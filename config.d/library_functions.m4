@@ -7,8 +7,6 @@ AC_FUNC_MEMCMP
 AC_FUNC_MMAP
 AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
-AC_FUNC_VA_COPY
-AC_FUNC__VA_COPY
 AC_CHECK_FUNCS(
 	access _access connect dlopen execvp fcntl ftime _ftime getaddrinfo \
 	gethostbyname gethostname getnameinfo getpagesize gettimeofday getuid \
@@ -16,6 +14,17 @@ AC_CHECK_FUNCS(
 	socket stat strcasestr strerror strnlen strsep strstr vsnprintf \
 	_vsnprintf wait
 )
+
+AC_FUNC_VA_COPY
+AC_FUNC__VA_COPY
+AH_VERBATIM([DEFINE_VA_COPY],
+[#ifndef HAVE_VA_COPY
+# ifdef HAVE__VA_COPY
+#  define va_copy(d,s) __va_copy ((d), (s))
+# else
+#  define va_copy(d,s) memcpy (&(d), &(s), sizeof (va_list))
+# endif
+#endif])
 
 DL_LIBS=""
 if test "x$ac_cv_func_dlopen" != "xyes"; then

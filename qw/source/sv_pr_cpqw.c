@@ -390,7 +390,7 @@ PF_validatefile (progs_t *pr)
 
 	st = P_GSTRING (pr, 0);
 
-	QFS_FOpenFile (st, &f);
+	f = QFS_FOpenFile (st);
 	if (!f) {
 		retval = 0.0;
 	} else {
@@ -818,10 +818,10 @@ cpqw_user_cmd (void)
 
 		PR_PushFrame (pr);
 		P_FLOAT (pr, 0) = argc;
-		for (i = 0; i < argc; i++)
-			P_STRING (pr, i + 1) = PR_SetTempString (pr, Cmd_Argv (i));
+		for (i = 1; i < argc; i++)
+			P_STRING (pr, i) = PR_SetTempString (pr, Cmd_Argv (i - 1));
 		for (; i < 7; i++)
-			P_STRING (pr, i + 1) = 0;
+			P_STRING (pr, i) = 0;
 		PR_ExecuteProgram (pr, cpqw_funcs.ClientCommand);
 		PR_PopFrame (pr);
 		return (int) R_FLOAT (pr);

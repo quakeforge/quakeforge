@@ -81,7 +81,7 @@ W_LoadWadFile (const char *filename)
 	int         i;
 	int			infotableofs;
 
-	wad_base = QFS_LoadHunkFile (filename);
+	wad_base = QFS_LoadHunkFile (QFS_FOpenFile (filename));
 	if (!wad_base)
 		Sys_Error ("W_LoadWadFile: unable to load %s", filename);
 

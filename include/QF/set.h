@@ -31,15 +31,32 @@
 #ifndef __QF_set_h
 #define __QF_set_h
 
+#include "QF/qtypes.h"
+
 /**	\defgroup set Set handling
 	\ingroup utils
 */
 //@{
 
-#define DEFMAP_SIZE ((32 - sizeof (struct set_s *) \
-					  - sizeof (unsigned *) \
-					  - sizeof (int) - sizeof (unsigned))\
-					 / sizeof (unsigned))
+//FIXME other archs
+#ifdef __x86_64__
+typedef uint64_t set_bits_t;
+#else
+typedef uint32_t set_bits_t;
+#endif
+
+#define SET_DEFMAP_SIZE ((32 - sizeof (struct set_s *) \
+						  - sizeof (set_bits_t *) \
+						  - sizeof (int) - sizeof (unsigned))\
+						 / sizeof (set_bits_t))
+#define SET_BITS (sizeof (set_bits_t) * 8)
+//NOTE: x is the element number, so size is x + 1
+#define SET_SIZE(x) (((x) + SET_BITS) & ~(SET_BITS - 1))
+#define SET_WORDS(s) ((s)->size / SET_BITS)
+#define SET_ZERO ((set_bits_t) 0)
+#define SET_ONE ((set_bits_t) 1)
+#define SET_TEST_MEMBER(s, x) \
+	((s)->map[(x) / SET_BITS] & (SET_ONE << ((x) % SET_BITS)))
 
 /** Represent a set using a bitmap.
 
@@ -50,10 +67,10 @@
 */
 typedef struct set_s {
 	struct set_s *next;				///< private. for ALLOC
-	unsigned   *map;				///< bitmap of set members
+	set_bits_t *map;				///< bitmap of set members
 	int         inverted;			///< if true, 0 indicates membership
 	unsigned    size;				///< number of representable members
-	unsigned	defmap[DEFMAP_SIZE];///< backing store for small sets
+	set_bits_t  defmap[SET_DEFMAP_SIZE];///< backing store for small sets
 } set_t;
 
 /** Represent the state of a scan through a set.
@@ -79,11 +96,19 @@ typedef struct set_iter_s {
 	unsigned    element;
 } set_iter_t;
 
+typedef struct set_pool_s {
+	set_t      *set_freelist;
+	set_iter_t *set_iter_freelist;
+} set_pool_t;
+
+void set_pool_init (set_pool_t *set_pool);
+
 /** Delete a set iterator that is no longer needed.
 
 	\param set_iter	The set iterator to be deleted.
 */
 void set_del_iter (set_iter_t *set_iter);
+void set_del_iter_r (set_pool_t *set_pool, set_iter_t *set_iter);
 
 /** Create a new set.
 
@@ -92,12 +117,28 @@ void set_del_iter (set_iter_t *set_iter);
 	\return			The newly created, empty set.
 */
 set_t *set_new (void);
+set_t *set_new_r (set_pool_t *set_pool);
+
+/** Create a new set with space pre-allocated for the specified set size.
+
+	Although sets automatically grow to accommodate new members as necessary,
+	sometimes the maximum set size is known in advance and it can be more
+	efficient to grow the set in advance.
+
+	The set is initialized to be the empty set.
+
+	\param size		The number of elements for which space is to be allocated.
+	\return			The newly created, empty set.
+*/
+set_t *set_new_size (int size);
+set_t *set_new_size_r (set_pool_t *set_pool, int size);
 
 /** Delete a set that is no longer needed.
 
 	\param set		The set to be deleted.
 */
 void set_delete (set_t *set);
+void set_delete_r (set_pool_t *set_pool, set_t *set);
 
 /** Add an element to a set.
 
@@ -295,6 +336,7 @@ unsigned set_size (const set_t *set);
 					of everything.
 */
 set_iter_t *set_first (const set_t *set);
+set_iter_t *set_first_r (set_pool_t *set_pool, const set_t *set);
 
 /** Find the next "member" of the set.
 
@@ -312,6 +354,7 @@ set_iter_t *set_first (const set_t *set);
 			is reached.
 */
 set_iter_t *set_next (set_iter_t *set_iter);
+set_iter_t *set_next_r (set_pool_t *set_pool, set_iter_t *set_iter);
 
 /** Return a human-readable string representing the set.
 

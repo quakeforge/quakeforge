@@ -71,6 +71,7 @@ sw32_D_Init (void)
 	vr_data.vid->init_caches = sw32_D_InitCaches;
 
 	VID_InitBuffers ();
+	VID_MakeColormaps();
 }
 
 void

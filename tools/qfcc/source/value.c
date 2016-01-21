@@ -73,7 +73,7 @@ typedef struct {
 } immediate_t;
 
 static hashtab_t *value_table;
-static ex_value_t *free_values;
+static ex_value_t *values_freelist;
 
 static uintptr_t
 value_get_hash (const void *_val, void *unused)

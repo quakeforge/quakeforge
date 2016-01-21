@@ -37,6 +37,7 @@ core
 /mkinstalldirs
 /quakeforge-config
 /quakeforge.lsm
+/test-driver
 /ylwrap
 
 # /RPM/

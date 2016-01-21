@@ -34,8 +34,14 @@
 # include "QF/quakeio.h"
 #endif
 
-// these are the key numbers that should be passed to Key_Event
+/** \defgroup input Input Sub-system */
 
+/** \defgroup input_keybinding Key Binding Sub-system
+	\ingroup input
+*/
+//@{
+
+/// these are the key numbers that should be passed to Key_Event
 typedef enum {
 	/* The keyboard syms have been cleverly chosen to map to ASCII */
 	QFK_UNKNOWN		= 0,
@@ -409,19 +415,87 @@ typedef enum {
 	QFJ_BUTTON30,
 	QFJ_BUTTON31,
 	QFJ_BUTTON32,
+	QFJ_BUTTON33,
+	QFJ_BUTTON34,
+	QFJ_BUTTON35,
+	QFJ_BUTTON36,
+	QFJ_BUTTON37,
+	QFJ_BUTTON38,
+	QFJ_BUTTON39,
+	QFJ_BUTTON40,
+	QFJ_BUTTON41,
+	QFJ_BUTTON42,
+	QFJ_BUTTON43,
+	QFJ_BUTTON44,
+	QFJ_BUTTON45,
+	QFJ_BUTTON46,
+	QFJ_BUTTON47,
+	QFJ_BUTTON48,
+	QFJ_BUTTON49,
+	QFJ_BUTTON50,
+	QFJ_BUTTON51,
+	QFJ_BUTTON52,
+	QFJ_BUTTON53,
+	QFJ_BUTTON54,
+	QFJ_BUTTON55,
+	QFJ_BUTTON56,
+	QFJ_BUTTON57,
+	QFJ_BUTTON58,
+	QFJ_BUTTON59,
+	QFJ_BUTTON60,
+	QFJ_BUTTON61,
+	QFJ_BUTTON62,
+	QFJ_BUTTON63,
+	QFJ_BUTTON64,
+
+//
+// joystick axes (for button emulation without consuming buttons)
+//
+	QFJ_AXIS1,
+	QFJ_AXIS2,
+	QFJ_AXIS3,
+	QFJ_AXIS4,
+	QFJ_AXIS5,
+	QFJ_AXIS6,
+	QFJ_AXIS7,
+	QFJ_AXIS8,
+	QFJ_AXIS9,
+	QFJ_AXIS10,
+	QFJ_AXIS11,
+	QFJ_AXIS12,
+	QFJ_AXIS13,
+	QFJ_AXIS14,
+	QFJ_AXIS15,
+	QFJ_AXIS16,
+	QFJ_AXIS17,
+	QFJ_AXIS18,
+	QFJ_AXIS19,
+	QFJ_AXIS20,
+	QFJ_AXIS21,
+	QFJ_AXIS22,
+	QFJ_AXIS23,
+	QFJ_AXIS24,
+	QFJ_AXIS25,
+	QFJ_AXIS26,
+	QFJ_AXIS27,
+	QFJ_AXIS28,
+	QFJ_AXIS29,
+	QFJ_AXIS30,
+	QFJ_AXIS31,
+	QFJ_AXIS32,
 
 	QFK_LAST
 } knum_t;
 
 typedef enum {
-	key_unfocused,			// engine has lost input focus
-	key_game,
-	key_demo,
-	key_console,
-	key_message,
-	key_menu,
+	key_unfocused,			///< engine has lost input focus
+	key_game,				///< Normal in-game key bindings
+	key_demo,				///< Demo playback key bindings
+	key_console,			///< Command console key bindings
+	key_message,			///< Message input line key bindings
+	key_menu,				///< Menu key bindings.
 
-	key_last				// enum size
+	key_last				///< enum size
 } keydest_t;
 
 #ifndef __QFCC__
@@ -447,34 +521,144 @@ typedef struct imt_s {
 	int         written;			///< avoid duplicate config file writes
 } imt_t;
 
+/**	Chain of input mapping tables ascociated with a keydest sub-system (game,
+	menu, etc).
+*/
 typedef struct keytarget_s {
-	imt_t      *imts;
-	imt_t      *active;
+	imt_t      *imts;				///< list of tables attached to this target
+	imt_t      *active;				///< currently active table in this target
 } keytarget_t;
 
 extern int		keydown[QFK_LAST];
 
+struct cbuf_s;
+
+void Key_Init (struct cbuf_s *cb);
+void Key_Init_Cvars (void);
+
+/**	Find an Input Mapping Table by name.
+
+	Searches through all keydest targets for the named imt. The search is case
+	insensitive.
+
+	\param imt_name	The name of the imt to find. Case insensitive.
+	\return			The named imt, or null if not found.
+*/
 imt_t *Key_FindIMT (const char *imt_name);
+
+/**	Create a new imt and attach it to the specified keydest target.
+
+	The name of the new imt must be unique (case insensitive) across all
+	keydest targets. This is to simplify the in_bind command.
+
+	If \a chain_imt_name is not null, then it species the fallback imt for when
+	the key is not bound in the new imt. It must be an already existing imt in
+	the specified keydest target. This is to prevent loops and other weird
+	behavior.
+
+	\param kd		The keydest target to which the new imt will be attached.
+	\param imt_name	The name for the new imt. Must be unique (case
+					insensitive).
+	\param chain_imt_name	The name of the fallback imt if not null. Must
+					already exist on the specified keydest target.
+*/
 void Key_CreateIMT (keydest_t kd, const char *imt_name,
 					const char *chain_imt_name);
 
-struct cbuf_s;
+/**	Handle a key press/release event.
+
+	\param key		The key that was pressed or released for this event.
+	\param unicode	The unicode value of the key.
+	\param down		True if a press event, false if a release event.
+*/
 void Key_Event (knum_t key, short unicode, qboolean down);
+
+/**	Handle loss or gain of input focus (usually in windowed enviroments).
+
+	Sets the keydest target to key_unfocuses when input focus is lost.
+
+	Triggers keydest callbacks.
+
+	\bug			Always sets the target to key_game when focus is gained.
+
+	\param gain		True if focus is gained, false if focus is lost.
+*/
 void Key_FocusEvent (int gain);
-void Key_Init (struct cbuf_s *cb);
-void Key_Init_Cvars (void);
+
 void Key_WriteBindings (QFile *f);
+
+/**	Force all key states to unpressed.
+
+	Sends a key release event for any keys that are seen as down.
+*/
 void Key_ClearStates (void);
-const char *Key_GetBinding (const char *imt_name, knum_t key);
+
+/**	Return a key binding in the specified input mapping table.
+
+	\param imt		The input mapping table from which to get the binding.
+	\param key		The key for which to get the binding.
+	\return			The command string bound to the key, or null if unbound.
+*/
+const char *Key_GetBinding (imt_t *imt, knum_t key);
+
+/** Bind a command string to a key in the specified input mapping table.
+
+	Only one command string can be bound to a key, but the command string may
+	contain multiple commands.
+
+	\param imt		The input mapping table in which the key will be bound.
+	\param keynum	The key to which the command string will be bound.
+	\param binding	The command string that will be bound.
+*/
 void Key_SetBinding (imt_t *imt, knum_t keynum, const char *binding);
+
+/**	Set the current keydest target.
+
+	Triggers keydest callbacks.
+
+	\param kd		The keydest target to make current.
+*/
 void Key_SetKeyDest(keydest_t kd);
-typedef void keydest_callback_t (keydest_t);
+
+/** keydest callback signature.
+
+	\param kd		The new current keydest target.
+*/
+typedef void keydest_callback_t (keydest_t kd);
+
+/**	Add a callback for when the keydest target changes.
+
+	\param callback	The callback to be added.
+*/
 void Key_KeydestCallback (keydest_callback_t *callback);
 
+/**	Get the string representation of a key.
 
+	Returns a string (a QFK_* name) for the given keynum.
+
+	\param keynum	The key for which to get the string.
+	\return			The string representation of the key.
+*/
 const char *Key_KeynumToString (knum_t keynum);
+
+/**	Get the keynum for the named key.
+
+	Returns a key number to be used to index keybindings[] by looking at
+	the given string.  Single ascii characters return themselves, while
+	the QFK_* names are matched up.
+
+	\param str		The name of the key.
+	\return			The named key if valid, otherwise -1
+*/
+int Key_StringToKeynum (const char *str);
+
 struct progs_s;
+
+/**	Add the Key builtins to the specified progs instance.
+*/
 void Key_Progs_Init (struct progs_s *pr);
 #endif
+
+//@}
 
 #endif // _KEYS_H

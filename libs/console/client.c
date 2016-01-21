@@ -474,11 +474,15 @@ C_KeyEvent (knum_t key, short unicode, qboolean down)
 						return;
 					}
 				case key_game:
+				case key_demo:
 					Menu_Enter ();
 					return;
-				default:
-					Sys_Error ("Bad con_keydest");
+				case key_unfocused:
+					return;
+				case key_last:
+					break;	// should not happen, so hit error
 			}
+			Sys_Error ("Bad con_keydest");
 		} else if (key == key_toggleconsole) {
 			ToggleConsole_f ();
 			return;

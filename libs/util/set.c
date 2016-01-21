@@ -45,66 +45,105 @@
 #include "QF/mathlib.h"
 #include "QF/set.h"
 
-#define BITS (sizeof (((set_t *) 0)->map[0]) * 8)
-
-set_t      *free_sets;
-set_iter_t *free_set_iters;
+static set_pool_t static_set_pool = {0, 0};
 
 static set_iter_t *
-new_setiter (void)
+new_setiter (set_pool_t *set_pool)
 {
 	set_iter_t *set_iter;
-	ALLOC (16, set_iter_t, set_iters, set_iter);
+	ALLOC (16, set_iter_t, set_pool->set_iter, set_iter);
 	return set_iter;
 }
 
 static void
-delete_setiter (set_iter_t *set_iter)
+delete_setiter (set_pool_t *set_pool, set_iter_t *set_iter)
 {
-	FREE (set_iters, set_iter);
+	FREE (set_pool->set_iter, set_iter);
 }
 
 void
 set_del_iter (set_iter_t *set_iter)
 {
-	delete_setiter (set_iter);
+	delete_setiter (&static_set_pool, set_iter);
 }
 
-set_t *
-set_new (void)
+void
+set_del_iter_r (set_pool_t *set_pool, set_iter_t *set_iter)
+{
+	delete_setiter (set_pool, set_iter);
+}
+
+void
+set_pool_init (set_pool_t *set_pool)
+{
+	set_pool->set_freelist = 0;
+	set_pool->set_iter_freelist = 0;
+}
+
+inline set_t *
+set_new_r (set_pool_t *set_pool)
 {
 	set_t      *set;
 
-	ALLOC (16, set_t, sets, set);
+	ALLOC (16, set_t, set_pool->set, set);
 	set->size = sizeof (set->defmap) * 8;
 	set->map = set->defmap;
 	return set;
 }
 
+set_t *
+set_new (void)
+{
+	return set_new_r (&static_set_pool);
+}
+
 void
-set_delete (set_t *set)
+set_delete_r (set_pool_t *set_pool, set_t *set)
 {
 	if (set->map != set->defmap)
 		free (set->map);
-	FREE (sets, set);
+	FREE (set_pool->set, set);
+}
+
+void
+set_delete (set_t *set)
+{
+	set_delete_r (&static_set_pool, set);
 }
 
 static void
 set_expand (set_t *set, unsigned x)
 {
-	unsigned   *map = set->map;
+	set_bits_t *map = set->map;
 	size_t      size;
 
 	if (x <= set->size)
 		return;
 
-	size = (x + BITS) & ~(BITS - 1);
+	size = SET_SIZE (x);
 	set->map = malloc (size / 8);
 	memcpy (set->map, map, set->size / 8);
-	memset (set->map + set->size / BITS, 0, (size - set->size) / 8);
+	memset (set->map + SET_WORDS (set), 0, (size - set->size) / 8);
 	set->size = size;
 	if (map != set->defmap)
 		free (map);
+}
+
+inline set_t *
+set_new_size_r (set_pool_t *set_pool, int size)
+{
+	set_t      *set;
+
+	set = set_new_r (set_pool);
+	set_expand (set, size);
+
+	return set;
+}
+
+set_t *
+set_new_size (int size)
+{
+	return set_new_size_r (&static_set_pool, size);
 }
 
 static inline void
@@ -112,7 +151,7 @@ _set_add (set_t *set, unsigned x)
 {
 	if (x >= set->size)
 		set_expand (set, x + 1);
-	set->map[x / BITS] |= 1 << (x % BITS);
+	set->map[x / SET_BITS] |= SET_ONE << (x % SET_BITS);
 }
 
 static inline void
@@ -120,7 +159,7 @@ _set_remove (set_t *set, unsigned x)
 {
 	if (x >= set->size)
 		return;
-	set->map[x / BITS] &= ~(1 << (x % BITS));
+	set->map[x / SET_BITS] &= ~(SET_ONE << (x % SET_BITS));
 }
 
 set_t *
@@ -158,7 +197,7 @@ _set_union (set_t *dst, const set_t *src)
 
 	size = max (dst->size, src->size);
 	set_expand (dst, size);
-	for (i = 0; i < src->size / BITS; i++)
+	for (i = 0; i < SET_WORDS (src); i++)
 		dst->map[i] |= src->map[i];
 	return dst;
 }
@@ -171,9 +210,9 @@ _set_intersection (set_t *dst, const set_t *src)
 
 	size = max (dst->size, src->size);
 	set_expand (dst, size);
-	for (i = 0; i < src->size / BITS; i++)
+	for (i = 0; i < SET_WORDS (src); i++)
 		dst->map[i] &= src->map[i];
-	for ( ; i < dst->size / BITS; i++)
+	for ( ; i < SET_WORDS (dst); i++)
 		dst->map[i] = 0;
 	return dst;
 }
@@ -186,7 +225,7 @@ _set_difference (set_t *dst, const set_t *src)
 
 	size = max (dst->size, src->size);
 	set_expand (dst, size);
-	for (i = 0; i < src->size / BITS; i++)
+	for (i = 0; i < SET_WORDS (src); i++)
 		dst->map[i] &= ~src->map[i];
 	return dst;
 }
@@ -199,7 +238,7 @@ _set_reverse_difference (set_t *dst, const set_t *src)
 
 	size = max (dst->size, src->size);
 	set_expand (dst, size);
-	for (i = 0; i < src->size / BITS; i++)
+	for (i = 0; i < SET_WORDS (src); i++)
 		dst->map[i] = ~dst->map[i] & src->map[i];
 	return dst;
 }
@@ -275,9 +314,9 @@ set_assign (set_t *dst, const set_t *src)
 	size = max (dst->size, src->size);
 	set_expand (dst, size);
 	dst->inverted = src->inverted;
-	for (i = 0; i < src->size / BITS; i++)
+	for (i = 0; i < SET_WORDS (src); i++)
 		dst->map[i] = src->map[i];
-	for ( ; i < dst->size / BITS; i++)
+	for ( ; i < SET_WORDS (dst); i++)
 		dst->map[i] = 0;
 	return dst;
 }
@@ -288,7 +327,7 @@ set_empty (set_t *set)
 	unsigned    i;
 
 	set->inverted = 0;
-	for (i = 0; i < set->size / BITS; i++)
+	for (i = 0; i < SET_WORDS (set); i++)
 		set->map[i] = 0;
 	return set;
 }
@@ -299,7 +338,7 @@ set_everything (set_t *set)
 	unsigned    i;
 
 	set->inverted = 1;
-	for (i = 0; i < set->size / BITS; i++)
+	for (i = 0; i < SET_WORDS (set); i++)
 		set->map[i] = 0;
 	return set;
 }
@@ -309,7 +348,7 @@ _set_is_empty (const set_t *set)
 {
 	unsigned    i;
 
-	for (i = 0; i < set->size / BITS; i++)
+	for (i = 0; i < SET_WORDS (set); i++)
 		if (set->map[i])
 			return 0;
 	return 1;
@@ -335,21 +374,21 @@ static int
 set_test_n_n (const set_t *s1, const set_t *s2)
 {
 	unsigned    i, end;
-	unsigned    intersection = 0;
-	unsigned    difference = 0;
+	set_bits_t  intersection = 0;
+	set_bits_t  difference = 0;
 
-	end = min (s1->size, s2->size) / BITS;
+	end = min (s1->size, s2->size) / SET_BITS;
 	for (i = 0; i < end; i++) {
-		unsigned    m1 = s1->map[i];
-		unsigned    m2 = s2->map[i];
+		set_bits_t  m1 = s1->map[i];
+		set_bits_t  m2 = s2->map[i];
 
 		intersection |= m1 & m2;
 		difference |= m1 ^ m2;
 	}
-	for ( ; i < s1->size / BITS; i++) {
+	for ( ; i < SET_WORDS (s1); i++) {
 		difference |= s1->map[i];
 	}
-	for ( ; i < s2->size / BITS; i++) {
+	for ( ; i < SET_WORDS (s2); i++) {
 		difference |= s2->map[i];
 	}
 	return (difference != 0) | ((intersection != 0) << 1);
@@ -359,22 +398,22 @@ static int
 set_test_n_i (const set_t *s1, const set_t *s2)
 {
 	unsigned    i, end;
-	unsigned    intersection = 0;
-	unsigned    difference = 0;
+	set_bits_t  intersection = 0;
+	set_bits_t  difference = 0;
 
-	end = min (s1->size, s2->size) / BITS;
+	end = min (s1->size, s2->size) / SET_BITS;
 	for (i = 0; i < end; i++) {
-		unsigned    m1 = s1->map[i];
-		unsigned    m2 = ~s2->map[i];
+		set_bits_t  m1 = s1->map[i];
+		set_bits_t  m2 = ~s2->map[i];
 
 		intersection |= m1 & m2;
 		difference |= m1 ^ m2;
 	}
-	for ( ; i < s1->size / BITS; i++) {
+	for ( ; i < SET_WORDS (s1); i++) {
 		intersection |= s1->map[i];
 		difference |= ~s1->map[i];
 	}
-	for ( ; i < s2->size / BITS; i++) {
+	for ( ; i < SET_WORDS (s2); i++) {
 		difference |= ~s2->map[i];
 	}
 	return (difference != 0) | ((intersection != 0) << 1);
@@ -384,21 +423,21 @@ static int
 set_test_i_n (const set_t *s1, const set_t *s2)
 {
 	unsigned    i, end;
-	unsigned    intersection = 0;
-	unsigned    difference = 0;
+	set_bits_t  intersection = 0;
+	set_bits_t  difference = 0;
 
-	end = min (s1->size, s2->size) / BITS;
+	end = min (s1->size, s2->size) / SET_BITS;
 	for (i = 0; i < end; i++) {
-		unsigned    m1 = ~s1->map[i];
-		unsigned    m2 = s2->map[i];
+		set_bits_t  m1 = ~s1->map[i];
+		set_bits_t  m2 = s2->map[i];
 
 		intersection |= m1 & m2;
 		difference |= m1 ^ m2;
 	}
-	for ( ; i < s1->size / BITS; i++) {
+	for ( ; i < SET_WORDS (s1); i++) {
 		difference |= ~s1->map[i];
 	}
-	for ( ; i < s2->size / BITS; i++) {
+	for ( ; i < SET_WORDS (s2); i++) {
 		intersection |= s2->map[i];
 		difference |= ~s2->map[i];
 	}
@@ -409,21 +448,21 @@ static int
 set_test_i_i (const set_t *s1, const set_t *s2)
 {
 	unsigned    i, end;
-	unsigned    intersection = 0;
-	unsigned    difference = 0;
+	set_bits_t  intersection = 0;
+	set_bits_t  difference = 0;
 
-	end = min (s1->size, s2->size) / BITS;
+	end = min (s1->size, s2->size) / SET_BITS;
 	for (i = 0; i < end; i++) {
-		unsigned    m1 = ~s1->map[i];
-		unsigned    m2 = ~s2->map[i];
+		set_bits_t  m1 = ~s1->map[i];
+		set_bits_t  m2 = ~s2->map[i];
 
 		intersection |= m1 & m2;
 		difference |= m1 ^ m2;
 	}
-	for ( ; i < s1->size / BITS; i++) {
+	for ( ; i < SET_WORDS (s1); i++) {
 		difference |= ~s1->map[i];
 	}
-	for ( ; i < s2->size / BITS; i++) {
+	for ( ; i < SET_WORDS (s2); i++) {
 		intersection |= s2->map[i];
 		difference |= ~s2->map[i];
 	}
@@ -467,13 +506,13 @@ set_is_subset (const set_t *set, const set_t *sub)
 {
 	unsigned    i, end;
 
-	end = min (set->size, sub->size) / BITS;
+	end = min (set->size, sub->size) / SET_BITS;
 	if (set->inverted && sub->inverted) {
 		for (i = 0; i < end; i++) {
 			if (~sub->map[i] & set->map[i])
 				return 0;
 		}
-		for ( ; i < set->size / BITS; i++)
+		for ( ; i < SET_WORDS (set); i++)
 			if (set->map[i])
 				return 0;
 	} else if (set->inverted) {
@@ -489,7 +528,7 @@ set_is_subset (const set_t *set, const set_t *sub)
 			if (sub->map[i] & ~set->map[i])
 				return 0;
 		}
-		for ( ; i < sub->size / BITS; i++)
+		for ( ; i < SET_WORDS (sub); i++)
 			if (sub->map[i])
 				return 0;
 	}
@@ -501,7 +540,7 @@ _set_is_member (const set_t *set, unsigned x)
 {
 	if (x >= set->size)
 		return 0;
-	return (set->map[x / BITS] & (1 << (x % BITS))) != 0;
+	return (set->map[x / SET_BITS] & (SET_ONE << (x % SET_BITS))) != 0;
 }
 
 int
@@ -525,14 +564,14 @@ set_size (const set_t *set)
 }
 
 set_iter_t *
-set_first (const set_t *set)
+set_first_r (set_pool_t *set_pool, const set_t *set)
 {
 	unsigned    x;
 	set_iter_t *set_iter;
 
 	for (x = 0; x < set->size; x++) {
 		if (_set_is_member (set, x)) {
-			set_iter = new_setiter ();
+			set_iter = new_setiter (set_pool);
 			set_iter->set = set;
 			set_iter->element = x;
 			return set_iter;
@@ -542,7 +581,13 @@ set_first (const set_t *set)
 }
 
 set_iter_t *
-set_next (set_iter_t *set_iter)
+set_first (const set_t *set)
+{
+	return set_first_r (&static_set_pool, set);
+}
+
+set_iter_t *
+set_next_r (set_pool_t *set_pool, set_iter_t *set_iter)
 {
 	unsigned    x;
 
@@ -552,8 +597,14 @@ set_next (set_iter_t *set_iter)
 			return set_iter;
 		}
 	}
-	delete_setiter (set_iter);
+	delete_setiter (set_pool, set_iter);
 	return 0;
+}
+
+set_iter_t *
+set_next (set_iter_t *set_iter)
+{
+	return set_next_r (&static_set_pool, set_iter);
 }
 
 const char *

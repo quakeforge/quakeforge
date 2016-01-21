@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS= foreign
 
 AM_CFLAGS= @PREFER_PIC@
-INCLUDES= -I$(top_srcdir)/include
+AM_CPPFLAGS= -I$(top_srcdir)/include
 
 noinst_LTLIBRARIES=	@alias_libs@
 EXTRA_LTLIBRARIES=libalias_gl.la libalias_glsl.la libalias_sw.la

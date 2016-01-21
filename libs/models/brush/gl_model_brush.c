@@ -141,6 +141,7 @@ gl_Mod_LoadLighting (bsp_t *bsp)
 	dstring_t  *litfilename = dstring_new ();
 	size_t      i;
 	int         ver;
+	QFile      *lit_file;
 
 	dstring_copystr (litfilename, loadmodel->name);
 	loadmodel->lightdata = NULL;
@@ -148,7 +149,8 @@ gl_Mod_LoadLighting (bsp_t *bsp)
 		// LordHavoc: check for a .lit file to load
 		QFS_StripExtension (litfilename->str, litfilename->str);
 		dstring_appendstr (litfilename, ".lit");
-		data = (byte *) QFS_LoadHunkFile (litfilename->str);
+		lit_file = QFS_VOpenFile (litfilename->str, 0, loadmodel->vpath);
+		data = (byte *) QFS_LoadHunkFile (lit_file);
 		if (data) {
 			if (data[0] == 'Q' && data[1] == 'L' && data[2] == 'I'
 				&& data[3] == 'T') {

@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS= foreign
 
 SUBDIRS= alias brush iqm sprite . test
 AM_CFLAGS= @PREFER_PIC@
-INCLUDES= -I$(top_srcdir)/include
+AM_CPPFLAGS= -I$(top_srcdir)/include
 
 lib_LTLIBRARIES=	libQFmodels.la
 noinst_LTLIBRARIES= @models_libs@

@@ -2,7 +2,7 @@ QWAQ_LIBS=@QWAQ_LIBS@
 QWAQ_DEPS=@QWAQ_DEPS@
 QWAQ_INCS=@QWAQ_INCS@
 
-INCLUDES=	-I$(top_srcdir)/include $(QWAQ_INCS)
+AM_CPPFLAGS=	-I$(top_srcdir)/include $(QWAQ_INCS)
 
 QFCC_DEP=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)
 QFCC=$(top_builddir)/tools/qfcc/source/qfcc
@@ -38,7 +38,7 @@ qwaq_x11_libs= \
 qwaq_x11_SOURCES=qwaq.c qwaq-bi.c
 qwaq_x11_LDADD= $(qwaq_x11_libs) $(QWAQ_LIBS) \
 				$(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
-				$(X_EXTRA_LIBS) $(X_SHM_LIB)
+				$(X_EXTRA_LIBS) $(X_SHM_LIB) $(DL_LIBS)
 qwaq_x11_LDFLAGS=
 qwaq_x11_DEPENDENCIES= $(qwaq_x11_libs) $(QWAQ_DEPS)
 

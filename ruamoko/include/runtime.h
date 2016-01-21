@@ -16,6 +16,22 @@ enum {
 
 /**
 	Standard boolean type
+
+	This is not like a boolean in some other languages, where you can compare
+	any number against the 'true' value; that is, the following does not catch
+	all true values.
+	\code
+	if (foo == YES) {
+		...
+	}
+	\endcode
+	If you want to catch all true values, simply test for truth using something
+	like:
+	\code
+	if (foo) {
+		...
+	}
+	\endcode
 */
 typedef enum {
 	NO = 0,		///< the false value

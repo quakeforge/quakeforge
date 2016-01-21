@@ -61,6 +61,24 @@
 int c_bad;
 int c_culldistplane, c_proper;
 
+const char *
+get_tex_name (int texindex)
+{
+	dmiptexlump_t *mtl;
+	miptex_t   *mt;
+	int         miptex;
+
+	if (bsp->texdatasize) {
+		mtl = (dmiptexlump_t *) bsp->texdata;
+		miptex = bsp->texinfo[texindex].miptex;
+		if (mtl->dataofs[miptex] != -1) {
+			mt = (miptex_t *) (bsp->texdata + mtl->dataofs[miptex]);
+			return mt->name;
+		}
+	}
+	return "notex";
+}
+
 /*
 SAMPLE POINT DETERMINATION
 
@@ -428,6 +446,71 @@ SingleLightFace (entity_t *light, lightinfo_t *l)
 		l->lightstyles[mapnum] = light->style;
 }
 
+static void
+SkyLightFace (entity_t *ent, int sun, lightinfo_t *l)
+{
+	int         sun_light  = ent->sun_light[sun != 0];
+	const vec_t *sun_color = ent->sun_color[sun != 0];
+	const vec_t *sun_dir   = ent->sun_dir[sun];
+	float       dist;
+	int         i;
+	int         mapnum;
+	float       angle;
+	float       add;
+	vec3_t      incoming;
+	lightpoint_t *point;
+	lightsample_t *sample;
+
+	if (sun_light <= 0)
+		return;
+
+	dist = DotProduct (sun_dir, l->facenormal);
+
+	// don't bother with lights behind the surface
+	if (dist <= -0.25)
+		return;
+
+	// if sunlight is set, use a style 0 light map
+	for (mapnum = 0; mapnum < MAXLIGHTMAPS; mapnum++) {
+		if (l->lightstyles[mapnum] == 0)
+			break;
+		if (l->lightstyles[mapnum] == 255) {
+			memset (l->sample[mapnum], 0,
+					sizeof (lightsample_t) * l->numsamples);
+			break;
+		}
+	}
+	if (mapnum == MAXLIGHTMAPS) {
+		//printf ("WARNING: Too many light styles on a face\n");
+		return;
+	}
+
+	// Check each point...
+	VectorCopy (sun_dir, incoming);
+	VectorNormalize (incoming);
+	angle = DotProduct (incoming, l->facenormal);
+	//anglesense = 0.5;	//FIXME
+
+	// FIXME global
+
+	for (i = 0, point = l->point; i < l->numpoints; i++, point++) {
+
+		angle = DotProduct (incoming, l->facenormal);
+
+		if (!TestSky (l, point->v, sun_dir))
+			continue;
+		add = sun_light;
+			continue;
+
+		add *= angle;
+
+		add *= options.extrascale;
+
+		sample = &l->sample[mapnum][point->samplepos];
+		VectorMultAdd (sample->c, add, sun_color, sample->c);
+	}
+}
+
 #if 0
 static void
 FixMinlight (lightinfo_t *l)
@@ -504,6 +587,10 @@ LightFace (lightinfo_t *l, int surfnum)
 	}
 	for (i = 0; i < num_novislights; i++) {
 		SingleLightFace (novislights[i], l);
+	}
+	if (world_entity && world_entity->num_suns) {
+		for (i = 0; i < world_entity->num_suns; i++)
+			SkyLightFace (world_entity, i, l);
 	}
 
 //	FixMinlight (&l);

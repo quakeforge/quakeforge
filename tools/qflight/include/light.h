@@ -29,12 +29,25 @@
 #ifndef __light_h
 #define __light_h
 
+/** \defgroup qflight QuakeForge light compiler.
+*/
+
 #include "QF/bspfile.h"
+
+/** \defgroup qflight_general General functions
+	\ingroup qflight
+*/
+//@{
 
 #define	ON_EPSILON	0.1
 #define	MAXLIGHTS	1024
 #define LIGHTDISTBIAS 65536.0
 #define BOGUS_RANGE 1000000000
+
+#define NUMHSUNS    32
+#define NUMVSUNS    4
+#define NUMSUNS     (1 + NUMHSUNS * NUMVSUNS)
+#define SHADOWSENSE 0.4
 
 #define	SINGLEMAP	(256*256)
 
@@ -87,7 +100,8 @@ extern qboolean extrasamples;
 extern float minlights[MAX_MAP_FACES];
 
 void LoadNodes (const char *file);
-qboolean TestLine (lightinfo_t *l, vec3_t start, vec3_t stop);
+qboolean TestLine (lightinfo_t *l, const vec3_t start, const vec3_t stop);
+qboolean TestSky (lightinfo_t *l, const vec3_t start, const vec3_t stop);
 
 void LightFace (lightinfo_t *l, int surfnum);
 void LightLeaf (dleaf_t *leaf);
@@ -113,5 +127,9 @@ extern lightchain_t **surfacelightchain;
 extern vec3_t *surfaceorgs;
 extern struct entity_s **novislights;
 extern int num_novislights;
+
+const char *get_tex_name (int texindex);
+
+//@}
 
 #endif// __light_h

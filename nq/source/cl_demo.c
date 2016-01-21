@@ -394,6 +394,8 @@ demo_check_dem (void)
 	// .dem demo files begin with an ascii integer (possibly negative)
 	// representing the forced bgm track, followed by a newline
 	c = Qgetc (cls.demofile);
+	while (isspace (c))	// hipnotic demos have leading whitespace :P
+		c = Qgetc (cls.demofile);
 	if (c == '-')
 		c = Qgetc (cls.demofile);
 	while (isdigit (c))
@@ -452,7 +454,7 @@ CL_StartDemo (void)
 	QFS_DefaultExtension (name, ".dem");
 
 	Sys_Printf ("Playing demo from %s.\n", name->str);
-	QFS_FOpenFile (name->str, &cls.demofile);
+	cls.demofile = QFS_FOpenFile (name->str);
 	if (!cls.demofile) {
 		Sys_Printf ("ERROR: couldn't open.\n");
 		cls.demonum = -1;				// stop demo loop

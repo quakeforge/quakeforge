@@ -34,18 +34,47 @@
 #endif
 
 #if defined (HAVE_PTHREAD_H) && defined (HAVE_PTHREAD)
+#define USE_PTHREADS
+#endif
+
+#ifdef USE_PTHREADS
 #include <pthread.h>
-extern pthread_mutex_t *my_mutex;
-#define	LOCK	do {if (options.threads > 1) pthread_mutex_lock (my_mutex); } while (0)
-#define	UNLOCK	do {if (options.threads > 1) pthread_mutex_unlock (my_mutex); } while (0)
+extern pthread_rwlock_t *global_lock;
+extern pthread_rwlock_t *portal_locks;
+
+#define	WRLOCK(l) \
+	do { \
+		if (options.threads > 1) \
+			pthread_rwlock_wrlock (l); \
+	} while (0)
+
+#define	RDLOCK(l) \
+	do { \
+		if (options.threads > 1) \
+			pthread_rwlock_rdlock (l); \
+	} while (0)
+
+#define	UNLOCK(l)	\
+	do { \
+		if (options.threads > 1)  \
+			pthread_rwlock_unlock (l); \
+	} while (0)
+
+#define WRLOCK_PORTAL(p) WRLOCK (&portal_locks[p - portals])
+#define RDLOCK_PORTAL(p) RDLOCK (&portal_locks[p - portals])
+#define UNLOCK_PORTAL(p) UNLOCK (&portal_locks[p - portals])
+
 #else
 #define	LOCK
 #define	UNLOCK
 #endif
 
+#include "QF/set.h"
+
 #define	MAX_PORTALS				32768
 #define	PORTALFILE				"PRT1"
 #define	PORTALFILE_AM			"PRT1-AM"
+#define	PORTALFILE2				"PRT2"
 #define	ON_EPSILON				0.1
 #define MAX_POINTS_ON_WINDING	64
 #define	MAX_PORTALS_ON_CLUSTER	128
@@ -66,10 +95,11 @@ typedef enum {
 typedef struct {
 	plane_t     plane;		// normal pointing into neighbor
 	int         cluster;	// neighbor
+	sphere_t    sphere;		// bounding sphere
 	winding_t  *winding;
 	vstatus_t   status;
-	byte       *visbits;
-	byte       *mightsee;
+	set_t      *visbits;
+	set_t      *mightsee;
 	int         nummightsee;
 	int         numcansee;
 } portal_t;
@@ -93,26 +123,49 @@ typedef struct cluster_s {
 } cluster_t;
 
 typedef struct pstack_s {
-	struct pstack_s *next;
-	cluster_t  *cluster;
-	portal_t   *portal;		// portal exiting
-	winding_t  *source, *pass;
-	plane_t     portalplane;
-	byte       *mightsee;	// bit string
+	struct pstack_s *next;		///< linked list of active stack objects
+	cluster_t  *cluster;		///< the cluster being sub-vised
+	winding_t  *source_winding;	///< clipped source portal winding
+	portal_t   *pass_portal;	///< the portal exiting from the cluster
+	winding_t  *pass_winding;	///< clipped pass portal winding
+	plane_t     pass_plane;		///< plane of the pass portal
+	set_t      *mightsee;
+	sep_t      *separators[2];
 } pstack_t;
 
 typedef struct {
-	byte       *clustervis;	// bit string
-	portal_t   *base;
+	int         portaltest;		///< number of portals tested via separators
+	int         portalpass;		///< number of portals through which vis passes
+	int         portalcheck;	///< number of portal checks
+	int         targettested;	///< number of times target portal tested
+	int         targettrimmed;	///< number of times target portal trimmed
+	int         targetclipped;	///< number of times target portal clipped away
+	int         sourcetested;	///< number of times source portal tested
+	int         sourcetrimmed;	///< number of times source portal trimmed
+	int         sourceclipped;	///< number of times source portal clipped away
+	int         chains;			///< number of visits to clusters
+	int         mighttest;		///< amount mightsee is used for masked tests
+	int         vistest;		///< amount visbits is used for masked tests
+	int         mightseeupdate;	///< amount of updates to waiting portals
+} visstat_t;
+
+typedef struct threaddata_s {
+	visstat_t   stats;			///< per-thread statistics merged on completion
+	set_t      *clustervis;		///< clusters base portal can see
+	portal_t   *base;			///< portal for which this thread is being run
 	pstack_t    pstack_head;
+	sep_t      *sep_freelist;	///< per-thread list of free separators
+	set_pool_t  set_pool;
 } threaddata_t;
+
+typedef struct {
+	set_t      *portalsee;
+	int         clustersee;
+} basethread_t;
 
 extern int numportals;
 extern int portalclusters;
 extern int numrealleafs;
-extern int c_portaltest;
-extern int c_portalpass;
-extern int c_portalcheck;
 extern int bitbytes;
 extern int bitbytes_l;
 extern int bitlongs;
@@ -123,18 +176,14 @@ extern cluster_t *clusters;
 extern int *leafcluster;
 extern byte *uncompressed;
 
-extern int c_chains;
-extern int c_mighttest;
-extern int c_vistest;
-
 void FreeWinding (winding_t *w);
 winding_t *NewWinding (int points);
-winding_t *ClipWinding (winding_t *in, plane_t *split, qboolean keepon);
-winding_t *CopyWinding (winding_t *w);
+winding_t *ClipWinding (winding_t *in, const plane_t *split, qboolean keepon);
+winding_t *CopyWinding (const winding_t *w);
 
 void ClusterFlow (int clusternum);
-void BasePortalVis (void);
-void PortalFlow (portal_t *portal);
+void PortalBase (basethread_t *thread, portal_t *portal);
+void PortalFlow (threaddata_t *data, portal_t *portal);
 void CalcAmbientSounds (void);
 
 #endif// __vis_h

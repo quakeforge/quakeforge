@@ -299,41 +299,48 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, ddef_t *key, const char *s)
 */
 
 VISIBLE plitem_t *
-ED_ConvertToPlist (progs_t *pr, script_t *script)
+ED_ConvertToPlist (script_t *script, int nohack)
 {
 	plitem_t   *plist = PL_NewArray ();
 	plitem_t   *ent;
 	plitem_t   *key;
 	plitem_t   *value;
-	const char *token;
+	char       *token;
 	int         anglehack;
 
 	while (Script_GetToken (script, 1)) {
 		token = script->token->str;
 		if (!strequal (token, "{"))
-			PR_Error (pr, "ED_ParseEntity: EOF without closing brace");
+			Sys_Error ("ED_ConvertToPlist: EOF without closing brace");
 		ent = PL_NewDictionary ();
 		while (1) {
+			int         n;
+
 			if (!Script_GetToken (script, 1))
-				PR_Error (pr, "ED_ParseEntity: EOF without closing brace");
+				Sys_Error ("ED_ConvertToPlist: EOF without closing brace");
 			token = script->token->str;
 			if (strequal (token, "}"))
 				break;
+			// hack to take care of trailing spaces in field names
+			// (looking at you, Rogue)
+			for (n = strlen (token); n && token[n - 1] == ' '; n--) {
+				token[n - 1] = 0;
+			}
 			anglehack = 0;
-			if (strequal (token, "angle")) {
+			if (!nohack && strequal (token, "angle")) {
 				key = PL_NewString ("angles");
 				anglehack = 1;
-			} else if (strequal (token, "light")) {
+			} else if (!nohack && strequal (token, "light")) {
 				key = PL_NewString ("light_lev");
 			} else {
 				key = PL_NewString (token);
 			}
 			if (!Script_TokenAvailable (script, 0))
-				PR_Error (pr, "ED_ParseEntity: EOL without value");
+				Sys_Error ("ED_ConvertToPlist: EOL without value");
 			Script_GetToken (script, 0);
 			token = script->token->str;
 			if (strequal (token, "}"))
-				PR_Error (pr, "ED_ParseEntity: closing brace without data");
+				Sys_Error ("ED_ConvertToPlist: closing brace without data");
 			if (anglehack)
 				value = PL_NewString (va ("0 %s 0", token));
 			else
@@ -501,7 +508,7 @@ ED_Parse (progs_t *pr, const char *data)
 		} else {
 			// oldstyle entity data
 			Script_UngetToken (script);
-			entity_list = ED_ConvertToPlist (pr, script);
+			entity_list = ED_ConvertToPlist (script, 0);
 		}
 	}
 	Script_Delete (script);

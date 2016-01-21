@@ -55,13 +55,19 @@
 
 #include "r_internal.h"
 
-static const char quakesprite_vert[] =
-#include "quakespr.vc"
-;
+static const char *sprite_vert_effects[] =
+{
+	"QuakeForge.Vertex.sprite",
+	0
+};
 
-static const char quakesprite_frag[] =
-#include "quakespr.fc"
-;
+static const char *sprite_frag_effects[] =
+{
+	"QuakeForge.Fragment.fog",
+	"QuakeForge.Fragment.palette",
+	"QuakeForge.Fragment.sprite",
+	0
+};
 
 //static float proj_matrix[16];
 
@@ -96,11 +102,14 @@ static struct {
 void
 glsl_R_InitSprites (void)
 {
+	shader_t   *vert_shader, *frag_shader;
 	int         frag, vert;
 
-	vert = GLSL_CompileShader ("quakespr.vert", quakesprite_vert,
+	vert_shader = GLSL_BuildShader (sprite_vert_effects);
+	frag_shader = GLSL_BuildShader (sprite_frag_effects);
+	vert = GLSL_CompileShader ("quakespr.vert", vert_shader,
 							   GL_VERTEX_SHADER);
-	frag = GLSL_CompileShader ("quakespr.frag", quakesprite_frag,
+	frag = GLSL_CompileShader ("quakespr.frag", frag_shader,
 							   GL_FRAGMENT_SHADER);
 	quake_sprite.program = GLSL_LinkProgram ("quakespr", vert, frag);
 	GLSL_ResolveShaderParam (quake_sprite.program, &quake_sprite.spritea);
@@ -114,6 +123,8 @@ glsl_R_InitSprites (void)
 	GLSL_ResolveShaderParam (quake_sprite.program, &quake_sprite.uvab);
 	GLSL_ResolveShaderParam (quake_sprite.program, &quake_sprite.blend);
 	GLSL_ResolveShaderParam (quake_sprite.program, &quake_sprite.fog);
+	GLSL_FreeShader (vert_shader);
+	GLSL_FreeShader (frag_shader);
 }
 
 static void

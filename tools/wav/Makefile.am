@@ -4,7 +4,7 @@ WAV_LIBS=@WAV_LIBS@
 WAV_DEPS=@WAV_DEPS@
 WAV_INCS=@WAV_INCS@
 
-INCLUDES= -I$(top_srcdir)/include $(WAV_INCS)
+AM_CPPFLAGS= -I$(top_srcdir)/include $(WAV_INCS)
 
 bin_PROGRAMS=	qfwavinfo
 

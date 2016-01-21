@@ -59,8 +59,6 @@ typedef struct {
 	int				 conrowbytes;
 	int				 conwidth;
 	int				 conheight;
-	unsigned         maxwarpwidth;
-	unsigned         maxwarpheight;
 	byte			*direct;		// direct drawing to framebuffer, if not
 									//  NULL
 	int			   (*surf_cache_size)(int width, int height);

@@ -78,21 +78,33 @@ static partvert_t  *particleVertexArray;
 
 static GLuint   part_tex;
 
-static const char quakepoint_vert[] =
-#include "quakepnt.vc"
-;
+static const char *particle_point_vert_effects[] =
+{
+	"QuakeForge.Vertex.particle.point",
+	0
+};
 
-static const char quakepoint_frag[] =
-#include "quakepnt.fc"
-;
+static const char *particle_point_frag_effects[] =
+{
+	"QuakeForge.Fragment.fog",
+	"QuakeForge.Fragment.palette",
+	"QuakeForge.Fragment.particle.point",
+	0
+};
 
-static const char quakepart_vert[] =
-#include "quakepar.vc"
-;
+static const char *particle_textured_vert_effects[] =
+{
+	"QuakeForge.Vertex.particle.textured",
+	0
+};
 
-static const char quakepart_frag[] =
-#include "quakepar.fc"
-;
+static const char *particle_textured_frag_effects[] =
+{
+	"QuakeForge.Fragment.fog",
+	"QuakeForge.Fragment.palette",
+	"QuakeForge.Fragment.particle.textured",
+	0
+};
 
 static struct {
 	int         program;
@@ -210,6 +222,7 @@ glsl_R_ClearParticles (void)
 void
 glsl_R_InitParticles (void)
 {
+	shader_t   *vert_shader, *frag_shader;
 	unsigned    i;
 	int         vert;
 	int         frag;
@@ -223,9 +236,11 @@ glsl_R_InitParticles (void)
 	qfeglGetFloatv (GL_ALIASED_POINT_SIZE_RANGE, v);
 	Sys_MaskPrintf (SYS_GLSL, "point size: %g - %g\n", v[0], v[1]);
 
-	vert = GLSL_CompileShader ("quakepnt.vert", quakepoint_vert,
+	vert_shader = GLSL_BuildShader (particle_point_vert_effects);
+	frag_shader = GLSL_BuildShader (particle_point_frag_effects);
+	vert = GLSL_CompileShader ("quakepnt.vert", vert_shader,
 							   GL_VERTEX_SHADER);
-	frag = GLSL_CompileShader ("quakepnt.frag", quakepoint_frag,
+	frag = GLSL_CompileShader ("quakepnt.frag", frag_shader,
 							   GL_FRAGMENT_SHADER);
 	quake_point.program = GLSL_LinkProgram ("quakepoint", vert, frag);
 	GLSL_ResolveShaderParam (quake_point.program, &quake_point.mvp_matrix);
@@ -233,10 +248,14 @@ glsl_R_InitParticles (void)
 	GLSL_ResolveShaderParam (quake_point.program, &quake_point.palette);
 	GLSL_ResolveShaderParam (quake_point.program, &quake_point.color);
 	GLSL_ResolveShaderParam (quake_point.program, &quake_point.fog);
+	GLSL_FreeShader (vert_shader);
+	GLSL_FreeShader (frag_shader);
 
-	vert = GLSL_CompileShader ("quakepar.vert", quakepart_vert,
+	vert_shader = GLSL_BuildShader (particle_textured_vert_effects);
+	frag_shader = GLSL_BuildShader (particle_textured_frag_effects);
+	vert = GLSL_CompileShader ("quakepar.vert", vert_shader,
 							   GL_VERTEX_SHADER);
-	frag = GLSL_CompileShader ("quakepar.frag", quakepart_frag,
+	frag = GLSL_CompileShader ("quakepar.frag", frag_shader,
 							   GL_FRAGMENT_SHADER);
 	quake_part.program = GLSL_LinkProgram ("quakepart", vert, frag);
 	GLSL_ResolveShaderParam (quake_part.program, &quake_part.mvp_matrix);
@@ -245,6 +264,8 @@ glsl_R_InitParticles (void)
 	GLSL_ResolveShaderParam (quake_part.program, &quake_part.color);
 	GLSL_ResolveShaderParam (quake_part.program, &quake_part.texture);
 	GLSL_ResolveShaderParam (quake_part.program, &quake_part.fog);
+	GLSL_FreeShader (vert_shader);
+	GLSL_FreeShader (frag_shader);
 
 	memset (data, 0, sizeof (data));
 	qfeglGenTextures (1, &part_tex);
@@ -300,7 +321,7 @@ glsl_R_ReadPointFile_f (void)
 	name = va ("%s.pts", mapname);
 	free (mapname);
 
-	QFS_FOpenFile (name, &f);
+	f = QFS_FOpenFile (name);
 	if (!f) {
 		Sys_Printf ("couldn't open %s\n", name);
 		return;
@@ -1271,9 +1292,11 @@ R_EntityParticles_ID (const entity_t *ent)
 		j = r_maxparticles - numparticles;
 	}
 
-	if (!avelocities[0][0]) {
-		for (i = 0; i < NUMVERTEXNORMALS * 3; i++)
-			avelocities[0][i] = (mtwist_rand (&mt) & 255) * 0.01;
+	for (i = 0; i < NUMVERTEXNORMALS; i++) {
+		int         k;
+		for (k = 0; k < 3; k++) {
+			avelocities[i][k] = (mtwist_rand (&mt) & 255) * 0.01;
+		}
 	}
 
 	for (i = 0; i < j; i++) {

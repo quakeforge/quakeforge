@@ -100,7 +100,7 @@ else
 fi
 
 if test -n "$errors" ; then
-	echo -e $errors
+	echo  "$errors"
 	exit 1
 fi
 

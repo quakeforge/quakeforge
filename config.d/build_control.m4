@@ -380,7 +380,8 @@ QF_DEPS(QFCC_TEST,
 )
 QF_DEPS(QFLIGHT,
 	[-I$(top_srcdir)/tools/qflight/include],
-	[$(top_builddir)/libs/util/libQFutil.la],
+	[$(top_builddir)/libs/gamecode/libQFgamecode.la
+	 $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
 QF_DEPS(QFLMP,

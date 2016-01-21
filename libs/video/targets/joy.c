@@ -37,8 +37,10 @@
 #include "QF/mathlib.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/cmd.h"
 
 #include "compat.h"
+#include <string.h>
 
 cvar_t     *joy_device;					// Joystick device name
 cvar_t     *joy_enable;					// Joystick enabling flag
@@ -48,25 +50,61 @@ cvar_t     *joy_pre_amp;				// Joystick pre-amplification
 qboolean    joy_found = false;
 qboolean    joy_active = false;
 
-typedef struct {
-	const char *name;
-	const char *string;
-} ocvar_t;
-
-ocvar_t joy_axes_cvar_init[JOY_MAX_AXES] = {
-	{"joyaxis1", "1"},
-	{"joyaxis2", "2"},
-	{"joyaxis3", "3"},
-	{"joyaxis4", "0"},
-	{"joyaxis5", "0"},
-	{"joyaxis6", "0"},
-	{"joyaxis7", "0"},
-	{"joyaxis8", "0"}
-};
-
 struct joy_axis joy_axes[JOY_MAX_AXES];
 struct joy_button joy_buttons[JOY_MAX_BUTTONS];
 
+void
+joy_clear_axis (int i)
+{
+	joy_axes[i].dest = js_none;
+	joy_axes[i].amp = 1;
+	joy_axes[i].pre_amp = 1;
+	joy_axes[i].deadzone = 12500;
+
+	joy_axes[i].num_buttons = 0;
+	if (joy_axes[i].axis_buttons) {
+		free (joy_axes[i].axis_buttons);
+		joy_axes[i].axis_buttons = NULL;
+	}
+}
+
+static void
+joy_check_axis_buttons (struct joy_axis *ja, float value)
+{
+	struct joy_axis_button *ab;
+	int         pressed = -1;
+	int         i;
+
+	// the axis button list is sorted in decending order of absolute threshold
+	for (i = 0; i < ja->num_buttons; i++) {
+		ab = &ja->axis_buttons[i];
+		if ((value < 0) == (ab->threshold < 0)
+			&& fabsf (value) >= fabsf (ab->threshold)) {
+			pressed = i;
+			break;
+
+		}
+	}
+	// make sure any buttons that are no longer active are "released"
+	for (i = 0; i < ja->num_buttons; i++) {
+		if (i == pressed)
+			continue;
+		ab = &ja->axis_buttons[i];
+		if (ab->state) {
+			Key_Event (ab->key, 0, 0);
+			ab->state = 0;
+		}
+	}
+	// press the active button if there is one
+	if (pressed >= 0) {
+		// FIXME support repeat?
+		ab = &ja->axis_buttons[pressed];
+		if (!ab->state) {
+			Key_Event (ab->key, 0, 1);
+		}
+		ab->state = 1;
+	}
+}
 
 VISIBLE void
 JOY_Command (void)
@@ -77,70 +115,36 @@ JOY_Command (void)
 VISIBLE void
 JOY_Move (void)
 {
-	float       mult_joy;
+	struct joy_axis *ja;
+	float       value;
+	float       amp = joy_amp->value * in_amp->value;
+	float       pre = joy_pre_amp->value * in_pre_amp->value;
 	int         i;
 
 	if (!joy_active || !joy_enable->int_val)
 		return;
 
-	mult_joy = (joy_amp->value * joy_pre_amp->value *
-				in_amp->value * in_pre_amp->value) / 200.0;
-	// Yes, mult_joy looks like a mess, but use of pre_amp values is useful in
-	// scripts, and *_pre_amp will matter once joystick filtering/acceleration
-	// is implemented
-
 	for (i = 0; i < JOY_MAX_AXES; i++) {
-		switch (joy_axes[i].axis->int_val) {
-			case 1:
-				if (joy_axes[i].current)
-					viewdelta.angles[YAW] -= joy_axes[i].current * mult_joy;
+		ja = &joy_axes[i];
+		value = ja->current * pre * ja->pre_amp;
+		if (fabs (value) < ja->deadzone)
+			value = -ja->offset;
+		value += ja->offset;
+		value *= amp * ja->amp;
+		switch (ja->dest) {
+			case js_none:
+				// ignore axis
 				break;
-			case -1:
-				if (joy_axes[i].current)
-					viewdelta.angles[YAW] += joy_axes[i].current * mult_joy;
+			case js_position:
+				if (ja->current)
+					viewdelta.position[(ja->axis) ? 2 : 0] += value;
 				break;
-			case 2:
-				if (joy_axes[i].current)
-					viewdelta.position[2] -= joy_axes[i].current * mult_joy;
+			case js_angles:
+				if (ja->current)
+					viewdelta.angles[(ja->axis) ? 1 : 0] -= value;
 				break;
-			case -2:
-				if (joy_axes[i].current)
-					viewdelta.position[2] += joy_axes[i].current * mult_joy;
-				break;
-			case 3:
-				if (joy_axes[i].current)
-					viewdelta.position[0] += joy_axes[i].current * mult_joy;
-				break;
-			case -3:
-				if (joy_axes[i].current)
-					viewdelta.position[0] -= joy_axes[i].current * mult_joy;
-				break;
-			case 4:
-				if (joy_axes[i].current)
-					viewdelta.angles[PITCH] -= joy_axes[i].current * mult_joy;
-				break;
-			case -4:
-				if (joy_axes[i].current)
-					viewdelta.angles[PITCH] += joy_axes[i].current * mult_joy;
-				break;
-			case 5:
-				if (joy_axes[i].current)
-					viewdelta.position[1] -= joy_axes[i].current * mult_joy;
-				break;
-			case -5:
-				if (joy_axes[i].current)
-					viewdelta.position[1] += joy_axes[i].current * mult_joy;
-				break;
-// Futureproofing
-			case 6:
-				if (joy_axes[i].current)
-					viewdelta.angles[ROLL] += joy_axes[i].current * mult_joy;
-				break;
-			case -6:
-				if (joy_axes[i].current)
-					viewdelta.angles[ROLL] -= joy_axes[i].current * mult_joy;
-				break;
-			default:
+			case js_button:
+				joy_check_axis_buttons (ja, value);
 				break;
 		}
 	}
@@ -149,7 +153,7 @@ JOY_Move (void)
 VISIBLE void
 JOY_Init (void)
 {
-	int     i;
+	int         i;
 
 	if (JOY_Open () == -1) {
 		Sys_MaskPrintf (SYS_VID, "JOY: Joystick not found.\n");
@@ -182,24 +186,336 @@ joyamp_f (cvar_t *var)
 	Cvar_Set (var, va ("%g", max (0.0001, var->value)));
 }
 
+typedef struct {
+	const char *name;
+	js_dest_t   destnum;
+} js_dests_t;
+
+typedef struct {
+	const char *name;
+	js_dest_t   optnum;
+} js_opts_t;
+
+typedef struct {
+	const char *name;
+	int         axis;
+} js_axis_t;
+
+js_dests_t  js_dests[] = {
+	{"none",		js_none},				// ignore axis
+	{"movement",	js_position},			// linear delta
+	{"aim",			js_angles},				// linear delta
+	{"button",		js_button},				// axis button
+	{0, 0}
+};
+
+js_opts_t   js_opts[] = {
+	{"clear",		js_clear},
+	{"amp",			js_amp},
+	{"pre_amp",		js_pre_amp},
+	{"deadzone",	js_deadzone},
+	{"offset",		js_offset},
+	{"type",		js_type},
+	{"button",		js_axis_button},
+	{0, 0}
+};
+
+js_axis_t   js_position_names[] = {
+	{"x",	0},
+	{"y",	1},
+	{"z",   2},
+	{0, 0}
+};
+
+js_axis_t   js_angles_names[] = {
+	{"pitch",	PITCH},
+	{"yaw",		YAW},
+	{"roll",	ROLL},
+	{"p",		PITCH},
+	{"y",		YAW},
+	{"r",		ROLL},
+	{0, 0}
+};
+
+js_axis_t  *js_axis_names[] = {
+	0,				// js_none
+	js_position_names,
+	js_angles_names,
+	0,				// js_button
+};
+
+const char *
+JOY_GetOption_c (int i)
+{
+	js_opts_t  *opt;
+
+	for (opt = &js_opts[0]; opt->name; opt++) {
+		if ((int) opt->optnum == i)
+			return opt->name;
+	}
+
+	return NULL;
+}
+
+int
+JOY_GetOption_i (const char *c)
+{
+	js_opts_t  *opt;
+
+	for (opt = &js_opts[0]; opt->name; opt++) {
+		if (!strcmp (opt->name, c))
+			return opt->optnum;
+	}
+
+	return -1;							// Failure code;
+}
+
+const char *
+JOY_GetDest_c (int i)
+{
+	js_dests_t *dest;
+
+	for (dest = &js_dests[0]; dest->name; dest++) {
+		if ((int) dest->destnum == i)
+			return dest->name;
+	}
+
+	return NULL;
+}
+
+int
+JOY_GetDest_i (const char *c)
+{
+	js_dests_t *dest;
+
+	for (dest = &js_dests[0]; dest->name; dest++) {
+		if (!strcmp (dest->name, c))
+			return dest->destnum;
+	}
+
+	return -1;							// Failure code;
+}
+
+int
+JOY_GetAxis_i (int dest, const char *c)
+{
+	char       *end;
+	int         axis;
+	js_axis_t  *axis_names;
+
+	axis = strtol (c, &end, 10);
+	if (*end || axis < 0 || axis > 2) {
+		axis = -1;
+		for (axis_names = js_axis_names[dest]; axis_names && axis_names->name;
+			 axis_names++) {
+			if (!strcasecmp (axis_names->name, c)) {
+				axis = axis_names->axis;
+				break;
+			}
+		}
+	}
+
+	return axis;
+}
+
+static void
+in_joy_button_add_f (int ax, int index)
+{
+	int         n;
+	size_t      size;
+	const char *key = Cmd_Argv (index);
+	int         keynum;
+	const char *thrsh = Cmd_Argv (index + 1);
+	float       threshold;
+	char       *end = 0;
+
+	keynum = strtol (key, &end, 10) + QFJ_AXIS1;
+	if (*end || keynum < QFJ_AXIS1 || keynum > QFJ_AXIS32) {
+		// if the key is not valid, try a key name
+		 keynum = Key_StringToKeynum (key);
+	}
+	if (keynum == -1) {
+		Sys_Printf ("\"%s\" isn't a valid key\n", key);
+	}
+	threshold = strtof (thrsh, &end);
+	if (*end) {
+		Sys_Printf ("invalid threshold: %s\n", thrsh);
+		keynum = -1;
+	}
+	if (keynum == -1)
+		return;
+
+	n = joy_axes[ax].num_buttons++;
+	size = joy_axes[ax].num_buttons * sizeof (struct joy_axis_button);
+	joy_axes[ax].axis_buttons = realloc (joy_axes[ax].axis_buttons, size);
+	joy_axes[ax].axis_buttons[n].key = keynum;
+	joy_axes[ax].axis_buttons[n].threshold = threshold;
+	joy_axes[ax].axis_buttons[n].state = 0;
+}
+
+static void
+in_joy_f (void)
+{
+	const char *arg;
+	int         i, ax, c = Cmd_Argc ();
+
+	if (c == 2) {
+		int         var = JOY_GetOption_i (Cmd_Argv (1));
+		switch (var) {
+			case js_clear:
+				Sys_Printf ("Clearing all joystick settings...\n");
+				for (i = 0; i < JOY_MAX_AXES; i++) {
+					joy_clear_axis (i);
+				}
+				break;
+			case js_amp:
+				Sys_Printf ("[...]<amp> [<#amp>]: Axis sensitivity\n");
+				break;
+			case js_pre_amp:
+				Sys_Printf ("[...]<pre_amp> [<#pre_amp>]: Axis sensitivity.\n");
+				break;
+			case js_deadzone:
+				Sys_Printf ("[...]<deadzone> [<#dz>]: Axis deadzone.\n");
+				break;
+			case js_offset:
+				Sys_Printf ("[...]<offset> [<#off>]: Axis initial position.\n");
+				break;
+			case js_type:
+				Sys_Printf ("[...]<type> [<act> <#act>].\n");
+				Sys_Printf ("Values for <act>:\n");
+				Sys_Printf ("none:     #0\n");
+				Sys_Printf ("aim:      #1..0\n");
+				Sys_Printf ("movement: #1..0\n");
+
+				break;
+			case js_axis_button:
+				/* TODO */
+				break;
+			default:
+				ax = strtol (Cmd_Argv (1), NULL, 0);
+
+				Sys_Printf ("<=====> AXIS %i <=====>\n", ax);
+				Sys_Printf ("amp:       %.9g\n", joy_axes[ax].amp);
+				Sys_Printf ("pre_amp:   %.9g\n", joy_axes[ax].pre_amp);
+				Sys_Printf ("deadzone:  %i\n", joy_axes[ax].deadzone);
+				Sys_Printf ("offset:    %.9g\n", joy_axes[ax].offset);
+				Sys_Printf ("type:      %s\n",
+							JOY_GetDest_c (joy_axes[ax].dest));
+				Sys_Printf ("<====================>\n");
+				break;
+		}
+		return;
+	} else if (c < 4) {
+		if (c == 3 && JOY_GetOption_i (Cmd_Argv (2)) == js_clear) {
+			ax = strtol (Cmd_Argv (1), NULL, 0);
+
+			joy_clear_axis (ax);
+			return;
+		} else {
+			Sys_Printf ("in_joy <axis#> [<var> <value>]*\n"
+						"    Configures the joystick behaviour\n");
+			return;
+		}
+	}
+
+	ax = strtol (Cmd_Argv (1), NULL, 0);
+
+	i = 2;
+	while (i < c) {
+		int         var = JOY_GetOption_i (Cmd_Argv (i++));
+
+		switch (var) {
+			case js_amp:
+				joy_axes[ax].amp = strtof (Cmd_Argv (i++), NULL);
+				break;
+			case js_pre_amp:
+				joy_axes[ax].pre_amp = strtof (Cmd_Argv (i++), NULL);
+				break;
+			case js_deadzone:
+				joy_axes[ax].deadzone = strtol (Cmd_Argv (i++), NULL, 10);
+				break;
+			case js_offset:
+				joy_axes[ax].offset = strtol (Cmd_Argv (i++), NULL, 10);
+				break;
+			case js_type:
+				joy_axes[ax].dest = JOY_GetDest_i (Cmd_Argv (i++));
+				joy_axes[ax].axis = JOY_GetAxis_i (joy_axes[ax].dest,
+												   Cmd_Argv (i++));
+				if (joy_axes[ax].axis > 2 || joy_axes[ax].axis < 0) {
+					joy_axes[ax].axis = 0;
+					Sys_Printf ("Invalid axis value.");
+				}
+				break;
+			case js_axis_button:
+				arg = Cmd_Argv (i++);
+				if (!strcmp ("add", arg)) {
+					in_joy_button_add_f (ax, i);
+					i += 2;
+				}
+				break;
+			default:
+				Sys_Printf ("Unknown option %s.\n", Cmd_Argv (i - 1));
+				break;
+		}
+	}
+}
+
 VISIBLE void
 JOY_Init_Cvars (void)
 {
 	int         i;
 
-	joy_device = Cvar_Get ("joy_device", "/dev/input/js0", CVAR_NONE | CVAR_ROM, 0,
-						   "Joystick device");
+	joy_device = Cvar_Get ("joy_device", "/dev/input/js0",
+						   CVAR_NONE | CVAR_ROM, 0, "Joystick device");
 	joy_enable = Cvar_Get ("joy_enable", "1", CVAR_NONE | CVAR_ARCHIVE, 0,
 						   "Joystick enable flag");
 	joy_amp = Cvar_Get ("joy_amp", "1", CVAR_NONE | CVAR_ARCHIVE, joyamp_f,
 						"Joystick amplification");
-	joy_pre_amp = Cvar_Get ("joy_pre_amp", "1", CVAR_NONE | CVAR_ARCHIVE,
+	joy_pre_amp = Cvar_Get ("joy_pre_amp", "0.01", CVAR_NONE | CVAR_ARCHIVE,
 							joyamp_f, "Joystick pre-amplification");
 
+	Cmd_AddCommand ("in_joy", in_joy_f, "Configures the joystick behaviour");
+
 	for (i = 0; i < JOY_MAX_AXES; i++) {
-		joy_axes[i].axis = Cvar_Get (joy_axes_cvar_init[i].name,
-									 joy_axes_cvar_init[i].string,
-									 CVAR_ARCHIVE, 0, "Set joystick axes");
+		joy_axes[i].dest = js_none;
+		joy_axes[i].amp = 1;
+		joy_axes[i].pre_amp = 1;
+		joy_axes[i].deadzone = 500;
+	}
+}
+
+
+void
+Joy_WriteBindings (QFile * f)
+{
+	int         i;
+
+	for (i = 0; i < JOY_MAX_AXES; i++) {
+		if (!js_axis_names[joy_axes[i].dest]) {
+			Qprintf (f, "in_joy %i amp %.9g pre_amp %.9g deadzone %i "
+					 "offset %.9g type %s %i\n",
+					 i, joy_axes[i].amp, joy_axes[i].pre_amp,
+					 joy_axes[i].deadzone,
+					 joy_axes[i].offset, JOY_GetDest_c (joy_axes[i].dest),
+					 joy_axes[i].axis);
+		} else {
+			Qprintf (f, "in_joy %i amp %.9g pre_amp %.9g deadzone %i "
+					 "offset %.9g type %s %s\n",
+					 i, joy_axes[i].amp, joy_axes[i].pre_amp,
+					 joy_axes[i].deadzone,
+					 joy_axes[i].offset, JOY_GetDest_c (joy_axes[i].dest),
+					 js_axis_names[joy_axes[i].dest][joy_axes[i].axis].name);
+		}
+
+		if (joy_axes[i].num_buttons > 0) {
+			int         n;
+
+			for (n = 0; n < joy_axes[i].num_buttons; n++) {
+				Qprintf (f, "in_joy %i button add %s %.9g\n", i,
+						 Key_KeynumToString (joy_axes[i].axis_buttons[n].key),
+						 joy_axes[i].axis_buttons[n].threshold);
+			}
+		}
 	}
 }
 

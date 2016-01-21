@@ -279,7 +279,7 @@ Host_Map_f (void)
 
 	// check to make sure the level exists
 	expanded = va ("maps/%s.bsp", Cmd_Argv (1));
-	QFS_FOpenFile (expanded, &f);
+	f = QFS_FOpenFile (expanded);
 	if (!f) {
 		Sys_Printf ("Can't find %s\n", expanded);
 		return;
@@ -499,7 +499,7 @@ convert_to_game_dict (script_t *script)
 	PL_D_AddObject (game, "lightstyles", item);
 
 	// load the edicts out of the savegame file
-	list = ED_ConvertToPlist (&sv_pr_state, script);
+	list = ED_ConvertToPlist (script, 0);
 	item = PL_RemoveObjectAtIndex (list, 0);
 	PL_D_AddObject (game, "globals", item);
 	PL_D_AddObject (game, "entities", list);

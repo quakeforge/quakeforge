@@ -1,5 +1,5 @@
 /*
-	trace.c
+	qflight.c
 
 	(description)
 
@@ -84,16 +84,22 @@ float minlights[MAX_MAP_FACES];
 int
 GetFileSpace (int size)
 {
+	int oldsize;
 	int ofs;
 
 	LOCK;
+	oldsize = lightdata->size;
 	lightdata->size = (lightdata->size + 3) & ~3;
 	ofs = lightdata->size;
 	lightdata->size += size;
 	dstring_adjust (lightdata);
+	memset (lightdata->str + oldsize, 0, ofs - oldsize);
+	memset (lightdata->str + ofs, 0, size);
 
 	rgblightdata->size = (ofs + size) * 3;
 	dstring_adjust (rgblightdata);
+	memset (rgblightdata->str + oldsize * 3, 0, (ofs - oldsize) * 3);
+	memset (rgblightdata->str + ofs * 3, 0, size * 3);
 	UNLOCK;
 	return ofs;
 }
@@ -134,17 +140,13 @@ LightThread (void *l)
 }
 
 static void
-LightWorld (void)
+FindFaceOffsets (void)
 {
 	int         i, j;
-	vec3_t      org;
 	entity_t   *ent;
+	vec3_t      org;
 	const char *name;
 
-	lightdata = dstring_new ();
-	rgblightdata = dstring_new ();
-	surfacelightchain = (lightchain_t **) calloc (bsp->numfaces,
-												  sizeof (lightchain_t *));
 	surfaceorgs = (vec3_t *) calloc (bsp->numfaces, sizeof (vec3_t));
 
 	for (i = 1; i < bsp->nummodels; i++) {
@@ -156,8 +158,17 @@ LightWorld (void)
 		if (!strncmp (ValueForKey (ent, "classname"), "rotate_", 7))
 			GetVectorForKey (ent, "origin", org);
 		for (j = 0; j < bsp->models[i].numfaces; j++)
-			VectorCopy (org, surfaceorgs[i]);
+			VectorCopy (org, surfaceorgs[bsp->models[i].firstface]);
 	}
+}
+
+static void
+LightWorld (void)
+{
+	lightdata = dstring_new ();
+	rgblightdata = dstring_new ();
+	surfacelightchain = (lightchain_t **) calloc (bsp->numfaces,
+												  sizeof (lightchain_t *));
 
 	VisThread (0);	// not worth threading :/
 	VisStats ();
@@ -205,6 +216,7 @@ main (int argc, char **argv)
 
 	MakeTnodes (&bsp->models[0]);
 
+	FindFaceOffsets ();
 	LightWorld ();
 
 	WriteEntitiesToString ();

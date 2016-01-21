@@ -717,8 +717,7 @@ static void
 SV_BeginDownload_f (void *unused)
 {
 	const char *name;
-	dstring_t  *realname;
-	int			http, size, zip;
+	int			http, zip;
 	QFile	   *file;
 
 	name = Cmd_Argv (1);
@@ -754,17 +753,16 @@ SV_BeginDownload_f (void *unused)
 	http = sv_http_url_base->string[0]
 			&& strchr (Info_ValueForKey (host_client->userinfo, "*cap"), 'h');
 
-	realname = dstring_newstr ();
-	size = _QFS_FOpenFile (name, &file, realname, !zip);
+	file = _QFS_FOpenFile (name, !zip);
 
 	host_client->download = file;
-	host_client->downloadsize = size;
+	host_client->downloadsize = Qfilesize (file);
 	host_client->downloadcount = 0;
 
 	if (!host_client->download
 		// ZOID: special check for maps, if it came from a pak file, don't
 		// allow download
-		|| (strncmp (name, "maps/", 5) == 0 && file_from_pak)) {
+		|| (strncmp (name, "maps/", 5) == 0 && qfs_foundfile.in_pak)) {
 		if (host_client->download) {
 			Qclose (host_client->download);
 			host_client->download = NULL;
@@ -774,41 +772,40 @@ SV_BeginDownload_f (void *unused)
 		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_download, 4);
 		MSG_ReliableWrite_Short (&host_client->backbuf, DL_NOFILE);
 		MSG_ReliableWrite_Byte (&host_client->backbuf, 0);
-		dstring_delete (realname);
 		return;
 	}
 
 	if (http) {
 		int         size;
-		int         ren = zip && strcmp (realname->str, name);
+		int         ren = zip && strcmp (qfs_foundfile.realname, name);
 		SV_Printf ("http redirect: %s/%s\n", sv_http_url_base->string,
-				   realname->str);
-		size = ren ? strlen (realname->str) * 2 : strlen (name);
+				   qfs_foundfile.realname);
+		size = ren ? strlen (qfs_foundfile.realname) * 2 : strlen (name);
 		size += strlen (sv_http_url_base->string) + 7;
 		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_download, size);
 		MSG_ReliableWrite_Short (&host_client->backbuf, DL_HTTP);
 		MSG_ReliableWrite_Byte (&host_client->backbuf, 0);
 		MSG_ReliableWrite_String (&host_client->backbuf,
 								  va ("%s/%s", sv_http_url_base->string,
-									  ren ? realname->str : name));
+									  ren ? qfs_foundfile.realname : name));
 		MSG_ReliableWrite_String (&host_client->backbuf,
-								  ren ? realname->str : "");
+								  ren ? qfs_foundfile.realname : "");
 		if (host_client->download) {
 			Qclose (host_client->download);
 			host_client->download = NULL;
 		}
 	} else {
-		if (zip && strcmp (realname->str, name)) {
-			SV_Printf ("download renamed to %s\n", realname->str);
+		if (zip && strcmp (qfs_foundfile.realname, name)) {
+			SV_Printf ("download renamed to %s\n", qfs_foundfile.realname);
 			MSG_ReliableWrite_Begin (&host_client->backbuf, svc_download,
-									 strlen (realname->str) + 5);
+									 strlen (qfs_foundfile.realname) + 5);
 			MSG_ReliableWrite_Short (&host_client->backbuf, DL_RENAME);
 			MSG_ReliableWrite_Byte (&host_client->backbuf, 0);
-			MSG_ReliableWrite_String (&host_client->backbuf, realname->str);
+			MSG_ReliableWrite_String (&host_client->backbuf,
+									  qfs_foundfile.realname);
 			MSG_Reliable_FinishWrite (&host_client->backbuf);
 		}
 	}
-	dstring_delete (realname);
 
 	SV_NextDownload_f (0);
 	SV_Printf ("Downloading %s to %s\n", name, host_client->name);

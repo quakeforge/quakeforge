@@ -48,8 +48,8 @@
 #include "symtab.h"
 #include "type.h"
 
-static symtab_t *free_symtabs;
-static symbol_t *free_symbols;
+static symtab_t *symtabs_freelist;
+static symbol_t *symbols_freelist;
 
 static const char *sy_type_names[] = {
 	"sy_var",

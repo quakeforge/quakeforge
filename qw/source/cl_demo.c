@@ -993,11 +993,11 @@ CL_StartDemo (void)
 	name = dstring_strdup (demoname);
 
 	QFS_DefaultExtension (name, ".mvd");
-	QFS_FOpenFile (name->str, &cls.demofile);
+	cls.demofile = QFS_FOpenFile (name->str);
 	if (!cls.demofile) {
 		dstring_copystr (name, demoname);
 		QFS_DefaultExtension (name, ".qwd");
-		QFS_FOpenFile (name->str, &cls.demofile);
+		cls.demofile = QFS_FOpenFile (name->str);
 	}
 
 	if (!cls.demofile) {

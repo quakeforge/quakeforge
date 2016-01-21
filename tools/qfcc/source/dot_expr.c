@@ -64,6 +64,7 @@ static const char *expr_names[] =
 	"uexpr",
 	"symbol",
 	"temp",
+	"vector",
 	"nil",
 	"value",
 };
@@ -362,6 +363,14 @@ print_temp (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 }
 
 static void
+print_vector (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	dasprintf (dstr, "%*se_%p [label=\"vector FIXME\"];\n", indent, "", e);
+}
+
+static void
 print_nil (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	int         indent = level * 2 + 2;
@@ -455,6 +464,7 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		print_uexpr,
 		print_symbol,
 		print_temp,
+		print_vector,
 		print_nil,
 		print_value,
 	};

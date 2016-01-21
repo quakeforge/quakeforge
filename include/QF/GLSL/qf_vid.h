@@ -30,6 +30,12 @@
 
 #include "QF/qtypes.h"
 
+typedef struct shader_s {
+	int         num_strings;
+	const char **strings;
+	const char **src;
+} shader_t;
+
 typedef struct shaderparam_s {
 	const char *name;
 	qboolean    uniform;
@@ -40,9 +46,42 @@ extern int glsl_palette;
 extern int glsl_colormap;
 
 void GLSL_Init_Common (void);
-int GLSL_CompileShader (const char *name, const char *shader_src, int type);
+
+int GLSL_CompileShader (const char *name, const shader_t *shader, int type);
 int GLSL_LinkProgram (const char *name, int vert, int frag);
 int GLSL_ResolveShaderParam (int program, shaderparam_t *param);
 void GLSL_DumpAttribArrays (void);
+
+/*	Register a shader effect "file".
+
+	This is based on The OpenGL Shader Wrangler by the little grasshopper
+	(http://prideout.net/blog/?p=11).
+
+	\param name		The name of the effect in the effect key.
+	\param src		The string holding the effect file.
+	\return			0 for failure, 1 for success.
+*/
+int GLSL_RegisterEffect (const char *name, const char *src);
+
+/*	Build a shader program script from a list of effect keys.
+
+	This is based on The OpenGL Shader Wrangler by the little grasshopper
+	(http://prideout.net/blog/?p=11).
+
+	The returned shader program script is suitable for passing directly to
+	GLSL_CompileShader.
+
+	\param effect_keys	Null terminated list of effect keys. The shader will be
+					built from the specified segments in the given order.
+	\return			A pointer to the built up shader program script, or null on
+					failure.
+*/
+shader_t *GLSL_BuildShader (const char **effect_keys);
+
+/*	Free a shader program script built by GLSL_BuildShader.
+
+	\param shader	The shader program script to be freed.
+*/
+void GLSL_FreeShader (shader_t *shader);
 
 #endif // __QF_GLSL_vid_h

@@ -591,7 +591,7 @@ R_DrawBEntitiesOnList (void)
 											currententity->origin,
 											lightorigin);
 							R_RecursiveMarkLights (lightorigin, &r_dlights[k],
-												   1 << k, clmodel->nodes +
+												   k, clmodel->nodes +
 										  clmodel->hulls[0].firstclipnode);
 						}
 					}

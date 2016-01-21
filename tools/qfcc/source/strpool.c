@@ -103,7 +103,7 @@ strpool_addstr (strpool_t *strpool, const char *str)
 	intptr_t    s;
 	int         len;
 
-	if (!str || !*str)
+	if (!str)
 		return 0;
 	s = (intptr_t) Hash_Find (strpool->str_tab, str);
 	if (s)

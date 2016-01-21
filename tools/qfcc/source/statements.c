@@ -227,9 +227,9 @@ print_statement (statement_t *s)
 	printf (")\n");
 }
 
-static sblock_t *free_sblocks;
-static statement_t *free_statements;
-static operand_t *free_operands;
+static sblock_t *sblocks_freelist;
+static statement_t *statements_freelist;
+static operand_t *operands_freelist;
 
 sblock_t *
 new_sblock (void)
@@ -624,7 +624,7 @@ vector_call (sblock_t *sblock, expr_t *earg, expr_t *param, int ind,
 	for (i = 0; i < 3; i++) {
 		n = new_name_expr (names[i]);
 		v = new_float_expr (earg->e.value->v.vector_val[i]);
-		a = assign_expr (binary_expr ('.', param, n), v);
+		a = assign_expr (field_expr (param, n), v);
 		param = new_param_expr (get_type (earg), ind);
 		a->line = earg->line;
 		a->file = earg->file;
@@ -1005,6 +1005,7 @@ statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 		expr_uexpr,
 		expr_symbol,
 		expr_temp,
+		0,					// ex_vector
 		0,					// ex_nil
 		expr_value,
 	};
@@ -1287,6 +1288,7 @@ statement_slist (sblock_t *sblock, expr_t *e)
 		statement_uexpr,
 		statement_nonexec,	// ex_symbol
 		statement_nonexec,	// ex_temp
+		statement_nonexec,	// ex_vector
 		statement_nonexec,	// ex_nil
 		statement_nonexec,	// ex_value
 	};
@@ -1306,8 +1308,11 @@ move_labels (sblock_t *dst, sblock_t *src)
 
 	if (!src_labels)
 		return;
-	while (src_labels->next)
+	src_labels->dest = dst;
+	while (src_labels->next) {
 		src_labels = src_labels->next;
+		src_labels->dest = dst;
+	}
 	src_labels->next = dst->labels;
 	dst->labels = src->labels;
 	src->labels = 0;

@@ -4,7 +4,7 @@ QFBSP_LIBS=@QFBSP_LIBS@
 QFBSP_DEPS=@QFBSP_DEPS@
 QFBSP_INCS=@QFBSP_INCS@
 
-INCLUDES=	-I$(top_srcdir)/include $(QFBSP_INCS)
+AM_CPPFLAGS=	-I$(top_srcdir)/include $(QFBSP_INCS)
 
 bin_PROGRAMS=	qfbsp
 

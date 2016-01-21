@@ -174,11 +174,11 @@ void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
 	} while (0)
 
 extern plane_t * const frustum;
-extern inline qboolean R_CullBox (const vec3_t mins, const vec3_t maxs);
-extern inline qboolean R_CullSphere (const vec3_t origin, const float radius);
+GNU89INLINE inline qboolean R_CullBox (const vec3_t mins, const vec3_t maxs);
+GNU89INLINE inline qboolean R_CullSphere (const vec3_t origin, const float radius);
 
 #ifndef IMPLEMENT_R_Cull
-extern inline
+GNU89INLINE inline
 #else
 VISIBLE
 #endif
@@ -194,7 +194,7 @@ R_CullBox (const vec3_t mins, const vec3_t maxs)
 }
 
 #ifndef IMPLEMENT_R_Cull
-extern inline
+GNU89INLINE inline
 #else
 VISIBLE
 #endif
@@ -212,6 +212,11 @@ R_CullSphere (const vec3_t origin, const float radius)
 	}
 	return false;
 }
+
+sphere_t SmallestEnclosingBall (const vec3_t points[], int num_points);
+int CircumSphere (const vec3_t points[], int num_points, sphere_t *sphere);
+void BarycentricCoords (const vec_t **points, int num_points, const vec3_t p,
+		                vec_t *lambda);
 
 //@}
 

@@ -213,7 +213,7 @@ gl_R_ReadPointFile_f (void)
 	name = va ("%s.pts", mapname);
 	free (mapname);
 
-	QFS_FOpenFile (name, &f);
+	f = QFS_FOpenFile (name);
 	if (!f) {
 		Sys_Printf ("couldn't open %s\n", name);
 		return;
@@ -1185,8 +1185,12 @@ R_EntityParticles_ID (const entity_t *ent)
 	}
 
 	if (!avelocities[0][0]) {
-		for (i = 0; i < NUMVERTEXNORMALS * 3; i++)
-			avelocities[0][i] = (mtwist_rand (&mt) & 255) * 0.01;
+		for (i = 0; i < NUMVERTEXNORMALS; i++) {
+			int         k;
+			for (k = 0; k < 3; k++) {
+				avelocities[i][k] = (mtwist_rand (&mt) & 255) * 0.01;
+			}
+		}
 	}
 
 	for (i = 0; i < j; i++) {

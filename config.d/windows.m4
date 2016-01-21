@@ -1,8 +1,9 @@
 endian=""
+FNM_FLAGS=""
 case "$host_os" in
 	mingw32*)
 		mingw=yes
-		CFLAGS="$CFLAGS -I\$(top_srcdir)/include/win32"
+		FNM_FLAGS="-I\$(top_srcdir)/include/win32"
 		if test "x$host" != "x$build"; then
 			case "$build_os" in
 				cygwin*)
@@ -24,3 +25,4 @@ case "$host_os" in
 		fi
 	;;
 esac
+AC_SUBST(FNM_FLAGS)

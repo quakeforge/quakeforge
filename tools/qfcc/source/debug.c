@@ -52,7 +52,7 @@
 
 int         lineno_base;
 
-static srcline_t *free_srclines;
+static srcline_t *srclines_freelist;
 
 static void
 push_source_file (void)

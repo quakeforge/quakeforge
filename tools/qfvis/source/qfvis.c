@@ -60,22 +60,19 @@
 #include "vis.h"
 #include "options.h"
 
-#define	MAX_THREADS		4
-
-#if defined (HAVE_PTHREAD_H) && defined (HAVE_PTHREAD)
-pthread_mutex_t *my_mutex;
+#ifdef USE_PTHREADS
+pthread_attr_t threads_attrib;
+pthread_rwlock_t *global_lock;
+pthread_rwlock_t *portal_locks;
+pthread_rwlock_t *stats_lock;
 #endif
 
 bsp_t *bsp;
 
 options_t   options;
 
-int         c_chains;
-int         c_mighttest;
-int         c_portaltest;
-int         c_portalpass;
-int         c_portalcheck;
-int         c_vistest;
+static visstat_t stats;
+int         base_mightsee;
 
 int         portal_count;
 int         numportals;
@@ -88,6 +85,8 @@ int         bitbytes;	// (portalleafs + 63)>>3
 int         bitlongs;
 int         bitbytes_l;	// (numrealleafs + 63)>>3
 
+portal_t  **portal_queue;
+
 portal_t   *portals;
 cluster_t  *clusters;
 dstring_t  *visdata;
@@ -96,13 +95,44 @@ int        *leafcluster;	// leaf to cluster mappings as read from .prt file
 
 int        *working;		// per thread current portal #
 
+static void
+InitThreads (void)
+{
+#ifdef USE_PTHREADS
+	if (pthread_attr_init (&threads_attrib) == -1)
+		Sys_Error ("pthread_attr_create failed");
+	if (pthread_attr_setstacksize (&threads_attrib, 0x100000) == -1)
+		Sys_Error ("pthread_attr_setstacksize failed");
+
+	global_lock = malloc (sizeof (pthread_rwlock_t));
+	if (pthread_rwlock_init (global_lock, 0))
+		Sys_Error ("pthread_rwlock_init failed");
+
+	stats_lock = malloc (sizeof (pthread_rwlock_t));
+	if (pthread_rwlock_init (stats_lock, 0))
+		Sys_Error ("pthread_rwlock_init failed");
+#endif
+}
+
+static void
+EndThreads (void)
+{
+#ifdef USE_PTHREADS
+	if (pthread_rwlock_destroy (global_lock) == -1)
+		Sys_Error ("pthread_rwlock_destroy failed");
+	free (global_lock);
+	if (pthread_rwlock_destroy (stats_lock) == -1)
+		Sys_Error ("pthread_rwlock_destroy failed");
+	free (stats_lock);
+#endif
+}
 
 static void
 PlaneFromWinding (winding_t *winding, plane_t *plane)
 {
 	vec3_t      v1, v2;
 
-	// calc plane
+	// calc plane using CW winding
 	VectorSubtract (winding->points[2], winding->points[1], v1);
 	VectorSubtract (winding->points[0], winding->points[1], v2);
 	CrossProduct (v2, v1, plane->normal);
@@ -133,7 +163,7 @@ FreeWinding (winding_t *w)
 }
 
 winding_t *
-CopyWinding (winding_t *w)
+CopyWinding (const winding_t *w)
 {
 	size_t      size;
 	winding_t  *copy;
@@ -143,6 +173,19 @@ CopyWinding (winding_t *w)
 	memcpy (copy, w, size);
 	copy->original = false;
 	return copy;
+}
+
+static winding_t *
+NewFlippedWinding (const winding_t *w)
+{
+	winding_t  *flipped;
+	int         i;
+
+	flipped = NewWinding (w->numpoints);
+	for (i = 0; i < w->numpoints; i++)
+		VectorCopy (w->points[i], flipped->points[w->numpoints - 1 - i]);
+	flipped->numpoints = w->numpoints;
+	return flipped;
 }
 
 /*
@@ -157,7 +200,7 @@ CopyWinding (winding_t *w)
 	it will be clipped away.
 */
 winding_t *
-ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
+ClipWinding (winding_t *in, const plane_t *split, qboolean keepon)
 {
 	int         maxpts, i, j;
 	int         counts[3], sides[MAX_POINTS_ON_WINDING];
@@ -243,39 +286,90 @@ ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 	return neww;
 }
 
-/*
-	GetNextPortal
-
-	Returns the next portal for a thread to work on
-	Returns the portals from the least complex, so the later ones can reuse
-	the earlier information.
-*/
 static portal_t *
 GetNextPortal (void)
 {
-	int         min, j;
-	portal_t   *p, *tp;
+	portal_t *p = 0;
 
-	LOCK;
-
-	min = 99999;
-	p = NULL;
-
-	for (j = 0, tp = portals; j < numportals * 2; j++, tp++) {
-		if (tp->nummightsee < min && tp->status == stat_none) {
-			min = tp->nummightsee;
-			p = tp;
-		}
-	}
-
-	if (p) {
-		portal_count++;
+	WRLOCK (global_lock);
+	if (portal_count < 2 * numportals) {
+		p = portal_queue[portal_count++];
 		p->status = stat_selected;
 	}
-
-	UNLOCK;
-
+	UNLOCK (global_lock);
 	return p;
+}
+
+static void
+UpdateMightsee (cluster_t *source, cluster_t *dest)
+{
+	int         i, clusternum;
+	portal_t   *portal;
+
+	clusternum = dest - clusters;
+	for (i = 0; i < source->numportals; i++) {
+		portal = source->portals[i];
+		WRLOCK_PORTAL (portal);
+		if (portal->status == stat_none) {
+			if (set_is_member (portal->mightsee, clusternum)) {
+				set_remove (portal->mightsee, clusternum);
+				portal->nummightsee--;
+				stats.mightseeupdate++;
+			}
+		}
+		UNLOCK_PORTAL (portal);
+	}
+}
+
+static void
+PortalCompleted (threaddata_t *thread, portal_t *completed)
+{
+	portal_t   *portal;
+	cluster_t  *cluster;
+	set_t      *changed;
+	set_iter_t *ci;
+	int         i, j;
+
+	completed->status = stat_done;
+	WRLOCK (stats_lock);
+	stats.portaltest += thread->stats.portaltest;
+	stats.portalpass += thread->stats.portalpass;
+	stats.portalcheck += thread->stats.portalcheck;
+	stats.targettested += thread->stats.targettested;
+	stats.targettrimmed += thread->stats.targettrimmed;
+	stats.targetclipped += thread->stats.targetclipped;
+	stats.sourcetested += thread->stats.sourcetested;
+	stats.sourcetrimmed += thread->stats.sourcetrimmed;
+	stats.sourceclipped += thread->stats.sourceclipped;
+	stats.chains += thread->stats.chains;
+	stats.mighttest += thread->stats.mighttest;
+	stats.vistest += thread->stats.vistest;
+	stats.mightseeupdate += thread->stats.mightseeupdate;
+	UNLOCK (stats_lock);
+	memset (&thread->stats, 0, sizeof (thread->stats));
+
+	changed = set_new_size_r (&thread->set_pool, portalclusters);
+	cluster = &clusters[completed->cluster];
+	for (i = 0; i < cluster->numportals; i++) {
+		portal = cluster->portals[i];
+		if (portal->status != stat_done)
+			continue;
+		set_assign (changed, portal->mightsee);
+		set_difference (changed, portal->visbits);
+		for (j = 0; j < cluster->numportals; j++) {
+			if (j == i)
+				continue;
+			if (cluster->portals[j]->status == stat_done)
+				set_difference (changed, cluster->portals[j]->visbits);
+			else
+				set_difference (changed, cluster->portals[j]->mightsee);
+		}
+		for (ci = set_first_r (&thread->set_pool, changed); ci;
+			 ci = set_next_r (&thread->set_pool, ci)) {
+			UpdateMightsee (&clusters[ci->element], cluster);
+		}
+	}
+	set_delete_r (&thread->set_pool, changed);
 }
 
 static void *
@@ -283,7 +377,10 @@ LeafThread (void *_thread)
 {
 	portal_t   *portal;
 	int         thread = (int) (intptr_t) _thread;
+	threaddata_t data;
 
+	memset (&data, 0, sizeof (data));
+	set_pool_init (&data.set_pool);
 	do {
 		portal = GetNextPortal ();
 		if (!portal)
@@ -291,31 +388,106 @@ LeafThread (void *_thread)
 
 		if (working)
 			working[thread] = (int) (portal - portals);
-		PortalFlow (portal);
 
-		if (options.verbosity > 0)
-			printf ("portal:%4i  mightsee:%4i  cansee:%4i\n",
+		PortalFlow (&data, portal);
+
+		PortalCompleted (&data, portal);
+
+		if (options.verbosity > 1)
+			printf ("portal:%5i  mightsee:%5i  cansee:%5i %5d/%d\n",
 						(int) (portal - portals),
 						portal->nummightsee,
-						portal->numcansee);
+						portal->numcansee,
+						portal_count, numportals * 2);
 	} while (1);
 
-	printf ("thread %d done\n", thread);
+	if (options.verbosity > 0)
+		printf ("thread %d done\n", thread);
 	if (working)
 		working[thread] = -1;
 	return NULL;
 }
 
-#if defined (HAVE_PTHREAD_H) && defined (HAVE_PTHREAD)
+static void *
+BaseVisThread (void *_thread)
+{
+	portal_t   *portal;
+	int         thread = (int) (intptr_t) _thread;
+	basethread_t data;
+	set_pool_t  set_pool;
+	int         num_mightsee = 0;
+
+	memset (&data, 0, sizeof (data));
+	set_pool_init (&set_pool);
+	data.portalsee = set_new_size_r (&set_pool, numportals * 2);
+	do {
+		portal = GetNextPortal ();
+		if (!portal)
+			break;
+
+		if (working)
+			working[thread] = (int) (portal - portals);
+
+		portal->mightsee = set_new_size_r (&set_pool, portalclusters);
+		set_empty (data.portalsee);
+
+		PortalBase (&data, portal);
+		num_mightsee += data.clustersee;
+		data.clustersee = 0;
+	} while (1);
+
+	WRLOCK (stats_lock);
+	base_mightsee += num_mightsee;
+	UNLOCK (stats_lock);
+
+	if (options.verbosity > 0)
+		printf ("thread %d done\n", thread);
+	if (working)
+		working[thread] = -1;
+	return NULL;
+}
+
+#ifdef USE_PTHREADS
+const char spinner[] = "|/-\\";
+const char progress[] = "0....1....2....3....4....5....6....7....8....9....";
+
+static void
+print_thread_stats (const int *local_work, int thread, int spinner_ind)
+{
+	int         i;
+
+	for (i = 0; i < thread; i++)
+		printf ("%6d", local_work[i]);
+	printf ("  %5d / %5d", portal_count, numportals * 2);
+	fflush (stdout);
+	printf (" %c\r", spinner[spinner_ind % 4]);
+	fflush (stdout);
+}
+
+static int
+print_progress (int prev_prog, int spinner_ind)
+{
+	int         prog;
+
+	prog = portal_count * 50 / (numportals * 2) + 1;
+	if (prog > prev_prog)
+		printf ("%.*s", prog - prev_prog, progress + prev_prog);
+	printf (" %c\b\b", spinner[spinner_ind % 4]);
+	fflush (stdout);
+	return prog;
+}
+
 static void *
 WatchThread (void *_thread)
 {
 	int         thread = (intptr_t) _thread;
 	int        *local_work = malloc (thread * sizeof (int));
 	int         i;
-	const char *spinner = "|/-\\";
 	int         spinner_ind = 0;
 	int         count = 0;
+	int         prev_prog = 0;
+	int         prev_port = 0;
+	int         stalled = 0;
 
 	while (1) {
 		usleep (1000);
@@ -324,24 +496,67 @@ WatchThread (void *_thread)
 				break;
 		if (i == thread)
 			break;
-		if (count++ == 1000) {
+		if (count++ == 100) {
 			count = 0;
 
 			for (i = 0; i < thread; i ++)
 				local_work[i] = working[i];
-			for (i = 0; i < thread; i++)
-				printf ("%6d", local_work[i]);
-			printf ("  %5d / %5d", portal_count, numportals * 2);
-			fflush (stdout);
-			printf (" %c\r", spinner[(spinner_ind++) % 4]);
-			fflush (stdout);
+			if (options.verbosity > 0)
+				print_thread_stats (local_work, thread, spinner_ind);
+			else if (options.verbosity == 0)
+				prev_prog = print_progress (prev_prog, spinner_ind);
+			if (prev_port != portal_count || stalled++ == 10) {
+				prev_port = portal_count;
+				stalled = 0;
+				spinner_ind++;
+			}
 		}
 	}
-	printf ("watch thread done\n");
+	if (options.verbosity > 0)
+		printf ("watch thread done\n");
+	else if (options.verbosity == 0)
+		printf ("\n");
+	free (local_work);
 
 	return NULL;
 }
 #endif
+
+static void
+RunThreads (void *(*thread_func) (void *))
+{
+#ifdef USE_PTHREADS
+	pthread_t  *work_threads;
+	void       *status;
+	int         i;
+
+	if (options.threads > 1) {
+		work_threads = alloca ((options.threads + 1) * sizeof (pthread_t *));
+		working = calloc (options.threads, sizeof (int));
+		for (i = 0; i < options.threads; i++) {
+			if (pthread_create (&work_threads[i], &threads_attrib,
+								thread_func, (void *) (intptr_t) i) == -1)
+				Sys_Error ("pthread_create failed");
+		}
+		if (pthread_create (&work_threads[i], &threads_attrib,
+							WatchThread, (void *) (intptr_t) i) == -1)
+			Sys_Error ("pthread_create failed");
+
+		for (i = 0; i < options.threads; i++) {
+			if (pthread_join (work_threads[i], &status) == -1)
+				Sys_Error ("pthread_join failed");
+		}
+		if (pthread_join (work_threads[i], &status) == -1)
+			Sys_Error ("pthread_join failed");
+
+		free (working);
+	} else {
+		thread_func (0);
+	}
+#else
+	LeafThread (0);
+#endif
+}
 
 static int
 CompressRow (byte *vis, byte *dest)
@@ -371,12 +586,12 @@ CompressRow (byte *vis, byte *dest)
 }
 
 static void
-ClusterFlowExpand (byte *src, byte *dest)
+ClusterFlowExpand (const set_t *src, byte *dest)
 {
 	int         i, j;
 
 	for (j = 1, i = 0; i < numrealleafs; i++) {
-		if (src[leafcluster[i] >> 3] & (1 << (leafcluster[i] & 7)))
+		if (set_is_member (src, leafcluster[i]))
 			*dest |= j;
 		j <<= 1;
 		if (j == 256) {
@@ -394,9 +609,10 @@ ClusterFlowExpand (byte *src, byte *dest)
 void
 ClusterFlow (int clusternum)
 {
+	set_t      *visclusters;
 	byte        compressed[MAX_MAP_LEAFS / 8];
 	byte       *outbuffer;
-	int         numvis, i, j;
+	int         numvis, i;
 	cluster_t  *cluster;
 	portal_t   *portal;
 
@@ -406,29 +622,28 @@ ClusterFlow (int clusternum)
 	// flow through all portals, collecting visible bits
 
 	memset (compressed, 0, sizeof (compressed));
+	visclusters = set_new ();
 	for (i = 0; i < cluster->numportals; i++) {
 		portal = cluster->portals[i];
 		if (portal->status != stat_done)
 			Sys_Error ("portal not done");
-		for (j = 0; j < bitbytes; j++)
-			compressed[j] |= portal->visbits[j];
+		set_union (visclusters, portal->visbits);
 	}
 
-	if (compressed[clusternum >> 3] & (1 << (clusternum & 7)))
+	if (set_is_member (visclusters, clusternum))
 		Sys_Error ("Cluster portals saw into cluster");
 
-	compressed[clusternum >> 3] |= (1 << (clusternum & 7));
+	set_add (visclusters, clusternum);
 
-	numvis = 0;
-	for (i = 0; i < portalclusters; i++)
-		if (compressed[i >> 3] & (1 << (i & 3)))
-			numvis++;
+	numvis = set_size (visclusters);
 
 	// expand to cluster->leaf PVS
-	ClusterFlowExpand (compressed, outbuffer);
+	ClusterFlowExpand (visclusters, outbuffer);
+
+	set_delete (visclusters);
 
 	// compress the bit string
-	if (options.verbosity > 0)
+	if (options.verbosity > 1)
 		printf ("cluster %4i : %4i visible\n", clusternum, numvis);
 	totalvis += numvis;
 
@@ -437,10 +652,39 @@ ClusterFlow (int clusternum)
 	dstring_append (visdata, (char *) compressed, i);
 }
 
+static int
+portalcmp (const void *_a, const void *_b)
+{
+	portal_t   *a = *(portal_t **) _a;
+	portal_t   *b = *(portal_t **) _b;
+	return a->nummightsee - b->nummightsee;
+}
+
+static void
+BasePortalVis (void)
+{
+	double      start, end;
+
+	if (options.verbosity >= 0)
+		printf ("Base vis: ");
+	if (options.verbosity >= 1)
+		printf ("\n");
+
+	start = Sys_DoubleTime ();
+	RunThreads (BaseVisThread);
+	end = Sys_DoubleTime ();
+
+	if (options.verbosity > 0)
+		printf ("base_mightsee: %d %gs\n", base_mightsee, end - start);
+}
+
 static void
 CalcPortalVis (void)
 {
 	long        i;
+	double      start, end;
+
+	portal_count = 0;
 
 	// fastvis just uses mightsee for a very loose bound
 	if (options.minimal) {
@@ -450,52 +694,28 @@ CalcPortalVis (void)
 		}
 		return;
 	}
+	start = Sys_DoubleTime ();
+	qsort (portal_queue, numportals * 2, sizeof (portal_t *), portalcmp);
+	end = Sys_DoubleTime ();
+	if (options.verbosity > 0)
+		printf ("qsort: %gs\n", end - start);
 
-#if defined (HAVE_PTHREAD_H) && defined (HAVE_PTHREAD)
-	{
-		pthread_t   work_threads[MAX_THREADS + 1];
-		void *status;
-		pthread_attr_t attrib;
+	if (options.verbosity >= 0)
+		printf ("Full vis: ");
+	if (options.verbosity >= 1)
+		printf ("\n");
 
-		if (options.threads > 1) {
-			working = calloc (options.threads, sizeof (int));
-			my_mutex = malloc (sizeof (*my_mutex));
-			if (pthread_mutex_init (my_mutex, 0) == -1)
-				Sys_Error ("pthread_mutex_init failed");
-			if (pthread_attr_init (&attrib) == -1)
-				Sys_Error ("pthread_attr_create failed");
-			if (pthread_attr_setstacksize (&attrib, 0x100000) == -1)
-				Sys_Error ("pthread_attr_setstacksize failed");
-			for (i = 0; i < options.threads; i++) {
-				if (pthread_create (&work_threads[i], &attrib, LeafThread,
-									(void *) (intptr_t) i) == -1)
-					Sys_Error ("pthread_create failed");
-			}
-			if (pthread_create (&work_threads[i], &attrib, WatchThread,
-								(void *) (intptr_t) i) == -1)
-				Sys_Error ("pthread_create failed");
-
-			for (i = 0; i < options.threads; i++) {
-				if (pthread_join (work_threads[i], &status) == -1)
-					Sys_Error ("pthread_join failed");
-			}
-			if (pthread_join (work_threads[i], &status) == -1)
-				Sys_Error ("pthread_join failed");
-
-			if (pthread_mutex_destroy (my_mutex) == -1)
-				Sys_Error ("pthread_mutex_destroy failed");
-		} else {
-			LeafThread (0);
-		}
-	}
-#else
-	LeafThread (0);
-#endif
+	RunThreads (LeafThread);
 
 	if (options.verbosity > 0) {
 		printf ("portalcheck: %i  portaltest: %i  portalpass: %i\n",
-				c_portalcheck, c_portaltest, c_portalpass);
-		printf ("c_vistest: %i  c_mighttest: %i\n", c_vistest, c_mighttest);
+				stats.portalcheck, stats.portaltest, stats.portalpass);
+		printf ("target trimmed: %d clipped: %d tested: %d\n",
+				stats.targettrimmed, stats.targetclipped, stats.targettested);
+		printf ("source trimmed: %d clipped: %d tested: %d\n",
+				stats.sourcetrimmed, stats.sourceclipped, stats.sourcetested);
+		printf ("vistest: %i  mighttest: %i mightseeupdate: %i\n",
+				stats.vistest, stats.mighttest, stats.mightseeupdate);
 	}
 }
 
@@ -704,6 +924,7 @@ LoadPortals (char *name)
 	plane_t     plane;
 	portal_t   *portal;
 	winding_t  *winding;
+	sphere_t    sphere;
 	QFile	   *f;
 
 	if (!strcmp (name, "-"))
@@ -740,6 +961,18 @@ LoadPortals (char *name)
 		if (!line || sscanf (line, "%i\n", &numrealleafs) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
 		read_leafs = 1;
+	} else if (line && (!strcmp (line, PORTALFILE2 "\n")
+						|| !strcmp (line, PORTALFILE2 "\r\n"))) {
+		line = Qgetline (f);
+		if (!line || sscanf (line, "%i\n", &numrealleafs) != 1)
+			Sys_Error ("LoadPortals: failed to read header");
+		line = Qgetline (f);
+		if (!line || sscanf (line, "%i\n", &portalclusters) != 1)
+			Sys_Error ("LoadPortals: failed to read header");
+		line = Qgetline (f);
+		if (!line || sscanf (line, "%i\n", &numportals) != 1)
+			Sys_Error ("LoadPortals: failed to read header");
+		read_leafs = 1;
 	} else {
 		Sys_Error ("LoadPortals: not a portal file");
 	}
@@ -758,6 +991,17 @@ LoadPortals (char *name)
 	// each file portal is split into two memory portals, one for each
 	// direction
 	portals = calloc (2 * numportals, sizeof (portal_t));
+	portal_queue = malloc (2 * numportals * sizeof (portal_t *));
+	for (i = 0; i < 2 * numportals; i++) {
+		portal_queue[i] = &portals[i];
+	}
+#ifdef USE_PTHREADS
+	portal_locks = calloc (2 * numportals, sizeof (pthread_rwlock_t));
+	for (i = 0; i < 2 * numportals; i++) {
+		if (pthread_rwlock_init (&portal_locks[i], 0))
+			Sys_Error ("pthread_rwlock_init failed");
+	}
+#endif
 
 	clusters = calloc (portalclusters, sizeof (cluster_t));
 
@@ -811,6 +1055,8 @@ LoadPortals (char *name)
 
 		// calc plane
 		PlaneFromWinding (winding, &plane);
+		sphere = SmallestEnclosingBall((const vec_t(*)[3])winding->points,
+									   winding->numpoints);
 
 		// create forward portal
 		cluster = &clusters[clusternums[0]];
@@ -821,8 +1067,9 @@ LoadPortals (char *name)
 
 		portal->winding = winding;
 		VectorNegate (plane.normal, portal->plane.normal);
-		portal->plane.dist = -plane.dist;
+		portal->plane.dist = -plane.dist;	// plane is for CW, portal is CCW
 		portal->cluster = clusternums[1];
+		portal->sphere = sphere;
 		portal++;
 
 		// create backwards portal
@@ -832,9 +1079,13 @@ LoadPortals (char *name)
 		cluster->portals[cluster->numportals] = portal;
 		cluster->numportals++;
 
-		portal->winding = winding;
+		// Use a flipped winding for the reverse portal so the winding
+		// direction and plane normal match.
+		portal->winding = NewFlippedWinding (winding);
+		portal->winding->original = true;
 		portal->plane = plane;
 		portal->cluster = clusternums[0];
+		portal->sphere = sphere;
 		portal++;
 	}
 
@@ -859,6 +1110,8 @@ main (int argc, char **argv)
 	double      start, stop;
 	dstring_t  *portalfile = dstring_new ();
 	QFile      *f;
+
+	InitThreads ();
 
 	start = Sys_DoubleTime ();
 
@@ -889,8 +1142,8 @@ main (int argc, char **argv)
 
 	CalcVis ();
 
-	if (options.verbosity >= 0)
-		printf ("c_chains: %i%s\n", c_chains,
+	if (options.verbosity > 0)
+		printf ("chains: %i%s\n", stats.chains,
 				options.threads > 1 ? " (not reliable)" :"");
 
 	BSP_AddVisibility (bsp, (byte *) visdata->str, visdata->size);
@@ -908,8 +1161,19 @@ main (int argc, char **argv)
 
 	stop = Sys_DoubleTime ();
 
-	if (options.verbosity >= 0)
+	if (options.verbosity >= -1)
 		printf ("%5.1f seconds elapsed\n", stop - start);
+
+	dstring_delete (portalfile);
+	dstring_delete (visdata);
+	dstring_delete (options.bspfile);
+	BSP_Free (bsp);
+	free (leafcluster);
+	free (uncompressed);
+	free (portals);
+	free (clusters);
+
+	EndThreads ();
 
 	return 0;
 }

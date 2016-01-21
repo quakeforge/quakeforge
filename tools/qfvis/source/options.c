@@ -37,10 +37,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <getopt.h>
+#include <unistd.h>
 
 #include "QF/dstring.h"
 
 #include "options.h"
+#include "vis.h"
 
 const char *this_program;
 
@@ -86,6 +88,20 @@ usage (int status)
 	exit (status);
 }
 
+static int
+default_threads (void)
+{
+	int         threads = 1;
+#ifdef USE_PTHREADS
+# ifdef _SC_NPROCESSORS_ONLN
+		threads = sysconf(_SC_NPROCESSORS_ONLN);
+		if (threads < 1)
+			threads = 1;
+# endif
+#endif
+	return threads;
+}
+
 int
 DecodeArgs (int argc, char **argv)
 {
@@ -93,7 +109,8 @@ DecodeArgs (int argc, char **argv)
 
 	options.verbosity = 0;
 	options.bspfile = NULL;
-	options.threads = 1;
+	options.threads = default_threads ();
+	options.level = 4;
 
 	while ((c = getopt_long (argc, argv, short_options, long_options, 0))
 		   != EOF) {
@@ -127,6 +144,12 @@ DecodeArgs (int argc, char **argv)
 				usage (1);
 		}
 	}
+#ifndef USE_PTHREADS
+	if (options.threads != 1) {
+		printf ("NOTE: ignoring thread count (unsupported)\n");
+		options.threads = 1;
+	}
+#endif
 	if ((!options.bspfile) && argv[optind] && *(argv[optind]))
 		options.bspfile = dstring_strdup (argv[optind++]);
 

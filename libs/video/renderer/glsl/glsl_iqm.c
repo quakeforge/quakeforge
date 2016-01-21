@@ -55,13 +55,19 @@
 
 #include "r_internal.h"
 
-static const char iqm_vert[] =
-#include "iqm.vc"
-;
+static const char *iqm_vert_effects[] =
+{
+	"QuakeForge.Math.quaternion",
+	"QuakeForge.Vertex.iqm",
+	0
+};
 
-static const char iqm_frag[] =
-#include "iqm.fc"
-;
+static const char *iqm_frag_effects[] =
+{
+	"QuakeForge.Fragment.fog",
+	"QuakeForge.Fragment.iqm",
+	0
+};
 
 typedef struct {
 	shaderparam_t position;
@@ -136,12 +142,15 @@ static mat4_t iqm_vp;
 void
 glsl_R_InitIQM (void)
 {
+	shader_t   *vert_shader, *frag_shader;
 	int         vert;
 	int         frag;
 	int         i;
 
-	vert = GLSL_CompileShader ("iqm.vert", iqm_vert, GL_VERTEX_SHADER);
-	frag = GLSL_CompileShader ("iqm.frag", iqm_frag, GL_FRAGMENT_SHADER);
+	vert_shader = GLSL_BuildShader (iqm_vert_effects);
+	frag_shader = GLSL_BuildShader (iqm_frag_effects);
+	vert = GLSL_CompileShader ("iqm.vert", vert_shader, GL_VERTEX_SHADER);
+	frag = GLSL_CompileShader ("iqm.frag", frag_shader, GL_FRAGMENT_SHADER);
 	iqm_shader.program = GLSL_LinkProgram ("iqm", vert, frag);
 	GLSL_ResolveShaderParam (iqm_shader.program, &iqm_shader.mvp_matrix);
 	GLSL_ResolveShaderParam (iqm_shader.program, &iqm_shader.norm_matrix);
@@ -163,6 +172,8 @@ glsl_R_InitIQM (void)
 	GLSL_ResolveShaderParam (iqm_shader.program, &iqm_shader.texture);
 	GLSL_ResolveShaderParam (iqm_shader.program, &iqm_shader.normalmap);
 	GLSL_ResolveShaderParam (iqm_shader.program, &iqm_shader.fog);
+	GLSL_FreeShader (vert_shader);
+	GLSL_FreeShader (frag_shader);
 }
 
 static void

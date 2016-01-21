@@ -743,7 +743,7 @@ do_precache (progs_t *pr, const char **cache, int max, const char *name,
 	}
 	s[i] = 0;
 
-	for (i = 0; i < MAX_SOUNDS; i++) {
+	for (i = 0; i < max; i++) {
 		if (!cache[i]) {
 			char *c = Hunk_Alloc (strlen (s) + 1);
 			strcpy (c, s);

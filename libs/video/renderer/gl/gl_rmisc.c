@@ -148,7 +148,7 @@ gl_R_Init (void)
 					"Load a pointfile to determine map leaks");
 	Cmd_AddCommand ("loadsky", gl_R_LoadSky_f, "Load a skybox");
 
-	Draw_Init ();
+	gl_Draw_Init ();
 	SCR_Init ();
 	gl_R_InitBubble ();
 
@@ -260,5 +260,5 @@ gl_R_TimeRefresh_f (void)
 
 	stop = Sys_DoubleTime ();
 	time = stop - start;
-	Sys_MaskPrintf (SYS_DEV, "%f seconds (%f fps)\n", time, 128 / time);
+	Sys_Printf ("%g seconds (%g fps)\n", time, 128 / time);
 }

@@ -44,6 +44,7 @@ typedef struct {
 	qboolean    local_merging;		// merge function locals into one block
 	unsigned    progsversion;		// Progs version to generate code for
 	qboolean    vector_components;	// add *_[xyz] symbols for vectors
+	qboolean    ifstring;			// expand if (str) to if (str != "")
 } code_options_t;
 
 typedef struct {
@@ -61,6 +62,7 @@ typedef struct {
 	qboolean	initializer;		// Warn on excessive initializer elements
 	qboolean	unimplemented;		// Warn on unimplemented class methods
 	qboolean	redeclared;			// Warn on redeclared local variables
+	qboolean	enum_switch;		// Warn on unhandled enum values in switch
 } warn_options_t;
 
 typedef struct {

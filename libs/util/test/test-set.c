@@ -6,8 +6,7 @@
 
 #include "QF/set.h"
 
-#define SIZE (DEFMAP_SIZE * sizeof (unsigned) * 8)
-#define BITS (sizeof (((set_t *) 0)->map[0]) * 8)
+#define SIZE (SET_DEFMAP_SIZE * sizeof (set_bits_t) * 8)
 
 typedef set_t *(*setup_func) (void);
 typedef set_t *(*op_func) (set_t *s1, const set_t *s2);
@@ -121,7 +120,7 @@ struct {
 	{make_everything,        0, 0, check_size, SIZE, "{...}"},
 	{make_empty_invert,      0, 0, check_size, SIZE, "{...}"},
 	{make_everything_invert, 0, 0, check_size, SIZE, "{}"},
-	{make_SIZE,              0, 0, check_size, SIZE + BITS, "{64}"},
+	{make_SIZE,              0, 0, check_size, SIZE + SET_BITS, "{64}"},
 	{make_0_to_SIZEm1,       0, 0, check_size, SIZE,
 		"{0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15"
 		" 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31"

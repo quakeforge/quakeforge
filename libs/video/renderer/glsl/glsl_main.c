@@ -247,10 +247,12 @@ void
 glsl_R_Init (void)
 {
 	Cmd_AddCommand ("pointfile", glsl_R_ReadPointFile_f,
-					"Load a pointfile to determine map leaks");
+					"Load a pointfile to determine map leaks.");
+	Cmd_AddCommand ("timerefresh", glsl_R_TimeRefresh_f,
+					"Test the current refresh rate for the current location.");
 	R_Init_Cvars ();
 	glsl_R_Particles_Init_Cvars ();
-	Draw_Init ();
+	glsl_Draw_Init ();
 	SCR_Init ();
 	glsl_R_InitBsp ();
 	glsl_R_InitAlias ();
@@ -294,4 +296,24 @@ glsl_R_ClearState (void)
 	R_ClearEfrags ();
 	R_ClearDlights ();
 	glsl_R_ClearParticles ();
+}
+
+void
+glsl_R_TimeRefresh_f (void)
+{
+	double      start, stop, time;
+	int         i;
+
+	vid.end_rendering ();
+
+	start = Sys_DoubleTime ();
+	for (i = 0; i < 128; i++) {
+		r_refdef.viewangles[1] = i * (360.0 / 128.0);
+		glsl_R_RenderView ();
+		vid.end_rendering ();
+	}
+
+	stop = Sys_DoubleTime ();
+	time = stop - start;
+	Sys_Printf ("%g seconds (%g fps)\n", time, 128 / time);
 }

@@ -29,6 +29,13 @@
 #ifndef __entities_h
 #define __entities_h
 
+#include "light.h"
+
+/** \defgroup qflight_entities Light entity data.
+	\ingroup qflight
+*/
+//@{
+
 #define DEFAULTLIGHTLEVEL	300
 #define DEFAULTFALLOFF 1.0f
 
@@ -45,17 +52,18 @@
 #define	NOISE_SMOOTH	1	// low res noise with interpolation
 #define NOISE_PERLIN	2	// combines several noise frequencies
 
-typedef struct epair_s {
-	struct epair_s *next;
-	const char *key;
-	const char *value;
-} epair_t;
-
 typedef struct entity_s {
 	const char *classname;
 	vec3_t      origin;
 	vec_t       angle;
 	int         light;
+
+	int         sun_light[2];
+	vec3_t      sun_color[2];
+	int         num_suns;
+	vec3_t      sun_dir[NUMSUNS];
+	float       shadow_sense;
+
 	// LordHavoc: added falloff (smaller fractions = bigger light area),
 	// color, and lightradius (also subbrightness to implement lightradius)
 	vec_t       falloff;
@@ -82,20 +90,22 @@ typedef struct entity_s {
 
 	const char *target;
 	const char *targetname;
-	struct epair_s *epairs;
 	struct entity_s *targetent;
+	struct plitem_s *dict;
 } entity_t;
 
 extern entity_t *entities;
 extern int num_entities;
+extern entity_t *world_entity;
 
 const char *ValueForKey (entity_t *ent, const char *key);
 void SetKeyValue (entity_t *ent, const char *key, const char *value);
-float FloatForKey (entity_t *ent, const char *key);
 entity_t *FindEntityWithKeyPair(const char *key, const char *value);
 void GetVectorForKey (entity_t *ent, const char *key, vec3_t vec);
 
 void LoadEntities (void);
 void WriteEntitiesToString (void);
+
+//@}
 
 #endif// __entities_h

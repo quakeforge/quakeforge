@@ -131,7 +131,7 @@ static builtin_sym_t builtin_symbols[] __attribute__ ((used)) = {
 static const int num_builtins = sizeof (builtin_symbols)
 								/ sizeof (builtin_symbols[0]);
 
-static defref_t *free_defrefs;
+static defref_t *defrefs_freelist;
 
 static hashtab_t *extern_data_defs;
 static hashtab_t *defined_data_defs;
@@ -876,7 +876,7 @@ process_funcs (qfo_t *qfo)
 		func->file = linker_add_string (QFOSTR (qfo, func->file));
 		if (func->code > 0)
 			func->code += work_base[qfo_code_space];
-		func->def = qfo->defs[func->def].offset;	// defref index
+		func->def = qfo->defs[func->def].line;	// defref index
 		func->locals_space = qfo->spaces[func->locals_space].id;
 		if (func->line_info)
 			func->line_info += work->num_lines - 1;		//FIXME order dependent

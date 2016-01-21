@@ -136,7 +136,7 @@ locs_load (const char *filename)
 	QFile      *file;
 
 	tmp = va ("maps/%s", filename);
-	QFS_FOpenFile (tmp, &file);
+	file = QFS_FOpenFile (tmp);
 	if (!file) {
 		Sys_Printf ("Couldn't load %s\n", tmp);
 		return;

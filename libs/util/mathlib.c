@@ -1151,3 +1151,262 @@ Mat4Decompose (const mat4_t mat, quat_t rot, vec3_t shear, vec3_t scale,
 	Mat4toMat3 (mat, m3);
 	return Mat3Decompose (m3, rot, shear, scale);
 }
+
+void
+BarycentricCoords (const vec_t **points, int num_points, const vec3_t p,
+				   vec_t *lambda)
+{
+	vec3_t      a, b, c, x, ab, bc, ca, n;
+	vec_t       div;
+	if (num_points > 4)
+		Sys_Error ("Don't know how to compute the barycentric coordinates "
+				   "for %d points", num_points);
+	switch (num_points) {
+		case 1:
+			lambda[0] = 1;
+			return;
+		case 2:
+			VectorSubtract (p, points[0], x);
+			VectorSubtract (points[1], points[0], a);
+			lambda[1] = DotProduct (x, a) / DotProduct (a, a);
+			lambda[0] = 1 - lambda[1];
+			return;
+		case 3:
+			VectorSubtract (p, points[0], x);
+			VectorSubtract (points[1], points[0], a);
+			VectorSubtract (points[2], points[0], b);
+			CrossProduct (a, b, ab);
+			div = DotProduct (ab, ab);
+			CrossProduct (x, b, n);
+			lambda[1] = DotProduct (n, ab) / div;
+			CrossProduct (a, x, n);
+			lambda[2] = DotProduct (n, ab) / div;
+			lambda[0] = 1 - lambda[1] - lambda[2];
+			return;
+		case 4:
+			VectorSubtract (p, points[0], x);
+			VectorSubtract (points[1], points[0], a);
+			VectorSubtract (points[2], points[0], b);
+			VectorSubtract (points[3], points[0], c);
+			CrossProduct (a, b, ab);
+			CrossProduct (b, c, bc);
+			CrossProduct (c, a, ca);
+			div = DotProduct (a, bc);
+			lambda[1] = DotProduct (x, bc) / div;
+			lambda[2] = DotProduct (x, ca) / div;
+			lambda[3] = DotProduct (x, ab) / div;
+			lambda[0] = 1 - lambda[1] - lambda[2] - lambda[3];
+			return;
+	}
+	Sys_Error ("Not enough points to project or enclose the point");
+}
+
+static int
+circum_circle (const vec_t **points, int num_points, sphere_t *sphere)
+{
+	vec3_t      a, c, b;
+	vec3_t      bc, ca, ab;
+	vec_t       aa, bb, cc;
+	vec_t       div;
+	vec_t       alpha, beta, gamma;
+
+	switch (num_points) {
+		case 1:
+			VectorCopy (points[0], sphere->center);
+			return 1;
+		case 2:
+			VectorBlend (points[0], points[1], 0.5, sphere->center);
+			return 1;
+		case 3:
+			VectorSubtract (points[0], points[1], a);
+			VectorSubtract (points[0], points[2], b);
+			VectorSubtract (points[1], points[2], c);
+			aa = DotProduct (a, a);
+			bb = DotProduct (b, b);
+			cc = DotProduct (c, c);
+			div = DotProduct (a, c);
+			div = 2 * (aa * cc - div * div);
+			if (fabs (div) < EQUAL_EPSILON) {
+				// degenerate
+				return 0;
+			}
+			alpha = cc * DotProduct (a, b) / div;
+			beta = -bb * DotProduct (a, c) / div;
+			gamma = aa * DotProduct (b, c) / div;
+			VectorScale (points[0], alpha, sphere->center);
+			VectorMultAdd (sphere->center, beta, points[1], sphere->center);
+			VectorMultAdd (sphere->center, gamma, points[2], sphere->center);
+			return 1;
+		case 4:
+			VectorSubtract (points[1], points[0], a);
+			VectorSubtract (points[2], points[0], b);
+			VectorSubtract (points[3], points[0], c);
+			CrossProduct (b, c, bc);
+			CrossProduct (c, a, ca);
+			CrossProduct (a, b, ab);
+			div = 2 * DotProduct (a, bc);
+			if (fabs (div) < EQUAL_EPSILON) {
+				// degenerate
+				return 0;
+			}
+			aa = DotProduct (a, a) / div;
+			bb = DotProduct (b, b) / div;
+			cc = DotProduct (c, c) / div;
+			VectorScale (bc, aa, sphere->center);
+			VectorMultAdd (sphere->center, bb, ca, sphere->center);
+			VectorMultAdd (sphere->center, cc, ab, sphere->center);
+			VectorAdd (sphere->center, points[0], sphere->center);
+			sphere->radius = VectorDistance (sphere->center, points[0]);
+			return 1;
+	}
+	return 0;
+}
+
+int
+CircumSphere (const vec3_t points[], int num_points, sphere_t *sphere)
+{
+	const vec_t *p[] = {points[0], points[1], points[2], points[3]};
+
+	if (num_points > 4)
+		return 0;
+	sphere->radius = 0;
+	if (num_points) {
+		if (circum_circle (p, num_points, sphere)) {
+			if (num_points > 1)
+				sphere->radius = VectorDistance (sphere->center, points[0]);
+			return 1;
+		}
+		return 0;
+	}
+	VectorZero (sphere->center);
+	return 1;
+}
+
+static void
+closest_point (const vec_t **points, int num_points, const vec3_t x,
+			   vec3_t closest)
+{
+	vec3_t      a, b, n, d;
+	vec_t       l;
+
+	switch (num_points) {
+		default:
+		case 1:
+			VectorCopy (points[0], closest);
+			break;
+		case 2:
+			VectorSubtract (points[1], points[0], n);
+			VectorSubtract (x, points[0], d);
+			l = DotProduct (d, n) / DotProduct (n, n);
+			VectorMultAdd (points[0], l, n, closest);
+			break;
+		case 3:
+			VectorSubtract (points[1], points[0], a);
+			VectorSubtract (points[2], points[0], b);
+			CrossProduct (a, b, n);
+			VectorSubtract (points[0], x, d);
+			l = DotProduct (d, n) / DotProduct (n, n);
+			VectorMultAdd (x, l, n, closest);
+			break;
+	}
+}
+
+sphere_t
+SmallestEnclosingBall (const vec3_t points[], int num_points)
+{
+	sphere_t    sphere;
+	const vec_t *best;
+	const vec_t *support[4];
+	int         num_support;
+	vec_t       dist, best_dist;
+	int         i;
+	int         itters = 0;
+
+	if (num_points < 3) {
+		CircumSphere (points, num_points, &sphere);
+		return sphere;
+	}
+
+	for (i = 0; i < 4; i++)
+		support[i] = 0;
+
+	VectorCopy (points[0], sphere.center);
+	best_dist = dist = 0;
+	best = 0;
+	for (i = 1; i < num_points; i++) {
+		dist = VectorDistance_fast (points[i], sphere.center);
+		if (dist > best_dist) {
+			best_dist = dist;
+			best = points[i];
+		}
+	}
+	num_support = 1;
+	support[0] = best;
+	sphere.radius = best_dist;	// note: radius squared until the end
+
+	while (1) {
+		vec3_t      affine;
+		vec3_t      center_to_affine, center_to_point;
+		vec_t       affine_dist, point_proj, point_dist, bound;
+		vec_t       scale = 1;
+		int         i;
+
+		if (itters++ > 10)
+			Sys_Error ("stuck SEB");
+		best = 0;
+
+		if (num_support == 4) {
+			vec_t       lambda[4];
+			int         dropped = 0;
+
+			BarycentricCoords (support, 4, sphere.center, lambda);
+			for (i = 0; i < 4; i++) {
+				support[i - dropped] = support[i];
+				if (lambda[i] < 0) {
+					dropped++;
+					num_support--;
+				}
+			}
+			if (!dropped)
+				break;
+			for (i = 4 - dropped; i < 4; i++)
+				support[i] = 0;
+		}
+		closest_point (support, num_support, sphere.center, affine);
+		VectorSubtract (affine, sphere.center, center_to_affine);
+		affine_dist = DotProduct (center_to_affine, center_to_affine);
+		if (affine_dist < 1e-2 * sphere.radius)
+			break;
+		for (i = 0; i < num_points; i++) {
+			if (points[i] == support [0] || points[i] == support[1]
+				|| points[i] == support[2])
+				continue;
+			VectorSubtract (points[i], sphere.center, center_to_point);
+			point_proj = DotProduct (center_to_affine, center_to_point);
+			if (affine_dist - point_proj <= 0
+				|| ((affine_dist - point_proj) * (affine_dist - point_proj)
+					< 1e-8 * sphere.radius * affine_dist))
+				continue;
+			point_dist = DotProduct (center_to_point, center_to_point);
+			bound = sphere.radius - point_dist;
+			bound /= 2 * (affine_dist - point_proj);
+			if (bound < scale) {
+				best = points[i];
+				scale = bound;
+			}
+		}
+		VectorMultAdd (sphere.center, scale, center_to_affine, sphere.center);
+		if (!best)
+			break;
+		sphere.radius = VectorDistance_fast (sphere.center, best);
+		support[num_support++] = best;
+	}
+	best_dist = 0;
+	for (i = 0; i < num_points; i++) {
+		dist = VectorDistance_fast (sphere.center, points[i]);
+		if (dist > best_dist)
+			best_dist = dist;
+	}
+	sphere.radius = sqrt (best_dist);
+	return sphere;
+}

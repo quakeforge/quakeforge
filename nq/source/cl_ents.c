@@ -294,6 +294,7 @@ CL_RelinkEntities (void)
 	int         i, j;
 	int         entvalid;
 	vec3_t      delta;
+	int         model_flags;
 
 	r_data->player_entity = &cl_entities[cl.viewentity];
 
@@ -365,13 +366,16 @@ CL_RelinkEntities (void)
 		VectorCopy (ent_colormod[new->colormod], ent->colormod);
 		ent->colormod[3] = ENTALPHA_DECODE (new->alpha);
 
+		model_flags = 0;
+		if (ent->model)
+			model_flags = ent->model->flags;
 
 		if (cl_forcelink[i]) {
 			// The entity was not updated in the last message so move to the
 			// final spot
 			ent->pose1 = ent->pose2 = -1;
 			VectorCopy (new->origin, ent->origin);
-			if (!(ent->model->flags & EF_ROTATE))
+			if (!(model_flags & EF_ROTATE))
 				CL_TransformEntity (ent, new->angles, true);
 			if (i != cl.viewentity || chase_active->int_val) {
 				if (ent->efrag)
@@ -388,14 +392,14 @@ CL_RelinkEntities (void)
 				|| fabs (delta[2]) > 100) {
 				// assume a teleportation, not a motion
 				VectorCopy (new->origin, ent->origin);
-				if (!(ent->model->flags & EF_ROTATE))
+				if (!(model_flags & EF_ROTATE))
 					CL_TransformEntity (ent, new->angles, true);
 				ent->pose1 = ent->pose2 = -1;
 			} else {
 				vec3_t      angles, d;
 				// interpolate the origin and angles
 				VectorMultAdd (old->origin, f, delta, ent->origin);
-				if (!(ent->model->flags & EF_ROTATE)) {
+				if (!(model_flags & EF_ROTATE)) {
 					VectorSubtract (new->angles, old->angles, d);
 					for (j = 0; j < 3; j++) {
 						if (d[j] > 180)
@@ -420,7 +424,7 @@ CL_RelinkEntities (void)
 		}
 
 		// rotate binary objects locally
-		if (ent->model->flags & EF_ROTATE) {
+		if (model_flags & EF_ROTATE) {
 			vec3_t      angles;
 			VectorCopy (new->angles, angles);
 			angles[YAW] = bobjrotate;
@@ -431,7 +435,7 @@ CL_RelinkEntities (void)
 					  new->glow_color);
 		if (VectorDistance_fast (old->origin, ent->origin) > (256 * 256))
 			VectorCopy (ent->origin, old->origin);
-		if (ent->model->flags & ~EF_ROTATE)
+		if (model_flags & ~EF_ROTATE)
 			CL_ModelEffects (ent, i, new->glow_color);
 
 		cl_forcelink[i] = false;

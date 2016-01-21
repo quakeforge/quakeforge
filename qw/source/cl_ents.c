@@ -302,7 +302,8 @@ CL_LinkPacketEntities (void)
 			old->colormap = new->colormap;
 			if (new->colormap && (new->colormap <= MAX_CLIENTS)
 				&& cl.players[new->colormap - 1].name
-				&& cl.players[new->colormap - 1].name->value[0]) {
+				&& cl.players[new->colormap - 1].name->value[0]
+				&& new->modelindex == cl_playerindex) {
 				player_info_t *player = &cl.players[new->colormap - 1];
 				ent->skin = mod_funcs->Skin_SetSkin (ent->skin, new->colormap,
 													 player->skinname->value);

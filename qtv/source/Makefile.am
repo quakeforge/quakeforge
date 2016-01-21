@@ -29,7 +29,7 @@
 
 AUTOMAKE_OPTIONS=	foreign
 
-INCLUDES=	-I$(top_srcdir)/include -I$(top_srcdir)/qtv/include
+AM_CPPFLAGS=	-I$(top_srcdir)/include -I$(top_srcdir)/qtv/include
 
 bin_PROGRAMS=	@QTV_TARGETS@
 

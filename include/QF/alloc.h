@@ -42,51 +42,52 @@
 #ifndef DEBUG_QF_MEMORY
 /**	High-tide structure allocator for use in linked lists.
 
-	Using a free-list with the name of \c free_NAME, return a single element.
+	Using a free-list with the name of \c NAME_freelist, return a single
+	element.
 	The type of the element must be a structure with a field named \c next.
 	When the free-list is empty, memory is claimed from the system in blocks.
-	elements may be returned to the pool by linking them into the free-list.
+	Elements may be returned to the pool by linking them into the free-list.
 
 	\param s		The number of structures in the block.
 	\param t		The structure type.
-	\param n		The \c NAME portion of the \c free_NAME free-list.
+	\param n		The \c NAME portion of the \c NAME_freelist free-list.
 	\param v		The destination of the pointer to the allocated
 					element. The contents of the allocated element will be
 					memset to 0.
 
 	\hideinitializer
 */
-#define ALLOC(s, t, n, v)							\
-	do {											\
-		if (!free_##n) {							\
-			int         i;							\
-			free_##n = malloc ((s) * sizeof (t));	\
-			for (i = 0; i < (s) - 1; i++)			\
-				free_##n[i].next = &free_##n[i + 1];\
-			free_##n[i].next = 0;					\
-		}											\
-		v = free_##n;								\
-		free_##n = free_##n->next;					\
-		memset (v, 0, sizeof (*v));					\
+#define ALLOC(s, t, n, v)									\
+	do {													\
+		if (!n##_freelist) {								\
+			int         i;									\
+			n##_freelist = malloc ((s) * sizeof (t));		\
+			for (i = 0; i < (s) - 1; i++)					\
+				n##_freelist[i].next = &n##_freelist[i + 1];\
+			n##_freelist[i].next = 0;						\
+		}													\
+		v = n##_freelist;									\
+		n##_freelist = n##_freelist->next;					\
+		memset (v, 0, sizeof (*v));							\
 	} while (0)
 
 /** Free a block allocated by #ALLOC
 
-	\param n		The \c NAME portion of the \c free_NAME free-list.
+	\param n		The \c NAME portion of the \c NAME_freelist free-list.
 	\param p		The pointer to the block to be freed.
 
 	\hideinitializer
 */
-#define FREE(n, p)			\
-	do {					\
-		p->next = free_##n;	\
-		free_##n = p->next;	\
+#define FREE(n, p)				\
+	do {						\
+		p->next = n##_freelist;	\
+		n##_freelist = p;		\
 	} while (0)
 #else
-#define ALLOC(s, t, n, v)								\
-	do {												\
-		__attribute__((unused)) t **dummy = &free_##n;	\
-		v = (t *) calloc (1, sizeof (t));				\
+#define ALLOC(s, t, n, v)									\
+	do {													\
+		__attribute__((unused)) t **dummy = &n##_freelist;	\
+		v = (t *) calloc (1, sizeof (t));					\
 	} while (0)
 
 #define FREE(n, p)			do { free (p); } while (0)

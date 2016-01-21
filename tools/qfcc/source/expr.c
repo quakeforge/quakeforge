@@ -65,7 +65,7 @@
 #include "value.h"
 #include "qc-parse.h"
 
-static expr_t *free_exprs;
+static expr_t *exprs_freelist;
 
 type_t     *ev_types[ev_type_count] = {
 	&type_void,
@@ -138,6 +138,65 @@ convert:
 	e->e = new->e;
 }
 
+expr_t *
+convert_vector (expr_t *e)
+{
+	float       val[4];
+
+	if (e->type != ex_vector)
+		return e;
+	if (e->e.vector.type == &type_vector) {
+		// guaranteed to have three elements
+		expr_t     *x = e->e.vector.list;
+		expr_t     *y = x->next;
+		expr_t     *z = y->next;
+		x = fold_constants (cast_expr (&type_float, x));
+		y = fold_constants (cast_expr (&type_float, y));
+		z = fold_constants (cast_expr (&type_float, z));
+		if (is_constant (x) && is_constant (y) && is_constant (z)) {
+			val[0] = expr_float(x);
+			val[1] = expr_float(y);
+			val[2] = expr_float(z);
+			return new_vector_expr (val);
+		}
+	}
+	if (e->e.vector.type == &type_quaternion) {
+		// guaranteed to have two or four elements
+		if (e->e.vector.list->next->next) {
+			// four vals: w, x, y, z
+			expr_t     *w = e->e.vector.list;
+			expr_t     *x = w->next;
+			expr_t     *y = x->next;
+			expr_t     *z = y->next;
+			w = fold_constants (cast_expr (&type_float, w));
+			x = fold_constants (cast_expr (&type_float, x));
+			y = fold_constants (cast_expr (&type_float, y));
+			z = fold_constants (cast_expr (&type_float, z));
+			if (is_constant (w) && is_constant (x) && is_constant (y)
+				&& is_constant (z)) {
+				val[0] = expr_float(w);
+				val[1] = expr_float(x);
+				val[2] = expr_float(y);
+				val[3] = expr_float(z);
+				return new_quaternion_expr (val);
+			}
+		} else {
+			// s, v
+			expr_t     *s = e->e.vector.list;
+			expr_t     *v = s->next;
+
+			s = fold_constants (cast_expr (&type_float, s));
+			v = convert_vector (v);
+			if (is_constant (s) && is_constant (v)) {
+				val[0] = expr_float (s);
+				memcpy (val + 1, expr_vector (v), 3 * sizeof (float));
+				return new_quaternion_expr (val);
+			}
+		}
+	}
+	internal_error (e, "bogus vector expression");
+}
+
 type_t *
 get_type (expr_t *e)
 {
@@ -178,6 +237,8 @@ get_type (expr_t *e)
 				convert_int (e);
 			}
 			return ev_types[e->e.value->type];
+		case ex_vector:
+			return e->e.vector.type;
 	}
 	return 0;
 }
@@ -354,6 +415,18 @@ copy_expr (expr_t *e)
 			n->line = pr.source_line;
 			n->file = pr.source_file;
 			n->e.temp.expr = copy_expr (e->e.temp.expr);
+			return n;
+		case ex_vector:
+			n = new_expr ();
+			n->e.vector.type = e->e.vector.type;
+			n->e.vector.list = copy_expr (e->e.vector.list);
+			n = n->e.vector.list;
+			t = e->e.vector.list;
+			while (t->next) {
+				n->next = copy_expr (t->next);
+				n = n->next;
+				t = t->next;
+			}
 			return n;
 	}
 	internal_error (e, "invalid expression");
@@ -544,6 +617,50 @@ new_vector_expr (const float *vector_val)
 	e->type = ex_value;
 	e->e.value = new_vector_val (vector_val);
 	return e;
+}
+
+expr_t *
+new_vector_list (expr_t *e)
+{
+	expr_t     *t;
+	int         count;
+	type_t     *type = &type_vector;
+	expr_t     *vec;
+
+	e = reverse_expr_list (e);		// put the elements in the right order
+	for (t = e, count = 0; t; t = t->next)
+		count++;
+	switch (count) {
+		case 4:
+			type = &type_quaternion;
+		case 3:
+			// quaternion or vector. all expressions must be compatible with
+			// a float
+			for (t = e; t; t = t->next)
+				if (!type_assignable (&type_float, get_type (t)))
+					return error (t, "invalid type for vector element");
+			vec = new_expr ();
+			vec->type = ex_vector;
+			vec->e.vector.type = type;
+			vec->e.vector.list = e;
+			break;
+		case 2:
+			// quaternion. first expression must be compatible with a float,
+			// the other must be a vector
+			if (!type_assignable (&type_float, get_type (e))
+				|| !type_assignable (&type_vector, get_type(e->next))) {
+				return error (t, "invalid types for vector elements");
+			}
+			// s, v
+			vec = new_expr ();
+			vec->type = ex_vector;
+			vec->e.vector.type = &type_quaternion;
+			vec->e.vector.list = e;
+			break;
+		default:
+			return error (e, "invalid number of elements in vector exprssion");
+	}
+	return vec;
 }
 
 expr_t *
@@ -958,7 +1075,7 @@ get_struct_field (type_t *t1, expr_t *e1, expr_t *e2)
 	return field;
 }
 
-static expr_t *
+expr_t *
 field_expr (expr_t *e1, expr_t *e2)
 {
 	type_t     *t1, *t2;
@@ -1082,6 +1199,8 @@ test_expr (expr_t *e)
 			}
 			return error (e, "void has no value");
 		case ev_string:
+			if (!options.code.ifstring)
+				return new_alias_expr (type_default, e);
 			new = new_string_expr (0);
 			break;
 		case ev_uinteger:
@@ -1211,7 +1330,8 @@ convert_bool (expr_t *e, int block)
 		return b;
 	}
 
-	if (e->type == ex_uexpr && e->e.expr.op == '!') {
+	if (e->type == ex_uexpr && e->e.expr.op == '!'
+		&& get_type (e->e.expr.e1) != &type_string) {
 		e = convert_bool (e->e.expr.e1, 0);
 		if (e->type == ex_error)
 			return e;
@@ -1243,7 +1363,7 @@ convert_bool (expr_t *e, int block)
 	return e;
 }
 
-static expr_t *
+expr_t *
 convert_from_bool (expr_t *e, type_t *type)
 {
 	expr_t     *zero;
@@ -1368,92 +1488,7 @@ is_logic (int op)
 	return 0;
 }
 
-static expr_t *
-check_precedence (int op, expr_t *e1, expr_t *e2)
-{
-	if (e1->type == ex_uexpr && e1->e.expr.op == '!' && !e1->paren) {
-		if (options.traditional) {
-			if (op != AND && op != OR && op != '=') {
-				notice (e1, "precedence of `!' and `%s' inverted for "
-							"traditional code", get_op_string (op));
-				e1->e.expr.e1->paren = 1;
-				return unary_expr ('!', binary_expr (op, e1->e.expr.e1, e2));
-			}
-		} else if (op == '&' || op == '|') {
-			if (options.warnings.precedence)
-				warning (e1, "ambiguous logic. Suggest explicit parentheses "
-						 "with expressions involving ! and %s",
-						 get_op_string (op));
-		}
-	}
-	if (options.traditional) {
-		if (e2->type == ex_expr && !e2->paren) {
-			if (((op == '&' || op == '|')
-				 && (is_math_op (e2->e.expr.op) || is_compare (e2->e.expr.op)))
-				|| (op == '='
-					&& (e2->e.expr.op == OR || e2->e.expr.op == AND))) {
-				notice (e1, "precedence of `%s' and `%s' inverted for "
-							"traditional code", get_op_string (op),
-							get_op_string (e2->e.expr.op));
-				e1 = binary_expr (op, e1, e2->e.expr.e1);
-				e1->paren = 1;
-				return binary_expr (e2->e.expr.op, e1, e2->e.expr.e2);
-			}
-			if (((op == EQ || op == NE) && is_compare (e2->e.expr.op))
-				|| (op == OR && e2->e.expr.op == AND)
-				|| (op == '|' && e2->e.expr.op == '&')) {
-				notice (e1, "precedence of `%s' raised to `%s' for "
-							"traditional code", get_op_string (op),
-							get_op_string (e2->e.expr.op));
-				e1 = binary_expr (op, e1, e2->e.expr.e1);
-				e1->paren = 1;
-				return binary_expr (e2->e.expr.op, e1, e2->e.expr.e2);
-			}
-		} else if (e1->type == ex_expr && !e1->paren) {
-			if (((op == '&' || op == '|')
-				 && (is_math_op (e1->e.expr.op) || is_compare (e1->e.expr.op)))
-				|| (op == '='
-					&& (e1->e.expr.op == OR || e1->e.expr.op == AND))) {
-				notice (e1, "precedence of `%s' and `%s' inverted for "
-							"traditional code", get_op_string (op),
-							get_op_string (e1->e.expr.op));
-				e2 = binary_expr (op, e1->e.expr.e2, e2);
-				e2->paren = 1;
-				return binary_expr (e1->e.expr.op, e1->e.expr.e1, e2);
-			}
-		}
-	} else {
-		if (e2->type == ex_expr && !e2->paren) {
-			if ((op == '&' || op == '|' || op == '^')
-				&& (is_math_op (e2->e.expr.op)
-					|| is_compare (e2->e.expr.op))) {
-				if (options.warnings.precedence)
-					warning (e2, "suggest parentheses around %s in "
-							 "operand of %c",
-							 is_compare (e2->e.expr.op)
-							 		? "comparison"
-							 		: get_op_string (e2->e.expr.op),
-							 op);
-			}
-		}
-		if (e1->type == ex_expr && !e1->paren) {
-			if ((op == '&' || op == '|' || op == '^')
-				&& (is_math_op (e1->e.expr.op)
-					|| is_compare (e1->e.expr.op))) {
-				if (options.warnings.precedence)
-					warning (e1, "suggest parentheses around %s in "
-							 "operand of %c",
-							 is_compare (e1->e.expr.op)
-							 		? "comparison"
-							 		: get_op_string (e1->e.expr.op),
-							 op);
-			}
-		}
-	}
-	return 0;
-}
-
-static int
+int
 has_function_call (expr_t *e)
 {
 	switch (e->type) {
@@ -1477,114 +1512,6 @@ has_function_call (expr_t *e)
 		default:
 			return 0;
 	}
-}
-
-expr_t *
-binary_expr (int op, expr_t *e1, expr_t *e2)
-{
-	type_t     *t1, *t2;
-	type_t     *type = 0;
-	expr_t     *e;
-
-	if (e1->type == ex_error)
-		return e1;
-	if (e2->type == ex_error)
-		return e2;
-
-	convert_name (e1);
-	if (e1->type == ex_block && e1->e.block.is_call
-		&& has_function_call (e2) && e1->e.block.result) {
-		e = new_temp_def_expr (get_type (e1->e.block.result));
-		e1 = assign_expr (e, e1);
-	}
-
-	if (op == '.')
-		return field_expr (e1, e2);
-
-	convert_name (e2);
-	if (op == OR || op == AND) {
-		e1 = test_expr (e1);
-		e2 = test_expr (e2);
-	}
-
-	if (e1->type == ex_error)
-		return e1;
-	if (e2->type == ex_error)
-		return e2;
-	t1 = get_type (e1);
-	t2 = get_type (e2);
-	if (!t1 || !t2)
-		internal_error (e1, 0);
-	if (op == EQ || op == NE) {
-		if (e1->type == ex_nil) {
-			t1 = t2;
-			convert_nil (e1, t1);
-		} else if (e2->type == ex_nil) {
-			t2 = t1;
-			convert_nil (e2, t2);
-		}
-	}
-
-	if (e1->type == ex_bool)
-		e1 = convert_from_bool (e1, t2);
-
-	if (e2->type == ex_bool)
-		e2 = convert_from_bool (e2, t1);
-
-	if ((e = check_precedence (op, e1, e2)))
-		return e;
-
-	type = t1;
-
-	if (is_compare (op) || is_logic (op)) {
-		if (options.code.progsversion > PROG_ID_VERSION)
-			type = &type_integer;
-		else
-			type = &type_float;
-	} else if (op == '*' && t1 == &type_vector && t2 == &type_vector) {
-		type = &type_float;
-	}
-	if (!type)
-		internal_error (e1, 0);
-
-	if (options.code.progsversion == PROG_ID_VERSION) {
-		switch (op) {
-			case '%':
-				{
-					expr_t     *tmp1, *tmp2, *tmp3, *tmp4, *t1, *t2;
-					e = new_block_expr ();
-					t1 = new_temp_def_expr (&type_float);
-					t2 = new_temp_def_expr (&type_float);
-					tmp1 = new_temp_def_expr (&type_float);
-					tmp2 = new_temp_def_expr (&type_float);
-					tmp3 = new_temp_def_expr (&type_float);
-					tmp4 = new_temp_def_expr (&type_float);
-
-					append_expr (e, assign_expr (t1, e1));
-					e1 = binary_expr ('&', t1, t1);
-					append_expr (e, assign_expr (tmp1, e1));
-
-					append_expr (e, assign_expr (t2, e2));
-					e2 = binary_expr ('&', t2, t2);
-					append_expr (e, assign_expr (tmp2, e2));
-
-					e1 = binary_expr ('/', tmp1, tmp2);
-					append_expr (e, assign_expr (tmp3, e1));
-
-					e2 = binary_expr ('&', tmp3, tmp3);
-					append_expr (e, assign_expr (tmp4, e2));
-
-					e1 = binary_expr ('*', tmp2, tmp4);
-					e2 = binary_expr ('-', tmp1, e1);
-					e->e.block.result = e2;
-					return e;
-				}
-				break;
-		}
-	}
-	e = new_binary_expr (op, e1, e2);
-	e->e.expr.type = type;
-	return e;
 }
 
 expr_t *
@@ -1662,6 +1589,7 @@ unary_expr (int op, expr_t *e)
 				case ex_expr:
 				case ex_bool:
 				case ex_temp:
+				case ex_vector:
 					{
 						expr_t     *n = new_unary_expr (op, e);
 
@@ -1726,6 +1654,7 @@ unary_expr (int op, expr_t *e)
 				case ex_expr:
 				case ex_symbol:
 				case ex_temp:
+				case ex_vector:
 					{
 						expr_t     *n = new_unary_expr (op, e);
 
@@ -1786,6 +1715,7 @@ unary_expr (int op, expr_t *e)
 				case ex_bool:
 				case ex_symbol:
 				case ex_temp:
+				case ex_vector:
 bitnot_expr:
 					if (options.code.progsversion == PROG_ID_VERSION) {
 						expr_t     *n1 = new_integer_expr (-1);
@@ -1906,11 +1836,11 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 	for (e = params, i = 0; e; e = e->next, i++) {
 		if (has_function_call (e)) {
 			*a = new_temp_def_expr (arg_types[i]);
-			arg_exprs[arg_expr_count][0] = cast_expr (arg_types[i], e);
+			arg_exprs[arg_expr_count][0] = cast_expr (arg_types[i], convert_vector (e));
 			arg_exprs[arg_expr_count][1] = *a;
 			arg_expr_count++;
 		} else {
-			*a = cast_expr (arg_types[i], e);
+			*a = cast_expr (arg_types[i], convert_vector (e));
 		}
 		a = &(*a)->next;
 	}
@@ -2284,7 +2214,7 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 }
 
 expr_t *
-build_if_statement (expr_t *test, expr_t *s1, expr_t *els, expr_t *s2)
+build_if_statement (int not, expr_t *test, expr_t *s1, expr_t *els, expr_t *s2)
 {
 	int         line = pr.source_line;
 	string_t    file = pr.source_file;
@@ -2292,6 +2222,14 @@ build_if_statement (expr_t *test, expr_t *s1, expr_t *els, expr_t *s2)
 	expr_t     *tl = new_label_expr ();
 	expr_t     *fl = new_label_expr ();
 
+	if (els && !s2) {
+		warning (els,
+				 "suggest braces around empty body in an ‘else’ statement");
+	}
+	if (!els && !s1) {
+		warning (test,
+				 "suggest braces around empty body in an ‘if’ statement");
+	}
 	pr.source_line = test->line;
 	pr.source_file = test->file;
 
@@ -2299,8 +2237,13 @@ build_if_statement (expr_t *test, expr_t *s1, expr_t *els, expr_t *s2)
 
 	test = convert_bool (test, 1);
 	if (test->type != ex_error) {
-		backpatch (test->e.bool.true_list, tl);
-		backpatch (test->e.bool.false_list, fl);
+		if (not) {
+			backpatch (test->e.bool.true_list, fl);
+			backpatch (test->e.bool.false_list, tl);
+		} else {
+			backpatch (test->e.bool.true_list, tl);
+			backpatch (test->e.bool.false_list, fl);
+		}
 		append_expr (test->e.bool.e, tl);
 		append_expr (if_expr, test);
 	}
@@ -2329,7 +2272,7 @@ build_if_statement (expr_t *test, expr_t *s1, expr_t *els, expr_t *s2)
 }
 
 expr_t *
-build_while_statement (expr_t *test, expr_t *statement,
+build_while_statement (int not, expr_t *test, expr_t *statement,
 					   expr_t *break_label, expr_t *continue_label)
 {
 	int         line = pr.source_line;
@@ -2350,8 +2293,13 @@ build_while_statement (expr_t *test, expr_t *statement,
 
 	test = convert_bool (test, 1);
 	if (test->type != ex_error) {
-		backpatch (test->e.bool.true_list, l1);
-		backpatch (test->e.bool.false_list, l2);
+		if (not) {
+			backpatch (test->e.bool.true_list, l2);
+			backpatch (test->e.bool.false_list, l1);
+		} else {
+			backpatch (test->e.bool.true_list, l1);
+			backpatch (test->e.bool.false_list, l2);
+		}
 		append_expr (test->e.bool.e, l2);
 		append_expr (while_expr, test);
 	}
@@ -2363,13 +2311,18 @@ build_while_statement (expr_t *test, expr_t *statement,
 }
 
 expr_t *
-build_do_while_statement (expr_t *statement, expr_t *test,
+build_do_while_statement (expr_t *statement, int not, expr_t *test,
 						  expr_t *break_label, expr_t *continue_label)
 {
 	expr_t *l1 = new_label_expr ();
 	int         line = pr.source_line;
 	string_t    file = pr.source_file;
 	expr_t     *do_while_expr;
+
+	if (!statement) {
+		warning (break_label,
+				 "suggest braces around empty body in a ‘do’ statement");
+	}
 
 	pr.source_line = test->line;
 	pr.source_file = test->file;
@@ -2382,8 +2335,13 @@ build_do_while_statement (expr_t *statement, expr_t *test,
 
 	test = convert_bool (test, 1);
 	if (test->type != ex_error) {
-		backpatch (test->e.bool.true_list, l1);
-		backpatch (test->e.bool.false_list, break_label);
+		if (not) {
+			backpatch (test->e.bool.true_list, break_label);
+			backpatch (test->e.bool.false_list, l1);
+		} else {
+			backpatch (test->e.bool.true_list, l1);
+			backpatch (test->e.bool.false_list, break_label);
+		}
 		append_expr (test->e.bool.e, break_label);
 		append_expr (do_while_expr, test);
 	}
@@ -2450,8 +2408,18 @@ build_for_statement (expr_t *init, expr_t *test, expr_t *next,
 }
 
 expr_t *
-build_state_expr (expr_t *frame, expr_t *think, expr_t *step)
+build_state_expr (expr_t *e)
 {
+	expr_t     *frame = 0;
+	expr_t     *think = 0;
+	expr_t     *step = 0;
+
+	e = reverse_expr_list (e);
+	frame = e;
+	think = frame->next;
+	step = think->next;
+	if (think->type == ex_symbol)
+		think = think_expr (think->e.symbol);
 	if (is_integer_val (frame))
 		convert_int (frame);
 	if (!type_assignable (&type_float, get_type (frame)))
@@ -2459,10 +2427,12 @@ build_state_expr (expr_t *frame, expr_t *think, expr_t *step)
 	if (extract_type (think) != ev_func)
 		return error (think, "invalid type for think");
 	if (step) {
+		if (step->next)
+			return error (step->next, "too many state arguments");
 		if (is_integer_val (step))
 			convert_int (step);
 		if (!type_assignable (&type_float, get_type (step)))
-			return error (step, "invalid type for frame number");
+			return error (step, "invalid type for step");
 	}
 	return new_state_expr (frame, think, step);
 }
@@ -2545,6 +2515,7 @@ assign_expr (expr_t *e1, expr_t *e2)
 
 	convert_name (e1);
 	convert_name (e2);
+	e2 = convert_vector (e2);
 
 	if (e1->type == ex_error)
 		return e1;
@@ -2597,10 +2568,10 @@ assign_expr (expr_t *e1, expr_t *e2)
 				warning (e1, "assignment between disparate function types");
 			} else if (t1->type == ev_float && t2->type == ev_vector) {
 				warning (e1, "assignment of vector to float");
-				e2 = binary_expr ('.', e2, new_name_expr ("x"));
+				e2 = field_expr (e2, new_name_expr ("x"));
 			} else if (t1->type == ev_vector && t2->type == ev_float) {
 				warning (e1, "assignment of float to vector");
-				e1 = binary_expr ('.', e1, new_name_expr ("x"));
+				e1 = field_expr (e1, new_name_expr ("x"));
 			} else {
 				return type_mismatch (e1, e2, op);
 			}
@@ -2813,13 +2784,13 @@ super_expr (class_type_t *class_type)
 
 	super_block = new_block_expr ();
 
-	e = assign_expr (binary_expr ('.', super, new_name_expr ("self")),
-								  new_name_expr ("self"));
+	e = assign_expr (field_expr (super, new_name_expr ("self")),
+								 new_name_expr ("self"));
 	append_expr (super_block, e);
 
 	e = new_symbol_expr (class_pointer_symbol (class));
-	e = assign_expr (binary_expr ('.', super, new_name_expr ("class")),
-					 binary_expr ('.', e, new_name_expr ("super_class")));
+	e = assign_expr (field_expr (super, new_name_expr ("class")),
+					 field_expr (e, new_name_expr ("super_class")));
 	append_expr (super_block, e);
 
 	e = address_expr (super, 0, 0);
@@ -2928,4 +2899,18 @@ sizeof_expr (expr_t *expr, struct type_s *type)
 		type = get_type (expr);
 	expr = new_integer_expr (type_size (type));
 	return expr;
+}
+
+expr_t *
+reverse_expr_list (expr_t *e)
+{
+	expr_t     *r = 0;
+
+	while (e) {
+		expr_t     *t = e->next;
+		e->next = r;
+		r = e;
+		e = t;
+	}
+	return r;
 }

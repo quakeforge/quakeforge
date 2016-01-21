@@ -57,52 +57,83 @@
 #include "vis.h"
 #include "options.h"
 
-static int  clustersee;
-static byte portalsee[MAX_PORTALS];
-
 /*
 	This is a rough first-order aproximation that is used to trivially reject
 	some of the final calculations.
 */
 static void
-SimpleFlood (portal_t *srcportal, int clusternum)
+SimpleFlood (basethread_t *thread, portal_t *srcportal, int clusternum)
 {
     int			i;
     cluster_t  *cluster;
     portal_t   *portal;
 
-    if (srcportal->mightsee[clusternum >> 3] & (1 << (clusternum & 7)))
+	if (set_is_member (srcportal->mightsee, clusternum))
 		return;
-    srcportal->mightsee[clusternum >> 3] |= (1 << (clusternum & 7));
-    clustersee++;
+	set_add (srcportal->mightsee, clusternum);
+    thread->clustersee++;
 
     cluster = &clusters[clusternum];
 
     for (i = 0; i < cluster->numportals; i++) {
 		portal = cluster->portals[i];
-		if (!portalsee[portal - portals])
+		if (!set_is_member (thread->portalsee, portal - portals))
 			continue;
-		SimpleFlood (srcportal, portal->cluster);
+		SimpleFlood (thread, srcportal, portal->cluster);
     }
 }
 
+static inline int
+test_sphere (sphere_t *sphere, plane_t *plane)
+{
+	float       d;
+	int         front, back;
+
+	d = DotProduct (sphere->center, plane->normal) - plane->dist;
+	front = (d >= sphere->radius);
+	back = (d <= -sphere->radius);
+	return front - back;
+}
+
 void
-BasePortalVis (void)
+PortalBase (basethread_t *thread, portal_t *portal)
 {
     int			i, j, k;
 	float		d;
-    portal_t   *tp, *portal;
+    portal_t   *tp;
     winding_t  *winding;
+	int         tp_side, portal_side;
 
-    for (i = 0, portal = portals; i < numportals * 2; i++, portal++) {
-		portal->mightsee = calloc (1, bitbytes);
+	i = portal - portals;
 
-		memset (portalsee, 0, numportals * 2);
+	for (j = 0, tp = portals; j < numportals * 2; j++, tp++) {
+		if (j == i)
+			continue;
 
-		for (j = 0, tp = portals; j < numportals * 2; j++, tp++) {
-			if (j == i)
-				continue;
+		// If the target portal is behind the portals's plane, then it
+		// can't possibly be seen by the portal.
+		//
+		// If the portal is in front of the target's plane, then the target
+		// is of no interest as it is facing counter to the flow of
+		// visibility.
 
+		// First check using the bounding spheres of the two portals.
+		tp_side = test_sphere (&tp->sphere, &portal->plane);
+		if (tp_side < 0) {
+			// The test portal definitely is entirely behind the portal's
+			// plane.
+			continue;	// entirely behind
+		}
+		portal_side = test_sphere (&portal->sphere, &tp->plane);
+		if (portal_side > 0) {
+			// The portal definitely is entirely in front of the test
+			// portal's plane.
+			continue;	// entirely in front
+		}
+
+		if (tp_side == 0) {
+			// The test portal's sphere touches the portal's plane, so
+			// do a more refined check.
 			winding = tp->winding;
 			for (k = 0; k < winding->numpoints; k++) {
 				d = DotProduct (winding->points[k],
@@ -112,7 +143,11 @@ BasePortalVis (void)
 			}
 			if (k == winding->numpoints)
 				continue;	// no points on front
+		}
 
+		if (portal_side == 0) {
+			// The portal's sphere touches the test portal's plane, so
+			// do a more refined check.
 			winding = portal->winding;
 			for (k = 0; k < winding->numpoints; k++) {
 				d = DotProduct (winding->points[k],
@@ -122,12 +157,11 @@ BasePortalVis (void)
 			}
 			if (k == winding->numpoints)
 				continue;	// no points on front
-
-			portalsee[j] = 1;
 		}
 
-		clustersee = 0;
-		SimpleFlood (portal, portal->cluster);
-		portal->nummightsee = clustersee;
-    }
+		set_add (thread->portalsee, j);
+	}
+
+	SimpleFlood (thread, portal, portal->cluster);
+	portal->nummightsee = thread->clustersee;
 }

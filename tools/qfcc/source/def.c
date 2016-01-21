@@ -62,7 +62,7 @@
 #include "type.h"
 #include "value.h"
 
-static def_t *free_defs;
+static def_t *defs_freelist;
 
 static void
 set_storage_bits (def_t *def, storage_class_t storage)
@@ -426,8 +426,8 @@ init_vector_components (symbol_t *vector_sym, int is_field)
 			if (is_field) {
 				expr = new_field_expr (i, &type_float, vector_sym->s.def);
 			} else {
-				expr = binary_expr ('.', vector_expr,
-									new_symbol_expr (new_symbol (fields[i])));
+				expr = field_expr (vector_expr,
+								   new_symbol_expr (new_symbol (fields[i])));
 			}
 		}
 		sym->sy_type = sy_expr;

@@ -65,6 +65,7 @@ static struct option const long_options[] = {
 	{"distance", required_argument, 0, 'd'},
 	{"range", required_argument, 0, 'r'},
 	{"file", required_argument, 0, 'f'},
+	{"solid-sky", no_argument, 0, 'S'},
 	{NULL, 0, NULL, 0}
 };
 
@@ -83,6 +84,7 @@ static const char *short_options =
 	"r:"	// scale range
 	"P:"	// properties file
 	"f:"
+	"S"		// solid-sky
 	;
 
 void
@@ -106,7 +108,9 @@ usage (int status)
 		"    -n, --noise [factor]      Scale noise. 0 (default) to disable\n"
 		"    -c, --cutoff [scale]      Scale cutoff. 0 to disable\n"
 		"    -P, --properties [file]   Properties file\n"
-		"    -f, --file [bspfile]      BSP file\n\n");
+		"    -f, --file [bspfile]      BSP file\n"
+		"    -S, --solid-sky           Enable solid sky brushes\n"
+		"\n");
 	exit (status);
 }
 
@@ -188,6 +192,8 @@ DecodeArgs (int argc, char **argv)
 			case 'P':
 				options.properties_filename = strdup (optarg);
 				break;
+			case 'S':
+				options.solid_sky = true;
 			default:
 				usage (1);
 		}

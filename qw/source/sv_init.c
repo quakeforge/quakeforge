@@ -285,15 +285,15 @@ SV_CalcPHS (void)
 static unsigned int
 SV_CheckModel (const char *mdl)
 {
-	byte        stackbuf[1024];			// avoid dirtying the cache heap
 	byte       *buf;
 	unsigned short crc = 0;
 
 //	int len;
 
-	buf = (byte *) QFS_LoadStackFile (mdl, stackbuf, sizeof (stackbuf));
+	buf = (byte *) QFS_LoadFile (QFS_FOpenFile (mdl), 0);
 	if (buf) {
 		crc = CRC_Block (buf, qfs_filesize);
+		free (buf);
 	} else {
 		SV_Printf ("WARNING: cannot generate checksum for %s\n", mdl);
 	}
@@ -312,13 +312,14 @@ SV_CheckModel (const char *mdl)
 void
 SV_SpawnServer (const char *server)
 {
-	char       *buf;
+	byte       *buf;
 	edict_t    *ent;
 	int         i;
 	void       *so_buffers;
 	int        *so_sizes;
 	int         max_so;
 	struct recorder_s *recorders;
+	QFile      *ent_file;
 
 	Sys_MaskPrintf (SYS_DEV, "SpawnServer: %s\n", server);
 
@@ -433,8 +434,10 @@ SV_SpawnServer (const char *server)
 
 	// load and spawn all other entities
 	*sv_globals.time = sv.time;
-	if ((buf = (char *) QFS_LoadFile (va ("maps/%s.ent", server), 0))) {
-		ED_LoadFromFile (&sv_pr_state, buf);
+	ent_file = QFS_VOpenFile (va ("maps/%s.ent", server), 0,
+							  sv.worldmodel->vpath);
+	if ((buf = QFS_LoadFile (ent_file, 0))) {
+		ED_LoadFromFile (&sv_pr_state, (char *) buf);
 		free (buf);
 	} else {
 		ED_LoadFromFile (&sv_pr_state, sv.worldmodel->entities);

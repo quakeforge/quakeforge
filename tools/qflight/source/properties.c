@@ -1,12 +1,12 @@
 /*
-	#FILENAME#
+	properties.c
 
-	#DESCRIPTION#
+	Light properties handling.
 
-	Copyright (C) 2004 #AUTHOR#
+	Copyright (C) 2004 Bill Currie <bill@taniwha.org>
 
-	Author: #AUTHOR#
-	Date: #DATE#
+	Author: Bill Currie <bill@taniwha.org>
+	Date: 2004/01/27
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -47,6 +47,7 @@
 #include "compat.h"
 
 #include "entities.h"
+#include "light.h"
 #include "options.h"
 #include "properties.h"
 
@@ -58,6 +59,22 @@ parse_float (const char *str)
 	char       *eptr;
 	double      val = strtod (str, &eptr);
 	return val;
+}
+
+void
+parse_vector (const char *str, vec3_t vec)
+{
+	double      tvec[3];
+	int         count;
+
+	tvec[2] = 0;	// assume 2 components is yaw and pitch
+	count = sscanf (str, "%lf %lf %lf", &tvec[0], &tvec[1], &tvec[2]);
+
+	if (count < 2 || count > 3) {
+		fprintf (stderr, "invalid vector");
+		VectorZero (tvec);
+	}
+	VectorCopy (tvec, vec);
 }
 
 void
@@ -87,7 +104,7 @@ parse_light (const char *str, vec3_t color)
 	i = sscanf (str, "%lf %lf %lf %lf", &vec[0], &vec[1], &vec[2], &vec[3]);
 	switch (i) {
 		case 4:		// HalfLife light
-			VectorScale (vec + 1, 1.0 / 255, color);
+			VectorScale (vec, 1.0 / 255, color);
 			return vec[3];
 			break;
 		case 3:
@@ -165,6 +182,54 @@ get_item (const char *key, plitem_t *d1, plitem_t *d2)
 }
 
 void
+set_sun_properties (entity_t *ent, plitem_t *dict)
+{
+	plitem_t   *prop = 0;
+	plitem_t   *p;
+	const char *str;
+
+	if (properties) {
+		prop = PL_ObjectForKey (properties, "worldspawn");
+	}
+	if ((p = get_item ("sunlight", dict, prop))) {
+		if ((str = PL_String (p))) {
+			ent->sun_light[0] = parse_light (str, ent->sun_color[0]);
+		}
+	}
+	if ((p = get_item ("sunlight2", dict, prop))) {
+		if ((str = PL_String (p))) {
+			ent->sun_light[1] = parse_light (str, ent->sun_color[1]);
+		}
+	}
+	if ((p = get_item ("sunlight3", dict, prop))) {
+		if ((str = PL_String (p))) {
+			ent->sun_light[1] = parse_light (str, ent->sun_color[1]);
+			ent->shadow_sense = SHADOWSENSE;
+		}
+	}
+	if ((p = get_item ("sunlight_color", dict, prop))) {
+		if ((str = PL_String (p))) {
+			parse_color (str, ent->sun_color[0]);
+		}
+	}
+	if ((p = get_item ("sunlight_color2", dict, prop))) {
+		if ((str = PL_String (p))) {
+			parse_color (str, ent->sun_color[1]);
+		}
+	}
+	if ((p = get_item ("sunlight_color3", dict, prop))) {
+		if ((str = PL_String (p))) {
+			parse_color (str, ent->sun_color[1]);
+		}
+	}
+	if ((p = get_item ("sun_mangle", dict, prop))) {
+		if ((str = PL_String (p))) {
+			parse_vector (str, ent->sun_dir[0]);
+		}
+	}
+}
+
+void
 set_properties (entity_t *ent, plitem_t *dict)
 {
 	plitem_t   *prop = 0;
@@ -173,7 +238,7 @@ set_properties (entity_t *ent, plitem_t *dict)
 
 	if (properties) {
 		prop = PL_ObjectForKey (properties, ent->classname);
-		if ((p = get_item ("_light_name", dict, 0))
+		if ((p = get_item ("light_name", dict, 0))
 			&& (str = PL_String (p)))
 			prop = PL_ObjectForKey (properties, str);
 		if (!prop)
@@ -183,8 +248,7 @@ set_properties (entity_t *ent, plitem_t *dict)
 		if (!prop)
 			prop = PL_ObjectForKey (properties, "default");
 	}
-	if ((p = get_item ("light", dict, prop))
-		|| (p = get_item ("_light", dict, prop))) {
+	if ((p = get_item ("light", dict, prop))) {
 		if ((str = PL_String (p))) {
 			ent->light = parse_light (str, ent->color);
 		}
@@ -208,18 +272,17 @@ set_properties (entity_t *ent, plitem_t *dict)
 			ent->falloff *= ent->falloff;			// presquared
 		}
 	}
-	if ((p = get_item ("_lightradius", dict, prop))) {
+	if ((p = get_item ("lightradius", dict, prop))) {
 		if ((str = PL_String (p))) {
 			ent->lightradius = parse_float (str);
 		}
 	}
-	if ((p = get_item ("color", dict, prop))
-		|| (p = get_item ("_color", dict, prop))) {
+	if ((p = get_item ("color", dict, prop))) {
 		if ((str = PL_String (p))) {
 			parse_color (str, ent->color2);
 		}
 	}
-	if ((p = get_item ("_attenuation", dict, prop))) {
+	if ((p = get_item ("attenuation", dict, prop))) {
 		if ((str = PL_String (p))) {
 			ent->attenuation = parse_attenuation (str);
 			if (ent->attenuation == -1) {
@@ -229,27 +292,27 @@ set_properties (entity_t *ent, plitem_t *dict)
 			}
 		}
 	}
-	if ((p = get_item ("_radius", dict, prop))) {
+	if ((p = get_item ("radius", dict, prop))) {
 		if ((str = PL_String (p))) {
 			ent->radius = parse_float (str);
 		}
 	}
-	if ((p = get_item ("_noise", dict, prop))) {
+	if ((p = get_item ("noise", dict, prop))) {
 		if ((str = PL_String (p))) {
 			ent->noise = parse_float (str);
 		}
 	}
-	if ((p = get_item ("_noisetype", dict, prop))) {
+	if ((p = get_item ("noisetype", dict, prop))) {
 		if ((str = PL_String (p))) {
 			ent->noisetype = parse_noise (str);
 		}
 	}
-	if ((p = get_item ("_persistence", dict, prop))) {
+	if ((p = get_item ("persistence", dict, prop))) {
 		if ((str = PL_String (p))) {
 			ent->persistence = parse_float (str);
 		}
 	}
-	if ((p = get_item ("_resolution", dict, prop))) {
+	if ((p = get_item ("resolution", dict, prop))) {
 		if ((str = PL_String (p))) {
 			ent->resolution = parse_float (str);
 		}

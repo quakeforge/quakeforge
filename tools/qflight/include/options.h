@@ -30,12 +30,18 @@
 
 #include "QF/qtypes.h"
 
+/** \defgroup qflight_options Light command line options.
+	\ingroup qflight
+*/
+//@{
+
 typedef struct {
 	int			verbosity;		// 0=silent
 	int			threads;
 	int         novis;
 	int         extrabit;
 	int         attenuation;
+	int         solid_sky;
 	vec_t       extrascale;
 	vec_t		distance;
 	vec_t		range;
@@ -52,5 +58,7 @@ extern const char *this_program;
 
 int DecodeArgs (int argc, char **argv);
 void usage (int status);
+
+//@}
 
 #endif//__options_h

@@ -60,8 +60,8 @@ typedef struct locref_s {
 	int         size;
 } locref_t;
 
-static defspace_t *free_spaces;
-static locref_t *free_locrefs;
+static defspace_t *spaces_freelist;
+static locref_t *locrefs_freelist;
 
 #define GROW 1024
 

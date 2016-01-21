@@ -35,6 +35,7 @@
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/input.h"
+#include "QF/joystick.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
 #include "QF/qfplist.h"
@@ -113,6 +114,7 @@ CL_WriteConfiguration (void)
 
 		Key_WriteBindings (f);
 		Cvar_WriteVariables (f);
+		Joy_WriteBindings (f);
 
 		Qclose (f);
 	}
@@ -527,10 +529,10 @@ CL_Init (cbuf_t *cbuf)
 {
 	byte       *basepal, *colormap;
 
-	basepal = (byte *) QFS_LoadHunkFile ("gfx/palette.lmp");
+	basepal = (byte *) QFS_LoadHunkFile (QFS_FOpenFile ("gfx/palette.lmp"));
 	if (!basepal)
 		Sys_Error ("Couldn't load gfx/palette.lmp");
-	colormap = (byte *) QFS_LoadHunkFile ("gfx/colormap.lmp");
+	colormap = (byte *) QFS_LoadHunkFile (QFS_FOpenFile ("gfx/colormap.lmp"));
 	if (!colormap)
 		Sys_Error ("Couldn't load gfx/colormap.lmp");
 

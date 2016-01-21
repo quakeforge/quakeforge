@@ -143,7 +143,7 @@ Load_Tracklist (void)
 {
 	QFile	*oggfile = NULL;
 	char	*buffile = NULL;
-	int		 size = -1;
+	int		 size;
 
 	/* kill off the old tracklist, and make sure we're not playing anything */
 	I_OGGMus_Shutdown ();
@@ -155,8 +155,8 @@ Load_Tracklist (void)
 		return -1;		// bail if we don't have a valid filename
 	}
 
-	size = QFS_FOpenFile (mus_ogglist->string, &oggfile);
-	if (size < 0) {
+	oggfile = QFS_FOpenFile (mus_ogglist->string);
+	if (!oggfile) {
 		Sys_Printf ("Mus_OggInit: open of file \"%s\" failed\n",
 			mus_ogglist->string);
 		return -1;

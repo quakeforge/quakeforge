@@ -66,6 +66,7 @@
 #include <fcntl.h>
 #include <stdarg.h>
 #include <time.h>
+#include <sys/types.h>
 #include <sys/stat.h>
 #ifdef HAVE_SYS_TIME_H
 #include <sys/time.h>
@@ -78,6 +79,7 @@
 
 #include "qfalloca.h"
 
+#include "QF/alloc.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
@@ -106,7 +108,16 @@ typedef struct shutdown_list_s {
 	void (*func)(void);
 } shutdown_list_t;
 
+typedef struct error_handler_s {
+	struct error_handler_s *next;
+	sys_error_t func;
+	void       *data;
+} error_handler_t;
+
 static shutdown_list_t *shutdown_list;
+
+static error_handler_t *error_handler_freelist;
+static error_handler_t *error_handler;
 
 #ifndef _WIN32
 static int  do_stdin = 1;
@@ -161,6 +172,25 @@ Sys_MaskFPUExceptions (void)
 #endif
 
 int
+Sys_isdir (const char *path)
+{
+	int         res;
+#ifdef _WIN32
+	struct _stat st;
+	res = _stat (path, &st);
+#else
+	struct stat st;
+	res = stat (path, &st);
+#endif
+	if (res < 0) {
+		// assume any error means path does not refer to a directory. certainly
+		// true if errno == ENOENT
+		return 0;
+	}
+	return S_ISDIR (st.st_mode);
+}
+
+int
 Sys_mkdir (const char *path)
 {
 #ifdef HAVE_MKDIR
@@ -179,13 +209,11 @@ Sys_mkdir (const char *path)
 #  error do not know how to make directories
 # endif
 #endif
-	if (errno != EEXIST)
-		return -1;
-	return 0;
+	return -1;
 }
 
 VISIBLE int
-Sys_FileTime (const char *path)
+Sys_FileExists (const char *path)
 {
 #ifdef HAVE_ACCESS
 	if (access (path, R_OK) == 0)
@@ -287,8 +315,8 @@ Sys_MaskPrintf (int mask, const char *fmt, ...)
 	va_end (args);
 }
 
-VISIBLE double
-Sys_DoubleTime (void)
+VISIBLE int64_t
+Sys_LongTime (void)
 {
 	static qboolean first = true;
 #ifdef _WIN32
@@ -314,13 +342,13 @@ Sys_DoubleTime (void)
 # else
 	// MH's solution combining timeGetTime for stability and
 	// QueryPerformanceCounter for precision.
-	static __int64 qpcfreq = 0;
-	static __int64 currqpccount = 0;
-	static __int64 lastqpccount = 0;
-	static double qpcfudge = 0;
-	DWORD currtime = 0;
-	static DWORD lasttime = 0;
-	static DWORD starttime = 0;
+	static int64_t qpcfreq = 0;
+	static int64_t currqpccount = 0;
+	static int64_t lastqpccount = 0;
+	static int64_t qpcfudge = 0;
+	int64_t currtime = 0;
+	static int64_t lasttime = 0;
+	static int64_t starttime = 0;
 
 	if (first) {
 		timeBeginPeriod (1);
@@ -342,9 +370,8 @@ Sys_DoubleTime (void)
 
 		// store back times and calc a fudge factor as timeGetTime can
 		// overshoot on a sub-millisecond scale
-		qpcfudge = (((double) (currqpccount - lastqpccount)
-					/ (double) qpcfreq))
-				- ((double) (currtime - lasttime) * 0.001);
+		qpcfudge = (( (currqpccount - lastqpccount) * 1000000 / qpcfreq))
+				- ((currtime - lasttime) * 1000);
 		lastqpccount = currqpccount;
 		lasttime = currtime;
 	} else {
@@ -352,19 +379,18 @@ Sys_DoubleTime (void)
 	}
 
 	// the final time is the base from timeGetTime plus an addition from QPC
-	return ((double) (currtime - starttime) * 0.001)
-		+ ((double) (currqpccount - lastqpccount) / (double) qpcfreq)
-		+ qpcfudge;
+	return (((currtime - starttime) * 1000)
+			+ ((currqpccount - lastqpccount) * 1000000 / qpcfreq) + qpcfudge);
 # endif
 #else
 	struct timeval tp;
 	struct timezone tzp;
-	double now;
-	static double start_time;
+	int64_t now;
+	static int64_t start_time;
 
 	gettimeofday (&tp, &tzp);
 
-	now = tp.tv_sec + tp.tv_usec / 1e6;
+	now = tp.tv_sec * 1000000 + tp.tv_usec;
 
 	if (first) {
 		first = false;
@@ -373,6 +399,12 @@ Sys_DoubleTime (void)
 
 	return now - start_time;
 #endif
+}
+
+VISIBLE double
+Sys_DoubleTime (void)
+{
+	return (__INT64_C (4294967296000000) + Sys_LongTime ()) / 1e6;
 }
 
 VISIBLE void
@@ -471,21 +503,36 @@ Sys_Quit (void)
 	exit (0);
 }
 
-#if defined (HAVE_VA_COPY)
-# define VA_COPY(a,b) va_copy (a, b)
-#elif defined (HAVE__VA_COPY)
-# define VA_COPY(a,b) __va_copy (a, b)
-#else
-# define VA_COPY(a,b) memcpy (a, b, sizeof (a))
-#endif
+VISIBLE void
+Sys_PushErrorHandler (sys_error_t func, void *data)
+{
+	error_handler_t *eh;
+	ALLOC (16, error_handler_t, error_handler, eh);
+	eh->func = func;
+	eh->data = data;
+	eh->next = error_handler;
+	error_handler = eh;
+}
+
+VISIBLE void
+Sys_PopErrorHandler (void)
+{
+	error_handler_t *eh;
+
+	if (!error_handler) {
+		Sys_Error ("Sys_PopErrorHandler: no handler to pop");
+	}
+	eh = error_handler;
+	error_handler = eh->next;
+	FREE (error_handler, eh);
+}
+
 
 VISIBLE void
 Sys_Error (const char *error, ...)
 {
 	va_list     args;
-#ifdef VA_LIST_IS_ARRAY
 	va_list     tmp_args;
-#endif
 	static int  in_sys_error = 0;
 
 	if (in_sys_error) {
@@ -499,20 +546,20 @@ Sys_Error (const char *error, ...)
 	in_sys_error = 1;
 
 	va_start (args, error);
-#ifdef VA_LIST_IS_ARRAY
-	VA_COPY (tmp_args, args);
-#endif
+	va_copy (tmp_args, args);
 	sys_err_printf_function (error, args);
 	va_end (args);
+
+	if (error_handler) {
+		error_handler->func (error_handler->data);
+	}
 
 	Sys_Shutdown ();
 
 	if (sys_err_printf_function != Sys_ErrPrintf) {
 		// print the message again using the default error printer to increase
 		// the chances of the error being seen.
-#ifdef VA_LIST_IS_ARRAY
-		VA_COPY (args, tmp_args);
-#endif
+		va_copy (args, tmp_args);
 		Sys_ErrPrintf (error, args);
 	}
 
@@ -849,10 +896,13 @@ Sys_CreatePath (const char *path)
 
 	strcpy (e_path, path);
 	for (ofs = e_path + 1; *ofs; ofs++) {
-		if (*ofs == '/') {				// create the directory
+		if (*ofs == '/') {
 			*ofs = 0;
-			if (Sys_mkdir (e_path) == -1)
-				return -1;
+			if (!Sys_isdir (e_path)) {
+				// create the directory
+				if (Sys_mkdir (e_path) == -1)
+					return -1;
+			}
 			*ofs = '/';
 		}
 	}

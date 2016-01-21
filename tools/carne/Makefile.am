@@ -4,7 +4,7 @@ CARNE_LIBS=@CARNE_LIBS@
 CARNE_DEPS=@CARNE_DEPS@
 PAK_INCS=@CARNE_INCS@
 
-INCLUDES= -I$(top_srcdir)/include $(CARNE_INCS)
+AM_CPPFLAGS= -I$(top_srcdir)/include $(CARNE_INCS)
 
 noinst_PROGRAMS= carne
 

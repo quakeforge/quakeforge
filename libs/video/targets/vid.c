@@ -134,9 +134,6 @@ VID_GetWindowSize (int def_w, int def_h)
 	Cvar_SetFlags (vid_width, vid_width->flags | CVAR_ROM);
 	Cvar_SetFlags (vid_height, vid_height->flags | CVAR_ROM);
 
-	viddef.maxwarpwidth = WARP_WIDTH;
-	viddef.maxwarpheight = WARP_HEIGHT;
-
 	// viddef.maxlowwidth = LOW_WIDTH;
 	// viddef.maxlowheight = LOW_HEIGHT;
 
