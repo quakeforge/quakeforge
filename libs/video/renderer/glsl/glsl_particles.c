@@ -738,6 +738,18 @@ R_TeleportSplash_QF (const vec3_t org)
 }
 
 static void
+add_trail_to_ent (entity_t *ent)
+{
+	ent->trail = new_trail ();
+	ent->trail->next = trails_active;
+	ent->trail->prev = &trails_active;
+	ent->trail->owner = &ent->trail;
+	if (trails_active)
+		trails_active->prev = &ent->trail->next;
+	trails_active = ent->trail;
+}
+
+static void
 R_RocketTrail_trail (entity_t *ent)
 {
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
@@ -746,13 +758,7 @@ R_RocketTrail_trail (entity_t *ent)
 	particle_t *point;
 
 	if (!ent->trail) {
-		ent->trail = new_trail ();
-		ent->trail->next = trails_active;
-		ent->trail->prev = &trails_active;
-		ent->trail->owner = &ent->trail;
-		if (trails_active)
-			trails_active->prev = &ent->trail->next;
-		trails_active = ent->trail;
+		add_trail_to_ent (ent);
 	}
 
 	VectorCopy (ent->old_origin, old_origin);
