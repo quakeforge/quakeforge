@@ -1736,7 +1736,9 @@ set_vertex (trailvtx_t *v, const particle_t *point, float w, const vec3_t bary,
 	byte       *color = (byte *) &d_8to24table[(byte) point->color];
 
 	VectorCopy (point->org, v->vertex);
-	VectorCopy (bary, v->bary);
+	if (bary) {
+		VectorCopy (bary, v->bary);
+	}
 	v->vertex[3] = w * point->scale;
 	v->texoff = off;
 	VectorScale (color, 1.5 / 255, v->colora);
@@ -1745,49 +1747,54 @@ set_vertex (trailvtx_t *v, const particle_t *point, float w, const vec3_t bary,
 }
 
 static void
-count_points (int *num_verts, int *num_elements)
+count_points (int *num_verts)
 {
 	trail_t    *trail;
 
 	*num_verts = 0;
-	*num_elements = 0;
 	for (trail = trails_active; trail; trail = trail->next) {
 		if (trail->num_points < 2)
 			continue;
-		// +2 for an extra point at either end of the strip
+		// Each point has two vertices, thus the * 2. However, both the
+		// first point and the last point need to be duplicated so the vertex
+		// shader has valid data (even though the distance between points will
+		// be 0), thus need vertices for two extra points.
 		*num_verts += (trail->num_points + 2) * 2;
-		*num_elements += trail->num_points * 2;
 	}
 }
 
 static void
-build_verts (trailvtx_t *v, GLushort *e)
+build_verts (trailvtx_t *v)
 {
 	trail_t    *trail;
-	int         index = 0;
-	particle_t *point, *last_point = 0;
+	particle_t *point, *last_point = 0, *second_last_point = 0;
+	particle_t  dup;
 	float       bary[] = {0, 0, 1, 0, 0, 1, 0, 0};
 	int         bind = 0;
 
+	memset (&dup, 0, sizeof (dup));
 	for (trail = trails_active; trail; trail = trail->next) {
+		int         index = 0;
 		if (trail->num_points < 2)
 			continue;
 		point = trail->points;
-		set_vertex (v++, point, -1, bary + bind++, index/2);
-		set_vertex (v++, point, 1, bary + bind++, index/2);
-		bind %= 3;
-		for (; point; point = point->next) {
-			set_vertex (v++, point, -1, bary + bind++, index/2 + 1);
-			set_vertex (v++, point, 1, bary + bind++, index/2 + 1);
-			bind %= 3;
-			*e++ = index++;
-			*e++ = index++;
+		VectorScale (point->org, 2, dup.org);
+		VectorSubtract (dup.org, point->next->org, dup.org);
+		set_vertex (v++, &dup, -1, 0, 0);
+		set_vertex (v++, &dup, +1, 0, 0);
+		for (point = trail->points; point; point = point->next) {
+			second_last_point = last_point;
 			last_point = point;
+			set_vertex (v++, point, -1, bary + bind++, index);
+			set_vertex (v++, point, +1, bary + bind++, index);
+			bind %= 3;
+			index++;
 			R_RunParticlePhysics (point);
 		}
-		set_vertex (v++, last_point, -1, bary + bind++, index/2 + 1);
-		set_vertex (v++, last_point, 1, bary + bind++, index/2 + 1);
-		index += 4;
+		VectorScale (last_point->org, 2, dup.org);
+		VectorSubtract (dup.org, second_last_point->org, dup.org);
+		set_vertex (v++, &dup, -1, 0, 0);
+		set_vertex (v++, &dup, +1, 0, 0);
 	}
 }
 
@@ -1819,17 +1826,15 @@ draw_trails (void)
 {
 	trail_t    *trl;
 	int         num_verts;
-	int         num_elements;
+	int         first;
 	trailvtx_t *verts;
-	GLushort   *elements;
 
-	count_points (&num_verts, &num_elements);
-	if (!num_elements)
+	count_points (&num_verts);
+	if (!num_verts)
 		return;
 
 	verts = alloca (num_verts * sizeof (trailvtx_t));
-	elements = alloca (num_verts * sizeof (GLushort));
-	build_verts (verts, elements);
+	build_verts (verts);
 
 	qfeglUseProgram (trail.program);
 	qfeglEnableVertexAttribArray (trail.last.location);
@@ -1863,14 +1868,13 @@ draw_trails (void)
 	qfeglVertexAttribPointer (trail.colorb.location, 4, GL_FLOAT,
 							 0, sizeof (trailvtx_t), &verts[0].colorb);
 
-	for (trl = trails_active; trl; trl = trl->next) {
+	for (first = 0, trl = trails_active; trl; trl = trl->next) {
 		int         count;
 		if (trl->num_points < 2)
 			continue;
 		count = trl->num_points * 2;
-		qfeglDrawElements (GL_TRIANGLE_STRIP, count, GL_UNSIGNED_SHORT,
-						   elements);
-		elements += count;
+		qfeglDrawArrays (GL_TRIANGLE_STRIP, first, count);
+		first += count + 4;
 	}
 
 	qfeglDisableVertexAttribArray (trail.last.location);
