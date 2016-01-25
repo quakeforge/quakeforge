@@ -17,6 +17,10 @@ color_ramp3
 alpha_ramp 6
 sub_grav
 
+-- pt_float
+add_vel
+sub_grav
+
 -- pt_explode
 add_ramp 10 8
 add_vel
