@@ -1736,9 +1736,7 @@ set_vertex (trailvtx_t *v, const particle_t *point, float w, const vec3_t bary,
 	byte       *color = (byte *) &d_8to24table[(byte) point->color];
 
 	VectorCopy (point->org, v->vertex);
-	if (bary) {
-		VectorCopy (bary, v->bary);
-	}
+	VectorCopy (bary, v->bary);
 	v->vertex[3] = w * point->scale;
 	v->texoff = off;
 	VectorScale (color, 1.5 / 255, v->colora);
@@ -1780,8 +1778,8 @@ build_verts (trailvtx_t *v)
 		point = trail->points;
 		VectorScale (point->org, 2, dup.org);
 		VectorSubtract (dup.org, point->next->org, dup.org);
-		set_vertex (v++, &dup, -1, 0, 0);
-		set_vertex (v++, &dup, +1, 0, 0);
+		set_vertex (v++, &dup, -1, bary, 0);
+		set_vertex (v++, &dup, +1, bary, 0);
 		for (point = trail->points; point; point = point->next) {
 			second_last_point = last_point;
 			last_point = point;
@@ -1793,8 +1791,8 @@ build_verts (trailvtx_t *v)
 		}
 		VectorScale (last_point->org, 2, dup.org);
 		VectorSubtract (dup.org, second_last_point->org, dup.org);
-		set_vertex (v++, &dup, -1, 0, 0);
-		set_vertex (v++, &dup, +1, 0, 0);
+		set_vertex (v++, &dup, -1, bary, 0);
+		set_vertex (v++, &dup, +1, bary, 0);
 	}
 }
 
