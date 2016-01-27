@@ -749,6 +749,34 @@ add_trail_to_ent (entity_t *ent)
 	trails_active = ent->trail;
 }
 
+static inline particle_t *
+new_trail_point (const vec3_t origin, float pscale, float percent)
+{
+	particle_t *point;
+	int         ramp;
+
+	point = new_point ();
+	VectorCopy (origin, point->org);
+	point->color = ramp3[ramp = mtwist_rand (&mt) & 3];
+	point->tex = part_tex_smoke;
+	point->scale = pscale + percent * 4.0;
+	point->alpha = 0.5 + qfrandom (0.125) - percent * 0.40;
+	VectorCopy (vec3_origin, point->vel);
+	point->die = vr_data.realtime + 2.0 - percent * 2.0;
+	point->ramp = ramp;
+	point->physics = R_ParticlePhysics ("pt_float");
+
+	return point;
+}
+
+static inline void
+add_point_to_trail (trail_t *trail, particle_t *point)
+{
+	*trail->head = point;
+	trail->head = &point->next;
+	trail->num_points++;
+}
+
 static void
 R_RocketTrail_trail (entity_t *ent)
 {
@@ -768,25 +796,13 @@ R_RocketTrail_trail (entity_t *ent)
 	pscale = 1.5 + qfrandom (1.5);
 
 	while (len < maxlen) {
-		int ramp;
 		pscalenext = 1.5 + qfrandom (1.5);
 		dist = (pscale + pscalenext) * 3.0;
 		percent = len * origlen;
 
-		point = new_point ();
-		VectorCopy (old_origin, point->org);
-		point->color = ramp3[ramp = mtwist_rand (&mt) & 3];
-		point->tex = part_tex_smoke;
-		point->scale = pscale + percent * 4.0;
-		point->alpha = 0.5 + qfrandom (0.125) - percent * 0.40;
-		VectorCopy (vec3_origin, point->vel);
-		point->die = vr_data.realtime + 2.0 - percent * 2.0;
-		point->ramp = ramp;
-		point->physics = R_ParticlePhysics ("pt_fire");
+		point = new_trail_point (old_origin, pscale, percent);
 
-		*ent->trail->head = point;
-		ent->trail->head = &point->next;
-		ent->trail->num_points++;
+		add_point_to_trail (ent->trail, point);
 
 		len += dist;
 		VectorMultAdd (old_origin, len, vec, old_origin);
