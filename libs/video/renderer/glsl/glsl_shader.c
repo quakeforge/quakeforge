@@ -129,7 +129,7 @@ GLSL_BuildShader (const char **effect_keys)
 			Sys_Printf ("Unknown shader key: '%s'\n", dot);
 			goto error;
 		}
-		shader->strings[num] = nva ("#line %d\n%s", chunk->start_line,
+		shader->strings[num] = nva ("#line %d\n%s", chunk->start_line - 1,
 									chunk->text);
 		shader->src[num] = strdup (ekey->str);
 	}
