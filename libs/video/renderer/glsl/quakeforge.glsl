@@ -50,6 +50,100 @@ dqtrans (vec4 q0, vec4 qe)
 	return 2.0 * (Ts * qv + qs * Tv + cross (Tv, qv));
 }
 
+-- Vertex.transform.mvp
+uniform mat4 mvp_mat;
+
+-- Vertex.transform.view_projection
+uniform mat4 projection_mat, view_mat;
+
+-- Screen.viewport
+uniform vec2 viewport;
+
+-- Vertex.ScreenSpace.curve.width
+
+vec2
+project (vec4 coord)
+{
+	vec3        device = coord.xyz / coord.w;
+	vec2        clip = (device * 0.5 + 0.5).xy;
+	return clip * viewport;
+}
+
+vec4
+unproject (vec2 screen, float z, float w)
+{
+	vec2        clip = screen / viewport;
+	vec2        device = clip * 2.0 - 1.0;
+	return vec4 (device * w, z, w);
+}
+
+vec2
+direction (vec2 from, vec2 to)
+{
+	vec2        t = to - from;
+	vec2        d = vec2 (0.0, 0.0);
+
+	if (dot (t, t) > 0.001) {
+		d = normalize (t);
+	}
+	return d;
+}
+
+vec2
+shared_direction (vec2 a, vec2 b)
+{
+	vec2        d = a + b;
+
+	if (dot (d, d) > 0.001) {
+		d = normalize (d);
+	} else if (dot (a, a) > 0.001) {
+		d = normalize (a);
+	} else if (dot (b, b) > 0.001) {
+		d = normalize (b);
+	} else {
+		d = vec2 (0.0);
+	}
+	return d;
+}
+
+float
+estimateScale (vec3 position, vec2 sPosition, float width)
+{
+	vec4        view_pos = view_mat * vec4 (position, 1.0);
+	vec4        scale_pos = view_pos - vec4 (normalize (view_pos.xy) * width,
+											 0.0, 0.0);
+	vec2        screen_scale_pos = project (projection_mat * scale_pos);
+	return distance (sPosition, screen_scale_pos);
+}
+
+vec4
+transform (vec4 coord)
+{
+	return projection_mat * view_mat * vec4 (coord.xyz, 1.0);
+}
+
+vec4
+curve_offset_vertex (vec4 last, vec4 current, vec4 next, float width)
+{
+	float       offset = current.w;
+
+	vec2        sLast = project (transform (last));
+	vec2        sNext = project (transform (next));
+	vec4        dCurrent = transform (current);
+	vec2        sCurrent = project (dCurrent);
+
+	vec2       n1 = direction (sCurrent, sLast);
+	vec2       n2 = direction (sNext, sCurrent);
+	vec2       n = shared_direction (n1, n2);
+
+	// rotate the normal by 90 degrees and scale by the desired offset
+	vec2       dir = vec2(n.y, -n.x) * offset;
+	float      scale = estimateScale (vec3(current), sCurrent, width);
+	vec2       pos = sCurrent + dir * scale;
+
+	return     unproject (pos, dCurrent.z, dCurrent.w);
+}
+
 -- Fragment.fog
 
 uniform vec4 fog;
@@ -587,8 +681,6 @@ attribute float texoff;
 attribute vec4 vcolora;
 attribute vec4 vcolorb;
 
-uniform mat4 proj, view;
-uniform vec2 viewport;
 uniform float width;
 
 varying vec2 texcoord;
@@ -596,75 +688,15 @@ varying vec3 vbarycentric;
 varying vec4 colora;
 varying vec4 colorb;
 
-vec4
-transform (vec3 coord)
-{
-	return proj * view * vec4 (coord, 1.0);
-}
-
-vec2
-project (vec4 coord)
-{
-	vec3        device = coord.xyz / coord.w;
-	vec2        clip = (device * 0.5 + 0.5).xy;
-	return clip * viewport;
-}
-
-vec4
-unproject (vec2 screen, float z, float w)
-{
-	vec2        clip = screen / viewport;
-	vec2        device = clip * 2.0 - 1.0;
-	return vec4 (device * w, z, w);
-}
-
-float
-estimateScale (vec3 position, vec2 sPosition)
-{
-	vec4        view_pos = view * vec4 (position, 1.0);
-	vec4        scale_pos = view_pos - vec4 (normalize (view_pos.xy) * width,
-											 0.0, 0.0);
-	vec2        screen_scale_pos = project (proj * scale_pos);
-	return distance (sPosition, screen_scale_pos);
-}
-
 void
 main (void)
 {
-	vec2        t, n1, n2, n;
-	vec2        sLast = project (transform (last.xyz));
-	vec2        sNext = project (transform (next.xyz));
-	vec4        dCurrent = transform (current.xyz);
-	vec2        sCurrent = project (dCurrent);
-	float       off = current.w;
-
 	colora = vcolora;
 	colorb = vcolorb;
-	texcoord = vec2 (texoff * 0.7, off);// * 0.5 + 0.5);
+	texcoord = vec2 (texoff * 0.7, current.w);// * 0.5 + 0.5);
 	vbarycentric = barycentric;
 
-	t = sLast - sCurrent;
-	n1 = vec2 (0.0);
-	if (dot (t, t) > 0.001)
-		n1 = normalize (t);
-	t = sCurrent - sNext;
-	n2 = vec2 (0.0);
-	if (dot (t, t) > 0.001)
-		n2 = normalize (t);
-	n = vec2 (0.0);
-	if (n1 != -n2)
-		n = normalize (n1 + n2);
-	else if (dot (n1, n1) > 0.001)
-		n = n1;
-	else if (dot (n2, n2) > 0.001)
-		n = n2;
-
-	// rotate the normal by 90 degrees and scale by the desired width
-	vec2        dir = vec2 (n.y, -n.x) * off;
-	float       scale = estimateScale (current.xyz, sCurrent);
-	vec2        pos = sCurrent + dir * scale;
-
-	gl_Position = unproject (pos, dCurrent.z, dCurrent.w);
+	gl_Position = curve_offset_vertex (last, current, next, width);
 }
 
 -- Fragment.particle.trail

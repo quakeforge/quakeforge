@@ -109,6 +109,9 @@ static const char *particle_textured_frag_effects[] =
 
 static const char *particle_trail_vert_effects[] =
 {
+	"QuakeForge.Screen.viewport",
+	"QuakeForge.Vertex.transform.view_projection",
+	"QuakeForge.Vertex.ScreenSpace.curve.width",
 	"QuakeForge.Vertex.particle.trail",
 	0
 };
@@ -171,8 +174,8 @@ static struct {
 	shaderparam_t colorb;
 } trail = {
 	0,
-	{"proj", 1},
-	{"view", 1},
+	{"projection_mat", 1},
+	{"view_mat", 1},
 	{"viewport", 1},
 	{"width", 1},
 	{"last", 0},
