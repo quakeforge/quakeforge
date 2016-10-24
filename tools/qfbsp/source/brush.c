@@ -736,7 +736,7 @@ LoadBrush (const mbrush_t *mb, int hullnum)
 		CreateBrushFaces ();
 	} else if (mb->detail) {
 		face_t     *f;
-		for (f = brush_faces; f; f = f->next);
+		for (f = brush_faces; f; f = f->next)
 			f->detail = 1;
 	}
 

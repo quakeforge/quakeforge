@@ -406,7 +406,7 @@ X11_SetVidMode (int width, int height)
 			vid_gamma_avail = true;
 
 			temp = X11_GetGamma ();
-			if (temp && temp[0] > 0) {
+			if (temp && (*temp)[0] > 0) {
 				x_gamma[0] = (*temp)[0];
 				x_gamma[1] = (*temp)[1];
 				x_gamma[2] = (*temp)[2];

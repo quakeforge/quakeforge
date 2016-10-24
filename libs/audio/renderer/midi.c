@@ -105,7 +105,7 @@ midi_stream_read (void *file, float **buf)
 	int         res;
 	byte       *data = alloca (size);
 
-	res = WildMidi_GetOutput (mf->handle, (char *)data, size);
+	res = WildMidi_GetOutput (mf->handle, (int8_t *)data, size);
 	if (res <= 0) {
 		stream->error = 1;
 		return 0;

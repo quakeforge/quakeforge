@@ -981,7 +981,7 @@ flow_make_edges (flowgraph_t *graph)
 	flownode_t *node;
 	set_iter_t *succ;
 
-	if (graph->edges);
+	if (graph->edges)
 		free (graph->edges);
 	graph->edges = malloc (graph->num_edges * sizeof (flowedge_t));
 	for (j = 0, i = 0; i < graph->num_nodes + 2; i++) {
