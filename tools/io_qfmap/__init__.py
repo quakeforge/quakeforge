@@ -222,7 +222,7 @@ class QFEntityClasses(bpy.types.PropertyGroup):
                     d[sub] = ec
             self.__class__.ecm = EntityClassMenu.build(menudict)
 
-class QFECPanel(bpy.types.Panel):
+class OBJECT_PT_QFECPanel(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = 'scene'

@@ -77,7 +77,7 @@ def draw_callback(self, context):
                     bgl.glEnd()
     bgl.glLineWidth(1)
 
-class QFEntityRelations(bpy.types.Panel):
+class VIEW3D_PT_QFEntityRelations(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_label = "Register callback"
@@ -100,7 +100,7 @@ class QFEntityRelations(bpy.types.Panel):
     def draw(self, context):
         pass
 
-class EntityField_list(bpy.types.UIList):
+class OBJECT_UL_EntityField_list(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
         layout.label(item.name)
@@ -163,7 +163,7 @@ def reflow_text(text, max_width):
             lines.append(flowed_line)
     return lines
 
-class EntityPanel(bpy.types.Panel):
+class OBJECT_PT_EntityPanel(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = 'object'
@@ -198,7 +198,7 @@ class EntityPanel(bpy.types.Panel):
                 sub.prop(qfentity, "flags", text=flags[idx], index=idx)
         row = layout.row()
         col = row.column()
-        col.template_list("EntityField_list", "", qfentity, "fields",
+        col.template_list("OBJECT_UL_EntityField_list", "", qfentity, "fields",
                           qfentity, "field_idx", rows=3)
         col = row.column(align=True)
         col.operator("object.entprop_add", icon='ZOOMIN', text="")
