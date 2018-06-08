@@ -221,7 +221,7 @@ struct edict_s {
 	int         entnum;			///< number of this entity
 	float       freetime;		///< sv.time when the object was freed
 	void       *edata;			///< external per-edict data
-	pr_type_t   v[1];			///< fields from progs
+	pr_type_t   v[];			///< fields from progs
 };
 
 // pr_edict.c

@@ -348,7 +348,7 @@ gettoklen (char *str, int req, char delim)
 	int         len = 0;
 
 	start = gettokstart (str, req, delim);
-	if (start == '\0') {
+	if (*start == '\0') {
 		return 0;
 	}
 	while (*start != delim && *start != '\0') {

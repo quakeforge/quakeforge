@@ -98,11 +98,13 @@ loaded_plugin_delete (void *lp, void *unused)
 static int
 pi_close_lib (void *handle)
 {
+	if (handle) {
 #if defined(HAVE_DLOPEN)
-	return (dlclose (handle) == 0);
+		return (dlclose (handle) == 0);
 #elif defined (_WIN32)
-	return (FreeLibrary (handle) == 0);
+		return (FreeLibrary (handle) == 0);
 #endif
+	}
 	return 1;
 }
 

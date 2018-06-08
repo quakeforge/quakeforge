@@ -296,7 +296,9 @@ convert_relop (const char *relop)
 #ifdef YY_FLEX_REALLOC_HACK
 static __attribute__ ((used)) void *(*const yy_flex_realloc_hack)(void *,yy_size_t) = yy_flex_realloc;
 #else
+#ifdef yyunput
 static __attribute__ ((used)) void (*yyunput_hack)(int, char*) = yyunput;
+#endif
 static __attribute__ ((used)) int (*input_hack)(void) = input;
 #endif
 
