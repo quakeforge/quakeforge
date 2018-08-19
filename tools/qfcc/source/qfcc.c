@@ -589,6 +589,14 @@ load_file (const char *fname)
 	return src;
 }
 
+/**	Parse a cpp line number directive.
+
+	Parses a cpp line directive of the form "# 1 file", setting the line and
+	file fields of \a script. "#line 1 file" is supported, too.
+
+	\param script		the script being parsed
+	\param filename		storage for the parsed filename
+*/
 static void
 parse_cpp_line (script_t *script, dstring_t *filename)
 {
