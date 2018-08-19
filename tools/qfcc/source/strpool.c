@@ -188,6 +188,10 @@ make_string (char *token, char **end)
 					boldnext = 0;
 					c = '\'' ^ mask;
 					break;
+				case '?':
+					boldnext = 0;
+					c = '?' ^ mask;
+					break;
 				case '0':
 				case '1':
 				case '2':
