@@ -143,11 +143,18 @@ bi_refresh_3d (progs_t *pr)
 	qc3d = P_FUNCTION (pr, 0);
 }
 
+static void
+bi_shutdown_ (progs_t *pr)
+{
+	Sys_Shutdown ();
+}
+
 static builtin_t builtins[] = {
 	{"printf",		bi_printf,		-1},
 	{"refresh",		bi_refresh,		-1},
 	{"refresh_2d",	bi_refresh_2d,	-1},
 	{"refresh_3d",	bi_refresh_3d,	-1},
+	{"shutdown",	bi_shutdown_,	-1},
 	{0}
 };
 
