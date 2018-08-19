@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "QF/dstring.h"
 #include "QF/image.h"
 #include "QF/pcx.h"
 #include "QF/qendian.h"
@@ -42,8 +43,8 @@
 tex_t          *image;
 dsprite_t		sprite;
 byte			*lumpbuffer, *plump;
-char			spritedir[1024];
-char			spriteoutname[1024];
+dstring_t		*spritedir;
+dstring_t		*spriteoutname;
 int				framesmaxs[2];
 int				framecount;
 
@@ -444,7 +445,7 @@ Cmd_Spritename (void)
 		FinishSprite ();
 
 	Script_GetToken (&scr, false);
-	sprintf (spriteoutname, "%s%s.spr", spritedir, Script_Token (&scr));
+	dsprintf (spriteoutname, "%s%s.spr", spritedir->str, Script_Token (&scr));
 	memset (&sprite, 0, sizeof(sprite));
 	framecount = 0;
 
@@ -472,14 +473,14 @@ FinishSprite (void)
 	if (sprite.numframes == 0)
 		Sys_Error ("no frames\n");
 
-	if (!strlen(spriteoutname))
+	if (!spriteoutname->str)
 		Sys_Error ("Didn't name sprite file");
 
 	if ((plump - lumpbuffer) > MAX_BUFFER_SIZE)
 		Sys_Error ("Sprite package too big; increase MAX_BUFFER_SIZE");
 
-	spriteouthandle = Qopen (spriteoutname, "wb");
-	printf ("saving in %s\n", spriteoutname);
+	spriteouthandle = Qopen (spriteoutname->str, "wb");
+	printf ("saving in %s\n", spriteoutname->str);
 	WriteSprite (spriteouthandle);
 	Qclose (spriteouthandle);
 
@@ -487,7 +488,7 @@ FinishSprite (void)
 	printf ("%d frame(s)\n", sprite.numframes);
 	printf ("%d ungrouped frame(s), including group headers\n", framecount);
 
-	spriteoutname[0] = 0;		// clear for a new sprite
+	dstring_clearstr (spriteoutname);		// clear for a new sprite
 }
 
 /*
@@ -504,6 +505,9 @@ int main (int argc, char **argv)
 
 	if (argc != 2)
 		Sys_Error ("usage: spritegen file.qc");
+
+	spritedir = dstring_newstr ();
+	spriteoutname = dstring_newstr ();
 
 	i = 1;
 

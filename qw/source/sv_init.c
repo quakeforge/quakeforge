@@ -341,6 +341,9 @@ SV_SpawnServer (const char *server)
 	so_buffers = sv.signon_buffers;
 	so_sizes = sv.signon_buffer_size;
 
+	if (sv.name) {
+		free (sv.name);
+	}
 	memset (&sv, 0, sizeof (sv));
 
 	sv.recorders = recorders;
@@ -363,7 +366,7 @@ SV_SpawnServer (const char *server)
 
 	SV_NextSignon ();
 
-	strcpy (sv.name, server);
+	sv.name = strdup(server);
 
 	// load progs to get entity field count which determines how big each
 	// edict is
@@ -384,7 +387,6 @@ SV_SpawnServer (const char *server)
 
 	sv.time = 1.0;
 
-	strncpy (sv.name, server, sizeof (sv.name));
 	snprintf (sv.modelname, sizeof (sv.modelname), "maps/%s.bsp", server);
 	map_cfg (sv.modelname, 0);
 	sv.worldmodel = Mod_ForName (sv.modelname, true);

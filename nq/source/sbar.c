@@ -352,7 +352,7 @@ draw_num (view_t *view, int x, int y, int num, int digits, int color)
 static inline void
 draw_smallnum (view_t *view, int x, int y, int n, int packed, int colored)
 {
-	char        num[4];
+	char        num[12];
 
 	packed = packed != 0;				// ensure 0 or 1
 

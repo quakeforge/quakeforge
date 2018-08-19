@@ -1430,7 +1430,7 @@ SV_AddIP_f (void)
 		// FIXME: this should boot any matching clients
 	    for (i = 0; i < MAX_CLIENTS; i++) {
 			client_t *cl = &svs.clients[i];
-			char text[1024];
+			const char *text;
 			const char *typestr;
 			char timestr[1024];
 
@@ -1461,9 +1461,9 @@ SV_AddIP_f (void)
 							  bantime / 60);
 				else
 					strncpy (timestr, "permanently", sizeof (timestr));
-				snprintf (text, sizeof (text), "You are %s %s\n%s",
-						  typestr, timestr, type == ft_ban ? "" :
-						  "\nReconnecting won't help...");
+				text = va ("You are %s %s\n%s",
+						   typestr, timestr, type == ft_ban ? "" :
+						   "\nReconnecting won't help...");
 				MSG_ReliableWrite_Begin (&cl->backbuf, svc_centerprint,
 										 strlen (text) + 2);
 				MSG_ReliableWrite_String (&cl->backbuf, text);

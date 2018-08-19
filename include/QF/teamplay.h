@@ -43,7 +43,7 @@ void Team_Init_Cvars (void);
 void Team_BestWeaponImpulse (void);
 void Team_Dead (void);
 void Team_NewMap (void);
-const char *Team_ParseSay (const char *);
+const char *Team_ParseSay (struct dstring_s *buf, const char *);
 void Locs_Init (void);
 void Team_ParseChat (const char *string);
 void Team_ResetTimers (void);

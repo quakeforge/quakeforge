@@ -161,7 +161,7 @@ pack_create (const char *name)
 		pack_del (pack);
 		return 0;
 	}
-	strncpy (pack->header.id, "PACK", sizeof (pack->header.id));
+	memcpy (pack->header.id, "PACK", sizeof (pack->header.id));
 
 	Qwrite (pack->handle, &pack->header, sizeof (pack->header));
 

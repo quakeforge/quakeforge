@@ -55,11 +55,11 @@
 void
 gl_Mod_ProcessTexture (texture_t *tx)
 {
-	char		name[32];
+	const char *name;
 
 	if (!strncmp (tx->name, "sky", 3))
 		return;
-	snprintf (name, sizeof (name), "fb_%s", tx->name);
+	name = va ("fb_%s", tx->name);
 	tx->gl_fb_texturenum =
 		Mod_Fullbright ((byte *) (tx + 1), tx->width, tx->height, name);
 	tx->gl_texturenum =

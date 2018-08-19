@@ -256,7 +256,8 @@ gl_Draw_CachePic (const char *path, qboolean alpha)
 	} else
 		Sys_Error ("Draw_CachePic: failed to load %s", path);
 
-	strncpy (pic->name, path, sizeof (pic->name));
+	memset (pic->name, 0, sizeof (pic->name));
+	strncpy (pic->name, path, sizeof (pic->name) - 1);
 
 	// Now lets mark this cache entry as used..
 	pic->dirty = false;

@@ -182,7 +182,7 @@ wad_create (const char *name)
 		wad_del (wad);
 		return 0;
 	}
-	strncpy (wad->header.id, "WAD2", sizeof (wad->header.id));
+	memcpy (wad->header.id, "WAD2", sizeof (wad->header.id));
 
 	Qwrite (wad->handle, &wad->header, sizeof (wad->header));
 

@@ -73,7 +73,7 @@ typedef struct {
 	unsigned int	model_player_checksum;
 	unsigned int	eyes_player_checksum;
 
-	char		name[64];			// map name
+	char		*name;			// map name
 	char		modelname[MAX_QPATH];		// maps/<name>.bsp, for model_precache[0]
 	struct model_s 	*worldmodel;
 	const char	*model_precache[MAX_MODELS];	// NULL terminated

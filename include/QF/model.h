@@ -90,7 +90,7 @@ typedef struct instsurf_s {
 } instsurf_t;
 
 typedef struct texture_s {
-	char		name[16];
+	char		*name;
 	unsigned int	width, height;
 	int			gl_texturenum;
 	int			gl_fb_texturenum;
@@ -445,7 +445,7 @@ mleaf_t *Mod_PointInLeaf (const vec3_t p, model_t *model);
 byte	*Mod_LeafPVS (mleaf_t *leaf, model_t *model);
 model_t	*Mod_FindName (const char *name);
 int     Mod_CalcFullbright (byte *in, byte *out, int pixels);
-int     Mod_Fullbright (byte * skin, int width, int height, char *name);
+int     Mod_Fullbright (byte * skin, int width, int height, const char *name);
 
 void    *Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame,
 							 int extra);

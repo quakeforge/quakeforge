@@ -69,14 +69,14 @@ typedef struct {
 	double      fps;
 } td_stats_t;
 
-int         demo_timeframes_isactive;
-int         demo_timeframes_index;
+static int  demo_timeframes_isactive;
+static int  demo_timeframes_index;
 static int  demotime_cached;
 static float cached_demotime;
 static byte cached_newtime;
-float       nextdemotime;
-char        demoname[1024];
-double     *demo_timeframes_array;
+static float  nextdemotime;
+static dstring_t *demoname;
+static double *demo_timeframes_array;
 #define CL_TIMEFRAMES_ARRAYBLOCK 4096
 
 int         timedemo_count;
@@ -990,12 +990,12 @@ CL_StartDemo (void)
 	int         type;
 
 	// open the demo file
-	name = dstring_strdup (demoname);
+	name = dstring_strdup (demoname->str);
 
 	QFS_DefaultExtension (name, ".mvd");
 	cls.demofile = QFS_FOpenFile (name->str);
 	if (!cls.demofile) {
-		dstring_copystr (name, demoname);
+		dstring_copystr (name, demoname->str);
 		QFS_DefaultExtension (name, ".qwd");
 		cls.demofile = QFS_FOpenFile (name->str);
 	}
@@ -1050,7 +1050,7 @@ CL_PlayDemo_f (void)
 {
 	switch (Cmd_Argc ()) {
 		case 1:
-			if (!demoname[0])
+			if (!demoname->str[0])
 				goto playdemo_error;
 			// fall through
 		case 2:
@@ -1072,7 +1072,7 @@ playdemo_error:
 	CL_Disconnect ();
 
 	if (Cmd_Argc () > 1)
-		strncpy (demoname, Cmd_Argv (1), sizeof (demoname));
+		dstring_copystr (demoname, Cmd_Argv (1));
 	CL_StartDemo ();
 }
 
@@ -1182,7 +1182,7 @@ CL_TimeDemo_f (void)
 		timedemo_data = 0;
 	}
 	timedemo_data = calloc (timedemo_runs, sizeof (td_stats_t));
-	strncpy (demoname, Cmd_Argv (1), sizeof (demoname));
+	dstring_copystr (demoname, Cmd_Argv (1));
 	CL_StartTimeDemo ();
 	timedemo_runs = timedemo_count = max (count, 1);
 	timedemo_data = calloc (timedemo_runs, sizeof (td_stats_t));
@@ -1191,6 +1191,8 @@ CL_TimeDemo_f (void)
 void
 CL_Demo_Init (void)
 {
+	demoname = dstring_newstr ();
+
 	demo_timeframes_isactive = 0;
 	demo_timeframes_index = 0;
 	demo_timeframes_array = NULL;

@@ -38,6 +38,7 @@
 # include <strings.h>
 #endif
 
+#include "QF/dstring.h"
 #include "QF/image.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
@@ -56,8 +57,9 @@ gl_Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,
 				 maliasskindesc_t *skindesc)
 {
 	byte   *pskin;
-	char	name[32], modname[MAX_QPATH + 4];
+	char	modname[MAX_QPATH + 4];
 	int		fb_texnum = 0, texnum = 0;
+	dstring_t  *name = dstring_new ();
 
 	pskin = Hunk_AllocName (skinsize, loadname);
 	skindesc->skin = (byte *) pskin - (byte *) pheader;
@@ -75,27 +77,26 @@ gl_Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,
 
 	if (!loadmodel->fullbright) {
 		if (group) {
-			snprintf (name, sizeof (name), "fb_%s_%i_%i", modname,
-					  snum, gnum);
+			dsprintf (name, "fb_%s_%i_%i", modname, snum, gnum);
 		} else {
-			snprintf (name, sizeof (name), "fb_%s_%i", modname, snum);
+			dsprintf (name, "fb_%s_%i", modname, snum);
 		}
 		fb_texnum = Mod_Fullbright (pskin, pheader->mdl.skinwidth,
-									pheader->mdl.skinheight, name);
-		Sys_MaskPrintf (SYS_GLT, "%s %d\n", name, fb_texnum);
+									pheader->mdl.skinheight, name->str);
+		Sys_MaskPrintf (SYS_GLT, "%s %d\n", name->str, fb_texnum);
 	}
 	if (group) {
-		snprintf (name, sizeof (name), "%s_%i_%i", modname, snum,
-				  gnum);
+		dsprintf (name, "%s_%i_%i", modname, snum, gnum);
 	} else {
-		snprintf (name, sizeof (name), "%s_%i", modname, snum);
+		dsprintf (name, "%s_%i", modname, snum);
 	}
-	texnum = GL_LoadTexture (name, pheader->mdl.skinwidth,
+	texnum = GL_LoadTexture (name->str, pheader->mdl.skinwidth,
 							 pheader->mdl.skinheight, pskin, true, false, 1);
-	Sys_MaskPrintf (SYS_GLT, "%s %d\n", name, texnum);
+	Sys_MaskPrintf (SYS_GLT, "%s %d\n", name->str, texnum);
 	skindesc->texnum = texnum;
 	skindesc->fb_texnum = fb_texnum;
 	loadmodel->hasfullbrights = fb_texnum;
+	dstring_delete (name);
 	// alpha param was true for non group skins
 	return skin + skinsize;
 }
@@ -151,10 +152,11 @@ Mod_LoadExternalSkin (maliasskindesc_t *pskindesc, char *filename)
 void
 gl_Mod_LoadExternalSkins (model_t *mod)
 {
-	char			   filename[MAX_QPATH + 4], modname[MAX_QPATH + 4];
+	char			   modname[MAX_QPATH + 4];
 	int				   i, j;
 	maliasskindesc_t  *pskindesc;
 	maliasskingroup_t *pskingroup;
+	dstring_t  *filename = dstring_new ();
 
 	QFS_StripExtension (mod->name, modname);
 
@@ -162,16 +164,15 @@ gl_Mod_LoadExternalSkins (model_t *mod)
 		pskindesc = ((maliasskindesc_t *)
 					 ((byte *) pheader + pheader->skindesc)) + i;
 		if (pskindesc->type == ALIAS_SKIN_SINGLE) {
-			snprintf (filename, sizeof (filename), "%s_%i", modname, i);
-			Mod_LoadExternalSkin (pskindesc, filename);
+			dsprintf (filename, "%s_%i", modname, i);
+			Mod_LoadExternalSkin (pskindesc, filename->str);
 		} else {
 			pskingroup = (maliasskingroup_t *)
 				((byte *) pheader + pskindesc->skin);
 
 			for (j = 0; j < pskingroup->numskins; j++) {
-				snprintf (filename, sizeof (filename), "%s_%i_%i",
-						  modname, i, j);
-				Mod_LoadExternalSkin (pskingroup->skindescs + j, filename);
+				dsprintf (filename, "%s_%i_%i", modname, i, j);
+				Mod_LoadExternalSkin (pskingroup->skindescs + j, filename->str);
 			}
 		}
 	}
