@@ -69,12 +69,17 @@ static frame_t *frame_list;
 static frame_t **frame_tail = &frame_list;
 
 static frame_t grab_list[] = {
-	{0, "cd",		0},
-	{0, "origin",	0},
-	{0, "base",		0},
-	{0, "flags",	0},
-	{0, "scale",	0},
-	{0, "skin",		0},
+	{0, "modelname",		0},
+	{0, "base",				0},
+	{0, "cd",				0},
+	{0, "sync",				0},
+	{0, "origin",			0},
+	{0, "eyeposition",		0},
+	{0, "scale",			0},
+	{0, "flags",			0},
+	{0, "skin",				0},
+	{0, "framegroupstart",	0},
+	{0, "skingroupstart",	0},
 };
 
 static const char *
