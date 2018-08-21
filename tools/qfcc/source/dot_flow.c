@@ -197,7 +197,7 @@ print_flow_node_live (dstring_t *dstr, flowgraph_t *graph, flownode_t *node,
 }
 
 static void
-print_extra_live (dstring_t *dstr, flowgraph_t *graph, int level)
+print_flow_vars (dstring_t *dstr, flowgraph_t *graph, int level)
 {
 	int         indent = level * 2 + 2;
 	int         i;
@@ -208,8 +208,9 @@ print_extra_live (dstring_t *dstr, flowgraph_t *graph, int level)
 					 "cellspacing=\"0\">\n", indent + 2, "");
 	for (i = 0; i < graph->func->num_vars; i++) {
 		var = graph->func->vars[i];
-		dasprintf (dstr, "%*s<tr><td>(%d) %s</td></tr>\n", indent + 4, "",
-				   var->number, html_string(operand_string (var->op)));
+		dasprintf (dstr, "%*s<tr><td>(%d) %s %s</td></tr>\n", indent + 4, "",
+				   var->number, html_string(operand_string (var->op)),
+				   set_as_string (var->define));
 	}
 	dasprintf (dstr, "%*s</table>>];\n", indent + 2, "");
 }
@@ -299,7 +300,7 @@ print_flow_edge_statements (dstring_t *dstr, flowgraph_t *graph,
 static flow_dot_t flow_dot_methods[] = {
 	{"",			print_flow_node,			print_flow_edge},
 	{"dag",			print_flow_node_dag,		print_flow_edge_dag},
-	{"live",		print_flow_node_live, print_flow_edge, print_extra_live},
+	{"live",		print_flow_node_live, print_flow_edge, print_flow_vars},
 	{"reaching",	print_flow_node_reaching,	print_flow_edge},
 	{"statements",	print_flow_node_statements,	print_flow_edge_statements},
 };
