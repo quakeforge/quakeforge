@@ -377,6 +377,17 @@ flow_build_vars (function_t *func)
 			set_add (func->global_vars, i);
 	}
 	// create dummy defs for local vars
+	// defined local vars add their address in local space to the number of
+	// statements in the function:
+	//     ([num_statements ... num_statements+localsize])
+	// with a set element for each def used in the local space
+	//
+	// temporary vars add their var number to the size of the local space
+	// before adding the number of statements in the function:
+	//     ([num_statements+localsize ... num_vars])
+	// temporary vars are always accessed as a full var, so only one set
+	// element per temporary var is needed. This can lead to holes in the
+	// temporary var set element space, but it does keep things simple
 	for (i = 0; i < func->num_vars; i++) {
 		int         offset, size;
 		int         j;
