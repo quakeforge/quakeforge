@@ -32,6 +32,8 @@ test_progs_dat=\
 	state.dat \
 	structlive.dat \
 	structptr.dat \
+	swap.dat \
+	triangle.dat \
 	vecinit.dat \
 	while.dat \
 	voidfor.dat
@@ -139,6 +141,20 @@ structptr.dat$(EXEEXT): $(structptr_obj) $(QFCC_DEP)
 structptr.run: Makefile build-run
 	$(srcdir)/build-run $@
 
+swap_dat_SOURCES=swap.r
+swap_obj=$(swap_dat_SOURCES:.r=.qfo)
+swap.dat$(EXEEXT): $(swap_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(swap_obj)
+swap.run: Makefile build-run
+	$(srcdir)/build-run $@
+
+triangle_dat_SOURCES=triangle.r
+triangle_obj=$(triangle_dat_SOURCES:.r=.qfo)
+triangle.dat$(EXEEXT): $(triangle_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(triangle_obj)
+triangle.run: Makefile build-run
+	$(srcdir)/build-run $@ 1 2 3
+
 vecinit_dat_SOURCES=vecinit.r
 vecinit_obj=$(vecinit_dat_SOURCES:.r=.qfo)
 vecinit.dat$(EXEEXT): $(vecinit_obj) $(QFCC_DEP)
@@ -163,4 +179,4 @@ voidfor.run: Makefile build-run
 include ./$(DEPDIR)/*.Qo
 
 EXTRA_DIST= test-bi.h build-run
-CLEANFILES= *.dat *.sym *.qfo *.run
+CLEANFILES= *.dat *.sym *.qfo *.run *.frame
