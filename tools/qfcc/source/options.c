@@ -411,6 +411,8 @@ DecodeArgs (int argc, char **argv)
 							options.block_dot.flow = flag;
 						} else if (!(strcasecmp (temp, "reaching"))) {
 							options.block_dot.reaching = flag;
+						} else if (!(strcasecmp (temp, "statements"))) {
+							options.block_dot.statements = flag;
 						} else if (!(strcasecmp (temp, "live"))) {
 							options.block_dot.live = flag;
 						} else if (!(strcasecmp (temp, "post"))) {
@@ -428,6 +430,7 @@ DecodeArgs (int argc, char **argv)
 					options.block_dot.expr = true;
 					options.block_dot.flow = true;
 					options.block_dot.reaching = true;
+					options.block_dot.statements = true;
 					options.block_dot.live = true;
 					options.block_dot.post = true;
 				}

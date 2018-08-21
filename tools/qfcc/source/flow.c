@@ -1262,6 +1262,8 @@ flow_data_flow (function_t *func)
 	flow_build_statements (func);
 	flow_build_vars (func);
 	graph = flow_build_graph (func);
+	if (options.block_dot.statements)
+		dump_dot ("statements", graph, dump_dot_flow_statements);
 	flow_reaching_defs (graph);
 	if (options.block_dot.reaching)
 		dump_dot ("reaching", graph, dump_dot_flow_reaching);

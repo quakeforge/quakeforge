@@ -77,6 +77,7 @@ typedef struct {
 	qboolean    final;
 	qboolean    dags;
 	qboolean    expr;
+	qboolean    statements;
 	qboolean    reaching;
 	qboolean    live;
 	qboolean    flow;
