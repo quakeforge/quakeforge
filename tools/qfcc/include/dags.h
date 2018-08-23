@@ -60,7 +60,7 @@ typedef struct dagnode_s {
 	struct set_s *parents;		///< empty if root node
 	int         cost;			///< cost of this node in temp vars
 	unsigned    killed:1;		///< node is unavailable for cse
-	st_type_t   type;			///< type of node (st_node = leaf)
+	st_type_t   type;			///< type of node (st_none = leaf)
 	daglabel_t *label;			///< ident/const if leaf node, or operator
 	etype_t     tl;
 	struct operand_s *value;	///< operand holding the value of this node
