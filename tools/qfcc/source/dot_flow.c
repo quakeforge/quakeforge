@@ -52,10 +52,14 @@
 #include "strpool.h"
 
 typedef struct {
+	void (*node) (dstring_t *, flowgraph_t *, flownode_t *, int);
+	void (*edge) (dstring_t *, flowgraph_t *, flowedge_t *, int);
+	void (*extra) (dstring_t *, flowgraph_t *, int);
+} flow_print_t;
+
+typedef struct {
 	const char *type;
-	void (*print_node) (dstring_t *, flowgraph_t *, flownode_t *, int);
-	void (*print_edge) (dstring_t *, flowgraph_t *, flowedge_t *, int);
-	void (*print_extra) (dstring_t *, flowgraph_t *, int);
+	flow_print_t *print;
 } flow_dot_t;
 
 static void
@@ -177,23 +181,17 @@ print_flow_node_live (dstring_t *dstr, flowgraph_t *graph, flownode_t *node,
 					  int level)
 {
 	int         indent = level * 2 + 2;
-	int         live;
 	set_t      *use = node->live_vars.use;
 	set_t      *def = node->live_vars.def;
 	set_t      *in = node->live_vars.in;
 	set_t      *out = node->live_vars.out;
 
-	live = node->live_vars.out && !set_is_empty (node->live_vars.out);
-
-	if (live) {
-		dasprintf (dstr, "%*sfn_%p [label=\"", indent, "", node);
-		dasprintf (dstr, "use: %s\\n", set_as_string (use));
-		dasprintf (dstr, "def: %s\\n", set_as_string (def));
-		dasprintf (dstr, "in: %s\\n", set_as_string (in));
-		dasprintf (dstr, "out: %s\"];\n", set_as_string (out));
-	} else {
-		print_flow_node (dstr, graph, node, level);
-	}
+	dasprintf (dstr, "%*sfn_%p [label=\"", indent, "", node);
+	dasprintf (dstr, "use: %s\\n", set_as_string (use));
+	dasprintf (dstr, "def: %s\\n", set_as_string (def));
+	dasprintf (dstr, "in: %s\\n", set_as_string (in));
+	dasprintf (dstr, "out: %s", set_as_string (out));
+	dasprintf (dstr, "\"];\n");
 }
 
 static void
@@ -297,12 +295,34 @@ print_flow_edge_statements (dstring_t *dstr, flowgraph_t *graph,
 	dasprintf (dstr, "];\n");
 }
 
+static flow_print_t null_print[] = {
+	{	print_flow_node,	print_flow_edge },
+	{ 0 }
+};
+static flow_print_t dag_print[] = {
+	{	print_flow_node_dag,	print_flow_edge_dag},
+	{ 0 }
+};
+static flow_print_t live_print[] = {
+	{	print_flow_node_live,	print_flow_edge, 	print_flow_vars},
+	{	print_flow_node_statements,	print_flow_edge_statements},
+	{ 0 }
+};
+static flow_print_t reaching_print[] = {
+	{	print_flow_node_reaching,	print_flow_edge},
+	{ 0 }
+};
+static flow_print_t statements_print[] = {
+	{	print_flow_node_statements,	print_flow_edge_statements},
+	{ 0 }
+};
+
 static flow_dot_t flow_dot_methods[] = {
-	{"",			print_flow_node,			print_flow_edge},
-	{"dag",			print_flow_node_dag,		print_flow_edge_dag},
-	{"live",		print_flow_node_live, print_flow_edge, print_flow_vars},
-	{"reaching",	print_flow_node_reaching,	print_flow_edge},
-	{"statements",	print_flow_node_statements,	print_flow_edge_statements},
+	{"",			null_print},
+	{"dag",			dag_print},
+	{"live",		live_print},
+	{"reaching",	reaching_print},
+	{"statements",	statements_print},
 };
 
 static void
@@ -316,17 +336,19 @@ print_flowgraph (flow_dot_t *method, flowgraph_t *graph, const char *filename)
 	dasprintf (dstr, "  clusterrank=local;\n");
 	dasprintf (dstr, "  rankdir=TB;\n");
 	dasprintf (dstr, "  compound=true;\n");
-	for (i = 0; i < graph->num_nodes; i++) {
-		method->print_node (dstr, graph, graph->nodes[i], 0);
+	for (flow_print_t *print = method->print; print->node; print++) {
+		for (i = 0; i < graph->num_nodes; i++) {
+			print->node (dstr, graph, graph->nodes[i], 0);
+		}
+		for (i = 0; i < graph->num_edges; i++) {
+			if ((int) graph->edges[i].head >= graph->num_nodes
+				|| (int) graph->edges[i].tail >= graph->num_nodes)
+				continue;		// dummy node
+			print->edge (dstr, graph, &graph->edges[i], 0);
+		}
+		if (print->extra)
+			print->extra (dstr, graph, 0);
 	}
-	for (i = 0; i < graph->num_edges; i++) {
-		if ((int) graph->edges[i].head >= graph->num_nodes
-			|| (int) graph->edges[i].tail >= graph->num_nodes)
-			continue;		// dummy node
-		method->print_edge (dstr, graph, &graph->edges[i], 0);
-	}
-	if (method->print_extra)
-		method->print_extra (dstr, graph, 0);
 	dasprintf (dstr, "}\n");
 
 	if (filename) {
