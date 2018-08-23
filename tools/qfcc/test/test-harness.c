@@ -242,11 +242,11 @@ main (int argc, char **argv)
 
 	PR_PushFrame (&pr);
 	if (argc > 2)
-		pr_argc = argc - 1;
+		pr_argc = argc;
 	pr_argv = PR_Zone_Malloc (&pr, (pr_argc + 1) * 4);
 	pr_argv[0] = PR_SetTempString (&pr, name);
 	for (i = 1; i < pr_argc; i++)
-		pr_argv[i] = PR_SetTempString (&pr, argv[1 + i]);
+		pr_argv[i] = PR_SetTempString (&pr, argv[i]);
 	pr_argv[i] = 0;
 
 	if ((dfunc = PR_FindFunction (&pr, ".main"))
