@@ -144,7 +144,7 @@ operand_string (operand_t *op)
 	return ("??");
 }
 
-static void
+void
 print_operand (operand_t *op)
 {
 	switch (op->op_type) {

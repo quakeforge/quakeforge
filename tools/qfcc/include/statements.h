@@ -133,6 +133,7 @@ void sblock_add_statement (sblock_t *sblock, statement_t *statement);
 sblock_t *make_statements (struct expr_s *expr);
 void statements_count_temps (sblock_t *sblock);
 
+void print_operand (operand_t *op);
 void print_statement (statement_t *s);
 void dump_dot_sblock (void *data, const char *fname);
 void dot_sblock (struct dstring_s *dstr, sblock_t *sblock, int blockno);
