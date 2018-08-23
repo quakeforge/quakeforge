@@ -153,7 +153,7 @@ triangle_obj=$(triangle_dat_SOURCES:.r=.qfo)
 triangle.dat$(EXEEXT): $(triangle_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(triangle_obj)
 triangle.run: Makefile build-run
-	$(srcdir)/build-run $@ 1 2 3
+	$(srcdir)/build-run $@ 100000 100000 1.00005 50002.4961
 
 vecinit_dat_SOURCES=vecinit.r
 vecinit_obj=$(vecinit_dat_SOURCES:.r=.qfo)

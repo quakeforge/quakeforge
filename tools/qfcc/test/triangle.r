@@ -16,17 +16,18 @@ kahan (float a, float b, float c)
 	if (a < b) { t = a; a = b; b = t; }
 	if (b < c) { t = b; b = c; c = t; }
 	if (a < b) { t = a; a = b; b = t; }
-	printf ("%f %f %f\n", a, b, c);
-	return sqrt ((a+(b+c))*(c-(a-b))*(c+(a-b))*(a+(b-c)))/4;
+	return sqrt ((a + (b + c))*(c - (a - b))*(c + (a - b))*(a + (b - c)))/4;
 }
 
 int
 main (int argc, string *argv)
 {
-	float a = stof(argv[1]);
-	float b = stof(argv[2]);
-	float c = stof(argv[3]);
-	printf ("%.9g %.9g %.9g\n", a, b, c);
-	printf ("%.9g %.9g\n", heron (a, b, c), kahan (a, b, c));
-	return 0;
+	float a = stof (argv[1]);
+	float b = stof (argv[2]);
+	float c = stof (argv[3]);
+	float expt = stof (argv[4]);
+	float h = heron (a, b, c);
+	float k = kahan (a, b, c);
+	printf ("%.9g %.9g %d\n", h, k, k == expt);
+	return k != expt;
 }
