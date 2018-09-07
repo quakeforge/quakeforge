@@ -607,7 +607,7 @@ qfo_delete (qfo_t *qfo)
 	} else {
 		int         i;
 		for (i = 0; i < qfo->num_spaces; i++)
-			free (qfo->spaces->d.data);
+			free (qfo->spaces[i].d.data);
 		free (qfo->relocs);
 		free (qfo->defs);
 		free (qfo->funcs);

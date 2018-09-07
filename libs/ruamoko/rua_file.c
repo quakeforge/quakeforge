@@ -166,6 +166,7 @@ bi_File_Open (progs_t *pr)
 	if ((R_INT (pr) = QFile_AllocHandle (pr, file)))
 		return;
 	Qclose (file);
+	return;
 error:
 	free (path);
 	R_INT (pr) = 0;
