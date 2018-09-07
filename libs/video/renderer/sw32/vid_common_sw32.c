@@ -150,8 +150,8 @@ VID_MakeColormap16 (void *outcolormap, byte *pal)
 void
 VID_MakeColormaps (void)
 {
-	vid.colormap16 = malloc (256*VID_GRADES * sizeof (short));
-	vid.colormap32 = malloc (256*VID_GRADES * sizeof (int));
+	vid.colormap16 = malloc (256*VID_GRADES * sizeof (unsigned short));
+	vid.colormap32 = malloc (256*VID_GRADES * sizeof (unsigned int));
 	SYS_CHECKMEM (vid.colormap16 && vid.colormap32);
 	VID_MakeColormap16(vid.colormap16, vid.palette);
 	VID_MakeColormap32(vid.colormap32, vid.palette);

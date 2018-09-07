@@ -121,7 +121,7 @@ build_cpp_args (const char *in_name, const char *out_name)
 
 	if (cpp_argv)
 		free (cpp_argv);
-	cpp_argv = (const char **)malloc ((cpp_argc + 1) * sizeof (char**));
+	cpp_argv = (const char **)malloc ((cpp_argc + 1) * sizeof (char *));
 	for (arg = cpp_argv, cpp_arg = cpp_arg_list;
 		 cpp_arg;
 		 cpp_arg = cpp_arg->next) {

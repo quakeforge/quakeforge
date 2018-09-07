@@ -102,7 +102,7 @@ filelist_print (filelist_t *filelist)
 	if (filelist->count) {
 		qsort (filelist->list, filelist->count, sizeof (char *), filelist_cmp);
 
-		list = malloc ((filelist->count + 1) * sizeof (char **));
+		list = malloc ((filelist->count + 1) * sizeof (char *));
 		list[filelist->count] = 0;
 		for (i = 0; i < filelist->count; i++)
 			list[i] = filelist->list[i];

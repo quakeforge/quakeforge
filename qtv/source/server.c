@@ -493,7 +493,7 @@ sv_list_f (void)
 		qtv_printf ("no servers\n");
 		return;
 	}
-	list = malloc (count * sizeof (server_t **));
+	list = malloc (count * sizeof (server_t *));
 	for (l = &servers, count = 0; *l; l = &(*l)->next, count++)
 		list[count] = *l;
 	qsort (list, count, sizeof (*list), server_compare);

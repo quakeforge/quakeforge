@@ -161,7 +161,7 @@ read_adtl (dstring_t *list_buf, QFile *f, int len)
 				chunk = &label->ck;
 				break;
 			default:
-				data = malloc (sizeof (data));
+				data = malloc (sizeof (riff_data_t));
 				data->ck = ck;
 				data->data = read_data (f, ck.len);
 				chunk = &data->ck;

@@ -213,7 +213,7 @@ new_case_node (expr_t *low, expr_t *high)
 		if (!is_integer_val (low))
 			internal_error (low, "switch");
 		size = expr_integer (high) - expr_integer (low) + 1;
-		node->labels = calloc (size, sizeof (case_node_t *));
+		node->labels = calloc (size, sizeof (expr_t *));
 	}
 	node->left = node->right = 0;
 	return node;

@@ -343,7 +343,7 @@ flow_build_vars (function_t *func)
 	if (!num_vars)
 		return;
 
-	func->vars = malloc (num_vars * sizeof (daglabel_t *));
+	func->vars = malloc (num_vars * sizeof (flowvar_t *));
 
 	stuse = set_new ();
 	stdef = set_new ();

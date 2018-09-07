@@ -108,7 +108,7 @@ source_path_f (cvar_t *var)
 	for (i = 2, s = source_path_string; *s; s++)
 		if (*s == ';')
 			i++;
-	source_paths = malloc (i * sizeof (char **));
+	source_paths = malloc (i * sizeof (char *));
 	source_paths[0] = source_path_string;
 	for (i = 1, s = source_path_string; *s; s++)
 		if (*s == ';') {

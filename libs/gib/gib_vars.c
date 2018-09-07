@@ -51,7 +51,7 @@ GIB_Var_New (const char *key)
 {
 	gib_var_t  *new = calloc (1, sizeof (gib_var_t));
 
-	new->array = calloc (1, sizeof (dstring_t *));
+	new->array = calloc (1, sizeof (struct gib_varray_s));
 	new->key = strdup (key);
 	return new;
 }

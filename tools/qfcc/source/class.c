@@ -1397,7 +1397,7 @@ add_protocol (protocollist_t *protocollist, const char *name)
 	}
 	protocollist->count++;
 	protocollist->list = realloc (protocollist->list,
-								  sizeof (protocol_t) * protocollist->count);
+								  sizeof (protocol_t *) * protocollist->count);
 	protocollist->list[protocollist->count - 1] = protocol;
 	return protocollist;
 }

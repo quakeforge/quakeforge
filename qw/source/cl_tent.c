@@ -181,7 +181,7 @@ new_tent_object (void)
 	if (!tent_objects) {
 		int         i;
 
-		tent_objects = malloc (TEMP_BATCH * sizeof (tent_t));
+		tent_objects = malloc (TEMP_BATCH * sizeof (tent_obj_t));
 		for (i = 0; i < TEMP_BATCH - 1; i++)
 			tent_objects[i].next = &tent_objects[i + 1];
 		tent_objects[i].next = 0;
