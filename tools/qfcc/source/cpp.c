@@ -55,6 +55,7 @@
 #include "QF/dstring.h"
 
 #include "cpp.h"
+#include "diagnostic.h"
 #include "options.h"
 
 typedef struct cpp_arg_s {
@@ -205,6 +206,9 @@ preprocess_file (const char *filename, const char *ext)
 	if (cpp_name) {
 		intermediate_file (tempname, filename, ext ? ext : "p", 0);
 		build_cpp_args (filename, tempname->str);
+		if (!cpp_argv[0]) {
+			internal_error(0, "cpp_argv[0] is null");
+		}
 
 #ifdef _WIN32
 		if (!options.save_temps && !options.preprocess_only)
