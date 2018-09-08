@@ -635,7 +635,7 @@ Parse_Server_Packet (int has_sequence)
 					break;
 				case svc_playerinfo:
 					Net_LogPrintf ("\n\tPlayer: %d", MSG_ReadByte (&packet));
-					mask2 = mask1 = MSG_ReadShort (&packet);
+					mask1 = MSG_ReadShort (&packet);
 					Net_LogPrintf (" Mask1: %d", mask1);
 #if 1
 					Net_LogPrintf (" Origin:");

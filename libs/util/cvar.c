@@ -356,8 +356,8 @@ set_cvar (const char *cmd, int orflags)
 			Cvar_SetFlags (var, var->flags | orflags);
 		}
 	} else {
-		var = Cvar_Get (var_name, value, CVAR_USER_CREATED | orflags, NULL,
-						USER_CVAR);
+		Cvar_Get (var_name, value, CVAR_USER_CREATED | orflags, NULL,
+				  USER_CVAR);
 	}
 }
 

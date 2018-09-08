@@ -97,7 +97,6 @@ gl_R_DrawIQMModel (entity_t *ent)
 	iqmframe_t *frame;
 	int         i;
 
-	model = ent->model;
 	blend = R_IQMGetLerpedFrames (ent, iqm);
 	frame = R_IQMBlendPalette (iqm, ent->pose1, ent->pose2, blend, 0,
 							   gl->blend_palette, gl->palette_size);

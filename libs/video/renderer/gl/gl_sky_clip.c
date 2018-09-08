@@ -370,7 +370,6 @@ process_corners (struct box_def *box)
 	for (i = 0; i < 6; i++) {
 		if (max_visit < box->face_visits[i]) {
 			max_visit = box->face_visits[i];
-			center = i;
 		}
 	}
 

@@ -156,7 +156,6 @@ Team_ParseSay (dstring_t *buf, const char *s)
 			case 'S':
 				bracket = 0;
 				t1 = skin->string;
-				t1 = "FIXME";
 				break;
 			case 'd':
 				bracket = 0;
@@ -475,7 +474,6 @@ Team_ParseChat (const char *string)
 	if (!cl_freply->value)
 		return;
 
-	s = strchr (string, ':');
 	if (!(s = strchr (string, ':')))
 		return;
 	s++;

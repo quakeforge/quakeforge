@@ -119,7 +119,6 @@ SL_Add (server_entry_t *start, const char *ip, const char *desc)
 {
 	server_entry_t *p;
 
-	p = start;
 	if (!start) {						// Nothing at beginning of list,
 										// create it
 		start = calloc (1, sizeof (server_entry_t));

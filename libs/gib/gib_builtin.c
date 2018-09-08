@@ -236,8 +236,8 @@ GIB_Local_f (void)
 			for (i = 3; i < GIB_Argc(); i++)
 				GIB_Return (GIB_Argv(i));
 	} else for (i = 1; i < GIB_Argc(); i++)
-		var = GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->locals, &zero,
-								 GIB_Argv (i), &index, true);
+		GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->locals, &zero,
+							 GIB_Argv (i), &index, true);
 }
 
 
@@ -261,8 +261,8 @@ GIB_Shared_f (void)
 			for (i = 3; i < GIB_Argc(); i++)
 				GIB_Return (GIB_Argv(i));
 	} else for (i = 1; i < GIB_Argc(); i++)
-		var = GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->globals, &zero,
-								 GIB_Argv (i), &index, true);
+		GIB_Var_Get_Complex (&GIB_DATA (cbuf_active)->globals, &zero,
+							 GIB_Argv (i), &index, true);
 }
 
 static void

@@ -558,7 +558,7 @@ emit_value (ex_value_t *value, def_t *def)
 
 	memcpy (D_POINTER (void, cn), &val.v, 4 * type_size (type));
 
-	imm = make_def_imm (cn, tab, &val);
+	make_def_imm (cn, tab, &val);
 
 	return cn;
 }

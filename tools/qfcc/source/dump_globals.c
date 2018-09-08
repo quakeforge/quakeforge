@@ -202,8 +202,6 @@ dump_functions (progs_t *pr)
 
 		name = PR_GetString (pr, func->s_name);
 
-		comment = "";
-
 		start = func->first_statement;
 		if (start > 0)
 			comment = va (" @ %x", start);

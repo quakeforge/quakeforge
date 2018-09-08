@@ -74,7 +74,6 @@ TryMerge (const face_t *f1, const face_t *f2)
 		return NULL;
 
 	p1 = p2 = NULL;
-	j = 0;
 
 	// find a common edge
 	for (i = 0; i < f1p->numpoints; i++) {

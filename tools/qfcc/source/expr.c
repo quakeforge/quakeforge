@@ -1926,13 +1926,17 @@ return_expr (function_t *f, expr_t *e)
 				if (options.warnings.traditional)
 					warning (e,
 							 "return from non-void function without a value");
+				// force a nil return value in case qf code is being generated
 				e = new_nil_expr ();
 			} else {
 				e = error (e, "return from non-void function without a value");
 				return e;
 			}
 		}
-		return new_unary_expr ('r', 0);
+		// the traditional check above may have set e
+		if (!e) {
+			return new_unary_expr ('r', 0);
+		}
 	}
 
 	t = get_type (e);
@@ -2823,7 +2827,6 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 			return receiver;
 		receiver = cast_expr (&type_id, receiver);	//FIXME better way?
 		class = extract_class (current_class);
-		rec_type = class->type;
 	} else {
 		if (receiver->type == ex_symbol) {
 			if (strcmp (receiver->e.symbol->name, "self") == 0)

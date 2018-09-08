@@ -1050,7 +1050,6 @@ flow_find_dominators (flowgraph_t *graph)
 		changed = 0;
 		for (i = 1; i < graph->num_nodes; i++) {
 			node = graph->nodes[i];
-			pred = set_first (node->predecessors);
 			set_empty (work);
 			for (pred = set_first (node->predecessors); pred;
 				 pred = set_next (pred))

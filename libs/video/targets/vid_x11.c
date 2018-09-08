@@ -536,8 +536,6 @@ x11_choose_visual (void)
 	int         num_visuals;
 	int         template_mask;
 
-	template_mask = 0;
-
 	// specify a visual id
 	if ((pnum = COM_CheckParm ("-visualid"))) {
 		if (pnum >= com_argc - 1)

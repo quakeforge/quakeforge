@@ -841,7 +841,6 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 		(*fi)->data.string_var = l;
 
 		(*fi)->next = new_fmt_item ();
-		fi = &(*fi)->next;
 	}
 
 	if (fmt_count != count) {

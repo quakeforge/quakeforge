@@ -234,11 +234,10 @@ GIB_Function_Prepare_Args_D (cbuf_t * cbuf, dstring_t **args, unsigned int
 	g_fpad_args = args;
 	g_fpad_argc = argc;
 
-	i = 1; llist_iterate (arglist, LLIST_ICAST (fpad_iterate));
+	llist_iterate (arglist, LLIST_ICAST (fpad_iterate));
 
-	var =
-		GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals, &g_fpad_zero, argss,
-				&g_fpad_ind, true);
+	var = GIB_Var_Get_Complex (&GIB_DATA (cbuf)->locals, &g_fpad_zero, argss,
+							   &g_fpad_ind, true);
 	var->array = realloc (var->array, sizeof (struct gib_varray_s) * argc);
 	memset (var->array + 1, 0, (argc - 1) * sizeof (struct gib_varray_s));
 	var->size = argc;

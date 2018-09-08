@@ -184,6 +184,10 @@ read_demopacket (void)
 	VectorCopy (cl.mviewangles[0], cl.mviewangles[1]);
 	for (i = 0; i < 3; i++) {
 		r = Qread (cls.demofile, &f, 4);
+		if (r != 4) {
+			CL_StopPlayback ();
+			return 0;
+		}
 		cl.mviewangles[0][i] = LittleFloat (f);
 	}
 	r = Qread (cls.demofile, net_message->message->data,

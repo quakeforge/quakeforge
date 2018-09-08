@@ -1209,7 +1209,7 @@ qfs_file_sort (char **os1, char **os2)
 	s2 = *os2;
 
 	while (1) {
-		in1 = in2 = n1 = n2 = 0;
+		n1 = n2 = 0;
 
 		if ((in1 = isdigit ((byte) *s1)))
 			n1 = strtol (s1, &s1, 10);

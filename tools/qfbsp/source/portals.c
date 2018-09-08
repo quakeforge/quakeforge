@@ -280,7 +280,6 @@ CutNodePortals_r (node_t *node)
 	/// cutting plane and clipping it by all of the planes from the other
 	/// portals on the node.
 	w = BaseWindingForPlane (plane);
-	side = 0;
 	for (p = node->portals; p; p = p->next[side]) {
 		clipplane = planes[p->planenum];	// copy the plane
 		if (p->nodes[0] == node)

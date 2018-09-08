@@ -138,7 +138,6 @@ read_adtl (dstring_t *list_buf, QFile *f, int len)
 	//FIXME list = (riff_list_t *) list_buf->str;
 	while (len) {
 		if (!Rread (f, &ck, sizeof (ck))) {
-			len = 0;
 			break;
 		}
 		len -= sizeof (ck);
@@ -392,7 +391,6 @@ riff_read (QFile *f)
 				break;
 		}
 		dstring_append (riff_buf, (char *)&chunk, sizeof (chunk));
-		riff = (riff_list_t *) riff_buf->str;
 		chunk = 0;
 	}
 bail:

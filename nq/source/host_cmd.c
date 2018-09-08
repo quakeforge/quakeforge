@@ -692,7 +692,6 @@ Host_Loadgame_f (void)
 	ED_InitGlobals (&sv_pr_state, PL_ObjectForKey (game, "globals"));
 
 	list = PL_ObjectForKey (game, "entities");
-	entnum = 0;
 	count = PL_A_NumObjects (list);
 	if (count > sv.max_edicts)
 		Host_Error ("too many entities in saved game. adjust max_edicts\n");
