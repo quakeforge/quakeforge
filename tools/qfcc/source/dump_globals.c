@@ -257,8 +257,8 @@ void
 qfo_globals (qfo_t *qfo)
 {
 	qfo_def_t  *def;
-	int         i;
-	int         space;
+	unsigned    i;
+	unsigned    space;
 	int         count = 0;
 
 	for (space = 0; space < qfo->num_spaces; space++) {
@@ -282,7 +282,7 @@ qfo_relocs (qfo_t *qfo)
 	qfo_reloc_t  *reloc;
 	qfo_def_t    *def;
 	qfo_func_t   *func;
-	int           i;
+	unsigned      i;
 
 	for (i = 0; i < qfo->num_relocs; i++) {
 		reloc = qfo->relocs + i;
@@ -385,8 +385,8 @@ qfo_functions (qfo_t *qfo)
 {
 	qfo_def_t  *def;
 	qfo_func_t *func;
-	int         i, d;
-	int         space;
+	unsigned    i, d;
+	unsigned    space;
 
 	for (i = 0; i < qfo->num_funcs; i++) {
 		func = &qfo->funcs[i];

@@ -147,7 +147,7 @@ static qfo_t *work;
 static int work_base[qfo_num_spaces];
 static int work_func_base;
 static defref_t **work_defrefs;
-static int num_work_defrefs;
+static unsigned num_work_defrefs;
 static strpool_t *work_strings;
 static codespace_t *work_code;
 static defspace_t *work_near_data;
@@ -436,7 +436,7 @@ adjust_reloc_offset (qfo_reloc_t *reloc)
 static int
 add_relocs (qfo_t *qfo, int start, int count, int target)
 {
-	int         size;
+	unsigned    size;
 	qfo_reloc_t *ireloc;
 	qfo_reloc_t *oreloc;
 
@@ -448,7 +448,7 @@ add_relocs (qfo_t *qfo, int start, int count, int target)
 		*oreloc = *ireloc;
 		ireloc->type = -1;
 		ireloc->offset = work->num_relocs++;
-		if (oreloc->space < 0 || oreloc->space >= qfo->num_spaces) {
+		if (oreloc->space >= qfo->num_spaces) {
 			linker_error ("bad reloc space: %d (%d)", oreloc->space,
 						  qfo->num_spaces);
 			oreloc->type = rel_none;
@@ -806,7 +806,7 @@ update_type_space_reloc (qfo_mspace_t *space, qfo_reloc_t *reloc)
 static int
 process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
-	int         i;
+	unsigned    i;
 
 	if (pass != 0)
 		return 0;
@@ -860,7 +860,7 @@ process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 static void
 process_funcs (qfo_t *qfo)
 {
-	int         size;
+	unsigned    size;
 	qfo_func_t *func;
 	qfot_type_t *type;
 
@@ -888,7 +888,7 @@ process_funcs (qfo_t *qfo)
 static void
 process_lines (qfo_t *qfo)
 {
-	int         size;
+	unsigned    size;
 	pr_lineno_t *line;
 
 	if (!qfo->num_lines)
@@ -920,7 +920,7 @@ process_loose_relocs (qfo_t *qfo)
 			qfo->num_loose_relocs * sizeof (qfo_reloc_t));
 	while (work_num_loose_relocs < size) {
 		reloc = work_loose_relocs + work_num_loose_relocs++;
-		if (reloc->space < 0 || reloc->space >= qfo->num_spaces) {
+		if (reloc->space >= qfo->num_spaces) {
 			linker_error ("bad reloc space");
 			reloc->type = rel_none;
 			continue;
@@ -954,7 +954,7 @@ linker_add_qfo (qfo_t *qfo)
 		process_entity_space,
 		process_type_space,
 	};
-	int         i;
+	unsigned    i;
 	int         pass;
 	qfo_mspace_t *space;
 
@@ -1027,7 +1027,8 @@ linker_add_lib (const char *libname)
 	path_t      start = {path_head, "."};
 	path_t     *path = &start;
 	const char *path_name = 0;
-	int         i, j;
+	int         i;
+	unsigned    j;
 	int         did_something;
 
 	if (strncmp (libname, "-l", 2) == 0) {
@@ -1101,7 +1102,7 @@ static __attribute__ ((used)) void
 undefined_def (qfo_def_t *def)
 {
 	qfo_def_t   line_def;
-	pr_int_t    i;
+	pr_uint_t   i;
 	qfo_reloc_t *reloc = work->relocs + def->relocs;
 
 	for (i = 0; i < def->num_relocs; i++, reloc++) {
@@ -1113,17 +1114,20 @@ undefined_def (qfo_def_t *def)
 			 || reloc->type == rel_op_c_def_ofs)
 			&& work->lines) {
 			qfo_func_t *func = work->funcs;
-			qfo_func_t *best = func;
-			pr_int_t    best_dist = reloc->offset - func->code;
+			qfo_func_t *best = 0;
+			pr_uint_t    best_dist;
 			pr_lineno_t *line;
 
-			while (best_dist && func - work->funcs < work->num_funcs) {
-				if (func->code <= reloc->offset) {
-					if (best_dist < 0
-						|| reloc->offset - func->code < best_dist) {
-						best = func;
-						best_dist = reloc->offset - func->code;
-					}
+			while (func - work->funcs < work->num_funcs) {
+				if (func->code < 0) {
+					continue;
+				}
+				if ((pr_uint_t) func->code > reloc->offset) {
+					continue;
+				}
+				if (!best || reloc->offset - func->code < best_dist) {
+					best = func;
+					best_dist = reloc->offset - func->code;
 				}
 				func++;
 			}
@@ -1195,7 +1199,7 @@ build_qfo (void)
 {
 	qfo_t      *qfo;
 	int         size;
-	int         i, j;
+	unsigned    i, j;
 	qfo_reloc_t *reloc;
 	qfo_def_t **defs;
 
@@ -1288,6 +1292,11 @@ build_qfo (void)
 			continue;
 		if (reloc->type != rel_def_def)
 			continue;
+		if (reloc->target >= qfo->num_defs) {
+			linker_error ("Invalid reloc target def %d / %d.\n",
+						  reloc->target, qfo->num_defs);
+			continue;
+		}
 		def = qfo->defs + reloc->target;
 		QFO_INT (qfo, reloc->space, reloc->offset) = def->offset;
 	}

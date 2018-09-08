@@ -83,11 +83,11 @@ typedef enum qfos_type_e {
 */
 typedef struct qfo_space_s {
 	pr_int_t    type;			///< code, string, data, entity...
-	pr_int_t    defs;			///< index of first def
-	pr_int_t    num_defs;		///< zero for code or string spaces
-	pr_int_t    data;			///< byte offset in qfo
+	pr_uint_t   defs;			///< index of first def
+	pr_uint_t   num_defs;		///< zero for code or string spaces
+	pr_uint_t   data;			///< byte offset in qfo
 	pr_uint_t   data_size;		///< in elements. zero for entity spaces
-	pr_int_t    id;
+	pr_uint_t   id;
 	pr_int_t    reserved[2];
 } qfo_space_t;
 
@@ -98,13 +98,13 @@ typedef struct qfo_def_s {
 	string_t    name;			///< def name
 	pointer_t   offset;			///< def offset (address)
 
-	pr_int_t    relocs;			///< index of first reloc record
-	pr_int_t    num_relocs;		///< number of reloc records
+	pr_uint_t   relocs;			///< index of first reloc record
+	pr_uint_t   num_relocs;		///< number of reloc records
 
 	pr_uint_t   flags;			///< \ref qfcc_qfo_QFOD "QFOD flags"
 
 	string_t    file;			///< source file name
-	pr_int_t    line;			///< source line number
+	pr_uint_t   line;			///< source line number
 } qfo_def_t;
 //@}
 
@@ -180,7 +180,7 @@ typedef struct qfo_func_s {
 	string_t    name;			///< function name
 	pointer_t   type;			///< function type (in type data space)
 	string_t    file;			///< source file name
-	pr_int_t    line;			///< source line number
+	pr_uint_t   line;			///< source line number
 
 	/** \name Function code location.
 		If #code is negative, then the function is a VM builtin function.
@@ -191,22 +191,22 @@ typedef struct qfo_func_s {
 	*/
 	pr_int_t    code;
 
-	pr_int_t    def;			///< def that references this function. Index
+	pr_uint_t   def;			///< def that references this function. Index
 								///< to ::qfo_def_t. The data word pointed to
 								///< by the def stores the index of this
 								///< function.
 
-	pr_int_t    locals_space;	///< space holding the function's local data
+	pr_uint_t   locals_space;	///< space holding the function's local data
 
-	pr_int_t    line_info;		///< Index to first ::pr_lineno_t line record.
+	pr_uint_t   line_info;		///< Index to first ::pr_lineno_t line record.
 								///< Zero if there are no records.
 
 	/** \name Function relocation records.
 		XXX not sure how these work
 	*/
 	//@{
-	pr_int_t    relocs;			///< Index to first ::qfo_reloc_t reloc record.
-	pr_int_t    num_relocs;		///< Number of reloc records.
+	pr_uint_t   relocs;			///< Index to first ::qfo_reloc_t reloc record.
+	pr_uint_t   num_relocs;		///< Number of reloc records.
 	//@}
 	pr_int_t    reserved[2];
 } qfo_func_t;
@@ -237,8 +237,8 @@ typedef struct qfo_func_s {
 	the referenced field def.
 */
 typedef struct qfo_reloc_s {
-	pr_int_t    space;			///< index of space holding data to be adjusted
-	pr_int_t    offset;			///< offset of the relocation
+	pr_uint_t   space;			///< index of space holding data to be adjusted
+	pr_uint_t   offset;			///< offset of the relocation
 	pr_int_t    type;			///< type of the relocation (::reloc_type)
 	pr_uint_t   target;			///< def/func/etc this relocation is for
 } qfo_reloc_t;
@@ -248,14 +248,14 @@ typedef struct qfo_reloc_s {
 typedef struct qfo_mspace_s {
 	qfos_type_t type;
 	qfo_def_t  *defs;
-	int         num_defs;
+	unsigned    num_defs;
 	union {
 		dstatement_t *code;
 		pr_type_t  *data;
 		char       *strings;
 	}           d;
 	unsigned    data_size;
-	int         id;
+	unsigned    id;
 } qfo_mspace_t;
 
 /** In-memory representation of a QFO object file.
@@ -263,16 +263,16 @@ typedef struct qfo_mspace_s {
 typedef struct qfo_s {
 	void       *data;			///< data buffer holding qfo file when read
 	qfo_mspace_t *spaces;
-	int         num_spaces;
+	unsigned    num_spaces;
 	qfo_reloc_t *relocs;
-	int         num_relocs;			// includes num_loose_relocs
+	unsigned    num_relocs;			// includes num_loose_relocs
 	qfo_def_t  *defs;
-	int         num_defs;
+	unsigned    num_defs;
 	qfo_func_t *funcs;
-	int         num_funcs;
+	unsigned    num_funcs;
 	pr_lineno_t *lines;
-	int         num_lines;
-	int         num_loose_relocs;	// included in num_relocs
+	unsigned    num_lines;
+	unsigned    num_loose_relocs;	// included in num_relocs
 } qfo_t;
 
 enum {

@@ -394,9 +394,9 @@ qfo_byteswap_space (void *space, int size, qfos_type_t type)
 int
 qfo_write (qfo_t *qfo, const char *filename)
 {
-	int         size;
+	unsigned    size;
 	int         space_offset;
-	int         i;
+	unsigned    i;
 	byte       *data;
 	qfo_header_t *header;
 	qfo_space_t *spaces;
@@ -499,7 +499,7 @@ qfo_read (QFile *file)
 	qfo_header_t *header;
 	qfo_space_t *spaces;
 	qfo_t      *qfo;
-	int         i;
+	unsigned    i;
 
 	size = Qfilesize (file);
 	data = malloc (size);
@@ -605,7 +605,7 @@ qfo_delete (qfo_t *qfo)
 	if (qfo->data) {
 		free (qfo->data);
 	} else {
-		int         i;
+		unsigned    i;
 		for (i = 0; i < qfo->num_spaces; i++)
 			free (qfo->spaces[i].d.data);
 		free (qfo->relocs);
@@ -715,7 +715,7 @@ convert_def (qfo_t *qfo, const qfo_def_t *def, ddef_t *ddef)
 static void
 qfo_relocate_refs (qfo_t *qfo)
 {
-	int         i;
+	unsigned    i;
 	qfo_reloc_t *reloc;
 
 	for (i = 0, reloc = qfo->relocs; i < qfo->num_relocs; i++, reloc++) {
@@ -788,10 +788,10 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	pr_type_t  *type_data;
 	dprograms_t *progs;
 	qfo_def_t  *types_def = 0;
-	int         i, j;
+	unsigned    i, j;
 	unsigned    locals_size = 0;
 	int         locals_start;
-	int         big_locals = 0;
+	unsigned    big_locals = 0;
 	int         big_func = 0;
 
 	*size = RUP (sizeof (dprograms_t), 16);
@@ -976,7 +976,7 @@ pr_debug_header_t *
 qfo_to_sym (qfo_t *qfo, int *size)
 {
 	pr_debug_header_t *sym;
-	int         i, j;
+	unsigned    i, j;
 	pr_auxfunction_t *auxfuncs;
 	pr_auxfunction_t *aux;
 	pr_lineno_t *linenos;
@@ -988,7 +988,7 @@ qfo_to_sym (qfo_t *qfo, int *size)
 	sym->version = PROG_DEBUG_VERSION;
 	for (i = 0; i < qfo->num_funcs; i++) {
 		qfo_func_t *func = qfo->funcs + i;
-		int num_locals = 0;
+		unsigned    num_locals = 0;
 
 		if (func->locals_space)
 			num_locals = qfo->spaces[func->locals_space].num_defs;
@@ -1017,7 +1017,7 @@ qfo_to_sym (qfo_t *qfo, int *size)
 	for (i = 0, aux = auxfuncs; i < qfo->num_funcs; i++) {
 		qfo_func_t *func = qfo->funcs + i;
 		qfo_def_t  *def = 0;
-		int         num_locals = 0;
+		unsigned    num_locals = 0;
 		qfot_type_t *type;
 
 		if (func->locals_space) {
