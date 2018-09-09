@@ -724,6 +724,7 @@ CalcVis (void)
 {
 	int         i;
 
+	printf ("Thread count: %d\n", options.threads);
 	BasePortalVis ();
 	CalcPortalVis ();
 
