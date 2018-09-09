@@ -228,6 +228,7 @@ read_list (riff_d_chunk_t *ck, QFile *f, int len)
 					riff_data_t     *data = malloc (sizeof (riff_data_t));
 					if (!Rread (f, &data->ck, sizeof (data->ck))) {
 						free (data);
+						len = 0;
 					} else {
 						data->ck.len = LittleLong (data->ck.len);
 						data->data = read_data (f, data->ck.len);
@@ -235,7 +236,6 @@ read_list (riff_d_chunk_t *ck, QFile *f, int len)
 						chunk = &data->ck;
 					}
 				}
-				len = 0;
 				break;
 		}
 		if (chunk) {
