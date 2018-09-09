@@ -149,7 +149,7 @@ NewWinding (int points)
 	if (points > MAX_POINTS_ON_WINDING)
 		Sys_Error ("NewWinding: %i points", points);
 
-	size = (size_t)(uintptr_t) ((winding_t *) 0)->points[points];
+	size = field_offset (winding_t, points[points]);
 	winding = calloc (1, size);
 
 	return winding;
@@ -168,7 +168,7 @@ CopyWinding (const winding_t *w)
 	size_t      size;
 	winding_t  *copy;
 
-	size = (size_t) (uintptr_t) ((winding_t *) 0)->points[w->numpoints];
+	size = field_offset (winding_t, points[w->numpoints]);
 	copy = malloc (size);
 	memcpy (copy, w, size);
 	copy->original = false;
