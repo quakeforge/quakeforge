@@ -38,8 +38,7 @@ test_progs_dat=\
 	while.dat \
 	voidfor.dat
 
-fail_progs_dat=\
-	$E
+fail_progs_dat=
 
 TESTS=$(test_progs_dat:.dat=.run)
 XFAIL_TESTS=$(fail_progs_dat:.dat=.run)
@@ -56,6 +55,7 @@ chewed-alias.dat$(EXEEXT): $(chewed_alias_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(chewed_alias_obj)
 chewed-alias.run: Makefile build-run
 	$(srcdir)/build-run $@
+include ./$(DEPDIR)/chewed-alias.Qo
 
 chewed_return_dat_SOURCES=chewed-return.r
 chewed_return_obj=$(chewed_return_dat_SOURCES:.r=.qfo)
@@ -63,6 +63,7 @@ chewed-return.dat$(EXEEXT): $(chewed_return_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(chewed_return_obj)
 chewed-return.run: Makefile build-run
 	TEST_HARNESS_OPTS=--float $(srcdir)/build-run $@
+include ./$(DEPDIR)/chewed-return.Qo
 
 func_expr_dat_SOURCES=func-expr.r
 func_expr_obj=$(func_expr_dat_SOURCES:.r=.qfo)
@@ -70,6 +71,7 @@ func-expr.dat$(EXEEXT): $(func_expr_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(func_expr_obj)
 func-expr.run: Makefile build-run
 	$(srcdir)/build-run $@
+include ./$(DEPDIR)/func-expr.Qo
 
 func_static_dat_SOURCES=func-static.r
 func_static_obj=$(func_static_dat_SOURCES:.r=.qfo)
@@ -77,6 +79,7 @@ func-static.dat$(EXEEXT): $(func_static_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(func_static_obj)
 func-static.run: Makefile build-run
 	$(srcdir)/build-run $@
+include ./$(DEPDIR)/func-static.Qo
 
 deadbool_dat_SOURCES=deadbool.r
 deadbool_obj=$(deadbool_dat_SOURCES:.r=.qfo)
@@ -84,6 +87,7 @@ deadbool.dat$(EXEEXT): $(deadbool_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(deadbool_obj)
 deadbool.run: Makefile build-run
 	$(srcdir)/build-run $@
+include ./$(DEPDIR)/deadbool.Qo
 
 infloop_dat_SOURCES=infloop.r
 infloop_obj=$(infloop_dat_SOURCES:.r=.qfo)
@@ -91,6 +95,7 @@ infloop.dat$(EXEEXT): $(infloop_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(infloop_obj)
 infloop.run: Makefile build-run
 	$(srcdir)/build-run $@
+include ./$(DEPDIR)/infloop.Qo
 
 modulo_dat_SOURCES=modulo.r
 modulo_obj=$(modulo_dat_SOURCES:.r=.qfo)
@@ -98,6 +103,7 @@ modulo.dat$(EXEEXT): $(modulo_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(modulo_obj)
 modulo.run: Makefile build-run
 	TEST_HARNESS_OPTS=--float $(srcdir)/build-run $@
+include ./$(DEPDIR)/modulo.Qo
 
 paramret_dat_SOURCES=paramret.r
 paramret_obj=$(paramret_dat_SOURCES:.r=.qfo)
@@ -105,6 +111,7 @@ paramret.dat$(EXEEXT): $(paramret_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(paramret_obj)
 paramret.run: Makefile build-run
 	TEST_HARNESS_OPTS=--float $(srcdir)/build-run $@
+include ./$(DEPDIR)/paramret.Qo
 
 return_ivar_dat_SOURCES=return-ivar.r
 return_ivar_obj=$(return_ivar_dat_SOURCES:.r=.qfo)
@@ -112,6 +119,7 @@ return-ivar.dat$(EXEEXT): $(return_ivar_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(return_ivar_obj)
 return-ivar.run: Makefile build-run
 	$(srcdir)/build-run $@
+include ./$(DEPDIR)/return-ivar.Qo
 
 sendv_dat_SOURCES=sendv.r
 sendv_obj=$(sendv_dat_SOURCES:.r=.qfo)
@@ -119,6 +127,7 @@ sendv.dat$(EXEEXT): $(sendv_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(sendv_obj)
 sendv.run: Makefile build-run
 	$(srcdir)/build-run $@
+include ./$(DEPDIR)/sendv.Qo
 
 state_dat_SOURCES=state.r
 state_obj=$(state_dat_SOURCES:.r=.qfo)
@@ -126,6 +135,7 @@ state.dat$(EXEEXT): $(state_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(state_obj)
 state.run: Makefile build-run
 	$(srcdir)/build-run $@
+include ./$(DEPDIR)/state.Qo
 
 structlive_dat_SOURCES=structlive.r
 structlive_obj=$(structlive_dat_SOURCES:.r=.qfo)
@@ -133,6 +143,7 @@ structlive.dat$(EXEEXT): $(structlive_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(structlive_obj)
 structlive.run: Makefile build-run
 	$(srcdir)/build-run $@
+include ./$(DEPDIR)/structlive.Qo
 
 structptr_dat_SOURCES=structptr.r
 structptr_obj=$(structptr_dat_SOURCES:.r=.qfo)
@@ -140,6 +151,7 @@ structptr.dat$(EXEEXT): $(structptr_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(structptr_obj)
 structptr.run: Makefile build-run
 	$(srcdir)/build-run $@
+include ./$(DEPDIR)/structptr.Qo
 
 swap_dat_SOURCES=swap.r
 swap_obj=$(swap_dat_SOURCES:.r=.qfo)
@@ -147,6 +159,7 @@ swap.dat$(EXEEXT): $(swap_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(swap_obj)
 swap.run: Makefile build-run
 	$(srcdir)/build-run $@
+include ./$(DEPDIR)/swap.Qo
 
 triangle_dat_SOURCES=triangle.r
 triangle_obj=$(triangle_dat_SOURCES:.r=.qfo)
@@ -154,6 +167,7 @@ triangle.dat$(EXEEXT): $(triangle_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(triangle_obj)
 triangle.run: Makefile build-run
 	$(srcdir)/build-run $@ 100000 100000 1.00005 50002.4961
+include ./$(DEPDIR)/triangle.Qo
 
 vecinit_dat_SOURCES=vecinit.r
 vecinit_obj=$(vecinit_dat_SOURCES:.r=.qfo)
@@ -161,6 +175,7 @@ vecinit.dat$(EXEEXT): $(vecinit_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(vecinit_obj)
 vecinit.run: Makefile build-run
 	$(srcdir)/build-run $@
+include ./$(DEPDIR)/vecinit.Qo
 
 while_dat_SOURCES=while.r
 while_obj=$(while_dat_SOURCES:.r=.qfo)
@@ -168,6 +183,7 @@ while.dat$(EXEEXT): $(while_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(while_obj)
 while.run: Makefile build-run
 	$(srcdir)/build-run $@
+include ./$(DEPDIR)/while.Qo
 
 voidfor_dat_SOURCES=voidfor.r
 voidfor_obj=$(voidfor_dat_SOURCES:.r=.qfo)
@@ -175,8 +191,8 @@ voidfor.dat$(EXEEXT): $(voidfor_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(voidfor_obj)
 voidfor.run: Makefile build-run
 	$(srcdir)/build-run $@
+include ./$(DEPDIR)/voidfor.Qo
 
-include ./$(DEPDIR)/*.Qo
 
 EXTRA_DIST= test-bi.h build-run
 CLEANFILES= *.dat *.sym *.qfo *.run *.frame
