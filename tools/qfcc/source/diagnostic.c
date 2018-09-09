@@ -73,10 +73,27 @@ report_function (expr_t *e)
 }
 
 static void
-_warning (expr_t *e, const char *fmt, va_list args)
+format_message (dstring_t *message, const char *msg_type, expr_t *e,
+				const char *fmt, va_list args)
 {
 	string_t    file = pr.source_file;
 	int         line = pr.source_line;
+	const char *colon = fmt ? ": " : "";
+
+	if (e) {
+		file = e->file;
+		line = e->line;
+	}
+	dsprintf (message, "%s:%d: %s%s", GETSTR (file), line, msg_type, colon);
+	if (fmt) {
+		davsprintf (message, fmt, args);
+	}
+}
+
+static void
+_warning (expr_t *e, const char *fmt, va_list args)
+{
+	dstring_t  *message = dstring_new ();
 
 	report_function (e);
 	if (options.warnings.promote) {
@@ -85,13 +102,9 @@ _warning (expr_t *e, const char *fmt, va_list args)
 		pr.error_count++;
 	}
 
-	if (e) {
-		file = e->file;
-		line = e->line;
-	}
-	fprintf (stderr, "%s:%d: warning: ", GETSTR (file), line);
-	vfprintf (stderr, fmt, args);
-	fputs ("\n", stderr);
+	format_message (message, "warning", e, fmt, args);
+	fprintf (stderr, "%s\n", message->str);
+	dstring_delete (message);
 }
 
 void
@@ -102,19 +115,14 @@ debug (expr_t *e, const char *fmt, ...)
 	if (options.verbosity < 1)
 		return;
 
+	report_function (e);
 	va_start (args, fmt);
 	{
-		string_t    file = pr.source_file;
-		int         line = pr.source_line;
+		dstring_t  *message = dstring_new ();
 
-		report_function (e);
-		if (e) {
-			file = e->file;
-			line = e->line;
-		}
-		fprintf (stderr, "%s:%d: debug: ", GETSTR (file), line);
-		vfprintf (stderr, fmt, args);
-		fputs ("\n", stderr);
+		format_message (message, "debug", e, fmt, args);
+		fprintf (stderr, "%s\n", message->str);
+		dstring_delete (message);
 	}
 	va_end (args);
 }
@@ -123,19 +131,17 @@ void
 bug (expr_t *e, const char *fmt, ...)
 {
 	va_list     args;
-	string_t    file = pr.source_file;
-	int         line = pr.source_line;
-
-	va_start (args, fmt);
 
 	report_function (e);
-	if (e) {
-		file = e->file;
-		line = e->line;
+
+	va_start (args, fmt);
+	{
+		dstring_t  *message = dstring_new ();
+
+		format_message (message, "BUG", e, fmt, args);
+		fprintf (stderr, "%s\n", message->str);
+		dstring_delete (message);
 	}
-	fprintf (stderr, "%s:%d: BUG: ", GETSTR (file), line);
-	vfprintf (stderr, fmt, args);
-	fputs ("\n", stderr);
 	va_end (args);
 }
 
@@ -151,17 +157,13 @@ notice (expr_t *e, const char *fmt, ...)
 	if (options.notices.promote) {
 		_warning (e, fmt, args);
 	} else {
-		string_t    file = pr.source_file;
-		int         line = pr.source_line;
+		dstring_t  *message = dstring_new ();
 
 		report_function (e);
-		if (e) {
-			file = e->file;
-			line = e->line;
-		}
-		fprintf (stderr, "%s:%d: notice: ", GETSTR (file), line);
-		vfprintf (stderr, fmt, args);
-		fputs ("\n", stderr);
+
+		format_message (message, "notice", e, fmt, args);
+		fprintf (stderr, "%s\n", message->str);
+		dstring_delete (message);
 	}
 	va_end (args);
 	return e;
@@ -178,33 +180,21 @@ warning (expr_t *e, const char *fmt, ...)
 	return e;
 }
 
-static void
-_error (expr_t *e, const char *err, const char *fmt, va_list args)
-{
-	string_t    file = pr.source_file;
-	int         line = pr.source_line;
-
-	report_function (e);
-
-	if (e) {
-		file = e->file;
-		line = e->line;
-	}
-	fprintf (stderr, "%s:%d: %s%s", GETSTR (file), line, err,
-			 fmt ? ": " : "");
-	if (fmt)
-		vfprintf (stderr, fmt, args);
-	fputs ("\n", stderr);
-	pr.error_count++;
-}
-
 void
 internal_error (expr_t *e, const char *fmt, ...)
 {
 	va_list     args;
 
+	report_function (e);
+
 	va_start (args, fmt);
-	_error (e, "internal error", fmt, args);
+	{
+		dstring_t  *message = dstring_new ();
+
+		format_message (message, "internal error", e, fmt, args);
+		fprintf (stderr, "%s\n", message->str);
+		dstring_delete (message);
+	}
 	va_end (args);
 	abort ();
 }
@@ -214,8 +204,16 @@ error (expr_t *e, const char *fmt, ...)
 {
 	va_list     args;
 
+	report_function (e);
+
 	va_start (args, fmt);
-	_error (e, "error", fmt, args);
+	{
+		dstring_t  *message = dstring_new ();
+
+		format_message (message, "error", e, fmt, args);
+		fprintf (stderr, "%s\n", message->str);
+		dstring_delete (message);
+	}
 	va_end (args);
 
 	if (!e)
