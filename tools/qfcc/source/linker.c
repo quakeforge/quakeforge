@@ -128,8 +128,8 @@ static builtin_sym_t builtin_symbols[] __attribute__ ((used)) = {
 	{".param_6",	&type_param,	QFOD_NOSAVE | QFOD_GLOBAL},
 	{".param_7",	&type_param,	QFOD_NOSAVE | QFOD_GLOBAL},
 };
-static const int num_builtins = sizeof (builtin_symbols)
-								/ sizeof (builtin_symbols[0]);
+static const unsigned num_builtins = sizeof (builtin_symbols)
+									 / sizeof (builtin_symbols[0]);
 
 static defref_t *defrefs_freelist;
 
@@ -638,7 +638,7 @@ linker_find_def (const char *name)
 void
 linker_begin (void)
 {
-	int         i;
+	unsigned    i;
 
 	linker_current_file = dstring_newstr ();
 
