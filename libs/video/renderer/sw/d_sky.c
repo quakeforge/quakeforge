@@ -72,6 +72,8 @@ D_DrawSkyScans (espan_t *pspan)
 
 	sstep = 0;							// keep compiler happy
 	tstep = 0;							// ditto
+	snext = 0;							// ditto
+	tnext = 0;							// ditto
 
 	do {
 		pdest = (unsigned char *) ((byte *) d_viewbuffer +

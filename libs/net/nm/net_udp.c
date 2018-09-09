@@ -387,7 +387,7 @@ PartialIPAddress (const char *in, netadr_t *hostaddr)
 {
 	char       *buff;
 	char       *b;
-	int         addr, mask, num, port, run;
+	unsigned    addr, mask, num, port, run;
 
 	buff = nva (".%s", in);
 	b = buff;
@@ -407,7 +407,7 @@ PartialIPAddress (const char *in, netadr_t *hostaddr)
 		}
 		if ((*b < '0' || *b > '9') && *b != '.' && *b != ':' && *b != 0)
 			goto error;
-		if (num < 0 || num > 255)
+		if (num > 255)
 			goto error;
 		mask <<= 8;
 		addr = (addr << 8) + num;

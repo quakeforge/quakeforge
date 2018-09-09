@@ -222,7 +222,7 @@ SubdividePolygon (int numverts, float *verts)
 	vec3_t      mins, maxs;
 	vec3_t      front[64], back[64];
 
-	if (numverts > 60)
+	if (numverts < 3 || numverts > 60)
 		Sys_Error ("numverts = %i", numverts);
 
 	BoundPoly (numverts, verts, mins, maxs);
@@ -317,5 +317,7 @@ gl_Mod_SubdivideSurface (msurface_t *fa)
 		numverts++;
 	}
 
-	SubdividePolygon (numverts, verts[0]);
+	if (numverts > 3) {
+		SubdividePolygon (numverts, verts[0]);
+	}
 }

@@ -79,6 +79,8 @@ sw32_D_DrawSkyScans (espan_t *pspan)
 
 		sstep = 0;							// keep compiler happy
 		tstep = 0;							// ditto
+		snext = 0;							// ditto
+		tnext = 0;							// ditto
 
 		do {
 			pdest = (byte *) sw32_d_viewbuffer + sw32_screenwidth * pspan->v + pspan->u;
@@ -146,6 +148,8 @@ sw32_D_DrawSkyScans (espan_t *pspan)
 
 		sstep = 0;							// keep compiler happy
 		tstep = 0;							// ditto
+		snext = 0;							// ditto
+		tnext = 0;							// ditto
 
 		do {
 			pdest = (short *) sw32_d_viewbuffer + sw32_screenwidth * pspan->v + pspan->u;
@@ -213,6 +217,8 @@ sw32_D_DrawSkyScans (espan_t *pspan)
 
 		sstep = 0;							// keep compiler happy
 		tstep = 0;							// ditto
+		snext = 0;							// ditto
+		tnext = 0;							// ditto
 
 		do {
 			pdest = (int *) sw32_d_viewbuffer + sw32_screenwidth * pspan->v + pspan->u;

@@ -657,6 +657,7 @@ Host_Loadgame_f (void)
 		game = convert_to_game_dict (script);
 	}
 
+	memset (spawn_parms, 0, sizeof (spawn_parms));
 	item = PL_ObjectForKey (game, "spawn_parms");
 	for (i = 0; i < NUM_SPAWN_PARMS; i++) {
 		if (i >= PL_A_NumObjects (item))
