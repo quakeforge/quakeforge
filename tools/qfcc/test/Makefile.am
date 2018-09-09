@@ -1,4 +1,9 @@
 AUTOMAKE_OPTIONS= foreign
+
+QFCC_LIBS=@QFCC_LIBS@
+QFCC_DEPS=@QFCC_DEPS@
+QFCC_INCS=@QFCC_INCS@
+
 AM_CPPFLAGS= -I$(top_srcdir)/include $(QFCC_INCS)
 
 QFCC_DEP=$(builddir)/../source/qfcc$(EXEEXT)
@@ -17,6 +22,11 @@ SUFFIXES=.qfo .r
 QFCC_TEST_LIBS=@QFCC_TEST_LIBS@
 QFCC_TEST_DEPS=@QFCC_TEST_DEPS@
 QFCC_TEST_INCS=@QFCC_TEST_INCS@
+
+test_bins=\
+	test-defspace
+
+fail_bins=
 
 test_progs_dat=\
 	chewed-alias.dat \
@@ -40,10 +50,17 @@ test_progs_dat=\
 
 fail_progs_dat=
 
-TESTS=$(test_progs_dat:.dat=.run)
-XFAIL_TESTS=$(fail_progs_dat:.dat=.run)
+test_defspace_src=\
+	tw-defspace.c tw-diagnostic.c tw-strpool.c
 
-check_PROGRAMS=test-harness $(test_progs_dat)
+TESTS=$(test_bins) $(test_progs_dat:.dat=.run)
+XFAIL_TESTS=$(fail_bins) $(fail_progs_dat:.dat=.run)
+
+check_PROGRAMS=test-harness $(test_progs_dat) $(test_bins)
+
+test_defspace_SOURCES=		test-defspace.c $(test_defspace_src)
+test_defspace_LDADD=		$(QFCC_LIBS)
+test_defspace_DEPENDENCIES=	$(QFCC_DEPS)
 
 test_harness_SOURCES=		test-bi.c test-harness.c
 test_harness_LDADD=			$(QFCC_TEST_LIBS)
