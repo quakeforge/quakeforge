@@ -111,6 +111,9 @@ InitThreads (void)
 	stats_lock = malloc (sizeof (pthread_rwlock_t));
 	if (pthread_rwlock_init (stats_lock, 0))
 		Sys_Error ("pthread_rwlock_init failed");
+#else
+	// Unable to run multi-threaded, so force threadcount to 1
+	options.threads = 1;
 #endif
 }
 
@@ -1112,13 +1115,13 @@ main (int argc, char **argv)
 	dstring_t  *portalfile = dstring_new ();
 	QFile      *f;
 
-	InitThreads ();
-
 	start = Sys_DoubleTime ();
 
 	this_program = argv[0];
 
 	DecodeArgs (argc, argv);
+
+	InitThreads ();
 
 	if (!options.bspfile) {
 		usage (1);
