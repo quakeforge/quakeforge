@@ -115,14 +115,14 @@ int defspace_alloc_loc (defspace_t *space, int size);
 	first word of the block and \a size indicating the number of words in the
 	block.
 
-	If the block to be freed has 0 words, or if the is partly or fully outside
-	the defspace (as defined by defspace_t::size), or if the block overlaps
-	any unallocated space in the defspace, then an internal error will be
-	generated. However, it is perfectly valid to allocate a large block and
-	subsequently free a small block from anywhere within the larger block.
-	This is because when memory is not fragmented, there is no difference
-	between allocating one large block and allocating several smaller blocks
-	when allocating the same amount of memory.
+	If the block to be freed has 0 words, or if the block is partly or fully
+	outside the defspace (as defined by defspace_t::size), or if the block
+	overlaps any unallocated space in the defspace, then an internal error
+	will be generated. However, it is perfectly valid to allocate a large
+	block and subsequently free a small block from anywhere within the larger
+	block.  This is because when memory is not fragmented, there is no
+	difference between allocating one large block and allocating several
+	smaller blocks when allocating the same amount of memory.
 
 	\param space	The space to which the freed block will be returned.
 	\param ofs		The first word of the block to be freed.
@@ -136,7 +136,7 @@ void defspace_free_loc (defspace_t *space, int ofs, int size);
 	defspace_alloc_loc().
 
 	If \a data is null, then the copying stage is skipped and this function
-	because a synonym for defspace_alloc_loc().
+	becomes a synonym for defspace_alloc_loc().
 
 	\param space	The space to which the data will be added.
 	\param data		The data to be copied into the space.
