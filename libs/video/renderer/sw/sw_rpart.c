@@ -590,7 +590,6 @@ R_BloodTrail_QF (const entity_t *ent)
 		p->color = 67 + (mtwist_rand (&mt) & 3);
 		for (j = 0; j < 3; j++)
 			p->org[j] = old_origin[j] + ((mtwist_rand (&mt) % 6) - 3);
-		break;
 
 		VectorAdd (old_origin, vec, old_origin);
 	}
