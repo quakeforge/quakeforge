@@ -38,6 +38,12 @@
 */
 //@{
 
+typedef void (*diagnostic_hook)(const char *message);
+extern diagnostic_hook bug_hook;
+extern diagnostic_hook error_hook;
+extern diagnostic_hook warning_hook;
+extern diagnostic_hook notice_hook;
+
 struct expr_s *error (struct expr_s *e, const char *fmt, ...)
 	__attribute__ ((format (printf, 2, 3)));
 void

@@ -41,6 +41,11 @@
 #include "options.h"
 #include "strpool.h"
 
+diagnostic_hook bug_hook;
+diagnostic_hook error_hook;
+diagnostic_hook warning_hook;
+diagnostic_hook notice_hook;
+
 static void
 report_function (expr_t *e)
 {
@@ -103,6 +108,11 @@ _warning (expr_t *e, const char *fmt, va_list args)
 	}
 
 	format_message (message, "warning", e, fmt, args);
+	if (warning_hook) {
+		warning_hook (message->str);
+	} else {
+		fprintf (stderr, "%s\n", message->str);
+	}
 	fprintf (stderr, "%s\n", message->str);
 	dstring_delete (message);
 }
@@ -139,7 +149,11 @@ bug (expr_t *e, const char *fmt, ...)
 		dstring_t  *message = dstring_new ();
 
 		format_message (message, "BUG", e, fmt, args);
-		fprintf (stderr, "%s\n", message->str);
+		if (bug_hook) {
+			bug_hook (message->str);
+		} else {
+			fprintf (stderr, "%s\n", message->str);
+		}
 		dstring_delete (message);
 	}
 	va_end (args);
@@ -162,6 +176,11 @@ notice (expr_t *e, const char *fmt, ...)
 		report_function (e);
 
 		format_message (message, "notice", e, fmt, args);
+		if (notice_hook) {
+			notice_hook (message->str);
+		} else {
+			fprintf (stderr, "%s\n", message->str);
+		}
 		fprintf (stderr, "%s\n", message->str);
 		dstring_delete (message);
 	}
@@ -211,6 +230,11 @@ error (expr_t *e, const char *fmt, ...)
 		dstring_t  *message = dstring_new ();
 
 		format_message (message, "error", e, fmt, args);
+		if (error_hook) {
+			error_hook (message->str);
+		} else {
+			fprintf (stderr, "%s\n", message->str);
+		}
 		fprintf (stderr, "%s\n", message->str);
 		dstring_delete (message);
 	}
