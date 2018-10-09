@@ -90,7 +90,7 @@ Host_Status_f (void)
 		print = SV_ClientPrintf;
 
 	print ("host:    %s\n", Cvar_VariableString ("hostname"));
-	print ("version: %4.2f\n", PACKAGE_VERSION);
+	print ("version: %4.2s\n", PACKAGE_VERSION);
 	if (tcpipAvailable)
 		print ("tcp/ip:  %s\n", my_tcpip_address);
 	print ("map:     %s\n", sv.name);
