@@ -5,12 +5,13 @@
 #include <stdlib.h>
 
 #include "class.h"
-#include "defspace.h"
 #include "expr.h"
 #include "function.h"
 #include "options.h"
 #include "strpool.h"
 #include "qfcc.h"
+
+#include "test-defspace.h"
 
 options_t   options;
 pr_info_t   pr;

@@ -211,5 +211,5 @@ voidfor.run: Makefile build-run
 include ./$(DEPDIR)/voidfor.Qo
 
 
-EXTRA_DIST= test-bi.h build-run
+EXTRA_DIST= test-bi.h build-run test-defspace.h
 CLEANFILES= *.dat *.sym *.qfo *.run *.frame
