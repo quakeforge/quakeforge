@@ -4,6 +4,15 @@
 
 #include "QF/mathlib.h"
 
+static struct {
+	quat_t      q1;
+	quat_t      q2;
+	quat_t      expect;
+} quat_mult_tests[] = {
+	{{4, 1, 2, 3}, {8, 5, 6, 7}, {-6, 24, 48, 48}},
+};
+#define num_quat_mult_tests (sizeof (quat_mult_tests) / sizeof (quat_mult_tests[0]))
+
 //PITCH YAW ROLL
 static vec3_t test_angles[] = {
 	{0, 0, 0},
@@ -26,6 +35,41 @@ compare (vec_t a, vec_t b)
 {
 	vec_t       diff = a - b;
 	return diff * diff < 0.001;
+}
+
+static int
+test_quat_mult(const quat_t q1, const quat_t q2, const quat_t expect)
+{
+	int         i;
+	quat_t      r;
+
+	QuatMult (q1, q2, r);
+
+	for (i = 0; i < 4; i++)
+		if (!compare (r[i], expect[i]))
+			goto fail;
+	return 1;
+fail:
+	printf ("%g %g %g %g\n", QuatExpand (q1));
+	printf ("%g %g %g %g\n", QuatExpand (q2));
+	printf ("%g %g %g %g\n", QuatExpand (r));
+	printf ("%g %g %g %g\n", QuatExpand (expect));
+	return 0;
+}
+
+
+static void
+rotate_vec (const quat_t r, const vec3_t v, vec3_t out)
+{
+	quat_t      qv = {0, 0, 0, 0};
+	quat_t      t;
+
+	VectorCopy (v, qv + 1);
+
+	QuatConj (r, t);
+	QuatMult (qv, t, t);
+	QuatMult (r, t, t);
+	VectorCopy (t + 1, out);
 }
 
 static int
@@ -131,11 +175,41 @@ fail:
 	return 0;
 }
 
+static int
+test_rotation3 (const vec3_t angles)
+{
+	int         i;
+	quat_t      quat;
+	vec3_t      v = {1, 1, 1};
+	vec3_t      a, b;
+
+	AngleQuat (angles, quat);
+	QuatMultVec (quat, v, a);
+	rotate_vec (quat, v, b);
+
+	for (i = 0; i < 3; i++)
+		if (!compare (a[i], b[i]))
+			goto fail;
+	return 1;
+fail:
+	printf ("%g %g %g\n", VectorExpand(a));
+	printf ("%g %g %g\n", VectorExpand(b));
+	return 0;
+}
+
 int
 main (int argc, const char **argv)
 {
 	int         res = 0;
 	size_t      i;
+
+	for (i = 0; i < num_quat_mult_tests; i ++) {
+		vec_t      *q1 = quat_mult_tests[i].q1;
+		vec_t      *q2 = quat_mult_tests[i].q2;
+		vec_t      *expect = quat_mult_tests[i].expect;
+		if (!test_quat_mult (q1, q2, expect))
+			res = 1;
+	}
 
 	for (i = 0; i < num_angle_tests; i ++) {
 		if (!test_rotation (test_angles[i]))
@@ -144,6 +218,11 @@ main (int argc, const char **argv)
 
 	for (i = 0; i < num_angle_tests; i ++) {
 		if (!test_rotation2 (test_angles[i]))
+			res = 1;
+	}
+
+	for (i = 0; i < num_angle_tests; i ++) {
+		if (!test_rotation3 (test_angles[i]))
 			res = 1;
 	}
 	return res;
