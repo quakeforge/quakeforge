@@ -107,7 +107,7 @@ void Z_CheckPointer (const memzone_t *zone, const void *ptr, int size);
 
 void *Hunk_Alloc (int size);		// returns 0 filled memory
 void *Hunk_AllocName (int size, const char *name);
-int	Hunk_LowMark (void);
+int	Hunk_LowMark (void) __attribute__((pure));
 void Hunk_FreeToLowMark (int mark);
 void *Hunk_TempAlloc (int size);
 void Hunk_Check (void);
@@ -138,7 +138,7 @@ void Cache_Remove (cache_user_t *c);
 void *Cache_TryGet (cache_user_t *c);
 void *Cache_Get (cache_user_t *c);
 void Cache_Release (cache_user_t *c);
-int Cache_ReadLock (cache_user_t *c);
+int Cache_ReadLock (cache_user_t *c) __attribute__((pure));
 
 //@}
 

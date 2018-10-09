@@ -164,14 +164,14 @@ void dstring_clearstr (dstring_t *dstr);
 /** Formatted printing to dstrings. Existing data is replaced by the formatted
 	string.
 */
-int dvsprintf (dstring_t *dstr, const char *fmt, va_list args);
+int dvsprintf (dstring_t *dstr, const char *fmt, va_list args) __attribute__((format(printf,2,0)));
 int dsprintf (dstring_t *dstr, const char *fmt, ...) __attribute__((format(printf,2,3)));
 //@}
 //@{
 /** Formatted printing to dstrings. Formatted string is appened to the dstring.
 	Embedded nulls in the dstring are ignored.
 */
-int davsprintf (dstring_t *dstr, const char *fmt, va_list args);
+int davsprintf (dstring_t *dstr, const char *fmt, va_list args) __attribute__((format(printf,2,0)));
 int dasprintf (dstring_t *dstr, const char *fmt, ...) __attribute__((format(printf,2,3)));
 //@}
 

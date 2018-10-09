@@ -40,7 +40,7 @@ void GIB_Buffer_Push_Sstack (struct cbuf_s *cbuf);
 void GIB_Buffer_Pop_Sstack (struct cbuf_s *cbuf);
 dstring_t *GIB_Buffer_Dsarray_Get (struct cbuf_s *cbuf);
 void GIB_Buffer_Reply_Callback (int argc, const char **argv, void *data);
-void GIB_Buffer_Error (cbuf_t *cbuf, const char *type, const char *fmt, va_list args);
+void GIB_Buffer_Error (cbuf_t *cbuf, const char *type, const char *fmt, va_list args) __attribute__((format(printf, 3, 0)));
 
 extern struct cbuf_interpreter_s gib_interp;
 

@@ -38,7 +38,7 @@
 #include <QF/qtypes.h>
 
 #ifdef STATIC_PLUGINS
-#define PLUGIN_INFO(type,name) plugin_t *type##_##name##_PluginInfo (void); plugin_t * type##_##name##_PluginInfo (void)
+#define PLUGIN_INFO(type,name) plugin_t *type##_##name##_PluginInfo (void); __attribute__((const)) plugin_t * type##_##name##_PluginInfo (void)
 #else
 #define PLUGIN_INFO(type,name) plugin_t *PluginInfo (void); __attribute__((visibility ("default"))) plugin_t *PluginInfo (void)
 #endif

@@ -433,7 +433,7 @@ typedef struct model_s {
 
 // ============================================================================
 
-extern float RadiusFromBounds (const vec3_t mins, const vec3_t maxs);
+extern float RadiusFromBounds (const vec3_t mins, const vec3_t maxs) __attribute__((pure));
 void	Mod_Init (void);
 void	Mod_Init_Cvars (void);
 void	Mod_ClearAll (void);
@@ -441,7 +441,7 @@ model_t *Mod_ForName (const char *name, qboolean crash);
 void	*Mod_Extradata (model_t *mod);	// handles caching
 void	Mod_TouchModel (const char *name);
 
-mleaf_t *Mod_PointInLeaf (const vec3_t p, model_t *model);
+mleaf_t *Mod_PointInLeaf (const vec3_t p, model_t *model) __attribute__((pure));
 byte	*Mod_LeafPVS (mleaf_t *leaf, model_t *model);
 model_t	*Mod_FindName (const char *name);
 int     Mod_CalcFullbright (byte *in, byte *out, int pixels);

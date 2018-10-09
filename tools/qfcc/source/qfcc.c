@@ -460,7 +460,7 @@ finish_link (void)
 	return 0;
 }
 
-static lang_t
+static __attribute__((pure)) lang_t
 file_language (const char *file, const char *ext)
 {
 	static ext_lang_t ext_lang[] = {

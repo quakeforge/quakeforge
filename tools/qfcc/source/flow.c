@@ -153,7 +153,7 @@ delete_graph (flowgraph_t *graph)
 	FREE (graphs, graph);
 }
 
-static def_t *
+static __attribute__((pure)) def_t *
 flowvar_get_def (flowvar_t *var)
 {
 	operand_t  *op = var->op;

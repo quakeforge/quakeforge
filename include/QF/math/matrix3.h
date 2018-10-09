@@ -101,7 +101,7 @@
 
 void Mat3Init (const quat_t rot, const vec3_t scale, mat3_t mat);
 void Mat3Transpose (const mat3_t a, mat3_t b);
-vec_t Mat3Determinant (const mat3_t m);
+vec_t Mat3Determinant (const mat3_t m) __attribute__((pure));
 int Mat3Inverse (const mat3_t a, mat3_t b);
 void Mat3Mult (const mat3_t a, const mat3_t b, mat3_t c);
 void Mat3MultVec (const mat3_t a, const vec3_t b, vec3_t c);

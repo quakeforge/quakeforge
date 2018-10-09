@@ -705,7 +705,7 @@ ctl_pretest_triggers (edict_t *touch, moveclip_t *clip)
 	return 1;
 }
 
-static always_inline int
+static always_inline __attribute__((pure)) int
 ctl_pretest_other (edict_t *touch, moveclip_t *clip)
 {
 	if (SVfloat (touch, solid) == SOLID_NOT)

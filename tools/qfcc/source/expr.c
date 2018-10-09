@@ -2462,7 +2462,7 @@ think_expr (symbol_t *think_sym)
 	return new_symbol_expr (think_sym);
 }
 
-static int
+static __attribute__((pure)) int
 is_indirect (expr_t *e)
 {
 	if (e->type == ex_block && e->e.block.result)
@@ -2480,7 +2480,7 @@ is_indirect (expr_t *e)
 	return 0;
 }
 
-static inline int
+static inline __attribute__((pure)) int
 is_lvalue (expr_t *e)
 {
 	if (e->type == ex_symbol) {

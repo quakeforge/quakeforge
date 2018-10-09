@@ -73,7 +73,7 @@ int num_alllights;
 entity_t **novislights;
 int num_novislights;
 
-static dleaf_t *
+static __attribute__((pure)) dleaf_t *
 Light_PointInLeaf (vec3_t point)
 {
 	int         num = 0, side;

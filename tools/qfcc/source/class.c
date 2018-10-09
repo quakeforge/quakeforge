@@ -281,7 +281,7 @@ obj_classname (const type_t *type)
 	return str->str;
 }
 
-static int
+static __attribute__((pure)) int
 category_implements (category_t *cat, protocol_t *protocol)
 {
 	for (; cat; cat = cat->next) {

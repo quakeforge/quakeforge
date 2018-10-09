@@ -208,7 +208,7 @@ leaf_node (dag_t *dag, operand_t *op, expr_t *expr)
 	return node;
 }
 
-static dagnode_t *
+static __attribute__((pure)) dagnode_t *
 dag_node (operand_t *op)
 {
 	def_t      *def;

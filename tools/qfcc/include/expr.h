@@ -384,7 +384,7 @@ expr_t *new_name_expr (const char *name);
 					(expr_t::e::string_val).
 */
 expr_t *new_string_expr (const char *string_val);
-const char *expr_string (expr_t *e);
+const char *expr_string (expr_t *e) __attribute__((pure));
 
 /** Create a new float constant expression node.
 
@@ -393,7 +393,7 @@ const char *expr_string (expr_t *e);
 					(expr_t::e::float_val).
 */
 expr_t *new_float_expr (float float_val);
-float expr_float (expr_t *e);
+float expr_float (expr_t *e) __attribute__((pure));
 
 /** Create a new vector constant expression node.
 
@@ -402,7 +402,7 @@ float expr_float (expr_t *e);
 					(expr_t::e::vector_val).
 */
 expr_t *new_vector_expr (const float *vector_val);
-const float *expr_vector (expr_t *e);
+const float *expr_vector (expr_t *e) __attribute__((pure));
 expr_t *new_vector_list (expr_t *e);
 
 /** Create a new entity constant expression node.
@@ -449,7 +449,7 @@ expr_t *new_pointer_expr (int val, struct type_s *type, struct def_s *def);
 					(expr_t::e::quaternion_val).
 */
 expr_t *new_quaternion_expr (const float *quaternion_val);
-const float *expr_quaternion (expr_t *e);
+const float *expr_quaternion (expr_t *e) __attribute__((pure));
 
 /** Create a new integer constant expression node.
 
@@ -458,7 +458,7 @@ const float *expr_quaternion (expr_t *e);
 					(expr_t::e::integer_val).
 */
 expr_t *new_integer_expr (int integer_val);
-int expr_integer (expr_t *e);
+int expr_integer (expr_t *e) __attribute__((pure));
 
 /** Create a new integer constant expression node.
 
@@ -467,7 +467,7 @@ int expr_integer (expr_t *e);
 					(expr_t::e::integer_val).
 */
 expr_t *new_uinteger_expr (unsigned uinteger_val);
-unsigned expr_uinteger (expr_t *e);
+unsigned expr_uinteger (expr_t *e) __attribute__((pure));
 
 /** Create a new short constant expression node.
 
@@ -476,14 +476,14 @@ unsigned expr_uinteger (expr_t *e);
 					(expr_t::e::short_val).
 */
 expr_t *new_short_expr (short short_val);
-short expr_short (expr_t *e);
+short expr_short (expr_t *e) __attribute__((pure));
 
 /**	Check of the expression refers to a constant value.
 
 	\param e		The expression to check.
 	\return			True if the expression is constant.
 */
-int is_constant (expr_t *e);
+int is_constant (expr_t *e) __attribute__((pure));
 
 /**	Return a value expression representing the constant stored in \a e.
 
@@ -500,30 +500,30 @@ expr_t *constant_expr (expr_t *e);
 	\param op		The op-code to check.
 	\return			True if the op-code is a comparison operator.
 */
-int is_compare (int op);
+int is_compare (int op) __attribute__((const));
 
 /**	Check if the op-code is a math operator.
 
 	\param op		The op-code to check.
 	\return			True if the op-code is a math operator.
 */
-int is_math_op (int op);
+int is_math_op (int op) __attribute__((const));
 
 /**	Check if the op-code is a logic operator.
 
 	\param op		The op-code to check.
 	\return			True if the op-code is a logic operator.
 */
-int is_logic (int op);
+int is_logic (int op) __attribute__((const));
 
-int has_function_call (expr_t *e);
+int has_function_call (expr_t *e) __attribute__((pure));
 
-int is_string_val (expr_t *e);
-int is_float_val (expr_t *e);
-int is_vector_val (expr_t *e);
-int is_quaternion_val (expr_t *e);
-int is_integer_val (expr_t *e);
-int is_short_val (expr_t *e);
+int is_string_val (expr_t *e) __attribute__((pure));
+int is_float_val (expr_t *e) __attribute__((pure));
+int is_vector_val (expr_t *e) __attribute__((pure));
+int is_quaternion_val (expr_t *e) __attribute__((pure));
+int is_integer_val (expr_t *e) __attribute__((pure));
+int is_short_val (expr_t *e) __attribute__((pure));
 
 /**	Create a reference to the global <code>.self</code> entity variable.
 
@@ -627,7 +627,7 @@ expr_t *think_expr (struct symbol_s *think_sym);
 expr_t *assign_expr (expr_t *e1, expr_t *e2);
 expr_t *cast_expr (struct type_s *t, expr_t *e);
 
-const char *get_op_string (int op);
+const char *get_op_string (int op) __attribute__((const));
 
 struct keywordarg_s;
 struct class_type_s;

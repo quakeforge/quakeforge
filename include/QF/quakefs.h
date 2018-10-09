@@ -356,7 +356,7 @@ char *QFS_CompressPath (const char *pth);
 	\return			Pointer to the beginning of the filename. This points
 					inside \a pathname.
 */
-const char *QFS_SkipPath (const char *pathname);
+const char *QFS_SkipPath (const char *pathname) __attribute__((pure));
 
 /**	Return a pointer to the start of the extention part of the path.
 
@@ -366,7 +366,7 @@ const char *QFS_SkipPath (const char *pathname);
 					the returned pointer will point to the terminating nul
 					of the path.
 */
-const char *QFS_FileExtension (const char *in);
+const char *QFS_FileExtension (const char *in) __attribute__((pure));
 
 /**	Register a callback function for when the gamedir changes.
 

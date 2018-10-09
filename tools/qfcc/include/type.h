@@ -123,7 +123,7 @@ extern struct symtab_s *quaternion_struct;
 
 struct dstring_s;
 
-etype_t low_level_type (type_t *type);
+etype_t low_level_type (type_t *type) __attribute__((pure));
 type_t *new_type (void);
 void free_type (type_t *type);
 void chain_type (type_t *type);
@@ -150,17 +150,17 @@ void print_type (const type_t *type);
 const char *encode_params (const type_t *type);
 void encode_type (struct dstring_s *encoding, const type_t *type);
 const char *type_get_encoding (const type_t *type);
-int is_void (const type_t *type);
-int is_enum (const type_t *type);
-int is_integral (const type_t *type);
-int is_float (const type_t *type);
-int is_scalar (const type_t *type);
-int is_math (const type_t *type);
-int is_pointer (const type_t *type);
-int is_struct (const type_t *type);
-int is_array (const type_t *type);
+int is_void (const type_t *type) __attribute__((pure));
+int is_enum (const type_t *type) __attribute__((pure));
+int is_integral (const type_t *type) __attribute__((pure));
+int is_float (const type_t *type) __attribute__((pure));
+int is_scalar (const type_t *type) __attribute__((pure));
+int is_math (const type_t *type) __attribute__((pure));
+int is_pointer (const type_t *type) __attribute__((pure));
+int is_struct (const type_t *type) __attribute__((pure));
+int is_array (const type_t *type) __attribute__((pure));
 int type_assignable (const type_t *dst, const type_t *src);
-int type_size (const type_t *type);
+int type_size (const type_t *type) __attribute__((pure));
 
 void init_types (void);
 void chain_initial_types (void);

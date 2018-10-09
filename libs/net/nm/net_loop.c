@@ -42,7 +42,7 @@ qboolean    localconnectpending = false;
 qsocket_t  *loop_client = NULL;
 qsocket_t  *loop_server = NULL;
 
-int
+__attribute__((pure)) int
 Loop_Init (void)
 {
 	if (cls.state == ca_dedicated)
@@ -240,7 +240,7 @@ Loop_SendUnreliableMessage (qsocket_t * sock, sizebuf_t *data)
 }
 
 
-qboolean
+__attribute__((pure)) qboolean
 Loop_CanSendMessage (qsocket_t * sock)
 {
 	if (!sock->driverdata)
@@ -249,7 +249,7 @@ Loop_CanSendMessage (qsocket_t * sock)
 }
 
 
-qboolean
+__attribute__((const)) qboolean
 Loop_CanSendUnreliableMessage (qsocket_t * sock)
 {
 	return true;

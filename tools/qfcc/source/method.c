@@ -212,7 +212,7 @@ copy_methods (methodlist_t *dst, methodlist_t *src)
 	}
 }
 
-int
+__attribute__((pure)) int
 method_compare (method_t *m1, method_t *m2)
 {
 	if (m1->instance != m2->instance)

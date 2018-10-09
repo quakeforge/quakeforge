@@ -257,7 +257,7 @@ SV_Shutdown (void)
 	Sends a datagram to all the clients informing them of the server crash,
 	then exits
 */
-static void
+static __attribute__((format(printf, 1, 0))) void
 SV_Error (const char *error, va_list argptr)
 {
 	static qboolean inerror = false;
@@ -1206,7 +1206,7 @@ SV_MaskIPTrim (byte *ip, int mask)
 }
 
 // assumes b has already been masked
-static inline qboolean
+static inline __attribute__((pure)) qboolean
 SV_MaskIPCompare (byte *a, byte *b, int mask)
 {
 	int i;

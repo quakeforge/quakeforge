@@ -218,7 +218,7 @@ append_type (type_t *type, type_t *new)
 	return type;
 }
 
-static int
+static __attribute__((pure)) int
 types_same (type_t *a, type_t *b)
 {
 	int         i, count;

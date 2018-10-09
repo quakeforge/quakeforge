@@ -116,7 +116,7 @@ void NET_SendPacket (int length, const void *data, netadr_t to);
 	\param b		The second address to compare.
 	\return			True of the addresses match, otherwise false.
 */
-qboolean NET_CompareAdr (netadr_t a, netadr_t b);
+qboolean NET_CompareAdr (netadr_t a, netadr_t b) __attribute__((pure));
 
 /** Compare two network addresses.
 
@@ -126,7 +126,7 @@ qboolean NET_CompareAdr (netadr_t a, netadr_t b);
 	\param b		The second address to compare.
 	\return			True of the addresses match, otherwise false.
 */
-qboolean NET_CompareBaseAdr (netadr_t a, netadr_t b);
+qboolean NET_CompareBaseAdr (netadr_t a, netadr_t b) __attribute__((pure));
 
 /** Convert an address to a string.
 
@@ -362,7 +362,7 @@ void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport, ncqport_e flags);
 	\param chan     The netchan representing the connection.
 	\return			True if the connection isn't chocked.
 */
-qboolean Netchan_CanPacket (netchan_t *chan);
+qboolean Netchan_CanPacket (netchan_t *chan) __attribute__((pure));
 
 /** Check if a reliable packet can be sent to the connection.
 
@@ -370,7 +370,7 @@ qboolean Netchan_CanPacket (netchan_t *chan);
 	\return			True if there is no outstanding reliable packet and the
 					connection isn't chocked.
 */
-qboolean Netchan_CanReliable (netchan_t *chan);
+qboolean Netchan_CanReliable (netchan_t *chan) __attribute__((pure));
 
 /** Send a packet.
 

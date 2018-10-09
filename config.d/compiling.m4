@@ -213,6 +213,10 @@ if test $CC_MAJ -gt 4 -o $CC_MAJ -eq 4 -a $CC_MIN -ge 5; then
 fi
 QF_CC_OPTION(-Wtype-limits)
 QF_CC_OPTION_TEST([-fvisibility=hidden], [VISIBILITY=-fvisibility=hidden])
+QF_CC_OPTION(-Wsuggest-attribute=pure)
+QF_CC_OPTION(-Wsuggest-attribute=const)
+QF_CC_OPTION(-Wsuggest-attribute=noreturn)
+QF_CC_OPTION(-Wsuggest-attribute=format)
 
 dnl QuakeForge uses lots of BCPL-style (//) comments, which can cause problems
 dnl with many compilers that do not support the latest ISO standards. Well,

@@ -259,7 +259,7 @@ imm_free (void *_imm, void *unused)
 	free (_imm);
 }
 
-static uintptr_t
+static __attribute__((pure)) uintptr_t
 imm_get_hash (const void *_imm, void *_tab)
 {
 	immediate_t *imm = (immediate_t *) _imm;
@@ -290,7 +290,7 @@ imm_get_hash (const void *_imm, void *_tab)
 	}
 }
 
-static int
+static __attribute__((pure)) int
 imm_compare (const void *_imm1, const void *_imm2, void *_tab)
 {
 	immediate_t *imm1 = (immediate_t *) _imm1;

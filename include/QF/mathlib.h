@@ -73,15 +73,15 @@ extern int		nanmask;
 // fall over
 #define	ROLL	2
 
-int Q_log2(int val);
+int Q_log2(int val) __attribute__((const));
 
 void R_ConcatRotations (float in1[3][3], float in2[3][3], float out[3][3]);
 void R_ConcatTransforms (float in1[3][4], float in2[3][4], float out[3][4]);
 
 void FloorDivMod (double numer, double denom, int *quotient, int *rem);
-fixed16_t Invert24To16(fixed16_t val);
+fixed16_t Invert24To16(fixed16_t val) __attribute__((const));
 fixed16_t Mul16_30(fixed16_t multiplier, fixed16_t multiplicand);
-int GreatestCommonDivisor (int i1, int i2);
+int GreatestCommonDivisor (int i1, int i2) __attribute__((const));
 
 /**	Convert quake angles to basis vectors.
 
@@ -139,8 +139,8 @@ void AngleVectors (const vec3_t angles, vec3_t forward, vec3_t right,
 void AngleQuat (const vec3_t angles, quat_t q);
 void VectorVectors (const vec3_t forward, vec3_t right, vec3_t up);
 int BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs,
-					struct plane_s *plane);
-float anglemod (float a);
+					struct plane_s *plane) __attribute__((pure));
+float anglemod (float a) __attribute__((const));
 
 void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
 							  const vec3_t point, float degrees);
@@ -174,7 +174,7 @@ void RotatePointAroundVector (vec3_t dst, const vec3_t axis,
 	} while (0)
 
 extern plane_t * const frustum;
-GNU89INLINE inline qboolean R_CullBox (const vec3_t mins, const vec3_t maxs);
+GNU89INLINE inline qboolean R_CullBox (const vec3_t mins, const vec3_t maxs) __attribute__((pure));
 GNU89INLINE inline qboolean R_CullSphere (const vec3_t origin, const float radius);
 
 #ifndef IMPLEMENT_R_Cull

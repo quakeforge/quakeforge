@@ -1321,7 +1321,7 @@ glsl_R_InitBsp (void)
 	GLSL_FreeShader (frag_shader);
 }
 
-static inline int
+static inline __attribute__((const)) int
 is_pow2 (unsigned x)
 {
 	int         count;

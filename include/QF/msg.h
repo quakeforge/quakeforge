@@ -73,7 +73,7 @@ void MSG_BeginReading (qmsg_t *msg);
 	\param msg		The message to check.
 	\return			The number of bytes that have been read.
 */
-int MSG_GetReadCount(qmsg_t *msg);
+int MSG_GetReadCount(qmsg_t *msg) __attribute__((pure));
 
 /** Read a single byte from the message.
 

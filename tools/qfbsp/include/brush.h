@@ -69,7 +69,7 @@ brushset_t *Brush_LoadEntity (entity_t *ent, int hullnum);
 
 	\param normal	Must be canonical.
 */
-int	PlaneTypeForNormal (const vec3_t normal);
+int	PlaneTypeForNormal (const vec3_t normal) __attribute__((pure));
 
 /**	Make the plane canonical.
 

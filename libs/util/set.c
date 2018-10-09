@@ -343,7 +343,7 @@ set_everything (set_t *set)
 	return set;
 }
 
-static inline int
+static inline __attribute__((pure)) int
 _set_is_empty (const set_t *set)
 {
 	unsigned    i;
@@ -370,7 +370,7 @@ set_is_everything (const set_t *set)
 	return _set_is_empty (set);
 }
 
-static int
+static __attribute__((pure)) int
 set_test_n_n (const set_t *s1, const set_t *s2)
 {
 	unsigned    i, end;
@@ -394,7 +394,7 @@ set_test_n_n (const set_t *s1, const set_t *s2)
 	return (difference != 0) | ((intersection != 0) << 1);
 }
 
-static int
+static __attribute__((pure)) int
 set_test_n_i (const set_t *s1, const set_t *s2)
 {
 	unsigned    i, end;
@@ -419,7 +419,7 @@ set_test_n_i (const set_t *s1, const set_t *s2)
 	return (difference != 0) | ((intersection != 0) << 1);
 }
 
-static int
+static __attribute__((pure)) int
 set_test_i_n (const set_t *s1, const set_t *s2)
 {
 	unsigned    i, end;
@@ -444,7 +444,7 @@ set_test_i_n (const set_t *s1, const set_t *s2)
 	return (difference != 0) | ((intersection != 0) << 1);
 }
 
-static int
+static __attribute__((pure)) int
 set_test_i_i (const set_t *s1, const set_t *s2)
 {
 	unsigned    i, end;
@@ -470,7 +470,7 @@ set_test_i_i (const set_t *s1, const set_t *s2)
 	return (difference != 0) | ((intersection != 0) << 1);
 }
 
-static int
+static __attribute__((pure)) int
 set_test (const set_t *s1, const set_t *s2)
 {
 	if (s1->inverted && s2->inverted)

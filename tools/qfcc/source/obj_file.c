@@ -643,7 +643,7 @@ get_def_type (qfo_t *qfo, pointer_t type)
 	return ev_invalid;
 }
 
-static etype_t
+static __attribute__((pure)) etype_t
 get_type_size (qfo_t *qfo, pointer_t type)
 {
 	qfot_type_t *type_def;

@@ -65,7 +65,7 @@ typedef enum {
 typedef struct particle_s particle_t;
 typedef void (*pt_phys_func)(particle_t *);
 
-pt_phys_func R_ParticlePhysics (ptype_t type);
+pt_phys_func R_ParticlePhysics (ptype_t type) __attribute__((pure));
 
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
 struct particle_s

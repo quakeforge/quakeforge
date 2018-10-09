@@ -23,11 +23,11 @@ options_t options;
 int num_linenos;
 pr_lineno_t *linenos;
 pr_info_t pr;
-string_t ReuseString (const char *str) {return 0;}
+__attribute__((const)) string_t ReuseString (const char *str) {return 0;}
 void encode_type (struct dstring_s *str, const type_t *type) {}
-codespace_t *codespace_new (void) {return 0;}
+__attribute__((const)) codespace_t *codespace_new (void) {return 0;}
 void codespace_addcode (codespace_t *codespace, struct dstatement_s *code, int size) {}
-int function_parms (function_t *f, byte *parm_size) {return 0;}
+__attribute__((const)) int function_parms (function_t *f, byte *parm_size) {return 0;}
 void def_to_ddef (def_t *def, ddef_t *ddef, int aux) {}
-expr_t *warning (expr_t *e, const char *fmt, ...) {return 0;}
-expr_t *error (expr_t *e, const char *fmt, ...) {return 0;}
+__attribute__((const)) expr_t *warning (expr_t *e, const char *fmt, ...) {return 0;}
+__attribute__((const)) expr_t *error (expr_t *e, const char *fmt, ...) {return 0;}

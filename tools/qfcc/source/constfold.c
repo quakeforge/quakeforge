@@ -60,7 +60,7 @@ cf_cast_expr (type_t *type, expr_t *e)
 	return e;
 }
 
-static int
+static __attribute__((pure)) int
 valid_op (int op, int *valid_ops)
 {
 	while (*valid_ops && op != *valid_ops)

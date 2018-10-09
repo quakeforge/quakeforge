@@ -544,7 +544,7 @@ void Key_Init_Cvars (void);
 	\param imt_name	The name of the imt to find. Case insensitive.
 	\return			The named imt, or null if not found.
 */
-imt_t *Key_FindIMT (const char *imt_name);
+imt_t *Key_FindIMT (const char *imt_name) __attribute__((pure));
 
 /**	Create a new imt and attach it to the specified keydest target.
 
@@ -599,7 +599,7 @@ void Key_ClearStates (void);
 	\param key		The key for which to get the binding.
 	\return			The command string bound to the key, or null if unbound.
 */
-const char *Key_GetBinding (imt_t *imt, knum_t key);
+const char *Key_GetBinding (imt_t *imt, knum_t key) __attribute__((pure));
 
 /** Bind a command string to a key in the specified input mapping table.
 
@@ -639,7 +639,7 @@ void Key_KeydestCallback (keydest_callback_t *callback);
 	\param keynum	The key for which to get the string.
 	\return			The string representation of the key.
 */
-const char *Key_KeynumToString (knum_t keynum);
+const char *Key_KeynumToString (knum_t keynum) __attribute__((pure));
 
 /**	Get the keynum for the named key.
 
@@ -650,7 +650,7 @@ const char *Key_KeynumToString (knum_t keynum);
 	\param str		The name of the key.
 	\return			The named key if valid, otherwise -1
 */
-int Key_StringToKeynum (const char *str);
+int Key_StringToKeynum (const char *str) __attribute__((pure));
 
 struct progs_s;
 

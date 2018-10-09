@@ -92,7 +92,7 @@ typedef struct symtab_s {
 	struct defspace_s *space;	///< storage for vars in scope symtabs
 } symtab_t;
 
-const char *symtype_str (sy_type_e type);
+const char *symtype_str (sy_type_e type) __attribute__((const));
 
 /**	Create a new, empty named symbol.
 

@@ -52,7 +52,7 @@ void CL_ParseServerMessage (void);
 void CL_ParseClientdata (void);
 void CL_NewTranslation (int slot, struct skin_s *skin);
 qboolean	CL_CheckOrDownloadFile (const char *filename);
-qboolean CL_IsUploading(void);
+qboolean CL_IsUploading(void) __attribute__((pure));
 void CL_NextUpload(void);
 void CL_FinishDownload (void);
 void CL_FailDownload (void);

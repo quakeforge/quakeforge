@@ -71,7 +71,7 @@ extern vrect_t     scr_vrect;
 
 extern qboolean    scr_skipupdate;
 
-float CalcFov (float fov_x, float width, float height);
+float CalcFov (float fov_x, float width, float height) __attribute__((const));
 void SCR_SetUpToDrawConsole (void);
 void SCR_ScreenShot_f (void);
 

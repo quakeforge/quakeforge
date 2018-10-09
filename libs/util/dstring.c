@@ -299,7 +299,7 @@ dstring_clearstr (dstring_t *dstr)
 	dstr->str[0] = 0;
 }
 
-static int
+static __attribute__((format(printf, 3, 0))) int
 _dvsprintf (dstring_t *dstr, int offs, const char *fmt, va_list args)
 {
 	int         size;

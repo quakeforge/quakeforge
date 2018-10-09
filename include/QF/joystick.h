@@ -144,11 +144,11 @@ void JOY_Close (void);
 void JOY_Read (void);
 
 
-const char *JOY_GetOption_c (int i);
-int JOY_GetOption_i (const char *c);
+const char *JOY_GetOption_c (int i) __attribute__((pure));
+int JOY_GetOption_i (const char *c) __attribute__((pure));
 
-const char *JOY_GetDest_c (int i);
-int JOY_GetDest_i (const char *c);
+const char *JOY_GetDest_c (int i) __attribute__((pure));
+int JOY_GetDest_i (const char *c) __attribute__((pure));
 int JOY_GetAxis_i (int dest, const char *c);
 
 

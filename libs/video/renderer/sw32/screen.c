@@ -87,7 +87,7 @@ sw32_SCR_CaptureBGR (void)
 	return tex;
 }
 
-tex_t *
+__attribute__((const)) tex_t *
 sw32_SCR_ScreenShot (int width, int height)
 {
 	return 0;

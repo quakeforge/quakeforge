@@ -121,7 +121,7 @@ FL_Add (filter_t * filter)
 	filter_list = filter;
 }
 
-static filter_t *
+static __attribute__((pure)) filter_t *
 FL_Find (netadr_t adr)
 {
 	filter_t   *filter;
@@ -209,7 +209,7 @@ SVL_Add (server_t *sv)
 	sv_list = sv;
 }
 
-static server_t *
+static __attribute__((pure)) server_t *
 SVL_Find (netadr_t adr)
 {
 	server_t   *sv;

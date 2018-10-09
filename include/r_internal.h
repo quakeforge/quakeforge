@@ -32,7 +32,7 @@ struct plitem_s;
 void Fog_ParseWorldspawn (struct plitem_s *worldspawn);
 
 float *Fog_GetColor (void);
-float Fog_GetDensity (void);
+float Fog_GetDensity (void) __attribute__((pure));
 void Fog_SetupFrame (void);
 void Fog_EnableGFog (void);
 void Fog_DisableGFog (void);
@@ -63,7 +63,7 @@ void R_NewMap (model_t *worldmodel, model_t **models, int num_models);
 void R_PushDlights (const vec3_t entorigin);
 void R_DrawWaterSurfaces (void);
 
-void *D_SurfaceCacheAddress (void);
+void *D_SurfaceCacheAddress (void) __attribute__((pure));
 int D_SurfaceCacheForRes (int width, int height);
 void D_FlushCaches (void);
 void D_DeleteSurfaceCache (void);

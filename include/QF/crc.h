@@ -38,8 +38,8 @@
 void CRC_Init(unsigned short *crcvalue);
 void CRC_ProcessByte(unsigned short *crcvalue, byte data);
 void CRC_ProcessBlock (const byte *start, unsigned short *crcvalue, int count);
-unsigned short CRC_Value(unsigned short crcvalue);
-unsigned short CRC_Block (const byte *start, int count);
+unsigned short CRC_Value(unsigned short crcvalue) __attribute__((const));
+unsigned short CRC_Block (const byte *start, int count) __attribute__((pure));
 
 //@}
 

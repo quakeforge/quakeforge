@@ -57,7 +57,7 @@ extern struct dstring_s *bspfile;
 extern const char *this_program;
 
 int DecodeArgs (int argc, char **argv);
-void usage (int status);
+void usage (int status) __attribute__((noreturn));
 
 //@}
 

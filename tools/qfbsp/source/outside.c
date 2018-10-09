@@ -41,7 +41,7 @@ int         outleafs;
 	\param point	The point's location.
 	\return			The leaf node in which the point is.
 */
-static node_t *
+static __attribute__((pure)) node_t *
 PointInLeaf (node_t *node, const vec3_t point)
 {
 	vec_t       d;

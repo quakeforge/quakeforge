@@ -511,7 +511,7 @@ keyname_t   keynames[] = {
 	{NULL, 0}
 };
 
-static imt_t *
+static __attribute__((pure)) imt_t *
 key_target_find_imt (keytarget_t *kt, const char *imt_name)
 {
 	imt_t      *imt;

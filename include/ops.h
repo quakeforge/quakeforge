@@ -22,34 +22,34 @@
 #ifndef __ops_h
 #define __ops_h
 
-double OP_Not (double op1, double op2);
-double OP_Negate (double op1, double op2);
-double OP_Add (double op1, double op2);
-double OP_Sub (double op1, double op2);
-double OP_Mult (double op1, double op2);
-double OP_Div (double op1, double op2);
-double OP_Exp (double op1, double op2);
-double OP_Eq (double op1, double op2);
-double OP_Neq (double op1, double op2);
-double OP_Or (double op1, double op2);
-double OP_And (double op1, double op2);
-double OP_GreaterThan (double op1, double op2);
-double OP_LessThan (double op1, double op2);
-double OP_GreaterThanEqual (double op1, double op2);
-double OP_LessThanEqual (double op1, double op2);
-double OP_BitAnd (double op1, double op2);
-double OP_BitOr (double op1, double op2);
-double OP_BitXor (double op1, double op2);
-double OP_BitInv (double op1, double op2);
+double OP_Not (double op1, double op2) __attribute__((const));
+double OP_Negate (double op1, double op2) __attribute__((const));
+double OP_Add (double op1, double op2) __attribute__((const));
+double OP_Sub (double op1, double op2) __attribute__((const));
+double OP_Mult (double op1, double op2) __attribute__((const));
+double OP_Div (double op1, double op2) __attribute__((const));
+double OP_Exp (double op1, double op2) __attribute__((const));
+double OP_Eq (double op1, double op2) __attribute__((const));
+double OP_Neq (double op1, double op2) __attribute__((const));
+double OP_Or (double op1, double op2) __attribute__((const));
+double OP_And (double op1, double op2) __attribute__((const));
+double OP_GreaterThan (double op1, double op2) __attribute__((const));
+double OP_LessThan (double op1, double op2) __attribute__((const));
+double OP_GreaterThanEqual (double op1, double op2) __attribute__((const));
+double OP_LessThanEqual (double op1, double op2) __attribute__((const));
+double OP_BitAnd (double op1, double op2) __attribute__((const));
+double OP_BitOr (double op1, double op2) __attribute__((const));
+double OP_BitXor (double op1, double op2) __attribute__((const));
+double OP_BitInv (double op1, double op2) __attribute__((const));
 
-double Func_Sin (double *oplist, unsigned int numops);
-double Func_Cos (double *oplist, unsigned int numops);
-double Func_Tan (double *oplist, unsigned int numops);
-double Func_Asin (double *oplist, unsigned int numops);
-double Func_Acos (double *oplist, unsigned int numops);
-double Func_Atan (double *oplist, unsigned int numops);
-double Func_Sqrt (double *oplist, unsigned int numops);
-double Func_Abs (double *oplist, unsigned int numops);
+double Func_Sin (double *oplist, unsigned int numops) __attribute__((pure));
+double Func_Cos (double *oplist, unsigned int numops) __attribute__((pure));
+double Func_Tan (double *oplist, unsigned int numops) __attribute__((pure));
+double Func_Asin (double *oplist, unsigned int numops) __attribute__((pure));
+double Func_Acos (double *oplist, unsigned int numops) __attribute__((pure));
+double Func_Atan (double *oplist, unsigned int numops) __attribute__((pure));
+double Func_Sqrt (double *oplist, unsigned int numops) __attribute__((pure));
+double Func_Abs (double *oplist, unsigned int numops) __attribute__((pure));
 double Func_Rand (double *oplist, unsigned int numops);
-double Func_Trunc (double *oplist, unsigned int numops);
+double Func_Trunc (double *oplist, unsigned int numops) __attribute__((pure));
 #endif // __ops_h

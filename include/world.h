@@ -98,8 +98,8 @@ void SV_LinkEdict (struct edict_s *ent, qboolean touch_triggers);
 // sets ent->v.absmin and ent->v.absmax
 // if touchtriggers, calls prog functions for the intersected triggers
 
-int SV_PointContents (const vec3_t p);
-int SV_TruePointContents (const vec3_t p);
+int SV_PointContents (const vec3_t p) __attribute__((pure));
+int SV_TruePointContents (const vec3_t p) __attribute__((pure));
 // returns the CONTENTS_* value from the world at the given point.
 // does not check any entities at all
 // the non-true version remaps the water current contents to content_water
@@ -123,7 +123,7 @@ trace_t SV_Move (const vec3_t start, const vec3_t mins, const vec3_t maxs,
 struct edict_s	*SV_TestPlayerPosition (struct edict_s *ent,
 										const vec3_t origin);
 
-int SV_HullPointContents (hull_t *hull, int num, const vec3_t p);
+int SV_HullPointContents (hull_t *hull, int num, const vec3_t p) __attribute__((pure));
 hull_t *SV_HullForEntity (struct edict_s *ent, const vec3_t mins,
 						  const vec3_t maxs, vec3_t extents, vec3_t offset);
 void MOD_TraceLine (hull_t *hull, int num,

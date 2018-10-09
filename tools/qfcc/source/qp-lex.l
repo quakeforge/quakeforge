@@ -57,9 +57,16 @@
 #define YY_DECL int yylex YY_PROTO(( void ))
 YY_DECL;
 
+int yyget_lineno (void) __attribute__((pure));
+int yyget_leng (void) __attribute__((pure));
+int yywrap (void) __attribute__((const));
+char *yyget_text (void) __attribute__((pure));
+int yyget_debug (void) __attribute__((pure));
+FILE *yyget_in (void) __attribute__((pure));
+FILE *yyget_out (void) __attribute__((pure));
 
 static int keyword_or_id (const char *token);
-static int convert_relop (const char *relop);
+static int convert_relop (const char *relop) __attribute__((pure));
 
 %}
 

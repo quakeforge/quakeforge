@@ -107,13 +107,13 @@ struct expr_s;
 struct method_s;
 struct symbol_s;
 
-int obj_is_id (const struct type_s *type);
-int obj_is_class (const struct type_s *type);
-int obj_is_Class (const struct type_s *type);
-int obj_is_classptr (const struct type_s *type);
+int obj_is_id (const struct type_s *type) __attribute__((pure));
+int obj_is_class (const struct type_s *type) __attribute__((pure));
+int obj_is_Class (const struct type_s *type) __attribute__((pure));
+int obj_is_classptr (const struct type_s *type) __attribute__((pure));
 int obj_types_assignable (const struct type_s *dst, const struct type_s *src);
 
-class_t *extract_class (class_type_t *class_type);
+class_t *extract_class (class_type_t *class_type) __attribute__((pure));
 const char *get_class_name (class_type_t *class_type, int pretty);
 struct symbol_s *class_symbol (class_type_t *class_type, int external);
 void class_init (void);
@@ -125,7 +125,7 @@ void class_add_ivars (class_t *class, struct symtab_s *ivars);
 void class_check_ivars (class_t *class, struct symtab_s *ivars);
 void class_begin (class_type_t *class_type);
 void class_finish (class_type_t *class_type);
-int class_access (class_type_t *current_class, class_t *class);
+int class_access (class_type_t *current_class, class_t *class) __attribute__((pure));
 struct symbol_s *class_find_ivar (class_t *class, int vis, const char *name);
 struct symtab_s *class_ivar_scope (class_type_t *class_type,
 								   struct symtab_s *parent);
@@ -153,8 +153,8 @@ void protocol_add_protocols (protocol_t *protocol, protocollist_t *protocols);
 struct def_s *protocol_def (protocol_t *protocol);
 protocollist_t *new_protocol_list (void);
 protocollist_t *add_protocol (protocollist_t *protocollist, const char *name);
-int procollist_find_protocol (protocollist_t *protocollist, protocol_t *proto);
-int compare_protocols (protocollist_t *protos1, protocollist_t *protos2);
+int procollist_find_protocol (protocollist_t *protocollist, protocol_t *proto) __attribute__((pure));
+int compare_protocols (protocollist_t *protos1, protocollist_t *protos2) __attribute__((pure));
 void print_protocollist (struct dstring_s *dstr, protocollist_t *protocollist);
 struct def_s *emit_protocol (protocol_t *protocol);
 struct def_s *emit_protocol_list (protocollist_t *protocols, const char *name);

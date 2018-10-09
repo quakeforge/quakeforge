@@ -122,12 +122,12 @@ void 	Cvar_WriteVariables (QFile *f);
 
 // attempts to match a partial variable name for command line completion
 // returns NULL if nothing fits
-const char 	*Cvar_CompleteVariable (const char *partial);
+const char 	*Cvar_CompleteVariable (const char *partial) __attribute__((pure));
 
 // Added by EvilTypeGuy - functions for tab completion system
 // Thanks to Fett erich@heintz.com
 // Thanks to taniwha
-int		Cvar_CompleteCountPossible (const char *partial);
+int		Cvar_CompleteCountPossible (const char *partial) __attribute__((pure));
 const char	**Cvar_CompleteBuildList (const char *partial);
 
 // Returns a pointer to the Cvar, NULL if not found

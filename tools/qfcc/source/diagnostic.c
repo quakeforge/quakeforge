@@ -72,7 +72,7 @@ report_function (expr_t *e)
 	last_func = current_func;
 }
 
-static void
+static __attribute__((format(printf, 4, 0))) void
 format_message (dstring_t *message, const char *msg_type, expr_t *e,
 				const char *fmt, va_list args)
 {
@@ -90,7 +90,7 @@ format_message (dstring_t *message, const char *msg_type, expr_t *e,
 	}
 }
 
-static void
+static __attribute__((format(printf, 2, 0))) void
 _warning (expr_t *e, const char *fmt, va_list args)
 {
 	dstring_t  *message = dstring_new ();

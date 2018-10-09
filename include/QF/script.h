@@ -95,7 +95,7 @@ void Script_UngetToken (script_t *script);
 /** Return a pointer to the current token.
 	\param script The script_t object being parsed
 */
-const char *Script_Token (script_t *script);
+const char *Script_Token (script_t *script) __attribute__((pure));
 
 //@}
 

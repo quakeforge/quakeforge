@@ -228,10 +228,10 @@ struct edict_s {
 void ED_ClearEdict (progs_t *pr, edict_t *e, int val);
 edict_t *ED_Alloc (progs_t *pr);
 void ED_Free (progs_t *pr, edict_t *ed);
-edict_t *ED_EdictNum(progs_t *pr, pr_int_t n);
-pr_int_t ED_NumForEdict(progs_t *pr, edict_t *e);
+edict_t *ED_EdictNum(progs_t *pr, pr_int_t n) __attribute__((pure));
+pr_int_t ED_NumForEdict(progs_t *pr, edict_t *e) __attribute__((pure));
 void ED_Count (progs_t *pr);
-qboolean PR_EdictValid (progs_t *pr, pr_int_t e);
+qboolean PR_EdictValid (progs_t *pr, pr_int_t e) __attribute__((pure));
 
 // pr_debug.c
 void ED_Print (progs_t *pr, edict_t *ed);
@@ -274,8 +274,8 @@ void ED_EntityParseFunction (progs_t *pr);
 */
 //@{
 
-ddef_t *PR_FieldAtOfs (progs_t *pr, pr_int_t ofs);
-ddef_t *PR_GlobalAtOfs (progs_t *pr, pr_int_t ofs);
+ddef_t *PR_FieldAtOfs (progs_t *pr, pr_int_t ofs) __attribute__((pure));
+ddef_t *PR_GlobalAtOfs (progs_t *pr, pr_int_t ofs) __attribute__((pure));
 
 ddef_t *PR_FindField (progs_t *pr, const char *name);
 ddef_t *PR_FindGlobal (progs_t *pr, const char *name);
@@ -1112,21 +1112,21 @@ int PR_LoadStrings (progs_t *pr);
 	\param num		string index to be validated
 	\return			true if the index is valid, false otherwise
 */
-qboolean PR_StringValid (progs_t *pr, string_t num);
+qboolean PR_StringValid (progs_t *pr, string_t num) __attribute__((pure));
 
 /** Convert a string index to a C string.
 	\param pr		pointer to ::progs_t VM struct
 	\param num		string index to be converted
 	\return			C pointer to the string.
 */
-const char *PR_GetString(progs_t *pr, string_t num);
+const char *PR_GetString(progs_t *pr, string_t num) __attribute__((pure));
 
 /** Retrieve the dstring_t associated with a mutable string.
 	\param pr		pointer to ::progs_t VM struct
 	\param num		string index of the mutable string
 	\return			the dstring implementing the mutable string
 */
-struct dstring_s *PR_GetMutableString(progs_t *pr, string_t num);
+struct dstring_s *PR_GetMutableString(progs_t *pr, string_t num) __attribute__((pure));
 
 /** Make a permanent progs string from the given C string. Will not create a
 	duplicate permanent string (temporary and mutable strings are not checked).
@@ -1450,14 +1450,14 @@ void PR_Debug_Init_Cvars (void);
 int PR_LoadDebug (progs_t *pr);
 void PR_Debug_Watch (progs_t *pr, const char *expr);
 void PR_Debug_Print (progs_t *pr, const char *expr);
-pr_auxfunction_t *PR_Get_Lineno_Func (progs_t *pr, pr_lineno_t *lineno);
-pr_uint_t PR_Get_Lineno_Addr (progs_t *pr, pr_lineno_t *lineno);
-pr_uint_t PR_Get_Lineno_Line (progs_t *pr, pr_lineno_t *lineno);
-pr_lineno_t *PR_Find_Lineno (progs_t *pr, pr_uint_t addr);
-const char *PR_Get_Source_File (progs_t *pr, pr_lineno_t *lineno);
+pr_auxfunction_t *PR_Get_Lineno_Func (progs_t *pr, pr_lineno_t *lineno) __attribute__((pure));
+pr_uint_t PR_Get_Lineno_Addr (progs_t *pr, pr_lineno_t *lineno) __attribute__((pure));
+pr_uint_t PR_Get_Lineno_Line (progs_t *pr, pr_lineno_t *lineno) __attribute__((pure));
+pr_lineno_t *PR_Find_Lineno (progs_t *pr, pr_uint_t addr) __attribute__((pure));
+const char *PR_Get_Source_File (progs_t *pr, pr_lineno_t *lineno) __attribute__((pure));
 const char *PR_Get_Source_Line (progs_t *pr, pr_uint_t addr);
-ddef_t *PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm);
-ddef_t *PR_Get_Local_Def (progs_t *pr, pr_int_t offs);
+ddef_t *PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm) __attribute__((pure));
+ddef_t *PR_Get_Local_Def (progs_t *pr, pr_int_t offs) __attribute__((pure));
 void PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents);
 void PR_DumpState (progs_t *pr);
 void PR_StackTrace (progs_t *pr);

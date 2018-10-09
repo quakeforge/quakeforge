@@ -314,7 +314,7 @@ SL_Shutdown (void)
 		SL_Del_All (all_slist);
 }
 
-static char *
+static __attribute__((pure)) char *
 gettokstart (char *str, int req, char delim)
 {
 	char       *start = str;
@@ -340,7 +340,7 @@ gettokstart (char *str, int req, char delim)
 	return start;
 }
 
-static int
+static __attribute__((pure)) int
 gettoklen (char *str, int req, char delim)
 {
 	char       *start = 0;

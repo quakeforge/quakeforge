@@ -255,7 +255,7 @@ void SV_DropClient (qboolean crash);
 void SV_SendClientMessages (void);
 void SV_ClearDatagram (void);
 
-int SV_ModelIndex (const char *name);
+int SV_ModelIndex (const char *name) __attribute__((pure));
 
 void SV_SetIdealPitch (void);
 
@@ -268,7 +268,7 @@ void SV_ClientPrintf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void SV_BroadcastPrintf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 
 struct trace_s SV_PushEntity (edict_t *ent, vec3_t push);
-int SV_EntCanSupportJump (edict_t *ent);
+int SV_EntCanSupportJump (edict_t *ent) __attribute__((pure));
 int SV_FlyMove (edict_t *ent, float time, struct trace_s *steptrace);
 void SV_CheckVelocity (edict_t *ent);
 qboolean SV_RunThink (edict_t *ent);

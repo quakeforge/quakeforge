@@ -111,7 +111,7 @@ struct expr_s;
 struct type_s;
 struct dstring_s;
 
-const char *optype_str (op_type_e type);
+const char *optype_str (op_type_e type) __attribute__((const));
 
 operand_t *def_operand (struct def_s *def, struct type_s *type);
 operand_t *value_operand (struct ex_value_s *value);
@@ -122,12 +122,12 @@ void free_operand (operand_t *op);
 sblock_t *new_sblock (void);
 statement_t *new_statement (st_type_t type, const char *opcode,
 							struct expr_s *expr);
-int statement_is_cond (statement_t *s);
-int statement_is_goto (statement_t *s);
-int statement_is_jumpb (statement_t *s);
-int statement_is_call (statement_t *s);
-int statement_is_return (statement_t *s);
-sblock_t *statement_get_target (statement_t *s);
+int statement_is_cond (statement_t *s) __attribute__((pure));
+int statement_is_goto (statement_t *s) __attribute__((pure));
+int statement_is_jumpb (statement_t *s) __attribute__((pure));
+int statement_is_call (statement_t *s) __attribute__((pure));
+int statement_is_return (statement_t *s) __attribute__((pure));
+sblock_t *statement_get_target (statement_t *s) __attribute__((pure));
 sblock_t **statement_get_targetlist (statement_t *s);
 void sblock_add_statement (sblock_t *sblock, statement_t *statement);
 sblock_t *make_statements (struct expr_s *expr);

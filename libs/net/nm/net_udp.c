@@ -433,7 +433,7 @@ error:
 	return -1;
 }
 
-int
+__attribute__((const)) int
 UDP_Connect (int socket, netadr_t *addr)
 {
 	return 0;
@@ -651,7 +651,7 @@ UDP_GetAddrFromName (const char *name, netadr_t *addr)
 	return 0;
 }
 
-int
+__attribute__((pure)) int
 UDP_AddrCompare (netadr_t *addr1, netadr_t *addr2)
 {
 	if (addr1->family != addr2->family)
@@ -666,7 +666,7 @@ UDP_AddrCompare (netadr_t *addr1, netadr_t *addr2)
 	return 0;
 }
 
-int
+__attribute__((pure)) int
 UDP_GetSocketPort (netadr_t *addr)
 {
 	return ntohs (addr->port);

@@ -62,7 +62,7 @@ int	Sys_FileExists (const char *path);
 int Sys_isdir (const char *path);
 int Sys_mkdir (const char *path);
 
-typedef void (*sys_printf_t) (const char *fmt, va_list args);
+typedef void (*sys_printf_t) (const char *fmt, va_list args) __attribute__((format(printf, 1, 0)));
 typedef void (*sys_error_t) (void *data);
 
 void Sys_SetStdPrintf (sys_printf_t func);
@@ -71,7 +71,7 @@ void Sys_SetErrPrintf (sys_printf_t func);
 void Sys_PushErrorHandler (sys_error_t func, void *data);
 void Sys_PopErrorHandler (void);
 
-void Sys_Print (FILE *stream, const char *fmt, va_list args);
+void Sys_Print (FILE *stream, const char *fmt, va_list args) __attribute__((format(printf, 2, 0)));
 void Sys_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void Sys_Error (const char *error, ...) __attribute__((format(printf,1,2), noreturn));
 void Sys_FatalError (const char *error, ...) __attribute__((format(printf,1,2), noreturn));

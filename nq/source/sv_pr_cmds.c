@@ -1069,7 +1069,7 @@ PF_changeyaw (progs_t *pr)
 #define	MSG_ALL			2				// reliable to all
 #define	MSG_INIT		3				// write to the init string
 
-static sizebuf_t *
+static __attribute__((pure)) sizebuf_t *
 WriteDest (progs_t *pr)
 {
 	int         entnum;

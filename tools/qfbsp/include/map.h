@@ -95,7 +95,7 @@ void PrintEntity (const entity_t *ent);
 	\return			The value for the key, or the empty string if the key
 					does not exist in this entity.
 */
-const char *ValueForKey (const entity_t *ent, const char *key);
+const char *ValueForKey (const entity_t *ent, const char *key) __attribute__((pure));
 
 /**	Set the value of the entity's key.
 	If the key does not exist, one will be added.

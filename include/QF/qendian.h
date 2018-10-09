@@ -75,12 +75,12 @@
 
 extern qboolean		bigendien;
 
-uint16_t	_ShortSwap (uint16_t l);
-uint16_t	_ShortNoSwap (uint16_t l);
-uint32_t _LongSwap (uint32_t l);
-uint32_t _LongNoSwap (uint32_t l);
-float	_FloatSwap (float f);
-float	_FloatNoSwap (float f);
+uint16_t	_ShortSwap (uint16_t l) __attribute__((const));
+uint16_t	_ShortNoSwap (uint16_t l) __attribute__((const));
+uint32_t _LongSwap (uint32_t l) __attribute__((const));
+uint32_t _LongNoSwap (uint32_t l) __attribute__((const));
+float	_FloatSwap (float f) __attribute__((const));
+float	_FloatNoSwap (float f) __attribute__((const));
 
 
 #ifdef __GNUC__

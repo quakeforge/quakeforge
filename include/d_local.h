@@ -94,11 +94,11 @@ void R_ShowSubDiv (void);
 extern void (*prealspandrawer)(void);
 surfcache_t	*D_CacheSurface (msurface_t *surface, int miplevel);
 
-extern int D_MipLevelForScale (float scale);
+int D_MipLevelForScale (float scale) __attribute__((pure));
 
 #ifdef USE_INTEL_ASM
-extern void D_PolysetAff8Start (void);
-extern void D_PolysetAff8End (void);
+void D_PolysetAff8Start (void);
+void D_PolysetAff8End (void);
 #endif
 
 extern short *d_pzbuffer;

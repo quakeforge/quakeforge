@@ -113,7 +113,7 @@ CL_NextDemo (void)
 {
 }
 
-int
+__attribute__((const)) int
 CL_ReadFromServer (void)
 {
 	return 0;
@@ -156,7 +156,7 @@ S_UnblockSound (void)
 }
 
 plugin_t *console_client_PluginInfo (void);
-plugin_t *
+__attribute__((const)) plugin_t *
 console_client_PluginInfo (void)
 {
 	return 0;

@@ -17,7 +17,7 @@ pr_info_t   pr;
 function_t *current_func;
 class_type_t *current_class;
 
-const char *
+__attribute__((const))const char *
 get_class_name (class_type_t *class_type, int prett)
 {
 	return 0;

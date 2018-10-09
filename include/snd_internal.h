@@ -502,13 +502,13 @@ int SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname);
 	\param sfx		sound reference
 	\return			pointer to sound's wavinfo
 */
-wavinfo_t *SND_CacheWavinfo (sfx_t *sfx);
+wavinfo_t *SND_CacheWavinfo (sfx_t *sfx) __attribute__((pure));
 
 /** Retrieve wavinfo from a streamed sound.
 	\param sfx		sound reference
 	\return			pointer to sound's wavinfo
 */
-wavinfo_t *SND_StreamWavinfo (sfx_t *sfx);
+wavinfo_t *SND_StreamWavinfo (sfx_t *sfx) __attribute__((pure));
 
 /** Ensure a cached sound is in memory.
 	\param sfx		sound reference
@@ -522,7 +522,7 @@ sfxbuffer_t *SND_CacheTouch (sfx_t *sfx);
 	\note	The sound must be retained with SND_CacheRetain() for the returned
 			buffer to be valid.
 */
-sfxbuffer_t *SND_CacheGetBuffer (sfx_t *sfx);
+sfxbuffer_t *SND_CacheGetBuffer (sfx_t *sfx) __attribute__((pure));
 
 /** Lock a cached sound into memory. After calling this, SND_CacheGetBffer()
 	will return a valid buffer.
@@ -541,14 +541,14 @@ void SND_CacheRelease (sfx_t *sfx);
 	\param sfx		sound reference
 	\return			poitner to sound buffer
 */
-sfxbuffer_t *SND_StreamGetBuffer (sfx_t *sfx);
+sfxbuffer_t *SND_StreamGetBuffer (sfx_t *sfx) __attribute__((pure));
 
 /** Lock a streamed sound into memory. Doesn't actually do anything other than
 	return a pointer to the buffer.
 	\param sfx		sound reference
 	\return			poitner to sound buffer
 */
-sfxbuffer_t *SND_StreamRetain (sfx_t *sfx);
+sfxbuffer_t *SND_StreamRetain (sfx_t *sfx) __attribute__((pure));
 
 /** Unlock a streamed sound from memory. Doesn't actually do anything.
 	\param sfx		sound reference

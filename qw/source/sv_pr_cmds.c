@@ -1061,7 +1061,7 @@ PF_changeyaw (progs_t *pr)
 #define	MSG_INIT		3				// write to the init string
 #define	MSG_MULTICAST	4				// for multicast ()
 
-static sizebuf_t *
+static __attribute__((pure)) sizebuf_t *
 WriteDest (progs_t *pr)
 {
 	int         dest;
@@ -1094,7 +1094,7 @@ WriteDest (progs_t *pr)
 	return NULL;
 }
 
-static client_t *
+static __attribute__((pure)) client_t *
 Write_GetClient (progs_t *pr)
 {
 	edict_t    *ent;

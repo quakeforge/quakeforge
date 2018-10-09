@@ -144,7 +144,7 @@ free_string_ref (progs_t *pr, strref_t *sr)
 	pr->free_string_refs = sr;
 }
 
-static string_t
+static __attribute__((pure)) string_t
 string_index (progs_t *pr, strref_t *sr)
 {
 	long        o = (long) (sr - pr->static_strings);
@@ -251,7 +251,7 @@ get_strref (progs_t *pr, string_t num)
 	return 0;
 }
 
-static inline const char *
+static inline __attribute__((pure)) const char *
 get_string (progs_t *pr, string_t num)
 {
 	if (num < 0) {

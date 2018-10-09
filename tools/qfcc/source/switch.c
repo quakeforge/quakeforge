@@ -63,7 +63,7 @@ typedef struct case_node_s {
 	struct case_node_s *left, *right;
 } case_node_t;
 
-static ex_value_t *
+static __attribute__((pure)) ex_value_t *
 get_value (expr_t *e)
 {
 	if (e->type == ex_symbol)
@@ -73,7 +73,7 @@ get_value (expr_t *e)
 	return e->e.value;
 }
 
-static uintptr_t
+static __attribute__((pure)) uintptr_t
 get_hash (const void *_cl, void *unused)
 {
 	case_label_t *cl = (case_label_t *) _cl;
@@ -172,7 +172,7 @@ new_switch_block (void)
 	return switch_block;
 }
 
-static int
+static __attribute__((pure)) int
 label_compare (const void *_a, const void *_b)
 {
 	const case_label_t **a = (const case_label_t **) _a;
