@@ -1612,6 +1612,19 @@ struct progs_s {
 	prstack_t   pr_stack[MAX_STACK_DEPTH];
 	int         pr_depth;
 
+	/// \name progs visible stack
+	/// Usable by the progs for any purpose. Will not be accessible unless
+	/// a .stack global is found. Space is allocated from the top of the stack
+	/// (as is common for hardware). The push and pop instructions will not
+	/// be considered valid if there is no .stack global.
+	/// \note The return address and saved locals will not ever be on this
+	/// stack.
+	//@{
+	pr_type_t  *stack;
+	pointer_t   stack_bottom;
+	int         stack_size;			///< set by user
+	//@}
+
 	int         localstack[LOCALSTACK_SIZE];
 	int         localstack_used;
 	//@}
@@ -1656,6 +1669,7 @@ struct progs_s {
 	struct {
 		float      *time;		///< required for OP_STATE
 		pr_int_t   *self;		///< required for OP_STATE
+		pointer_t  *stack;		///< required for OP_(PUSH|POP)*
 	} globals;
 	struct {
 		pr_int_t    nextthink;	///< required for OP_STATE

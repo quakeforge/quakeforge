@@ -97,6 +97,17 @@ free_progs_mem (progs_t *pr, void *mem)
 {
 }
 
+static int
+align_size (int size)
+{
+	// round off to next highest whole word address (esp for Alpha)
+	// this ensures that pointers in the engine data area are always
+	// properly aligned
+	size += sizeof (void*) - 1;
+	size &= ~(sizeof (void*) - 1);
+	return size;
+}
+
 VISIBLE void
 PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 {
@@ -160,33 +171,27 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	// size of progs themselves
 	pr->progs_size = size + offset_tweak;
 	Sys_MaskPrintf (SYS_DEV, "Programs occupy %iK.\n", size / 1024);
-	// round off to next highest whole word address (esp for Alpha)
-	// this ensures that pointers in the engine data area are always
-	// properly aligned
-	pr->progs_size += sizeof (void*) - 1;
-	pr->progs_size &= ~(sizeof (void*) - 1);
 
-	// round off to next highest whole word address (esp for Alpha)
-	// this ensures that pointers in the engine data area are always
-	// properly aligned
-	pr->zone_size += sizeof (void*) - 1;
-	pr->zone_size &= ~(sizeof (void*) - 1);
+	pr->progs_size = align_size (pr->progs_size);
+	pr->zone_size = align_size (pr->zone_size);
+	pr->stack_size = align_size (pr->stack_size);
 
 	// size of edict asked for by progs
 	pr->pr_edict_size = max (1, progs.entityfields) * 4;
 	// size of engine data
 	pr->pr_edict_size += sizeof (edict_t);
-	// round off to next highest whole word address (esp for Alpha)
-	// this ensures that pointers in the engine data area are always
-	// properly aligned
-	pr->pr_edict_size += sizeof (void*) - 1;
-	pr->pr_edict_size &= ~(sizeof (void*) - 1);
+	pr->pr_edict_size = align_size (pr->progs_size);
+
 	pr->pr_edictareasize = pr->max_edicts * pr->pr_edict_size;
 
-	mem_size = pr->progs_size + pr->zone_size + pr->pr_edictareasize;
+	mem_size = pr->progs_size + pr->zone_size + pr->pr_edictareasize
+			   + pr->stack_size;
+	// +1 for a nul terminator
 	pr->progs = pr->allocate_progs_mem (pr, mem_size + 1);
 	if (!pr->progs)
 		return;
+	// Place a nul at the end of progs memory to ensure any unterminated
+	// strings within progs memory don't run off the end.
 	((byte *) pr->progs)[mem_size] = 0;
 
 	memcpy (pr->progs, &progs, sizeof (progs));
@@ -195,8 +200,10 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	CRC_ProcessBlock (base, &pr->crc, size - sizeof (progs));
 	base -= sizeof (progs);	// offsets are from file start
 
-	if (pr->edicts)
+	if (pr->edicts) {
 		*pr->edicts = (edict_t *)((byte *) pr->progs + pr->progs_size);
+	}
+
 	if (pr->zone_size) {
 		//FIXME zone_size needs to be at least as big as memzone_t, but
 		//memzone_t is opaque so its size is unknown
@@ -213,9 +220,11 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	pr->pr_statements = (dstatement_t *) (base + pr->progs->ofs_statements);
 
 	pr->pr_globals = (pr_type_t *) (base + pr->progs->ofs_globals);
-
-	pr->globals_size = (pr_type_t*)((byte *) pr->zone + pr->zone_size)
+	pr->stack = (pr_type_t *) ((byte *) pr->zone + pr->zone_size);
+	pr->stack_bottom = pr->stack - pr->pr_globals;
+	pr->globals_size = (pr_type_t *) ((byte *) pr->stack + pr->stack_size)
 						- pr->pr_globals;
+
 	if (pr->zone) {
 		PR_Zone_Init (pr);
 	}

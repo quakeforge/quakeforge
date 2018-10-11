@@ -44,6 +44,8 @@
 #include "QF/progs.h"
 #include "QF/sys.h"
 
+#include "compat.h"
+
 hashtab_t *opcode_table;
 
 VISIBLE int pr_type_size[ev_type_count] = {
@@ -1041,6 +1043,282 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 "%Ga, %Gb, %Gc",
 	},
 
+	{"<PUSH>", "push.s", OP_PUSH_S, false,
+	 ev_string, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%Ga",
+	},
+	{"<PUSH>", "push.f", OP_PUSH_F, false,
+	 ev_float, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%Ga",
+	},
+	{"<PUSH>", "push.v", OP_PUSH_V, false,
+	 ev_vector, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%Ga",
+	},
+	{"<PUSH>", "push.ent", OP_PUSH_ENT, false,
+	 ev_entity, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%Ga",
+	},
+	{"<PUSH>", "push.fld", OP_PUSH_FLD, false,
+	 ev_field, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%Ga",
+	},
+	{"<PUSH>", "push.fn", OP_PUSH_FN, false,
+	 ev_func, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%Ga",
+	},
+	{"<PUSH>", "push.p", OP_PUSH_P, false,
+	 ev_pointer, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%Ga",
+	},
+	{"<PUSH>", "push.q", OP_PUSH_Q, false,
+	 ev_quat, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%Ga",
+	},
+	{"<PUSH>", "push.i", OP_PUSH_I, false,
+	 ev_integer, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%Ga",
+	},
+
+	{"<PUSH>", "pushb.s", OP_PUSHB_S, false,
+	 ev_pointer, ev_integer, ev_string,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<PUSH>", "pushb.f", OP_PUSHB_F, false,
+	 ev_pointer, ev_integer, ev_float,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<PUSH>", "pushb.v", OP_PUSHB_V, false,
+	 ev_pointer, ev_integer, ev_vector,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<PUSH>", "pushb.ent", OP_PUSHB_ENT, false,
+	 ev_pointer, ev_integer, ev_entity,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<PUSH>", "pushb.fld", OP_PUSHB_FLD, false,
+	 ev_pointer, ev_integer, ev_field,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<PUSH>", "pushb.fn", OP_PUSHB_FN, false,
+	 ev_pointer, ev_integer, ev_func,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<PUSH>", "pushb.p", OP_PUSHB_P, false,
+	 ev_pointer, ev_integer, ev_pointer,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<PUSH>", "pushb.q", OP_PUSHB_Q, false,
+	 ev_pointer, ev_integer, ev_quat,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<PUSH>", "pushb.i", OP_PUSHB_I, false,
+	 ev_pointer, ev_integer, ev_integer,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+
+	{"<PUSH>", "pushbi.s", OP_PUSHBI_S, false,
+	 ev_pointer, ev_short, ev_string,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<PUSH>", "pushbi.f", OP_PUSHBI_F, false,
+	 ev_pointer, ev_short, ev_float,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<PUSH>", "pushbi.v", OP_PUSHBI_V, false,
+	 ev_pointer, ev_short, ev_vector,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<PUSH>", "pushbi.ent", OP_PUSHBI_ENT, false,
+	 ev_pointer, ev_short, ev_entity,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<PUSH>", "pushbi.fld", OP_PUSHBI_FLD, false,
+	 ev_pointer, ev_short, ev_field,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<PUSH>", "pushbi.fn", OP_PUSHBI_FN, false,
+	 ev_pointer, ev_short, ev_func,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<PUSH>", "pushbi.p", OP_PUSHBI_P, false,
+	 ev_pointer, ev_short, ev_pointer,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<PUSH>", "pushbi.q", OP_PUSHBI_Q, false,
+	 ev_pointer, ev_short, ev_quat,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<PUSH>", "pushbi.i", OP_PUSHBI_I, false,
+	 ev_pointer, ev_short, ev_integer,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+
+	{"<POP>", "pop.s", OP_POP_S, false,
+	 ev_string, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%ga",
+	},
+	{"<POP>", "pop.f", OP_POP_F, false,
+	 ev_float, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%ga",
+	},
+	{"<POP>", "pop.v", OP_POP_V, false,
+	 ev_vector, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%ga",
+	},
+	{"<POP>", "pop.ent", OP_POP_ENT, false,
+	 ev_entity, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%ga",
+	},
+	{"<POP>", "pop.fld", OP_POP_FLD, false,
+	 ev_field, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%ga",
+	},
+	{"<POP>", "pop.fn", OP_POP_FN, false,
+	 ev_func, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%ga",
+	},
+	{"<POP>", "pop.p", OP_POP_P, false,
+	 ev_pointer, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%ga",
+	},
+	{"<POP>", "pop.q", OP_POP_Q, false,
+	 ev_quat, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%ga",
+	},
+	{"<POP>", "pop.i", OP_POP_I, false,
+	 ev_integer, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%ga",
+	},
+
+	{"<POP>", "popb.s", OP_POPB_S, false,
+	 ev_pointer, ev_integer, ev_string,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<POP>", "popb.f", OP_POPB_F, false,
+	 ev_pointer, ev_integer, ev_float,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<POP>", "popb.v", OP_POPB_V, false,
+	 ev_pointer, ev_integer, ev_vector,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<POP>", "popb.ent", OP_POPB_ENT, false,
+	 ev_pointer, ev_integer, ev_entity,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<POP>", "popb.fld", OP_POPB_FLD, false,
+	 ev_pointer, ev_integer, ev_field,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<POP>", "popb.fn", OP_POPB_FN, false,
+	 ev_pointer, ev_integer, ev_func,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<POP>", "popb.p", OP_POPB_P, false,
+	 ev_pointer, ev_integer, ev_pointer,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<POP>", "popb.q", OP_POPB_Q, false,
+	 ev_pointer, ev_integer, ev_quat,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<POP>", "popb.i", OP_POPB_I, false,
+	 ev_pointer, ev_integer, ev_integer,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+
+	{"<POP>", "popbi.s", OP_POPBI_S, false,
+	 ev_pointer, ev_short, ev_string,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<POP>", "popbi.f", OP_POPBI_F, false,
+	 ev_pointer, ev_short, ev_float,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<POP>", "popbi.v", OP_POPBI_V, false,
+	 ev_pointer, ev_short, ev_vector,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<POP>", "popbi.ent", OP_POPBI_ENT, false,
+	 ev_pointer, ev_short, ev_entity,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<POP>", "popbi.fld", OP_POPBI_FLD, false,
+	 ev_pointer, ev_short, ev_field,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<POP>", "popbi.fn", OP_POPBI_FN, false,
+	 ev_pointer, ev_short, ev_func,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<POP>", "popbi.p", OP_POPBI_P, false,
+	 ev_pointer, ev_short, ev_pointer,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<POP>", "popbi.q", OP_POPBI_Q, false,
+	 ev_pointer, ev_short, ev_quat,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<POP>", "popbi.i", OP_POPBI_I, false,
+	 ev_pointer, ev_short, ev_integer,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+
 	// end of table
 	{0},
 };
@@ -1192,11 +1470,16 @@ PR_Check_Opcodes (progs_t *pr)
 	opcode_t   *op;
 	dstatement_t *st;
 	int         state_ok = 0;
+	int         pushpop_ok = 0;
 	pr_uint_t   i;
 
 	if (pr->globals.time && pr->globals.self && pr->fields.nextthink != -1
-		&& pr->fields.think != -1 && pr->fields.frame != -1)
+		&& pr->fields.think != -1 && pr->fields.frame != -1) {
 		state_ok = 1;
+	}
+	if (pr->globals.stack) {
+		pushpop_ok = 1;
+	}
 
 	//FIXME need to decide if I really want to always do static bounds checking
 	// the only problem is that it slows progs load a little, but it's the only
@@ -1213,6 +1496,11 @@ PR_Check_Opcodes (progs_t *pr)
 			if ((st->op == OP_STATE || st->op == OP_STATE_F) && !state_ok) {
 				PR_Error (pr, "PR_Check_Opcodes: %s used with missing fields "
 						  "or globals", op->opname);
+			}
+			if ((strequal(op->name, "<PUSH>") || strequal(op->name, "<POP>"))
+				&& !pushpop_ok) {
+				PR_Error (pr, "PR_Check_Opcodes: %s used with missing .stack "
+						  "globals", op->opname);
 			}
 		}
 	} else {
@@ -1266,6 +1554,69 @@ PR_Check_Opcodes (progs_t *pr)
 				case OP_MOVEI:
 					check_global_size (pr, st, op, st->b, st->a);
 					check_global_size (pr, st, op, st->b, st->c);
+					break;
+				case OP_PUSHB_F:
+				case OP_PUSHB_S:
+				case OP_PUSHB_ENT:
+				case OP_PUSHB_FLD:
+				case OP_PUSHB_FN:
+				case OP_PUSHB_I:
+				case OP_PUSHB_P:
+				case OP_PUSHB_V:
+				case OP_PUSHB_Q:
+				case OP_PUSHBI_F:
+				case OP_PUSHBI_S:
+				case OP_PUSHBI_ENT:
+				case OP_PUSHBI_FLD:
+				case OP_PUSHBI_FN:
+				case OP_PUSHBI_I:
+				case OP_PUSHBI_P:
+				case OP_PUSHBI_V:
+				case OP_PUSHBI_Q:
+					// op->type_c is used for selecting the operator during
+					// compilation, but is invalid when running
+					check_global (pr, st, op, op->type_a, st->a, 1);
+					check_global (pr, st, op, op->type_b, st->b, 1);
+					check_global (pr, st, op, ev_invalid, st->c, 1);
+					break;
+				case OP_POP_F:
+				case OP_POP_FLD:
+				case OP_POP_ENT:
+				case OP_POP_S:
+				case OP_POP_FN:
+				case OP_POP_I:
+				case OP_POP_P:
+				case OP_POP_V:
+				case OP_POP_Q:
+					// don't want to check for denormal floats, otherwise
+					// OP_POP_* could use the defualt rule
+					check_global (pr, st, op, op->type_a, st->a, 0);
+					check_global (pr, st, op, ev_invalid, st->b, 1);
+					check_global (pr, st, op, ev_invalid, st->c, 1);
+					break;
+				case OP_POPB_F:
+				case OP_POPB_S:
+				case OP_POPB_ENT:
+				case OP_POPB_FLD:
+				case OP_POPB_FN:
+				case OP_POPB_I:
+				case OP_POPB_P:
+				case OP_POPB_V:
+				case OP_POPB_Q:
+				case OP_POPBI_F:
+				case OP_POPBI_S:
+				case OP_POPBI_ENT:
+				case OP_POPBI_FLD:
+				case OP_POPBI_FN:
+				case OP_POPBI_I:
+				case OP_POPBI_P:
+				case OP_POPBI_V:
+				case OP_POPBI_Q:
+					// op->type_c is used for selecting the operator during
+					// compilation, but is invalid when running
+					check_global (pr, st, op, op->type_a, st->a, 1);
+					check_global (pr, st, op, op->type_b, st->b, 1);
+					check_global (pr, st, op, ev_invalid, st->c, 1);
 					break;
 				default:
 					check_global (pr, st, op, op->type_a, st->a, 1);

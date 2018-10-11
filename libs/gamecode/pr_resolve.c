@@ -149,6 +149,13 @@ PR_ResolveGlobals (progs_t *pr)
 			|| (def = PR_FindGlobal (pr, "self")))
 			pr->globals.self = &G_INT (pr, def->ofs);
 	}
+	if (!pr->globals.stack) {
+		if ((def = PR_FindGlobal (pr, ".stack"))
+			|| (def = PR_FindGlobal (pr, "stack")))
+			pr->globals.stack = &G_POINTER (pr, def->ofs);
+		// the stack is at the very end of the progs memory map
+		*pr->globals.stack = pr->globals_size;
+	}
 	if (pr->fields.nextthink == -1)
 		if ((def = PR_FindField (pr, "nextthink")))
 			pr->fields.nextthink = def->ofs;

@@ -358,13 +358,24 @@ PR_CallFunction (progs_t *pr, func_t fnum)
 	}
 }
 
+static void
+check_stack_pointer (progs_t *pr, pointer_t stack, int size)
+{
+	if (stack < pr->stack_bottom) {
+		PR_RunError (pr, "Progs stack overflow");
+	}
+	if (stack > pr->globals_size - size) {
+		PR_RunError (pr, "Progs stack underflow");
+	}
+}
+
 /*
 	PR_ExecuteProgram
 
 	The interpretation main loop
 */
 VISIBLE void
-PR_ExecuteProgram (progs_t * pr, func_t fnum)
+PR_ExecuteProgram (progs_t *pr, func_t fnum)
 {
 	int         exitdepth, profile, startprofile;
 	pr_uint_t   pointer;
@@ -857,6 +868,318 @@ PR_ExecuteProgram (progs_t * pr, func_t fnum)
 				}
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (OPA.quat_var, ptr->quat_var);
+				break;
+
+			case OP_PUSH_F:
+			case OP_PUSH_FLD:
+			case OP_PUSH_ENT:
+			case OP_PUSH_S:
+			case OP_PUSH_FN:
+			case OP_PUSH_I:
+			case OP_PUSH_P:
+				{
+					pointer_t   stack = *pr->globals.stack - 1;
+					pr_type_t  *stk = pr->pr_globals + stack;
+					if (pr_boundscheck->int_val) {
+						check_stack_pointer (pr, stack, 1);
+					}
+					stk->integer_var = OPA.integer_var;
+					*pr->globals.stack = stack;
+				}
+				break;
+			case OP_PUSH_V:
+				{
+					pointer_t   stack = *pr->globals.stack - 3;
+					pr_type_t  *stk = pr->pr_globals + stack;
+					if (pr_boundscheck->int_val) {
+						check_stack_pointer (pr, stack, 3);
+					}
+					memcpy (stk, &OPA, 3 * sizeof (OPC));
+					*pr->globals.stack = stack;
+				}
+				break;
+			case OP_PUSH_Q:
+				{
+					pointer_t   stack = *pr->globals.stack - 4;
+					pr_type_t  *stk = pr->pr_globals + stack;
+					if (pr_boundscheck->int_val) {
+						check_stack_pointer (pr, stack, 4);
+					}
+					memcpy (stk, &OPA, 4 * sizeof (OPC));
+					*pr->globals.stack = stack;
+				}
+				break;
+
+			case OP_PUSHB_F:
+			case OP_PUSHB_S:
+			case OP_PUSHB_ENT:
+			case OP_PUSHB_FLD:
+			case OP_PUSHB_FN:
+			case OP_PUSHB_I:
+			case OP_PUSHB_P:
+				{
+					pointer_t   stack = *pr->globals.stack - 1;
+					pr_type_t  *stk = pr->pr_globals + stack;
+
+					pointer = OPA.integer_var + OPB.integer_var;
+					ptr = pr->pr_globals + pointer;
+
+					if (pr_boundscheck->int_val) {
+						check_stack_pointer (pr, stack, 1);
+						PR_BoundsCheck (pr, pointer, ev_integer);
+					}
+
+					stk->integer_var = ptr->integer_var;
+					*pr->globals.stack = stack;
+				}
+				break;
+			case OP_PUSHB_V:
+				{
+					pointer_t   stack = *pr->globals.stack - 3;
+					pr_type_t  *stk = pr->pr_globals + stack;
+
+					pointer = OPA.integer_var + OPB.integer_var;
+					ptr = pr->pr_globals + pointer;
+
+					if (pr_boundscheck->int_val) {
+						check_stack_pointer (pr, stack, 3);
+						PR_BoundsCheck (pr, pointer, ev_integer);
+					}
+
+					VectorCopy (ptr->vector_var, stk->vector_var);
+					*pr->globals.stack = stack;
+				}
+				break;
+			case OP_PUSHB_Q:
+				{
+					pointer_t   stack = *pr->globals.stack - 4;
+					pr_type_t  *stk = pr->pr_globals + stack;
+
+					pointer = OPA.integer_var + OPB.integer_var;
+					ptr = pr->pr_globals + pointer;
+
+					if (pr_boundscheck->int_val) {
+						check_stack_pointer (pr, stack, 4);
+						PR_BoundsCheck (pr, pointer, ev_quat);
+					}
+
+					QuatCopy (ptr->quat_var, stk->quat_var);
+					*pr->globals.stack = stack;
+				}
+				break;
+
+			case OP_PUSHBI_F:
+			case OP_PUSHBI_S:
+			case OP_PUSHBI_ENT:
+			case OP_PUSHBI_FLD:
+			case OP_PUSHBI_FN:
+			case OP_PUSHBI_I:
+			case OP_PUSHBI_P:
+				{
+					pointer_t   stack = *pr->globals.stack - 1;
+					pr_type_t  *stk = pr->pr_globals + stack;
+
+					pointer = OPA.integer_var + st->b;
+					ptr = pr->pr_globals + pointer;
+
+					if (pr_boundscheck->int_val) {
+						check_stack_pointer (pr, stack, 1);
+						PR_BoundsCheck (pr, pointer, ev_integer);
+					}
+
+					stk->integer_var = ptr->integer_var;
+					*pr->globals.stack = stack;
+				}
+				break;
+			case OP_PUSHBI_V:
+				{
+					pointer_t   stack = *pr->globals.stack - 3;
+					pr_type_t  *stk = pr->pr_globals + stack;
+
+					pointer = OPA.integer_var + st->b;
+					ptr = pr->pr_globals + pointer;
+
+					if (pr_boundscheck->int_val) {
+						check_stack_pointer (pr, stack, 3);
+						PR_BoundsCheck (pr, pointer, ev_integer);
+					}
+
+					VectorCopy (ptr->vector_var, stk->vector_var);
+					*pr->globals.stack = stack;
+				}
+				break;
+			case OP_PUSHBI_Q:
+				{
+					pointer_t   stack = *pr->globals.stack - 4;
+					pr_type_t  *stk = pr->pr_globals + stack;
+
+					pointer = OPA.integer_var + st->b;
+					ptr = pr->pr_globals + pointer;
+
+					if (pr_boundscheck->int_val) {
+						check_stack_pointer (pr, stack, 4);
+						PR_BoundsCheck (pr, pointer, ev_quat);
+					}
+
+					QuatCopy (ptr->quat_var, stk->quat_var);
+					*pr->globals.stack = stack;
+				}
+				break;
+
+			case OP_POP_F:
+			case OP_POP_FLD:
+			case OP_POP_ENT:
+			case OP_POP_S:
+			case OP_POP_FN:
+			case OP_POP_I:
+			case OP_POP_P:
+				{
+					pointer_t   stack = *pr->globals.stack;
+					pr_type_t  *stk = pr->pr_globals + stack;
+					if (pr_boundscheck->int_val) {
+						check_stack_pointer (pr, stack, 1);
+					}
+					stk->integer_var = OPA.integer_var;
+					*pr->globals.stack = stack + 1;
+				}
+				break;
+			case OP_POP_V:
+				{
+					pointer_t   stack = *pr->globals.stack;
+					pr_type_t  *stk = pr->pr_globals + stack;
+					if (pr_boundscheck->int_val) {
+						check_stack_pointer (pr, stack, 3);
+					}
+					memcpy (stk, &OPA, 3 * sizeof (OPC));
+					*pr->globals.stack = stack + 3;
+				}
+				break;
+			case OP_POP_Q:
+				{
+					pointer_t   stack = *pr->globals.stack;
+					pr_type_t  *stk = pr->pr_globals + stack;
+					if (pr_boundscheck->int_val) {
+						check_stack_pointer (pr, stack, 4);
+					}
+					memcpy (stk, &OPA, 4 * sizeof (OPC));
+					*pr->globals.stack = stack + 4;
+				}
+				break;
+
+			case OP_POPB_F:
+			case OP_POPB_S:
+			case OP_POPB_ENT:
+			case OP_POPB_FLD:
+			case OP_POPB_FN:
+			case OP_POPB_I:
+			case OP_POPB_P:
+				{
+					pointer_t   stack = *pr->globals.stack;
+					pr_type_t  *stk = pr->pr_globals + stack;
+
+					pointer = OPA.integer_var + OPB.integer_var;
+					ptr = pr->pr_globals + pointer;
+
+					if (pr_boundscheck->int_val) {
+						check_stack_pointer (pr, stack, 1);
+						PR_BoundsCheck (pr, pointer, ev_integer);
+					}
+
+					stk->integer_var = ptr->integer_var;
+					*pr->globals.stack = stack + 1;
+				}
+				break;
+			case OP_POPB_V:
+				{
+					pointer_t   stack = *pr->globals.stack;
+					pr_type_t  *stk = pr->pr_globals + stack;
+
+					pointer = OPA.integer_var + OPB.integer_var;
+					ptr = pr->pr_globals + pointer;
+
+					if (pr_boundscheck->int_val) {
+						check_stack_pointer (pr, stack, 3);
+						PR_BoundsCheck (pr, pointer, ev_integer);
+					}
+
+					VectorCopy (ptr->vector_var, stk->vector_var);
+					*pr->globals.stack = stack + 3;
+				}
+				break;
+			case OP_POPB_Q:
+				{
+					pointer_t   stack = *pr->globals.stack;
+					pr_type_t  *stk = pr->pr_globals + stack;
+
+					pointer = OPA.integer_var + OPB.integer_var;
+					ptr = pr->pr_globals + pointer;
+
+					if (pr_boundscheck->int_val) {
+						check_stack_pointer (pr, stack, 4);
+						PR_BoundsCheck (pr, pointer, ev_quat);
+					}
+
+					QuatCopy (ptr->quat_var, stk->quat_var);
+					*pr->globals.stack = stack + 4;
+				}
+				break;
+
+			case OP_POPBI_F:
+			case OP_POPBI_S:
+			case OP_POPBI_ENT:
+			case OP_POPBI_FLD:
+			case OP_POPBI_FN:
+			case OP_POPBI_I:
+			case OP_POPBI_P:
+				{
+					pointer_t   stack = *pr->globals.stack;
+					pr_type_t  *stk = pr->pr_globals + stack;
+
+					pointer = OPA.integer_var + st->b;
+					ptr = pr->pr_globals + pointer;
+
+					if (pr_boundscheck->int_val) {
+						check_stack_pointer (pr, stack, 1);
+						PR_BoundsCheck (pr, pointer, ev_integer);
+					}
+
+					stk->integer_var = ptr->integer_var;
+					*pr->globals.stack = stack + 1;
+				}
+				break;
+			case OP_POPBI_V:
+				{
+					pointer_t   stack = *pr->globals.stack;
+					pr_type_t  *stk = pr->pr_globals + stack;
+
+					pointer = OPA.integer_var + st->b;
+					ptr = pr->pr_globals + pointer;
+
+					if (pr_boundscheck->int_val) {
+						check_stack_pointer (pr, stack, 3);
+						PR_BoundsCheck (pr, pointer, ev_integer);
+					}
+
+					VectorCopy (ptr->vector_var, stk->vector_var);
+					*pr->globals.stack = stack + 3;
+				}
+				break;
+			case OP_POPBI_Q:
+				{
+					pointer_t   stack = *pr->globals.stack;
+					pr_type_t  *stk = pr->pr_globals + stack;
+
+					pointer = OPA.integer_var + st->b;
+					ptr = pr->pr_globals + pointer;
+
+					if (pr_boundscheck->int_val) {
+						check_stack_pointer (pr, stack, 4);
+						PR_BoundsCheck (pr, pointer, ev_quat);
+					}
+
+					QuatCopy (ptr->quat_var, stk->quat_var);
+					*pr->globals.stack = stack + 4;
+				}
 				break;
 
 			// ==================
