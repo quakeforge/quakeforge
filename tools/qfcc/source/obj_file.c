@@ -188,11 +188,13 @@ qfo_count_stuff (qfo_t *qfo, pr_info_t *pr)
 static void
 qfo_init_string_space (qfo_t *qfo, qfo_mspace_t *space, strpool_t *strings)
 {
+	size_t      size = strings->size * sizeof (*strings->strings);
 	strings->qfo_space = space - qfo->spaces;
 	space->type = qfos_string;
 	space->num_defs = 0;
 	space->defs = 0;
-	space->d.strings = strings->strings;
+	space->d.strings = malloc (size);
+	memcpy (space->d.strings, strings->strings, size);
 	space->data_size = strings->size;
 	space->id = qfo_strings_space;
 }
@@ -200,11 +202,13 @@ qfo_init_string_space (qfo_t *qfo, qfo_mspace_t *space, strpool_t *strings)
 static void
 qfo_init_code_space (qfo_t *qfo, qfo_mspace_t *space, codespace_t *code)
 {
+	size_t      size = code->size * sizeof (*code->code);
 	code->qfo_space = space - qfo->spaces;
 	space->type = qfos_code;
 	space->num_defs = 0;
 	space->defs = 0;
-	space->d.code = code->code;
+	space->d.code = malloc (size);
+	memcpy (space->d.code, code->code, size);
 	space->data_size = code->size;
 	space->id = qfo_code_space;
 }
@@ -213,11 +217,13 @@ static void
 qfo_init_data_space (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
 					 qfo_mspace_t *space, defspace_t *data)
 {
+	size_t      size = data->size * sizeof (*data->data);
 	data->qfo_space = space - qfo->spaces;
 	space->type = qfos_data;
 	space->defs = *defs;
 	space->num_defs = qfo_encode_defs (qfo, data->defs, defs, relocs);
-	space->d.data = data->data;
+	space->d.data = malloc (size);
+	memcpy (space->d.data, data->data, size);
 	space->data_size = data->size;
 }
 
@@ -238,11 +244,13 @@ static void
 qfo_init_type_space (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
 					 qfo_mspace_t *space, defspace_t *data)
 {
+	size_t      size = data->size * sizeof (*data->data);
 	data->qfo_space = space - qfo->spaces;
 	space->type = qfos_type;
 	space->defs = *defs;
 	space->num_defs = qfo_encode_defs (qfo, data->defs, defs, relocs);
-	space->d.data = data->data;
+	space->d.data = malloc (size);
+	memcpy (space->d.data, data->data, size);
 	space->data_size = data->size;
 	space->id = qfo_type_space;
 }
