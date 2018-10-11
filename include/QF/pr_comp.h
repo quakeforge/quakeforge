@@ -140,7 +140,7 @@ typedef enum {
 	OP_OR,
 
 	OP_BITAND,
-	OP_BITOR,
+	OP_BITOR,	// end of v6 opcodes
 
 	OP_ADD_S,
 	OP_LE_S,
