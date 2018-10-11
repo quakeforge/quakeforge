@@ -223,6 +223,8 @@ error (expr_t *e, const char *fmt, ...)
 {
 	va_list     args;
 
+	pr.error_count++;
+
 	report_function (e);
 
 	va_start (args, fmt);
