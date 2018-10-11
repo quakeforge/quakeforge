@@ -197,8 +197,12 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 
 	if (pr->edicts)
 		*pr->edicts = (edict_t *)((byte *) pr->progs + pr->progs_size);
-	pr->zone = (memzone_t *)((byte *) pr->progs + pr->progs_size
-						   + pr->pr_edictareasize);
+	if (pr->zone_size) {
+		//FIXME zone_size needs to be at least as big as memzone_t, but
+		//memzone_t is opaque so its size is unknown
+		pr->zone = (memzone_t *)((byte *) pr->progs + pr->progs_size
+								 + pr->pr_edictareasize);
+	}
 
 	pr->pr_functions =
 		(dfunction_t *) (base + pr->progs->ofs_functions);
@@ -212,8 +216,9 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 
 	pr->globals_size = (pr_type_t*)((byte *) pr->zone + pr->zone_size)
 						- pr->pr_globals;
-	if (pr->zone_size)
+	if (pr->zone) {
 		PR_Zone_Init (pr);
+	}
 
 	if (pr->function_hash) {
 		Hash_FlushTable (pr->function_hash);
