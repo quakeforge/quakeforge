@@ -133,7 +133,9 @@ load_progs (const char *name)
 		return 0;
 	}
 	pr.progs_name = name;
-	PR_LoadProgsFile (&pr, file, size, 1, 1024 * 1024);
+	pr.max_edicts = 1;
+	pr.zone_size = 1024*1024;
+	PR_LoadProgsFile (&pr, file, size);
 	Qclose (file);
 	if (!PR_RunLoadFuncs (&pr))
 		PR_Error (&pr, "unable to load %s", pr.progs_name);

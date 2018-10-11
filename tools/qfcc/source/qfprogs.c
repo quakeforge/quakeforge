@@ -322,7 +322,9 @@ load_progs (const char *name)
 		convert_qfo ();
 	} else {
 		pr.progs_name = name;
-		PR_LoadProgsFile (&pr, file, size, 1, 0);
+		pr.max_edicts = 1;
+		pr.zone_size = 0;
+		PR_LoadProgsFile (&pr, file, size);
 		Qclose (file);
 
 		if (!pr.progs)

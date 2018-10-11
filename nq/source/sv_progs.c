@@ -498,8 +498,9 @@ SV_LoadProgs (void)
 	if (*sv_progs->string)
 		progs_name = sv_progs->string;
 
-	PR_LoadProgs (&sv_pr_state, progs_name, sv.max_edicts,
-				  sv_progs_zone->int_val * 1024);
+	sv_pr_state.max_edicts = sv.max_edicts;
+	sv_pr_state.zone_size = sv_progs_zone->int_val * 1024;
+	PR_LoadProgs (&sv_pr_state, progs_name);
 	if (!sv_pr_state.progs)
 		Host_Error ("SV_LoadProgs: couldn't load %s", progs_name);
 

@@ -578,6 +578,9 @@ Menu_Init (void)
 	menu_pr_state.load_file = menu_load_file;
 	menu_pr_state.resolve = menu_resolve_globals;
 
+	menu_pr_state.max_edicts = 0;
+	menu_pr_state.zone_size = 1024 * 1024;
+
 	menu_hash = Hash_NewTable (61, menu_get_key, menu_free, 0);
 
 	PR_RegisterBuiltins (&menu_pr_state, builtins);
@@ -617,7 +620,7 @@ Menu_Load (void)
 	menu_pr_state.progs = 0;
 	if ((file = QFS_FOpenFile (menu_pr_state.progs_name))) {
 		size = Qfilesize (file);
-		PR_LoadProgsFile (&menu_pr_state, file, size, 0, 1024 * 1024);
+		PR_LoadProgsFile (&menu_pr_state, file, size);
 		Qclose (file);
 
 		if (!PR_RunLoadFuncs (&menu_pr_state)) {

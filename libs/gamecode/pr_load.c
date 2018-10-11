@@ -98,7 +98,7 @@ free_progs_mem (progs_t *pr, void *mem)
 }
 
 VISIBLE void
-PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int max_edicts, int zone)
+PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 {
 	size_t      i;
 	int         mem_size;
@@ -166,8 +166,6 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int max_edicts, int zone)
 	pr->progs_size += sizeof (void*) - 1;
 	pr->progs_size &= ~(sizeof (void*) - 1);
 
-	// size of heap asked for by vm-subsystem
-	pr->zone_size = zone;
 	// round off to next highest whole word address (esp for Alpha)
 	// this ensures that pointers in the engine data area are always
 	// properly aligned
@@ -183,8 +181,7 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int max_edicts, int zone)
 	// properly aligned
 	pr->pr_edict_size += sizeof (void*) - 1;
 	pr->pr_edict_size &= ~(sizeof (void*) - 1);
-	pr->pr_edictareasize = max_edicts * pr->pr_edict_size;
-	pr->max_edicts = max_edicts;
+	pr->pr_edictareasize = pr->max_edicts * pr->pr_edict_size;
 
 	mem_size = pr->progs_size + pr->zone_size + pr->pr_edictareasize;
 	pr->progs = pr->allocate_progs_mem (pr, mem_size + 1);
@@ -379,14 +376,14 @@ PR_RunLoadFuncs (progs_t *pr)
 	PR_LoadProgs
 */
 VISIBLE void
-PR_LoadProgs (progs_t *pr, const char *progsname, int max_edicts, int zone)
+PR_LoadProgs (progs_t *pr, const char *progsname)
 {
 	QFile      *file;
 	file = QFS_FOpenFile (progsname);
 
 	pr->progs_name = progsname;
 	if (file) {
-		PR_LoadProgsFile (pr, file, qfs_filesize, max_edicts, zone);
+		PR_LoadProgsFile (pr, file, qfs_filesize);
 		Qclose (file);
 	}
 	if (!pr->progs)

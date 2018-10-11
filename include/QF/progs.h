@@ -145,27 +145,22 @@ typedef int pr_load_func_t (progs_t *pr);
 	\param pr		pointer to ::progs_t VM struct
 	\param file		handle of file to read progs data from
 	\param size		bytes of \p file to read
-	\param max_edicts \e number of entities to allocate space for
-	\param zone		minimum size of dynamic memory to allocate space for
-					dynamic memory (bytes).
 
 	\note \e All runtime strings (permanent or temporary) are allocated from
-	the VM's dynamic memory space, so be sure \p zone is of sufficient size.
-	So far, 1MB has proven more than sufficient for Quakeword, even when using
-	Ruamoko objects.
+	the VM's dynamic memory space, so be sure \p zone is of sufficient size
+	(by setting pr->zone_size prior to calling).  So far, 1MB has proven more
+	than sufficient for Quakeword, even when using Ruamoko objects.
+	\note If entities are used, ensure pr->max_edicts is set appropriately
+	prior to calling.
 */
-void PR_LoadProgsFile (progs_t *pr, struct QFile_s *file, int size,
-					   int max_edicts, int zone);
+void PR_LoadProgsFile (progs_t *pr, struct QFile_s *file, int size);
 
 /** Convenience wrapper for PR_LoadProgsFile() and PR_RunLoadFuncs().
 	Searches for the specified file in the Quake filesystem.
 	\param pr		pointer to ::progs_t VM struct
 	\param progsname name of the file to load as progs data
-	\param max_edicts \e number of entities to allocate space for
-	\param zone		minimum size of dynamic memory to allocate space for
 */
-void PR_LoadProgs (progs_t *pr, const char *progsname, int max_edicts,
-				   int zone);
+void PR_LoadProgs (progs_t *pr, const char *progsname);
 
 /** Register a primary function to be called after the progs code has been
 	loaded. These functions are remembered across progs loads. They will be
@@ -1521,7 +1516,7 @@ struct progs_s {
 	int         denorm_found;
 
 	struct memzone_s *zone;
-	int         zone_size;
+	int         zone_size;			///< set by user
 
 	/// \name builtin functions
 	//@{
@@ -1593,7 +1588,7 @@ struct progs_s {
 	/// \name edicts
 	//@{
 	edict_t   **edicts;
-	int         max_edicts;
+	int         max_edicts;			///< set by user
 	int        *num_edicts;
 	int        *reserved_edicts;	///< alloc will start at reserved_edicts+1
 	void      (*unlink) (edict_t *ent);
