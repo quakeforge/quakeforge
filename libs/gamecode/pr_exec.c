@@ -733,7 +733,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 									 "field in an edict");
 				}
 				ed = PROG_TO_EDICT (pr, OPA.entity_var);
-				memcpy (&OPC, &ed->v[OPB.integer_var], 3 * sizeof (OPC));
+				memcpy (&OPC, &ed->v[OPB.integer_var], 4 * sizeof (OPC));
 				break;
 
 			case OP_LOADB_F:
