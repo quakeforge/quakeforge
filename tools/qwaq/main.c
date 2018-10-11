@@ -157,7 +157,7 @@ main (int argc, char **argv)
 		name = argv[1];
 
 	if (!load_progs (name))
-		Sys_Error ("couldn't load %s", "qwaq.dat");
+		Sys_Error ("couldn't load %s", name);
 
 	PR_PushFrame (&pr);
 	if (argc > 2)
