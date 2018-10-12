@@ -239,7 +239,7 @@ static __attribute__((pure)) int
 is_const_ptr (expr_t *e)
 {
 	if ((e->type != ex_value || e->e.value->lltype != ev_pointer)
-		|| !(POINTER_VAL (e->e.value->v.pointer) > 0
+		|| !(POINTER_VAL (e->e.value->v.pointer) >= 0
 			 && POINTER_VAL (e->e.value->v.pointer) < 65536)) {
 		return 1;
 	}
