@@ -59,12 +59,12 @@ qfprogs_DEPENDENCIES= $(QFCC_DEPS)
 BUILT_SOURCES=qc-parse.c qc-parse.h qc-lex.c qp-parse.c qp-parse.h qp-lex.c
 
 qc-parse.c: qc-parse.y
-	$(YACC) $(YFLAGS) -Dapi.prefix=qc_yy $< -o $@
-qc-lex.c: qc-lex.l
+	$(YACC) $(YFLAGS) -Dapi.prefix={qc_yy} $< -o $@
+qc-lex.c: qc-lex.l qc-parse.h
 	$(LEX) $(LFLAGS) $(AM_LFLAGS) -Pqc_yy -o$@ $<
 qp-parse.c: qp-parse.y
-	$(YACC) $(YFLAGS) -Dapi.prefix=qp_yy $< -o $@
-qp-lex.c: qp-lex.l
+	$(YACC) $(YFLAGS) -Dapi.prefix={qp_yy} $< -o $@
+qp-lex.c: qp-lex.l qp-parse.h
 	$(LEX) $(LFLAGS) $(AM_LFLAGS) -Pqp_yy -o$@ $<
 
 EXTRA_DIST=qc-lex.c qc-parse.c qc-parse.h qfpreqcc \
