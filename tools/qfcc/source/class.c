@@ -1265,6 +1265,7 @@ class_finish_module (void)
 	category_t **ca;
 	def_t      *symtab_def;
 	symbol_t   *module_sym;
+	expr_t     *module_expr;
 	pr_module_t *module;
 	symbol_t   *exec_class_sym;
 	symbol_t   *init_sym;
@@ -1314,12 +1315,12 @@ class_finish_module (void)
 	init_sym = new_symbol_type (".ctor", &type_function);
 	init_sym = function_symbol (init_sym, 0, 1);
 
+	module_expr = address_expr (new_symbol_expr (module_sym), 0, 0);
+
 	init_expr = new_block_expr ();
 	append_expr (init_expr,
-			build_function_call (new_symbol_expr (exec_class_sym),
-								 exec_class_sym->type,
-								 address_expr (new_symbol_expr (module_sym),
-									 		   0, 0)));
+				 build_function_call (new_symbol_expr (exec_class_sym),
+									  exec_class_sym->type, module_expr));
 
 	save_storage = current_storage;
 	current_storage = sc_static;
