@@ -200,7 +200,7 @@ warning (expr_t *e, const char *fmt, ...)
 }
 
 void
-internal_error (expr_t *e, const char *fmt, ...)
+_internal_error (expr_t *e, const char *file, int line, const char *fmt, ...)
 {
 	va_list     args;
 
@@ -211,6 +211,7 @@ internal_error (expr_t *e, const char *fmt, ...)
 		dstring_t  *message = dstring_new ();
 
 		format_message (message, "internal error", e, fmt, args);
+		dasprintf (message, " (%s:%d)", file, line);
 		fprintf (stderr, "%s\n", message->str);
 		dstring_delete (message);
 	}
