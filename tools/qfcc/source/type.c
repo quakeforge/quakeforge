@@ -843,8 +843,8 @@ init_types (void)
 		{0, 0}
 	};
 	static struct_def_t quaternion_struct[] = {
-		{"s", &type_float},
 		{"v", &type_vector},
+		{"s", &type_float},
 		{0, 0}
 	};
 	static struct_def_t type_encoding_struct[] = {
@@ -882,16 +882,16 @@ init_types (void)
 	type_quaternion.meta = ty_none;
 	{
 		symbol_t   *sym;
-		sym = new_symbol_type ("w", &type_float);
+		sym = new_symbol_type ("x", &type_float);
 		sym->s.offset = 0;
 		symtab_addsymbol (type_quaternion.t.symtab, sym);
-		sym = new_symbol_type ("x", &type_float);
+		sym = new_symbol_type ("y", &type_float);
 		sym->s.offset = 1;
 		symtab_addsymbol (type_quaternion.t.symtab, sym);
-		sym = new_symbol_type ("y", &type_float);
+		sym = new_symbol_type ("z", &type_float);
 		sym->s.offset = 2;
 		symtab_addsymbol (type_quaternion.t.symtab, sym);
-		sym = new_symbol_type ("z", &type_float);
+		sym = new_symbol_type ("w", &type_float);
 		sym->s.offset = 3;
 		symtab_addsymbol (type_quaternion.t.symtab, sym);
 	}

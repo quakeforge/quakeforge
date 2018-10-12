@@ -80,7 +80,8 @@ negate:
 
 	return 1;
 fail:
-	printf ("\n\n(%g %g %g)\n", VectorExpand (angles));
+	printf ("\ntest_angle\n");
+	printf ("(%g %g %g)\n", VectorExpand (angles));
 	printf ("  [%g %g %g %g]\n", QuatExpand (rotation));
 	printf ("  [%g %g %g %g] [%g %g %g] [%g %g %g]\n",
 			QuatExpand (r), VectorExpand (scale), VectorExpand (shear));
@@ -110,7 +111,8 @@ test_transform (const vec3_t angles, const vec3_t scale)
 
 	return 1;
 fail:
-	printf ("\n\n(%g %g %g) (%g %g %g)\n", VectorExpand (angles),
+	printf ("\ntest_transform\n");
+	printf ("(%g %g %g) (%g %g %g)\n", VectorExpand (angles),
 			VectorExpand (scale));
 	printf ("  (%g %g %g)\n", VectorExpand (x));
 	printf ("  (%g %g %g)\n", VectorExpand (y));
@@ -146,7 +148,8 @@ test_transform2 (const vec3_t angles, const vec3_t scale)
 
 	return 1;
 fail:
-	printf ("\n\n(%g %g %g) (%g %g %g) (%g %g %g)\n",
+	printf ("\ntest_transform2\n");
+	printf ("(%g %g %g) (%g %g %g) (%g %g %g)\n",
 			VectorExpand (angles), VectorExpand (scale), VectorExpand (v));
 	printf ("  (%g %g %g)\n", VectorExpand (x));
 	printf ("  (%g %g %g)\n", VectorExpand (y));
@@ -173,7 +176,8 @@ test_inverse (const vec3_t angles, const vec3_t scale)
 
 	return 1;
 fail:
-	printf ("\n\n(%g %g %g) (%g %g %g)\n",
+	printf ("\ntest_inverse\n");
+	printf ("(%g %g %g) (%g %g %g)\n",
 			VectorExpand (angles), VectorExpand (scale));
 	printf ("  [%g %g %g]\n  [%g %g %g]\n  [%g %g %g]\n\n", Mat3Expand (mat));
 	printf ("  [%g %g %g]\n  [%g %g %g]\n  [%g %g %g]\n\n", Mat3Expand (inv));

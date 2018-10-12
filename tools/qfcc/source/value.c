@@ -316,9 +316,7 @@ imm_compare (const void *_imm1, const void *_imm2, void *_tab)
 		return !memcmp (&imm1->i.pointer, &imm2->i.pointer,
 						sizeof (imm1->i.pointer));
 	} else if (tab == &quaternion_imm_defs) {
-		return (VectorCompare (imm1->i.quaternion_val,
-							   imm2->i.quaternion_val)
-				&& imm1->i.quaternion_val[3] == imm2->i.quaternion_val[3]);
+		return QuatCompare (imm1->i.quaternion_val, imm2->i.quaternion_val);
 	} else if (tab == &integer_imm_defs) {
 		return imm1->i.integer_val == imm2->i.integer_val;
 	} else {

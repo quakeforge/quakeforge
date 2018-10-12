@@ -248,11 +248,11 @@ QuatMult (const quat_t q1, const quat_t q2, quat_t out)
 	vec_t      s;
 	vec3_t     v;
 
-	s = q1[0] * q2[0] - DotProduct (q1 + 1, q2 + 1);
-	CrossProduct (q1 + 1, q2 + 1, v);
-	VectorMultAdd (v, q1[0], q2 + 1, v);
-	VectorMultAdd (v, q2[0], q1 + 1, out + 1);
-	out[0] = s;
+	s = q1[3] * q2[3] - DotProduct (q1, q2);
+	CrossProduct (q1, q2, v);
+	VectorMultAdd (v, q1[3], q2, v);
+	VectorMultAdd (v, q2[3], q1, out);
+	out[3] = s;
 }
 
 VISIBLE void
@@ -261,12 +261,12 @@ QuatMultVec (const quat_t q, const vec3_t v, vec3_t out)
 	vec_t      s;
 	vec3_t     tv;
 
-	s = -DotProduct (q + 1, v);
-	CrossProduct (q + 1, v, tv);
-	VectorMultAdd (tv, q[0], v, tv);
-	CrossProduct (q + 1, tv, out);
-	VectorMultSub (out, s, q + 1, out);
-	VectorMultAdd (out, q[0], tv, out);
+	s = -DotProduct (q, v);
+	CrossProduct (q, v, tv);
+	VectorMultAdd (tv, q[3], v, tv);
+	CrossProduct (q, tv, out);
+	VectorMultSub (out, s, q, out);
+	VectorMultAdd (out, q[3], tv, out);
 }
 
 VISIBLE void
@@ -288,19 +288,19 @@ QuatExp (const quat_t a, quat_t b)
 	vec_t       r;
 	vec_t       c, s;
 
-	VectorCopy (a + 1, n);
+	VectorCopy (a, n);
 	th = VectorNormalize (n);
-	r = expf (a[0]);
+	r = expf (a[3]);
 	c = cosf (th);
 	s = sinf (th);
-	VectorScale (n, r * s, b + 1);
-	b[0] = r * c;
+	VectorScale (n, r * s, b);
+	b[3] = r * c;
 }
 
 VISIBLE void
 QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical)
 {
-	vec_t       aa, ab, ac, ad, bb, bc, bd, cc, cd, dd;
+	vec_t       xx, xy, xz, xw, yy, yz, yw, zz, zw, ww;
 	vec_t       *_m[4] = {
 		m + (homogenous ? 0 : 0),
 		m + (homogenous ? 4 : 3),
@@ -308,28 +308,28 @@ QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical)
 		m + (homogenous ? 12 : 9),
 	};
 
-	aa = q[0] * q[0];
-	ab = q[0] * q[1];
-	ac = q[0] * q[2];
-	ad = q[0] * q[3];
+	xx = q[0] * q[0];
+	xy = q[0] * q[1];
+	xz = q[0] * q[2];
+	xw = q[0] * q[3];
 
-	bb = q[1] * q[1];
-	bc = q[1] * q[2];
-	bd = q[1] * q[3];
+	yy = q[1] * q[1];
+	yz = q[1] * q[2];
+	yw = q[1] * q[3];
 
-	cc = q[2] * q[2];
-	cd = q[2] * q[3];
+	zz = q[2] * q[2];
+	zw = q[2] * q[3];
 
-	dd = q[3] * q[3];
+	ww = q[3] * q[3];
 
 	if (vertical) {
-		VectorSet (aa + bb - cc - dd, 2 * (bc + ad), 2 * (bd - ac), _m[0]);
-		VectorSet (2 * (bc - ad), aa - bb + cc - dd, 2 * (cd + ab), _m[1]);
-		VectorSet (2 * (bd + ac), 2 * (cd - ab), aa - bb - cc + dd, _m[2]);
+		VectorSet (ww + xx - yy - zz, 2 * (xy + zw), 2 * (xz - yw), _m[0]);
+		VectorSet (2 * (xy - zw), ww - xx + yy - zz, 2 * (yz + xw), _m[1]);
+		VectorSet (2 * (xz + yw), 2 * (yz - xw), ww - xx - yy + zz, _m[2]);
 	} else {
-		VectorSet (aa + bb - cc - dd, 2 * (bc - ad), 2 * (bd + ac), _m[0]);
-		VectorSet (2 * (bc + ad), aa - bb + cc - dd, 2 * (cd - ab), _m[1]);
-		VectorSet (2 * (bd - ac), 2 * (cd + ab), aa - bb - cc + dd, _m[2]);
+		VectorSet (ww + xx - yy - zz, 2 * (xy - zw), 2 * (xz + yw), _m[0]);
+		VectorSet (2 * (xy + zw), ww - xx + yy - zz, 2 * (yz - xw), _m[1]);
+		VectorSet (2 * (xz - yw), 2 * (yz + xw), ww - xx - yy + zz, _m[2]);
 	}
 	if (homogenous) {
 		_m[0][3] = 0;
@@ -555,10 +555,10 @@ AngleQuat (const vec3_t angles, quat_t q)
 	sr = sin (alpha);
 	cr = cos (alpha);
 
-	QuatSet (cy * cp * cr + sy * sp * sr,
-			 cy * cp * sr - sy * sp * cr,
-			 cy * sp * cr + sy * cp * sr,
-			 sy * cp * cr - cy * sp * sr,
+	QuatSet (cy * cp * sr - sy * sp * cr,	// x
+			 cy * sp * cr + sy * cp * sr,	// y
+			 sy * cp * cr - cy * sp * sr,	// z
+			 cy * cp * cr + sy * sp * sr,	// w
 			 q);
 }
 
@@ -1112,29 +1112,29 @@ Mat3Decompose (const mat3_t mat, quat_t rot, vec3_t shear, vec3_t scale)
 	t = 1 + row[0][0] + row[1][1] + row[2][2];
 	if (t >= 1e-5) {
 		vec_t       s = sqrt (t) * 2;
-		rot[0] = s / 4;
-		rot[1] = (row[2][1] - row[1][2]) / s;
-		rot[2] = (row[0][2] - row[2][0]) / s;
-		rot[3] = (row[1][0] - row[0][1]) / s;
+		rot[0] = (row[2][1] - row[1][2]) / s;
+		rot[1] = (row[0][2] - row[2][0]) / s;
+		rot[2] = (row[1][0] - row[0][1]) / s;
+		rot[3] = s / 4;
 	} else {
 		if (row[0][0] > row[1][1] && row[0][0] > row[2][2]) {
 			vec_t       s = sqrt (1 + row[0][0] - row[1][1] - row[2][2]) * 2;
-			rot[0] = (row[2][1] - row[1][2]) / s;
-			rot[1] = s / 4;
-			rot[2] = (row[1][0] + row[0][1]) / s;
-			rot[3] = (row[0][2] + row[2][0]) / s;
+			rot[0] = s / 4;
+			rot[1] = (row[1][0] + row[0][1]) / s;
+			rot[2] = (row[0][2] + row[2][0]) / s;
+			rot[3] = (row[2][1] - row[1][2]) / s;
 		} else if (row[1][1] > row[2][2]) {
 			vec_t       s = sqrt (1 + row[1][1] - row[0][0] - row[2][2]) * 2;
-			rot[0] = (row[0][2] - row[2][0]) / s;
-			rot[1] = (row[1][0] + row[0][1]) / s;
-			rot[2] = s / 4;
-			rot[3] = (row[2][1] + row[1][2]) / s;
+			rot[0] = (row[1][0] + row[0][1]) / s;
+			rot[1] = s / 4;
+			rot[2] = (row[2][1] + row[1][2]) / s;
+			rot[3] = (row[0][2] - row[2][0]) / s;
 		} else {
 			vec_t       s = sqrt (1 + row[2][2] - row[0][0] - row[1][1]) * 2;
-			rot[0] = (row[1][0] - row[0][1]) / s;
-			rot[1] = (row[0][2] + row[2][0]) / s;
-			rot[2] = (row[2][1] + row[1][2]) / s;
-			rot[3] = s / 4;
+			rot[0] = (row[0][2] + row[2][0]) / s;
+			rot[1] = (row[2][1] + row[1][2]) / s;
+			rot[2] = s / 4;
+			rot[3] = (row[1][0] - row[0][1]) / s;
 		}
 	}
 	return 1;

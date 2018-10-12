@@ -593,11 +593,11 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		return e;
 
 	if (is_float_val (e1)) {
-		float_quat[0] = expr_float (e1);
+		QuatSet (0, 0, 0, expr_float (e1), float_quat);
 		q2 = float_quat;
 		q1 = expr_quaternion (e2);
 	} else if (is_float_val (e2)) {
-		float_quat[0] = expr_float (e2);
+		QuatSet (0, 0, 0, expr_float (e2), float_quat);
 		q2 = float_quat;
 		q1 = expr_quaternion (e1);
 	} else {
@@ -627,7 +627,7 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			if (get_type (e2) == &type_quaternion) {
 				QuatMult (q1, q2, q);
 			} else {
-				QuatScale (q1, q2[0], q);
+				QuatScale (q1, q2[3], q);
 			}
 			e = new_quaternion_expr (q);
 			break;

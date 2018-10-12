@@ -37,6 +37,7 @@ test_progs_dat=\
 	infloop.dat \
 	modulo.dat \
 	paramret.dat \
+	quaternion.dat \
 	return-ivar.dat \
 	sendv.dat \
 	state.dat \
@@ -129,6 +130,14 @@ paramret.dat$(EXEEXT): $(paramret_obj) $(QFCC_DEP)
 paramret.run: Makefile build-run
 	TEST_HARNESS_OPTS=--float $(srcdir)/build-run $@
 include ./$(DEPDIR)/paramret.Qo
+
+quaternion_dat_SOURCES=quaternion.r
+quaternion_obj=$(quaternion_dat_SOURCES:.r=.qfo)
+quaternion.dat$(EXEEXT): $(quaternion_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(quaternion_obj)
+quaternion.run: Makefile build-run
+	$(srcdir)/build-run $@
+include ./$(DEPDIR)/quaternion.Qo
 
 return_ivar_dat_SOURCES=return-ivar.r
 return_ivar_obj=$(return_ivar_dat_SOURCES:.r=.qfo)

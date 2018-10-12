@@ -163,35 +163,42 @@ convert_vector (expr_t *e)
 	if (e->e.vector.type == &type_quaternion) {
 		// guaranteed to have two or four elements
 		if (e->e.vector.list->next->next) {
-			// four vals: w, x, y, z
-			expr_t     *w = e->e.vector.list;
-			expr_t     *x = w->next;
+			// four vals: x, y, z, w
+			expr_t     *x = e->e.vector.list;
 			expr_t     *y = x->next;
 			expr_t     *z = y->next;
-			w = fold_constants (cast_expr (&type_float, w));
+			expr_t     *w = z->next;
 			x = fold_constants (cast_expr (&type_float, x));
 			y = fold_constants (cast_expr (&type_float, y));
 			z = fold_constants (cast_expr (&type_float, z));
-			if (is_constant (w) && is_constant (x) && is_constant (y)
-				&& is_constant (z)) {
-				val[0] = expr_float(w);
-				val[1] = expr_float(x);
-				val[2] = expr_float(y);
-				val[3] = expr_float(z);
+			w = fold_constants (cast_expr (&type_float, w));
+			if (is_constant (x) && is_constant (y) && is_constant (z)
+				&& is_constant (w)) {
+				val[0] = expr_float(x);
+				val[1] = expr_float(y);
+				val[2] = expr_float(z);
+				val[3] = expr_float(w);
 				return new_quaternion_expr (val);
 			}
 		} else {
-			// s, v
-			expr_t     *s = e->e.vector.list;
-			expr_t     *v = s->next;
+			// v, s
+			expr_t     *v = e->e.vector.list;
+			expr_t     *s = v->next;
 
-			s = fold_constants (cast_expr (&type_float, s));
 			v = convert_vector (v);
-			if (is_constant (s) && is_constant (v)) {
-				val[0] = expr_float (s);
-				memcpy (val + 1, expr_vector (v), 3 * sizeof (float));
+			s = fold_constants (cast_expr (&type_float, s));
+			if (is_constant (v) && is_constant (s)) {
+				memcpy (val, expr_vector (v), 3 * sizeof (float));
+				val[3] = expr_float (s);
 				return new_quaternion_expr (val);
 			}
+			// Either v or is is not constant, so can't convert to a quaternion
+			// constant.
+			// Rebuild the list in case v or s is a new expression
+			s->next = 0;
+			v->next = s;
+			e->e.vector.list = v;
+			return e;
 		}
 	}
 	internal_error (e, "bogus vector expression");
@@ -645,13 +652,23 @@ new_vector_list (expr_t *e)
 			vec->e.vector.list = e;
 			break;
 		case 2:
-			// quaternion. first expression must be compatible with a float,
-			// the other must be a vector
-			if (!type_assignable (&type_float, get_type (e))
-				|| !type_assignable (&type_vector, get_type(e->next))) {
+			// quaternion. either float-ish, vector or vector, float-ish
+			if (type_assignable (&type_float, get_type (e))
+				&& type_assignable (&type_vector, get_type(e->next))) {
+				// float-ish, vector
+				// swap expressions
+				t = e;
+				e = e->next;
+				e->next = t;
+				t->next = 0;
+			} else if (type_assignable (&type_vector, get_type (e))
+					   && type_assignable (&type_float, get_type(e->next))) {
+				// vector, float-ish
+				// do nothing
+			} else {
 				return error (t, "invalid types for vector elements");
 			}
-			// s, v
+			// v, s
 			vec = new_expr ();
 			vec->type = ex_vector;
 			vec->e.vector.type = &type_quaternion;
