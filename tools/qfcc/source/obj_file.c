@@ -193,11 +193,8 @@ qfo_init_string_space (qfo_t *qfo, qfo_mspace_t *space, strpool_t *strings)
 	space->type = qfos_string;
 	space->num_defs = 0;
 	space->defs = 0;
-	space->d.strings = 0;
-	if (strings->strings) {
-		space->d.strings = malloc (size);
-		memcpy (space->d.strings, strings->strings, size);
-	}
+	space->d.strings = malloc (size);
+	memcpy (space->d.strings, strings->strings, size);
 	space->data_size = strings->size;
 	space->id = qfo_strings_space;
 }
@@ -210,11 +207,8 @@ qfo_init_code_space (qfo_t *qfo, qfo_mspace_t *space, codespace_t *code)
 	space->type = qfos_code;
 	space->num_defs = 0;
 	space->defs = 0;
-	space->d.code = 0;
-	if (code->code) {
-		space->d.code = malloc (size);
-		memcpy (space->d.code, code->code, size);
-	}
+	space->d.code = malloc (size);
+	memcpy (space->d.code, code->code, size);
 	space->data_size = code->size;
 	space->id = qfo_code_space;
 }
@@ -228,11 +222,8 @@ qfo_init_data_space (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
 	space->type = qfos_data;
 	space->defs = *defs;
 	space->num_defs = qfo_encode_defs (qfo, data->defs, defs, relocs);
-	space->d.data = 0;
-	if (data->data) {
-		space->d.data = malloc (size);
-		memcpy (space->d.data, data->data, size);
-	}
+	space->d.data = malloc (size);
+	memcpy (space->d.data, data->data, size);
 	space->data_size = data->size;
 }
 
@@ -258,11 +249,8 @@ qfo_init_type_space (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
 	space->type = qfos_type;
 	space->defs = *defs;
 	space->num_defs = qfo_encode_defs (qfo, data->defs, defs, relocs);
-	space->d.data = 0;
-	if (data->data) {
-		space->d.data = malloc (size);
-		memcpy (space->d.data, data->data, size);
-	}
+	space->d.data = malloc (size);
+	memcpy (space->d.data, data->data, size);
 	space->data_size = data->size;
 	space->id = qfo_type_space;
 }

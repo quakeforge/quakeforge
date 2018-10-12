@@ -180,7 +180,7 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	pr->pr_edict_size = max (1, progs.entityfields) * 4;
 	// size of engine data
 	pr->pr_edict_size += sizeof (edict_t);
-	pr->pr_edict_size = align_size (pr->progs_size);
+	pr->pr_edict_size = align_size (pr->pr_edict_size);
 
 	pr->pr_edictareasize = pr->max_edicts * pr->pr_edict_size;
 
