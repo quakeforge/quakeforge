@@ -118,7 +118,7 @@ _warning (expr_t *e, const char *fmt, va_list args)
 }
 
 void
-debug (expr_t *e, const char *fmt, ...)
+_debug (expr_t *e, const char *file, int line, const char *fmt, ...)
 {
 	va_list     args;
 
@@ -131,6 +131,7 @@ debug (expr_t *e, const char *fmt, ...)
 		dstring_t  *message = dstring_new ();
 
 		format_message (message, "debug", e, fmt, args);
+		dasprintf (message, " (%s:%d)", file, line);
 		fprintf (stderr, "%s\n", message->str);
 		dstring_delete (message);
 	}
@@ -138,7 +139,7 @@ debug (expr_t *e, const char *fmt, ...)
 }
 
 void
-bug (expr_t *e, const char *fmt, ...)
+_bug (expr_t *e, const char *file, int line, const char *fmt, ...)
 {
 	va_list     args;
 
@@ -149,6 +150,7 @@ bug (expr_t *e, const char *fmt, ...)
 		dstring_t  *message = dstring_new ();
 
 		format_message (message, "BUG", e, fmt, args);
+		dasprintf (message, " (%s:%d)", file, line);
 		if (bug_hook) {
 			bug_hook (message->str);
 		} else {
