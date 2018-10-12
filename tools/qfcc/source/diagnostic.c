@@ -113,7 +113,6 @@ _warning (expr_t *e, const char *fmt, va_list args)
 	} else {
 		fprintf (stderr, "%s\n", message->str);
 	}
-	fprintf (stderr, "%s\n", message->str);
 	dstring_delete (message);
 }
 
@@ -183,7 +182,6 @@ notice (expr_t *e, const char *fmt, ...)
 		} else {
 			fprintf (stderr, "%s\n", message->str);
 		}
-		fprintf (stderr, "%s\n", message->str);
 		dstring_delete (message);
 	}
 	va_end (args);
@@ -240,7 +238,6 @@ error (expr_t *e, const char *fmt, ...)
 		} else {
 			fprintf (stderr, "%s\n", message->str);
 		}
-		fprintf (stderr, "%s\n", message->str);
 		dstring_delete (message);
 	}
 	va_end (args);
