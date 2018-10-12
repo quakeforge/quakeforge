@@ -52,7 +52,7 @@
 #include "qc-parse.h"
 #include "strpool.h"
 
-static const char *expr_names[] =
+const char *expr_names[] =
 {
 	"error",
 	"state",

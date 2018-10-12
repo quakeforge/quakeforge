@@ -1017,7 +1017,8 @@ statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 	if (e->type > ex_value)
 		internal_error (e, "bad expression type");
 	if (!sfuncs[e->type])
-		internal_error (e, "unexpected expression type");
+		internal_error (e, "unexpected expression type; %s",
+						expr_names[e->type]);
 
 	sblock = sfuncs[e->type] (sblock, e, op);
 	return sblock;
