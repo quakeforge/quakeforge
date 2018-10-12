@@ -159,6 +159,13 @@ convert_vector (expr_t *e)
 			val[2] = expr_float(z);
 			return new_vector_expr (val);
 		}
+		// at least one of x, y, z is not constant, so rebuild the
+		// list incase any of them are new expressions
+		z->next = 0;
+		y->next = z;
+		x->next = y;
+		e->e.vector.list = x;
+		return e;
 	}
 	if (e->e.vector.type == &type_quaternion) {
 		// guaranteed to have two or four elements
@@ -180,6 +187,14 @@ convert_vector (expr_t *e)
 				val[3] = expr_float(w);
 				return new_quaternion_expr (val);
 			}
+			// at least one of x, y, z, w is not constant, so rebuild the
+			// list incase any of them are new expressions
+			w->next = 0;
+			z->next = w;
+			y->next = z;
+			x->next = y;
+			e->e.vector.list = x;
+			return e;
 		} else {
 			// v, s
 			expr_t     *v = e->e.vector.list;
@@ -192,7 +207,7 @@ convert_vector (expr_t *e)
 				val[3] = expr_float (s);
 				return new_quaternion_expr (val);
 			}
-			// Either v or is is not constant, so can't convert to a quaternion
+			// Either v or s is not constant, so can't convert to a quaternion
 			// constant.
 			// Rebuild the list in case v or s is a new expression
 			s->next = 0;
@@ -233,17 +248,7 @@ get_type (expr_t *e)
 		case ex_temp:
 			return e->e.temp.type;
 		case ex_value:
-			if (e->e.value->type == ev_func)
-				return e->e.value->v.func_val.type;
-			if (e->e.value->type == ev_pointer)
-				return pointer_type (e->e.value->v.pointer.type);
-			if (e->e.value->type == ev_field)
-				return field_type (e->e.value->v.pointer.type);
-			if (e->e.value->type == ev_integer
-				&& options.code.progsversion == PROG_ID_VERSION) {
-				convert_int (e);
-			}
-			return ev_types[e->e.value->type];
+			return e->e.value->type;
 		case ex_vector:
 			return e->e.vector.type;
 	}
@@ -801,7 +806,7 @@ is_string_val (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 1;
-	if (e->type == ex_value && e->e.value->type == ev_string)
+	if (e->type == ex_value && e->e.value->lltype == ev_string)
 		return 1;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_string)
@@ -814,7 +819,7 @@ expr_string (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 0;
-	if (e->type == ex_value && e->e.value->type == ev_string)
+	if (e->type == ex_value && e->e.value->lltype == ev_string)
 		return e->e.value->v.string_val;
 	internal_error (e, "not a string constant");
 }
@@ -824,7 +829,7 @@ is_float_val (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 1;
-	if (e->type == ex_value && e->e.value->type == ev_float)
+	if (e->type == ex_value && e->e.value->lltype == ev_float)
 		return 1;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_float)
@@ -837,7 +842,7 @@ expr_float (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 0;
-	if (e->type == ex_value && e->e.value->type == ev_float)
+	if (e->type == ex_value && e->e.value->lltype == ev_float)
 		return e->e.value->v.float_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_float)
@@ -854,7 +859,7 @@ is_vector_val (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 1;
-	if (e->type == ex_value && e->e.value->type == ev_vector)
+	if (e->type == ex_value && e->e.value->lltype == ev_vector)
 		return 1;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_vector)
@@ -867,7 +872,7 @@ expr_vector (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return vec3_origin;
-	if (e->type == ex_value && e->e.value->type == ev_vector)
+	if (e->type == ex_value && e->e.value->lltype == ev_vector)
 		return e->e.value->v.vector_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_vector)
@@ -884,7 +889,7 @@ is_quaternion_val (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 1;
-	if (e->type == ex_value && e->e.value->type == ev_quat)
+	if (e->type == ex_value && e->e.value->lltype == ev_quat)
 		return 1;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_quat)
@@ -897,7 +902,7 @@ expr_quaternion (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return quat_origin;
-	if (e->type == ex_value && e->e.value->type == ev_quat)
+	if (e->type == ex_value && e->e.value->lltype == ev_quat)
 		return e->e.value->v.quaternion_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_quat)
@@ -914,7 +919,7 @@ is_integer_val (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 1;
-	if (e->type == ex_value && e->e.value->type == ev_integer)
+	if (e->type == ex_value && e->e.value->lltype == ev_integer)
 		return 1;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& (e->e.symbol->type->type == ev_integer
@@ -928,7 +933,7 @@ expr_integer (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 0;
-	if (e->type == ex_value && e->e.value->type == ev_integer)
+	if (e->type == ex_value && e->e.value->lltype == ev_integer)
 		return e->e.value->v.integer_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& (e->e.symbol->type->type == ev_integer
@@ -946,7 +951,7 @@ expr_uinteger (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 0;
-	if (e->type == ex_value && e->e.value->type == ev_uinteger)
+	if (e->type == ex_value && e->e.value->lltype == ev_uinteger)
 		return e->e.value->v.uinteger_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_uinteger)
@@ -963,7 +968,7 @@ is_short_val (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 1;
-	if (e->type == ex_value && e->e.value->type == ev_short)
+	if (e->type == ex_value && e->e.value->lltype == ev_short)
 		return 1;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_short)
@@ -976,7 +981,7 @@ expr_short (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 0;
-	if (e->type == ex_value && e->e.value->type == ev_short)
+	if (e->type == ex_value && e->e.value->lltype == ev_short)
 		return e->e.value->v.short_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& e->e.symbol->type->type == ev_short)
@@ -1172,7 +1177,8 @@ field_expr (expr_t *e1, expr_t *e2)
 				}
 				def = sym->s.def;
 				e2 = new_field_expr (0, field->type, def);
-			} else if (e2->type != ex_value || e2->e.value->type != ev_field) {
+			} else if (e2->type != ex_value
+					   || e2->e.value->lltype != ev_field) {
 				internal_error (e2, "unexpected field exression");
 			}
 			e2->e.value = new_field_val (e2->e.value->v.pointer.val + field->s.offset, field->type, e2->e.value->v.pointer.def);
@@ -2215,7 +2221,7 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 	if (e2) {
 		if (e2->type == ex_error)
 			return e2;
-		if (e->type == ex_value && e->e.value->type == ev_pointer
+		if (e->type == ex_value && e->e.value->lltype == ev_pointer
 			&& is_short_val (e2)) {
 			e->e.value = new_pointer_val (e->e.value->v.pointer.val + expr_short (e2), t, e->e.value->v.pointer.def);
 		} else {
@@ -2479,24 +2485,6 @@ think_expr (symbol_t *think_sym)
 	return new_symbol_expr (think_sym);
 }
 
-static __attribute__((pure)) int
-is_indirect (expr_t *e)
-{
-	if (e->type == ex_block && e->e.block.result)
-		return is_indirect (e->e.block.result);
-	if (e->type == ex_expr && e->e.expr.op == '.')
-		return 1;
-	if (!(e->type == ex_uexpr && e->e.expr.op == '.'))
-		return 0;
-	e = e->e.expr.e1;
-	if (e->type != ex_value || e->e.value->type != ev_pointer
-		|| !(POINTER_VAL (e->e.value->v.pointer) >= 0
-			 && POINTER_VAL (e->e.value->v.pointer) < 65536)) {
-		return 1;
-	}
-	return 0;
-}
-
 static inline __attribute__((pure)) int
 is_lvalue (expr_t *e)
 {
@@ -2525,150 +2513,6 @@ is_lvalue (expr_t *e)
 	if (e->type == ex_uexpr && e->e.expr.op == 'A')
 		return is_lvalue (e->e.expr.e1);
 	return 0;
-}
-
-expr_t *
-assign_expr (expr_t *e1, expr_t *e2)
-{
-	int         op = '=';
-	type_t     *t1, *t2, *type;
-	expr_t     *e;
-
-	convert_name (e1);
-	convert_name (e2);
-	e2 = convert_vector (e2);
-
-	if (e1->type == ex_error)
-		return e1;
-	if (e2->type == ex_error)
-		return e2;
-
-	e1 = fold_constants (e1);
-	e2 = fold_constants (e2);
-
-	if (options.traditional) {
-		if (e2->type == ex_expr && !e2->paren
-			&& (e2->e.expr.op == AND || e2->e.expr.op == OR)) {
-			notice (e2, "precedence of `%s' and `%s' inverted for "
-						"traditional code", get_op_string (op),
-						get_op_string (e2->e.expr.op));
-			e1 = assign_expr (e1, e2->e.expr.e1);
-			e1->paren = 1;
-			return binary_expr (e2->e.expr.op, e1, e2->e.expr.e2);
-		}
-	}
-
-	if (!is_lvalue (e1)) {
-		if (options.traditional)
-			warning (e1, "invalid lvalue in assignment");
-		else
-			return error (e1, "invalid lvalue in assignment");
-	}
-	t1 = get_type (e1);
-	t2 = get_type (e2);
-	if (!t1 || !t2)
-		internal_error (e1, 0);
-	//XXX func = func ???
-	if (t1->type == ev_pointer && is_array (t2)) {
-		e2 = address_expr (e2, 0, t2->t.fldptr.type);
-		t2 = get_type (e2);
-	}
-	if (e2->type == ex_bool)
-		e2 = convert_from_bool (e2, t1);
-
-	if (t1->type != ev_void && e2->type == ex_nil) {
-		t2 = t1;
-		convert_nil (e2, t2);
-	}
-
-	e2->rvalue = 1;
-
-	if (!type_assignable (t1, t2)) {
-		if (options.traditional) {
-			if (t1->type == ev_func && t2->type == ev_func) {
-				warning (e1, "assignment between disparate function types");
-			} else if (t1->type == ev_float && t2->type == ev_vector) {
-				warning (e1, "assignment of vector to float");
-				e2 = field_expr (e2, new_name_expr ("x"));
-			} else if (t1->type == ev_vector && t2->type == ev_float) {
-				warning (e1, "assignment of float to vector");
-				e1 = field_expr (e1, new_name_expr ("x"));
-			} else {
-				return type_mismatch (e1, e2, op);
-			}
-		} else {
-			return type_mismatch (e1, e2, op);
-		}
-	}
-	type = t1;
-	if (is_indirect (e1) && is_indirect (e2)) {
-		if (is_struct (get_type (e2))) {
-			e1 = address_expr (e1, 0, 0);
-			e2 = address_expr (e2, 0, 0);
-			e = new_move_expr (e1, e2, t2, 1);
-		} else {
-			expr_t     *temp = new_temp_def_expr (t1);
-
-			e = new_block_expr ();
-			append_expr (e, assign_expr (temp, e2));
-			append_expr (e, assign_expr (e1, temp));
-			e->e.block.result = temp;
-		}
-		return e;
-	} else if (is_indirect (e1)) {
-		if (is_struct (get_type (e1))) {
-			e1 = address_expr (e1, 0, 0);
-			e2 = address_expr (e2, 0, 0);
-			return new_move_expr (e1, e2, t1, 1);
-		}
-		if (e1->type == ex_expr) {
-			if (get_type (e1->e.expr.e1) == &type_entity) {
-				type = e1->e.expr.type;
-				e1->e.expr.type = pointer_type (type);
-				e1->e.expr.op = '&';
-			}
-			op = PAS;
-		} else {
-			e = e1->e.expr.e1;
-			if ((e->type != ex_value || e->e.value->type != ev_pointer)
-				|| !(POINTER_VAL (e->e.value->v.pointer) > 0
-					 && POINTER_VAL (e->e.value->v.pointer) < 65536)) {
-				e1 = e;
-				op = PAS;
-			}
-		}
-	} else if (is_indirect (e2)) {
-		if (is_struct (get_type (e1))) {
-			e1 = address_expr (e1, 0, 0);
-			e2 = address_expr (e2, 0, 0);
-			e2->rvalue = 1;
-			return new_move_expr (e1, e2, t2, 1);
-		}
-		if (e2->type == ex_uexpr) {
-			e = e2->e.expr.e1;
-			if ((e->type != ex_value || e->e.value->type != ev_pointer)
-				|| !(POINTER_VAL (e->e.value->v.pointer) > 0
-					 && POINTER_VAL (e->e.value->v.pointer) < 65536)) {
-				if (e->type == ex_expr && e->e.expr.op == '&'
-					&& e->e.expr.type->type == ev_pointer
-					&& !is_constant (e)) {
-					e2 = e;
-					e2->e.expr.op = '.';
-					e2->e.expr.type = t2;
-					e2->rvalue = 1;
-				}
-			}
-		}
-	}
-	if (is_struct (get_type (e1))) {
-		return new_move_expr (e1, e2, get_type (e1), 0);
-	}
-	if (!type)
-		internal_error (e1, 0);
-
-	e = new_binary_expr (op, e1, e2);
-	e->e.expr.type = type;
-	return e;
 }
 
 expr_t *

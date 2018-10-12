@@ -155,10 +155,13 @@ int is_enum (const type_t *type) __attribute__((pure));
 int is_integral (const type_t *type) __attribute__((pure));
 int is_float (const type_t *type) __attribute__((pure));
 int is_scalar (const type_t *type) __attribute__((pure));
+int is_vector (const type_t *type) __attribute__((pure));
+int is_quaternion (const type_t *type) __attribute__((pure));
 int is_math (const type_t *type) __attribute__((pure));
 int is_pointer (const type_t *type) __attribute__((pure));
 int is_struct (const type_t *type) __attribute__((pure));
 int is_array (const type_t *type) __attribute__((pure));
+int is_func (const type_t *type) __attribute__((pure));
 int type_assignable (const type_t *dst, const type_t *src);
 int type_size (const type_t *type) __attribute__((pure));
 

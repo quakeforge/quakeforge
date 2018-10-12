@@ -386,7 +386,7 @@ print_value (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 	type_t     *type;
 	const char *label = "?!?";
 
-	switch (e->e.value->type) {
+	switch (e->e.value->lltype) {
 		case ev_string:
 			label = va ("\\\"%s\\\"", quote_string (e->e.value->v.string_val));
 			break;

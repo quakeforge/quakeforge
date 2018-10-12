@@ -83,7 +83,7 @@ operand_string (operand_t *op)
 		case op_def:
 			return op->o.def->name;
 		case op_value:
-			switch (op->o.value->type) {
+			switch (op->o.value->lltype) {
 				case ev_string:
 					return va ("\"%s\"",
 							   quote_string (op->o.value->v.string_val));
@@ -154,7 +154,7 @@ print_operand (operand_t *op)
 			break;
 		case op_value:
 			printf ("(%s) ", pr_type_name[op->type]);
-			switch (op->o.value->type) {
+			switch (op->o.value->lltype) {
 				case ev_string:
 					printf ("\"%s\"", op->o.value->v.string_val);
 					break;
@@ -316,7 +316,7 @@ value_operand (ex_value_t *value)
 {
 	operand_t  *op;
 	op = new_operand (op_value);
-	op->type = value->type;
+	op->type = value->lltype;
 	op->o.value = value;
 	return op;
 }
@@ -337,8 +337,11 @@ alias_operand (etype_t type, operand_t *op)
 {
 	operand_t  *aop;
 
-	if (pr_type_size[type] != pr_type_size[op->type])
-		internal_error (0, "aliasing operand with type of diffent size");
+	if (pr_type_size[type] != pr_type_size[op->type]) {
+		internal_error (0, "\naliasing operand with type of diffent size"
+						" (%d, %d)", pr_type_size[type],
+						pr_type_size[op->type]);
+	}
 	aop = new_operand (op_alias);
 	aop->o.alias = op;
 	aop->type = type;
@@ -659,7 +662,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 			pref = "R";
 			sblock = statement_subexpr (sblock, param, &arguments[ind]);
 			if (options.code.vector_calls && a->type == ex_value
-				&& a->e.value->type == ev_vector)
+				&& a->e.value->lltype == ev_vector)
 				sblock = vector_call (sblock, a, param, ind, &arguments[ind]);
 			else
 				sblock = statement_subexpr (sblock, a, &arguments[ind]);
@@ -673,7 +676,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 			sblock = statement_slist (sblock, mov);
 		} else {
 			if (options.code.vector_calls && a->type == ex_value
-				&& a->e.value->type == ev_vector) {
+				&& a->e.value->lltype == ev_vector) {
 				sblock = vector_call (sblock, a, param, ind, 0);
 			} else {
 				operand_t  *p = 0;
@@ -774,7 +777,7 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 			s->opc = *op;
 			sblock_add_statement (sblock, s);
 		}
-	} else if (e->type == ex_value && e->e.value->type == ev_pointer) {
+	} else if (e->type == ex_value && e->e.value->lltype == ev_pointer) {
 		ex_pointer_t *ptr = &e->e.value->v.pointer;
 		*op = def_operand (alias_def (ptr->def, ptr->type, ptr->val),
 						   ptr->type);
@@ -1017,7 +1020,7 @@ statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 	if (e->type > ex_value)
 		internal_error (e, "bad expression type");
 	if (!sfuncs[e->type])
-		internal_error (e, "unexpected expression type; %s",
+		internal_error (e, "unexpected expression type: %s",
 						expr_names[e->type]);
 
 	sblock = sfuncs[e->type] (sblock, e, op);

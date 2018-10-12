@@ -43,7 +43,7 @@ test_format ()
 		printf ("q = [[5, 6, 7], 8] -> %v, %g\n", q.v, q.s);
 		fail = 1;
 	}
-/*	q = [s, v];
+	q = [s, v];
 	if (q.x != v.x || q.y != v.y || q.z != v.z || q.w != s) {
 		printf ("q = [s, v] -> %q (%v)\n", q, v);
 		fail = 1;
@@ -60,7 +60,7 @@ test_format ()
 	if (q.v != v || q.s != s) {
 		printf ("q = [v, s] -> %v, %g (%v %s)\n", q.v, q.s, v, s);
 		fail = 1;
-	}*/
+	}
 	return fail;
 }
 

@@ -428,8 +428,10 @@ qfo_write (qfo_t *qfo, const char *filename)
 	QFile      *file;
 
 	file = Qopen (filename, options.gzip ? "wbz9" : "wb");
-	if (!file)
+	if (!file) {
+		perror (va ("failed to open %s for writing", filename));
 		return -1;
+	}
 
 	size = sizeof (qfo_header_t);
 	size += sizeof (qfo_space_t) * qfo->num_spaces;

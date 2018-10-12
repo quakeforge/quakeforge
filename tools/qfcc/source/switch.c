@@ -82,7 +82,7 @@ get_hash (const void *_cl, void *unused)
 	if (!cl->value)
 		return 0;
 	val = get_value (cl->value);
-	return Hash_Buffer (&val->v, sizeof (val->v)) + val->type;
+	return Hash_Buffer (&val->v, sizeof (val->v)) + val->lltype;
 }
 
 static int

@@ -396,9 +396,12 @@ compile_to_obj (const char *file, const char *obj, lang_t lang)
 		qfo_t      *qfo;
 
 		class_finish_module ();
-		qfo = qfo_from_progs (&pr);
-		err = qfo_write (qfo, obj);
-		qfo_delete (qfo);
+		err = pr.error_count;
+		if (!err) {
+			qfo = qfo_from_progs (&pr);
+			err = qfo_write (qfo, obj);
+			qfo_delete (qfo);
+		}
 	}
 	return err;
 }

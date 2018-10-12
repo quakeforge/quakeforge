@@ -682,6 +682,18 @@ is_scalar (const type_t *type)
 }
 
 int
+is_vector (const type_t *type)
+{
+	return type->type == ev_vector;
+}
+
+int
+is_quaternion (const type_t *type)
+{
+	return type->type == ev_quat;
+}
+
+int
 is_math (const type_t *type)
 {
 	etype_t     t = type->type;
@@ -710,6 +722,14 @@ int
 is_array (const type_t *type)
 {
 	if (type->type == ev_invalid && type->meta == ty_array)
+		return 1;
+	return 0;
+}
+
+int
+is_func (const type_t *type)
+{
+	if (type->type == ev_func)
 		return 1;
 	return 0;
 }

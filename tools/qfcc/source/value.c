@@ -79,7 +79,7 @@ static uintptr_t
 value_get_hash (const void *_val, void *unused)
 {
 	const ex_value_t *val = (const ex_value_t *) _val;
-	return Hash_Buffer (&val->v, sizeof (val->v)) + val->type;
+	return Hash_Buffer (&val->v, sizeof (val->v)) + val->lltype;
 }
 
 static int
@@ -87,7 +87,7 @@ value_compare (const void *_val1, const void *_val2, void *unused)
 {
 	const ex_value_t *val1 = (const ex_value_t *) _val1;
 	const ex_value_t *val2 = (const ex_value_t *) _val2;
-	if (val1->type != val2->type)
+	if (val1->lltype != val2->lltype)
 		return 0;
 	return memcmp (&val1->v, &val2->v, sizeof (val1->v)) == 0;
 }
@@ -98,6 +98,13 @@ new_value (void)
 	ex_value_t *value;
 	ALLOC (256, ex_value_t, values, value);
 	return value;
+}
+
+static void
+set_val_type (ex_value_t *val, type_t *type)
+{
+	val->type = type;
+	val->lltype = low_level_type (type);
 }
 
 static ex_value_t *
@@ -119,7 +126,7 @@ new_string_val (const char *string_val)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	val.type = ev_string;
+	set_val_type (&val, &type_string);
 	if (string_val)
 		val.v.string_val = save_string (string_val);
 	return find_value (&val);
@@ -130,7 +137,7 @@ new_float_val (float float_val)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	val.type = ev_float;
+	set_val_type (&val, &type_float);
 	val.v.float_val = float_val;
 	return find_value (&val);
 }
@@ -140,7 +147,7 @@ new_vector_val (const float *vector_val)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	val.type = ev_vector;
+	set_val_type (&val, &type_vector);
 	VectorCopy (vector_val, val.v.vector_val);
 	return find_value (&val);
 }
@@ -150,7 +157,7 @@ new_entity_val (int entity_val)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	val.type = ev_entity;
+	set_val_type (&val, &type_entity);
 	val.v.entity_val = entity_val;
 	return find_value (&val);
 }
@@ -160,7 +167,7 @@ new_field_val (int field_val, type_t *type, def_t *def)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	val.type = ev_field;
+	set_val_type (&val, field_type (type));
 	val.v.pointer.val = field_val;
 	val.v.pointer.type = type;
 	val.v.pointer.def = def;
@@ -172,7 +179,7 @@ new_func_val (int func_val, type_t *type)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	val.type = ev_func;
+	set_val_type (&val, type);
 	val.v.func_val.val = func_val;
 	val.v.func_val.type = type;
 	return find_value (&val);
@@ -183,7 +190,7 @@ new_pointer_val (int pointer_val, type_t *type, def_t *def)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	val.type = ev_pointer;
+	set_val_type (&val, pointer_type (type));
 	val.v.pointer.val = pointer_val;
 	val.v.pointer.type = type;
 	val.v.pointer.def = def;
@@ -195,7 +202,7 @@ new_quaternion_val (const float *quaternion_val)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	val.type = ev_quat;
+	set_val_type (&val, &type_quaternion);
 	QuatCopy (quaternion_val, val.v.quaternion_val);
 	return find_value (&val);
 }
@@ -205,7 +212,7 @@ new_integer_val (int integer_val)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	val.type = ev_integer;
+	set_val_type (&val, &type_integer);
 	val.v.integer_val = integer_val;
 	return find_value (&val);
 }
@@ -215,7 +222,7 @@ new_uinteger_val (int uinteger_val)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	val.type = ev_uinteger;
+	set_val_type (&val, &type_uinteger);
 	val.v.uinteger_val = uinteger_val;
 	return find_value (&val);
 }
@@ -225,7 +232,7 @@ new_short_val (short short_val)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	val.type = ev_short;
+	set_val_type (&val, &type_short);
 	val.v.short_val = short_val;
 	return find_value (&val);
 }
@@ -235,10 +242,13 @@ new_nil_val (type_t *type)
 {
 	ex_value_t  val;
 	memset (&val, 0, sizeof (val));
-	val.type = low_level_type (type);
-	if (val.type == ev_pointer|| val.type == ev_field )
+	set_val_type (&val, type);
+	if (val.lltype == ev_void) {
+		val.lltype = type_nil->type;
+	}
+	if (val.lltype == ev_pointer || val.lltype == ev_field )
 		val.v.pointer.type = type->t.fldptr.type;
-	if (val.type == ev_func)
+	if (val.lltype == ev_func)
 		val.v.func_val.type = type;
 	return find_value (&val);
 }
@@ -333,13 +343,13 @@ ReuseString (const char *str)
 static float
 value_as_float (ex_value_t *value)
 {
-	if (value->type == ev_uinteger)
+	if (value->lltype == ev_uinteger)
 		return value->v.uinteger_val;
-	if (value->type == ev_integer)
+	if (value->lltype == ev_integer)
 		return value->v.integer_val;
-	if (value->type == ev_short)
+	if (value->lltype == ev_short)
 		return value->v.short_val;
-	if (value->type == ev_float)
+	if (value->lltype == ev_float)
 		return value->v.float_val;
 	return 0;
 }
@@ -347,13 +357,13 @@ value_as_float (ex_value_t *value)
 static int
 value_as_int (ex_value_t *value)
 {
-	if (value->type == ev_uinteger)
+	if (value->lltype == ev_uinteger)
 		return value->v.uinteger_val;
-	if (value->type == ev_integer)
+	if (value->lltype == ev_integer)
 		return value->v.integer_val;
-	if (value->type == ev_short)
+	if (value->lltype == ev_short)
 		return value->v.short_val;
-	if (value->type == ev_float)
+	if (value->lltype == ev_float)
 		return value->v.float_val;
 	return 0;
 }
@@ -361,13 +371,13 @@ value_as_int (ex_value_t *value)
 static unsigned
 value_as_uint (ex_value_t *value)
 {
-	if (value->type == ev_uinteger)
+	if (value->lltype == ev_uinteger)
 		return value->v.uinteger_val;
-	if (value->type == ev_integer)
+	if (value->lltype == ev_integer)
 		return value->v.integer_val;
-	if (value->type == ev_short)
+	if (value->lltype == ev_short)
 		return value->v.short_val;
-	if (value->type == ev_float)
+	if (value->lltype == ev_float)
 		return value->v.float_val;
 	return 0;
 }
@@ -375,7 +385,7 @@ value_as_uint (ex_value_t *value)
 ex_value_t *
 convert_value (ex_value_t *value, type_t *type)
 {
-	if (!is_scalar (type) || !is_scalar (ev_types[value->type])) {
+	if (!is_scalar (type) || !is_scalar (ev_types[value->lltype])) {
 		error (0, "unable to convert non-scalar value");
 		return value;
 	}
@@ -400,12 +410,12 @@ alias_value (ex_value_t *value, type_t *type)
 {
 	ex_value_t  new;
 
-	if (type_size (type) != type_size (ev_types[value->type])) {
+	if (type_size (type) != type_size (ev_types[value->lltype])) {
 		error (0, "unable to alias different sized values");
 		return value;
 	}
 	new = *value;
-	new.type = type->type;
+	set_val_type (&new, type);
 	return find_value (&new);
 }
 
@@ -436,9 +446,9 @@ emit_value (ex_value_t *value, def_t *def)
 		clear_immediates ();
 	}
 	cn = 0;
-	if (val.type == ev_void)
-		val.type = type_nil->type;
-	switch (val.type) {
+//	if (val.type == ev_void)
+//		val.type = type_nil->type;
+	switch (val.lltype) {
 		case ev_entity:
 			tab = entity_imm_defs;
 			type = &type_entity;
@@ -463,7 +473,7 @@ emit_value (ex_value_t *value, def_t *def)
 				break;
 			}
 			val.v.float_val = val.v.integer_val;
-			val.type = ev_float;
+			val.lltype = ev_float;
 		case ev_float:
 			tab = float_imm_defs;
 			type = &type_float;
@@ -528,7 +538,7 @@ emit_value (ex_value_t *value, def_t *def)
 	cn->initialized = cn->constant = 1;
 	cn->nosave = 1;
 	// copy the immediate to the global area
-	switch (val.type) {
+	switch (val.lltype) {
 		case ev_string:
 			reloc_def_string (cn);
 			break;

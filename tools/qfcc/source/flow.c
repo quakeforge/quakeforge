@@ -830,7 +830,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			} else if (!strcmp (s->opcode, "<MOVEP>")) {
 				flow_add_op_var (use, s->opc);
 				if (s->opc->op_type == op_value
-					&& s->opc->o.value->type == ev_pointer
+					&& s->opc->o.value->lltype == ev_pointer
 					&& s->opc->o.value->v.pointer.def) {
 					operand_t  *op;
 					ex_pointer_t *ptr = &s->opc->o.value->v.pointer;
