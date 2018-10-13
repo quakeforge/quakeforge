@@ -95,8 +95,9 @@ format_message (dstring_t *message, const char *msg_type, expr_t *e,
 	}
 }
 
-static __attribute__((format(printf, 2, 0))) void
-_warning (expr_t *e, const char *fmt, va_list args)
+static __attribute__((format(printf, 4, 0))) void
+__warning (expr_t *e, const char *file, int line,
+		   const char *fmt, va_list args)
 {
 	dstring_t  *message = dstring_new ();
 
@@ -108,6 +109,9 @@ _warning (expr_t *e, const char *fmt, va_list args)
 	}
 
 	format_message (message, "warning", e, fmt, args);
+	if (options.verbosity > 1) {
+		dasprintf (message, " (%s:%d)", file, line);
+	}
 	if (warning_hook) {
 		warning_hook (message->str);
 	} else {
@@ -161,7 +165,7 @@ _bug (expr_t *e, const char *file, int line, const char *fmt, ...)
 }
 
 expr_t *
-notice (expr_t *e, const char *fmt, ...)
+_notice (expr_t *e, const char *file, int line, const char *fmt, ...)
 {
 	va_list     args;
 
@@ -170,13 +174,16 @@ notice (expr_t *e, const char *fmt, ...)
 
 	va_start (args, fmt);
 	if (options.notices.promote) {
-		_warning (e, fmt, args);
+		__warning (e, file, line, fmt, args);
 	} else {
 		dstring_t  *message = dstring_new ();
 
 		report_function (e);
 
 		format_message (message, "notice", e, fmt, args);
+		if (options.verbosity > 1) {
+			dasprintf (message, " (%s:%d)", file, line);
+		}
 		if (notice_hook) {
 			notice_hook (message->str);
 		} else {
@@ -189,12 +196,12 @@ notice (expr_t *e, const char *fmt, ...)
 }
 
 expr_t *
-warning (expr_t *e, const char *fmt, ...)
+_warning (expr_t *e, const char *file, int line, const char *fmt, ...)
 {
 	va_list     args;
 
 	va_start (args, fmt);
-	_warning (e, fmt, args);
+	__warning (e, file, line, fmt, args);
 	va_end (args);
 	return e;
 }
@@ -220,7 +227,7 @@ _internal_error (expr_t *e, const char *file, int line, const char *fmt, ...)
 }
 
 expr_t *
-error (expr_t *e, const char *fmt, ...)
+_error (expr_t *e, const char *file, int line, const char *fmt, ...)
 {
 	va_list     args;
 
@@ -233,6 +240,9 @@ error (expr_t *e, const char *fmt, ...)
 		dstring_t  *message = dstring_new ();
 
 		format_message (message, "error", e, fmt, args);
+		if (options.verbosity > 1) {
+			dasprintf (message, " (%s:%d)", file, line);
+		}
 		if (error_hook) {
 			error_hook (message->str);
 		} else {

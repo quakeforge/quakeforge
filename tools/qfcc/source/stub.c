@@ -29,5 +29,5 @@ __attribute__((const)) codespace_t *codespace_new (void) {return 0;}
 void codespace_addcode (codespace_t *codespace, struct dstatement_s *code, int size) {}
 __attribute__((const)) int function_parms (function_t *f, byte *parm_size) {return 0;}
 void def_to_ddef (def_t *def, ddef_t *ddef, int aux) {}
-__attribute__((const)) expr_t *warning (expr_t *e, const char *fmt, ...) {return 0;}
-__attribute__((const)) expr_t *error (expr_t *e, const char *fmt, ...) {return 0;}
+__attribute__((const)) expr_t *_warning (expr_t *e, const char *file, int line, const char *fmt, ...) {return 0;}
+__attribute__((const)) expr_t *_error (expr_t *e, const char *file, int line, const char *fmt, ...) {return 0;}
