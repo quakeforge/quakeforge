@@ -116,6 +116,7 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	int         offset_tweak;
 	dprograms_t progs;
 	byte       *base;
+	byte       *heap;
 
 	if (!pr->file_error)
 		pr->file_error = file_error;
@@ -199,6 +200,7 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	Qread (file, base, size - sizeof (progs));
 	CRC_ProcessBlock (base, &pr->crc, size - sizeof (progs));
 	base -= sizeof (progs);	// offsets are from file start
+	heap = ((byte *) pr->progs + pr->progs_size + pr->pr_edictareasize);
 
 	if (pr->edicts) {
 		*pr->edicts = (edict_t *)((byte *) pr->progs + pr->progs_size);
@@ -207,20 +209,19 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	if (pr->zone_size) {
 		//FIXME zone_size needs to be at least as big as memzone_t, but
 		//memzone_t is opaque so its size is unknown
-		pr->zone = (memzone_t *)((byte *) pr->progs + pr->progs_size
-								 + pr->pr_edictareasize);
+		pr->zone = (memzone_t *) heap;
 	}
 
 	pr->pr_functions =
 		(dfunction_t *) (base + pr->progs->ofs_functions);
 	pr->pr_strings = (char *) base + pr->progs->ofs_strings;
-	pr->pr_stringsize = (char *) pr->zone + pr->zone_size - (char *) base;
+	pr->pr_stringsize = (char *) heap + pr->zone_size - (char *) base;
 	pr->pr_globaldefs = (ddef_t *) (base + pr->progs->ofs_globaldefs);
 	pr->pr_fielddefs = (ddef_t *) (base + pr->progs->ofs_fielddefs);
 	pr->pr_statements = (dstatement_t *) (base + pr->progs->ofs_statements);
 
 	pr->pr_globals = (pr_type_t *) (base + pr->progs->ofs_globals);
-	pr->stack = (pr_type_t *) ((byte *) pr->zone + pr->zone_size);
+	pr->stack = (pr_type_t *) ((byte *) heap + pr->zone_size);
 	pr->stack_bottom = pr->stack - pr->pr_globals;
 	pr->globals_size = (pr_type_t *) ((byte *) pr->stack + pr->stack_size)
 						- pr->pr_globals;
