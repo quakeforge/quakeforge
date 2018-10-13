@@ -45,6 +45,7 @@ test_progs_dat=\
 	structptr.dat \
 	swap.dat \
 	triangle.dat \
+	vecexpr.dat \
 	vecinit.dat \
 	while.dat \
 	voidfor.dat
@@ -194,6 +195,14 @@ triangle.dat$(EXEEXT): $(triangle_obj) $(QFCC_DEP)
 triangle.run: Makefile build-run
 	$(srcdir)/build-run $@ 100000 100000 1.00005 50002.4961
 include ./$(DEPDIR)/triangle.Qo
+
+vecexpr_dat_SOURCES=vecexpr.r
+vecexpr_obj=$(vecexpr_dat_SOURCES:.r=.qfo)
+vecexpr.dat$(EXEEXT): $(vecexpr_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(vecexpr_obj)
+vecexpr.run: Makefile build-run
+	$(srcdir)/build-run $@
+include ./$(DEPDIR)/vecexpr.Qo
 
 vecinit_dat_SOURCES=vecinit.r
 vecinit_obj=$(vecinit_dat_SOURCES:.r=.qfo)

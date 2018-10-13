@@ -1999,8 +1999,13 @@ return_expr (function_t *f, expr_t *e)
 			warning (e, "type mismatch for return value of %s",
 					 f->sym->name);
 	} else {
-		if (f->sym->type->t.func.type != t)
+		if (f->sym->type->t.func.type != t) {
 			e = cast_expr (f->sym->type->t.func.type, e);
+			t = f->sym->type->t.func.type;
+		}
+	}
+	if (e->type == ex_vector) {
+		e = assign_expr (new_ret_expr (t), e);
 	}
 	return new_unary_expr ('r', e);
 }

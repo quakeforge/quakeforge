@@ -259,8 +259,6 @@ is_indirect (expr_t *e)
 }
 
 expr_t *
-aassign_expr (expr_t *dst, expr_t *src);
-expr_t *
 assign_expr (expr_t *dst, expr_t *src)
 {
 	int         op = '=';
