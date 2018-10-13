@@ -91,7 +91,6 @@ typedef struct {
 } ex_block_t;
 
 typedef struct {
-	struct expr_s *expr;
 	struct operand_s *op;	///< The operand for the temporary variable, if
 							///< allocated
 	struct type_s *type;	///< The type of the temporary variable.

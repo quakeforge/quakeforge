@@ -426,7 +426,6 @@ copy_expr (expr_t *e)
 			*n = *e;
 			n->line = pr.source_line;
 			n->file = pr.source_file;
-			n->e.temp.expr = copy_expr (e->e.temp.expr);
 			return n;
 		case ex_vector:
 			n = new_expr ();
