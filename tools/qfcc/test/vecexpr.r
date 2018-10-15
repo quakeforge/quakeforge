@@ -19,5 +19,5 @@ t3(float x)
 int
 main ()
 {
-	return t3(5) == '5 9 5' ? 0 : 1;
+	return t3(5) == [5, 9, 5] ? 0 : 1;
 }
