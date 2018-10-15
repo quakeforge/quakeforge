@@ -484,19 +484,14 @@ init_field_def (def_t *def, expr_t *init, storage_class_t storage)
 }
 
 void
-initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
+initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 				storage_class_t storage)
 {
 	symbol_t   *check = symtab_lookup (current_symtab, sym->name);
 	reloc_t    *relocs = 0;
 
-	if (!type) {
-		warning (0, "type for %s defaults to %s", sym->name,
-				 type_default->name);
-		type = type_default;
-	}
 	if (check && check->table == current_symtab) {
-		if (check->sy_type != sy_var || check->type != type) {
+		if (check->sy_type != sy_var || check->type != sym->type) {
 			error (0, "%s redefined", sym->name);
 		} else {
 			// is var and same type
@@ -514,7 +509,7 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 			sym = check;
 		}
 	}
-	sym->type = type;
+	sym->sy_type = sy_var;
 	if (!sym->table)
 		symtab_addsymbol (current_symtab, sym);
 //	if (storage == sc_global && init && is_scalar (type)) {
@@ -535,12 +530,13 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 		sym->s.def = 0;
 	}
 	if (!sym->s.def) {
-		sym->s.def = new_def (sym->name, type, space, storage);
+		sym->s.def = new_def (sym->name, sym->type, space, storage);
 		reloc_attach_relocs (relocs, &sym->s.def->relocs);
 	}
-	if (type == &type_vector && options.code.vector_components)
+	if (sym->type == &type_vector && options.code.vector_components)
 		init_vector_components (sym, 0);
-	if (type->type == ev_field && storage != sc_local && storage != sc_param)
+	if (sym->type->type == ev_field && storage != sc_local
+		&& storage != sc_param)
 		init_field_def (sym->s.def, init, storage);
 	if (storage == sc_extern) {
 		if (init)
@@ -553,14 +549,14 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 	if (init->type == ex_error)
 		return;
 	if (init->type == ex_nil)
-		convert_nil (init, type);
-	if ((is_array (type) || is_struct (type)
-		 || type == &type_vector || type == &type_quaternion)
+		convert_nil (init, sym->type);
+	if ((is_array (sym->type) || is_struct (sym->type)
+		 || sym->type == &type_vector || sym->type == &type_quaternion)
 		&& init->type == ex_block && !init->e.block.result) {
 		init_elements (sym->s.def, init);
 		sym->s.def->initialized = 1;
 	} else {
-		if (!type_assignable (type, get_type (init))) {
+		if (!type_assignable (sym->type, get_type (init))) {
 			error (init, "type mismatch in initializer");
 			return;
 		}
@@ -589,7 +585,7 @@ initialize_def (symbol_t *sym, type_t *type, expr_t *init, defspace_t *space,
 								 v->v.string_val);
 				} else {
 					memcpy (D_POINTER (void, sym->s.def), &v->v,
-							type_size (type) * sizeof (pr_type_t));
+							type_size (sym->type) * sizeof (pr_type_t));
 				}
 			}
 			sym->s.def->initialized = sym->s.def->constant = 1;

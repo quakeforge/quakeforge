@@ -237,13 +237,11 @@ void def_to_ddef (def_t *def, ddef_t *ddef, int aux);
 	For \a space and \a storage, see new_def().
 
 	\param sym		The symbol for which to create and initialize a def.
-	\param type		The type of the def. sym_t::type is set to this. If null,
-					the default type is used.
 	\param init		If not null, the expressions to use to initialize the def.
 	\param space	The space from which to allocate space for the def.
 	\param storage	The storage class of the def.
 */
-void initialize_def (struct symbol_s *sym, struct type_s *type,
+void initialize_def (struct symbol_s *sym,
 					 struct expr_s *init, struct defspace_s *space,
 					 storage_class_t storage);
 

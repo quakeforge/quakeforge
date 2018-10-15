@@ -207,8 +207,8 @@ declarations
 		{
 			while ($3) {
 				symbol_t   *next = $3->next;
-				initialize_def ($3, $5, 0, current_symtab->space,
-								current_storage);
+				$3->type = $5;
+				initialize_def ($3, 0, current_symtab->space, current_storage);
 				$3 = next;
 			}
 		}

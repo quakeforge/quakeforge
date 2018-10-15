@@ -252,6 +252,17 @@ spec_merge (specifier_t spec, specifier_t new)
 	return spec;
 }
 
+static specifier_t
+default_type (specifier_t spec, symbol_t *sym)
+{
+	if (!spec.type) {
+		spec.type = type_default;
+		warning (0, "type defaults to '%s' in declaration of '%s'",
+				 type_default->name, sym->name);
+	}
+	return spec;
+}
+
 %}
 
 %expect 0
@@ -382,48 +393,35 @@ external_decl_list
 external_decl
 	: var_decl
 		{
-			specifier_t spec = $<spec>0;
-			type_t     *type;
-
-			if (!spec.type)
-				spec.type = type_default;
-			type = find_type (append_type ($1->type, spec.type));
+			specifier_t spec = default_type ($<spec>0, $1);
+			$1->type = find_type (append_type ($1->type, spec.type));
 			if (spec.is_typedef) {
-				$1->type = type;
 				$1->sy_type = sy_type;
 				symtab_addsymbol (current_symtab, $1);
 			} else {
-				initialize_def ($1, type, 0, current_symtab->space,
-								spec.storage);
+				initialize_def ($1, 0, current_symtab->space, spec.storage);
 				if ($1->s.def)
 					$1->s.def->nosave |= spec.nosave;
 			}
 		}
 	| var_decl var_initializer
 		{
-			specifier_t spec = $<spec>0;
-			type_t     *type;
+			specifier_t spec = default_type ($<spec>0, $1);
 
-			if (!spec.type)
-				spec.type = type_default;
-			type = find_type (append_type ($1->type, spec.type));
+			$1->type = find_type (append_type ($1->type, spec.type));
 			if (spec.is_typedef) {
 				error (0, "typedef %s is initialized", $1->name);
-				$1->type = type;
 				$1->sy_type = sy_type;
 				symtab_addsymbol (current_symtab, $1);
 			} else {
-				initialize_def ($1, type, $2, current_symtab->space,
-								spec.storage);
+				initialize_def ($1, $2, current_symtab->space, spec.storage);
 				if ($1->s.def)
 					$1->s.def->nosave |= spec.nosave;
 			}
 		}
 	| function_decl
 		{
-			specifier_t spec = $<spec>0;
-			if (!spec.type)
-				spec.type = type_default;
+			specifier_t spec = default_type ($<spec>0, $1);
 			$1->type = find_type (append_type ($1->type, spec.type));
 			if (spec.is_typedef) {
 				$1->sy_type = sy_type;
@@ -903,19 +901,16 @@ decl
 	: function_decl							{}
 	| var_decl opt_initializer
 		{
-			specifier_t spec = $<spec>0;
-			type_t     *type;
-			storage_class_t sc = $<spec>0.storage;
+			specifier_t spec = default_type ($<spec>0, $1);
+			storage_class_t sc = spec.storage;
 			struct defspace_s *space = current_symtab->space;
 
-			if (!spec.type)
-				spec.type = type_default;
 			if (sc == sc_static)
 				space = pr.near_data;
-			type = find_type (append_type ($1->type, spec.type));
-			initialize_def ($1, type, $2, space, sc);
+			$1->type = find_type (append_type ($1->type, spec.type));
+			initialize_def ($1, $2, space, sc);
 			if ($1->s.def)
-				$1->s.def->nosave |= $<spec>0.nosave;
+				$1->s.def->nosave |= spec.nosave;
 		}
 	;
 
@@ -974,8 +969,7 @@ non_code_func
 		{
 			symbol_t   *sym = $<symbol>0;
 			specifier_t spec = $<spec>-1;
-			initialize_def (sym, sym->type, $2, current_symtab->space,
-							spec.storage);
+			initialize_def (sym, $2, current_symtab->space, spec.storage);
 			if (sym->s.def)
 				sym->s.def->nosave |= spec.nosave;
 		}
@@ -988,8 +982,7 @@ non_code_func
 				if (sym->sy_type == sy_func)
 					make_function (sym, 0, sym->table->space, spec.storage);
 			} else {
-				initialize_def (sym, sym->type, 0, current_symtab->space,
-								spec.storage);
+				initialize_def (sym, 0, current_symtab->space, spec.storage);
 				if (sym->s.def)
 					sym->s.def->nosave |= spec.nosave;
 			}

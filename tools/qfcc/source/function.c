@@ -463,7 +463,7 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 
 	if (fsym->type->t.func.num_params < 0) {
 		args = new_symbol_type (".args", &type_va_list);
-		initialize_def (args, args->type, 0, symtab->space, sc_param);
+		initialize_def (args, 0, symtab->space, sc_param);
 	}
 
 	for (p = fsym->params, i = 0; p; p = p->next) {
@@ -476,14 +476,14 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 			p->name = save_string ("");
 		}
 		param = new_symbol_type (p->name, p->type);
-		initialize_def (param, param->type, 0, symtab->space, sc_param);
+		initialize_def (param, 0, symtab->space, sc_param);
 		i++;
 	}
 
 	if (args) {
 		while (i < MAX_PARMS) {
 			param = new_symbol_type (va (".par%d", i), &type_param);
-			initialize_def (param, &type_param, 0, symtab->space, sc_param);
+			initialize_def (param, 0, symtab->space, sc_param);
 			i++;
 		}
 	}
