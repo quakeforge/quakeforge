@@ -2489,36 +2489,6 @@ think_expr (symbol_t *think_sym)
 	return new_symbol_expr (think_sym);
 }
 
-static inline __attribute__((pure)) int
-is_lvalue (expr_t *e)
-{
-	if (e->type == ex_symbol) {
-		switch (e->e.symbol->sy_type) {
-			case sy_var:
-				return 1;
-			case sy_const:
-				return 0;
-			case sy_type:
-				return 0;
-			case sy_expr:
-				return 0;
-			case sy_func:
-				return 0;
-			case sy_class:
-				return 0;
-		}
-	}
-	if (e->type == ex_temp)
-		return 1;
-	if (e->type == ex_expr && e->e.expr.op == '.')
-		return 1;
-	if (e->type == ex_uexpr && e->e.expr.op == '.')
-		return 1;
-	if (e->type == ex_uexpr && e->e.expr.op == 'A')
-		return is_lvalue (e->e.expr.e1);
-	return 0;
-}
-
 expr_t *
 cast_expr (type_t *type, expr_t *e)
 {
