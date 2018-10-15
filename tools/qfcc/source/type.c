@@ -73,8 +73,8 @@ type_t      type_field = {ev_field, "field", ty_none, {{&type_void}} };
 type_t      type_function = { ev_func, "function", ty_none, {{&type_void}} };
 type_t      type_pointer = { ev_pointer, "pointer", ty_none, {{&type_void}} };
 type_t      type_quaternion = { ev_quat, "quaternion" };
-type_t      type_integer = { ev_integer, "integer" };
-type_t      type_uinteger = { ev_uinteger, "uinteger" };
+type_t      type_integer = { ev_integer, "int" };
+type_t      type_uinteger = { ev_uinteger, "uint" };
 type_t      type_short = { ev_short, "short" };
 
 type_t     *type_nil;
