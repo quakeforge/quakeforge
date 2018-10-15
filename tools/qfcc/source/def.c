@@ -512,17 +512,7 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 	sym->sy_type = sy_var;
 	if (!sym->table)
 		symtab_addsymbol (current_symtab, sym);
-//	if (storage == sc_global && init && is_scalar (type)) {
-//		sym->sy_type = sy_const;
-//		memset (&sym->s.value, 0, sizeof (&sym->s.value));
-//		if (init->type != ex_value) {	//FIXME arrays/structs
-//			error (0, "non-constant initializier");
-//		} else {
-//			sym->s.value = init->e.value;
-//			convert_value (&sym->s.value, sym->type);
-//		}
-//		return;
-//	}
+
 	if (sym->s.def && sym->s.def->external) {
 		//FIXME this really is not the right way
 		relocs = sym->s.def->relocs;
