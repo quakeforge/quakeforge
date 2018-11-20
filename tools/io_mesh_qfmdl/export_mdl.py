@@ -300,7 +300,7 @@ def export_mdl(operator, context, filepath):
         make_skin(operator, mdl, mesh)
     if not mdl.frames:
         curframe = context.scene.frame_current
-        for fno in range(1, curframe + 1):
+        for fno in range(context.scene.frame_start, context.scene.frame_end + 1):
             context.scene.frame_set(fno)
             mesh = obj.to_mesh(context.scene, True, 'PREVIEW') #wysiwyg?
             if mdl.obj.qfmdl.xform:
