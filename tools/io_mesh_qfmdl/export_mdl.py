@@ -27,6 +27,7 @@ from .qfplist import pldata, PListError
 from .quakepal import palette
 from .quakenorm import map_normal
 from .mdl import MDL
+from .__init__ import SYNCTYPE, EFFECTS
 
 def check_faces(mesh):
     #Check that all faces are tris because mdl does not support anything else.
@@ -185,14 +186,25 @@ def calc_average_area(mdl):
         totalarea += (c * c) ** 0.5 / 2.0
     return totalarea / len(mdl.tris)
 
-def get_properties(operator, mdl, obj):
-    mdl.eyeposition = tuple(obj.qfmdl.eyeposition)
-    mdl.synctype = MDL.SYNCTYPE[obj.qfmdl.synctype]
-    mdl.flags = ((obj.qfmdl.rotate and MDL.EF_ROTATE or 0)
-                 | MDL.EFFECTS[obj.qfmdl.effects])
-    if obj.qfmdl.md16:
+def get_properties(
+            operator,
+            mdl,
+            eyeposition,
+            synctype,
+            rotate,
+            effects,
+            xform,
+            md16):
+    mdl.eyeposition = eyeposition
+    mdl.synctype = MDL.SYNCTYPE[synctype]
+    mdl.flags = ((rotate and MDL.EF_ROTATE or 0)
+                 | MDL.EFFECTS[effects])
+    if md16:
         mdl.ident = "MD16"
-    script = obj.qfmdl.script
+
+    #tomporarily disabled
+    #script = obj.qfmdl.script
+    script = None
     mdl.script = None
     if script:
         try:
@@ -276,7 +288,18 @@ def process_frame(mdl, scene, frame, vertmap, ingroup = False,
     fr.name = name
     return fr
 
-def export_mdl(operator, context, filepath):
+def export_mdl(
+    operator,
+    context,
+    filepath = "",
+    eyeposition = (0.0, 0.0, 0.0),
+    synctype = SYNCTYPE[1],
+    rotate = False,
+    effects = EFFECTS[1],
+    xform = True,
+    md16 = False
+    ):
+
     obj = context.active_object
     mesh = obj.to_mesh(context.scene, True, 'PREVIEW') #wysiwyg?
     #if not check_faces(mesh):
@@ -285,8 +308,17 @@ def export_mdl(operator, context, filepath):
     #    return {'CANCELLED'}
     mdl = MDL(obj.name)
     mdl.obj = obj
-    if not get_properties(operator, mdl, obj):
-        return {'CANCELLED'}
+    if not get_properties(
+            operator,
+            mdl,
+            eyeposition,
+            synctype,
+            rotate,
+            effects,
+            xform,
+            md16):
+                return {'CANCELLED'}
+
     mdl.tris, mdl.stverts, vertmap = build_tris(mesh)
     if mdl.script:
         if 'skins' in mdl.script:
@@ -303,7 +335,7 @@ def export_mdl(operator, context, filepath):
         for fno in range(context.scene.frame_start, context.scene.frame_end + 1):
             context.scene.frame_set(fno)
             mesh = obj.to_mesh(context.scene, True, 'PREVIEW') #wysiwyg?
-            if mdl.obj.qfmdl.xform:
+            if xform:
                 mesh.transform(mdl.obj.matrix_world)
             mdl.frames.append(make_frame(mesh, vertmap))
     convert_stverts(mdl, mdl.stverts)

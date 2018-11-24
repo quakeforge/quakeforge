@@ -66,6 +66,7 @@ EFFECTS=(
 )
 
 class QFMDLSettings(bpy.types.PropertyGroup):
+    '''
     eyeposition = FloatVectorProperty(
         name="Eye Position",
         description="View possion relative to object origin")
@@ -85,9 +86,7 @@ class QFMDLSettings(bpy.types.PropertyGroup):
     #    type=bpy.types.Object,
     #    name="Script",
     #    description="Script for animating frames and skins")
-    script = StringProperty(
-        name="Script",
-        description="Script for animating frames and skins")
+
     xform = BoolProperty(
         name="Auto transform",
         description="Auto-apply location/rotation/scale when exporting",
@@ -95,6 +94,10 @@ class QFMDLSettings(bpy.types.PropertyGroup):
     md16 = BoolProperty(
         name="16-bit",
         description="16 bit vertex coordinates: QuakeForge only")
+    '''
+    script = StringProperty(
+        name="Script",
+        description="Script for animating frames and skins")
 
 class ImportMDL6(bpy.types.Operator, ImportHelper):
     '''Load a Quake MDL (v6) File'''
@@ -114,9 +117,33 @@ class ExportMDL6(bpy.types.Operator, ExportHelper):
 
     bl_idname = "export_mesh.quake_mdl_v6"
     bl_label = "Export MDL"
+    bl_options = {'PRESET'};
 
     filename_ext = ".mdl"
     filter_glob = StringProperty(default="*.mdl", options={'HIDDEN'})
+
+    eyeposition = FloatVectorProperty(
+        name="Eye Position",
+        description="View possion relative to object origin")
+    synctype = EnumProperty(
+        items=SYNCTYPE,
+        name="Sync Type",
+        description="Add random time offset for automatic animations")
+    rotate = BoolProperty(
+        name="Rotate",
+        description="Rotate automatically (for pickup items)",
+        default=False)
+    effects = EnumProperty(
+        items=EFFECTS,
+        name="Effects",
+        description="Particle trail effects")
+    xform = BoolProperty(
+        name="Auto transform",
+        description="Auto-apply location/rotation/scale when exporting",
+        default=True)
+    md16 = BoolProperty(
+        name="16-bit",
+        description="16 bit vertex coordinates: QuakeForge only")
 
     @classmethod
     def poll(cls, context):
