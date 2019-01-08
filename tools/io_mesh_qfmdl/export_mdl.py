@@ -86,7 +86,7 @@ def null_skin(size):
     return skin
 
 def active_uv(mesh):
-    for uvt in mesh.uv_textures:
+    for uvt in mesh.uv_layers:
         if uvt.active:
             return uvt
     return None
@@ -95,6 +95,18 @@ def make_skin(operator, mdl, mesh):
     uvt = active_uv(mesh)
     mdl.skinwidth, mdl.skinheight = (4, 4)
     skin = null_skin((mdl.skinwidth, mdl.skinheight))
+
+    mat = bpy.context.object.data.materials[0]
+    allNodes = mat.node_tree.nodes
+
+    for node in allNodes:
+        if node.type == "TEX_IMAGE":
+            image = node.image
+            mdl.skinwidth, mdl.skinheight = image.size
+            skin = convert_image(image)
+            mdl.skins.append(skin)
+
+    '''
     if (uvt and uvt.data and uvt.data[0].image):
         image = uvt.data[0].image
         if (uvt.data[0].image.size[0] and uvt.data[0].image.size[1]):
@@ -103,7 +115,9 @@ def make_skin(operator, mdl, mesh):
         else:
             operator.report({'WARNING'},
                             "Texture '%s' invalid (missing?)." % image.name)
+    
     mdl.skins.append(skin)
+    '''
 
 def build_tris(mesh):
     # mdl files have a 1:1 relationship between stverts and 3d verts.
@@ -183,7 +197,7 @@ def calc_average_area(mdl):
         a = Vector(verts[0].r) - Vector(verts[1].r)
         b = Vector(verts[2].r) - Vector(verts[1].r)
         c = a.cross(b)
-        totalarea += (c * c) ** 0.5 / 2.0
+        totalarea += (c @ c) ** 0.5 / 2.0
     return totalarea / len(mdl.tris)
 
 def get_properties(
@@ -301,7 +315,8 @@ def export_mdl(
     ):
 
     obj = context.active_object
-    mesh = obj.to_mesh(context.scene, True, 'PREVIEW') #wysiwyg?
+    #mesh = obj.to_mesh(context.scene, True, 'PREVIEW') #wysiwyg?
+    mesh = obj.to_mesh(context.depsgraph, True, calc_undeformed=False)
     #if not check_faces(mesh):
     #    operator.report({'ERROR'},
     #                    "Mesh has faces with more than 3 vertices.")
@@ -334,7 +349,7 @@ def export_mdl(
         curframe = context.scene.frame_current
         for fno in range(context.scene.frame_start, context.scene.frame_end + 1):
             context.scene.frame_set(fno)
-            mesh = obj.to_mesh(context.scene, True, 'PREVIEW') #wysiwyg?
+            mesh = obj.to_mesh(context.depsgraph, True, calc_undeformed=False) #wysiwyg?
             if xform:
                 mesh.transform(mdl.obj.matrix_world)
             mdl.frames.append(make_frame(mesh, vertmap))

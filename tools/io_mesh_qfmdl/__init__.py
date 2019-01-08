@@ -24,14 +24,14 @@
 bl_info = {
     "name": "Quake MDL format",
     "author": "Bill Currie",
-    "blender": (2, 6, 3),
+    "blender": (2, 80, 0),
     "api": 35622,
     "location": "File > Import-Export",
     "description": "Import-Export Quake MDL (version 6) files. (.mdl)",
-    "warning": "not even alpha",
+    "warning": "still work in progress",
     "wiki_url": "",
     "tracker_url": "",
-#    "support": 'OFFICIAL',
+#   "support": 'OFFICIAL',
     "category": "Import-Export"}
 
 # To support reload properly, try to access a package var, if it's there,
@@ -64,28 +64,35 @@ EFFECTS=(
     ('EF_TRACER2', "Tracer 2", "Orange split trail + rotate"),
     ('EF_TRACER3', "Tracer 3", "Purple split trail"),
 )
+'''
+ class QFMDLSettings(bpy.types.PropertyGroup):
+#     eyeposition = FloatVectorProperty(
+#         name="Eye Position",
+#         description="View possion relative to object origin")
+#     synctype = EnumProperty(
+#         items=SYNCTYPE,
+#         name="Sync Type",
+#         description="Add random time offset for automatic animations")
+#     rotate = BoolProperty(
+#         name="Rotate",
+#         description="Rotate automatically (for pickup items)")
+#     effects = EnumProperty(
+#         items=EFFECTS,
+#         name="Effects",
+#         description="Particle trail effects")
+#     #doesn't work :(
+#     #script = PointerProperty(
+#     #    type=bpy.types.Object,
+#     #    name="Script",
+#     #    description="Script for animating frames and skins")
 
-class QFMDLSettings(bpy.types.PropertyGroup):
-    '''
-    eyeposition = FloatVectorProperty(
-        name="Eye Position",
-        description="View possion relative to object origin")
-    synctype = EnumProperty(
-        items=SYNCTYPE,
-        name="Sync Type",
-        description="Add random time offset for automatic animations")
-    rotate = BoolProperty(
-        name="Rotate",
-        description="Rotate automatically (for pickup items)")
-    effects = EnumProperty(
-        items=EFFECTS,
-        name="Effects",
-        description="Particle trail effects")
-    #doesn't work :(
-    #script = PointerProperty(
-    #    type=bpy.types.Object,
-    #    name="Script",
-    #    description="Script for animating frames and skins")
+#     xform = BoolProperty(
+#         name="Auto transform",
+#         description="Auto-apply location/rotation/scale when exporting",
+#         default=True)
+#     md16 = BoolProperty(
+#         name="16-bit",
+#         description="16 bit vertex coordinates: QuakeForge only")
 
     xform = BoolProperty(
         name="Auto transform",
@@ -94,10 +101,10 @@ class QFMDLSettings(bpy.types.PropertyGroup):
     md16 = BoolProperty(
         name="16-bit",
         description="16 bit vertex coordinates: QuakeForge only")
-    '''
     script = StringProperty(
         name="Script",
-        description="Script for animating frames and skins")
+       description="Script for animating frames and skins")
+'''
 
 class ImportMDL6(bpy.types.Operator, ImportHelper):
     '''Load a Quake MDL (v6) File'''
@@ -155,6 +162,7 @@ class ExportMDL6(bpy.types.Operator, ExportHelper):
         keywords = self.as_keywords (ignore=("check_existing", "filter_glob"))
         return export_mdl.export_mdl(self, context, **keywords)
 
+'''
 class OBJECT_PT_MDLPanel(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
@@ -176,6 +184,7 @@ class OBJECT_PT_MDLPanel(bpy.types.Panel):
         layout.prop(obj.qfmdl, "script")
         layout.prop(obj.qfmdl, "xform")
         layout.prop(obj.qfmdl, "md16")
+'''
 
 def menu_func_import(self, context):
     self.layout.operator(ImportMDL6.bl_idname, text="Quake MDL (.mdl)")
@@ -184,21 +193,25 @@ def menu_func_import(self, context):
 def menu_func_export(self, context):
     self.layout.operator(ExportMDL6.bl_idname, text="Quake MDL (.mdl)")
 
+classes = (
+    #OBJECT_PT_MDLPanel,
+    ImportMDL6,
+    ExportMDL6
+)
 
 def register():
-    bpy.utils.register_module(__name__)
+    for cls in classes:
+        bpy.utils.register_class(cls)
 
-    bpy.types.Object.qfmdl = PointerProperty(type=QFMDLSettings)
-
-    bpy.types.INFO_MT_file_import.append(menu_func_import)
-    bpy.types.INFO_MT_file_export.append(menu_func_export)
-
+    bpy.types.TOPBAR_MT_file_import.append(menu_func_import)
+    bpy.types.TOPBAR_MT_file_export.append(menu_func_export)
 
 def unregister():
-    bpy.utils.unregister_module(__name__)
+    for cls in classes:
+        bpy.utils.unregister_class(cls)
 
-    bpy.types.INFO_MT_file_import.remove(menu_func_import)
-    bpy.types.INFO_MT_file_export.remove(menu_func_export)
+    bpy.types.TOPBAR_MT_file_import.remove(menu_func_import)
+    bpy.types.TOPBAR_MT_file_export.remove(menu_func_export)
 
 if __name__ == "__main__":
     register()
