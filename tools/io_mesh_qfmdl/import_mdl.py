@@ -98,6 +98,16 @@ def load_skins(mdl):
         else:
             load_skin(skin, "%s_%d" % (mdl.name, i))
 
+def setup_main_material(mdl):
+    mat = bpy.data.materials.new(mdl.name)
+    mat.blend_method = 'OPAQUE'
+    mat.diffuse_color = (1, 1, 1)
+    mat.metallic = 1
+    mat.roughness = 1
+    mat.specular_intensity = 0
+    mat.use_nodes = True
+    return mat
+
 def setup_skins(mdl, uvs):
     load_skins(mdl)
 #    img = mdl.images[0]   # use the first skin for now
@@ -112,36 +122,40 @@ def setup_skins(mdl, uvs):
         for j,k in enumerate(poly.loop_indices):
             uvloop.data[k].uv = mdl_uv[j]
 
-    # Create main material
-    mat = bpy.data.materials.new(mdl.name)
-    mat.blend_method = 'OPAQUE'
-    mat.diffuse_color = (1,1,1)
-    mat.metallic = 1
-    mat.roughness = 1
-    mat.specular_intensity = 0
-    mat.use_nodes = True
+    #Load all skins
+    for i, skin in enumerate(mdl.skins):
+        if skin.type:
+            mat = setup_main_material(mdl)
+            emissionNode = mat.node_tree.nodes.new("ShaderNodeEmission")
+            shaderOut = mat.node_tree.nodes["Material Output"]
+            mat.node_tree.nodes.remove(mat.node_tree.nodes["Principled BSDF"])
 
-    # TODO: turn transform to True and position it properly in editor
-    emissionNode = mat.node_tree.nodes.new("ShaderNodeEmission")
-    shaderOut = mat.node_tree.nodes["Material Output"]
-    bdsf_node = mat.node_tree.nodes["Principled BSDF"]
-    mat.node_tree.nodes.remove(bdsf_node)
+            for j, subskin in enumerate(skin.skins):
+                tex_node = mat.node_tree.nodes.new("ShaderNodeTexImage")
+                tex_node.image = mdl.images[i + j]
+                tex_node.interpolation = "Closest"
+                if j == 0:
+                    # connect only first texture (we'll need something smarter in the future)
+                    mat.node_tree.links.new(tex_node.outputs[0], emissionNode.inputs[0])
 
-    #Add skingroup
-    #bpy.ops.object.material_slot_add()
-    #bpy.ops.material.new()
+            mat.node_tree.links.new(emissionNode.outputs[0], shaderOut.inputs[0])
+            mdl.mesh.materials.append(mat)
 
-    #Add all existing textures to shader node
-    for i in range(len(mdl.images)):
-        tex_node = mat.node_tree.nodes.new("ShaderNodeTexImage")
-        tex_node.image = mdl.images[i]
-        tex_node.interpolation = "Closest"
-        if i == 0:
-            # connect only first texture (we'll need something smarter in the future)
+        else:
+            mat = setup_main_material(mdl)
+
+            # TODO: turn transform to True and position it properly in editor
+            emissionNode = mat.node_tree.nodes.new("ShaderNodeEmission")
+            shaderOut = mat.node_tree.nodes["Material Output"]
+            mat.node_tree.nodes.remove(mat.node_tree.nodes["Principled BSDF"])
+
+            tex_node = mat.node_tree.nodes.new("ShaderNodeTexImage")
+            tex_node.image = mdl.images[i]
+            tex_node.interpolation = "Closest"
+
             mat.node_tree.links.new(tex_node.outputs[0], emissionNode.inputs[0])
-
-    mat.node_tree.links.new(emissionNode.outputs[0], shaderOut.inputs[0])
-    mdl.mesh.materials.append(mat)
+            mat.node_tree.links.new(emissionNode.outputs[0], shaderOut.inputs[0])
+            mdl.mesh.materials.append(mat)
 
 def make_shape_key(mdl, framenum, subframenum=0):
     frame = mdl.frames[framenum]
