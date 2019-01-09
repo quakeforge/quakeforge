@@ -346,7 +346,6 @@ def export_mdl(
     if not mdl.skins:
         make_skin(operator, mdl, mesh)
     if not mdl.frames:
-        curframe = context.scene.frame_current
         for fno in range(context.scene.frame_start, context.scene.frame_end + 1):
             context.scene.frame_set(fno)
             mesh = obj.to_mesh(context.depsgraph, True, calc_undeformed=False) #wysiwyg?
