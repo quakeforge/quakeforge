@@ -96,15 +96,30 @@ def make_skin(operator, mdl, mesh):
     mdl.skinwidth, mdl.skinheight = (4, 4)
     skin = null_skin((mdl.skinwidth, mdl.skinheight))
 
-    mat = bpy.context.object.data.materials[0]
-    allNodes = mat.node_tree.nodes
+    materials = bpy.context.object.data.materials
 
-    for node in allNodes:
-        if node.type == "TEX_IMAGE":
-            image = node.image
-            mdl.skinwidth, mdl.skinheight = image.size
-            skin = convert_image(image)
-            mdl.skins.append(skin)
+    for mat in materials:
+        allNodes = mat.node_tree.nodes
+        if len(allNodes) > 1:
+            skingroup = MDL.Skin()
+            skingroup.type = 1
+            skingroup.skins = []
+            skingroup.times = []
+            for node in allNodes:
+                if node.type == "TEX_IMAGE":
+                    image = node.image
+                    mdl.skinwidth, mdl.skinheight = image.size
+                    skin = convert_image(image)
+                    skingroup.skins.append(skin)
+                    skingroup.times.append(0.1)  # hardcoded at the moment
+            mdl.skins.append(skingroup)
+        else:
+            for node in allNodes:
+                if node.type == "TEX_IMAGE":
+                    image = node.image
+                    mdl.skinwidth, mdl.skinheight = image.size
+                    skin = convert_image(image)
+                    mdl.skins.append(skin)
 
     '''
     if (uvt and uvt.data and uvt.data[0].image):
