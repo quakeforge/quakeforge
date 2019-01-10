@@ -123,6 +123,7 @@ def setup_skins(mdl, uvs):
             uvloop.data[k].uv = mdl_uv[j]
 
     #Load all skins
+    img_counter = 0
     for i, skin in enumerate(mdl.skins):
         if skin.type:
             mat = setup_main_material(mdl)
@@ -132,7 +133,8 @@ def setup_skins(mdl, uvs):
 
             for j, subskin in enumerate(skin.skins):
                 tex_node = mat.node_tree.nodes.new("ShaderNodeTexImage")
-                tex_node.image = mdl.images[i + j]
+                tex_node.image = mdl.images[img_counter]
+                img_counter += 1
                 tex_node.interpolation = "Closest"
                 if j == 0:
                     # connect only first texture (we'll need something smarter in the future)
@@ -150,7 +152,8 @@ def setup_skins(mdl, uvs):
             mat.node_tree.nodes.remove(mat.node_tree.nodes["Principled BSDF"])
 
             tex_node = mat.node_tree.nodes.new("ShaderNodeTexImage")
-            tex_node.image = mdl.images[i]
+            tex_node.image = mdl.images[img_counter]
+            img_counter += 1
             tex_node.interpolation = "Closest"
 
             mat.node_tree.links.new(tex_node.outputs[0], emissionNode.inputs[0])
