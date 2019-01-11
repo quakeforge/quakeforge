@@ -105,7 +105,9 @@ def make_skin(operator, mdl, mesh):
             skingroup.type = 1
             skingroup.skins = []
             skingroup.times = []
-            for node in allNodes:
+            sortedNodes = list(allNodes)
+            sortedNodes.sort(key=lambda x: x.location[1], reverse=True)
+            for node in sortedNodes:
                 if node.type == "TEX_IMAGE":
                     image = node.image
                     mdl.skinwidth, mdl.skinheight = image.size
