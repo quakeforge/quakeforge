@@ -98,30 +98,35 @@ def make_skin(operator, mdl, mesh):
 
     materials = bpy.context.object.data.materials
 
-    for mat in materials:
-        allNodes = list(filter(lambda node: node.type == "TEX_IMAGE", mat.node_tree.nodes))
-        if len(allNodes) > 1:
-            skingroup = MDL.Skin()
-            skingroup.type = 1
-            skingroup.skins = []
-            skingroup.times = []
-            sortedNodes = list(allNodes)
-            sortedNodes.sort(key=lambda x: x.location[1], reverse=True)
-            for node in sortedNodes:
-                if node.type == "TEX_IMAGE":
-                    image = node.image
-                    mdl.skinwidth, mdl.skinheight = image.size
-                    skin = convert_image(image)
-                    skingroup.skins.append(skin)
-                    skingroup.times.append(0.1)  # hardcoded at the moment
-            mdl.skins.append(skingroup)
-        else:
-            for node in allNodes:
-                if node.type == "TEX_IMAGE":
-                    image = node.image
-                    mdl.skinwidth, mdl.skinheight = image.size
-                    skin = convert_image(image)
-                    mdl.skins.append(skin)
+    if len(materials) > 0:
+        for mat in materials:
+            allTextureNodes = list(filter(lambda node: node.type == "TEX_IMAGE", mat.node_tree.nodes))
+            if len(allTextureNodes) > 1:                            #=== skingroup
+                skingroup = MDL.Skin()
+                skingroup.type = 1
+                skingroup.skins = []
+                skingroup.times = []
+                sortedNodes = list(allTextureNodes)
+                sortedNodes.sort(key=lambda x: x.location[1], reverse=True)
+                for node in sortedNodes:
+                    if node.type == "TEX_IMAGE":
+                        image = node.image
+                        mdl.skinwidth, mdl.skinheight = image.size
+                        skin = convert_image(image)
+                        skingroup.skins.append(skin)
+                        skingroup.times.append(0.1)                 # hardcoded at the moment
+                mdl.skins.append(skingroup)
+            elif len(allTextureNodes) == 1:                         #=== single skin
+                for node in allTextureNodes:
+                    if node.type == "TEX_IMAGE":
+                        image = node.image
+                        mdl.skinwidth, mdl.skinheight = image.size
+                        skin = convert_image(image)
+                        mdl.skins.append(skin)
+            else:
+                mdl.skins.append(skin)                              # add empty skin - no texture nodes
+    else:
+        mdl.skins.append(skin)                                      # add empty skin - no materials
 
     '''
     if (uvt and uvt.data and uvt.data[0].image):
