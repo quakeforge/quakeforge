@@ -99,7 +99,7 @@ def make_skin(operator, mdl, mesh):
     materials = bpy.context.object.data.materials
 
     for mat in materials:
-        allNodes = mat.node_tree.nodes
+        allNodes = list(filter(lambda node: node.type == "TEX_IMAGE", mat.node_tree.nodes))
         if len(allNodes) > 1:
             skingroup = MDL.Skin()
             skingroup.type = 1
