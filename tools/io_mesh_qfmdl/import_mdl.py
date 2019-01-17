@@ -211,6 +211,8 @@ def build_shape_keys(mdl):
             make_shape_key(mdl, i)
             bpy.context.scene.frame_end += 1
 
+    bpy.context.scene.frame_start = 1
+
 def set_keys(act, data):
     for d in data:
         key, co = d
