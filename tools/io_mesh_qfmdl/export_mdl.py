@@ -189,8 +189,14 @@ def convert_stverts(mdl, stverts):
         t = ((t % mdl.skinheight) + mdl.skinheight) % mdl.skinheight
         stverts[i] = MDL.STVert((s, t))
 
-def make_frame(mesh, vertmap):
+def make_frame(mesh, vertmap, idx):
     frame = MDL.Frame()
+    frame.name = "frame" + str(idx)
+
+    shape_keys_amount = len(bpy.context.object.data.shape_keys.key_blocks)
+    if shape_keys_amount > idx:
+        frame.name = bpy.context.object.data.shape_keys.key_blocks[idx].name
+
     for v in vertmap:
         mv = mesh.vertices[v]
         vert = MDL.Vert(tuple(mv.co), map_normal(mv.normal))
@@ -373,7 +379,7 @@ def export_mdl(
             mesh = obj.to_mesh(context.depsgraph, True, calc_undeformed=False) #wysiwyg?
             if xform:
                 mesh.transform(mdl.obj.matrix_world)
-            mdl.frames.append(make_frame(mesh, vertmap))
+            mdl.frames.append(make_frame(mesh, vertmap, fno))
     convert_stverts(mdl, mdl.stverts)
     mdl.size = calc_average_area(mdl)
     scale_verts(mdl)
