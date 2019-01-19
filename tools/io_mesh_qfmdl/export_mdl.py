@@ -193,9 +193,10 @@ def make_frame(mesh, vertmap, idx):
     frame = MDL.Frame()
     frame.name = "frame" + str(idx)
 
-    shape_keys_amount = len(bpy.context.object.data.shape_keys.key_blocks)
-    if shape_keys_amount > idx:
-        frame.name = bpy.context.object.data.shape_keys.key_blocks[idx].name
+    if bpy.context.object.data.shape_keys:
+        shape_keys_amount = len(bpy.context.object.data.shape_keys.key_blocks)
+        if shape_keys_amount > idx:
+            frame.name = bpy.context.object.data.shape_keys.key_blocks[idx].name
 
     for v in vertmap:
         mv = mesh.vertices[v]
