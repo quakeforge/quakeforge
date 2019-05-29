@@ -87,7 +87,7 @@ def load_skins(mdl):
                 p[l + 2] = c[2] / 255.0
                 p[l + 3] = 1.0
         img.pixels[:] = p[:]
-        img.pack(as_png=True)
+        img.pack()
         img.use_fake_user = True
 
     mdl.images=[]
@@ -101,7 +101,7 @@ def load_skins(mdl):
 def setup_main_material(mdl):
     mat = bpy.data.materials.new(mdl.name)
     mat.blend_method = 'OPAQUE'
-    mat.diffuse_color = (1, 1, 1)
+    mat.diffuse_color = (1, 1, 1, 1)
     mat.metallic = 1
     mat.roughness = 1
     mat.specular_intensity = 0

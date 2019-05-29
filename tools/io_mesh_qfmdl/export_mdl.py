@@ -344,8 +344,10 @@ def export_mdl(
     ):
 
     obj = context.active_object
-    #mesh = obj.to_mesh(context.scene, True, 'PREVIEW') #wysiwyg?
-    mesh = obj.to_mesh(context.depsgraph, True, calc_undeformed=False)
+    obj.update_from_editmode()
+    depsgraph = context.evaluated_depsgraph_get()
+    ob_eval = obj.evaluated_get(depsgraph)
+    mesh = ob_eval.to_mesh()
     #if not check_faces(mesh):
     #    operator.report({'ERROR'},
     #                    "Mesh has faces with more than 3 vertices.")
@@ -377,7 +379,10 @@ def export_mdl(
     if not mdl.frames:
         for fno in range(context.scene.frame_start, context.scene.frame_end + 1):
             context.scene.frame_set(fno)
-            mesh = obj.to_mesh(context.depsgraph, True, calc_undeformed=False) #wysiwyg?
+            obj.update_from_editmode()
+            depsgraph = context.evaluated_depsgraph_get()
+            ob_eval = obj.evaluated_get(depsgraph)
+            mesh = ob_eval.to_mesh()
             if xform:
                 mesh.transform(mdl.obj.matrix_world)
             mdl.frames.append(make_frame(mesh, vertmap, fno))
