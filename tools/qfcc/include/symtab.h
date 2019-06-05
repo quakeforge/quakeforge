@@ -48,6 +48,7 @@ typedef enum vis_e {
 } vis_t;
 
 typedef enum {
+	sy_name,					///< just a name (referent tbd)
 	sy_var,						///< symbol refers to a variable
 	sy_const,					///< symbol refers to a constant
 	sy_type,					///< symbol refers to a type

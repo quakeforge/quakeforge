@@ -87,6 +87,8 @@ check_valid_lvalue (expr_t *expr)
 	switch (expr->type) {
 		case ex_symbol:
 			switch (expr->e.symbol->sy_type) {
+				case sy_name:
+					break;
 				case sy_var:
 					return 0;
 				case sy_const:

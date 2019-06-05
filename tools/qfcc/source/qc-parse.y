@@ -650,6 +650,7 @@ struct_decl
 				$<spec>0.type = type_default;
 			$1->type = append_type ($1->type, $<spec>0.type);
 			$1->type = find_type ($1->type);
+			$1->sy_type = sy_var;
 			symtab_addsymbol (current_symtab, $1);
 		}
 	| var_decl
@@ -658,6 +659,7 @@ struct_decl
 				$<spec>0.type = type_default;
 			$1->type = append_type ($1->type, $<spec>0.type);
 			$1->type = find_type ($1->type);
+			$1->sy_type = sy_var;
 			symtab_addsymbol (current_symtab, $1);
 		}
 	| var_decl ':' expr		%prec COMMA		{}

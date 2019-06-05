@@ -246,6 +246,7 @@ make_structure (const char *name, int su, struct_def_t *defs, type_t *type)
 		strct = new_symtab (0, stab_struct);
 	while (defs->name) {
 		field = new_symbol_type (defs->name, defs->type);
+		field->sy_type = sy_var;
 		if (!symtab_addsymbol (strct, field))
 			internal_error (0, "duplicate symbol: %s", defs->name);
 		defs++;

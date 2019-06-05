@@ -52,6 +52,7 @@ static symtab_t *symtabs_freelist;
 static symbol_t *symbols_freelist;
 
 static const char *sy_type_names[] = {
+	"sy_name",
 	"sy_var",
 	"sy_const",
 	"sy_type",
@@ -234,5 +235,6 @@ make_symbol (const char *name, type_t *type, defspace_t *space,
 		sym->s.def = new_def (name, type, space, storage);
 		reloc_attach_relocs (relocs, &sym->s.def->relocs);
 	}
+	sym->sy_type = sy_var;
 	return sym;
 }
