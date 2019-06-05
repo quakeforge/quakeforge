@@ -972,8 +972,8 @@ expr_symbol (sblock_t *sblock, expr_t *e, operand_t **op)
 	} else if (sym->sy_type == sy_func) {
 		*op = def_operand (sym->s.func->def, 0);
 	} else {
-		internal_error (e, "unexpected symbol type: %s",
-						symtype_str(sym->sy_type));
+		internal_error (e, "unexpected symbol type: %s for %s",
+						symtype_str(sym->sy_type), sym->name);
 	}
 	return sblock;
 }
