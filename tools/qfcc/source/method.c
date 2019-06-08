@@ -511,7 +511,7 @@ emit_method_list_item (def_t *def, void *data, int index)
 	pr_method_description_t *desc;
 
 	if (def->type != &type_obj_method_description)
-		internal_error (0, "%s: expected method_descripting def",
+		internal_error (0, "%s: expected method_description def",
 						__FUNCTION__);
 	if (index < 0 || index >= methods->count)
 		internal_error (0, "%s: out of bounds index: %d %d",
