@@ -584,8 +584,13 @@ struct_specifier
 		{
 			symbol_t   *sym;
 			sym = find_struct ($1, $2, 0);
-			if (!sym->table)
+			if (!sym->table) {
 				symtab_addsymbol (current_symtab, sym);
+			} else {
+				error (0, "%s %s redefined", $1 == 's' ? "struct" : "union",
+					   $2->name);
+				$1 = 0;
+			}
 			current_symtab = new_symtab (current_symtab, stab_local);
 		}
 	  struct_defs '}'
@@ -594,10 +599,12 @@ struct_specifier
 			symtab_t   *symtab = current_symtab;
 			current_symtab = symtab->parent;
 
-			sym = build_struct ($1, $2, symtab, 0);
-			$$ = make_spec (sym->type, 0, 0, 0);
-			if (!sym->table)
-				symtab_addsymbol (current_symtab, sym);
+			if ($1) {
+				sym = build_struct ($1, $2, symtab, 0);
+				$$ = make_spec (sym->type, 0, 0, 0);
+				if (!sym->table)
+					symtab_addsymbol (current_symtab, sym);
+			}
 		}
 	| STRUCT tag
 		{
