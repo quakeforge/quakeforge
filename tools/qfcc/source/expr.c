@@ -2005,7 +2005,7 @@ return_expr (function_t *f, expr_t *e)
 		}
 	}
 	if (e->type == ex_vector) {
-		e = assign_expr (new_ret_expr (t), e);
+		e = assign_expr (new_temp_def_expr (t), e);
 	}
 	return new_unary_expr ('r', e);
 }
