@@ -71,7 +71,7 @@ typedef struct def_s {
 		def they alias, including relocation records. However, they do keep
 		track of the source file and line that first created the alias.
 
-		The relations between a def an any of its aliases are maintained by
+		The relations between a def and any of its aliases are maintained by
 		a linked list headed by def_t::alias_defs and connected by
 		def_t::next. def_t::alias is used to find the main def via one if its
 		aliases. The order of the aliases in the list is arbitrary: it is the
