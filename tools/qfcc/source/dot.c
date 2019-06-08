@@ -37,7 +37,7 @@
 
 #include "dot.h"
 #include "function.h"
-#include "qfcc.h"
+#include "options.h"
 #include "strpool.h"
 
 void
@@ -46,7 +46,7 @@ dump_dot (const char *stage, void *data,
 {
 	char       *fname;
 
-	fname = nva ("%s.%s.%s.dot", GETSTR (pr.source_file), current_func->name,
+	fname = nva ("%s.%s.%s.dot", options.output_file, current_func->name,
 				 stage);
 	dump_func (data, fname);
 	free (fname);
