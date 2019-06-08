@@ -1470,39 +1470,57 @@ emit_protocol (protocol_t *protocol)
 	return proto_def;
 }
 
+static void
+emit_protocol_next (def_t *def, void *data, int index)
+{
+	if (def->type != &type_pointer) {
+		internal_error (0, "%s: expected pointer def", __FUNCTION__);
+	}
+	D_INT (def) = 0;
+}
+
+static void
+emit_protocol_count (def_t *def, void *data, int index)
+{
+	protocollist_t *protocols = (protocollist_t *) data;
+
+	if (def->type != &type_integer) {
+		internal_error (0, "%s: expected integer def", __FUNCTION__);
+	}
+	D_INT (def) = protocols->count;
+}
+
+static void
+emit_protocol_list_item (def_t *def, void *data, int index)
+{
+	protocollist_t *protocols = (protocollist_t *) data;
+	protocol_t *protocol = protocols->list[index];
+
+	if (!is_array (def->type) || def->type->t.array.type != &type_pointer) {
+		internal_error (0, "%s: expected array of pointer def", __FUNCTION__);
+	}
+	if (index < 0 || index >= protocols->count) {
+		internal_error (0, "%s: out of bounds index: %d %d",
+						__FUNCTION__, index, protocols->count);
+	}
+	EMIT_DEF (def->space, D_INT(def), emit_protocol (protocol));
+}
+
 def_t *
 emit_protocol_list (protocollist_t *protocols, const char *name)
 {
-	//FIXME use emit_struct
 	static struct_def_t proto_list_struct[] = {
-		{"next",	&type_pointer},
-		{"count",	&type_integer},
-		{"list",	0},				// type will be filled in at run time
+		{"next",  &type_pointer, emit_protocol_next},
+		{"count", &type_integer, emit_protocol_count},
+		{"list",  0,             emit_protocol_list_item},
 		{0, 0},
 	};
-	type_t     *proto_list_type;
-	def_t      *proto_list_def;
-	defspace_t *space;
-	pr_protocol_list_t *proto_list;
-	int         i;
 
 	if (!protocols)
 		return 0;
 	proto_list_struct[2].type = array_type (&type_pointer, protocols->count);
-	proto_list_type = make_structure (0, 's', proto_list_struct, 0)->type;
-	proto_list_def = make_symbol (va ("_OBJ_PROTOCOLS_%s", name),
-								  proto_list_type,
-								  pr.far_data, sc_static)->s.def;
-	proto_list_def->initialized = proto_list_def->constant = 1;
-	proto_list_def->nosave = 1;
-	space = proto_list_def->space;
-	proto_list = &D_STRUCT (pr_protocol_list_t, proto_list_def);
-	proto_list->next = 0;
-	proto_list->count = protocols->count;
-	for (i = 0; i < protocols->count; i++)
-		EMIT_DEF (space, proto_list->list[i],
-				  emit_protocol (protocols->list[i]));
-	return proto_list_def;
+	return emit_structure (va ("_OBJ_PROTOCOLS_%s", name), 's',
+						   proto_list_struct, 0, protocols, sc_static);
 }
 
 void
