@@ -222,7 +222,9 @@ void def_to_ddef (def_t *def, ddef_t *ddef, int aux);
 
 /** Initialize a def referenced by the given symbol.
 
-	The symbol is checked for redefinition. (FIXME check rules)
+	The symbol is checked for redefinition. A symbol is considered to be
+	redefined if the previous definition is in the same symbol table and
+	of a different type or already initialized.
 
 	If \a type is null, then the def will be given the default type (as
 	specified by ::type_default).

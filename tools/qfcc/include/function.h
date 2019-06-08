@@ -105,9 +105,9 @@ extern function_t *current_func;
 typedef struct param_s {
 	struct param_s *next;
 	const char *selector;
-	struct type_s *type;		//FIXME redundant
-	const char *name;			//FIXME redundant
-	struct symbol_s *symbol;
+	struct type_s *type;
+	const char *name;
+	struct symbol_s *symbol;	//FIXME what is this for?
 } param_t;
 
 struct expr_s;

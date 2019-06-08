@@ -416,7 +416,7 @@ expr_t *new_entity_expr (int entity_val);
 
 /** Create a new field constant expression node.
 
-	\param field_val	XXX
+	\param field_val	offset? XXX
 	\param type		The type of the field.
 	\param def
 	\return			The new field constant expression node
