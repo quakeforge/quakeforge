@@ -282,8 +282,6 @@ assign_expr (expr_t *dst, expr_t *src)
 		return expr;
 	}
 
-	dst = fold_constants (dst);
-	src = fold_constants (src);
 
 	if ((expr = check_valid_lvalue (dst))) {
 		return expr;
