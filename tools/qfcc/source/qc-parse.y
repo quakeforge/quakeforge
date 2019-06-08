@@ -180,11 +180,12 @@ int yylex (void);
 %type	<symbol>	methoddef
 %type	<expr>		opt_initializer var_initializer local_def
 
-%type	<expr>		opt_expr fexpr expr element_list element vector_expr
-%type	<expr>		optional_state_expr texpr
+%type	<expr>		opt_init opt_expr fexpr expr element_list element
+%type	<expr>		optional_state_expr texpr vector_expr
 %type	<expr>		statement statements compound_statement
 %type	<expr>		else label break_label continue_label
 %type	<expr>		unary_expr cast_expr opt_arg_list arg_list
+%type	<expr>		init_var_decl_list init_var_decl
 %type	<switch_block> switch_block
 %type	<symbol>	identifier
 
@@ -1053,20 +1054,26 @@ optional_comma
 	| ','
 	;
 
-compound_statement
-	: '{'
+push_scope
+	: /* empty */
 		{
 			if (!options.traditional) {
 				current_symtab = new_symtab (current_symtab, stab_local);
 				current_symtab->space = current_symtab->parent->space;
 			}
 		}
-	  statements '}'
+	;
+
+pop_scope
+	: /* empty */
 		{
 			if (!options.traditional)
 				current_symtab = current_symtab->parent;
-			$$ = $3;
 		}
+	;
+
+compound_statement
+	: '{' push_scope statements '}' pop_scope { $$ = $3; }
 	;
 
 statements
@@ -1143,13 +1150,13 @@ statement
 		{
 			$$ = build_if_statement ($2, $4, $6, $7, $8);
 		}
-	| FOR break_label continue_label
-			'(' opt_expr ';' opt_expr ';' opt_expr ')' statement
+	| FOR push_scope break_label continue_label
+			'(' opt_init ';' opt_expr ';' opt_expr ')' statement pop_scope
 		{
-			$$ = build_for_statement ($5, $7, $9, $11,
+			$$ = build_for_statement ($6, $8, $10, $12,
 									  break_label, continue_label);
-			break_label = $2;
-			continue_label = $3;
+			break_label = $3;
+			continue_label = $4;
 		}
 	| WHILE break_label continue_label not '(' texpr ')' statement
 		{
@@ -1213,6 +1220,32 @@ switch_block
 			$$ = switch_block;
 			switch_block = new_switch_block ();
 			switch_block->test = $<expr>0;
+		}
+	;
+
+opt_init
+	: fexpr
+	| type init_var_decl_list { $$ = $2; }
+	| /* empty */
+		{
+			$$ = 0;
+		}
+	;
+
+init_var_decl_list
+	: init_var_decl
+	| init_var_decl_list ',' init_var_decl
+	;
+
+init_var_decl
+	: var_decl opt_initializer
+		{
+			specifier_t spec = $<spec>0;
+			$1->type = append_type ($1->type, spec.type);
+			$1->type = find_type ($1->type);
+			$1->sy_type = sy_var;
+			initialize_def ($1, 0, current_symtab->space, spec.storage);
+			$$ = assign_expr (new_symbol_expr ($1), $2);
 		}
 	;
 
