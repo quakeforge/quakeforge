@@ -31,6 +31,7 @@ fail_bins=
 test_progs_dat=\
 	chewed-alias.dat \
 	chewed-return.dat \
+	comma-expr.dat \
 	deadbool.dat \
 	fordecl.dat \
 	func-expr.dat \
@@ -88,6 +89,15 @@ chewed-return.run: Makefile build-run
 	TEST_HARNESS_OPTS=--float $(srcdir)/build-run $@
 include ./$(DEPDIR)/chewed-return.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/chewed-return.Qo
+
+comma_expr_dat_SOURCES=comma-expr.r
+comma_expr_obj=$(comma_expr_dat_SOURCES:.r=.qfo)
+comma-expr.dat$(EXEEXT): $(comma_expr_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(comma_expr_obj)
+comma-expr.run: Makefile build-run
+	$(srcdir)/build-run $@
+include ./$(DEPDIR)/comma-expr.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/comma-expr.Qo
 
 deadbool_dat_SOURCES=deadbool.r
 deadbool_obj=$(deadbool_dat_SOURCES:.r=.qfo)

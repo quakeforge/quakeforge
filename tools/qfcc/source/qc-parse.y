@@ -180,7 +180,7 @@ int yylex (void);
 %type	<symbol>	methoddef
 %type	<expr>		opt_initializer var_initializer local_def
 
-%type	<expr>		opt_init opt_expr fexpr expr element_list element
+%type	<expr>		opt_init opt_expr cexpr fexpr expr element_list element
 %type	<expr>		optional_state_expr texpr vector_expr
 %type	<expr>		statement statements compound_statement
 %type	<expr>		else label break_label continue_label
@@ -1175,7 +1175,7 @@ statement
 			break_label = $2;
 			continue_label = $3;
 		}
-	| fexpr ';'
+	| cexpr ';'
 		{
 			$$ = $1;
 		}
@@ -1227,7 +1227,7 @@ switch_block
 	;
 
 opt_init
-	: fexpr
+	: cexpr
 	| type init_var_decl_list { $$ = $2; }
 	| /* empty */
 		{
@@ -1260,7 +1260,7 @@ init_var_decl
 	;
 
 opt_expr
-	: fexpr
+	: cexpr
 	| /* empty */
 		{
 			$$ = 0;
@@ -1344,6 +1344,18 @@ fexpr
 
 texpr
 	: fexpr						{ $$ = convert_bool ($1, 1); }
+	;
+
+cexpr
+	: arg_list
+		{
+			if ($1->next) {
+				expr_t     *res = $1;
+				$1 = build_block_expr ($1->next);
+				$1->e.block.result = res;
+			}
+			$$ = $1;
+		}
 	;
 
 opt_arg_list
