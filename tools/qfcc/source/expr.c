@@ -2238,6 +2238,7 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 			return new_label_ref (&e1->e.label);
 		case ex_temp:
 			e = new_unary_expr ('&', e1);
+			e->e.expr.type = pointer_type (t);
 			break;
 		default:
 			return error (e1, "invalid type for unary &");

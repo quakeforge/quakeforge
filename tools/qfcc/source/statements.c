@@ -706,10 +706,12 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 static sblock_t *
 expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
 {
-	if (e->type == ex_uexpr) {
-		sblock = statement_subexpr (sblock, e->e.expr.e1, op);
-		(*op)->type = ev_pointer;
-	}
+	statement_t *s;
+	s = new_statement (st_expr, "&", e);
+	sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
+	s->opc = temp_operand (e->e.expr.type);
+	sblock_add_statement (sblock, s);
+	*(op) = s->opc;
 	return sblock;
 }
 
