@@ -33,7 +33,7 @@ QFCC_DEPS=@QFCC_DEPS@
 QFCC_INCS=@QFCC_INCS@
 
 AM_CPPFLAGS=	-I$(top_srcdir)/include $(QFCC_INCS)
-YFLAGS = -v -d
+YFLAGS = -v -d -Wno-yacc -Werror
 
 bin_PROGRAMS=	qfcc qfprogs
 bin_SCRIPTS=	qfpreqcc
