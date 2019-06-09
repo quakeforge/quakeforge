@@ -43,6 +43,7 @@ test_progs_dat=\
 	return-ivar.dat \
 	sendv.dat \
 	state.dat \
+	structarray.dat \
 	structlive.dat \
 	structptr.dat \
 	swap.dat \
@@ -197,6 +198,15 @@ state.run: Makefile build-run
 	$(srcdir)/build-run $@
 include ./$(DEPDIR)/state.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/state.Qo
+
+structarray_dat_SOURCES=structarray.r
+structarray_obj=$(structarray_dat_SOURCES:.r=.qfo)
+structarray.dat$(EXEEXT): $(structarray_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(structarray_obj)
+structarray.run: Makefile build-run
+	$(srcdir)/build-run $@
+include ./$(DEPDIR)/structarray.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/structarray.Qo
 
 structlive_dat_SOURCES=structlive.r
 structlive_obj=$(structlive_dat_SOURCES:.r=.qfo)
