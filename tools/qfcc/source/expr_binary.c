@@ -46,6 +46,7 @@ typedef struct {
 } expr_type_t;
 
 static expr_t *pointer_arithmetic (int op, expr_t *e1, expr_t *e2);
+static expr_t *inverse_multiply (int op, expr_t *e1, expr_t *e2);
 
 static expr_type_t string_string[] = {
 	{'+',	&type_string},
@@ -85,7 +86,7 @@ static expr_type_t float_vector[] = {
 
 static expr_type_t float_quat[] = {
 	{'*',	&type_quaternion},
-	{'/',	&type_quaternion},
+	{'/',	0, 0, 0, inverse_multiply},
 	{0, 0}
 };
 
@@ -113,7 +114,7 @@ static expr_type_t float_integer[] = {
 
 static expr_type_t vector_float[] = {
 	{'*',	&type_vector},
-	{'/',	&type_vector},
+	{'/',	0, 0, 0, inverse_multiply},
 	{0, 0}
 };
 
@@ -599,6 +600,15 @@ pointer_arithmetic (int op, expr_t *e1, expr_t *e2)
 	e2 = cast_expr (&type_integer, e2);
 	e = binary_expr (op, e1, e2);
 	return cast_expr (ptype, e);
+}
+
+static expr_t *
+inverse_multiply (int op, expr_t *e1, expr_t *e2)
+{
+	// There is no vector/float or quaternion/float instruction and adding
+	// one would mean the engine would have to do 1/f every time
+	expr_t     *one = new_float_expr (1);
+	return binary_expr ('*', e1, binary_expr ('/', one, e2));
 }
 
 static expr_t *
