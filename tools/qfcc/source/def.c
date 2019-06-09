@@ -578,8 +578,11 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 							type_size (sym->type) * sizeof (pr_type_t));
 				}
 			}
-			sym->s.def->initialized = sym->s.def->constant = 1;
-			sym->s.def->nosave = 1;
+			sym->s.def->initialized = 1;
+			if (options.traditional) {
+				sym->s.def->constant = 1;
+				sym->s.def->nosave = 1;
+			}
 		}
 	}
 	sym->s.def->initializer = init;
