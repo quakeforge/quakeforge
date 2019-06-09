@@ -483,6 +483,16 @@ init_field_def (def_t *def, expr_t *init, storage_class_t storage)
 	}
 }
 
+static int
+num_elements (expr_t *e)
+{
+	int         count = 0;
+	for (e = e->e.block.head; e; e = e->next) {
+		count++;
+	}
+	return count;
+}
+
 void
 initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 				storage_class_t storage)
@@ -520,6 +530,11 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 		sym->s.def = 0;
 	}
 	if (!sym->s.def) {
+		if (is_array (sym->type) && !type_size (sym->type)
+			&& init->type == ex_block && !init->e.block.result) {
+			sym->type = array_type (sym->type->t.array.type,
+									num_elements (init));
+		}
 		sym->s.def = new_def (sym->name, sym->type, space, storage);
 		reloc_attach_relocs (relocs, &sym->s.def->relocs);
 	}

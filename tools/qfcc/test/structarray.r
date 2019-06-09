@@ -7,7 +7,7 @@ typedef struct {
 	int         ofs[];
 } valstruct_t;
 
-int foo[5] = {1, 2, 3, 4, 5};
+int foo[] = {1, 2, 3, 4, 5};
 valstruct_t *vs;
 int dst;
 
@@ -19,5 +19,5 @@ main ()
 		dst = vs.ofs[i];
 	}
 	printf("dst = %d\n", dst);
-	return dst != 4;
+	return sizeof(foo) != 5 || dst != 4;
 }
