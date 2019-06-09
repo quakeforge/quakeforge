@@ -46,6 +46,7 @@
 #include "QF/hash.h"
 #include "QF/mathlib.h"
 #include "QF/pr_debug.h"
+#include "QF/pr_type.h"
 #include "QF/progs.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
@@ -514,6 +515,26 @@ get_aux_function (progs_t *pr)
 	return pr->auxfunction_map[func - pr->pr_functions];
 }
 
+static etype_t
+get_etype (progs_t *pr, int typeptr)
+{
+	//FIXME cache .type_encodings def
+	ddef_t     *te_def = PR_FindGlobal (pr, ".type_encodings");
+	qfot_type_encodings_t *encodings;
+	qfot_type_t *type;
+
+	if (!te_def) {
+		// can't decode the type, so make no assumptions about it
+		return typeptr;
+	}
+	encodings = &G_STRUCT (pr, qfot_type_encodings_t, te_def->ofs);
+	type = &G_STRUCT (pr, qfot_type_t, encodings->types + typeptr);
+	if (type->meta == 0) {
+		return type->t.type;
+	}
+	return ev_void;
+}
+
 ddef_t *
 PR_Get_Local_Def (progs_t *pr, pr_int_t offs)
 {
@@ -885,7 +906,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						optype = ev_void;
 						aux_func = get_aux_function (pr);
 						if (aux_func)
-							optype = aux_func->return_type;
+							optype = get_etype (pr, aux_func->return_type);
 						str = global_string (pr, opval, optype, contents & 1);
 						break;
 					case 'F':
