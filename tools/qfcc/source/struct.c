@@ -159,25 +159,38 @@ start_enum (symbol_t *sym)
 symbol_t *
 finish_enum (symbol_t *sym)
 {
-	sym->type = find_type (sym->type);
+	symbol_t   *enum_sym;
+	symbol_t   *name;
+	type_t     *enum_type;
+	symtab_t   *enum_tab;
+
+	enum_type = sym->type = find_type (sym->type);
+	enum_tab = enum_type->t.symtab;
+
+	for (name = enum_tab->symbols; name; name = name->next) {
+		name->type = sym->type;
+
+		enum_sym = new_symbol_type (name->name, enum_type);
+		enum_sym->sy_type = sy_const;
+		enum_sym->s.value = name->s.value;
+		symtab_addsymbol (enum_tab->parent, enum_sym);
+	}
 	return sym;
 }
 
 void
 add_enum (symbol_t *enm, symbol_t *name, expr_t *val)
 {
-	symbol_t   *sym;
 	type_t     *enum_type = enm->type;
-	symtab_t   *enum_tab;
+	symtab_t   *enum_tab = enum_type->t.symtab;
 	int         value;
 
-	if (name->table == current_symtab)
+	if (name->table == current_symtab || name->table == enum_tab)
 		error (0, "%s redefined", name->name);
 	if (name->table)
 		name = new_symbol (name->name);
 	name->sy_type = sy_const;
 	name->type = enum_type;
-	enum_tab = enum_type->t.symtab;
 	value = 0;
 	if (enum_tab->symbols)
 		value = ((symbol_t *)(enum_tab->symtail))->s.value->v.integer_val + 1;
@@ -191,10 +204,6 @@ add_enum (symbol_t *enm, symbol_t *name, expr_t *val)
 	}
 	name->s.value = new_integer_val (value);
 	symtab_addsymbol (enum_tab, name);
-	sym = new_symbol_type (name->name, name->type);
-	sym->sy_type = sy_const;
-	sym->s.value = name->s.value;
-	symtab_addsymbol (enum_tab->parent, sym);
 }
 
 int
