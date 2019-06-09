@@ -1280,7 +1280,7 @@ test_expr (expr_t *e)
 	new = binary_expr (NE, e, new);
 	new->line = e->line;
 	new->file = e->file;
-	return fold_constants (new);
+	return new;
 }
 
 void
@@ -2130,10 +2130,10 @@ array_expr (expr_t *array, expr_t *index)
 			|| ind - array_type->t.array.base >= array_type->t.array.size))
 			return error (index, "array index out of bounds");
 	scale = new_integer_expr (type_size (array_type->t.array.type));
-	index = fold_constants (binary_expr ('*', index, scale));
+	index = binary_expr ('*', index, scale);
 	base = new_integer_expr (array_type->t.array.base);
-	offset = fold_constants (binary_expr ('*', base, scale));
-	index = fold_constants (binary_expr ('-', index, offset));
+	offset = binary_expr ('*', base, scale);
+	index = binary_expr ('-', index, offset);
 	if (is_short_val (index))
 		ind = expr_short (index);
 	if (is_integer_val (index))

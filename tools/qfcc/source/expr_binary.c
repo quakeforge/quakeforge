@@ -42,7 +42,10 @@ typedef struct {
 	type_t     *type;
 	type_t     *a_cast;
 	type_t     *b_cast;
+	expr_t     *(*process)(int op, expr_t *e1, expr_t *e2);
 } expr_type_t;
+
+static expr_t *pointer_arithmetic (int op, expr_t *e1, expr_t *e2);
 
 static expr_type_t string_string[] = {
 	{'+',	&type_string},
@@ -157,8 +160,8 @@ static expr_type_t pointer_pointer[] = {
 };
 
 static expr_type_t pointer_integer[] = {
-	{'+',	&type_pointer},
-	{'-',	&type_pointer},
+	{'+',	0, 0, 0, pointer_arithmetic},
+	{'-',	0, 0, 0, pointer_arithmetic},
 	{0, 0}
 };
 #define pointer_uinteger pointer_integer
@@ -218,7 +221,7 @@ static expr_type_t integer_vector[] = {
 };
 
 static expr_type_t integer_pointer[] = {
-	{'+',	&type_pointer},
+	{'+',	&type_pointer, 0, &type_integer},
 	{0, 0}
 };
 
@@ -580,6 +583,25 @@ static expr_type_t **binary_expr_types[] = {
 };
 
 static expr_t *
+pointer_arithmetic (int op, expr_t *e1, expr_t *e2)
+{
+	expr_t     *e;
+	type_t     *ptype = get_type (e1);
+
+	if (!is_pointer (ptype)) {
+		ptype = get_type (e2);
+	}
+	if (!is_pointer (ptype)) {
+		internal_error (e1, "pointer arithmetic on non-pointers");
+	}
+
+	e1 = cast_expr (&type_integer, e1);
+	e2 = cast_expr (&type_integer, e2);
+	e = binary_expr (op, e1, e2);
+	return cast_expr (ptype, e);
+}
+
+static expr_t *
 invalid_binary_expr (int op, expr_t *e1, expr_t *e2)
 {
 	etype_t     t1, t2;
@@ -780,9 +802,12 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		e1 = cast_expr (expr_type->a_cast, e1);
 	if (expr_type->b_cast)
 		e2 = cast_expr (expr_type->b_cast, e2);
+	if (expr_type->process) {
+		return fold_constants (expr_type->process (op, e1, e2));
+	}
 
 	if ((e = reimplement_binary_expr (op, e1, e2)))
-		return e;
+		return fold_constants (e);
 
 	e = new_binary_expr (op, e1, e2);
 	e->e.expr.type = expr_type->type;
@@ -790,5 +815,5 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		if (options.code.progsversion == PROG_ID_VERSION)
 			e->e.expr.type = &type_float;
 	}
-	return e;
+	return fold_constants (e);
 }

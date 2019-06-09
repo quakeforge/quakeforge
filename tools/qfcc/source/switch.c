@@ -338,8 +338,6 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 		int         i;
 		expr_t     *range = binary_expr ('-', tree->high, tree->low);
 
-		range = fold_constants (range);
-
 		table_init = new_block_expr ();
 		for (i = 0; i <= high - low; i++) {
 			tree->labels[i]->e.label.used++;

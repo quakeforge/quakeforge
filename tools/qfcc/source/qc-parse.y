@@ -180,7 +180,7 @@ int yylex (void);
 %type	<symbol>	methoddef
 %type	<expr>		opt_initializer var_initializer local_def
 
-%type	<expr>		opt_init opt_expr cexpr fexpr expr element_list element
+%type	<expr>		opt_init opt_expr cexpr expr element_list element
 %type	<expr>		optional_state_expr texpr vector_expr
 %type	<expr>		statement statements compound_statement
 %type	<expr>		else label break_label continue_label
@@ -577,7 +577,7 @@ enumerator_list
 
 enumerator
 	: identifier				{ add_enum ($<symbol>0, $1, 0); }
-	| identifier '=' fexpr		{ add_enum ($<symbol>0, $1, $3); }
+	| identifier '=' expr		{ add_enum ($<symbol>0, $1, $3); }
 	;
 
 struct_specifier
@@ -846,9 +846,8 @@ abs_decl
 	;
 
 array_decl
-	: '[' fexpr ']'
+	: '[' expr ']'
 		{
-			$2 = fold_constants ($2);
 			if (!is_integer_val ($2) || expr_integer ($2) < 1) {
 				error (0, "invalid array size");
 				$$ = 0;
@@ -971,11 +970,11 @@ overloaded_identifier
 	;
 
 non_code_func
-	: '=' '#' fexpr
+	: '=' '#' expr
 		{
 			build_builtin_function ($<symbol>0, $3, 0);
 		}
-	| '=' fexpr
+	| '=' expr
 		{
 			symbol_t   *sym = $<symbol>0;
 			specifier_t spec = $<spec>-1;
@@ -1023,7 +1022,7 @@ opt_initializer
 	;
 
 var_initializer
-	: '=' fexpr									{ $$ = $2; }
+	: '=' expr									{ $$ = $2; }
 	| '=' '{' element_list optional_comma '}'	{ $$ = $3; }
 	;
 
@@ -1046,7 +1045,7 @@ element_list
 
 element
 	: '{' element_list optional_comma '}'		{ $$ = $2; }
-	| fexpr									{ $$ = $1; }
+	| expr										{ $$ = $1; }
 	;
 
 optional_comma
@@ -1128,7 +1127,7 @@ statement
 			else
 				error (0, "continue outside of loop");
 		}
-	| CASE fexpr ':'
+	| CASE expr ':'
 		{
 			$$ = case_label_expr (switch_block, $2);
 		}
@@ -1136,7 +1135,7 @@ statement
 		{
 			$$ = case_label_expr (switch_block, 0);
 		}
-	| SWITCH break_label '(' fexpr switch_block ')' compound_statement
+	| SWITCH break_label '(' expr switch_block ')' compound_statement
 		{
 			$$ = switch_expr (switch_block, break_label, $7);
 			switch_block = $5;
@@ -1295,7 +1294,7 @@ unary_expr
 	;
 
 vector_expr
-	: '[' fexpr ',' arg_list ']'
+	: '[' expr ',' arg_list ']'
 		{
 			expr_t     *t = $4;
 			while (t->next)
@@ -1338,12 +1337,8 @@ expr
 	| expr '%' expr				{ $$ = binary_expr ('%', $1, $3); }
 	;
 
-fexpr
-	: expr						{ $$ = fold_constants ($1); }
-	;
-
 texpr
-	: fexpr						{ $$ = convert_bool ($1, 1); }
+	: expr						{ $$ = convert_bool ($1, 1); }
 	;
 
 cexpr
@@ -1364,8 +1359,8 @@ opt_arg_list
 	;
 
 arg_list
-	: fexpr
-	| arg_list ',' fexpr
+	: expr
+	| arg_list ',' expr
 		{
 			$3->next = $1;
 			$$ = $3;
@@ -1874,7 +1869,7 @@ obj_messageexpr
 	;
 
 receiver
-	: fexpr
+	: expr
 	| CLASS_NAME
 		{
 			$$ = new_symbol_expr ($1);
