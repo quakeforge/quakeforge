@@ -2537,8 +2537,9 @@ cast_expr (type_t *type, expr_t *e)
 		&& !(is_scalar (type) && is_scalar (e_type))) {
 		return cast_error (e, e_type, type);
 	}
-	if (is_array (e_type))
-		return address_expr (e, 0, 0);
+	if (is_array (e_type)) {
+		return address_expr (e, 0, type->t.fldptr.type);
+	}
 	if (is_constant (e) && is_scalar (type) && is_scalar (e_type)) {
 		ex_value_t *val = 0;
 		if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const) {

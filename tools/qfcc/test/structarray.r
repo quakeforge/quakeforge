@@ -7,14 +7,17 @@ typedef struct {
 	int         ofs[];
 } valstruct_t;
 
+int foo[5] = {1, 2, 3, 4, 5};
 valstruct_t *vs;
 int dst;
 
 int
 main ()
 {
+	vs = (valstruct_t *)foo;
 	for (int i = 0; i < 2; i++) {
 		dst = vs.ofs[i];
 	}
-	return 1;
+	printf("dst = %d\n", dst);
+	return dst != 4;
 }
