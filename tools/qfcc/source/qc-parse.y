@@ -1238,12 +1238,10 @@ opt_init
 init_var_decl_list
 	: init_var_decl
 		{
-			printf ("a\n");
 			$$ = $1;
 		}
 	| init_var_decl_list ',' { $<spec>$ = $<spec>0; } init_var_decl
 		{
-			printf ("b\n");
 			$4->next = $1;
 			$$ = $4;
 		}
@@ -1252,7 +1250,6 @@ init_var_decl_list
 init_var_decl
 	: var_decl opt_initializer
 		{
-			printf ("c\n");
 			specifier_t spec = $<spec>0;
 			$1->type = append_type ($1->type, spec.type);
 			$1->type = find_type ($1->type);
