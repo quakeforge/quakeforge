@@ -414,7 +414,7 @@ process_type_def (defref_t *ref, qfo_mspace_t *space, qfo_def_t *old)
 		// mark the old type encoding as having been transfered, and save the
 		// new address in the encoding's class field so def and function types
 		// can be updated easily.
-		old_type->ty = -1;
+		old_type->meta = -1;
 		old_type->t.class = REF (ref)->offset;
 	}
 }

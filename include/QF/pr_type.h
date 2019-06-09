@@ -84,7 +84,7 @@ typedef struct qfot_array_s {
 	arrays.
 */
 typedef struct qfot_type_s {
-	pr_int_t    ty;					///< meta type: ty_meta_e
+	pr_int_t    meta;				///< meta type: ty_meta_e
 	pr_int_t    size;				///< total word size of this encoding
 	string_t    encoding;			///< Objective-QC encoding
 	union {

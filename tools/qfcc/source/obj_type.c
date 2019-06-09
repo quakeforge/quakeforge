@@ -87,7 +87,7 @@ qfo_new_encoding (type_t *type, int size)
 	def->offset = defspace_alloc_loc (pr.type_data, size);
 
 	enc = D_POINTER (qfot_type_t, def);
-	enc->ty = type->meta;
+	enc->meta = type->meta;
 	enc->size = size;
 	ENC_STR (enc->encoding, type->encoding);
 	return def;

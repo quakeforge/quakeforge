@@ -445,17 +445,17 @@ dump_qfo_types (qfo_t *qfo, int base_address)
 					qfo->spaces[qfo_type_space].data_size);
 			continue;
 		}
-		if (type->ty < 0 || type->ty >= NUM_META)
-			meta = va ("invalid meta: %d", type->ty);
+		if (type->meta < 0 || type->meta >= NUM_META)
+			meta = va ("invalid meta: %d", type->meta);
 		else
-			meta = ty_meta_names[type->ty];
+			meta = ty_meta_names[type->meta];
 		printf ("%-5x %-9s %-20s", type_ptr + base_address, meta,
 				QFO_TYPESTR (qfo, type_ptr));
-		if (type->ty < 0 || type->ty >= NUM_META) {
+		if (type->meta < 0 || type->meta >= NUM_META) {
 			puts ("");
 			break;
 		}
-		switch ((ty_meta_e) type->ty) {
+		switch ((ty_meta_e) type->meta) {
 			case ty_none:
 				printf (" %-10s", (type->t.type < 0
 								   || type->t.type >= ev_type_count)
