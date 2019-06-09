@@ -1458,7 +1458,7 @@ fold_constants (expr_t *e)
 
 	if (e->type == ex_uexpr) {
 		e1 = e->e.expr.e1;
-		if (!e1 || !is_constant (e1)) {
+		if (!e1) {
 			return e;
 		}
 		op = e->e.expr.op;
@@ -1473,7 +1473,7 @@ fold_constants (expr_t *e)
 	} else if (e->type == ex_expr) {
 		e1 = e->e.expr.e1;
 		e2 = e->e.expr.e2;
-		if (!is_constant (e1) || !is_constant (e2)) {
+		if (!is_constant (e1) && !is_constant (e2)) {
 			return e;
 		}
 
