@@ -5,12 +5,15 @@ test_fordecl ()
 {
 	int         fail = 1;
 	int         count = 5;
+	int         ti = -1, tj = -1;
 
 	for (int i = 3, j = 5; count-- > 0; ) {
 		i += 2;
 		j += 3;
+		ti = i;
+		tj = j;
 	}
-	if (i == 13 && j == 20) {
+	if (ti == 13 && tj == 20) {
 		fail = 0;
 	}
 
