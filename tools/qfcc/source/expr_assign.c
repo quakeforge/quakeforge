@@ -142,7 +142,15 @@ check_types_compatible (expr_t *dst, expr_t *src)
 	type_t     *dst_type = get_type (dst);
 	type_t     *src_type = get_type (src);
 
+	if (dst_type == src_type) {
+		return 0;
+	}
+
 	if (type_assignable (dst_type, src_type)) {
+		if (is_scalar (dst_type) && is_scalar (src_type)) {
+			// the types are different but cast-compatible
+			return assign_expr (dst, cast_expr (dst_type, src));
+		}
 		return 0;
 	}
 	// traditional qcc is a little sloppy
