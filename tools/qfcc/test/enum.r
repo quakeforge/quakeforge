@@ -7,6 +7,7 @@ int
 main()
 {
 	BOOL b;
+	b = 0;
 	b = YES;
 	return !b;
 }
