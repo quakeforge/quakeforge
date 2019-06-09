@@ -540,6 +540,20 @@ new_binary_expr (int op, expr_t *e1, expr_t *e2)
 }
 
 expr_t *
+build_block_expr (expr_t *expr_list)
+{
+	expr_t     *b = new_block_expr ();
+
+	while (expr_list) {
+		expr_t     *e = expr_list;
+		expr_list = e->next;
+		e->next = 0;
+		append_expr (b, e);
+	}
+	return b;
+}
+
+expr_t *
 new_unary_expr (int op, expr_t *e1)
 {
 	expr_t     *e = new_expr ();

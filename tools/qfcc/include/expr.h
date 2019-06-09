@@ -314,6 +314,17 @@ expr_t *new_bool_expr (ex_list_t *true_list, ex_list_t *false_list, expr_t *e);
 */
 expr_t *new_block_expr (void);
 
+/**	Create a new statement block expression node from an expression list
+
+	The returned block holds the expression list in reverse order. This makes
+	it easy to build the list in a parser.
+
+	\param expr_list The expression list to convert to an expression block.
+					Note that the evaluation order will be reversed.
+	\return		The new block expression (::ex_block_t) node.
+*/
+expr_t *build_block_expr (expr_t *expr_list);
+
 /**	Create a new binary expression node node.
 
 	If either \a e1 or \a e2 are error expressions, then that expression will
