@@ -1456,34 +1456,12 @@ fold_constants (expr_t *e)
 	expr_t     *e1, *e2;
 	etype_t     t1, t2;
 
-	if (e->type == ex_block) {
-		expr_t     *block = new_block_expr ();
-		expr_t     *next;
-
-		block->e.block.result = e->e.block.result;
-		block->line = e->line;
-		block->file = e->file;
-
-		for (e = e->e.block.head; e; e = next) {
-			next = e->next;
-			e = fold_constants (e);
-			e->next = 0;
-			append_expr (block, e);
-		}
-
-		return block;
-	}
-	if (e->type == ex_bool) {
-		e->e.bool.e = fold_constants (e->e.bool.e);
-		return e;
-	}
 	if (e->type == ex_uexpr) {
-		if (!e->e.expr.e1)
+		e1 = e->e.expr.e1;
+		if (!e1 || !is_constant (e1)) {
 			return e;
+		}
 		op = e->e.expr.op;
-		e->e.expr.e1 = e1 = fold_constants (e->e.expr.e1);
-		if (e1->type == ex_error)
-			return e1;
 		if (op == 'A' || op == 'g' || op == 'r')
 			return e;
 		t1 = extract_type (e1);
@@ -1492,35 +1470,25 @@ fold_constants (expr_t *e)
 			internal_error (e, "invalid type: %d", t1);
 		}
 		return do_unary_op[t1] (op, e, e1);
+	} else if (e->type == ex_expr) {
+		e1 = e->e.expr.e1;
+		e2 = e->e.expr.e2;
+		if (!is_constant (e1) || !is_constant (e2)) {
+			return e;
+		}
+
+		op = e->e.expr.op;
+		if (op == 'i' || op == 'n' || op == 'c' || op == 's') {
+			return e;
+		}
+
+		t1 = extract_type (e1);
+		t2 = extract_type (e2);
+
+		if (t1 >= ev_type_count || t2 >= ev_type_count
+			|| !do_op[t1] || !do_op[t1][t2])
+			internal_error (e, "invalid type");
+		return do_op[t1][t2] (op, e, e1, e2);
 	}
-
-	if (e->type != ex_expr)
-		return e;
-
-	op = e->e.expr.op;
-
-	e->e.expr.e1 = e1 = fold_constants (e->e.expr.e1);
-	if (e1->type == ex_error)
-		return e1;
-	t1 = extract_type (e1);
-
-	if (op == 'i' || op == 'n' || op == 'c')
-		return e;
-
-	e->e.expr.e2 = e2 = fold_constants (e->e.expr.e2);
-	if (e2->type == ex_error)
-		return e2;
-
-	if (e2->type == ex_label || e2->type == ex_labelref)
-		return e;
-
-	t2 = extract_type (e2);
-
-	if (op == 's')
-		return e;
-
-	if (t1 >= ev_type_count || t2 >= ev_type_count
-		|| !do_op[t1] || !do_op[t1][t2])
-		internal_error (e, "invalid type");
-	return do_op[t1][t2] (op, e, e1, e2);
+	return e;
 }
