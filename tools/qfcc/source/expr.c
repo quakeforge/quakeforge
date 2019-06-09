@@ -2021,6 +2021,9 @@ return_expr (function_t *f, expr_t *e)
 	if (e->type == ex_vector) {
 		e = assign_expr (new_temp_def_expr (t), e);
 	}
+	if (e->type == ex_block) {
+		e->e.block.result->rvalue = 1;
+	}
 	return new_unary_expr ('r', e);
 }
 

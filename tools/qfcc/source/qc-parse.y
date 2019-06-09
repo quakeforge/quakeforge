@@ -1351,7 +1351,7 @@ cexpr
 		{
 			if ($1->next) {
 				expr_t     *res = $1;
-				$1 = build_block_expr ($1->next);
+				$1 = build_block_expr ($1);
 				$1->e.block.result = res;
 			}
 			$$ = $1;

@@ -1273,7 +1273,7 @@ statement_uexpr (sblock_t *sblock, expr_t *e)
 static sblock_t *
 statement_nonexec (sblock_t *sblock, expr_t *e)
 {
-	if (options.warnings.executable)
+	if (!e->rvalue && options.warnings.executable)
 		warning (e, "Non-executable statement; executing programmer instead.");
 	return sblock;
 }
