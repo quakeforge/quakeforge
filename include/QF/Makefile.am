@@ -6,7 +6,8 @@ nobase_pkginclude_HEADERS = \
 	idparse.h image.h in_event.h info.h input.h iqm.h joystick.h keys.h \
 	link.h llist.h locs.h mathlib.h mdfour.h mersenne.h model.h modelgen.h \
 	msg.h object.h pak.h pakfile.h pcx.h png.h plugin.h pr_comp.h pr_debug.h \
-	pr_obj.h progs.h qargs.h qdefs.h qendian.h qfplist.h qtypes.h quakefs.h \
+	pr_obj.h pr_type.h progs.h qargs.h qdefs.h qendian.h qfplist.h qtypes.h \
+	quakefs.h \
 	quakeio.h render.h riff.h ruamoko.h screen.h script.h segtext.h set.h \
 	sizebuf.h skin.h sound.h spritegn.h sys.h teamplay.h tga.h uint32.h va.h \
 	ver_check.h vid.h vrect.h view.h wad.h wadfile.h winding.h zone.h \
