@@ -32,6 +32,7 @@ test_progs_dat=\
 	chewed-alias.dat \
 	chewed-return.dat \
 	deadbool.dat \
+	fordecl.dat \
 	func-expr.dat \
 	func-static.dat \
 	infloop.dat \
@@ -96,6 +97,15 @@ deadbool.run: Makefile build-run
 	$(srcdir)/build-run $@
 include ./$(DEPDIR)/deadbool.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/deadbool.Qo
+
+fordecl_dat_SOURCES=fordecl.r
+fordecl_obj=$(fordecl_dat_SOURCES:.r=.qfo)
+fordecl.dat$(EXEEXT): $(fordecl_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(fordecl_obj)
+fordecl.run: Makefile build-run
+	$(srcdir)/build-run $@
+include ./$(DEPDIR)/fordecl.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/fordecl.Qo
 
 func_expr_dat_SOURCES=func-expr.r
 func_expr_obj=$(func_expr_dat_SOURCES:.r=.qfo)
