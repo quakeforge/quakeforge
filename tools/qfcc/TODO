@@ -12,7 +12,7 @@ M	unnamed function parameters for prototypes/typdefs etc.
 I	optimizations (esp CSE)
 I	fix used/uninitialized warnings
 o	id id;
-o	vec = [x, y, z]; expressions (nice feature in fteqcc)
+M	vec = [x, y, z]; expressions (nice feature in fteqcc)
 M	finish -Fifstring
 o	isset() intrinsic for more consistent string handling.
 o	arrays in entities
