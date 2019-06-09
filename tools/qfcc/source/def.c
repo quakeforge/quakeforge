@@ -199,6 +199,9 @@ temp_def (etype_t type, int size)
 	def_t      *temp;
 	defspace_t *space = current_func->symtab->space;
 
+	if (size < 1 || size > 4) {
+		internal_error (0, "%d invalid size for temp def", size);
+	}
 	if ((temp = current_func->temp_defs[size - 1])) {
 		current_func->temp_defs[size - 1] = temp->temp_next;
 		temp->temp_next = 0;
