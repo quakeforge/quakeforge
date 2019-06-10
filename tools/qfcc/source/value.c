@@ -189,6 +189,9 @@ ex_value_t *
 new_pointer_val (int pointer_val, type_t *type, def_t *def)
 {
 	ex_value_t  val;
+	if (!type) {
+		internal_error (0, "pointer value with no type");
+	}
 	memset (&val, 0, sizeof (val));
 	set_val_type (&val, pointer_type (type));
 	val.v.pointer.val = pointer_val;

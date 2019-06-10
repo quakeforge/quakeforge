@@ -787,6 +787,7 @@ generate_moveps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 	operand_t   *operands[3] = {0, 0, 0};
 	statement_t *st;
 	operand_t   *dst = 0;
+	type_t      *type;
 
 	operands[0] = make_operand (dag, block, dagnode, 0);
 	operands[1] = make_operand (dag, block, dagnode, 1);
@@ -794,7 +795,8 @@ generate_moveps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 		 var_iter = set_next (var_iter)) {
 		var = dag->labels[var_iter->element];
 		dst = var->op;
-		operands[2] = value_operand (new_pointer_val (0, 0, dst->o.def));
+		type = dst->o.def->type;
+		operands[2] = value_operand (new_pointer_val (0, type, dst->o.def));
 		st = build_statement ("<MOVEP>", operands, var->expr);
 		sblock_add_statement (block, st);
 	}
