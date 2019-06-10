@@ -558,6 +558,7 @@ expr_t *new_this_expr (void);
 expr_t *new_ret_expr (struct type_s *type);
 
 expr_t *new_alias_expr (struct type_s *type, expr_t *expr);
+expr_t *new_offset_alias_expr (struct type_s *type, expr_t *expr, int offset);
 
 /**	Create an expression of the correct type that references the specified
 	parameter slot.

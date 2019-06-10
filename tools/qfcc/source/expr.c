@@ -1025,6 +1025,18 @@ new_alias_expr (type_t *type, expr_t *expr)
 	return alias;
 }
 
+expr_t *
+new_offset_alias_expr (type_t *type, expr_t *expr, int offset)
+{
+	expr_t     *alias;
+
+	alias = new_binary_expr ('A', expr, new_integer_expr (offset));
+	alias->e.expr.type = type;
+	alias->file = expr->file;
+	alias->line = expr->line;
+	return alias;
+}
+
 static expr_t *
 param_expr (const char *name, type_t *type)
 {
