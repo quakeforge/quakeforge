@@ -985,6 +985,67 @@ expr_temp (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
+expr_vector_e (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	expr_t     *x, *y, *z, *w;
+	expr_t     *s, *v;
+	expr_t     *ax, *ay, *az, *aw;
+	expr_t     *as, *av;
+	expr_t     *tmp;
+	type_t     *vec_type = get_type(e);
+
+	tmp = new_temp_def_expr(vec_type);
+	if (vec_type == &type_vector) {
+		// guaranteed to have three elements
+		x = e->e.vector.list;
+		y = x->next;
+		z = y->next;
+		ax = new_name_expr ("x");
+		ay = new_name_expr ("y");
+		az = new_name_expr ("z");
+		ax = assign_expr (field_expr (tmp, ax), x);
+		ay = assign_expr (field_expr (tmp, ay), y);
+		az = assign_expr (field_expr (tmp, az), z);
+		sblock = statement_slist (sblock, ax);
+		sblock = statement_slist (sblock, ay);
+		sblock = statement_slist (sblock, az);
+	} else {
+		// guaranteed to have two or four elements
+		if (e->e.vector.list->next->next) {
+			// four vals: x, y, z, w
+			x = e->e.vector.list;
+			y = x->next;
+			z = y->next;
+			w = z->next;
+			ax = new_name_expr ("x");
+			ay = new_name_expr ("y");
+			az = new_name_expr ("z");
+			aw = new_name_expr ("w");
+			ax = assign_expr (field_expr (tmp, ax), x);
+			ay = assign_expr (field_expr (tmp, ay), y);
+			az = assign_expr (field_expr (tmp, az), z);
+			aw = assign_expr (field_expr (tmp, aw), w);
+			sblock = statement_slist (sblock, ax);
+			sblock = statement_slist (sblock, ay);
+			sblock = statement_slist (sblock, az);
+			sblock = statement_slist (sblock, aw);
+		} else {
+			// v, s
+			v = e->e.vector.list;
+			s = v->next;
+			av = new_name_expr ("v");
+			as = new_name_expr ("s");
+			av = assign_expr (field_expr (tmp, av), v);
+			as = assign_expr (field_expr (tmp, as), s);
+			sblock = statement_slist (sblock, av);
+			sblock = statement_slist (sblock, as);
+		}
+	}
+	sblock = statement_subexpr (sblock, tmp, op);
+	return sblock;
+}
+
+static sblock_t *
 expr_value (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	*op = value_operand (e->e.value);
@@ -1005,7 +1066,7 @@ statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 		expr_uexpr,
 		expr_symbol,
 		expr_temp,
-		0,					// ex_vector
+		expr_vector_e,		// ex_vector
 		0,					// ex_nil
 		expr_value,
 	};

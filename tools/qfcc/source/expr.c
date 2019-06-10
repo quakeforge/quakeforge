@@ -210,6 +210,7 @@ convert_vector (expr_t *e)
 			// Either v or s is not constant, so can't convert to a quaternion
 			// constant.
 			// Rebuild the list in case v or s is a new expression
+			// the list will always be v, s
 			s->next = 0;
 			v->next = s;
 			e->e.vector.list = v;
