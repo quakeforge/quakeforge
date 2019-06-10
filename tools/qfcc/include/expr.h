@@ -210,7 +210,6 @@ typedef struct expr_s {
 	} e;
 } expr_t;
 
-extern struct type_s *ev_types[];
 extern const char *expr_names[];
 
 /**	Report a type mismatch error.

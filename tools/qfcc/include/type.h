@@ -170,4 +170,6 @@ void chain_initial_types (void);
 
 void clear_typedefs (void);
 
+extern type_t *ev_types[];
+
 #endif//__type_h

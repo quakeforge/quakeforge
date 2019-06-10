@@ -67,22 +67,6 @@
 
 static expr_t *exprs_freelist;
 
-type_t     *ev_types[ev_type_count] = {
-	&type_void,
-	&type_string,
-	&type_float,
-	&type_vector,
-	&type_entity,
-	&type_field,
-	&type_function,
-	&type_pointer,
-	&type_quaternion,
-	&type_integer,
-	&type_uinteger,
-	&type_short,
-	&type_invalid,
-};
-
 void
 convert_name (expr_t *e)
 {

@@ -88,6 +88,22 @@ type_t      type_type_encodings = { ev_invalid, "@type_encodings", ty_struct };
 
 type_t      type_floatfield = { ev_field, ".float", ty_none, {{&type_float}} };
 
+type_t     *ev_types[ev_type_count] = {
+	&type_void,
+	&type_string,
+	&type_float,
+	&type_vector,
+	&type_entity,
+	&type_field,
+	&type_function,
+	&type_pointer,
+	&type_quaternion,
+	&type_integer,
+	&type_uinteger,
+	&type_short,
+	&type_invalid,
+};
+
 static type_t *types_freelist;
 
 etype_t
