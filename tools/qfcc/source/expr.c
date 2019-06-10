@@ -1195,10 +1195,14 @@ field_expr (expr_t *e1, expr_t *e2)
 			// create a new . expression
 			return field_expr (e1, e2);
 		} else {
-			e2->type = ex_value;
-			e2->e.value = new_short_val (field->s.offset);
-			e = address_expr (e1, e2, field->type);
-			return unary_expr ('.', e);
+			if (e1->type == ex_uexpr && e1->e.expr.op == '.') {
+				e2->type = ex_value;
+				e2->e.value = new_short_val (field->s.offset);
+				e = address_expr (e1, e2, field->type);
+				return unary_expr ('.', e);
+			} else {
+				return new_offset_alias_expr (field->type, e1, field->s.offset);
+			}
 		}
 	} else if (obj_is_class (t1)) {
 		//Class instance variables aren't allowed and thus declaring one
