@@ -109,6 +109,9 @@ check_valid_lvalue (expr_t *expr)
 			if (expr->e.expr.op == '.') {
 				return 0;
 			}
+			if (expr->e.expr.op == 'A') {
+				return check_valid_lvalue (expr->e.expr.e1);
+			}
 			break;
 		case ex_uexpr:
 			if (expr->e.expr.op == '.') {

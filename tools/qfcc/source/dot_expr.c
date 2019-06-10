@@ -320,8 +320,16 @@ print_subexpr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"r\"];\n", indent, "", e,
 				   e->e.expr.e2);
 	}
-	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
-			   get_op_string (e->e.expr.op), e->line);
+	if (e->e.expr.op == 'A') {
+		dstring_t  *typestr = dstring_newstr();
+		print_type_str (typestr, e->e.expr.type);
+		dasprintf (dstr, "%*se_%p [label=\"%s (%s)\\n%d\"];\n", indent, "", e,
+				   get_op_string (e->e.expr.op), typestr->str, e->line);
+		dstring_delete (typestr);
+	} else {
+		dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+				   get_op_string (e->e.expr.op), e->line);
+	}
 }
 
 static void

@@ -805,6 +805,59 @@ expr_block (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
+expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	operand_t *aop = 0;
+	operand_t *top;
+	etype_t    type;
+	def_t     *def;
+	int        offset = 0;
+
+	if (e->type == ex_expr) {
+		offset = expr_integer (e->e.expr.e2);
+	}
+	type = low_level_type (e->e.expr.type);
+	sblock = statement_subexpr (sblock, e->e.expr.e1, &aop);
+	if (aop->type == type) {
+		if (offset) {
+			internal_error (e, "offset alias of same type");
+		}
+		*op = aop;
+		return sblock;
+	}
+	if (aop->op_type == op_temp) {
+		while (aop->o.tempop.alias) {
+			aop = aop->o.tempop.alias;
+			if (aop->op_type != op_temp)
+				internal_error (e, "temp alias of non-temp var");
+		}
+		for (top = aop->o.tempop.alias_ops; top; top = top->next) {
+			if (top->type == type && top->o.tempop.offset == offset) {
+				break;
+			}
+		}
+		if (!top) {
+			top = new_operand (op_temp);
+			top->type = type;
+			top->o.tempop.alias = aop;
+			top->o.tempop.offset = offset;
+			top->next = aop->o.tempop.alias_ops;
+			aop->o.tempop.alias_ops = top;
+		}
+		*op = top;
+	} else if (aop->op_type == op_def) {
+		def = aop->o.def;
+		while (def->alias)
+			def = def->alias;
+		*op = def_operand (alias_def (def, ev_types[type], offset), 0);
+	} else {
+		internal_error (e, "invalid alias target: %s: %s",
+						optype_str (aop->op_type), operand_string (aop));
+	}
+	return sblock;
+}
+
+static sblock_t *
 expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	const char *opcode;
@@ -822,6 +875,9 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 		case 'M':
 			sblock = expr_move (sblock, e, op);
 			break;
+		case 'A':
+			sblock = expr_alias (sblock, e, op);
+			break;
 		default:
 			opcode = convert_op (e->e.expr.op);
 			if (!opcode)
@@ -834,49 +890,6 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 			s->opc = *op;
 			sblock_add_statement (sblock, s);
 			break;
-	}
-	return sblock;
-}
-
-static sblock_t *
-expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
-{
-	operand_t *aop = 0;
-	operand_t *top;
-	etype_t    type;
-	def_t     *def;
-
-	type = low_level_type (e->e.expr.type);
-	sblock = statement_subexpr (sblock, e->e.expr.e1, &aop);
-	if (aop->type == type) {
-		*op = aop;
-		return sblock;
-	}
-	if (aop->op_type == op_temp) {
-		while (aop->o.tempop.alias) {
-			aop = aop->o.tempop.alias;
-			if (aop->op_type != op_temp)
-				internal_error (e, "temp alias of non-temp var");
-		}
-		for (top = aop->o.tempop.alias_ops; top; top = top->next)
-			if (top->type == type)
-				break;
-		if (!top) {
-			top = new_operand (op_temp);
-			top->type = type;
-			top->o.tempop.alias = aop;
-			top->next = aop->o.tempop.alias_ops;
-			aop->o.tempop.alias_ops = top;
-		}
-		*op = top;
-	} else if (aop->op_type == op_def) {
-		def = aop->o.def;
-		while (def->alias)
-			def = def->alias;
-		*op = def_operand (alias_def (def, ev_types[type], 0), 0);
-	} else {
-		internal_error (e, "invalid alias target: %s: %s",
-						optype_str (aop->op_type), operand_string (aop));
 	}
 	return sblock;
 }
