@@ -158,8 +158,8 @@ operand_label (dag_t *dag, operand_t *op)
 		return 0;
 
 	if (op->op_type == op_temp) {
-		while (op->o.tempop.alias)
-			op = op->o.tempop.alias;
+		//while (op->o.tempop.alias)
+		//	op = op->o.tempop.alias;
 		if (op->o.tempop.daglabel)
 			return op->o.tempop.daglabel;
 		label = new_label (dag);

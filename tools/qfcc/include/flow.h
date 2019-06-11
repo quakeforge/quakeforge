@@ -46,6 +46,7 @@ typedef struct flowvar_s {
 	struct set_s *define;		///< set of statements that define this var
 	struct operand_s *op;		///< an operand using this var
 	int         number;			///< number of variable in func's ref list
+	int         flowaddr;		///< psuedo address for local and temp vars
 } flowvar_t;
 
 typedef struct flowloop_s {

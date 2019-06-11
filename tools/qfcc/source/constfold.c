@@ -1478,7 +1478,7 @@ fold_constants (expr_t *e)
 		}
 
 		op = e->e.expr.op;
-		if (op == 'i' || op == 'n' || op == 'c' || op == 's') {
+		if (op == 'A' || op == 'i' || op == 'n' || op == 'c' || op == 's') {
 			return e;
 		}
 

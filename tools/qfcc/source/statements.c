@@ -126,10 +126,11 @@ operand_string (operand_t *op)
 			return op->o.label->name;
 		case op_temp:
 			if (op->o.tempop.alias)
-				return va ("<tmp %s %p:%d:%p:%d>",
+				return va ("<tmp %s %p:%d:%p:%d:%d>",
 						   pr_type_name[op->type],
 						   op, op->o.tempop.users,
 						   op->o.tempop.alias,
+						   op->o.tempop.offset,
 						   op->o.tempop.alias->o.tempop.users);
 			return va ("<tmp %s %p:%d>", pr_type_name[op->o.tempop.type->type],
 					   op, op->o.tempop.users);
@@ -307,6 +308,7 @@ def_operand (def_t *def, type_t *type)
 		type = def->type;
 	op = new_operand (op_def);
 	op->type = low_level_type (type);
+	op->size = type_size (type);
 	op->o.def = def;
 	return op;
 }
@@ -830,6 +832,8 @@ expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 			aop = aop->o.tempop.alias;
 			if (aop->op_type != op_temp)
 				internal_error (e, "temp alias of non-temp var");
+			if (aop->o.tempop.alias)
+				bug (e, "aliased temp alias");
 		}
 		for (top = aop->o.tempop.alias_ops; top; top = top->next) {
 			if (top->type == type && top->o.tempop.offset == offset) {
@@ -839,6 +843,7 @@ expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 		if (!top) {
 			top = new_operand (op_temp);
 			top->type = type;
+			top->size = pr_type_size[type];
 			top->o.tempop.alias = aop;
 			top->o.tempop.offset = offset;
 			top->next = aop->o.tempop.alias_ops;

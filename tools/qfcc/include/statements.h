@@ -49,6 +49,7 @@ typedef struct {
 	struct operand_s *alias;
 	struct operand_s *alias_ops;
 	int         users;
+	int         flowaddr;		///< "address" of temp in flow analysis, != 0
 } tempop_t;
 
 typedef struct operand_s {

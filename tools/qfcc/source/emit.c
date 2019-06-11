@@ -91,10 +91,18 @@ get_operand_def (expr_t *expr, operand_t *op)
 			zero_def.type = &type_short;
 			return &zero_def;	//FIXME
 		case op_temp:
-			while (op->o.tempop.alias)
-				op = op->o.tempop.alias;
-			if (!op->o.tempop.def)
+			if (op->o.tempop.def) {
+				return op->o.tempop.def;
+			}
+			if (op->o.tempop.alias) {
+				def_t      *tdef = get_operand_def (expr, op->o.tempop.alias);
+				int         offset = op->o.tempop.offset;
+				type_t     *type = ev_types[op->type];
+				op->o.tempop.def = alias_def (tdef, type, offset);
+			}
+			if (!op->o.tempop.def) {
 				op->o.tempop.def = temp_def (op->type, op->size);
+			}
 			return op->o.tempop.def;
 		case op_alias:
 			return get_operand_def (expr, op->o.alias);

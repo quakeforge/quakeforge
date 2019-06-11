@@ -204,6 +204,12 @@ flowvar_is_param (flowvar_t *var)
 		return 0;
 	return 1;
 }
+
+static int
+flowvar_is_local (flowvar_t *var)
+{
+	return !(flowvar_is_global (var) || flowvar_is_param (var));
+}
 #if 0
 static int
 flowvar_is_initialized (flowvar_t *var)
@@ -263,6 +269,24 @@ count_operand (operand_t *op)
 	return 0;
 }
 
+static int
+get_temp_address (function_t *func, operand_t *op)
+{
+	operand_t  *top = op;
+	if (op->o.tempop.flowaddr) {
+		return op->o.tempop.flowaddr;
+	}
+	while (top->o.tempop.alias) {
+		top = top->o.tempop.alias;
+	}
+	if (!top->o.tempop.flowaddr) {
+		top->o.tempop.flowaddr = func->tmpaddr;
+		func->tmpaddr += top->size;
+	}
+	op->o.tempop.flowaddr = top->o.tempop.flowaddr + op->o.tempop.offset;
+	return op->o.tempop.flowaddr;
+}
+
 static void
 add_operand (function_t *func, operand_t *op)
 {
@@ -280,6 +304,11 @@ add_operand (function_t *func, operand_t *op)
 		var->number = func->num_vars++;
 		var->op = op;
 		func->vars[var->number] = var;
+		if (op->op_type == op_temp) {
+			var->flowaddr = get_temp_address (func, op);
+		} else if (flowvar_is_local (var)) {
+			var->flowaddr = func->num_statements + def_offset (var->op->o.def);
+		}
 	}
 }
 
@@ -348,6 +377,9 @@ flow_build_vars (function_t *func)
 	stuse = set_new ();
 	stdef = set_new ();
 
+	// set up pseudo address space for temp vars so accessing tmp vars
+	// though aliases analyses correctly
+	func->tmpaddr = func->num_statements + func->symtab->space->size;
 	func->num_vars = 0;	// incremented by add_operand
 	// first, add .return and .param_[0-7] as they are always needed
 	for (i = 0; i < num_flow_params; i++)
@@ -382,27 +414,18 @@ flow_build_vars (function_t *func)
 	//     ([num_statements ... num_statements+localsize])
 	// with a set element for each def used in the local space
 	//
-	// temporary vars add their var number to the size of the local space
-	// before adding the number of statements in the function:
-	//     ([num_statements+localsize ... num_vars])
-	// temporary vars are always accessed as a full var, so only one set
-	// element per temporary var is needed. This can lead to holes in the
-	// temporary var set element space, but it does keep things simple
+	// temporary vars are pseudo allocated and their addresses are added as for
+	// locals
+	// add_operand takes care of setting flowaddr for both locals and temps
 	for (i = 0; i < func->num_vars; i++) {
-		int         offset, size;
 		int         j;
 
 		var = func->vars[i];
-		if (flowvar_is_global (var) || flowvar_is_param (var))
+		if (flowvar_is_global (var) || flowvar_is_param (var)) {
 			continue;
-		if (var->op->op_type == op_temp) {
-			j = func->symtab->space->size + var->number;
-			set_add (var->define, func->num_statements + j);
-		} else {
-			offset = def_offset (var->op->o.def);
-			size = def_size (var->op->o.def);
-			for (j = offset; j < offset + size; j++)
-				set_add (var->define, func->num_statements + j);
+		}
+		for (j = 0; j < var->op->size; j++) {
+			set_add (var->define, var->flowaddr + j);
 		}
 	}
 
