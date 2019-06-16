@@ -381,7 +381,8 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n)
 					def_visit_all (op->o.def, 1,
 								   dagnode_def_set_edges_visit, n);
 				}
-				if (op->op_type == op_temp) {
+				if (op->op_type == op_temp
+					&& (op->o.tempop.alias || op->o.tempop.alias_ops)) {
 					tempop_visit_all (&op->o.tempop, 1,
 									  dagnode_tempop_set_edges_visit, n);
 				}
@@ -488,7 +489,10 @@ dag_kill_aliases (daglabel_t *l)
 	operand_t  *op = l->op;
 
 	if (op->op_type == op_temp) {
-		tempop_visit_all (&op->o.tempop, 1, dag_tempop_kill_aliases_visit, l);
+		if (op->o.tempop.alias || op->o.tempop.alias_ops) {
+			tempop_visit_all (&op->o.tempop, 1,
+							  dag_tempop_kill_aliases_visit, l);
+		}
 	} else if (op->op_type == op_def) {
 		if (op->o.def->alias || op->o.def->alias_defs) {
 			def_visit_all (op->o.def, 1, dag_def_kill_aliases_visit, l);
@@ -517,6 +521,21 @@ dag_def_live_aliases (def_t *def, void *_d)
 }
 
 static void
+dag_live_aliases(operand_t *op)
+{
+	// FIXME it would be better to propogate the aliasing
+	if (op->op_type == op_temp
+		&& (op->o.tempop.alias || op->o.tempop.alias_ops)) {
+		tempop_visit_all (&op->o.tempop, 1, dag_tempop_live_aliases,
+						  &op->o.tempop);
+	}
+	if (op->op_type == op_def
+		&& (op->o.def->alias || op->o.def->alias_defs)) {
+		def_visit_all (op->o.def, 1, dag_def_live_aliases, op->o.def);
+	}
+}
+
+static void
 dagnode_attach_label (dagnode_t *n, daglabel_t *l)
 {
 	if (!l->op)
@@ -541,18 +560,7 @@ dagnode_attach_label (dagnode_t *n, daglabel_t *l)
 	set_add (n->identifiers, l->number);
 	dag_kill_aliases (l);
 	if (n->label->op) {
-		// FIXME it would be better to propogate the aliasing
-		if (n->label->op->op_type == op_temp) {
-			tempop_visit_all (&n->label->op->o.tempop, 1,
-							  dag_tempop_live_aliases,
-							  &n->label->op->o.tempop);
-		}
-		if (n->label->op->op_type == op_def
-			&& (n->label->op->o.def->alias
-				|| n->label->op->o.def->alias_defs)) {
-			def_visit_all (n->label->op->o.def, 1, dag_def_live_aliases,
-						   n->label->op->o.def);
-		}
+		dag_live_aliases (n->label->op);
 	}
 }
 
