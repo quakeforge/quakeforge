@@ -724,7 +724,7 @@ dag_create (flownode_t *flownode)
 		int         i;
 
 		dag_make_children (dag, s, operands, children);
-		if (s->type == st_flow)
+		if (s->type == st_flow || s->type == st_func)
 			for (i = 0; i < 3; i++)
 				if (children[i])
 					dag_make_var_live (live_vars, operands[i]);
