@@ -46,7 +46,7 @@ typedef struct daglabel_s {
 	struct daglabel_s *next;
 	struct daglabel_s *daglabel_chain;	///< all labels created for a dag
 	int         number;			///< index into array of labels in dag_t
-	unsigned    live:1;			///< accessed via an alias
+	unsigned    live:1;			///< accessed via an alias FIXME redundant?
 	const char *opcode;			///< not if op
 	struct operand_s *op;		///< not if opcode;
 	struct dagnode_s *dagnode;	///< node with which this label is associated
