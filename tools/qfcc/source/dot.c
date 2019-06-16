@@ -40,14 +40,23 @@
 #include "options.h"
 #include "strpool.h"
 
+static function_t *last_func;
+static int dot_index;
+
 void
 dump_dot (const char *stage, void *data,
 		  void (*dump_func) (void *data, const char *fname))
 {
 	char       *fname;
 
-	fname = nva ("%s.%s.%s.dot", options.output_file, current_func->name,
-				 stage);
+	if (last_func != current_func) {
+		last_func = current_func;
+		dot_index = 0;
+	} else {
+		dot_index++;
+	}
+	fname = nva ("%s.%s.%03d.%s.dot", options.output_file, current_func->name,
+				 dot_index, stage);
 	dump_func (data, fname);
 	free (fname);
 }
