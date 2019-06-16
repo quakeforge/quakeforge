@@ -353,15 +353,17 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n)
 			if (child->label->op) {
 				dagnode_t  *node = child->label->dagnode;
 				operand_t  *op = child->label->op;
-				if (node != child && node != n)
+				if (node != child && node != n) {
 					set_add (node->edges, n->number);
+				}
 				if (op->op_type == op_value
 					&& op->o.value->lltype == ev_pointer
-					&& op->o.value->v.pointer.def)
+					&& op->o.value->v.pointer.def) {
 					def_visit_all (op->o.value->v.pointer.def, 1,
 								   dagnode_set_edges_visit, n);
+				}
 				if (op->op_type == op_def
-					&& (op->o.def->alias || op->o.def->alias_defs))
+					&& (op->o.def->alias || op->o.def->alias_defs)) {
 					def_visit_all (op->o.def, 1, dagnode_set_edges_visit, n);
 			}
 			if (n != child)
@@ -449,8 +451,9 @@ dag_kill_aliases (daglabel_t *l)
 
 	if (op->op_type == op_temp) {
 	} else if (op->op_type == op_def) {
-		if (op->o.def->alias || op->o.def->alias_defs)
+		if (op->o.def->alias || op->o.def->alias_defs) {
 			def_visit_all (op->o.def, 1, dag_kill_aliases_visit, l);
+		}
 	} else {
 		internal_error (0, "rvalue assignment?");
 	}
@@ -494,7 +497,7 @@ dagnode_attach_label (dagnode_t *n, daglabel_t *l)
 		// FIXME it would be better to propogate the aliasing
 		if (n->label->op->op_type == op_def
 			&& (n->label->op->o.def->alias
-				|| n->label->op->o.def->alias_defs))
+				|| n->label->op->o.def->alias_defs)) {
 			def_visit_all (n->label->op->o.def, 1, dag_live_aliases,
 						   n->label->op->o.def);
 	}
