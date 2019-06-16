@@ -536,6 +536,19 @@ dag_live_aliases(operand_t *op)
 }
 
 static void
+dag_make_var_live (set_t *live_vars, operand_t *op)
+{
+	flowvar_t  *var = 0;
+
+	if (op) {
+		dag_live_aliases (op);
+		var = flow_get_var (op);
+	}
+	if (var)
+		set_add (live_vars, var->number);
+}
+
+static void
 dagnode_attach_label (dagnode_t *n, daglabel_t *l)
 {
 	if (!l->op)
@@ -648,17 +661,6 @@ dag_sort_nodes (dag_t *dag)
 	memcpy (tmp_topo, dag->topo, topo * sizeof (int));
 	dag->topo = tmp_topo;
 	dag->num_topo = topo;
-}
-
-static void
-dag_make_var_live (set_t *live_vars, operand_t *op)
-{
-	flowvar_t  *var = 0;
-
-	if (op)
-		var = flow_get_var (op);
-	if (var)
-		set_add (live_vars, var->number);
 }
 
 static void
