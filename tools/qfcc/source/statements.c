@@ -334,6 +334,55 @@ temp_operand (type_t *type)
 	return op;
 }
 
+int
+tempop_overlap (tempop_t *t1, tempop_t *t2)
+{
+	int         offs1 = t1->offset;
+	int         offs2 = t2->offset;
+	int         size1 = type_size (t1->type);
+	int         size2 = type_size (t2->type);
+
+	if (offs1 <= offs2 && offs1 + size1 >= offs2 + size2)
+		return 2;	// t1 fully overlaps t2
+	if (offs1 < offs2 + size2 && offs2 < offs1 + size1)
+		return 1;	// t1 and t2 at least partially overlap
+	return 0;
+}
+
+int
+tempop_visit_all (tempop_t *tempop, int overlap,
+			   int (*visit) (tempop_t *, void *), void *data)
+{
+	tempop_t   *start_tempop = tempop;
+	operand_t  *top;
+	int         ret;
+
+	if ((ret = visit (tempop, data)))
+		return ret;
+	if (tempop->alias) {
+		top = tempop->alias;
+		if (top->op_type != op_temp) {
+			internal_error (0, "temp alias of non-temp operand");
+		}
+		tempop = &top->o.tempop;
+		if ((ret = visit (tempop, data)))
+			return ret;
+	}
+	for (top = tempop->alias_ops; top; top = top->next) {
+		if (top->op_type != op_temp) {
+			internal_error (0, "temp alias of non-temp operand");
+		}
+		tempop = &top->o.tempop;
+		if (tempop == start_tempop)
+			continue;
+		if (overlap && tempop_overlap (tempop, start_tempop) < overlap)
+			continue;
+		if ((ret = visit (tempop, data)))
+			return ret;
+	}
+	return 0;
+}
+
 operand_t *
 alias_operand (etype_t type, operand_t *op)
 {
