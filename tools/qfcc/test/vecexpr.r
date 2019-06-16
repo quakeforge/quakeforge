@@ -1,3 +1,4 @@
+#include "test-harness.h"
 vector
 t1()
 {
@@ -19,5 +20,18 @@ t3(float x)
 int
 main ()
 {
-	return t3(5) == [10, 18, 10] ? 0 : 1;
+	int ret = 0;
+	vector v;
+
+	v = t2(5);
+	if (v != [5, 5, 5]) {
+		printf("t2(5) = %v\n", v);
+		ret |= 1;
+	}
+	v = t3 (5);
+	if (v != [10, 18, 10]) {
+		printf("t3(5) = %v\n", v);
+		ret |= 1;
+	}
+	return ret;
 }

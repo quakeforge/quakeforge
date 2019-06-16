@@ -434,7 +434,18 @@ flow_build_vars (function_t *func)
 }
 
 static int
-flow_kill_aliases_visit (def_t *def, void *_kill)
+flow_tempop_kill_aliases_visit (tempop_t *tempop, void *_kill)
+{
+	set_t      *kill = (set_t *) _kill;
+	flowvar_t  *var;
+	var = tempop->flowvar;
+	if (var)
+		set_union (kill, var->define);
+	return 0;
+}
+
+static int
+flow_def_kill_aliases_visit (def_t *def, void *_kill)
 {
 	set_t      *kill = (set_t *) _kill;
 	flowvar_t  *var;
@@ -454,19 +465,11 @@ flow_kill_aliases (set_t *kill, flowvar_t *var, const set_t *uninit)
 	op = var->op;
 	tmp = set_new ();
 	if (op->op_type == op_temp) {
-		if (op->o.tempop.alias) {
-			op = op->o.tempop.alias;
-			var = op->o.tempop.flowvar;
-			if (var)
-				set_union (tmp, var->define);
-		}
-		for (op = op->o.tempop.alias_ops; op; op = op->next) {
-			var = op->o.tempop.flowvar;
-			if (var)
-				set_union (tmp, var->define);
-		}
+		tempop_visit_all (&op->o.tempop, 1, flow_tempop_kill_aliases_visit,
+						  tmp);
+		set_difference (tmp, uninit);
 	} else if (op->op_type == op_def) {
-		def_visit_all (op->o.def, 1, flow_kill_aliases_visit, tmp);
+		def_visit_all (op->o.def, 1, flow_def_kill_aliases_visit, tmp);
 		// don't allow aliases to kill definitions in the entry dummy block
 		set_difference (tmp, uninit);
 	}

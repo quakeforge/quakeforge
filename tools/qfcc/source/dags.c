@@ -311,7 +311,21 @@ dagnode_add_children (dag_t *dag, dagnode_t *n, operand_t *operands[4],
 }
 
 static int
-dagnode_set_edges_visit (def_t *def, void *_node)
+dagnode_tempop_set_edges_visit (tempop_t *tempop, void *_node)
+{
+	dagnode_t  *node = (dagnode_t *) _node;
+	daglabel_t *label;
+
+	label = tempop->daglabel;
+	if (label && label->dagnode) {
+		set_add (node->edges, label->dagnode->number);
+		label->live = 1;
+	}
+	return 0;
+}
+
+static int
+dagnode_def_set_edges_visit (def_t *def, void *_node)
 {
 	dagnode_t  *node = (dagnode_t *) _node;
 	daglabel_t *label;
@@ -360,11 +374,17 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n)
 					&& op->o.value->lltype == ev_pointer
 					&& op->o.value->v.pointer.def) {
 					def_visit_all (op->o.value->v.pointer.def, 1,
-								   dagnode_set_edges_visit, n);
+								   dagnode_def_set_edges_visit, n);
 				}
 				if (op->op_type == op_def
 					&& (op->o.def->alias || op->o.def->alias_defs)) {
-					def_visit_all (op->o.def, 1, dagnode_set_edges_visit, n);
+					def_visit_all (op->o.def, 1,
+								   dagnode_def_set_edges_visit, n);
+				}
+				if (op->op_type == op_temp) {
+					tempop_visit_all (&op->o.tempop, 1,
+									  dagnode_tempop_set_edges_visit, n);
+				}
 			}
 			if (n != child)
 				set_add (n->edges, child->number);
@@ -427,7 +447,25 @@ op_is_identifier (operand_t *op)
 }
 
 static int
-dag_kill_aliases_visit (def_t *def, void *_l)
+dag_tempop_kill_aliases_visit (tempop_t *tempop, void *_l)
+{
+	daglabel_t *l = (daglabel_t *) _l;
+	dagnode_t  *node = l->dagnode;;
+	daglabel_t *label;
+
+	if (tempop == &l->op->o.tempop)
+		return 0;
+	label = tempop->daglabel;
+	if (label && label->dagnode) {
+		set_add (node->edges, label->dagnode->number);
+		set_remove (node->edges, node->number);
+		label->dagnode->killed = 1;
+	}
+	return 0;
+}
+
+static int
+dag_def_kill_aliases_visit (def_t *def, void *_l)
 {
 	daglabel_t *l = (daglabel_t *) _l;
 	dagnode_t  *node = l->dagnode;;
@@ -450,9 +488,10 @@ dag_kill_aliases (daglabel_t *l)
 	operand_t  *op = l->op;
 
 	if (op->op_type == op_temp) {
+		tempop_visit_all (&op->o.tempop, 1, dag_tempop_kill_aliases_visit, l);
 	} else if (op->op_type == op_def) {
 		if (op->o.def->alias || op->o.def->alias_defs) {
-			def_visit_all (op->o.def, 1, dag_kill_aliases_visit, l);
+			def_visit_all (op->o.def, 1, dag_def_kill_aliases_visit, l);
 		}
 	} else {
 		internal_error (0, "rvalue assignment?");
@@ -460,7 +499,16 @@ dag_kill_aliases (daglabel_t *l)
 }
 
 static int
-dag_live_aliases (def_t *def, void *_d)
+dag_tempop_live_aliases (tempop_t *tempop, void *_t)
+{
+
+	if (tempop != _t && tempop->daglabel)
+		tempop->daglabel->live = 1;
+	return 0;
+}
+
+static int
+dag_def_live_aliases (def_t *def, void *_d)
 {
 
 	if (def != _d && def->daglabel)
@@ -493,18 +541,32 @@ dagnode_attach_label (dagnode_t *n, daglabel_t *l)
 	set_add (n->identifiers, l->number);
 	dag_kill_aliases (l);
 	if (n->label->op) {
-		// FIXME temps
 		// FIXME it would be better to propogate the aliasing
+		if (n->label->op->op_type == op_temp) {
+			tempop_visit_all (&n->label->op->o.tempop, 1,
+							  dag_tempop_live_aliases,
+							  &n->label->op->o.tempop);
+		}
 		if (n->label->op->op_type == op_def
 			&& (n->label->op->o.def->alias
 				|| n->label->op->o.def->alias_defs)) {
-			def_visit_all (n->label->op->o.def, 1, dag_live_aliases,
+			def_visit_all (n->label->op->o.def, 1, dag_def_live_aliases,
 						   n->label->op->o.def);
+		}
 	}
 }
 
 static int
-dag_alias_live (def_t *def, void *_live_vars)
+dag_tempop_alias_live (tempop_t *tempop, void *_live_vars)
+{
+	set_t      *live_vars = (set_t *) _live_vars;
+	if (!tempop->flowvar)
+		return 0;
+	return set_is_member (live_vars, tempop->flowvar->number);
+}
+
+static int
+dag_def_alias_live (def_t *def, void *_live_vars)
 {
 	set_t      *live_vars = (set_t *) _live_vars;
 	if (!def->flowvar)
@@ -531,7 +593,11 @@ dag_remove_dead_vars (dag_t *dag, set_t *live_vars)
 		if (set_is_member (dag->flownode->global_vars, var->number))
 			continue;
 		if (l->op->op_type == op_def
-			&& def_visit_all (l->op->o.def, 1, dag_alias_live, live_vars))
+			&& def_visit_all (l->op->o.def, 1, dag_def_alias_live, live_vars))
+			continue;
+		if (l->op->op_type == op_temp
+			&& tempop_visit_all (&l->op->o.tempop, 1, dag_tempop_alias_live,
+								 live_vars))
 			continue;
 		if (!set_is_member (live_vars, var->number))
 			set_remove (l->dagnode->identifiers, l->number);
