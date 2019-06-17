@@ -818,7 +818,7 @@ dag_calc_node_costs (dagnode_t *dagnode)
 }
 #endif
 static operand_t *
-fix_op_type (operand_t *op, etype_t type)
+fix_op_type (operand_t *op, type_t *type)
 {
 	if (op && op->op_type != op_label && op->type != type)
 		op = alias_operand (type, op);
@@ -884,7 +884,7 @@ generate_moveps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 
 static operand_t *
 generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
-					  set_iter_t *var_iter, etype_t type)
+					  set_iter_t *var_iter, type_t *type)
 {
 	statement_t *st;
 	operand_t   *dst = 0;
@@ -912,7 +912,7 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 	statement_t *st;
 	set_iter_t *var_iter;
 	int         i;
-	etype_t     type;
+	type_t     *type;
 
 	switch (dagnode->type) {
 		case st_none:
@@ -928,7 +928,7 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			operands[0] = make_operand (dag, block, dagnode, 0);
 			if (dagnode->children[1])
 				operands[1] = make_operand (dag, block, dagnode, 1);
-			type = low_level_type (get_type (dagnode->label->expr));
+			type = get_type (dagnode->label->expr);
 			if (!(var_iter = set_first (dagnode->identifiers))) {
 				operands[2] = temp_operand (get_type (dagnode->label->expr));
 			} else {

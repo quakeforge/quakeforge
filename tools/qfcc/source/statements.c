@@ -127,7 +127,7 @@ operand_string (operand_t *op)
 		case op_temp:
 			if (op->o.tempop.alias)
 				return va ("<tmp %s %p:%d:%p:%d:%d>",
-						   pr_type_name[op->type],
+						   pr_type_name[op->type->type],
 						   op, op->o.tempop.users,
 						   op->o.tempop.alias,
 						   op->o.tempop.offset,
@@ -139,7 +139,7 @@ operand_string (operand_t *op)
 				const char *alias = operand_string (op->o.alias);
 				char       *buf = alloca (strlen (alias) + 1);
 				strcpy (buf, alias);
-				return va ("alias(%s,%s)", pr_type_name[op->type], buf);
+				return va ("alias(%s,%s)", pr_type_name[op->type->type], buf);
 			}
 	}
 	return ("??");
@@ -150,11 +150,11 @@ print_operand (operand_t *op)
 {
 	switch (op->op_type) {
 		case op_def:
-			printf ("(%s) ", pr_type_name[op->type]);
+			printf ("(%s) ", pr_type_name[op->type->type]);
 			printf ("%s", op->o.def->name);
 			break;
 		case op_value:
-			printf ("(%s) ", pr_type_name[op->type]);
+			printf ("(%s) ", pr_type_name[op->type->type]);
 			switch (op->o.value->lltype) {
 				case ev_string:
 					printf ("\"%s\"", op->o.value->v.string_val);
@@ -202,12 +202,12 @@ print_operand (operand_t *op)
 			printf ("block %p", op->o.label->dest);
 			break;
 		case op_temp:
-			printf ("tmp (%s) %p", pr_type_name[op->type], op);
+			printf ("tmp (%s) %p", pr_type_name[op->type->type], op);
 			if (op->o.tempop.def)
 				printf (" %s", op->o.tempop.def->name);
 			break;
 		case op_alias:
-			printf ("alias(%s,", pr_type_name[op->type]);
+			printf ("alias(%s,", pr_type_name[op->type->type]);
 			print_operand (op->o.alias);
 			printf (")");
 	}
@@ -307,7 +307,7 @@ def_operand (def_t *def, type_t *type)
 	if (!type)
 		type = def->type;
 	op = new_operand (op_def);
-	op->type = low_level_type (type);
+	op->type = type;
 	op->size = type_size (type);
 	op->o.def = def;
 	return op;
@@ -318,7 +318,7 @@ value_operand (ex_value_t *value)
 {
 	operand_t  *op;
 	op = new_operand (op_value);
-	op->type = value->lltype;
+	op->type = value->type;
 	op->o.value = value;
 	return op;
 }
@@ -329,7 +329,7 @@ temp_operand (type_t *type)
 	operand_t  *op = new_operand (op_temp);
 
 	op->o.tempop.type = type;
-	op->type = low_level_type (type);
+	op->type = type;
 	op->size = type_size (type);
 	return op;
 }
@@ -384,19 +384,18 @@ tempop_visit_all (tempop_t *tempop, int overlap,
 }
 
 operand_t *
-alias_operand (etype_t type, operand_t *op)
+alias_operand (type_t *type, operand_t *op)
 {
 	operand_t  *aop;
 
-	if (pr_type_size[type] != pr_type_size[op->type]) {
+	if (type_size (type) != type_size (op->type)) {
 		internal_error (0, "\naliasing operand with type of diffent size"
-						" (%d, %d)", pr_type_size[type],
-						pr_type_size[op->type]);
+						" (%d, %d)", type_size (type), type_size (op->type));
 	}
 	aop = new_operand (op_alias);
 	aop->o.alias = op;
 	aop->type = type;
-	aop->size = pr_type_size[type];
+	aop->size = type_size (type);
 	return aop;
 }
 
@@ -860,14 +859,14 @@ expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	operand_t *aop = 0;
 	operand_t *top;
-	etype_t    type;
+	type_t    *type;
 	def_t     *def;
 	int        offset = 0;
 
 	if (e->type == ex_expr) {
 		offset = expr_integer (e->e.expr.e2);
 	}
-	type = low_level_type (e->e.expr.type);
+	type = e->e.expr.type;
 	sblock = statement_subexpr (sblock, e->e.expr.e1, &aop);
 	if (aop->type == type) {
 		if (offset) {
@@ -892,7 +891,7 @@ expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 		if (!top) {
 			top = new_operand (op_temp);
 			top->type = type;
-			top->size = pr_type_size[type];
+			top->size = type_size (type);
 			top->o.tempop.alias = aop;
 			top->o.tempop.offset = offset;
 			top->next = aop->o.tempop.alias_ops;
@@ -903,7 +902,7 @@ expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 		def = aop->o.def;
 		while (def->alias)
 			def = def->alias;
-		*op = def_operand (alias_def (def, ev_types[type], offset), 0);
+		*op = def_operand (alias_def (def, type, offset), 0);
 	} else {
 		internal_error (e, "invalid alias target: %s: %s",
 						optype_str (aop->op_type), operand_string (aop));
@@ -1037,7 +1036,7 @@ expr_symbol (sblock_t *sblock, expr_t *e, operand_t **op)
 		*op = def_operand (sym->s.func->def, 0);
 	} else {
 		internal_error (e, "unexpected symbol type: %s for %s",
-						symtype_str(sym->sy_type), sym->name);
+						symtype_str (sym->sy_type), sym->name);
 	}
 	return sblock;
 }
@@ -1059,9 +1058,9 @@ expr_vector_e (sblock_t *sblock, expr_t *e, operand_t **op)
 	expr_t     *ax, *ay, *az, *aw;
 	expr_t     *as, *av;
 	expr_t     *tmp;
-	type_t     *vec_type = get_type(e);
+	type_t     *vec_type = get_type (e);
 
-	tmp = new_temp_def_expr(vec_type);
+	tmp = new_temp_def_expr (vec_type);
 	if (vec_type == &type_vector) {
 		// guaranteed to have three elements
 		x = e->e.vector.list;

@@ -194,10 +194,11 @@ alias_def (def_t *def, type_t *type, int offset)
 }
 
 def_t *
-temp_def (etype_t type, int size)
+temp_def (type_t *type)
 {
 	def_t      *temp;
 	defspace_t *space = current_func->symtab->space;
+	int         size = type_size (type);
 
 	if (size < 1 || size > 4) {
 		internal_error (0, "%d invalid size for temp def", size);
@@ -213,7 +214,7 @@ temp_def (etype_t type, int size)
 		temp->name = save_string (va (".tmp%d", current_func->temp_num++));
 	}
 	temp->return_addr = __builtin_return_address (0);
-	temp->type = ev_types[type];
+	temp->type = type;
 	temp->file = pr.source_file;
 	temp->line = pr.source_line;
 	set_storage_bits (temp, sc_local);

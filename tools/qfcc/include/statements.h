@@ -55,7 +55,7 @@ typedef struct {
 typedef struct operand_s {
 	struct operand_s *next;
 	op_type_e   op_type;
-	etype_t     type;			///< possibly override def's type
+	struct type_s *type;		///< possibly override def's type
 	int         size;			///< for structures
 	union {
 		struct def_s *def;
@@ -121,7 +121,7 @@ int tempop_overlap (tempop_t *t1, tempop_t *t2);
 operand_t *temp_operand (struct type_s *type);
 int tempop_visit_all (tempop_t *tempop, int overlap,
 					  int (*visit) (tempop_t *, void *), void *data);
-operand_t *alias_operand (etype_t type, operand_t *op);
+operand_t *alias_operand (struct type_s *type, operand_t *op);
 void free_operand (operand_t *op);
 
 sblock_t *new_sblock (void);

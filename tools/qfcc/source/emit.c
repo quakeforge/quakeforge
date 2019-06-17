@@ -61,18 +61,18 @@
 static def_t zero_def;
 
 static def_t *
-get_value_def (ex_value_t *value, etype_t type)
+get_value_def (ex_value_t *value, type_t *type)
 {
 	def_t      *def;
 
-	if (type == ev_short) {
+	if (type == &type_short) {
 		def = new_def (0, &type_short, 0, sc_extern);
 		def->offset = value->v.short_val;
 		return def;
 	}
 	def = emit_value (value, 0);
-	if (type != def->type->type)
-		return alias_def (def, ev_types[type], 0);
+	if (type != def->type)
+		return alias_def (def, type, 0);
 	return def;
 }
 
@@ -87,7 +87,7 @@ get_operand_def (expr_t *expr, operand_t *op)
 		case op_value:
 			return get_value_def (op->o.value, op->type);
 		case op_label:
-			op->type = ev_short;
+			op->type = &type_short;
 			zero_def.type = &type_short;
 			return &zero_def;	//FIXME
 		case op_temp:
@@ -97,11 +97,11 @@ get_operand_def (expr_t *expr, operand_t *op)
 			if (op->o.tempop.alias) {
 				def_t      *tdef = get_operand_def (expr, op->o.tempop.alias);
 				int         offset = op->o.tempop.offset;
-				type_t     *type = ev_types[op->type];
+				type_t     *type = op->type;
 				op->o.tempop.def = alias_def (tdef, type, offset);
 			}
 			if (!op->o.tempop.def) {
-				op->o.tempop.def = temp_def (op->type, op->size);
+				op->o.tempop.def = temp_def (op->type);
 			}
 			return op->o.tempop.def;
 		case op_alias:

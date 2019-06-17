@@ -190,14 +190,13 @@ void free_def (def_t *def);
 
 	\note ::current_func must be valid.
 
-	\param type		The low-level type of the temporary variable.
-	\param size		The amount of space to allocate to the temp.
+	\param type		The type of the temporary variable.
 	\return			The def for the temparary variable.
 
-	\bug \a size is not checked for validity (must be 1-4).
+	\bug size of type must be 1 to 4.
 	\todo support arbitrary sizes
 */
-def_t *temp_def (etype_t type, int size);
+def_t *temp_def (struct type_s *type);
 
 /** Free a tempary def so it may be recycled.
 

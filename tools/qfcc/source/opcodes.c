@@ -102,9 +102,9 @@ opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 	int         i;
 
 	search_op.name = name;
-	search_op.type_a = op_a ? op_a->type : ev_invalid;
-	search_op.type_b = op_b ? op_b->type : ev_invalid;
-	search_op.type_c = op_c ? op_c->type : ev_invalid;
+	search_op.type_a = op_a ? low_level_type (op_a->type) : ev_invalid;
+	search_op.type_b = op_b ? low_level_type (op_b->type) : ev_invalid;
+	search_op.type_c = op_c ? low_level_type (op_c->type) : ev_invalid;
 	op = Hash_FindElement (opcode_type_table, &search_op);
 	if (op)
 		return op;
