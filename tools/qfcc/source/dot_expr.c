@@ -428,6 +428,11 @@ print_value (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 	int         indent = level * 2 + 2;
 	type_t     *type;
 	const char *label = "?!?";
+	static dstring_t *type_str;
+
+	if (!type_str) {
+		type_str = dstring_newstr ();
+	}
 
 	switch (e->e.value->lltype) {
 		case ev_string:
@@ -451,14 +456,18 @@ print_value (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 			break;
 		case ev_pointer:
 			type = e->e.value->v.pointer.type;
+			dstring_clearstr(type_str);
+			if (type) {
+				print_type_str (type_str, type);
+			}
 			if (e->e.value->v.pointer.def)
-				label = va ("(%s)[%d]<%s>",
-							type ? pr_type_name[type->type] : "???",
+				label = va ("(*%s)[%d]<%s>",
+							type ? type_str->str : "???",
 							e->e.value->v.pointer.val,
 							e->e.value->v.pointer.def->name);
 			else
-				label = va ("(%s)[%d]",
-							type ? pr_type_name[type->type] : "???",
+				label = va ("(*%s)[%d]",
+							type ? type_str->str : "???",
 							e->e.value->v.pointer.val);
 			break;
 		case ev_field:
