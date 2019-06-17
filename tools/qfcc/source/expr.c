@@ -1020,6 +1020,9 @@ new_alias_expr (type_t *type, expr_t *expr)
 	alias->e.expr.type = type;
 	//if (expr->type == ex_uexpr && expr->e.expr.op == 'A')
 	//	bug (alias, "aliasing an alias expression");
+	if (expr->type == ex_expr && expr->e.expr.op == 'A') {
+		return new_offset_alias_expr (type, expr, 0);
+	}
 	alias->file = expr->file;
 	alias->line = expr->line;
 	return alias;
@@ -1030,6 +1033,14 @@ new_offset_alias_expr (type_t *type, expr_t *expr, int offset)
 {
 	expr_t     *alias;
 
+	if (expr->type == ex_expr && expr->e.expr.op == 'A') {
+		expr_t     *ofs_expr = expr->e.expr.e2;
+		expr = expr->e.expr.e1;
+		if (!is_constant (ofs_expr)) {
+			internal_error (ofs_expr, "non-constant offset for alias expr");
+		}
+		offset += expr_integer (ofs_expr);
+	}
 	alias = new_binary_expr ('A', expr, new_integer_expr (offset));
 	alias->e.expr.type = type;
 	alias->file = expr->file;
