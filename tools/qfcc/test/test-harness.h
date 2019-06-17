@@ -1,3 +1,4 @@
+void *obj_malloc (int size) = #0;
 void printf (string fmt, ...) = #0;
 int errno (void) = #0;
 string strerror (int err) = #0;

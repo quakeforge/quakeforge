@@ -47,6 +47,7 @@ test_progs_dat=\
 	structarray.dat \
 	structlive.dat \
 	structptr.dat \
+	structstruct.dat \
 	swap.dat \
 	triangle.dat \
 	vecexpr.dat \
@@ -235,6 +236,15 @@ structptr.run: Makefile build-run
 	$(srcdir)/build-run $@
 include ./$(DEPDIR)/structptr.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/structptr.Qo
+
+structstruct_dat_SOURCES=structstruct.r
+structstruct_obj=$(structstruct_dat_SOURCES:.r=.qfo)
+structstruct.dat$(EXEEXT): $(structstruct_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(structstruct_obj)
+structstruct.run: Makefile build-run
+	$(srcdir)/build-run $@
+include ./$(DEPDIR)/structstruct.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/structstruct.Qo
 
 swap_dat_SOURCES=swap.r
 swap_obj=$(swap_dat_SOURCES:.r=.qfo)
