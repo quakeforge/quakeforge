@@ -735,6 +735,14 @@ is_pointer (const type_t *type)
 }
 
 int
+is_field (const type_t *type)
+{
+	if (type->type == ev_field)
+		return 1;
+	return 0;
+}
+
+int
 is_array (const type_t *type)
 {
 	if (type->type == ev_invalid && type->meta == ty_array)
@@ -747,6 +755,25 @@ is_func (const type_t *type)
 {
 	if (type->type == ev_func)
 		return 1;
+	return 0;
+}
+
+int
+type_compatible (const type_t *dst, const type_t *src)
+{
+	// same type
+	if (dst == src) {
+		return 1;
+	}
+	if (is_field (dst) && is_field (src)) {
+		return 1;
+	}
+	if (is_func (dst) && is_func (src)) {
+		return 1;
+	}
+	if (is_pointer (dst) && is_pointer (src)) {
+		return 1;
+	}
 	return 0;
 }
 

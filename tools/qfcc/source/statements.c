@@ -868,9 +868,9 @@ expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 	}
 	type = e->e.expr.type;
 	sblock = statement_subexpr (sblock, e->e.expr.e1, &aop);
-	if (aop->type == type) {
+	if (type_compatible (aop->type, type)) {
 		if (offset) {
-			internal_error (e, "offset alias of same type");
+			internal_error (e, "offset alias of same size type");
 		}
 		*op = aop;
 		return sblock;
