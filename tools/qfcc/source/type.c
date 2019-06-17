@@ -109,7 +109,7 @@ static type_t *types_freelist;
 etype_t
 low_level_type (type_t *type)
 {
-	if (type->type >= ev_type_count)
+	if (type->type > ev_type_count)
 		internal_error (0, "invalid type");
 	if (type->type == ev_type_count)
 		internal_error (0, "found 'type count' type");
