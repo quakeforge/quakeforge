@@ -16,6 +16,8 @@ typedef struct Rect {
 } Rect;
 
 Rect rect = {{1, 2}, {3, 4}};
+Point origin = {5, 6};
+Size size = {7, 8};
 
 int
 test_struct_1(Rect rect)
@@ -49,5 +51,11 @@ main()
 	ret |= test_struct_2(rect) != 2;
 	ret |= test_struct_3(rect) != 3;
 	ret |= test_struct_4(rect) != 4;
+	rect.origin = origin;
+	rect.size = size;
+	ret |= test_struct_1(rect) != 5;
+	ret |= test_struct_2(rect) != 6;
+	ret |= test_struct_3(rect) != 7;
+	ret |= test_struct_4(rect) != 8;
 	return ret;
 }
