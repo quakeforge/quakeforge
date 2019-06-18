@@ -645,9 +645,9 @@ new_vector_list (expr_t *e)
 			type = &type_quaternion;
 		case 3:
 			// quaternion or vector. all expressions must be compatible with
-			// a float
+			// a float (ie, a scalar)
 			for (t = e; t; t = t->next)
-				if (!type_assignable (&type_float, get_type (t)))
+				if (!is_scalar (get_type (t)))
 					return error (t, "invalid type for vector element");
 			vec = new_expr ();
 			vec->type = ex_vector;
@@ -655,18 +655,28 @@ new_vector_list (expr_t *e)
 			vec->e.vector.list = e;
 			break;
 		case 2:
-			// quaternion. either float-ish, vector or vector, float-ish
-			if (type_assignable (&type_float, get_type (e))
-				&& type_assignable (&type_vector, get_type(e->next))) {
-				// float-ish, vector
+			if (is_scalar (get_type (e)) && is_scalar (get_type (e->next))) {
+				// scalar, scalar
+				// expand [x, y] to [x, y, 0]
+				e->next->next = new_float_expr (0);
+				vec = new_expr ();
+				vec->type = ex_vector;
+				vec->e.vector.type = type;
+				vec->e.vector.list = e;
+				break;
+			}
+			// quaternion. either scalar, vector or vector, scalar
+			if (is_scalar (get_type (e))
+				&& is_vector (get_type (e->next))) {
+				// scalar, vector
 				// swap expressions
 				t = e;
 				e = e->next;
 				e->next = t;
 				t->next = 0;
-			} else if (type_assignable (&type_vector, get_type (e))
-					   && type_assignable (&type_float, get_type(e->next))) {
-				// vector, float-ish
+			} else if (is_vector (get_type (e))
+					   && is_scalar (get_type (e->next))) {
+				// vector, scalar
 				// do nothing
 			} else {
 				return error (t, "invalid types for vector elements");
