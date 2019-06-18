@@ -817,8 +817,6 @@ type_assignable (const type_t *dst, const type_t *src)
 int
 type_size (const type_t *type)
 {
-	if (!type)
-		return 0;
 	switch (type->type) {
 		case ev_void:
 		case ev_string:
