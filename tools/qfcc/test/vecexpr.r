@@ -21,6 +21,8 @@ int
 main ()
 {
 	int ret = 0;
+	float x = 4;
+	float y = 5;
 	vector v;
 
 	v = t2(5);
@@ -33,5 +35,11 @@ main ()
 		printf("t3(5) = %v\n", v);
 		ret |= 1;
 	}
+	v = [x, y, 0] / 2;
+	if (v != [2, 2.5, 0]) {
+		printf("v = %v\n", v);
+		ret |= 1;
+	}
+
 	return ret;
 }

@@ -889,9 +889,7 @@ expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 			}
 		}
 		if (!top) {
-			top = new_operand (op_temp);
-			top->type = type;
-			top->size = type_size (type);
+			top = temp_operand (type);
 			top->o.tempop.alias = aop;
 			top->o.tempop.offset = offset;
 			top->next = aop->o.tempop.alias_ops;
