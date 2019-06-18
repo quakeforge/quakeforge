@@ -1057,6 +1057,11 @@ expr_vector_e (sblock_t *sblock, expr_t *e, operand_t **op)
 	expr_t     *as, *av;
 	expr_t     *tmp;
 	type_t     *vec_type = get_type (e);
+	int         file = pr.source_file;
+	int         line = pr.source_line;
+
+	pr.source_file = e->file;
+	pr.source_line = e->line;
 
 	tmp = new_temp_def_expr (vec_type);
 	if (vec_type == &type_vector) {
@@ -1105,6 +1110,8 @@ expr_vector_e (sblock_t *sblock, expr_t *e, operand_t **op)
 			sblock = statement_slist (sblock, as);
 		}
 	}
+	pr.source_file = file;
+	pr.source_line = line;
 	sblock = statement_subexpr (sblock, tmp, op);
 	return sblock;
 }
