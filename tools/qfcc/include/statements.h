@@ -117,7 +117,7 @@ const char *optype_str (op_type_e type) __attribute__((const));
 
 operand_t *def_operand (struct def_s *def, struct type_s *type);
 operand_t *value_operand (struct ex_value_s *value);
-int tempop_overlap (tempop_t *t1, tempop_t *t2);
+int tempop_overlap (tempop_t *t1, tempop_t *t2) __attribute__((pure));
 operand_t *temp_operand (struct type_s *type);
 int tempop_visit_all (tempop_t *tempop, int overlap,
 					  int (*visit) (tempop_t *, void *), void *data);
