@@ -16,7 +16,8 @@ noinst_LTLIBRARIES= libQFrenderer.la @vid_render_static_plugins@
 
 EXTRA_LTLIBRARIES=	\
 					vid_render_sw.la vid_render_sw32.la \
-					vid_render_gl.la vid_render_glsl.la
+					vid_render_gl.la vid_render_glsl.la \
+					vid_render_vulkan.la
 
 common_sources= \
 	crosshair.c noisetextures.c r_alias.c r_bsp.c r_cvar.c r_dyn_textures.c \
@@ -63,3 +64,10 @@ vid_render_sw32_la_LDFLAGS=		$(plugin_ldflags)
 vid_render_sw32_la_LIBADD=		$(sw32_libs)
 vid_render_sw32_la_DEPENDENCIES=$(sw32_libs)
 vid_render_sw32_la_SOURCES=		$(common_sources) vid_render_sw32.c
+
+vulkan_libs= \
+	vulkan/libvulkan.la
+vid_render_vulkan_la_LDFLAGS=		$(plugin_ldflags)
+vid_render_vulkan_la_LIBADD=		$(vulkan_libs)
+vid_render_vulkan_la_DEPENDENCIES=$(vulkan_libs)
+vid_render_vulkan_la_SOURCES=		$(common_sources) vid_render_vulkan.c

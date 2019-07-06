@@ -71,7 +71,7 @@ if test "x$HAVE_X" = xyes; then
 		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-x11.desktop"
 		CL_TARGETS="$CL_TARGETS X11"
 		VID_TARGETS="$VID_TARGETS libQFx11.la"
-		QF_NEED(vid_render, [sw sw32 gl glsl])
+		QF_NEED(vid_render, [sw sw32 gl glsl vulkan])
 		QF_NEED(models, [sw gl glsl])
 		QF_NEED(alias, [sw gl glsl])
 		QF_NEED(brush, [sw gl glsl])
@@ -95,7 +95,7 @@ if test "x$HAVE_SDL" = xyes; then
 		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-sdl.desktop"
 		CL_TARGETS="$CL_TARGETS SDL"
 		VID_TARGETS="$VID_TARGETS libQFsdl.la"
-		QF_NEED(vid_render, [sw sw32 gl glsl])
+		QF_NEED(vid_render, [sw sw32 gl glsl vulkan])
 		QF_NEED(models, [sw gl glsl])
 		QF_NEED(alias, [sw gl glsl])
 		QF_NEED(brush, [sw gl glsl])
@@ -258,7 +258,7 @@ QF_SUBST(progs_gz)
 QF_PROCESS_NEED_DIRS(top, [libs hw nq qtv qw tools ruamoko])
 
 QF_PROCESS_NEED_LIBS(swrend, [asm])
-QF_PROCESS_NEED_DIRS(vid_render, [gl glsl sw sw32])
+QF_PROCESS_NEED_DIRS(vid_render, [gl glsl sw sw32 vulkan])
 QF_PROCESS_NEED_LIBS(models, [gl glsl sw])
 QF_PROCESS_NEED_LIBS(alias, [gl glsl sw])
 QF_PROCESS_NEED_LIBS(brush, [gl glsl sw])
@@ -308,7 +308,7 @@ if test "x$static_plugins" = xauto; then
 	fi
 fi
 if test "x$static_plugins" = xyes; then
-	QF_PROCESS_NEED_STATIC_PLUGINS(vid_render, [sw sw32 glsl gl])
+	QF_PROCESS_NEED_STATIC_PLUGINS(vid_render, [sw sw32 glsl gl vulkan])
 	QF_PROCESS_NEED_STATIC_PLUGINS(console, [server], [\$(top_builddir)/libs/console], [server])
 	QF_PROCESS_NEED_STATIC_PLUGINS(console, [client], [\$(top_builddir)/libs/console], [client])
 
@@ -323,7 +323,7 @@ if test "x$static_plugins" = xyes; then
 		CDTYPE="$CDTYPE (static)"
 	fi
 else
-	QF_PROCESS_NEED_PLUGINS(vid_render, [sw sw32 glsl gl])
+	QF_PROCESS_NEED_PLUGINS(vid_render, [sw sw32 glsl gl vulkan])
 	QF_PROCESS_NEED_PLUGINS(console, [server], [server])
 	QF_PROCESS_NEED_PLUGINS(console, [client], [client])
 	QF_PROCESS_NEED_PLUGINS(snd_output, [sdl mme sgi sun win dx oss alsa])

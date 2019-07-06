@@ -32,6 +32,7 @@
 	libs/video/renderer/glsl/Makefile
 	libs/video/renderer/sw/Makefile
 	libs/video/renderer/sw32/Makefile
+	libs/video/renderer/vulkan/Makefile
 	libs/video/targets/Makefile
 
 	hw/Makefile
