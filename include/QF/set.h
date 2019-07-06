@@ -251,7 +251,7 @@ set_t *set_empty (set_t *set);
 */
 set_t *set_everything (set_t *set);
 
-/** Test if a set is the set of everything.
+/** Test if a set is the empty set.
 
 	\param set		The set to test.
 	\return			1 if \a set is empty (non-inverted).
@@ -358,8 +358,8 @@ set_iter_t *set_next_r (set_pool_t *set_pool, set_iter_t *set_iter);
 
 /** Return a human-readable string representing the set.
 
-	Empty sets will be represented by the string "[empty]". Sets of everything
-	will be represented by the string "[everything]". Inverted sets will have
+	Empty sets will be represented by the string "{}". Sets of everything
+	will be represented by the string "{...}". Inverted sets will have
 	the first implicit member followed by "..." (eg, "256 ...").
 
 	\param set		The set to be converted to a string.
