@@ -258,15 +258,18 @@ QuatMult (const quat_t q1, const quat_t q2, quat_t out)
 VISIBLE void
 QuatMultVec (const quat_t q, const vec3_t v, vec3_t out)
 {
-	vec_t      s;
 	vec3_t     tv;
+	vec_t      dqv, dqq;
+	vec_t      s;
 
-	s = -DotProduct (q, v);
+	s = q[3];
 	CrossProduct (q, v, tv);
-	VectorMultAdd (tv, q[3], v, tv);
-	CrossProduct (q, tv, out);
-	VectorMultSub (out, s, q, out);
-	VectorMultAdd (out, q[3], tv, out);
+	dqv = DotProduct (q, v);
+	dqq = DotProduct (q, q);
+	VectorScale (tv, s, tv);
+	VectorMultAdd (tv, dqv, q, tv);
+	VectorAdd (tv, tv, tv);
+	VectorMultAdd (tv, s * s - dqq, v, out);
 }
 
 VISIBLE void
