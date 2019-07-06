@@ -59,6 +59,7 @@
 static void *vulkan_library;
 
 static VulkanInstance_t *vulkan_instance;
+static VulkanDevice_t *vulkan_device;
 
 static void
 load_vulkan_library (void)
@@ -102,21 +103,117 @@ Vulkan_Init_Cvars ()
 									  "restart).");
 }
 
-const char *extensions[] = {
-	"foo",
+static const char *instance_extensions[] = {
 	0,
 };
+
+static const char *device_extensions[] = {
+	0,
+};
+
+static int
+count_bits (uint32_t val)
+{
+	int         bits = 0;
+	while (val) {
+		bits += val & 1;
+		val >>= 1;
+	}
+	return bits;
+}
+
+static int
+find_queue_family (VulkanPhysDevice_t *dev, uint32_t flags)
+{
+	int         best_diff = 32;
+	uint32_t    family = -1;
+
+	for (uint32_t i = 0; i < dev->numQueueFamilies; i++) {
+		VkQueueFamilyProperties *queue = &dev->queueFamilies[i];
+
+		if ((queue->queueFlags & flags) == flags) {
+			int diff = count_bits (queue->queueFlags & ~flags);
+			if (diff < best_diff) {
+				best_diff = diff;
+				family = i;
+			}
+		}
+	}
+	return family;
+}
+
+static void
+load_device_funcs (VulkanInstance_t *inst, VulkanDevice_t *dev)
+{
+#define DEVICE_LEVEL_VULKAN_FUNCTION(name) \
+	dev->name = (PFN_##name) inst->vkGetDeviceProcAddr (dev->device, #name); \
+	if (!dev->name) { \
+		Sys_Error ("Couldn't find device level function %s", #name); \
+	}
+
+#define DEVICE_LEVEL_VULKAN_FUNCTION_EXTENSION(name) \
+	dev->name = (PFN_##name) inst->vkGetDeviceProcAddr (dev->device, #name); \
+	if (!dev->name) { \
+		Sys_Printf ("Couldn't find device level function %s", #name); \
+	}
+
+#include "QF/Vulkan/funclist.h"
+}
+
+static VulkanDevice_t *
+create_suitable_device (VulkanInstance_t *instance)
+{
+	for (uint32_t i = 0; i < instance->numDevices; i++) {
+		VulkanPhysDevice_t *phys = &instance->devices[i];
+		if (!Vulkan_ExtensionsSupported (phys->extensions, phys->numExtensions,
+										 device_extensions)) {
+			return 0;
+		}
+		int family = find_queue_family (phys, VK_QUEUE_GRAPHICS_BIT);
+		if (family < 0) {
+			return 0;
+		}
+		float priority = 1;
+		VkDeviceQueueCreateInfo qCreateInfo = {
+			VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, 0, 0,
+			family, 1, &priority
+		};
+		VkPhysicalDeviceFeatures features;
+		VkDeviceCreateInfo dCreateInfo = {
+			VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, 0, 0,
+			1, &qCreateInfo,
+			0, 0,
+			0, device_extensions,
+			&features
+		};
+		memset (&features, 0, sizeof (features));
+		VulkanDevice_t *device = calloc (1, sizeof (VulkanDevice_t));
+		if (instance->vkCreateDevice (phys->device, &dCreateInfo, 0,
+									  &device->device) == VK_SUCCESS) {
+			load_device_funcs (instance, device);
+			device->vkGetDeviceQueue (device->device, family,
+									  0, &device->queue);
+			return device;
+		}
+	}
+	return 0;
+}
 
 void
 Vulkan_Init_Common (void)
 {
+	Sys_Printf ("Vulkan_Init_Common\n");
 	Vulkan_Init_Cvars ();
 
 	load_vulkan_library ();
 
-	vulkan_instance = Vulkan_CreateInstance (PACKAGE_STRING, 0x000702ff, 0, extensions);//FIXME version
-	Sys_Printf ("Vulkan_Init_Common\n");
+	vulkan_instance = Vulkan_CreateInstance (PACKAGE_STRING, 0x000702ff, 0, instance_extensions);//FIXME version
+	vulkan_device = create_suitable_device (vulkan_instance);
+	if (!vulkan_device) {
+		Sys_Error ("no suitable vulkan device found");
+	}
 	if (developer->int_val & SYS_VID) {
+		Sys_Printf ("%p %p\n", vulkan_device->device, vulkan_device->queue);
 		Vulkan_DestroyInstance (vulkan_instance);
 		Sys_Quit();
 	}

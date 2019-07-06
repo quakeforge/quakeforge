@@ -32,13 +32,22 @@
 #include "QF/Vulkan/funcs.h"
 
 typedef struct {
+	VkDevice device;
+	VkQueue queue;
+
+    #define DEVICE_LEVEL_VULKAN_FUNCTION(name) PFN_##name name;
+    #define DEVICE_LEVEL_VULKAN_FUNCTION_EXTENSION(name) PFN_##name name;
+	#include "QF/Vulkan/funclist.h"
+} VulkanDevice_t;
+
+typedef struct {
 	VkPhysicalDevice device;
+	VkPhysicalDeviceFeatures features;
 	VkPhysicalDeviceProperties properties;
 	uint32_t    numLayers;
 	VkLayerProperties *layers;
 	uint32_t    numExtensions;
 	VkExtensionProperties *extensions;
-	VkPhysicalDeviceFeatures features;
 	VkPhysicalDeviceMemoryProperties memory;
 	uint32_t    numQueueFamilies;
 	VkQueueFamilyProperties *queueFamilies;
@@ -61,5 +70,8 @@ VulkanInstance_t *Vulkan_CreateInstance (const char *appName,
 										 const char **layers,
 										 const char **extensions);
 void Vulkan_DestroyInstance (VulkanInstance_t *instance);
+int Vulkan_ExtensionsSupported (const VkExtensionProperties *extensions,
+								int numExtensions,
+								const char * const *requested);
 
 #endif // __QF_Vulkan_init_h

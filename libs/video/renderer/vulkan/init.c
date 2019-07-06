@@ -388,3 +388,23 @@ Vulkan_DestroyInstance (VulkanInstance_t *instance)
 	instance->vkDestroyInstance (instance->instance, 0);
 	free (instance);
 }
+
+int
+Vulkan_ExtensionsSupported (const VkExtensionProperties *extensions,
+							int numExtensions,
+							const char * const *requested)
+{
+	while (*requested) {
+		int         i;
+		for (i = 0; i < numExtensions; i++) {
+			if (!strcmp (*requested, extensions[i].extensionName)) {
+				break;
+			}
+		}
+		if (i < numExtensions) {
+			// requested extension not found
+			break;
+		}
+	}
+	return !*requested;
+}
