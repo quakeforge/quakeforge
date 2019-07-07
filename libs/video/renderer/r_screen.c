@@ -104,8 +104,6 @@ qpic_t     *scr_turtle;
 
 int         clearconsole;
 
-viddef_t    vid;						// global video state
-
 vrect_t    *pconupdate;
 vrect_t     scr_vrect;
 
@@ -365,6 +363,5 @@ SCR_Init (void)
 	scr_ram = vr_funcs->Draw_PicFromWad ("ram");
 	scr_turtle = vr_funcs->Draw_PicFromWad ("turtle");
 
-	vid = *vr_data.vid;	// cache
 	scr_initialized = true;
 }

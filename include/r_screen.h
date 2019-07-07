@@ -64,8 +64,6 @@ extern struct qpic_s *scr_turtle;
 extern int         clearconsole;
 extern int         clearnotify;
 
-extern viddef_t    vid;						// global video state
-
 extern vrect_t    *pconupdate;
 extern vrect_t     scr_vrect;
 
