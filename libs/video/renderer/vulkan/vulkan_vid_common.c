@@ -214,7 +214,7 @@ Vulkan_Init_Common (void)
 	}
 	if (developer->int_val & SYS_VID) {
 		Sys_Printf ("%p %p\n", vulkan_device->device, vulkan_device->queue);
-		Vulkan_DestroyInstance (vulkan_instance);
+		Vulkan_Shutdown_Common ();
 		Sys_Quit();
 	}
 }
@@ -222,5 +222,13 @@ Vulkan_Init_Common (void)
 void
 Vulkan_Shutdown_Common (void)
 {
+	if (vulkan_device) {
+		vulkan_device->vkDestroyDevice (vulkan_device->device, 0);
+		free (vulkan_device);
+		vulkan_device = 0;
+	}
 	Vulkan_DestroyInstance (vulkan_instance);
+	vulkan_instance = 0;
+	dlclose (vulkan_library);
+	vulkan_library = 0;
 }
