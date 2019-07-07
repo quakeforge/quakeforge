@@ -64,7 +64,8 @@ static VulkanDevice_t *vulkan_device;
 static void
 load_vulkan_library (void)
 {
-	vulkan_library = dlopen (vulkan_library_name->string, RTLD_NOW);
+	vulkan_library = dlopen (vulkan_library_name->string,
+							 RTLD_DEEPBIND | RTLD_NOW);
 	if (!vulkan_library) {
 		Sys_Error ("Couldn't load vulkan library %s: %s",
 				   vulkan_library_name->name, dlerror ());
@@ -76,13 +77,8 @@ load_vulkan_library (void)
 		Sys_Error ("Couldn't find exported vulkan function %s", #name); \
 	}
 
-	// Can't use vkGetInstanceProcAddr (0, ...) here because it grabs from
-	// the whole exe and thus sees the function pointers instead of the actual
-	// functions. Sure, could rename all the function pointers, but while that
-	// worked for gl and glsl, it also made it a real pain to work with the
-	// spec (or man pages, etc). Of course, namespaces would help, too.
 	#define GLOBAL_LEVEL_VULKAN_FUNCTION(name) \
-	name = (PFN_##name) dlsym (vulkan_library, #name); \
+	name = (PFN_##name) vkGetInstanceProcAddr (0, #name); \
 	if (!name) { \
 		Sys_Error ("Couldn't find global-level function %s", #name); \
 	}
