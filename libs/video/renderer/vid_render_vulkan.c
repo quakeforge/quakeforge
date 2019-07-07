@@ -179,9 +179,9 @@ static plugin_t plugin_info = {
 	0,
 	QFPLUGIN_VERSION,
 	"0.1",
-	"GLSL Renderer",
+	"Vulkan Renderer",
 	"Copyright (C) 1996-1997  Id Software, Inc.\n"
-	"Copyright (C) 1999-2012  contributors of the QuakeForge project\n"
+	"Copyright (C) 1999-2019  contributors of the QuakeForge project\n"
 	"Please see the file \"AUTHORS\" for a list of contributors",
 	&plugin_info_funcs,
 	&plugin_info_data,
