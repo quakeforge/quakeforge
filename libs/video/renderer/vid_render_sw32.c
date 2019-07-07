@@ -161,7 +161,7 @@ static plugin_data_t plugin_info_data = {
 };
 
 static plugin_t plugin_info = {
-	qfp_snd_render,
+	qfp_vid_render,
 	0,
 	QFPLUGIN_VERSION,
 	"0.1",
