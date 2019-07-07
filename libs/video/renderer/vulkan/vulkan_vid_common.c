@@ -104,6 +104,8 @@ Vulkan_Init_Cvars ()
 }
 
 static const char *instance_extensions[] = {
+	VK_KHR_SURFACE_EXTENSION_NAME,
+	VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
 	0,
 };
 

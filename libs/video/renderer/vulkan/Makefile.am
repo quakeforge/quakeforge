@@ -1,7 +1,7 @@
 AUTOMAKE_OPTIONS= foreign
 
 AM_CFLAGS= @PREFER_PIC@
-AM_CPPFLAGS= -I$(top_srcdir)/include -DVK_NO_PROTOTYPES
+AM_CPPFLAGS= -I$(top_srcdir)/include -DVK_NO_PROTOTYPES -DVK_USE_PLATFORM_XLIB_KHR
 
 vulkan_src = \
 	init.c \
