@@ -667,12 +667,13 @@ VID_SetPalette (const byte *palette)
 void
 VID_Init (byte *palette, byte *colormap)
 {
-	viddef.vid_internal = &vid_internal;
+	vid_internal.load_gl = glx_load_gl;
+	vid_internal.set_palette = VID_SetPalette;
 
 	choose_visual = x11_choose_visual;
 	create_context = x11_create_context;
 
-	R_LoadModule (glx_load_gl, VID_SetPalette);
+	R_LoadModule (&vid_internal);
 
 	viddef.numpages = 2;
 	viddef.colormap8 = colormap;
