@@ -71,7 +71,11 @@ if test "x$HAVE_X" = xyes; then
 		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-x11.desktop"
 		CL_TARGETS="$CL_TARGETS X11"
 		VID_TARGETS="$VID_TARGETS libQFx11.la"
-		QF_NEED(vid_render, [sw sw32 gl glsl vulkan])
+		if test "$HAVE_VULKAN" = "yes"; then
+			QF_NEED(vid_render, [sw sw32 gl glsl vulkan])
+		else
+			QF_NEED(vid_render, [sw sw32 gl glsl])
+		fi
 		QF_NEED(models, [sw gl glsl])
 		QF_NEED(alias, [sw gl glsl])
 		QF_NEED(brush, [sw gl glsl])
@@ -95,7 +99,11 @@ if test "x$HAVE_SDL" = xyes; then
 		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA quakeforge-nq-sdl.desktop"
 		CL_TARGETS="$CL_TARGETS SDL"
 		VID_TARGETS="$VID_TARGETS libQFsdl.la"
-		QF_NEED(vid_render, [sw sw32 gl glsl vulkan])
+		if test "$HAVE_VULKAN" = "yes"; then
+			QF_NEED(vid_render, [sw sw32 gl glsl vulkan])
+		else
+			QF_NEED(vid_render, [sw sw32 gl glsl])
+		fi
 		QF_NEED(models, [sw gl glsl])
 		QF_NEED(alias, [sw gl glsl])
 		QF_NEED(brush, [sw gl glsl])
