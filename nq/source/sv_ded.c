@@ -69,6 +69,11 @@ CL_UpdateScreen (double realtime)
 }
 
 void
+CL_ClearMemory (void)
+{
+}
+
+void
 CL_Cmd_ForwardToServer (void)
 {
 }

@@ -495,8 +495,7 @@ void
 Host_ClearMemory (void)
 {
 	Sys_MaskPrintf (SYS_DEV, "Clearing memory\n");
-	if (viddef.flush_caches)
-		viddef.flush_caches ();
+	CL_ClearMemory ();
 	Mod_ClearAll ();
 	if (host_hunklevel)
 		Hunk_FreeToLowMark (host_hunklevel);
@@ -504,8 +503,6 @@ Host_ClearMemory (void)
 	cls.signon = 0;
 	memset (&sv, 0, sizeof (sv));
 	memset (&cl, 0, sizeof (cl));
-	if (r_data)
-		r_data->force_fullscreen = 0;
 }
 
 /*

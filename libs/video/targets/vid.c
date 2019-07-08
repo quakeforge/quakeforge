@@ -305,3 +305,10 @@ VID_InitBuffers (void)
 	if (viddef.init_caches)
 		viddef.init_caches (viddef.surfcache, cachesize);
 }
+
+void
+VID_ClearMemory (void)
+{
+	if (viddef.flush_caches)
+		viddef.flush_caches ();
+}

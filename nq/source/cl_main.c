@@ -131,6 +131,14 @@ CL_Shutdown (void)
 }
 
 void
+CL_ClearMemory (void)
+{
+	VID_ClearMemory ();
+	if (r_data)
+		r_data->force_fullscreen = 0;
+}
+
+void
 CL_InitCvars (void)
 {
 	VID_Init_Cvars ();

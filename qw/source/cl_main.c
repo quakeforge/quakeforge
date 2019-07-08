@@ -412,8 +412,7 @@ CL_ClearState (void)
 	CL_Init_Entity (&cl.viewent);
 
 	Sys_MaskPrintf (SYS_DEV, "Clearing memory\n");
-	if (viddef.flush_caches)
-		viddef.flush_caches ();
+	VID_ClearMemory ();
 	Mod_ClearAll ();
 	if (host_hunklevel)					// FIXME: check this...
 		Hunk_FreeToLowMark (host_hunklevel);

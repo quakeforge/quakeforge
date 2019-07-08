@@ -287,6 +287,7 @@ struct cbuf_s;
 void CL_Init (struct cbuf_s *cbuf);
 void CL_InitCvars (void);
 void CL_Shutdown (void);
+void CL_ClearMemory (void);
 
 void CL_EstablishConnection (const char *host);
 void CL_Signon1 (void);

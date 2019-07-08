@@ -88,5 +88,6 @@ void VID_Init_Cvars (void);
 void VID_Init (byte *palette, byte *colormap);
 void VID_Shutdown (void);
 void VID_SetCaption (const char *text);
+void VID_ClearMemory (void);
 
 #endif	// __vid_h_
