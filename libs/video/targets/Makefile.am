@@ -27,6 +27,15 @@ joy_src=      $(joy_null_src)
 endif
 endif
 
+x11_gl_src=vid_x11_gl.c
+x11_sw_src=vid_x11_sw.c
+x11_vulkan_src=vid_x11_vulkan.c
+if X11_VULKAN
+x11_src=      $(x11_gl_src) $(x11_sw_src) $(x11_vulkan_src)
+else
+x11_src=      $(x11_gl_src) $(x11_sw_src)
+endif
+
 js_libs=$(top_builddir)/libs/util/libQFutil.la
 
 libQFjs_la_LDFLAGS=		$(lib_ldflags)
@@ -41,15 +50,16 @@ libvid_common_la_SOURCES=	\
 libvid_common_la_CFLAGS=	@PREFER_NON_PIC@
 libvid_common_la_LDFLAGS=	@STATIC@
 
-libvid_x11_la_SOURCES=		in_x11.c context_x11.c dga_check.c
+libvid_x11_la_SOURCES=		in_x11.c context_x11.c dga_check.c $(x11_src)
 libvid_x11_la_CFLAGS=		@PREFER_NON_PIC@ $(X_CFLAGS)
 libvid_x11_la_LDFLAGS=		@STATIC@
+EXTRA_libvid_x11_la_SOURCES= $(x11_vulkan_src)
 
 libvid_svga_la_SOURCES=		in_svgalib.c
 libvid_svga_la_CFLAGS=		@PREFER_NON_PIC@ $(SVGA_CFLAGS)
 libvid_svga_la_LDFLAGS=		@STATIC@
 
-libvid_sdl_la_SOURCES=		in_sdl.c context_sdl.c
+libvid_sdl_la_SOURCES=		in_sdl.c context_sdl.c vid_sdl_gl.c vid_sdl_sw.c
 libvid_sdl_la_CFLAGS=		@PREFER_NON_PIC@ $(SDL_CFLAGS)
 libvid_sdl_la_LDFLAGS=		@STATIC@
 

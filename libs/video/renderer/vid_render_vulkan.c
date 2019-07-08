@@ -39,8 +39,11 @@
 #include "mod_internal.h"
 #include "r_internal.h"
 #include "vid_internal.h"
+#include "vid_vulkan.h"
 
 #include "vulkan/namehack.h"
+
+vulkan_ctx_t *vulkan_ctx;
 
 static vid_model_funcs_t model_funcs = {
 /*	vulkan_Mod_LoadExternalTextures,
@@ -135,9 +138,11 @@ set_palette (const byte *palette)
 static void
 vulkan_vid_render_init (void)
 {
+	vulkan_ctx = vr_data.vid->vid_internal->vulkan_context ();
+	vulkan_ctx->init_vulkan = Vulkan_Init_Common;
+	vulkan_ctx->load_vulkan (vulkan_ctx);
+
 	vr_data.vid->vid_internal->set_palette = set_palette;
-	vr_data.vid->vid_internal->init_gl = Vulkan_Init_Common;
-	vr_data.vid->vid_internal->load_gl ();
 	vr_funcs = &vulkan_vid_render_funcs;
 	m_funcs = &model_funcs;
 }

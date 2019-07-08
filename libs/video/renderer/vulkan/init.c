@@ -43,7 +43,8 @@
 #include "QF/vid.h"
 #include "QF/Vulkan/init.h"
 
-cvar_t *vulkan_library_name;
+#include "vid_vulkan.h"
+
 cvar_t *vulkan_use_validation;
 
 static uint32_t numLayers;
@@ -78,9 +79,9 @@ get_instance_layers_and_extensions  (void)
 	VkLayerProperties *properties;
 	VkExtensionProperties *extensions;
 
-	vkEnumerateInstanceLayerProperties (&numLayers, 0);
+	vulkan_ctx->vkEnumerateInstanceLayerProperties (&numLayers, 0);
 	properties = malloc (numLayers * sizeof (VkLayerProperties));
-	vkEnumerateInstanceLayerProperties (&numLayers, properties);
+	vulkan_ctx->vkEnumerateInstanceLayerProperties (&numLayers, properties);
 	instanceLayerNames = (const char **) malloc ((numLayers + 1)
 												 * sizeof (const char **));
 	for (i = 0; i < numLayers; i++) {
@@ -88,9 +89,10 @@ get_instance_layers_and_extensions  (void)
 	}
 	instanceLayerNames[i] = 0;
 
-	vkEnumerateInstanceExtensionProperties (0, &numExtensions, 0);
+	vulkan_ctx->vkEnumerateInstanceExtensionProperties (0, &numExtensions, 0);
 	extensions = malloc (numExtensions * sizeof (VkLayerProperties));
-	vkEnumerateInstanceExtensionProperties (0, &numExtensions, extensions);
+	vulkan_ctx->vkEnumerateInstanceExtensionProperties (0, &numExtensions,
+														extensions);
 	instanceExtensionNames = (const char **) malloc ((numExtensions + 1)
 													 * sizeof (const char **));
 	for (i = 0; i < numExtensions; i++) {
@@ -278,15 +280,15 @@ static void
 load_instance_funcs (VulkanInstance_t *instance)
 {
 #define INSTANCE_LEVEL_VULKAN_FUNCTION(name) \
-	instance->name = (PFN_##name) vkGetInstanceProcAddr (instance->instance, \
-														 #name); \
+	instance->name = (PFN_##name) \
+		vulkan_ctx->vkGetInstanceProcAddr (instance->instance, #name); \
 	if (!instance->name) { \
 		Sys_Error ("Couldn't find instance level function %s", #name); \
 	}
 
 #define INSTANCE_LEVEL_VULKAN_FUNCTION_EXTENSION(name) \
-	instance->name = (PFN_##name) vkGetInstanceProcAddr (instance->instance,\
-														 #name); \
+	instance->name = (PFN_##name) \
+		vulkan_ctx->vkGetInstanceProcAddr (instance->instance, #name); \
 	if (!instance->name) { \
 		Sys_Printf ("Couldn't find instance level function %s", #name); \
 	}
@@ -344,7 +346,7 @@ Vulkan_CreateInstance (const char *appName, uint32_t appVersion,
 	createInfo.ppEnabledLayerNames = lay;
 	createInfo.ppEnabledExtensionNames = ext;
 
-	res = vkCreateInstance (&createInfo, 0, &instance);
+	res = vulkan_ctx->vkCreateInstance (&createInfo, 0, &instance);
 	if (res != VK_SUCCESS) {
 		Sys_Error ("unable to create vulkan instance\n");
 	}

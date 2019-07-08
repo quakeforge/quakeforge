@@ -21,6 +21,16 @@ GLOBAL_LEVEL_VULKAN_FUNCTION (vkCreateInstance)
 #define INSTANCE_LEVEL_VULKAN_FUNCTION(function)
 #endif
 
+#if defined(VK_USE_PLATFORM_XLIB_KHR)
+INSTANCE_LEVEL_VULKAN_FUNCTION (vkGetPhysicalDeviceXlibPresentationSupportKHR)
+INSTANCE_LEVEL_VULKAN_FUNCTION (vkCreateXlibSurfaceKHR)
+#elif defined(VK_USE_PLATFORM_WIN32_KHR)
+INSTANCE_LEVEL_VULKAN_FUNCTION (vkGetPhysicalDeviceWin32PresentationSupportKHR)
+INSTANCE_LEVEL_VULKAN_FUNCTION (vkCreateWin32SurfaceKHR)
+#elif defined(VK_USE_PLATFORM_XCB_KHR)
+INSTANCE_LEVEL_VULKAN_FUNCTION (vkGetPhysicalDeviceXcbPresentationSupportKHR)
+INSTANCE_LEVEL_VULKAN_FUNCTION (vkCreateXcbSurfaceKHR)
+#else
 INSTANCE_LEVEL_VULKAN_FUNCTION (vkEnumeratePhysicalDevices)
 INSTANCE_LEVEL_VULKAN_FUNCTION (vkGetPhysicalDeviceProperties)
 INSTANCE_LEVEL_VULKAN_FUNCTION (vkGetPhysicalDeviceFeatures)
@@ -31,6 +41,7 @@ INSTANCE_LEVEL_VULKAN_FUNCTION (vkDestroyInstance)
 INSTANCE_LEVEL_VULKAN_FUNCTION (vkEnumerateDeviceLayerProperties)
 INSTANCE_LEVEL_VULKAN_FUNCTION (vkEnumerateDeviceExtensionProperties)
 INSTANCE_LEVEL_VULKAN_FUNCTION (vkGetPhysicalDeviceMemoryProperties)
+#endif
 
 #undef INSTANCE_LEVEL_VULKAN_FUNCTION
 

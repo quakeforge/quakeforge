@@ -54,6 +54,7 @@
 #include "compat.h"
 #include "r_internal.h"
 #include "vid_internal.h"
+#include "vid_sw.h"
 
 /* SCREEN SHOTS */
 
@@ -221,5 +222,5 @@ sw32_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs
 		vrect.height = scr_vrect.height;
 		vrect.next = 0;
 	}
-	VID_Update (&vrect);
+	sw32_ctx->update (&vrect);
 }

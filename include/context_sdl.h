@@ -30,7 +30,19 @@
 #ifndef __context_sdl_h_
 #define __context_sdl_h_
 
+#include <SDL.h>
+
+extern SDL_Surface *sdl_screen;
+
 void VID_SDL_GammaCheck (void);
 void SDL_Init_Cvars (void);
+
+struct gl_ctx_s *SDL_GL_Context (void);
+void SDL_GL_Init_Cvars (void);
+
+struct sw_ctx_s *SDL_SW_Context (void);
+void SDL_SW_Init_Cvars (void);
+
+extern uint32_t sdl_flags;
 
 #endif	// __context_sdl_h_

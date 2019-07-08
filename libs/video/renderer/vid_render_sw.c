@@ -1,5 +1,5 @@
 /*
-	vid_render_gl.c
+	vid_render_sw.c
 
 	SW version of the renderer
 
@@ -33,6 +33,10 @@
 
 #include "mod_internal.h"
 #include "r_internal.h"
+#include "vid_internal.h"
+#include "vid_sw.h"
+
+sw_ctx_t *sw_ctx;
 
 static vid_model_funcs_t model_funcs = {
 	sw_Mod_LoadExternalTextures,
@@ -117,8 +121,26 @@ vid_render_funcs_t sw_vid_render_funcs = {
 };
 
 static void
+sw_vid_render_choose_visual (void)
+{
+    sw_ctx->choose_visual (sw_ctx);
+}
+
+static void
+sw_vid_render_create_context (void)
+{
+    sw_ctx->create_context (sw_ctx);
+}
+
+static void
 sw_vid_render_init (void)
 {
+	sw_ctx = vr_data.vid->vid_internal->sw_context ();
+
+	vr_data.vid->vid_internal->set_palette = sw_ctx->set_palette;
+	vr_data.vid->vid_internal->choose_visual = sw_vid_render_choose_visual;
+	vr_data.vid->vid_internal->create_context = sw_vid_render_create_context;
+
 	vr_funcs = &sw_vid_render_funcs;
 	m_funcs = &model_funcs;
 }

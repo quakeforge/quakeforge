@@ -29,7 +29,6 @@
 #include <vulkan/vulkan.h>
 
 #include "QF/qtypes.h"
-#include "QF/Vulkan/funcs.h"
 
 typedef struct {
 	VkDevice device;

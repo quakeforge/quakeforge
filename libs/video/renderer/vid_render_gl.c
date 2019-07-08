@@ -39,8 +39,11 @@
 #include "mod_internal.h"
 #include "r_internal.h"
 #include "vid_internal.h"
+#include "vid_gl.h"
 
 #include "gl/namehack.h"
+
+gl_ctx_t *gl_ctx;
 
 static vid_model_funcs_t model_funcs = {
 	gl_Mod_LoadExternalTextures,
@@ -125,11 +128,28 @@ vid_render_funcs_t gl_vid_render_funcs = {
 };
 
 static void
+gl_vid_render_choose_visual (void)
+{
+	gl_ctx->choose_visual (gl_ctx);
+}
+
+static void
+gl_vid_render_create_context (void)
+{
+	gl_ctx->create_context (gl_ctx);
+}
+
+static void
 gl_vid_render_init (void)
 {
+	gl_ctx = vr_data.vid->vid_internal->gl_context ();
+	gl_ctx->init_gl = GL_Init_Common;
+	gl_ctx->load_gl ();
+
 	vr_data.vid->vid_internal->set_palette = GL_SetPalette;
-	vr_data.vid->vid_internal->init_gl = GL_Init_Common;
-	vr_data.vid->vid_internal->load_gl ();
+	vr_data.vid->vid_internal->choose_visual = gl_vid_render_choose_visual;
+	vr_data.vid->vid_internal->create_context = gl_vid_render_create_context;
+
 	vr_funcs = &gl_vid_render_funcs;
 	m_funcs = &model_funcs;
 }

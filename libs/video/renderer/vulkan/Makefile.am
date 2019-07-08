@@ -1,12 +1,11 @@
 AUTOMAKE_OPTIONS= foreign
 
 AM_CFLAGS= @PREFER_PIC@
-AM_CPPFLAGS= -I$(top_srcdir)/include -DVK_NO_PROTOTYPES -DVK_USE_PLATFORM_XLIB_KHR
+AM_CPPFLAGS= -I$(top_srcdir)/include -DVK_NO_PROTOTYPES
 
 vulkan_src = \
 	init.c \
 	vulkan_draw.c \
-	vulkan_funcs.c \
 	vulkan_vid_common.c
 
 noinst_LTLIBRARIES=	libvulkan.la

@@ -39,8 +39,6 @@
 # include <strings.h>
 #endif
 
-#include <dlfcn.h>
-
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/input.h"
@@ -55,43 +53,14 @@
 #include "compat.h"
 #include "d_iface.h"
 #include "r_internal.h"
-
-static void *vulkan_library;
+#include "vid_vulkan.h"
 
 static VulkanInstance_t *vulkan_instance;
 static VulkanDevice_t *vulkan_device;
 
-static void
-load_vulkan_library (void)
-{
-	vulkan_library = dlopen (vulkan_library_name->string,
-							 RTLD_DEEPBIND | RTLD_NOW);
-	if (!vulkan_library) {
-		Sys_Error ("Couldn't load vulkan library %s: %s",
-				   vulkan_library_name->name, dlerror ());
-	}
-
-	#define EXPORTED_VULKAN_FUNCTION(name) \
-	name = (PFN_##name) dlsym (vulkan_library, #name); \
-	if (!name) { \
-		Sys_Error ("Couldn't find exported vulkan function %s", #name); \
-	}
-
-	#define GLOBAL_LEVEL_VULKAN_FUNCTION(name) \
-	name = (PFN_##name) vkGetInstanceProcAddr (0, #name); \
-	if (!name) { \
-		Sys_Error ("Couldn't find global-level function %s", #name); \
-	}
-
-	#include "QF/Vulkan/funclist.h"
-}
-
 void
 Vulkan_Init_Cvars ()
 {
-	vulkan_library_name = Cvar_Get ("vulkan_library", "libvulkan.so.1",
-									CVAR_ROM, 0,
-									"the name of the vulkan shared library");
 	vulkan_use_validation = Cvar_Get ("vulkan_use_validation", "1", CVAR_NONE,
 									  0,
 									  "enable LunarG Standard Validation "
@@ -101,7 +70,6 @@ Vulkan_Init_Cvars ()
 
 static const char *instance_extensions[] = {
 	VK_KHR_SURFACE_EXTENSION_NAME,
-	VK_KHR_XLIB_SURFACE_EXTENSION_NAME,
 	0,
 };
 
@@ -203,8 +171,6 @@ Vulkan_Init_Common (void)
 	Sys_Printf ("Vulkan_Init_Common\n");
 	Vulkan_Init_Cvars ();
 
-	load_vulkan_library ();
-
 	vulkan_instance = Vulkan_CreateInstance (PACKAGE_STRING, 0x000702ff, 0, instance_extensions);//FIXME version
 	vulkan_device = create_suitable_device (vulkan_instance);
 	if (!vulkan_device) {
@@ -227,6 +193,5 @@ Vulkan_Shutdown_Common (void)
 	}
 	Vulkan_DestroyInstance (vulkan_instance);
 	vulkan_instance = 0;
-	dlclose (vulkan_library);
-	vulkan_library = 0;
+	vulkan_ctx->unload_vulkan (vulkan_ctx);
 }

@@ -37,6 +37,7 @@
 #include "compat.h"
 #include "r_internal.h"
 #include "vid_internal.h"
+#include "vid_sw.h"
 
 
 static void
@@ -74,7 +75,7 @@ R_TimeRefresh_f (void)
 		vr.width = r_refdef.vrect.width;
 		vr.height = r_refdef.vrect.height;
 		vr.next = NULL;
-		VID_Update (&vr);
+		sw_ctx->update (&vr);
 	}
 	stop = Sys_DoubleTime ();
 	time = stop - start;

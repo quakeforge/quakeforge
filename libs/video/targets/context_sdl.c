@@ -23,9 +23,6 @@
 
 cvar_t     *vid_bitdepth;
 
-extern SDL_Surface *screen;
-
-
 void
 VID_SDL_GammaCheck (void)
 {
@@ -67,9 +64,9 @@ VID_UpdateFullscreen (cvar_t *vid_fullscreen)
 {
 	if (!r_data || !viddef.initialized)
 		return;
-	if ((vid_fullscreen->int_val && !(screen->flags & SDL_FULLSCREEN))
-		|| (!vid_fullscreen->int_val && screen->flags & SDL_FULLSCREEN))
-		if (!SDL_WM_ToggleFullScreen (screen))
+	if ((vid_fullscreen->int_val && !(sdl_screen->flags & SDL_FULLSCREEN))
+		|| (!vid_fullscreen->int_val && sdl_screen->flags & SDL_FULLSCREEN))
+		if (!SDL_WM_ToggleFullScreen (sdl_screen))
 			Sys_Printf ("VID_UpdateFullscreen: error setting fullscreen\n");
 	IN_UpdateGrab (in_grab);
 }

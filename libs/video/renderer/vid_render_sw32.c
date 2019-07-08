@@ -36,8 +36,12 @@
 
 #include "mod_internal.h"
 #include "r_internal.h"
+#include "vid_internal.h"
+#include "vid_sw.h"
 
 #include "sw32/namehack.h"
+
+sw_ctx_t *sw32_ctx;
 
 static vid_model_funcs_t model_funcs = {
 	sw_Mod_LoadExternalTextures,
@@ -122,8 +126,26 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 };
 
 static void
+sw32_vid_render_choose_visual (void)
+{
+    sw32_ctx->choose_visual (sw32_ctx);
+}
+
+static void
+sw32_vid_render_create_context (void)
+{
+    sw32_ctx->create_context (sw32_ctx);
+}
+
+static void
 sw32_vid_render_init (void)
 {
+	sw32_ctx = vr_data.vid->vid_internal->sw_context ();
+
+	vr_data.vid->vid_internal->set_palette = sw32_ctx->set_palette;
+	vr_data.vid->vid_internal->choose_visual = sw32_vid_render_choose_visual;
+	vr_data.vid->vid_internal->create_context = sw32_vid_render_create_context;
+
 	vr_funcs = &sw32_vid_render_funcs;
 	m_funcs = &model_funcs;
 }

@@ -11,11 +11,12 @@ typedef struct vid_internal_s {
 	void        (*do_screen_buffer) (void);
 	void        (*set_palette) (const byte *palette);
 
-	// gl stuff
-	void        (*load_gl) (void);
-	void        (*init_gl) (void);
-	void        *(*get_proc_address) (const char *name, qboolean crit);
-	void        (*end_rendering) (void);
+	void        (*choose_visual) (void);
+	void        (*create_context) (void);
+
+	struct gl_ctx_s *(*gl_context) (void);
+	struct sw_ctx_s *(*sw_context) (void);
+	struct vulkan_ctx_s *(*vulkan_context) (void);
 } vid_internal_t;
 
 extern struct cvar_s *vid_fullscreen;
@@ -30,11 +31,9 @@ void VID_InitGamma (unsigned char *);
 qboolean VID_SetGamma (double);
 void VID_UpdateGamma (struct cvar_s *);
 
-void VID_Update (vrect_t *rects);
 void VID_LockBuffer (void);
 void VID_UnlockBuffer (void);
 void VID_InitBuffers (void);
 void VID_MakeColormaps (void);
-
 
 #endif//__vid_internal_h
