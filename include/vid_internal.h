@@ -4,6 +4,20 @@
 #include "QF/vid.h"
 #include "QF/plugin/vid_render.h"
 
+typedef struct vid_internal_s {
+	int         (*surf_cache_size) (int width, int height);
+	void        (*flush_caches) (void);
+	void        (*init_caches) (void *cache, int size);
+	void        (*do_screen_buffer) (void);
+	void        (*set_palette) (const byte *palette);
+
+	// gl stuff
+	void        (*load_gl) (void);
+	void        (*init_gl) (void);
+	void        *(*get_proc_address) (const char *name, qboolean crit);
+	void        (*end_rendering) (void);
+} vid_internal_t;
+
 extern struct cvar_s *vid_fullscreen;
 extern struct cvar_s *vid_system_gamma;
 extern struct cvar_s *vid_gamma;

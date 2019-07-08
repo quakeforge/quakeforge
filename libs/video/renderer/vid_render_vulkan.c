@@ -38,6 +38,7 @@
 
 #include "mod_internal.h"
 #include "r_internal.h"
+#include "vid_internal.h"
 
 #include "vulkan/namehack.h"
 
@@ -134,9 +135,9 @@ set_palette (const byte *palette)
 static void
 vulkan_vid_render_init (void)
 {
-	vr_data.vid->set_palette = set_palette;
-	vr_data.vid->init_gl = Vulkan_Init_Common;
-	vr_data.vid->load_gl ();
+	vr_data.vid->vid_internal->set_palette = set_palette;
+	vr_data.vid->vid_internal->init_gl = Vulkan_Init_Common;
+	vr_data.vid->vid_internal->load_gl ();
 	vr_funcs = &vulkan_vid_render_funcs;
 	m_funcs = &model_funcs;
 }

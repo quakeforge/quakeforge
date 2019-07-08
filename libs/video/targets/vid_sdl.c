@@ -78,6 +78,8 @@ SDL_Surface *screen = NULL;
 # endif
 #endif
 
+static vid_internal_t vid_internal;
+
 static void (*set_vid_mode) (Uint32 flags);
 
 static void (GLAPIENTRY *qfglFinish) (void);
@@ -157,7 +159,7 @@ sdlgl_set_vid_mode (Uint32 flags)
 success:
 	viddef.numpages = 2;
 
-	viddef.init_gl ();
+	viddef.vid_internal->init_gl ();
 }
 
 static void
@@ -170,8 +172,8 @@ sdlgl_end_rendering (void)
 static void
 sdl_load_gl (void)
 {
-	viddef.get_proc_address = QFGL_ProcAddress;
-	viddef.end_rendering = sdlgl_end_rendering;
+	viddef.vid_internal->get_proc_address = QFGL_ProcAddress;
+	viddef.vid_internal->end_rendering = sdlgl_end_rendering;
 	set_vid_mode = sdlgl_set_vid_mode;
 
 	if (SDL_GL_LoadLibrary (gl_driver->string) != 0)
@@ -220,7 +222,7 @@ sdl_set_vid_mode (Uint32 flags)
 	// now know everything we need to know about the buffer
 	VGA_width = viddef.width;
 	VGA_height = viddef.height;
-	viddef.do_screen_buffer = do_screen_buffer;
+	viddef.vid_internal->do_screen_buffer = do_screen_buffer;
 	VGA_pagebase = viddef.buffer = screen->pixels;
 	VGA_rowbytes = viddef.rowbytes = screen->pitch;
 	viddef.conbuffer = viddef.buffer;
@@ -234,6 +236,8 @@ void
 VID_Init (byte *palette, byte *colormap)
 {
 	Uint32      flags;
+
+	viddef.vid_internal = &vid_internal;
 
 	set_vid_mode = sdl_set_vid_mode;
 
@@ -269,7 +273,7 @@ VID_Init (byte *palette, byte *colormap)
 
 	VID_SDL_GammaCheck ();
 	VID_InitGamma (palette);
-	viddef.set_palette (viddef.palette);
+	viddef.vid_internal->set_palette (viddef.palette);
 
 	viddef.initialized = true;
 

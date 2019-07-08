@@ -61,17 +61,7 @@ typedef struct {
 	int				 conheight;
 	byte			*direct;		// direct drawing to framebuffer, if not
 									//  NULL
-	int			   (*surf_cache_size)(int width, int height);
-	void		   (*flush_caches)(void);
-	void		   (*init_caches)(void *cache, int size);
-	void		   (*do_screen_buffer)(void);
-	void           (*set_palette)(const byte *palette);
-
-	// gl stuff
-	void           (*load_gl)(void);
-	void           (*init_gl)(void);
-	void          *(*get_proc_address)(const char *name, qboolean crit);
-	void           (*end_rendering)(void);
+	struct vid_internal_s *vid_internal;
 } viddef_t;
 
 #define viddef (*r_data->vid)

@@ -79,6 +79,7 @@
 #include "dga_check.h"
 #include "vid_internal.h"
 
+static vid_internal_t vid_internal;
 int XShmGetEventBase (Display *x);	// for broken X11 headers
 
 static GC		x_gc;
@@ -209,7 +210,7 @@ glx_create_context (void)
 	XSync (x_disp, 0);
 	ctx = qfglXCreateContext (x_disp, x_visinfo, NULL, True);
 	qfglXMakeCurrent (x_disp, x_win, ctx);
-	viddef.init_gl ();
+	viddef.vid_internal->init_gl ();
 }
 
 static void
@@ -227,8 +228,8 @@ glx_load_gl (void)
 	choose_visual = glx_choose_visual;
 	create_context = glx_create_context;
 
-	viddef.get_proc_address = QFGL_ProcAddress;
-	viddef.end_rendering = glx_end_rendering;
+	viddef.vid_internal->get_proc_address = QFGL_ProcAddress;
+	viddef.vid_internal->end_rendering = glx_end_rendering;
 
 #ifdef RTLD_GLOBAL
 	flags |= RTLD_GLOBAL;
@@ -623,7 +624,7 @@ x11_create_context (void)
 		x_shmeventtype = XShmGetEventBase (x_disp) + ShmCompletion;
 	}
 
-	viddef.do_screen_buffer = x11_init_buffers;
+	viddef.vid_internal->do_screen_buffer = x11_init_buffers;
 	VID_InitBuffers ();
 
 //  XSynchronize (x_disp, False);
@@ -666,6 +667,8 @@ VID_SetPalette (const byte *palette)
 void
 VID_Init (byte *palette, byte *colormap)
 {
+	viddef.vid_internal = &vid_internal;
+
 	choose_visual = x11_choose_visual;
 	create_context = x11_create_context;
 
@@ -686,7 +689,7 @@ VID_Init (byte *palette, byte *colormap)
 	create_context ();
 
 	VID_InitGamma (palette);
-	viddef.set_palette (viddef.palette);
+	viddef.vid_internal->set_palette (viddef.palette);
 
 	Sys_MaskPrintf (SYS_VID, "Video mode %dx%d initialized.\n",
 					viddef.width, viddef.height);

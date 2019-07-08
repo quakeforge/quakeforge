@@ -59,6 +59,7 @@
 #include "compat.h"
 #include "r_internal.h"
 #include "sbar.h"
+#include "vid_internal.h"
 
 /* SCREEN SHOTS */
 
@@ -206,7 +207,7 @@ gl_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 		return;
 
 	if (begun)
-		vid.end_rendering ();
+		vid.vid_internal->end_rendering ();
 
 	vr_data.realtime = realtime;
 
@@ -263,7 +264,7 @@ gl_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	qfglFlush ();
 
 	if (gl_finish->int_val) {
-		vid.end_rendering ();
+		vid.vid_internal->end_rendering ();
 		begun = 0;
 	}
 }

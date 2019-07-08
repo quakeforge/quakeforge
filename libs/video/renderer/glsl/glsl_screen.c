@@ -60,6 +60,7 @@
 #include "QF/GLSL/qf_vid.h"
 
 #include "r_internal.h"
+#include "vid_internal.h"
 
 /* Unknown renamed to GLErr_Unknown to solve conflict with winioctl.h */
 static unsigned int GLErr_InvalidEnum;
@@ -165,7 +166,7 @@ glsl_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc,
 
 	if (begun) {
 		begun = 0;
-		vid.end_rendering ();
+		vid.vid_internal->end_rendering ();
 	}
 
 	vr_data.realtime = realtime;

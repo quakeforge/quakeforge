@@ -1299,7 +1299,7 @@ sw32_Draw_BlendScreen (quat_t color)
 			newpal[2] = vid.gammatable[b];
 			newpal += 3;
 		}
-		vid.set_palette (pal);
+		vid.vid_internal->set_palette (pal);
 	}
 	break;
 	case 2:

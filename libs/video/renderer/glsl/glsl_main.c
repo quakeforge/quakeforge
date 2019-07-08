@@ -58,6 +58,7 @@
 
 #include "mod_internal.h"
 #include "r_internal.h"
+#include "vid_internal.h"
 
 mat4_t glsl_projection;
 mat4_t glsl_view;
@@ -304,13 +305,13 @@ glsl_R_TimeRefresh_f (void)
 	double      start, stop, time;
 	int         i;
 
-	vid.end_rendering ();
+	vid.vid_internal->end_rendering ();
 
 	start = Sys_DoubleTime ();
 	for (i = 0; i < 128; i++) {
 		r_refdef.viewangles[1] = i * (360.0 / 128.0);
 		glsl_R_RenderView ();
-		vid.end_rendering ();
+		vid.vid_internal->end_rendering ();
 	}
 
 	stop = Sys_DoubleTime ();

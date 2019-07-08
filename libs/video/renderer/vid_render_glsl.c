@@ -38,6 +38,7 @@
 
 #include "mod_internal.h"
 #include "r_internal.h"
+#include "vid_internal.h"
 
 #include "glsl/namehack.h"
 
@@ -126,9 +127,9 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 static void
 glsl_vid_render_init (void)
 {
-	vr_data.vid->set_palette = GLSL_SetPalette;
-	vr_data.vid->init_gl = GLSL_Init_Common;
-	vr_data.vid->load_gl ();
+	vr_data.vid->vid_internal->set_palette = GLSL_SetPalette;
+	vr_data.vid->vid_internal->init_gl = GLSL_Init_Common;
+	vr_data.vid->vid_internal->load_gl ();
 	vr_funcs = &glsl_vid_render_funcs;
 	m_funcs = &model_funcs;
 }

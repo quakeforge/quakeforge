@@ -214,7 +214,7 @@ VID_UpdateGamma (cvar_t *vid_gamma)
 		VID_BuildGammaTable (gamma);
 		for (i = 0; i < 256 * 3; i++)
 			viddef.palette[i] = viddef.gammatable[viddef.basepal[i]];
-		viddef.set_palette (viddef.palette); // update with the new palette
+		viddef.vid_internal->set_palette (viddef.palette); // update with the new palette
 	}
 }
 
@@ -256,8 +256,9 @@ VID_InitBuffers (void)
 	// Calculate the sizes we want first
 	buffersize = viddef.rowbytes * viddef.height;
 	zbuffersize = viddef.width * viddef.height * sizeof (*viddef.zbuffer);
-	if (viddef.surf_cache_size)
-		cachesize = viddef.surf_cache_size (viddef.width, viddef.height);
+	if (viddef.vid_internal->surf_cache_size)
+		cachesize = viddef.vid_internal->surf_cache_size (viddef.width,
+														  viddef.height);
 
 	// Free the old z-buffer
 	if (viddef.zbuffer) {
@@ -266,13 +267,13 @@ VID_InitBuffers (void)
 	}
 	// Free the old surface cache
 	if (viddef.surfcache) {
-		if (viddef.flush_caches)
-			viddef.flush_caches ();
+		if (viddef.vid_internal->flush_caches)
+			viddef.vid_internal->flush_caches ();
 		free (viddef.surfcache);
 		viddef.surfcache = NULL;
 	}
-	if (viddef.do_screen_buffer) {
-		viddef.do_screen_buffer ();
+	if (viddef.vid_internal->do_screen_buffer) {
+		viddef.vid_internal->do_screen_buffer ();
 	} else {
 		// Free the old screen buffer
 		if (viddef.buffer) {
@@ -302,13 +303,13 @@ VID_InitBuffers (void)
 		Sys_Error ("Not enough memory for video mode");
 	}
 
-	if (viddef.init_caches)
-		viddef.init_caches (viddef.surfcache, cachesize);
+	if (viddef.vid_internal->init_caches)
+		viddef.vid_internal->init_caches (viddef.surfcache, cachesize);
 }
 
 void
 VID_ClearMemory (void)
 {
-	if (viddef.flush_caches)
-		viddef.flush_caches ();
+	if (viddef.vid_internal->flush_caches)
+		viddef.vid_internal->flush_caches ();
 }

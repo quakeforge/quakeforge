@@ -38,6 +38,7 @@
 
 #include "mod_internal.h"
 #include "r_internal.h"
+#include "vid_internal.h"
 
 #include "gl/namehack.h"
 
@@ -126,9 +127,9 @@ vid_render_funcs_t gl_vid_render_funcs = {
 static void
 gl_vid_render_init (void)
 {
-	vr_data.vid->set_palette = GL_SetPalette;
-	vr_data.vid->init_gl = GL_Init_Common;
-	vr_data.vid->load_gl ();
+	vr_data.vid->vid_internal->set_palette = GL_SetPalette;
+	vr_data.vid->vid_internal->init_gl = GL_Init_Common;
+	vr_data.vid->vid_internal->load_gl ();
 	vr_funcs = &gl_vid_render_funcs;
 	m_funcs = &model_funcs;
 }

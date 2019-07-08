@@ -46,6 +46,7 @@
 #include "QF/plugin/general.h"
 
 #include "r_internal.h"
+#include "vid_internal.h"
 
 cvar_t         *vidrend_plugin;
 plugin_t       *vidrendmodule = NULL;
@@ -76,8 +77,8 @@ R_LoadModule (void (*load_gl)(void), void (*set_palette) (const byte *palette))
 	r_funcs = vidrendmodule->functions->vid_render;
 	mod_funcs = r_funcs->model_funcs;
 	r_data = vidrendmodule->data->vid_render;
-	r_data->vid->load_gl = load_gl;
-	r_data->vid->set_palette = set_palette;
+	r_data->vid->vid_internal->load_gl = load_gl;
+	r_data->vid->vid_internal->set_palette = set_palette;
 
 	vidrendmodule->functions->general->p_Init ();
 }
