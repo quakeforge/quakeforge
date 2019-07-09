@@ -110,11 +110,38 @@ unload_vulkan_library (vulkan_ctx_t *ctx)
 	vulkan_library = 0;
 }
 
+static void
+x11_vulkan_init_presentation (vulkan_ctx_t *ctx)
+{
+	ctx->presentation = calloc (1, sizeof (vulkan_presentation_t));
+	vulkan_presentation_t *pres = ctx->presentation;
+	VkInstance  instance = ctx->instance;
+
+#define INSTANCE_LEVEL_VULKAN_FUNCTION(name) \
+	pres->name = (PFN_##name) ctx->vkGetInstanceProcAddr (instance, #name); \
+	if (!pres->name) { \
+		Sys_Error ("Couldn't find instance-level function %s", #name); \
+	}
+#include "QF/Vulkan/funclist.h"
+
+	XVisualInfo template;
+	Visual *defaultVisual = XDefaultVisual (x_disp, x_screen);
+	template.visualid = XVisualIDFromVisual (defaultVisual);
+	int template_mask = VisualIDMask;
+	pres->display = x_disp;
+	pres->usable_visuals = set_new ();
+	pres->visinfo = XGetVisualInfo (x_disp, template_mask, &template,
+									&pres->num_visuals);
+}
+
 static int
 x11_vulkan_get_presentation_support (vulkan_ctx_t *ctx,
 									 VkPhysicalDevice physicalDevice,
 									 uint32_t queueFamilyIndex)
 {
+	if (!ctx->presentation) {
+		x11_vulkan_init_presentation (ctx);
+	}
 	vulkan_presentation_t *pres = ctx->presentation;
 
 	set_empty (pres->usable_visuals);
@@ -127,6 +154,25 @@ x11_vulkan_get_presentation_support (vulkan_ctx_t *ctx,
 		}
 	}
 	return !set_is_empty (pres->usable_visuals);
+}
+
+static void
+x11_vulkan_choose_visual (vulkan_ctx_t *ctx)
+{
+	vulkan_presentation_t *pres = ctx->presentation;
+	set_iter_t *first = set_first (pres->usable_visuals);
+	if (first) {
+		x_visinfo = pres->visinfo + first->element;
+		x_vis = x_visinfo->visual;
+		set_del_iter (first);
+	}
+}
+
+static void
+x11_vulkan_create_window (vulkan_ctx_t *ctx)
+{
+	vulkan_presentation_t *pres = ctx->presentation;
+	pres->window = x_win;
 }
 
 static VkSurfaceKHR
@@ -155,6 +201,8 @@ X11_Vulkan_Context (void)
 	ctx->load_vulkan = load_vulkan_library;
 	ctx->unload_vulkan = unload_vulkan_library;
 	ctx->get_presentation_support = x11_vulkan_get_presentation_support;
+	ctx->choose_visual = x11_vulkan_choose_visual;
+	ctx->create_window = x11_vulkan_create_window;
 	ctx->create_surface = x11_vulkan_create_surface;
 	ctx->required_extensions = required_extensions;
 	return ctx;

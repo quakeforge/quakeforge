@@ -36,7 +36,7 @@
 #include "util.h"
 
 int
-count_strings (const char **str)
+count_strings (const char * const *str)
 {
 	int         count = 0;
 
@@ -49,7 +49,8 @@ count_strings (const char **str)
 }
 
 void
-merge_strings (const char **out, const char **in1, const char **in2)
+merge_strings (const char **out, const char * const *in1,
+			   const char * const *in2)
 {
 	if (in1) {
 		while (*in1) {

@@ -31,10 +31,13 @@
 #define NH_DEFINE
 #include "vulkan/namehack.h"
 
+#include "QF/sys.h"
+
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
 #include "QF/Vulkan/qf_vid.h"
+#include "QF/Vulkan/init.h"
 
 #include "mod_internal.h"
 #include "r_internal.h"
@@ -138,13 +141,16 @@ set_palette (const byte *palette)
 static void
 vulkan_vid_render_choose_visual (void)
 {
-	//vulkan_ctx->coose_visual (vulkan_ctx);
+	Vulkan_CreateDevice (vulkan_ctx);
+	vulkan_ctx->choose_visual (vulkan_ctx);
+	Sys_Printf ("%p %p\n", vulkan_ctx->dev->device, vulkan_ctx->dev->queue);
 }
 
 static void
 vulkan_vid_render_create_context (void)
 {
-	vulkan_ctx->create_surface (vulkan_ctx);
+	vulkan_ctx->create_window (vulkan_ctx);
+	vulkan_ctx->dev->surface = vulkan_ctx->create_surface (vulkan_ctx);
 }
 
 static void

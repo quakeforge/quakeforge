@@ -30,9 +30,10 @@
 
 #include "QF/qtypes.h"
 
-typedef struct {
+typedef struct VulkanDevice_s {
 	VkDevice device;
 	VkQueue queue;
+	VkSurfaceKHR surface;
 
     #define DEVICE_LEVEL_VULKAN_FUNCTION(name) PFN_##name name;
     #define DEVICE_LEVEL_VULKAN_FUNCTION_EXTENSION(name) PFN_##name name;
@@ -63,6 +64,8 @@ typedef struct VulkanInstance_s {
 	#include "QF/Vulkan/funclist.h"
 } VulkanInstance_t;
 
+extern const char * const vulkanValidationLayers[];
+
 void Vulkan_Init_Cvars (void);
 struct vulkan_ctx_s;
 VulkanInstance_t *Vulkan_CreateInstance (struct vulkan_ctx_s *ctx,
@@ -73,6 +76,9 @@ VulkanInstance_t *Vulkan_CreateInstance (struct vulkan_ctx_s *ctx,
 void Vulkan_DestroyInstance (VulkanInstance_t *instance);
 int Vulkan_ExtensionsSupported (const VkExtensionProperties *extensions,
 								int numExtensions,
+								const char * const *requested);
+int Vulkan_LayersSupported (const VkLayerProperties *extensions,
+								int numLayers,
 								const char * const *requested);
 
 #endif // __QF_Vulkan_init_h

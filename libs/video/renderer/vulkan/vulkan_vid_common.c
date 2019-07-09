@@ -55,8 +55,7 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
-static VulkanInstance_t *vulkan_instance;
-static VulkanDevice_t *vulkan_device;
+#include "util.h"
 
 void
 Vulkan_Init_Cvars ()
@@ -74,6 +73,7 @@ static const char *instance_extensions[] = {
 };
 
 static const char *device_extensions[] = {
+	VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 	0,
 };
 
@@ -126,18 +126,61 @@ load_device_funcs (VulkanInstance_t *inst, VulkanDevice_t *dev)
 #include "QF/Vulkan/funclist.h"
 }
 
-static VulkanDevice_t *
-create_suitable_device (VulkanInstance_t *instance)
+void
+Vulkan_Init_Common (vulkan_ctx_t *ctx)
 {
-	for (uint32_t i = 0; i < instance->numDevices; i++) {
-		VulkanPhysDevice_t *phys = &instance->devices[i];
+	Sys_Printf ("Vulkan_Init_Common\n");
+	Vulkan_Init_Cvars ();
+
+	ctx->vtx = Vulkan_CreateInstance (ctx, PACKAGE_STRING, 0x000702ff, 0, instance_extensions);//FIXME version
+	ctx->instance = ctx->vtx->instance;
+}
+
+void
+Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
+{
+	Vulkan_DestroyInstance (ctx->vtx);
+	ctx->vtx = 0;
+	ctx->unload_vulkan (ctx);
+}
+
+void
+Vulkan_CreateDevice (vulkan_ctx_t *ctx)
+{
+	VulkanInstance_t *inst = ctx->vtx;
+
+	uint32_t nlay = 1;	// ensure alloca doesn't see 0 and terminated
+	uint32_t next = count_strings (device_extensions) + 1; // ensure terminated
+	if (vulkan_use_validation->int_val) {
+		nlay += count_strings (vulkanValidationLayers);
+	}
+	const char **lay = alloca (nlay * sizeof (const char *));
+	const char **ext = alloca (next * sizeof (const char *));
+	// ensure there are null pointers so merge_strings can act as append
+	// since it does not add a null, but also make sure the counts reflect
+	// actual numbers
+	memset (lay, 0, nlay-- * sizeof (const char *));
+	memset (ext, 0, next-- * sizeof (const char *));
+	merge_strings (ext, device_extensions, 0);
+	if (vulkan_use_validation->int_val) {
+		merge_strings (lay, lay, vulkanValidationLayers);
+	}
+
+	for (uint32_t i = 0; i < inst->numDevices; i++) {
+		VulkanPhysDevice_t *phys = &inst->devices[i];
+		if (!Vulkan_LayersSupported (phys->layers, phys->numLayers, lay)) {
+			continue;
+		}
 		if (!Vulkan_ExtensionsSupported (phys->extensions, phys->numExtensions,
-										 device_extensions)) {
-			return 0;
+										 ext)) {
+			continue;
 		}
 		int family = find_queue_family (phys, VK_QUEUE_GRAPHICS_BIT);
 		if (family < 0) {
-			return 0;
+			continue;
+		}
+		if (!ctx->get_presentation_support (ctx, phys->device, family)) {
+			continue;
 		}
 		float priority = 1;
 		VkDeviceQueueCreateInfo qCreateInfo = {
@@ -148,52 +191,20 @@ create_suitable_device (VulkanInstance_t *instance)
 		VkDeviceCreateInfo dCreateInfo = {
 			VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, 0, 0,
 			1, &qCreateInfo,
-			0, 0,
-			0, device_extensions,
+			nlay, lay,
+			next, ext,
 			&features
 		};
 		memset (&features, 0, sizeof (features));
 		VulkanDevice_t *device = calloc (1, sizeof (VulkanDevice_t));
-		if (instance->vkCreateDevice (phys->device, &dCreateInfo, 0,
+		if (inst->vkCreateDevice (phys->device, &dCreateInfo, 0,
 									  &device->device) == VK_SUCCESS) {
-			load_device_funcs (instance, device);
+			load_device_funcs (inst, device);
 			device->vkGetDeviceQueue (device->device, family,
 									  0, &device->queue);
-			return device;
+			ctx->dev = device;
+			ctx->device = device->device;
+			return;
 		}
 	}
-	return 0;
-}
-
-int x = 1;
-
-void
-Vulkan_Init_Common (vulkan_ctx_t *ctx)
-{
-	Sys_Printf ("Vulkan_Init_Common\n");
-	Vulkan_Init_Cvars ();
-
-	vulkan_instance = Vulkan_CreateInstance (ctx, PACKAGE_STRING, 0x000702ff, 0, instance_extensions);//FIXME version
-	vulkan_device = create_suitable_device (vulkan_instance);
-	if (!vulkan_device) {
-		Sys_Error ("no suitable vulkan device found");
-	}
-	// only for now...
-	Sys_Printf ("%p %p\n", vulkan_device->device, vulkan_device->queue);
-	Vulkan_Shutdown_Common (ctx);
-	if (x)
-	Sys_Quit();
-}
-
-void
-Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
-{
-	if (vulkan_device) {
-		vulkan_device->vkDestroyDevice (vulkan_device->device, 0);
-		free (vulkan_device);
-		vulkan_device = 0;
-	}
-	Vulkan_DestroyInstance (vulkan_instance);
-	vulkan_instance = 0;
-	ctx->unload_vulkan (ctx);
 }

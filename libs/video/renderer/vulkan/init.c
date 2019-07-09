@@ -56,17 +56,17 @@ static uint32_t numExtensions;
 static VkExtensionProperties *instanceExtensionProperties;
 static const char **instanceExtensionNames;
 
-static const char *validationLayers[] = {
+const char * const vulkanValidationLayers[] = {
 	"VK_LAYER_LUNARG_standard_validation",
 	0,
 };
 
-static const char *debugExtensions[] = {
+static const char * const debugExtensions[] = {
 	VK_EXT_DEBUG_UTILS_EXTENSION_NAME,
 	0,
 };
 
-static const char *device_types[] = {
+static const char * const device_types[] = {
 	"other",
 	"integrated gpu",
 	"discrete gpu",
@@ -278,28 +278,30 @@ Vulkan_CreateInstance (vulkan_ctx_t *ctx,
 		get_instance_layers_and_extensions (ctx);
 	}
 
-	createInfo.enabledLayerCount = count_strings (layers);
-	createInfo.ppEnabledLayerNames = layers;
-	createInfo.enabledExtensionCount = count_strings (extensions);
-	createInfo.ppEnabledExtensionNames = extensions;
+	uint32_t nlay = count_strings (layers);
+	uint32_t next = count_strings (extensions)
+					+ count_strings (ctx->required_extensions);
 	if (vulkan_use_validation->int_val) {
-		createInfo.enabledLayerCount += count_strings (validationLayers);
-		createInfo.enabledExtensionCount += count_strings (debugExtensions);
+		nlay += count_strings (vulkanValidationLayers);
+		next += count_strings (debugExtensions);
 	}
-	const char **lay = alloca (createInfo.enabledLayerCount * sizeof (const char *));
-	const char **ext = alloca (createInfo.enabledExtensionCount * sizeof (const char *));
+	const char **lay = alloca (nlay * sizeof (const char *));
+	const char **ext = alloca (next * sizeof (const char *));
+	// ensure there are null pointers so merge_strings can act as append
+	// since it does not add a null
+	memset (lay, 0, nlay * sizeof (const char *));
+	memset (ext, 0, next * sizeof (const char *));
+	merge_strings (lay, layers, 0);
+	merge_strings (ext, extensions, ctx->required_extensions);
 	if (vulkan_use_validation->int_val) {
-		merge_strings (lay, layers, validationLayers);
-		merge_strings (ext, extensions, debugExtensions);
-	} else {
-		merge_strings (lay, layers, 0);
-		merge_strings (ext, extensions, 0);
+		merge_strings (lay, lay, vulkanValidationLayers);
+		merge_strings (ext, ext, debugExtensions);
 	}
-	prune_strings (instanceLayerNames, lay,
-				   &createInfo.enabledLayerCount);
-	prune_strings (instanceExtensionNames, ext,
-				   &createInfo.enabledExtensionCount);
+	prune_strings (instanceLayerNames, lay, &nlay);
+	prune_strings (instanceExtensionNames, ext, &next);
+	createInfo.enabledLayerCount = nlay;
 	createInfo.ppEnabledLayerNames = lay;
+	createInfo.enabledExtensionCount = next;
 	createInfo.ppEnabledExtensionNames = ext;
 
 	res = ctx->vkCreateInstance (&createInfo, 0, &instance);
@@ -349,6 +351,27 @@ Vulkan_DestroyInstance (VulkanInstance_t *instance)
 }
 
 int
+Vulkan_LayersSupported (const VkLayerProperties *layers,
+						int numLayers,
+						const char * const *requested)
+{
+	while (*requested) {
+		int         i;
+		for (i = 0; i < numLayers; i++) {
+			if (!strcmp (*requested, layers[i].layerName)) {
+				break;
+			}
+		}
+		if (i == numLayers) {
+			// requested layer not found
+			break;
+		}
+		requested++;
+	}
+	return !*requested;
+}
+
+int
 Vulkan_ExtensionsSupported (const VkExtensionProperties *extensions,
 							int numExtensions,
 							const char * const *requested)
@@ -360,10 +383,11 @@ Vulkan_ExtensionsSupported (const VkExtensionProperties *extensions,
 				break;
 			}
 		}
-		if (i < numExtensions) {
+		if (i == numExtensions) {
 			// requested extension not found
 			break;
 		}
+		requested++;
 	}
 	return !*requested;
 }
