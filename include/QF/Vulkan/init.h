@@ -52,7 +52,7 @@ typedef struct {
 	VkQueueFamilyProperties *queueFamilies;
 } VulkanPhysDevice_t;
 
-typedef struct {
+typedef struct VulkanInstance_s {
 	VkInstance  instance;
 	VkDebugUtilsMessengerEXT debug_callback;
 	uint32_t    numDevices;
@@ -64,7 +64,9 @@ typedef struct {
 } VulkanInstance_t;
 
 void Vulkan_Init_Cvars (void);
-VulkanInstance_t *Vulkan_CreateInstance (const char *appName,
+struct vulkan_ctx_s;
+VulkanInstance_t *Vulkan_CreateInstance (struct vulkan_ctx_s *ctx,
+										 const char *appName,
 										 uint32_t appVersion,
 										 const char **layers,
 										 const char **extensions);

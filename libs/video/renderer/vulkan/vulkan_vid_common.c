@@ -168,25 +168,25 @@ create_suitable_device (VulkanInstance_t *instance)
 int x = 1;
 
 void
-Vulkan_Init_Common (void)
+Vulkan_Init_Common (vulkan_ctx_t *ctx)
 {
 	Sys_Printf ("Vulkan_Init_Common\n");
 	Vulkan_Init_Cvars ();
 
-	vulkan_instance = Vulkan_CreateInstance (PACKAGE_STRING, 0x000702ff, 0, instance_extensions);//FIXME version
+	vulkan_instance = Vulkan_CreateInstance (ctx, PACKAGE_STRING, 0x000702ff, 0, instance_extensions);//FIXME version
 	vulkan_device = create_suitable_device (vulkan_instance);
 	if (!vulkan_device) {
 		Sys_Error ("no suitable vulkan device found");
 	}
 	// only for now...
 	Sys_Printf ("%p %p\n", vulkan_device->device, vulkan_device->queue);
-	Vulkan_Shutdown_Common ();
+	Vulkan_Shutdown_Common (ctx);
 	if (x)
 	Sys_Quit();
 }
 
 void
-Vulkan_Shutdown_Common (void)
+Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 {
 	if (vulkan_device) {
 		vulkan_device->vkDestroyDevice (vulkan_device->device, 0);
@@ -195,5 +195,5 @@ Vulkan_Shutdown_Common (void)
 	}
 	Vulkan_DestroyInstance (vulkan_instance);
 	vulkan_instance = 0;
-	vulkan_ctx->unload_vulkan (vulkan_ctx);
+	ctx->unload_vulkan (ctx);
 }

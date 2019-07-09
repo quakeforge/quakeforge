@@ -43,7 +43,7 @@
 
 #include "vulkan/namehack.h"
 
-vulkan_ctx_t *vulkan_ctx;
+static vulkan_ctx_t *vulkan_ctx;
 
 static vid_model_funcs_t model_funcs = {
 /*	vulkan_Mod_LoadExternalTextures,
@@ -153,7 +153,7 @@ vulkan_vid_render_init (void)
 	vulkan_ctx = vr_data.vid->vid_internal->vulkan_context ();
 	vulkan_ctx->load_vulkan (vulkan_ctx);
 
-	Vulkan_Init_Common ();
+	Vulkan_Init_Common (vulkan_ctx);
 
 	vr_data.vid->vid_internal->set_palette = set_palette;
 	vr_data.vid->vid_internal->choose_visual = vulkan_vid_render_choose_visual;
@@ -166,7 +166,7 @@ vulkan_vid_render_init (void)
 static void
 vulkan_vid_render_shutdown (void)
 {
-	Vulkan_Shutdown_Common ();
+	Vulkan_Shutdown_Common (vulkan_ctx);
 }
 
 static general_funcs_t plugin_info_general_funcs = {

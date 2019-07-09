@@ -30,7 +30,8 @@
 
 #include "QF/Vulkan/cvars.h"
 
-void Vulkan_Init_Common (void);
-void Vulkan_Shutdown_Common (void);
+struct vulkan_ctx_s;
+void Vulkan_Init_Common (struct vulkan_ctx_s *ctx);
+void Vulkan_Shutdown_Common (struct vulkan_ctx_s *ctx);
 
 #endif // __QF_Vulkan_vid_h
