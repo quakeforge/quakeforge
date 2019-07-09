@@ -102,7 +102,7 @@ get_instance_layers_and_extensions  (vulkan_ctx_t *ctx)
 	}
 	instanceExtensionNames[i] = 0;
 
-	if (developer->int_val & SYS_VID) {
+	if (developer->int_val & SYS_VULKAN) {
 		for (i = 0; i < numLayers; i++) {
 			Sys_Printf ("%s %x %u %s\n",
 						properties[i].layerName,
@@ -154,7 +154,7 @@ init_physdev (VulkanInstance_t *instance, VkPhysicalDevice dev, VulkanPhysDevice
 														&physdev->numQueueFamilies,
 														physdev->queueFamilies);
 
-	if (developer->int_val & SYS_VID) {
+	if (developer->int_val & SYS_VULKAN) {
 		VkPhysicalDeviceProperties *prop = &physdev->properties;
 		Sys_Printf ("dev: %p\n", dev);
 		Sys_Printf ("  %x %x\n", prop->apiVersion, prop->driverVersion);
