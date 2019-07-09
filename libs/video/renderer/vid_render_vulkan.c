@@ -136,13 +136,29 @@ set_palette (const byte *palette)
 }
 
 static void
+vulkan_vid_render_choose_visual (void)
+{
+	//vulkan_ctx->coose_visual (vulkan_ctx);
+}
+
+static void
+vulkan_vid_render_create_context (void)
+{
+	vulkan_ctx->create_surface (vulkan_ctx);
+}
+
+static void
 vulkan_vid_render_init (void)
 {
 	vulkan_ctx = vr_data.vid->vid_internal->vulkan_context ();
-	vulkan_ctx->init_vulkan = Vulkan_Init_Common;
 	vulkan_ctx->load_vulkan (vulkan_ctx);
 
+	Vulkan_Init_Common ();
+
 	vr_data.vid->vid_internal->set_palette = set_palette;
+	vr_data.vid->vid_internal->choose_visual = vulkan_vid_render_choose_visual;
+	vr_data.vid->vid_internal->create_context = vulkan_vid_render_create_context;
+
 	vr_funcs = &vulkan_vid_render_funcs;
 	m_funcs = &model_funcs;
 }

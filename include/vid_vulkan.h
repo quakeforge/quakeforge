@@ -9,7 +9,6 @@
 typedef struct vulkan_ctx_s {
 	void        (*load_vulkan) (struct vulkan_ctx_s *ctx);
 	void        (*unload_vulkan) (struct vulkan_ctx_s *ctx);
-	void        (*init_vulkan) (void);
 
 	const char * const *required_extensions;
 	struct vulkan_presentation_s *presentation;
@@ -18,7 +17,6 @@ typedef struct vulkan_ctx_s {
 									 uint32_t queueFamilyIndex);
 	VkSurfaceKHR (*create_surface) (struct vulkan_ctx_s *ctx);
 	VkInstance  instance;
-	VkPhysicalDevice physicalDevice;
 #define EXPORTED_VULKAN_FUNCTION(fname) PFN_##fname fname;
 #define GLOBAL_LEVEL_VULKAN_FUNCTION(fname) PFN_##fname fname;
 #include "QF/Vulkan/funclist.h"

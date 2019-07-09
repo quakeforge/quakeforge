@@ -165,6 +165,8 @@ create_suitable_device (VulkanInstance_t *instance)
 	return 0;
 }
 
+int x = 1;
+
 void
 Vulkan_Init_Common (void)
 {
@@ -176,11 +178,11 @@ Vulkan_Init_Common (void)
 	if (!vulkan_device) {
 		Sys_Error ("no suitable vulkan device found");
 	}
-	if (developer->int_val & SYS_VID) {
-		Sys_Printf ("%p %p\n", vulkan_device->device, vulkan_device->queue);
-		Vulkan_Shutdown_Common ();
-		Sys_Quit();
-	}
+	// only for now...
+	Sys_Printf ("%p %p\n", vulkan_device->device, vulkan_device->queue);
+	Vulkan_Shutdown_Common ();
+	if (x)
+	Sys_Quit();
 }
 
 void
