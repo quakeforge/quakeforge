@@ -264,19 +264,21 @@ Cvar_Set (cvar_t *var, const char *value)
 	}
 
 	changed = !strequal (var->string, value);
-	free ((char*)var->string);					// free the old value string
+	if (changed) {
+		free ((char*)var->string);				// free the old value string
 
-	var->string = strdup (value);
-	var->value = atof (var->string);
-	var->int_val = atoi (var->string);
-	VectorZero (var->vec);
-	vals = sscanf (var->string, "%f %f %f",
-				   &var->vec[0], &var->vec[1], &var->vec[2]);
-	if (vals == 1)
-		var->vec[2] = var->vec[1] = var->vec[0];
+		var->string = strdup (value);
+		var->value = atof (var->string);
+		var->int_val = atoi (var->string);
+		VectorZero (var->vec);
+		vals = sscanf (var->string, "%f %f %f",
+					   &var->vec[0], &var->vec[1], &var->vec[2]);
+		if (vals == 1)
+			var->vec[2] = var->vec[1] = var->vec[0];
 
-	if (changed && var->callback)
-		var->callback (var);
+		if (var->callback)
+			var->callback (var);
+	}
 }
 
 VISIBLE void
