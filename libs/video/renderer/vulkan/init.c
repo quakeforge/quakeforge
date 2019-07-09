@@ -1,5 +1,5 @@
 /*
-	int.c
+	init.c
 
 	Copyright (C) 2019      Bill Currie <bill@taniwha.org>
 
@@ -44,6 +44,8 @@
 #include "QF/Vulkan/init.h"
 
 #include "vid_vulkan.h"
+
+#include "util.h"
 
 cvar_t *vulkan_use_validation;
 
@@ -192,53 +194,6 @@ init_physdev (VulkanInstance_t *instance, VkPhysicalDevice dev, VulkanPhysDevice
 						queue->queueCount,
 						queue->timestampValidBits,
 						gran.width, gran.height, gran.depth);
-		}
-	}
-}
-
-static int
-count_strings (const char **str)
-{
-	int         count = 0;
-
-	if (str) {
-		while (*str++) {
-			count++;
-		}
-	}
-	return count;
-}
-
-static void
-merge_strings (const char **out, const char **in1, const char **in2)
-{
-	if (in1) {
-		while (*in1) {
-			*out++ = *in1++;
-		}
-	}
-	if (in2) {
-		while (*in2) {
-			*out++ = *in2++;
-		}
-	}
-}
-
-static void
-prune_strings (const char * const *reference, const char **strings,
-			   uint32_t *count)
-{
-	for (int i = *count; i-- > 0; ) {
-		const char *str = strings[i];
-		const char * const *ref;
-		for (ref = reference; *ref; ref++) {
-			if (!strcmp (*ref, str)) {
-				break;
-			}
-		}
-		if (!*ref) {
-			memmove (strings + i, strings + i + 1,
-					 (--(*count) - i) * sizeof (const char **));
 		}
 	}
 }
