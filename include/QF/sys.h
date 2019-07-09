@@ -83,6 +83,7 @@ double Sys_DoubleTime (void);
 void Sys_TimeOfDay(date_t *date);
 
 void Sys_MaskPrintf (int mask, const char *fmt, ...) __attribute__((format(printf,2,3)));
+// remember to update developer_flags in cvar.c
 #define SYS_DEV     (1|0)
 #define SYS_WARN    (1|2)	// bit 0 so developer 1 will pick it up
 #define SYS_VID     (1|4)
