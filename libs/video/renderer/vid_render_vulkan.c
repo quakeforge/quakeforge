@@ -49,29 +49,29 @@
 static vulkan_ctx_t *vulkan_ctx;
 
 static vid_model_funcs_t model_funcs = {
-/*	vulkan_Mod_LoadExternalTextures,
-	vulkan_Mod_LoadLighting,
-	vulkan_Mod_SubdivideSurface,
-	vulkan_Mod_ProcessTexture,
+	0,//vulkan_Mod_LoadExternalTextures,
+	0,//vulkan_Mod_LoadLighting,
+	0,//vulkan_Mod_SubdivideSurface,
+	0,//vulkan_Mod_ProcessTexture,
 
 	Mod_LoadIQM,
 	Mod_LoadAliasModel,
 	Mod_LoadSpriteModel,
 
-	vulkan_Mod_MakeAliasModelDisplayLists,
-	vulkan_Mod_LoadSkin,
-	vulkan_Mod_FinalizeAliasModel,
-	vulkan_Mod_LoadExternalSkins,
-	vulkan_Mod_IQMFinish,
+	0,//vulkan_Mod_MakeAliasModelDisplayLists,
+	0,//vulkan_Mod_LoadSkin,
+	0,//vulkan_Mod_FinalizeAliasModel,
+	0,//vulkan_Mod_LoadExternalSkins,
+	0,//vulkan_Mod_IQMFinish,
 	0,
-	vulkan_Mod_SpriteLoadTexture,
+	0,//vulkan_Mod_SpriteLoadTexture,
 
 	Skin_SetColormap,
 	Skin_SetSkin,
-	vulkan_Skin_SetupSkin,
+	0,//vulkan_Skin_SetupSkin,
 	Skin_SetTranslation,
-	vulkan_Skin_ProcessTranslation,
-	vulkan_Skin_InitTranslations,*/
+	0,//vulkan_Skin_ProcessTranslation,
+	0,//vulkan_Skin_InitTranslations,
 };
 
 vid_render_funcs_t vulkan_vid_render_funcs = {
@@ -97,37 +97,37 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_Draw_Picf,
 	vulkan_Draw_SubPic,
 
-/*	vulkan_SCR_UpdateScreen,
+	0,//vulkan_SCR_UpdateScreen,
 	SCR_DrawRam,
 	SCR_DrawTurtle,
 	SCR_DrawPause,
-	vulkan_SCR_CaptureBGR,
-	vulkan_SCR_ScreenShot,
+	0,//vulkan_SCR_CaptureBGR,
+	0,//vulkan_SCR_ScreenShot,
 	SCR_DrawStringToSnap,
 
-	vulkan_Fog_Update,
-	vulkan_Fog_ParseWorldspawn,
+	0,//vulkan_Fog_Update,
+	0,//vulkan_Fog_ParseWorldspawn,
 
-	vulkan_R_Init,
-	vulkan_R_ClearState,
-	vulkan_R_LoadSkys,
-	vulkan_R_NewMap,
+	0,//vulkan_R_Init,
+	0,//vulkan_R_ClearState,
+	0,//vulkan_R_LoadSkys,
+	0,//vulkan_R_NewMap,
 	R_AddEfrags,
 	R_RemoveEfrags,
 	R_EnqueueEntity,
-	vulkan_R_LineGraph,
+	0,//vulkan_R_LineGraph,
 	R_AllocDlight,
 	R_AllocEntity,
-	vulkan_R_RenderView,
+	0,//vulkan_R_RenderView,
 	R_DecayLights,
-	vulkan_R_ViewChanged,
-	vulkan_R_ClearParticles,
-	vulkan_R_InitParticles,
-	vulkan_SCR_ScreenShot_f,
-	vulkan_r_easter_eggs_f,
-	vulkan_r_particles_style_f,
+	0,//vulkan_R_ViewChanged,
+	0,//vulkan_R_ClearParticles,
+	0,//vulkan_R_InitParticles,
+	0,//vulkan_SCR_ScreenShot_f,
+	0,//vulkan_r_easter_eggs_f,
+	0,//vulkan_r_particles_style_f,
 	0,
-	&model_funcs*/
+	&model_funcs
 };
 
 static void
