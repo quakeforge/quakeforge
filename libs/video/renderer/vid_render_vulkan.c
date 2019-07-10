@@ -48,6 +48,13 @@
 
 static vulkan_ctx_t *vulkan_ctx;
 
+static void
+vulkan_R_Init (void)
+{
+	if (vulkan_ctx)
+		Sys_Quit ();
+}
+
 static vid_model_funcs_t model_funcs = {
 	0,//vulkan_Mod_LoadExternalTextures,
 	0,//vulkan_Mod_LoadLighting,
@@ -108,7 +115,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	0,//vulkan_Fog_Update,
 	0,//vulkan_Fog_ParseWorldspawn,
 
-	0,//vulkan_R_Init,
+	vulkan_R_Init,
 	0,//vulkan_R_ClearState,
 	0,//vulkan_R_LoadSkys,
 	0,//vulkan_R_NewMap,
@@ -151,6 +158,7 @@ vulkan_vid_render_create_context (void)
 {
 	vulkan_ctx->create_window (vulkan_ctx);
 	vulkan_ctx->dev->surface = vulkan_ctx->create_surface (vulkan_ctx);
+	Sys_Printf ("%p\n", vulkan_ctx->dev->surface);
 }
 
 static void

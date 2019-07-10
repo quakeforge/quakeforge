@@ -35,9 +35,9 @@ typedef struct VulkanDevice_s {
 	VkQueue queue;
 	VkSurfaceKHR surface;
 
-    #define DEVICE_LEVEL_VULKAN_FUNCTION(name) PFN_##name name;
-    #define DEVICE_LEVEL_VULKAN_FUNCTION_EXTENSION(name) PFN_##name name;
-	#include "QF/Vulkan/funclist.h"
+#define DEVICE_LEVEL_VULKAN_FUNCTION(name) PFN_##name name;
+#define DEVICE_LEVEL_VULKAN_FUNCTION_FROM_EXTENSION(name,ext) PFN_##name name;
+#include "QF/Vulkan/funclist.h"
 } VulkanDevice_t;
 
 typedef struct {
@@ -55,13 +55,16 @@ typedef struct {
 
 typedef struct VulkanInstance_s {
 	VkInstance  instance;
+	struct strset_s *enabled_extensions;
+	int         (*extension_enabled) (struct VulkanInstance_s *inst,
+									  const char *ext);
 	VkDebugUtilsMessengerEXT debug_callback;
 	uint32_t    numDevices;
 	VulkanPhysDevice_t *devices;
 
-    #define INSTANCE_LEVEL_VULKAN_FUNCTION(name) PFN_##name name;
-    #define INSTANCE_LEVEL_VULKAN_FUNCTION_EXTENSION(name) PFN_##name name;
-	#include "QF/Vulkan/funclist.h"
+#define INSTANCE_LEVEL_VULKAN_FUNCTION(name) PFN_##name name;
+#define INSTANCE_LEVEL_VULKAN_FUNCTION_FROM_EXTENSION(name,ext) PFN_##name name;
+#include "QF/Vulkan/funclist.h"
 } VulkanInstance_t;
 
 extern const char * const vulkanValidationLayers[];

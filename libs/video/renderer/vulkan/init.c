@@ -198,6 +198,12 @@ init_physdev (VulkanInstance_t *instance, VkPhysicalDevice dev, VulkanPhysDevice
 	}
 }
 
+static int
+instance_extension_enabled (VulkanInstance_t *inst, const char *ext)
+{
+	return strset_contains (inst->enabled_extensions, ext);
+}
+
 static int message_severities =
 	VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
 	VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
@@ -242,10 +248,13 @@ load_instance_funcs (vulkan_ctx_t *ctx)
 		Sys_Error ("Couldn't find instance level function %s", #name); \
 	}
 
-#define INSTANCE_LEVEL_VULKAN_FUNCTION_EXTENSION(name) \
-	vtx->name = (PFN_##name) ctx->vkGetInstanceProcAddr (instance, #name); \
-	if (!vtx->name) { \
-		Sys_Printf ("Couldn't find instance level function %s", #name); \
+#define INSTANCE_LEVEL_VULKAN_FUNCTION_FROM_EXTENSION(name, ext) \
+	if (vtx->extension_enabled (vtx, ext)) { \
+		vtx->name = (PFN_##name) ctx->vkGetInstanceProcAddr (instance, \
+															 #name); \
+		if (!vtx->name) { \
+			Sys_Error ("Couldn't find instance level function %s", #name); \
+		} \
 	}
 
 #include "QF/Vulkan/funclist.h"
@@ -278,9 +287,9 @@ Vulkan_CreateInstance (vulkan_ctx_t *ctx,
 		get_instance_layers_and_extensions (ctx);
 	}
 
-	uint32_t nlay = count_strings (layers);
+	uint32_t nlay = count_strings (layers) + 1;
 	uint32_t next = count_strings (extensions)
-					+ count_strings (ctx->required_extensions);
+					+ count_strings (ctx->required_extensions) + 1;
 	if (vulkan_use_validation->int_val) {
 		nlay += count_strings (vulkanValidationLayers);
 		next += count_strings (debugExtensions);
@@ -289,8 +298,8 @@ Vulkan_CreateInstance (vulkan_ctx_t *ctx,
 	const char **ext = alloca (next * sizeof (const char *));
 	// ensure there are null pointers so merge_strings can act as append
 	// since it does not add a null
-	memset (lay, 0, nlay * sizeof (const char *));
-	memset (ext, 0, next * sizeof (const char *));
+	memset (lay, 0, nlay-- * sizeof (const char *));
+	memset (ext, 0, next-- * sizeof (const char *));
 	merge_strings (lay, layers, 0);
 	merge_strings (ext, extensions, ctx->required_extensions);
 	if (vulkan_use_validation->int_val) {
@@ -299,6 +308,8 @@ Vulkan_CreateInstance (vulkan_ctx_t *ctx,
 	}
 	prune_strings (instanceLayerNames, lay, &nlay);
 	prune_strings (instanceExtensionNames, ext, &next);
+	lay[nlay] = 0;
+	ext[next] = 0;
 	createInfo.enabledLayerCount = nlay;
 	createInfo.ppEnabledLayerNames = lay;
 	createInfo.enabledExtensionCount = next;
@@ -310,6 +321,9 @@ Vulkan_CreateInstance (vulkan_ctx_t *ctx,
 	}
 	inst = malloc (sizeof(VulkanInstance_t));
 	inst->instance = instance;
+	inst->enabled_extensions = new_strset (ext);
+	inst->extension_enabled = instance_extension_enabled;
+	ctx->extension_enabled = instance_extension_enabled;
 	ctx->vtx = inst;
 	load_instance_funcs (ctx);
 

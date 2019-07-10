@@ -61,7 +61,7 @@
 static cvar_t *vulkan_library_name;
 
 typedef struct vulkan_presentation_s {
-#define INSTANCE_LEVEL_VULKAN_FUNCTION(name) PFN_##name name;
+#define INSTANCE_LEVEL_VULKAN_FUNCTION_FROM_EXTENSION(name,ext) PFN_##name name;
 #include "QF/Vulkan/funclist.h"
 
 	Display    *display;
@@ -117,10 +117,13 @@ x11_vulkan_init_presentation (vulkan_ctx_t *ctx)
 	vulkan_presentation_t *pres = ctx->presentation;
 	VkInstance  instance = ctx->instance;
 
-#define INSTANCE_LEVEL_VULKAN_FUNCTION(name) \
-	pres->name = (PFN_##name) ctx->vkGetInstanceProcAddr (instance, #name); \
-	if (!pres->name) { \
-		Sys_Error ("Couldn't find instance-level function %s", #name); \
+#define INSTANCE_LEVEL_VULKAN_FUNCTION_FROM_EXTENSION(name, ext) \
+	if (ctx->extension_enabled (ctx->vtx, ext)) { \
+		pres->name = (PFN_##name) ctx->vkGetInstanceProcAddr (instance, \
+															  #name); \
+		if (!pres->name) { \
+			Sys_Error ("Couldn't find instance-level function %s", #name); \
+		} \
 	}
 #include "QF/Vulkan/funclist.h"
 

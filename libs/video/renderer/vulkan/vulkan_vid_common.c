@@ -117,10 +117,13 @@ load_device_funcs (VulkanInstance_t *inst, VulkanDevice_t *dev)
 		Sys_Error ("Couldn't find device level function %s", #name); \
 	}
 
-#define DEVICE_LEVEL_VULKAN_FUNCTION_EXTENSION(name) \
-	dev->name = (PFN_##name) inst->vkGetDeviceProcAddr (dev->device, #name); \
-	if (!dev->name) { \
-		Sys_Printf ("Couldn't find device level function %s", #name); \
+#define DEVICE_LEVEL_VULKAN_FUNCTION_FROM_EXTENSION(name, ext) \
+	if (inst->extension_enabled (vtx, ext)) { \
+		dev->name = (PFN_##name) inst->vkGetDeviceProcAddr (dev->device, \
+															#name); \
+		if (!dev->name) { \
+			Sys_Printf ("Couldn't find device level function %s", #name); \
+		} \
 	}
 
 #include "QF/Vulkan/funclist.h"
@@ -204,6 +207,7 @@ Vulkan_CreateDevice (vulkan_ctx_t *ctx)
 									  0, &device->queue);
 			ctx->dev = device;
 			ctx->device = device->device;
+			ctx->physDevice = phys->device;
 			return;
 		}
 	}
