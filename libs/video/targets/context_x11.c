@@ -354,7 +354,14 @@ X11_SetMouse (void)
 	XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0, 0, 0);
 	XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0,
 				  viddef.width / 2, viddef.height / 2);
-	XPeekIfEvent (x_disp, &ev, check_mouse_event, 0);
+	//FIXME this should be done in a state machine that handles events without
+	//blocking
+	double start = Sys_DoubleTime ();
+	while (!XCheckIfEvent (x_disp, &ev, check_mouse_event, 0)) {
+		if (Sys_DoubleTime () - start > 2) {
+			break;
+		}
+	}
 	x_mouse_time = ev.xmotion.time;
 }
 
