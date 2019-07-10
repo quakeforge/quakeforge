@@ -32,6 +32,7 @@
 
 typedef struct VulkanDevice_s {
 	VkDevice device;
+	int32_t queueFamily;
 	VkQueue queue;
 	VkSurfaceKHR surface;
 

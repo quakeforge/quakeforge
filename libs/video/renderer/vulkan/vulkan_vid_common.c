@@ -42,6 +42,7 @@
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/input.h"
+#include "QF/mathlib.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
@@ -57,6 +58,25 @@
 
 #include "util.h"
 
+static cvar_t *vulkan_presentation_mode;
+
+static void
+vulkan_presentation_mode_f (cvar_t *var)
+{
+	if (!strcmp (var->string, "immediate")) {
+		var->int_val = VK_PRESENT_MODE_IMMEDIATE_KHR;
+	} else if (!strcmp (var->string, "fifo")) {
+		var->int_val = VK_PRESENT_MODE_FIFO_KHR;
+	} else if (!strcmp (var->string, "relaxed")) {
+		var->int_val = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
+	} else if (!strcmp (var->string, "mailbox")) {
+		var->int_val = VK_PRESENT_MODE_MAILBOX_KHR;
+	} else {
+		Sys_Printf ("Invalid presentation mode, using fifo\n");
+		var->int_val = VK_PRESENT_MODE_FIFO_KHR;
+	}
+}
+
 void
 Vulkan_Init_Cvars ()
 {
@@ -65,6 +85,11 @@ Vulkan_Init_Cvars ()
 									  "enable LunarG Standard Validation "
 									  "Layer if available (requires instance "
 									  "restart).");
+	// FIXME implement fallback choices (instead of just fifo)
+	vulkan_presentation_mode = Cvar_Get ("vulkan_presentation_mode", "mailbox",
+										 CVAR_NONE, vulkan_presentation_mode_f,
+										 "desired presentation mode (may fall "
+										 "back to fifo).");
 }
 
 static const char *instance_extensions[] = {
@@ -118,7 +143,7 @@ load_device_funcs (VulkanInstance_t *inst, VulkanDevice_t *dev)
 	}
 
 #define DEVICE_LEVEL_VULKAN_FUNCTION_FROM_EXTENSION(name, ext) \
-	if (inst->extension_enabled (vtx, ext)) { \
+	if (inst->extension_enabled (inst, ext)) { \
 		dev->name = (PFN_##name) inst->vkGetDeviceProcAddr (dev->device, \
 															#name); \
 		if (!dev->name) { \
@@ -208,7 +233,120 @@ Vulkan_CreateDevice (vulkan_ctx_t *ctx)
 			ctx->dev = device;
 			ctx->device = device->device;
 			ctx->physDevice = phys->device;
+			device->queueFamily = family;
 			return;
 		}
 	}
+}
+
+void
+Vulkan_CreateSwapchain (vulkan_ctx_t *ctx)
+{
+	VkBool32    supported;
+	ctx->vtx->vkGetPhysicalDeviceSurfaceSupportKHR (ctx->physDevice,
+													ctx->dev->queueFamily,
+													ctx->dev->surface,
+													&supported);
+	if (!supported) {
+		Sys_Error ("unsupported surface for swapchain");
+	}
+	uint32_t    numModes;
+	VkPresentModeKHR *modes;
+	VkPresentModeKHR useMode = VK_PRESENT_MODE_FIFO_KHR;;
+	ctx->vtx->vkGetPhysicalDeviceSurfacePresentModesKHR (ctx->physDevice,
+														 ctx->dev->surface,
+														 &numModes, 0);
+	modes = alloca (numModes * sizeof (VkPresentModeKHR));
+	ctx->vtx->vkGetPhysicalDeviceSurfacePresentModesKHR (ctx->physDevice,
+														 ctx->dev->surface,
+														 &numModes, modes);
+	for (uint32_t i = 0; i < numModes; i++) {
+		if ((int) modes[i] == vulkan_presentation_mode->int_val) {
+			useMode = modes[i];
+		}
+	}
+	Sys_MaskPrintf (SYS_VULKAN, "presentation mode: %d (%d)\n", useMode,
+					vulkan_presentation_mode->int_val);
+
+	VkSurfaceCapabilitiesKHR surfCaps;
+	ctx->vtx->vkGetPhysicalDeviceSurfaceCapabilitiesKHR (ctx->physDevice,
+														 ctx->dev->surface,
+														 &surfCaps);
+	uint32_t numImages = surfCaps.minImageCount + 1;
+	if (surfCaps.maxImageCount > 0 && numImages > surfCaps.maxImageCount) {
+		numImages = surfCaps.maxImageCount;
+	}
+
+	VkExtent2D imageSize = {viddef.width, viddef.height};
+	if (surfCaps.currentExtent.width == ~0u) {
+		imageSize.width = bound (surfCaps.minImageExtent.width,
+								 imageSize.width,
+								 surfCaps.maxImageExtent.width);
+		imageSize.height = bound (surfCaps.minImageExtent.height,
+								  imageSize.height,
+								  surfCaps.maxImageExtent.height);
+	} else {
+		imageSize = surfCaps.currentExtent;
+	}
+	Sys_MaskPrintf (SYS_VULKAN, "%d [%d, %d]\n", numImages,
+					imageSize.width, imageSize.height);
+
+	VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	imageUsage &= surfCaps.supportedUsageFlags;
+
+	VkSurfaceTransformFlagBitsKHR surfTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+
+	uint32_t numFormats;
+	ctx->vtx->vkGetPhysicalDeviceSurfaceFormatsKHR (ctx->physDevice,
+													ctx->dev->surface,
+													&numFormats, 0);
+	VkSurfaceFormatKHR *formats = alloca (numFormats * sizeof (*formats));
+	ctx->vtx->vkGetPhysicalDeviceSurfaceFormatsKHR (ctx->physDevice,
+													ctx->dev->surface,
+													&numFormats, formats);
+	VkSurfaceFormatKHR useFormat = {VK_FORMAT_R8G8B8A8_UNORM,
+									VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+	if (numFormats > 1) {
+		uint32_t i;
+		for (i = 0; i < numFormats; i++) {
+			if (formats[i].format == useFormat.format
+				&& formats[i].colorSpace == useFormat.colorSpace) {
+				break;
+			}
+		}
+		if (i == numFormats) {
+			useFormat = formats[0];
+		}
+	} else if (numFormats == 1 && formats[0].format != VK_FORMAT_UNDEFINED) {
+		useFormat = formats[0];
+	}
+
+	VkSwapchainCreateInfoKHR createInfo = {
+		VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR, 0, 0,
+		ctx->dev->surface,
+		numImages,
+		useFormat.format, useFormat.colorSpace,
+		imageSize,
+		1, // array layers
+		imageUsage,
+		VK_SHARING_MODE_EXCLUSIVE,
+		0, 0,
+		surfTransform,
+		VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+		useMode,
+		VK_TRUE,
+		ctx->swapchain
+	};
+	VkSwapchainKHR swapchain;
+	ctx->dev->vkCreateSwapchainKHR (ctx->device, &createInfo, 0, &swapchain);
+	if (ctx->swapchain != swapchain) {
+		ctx->dev->vkDestroySwapchainKHR (ctx->device, ctx->swapchain, 0);
+	}
+	ctx->swapchain = swapchain;
+
+	ctx->dev->vkGetSwapchainImagesKHR (ctx->device, swapchain, &numImages, 0);
+	ctx->swapchainImages = malloc (numImages * sizeof (*ctx->swapchainImages));
+	ctx->dev->vkGetSwapchainImagesKHR (ctx->device, swapchain, &numImages,
+									   ctx->swapchainImages);
+	ctx->numSwapchainImages = numImages;
 }

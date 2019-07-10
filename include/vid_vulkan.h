@@ -27,6 +27,9 @@ typedef struct vulkan_ctx_s {
 	VkInstance  instance;
 	VkPhysicalDevice physDevice;
 	VkDevice    device;
+	VkSwapchainKHR swapchain;
+	int32_t     numSwapchainImages;
+	VkImage    *swapchainImages;
 #define EXPORTED_VULKAN_FUNCTION(fname) PFN_##fname fname;
 #define GLOBAL_LEVEL_VULKAN_FUNCTION(fname) PFN_##fname fname;
 #include "QF/Vulkan/funclist.h"

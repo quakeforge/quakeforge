@@ -159,6 +159,13 @@ vulkan_vid_render_create_context (void)
 	vulkan_ctx->create_window (vulkan_ctx);
 	vulkan_ctx->dev->surface = vulkan_ctx->create_surface (vulkan_ctx);
 	Sys_Printf ("%p\n", vulkan_ctx->dev->surface);
+	Vulkan_CreateSwapchain (vulkan_ctx);
+	Sys_Printf ("%p %d", vulkan_ctx->swapchain,
+				vulkan_ctx->numSwapchainImages);
+	for (int32_t i = 0; i < vulkan_ctx->numSwapchainImages; i++) {
+		Sys_Printf (" %p", vulkan_ctx->swapchainImages[i]);
+	}
+	Sys_Printf ("\n");
 }
 
 static void
