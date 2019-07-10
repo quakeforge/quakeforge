@@ -219,7 +219,20 @@ debug_callback (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 				const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
 				void *data)
 {
-	fprintf (stderr, "validation layer: %s\n", callbackData->pMessage);
+	const char *msgSev = "";
+	if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
+		msgSev = "verbose: ";
+	}
+	if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
+		msgSev = "info: ";
+	}
+	if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+		msgSev = "warning: ";
+	}
+	if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+		msgSev = "error: ";
+	}
+	fprintf (stderr, "validation layer: %s%s\n", msgSev, callbackData->pMessage);
 	return VK_FALSE;
 }
 
