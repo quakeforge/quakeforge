@@ -33,7 +33,34 @@
 # include <strings.h>
 #endif
 
+#include "QF/hash.h"
+
 #include "util.h"
+
+static const char *
+strset_get_key (const void *_str, void *unused)
+{
+	return (const char *)_str;
+}
+
+strset_t *
+new_strset (const char * const *strings)
+{
+	hashtab_t  *tab = Hash_NewTable (61, strset_get_key, 0, 0);
+	for ( ; *strings; strings++) {
+		Hash_Add (tab, (void *) *strings);
+	}
+	return (strset_t *) tab;
+}
+void del_strset (strset_t *strset)
+{
+	Hash_DelTable ((hashtab_t *) strset);
+}
+
+int strset_contains (strset_t *strset, const char *str)
+{
+	return Hash_Find ((hashtab_t *) strset, str) != 0;
+}
 
 int
 count_strings (const char * const *str)
