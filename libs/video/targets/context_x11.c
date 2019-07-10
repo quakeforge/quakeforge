@@ -574,10 +574,11 @@ X11_CreateWindow (int width, int height)
 	X11_WaitForEvent (ConfigureNotify);
 
 	vid_context_created = true;
+	XRaiseWindow (x_disp, x_win);
+	X11_WaitForEvent (VisibilityNotify);
 	if (vid_fullscreen->int_val) {
 		X11_UpdateFullscreen (vid_fullscreen);
 	}
-	XRaiseWindow (x_disp, x_win);
 }
 
 void
