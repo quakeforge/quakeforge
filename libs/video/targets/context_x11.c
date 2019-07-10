@@ -125,6 +125,8 @@ static int	accel_threshold;
 static Atom x_net_state;
 static Atom x_net_fullscreen;
 
+static cvar_t *x11_vidmode;
+
 static void
 set_fullscreen (int full)
 {
@@ -387,6 +389,10 @@ X11_SetVidMode (int width, int height)
 	if (vidmode_active)
 		return;
 
+	if (!x11_vidmode->int_val) {
+		return;
+	}
+
 	if (str && (tolower (*str) == 'f')) {
 		Cvar_Set (vid_fullscreen, "1");
 	}
@@ -506,6 +512,9 @@ X11_Init_Cvars (void)
 							   "Toggles fullscreen game mode");
 	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
 								 "Use system gamma control if available");
+	x11_vidmode = Cvar_Get ("x11_vidmode", "0", CVAR_ROM, 0,
+							"Use x11 vidmode extension to set video mode "
+							"(not recommended for modern systems)");
 }
 
 void
