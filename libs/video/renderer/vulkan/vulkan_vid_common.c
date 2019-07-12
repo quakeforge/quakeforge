@@ -51,6 +51,7 @@
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/swapchain.h"
 
 #include "compat.h"
 #include "d_iface.h"
@@ -129,4 +130,14 @@ Vulkan_CreateDevice (vulkan_ctx_t *ctx)
 void
 Vulkan_CreateSwapchain (vulkan_ctx_t *ctx)
 {
+	VkSwapchainKHR old_swapchain = 0;
+	if (ctx->swapchain) {
+		old_swapchain = ctx->swapchain->swapchain;
+		free (ctx->swapchain);
+	}
+	ctx->swapchain = QFV_CreateSwapchain (ctx, old_swapchain);
+	if (ctx->swapchain->swapchain == old_swapchain) {
+		ctx->device->funcs->vkDestroySwapchainKHR (ctx->device->dev,
+												   old_swapchain, 0);
+	}
 }
