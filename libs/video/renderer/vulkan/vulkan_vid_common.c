@@ -116,9 +116,15 @@ Vulkan_Init_Common (vulkan_ctx_t *ctx)
 void
 Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 {
-	Sys_Printf ("are we here?\n");
-	QFV_DestroyDevice (ctx->device);
-	QFV_DestroyInstance (ctx->instance);
+	if (ctx->swapchain) {
+		QFV_DestroySwapchain (ctx->swapchain);
+	}
+	if (ctx->device) {
+		QFV_DestroyDevice (ctx->device);
+	}
+	if (ctx->instance) {
+		QFV_DestroyInstance (ctx->instance);
+	}
 	ctx->instance = 0;
 	ctx->unload_vulkan (ctx);
 }
