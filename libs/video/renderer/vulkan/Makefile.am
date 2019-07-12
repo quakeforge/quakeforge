@@ -4,7 +4,9 @@ AM_CFLAGS= @PREFER_PIC@
 AM_CPPFLAGS= -I$(top_srcdir)/include -DVK_NO_PROTOTYPES
 
 vulkan_src = \
-	init.c \
+	device.c \
+	instance.c \
+	swapchain.c \
 	util.c \
 	vulkan_draw.c \
 	vulkan_vid_common.c

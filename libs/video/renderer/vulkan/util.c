@@ -47,17 +47,27 @@ strset_t *
 new_strset (const char * const *strings)
 {
 	hashtab_t  *tab = Hash_NewTable (61, strset_get_key, 0, 0);
-	for ( ; *strings; strings++) {
+	for ( ; strings && *strings; strings++) {
 		Hash_Add (tab, (void *) *strings);
 	}
 	return (strset_t *) tab;
 }
-void del_strset (strset_t *strset)
+
+void
+del_strset (strset_t *strset)
 {
 	Hash_DelTable ((hashtab_t *) strset);
 }
 
-int strset_contains (strset_t *strset, const char *str)
+void
+strset_add (strset_t *strset, const char *str)
+{
+	hashtab_t  *tab = (hashtab_t *) strset;
+	Hash_Add (tab, (void *) str);
+}
+
+int
+strset_contains (strset_t *strset, const char *str)
 {
 	return Hash_Find ((hashtab_t *) strset, str) != 0;
 }
@@ -92,18 +102,12 @@ merge_strings (const char **out, const char * const *in1,
 }
 
 void
-prune_strings (const char * const *reference, const char **strings,
-			   uint32_t *count)
+prune_strings (strset_t *strset, const char **strings, uint32_t *count)
 {
-	for (int i = *count; i-- > 0; ) {
-		const char *str = strings[i];
-		const char * const *ref;
-		for (ref = reference; *ref; ref++) {
-			if (!strcmp (*ref, str)) {
-				break;
-			}
-		}
-		if (!*ref) {
+	hashtab_t  *tab = (hashtab_t *) strset;
+
+	for (uint32_t i = *count; i-- > 0; ) {
+		if (!Hash_Find (tab, strings[i])) {
 			memmove (strings + i, strings + i + 1,
 					 (--(*count) - i) * sizeof (const char **));
 		}

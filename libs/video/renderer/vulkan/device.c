@@ -1,0 +1,211 @@
+/*
+	vid_common_vulkan.c
+
+	Common Vulkan video driver functions
+
+	Copyright (C) 1996-1997 Id Software, Inc.
+	Copyright (C) 2019      Bill Currie <bill@taniwha.org>
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License
+	as published by the Free Software Foundation; either version 2
+	of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+*/
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#ifdef HAVE_MATH_H
+# include <math.h>
+#endif
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+
+#include "QF/cvar.h"
+#include "QF/dstring.h"
+#include "QF/input.h"
+#include "QF/mathlib.h"
+#include "QF/qargs.h"
+#include "QF/quakefs.h"
+#include "QF/sys.h"
+#include "QF/va.h"
+#include "QF/vid.h"
+#include "QF/Vulkan/qf_vid.h"
+#include "QF/Vulkan/device.h"
+#include "QF/Vulkan/instance.h"
+
+#include "compat.h"
+#include "d_iface.h"
+#include "r_internal.h"
+#include "vid_vulkan.h"
+
+#include "util.h"
+
+static int
+count_bits (uint32_t val)
+{
+	int         bits = 0;
+	while (val) {
+		bits += val & 1;
+		val >>= 1;
+	}
+	return bits;
+}
+
+static int
+find_queue_family (qfv_instance_t *instance, VkPhysicalDevice dev,
+				   uint32_t flags)
+{
+	qfv_instfuncs_t *funcs = instance->funcs;
+	uint32_t    numFamilies;
+	VkQueueFamilyProperties *queueFamilies;
+	int         best_diff = 32;
+	uint32_t    family = -1;
+
+	funcs->vkGetPhysicalDeviceQueueFamilyProperties (dev, &numFamilies, 0);
+	queueFamilies = alloca (numFamilies * sizeof (*queueFamilies));
+	funcs->vkGetPhysicalDeviceQueueFamilyProperties (dev, &numFamilies,
+													 queueFamilies);
+
+	for (uint32_t i = 0; i < numFamilies; i++) {
+		VkQueueFamilyProperties *queue = &queueFamilies[i];
+
+		if ((queue->queueFlags & flags) == flags) {
+			int diff = count_bits (queue->queueFlags & ~flags);
+			if (diff < best_diff) {
+				best_diff = diff;
+				family = i;
+			}
+		}
+	}
+	return family;
+}
+
+static void
+load_device_funcs (qfv_instance_t *inst, qfv_device_t *dev)
+{
+	qfv_instfuncs_t *ifunc = inst->funcs;
+	qfv_devfuncs_t *dfunc = dev->funcs;
+	VkDevice    device = dev->dev;
+#define DEVICE_LEVEL_VULKAN_FUNCTION(name) \
+	dfunc->name = (PFN_##name) ifunc->vkGetDeviceProcAddr (device, #name); \
+	if (!dfunc->name) { \
+		Sys_Error ("Couldn't find device level function %s", #name); \
+	}
+
+#define DEVICE_LEVEL_VULKAN_FUNCTION_FROM_EXTENSION(name, ext) \
+	if (dev->extension_enabled (dev, ext)) { \
+		dfunc->name = (PFN_##name) ifunc->vkGetDeviceProcAddr (device, #name); \
+		if (!dfunc->name) { \
+			Sys_Printf ("Couldn't find device level function %s", #name); \
+		} \
+	}
+
+#include "QF/Vulkan/funclist.h"
+}
+
+static int
+device_extension_enabled (qfv_device_t *device, const char *ext)
+{
+	return strset_contains (device->enabled_extensions, ext);
+}
+
+qfv_device_t *
+QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
+{
+	uint32_t nlay = 1;	// ensure alloca doesn't see 0 and terminated
+	uint32_t next = count_strings (extensions) + 1; // ensure terminated
+	//if (vulkan_use_validation->int_val) {
+	//	nlay += count_strings (vulkanValidationLayers);
+	//}
+	const char **lay = alloca (nlay * sizeof (const char *));
+	const char **ext = alloca (next * sizeof (const char *));
+	// ensure there are null pointers so merge_strings can act as append
+	// since it does not add a null, but also make sure the counts reflect
+	// actual numbers
+	memset (lay, 0, nlay-- * sizeof (const char *));
+	memset (ext, 0, next-- * sizeof (const char *));
+	merge_strings (ext, extensions, 0);
+	//if (vulkan_use_validation->int_val) {
+	//	merge_strings (lay, lay, vulkanValidationLayers);
+	//}
+
+	qfv_instance_t *inst = ctx->instance;
+	VkInstance  instance = inst->instance;
+	qfv_instfuncs_t *ifunc = inst->funcs;
+
+	uint32_t numDevices;
+	ifunc->vkEnumeratePhysicalDevices (instance, &numDevices, 0);
+	VkPhysicalDevice *devices = alloca (numDevices * sizeof (*devices));
+	ifunc->vkEnumeratePhysicalDevices (instance, &numDevices, devices);
+
+	for (uint32_t i = 0; i < numDevices; i++) {
+		VkPhysicalDevice physdev = devices[i];
+		/*
+		if (!Vulkan_LayersSupported (phys->layers, phys->numLayers, lay)) {
+			continue;
+		}
+		if (!Vulkan_ExtensionsSupported (phys->extensions, phys->numExtensions,
+										 ext)) {
+			continue;
+		}
+		*/
+		int family = find_queue_family (inst, physdev, VK_QUEUE_GRAPHICS_BIT);
+		if (family < 0) {
+			continue;
+		}
+		if (!ctx->get_presentation_support (ctx, physdev, family)) {
+			continue;
+		}
+		float priority = 1;
+		VkDeviceQueueCreateInfo qCreateInfo = {
+			VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, 0, 0,
+			family, 1, &priority
+		};
+		VkPhysicalDeviceFeatures features;
+		VkDeviceCreateInfo dCreateInfo = {
+			VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, 0, 0,
+			1, &qCreateInfo,
+			nlay, lay,
+			next, ext,
+			&features
+		};
+		memset (&features, 0, sizeof (features));
+		qfv_device_t *device = calloc (1, sizeof (qfv_device_t)
+										  + sizeof (qfv_devfuncs_t));
+		device->funcs = (qfv_devfuncs_t *) (device + 1);
+		if (ifunc->vkCreateDevice (physdev, &dCreateInfo, 0,
+								   &device->dev) == VK_SUCCESS) {
+			qfv_devfuncs_t *dfunc = device->funcs;
+
+			device->physDev = physdev;
+			load_device_funcs (inst, device);
+			device->queueFamily = family;
+			dfunc->vkGetDeviceQueue (device->dev, family, 0, &device->queue);
+			device->enabled_extensions = new_strset (ext);
+			device->extension_enabled = device_extension_enabled;
+			ctx->device = device;
+			return device;
+		}
+		free (device);
+	}
+	return 0;
+}

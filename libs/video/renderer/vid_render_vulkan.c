@@ -37,7 +37,9 @@
 #include "QF/plugin/vid_render.h"
 
 #include "QF/Vulkan/qf_vid.h"
-#include "QF/Vulkan/init.h"
+#include "QF/Vulkan/device.h"
+#include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/swapchain.h"
 
 #include "mod_internal.h"
 #include "r_internal.h"
@@ -150,20 +152,20 @@ vulkan_vid_render_choose_visual (void)
 {
 	Vulkan_CreateDevice (vulkan_ctx);
 	vulkan_ctx->choose_visual (vulkan_ctx);
-	Sys_Printf ("%p %p\n", vulkan_ctx->dev->device, vulkan_ctx->dev->queue);
+	Sys_Printf ("%p %p\n", vulkan_ctx->device->dev, vulkan_ctx->device->queue);
 }
 
 static void
 vulkan_vid_render_create_context (void)
 {
 	vulkan_ctx->create_window (vulkan_ctx);
-	vulkan_ctx->dev->surface = vulkan_ctx->create_surface (vulkan_ctx);
-	Sys_Printf ("%p\n", vulkan_ctx->dev->surface);
+	vulkan_ctx->surface = vulkan_ctx->create_surface (vulkan_ctx);
+	Sys_Printf ("%p\n", vulkan_ctx->surface);
 	Vulkan_CreateSwapchain (vulkan_ctx);
-	Sys_Printf ("%p %d", vulkan_ctx->swapchain,
-				vulkan_ctx->numSwapchainImages);
-	for (int32_t i = 0; i < vulkan_ctx->numSwapchainImages; i++) {
-		Sys_Printf (" %p", vulkan_ctx->swapchainImages[i]);
+	Sys_Printf ("%p %d", vulkan_ctx->swapchain->swapchain,
+				vulkan_ctx->swapchain->numImages);
+	for (int32_t i = 0; i < vulkan_ctx->swapchain->numImages; i++) {
+		Sys_Printf (" %p", vulkan_ctx->swapchain->images[i]);
 	}
 	Sys_Printf ("\n");
 }

@@ -54,6 +54,8 @@
 #include "QF/set.h"
 #include "QF/sys.h"
 
+#include "QF/Vulkan/instance.h"
+
 #include "context_x11.h"
 #include "vid_internal.h"
 #include "vid_vulkan.h"
@@ -61,7 +63,7 @@
 static cvar_t *vulkan_library_name;
 
 typedef struct vulkan_presentation_s {
-#define INSTANCE_LEVEL_VULKAN_FUNCTION_FROM_EXTENSION(name,ext) PFN_##name name;
+#define PRESENTATION_VULKAN_FUNCTION_FROM_EXTENSION(name,ext) PFN_##name name;
 #include "QF/Vulkan/funclist.h"
 
 	Display    *display;
@@ -115,12 +117,12 @@ x11_vulkan_init_presentation (vulkan_ctx_t *ctx)
 {
 	ctx->presentation = calloc (1, sizeof (vulkan_presentation_t));
 	vulkan_presentation_t *pres = ctx->presentation;
-	VkInstance  instance = ctx->instance;
+	qfv_instance_t *instance = ctx->instance;
+	VkInstance  inst = instance->instance;
 
-#define INSTANCE_LEVEL_VULKAN_FUNCTION_FROM_EXTENSION(name, ext) \
-	if (ctx->extension_enabled (ctx->vtx, ext)) { \
-		pres->name = (PFN_##name) ctx->vkGetInstanceProcAddr (instance, \
-															  #name); \
+#define PRESENTATION_VULKAN_FUNCTION_FROM_EXTENSION(name, ext) \
+	if (instance->extension_enabled (instance, ext)) { \
+		pres->name = (PFN_##name) ctx->vkGetInstanceProcAddr (inst, #name); \
 		if (!pres->name) { \
 			Sys_Error ("Couldn't find instance-level function %s", #name); \
 		} \
@@ -182,6 +184,7 @@ static VkSurfaceKHR
 x11_vulkan_create_surface (vulkan_ctx_t *ctx)
 {
 	vulkan_presentation_t *pres = ctx->presentation;
+	VkInstance inst = ctx->instance->instance;
 	VkSurfaceKHR surface;
 	VkXlibSurfaceCreateInfoKHR createInfo = {
 		.sType = VK_STRUCTURE_TYPE_XLIB_SURFACE_CREATE_INFO_KHR,
@@ -190,7 +193,7 @@ x11_vulkan_create_surface (vulkan_ctx_t *ctx)
 		.window = pres->window
 	};
 
-	if (pres->vkCreateXlibSurfaceKHR (ctx->instance, &createInfo, 0, &surface)
+	if (pres->vkCreateXlibSurfaceKHR (inst, &createInfo, 0, &surface)
 		!= VK_SUCCESS) {
 		return 0;
 	}
