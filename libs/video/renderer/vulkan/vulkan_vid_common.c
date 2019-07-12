@@ -119,6 +119,8 @@ Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 	if (ctx->swapchain) {
 		QFV_DestroySwapchain (ctx->swapchain);
 	}
+	ctx->instance->funcs->vkDestroySurfaceKHR (ctx->instance->instance,
+											   ctx->surface, 0);
 	if (ctx->device) {
 		QFV_DestroyDevice (ctx->device);
 	}
