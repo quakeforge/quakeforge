@@ -90,10 +90,6 @@ extern struct cvar_s *net_packetlog;
 */
 void NET_Init (int port);
 
-/** Shutdown the UDP network interface.
-*/
-void NET_Shutdown (void);
-
 /** Read a single packet from the network into net_message.
 
 	\return			True if successfully read, otherwise false.

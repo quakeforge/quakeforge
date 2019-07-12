@@ -286,7 +286,6 @@ extern void (*write_angles) (sizebuf_t *sb, const vec3_t angles);
 struct cbuf_s;
 void CL_Init (struct cbuf_s *cbuf);
 void CL_InitCvars (void);
-void CL_Shutdown (void);
 void CL_ClearMemory (void);
 
 void CL_EstablishConnection (const char *host);

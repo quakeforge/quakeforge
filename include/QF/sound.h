@@ -81,10 +81,6 @@ void S_Init (int *viewentity, double *host_frametime);
 */
 void S_Init_Cvars (void);
 
-/** Shutdown the sound engine. Allows audio output modules to shutdown
-	gracefully.
-*/
-void S_Shutdown (void);
 //@}
 
 /** \defgroup sound_stuff Unclassified

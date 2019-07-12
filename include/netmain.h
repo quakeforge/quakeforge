@@ -273,10 +273,6 @@ extern	int			net_activeconnections;
 */
 void		NET_Init (void);
 
-/** Shutdown the networking sub-system.
-*/
-void		NET_Shutdown (void);
-
 /** Check for new connections.
 
 	\return			Pointer to the qsocket for the new connection if there

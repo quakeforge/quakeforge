@@ -372,8 +372,8 @@ GL_EndRendering (void)
 	}
 }
 
-void
-VID_Shutdown (void)
+static void
+VID_shutdown (void)
 {
 	HGLRC		hRC;
 	HDC			hDC;
@@ -453,6 +453,8 @@ VID_Init (byte *palette, byte *colormap)
 	HGLRC		baseRC;
 	DWORD		lasterror;
 	WNDCLASS	wc;
+
+	Sys_RegisterShutdown (VID_shutdown);
 
 	vid_fullscreen = Cvar_Get ("vid_fullscreen", "0", CVAR_ROM | CVAR_ARCHIVE,
 							   NULL, "Run WGL client at fullscreen");

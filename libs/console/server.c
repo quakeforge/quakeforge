@@ -696,7 +696,7 @@ C_Init (void)
 }
 
 static void
-C_Shutdown (void)
+C_shutdown (void)
 {
 	if (log_file) {
 		Qclose (log_file);
@@ -780,7 +780,7 @@ C_NewMap (void)
 
 static general_funcs_t plugin_info_general_funcs = {
 	C_Init,
-	C_Shutdown,
+	C_shutdown,
 };
 static general_data_t plugin_info_general_data;
 

@@ -1882,10 +1882,5 @@ Host_Shutdown (void)
 
 	Host_WriteConfiguration ();
 
-	CDAudio_Shutdown ();
 	CL_HTTP_Shutdown ();
-	NET_Shutdown ();
-	S_Shutdown ();
-	IN_Shutdown ();
-	VID_Shutdown ();
 }

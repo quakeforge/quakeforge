@@ -968,11 +968,4 @@ Host_Shutdown (void)
 		return;
 	}
 	isdown = true;
-
-
-	NET_Shutdown ();
-	if (cls.state != ca_dedicated) {
-		CL_Shutdown ();
-	}
-	Con_Shutdown ();
 }

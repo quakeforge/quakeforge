@@ -931,13 +931,13 @@ C_Init (void)
 }
 
 static void
-C_Shutdown (void)
+C_shutdown (void)
 {
 }
 
 static general_funcs_t plugin_info_general_funcs = {
 	C_Init,
-	C_Shutdown,
+	C_shutdown,
 };
 
 static console_funcs_t plugin_info_console_funcs = {

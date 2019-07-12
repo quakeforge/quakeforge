@@ -84,9 +84,20 @@ Con_Interp_f (cvar_t *var)
 	}
 }
 
+static void
+Con_shutdown (void)
+{
+	if (con_module) {
+		con_module->functions->general->p_Shutdown ();
+		PI_UnloadPlugin (con_module);
+	}
+}
+
 VISIBLE void
 Con_Init (const char *plugin_name)
 {
+	Sys_RegisterShutdown (Con_shutdown);
+
 	con_module = PI_LoadPlugin ("console", plugin_name);
 	if (con_module) {
 		con_module->functions->general->p_Init ();
@@ -121,15 +132,6 @@ Con_ExecLine (const char *line)
   no_lf:
 	if (echo)
 		Sys_Printf ("%s\n", line);
-}
-
-VISIBLE void
-Con_Shutdown (void)
-{
-	if (con_module) {
-		con_module->functions->general->p_Shutdown ();
-		PI_UnloadPlugin (con_module);
-	}
 }
 
 VISIBLE void

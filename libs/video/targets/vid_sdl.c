@@ -64,9 +64,17 @@ static vid_internal_t vid_internal;
 
 uint32_t    sdl_flags;
 
+static void
+VID_shutdown (void)
+{
+	SDL_Quit ();
+}
+
 void
 VID_Init (byte *palette, byte *colormap)
 {
+	Sys_RegisterShutdown (VID_shutdown);
+
 	vid_internal.gl_context = SDL_GL_Context;
 	vid_internal.sw_context = SDL_SW_Context;
 	// Load the SDL library

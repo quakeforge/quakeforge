@@ -99,11 +99,6 @@ CL_EstablishConnection (const char *host)
 }
 
 void
-CL_Shutdown ()
-{
-}
-
-void
 CL_Init (struct cbuf_s *cbuf)
 {
 }

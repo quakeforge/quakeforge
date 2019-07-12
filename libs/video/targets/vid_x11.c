@@ -83,6 +83,13 @@ D_EndDirectRect (int x, int y, int width, int height)
 // direct drawing of the "accessing disk" icon isn't supported
 }
 
+static void
+VID_shutdown (void)
+{
+	Sys_MaskPrintf (SYS_VID, "VID_shutdown\n");
+	X11_CloseDisplay ();
+}
+
 /*
 	Set up color translation tables and the window.  Takes a 256-color 8-bit
 	palette.  Palette data will go away after the call, so copy it if you'll
@@ -91,6 +98,8 @@ D_EndDirectRect (int x, int y, int width, int height)
 void
 VID_Init (byte *palette, byte *colormap)
 {
+	Sys_RegisterShutdown (VID_shutdown);
+
 	vid_internal.gl_context = X11_GL_Context;
 	vid_internal.sw_context = X11_SW_Context;
 #ifdef HAVE_VULKAN
@@ -131,18 +140,6 @@ VID_Init_Cvars ()
 	X11_Vulkan_Init_Cvars ();
 #endif
 	X11_GL_Init_Cvars ();
-}
-
-/*
-	VID_Shutdown
-
-	Restore video mode
-*/
-void
-VID_Shutdown (void)
-{
-	Sys_MaskPrintf (SYS_VID, "VID_Shutdown\n");
-	X11_CloseDisplay ();
 }
 
 #if 0

@@ -53,6 +53,19 @@ static plugin_list_t snd_render_list[] = {
 	SND_RENDER_PLUGIN_LIST
 };
 
+static void
+S_shutdown (void)
+{
+	if (snd_render_module) {
+		PI_UnloadPlugin (snd_render_module);
+		snd_render_module = NULL;
+		snd_render_funcs = NULL;
+	}
+	if (snd_output_module) {
+		PI_UnloadPlugin (snd_output_module);
+		snd_output_module = NULL;
+	}
+}
 
 VISIBLE void
 S_Init (int *viewentity, double *host_frametime)
@@ -64,6 +77,8 @@ S_Init (int *viewentity, double *host_frametime)
 		Sys_Printf ("Not loading sound due to no renderer/output\n");
 		return;
 	}
+
+	Sys_RegisterShutdown (S_shutdown);
 
 	PI_RegisterPlugins (snd_output_list);
 	PI_RegisterPlugins (snd_render_list);
@@ -118,20 +133,6 @@ S_AmbientOn (void)
 {
 	if (snd_render_funcs)
 		snd_render_funcs->pS_AmbientOn ();
-}
-
-VISIBLE void
-S_Shutdown (void)
-{
-	if (snd_render_module) {
-		PI_UnloadPlugin (snd_render_module);
-		snd_render_module = NULL;
-		snd_render_funcs = NULL;
-	}
-	if (snd_output_module) {
-		PI_UnloadPlugin (snd_output_module);
-		snd_output_module = NULL;
-	}
 }
 
 VISIBLE void

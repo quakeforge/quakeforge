@@ -246,9 +246,6 @@ SV_Shutdown (void)
 	}
 	if (sv.recording_demo)
 		SV_Stop (0);
-
-	NET_Shutdown ();
-	Con_Shutdown ();
 }
 
 /*

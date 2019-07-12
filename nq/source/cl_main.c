@@ -120,14 +120,10 @@ CL_WriteConfiguration (void)
 	}
 }
 
-void
+static void
 CL_Shutdown (void)
 {
 	CL_WriteConfiguration ();
-	CDAudio_Shutdown ();
-	S_Shutdown ();
-	IN_Shutdown ();
-	VID_Shutdown ();
 }
 
 void
@@ -536,6 +532,8 @@ void
 CL_Init (cbuf_t *cbuf)
 {
 	byte       *basepal, *colormap;
+
+	Sys_RegisterShutdown (CL_Shutdown);
 
 	basepal = (byte *) QFS_LoadHunkFile (QFS_FOpenFile ("gfx/palette.lmp"));
 	if (!basepal)

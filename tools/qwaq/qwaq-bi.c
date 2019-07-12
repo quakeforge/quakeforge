@@ -161,9 +161,6 @@ static builtin_t builtins[] = {
 static void
 bi_shutdown (void)
 {
-	S_Shutdown ();
-	IN_Shutdown ();
-	VID_Shutdown ();
 }
 
 void

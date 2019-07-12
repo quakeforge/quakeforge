@@ -150,8 +150,8 @@ QFGL_LoadLibrary (void)
 #endif  // HAVE_DLOPEN
 
 
-void
-VID_Shutdown (void)
+static void
+VID_shutdown (void)
 {
 	if (!fc)
 		return;
@@ -270,6 +270,8 @@ void
 VID_Init (byte *palette, byte *colormap)
 {
 	GLint       attribs[32];
+
+	Sys_RegisterShutdown (VID_shutdown);
 
 	GLF_Init ();
 

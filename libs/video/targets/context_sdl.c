@@ -53,12 +53,6 @@ VID_SetGamma (double gamma)
 	return SDL_SetGamma((float) gamma, (float) gamma, (float) gamma);
 }
 
-void
-VID_Shutdown (void)
-{
-	SDL_Quit ();
-}
-
 static void
 VID_UpdateFullscreen (cvar_t *vid_fullscreen)
 {
