@@ -20,7 +20,8 @@ typedef struct qfv_device_s {
 } qfv_device_t;
 
 struct vulkan_ctx_s;
-qfv_device_t *QFV_CreateDevice(struct vulkan_ctx_s *ctx,
-							   const char **extensions);
+qfv_device_t *QFV_CreateDevice (struct vulkan_ctx_s *ctx,
+								const char **extensions);
+void QFV_DestroyDevice (qfv_device_t *device);
 
 #endif//__QF_Vulkan_swapchain_h

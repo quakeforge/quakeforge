@@ -63,6 +63,14 @@ vid_render_funcs_t *r_funcs;
 static U void (*const r_progs_init)(struct progs_s *) = R_Progs_Init;
 #undef U
 
+static void
+R_shutdown (void)
+{
+	if (vidrendmodule->functions->general->p_Shutdown) {
+		vidrendmodule->functions->general->p_Shutdown ();
+	}
+}
+
 VISIBLE void
 R_LoadModule (vid_internal_t *vid_internal)
 {
@@ -80,6 +88,7 @@ R_LoadModule (vid_internal_t *vid_internal)
 	r_data->vid->vid_internal = vid_internal;
 
 	vidrendmodule->functions->general->p_Init ();
+	Sys_RegisterShutdown (R_shutdown);
 }
 
 VISIBLE void

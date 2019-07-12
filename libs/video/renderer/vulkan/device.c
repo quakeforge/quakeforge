@@ -133,9 +133,6 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 {
 	uint32_t nlay = 1;	// ensure alloca doesn't see 0 and terminated
 	uint32_t next = count_strings (extensions) + 1; // ensure terminated
-	//if (vulkan_use_validation->int_val) {
-	//	nlay += count_strings (vulkanValidationLayers);
-	//}
 	const char **lay = alloca (nlay * sizeof (const char *));
 	const char **ext = alloca (next * sizeof (const char *));
 	// ensure there are null pointers so merge_strings can act as append
@@ -144,9 +141,6 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 	memset (lay, 0, nlay-- * sizeof (const char *));
 	memset (ext, 0, next-- * sizeof (const char *));
 	merge_strings (ext, extensions, 0);
-	//if (vulkan_use_validation->int_val) {
-	//	merge_strings (lay, lay, vulkanValidationLayers);
-	//}
 
 	qfv_instance_t *inst = ctx->instance;
 	VkInstance  instance = inst->instance;
@@ -160,9 +154,6 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 	for (uint32_t i = 0; i < numDevices; i++) {
 		VkPhysicalDevice physdev = devices[i];
 		/*
-		if (!Vulkan_LayersSupported (phys->layers, phys->numLayers, lay)) {
-			continue;
-		}
 		if (!Vulkan_ExtensionsSupported (phys->extensions, phys->numExtensions,
 										 ext)) {
 			continue;
@@ -208,4 +199,12 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 		free (device);
 	}
 	return 0;
+}
+
+void
+QFV_DestroyDevice (qfv_device_t *device)
+{
+	device->funcs->vkDestroyDevice (device->dev, 0);
+	del_strset (device->enabled_extensions);
+	free (device);
 }

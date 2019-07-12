@@ -13,5 +13,6 @@ typedef struct qfv_swapchain_s {
 struct vulkan_ctx_s;
 qfv_swapchain_t *QFV_CreateSwapchain (struct vulkan_ctx_s *ctx,
 									  VkSwapchainKHR old_swapchain);
+void QFV_DestroySwapchain (qfv_swapchain_t *swapchain);
 
 #endif//__QF_Vulkan_swapchain_h

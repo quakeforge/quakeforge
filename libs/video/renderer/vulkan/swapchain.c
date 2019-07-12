@@ -146,3 +146,11 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 									 sc->images);
 	return sc;
 }
+
+void
+QFV_DestroySwapchain (qfv_swapchain_t *swapchain)
+{
+	swapchain->funcs->vkDestroySwapchainKHR (swapchain->dev,
+											 swapchain->swapchain, 0);
+	free (swapchain);
+}
