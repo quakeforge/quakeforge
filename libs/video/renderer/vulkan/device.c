@@ -195,13 +195,13 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 		if (ifunc->vkCreateDevice (physdev, &dCreateInfo, 0,
 								   &device->dev) == VK_SUCCESS) {
 			qfv_devfuncs_t *dfunc = device->funcs;
+			device->enabled_extensions = new_strset (ext);
+			device->extension_enabled = device_extension_enabled;
 
 			device->physDev = physdev;
 			load_device_funcs (inst, device);
 			device->queueFamily = family;
 			dfunc->vkGetDeviceQueue (device->dev, family, 0, &device->queue);
-			device->enabled_extensions = new_strset (ext);
-			device->extension_enabled = device_extension_enabled;
 			ctx->device = device;
 			return device;
 		}
