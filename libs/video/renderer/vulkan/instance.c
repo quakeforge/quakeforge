@@ -150,7 +150,7 @@ debug_callback (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 static void
 setup_debug_callback (qfv_instance_t *instance)
 {
-	VkDebugUtilsMessengerEXT debug_callback_handle;
+	VkDebugUtilsMessengerEXT debug_handle;
 	VkDebugUtilsMessengerCreateInfoEXT createInfo = {
 		.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
 		.messageSeverity = message_severities,
@@ -160,7 +160,8 @@ setup_debug_callback (qfv_instance_t *instance)
 	};
 	instance->funcs->vkCreateDebugUtilsMessengerEXT(instance->instance,
 													&createInfo, 0,
-													&debug_callback_handle);
+													&debug_handle);
+	instance->debug_handle = debug_handle;
 }
 
 static void
@@ -242,7 +243,7 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 	if (res != VK_SUCCESS) {
 		Sys_Error ("unable to create vulkan instance\n");
 	}
-	qfv_instance_t *inst = malloc (sizeof(qfv_instance_t)
+	qfv_instance_t *inst = calloc (1, sizeof(qfv_instance_t)
 								   + sizeof (qfv_instfuncs_t));
 	inst->instance = instance;
 	inst->funcs = (qfv_instfuncs_t *)(inst + 1);
@@ -261,6 +262,11 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 void
 QFV_DestroyInstance (qfv_instance_t *instance)
 {
+	qfv_instfuncs_t *ifunc = instance->funcs;
+	if (instance->debug_handle) {
+		ifunc->vkDestroyDebugUtilsMessengerEXT (instance->instance,
+												instance->debug_handle, 0);
+	}
 	instance->funcs->vkDestroyInstance (instance->instance, 0);
 	free (instance);
 }

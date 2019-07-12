@@ -42,6 +42,7 @@ typedef struct qfv_instance_s {
 	struct strset_s *enabled_extensions;
 	int         (*extension_enabled) (struct qfv_instance_s *inst,
 									  const char *ext);
+	VkDebugUtilsMessengerEXT debug_handle;
 } qfv_instance_t;
 
 struct vulkan_ctx_s;
