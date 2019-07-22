@@ -200,6 +200,62 @@ fail:
 	return 0;
 }
 
+#define s05 0.70710678118654757
+
+static struct {
+	quat_t      q;
+	vec_t       expect[9];
+} quat_mat_tests[] = {
+	{{0, 0, 0, 1},
+		{1, 0, 0,
+		 0, 1, 0,
+		 0, 0, 1}},
+	{{1, 0, 0, 0},
+		{1,  0,  0,
+		 0, -1,  0,
+		 0,  0, -1}},
+	{{0, 1, 0, 0},
+		{-1, 0,  0,
+		  0, 1,  0,
+		  0, 0, -1}},
+	{{0, 0, 1, 0},
+		{-1,  0, 0,
+		  0, -1, 0,
+		  0,  0, 1}},
+	{{0.5, 0.5, 0.5, 0.5},
+		{0, 0, 1,
+		 1, 0, 0,
+		 0, 1, 0}},
+	{{s05, 0.0, 0.0, s05},
+		{1,             0,             0,
+		 0, 5.96046448e-8,   -0.99999994,
+		 0,    0.99999994, 5.96046448e-8}},
+};
+#define num_quat_mat_tests (sizeof (quat_mat_tests) / sizeof (quat_mat_tests[0]))
+
+static int
+test_quat_mat(const quat_t q, const quat_t expect)
+{
+	int         i;
+	vec_t       m[9];
+
+	QuatToMatrix (q, m, 0, 0);
+
+	for (i = 0; i < 9; i++)
+		if (m[i] != expect[i])	// exact tests here
+			goto fail;
+	return 1;
+fail:
+	printf ("%11.9g %11.9g %11.9g %11.9g\n", QuatExpand (q));
+	printf ("%11.9g %11.9g %11.9g   %11.9g %11.9g %11.9g\n",
+			VectorExpand (m + 0), VectorExpand (expect + 0));
+	printf ("%11.9g %11.9g %11.9g   %11.9g %11.9g %11.9g\n",
+			VectorExpand (m + 3), VectorExpand (expect + 3));
+	printf ("%11.9g %11.9g %11.9g   %11.9g %11.9g %11.9g\n",
+			VectorExpand (m + 6), VectorExpand (expect + 6));
+	return 0;
+}
+
 int
 main (int argc, const char **argv)
 {
@@ -228,5 +284,13 @@ main (int argc, const char **argv)
 		if (!test_rotation3 (test_angles[i]))
 			res = 1;
 	}
+
+	for (i = 0; i < num_quat_mat_tests; i ++) {
+		vec_t      *q = quat_mat_tests[i].q;
+		vec_t      *expect = quat_mat_tests[i].expect;
+		if (!test_quat_mat (q, expect))
+			res = 1;
+	}
+
 	return res;
 }

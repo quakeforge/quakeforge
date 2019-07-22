@@ -303,7 +303,7 @@ QuatExp (const quat_t a, quat_t b)
 VISIBLE void
 QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical)
 {
-	vec_t       xx, xy, xz, xw, yy, yz, yw, zz, zw, ww;
+	vec_t       xx, xy, xz, xw, yy, yz, yw, zz, zw;
 	vec_t       *_m[4] = {
 		m + (homogenous ? 0 : 0),
 		m + (homogenous ? 4 : 3),
@@ -311,28 +311,26 @@ QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical)
 		m + (homogenous ? 12 : 9),
 	};
 
-	xx = q[0] * q[0];
-	xy = q[0] * q[1];
-	xz = q[0] * q[2];
-	xw = q[0] * q[3];
+	xx = 2 * q[0] * q[0];
+	xy = 2 * q[0] * q[1];
+	xz = 2 * q[0] * q[2];
+	xw = 2 * q[0] * q[3];
 
-	yy = q[1] * q[1];
-	yz = q[1] * q[2];
-	yw = q[1] * q[3];
+	yy = 2 * q[1] * q[1];
+	yz = 2 * q[1] * q[2];
+	yw = 2 * q[1] * q[3];
 
-	zz = q[2] * q[2];
-	zw = q[2] * q[3];
-
-	ww = q[3] * q[3];
+	zz = 2 * q[2] * q[2];
+	zw = 2 * q[2] * q[3];
 
 	if (vertical) {
-		VectorSet (ww + xx - yy - zz, 2 * (xy + zw), 2 * (xz - yw), _m[0]);
-		VectorSet (2 * (xy - zw), ww - xx + yy - zz, 2 * (yz + xw), _m[1]);
-		VectorSet (2 * (xz + yw), 2 * (yz - xw), ww - xx - yy + zz, _m[2]);
+		VectorSet (1.0f - yy - zz, xy + zw, xz - yw, _m[0]);
+		VectorSet (xy - zw, 1.0f - xx - zz, yz + xw, _m[1]);
+		VectorSet (xz + yw, yz - xw, 1.0f - xx - yy, _m[2]);
 	} else {
-		VectorSet (ww + xx - yy - zz, 2 * (xy - zw), 2 * (xz + yw), _m[0]);
-		VectorSet (2 * (xy + zw), ww - xx + yy - zz, 2 * (yz - xw), _m[1]);
-		VectorSet (2 * (xz - yw), 2 * (yz + xw), ww - xx - yy + zz, _m[2]);
+		VectorSet (1.0f - yy - zz, xy - zw, xz + yw, _m[0]);
+		VectorSet (xy + zw, 1.0f - xx - zz, yz - xw, _m[1]);
+		VectorSet (xz - yw, yz + xw, 1.0f - xx - yy, _m[2]);
 	}
 	if (homogenous) {
 		_m[0][3] = 0;
