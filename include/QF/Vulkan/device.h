@@ -24,4 +24,4 @@ qfv_device_t *QFV_CreateDevice (struct vulkan_ctx_s *ctx,
 								const char **extensions);
 void QFV_DestroyDevice (qfv_device_t *device);
 
-#endif//__QF_Vulkan_swapchain_h
+#endif//__QF_Vulkan_device_h
