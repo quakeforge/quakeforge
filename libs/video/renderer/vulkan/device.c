@@ -191,8 +191,11 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 
 			device->physDev = physdev;
 			load_device_funcs (inst, device);
-			device->queueFamily = family;
-			dfunc->vkGetDeviceQueue (device->dev, family, 0, &device->queue);
+			device->queue.dev = device->dev;
+			device->queue.funcs = dfunc;
+			device->queue.queueFamily = family;
+			dfunc->vkGetDeviceQueue (device->dev, family, 0,
+									 &device->queue.queue);
 			ctx->device = device;
 			return device;
 		}

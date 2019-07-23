@@ -297,11 +297,11 @@ QFV_ResetFences (qfv_fenceset_t *fences)
 }
 
 int
-QFV_QueueSubmit (qfv_device_t *device, qfv_semaphoreset_t *waitSemaphores,
+QFV_QueueSubmit (qfv_queue_t *queue, qfv_semaphoreset_t *waitSemaphores,
 				 qfv_cmdbufferset_t *buffers,
 				 qfv_semaphoreset_t *signalSemaphores, qfv_fence_t *fence)
 {
-	qfv_devfuncs_t *dfunc = device->funcs;
+	qfv_devfuncs_t *dfunc = queue->funcs;
 	VkSubmitInfo submitInfo = {
 		VK_STRUCTURE_TYPE_SUBMIT_INFO, 0,
 		waitSemaphores->numSemaphores,
@@ -311,6 +311,6 @@ QFV_QueueSubmit (qfv_device_t *device, qfv_semaphoreset_t *waitSemaphores,
 		signalSemaphores->semaphores
 	};
 	//FIXME multi-batch
-	return dfunc->vkQueueSubmit (device->queue, 1, &submitInfo,
+	return dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo,
 								 fence->fence) == VK_SUCCESS;
 }

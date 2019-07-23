@@ -7,13 +7,21 @@ typedef struct qfv_devfuncs_s {
 #include "QF/Vulkan/funclist.h"
 } qfv_devfuncs_t;
 
+struct qfv_device_s;
+typedef struct qfv_queue_s {
+	VkDevice    dev;
+	qfv_devfuncs_t *funcs;
+
+	int32_t     queueFamily;
+	VkQueue     queue;
+} qfv_queue_t;
+
 struct qfv_instance_s;
 typedef struct qfv_device_s {
 	VkDevice    dev;
 	VkPhysicalDevice physDev;
 	qfv_devfuncs_t *funcs;
-	int32_t     queueFamily;
-	VkQueue     queue;
+	qfv_queue_t queue;
 	struct strset_s *enabled_extensions;
 	int         (*extension_enabled) (struct qfv_device_s *inst,
 									  const char *ext);

@@ -48,6 +48,7 @@ typedef struct qfv_fenceset_s {
 } qfv_fenceset_t;
 
 struct qfv_device_s;
+struct qfv_queue_s;
 qfv_cmdpool_t *QFV_CreateCommandPool (struct qfv_device_s *device,
 									  uint32_t queueFamily,
 									  int transient, int reset);
@@ -70,7 +71,7 @@ qfv_fence_t *QFV_CreateFence (struct qfv_device_s *device, int signaled);
 qfv_fenceset_t *QFV_CreateFenceSet (qfv_fence_t **fences, int numFences);
 int QFV_WaitForFences (qfv_fenceset_t *fences, int all, uint64_t timeout);
 int QFV_ResetFences (qfv_fenceset_t *fences);
-int QFV_QueueSubmit (struct qfv_device_s *device,
+int QFV_QueueSubmit (struct qfv_queue_s *queue,
 					 qfv_semaphoreset_t *waitSemaphores,
 					 qfv_cmdbufferset_t *buffers,
 					 qfv_semaphoreset_t *signalSemaphores, qfv_fence_t *fence);

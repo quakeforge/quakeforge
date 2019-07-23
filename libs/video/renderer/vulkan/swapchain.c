@@ -27,10 +27,11 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 {
 	qfv_instfuncs_t *ifuncs = ctx->instance->funcs;
 	qfv_devfuncs_t *dfuncs = ctx->device->funcs;
+	qfv_queue_t *queue = &ctx->device->queue;
 
 	VkBool32    supported;
 	ifuncs->vkGetPhysicalDeviceSurfaceSupportKHR (ctx->device->physDev,
-												  ctx->device->queueFamily,
+												  queue->queueFamily,
 												  ctx->surface,
 												  &supported);
 	if (!supported) {
