@@ -211,3 +211,10 @@ QFV_DestroyDevice (qfv_device_t *device)
 	del_strset (device->enabled_extensions);
 	free (device);
 }
+
+int
+QFV_DeviceWaitIdle (qfv_device_t *device)
+{
+	qfv_devfuncs_t *dfunc = device->funcs;
+	return dfunc->vkDeviceWaitIdle (device->dev) == VK_SUCCESS;
+}

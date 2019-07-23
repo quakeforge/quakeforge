@@ -100,6 +100,16 @@ QFV_ResetCommandPool (qfv_cmdpool_t *pool, int release)
 	return dfunc->vkResetCommandPool (dev, cmdpool, release_flag) == VK_SUCCESS;
 }
 
+void
+QFV_DestroyCommandPool (qfv_cmdpool_t *pool)
+{
+	VkDevice    dev = pool->dev;
+	qfv_devfuncs_t *dfunc = pool->funcs;
+
+	dfunc->vkDestroyCommandPool (dev, pool->cmdpool, 0);
+	free (pool);
+}
+
 qfv_cmdbuffer_t *
 QFV_AllocateCommandBuffers (qfv_cmdpool_t *pool, int secondary, int count)
 {
@@ -119,6 +129,7 @@ QFV_AllocateCommandBuffers (qfv_cmdpool_t *pool, int secondary, int count)
 	for (int i = 0; i < count; i++) {
 		cmdbuffers[i].dev = dev;
 		cmdbuffers[i].funcs = dfunc;
+		cmdbuffers[i].cmdpool = pool->cmdpool;
 		cmdbuffers[i].buffer = buffers[i];
 	}
 	return cmdbuffers;
@@ -142,6 +153,26 @@ QFV_CreateCommandBufferSet (qfv_cmdbuffer_t **buffers, int numBuffers)
 		bufferset->buffers[i] = buffers[i]->buffer;
 	}
 	return bufferset;
+}
+
+void QFV_FreeCommandBuffers (qfv_cmdbuffer_t *buffer, int count)
+{
+	VkDevice    dev = buffer->dev;
+	qfv_devfuncs_t *dfunc = buffer->funcs;
+	VkCommandBuffer *buffers = alloca (sizeof (*buffers) * count);
+
+	for (int i = 0; i < count; i++) {
+		buffers[i] = buffer[i].buffer;
+	}
+
+	dfunc->vkFreeCommandBuffers (dev, buffer->cmdpool, count, buffers);
+	free (buffer);
+}
+
+void
+QFV_DestroyCommandBufferSet (qfv_cmdbufferset_t *buffers)
+{
+	free (buffers);
 }
 
 int
@@ -237,6 +268,22 @@ QFV_CreateSemaphoreSet (qfv_semaphore_t **semaphores, int numSemaphores)
 	return semaphoreset;
 }
 
+void
+QFV_DestroySemaphore (qfv_semaphore_t *semaphore)
+{
+	VkDevice    dev = semaphore->dev;
+	qfv_devfuncs_t *dfunc = semaphore->funcs;
+
+	dfunc->vkDestroySemaphore (dev, semaphore->semaphore, 0);
+	free (semaphore);
+}
+
+void
+QFV_DestroySemaphoreSet (qfv_semaphoreset_t *semaphores)
+{
+	free (semaphores);
+}
+
 qfv_fence_t *
 QFV_CreateFence (qfv_device_t *device, int signaled)
 {
@@ -273,6 +320,22 @@ QFV_CreateFenceSet (qfv_fence_t **fences, int numFences)
 		fenceset->fences[i] = fences[i]->fence;
 	}
 	return fenceset;
+}
+
+void
+QFV_DestroyFence (qfv_fence_t *fence)
+{
+	VkDevice    dev = fence->dev;
+	qfv_devfuncs_t *dfunc = fence->funcs;
+
+	dfunc->vkDestroyFence (dev, fence->fence, 0);
+	free (fence);
+}
+
+void
+QFV_DestroyFenceSet (qfv_fenceset_t *fences)
+{
+	free (fences);
 }
 
 int
@@ -313,4 +376,11 @@ QFV_QueueSubmit (qfv_queue_t *queue, qfv_semaphoreset_t *waitSemaphores,
 	//FIXME multi-batch
 	return dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo,
 								 fence->fence) == VK_SUCCESS;
+}
+
+int
+QFV_QueueWaitIdle (qfv_queue_t *queue)
+{
+	qfv_devfuncs_t *dfunc = queue->funcs;
+	return dfunc->vkQueueWaitIdle (queue->queue) == VK_SUCCESS;
 }
