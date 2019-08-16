@@ -36,17 +36,17 @@ def check_faces(mesh):
     faces_ok = True
     save_select = []
     for f in mesh.polygons:
-        save_select.append(f.select)
-        f.select = False
+        save_select.append(f.select_get())
+        f.select_set('DESELECT')
         if len(f.vertices) > 3:
-            f.select = True
+            f.select_set('SELECT')
             faces_ok = False
     if not faces_ok:
         mesh.update()
         return False
     #reset selection to what it was before the check.
     for f, s in map(lambda x, y: (x, y), mesh.polygons, save_select):
-        f.select = s
+        f.select_set('SELECT' if s else 'DESELECT')
     mesh.update()
     return True
 

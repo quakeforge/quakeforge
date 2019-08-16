@@ -66,17 +66,17 @@ EFFECTS=(
 )
 
 class QFMDLSettings(bpy.types.PropertyGroup):
-    eyeposition = FloatVectorProperty(
+    eyeposition : FloatVectorProperty(
         name="Eye Position",
         description="View possion relative to object origin")
-    synctype = EnumProperty(
+    synctype : EnumProperty(
         items=SYNCTYPE,
         name="Sync Type",
         description="Add random time offset for automatic animations")
-    rotate = BoolProperty(
+    rotate : BoolProperty(
         name="Rotate",
         description="Rotate automatically (for pickup items)")
-    effects = EnumProperty(
+    effects : EnumProperty(
         items=EFFECTS,
         name="Effects",
         description="Particle trail effects")
@@ -87,11 +87,11 @@ class QFMDLSettings(bpy.types.PropertyGroup):
     #    name="Script",
     #    description="Script for animating frames and skins")
 
-    xform = BoolProperty(
+    xform : BoolProperty(
         name="Auto transform",
         description="Auto-apply location/rotation/scale when exporting",
         default=True)
-    md16 = BoolProperty(
+    md16 : BoolProperty(
         name="16-bit",
         description="16 bit vertex coordinates: QuakeForge only")
     xform = BoolProperty(
@@ -111,7 +111,7 @@ class ImportMDL6(bpy.types.Operator, ImportHelper):
     bl_label = "Import MDL"
 
     filename_ext = ".mdl"
-    filter_glob = StringProperty(default="*.mdl", options={'HIDDEN'})
+    filter_glob : StringProperty(default="*.mdl", options={'HIDDEN'})
 
     def execute(self, context):
         from . import import_mdl
@@ -126,28 +126,28 @@ class ExportMDL6(bpy.types.Operator, ExportHelper):
     bl_options = {'PRESET'};
 
     filename_ext = ".mdl"
-    filter_glob = StringProperty(default="*.mdl", options={'HIDDEN'})
+    filter_glob : StringProperty(default="*.mdl", options={'HIDDEN'})
 
-    eyeposition = FloatVectorProperty(
+    eyeposition : FloatVectorProperty(
         name="Eye Position",
         description="View possion relative to object origin")
-    synctype = EnumProperty(
+    synctype : EnumProperty(
         items=SYNCTYPE,
         name="Sync Type",
         description="Add random time offset for automatic animations")
-    rotate = BoolProperty(
+    rotate : BoolProperty(
         name="Rotate",
         description="Rotate automatically (for pickup items)",
         default=False)
-    effects = EnumProperty(
+    effects : EnumProperty(
         items=EFFECTS,
         name="Effects",
         description="Particle trail effects")
-    xform = BoolProperty(
+    xform : BoolProperty(
         name="Auto transform",
         description="Auto-apply location/rotation/scale when exporting",
         default=True)
-    md16 = BoolProperty(
+    md16 : BoolProperty(
         name="16-bit",
         description="16 bit vertex coordinates: QuakeForge only")
 
@@ -172,11 +172,6 @@ class OBJECT_PT_MDLPanel(bpy.types.Panel):
     def poll(cls, context):
         obj = context.active_object
         return obj and obj.type == 'MESH'
-
-    def draw_header(self, context):
-        layout = self.layout
-        obj = context.object
-        layout.prop(obj, "select", text="")
 
     def draw(self, context):
         layout = self.layout
