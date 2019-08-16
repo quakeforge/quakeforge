@@ -390,7 +390,7 @@ def set_properties(mdl):
         mdl.obj.qfmdl.synctype = 'ST_SYNC'
     mdl.obj.qfmdl.rotate = (mdl.flags & MDL.EF_ROTATE) and True or False
     mdl.obj.qfmdl.effects = parse_flags(mdl.flags)
-    #mdl.obj.qfmdl.script = mdl.text.name #FIXME really want the text object
+    mdl.obj.qfmdl.script = mdl.text
     mdl.obj.qfmdl.md16 = (mdl.ident == "MD16")
 
 def import_mdl(operator, context, filepath, **opts):

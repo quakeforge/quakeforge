@@ -81,11 +81,10 @@ class QFMDLSettings(bpy.types.PropertyGroup):
         name="Effects",
         description="Particle trail effects")
 
-    #doesn't work :(
-    #script = PointerProperty(
-    #    type=bpy.types.Object,
-    #    name="Script",
-    #    description="Script for animating frames and skins")
+    script : PointerProperty(
+        type=bpy.types.Text,
+        name="Script",
+        description="Script for animating frames and skins")
 
     xform : BoolProperty(
         name="Auto transform",
@@ -101,9 +100,6 @@ class QFMDLSettings(bpy.types.PropertyGroup):
     md16 = BoolProperty(
         name="16-bit",
         description="16 bit vertex coordinates: QuakeForge only")
-    #script = StringProperty(
-    #    name="Script",
-    #    description="Script for animating frames and skins")
 
 class ImportMDL6(bpy.types.Operator, ImportHelper):
     '''Load a Quake MDL (v6) File'''

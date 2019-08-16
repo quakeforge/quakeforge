@@ -245,18 +245,10 @@ def get_properties(
     if md16:
         mdl.ident = "MD16"
 
-    #tomporarily disabled
-    #script = obj.qfmdl.script
-    script = None
+    script = obj.qfmdl.script
     mdl.script = None
     if script:
-        try:
-            script = bpy.data.texts[script].as_string()
-        except KeyError:
-            operator.report({'ERROR'},
-                            "Script '%s' not found." % script)
-            return False
-        pl = pldata(script)
+        pl = pldata(script.as_string())
         try:
             mdl.script = pl.parse()
         except PListError as err:
