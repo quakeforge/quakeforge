@@ -296,8 +296,8 @@ def write_text(mdl):
     /*  This script represents the animation data within the model file. It
         is generated automatically on import, and is optional when exporting.
         If no script is used when exporting, frames will be exported one per
-        blender frame from frame 1 to the current frame (inclusive), and only
-        one skin will be exported.
+        blender frame from the scene start frame to the scene end frame
+        (inclusive), and one skin per teximage node will be exported.
 
         The fundamental format of the script is documented at
         http://quakeforge.net/doxygen/property-list.html

@@ -96,7 +96,7 @@ def make_skin(operator, mdl, mesh):
     mdl.skinwidth, mdl.skinheight = (4, 4)
     skin = null_skin((mdl.skinwidth, mdl.skinheight))
 
-    materials = bpy.context.object.data.materials
+    materials = mesh.materials
 
     if len(materials) > 0:
         for mat in materials:
@@ -189,15 +189,8 @@ def convert_stverts(mdl, stverts):
         t = ((t % mdl.skinheight) + mdl.skinheight) % mdl.skinheight
         stverts[i] = MDL.STVert((s, t))
 
-def make_frame(mesh, vertmap, idx):
+def make_frame(mesh, vertmap):
     frame = MDL.Frame()
-    frame.name = "frame" + str(idx)
-
-    if bpy.context.object.data.shape_keys:
-        shape_keys_amount = len(bpy.context.object.data.shape_keys.key_blocks)
-        if shape_keys_amount > idx:
-            frame.name = bpy.context.object.data.shape_keys.key_blocks[idx].name
-
     for v in vertmap:
         mv = mesh.vertices[v]
         vert = MDL.Vert(tuple(mv.co), map_normal(mv.normal))
@@ -229,20 +222,12 @@ def calc_average_area(mdl):
         totalarea += (c @ c) ** 0.5 / 2.0
     return totalarea / len(mdl.tris)
 
-def get_properties(
-            operator,
-            mdl,
-            eyeposition,
-            synctype,
-            rotate,
-            effects,
-            xform,
-            md16):
-    mdl.eyeposition = eyeposition
-    mdl.synctype = MDL.SYNCTYPE[synctype]
-    mdl.flags = ((rotate and MDL.EF_ROTATE or 0)
-                 | MDL.EFFECTS[effects])
-    if md16:
+def get_properties(operator, mdl, obj):
+    mdl.eyeposition = tuple(obj.qfmdl.eyeposition)
+    mdl.synctype = MDL.SYNCTYPE[obj.qfmdl.synctype]
+    mdl.flags = ((obj.qfmdl.rotate and MDL.EF_ROTATE or 0)
+                 | MDL.EFFECTS[obj.qfmdl.effects])
+    if obj.qfmdl.md16:
         mdl.ident = "MD16"
 
     script = obj.qfmdl.script
@@ -315,26 +300,24 @@ def process_frame(mdl, scene, frame, vertmap, ingroup = False,
             return fr
         mdl.frames += fr.frames[:-1]
         return fr.frames[-1]
-    scene.frame_set(int(frameno), frameno - int(frameno))
-    mesh = mdl.obj.to_mesh(scene, True, 'PREVIEW') #wysiwyg?
+    scene.frame_set(int(frameno), subframe = frameno - int(frameno))
+    depsgraph = bpy.context.evaluated_depsgraph_get()
+    mesh = mdl.obj.evaluated_get(depsgraph).to_mesh() #wysiwyg?
     if mdl.obj.qfmdl.xform:
         mesh.transform(mdl.obj.matrix_world)
     fr = make_frame(mesh, vertmap)
     fr.name = name
     return fr
 
-def export_mdl(
-    operator,
-    context,
-    filepath = "",
-    eyeposition = (0.0, 0.0, 0.0),
-    synctype = SYNCTYPE[1],
-    rotate = False,
-    effects = EFFECTS[1],
-    xform = True,
-    md16 = False
-    ):
+def get_frame_name(mesh, idx):
+    name = "frame" + str(idx)
+    if mesh.shape_keys:
+        shape_keys_amount = len(mesh.shape_keys.key_blocks)
+        if shape_keys_amount > idx:
+            name = mesh.shape_keys.key_blocks[idx].name
+    return name
 
+def export_mdl(operator, context, filepath):
     obj = context.active_object
     obj.update_from_editmode()
     depsgraph = context.evaluated_depsgraph_get()
@@ -346,16 +329,8 @@ def export_mdl(
     #    return {'CANCELLED'}
     mdl = MDL(obj.name)
     mdl.obj = obj
-    if not get_properties(
-            operator,
-            mdl,
-            eyeposition,
-            synctype,
-            rotate,
-            effects,
-            xform,
-            md16):
-                return {'CANCELLED'}
+    if not get_properties(operator, mdl, obj):
+        return {'CANCELLED'}
 
     mdl.tris, mdl.stverts, vertmap = build_tris(mesh)
     if mdl.script:
@@ -369,15 +344,19 @@ def export_mdl(
     if not mdl.skins:
         make_skin(operator, mdl, mesh)
     if not mdl.frames:
-        for fno in range(context.scene.frame_start, context.scene.frame_end + 1):
+        scene = context.scene
+        for fno in range(scene.frame_start, scene.frame_end + 1):
             context.scene.frame_set(fno)
             obj.update_from_editmode()
             depsgraph = context.evaluated_depsgraph_get()
             ob_eval = obj.evaluated_get(depsgraph)
             mesh = ob_eval.to_mesh()
-            if xform:
+            if obj.qfmdl.xform:
                 mesh.transform(mdl.obj.matrix_world)
-            mdl.frames.append(make_frame(mesh, vertmap, fno))
+            frame = make_frame(mesh, vertmap)
+            frame.name = get_frame_name(obj.data, fno)
+            mdl.frames.append(frame)
+
     convert_stverts(mdl, mdl.stverts)
     mdl.size = calc_average_area(mdl)
     scale_verts(mdl)
