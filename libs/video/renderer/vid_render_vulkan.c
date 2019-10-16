@@ -152,7 +152,8 @@ vulkan_vid_render_choose_visual (void)
 {
 	Vulkan_CreateDevice (vulkan_ctx);
 	vulkan_ctx->choose_visual (vulkan_ctx);
-	Sys_Printf ("%p %p\n", vulkan_ctx->device->dev, vulkan_ctx->device->queue);
+	Sys_Printf ("vk choose visual %p %p\n", vulkan_ctx->device->dev,
+				vulkan_ctx->device->queue.queue);
 }
 
 static void
@@ -160,7 +161,7 @@ vulkan_vid_render_create_context (void)
 {
 	vulkan_ctx->create_window (vulkan_ctx);
 	vulkan_ctx->surface = vulkan_ctx->create_surface (vulkan_ctx);
-	Sys_Printf ("%p\n", vulkan_ctx->surface);
+	Sys_Printf ("vk create context %p\n", vulkan_ctx->surface);
 	Vulkan_CreateSwapchain (vulkan_ctx);
 	Sys_Printf ("%p %d", vulkan_ctx->swapchain->swapchain,
 				vulkan_ctx->swapchain->numImages);
