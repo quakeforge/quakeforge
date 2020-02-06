@@ -19,7 +19,7 @@ typedef struct qfv_queue_s {
 struct qfv_instance_s;
 typedef struct qfv_device_s {
 	VkDevice    dev;
-	VkPhysicalDevice physDev;
+	struct qfv_physdev_s *physDev;
 	qfv_devfuncs_t *funcs;
 	qfv_queue_t queue;
 	struct strset_s *enabled_extensions;

@@ -143,16 +143,10 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 	merge_strings (ext, extensions, 0);
 
 	qfv_instance_t *inst = ctx->instance;
-	VkInstance  instance = inst->instance;
 	qfv_instfuncs_t *ifunc = inst->funcs;
 
-	uint32_t numDevices;
-	ifunc->vkEnumeratePhysicalDevices (instance, &numDevices, 0);
-	VkPhysicalDevice *devices = alloca (numDevices * sizeof (*devices));
-	ifunc->vkEnumeratePhysicalDevices (instance, &numDevices, devices);
-
-	for (uint32_t i = 0; i < numDevices; i++) {
-		VkPhysicalDevice physdev = devices[i];
+	for (uint32_t i = 0; i < inst->numDevices; i++) {
+		VkPhysicalDevice physdev = inst->devices[i].dev;
 		/*
 		if (!Vulkan_ExtensionsSupported (phys->extensions, phys->numExtensions,
 										 ext)) {
@@ -189,7 +183,7 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 			device->enabled_extensions = new_strset (ext);
 			device->extension_enabled = device_extension_enabled;
 
-			device->physDev = physdev;
+			device->physDev = &inst->devices[i];
 			load_device_funcs (inst, device);
 			device->queue.dev = device->dev;
 			device->queue.funcs = dfunc;

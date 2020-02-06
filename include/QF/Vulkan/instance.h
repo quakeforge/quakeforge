@@ -36,6 +36,11 @@ typedef struct qfv_instfuncs_s {
 #include "QF/Vulkan/funclist.h"
 } qfv_instfuncs_t;
 
+typedef struct qfv_physdev_s {
+	VkPhysicalDevice dev;
+	VkPhysicalDeviceMemoryProperties memory_properties;
+} qfv_physdev_t;
+
 typedef struct qfv_instance_s {
 	VkInstance  instance;
 	qfv_instfuncs_t *funcs;
@@ -43,6 +48,8 @@ typedef struct qfv_instance_s {
 	int         (*extension_enabled) (struct qfv_instance_s *inst,
 									  const char *ext);
 	VkDebugUtilsMessengerEXT debug_handle;
+	uint32_t    numDevices;
+	qfv_physdev_t *devices;
 } qfv_instance_t;
 
 struct vulkan_ctx_s;

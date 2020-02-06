@@ -28,9 +28,10 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 	qfv_instfuncs_t *ifuncs = ctx->instance->funcs;
 	qfv_devfuncs_t *dfuncs = ctx->device->funcs;
 	qfv_queue_t *queue = &ctx->device->queue;
+	VkPhysicalDevice physDev = ctx->device->physDev->dev;
 
 	VkBool32    supported;
-	ifuncs->vkGetPhysicalDeviceSurfaceSupportKHR (ctx->device->physDev,
+	ifuncs->vkGetPhysicalDeviceSurfaceSupportKHR (physDev,
 												  queue->queueFamily,
 												  ctx->surface,
 												  &supported);
@@ -41,11 +42,11 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 	uint32_t    numModes;
 	VkPresentModeKHR *modes;
 	VkPresentModeKHR useMode = VK_PRESENT_MODE_FIFO_KHR;;
-	ifuncs->vkGetPhysicalDeviceSurfacePresentModesKHR (ctx->device->physDev,
+	ifuncs->vkGetPhysicalDeviceSurfacePresentModesKHR (physDev,
 													   ctx->surface,
 													   &numModes, 0);
 	modes = alloca (numModes * sizeof (VkPresentModeKHR));
-	ifuncs->vkGetPhysicalDeviceSurfacePresentModesKHR (ctx->device->physDev,
+	ifuncs->vkGetPhysicalDeviceSurfacePresentModesKHR (physDev,
 													   ctx->surface,
 													   &numModes, modes);
 	for (uint32_t i = 0; i < numModes; i++) {
@@ -57,7 +58,7 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 					vulkan_presentation_mode->int_val);
 
 	VkSurfaceCapabilitiesKHR surfCaps;
-	ifuncs->vkGetPhysicalDeviceSurfaceCapabilitiesKHR (ctx->device->physDev,
+	ifuncs->vkGetPhysicalDeviceSurfaceCapabilitiesKHR (physDev,
 													   ctx->surface,
 													   &surfCaps);
 	uint32_t numImages = surfCaps.minImageCount + 1;
@@ -85,11 +86,11 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 	VkSurfaceTransformFlagBitsKHR surfTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
 
 	uint32_t numFormats;
-	ifuncs->vkGetPhysicalDeviceSurfaceFormatsKHR (ctx->device->physDev,
+	ifuncs->vkGetPhysicalDeviceSurfaceFormatsKHR (physDev,
 												  ctx->surface,
 												  &numFormats, 0);
 	VkSurfaceFormatKHR *formats = alloca (numFormats * sizeof (*formats));
-	ifuncs->vkGetPhysicalDeviceSurfaceFormatsKHR (ctx->device->physDev,
+	ifuncs->vkGetPhysicalDeviceSurfaceFormatsKHR (physDev,
 												  ctx->surface,
 												  &numFormats, formats);
 	VkSurfaceFormatKHR useFormat = {VK_FORMAT_R8G8B8A8_UNORM,

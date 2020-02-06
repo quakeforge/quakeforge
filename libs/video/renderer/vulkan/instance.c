@@ -256,6 +256,18 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 		setup_debug_callback (inst);
 	}
 
+	qfv_instfuncs_t *ifunc = inst->funcs;
+	ifunc->vkEnumeratePhysicalDevices (instance, &inst->numDevices, 0);
+	inst->devices = malloc (inst->numDevices * sizeof (*inst->devices));
+	VkPhysicalDevice *devices = alloca (inst->numDevices * sizeof (*devices));
+	ifunc->vkEnumeratePhysicalDevices (instance, &inst->numDevices, devices);
+	for (uint32_t i = 0; i < inst->numDevices; i++) {
+		VkPhysicalDevice physDev = devices[i];
+		qfv_physdev_t *dev = &inst->devices[i];
+		dev->dev = physDev;
+		ifunc->vkGetPhysicalDeviceMemoryProperties (physDev,
+													&dev->memory_properties);
+	}
 	return inst;
 }
 
