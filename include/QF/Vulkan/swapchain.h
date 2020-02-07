@@ -2,8 +2,7 @@
 #define __QF_Vulkan_swapchain_h
 
 typedef struct qfv_swapchain_s {
-	VkDevice    dev;
-	struct qfv_devfuncs_s *funcs;
+	struct qfv_device_s *device;
 	VkSurfaceKHR surface;
 	VkSwapchainKHR swapchain;
 	int32_t     numImages;

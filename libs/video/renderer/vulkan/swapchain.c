@@ -138,8 +138,7 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 	dfuncs->vkGetSwapchainImagesKHR (device, swapchain, &numImages, 0);
 	qfv_swapchain_t *sc = malloc (sizeof (qfv_swapchain_t)
 								  + numImages * sizeof (VkImage));
-	sc->dev = device;
-	sc->funcs = ctx->device->funcs;
+	sc->device = ctx->device;
 	sc->surface = ctx->surface;
 	sc->swapchain = swapchain;
 	sc->numImages = numImages;
@@ -152,7 +151,9 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 void
 QFV_DestroySwapchain (qfv_swapchain_t *swapchain)
 {
-	swapchain->funcs->vkDestroySwapchainKHR (swapchain->dev,
-											 swapchain->swapchain, 0);
+	qfv_device_t *device = swapchain->device;
+	VkDevice dev = device->dev;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	dfunc->vkDestroySwapchainKHR (dev, swapchain->swapchain, 0);
 	free (swapchain);
 }

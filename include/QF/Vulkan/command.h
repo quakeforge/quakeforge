@@ -2,53 +2,45 @@
 #define __QF_Vulkan_command_h
 
 typedef struct qfv_cmdpool_s {
-	VkDevice    dev;
-	struct qfv_devfuncs_s *funcs;
+	struct qfv_device_s *device;
 	VkCommandPool cmdpool;
 } qfv_cmdpool_t;
 
 typedef struct qfv_cmdbuffer_s {
-	VkDevice    dev;
-	struct qfv_devfuncs_s *funcs;
+	struct qfv_device_s *device;
 	VkCommandPool cmdpool;
 	VkCommandBuffer buffer;
 } qfv_cmdbuffer_t;
 
 typedef struct qfv_cmdbufferset_s {
-	VkDevice    dev;
-	struct qfv_devfuncs_s *funcs;
+	struct qfv_device_s *device;
 	VkCommandBuffer *buffers;
 	int         numBuffers;
 } qfv_cmdbufferset_t;
 
 typedef struct qfv_semaphore_s {
-	VkDevice    dev;
-	struct qfv_devfuncs_s *funcs;
+	struct qfv_device_s *device;
 	VkSemaphore semaphore;
 } qfv_semaphore_t;
 
 typedef struct qfv_semaphoreset_s {
-	VkDevice    dev;
-	struct qfv_devfuncs_s *funcs;
+	struct qfv_device_s *device;
 	VkSemaphore *semaphores;
 	VkPipelineStageFlags *stages;
 	int         numSemaphores;
 } qfv_semaphoreset_t;
 
 typedef struct qfv_fence_s {
-	VkDevice    dev;
-	struct qfv_devfuncs_s *funcs;
+	struct qfv_device_s *device;
 	VkFence     fence;
 } qfv_fence_t;
 
 typedef struct qfv_fenceset_s {
-	VkDevice    dev;
-	struct qfv_devfuncs_s *funcs;
+	struct qfv_device_s *device;
 	VkFence    *fences;
 	int         numFences;
 } qfv_fenceset_t;
 
-struct qfv_device_s;
 struct qfv_queue_s;
 qfv_cmdpool_t *QFV_CreateCommandPool (struct qfv_device_s *device,
 									  uint32_t queueFamily,

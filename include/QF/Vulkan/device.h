@@ -7,10 +7,8 @@ typedef struct qfv_devfuncs_s {
 #include "QF/Vulkan/funclist.h"
 } qfv_devfuncs_t;
 
-struct qfv_device_s;
 typedef struct qfv_queue_s {
-	VkDevice    dev;
-	qfv_devfuncs_t *funcs;
+	struct qfv_device_s *device;
 
 	int32_t     queueFamily;
 	VkQueue     queue;
