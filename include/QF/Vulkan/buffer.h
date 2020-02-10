@@ -6,11 +6,6 @@ typedef struct qfv_buffer_s {
 	VkBuffer    buffer;
 } qfv_buffer_t;
 
-typedef struct qfv_memory_s {
-	struct qfv_device_s *device;
-	VkDeviceMemory object;
-} qfv_memory_t;
-
 typedef struct qfv_buffertransition_s {
 	qfv_buffer_t *buffer;
 	VkAccessFlags srcAccess;
@@ -41,11 +36,11 @@ qfv_buffer_t *QFV_CreateBuffer (struct qfv_device_s *device,
 								VkDeviceSize size,
 								VkBufferUsageFlags usage);
 
-qfv_memory_t *QFV_AllocBufferMemory (qfv_buffer_t *buffer,
+struct qfv_memory_s *QFV_AllocBufferMemory (qfv_buffer_t *buffer,
 									 VkMemoryPropertyFlags properties,
 									 VkDeviceSize size, VkDeviceSize offset);
 
-int QFV_BindBufferMemory (qfv_buffer_t *buffer, qfv_memory_t *memory,
+int QFV_BindBufferMemory (qfv_buffer_t *buffer, struct qfv_memory_s *memory,
 						  VkDeviceSize offset);
 
 qfv_bufferbarrierset_t *

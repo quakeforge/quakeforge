@@ -49,10 +49,10 @@
 #include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/Vulkan/qf_vid.h"
-#include "QF/Vulkan/buffer.h"//FIXME qfv_memory_t
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/memory.h"
 
 #include "compat.h"
 #include "d_iface.h"

@@ -52,6 +52,7 @@
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/memory.h"
 
 #include "compat.h"
 #include "d_iface.h"
