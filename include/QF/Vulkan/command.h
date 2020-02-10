@@ -90,4 +90,22 @@ void QFV_CmdPipelineBarrier (qfv_cmdbuffer_t *cmdBuffer,
 							 struct qfv_bufferbarrierset_s *buffBarriers,
 							 struct qfv_imagebarrierset_s *imgBarriers);
 
+struct qfv_buffer_s;
+struct qfv_image_s;
+void QFV_CmdCopyBuffer (qfv_cmdbuffer_t *cmdBuffer,
+						struct qfv_buffer_s *src, struct qfv_buffer_s *dst,
+						VkBufferCopy *regions, uint32_t numRegions);
+void QFV_CmdCopyBufferToImage (qfv_cmdbuffer_t *cmdBuffer,
+							   struct qfv_buffer_s *src,
+							   struct qfv_image_s *dst,
+							   VkImageLayout layout,
+							   VkBufferImageCopy *regions,
+							   uint32_t numRegions);
+void QFV_CmdCopyImageToBuffer (qfv_cmdbuffer_t *cmdBuffer,
+							   struct qfv_image_s *src,
+							   VkImageLayout layout,
+							   struct qfv_buffer_s *dst,
+							   VkBufferImageCopy *regions,
+							   uint32_t numRegions);
+
 #endif//__QF_Vulkan_command_h

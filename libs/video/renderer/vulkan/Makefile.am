@@ -9,6 +9,7 @@ vulkan_src = \
 	device.c \
 	image.c \
 	instance.c \
+	memory.c \
 	swapchain.c \
 	util.c \
 	vulkan_draw.c \

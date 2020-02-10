@@ -422,3 +422,43 @@ QFV_CmdPipelineBarrier (qfv_cmdbuffer_t *cmdBuffer,
 								  numBuffBarriers, buffBarriers,
 								  numImgBarriers, imgBarriers);
 }
+
+void
+QFV_CmdCopyBuffer (qfv_cmdbuffer_t *cmdBuffer,
+				   struct qfv_buffer_s *src, struct qfv_buffer_s *dst,
+				   VkBufferCopy *regions, uint32_t numRegions)
+{
+	qfv_device_t *device = cmdBuffer->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	dfunc->vkCmdCopyBuffer (cmdBuffer->buffer, src->buffer, dst->buffer,
+							numRegions, regions);
+}
+
+void
+QFV_CmdCopyBufferToImage (qfv_cmdbuffer_t *cmdBuffer,
+						  struct qfv_buffer_s *src,
+						  struct qfv_image_s *dst,
+						  VkImageLayout layout,
+						  VkBufferImageCopy *regions, uint32_t numRegions)
+{
+	qfv_device_t *device = cmdBuffer->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	dfunc->vkCmdCopyBufferToImage (cmdBuffer->buffer, src->buffer, dst->image,
+								   layout, numRegions, regions);
+}
+
+void
+QFV_CmdCopyImageToBuffer (qfv_cmdbuffer_t *cmdBuffer,
+						  struct qfv_image_s *src,
+						  VkImageLayout layout,
+						  struct qfv_buffer_s *dst,
+						  VkBufferImageCopy *regions, uint32_t numRegions)
+{
+	qfv_device_t *device = cmdBuffer->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	dfunc->vkCmdCopyImageToBuffer (cmdBuffer->buffer, src->image, layout,
+								   dst->buffer, numRegions, regions);
+}
