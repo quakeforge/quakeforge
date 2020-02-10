@@ -49,6 +49,7 @@
 #include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/Vulkan/qf_vid.h"
+#include "QF/Vulkan/buffer.h"//FIXME should QFV_CmdPipelineBarrier be here?
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
@@ -386,4 +387,33 @@ QFV_QueueWaitIdle (qfv_queue_t *queue)
 	qfv_device_t *device = queue->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	return dfunc->vkQueueWaitIdle (queue->queue) == VK_SUCCESS;
+}
+
+void
+QFV_CmdPipelineBarrier (qfv_cmdbuffer_t *cmdBuffer,
+						VkPipelineStageFlags srcStageMask,
+						VkPipelineStageFlags dstStageMask,
+						VkDependencyFlags dependencyFlags,
+						struct qfv_memorybarrierset_s *memBarrierSet,
+						qfv_bufferbarrierset_t *buffBarrierSet,
+						struct qfv_imagebarrierset_s *imgBarrierSet)
+{
+	qfv_device_t *device = cmdBuffer->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	uint32_t    numMemBarriers = 0;
+	VkMemoryBarrier *memBarriers = 0;
+	uint32_t    numBuffBarriers = 0;
+	VkBufferMemoryBarrier *buffBarriers = 0;
+	uint32_t    numImgBarriers = 0;
+	VkImageMemoryBarrier *imgBarriers = 0;
+
+	if (buffBarrierSet) {
+		numBuffBarriers = buffBarrierSet->numBarriers;
+		buffBarriers = buffBarrierSet->barriers;
+	}
+	dfunc->vkCmdPipelineBarrier (cmdBuffer->buffer,
+								  srcStageMask, dstStageMask, dependencyFlags,
+								  numMemBarriers, memBarriers,
+								  numBuffBarriers, buffBarriers,
+								  numImgBarriers, imgBarriers);
 }

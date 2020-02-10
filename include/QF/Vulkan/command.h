@@ -79,5 +79,15 @@ int QFV_QueueSubmit (struct qfv_queue_s *queue,
 					 qfv_semaphoreset_t *signalSemaphores, qfv_fence_t *fence);
 int QFV_QueueWaitIdle (struct qfv_queue_s *queue);
 
+struct qfv_memorybarrierset_s *memBarriers;
+struct qfv_bufferbarrierset_s *buffBarriers;
+struct qfv_imagebarrierset_s *imgBarriers;
+void QFV_CmdPipelineBarrier (qfv_cmdbuffer_t *cmdBuffer,
+							 VkPipelineStageFlags srcStageMask,
+							 VkPipelineStageFlags dstStageMask,
+							 VkDependencyFlags dependencyFlags,
+							 struct qfv_memorybarrierset_s *memBarriers,
+							 struct qfv_bufferbarrierset_s *buffBarriers,
+							 struct qfv_imagebarrierset_s *imgBarriers);
 
 #endif//__QF_Vulkan_command_h
