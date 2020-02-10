@@ -27,14 +27,23 @@ typedef struct qfv_bufferbarrierset_s {
 	VkBufferMemoryBarrier *barriers;
 } qfv_bufferbarrierset_t;
 
+typedef struct qfv_bufferview_s {
+	struct qfv_device_s *device;
+	VkBufferView view;
+	qfv_buffer_t *buffer;
+	VkFormat    format;
+	VkDeviceSize offset;
+	VkDeviceSize size;
+} qfv_bufferview_t;
+
 struct qfv_device_s;
 qfv_buffer_t *QFV_CreateBuffer (struct qfv_device_s *device,
 								VkDeviceSize size,
 								VkBufferUsageFlags usage);
 
-qfv_memory_t *QFV_AllocMemory (qfv_buffer_t *buffer,
-							   VkMemoryPropertyFlags properties,
-							   VkDeviceSize size, VkDeviceSize offset);
+qfv_memory_t *QFV_AllocBufferMemory (qfv_buffer_t *buffer,
+									 VkMemoryPropertyFlags properties,
+									 VkDeviceSize size, VkDeviceSize offset);
 
 int QFV_BindBufferMemory (qfv_buffer_t *buffer, qfv_memory_t *memory,
 						  VkDeviceSize offset);
@@ -43,5 +52,7 @@ qfv_bufferbarrierset_t *
 QFV_CreateBufferTransitionSet (qfv_buffertransition_t **transitions,
 							   int numTransitions);
 
+qfv_bufferview_t *QFV_CreateBufferView (qfv_buffer_t *buffer, VkFormat format,
+										VkDeviceSize offset, VkDeviceSize size);
 
 #endif//__QF_Vulkan_buffer_h

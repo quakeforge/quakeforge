@@ -79,8 +79,8 @@ QFV_CreateBuffer (qfv_device_t *device, VkDeviceSize size,
 }
 
 qfv_memory_t *
-QFV_AllocMemory (qfv_buffer_t *buffer, VkMemoryPropertyFlags properties,
-				 VkDeviceSize size, VkDeviceSize offset)
+QFV_AllocBufferMemory (qfv_buffer_t *buffer, VkMemoryPropertyFlags properties,
+					   VkDeviceSize size, VkDeviceSize offset)
 {
 	qfv_device_t *device = buffer->device;
 	VkDevice    dev = device->dev;
@@ -158,4 +158,28 @@ QFV_CreateBufferTransitionSet (qfv_buffertransition_t **transitions,
 		barrier->size = transitions[i]->size;
 	}
 	return barrierset;
+}
+
+qfv_bufferview_t *
+QFV_CreateBufferView (qfv_buffer_t *buffer, VkFormat format,
+					  VkDeviceSize offset, VkDeviceSize size)
+{
+	qfv_device_t *device = buffer->device;
+	VkDevice    dev = device->dev;
+    qfv_devfuncs_t *dfunc = device->funcs;
+
+	VkBufferViewCreateInfo createInfo = {
+		VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO, 0,
+		0,
+		buffer->buffer, format, offset, size,
+	};
+
+	qfv_bufferview_t *view = malloc (sizeof (*view));
+	view->device = device;
+	view->buffer = buffer;
+	view->format = format;
+	view->offset = offset;
+	view->size = size;
+	dfunc->vkCreateBufferView (dev, &createInfo, 0, &view->view);
+	return view;
 }
