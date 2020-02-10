@@ -7,6 +7,7 @@ vulkan_src = \
 	buffer.c \
 	command.c \
 	device.c \
+	image.c \
 	instance.c \
 	swapchain.c \
 	util.c \

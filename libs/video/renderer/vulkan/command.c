@@ -50,6 +50,7 @@
 #include "QF/vid.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/buffer.h"//FIXME should QFV_CmdPipelineBarrier be here?
+#include "QF/Vulkan/image.h"//FIXME should QFV_CmdPipelineBarrier be here?
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
@@ -396,7 +397,7 @@ QFV_CmdPipelineBarrier (qfv_cmdbuffer_t *cmdBuffer,
 						VkDependencyFlags dependencyFlags,
 						struct qfv_memorybarrierset_s *memBarrierSet,
 						qfv_bufferbarrierset_t *buffBarrierSet,
-						struct qfv_imagebarrierset_s *imgBarrierSet)
+						qfv_imagebarrierset_t *imgBarrierSet)
 {
 	qfv_device_t *device = cmdBuffer->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -410,6 +411,10 @@ QFV_CmdPipelineBarrier (qfv_cmdbuffer_t *cmdBuffer,
 	if (buffBarrierSet) {
 		numBuffBarriers = buffBarrierSet->numBarriers;
 		buffBarriers = buffBarrierSet->barriers;
+	}
+	if (imgBarrierSet) {
+		numImgBarriers = imgBarrierSet->numBarriers;
+		imgBarriers = imgBarrierSet->barriers;
 	}
 	dfunc->vkCmdPipelineBarrier (cmdBuffer->buffer,
 								  srcStageMask, dstStageMask, dependencyFlags,
