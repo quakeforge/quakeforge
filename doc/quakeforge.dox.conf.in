@@ -937,7 +937,6 @@ EXAMPLE_RECURSIVE      = NO
 # \image command).
 
 IMAGE_PATH             = @TOPSRC@/doc \
-                         @builddir@ \
                          @builddir@/progs \
                          @builddir@/qtv
 
