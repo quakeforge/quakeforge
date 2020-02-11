@@ -39,7 +39,7 @@
 /** \defgroup qfcc_general General functions
 	\ingroup qfcc
 */
-//@{
+///@{
 
 typedef struct srcline_s srcline_t;
 struct srcline_s {
@@ -132,6 +132,6 @@ char *fix_backslash (char *path);
 */
 #define RUP(x,a) (((x) + ((a) - 1)) & ~((a) - 1))
 
-//@}
+///@}
 
 #endif//__qfcc_h

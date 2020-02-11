@@ -39,7 +39,7 @@ enum storage_class_e;
 /**	\defgroup qfcc_symtab Symbol Table Management
 	\ingroup qfcc
 */
-//@{
+///@{
 
 typedef enum vis_e {
 	vis_public,
@@ -235,6 +235,6 @@ symtab_t *symtab_flat_copy (symtab_t *symtab, symtab_t *parent);
 symbol_t *make_symbol (const char *name, struct type_s *type,
 					   struct defspace_s *space, enum storage_class_e storage);
 
-//@}
+///@}
 
 #endif//__symtab_h

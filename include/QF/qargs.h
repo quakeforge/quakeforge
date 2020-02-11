@@ -32,7 +32,7 @@
 
 /** \addtogroup misc
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 
@@ -50,6 +50,6 @@ void COM_Init_Cvars (void);
 void COM_InitArgv (int argc, const char **argv);
 void COM_ParseConfig (void);
 
-//@}
+///@}
 
 #endif // __qargs_h

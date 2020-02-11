@@ -37,7 +37,7 @@
 /**
 	\ingroup sound
 */
-//@{
+///@{
 typedef struct sfx_s sfx_t;
 struct sfx_s
 {
@@ -62,14 +62,14 @@ struct sfx_s
 	sfx_t      *(*open) (sfx_t *sfx);
 	void        (*close) (sfx_t *sfx);
 };
-//@}
+///@}
 
 struct model_s;
 
 /** \defgroup sound_init Initialization functions
 	\ingroup sound
 */
-//@{
+///@{
 
 /** Initialize the sound engine.
 	\param viewentity pointer to view entity index
@@ -81,12 +81,12 @@ void S_Init (int *viewentity, double *host_frametime);
 */
 void S_Init_Cvars (void);
 
-//@}
+///@}
 
 /** \defgroup sound_stuff Unclassified
 	\ingroup sound
 */
-//@{
+///@{
 
 /** Start a sound playing.
 	\param entnum	index of entity the sound is associated with.
@@ -189,6 +189,6 @@ void S_AmbientOn (void);
 struct progs_s;
 void S_Progs_Init (struct progs_s *pr);
 
-//@}
+///@}
 
 #endif // _SOUND_H

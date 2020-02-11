@@ -39,18 +39,18 @@
 struct QFile_s;
 
 /** \ingroup progs */
-//@{
+///@{
 typedef struct progs_s progs_t;
 typedef struct pr_resource_s pr_resource_t;
 typedef struct edict_s edict_t;
-//@}
+///@}
 
 //============================================================================
 
 /** \defgroup progs_misc Miscelaneous functions
 	\ingroup progs
 */
-//@{
+///@{
 
 /** Initialize the progs engine.
 */
@@ -63,12 +63,12 @@ void PR_Init_Cvars (void);
 void PR_Error (progs_t *pr, const char *error, ...) __attribute__((format(printf,2,3), noreturn));
 void PR_RunError (progs_t *pr, const char *error, ...) __attribute__((format(printf,2,3), noreturn));
 
-//@}
+///@}
 
 /** \defgroup progs_execution Execution
 	\ingroup progs
 */
-//@{
+///@{
 
 /** Ensure P_* macros point to the right place for passing parameters to progs
 	functions.
@@ -128,12 +128,12 @@ void PR_ExecuteProgram (progs_t *pr, func_t fnum);
 */
 int PR_CallFunction (progs_t *pr, func_t fnum);
 
-//@}
+///@}
 
 /** \defgroup progs_load Loading
 	\ingroup progs
 */
-//@{
+///@{
 
 /** Type of functions that are called at progs load.
 	\param pr		pointer to ::progs_t VM struct
@@ -204,12 +204,12 @@ int PR_Check_Opcodes (progs_t *pr);
 void PR_BoundsCheckSize (progs_t *pr, pointer_t addr, unsigned size);
 void PR_BoundsCheck (progs_t *pr, int addr, etype_t type);
 
-//@}
+///@}
 
 /** \defgroup progs_edict Edict management
 	\ingroup progs
 */
-//@{
+///@{
 
 struct edict_s {
 	qboolean    free;
@@ -261,13 +261,13 @@ void ED_EntityParseFunction (progs_t *pr);
 # define NUM_FOR_EDICT(p,e)	ED_NumForEdict (p, e)
 #endif
 
-//@}
+///@}
 
 /** \defgroup pr_symbols Symbol Management
 	\ingroup progs
 	Lookup functions for symbol name resolution.
 */
-//@{
+///@{
 
 ddef_t *PR_FieldAtOfs (progs_t *pr, pr_int_t ofs) __attribute__((pure));
 ddef_t *PR_GlobalAtOfs (progs_t *pr, pr_int_t ofs) __attribute__((pure));
@@ -282,7 +282,7 @@ int PR_AccessField (progs_t *pr, const char *name, etype_t type,
 					const char *file, int line);
 
 void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute__((noreturn));
-//@}
+///@}
 
 //============================================================================
 
@@ -296,7 +296,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	Typed global access macros. No checking is done against the QC type, but
 	the appropriate C type will be used.
 */
-//@{
+///@{
 
 /** \internal
 	\param p		pointer to ::progs_t VM struct
@@ -479,14 +479,14 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	\hideinitializer
 */
 #define G_STRUCT(p,t,o)	(*(t *)G_GPOINTER (p, o))
-//@}
+///@}
 
 /** \defgroup prda_parameters Parameters
 	\ingroup progs_data_access
 	Typed parameter access macros. No checking is done against the QC type, but
 	the appropriate C type will be used.
 */
-//@{
+///@{
 
 /** \internal
 	\param p		pointer to ::progs_t VM struct
@@ -669,7 +669,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	\hideinitializer
 */
 #define P_STRUCT(p,t,n)	(*(t *)P_GPOINTER (p, n))
-//@}
+///@}
 
 /** \defgroup prda_return Return Values
 	\ingroup progs_data_access
@@ -680,7 +680,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	ask for an \c int from a function that returned a \c float, you're asking
 	for trouble.
 */
-//@{
+///@{
 
 /** \internal
 	\param p		pointer to ::progs_t VM struct
@@ -836,14 +836,14 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	\hideinitializer
 */
 #define RETURN_QUAT(p,q)		VectorCopy (q, R_QUAT (p))
-//@}
+///@}
 
 /** \defgroup prda_entity_fields Entity Fields
 	\ingroup progs_data_access
 	Typed entity field access macros. No checking is done against the QC type,
 	but the appropriate C type will be used.
 */
-//@{
+///@{
 
 /** \internal
 	\param e		pointer to the entity
@@ -980,7 +980,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	\hideinitializer
 */
 #define E_DSTRING(p,e,o) (PR_GetMutableString (p, E_STRING (e, o)))
-//@}
+///@}
 
 /** \defgroup pr_builtins VM Builtin functions
 	\ingroup progs
@@ -993,7 +993,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	0x8000000 to 0xffffffff is unavailable due to the builtin number being
 	a negative statement address.
 */
-//@{
+///@{
 
 #define PR_RANGE_SHIFT	16
 #define PR_RANGE_MASK	0xffff0000
@@ -1067,7 +1067,7 @@ builtin_t *PR_FindBuiltinNum (progs_t *pr, pr_int_t num);
 */
 int PR_RelocateBuiltins (progs_t *pr);
 
-//@}
+///@}
 
 /** \defgroup pr_strings String Management
 	\ingroup progs
@@ -1093,7 +1093,7 @@ int PR_RelocateBuiltins (progs_t *pr);
 	They can be created, altered, and destroyed at any time by the main
 	program (or the progs code via an appropriate builtin function).
 */
-//@{
+///@{
 
 /** Initialize the string tables using the strings supplied by the progs.
 	Called automatically during progs load.
@@ -1254,13 +1254,13 @@ void PR_FreeTempStrings (progs_t *pr);
 void PR_Sprintf (progs_t *pr, struct dstring_s *result, const char *name,
 				 const char *format, int count, pr_type_t **args);
 
-//@}
+///@}
 
 /** \defgroup pr_resources Resource Management
 	\ingroup progs
 	Builtin module private data management.
 */
-//@{
+///@{
 
 /** Initialize the resource management fields.
 
@@ -1314,7 +1314,7 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 	\note			\p map is the resource map itself, not a pointer to the
 					resource map.
 */
-//@{
+///@{
 
 /** Type delcaration for the resource map.
 
@@ -1416,29 +1416,30 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 			return ~(i * 1024 + d);							\
 	}														\
 	return 0
-//@}
+///@}
 
-//@}
+///@}
 
 /** \defgroup pr_zone VM memory management.
 	\ingroup progs
 
 	Used to allocate and free memory in the VM address space.
 */
-//@{
+///@{
 
 void PR_Zone_Init (progs_t *pr);
 void PR_Zone_Free (progs_t *pr, void *ptr);
 void *PR_Zone_Malloc (progs_t *pr, pr_int_t size);
 void *PR_Zone_Realloc (progs_t *pr, void *ptr, pr_int_t size);
 
-//@}
+///@}
 
 /** \defgroup debug VM Debugging
 	\ingroup progs
 	Progs debugging support.
 */
-//@{
+/// \addtogroup debug
+///@{
 
 void PR_Debug_Init (void);
 void PR_Debug_Init_Cvars (void);
@@ -1464,20 +1465,20 @@ extern struct cvar_s *pr_deadbeef_locals;
 extern struct cvar_s *pr_boundscheck;
 extern struct cvar_s *pr_faultchecks;
 
-//@}
+///@}
 
 /** \defgroup pr_cmds Quake and Quakeworld common builtins
 	\ingroup progs
 	\todo This really doesn't belong in progs.
 */
-//@{
+///@{
 
 char *PF_VarString (progs_t *pr, int first);
 void PR_Cmds_Init (progs_t *pr);
 
 extern const char *pr_gametype;
 
-//@}
+///@}
 
 //============================================================================
 
@@ -1682,7 +1683,7 @@ struct progs_s {
 
 /** \addtogroup progs_data_access
 */
-//@{
+///@{
 
 /** Convert a progs offset/pointer to a C pointer.
 	\param pr		pointer to ::progs_t VM struct
@@ -1706,7 +1707,7 @@ PR_SetPointer (progs_t *pr, void *p)
 	return p ? (pr_type_t *) p - pr->pr_globals : 0;
 }
 
-//@}
+///@}
 
 /** \example vm-exec.c
 */

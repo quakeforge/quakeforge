@@ -36,7 +36,7 @@
 /**	\defgroup set Set handling
 	\ingroup utils
 */
-//@{
+///@{
 
 //FIXME other archs
 #ifdef __x86_64__
@@ -370,5 +370,5 @@ set_iter_t *set_next_r (set_pool_t *set_pool, set_iter_t *set_iter);
 */
 const char *set_as_string (const set_t *set);
 
-//@}
+///@}
 #endif//__QF_set_h

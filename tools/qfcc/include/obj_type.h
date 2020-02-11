@@ -38,6 +38,4 @@
 struct type_s;
 struct def_s *qfo_encode_type (struct type_s *type);
 
-//@}
-
 #endif//__obj_type_h

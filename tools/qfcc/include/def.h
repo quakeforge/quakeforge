@@ -37,7 +37,7 @@
 /** \defgroup qfcc_def Def handling
 	\ingroup qfcc
 */
-//@{
+///@{
 
 struct symbol_s;
 struct expr_s;
@@ -180,7 +180,7 @@ void free_def (def_t *def);
 	Temporary defs are bound to the current function (::current_func must
 	be valid). They are always allocated from the funciont's local defspace.
 */
-//@{
+///@{
 /** Get a temporary def.
 
 	If the current function has a free temp def of the same size as \a size,
@@ -207,7 +207,7 @@ def_t *temp_def (struct type_s *type);
 	\param temp		The temp def to be recycled.
 */
 void free_temp_def (def_t *temp);
-//@}
+///@}
 
 /** Initialize a vm def from a qfcc def.
 
@@ -306,6 +306,6 @@ int def_size (def_t *def) __attribute__((pure));
 */
 int def_visit_all (def_t *def, int overlap,
 				   int (*visit) (def_t *, void *), void *data);
-//@}
+///@}
 
 #endif//__def_h

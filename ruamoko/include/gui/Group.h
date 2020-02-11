@@ -4,7 +4,7 @@
 #include "View.h"
 
 /**	\addtogroup gui */
-//@{
+///@{
 
 @class Array;
 
@@ -41,6 +41,6 @@
 - (id) addViews: (Array*)viewlist;
 @end
 
-//@}
+///@}
 
 #endif//__ruamoko_gui_Group_h

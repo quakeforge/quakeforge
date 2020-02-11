@@ -37,7 +37,7 @@
 /** \defgroup alloc High-tide allocator.
 	\ingroup utils
 */
-//@{
+///@{
 
 #ifndef DEBUG_QF_MEMORY
 /**	High-tide structure allocator for use in linked lists.
@@ -93,6 +93,6 @@
 #define FREE(n, p)			do { free (p); } while (0)
 #endif
 
-//@}
+///@}
 
 #endif//__QF_alloc_h

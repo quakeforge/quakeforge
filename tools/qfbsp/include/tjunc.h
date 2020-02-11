@@ -25,7 +25,7 @@
 /**	\defgroup qfbsp_tjunc T-Junction Repair
 	\ingroup qfbsp
 */
-//@{
+///@{
 
 struct node_s;
 
@@ -35,6 +35,6 @@ struct node_s;
 */
 void tjunc (struct node_s *headnode);
 
-//@}
+///@}
 
 #endif//qfbsp_tjunc_h

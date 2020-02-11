@@ -39,7 +39,7 @@
 /** \defgroup input_keybinding Key Binding Sub-system
 	\ingroup input
 */
-//@{
+///@{
 
 /// these are the key numbers that should be passed to Key_Event
 typedef enum {
@@ -659,6 +659,6 @@ struct progs_s;
 void Key_Progs_Init (struct progs_s *pr);
 #endif
 
-//@}
+///@}
 
 #endif // _KEYS_H

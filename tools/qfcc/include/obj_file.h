@@ -34,7 +34,7 @@
 /** \defgroup qfcc_qfo Object file functions
 	\ingroup qfcc
 */
-//@{
+///@{
 
 #include "QF/pr_comp.h"
 #include "QF/pr_debug.h"
@@ -106,12 +106,12 @@ typedef struct qfo_def_s {
 	string_t    file;			///< source file name
 	pr_uint_t   line;			///< source line number
 } qfo_def_t;
-//@}
+///@}
 
 /** \defgroup qfcc_qfo_QFOD QFOD flags
 	\ingroup qfcc_qfo
 */
-//@{
+///@{
 
 /** The def has been initialized.
 
@@ -168,11 +168,11 @@ typedef struct qfo_def_s {
 	\hideinitializer
 */
 #define QFOD_PARAM			(1u<<8)
-//@}
+///@}
 
 /** \addtogroup qfcc_qfo
 */
-//@{
+///@{
 
 /** Representation of a function in the object file.
 */
@@ -286,13 +286,13 @@ enum {
 
 	qfo_num_spaces
 };
-//@}
+///@}
 
 /** \defgroup qfcc_qfo_data_access QFO Data Acess
 	\ingroup qfcc_qfo
 	Macros for accessing data in the QFO address space
 */
-//@{
+///@{
 
 /** \internal
 	\param q pointer to ::qfo_t struct
@@ -361,7 +361,6 @@ enum {
 
 	\param q pointer to ::qfo_t struct
 	\param s space index
-	\param s offset into object file string space
 	\return (char *)
 
 	\hideinitializer
@@ -439,11 +438,11 @@ enum {
 */
 #define QFO_STRUCT(q, s, t, o)	(*QFO_POINTER (q, s, t, o))
 
-//@}
+///@}
 
 /** \addtogroup qfcc_qfo
 */
-//@{
+///@{
 
 struct pr_info_s;
 
@@ -485,6 +484,6 @@ qfo_t *qfo_new (void);
 */
 void qfo_delete (qfo_t *qfo);
 
-//@}
+///@}
 
 #endif//__obj_file_h

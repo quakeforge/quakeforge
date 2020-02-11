@@ -30,7 +30,7 @@
 /**	\defgroup qfbsp_brush Brush Functions
 	\ingroup qfbsp
 */
-//@{
+///@{
 
 #define	NUM_HULLS		2				// normal and +16
 
@@ -95,6 +95,6 @@ int NormalizePlane (plane_t *dp);
 */
 int	FindPlane (const plane_t *dplane, int *side);
 
-//@}
+///@}
 
 #endif//qfbsp_brush_h

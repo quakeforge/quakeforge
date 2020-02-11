@@ -25,7 +25,7 @@
 /**	\defgroup qfbsp_outside Outside Functions
 	\ingroup qfbsp
 */
-//@{
+///@{
 
 struct node_s;
 
@@ -41,6 +41,6 @@ struct node_s;
 */
 qboolean FillOutside (struct node_s *node);
 
-//@}
+///@}
 
 #endif//qfbsp_outside_h

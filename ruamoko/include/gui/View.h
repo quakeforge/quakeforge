@@ -8,7 +8,7 @@
 */
 
 /**	\addtogroup gui */
-//@{
+///@{
 
 /** The View class.
 */
@@ -34,6 +34,6 @@
 - (int) keyEvent:(int)key unicode:(int)unicode down:(int)down;
 @end
 
-//@}
+///@}
 
 #endif //__ruamoko_gui_View_h

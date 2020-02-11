@@ -4,7 +4,7 @@
 #include "gui/View.h"
 
 /**	\addtogroup gui */
-//@{
+///@{
 
 @interface Pic : View
 {
@@ -18,6 +18,6 @@
 -(void)draw;
 @end
 
-//@}
+///@}
 
 #endif//__ruamoko_gui_Pic_h

@@ -33,7 +33,7 @@
 /** \defgroup qfcc_dags DAG building
 	\ingroup qfcc
 */
-//@{
+///@{
 
 #include "QF/pr_comp.h"
 
@@ -110,6 +110,6 @@ dag_t *dag_create (struct flownode_s *flownode);
 void dag_remove_dead_nodes (dag_t *dag);
 void dag_generate (dag_t *dag, sblock_t *block);
 
-//@}
+///@}
 
 #endif//dags_h

@@ -34,7 +34,7 @@
 /** \defgroup mathlib_quaternion Quaternion functions
 	\ingroup utils
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 
@@ -168,6 +168,6 @@ void QuatInverse (const quat_t in, quat_t out);
 void QuatExp (const quat_t a, quat_t b);
 void QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical);
 
-//@}
+///@}
 
 #endif // __QF_math_quaternion_h

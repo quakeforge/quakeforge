@@ -30,7 +30,7 @@
 /** \defgroup msg Message reading and writing
 	\ingroup utils
 */
-//@{
+///@{
 
 #include "QF/sizebuf.h"
 
@@ -249,6 +249,6 @@ void MSG_ReadAngle16V (qmsg_t *msg, vec3_t angles);
 */
 int MSG_ReadUTF8 (qmsg_t *msg);
 
-//@}
+///@}
 
 #endif

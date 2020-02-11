@@ -31,7 +31,7 @@
 /** \defgroup dstring Dynamic Strings
 	\ingroup utils
 */
-//@{
+///@{
 
 #include <stdarg.h>
 #include <stdlib.h>
@@ -52,13 +52,13 @@ typedef struct dstring_s {
 extern dstring_mem_t dstring_default_mem;
 
 // General buffer functions
-//@{
+///@{
 /** Create a new dstring. size and truesize start at 0 and no string buffer
 	is allocated.
 */
 dstring_t *_dstring_new (dstring_mem_t *mem);
 dstring_t *dstring_new (void);
-//@}
+///@}
 /** Delete a dstring. Both the string buffer and dstring object are freed.
 */
 void dstring_delete (dstring_t *dstr);
@@ -103,13 +103,13 @@ void dstring_replace (dstring_t *dstr, unsigned int pos, unsigned int rlen,
 char *dstring_freeze (dstring_t *dstr);
 
 // String-specific functions
-//@{
+///@{
 /** Allocate a new dstring pre-initialized as a null terminated string. size
 	will be 1 and the first byte 0.
 */
 dstring_t *_dstring_newstr (dstring_mem_t *mem);
 dstring_t *dstring_newstr (void);
-//@}
+///@}
 /** Create a new dstring from a string. Similar to strdup().
 	\param str		the string to copy
 	\return			inititialized dstring
@@ -160,21 +160,21 @@ void dstring_insertsubstr (dstring_t *dstr, unsigned int pos, const char *str,
 */
 void dstring_clearstr (dstring_t *dstr);
 
-//@{
+///@{
 /** Formatted printing to dstrings. Existing data is replaced by the formatted
 	string.
 */
 int dvsprintf (dstring_t *dstr, const char *fmt, va_list args) __attribute__((format(printf,2,0)));
 int dsprintf (dstring_t *dstr, const char *fmt, ...) __attribute__((format(printf,2,3)));
-//@}
-//@{
+///@}
+///@{
 /** Formatted printing to dstrings. Formatted string is appened to the dstring.
 	Embedded nulls in the dstring are ignored.
 */
 int davsprintf (dstring_t *dstr, const char *fmt, va_list args) __attribute__((format(printf,2,0)));
 int dasprintf (dstring_t *dstr, const char *fmt, ...) __attribute__((format(printf,2,3)));
-//@}
+///@}
 
-//@}
+///@}
 
 #endif // __dstring_h

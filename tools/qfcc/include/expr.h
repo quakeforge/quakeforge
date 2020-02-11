@@ -36,7 +36,7 @@
 /**	\defgroup qfcc_expr Expressions
 	\ingroup qfcc
 */
-//@{
+///@{
 
 /**	Type of the exression node in an expression tree.
 */
@@ -652,6 +652,6 @@ expr_t *sizeof_expr (expr_t *expr, struct type_s *type);
 
 expr_t *fold_constants (expr_t *e);
 
-//@}
+///@}
 
 #endif//__expr_h

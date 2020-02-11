@@ -34,7 +34,7 @@
 /** \defgroup console_view Console View Objects
 	\ingroup console
 */
-//@{
+///@{
 
 /** Control the positioning of a view within its parent. The directions are
 	the standard compass rose (north, east, south, west in clockwise order)
@@ -215,6 +215,6 @@ void view_resize (view_t *view, int xl, int yl);
 */
 void view_move (view_t *view, int xp, int yp);
 
-//@}
+///@}
 
 #endif//__qf_view_h

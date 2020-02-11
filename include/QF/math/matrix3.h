@@ -34,7 +34,7 @@
 /** \defgroup mathlib_matrix3 3x3 matrix functions
 	\ingroup utils
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 
@@ -118,6 +118,6 @@ void Mat3SymEigen (const mat3_t m, vec3_t e);
 */
 int Mat3Decompose (const mat4_t mat, quat_t rot, vec3_t shear, vec3_t scale);
 
-//@}
+///@}
 
 #endif // __QF_math_matrix3_h

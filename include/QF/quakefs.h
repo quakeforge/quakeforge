@@ -33,7 +33,7 @@
 /** \defgroup quakefs Quake Filesystem
 	\ingroup utils
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 #include "QF/quakeio.h"
@@ -418,6 +418,6 @@ void QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 */
 void QFS_FilelistFree (filelist_t *list);
 
-//@}
+///@}
 
 #endif // __quakefs_h

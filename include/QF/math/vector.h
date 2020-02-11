@@ -31,7 +31,7 @@
 /** \defgroup mathlib_vector Vector functions
 	\ingroup mathlib
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 
@@ -209,6 +209,6 @@ VectorNormalize (vec3_t v)
 	return length;
 }
 
-//@}
+///@}
 
 #endif // __QF_math_vector_h

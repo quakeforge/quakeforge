@@ -37,7 +37,7 @@
 /** \defgroup video_renderer_draw Generic draw functions
 	\ingroup video_renderer
 */
-//@{
+///@{
 
 #include "QF/wad.h"
 
@@ -160,12 +160,12 @@ void Draw_FadeScreen (void);
 /** Shift the screen colors.
 */
 void Draw_BlendScreen (quat_t color);
-//@}
+///@}
 
 /** \defgroup video_renderer_draw_qpic QPic functions
 	\ingroup video_renderer_draw
 */
-//@{
+///@{
 /** Load a qpic from the filesystem.
 	\param path	path of the file within the quake filesystem
 	\param alpha transparency level of the pic.
@@ -232,6 +232,6 @@ void Draw_Picf (float x, float y, qpic_t *pic);
 	\param height vertical size of the sub-region to be drawn
 */
 void Draw_SubPic(int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
-//@}
+///@}
 
 #endif // _DRAW_H

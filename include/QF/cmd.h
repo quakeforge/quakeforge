@@ -31,7 +31,7 @@
 /** \defgroup cmd Command management.
 	\ingroup utils
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 #include "QF/cbuf.h"
@@ -81,6 +81,6 @@ struct cbuf_interpreter_s *Cmd_GetProvider(const char *name);
 extern struct cbuf_args_s *cmd_args;
 extern struct cvar_s *cmd_warncmd;
 
-//@}
+///@}
 
 #endif//__QF_cmd_h

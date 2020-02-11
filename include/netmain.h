@@ -34,7 +34,7 @@
 /** \defgroup nq-net NetQuake network support.
 	\ingroup network
 */
-//@{
+///@{
 
 typedef struct
 {
@@ -56,7 +56,7 @@ typedef struct
 
 /** \name NetHeader flags
 */
-//@{
+///@{
 #define NETFLAG_LENGTH_MASK	0x0000ffff
 #define NETFLAG_DATA		0x00010000
 #define NETFLAG_ACK			0x00020000
@@ -64,7 +64,7 @@ typedef struct
 #define NETFLAG_EOM			0x00080000
 #define NETFLAG_UNRELIABLE	0x00100000
 #define NETFLAG_CTL			0x80000000
-//@}
+///@}
 
 
 #define NET_PROTOCOL_VERSION	3
@@ -86,7 +86,7 @@ typedef struct
 		a full address and port in a string.  It is used for returning the
 		address of a server that is not running locally.
 */
-//@{
+///@{
 
 /** Connect Request:
 	\arg \b string	\c game_name			\em "QUAKE"
@@ -153,7 +153,7 @@ typedef struct
 	\arg \b string	\c value
 */
 #define CCREP_RULE_INFO		0x85
-//@}
+///@}
 
 typedef struct qsocket_s {
 	struct qsocket_s	*next;
@@ -205,11 +205,11 @@ typedef struct qsocket_s {
 
 /** \name socket management
 */
-//@{
+///@{
 extern qsocket_t	*net_activeSockets;
 extern qsocket_t	*net_freeSockets;
 extern int			net_numsockets;
-//@}
+///@}
 
 #define	MAX_NET_DRIVERS		8
 
@@ -220,12 +220,12 @@ extern int net_driverlevel;
 
 /** \name message statistics
 */
-//@{
+///@{
 extern int		messagesSent;
 extern int		messagesReceived;
 extern int		unreliableMessagesSent;
 extern int		unreliableMessagesReceived;
-//@}
+///@}
 
 /** Create and initialize a new qsocket.
 
@@ -386,12 +386,12 @@ extern struct cvar_s	*hostname;
 
 extern QFile *vcrFile;
 
-//@}
+///@}
 
 /** \defgroup nq-ld NetQuake lan drivers.
 	\ingroup nq-net
 */
-//@{
+///@{
 
 typedef struct {
 	const char		*name;
@@ -419,12 +419,12 @@ typedef struct {
 extern int 				net_numlandrivers;
 extern net_landriver_t	net_landrivers[MAX_NET_DRIVERS];
 
-//@}
+///@}
 
 /** \defgroup nq-nd NetQuake network drivers.
 	\ingroup nq-net
 */
-//@{
+///@{
 
 typedef struct {
 	const char		*name;
@@ -447,6 +447,6 @@ typedef struct {
 extern int			net_numdrivers;
 extern net_driver_t	net_drivers[MAX_NET_DRIVERS];
 
-//@}
+///@}
 
 #endif // __net_h
