@@ -4,7 +4,7 @@
 #include "View.h"
 
 /**	\addtogroup gui */
-//@{
+///@{
 
 @interface Text: View
 {
@@ -18,6 +18,6 @@
 - (void) draw;
 @end
 
-//@}
+///@}
 
 #endif //__ruamoko_gui_Text_h

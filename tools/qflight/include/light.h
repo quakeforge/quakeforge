@@ -37,7 +37,7 @@
 /** \defgroup qflight_general General functions
 	\ingroup qflight
 */
-//@{
+///@{
 
 #define	ON_EPSILON	0.1
 #define	MAXLIGHTS	1024
@@ -130,6 +130,6 @@ extern int num_novislights;
 
 const char *get_tex_name (int texindex) __attribute__((pure));
 
-//@}
+///@}
 
 #endif// __light_h

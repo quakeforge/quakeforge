@@ -27,7 +27,7 @@
 /**	\defgroup qfbsp_draw Debug Drawing Functions
 	\ingroup qfbsp
 */
-//@{
+///@{
 
 struct visfacet_s;
 struct portal_s;
@@ -53,6 +53,6 @@ void DrawBrush (const struct brush_s *b);
 void DrawWinding (const struct winding_s *w);
 void DrawTri (const vec3_t p1, const vec3_t p2, const vec3_t p3);
 
-//@}
+///@}
 
 #endif//qfbsp_draw_h

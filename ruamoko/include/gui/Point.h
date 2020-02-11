@@ -2,7 +2,7 @@
 #define __ruamoko_gui_Point_h
 
 /**	\addtogroup gui */
-//@{
+///@{
 
 struct Point {
 	int x;
@@ -15,6 +15,6 @@ typedef struct Point Point;
 @extern Point addPoint (Point a, Point b);
 @extern Point subtractPoint (Point a, Point b);
 
-//@}
+///@}
 
 #endif //__ruamoko_gui_Point_h

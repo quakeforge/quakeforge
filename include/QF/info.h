@@ -31,7 +31,7 @@
 /** \defgroup info Info Keys
 	\ingroup utils
 */
-//@{
+///@{
 
 #include <stdlib.h> // for size_t. sys/types.h SHOULD be used, but can't :(bc)
 #include <QF/qtypes.h>
@@ -63,6 +63,6 @@ void Info_Destroy (info_t *info);
 char *Info_MakeString (info_t *info, int (*filter)(const char *));
 void Info_AddKeys (info_t *info, info_t *keys);
 
-//@}
+///@}
 
 #endif	// _INFO_H

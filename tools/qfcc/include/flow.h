@@ -33,7 +33,7 @@
 /** \defgroup qfcc_flow Flow graph analysis
 	\ingroup qfcc
 */
-//@{
+///@{
 
 struct function_s;
 struct sblock_s;
@@ -120,6 +120,6 @@ void dump_dot_flow_live (void *g, const char *filename);
 void dump_dot_flow_reaching (void *g, const char *filename);
 void dump_dot_flow_statements (void *g, const char *filename);
 
-//@}
+///@}
 
 #endif//flow_h

@@ -27,7 +27,7 @@
 /**	\defgroup qfbsp_writebsp BSP Writing Functions
 	\ingroup qfbsp
 */
-//@{
+///@{
 
 struct node_s;
 
@@ -78,6 +78,6 @@ void BeginBSPFile (void);
 */
 void FinishBSPFile (void);
 
-//@}
+///@}
 
 #endif//qfbsp_writebsp_h

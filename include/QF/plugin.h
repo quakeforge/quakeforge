@@ -31,7 +31,7 @@
 /** \defgroup plugin Plugins
 	\ingroup utils
 */
-//@{
+///@{
 
 #define QFPLUGIN_VERSION	"1.0"
 
@@ -111,6 +111,6 @@ void PI_Shutdown (void);
 
 // FIXME: we need a generic function to initialize unused fields
 
-//@}
+///@}
 
 #endif	// __QF_plugin_h_

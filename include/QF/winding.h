@@ -26,7 +26,7 @@
 
 /**	\defgroup winding Winding Manipulation
 */
-//@{
+///@{
 
 struct plane_s;
 
@@ -138,6 +138,6 @@ winding_t *ClipWinding (winding_t *in, struct plane_s *split, qboolean keepon);
 void DivideWinding (winding_t *in, struct plane_s *split,
 					winding_t **front, winding_t **back);
 
-//@}
+///@}
 
 #endif//__QF_winding_h

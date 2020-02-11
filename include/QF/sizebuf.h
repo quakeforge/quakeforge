@@ -31,7 +31,7 @@
 	\ingroup utils
 	Fixed size buffer management
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 
@@ -51,6 +51,6 @@ void *SZ_GetSpace (sizebuf_t *buf, int length);
 void SZ_Write (sizebuf_t *buf, const void *data, int length);
 void SZ_Print (sizebuf_t *buf, const char *data);	// strcats onto the sizebuf
 
-//@}
+///@}
 
 #endif // __sizebuf_h

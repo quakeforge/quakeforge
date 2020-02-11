@@ -29,7 +29,7 @@
 /** \defgroup nq-dgrm NetQuake Datagram network driver.
 	\ingroup nq-nd
 */
-//@{
+///@{
 
 /** Initialize the Datagram net driver.
 
@@ -125,4 +125,4 @@ void		Datagram_Close (qsocket_t *sock);
 */
 void		Datagram_Shutdown (void);
 
-//@}
+///@}

@@ -34,7 +34,7 @@
 /** \defgroup qfcc_function Internal function structures.
 	\ingroup qfcc
 */
-//@{
+///@{
 
 #include "QF/pr_comp.h"
 #include "QF/pr_debug.h"
@@ -147,6 +147,6 @@ void emit_function (function_t *f, struct expr_s *e);
 int function_parms (function_t *f, byte *parm_size);
 void clear_functions (void);
 
-//@}
+///@}
 
 #endif//__function_h

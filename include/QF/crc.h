@@ -31,7 +31,7 @@
 /** \defgroup crc Checksum generation.
 	\ingroup utils
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 
@@ -41,6 +41,6 @@ void CRC_ProcessBlock (const byte *start, unsigned short *crcvalue, int count);
 unsigned short CRC_Value(unsigned short crcvalue) __attribute__((const));
 unsigned short CRC_Block (const byte *start, int count) __attribute__((pure));
 
-//@}
+///@}
 
 #endif // __crc_h

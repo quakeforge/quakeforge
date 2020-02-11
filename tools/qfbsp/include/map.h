@@ -27,7 +27,7 @@
 /**	\defgroup qfbsp_map Map Parser
 	\ingroup qfbsp
 */
-//@{
+///@{
 
 #define MAX_FACES 256
 typedef struct mface_s {
@@ -120,6 +120,6 @@ void GetVectorForKey (const entity_t *ent, const char *key, vec3_t vec);
 */
 void WriteEntitiesToString (void);
 
-//@}
+///@}
 
 #endif//qfbsp_map_h

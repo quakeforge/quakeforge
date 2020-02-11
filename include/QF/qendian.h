@@ -33,7 +33,7 @@
 /** \defgroup qendian Endian handling functions
 	\ingroup utils
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 
@@ -118,6 +118,6 @@ byte ReadByte (struct QFile_s *file);
 unsigned short ReadShort (struct QFile_s *file);
 unsigned int ReadLong (struct QFile_s *file);
 
-//@}
+///@}
 
 #endif // __qendian_h

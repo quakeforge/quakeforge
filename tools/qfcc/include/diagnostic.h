@@ -36,7 +36,7 @@
 /**	\defgroup qfcc_diagnostic Diagnostic Messages
 	\ingroup qfcc
 */
-//@{
+///@{
 
 typedef void (*diagnostic_hook)(const char *message);
 extern diagnostic_hook bug_hook;
@@ -73,6 +73,6 @@ void _bug (struct expr_s *e, const char *file, int line, const char *fmt, ...)
 	__attribute__ ((format (printf, 4, 5)));
 #define bug(e, fmt...) _bug(e, __FILE__, __LINE__, fmt)
 
-//@}
+///@}
 
 #endif//__diagnostic_h

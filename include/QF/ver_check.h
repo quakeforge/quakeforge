@@ -34,7 +34,7 @@
 /** \defgroup misc Miscellaneous functions
 	\ingroup utils
 */
-//@{
+///@{
 
 /*
 	ver_compare
@@ -45,6 +45,6 @@
 */
 int ver_compare (const char *, const char *);
 
-//@}
+///@}
 
 #endif	// __ver_check_h_

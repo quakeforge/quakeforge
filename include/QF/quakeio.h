@@ -34,7 +34,7 @@
 /** \defgroup quakeio File IO
 	\ingroup utils
 */
-//@{
+///@{
 
 typedef struct QFile_s QFile;
 
@@ -60,6 +60,6 @@ int Qflush(QFile *file);
 int Qeof(QFile *file);
 const char *Qgetline(QFile *file);
 
-//@}
+///@}
 
 #endif /*__quakeio_h*/

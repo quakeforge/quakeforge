@@ -34,7 +34,7 @@
 /** \defgroup qfcc_value Constant values.
 	\ingroup qfcc_expr
 */
-//@{
+///@{
 
 struct ex_value_s;
 struct type_s;
@@ -63,6 +63,6 @@ int	ReuseString (const char *str);
 
 void clear_immediates (void);
 
-//@}
+///@}
 
 #endif//__value_h

@@ -4,7 +4,7 @@
 #include "View.h"
 
 /**	\addtogroup gui */
-//@{
+///@{
 
 @interface Slider: View
 {
@@ -19,6 +19,6 @@
 
 @end
 
-//@}
+///@}
 
 #endif //__ruamoko_gui_Slider_h

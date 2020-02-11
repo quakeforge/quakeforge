@@ -34,7 +34,7 @@
 /** \defgroup hash Hash tables
 	\ingroup utils
 */
-//@{
+///@{
 
 typedef struct hashtab_s hashtab_t;
 
@@ -209,6 +209,6 @@ void **Hash_GetList (hashtab_t *tab);
 */
 void Hash_Stats (hashtab_t *tab);
 
-//@}
+///@}
 
 #endif // __hash_h

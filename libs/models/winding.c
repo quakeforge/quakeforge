@@ -40,10 +40,6 @@
 
 #define BOGUS (18000.0)
 
-/**	\addtogroup qfbsp_winding
-*/
-//@{
-
 int         c_activewindings, c_peakwindings;
 
 winding_t *
@@ -326,5 +322,3 @@ FreeWinding (winding_t *w)
 	c_activewindings--;
 	free (w);
 }
-
-//@}

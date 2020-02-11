@@ -25,7 +25,7 @@
 /**	\defgroup qfbsp_readbsp BSP Reading Functions
 	\ingroup qfbsp
 */
-//@{
+///@{
 
 /**	Load the bspfile into memory.
 */
@@ -47,6 +47,6 @@ void extract_entities (void);
 */
 void extract_hull (void);
 
-//@}
+///@}
 
 #endif//qfbsp_readbsp_h

@@ -25,7 +25,7 @@
 	Line oriented script parsing. Multiple scripts being parsed at the same
 	time is supported.
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 
@@ -97,6 +97,6 @@ void Script_UngetToken (script_t *script);
 */
 const char *Script_Token (script_t *script) __attribute__((pure));
 
-//@}
+///@}
 
 #endif//__QF_script_h

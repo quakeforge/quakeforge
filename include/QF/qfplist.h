@@ -31,7 +31,7 @@
 /** \defgroup qfplist Property lists
 	\ingroup utils
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 
@@ -226,6 +226,6 @@ plitem_t *PL_NewString (const char *str);
 */
 void PL_Free (plitem_t *item);
 
-//@}
+///@}
 
 #endif	// __QF_qfplist_h_

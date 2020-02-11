@@ -33,7 +33,7 @@
 /** \defgroup qflight_options Light command line options.
 	\ingroup qflight
 */
-//@{
+///@{
 
 typedef struct {
 	int			verbosity;		// 0=silent
@@ -59,6 +59,6 @@ extern const char *this_program;
 int DecodeArgs (int argc, char **argv);
 void usage (int status) __attribute__((noreturn));
 
-//@}
+///@}
 
 #endif//__options_h

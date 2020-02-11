@@ -32,7 +32,7 @@
 	\ingroup utils
 	Non-portable functions
 */
-//@{
+///@{
 
 #include <stdio.h>
 #include <stdint.h>
@@ -157,6 +157,6 @@ int Sys_CreatePath (const char *path);
 */
 char *Sys_ExpandSquiggle (const char *path);
 
-//@}
+///@}
 
 #endif // __sys_h

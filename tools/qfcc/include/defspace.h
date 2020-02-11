@@ -37,7 +37,7 @@
 /** \defgroup qfcc_defspace Defspace handling
 	\ingroup qfcc
 */
-//@{
+///@{
 
 typedef enum {
 	ds_backed,		///< data space is globally addressable (near/far/type) and
@@ -145,6 +145,6 @@ void defspace_free_loc (defspace_t *space, int ofs, int size);
 */
 int defspace_add_data (defspace_t *space, pr_type_t *data, int size);
 
-//@}
+///@}
 
 #endif//__defspace_h

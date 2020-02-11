@@ -33,7 +33,7 @@
 /** \defgroup qflight_properties Lighting properties
 	\ingroup qflight
 */
-//@{
+///@{
 
 struct plitem_s;
 
@@ -199,6 +199,6 @@ void set_properties (entity_t *ent, struct plitem_s *dict);
 */
 void LoadProperties (const char *filename);
 
-//@}
+///@}
 
 #endif//__properties_h

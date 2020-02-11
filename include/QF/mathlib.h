@@ -31,7 +31,7 @@
 /** \defgroup mathlib Vector and matrix functions
 	\ingroup utils
 */
-//@{
+///@{
 
 #include <math.h>
 #include "QF/qtypes.h"
@@ -218,6 +218,6 @@ int CircumSphere (const vec3_t points[], int num_points, sphere_t *sphere);
 void BarycentricCoords (const vec_t **points, int num_points, const vec3_t p,
 		                vec_t *lambda);
 
-//@}
+///@}
 
 #endif // __mathlib_h

@@ -36,7 +36,7 @@
 
 	All \c pointer_t \c type fields are pointers within the type qfo_space.
 */
-//@{
+///@{
 
 #include "QF/pr_comp.h"
 
@@ -102,6 +102,6 @@ typedef struct qfot_type_encodings_s {
 	pr_int_t    size;
 } qfot_type_encodings_t;
 
-//@}
+///@}
 
 #endif//__pr_type_h

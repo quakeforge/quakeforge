@@ -88,7 +88,7 @@
 
 	----- Bottom of Memory -----
 */
-//@{
+///@{
 
 typedef struct memzone_s memzone_t;
 
@@ -140,6 +140,6 @@ void *Cache_Get (cache_user_t *c);
 void Cache_Release (cache_user_t *c);
 int Cache_ReadLock (cache_user_t *c) __attribute__((pure));
 
-//@}
+///@}
 
 #endif // __zone_h

@@ -32,7 +32,7 @@
 /** \addtogroup wad
 	Wad Files
 */
-//@{
+///@{
 
 #include "QF/wadfile.h"
 
@@ -46,6 +46,6 @@ void	*W_GetLumpName (const char *name);
 
 void SwapPic (qpic_t *pic);
 
-//@}
+///@}
 
 #endif // _WAD_H

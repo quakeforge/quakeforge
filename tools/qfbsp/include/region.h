@@ -25,7 +25,7 @@
 /**	\defgroup qfbsp_region Region Functions
 	\ingroup qfbsp
 */
-//@{
+///@{
 
 struct node_s;
 
@@ -35,6 +35,6 @@ struct node_s;
 */
 void GrowNodeRegions (struct node_s *headnode);
 
-//@}
+///@}
 
 #endif//qfbsp_region_h

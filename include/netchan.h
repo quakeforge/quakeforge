@@ -39,7 +39,7 @@
 /** \defgroup qw-net QuakeWorld network support.
 	\ingroup network
 */
-//{
+///@{
 #define MAX_MSGLEN		1450		///< max length of a reliable message
 #define MAX_DATAGRAM	1450		///< max length of unreliable message
 
@@ -75,12 +75,12 @@ void Analyze_Client_Packet (const byte * data, int len, int has_sequence);
 void Analyze_Server_Packet (const byte * data, int len, int has_sequence);
 
 extern struct cvar_s *net_packetlog;
-//@}
+///@}
 
 /** \defgroup qw-udp QuakeWorld udp support.
 	\ingroup qw-net
 */
-//@{
+///@{
 
 /** Initialize the UDP network interface.
 
@@ -165,7 +165,7 @@ const char *NET_BaseAdrToString (netadr_t a);
 */
 qboolean NET_StringToAdr (const char *s, netadr_t *a);
 
-//@}
+///@}
 
 /** \defgroup netchan Netchan
 	\ingroup qw-net
@@ -220,7 +220,7 @@ qboolean NET_StringToAdr (const char *s, netadr_t *a);
 	the channel matches even if the IP port differs.  The IP port should be
 	updated to the new value before sending out any replies.
 */
-//@{
+///@{
 #define	OLD_AVG		0.99		// total = oldtotal*OLD_AVG + new*(1-OLD_AVG)
 
 #define	MAX_LATENT	32
@@ -381,6 +381,6 @@ qboolean Netchan_CanReliable (netchan_t *chan) __attribute__((pure));
 */
 void Netchan_SendPacket (int length, const void *data, netadr_t to);
 
-//@}
+///@}
 
 #endif // _NET_H

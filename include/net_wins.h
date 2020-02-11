@@ -35,7 +35,7 @@
 /** \defgroup nq-wins NetQuake Winsock lan driver.
 	\ingroup nq-ld
 */
-//@{
+///@{
 
 extern int winsock_initialized;
 extern WSADATA winsockdata;
@@ -58,6 +58,6 @@ int  WINS_AddrCompare (netadr_t *addr1, netadr_t *addr2);
 int  WINS_GetSocketPort (netadr_t *addr);
 int  WINS_SetSocketPort (netadr_t *addr, int port);
 
-//@}
+///@}
 
 #endif//__net_wins_h
