@@ -54,10 +54,22 @@
 
 #include "r_internal.h"
 
+static qpic_t *
+pic_data (const char *name, int w, int h, const byte *data)
+{
+	qpic_t     *pic;
+
+	pic = malloc (field_offset (qpic_t, data[w * h]));
+	pic->width = w;
+	pic->height = h;
+	memcpy (pic->data, data, pic->width * pic->height);
+	return pic;
+}
+
 qpic_t *
 vulkan_Draw_MakePic (int width, int height, const byte *data)
 {
-	return 0;
+	return pic_data (0, width, height, data);
 }
 
 void
@@ -68,13 +80,13 @@ vulkan_Draw_DestroyPic (qpic_t *pic)
 qpic_t *
 vulkan_Draw_PicFromWad (const char *name)
 {
-	return 0;
+	return pic_data (0, 1, 1, (const byte *)"");
 }
 
 qpic_t *
 vulkan_Draw_CachePic (const char *path, qboolean alpha)
 {
-	return 0;
+	return pic_data (0, 1, 1, (const byte *)"");
 }
 
 void
