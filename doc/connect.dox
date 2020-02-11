@@ -3,38 +3,39 @@
 /**
 \page connection_sequence QW Connection Sequence
 \msc
-Client,Server;
-Client=>Server [label = "getchallenge\n"];
-Server=>Client [label = "c[challenge][ext]"];
-Client=>Server [label = "connect [protover] [qport] [challenge] [userinfo]"];
-Server=>Client [label = "j"];
-Client->Server [label = "[clc_stringcmd]new"];
-Server->Client [label = "[svc_serverdata][data]"];
-|||;
-Client->Server [label = "[clc_stringcmd]soundlist [svcount] 0"];
---- [label = "soundlist loop start"];
-Server->Client [label = "[svc_soundlist][data][next]"];
-Client->Server [label = "[clc_stringcmd]soundlist [svcount] [next]"];
---- [label = "soundlist loop end"];
-Server->Client [label = "[svc_soundlist][data]0"];
-|||;
-Client->Server [label = "[clc_stringcmd]modellist [svcount] 0"];
---- [label = "modellist list loop start"];
-Server->Client [label = "[svc_modellist][data][next]"];
-Client->Server [label = "[clc_stringcmd]modellist [svcount] [next]"];
---- [label = "modellist list loop end"];
-Server->Client [label = "[svc_modellist][data]0"];
-|||;
-Client->Server [label = "[clc_stringcmd]prespawn [svcount] [n=0] [wcsum]"];
---- [label = "prespawn loop start"];
-Server->Client [label = "[signon buffer n][stuffcmd]prespawn..."];
-Client->Server [label = "[clc_stringcmd]prespawn [svcount] [n]"];
---- [label = "prespawn loop end"];
-Server->Client [label = "[signon buffer n][stuffcmd]spawn..."];
-|||;
-Client->Server [label = "[clc_stringcmd]spawn [svcount] 0"];
-Server->Client [label = "[spawn info][stuffcmd]skins"];
-Client->Server [label = "[clc_stringcmd]begin [svcount]"];
-#... [label = "in game message sequence"];
+Client [linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black],
+Server [linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+Client=>Server [label = "getchallenge\n", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+Server=>Client [label = "c[challenge][ext]", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+Client=>Server [label = "connect [protover] [qport] [challenge] [userinfo]", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+Server=>Client [label = "j", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+Client->Server [label = "[clc_stringcmd]new", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+Server->Client [label = "[svc_serverdata][data]", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+||| [linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+Client->Server [label = "[clc_stringcmd]soundlist [svcount] 0", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+--- [label = "soundlist loop start", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+Server->Client [label = "[svc_soundlist][data][next]", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+Client->Server [label = "[clc_stringcmd]soundlist [svcount] [next]", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+--- [label = "soundlist loop end", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+Server->Client [label = "[svc_soundlist][data]0", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+||| [linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+Client->Server [label = "[clc_stringcmd]modellist [svcount] 0", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+--- [label = "modellist list loop start", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+Server->Client [label = "[svc_modellist][data][next]", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+Client->Server [label = "[clc_stringcmd]modellist [svcount] [next]", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+--- [label = "modellist list loop end", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+Server->Client [label = "[svc_modellist][data]0", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+||| [linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+Client->Server [label = "[clc_stringcmd]prespawn [svcount] [n=0] [wcsum]", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+--- [label = "prespawn loop start", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+Server->Client [label = "[signon buffer n][stuffcmd]prespawn...", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+Client->Server [label = "[clc_stringcmd]prespawn [svcount] [n]", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+--- [label = "prespawn loop end", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+Server->Client [label = "[signon buffer n][stuffcmd]spawn...", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+||| [linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+Client->Server [label = "[clc_stringcmd]spawn [svcount] 0", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+Server->Client [label = "[spawn info][stuffcmd]skins", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+Client->Server [label = "[clc_stringcmd]begin [svcount]", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
+... [label = "in game message sequence", linecolor=white, textcolor=white, arclinecolor=white, arctextcolor=white, textbgcolor=black, arctextbgcolor=black];
 \endmsc
 */
