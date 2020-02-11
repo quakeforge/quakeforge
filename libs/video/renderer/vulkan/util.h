@@ -5,7 +5,7 @@
 
 typedef struct strset_s strset_t;
 
-int count_strings (const char * const *str);
+int count_strings (const char * const *str) __attribute__((const));
 void merge_strings (const char **out, const char * const *in1,
 					const char * const *in2);
 void prune_strings (strset_t *strset, const char **strings, uint32_t *count);
