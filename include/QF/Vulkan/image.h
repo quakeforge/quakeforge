@@ -57,4 +57,8 @@ qfv_imageview_t *QFV_CreateImageView (qfv_image_t *image, VkImageViewType type,
 									  VkFormat format,
 									  VkImageAspectFlags aspect);
 
+void QFV_DestroyImageView (qfv_imageview_t *view);
+
+void QFV_DestroyImage (qfv_image_t *image);
+
 #endif//__QF_Vulkan_image_h

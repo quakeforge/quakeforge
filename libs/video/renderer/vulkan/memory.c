@@ -60,6 +60,17 @@
 
 #include "util.h"
 
+void
+QFV_FreeMemory (qfv_memory_t *memory)
+{
+	qfv_device_t *device = memory->device;
+	VkDevice    dev = device->dev;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	dfunc->vkFreeMemory (dev, memory->object, 0);
+	free (memory);
+}
+
 void *
 QFV_MapMemory (qfv_memory_t *memory, VkDeviceSize offset, VkDeviceSize size)
 {

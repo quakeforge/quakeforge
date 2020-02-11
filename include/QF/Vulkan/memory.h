@@ -12,6 +12,7 @@ typedef struct qfv_mappedmemrange_s {
 	VkDeviceSize size;
 } qfv_mappedmemrange_t;
 
+void QFV_FreeMemory (qfv_memory_t *memory);
 void *QFV_MapMemory (qfv_memory_t *memory,
 					 VkDeviceSize offset, VkDeviceSize size);
 void QFV_UnmapMemory (qfv_memory_t *memory);

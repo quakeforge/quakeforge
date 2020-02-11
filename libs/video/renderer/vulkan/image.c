@@ -212,3 +212,25 @@ QFV_CreateImageView (qfv_image_t *image, VkImageViewType type, VkFormat format,
 	dfunc->vkCreateImageView (dev, &createInfo, 0, &view->view);
 	return view;
 }
+
+void
+QFV_DestroyImageView (qfv_imageview_t *view)
+{
+	qfv_device_t *device = view->device;
+	VkDevice    dev = device->dev;
+    qfv_devfuncs_t *dfunc = device->funcs;
+
+	dfunc->vkDestroyImageView (dev, view->view, 0);
+	free (view);
+}
+
+void
+QFV_DestroyImage (qfv_image_t *image)
+{
+	qfv_device_t *device = image->device;
+	VkDevice    dev = device->dev;
+    qfv_devfuncs_t *dfunc = device->funcs;
+
+	dfunc->vkDestroyImage (dev, image->image, 0);
+	free (image);
+}

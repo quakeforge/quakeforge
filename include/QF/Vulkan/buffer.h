@@ -50,4 +50,8 @@ QFV_CreateBufferTransitionSet (qfv_buffertransition_t **transitions,
 qfv_bufferview_t *QFV_CreateBufferView (qfv_buffer_t *buffer, VkFormat format,
 										VkDeviceSize offset, VkDeviceSize size);
 
+void QFV_DestroyBufferView (qfv_bufferview_t *view);
+
+void QFV_DestroyBuffer (qfv_buffer_t *buffer);
+
 #endif//__QF_Vulkan_buffer_h

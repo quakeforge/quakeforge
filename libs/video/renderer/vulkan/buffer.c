@@ -184,3 +184,25 @@ QFV_CreateBufferView (qfv_buffer_t *buffer, VkFormat format,
 	dfunc->vkCreateBufferView (dev, &createInfo, 0, &view->view);
 	return view;
 }
+
+void
+QFV_DestroyBufferView (qfv_bufferview_t *view)
+{
+	qfv_device_t *device = view->device;
+	VkDevice    dev = device->dev;
+    qfv_devfuncs_t *dfunc = device->funcs;
+
+	dfunc->vkDestroyBufferView (dev, view->view, 0);
+	free (view);
+}
+
+void
+QFV_DestroyBuffer (qfv_buffer_t *buffer)
+{
+	qfv_device_t *device = buffer->device;
+	VkDevice    dev = device->dev;
+    qfv_devfuncs_t *dfunc = device->funcs;
+
+	dfunc->vkDestroyBuffer (dev, buffer->buffer, 0);
+	free (buffer);
+}
