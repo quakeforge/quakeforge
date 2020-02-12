@@ -6,6 +6,7 @@ AM_CPPFLAGS= -I$(top_srcdir)/include -DVK_NO_PROTOTYPES
 vulkan_src = \
 	buffer.c \
 	command.c \
+	descriptor.c \
 	device.c \
 	image.c \
 	instance.c \
