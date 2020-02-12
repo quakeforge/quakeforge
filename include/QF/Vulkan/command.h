@@ -119,5 +119,9 @@ void QFV_CmdBeginRenderPass (qfv_cmdbuffer_t *cmdBuffer,
 void QFV_CmdNextSubpass (qfv_cmdbuffer_t *cmdBuffer,
 						 VkSubpassContents subpassContents);
 void QFV_CmdEndRenderPass (qfv_cmdbuffer_t *cmdBuffer);
+struct qfv_pipeline_s;
+void QFV_CmdBindPipeline (qfv_cmdbuffer_t *cmdBuffer,
+						  VkPipelineBindPoint bindPoint,
+						  struct qfv_pipeline_s *pipeline);
 
 #endif//__QF_Vulkan_command_h

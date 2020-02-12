@@ -52,6 +52,7 @@
 #include "QF/Vulkan/buffer.h"//FIXME should QFV_CmdPipelineBarrier be here?
 #include "QF/Vulkan/image.h"//FIXME should QFV_CmdPipelineBarrier be here?
 #include "QF/Vulkan/renderpass.h"//FIXME should QFV_CmdPipelineBarrier be here?
+#include "QF/Vulkan/pipeline.h"//FIXME should QFV_CmdPipelineBarrier be here?
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
@@ -503,4 +504,15 @@ QFV_CmdEndRenderPass (qfv_cmdbuffer_t *cmdBuffer)
 	qfv_devfuncs_t *dfunc = device->funcs;
 
 	dfunc->vkCmdEndRenderPass (cmdBuffer->buffer);
+}
+
+void
+QFV_CmdBindPipeline (qfv_cmdbuffer_t *cmdBuffer,
+					 VkPipelineBindPoint bindPoint,
+					 qfv_pipeline_t *pipeline)
+{
+	qfv_device_t *device = cmdBuffer->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	dfunc->vkCmdBindPipeline (cmdBuffer->buffer, bindPoint, pipeline->pipeline);
 }

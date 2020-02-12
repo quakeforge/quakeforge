@@ -16,6 +16,15 @@ typedef struct qfv_descriptorsetlayout_s {
 	VkDescriptorSetLayout layout;
 } qfv_descriptorsetlayout_t;
 
+typedef struct qfv_descriptorsetlayoutset_s {
+	uint32_t    numLayouts;
+	qfv_descriptorsetlayout_t *layouts[];
+} qfv_descriptorsetlayoutset_t;
+
+#define QFV_AllocDescriptorSetLayoutSet(num, allocator) \
+    allocator (field_offset (qfv_descriptorsetlayoutset_t, layouts[num]))
+
+
 typedef struct qfv_descriptorpool_s {
 	struct qfv_device_s *device;
 	VkDescriptorPool pool;
