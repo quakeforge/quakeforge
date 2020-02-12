@@ -92,6 +92,8 @@ void QFV_CmdPipelineBarrier (qfv_cmdbuffer_t *cmdBuffer,
 
 struct qfv_buffer_s;
 struct qfv_image_s;
+struct qfv_renderpass_s;
+struct qfv_framebuffer_s;
 void QFV_CmdCopyBuffer (qfv_cmdbuffer_t *cmdBuffer,
 						struct qfv_buffer_s *src, struct qfv_buffer_s *dst,
 						VkBufferCopy *regions, uint32_t numRegions);
@@ -107,5 +109,15 @@ void QFV_CmdCopyImageToBuffer (qfv_cmdbuffer_t *cmdBuffer,
 							   struct qfv_buffer_s *dst,
 							   VkBufferImageCopy *regions,
 							   uint32_t numRegions);
+void QFV_CmdBeginRenderPass (qfv_cmdbuffer_t *cmdBuffer,
+							 struct qfv_renderpass_s *renderPass,
+							 struct qfv_framebuffer_s *framebuffer,
+							 VkRect2D renderArea,
+							 uint32_t numClearValues,
+							 VkClearValue *clearValues,
+							 VkSubpassContents subpassContents);
+void QFV_CmdNextSubpass (qfv_cmdbuffer_t *cmdBuffer,
+						 VkSubpassContents subpassContents);
+void QFV_CmdEndRenderPass (qfv_cmdbuffer_t *cmdBuffer);
 
 #endif//__QF_Vulkan_command_h

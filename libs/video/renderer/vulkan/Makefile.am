@@ -11,6 +11,7 @@ vulkan_src = \
 	image.c \
 	instance.c \
 	memory.c \
+	renderpass.c \
 	swapchain.c \
 	util.c \
 	vulkan_draw.c \

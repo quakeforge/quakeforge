@@ -51,6 +51,7 @@
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/buffer.h"//FIXME should QFV_CmdPipelineBarrier be here?
 #include "QF/Vulkan/image.h"//FIXME should QFV_CmdPipelineBarrier be here?
+#include "QF/Vulkan/renderpass.h"//FIXME should QFV_CmdPipelineBarrier be here?
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
@@ -461,4 +462,45 @@ QFV_CmdCopyImageToBuffer (qfv_cmdbuffer_t *cmdBuffer,
 
 	dfunc->vkCmdCopyImageToBuffer (cmdBuffer->buffer, src->image, layout,
 								   dst->buffer, numRegions, regions);
+}
+
+void
+QFV_CmdBeginRenderPass (qfv_cmdbuffer_t *cmdBuffer,
+						qfv_renderpass_t *renderPass,
+						qfv_framebuffer_t *framebuffer,
+						VkRect2D renderArea,
+						uint32_t numClearValues,
+						VkClearValue *clearValues,
+						VkSubpassContents subpassContents)
+{
+	qfv_device_t *device = cmdBuffer->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	VkRenderPassBeginInfo beginInfo = {
+		VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, 0,
+		renderPass->renderPass, framebuffer->framebuffer, renderArea,
+		numClearValues, clearValues,
+	};
+
+	dfunc->vkCmdBeginRenderPass (cmdBuffer->buffer, &beginInfo,
+								 subpassContents);
+}
+
+void
+QFV_CmdNextSubpass (qfv_cmdbuffer_t *cmdBuffer,
+					VkSubpassContents subpassContents)
+{
+	qfv_device_t *device = cmdBuffer->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	dfunc->vkCmdNextSubpass (cmdBuffer->buffer, subpassContents);
+}
+
+void
+QFV_CmdEndRenderPass (qfv_cmdbuffer_t *cmdBuffer)
+{
+	qfv_device_t *device = cmdBuffer->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	dfunc->vkCmdEndRenderPass (cmdBuffer->buffer);
 }
