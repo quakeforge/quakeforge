@@ -188,7 +188,7 @@ QFV_CreateDescriptorPool (qfv_device_t *device,
 
 	VkDescriptorPoolCreateInfo createInfo = {
 		VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO, 0,
-		flags, maxSets, ps - poolsize_pool, poolsize_pool,
+		flags, maxSets, poolsize_next - poolsize_pool, poolsize_pool,
 	};
 
 	qfv_descriptorpool_t *descriptorpool = malloc (sizeof (descriptorpool));
