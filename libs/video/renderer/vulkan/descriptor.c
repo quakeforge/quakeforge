@@ -319,6 +319,7 @@ QFV_DestroyDescriptorPool (qfv_descriptorpool_t *pool)
 	qfv_devfuncs_t *dfunc = device->funcs;
 
 	dfunc->vkDestroyDescriptorPool (dev, pool->pool, 0);
+	free (pool);
 }
 
 void
@@ -329,6 +330,7 @@ QFV_DestroyDescriptorSetLayout (qfv_descriptorsetlayout_t *layout)
 	qfv_devfuncs_t *dfunc = device->funcs;
 
 	dfunc->vkDestroyDescriptorSetLayout (dev, layout->layout, 0);
+	free (layout);
 }
 
 void
@@ -339,4 +341,5 @@ QFV_DestroySampler (qfv_sampler_t *sampler)
 	qfv_devfuncs_t *dfunc = device->funcs;
 
 	dfunc->vkDestroySampler (dev, sampler->sampler, 0);
+	free (sampler);
 }
