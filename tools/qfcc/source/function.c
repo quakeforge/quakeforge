@@ -338,7 +338,7 @@ find_function (expr_t *fexpr, expr_t *params)
 		return fexpr;
 	for (func_count = 0; funcs[func_count]; func_count++)
 		;
-	if (func_count < 2) {
+	if (func_count < 1) {
 		free (funcs);
 		return fexpr;
 	}
