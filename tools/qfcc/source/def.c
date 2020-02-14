@@ -148,11 +148,17 @@ new_def (const char *name, type_t *type, defspace_t *space,
 
 	if (storage != sc_extern) {
 		int         size = type_size (type);
+		int         alignment = type->alignment;
+
 		if (!size) {
 			error (0, "%s has incomplete type", name);
 			size = 1;
 		}
-		def->offset = defspace_alloc_loc (space, size);
+		if (alignment < 1) {
+			print_type (type);
+			internal_error (0, "temp type has no alignment");
+		}
+		def->offset = defspace_alloc_aligned_loc (space, size, alignment);
 	}
 
 	return def;
@@ -199,16 +205,20 @@ temp_def (type_t *type)
 	def_t      *temp;
 	defspace_t *space = current_func->symtab->space;
 	int         size = type_size (type);
+	int         alignment = type->alignment;
 
 	if (size < 1 || size > 4) {
 		internal_error (0, "%d invalid size for temp def", size);
+	}
+	if (alignment < 1) {
+		internal_error (0, "temp type has no alignment");
 	}
 	if ((temp = current_func->temp_defs[size - 1])) {
 		current_func->temp_defs[size - 1] = temp->temp_next;
 		temp->temp_next = 0;
 	} else {
 		ALLOC (16384, def_t, defs, temp);
-		temp->offset = defspace_alloc_loc (space, size);
+		temp->offset = defspace_alloc_aligned_loc (space, size, alignment);
 		*space->def_tail = temp;
 		space->def_tail = &temp->next;
 		temp->name = save_string (va (".tmp%d", current_func->temp_num++));

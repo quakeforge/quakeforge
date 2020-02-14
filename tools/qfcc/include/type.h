@@ -63,6 +63,7 @@ typedef enum {
 typedef struct type_s {
 	etype_t     type;		///< ev_invalid means structure/array etc
 	const char *name;
+	int         alignment;	///< required alignment for instances
 	/// function/pointer/array/struct types are more complex
 	ty_meta_e   meta;
 	union {
