@@ -86,7 +86,6 @@ static expr_type_t float_vector[] = {
 
 static expr_type_t float_quat[] = {
 	{'*',	&type_quaternion},
-	{'/',	0, 0, 0, inverse_multiply},
 	{0, 0}
 };
 
@@ -170,7 +169,7 @@ static expr_type_t pointer_integer[] = {
 
 static expr_type_t quat_float[] = {
 	{'*',	&type_quaternion},
-	{'/',	&type_quaternion},
+	{'/',	0, 0, 0, inverse_multiply},
 	{0, 0}
 };
 
@@ -190,7 +189,7 @@ static expr_type_t quat_quat[] = {
 
 static expr_type_t quat_integer[] = {
 	{'*',	&type_quaternion, 0, &type_float},
-	{'/',	&type_quaternion, 0, &type_float},
+	{'/',	0, 0, 0, inverse_multiply},
 	{0, 0}
 };
 #define quat_uinteger quat_integer
@@ -228,7 +227,6 @@ static expr_type_t integer_pointer[] = {
 
 static expr_type_t integer_quat[] = {
 	{'*',	&type_quaternion, &type_float, 0},
-	{'/',	&type_quaternion, &type_float, 0},
 	{0, 0}
 };
 
@@ -478,7 +476,7 @@ static expr_type_t *field_x[] = {
 	0,				// ev_short
 };
 
-static expr_type_t *funcx[] = {
+static expr_type_t *func_x[] = {
 	0,				// ev_void
 	0,				// ev_string
 	0,				// ev_float
@@ -575,7 +573,7 @@ static expr_type_t **binary_expr_types[] = {
 	vector_x,
 	entity_x,
 	field_x,
-	funcx,
+	func_x,
 	pointer_x,
 	quat_x,
 	integer_x,
