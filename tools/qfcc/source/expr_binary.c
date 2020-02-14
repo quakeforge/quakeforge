@@ -47,6 +47,7 @@ typedef struct {
 
 static expr_t *pointer_arithmetic (int op, expr_t *e1, expr_t *e2);
 static expr_t *inverse_multiply (int op, expr_t *e1, expr_t *e2);
+static expr_t *double_compare (int op, expr_t *e1, expr_t *e2);
 
 static expr_type_t string_string[] = {
 	{'+',	&type_string},
@@ -111,6 +112,21 @@ static expr_type_t float_integer[] = {
 #define float_uinteger float_integer
 #define float_short float_integer
 
+static expr_type_t float_double[] = {
+	{'+',	&type_double, &type_double, 0},
+	{'-',	&type_double, &type_double, 0},
+	{'*',	&type_double, &type_double, 0},
+	{'/',	&type_double, &type_double, 0},
+	{'%',	&type_double, &type_double, 0},
+	{EQ,	0, 0, 0, double_compare},
+	{NE,	0, 0, 0, double_compare},
+	{LE,	0, 0, 0, double_compare},
+	{GE,	0, 0, 0, double_compare},
+	{LT,	0, 0, 0, double_compare},
+	{GT,	0, 0, 0, double_compare},
+	{0, 0}
+};
+
 static expr_type_t vector_float[] = {
 	{'*',	&type_vector},
 	{'/',	0, 0, 0, inverse_multiply},
@@ -129,6 +145,12 @@ static expr_type_t vector_vector[] = {
 #define vector_integer vector_float
 #define vector_uinteger vector_float
 #define vector_short vector_float
+
+static expr_type_t vector_double[] = {
+	{'*',	&type_vector},
+	{'/',	0, 0, 0, inverse_multiply},
+	{0, 0}
+};
 
 static expr_type_t entity_entity[] = {
 	{EQ,	&type_integer},
@@ -194,6 +216,12 @@ static expr_type_t quat_integer[] = {
 };
 #define quat_uinteger quat_integer
 #define quat_short quat_integer
+
+static expr_type_t quat_double[] = {
+	{'*',	&type_quaternion},
+	{'/',	0, 0, 0, inverse_multiply},
+	{0, 0}
+};
 
 static expr_type_t integer_float[] = {
 	{'+',	&type_float, &type_float, 0},
@@ -290,6 +318,21 @@ static expr_type_t integer_short[] = {
 	{0, 0}
 };
 
+static expr_type_t integer_double[] = {
+	{'+',	&type_double, &type_double, 0},
+	{'-',	&type_double, &type_double, 0},
+	{'*',	&type_double, &type_double, 0},
+	{'/',	&type_double, &type_double, 0},
+	{'%',	&type_double, &type_double, 0},
+	{EQ,	&type_integer, &type_double, 0},
+	{NE,	&type_integer, &type_double, 0},
+	{LE,	&type_integer, &type_double, 0},
+	{GE,	&type_integer, &type_double, 0},
+	{LT,	&type_integer, &type_double, 0},
+	{GT,	&type_integer, &type_double, 0},
+	{0, 0}
+};
+
 #define uinteger_float integer_float
 #define uinteger_vector integer_vector
 #define uinteger_pointer integer_pointer
@@ -335,6 +378,7 @@ static expr_type_t uinteger_uinteger[] = {
 	{0, 0}
 };
 #define uinteger_short uinteger_integer
+#define uinteger_double integer_double
 
 #define short_float integer_float
 #define short_vector integer_vector
@@ -400,8 +444,66 @@ static expr_type_t short_short[] = {
 	{GT,	&type_integer},
 	{0, 0}
 };
+#define short_double integer_double
 
-static expr_type_t *string_x[] = {
+static expr_type_t double_float[] = {
+	{'+',	&type_double, 0, &type_double},
+	{'-',	&type_double, 0, &type_double},
+	{'*',	&type_double, 0, &type_double},
+	{'/',	&type_double, 0, &type_double},
+	{'%',	&type_double, 0, &type_double},
+	{EQ,	0, 0, 0, double_compare},
+	{NE,	0, 0, 0, double_compare},
+	{LE,	0, 0, 0, double_compare},
+	{GE,	0, 0, 0, double_compare},
+	{LT,	0, 0, 0, double_compare},
+	{GT,	0, 0, 0, double_compare},
+	{0, 0}
+};
+
+static expr_type_t double_vector[] = {
+	{'*',	&type_vector},
+	{0, 0}
+};
+
+static expr_type_t double_quat[] = {
+	{'*',	&type_quaternion},
+	{0, 0}
+};
+
+static expr_type_t double_integer[] = {
+	{'+',	&type_double, 0, &type_double},
+	{'-',	&type_double, 0, &type_double},
+	{'*',	&type_double, 0, &type_double},
+	{'/',	&type_double, 0, &type_double},
+	{'%',	&type_double, 0, &type_double},
+	{EQ,	0, 0, 0, double_compare},
+	{NE,	0, 0, 0, double_compare},
+	{LE,	0, 0, 0, double_compare},
+	{GE,	0, 0, 0, double_compare},
+	{LT,	0, 0, 0, double_compare},
+	{GT,	0, 0, 0, double_compare},
+	{0, 0}
+};
+#define double_uinteger double_integer
+#define double_short double_integer
+
+static expr_type_t double_double[] = {
+	{'+',	&type_double},
+	{'-',	&type_double},
+	{'*',	&type_double},
+	{'/',	&type_double},
+	{'%',	&type_double},
+	{EQ,	&type_integer},
+	{NE,	&type_integer},
+	{LE,	&type_integer},
+	{GE,	&type_integer},
+	{LT,	&type_integer},
+	{GT,	&type_integer},
+	{0, 0}
+};
+
+static expr_type_t *string_x[ev_type_count] = {
 	0,				// ev_void
 	string_string,
 	0,				// ev_float
@@ -414,9 +516,10 @@ static expr_type_t *string_x[] = {
 	0,				// ev_integer
 	0,				// ev_uinteger
 	0,				// ev_short
+	0,				// ev_double
 };
 
-static expr_type_t *float_x[] = {
+static expr_type_t *float_x[ev_type_count] = {
 	0,				// ev_void
 	0,				// ev_string
 	float_float,
@@ -429,9 +532,10 @@ static expr_type_t *float_x[] = {
 	float_integer,
 	float_uinteger,
 	float_short,
+	float_double,
 };
 
-static expr_type_t *vector_x[] = {
+static expr_type_t *vector_x[ev_type_count] = {
 	0,				// ev_void
 	0,				// ev_string
 	vector_float,
@@ -444,9 +548,10 @@ static expr_type_t *vector_x[] = {
 	vector_integer,
 	vector_uinteger,
 	vector_short,
+	vector_double,
 };
 
-static expr_type_t *entity_x[] = {
+static expr_type_t *entity_x[ev_type_count] = {
 	0,				// ev_void
 	0,				// ev_string
 	0,				// ev_float
@@ -459,9 +564,10 @@ static expr_type_t *entity_x[] = {
 	0,				// ev_integer
 	0,				// ev_uinteger
 	0,				// ev_short
+	0,				// ev_double
 };
 
-static expr_type_t *field_x[] = {
+static expr_type_t *field_x[ev_type_count] = {
 	0,				// ev_void
 	0,				// ev_string
 	0,				// ev_float
@@ -474,9 +580,10 @@ static expr_type_t *field_x[] = {
 	0,				// ev_integer
 	0,				// ev_uinteger
 	0,				// ev_short
+	0,				// ev_double
 };
 
-static expr_type_t *func_x[] = {
+static expr_type_t *func_x[ev_type_count] = {
 	0,				// ev_void
 	0,				// ev_string
 	0,				// ev_float
@@ -489,9 +596,10 @@ static expr_type_t *func_x[] = {
 	0,				// ev_integer
 	0,				// ev_uinteger
 	0,				// ev_short
+	0,				// ev_double
 };
 
-static expr_type_t *pointer_x[] = {
+static expr_type_t *pointer_x[ev_type_count] = {
 	0,				// ev_void
 	0,				// ev_string
 	0,				// ev_float
@@ -504,9 +612,10 @@ static expr_type_t *pointer_x[] = {
 	pointer_integer,
 	pointer_uinteger,
 	pointer_short,
+	0,				// ev_double
 };
 
-static expr_type_t *quat_x[] = {
+static expr_type_t *quat_x[ev_type_count] = {
 	0,				// ev_void
 	0,				// ev_string
 	quat_float,
@@ -519,9 +628,10 @@ static expr_type_t *quat_x[] = {
 	quat_integer,
 	quat_uinteger,
 	quat_short,
+	quat_double,
 };
 
-static expr_type_t *integer_x[] = {
+static expr_type_t *integer_x[ev_type_count] = {
 	0,				// ev_void
 	0,				// ev_string
 	integer_float,
@@ -534,9 +644,10 @@ static expr_type_t *integer_x[] = {
 	integer_integer,
 	integer_uinteger,
 	integer_short,
+	integer_double,
 };
 
-static expr_type_t *uinteger_x[] = {
+static expr_type_t *uinteger_x[ev_type_count] = {
 	0,				// ev_void
 	0,				// ev_string
 	uinteger_float,
@@ -549,9 +660,10 @@ static expr_type_t *uinteger_x[] = {
 	uinteger_integer,
 	uinteger_uinteger,
 	uinteger_short,
+	uinteger_double,
 };
 
-static expr_type_t *short_x[] = {
+static expr_type_t *short_x[ev_type_count] = {
 	0,				// ev_void
 	0,				// ev_string
 	short_float,
@@ -564,9 +676,26 @@ static expr_type_t *short_x[] = {
 	short_integer,
 	short_uinteger,
 	short_short,
+	short_double,
 };
 
-static expr_type_t **binary_expr_types[] = {
+static expr_type_t *double_x[ev_type_count] = {
+	0,				// ev_void
+	0,				// ev_string
+	double_float,
+	double_vector,
+	0,				// ev_entity
+	0,				// ev_field
+	0,				// ev_func
+	0,				// ev_pointer
+	double_quat,
+	double_integer,
+	double_uinteger,
+	double_short,
+	double_double,
+};
+
+static expr_type_t **binary_expr_types[ev_type_count] = {
 	0,				// ev_void
 	string_x,
 	float_x,
@@ -579,6 +708,7 @@ static expr_type_t **binary_expr_types[] = {
 	integer_x,
 	uinteger_x,
 	short_x,
+	double_x
 };
 
 static expr_t *
@@ -607,6 +737,36 @@ inverse_multiply (int op, expr_t *e1, expr_t *e2)
 	// one would mean the engine would have to do 1/f every time
 	expr_t     *one = new_float_expr (1);
 	return binary_expr ('*', e1, binary_expr ('/', one, e2));
+}
+
+static expr_t *
+double_compare (int op, expr_t *e1, expr_t *e2)
+{
+	type_t     *t1 = get_type (e1);
+	type_t     *t2 = get_type (e2);
+	expr_t     *e;
+
+	if ((is_double (t1) && is_float (t2))
+		|| (is_float (t1) && is_double (t2))) {
+	}
+	if (is_double (t1)) {
+		if (is_float (t2)) {
+			warning (e2, "comparison between double and float");
+		} else if (!is_constant (e2)) {
+			warning (e2, "comparison between double and integer");
+		}
+		e2 = cast_expr (&type_double, e2);
+	} else {
+		if (is_float (t1)) {
+			warning (e1, "comparison between float and double");
+		} else if (!is_constant (e1)) {
+			warning (e1, "comparison between integer and double");
+		}
+		e1 = cast_expr (&type_double, e1);
+	}
+	e = new_binary_expr (op, e1, e2);
+	e->e.expr.type = &type_double;
+	return e;
 }
 
 static expr_t *
@@ -778,9 +938,9 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	et1 = low_level_type (t1);
 	et2 = low_level_type (t2);
 
-	if (et1 > ev_short || !binary_expr_types[et1])
+	if (et1 >= ev_type_count || !binary_expr_types[et1])
 		return invalid_binary_expr(op, e1, e2);
-	if (et2 > ev_short || !binary_expr_types[et1][et2])
+	if (et2 >= ev_type_count || !binary_expr_types[et1][et2])
 		return invalid_binary_expr(op, e1, e2);
 	expr_type = binary_expr_types[et1][et2];
 	while (expr_type->op && expr_type->op != op)

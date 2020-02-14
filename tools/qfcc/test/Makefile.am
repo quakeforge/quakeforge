@@ -58,11 +58,23 @@ test_progs_dat=\
 
 fail_progs_dat=
 
+test_build_errors=\
+	double-int-compare.r \
+	double-float-compare.r
+
+fail_build_errors=
+
 test_defspace_src=\
 	tw-defspace.c tw-diagnostic.c tw-strpool.c
 
-TESTS=$(test_bins) $(test_progs_dat:.dat=.run)
-XFAIL_TESTS=$(fail_bins) $(fail_progs_dat:.dat=.run)
+TESTS=\
+	$(test_bins) \
+	$(test_progs_dat:.dat=.run) \
+	$(test_build_errors:.r=.run)
+XFAIL_TESTS=\
+	$(fail_bins) \
+	$(fail_progs_dat:.dat=.run) \
+	$(fail_build_errors:.r=.run)
 
 check_PROGRAMS=test-harness $(test_progs_dat) $(test_bins)
 
@@ -120,6 +132,12 @@ double.run: Makefile build-run
 	$(srcdir)/build-run $@
 include ./$(DEPDIR)/double.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/double.Qo
+
+double-int-compare.run$(EXEEXT): double-int-compare.r Makefile build-compile-fail-run
+	$(srcdir)/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
+
+double-float-compare.run$(EXEEXT): double-float-compare.r Makefile build-compile-fail-run
+	$(srcdir)/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
 
 enum_dat_SOURCES=enum.r
 enum_obj=$(enum_dat_SOURCES:.r=.qfo)
