@@ -1337,7 +1337,11 @@ op_call:
 				OPC.integer_var = OPA.integer_var % OPB.integer_var;
 				break;
 			case OP_MOD_F:
-				OPC.float_var = (int) OPA.float_var % (int) OPB.float_var;
+				{
+					float       a = OPA.float_var;
+					float       b = OPB.float_var;
+					OPC.float_var = a - b * truncf (a / b);
+				}
 				break;
 			case OP_CONV_IF:
 				OPC.float_var = OPA.integer_var;
