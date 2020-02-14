@@ -1567,36 +1567,36 @@ struct progs_s {
 	int         zone_size;			///< set by user
 
 	/// \name builtin functions
-	//@{
+	///@{
 	struct hashtab_s *builtin_hash;
 	struct hashtab_s *builtin_num_hash;
 	unsigned    bi_next;
 	unsigned  (*bi_map) (progs_t *pr, unsigned binum);
-	//@}
+	///@}
 
 	/// \name symbol management
-	//@{
+	///@{
 	struct hashtab_s *function_hash;
 	struct hashtab_s *global_hash;
 	struct hashtab_s *field_hash;
-	//@}
+	///@}
 
 	/// \name load hooks
-	//@{
+	///@{
 	int         num_load_funcs;
 	int         max_load_funcs;
 	pr_load_func_t **load_funcs;
 
 	/// cleared each load
-	//@{
+	///@{
 	int         num_load_finish_funcs;
 	int         max_load_finish_funcs;
 	pr_load_func_t **load_finish_funcs;
-	//@}
-	//@}
+	///@}
+	///@}
 
 	/// \name string management
-	//@{
+	///@{
 	struct dstring_mem_s *ds_mem;
 	strref_t   *free_string_refs;
 	strref_t   *static_strings;
@@ -1608,10 +1608,10 @@ struct progs_s {
 	int         num_strings;
 	strref_t   *pr_xtstr;
 	int         float_promoted;	///< for PR_Sprintf
-	//@}
+	///@}
 
 	/// \name memory map
-	//@{
+	///@{
 	dfunction_t *pr_functions;
 	bfunction_t *function_table;
 	char       *pr_strings;
@@ -1621,10 +1621,10 @@ struct progs_s {
 	dstatement_t *pr_statements;
 	pr_type_t  *pr_globals;
 	unsigned    globals_size;
-	//@}
+	///@}
 
 	/// \name parameter block
-	//@{
+	///@{
 	pr_type_t  *pr_return;
 	pr_type_t  *pr_params[MAX_PARMS];
 	pr_type_t  *pr_real_params[MAX_PARMS];
@@ -1632,10 +1632,10 @@ struct progs_s {
 	pr_type_t  *pr_saved_params;
 	int         pr_saved_argc;
 	int         pr_param_size;		///< covers both params and return
-	//@}
+	///@}
 
 	/// \name edicts
-	//@{
+	///@{
 	edict_t   **edicts;
 	int         max_edicts;			///< set by user
 	int        *num_edicts;
@@ -1647,10 +1647,10 @@ struct progs_s {
 	int         pr_edict_size;		///< in bytes
 	int         pr_edictareasize;	///< for bounds checking, starts at 0
 	func_t      edict_parse;
-	//@}
+	///@}
 
 	/// \name execution state
-	//@{
+	///@{
 	int         pr_argc;
 
 	qboolean    pr_trace;
@@ -1668,24 +1668,24 @@ struct progs_s {
 	/// be considered valid if there is no .stack global.
 	/// \note The return address and saved locals will not ever be on this
 	/// stack.
-	//@{
+	///@{
 	pr_type_t  *stack;
 	pointer_t   stack_bottom;
 	int         stack_size;			///< set by user
-	//@}
+	///@}
 
 	int         localstack[LOCALSTACK_SIZE];
 	int         localstack_used;
-	//@}
+	///@}
 
 	/// \name resources
-	//@{
+	///@{
 	pr_resource_t *resources;
 	struct hashtab_s *resource_hash;
-	//@}
+	///@}
 
 	/// \name obj info
-	//@{
+	///@{
 	unsigned    selector_index;
 	unsigned    selector_index_max;
 	struct obj_list_s **selector_sels;
@@ -1698,10 +1698,10 @@ struct progs_s {
 	struct obj_list_s *unclaimed_proto_list;
 	struct obj_list_s *module_list;
 	struct obj_list_s *class_tree_list;
-	//@}
+	///@}
 
 	/// \name debug info
-	//@{
+	///@{
 	const char *debugfile;
 	struct pr_debug_header_s *debug;
 	struct pr_auxfunction_s *auxfunctions;
@@ -1711,10 +1711,10 @@ struct progs_s {
 	pr_type_t  *watch;
 	int         wp_conditional;
 	pr_type_t   wp_val;
-	//@}
+	///@}
 
 	/// \name globals and fields needed by the VM
-	//@{
+	///@{
 	struct {
 		float      *time;		///< required for OP_STATE
 		pr_int_t   *self;		///< required for OP_STATE
@@ -1726,7 +1726,7 @@ struct progs_s {
 		pr_int_t    think;		///< required for OP_STATE
 		pr_int_t    this;		///< optional for entity<->object linking
 	} fields;
-	//@}
+	///@}
 };
 
 /** \addtogroup progs_data_access
