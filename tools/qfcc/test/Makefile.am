@@ -29,6 +29,7 @@ test_bins=\
 fail_bins=
 
 test_progs_dat=\
+	alignment.dat \
 	chewed-alias.dat \
 	chewed-return.dat \
 	comma-expr.dat \
@@ -87,6 +88,15 @@ test_harness_LDADD=			$(QFCC_TEST_LIBS)
 test_harness_DEPENDENCIES=	$(QFCC_TEST_DEPS)
 
 r_depfiles_remade=
+
+alignment_dat_SOURCES=alignment.r
+alignment_obj=$(alignment_dat_SOURCES:.r=.qfo)
+alignment.dat$(EXEEXT): $(alignment_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(alignment_obj)
+alignment.run: Makefile build-run
+	$(srcdir)/build-run $@
+include ./$(DEPDIR)/alignment.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/alignment.Qo
 
 chewed_alias_dat_SOURCES=chewed-alias.r
 chewed_alias_obj=$(chewed_alias_dat_SOURCES:.r=.qfo)
