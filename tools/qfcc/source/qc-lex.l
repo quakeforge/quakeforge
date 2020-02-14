@@ -93,6 +93,8 @@ B			[01]
 X			[0-9a-fA-F]
 ID			[a-zA-Z_][a-zA-Z_0-9]*
 FLOAT		({D}+|{D}*\.{D}+|{D}+\.{D}*)([eE]{m}?{D}+)?
+FLOATf		{FLOAT}[fF]
+FLOATd		{FLOAT}[dD]
 INT			({D}+|0[xX]{X}+|0[bB]{B})
 RANGE		\.\.
 ELLIPSIS	\.\.\.
@@ -136,8 +138,33 @@ STRING		\"(\\.|[^"\\])*\"
 					}
 
 {FLOAT}				{
+						// advanced code defaults to double, but traditional
+						// and extended code defaults to float
+						if (options.traditional < 1) {
+							double      d = strtod (yytext, 0);
+							qc_yylval.expr = new_double_expr (d);
+						} else {
+							float       f = strtof (yytext, 0);
+							qc_yylval.expr = new_float_expr (f);
+						}
+						return VALUE;
+					}
+{FLOATf}			{
 						float       f = strtof (yytext, 0);
 						qc_yylval.expr = new_float_expr (f);
+						return VALUE;
+					}
+{FLOATd}			{
+						// advanced code defaults to double, but traditional
+						// and extended code defaults to float
+						if (options.traditional < 1) {
+							double      d = strtod (yytext, 0);
+							qc_yylval.expr = new_double_expr (d);
+						} else {
+							float       f = strtof (yytext, 0);
+							qc_yylval.expr = new_float_expr (f);
+							warning (0, "truncating double constant to float");
+						}
 						return VALUE;
 					}
 

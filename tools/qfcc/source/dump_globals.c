@@ -97,6 +97,9 @@ dump_def (progs_t *pr, ddef_t *def, int indent)
 			case ev_float:
 				comment = va (" %g", G_FLOAT (pr, offset));
 				break;
+			case ev_double:
+				comment = va (" %.17g", G_DOUBLE (pr, offset));
+				break;
 			case ev_vector:
 				comment = va (" '%g %g %g'",
 							  G_VECTOR (pr, offset)[0],

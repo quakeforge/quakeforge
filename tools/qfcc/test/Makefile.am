@@ -33,6 +33,7 @@ test_progs_dat=\
 	chewed-return.dat \
 	comma-expr.dat \
 	deadbool.dat \
+	double.dat \
 	enum.dat \
 	fordecl.dat \
 	func-expr.dat \
@@ -110,6 +111,15 @@ deadbool.run: Makefile build-run
 	$(srcdir)/build-run $@
 include ./$(DEPDIR)/deadbool.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/deadbool.Qo
+
+double_dat_SOURCES=double.r
+double_obj=$(double_dat_SOURCES:.r=.qfo)
+double.dat$(EXEEXT): $(double_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(double_obj)
+double.run: Makefile build-run
+	$(srcdir)/build-run $@
+include ./$(DEPDIR)/double.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/double.Qo
 
 enum_dat_SOURCES=enum.r
 enum_obj=$(enum_dat_SOURCES:.r=.qfo)

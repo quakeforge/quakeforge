@@ -2273,6 +2273,14 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 				e = e1->e.expr.e2;
 				break;
 			}
+			if (e1->e.expr.op == 'A') {
+				if (!t)
+					t = e1->e.expr.type;
+				if (e2) {
+					e2 = binary_expr ('+', e1->e.expr.e2, e2);
+				}
+				return address_expr (e1->e.expr.e1, e2, t);
+			}
 			return error (e1, "invalid type for unary &");
 		case ex_uexpr:
 			if (e1->e.expr.op == '.') {

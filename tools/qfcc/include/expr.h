@@ -174,7 +174,7 @@ typedef struct ex_value_s {
 	etype_t     lltype;
 	union {
 		const char *string_val;			///< string constant
-		float       double_val;			///< double constant
+		double      double_val;			///< double constant
 		float       float_val;			///< float constant
 		float       vector_val[3];		///< vector constant
 		int         entity_val;			///< entity constant
