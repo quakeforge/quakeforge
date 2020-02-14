@@ -13,5 +13,10 @@ struct vulkan_ctx_s;
 qfv_swapchain_t *QFV_CreateSwapchain (struct vulkan_ctx_s *ctx,
 									  VkSwapchainKHR old_swapchain);
 void QFV_DestroySwapchain (qfv_swapchain_t *swapchain);
+struct qfv_semaphore_s;
+struct qfv_fence_s;
+int QFV_AcquireNextImage (qfv_swapchain_t *swapchain,
+						  struct qfv_semaphore_s *semaphore,
+						  struct qfv_fence_s *fence, uint32_t *imageIndex);
 
 #endif//__QF_Vulkan_swapchain_h

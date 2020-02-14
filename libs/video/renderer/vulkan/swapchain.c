@@ -11,6 +11,7 @@
 #include "QF/sys.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/cvars.h"
+#include "QF/Vulkan/command.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/swapchain.h"
@@ -156,4 +157,31 @@ QFV_DestroySwapchain (qfv_swapchain_t *swapchain)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	dfunc->vkDestroySwapchainKHR (dev, swapchain->swapchain, 0);
 	free (swapchain);
+}
+
+int
+QFV_AcquireNextImage (qfv_swapchain_t *swapchain, qfv_semaphore_t *semaphore,
+					  qfv_fence_t *fence, uint32_t *imageIndex)
+{
+	qfv_device_t *device = swapchain->device;
+	VkDevice dev = device->dev;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	uint64_t timeout = 2000000000;
+	VkSemaphore sem = semaphore ? semaphore->semaphore : VK_NULL_HANDLE;
+	VkFence fnc = fence ? fence->fence : VK_NULL_HANDLE;
+	*imageIndex = ~0u;
+	VkResult res = dfunc->vkAcquireNextImageKHR (dev, swapchain->swapchain,
+												 timeout, sem, fnc,
+												 imageIndex);
+	switch (res) {
+		case VK_SUCCESS:
+		case VK_TIMEOUT:
+		case VK_NOT_READY:
+			return 1;
+		case VK_SUBOPTIMAL_KHR:
+		case VK_ERROR_OUT_OF_DATE_KHR:
+			return 0;
+		default:
+			Sys_Error ("vkAcquireNextImageKHR failed: %d", res);
+	}
 }
