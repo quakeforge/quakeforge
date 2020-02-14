@@ -77,6 +77,7 @@ VISIBLE const char *pr_type_name[ev_type_count] = {
 	"integer",
 	"uinteger",
 	"short",
+	"double",
 	"invalid",
 };
 

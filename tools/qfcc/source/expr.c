@@ -867,7 +867,7 @@ expr_double (expr_t *e)
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
 		&& e->e.symbol->s.def->constant
 		&& is_double (e->e.symbol->s.def->type))
-		return D_FLOAT (e->e.symbol->s.def);
+		return D_DOUBLE (e->e.symbol->s.def);
 	internal_error (e, "not a double constant");
 }
 
@@ -1915,6 +1915,10 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 			if (is_integer_val (e)
 				&& options.code.progsversion == PROG_ID_VERSION)
 				convert_int (e);
+			if (is_float (get_type (e))
+				&& options.code.progsversion != PROG_ID_VERSION) {
+				t = &type_double;
+			}
 			if (is_integer_val (e) && options.warnings.vararg_integer)
 				warning (e, "passing integer constant into ... function");
 		}
@@ -2611,8 +2615,7 @@ cast_expr (type_t *type, expr_t *e)
 		e->e.value = convert_value (val, type);
 		e->type = ex_value;
 		c = e;
-	} else if ((is_float (type) && is_integral (e_type))
-		|| (is_integral (type) && is_float (e_type))) {
+	} else if (is_scalar (type) && is_scalar (e_type)) {
 		c = new_unary_expr ('C', e);
 		c->e.expr.type = type;
 	} else if (e->type == ex_uexpr && e->e.expr.op == '.') {

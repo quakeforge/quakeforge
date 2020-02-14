@@ -649,6 +649,8 @@ free_fmt_item (fmt_item_t *fi)
 
 #undef P_var
 #define P_var(p,n,t) (args[n]->t##_var)
+#undef P_DOUBLE
+#define P_DOUBLE(p,n) (*(double *) (args[n]))
 VISIBLE void
 PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 			const char *format, int count, pr_type_t **args)

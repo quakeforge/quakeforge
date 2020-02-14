@@ -958,8 +958,7 @@ expr_cast (sblock_t *sblock, expr_t *e, operand_t **op)
 	statement_t *s;
 
 	src_type = get_type (e->e.expr.e1);
-	if ((src_type->type == ev_integer && type->type == ev_float)
-		|| (src_type->type == ev_float && type->type == ev_integer)) {
+	if (is_scalar (src_type) && is_scalar (type)) {
 		operand_t  *src = 0;
 		sblock = statement_subexpr (sblock, e->e.expr.e1, &src);
 		*op = temp_operand (e->e.expr.type);

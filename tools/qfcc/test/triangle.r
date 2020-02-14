@@ -1,6 +1,6 @@
 void printf (string fmt, ...) = #0;
 float (string s) stof = #0;
-float (float x) sqrt = #0;
+@overload float (float x) sqrt = #0;
 
 float
 heron (float a, float b, float c)
