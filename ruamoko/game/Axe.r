@@ -32,7 +32,7 @@
 	source = s.origin + '0 0 16';
 
 	traceline (source, source + v_forward * 64, NO, s);
-	if (trace_fraction == 1.0)
+	if (trace_fraction == 1.0f)
 		return;
 
 	org = trace_endpos - v_forward * 4;
