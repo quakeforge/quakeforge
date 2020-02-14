@@ -57,5 +57,8 @@ float main (void)
 	res |= test ("foo", foo, -5, -3, -2);
 	res |= test ("bar", bar, -5, -3, -2);
 	res |= test ("baz", baz, -5, -3, 0);
+
+	res |= test ("foo", foo, 5, 3.5, 1.5);
+	res |= test ("foo", foo, -5, 3.5, -1.5);
 	return res;
 }
