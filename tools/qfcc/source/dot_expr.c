@@ -438,6 +438,9 @@ print_value (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		case ev_string:
 			label = va ("\\\"%s\\\"", quote_string (e->e.value->v.string_val));
 			break;
+		case ev_double:
+			label = va ("f %g", e->e.value->v.double_val);
+			break;
 		case ev_float:
 			label = va ("f %g", e->e.value->v.float_val);
 			break;

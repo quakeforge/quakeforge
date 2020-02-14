@@ -44,6 +44,7 @@ typedef enum {
 	ev_integer,
 	ev_uinteger,
 	ev_short,			// value is embedded in the opcode
+	ev_double,
 
 	ev_invalid,			// invalid type. used for instruction checking
 	ev_type_count		// not a type, gives number of types
@@ -305,6 +306,7 @@ typedef enum {
 	OP_PUSH_P,
 	OP_PUSH_Q,
 	OP_PUSH_I,
+	OP_PUSH_D,
 
 	OP_PUSHB_S,
 	OP_PUSHB_F,
@@ -315,6 +317,7 @@ typedef enum {
 	OP_PUSHB_P,
 	OP_PUSHB_Q,
 	OP_PUSHB_I,
+	OP_PUSHB_D,
 
 	OP_PUSHBI_S,
 	OP_PUSHBI_F,
@@ -325,6 +328,7 @@ typedef enum {
 	OP_PUSHBI_P,
 	OP_PUSHBI_Q,
 	OP_PUSHBI_I,
+	OP_PUSHBI_D,
 
 	OP_POP_S,
 	OP_POP_F,
@@ -335,6 +339,7 @@ typedef enum {
 	OP_POP_P,
 	OP_POP_Q,
 	OP_POP_I,
+	OP_POP_D,
 
 	OP_POPB_S,
 	OP_POPB_F,
@@ -345,6 +350,7 @@ typedef enum {
 	OP_POPB_P,
 	OP_POPB_Q,
 	OP_POPB_I,
+	OP_POPB_D,
 
 	OP_POPBI_S,
 	OP_POPBI_F,
@@ -355,6 +361,36 @@ typedef enum {
 	OP_POPBI_P,
 	OP_POPBI_Q,
 	OP_POPBI_I,
+	OP_POPBI_D,
+
+	OP_ADD_D,
+	OP_SUB_D,
+	OP_MUL_D,
+	OP_MUL_QD,
+	OP_MUL_DQ,
+	OP_MUL_VD,
+	OP_MUL_DV,
+	OP_DIV_D,
+	OP_MOD_D,
+	OP_GE_D,
+	OP_LE_D,
+	OP_GT_D,
+	OP_LT_D,
+	OP_NOT_D,
+	OP_EQ_D,
+	OP_NE_D,
+	OP_CONV_FD,
+	OP_CONV_DF,
+	OP_CONV_ID,
+	OP_CONV_DI,
+	OP_STORE_D,
+	OP_STOREB_D,
+	OP_STOREBI_D,
+	OP_STOREP_D,
+	OP_LOAD_D,
+	OP_LOADB_D,
+	OP_LOADBI_D,
+	OP_ADDRESS_D,
 } pr_opcode_e;
 
 typedef struct opcode_s {
@@ -423,7 +459,7 @@ typedef struct pr_va_list_s {
 	 |(((0x##b) & 0xfff) << 12)		\
 	 |(((0x##c) & 0xfff) <<  0) )
 #define	PROG_ID_VERSION	6
-#define	PROG_VERSION	PROG_VERSION_ENCODE(0,fff,009)
+#define	PROG_VERSION	PROG_VERSION_ENCODE(0,fff,00a)
 
 typedef struct dprograms_s {
 	pr_uint_t   version;

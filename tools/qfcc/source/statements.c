@@ -87,6 +87,8 @@ operand_string (operand_t *op)
 				case ev_string:
 					return va ("\"%s\"",
 							   quote_string (op->o.value->v.string_val));
+				case ev_double:
+					return va ("%g", op->o.value->v.double_val);
 				case ev_float:
 					return va ("%g", op->o.value->v.float_val);
 				case ev_vector:
@@ -158,6 +160,9 @@ print_operand (operand_t *op)
 			switch (op->o.value->lltype) {
 				case ev_string:
 					printf ("\"%s\"", op->o.value->v.string_val);
+					break;
+				case ev_double:
+					printf ("%g", op->o.value->v.double_val);
 					break;
 				case ev_float:
 					printf ("%g", op->o.value->v.float_val);

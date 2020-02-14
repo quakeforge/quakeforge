@@ -76,6 +76,7 @@ type_t      type_quaternion = { ev_quat, "quaternion" };
 type_t      type_integer = { ev_integer, "int" };
 type_t      type_uinteger = { ev_uinteger, "uint" };
 type_t      type_short = { ev_short, "short" };
+type_t      type_double = { ev_double, "double" };
 
 type_t     *type_nil;
 type_t     *type_default;
@@ -101,6 +102,7 @@ type_t     *ev_types[ev_type_count] = {
 	&type_integer,
 	&type_uinteger,
 	&type_short,
+	&type_double,
 	&type_invalid,
 };
 
@@ -180,6 +182,7 @@ free_type (type_t *type)
 		case ev_integer:
 		case ev_uinteger:
 		case ev_short:
+		case ev_double:
 			break;
 		case ev_field:
 		case ev_pointer:
@@ -214,6 +217,7 @@ append_type (type_t *type, type_t *new)
 			case ev_integer:
 			case ev_uinteger:
 			case ev_short:
+			case ev_double:
 				internal_error (0, "append to basic type");
 			case ev_field:
 			case ev_pointer:
@@ -582,6 +586,9 @@ encode_type (dstring_t *encoding, const type_t *type)
 		case ev_string:
 			dasprintf (encoding, "*");
 			break;
+		case ev_double:
+			dasprintf (encoding, "d");
+			break;
 		case ev_float:
 			dasprintf (encoding, "f");
 			break;
@@ -686,6 +693,12 @@ is_integral (const type_t *type)
 }
 
 int
+is_double (const type_t *type)
+{
+	return type->type == ev_double;
+}
+
+int
 is_float (const type_t *type)
 {
 	return type->type == ev_float;
@@ -694,7 +707,7 @@ is_float (const type_t *type)
 int
 is_scalar (const type_t *type)
 {
-	return is_float (type) || is_integral (type);
+	return is_float (type) || is_integral (type) || is_double (type);
 }
 
 int
@@ -830,6 +843,7 @@ type_size (const type_t *type)
 		case ev_integer:
 		case ev_uinteger:
 		case ev_short:
+		case ev_double:
 		case ev_type_count:
 			return pr_type_size[type->type];
 		case ev_invalid:
@@ -869,6 +883,7 @@ init_types (void)
 {
 	static struct_def_t zero_struct[] = {
 		{"string_val",       &type_string},
+		{"double_val",       &type_double},
 		{"float_val",        &type_float},
 		{"entity_val",       &type_entity},
 		{"field_val",        &type_field},
@@ -884,6 +899,7 @@ init_types (void)
 	};
 	static struct_def_t param_struct[] = {
 		{"string_val",       &type_string},
+		{"double_val",       &type_double},
 		{"float_val",        &type_float},
 		{"vector_val",       &type_vector},
 		{"entity_val",       &type_entity},
@@ -982,6 +998,7 @@ chain_initial_types (void)
 		chain_type (&type_integer);
 		chain_type (&type_uinteger);
 		chain_type (&type_short);
+		chain_type (&type_double);
 	}
 
 	chain_type (&type_param);

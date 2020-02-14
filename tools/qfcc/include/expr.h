@@ -174,6 +174,7 @@ typedef struct ex_value_s {
 	etype_t     lltype;
 	union {
 		const char *string_val;			///< string constant
+		float       double_val;			///< double constant
 		float       float_val;			///< float constant
 		float       vector_val[3];		///< vector constant
 		int         entity_val;			///< entity constant
@@ -396,6 +397,15 @@ expr_t *new_name_expr (const char *name);
 */
 expr_t *new_string_expr (const char *string_val);
 const char *expr_string (expr_t *e) __attribute__((pure));
+
+/** Create a new double constant expression node.
+
+	\param double_val	The double constant being represented.
+	\return			The new double constant expression node
+					(expr_t::e::double_val).
+*/
+expr_t *new_double_expr (double double_val);
+double expr_double (expr_t *e) __attribute__((pure));
 
 /** Create a new float constant expression node.
 

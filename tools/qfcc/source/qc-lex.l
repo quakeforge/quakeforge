@@ -333,6 +333,7 @@ static keyword_t at_keywords[] = {
 // be supported (sanely) by v6 progs.
 static keyword_t qf_keywords[] = {
 	{"quaternion",	TYPE,	&type_quaternion},
+	{"double",		TYPE,	&type_double},
 	{"int",			TYPE,	&type_integer	},
 	{"unsigned",	TYPE,	&type_integer	},//FIXME
 	{"function",	TYPE,	&type_function	},

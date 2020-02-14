@@ -612,6 +612,15 @@ new_string_expr (const char *string_val)
 }
 
 expr_t *
+new_double_expr (double double_val)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_value;
+	e->e.value = new_double_val (double_val);
+	return e;
+}
+
+expr_t *
 new_float_expr (float float_val)
 {
 	expr_t     *e = new_expr ();
@@ -843,6 +852,23 @@ is_float_val (expr_t *e)
 		&& e->e.symbol->type->type == ev_float)
 		return 1;
 	return 0;
+}
+
+double
+expr_double (expr_t *e)
+{
+	if (e->type == ex_nil)
+		return 0;
+	if (e->type == ex_value && e->e.value->lltype == ev_double)
+		return e->e.value->v.double_val;
+	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
+		&& e->e.symbol->type->type == ev_double)
+		return e->e.symbol->s.value->v.double_val;
+	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
+		&& e->e.symbol->s.def->constant
+		&& is_double (e->e.symbol->s.def->type))
+		return D_FLOAT (e->e.symbol->s.def);
+	internal_error (e, "not a double constant");
 }
 
 float
@@ -1276,6 +1302,9 @@ test_expr (expr_t *e)
 			}
 			new = new_float_expr (0);
 			break;
+		case ev_double:
+			new = new_double_expr (0);
+			break;
 		case ev_vector:
 			new = new_vector_expr (zero);
 			break;
@@ -1610,6 +1639,8 @@ unary_expr (int op, expr_t *e)
 					case ev_func:
 					case ev_pointer:
 						internal_error (e, "type check failed!");
+					case ev_double:
+						return new_double_expr (-expr_double (e));
 					case ev_float:
 						return new_float_expr (-expr_float (e));
 					case ev_vector:
@@ -1676,6 +1707,8 @@ unary_expr (int op, expr_t *e)
 					case ev_string:
 						s = expr_string (e);
 						return new_integer_expr (!s || !s[0]);
+					case ev_double:
+						return new_integer_expr (!expr_double (e));
 					case ev_float:
 						return new_integer_expr (!expr_float (e));
 					case ev_vector:
@@ -1735,6 +1768,7 @@ unary_expr (int op, expr_t *e)
 					case ev_func:
 					case ev_pointer:
 					case ev_vector:
+					case ev_double:
 						return error (e, "invalid type for unary ~");
 					case ev_float:
 						return new_float_expr (~(int) expr_float (e));

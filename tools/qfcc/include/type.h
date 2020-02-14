@@ -98,6 +98,7 @@ typedef struct {
 extern	type_t	type_invalid;
 extern	type_t	type_void;
 extern	type_t	type_string;
+extern	type_t	type_double;
 extern	type_t	type_float;
 extern	type_t	type_vector;
 extern	type_t	type_entity;
@@ -153,6 +154,7 @@ const char *type_get_encoding (const type_t *type);
 int is_void (const type_t *type) __attribute__((pure));
 int is_enum (const type_t *type) __attribute__((pure));
 int is_integral (const type_t *type) __attribute__((pure));
+int is_double (const type_t *type) __attribute__((pure));
 int is_float (const type_t *type) __attribute__((pure));
 int is_scalar (const type_t *type) __attribute__((pure));
 int is_vector (const type_t *type) __attribute__((pure));

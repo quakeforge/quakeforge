@@ -133,6 +133,16 @@ new_string_val (const char *string_val)
 }
 
 ex_value_t *
+new_double_val (double double_val)
+{
+	ex_value_t  val;
+	memset (&val, 0, sizeof (val));
+	set_val_type (&val, &type_double);
+	val.v.double_val = double_val;
+	return find_value (&val);
+}
+
+ex_value_t *
 new_float_val (float float_val)
 {
 	ex_value_t  val;

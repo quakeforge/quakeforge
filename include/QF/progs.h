@@ -320,6 +320,18 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define G_FLOAT(p,o)	G_var (p, o, float)
 
+/** Access a double global. Can be assigned to.
+
+	\par QC type:
+		\c double
+	\param p		pointer to ::progs_t VM struct
+	\param o		offset into global data space
+	\return			double lvalue
+
+	\hideinitializer
+*/
+#define G_DOUBLE(p,o)	(*(double *) ((p)->pr_globals + o))
+
 /** Access an integer global. Can be assigned to.
 
 	\par QC type:
@@ -509,6 +521,18 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	\hideinitializer
 */
 #define P_FLOAT(p,n)	P_var (p, n, float)
+
+/** Access a double parameter. Can be assigned to.
+
+	\par QC type:
+		\c double
+	\param p		pointer to ::progs_t VM struct
+	\param n		parameter number (0-7)
+	\return			double lvalue
+
+	\hideinitializer
+*/
+#define P_DOUBLE(p,n)	(*(double *) ((p)->pr_params[n]))
 
 /** Access an integer parameter. Can be assigned to.
 
@@ -702,6 +726,17 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define R_FLOAT(p)		R_var (p, float)
 
+/** Access the VM function return value as a \c double
+
+	\par QC type:
+		\c double
+	\param p		pointer to ::progs_t VM struct
+	\return			double lvalue
+
+	\hideinitializer
+*/
+#define R_DOUBLE(p)		(*(double *) ((p)->pr_return))
+
 /** Access the VM function return value as a \c ::pr_int_t (AKA int32_t)
 
 	\par QC type:
@@ -867,6 +902,18 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	\hideinitializer
 */
 #define E_FLOAT(e,o)	E_var (e, o, float)
+
+/** Access a double entity field. Can be assigned to.
+
+	\par QC type:
+		\c double
+	\param e		pointer to the entity
+	\param o		field offset into entity data space
+	\return			double lvalue
+
+	\hideinitializer
+*/
+#define E_DOUBLE(e,o)	(*(double *) ((e)->v + o))
 
 /** Access an integer entity field. Can be assigned to.
 
@@ -1560,6 +1607,7 @@ struct progs_s {
 	struct hashtab_s *strref_hash;
 	int         num_strings;
 	strref_t   *pr_xtstr;
+	int         float_promoted;	///< for PR_Sprintf
 	//@}
 
 	/// \name memory map

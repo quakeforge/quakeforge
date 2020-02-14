@@ -280,12 +280,15 @@ PR_BoundsCheck (progs_t *pr, int addr, etype_t type)
 #define OPB (*op_b)
 #define OPC (*op_c)
 
+#define OPA_double_var (*((double *) (op_a)))
+#define OPB_double_var (*((double *) (op_b)))
+#define OPC_double_var (*((double *) (op_c)))
+
 /*
 	This gets around the problem of needing to test for -0.0 but denormals
 	causing exceptions (or wrong results for what we need) on the alpha.
 */
-#define FNZ(x) ((x).uinteger_var && (x).uinteger_var != 0x80000000u)
-
+#define FNZ(x) ((x).uinteger_var & ~0x80000000u)
 
 static int
 signal_hook (int sig, void *data)
@@ -421,6 +424,9 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 			PR_PrintStatement (pr, st, 1);
 
 		switch (st->op) {
+			case OP_ADD_D:
+				OPC_double_var = OPA_double_var + OPB_double_var;
+				break;
 			case OP_ADD_F:
 				OPC.float_var = OPA.float_var + OPB.float_var;
 				break;
@@ -437,6 +443,9 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 												PR_GetString (pr,
 															  OPB.string_var));
 				break;
+			case OP_SUB_D:
+				OPC_double_var = OPA_double_var - OPB_double_var;
+				break;
 			case OP_SUB_F:
 				OPC.float_var = OPA.float_var - OPB.float_var;
 				break;
@@ -446,11 +455,30 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 			case OP_SUB_Q:
 				QuatSubtract (OPA.quat_var, OPB.quat_var, OPC.quat_var);
 				break;
+			case OP_MUL_D:
+				OPC_double_var = OPA_double_var * OPB_double_var;
+				break;
 			case OP_MUL_F:
 				OPC.float_var = OPA.float_var * OPB.float_var;
 				break;
 			case OP_MUL_V:
 				OPC.float_var = DotProduct (OPA.vector_var, OPB.vector_var);
+				break;
+			case OP_MUL_DV:
+				{
+					// avoid issues with the likes of x = x.x * x;
+					// makes for faster code, too
+					double      scale = OPA_double_var;
+					VectorScale (OPB.vector_var, scale, OPC.vector_var);
+				}
+				break;
+			case OP_MUL_VD:
+				{
+					// avoid issues with the likes of x = x * x.x;
+					// makes for faster code, too
+					double      scale = OPB_double_var;
+					VectorScale (OPA.vector_var, scale, OPC.vector_var);
+				}
 				break;
 			case OP_MUL_FV:
 				{
@@ -474,6 +502,22 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 			case OP_MUL_QV:
 				QuatMultVec (OPA.quat_var, OPB.vector_var, OPC.vector_var);
 				break;
+			case OP_MUL_DQ:
+				{
+					// avoid issues with the likes of x = x.s * x;
+					// makes for faster code, too
+					double      scale = OPA_double_var;
+					QuatScale (OPB.quat_var, scale, OPC.quat_var);
+				}
+				break;
+			case OP_MUL_QD:
+				{
+					// avoid issues with the likes of x = x * x.s;
+					// makes for faster code, too
+					double      scale = OPB_double_var;
+					QuatScale (OPA.quat_var, scale, OPC.quat_var);
+				}
+				break;
 			case OP_MUL_FQ:
 				{
 					// avoid issues with the likes of x = x.s * x;
@@ -492,6 +536,9 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 				break;
 			case OP_CONJ_Q:
 				QuatConj (OPA.quat_var, OPC.quat_var);
+				break;
+			case OP_DIV_D:
+				OPC_double_var = OPA_double_var / OPB_double_var;
 				break;
 			case OP_DIV_F:
 				OPC.float_var = OPA.float_var / OPB.float_var;
@@ -630,6 +677,9 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 			case OP_STORE_Q:
 				QuatCopy (OPA.quat_var, OPB.quat_var);
 				break;
+			case OP_STORE_D:
+				OPB_double_var = OPA_double_var;
+				break;
 
 			case OP_STOREP_F:
 			case OP_STOREP_ENT:
@@ -661,6 +711,14 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (OPA.quat_var, ptr->quat_var);
 				break;
+			case OP_STOREP_D:
+				pointer = OPB.integer_var;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_double);
+				}
+				ptr = pr->pr_globals + pointer;
+				*(double *) ptr = OPA_double_var;
+				break;
 
 			case OP_ADDRESS:
 				if (pr_boundscheck->int_val) {
@@ -687,6 +745,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 			case OP_ADDRESS_FN:
 			case OP_ADDRESS_I:
 			case OP_ADDRESS_P:
+			case OP_ADDRESS_D:
 				OPC.integer_var = st->a;
 				break;
 
@@ -735,6 +794,19 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 				ed = PROG_TO_EDICT (pr, OPA.entity_var);
 				memcpy (&OPC, &ed->v[OPB.integer_var], 4 * sizeof (OPC));
 				break;
+			case OP_LOAD_D:
+				if (pr_boundscheck->int_val) {
+					if (OPA.entity_var < 0
+						|| OPA.entity_var >= pr->pr_edictareasize)
+						PR_RunError (pr, "Progs attempted to read an out of "
+									 "bounds edict number");
+					if (OPB.uinteger_var + 1 >= pr->progs->entityfields)
+						PR_RunError (pr, "Progs attempted to read an invalid "
+									 "field in an edict");
+				}
+				ed = PROG_TO_EDICT (pr, OPA.entity_var);
+				OPC_double_var = *(double *) (ed->v + OPB.integer_var);
+				break;
 
 			case OP_LOADB_F:
 			case OP_LOADB_S:
@@ -766,6 +838,14 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (ptr->quat_var, OPC.quat_var);
 				break;
+			case OP_LOADB_D:
+				pointer = OPA.integer_var + OPB.integer_var;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_double);
+				}
+				ptr = pr->pr_globals + pointer;
+				OPC_double_var = *(double *) ptr;
+				break;
 
 			case OP_LOADBI_F:
 			case OP_LOADBI_S:
@@ -796,6 +876,14 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 				}
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (ptr->quat_var, OPC.quat_var);
+				break;
+			case OP_LOADBI_D:
+				pointer = OPA.integer_var + (short) st->b;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_quat);
+				}
+				ptr = pr->pr_globals + pointer;
+				OPC_double_var = *(double *) ptr;
 				break;
 
 			case OP_LEA:
@@ -838,6 +926,14 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (OPA.quat_var, ptr->quat_var);
 				break;
+			case OP_STOREB_D:
+				pointer = OPB.integer_var + OPC.integer_var;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_quat);
+				}
+				ptr = pr->pr_globals + pointer;
+				*(double *) ptr = OPA_double_var;
+				break;
 
 			case OP_STOREBI_F:
 			case OP_STOREBI_S:
@@ -868,6 +964,14 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 				}
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (OPA.quat_var, ptr->quat_var);
+				break;
+			case OP_STOREBI_D:
+				pointer = OPB.integer_var + (short) st->c;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_quat);
+				}
+				ptr = pr->pr_globals + pointer;
+				*(double *) ptr = OPA_double_var;
 				break;
 
 			case OP_PUSH_F:
@@ -1322,19 +1426,18 @@ op_call:
 			case OP_MUL_I:
 				OPC.integer_var = OPA.integer_var * OPB.integer_var;
 				break;
-/*
-			case OP_DIV_VF:
-				{
-					float       temp = 1.0f / OPB.float_var;
-					VectorScale (OPA.vector_var, temp, OPC.vector_var);
-				}
-				break;
-*/
 			case OP_DIV_I:
 				OPC.integer_var = OPA.integer_var / OPB.integer_var;
 				break;
 			case OP_MOD_I:
 				OPC.integer_var = OPA.integer_var % OPB.integer_var;
+				break;
+			case OP_MOD_D:
+				{
+					double      a = OPA_double_var;
+					double      b = OPB_double_var;
+					OPC_double_var = a - b * trunc (a / b);
+				}
 				break;
 			case OP_MOD_F:
 				{
@@ -1430,6 +1533,41 @@ op_call:
 				memmove (pr->pr_globals + OPC.integer_var,
 						 pr->pr_globals + OPA.integer_var,
 						 st->b * 4);
+				break;
+
+			case OP_GE_D:
+				OPC.float_var = OPA_double_var >= OPB_double_var;
+				break;
+			case OP_LE_D:
+				OPC.float_var = OPA_double_var <= OPB_double_var;
+				break;
+			case OP_GT_D:
+				OPC.float_var = OPA_double_var > OPB_double_var;
+				break;
+			case OP_LT_D:
+				OPC.float_var = OPA_double_var < OPB_double_var;
+				break;
+			case OP_NOT_D:
+				OPC.integer_var = (op_a[0].integer_var
+								   || (op_a[1].integer_var & ~0x80000000u));
+				break;
+			case OP_EQ_D:
+				OPC.integer_var = OPA_double_var == OPB_double_var;
+				break;
+			case OP_NE_D:
+				OPC.integer_var = OPA_double_var != OPB_double_var;
+				break;
+			case OP_CONV_ID:
+				OPC_double_var = OPA.integer_var;
+				break;
+			case OP_CONV_DI:
+				OPC.integer_var = OPA_double_var;
+				break;
+			case OP_CONV_FD:
+				OPC_double_var = OPA.float_var;
+				break;
+			case OP_CONV_DF:
+				OPC.float_var = OPA_double_var;
 				break;
 
 // LordHavoc: to be enabled when Progs version 7 (or whatever it will be numbered) is finalized
