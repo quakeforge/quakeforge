@@ -2623,6 +2623,8 @@ cast_expr (type_t *type, expr_t *e)
 		e->e.value = convert_value (val, type);
 		e->type = ex_value;
 		c = e;
+	} else if (is_integral (type) && is_integral (e_type)) {
+		c = new_alias_expr (type, e);
 	} else if (is_scalar (type) && is_scalar (e_type)) {
 		c = new_unary_expr ('C', e);
 		c->e.expr.type = type;
