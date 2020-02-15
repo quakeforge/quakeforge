@@ -14,7 +14,7 @@
 - (id) init
 {
 	[super init];
-	damage = (deathmatch > 3) ? 75.0 : 20.0;
+	damage = (deathmatch > 3) ? 75.0f : 20.0f;
 	return self;
 }
 
