@@ -41,6 +41,7 @@ test_progs_dat=\
 	func-expr.dat \
 	func-static.dat \
 	infloop.dat \
+	ivar-struct-return.dat \
 	modulo.dat \
 	paramret.dat \
 	quaternion.dat \
@@ -235,6 +236,15 @@ infloop.run: Makefile build-run
 	$(srcdir)/build-run $@
 include ./$(DEPDIR)/infloop.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/infloop.Qo
+
+ivar_struct_return_dat_SOURCES=ivar-struct-return.r
+ivar_struct_return_obj=$(ivar_struct_return_dat_SOURCES:.r=.qfo)
+ivar-struct-return.dat$(EXEEXT): $(ivar_struct_return_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(ivar_struct_return_obj)
+ivar-struct-return.run: Makefile build-run
+	$(srcdir)/build-run $@
+include ./$(DEPDIR)/ivar-struct-return.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/ivar-struct-return.Qo
 
 modulo_dat_SOURCES=modulo.r
 modulo_obj=$(modulo_dat_SOURCES:.r=.qfo)
