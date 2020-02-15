@@ -169,6 +169,24 @@ bi_atanhf (progs_t *pr)
 }
 
 static void
+bi_floor (progs_t *pr)
+{
+	R_DOUBLE (pr) = floor (P_DOUBLE (pr, 0));
+}
+
+static void
+bi_ceil (progs_t *pr)
+{
+	R_DOUBLE (pr) = ceil (P_DOUBLE (pr, 0));
+}
+
+static void
+bi_fabs (progs_t *pr)
+{
+	R_DOUBLE (pr) = fabs (P_DOUBLE (pr, 0));
+}
+
+static void
 bi_sin (progs_t *pr)
 {
 	R_DOUBLE (pr) = sin (P_DOUBLE (pr, 0));
@@ -298,34 +316,37 @@ static builtin_t builtins[] = {
 	{"asin|f",	bi_asinf,	-1},
 	{"acos|f",	bi_acosf,	-1},
 	{"atan|f",	bi_atanf,	-1},
-	{"atan2|f",	bi_atan2f, 	-1},
+	{"atan2|ff",bi_atan2f, 	-1},
 	{"log|f",	bi_logf,	-1},
 	{"log2|f",	bi_log2f,	-1},
 	{"log10|f",	bi_log10f,	-1},
-	{"pow|f",	bi_powf,	-1},
+	{"pow|ff",	bi_powf,	-1},
 	{"sqrt|f",	bi_sqrtf,	-1},
 	{"cbrt|f",	bi_cbrtf,	-1},
-	{"hypot|f",	bi_hypotf,	-1},
+	{"hypot|ff",bi_hypotf,	-1},
 	{"sinh|f",	bi_sinhf,	-1},
 	{"cosh|f",	bi_coshf,	-1},
 	{"tanh|f",	bi_tanhf,	-1},
 	{"asinh|f",	bi_asinhf,	-1},
 	{"acosh|f",	bi_acoshf,	-1},
 	{"atanh|f",	bi_atanhf,	-1},
+	{"floor|d",	bi_floor,	-1},	// float version in pr_cmds
+	{"ceil|d",	bi_ceil,	-1},	// float version in pr_cmds
+	{"fabs|d",	bi_fabs,	-1},	// float version in pr_cmds
 	{"sin|d",	bi_sin,		-1},
 	{"cos|d",	bi_cos,		-1},
 	{"tan|d",	bi_tan,		-1},
 	{"asin|d",	bi_asin,	-1},
 	{"acos|d",	bi_acos,	-1},
 	{"atan|d",	bi_atan,	-1},
-	{"atan2|d",	bi_atan2, 	-1},
+	{"atan2|dd",bi_atan2, 	-1},
 	{"log|d",	bi_log,		-1},
 	{"log2|d",	bi_log2,	-1},
 	{"log10|d",	bi_log10,	-1},
-	{"pow|d",	bi_pow,		-1},
+	{"pow|dd",	bi_pow,		-1},
 	{"sqrt|d",	bi_sqrt,	-1},
 	{"cbrt|d",	bi_cbrt,	-1},
-	{"hypot|d",	bi_hypot,	-1},
+	{"hypot|dd",bi_hypot,	-1},
 	{"sinh|d",	bi_sinh,	-1},
 	{"cosh|d",	bi_cosh,	-1},
 	{"tanh|d",	bi_tanh,	-1},
