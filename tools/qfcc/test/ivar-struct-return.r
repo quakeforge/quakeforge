@@ -8,6 +8,7 @@ typedef struct Point Point;
 
 @interface Object
 {
+	int   foo;
 	Point origin;
 }
 -(Point) origin;

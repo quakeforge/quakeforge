@@ -319,6 +319,15 @@ def_operand (def_t *def, type_t *type)
 }
 
 operand_t *
+return_operand (type_t *type)
+{
+	symbol_t   *return_symbol;
+	return_symbol = make_symbol (".return", &type_param, pr.symtab->space,
+								 sc_extern);
+	return def_operand (return_symbol->s.def, type);
+}
+
+operand_t *
 value_operand (ex_value_t *value)
 {
 	operand_t  *op;
@@ -394,7 +403,7 @@ alias_operand (type_t *type, operand_t *op)
 	operand_t  *aop;
 
 	if (type_size (type) != type_size (op->type)) {
-		internal_error (0, "\naliasing operand with type of diffent size"
+		internal_error (0, "\naliasing operand with type of different size"
 						" (%d, %d)", type_size (type), type_size (op->type));
 	}
 	aop = new_operand (op_alias);
@@ -1387,8 +1396,10 @@ statement_uexpr (sblock_t *sblock, expr_t *e)
 				}
 			}
 			s = new_statement (st_func, opcode, e);
-			if (e->e.expr.e1)
+			if (e->e.expr.e1) {
+				s->opa = return_operand (get_type (e->e.expr.e1));
 				sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
+			}
 			sblock_add_statement (sblock, s);
 			sblock->next = new_sblock ();
 			sblock = sblock->next;
@@ -1667,10 +1678,6 @@ static void
 check_final_block (sblock_t *sblock)
 {
 	statement_t *s = 0;
-	symbol_t   *return_symbol = 0;
-	def_t      *return_def = 0;
-	operand_t  *return_operand = 0;
-	const char *return_opcode = "<RETURN_V>";
 
 	if (!sblock)
 		return;
@@ -1691,16 +1698,11 @@ check_final_block (sblock_t *sblock)
 		sblock->next = new_sblock ();
 		sblock = sblock->next;
 	}
+	s = new_statement (st_func, "<RETURN_V>", 0);
 	if (options.traditional || options.code.progsversion == PROG_ID_VERSION) {
-		return_symbol = make_symbol (".return", &type_param, pr.symtab->space,
-									 sc_extern);
-		return_def = return_symbol->s.def;
-		return_opcode = "<RETURN>";
+		s->opcode = save_string ("<RETURN>");
+		s->opa = return_operand (&type_void);
 	}
-	if (return_symbol)
-		return_operand = def_operand (return_def, &type_void);
-	s = new_statement (st_func, return_opcode, 0);
-	s->opa = return_operand;
 	sblock_add_statement (sblock, s);
 }
 
