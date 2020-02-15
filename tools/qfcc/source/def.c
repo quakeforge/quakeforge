@@ -585,8 +585,20 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 			// fold_constants takes care of int/float conversions
 			append_expr (local_expr, fold_constants (init));
 		} else {
+			int         offset = 0;
+			if (!is_constant (init)) {
+				error (init, "non-constant initializier");
+				return;
+			}
+			while ((init->type == ex_uexpr || init->type == ex_expr)
+				   && init->e.expr.op == 'A') {
+				if (init->type == ex_expr) {
+					offset += expr_integer (init->e.expr.e2);
+				}
+				init = init->e.expr.e1;
+			}
 			if (init->type != ex_value) {	//FIXME enum etc
-				error (0, "non-constant initializier");
+				internal_error (0, "initializier not a value");
 				return;
 			}
 			if (init->e.value->lltype == ev_pointer

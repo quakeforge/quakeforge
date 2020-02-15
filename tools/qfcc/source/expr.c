@@ -777,6 +777,10 @@ new_short_expr (short short_val)
 int
 is_constant (expr_t *e)
 {
+	while ((e->type == ex_uexpr || e->type == ex_expr)
+		   && e->e.expr.op == 'A') {
+		e = e->e.expr.e1;
+	}
 	if (e->type == ex_nil || e->type == ex_value || e->type == ex_labelref
 		|| (e->type == ex_symbol && e->e.symbol->sy_type == sy_const)
 		|| (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
