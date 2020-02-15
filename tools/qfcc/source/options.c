@@ -69,11 +69,13 @@ enum {
 	OPT_PROGDEFS,
 	OPT_QCCX_ESCAPES,
 	OPT_TRADITIONAL,
+	OPT_BUG,
 };
 
 static struct option const long_options[] = {
 	{"advanced", no_argument, 0, OPT_ADVANCED},
 	{"block-dot", optional_argument, 0, OPT_BLOCK_DOT},
+	{"bug", required_argument, 0, OPT_BUG},
 	{"code", required_argument, 0, 'C'},
 	{"cpp", required_argument, 0, OPT_CPP},
 	{"define", required_argument, 0, 'D'},
@@ -139,6 +141,7 @@ usage (int status)
 "Options:\n"
 "        --advanced            Advanced Ruamoko mode\n"
 "                              default for separate compilation mode\n"
+"        --bug OPTION,...      Set bug options\n"
 "    -C, --code OPTION,...     Set code generation options\n"
 "    -c                        Only compile, don't link\n"
 "        --cpp CPPSPEC         cpp execution command line\n"
@@ -260,6 +263,21 @@ notice_usage (void)
 "    warn                    Change notices to warnings.\n"
 "\n"
 "For details, see the qfcc(1) manual page\n"
+	);
+	exit (0);
+}
+
+static void
+bug_usage (void)
+{
+	printf ("%s - QuakeForge Code Compiler\n", this_program);
+	printf ("Bug options\n");
+	printf (
+"    help                    Display his text.\n"
+"    none                    Turn off all bugs (don't we wish: messages).\n"
+"    die                     Change bugs to internal errors.\n"
+"\n"
+"This is a developer feature and thus not in the manual page\n"
 	);
 	exit (0);
 }
@@ -584,6 +602,23 @@ DecodeArgs (int argc, char **argv)
 							options.notices.silent = true;
 						} else if (!(strcasecmp (temp, "warn"))) {
 							options.notices.promote = true;
+						}
+						temp = strtok (NULL, ",");
+					}
+					free (opts);
+				}
+				break;
+			case OPT_BUG:{
+					char       *opts = strdup (optarg);
+					char       *temp = strtok (opts, ",");
+
+					while (temp) {
+						if (!strcasecmp (temp, "help")) {
+							bug_usage ();
+						} else if (!(strcasecmp (temp, "none"))) {
+							options.bug.silent = true;
+						} else if (!(strcasecmp (temp, "die"))) {
+							options.bug.promote = true;
 						}
 						temp = strtok (NULL, ",");
 					}

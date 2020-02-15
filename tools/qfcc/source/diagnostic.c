@@ -141,16 +141,38 @@ _debug (expr_t *e, const char *file, int line, const char *fmt, ...)
 	va_end (args);
 }
 
+static __attribute__((noreturn, format(printf, 4, 0))) void
+__internal_error (expr_t *e, const char *file, int line,
+				  const char *fmt, va_list args)
+{
+	dstring_t  *message = dstring_new ();
+
+	report_function (e);
+
+	format_message (message, "internal error", e, fmt, args);
+	dasprintf (message, " (%s:%d)", file, line);
+	fprintf (stderr, "%s\n", message->str);
+	dstring_delete (message);
+	abort ();
+}
+
 void
 _bug (expr_t *e, const char *file, int line, const char *fmt, ...)
 {
 	va_list     args;
 
-	report_function (e);
+	if (options.bug.silent)
+		return;
 
 	va_start (args, fmt);
+	if (options.bug.promote) {
+		__internal_error (e, file, line, fmt, args);
+	}
+
 	{
 		dstring_t  *message = dstring_new ();
+
+		report_function (e);
 
 		format_message (message, "BUG", e, fmt, args);
 		dasprintf (message, " (%s:%d)", file, line);
@@ -211,19 +233,9 @@ _internal_error (expr_t *e, const char *file, int line, const char *fmt, ...)
 {
 	va_list     args;
 
-	report_function (e);
-
 	va_start (args, fmt);
-	{
-		dstring_t  *message = dstring_new ();
-
-		format_message (message, "internal error", e, fmt, args);
-		dasprintf (message, " (%s:%d)", file, line);
-		fprintf (stderr, "%s\n", message->str);
-		dstring_delete (message);
-	}
+	__internal_error (e, file, line, fmt, args);
 	va_end (args);
-	abort ();
 }
 
 expr_t *

@@ -71,6 +71,11 @@ typedef struct {
 } notice_options_t;
 
 typedef struct {
+	qboolean	promote;			// Promote bugs to internal errors
+	qboolean	silent;				// don't even bother (overrides promote)
+} bug_options_t;
+
+typedef struct {
 	qboolean    initial;
 	qboolean    thread;
 	qboolean    dead;
@@ -88,6 +93,7 @@ typedef struct {
 	code_options_t	code;			// Code generation options
 	warn_options_t	warnings;		// Warning options
 	notice_options_t notices;		// Notice options
+	bug_options_t   bug;			// Bug options
 	blockdot_options_t block_dot;	// Statement block flow diagrams
 
 	int				verbosity;		// 0=silent, goes up to 2 currently
