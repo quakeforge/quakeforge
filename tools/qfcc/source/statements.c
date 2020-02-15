@@ -906,6 +906,8 @@ expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 		while (def->alias)
 			def = def->alias;
 		*op = def_operand (alias_def (def, type, offset), 0);
+	} else if (aop->op_type == op_value) {
+		*op = value_operand (aop->o.value);
 	} else {
 		internal_error (e, "invalid alias target: %s: %s",
 						optype_str (aop->op_type), operand_string (aop));
