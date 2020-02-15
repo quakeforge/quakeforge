@@ -35,6 +35,46 @@ test_constant ()
 	return fail;
 }
 
+double less = 3;
+double greater_equal = 3;
+double less_equal = 5;
+double greater = 5;
+
+int
+test_copare ()
+{
+	int fail = 0;
+
+	fail |= !(less < greater);
+	fail |= (less > greater);
+	fail |= !(less != greater);
+	fail |= (less == greater);
+	fail |= !(less <= greater);
+	fail |= (less >= greater);
+
+	fail |= (less_equal < greater);
+	fail |= (less_equal > greater);
+	fail |= !(less_equal == greater);
+	fail |= (less_equal != greater);
+	fail |= !(less_equal <= greater);
+	fail |= !(less_equal >= greater);
+
+	fail |= (greater < less);
+	fail |= !(greater > less);
+	fail |= !(greater != less);
+	fail |= (greater == less);
+	fail |= (greater <= less);
+	fail |= !(greater >= less);
+
+	fail |= (greater_equal < less);
+	fail |= (greater_equal > less);
+	fail |= !(greater_equal == less);
+	fail |= (greater_equal != less);
+	fail |= !(greater_equal <= less);
+	fail |= !(greater_equal >= less);
+	return fail;
+}
+
 int
 test_ops ()
 {
