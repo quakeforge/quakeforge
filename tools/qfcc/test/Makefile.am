@@ -61,6 +61,8 @@ test_progs_dat=\
 fail_progs_dat=
 
 test_build_errors=\
+	double-demote-int.r \
+	double-demote-float.r \
 	double-int-compare.r \
 	double-float-compare.r
 
@@ -152,6 +154,12 @@ double.run: Makefile build-run
 	$(srcdir)/build-run $@
 include ./$(DEPDIR)/double.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/double.Qo
+
+double-demote-int.run$(EXEEXT): double-demote-int.r Makefile build-compile-fail-run
+	$(srcdir)/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
+
+double-demote-float.run$(EXEEXT): double-demote-float.r Makefile build-compile-fail-run
+	$(srcdir)/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
 
 double-int-compare.run$(EXEEXT): double-int-compare.r Makefile build-compile-fail-run
 	$(srcdir)/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
