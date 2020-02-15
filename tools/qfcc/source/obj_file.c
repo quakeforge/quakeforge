@@ -889,8 +889,8 @@ qfo_to_progs (qfo_t *qfo, int *size)
 
 	progs->ofs_globals = data - (byte *) progs;
 	globals = (pr_type_t*) data;
-	locals = globals + qfo->spaces[qfo_near_data_space].data_size;
-	far_data = locals + locals_size;
+	locals = globals + locals_start;
+	far_data = globals + near_data_size;
 	type_data = far_data + qfo->spaces[qfo_far_data_space].data_size;
 
 	memcpy (strings, qfo->spaces[qfo_strings_space].d.strings,
@@ -947,7 +947,7 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	memcpy (globals, qfo->spaces[qfo_near_data_space].d.data,
 			qfo->spaces[qfo_near_data_space].data_size * sizeof (pr_type_t));
 	qfo->spaces[qfo_near_data_space].d.data = globals;
-	// lcear locals data
+	// clear locals data
 	memset (locals, 0, locals_size * sizeof (pr_type_t));
 	// copy far data
 	memcpy (far_data, qfo->spaces[qfo_far_data_space].d.data,
