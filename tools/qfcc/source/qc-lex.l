@@ -272,9 +272,12 @@ STRING		\"(\\.|[^"\\])*\"
 							write_frame_macros (s);
 							BEGIN (GRAB_OTHER);	// ignore rest of line
 						}
-<PRAGMA>{ID}		{ pragma (yytext); }
+<PRAGMA>{ID}		{ pragma_add_arg (yytext); }
 
 <*>\r*\n			{
+						if (YY_START == PRAGMA) {
+							pragma_process ();
+						}
 						pr.source_line++;
 						BEGIN (INITIAL);
 					}

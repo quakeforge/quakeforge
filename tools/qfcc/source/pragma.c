@@ -39,13 +39,24 @@
 #endif
 #include <stdlib.h>
 
+#include "QF/alloc.h"
 #include "QF/pr_comp.h"
 
 #include "diagnostic.h"
 #include "opcodes.h"
 #include "options.h"
 #include "pragma.h"
+#include "strpool.h"
 #include "type.h"
+
+typedef struct pragma_arg_s {
+	struct pragma_arg_s *next;
+	const char *arg;
+} pragma_arg_t;
+
+static pragma_arg_t *pragma_args_freelist;
+static pragma_arg_t *pragma_args;
+static pragma_arg_t **pragma_args_tail = &pragma_args;
 
 static void
 set_traditional (int traditional)
@@ -73,20 +84,58 @@ set_traditional (int traditional)
 	opcode_init ();		// reset the opcode table
 }
 
-void
-pragma (const char *id)
+static void
+set_bug (pragma_arg_t *args)
 {
+	if (!args) {
+		warning (0, "missing bug flag");
+		return;
+	}
+	const char *flag = args->arg;
+	if (!strcmp (flag, "none")) {
+		options.bug.silent = true;
+	} else if (!strcmp (flag, "!none")) {
+		options.bug.silent = false;
+	} else if (!strcmp (flag, "die")) {
+		options.bug.promote = true;
+	} else if (!strcmp (flag, "!die")) {
+		options.bug.promote = false;
+	}
+	if (args->next) {
+		warning (0, "pragma bug: ignoring extra arguments");
+	}
+}
+
+void
+pragma_process ()
+{
+	if (!pragma_args) {
+		warning (0, "empty pragma");
+		return;
+	}
+	const char *id = pragma_args->arg;
 	if (!strcmp (id, "traditional")) {
 		set_traditional (2);
-		return;
-	}
-	if (!strcmp (id, "extended")) {
+	} else if (!strcmp (id, "extended")) {
 		set_traditional (1);
-		return;
-	}
-	if (!strcmp (id, "advanced")) {
+	} else if (!strcmp (id, "advanced")) {
 		set_traditional (0);
-		return;
+	} else if (!strcmp (id, "bug")) {
+		set_bug (pragma_args->next);
+	} else {
+		warning (0, "unknown pragma: '%s'", id);
 	}
-	warning (0, "unknown pragma: %s", id);
+	*pragma_args_tail = pragma_args_freelist;
+	pragma_args_tail = &pragma_args;
+	pragma_args = 0;
+}
+
+void
+pragma_add_arg (const char *id)
+{
+	pragma_arg_t *arg;
+	ALLOC (16, pragma_arg_t, pragma_args, arg);
+	arg->arg = save_string (id);
+	*pragma_args_tail = arg;
+	pragma_args_tail = &arg->next;
 }
