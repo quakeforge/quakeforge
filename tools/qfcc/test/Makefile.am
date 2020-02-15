@@ -29,6 +29,7 @@ test_bins=\
 fail_bins=
 
 test_progs_dat=\
+	address-cast.dat \
 	alignment.dat \
 	chewed-alias.dat \
 	chewed-return.dat \
@@ -88,6 +89,15 @@ test_harness_LDADD=			$(QFCC_TEST_LIBS)
 test_harness_DEPENDENCIES=	$(QFCC_TEST_DEPS)
 
 r_depfiles_remade=
+
+address_cast_dat_SOURCES=address-cast.r
+address_cast_obj=$(address_cast_dat_SOURCES:.r=.qfo)
+address-cast.dat$(EXEEXT): $(address_cast_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(address_cast_obj)
+address-cast.run: Makefile build-run
+	$(srcdir)/build-run $@
+include ./$(DEPDIR)/address-cast.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/address-cast.Qo
 
 alignment_dat_SOURCES=alignment.r
 alignment_obj=$(alignment_dat_SOURCES:.r=.qfo)
