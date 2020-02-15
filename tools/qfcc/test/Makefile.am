@@ -62,8 +62,10 @@ fail_progs_dat=
 
 test_build_errors=\
 	double-demote-float.r \
+	double-demote-float-ginit.r \
 	double-demote-float-linit.r \
 	double-demote-int.r \
+	double-demote-int-ginit.r \
 	double-demote-int-linit.r \
 	double-int-compare.r \
 	double-float-compare.r
@@ -161,6 +163,12 @@ double-demote-int.run$(EXEEXT): double-demote-int.r Makefile build-compile-fail-
 	$(srcdir)/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
 
 double-demote-float.run$(EXEEXT): double-demote-float.r Makefile build-compile-fail-run
+	$(srcdir)/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
+
+double-demote-int-ginit.run$(EXEEXT): double-demote-int-ginit.r Makefile build-compile-fail-run
+	$(srcdir)/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
+
+double-demote-float-ginit.run$(EXEEXT): double-demote-float-ginit.r Makefile build-compile-fail-run
 	$(srcdir)/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
 
 double-demote-int-linit.run$(EXEEXT): double-demote-int-linit.r Makefile build-compile-fail-run

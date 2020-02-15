@@ -575,7 +575,8 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 		init_elements (sym->s.def, init);
 		sym->s.def->initialized = 1;
 	} else {
-		if (!type_assignable (sym->type, get_type (init))) {
+		type_t     *init_type = get_type (init);
+		if (!type_assignable (sym->type, init_type)) {
 			error (init, "type mismatch in initializer");
 			return;
 		}
@@ -609,6 +610,11 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 					reloc_def_field (init->e.value->v.pointer.def, sym->s.def);
 			} else {
 				ex_value_t *v = init->e.value;
+				if (is_double (init_type)
+					&& (is_integral (sym->type) || is_float (sym->type))) {
+					warning (init, "assigning double to %s in initializer "
+							 "(use a cast)", sym->type->name);
+				}
 				if (is_scalar (sym->type))
 					v = convert_value (v, sym->type);
 				if (v->lltype == ev_string) {
