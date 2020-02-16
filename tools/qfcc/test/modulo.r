@@ -6,17 +6,17 @@ float snafu (float a, float b)
 	return c;
 }
 
-@overload int modulo (int a, int b)
+int imodulo (int a, int b)
 {
 	return a %% b;
 }
 
-@overload float modulo (float a, float b)
+float fmodulo (float a, float b)
 {
 	return a %% b;
 }
 
-@overload double modulo (double a, double b)
+double dmodulo (double a, double b)
 {
 	return a %% b;
 }
@@ -46,8 +46,27 @@ float baz (float a, float b)
 }
 #pragma advanced
 
-float test (string name, float (func)(float a, float b),
-			float a, float b, float c)
+@overload int
+test (string name, string op, int (func)(int a, int b), int a, int b, int c)
+{
+	int ret;
+
+	ret = func (a, b);
+	if (ret != c) {
+		if (func == baz)
+			printf ("%s: (%d + %d) %% (%d - %d): %d != %d\n",
+					name, a, b, a, b, ret, c);
+		else
+			printf ("%s: %d %s %d: %d != %d\n",
+					name, a, op, b, ret, c);
+		return 1;
+	}
+	return 0;
+}
+
+@overload int
+test (string name, string op, float (func)(float a, float b),
+	  float a, float b, float c)
 {
 	float ret;
 
@@ -57,8 +76,27 @@ float test (string name, float (func)(float a, float b),
 			printf ("%s: (%g + %g) %% (%g - %g): %g != %g\n",
 					name, a, b, a, b, ret, c);
 		else
-			printf ("%s: %g %% %g: %g != %g\n",
-					name, a, b, ret, c);
+			printf ("%s: %g %s %g: %g != %g\n",
+					name, a, op, b, ret, c);
+		return 1;
+	}
+	return 0;
+}
+
+@overload int
+test (string name, string op, double (func)(double a, double b),
+	  double a, double b, double c)
+{
+	double ret;
+
+	ret = func (a, b);
+	if (ret != c) {
+		if (func == baz)
+			printf ("%s: (%g + %g) %% (%g - %g): %g != %g\n",
+					name, a, b, a, b, ret, c);
+		else
+			printf ("%s: %g %s %g: %g != %g\n",
+					name, a, op, b, ret, c);
 		return 1;
 	}
 	return 0;
@@ -67,29 +105,56 @@ float test (string name, float (func)(float a, float b),
 float main (void)
 {
 	float res = 0;
-	res |= test ("foo", foo, 5, 3, 2);
-	res |= test ("bar", bar, 5, 3, 2);
-	res |= test ("baz", baz, 5, 3, 0);
-	res |= test ("snafu", snafu, 5, 3, 2);
+	res |= test ("foo", "%", foo, 5, 3, 2);
+	res |= test ("bar", "%", bar, 5, 3, 2);
+	res |= test ("baz", "%", baz, 5, 3, 0);
+	res |= test ("snafu", "%", snafu, 5, 3, 2);
 
-	res |= test ("foo", foo, -5, 3, -2);
-	res |= test ("bar", bar, -5, 3, -2);
-	res |= test ("baz", baz, -5, 3, -2);
-	res |= test ("snafu", snafu, -5, 3, -2);
+	res |= test ("foo", "%", foo, -5, 3, -2);
+	res |= test ("bar", "%", bar, -5, 3, -2);
+	res |= test ("baz", "%", baz, -5, 3, -2);
+	res |= test ("snafu", "%", snafu, -5, 3, -2);
 
-	res |= test ("foo", foo, 5, -3, 2);
-	res |= test ("bar", bar, 5, -3, 2);
-	res |= test ("baz", baz, 5, -3, 2);
-	res |= test ("snafu", snafu, 5, -3, 2);
+	res |= test ("foo", "%", foo, 5, -3, 2);
+	res |= test ("bar", "%", bar, 5, -3, 2);
+	res |= test ("baz", "%", baz, 5, -3, 2);
+	res |= test ("snafu", "%", snafu, 5, -3, 2);
 
-	res |= test ("foo", foo, -5, -3, -2);
-	res |= test ("bar", bar, -5, -3, -2);
-	res |= test ("baz", baz, -5, -3, 0);
-	res |= test ("snafu", snafu, -5, -3, -2);
+	res |= test ("foo", "%", foo, -5, -3, -2);
+	res |= test ("bar", "%", bar, -5, -3, -2);
+	res |= test ("baz", "%", baz, -5, -3, 0);
+	res |= test ("snafu", "%", snafu, -5, -3, -2);
 
-	res |= test ("foo", foo, 5, 3.5, 1.5);
-	res |= test ("foo", foo, -5, 3.5, -1.5);
-	res |= test ("snafu", snafu, 5, 3.5, 1.5);
-	res |= test ("snafu", snafu, -5, 3.5, -1.5);
+	res |= test ("foo", "%", foo, 5, 3.5, 1.5);
+	res |= test ("foo", "%", foo, -5, 3.5, -1.5);
+	res |= test ("snafu", "%", snafu, 5, 3.5, 1.5);
+	res |= test ("snafu", "%", snafu, -5, 3.5, -1.5);
+
+	res |= test ("int modulo", "%%", imodulo, 5, 3, 2);
+	res |= test ("int modulo", "%%", imodulo, -5, 3, 1);
+	res |= test ("int modulo", "%%", imodulo, 5, -3, -1);
+	res |= test ("int modulo", "%%", imodulo, -5, -3, -2);
+	res |= test ("int modulo", "%%", imodulo, 6, 3, 0);
+	res |= test ("int modulo", "%%", imodulo, -6, 3, 0);
+	res |= test ("int modulo", "%%", imodulo, 6, -3, 0);
+	res |= test ("int modulo", "%%", imodulo, -6, -3, 0);
+
+	res |= test ("float modulo", "%%", fmodulo, 5, 3, 2);
+	res |= test ("float modulo", "%%", fmodulo, -5, 3, 1);
+	res |= test ("float modulo", "%%", fmodulo, 5, -3, -1);
+	res |= test ("float modulo", "%%", fmodulo, -5, -3, -2);
+	res |= test ("float modulo", "%%", fmodulo, 6, 3, 0);
+	res |= test ("float modulo", "%%", fmodulo, -6, 3, 0);
+	res |= test ("float modulo", "%%", fmodulo, 6, -3, 0);
+	res |= test ("float modulo", "%%", fmodulo, -6, -3, 0);
+
+	res |= test ("double modulo", "%%", dmodulo, 5, 3, 2);
+	res |= test ("double modulo", "%%", dmodulo, -5, 3, 1);
+	res |= test ("double modulo", "%%", dmodulo, 5, -3, -1);
+	res |= test ("double modulo", "%%", dmodulo, -5, -3, -2);
+	res |= test ("double modulo", "%%", dmodulo, 6, 3, 0);
+	res |= test ("double modulo", "%%", dmodulo, -6, 3, 0);
+	res |= test ("double modulo", "%%", dmodulo, 6, -3, 0);
+	res |= test ("double modulo", "%%", dmodulo, -6, -3, 0);
 	return res;
 }
