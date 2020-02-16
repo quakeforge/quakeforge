@@ -137,12 +137,15 @@ QFV_AllocateCommandBuffers (qfv_cmdpool_t *pool, int secondary, int count)
 	cmdbufferset->buffers = (qfv_cmdbuffer_t **) (cmdbufferset + 1);
 	cmdbufferset->vkBuffers = (VkCommandBuffer *) (cmdbufferset->buffers
 												   + count);
+	qfv_cmdbuffer_t *buffer = (qfv_cmdbuffer_t *) (cmdbufferset->vkBuffers
+												   + count);
 	cmdbufferset->cmdpool = pool->cmdpool;
 	cmdbufferset->numBuffers = count;
 	dfunc->vkAllocateCommandBuffers (dev, &allocInfo, cmdbufferset->vkBuffers);
 	for (int i = 0; i < count; i++) {
-		cmdbufferset->buffers[i]->device = device;
-		cmdbufferset->buffers[i]->buffer = &cmdbufferset->vkBuffers[i];
+		buffer->device = device;
+		buffer->buffer = &cmdbufferset->vkBuffers[i];
+		cmdbufferset->buffers[i] = buffer++;
 	}
 	return cmdbufferset;
 }
