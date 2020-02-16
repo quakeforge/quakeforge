@@ -26,7 +26,8 @@ typedef struct qfv_semaphore_s {
 
 typedef struct qfv_semaphoreset_s {
 	struct qfv_device_s *device;
-	VkSemaphore *semaphores;
+	qfv_semaphore_t **semaphores;
+	VkSemaphore *vkSemaphores;
 	VkPipelineStageFlags *stages;
 	int         numSemaphores;
 } qfv_semaphoreset_t;

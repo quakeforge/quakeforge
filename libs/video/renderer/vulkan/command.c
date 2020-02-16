@@ -237,17 +237,23 @@ QFV_CreateSemaphoreSet (qfv_semaphore_t **semaphores, int numSemaphores)
 	qfv_device_t *device = semaphores[0]->device;
 	qfv_semaphoreset_t *semaphoreset;
 	semaphoreset = calloc (1, sizeof (*semaphoreset)
+						   + sizeof (qfv_semaphore_t *) * numSemaphores
 						   + sizeof (VkSemaphore) * numSemaphores
 						   + sizeof (VkPipelineStageFlags) * numSemaphores);
 
 	semaphoreset->device = device;
-	semaphoreset->semaphores = (VkSemaphore *) (semaphoreset + 1);
+	semaphoreset->vkSemaphores = (VkSemaphore *) (semaphoreset + 1);
 	semaphoreset->stages = (VkPipelineStageFlags *)
-							&semaphoreset->semaphores[numSemaphores];
+							&semaphoreset->vkSemaphores[numSemaphores];
+	semaphoreset->semaphores = (qfv_semaphore_t **) (semaphoreset->stages
+													 + numSemaphores);
 	semaphoreset->numSemaphores = numSemaphores;
 
-	for (int i = 0; i < numSemaphores; i++) {
-		semaphoreset->semaphores[i] = semaphores[i]->semaphore;
+	if (semaphores) {
+		for (int i = 0; i < numSemaphores; i++) {
+			semaphoreset->semaphores[i] = semaphores[i];
+			semaphoreset->vkSemaphores[i] = semaphores[i]->semaphore;
+		}
 	}
 	return semaphoreset;
 }
@@ -379,10 +385,10 @@ QFV_QueueSubmit (qfv_queue_t *queue, qfv_semaphoreset_t *waitSemaphores,
 	VkSubmitInfo submitInfo = {
 		VK_STRUCTURE_TYPE_SUBMIT_INFO, 0,
 		waitSemaphores->numSemaphores,
-		waitSemaphores->semaphores, waitSemaphores->stages,
+		waitSemaphores->vkSemaphores, waitSemaphores->stages,
 		buffers->numBuffers, buffers->vkBuffers,
 		signalSemaphores->numSemaphores,
-		signalSemaphores->semaphores
+		signalSemaphores->vkSemaphores
 	};
 	//FIXME multi-batch
 	return dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo,
