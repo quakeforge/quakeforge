@@ -28,8 +28,10 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-#include "vulkan/namehack.h"
+#include <stdlib.h>
+
+//#define NH_DEFINE
+//#include "vulkan/namehack.h"
 
 #include "QF/sys.h"
 
@@ -37,6 +39,7 @@
 #include "QF/plugin/vid_render.h"
 
 #include "QF/Vulkan/qf_vid.h"
+#include "QF/Vulkan/command.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/swapchain.h"
@@ -53,8 +56,43 @@ static vulkan_ctx_t *vulkan_ctx;
 static void
 vulkan_R_Init (void)
 {
-	if (vulkan_ctx)
-		Sys_Quit ();
+	Vulkan_CreateSwapchain (vulkan_ctx);
+	Sys_Printf ("R_Init %p %d", vulkan_ctx->swapchain->swapchain,
+				vulkan_ctx->swapchain->numImages);
+	for (int32_t i = 0; i < vulkan_ctx->swapchain->numImages; i++) {
+		Sys_Printf (" %p", vulkan_ctx->swapchain->images[i]);
+	}
+	Sys_Printf ("\n");
+}
+
+static void
+vulkan_SCR_UpdateScreen (double time,  void (*f)(void), void (**g)(void))
+{
+	static int count = 0;
+	static double startTime;
+
+	if (++count >= 100) {
+		double currenTime = Sys_DoubleTime ();
+		double time = currenTime - startTime;
+		startTime = currenTime;
+		printf ("%d frames in %g s: %g fps     \r", count, time, count / time);
+		fflush (stdout);
+		count = 0;
+	}
+}
+
+static qpic_t *
+vulkan_Draw_CachePic (const char *path, qboolean alpha)
+{
+	return 0;
+}
+
+static qpic_t qpic = { 1, 1, {0} };
+
+static qpic_t *
+vulkan_Draw_MakePic (int width, int height, const byte *data)
+{
+	return &qpic;
 }
 
 static vid_model_funcs_t model_funcs = {
@@ -84,29 +122,29 @@ static vid_model_funcs_t model_funcs = {
 };
 
 vid_render_funcs_t vulkan_vid_render_funcs = {
-	vulkan_Draw_Init,
-	vulkan_Draw_Character,
-	vulkan_Draw_String,
-	vulkan_Draw_nString,
-	vulkan_Draw_AltString,
-	vulkan_Draw_ConsoleBackground,
-	vulkan_Draw_Crosshair,
-	vulkan_Draw_CrosshairAt,
-	vulkan_Draw_TileClear,
-	vulkan_Draw_Fill,
-	vulkan_Draw_TextBox,
-	vulkan_Draw_FadeScreen,
-	vulkan_Draw_BlendScreen,
+	0,//vulkan_Draw_Init,
+	0,//vulkan_Draw_Character,
+	0,//vulkan_Draw_String,
+	0,//vulkan_Draw_nString,
+	0,//vulkan_Draw_AltString,
+	0,//vulkan_Draw_ConsoleBackground,
+	0,//vulkan_Draw_Crosshair,
+	0,//vulkan_Draw_CrosshairAt,
+	0,//vulkan_Draw_TileClear,
+	0,//vulkan_Draw_Fill,
+	0,//vulkan_Draw_TextBox,
+	0,//vulkan_Draw_FadeScreen,
+	0,//vulkan_Draw_BlendScreen,
 	vulkan_Draw_CachePic,
-	vulkan_Draw_UncachePic,
+	0,//vulkan_Draw_UncachePic,
 	vulkan_Draw_MakePic,
-	vulkan_Draw_DestroyPic,
-	vulkan_Draw_PicFromWad,
-	vulkan_Draw_Pic,
-	vulkan_Draw_Picf,
-	vulkan_Draw_SubPic,
+	0,//vulkan_Draw_DestroyPic,
+	0,//vulkan_Draw_PicFromWad,
+	0,//vulkan_Draw_Pic,
+	0,//vulkan_Draw_Picf,
+	0,//vulkan_Draw_SubPic,
 
-	0,//vulkan_SCR_UpdateScreen,
+	vulkan_SCR_UpdateScreen,
 	SCR_DrawRam,
 	SCR_DrawTurtle,
 	SCR_DrawPause,
@@ -152,8 +190,13 @@ vulkan_vid_render_choose_visual (void)
 {
 	Vulkan_CreateDevice (vulkan_ctx);
 	vulkan_ctx->choose_visual (vulkan_ctx);
-	Sys_Printf ("vk choose visual %p %p\n", vulkan_ctx->device->dev,
-				vulkan_ctx->device->queue.queue);
+	vulkan_ctx->cmdpool = QFV_CreateCommandPool (vulkan_ctx->device,
+									 vulkan_ctx->device->queue.queueFamily,
+									 0, 0);
+	Sys_Printf ("vk choose visual %p %p %d %p\n", vulkan_ctx->device->dev,
+				vulkan_ctx->device->queue.queue,
+				vulkan_ctx->device->queue.queueFamily,
+				vulkan_ctx->cmdpool->cmdpool);
 }
 
 static void
@@ -161,14 +204,14 @@ vulkan_vid_render_create_context (void)
 {
 	vulkan_ctx->create_window (vulkan_ctx);
 	vulkan_ctx->surface = vulkan_ctx->create_surface (vulkan_ctx);
-	Sys_Printf ("vk create context %p\n", vulkan_ctx->surface);
-	Vulkan_CreateSwapchain (vulkan_ctx);
-	Sys_Printf ("%p %d", vulkan_ctx->swapchain->swapchain,
-				vulkan_ctx->swapchain->numImages);
-	for (int32_t i = 0; i < vulkan_ctx->swapchain->numImages; i++) {
-		Sys_Printf (" %p", vulkan_ctx->swapchain->images[i]);
+	vulkan_ctx->frameset.curFrame = 0;
+	vulkan_ctx->frameset.curImage = -1;	// not acquired yet
+	qfv_fence_t **fences = alloca (2 * sizeof (*fences));
+	for (int i = 0; i < 2; i++) {
+		fences[i]= QFV_CreateFence (vulkan_ctx->device, 1);
 	}
-	Sys_Printf ("\n");
+	vulkan_ctx->frameset.fences = QFV_CreateFenceSet (fences, 2);
+	Sys_Printf ("vk create context %p\n", vulkan_ctx->surface);
 }
 
 static void
@@ -190,6 +233,11 @@ vulkan_vid_render_init (void)
 static void
 vulkan_vid_render_shutdown (void)
 {
+	for (int i = 0; i < vulkan_ctx->frameset.fences->numFences; i++) {
+		QFV_DestroyFence (vulkan_ctx->frameset.fences->fences[i]);
+	}
+	QFV_DestroyFenceSet (vulkan_ctx->frameset.fences);
+	QFV_DestroyCommandPool (vulkan_ctx->cmdpool);
 	Vulkan_Shutdown_Common (vulkan_ctx);
 }
 
