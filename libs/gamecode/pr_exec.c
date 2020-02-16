@@ -1445,7 +1445,7 @@ op_call:
 					// as division: -5 % 3 = -2, so need to add b (3 here)
 					// if c's sign is incorrect, but only if c is non-zero
 					int         mask = (a ^ b) >> 31;
-					mask &= ~!!c + 1;
+					mask &= ~(!!c + 0) + 1;	// +0 to convert bool to int (gcc)
 					OPC.integer_var = c + (mask & b);
 				}
 				break;
