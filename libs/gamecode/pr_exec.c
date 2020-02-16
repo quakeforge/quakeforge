@@ -318,6 +318,8 @@ signal_hook (int sig, void *data)
 				else
 					OPC.integer_var = 0x7fffffff;
 				return 1;
+			case OP_MOD_I:
+			case OP_MOD_F:
 			case OP_REM_I:
 			case OP_REM_F:
 				OPC.integer_var = 0x00000000;
@@ -1429,14 +1431,47 @@ op_call:
 			case OP_DIV_I:
 				OPC.integer_var = OPA.integer_var / OPB.integer_var;
 				break;
+			case OP_MOD_I:
+				{
+					// implement true modulo for integers:
+					//  5 mod  3 = 2
+					// -5 mod  3 = 1
+					//  5 mod -3 = -1
+					// -5 mod -3 = -2
+					int         a = OPA.integer_var;
+					int         b = OPB.integer_var;
+					int         c = a % b;
+					// % is really remainder and so has the same sign rules
+					// as division: -5 % 3 = -2, so need to add b (3 here)
+					// if c's sign is incorrect, but only if c is non-zero
+					int         mask = (a ^ b) >> 31;
+					mask &= ~!!c + 1;
+					OPC.integer_var = c + (mask & b);
+				}
+				break;
 			case OP_REM_I:
 				OPC.integer_var = OPA.integer_var % OPB.integer_var;
+				break;
+			case OP_MOD_D:
+				{
+					double      a = OPA_double_var;
+					double      b = OPB_double_var;
+					// floating point modulo is so much easier :P
+					OPC_double_var = a - b * floor (a / b);
+				}
 				break;
 			case OP_REM_D:
 				{
 					double      a = OPA_double_var;
 					double      b = OPB_double_var;
 					OPC_double_var = a - b * trunc (a / b);
+				}
+				break;
+			case OP_MOD_F:
+				{
+					float       a = OPA.float_var;
+					float       b = OPB.float_var;
+					OPC.float_var = a - b * floorf (a / b);
 				}
 				break;
 			case OP_REM_F:

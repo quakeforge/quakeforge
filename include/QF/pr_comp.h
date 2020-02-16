@@ -391,6 +391,10 @@ typedef enum {
 	OP_LOADB_D,
 	OP_LOADBI_D,
 	OP_ADDRESS_D,
+
+	OP_MOD_I,
+	OP_MOD_F,
+	OP_MOD_D,
 } pr_opcode_e;
 
 typedef struct opcode_s {

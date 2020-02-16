@@ -175,6 +175,10 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 ev_double, ev_double, ev_double,
 	 PROG_VERSION,
 	},
+	{"%%", "mod.d", OP_MOD_D, false,
+	 ev_double, ev_double, ev_double,
+	 PROG_VERSION,
+	},
 
 	{"+", "add.d", OP_ADD_D, false,
 	 ev_double, ev_double, ev_double,
@@ -1040,6 +1044,10 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 ev_integer, ev_integer, ev_integer,
 	 PROG_VERSION,
 	},
+	{"%%", "mod.i", OP_MOD_I, false,
+	 ev_integer, ev_integer, ev_integer,
+	 PROG_VERSION,
+	},
 	{"&", "bitand.i", OP_BITAND_I, false,
 	 ev_integer, ev_integer, ev_integer,
 	 PROG_VERSION,
@@ -1050,6 +1058,11 @@ VISIBLE opcode_t pr_opcodes[] = {
 	},
 
 	{"%", "rem.f", OP_REM_F, false,
+	 ev_float, ev_float, ev_float,
+	 PROG_VERSION,
+	},
+
+	{"%%", "mod.f", OP_MOD_F, false,
 	 ev_float, ev_float, ev_float,
 	 PROG_VERSION,
 	},
