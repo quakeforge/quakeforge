@@ -8,9 +8,10 @@
 
 typedef struct vulkan_frameset_s {
 	int         curFrame;	// index into fences
-	int         curImage;	// index into cmdBuffers and swapchain images
 	struct qfv_fenceset_s *fences;
 	struct qfv_cmdbufferset_s *cmdBuffers;
+	struct qfv_semaphoreset_s *imageSemaphores;
+	struct qfv_semaphoreset_s *renderDoneSemaphores;
 } vulkan_frameset_t;
 
 typedef struct vulkan_ctx_s {
