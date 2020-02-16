@@ -204,7 +204,7 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 		for (; i < MAX_PARMS; i++) {
 			if (pr->pr_params[i] != pr->pr_real_params[i]) {
 				copy_param (pr->pr_real_params[i], pr->pr_params[i],
-							f->parm_size[i].size);
+							parmsize.size);
 			}
 		}
 	}
