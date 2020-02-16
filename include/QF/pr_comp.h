@@ -181,8 +181,8 @@ typedef enum {
 	OP_SHL_I,
 	OP_SHR_I,
 
-	OP_MOD_F,
-	OP_MOD_I,
+	OP_REM_F,
+	OP_REM_I,
 
 	OP_LOADB_F,
 	OP_LOADB_V,
@@ -371,7 +371,7 @@ typedef enum {
 	OP_MUL_VD,
 	OP_MUL_DV,
 	OP_DIV_D,
-	OP_MOD_D,
+	OP_REM_D,
 	OP_GE_D,
 	OP_LE_D,
 	OP_GT_D,

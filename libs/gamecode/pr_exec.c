@@ -318,8 +318,8 @@ signal_hook (int sig, void *data)
 				else
 					OPC.integer_var = 0x7fffffff;
 				return 1;
-			case OP_MOD_I:
-			case OP_MOD_F:
+			case OP_REM_I:
+			case OP_REM_F:
 				OPC.integer_var = 0x00000000;
 				return 1;
 			default:
@@ -1429,17 +1429,17 @@ op_call:
 			case OP_DIV_I:
 				OPC.integer_var = OPA.integer_var / OPB.integer_var;
 				break;
-			case OP_MOD_I:
+			case OP_REM_I:
 				OPC.integer_var = OPA.integer_var % OPB.integer_var;
 				break;
-			case OP_MOD_D:
+			case OP_REM_D:
 				{
 					double      a = OPA_double_var;
 					double      b = OPB_double_var;
 					OPC_double_var = a - b * trunc (a / b);
 				}
 				break;
-			case OP_MOD_F:
+			case OP_REM_F:
 				{
 					float       a = OPA.float_var;
 					float       b = OPB.float_var;

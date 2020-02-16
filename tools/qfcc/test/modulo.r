@@ -1,11 +1,19 @@
-#pragma traditional
+void printf (string ftm, ...) = #0;
 
-void (...) printf = #0;
+float snafu (float a, float b)
+{
+	float c = a % b;
+	return c;
+}
+
+#pragma traditional
 float foo (float a, float b)
 {
 	float c = a % b;
 	return c;
 }
+#pragma advanced
+
 float bar (float a, float b)
 {
 	float c;
@@ -15,11 +23,13 @@ float bar (float a, float b)
 	return c;
 }
 
+#pragma traditional
 float baz (float a, float b)
 {
 	float c = (a + b) % (a - b);
 	return c;
 }
+#pragma advanced
 
 float test (string name, float (func)(float a, float b),
 			float a, float b, float c)
@@ -45,20 +55,26 @@ float main (void)
 	res |= test ("foo", foo, 5, 3, 2);
 	res |= test ("bar", bar, 5, 3, 2);
 	res |= test ("baz", baz, 5, 3, 0);
+	res |= test ("snafu", snafu, 5, 3, 2);
 
 	res |= test ("foo", foo, -5, 3, -2);
 	res |= test ("bar", bar, -5, 3, -2);
 	res |= test ("baz", baz, -5, 3, -2);
+	res |= test ("snafu", snafu, -5, 3, -2);
 
 	res |= test ("foo", foo, 5, -3, 2);
 	res |= test ("bar", bar, 5, -3, 2);
 	res |= test ("baz", baz, 5, -3, 2);
+	res |= test ("snafu", snafu, 5, -3, 2);
 
 	res |= test ("foo", foo, -5, -3, -2);
 	res |= test ("bar", bar, -5, -3, -2);
 	res |= test ("baz", baz, -5, -3, 0);
+	res |= test ("snafu", snafu, -5, -3, -2);
 
 	res |= test ("foo", foo, 5, 3.5, 1.5);
 	res |= test ("foo", foo, -5, 3.5, -1.5);
+	res |= test ("snafu", snafu, 5, 3.5, 1.5);
+	res |= test ("snafu", snafu, -5, 3.5, -1.5);
 	return res;
 }
