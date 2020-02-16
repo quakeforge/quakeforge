@@ -8,13 +8,14 @@ typedef struct qfv_cmdpool_s {
 
 typedef struct qfv_cmdbuffer_s {
 	struct qfv_device_s *device;
-	VkCommandPool cmdpool;
-	VkCommandBuffer buffer;
+	VkCommandBuffer *buffer;
 } qfv_cmdbuffer_t;
 
 typedef struct qfv_cmdbufferset_s {
 	struct qfv_device_s *device;
-	VkCommandBuffer *buffers;
+	qfv_cmdbuffer_t **buffers;
+	VkCommandBuffer *vkBuffers;
+	VkCommandPool cmdpool;
 	int         numBuffers;
 } qfv_cmdbufferset_t;
 
@@ -37,7 +38,8 @@ typedef struct qfv_fence_s {
 
 typedef struct qfv_fenceset_s {
 	struct qfv_device_s *device;
-	VkFence    *fences;
+	qfv_fence_t **fences;
+	VkFence    *vkFences;
 	int         numFences;
 } qfv_fenceset_t;
 
@@ -47,13 +49,9 @@ qfv_cmdpool_t *QFV_CreateCommandPool (struct qfv_device_s *device,
 									  int transient, int reset);
 int QFV_ResetCommandPool (qfv_cmdpool_t *pool, int release);
 void QFV_DestroyCommandPool (qfv_cmdpool_t *pool);
-qfv_cmdbuffer_t *QFV_AllocateCommandBuffers (qfv_cmdpool_t *pool,
-											 int secondary, int count);
-qfv_cmdbufferset_t *QFV_CreateCommandBufferSet (qfv_cmdbuffer_t **buffers,
-												int numBuffers);
-void QFV_FreeCommandBuffers (qfv_cmdbuffer_t *buffer, int count);
-// NOTE: does not destroy buffers
-void QFV_DestroyCommandBufferSet (qfv_cmdbufferset_t *buffers);
+qfv_cmdbufferset_t *QFV_AllocateCommandBuffers (qfv_cmdpool_t *pool,
+											    int secondary, int count);
+void QFV_FreeCommandBuffers (qfv_cmdbufferset_t *buffer);
 int QFV_BeginCommandBuffer (qfv_cmdbuffer_t *buffer, int oneTime,
 							int rpContinue, int simultaneous,
 							VkCommandBufferInheritanceInfo *inheritanceInfo);
@@ -70,9 +68,11 @@ qfv_fence_t *QFV_CreateFence (struct qfv_device_s *device, int signaled);
 qfv_fenceset_t *QFV_CreateFenceSet (qfv_fence_t **fences, int numFences);
 void QFV_DestroyFence (qfv_fence_t *fence);
 // NOTE: does not destroy fences
-void QFV_DestroyFenceSet (qfv_fenceset_t *fences);
-int QFV_WaitForFences (qfv_fenceset_t *fences, int all, uint64_t timeout);
-int QFV_ResetFences (qfv_fenceset_t *fences);
+void QFV_DestroyFenceSet (qfv_fenceset_t *fenceset);
+int QFV_WaitForFences (qfv_fenceset_t *fenceset, int all, uint64_t timeout);
+int QFV_WaitForFence (qfv_fence_t *fence, uint64_t timeout);
+int QFV_ResetFences (qfv_fenceset_t *fenceset);
+int QFV_ResetFence (qfv_fence_t *fence);
 int QFV_QueueSubmit (struct qfv_queue_s *queue,
 					 qfv_semaphoreset_t *waitSemaphores,
 					 qfv_cmdbufferset_t *buffers,

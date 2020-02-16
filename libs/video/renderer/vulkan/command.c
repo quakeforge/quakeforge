@@ -115,7 +115,7 @@ QFV_DestroyCommandPool (qfv_cmdpool_t *pool)
 	free (pool);
 }
 
-qfv_cmdbuffer_t *
+qfv_cmdbufferset_t *
 QFV_AllocateCommandBuffers (qfv_cmdpool_t *pool, int secondary, int count)
 {
 	qfv_device_t *device = pool->device;
@@ -129,54 +129,34 @@ QFV_AllocateCommandBuffers (qfv_cmdpool_t *pool, int secondary, int count)
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, 0,
 		pool->cmdpool, level, count
 	};
-	qfv_cmdbuffer_t *cmdbuffers = malloc (count * sizeof (*cmdbuffers));
-	VkCommandBuffer *buffers = alloca (count * sizeof (*buffers));
-	dfunc->vkAllocateCommandBuffers (dev, &allocInfo, buffers);
+	qfv_cmdbufferset_t *cmdbufferset;
+	cmdbufferset = malloc (sizeof (qfv_cmdbufferset_t)
+						   + count * sizeof (qfv_buffer_t *)
+						   + count * sizeof (qfv_buffer_t)
+						   + count * sizeof (VkCommandBuffer));
+	cmdbufferset->buffers = (qfv_cmdbuffer_t **) (cmdbufferset + 1);
+	cmdbufferset->vkBuffers = (VkCommandBuffer *) (cmdbufferset->buffers
+												   + count);
+	cmdbufferset->cmdpool = pool->cmdpool;
+	cmdbufferset->numBuffers = count;
+	dfunc->vkAllocateCommandBuffers (dev, &allocInfo, cmdbufferset->vkBuffers);
 	for (int i = 0; i < count; i++) {
-		cmdbuffers[i].device = device;
-		cmdbuffers[i].cmdpool = pool->cmdpool;
-		cmdbuffers[i].buffer = buffers[i];
+		cmdbufferset->buffers[i]->device = device;
+		cmdbufferset->buffers[i]->buffer = &cmdbufferset->vkBuffers[i];
 	}
-	return cmdbuffers;
+	return cmdbufferset;
 }
 
-qfv_cmdbufferset_t *
-QFV_CreateCommandBufferSet (qfv_cmdbuffer_t **buffers, int numBuffers)
+void QFV_FreeCommandBuffers (qfv_cmdbufferset_t *bufferset)
 {
-	qfv_device_t *device = buffers[0]->device;
-	qfv_cmdbufferset_t *bufferset = malloc (sizeof (*bufferset)
-											+ sizeof (VkCommandBuffer)
-											  * numBuffers);
-
-	bufferset->device = device;
-	bufferset->buffers = (VkCommandBuffer *) (bufferset + 1);
-	bufferset->numBuffers = numBuffers;
-
-	for (int i = 0; i < numBuffers; i++) {
-		bufferset->buffers[i] = buffers[i]->buffer;
-	}
-	return bufferset;
-}
-
-void QFV_FreeCommandBuffers (qfv_cmdbuffer_t *buffer, int count)
-{
-	qfv_device_t *device = buffer->device;
+	qfv_device_t *device = bufferset->device;
 	VkDevice    dev = device->dev;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	VkCommandBuffer *buffers = alloca (sizeof (*buffers) * count);
 
-	for (int i = 0; i < count; i++) {
-		buffers[i] = buffer[i].buffer;
-	}
-
-	dfunc->vkFreeCommandBuffers (dev, buffer->cmdpool, count, buffers);
-	free (buffer);
-}
-
-void
-QFV_DestroyCommandBufferSet (qfv_cmdbufferset_t *buffers)
-{
-	free (buffers);
+	dfunc->vkFreeCommandBuffers (dev, bufferset->cmdpool,
+								 bufferset->numBuffers,
+								 bufferset->vkBuffers);
+	free (bufferset);
 }
 
 int
@@ -186,7 +166,7 @@ QFV_BeginCommandBuffer (qfv_cmdbuffer_t *buffer, int oneTime, int rpContinue,
 {
 	qfv_device_t *device = buffer->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	VkCommandBuffer buff = buffer->buffer;
+	VkCommandBuffer buff = *buffer->buffer;
 	VkCommandBufferUsageFlags usage = 0;
 
 	if (oneTime) {
@@ -213,7 +193,7 @@ QFV_EndCommandBuffer (qfv_cmdbuffer_t *buffer)
 {
 	qfv_device_t *device = buffer->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	VkCommandBuffer buff = buffer->buffer;
+	VkCommandBuffer buff = *buffer->buffer;
 
 	return dfunc->vkEndCommandBuffer (buff) == VK_SUCCESS;
 }
@@ -223,7 +203,7 @@ QFV_ResetCommandBuffer (qfv_cmdbuffer_t *buffer, int release)
 {
 	qfv_device_t *device = buffer->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	VkCommandBuffer buff = buffer->buffer;
+	VkCommandBuffer buff = *buffer->buffer;
 	VkCommandBufferResetFlags release_flag = 0;
 
 	if (release) {
@@ -310,16 +290,20 @@ QFV_CreateFence (qfv_device_t *device, int signaled)
 qfv_fenceset_t *
 QFV_CreateFenceSet (qfv_fence_t **fences, int numFences)
 {
-	qfv_device_t *device = fences[0]->device;
 	qfv_fenceset_t *fenceset = malloc (sizeof (*fenceset)
+									   + sizeof (qfv_fence_t) * numFences
 									   + sizeof (VkFence) * numFences);
 
-	fenceset->device = device;
-	fenceset->fences = (VkFence *) (fenceset + 1);
+	fenceset->fences = (qfv_fence_t **) (fenceset + 1);
+	fenceset->vkFences = (VkFence *) (fenceset->fences + numFences);
 	fenceset->numFences = numFences;
 
-	for (int i = 0; i < numFences; i++) {
-		fenceset->fences[i] = fences[i]->fence;
+	if (fences) {
+		fenceset->device = fences[0]->device;
+		for (int i = 0; i < numFences; i++) {
+			fenceset->fences[i] = fences[i];
+			fenceset->vkFences[i] = fences[i]->fence;
+		}
 	}
 	return fenceset;
 }
@@ -336,32 +320,53 @@ QFV_DestroyFence (qfv_fence_t *fence)
 }
 
 void
-QFV_DestroyFenceSet (qfv_fenceset_t *fences)
+QFV_DestroyFenceSet (qfv_fenceset_t *fenceset)
 {
-	free (fences);
+	free (fenceset);
 }
 
 int
-QFV_WaitForFences (qfv_fenceset_t *fences, int all, uint64_t timeout)
+QFV_WaitForFences (qfv_fenceset_t *fenceset, int all, uint64_t timeout)
 {
-	qfv_device_t *device = fences->device;
+	qfv_device_t *device = fenceset->device;
 	VkDevice    dev = device->dev;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	VkResult res = dfunc->vkWaitForFences (dev, fences->numFences,
-										   fences->fences, all, timeout);
+	VkResult res = dfunc->vkWaitForFences (dev, fenceset->numFences,
+										   fenceset->vkFences, all, timeout);
 	return res == VK_SUCCESS;
 }
 
 int
-QFV_ResetFences (qfv_fenceset_t *fences)
+QFV_WaitForFence (qfv_fence_t *fence, uint64_t timeout)
 {
-	qfv_device_t *device = fences->device;
+	qfv_device_t *device = fence->device;
 	VkDevice    dev = device->dev;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	return dfunc->vkResetFences (dev, fences->numFences,
-								 fences->fences) == VK_SUCCESS;
+	VkResult res = dfunc->vkWaitForFences (dev, 1, &fence->fence, 1, timeout);
+	return res == VK_SUCCESS;
+}
+
+int
+QFV_ResetFences (qfv_fenceset_t *fenceset)
+{
+	qfv_device_t *device = fenceset->device;
+	VkDevice    dev = device->dev;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	return dfunc->vkResetFences (dev, fenceset->numFences,
+								 fenceset->vkFences) == VK_SUCCESS;
+}
+
+int
+QFV_ResetFence (qfv_fence_t *fence)
+{
+	qfv_device_t *device = fence->device;
+	VkDevice    dev = device->dev;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	return dfunc->vkResetFences (dev, 1, &fence->fence) == VK_SUCCESS;
 }
 
 int
@@ -375,7 +380,7 @@ QFV_QueueSubmit (qfv_queue_t *queue, qfv_semaphoreset_t *waitSemaphores,
 		VK_STRUCTURE_TYPE_SUBMIT_INFO, 0,
 		waitSemaphores->numSemaphores,
 		waitSemaphores->semaphores, waitSemaphores->stages,
-		buffers->numBuffers, buffers->buffers,
+		buffers->numBuffers, buffers->vkBuffers,
 		signalSemaphores->numSemaphores,
 		signalSemaphores->semaphores
 	};
@@ -418,11 +423,11 @@ QFV_CmdPipelineBarrier (qfv_cmdbuffer_t *cmdBuffer,
 		numImgBarriers = imgBarrierSet->numBarriers;
 		imgBarriers = imgBarrierSet->barriers;
 	}
-	dfunc->vkCmdPipelineBarrier (cmdBuffer->buffer,
-								  srcStageMask, dstStageMask, dependencyFlags,
-								  numMemBarriers, memBarriers,
-								  numBuffBarriers, buffBarriers,
-								  numImgBarriers, imgBarriers);
+	dfunc->vkCmdPipelineBarrier (*cmdBuffer->buffer,
+								 srcStageMask, dstStageMask, dependencyFlags,
+								 numMemBarriers, memBarriers,
+								 numBuffBarriers, buffBarriers,
+								 numImgBarriers, imgBarriers);
 }
 
 void
@@ -433,7 +438,7 @@ QFV_CmdCopyBuffer (qfv_cmdbuffer_t *cmdBuffer,
 	qfv_device_t *device = cmdBuffer->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	dfunc->vkCmdCopyBuffer (cmdBuffer->buffer, src->buffer, dst->buffer,
+	dfunc->vkCmdCopyBuffer (*cmdBuffer->buffer, src->buffer, dst->buffer,
 							numRegions, regions);
 }
 
@@ -447,7 +452,7 @@ QFV_CmdCopyBufferToImage (qfv_cmdbuffer_t *cmdBuffer,
 	qfv_device_t *device = cmdBuffer->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	dfunc->vkCmdCopyBufferToImage (cmdBuffer->buffer, src->buffer, dst->image,
+	dfunc->vkCmdCopyBufferToImage (*cmdBuffer->buffer, src->buffer, dst->image,
 								   layout, numRegions, regions);
 }
 
@@ -461,7 +466,7 @@ QFV_CmdCopyImageToBuffer (qfv_cmdbuffer_t *cmdBuffer,
 	qfv_device_t *device = cmdBuffer->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	dfunc->vkCmdCopyImageToBuffer (cmdBuffer->buffer, src->image, layout,
+	dfunc->vkCmdCopyImageToBuffer (*cmdBuffer->buffer, src->image, layout,
 								   dst->buffer, numRegions, regions);
 }
 
@@ -483,7 +488,7 @@ QFV_CmdBeginRenderPass (qfv_cmdbuffer_t *cmdBuffer,
 		numClearValues, clearValues,
 	};
 
-	dfunc->vkCmdBeginRenderPass (cmdBuffer->buffer, &beginInfo,
+	dfunc->vkCmdBeginRenderPass (*cmdBuffer->buffer, &beginInfo,
 								 subpassContents);
 }
 
@@ -494,7 +499,7 @@ QFV_CmdNextSubpass (qfv_cmdbuffer_t *cmdBuffer,
 	qfv_device_t *device = cmdBuffer->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	dfunc->vkCmdNextSubpass (cmdBuffer->buffer, subpassContents);
+	dfunc->vkCmdNextSubpass (*cmdBuffer->buffer, subpassContents);
 }
 
 void
@@ -503,7 +508,7 @@ QFV_CmdEndRenderPass (qfv_cmdbuffer_t *cmdBuffer)
 	qfv_device_t *device = cmdBuffer->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	dfunc->vkCmdEndRenderPass (cmdBuffer->buffer);
+	dfunc->vkCmdEndRenderPass (*cmdBuffer->buffer);
 }
 
 void
@@ -514,5 +519,6 @@ QFV_CmdBindPipeline (qfv_cmdbuffer_t *cmdBuffer,
 	qfv_device_t *device = cmdBuffer->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	dfunc->vkCmdBindPipeline (cmdBuffer->buffer, bindPoint, pipeline->pipeline);
+	dfunc->vkCmdBindPipeline (*cmdBuffer->buffer, bindPoint,
+							  pipeline->pipeline);
 }
