@@ -423,6 +423,11 @@ typedef struct ddef_s {
 	pr_int_t    s_name;
 } ddef_t;
 
+typedef struct dparmsize_s {
+	uint8_t     size:5;
+	uint8_t     alignment:3;
+} dparmsize_t;
+
 #define	DEF_SAVEGLOBAL	(1<<15)
 
 #define	MAX_PARMS	8
@@ -438,7 +443,7 @@ typedef struct dfunction_s {
 	pr_int_t    s_file;				// source file defined in
 
 	pr_int_t    numparms;
-	uint8_t     parm_size[MAX_PARMS];
+	dparmsize_t parm_size[MAX_PARMS];
 } dfunction_t;
 
 typedef union pr_type_u {

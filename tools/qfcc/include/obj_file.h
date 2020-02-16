@@ -497,6 +497,8 @@ qfo_t *qfo_new (void);
 */
 void qfo_delete (qfo_t *qfo);
 
+__attribute__((const)) int qfo_log2 (unsigned x);
+
 ///@}
 
 #endif//__obj_file_h

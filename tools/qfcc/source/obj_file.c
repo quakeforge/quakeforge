@@ -665,7 +665,7 @@ get_def_type (qfo_t *qfo, pointer_t type)
 	return ev_invalid;
 }
 
-static __attribute__((pure)) etype_t
+static __attribute__((pure)) int
 get_type_size (qfo_t *qfo, pointer_t type)
 {
 	qfot_type_t *type_def;
@@ -701,6 +701,62 @@ get_type_size (qfo_t *qfo, pointer_t type)
 	return 0;
 }
 
+int
+qfo_log2 (unsigned x)
+{
+	int         log2 = 0;
+
+	while (x > 1) {
+		x >>= 1;
+		log2++;
+	}
+	return log2;
+}
+
+static __attribute__((pure)) int
+get_type_alignment_log (qfo_t *qfo, pointer_t type)
+{
+	qfot_type_t *type_def;
+	int          i, alignment;
+	if (type >= qfo->spaces[qfo_type_space].data_size)
+		return 0;
+	type_def = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, type);
+	switch ((ty_meta_e)type_def->meta) {
+		case ty_none:
+			// field, pointer and function types store their basic type in
+			// the same location.
+			return qfo_log2 (ev_types[type_def->t.type]->alignment);
+		case ty_struct:
+		case ty_union:
+			for (i = alignment = 0; i < type_def->t.strct.num_fields; i++) {
+				qfot_var_t *field = type_def->t.strct.fields + i;
+				int         a;
+				a = get_type_alignment_log (qfo, field->type);
+				if (a > alignment) {
+					alignment = a;
+				}
+			}
+			return alignment;
+		case ty_enum:
+			return qfo_log2 (ev_types[ev_integer]->alignment);
+		case ty_array:
+			return get_type_alignment_log (qfo, type_def->t.array.type);
+		case ty_class:
+			return 0;	// FIXME
+	}
+	return 0;
+}
+
+static __attribute__((pure)) dparmsize_t
+get_parmsize (qfo_t *qfo, pointer_t type)
+{
+	dparmsize_t parmsize = {
+		get_type_size (qfo, type),
+		get_type_alignment_log (qfo, type),
+	};
+	return parmsize;
+}
+
 static void
 function_params (qfo_t *qfo, qfo_func_t *func, dfunction_t *df)
 {
@@ -716,8 +772,9 @@ function_params (qfo_t *qfo, qfo_func_t *func, dfunction_t *df)
 	df->numparms = num_params = type->t.func.num_params;
 	if (num_params < 0)
 		num_params = ~num_params;
-	for (i = 0; i < num_params; i++)
-		df->parm_size[i] = get_type_size (qfo, type->t.func.param_types[i]);
+	for (i = 0; i < num_params; i++) {
+		df->parm_size[i] = get_parmsize (qfo, type->t.func.param_types[i]);
+	}
 }
 
 static void

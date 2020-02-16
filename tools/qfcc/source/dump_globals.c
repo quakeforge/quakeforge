@@ -217,7 +217,8 @@ dump_functions (progs_t *pr)
 		else
 			count = func->numparms;
 		for (j = 0; j < count; j++)
-			printf (" %d", func->parm_size[j]);
+			printf (" %d:%d", func->parm_size[j].alignment,
+					func->parm_size[j].size);
 		printf (") %d @ %x", func->locals, func->parm_start);
 		puts ("");
 		if (pr->debug) {
