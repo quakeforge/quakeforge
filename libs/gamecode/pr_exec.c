@@ -142,6 +142,21 @@ PR_PopFrame (progs_t *pr)
 	pr->pr_xtstr      = frame->tstr;
 }
 
+static __attribute__((pure)) long
+align_offset (long offset, dparmsize_t parmsize)
+{
+	int         mask = (1 << parmsize.alignment) - 1;
+	return (offset + mask) & ~mask;
+}
+
+static void
+copy_param (pr_type_t *dst, pr_type_t *src, size_t size)
+{
+	while (size--) {
+		memcpy (dst++, src++, sizeof (pr_type_t));
+	}
+}
+
 /** Setup the stackframe prior to calling a progs function. Saves all local
 	data the called function will trample on and copies the parameters used
 	by the function into the function's local data space.
@@ -153,39 +168,44 @@ PR_PopFrame (progs_t *pr)
 static void
 PR_EnterFunction (progs_t *pr, bfunction_t *f)
 {
-	pr_int_t    i, j, c, o;
-	pr_int_t    k;
-	pr_int_t    count = 0;
-	int         size[2] = {0, 0};
+	pr_int_t    i;
+	pr_type_t  *dstParams[MAX_PARMS];
 	long        paramofs = 0;
-	long        offs;
 
 	PR_PushFrame (pr);
 
 	if (f->numparms > 0) {
-		for (i = 0; i < 2 && i < f->numparms; i++) {
-			paramofs += f->parm_size[i];
-			size[i] = f->parm_size[i];
+		paramofs = f->parm_start;
+		for (i = 0; i < f->numparms; i++) {
+			paramofs = align_offset (paramofs, f->parm_size[i]);
+			dstParams[i] = pr->pr_globals + paramofs;
+			paramofs += f->parm_size[i].size;
+			if (pr->pr_params[i] != pr->pr_real_params[i]) {
+				copy_param (pr->pr_real_params[i], pr->pr_params[i],
+							f->parm_size[i].size);
+			}
 		}
-		count = i;
 	} else if (f->numparms < 0) {
-		for (i = 0; i < 2 && i < -f->numparms - 1; i++) {
-			paramofs += f->parm_size[i];
-			size[i] = f->parm_size[i];
+		paramofs = f->parm_start + 2;	// argc and argv
+		for (i = 0; i < -f->numparms - 1; i++) {
+			paramofs = align_offset (paramofs, f->parm_size[i]);
+			dstParams[i] = pr->pr_globals + paramofs;
+			paramofs += f->parm_size[i].size;
+			if (pr->pr_params[i] != pr->pr_real_params[i]) {
+				copy_param (pr->pr_real_params[i], pr->pr_params[i],
+							f->parm_size[i].size);
+			}
 		}
-		for (; i < 2; i++) {
-			paramofs += pr->pr_param_size;
-			size[i] = pr->pr_param_size;
+		dparmsize_t parmsize = { pr->pr_param_size, pr->pr_param_alignment };
+		paramofs = align_offset (paramofs, parmsize );
+		if (i < MAX_PARMS) {
+			dstParams[i] = pr->pr_globals + paramofs;
 		}
-		count = i;
-	}
-
-	for (i = 0; i < count && i < pr->pr_argc; i++) {
-		offs = (pr->pr_params[i] - pr->pr_globals) - f->parm_start;
-		if (offs >= 0 && offs < paramofs) {
-			memcpy (pr->pr_real_params[i], pr->pr_params[i],
-					size[i] * sizeof (pr_type_t));
-			pr->pr_params[i] = pr->pr_real_params[i];
+		for (; i < MAX_PARMS; i++) {
+			if (pr->pr_params[i] != pr->pr_real_params[i]) {
+				copy_param (pr->pr_real_params[i], pr->pr_params[i],
+							f->parm_size[i].size);
+			}
 		}
 	}
 
@@ -194,43 +214,33 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 	pr->pr_xstatement = f->first_statement - 1;      		// offset the st++
 
 	// save off any locals that the new function steps on
-	c = f->locals;
-	if (pr->localstack_used + c > LOCALSTACK_SIZE)
+	if (pr->localstack_used + f->locals > LOCALSTACK_SIZE)
 		PR_RunError (pr, "PR_EnterFunction: locals stack overflow");
 
 	memcpy (&pr->localstack[pr->localstack_used],
 			&pr->pr_globals[f->parm_start],
-			sizeof (pr_type_t) * c);
-	pr->localstack_used += c;
+			sizeof (pr_type_t) * f->locals);
+	pr->localstack_used += f->locals;
 
 	if (pr_deadbeef_locals->int_val)
-		for (k = f->parm_start; k < f->parm_start + c; k++)
-			pr->pr_globals[k].integer_var = 0xdeadbeef;
+		for (i = f->parm_start; i < f->parm_start + f->locals; i++)
+			pr->pr_globals[i].integer_var = 0xdeadbeef;
 
 	// copy parameters
-	o = f->parm_start;
 	if (f->numparms >= 0) {
 		for (i = 0; i < f->numparms; i++) {
-			for (j = 0; j < f->parm_size[i]; j++) {
-				memcpy (&pr->pr_globals[o], &P_INT (pr, i) + j,
-						sizeof (pr_type_t));
-				o++;
-			}
+			copy_param (dstParams[i], pr->pr_params[i], f->parm_size[i].size);
 		}
 	} else {
-		pr_type_t  *argc = &pr->pr_globals[o++];
-		pr_type_t  *argv = &pr->pr_globals[o++];
+		pr_type_t  *argc = &pr->pr_globals[f->parm_start + 0];
+		pr_type_t  *argv = &pr->pr_globals[f->parm_start + 1];
 		for (i = 0; i < -f->numparms - 1; i++) {
-			for (j = 0; j < f->parm_size[i]; j++) {
-				memcpy (&pr->pr_globals[o], &P_INT (pr, i) + j,
-						sizeof (pr_type_t));
-				o++;
-			}
+			copy_param (dstParams[i], pr->pr_params[i], f->parm_size[i].size);
 		}
 		argc->integer_var = pr->pr_argc - i;
-		argv->integer_var = o;
+		argv->integer_var = dstParams[i] - pr->pr_globals;
 		if (i < MAX_PARMS) {
-			memcpy (&pr->pr_globals[o], &P_INT (pr, i),
+			memcpy (dstParams[i], &P_INT (pr, i),
 					(MAX_PARMS - i) * pr->pr_param_size * sizeof (pr_type_t));
 		}
 	}
@@ -239,19 +249,18 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 static void
 PR_LeaveFunction (progs_t *pr)
 {
-	int			c;
 	bfunction_t *f = pr->pr_xfunction;
 
 	PR_PopFrame (pr);
 
 	// restore locals from the stack
-	c = f->locals;
-	pr->localstack_used -= c;
+	pr->localstack_used -= f->locals;
 	if (pr->localstack_used < 0)
 		PR_RunError (pr, "PR_LeaveFunction: locals stack underflow");
 
 	memcpy (&pr->pr_globals[f->parm_start],
-			&pr->localstack[pr->localstack_used], sizeof (pr_type_t) * c);
+			&pr->localstack[pr->localstack_used],
+			sizeof (pr_type_t) * f->locals);
 }
 
 VISIBLE void

@@ -1079,7 +1079,7 @@ typedef struct {
 	pr_int_t    locals;
 	pr_int_t    profile;
 	pr_int_t    numparms;
-	uint8_t     parm_size[MAX_PARMS];
+	dparmsize_t parm_size[MAX_PARMS];
 	dfunction_t *descriptor;
 	builtin_proc func;
 } bfunction_t;
@@ -1632,6 +1632,7 @@ struct progs_s {
 	pr_type_t  *pr_saved_params;
 	int         pr_saved_argc;
 	int         pr_param_size;		///< covers both params and return
+	int         pr_param_alignment;	///< covers both params and return
 	///@}
 
 	/// \name edicts
