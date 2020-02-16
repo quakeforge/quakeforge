@@ -170,7 +170,7 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 {
 	pr_int_t    i;
 	pr_type_t  *dstParams[MAX_PARMS];
-	long        paramofs = 0;
+	pointer_t   paramofs = 0;
 
 	PR_PushFrame (pr);
 
@@ -201,7 +201,7 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 		if (i < MAX_PARMS) {
 			dstParams[i] = pr->pr_globals + paramofs;
 		}
-		for (; i < MAX_PARMS; i++) {
+		for (; i < pr->pr_argc; i++) {
 			if (pr->pr_params[i] != pr->pr_real_params[i]) {
 				copy_param (pr->pr_real_params[i], pr->pr_params[i],
 							parmsize.size);
@@ -232,16 +232,18 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 			copy_param (dstParams[i], pr->pr_params[i], f->parm_size[i].size);
 		}
 	} else {
+		int         copy_args;
 		pr_type_t  *argc = &pr->pr_globals[f->parm_start + 0];
 		pr_type_t  *argv = &pr->pr_globals[f->parm_start + 1];
 		for (i = 0; i < -f->numparms - 1; i++) {
 			copy_param (dstParams[i], pr->pr_params[i], f->parm_size[i].size);
 		}
-		argc->integer_var = pr->pr_argc - i;
+		copy_args = pr->pr_argc - i;
+		argc->integer_var = copy_args;
 		argv->integer_var = dstParams[i] - pr->pr_globals;
 		if (i < MAX_PARMS) {
-			memcpy (dstParams[i], &P_INT (pr, i),
-					(MAX_PARMS - i) * pr->pr_param_size * sizeof (pr_type_t));
+			memcpy (dstParams[i], pr->pr_params[i],
+					(copy_args * pr->pr_param_size) * sizeof (pr_type_t));
 		}
 	}
 }
