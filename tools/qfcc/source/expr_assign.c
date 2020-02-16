@@ -151,6 +151,10 @@ check_types_compatible (expr_t *dst, expr_t *src)
 
 	if (type_assignable (dst_type, src_type)) {
 		if (is_scalar (dst_type) && is_scalar (src_type)) {
+			if (is_double (src_type)) {
+				warning (dst, "assignment of double to %s (use a cast)\n",
+						 dst_type->name);
+			}
 			// the types are different but cast-compatible
 			expr_t     *new = cast_expr (dst_type, src);
 			// the cast was a no-op, so the types are compatible at the

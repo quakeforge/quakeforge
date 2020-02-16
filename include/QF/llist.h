@@ -30,16 +30,28 @@
 
 #include "QF/qtypes.h"
 
+/**	\defgroup llist Linked lists
+	\ingroup utils
+*/
+//@{
+
 typedef struct llist_node_s {
-	struct llist_s *parent;
-	struct llist_node_s *prev, *next;
-	void *data;
+	struct llist_s *parent;		///< The list owning this node.
+	struct llist_node_s *prev;	///< The previous node in the list, or null.
+	struct llist_node_s *next;	///< The flowing node in the list, or null.
+	void *data;					///< The actual list item.
 } llist_node_t;
 
 typedef struct llist_s {
-	struct llist_node_s *start, *end, *iter;
+	struct llist_node_s *start;	///< The first node in the list, or null.
+	struct llist_node_s *end;	///< The last node in the list, or null.
+	struct llist_node_s *iter;
+	/// Function called when deleting a list item.
+	/// \param element	The item being deleted.
+	///	\param userdata	Pointer to user data supplied to llist_new().
 	void (*freedata)(void *element, void *userdata);
-	qboolean (*cmpdata)(const void *element, const void *comparison, void *userdata);
+	qboolean (*cmpdata)(const void *element, const void *comparison,
+						void *userdata);
 	void *userdata;
 } llist_t;
 
@@ -48,8 +60,43 @@ typedef qboolean (*llist_iterator_t)(void *element, llist_node_t *node);
 #define LLIST_ICAST(x) (llist_iterator_t)(x)
 #define LLIST_DATA(node, type) ((type *)((node)->data))
 
-llist_t *llist_new (void (*freedata)(void *element, void *userdata), qboolean (*cmpdata)(const void *element, const void *comparison, void *userdata), void *userdata);
+/**	Create a new, empty, linked list.
+
+	\param freedata	Function to call when deleting a list item.
+	\param cmpdata	Function to call to compare two list items. It must
+					return true when the items are the same and false when
+					they differ.
+	\param userdata	User data pointer. Set to whatever you want, it will be
+					passed to the \a freedata and \a cmpdata functions as
+					their final parameter.
+	\return			Pointer to the list's control structure, which is to be
+					passed to the other functions accessing the list.
+*/
+llist_t *llist_new (void (*freedata)(void *element, void *userdata),
+					qboolean (*cmpdata)(const void *element,
+										const void *comparison,
+										void *userdata),
+					void *userdata);
+
+/** Empty a linked list.
+	All of the items in the list will be deleted via the list's \a freedata
+	function and the list will become empty.
+
+	\param list		Pointer to the list's control structure created by
+					llist_new(). May be null, in which case no operation is
+					performed.
+*/
 void llist_flush (llist_t *list);
+
+/** Delete a linked list.
+	All of the items in the list will be deleted via the list's \a freedata
+	function and the list will be destroyed. Do not attempt to use the list
+	pointer after destroying the list.
+
+	\param list		Pointer to the list's control structure created by
+					llist_new(). May be null, in which case no operation is
+					performed.
+*/
 void llist_delete (llist_t *list);
 llist_node_t *llist_append (llist_t *list, void *element);
 llist_node_t *llist_prefix (llist_t *list, void *element);
@@ -62,4 +109,7 @@ void llist_iterate (llist_t *list, llist_iterator_t iterate);
 void *llist_find (llist_t *list, void *comparison);
 llist_node_t *llist_findnode (llist_t *list, void *comparison);
 void *llist_createarray (llist_t *list, size_t esize);
+
+//@}
+
 #endif

@@ -320,6 +320,18 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define G_FLOAT(p,o)	G_var (p, o, float)
 
+/** Access a double global. Can be assigned to.
+
+	\par QC type:
+		\c double
+	\param p		pointer to ::progs_t VM struct
+	\param o		offset into global data space
+	\return			double lvalue
+
+	\hideinitializer
+*/
+#define G_DOUBLE(p,o)	(*(double *) ((p)->pr_globals + o))
+
 /** Access an integer global. Can be assigned to.
 
 	\par QC type:
@@ -509,6 +521,18 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	\hideinitializer
 */
 #define P_FLOAT(p,n)	P_var (p, n, float)
+
+/** Access a double parameter. Can be assigned to.
+
+	\par QC type:
+		\c double
+	\param p		pointer to ::progs_t VM struct
+	\param n		parameter number (0-7)
+	\return			double lvalue
+
+	\hideinitializer
+*/
+#define P_DOUBLE(p,n)	(*(double *) ((p)->pr_params[n]))
 
 /** Access an integer parameter. Can be assigned to.
 
@@ -702,6 +726,17 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define R_FLOAT(p)		R_var (p, float)
 
+/** Access the VM function return value as a \c double
+
+	\par QC type:
+		\c double
+	\param p		pointer to ::progs_t VM struct
+	\return			double lvalue
+
+	\hideinitializer
+*/
+#define R_DOUBLE(p)		(*(double *) ((p)->pr_return))
+
 /** Access the VM function return value as a \c ::pr_int_t (AKA int32_t)
 
 	\par QC type:
@@ -868,6 +903,18 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define E_FLOAT(e,o)	E_var (e, o, float)
 
+/** Access a double entity field. Can be assigned to.
+
+	\par QC type:
+		\c double
+	\param e		pointer to the entity
+	\param o		field offset into entity data space
+	\return			double lvalue
+
+	\hideinitializer
+*/
+#define E_DOUBLE(e,o)	(*(double *) ((e)->v + o))
+
 /** Access an integer entity field. Can be assigned to.
 
 	\par QC type:
@@ -1032,7 +1079,7 @@ typedef struct {
 	pr_int_t    locals;
 	pr_int_t    profile;
 	pr_int_t    numparms;
-	uint8_t     parm_size[MAX_PARMS];
+	dparmsize_t parm_size[MAX_PARMS];
 	dfunction_t *descriptor;
 	builtin_proc func;
 } bfunction_t;
@@ -1520,36 +1567,36 @@ struct progs_s {
 	int         zone_size;			///< set by user
 
 	/// \name builtin functions
-	//@{
+	///@{
 	struct hashtab_s *builtin_hash;
 	struct hashtab_s *builtin_num_hash;
 	unsigned    bi_next;
 	unsigned  (*bi_map) (progs_t *pr, unsigned binum);
-	//@}
+	///@}
 
 	/// \name symbol management
-	//@{
+	///@{
 	struct hashtab_s *function_hash;
 	struct hashtab_s *global_hash;
 	struct hashtab_s *field_hash;
-	//@}
+	///@}
 
 	/// \name load hooks
-	//@{
+	///@{
 	int         num_load_funcs;
 	int         max_load_funcs;
 	pr_load_func_t **load_funcs;
 
 	/// cleared each load
-	//@{
+	///@{
 	int         num_load_finish_funcs;
 	int         max_load_finish_funcs;
 	pr_load_func_t **load_finish_funcs;
-	//@}
-	//@}
+	///@}
+	///@}
 
 	/// \name string management
-	//@{
+	///@{
 	struct dstring_mem_s *ds_mem;
 	strref_t   *free_string_refs;
 	strref_t   *static_strings;
@@ -1560,10 +1607,11 @@ struct progs_s {
 	struct hashtab_s *strref_hash;
 	int         num_strings;
 	strref_t   *pr_xtstr;
-	//@}
+	int         float_promoted;	///< for PR_Sprintf
+	///@}
 
 	/// \name memory map
-	//@{
+	///@{
 	dfunction_t *pr_functions;
 	bfunction_t *function_table;
 	char       *pr_strings;
@@ -1573,10 +1621,10 @@ struct progs_s {
 	dstatement_t *pr_statements;
 	pr_type_t  *pr_globals;
 	unsigned    globals_size;
-	//@}
+	///@}
 
 	/// \name parameter block
-	//@{
+	///@{
 	pr_type_t  *pr_return;
 	pr_type_t  *pr_params[MAX_PARMS];
 	pr_type_t  *pr_real_params[MAX_PARMS];
@@ -1584,10 +1632,11 @@ struct progs_s {
 	pr_type_t  *pr_saved_params;
 	int         pr_saved_argc;
 	int         pr_param_size;		///< covers both params and return
-	//@}
+	int         pr_param_alignment;	///< covers both params and return
+	///@}
 
 	/// \name edicts
-	//@{
+	///@{
 	edict_t   **edicts;
 	int         max_edicts;			///< set by user
 	int        *num_edicts;
@@ -1599,10 +1648,10 @@ struct progs_s {
 	int         pr_edict_size;		///< in bytes
 	int         pr_edictareasize;	///< for bounds checking, starts at 0
 	func_t      edict_parse;
-	//@}
+	///@}
 
 	/// \name execution state
-	//@{
+	///@{
 	int         pr_argc;
 
 	qboolean    pr_trace;
@@ -1620,24 +1669,24 @@ struct progs_s {
 	/// be considered valid if there is no .stack global.
 	/// \note The return address and saved locals will not ever be on this
 	/// stack.
-	//@{
+	///@{
 	pr_type_t  *stack;
 	pointer_t   stack_bottom;
 	int         stack_size;			///< set by user
-	//@}
+	///@}
 
 	int         localstack[LOCALSTACK_SIZE];
 	int         localstack_used;
-	//@}
+	///@}
 
 	/// \name resources
-	//@{
+	///@{
 	pr_resource_t *resources;
 	struct hashtab_s *resource_hash;
-	//@}
+	///@}
 
 	/// \name obj info
-	//@{
+	///@{
 	unsigned    selector_index;
 	unsigned    selector_index_max;
 	struct obj_list_s **selector_sels;
@@ -1650,10 +1699,10 @@ struct progs_s {
 	struct obj_list_s *unclaimed_proto_list;
 	struct obj_list_s *module_list;
 	struct obj_list_s *class_tree_list;
-	//@}
+	///@}
 
 	/// \name debug info
-	//@{
+	///@{
 	const char *debugfile;
 	struct pr_debug_header_s *debug;
 	struct pr_auxfunction_s *auxfunctions;
@@ -1663,10 +1712,10 @@ struct progs_s {
 	pr_type_t  *watch;
 	int         wp_conditional;
 	pr_type_t   wp_val;
-	//@}
+	///@}
 
 	/// \name globals and fields needed by the VM
-	//@{
+	///@{
 	struct {
 		float      *time;		///< required for OP_STATE
 		pr_int_t   *self;		///< required for OP_STATE
@@ -1678,7 +1727,7 @@ struct progs_s {
 		pr_int_t    think;		///< required for OP_STATE
 		pr_int_t    this;		///< optional for entity<->object linking
 	} fields;
-	//@}
+	///@}
 };
 
 /** \addtogroup progs_data_access

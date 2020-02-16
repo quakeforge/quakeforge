@@ -93,6 +93,8 @@ B			[01]
 X			[0-9a-fA-F]
 ID			[a-zA-Z_][a-zA-Z_0-9]*
 FLOAT		({D}+|{D}*\.{D}+|{D}+\.{D}*)([eE]{m}?{D}+)?
+FLOATf		{FLOAT}[fF]
+FLOATd		{FLOAT}[dD]
 INT			({D}+|0[xX]{X}+|0[bB]{B})
 RANGE		\.\.
 ELLIPSIS	\.\.\.
@@ -136,8 +138,33 @@ STRING		\"(\\.|[^"\\])*\"
 					}
 
 {FLOAT}				{
+						// advanced code defaults to double, but traditional
+						// and extended code defaults to float
+						if (options.traditional < 1) {
+							double      d = strtod (yytext, 0);
+							qc_yylval.expr = new_double_expr (d);
+						} else {
+							float       f = strtof (yytext, 0);
+							qc_yylval.expr = new_float_expr (f);
+						}
+						return VALUE;
+					}
+{FLOATf}			{
 						float       f = strtof (yytext, 0);
 						qc_yylval.expr = new_float_expr (f);
+						return VALUE;
+					}
+{FLOATd}			{
+						// advanced code defaults to double, but traditional
+						// and extended code defaults to float
+						if (options.traditional < 1) {
+							double      d = strtod (yytext, 0);
+							qc_yylval.expr = new_double_expr (d);
+						} else {
+							float       f = strtof (yytext, 0);
+							qc_yylval.expr = new_float_expr (f);
+							warning (0, "truncating double constant to float");
+						}
 						return VALUE;
 					}
 
@@ -189,6 +216,11 @@ STRING		\"(\\.|[^"\\])*\"
 						return ASX;
 					}
 
+"%%="				{
+						qc_yylval.op = MOD;
+						return ASX;
+					}
+
 "<<="				{
 						qc_yylval.op = SHL;
 						return ASX;
@@ -202,6 +234,11 @@ STRING		\"(\\.|[^"\\])*\"
 [!(){}.*/&|^~+\-=\[\];,#%?:] {
 						qc_yylval.pointer = 0;	// ensure pointer vals are null
 						return yytext[0];
+					}
+
+"%%"				{
+						qc_yylval.pointer = 0;	// ensure pointer vals are null
+						return MOD;
 					}
 
 {ELLIPSIS}			return ELLIPSIS;
@@ -245,9 +282,12 @@ STRING		\"(\\.|[^"\\])*\"
 							write_frame_macros (s);
 							BEGIN (GRAB_OTHER);	// ignore rest of line
 						}
-<PRAGMA>{ID}		{ pragma (yytext); }
+<PRAGMA>{ID}		{ pragma_add_arg (yytext); }
 
 <*>\r*\n			{
+						if (YY_START == PRAGMA) {
+							pragma_process ();
+						}
 						pr.source_line++;
 						BEGIN (INITIAL);
 					}
@@ -333,6 +373,7 @@ static keyword_t at_keywords[] = {
 // be supported (sanely) by v6 progs.
 static keyword_t qf_keywords[] = {
 	{"quaternion",	TYPE,	&type_quaternion},
+	{"double",		TYPE,	&type_double},
 	{"int",			TYPE,	&type_integer	},
 	{"unsigned",	TYPE,	&type_integer	},//FIXME
 	{"function",	TYPE,	&type_function	},

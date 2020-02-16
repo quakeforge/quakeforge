@@ -135,8 +135,12 @@ init_qf (void)
 
 	Memory_Init (malloc (1024 * 1024), 1024 * 1024);
 
-	Cvar_Get ("pr_debug", "2", 0, 0, 0);
+	cvar_t *debug = Cvar_Get ("pr_debug", "2", 0, 0, 0);
 	Cvar_Get ("pr_boundscheck", "2", 0, 0, 0);
+
+	if (options.trace > 1) {
+		Cvar_SetValue (debug, 4);
+	}
 
 	pr.edicts = &edicts;
 	pr.num_edicts = &num_edicts;
@@ -207,7 +211,7 @@ parse_options (int argc, char **argv)
 				options.flote = 1;
 				break;
 			case 't':
-				options.trace = 1;
+				options.trace++;
 				break;
 			case 'h':
 				usage (0);

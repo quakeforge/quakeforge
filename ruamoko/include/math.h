@@ -60,17 +60,20 @@
 /**
 	Returns \a f, rounded down to the next lower integer
 */
-@extern float floor (float f);
+@extern @overload float floor (float f);
+@extern @overload double floor (double f);
 
 /**
 	Returns \a f, rounded up to the next highest integer
 */
-@extern float ceil (float f);
+@extern @overload float ceil (float f);
+@extern @overload double ceil (double f);
 
 /**
 	Returns the absolute value of \a f
 */
-@extern float fabs (float f);
+@extern @overload float fabs (float f);
+@extern @overload double fabs (double f);
 //\}
 
 ///\name Exponentials and Logarithms
@@ -78,32 +81,38 @@
 /**
 	Returns the natural log of \a x.
 */
-@extern float log (float x);
+@extern @overload float log (float x);
+@extern @overload double log (double x);
 
 /**
 	Returns the base-2 log of \a x.
 */
-@extern float log2 (float x);
+@extern @overload float log2 (float x);
+@extern @overload double log2 (double x);
 
 /**
 	Returns the base-10 log of \a x.
 */
-@extern float log10 (float x);
+@extern @overload float log10 (float x);
+@extern @overload double log10 (double x);
 
 /**
 	Returns \a x to the \a y power
 */
-@extern float pow (float x, float y);
+@extern @overload float pow (float x, float y);
+@extern @overload double pow (double x, double y);
 
 /**
 	Returns the square root of \a x
 */
-@extern float sqrt (float x);
+@extern @overload float sqrt (float x);
+@extern @overload double sqrt (double x);
 
 /**
 	Returns the cube root of \a x
 */
-@extern float cbrt (float x);
+@extern @overload float cbrt (float x);
+@extern @overload double cbrt (double x);
 //\}
 
 ///\name Trigonometric functions
@@ -112,40 +121,52 @@
 /**
 	Returns the sine of \a x.
 */
-@extern float sin (float x);
+@extern @overload float sin (float x);
+@extern @overload double sin (double x);
 
 /**
 	Returns the cosine of \a x.
 */
-@extern float cos (float x);
+@extern @overload float cos (float x);
+@extern @overload double cos (double x);
 
 /**
 	Returns the tangent of \a x.
 */
-@extern float tan (float x);
+@extern @overload float tan (float x);
+@extern @overload double tan (double x);
 
 /**
 	Returns the arcsine of \a x.
 */
-@extern float asin (float x);
+@extern @overload float asin (float x);
+@extern @overload double asin (double x);
 
 /**
 	Returns the arccosine of \a x.
 */
-@extern float acos (float x);
+@extern @overload float acos (float x);
+@extern @overload double acos (double x);
 
 /**
 	Returns the arctangent of \a x.
 */
-@extern float atan (float x);
-@extern float atan2 (float y, float x);
+@extern @overload float atan (float x);
+@extern @overload double atan (double x);
+
+/**
+	Returns the arctangent of \a y / \a x preserving the quadrant.
+*/
+@extern @overload float atan2 (float y, float x);
+@extern @overload double atan2 (double y, double x);
 
 /**
 	Returns the length of the hypotenuse of a right triangle with sides \a x
 	and \a y. That is, this function returns
 	<code>sqrt (\a x*\a x + \a y*\a y)</code>.
 */
-@extern float hypot (float x, float y);
+@extern @overload float hypot (float x, float y);
+@extern @overload double hypot (double x, double y);
 //\}
 
 ///\name Hyperbolic functions
@@ -153,32 +174,38 @@
 /**
 	Returns the hyperbolic sine of \a x
 */
-@extern float sinh (float x);
+@extern @overload float sinh (float x);
+@extern @overload double sinh (double x);
 
 /**
 	Returns the hyperbolic cosine of \a x
 */
-@extern float cosh (float x);
+@extern @overload float cosh (float x);
+@extern @overload double cosh (double x);
 
 /**
 	Returns the hyperbolic tangent of \a x
 */
-@extern float tanh (float x);
+@extern @overload float tanh (float x);
+@extern @overload double tanh (double x);
 
 /**
 	Returns the area hyperbolic sine of \a x
 */
-@extern float asinh (float x);
+@extern @overload float asinh (float x);
+@extern @overload double asinh (double x);
 
 /**
 	Returns the area hyperbolic cosine of \a x
 */
-@extern float acosh (float x);
+@extern @overload float acosh (float x);
+@extern @overload double acosh (double x);
 
 /**
 	Returns the area hyperbolic tangent of \a x
 */
-@extern float atanh (float x);
+@extern @overload float atanh (float x);
+@extern @overload double atanh (double x);
 //\}
 
 ///\name Vector Functions

@@ -70,6 +70,7 @@ struct strref_s {
 #define FMT_ADDSIGN		(1<<3)
 #define FMT_ADDBLANK	(1<<4)
 #define FMT_HEX			(1<<5)
+#define FMT_LONG		(1<<6)
 
 typedef struct fmt_item_s {
 	byte        type;
@@ -81,6 +82,7 @@ typedef struct fmt_item_s {
 		int         integer_var;
 		unsigned    uinteger_var;
 		float       float_var;
+		double      double_var;
 	}           data;
 	struct fmt_item_s *next;
 } fmt_item_t;
@@ -596,11 +598,19 @@ I_DoPrint (dstring_t *result, fmt_item_t *formatting)
 				break;
 			case 'f':
 				dstring_appendstr (tmp, "f");
-				PRINT (float);
+				if (current->flags & FMT_LONG) {
+					PRINT (double);
+				} else {
+					PRINT (float);
+				}
 				break;
 			case 'g':
 				dstring_appendstr (tmp, "g");
-				PRINT (float);
+				if (current->flags & FMT_LONG) {
+					PRINT (double);
+				} else {
+					PRINT (float);
+				}
 				break;
 			default:
 				break;
@@ -639,6 +649,8 @@ free_fmt_item (fmt_item_t *fi)
 
 #undef P_var
 #define P_var(p,n,t) (args[n]->t##_var)
+#undef P_DOUBLE
+#define P_DOUBLE(p,n) (*(double *) (args[n]))
 VISIBLE void
 PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 			const char *format, int count, pr_type_t **args)
@@ -650,7 +662,7 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 	int         fmt_count = 0;
 
 	if (!name)
-		name = "PF_InternalSprintf";
+		name = "PR_Sprintf";
 
 	*fi = new_fmt_item ();
 	c = l = format;
@@ -742,12 +754,19 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 							fi = &(*fi)->next;
 							break;
 						case 'f':
-							// float
+							// float or double
 						case 'g':
-							// float, no trailing zeroes, trim "." if nothing
-							// after
+							// float or double, no trailing zeroes, trim "."
+							// if nothing after
 							(*fi)->type = *c;
-							(*fi)->data.float_var = P_FLOAT (pr, fmt_count);
+							if (pr->float_promoted) {
+								(*fi)->flags |= FMT_LONG;
+								(*fi)->data.double_var
+									= P_DOUBLE (pr, fmt_count);
+							} else {
+								(*fi)->data.float_var
+									= P_FLOAT (pr, fmt_count);
+							}
 
 							fmt_count++;
 							(*fi)->next = new_fmt_item ();

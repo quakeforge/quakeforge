@@ -148,11 +148,17 @@ new_def (const char *name, type_t *type, defspace_t *space,
 
 	if (storage != sc_extern) {
 		int         size = type_size (type);
+		int         alignment = type->alignment;
+
 		if (!size) {
 			error (0, "%s has incomplete type", name);
 			size = 1;
 		}
-		def->offset = defspace_alloc_loc (space, size);
+		if (alignment < 1) {
+			print_type (type);
+			internal_error (0, "temp type has no alignment");
+		}
+		def->offset = defspace_alloc_aligned_loc (space, size, alignment);
 	}
 
 	return def;
@@ -199,16 +205,20 @@ temp_def (type_t *type)
 	def_t      *temp;
 	defspace_t *space = current_func->symtab->space;
 	int         size = type_size (type);
+	int         alignment = type->alignment;
 
 	if (size < 1 || size > 4) {
 		internal_error (0, "%d invalid size for temp def", size);
+	}
+	if (alignment < 1) {
+		internal_error (0, "temp type has no alignment");
 	}
 	if ((temp = current_func->temp_defs[size - 1])) {
 		current_func->temp_defs[size - 1] = temp->temp_next;
 		temp->temp_next = 0;
 	} else {
 		ALLOC (16384, def_t, defs, temp);
-		temp->offset = defspace_alloc_loc (space, size);
+		temp->offset = defspace_alloc_aligned_loc (space, size, alignment);
 		*space->def_tail = temp;
 		space->def_tail = &temp->next;
 		temp->name = save_string (va (".tmp%d", current_func->temp_num++));
@@ -565,7 +575,8 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 		init_elements (sym->s.def, init);
 		sym->s.def->initialized = 1;
 	} else {
-		if (!type_assignable (sym->type, get_type (init))) {
+		type_t     *init_type = get_type (init);
+		if (!type_assignable (sym->type, init_type)) {
 			error (init, "type mismatch in initializer");
 			return;
 		}
@@ -575,8 +586,20 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 			// fold_constants takes care of int/float conversions
 			append_expr (local_expr, fold_constants (init));
 		} else {
+			int         offset = 0;
+			if (!is_constant (init)) {
+				error (init, "non-constant initializier");
+				return;
+			}
+			while ((init->type == ex_uexpr || init->type == ex_expr)
+				   && init->e.expr.op == 'A') {
+				if (init->type == ex_expr) {
+					offset += expr_integer (init->e.expr.e2);
+				}
+				init = init->e.expr.e1;
+			}
 			if (init->type != ex_value) {	//FIXME enum etc
-				error (0, "non-constant initializier");
+				internal_error (0, "initializier not a value");
 				return;
 			}
 			if (init->e.value->lltype == ev_pointer
@@ -587,6 +610,11 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 					reloc_def_field (init->e.value->v.pointer.def, sym->s.def);
 			} else {
 				ex_value_t *v = init->e.value;
+				if (is_double (init_type)
+					&& (is_integral (sym->type) || is_float (sym->type))) {
+					warning (init, "assigning double to %s in initializer "
+							 "(use a cast)", sym->type->name);
+				}
 				if (is_scalar (sym->type))
 					v = convert_value (v, sym->type);
 				if (v->lltype == ev_string) {

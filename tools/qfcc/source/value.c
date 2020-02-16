@@ -69,6 +69,7 @@ typedef struct {
 		ex_pointer_t pointer;
 		float       quaternion_val[4];
 		int         integer_val;
+		double      double_val;
 	} i;
 } immediate_t;
 
@@ -129,6 +130,16 @@ new_string_val (const char *string_val)
 	set_val_type (&val, &type_string);
 	if (string_val)
 		val.v.string_val = save_string (string_val);
+	return find_value (&val);
+}
+
+ex_value_t *
+new_double_val (double double_val)
+{
+	ex_value_t  val;
+	memset (&val, 0, sizeof (val));
+	set_val_type (&val, &type_double);
+	val.v.double_val = double_val;
 	return find_value (&val);
 }
 
@@ -265,6 +276,7 @@ static hashtab_t *func_imm_defs;
 static hashtab_t *pointer_imm_defs;
 static hashtab_t *quaternion_imm_defs;
 static hashtab_t *integer_imm_defs;
+static hashtab_t *double_imm_defs;
 
 static void
 imm_free (void *_imm, void *unused)
@@ -296,6 +308,8 @@ imm_get_hash (const void *_imm, void *_tab)
 	} else if (tab == &quaternion_imm_defs) {
 		return Hash_Buffer (&imm->i.quaternion_val,
 							sizeof (&imm->i.quaternion_val));
+	} else if (tab == &double_imm_defs) {
+		return Hash_Buffer (&imm->i.double_val, sizeof (&imm->i.double_val));
 	} else if (tab == &integer_imm_defs) {
 		return imm->i.integer_val;
 	} else {
@@ -330,6 +344,8 @@ imm_compare (const void *_imm1, const void *_imm2, void *_tab)
 						sizeof (imm1->i.pointer));
 	} else if (tab == &quaternion_imm_defs) {
 		return QuatCompare (imm1->i.quaternion_val, imm2->i.quaternion_val);
+	} else if (tab == &double_imm_defs) {
+		return imm1->i.double_val == imm2->i.double_val;
 	} else if (tab == &integer_imm_defs) {
 		return imm1->i.integer_val == imm2->i.integer_val;
 	} else {
@@ -352,6 +368,24 @@ value_as_float (ex_value_t *value)
 		return value->v.integer_val;
 	if (value->lltype == ev_short)
 		return value->v.short_val;
+	if (value->lltype == ev_double)
+		return value->v.double_val;
+	if (value->lltype == ev_float)
+		return value->v.float_val;
+	return 0;
+}
+
+static double
+value_as_double (ex_value_t *value)
+{
+	if (value->lltype == ev_uinteger)
+		return value->v.uinteger_val;
+	if (value->lltype == ev_integer)
+		return value->v.integer_val;
+	if (value->lltype == ev_short)
+		return value->v.short_val;
+	if (value->lltype == ev_double)
+		return value->v.double_val;
 	if (value->lltype == ev_float)
 		return value->v.float_val;
 	return 0;
@@ -366,6 +400,8 @@ value_as_int (ex_value_t *value)
 		return value->v.integer_val;
 	if (value->lltype == ev_short)
 		return value->v.short_val;
+	if (value->lltype == ev_double)
+		return value->v.double_val;
 	if (value->lltype == ev_float)
 		return value->v.float_val;
 	return 0;
@@ -380,6 +416,8 @@ value_as_uint (ex_value_t *value)
 		return value->v.integer_val;
 	if (value->lltype == ev_short)
 		return value->v.short_val;
+	if (value->lltype == ev_double)
+		return value->v.double_val;
 	if (value->lltype == ev_float)
 		return value->v.float_val;
 	return 0;
@@ -395,6 +433,9 @@ convert_value (ex_value_t *value, type_t *type)
 	if (is_float (type)) {
 		float       val = value_as_float (value);
 		return new_float_val (val);
+	} else if (is_double (type)) {
+		double      val = value_as_double (value);
+		return new_double_val (val);
 	} else if (type->type == ev_short) {
 		int         val = value_as_int (value);
 		return new_short_val (val);
@@ -494,6 +535,10 @@ emit_value (ex_value_t *value, def_t *def)
 			tab = quaternion_imm_defs;
 			type = &type_quaternion;
 			break;
+		case ev_double:
+			tab = double_imm_defs;
+			type = &type_double;
+			break;
 		default:
 			internal_error (0, 0);
 	}
@@ -591,6 +636,7 @@ clear_immediates (void)
 		Hash_FlushTable (pointer_imm_defs);
 		Hash_FlushTable (quaternion_imm_defs);
 		Hash_FlushTable (integer_imm_defs);
+		Hash_FlushTable (double_imm_defs);
 	} else {
 		value_table = Hash_NewTable (16381, 0, 0, 0);
 		Hash_SetHashCompare (value_table, value_get_hash, value_compare);
@@ -624,6 +670,10 @@ clear_immediates (void)
 		integer_imm_defs =
 			Hash_NewTable (16381, 0, imm_free, &integer_imm_defs);
 		Hash_SetHashCompare (integer_imm_defs, imm_get_hash, imm_compare);
+
+		double_imm_defs =
+			Hash_NewTable (16381, 0, imm_free, &double_imm_defs);
+		Hash_SetHashCompare (double_imm_defs, imm_get_hash, imm_compare);
 	}
 
 	def = make_symbol (".zero", &type_zero, 0, sc_extern)->s.def;

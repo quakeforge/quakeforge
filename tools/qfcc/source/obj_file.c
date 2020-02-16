@@ -665,7 +665,7 @@ get_def_type (qfo_t *qfo, pointer_t type)
 	return ev_invalid;
 }
 
-static __attribute__((pure)) etype_t
+static __attribute__((pure)) int
 get_type_size (qfo_t *qfo, pointer_t type)
 {
 	qfot_type_t *type_def;
@@ -701,6 +701,62 @@ get_type_size (qfo_t *qfo, pointer_t type)
 	return 0;
 }
 
+int
+qfo_log2 (unsigned x)
+{
+	int         log2 = 0;
+
+	while (x > 1) {
+		x >>= 1;
+		log2++;
+	}
+	return log2;
+}
+
+static __attribute__((pure)) int
+get_type_alignment_log (qfo_t *qfo, pointer_t type)
+{
+	qfot_type_t *type_def;
+	int          i, alignment;
+	if (type >= qfo->spaces[qfo_type_space].data_size)
+		return 0;
+	type_def = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, type);
+	switch ((ty_meta_e)type_def->meta) {
+		case ty_none:
+			// field, pointer and function types store their basic type in
+			// the same location.
+			return qfo_log2 (ev_types[type_def->t.type]->alignment);
+		case ty_struct:
+		case ty_union:
+			for (i = alignment = 0; i < type_def->t.strct.num_fields; i++) {
+				qfot_var_t *field = type_def->t.strct.fields + i;
+				int         a;
+				a = get_type_alignment_log (qfo, field->type);
+				if (a > alignment) {
+					alignment = a;
+				}
+			}
+			return alignment;
+		case ty_enum:
+			return qfo_log2 (ev_types[ev_integer]->alignment);
+		case ty_array:
+			return get_type_alignment_log (qfo, type_def->t.array.type);
+		case ty_class:
+			return 0;	// FIXME
+	}
+	return 0;
+}
+
+static __attribute__((pure)) dparmsize_t
+get_parmsize (qfo_t *qfo, pointer_t type)
+{
+	dparmsize_t parmsize = {
+		get_type_size (qfo, type),
+		get_type_alignment_log (qfo, type),
+	};
+	return parmsize;
+}
+
 static void
 function_params (qfo_t *qfo, qfo_func_t *func, dfunction_t *df)
 {
@@ -716,8 +772,9 @@ function_params (qfo_t *qfo, qfo_func_t *func, dfunction_t *df)
 	df->numparms = num_params = type->t.func.num_params;
 	if (num_params < 0)
 		num_params = ~num_params;
-	for (i = 0; i < num_params; i++)
-		df->parm_size[i] = get_type_size (qfo, type->t.func.param_types[i]);
+	for (i = 0; i < num_params; i++) {
+		df->parm_size[i] = get_parmsize (qfo, type->t.func.param_types[i]);
+	}
 }
 
 static void
@@ -795,6 +852,14 @@ qfo_relocate_refs (qfo_t *qfo)
 	}
 }
 
+static unsigned
+align_globals_size (unsigned size)
+{
+	if (options.code.progsversion == PROG_ID_VERSION)
+		return size;
+	return RUP (size, 16 / sizeof (pr_type_t));
+}
+
 dprograms_t *
 qfo_to_progs (qfo_t *qfo, int *size)
 {
@@ -811,6 +876,7 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	dprograms_t *progs;
 	qfo_def_t  *types_def = 0;
 	unsigned    i, j;
+	unsigned    near_data_size = 0;
 	unsigned    locals_size = 0;
 	int         locals_start;
 	unsigned    big_locals = 0;
@@ -827,9 +893,8 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	progs->numfunctions = qfo->num_funcs + 1;
 	progs->numstrings = qfo->spaces[qfo_strings_space].data_size;
 	progs->numglobals = qfo->spaces[qfo_near_data_space].data_size;
-	progs->numglobals += qfo->spaces[qfo_far_data_space].data_size;
-	progs->numglobals += qfo->spaces[qfo_type_space].data_size;
-	locals_start = qfo->spaces[qfo_near_data_space].data_size;
+	progs->numglobals = align_globals_size (progs->numglobals);
+	locals_start = progs->numglobals;
 	for (i = qfo_num_spaces; i < qfo->num_spaces; i++) {
 		if (options.code.local_merging) {
 			if (locals_size < qfo->spaces[i].data_size) {
@@ -837,11 +902,14 @@ qfo_to_progs (qfo_t *qfo, int *size)
 				big_locals = i;
 			}
 		} else {
-			locals_size += qfo->spaces[i].data_size;
+			locals_size += align_globals_size (qfo->spaces[i].data_size);
 		}
 	}
 	progs->numglobals += locals_size;
+	near_data_size = progs->numglobals;
 	progs->numglobals = RUP (progs->numglobals, 16 / sizeof (pr_type_t));
+	progs->numglobals += qfo->spaces[qfo_far_data_space].data_size;
+	progs->numglobals += qfo->spaces[qfo_type_space].data_size;
 	progs->entityfields = qfo->spaces[qfo_entity_space].data_size;
 	*size += progs->numstatements * sizeof (dstatement_t);
 	*size += progs->numglobaldefs * sizeof (ddef_t);
@@ -878,8 +946,8 @@ qfo_to_progs (qfo_t *qfo, int *size)
 
 	progs->ofs_globals = data - (byte *) progs;
 	globals = (pr_type_t*) data;
-	locals = globals + qfo->spaces[qfo_near_data_space].data_size;
-	far_data = locals + locals_size;
+	locals = globals + locals_start;
+	far_data = globals + near_data_size;
 	type_data = far_data + qfo->spaces[qfo_far_data_space].data_size;
 
 	memcpy (strings, qfo->spaces[qfo_strings_space].d.strings,
@@ -902,7 +970,7 @@ qfo_to_progs (qfo_t *qfo, int *size)
 		for (j = 0; j < space->num_defs; j++)
 			space->defs[j].offset += locals_start;
 		if (!options.code.local_merging)
-			locals_start += df->locals;
+			locals_start += align_globals_size (df->locals);
 		df->profile = 0;
 		df->s_name = qf->name;
 		df->s_file = qf->file;
@@ -936,7 +1004,7 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	memcpy (globals, qfo->spaces[qfo_near_data_space].d.data,
 			qfo->spaces[qfo_near_data_space].data_size * sizeof (pr_type_t));
 	qfo->spaces[qfo_near_data_space].d.data = globals;
-	// lcear locals data
+	// clear locals data
 	memset (locals, 0, locals_size * sizeof (pr_type_t));
 	// copy far data
 	memcpy (far_data, qfo->spaces[qfo_far_data_space].d.data,
@@ -978,8 +1046,7 @@ qfo_to_progs (qfo_t *qfo, int *size)
 		printf ("%6i global defs\n", progs->numglobaldefs);
 		printf ("%6i fielddefs\n", progs->numfielddefs);
 		printf ("%6i globals\n", progs->numglobals);
-		printf ("    %6i near globals\n",
-				qfo->spaces[qfo_near_data_space].data_size + locals_size);
+		printf ("    %6i near globals\n", near_data_size);
 		printf ("        %6i locals size%s\n", locals_size, big_function);
 		printf ("    %6i far globals\n",
 				qfo->spaces[qfo_far_data_space].data_size);

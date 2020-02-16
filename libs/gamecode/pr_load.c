@@ -202,6 +202,8 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	base -= sizeof (progs);	// offsets are from file start
 	heap = ((byte *) pr->progs + pr->progs_size + pr->pr_edictareasize);
 
+	pr->float_promoted = progs.version == PROG_VERSION;
+
 	if (pr->edicts) {
 		*pr->edicts = (edict_t *)((byte *) pr->progs + pr->progs_size);
 	}

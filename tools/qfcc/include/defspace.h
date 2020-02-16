@@ -109,6 +109,27 @@ defspace_t *defspace_new (ds_type_t type);
 */
 int defspace_alloc_loc (defspace_t *space, int size);
 
+/** Allocate space from the defspace's backing memory.
+
+	If the memory is fragmented, then the first available location at least
+	as large as \a size plus padding for alignment is returned. This means
+	that freeing a location then allocating the same amount of space may
+	return a different location.
+
+	If memory cannot be allocated (there is no free space in the currently
+	available memory and defspace_t::grow is null), then an internal error
+	will be generated.
+
+	\param space	The space from which to allocate data.
+	\param size		The amount of pr_type_t words to allocated. int and float
+					need 1 word, vector 3 words, and quaternion 4.
+	\param alignment The alignment of the allocated space.
+	\return			The offset of the first word of the freshly allocated
+					space. May be 0 if the allocated space is at the beginning
+					of the defspace.
+*/
+int defspace_alloc_aligned_loc (defspace_t *space, int size, int alignment);
+
 /** Free a block of contiguous words, returning them to the defspace.
 
 	The block to be freed is specified by \a ofs indicating the offset of the

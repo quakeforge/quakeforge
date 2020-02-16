@@ -87,6 +87,8 @@ operand_string (operand_t *op)
 				case ev_string:
 					return va ("\"%s\"",
 							   quote_string (op->o.value->v.string_val));
+				case ev_double:
+					return va ("%g", op->o.value->v.double_val);
 				case ev_float:
 					return va ("%g", op->o.value->v.float_val);
 				case ev_vector:
@@ -158,6 +160,9 @@ print_operand (operand_t *op)
 			switch (op->o.value->lltype) {
 				case ev_string:
 					printf ("\"%s\"", op->o.value->v.string_val);
+					break;
+				case ev_double:
+					printf ("%g", op->o.value->v.double_val);
 					break;
 				case ev_float:
 					printf ("%g", op->o.value->v.float_val);
@@ -314,6 +319,15 @@ def_operand (def_t *def, type_t *type)
 }
 
 operand_t *
+return_operand (type_t *type)
+{
+	symbol_t   *return_symbol;
+	return_symbol = make_symbol (".return", &type_param, pr.symtab->space,
+								 sc_extern);
+	return def_operand (return_symbol->s.def, type);
+}
+
+operand_t *
 value_operand (ex_value_t *value)
 {
 	operand_t  *op;
@@ -389,7 +403,7 @@ alias_operand (type_t *type, operand_t *op)
 	operand_t  *aop;
 
 	if (type_size (type) != type_size (op->type)) {
-		internal_error (0, "\naliasing operand with type of diffent size"
+		internal_error (0, "\naliasing operand with type of different size"
 						" (%d, %d)", type_size (type), type_size (op->type));
 	}
 	aop = new_operand (op_alias);
@@ -425,6 +439,7 @@ convert_op (int op)
 		case '*':	return "*";
 		case '/':	return "/";
 		case '%':	return "%";
+		case MOD:	return "%%";
 		case '&':	return "&";
 		case '|':	return "|";
 		case '^':	return "^";
@@ -901,6 +916,8 @@ expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 		while (def->alias)
 			def = def->alias;
 		*op = def_operand (alias_def (def, type, offset), 0);
+	} else if (aop->op_type == op_value) {
+		*op = value_operand (aop->o.value);
 	} else {
 		internal_error (e, "invalid alias target: %s: %s",
 						optype_str (aop->op_type), operand_string (aop));
@@ -953,8 +970,7 @@ expr_cast (sblock_t *sblock, expr_t *e, operand_t **op)
 	statement_t *s;
 
 	src_type = get_type (e->e.expr.e1);
-	if ((src_type->type == ev_integer && type->type == ev_float)
-		|| (src_type->type == ev_float && type->type == ev_integer)) {
+	if (is_scalar (src_type) && is_scalar (type)) {
 		operand_t  *src = 0;
 		sblock = statement_subexpr (sblock, e->e.expr.e1, &src);
 		*op = temp_operand (e->e.expr.type);
@@ -1381,8 +1397,10 @@ statement_uexpr (sblock_t *sblock, expr_t *e)
 				}
 			}
 			s = new_statement (st_func, opcode, e);
-			if (e->e.expr.e1)
+			if (e->e.expr.e1) {
+				s->opa = return_operand (get_type (e->e.expr.e1));
 				sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
+			}
 			sblock_add_statement (sblock, s);
 			sblock->next = new_sblock ();
 			sblock = sblock->next;
@@ -1661,10 +1679,6 @@ static void
 check_final_block (sblock_t *sblock)
 {
 	statement_t *s = 0;
-	symbol_t   *return_symbol = 0;
-	def_t      *return_def = 0;
-	operand_t  *return_operand = 0;
-	const char *return_opcode = "<RETURN_V>";
 
 	if (!sblock)
 		return;
@@ -1685,16 +1699,11 @@ check_final_block (sblock_t *sblock)
 		sblock->next = new_sblock ();
 		sblock = sblock->next;
 	}
+	s = new_statement (st_func, "<RETURN_V>", 0);
 	if (options.traditional || options.code.progsversion == PROG_ID_VERSION) {
-		return_symbol = make_symbol (".return", &type_param, pr.symtab->space,
-									 sc_extern);
-		return_def = return_symbol->s.def;
-		return_opcode = "<RETURN>";
+		s->opcode = save_string ("<RETURN>");
+		s->opa = return_operand (&type_void);
 	}
-	if (return_symbol)
-		return_operand = def_operand (return_def, &type_void);
-	s = new_statement (st_func, return_opcode, 0);
-	s->opa = return_operand;
 	sblock_add_statement (sblock, s);
 }
 

@@ -40,6 +40,7 @@ struct ex_value_s;
 struct type_s;
 
 struct ex_value_s *new_string_val (const char *string_val);
+struct ex_value_s *new_double_val (double double_val);
 struct ex_value_s *new_float_val (float float_val);
 struct ex_value_s *new_vector_val (const float *vector_val);
 struct ex_value_s *new_entity_val (int entity_val);

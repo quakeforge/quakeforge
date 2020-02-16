@@ -612,6 +612,15 @@ new_string_expr (const char *string_val)
 }
 
 expr_t *
+new_double_expr (double double_val)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_value;
+	e->e.value = new_double_val (double_val);
+	return e;
+}
+
+expr_t *
 new_float_expr (float float_val)
 {
 	expr_t     *e = new_expr ();
@@ -768,6 +777,10 @@ new_short_expr (short short_val)
 int
 is_constant (expr_t *e)
 {
+	while ((e->type == ex_uexpr || e->type == ex_expr)
+		   && e->e.expr.op == 'A') {
+		e = e->e.expr.e1;
+	}
 	if (e->type == ex_nil || e->type == ex_value || e->type == ex_labelref
 		|| (e->type == ex_symbol && e->e.symbol->sy_type == sy_const)
 		|| (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
@@ -843,6 +856,23 @@ is_float_val (expr_t *e)
 		&& e->e.symbol->type->type == ev_float)
 		return 1;
 	return 0;
+}
+
+double
+expr_double (expr_t *e)
+{
+	if (e->type == ex_nil)
+		return 0;
+	if (e->type == ex_value && e->e.value->lltype == ev_double)
+		return e->e.value->v.double_val;
+	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
+		&& e->e.symbol->type->type == ev_double)
+		return e->e.symbol->s.value->v.double_val;
+	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
+		&& e->e.symbol->s.def->constant
+		&& is_double (e->e.symbol->s.def->type))
+		return D_DOUBLE (e->e.symbol->s.def);
+	internal_error (e, "not a double constant");
 }
 
 float
@@ -1024,8 +1054,6 @@ new_alias_expr (type_t *type, expr_t *expr)
 {
 	expr_t     *alias;
 
-	if (expr->type == ex_value)
-		return new_value_expr (alias_value (expr->e.value, type));
 	alias = new_unary_expr ('A', expr);
 	alias->e.expr.type = type;
 	//if (expr->type == ex_uexpr && expr->e.expr.op == 'A')
@@ -1275,6 +1303,9 @@ test_expr (expr_t *e)
 				return e;
 			}
 			new = new_float_expr (0);
+			break;
+		case ev_double:
+			new = new_double_expr (0);
 			break;
 		case ev_vector:
 			new = new_vector_expr (zero);
@@ -1610,6 +1641,8 @@ unary_expr (int op, expr_t *e)
 					case ev_func:
 					case ev_pointer:
 						internal_error (e, "type check failed!");
+					case ev_double:
+						return new_double_expr (-expr_double (e));
 					case ev_float:
 						return new_float_expr (-expr_float (e));
 					case ev_vector:
@@ -1676,6 +1709,8 @@ unary_expr (int op, expr_t *e)
 					case ev_string:
 						s = expr_string (e);
 						return new_integer_expr (!s || !s[0]);
+					case ev_double:
+						return new_integer_expr (!expr_double (e));
 					case ev_float:
 						return new_integer_expr (!expr_float (e));
 					case ev_vector:
@@ -1735,6 +1770,7 @@ unary_expr (int op, expr_t *e)
 					case ev_func:
 					case ev_pointer:
 					case ev_vector:
+					case ev_double:
 						return error (e, "invalid type for unary ~");
 					case ev_float:
 						return new_float_expr (~(int) expr_float (e));
@@ -1881,6 +1917,10 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 			if (is_integer_val (e)
 				&& options.code.progsversion == PROG_ID_VERSION)
 				convert_int (e);
+			if (is_float (get_type (e))
+				&& options.code.progsversion != PROG_ID_VERSION) {
+				t = &type_double;
+			}
 			if (is_integer_val (e) && options.warnings.vararg_integer)
 				warning (e, "passing integer constant into ... function");
 		}
@@ -2235,6 +2275,14 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 				e = e1->e.expr.e2;
 				break;
 			}
+			if (e1->e.expr.op == 'A') {
+				if (!t)
+					t = e1->e.expr.type;
+				if (e2) {
+					e2 = binary_expr ('+', e1->e.expr.e2, e2);
+				}
+				return address_expr (e1->e.expr.e1, e2, t);
+			}
 			return error (e1, "invalid type for unary &");
 		case ex_uexpr:
 			if (e1->e.expr.op == '.') {
@@ -2577,8 +2625,9 @@ cast_expr (type_t *type, expr_t *e)
 		e->e.value = convert_value (val, type);
 		e->type = ex_value;
 		c = e;
-	} else if ((is_float (type) && is_integral (e_type))
-		|| (is_integral (type) && is_float (e_type))) {
+	} else if (is_integral (type) && is_integral (e_type)) {
+		c = new_alias_expr (type, e);
+	} else if (is_scalar (type) && is_scalar (e_type)) {
 		c = new_unary_expr ('C', e);
 		c->e.expr.type = type;
 	} else if (e->type == ex_uexpr && e->e.expr.op == '.') {

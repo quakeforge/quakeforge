@@ -305,6 +305,19 @@ enum {
 */
 #define QFO_var(q, s, t, o)	((q)->spaces[s].d.data[o].t##_var)
 
+/** Access a double variable in the object file. Can be assigned to.
+
+	\par QC type:
+		\c double
+	\param q pointer to ::qfo_t struct
+	\param s space index
+	\param o offset into object file data space
+	\return double lvalue
+
+	\hideinitializer
+*/
+#define	QFO_DOUBLE(q, s, o)		(*(double *) ((q)->spaces[s].d.data + o))
+
 /** Access a float variable in the object file. Can be assigned to.
 
 	\par QC type:
@@ -483,6 +496,8 @@ qfo_t *qfo_new (void);
 	\param qfo ::qfo_t struct to delete
 */
 void qfo_delete (qfo_t *qfo);
+
+__attribute__((const)) int qfo_log2 (unsigned x);
 
 ///@}
 

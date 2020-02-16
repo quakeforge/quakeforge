@@ -158,6 +158,7 @@ parse_params (type_t *type, param_t *parms)
 
 	new = new_type ();
 	new->type = ev_func;
+	new->alignment = 1;
 	new->t.func.type = type;
 	new->t.func.num_params = 0;
 
@@ -339,8 +340,11 @@ find_function (expr_t *fexpr, expr_t *params)
 	for (func_count = 0; funcs[func_count]; func_count++)
 		;
 	if (func_count < 2) {
-		free (funcs);
-		return fexpr;
+		f = (overloaded_function_t *) funcs[0];
+		if (func_count && !f->overloaded) {
+			free (funcs);
+			return fexpr;
+		}
 	}
 	type.t.func.type = ((overloaded_function_t *) funcs[0])->type->t.func.type;
 	dummy.type = find_type (&type);

@@ -112,6 +112,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
 {
 	symbol_t   *sym = find_struct (su, tag, type);
 	symbol_t   *s;
+	int         alignment = 1;
 
 	symtab->parent = 0;		// disconnect struct's symtab from parent scope
 
@@ -130,10 +131,14 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
 			if (size > symtab->size)
 				symtab->size = size;
 		}
+		if (s->type->alignment > alignment) {
+			alignment = s->type->alignment;
+		}
 	}
 	if (!type)
 		sym->type = find_type (sym->type);	// checks the tag, not the symtab
 	sym->type->t.symtab = symtab;
+	sym->type->alignment = alignment;
 	if (!type && sym->type->type_def->external)	//FIXME should not be necessary
 		sym->type->type_def = qfo_encode_type (sym->type);
 	return sym;
@@ -166,6 +171,7 @@ finish_enum (symbol_t *sym)
 
 	enum_type = sym->type = find_type (sym->type);
 	enum_tab = enum_type->t.symtab;
+	enum_type->alignment = 1;
 
 	for (name = enum_tab->symbols; name; name = name->next) {
 		name->type = sym->type;

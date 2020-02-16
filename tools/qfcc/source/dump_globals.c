@@ -97,6 +97,9 @@ dump_def (progs_t *pr, ddef_t *def, int indent)
 			case ev_float:
 				comment = va (" %g", G_FLOAT (pr, offset));
 				break;
+			case ev_double:
+				comment = va (" %.17g", G_DOUBLE (pr, offset));
+				break;
 			case ev_vector:
 				comment = va (" '%g %g %g'",
 							  G_VECTOR (pr, offset)[0],
@@ -214,7 +217,8 @@ dump_functions (progs_t *pr)
 		else
 			count = func->numparms;
 		for (j = 0; j < count; j++)
-			printf (" %d", func->parm_size[j]);
+			printf (" %d:%d", func->parm_size[j].alignment,
+					func->parm_size[j].size);
 		printf (") %d @ %x", func->locals, func->parm_start);
 		puts ("");
 		if (pr->debug) {

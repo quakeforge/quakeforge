@@ -63,30 +63,33 @@
 // simple types.  function types are dynamically allocated
 type_t      type_invalid = { ev_invalid, "invalid" };
 type_t      type_void = { ev_void, "void" };
-type_t      type_string = { ev_string, "string" };
-type_t      type_float = { ev_float, "float" };
-type_t      type_vector = { ev_vector, "vector" };
-type_t      type_entity = { ev_entity, "entity" };
-type_t      type_field = {ev_field, "field", ty_none, {{&type_void}} };
+type_t      type_string = { ev_string, "string", 1 };
+type_t      type_float = { ev_float, "float", 1 };
+type_t      type_vector = { ev_vector, "vector", 1 };
+type_t      type_entity = { ev_entity, "entity", 1 };
+type_t      type_field = {ev_field, "field", 1, ty_none, {{&type_void}} };
 
 // type_function is a void() function used for state defs
-type_t      type_function = { ev_func, "function", ty_none, {{&type_void}} };
-type_t      type_pointer = { ev_pointer, "pointer", ty_none, {{&type_void}} };
-type_t      type_quaternion = { ev_quat, "quaternion" };
-type_t      type_integer = { ev_integer, "int" };
-type_t      type_uinteger = { ev_uinteger, "uint" };
-type_t      type_short = { ev_short, "short" };
+type_t      type_function = { ev_func, "function", 1, ty_none, {{&type_void}} };
+type_t      type_pointer = { ev_pointer, "pointer", 1, ty_none, {{&type_void}} };
+type_t      type_quaternion = { ev_quat, "quaternion", 1 };
+type_t      type_integer = { ev_integer, "int", 1 };
+type_t      type_uinteger = { ev_uinteger, "uint", 1 };
+type_t      type_short = { ev_short, "short", 1 };
+type_t      type_double = { ev_double, "double", 2 };
 
 type_t     *type_nil;
 type_t     *type_default;
 
 // these will be built up further
-type_t      type_va_list = { ev_invalid, 0, ty_struct };
-type_t      type_param = { ev_invalid, 0, ty_struct };
-type_t      type_zero = { ev_invalid, 0, ty_struct };
-type_t      type_type_encodings = { ev_invalid, "@type_encodings", ty_struct };
+type_t      type_va_list = { ev_invalid, 0, 0, ty_struct };
+type_t      type_param = { ev_invalid, 0, 0, ty_struct };
+type_t      type_zero = { ev_invalid, 0, 0, ty_struct };
+type_t      type_type_encodings = { ev_invalid, "@type_encodings", 0,
+									ty_struct };
 
-type_t      type_floatfield = { ev_field, ".float", ty_none, {{&type_float}} };
+type_t      type_floatfield = { ev_field, ".float", 1, ty_none,
+								{{&type_float}} };
 
 type_t     *ev_types[ev_type_count] = {
 	&type_void,
@@ -101,6 +104,7 @@ type_t     *ev_types[ev_type_count] = {
 	&type_integer,
 	&type_uinteger,
 	&type_short,
+	&type_double,
 	&type_invalid,
 };
 
@@ -180,6 +184,7 @@ free_type (type_t *type)
 		case ev_integer:
 		case ev_uinteger:
 		case ev_short:
+		case ev_double:
 			break;
 		case ev_field:
 		case ev_pointer:
@@ -214,19 +219,24 @@ append_type (type_t *type, type_t *new)
 			case ev_integer:
 			case ev_uinteger:
 			case ev_short:
+			case ev_double:
 				internal_error (0, "append to basic type");
 			case ev_field:
 			case ev_pointer:
 				t = &(*t)->t.fldptr.type;
+				type->alignment = 1;
 				break;
 			case ev_func:
 				t = &(*t)->t.func.type;
+				type->alignment = 1;
 				break;
 			case ev_invalid:
-				if ((*t)->meta == ty_array)
+				if ((*t)->meta == ty_array) {
 					t = &(*t)->t.array.type;
-				else
+					type->alignment = new->alignment;
+				} else {
 					internal_error (0, "append to object type");
+				}
 				break;
 		}
 	}
@@ -360,6 +370,7 @@ field_type (type_t *aux)
 	else
 		new = new_type ();
 	new->type = ev_field;
+	new->alignment = 1;
 	new->t.fldptr.type = aux;
 	if (aux)
 		new = find_type (new);
@@ -377,6 +388,7 @@ pointer_type (type_t *aux)
 	else
 		new = new_type ();
 	new->type = ev_pointer;
+	new->alignment = 1;
 	new->t.fldptr.type = aux;
 	if (aux)
 		new = find_type (new);
@@ -394,6 +406,9 @@ array_type (type_t *aux, int size)
 	else
 		new = new_type ();
 	new->type = ev_invalid;
+	if (aux) {
+		new->alignment = aux->alignment;
+	}
 	new->meta = ty_array;
 	new->t.array.type = aux;
 	new->t.array.size = size;
@@ -413,6 +428,9 @@ based_array_type (type_t *aux, int base, int top)
 	else
 		new = new_type ();
 	new->type = ev_invalid;
+	if (aux) {
+		new->alignment = aux->alignment;
+	}
 	new->meta = ty_array;
 	new->t.array.type = aux;
 	new->t.array.base = base;
@@ -582,6 +600,9 @@ encode_type (dstring_t *encoding, const type_t *type)
 		case ev_string:
 			dasprintf (encoding, "*");
 			break;
+		case ev_double:
+			dasprintf (encoding, "d");
+			break;
 		case ev_float:
 			dasprintf (encoding, "f");
 			break;
@@ -686,6 +707,12 @@ is_integral (const type_t *type)
 }
 
 int
+is_double (const type_t *type)
+{
+	return type->type == ev_double;
+}
+
+int
 is_float (const type_t *type)
 {
 	return type->type == ev_float;
@@ -694,7 +721,7 @@ is_float (const type_t *type)
 int
 is_scalar (const type_t *type)
 {
-	return is_float (type) || is_integral (type);
+	return is_float (type) || is_integral (type) || is_double (type);
 }
 
 int
@@ -830,6 +857,7 @@ type_size (const type_t *type)
 		case ev_integer:
 		case ev_uinteger:
 		case ev_short:
+		case ev_double:
 		case ev_type_count:
 			return pr_type_size[type->type];
 		case ev_invalid:
@@ -869,6 +897,7 @@ init_types (void)
 {
 	static struct_def_t zero_struct[] = {
 		{"string_val",       &type_string},
+		{"double_val",       &type_double},
 		{"float_val",        &type_float},
 		{"entity_val",       &type_entity},
 		{"field_val",        &type_field},
@@ -895,6 +924,7 @@ init_types (void)
 		{"integer_val",      &type_integer},
 		{"uinteger_val",     &type_uinteger},
 		{"quaternion_val",   &type_quaternion},
+		{"double_val",       &type_double},
 		{0, 0}
 	};
 	static struct_def_t vector_struct[] = {
@@ -982,6 +1012,7 @@ chain_initial_types (void)
 		chain_type (&type_integer);
 		chain_type (&type_uinteger);
 		chain_type (&type_short);
+		chain_type (&type_double);
 	}
 
 	chain_type (&type_param);

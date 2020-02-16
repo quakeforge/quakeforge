@@ -692,7 +692,12 @@ value_string (progs_t *pr, etype_t type, pr_type_t *val)
 		case ev_uinteger:
 			dsprintf (line, "$%08x", val->uinteger_var);
 			break;
-		default:
+		case ev_double:
+			dsprintf (line, "%g", *(double *)val);
+			break;
+		case ev_short:
+		case ev_invalid:
+		case ev_type_count:
 			//dsprintf (line, "bad type %i", type);
 			dsprintf (line, "<%x %x %x %x>",
 					  val[0].integer_var, val[1].integer_var,

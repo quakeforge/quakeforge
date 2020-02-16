@@ -122,6 +122,7 @@ PR_ResolveGlobals (progs_t *pr)
 		pr->pr_params[6] = &pr->pr_globals[OFS_PARM6];
 		pr->pr_params[7] = &pr->pr_globals[OFS_PARM7];
 		pr->pr_param_size = OFS_PARM1 - OFS_PARM0;
+		pr->pr_param_alignment = 0;	// log2
 	} else {
 		if (!(def = PR_FindGlobal (pr, sym = ".return")))
 			goto error;
@@ -134,6 +135,9 @@ PR_ResolveGlobals (progs_t *pr)
 		if (!(def = PR_FindGlobal (pr, sym = ".param_size")))
 			goto error;
 		pr->pr_param_size = G_INT (pr, def->ofs);
+		if (!(def = PR_FindGlobal (pr, sym = ".param_alignment")))
+			goto error;
+		pr->pr_param_alignment = G_INT (pr, def->ofs);
 	}
 	if (pr->pr_saved_params)
 		free (pr->pr_saved_params);

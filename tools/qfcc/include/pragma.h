@@ -35,7 +35,8 @@
 */
 ///@{
 
-void pragma (const char *id);
+void pragma_process (void);
+void pragma_add_arg (const char *id);
 
 ///@}
 

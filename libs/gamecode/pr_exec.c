@@ -142,6 +142,21 @@ PR_PopFrame (progs_t *pr)
 	pr->pr_xtstr      = frame->tstr;
 }
 
+static __attribute__((pure)) long
+align_offset (long offset, dparmsize_t parmsize)
+{
+	int         mask = (1 << parmsize.alignment) - 1;
+	return (offset + mask) & ~mask;
+}
+
+static void
+copy_param (pr_type_t *dst, pr_type_t *src, size_t size)
+{
+	while (size--) {
+		memcpy (dst++, src++, sizeof (pr_type_t));
+	}
+}
+
 /** Setup the stackframe prior to calling a progs function. Saves all local
 	data the called function will trample on and copies the parameters used
 	by the function into the function's local data space.
@@ -153,39 +168,44 @@ PR_PopFrame (progs_t *pr)
 static void
 PR_EnterFunction (progs_t *pr, bfunction_t *f)
 {
-	pr_int_t    i, j, c, o;
-	pr_int_t    k;
-	pr_int_t    count = 0;
-	int         size[2] = {0, 0};
-	long        paramofs = 0;
-	long        offs;
+	pr_int_t    i;
+	pr_type_t  *dstParams[MAX_PARMS];
+	pointer_t   paramofs = 0;
 
 	PR_PushFrame (pr);
 
 	if (f->numparms > 0) {
-		for (i = 0; i < 2 && i < f->numparms; i++) {
-			paramofs += f->parm_size[i];
-			size[i] = f->parm_size[i];
+		paramofs = f->parm_start;
+		for (i = 0; i < f->numparms; i++) {
+			paramofs = align_offset (paramofs, f->parm_size[i]);
+			dstParams[i] = pr->pr_globals + paramofs;
+			paramofs += f->parm_size[i].size;
+			if (pr->pr_params[i] != pr->pr_real_params[i]) {
+				copy_param (pr->pr_real_params[i], pr->pr_params[i],
+							f->parm_size[i].size);
+			}
 		}
-		count = i;
 	} else if (f->numparms < 0) {
-		for (i = 0; i < 2 && i < -f->numparms - 1; i++) {
-			paramofs += f->parm_size[i];
-			size[i] = f->parm_size[i];
+		paramofs = f->parm_start + 2;	// argc and argv
+		for (i = 0; i < -f->numparms - 1; i++) {
+			paramofs = align_offset (paramofs, f->parm_size[i]);
+			dstParams[i] = pr->pr_globals + paramofs;
+			paramofs += f->parm_size[i].size;
+			if (pr->pr_params[i] != pr->pr_real_params[i]) {
+				copy_param (pr->pr_real_params[i], pr->pr_params[i],
+							f->parm_size[i].size);
+			}
 		}
-		for (; i < 2; i++) {
-			paramofs += pr->pr_param_size;
-			size[i] = pr->pr_param_size;
+		dparmsize_t parmsize = { pr->pr_param_size, pr->pr_param_alignment };
+		paramofs = align_offset (paramofs, parmsize );
+		if (i < MAX_PARMS) {
+			dstParams[i] = pr->pr_globals + paramofs;
 		}
-		count = i;
-	}
-
-	for (i = 0; i < count && i < pr->pr_argc; i++) {
-		offs = (pr->pr_params[i] - pr->pr_globals) - f->parm_start;
-		if (offs >= 0 && offs < paramofs) {
-			memcpy (pr->pr_real_params[i], pr->pr_params[i],
-					size[i] * sizeof (pr_type_t));
-			pr->pr_params[i] = pr->pr_real_params[i];
+		for (; i < pr->pr_argc; i++) {
+			if (pr->pr_params[i] != pr->pr_real_params[i]) {
+				copy_param (pr->pr_real_params[i], pr->pr_params[i],
+							parmsize.size);
+			}
 		}
 	}
 
@@ -194,44 +214,36 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 	pr->pr_xstatement = f->first_statement - 1;      		// offset the st++
 
 	// save off any locals that the new function steps on
-	c = f->locals;
-	if (pr->localstack_used + c > LOCALSTACK_SIZE)
+	if (pr->localstack_used + f->locals > LOCALSTACK_SIZE)
 		PR_RunError (pr, "PR_EnterFunction: locals stack overflow");
 
 	memcpy (&pr->localstack[pr->localstack_used],
 			&pr->pr_globals[f->parm_start],
-			sizeof (pr_type_t) * c);
-	pr->localstack_used += c;
+			sizeof (pr_type_t) * f->locals);
+	pr->localstack_used += f->locals;
 
 	if (pr_deadbeef_locals->int_val)
-		for (k = f->parm_start; k < f->parm_start + c; k++)
-			pr->pr_globals[k].integer_var = 0xdeadbeef;
+		for (i = f->parm_start; i < f->parm_start + f->locals; i++)
+			pr->pr_globals[i].integer_var = 0xdeadbeef;
 
 	// copy parameters
-	o = f->parm_start;
 	if (f->numparms >= 0) {
 		for (i = 0; i < f->numparms; i++) {
-			for (j = 0; j < f->parm_size[i]; j++) {
-				memcpy (&pr->pr_globals[o], &P_INT (pr, i) + j,
-						sizeof (pr_type_t));
-				o++;
-			}
+			copy_param (dstParams[i], pr->pr_params[i], f->parm_size[i].size);
 		}
 	} else {
-		pr_type_t  *argc = &pr->pr_globals[o++];
-		pr_type_t  *argv = &pr->pr_globals[o++];
+		int         copy_args;
+		pr_type_t  *argc = &pr->pr_globals[f->parm_start + 0];
+		pr_type_t  *argv = &pr->pr_globals[f->parm_start + 1];
 		for (i = 0; i < -f->numparms - 1; i++) {
-			for (j = 0; j < f->parm_size[i]; j++) {
-				memcpy (&pr->pr_globals[o], &P_INT (pr, i) + j,
-						sizeof (pr_type_t));
-				o++;
-			}
+			copy_param (dstParams[i], pr->pr_params[i], f->parm_size[i].size);
 		}
-		argc->integer_var = pr->pr_argc - i;
-		argv->integer_var = o;
+		copy_args = pr->pr_argc - i;
+		argc->integer_var = copy_args;
+		argv->integer_var = dstParams[i] - pr->pr_globals;
 		if (i < MAX_PARMS) {
-			memcpy (&pr->pr_globals[o], &P_INT (pr, i),
-					(MAX_PARMS - i) * pr->pr_param_size * sizeof (pr_type_t));
+			memcpy (dstParams[i], pr->pr_params[i],
+					(copy_args * pr->pr_param_size) * sizeof (pr_type_t));
 		}
 	}
 }
@@ -239,19 +251,18 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 static void
 PR_LeaveFunction (progs_t *pr)
 {
-	int			c;
 	bfunction_t *f = pr->pr_xfunction;
 
 	PR_PopFrame (pr);
 
 	// restore locals from the stack
-	c = f->locals;
-	pr->localstack_used -= c;
+	pr->localstack_used -= f->locals;
 	if (pr->localstack_used < 0)
 		PR_RunError (pr, "PR_LeaveFunction: locals stack underflow");
 
 	memcpy (&pr->pr_globals[f->parm_start],
-			&pr->localstack[pr->localstack_used], sizeof (pr_type_t) * c);
+			&pr->localstack[pr->localstack_used],
+			sizeof (pr_type_t) * f->locals);
 }
 
 VISIBLE void
@@ -280,12 +291,15 @@ PR_BoundsCheck (progs_t *pr, int addr, etype_t type)
 #define OPB (*op_b)
 #define OPC (*op_c)
 
+#define OPA_double_var (*((double *) (op_a)))
+#define OPB_double_var (*((double *) (op_b)))
+#define OPC_double_var (*((double *) (op_c)))
+
 /*
 	This gets around the problem of needing to test for -0.0 but denormals
 	causing exceptions (or wrong results for what we need) on the alpha.
 */
-#define FNZ(x) ((x).uinteger_var && (x).uinteger_var != 0x80000000u)
-
+#define FNZ(x) ((x).uinteger_var & ~0x80000000u)
 
 static int
 signal_hook (int sig, void *data)
@@ -317,6 +331,8 @@ signal_hook (int sig, void *data)
 				return 1;
 			case OP_MOD_I:
 			case OP_MOD_F:
+			case OP_REM_I:
+			case OP_REM_F:
 				OPC.integer_var = 0x00000000;
 				return 1;
 			default:
@@ -421,6 +437,9 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 			PR_PrintStatement (pr, st, 1);
 
 		switch (st->op) {
+			case OP_ADD_D:
+				OPC_double_var = OPA_double_var + OPB_double_var;
+				break;
 			case OP_ADD_F:
 				OPC.float_var = OPA.float_var + OPB.float_var;
 				break;
@@ -437,6 +456,9 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 												PR_GetString (pr,
 															  OPB.string_var));
 				break;
+			case OP_SUB_D:
+				OPC_double_var = OPA_double_var - OPB_double_var;
+				break;
 			case OP_SUB_F:
 				OPC.float_var = OPA.float_var - OPB.float_var;
 				break;
@@ -446,11 +468,30 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 			case OP_SUB_Q:
 				QuatSubtract (OPA.quat_var, OPB.quat_var, OPC.quat_var);
 				break;
+			case OP_MUL_D:
+				OPC_double_var = OPA_double_var * OPB_double_var;
+				break;
 			case OP_MUL_F:
 				OPC.float_var = OPA.float_var * OPB.float_var;
 				break;
 			case OP_MUL_V:
 				OPC.float_var = DotProduct (OPA.vector_var, OPB.vector_var);
+				break;
+			case OP_MUL_DV:
+				{
+					// avoid issues with the likes of x = x.x * x;
+					// makes for faster code, too
+					double      scale = OPA_double_var;
+					VectorScale (OPB.vector_var, scale, OPC.vector_var);
+				}
+				break;
+			case OP_MUL_VD:
+				{
+					// avoid issues with the likes of x = x * x.x;
+					// makes for faster code, too
+					double      scale = OPB_double_var;
+					VectorScale (OPA.vector_var, scale, OPC.vector_var);
+				}
 				break;
 			case OP_MUL_FV:
 				{
@@ -474,6 +515,22 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 			case OP_MUL_QV:
 				QuatMultVec (OPA.quat_var, OPB.vector_var, OPC.vector_var);
 				break;
+			case OP_MUL_DQ:
+				{
+					// avoid issues with the likes of x = x.s * x;
+					// makes for faster code, too
+					double      scale = OPA_double_var;
+					QuatScale (OPB.quat_var, scale, OPC.quat_var);
+				}
+				break;
+			case OP_MUL_QD:
+				{
+					// avoid issues with the likes of x = x * x.s;
+					// makes for faster code, too
+					double      scale = OPB_double_var;
+					QuatScale (OPA.quat_var, scale, OPC.quat_var);
+				}
+				break;
 			case OP_MUL_FQ:
 				{
 					// avoid issues with the likes of x = x.s * x;
@@ -492,6 +549,9 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 				break;
 			case OP_CONJ_Q:
 				QuatConj (OPA.quat_var, OPC.quat_var);
+				break;
+			case OP_DIV_D:
+				OPC_double_var = OPA_double_var / OPB_double_var;
 				break;
 			case OP_DIV_F:
 				OPC.float_var = OPA.float_var / OPB.float_var;
@@ -630,6 +690,9 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 			case OP_STORE_Q:
 				QuatCopy (OPA.quat_var, OPB.quat_var);
 				break;
+			case OP_STORE_D:
+				OPB_double_var = OPA_double_var;
+				break;
 
 			case OP_STOREP_F:
 			case OP_STOREP_ENT:
@@ -661,6 +724,14 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (OPA.quat_var, ptr->quat_var);
 				break;
+			case OP_STOREP_D:
+				pointer = OPB.integer_var;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_double);
+				}
+				ptr = pr->pr_globals + pointer;
+				*(double *) ptr = OPA_double_var;
+				break;
 
 			case OP_ADDRESS:
 				if (pr_boundscheck->int_val) {
@@ -687,6 +758,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 			case OP_ADDRESS_FN:
 			case OP_ADDRESS_I:
 			case OP_ADDRESS_P:
+			case OP_ADDRESS_D:
 				OPC.integer_var = st->a;
 				break;
 
@@ -735,6 +807,19 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 				ed = PROG_TO_EDICT (pr, OPA.entity_var);
 				memcpy (&OPC, &ed->v[OPB.integer_var], 4 * sizeof (OPC));
 				break;
+			case OP_LOAD_D:
+				if (pr_boundscheck->int_val) {
+					if (OPA.entity_var < 0
+						|| OPA.entity_var >= pr->pr_edictareasize)
+						PR_RunError (pr, "Progs attempted to read an out of "
+									 "bounds edict number");
+					if (OPB.uinteger_var + 1 >= pr->progs->entityfields)
+						PR_RunError (pr, "Progs attempted to read an invalid "
+									 "field in an edict");
+				}
+				ed = PROG_TO_EDICT (pr, OPA.entity_var);
+				OPC_double_var = *(double *) (ed->v + OPB.integer_var);
+				break;
 
 			case OP_LOADB_F:
 			case OP_LOADB_S:
@@ -766,6 +851,14 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (ptr->quat_var, OPC.quat_var);
 				break;
+			case OP_LOADB_D:
+				pointer = OPA.integer_var + OPB.integer_var;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_double);
+				}
+				ptr = pr->pr_globals + pointer;
+				OPC_double_var = *(double *) ptr;
+				break;
 
 			case OP_LOADBI_F:
 			case OP_LOADBI_S:
@@ -796,6 +889,14 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 				}
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (ptr->quat_var, OPC.quat_var);
+				break;
+			case OP_LOADBI_D:
+				pointer = OPA.integer_var + (short) st->b;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_quat);
+				}
+				ptr = pr->pr_globals + pointer;
+				OPC_double_var = *(double *) ptr;
 				break;
 
 			case OP_LEA:
@@ -838,6 +939,14 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (OPA.quat_var, ptr->quat_var);
 				break;
+			case OP_STOREB_D:
+				pointer = OPB.integer_var + OPC.integer_var;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_quat);
+				}
+				ptr = pr->pr_globals + pointer;
+				*(double *) ptr = OPA_double_var;
+				break;
 
 			case OP_STOREBI_F:
 			case OP_STOREBI_S:
@@ -868,6 +977,14 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 				}
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (OPA.quat_var, ptr->quat_var);
+				break;
+			case OP_STOREBI_D:
+				pointer = OPB.integer_var + (short) st->c;
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheck (pr, pointer, ev_quat);
+				}
+				ptr = pr->pr_globals + pointer;
+				*(double *) ptr = OPA_double_var;
 				break;
 
 			case OP_PUSH_F:
@@ -1322,22 +1439,58 @@ op_call:
 			case OP_MUL_I:
 				OPC.integer_var = OPA.integer_var * OPB.integer_var;
 				break;
-/*
-			case OP_DIV_VF:
-				{
-					float       temp = 1.0f / OPB.float_var;
-					VectorScale (OPA.vector_var, temp, OPC.vector_var);
-				}
-				break;
-*/
 			case OP_DIV_I:
 				OPC.integer_var = OPA.integer_var / OPB.integer_var;
 				break;
 			case OP_MOD_I:
+				{
+					// implement true modulo for integers:
+					//  5 mod  3 = 2
+					// -5 mod  3 = 1
+					//  5 mod -3 = -1
+					// -5 mod -3 = -2
+					int         a = OPA.integer_var;
+					int         b = OPB.integer_var;
+					int         c = a % b;
+					// % is really remainder and so has the same sign rules
+					// as division: -5 % 3 = -2, so need to add b (3 here)
+					// if c's sign is incorrect, but only if c is non-zero
+					int         mask = (a ^ b) >> 31;
+					mask &= ~(!!c + 0) + 1;	// +0 to convert bool to int (gcc)
+					OPC.integer_var = c + (mask & b);
+				}
+				break;
+			case OP_REM_I:
 				OPC.integer_var = OPA.integer_var % OPB.integer_var;
 				break;
+			case OP_MOD_D:
+				{
+					double      a = OPA_double_var;
+					double      b = OPB_double_var;
+					// floating point modulo is so much easier :P
+					OPC_double_var = a - b * floor (a / b);
+				}
+				break;
+			case OP_REM_D:
+				{
+					double      a = OPA_double_var;
+					double      b = OPB_double_var;
+					OPC_double_var = a - b * trunc (a / b);
+				}
+				break;
 			case OP_MOD_F:
-				OPC.float_var = (int) OPA.float_var % (int) OPB.float_var;
+				{
+					float       a = OPA.float_var;
+					float       b = OPB.float_var;
+					OPC.float_var = a - b * floorf (a / b);
+				}
+				break;
+			case OP_REM_F:
+				{
+					float       a = OPA.float_var;
+					float       b = OPB.float_var;
+					OPC.float_var = a - b * truncf (a / b);
+				}
 				break;
 			case OP_CONV_IF:
 				OPC.float_var = OPA.integer_var;
@@ -1426,6 +1579,41 @@ op_call:
 				memmove (pr->pr_globals + OPC.integer_var,
 						 pr->pr_globals + OPA.integer_var,
 						 st->b * 4);
+				break;
+
+			case OP_GE_D:
+				OPC.float_var = OPA_double_var >= OPB_double_var;
+				break;
+			case OP_LE_D:
+				OPC.float_var = OPA_double_var <= OPB_double_var;
+				break;
+			case OP_GT_D:
+				OPC.float_var = OPA_double_var > OPB_double_var;
+				break;
+			case OP_LT_D:
+				OPC.float_var = OPA_double_var < OPB_double_var;
+				break;
+			case OP_NOT_D:
+				OPC.integer_var = (op_a[0].integer_var
+								   || (op_a[1].integer_var & ~0x80000000u));
+				break;
+			case OP_EQ_D:
+				OPC.integer_var = OPA_double_var == OPB_double_var;
+				break;
+			case OP_NE_D:
+				OPC.integer_var = OPA_double_var != OPB_double_var;
+				break;
+			case OP_CONV_ID:
+				OPC_double_var = OPA.integer_var;
+				break;
+			case OP_CONV_DI:
+				OPC.integer_var = OPA_double_var;
+				break;
+			case OP_CONV_FD:
+				OPC_double_var = OPA.float_var;
+				break;
+			case OP_CONV_DF:
+				OPC.float_var = OPA_double_var;
 				break;
 
 // LordHavoc: to be enabled when Progs version 7 (or whatever it will be numbered) is finalized

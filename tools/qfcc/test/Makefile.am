@@ -29,15 +29,19 @@ test_bins=\
 fail_bins=
 
 test_progs_dat=\
+	address-cast.dat \
+	alignment.dat \
 	chewed-alias.dat \
 	chewed-return.dat \
 	comma-expr.dat \
 	deadbool.dat \
+	double.dat \
 	enum.dat \
 	fordecl.dat \
 	func-expr.dat \
 	func-static.dat \
 	infloop.dat \
+	ivar-struct-return.dat \
 	modulo.dat \
 	paramret.dat \
 	quaternion.dat \
@@ -57,11 +61,31 @@ test_progs_dat=\
 
 fail_progs_dat=
 
+test_build_errors=\
+	double-demote-float.r \
+	double-demote-float-ainit.r \
+	double-demote-float-ginit.r \
+	double-demote-float-linit.r \
+	double-demote-int.r \
+	double-demote-int-ainit.r \
+	double-demote-int-ginit.r \
+	double-demote-int-linit.r \
+	double-int-compare.r \
+	double-float-compare.r
+
+fail_build_errors=
+
 test_defspace_src=\
 	tw-defspace.c tw-diagnostic.c tw-strpool.c
 
-TESTS=$(test_bins) $(test_progs_dat:.dat=.run)
-XFAIL_TESTS=$(fail_bins) $(fail_progs_dat:.dat=.run)
+TESTS=\
+	$(test_bins) \
+	$(test_progs_dat:.dat=.run) \
+	$(test_build_errors:.r=.run)
+XFAIL_TESTS=\
+	$(fail_bins) \
+	$(fail_progs_dat:.dat=.run) \
+	$(fail_build_errors:.r=.run)
 
 check_PROGRAMS=test-harness $(test_progs_dat) $(test_bins)
 
@@ -74,6 +98,24 @@ test_harness_LDADD=			$(QFCC_TEST_LIBS)
 test_harness_DEPENDENCIES=	$(QFCC_TEST_DEPS)
 
 r_depfiles_remade=
+
+address_cast_dat_SOURCES=address-cast.r
+address_cast_obj=$(address_cast_dat_SOURCES:.r=.qfo)
+address-cast.dat$(EXEEXT): $(address_cast_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(address_cast_obj)
+address-cast.run: Makefile build-run
+	$(srcdir)/build-run $@
+include ./$(DEPDIR)/address-cast.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/address-cast.Qo
+
+alignment_dat_SOURCES=alignment.r
+alignment_obj=$(alignment_dat_SOURCES:.r=.qfo)
+alignment.dat$(EXEEXT): $(alignment_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(alignment_obj)
+alignment.run: Makefile build-run
+	$(srcdir)/build-run $@
+include ./$(DEPDIR)/alignment.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/alignment.Qo
 
 chewed_alias_dat_SOURCES=chewed-alias.r
 chewed_alias_obj=$(chewed_alias_dat_SOURCES:.r=.qfo)
@@ -110,6 +152,45 @@ deadbool.run: Makefile build-run
 	$(srcdir)/build-run $@
 include ./$(DEPDIR)/deadbool.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/deadbool.Qo
+
+double_dat_SOURCES=double.r
+double_obj=$(double_dat_SOURCES:.r=.qfo)
+double.dat$(EXEEXT): $(double_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(double_obj)
+double.run: Makefile build-run
+	$(srcdir)/build-run $@
+include ./$(DEPDIR)/double.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/double.Qo
+
+double-demote-int.run$(EXEEXT): double-demote-int.r Makefile build-compile-fail-run
+	$(srcdir)/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
+
+double-demote-float.run$(EXEEXT): double-demote-float.r Makefile build-compile-fail-run
+	$(srcdir)/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
+
+double-demote-int-ainit.run$(EXEEXT): double-demote-int-ainit.r Makefile build-compile-fail-run
+	$(srcdir)/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
+
+double-demote-float-ainit.run$(EXEEXT): double-demote-float-ainit.r Makefile build-compile-fail-run
+	$(srcdir)/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
+
+double-demote-int-ginit.run$(EXEEXT): double-demote-int-ginit.r Makefile build-compile-fail-run
+	$(srcdir)/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
+
+double-demote-float-ginit.run$(EXEEXT): double-demote-float-ginit.r Makefile build-compile-fail-run
+	$(srcdir)/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
+
+double-demote-int-linit.run$(EXEEXT): double-demote-int-linit.r Makefile build-compile-fail-run
+	$(srcdir)/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
+
+double-demote-float-linit.run$(EXEEXT): double-demote-float-linit.r Makefile build-compile-fail-run
+	$(srcdir)/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
+
+double-int-compare.run$(EXEEXT): double-int-compare.r Makefile build-compile-fail-run
+	$(srcdir)/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
+
+double-float-compare.run$(EXEEXT): double-float-compare.r Makefile build-compile-fail-run
+	$(srcdir)/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
 
 enum_dat_SOURCES=enum.r
 enum_obj=$(enum_dat_SOURCES:.r=.qfo)
@@ -155,6 +236,15 @@ infloop.run: Makefile build-run
 	$(srcdir)/build-run $@
 include ./$(DEPDIR)/infloop.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/infloop.Qo
+
+ivar_struct_return_dat_SOURCES=ivar-struct-return.r
+ivar_struct_return_obj=$(ivar_struct_return_dat_SOURCES:.r=.qfo)
+ivar-struct-return.dat$(EXEEXT): $(ivar_struct_return_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(ivar_struct_return_obj)
+ivar-struct-return.run: Makefile build-run
+	$(srcdir)/build-run $@
+include ./$(DEPDIR)/ivar-struct-return.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/ivar-struct-return.Qo
 
 modulo_dat_SOURCES=modulo.r
 modulo_obj=$(modulo_dat_SOURCES:.r=.qfo)
