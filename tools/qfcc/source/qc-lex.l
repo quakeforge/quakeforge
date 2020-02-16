@@ -216,6 +216,11 @@ STRING		\"(\\.|[^"\\])*\"
 						return ASX;
 					}
 
+"%%="				{
+						qc_yylval.op = MOD;
+						return ASX;
+					}
+
 "<<="				{
 						qc_yylval.op = SHL;
 						return ASX;
@@ -229,6 +234,11 @@ STRING		\"(\\.|[^"\\])*\"
 [!(){}.*/&|^~+\-=\[\];,#%?:] {
 						qc_yylval.pointer = 0;	// ensure pointer vals are null
 						return yytext[0];
+					}
+
+"%%"				{
+						qc_yylval.pointer = 0;	// ensure pointer vals are null
+						return MOD;
 					}
 
 {ELLIPSIS}			return ELLIPSIS;

@@ -88,6 +88,7 @@ get_op_string (int op)
 		case '*':	return "*";
 		case '/':	return "/";
 		case '%':	return "%";
+		case MOD:	return "%%";
 		case '&':	return "&";
 		case '|':	return "|";
 		case '^':	return "^";

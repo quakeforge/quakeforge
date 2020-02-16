@@ -135,7 +135,7 @@ int yylex (void);
 
 %left			SHL SHR
 %left			'+' '-'
-%left			'*' '/' '%'
+%left			'*' '/' '%' MOD
 %right	<op>	SIZEOF UNARY INCOP
 %left			HYPERUNARY
 %left			'.' '(' '['
@@ -1335,6 +1335,7 @@ expr
 	| expr '|' expr				{ $$ = binary_expr ('|', $1, $3); }
 	| expr '^' expr				{ $$ = binary_expr ('^', $1, $3); }
 	| expr '%' expr				{ $$ = binary_expr ('%', $1, $3); }
+	| expr MOD expr				{ $$ = binary_expr (MOD, $1, $3); }
 	;
 
 texpr

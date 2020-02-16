@@ -6,6 +6,21 @@ float snafu (float a, float b)
 	return c;
 }
 
+@overload int modulo (int a, int b)
+{
+	return a %% b;
+}
+
+@overload float modulo (float a, float b)
+{
+	return a %% b;
+}
+
+@overload double modulo (double a, double b)
+{
+	return a %% b;
+}
+
 #pragma traditional
 float foo (float a, float b)
 {
