@@ -37,7 +37,9 @@ typedef struct qfv_instfuncs_s {
 } qfv_instfuncs_t;
 
 typedef struct qfv_physdev_s {
+	struct qfv_instance_s *instance;
 	VkPhysicalDevice dev;
+	VkPhysicalDeviceProperties properties;
 	VkPhysicalDeviceMemoryProperties memory_properties;
 } qfv_physdev_t;
 

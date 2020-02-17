@@ -264,7 +264,9 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 	for (uint32_t i = 0; i < inst->numDevices; i++) {
 		VkPhysicalDevice physDev = devices[i];
 		qfv_physdev_t *dev = &inst->devices[i];
+		dev->instance = inst;
 		dev->dev = physDev;
+		ifunc->vkGetPhysicalDeviceProperties (physDev, &dev->properties);
 		ifunc->vkGetPhysicalDeviceMemoryProperties (physDev,
 													&dev->memory_properties);
 	}

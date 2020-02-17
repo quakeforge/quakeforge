@@ -63,7 +63,7 @@ struct qfv_imageview_s;
 qfv_framebuffer_t *
 QFV_CreateFramebuffer (qfv_renderpass_t *renderPass,
 					   uint32_t numAttachments,
-					   struct qfv_imageview_s **attachments,
+					   VkImageView *attachments,
 					   uint32_t width, uint32_t height, uint32_t layers);
 
 void QFV_DestroyFramebuffer (qfv_framebuffer_t *framebuffer);

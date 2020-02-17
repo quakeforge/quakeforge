@@ -13,6 +13,7 @@
 #include "QF/Vulkan/cvars.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/swapchain.h"
 
@@ -84,7 +85,8 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 	VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 	imageUsage &= surfCaps.supportedUsageFlags;
 
-	VkSurfaceTransformFlagBitsKHR surfTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
+	VkSurfaceTransformFlagBitsKHR surfTransform
+		= VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
 
 	uint32_t numFormats;
 	ifuncs->vkGetPhysicalDeviceSurfaceFormatsKHR (physDev,
@@ -128,24 +130,31 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 		old_swapchain
 	};
 
-	VkDevice device = ctx->device->dev;
+	VkDevice dev = ctx->device->dev;
 	VkSwapchainKHR swapchain;
-	dfuncs->vkCreateSwapchainKHR (device, &createInfo, 0, &swapchain);
+	dfuncs->vkCreateSwapchainKHR (dev, &createInfo, 0, &swapchain);
 
 	if (old_swapchain != swapchain) {
-		dfuncs->vkDestroySwapchainKHR (device, old_swapchain, 0);
+		dfuncs->vkDestroySwapchainKHR (dev, old_swapchain, 0);
 	}
 
-	dfuncs->vkGetSwapchainImagesKHR (device, swapchain, &numImages, 0);
-	qfv_swapchain_t *sc = malloc (sizeof (qfv_swapchain_t)
-								  + numImages * sizeof (VkImage));
+	dfuncs->vkGetSwapchainImagesKHR (dev, swapchain, &numImages, 0);
+	qfv_swapchain_t *sc = malloc (sizeof (qfv_swapchain_t));
 	sc->device = ctx->device;
 	sc->surface = ctx->surface;
 	sc->swapchain = swapchain;
+	sc->format = useFormat.format;
+	sc->extent = imageSize;
 	sc->numImages = numImages;
-	sc->images = (VkImage *) (sc + 1);
-	dfuncs->vkGetSwapchainImagesKHR (device, swapchain, &numImages,
-									 sc->images);
+	sc->images = DARRAY_ALLOCFIXED (qfv_imageset_t, numImages, malloc);
+	sc->imageViews = DARRAY_ALLOCFIXED (qfv_imageviewset_t, numImages, malloc);
+	dfuncs->vkGetSwapchainImagesKHR (dev, swapchain, &numImages, sc->images->a);
+	for (uint32_t i = 0; i < numImages; i++) {
+		sc->imageViews->a[i]
+			= QFV_CreateImageView (ctx->device, sc->images->a[i],
+								   VK_IMAGE_VIEW_TYPE_2D, sc->format,
+								   VK_IMAGE_ASPECT_COLOR_BIT);
+	}
 	return sc;
 }
 
@@ -155,23 +164,26 @@ QFV_DestroySwapchain (qfv_swapchain_t *swapchain)
 	qfv_device_t *device = swapchain->device;
 	VkDevice dev = device->dev;
 	qfv_devfuncs_t *dfunc = device->funcs;
+	for (size_t i = 0; i < swapchain->imageViews->size; i++) {
+		dfunc->vkDestroyImageView (dev, swapchain->imageViews->a[i], 0);
+	}
+	free (swapchain->images);
+	free (swapchain->imageViews);
 	dfunc->vkDestroySwapchainKHR (dev, swapchain->swapchain, 0);
 	free (swapchain);
 }
 
 int
-QFV_AcquireNextImage (qfv_swapchain_t *swapchain, qfv_semaphore_t *semaphore,
-					  qfv_fence_t *fence, uint32_t *imageIndex)
+QFV_AcquireNextImage (qfv_swapchain_t *swapchain, VkSemaphore semaphore,
+					  VkFence fence, uint32_t *imageIndex)
 {
 	qfv_device_t *device = swapchain->device;
 	VkDevice dev = device->dev;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	uint64_t timeout = 2000000000;
-	VkSemaphore sem = semaphore ? semaphore->semaphore : VK_NULL_HANDLE;
-	VkFence fnc = fence ? fence->fence : VK_NULL_HANDLE;
 	*imageIndex = ~0u;
 	VkResult res = dfunc->vkAcquireNextImageKHR (dev, swapchain->swapchain,
-												 timeout, sem, fnc,
+												 timeout, semaphore, fence,
 												 imageIndex);
 	switch (res) {
 		case VK_SUCCESS:

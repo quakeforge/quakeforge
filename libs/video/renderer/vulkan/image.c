@@ -61,7 +61,7 @@
 
 #include "util.h"
 
-qfv_image_t *
+VkImage
 QFV_CreateImage (qfv_device_t *device, int cubemap,
 				 VkImageType type,
 				 VkFormat format,
@@ -85,24 +85,23 @@ QFV_CreateImage (qfv_device_t *device, int cubemap,
 		0, 0,
 		VK_IMAGE_LAYOUT_UNDEFINED,
 	};
-	qfv_image_t *image = malloc (sizeof (*image));
-	dfunc->vkCreateImage (dev, &createInfo, 0, &image->image);
-	image->device = device;
+	VkImage image;
+	dfunc->vkCreateImage (dev, &createInfo, 0, &image);
 	return image;
 }
 
-qfv_memory_t *
-QFV_AllocImageMemory (qfv_image_t *image, VkMemoryPropertyFlags properties,
-					   VkDeviceSize size, VkDeviceSize offset)
+VkDeviceMemory
+QFV_AllocImageMemory (qfv_device_t *device,
+					  VkImage image, VkMemoryPropertyFlags properties,
+					  VkDeviceSize size, VkDeviceSize offset)
 {
-	qfv_device_t *device = image->device;
 	VkDevice    dev = device->dev;
 	qfv_physdev_t *physdev = device->physDev;
 	VkPhysicalDeviceMemoryProperties *memprops = &physdev->memory_properties;
     qfv_devfuncs_t *dfunc = device->funcs;
 
 	VkMemoryRequirements requirements;
-	dfunc->vkGetImageMemoryRequirements (dev, image->image, &requirements);
+	dfunc->vkGetImageMemoryRequirements (dev, image, &requirements);
 
 	size = max (size, offset + requirements.size);
 	VkDeviceMemory object = 0;
@@ -124,72 +123,48 @@ QFV_AllocImageMemory (qfv_image_t *image, VkMemoryPropertyFlags properties,
 		}
 	}
 
-	qfv_memory_t *memory = 0;
-
-	if (object) {
-		memory = malloc (sizeof (*memory));
-		memory->device = device;
-		memory->object = object;
-	}
-	return memory;
-}
-
-int
-QFV_BindImageMemory (qfv_image_t *image, qfv_memory_t *memory,
-					  VkDeviceSize offset)
-{
-	qfv_device_t *device = image->device;
-	VkDevice    dev = device->dev;
-    qfv_devfuncs_t *dfunc = device->funcs;
-	VkResult res = dfunc->vkBindImageMemory (dev, image->image,
-											  memory->object, offset);
-	return res == VK_SUCCESS;
+	return object;
 }
 
 qfv_imagebarrierset_t *
-QFV_CreateImageTransitionSet (qfv_imagetransition_t **transitions,
+QFV_CreateImageTransitionSet (qfv_imagetransition_t *transitions,
 							   int numTransitions)
 {
-	qfv_device_t *device = transitions[0]->image->device;
-	qfv_imagebarrierset_t *barrierset = malloc (sizeof (*barrierset)
-									   + sizeof (VkImageMemoryBarrier) * numTransitions);
-
-	barrierset->device = device;
-	barrierset->numBarriers = numTransitions;
-	barrierset->barriers = (VkImageMemoryBarrier *) (barrierset + 1);
+	qfv_imagebarrierset_t *barrierset;
+    barrierset = DARRAY_ALLOCFIXED (*barrierset, numTransitions, malloc);
 
 	for (int i = 0; i < numTransitions; i++) {
-		VkImageMemoryBarrier *barrier = &barrierset->barriers[i];
-		barrier->sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-		barrier->pNext = 0;
-		barrier->srcAccessMask = transitions[i]->srcAccess;
-		barrier->dstAccessMask = transitions[i]->dstAccess;
-		barrier->oldLayout = transitions[i]->oldLayout;
-		barrier->newLayout = transitions[i]->newLayout;
-		barrier->srcQueueFamilyIndex = transitions[i]->srcQueueFamily;
-		barrier->dstQueueFamilyIndex = transitions[i]->dstQueueFamily;
-		barrier->image = transitions[i]->image->image;
-		barrier->subresourceRange.aspectMask = transitions[i]->aspect;
-		barrier->subresourceRange.baseMipLevel = 0;
-		barrier->subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-		barrier->subresourceRange.baseArrayLayer = 0;
-		barrier->subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+		barrierset->a[i].sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		barrierset->a[i].pNext = 0;
+		barrierset->a[i].srcAccessMask = transitions[i].srcAccess;
+		barrierset->a[i].dstAccessMask = transitions[i].dstAccess;
+		barrierset->a[i].oldLayout = transitions[i].oldLayout;
+		barrierset->a[i].newLayout = transitions[i].newLayout;
+		barrierset->a[i].srcQueueFamilyIndex = transitions[i].srcQueueFamily;
+		barrierset->a[i].dstQueueFamilyIndex = transitions[i].dstQueueFamily;
+		barrierset->a[i].image = transitions[i].image;
+		barrierset->a[i].subresourceRange.aspectMask = transitions[i].aspect;
+		barrierset->a[i].subresourceRange.baseMipLevel = 0;
+		barrierset->a[i].subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+		barrierset->a[i].subresourceRange.baseArrayLayer = 0;
+		barrierset->a[i].subresourceRange.layerCount
+			= VK_REMAINING_ARRAY_LAYERS;
 	}
 	return barrierset;
 }
 
-qfv_imageview_t *
-QFV_CreateImageView (qfv_image_t *image, VkImageViewType type, VkFormat format,
+VkImageView
+QFV_CreateImageView (qfv_device_t *device, VkImage image,
+					 VkImageViewType type, VkFormat format,
 					 VkImageAspectFlags aspect)
 {
-	qfv_device_t *device = image->device;
 	VkDevice    dev = device->dev;
     qfv_devfuncs_t *dfunc = device->funcs;
 
 	VkImageViewCreateInfo createInfo = {
 		VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO, 0,
 		0,
-		image->image, type, format,
+		image, type, format,
 		{
 			VK_COMPONENT_SWIZZLE_IDENTITY,
 			VK_COMPONENT_SWIZZLE_IDENTITY,
@@ -203,34 +178,7 @@ QFV_CreateImageView (qfv_image_t *image, VkImageViewType type, VkFormat format,
 		}
 	};
 
-	qfv_imageview_t *view = malloc (sizeof (*view));
-	view->device = device;
-	view->image = image;
-	view->type = type;
-	view->format = format;
-	view->aspect = aspect;
-	dfunc->vkCreateImageView (dev, &createInfo, 0, &view->view);
+	VkImageView view;
+	dfunc->vkCreateImageView (dev, &createInfo, 0, &view);
 	return view;
-}
-
-void
-QFV_DestroyImageView (qfv_imageview_t *view)
-{
-	qfv_device_t *device = view->device;
-	VkDevice    dev = device->dev;
-    qfv_devfuncs_t *dfunc = device->funcs;
-
-	dfunc->vkDestroyImageView (dev, view->view, 0);
-	free (view);
-}
-
-void
-QFV_DestroyImage (qfv_image_t *image)
-{
-	qfv_device_t *device = image->device;
-	VkDevice    dev = device->dev;
-    qfv_devfuncs_t *dfunc = device->funcs;
-
-	dfunc->vkDestroyImage (dev, image->image, 0);
-	free (image);
 }

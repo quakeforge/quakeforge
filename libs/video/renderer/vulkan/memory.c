@@ -60,54 +60,32 @@
 
 #include "util.h"
 
-void
-QFV_FreeMemory (qfv_memory_t *memory)
-{
-	qfv_device_t *device = memory->device;
-	VkDevice    dev = device->dev;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	dfunc->vkFreeMemory (dev, memory->object, 0);
-	free (memory);
-}
-
 void *
-QFV_MapMemory (qfv_memory_t *memory, VkDeviceSize offset, VkDeviceSize size)
+QFV_MapMemory (qfv_device_t *device, VkDeviceMemory object,
+			   VkDeviceSize offset, VkDeviceSize size)
 {
-	qfv_device_t *device = memory->device;
 	VkDevice    dev = device->dev;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	void       *map = 0;
 
-	dfunc->vkMapMemory (dev, memory->object, offset, size, 0, &map);
+	dfunc->vkMapMemory (dev, object, offset, size, 0, &map);
 	return map;
 }
 
 void
-QFV_UnmapMemory (qfv_memory_t *memory)
+QFV_FlushMemory (qfv_device_t *device, qfv_mappedmemrangeset_t *flushRanges)
 {
-	qfv_device_t *device = memory->device;
 	VkDevice    dev = device->dev;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	dfunc->vkUnmapMemory (dev, memory->object);
-}
+	VkMappedMemoryRange *ranges = alloca(sizeof (*ranges) * flushRanges->size);
 
-void
-QFV_FlushMemory (qfv_mappedmemrange_t *flushRanges, uint32_t numFlushRanges)
-{
-	qfv_device_t *device = flushRanges[0].memory->device;
-	VkDevice    dev = device->dev;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	VkMappedMemoryRange *ranges = alloca(sizeof (*ranges) * numFlushRanges);
-
-	for (uint32_t i = 0; i < numFlushRanges; i++) {
+	for (uint32_t i = 0; i < flushRanges->size; i++) {
 		ranges[i].sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
 		ranges[i].pNext = 0;
-		ranges[i].memory = flushRanges[i].memory->object;
-		ranges[i].offset = flushRanges[i].offset;
-		ranges[i].size = flushRanges[i].size;
+		ranges[i].memory = flushRanges->a[i].object;
+		ranges[i].offset = flushRanges->a[i].offset;
+		ranges[i].size = flushRanges->a[i].size;
 	}
-	dfunc->vkFlushMappedMemoryRanges (dev, numFlushRanges, ranges);
+	dfunc->vkFlushMappedMemoryRanges (dev, flushRanges->size, ranges);
 }

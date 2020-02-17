@@ -32,7 +32,7 @@ typedef struct vulkan_ctx_s {
 	struct qfv_swapchain_s *swapchain;
 	VkSurfaceKHR surface;	//FIXME surface = window, so "contains" swapchain
 
-	struct qfv_cmdpool_s *cmdpool;
+	VkCommandPool cmdpool;
 	vulkan_frameset_t frameset;
 
 #define EXPORTED_VULKAN_FUNCTION(fname) PFN_##fname fname;

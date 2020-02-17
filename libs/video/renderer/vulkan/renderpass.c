@@ -105,21 +105,17 @@ QFV_CreateRenderPass (qfv_device_t *device,
 
 qfv_framebuffer_t *
 QFV_CreateFramebuffer (qfv_renderpass_t *renderPass,
-					   uint32_t numAttachments, qfv_imageview_t **attachments,
+					   uint32_t numAttachments, VkImageView *attachments,
 					   uint32_t width, uint32_t height, uint32_t layers)
 {
 	qfv_device_t *device = renderPass->device;
 	VkDevice    dev = device->dev;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	VkImageView *views = alloca (numAttachments * sizeof (*views));
-	for (uint32_t i = 0; i < numAttachments; i++) {
-		views[i] = attachments[i]->view;
-	}
-
 	VkFramebufferCreateInfo createInfo = {
 		VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, 0, 0,
-		renderPass->renderPass, numAttachments, views, width, height, layers,
+		renderPass->renderPass, numAttachments, attachments,
+		width, height, layers,
 	};
 
 	qfv_framebuffer_t *framebuffer = malloc (sizeof (*framebuffer));

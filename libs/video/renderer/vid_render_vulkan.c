@@ -33,6 +33,7 @@
 //#define NH_DEFINE
 //#include "vulkan/namehack.h"
 
+#include "QF/darray.h"
 #include "QF/sys.h"
 
 #include "QF/plugin/general.h"
@@ -41,6 +42,7 @@
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/swapchain.h"
 
@@ -56,19 +58,24 @@ static vulkan_ctx_t *vulkan_ctx;
 static void
 vulkan_R_Init (void)
 {
+	qfv_device_t *device = vulkan_ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
 	qfv_cmdbufferset_t *cmdBuffers;
+
 	Vulkan_CreateSwapchain (vulkan_ctx);
-	cmdBuffers = QFV_AllocateCommandBuffers (vulkan_ctx->cmdpool, 0,
+	cmdBuffers = QFV_AllocateCommandBuffers (device, vulkan_ctx->cmdpool, 0,
 											 vulkan_ctx->swapchain->numImages);
 	vulkan_ctx->frameset.cmdBuffers = cmdBuffers;
-	for (int i = 0; i < cmdBuffers->numBuffers; i++) {
-		QFV_BeginCommandBuffer (cmdBuffers->buffers[i], 0, 0, 0, 0);
-		QFV_EndCommandBuffer (cmdBuffers->buffers[i]);
+	VkCommandBufferBeginInfo beginInfo
+		= { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+	for (size_t i = 0; i < cmdBuffers->size; i++) {
+		dfunc->vkBeginCommandBuffer (cmdBuffers->a[i], &beginInfo);
+		dfunc->vkEndCommandBuffer (cmdBuffers->a[i]);
 	}
 	Sys_Printf ("R_Init %p %d", vulkan_ctx->swapchain->swapchain,
 				vulkan_ctx->swapchain->numImages);
 	for (int32_t i = 0; i < vulkan_ctx->swapchain->numImages; i++) {
-		Sys_Printf (" %p", vulkan_ctx->swapchain->images[i]);
+		Sys_Printf (" %p", vulkan_ctx->swapchain->images->a[i]);
 	}
 	Sys_Printf ("\n");
 }
@@ -79,39 +86,42 @@ vulkan_SCR_UpdateScreen (double time,  void (*f)(void), void (**g)(void))
 	static int count = 0;
 	static double startTime;
 	uint32_t imageIndex = 0;
-	qfv_devfuncs_t *dfunc = vulkan_ctx->device->funcs;
+	qfv_device_t *device = vulkan_ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	VkDevice    dev = device->dev;
 	qfv_queue_t *queue = &vulkan_ctx->device->queue;
 	vulkan_frameset_t *frameset = &vulkan_ctx->frameset;
 
-	QFV_WaitForFence (frameset->fences->fences[frameset->curFrame],
-					  2000000000);
+	dfunc->vkWaitForFences (dev, 1, & frameset->fences->a[frameset->curFrame],
+							VK_TRUE, 2000000000);
 	QFV_AcquireNextImage (vulkan_ctx->swapchain,
-				  frameset->imageSemaphores->semaphores[frameset->curFrame],
+				  frameset->imageSemaphores->a[frameset->curFrame],
 				  0, &imageIndex);
 
-	VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	VkPipelineStageFlags waitStage
+		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	VkSubmitInfo submitInfo = {
 		VK_STRUCTURE_TYPE_SUBMIT_INFO, 0,
 		1,
-		&frameset->imageSemaphores->vkSemaphores[frameset->curFrame],
+		&frameset->imageSemaphores->a[frameset->curFrame],
 		&waitStage,
-		1, &frameset->cmdBuffers->vkBuffers[imageIndex],
-		1, &frameset->renderDoneSemaphores->vkSemaphores[frameset->curFrame],
+		1, &frameset->cmdBuffers->a[imageIndex],
+		1, &frameset->renderDoneSemaphores->a[frameset->curFrame],
 	};
-	QFV_ResetFence (frameset->fences->fences[frameset->curFrame]);
+	dfunc->vkResetFences (dev, 1, &frameset->fences->a[frameset->curFrame]);
 	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo,
-						  frameset->fences->vkFences[frameset->curFrame]);
+						  frameset->fences->a[frameset->curFrame]);
 
 	VkPresentInfoKHR presentInfo = {
 		VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, 0,
-		1, &frameset->renderDoneSemaphores->vkSemaphores[frameset->curFrame],
+		1, &frameset->renderDoneSemaphores->a[frameset->curFrame],
 		1, &vulkan_ctx->swapchain->swapchain, &imageIndex,
 		0
 	};
 	dfunc->vkQueuePresentKHR (queue->queue, &presentInfo);
 
 	frameset->curFrame++;
-	frameset->curFrame %= frameset->fences->numFences;
+	frameset->curFrame %= frameset->fences->size;
 
 	if (++count >= 100) {
 		double currenTime = Sys_DoubleTime ();
@@ -238,7 +248,7 @@ vulkan_vid_render_choose_visual (void)
 	Sys_Printf ("vk choose visual %p %p %d %p\n", vulkan_ctx->device->dev,
 				vulkan_ctx->device->queue.queue,
 				vulkan_ctx->device->queue.queueFamily,
-				vulkan_ctx->cmdpool->cmdpool);
+				vulkan_ctx->cmdpool);
 }
 
 static void
@@ -247,19 +257,18 @@ vulkan_vid_render_create_context (void)
 	vulkan_ctx->create_window (vulkan_ctx);
 	vulkan_ctx->surface = vulkan_ctx->create_surface (vulkan_ctx);
 	vulkan_ctx->frameset.curFrame = 0;
-	qfv_fence_t **fences = alloca (2 * sizeof (*fences));
-	qfv_semaphore_t **imageSems = alloca (2 * sizeof (*imageSems));
-	qfv_semaphore_t **renderDoneSems = alloca (2 * sizeof (*renderDoneSems));
+	qfv_fenceset_t *fences = DARRAY_ALLOCFIXED (*fences, 2, malloc);
+	qfv_semaphoreset_t *imageSems = DARRAY_ALLOCFIXED (*imageSems, 2, malloc);
+	qfv_semaphoreset_t *renderDoneSems = DARRAY_ALLOCFIXED (*renderDoneSems, 2,
+															malloc);
 	for (int i = 0; i < 2; i++) {
-		fences[i]= QFV_CreateFence (vulkan_ctx->device, 1);
-		imageSems[i] = QFV_CreateSemaphore (vulkan_ctx->device);
-		renderDoneSems[i] = QFV_CreateSemaphore (vulkan_ctx->device);
+		fences->a[i]= QFV_CreateFence (vulkan_ctx->device, 1);
+		imageSems->a[i] = QFV_CreateSemaphore (vulkan_ctx->device);
+		renderDoneSems->a[i] = QFV_CreateSemaphore (vulkan_ctx->device);
 	}
-	vulkan_ctx->frameset.fences = QFV_CreateFenceSet (fences, 2);
-	vulkan_ctx->frameset.imageSemaphores
-		= QFV_CreateSemaphoreSet (imageSems, 2);
-	vulkan_ctx->frameset.renderDoneSemaphores
-		= QFV_CreateSemaphoreSet (renderDoneSems, 2);
+	vulkan_ctx->frameset.fences = fences;
+	vulkan_ctx->frameset.imageSemaphores = imageSems;
+	vulkan_ctx->frameset.renderDoneSemaphores = renderDoneSems;
 	Sys_Printf ("vk create context %p\n", vulkan_ctx->surface);
 }
 
@@ -282,15 +291,17 @@ vulkan_vid_render_init (void)
 static void
 vulkan_vid_render_shutdown (void)
 {
-	QFV_DeviceWaitIdle (vulkan_ctx->device);
+	qfv_device_t *device = vulkan_ctx->device;
+	qfv_devfuncs_t *df = device->funcs;
+	VkDevice    dev = device->dev;
+	QFV_DeviceWaitIdle (device);
 	vulkan_frameset_t *frameset = &vulkan_ctx->frameset;
-	for (int i = 0; i < frameset->fences->numFences; i++) {
-		QFV_DestroyFence (frameset->fences->fences[i]);
-		QFV_DestroySemaphore (frameset->imageSemaphores->semaphores[i]);
-		QFV_DestroySemaphore (frameset->renderDoneSemaphores->semaphores[i]);
+	for (size_t i = 0; i < frameset->fences->size; i++) {
+		df->vkDestroyFence (dev, frameset->fences->a[i], 0);
+		df->vkDestroySemaphore (dev, frameset->imageSemaphores->a[i], 0);
+		df->vkDestroySemaphore (dev, frameset->renderDoneSemaphores->a[i], 0);
 	}
-	QFV_DestroyFenceSet (vulkan_ctx->frameset.fences);
-	QFV_DestroyCommandPool (vulkan_ctx->cmdpool);
+	df->vkDestroyCommandPool (dev, vulkan_ctx->cmdpool, 0);
 	Vulkan_Shutdown_Common (vulkan_ctx);
 }
 

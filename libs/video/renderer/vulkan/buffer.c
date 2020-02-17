@@ -61,7 +61,7 @@
 
 #include "util.h"
 
-qfv_buffer_t *
+VkBuffer
 QFV_CreateBuffer (qfv_device_t *device, VkDeviceSize size,
 				  VkBufferUsageFlags usage)
 {
@@ -73,24 +73,23 @@ QFV_CreateBuffer (qfv_device_t *device, VkDeviceSize size,
 		size, usage, VK_SHARING_MODE_EXCLUSIVE,
 		0, 0
 	};
-	qfv_buffer_t *buffer = malloc (sizeof (*buffer));
-	dfunc->vkCreateBuffer (dev, &createInfo, 0, &buffer->buffer);
-	buffer->device = device;
+	VkBuffer buffer;
+	dfunc->vkCreateBuffer (dev, &createInfo, 0, &buffer);
 	return buffer;
 }
 
-qfv_memory_t *
-QFV_AllocBufferMemory (qfv_buffer_t *buffer, VkMemoryPropertyFlags properties,
+VkDeviceMemory
+QFV_AllocBufferMemory (qfv_device_t *device,
+					   VkBuffer buffer, VkMemoryPropertyFlags properties,
 					   VkDeviceSize size, VkDeviceSize offset)
 {
-	qfv_device_t *device = buffer->device;
 	VkDevice    dev = device->dev;
 	qfv_physdev_t *physdev = device->physDev;
 	VkPhysicalDeviceMemoryProperties *memprops = &physdev->memory_properties;
     qfv_devfuncs_t *dfunc = device->funcs;
 
 	VkMemoryRequirements requirements;
-	dfunc->vkGetBufferMemoryRequirements (dev, buffer->buffer, &requirements);
+	dfunc->vkGetBufferMemoryRequirements (dev, buffer, &requirements);
 
 	size = max (size, offset + requirements.size);
 	VkDeviceMemory object = 0;
@@ -112,97 +111,55 @@ QFV_AllocBufferMemory (qfv_buffer_t *buffer, VkMemoryPropertyFlags properties,
 		}
 	}
 
-	qfv_memory_t *memory = 0;
-
-	if (object) {
-		memory = malloc (sizeof (*memory));
-		memory->device = device;
-		memory->object = object;
-	}
-	return memory;
+	return object;
 }
 
 int
-QFV_BindBufferMemory (qfv_buffer_t *buffer, qfv_memory_t *memory,
+QFV_BindBufferMemory (qfv_device_t *device,
+					  VkBuffer buffer, VkDeviceMemory object,
 					  VkDeviceSize offset)
 {
-	qfv_device_t *device = buffer->device;
 	VkDevice    dev = device->dev;
     qfv_devfuncs_t *dfunc = device->funcs;
-	VkResult res = dfunc->vkBindBufferMemory (dev, buffer->buffer,
-											  memory->object, offset);
+	VkResult res = dfunc->vkBindBufferMemory (dev, buffer, object, offset);
 	return res == VK_SUCCESS;
 }
 
 qfv_bufferbarrierset_t *
-QFV_CreateBufferTransitionSet (qfv_buffertransition_t **transitions,
-							   int numTransitions)
+QFV_CreateBufferTransitions (qfv_buffertransition_t *transitions,
+							 int numTransitions)
 {
-	qfv_device_t *device = transitions[0]->buffer->device;
-	qfv_bufferbarrierset_t *barrierset = malloc (sizeof (*barrierset)
-									   + sizeof (VkBufferMemoryBarrier) * numTransitions);
-
-	barrierset->device = device;
-	barrierset->numBarriers = numTransitions;
-	barrierset->barriers = (VkBufferMemoryBarrier *) (barrierset + 1);
+	qfv_bufferbarrierset_t *barrierset;
+	barrierset = DARRAY_ALLOCFIXED (*barrierset, numTransitions, malloc);
 
 	for (int i = 0; i < numTransitions; i++) {
-		VkBufferMemoryBarrier *barrier = &barrierset->barriers[i];
-		barrier->sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
-		barrier->pNext = 0;
-		barrier->srcAccessMask = transitions[i]->srcAccess;
-		barrier->dstAccessMask = transitions[i]->dstAccess;
-		barrier->srcQueueFamilyIndex = transitions[i]->srcQueueFamily;
-		barrier->dstQueueFamilyIndex = transitions[i]->dstQueueFamily;
-		barrier->buffer = transitions[i]->buffer->buffer;
-		barrier->offset = transitions[i]->offset;
-		barrier->size = transitions[i]->size;
+		barrierset->a[i].sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
+		barrierset->a[i].pNext = 0;
+		barrierset->a[i].srcAccessMask = transitions[i].srcAccess;
+		barrierset->a[i].dstAccessMask = transitions[i].dstAccess;
+		barrierset->a[i].srcQueueFamilyIndex = transitions[i].srcQueueFamily;
+		barrierset->a[i].dstQueueFamilyIndex = transitions[i].dstQueueFamily;
+		barrierset->a[i].buffer = transitions[i].buffer;
+		barrierset->a[i].offset = transitions[i].offset;
+		barrierset->a[i].size = transitions[i].size;
 	}
 	return barrierset;
 }
 
-qfv_bufferview_t *
-QFV_CreateBufferView (qfv_buffer_t *buffer, VkFormat format,
+VkBufferView
+QFV_CreateBufferView (qfv_device_t *device, VkBuffer buffer, VkFormat format,
 					  VkDeviceSize offset, VkDeviceSize size)
 {
-	qfv_device_t *device = buffer->device;
 	VkDevice    dev = device->dev;
     qfv_devfuncs_t *dfunc = device->funcs;
 
 	VkBufferViewCreateInfo createInfo = {
 		VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO, 0,
 		0,
-		buffer->buffer, format, offset, size,
+		buffer, format, offset, size,
 	};
 
-	qfv_bufferview_t *view = malloc (sizeof (*view));
-	view->device = device;
-	view->buffer = buffer;
-	view->format = format;
-	view->offset = offset;
-	view->size = size;
-	dfunc->vkCreateBufferView (dev, &createInfo, 0, &view->view);
+	VkBufferView view;
+	dfunc->vkCreateBufferView (dev, &createInfo, 0, &view);
 	return view;
-}
-
-void
-QFV_DestroyBufferView (qfv_bufferview_t *view)
-{
-	qfv_device_t *device = view->device;
-	VkDevice    dev = device->dev;
-    qfv_devfuncs_t *dfunc = device->funcs;
-
-	dfunc->vkDestroyBufferView (dev, view->view, 0);
-	free (view);
-}
-
-void
-QFV_DestroyBuffer (qfv_buffer_t *buffer)
-{
-	qfv_device_t *device = buffer->device;
-	VkDevice    dev = device->dev;
-    qfv_devfuncs_t *dfunc = device->funcs;
-
-	dfunc->vkDestroyBuffer (dev, buffer->buffer, 0);
-	free (buffer);
 }

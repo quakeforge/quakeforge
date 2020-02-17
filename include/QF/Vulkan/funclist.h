@@ -31,6 +31,7 @@ INSTANCE_LEVEL_VULKAN_FUNCTION (vkDestroyInstance)
 INSTANCE_LEVEL_VULKAN_FUNCTION (vkEnumerateDeviceLayerProperties)
 INSTANCE_LEVEL_VULKAN_FUNCTION (vkEnumerateDeviceExtensionProperties)
 INSTANCE_LEVEL_VULKAN_FUNCTION (vkGetPhysicalDeviceMemoryProperties)
+INSTANCE_LEVEL_VULKAN_FUNCTION (vkGetPhysicalDeviceFormatProperties)
 
 #undef INSTANCE_LEVEL_VULKAN_FUNCTION
 

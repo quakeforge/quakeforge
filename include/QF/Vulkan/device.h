@@ -31,4 +31,9 @@ qfv_device_t *QFV_CreateDevice (struct vulkan_ctx_s *ctx,
 void QFV_DestroyDevice (qfv_device_t *device);
 int QFV_DeviceWaitIdle (qfv_device_t *device);
 
+VkFormat QFV_FindSupportedFormat (qfv_device_t *device, VkImageTiling tiling,
+								  VkFormatFeatureFlags features,
+								  int numCandidates,
+								  const VkFormat *candidates);
+
 #endif//__QF_Vulkan_device_h

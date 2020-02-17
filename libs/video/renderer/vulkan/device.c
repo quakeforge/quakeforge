@@ -211,3 +211,24 @@ QFV_DeviceWaitIdle (qfv_device_t *device)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	return dfunc->vkDeviceWaitIdle (device->dev) == VK_SUCCESS;
 }
+
+VkFormat
+QFV_FindSupportedFormat (qfv_device_t *device,
+						 VkImageTiling tiling, VkFormatFeatureFlags features,
+						 int numCandidates, const VkFormat *candidates)
+{
+	VkPhysicalDevice pdev = device->physDev->dev;
+	qfv_instfuncs_t *ifuncs = device->physDev->instance->funcs;
+	for (int i = 0; i < numCandidates; i++) {
+		VkFormat    format = candidates[i];
+		VkFormatProperties props;
+		ifuncs->vkGetPhysicalDeviceFormatProperties (pdev, format, &props);
+		if ((tiling == VK_IMAGE_TILING_LINEAR
+			 && (props.linearTilingFeatures & features) == features)
+			|| (tiling == VK_IMAGE_TILING_OPTIMAL
+				&& (props.optimalTilingFeatures & features) == features)) {
+			return format;
+		}
+	}
+	Sys_Error ("no supported format");
+}
