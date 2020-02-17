@@ -5,7 +5,7 @@ pkgdatadir = $(datarootdir)/qfcc/include/QF
 
 include_qf= \
 	alloc.h bspfile.h cbuf.h cdaudio.h checksum.h clip_hull.h cmd.h \
-	console.h crc.h csqc.h cvar.h dstring.h draw.h gib.h hash.h \
+	console.h crc.h csqc.h cvar.h darray.h dstring.h draw.h gib.h hash.h \
 	idparse.h image.h in_event.h info.h input.h iqm.h joystick.h keys.h \
 	link.h llist.h locs.h mathlib.h mdfour.h mersenne.h model.h modelgen.h \
 	msg.h object.h pak.h pakfile.h pcx.h png.h plugin.h pr_comp.h pr_debug.h \
