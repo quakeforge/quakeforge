@@ -83,6 +83,7 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 					imageSize.width, imageSize.height);
 
 	VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+	imageUsage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 	imageUsage &= surfCaps.supportedUsageFlags;
 
 	VkSurfaceTransformFlagBitsKHR surfTransform

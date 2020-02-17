@@ -68,8 +68,55 @@ vulkan_R_Init (void)
 	vulkan_ctx->frameset.cmdBuffers = cmdBuffers;
 	VkCommandBufferBeginInfo beginInfo
 		= { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+	VkClearColorValue clearColor = { {0.7294, 0.8549, 0.3333, 1.0} };
+	VkImageSubresourceRange image_subresource_range = {
+		VK_IMAGE_ASPECT_COLOR_BIT,
+		0, 1, 0, 1,
+	};
+	VkImageMemoryBarrier pc_barrier = {
+		VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, 0,
+		VK_ACCESS_TRANSFER_WRITE_BIT,
+		VK_ACCESS_MEMORY_READ_BIT,
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		device->queue.queueFamily,
+		device->queue.queueFamily,
+		0,	// filled in later
+		image_subresource_range
+    };
+	VkImageMemoryBarrier cp_barrier = {
+		VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, 0,
+		VK_ACCESS_TRANSFER_WRITE_BIT,
+		VK_ACCESS_MEMORY_READ_BIT,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+		device->queue.queueFamily,
+		device->queue.queueFamily,
+		0,	// filled in later
+		image_subresource_range
+    };
 	for (size_t i = 0; i < cmdBuffers->size; i++) {
+		pc_barrier.image = vulkan_ctx->swapchain->images->a[i];
+		cp_barrier.image = vulkan_ctx->swapchain->images->a[i];
 		dfunc->vkBeginCommandBuffer (cmdBuffers->a[i], &beginInfo);
+		dfunc->vkCmdPipelineBarrier (cmdBuffers->a[i],
+				VK_PIPELINE_STAGE_TRANSFER_BIT,
+				VK_PIPELINE_STAGE_TRANSFER_BIT,
+				0,
+				0, 0,	// memory barriers
+				0, 0,	// buffer barriers
+				1, &pc_barrier);
+		dfunc->vkCmdClearColorImage (cmdBuffers->a[i], pc_barrier.image,
+									 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+									 &clearColor, 1,
+									 &image_subresource_range);
+		dfunc->vkCmdPipelineBarrier (cmdBuffers->a[i],
+				VK_PIPELINE_STAGE_TRANSFER_BIT,
+				VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+				0,
+				0, 0,
+				0, 0,
+				1, &cp_barrier);
 		dfunc->vkEndCommandBuffer (cmdBuffers->a[i]);
 	}
 	Sys_Printf ("R_Init %p %d", vulkan_ctx->swapchain->swapchain,
