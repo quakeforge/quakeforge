@@ -1,6 +1,8 @@
 #ifndef __QF_Vulkan_pipeline_h
 #define __QF_Vulkan_pipeline_h
 
+#include "QF/darray.h"
+
 typedef struct qfv_shadermodule_s {
 	struct qfv_device_s *device;
 	VkShaderModule module;
@@ -13,29 +15,24 @@ typedef struct qfv_shaderstageparams_s {
 	const VkSpecializationInfo *specializationInfo;
 } qfv_shaderstageparams_t;
 
-typedef struct qfv_shaderstageparamsset_s {
-	uint32_t    numParams;
-	qfv_shaderstageparams_t params[];
-} qfv_shaderstageparamsset_t;
+typedef struct qfv_shaderstageparamsset_s
+	DARRAY_TYPE (qfv_shaderstageparams_t) qfv_shaderstageparamsset_t;
 
 #define QFV_AllocShaderParamsSet(num, allocator) \
-    allocator (field_offset (qfv_shaderstageparamsset_t, params[num]))
+	DARRAY_ALLOCFIXED (qfv_shaderstageparamsset_t, num, allocator)
 
-typedef struct qfv_vertexinputbindingset_s {
-	uint32_t    numBindings;
-	VkVertexInputBindingDescription bindings[];
-} qfv_vertexinputbindingset_t;
+typedef struct qfv_vertexinputbindingset_s
+	DARRAY_TYPE (VkVertexInputBindingDescription)  qfv_vertexinputbindingset_t;
 
 #define QFV_AllocVertexInputBindingSet(num, allocator) \
-    allocator (field_offset (qfv_vertexinputbindingset_t, bindings[num]))
+	DARRAY_ALLOCFIXED (qfv_vertexinputbindingset_t, num, allocator)
 
-typedef struct qfv_vertexinputattributeset_s {
-	uint32_t    numAttributes;
-	VkVertexInputAttributeDescription attributes[];
-} qfv_vertexinputattributeset_t;
+typedef struct qfv_vertexinputattributeset_s
+	DARRAY_TYPE (VkVertexInputAttributeDescription)
+		qfv_vertexinputattributeset_t;
 
 #define QFV_AllocVertexInputAttributeSet(num, allocator) \
-    allocator (field_offset (qfv_vertexinputattributeset_t, bindings[num]))
+	DARRAY_ALLOCFIXED (qfv_vertexinputattributeset_t, num, allocator)
 
 typedef struct qfv_vertexinputstate_s {
 	qfv_vertexinputbindingset_t *bindings;
@@ -168,7 +165,7 @@ typedef struct qfv_graphicspipelinecreateinfo_s {
 	qfv_pipelineblend_t *colorBlendState;
 	qfv_dynamicstateset_t *dynamicState;
 	qfv_pipelinelayout_t *layout;
-	struct qfv_renderpass_s *renderPass;
+	VkRenderPass renderPass;
 	uint32_t    subpass;
 	qfv_pipeline_t *basePipeline;
 	int32_t     basePipelineIndex;

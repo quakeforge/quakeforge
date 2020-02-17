@@ -205,10 +205,10 @@ vertexInputSCI (qfv_vertexinputstate_t vertexState)
 {
 	VkPipelineVertexInputStateCreateInfo createInfo = {
 		VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO, 0, 0,
-		vertexState.bindings->numBindings,
-		vertexState.bindings->bindings,
-		vertexState.attributes->numAttributes,
-		vertexState.attributes->attributes,
+		vertexState.bindings->size,
+		vertexState.bindings->a,
+		vertexState.attributes->size,
+		vertexState.attributes->a,
 	};
 	return createInfo;
 }
@@ -339,7 +339,7 @@ QFV_CreateGraphicsPipelines (qfv_device_t *device,
 	uint32_t numPipelines = gpciSet->numPipelines;
 	uint32_t stageCount = 0;
 	for (uint32_t i = 0; i < numPipelines; i++) {
-		stageCount += gpciSet->pipelines[i]->stages->numParams;
+		stageCount += gpciSet->pipelines[i]->stages->size;
 	}
 
 	size_t blockSize = numPipelines
@@ -377,7 +377,7 @@ QFV_CreateGraphicsPipelines (qfv_device_t *device,
 		= (void *)(pipelineInfos->pColorBlendState + numPipelines);
 	for (uint32_t i = 1; i < gpciSet->numPipelines; i++) {
 		pipelineInfos[i].pStages = pipelineInfos[i - 1].pStages
-			+ gpciSet->pipelines[i - 1]->stages->numParams;
+			+ gpciSet->pipelines[i - 1]->stages->size;
 		pipelineInfos[i].pVertexInputState
 			= pipelineInfos[i - 1].pVertexInputState + 1;
 		pipelineInfos[i].pInputAssemblyState
@@ -403,9 +403,9 @@ QFV_CreateGraphicsPipelines (qfv_device_t *device,
 		gci->sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
 		gci->pNext = 0;
 		gci->flags = ci->flags;
-		gci->stageCount = ci->stages->numParams;
+		gci->stageCount = ci->stages->size;
 		for (uint32_t j = 0; j < gci->stageCount; j++) {
-			((VkPipelineShaderStageCreateInfo *)gci->pStages)[i] = shaderStageCI (ci->stages->params[j]);
+			((VkPipelineShaderStageCreateInfo *)gci->pStages)[i] = shaderStageCI (ci->stages->a[j]);
 		}
 		if (ci->vertexState) {
 			*(VkPipelineVertexInputStateCreateInfo *)gci->pVertexInputState = vertexInputSCI (*ci->vertexState);
@@ -453,7 +453,7 @@ QFV_CreateGraphicsPipelines (qfv_device_t *device,
 			gci->pDynamicState = 0;
 		}
 		gci->layout = ci->layout->layout;
-		gci->renderPass = ci->renderPass->renderPass;
+		gci->renderPass = ci->renderPass;
 		gci->subpass = ci->subpass;
 		gci->basePipelineHandle = ci->basePipeline->pipeline;
 		gci->basePipelineIndex = ci->basePipelineIndex;

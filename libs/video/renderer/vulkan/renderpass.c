@@ -1,7 +1,7 @@
 /*
-	descriptor.c
+	renderpass.c
 
-	Vulkan descriptor functions
+	Vulkan render pass and frame buffer functions
 
 	Copyright (C) 1996-1997 Id Software, Inc.
 	Copyright (C) 2020      Bill Currie <bill@taniwha.org>
@@ -62,7 +62,7 @@
 
 #include "util.h"
 
-qfv_renderpass_t *
+VkRenderPass
 QFV_CreateRenderPass (qfv_device_t *device,
 					  qfv_attachmentdescription_t *attachments,
 					  qfv_subpassparametersset_t *subpassparams,
@@ -71,19 +71,19 @@ QFV_CreateRenderPass (qfv_device_t *device,
 	VkDevice    dev = device->dev;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	VkSubpassDescription *subpasses = alloca (subpassparams->numSubpasses
+	VkSubpassDescription *subpasses = alloca (subpassparams->size
 											  * sizeof (*subpasses));
 
-	for (uint32_t i =  0; i < subpassparams->numSubpasses; i++) {
-		qfv_subpassparameters_t *params = &subpassparams->subpasses[i];
+	for (uint32_t i =  0; i < subpassparams->size; i++) {
+		qfv_subpassparameters_t *params = &subpassparams->a[i];
 		subpasses[i].flags = 0;
 		subpasses[i].pipelineBindPoint = params->pipelineBindPoint;
-		subpasses[i].inputAttachmentCount = params->inputAttachments->numReferences;
-		subpasses[i].pInputAttachments = params->inputAttachments->references;
-		subpasses[i].colorAttachmentCount = params->colorAttachments->numReferences;
-		subpasses[i].pColorAttachments = params->colorAttachments->references;
+		subpasses[i].inputAttachmentCount = params->inputAttachments->size;
+		subpasses[i].pInputAttachments = params->inputAttachments->a;
+		subpasses[i].colorAttachmentCount = params->colorAttachments->size;
+		subpasses[i].pColorAttachments = params->colorAttachments->a;
 		if (params->resolveAttachments) {
-			subpasses[i].pResolveAttachments = params->resolveAttachments->references;
+			subpasses[i].pResolveAttachments = params->resolveAttachments->a;
 		}
 		subpasses[i].pDepthStencilAttachment = params->depthStencilAttachment;
 		subpasses[i].preserveAttachmentCount = params->numPreserve;
@@ -92,56 +92,31 @@ QFV_CreateRenderPass (qfv_device_t *device,
 
 	VkRenderPassCreateInfo createInfo = {
 		VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, 0, 0,
-		attachments->numAttachments, attachments->attachments,
-		subpassparams->numSubpasses, subpasses,
-		dependencies->numDependencies, dependencies->dependencies,
+		attachments->size, attachments->a,
+		subpassparams->size, subpasses,
+		dependencies->size, dependencies->a,
 	};
 
-	qfv_renderpass_t *renderpass = malloc (sizeof (*renderpass));
-	renderpass->device = device;
-	dfunc->vkCreateRenderPass (dev, &createInfo, 0, &renderpass->renderPass);
+	VkRenderPass renderpass;
+	dfunc->vkCreateRenderPass (dev, &createInfo, 0, &renderpass);
 	return renderpass;
 }
 
-qfv_framebuffer_t *
-QFV_CreateFramebuffer (qfv_renderpass_t *renderPass,
+VkFramebuffer
+QFV_CreateFramebuffer (qfv_device_t *device, VkRenderPass renderPass,
 					   uint32_t numAttachments, VkImageView *attachments,
 					   uint32_t width, uint32_t height, uint32_t layers)
 {
-	qfv_device_t *device = renderPass->device;
 	VkDevice    dev = device->dev;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
 	VkFramebufferCreateInfo createInfo = {
 		VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, 0, 0,
-		renderPass->renderPass, numAttachments, attachments,
+		renderPass, numAttachments, attachments,
 		width, height, layers,
 	};
 
-	qfv_framebuffer_t *framebuffer = malloc (sizeof (*framebuffer));
-	framebuffer->device = device;
-	dfunc->vkCreateFramebuffer (dev, &createInfo, 0, &framebuffer->framebuffer);
+	VkFramebuffer framebuffer;
+	dfunc->vkCreateFramebuffer (dev, &createInfo, 0, &framebuffer);
 	return framebuffer;
-}
-
-void
-QFV_DestroyFramebuffer (qfv_framebuffer_t *framebuffer)
-{
-	qfv_device_t *device = framebuffer->device;
-	VkDevice    dev = device->dev;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	dfunc->vkDestroyFramebuffer (dev, framebuffer->framebuffer, 0);
-	free (framebuffer);
-}
-
-void
-QFV_DestroyRenderPass (qfv_renderpass_t *renderPass)
-{
-	qfv_device_t *device = renderPass->device;
-	VkDevice    dev = device->dev;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	dfunc->vkDestroyRenderPass (dev, renderPass->renderPass, 0);
-	free (renderPass);
 }
