@@ -28,8 +28,8 @@
 
 */
 
-#ifndef __pr_type_h
-#define __pr_type_h
+#ifndef __darray_h
+#define __darray_h
 
 /** \defgroup darray Dynamic Arrays
 	\ingroup utils
@@ -298,4 +298,4 @@
 
 ///@}
 
-#endif//__pr_type_h
+#endif//__darray_h
