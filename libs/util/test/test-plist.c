@@ -11,7 +11,7 @@ static const char *test_strings[] = {
 	"of the Shadow cult.\n\n"
 	"For years the Shadow Gate existed in\n"
 	"obscurity but after the cult discovered\n"
-	"the \3023\354\341\343\353\240\307\341\364\345 in the caves below\n"
+	"the \302\354\341\343\353\240\307\341\364\345 in the caves below\n"
 	"the empire took notice.\n"
 	"A batallion of Imperial Knights were\n"
 	"sent to the gate to destroy the cult\n"
