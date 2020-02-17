@@ -67,6 +67,27 @@
 		ele_type   *a;			\
 	}
 
+/**	Allocate a fixed-size array using the given allocator
+
+	The allocated array is initilized to be ungrowable, and with both size
+	and maxSize set to the given size.
+
+	\param array_type	Expression acceptable by typeof for determining the
+						type of the array.
+	\param array_size   The size of the array.
+	\param alloc		Allocator compatible with malloc (eg, alloca).
+*/
+#define DARRAY_ALLOCFIXED(array_type, array_size, alloc)				\
+	({																	\
+		__auto_type s = (array_size);									\
+		typeof (array_type) *ar = alloc (sizeof(*ar)					\
+										 + s * sizeof (*ar->a));		\
+		ar->size = ar->maxSize = s;										\
+		ar->grow = 0;													\
+		ar->a = (typeof (ar->a)) (ar + 1);								\
+		ar;																\
+	})
+
 /**	Clear the array.
 
 	If the array can grow, its backing will be freed and maxSize and a reset,
