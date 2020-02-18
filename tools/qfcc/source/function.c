@@ -155,6 +155,7 @@ parse_params (type_t *type, param_t *parms)
 {
 	param_t    *p;
 	type_t     *new;
+	int         count;
 
 	new = new_type ();
 	new->type = ev_func;
@@ -163,10 +164,12 @@ parse_params (type_t *type, param_t *parms)
 	new->t.func.num_params = 0;
 
 	for (p = parms; p; p = p->next) {
-		if (new->t.func.num_params > MAX_PARMS) {
-			error (0, "too many params");
-			return type;
+		if (p->type) {
+			count++;
 		}
+	}
+	new->t.func.param_types = malloc (count * sizeof (type_t));
+	for (p = parms; p; p = p->next) {
 		if (!p->selector && !p->type && !p->name) {
 			if (p->next)
 				internal_error (0, 0);
@@ -581,12 +584,25 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 	return sym->s.func;
 }
 
+static void
+build_function (symbol_t *fsym)
+{
+	if (fsym->type->t.func.num_params > MAX_PARMS) {
+		error (0, "too many params");
+	}
+	//	FIXME
+//	f->def->constant = 1;
+//	f->def->nosave = 1;
+//	f->def->initialized = 1;
+//	G_FUNCTION (f->def->ofs) = f->function_num;
+}
+
 function_t *
 build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 {
 	if (fsym->sy_type != sy_func)	// probably in error recovery
 		return 0;
-	build_function (fsym->s.func);
+	build_function (fsym);
 	if (state_expr) {
 		state_expr->next = statements;
 		statements = state_expr;
@@ -629,23 +645,13 @@ build_builtin_function (symbol_t *sym, expr_t *bi_val, int far)
 		bi = expr_float (bi_val);
 	sym->s.func->builtin = bi;
 	reloc_def_func (sym->s.func, sym->s.func->def);
-	build_function (sym->s.func);
+	build_function (sym);
 	finish_function (sym->s.func);
 
 	// for debug info
 	build_scope (sym, current_symtab);
 	sym->s.func->symtab->space->size = 0;
 	return sym->s.func;
-}
-
-void
-build_function (function_t *f)
-{
-	//	FIXME
-//	f->def->constant = 1;
-//	f->def->nosave = 1;
-//	f->def->initialized = 1;
-//	G_FUNCTION (f->def->ofs) = f->function_num;
 }
 
 void
