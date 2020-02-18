@@ -1892,11 +1892,6 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 		if (type_size (t) > type_size (&type_param))
 			err = error (e, "formal parameter %d is too large to be passed by"
 						 " value", i + 1);
-		if (ftype->t.func.param_types[i] == &type_float
-			&& is_integer_val (e)) {
-			convert_int (e);
-			t = &type_float;
-		}
 		if (i < parm_count) {
 			if (e->type == ex_nil)
 				convert_nil (e, t = ftype->t.func.param_types[i]);
@@ -1934,7 +1929,8 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 	for (e = params, i = 0; e; e = e->next, i++) {
 		if (has_function_call (e)) {
 			*a = new_temp_def_expr (arg_types[i]);
-			arg_exprs[arg_expr_count][0] = cast_expr (arg_types[i], convert_vector (e));
+			arg_exprs[arg_expr_count][0] = cast_expr (arg_types[i],
+													  convert_vector (e));
 			arg_exprs[arg_expr_count][1] = *a;
 			arg_expr_count++;
 		} else {
