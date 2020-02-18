@@ -299,6 +299,8 @@ DecodeArgs (int argc, char **argv)
 	int         c;
 	int         saw_E = 0, saw_MD = 0;
 
+	add_cpp_undef ("-undef");
+	add_cpp_undef ("-nostdinc");
 	add_cpp_def ("-D__QFCC__=1");
 	add_cpp_def ("-D__QUAKEC__=1");
 
@@ -720,7 +722,8 @@ DecodeArgs (int argc, char **argv)
 
 	// add the default paths
 	if (!options.no_default_paths) {
-		add_cpp_def (nva ("-I%s", QFCC_INCLUDE_PATH));
+		add_cpp_sysinc ("-isystem");
+		add_cpp_sysinc (QFCC_INCLUDE_PATH);
 		linker_add_path (QFCC_LIB_PATH);
 	}
 
