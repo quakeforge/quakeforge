@@ -201,6 +201,7 @@ add_enum (symbol_t *enm, symbol_t *name, expr_t *val)
 	if (enum_tab->symbols)
 		value = ((symbol_t *)(enum_tab->symtail))->s.value->v.integer_val + 1;
 	if (val) {
+		convert_name (val);
 		if (!is_constant (val))
 			error (val, "non-constant initializer");
 		else if (!is_integer_val (val))
