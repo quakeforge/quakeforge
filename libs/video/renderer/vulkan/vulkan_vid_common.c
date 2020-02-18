@@ -286,7 +286,7 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 	VkImageMemoryBarrier barrier;
 	qfv_pipelinestagepair_t stages;
 
-	df->vkWaitForFences (dev, 1, &ctx->fence, VK_TRUE, ~0ul);
+	df->vkWaitForFences (dev, 1, &ctx->fence, VK_TRUE, ~0ull);
 	df->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferBeginInfo beginInfo = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, 0,
