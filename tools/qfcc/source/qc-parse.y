@@ -553,6 +553,7 @@ optional_enum_list
 enum_list
 	: '{' enum_init enumerator_list optional_comma '}'
 		{
+			current_symtab = current_symtab->parent;
 			$$ = finish_enum ($3);
 		}
 	;
@@ -562,6 +563,7 @@ enum_init
 		{
 			$$ = find_enum ($<symbol>-1);
 			start_enum ($$);
+			current_symtab = $$->type->t.symtab;
 		}
 	;
 
