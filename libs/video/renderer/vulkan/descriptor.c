@@ -61,7 +61,7 @@
 
 #include "util.h"
 
-qfv_sampler_t *
+VkSampler
 QFV_CreateSampler (qfv_device_t *device,
 				   VkFilter magFilter, VkFilter minFilter,
                    VkSamplerMipmapMode mipmapMode,
@@ -90,29 +90,12 @@ QFV_CreateSampler (qfv_device_t *device,
 		borderColor, unnormalizedCoordinates,
 	};
 
-	qfv_sampler_t *sampler = malloc (sizeof (*sampler));
-	sampler->device = device;
-	dfunc->vkCreateSampler (dev, &createInfo, 0, &sampler->sampler);
+	VkSampler sampler;
+	dfunc->vkCreateSampler (dev, &createInfo, 0, &sampler);
 	return sampler;
 }
 
-qfv_bindingset_t *
-QFV_CreateBindingSet (int numBindings)
-{
-	qfv_bindingset_t *bindingset;
-	bindingset = malloc (field_offset (qfv_bindingset_t,
-									   bindings[numBindings]));
-	bindingset->numBindings = numBindings;
-	return bindingset;
-}
-
-void
-QFV_DestroyBindingSet (qfv_bindingset_t *bindingset)
-{
-	free (bindingset);
-}
-
-qfv_descriptorsetlayout_t *
+VkDescriptorSetLayout
 QFV_CreateDescriptorSetLayout (qfv_device_t *device,
                                qfv_bindingset_t *bindingset)
 {
@@ -122,12 +105,11 @@ QFV_CreateDescriptorSetLayout (qfv_device_t *device,
 	VkDescriptorSetLayoutCreateInfo createInfo = {
 		VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO, 0,
 		0,
-		bindingset->numBindings, bindingset->bindings,
+		bindingset->size, bindingset->a,
 	};
 
-	qfv_descriptorsetlayout_t *layout = malloc (sizeof (layout));
-	layout->device = device;
-	dfunc->vkCreateDescriptorSetLayout (dev, &createInfo, 0, &layout->layout);
+	VkDescriptorSetLayout layout;
+	dfunc->vkCreateDescriptorSetLayout (dev, &createInfo, 0, &layout);
 	return layout;
 }
 
@@ -151,7 +133,7 @@ poolsize_compmare (const void *ele1, const void *ele2, void *unused)
 }
 
 //FIXME not thread-safe
-qfv_descriptorpool_t *
+VkDescriptorPool
 QFV_CreateDescriptorPool (qfv_device_t *device,
 						  VkDescriptorPoolCreateFlags flags, uint32_t maxSets,
                           qfv_bindingset_t *bindings)
@@ -170,8 +152,8 @@ QFV_CreateDescriptorPool (qfv_device_t *device,
 	poolsize_next = poolsize_pool;
 
 	VkDescriptorPoolSize *ps;
-	for (int i = 0; i < bindings->numBindings; i++) {
-		VkDescriptorPoolSize test = { bindings->bindings[i].descriptorType, 0 };
+	for (size_t i = 0; i < bindings->size; i++) {
+		VkDescriptorPoolSize test = { bindings->a[i].descriptorType, 0 };
 		ps = Hash_FindElement (poolsizes, &test);
 		if (!ps) {
 			ps = poolsize_next++;
@@ -183,7 +165,7 @@ QFV_CreateDescriptorPool (qfv_device_t *device,
 		}
 		//XXX is descriptorCount correct?
 		//FIXME assumes only one layout is used with this pool
-		ps->descriptorCount += bindings->bindings[i].descriptorCount * maxSets;
+		ps->descriptorCount += bindings->a[i].descriptorCount * maxSets;
 	}
 
 	VkDescriptorPoolCreateInfo createInfo = {
@@ -191,155 +173,26 @@ QFV_CreateDescriptorPool (qfv_device_t *device,
 		flags, maxSets, poolsize_next - poolsize_pool, poolsize_pool,
 	};
 
-	qfv_descriptorpool_t *descriptorpool = malloc (sizeof (descriptorpool));
-	descriptorpool->device = device;
-	dfunc->vkCreateDescriptorPool (dev, &createInfo, 0, &descriptorpool->pool);
-	return descriptorpool;
+	VkDescriptorPool pool;
+	dfunc->vkCreateDescriptorPool (dev, &createInfo, 0, &pool);
+	return pool;
 }
 
-qfv_descriptorset_t *
-QFV_AllocateDescriptorSet (qfv_descriptorpool_t *pool,
-                           qfv_descriptorsetlayout_t *layout)
+qfv_descriptorsets_t *
+QFV_AllocateDescriptorSet (qfv_device_t *device,
+						   VkDescriptorPool pool,
+                           qfv_descriptorsetlayoutset_t *layouts)
 {
-	qfv_device_t *device = pool->device;
 	VkDevice    dev = device->dev;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
 	VkDescriptorSetAllocateInfo allocateInfo = {
 		VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO, 0,
-		pool->pool, 1, &layout->layout,
+		pool, layouts->size, layouts->a,
 	};
 
-	qfv_descriptorset_t *descriptorset = malloc (sizeof (*descriptorset));
-	descriptorset->device = device;
-	descriptorset->pool = pool;
-	dfunc->vkAllocateDescriptorSets (dev, &allocateInfo, &descriptorset->set);
-	return descriptorset;
-}
-
-void
-QFV_UpdateDescriptorSets (qfv_device_t *device,
-						  uint32_t numImageInfos,
-						  qfv_imagedescriptorinfo_t *imageInfos,
-						  uint32_t numBufferInfos,
-						  qfv_bufferdescriptorinfo_t *bufferInfos,
-						  uint32_t numTexelBufferInfos,
-						  qfv_texelbufferdescriptorinfo_t *texelbufferInfos,
-						  uint32_t numCopyInfos,
-						  qfv_copydescriptorinfo_t *copyInfos)
-{
-	VkDevice    dev = device->dev;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	uint32_t numWrite = 0;
-	numWrite += numImageInfos;
-	numWrite += numBufferInfos;
-	numWrite += numTexelBufferInfos;
-	VkWriteDescriptorSet *writeSets = alloca (numWrite * sizeof (*writeSets));
-	VkWriteDescriptorSet *writeSet = writeSets;
-	for (uint32_t i = 0; i < numImageInfos; i++, writeSet++) {
-		writeSet->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeSet->pNext = 0;
-		writeSet->dstSet = imageInfos[i].descriptorset->set;
-		writeSet->dstBinding = imageInfos[i].binding;
-		writeSet->dstArrayElement = imageInfos[i].arrayElement;
-		writeSet->descriptorCount = imageInfos[i].numInfo;
-		writeSet->descriptorType = imageInfos[i].type;
-		writeSet->pImageInfo = imageInfos[i].infos;
-		writeSet->pBufferInfo = 0;
-		writeSet->pTexelBufferView = 0;
-	}
-	for (uint32_t i = 0; i < numBufferInfos; i++, writeSet++) {
-		writeSet->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeSet->pNext = 0;
-		writeSet->dstSet = bufferInfos[i].descriptorset->set;
-		writeSet->dstBinding = bufferInfos[i].binding;
-		writeSet->dstArrayElement = bufferInfos[i].arrayElement;
-		writeSet->descriptorCount = bufferInfos[i].numInfo;
-		writeSet->descriptorType = bufferInfos[i].type;
-		writeSet->pImageInfo = 0;
-		writeSet->pBufferInfo = bufferInfos[i].infos;
-		writeSet->pTexelBufferView = 0;
-	}
-	for (uint32_t i = 0; i < numTexelBufferInfos; i++, writeSet++) {
-		writeSet->sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeSet->pNext = 0;
-		writeSet->dstSet = bufferInfos[i].descriptorset->set;
-		writeSet->dstBinding = texelbufferInfos[i].binding;
-		writeSet->dstArrayElement = texelbufferInfos[i].arrayElement;
-		writeSet->descriptorCount = texelbufferInfos[i].numInfo;
-		writeSet->descriptorType = texelbufferInfos[i].type;
-		writeSet->pImageInfo = 0;
-		writeSet->pBufferInfo = 0;
-		writeSet->pTexelBufferView = texelbufferInfos[i].infos;
-	}
-	VkCopyDescriptorSet *copySets = alloca (numWrite * sizeof (*copySets));
-	VkCopyDescriptorSet *copySet = copySets;
-	for (uint32_t i = 0; i < numCopyInfos; i++, copySet++) {
-		copySet->sType = VK_STRUCTURE_TYPE_COPY_DESCRIPTOR_SET;
-		copySet->pNext = 0;
-		copySet->srcSet = copyInfos[i].srcSet->set;
-		copySet->srcBinding = copyInfos[i].srcBinding;
-		copySet->srcArrayElement = copyInfos[i].srcArrayElement;
-		copySet->dstSet = copyInfos[i].dstSet->set;
-		copySet->dstBinding = copyInfos[i].dstBinding;
-		copySet->dstArrayElement = copyInfos[i].dstArrayElement;
-		copySet->descriptorCount = copyInfos[i].descriptorCount;
-	}
-	dfunc->vkUpdateDescriptorSets (dev, numWrite, writeSets,
-								   numCopyInfos, copySets);
-}
-
-void
-QFV_FreeDescriptorSet (qfv_descriptorset_t *set)
-{
-	qfv_device_t *device = set->device;
-	VkDevice    dev = device->dev;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	VkDescriptorPool pool = set->pool->pool;
-
-	dfunc->vkFreeDescriptorSets (dev, pool, 1, &set->set);
-}
-
-void
-QFV_ResetDescriptorPool (qfv_descriptorpool_t *pool)
-{
-	qfv_device_t *device = pool->device;
-	VkDevice    dev = device->dev;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	dfunc->vkResetDescriptorPool (dev, pool->pool, 0);
-}
-
-void
-QFV_DestroyDescriptorPool (qfv_descriptorpool_t *pool)
-{
-	qfv_device_t *device = pool->device;
-	VkDevice    dev = device->dev;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	dfunc->vkDestroyDescriptorPool (dev, pool->pool, 0);
-	free (pool);
-}
-
-void
-QFV_DestroyDescriptorSetLayout (qfv_descriptorsetlayout_t *layout)
-{
-	qfv_device_t *device = layout->device;
-	VkDevice    dev = device->dev;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	dfunc->vkDestroyDescriptorSetLayout (dev, layout->layout, 0);
-	free (layout);
-}
-
-void
-QFV_DestroySampler (qfv_sampler_t *sampler)
-{
-	qfv_device_t *device = sampler->device;
-	VkDevice    dev = device->dev;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	dfunc->vkDestroySampler (dev, sampler->sampler, 0);
-	free (sampler);
+	__auto_type descriptorsets
+		= QFV_AllocDescriptorSets (layouts->size, malloc);
+	dfunc->vkAllocateDescriptorSets (dev, &allocateInfo, descriptorsets->a);
+	return descriptorsets;
 }

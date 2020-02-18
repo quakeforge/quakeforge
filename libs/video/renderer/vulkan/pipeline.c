@@ -154,22 +154,16 @@ QFV_DestroyPipelineCache (qfv_pipelinecache_t *cache)
 
 qfv_pipelinelayout_t *
 QFV_CreatePipelineLayout (qfv_device_t *device,
-						  qfv_descriptorsetlayoutset_t *layoutset,
+						  qfv_descriptorsetlayoutset_t *layouts,
                           qfv_pushconstantrangeset_t *pushConstants)
 {
 	VkDevice    dev = device->dev;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	uint32_t    numLayouts = layoutset->numLayouts;
-	VkDescriptorSetLayout *layouts = alloca (numLayouts * sizeof (*layouts));
-
-	for (uint32_t i = 0; i < numLayouts; i++) {
-		layouts[i] = layoutset->layouts[i]->layout;
-	}
-
 	VkPipelineLayoutCreateInfo createInfo = {
 		VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO, 0, 0,
-		numLayouts, layouts, pushConstants->numRanges, pushConstants->ranges,
+		layouts->size, layouts->a,
+		pushConstants->numRanges, pushConstants->ranges,
 	};
 
 	qfv_pipelinelayout_t *layout = malloc (sizeof (layout));
