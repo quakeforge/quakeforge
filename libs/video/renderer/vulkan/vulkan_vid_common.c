@@ -362,7 +362,7 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 	attachments->a[2].flags = 0;
 	attachments->a[2].format = sc->format;
 	attachments->a[2].samples = VK_SAMPLE_COUNT_1_BIT;
-	attachments->a[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachments->a[2].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	attachments->a[2].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	attachments->a[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	attachments->a[2].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
@@ -469,4 +469,6 @@ Vulkan_DestroyFramebuffers (vulkan_ctx_t *ctx)
 		df->vkDestroySemaphore (dev, frame->renderDoneSemaphore, 0);
 		df->vkDestroyFramebuffer (dev, frame->framebuffer, 0);
 	}
+
+	DARRAY_CLEAR (&ctx->framebuffers);
 }
