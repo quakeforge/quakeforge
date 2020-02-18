@@ -30,7 +30,7 @@ AC_ARG_WITH(cpp,
 if test "x$cpp_name" != xauto; then
 	CPP_NAME="$cpp_name"
 else
-	CPP_NAME="cpp %d -o %o %i"
+	CPP_NAME="cpp %u %d %s -o %o %i"
 	case "$target_os" in
 		*bsd*)
 			touch conftest.c
