@@ -141,9 +141,6 @@ build_cpp_args (const char *in_name, const char *out_name)
 		}
 	}
 	*arg = 0;
-	//for (arg = cpp_argv; *arg; arg++)
-	//	printf ("%s ", *arg);
-	//puts ("");
 }
 
 //============================================================================

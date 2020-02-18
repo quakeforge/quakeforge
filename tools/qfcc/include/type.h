@@ -38,7 +38,7 @@
 typedef struct ty_func_s {
 	struct type_s *type;
 	int         num_params;
-	struct type_s *param_types[MAX_PARMS];
+	struct type_s **param_types;
 } ty_func_t;
 
 typedef struct ty_fldptr_s {
