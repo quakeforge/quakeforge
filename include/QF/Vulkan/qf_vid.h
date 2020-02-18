@@ -36,6 +36,8 @@
 #include <vulkan/vulkan.h>
 
 struct vulkan_ctx_s;
+void Vulkan_DestroyFramebuffers (struct vulkan_ctx_s *ctx);
+void Vulkan_CreateFramebuffers (struct vulkan_ctx_s *ctx);
 void Vulkan_DestroyRenderPass (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateRenderPass (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateSwapchain (struct vulkan_ctx_s *ctx);

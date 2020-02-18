@@ -6,18 +6,24 @@
 #endif
 #include <vulkan/vulkan.h>
 
-typedef struct vulkan_frameset_s {
-	int         curFrame;	// index into fences
-	struct qfv_fenceset_s *fences;
-	struct qfv_cmdbufferset_s *cmdBuffers;
-	struct qfv_semaphoreset_s *imageSemaphores;
-	struct qfv_semaphoreset_s *renderDoneSemaphores;
-} vulkan_frameset_t;
+#include "QF/darray.h"
 
 typedef struct vulkan_renderpass_s {
+	VkRenderPass renderpass;
 	struct qfv_imageresource_s *colorImage;
 	struct qfv_imageresource_s *depthImage;
 } vulkan_renderpass_t;
+
+typedef struct vulkan_framebuffer_s {
+	VkFramebuffer framebuffer;
+	VkFence     fence;
+	VkSemaphore imageAvailableSemaphore;
+	VkSemaphore renderDoneSemaphore;
+	VkCommandBuffer cmdBuffer;
+} vulkan_framebuffer_t;
+
+typedef struct vulkan_framebufferset_s
+	DARRAY_TYPE (vulkan_framebuffer_t) vulkan_framebufferset_t;
 
 typedef struct vulkan_ctx_s {
 	void        (*load_vulkan) (struct vulkan_ctx_s *ctx);
@@ -40,8 +46,9 @@ typedef struct vulkan_ctx_s {
 	VkCommandPool cmdpool;
 	VkCommandBuffer cmdbuffer;
 	VkFence     fence;			// for ctx->cmdbuffer only
-	vulkan_frameset_t frameset;
 	vulkan_renderpass_t renderpass;
+	size_t      curFrame;
+	vulkan_framebufferset_t framebuffers;
 
 #define EXPORTED_VULKAN_FUNCTION(fname) PFN_##fname fname;
 #define GLOBAL_LEVEL_VULKAN_FUNCTION(fname) PFN_##fname fname;

@@ -62,4 +62,6 @@ qfv_instance_t *QFV_CreateInstance (struct vulkan_ctx_s *ctx,
 									const char **extensions);
 void QFV_DestroyInstance (qfv_instance_t *instance);
 
+VkSampleCountFlagBits QFV_GetMaxSampleCount (qfv_physdev_t *physdev);
+
 #endif // __QF_Vulkan_instance_h

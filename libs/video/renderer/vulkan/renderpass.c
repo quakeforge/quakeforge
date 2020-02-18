@@ -71,29 +71,10 @@ QFV_CreateRenderPass (qfv_device_t *device,
 	VkDevice    dev = device->dev;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	VkSubpassDescription *subpasses = alloca (subpassparams->size
-											  * sizeof (*subpasses));
-
-	for (uint32_t i =  0; i < subpassparams->size; i++) {
-		qfv_subpassparameters_t *params = &subpassparams->a[i];
-		subpasses[i].flags = 0;
-		subpasses[i].pipelineBindPoint = params->pipelineBindPoint;
-		subpasses[i].inputAttachmentCount = params->inputAttachments->size;
-		subpasses[i].pInputAttachments = params->inputAttachments->a;
-		subpasses[i].colorAttachmentCount = params->colorAttachments->size;
-		subpasses[i].pColorAttachments = params->colorAttachments->a;
-		if (params->resolveAttachments) {
-			subpasses[i].pResolveAttachments = params->resolveAttachments->a;
-		}
-		subpasses[i].pDepthStencilAttachment = params->depthStencilAttachment;
-		subpasses[i].preserveAttachmentCount = params->numPreserve;
-		subpasses[i].pPreserveAttachments = params->preserveAttachments;
-	}
-
 	VkRenderPassCreateInfo createInfo = {
 		VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, 0, 0,
 		attachments->size, attachments->a,
-		subpassparams->size, subpasses,
+		subpassparams->size, subpassparams->a,
 		dependencies->size, dependencies->a,
 	};
 
@@ -105,7 +86,7 @@ QFV_CreateRenderPass (qfv_device_t *device,
 VkFramebuffer
 QFV_CreateFramebuffer (qfv_device_t *device, VkRenderPass renderPass,
 					   uint32_t numAttachments, VkImageView *attachments,
-					   uint32_t width, uint32_t height, uint32_t layers)
+					   VkExtent2D extent, uint32_t layers)
 {
 	VkDevice    dev = device->dev;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -113,7 +94,7 @@ QFV_CreateFramebuffer (qfv_device_t *device, VkRenderPass renderPass,
 	VkFramebufferCreateInfo createInfo = {
 		VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, 0, 0,
 		renderPass, numAttachments, attachments,
-		width, height, layers,
+		extent.width, extent.height, layers,
 	};
 
 	VkFramebuffer framebuffer;

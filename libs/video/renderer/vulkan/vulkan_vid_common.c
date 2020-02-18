@@ -50,8 +50,10 @@
 #include "QF/vid.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/command.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/image.h"
+#include "QF/Vulkan/renderpass.h"
 #include "QF/Vulkan/swapchain.h"
 
 #include "compat.h"
@@ -117,6 +119,9 @@ Vulkan_Init_Common (vulkan_ctx_t *ctx)
 void
 Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 {
+	if (ctx->framebuffers.size) {
+		Vulkan_DestroyFramebuffers (ctx);
+	}
 	if (ctx->renderpass.colorImage) {
 		Vulkan_DestroyRenderPass (ctx);
 	}
@@ -241,11 +246,13 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 
 	VkExtent3D extent = {sc->extent.width, sc->extent.height, 1};
 
+	VkSampleCountFlagBits msaaSamples
+		= QFV_GetMaxSampleCount (device->physDev);
+
 	Sys_MaskPrintf (SYS_VULKAN, "color resource\n");
 	colorImage->image
 		= QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D,
-						   sc->format, extent, 1, 1,
-						   VK_SAMPLE_COUNT_1_BIT, // FIXME
+						   sc->format, extent, 1, 1, msaaSamples,
 						   VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT
 							   | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 	colorImage->object
@@ -263,8 +270,7 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 	VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
 	depthImage->image
 		= QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D,
-						   depthFormat, extent, 1, 1,
-						   VK_SAMPLE_COUNT_1_BIT, // FIXME (for depth?!?)
+						   depthFormat, extent, 1, 1, msaaSamples,
 						   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 	depthImage->object
 		= QFV_AllocImageMemory (device, depthImage->image,
@@ -322,6 +328,72 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 
 	ctx->renderpass.colorImage = colorImage;
 	ctx->renderpass.depthImage = depthImage;
+
+	__auto_type attachments = QFV_AllocAttachmentDescription (3, alloca);
+	__auto_type attachmentRefs = QFV_AllocAttachmentReference (3, alloca);
+
+	// color attachment
+	attachments->a[0].flags = 0;
+	attachments->a[0].format = sc->format;
+	attachments->a[0].samples = msaaSamples;
+	attachments->a[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachments->a[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments->a[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachments->a[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachments->a[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	attachments->a[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+	attachmentRefs->a[0].attachment = 0;
+	attachmentRefs->a[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	// depth attachment
+	attachments->a[1].flags = 0;
+	attachments->a[1].format = depthFormat;
+	attachments->a[1].samples = msaaSamples;
+	attachments->a[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachments->a[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachments->a[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachments->a[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachments->a[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	attachments->a[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	attachmentRefs->a[1].attachment = 1;
+	attachmentRefs->a[1].layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	// resolve attachment
+	attachments->a[2].flags = 0;
+	attachments->a[2].format = sc->format;
+	attachments->a[2].samples = VK_SAMPLE_COUNT_1_BIT;
+	attachments->a[2].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	attachments->a[2].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+	attachments->a[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	attachments->a[2].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	attachments->a[2].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	attachments->a[2].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+	attachmentRefs->a[2].attachment = 2;
+	attachmentRefs->a[2].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+	__auto_type subpasses = QFV_AllocSubpassParametersSet (1, alloca);
+	subpasses->a[0].flags = 0;
+	subpasses->a[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	subpasses->a[0].inputAttachmentCount = 0;
+	subpasses->a[0].pInputAttachments = 0;
+	subpasses->a[0].colorAttachmentCount = 1;
+	subpasses->a[0].pColorAttachments = &attachmentRefs->a[0];
+	subpasses->a[0].pResolveAttachments = &attachmentRefs->a[2];
+	subpasses->a[0].pDepthStencilAttachment = &attachmentRefs->a[1];
+	subpasses->a[0].preserveAttachmentCount = 0;
+	subpasses->a[0].pPreserveAttachments = 0;
+
+	__auto_type depenencies = QFV_AllocSubpassDependencies (1, alloca);
+	depenencies->a[0].srcSubpass = VK_SUBPASS_EXTERNAL;
+	depenencies->a[0].dstSubpass = 0;
+	depenencies->a[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	depenencies->a[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	depenencies->a[0].srcAccessMask = 0;
+	depenencies->a[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	depenencies->a[0].dependencyFlags = 0;
+
+	ctx->renderpass.renderpass = QFV_CreateRenderPass (device, attachments,
+													   subpasses, depenencies);
 }
 
 void
@@ -330,6 +402,8 @@ Vulkan_DestroyRenderPass (vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	VkDevice    dev = device->dev;
 	qfv_devfuncs_t *df = device->funcs;
+
+	df->vkDestroyRenderPass (dev, ctx->renderpass.renderpass, 0);
 
 	df->vkDestroyImageView (dev, ctx->renderpass.colorImage->view, 0);
 	df->vkDestroyImage (dev, ctx->renderpass.colorImage->image, 0);
@@ -342,4 +416,57 @@ Vulkan_DestroyRenderPass (vulkan_ctx_t *ctx)
 	df->vkFreeMemory (dev, ctx->renderpass.depthImage->object, 0);
 	free (ctx->renderpass.depthImage);
 	ctx->renderpass.depthImage = 0;
+}
+
+void
+Vulkan_CreateFramebuffers (vulkan_ctx_t *ctx)
+{
+	qfv_device_t *device = ctx->device;
+	VkCommandPool cmdpool = ctx->cmdpool;
+	qfv_swapchain_t *sc = ctx->swapchain;
+	VkRenderPass renderpass = ctx->renderpass.renderpass;
+
+	if (!ctx->framebuffers.grow) {
+		DARRAY_INIT (&ctx->framebuffers, 4);
+	}
+
+	DARRAY_RESIZE (&ctx->framebuffers, sc->numImages);
+
+	__auto_type attachments = DARRAY_ALLOCFIXED (qfv_imageviewset_t, 3,
+												 alloca);
+	attachments->a[0] = ctx->renderpass.colorImage->view;
+	attachments->a[1] = ctx->renderpass.depthImage->view;
+
+	__auto_type cmdBuffers
+		= QFV_AllocateCommandBuffers (device, cmdpool, 0,
+									  ctx->framebuffers.size);
+
+	for (size_t i = 0; i < ctx->framebuffers.size; i++) {
+		attachments->a[2] = sc->imageViews->a[i];
+		__auto_type frame = &ctx->framebuffers.a[i];
+		frame->framebuffer = QFV_CreateFramebuffer (device, renderpass,
+												   attachments->size,
+												   attachments->a,
+												   sc->extent, 1);
+		frame->fence = QFV_CreateFence (device, 1);
+		frame->imageAvailableSemaphore = QFV_CreateSemaphore (device);
+		frame->renderDoneSemaphore = QFV_CreateSemaphore (device);
+		frame->cmdBuffer = cmdBuffers->a[i];
+	}
+}
+
+void
+Vulkan_DestroyFramebuffers (vulkan_ctx_t *ctx)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *df = device->funcs;
+	VkDevice    dev = device->dev;
+
+	for (size_t i = 0; i < ctx->framebuffers.size; i++) {
+		__auto_type frame = &ctx->framebuffers.a[i];
+		df->vkDestroyFence (dev, frame->fence, 0);
+		df->vkDestroySemaphore (dev, frame->imageAvailableSemaphore, 0);
+		df->vkDestroySemaphore (dev, frame->renderDoneSemaphore, 0);
+		df->vkDestroyFramebuffer (dev, frame->framebuffer, 0);
+	}
 }

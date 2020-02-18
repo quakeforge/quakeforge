@@ -36,6 +36,7 @@
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/input.h"
+#include "QF/mathlib.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
@@ -283,4 +284,18 @@ QFV_DestroyInstance (qfv_instance_t *instance)
 	}
 	instance->funcs->vkDestroyInstance (instance->instance, 0);
 	free (instance);
+}
+
+VkSampleCountFlagBits
+QFV_GetMaxSampleCount (qfv_physdev_t *physdev)
+{
+	VkSampleCountFlagBits maxSamples = VK_SAMPLE_COUNT_64_BIT;
+	VkSampleCountFlagBits counts;
+	counts = min (physdev->properties.limits.framebufferColorSampleCounts,
+				  physdev->properties.limits.framebufferDepthSampleCounts);
+	while (maxSamples && maxSamples > counts) {
+		maxSamples >>= 1;
+	}
+	Sys_MaskPrintf (SYS_VULKAN, "Max samples: %x\n", maxSamples);
+	return maxSamples;
 }

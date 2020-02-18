@@ -15,18 +15,8 @@ typedef struct qfv_attachmentreference_s
 #define QFV_AllocAttachmentReference(num, allocator) \
 	DARRAY_ALLOCFIXED (qfv_attachmentreference_t, num, allocator)
 
-typedef struct qfv_subpassparameters_s {
-	VkPipelineBindPoint pipelineBindPoint;
-	qfv_attachmentreference_t *inputAttachments;
-	qfv_attachmentreference_t *colorAttachments;
-	qfv_attachmentreference_t *resolveAttachments;
-	VkAttachmentReference *depthStencilAttachment;
-	uint32_t    numPreserve;
-	uint32_t   *preserveAttachments;
-} qfv_subpassparameters_t;
-
 typedef struct qfv_subpassparametersset_s
-	DARRAY_TYPE (qfv_subpassparameters_t) qfv_subpassparametersset_t;
+	DARRAY_TYPE (VkSubpassDescription) qfv_subpassparametersset_t;
 
 #define QFV_AllocSubpassParametersSet(num, allocator) \
 	DARRAY_ALLOCFIXED (qfv_subpassparametersset_t, num, allocator)
@@ -49,6 +39,6 @@ QFV_CreateFramebuffer (struct qfv_device_s *device,
 					   VkRenderPass renderPass,
 					   uint32_t numAttachments,
 					   VkImageView *attachments,
-					   uint32_t width, uint32_t height, uint32_t layers);
+					   VkExtent2D, uint32_t layers);
 
 #endif//__QF_Vulkan_renderpass_h

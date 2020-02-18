@@ -60,13 +60,11 @@ vulkan_R_Init (void)
 {
 	qfv_device_t *device = vulkan_ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	qfv_cmdbufferset_t *cmdBuffers;
 
 	Vulkan_CreateSwapchain (vulkan_ctx);
 	Vulkan_CreateRenderPass (vulkan_ctx);
-	cmdBuffers = QFV_AllocateCommandBuffers (device, vulkan_ctx->cmdpool, 0,
-											 vulkan_ctx->swapchain->numImages);
-	vulkan_ctx->frameset.cmdBuffers = cmdBuffers;
+	Vulkan_CreateFramebuffers (vulkan_ctx);
+
 	VkCommandBufferBeginInfo beginInfo
 		= { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
 	VkClearColorValue clearColor = { {0.7294, 0.8549, 0.3333, 1.0} };
@@ -96,29 +94,30 @@ vulkan_R_Init (void)
 		0,	// filled in later
 		image_subresource_range
     };
-	for (size_t i = 0; i < cmdBuffers->size; i++) {
+	for (size_t i = 0; i < vulkan_ctx->framebuffers.size; i++) {
+		__auto_type framebuffer = &vulkan_ctx->framebuffers.a[i];
 		pc_barrier.image = vulkan_ctx->swapchain->images->a[i];
 		cp_barrier.image = vulkan_ctx->swapchain->images->a[i];
-		dfunc->vkBeginCommandBuffer (cmdBuffers->a[i], &beginInfo);
-		dfunc->vkCmdPipelineBarrier (cmdBuffers->a[i],
+		dfunc->vkBeginCommandBuffer (framebuffer->cmdBuffer, &beginInfo);
+		dfunc->vkCmdPipelineBarrier (framebuffer->cmdBuffer,
 				VK_PIPELINE_STAGE_TRANSFER_BIT,
 				VK_PIPELINE_STAGE_TRANSFER_BIT,
 				0,
 				0, 0,	// memory barriers
 				0, 0,	// buffer barriers
 				1, &pc_barrier);
-		dfunc->vkCmdClearColorImage (cmdBuffers->a[i], pc_barrier.image,
+		dfunc->vkCmdClearColorImage (framebuffer->cmdBuffer, pc_barrier.image,
 									 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 									 &clearColor, 1,
 									 &image_subresource_range);
-		dfunc->vkCmdPipelineBarrier (cmdBuffers->a[i],
+		dfunc->vkCmdPipelineBarrier (framebuffer->cmdBuffer,
 				VK_PIPELINE_STAGE_TRANSFER_BIT,
 				VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
 				0,
 				0, 0,
 				0, 0,
 				1, &cp_barrier);
-		dfunc->vkEndCommandBuffer (cmdBuffers->a[i]);
+		dfunc->vkEndCommandBuffer (framebuffer->cmdBuffer);
 	}
 	Sys_Printf ("R_Init %p %d", vulkan_ctx->swapchain->swapchain,
 				vulkan_ctx->swapchain->numImages);
@@ -138,38 +137,38 @@ vulkan_SCR_UpdateScreen (double time,  void (*f)(void), void (**g)(void))
 	qfv_devfuncs_t *dfunc = device->funcs;
 	VkDevice    dev = device->dev;
 	qfv_queue_t *queue = &vulkan_ctx->device->queue;
-	vulkan_frameset_t *frameset = &vulkan_ctx->frameset;
 
-	dfunc->vkWaitForFences (dev, 1, &frameset->fences->a[frameset->curFrame],
-							VK_TRUE, 2000000000);
+	__auto_type framebuffer
+		= &vulkan_ctx->framebuffers.a[vulkan_ctx->curFrame];
+
+	dfunc->vkWaitForFences (dev, 1, &framebuffer->fence, VK_TRUE, 2000000000);
 	QFV_AcquireNextImage (vulkan_ctx->swapchain,
-				  frameset->imageSemaphores->a[frameset->curFrame],
-				  0, &imageIndex);
+						  framebuffer->imageAvailableSemaphore,
+						  0, &imageIndex);
 
 	VkPipelineStageFlags waitStage
 		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	VkSubmitInfo submitInfo = {
 		VK_STRUCTURE_TYPE_SUBMIT_INFO, 0,
 		1,
-		&frameset->imageSemaphores->a[frameset->curFrame],
+		&framebuffer->imageAvailableSemaphore,
 		&waitStage,
-		1, &frameset->cmdBuffers->a[imageIndex],
-		1, &frameset->renderDoneSemaphores->a[frameset->curFrame],
+		1, &framebuffer->cmdBuffer,
+		1, &framebuffer->renderDoneSemaphore,
 	};
-	dfunc->vkResetFences (dev, 1, &frameset->fences->a[frameset->curFrame]);
-	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo,
-						  frameset->fences->a[frameset->curFrame]);
+	dfunc->vkResetFences (dev, 1, &framebuffer->fence);
+	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, framebuffer->fence);
 
 	VkPresentInfoKHR presentInfo = {
 		VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, 0,
-		1, &frameset->renderDoneSemaphores->a[frameset->curFrame],
+		1, &framebuffer->renderDoneSemaphore,
 		1, &vulkan_ctx->swapchain->swapchain, &imageIndex,
 		0
 	};
 	dfunc->vkQueuePresentKHR (queue->queue, &presentInfo);
 
-	frameset->curFrame++;
-	frameset->curFrame %= frameset->fences->size;
+	vulkan_ctx->curFrame++;
+	vulkan_ctx->curFrame %= vulkan_ctx->framebuffers.size;
 
 	if (++count >= 100) {
 		double currenTime = Sys_DoubleTime ();
@@ -311,19 +310,6 @@ vulkan_vid_render_create_context (void)
 {
 	vulkan_ctx->create_window (vulkan_ctx);
 	vulkan_ctx->surface = vulkan_ctx->create_surface (vulkan_ctx);
-	vulkan_ctx->frameset.curFrame = 0;
-	qfv_fenceset_t *fences = DARRAY_ALLOCFIXED (*fences, 2, malloc);
-	qfv_semaphoreset_t *imageSems = DARRAY_ALLOCFIXED (*imageSems, 2, malloc);
-	qfv_semaphoreset_t *renderDoneSems = DARRAY_ALLOCFIXED (*renderDoneSems, 2,
-															malloc);
-	for (int i = 0; i < 2; i++) {
-		fences->a[i] = QFV_CreateFence (vulkan_ctx->device, 1);
-		imageSems->a[i] = QFV_CreateSemaphore (vulkan_ctx->device);
-		renderDoneSems->a[i] = QFV_CreateSemaphore (vulkan_ctx->device);
-	}
-	vulkan_ctx->frameset.fences = fences;
-	vulkan_ctx->frameset.imageSemaphores = imageSems;
-	vulkan_ctx->frameset.renderDoneSemaphores = renderDoneSems;
 	Sys_Printf ("vk create context %p\n", vulkan_ctx->surface);
 }
 
@@ -350,12 +336,6 @@ vulkan_vid_render_shutdown (void)
 	qfv_devfuncs_t *df = device->funcs;
 	VkDevice    dev = device->dev;
 	QFV_DeviceWaitIdle (device);
-	vulkan_frameset_t *frameset = &vulkan_ctx->frameset;
-	for (size_t i = 0; i < frameset->fences->size; i++) {
-		df->vkDestroyFence (dev, frameset->fences->a[i], 0);
-		df->vkDestroySemaphore (dev, frameset->imageSemaphores->a[i], 0);
-		df->vkDestroySemaphore (dev, frameset->renderDoneSemaphores->a[i], 0);
-	}
 	df->vkDestroyFence (dev, vulkan_ctx->fence, 0);
 	df->vkDestroyCommandPool (dev, vulkan_ctx->cmdpool, 0);
 	Vulkan_Shutdown_Common (vulkan_ctx);
