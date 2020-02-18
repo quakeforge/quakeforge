@@ -51,6 +51,7 @@
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/image.h"
 #include "QF/Vulkan/swapchain.h"
 
 #include "compat.h"
@@ -116,6 +117,9 @@ Vulkan_Init_Common (vulkan_ctx_t *ctx)
 void
 Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 {
+	if (ctx->renderpass.colorImage) {
+		Vulkan_DestroyRenderPass (ctx);
+	}
 	if (ctx->swapchain) {
 		QFV_DestroySwapchain (ctx->swapchain);
 	}
@@ -150,4 +154,192 @@ Vulkan_CreateSwapchain (vulkan_ctx_t *ctx)
 		ctx->device->funcs->vkDestroySwapchainKHR (ctx->device->dev,
 												   old_swapchain, 0);
 	}
+}
+
+typedef struct {
+	VkPipelineStageFlags src;
+	VkPipelineStageFlags dst;
+} qfv_pipelinestagepair_t;
+
+//XXX Note: imageLayoutTransitionBarriers, imageLayoutTransitionStages and
+// the enum be kept in sync
+enum {
+	qfv_LT_Undefined_to_TransferDst,
+	qfv_LT_TransferDst_to_ShaderReadOnly,
+	qfv_LT_Undefined_to_DepthStencil,
+	qfv_LT_Undefined_to_Color,
+};
+
+static VkImageMemoryBarrier imageLayoutTransitionBarriers[] = {
+	// undefined -> transfer dst optimal
+	{	VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, 0,
+		0,
+		VK_ACCESS_TRANSFER_WRITE_BIT,
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, 0,
+		{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+	},
+	// transfer dst optimal -> shader read only optimal
+	{	VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, 0,
+		VK_ACCESS_TRANSFER_WRITE_BIT,
+		VK_ACCESS_SHADER_READ_BIT,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, 0,
+		{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+	},
+	// undefined -> depth stencil attachment optimal
+	{	VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, 0,
+		0,
+		VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT
+			| VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT,
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
+		VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, 0,
+		{ VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1 }
+	},
+	// undefined -> color attachment optimal
+	{	VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, 0,
+		0,
+		VK_ACCESS_COLOR_ATTACHMENT_READ_BIT
+			| VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+		VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+		VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, 0,
+		{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+	},
+	{ /* end of transition barriers */ }
+};
+
+static qfv_pipelinestagepair_t imageLayoutTransitionStages[] = {
+	// undefined -> transfer dst optimal
+	{	VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT },
+	// transfer dst optimal -> shader read only optimal
+	{	VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT },
+	// undefined -> depth stencil attachment optimal
+	{	VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+		VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT },
+	// undefined -> color attachment optimal
+	{	VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT },
+};
+
+void
+Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
+{
+	qfv_device_t *device = ctx->device;
+	VkDevice    dev = device->dev;
+	qfv_devfuncs_t *df = device->funcs;
+	VkCommandBuffer cmd = ctx->cmdbuffer;
+	qfv_swapchain_t *sc = ctx->swapchain;
+
+	qfv_imageresource_t *colorImage = malloc (sizeof (*colorImage));
+	qfv_imageresource_t *depthImage = malloc (sizeof (*depthImage));
+
+	VkExtent3D extent = {sc->extent.width, sc->extent.height, 1};
+
+	Sys_MaskPrintf (SYS_VULKAN, "color resource\n");
+	colorImage->image
+		= QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D,
+						   sc->format, extent, 1, 1,
+						   VK_SAMPLE_COUNT_1_BIT, // FIXME
+						   VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT
+							   | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+	colorImage->object
+		= QFV_AllocImageMemory (device, colorImage->image,
+								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, 0);
+	QFV_BindImageMemory (device, colorImage->image, colorImage->object, 0);
+	colorImage->view
+		= QFV_CreateImageView (device, colorImage->image,
+							   VK_IMAGE_VIEW_TYPE_2D,
+							   sc->format, VK_IMAGE_ASPECT_COLOR_BIT);
+	Sys_MaskPrintf (SYS_VULKAN, "	image: %p object: %p view:%p\n",
+					colorImage->image, colorImage->object, colorImage->view);
+
+	Sys_MaskPrintf (SYS_VULKAN, "depth resource\n");
+	VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
+	depthImage->image
+		= QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D,
+						   depthFormat, extent, 1, 1,
+						   VK_SAMPLE_COUNT_1_BIT, // FIXME (for depth?!?)
+						   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+	depthImage->object
+		= QFV_AllocImageMemory (device, depthImage->image,
+								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, 0);
+	QFV_BindImageMemory (device, depthImage->image, depthImage->object, 0);
+	depthImage->view
+		= QFV_CreateImageView (device, depthImage->image,
+							   VK_IMAGE_VIEW_TYPE_2D,
+							   depthFormat, VK_IMAGE_ASPECT_DEPTH_BIT);
+	Sys_MaskPrintf (SYS_VULKAN, "	image: %p object: %p view:%p\n",
+					depthImage->image, depthImage->object, depthImage->view);
+
+	VkImageMemoryBarrier barrier;
+	qfv_pipelinestagepair_t stages;
+
+	df->vkWaitForFences (dev, 1, &ctx->fence, VK_TRUE, ~0ul);
+	df->vkResetCommandBuffer (cmd, 0);
+	VkCommandBufferBeginInfo beginInfo = {
+		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, 0,
+		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, 0,
+	};
+	df->vkBeginCommandBuffer (cmd, &beginInfo);
+
+	stages = imageLayoutTransitionStages[qfv_LT_Undefined_to_Color];
+	barrier = imageLayoutTransitionBarriers[qfv_LT_Undefined_to_Color];
+	barrier.image = colorImage->image;
+
+	df->vkCmdPipelineBarrier (cmd, stages.src, stages.dst, 0,
+							  0, 0,
+							  0, 0,
+							  1, &barrier);
+
+	stages = imageLayoutTransitionStages[qfv_LT_Undefined_to_DepthStencil];
+	barrier = imageLayoutTransitionBarriers[qfv_LT_Undefined_to_DepthStencil];
+	barrier.image = depthImage->image;
+	if (depthFormat == VK_FORMAT_D32_SFLOAT_S8_UINT
+		|| depthFormat == VK_FORMAT_D24_UNORM_S8_UINT) {
+		barrier.subresourceRange.aspectMask |= VK_IMAGE_ASPECT_STENCIL_BIT;
+	}
+
+	df->vkCmdPipelineBarrier (cmd, stages.src, stages.dst, 0,
+							  0, 0,
+							  0, 0,
+							  1, &barrier);
+	df->vkEndCommandBuffer (cmd);
+
+	VkSubmitInfo submitInfo = {
+		VK_STRUCTURE_TYPE_SUBMIT_INFO, 0,
+		0, 0, 0,
+		1, &cmd,
+		0, 0
+	};
+	df->vkResetFences (dev, 1, &ctx->fence);
+	df->vkQueueSubmit (device->queue.queue, 1, &submitInfo, ctx->fence);
+
+	ctx->renderpass.colorImage = colorImage;
+	ctx->renderpass.depthImage = depthImage;
+}
+
+void
+Vulkan_DestroyRenderPass (vulkan_ctx_t *ctx)
+{
+	qfv_device_t *device = ctx->device;
+	VkDevice    dev = device->dev;
+	qfv_devfuncs_t *df = device->funcs;
+
+	df->vkDestroyImageView (dev, ctx->renderpass.colorImage->view, 0);
+	df->vkDestroyImage (dev, ctx->renderpass.colorImage->image, 0);
+	df->vkFreeMemory (dev, ctx->renderpass.colorImage->object, 0);
+	free (ctx->renderpass.colorImage);
+	ctx->renderpass.colorImage = 0;
+
+	df->vkDestroyImageView (dev, ctx->renderpass.depthImage->view, 0);
+	df->vkDestroyImage (dev, ctx->renderpass.depthImage->image, 0);
+	df->vkFreeMemory (dev, ctx->renderpass.depthImage->object, 0);
+	free (ctx->renderpass.depthImage);
+	ctx->renderpass.depthImage = 0;
 }

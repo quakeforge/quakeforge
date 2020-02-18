@@ -6,6 +6,13 @@
 typedef struct qfv_imageset_s DARRAY_TYPE (VkImage) qfv_imageset_t;
 typedef struct qfv_imageviewset_s DARRAY_TYPE (VkImageView) qfv_imageviewset_t;
 
+typedef struct qfv_imageresource_s {
+	struct qfv_device_s *device;
+	VkImage     image;
+	VkDeviceMemory object;
+	VkImageView view;
+} qfv_imageresource_t;
+
 typedef struct qfv_imagetransition_s {
 	VkImage       image;
 	VkAccessFlags srcAccess;
@@ -36,6 +43,9 @@ VkDeviceMemory QFV_AllocImageMemory (struct qfv_device_s *device,
 									 VkImage image,
 									 VkMemoryPropertyFlags properties,
 									 VkDeviceSize size, VkDeviceSize offset);
+
+int QFV_BindImageMemory (struct qfv_device_s *device, VkImage image,
+						 VkDeviceMemory object, VkDeviceSize offset);
 
 qfv_imagebarrierset_t *
 QFV_CreateImageTransitionSet (qfv_imagetransition_t *transitions,

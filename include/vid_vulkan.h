@@ -14,6 +14,11 @@ typedef struct vulkan_frameset_s {
 	struct qfv_semaphoreset_s *renderDoneSemaphores;
 } vulkan_frameset_t;
 
+typedef struct vulkan_renderpass_s {
+	struct qfv_imageresource_s *colorImage;
+	struct qfv_imageresource_s *depthImage;
+} vulkan_renderpass_t;
+
 typedef struct vulkan_ctx_s {
 	void        (*load_vulkan) (struct vulkan_ctx_s *ctx);
 	void        (*unload_vulkan) (struct vulkan_ctx_s *ctx);
@@ -33,7 +38,10 @@ typedef struct vulkan_ctx_s {
 	VkSurfaceKHR surface;	//FIXME surface = window, so "contains" swapchain
 
 	VkCommandPool cmdpool;
+	VkCommandBuffer cmdbuffer;
+	VkFence     fence;			// for ctx->cmdbuffer only
 	vulkan_frameset_t frameset;
+	vulkan_renderpass_t renderpass;
 
 #define EXPORTED_VULKAN_FUNCTION(fname) PFN_##fname fname;
 #define GLOBAL_LEVEL_VULKAN_FUNCTION(fname) PFN_##fname fname;

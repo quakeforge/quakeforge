@@ -126,6 +126,16 @@ QFV_AllocImageMemory (qfv_device_t *device,
 	return object;
 }
 
+int
+QFV_BindImageMemory (qfv_device_t *device,
+					 VkImage image, VkDeviceMemory object, VkDeviceSize offset)
+{
+	VkDevice    dev = device->dev;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	VkResult res = dfunc->vkBindImageMemory (dev, image, object, offset);
+	return res == VK_SUCCESS;
+}
+
 qfv_imagebarrierset_t *
 QFV_CreateImageTransitionSet (qfv_imagetransition_t *transitions,
 							   int numTransitions)
