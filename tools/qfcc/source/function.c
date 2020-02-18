@@ -330,8 +330,9 @@ find_function (expr_t *fexpr, expr_t *params)
 			return e;
 		type.t.func.num_params++;
 	}
-	if (type.t.func.num_params > MAX_PARMS)
-		return fexpr;
+	i = type.t.func.num_params * sizeof (type_t);
+	type.t.func.param_types = alloca(i);
+	memset (type.t.func.param_types, 0, i);
 	for (i = 0, e = params; e; i++, e = e->next) {
 		type.t.func.param_types[type.t.func.num_params - 1 - i] = get_type (e);
 		if (e->type == ex_error)
