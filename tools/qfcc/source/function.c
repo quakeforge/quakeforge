@@ -155,7 +155,7 @@ parse_params (type_t *type, param_t *parms)
 {
 	param_t    *p;
 	type_t     *new;
-	int         count;
+	int         count = 0;
 
 	new = new_type ();
 	new->type = ev_func;
@@ -168,7 +168,9 @@ parse_params (type_t *type, param_t *parms)
 			count++;
 		}
 	}
-	new->t.func.param_types = malloc (count * sizeof (type_t));
+	if (count) {
+		new->t.func.param_types = malloc (count * sizeof (type_t));
+	}
 	for (p = parms; p; p = p->next) {
 		if (!p->selector && !p->type && !p->name) {
 			if (p->next)
