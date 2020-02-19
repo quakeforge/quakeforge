@@ -1459,15 +1459,15 @@ convert_from_bool (expr_t *e, type_t *type)
 	expr_t     *one;
 	expr_t     *cond;
 
-	if (type == &type_float) {
+	if (is_float (type)) {
 		one = new_float_expr (1);
 		zero = new_float_expr (0);
-	} else if (type == &type_integer) {
+	} else if (is_integer (type)) {
 		one = new_integer_expr (1);
 		zero = new_integer_expr (0);
 	} else if (is_enum (type) && enum_as_bool (type, &zero, &one)) {
 		// don't need to do anything
-	} else if (type == &type_uinteger) {
+	} else if (is_uinteger (type)) {
 		one = new_uinteger_expr (1);
 		zero = new_uinteger_expr (0);
 	} else {

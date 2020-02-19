@@ -750,11 +750,39 @@ is_enum (const type_t *type)
 }
 
 int
-is_integral (const type_t *type)
+is_integer (const type_t *type)
 {
 	etype_t     t = type->type;
 
-	if (t == ev_integer || t == ev_uinteger || t == ev_short)
+	if (t == ev_integer)
+		return 1;
+	return is_enum (type);
+}
+
+int
+is_uinteger (const type_t *type)
+{
+	etype_t     t = type->type;
+
+	if (t == ev_uinteger)
+		return 1;
+	return is_enum (type);
+}
+
+int
+is_short (const type_t *type)
+{
+	etype_t     t = type->type;
+
+	if (t == ev_short)
+		return 1;
+	return is_enum (type);
+}
+
+int
+is_integral (const type_t *type)
+{
+	if (is_integer (type) || is_uinteger (type) || is_short (type))
 		return 1;
 	return is_enum (type);
 }
