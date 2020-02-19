@@ -22,35 +22,35 @@ next_type (qfot_type_t *type)
 }
 
 int
+check_alias (qfot_type_t *alias)
+{
+	if (alias.meta != ty_none && alias.t.type != ev_pointer) {
+		printf ("%s is not a *int alias\n", alias.t.alias.name);
+		return 0;
+	}
+	return 1;
+}
+
+int
 main (void)
 {
+	baz = snafu;
+
 	int         found_foo = 0;
 	int         found_bar = 0;
 	qfot_type_t *type;
-	qfot_type_t *alias;
-
-	baz = snafu;	// must be able to assign without warnings (won't compile)
 
 	encodings = PR_FindGlobal (".type_encodings");
 
 	for (type = encodings.types;
 		 ((int *)type - (int *) encodings.types) < encodings.size;
 		type = next_type (type)) {
-		if (type.meta == ty_alias && type.t.alias.type == ev_integer) {
-			alias = type.t.alias.aux_type;
+		if (type.meta == ty_alias) {
 			if (type.t.alias.name == "foo") {
-				if (alias.meta == ty_none && alias.t.type == ev_integer) {
-					found_foo = 1;
-				} else {
-					printf ("foo type not aliased to int\n");
-				}
+				found_foo = check_alias (type.t.alias.aux_type);
 			}
 			if (type.t.alias.name == "bar") {
-				if (alias.meta == ty_none && alias.t.type == ev_integer) {
-					found_bar = 1;
-				} else {
-					printf ("bar type not aliased to int\n");
-				}
+				found_bar = check_alias (type.t.alias.aux_type);
 			}
 		}
 	}
