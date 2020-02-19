@@ -2595,6 +2595,11 @@ cast_expr (type_t *type, expr_t *e)
 	if ((type == type_default && is_enum (e_type))
 		|| (is_enum (type) && e_type == type_default))
 		return e;
+	if ((is_pointer (type) && is_string (e_type))
+		|| (is_string (type) && is_pointer (e_type))) {
+		c = new_alias_expr (type, e);
+		return c;
+	}
 	if (!(type->type == ev_pointer
 		  && (e_type->type == ev_pointer || is_integral (e_type)
 			  || is_array (e_type)))

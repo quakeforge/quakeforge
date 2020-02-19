@@ -786,6 +786,14 @@ is_func (const type_t *type)
 }
 
 int
+is_string (const type_t *type)
+{
+	if (type->type == ev_string)
+		return 1;
+	return 0;
+}
+
+int
 type_compatible (const type_t *dst, const type_t *src)
 {
 	// same type
