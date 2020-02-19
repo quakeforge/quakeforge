@@ -12,6 +12,7 @@ typedef enum {
 	ev_integer,
 	ev_uinteger,
 	ev_short,			// value is embedded in the opcode
+	ev_double,
 
 	ev_invalid,			// invalid type. used for instruction checking
 	ev_type_count		// not a type, gives number of types
@@ -107,6 +108,7 @@ string pr_type_name[ev_type_count] = {
 	"integer",
 	"uinteger",
 	"short",
+	"double"
 	"invalid",
 };
 
