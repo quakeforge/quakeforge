@@ -138,8 +138,9 @@ void chain_type (type_t *type);
 
 /**	Append a type to the end of a type chain.
 
-	The type chain must be made up of only field, pointer, function and array
-	types, as other types do not have auxiliary type fields.
+	The type chain must be made up of only field, pointer, function, array
+	and alias (typedef) types, as other types do not have auxiliary type
+	fields.
 
 	\param type		The type chain to which the type will be appended.
 	\param new		The type to be appended. May be any type.
@@ -153,6 +154,7 @@ type_t *field_type (type_t *aux);
 type_t *pointer_type (type_t *aux);
 type_t *array_type (type_t *aux, int size);
 type_t *based_array_type (type_t *aux, int base, int top);
+type_t *alias_type (type_t *aux, const char *name);
 void print_type_str (struct dstring_s *str, const type_t *type);
 void print_type (const type_t *type);
 const char *encode_params (const type_t *type);

@@ -253,6 +253,22 @@ qfo_encode_class (type_t *type)
 	return def;
 }
 
+static def_t *
+qfo_encode_alias (type_t *type)
+{
+	qfot_type_t *enc;
+	def_t      *def;
+	def_t      *alias_type_def;
+
+	alias_type_def = qfo_encode_type (type->t.alias.type);
+
+	def = qfo_new_encoding (type, sizeof (enc->t.alias));
+	enc = D_POINTER (qfot_type_t, def);
+	ENC_DEF (enc->t.alias.type, alias_type_def);
+	ENC_STR (enc->t.alias.name, type->name);
+	return def;
+}
+
 def_t *
 qfo_encode_type (type_t *type)
 {
@@ -265,6 +281,7 @@ qfo_encode_type (type_t *type)
 		qfo_encode_struct,	// ty_enum
 		qfo_encode_array,	// ty_array
 		qfo_encode_class,	// ty_class
+		qfo_encode_alias,	// ty_alias
 	};
 
 	if (type->type_def && type->type_def->external) {
@@ -274,7 +291,7 @@ qfo_encode_type (type_t *type)
 	}
 	if (type->type_def)
 		return type->type_def;
-	if (type->meta > ty_class)
+	if (type->meta > sizeof (funcs) / (sizeof (funcs[0])))
 		internal_error (0, "bad type meta type");
 	if (!type->encoding)
 		type->encoding = type_get_encoding (type);

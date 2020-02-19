@@ -406,6 +406,7 @@ external_decl
 			$1->type = find_type (append_type ($1->type, spec.type));
 			if (spec.is_typedef) {
 				$1->sy_type = sy_type;
+				$1->type = alias_type ($1->type, $1->name);
 				symtab_addsymbol (current_symtab, $1);
 			} else {
 				initialize_def ($1, 0, current_symtab->space, spec.storage);

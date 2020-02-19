@@ -423,6 +423,7 @@ static const char *ty_meta_names[] = {
 	"ty_enum",
 	"ty_array",
 	"ty_class",
+	"ty_alias",
 };
 #define NUM_META ((int)(sizeof (ty_meta_names) / sizeof (ty_meta_names[0])))
 

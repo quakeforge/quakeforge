@@ -445,6 +445,25 @@ based_array_type (type_t *aux, int base, int top)
 	return new;
 }
 
+type_t *
+alias_type (type_t *aux, const char *name)
+{
+	type_t      _new;
+	type_t     *new = &_new;
+
+	if (!aux || !name) {
+		internal_error (0, "alias to null type or with no name");
+	}
+	memset (&_new, 0, sizeof (_new));
+	new->name = save_string (name);
+	new->meta = ty_alias;
+	new->type = aux->type;
+	new->alignment = aux->alignment;
+	new->t.alias.type = aux;
+	new = find_type (new);
+	return new;
+}
+
 void
 print_type_str (dstring_t *str, const type_t *type)
 {
