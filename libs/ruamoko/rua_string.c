@@ -112,6 +112,10 @@ bi_str_mid (progs_t *pr)
 		end = size;
 	if (pos < 0 || pos >= size || end <= pos)
 		return;
+	if (end == size) {
+		R_STRING (pr) = str + pos - pr->pr_strings;
+		return;
+	}
 	temp = alloca (end - pos + 1);
 	strncpy (temp, str + pos, end - pos);
 	temp[end - pos] = 0;
