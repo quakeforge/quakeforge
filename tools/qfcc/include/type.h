@@ -160,6 +160,7 @@ void print_type (const type_t *type);
 const char *encode_params (const type_t *type);
 void encode_type (struct dstring_s *encoding, const type_t *type);
 const char *type_get_encoding (const type_t *type);
+const type_t *unalias_type (const type_t *type) __attribute__((pure));
 int is_void (const type_t *type) __attribute__((pure));
 int is_enum (const type_t *type) __attribute__((pure));
 int is_integral (const type_t *type) __attribute__((pure));
