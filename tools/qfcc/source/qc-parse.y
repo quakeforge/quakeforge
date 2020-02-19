@@ -153,7 +153,7 @@ int yylex (void);
 %token				PROTECTED PROTOCOL PUBLIC SELECTOR REFERENCE SELF THIS
 
 %type	<spec>		optional_specifiers specifiers local_specifiers
-%type	<spec>		storage_class save_storage
+%type	<spec>		storage_class save_storage set_spec_storage
 %type	<spec>		type_specifier type_specifier_or_storage_class
 %type	<spec>		type
 
@@ -345,6 +345,14 @@ external_def
 save_storage
 	: /* emtpy */
 		{
+			$$.storage = current_storage;
+		}
+	;
+
+set_spec_storage
+	: /* emtpy */
+		{
+			$$ = $<spec>0;
 			$$.storage = current_storage;
 		}
 	;
@@ -1229,7 +1237,7 @@ switch_block
 
 opt_init
 	: cexpr
-	| type init_var_decl_list { $$ = $2; }
+	| type set_spec_storage init_var_decl_list { $$ = $3; }
 	| /* empty */
 		{
 			$$ = 0;
