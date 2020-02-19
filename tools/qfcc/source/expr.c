@@ -1843,7 +1843,7 @@ bitnot_expr:
 }
 
 expr_t *
-build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
+build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 {
 	expr_t     *e;
 	int         arg_count = 0, parm_count = 0;
@@ -1854,6 +1854,8 @@ build_function_call (expr_t *fexpr, type_t *ftype, expr_t *params)
 	int         arg_expr_count = 0;
 	expr_t     *call;
 	expr_t     *err = 0;
+
+	ftype = unalias_type (ftype);
 
 	for (e = params; e; e = e->next) {
 		if (e->type == ex_error)
