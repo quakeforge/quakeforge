@@ -654,7 +654,9 @@ encode_type (dstring_t *encoding, const type_t *type)
 			dasprintf (encoding, "]");
 			return;
 		case ty_alias:
+			dasprintf (encoding, "{%s>", type->name);
 			encode_type (encoding, type->t.alias.type);
+			dasprintf (encoding, "}");
 			return;
 		case ty_none:
 			switch (type->type) {
