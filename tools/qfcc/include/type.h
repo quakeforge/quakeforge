@@ -51,6 +51,10 @@ typedef struct ty_array_s {
 	int         size;
 } ty_array_t;
 
+typedef struct ty_alias_s {
+	struct type_s *type;
+} ty_alias_t;
+
 typedef enum {
 	ty_none,				///< func/field/pointer or not used
 	ty_struct,
@@ -58,6 +62,7 @@ typedef enum {
 	ty_enum,
 	ty_array,
 	ty_class,
+	ty_alias,
 } ty_meta_e;
 
 typedef struct type_s {
@@ -72,6 +77,7 @@ typedef struct type_s {
 		ty_array_t  array;
 		struct symtab_s *symtab;
 		struct class_s *class;
+		ty_alias_t  alias;
 	} t;
 	struct type_s *next;
 	int         freeable;

@@ -40,6 +40,12 @@
 
 #include "QF/pr_comp.h"
 
+typedef struct qfot_alias_s {
+	pr_int_t    type;				///< type at end of alias chain
+	pointer_t   aux_type;			///< referenced type
+	string_t    name;				///< alias name
+} qfot_alias_t;
+
 typedef struct qfot_fldptr_s {
 	pr_int_t    type;				///< ev_field or ev_pointer
 	pointer_t   aux_type;			///< referenced type
@@ -94,6 +100,7 @@ typedef struct qfot_type_s {
 		qfot_struct_t strct;		///< ty_struct/ty_union/ty_enum
 		qfot_array_t array;			///< ty_array
 		pointer_t   class;			///< ty_class
+		qfot_alias_t alias;			///< ty_alias
 	}           t;
 } qfot_type_t;
 

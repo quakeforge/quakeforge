@@ -292,6 +292,8 @@ types_same (type_t *a, type_t *b)
 			if (a->t.class != b->t.class)
 				return 0;
 			return compare_protocols (a->protos, b->protos);
+		case ty_alias:
+			return !strcmp (a->name, b->name);
 	}
 	internal_error (0, "we be broke");
 }
@@ -340,6 +342,9 @@ find_type (type_t *type)
 				type->t.array.type = find_type (type->t.array.type);
 				break;
 			case ty_class:
+				break;
+			case ty_alias:
+				type->t.alias.type = find_type (type->t.alias.type);
 				break;
 		}
 	}
@@ -512,6 +517,11 @@ print_type_str (dstring_t *str, const type_t *type)
 						dasprintf (str, "[%d]", type->t.array.size);
 					}
 					break;
+				case ty_alias:
+					dasprintf (str, "({%s=", type->name);
+					print_type_str (str, type->t.alias.type);
+					dstring_appendstr (str, "})");
+					break;
 				case ty_none:
 					break;
 			}
@@ -670,6 +680,9 @@ encode_type (dstring_t *encoding, const type_t *type)
 					dasprintf (encoding, "=");
 					encode_type (encoding, type->t.array.type);
 					dasprintf (encoding, "]");
+					break;
+				case ty_alias:
+					encode_type (encoding, type->t.alias.type);
 					break;
 				case ty_none:
 					dasprintf (encoding, "?");
@@ -892,6 +905,8 @@ type_size (const type_t *type)
 					}
 				case ty_array:
 					return type->t.array.size * type_size (type->t.array.type);
+				case ty_alias:
+					return type_size (type->t.alias.type);
 				case ty_none:
 					return 0;
 			}

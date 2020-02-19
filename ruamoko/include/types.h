@@ -27,7 +27,14 @@ typedef enum {
 	ty_enum,
 	ty_array,
 	ty_class,
+	ty_alias,
 } ty_meta_e;
+
+typedef struct qfot_alias_s {
+	etype_t     type;
+	struct qfot_type_s *aux_type;
+	string      name;
+} qfot_alias_t;
 
 typedef struct qfot_fldptr_s {
 	etype_t     type;
@@ -70,6 +77,7 @@ typedef struct qfot_type_s {
 		qfot_struct_t strct;
 		qfot_array_t array;
 		string      class;
+		qfot_alias_t alias;
 	}           t;
 } qfot_type_t;
 

@@ -9,8 +9,8 @@ AM_CPPFLAGS= -I$(top_srcdir)/include $(QFCC_INCS)
 QFCC_DEP=$(builddir)/../source/qfcc$(EXEEXT)
 QFCC=$(QFCC_DEP)
 
-QCFLAGS=-qq -O -g --no-default-paths -Werror
-QCPPFLAGS=
+QCFLAGS=-qq -O -g -Werror
+QCPPFLAGS=--no-default-paths -I$(top_srcdir)/ruamoko/include
 QCOMPILE=$(QFCC) $(QCFLAGS) $(QCPPFLAGS)
 
 SUFFIXES=.qfo .r
@@ -54,6 +54,7 @@ test_progs_dat=\
 	structstruct.dat \
 	swap.dat \
 	triangle.dat \
+	typedef.dat \
 	vecexpr.dat \
 	vecinit.dat \
 	voidfor.dat \
@@ -353,6 +354,15 @@ triangle.run: Makefile build-run
 	@$(srcdir)/build-run $@ 100000 100000 1.00005 50002.4961
 include ./$(DEPDIR)/triangle.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/triangle.Qo
+
+typedef_dat_SOURCES=typedef.r
+typedef_obj=$(typedef_dat_SOURCES:.r=.qfo)
+typedef.dat$(EXEEXT): $(typedef_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(typedef_obj)
+typedef.run: Makefile build-run
+	@$(srcdir)/build-run $@
+include ./$(DEPDIR)/typedef.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/typedef.Qo
 
 vecexpr_dat_SOURCES=vecexpr.r
 vecexpr_obj=$(vecexpr_dat_SOURCES:.r=.qfo)
