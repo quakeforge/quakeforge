@@ -677,10 +677,10 @@ get_type_size (qfo_t *qfo, pointer_t type)
 	type_def = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, type);
 	switch ((ty_meta_e)type_def->meta) {
 		case ty_alias:
+			return get_type_size (qfo, type_def->t.alias.aux_type);
 		case ty_none:
 			// field, pointer and function types store their basic type in
 			// the same location.
-			// alias types store the basic type at the end of the alias chain
 			return pr_type_size[type_def->t.type];
 		case ty_struct:
 			for (i = size = 0; i < type_def->t.strct.num_fields; i++)
@@ -726,11 +726,11 @@ get_type_alignment_log (qfo_t *qfo, pointer_t type)
 		return 0;
 	type_def = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, type);
 	switch ((ty_meta_e)type_def->meta) {
-		case ty_none:
 		case ty_alias:
+			return get_type_alignment_log (qfo, type_def->t.alias.aux_type);
+		case ty_none:
 			// field, pointer and function types store their basic type in
 			// the same location.
-			// alias types store the basic type at the end of the alias chain
 			return qfo_log2 (ev_types[type_def->t.type]->alignment);
 		case ty_struct:
 		case ty_union:
