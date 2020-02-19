@@ -897,8 +897,11 @@ type_assignable (const type_t *dst, const type_t *src)
 	if (ret >= 0)
 		return ret;
 
-	dst = dst->t.fldptr.type;
-	src = src->t.fldptr.type;
+	dst = unalias_type (dst->t.fldptr.type);
+	src = unalias_type (src->t.fldptr.type);
+	if (dst == src) {
+		return 1;
+	}
 	if (is_void (dst))
 		return 1;
 	if (is_void (src))
