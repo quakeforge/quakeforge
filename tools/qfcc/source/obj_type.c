@@ -264,7 +264,8 @@ qfo_encode_alias (type_t *type)
 
 	def = qfo_new_encoding (type, sizeof (enc->t.alias));
 	enc = D_POINTER (qfot_type_t, def);
-	ENC_DEF (enc->t.alias.type, alias_type_def);
+	enc->t.alias.type = type->type;
+	ENC_DEF (enc->t.alias.aux_type, alias_type_def);
 	ENC_STR (enc->t.alias.name, type->name);
 	return def;
 }
