@@ -307,10 +307,9 @@ init_elements (struct def_s *def, expr_t *eles)
 			elements[i].offset = base_offset + i * type_size (array_type);
 		}
 		num_elements = i;
-	} else if (is_struct (def->type)
-			   || def->type == &type_vector
-			   || def->type == &type_quaternion) {
-		symtab_t   *symtab = def->type->t.symtab;
+	} else if (is_struct (def->type) || is_vector (def->type)
+			   || is_quaternion (def->type)) {
+		symtab_t   *symtab = unalias_type (def->type)->t.symtab;
 		symbol_t   *field;
 
 		for (i = 0, field = symtab->symbols; field; field = field->next) {
