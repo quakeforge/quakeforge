@@ -28,7 +28,7 @@
 #ifndef __sys_h
 #define __sys_h
 
-/** \defgroup sys Portability
+/** \defgroup sys System Portability
 	\ingroup utils
 	Non-portable functions
 */
