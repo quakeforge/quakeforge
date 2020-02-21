@@ -149,6 +149,7 @@ init_qf (void)
 	pr.allocate_progs_mem = allocate_progs_mem;
 	pr.free_progs_mem = free_progs_mem;
 	pr.no_exec_limit = 0;	// absolutely want a limit!
+	pr.pr_trace_depth = -1;
 	pr.pr_trace = options.trace;
 
 	PR_Init_Cvars ();
