@@ -94,9 +94,9 @@ typedef struct qfot_type_s {
 	pr_int_t    size;				///< total word size of this encoding
 	string_t    encoding;			///< Objective-QC encoding
 	union {
-		pr_int_t    type;			///< basic type: etype_t
-		qfot_fldptr_t fldptr;		///< ty_none, ev_pointer/ev_field
-		qfot_func_t func;			///< ty_none, ev_func
+		pr_int_t    type;			///< ty_basic: etype_t
+		qfot_fldptr_t fldptr;		///< ty_basic, ev_pointer/ev_field
+		qfot_func_t func;			///< ty_basic, ev_func
 		qfot_struct_t strct;		///< ty_struct/ty_union/ty_enum
 		qfot_array_t array;			///< ty_array
 		pointer_t   class;			///< ty_class

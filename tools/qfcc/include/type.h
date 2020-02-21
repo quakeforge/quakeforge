@@ -56,7 +56,7 @@ typedef struct ty_alias_s {
 } ty_alias_t;
 
 typedef enum {
-	ty_none,				///< func/field/pointer or not used
+	ty_basic,				///< VM type (float, int, pointer, field, etc)
 	ty_struct,
 	ty_union,
 	ty_enum,
@@ -72,6 +72,7 @@ typedef struct type_s {
 	/// function/pointer/array/struct types are more complex
 	ty_meta_e   meta;
 	union {
+		// no data for ty_basic when not a func, field or pointer
 		ty_func_t   func;
 		ty_fldptr_t fldptr;
 		ty_array_t  array;

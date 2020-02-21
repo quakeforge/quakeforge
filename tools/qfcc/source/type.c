@@ -67,11 +67,13 @@ type_t      type_string = { ev_string, "string", 1 };
 type_t      type_float = { ev_float, "float", 1 };
 type_t      type_vector = { ev_vector, "vector", 1 };
 type_t      type_entity = { ev_entity, "entity", 1 };
-type_t      type_field = {ev_field, "field", 1, ty_none, {{&type_void}} };
+type_t      type_field = {ev_field, "field", 1, ty_basic, {{&type_void}} };
 
 // type_function is a void() function used for state defs
-type_t      type_function = { ev_func, "function", 1, ty_none, {{&type_void}} };
-type_t      type_pointer = { ev_pointer, "pointer", 1, ty_none, {{&type_void}} };
+type_t      type_function = { ev_func, "function", 1, ty_basic,
+								{{&type_void}} };
+type_t      type_pointer = { ev_pointer, "pointer", 1, ty_basic,
+								{{&type_void}} };
 type_t      type_quaternion = { ev_quat, "quaternion", 1 };
 type_t      type_integer = { ev_integer, "int", 1 };
 type_t      type_uinteger = { ev_uinteger, "uint", 1 };
@@ -88,7 +90,7 @@ type_t      type_zero = { ev_invalid, 0, 0, ty_struct };
 type_t      type_type_encodings = { ev_invalid, "@type_encodings", 0,
 									ty_struct };
 
-type_t      type_floatfield = { ev_field, ".float", 1, ty_none,
+type_t      type_floatfield = { ev_field, ".float", 1, ty_basic,
 								{{&type_float}} };
 
 type_t     *ev_types[ev_type_count] = {
@@ -252,7 +254,7 @@ types_same (type_t *a, type_t *b)
 	if (a->type != b->type || a->meta != b->meta)
 		return 0;
 	switch (a->meta) {
-		case ty_none:
+		case ty_basic:
 			switch (a->type) {
 				case ev_field:
 				case ev_pointer:
@@ -315,7 +317,7 @@ find_type (type_t *type)
 
 	if (type->freeable) {
 		switch (type->meta) {
-			case ty_none:
+			case ty_basic:
 				switch (type->type) {
 					case ev_field:
 					case ev_pointer:
@@ -500,7 +502,7 @@ print_type_str (dstring_t *str, const type_t *type)
 			print_type_str (str, type->t.alias.type);
 			dstring_appendstr (str, "})");
 			return;
-		case ty_none:
+		case ty_basic:
 			switch (type->type) {
 				case ev_field:
 					dasprintf (str, ".(");
@@ -658,7 +660,7 @@ encode_type (dstring_t *encoding, const type_t *type)
 			encode_type (encoding, type->t.alias.type);
 			dasprintf (encoding, "}");
 			return;
-		case ty_none:
+		case ty_basic:
 			switch (type->type) {
 				case ev_void:
 					dasprintf (encoding, "v");
@@ -984,7 +986,7 @@ type_size (const type_t *type)
 					return type->t.array.size * type_size (type->t.array.type);
 				case ty_alias:
 					return type_size (type->t.alias.type);
-				case ty_none:
+				case ty_basic:
 					return 0;
 			}
 			break;
@@ -1060,7 +1062,7 @@ init_types (void)
 	make_structure ("@param", 'u', param_struct, &type_param);
 	make_structure ("@vector", 's', vector_struct, &type_vector);
 	type_vector.type = ev_vector;
-	type_vector.meta = ty_none;
+	type_vector.meta = ty_basic;
 
 	make_structure ("@type_encodings", 's', type_encoding_struct,
 					&type_type_encodings);
@@ -1070,7 +1072,7 @@ init_types (void)
 
 	make_structure ("@quaternion", 's', quaternion_struct, &type_quaternion);
 	type_quaternion.type = ev_quat;
-	type_quaternion.meta = ty_none;
+	type_quaternion.meta = ty_basic;
 	{
 		symbol_t   *sym;
 		sym = new_symbol_type ("x", &type_float);

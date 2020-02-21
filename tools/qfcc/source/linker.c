@@ -1164,7 +1164,7 @@ check_defs (void)
 			defref_t   *_d = Hash_Find (defined_data_defs, "self");
 			if (_d) {
 				qfo_def_t  *d = REF (_d);
-				if (QFO_TYPEMETA (work, d->type) == ty_none
+				if (QFO_TYPEMETA (work, d->type) == ty_basic
 					&& QFO_TYPETYPE (work, d->type) == ev_entity)
 					def_warning (d, "@self and self used together");
 			}

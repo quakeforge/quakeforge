@@ -21,7 +21,7 @@ typedef enum {
 } etype_t;
 
 typedef enum {
-    ty_none,				///< func/field/pointer or not used
+	ty_basic,				///< VM type (float, int, pointer, field, etc)
 	ty_struct,
 	ty_union,
 	ty_enum,

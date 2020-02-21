@@ -647,7 +647,7 @@ get_def_type (qfo_t *qfo, pointer_t type)
 		return ev_void;
 	type_def = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, type);
 	switch ((ty_meta_e)type_def->meta) {
-		case ty_none:
+		case ty_basic:
 		case ty_alias:
 			// field, pointer and function types store their basic type in
 			// the same location.
@@ -678,7 +678,7 @@ get_type_size (qfo_t *qfo, pointer_t type)
 	switch ((ty_meta_e)type_def->meta) {
 		case ty_alias:
 			return get_type_size (qfo, type_def->t.alias.aux_type);
-		case ty_none:
+		case ty_basic:
 			// field, pointer and function types store their basic type in
 			// the same location.
 			return pr_type_size[type_def->t.type];
@@ -728,7 +728,7 @@ get_type_alignment_log (qfo_t *qfo, pointer_t type)
 	switch ((ty_meta_e)type_def->meta) {
 		case ty_alias:
 			return get_type_alignment_log (qfo, type_def->t.alias.aux_type);
-		case ty_none:
+		case ty_basic:
 			// field, pointer and function types store their basic type in
 			// the same location.
 			return qfo_log2 (ev_types[type_def->t.type]->alignment);
@@ -773,7 +773,7 @@ function_params (qfo_t *qfo, qfo_func_t *func, dfunction_t *df)
 	if (func->type >= qfo->spaces[qfo_type_space].data_size)
 		return;
 	type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, func->type);
-	if (type->meta != ty_none && type->t.type != ev_func)
+	if (type->meta != ty_basic && type->t.type != ev_func)
 		return;
 	df->numparms = num_params = type->t.func.num_params;
 	if (num_params < 0)

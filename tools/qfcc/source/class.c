@@ -69,30 +69,31 @@ static hashtab_t *protocol_hash;
 
 // these will be built up further
 type_t      type_obj_selector = { ev_invalid, 0, 0, ty_struct};
-type_t      type_SEL = { ev_pointer, "SEL", 1, ty_none, {{&type_obj_selector}}};
+type_t      type_SEL = { ev_pointer, "SEL", 1, ty_basic,
+						{{&type_obj_selector}}};
 type_t     *IMP_params[] = {&type_id, &type_SEL};
-type_t      type_IMP = { ev_func, "IMP", 1, ty_none,
+type_t      type_IMP = { ev_func, "IMP", 1, ty_basic,
 						 {{&type_id, -3, IMP_params}}};
 type_t      type_obj_super = { ev_invalid, 0, 0 };
-type_t      type_SuperPtr = { ev_pointer, 0, 1, ty_none, {{&type_obj_super}}};
+type_t      type_SuperPtr = { ev_pointer, 0, 1, ty_basic, {{&type_obj_super}}};
 type_t     *supermsg_params[] = {&type_SuperPtr, &type_SEL};
-type_t      type_supermsg = { ev_func, ".supermsg", 1, ty_none,
+type_t      type_supermsg = { ev_func, ".supermsg", 1, ty_basic,
 							  {{&type_id, -3, supermsg_params}}};
 type_t      type_obj_method = { ev_invalid, 0, 0, ty_struct };
 type_t      type_obj_method_description = { ev_invalid, 0, 0, ty_struct };
 type_t      type_obj_category = { ev_invalid, 0, 0, ty_struct};
 type_t      type_obj_ivar = { ev_invalid, 0, 0, ty_struct};
 type_t      type_obj_module = { ev_invalid, 0, 0, ty_struct};
-type_t      type_moduleptr = { ev_pointer, 0, 1, ty_none,
+type_t      type_moduleptr = { ev_pointer, 0, 1, ty_basic,
 									{{&type_obj_module}}};
 type_t     *obj_exec_class_params[] = { &type_moduleptr };
-type_t      type_obj_exec_class = { ev_func, 0, 1, ty_none,
+type_t      type_obj_exec_class = { ev_func, 0, 1, ty_basic,
 									{{&type_void, 1, obj_exec_class_params}}};
 
 type_t      type_obj_object = {ev_invalid, 0, 0, ty_struct};
-type_t      type_id = { ev_pointer, "id", 1, ty_none, {{&type_obj_object}}};
+type_t      type_id = { ev_pointer, "id", 1, ty_basic, {{&type_obj_object}}};
 type_t      type_obj_class = { ev_invalid, 0, 0, ty_struct};
-type_t      type_Class = { ev_pointer, 0, 1, ty_none, {{&type_obj_class}}};
+type_t      type_Class = { ev_pointer, 0, 1, ty_basic, {{&type_obj_class}}};
 type_t      type_obj_protocol = { ev_invalid, 0, 0, ty_struct};
 
 int         obj_initialized = 0;

@@ -417,7 +417,7 @@ qfo_functions (qfo_t *qfo)
 }
 
 static const char *ty_meta_names[] = {
-	"ty_none",
+	"ty_basic",
 	"ty_struct",
 	"ty_union",
 	"ty_enum",
@@ -461,7 +461,7 @@ dump_qfo_types (qfo_t *qfo, int base_address)
 			break;
 		}
 		switch ((ty_meta_e) type->meta) {
-			case ty_none:
+			case ty_basic:
 				printf (" %-10s", (type->t.type < 0
 								   || type->t.type >= ev_type_count)
 								  ? "invalid type"
