@@ -176,7 +176,7 @@ file_error (progs_t *pr, const char *name)
 }
 
 static void *
-load_file (progs_t *pr, const char *name)
+load_file (progs_t *pr, const char *name, off_t *_size)
 {
 	QFile      *file;
 	int         size;
@@ -191,6 +191,7 @@ load_file (progs_t *pr, const char *name)
 	sym = malloc (size + 1);
 	sym[size] = 0;
 	Qread (file, sym, size);
+	*_size = size;
 	return sym;
 }
 

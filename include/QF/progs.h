@@ -1550,7 +1550,7 @@ struct progs_s {
 	int         no_exec_limit;
 
 	void      (*file_error) (progs_t *pr, const char *path);
-	void     *(*load_file) (progs_t *pr, const char *path);
+	void     *(*load_file) (progs_t *pr, const char *path, off_t *size);
 	void     *(*allocate_progs_mem) (progs_t *pr, int size);
 	void      (*free_progs_mem) (progs_t *pr, void *mem);
 

@@ -510,9 +510,11 @@ menu_free_progs_mem (progs_t *pr, void *mem)
 }
 
 static void *
-menu_load_file (progs_t *pr, const char *path)
+menu_load_file (progs_t *pr, const char *path, off_t *size)
 {
-	return QFS_LoadFile (QFS_FOpenFile (path), 0);
+	void *data = QFS_LoadFile (QFS_FOpenFile (path), 0);
+	*size = qfs_filesize;
+	return data;
 }
 
 static builtin_t builtins[] = {

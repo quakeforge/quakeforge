@@ -81,9 +81,11 @@ file_error (progs_t *pr, const char *path)
 }
 
 static void *
-load_file (progs_t *pr, const char *path)
+load_file (progs_t *pr, const char *path, off_t *size)
 {
-	return QFS_LoadHunkFile (QFS_FOpenFile (path));
+	void *data = QFS_LoadHunkFile (QFS_FOpenFile (path));
+	*size = qfs_filesize;
+	return data;
 }
 
 static void *

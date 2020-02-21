@@ -65,6 +65,7 @@ typedef struct {
 typedef struct {
 	char *name;
 	char *text;
+	off_t size;
 	line_t *lines;
 	pr_uint_t   num_lines;
 	progs_t *pr;
@@ -227,7 +228,8 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 		return 0;
 	for (dir = source_paths; *dir && !f->text; dir++) {
 		f->text = pr->load_file (pr, va ("%s%s%s", *dir, **dir ? "/" : "",
-										 fname));
+										 fname),
+								 &f->size);
 	}
 	if (!f->text) {
 		pr->file_error (pr, fname);
@@ -273,6 +275,7 @@ PR_LoadDebug (progs_t *pr)
 {
 	char       *sym_path;
 	const char *path_end, *sym_file;
+	off_t       debug_size;
 	pr_uint_t   i;
 	ddef_t	   *def;
 	pr_type_t  *str = 0;
@@ -303,7 +306,7 @@ PR_LoadDebug (progs_t *pr)
 	sym_path = malloc (strlen (sym_file) + (path_end - pr->progs_name) + 1);
 	strncpy (sym_path, pr->progs_name, path_end - pr->progs_name);
 	strcpy (sym_path + (path_end - pr->progs_name), sym_file);
-	pr->debug = pr->load_file (pr, sym_path);
+	pr->debug = pr->load_file (pr, sym_path, &debug_size);
 	if (!pr->debug) {
 		Sys_Printf ("can't load %s for debug info\n", sym_path);
 		free (sym_path);
