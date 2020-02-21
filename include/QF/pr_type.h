@@ -40,6 +40,16 @@
 
 #include "QF/pr_comp.h"
 
+typedef enum {
+	ty_basic,				///< VM type (float, int, pointer, field, etc)
+	ty_struct,
+	ty_union,
+	ty_enum,
+	ty_array,
+	ty_class,
+	ty_alias,
+} ty_meta_e;
+
 typedef struct qfot_alias_s {
 	pr_int_t    type;				///< type at end of alias chain
 	pointer_t   aux_type;			///< referenced type

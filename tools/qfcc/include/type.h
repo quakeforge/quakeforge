@@ -31,7 +31,7 @@
 #ifndef __type_h
 #define __type_h
 
-#include "QF/pr_comp.h"
+#include "QF/pr_type.h"
 
 #include "def.h"
 
@@ -54,16 +54,6 @@ typedef struct ty_array_s {
 typedef struct ty_alias_s {
 	struct type_s *type;
 } ty_alias_t;
-
-typedef enum {
-	ty_basic,				///< VM type (float, int, pointer, field, etc)
-	ty_struct,
-	ty_union,
-	ty_enum,
-	ty_array,
-	ty_class,
-	ty_alias,
-} ty_meta_e;
 
 typedef struct type_s {
 	etype_t     type;		///< ev_invalid means structure/array etc
