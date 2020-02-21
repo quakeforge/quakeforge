@@ -24,7 +24,7 @@ next_type (qfot_type_t *type)
 int
 check_alias (qfot_type_t *alias)
 {
-	if (alias.meta != ty_none && alias.t.type != ev_pointer) {
+	if (alias.meta != ty_basic && alias.t.type != ev_pointer) {
 		printf ("%s is not a *int alias\n", alias.t.alias.name);
 		return 0;
 	}
