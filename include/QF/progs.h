@@ -236,7 +236,7 @@ void ED_PrintNum (progs_t *pr, pr_int_t ent);
 // pr_parse.c
 struct script_s;
 struct plitem_s;
-qboolean ED_ParseEpair (progs_t *pr, pr_type_t *base, ddef_t *key,
+qboolean ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key,
 						const char *s);
 struct plitem_s *ED_EntityDict (progs_t *pr, edict_t *ed);
 struct plitem_s *ED_GlobalsDict (progs_t *pr);
@@ -269,11 +269,11 @@ void ED_EntityParseFunction (progs_t *pr);
 */
 ///@{
 
-ddef_t *PR_FieldAtOfs (progs_t *pr, pr_int_t ofs) __attribute__((pure));
-ddef_t *PR_GlobalAtOfs (progs_t *pr, pr_int_t ofs) __attribute__((pure));
+pr_def_t *PR_FieldAtOfs (progs_t *pr, pointer_t ofs) __attribute__((pure));
+pr_def_t *PR_GlobalAtOfs (progs_t *pr, pointer_t ofs) __attribute__((pure));
 
-ddef_t *PR_FindField (progs_t *pr, const char *name);
-ddef_t *PR_FindGlobal (progs_t *pr, const char *name);
+pr_def_t *PR_FindField (progs_t *pr, const char *name);
+pr_def_t *PR_FindGlobal (progs_t *pr, const char *name);
 dfunction_t *PR_FindFunction (progs_t *pr, const char *name);
 
 int PR_ResolveGlobals (progs_t *pr);
@@ -1499,8 +1499,8 @@ pr_uint_t PR_Get_Lineno_Line (progs_t *pr, pr_lineno_t *lineno) __attribute__((p
 pr_lineno_t *PR_Find_Lineno (progs_t *pr, pr_uint_t addr) __attribute__((pure));
 const char *PR_Get_Source_File (progs_t *pr, pr_lineno_t *lineno) __attribute__((pure));
 const char *PR_Get_Source_Line (progs_t *pr, pr_uint_t addr);
-ddef_t *PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm) __attribute__((pure));
-ddef_t *PR_Get_Local_Def (progs_t *pr, pr_int_t offs) __attribute__((pure));
+pr_def_t *PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm) __attribute__((pure));
+pr_def_t *PR_Get_Local_Def (progs_t *pr, pointer_t offs) __attribute__((pure));
 void PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents);
 void PR_DumpState (progs_t *pr);
 void PR_StackTrace (progs_t *pr);
@@ -1616,8 +1616,10 @@ struct progs_s {
 	bfunction_t *function_table;
 	char       *pr_strings;
 	int         pr_stringsize;
-	ddef_t     *pr_globaldefs;
-	ddef_t     *pr_fielddefs;
+	ddef_t     *pr_globalddefs;
+	ddef_t     *pr_fieldddefs;
+	pr_def_t   *pr_globaldefs;
+	pr_def_t   *pr_fielddefs;
 	dstatement_t *pr_statements;
 	pr_type_t  *pr_globals;
 	unsigned    globals_size;
@@ -1708,7 +1710,7 @@ struct progs_s {
 	struct pr_auxfunction_s *auxfunctions;
 	struct pr_auxfunction_s **auxfunction_map;
 	struct pr_lineno_s *linenos;
-	ddef_t     *local_defs;
+	pr_def_t   *local_defs;
 	pr_type_t  *watch;
 	int         wp_conditional;
 	pr_type_t   wp_val;

@@ -379,7 +379,7 @@ set_address (sv_def_t *def, void *address)
 static int
 resolve_globals (progs_t *pr, sv_def_t *def, int mode)
 {
-	ddef_t     *ddef;
+	pr_def_t   *ddef;
 	int         ret = 1;
 
 	if (mode == 2) {
@@ -425,7 +425,7 @@ resolve_functions (progs_t *pr, sv_def_t *def, int mode)
 static int
 resolve_fields (progs_t *pr, sv_def_t *def, int mode)
 {
-	ddef_t     *ddef;
+	pr_def_t   *ddef;
 	int         ret = 1;
 
 	if (mode == 2) {

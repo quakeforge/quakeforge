@@ -1550,7 +1550,7 @@ static void
 rua_PR_FindGlobal (progs_t *pr)
 {
 	const char *name = P_GSTRING (pr, 0);
-	ddef_t     *def;
+	pr_def_t   *def;
 
 	R_POINTER (pr) = 0;
 	def = PR_FindGlobal (pr, name);
@@ -1654,7 +1654,7 @@ rua_init_finish (progs_t *pr)
 static int
 rua_init_runtime (progs_t *pr)
 {
-	ddef_t     *def;
+	pr_def_t   *def;
 	unsigned    i;
 
 	if (!pr->selector_hash)

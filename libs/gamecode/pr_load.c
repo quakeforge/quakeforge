@@ -70,8 +70,8 @@ static const char *
 var_get_key (const void *d, void *_pr)
 {
 	progs_t *pr = (progs_t*)_pr;
-	ddef_t *def = (ddef_t*)d;
-	return PR_GetString (pr, def->s_name);
+	pr_def_t *def = (pr_def_t*)d;
+	return PR_GetString (pr, def->name);
 }
 
 static void
@@ -119,6 +119,8 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	dprograms_t progs;
 	byte       *base;
 	byte       *heap;
+	pr_def_t   *xdefs_def = 0;
+
 
 	if (!pr->file_error)
 		pr->file_error = file_error;
@@ -220,8 +222,8 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 		(dfunction_t *) (base + pr->progs->ofs_functions);
 	pr->pr_strings = (char *) base + pr->progs->ofs_strings;
 	pr->pr_stringsize = (char *) heap + pr->zone_size - (char *) base;
-	pr->pr_globaldefs = (ddef_t *) (base + pr->progs->ofs_globaldefs);
-	pr->pr_fielddefs = (ddef_t *) (base + pr->progs->ofs_fielddefs);
+	pr->pr_globalddefs = (ddef_t *) (base + pr->progs->ofs_globaldefs);
+	pr->pr_fieldddefs = (ddef_t *) (base + pr->progs->ofs_fielddefs);
 	pr->pr_statements = (dstatement_t *) (base + pr->progs->ofs_statements);
 
 	pr->pr_globals = (pr_type_t *) (base + pr->progs->ofs_globals);
@@ -272,24 +274,58 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 			Hash_Add (pr->function_hash, &pr->pr_functions[i]);
 	}
 
+	if (pr->pr_globaldefs) {
+		free (pr->pr_globaldefs);
+	}
+	pr->pr_globaldefs = calloc (pr->progs->numglobaldefs, sizeof (pr_def_t));
+
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
-		pr->pr_globaldefs[i].type = LittleShort (pr->pr_globaldefs[i].type);
-		pr->pr_globaldefs[i].ofs = LittleShort (pr->pr_globaldefs[i].ofs);
-		pr->pr_globaldefs[i].s_name = LittleLong (pr->pr_globaldefs[i].s_name);
+		pr->pr_globalddefs[i].type = LittleShort (pr->pr_globalddefs[i].type);
+		pr->pr_globalddefs[i].ofs = LittleShort (pr->pr_globalddefs[i].ofs);
+		pr->pr_globalddefs[i].s_name = LittleLong (pr->pr_globalddefs[i].s_name);
+
+		pr->pr_globaldefs[i].type = pr->pr_globalddefs[i].type;
+		pr->pr_globaldefs[i].ofs = pr->pr_globalddefs[i].ofs;
+		pr->pr_globaldefs[i].name = pr->pr_globalddefs[i].s_name;
 		Hash_Add (pr->global_hash, &pr->pr_globaldefs[i]);
 	}
 
+	if (pr->pr_fielddefs) {
+		free (pr->pr_fielddefs);
+	}
+	pr->pr_fielddefs = calloc (pr->progs->numfielddefs, sizeof (pr_def_t));
 	for (i = 0; i < pr->progs->numfielddefs; i++) {
-		pr->pr_fielddefs[i].type = LittleShort (pr->pr_fielddefs[i].type);
+		pr->pr_fieldddefs[i].type = LittleShort (pr->pr_fieldddefs[i].type);
 		if (pr->pr_fielddefs[i].type & DEF_SAVEGLOBAL)
 			PR_Error (pr, "PR_LoadProgs: pr_fielddefs[i].type & DEF_SAVEGLOBAL");
-		pr->pr_fielddefs[i].ofs = LittleShort (pr->pr_fielddefs[i].ofs);
-		pr->pr_fielddefs[i].s_name = LittleLong (pr->pr_fielddefs[i].s_name);
+		pr->pr_fieldddefs[i].ofs = LittleShort (pr->pr_fieldddefs[i].ofs);
+		pr->pr_fieldddefs[i].s_name = LittleLong (pr->pr_fieldddefs[i].s_name);
+
+		pr->pr_fielddefs[i].type = pr->pr_fieldddefs[i].type;
+		pr->pr_fielddefs[i].ofs = pr->pr_fieldddefs[i].ofs;
+		pr->pr_fielddefs[i].name = pr->pr_fieldddefs[i].s_name;
 		Hash_Add (pr->field_hash, &pr->pr_fielddefs[i]);
 	}
 
 	for (i = 0; i < pr->progs->numglobals; i++)
 		((int *) pr->pr_globals)[i] = LittleLong (((int *) pr->pr_globals)[i]);
+
+	xdefs_def = PR_FindGlobal (pr, ".xdefs");
+	if (xdefs_def) {
+		pr_xdefs_t *xdefs = &G_STRUCT (pr, pr_xdefs_t, xdefs_def->ofs);
+		xdef_t     *xdef = &G_STRUCT (pr, xdef_t, xdefs->xdefs);
+		pr_def_t   *def;
+		for (def = pr->pr_globaldefs, i = 0; i < pr->progs->numglobaldefs;
+			 i++, xdef++, def++) {
+			def->ofs = xdef->ofs;
+			def->type_encoding = xdef->type;
+		}
+		for (def = pr->pr_fielddefs, i = 0; i < pr->progs->numfielddefs;
+			 i++, xdef++, def++) {
+			def->ofs = xdef->ofs;
+			def->type_encoding = xdef->type;
+		}
+	}
 }
 
 VISIBLE void

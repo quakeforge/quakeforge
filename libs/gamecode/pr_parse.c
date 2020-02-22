@@ -71,7 +71,7 @@ static const char *
 PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val)
 {
 	static dstring_t *line = 0;
-	ddef_t		*def;
+	pr_def_t    *def;
 	dfunction_t	*f;
 
 	if (!line)
@@ -93,7 +93,7 @@ PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val)
 			break;
 		case ev_field:
 			def = PR_FieldAtOfs (pr, val->integer_var);
-			dsprintf (line, "%s", PR_GetString (pr, def->s_name));
+			dsprintf (line, "%s", PR_GetString (pr, def->name));
 			break;
 		case ev_void:
 			dstring_copystr (line, "void");
@@ -131,9 +131,9 @@ ED_EntityDict (progs_t *pr, edict_t *ed)
 
 	if (!ed->free) {
 		for (i = 0; i < pr->progs->numfielddefs; i++) {
-			ddef_t     *d = &pr->pr_fielddefs[i];
+			pr_def_t   *d = &pr->pr_fielddefs[i];
 
-			name = PR_GetString (pr, d->s_name);
+			name = PR_GetString (pr, d->name);
 			if (!name[0])
 				continue;					// skip unnamed fields
 			if (name[strlen (name) - 2] == '_')
@@ -169,7 +169,7 @@ ED_GlobalsDict (progs_t *pr)
 	pr_uint_t   i;
 	const char *name;
 	const char *value;
-	ddef_t     *def;
+	pr_def_t   *def;
 	int         type;
 
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
@@ -182,7 +182,7 @@ ED_GlobalsDict (progs_t *pr)
 		if (type != ev_string && type != ev_float && type != ev_entity)
 			continue;
 
-		name = PR_GetString (pr, def->s_name);
+		name = PR_GetString (pr, def->name);
 		value = PR_UglyValueString (pr, type, &pr->pr_globals[def->ofs]);
 		PL_D_AddObject (globals, name, PL_NewString (value));
 	}
@@ -222,11 +222,11 @@ ED_NewString (progs_t *pr, const char *string)
 	returns false if error
 */
 VISIBLE qboolean
-ED_ParseEpair (progs_t *pr, pr_type_t *base, ddef_t *key, const char *s)
+ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key, const char *s)
 {
 	int			i;
 	char		*string;
-	ddef_t		*def;
+	pr_def_t    *def;
 	char		*v, *w;
 	pr_type_t	*d;
 	dfunction_t	*func;
@@ -357,8 +357,8 @@ ED_ConvertToPlist (script_t *script, int nohack)
 VISIBLE void
 ED_InitGlobals (progs_t *pr, plitem_t *globals)
 {
-	ddef_t      vector_def;
-	ddef_t     *global;
+	pr_def_t    vector_def;
+	pr_def_t   *global;
 	plitem_t   *keys;
 	int         count;
 	const char *global_name;
@@ -405,7 +405,7 @@ ED_InitGlobals (progs_t *pr, plitem_t *globals)
 VISIBLE void
 ED_InitEntity (progs_t *pr, plitem_t *entity, edict_t *ent)
 {
-	ddef_t     *field;
+	pr_def_t   *field;
 	plitem_t   *keys;
 	const char *field_name;
 	const char *value;

@@ -126,17 +126,17 @@ pr_debug_expression_error (script_t *script, const char *msg)
 	Sys_Printf ("%s\n", msg);
 }
 
-static ddef_t
+static pr_def_t
 parse_expression (progs_t *pr, const char *expr, int conditional)
 {
 	script_t   *es;
 	char       *e;
 	pr_type_t  *expr_ptr;
-	ddef_t      d;
+	pr_def_t    d;
 
 	d.ofs = 0;
 	d.type = ev_invalid;
-	d.s_name = 0;
+	d.name = 0;
 	es = Script_New ();
 	es->error = pr_debug_expression_error;
 	Script_Start (es, "<console>", expr);
@@ -145,7 +145,7 @@ parse_expression (progs_t *pr, const char *expr, int conditional)
 	if (Script_GetToken (es, 1)) {
 		if (strequal (es->token->str, "[")) {
 			edict_t    *ent;
-			ddef_t     *field;
+			pr_def_t   *field;
 
 			if (!Script_GetToken (es, 1))
 				goto error;
@@ -169,7 +169,7 @@ parse_expression (progs_t *pr, const char *expr, int conditional)
 			d.type = ev_void;
 			d.ofs = PR_SetPointer (pr, expr_ptr);
 		} else {
-			ddef_t     *global = PR_FindGlobal (pr, es->token->str);
+			pr_def_t   *global = PR_FindGlobal (pr, es->token->str);
 			if (!global)
 				goto error;
 			d = *global;
@@ -277,7 +277,7 @@ PR_LoadDebug (progs_t *pr)
 	const char *path_end, *sym_file;
 	off_t       debug_size;
 	pr_uint_t   i;
-	ddef_t	   *def;
+	pr_def_t   *def;
 	pr_type_t  *str = 0;
 
 	if (pr->debug)
@@ -348,7 +348,7 @@ PR_LoadDebug (progs_t *pr)
 	pr->auxfunctions = (pr_auxfunction_t*)((char*)pr->debug +
 										   pr->debug->auxfunctions);
 	pr->linenos = (pr_lineno_t*)((char*)pr->debug + pr->debug->linenos);
-	pr->local_defs = (ddef_t*)((char*)pr->debug + pr->debug->locals);
+	pr->local_defs = (pr_def_t*)((char*)pr->debug + pr->debug->locals);
 
 	i = pr->progs->numfunctions * sizeof (pr_auxfunction_t *);
 	pr->auxfunction_map = pr->allocate_progs_mem (pr, i);
@@ -377,7 +377,7 @@ PR_LoadDebug (progs_t *pr)
 	for (i = 0; i < pr->debug->num_locals; i++) {
 		pr->local_defs[i].type = LittleShort (pr->local_defs[i].type);
 		pr->local_defs[i].ofs = LittleShort (pr->local_defs[i].ofs);
-		pr->local_defs[i].s_name = LittleLong (pr->local_defs[i].s_name);
+		pr->local_defs[i].name = LittleLong (pr->local_defs[i].name);
 	}
 	return 1;
 }
@@ -474,12 +474,12 @@ PR_Get_Source_Line (progs_t *pr, pr_uint_t addr)
 			   file->lines[line - 1].text);
 }
 
-ddef_t *
+pr_def_t *
 PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm)
 {
 	pr_uint_t    i;
 	pr_auxfunction_t *aux_func;
-	ddef_t      *ddef = 0;
+	pr_def_t    *ddef = 0;
 	int          num_params;
 	int          param_offs = 0;
 
@@ -522,7 +522,7 @@ static etype_t
 get_etype (progs_t *pr, int typeptr)
 {
 	//FIXME cache .type_encodings def
-	ddef_t     *te_def = PR_FindGlobal (pr, ".type_encodings");
+	pr_def_t   *te_def = PR_FindGlobal (pr, ".type_encodings");
 	qfot_type_encodings_t *encodings;
 	qfot_type_t *type;
 
@@ -538,8 +538,8 @@ get_etype (progs_t *pr, int typeptr)
 	return ev_void;
 }
 
-ddef_t *
-PR_Get_Local_Def (progs_t *pr, pr_int_t offs)
+pr_def_t *
+PR_Get_Local_Def (progs_t *pr, pointer_t offs)
 {
 	pr_uint_t   i;
 	dfunction_t *func;
@@ -554,7 +554,7 @@ PR_Get_Local_Def (progs_t *pr, pr_int_t offs)
 	if (!aux_func)
 		return 0;
 	offs -= func->parm_start;
-	if (offs < 0 || offs >= func->locals)
+	if (offs >= func->locals)
 		return 0;
 	for (i = 0; i < aux_func->num_locals; i++)
 		if (pr->local_defs[aux_func->local_defs + i].ofs == offs)
@@ -594,7 +594,7 @@ static const char *
 value_string (progs_t *pr, etype_t type, pr_type_t *val)
 {
 	static dstring_t *line;
-	ddef_t     *def;
+	pr_def_t   *def;
 	pr_int_t    ofs;
 	edict_t    *edict;
 	dfunction_t	*f;
@@ -655,7 +655,7 @@ value_string (progs_t *pr, etype_t type, pr_type_t *val)
 		case ev_field:
 			def = PR_FieldAtOfs (pr, val->integer_var);
 			if (def)
-				dsprintf (line, ".%s", PR_GetString (pr, def->s_name));
+				dsprintf (line, ".%s", PR_GetString (pr, def->name));
 			else
 				dsprintf (line, ".<$%04x>", val->integer_var);
 			break;
@@ -679,8 +679,8 @@ value_string (progs_t *pr, etype_t type, pr_type_t *val)
 				def = PR_Get_Local_Def (pr, ofs);
 			if (!def)
 				def = PR_GlobalAtOfs (pr, ofs);
-			if (def && def->s_name)
-				dsprintf (line, "&%s", PR_GetString (pr, def->s_name));
+			if (def && def->name)
+				dsprintf (line, "&%s", PR_GetString (pr, def->name));
 			else
 				dsprintf (line, "[$%x]", ofs);
 			break;
@@ -711,17 +711,17 @@ value_string (progs_t *pr, etype_t type, pr_type_t *val)
 	return line->str;
 }
 
-static ddef_t *
+static pr_def_t *
 def_string (progs_t *pr, pr_int_t ofs, dstring_t *dstr)
 {
-	ddef_t     *def = 0;
+	pr_def_t   *def = 0;
 	const char *name;
 
 	if (pr_debug->int_val && pr->debug)
 		def = PR_Get_Local_Def (pr, ofs);
 	if (!def)
 		def = PR_GlobalAtOfs (pr, ofs);
-	if (!def || !*(name = PR_GetString (pr, def->s_name)))
+	if (!def || !*(name = PR_GetString (pr, def->name)))
 		dsprintf (dstr, "[$%x]", ofs);
 	else
 		dsprintf (dstr, "%s", name);
@@ -732,7 +732,7 @@ static const char *
 global_string (progs_t *pr, pointer_t ofs, etype_t type, int contents)
 {
 	static dstring_t *line = NULL;
-	ddef_t     *def = NULL;
+	pr_def_t   *def = NULL;
 	const char *s;
 
 	if (!line)
@@ -771,7 +771,7 @@ global_string (progs_t *pr, pointer_t ofs, etype_t type, int contents)
 VISIBLE void
 PR_Debug_Watch (progs_t *pr, const char *expr)
 {
-	ddef_t      watch;
+	pr_def_t    watch;
 	if (!expr) {
 		Sys_Printf ("watch <watchpoint expr>\n");
 		if (pr->watch) {
@@ -802,7 +802,7 @@ PR_Debug_Watch (progs_t *pr, const char *expr)
 VISIBLE void
 PR_Debug_Print (progs_t *pr, const char *expr)
 {
-	ddef_t      print;
+	pr_def_t    print;
 
 	if (!expr) {
 		Sys_Printf ("print <print expr>\n");
@@ -825,7 +825,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 	opcode_t   *op;
 	static dstring_t *line;
 	dfunction_t *call_func = 0;
-	ddef_t     *parm_def = 0;
+	pr_def_t   *parm_def = 0;
 	pr_auxfunction_t *aux_func = 0;
 
 	if (!line)
@@ -1075,7 +1075,7 @@ ED_Print (progs_t *pr, edict_t *ed)
 	int         type, l;
 	pr_uint_t   i;
 	const char *name;
-	ddef_t     *d;
+	pr_def_t   *d;
 	pr_type_t  *v;
 
 	if (ed->free) {
@@ -1086,9 +1086,9 @@ ED_Print (progs_t *pr, edict_t *ed)
 	Sys_Printf ("\nEDICT %d:\n", NUM_FOR_BAD_EDICT (pr, ed));
 	for (i = 0; i < pr->progs->numfielddefs; i++) {
 		d = &pr->pr_fielddefs[i];
-		if (!d->s_name)					// null field def (probably 1st)
+		if (!d->name)					// null field def (probably 1st)
 			continue;
-		name = PR_GetString (pr, d->s_name);
+		name = PR_GetString (pr, d->name);
 		if (name[strlen (name) - 2] == '_'
 			&& strchr ("xyz", name[strlen (name) -1]))
 			continue;					// skip _x, _y, _z vars

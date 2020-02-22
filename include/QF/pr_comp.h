@@ -420,7 +420,7 @@ typedef struct ddef_s {
 	pr_ushort_t type;			// if DEF_SAVEGLOBGAL bit is set
 								// the variable needs to be saved in savegames
 	pr_ushort_t ofs;
-	pr_int_t    s_name;
+	string_t    s_name;
 } ddef_t;
 
 typedef struct xdef_s {
@@ -432,6 +432,13 @@ typedef struct pr_xdefs_s {
 	pointer_t   xdefs;
 	pr_int_t    num_xdefs;
 } pr_xdefs_t;
+
+typedef struct pr_def_s {
+	pr_uint_t   type;
+	pointer_t   ofs;
+	string_t    name;
+	pointer_t   type_encoding;
+} pr_def_t;
 
 typedef struct dparmsize_s {
 	uint8_t     size:5;
@@ -445,11 +452,11 @@ typedef struct dparmsize_s {
 typedef struct dfunction_s {
 	pr_int_t    first_statement;	// negative numbers are builtins
 	pr_int_t    parm_start;
-	pr_int_t    locals;				// total ints of parms + locals
+	pr_uint_t   locals;				// total ints of parms + locals
 
 	pr_int_t    profile;			// runtime
 
-	pr_int_t    s_name;
+	string_t    s_name;
 	pr_int_t    s_file;				// source file defined in
 
 	pr_int_t    numparms;

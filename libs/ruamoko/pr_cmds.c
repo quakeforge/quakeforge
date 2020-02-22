@@ -255,7 +255,7 @@ PF_Find (progs_t *pr)
 	int			i;			// ev_vector
 	int			e, f;
 	etype_t		type;
-	ddef_t	   *field_def;
+	pr_def_t   *field_def;
 	edict_t	   *ed;
 
 	e = P_EDICTNUM (pr, 0);
@@ -596,7 +596,7 @@ static void
 PF_PR_SetField (progs_t *pr)
 {
 	edict_t    *ent = P_EDICT (pr, 0);
-	ddef_t     *field = PR_FindField (pr, P_GSTRING (pr, 1));
+	pr_def_t   *field = PR_FindField (pr, P_GSTRING (pr, 1));
 	const char *value = P_GSTRING (pr, 2);
 
 	R_INT (pr) = 0;

@@ -52,14 +52,14 @@
 static int
 cmp (const void *_a, const void *_b)
 {
-	const ddef_t *a = (const ddef_t *)_a;
-	const ddef_t *b = (const ddef_t *)_b;
+	const pr_def_t *a = (const pr_def_t *)_a;
+	const pr_def_t *b = (const pr_def_t *)_b;
 
 	return a->ofs - b->ofs;
 }
 
 static void
-dump_def (progs_t *pr, ddef_t *def, int indent)
+dump_def (progs_t *pr, pr_def_t *def, int indent)
 {
 	const char *name;
 	const char *type;
@@ -69,10 +69,10 @@ dump_def (progs_t *pr, ddef_t *def, int indent)
 	const char *str;
 	int         saveglobal;
 
-	if (!def->type && !def->ofs && !def->s_name)
+	if (!def->type && !def->ofs && !def->name)
 		return;
 
-	name = PR_GetString (pr, def->s_name);
+	name = PR_GetString (pr, def->name);
 	type = pr_type_name[def->type & ~DEF_SAVEGLOBAL];
 	saveglobal = (def->type & DEF_SAVEGLOBAL) != 0;
 	offset = def->ofs;
@@ -148,15 +148,15 @@ dump_def (progs_t *pr, ddef_t *def, int indent)
 				break;
 		}
 	}
-	printf ("%*s %x %d %s %s%s\n", indent * 12, "",
-			offset, saveglobal, name, type, comment);
+	printf ("%*s %x %d %s %s:%x %s\n", indent * 12, "",
+			offset, saveglobal, name, type, def->type_encoding, comment);
 }
 
 void
 dump_globals (progs_t *pr)
 {
 	unsigned int i;
-	ddef_t     *global_defs = pr->pr_globaldefs;
+	pr_def_t   *global_defs = pr->pr_globaldefs;
 
 	if (sorted) {
 		global_defs = malloc (pr->progs->numglobaldefs * sizeof (ddef_t));
@@ -165,7 +165,7 @@ dump_globals (progs_t *pr)
 		qsort (global_defs, pr->progs->numglobaldefs, sizeof (ddef_t), cmp);
 	}
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
-		ddef_t *def = &global_defs[i];
+		pr_def_t   *def = &global_defs[i];
 		dump_def (pr, def, 0);
 	}
 }
@@ -180,9 +180,9 @@ dump_fields (progs_t *pr)
 	const char *comment;
 
 	for (i = 0; i < pr->progs->numfielddefs; i++) {
-		ddef_t *def = &pr->pr_fielddefs[i];
+		pr_def_t   *def = &pr->pr_fielddefs[i];
 
-		name = PR_GetString (pr, def->s_name);
+		name = PR_GetString (pr, def->name);
 		type = pr_type_name[def->type & ~DEF_SAVEGLOBAL];
 		offset = def->ofs;
 
@@ -516,7 +516,7 @@ dump_types (progs_t *pr)
 {
 	qfo_mspace_t spaces[qfo_num_spaces];
 	qfo_t       qfo;
-	ddef_t     *encodings_def;
+	pr_def_t   *encodings_def;
 	qfot_type_encodings_t *encodings;
 
 	encodings_def = PR_FindGlobal (pr, ".type_encodings");

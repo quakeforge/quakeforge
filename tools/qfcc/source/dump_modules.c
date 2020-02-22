@@ -205,11 +205,11 @@ dump_modules (progs_t *pr)
 	unsigned int i;
 
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
-		ddef_t     *def = &pr->pr_globaldefs[i];
+		pr_def_t   *def = &pr->pr_globaldefs[i];
 		const char *name = "<invalid_string>";
 
-		if (PR_StringValid (pr, def->s_name))
-			name = PR_GetString (pr, def->s_name);
+		if (PR_StringValid (pr, def->name))
+			name = PR_GetString (pr, def->name);
 		if (strcmp (name, "_OBJ_MODULE") == 0) {
 			printf ("module @ %x\n", def->ofs);
 			dump_module (pr, &G_STRUCT (pr, pr_module_t, def->ofs));

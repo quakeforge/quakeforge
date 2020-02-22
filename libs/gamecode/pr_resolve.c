@@ -52,10 +52,10 @@
 #include "compat.h"
 
 
-ddef_t *
-PR_GlobalAtOfs (progs_t * pr, pr_int_t ofs)
+pr_def_t *
+PR_GlobalAtOfs (progs_t * pr, pointer_t ofs)
 {
-	ddef_t     *def;
+	pr_def_t   *def;
 	pr_uint_t   i;
 
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
@@ -66,10 +66,10 @@ PR_GlobalAtOfs (progs_t * pr, pr_int_t ofs)
 	return NULL;
 }
 
-VISIBLE ddef_t *
-PR_FieldAtOfs (progs_t * pr, pr_int_t ofs)
+VISIBLE pr_def_t *
+PR_FieldAtOfs (progs_t * pr, pointer_t ofs)
 {
-	ddef_t     *def;
+	pr_def_t   *def;
 	pr_uint_t   i;
 
 	for (i = 0; i < pr->progs->numfielddefs; i++) {
@@ -80,13 +80,13 @@ PR_FieldAtOfs (progs_t * pr, pr_int_t ofs)
 	return NULL;
 }
 
-VISIBLE ddef_t *
+VISIBLE pr_def_t *
 PR_FindField (progs_t * pr, const char *name)
 {
 	return  Hash_Find (pr->field_hash, name);
 }
 
-VISIBLE ddef_t *
+VISIBLE pr_def_t *
 PR_FindGlobal (progs_t * pr, const char *name)
 {
 	return  Hash_Find (pr->global_hash, name);
@@ -108,7 +108,7 @@ VISIBLE int
 PR_ResolveGlobals (progs_t *pr)
 {
 	const char *sym;
-	ddef_t     *def;
+	pr_def_t   *def;
 	int         i;
 
 	if (pr->progs->version == PROG_ID_VERSION) {
@@ -180,7 +180,7 @@ int
 PR_AccessField (progs_t *pr, const char *name, etype_t type,
 				const char *file, int line)
 {
-	ddef_t *def = PR_FindField (pr, name);
+	pr_def_t   *def = PR_FindField (pr, name);
 
 	if (!def)
 		PR_Error (pr, "undefined field %s accessed at %s:%d", name, file, line);

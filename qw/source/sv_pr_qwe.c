@@ -551,7 +551,7 @@ static int
 qwe_load_finish (progs_t *pr)
 {
 	edict_t    *ent;
-	ddef_t     *targetname;
+	pr_def_t   *targetname;
 
 	targetname = PR_FindField (pr, "targetname");
 	ent = EDICT_NUM (pr, 0);

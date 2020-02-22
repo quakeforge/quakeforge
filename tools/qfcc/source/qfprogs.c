@@ -256,6 +256,9 @@ convert_qfo (void)
 {
 	int         size;
 	int         i;
+	xdef_t     *xdef = 0;
+	pr_xdefs_t *xdefs = 0;
+	ddef_t     *xdefs_def = 0;
 
 	pr.progs = qfo_to_progs (qfo, &size);
 
@@ -264,20 +267,52 @@ convert_qfo (void)
 	pr.pr_strings = P (char, ofs_strings);
 	pr.pr_stringsize = pr.progs->numstrings;
 	pr.pr_functions = P (dfunction_t, ofs_functions);
-	pr.pr_globaldefs = P (ddef_t, ofs_globaldefs);
-	pr.pr_fielddefs = P (ddef_t, ofs_fielddefs);
+	pr.pr_globalddefs = P (ddef_t, ofs_globaldefs);
+	pr.pr_fieldddefs = P (ddef_t, ofs_fielddefs);
 	pr.pr_globals = P (pr_type_t, ofs_globals);
 	pr.globals_size = pr.progs->numglobals;
 	pr.pr_edict_size = max (1, pr.progs->entityfields) * 4;
 	pr.pr_edictareasize = 1 * pr.pr_edict_size;
 #undef P
 
+	pr.pr_globaldefs = malloc ((pr.progs->numglobaldefs
+								+ pr.progs->numfielddefs)
+							   * sizeof (pr_def_t));
+	// can't use PR_FindGlobal yet as pr_globaldefs is still uninitialized
+	for (i = 0; i < (int) pr.progs->numglobaldefs; i++) {
+		ddef_t     *ddef = pr.pr_globalddefs + i;
+		if (!strcmp (PR_GetString (&pr, ddef->s_name), ".xdefs")) {
+			xdefs_def = ddef;
+			break;
+		}
+	}
+	if (xdefs_def) {
+		xdefs = &G_STRUCT (&pr, pr_xdefs_t, xdefs_def->ofs);
+		xdef = &G_STRUCT (&pr, xdef_t, xdefs->xdefs);
+	}
+	for (i = 0; i < (int) pr.progs->numglobaldefs; i++, xdef++) {
+		ddef_t     *ddef = pr.pr_globalddefs + i;
+		pr_def_t   *def = pr.pr_globaldefs + i;
+		def->type = ddef->type;
+		def->ofs = xdefs ? xdef->ofs : ddef->ofs;
+		def->name = ddef->s_name;
+		def->type_encoding = xdefs ? xdef->type : 0;
+	}
+	for (i = 0; i < (int) pr.progs->numfielddefs; i++, xdef++) {
+		ddef_t     *ddef = pr.pr_fieldddefs + i;
+		pr_def_t   *def = pr.pr_fielddefs + i;
+		def->type = ddef->type;
+		def->ofs = xdefs ? xdef->ofs : ddef->ofs;
+		def->name = ddef->s_name;
+		def->type_encoding = xdefs ? xdef->type : 0;
+	}
+
 	if (verbosity) {
 		pr.debug = qfo_to_sym (qfo, &size);
 #define P(t,o) ((t *)((char *)pr.debug + pr.debug->o))
 		pr.auxfunctions = P (pr_auxfunction_t, auxfunctions);
 		pr.linenos = P (pr_lineno_t, linenos);
-		pr.local_defs = P (ddef_t, locals);
+		pr.local_defs = P (pr_def_t, locals);
 #undef P
 
 		pr.local_defs = calloc (qfo->num_defs, sizeof (ddef_t));

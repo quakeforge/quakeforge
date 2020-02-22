@@ -158,7 +158,7 @@ ED_PrintEdicts (progs_t *pr, const char *fieldval)
 {
 	pr_int_t    i;
 	int         count;
-	ddef_t     *def;
+	pr_def_t   *def;
 
 	def = PR_FindField(pr, "classname");
 
@@ -188,8 +188,8 @@ ED_Count (progs_t *pr)
 {
 	pr_int_t    i;
 	int         active, models, solid, step, zombie;
-	ddef_t     *solid_def;
-	ddef_t     *model_def;
+	pr_def_t   *solid_def;
+	pr_def_t   *model_def;
 	edict_t    *ent;
 
 	solid_def = PR_FindField (pr, "solid");

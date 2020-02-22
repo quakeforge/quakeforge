@@ -1535,7 +1535,7 @@ check_global (progs_t *pr, dstatement_t *st, opcode_t *op, etype_t type,
 			  unsigned short operand, int check_denorm)
 {
 	const char *msg;
-	ddef_t     *def;
+	pr_def_t   *def;
 
 	switch (type) {
 		case ev_short:

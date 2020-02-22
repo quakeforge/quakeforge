@@ -117,7 +117,7 @@ static int
 menu_resolve_globals (progs_t *pr)
 {
 	const char *sym;
-	ddef_t     *def;
+	pr_def_t   *def;
 	dfunction_t *f;
 	size_t      i;
 

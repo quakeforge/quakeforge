@@ -51,7 +51,7 @@ typedef struct pr_lineno_s {
 	pr_uint_t   line;
 } pr_lineno_t;
 
-#define PROG_DEBUG_VERSION 0x00001002	// MMmmmRRR 0.001.002 (hex)
+#define PROG_DEBUG_VERSION 0x00001003	// MMmmmRRR 0.001.002 (hex)
 
 typedef struct pr_debug_header_s {
 	pr_int_t    version;
