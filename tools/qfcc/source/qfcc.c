@@ -423,6 +423,7 @@ finish_link (void)
 						&param_size);
 		linker_add_def (".param_alignment", &type_integer, flags,
 						&param_alignment);
+		linker_add_def (".xdefs", &type_xdefs, flags, 0);
 	}
 
 	if (options.code.debug) {

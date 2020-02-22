@@ -879,12 +879,16 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	pr_type_t  *locals;
 	pr_type_t  *far_data;
 	pr_type_t  *type_data;
+	pr_type_t  *xdef_data;
 	dprograms_t *progs;
 	qfo_def_t  *types_def = 0;
+	qfo_def_t  *xdefs_def = 0;
 	unsigned    i, j;
 	unsigned    near_data_size = 0;
 	unsigned    locals_size = 0;
 	int         locals_start;
+	int         type_encodings_start;
+	int         xdefs_start;
 	unsigned    big_locals = 0;
 	int         big_func = 0;
 
@@ -893,7 +897,9 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	progs->version = options.code.progsversion;
 	progs->numstatements = qfo->spaces[qfo_code_space].data_size;
 	progs->numglobaldefs = qfo->spaces[qfo_near_data_space].num_defs;
-	//FIXME ddef offsets are 16 bits
+	//ddef offsets are 16 bits so the ddef ofs will likely be invalid
+	//thus it will be forced invalid and the true offset written to the
+	//symbols file if it is created (fa
 	progs->numglobaldefs += qfo->spaces[qfo_far_data_space].num_defs;
 	progs->numfielddefs = qfo->spaces[qfo_entity_space].num_defs;
 	progs->numfunctions = qfo->num_funcs + 1;
@@ -915,7 +921,11 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	near_data_size = progs->numglobals;
 	progs->numglobals = RUP (progs->numglobals, 16 / sizeof (pr_type_t));
 	progs->numglobals += qfo->spaces[qfo_far_data_space].data_size;
+	type_encodings_start = progs->numglobals;
 	progs->numglobals += qfo->spaces[qfo_type_space].data_size;
+	progs->numglobals = RUP (progs->numglobals, type_xdef.alignment);
+	xdefs_start = progs->numglobals;
+	progs->numglobals += progs->numglobaldefs * type_size (&type_xdef);
 	progs->entityfields = qfo->spaces[qfo_entity_space].data_size;
 	*size += progs->numstatements * sizeof (dstatement_t);
 	*size += progs->numglobaldefs * sizeof (ddef_t);
@@ -954,7 +964,8 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	globals = (pr_type_t*) data;
 	locals = globals + locals_start;
 	far_data = globals + near_data_size;
-	type_data = far_data + qfo->spaces[qfo_far_data_space].data_size;
+	type_data = globals + type_encodings_start;
+	xdef_data = globals + xdefs_start;
 
 	memcpy (strings, qfo->spaces[qfo_strings_space].d.strings,
 			qfo->spaces[qfo_strings_space].data_size * sizeof (char));
@@ -987,14 +998,18 @@ qfo_to_progs (qfo_t *qfo, int *size)
 		qfo_def_t  *def = qfo->spaces[qfo_near_data_space].defs + i;
 		if (!strcmp (QFO_GETSTR (qfo, def->name), ".type_encodings"))
 			types_def = def;
+		if (!strcmp (QFO_GETSTR (qfo, def->name), ".xdefs"))
+			xdefs_def = def;
 		convert_def (qfo, def, globaldefs++);
 	}
 
-	//FIXME ddef offsets are 16 bits
 	for (i = 0; i < qfo->spaces[qfo_far_data_space].num_defs; i++) {
 		qfo_def_t  *def = qfo->spaces[qfo_far_data_space].defs + i;
 		def->offset += far_data - globals;
-		convert_def (qfo, def, globaldefs++);
+		convert_def (qfo, def, globaldefs);
+		// the correct offset will be written to the far data space
+		globaldefs->ofs = -1;
+		globaldefs++;
 	}
 
 	for (i = 0; i < qfo->spaces[qfo_type_space].num_defs; i++) {
@@ -1025,8 +1040,26 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	if (types_def) {
 		qfot_type_encodings_t *encodings;
 		encodings = (qfot_type_encodings_t *) &globals[types_def->offset];
-		encodings->types = type_data - globals;
+		encodings->types = type_encodings_start;
 		encodings->size = qfo->spaces[qfo_type_space].data_size;
+	}
+	if (xdefs_def) {
+		int xdef_data_size = type_size (&type_xdef);
+		pr_xdefs_t  *xdefs = (pr_xdefs_t *) &globals[xdefs_def->offset];
+		xdefs->xdefs = xdefs_start;
+		xdefs->num_xdefs = progs->numglobaldefs;
+		for (i = 0; i < qfo->spaces[qfo_near_data_space].num_defs; i++) {
+			qfo_def_t  *def = qfo->spaces[qfo_near_data_space].defs + i;
+			xdef_data[0].pointer_var = def->type + type_encodings_start;
+			xdef_data[1].pointer_var = def->offset;
+			xdef_data += xdef_data_size;
+		}
+		for (i = 0; i < qfo->spaces[qfo_far_data_space].num_defs; i++) {
+			qfo_def_t  *def = qfo->spaces[qfo_far_data_space].defs + i;
+			xdef_data[0].pointer_var = def->type + type_encodings_start;
+			xdef_data[1].pointer_var = def->offset;
+			xdef_data += xdef_data_size;
+		}
 	}
 
 	// undo the relocation of the offsets of local defs so the local defs have

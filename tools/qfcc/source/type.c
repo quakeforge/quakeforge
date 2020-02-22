@@ -89,6 +89,9 @@ type_t      type_param = { ev_invalid, 0, 0, ty_struct };
 type_t      type_zero = { ev_invalid, 0, 0, ty_struct };
 type_t      type_type_encodings = { ev_invalid, "@type_encodings", 0,
 									ty_struct };
+type_t      type_xdef = { ev_invalid, "@xdef", 0, ty_struct };
+type_t      type_xdef_pointer = { ev_pointer, 0, 1, ty_basic, {{&type_xdef}} };
+type_t      type_xdefs = { ev_invalid, "@xdefs", 0, ty_struct };
 
 type_t      type_floatfield = { ev_field, ".float", 1, ty_basic,
 								{{&type_float}} };
@@ -1045,6 +1048,16 @@ init_types (void)
 		{"size",	&type_integer},
 		{0, 0}
 	};
+	static struct_def_t xdef_struct[] = {
+		{"types",	&type_pointer},
+		{"offset",	&type_pointer},
+		{0, 0}
+	};
+	static struct_def_t xdefs_struct[] = {
+		{"xdefs",	&type_xdef_pointer},
+		{"num_xdefs", &type_pointer},
+		{0, 0}
+	};
 
 	type_nil = &type_quaternion;
 	type_default = &type_integer;
@@ -1066,6 +1079,8 @@ init_types (void)
 
 	make_structure ("@type_encodings", 's', type_encoding_struct,
 					&type_type_encodings);
+	make_structure ("@xdef", 's', xdef_struct, &type_xdef);
+	make_structure ("@xdefs", 's', xdefs_struct, &type_xdefs);
 
 	if (options.traditional)
 		return;
@@ -1120,6 +1135,9 @@ chain_initial_types (void)
 	chain_type (&type_param);
 	chain_type (&type_zero);
 	chain_type (&type_type_encodings);
+	chain_type (&type_xdef);
+	chain_type (&type_xdef_pointer);
+	chain_type (&type_xdefs);
 
 	va_list_struct[1].type = pointer_type (&type_param);
 	make_structure ("@va_list", 's', va_list_struct, &type_va_list);

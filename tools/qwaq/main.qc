@@ -109,5 +109,6 @@ int main (int argc, string *argv)
 	test_script ();
 	test_plist ();
 	test_types ();
+	test_xdefs ();
 	return 0;
 };

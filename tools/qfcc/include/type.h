@@ -116,6 +116,9 @@ extern	type_t	type_va_list;
 extern	type_t	type_param;
 extern	type_t	type_zero;
 extern	type_t	type_type_encodings;
+extern	type_t	type_xdef;
+extern	type_t	type_xdef_pointer;
+extern	type_t	type_xdefs;
 
 extern struct symtab_s *vector_struct;
 extern struct symtab_s *quaternion_struct;

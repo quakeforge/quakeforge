@@ -77,6 +77,16 @@ typedef struct qfot_type_encodings_s {
 	int         size;
 } qfot_type_encodings_t;
 
+typedef struct xdef_s {
+	qfot_type_t *type;
+	void        *offset;
+} xdef_t;
+
+typedef struct pr_xdefs_s {
+	xdef_t     *xdefs;
+	int         num_xdefs;
+} pr_xdefs_t;
+
 qfot_type_t *
 next_type (qfot_type_t *type)
 {
@@ -173,4 +183,21 @@ test_types (void)
 				break;
 		}
 	 }
+}
+
+void
+test_xdefs (void)
+{
+	pr_xdefs_t *xdefs;
+	int         i;
+
+	xdefs = PR_FindGlobal (".xdefs");
+	if (!xdefs) {
+		printf ("Can't find xdefs\n");
+		return;
+	}
+	printf ("%p %i\n", xdefs.xdefs, xdefs.num_xdefs);
+	for (i = 0; i < xdefs.num_xdefs; i++) {
+		printf ("%p %p\n", xdefs.xdefs[i].type, xdefs.xdefs[i].offset);
+	}
 }

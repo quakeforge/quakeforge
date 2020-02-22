@@ -423,6 +423,16 @@ typedef struct ddef_s {
 	pr_int_t    s_name;
 } ddef_t;
 
+typedef struct xdef_s {
+	pointer_t   type;			///< pointer to type definition
+	pointer_t   ofs;			///< 32-bit version of ddef_t.ofs
+} xdef_t;
+
+typedef struct pr_xdefs_s {
+	pointer_t   xdefs;
+	pr_int_t    num_xdefs;
+} pr_xdefs_t;
+
 typedef struct dparmsize_s {
 	uint8_t     size:5;
 	uint8_t     alignment:3;
