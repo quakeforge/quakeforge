@@ -1013,6 +1013,10 @@ qfo_to_progs (qfo_t *qfo, int *size)
 		globaldefs++;
 	}
 
+	for (i = 0; i < qfo->spaces[qfo_type_space].num_defs; i++) {
+		qfo->spaces[qfo_type_space].defs[i].offset += type_encodings_start;
+	}
+
 	for (i = 0; i < qfo->spaces[qfo_entity_space].num_defs; i++) {
 		convert_def (qfo, qfo->spaces[qfo_entity_space].defs + i,
 					 fielddefs + i);
