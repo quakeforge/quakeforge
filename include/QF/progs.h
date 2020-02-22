@@ -1616,8 +1616,6 @@ struct progs_s {
 	bfunction_t *function_table;
 	char       *pr_strings;
 	int         pr_stringsize;
-	ddef_t     *pr_globalddefs;
-	ddef_t     *pr_fieldddefs;
 	pr_def_t   *pr_globaldefs;
 	pr_def_t   *pr_fielddefs;
 	dstatement_t *pr_statements;

@@ -120,7 +120,8 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	byte       *base;
 	byte       *heap;
 	pr_def_t   *xdefs_def = 0;
-
+	ddef_t     *global_ddefs;
+	ddef_t     *field_ddefs;
 
 	if (!pr->file_error)
 		pr->file_error = file_error;
@@ -222,8 +223,8 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 		(dfunction_t *) (base + pr->progs->ofs_functions);
 	pr->pr_strings = (char *) base + pr->progs->ofs_strings;
 	pr->pr_stringsize = (char *) heap + pr->zone_size - (char *) base;
-	pr->pr_globalddefs = (ddef_t *) (base + pr->progs->ofs_globaldefs);
-	pr->pr_fieldddefs = (ddef_t *) (base + pr->progs->ofs_fielddefs);
+	global_ddefs = (ddef_t *) (base + pr->progs->ofs_globaldefs);
+	field_ddefs = (ddef_t *) (base + pr->progs->ofs_fielddefs);
 	pr->pr_statements = (dstatement_t *) (base + pr->progs->ofs_statements);
 
 	pr->pr_globals = (pr_type_t *) (base + pr->progs->ofs_globals);
@@ -280,13 +281,13 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	pr->pr_globaldefs = calloc (pr->progs->numglobaldefs, sizeof (pr_def_t));
 
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
-		pr->pr_globalddefs[i].type = LittleShort (pr->pr_globalddefs[i].type);
-		pr->pr_globalddefs[i].ofs = LittleShort (pr->pr_globalddefs[i].ofs);
-		pr->pr_globalddefs[i].s_name = LittleLong (pr->pr_globalddefs[i].s_name);
+		global_ddefs[i].type = LittleShort (global_ddefs[i].type);
+		global_ddefs[i].ofs = LittleShort (global_ddefs[i].ofs);
+		global_ddefs[i].s_name = LittleLong (global_ddefs[i].s_name);
 
-		pr->pr_globaldefs[i].type = pr->pr_globalddefs[i].type;
-		pr->pr_globaldefs[i].ofs = pr->pr_globalddefs[i].ofs;
-		pr->pr_globaldefs[i].name = pr->pr_globalddefs[i].s_name;
+		pr->pr_globaldefs[i].type = global_ddefs[i].type;
+		pr->pr_globaldefs[i].ofs = global_ddefs[i].ofs;
+		pr->pr_globaldefs[i].name = global_ddefs[i].s_name;
 		Hash_Add (pr->global_hash, &pr->pr_globaldefs[i]);
 	}
 
@@ -295,15 +296,15 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	}
 	pr->pr_fielddefs = calloc (pr->progs->numfielddefs, sizeof (pr_def_t));
 	for (i = 0; i < pr->progs->numfielddefs; i++) {
-		pr->pr_fieldddefs[i].type = LittleShort (pr->pr_fieldddefs[i].type);
-		if (pr->pr_fielddefs[i].type & DEF_SAVEGLOBAL)
-			PR_Error (pr, "PR_LoadProgs: pr_fielddefs[i].type & DEF_SAVEGLOBAL");
-		pr->pr_fieldddefs[i].ofs = LittleShort (pr->pr_fieldddefs[i].ofs);
-		pr->pr_fieldddefs[i].s_name = LittleLong (pr->pr_fieldddefs[i].s_name);
+		field_ddefs[i].type = LittleShort (field_ddefs[i].type);
+		if (field_ddefs[i].type & DEF_SAVEGLOBAL)
+			PR_Error (pr, "PR_LoadProgs: DEF_SAVEGLOBAL on field def %zd", i);
+		field_ddefs[i].ofs = LittleShort (field_ddefs[i].ofs);
+		field_ddefs[i].s_name = LittleLong (field_ddefs[i].s_name);
 
-		pr->pr_fielddefs[i].type = pr->pr_fieldddefs[i].type;
-		pr->pr_fielddefs[i].ofs = pr->pr_fieldddefs[i].ofs;
-		pr->pr_fielddefs[i].name = pr->pr_fieldddefs[i].s_name;
+		pr->pr_fielddefs[i].type = field_ddefs[i].type;
+		pr->pr_fielddefs[i].ofs = field_ddefs[i].ofs;
+		pr->pr_fielddefs[i].name = field_ddefs[i].s_name;
 		Hash_Add (pr->field_hash, &pr->pr_fielddefs[i]);
 	}
 

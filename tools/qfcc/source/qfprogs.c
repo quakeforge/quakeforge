@@ -259,6 +259,8 @@ convert_qfo (void)
 	xdef_t     *xdef = 0;
 	pr_xdefs_t *xdefs = 0;
 	ddef_t     *xdefs_def = 0;
+	ddef_t     *global_ddefs;
+	ddef_t     *field_ddefs;
 
 	pr.progs = qfo_to_progs (qfo, &size);
 
@@ -267,8 +269,8 @@ convert_qfo (void)
 	pr.pr_strings = P (char, ofs_strings);
 	pr.pr_stringsize = pr.progs->numstrings;
 	pr.pr_functions = P (dfunction_t, ofs_functions);
-	pr.pr_globalddefs = P (ddef_t, ofs_globaldefs);
-	pr.pr_fieldddefs = P (ddef_t, ofs_fielddefs);
+	global_ddefs = P (ddef_t, ofs_globaldefs);
+	field_ddefs = P (ddef_t, ofs_fielddefs);
 	pr.pr_globals = P (pr_type_t, ofs_globals);
 	pr.globals_size = pr.progs->numglobals;
 	pr.pr_edict_size = max (1, pr.progs->entityfields) * 4;
@@ -278,9 +280,10 @@ convert_qfo (void)
 	pr.pr_globaldefs = malloc ((pr.progs->numglobaldefs
 								+ pr.progs->numfielddefs)
 							   * sizeof (pr_def_t));
+	pr.pr_fielddefs = pr.pr_globaldefs + pr.progs->numglobaldefs;
 	// can't use PR_FindGlobal yet as pr_globaldefs is still uninitialized
 	for (i = 0; i < (int) pr.progs->numglobaldefs; i++) {
-		ddef_t     *ddef = pr.pr_globalddefs + i;
+		ddef_t     *ddef = global_ddefs + i;
 		if (!strcmp (PR_GetString (&pr, ddef->s_name), ".xdefs")) {
 			xdefs_def = ddef;
 			break;
@@ -291,7 +294,7 @@ convert_qfo (void)
 		xdef = &G_STRUCT (&pr, xdef_t, xdefs->xdefs);
 	}
 	for (i = 0; i < (int) pr.progs->numglobaldefs; i++, xdef++) {
-		ddef_t     *ddef = pr.pr_globalddefs + i;
+		ddef_t     *ddef = global_ddefs + i;
 		pr_def_t   *def = pr.pr_globaldefs + i;
 		def->type = ddef->type;
 		def->ofs = xdefs ? xdef->ofs : ddef->ofs;
@@ -299,7 +302,7 @@ convert_qfo (void)
 		def->type_encoding = xdefs ? xdef->type : 0;
 	}
 	for (i = 0; i < (int) pr.progs->numfielddefs; i++, xdef++) {
-		ddef_t     *ddef = pr.pr_fieldddefs + i;
+		ddef_t     *ddef = field_ddefs + i;
 		pr_def_t   *def = pr.pr_fielddefs + i;
 		def->type = ddef->type;
 		def->ofs = xdefs ? xdef->ofs : ddef->ofs;
