@@ -1162,9 +1162,10 @@ field_expr (expr_t *e1, expr_t *e2)
 	const type_t *t1, *t2;
 	expr_t     *e;
 
+	t1 = get_type (e1);
 	if (e1->type == ex_error)
 		return e1;
-	t1 = unalias_type (get_type (e1));
+	t1 = unalias_type (t1);
 	if (t1->type == ev_entity) {
 		symbol_t   *field = 0;
 
