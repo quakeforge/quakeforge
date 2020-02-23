@@ -154,7 +154,7 @@ init_qf (void)
 	pr.pr_trace = options.trace;
 
 	PR_Init_Cvars ();
-	PR_Init ();
+	PR_Init (&pr);
 	RUA_Init (&pr, 0);
 	PR_Cmds_Init(&pr);
 	BI_Init (&pr);

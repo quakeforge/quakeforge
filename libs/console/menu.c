@@ -583,6 +583,8 @@ Menu_Init (void)
 	menu_pr_state.max_edicts = 0;
 	menu_pr_state.zone_size = 1024 * 1024;
 
+	PR_Init (&menu_pr_state);
+
 	menu_hash = Hash_NewTable (61, menu_get_key, menu_free, 0);
 
 	PR_RegisterBuiltins (&menu_pr_state, builtins);

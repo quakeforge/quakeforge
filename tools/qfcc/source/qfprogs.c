@@ -236,7 +236,6 @@ init_qf (void)
 	Cvar_Get ("pr_debug", va ("%d", 1+verbosity), 0, 0, "");
 	Cvar_Get ("pr_source_path", source_path, 0, 0, "");
 	PR_Init_Cvars ();
-	PR_Init ();
 
 	pr.edicts = &edicts;
 	pr.num_edicts = &num_edicts;
@@ -245,6 +244,8 @@ init_qf (void)
 	pr.load_file = load_file;
 	pr.allocate_progs_mem = allocate_progs_mem;
 	pr.free_progs_mem = free_progs_mem;
+
+	PR_Init (&pr);
 
 	func_tab = Hash_NewTable (1021, 0, 0, 0);
 	Hash_SetHashCompare (func_tab, func_hash, func_compare);

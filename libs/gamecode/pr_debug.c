@@ -200,7 +200,7 @@ error:
 }
 
 void
-PR_Debug_Init (void)
+PR_Debug_Init (progs_t *pr)
 {
 	file_hash = Hash_NewTable (1024, file_get_key, file_free, 0);
 }

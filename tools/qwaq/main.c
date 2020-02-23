@@ -117,7 +117,7 @@ init_qf (void)
 	pr.no_exec_limit = 1;
 
 	PR_Init_Cvars ();
-	PR_Init ();
+	PR_Init (&pr);
 	RUA_Init (&pr, 0);
 	PR_Cmds_Init(&pr);
 	BI_Init (&pr);

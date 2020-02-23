@@ -409,7 +409,7 @@ typedef struct opcode_s {
 
 extern opcode_t pr_opcodes[];
 opcode_t *PR_Opcode (pr_short_t opcode);
-void PR_Opcode_Init (void);
+void PR_Opcode_Init (void);	// idempotent
 
 typedef struct dstatement_s {
 	pr_opcode_e op:16;

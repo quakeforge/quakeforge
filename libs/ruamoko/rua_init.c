@@ -56,7 +56,6 @@ RUA_Init (progs_t *pr, int secure)
 {
 	size_t      i;
 
-	PR_Resources_Init (pr);
 	for (i = 0; i < sizeof (init_funcs) / sizeof (init_funcs[0]); i++)
 		init_funcs[i] (pr, secure);
 }

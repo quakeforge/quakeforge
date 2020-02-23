@@ -521,6 +521,8 @@ SV_LoadProgs (void)
 void
 SV_Progs_Init (void)
 {
+	SV_Progs_Init_Cvars ();
+
 	pr_gametype = "netquake";
 	sv_pr_state.edicts = &sv.edicts;
 	sv_pr_state.num_edicts = &sv.num_edicts;
@@ -530,6 +532,8 @@ SV_Progs_Init (void)
 	sv_pr_state.prune_edict = prune_edict;
 	sv_pr_state.bi_map = bi_map;
 	sv_pr_state.resolve = resolve;
+
+	PR_Init (&sv_pr_state);
 
 	SV_PR_Cmds_Init ();
 
@@ -548,6 +552,7 @@ SV_Progs_Init (void)
 void
 SV_Progs_Init_Cvars (void)
 {
+	PR_Init_Cvars ();
 	sv_progs = Cvar_Get ("sv_progs", "", CVAR_NONE, NULL,
 						 "Override the default game progs.");
 	sv_progs_zone = Cvar_Get ("sv_progs_zone", "256", CVAR_NONE, NULL,

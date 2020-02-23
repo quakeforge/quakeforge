@@ -1804,11 +1804,9 @@ Host_Init (void)
 
 	Netchan_Init_Cvars ();
 
-	PR_Init_Cvars ();
+	PR_Init_Cvars ();		// FIXME location
 
 	CL_Init_Cvars ();
-
-	PR_Init ();
 
 	CL_Chat_Init ();
 

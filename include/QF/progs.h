@@ -53,8 +53,12 @@ typedef struct edict_s edict_t;
 ///@{
 
 /** Initialize the progs engine.
+
+	The first call will initialize subsystems common to all progs instances.
+
+	\param pr		The progs engine instance to initialize.
 */
-void PR_Init (void);
+void PR_Init (progs_t *pr);
 
 /** Initialize the Cvars for the progs engine. Call before calling PR_Init().
 */
@@ -1488,7 +1492,7 @@ void *PR_Zone_Realloc (progs_t *pr, void *ptr, pr_int_t size);
 /// \addtogroup debug
 ///@{
 
-void PR_Debug_Init (void);
+void PR_Debug_Init (progs_t *pr);
 void PR_Debug_Init_Cvars (void);
 int PR_LoadDebug (progs_t *pr);
 void PR_Debug_Watch (progs_t *pr, const char *expr);

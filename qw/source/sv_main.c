@@ -2523,8 +2523,6 @@ SV_Init (void)
 	Mod_Init_Cvars ();
 	Netchan_Init_Cvars ();
 	Pmove_Init_Cvars ();
-	SV_Progs_Init_Cvars ();
-	PR_Init_Cvars ();
 
 	// and now reprocess the cmdline's sets for overrides
 	Cmd_StuffCmds (sv_cbuf);
@@ -2534,7 +2532,6 @@ SV_Init (void)
 
 	Game_Init ();
 
-	PR_Init ();
 	SV_Progs_Init ();
 	Mod_Init ();
 
