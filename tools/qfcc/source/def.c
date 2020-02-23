@@ -609,7 +609,8 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 					reloc_def_field (init->e.value->v.pointer.def, sym->s.def);
 			} else {
 				ex_value_t *v = init->e.value;
-				if (is_double (init_type)
+				if (!init->implicit
+					&& is_double (init_type)
 					&& (is_integral (sym->type) || is_float (sym->type))) {
 					warning (init, "assigning double to %s in initializer "
 							 "(use a cast)", sym->type->name);

@@ -143,6 +143,7 @@ STRING		\"(\\.|[^"\\])*\"
 						if (options.traditional < 1) {
 							double      d = strtod (yytext, 0);
 							qc_yylval.expr = new_double_expr (d);
+							qc_yylval.expr->implicit = 1;
 						} else {
 							float       f = strtof (yytext, 0);
 							qc_yylval.expr = new_float_expr (f);

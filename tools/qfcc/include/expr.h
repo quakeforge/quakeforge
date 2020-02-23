@@ -197,6 +197,7 @@ typedef struct expr_s {
 	int         printid;		///< avoid duplicate output when printing
 	unsigned    paren:1;		///< the expression is enclosed in ()
 	unsigned    rvalue:1;		///< the expression is on the right side of =
+	unsigned    implicit:1;		///< don't warn for implicit casts
 	union {
 		ex_label_t  label;				///< label expression
 		ex_labelref_t labelref;			///< label reference expression (&)
