@@ -947,52 +947,33 @@ type_assignable (const type_t *dst, const type_t *src)
 int
 type_size (const type_t *type)
 {
-	switch (type->type) {
-		case ev_void:
-		case ev_string:
-		case ev_float:
-		case ev_vector:
-		case ev_entity:
-		case ev_field:
-		case ev_func:
-		case ev_pointer:
-		case ev_quat:
-		case ev_integer:
-		case ev_uinteger:
-		case ev_short:
-		case ev_double:
-		case ev_type_count:
+	switch (type->meta) {
+		case ty_basic:
 			return pr_type_size[type->type];
-		case ev_invalid:
-			switch (type->meta) {
-				case ty_enum:
-					if (!type->t.symtab)
-						return 0;
-					return type_size (&type_integer);
-				case ty_struct:
-				case ty_union:
-					if (!type->t.symtab)
-						return 0;
-					return type->t.symtab->size;
-				case ty_class:
-					{
-						class_t    *class = type->t.class;
-						int         size;
-						if (!class->ivars)
-							return 0;
-						size = class->ivars->size;
-						if (class->super_class)
-							size += type_size (class->super_class->type);
-						return size;
-					}
-				case ty_array:
-					return type->t.array.size * type_size (type->t.array.type);
-				case ty_alias:
-					return type_size (type->t.alias.type);
-				case ty_basic:
+		case ty_struct:
+		case ty_union:
+			if (!type->t.symtab)
+				return 0;
+			return type->t.symtab->size;
+		case ty_enum:
+			if (!type->t.symtab)
+				return 0;
+			return type_size (&type_integer);
+		case ty_array:
+			return type->t.array.size * type_size (type->t.array.type);
+		case ty_class:
+			{
+				class_t    *class = type->t.class;
+				int         size;
+				if (!class->ivars)
 					return 0;
+				size = class->ivars->size;
+				if (class->super_class)
+					size += type_size (class->super_class->type);
+				return size;
 			}
-			break;
+		case ty_alias:
+			return type_size (type->t.alias.type);
 	}
 	return 0;
 }
