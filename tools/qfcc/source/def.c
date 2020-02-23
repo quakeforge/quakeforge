@@ -626,7 +626,7 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 				}
 			}
 			sym->s.def->initialized = 1;
-			if (options.traditional) {
+			if (options.code.const_initializers) {
 				sym->s.def->constant = 1;
 				sym->s.def->nosave = 1;
 			}

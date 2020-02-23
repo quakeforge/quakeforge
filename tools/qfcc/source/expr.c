@@ -2626,6 +2626,19 @@ cast_expr (type_t *type, expr_t *e)
 		ex_value_t *val = 0;
 		if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const) {
 			val = e->e.symbol->s.value;
+		} else if (e->type == ex_symbol
+				   && e->e.symbol->sy_type == sy_var) {
+			// initialized global def treated as a constant
+			// from the tests above, the def is known to be constant
+			// and of one of the three storable scalar types
+			def_t      *def = e->e.symbol->s.def;
+			if (is_float (def->type)) {
+				val = new_float_val (D_FLOAT (def));
+			} else if (is_double (def->type)) {
+				val = new_double_val (D_DOUBLE (def));
+			} else if (is_integral (def->type)) {
+				val = new_integer_val (D_INT (def));
+			}
 		} else if (e->type == ex_value) {
 			val = e->e.value;
 		} else if (e->type == ex_nil) {

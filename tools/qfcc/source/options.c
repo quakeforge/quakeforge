@@ -194,12 +194,13 @@ code_usage (void)
 	printf ("%s - QuakeForge Code Compiler\n", this_program);
 	printf ("Code generation options\n");
 	printf (
+"    [no-]const-initializers Treat initialized globals as constants.\n"
 "    [no-]cow                Allow assignment to initialized globals.\n"
 "    [no-]cpp                Preprocess all input files with cpp.\n"
 "    [no-]crc                Write progdefs.h crc to progs.dat.\n"
 "    [no-]debug              Generate debug information.\n"
 "    [no-]fast-float         Use float values directly in \"if\" statements.\n"
-"    help                    Display his text.\n"
+"    help                    Display this text.\n"
 "    [no-]local-merging      Merge the local variable blocks into one.\n"
 "    [no-]optimize           Perform various optimizations on the code.\n"
 "    [no-]short-circuit      Generate short circuit code for logical\n"
@@ -392,16 +393,19 @@ DecodeArgs (int argc, char **argv)
 				options.traditional = 1;
 				options.advanced = false;
 				options.code.progsversion = PROG_ID_VERSION;
+				options.code.const_initializers = true;
 				break;
 			case OPT_TRADITIONAL:
 				options.traditional = 2;
 				options.advanced = false;
 				options.code.progsversion = PROG_ID_VERSION;
+				options.code.const_initializers = true;
 				break;
 			case OPT_ADVANCED:
 				options.traditional = 0;
 				options.advanced = true;
 				options.code.progsversion = PROG_VERSION;
+				options.code.const_initializers = false;
 				break;
 			case OPT_BLOCK_DOT:
 				if (optarg) {
@@ -506,6 +510,8 @@ DecodeArgs (int argc, char **argv)
 								options.code.progsversion = PROG_ID_VERSION;
 							else
 								options.code.progsversion = PROG_VERSION;
+						} else if (!(strcasecmp (temp, "const-initializers"))) {
+							options.code.const_initializers = flag;
 						}
 						temp = strtok (NULL, ",");
 					}
