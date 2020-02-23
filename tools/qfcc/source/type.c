@@ -62,7 +62,7 @@
 
 // simple types.  function types are dynamically allocated
 type_t      type_invalid = { ev_invalid, "invalid" };
-type_t      type_void = { ev_void, "void" };
+type_t      type_void = { ev_void, "void", 1 };
 type_t      type_string = { ev_string, "string", 1 };
 type_t      type_float = { ev_float, "float", 1 };
 type_t      type_vector = { ev_vector, "vector", 1 };
