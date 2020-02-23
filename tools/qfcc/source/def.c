@@ -153,6 +153,7 @@ new_def (const char *name, type_t *type, defspace_t *space,
 		if (!size) {
 			error (0, "%s has incomplete type", name);
 			size = 1;
+			alignment = 1;
 		}
 		if (alignment < 1) {
 			print_type (type);
