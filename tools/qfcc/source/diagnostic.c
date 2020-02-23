@@ -99,16 +99,21 @@ static __attribute__((format(printf, 4, 0))) void
 __warning (expr_t *e, const char *file, int line,
 		   const char *fmt, va_list args)
 {
+	static int  promoted = 0;
 	dstring_t  *message = dstring_new ();
 
 	report_function (e);
 	if (options.warnings.promote) {
-		options.warnings.promote = 0;	// want to do this only once
-		fprintf (stderr, "%s: warnings treated as errors\n", "qfcc");
+		if (!promoted) {
+			promoted = 1;	// want to do this only once
+			fprintf (stderr, "%s: warnings treated as errors\n", "qfcc");
+		}
 		pr.error_count++;
+		format_message (message, "error", e, fmt, args);
+	} else {
+		format_message (message, "warning", e, fmt, args);
 	}
 
-	format_message (message, "warning", e, fmt, args);
 	if (options.verbosity > 1) {
 		dasprintf (message, " (%s:%d)", file, line);
 	}
