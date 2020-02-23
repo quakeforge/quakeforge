@@ -891,6 +891,8 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	int         xdefs_start;
 	unsigned    big_locals = 0;
 	int         big_func = 0;
+	pr_xdefs_t *xdefs;
+	xdef_t     *xdef;
 
 	*size = RUP (sizeof (dprograms_t), 16);
 	progs = calloc (1, *size);
@@ -1046,8 +1048,8 @@ qfo_to_progs (qfo_t *qfo, int *size)
 		encodings->size = qfo->spaces[qfo_type_space].data_size;
 	}
 	if (xdefs_def) {
-		pr_xdefs_t *xdefs = (pr_xdefs_t *) &globals[xdefs_def->offset];
-		xdef_t     *xdef = (xdef_t *) xdef_data;
+		xdefs = (pr_xdefs_t *) &globals[xdefs_def->offset];
+		xdef = (xdef_t *) xdef_data;
 		xdefs->xdefs = xdefs_start;
 		xdefs->num_xdefs = progs->numglobaldefs + progs->numfielddefs;
 		for (i = 0; i < qfo->spaces[qfo_near_data_space].num_defs;
@@ -1091,7 +1093,7 @@ qfo_to_progs (qfo_t *qfo, int *size)
 		printf ("%6i statements\n", progs->numstatements);
 		printf ("%6i functions\n", progs->numfunctions);
 		printf ("%6i global defs\n", progs->numglobaldefs);
-		printf ("%6i fielddefs\n", progs->numfielddefs);
+		printf ("%6i field defs\n", progs->numfielddefs);
 		printf ("%6i globals\n", progs->numglobals);
 		printf ("    %6i near globals\n", near_data_size);
 		printf ("        %6i locals size%s\n", locals_size, big_function);
@@ -1099,6 +1101,10 @@ qfo_to_progs (qfo_t *qfo, int *size)
 				qfo->spaces[qfo_far_data_space].data_size);
 		printf ("    %6i type globals\n",
 				qfo->spaces[qfo_type_space].data_size);
+		if (xdefs) {
+			printf ("    %6i extended defs\n",
+					xdefs->num_xdefs * type_size (&type_xdef));
+		}
 		printf ("%6i entity fields\n", progs->entityfields);
 	}
 
