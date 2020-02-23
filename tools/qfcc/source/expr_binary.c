@@ -992,8 +992,9 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	e = new_binary_expr (op, e1, e2);
 	e->e.expr.type = expr_type->type;
 	if (is_compare (op) || is_logic (op)) {
-		if (options.code.progsversion == PROG_ID_VERSION)
+		if (options.code.progsversion == PROG_ID_VERSION) {
 			e->e.expr.type = &type_float;
+		}
 	}
 	return fold_constants (e);
 }
