@@ -128,7 +128,6 @@ static edict_t *edicts;
 static int      num_edicts;
 static int      reserved_edicts = 1;
 static progs_t  pr;
-static int      need_progs;
 static qfo_t   *qfo;
 
 static const char *source_path = "";
@@ -234,7 +233,7 @@ init_qf (void)
 {
 	Sys_Init ();
 
-	Cvar_Get ("pr_debug", va ("%d", verbosity), 0, 0, "");
+	Cvar_Get ("pr_debug", va ("%d", 1+verbosity), 0, 0, "");
 	Cvar_Get ("pr_source_path", source_path, 0, 0, "");
 	PR_Init_Cvars ();
 	PR_Init ();
@@ -249,87 +248,6 @@ init_qf (void)
 
 	func_tab = Hash_NewTable (1021, 0, 0, 0);
 	Hash_SetHashCompare (func_tab, func_hash, func_compare);
-}
-
-static void
-convert_qfo (void)
-{
-	int         size;
-	int         i;
-	xdef_t     *xdef = 0;
-	pr_xdefs_t *xdefs = 0;
-	ddef_t     *xdefs_def = 0;
-	ddef_t     *global_ddefs;
-	ddef_t     *field_ddefs;
-
-	pr.progs = qfo_to_progs (qfo, &size);
-
-#define P(t,o) ((t *)((char *)pr.progs + pr.progs->o))
-	pr.pr_statements = P (dstatement_t, ofs_statements);
-	pr.pr_strings = P (char, ofs_strings);
-	pr.pr_stringsize = pr.progs->numstrings;
-	pr.pr_functions = P (dfunction_t, ofs_functions);
-	global_ddefs = P (ddef_t, ofs_globaldefs);
-	field_ddefs = P (ddef_t, ofs_fielddefs);
-	pr.pr_globals = P (pr_type_t, ofs_globals);
-	pr.globals_size = pr.progs->numglobals;
-	pr.pr_edict_size = max (1, pr.progs->entityfields) * 4;
-	pr.pr_edictareasize = 1 * pr.pr_edict_size;
-#undef P
-
-	pr.pr_globaldefs = malloc ((pr.progs->numglobaldefs
-								+ pr.progs->numfielddefs)
-							   * sizeof (pr_def_t));
-	pr.pr_fielddefs = pr.pr_globaldefs + pr.progs->numglobaldefs;
-	// can't use PR_FindGlobal yet as pr_globaldefs is still uninitialized
-	for (i = 0; i < (int) pr.progs->numglobaldefs; i++) {
-		ddef_t     *ddef = global_ddefs + i;
-		if (!strcmp (PR_GetString (&pr, ddef->s_name), ".xdefs")) {
-			xdefs_def = ddef;
-			break;
-		}
-	}
-	if (xdefs_def) {
-		xdefs = &G_STRUCT (&pr, pr_xdefs_t, xdefs_def->ofs);
-		xdef = &G_STRUCT (&pr, xdef_t, xdefs->xdefs);
-	}
-	for (i = 0; i < (int) pr.progs->numglobaldefs; i++, xdef++) {
-		ddef_t     *ddef = global_ddefs + i;
-		pr_def_t   *def = pr.pr_globaldefs + i;
-		def->type = ddef->type;
-		def->ofs = xdefs ? xdef->ofs : ddef->ofs;
-		def->name = ddef->s_name;
-		def->type_encoding = xdefs ? xdef->type : 0;
-	}
-	for (i = 0; i < (int) pr.progs->numfielddefs; i++, xdef++) {
-		ddef_t     *ddef = field_ddefs + i;
-		pr_def_t   *def = pr.pr_fielddefs + i;
-		def->type = ddef->type;
-		def->ofs = xdefs ? xdef->ofs : ddef->ofs;
-		def->name = ddef->s_name;
-		def->type_encoding = xdefs ? xdef->type : 0;
-	}
-
-	if (verbosity) {
-		pr.debug = qfo_to_sym (qfo, &size);
-#define P(t,o) ((t *)((char *)pr.debug + pr.debug->o))
-		pr.auxfunctions = P (pr_auxfunction_t, auxfunctions);
-		pr.linenos = P (pr_lineno_t, linenos);
-		pr.local_defs = P (pr_def_t, locals);
-#undef P
-
-		pr.local_defs = calloc (qfo->num_defs, sizeof (ddef_t));
-
-		pr.auxfunction_map = calloc (pr.progs->numfunctions,
-									 sizeof (pr_auxfunction_t *));
-		for (i = 0; (int) i < pr.progs->numfunctions; i++)	//FIXME (cast)
-			pr.auxfunction_map[i] = 0;
-
-		for (i = 0; i < (int) pr.debug->num_auxfunctions; i++) {
-			pr_auxfunction_t *aux = pr.auxfunctions + i;
-			pr.auxfunction_map[aux->function] = aux;
-		}
-	}
 }
 
 static int
@@ -349,6 +267,7 @@ load_progs (const char *name)
 	Qread (file, buff, 4);
 	buff[4] = 0;
 	Qseek (file, 0, SEEK_SET);
+	qfo = 0;
 	if (!strcmp (buff, QFO)) {
 		qfo = qfo_read (file);
 		Qclose (file);
@@ -356,9 +275,7 @@ load_progs (const char *name)
 		if (!qfo)
 			return 0;
 
-		if (!need_progs)
-			return 1;
-		convert_qfo ();
+		return 1;
 	} else {
 		pr.progs_name = name;
 		pr.max_edicts = 1;
@@ -392,7 +309,7 @@ operation_t operations[] = {
 	{dump_strings,		0},					// strings
 	{dump_fields,		0},					// fields
 	{dump_functions,	qfo_functions},		// functions
-	{dump_lines,		0},					// lines
+	{dump_lines,		qfo_lines},			// lines
 	{dump_modules,		0},					// modules
 	{0,					qfo_relocs},		// relocs
 	{dump_types,		qfo_types},			// types
@@ -451,12 +368,11 @@ main (int argc, char **argv)
 	}
 	init_qf ();
 	while (optind < argc) {
-		need_progs = !func->qfo;
 		if (!load_progs (argv[optind++]))
 			return 1;
 		if (qfo && func->qfo)
 			func->qfo (qfo);
-		else if (func->progs)
+		else if (!qfo && func->progs)
 			func->progs (&pr);
 		else
 			fprintf (stderr, "can't process %s\n", argv[optind - 1]);
