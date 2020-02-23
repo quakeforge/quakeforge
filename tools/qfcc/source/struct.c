@@ -124,6 +124,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
 		if (s->sy_type != sy_var)
 			continue;
 		if (su == 's') {
+			symtab->size = RUP (symtab->size, s->type->alignment);
 			s->s.offset = symtab->size;
 			symtab->size += type_size (s->type);
 		} else {
