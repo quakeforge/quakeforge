@@ -391,7 +391,9 @@ compile_to_obj (const char *file, const char *obj, lang_t lang)
 			exit (1);
 		}
 	}
-	write_frame_macros (va ("%s.frame", file_basename (file)));
+	if (options.frames_files) {
+		write_frame_macros (va ("%s.frame", file_basename (file)));
+	}
 	if (!err) {
 		qfo_t      *qfo;
 
@@ -750,8 +752,10 @@ progs_src_compile (void)
 			} else {
 				if (compile_file (qc_filename->str))
 					return 1;
-				write_frame_macros (va ("%s.frame",
-										file_basename (qc_filename->str)));
+				if (options.frames_files) {
+					write_frame_macros (va ("%s.frame",
+											file_basename (qc_filename->str)));
+				}
 			}
 			if (!Script_TokenAvailable (script, 0))
 				break;
