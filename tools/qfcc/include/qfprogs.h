@@ -59,6 +59,7 @@ void qfo_fields (struct qfo_s *qfo);
 void qfo_functions (struct qfo_s *qfo);
 void qfo_lines (struct qfo_s *qfo);
 void qfo_relocs (struct qfo_s *qfo);
+void qfo_strings (struct qfo_s *qfo);
 void qfo_types (struct qfo_s *qfo);
 
 #endif//__qfprogs_h
