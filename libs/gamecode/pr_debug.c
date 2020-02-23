@@ -1055,9 +1055,10 @@ static void
 pr_debug_alias_view (qfot_type_t *type, pr_type_t *value, void *_data)
 {
 	__auto_type data = (pr_debug_data_t *) _data;
-	dstring_t  *dstr = data->dstr;
+	progs_t    *pr = data->pr;
 
-	dstring_appendstr (dstr, "<alias>");
+	type = &G_STRUCT (pr, qfot_type_t, type->t.alias.aux_type);
+	value_string (data, type, value);
 }
 
 VISIBLE void
