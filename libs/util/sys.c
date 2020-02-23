@@ -240,16 +240,20 @@ Sys_FileExists (const char *path)
 	for want of a better name, but it sets the function pointer for the
 	actual implementation of Sys_Printf.
 */
-VISIBLE void
+VISIBLE sys_printf_t
 Sys_SetStdPrintf (sys_printf_t func)
 {
+	sys_printf_t prev = sys_std_printf_function;
 	sys_std_printf_function = func;
+	return prev;
 }
 
-VISIBLE void
+VISIBLE sys_printf_t
 Sys_SetErrPrintf (sys_printf_t func)
 {
+	sys_printf_t prev = sys_err_printf_function;
 	sys_err_printf_function = func;
+	return prev;
 }
 
 void
