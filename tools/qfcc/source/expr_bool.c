@@ -280,9 +280,16 @@ convert_bool (expr_t *e, int block)
 		e = test_expr (e);
 		if (e->type == ex_error)
 			return e;
-		if (is_integer_val (e)) {
+		if (is_constant (e)) {
+			int         val;
+
 			b = goto_expr (0);
-			if (expr_integer (e))
+			if (is_integer_val (e)) {
+				val = expr_integer (e);
+			} else {
+				val = expr_float (e) != 0;
+			}
+			if (val)
 				e = new_bool_expr (make_list (b), 0, b);
 			else
 				e = new_bool_expr (0, make_list (b), b);
