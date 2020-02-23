@@ -762,8 +762,13 @@ double_compare (int op, expr_t *e1, expr_t *e2)
 	type_t     *t2 = get_type (e2);
 	expr_t     *e;
 
-	if ((is_double (t1) && is_float (t2))
-		|| (is_float (t1) && is_double (t2))) {
+	if (is_constant (e1) && e1->implicit && is_double (t1) && is_float (t2)) {
+		t1 = &type_float;
+		convert_double (e1);
+	}
+	if (is_float (t1) && is_constant (e2) && e2->implicit && is_double (t2)) {
+		t2 = &type_float;
+		convert_double (e2);
 	}
 	if (is_double (t1)) {
 		if (is_float (t2)) {
@@ -772,7 +777,7 @@ double_compare (int op, expr_t *e1, expr_t *e2)
 			warning (e2, "comparison between double and integer");
 		}
 		e2 = cast_expr (&type_double, e2);
-	} else {
+	} else if (is_double (t2)) {
 		if (is_float (t1)) {
 			warning (e1, "comparison between float and double");
 		} else if (!is_constant (e1)) {
