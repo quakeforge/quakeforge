@@ -997,9 +997,10 @@ qfo_to_progs (qfo_t *qfo, int *size)
 
 	for (i = 0; i < qfo->spaces[qfo_near_data_space].num_defs; i++) {
 		qfo_def_t  *def = qfo->spaces[qfo_near_data_space].defs + i;
-		if (!strcmp (QFO_GETSTR (qfo, def->name), ".type_encodings"))
+		const char *defname = QFO_GETSTR (qfo, def->name);
+		if (!strcmp (defname, ".type_encodings"))
 			types_def = def;
-		if (!strcmp (QFO_GETSTR (qfo, def->name), ".xdefs"))
+		if (!strcmp (defname, ".xdefs"))
 			xdefs_def = def;
 		convert_def (qfo, def, globaldefs++);
 	}
