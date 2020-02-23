@@ -191,12 +191,12 @@ typedef struct ex_value_s {
 
 typedef struct expr_s {
 	struct expr_s *next;		///< the next expression in a block expression
-	expr_type	type;			///< the type of the result of this expression
-	int			line;			///< source line that generated this expression
-	string_t	file;			///< source file that generated this expression
+	expr_type   type;			///< the type of the result of this expression
+	int         line;			///< source line that generated this expression
+	string_t    file;			///< source file that generated this expression
 	int         printid;		///< avoid duplicate output when printing
-	unsigned	paren:1;		///< the expression is enclosed in ()
-	unsigned	rvalue:1;		///< the expression is on the right side of =
+	unsigned    paren:1;		///< the expression is enclosed in ()
+	unsigned    rvalue:1;		///< the expression is on the right side of =
 	union {
 		ex_label_t  label;				///< label expression
 		ex_labelref_t labelref;			///< label reference expression (&)
