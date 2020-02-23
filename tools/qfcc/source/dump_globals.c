@@ -193,6 +193,41 @@ dump_fields (progs_t *pr)
 }
 
 void
+qfo_fields (qfo_t *qfo)
+{
+	unsigned int i;
+	const char *name;
+	const char *typestr;
+	qfot_type_t *type;
+	int         offset;
+	const char *comment;
+	qfo_mspace_t *space = &qfo->spaces[qfo_entity_space];
+
+	if (qfo_entity_space >= qfo->num_spaces) {
+		printf ("no entity space\n");
+		return;
+	}
+	if (!space->num_defs) {
+		printf ("no fields\n");
+		return;
+	}
+
+	for (i = 0; i < space->num_defs; i++) {
+		qfo_def_t  *def = space->defs + i;
+
+		name = QFO_GETSTR (qfo, def->name);
+		//FIXME check type
+		type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, def->type);
+		typestr = QFO_GETSTR (qfo, type->encoding);
+		offset = def->offset;
+
+		comment = "";
+
+		printf ("%d %s %s%s\n", offset, name, typestr, comment);
+	}
+}
+
+void
 dump_functions (progs_t *pr)
 {
 	int         i, j;

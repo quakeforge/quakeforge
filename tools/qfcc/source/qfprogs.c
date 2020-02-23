@@ -307,7 +307,7 @@ operation_t operations[] = {
 	{disassemble_progs, 0},					// disassemble
 	{dump_globals,		qfo_globals},		// globals
 	{dump_strings,		0},					// strings
-	{dump_fields,		0},					// fields
+	{dump_fields,		qfo_fields},		// fields
 	{dump_functions,	qfo_functions},		// functions
 	{dump_lines,		qfo_lines},			// lines
 	{dump_modules,		0},					// modules
