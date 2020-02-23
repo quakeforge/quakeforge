@@ -434,7 +434,8 @@ typedef struct pr_xdefs_s {
 } pr_xdefs_t;
 
 typedef struct pr_def_s {
-	pr_uint_t   type;
+	pr_ushort_t type;
+	pr_ushort_t size;			///< may not be correct
 	pointer_t   ofs;
 	string_t    name;
 	pointer_t   type_encoding;

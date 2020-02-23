@@ -195,6 +195,57 @@ pr_debug_expression_error (script_t *script, const char *msg)
 	Sys_Printf ("%s\n", msg);
 }
 
+#define RUP(x,a) (((x) + ((a) - 1)) & ~((a) - 1))
+static pr_short_t
+pr_debug_type_size (progs_t *pr, qfot_type_t *type)
+{
+	pr_short_t  size;
+	qfot_type_t *aux_type;
+	switch (type->meta) {
+		case ty_basic:
+			return pr_type_size[type->t.type];
+		case ty_struct:
+		case ty_union:
+			size = 0;
+			for (pr_int_t i = 0; i < type->t.strct.num_fields; i++) {
+				qfot_var_t *field = &type->t.strct.fields[i];
+				aux_type = &G_STRUCT (pr, qfot_type_t, field->type);
+				size = max (size,
+							field->offset + pr_debug_type_size (pr, aux_type));
+			}
+			return size;
+		case ty_enum:
+			return pr_type_size[ev_integer];
+		case ty_array:
+			aux_type = &G_STRUCT (pr, qfot_type_t, type->t.array.type);
+			size = pr_debug_type_size (pr, aux_type);
+			return type->t.array.size * size;
+		case ty_class:
+			return 1;	//FIXME or should it return sizeof class struct?
+		case ty_alias:
+			aux_type = &G_STRUCT (pr, qfot_type_t, type->t.alias.aux_type);
+			return pr_debug_type_size (pr, aux_type);
+	}
+	return 0;
+}
+
+static qfot_type_t *
+get_def_type (progs_t *pr, pr_def_t *def, qfot_type_t *type)
+{
+	if (!def->type_encoding) {
+		// no type encoding, so use basic type data to fill in and return
+		// the dummy encoding
+		memset (type, 0, sizeof (*type));
+		type->t.type = def->type;
+	} else {
+		type = &G_STRUCT (pr, qfot_type_t, def->type_encoding);
+		if (!def->size) {
+			def->size = pr_debug_type_size (pr, type);
+		}
+	}
+	return type;
+}
+
 static pr_def_t
 parse_expression (progs_t *pr, const char *expr, int conditional)
 {
@@ -1379,7 +1430,7 @@ VISIBLE void
 ED_Print (progs_t *pr, edict_t *ed)
 {
 	int         l;
-	pr_uint_t   i;
+	pr_uint_t   i, j;
 	const char *name;
 	pr_def_t   *d;
 	pr_type_t  *v;
@@ -1398,16 +1449,20 @@ ED_Print (progs_t *pr, edict_t *ed)
 		d = &pr->pr_fielddefs[i];
 		if (!d->name)					// null field def (probably 1st)
 			continue;
-		if (!d->type_encoding) {
-			dummy_type.t.type = d->type;
-			type = &dummy_type;
-		} else {
-			type = &G_STRUCT (pr, qfot_type_t, d->type_encoding);
-		}
+		type = get_def_type (pr, d, &dummy_type);
 		name = PR_GetString (pr, d->name);
 		if (name[strlen (name) - 2] == '_'
 			&& strchr ("xyz", name[strlen (name) -1]))
 			continue;					// skip _x, _y, _z vars
+
+		for (j = 0; j < d->size; j++) {
+			if (E_INT (ed, d->ofs + j)) {
+				break;
+			}
+		}
+		if (j == d->size) {
+			continue;
+		}
 
 		v = ed->v + d->ofs;
 

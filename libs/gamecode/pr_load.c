@@ -281,11 +281,13 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	pr->pr_globaldefs = calloc (pr->progs->numglobaldefs, sizeof (pr_def_t));
 
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
+		pr_ushort_t safe_type = global_ddefs[i].type & ~DEF_SAVEGLOBAL;
 		global_ddefs[i].type = LittleShort (global_ddefs[i].type);
 		global_ddefs[i].ofs = LittleShort (global_ddefs[i].ofs);
 		global_ddefs[i].s_name = LittleLong (global_ddefs[i].s_name);
 
 		pr->pr_globaldefs[i].type = global_ddefs[i].type;
+		pr->pr_globaldefs[i].size = pr_type_size[safe_type];
 		pr->pr_globaldefs[i].ofs = global_ddefs[i].ofs;
 		pr->pr_globaldefs[i].name = global_ddefs[i].s_name;
 		Hash_Add (pr->global_hash, &pr->pr_globaldefs[i]);
