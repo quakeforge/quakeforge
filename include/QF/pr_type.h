@@ -109,7 +109,7 @@ typedef struct qfot_type_s {
 		qfot_func_t func;			///< ty_basic, ev_func
 		qfot_struct_t strct;		///< ty_struct/ty_union/ty_enum
 		qfot_array_t array;			///< ty_array
-		pointer_t   class;			///< ty_class
+		string_t    class;			///< ty_class
 		qfot_alias_t alias;			///< ty_alias
 	}           t;
 } qfot_type_t;
