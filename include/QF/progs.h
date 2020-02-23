@@ -1492,6 +1492,49 @@ void *PR_Zone_Realloc (progs_t *pr, void *ptr, pr_int_t size);
 /// \addtogroup debug
 ///@{
 
+struct qfot_type_s;
+
+/**	Callback for viewing progs data
+
+	\param type		C pointer to the type definition by which to view the
+					data.
+	\param value	C pointer to the data to be viewed.
+	\param data		User data.
+*/
+typedef void (*type_view_func) (struct qfot_type_s *type, pr_type_t *value,
+								void *data);
+
+/**	Set of callbacks for viewing progs data
+
+	Each possible type has its own callback. Basic types (those for which the
+	VM has specific instructions) all have separate callbacks, one for each
+	type, but the callbacks for compound types are expected to some
+	interpretation on their own, such as displaying a simple identifier or
+	the entire contents of the data.
+*/
+typedef struct type_view_s {
+	type_view_func void_view;
+	type_view_func string_view;
+	type_view_func float_view;
+	type_view_func vector_view;
+	type_view_func entity_view;
+	type_view_func field_view;
+	type_view_func func_view;
+	type_view_func pointer_view;
+	type_view_func quat_view;
+	type_view_func integer_view;
+	type_view_func uinteger_view;
+	type_view_func short_view;
+	type_view_func double_view;
+
+	type_view_func struct_view;
+	type_view_func union_view;
+	type_view_func enum_view;
+	type_view_func array_view;
+	type_view_func class_view;
+	type_view_func alias_view;
+} type_view_t;
+
 void PR_Debug_Init (progs_t *pr);
 void PR_Debug_Init_Cvars (void);
 int PR_LoadDebug (progs_t *pr);
