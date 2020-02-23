@@ -48,7 +48,7 @@
 
 hashtab_t *opcode_table;
 
-VISIBLE int pr_type_size[ev_type_count] = {
+VISIBLE pr_ushort_t pr_type_size[ev_type_count] = {
 	1,			// ev_void
 	1,			// ev_string
 	1,			// ev_float
