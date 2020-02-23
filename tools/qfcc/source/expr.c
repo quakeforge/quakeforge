@@ -1634,6 +1634,7 @@ unary_expr (int op, expr_t *e)
 	vec3_t      v;
 	quat_t      q;
 	const char *s;
+	expr_t     *new;
 
 	convert_name (e);
 	if (e->type == ex_error)
@@ -1651,7 +1652,9 @@ unary_expr (int op, expr_t *e)
 					case ev_pointer:
 						internal_error (e, "type check failed!");
 					case ev_double:
-						return new_double_expr (-expr_double (e));
+						new = new_double_expr (-expr_double (e));
+						new->implicit = e->implicit;
+						return new;
 					case ev_float:
 						return new_float_expr (-expr_float (e));
 					case ev_vector:
