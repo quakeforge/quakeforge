@@ -417,7 +417,7 @@ typedef struct dstatement_s {
 } GCC_STRUCT dstatement_t;
 
 typedef struct ddef_s {
-	pr_ushort_t type;			// if DEF_SAVEGLOBGAL bit is set
+	pr_ushort_t type;			// if DEF_SAVEGLOBAL bit is set
 								// the variable needs to be saved in savegames
 	pr_ushort_t ofs;
 	string_t    s_name;
