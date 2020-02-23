@@ -70,6 +70,16 @@ valid_op (int op, int *valid_ops)
 }
 
 static expr_t *
+cmp_result_expr (int result)
+{
+	if (is_float (type_default)) {
+		return new_float_expr (result);
+	} else {
+		return new_integer_expr(result);
+	}
+}
+
+static expr_t *
 do_op_string (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	const char *s1, *s2;
@@ -108,22 +118,22 @@ do_op_string (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e = new_string_expr (save_string (temp_str->str));
 			break;
 		case LT:
-			e = new_integer_expr (strcmp (s1, s2) < 0);
+			e = cmp_result_expr (strcmp (s1, s2) < 0);
 			break;
 		case GT:
-			e = new_integer_expr (strcmp (s1, s2) > 0);
+			e = cmp_result_expr (strcmp (s1, s2) > 0);
 			break;
 		case LE:
-			e = new_integer_expr (strcmp (s1, s2) <= 0);
+			e = cmp_result_expr (strcmp (s1, s2) <= 0);
 			break;
 		case GE:
-			e = new_integer_expr (strcmp (s1, s2) >= 0);
+			e = cmp_result_expr (strcmp (s1, s2) >= 0);
 			break;
 		case EQ:
-			e = new_integer_expr (strcmp (s1, s2) == 0);
+			e = cmp_result_expr (strcmp (s1, s2) == 0);
 			break;
 		case NE:
-			e = new_integer_expr (strcmp (s1, s2));
+			e = cmp_result_expr (strcmp (s1, s2));
 			break;
 		default:
 			internal_error (e1, 0);
@@ -300,28 +310,28 @@ do_op_float (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e = new_float_expr ((int)f1 >> (int)f2);
 			break;
 		case AND:
-			e = new_integer_expr (f1 && f2);
+			e = cmp_result_expr (f1 && f2);
 			break;
 		case OR:
-			e = new_integer_expr (f1 || f2);
+			e = cmp_result_expr (f1 || f2);
 			break;
 		case LT:
-			e = new_integer_expr (f1 < f2);
+			e = cmp_result_expr (f1 < f2);
 			break;
 		case GT:
-			e = new_integer_expr (f1 > f2);
+			e = cmp_result_expr (f1 > f2);
 			break;
 		case LE:
-			e = new_integer_expr (f1 <= f2);
+			e = cmp_result_expr (f1 <= f2);
 			break;
 		case GE:
-			e = new_integer_expr (f1 >= f2);
+			e = cmp_result_expr (f1 >= f2);
 			break;
 		case EQ:
-			e = new_integer_expr (f1 == f2);
+			e = cmp_result_expr (f1 == f2);
 			break;
 		case NE:
-			e = new_integer_expr (f1 != f2);
+			e = cmp_result_expr (f1 != f2);
 			break;
 		default:
 			internal_error (e1, 0);
@@ -411,22 +421,22 @@ do_op_double (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e = new_double_expr ((int)d1 % (int)d2);
 			break;
 		case LT:
-			e = new_integer_expr (d1 < d2);
+			e = cmp_result_expr (d1 < d2);
 			break;
 		case GT:
-			e = new_integer_expr (d1 > d2);
+			e = cmp_result_expr (d1 > d2);
 			break;
 		case LE:
-			e = new_integer_expr (d1 <= d2);
+			e = cmp_result_expr (d1 <= d2);
 			break;
 		case GE:
-			e = new_integer_expr (d1 >= d2);
+			e = cmp_result_expr (d1 >= d2);
 			break;
 		case EQ:
-			e = new_integer_expr (d1 == d2);
+			e = cmp_result_expr (d1 == d2);
 			break;
 		case NE:
-			e = new_integer_expr (d1 != d2);
+			e = cmp_result_expr (d1 != d2);
 			break;
 		default:
 			internal_error (e1, 0);
@@ -539,10 +549,10 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			}
 			break;
 		case EQ:
-			e = new_integer_expr (VectorCompare (v1, v2));
+			e = cmp_result_expr (VectorCompare (v1, v2));
 			break;
 		case NE:
-			e = new_integer_expr (!VectorCompare (v1, v2));
+			e = cmp_result_expr (!VectorCompare (v1, v2));
 			break;
 		default:
 			internal_error (e1, 0);
@@ -776,10 +786,10 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e = new_quaternion_expr (q);
 			break;
 		case EQ:
-			e = new_integer_expr (QuatCompare (q1, q2));
+			e = cmp_result_expr (QuatCompare (q1, q2));
 			break;
 		case NE:
-			e = new_integer_expr (!QuatCompare (q1, q2));
+			e = cmp_result_expr (!QuatCompare (q1, q2));
 			break;
 		default:
 			internal_error (e1, 0);
@@ -877,28 +887,28 @@ do_op_integer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e = new_integer_expr (i1 >> i2);
 			break;
 		case AND:
-			e = new_integer_expr (i1 && i2);
+			e = cmp_result_expr (i1 && i2);
 			break;
 		case OR:
-			e = new_integer_expr (i1 || i2);
+			e = cmp_result_expr (i1 || i2);
 			break;
 		case LT:
-			e = new_integer_expr (i1 < i2);
+			e = cmp_result_expr (i1 < i2);
 			break;
 		case GT:
-			e = new_integer_expr (i1 > i2);
+			e = cmp_result_expr (i1 > i2);
 			break;
 		case LE:
-			e = new_integer_expr (i1 <= i2);
+			e = cmp_result_expr (i1 <= i2);
 			break;
 		case GE:
-			e = new_integer_expr (i1 >= i2);
+			e = cmp_result_expr (i1 >= i2);
 			break;
 		case EQ:
-			e = new_integer_expr (i1 == i2);
+			e = cmp_result_expr (i1 == i2);
 			break;
 		case NE:
-			e = new_integer_expr (i1 != i2);
+			e = cmp_result_expr (i1 != i2);
 			break;
 		default:
 			internal_error (e1, 0);
@@ -981,22 +991,22 @@ do_op_short (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e = new_short_expr (i1 || i2);
 			break;
 		case LT:
-			e = new_integer_expr (i1 < i2);
+			e = cmp_result_expr (i1 < i2);
 			break;
 		case GT:
-			e = new_integer_expr (i1 > i2);
+			e = cmp_result_expr (i1 > i2);
 			break;
 		case LE:
-			e = new_integer_expr (i1 <= i2);
+			e = cmp_result_expr (i1 <= i2);
 			break;
 		case GE:
-			e = new_integer_expr (i1 >= i2);
+			e = cmp_result_expr (i1 >= i2);
 			break;
 		case EQ:
-			e = new_integer_expr (i1 == i2);
+			e = cmp_result_expr (i1 == i2);
 			break;
 		case NE:
-			e = new_integer_expr (i1 != i2);
+			e = cmp_result_expr (i1 != i2);
 			break;
 		default:
 			internal_error (e1, 0);
@@ -1375,7 +1385,7 @@ uop_string (int op, expr_t *e, expr_t *e1)
 		return e;
 
 	s = expr_string (e1);
-	return new_integer_expr (!s || !s[0]);
+	return cmp_result_expr (!s || !s[0]);
 }
 
 static expr_t *
@@ -1399,7 +1409,7 @@ uop_float (int op, expr_t *e, expr_t *e1)
 			return new_float_expr (-expr_float (e1));
 		case '!':
 			print_type (get_type (e));
-			return new_integer_expr (!expr_float (e1));
+			return cmp_result_expr (!expr_float (e1));
 		case '~':
 			return new_float_expr (~(int) expr_float (e1));
 		case 'C':
@@ -1430,7 +1440,7 @@ uop_vector (int op, expr_t *e, expr_t *e1)
 			VectorNegate (expr_vector (e), v);
 			return new_vector_expr (v);
 		case '!':
-			return new_integer_expr (!VectorIsZero (expr_vector (e1)));
+			return cmp_result_expr (!VectorIsZero (expr_vector (e1)));
 	}
 	internal_error (e, "vector unary op blew up");
 }
@@ -1524,7 +1534,7 @@ uop_quaternion (int op, expr_t *e, expr_t *e1)
 			QuatNegate (expr_vector (e), q);
 			return new_quaternion_expr (q);
 		case '!':
-			return new_integer_expr (!QuatIsZero (expr_quaternion (e1)));
+			return cmp_result_expr (!QuatIsZero (expr_quaternion (e1)));
 		case '~':
 			QuatConj (expr_vector (e), q);
 			return new_quaternion_expr (q);
@@ -1550,7 +1560,7 @@ uop_integer (int op, expr_t *e, expr_t *e1)
 		case '-':
 			return new_integer_expr (-expr_integer (e1));
 		case '!':
-			return new_integer_expr (!expr_integer (e1));
+			return cmp_result_expr (!expr_integer (e1));
 		case '~':
 			return new_integer_expr (~expr_integer (e1));
 		case 'C':
@@ -1575,7 +1585,7 @@ uop_uinteger (int op, expr_t *e, expr_t *e1)
 		case '-':
 			return new_uinteger_expr (-expr_uinteger (e1));
 		case '!':
-			return new_integer_expr (!expr_uinteger (e1));
+			return cmp_result_expr (!expr_uinteger (e1));
 		case '~':
 			return new_uinteger_expr (~expr_uinteger (e1));
 	}
@@ -1598,7 +1608,7 @@ uop_short (int op, expr_t *e, expr_t *e1)
 		case '-':
 			return new_short_expr (-expr_short (e1));
 		case '!':
-			return new_integer_expr (!expr_short (e1));
+			return cmp_result_expr (!expr_short (e1));
 		case '~':
 			return new_short_expr (~expr_short (e1));
 	}
@@ -1626,7 +1636,7 @@ uop_double (int op, expr_t *e, expr_t *e1)
 			return new_double_expr (-expr_double (e1));
 		case '!':
 			print_type (get_type (e));
-			return new_integer_expr (!expr_double (e1));
+			return cmp_result_expr (!expr_double (e1));
 		case 'C':
 			if (type == &type_integer) {
 				return new_integer_expr (expr_double (e1));
