@@ -956,9 +956,6 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		}
 	}
 
-	et1 = low_level_type (t1);
-	et2 = low_level_type (t2);
-
 	if (is_constant (e1) && is_double (t1) && e1->implicit && is_float (t2)) {
 		t1 = &type_float;
 		convert_double (e1);
@@ -967,6 +964,9 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 		t2 = &type_float;
 		convert_double (e2);
 	}
+
+	et1 = low_level_type (t1);
+	et2 = low_level_type (t2);
 
 	if (et1 >= ev_type_count || !binary_expr_types[et1])
 		return invalid_binary_expr(op, e1, e2);
