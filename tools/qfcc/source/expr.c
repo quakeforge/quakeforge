@@ -1547,6 +1547,14 @@ convert_short_int (expr_t *e)
 }
 
 void
+convert_double (expr_t *e)
+{
+	float       float_val = expr_double (e);
+	e->type = ex_value;
+	e->e.value = new_float_val (float_val);
+}
+
+void
 convert_nil (expr_t *e, type_t *t)
 {
 	e->type = ex_value;

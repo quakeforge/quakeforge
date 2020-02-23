@@ -148,8 +148,12 @@ convert_to_float (expr_t *e)
 				case ev_short:
 					convert_short (e);
 					return e;
+				case ev_double:
+					convert_double (e);
+					return e;
 				default:
-					internal_error (e, 0);
+					internal_error (e, "bad conversion to float: %d",
+									e->e.value->lltype);
 			}
 			break;
 		case ex_symbol:
