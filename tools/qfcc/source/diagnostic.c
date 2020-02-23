@@ -114,7 +114,7 @@ __warning (expr_t *e, const char *file, int line,
 		format_message (message, "warning", e, fmt, args);
 	}
 
-	if (options.verbosity > 1) {
+	if (options.verbosity) {
 		dasprintf (message, " (%s:%d)", file, line);
 	}
 	if (warning_hook) {
@@ -130,7 +130,7 @@ _debug (expr_t *e, const char *file, int line, const char *fmt, ...)
 {
 	va_list     args;
 
-	if (options.verbosity < 1)
+	if (options.verbosity < 2)
 		return;
 
 	report_function (e);
@@ -208,7 +208,7 @@ _notice (expr_t *e, const char *file, int line, const char *fmt, ...)
 		report_function (e);
 
 		format_message (message, "notice", e, fmt, args);
-		if (options.verbosity > 1) {
+		if (options.verbosity) {
 			dasprintf (message, " (%s:%d)", file, line);
 		}
 		if (notice_hook) {
@@ -257,7 +257,7 @@ _error (expr_t *e, const char *file, int line, const char *fmt, ...)
 		dstring_t  *message = dstring_new ();
 
 		format_message (message, "error", e, fmt, args);
-		if (options.verbosity > 1) {
+		if (options.verbosity) {
 			dasprintf (message, " (%s:%d)", file, line);
 		}
 		if (error_hook) {
