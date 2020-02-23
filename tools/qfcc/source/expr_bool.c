@@ -96,14 +96,22 @@ test_expr (expr_t *e)
 		case ev_uinteger:
 		case ev_integer:
 		case ev_short:
-			if (type_default != &type_integer)
+			if (type_default != &type_integer) {
+				if (is_constant (e)) {
+					return cast_expr (type_default, e);
+				}
 				return new_alias_expr (type_default, e);
+			}
 			return e;
 		case ev_float:
 			if (options.code.fast_float
 				|| options.code.progsversion == PROG_ID_VERSION) {
-				if (type_default != &type_float)
+				if (type_default != &type_float) {
+					if (is_constant (e)) {
+						return cast_expr (type_default, e);
+					}
 					return new_alias_expr (type_default, e);
+				}
 				return e;
 			}
 			new = new_float_expr (0);
