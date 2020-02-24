@@ -212,6 +212,7 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 		*pr->edicts = (edict_t *)((byte *) pr->progs + pr->progs_size);
 	}
 
+	pr->zone = 0;
 	if (pr->zone_size) {
 		//FIXME zone_size needs to be at least as big as memzone_t, but
 		//memzone_t is opaque so its size is unknown
