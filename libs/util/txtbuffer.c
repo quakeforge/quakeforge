@@ -116,6 +116,32 @@ txtbuffer_open_gap (txtbuffer_t *buffer, size_t offset, size_t length)
 	return buffer->text + buffer->gapOffset;
 }
 
+static char *
+txtbuffer_delete_text (txtbuffer_t *buffer, size_t offset, size_t length)
+{
+	size_t      len;
+	char       *dst;
+	char       *src;
+
+	if (offset > buffer->gapOffset) {
+		len = offset - buffer->gapOffset;
+		dst = buffer->text + buffer->gapOffset;
+		src = buffer->text + buffer->gapOffset + buffer->gapSize;
+		memmove (dst, src, len);
+	} else if (offset + length < buffer->gapOffset) {
+		len = buffer->gapOffset - (offset + length);
+		dst = buffer->text + buffer->gapSize + (offset + length);
+		src = buffer->text + (offset + length);
+		memmove (dst, src, len);
+	}
+	// don't need to do any copying when offset <= gapOffset &&
+	// offset + length >= offset
+	buffer->gapOffset = offset;
+	buffer->gapSize += length;
+	buffer->textSize -= length;
+	return buffer->text + buffer->gapOffset;
+}
+
 VISIBLE txtbuffer_t *
 TextBuffer_Create (void)
 {
@@ -159,14 +185,10 @@ TextBuffer_DeleteAt (txtbuffer_t *buffer, size_t offset, size_t len)
 	if (offset > buffer->textSize) {
 		return 0;
 	}
-	// only moves, does not resize, the gap if necessary
-	txtbuffer_open_gap (buffer, offset, buffer->gapSize);
 	// clamp len to the amount of text beyond offset
 	if (len > buffer->textSize - offset) {
 		len = buffer->textSize - offset;
 	}
-	// delete the text
-	buffer->gapSize += len;
-	buffer->textSize -= len;
+	txtbuffer_delete_text (buffer, offset, len);
 	return 1;
 }
