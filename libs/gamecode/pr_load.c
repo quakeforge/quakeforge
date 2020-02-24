@@ -133,7 +133,6 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 		pr->free_progs_mem = free_progs_mem;
 
 	PR_Resources_Clear (pr);
-	PR_ClearReturnStrings (pr);
 	if (pr->progs)
 		pr->free_progs_mem (pr, pr->progs);
 	pr->progs = 0;
@@ -374,7 +373,6 @@ pr_run_ctors (progs_t *pr)
 }
 
 static int (*load_funcs_1[])(progs_t *) = {
-	PR_LoadStrings,
 	PR_RelocateBuiltins,
 	PR_LoadDebug,
 	0,
@@ -472,6 +470,7 @@ PR_Init (progs_t *pr)
 {
 	PR_Opcode_Init ();	// idempotent
 	PR_Resources_Init (pr);
+	PR_Strings_Init (pr);
 	PR_Debug_Init (pr);
 }
 

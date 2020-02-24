@@ -44,6 +44,19 @@
 #include "QF/progs.h"
 #include "QF/va.h"
 
+typedef struct prstr_resources_s {
+	progs_t    *pr;
+	dstring_mem_t ds_mem;
+	strref_t   *free_string_refs;
+	strref_t   *static_strings;
+	strref_t  **string_map;
+	strref_t   *return_strings[PR_RS_SLOTS];
+	int         rs_slot;
+	unsigned    dyn_str_size;
+	struct hashtab_s *strref_hash;
+	int         num_strings;
+} prstr_resources_t;
+
 typedef enum {
 	str_free,
 	str_static,
@@ -111,51 +124,51 @@ pr_strings_realloc (void *_pr, void *ptr, size_t size)
 }
 
 static strref_t *
-new_string_ref (progs_t *pr)
+new_string_ref (prstr_resources_t *res)
 {
 	strref_t *sr;
-	if (!pr->free_string_refs) {
+	if (!res->free_string_refs) {
 		int		    i;
 		size_t      size;
 
-		pr->dyn_str_size++;
-		size = pr->dyn_str_size * sizeof (strref_t *);
-		pr->string_map = realloc (pr->string_map, size);
-		if (!pr->string_map)
-			PR_Error (pr, "out of memory");
-		if (!(pr->free_string_refs = calloc (1024, sizeof (strref_t))))
-			PR_Error (pr, "out of memory");
-		pr->string_map[pr->dyn_str_size - 1] = pr->free_string_refs;
-		for (i = 0, sr = pr->free_string_refs; i < 1023; i++, sr++)
+		res->dyn_str_size++;
+		size = res->dyn_str_size * sizeof (strref_t *);
+		res->string_map = realloc (res->string_map, size);
+		if (!res->string_map)
+			PR_Error (res->pr, "out of memory");
+		if (!(res->free_string_refs = calloc (1024, sizeof (strref_t))))
+			PR_Error (res->pr, "out of memory");
+		res->string_map[res->dyn_str_size - 1] = res->free_string_refs;
+		for (i = 0, sr = res->free_string_refs; i < 1023; i++, sr++)
 			sr->next = sr + 1;
 		sr->next = 0;
 	}
-	sr = pr->free_string_refs;
-	pr->free_string_refs = sr->next;
+	sr = res->free_string_refs;
+	res->free_string_refs = sr->next;
 	sr->next = 0;
 	return sr;
 }
 
 static void
-free_string_ref (progs_t *pr, strref_t *sr)
+free_string_ref (prstr_resources_t *res, strref_t *sr)
 {
 	sr->type = str_free;
 	if (sr->prev)
 		*sr->prev = sr->next;
-	sr->next = pr->free_string_refs;
-	pr->free_string_refs = sr;
+	sr->next = res->free_string_refs;
+	res->free_string_refs = sr;
 }
 
 static __attribute__((pure)) string_t
-string_index (progs_t *pr, strref_t *sr)
+string_index (prstr_resources_t *res, strref_t *sr)
 {
-	long        o = (long) (sr - pr->static_strings);
+	long        o = (long) (sr - res->static_strings);
 	unsigned    i;
 
-	if (o >= 0 && o < pr->num_strings)
-		return sr->s.string - pr->pr_strings;
-	for (i = 0; i < pr->dyn_str_size; i++) {
-		int         d = sr - pr->string_map[i];
+	if (o >= 0 && o < res->num_strings)
+		return sr->s.string - res->pr->pr_strings;
+	for (i = 0; i < res->dyn_str_size; i++) {
+		int         d = sr - res->string_map[i];
 		if (d >= 0 && d < 1024)
 			return ~(i * 1024 + d);
 	}
@@ -172,24 +185,44 @@ strref_get_key (const void *_sr, void *notused)
 }
 
 static void
-strref_free (void *_sr, void *_pr)
+strref_free (void *_sr, void *_res)
 {
-	progs_t		*pr = (progs_t*)_pr;
-	strref_t	*sr = (strref_t*)_sr;
+	__auto_type res = (prstr_resources_t *) _res;
+	__auto_type sr = (strref_t *) _sr;
 
 	// Since this is called only by Hash_FlushTable, the memory pointed
 	// to by sr->string or sr->dstring has already been lost in the progs
 	// load/reload and thus there's no need to free it.
 
 	// free the string and ref only if it's not a static string
-	if (sr < pr->static_strings || sr >= pr->static_strings + pr->num_strings) {
-		free_string_ref (pr, sr);
+	if (sr < res->static_strings
+		|| sr >= res->static_strings + res->num_strings) {
+		free_string_ref (res, sr);
 	}
 }
 
-VISIBLE int
+static void
+pr_strings_clear (progs_t *pr, void *data)
+{
+	__auto_type res = (prstr_resources_t *) data;
+	int         i;
+
+	for (i = 0; i < PR_RS_SLOTS; i++) {
+		if (res->return_strings[i])
+			free_string_ref (res, res->return_strings[i]);
+		res->return_strings[i] = 0;
+	}
+	res->rs_slot = 0;
+
+	pr->pr_string_resources = res;
+	pr->pr_xtstr = 0;
+}
+
+static int
 PR_LoadStrings (progs_t *pr)
 {
+	prstr_resources_t *res = PR_Resources_Find (pr, "Strings");
+
 	char   *end = pr->pr_strings + pr->progs->numstrings;
 	char   *str = pr->pr_strings;
 	int		count = 0;
@@ -199,43 +232,41 @@ PR_LoadStrings (progs_t *pr)
 		str += strlen (str) + 1;
 	}
 
-	if (!pr->ds_mem) {
-		pr->ds_mem = malloc (sizeof (dstring_mem_t));
-		pr->ds_mem->alloc = pr_strings_alloc;
-		pr->ds_mem->free = pr_strings_free;
-		pr->ds_mem->realloc = pr_strings_realloc;
-		pr->ds_mem->data = pr;
-	}
-	if (pr->strref_hash) {
-		Hash_FlushTable (pr->strref_hash);
+	res->ds_mem.alloc = pr_strings_alloc;
+	res->ds_mem.free = pr_strings_free;
+	res->ds_mem.realloc = pr_strings_realloc;
+	res->ds_mem.data = pr;
+
+	if (res->strref_hash) {
+		Hash_FlushTable (res->strref_hash);
 	} else {
-		pr->strref_hash = Hash_NewTable (1021, strref_get_key, strref_free,
-										 pr);
-		pr->string_map = 0;
-		pr->free_string_refs = 0;
-		pr->dyn_str_size = 0;
+		res->strref_hash = Hash_NewTable (1021, strref_get_key, strref_free,
+										  res);
+		res->string_map = 0;
+		res->free_string_refs = 0;
+		res->dyn_str_size = 0;
 	}
 
-	if (pr->static_strings)
-		free (pr->static_strings);
-	pr->static_strings = malloc (count * sizeof (strref_t));
+	if (res->static_strings)
+		free (res->static_strings);
+	res->static_strings = malloc (count * sizeof (strref_t));
 	count = 0;
 	str = pr->pr_strings;
 	while (str < end) {
-		if (!Hash_Find (pr->strref_hash, str)) {
-			pr->static_strings[count].type = str_static;
-			pr->static_strings[count].s.string = str;
-			Hash_Add (pr->strref_hash, &pr->static_strings[count]);
+		if (!Hash_Find (res->strref_hash, str)) {
+			res->static_strings[count].type = str_static;
+			res->static_strings[count].s.string = str;
+			Hash_Add (res->strref_hash, &res->static_strings[count]);
 			count++;
 		}
 		str += strlen (str) + 1;
 	}
-	pr->num_strings = count;
+	res->num_strings = count;
 	return 1;
 }
 
 static inline strref_t *
-get_strref (progs_t *pr, string_t num)
+get_strref (prstr_resources_t *res, string_t num)
 {
 	if (num < 0) {
 		strref_t   *ref;
@@ -243,9 +274,9 @@ get_strref (progs_t *pr, string_t num)
 
 		num = ~num % 1024;
 
-		if (row >= pr->dyn_str_size)
+		if (row >= res->dyn_str_size)
 			return 0;
-		ref = &pr->string_map[row][num];
+		ref = &res->string_map[row][num];
 		if (ref->type == str_free)
 			return 0;
 		return ref;
@@ -257,7 +288,7 @@ static inline __attribute__((pure)) const char *
 get_string (progs_t *pr, string_t num)
 {
 	if (num < 0) {
-		strref_t   *ref = get_strref (pr, num);
+		strref_t   *ref = get_strref (pr->pr_string_resources, num);
 		if (!ref)
 			return 0;
 		switch (ref->type) {
@@ -299,7 +330,7 @@ PR_GetString (progs_t *pr, string_t num)
 VISIBLE dstring_t *
 PR_GetMutableString (progs_t *pr, string_t num)
 {
-	strref_t   *ref = get_strref (pr, num);
+	strref_t   *ref = get_strref (pr->pr_string_resources, num);
 	if (ref) {
 		if (ref->type == str_mutable)
 			return ref->s.dstring;
@@ -331,70 +362,60 @@ pr_strdup (progs_t *pr, const char *s)
 VISIBLE string_t
 PR_SetString (progs_t *pr, const char *s)
 {
+	prstr_resources_t *res = pr->pr_string_resources;
 	strref_t   *sr;
 
 	if (!s)
 		s = "";
-	sr = Hash_Find (pr->strref_hash, s);
+	sr = Hash_Find (res->strref_hash, s);
 
 	if (__builtin_expect (!sr, 1)) {
-		sr = new_string_ref (pr);
+		sr = new_string_ref (res);
 		sr->type = str_static;
 		sr->s.string = pr_strdup(pr, s);
-		Hash_Add (pr->strref_hash, sr);
+		Hash_Add (res->strref_hash, sr);
 	}
-	return string_index (pr, sr);
-}
-
-void
-PR_ClearReturnStrings (progs_t *pr)
-{
-	int         i;
-
-	for (i = 0; i < PR_RS_SLOTS; i++) {
-		if (pr->return_strings[i])
-			free_string_ref (pr, pr->return_strings[i]);
-		pr->return_strings[i] = 0;
-	}
+	return string_index (res, sr);
 }
 
 VISIBLE string_t
 PR_SetReturnString (progs_t *pr, const char *s)
 {
+	prstr_resources_t *res = pr->pr_string_resources;
 	strref_t   *sr;
 
 	if (!s)
 		s = "";
-	if ((sr = Hash_Find (pr->strref_hash, s))) {
-		return string_index (pr, sr);
+	if ((sr = Hash_Find (res->strref_hash, s))) {
+		return string_index (res, sr);
 	}
 
-	if ((sr = pr->return_strings[pr->rs_slot])) {
+	if ((sr = res->return_strings[res->rs_slot])) {
 		if (sr->type != str_return)
 			PR_Error (pr, "internal string error");
 		pr_strfree (pr, sr->s.string);
 	} else {
-		sr = new_string_ref (pr);
+		sr = new_string_ref (res);
 	}
 	sr->type = str_return;
 	sr->s.string = pr_strdup(pr, s);
 
-	pr->return_strings[pr->rs_slot++] = sr;
-	pr->rs_slot %= PR_RS_SLOTS;
-	return string_index (pr, sr);
+	res->return_strings[res->rs_slot++] = sr;
+	res->rs_slot %= PR_RS_SLOTS;
+	return string_index (res, sr);
 }
 
 static inline string_t
-pr_settempstring (progs_t *pr, char *s)
+pr_settempstring (progs_t *pr, prstr_resources_t *res, char *s)
 {
 	strref_t   *sr;
 
-	sr = new_string_ref (pr);
+	sr = new_string_ref (res);
 	sr->type = str_temp;
 	sr->s.string = s;
 	sr->next = pr->pr_xtstr;
 	pr->pr_xtstr = sr;
-	return string_index (pr, sr);
+	return string_index (res, sr);
 }
 
 VISIBLE string_t
@@ -410,46 +431,49 @@ PR_CatStrings (progs_t *pr, const char *a, const char *b)
 	strcpy (c, a);
 	strcpy (c + lena, b);
 
-	return pr_settempstring (pr, c);
+	return pr_settempstring (pr, pr->pr_string_resources, c);
 }
 
 VISIBLE string_t
 PR_SetTempString (progs_t *pr, const char *s)
 {
+	prstr_resources_t *res = pr->pr_string_resources;
 	strref_t   *sr;
 
 	if (!s)
 		return PR_SetString (pr, "");
 
-	if ((sr = Hash_Find (pr->strref_hash, s))) {
-		return string_index (pr, sr);
+	if ((sr = Hash_Find (res->strref_hash, s))) {
+		return string_index (res, sr);
 	}
 
-	return pr_settempstring (pr, pr_strdup (pr, s));
+	return pr_settempstring (pr, res, pr_strdup (pr, s));
 }
 
 VISIBLE string_t
 PR_SetDynamicString (progs_t *pr, const char *s)
 {
+	prstr_resources_t *res = pr->pr_string_resources;
 	strref_t   *sr;
 
 	if (!s)
 		return PR_SetString (pr, "");
 
-	if ((sr = Hash_Find (pr->strref_hash, s))) {
-		return string_index (pr, sr);
+	if ((sr = Hash_Find (res->strref_hash, s))) {
+		return string_index (res, sr);
 	}
 
-	sr = new_string_ref (pr);
+	sr = new_string_ref (res);
 	sr->type = str_dynamic;
 	sr->s.string = pr_strdup (pr, s);
-	return string_index (pr, sr);
+	return string_index (res, sr);
 }
 
 void
 PR_MakeTempString (progs_t *pr, string_t str)
 {
-	strref_t   *sr = get_strref (pr, str);
+	prstr_resources_t *res = pr->pr_string_resources;
+	strref_t   *sr = get_strref (res, str);
 
 	if (!sr)
 		PR_RunError (pr, "invalid string %d", str);
@@ -470,16 +494,18 @@ PR_MakeTempString (progs_t *pr, string_t str)
 VISIBLE string_t
 PR_NewMutableString (progs_t *pr)
 {
-	strref_t   *sr = new_string_ref (pr);
+	prstr_resources_t *res = pr->pr_string_resources;
+	strref_t   *sr = new_string_ref (res);
 	sr->type = str_mutable;
-	sr->s.dstring = _dstring_newstr (pr->ds_mem);
-	return string_index (pr, sr);
+	sr->s.dstring = _dstring_newstr (&res->ds_mem);
+	return string_index (res, sr);
 }
 
 VISIBLE void
 PR_FreeString (progs_t *pr, string_t str)
 {
-	strref_t   *sr = get_strref (pr, str);
+	prstr_resources_t *res = pr->pr_string_resources;
+	strref_t   *sr = get_strref (res, str);
 
 	if (sr) {
 		switch (sr->type) {
@@ -496,7 +522,7 @@ PR_FreeString (progs_t *pr, string_t str)
 			default:
 				PR_Error (pr, "internal string error");
 		}
-		free_string_ref (pr, sr);
+		free_string_ref (res, sr);
 		return;
 	}
 	if (!get_string (pr, str))
@@ -506,20 +532,21 @@ PR_FreeString (progs_t *pr, string_t str)
 void
 PR_FreeTempStrings (progs_t *pr)
 {
+	prstr_resources_t *res = pr->pr_string_resources;
 	strref_t   *sr, *t;
 
 	for (sr = pr->pr_xtstr; sr; sr = t) {
 		t = sr->next;
 		if (sr->type != str_temp)
 			PR_Error (pr, "internal string error");
-		if (R_STRING (pr) < 0 && string_index (pr, sr) == R_STRING (pr)
+		if (R_STRING (pr) < 0 && string_index (res, sr) == R_STRING (pr)
 			&& pr->pr_depth) {
 			prstack_t  *frame = pr->pr_stack + pr->pr_depth - 1;
 			sr->next = frame->tstr;
 			frame->tstr = sr;
 		} else {
 			pr_strfree (pr, sr->s.string);
-			free_string_ref (pr, sr);
+			free_string_ref (res, sr);
 		}
 	}
 	pr->pr_xtstr = 0;
@@ -880,4 +907,14 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 	return;
 error:
 	PR_RunError (pr, "%s: %s", name, msg);
+}
+
+void
+PR_Strings_Init (progs_t *pr)
+{
+	prstr_resources_t *res = calloc (1, sizeof (*res));
+	res->pr = pr;
+
+	PR_Resources_Register (pr, "Strings", res, pr_strings_clear);
+	PR_AddLoadFunc (pr, PR_LoadStrings);
 }

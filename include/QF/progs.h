@@ -1146,12 +1146,12 @@ int PR_RelocateBuiltins (progs_t *pr);
 */
 ///@{
 
-/** Initialize the string tables using the strings supplied by the progs.
-	Called automatically during progs load.
-	\param pr		pointer to ::progs_t VM struct
-	\return			true for success, false for failure
+/** Initialize the string management subsystem.
+
+	\param pr		The VM of which the string management subsystem will be
+					initialized;
 */
-int PR_LoadStrings (progs_t *pr);
+void PR_Strings_Init (progs_t *pr);
 
 /** Check the validity of a string index.
 	\param pr		pointer to ::progs_t VM struct
@@ -1229,11 +1229,6 @@ string_t PR_NewMutableString (progs_t *pr);
 	\return			string index of the progs string
 */
 string_t PR_SetDynamicString (progs_t *pr, const char *s);
-
-/** Clear all of the return string slots. Called at progs load.
-	\param pr		pointer to ::progs_t VM struct
-*/
-void PR_ClearReturnStrings (progs_t *pr);
 
 /** Destroy a mutable, dynamic or temporary string.
 	\param pr		pointer to ::progs_t VM struct
@@ -1644,15 +1639,7 @@ struct progs_s {
 
 	/// \name string management
 	///@{
-	struct dstring_mem_s *ds_mem;
-	strref_t   *free_string_refs;
-	strref_t   *static_strings;
-	strref_t  **string_map;
-	strref_t   *return_strings[PR_RS_SLOTS];
-	int         rs_slot;
-	unsigned    dyn_str_size;
-	struct hashtab_s *strref_hash;
-	int         num_strings;
+	struct prstr_resources_s *pr_string_resources;
 	strref_t   *pr_xtstr;
 	int         float_promoted;	///< for PR_Sprintf
 	///@}

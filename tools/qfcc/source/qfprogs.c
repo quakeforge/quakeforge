@@ -287,7 +287,6 @@ load_progs (const char *name)
 		if (!pr.progs)
 			return 0;
 
-		PR_LoadStrings (&pr);
 		PR_ResolveGlobals (&pr);
 		PR_LoadDebug (&pr);
 	}
