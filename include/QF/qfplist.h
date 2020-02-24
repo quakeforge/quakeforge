@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __QF_qfplist_h_
-#define __QF_qfplist_h_
+#ifndef __QF_qfplist_h
+#define __QF_qfplist_h
 
 /** \defgroup qfplist Property lists
 	\ingroup utils
@@ -228,4 +228,4 @@ void PL_Free (plitem_t *item);
 
 ///@}
 
-#endif	// __QF_qfplist_h_
+#endif//__QF_qfplist_h

@@ -26,8 +26,8 @@
 
 */
 
-#ifndef __mdfour_h
-#define __mdfour_h
+#ifndef __QF_mdfour_h
+#define __QF_mdfour_h
 
 /** \addtogroup crc
 */
@@ -49,4 +49,4 @@ void mdfour(unsigned char *out, const unsigned char *in, int n);
 
 ///@}
 
-#endif	// __mdfour_h
+#endif//__QF_mdfour_h

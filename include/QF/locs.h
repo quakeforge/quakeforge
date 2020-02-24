@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __locs_h
-#define __locs_h
+#ifndef __QF_locs_h
+#define __QF_locs_h
 
 #include "QF/qtypes.h"
 
@@ -47,4 +47,4 @@ void locs_reset (void);
 void locs_save (const char *filename, qboolean gz);
 void map_to_loc (const char *mapname, char *filename);
 
-#endif // __locs_h
+#endif//__QF_locs_h

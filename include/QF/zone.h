@@ -24,8 +24,8 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef __zone_h
-#define __zone_h
+#ifndef __QF_zone_h
+#define __QF_zone_h
 
 /** \defgroup zone Memory Management
 	\ingroup utils
@@ -142,4 +142,4 @@ int Cache_ReadLock (cache_user_t *c) __attribute__((pure));
 
 ///@}
 
-#endif // __zone_h
+#endif//__QF_zone_h

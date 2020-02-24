@@ -24,8 +24,8 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef __sizebuf_h
-#define __sizebuf_h
+#ifndef __QF_sizebuf_h
+#define __QF_sizebuf_h
 
 /** \defgroup sizebuf Fixed Size Buffers
 	\ingroup utils
@@ -53,4 +53,4 @@ void SZ_Print (sizebuf_t *buf, const char *data);	// strcats onto the sizebuf
 
 ///@}
 
-#endif // __sizebuf_h
+#endif//__QF_sizebuf_h

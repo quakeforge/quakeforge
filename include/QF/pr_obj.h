@@ -28,8 +28,8 @@
 
 */
 
-#ifndef __pr_obj_h
-#define __pr_obj_h
+#ifndef __QF_pr_obj_h
+#define __QF_pr_obj_h
 
 #include "QF/pr_comp.h"
 
@@ -185,4 +185,4 @@ typedef struct pr_super_s {
 	pointer_t   class;
 } pr_super_t;
 
-#endif//__pr_obj_h
+#endif//__QF_pr_obj_h

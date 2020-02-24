@@ -26,8 +26,8 @@
 
 */
 
-#ifndef __va_h
-#define __va_h
+#ifndef __QF_va_h
+#define __QF_va_h
 
 /** \addtogroup misc
 	Formatted printing.
@@ -41,4 +41,4 @@ char	*nva(const char *format, ...) __attribute__((format(printf,1,2)));
 
 ///@}
 
-#endif // __va_h
+#endif//__QF_va_h

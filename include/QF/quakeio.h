@@ -26,8 +26,8 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef __quakeio_h
-#define __quakeio_h
+#ifndef __QF_quakeio_h
+#define __QF_quakeio_h
 
 #include <stdio.h>
 
@@ -62,4 +62,4 @@ const char *Qgetline(QFile *file);
 
 ///@}
 
-#endif /*__quakeio_h*/
+#endif//__QF_quakeio_h

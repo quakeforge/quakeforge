@@ -24,8 +24,8 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef _MSG_H
-#define _MSG_H
+#ifndef __QF_msg_h
+#define __QF_msg_h
 
 /** \defgroup msg Message reading and writing
 	\ingroup utils
@@ -251,4 +251,4 @@ int MSG_ReadUTF8 (qmsg_t *msg);
 
 ///@}
 
-#endif
+#endif//__QF_msg_h

@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __dstring_h
-#define __dstring_h
+#ifndef __QF_dstring_h
+#define __QF_dstring_h
 
 /** \defgroup dstring Dynamic Strings
 	\ingroup utils
@@ -177,4 +177,4 @@ int dasprintf (dstring_t *dstr, const char *fmt, ...) __attribute__((format(prin
 
 ///@}
 
-#endif // __dstring_h
+#endif//__QF_dstring_h

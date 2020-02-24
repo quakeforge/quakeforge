@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __crc_h
-#define __crc_h
+#ifndef __QF_crc_h
+#define __QF_crc_h
 
 /** \defgroup crc Checksum generation.
 	\ingroup utils
@@ -43,4 +43,4 @@ unsigned short CRC_Block (const byte *start, int count) __attribute__((pure));
 
 ///@}
 
-#endif // __crc_h
+#endif//__QF_crc_h

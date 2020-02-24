@@ -27,8 +27,8 @@
 
 */
 
-#ifndef __qtypes_h
-#define __qtypes_h
+#ifndef __QF_qtypes_h
+#define __QF_qtypes_h
 
 #include <stdio.h>
 #include <stdint.h>
@@ -115,4 +115,4 @@ typedef struct sphere_s {
 	vec_t       radius;
 } sphere_t;
 
-#endif // __qtypes_h
+#endif//__QF_qtypes_h

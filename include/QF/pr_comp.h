@@ -18,8 +18,8 @@
 */
 
 // this file is shared by QuakeForge and qfcc
-#ifndef __pr_comp_h
-#define __pr_comp_h
+#ifndef __QF_pr_comp_h
+#define __QF_pr_comp_h
 
 #include "QF/qtypes.h"
 
@@ -513,4 +513,4 @@ typedef struct dprograms_s {
 	pr_uint_t   entityfields;
 } dprograms_t;
 
-#endif // __pr_comp_h
+#endif//__QF_pr_comp_h

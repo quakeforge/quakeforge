@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __console_h
-#define __console_h
+#ifndef __QF_console_h
+#define __QF_console_h
 
 #include <stdarg.h>
 
@@ -151,4 +151,4 @@ void Menu_Leave_f (void);
 void Menu_Prev_f (void);
 void Menu_Next_f (void);
 
-#endif // __console_h
+#endif//__QF_console_h

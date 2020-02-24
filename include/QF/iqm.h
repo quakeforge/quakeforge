@@ -1,5 +1,5 @@
-#ifndef __QF_iqm_h__
-#define __QF_iqm_h__
+#ifndef __QF_iqm_h
+#define __QF_iqm_h
 
 #include "QF/qtypes.h"
 
@@ -149,4 +149,4 @@ typedef struct {
 	void       *extra_data;
 } iqm_t;
 
-#endif//__QF_iqm_h__
+#endif//__QF_iqm_h

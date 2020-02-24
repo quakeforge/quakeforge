@@ -27,8 +27,8 @@
 
 */
 
-#ifndef __quakefs_h
-#define __quakefs_h
+#ifndef __QF_quakefs_h
+#define __QF_quakefs_h
 
 /** \defgroup quakefs Quake Filesystem
 	\ingroup utils
@@ -420,4 +420,4 @@ void QFS_FilelistFree (filelist_t *list);
 
 ///@}
 
-#endif // __quakefs_h
+#endif//__QF_quakefs_h

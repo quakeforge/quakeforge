@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __hash_h
-#define __hash_h
+#ifndef __QF_hash_h
+#define __QF_hash_h
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -211,4 +211,4 @@ void Hash_Stats (hashtab_t *tab);
 
 ///@}
 
-#endif // __hash_h
+#endif//__QF_hash_h

@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __cvar_h
-#define __cvar_h
+#ifndef __QF_cvar_h
+#define __QF_cvar_h
 
 /** \defgroup cvar Configuration variables
 	\ingroup utils
@@ -140,4 +140,4 @@ extern cvar_t	*cvar_vars;
 
 ///@}
 
-#endif // __cvar_h
+#endif//__QF_cvar_h

@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __teamplay_h
-#define __teamplay_h
+#ifndef __QF_teamplay_h
+#define __QF_teamplay_h
 
 extern struct cvar_s	*cl_parsesay;
 extern struct cvar_s	*cl_nofake;
@@ -47,4 +47,4 @@ const char *Team_ParseSay (struct dstring_s *buf, const char *);
 void Locs_Init (void);
 void Team_ParseChat (const char *string);
 void Team_ResetTimers (void);
-#endif // __teamplay_h
+#endif//__QF_teamplay_h

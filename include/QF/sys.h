@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __sys_h
-#define __sys_h
+#ifndef __QF_sys_h
+#define __QF_sys_h
 
 /** \defgroup sys System Portability
 	\ingroup utils
@@ -159,4 +159,4 @@ char *Sys_ExpandSquiggle (const char *path);
 
 ///@}
 
-#endif // __sys_h
+#endif//__QF_sys_h

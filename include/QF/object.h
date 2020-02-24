@@ -32,8 +32,8 @@
 
 */
 
-#ifndef __object_h
-#define __object_h
+#ifndef __QF_object_h
+#define __QF_object_h
 
 #include "QF/qtypes.h"
 
@@ -115,4 +115,4 @@ void Object_Garbage_Collect (void);
 
 #include "QF/classes/String.h"
 
-#endif
+#endif//__QF_object_h

@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __QF_plugin_h_
-#define __QF_plugin_h_
+#ifndef __QF_plugin_h
+#define __QF_plugin_h
 
 /** \defgroup plugin Plugins
 	\ingroup utils
@@ -113,4 +113,4 @@ void PI_Shutdown (void);
 
 ///@}
 
-#endif	// __QF_plugin_h_
+#endif//__QF_plugin_h

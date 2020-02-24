@@ -25,8 +25,8 @@
 
 */
 
-#ifndef _CDAUDIO_H
-#define _CDAUDIO_H
+#ifndef __QF_cdaudio_h
+#define __QF_cdaudio_h
 
 #include "QF/qtypes.h"
 
@@ -38,4 +38,4 @@ void CDAudio_Resume(void);
 void CDAudio_Shutdown(void);
 void CDAudio_Update(void);
 
-#endif // _CDAUDIO_H
+#endif//__QF_cdaudio_h

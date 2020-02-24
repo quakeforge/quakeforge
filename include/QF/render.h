@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __render_h
-#define __render_h
+#ifndef __QF_render_h
+#define __QF_render_h
 
 #include "QF/mathlib.h"
 #include "QF/model.h"
@@ -177,4 +177,4 @@ void R_LoadModule (void (*load_gl)(void),
 struct progs_s;
 void R_Progs_Init (struct progs_s *pr);
 
-#endif // __render_h
+#endif//__QF_render_h

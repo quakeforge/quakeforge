@@ -28,8 +28,8 @@
 
 */
 
-#ifndef __pr_debug_h
-#define __pr_debug_h
+#ifndef __QF_pr_debug_h
+#define __QF_pr_debug_h
 
 #include "QF/pr_comp.h"
 
@@ -65,4 +65,4 @@ typedef struct pr_debug_header_s {
 	pr_uint_t   num_locals;
 } pr_debug_header_t;
 
-#endif//__pr_debug_h
+#endif//__QF_pr_debug_h

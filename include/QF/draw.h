@@ -25,8 +25,8 @@
 
 */
 
-#ifndef _DRAW_H
-#define _DRAW_H
+#ifndef __QF_draw_h
+#define __QF_draw_h
 
 /** \defgroup video Video Sub-sytem */
 
@@ -234,4 +234,4 @@ void Draw_Picf (float x, float y, qpic_t *pic);
 void Draw_SubPic(int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
 ///@}
 
-#endif // _DRAW_H
+#endif//__QF_draw_h

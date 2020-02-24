@@ -28,8 +28,8 @@
 
 */
 
-#ifndef __qf_pak_h
-#define __qf_pak_h
+#ifndef __QF_pak_h
+#define __QF_pak_h
 
 /** \addtogroup pak
 */
@@ -53,4 +53,4 @@ typedef struct {
 
 ///@}
 
-#endif//__qf_pak_h
+#endif//__QF_pak_h

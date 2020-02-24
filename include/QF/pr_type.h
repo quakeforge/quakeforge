@@ -28,8 +28,8 @@
 
 */
 
-#ifndef __pr_type_h
-#define __pr_type_h
+#ifndef __QF_pr_type_h
+#define __QF_pr_type_h
 
 /** \defgroup qfcc_qfo_type Object file type encoding
 	\ingroup progs
@@ -121,4 +121,4 @@ typedef struct qfot_type_encodings_s {
 
 ///@}
 
-#endif//__pr_type_h
+#endif//__QF_pr_type_h

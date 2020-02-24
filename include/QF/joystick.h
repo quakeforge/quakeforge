@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __QF_joystick_h_
-#define __QF_joystick_h_
+#ifndef __QF_joystick_h
+#define __QF_joystick_h
 
 #include <QF/qtypes.h>
 #include "QF/quakeio.h"
@@ -154,4 +154,4 @@ int JOY_GetAxis_i (int dest, const char *c);
 
 void Joy_WriteBindings (QFile *f);
 
-#endif	// __QF_joystick_h_
+#endif//__QF_joystick_h
