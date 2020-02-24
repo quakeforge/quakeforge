@@ -1787,7 +1787,7 @@ struct progs_s {
 	\return			C pointer represented by the parameter. 0 offset -> NULL
 */
 static inline pr_type_t *
-PR_GetPointer (progs_t *pr, pointer_t o)
+PR_GetPointer (const progs_t *pr, pointer_t o)
 {
 	return o ? pr->pr_globals + o : 0;
 }
@@ -1798,9 +1798,9 @@ PR_GetPointer (progs_t *pr, pointer_t o)
 	\return			Progs offset/pointer represented by \c p. NULL -> 0 offset
 */
 static inline pointer_t
-PR_SetPointer (progs_t *pr, void *p)
+PR_SetPointer (const progs_t *pr, const void *p)
 {
-	return p ? (pr_type_t *) p - pr->pr_globals : 0;
+	return p ? (const pr_type_t *) p - pr->pr_globals : 0;
 }
 
 ///@}

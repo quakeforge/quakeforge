@@ -891,7 +891,7 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	int         xdefs_start;
 	unsigned    big_locals = 0;
 	int         big_func = 0;
-	pr_xdefs_t *xdefs;
+	pr_xdefs_t *xdefs = 0;
 	xdef_t     *xdef;
 
 	*size = RUP (sizeof (dprograms_t), 16);

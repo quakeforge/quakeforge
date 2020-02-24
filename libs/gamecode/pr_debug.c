@@ -196,8 +196,8 @@ pr_debug_expression_error (script_t *script, const char *msg)
 }
 
 #define RUP(x,a) (((x) + ((a) - 1)) & ~((a) - 1))
-static pr_short_t
-pr_debug_type_size (progs_t *pr, qfot_type_t *type)
+static pr_short_t __attribute__((pure))
+pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
 {
 	pr_short_t  size;
 	qfot_type_t *aux_type;
@@ -208,7 +208,7 @@ pr_debug_type_size (progs_t *pr, qfot_type_t *type)
 		case ty_union:
 			size = 0;
 			for (pr_int_t i = 0; i < type->t.strct.num_fields; i++) {
-				qfot_var_t *field = &type->t.strct.fields[i];
+				const qfot_var_t *field = &type->t.strct.fields[i];
 				aux_type = &G_STRUCT (pr, qfot_type_t, field->type);
 				size = max (size,
 							field->offset + pr_debug_type_size (pr, aux_type));
@@ -995,7 +995,7 @@ pr_debug_pointer_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	progs_t    *pr = data->pr;
 	dstring_t  *dstr = data->dstr;
 	pointer_t   ofs = value->integer_var;
-	pr_def_t   *def;
+	pr_def_t   *def = 0;
 
 	if (pr_debug->int_val && pr->debug) {
 		def = PR_Get_Local_Def (pr, ofs);
