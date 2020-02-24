@@ -234,6 +234,13 @@ dump_functions (progs_t *pr)
 	const char *name;
 	int         start, count;
 	const char *comment;
+	pr_def_t   *encodings_def;
+	pointer_t type_encodings = 0;
+
+	encodings_def = PR_FindGlobal (pr, ".type_encodings");
+	if (encodings_def) {
+		type_encodings = encodings_def->ofs;
+	}
 
 	for (i = 0; i < pr->progs->numfunctions; i++) {
 		dfunction_t *func = &pr->pr_functions[i];
@@ -256,7 +263,7 @@ dump_functions (progs_t *pr)
 					func->parm_size[j].size);
 		printf (") %d @ %x", func->locals, func->parm_start);
 		puts ("");
-		if (pr->debug) {
+		if (pr->debug && type_encodings) {
 			pr_auxfunction_t *aux = pr->auxfunction_map[i];
 			if (!aux)
 				continue;
@@ -265,8 +272,11 @@ dump_functions (progs_t *pr)
 					aux->line_info,
 					aux->local_defs, aux->num_locals,
 					aux->return_type);
-			for (j = 0; j < (int)aux->num_locals; j++)
+			for (j = 0; j < (int)aux->num_locals; j++) {
+				pr->local_defs[+ aux->local_defs + j].type_encoding
+					+= type_encodings;
 				dump_def (pr, pr->local_defs + aux->local_defs + j, 1);
+			}
 		}
 	}
 }
