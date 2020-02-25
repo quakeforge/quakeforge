@@ -330,6 +330,12 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 			def->type_encoding = xdef->type;
 		}
 	}
+	pr->pr_trace = 0;
+	pr->pr_trace_depth = 0;
+	pr->pr_xfunction = 0;
+	pr->pr_xstatement = 0;
+	pr->pr_depth = 0;
+	pr->localstack_used = 0;
 }
 
 VISIBLE void
