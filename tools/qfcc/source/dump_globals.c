@@ -278,7 +278,6 @@ dump_functions (progs_t *pr)
 				continue;
 			}
 			for (j = 0; j < (int)aux->num_locals; j++) {
-				local_defs[j].type_encoding += type_encodings;//FIXME do in debug
 				dump_def (pr, local_defs + j, 1);
 			}
 		}

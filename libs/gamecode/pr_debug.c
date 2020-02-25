@@ -80,6 +80,7 @@ typedef struct prdeb_resources_s {
 	struct pr_auxfunction_s **auxfunction_map;
 	struct pr_lineno_s *linenos;
 	pr_def_t   *local_defs;
+	pr_def_t   *type_encodings_def;
 } prdeb_resources_t;
 
 typedef struct {
@@ -418,6 +419,7 @@ PR_LoadDebug (progs_t *pr)
 	pr_uint_t   i;
 	pr_def_t   *def;
 	pr_type_t  *str = 0;
+	pointer_t   type_encodings = 0;
 
 	if (!pr_debug->int_val)
 		return 1;
@@ -503,10 +505,22 @@ PR_LoadDebug (progs_t *pr)
 		res->linenos[i].fa.func = LittleLong (res->linenos[i].fa.func);
 		res->linenos[i].line = LittleLong (res->linenos[i].line);
 	}
+	res->type_encodings_def = PR_FindGlobal (pr, ".type_encodings");
+	if (res->type_encodings_def) {
+		__auto_type encodings = &G_STRUCT (pr, qfot_type_encodings_t,
+										   res->type_encodings_def->ofs);
+		type_encodings = encodings->types;
+	}
 	for (i = 0; i < res->debug->num_locals; i++) {
 		res->local_defs[i].type = LittleShort (res->local_defs[i].type);
-		res->local_defs[i].ofs = LittleShort (res->local_defs[i].ofs);
+		res->local_defs[i].size = LittleShort (res->local_defs[i].size);
+		res->local_defs[i].ofs = LittleLong (res->local_defs[i].ofs);
 		res->local_defs[i].name = LittleLong (res->local_defs[i].name);
+		res->local_defs[i].type_encoding
+			= LittleLong (res->local_defs[i].type_encoding);
+		if (type_encodings) {
+			res->local_defs[i].type_encoding += type_encodings;
+		}
 	}
 	return 1;
 }
@@ -715,18 +729,13 @@ get_aux_function (progs_t *pr)
 static etype_t
 get_etype (progs_t *pr, int typeptr)
 {
-	//FIXME cache .type_encodings def
-	pr_def_t   *te_def = PR_FindGlobal (pr, ".type_encodings");
-	qfot_type_encodings_t *encodings;
 	qfot_type_t *type;
 
-	if (!te_def) {
-		// can't decode the type, so make no assumptions about it
-		return typeptr;
+	if (!typeptr) {
+		return ev_void;
 	}
-	encodings = &G_STRUCT (pr, qfot_type_encodings_t, te_def->ofs);
-	type = &G_STRUCT (pr, qfot_type_t, encodings->types + typeptr);
-	if (type->meta == 0) {
+	type = &G_STRUCT (pr, qfot_type_t, typeptr);
+	if (type->meta == ty_basic) {
 		return type->t.type;
 	}
 	return ev_void;
