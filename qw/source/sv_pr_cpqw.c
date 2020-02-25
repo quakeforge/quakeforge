@@ -822,6 +822,7 @@ cpqw_user_cmd (void)
 			P_STRING (pr, i) = PR_SetTempString (pr, Cmd_Argv (i - 1));
 		for (; i < 7; i++)
 			P_STRING (pr, i) = 0;
+		pr->pr_argc = 7;
 		PR_ExecuteProgram (pr, cpqw_funcs.ClientCommand);
 		PR_PopFrame (pr);
 		return (int) R_FLOAT (pr);

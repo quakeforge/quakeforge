@@ -1640,6 +1640,7 @@ op_call:
 						 watch->integer_var);
 	}
 exit_program:
+	pr->pr_argc = 0;
 	Sys_PopErrorHandler ();
 	Sys_PopSignalHook ();
 }

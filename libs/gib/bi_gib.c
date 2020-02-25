@@ -91,6 +91,7 @@ bi_gib_builtin_f (void)
 	PR_RESET_PARAMS (builtin->pr);
 	P_INT (builtin->pr, 0) = GIB_Argc();
 	P_INT (builtin->pr, 1) = PR_SetPointer (builtin->pr, pr_list);
+	builtin->pr->pr_argc = 2;
 	PR_ExecuteProgram (builtin->pr, builtin->func);
 	PR_PopFrame (builtin->pr);
 	PR_Zone_Free (builtin->pr, pr_list);

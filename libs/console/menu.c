@@ -439,6 +439,7 @@ bi_Menu_Enter (progs_t *pr)
 		P_STRING (&menu_pr_state, 0) =
 			PR_SetTempString (&menu_pr_state, item->text);
 		P_INT (&menu_pr_state, 1) = 0;
+		pr->pr_argc = 2;
 		PR_ExecuteProgram (&menu_pr_state, item->func);
 		PR_PopFrame (&menu_pr_state);
 		run_menu_post ();
@@ -672,6 +673,7 @@ Menu_Draw (view_t *view)
 		PR_RESET_PARAMS (&menu_pr_state);
 		P_INT (&menu_pr_state, 0) = x;
 		P_INT (&menu_pr_state, 1) = y;
+		menu_pr_state.pr_argc = 2;
 		PR_ExecuteProgram (&menu_pr_state, menu->draw);
 		ret = R_INT (&menu_pr_state);
 		run_menu_post ();
@@ -706,6 +708,7 @@ Menu_Draw (view_t *view)
 		PR_RESET_PARAMS (&menu_pr_state);
 		P_INT (&menu_pr_state, 0) = x + item->x;
 		P_INT (&menu_pr_state, 1) = y + item->y;
+		menu_pr_state.pr_argc = 2;
 		PR_ExecuteProgram (&menu_pr_state, menu->cursor);
 		run_menu_post ();
 	} else {
@@ -738,6 +741,7 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 		P_INT (&menu_pr_state, 0) = key;
 		P_INT (&menu_pr_state, 1) = unicode;
 		P_INT (&menu_pr_state, 2) = down;
+		menu_pr_state.pr_argc = 3;
 		PR_ExecuteProgram (&menu_pr_state, menu->keyevent);
 		ret = R_INT (&menu_pr_state);
 		run_menu_post ();
@@ -752,6 +756,7 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 		P_STRING (&menu_pr_state, 0) = PR_SetTempString (&menu_pr_state,
 														 item->text);
 		P_INT (&menu_pr_state, 1) = key;
+		menu_pr_state.pr_argc = 2;
 		PR_ExecuteProgram (&menu_pr_state, item->func);
 		PR_PopFrame (&menu_pr_state);
 		ret = R_INT (&menu_pr_state);

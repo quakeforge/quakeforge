@@ -189,6 +189,7 @@ main (int argc, const char **argv)
 	PR_RESET_PARAMS (&pr);
 	P_INT (&pr, 0) = pr_argc;
 	P_POINTER (&pr, 1) = PR_SetPointer (&pr, pr_argv);
+	pr.pr_argc = 2;
 	PR_ExecuteProgram (&pr, main_func);
 	PR_PopFrame (&pr);
 	return R_INT (&pr);

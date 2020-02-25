@@ -336,6 +336,7 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	pr->pr_xstatement = 0;
 	pr->pr_depth = 0;
 	pr->localstack_used = 0;
+	pr->pr_argc = 0;
 }
 
 VISIBLE void

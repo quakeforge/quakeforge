@@ -1732,7 +1732,7 @@ struct progs_s {
 
 	/// \name execution state
 	///@{
-	int         pr_argc;
+	int         pr_argc;	//FIXME need a good way to ensure it is correct
 
 	qboolean    pr_trace;
 	int         pr_trace_depth;
