@@ -1636,8 +1636,6 @@ typedef struct {
 	strref_t   *tstr;				///< Linked list of temporary strings.
 } prstack_t;
 
-struct obj_list_s;
-
 struct progs_s {
 	int       (*parse_field) (progs_t *pr, const char *key, const char *value);
 
@@ -1772,18 +1770,7 @@ struct progs_s {
 
 	/// \name obj info
 	///@{
-	unsigned    selector_index;
-	unsigned    selector_index_max;
-	struct obj_list_s **selector_sels;
-	string_t   *selector_names;
-	struct hashtab_s *selector_hash;
-	struct hashtab_s *classes;
-	struct hashtab_s *load_methods;
-	struct obj_list_s *unresolved_classes;
-	struct obj_list_s *unclaimed_categories;
-	struct obj_list_s *unclaimed_proto_list;
-	struct obj_list_s *module_list;
-	struct obj_list_s *class_tree_list;
+	struct probj_resources_s *pr_objective_resources;
 	///@}
 
 	/// \name debugging
