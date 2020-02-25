@@ -188,6 +188,7 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	pr->pr_edict_size = align_size (pr->pr_edict_size);
 
 	pr->pr_edictareasize = pr->max_edicts * pr->pr_edict_size;
+	pr->edict_parse = 0;
 
 	mem_size = pr->progs_size + pr->zone_size + pr->pr_edictareasize
 			   + pr->stack_size;
