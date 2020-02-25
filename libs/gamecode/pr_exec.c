@@ -68,6 +68,7 @@ PR_RunError (progs_t * pr, const char *error, ...)
 
 	// dump the stack so PR_Error can shutdown functions
 	pr->pr_depth = 0;
+	pr->localstack_used = 0;
 
 	PR_Error (pr, "Program error: %s", string->str);
 }
