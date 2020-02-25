@@ -1715,6 +1715,7 @@ struct progs_s {
 	///@}
 
 	/// \name edicts
+	/// \todo FIXME should this be outside the VM?
 	///@{
 	edict_t   **edicts;
 	int         max_edicts;			///< set by user

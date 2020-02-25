@@ -63,7 +63,7 @@ ED_ClearEdict (progs_t *pr, edict_t *e, int val)
 {
 	pr_uint_t   i;
 
-	if (NUM_FOR_EDICT (pr, e) < *pr->reserved_edicts)
+	if (pr->reserved_edicts && NUM_FOR_EDICT (pr, e) < *pr->reserved_edicts)
 		Sys_Printf ("clearing reserved edict %d\n", NUM_FOR_EDICT (pr, e));
 	for (i=0; i < pr->progs->entityfields; i++)
 		e->v[i].integer_var = val;
@@ -86,6 +86,9 @@ ED_Alloc (progs_t *pr)
 	edict_t    *e;
 	int         start = pr->reserved_edicts ? *pr->reserved_edicts : 0;
 
+	if (!pr->num_edicts) {
+		PR_RunError (pr, "Edicts not supported in this VM\n");
+	}
 	for (i = start + 1; i < *pr->num_edicts; i++) {
 		e = EDICT_NUM (pr, i);
 		// the first couple seconds of server time can involve a lot of
@@ -145,6 +148,10 @@ ED_Free (progs_t *pr, edict_t *ed)
 VISIBLE void
 ED_PrintNum (progs_t *pr, pr_int_t ent)
 {
+	if (!pr->num_edicts) {
+		Sys_Printf ("Edicts not supported in this VM\n");
+		return;
+	}
 	ED_Print (pr, EDICT_NUM (pr, ent));
 }
 
@@ -162,9 +169,13 @@ ED_PrintEdicts (progs_t *pr, const char *fieldval)
 
 	def = PR_FindField(pr, "classname");
 
+	if (!pr->num_edicts) {
+		Sys_Printf ("Edicts not supported in this VM\n");
+		return;
+	}
 	if (fieldval && fieldval[0] && def) {
 		count = 0;
-		for (i = 0; i < *(pr)->num_edicts; i++)
+		for (i = 0; i < *pr->num_edicts; i++)
 			if (strequal(fieldval,
 						 E_GSTRING (pr, EDICT_NUM(pr, i), def->ofs))) {
 				ED_PrintNum (pr, i);
@@ -172,9 +183,9 @@ ED_PrintEdicts (progs_t *pr, const char *fieldval)
 			}
 		Sys_Printf ("%i entities\n", count);
 	} else {
-		for (i = 0; i < *(pr)->num_edicts; i++)
+		for (i = 0; i < *pr->num_edicts; i++)
 			ED_PrintNum (pr, i);
-		Sys_Printf ("%i entities\n", *(pr)->num_edicts);
+		Sys_Printf ("%i entities\n", *pr->num_edicts);
 	}
 }
 
@@ -192,10 +203,14 @@ ED_Count (progs_t *pr)
 	pr_def_t   *model_def;
 	edict_t    *ent;
 
+	if (!pr->num_edicts) {
+		Sys_Printf ("Edicts not supported in this VM\n");
+		return;
+	}
 	solid_def = PR_FindField (pr, "solid");
 	model_def = PR_FindField (pr, "model");
 	active = models = solid = step = zombie = 0;
-	for (i = 0; i < *(pr)->num_edicts; i++) {
+	for (i = 0; i < *pr->num_edicts; i++) {
 		ent = EDICT_NUM (pr, i);
 		if (ent->free) {
 			if (pr->globals.time && *pr->globals.time - ent->freetime <= 0.5)
@@ -209,7 +224,7 @@ ED_Count (progs_t *pr)
 			models++;
 	}
 
-	Sys_Printf ("num_edicts:%3i\n", *(pr)->num_edicts);
+	Sys_Printf ("num_edicts:%3i\n", *pr->num_edicts);
 	Sys_Printf ("active    :%3i\n", active);
 	Sys_Printf ("view      :%3i\n", models);
 	Sys_Printf ("touch     :%3i\n", solid);
@@ -234,7 +249,7 @@ ED_NumForEdict (progs_t *pr, edict_t *e)
 
 	b = NUM_FOR_BAD_EDICT (pr, e);
 
-	if (b && (b < 0 || b >= *(pr)->num_edicts))
+	if (b && (b < 0 || b >= *pr->num_edicts))
 		PR_RunError (pr, "NUM_FOR_EDICT: bad pointer %d %p %p", b, e,
 					 *(pr)->edicts);
 
@@ -244,6 +259,9 @@ ED_NumForEdict (progs_t *pr, edict_t *e)
 qboolean
 PR_EdictValid (progs_t *pr, pr_int_t e)
 {
+	if (!pr->num_edicts) {
+		return false;
+	}
 	if (e < 0 || e >= pr->pr_edictareasize)
 		return false;
 	if (e % pr->pr_edict_size)
