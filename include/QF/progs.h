@@ -1583,6 +1583,11 @@ void PR_Debug_Init_Cvars (void);
 int PR_LoadDebug (progs_t *pr);
 void PR_Debug_Watch (progs_t *pr, const char *expr);
 void PR_Debug_Print (progs_t *pr, const char *expr);
+pr_auxfunction_t *PR_Debug_AuxFunction (progs_t *pr, pr_uint_t func) __attribute__((pure));
+pr_auxfunction_t *PR_Debug_MappedAuxFunction (progs_t *pr, pr_uint_t func) __attribute__((pure));
+pr_def_t *PR_Debug_LocalDefs (progs_t *pr, pr_auxfunction_t *aux_function) __attribute__((pure));
+pr_lineno_t *PR_Debug_Linenos (progs_t *pr, pr_auxfunction_t *aux_function,
+							   pr_uint_t *num_linenos);
 pr_auxfunction_t *PR_Get_Lineno_Func (progs_t *pr, pr_lineno_t *lineno) __attribute__((pure));
 pr_uint_t PR_Get_Lineno_Addr (progs_t *pr, pr_lineno_t *lineno) __attribute__((pure));
 pr_uint_t PR_Get_Lineno_Line (progs_t *pr, pr_lineno_t *lineno) __attribute__((pure));
@@ -1781,14 +1786,9 @@ struct progs_s {
 	struct obj_list_s *class_tree_list;
 	///@}
 
-	/// \name debug info
+	/// \name debugging
 	///@{
-	const char *debugfile;
-	struct pr_debug_header_s *debug;
-	struct pr_auxfunction_s *auxfunctions;
-	struct pr_auxfunction_s **auxfunction_map;
-	struct pr_lineno_s *linenos;
-	pr_def_t   *local_defs;
+	struct prdeb_resources_s *pr_debug_resources;
 	pr_type_t  *watch;
 	int         wp_conditional;
 	pr_type_t   wp_val;

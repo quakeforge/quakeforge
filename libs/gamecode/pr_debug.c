@@ -71,9 +71,16 @@ typedef struct {
 	progs_t *pr;
 } file_t;
 
-typedef struct {
+typedef struct prdeb_resources_s {
+	progs_t    *pr;
 	dstring_t  *string;
-} pr_debug_resources_t;
+	const char *debugfile;
+	struct pr_debug_header_s *debug;
+	struct pr_auxfunction_s *auxfunctions;
+	struct pr_auxfunction_s **auxfunction_map;
+	struct pr_lineno_s *linenos;
+	pr_def_t   *local_defs;
+} prdeb_resources_t;
 
 typedef struct {
 	progs_t    *pr;
@@ -322,35 +329,28 @@ error:
 static void
 pr_debug_clear (progs_t *pr, void *data)
 {
-	__auto_type res = (pr_debug_resources_t *) data;
+	__auto_type res = (prdeb_resources_t *) data;
 
 	if (res->string) {
 		dstring_clearstr (res->string);
 	} else {
 		res->string = dstring_newstr ();
 	}
-}
 
-void
-PR_Debug_Init (progs_t *pr)
-{
-	pr_debug_resources_t *res = calloc (1, sizeof (*res));
-	res->string = 0;
+	if (res->debug)
+		pr->free_progs_mem (pr, res->debug);
+	res->debug = 0;
+	res->auxfunctions = 0;
+	if (res->auxfunction_map)
+		pr->free_progs_mem (pr, res->auxfunction_map);
+	res->auxfunction_map = 0;
+	res->linenos = 0;
+	res->local_defs = 0;
 
-	PR_Resources_Register (pr, "PR_Debug", res, pr_debug_clear);
-	if (!file_hash) {
-		file_hash = Hash_NewTable (1024, file_get_key, file_free, 0);
-	}
-}
-
-void
-PR_Debug_Init_Cvars (void)
-{
-	pr_debug = Cvar_Get ("pr_debug", "0", CVAR_NONE, NULL,
-						 "enable progs debugging");
-	pr_source_path = Cvar_Get ("pr_source_path", ".", CVAR_NONE, source_path_f,
-							   "where to look (within gamedir) for source "
-							   "files");
+	pr->pr_debug_resources = res;
+	pr->watch = 0;
+	pr->wp_conditional = 0;
+	pr->wp_val.integer_var = 0;
 }
 
 static file_t *
@@ -411,22 +411,13 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 VISIBLE int
 PR_LoadDebug (progs_t *pr)
 {
+	prdeb_resources_t *res = PR_Resources_Find (pr, "PR_Debug");
 	char       *sym_path;
 	const char *path_end, *sym_file;
 	off_t       debug_size;
 	pr_uint_t   i;
 	pr_def_t   *def;
 	pr_type_t  *str = 0;
-
-	if (pr->debug)
-		pr->free_progs_mem (pr, pr->debug);
-	pr->debug = 0;
-	pr->auxfunctions = 0;
-	if (pr->auxfunction_map)
-		pr->free_progs_mem (pr, pr->auxfunction_map);
-	pr->auxfunction_map = 0;
-	pr->linenos = 0;
-	pr->local_defs = 0;
 
 	if (!pr_debug->int_val)
 		return 1;
@@ -438,107 +429,169 @@ PR_LoadDebug (progs_t *pr)
 	Hash_FlushTable (file_hash);
 	if (!str)
 		return 1;
-	pr->debugfile = PR_GetString (pr, str->string_var);
-	sym_file = QFS_SkipPath (pr->debugfile);
+	res->debugfile = PR_GetString (pr, str->string_var);
+	sym_file = QFS_SkipPath (res->debugfile);
 	path_end = QFS_SkipPath (pr->progs_name);
 	sym_path = malloc (strlen (sym_file) + (path_end - pr->progs_name) + 1);
 	strncpy (sym_path, pr->progs_name, path_end - pr->progs_name);
 	strcpy (sym_path + (path_end - pr->progs_name), sym_file);
-	pr->debug = pr->load_file (pr, sym_path, &debug_size);
-	if (!pr->debug) {
+	res->debug = pr->load_file (pr, sym_path, &debug_size);
+	if (!res->debug) {
 		Sys_Printf ("can't load %s for debug info\n", sym_path);
 		free (sym_path);
 		return 1;
 	}
-	pr->debug->version = LittleLong (pr->debug->version);
-	if (pr->debug->version != PROG_DEBUG_VERSION) {
+	res->debug->version = LittleLong (res->debug->version);
+	if (res->debug->version != PROG_DEBUG_VERSION) {
 		Sys_Printf ("ignoring %s with unsupported version %x.%03x.%03x\n",
 					sym_path,
-					(pr->debug->version >> 24) & 0xff,
-					(pr->debug->version >> 12) & 0xfff,
-					pr->debug->version & 0xfff);
-		pr->debug = 0;
+					(res->debug->version >> 24) & 0xff,
+					(res->debug->version >> 12) & 0xfff,
+					res->debug->version & 0xfff);
+		res->debug = 0;
 		free (sym_path);
 		return 1;
 	}
-	pr->debug->crc = LittleShort (pr->debug->crc);
-	if (pr->debug->crc != pr->crc) {
+	res->debug->crc = LittleShort (res->debug->crc);
+	if (res->debug->crc != pr->crc) {
 		Sys_Printf ("ignoring %s that doesn't match %s. (CRCs: "
 					"sym:%d dat:%d)\n",
 					sym_path,
 					pr->progs_name,
-					pr->debug->crc,
+					res->debug->crc,
 					pr->crc);
-		pr->debug = 0;
+		res->debug = 0;
 		free (sym_path);
 		return 1;
 	}
 	free (sym_path);
-	pr->debug->you_tell_me_and_we_will_both_know = LittleShort
-		(pr->debug->you_tell_me_and_we_will_both_know);
-	pr->debug->auxfunctions = LittleLong (pr->debug->auxfunctions);
-	pr->debug->num_auxfunctions = LittleLong (pr->debug->num_auxfunctions);
-	pr->debug->linenos = LittleLong (pr->debug->linenos);
-	pr->debug->num_linenos = LittleLong (pr->debug->num_linenos);
-	pr->debug->locals = LittleLong (pr->debug->locals);
-	pr->debug->num_locals = LittleLong (pr->debug->num_locals);
+	res->debug->you_tell_me_and_we_will_both_know = LittleShort
+		(res->debug->you_tell_me_and_we_will_both_know);
+	res->debug->auxfunctions = LittleLong (res->debug->auxfunctions);
+	res->debug->num_auxfunctions = LittleLong (res->debug->num_auxfunctions);
+	res->debug->linenos = LittleLong (res->debug->linenos);
+	res->debug->num_linenos = LittleLong (res->debug->num_linenos);
+	res->debug->locals = LittleLong (res->debug->locals);
+	res->debug->num_locals = LittleLong (res->debug->num_locals);
 
-	pr->auxfunctions = (pr_auxfunction_t*)((char*)pr->debug +
-										   pr->debug->auxfunctions);
-	pr->linenos = (pr_lineno_t*)((char*)pr->debug + pr->debug->linenos);
-	pr->local_defs = (pr_def_t*)((char*)pr->debug + pr->debug->locals);
+	res->auxfunctions = (pr_auxfunction_t*)((char*)res->debug +
+										   res->debug->auxfunctions);
+	res->linenos = (pr_lineno_t*)((char*)res->debug + res->debug->linenos);
+	res->local_defs = (pr_def_t*)((char*)res->debug + res->debug->locals);
 
 	i = pr->progs->numfunctions * sizeof (pr_auxfunction_t *);
-	pr->auxfunction_map = pr->allocate_progs_mem (pr, i);
+	res->auxfunction_map = pr->allocate_progs_mem (pr, i);
 	for (i = 0; (int) i < pr->progs->numfunctions; i++) //FIXME (cast)
-		pr->auxfunction_map[i] = 0;
+		res->auxfunction_map[i] = 0;
 
-	for (i = 0; i < pr->debug->num_auxfunctions; i++) {
-		pr->auxfunctions[i].function = LittleLong
-			(pr->auxfunctions[i].function);
-		pr->auxfunctions[i].source_line = LittleLong
-			(pr->auxfunctions[i].source_line);
-		pr->auxfunctions[i].line_info = LittleLong
-			(pr->auxfunctions[i].line_info);
-		pr->auxfunctions[i].local_defs = LittleLong
-			(pr->auxfunctions[i].local_defs);
-		pr->auxfunctions[i].num_locals = LittleLong
-			(pr->auxfunctions[i].num_locals);
+	for (i = 0; i < res->debug->num_auxfunctions; i++) {
+		res->auxfunctions[i].function = LittleLong
+			(res->auxfunctions[i].function);
+		res->auxfunctions[i].source_line = LittleLong
+			(res->auxfunctions[i].source_line);
+		res->auxfunctions[i].line_info = LittleLong
+			(res->auxfunctions[i].line_info);
+		res->auxfunctions[i].local_defs = LittleLong
+			(res->auxfunctions[i].local_defs);
+		res->auxfunctions[i].num_locals = LittleLong
+			(res->auxfunctions[i].num_locals);
 
-		pr->auxfunction_map[pr->auxfunctions[i].function] =
-			&pr->auxfunctions[i];
+		res->auxfunction_map[res->auxfunctions[i].function] =
+			&res->auxfunctions[i];
 	}
-	for (i = 0; i < pr->debug->num_linenos; i++) {
-		pr->linenos[i].fa.func = LittleLong (pr->linenos[i].fa.func);
-		pr->linenos[i].line = LittleLong (pr->linenos[i].line);
+	for (i = 0; i < res->debug->num_linenos; i++) {
+		res->linenos[i].fa.func = LittleLong (res->linenos[i].fa.func);
+		res->linenos[i].line = LittleLong (res->linenos[i].line);
 	}
-	for (i = 0; i < pr->debug->num_locals; i++) {
-		pr->local_defs[i].type = LittleShort (pr->local_defs[i].type);
-		pr->local_defs[i].ofs = LittleShort (pr->local_defs[i].ofs);
-		pr->local_defs[i].name = LittleLong (pr->local_defs[i].name);
+	for (i = 0; i < res->debug->num_locals; i++) {
+		res->local_defs[i].type = LittleShort (res->local_defs[i].type);
+		res->local_defs[i].ofs = LittleShort (res->local_defs[i].ofs);
+		res->local_defs[i].name = LittleLong (res->local_defs[i].name);
 	}
 	return 1;
+}
+
+VISIBLE pr_auxfunction_t *
+PR_Debug_AuxFunction (progs_t *pr, pr_uint_t func)
+{
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	if (!res->debug || func >= res->debug->num_auxfunctions) {
+		return 0;
+	}
+	return &res->auxfunctions[func];
+}
+
+VISIBLE pr_auxfunction_t *
+PR_Debug_MappedAuxFunction (progs_t *pr, pr_uint_t func)
+{
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	if (!res->debug || (int)func >= pr->progs->numfunctions) {//FIXME (cast)
+		return 0;
+	}
+	return res->auxfunction_map[func];
+}
+
+VISIBLE pr_def_t *
+PR_Debug_LocalDefs (progs_t *pr, pr_auxfunction_t *aux_function)
+{
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	if (!res->debug || !aux_function) {
+		return 0;
+	}
+	if (aux_function->local_defs > res->debug->num_locals) {
+		return 0;
+	}
+	return res->local_defs + aux_function->local_defs;
+}
+
+VISIBLE pr_lineno_t *
+PR_Debug_Linenos (progs_t *pr, pr_auxfunction_t *aux_function,
+				  pr_uint_t *num_linenos)
+{
+	pr_uint_t   i, count;
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	if (!res->debug) {
+		return 0;
+	}
+	if (!aux_function) {
+		*num_linenos = res->debug->num_linenos;
+		return res->linenos;
+	}
+	if (aux_function->line_info > res->debug->num_linenos) {
+		return 0;
+	}
+	//FIXME put lineno count in sym file
+	for (count = 1, i = aux_function->line_info + 1;
+		 i < res->debug->num_linenos; i++, count++) {
+		if (!res->linenos[i].line) {
+			break;
+		}
+	}
+	*num_linenos = count;
+	return res->linenos + aux_function->line_info;
 }
 
 pr_auxfunction_t *
 PR_Get_Lineno_Func (progs_t *pr, pr_lineno_t *lineno)
 {
-	while (lineno > pr->linenos && lineno->line)
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	while (lineno > res->linenos && lineno->line)
 		lineno--;
 	if (lineno->line)
 		return 0;
-	return &pr->auxfunctions[lineno->fa.func];
+	return &res->auxfunctions[lineno->fa.func];
 }
 
 pr_uint_t
 PR_Get_Lineno_Addr (progs_t *pr, pr_lineno_t *lineno)
 {
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	pr_auxfunction_t *f;
 
 	if (lineno->line)
 		return lineno->fa.addr;
-	if (lineno->fa.func < pr->debug->num_auxfunctions) {
-		f = &pr->auxfunctions[lineno->fa.func];
+	if (lineno->fa.func < res->debug->num_auxfunctions) {
+		f = &res->auxfunctions[lineno->fa.func];
 		return pr->pr_functions[f->function].first_statement;
 	}
 	// take a wild guess that only the line number is bogus and return
@@ -557,16 +610,17 @@ PR_Get_Lineno_Line (progs_t *pr, pr_lineno_t *lineno)
 pr_lineno_t *
 PR_Find_Lineno (progs_t *pr, pr_uint_t addr)
 {
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	pr_uint_t   i;
 	pr_lineno_t *lineno = 0;
 
-	if (!pr->debug)
+	if (!res->debug)
 		return 0;
-	if (!pr->debug->num_linenos)
+	if (!res->debug->num_linenos)
 		return 0;
-	for (i = pr->debug->num_linenos; i > 0; i--) {
-		if (PR_Get_Lineno_Addr (pr, &pr->linenos[i - 1]) <= addr) {
-			lineno = &pr->linenos[i - 1];
+	for (i = res->debug->num_linenos; i > 0; i--) {
+		if (PR_Get_Lineno_Addr (pr, &res->linenos[i - 1]) <= addr) {
+			lineno = &res->linenos[i - 1];
 			break;
 		}
 	}
@@ -615,13 +669,14 @@ PR_Get_Source_Line (progs_t *pr, pr_uint_t addr)
 pr_def_t *
 PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm)
 {
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	pr_uint_t    i;
 	pr_auxfunction_t *aux_func;
 	pr_def_t    *ddef = 0;
 	int          num_params;
 	int          param_offs = 0;
 
-	if (!pr->debug)
+	if (!res->debug)
 		return 0;
 	if (!func)
 		return 0;
@@ -634,12 +689,12 @@ PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm)
 	if (parm >= (unsigned) num_params)
 		return 0;
 
-	aux_func = pr->auxfunction_map[func - pr->pr_functions];
+	aux_func = res->auxfunction_map[func - pr->pr_functions];
 	if (!aux_func)
 		return 0;
 
 	for (i = 0; i < aux_func->num_locals; i++) {
-		ddef = &pr->local_defs[aux_func->local_defs + param_offs + i];
+		ddef = &res->local_defs[aux_func->local_defs + param_offs + i];
 		if (!parm--)
 			break;
 	}
@@ -649,11 +704,12 @@ PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm)
 static pr_auxfunction_t *
 get_aux_function (progs_t *pr)
 {
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	dfunction_t *func;
-	if (!pr->pr_xfunction || !pr->auxfunction_map)
+	if (!pr->pr_xfunction || !res->auxfunction_map)
 		return 0;
 	func = pr->pr_xfunction->descriptor;
-	return pr->auxfunction_map[func - pr->pr_functions];
+	return res->auxfunction_map[func - pr->pr_functions];
 }
 
 static etype_t
@@ -679,6 +735,7 @@ get_etype (progs_t *pr, int typeptr)
 pr_def_t *
 PR_Get_Local_Def (progs_t *pr, pointer_t offs)
 {
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	pr_uint_t   i;
 	dfunction_t *func;
 	pr_auxfunction_t *aux_func;
@@ -688,23 +745,24 @@ PR_Get_Local_Def (progs_t *pr, pointer_t offs)
 	func = pr->pr_xfunction->descriptor;
 	if (!func)
 		return 0;
-	aux_func = pr->auxfunction_map[func - pr->pr_functions];
+	aux_func = res->auxfunction_map[func - pr->pr_functions];
 	if (!aux_func)
 		return 0;
 	offs -= func->parm_start;
 	if (offs >= func->locals)
 		return 0;
 	for (i = 0; i < aux_func->num_locals; i++)
-		if (pr->local_defs[aux_func->local_defs + i].ofs == offs)
-			return &pr->local_defs[aux_func->local_defs + i];
+		if (res->local_defs[aux_func->local_defs + i].ofs == offs)
+			return &res->local_defs[aux_func->local_defs + i];
 	return 0;
 }
 
 VISIBLE void
 PR_DumpState (progs_t *pr)
 {
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	if (pr->pr_xfunction) {
-		if (pr_debug->int_val && pr->debug) {
+		if (pr_debug->int_val && res->debug) {
 			pr_lineno_t *lineno;
 			pr_auxfunction_t *func = 0;
 			dfunction_t *descriptor = pr->pr_xfunction->descriptor;
@@ -803,9 +861,10 @@ value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 static pr_def_t *
 pr_debug_find_def (progs_t *pr, pr_int_t ofs)
 {
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	pr_def_t   *def = 0;
 
-	if (pr_debug->int_val && pr->debug)
+	if (pr_debug->int_val && res->debug)
 		def = PR_Get_Local_Def (pr, ofs);
 	if (!def)
 		def = PR_GlobalAtOfs (pr, ofs);
@@ -993,11 +1052,12 @@ pr_debug_pointer_view (qfot_type_t *type, pr_type_t *value, void *_data)
 {
 	__auto_type data = (pr_debug_data_t *) _data;
 	progs_t    *pr = data->pr;
+	prdeb_resources_t *res = pr->pr_debug_resources; //FIXME
 	dstring_t  *dstr = data->dstr;
 	pointer_t   ofs = value->integer_var;
 	pr_def_t   *def = 0;
 
-	if (pr_debug->int_val && pr->debug) {
+	if (pr_debug->int_val && res->debug) {
 		def = PR_Get_Local_Def (pr, ofs);
 	}
 	if (!def) {
@@ -1165,6 +1225,7 @@ PR_Debug_Print (progs_t *pr, const char *expr)
 VISIBLE void
 PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 {
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	int         addr = s - pr->pr_statements;
 	int         dump_code = contents & 2;
 	const char *fmt;
@@ -1188,7 +1249,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 	if (pr_debug->int_val > 1)
 		dump_code = 1;
 
-	if (pr_debug->int_val && pr->debug) {
+	if (pr_debug->int_val && res->debug) {
 		const char *source_line = PR_Get_Source_Line (pr, addr);
 
 		if (source_line) {
@@ -1344,13 +1405,14 @@ do_print:
 static void
 dump_frame (progs_t *pr, prstack_t *frame)
 {
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	dfunction_t	   *f = frame->f ? frame->f->descriptor : 0;
 
 	if (!f) {
 		Sys_Printf ("<NO FUNCTION>\n");
 		return;
 	}
-	if (pr_debug->int_val && pr->debug) {
+	if (pr_debug->int_val && res->debug) {
 		pr_lineno_t *lineno = PR_Find_Lineno (pr, frame->s);
 		pr_auxfunction_t *func = PR_Get_Lineno_Func (pr, lineno);
 		pr_uint_t   line = PR_Get_Lineno_Line (pr, lineno);
@@ -1476,4 +1538,27 @@ ED_Print (progs_t *pr, edict_t *ed)
 	}
 
 	dstring_delete (dstr);
+}
+
+void
+PR_Debug_Init (progs_t *pr)
+{
+	prdeb_resources_t *res = calloc (1, sizeof (*res));
+	res->pr = pr;
+
+	PR_Resources_Register (pr, "PR_Debug", res, pr_debug_clear);
+	if (!file_hash) {
+		file_hash = Hash_NewTable (1024, file_get_key, file_free, 0);
+	}
+	PR_AddLoadFunc (pr, PR_LoadDebug);
+}
+
+void
+PR_Debug_Init_Cvars (void)
+{
+	pr_debug = Cvar_Get ("pr_debug", "0", CVAR_NONE, NULL,
+						 "enable progs debugging");
+	pr_source_path = Cvar_Get ("pr_source_path", ".", CVAR_NONE, source_path_f,
+							   "where to look (within gamedir) for source "
+							   "files");
 }

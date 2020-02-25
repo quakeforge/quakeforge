@@ -383,7 +383,6 @@ pr_run_ctors (progs_t *pr)
 
 static int (*load_funcs_1[])(progs_t *) = {
 	PR_RelocateBuiltins,
-	PR_LoadDebug,
 	0,
 };
 

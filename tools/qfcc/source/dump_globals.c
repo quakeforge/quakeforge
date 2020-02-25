@@ -263,19 +263,23 @@ dump_functions (progs_t *pr)
 					func->parm_size[j].size);
 		printf (") %d @ %x", func->locals, func->parm_start);
 		puts ("");
-		if (pr->debug && type_encodings) {
-			pr_auxfunction_t *aux = pr->auxfunction_map[i];
-			if (!aux)
+		if (type_encodings) {
+			pr_auxfunction_t *aux = PR_Debug_MappedAuxFunction (pr, i);
+			if (!aux) {
 				continue;
+			}
 			printf ("        %d %s:%d %d %d %d %x\n", aux->function,
 					PR_GetString (pr, func->s_file), aux->source_line,
 					aux->line_info,
 					aux->local_defs, aux->num_locals,
 					aux->return_type);
+			pr_def_t   *local_defs = PR_Debug_LocalDefs (pr, aux);
+			if (!local_defs) {
+				continue;
+			}
 			for (j = 0; j < (int)aux->num_locals; j++) {
-				pr->local_defs[+ aux->local_defs + j].type_encoding
-					+= type_encodings;
-				dump_def (pr, pr->local_defs + aux->local_defs + j, 1);
+				local_defs[j].type_encoding += type_encodings;//FIXME do in debug
+				dump_def (pr, local_defs + j, 1);
 			}
 		}
 	}

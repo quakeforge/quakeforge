@@ -69,8 +69,8 @@ progs_get_func_data (unsigned func_index, void *data)
 	dfunction_t *func;
 
 	memset (&func_data, 0, sizeof (func_data));
-	if (func_index < pr->debug->num_auxfunctions) {
-		aux_func = pr->auxfunctions + func_index;
+	aux_func = PR_Debug_AuxFunction (pr, func_index);
+	if (aux_func) {
 		func_data.source_line = aux_func->source_line;
 		func_data.return_type = aux_func->return_type;
 		func_data.num_locals = aux_func->num_locals;
@@ -126,10 +126,11 @@ dump_line_set (pr_lineno_t *lineno, unsigned count,
 void
 dump_lines (progs_t *pr)
 {
-	if (!pr->debug)
+	pr_lineno_t *linenos;
+	pr_uint_t   num_linenos;
+	if (!(linenos = PR_Debug_Linenos (pr, 0, &num_linenos)))
 		return;
-	dump_line_set (pr->linenos, pr->debug->num_linenos,
-				   progs_get_func_data, pr);
+	dump_line_set (linenos, num_linenos, progs_get_func_data, pr);
 }
 
 static func_data_t *
