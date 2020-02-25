@@ -39,8 +39,7 @@ typedef struct pr_auxfunction_s {
 	pr_uint_t   line_info;		// index to first lineno entry
 	pr_uint_t   local_defs;		// index to the first local def
 	pr_uint_t   num_locals;		// number of local defs
-	pr_short_t  return_type;	// return type of this function
-	pr_short_t  reserved;
+	pr_uint_t   return_type;	// return type of this function
 } pr_auxfunction_t;
 
 typedef struct pr_lineno_s {
