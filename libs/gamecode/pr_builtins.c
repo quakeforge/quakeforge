@@ -158,7 +158,8 @@ bi_no_function (progs_t *pr)
 VISIBLE int
 PR_RelocateBuiltins (progs_t *pr)
 {
-	pr_int_t    i, ind;
+	pr_uint_t   i;
+	pr_int_t    ind;
 	int         bad = 0;
 	dfunction_t *desc;
 	bfunction_t *func;

@@ -86,7 +86,12 @@ dump_def (progs_t *pr, pr_def_t *def, int indent)
 				break;
 			case ev_string:
 				string = G_INT (pr, offset);
-				if (string < 0 || string >= pr->progs->numstrings) {
+				// at runtime, strings can be negative (thus string_t is
+				// signed), but negative strings means they have been
+				// dynamically allocated, thus a negative string index should
+				// never appear in compiled code
+				if (string < 0
+					|| (pr_uint_t) string >= pr->progs->numstrings) {
 					str = "invalid string offset";
 					comment = va (" %d %s", string, str);
 				} else {
@@ -115,7 +120,7 @@ dump_def (progs_t *pr, pr_def_t *def, int indent)
 				{
 					func_t      func = G_FUNCTION (pr, offset);
 					int         start;
-					if (func >= 0 && func < pr->progs->numfunctions) {
+					if (func < pr->progs->numfunctions) {
 						start = pr->pr_functions[func].first_statement;
 						if (start > 0)
 							comment = va (" %d @ %x", func, start);
@@ -230,9 +235,9 @@ qfo_fields (qfo_t *qfo)
 void
 dump_functions (progs_t *pr)
 {
-	int         i, j;
+	pr_uint_t   i, j, count;
 	const char *name;
-	int         start, count;
+	int         start;
 	const char *comment;
 	pr_def_t   *encodings_def;
 	pointer_t type_encodings = 0;
@@ -277,7 +282,7 @@ dump_functions (progs_t *pr)
 			if (!local_defs) {
 				continue;
 			}
-			for (j = 0; j < (int)aux->num_locals; j++) {
+			for (j = 0; j < aux->num_locals; j++) {
 				dump_def (pr, local_defs + j, 1);
 			}
 		}

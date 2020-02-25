@@ -255,7 +255,8 @@ static int
 load_progs (const char *name)
 {
 	QFile      *file;
-	int         i, size;
+	int         size;
+	pr_uint_t   i;
 	char        buff[5];
 
 	Hash_FlushTable (func_tab);

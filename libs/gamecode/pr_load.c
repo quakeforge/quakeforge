@@ -370,7 +370,7 @@ PR_AddLoadFinishFunc (progs_t *pr, int (*func)(progs_t *))
 static int
 pr_run_ctors (progs_t *pr)
 {
-	pr_int_t    fnum;
+	pr_uint_t   fnum;
 	dfunction_t *func;
 
 	for (fnum = 0; fnum < pr->progs->numfunctions; fnum++) {

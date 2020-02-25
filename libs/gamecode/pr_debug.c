@@ -483,7 +483,7 @@ PR_LoadDebug (progs_t *pr)
 
 	i = pr->progs->numfunctions * sizeof (pr_auxfunction_t *);
 	res->auxfunction_map = pr->allocate_progs_mem (pr, i);
-	for (i = 0; (int) i < pr->progs->numfunctions; i++) //FIXME (cast)
+	for (i = 0; i < pr->progs->numfunctions; i++)
 		res->auxfunction_map[i] = 0;
 
 	for (i = 0; i < res->debug->num_auxfunctions; i++) {
@@ -539,7 +539,7 @@ VISIBLE pr_auxfunction_t *
 PR_Debug_MappedAuxFunction (progs_t *pr, pr_uint_t func)
 {
 	prdeb_resources_t *res = pr->pr_debug_resources;
-	if (!res->debug || (int)func >= pr->progs->numfunctions) {//FIXME (cast)
+	if (!res->debug || func >= pr->progs->numfunctions) {
 		return 0;
 	}
 	return res->auxfunction_map[func];
@@ -1046,7 +1046,7 @@ pr_debug_func_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	progs_t    *pr = data->pr;
 	dstring_t  *dstr = data->dstr;
 
-	if (value->func_var < 0 || value->func_var >= pr->progs->numfunctions) {
+	if (value->func_var >= pr->progs->numfunctions) {
 		dasprintf (dstr, "INVALID:%d", value->func_var);
 	} else if (!value->func_var) {
 		dstring_appendstr (dstr, "NULL");
@@ -1300,6 +1300,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 				unsigned    parm_ind = 0;
 				pr_int_t    opval;
 				etype_t     optype = ev_void;
+				func_t      func;
 
 				if (mode == 'P') {
 					opchar = fmt[3];
@@ -1343,10 +1344,10 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 					case 'F':
 						str = global_string (&data, opval, optype,
 											 contents & 1);
-						if (G_FUNCTION (pr, opval) >= 0
-							&& G_FUNCTION (pr, opval)
-								< pr->progs->numfunctions)
-						call_func = pr->pr_functions + G_FUNCTION (pr, opval);
+						func = G_FUNCTION (pr, opval);
+						if (func < pr->progs->numfunctions) {
+							call_func = pr->pr_functions + func;
+						}
 						break;
 					case 'P':
 						parm_def = PR_Get_Param_Def (pr, call_func, parm_ind);
@@ -1468,7 +1469,7 @@ PR_StackTrace (progs_t *pr)
 VISIBLE void
 PR_Profile (progs_t * pr)
 {
-	pr_int_t    max, num, i;
+	pr_uint_t   max, num, i;
 	dfunction_t *best, *f;
 
 	num = 0;

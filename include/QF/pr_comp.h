@@ -27,7 +27,7 @@ typedef int16_t pr_short_t;
 typedef uint16_t pr_ushort_t;
 typedef int32_t pr_int_t;
 typedef uint32_t pr_uint_t;
-typedef pr_int_t func_t;
+typedef pr_uint_t func_t;
 typedef pr_int_t string_t;
 typedef pr_uint_t pointer_t;
 
@@ -455,7 +455,7 @@ typedef struct dfunction_s {
 	pr_int_t    parm_start;
 	pr_uint_t   locals;				// total ints of parms + locals
 
-	pr_int_t    profile;			// runtime
+	pr_uint_t   profile;			// runtime
 
 	string_t    s_name;
 	pr_int_t    s_file;				// source file defined in
@@ -502,10 +502,10 @@ typedef struct dprograms_s {
 	pr_uint_t   numfielddefs;
 
 	pr_uint_t   ofs_functions;
-	pr_int_t    numfunctions;	// function 0 is an empty
+	pr_uint_t   numfunctions;	// function 0 is an empty
 
 	pr_uint_t   ofs_strings;
-	pr_int_t    numstrings;		// first string is a null string
+	pr_uint_t   numstrings;		// first string is a null string
 
 	pr_uint_t   ofs_globals;
 	pr_uint_t   numglobals;
