@@ -68,14 +68,10 @@
 	Easier to parse than PR_ValueString
 */
 static const char *
-PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val)
+PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val, dstring_t *line)
 {
-	static dstring_t *line = 0;
 	pr_def_t    *def;
 	dfunction_t	*f;
-
-	if (!line)
-		line = dstring_new ();
 
 	type &= ~DEF_SAVEGLOBAL;
 
@@ -121,6 +117,7 @@ PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val)
 VISIBLE plitem_t *
 ED_EntityDict (progs_t *pr, edict_t *ed)
 {
+	dstring_t  *dstr = dstring_newstr ();
 	plitem_t   *entity = PL_NewDictionary ();
 	pr_uint_t   i;
 	int         j;
@@ -149,10 +146,11 @@ ED_EntityDict (progs_t *pr, edict_t *ed)
 			if (j == pr_type_size[type])
 				continue;
 
-			value = PR_UglyValueString (pr, type, v);
+			value = PR_UglyValueString (pr, type, v, dstr);
 			PL_D_AddObject (entity, name, PL_NewString (value));
 		}
 	}
+	dstring_delete (dstr);
 	return entity;
 }
 
@@ -165,6 +163,7 @@ ED_EntityDict (progs_t *pr, edict_t *ed)
 VISIBLE plitem_t *
 ED_GlobalsDict (progs_t *pr)
 {
+	dstring_t  *dstr = dstring_newstr ();
 	plitem_t   *globals = PL_NewDictionary ();
 	pr_uint_t   i;
 	const char *name;
@@ -183,9 +182,10 @@ ED_GlobalsDict (progs_t *pr)
 			continue;
 
 		name = PR_GetString (pr, def->name);
-		value = PR_UglyValueString (pr, type, &pr->pr_globals[def->ofs]);
+		value = PR_UglyValueString (pr, type, &pr->pr_globals[def->ofs], dstr);
 		PL_D_AddObject (globals, name, PL_NewString (value));
 	}
+	dstring_delete (dstr);
 	return globals;
 }
 
