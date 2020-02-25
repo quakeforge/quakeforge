@@ -72,37 +72,40 @@ PR_RunError (progs_t * pr, const char *error, ...)
 	PR_Error (pr, "Program error: %s", string->str);
 }
 
-VISIBLE void
-PR_SaveParams (progs_t *pr)
+VISIBLE pr_stashed_params_t *
+_PR_SaveParams (progs_t *pr, pr_stashed_params_t *params)
 {
 	int         i;
 	int         size = pr->pr_param_size * sizeof (pr_type_t);
 
-	pr->pr_param_ptrs[0] = pr->pr_params[0];
-	pr->pr_param_ptrs[1] = pr->pr_params[1];
+	params->param_ptrs[0] = pr->pr_params[0];
+	params->param_ptrs[1] = pr->pr_params[1];
 	pr->pr_params[0] = pr->pr_real_params[0];
 	pr->pr_params[1] = pr->pr_real_params[1];
 	for (i = 0; i < pr->pr_argc; i++) {
-		memcpy (pr->pr_saved_params + i * pr->pr_param_size,
+		memcpy (params->params + i * pr->pr_param_size,
 				pr->pr_real_params[i], size);
-		if (i < 2)
-			memcpy (pr->pr_real_params[i], pr->pr_param_ptrs[0], size);
+		if (i < 2) { //XXX FIXME what the what?!?
+			memcpy (pr->pr_real_params[i], params->param_ptrs[0], size);
+		}
 	}
-	pr->pr_saved_argc = pr->pr_argc;
+	params->argc = pr->pr_argc;
+	return params;
 }
 
 VISIBLE void
-PR_RestoreParams (progs_t *pr)
+PR_RestoreParams (progs_t *pr, pr_stashed_params_t *params)
 {
 	int         i;
 	int         size = pr->pr_param_size * sizeof (pr_type_t);
 
-	pr->pr_params[0] = pr->pr_param_ptrs[0];
-	pr->pr_params[1] = pr->pr_param_ptrs[1];
-	pr->pr_argc = pr->pr_saved_argc;
-	for (i = 0; i < pr->pr_argc; i++)
+	pr->pr_params[0] = params->param_ptrs[0];
+	pr->pr_params[1] = params->param_ptrs[1];
+	pr->pr_argc = params->argc;
+	for (i = 0; i < pr->pr_argc; i++) {
 		memcpy (pr->pr_real_params[i],
-				pr->pr_saved_params + i * pr->pr_param_size, size);
+				params->params + i * pr->pr_param_size, size);
+	}
 }
 
 VISIBLE inline void

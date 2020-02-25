@@ -728,12 +728,12 @@ obj_send_initialize (progs_t *pr, pr_class_t *class)
 			sel = &G_STRUCT (pr, pr_sel_t, method->method_name);
 			if (sel->sel_id == selector->sel_id) {
 				PR_PushFrame (pr);
-				PR_SaveParams (pr);
+				__auto_type params = PR_SaveParams (pr);
 				// param 0 is known to be the class pointer
 				P_POINTER (pr, 1) = method->method_name;
 				// pr->pr_argc is known to be 2
 				PR_ExecuteProgram (pr, method->method_imp);
-				PR_RestoreParams (pr);
+				PR_RestoreParams (pr, params);
 				PR_PopFrame (pr);
 				return;
 			}

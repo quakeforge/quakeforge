@@ -91,15 +91,63 @@ void PR_RunError (progs_t *pr, const char *error, ...) __attribute__((format(pri
 		(pr)->pr_params[1] = (pr)->pr_real_params[1];	\
 	} while (0)
 
-/** Save the current parameters.
-	\param pr		pointer to ::progs_t VM struct
+/**	\name Detouring Function Calls
+
+	These functions allow a builtin function that uses PR_CallFunction() to
+	safely insert a call to another VM function. The +initialize diversion
+	required by Objective-QuakeC uses this.
+
+		PR_PushFrame (pr);
+		__auto_type params = PR_SaveParams (pr);
+		... set up parameters to detour_function
+		PR_ExecuteProgram (pr, detour_function)
+		PR_RestoreParams (pr, params);
+		PR_PopFrame (pr);
+
 */
-void PR_SaveParams (progs_t *pr);
+///@{
+typedef struct pr_stashed_params_s {
+	pr_type_t  *param_ptrs[2];
+	int         argc;
+	pr_type_t   params[1];
+} pr_stashed_params_t;
+
+/** Save the current parameters to the provided stash.
+
+	\warning	The memory for the parameter stash is allocated using
+				alloca().
+
+	\param pr		pointer to ::progs_t VM struct
+	\return 		Pointer to a newly allocated and initialized parameter
+					stash that has the current parameters saved to it.
+	\hideinitializer
+*/
+#define PR_SaveParams(pr) \
+	_PR_SaveParams((pr), \
+				   alloca (field_offset (pr_stashed_params_t, \
+										 params[(pr)->pr_argc \
+												* (pr)->pr_param_size])))
+
+/** [INTERNAL] Save the current parameters to the provided stash.
+
+	\warning	Requires \a params to be correctly allocated. Use
+				PR_SaveParams instead as it will create a suitable stash for
+				saving the parameters.
+
+	\param pr		pointer to ::progs_t VM struct
+	\param params	location to save the parameters, must be of adequade size
+					to hold \a pr_argc * \a pr_param_size words in \a params
+	\return 		\a params Allows the likes of:
+						__auto_type params = PR_SaveParams (pr);
+*/
+pr_stashed_params_t *_PR_SaveParams (progs_t *pr, pr_stashed_params_t *params);
 
 /** Restore the parameters saved by PR_SaveParams().
 	\param pr		pointer to ::progs_t VM struct
+	\param params	pointer to stash created by PR_SaveParams()
 */
-void PR_RestoreParams (progs_t *pr);
+void PR_RestoreParams (progs_t *pr, pr_stashed_params_t *params);
+///@}
 
 /** Push an execution frame onto the VM stack. Saves current execution state.
 	\param pr		pointer to ::progs_t VM struct
@@ -1662,9 +1710,6 @@ struct progs_s {
 	pr_type_t  *pr_return;
 	pr_type_t  *pr_params[MAX_PARMS];
 	pr_type_t  *pr_real_params[MAX_PARMS];
-	pr_type_t  *pr_param_ptrs[2];
-	pr_type_t  *pr_saved_params;
-	int         pr_saved_argc;
 	int         pr_param_size;		///< covers both params and return
 	int         pr_param_alignment;	///< covers both params and return
 	///@}
