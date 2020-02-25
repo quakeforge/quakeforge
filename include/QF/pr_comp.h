@@ -50,8 +50,8 @@ typedef enum {
 	ev_type_count		// not a type, gives number of types
 } etype_t;
 
-extern pr_ushort_t pr_type_size[ev_type_count];
-extern const char *pr_type_name[ev_type_count];
+extern const pr_ushort_t pr_type_size[ev_type_count];
+extern const char * const pr_type_name[ev_type_count];
 
 #define	OFS_NULL		0
 #define	OFS_RETURN		1
@@ -407,7 +407,7 @@ typedef struct opcode_s {
 	const char	*fmt;
 } opcode_t;
 
-extern opcode_t pr_opcodes[];
+extern const opcode_t pr_opcodes[];
 opcode_t *PR_Opcode (pr_short_t opcode);
 void PR_Opcode_Init (void);	// idempotent
 

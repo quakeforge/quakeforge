@@ -46,9 +46,9 @@
 
 #include "compat.h"
 
-hashtab_t *opcode_table;
+static hashtab_t *opcode_table;
 
-VISIBLE pr_ushort_t pr_type_size[ev_type_count] = {
+VISIBLE const pr_ushort_t pr_type_size[ev_type_count] = {
 	1,			// ev_void
 	1,			// ev_string
 	1,			// ev_float
@@ -65,7 +65,7 @@ VISIBLE pr_ushort_t pr_type_size[ev_type_count] = {
 	0,			// ev_invalid      not a valid/simple type
 };
 
-VISIBLE const char *pr_type_name[ev_type_count] = {
+VISIBLE const char * const pr_type_name[ev_type_count] = {
 	"void",
 	"string",
 	"float",
@@ -98,7 +98,7 @@ VISIBLE const char *pr_type_name[ev_type_count] = {
 // c  operand c
 // x  place holder for P (padding)
 // 0-7 parameter index (for P)
-VISIBLE opcode_t pr_opcodes[] = {
+VISIBLE const opcode_t pr_opcodes[] = {
 	{"<DONE>", "done", OP_DONE, false,	// OP_DONE is actually the same as
 	 ev_entity, ev_field, ev_void,		// OP_RETURN, the types are bogus
 	 PROG_ID_VERSION,
@@ -1492,7 +1492,7 @@ PR_Opcode (pr_short_t opcode)
 VISIBLE void
 PR_Opcode_Init (void)
 {
-	opcode_t   *op;
+	const opcode_t *op;
 
 	if (opcode_table) {
 		// already initialized
@@ -1502,7 +1502,7 @@ PR_Opcode_Init (void)
 	Hash_SetHashCompare (opcode_table, opcode_get_hash, opcode_compare);
 
 	for (op = pr_opcodes; op->name; op++) {
-		Hash_AddElement (opcode_table, op);
+		Hash_AddElement (opcode_table, (void *) op);
 	}
 }
 
