@@ -86,6 +86,7 @@ typedef struct prstr_resources_s {
 	struct hashtab_s *strref_hash;
 	int         num_strings;
 	fmt_item_t *free_fmt_items;
+	dstring_t  *print_str;
 } prstr_resources_t;
 
 typedef enum {
@@ -623,10 +624,9 @@ PR_FreeTempStrings (progs_t *pr)
 	list item.
 */
 static void
-I_DoPrint (dstring_t *result, fmt_item_t *formatting)
+I_DoPrint (dstring_t *tmp, dstring_t *result, fmt_item_t *formatting)
 {
 	fmt_item_t		*current = formatting;
-	dstring_t		*tmp = dstring_new ();
 
 	while (current) {
 		qboolean	doPrecision, doWidth;
@@ -689,7 +689,6 @@ I_DoPrint (dstring_t *result, fmt_item_t *formatting)
 		}
 		current = current->next;
 	}
-	dstring_delete (tmp);
 }
 
 static fmt_item_t *
@@ -940,11 +939,13 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 			msg = "Not enough arguments for format string.";
 		else
 			msg = "Too many arguments for format string.";
-		msg = va ("%s: %d %d", msg, fmt_count, count);
+		dsprintf (res->print_str, "%s: %d %d", msg, fmt_count, count);
+		msg = res->print_str->str;
 		goto error;
 	}
 
-	I_DoPrint (result, fmt_items);
+	dstring_clear (res->print_str);
+	I_DoPrint (res->print_str, result, fmt_items);
 	while (fmt_items) {
 		fmt_item_t *t = fmt_items->next;
 		free_fmt_item (res, fmt_items);
@@ -960,6 +961,7 @@ PR_Strings_Init (progs_t *pr)
 {
 	prstr_resources_t *res = calloc (1, sizeof (*res));
 	res->pr = pr;
+	res->print_str = dstring_new ();
 
 	PR_Resources_Register (pr, "Strings", res, pr_strings_clear);
 	PR_AddLoadFunc (pr, PR_LoadStrings);
