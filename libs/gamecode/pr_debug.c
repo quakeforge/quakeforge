@@ -52,7 +52,6 @@
 #include "QF/quakefs.h"
 #include "QF/script.h"
 #include "QF/sys.h"
-#include "QF/va.h"
 #include "QF/zone.h"
 
 #include "compat.h"
@@ -74,6 +73,9 @@ typedef struct {
 typedef struct prdeb_resources_s {
 	progs_t    *pr;
 	dstring_t  *string;
+	dstring_t  *dva;
+	dstring_t  *line;
+	dstring_t  *dstr;
 	const char *debugfile;
 	struct pr_debug_header_s *debug;
 	struct pr_auxfunction_s *auxfunctions;
@@ -328,11 +330,10 @@ pr_debug_clear (progs_t *pr, void *data)
 {
 	__auto_type res = (prdeb_resources_t *) data;
 
-	if (res->string) {
-		dstring_clearstr (res->string);
-	} else {
-		res->string = dstring_newstr ();
-	}
+	dstring_clearstr (res->string);
+	dstring_clearstr (res->dva);
+	dstring_clearstr (res->line);
+	dstring_clearstr (res->dstr);
 
 	if (res->debug)
 		pr->free_progs_mem (pr, res->debug);
@@ -353,6 +354,7 @@ pr_debug_clear (progs_t *pr, void *data)
 static file_t *
 PR_Load_Source_File (progs_t *pr, const char *fname)
 {
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	char       *l, *p, **dir;
 	file_t     *f = Hash_Find (file_hash, fname);
 
@@ -362,8 +364,8 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 	if (!f)
 		return 0;
 	for (dir = source_paths; *dir && !f->text; dir++) {
-		f->text = pr->load_file (pr, va ("%s%s%s", *dir, **dir ? "/" : "",
-										 fname),
+		f->text = pr->load_file (pr, dsprintf (res->dva, "%s%s%s", *dir,
+											   **dir ? "/" : "", fname),
 								 &f->size);
 	}
 	if (!f->text) {
@@ -651,6 +653,7 @@ PR_Get_Source_File (progs_t *pr, pr_lineno_t *lineno)
 const char *
 PR_Get_Source_Line (progs_t *pr, pr_uint_t addr)
 {
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	const char *fname;
 	pr_uint_t   line;
 	file_t     *file;
@@ -670,10 +673,11 @@ PR_Get_Source_Line (progs_t *pr, pr_uint_t addr)
 	file = PR_Load_Source_File (pr, fname);
 
 	if (!file || !file->lines || !line || line > file->num_lines)
-		return va ("%s:%u", fname, line);
+		return dsprintf (res->dva, "%s:%u", fname, line);
 
-	return va ("%s:%u:%.*s", fname, line, (int)file->lines[line - 1].len,
-			   file->lines[line - 1].text);
+	return dsprintf (res->dva, "%s:%u:%.*s", fname, line,
+					 (int)file->lines[line - 1].len,
+					 file->lines[line - 1].text);
 }
 
 pr_def_t *
@@ -1210,9 +1214,9 @@ PR_Debug_Watch (progs_t *pr, const char *expr)
 VISIBLE void
 PR_Debug_Print (progs_t *pr, const char *expr)
 {
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	pr_def_t    print;
-	dstring_t  *dstr = dstring_newstr();
-	pr_debug_data_t data = {pr, dstr};
+	pr_debug_data_t data = {pr, res->dstr};
 
 	if (!expr) {
 		Sys_Printf ("print <print expr>\n");
@@ -1224,7 +1228,6 @@ PR_Debug_Print (progs_t *pr, const char *expr)
 		const char *s = global_string (&data, print.ofs, print.type, 1);
 		Sys_Printf ("[%d] = %s\n", print.ofs, s);
 	}
-	dstring_delete (dstr);
 }
 
 VISIBLE void
@@ -1235,21 +1238,13 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 	int         dump_code = contents & 2;
 	const char *fmt;
 	opcode_t   *op;
-	static dstring_t *line;
-	static dstring_t *dstr;
 	dfunction_t *call_func = 0;
 	pr_def_t   *parm_def = 0;
 	pr_auxfunction_t *aux_func = 0;
 	pr_debug_data_t data;
 
-	if (!line) {
-		line = dstring_new ();
-		dstr = dstring_new ();
-	}
-	dstring_clearstr (line);
-
 	data.pr = pr;
-	data.dstr = dstr;
+	data.dstr = res->dstr;
 
 	if (pr_debug->int_val > 1)
 		dump_code = 1;
@@ -1258,7 +1253,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 		const char *source_line = PR_Get_Source_Line (pr, addr);
 
 		if (source_line) {
-			dasprintf (line, "%s%s", source_line, dump_code ? "\n" : "");
+			dasprintf (res->line, "%s%s", source_line, dump_code ? "\n" : "");
 			if (!dump_code)
 				goto do_print;
 		}
@@ -1268,27 +1263,27 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 
 	op = PR_Opcode (s->op);
 	if (!op) {
-		Sys_Printf ("%sUnknown instruction %d\n", line->str, s->op);
+		Sys_Printf ("%sUnknown instruction %d\n", res->line->str, s->op);
 		return;
 	}
 
 	if (!(fmt = op->fmt))
 		fmt = "%Ga, %Gb, %gc";
 
-	dasprintf (line, "%04x ", addr);
+	dasprintf (res->line, "%04x ", addr);
 	if (pr_debug->int_val > 2)
-		dasprintf (line, "%02x %04x(%8s) %04x(%8s) %04x(%8s)\t",
+		dasprintf (res->line, "%02x %04x(%8s) %04x(%8s) %04x(%8s)\t",
 					s->op,
 					s->a, pr_type_name[op->type_a],
 					s->b, pr_type_name[op->type_b],
 					s->c, pr_type_name[op->type_c]);
 
-	dasprintf (line, "%s ", op->opname);
+	dasprintf (res->line, "%s ", op->opname);
 
 	while (*fmt) {
 		if (*fmt == '%') {
 			if (fmt[1] == '%') {
-				dstring_appendsubstr (line, fmt + 1, 1);
+				dstring_appendsubstr (res->line, fmt + 1, 1);
 				fmt += 2;
 			} else {
 				const char *str;
@@ -1365,10 +1360,11 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						str = global_string (&data, opval, optype, 0);
 						break;
 					case 's':
-						str = va ("%d", (short) opval);
+						str = dsprintf (res->dva, "%d", (short) opval);
 						break;
 					case 'O':
-						str = va ("%04x", addr + (short) opval);
+						str = dsprintf (res->dva, "%04x",
+										addr + (short) opval);
 						break;
 					case 'E':
 						{
@@ -1387,25 +1383,26 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 							}
 							str = global_string (&data, opval, optype,
 												 contents & 1);
-							str = va ("$%x $%x %s", s->a, s->b, str);
+							str = dsprintf (res->dva, "$%x $%x %s",
+											s->a, s->b, str);
 						}
 						break;
 					default:
 						goto err;
 				}
-				dstring_appendstr (line, str);
+				dstring_appendstr (res->line, str);
 				fmt += 3;
 				continue;
 			err:
-				dstring_appendstr (line, fmt);
+				dstring_appendstr (res->line, fmt);
 				break;
 			}
 		} else {
-			dstring_appendsubstr (line, fmt++, 1);
+			dstring_appendsubstr (res->line, fmt++, 1);
 		}
 	}
 do_print:
-	Sys_Printf ("%s\n", line->str);
+	Sys_Printf ("%s\n", res->line->str);
 }
 
 static void
@@ -1497,6 +1494,7 @@ PR_Profile (progs_t * pr)
 VISIBLE void
 ED_Print (progs_t *pr, edict_t *ed)
 {
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	int         l;
 	pr_uint_t   i, j;
 	const char *name;
@@ -1504,8 +1502,7 @@ ED_Print (progs_t *pr, edict_t *ed)
 	pr_type_t  *v;
 	qfot_type_t dummy_type = { };
 	qfot_type_t *type;
-	dstring_t  *dstr = dstring_newstr();
-	pr_debug_data_t data = {pr, dstr};
+	pr_debug_data_t data = {pr, res->dstr};
 
 	if (ed->free) {
 		Sys_Printf ("FREE\n");
@@ -1538,12 +1535,10 @@ ED_Print (progs_t *pr, edict_t *ed)
 		if (l < 1)
 			l = 1;
 
-		dstring_clearstr (dstr);
+		dstring_clearstr (res->dstr);
 		value_string (&data, type, v);
-		Sys_Printf ("%s%*s%s\n", name, l, "", dstr->str);
+		Sys_Printf ("%s%*s%s\n", name, l, "", res->dstr->str);
 	}
-
-	dstring_delete (dstr);
 }
 
 void
@@ -1551,6 +1546,10 @@ PR_Debug_Init (progs_t *pr)
 {
 	prdeb_resources_t *res = calloc (1, sizeof (*res));
 	res->pr = pr;
+	res->string = dstring_newstr ();
+	res->dva = dstring_newstr ();
+	res->line = dstring_newstr ();
+	res->dstr = dstring_newstr ();
 
 	PR_Resources_Register (pr, "PR_Debug", res, pr_debug_clear);
 	if (!file_hash) {

@@ -47,7 +47,6 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/zone.h"
-#include "QF/va.h"
 
 #include "compat.h"
 

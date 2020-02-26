@@ -42,7 +42,6 @@
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/progs.h"
-#include "QF/va.h"
 
 // format adjustments
 #define FMT_ALTFORM		(1<<0)
