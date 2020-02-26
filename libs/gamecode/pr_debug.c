@@ -1243,6 +1243,8 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 	pr_auxfunction_t *aux_func = 0;
 	pr_debug_data_t data;
 
+	dstring_clearstr (res->line);
+
 	data.pr = pr;
 	data.dstr = res->dstr;
 
