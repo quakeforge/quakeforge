@@ -7,7 +7,7 @@ nobase_pkginclude_HEADERS= \
 	\
 	draw.h key.h \
 	\
-	cbuf.h cmd.h cvar.h file.h gib.h hash.h plist.h runtime.h \
+	cbuf.h cmd.h cvar.h gib.h hash.h plist.h runtime.h \
 	Object.h Protocol.h \
 	AutoreleasePool.h Array.h Entity.h PropertyList.h Set.h \
 	\

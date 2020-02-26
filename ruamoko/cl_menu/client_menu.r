@@ -1,6 +1,5 @@
 #include "AutoreleasePool.h"
 #include "menu.h"
-#include "file.h"
 #include "cmd.h"
 #include "gib.h"
 #include "draw.h"
@@ -10,6 +9,7 @@
 #include "options.h"
 #include "servlist.h"
 #include "system.h"
+#include "qfs.h"
 #include "debug.h"
 #include "HUD.h"
 #include "client_menu.h"
@@ -137,17 +137,17 @@ void (int quick) scan_saves =
 	local QFile		f;
 	local string    line;
 	local int max = MAX_SAVEGAMES;
-	if (quick)
+	string basename = "s";
+	if (quick) {
 		max = MAX_QUICK;
+		basename = "quick";
+	}
+	string gamedir = QFS_GetDirectory();
 	for (i = 0; i < max; i++) {
 		if (!filenames[i])
 			filenames[i] = str_new ();
 		loadable[i] = 0;
-		if (quick) {
-			f = File_Open (sprintf ("quick%i.sav", i + 1), "rz");
-		} else {
-			f = File_Open (sprintf ("s%i.sav", i), "rz");
-		}
+		f = QFS_OpenFile (sprintf ("%s/%s%i.sav", gamedir, basename, i));
 		if (!f) {
 			str_copy (filenames[i], "--- UNUSED SLOT ---");
 			continue;

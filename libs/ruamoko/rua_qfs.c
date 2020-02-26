@@ -181,6 +181,12 @@ bi_QFS_FilelistFree (progs_t *pr)
 	PR_Zone_Free (pr, list);
 }
 
+static void
+bi_QFS_GetDirectory (progs_t *pr)
+{
+	RETURN_STRING (pr, qfs_gamedir->dir.def);
+}
+
 static builtin_t builtins[] = {
 	{"QFS_Open",			bi_QFS_Open,			-1},
 	{"QFS_WOpen",			bi_QFS_WOpen,			-1},
@@ -190,6 +196,7 @@ static builtin_t builtins[] = {
 	{"QFS_WriteFile",		bi_QFS_WriteFile,		-1},
 	{"QFS_Filelist",		bi_QFS_Filelist,		-1},
 	{"QFS_FilelistFree",	bi_QFS_FilelistFree,	-1},
+	{"QFS_GetDirectory",	bi_QFS_GetDirectory,	-1},
 	{0}
 };
 
