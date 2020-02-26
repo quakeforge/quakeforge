@@ -142,12 +142,13 @@ void (int quick) scan_saves =
 		max = MAX_QUICK;
 		basename = "quick";
 	}
-	string gamedir = QFS_GetDirectory();
 	for (i = 0; i < max; i++) {
 		if (!filenames[i])
 			filenames[i] = str_new ();
 		loadable[i] = 0;
-		f = QFS_OpenFile (sprintf ("%s/%s%i.sav", gamedir, basename, i));
+		string path = sprintf ("%s%i.sav", basename, i);
+		dprint(path + "\n");
+		f = QFS_OpenFile (path);
 		if (!f) {
 			str_copy (filenames[i], "--- UNUSED SLOT ---");
 			continue;
