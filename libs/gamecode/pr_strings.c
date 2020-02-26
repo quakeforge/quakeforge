@@ -44,44 +44,6 @@
 #include "QF/progs.h"
 #include "QF/va.h"
 
-typedef struct strref_slot_s {
-	struct strref_slot_s *next;
-	struct strref_slot_s **prev;
-	strref_t   *strref;
-} strref_slot_t;
-
-typedef struct prstr_resources_s {
-	progs_t    *pr;
-	dstring_mem_t ds_mem;
-	strref_t   *free_string_refs;
-	strref_t   *static_strings;
-	strref_t  **string_map;
-	strref_slot_t return_strings[PR_RS_SLOTS];
-	strref_slot_t *rs_slot;
-	unsigned    dyn_str_size;
-	struct hashtab_s *strref_hash;
-	int         num_strings;
-} prstr_resources_t;
-
-typedef enum {
-	str_free,
-	str_static,
-	str_dynamic,
-	str_mutable,
-	str_temp,
-	str_return,
-} str_e;
-
-struct strref_s {
-	strref_t   *next;
-	strref_slot_t *rs_slot;
-	str_e       type;
-	union {
-		char       *string;
-		dstring_t  *dstring;
-	} s;
-};
-
 // format adjustments
 #define FMT_ALTFORM		(1<<0)
 #define FMT_LJUSTIFY	(1<<1)
@@ -106,7 +68,44 @@ typedef struct fmt_item_s {
 	struct fmt_item_s *next;
 } fmt_item_t;
 
-static fmt_item_t *free_fmt_items;
+typedef struct strref_slot_s {
+	struct strref_slot_s *next;
+	struct strref_slot_s **prev;
+	strref_t   *strref;
+} strref_slot_t;
+
+typedef struct prstr_resources_s {
+	progs_t    *pr;
+	dstring_mem_t ds_mem;
+	strref_t   *free_string_refs;
+	strref_t   *static_strings;
+	strref_t  **string_map;
+	strref_slot_t return_strings[PR_RS_SLOTS];
+	strref_slot_t *rs_slot;
+	unsigned    dyn_str_size;
+	struct hashtab_s *strref_hash;
+	int         num_strings;
+	fmt_item_t *free_fmt_items;
+} prstr_resources_t;
+
+typedef enum {
+	str_free,
+	str_static,
+	str_dynamic,
+	str_mutable,
+	str_temp,
+	str_return,
+} str_e;
+
+struct strref_s {
+	strref_t   *next;
+	strref_slot_t *rs_slot;
+	str_e       type;
+	union {
+		char       *string;
+		dstring_t  *dstring;
+	} s;
+};
 
 static void *
 pr_strings_alloc (void *_pr, size_t size)
@@ -694,30 +693,30 @@ I_DoPrint (dstring_t *result, fmt_item_t *formatting)
 }
 
 static fmt_item_t *
-new_fmt_item (void)
+new_fmt_item (prstr_resources_t *res)
 {
 	int        i;
 	fmt_item_t *fi;
 
-	if (!free_fmt_items) {
-		free_fmt_items = malloc (16 * sizeof (fmt_item_t));
+	if (!res->free_fmt_items) {
+		res->free_fmt_items = malloc (16 * sizeof (fmt_item_t));
 		for (i = 0; i < 15; i++)
-			free_fmt_items[i].next = free_fmt_items + i + 1;
-		free_fmt_items[i].next = 0;
+			res->free_fmt_items[i].next = res->free_fmt_items + i + 1;
+		res->free_fmt_items[i].next = 0;
 	}
 
-	fi = free_fmt_items;
-	free_fmt_items = fi->next;
+	fi = res->free_fmt_items;
+	res->free_fmt_items = fi->next;
 	memset (fi, 0, sizeof (*fi));
 	fi->precision = -1;
 	return fi;
 }
 
 static void
-free_fmt_item (fmt_item_t *fi)
+free_fmt_item (prstr_resources_t *res, fmt_item_t *fi)
 {
-	fi->next = free_fmt_items;
-	free_fmt_items = fi;
+	fi->next = res->free_fmt_items;
+	res->free_fmt_items = fi;
 }
 
 #undef P_var
@@ -728,6 +727,7 @@ VISIBLE void
 PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 			const char *format, int count, pr_type_t **args)
 {
+	prstr_resources_t *res = pr->pr_string_resources;
 	const char *c, *l;
 	const char *msg = "";
 	fmt_item_t *fmt_items = 0;
@@ -737,7 +737,7 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 	if (!name)
 		name = "PR_Sprintf";
 
-	*fi = new_fmt_item ();
+	*fi = new_fmt_item (res);
 	c = l = format;
 	while (*c) {
 		if (*c++ == '%') {
@@ -747,14 +747,14 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 				(*fi)->type = 's';
 				(*fi)->data.string_var = l;
 
-				(*fi)->next = new_fmt_item ();
+				(*fi)->next = new_fmt_item (res);
 				fi = &(*fi)->next;
 			}
 			if (*c == '%') {
 				(*fi)->type = 's';
 				(*fi)->data.string_var = "%";
 
-				(*fi)->next = new_fmt_item ();
+				(*fi)->next = new_fmt_item (res);
 				fi = &(*fi)->next;
 			} else {
 				do {
@@ -802,7 +802,7 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 						case '@':
 							// object
 							fmt_count++;
-							(*fi)->next = new_fmt_item ();
+							(*fi)->next = new_fmt_item (res);
 							fi = &(*fi)->next;
 							break;
 						case 'e':
@@ -812,7 +812,7 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 								P_EDICTNUM (pr, fmt_count);
 
 							fmt_count++;
-							(*fi)->next = new_fmt_item ();
+							(*fi)->next = new_fmt_item (res);
 							fi = &(*fi)->next;
 							break;
 						case 'i':
@@ -823,7 +823,7 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 							(*fi)->data.integer_var = P_INT (pr, fmt_count);
 
 							fmt_count++;
-							(*fi)->next = new_fmt_item ();
+							(*fi)->next = new_fmt_item (res);
 							fi = &(*fi)->next;
 							break;
 						case 'f':
@@ -842,7 +842,7 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 							}
 
 							fmt_count++;
-							(*fi)->next = new_fmt_item ();
+							(*fi)->next = new_fmt_item (res);
 							fi = &(*fi)->next;
 							break;
 						case 'p':
@@ -852,7 +852,7 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 							(*fi)->data.uinteger_var = P_UINT (pr, fmt_count);
 
 							fmt_count++;
-							(*fi)->next = new_fmt_item ();
+							(*fi)->next = new_fmt_item (res);
 							fi = &(*fi)->next;
 							break;
 						case 's':
@@ -861,7 +861,7 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 							(*fi)->data.string_var = P_GSTRING (pr, fmt_count);
 
 							fmt_count++;
-							(*fi)->next = new_fmt_item ();
+							(*fi)->next = new_fmt_item (res);
 							fi = &(*fi)->next;
 							break;
 						case 'v':
@@ -888,7 +888,7 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 										(*fi)->type = 's';
 										(*fi)->data.string_var = " ";
 									}
-									(*fi)->next = new_fmt_item ();
+									(*fi)->next = new_fmt_item (res);
 									fi = &(*fi)->next;
 
 									(*fi)->flags = flags;
@@ -898,7 +898,7 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 									(*fi)->data.float_var =
 										P_VECTOR (pr, fmt_count)[i];
 
-									(*fi)->next = new_fmt_item ();
+									(*fi)->next = new_fmt_item (res);
 									fi = &(*fi)->next;
 								}
 							}
@@ -907,7 +907,7 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 							(*fi)->data.string_var = "'";
 
 							fmt_count++;
-							(*fi)->next = new_fmt_item ();
+							(*fi)->next = new_fmt_item (res);
 							fi = &(*fi)->next;
 							break;
 						case 'x':
@@ -916,7 +916,7 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 							(*fi)->data.uinteger_var = P_UINT (pr, fmt_count);
 
 							fmt_count++;
-							(*fi)->next = new_fmt_item ();
+							(*fi)->next = new_fmt_item (res);
 							fi = &(*fi)->next;
 							break;
 					}
@@ -932,7 +932,7 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 		(*fi)->type = 's';
 		(*fi)->data.string_var = l;
 
-		(*fi)->next = new_fmt_item ();
+		(*fi)->next = new_fmt_item (res);
 	}
 
 	if (fmt_count != count) {
@@ -947,7 +947,7 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 	I_DoPrint (result, fmt_items);
 	while (fmt_items) {
 		fmt_item_t *t = fmt_items->next;
-		free_fmt_item (fmt_items);
+		free_fmt_item (res, fmt_items);
 		fmt_items = t;
 	}
 	return;
