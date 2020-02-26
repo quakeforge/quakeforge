@@ -396,6 +396,7 @@ typedef enum {
 	OP_MOD_F,
 	OP_MOD_D,
 } pr_opcode_e;
+#define OP_BREAK 0x8000
 
 typedef struct opcode_s {
 	const char	*name;

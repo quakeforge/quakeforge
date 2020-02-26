@@ -440,7 +440,16 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 		if (pr->pr_trace)
 			PR_PrintStatement (pr, st, 1);
 
-		switch (st->op) {
+		if (st->op & OP_BREAK) {
+			if (pr->breakpoint_handler) {
+				pr->breakpoint_handler (pr);
+			} else {
+				PR_RunError (pr, "breakpoint hit");
+			}
+		}
+
+		pr_opcode_e op = st->op & ~OP_BREAK;
+		switch (op) {
 			case OP_ADD_D:
 				OPC_double_var = OPA_double_var + OPB_double_var;
 				break;

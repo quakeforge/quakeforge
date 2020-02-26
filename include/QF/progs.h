@@ -1776,6 +1776,7 @@ struct progs_s {
 	/// \name debugging
 	///@{
 	struct prdeb_resources_s *pr_debug_resources;
+	void      (*breakpoint_handler) (progs_t *pr);
 	pr_type_t  *watch;
 	int         wp_conditional;
 	pr_type_t   wp_val;
