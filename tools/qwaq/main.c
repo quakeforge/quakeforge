@@ -152,7 +152,7 @@ main (int argc, const char **argv)
 {
 	dfunction_t *dfunc;
 	func_t      main_func = 0;
-	const char *name = "qwaq.dat";
+	const char *name = "qwaq-app.dat";
 	string_t   *pr_argv;
 	int         pr_argc = 1, i;
 
@@ -162,8 +162,9 @@ main (int argc, const char **argv)
 	if (argc > 1)
 		name = argv[1];
 
-	if (!load_progs (name))
+	if (!load_progs (name)) {
 		Sys_Error ("couldn't load %s", name);
+	}
 
 	PR_PushFrame (&pr);
 	if (argc > 2)
@@ -185,5 +186,6 @@ main (int argc, const char **argv)
 	pr.pr_argc = 2;
 	PR_ExecuteProgram (&pr, main_func);
 	PR_PopFrame (&pr);
+	Sys_Shutdown ();
 	return R_INT (&pr);
 }

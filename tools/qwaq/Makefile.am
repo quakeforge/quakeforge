@@ -1,15 +1,25 @@
+AUTOMAKE_OPTIONS= foreign
+
 QWAQ_LIBS=@QWAQ_LIBS@
 QWAQ_DEPS=@QWAQ_DEPS@
 QWAQ_INCS=@QWAQ_INCS@
 
 AM_CPPFLAGS=	-I$(top_srcdir)/include $(QWAQ_INCS) $(PTHREAD_CFLAGS)
 
+noinst_PROGRAMS=@QWAQ_TARGETS@ qwaq-app.dat$(EXEEXT)
+
 QFCC_DEP=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)
 QFCC=$(top_builddir)/tools/qfcc/source/qfcc
-QCFLAGS=-qq -O -g -Werror --advanced --no-default-paths
 
-noinst_PROGRAMS=@QWAQ_TARGETS@
-noinst_DATA= #qwaq.dat
+QCFLAGS=-qq -O -g -Werror
+QCPPFLAGS=--no-default-paths -I$(top_srcdir)/ruamoko/include
+QCOMPILE=$(QFCC) $(QCFLAGS) $(QCPPFLAGS)
+
+SUFFIXES=.o .r
+.r.o:
+	$(QCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tqo -c -o $@ $<
+	sed -i -e '1s@:@: $(QFCC_DEP)@' $(DEPDIR)/$*.Tqo
+	$(am__mv) $(DEPDIR)/$*.Tqo $(DEPDIR)/$*.Qo
 
 qwaq_dat_src= \
 	$e
@@ -45,8 +55,21 @@ qwaq_x11_LDADD= $(qwaq_x11_libs) $(QWAQ_LIBS) \
 qwaq_x11_LDFLAGS=
 qwaq_x11_DEPENDENCIES= $(qwaq_x11_libs) $(QWAQ_DEPS)
 
-#qwaq.dat: $(qwaq_dat_src) $(QFCC_DEP) $(top_srcdir)/ruamoko/lib/Object.r
-#	$(QFCC) $(QCFLAGS) -I$(top_srcdir)/ruamoko/include
+r_depfiles_remade=
+
+qwaq_app_dat_SOURCES=qwaq-app.r
+qwaq_app_obj=$(qwaq_app_dat_SOURCES:.r=.o)
+qwaq_app_dep=$(addprefix ./$(DEPDIR)/,$(qwaq_app_obj:.o=.Qo))
+qwaq-app.dat$(EXEEXT): $(qwaq_app_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(qwaq_app_obj)
+include $(qwaq_app_dep) # am--include-marker
+r_depfiles_remade += $(qwaq_app_dep)
+
+$(r_depfiles_remade):
+	@$(MKDIR_P) $(@D)
+	@echo '# dummy' >$@-t && $(am__mv) $@-t $@
+
+am--depfiles: $(am__depfiles_remade) $(r_depfiles_remade)
 
 EXTRA_PROGRAMS=qwaq-curses qwaq-x11
 EXTRA_DIST=$(qwaq_dat_src) qwaq.h
