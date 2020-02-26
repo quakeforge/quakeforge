@@ -44,14 +44,20 @@
 #include "QF/progs.h"
 #include "QF/va.h"
 
+typedef struct strref_slot_s {
+	struct strref_slot_s *next;
+	struct strref_slot_s **prev;
+	strref_t   *strref;
+} strref_slot_t;
+
 typedef struct prstr_resources_s {
 	progs_t    *pr;
 	dstring_mem_t ds_mem;
 	strref_t   *free_string_refs;
 	strref_t   *static_strings;
 	strref_t  **string_map;
-	strref_t   *return_strings[PR_RS_SLOTS];
-	int         rs_slot;
+	strref_slot_t return_strings[PR_RS_SLOTS];
+	strref_slot_t *rs_slot;
 	unsigned    dyn_str_size;
 	struct hashtab_s *strref_hash;
 	int         num_strings;
@@ -68,7 +74,7 @@ typedef enum {
 
 struct strref_s {
 	strref_t   *next;
-	strref_t  **prev;
+	strref_slot_t *rs_slot;
 	str_e       type;
 	union {
 		char       *string;
@@ -146,6 +152,7 @@ new_string_ref (prstr_resources_t *res)
 	sr = res->free_string_refs;
 	res->free_string_refs = sr->next;
 	sr->next = 0;
+	sr->rs_slot = 0;
 	return sr;
 }
 
@@ -153,8 +160,6 @@ static void
 free_string_ref (prstr_resources_t *res, strref_t *sr)
 {
 	sr->type = str_free;
-	if (sr->prev)
-		*sr->prev = sr->next;
 	sr->next = res->free_string_refs;
 	res->free_string_refs = sr;
 }
@@ -208,11 +213,18 @@ pr_strings_clear (progs_t *pr, void *data)
 	int         i;
 
 	for (i = 0; i < PR_RS_SLOTS; i++) {
-		if (res->return_strings[i])
-			free_string_ref (res, res->return_strings[i]);
-		res->return_strings[i] = 0;
+		if (res->return_strings[i].strref)
+			free_string_ref (res, res->return_strings[i].strref);
+		res->return_strings[i].strref = 0;
 	}
-	res->rs_slot = 0;
+	if (!res->rs_slot) {
+		strref_slot_t * const rs = res->return_strings;
+		for (i = 0; i < PR_RS_SLOTS; i++) {
+			rs[i].next = &rs[(i + 1) % PR_RS_SLOTS];
+			rs[i].prev = &rs[(i - 1 + PR_RS_SLOTS) % PR_RS_SLOTS].next;
+		}
+		res->rs_slot = rs;
+	}
 
 	pr->pr_string_resources = res;
 	pr->pr_xtstr = 0;
@@ -265,6 +277,28 @@ PR_LoadStrings (progs_t *pr)
 	return 1;
 }
 
+static void
+requeue_strref (prstr_resources_t *res, strref_t *sr)
+{
+	strref_slot_t *rs_slot = sr->rs_slot;
+	if (rs_slot->next != res->rs_slot) {
+		// this is the oldest slot, so advance res->rs_slot to the
+		// next oldest slot so this slot does not get reused just yet
+		if (res->rs_slot == rs_slot) {
+			res->rs_slot = rs_slot->next;
+		}
+		// unlink this slot from the chain
+		rs_slot->next->prev = rs_slot->prev;
+		*rs_slot->prev = rs_slot->next;
+		// link this slot just before the oldest slot: all the slots
+		// form a doubly linked circular list
+		rs_slot->prev = res->rs_slot->prev;
+		rs_slot->next = res->rs_slot;
+		*res->rs_slot->prev = rs_slot;
+		res->rs_slot->prev = &rs_slot->next;
+	}
+}
+
 static inline strref_t *
 get_strref (prstr_resources_t *res, string_t num)
 {
@@ -287,15 +321,17 @@ get_strref (prstr_resources_t *res, string_t num)
 static inline __attribute__((pure)) const char *
 get_string (progs_t *pr, string_t num)
 {
+	__auto_type res = pr->pr_string_resources;
 	if (num < 0) {
-		strref_t   *ref = get_strref (pr->pr_string_resources, num);
+		strref_t   *ref = get_strref (res, num);
 		if (!ref)
 			return 0;
 		switch (ref->type) {
+			case str_return:
+				requeue_strref (res, ref);
 			case str_static:
 			case str_temp:
 			case str_dynamic:
-			case str_return:
 				return ref->s.string;
 			case str_mutable:
 				return ref->s.dstring->str;
@@ -313,7 +349,7 @@ get_string (progs_t *pr, string_t num)
 VISIBLE qboolean
 PR_StringValid (progs_t *pr, string_t num)
 {
-	return get_string (pr, num) != 0;
+	return get_strref (pr->pr_string_resources, num) != 0;
 }
 
 VISIBLE const char *
@@ -387,21 +423,32 @@ PR_SetReturnString (progs_t *pr, const char *s)
 	if (!s)
 		s = "";
 	if ((sr = Hash_Find (res->strref_hash, s))) {
+		if (sr->type == str_return && sr->rs_slot) {
+			requeue_strref (res, sr);
+		} else if ((sr->type == str_return && !sr->rs_slot)
+				   || (sr->type != str_return && sr->rs_slot)) {
+			PR_Error (pr, "internal string error");
+		}
 		return string_index (res, sr);
 	}
 
-	if ((sr = res->return_strings[res->rs_slot])) {
-		if (sr->type != str_return)
+	// grab the string ref from the oldest slot, or make a new one if the
+	// slot is empty
+	if ((sr = res->rs_slot->strref)) {
+		if (sr->type != str_return || sr->rs_slot != res->rs_slot) {
 			PR_Error (pr, "internal string error");
+		}
 		pr_strfree (pr, sr->s.string);
 	} else {
 		sr = new_string_ref (res);
 	}
 	sr->type = str_return;
+	sr->rs_slot = res->rs_slot;
 	sr->s.string = pr_strdup(pr, s);
 
-	res->return_strings[res->rs_slot++] = sr;
-	res->rs_slot %= PR_RS_SLOTS;
+	// the oldest slot just became the newest, so advance to the next oldest
+	res->rs_slot = res->rs_slot->next;
+
 	return string_index (res, sr);
 }
 
@@ -525,8 +572,7 @@ PR_FreeString (progs_t *pr, string_t str)
 		free_string_ref (res, sr);
 		return;
 	}
-	if (!get_string (pr, str))
-		PR_RunError (pr, "attempt to free invalid string %d", str);
+	PR_RunError (pr, "attempt to free invalid string %d", str);
 }
 
 void
