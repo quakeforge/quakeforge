@@ -197,12 +197,6 @@ source_path_f (cvar_t *var)
 	source_paths[i] = 0;
 }
 
-static void
-pr_debug_expression_error (script_t *script, const char *msg)
-{
-	Sys_Printf ("%s\n", msg);
-}
-
 #define RUP(x,a) (((x) + ((a) - 1)) & ~((a) - 1))
 static pr_short_t __attribute__((pure))
 pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
@@ -266,7 +260,6 @@ parse_expression (progs_t *pr, const char *expr, int conditional)
 	d.type = ev_invalid;
 	d.name = 0;
 	es = Script_New ();
-	es->error = pr_debug_expression_error;
 	Script_Start (es, "<console>", expr);
 	expr_ptr = 0;
 	es->single = "{}()':[].";
@@ -323,6 +316,9 @@ parse_expression (progs_t *pr, const char *expr, int conditional)
 			Sys_Printf ("ignoring tail\n");
 	}
 error:
+	if (es->error) {
+		Sys_Printf (es->error);
+	}
 	Script_Delete (es);
 	return d;
 }
