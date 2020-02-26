@@ -291,7 +291,7 @@ cast_error (expr_t *e, type_t *t1, type_t *t2)
 	print_type_str (s1, t1);
 	print_type_str (s2, t2);
 
-	e =  error (e, "can not cast from %s to %s", s1->str, s2->str);
+	e =  error (e, "cannot cast from %s to %s", s1->str, s2->str);
 	dstring_delete (s1);
 	dstring_delete (s2);
 	return e;
@@ -2385,11 +2385,11 @@ cast_expr (type_t *type, expr_t *e)
 		c = new_alias_expr (type, e);
 		return c;
 	}
-	if (!(type->type == ev_pointer
-		  && (e_type->type == ev_pointer || is_integral (e_type)
+	if (!(is_pointer (type)
+		  && (is_pointer (e_type) || is_integral (e_type)
 			  || is_array (e_type)))
-		&& !(is_integral (type) && e_type->type == ev_pointer)
-		&& !(type->type == ev_func && e_type->type == ev_func)
+		&& !(is_integral (type) && is_pointer (e_type))
+		&& !(is_func (type) && is_func (e_type))
 		&& !(is_scalar (type) && is_scalar (e_type))) {
 		return cast_error (e, e_type, type);
 	}
