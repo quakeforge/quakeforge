@@ -151,6 +151,7 @@ bi_wprintf (progs_t *pr)
 	int         count = pr->pr_argc - 2;
 	pr_type_t **args = pr->pr_params + 2;
 
+	dstring_clearstr (res->print_buffer);
 	PR_Sprintf (pr, res->print_buffer, "bi_wprintf", fmt, count, args);
 	waddstr (window->win, res->print_buffer->str);
 	wrefresh (window->win);
