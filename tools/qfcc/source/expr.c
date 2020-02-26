@@ -2362,41 +2362,41 @@ think_expr (symbol_t *think_sym)
 }
 
 expr_t *
-cast_expr (type_t *type, expr_t *e)
+cast_expr (type_t *dstType, expr_t *e)
 {
 	expr_t    *c;
-	type_t    *e_type;
+	type_t    *srcType;
 
 	convert_name (e);
 
 	if (e->type == ex_error)
 		return e;
 
-	e_type = get_type (e);
+	srcType = get_type (e);
 
-	if (type == e_type)
+	if (dstType == srcType)
 		return e;
 
-	if ((type == type_default && is_enum (e_type))
-		|| (is_enum (type) && e_type == type_default))
+	if ((dstType == type_default && is_enum (srcType))
+		|| (is_enum (dstType) && srcType == type_default))
 		return e;
-	if ((is_pointer (type) && is_string (e_type))
-		|| (is_string (type) && is_pointer (e_type))) {
-		c = new_alias_expr (type, e);
+	if ((is_pointer (dstType) && is_string (srcType))
+		|| (is_string (dstType) && is_pointer (srcType))) {
+		c = new_alias_expr (dstType, e);
 		return c;
 	}
-	if (!(is_pointer (type)
-		  && (is_pointer (e_type) || is_integral (e_type)
-			  || is_array (e_type)))
-		&& !(is_integral (type) && is_pointer (e_type))
-		&& !(is_func (type) && is_func (e_type))
-		&& !(is_scalar (type) && is_scalar (e_type))) {
-		return cast_error (e, e_type, type);
+	if (!(is_pointer (dstType)
+		  && (is_pointer (srcType) || is_integral (srcType)
+			  || is_array (srcType)))
+		&& !(is_integral (dstType) && is_pointer (srcType))
+		&& !(is_func (dstType) && is_func (srcType))
+		&& !(is_scalar (dstType) && is_scalar (srcType))) {
+		return cast_error (e, srcType, dstType);
 	}
-	if (is_array (e_type)) {
-		return address_expr (e, 0, type->t.fldptr.type);
+	if (is_array (srcType)) {
+		return address_expr (e, 0, dstType->t.fldptr.type);
 	}
-	if (is_constant (e) && is_scalar (type) && is_scalar (e_type)) {
+	if (is_constant (e) && is_scalar (dstType) && is_scalar (srcType)) {
 		ex_value_t *val = 0;
 		if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const) {
 			val = e->e.symbol->s.value;
@@ -2416,24 +2416,24 @@ cast_expr (type_t *type, expr_t *e)
 		} else if (e->type == ex_value) {
 			val = e->e.value;
 		} else if (e->type == ex_nil) {
-			convert_nil (e, type);
+			convert_nil (e, dstType);
 			return e;
 		}
 		if (!val)
 			internal_error (e, "unexpected constant expression type");
-		e->e.value = convert_value (val, type);
+		e->e.value = convert_value (val, dstType);
 		e->type = ex_value;
 		c = e;
-	} else if (is_integral (type) && is_integral (e_type)) {
-		c = new_alias_expr (type, e);
-	} else if (is_scalar (type) && is_scalar (e_type)) {
+	} else if (is_integral (dstType) && is_integral (srcType)) {
+		c = new_alias_expr (dstType, e);
+	} else if (is_scalar (dstType) && is_scalar (srcType)) {
 		c = new_unary_expr ('C', e);
-		c->e.expr.type = type;
+		c->e.expr.type = dstType;
 	} else if (e->type == ex_uexpr && e->e.expr.op == '.') {
-		e->e.expr.type = type;
+		e->e.expr.type = dstType;
 		c = e;
 	} else {
-		c = new_alias_expr (type, e);
+		c = new_alias_expr (dstType, e);
 	}
 	return c;
 }
