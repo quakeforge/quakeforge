@@ -348,6 +348,9 @@ get_string (progs_t *pr, string_t num)
 VISIBLE qboolean
 PR_StringValid (progs_t *pr, string_t num)
 {
+	if (num >= 0) {
+		return num < pr->pr_stringsize;
+	}
 	return get_strref (pr->pr_string_resources, num) != 0;
 }
 
