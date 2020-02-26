@@ -2,21 +2,24 @@ QWAQ_LIBS=@QWAQ_LIBS@
 QWAQ_DEPS=@QWAQ_DEPS@
 QWAQ_INCS=@QWAQ_INCS@
 
-AM_CPPFLAGS=	-I$(top_srcdir)/include $(QWAQ_INCS)
+AM_CPPFLAGS=	-I$(top_srcdir)/include $(QWAQ_INCS) $(PTHREAD_CFLAGS)
 
 QFCC_DEP=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)
 QFCC=$(top_builddir)/tools/qfcc/source/qfcc
 QCFLAGS=-qq -O -g -Werror --advanced --no-default-paths
 
-noinst_PROGRAMS=qwaq @QWAQ_TARGETS@
-noinst_DATA=qwaq.dat
+noinst_PROGRAMS=@QWAQ_TARGETS@
+noinst_DATA= #qwaq.dat
 
 qwaq_dat_src= \
-	defs.qc main.qc test.r types.r
+	$e
 
-qwaq_SOURCES= main.c builtins.c
-qwaq_LDADD= $(QWAQ_LIBS)
-qwaq_DEPENDENCIES= $(QWAQ_DEPS)
+qwaq_curses_libs=
+qwaq_curses_SOURCES=main.c qwaq-curses.c
+qwaq_curses_LDADD= $(qwaq_curses_libs) $(QWAQ_LIBS) \
+				$(PANEL_LIBS) $(CURSES_LIBS) $(PTHREAD_LDFLAGS) $(DL_LIBS)
+qwaq_curses_LDFLAGS=
+qwaq_curses_DEPENDENCIES= $(qwaq_curses_libs) $(QWAQ_DEPS)
 
 cl_plugin_libs= \
 	@client_static_plugin_libs@
@@ -42,9 +45,9 @@ qwaq_x11_LDADD= $(qwaq_x11_libs) $(QWAQ_LIBS) \
 qwaq_x11_LDFLAGS=
 qwaq_x11_DEPENDENCIES= $(qwaq_x11_libs) $(QWAQ_DEPS)
 
-qwaq.dat: progs.src $(qwaq_dat_src) $(QFCC_DEP) $(top_srcdir)/ruamoko/lib/Object.r
-	$(QFCC) $(QCFLAGS) -I$(top_srcdir)/ruamoko/include
+#qwaq.dat: $(qwaq_dat_src) $(QFCC_DEP) $(top_srcdir)/ruamoko/lib/Object.r
+#	$(QFCC) $(QCFLAGS) -I$(top_srcdir)/ruamoko/include
 
-EXTRA_PROGRAMS=qwaq-x11
+EXTRA_PROGRAMS=qwaq-curses qwaq-x11
 EXTRA_DIST=$(qwaq_dat_src) qwaq.h
 CLEANFILES= *.dat *.sym

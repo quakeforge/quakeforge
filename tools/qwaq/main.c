@@ -33,23 +33,26 @@
 
 #include <stdlib.h>
 
-#include <QF/cmd.h>
-#include <QF/cvar.h>
-#include <QF/progs.h>
-#include <QF/quakefs.h>
+#include "QF/cbuf.h"
+#include "QF/cmd.h"
+#include "QF/cvar.h"
+#include "QF/gib.h"
+#include "QF/idparse.h"
+#include "QF/progs.h"
+#include "QF/qargs.h"
+#include "QF/quakefs.h"
 #include "QF/ruamoko.h"
-#include <QF/sys.h>
+#include "QF/sys.h"
 #include "QF/va.h"
-#include <QF/zone.h>
+#include "QF/zone.h"
 
 #include "qwaq.h"
 
 #define MAX_EDICTS 1024
 
-static edict_t *edicts;
-static int num_edicts;
-static int reserved_edicts;
 static progs_t pr;
+
+cbuf_t *qwaq_cbuf;
 
 static QFile *
 open_file (const char *path, int *len)
@@ -100,17 +103,18 @@ free_progs_mem (progs_t *pr, void *mem)
 static void
 init_qf (void)
 {
-	Sys_Init ();
-	//Cvar_Get ("developer", "128", 0, 0, 0);
+	qwaq_cbuf = Cbuf_New (&id_interp);
 
-	Memory_Init (malloc (1024 * 1024), 1024 * 1024);
+	Sys_Init ();
+	COM_ParseConfig ();
+
+	//Cvar_Set (developer, "1");
+
+	Memory_Init (malloc (8 * 1024 * 1024), 8 * 1024 * 1024);
 
 	Cvar_Get ("pr_debug", "2", 0, 0, 0);
 	Cvar_Get ("pr_boundscheck", "0", 0, 0, 0);
 
-	pr.edicts = &edicts;
-	pr.num_edicts = &num_edicts;
-	pr.reserved_edicts = &reserved_edicts;
 	pr.load_file = load_file;
 	pr.allocate_progs_mem = allocate_progs_mem;
 	pr.free_progs_mem = free_progs_mem;
@@ -119,7 +123,7 @@ init_qf (void)
 	PR_Init_Cvars ();
 	PR_Init (&pr);
 	RUA_Init (&pr, 0);
-	PR_Cmds_Init(&pr);
+	PR_Cmds_Init (&pr);
 	BI_Init (&pr);
 }
 
@@ -144,7 +148,7 @@ load_progs (const char *name)
 }
 
 int
-main (int argc, char **argv)
+main (int argc, const char **argv)
 {
 	dfunction_t *dfunc;
 	func_t      main_func = 0;
@@ -152,6 +156,7 @@ main (int argc, char **argv)
 	string_t   *pr_argv;
 	int         pr_argc = 1, i;
 
+	COM_InitArgv (argc, argv);
 	init_qf ();
 
 	if (argc > 1)

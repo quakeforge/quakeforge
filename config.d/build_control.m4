@@ -227,7 +227,10 @@ if test "x$ENABLE_tools_qfvis" = xyes; then
 	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qwaq" = xyes; then
-	QF_NEED(tools,[qwaq])
+	if test "x$HAVE_PANEL" = xyes -a "x$HAVE_PTHREAD" = xyes; then
+		QWAQ_TARGETS="$QWAQ_TARGETS qwaq-curses\$(EXEEXT)"
+	fi
+	QF_NEED(tools,[qfcc qwaq])
 	QF_NEED(libs,[ruamoko gamecode util])
 fi
 if test "x$ENABLE_tools_wad" = xyes; then
