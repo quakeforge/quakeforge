@@ -2374,7 +2374,7 @@ cast_expr (type_t *dstType, expr_t *e)
 
 	srcType = get_type (e);
 
-	if (dstType == srcType)
+	if (unalias_type (dstType) == unalias_type (srcType))
 		return e;
 
 	if ((dstType == type_default && is_enum (srcType))
