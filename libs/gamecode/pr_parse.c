@@ -43,21 +43,12 @@
 #include <malloc.h>
 #endif
 
-#include "QF/cbuf.h"
-#include "QF/crc.h"
-#include "QF/cvar.h"
 #include "QF/dstring.h"
-#include "QF/hash.h"
 #include "QF/mathlib.h"
 #include "QF/progs.h"
-#include "QF/qdefs.h"
 #include "QF/qfplist.h"
-#include "QF/qendian.h"
-#include "QF/quakefs.h"
 #include "QF/script.h"
 #include "QF/sys.h"
-#include "QF/zone.h"
-#include "QF/va.h"
 
 #include "compat.h"
 
@@ -301,6 +292,7 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key, const char *s)
 VISIBLE plitem_t *
 ED_ConvertToPlist (script_t *script, int nohack)
 {
+	dstring_t  *dstr = dstring_newstr ();
 	plitem_t   *plist = PL_NewArray ();
 	plitem_t   *ent;
 	plitem_t   *key;
@@ -341,15 +333,18 @@ ED_ConvertToPlist (script_t *script, int nohack)
 			token = script->token->str;
 			if (strequal (token, "}"))
 				Sys_Error ("ED_ConvertToPlist: closing brace without data");
-			if (anglehack)
-				value = PL_NewString (va ("0 %s 0", token));
-			else
+			if (anglehack) {
+				dsprintf (dstr, "0 %s 0", token);
+				value = PL_NewString (dstr->str);
+			} else {
 				value = PL_NewString (token);
+			}
 			PL_D_AddObject (ent, PL_String (key), value);
 			PL_Free (key);
 		}
 		PL_A_AddObject (plist, ent);
 	}
+	dstring_delete (dstr);
 	return plist;
 }
 

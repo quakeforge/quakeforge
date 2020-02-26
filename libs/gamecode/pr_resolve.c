@@ -34,23 +34,14 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-#include <stdarg.h>
-#include <stdio.h>
 
-#include "QF/cmd.h"
-#include "QF/crc.h"
-#include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/progs.h"
-#include "QF/qdefs.h"
-#include "QF/qendian.h"
-#include "QF/quakefs.h"
 #include "QF/sys.h"
-#include "QF/zone.h"
-#include "QF/va.h"
 
 #include "compat.h"
 
+static const char param_str[] = ".param_0";
 
 pr_def_t *
 PR_GlobalAtOfs (progs_t * pr, pointer_t ofs)
@@ -124,11 +115,14 @@ PR_ResolveGlobals (progs_t *pr)
 		pr->pr_param_size = OFS_PARM1 - OFS_PARM0;
 		pr->pr_param_alignment = 0;	// log2
 	} else {
+		char       *param_n = alloca (sizeof (param_str));
+		strcpy (param_n, param_str);
 		if (!(def = PR_FindGlobal (pr, sym = ".return")))
 			goto error;
 		pr->pr_return = &pr->pr_globals[def->ofs];
 		for (i = 0; i < MAX_PARMS; i++) {
-			if (!(def = PR_FindGlobal (pr, sym = va(".param_%d", i))))
+			param_n[sizeof (param_str) - 2] = i + '0';
+			if (!(def = PR_FindGlobal (pr, sym = param_n)))
 				goto error;
 			pr->pr_params[i] = &pr->pr_globals[def->ofs];
 		}

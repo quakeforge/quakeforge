@@ -34,22 +34,10 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-#include <stdarg.h>
-#include <stdio.h>
 
-#include "QF/cbuf.h"
-#include "QF/crc.h"
 #include "QF/cvar.h"
-#include "QF/dstring.h"
-#include "QF/hash.h"
-#include "QF/idparse.h"
 #include "QF/progs.h"
-#include "QF/qdefs.h"
-#include "QF/qendian.h"
-#include "QF/quakefs.h"
 #include "QF/sys.h"
-#include "QF/zone.h"
-#include "QF/va.h"
 
 #include "compat.h"
 

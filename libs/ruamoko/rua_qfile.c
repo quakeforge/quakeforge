@@ -38,9 +38,7 @@
 
 #include "QF/dstring.h"
 #include "QF/progs.h"
-#include "QF/quakefs.h"
-#include "QF/va.h"
-#include "QF/zone.h"
+#include "QF/quakeio.h"
 
 #include "rua_internal.h"
 
