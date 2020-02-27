@@ -40,8 +40,11 @@
 #include "QF/sys.h"
 
 #include "qwaq.h"
+#include "event.h"
 
 #define always_inline inline __attribute__((__always_inline__))
+#define QUEUE_SIZE 16		// must be power of 2 greater than 1
+#define QUEUE_MASK (QUEUE_SIZE - 1)
 
 typedef struct window_s {
 	WINDOW     *win;
@@ -52,6 +55,9 @@ typedef struct qwaq_resources_s {
 	int         initialized;
 	dstring_t  *print_buffer;
 	PR_RESMAP (window_t) window_map;
+	qwaq_event_t event_queue[QUEUE_SIZE];
+	unsigned    queue_head;
+	unsigned    queue_tail;
 } qwaq_resources_t;
 
 static window_t *
@@ -116,6 +122,8 @@ bi_initialize (progs_t *pr)
 	keypad (stdscr, TRUE);
 	noecho ();
 	nonl ();
+	nodelay (stdscr, TRUE);
+	mousemask(ALL_MOUSE_EVENTS, NULL);
 }
 
 static void
@@ -167,6 +175,78 @@ bi_wgetch (progs_t *pr)
 }
 
 static void
+add_event (qwaq_resources_t *res, qwaq_event_t *event)
+{
+	if (((res->queue_head - res->queue_tail) & QUEUE_MASK) != QUEUE_MASK) {
+		res->event_queue[res->queue_head] = *event;
+		res->queue_head = (res->queue_head + 1) & QUEUE_MASK;
+	}
+}
+
+static int
+get_event (qwaq_resources_t *res, qwaq_event_t *event)
+{
+	if (res->queue_head != res->queue_tail) {
+		if (event) {
+			*event = res->event_queue[res->queue_tail];
+			res->queue_tail = (res->queue_tail + 1) & QUEUE_MASK;
+		}
+		return 1;
+	}
+	return 0;
+}
+
+static void
+mouse_event (qwaq_resources_t *res, MEVENT *mevent)
+{
+	qwaq_event_t event = {};
+	event.event_type = qe_mouse;
+	event.e.mouse.id = mevent->id;
+	event.e.mouse.x = mevent->x;
+	event.e.mouse.y = mevent->y;
+	event.e.mouse.z = mevent->z;
+	event.e.mouse.buttons = mevent->bstate;
+	add_event (res, &event);
+}
+
+static void
+key_event (qwaq_resources_t *res, int key)
+{
+	qwaq_event_t event = {};
+	event.event_type = qe_key;
+	event.e.key = key;
+	add_event (res, &event);
+}
+
+static void
+bi_process_input (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	if (Sys_CheckInput (1, -1)) {
+		int         ch;
+		while ((ch = getch ()) != ERR && ch) {
+			fflush (stderr);
+			if (ch == KEY_MOUSE) {
+				MEVENT    mevent;
+				getmouse (&mevent);
+				mouse_event (res, &mevent);
+			} else {
+				key_event (res, ch);
+			}
+		}
+	}
+}
+
+static void
+bi_get_event (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_event_t *event = &G_STRUCT (pr, qwaq_event_t, P_INT (pr, 0));
+
+	R_INT (pr) = get_event (res, event);
+}
+
+static void
 bi_qwaq_clear (progs_t *pr, void *data)
 {
 	__auto_type res = (qwaq_resources_t *) data;
@@ -184,6 +264,8 @@ static builtin_t builtins[] = {
 	{"destroy_window",	bi_destroy_window,	-1},
 	{"wprintf",			bi_wprintf,			-1},
 	{"wgetch",			bi_wgetch,			-1},
+	{"process_input",	bi_process_input,	-1},
+	{"get_event",		bi_get_event,		-1},
 	{0}
 };
 
