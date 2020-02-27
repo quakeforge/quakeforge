@@ -484,6 +484,15 @@ specifiers
 type
 	: type_specifier
 	| type type_specifier
+		{
+			// deal with eg "int id"
+			$1.sym = $2.sym;
+
+			if (!$1.sym) {
+				error (0, "two or more data types in declaration specifiers");
+			}
+			$$ = $1;
+		}
 	;
 
 type_specifier_or_storage_class
@@ -501,6 +510,7 @@ type_specifier
 	| TYPE_NAME
 		{
 			$$ = make_spec ($1->type, 0, 0, 0);
+			$$.sym = $1;
 		}
 	| OBJECT protocolrefs
 		{
@@ -512,6 +522,7 @@ type_specifier
 			} else {
 				$$ = make_spec (&type_id, 0, 0, 0);
 			}
+			$$.sym = $1;
 		}
 	| CLASS_NAME protocolrefs
 		{
@@ -523,6 +534,7 @@ type_specifier
 			} else {
 				$$ = make_spec ($1->type, 0, 0, 0);
 			}
+			$$.sym = $1;
 		}
 	// NOTE: fields don't parse the way they should. This is not a problem
 	// for basic types, but functions need special treatment
@@ -656,6 +668,22 @@ struct_def_list
 struct_def
 	: type struct_decl_list
 	| type
+		{
+			if ($1.sym) {
+				// a type name (id, typedef, etc) was used as a field name.
+				// this is allowed in C
+				print_type ($1.type);
+				printf ("%s\n", $1.sym->name);
+				$1.sym = new_symbol ($1.sym->name);
+				$1.sym->type = $1.type;
+				$1.sym->sy_type = sy_var;
+				symtab_addsymbol (current_symtab, $1.sym);
+			} else {
+				// bare type
+				warning (0, "declaration does not declare anything");
+			}
+			$$ = $1;
+		}
 	;
 
 struct_decl_list
