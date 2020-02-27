@@ -184,7 +184,7 @@ int yylex (void);
 %type	<expr>		optional_state_expr texpr vector_expr
 %type	<expr>		statement statements compound_statement
 %type	<expr>		else label break_label continue_label
-%type	<expr>		unary_expr cast_expr opt_arg_list arg_list
+%type	<expr>		unary_expr ident_expr cast_expr opt_arg_list arg_list
 %type	<expr>		init_var_decl_list init_var_decl
 %type	<switch_block> switch_block
 %type	<symbol>	identifier
@@ -1288,6 +1288,7 @@ unary_expr
 	| '(' expr ')'				{ $$ = $2; $$->paren = 1; }
 	| unary_expr '(' opt_arg_list ')' { $$ = function_expr ($1, $3); }
 	| unary_expr '[' expr ']'		{ $$ = array_expr ($1, $3); }
+	| unary_expr '.' ident_expr		{ $$ = field_expr ($1, $3); }
 	| unary_expr '.' unary_expr		{ $$ = field_expr ($1, $3); }
 	| INCOP unary_expr				{ $$ = incop_expr ($1, $2, 0); }
 	| unary_expr INCOP				{ $$ = incop_expr ($2, $1, 1); }
@@ -1304,6 +1305,12 @@ unary_expr
 		}
 	| vector_expr				{ $$ = new_vector_list ($1); }
 	| obj_expr					{ $$ = $1; }
+	;
+
+ident_expr
+	: OBJECT					{ $$ = new_symbol_expr ($1); }
+	| CLASS_NAME				{ $$ = new_symbol_expr ($1); }
+	| TYPE_NAME					{ $$ = new_symbol_expr ($1); }
 	;
 
 vector_expr
