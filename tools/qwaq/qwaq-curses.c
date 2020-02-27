@@ -201,10 +201,8 @@ mouse_event (qwaq_resources_t *res, MEVENT *mevent)
 {
 	qwaq_event_t event = {};
 	event.event_type = qe_mouse;
-	event.e.mouse.id = mevent->id;
 	event.e.mouse.x = mevent->x;
 	event.e.mouse.y = mevent->y;
-	event.e.mouse.z = mevent->z;
 	event.e.mouse.buttons = mevent->bstate;
 	add_event (res, &event);
 }

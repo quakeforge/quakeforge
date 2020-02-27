@@ -9,8 +9,7 @@ typedef enum {
 
 // right now, this is just a copy of ncurses MEVENT, but all int
 typedef struct qwaq_mevent_s {
-	int         id;			// XXX does it matter?
-	int         x, y, z;	// z? what?
+	int         x, y;
 	int         buttons;
 } qwaq_mevent_t;
 
