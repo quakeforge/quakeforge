@@ -127,6 +127,7 @@ bi_initialize (progs_t *pr)
 	nodelay (stdscr, TRUE);
 	mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
 	write(1, MOUSE_MOVES, sizeof (MOUSE_MOVES) - 1);
+	refresh();
 }
 
 static void
