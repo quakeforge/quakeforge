@@ -1325,11 +1325,12 @@ convert_double (expr_t *e)
 	e->e.value = new_float_val (float_val);
 }
 
-void
+expr_t *
 convert_nil (expr_t *e, type_t *t)
 {
 	e->type = ex_value;
 	e->e.value = new_nil_val (t);
+	return e;
 }
 
 int

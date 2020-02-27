@@ -287,6 +287,21 @@ def_to_ddef (def_t *def, ddef_t *ddef, int aux)
 	ddef->s_name = ReuseString (def->name);
 }
 
+static int
+zero_memory (expr_t *local_expr, def_t *def, type_t *zero_type,
+			 int init_size, int init_offset)
+{
+	int         zero_size = type_size (zero_type);
+	expr_t     *zero = convert_nil (new_nil_expr (), zero_type);
+	expr_t     *dst;
+
+	for (; init_offset < init_size + 1 - zero_size; init_offset += zero_size) {
+		dst = new_pointer_expr (init_offset, zero_type, def);
+		append_expr (local_expr, assign_expr (unary_expr ('.', dst), zero));
+	}
+	return init_offset;
+}
+
 static void
 init_elements (struct def_s *def, expr_t *eles)
 {
@@ -298,6 +313,39 @@ init_elements (struct def_s *def, expr_t *eles)
 	base_offset = def->offset;
 	if (def->local && local_expr)
 		base_offset = 0;
+	if (eles->type == ex_nil) {
+		if (def->local && local_expr) {
+			// memset to 0
+			int         init_size = type_size (def->type);
+			int         init_offset = 0;
+
+			if (options.code.progsversion != PROG_ID_VERSION) {
+				init_offset = zero_memory (local_expr, def, &type_zero,
+										   init_size, init_offset);
+			}
+			// probably won't happen any time soon, but who knows...
+			if (options.code.progsversion != PROG_ID_VERSION
+				&& init_size - init_offset >= type_size (&type_quaternion)) {
+				init_offset = zero_memory (local_expr, def, &type_quaternion,
+										   init_size, init_offset);
+			}
+			if (init_size - init_offset >= type_size (&type_vector)) {
+				init_offset = zero_memory (local_expr, def, &type_vector,
+										   init_size, init_offset);
+			}
+			if (options.code.progsversion != PROG_ID_VERSION
+				&& init_size - init_offset >= type_size (&type_double)) {
+				init_offset = zero_memory (local_expr, def, &type_double,
+										   init_size, init_offset);
+			}
+			if (init_size - init_offset >= type_size (type_default)) {
+				zero_memory (local_expr, def, type_default,
+							 init_size, init_offset);
+			}
+		}
+		// it's a global, so already initialized to 0
+		return;
+	}
 	if (is_array (def->type)) {
 		type_t     *array_type = def->type->t.array.type;
 		int         array_size = def->type->t.array.size;
@@ -334,8 +382,11 @@ init_elements (struct def_s *def, expr_t *eles)
 	}
 	for (count = 0, e = eles->e.block.head; e; count++, e = e->next) {
 		convert_name (e);
-		if (e->type == ex_nil && count < num_elements)
+		if (e->type == ex_nil && count < num_elements
+			&& !(is_array (elements[count].type)
+				 || is_struct (elements[count].type))) {
 			convert_nil (e, elements[count].type);
+		}
 		if (e->type == ex_error) {
 			free (elements);
 			return;
@@ -349,7 +400,8 @@ init_elements (struct def_s *def, expr_t *eles)
 	for (i = 0, e = eles->e.block.head; i < count; i++, e = e->next) {
 		g = D_POINTER (pr_type_t, &elements[i]);
 		c = constant_expr (e);
-		if (c->type == ex_block) {
+		// nil will not survive as nil to this point if array or struct
+		if (c->type == ex_block || c->type == ex_nil) {
 			if (!is_array (elements[i].type)
 				&& !is_struct (elements[i].type)) {
 				error (e, "type mismatch in initializer");
@@ -567,15 +619,18 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 	convert_name (init);
 	if (init->type == ex_error)
 		return;
-	if (init->type == ex_nil)
-		convert_nil (init, sym->type);
 	if ((is_array (sym->type) || is_struct (sym->type)
 		 || sym->type == &type_vector || sym->type == &type_quaternion)
-		&& init->type == ex_block && !init->e.block.result) {
+		&& ((init->type == ex_block && !init->e.block.result)
+			|| init->type == ex_nil)) {
 		init_elements (sym->s.def, init);
 		sym->s.def->initialized = 1;
 	} else {
-		type_t     *init_type = get_type (init);
+		type_t     *init_type;
+		if (init->type == ex_nil) {
+			convert_nil (init, sym->type);
+		}
+		init_type = get_type (init);
 		if (!type_assignable (sym->type, init_type)) {
 			error (init, "type mismatch in initializer");
 			return;

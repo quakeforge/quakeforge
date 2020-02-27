@@ -1065,6 +1065,13 @@ opt_initializer
 var_initializer
 	: '=' expr									{ $$ = $2; }
 	| '=' '{' element_list optional_comma '}'	{ $$ = $3; }
+	| '=' '{' '}'
+		{
+			if (is_scalar ($<spec>-1.type)) {
+				error (0, "empty scalar initializer");
+			}
+			$$ = new_nil_expr ();
+		}
 	;
 
 optional_state_expr

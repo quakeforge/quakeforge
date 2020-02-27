@@ -48,6 +48,7 @@ test_progs_dat=\
 	return-ivar.dat \
 	sendv.dat \
 	state.dat \
+	struct-nil-init.dat \
 	structarray.dat \
 	structlive.dat \
 	structptr.dat \
@@ -300,6 +301,15 @@ state.run: Makefile build-run
 	@$(srcdir)/build-run $@
 include ./$(DEPDIR)/state.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/state.Qo
+
+struct_nil_init_dat_SOURCES=struct-nil-init.r
+struct_nil_init_obj=$(struct_nil_init_dat_SOURCES:.r=.qfo)
+struct-nil-init.dat$(EXEEXT): $(struct_nil_init_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(struct_nil_init_obj)
+struct-nil-init.run: Makefile build-run
+	@$(srcdir)/build-run $@
+include ./$(DEPDIR)/struct-nil-init.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/struct-nil-init.Qo
 
 structarray_dat_SOURCES=structarray.r
 structarray_obj=$(structarray_dat_SOURCES:.r=.qfo)
