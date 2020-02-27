@@ -34,6 +34,7 @@
 #include <curses.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "QF/dstring.h"
 #include "QF/progs.h"
@@ -45,6 +46,7 @@
 #define always_inline inline __attribute__((__always_inline__))
 #define QUEUE_SIZE 16		// must be power of 2 greater than 1
 #define QUEUE_MASK (QUEUE_SIZE - 1)
+#define MOUSE_MOVES "\033[?1003h"	// Make the terminal report mouse movements
 
 typedef struct window_s {
 	WINDOW     *win;
@@ -123,7 +125,8 @@ bi_initialize (progs_t *pr)
 	noecho ();
 	nonl ();
 	nodelay (stdscr, TRUE);
-	mousemask(ALL_MOUSE_EVENTS, NULL);
+	mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
+	write(1, MOUSE_MOVES, sizeof (MOUSE_MOVES) - 1);
 }
 
 static void
@@ -162,6 +165,23 @@ bi_wprintf (progs_t *pr)
 	dstring_clearstr (res->print_buffer);
 	PR_Sprintf (pr, res->print_buffer, "bi_wprintf", fmt, count, args);
 	waddstr (window->win, res->print_buffer->str);
+	wrefresh (window->win);
+}
+
+static void
+bi_mvwprintf (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	window_t   *window = get_window (res, __FUNCTION__, P_INT (pr, 0));
+	int         x = P_INT (pr, 1);
+	int         y = P_INT (pr, 2);
+	const char *fmt = P_GSTRING (pr, 3);
+	int         count = pr->pr_argc - 4;
+	pr_type_t **args = pr->pr_params + 4;
+
+	dstring_clearstr (res->print_buffer);
+	PR_Sprintf (pr, res->print_buffer, "bi_wprintf", fmt, count, args);
+	mvwaddstr (window->win, y, x, res->print_buffer->str);
 	wrefresh (window->win);
 }
 
@@ -261,6 +281,7 @@ static builtin_t builtins[] = {
 	{"create_window",	bi_create_window,	-1},
 	{"destroy_window",	bi_destroy_window,	-1},
 	{"wprintf",			bi_wprintf,			-1},
+	{"mvwprintf",		bi_mvwprintf,		-1},
 	{"wgetch",			bi_wgetch,			-1},
 	{"process_input",	bi_process_input,	-1},
 	{"get_event",		bi_get_event,		-1},

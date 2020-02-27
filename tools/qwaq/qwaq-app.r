@@ -6,6 +6,7 @@ void initialize (void) = #0;
 window_t create_window (int xpos, int ypos, int xlen, int ylen) = #0;
 void destroy_window (window_t win) = #0;
 void wprintf (window_t win, string fmt, ...) = #0;
+void mvwprintf (window_t win, int x, int y, string fmt, ...) = #0;
 int wgetch (window_t win) = #0;
 
 void process_input (void) = #0;
@@ -25,14 +26,14 @@ int main (int argc, string *argv)
 		if (get_event (&event)) {
 			if (event.event_type == qe_key) {
 				ch = event.e.key;
-				wprintf (win, "key: %d\n", ch);
+				mvwprintf (win, 1, 1, "key: %d\n", ch);
 			} else if (event.event_type == qe_mouse) {
-				wprintf (win, "mouse: %d %d %d\n",
-						 event.e.mouse.x,
-						 event.e.mouse.y,
-						 event.e.mouse.buttons);
+				mvwprintf (win, 1, 2, "mouse: %d %d %d\n",
+						   event.e.mouse.x,
+						   event.e.mouse.y,
+						   event.e.mouse.buttons);
 			}
 		}
-	} while (ch != 27);
+	} while (ch != 'q' && ch != 'Q');
 	return 0;
 }
