@@ -16,7 +16,9 @@ int main (int argc, string *argv)
 
 	initialize ();
 	window_t win = create_window (20, 5, 50, 10);
-	mvwprintf (win, 0, 0, "Hi there!\n");
+	mvwprintf (win, 0, 0, "Hi there! (q to quit)\n");
+	mvwprintf (win, 1, 1, "(?)Oo.\n");
+	mvwprintf (win, 1, 2, "   \\_O>\n");
 	do {
 		if (get_event (&event)) {
 			if (event.event_type == qe_key) {
