@@ -28,7 +28,7 @@ int main (int argc, string *argv)
 				ch = event.e.key;
 				mvwprintf (win, 1, 1, "key: %d\n", ch);
 			} else if (event.event_type == qe_mouse) {
-				mvwprintf (win, 1, 2, "mouse: %d %d %d\n",
+				mvwprintf (win, 1, 2, "mouse: %2d %2d %08x\n",
 						   event.e.mouse.x,
 						   event.e.mouse.y,
 						   event.e.mouse.buttons);

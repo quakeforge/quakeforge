@@ -48,6 +48,61 @@
 #define QUEUE_MASK (QUEUE_SIZE - 1)
 #define MOUSE_MOVES "\033[?1003h"	// Make the terminal report mouse movements
 
+#define RING_BUFFER(type, size) 	\
+	struct {						\
+		type        buffer[size];	\
+		unsigned    head;			\
+		unsigned    tail;			\
+	}
+
+#define RB_buffer_size(ring_buffer)						\
+	({	__auto_type rb = (ring_buffer);					\
+		sizeof (rb->buffer) / sizeof (rb->buffer[0]);	\
+	})
+
+#define RB_SPACE_AVAILABLE(ring_buffer)										\
+	({	__auto_type rb = &(ring_buffer);									\
+		(rb->tail + RB_buffer_size(rb) - rb->head - 1) % RB_buffer_size(rb);\
+	})
+
+#define RB_DATA_AVAILABLE(ring_buffer)										\
+	({	__auto_type rb = &(ring_buffer);									\
+		(rb->head + RB_buffer_size (rb) - rb->tail) % RB_buffer_size (rb);	\
+	})
+
+#define RB_WRITE_DATA(ring_buffer, data, count)								\
+	({	__auto_type rb = &(ring_buffer);									\
+		typeof (&rb->buffer[0]) d = (data);									\
+		unsigned    c = (count);											\
+		unsigned    h = rb->head;											\
+		rb->head = (h + c) % RB_buffer_size (rb);							\
+		if (c > RB_buffer_size (rb) - h) {									\
+			memcpy (rb->buffer + h, d,										\
+					(RB_buffer_size (rb) - h) * sizeof (rb->buffer[0]));	\
+			c -= RB_buffer_size (rb) - h;									\
+			d += RB_buffer_size (rb) - h;									\
+			h = 0;															\
+		}																	\
+		memcpy (rb->buffer + h, d, c * sizeof (rb->buffer[0]));				\
+	})
+
+#define RB_READ_DATA(ring_buffer, data, count)								\
+	({	__auto_type rb = &(ring_buffer);									\
+		typeof (&rb->buffer[0]) d = (data);									\
+		unsigned    c = (count);											\
+		unsigned    oc = c;													\
+		unsigned    t = rb->tail;											\
+		if (c > RB_buffer_size (rb) - t) {									\
+			memcpy (d, rb->buffer + t,										\
+					(RB_buffer_size (rb) - t) * sizeof (rb->buffer[0]));	\
+			c -= RB_buffer_size (rb) - t;									\
+			d += RB_buffer_size (rb) - t;									\
+			t = 0;															\
+		}																	\
+		memcpy (d, rb->buffer + t, c * sizeof (rb->buffer[0]));				\
+		rb->tail = (t + oc) % RB_buffer_size (rb);							\
+	})
+
 typedef struct window_s {
 	WINDOW     *win;
 } window_t;
@@ -57,9 +112,7 @@ typedef struct qwaq_resources_s {
 	int         initialized;
 	dstring_t  *print_buffer;
 	PR_RESMAP (window_t) window_map;
-	qwaq_event_t event_queue[QUEUE_SIZE];
-	unsigned    queue_head;
-	unsigned    queue_tail;
+	RING_BUFFER (qwaq_event_t, QUEUE_SIZE) event_queue;
 } qwaq_resources_t;
 
 static window_t *
@@ -92,7 +145,7 @@ window_index (qwaq_resources_t *res, window_t *win)
 	PR_RESINDEX (res->window_map, win);
 }
 
-static always_inline window_t *
+static always_inline window_t * __attribute__((pure))
 get_window (qwaq_resources_t *res, const char *name, int handle)
 {
 	window_t   *window = window_get (res, handle);
@@ -198,19 +251,17 @@ bi_wgetch (progs_t *pr)
 static void
 add_event (qwaq_resources_t *res, qwaq_event_t *event)
 {
-	if (((res->queue_head - res->queue_tail) & QUEUE_MASK) != QUEUE_MASK) {
-		res->event_queue[res->queue_head] = *event;
-		res->queue_head = (res->queue_head + 1) & QUEUE_MASK;
+	if (RB_SPACE_AVAILABLE (res->event_queue) >= 1) {
+		RB_WRITE_DATA (res->event_queue, event, 1);
 	}
 }
 
 static int
 get_event (qwaq_resources_t *res, qwaq_event_t *event)
 {
-	if (res->queue_head != res->queue_tail) {
+	if (RB_DATA_AVAILABLE (res->event_queue) >= 1) {
 		if (event) {
-			*event = res->event_queue[res->queue_tail];
-			res->queue_tail = (res->queue_tail + 1) & QUEUE_MASK;
+			RB_READ_DATA (res->event_queue, event, 1);
 		}
 		return 1;
 	}
