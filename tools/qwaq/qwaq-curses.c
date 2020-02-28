@@ -32,6 +32,7 @@
 #endif
 
 #include <curses.h>
+#include <panel.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -44,9 +45,19 @@
 #include "event.h"
 
 #define always_inline inline __attribute__((__always_inline__))
-#define QUEUE_SIZE 16		// must be power of 2 greater than 1
-#define QUEUE_MASK (QUEUE_SIZE - 1)
+#define QUEUE_SIZE 16
 #define MOUSE_MOVES "\033[?1003h"	// Make the terminal report mouse movements
+#define STRING_ID_QUEUE_SIZE 8		// must be > 1
+#define COMMAND_QUEUE_SIZE 128
+#define CMD_SIZE(x) sizeof(x)/sizeof(x[0])
+
+typedef enum qwaq_commands_e {
+	qwaq_cmd_create_window,
+	qwaq_cmd_destroy_window,
+	qwaq_cmd_create_panel,
+	qwaq_cmd_destroy_panel,
+	qwaq_cmd_mvwprint,
+} qwaq_commands;
 
 #define RING_BUFFER(type, size) 	\
 	struct {						\
@@ -103,16 +114,36 @@
 		rb->tail = (t + oc) % RB_buffer_size (rb);							\
 	})
 
+#define RB_DROP_DATA(ring_buffer, count)									\
+	({	__auto_type rb = &(ring_buffer);									\
+		unsigned    c = (count);											\
+		unsigned    t = rb->tail;											\
+		rb->tail = (t + c) % RB_buffer_size (rb);							\
+	})
+
+#define RB_PEEK_DATA(ring_buffer, ahead)						\
+	({	__auto_type rb = &(ring_buffer);						\
+		rb->buffer[(rb->tail + ahead) % RB_buffer_size (rb)];	\
+	})
+
 typedef struct window_s {
 	WINDOW     *win;
 } window_t;
 
+typedef struct panel_s {
+	PANEL      *panel;
+} panel_t;
+
 typedef struct qwaq_resources_s {
 	progs_t    *pr;
 	int         initialized;
-	dstring_t  *print_buffer;
 	PR_RESMAP (window_t) window_map;
+	PR_RESMAP (panel_t) panel_map;
 	RING_BUFFER (qwaq_event_t, QUEUE_SIZE) event_queue;
+	RING_BUFFER (int, COMMAND_QUEUE_SIZE) command_queue;
+	RING_BUFFER (int, COMMAND_QUEUE_SIZE) results;
+	RING_BUFFER (int, STRING_ID_QUEUE_SIZE) string_ids;
+	dstring_t   strings[STRING_ID_QUEUE_SIZE - 1];
 } qwaq_resources_t;
 
 static window_t *
@@ -156,96 +187,127 @@ get_window (qwaq_resources_t *res, const char *name, int handle)
 	return window;
 }
 
-static int need_endwin;
-static void
-bi_shutdown (void)
+static panel_t *
+panel_new (qwaq_resources_t *res)
 {
-	if (need_endwin) {
-		endwin ();
+	PR_RESNEW (panel_t, res->panel_map);
+}
+
+static void
+panel_free (qwaq_resources_t *res, panel_t *win)
+{
+	PR_RESFREE (panel_t, res->panel_map, win);
+}
+
+static void
+panel_reset (qwaq_resources_t *res)
+{
+	PR_RESRESET (panel_t, res->panel_map);
+}
+
+static inline panel_t *
+panel_get (qwaq_resources_t *res, unsigned index)
+{
+	PR_RESGET(res->panel_map, index);
+}
+
+static inline int
+panel_index (qwaq_resources_t *res, panel_t *win)
+{
+	PR_RESINDEX (res->panel_map, win);
+}
+
+static always_inline panel_t * __attribute__((pure))
+get_panel (qwaq_resources_t *res, const char *name, int handle)
+{
+	panel_t   *panel = panel_get (res, handle);
+
+	if (!panel || !panel->panel) {
+		PR_RunError (res->pr, "invalid panel passed to %s", name + 3);
+	}
+	return panel;
+}
+
+static int
+acquire_string (qwaq_resources_t *res)
+{
+	int         string_id = -1;
+
+	// XXX add locking and loop for available
+	if (RB_DATA_AVAILABLE (res->string_ids)) {
+		RB_READ_DATA (res->string_ids, &string_id, 1);
+	}
+	// XXX unlock and end of loop
+	return string_id;
+}
+
+static void
+release_string (qwaq_resources_t *res, int string_id)
+{
+	// locking shouldn't be necessary as there should be only one writer
+	// but if it becomes such that there is more than one writer, locks as per
+	// acquire
+	if (RB_SPACE_AVAILABLE (res->string_ids)) {
+		RB_WRITE_DATA (res->string_ids, &string_id, 1);
 	}
 }
 
 static void
-bi_initialize (progs_t *pr)
+create_window (qwaq_resources_t *res)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	int         xpos = RB_PEEK_DATA (res->command_queue, 2);
+	int         ypos = RB_PEEK_DATA (res->command_queue, 3);
+	int         xlen = RB_PEEK_DATA (res->command_queue, 4);
+	int         ylen = RB_PEEK_DATA (res->command_queue, 5);
 
-	initscr ();
-	need_endwin = 1;
-	res->initialized = 1;
-	raw ();
-	keypad (stdscr, TRUE);
-	noecho ();
-	nonl ();
-	nodelay (stdscr, TRUE);
-	mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
-	write(1, MOUSE_MOVES, sizeof (MOUSE_MOVES) - 1);
-	refresh();
-}
-
-static void
-bi_create_window (progs_t *pr)
-{
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
-	int         xpos = P_INT (pr, 0);
-	int         ypos = P_INT (pr, 1);
-	int         xlen = P_INT (pr, 2);
-	int         ylen = P_INT (pr, 3);
 	window_t   *window = window_new (res);
 	window->win = newwin (ylen, xlen, ypos, xpos);
 	keypad (window->win, TRUE);
-	R_INT (pr) = window_index (res, window);
+
+	int         window_id = window_index (res, window);
+
+	int         cmd_result[] = { qwaq_cmd_create_window, window_id };
+
+	// loop
+	if (RB_SPACE_AVAILABLE (res->results) >= CMD_SIZE (cmd_result)) {
+		RB_WRITE_DATA (res->results, cmd_result, CMD_SIZE (cmd_result));
+	}
 }
 
 static void
-bi_destroy_window (progs_t *pr)
+move_print (qwaq_resources_t *res)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
-	window_t   *window = get_window (res, __FUNCTION__, P_INT (pr, 0));
-	delwin (window->win);
-	window->win = 0;
-	window_free (res, window);
-}
+	int         window_id = RB_PEEK_DATA (res->command_queue, 2);
+	int         x = RB_PEEK_DATA (res->command_queue, 3);
+	int         y = RB_PEEK_DATA (res->command_queue, 4);
+	int         string_id = RB_PEEK_DATA (res->command_queue, 5);
 
-static void
-bi_wprintf (progs_t *pr)
-{
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
-	window_t   *window = get_window (res, __FUNCTION__, P_INT (pr, 0));
-	const char *fmt = P_GSTRING (pr, 1);
-	int         count = pr->pr_argc - 2;
-	pr_type_t **args = pr->pr_params + 2;
-
-	dstring_clearstr (res->print_buffer);
-	PR_Sprintf (pr, res->print_buffer, "bi_wprintf", fmt, count, args);
-	waddstr (window->win, res->print_buffer->str);
+	window_t   *window = get_window (res, __FUNCTION__, window_id);
+	mvwaddstr (window->win, y, x, res->strings[string_id].str);
+	release_string (res, string_id);
 	wrefresh (window->win);
 }
 
 static void
-bi_mvwprintf (progs_t *pr)
+process_commands (qwaq_resources_t *res)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
-	window_t   *window = get_window (res, __FUNCTION__, P_INT (pr, 0));
-	int         x = P_INT (pr, 1);
-	int         y = P_INT (pr, 2);
-	const char *fmt = P_GSTRING (pr, 3);
-	int         count = pr->pr_argc - 4;
-	pr_type_t **args = pr->pr_params + 4;
-
-	dstring_clearstr (res->print_buffer);
-	PR_Sprintf (pr, res->print_buffer, "bi_wprintf", fmt, count, args);
-	mvwaddstr (window->win, y, x, res->print_buffer->str);
-	wrefresh (window->win);
-}
-
-static void
-bi_wgetch (progs_t *pr)
-{
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
-	window_t   *window = get_window (res, __FUNCTION__, P_INT (pr, 0));
-
-	R_INT (pr) = wgetch (window->win);
+	while (RB_DATA_AVAILABLE (res->command_queue) > 2) {
+		switch ((qwaq_commands) RB_PEEK_DATA (res->command_queue, 0)) {
+			case qwaq_cmd_create_window:
+				create_window (res);
+				break;
+			case qwaq_cmd_destroy_window:
+				break;
+			case qwaq_cmd_create_panel:
+				break;
+			case qwaq_cmd_destroy_panel:
+				break;
+			case qwaq_cmd_mvwprint:
+				move_print (res);
+				break;
+		}
+		RB_DROP_DATA (res->command_queue, RB_PEEK_DATA (res->command_queue, 1));
+	}
 }
 
 static void
@@ -289,9 +351,8 @@ key_event (qwaq_resources_t *res, int key)
 }
 
 static void
-bi_process_input (progs_t *pr)
+process_input (qwaq_resources_t *res)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
 	if (Sys_CheckInput (1, -1)) {
 		int         ch;
 		while ((ch = getch ()) != ERR && ch) {
@@ -307,13 +368,141 @@ bi_process_input (progs_t *pr)
 	}
 }
 
+static int need_endwin;
+static void
+bi_shutdown (void)
+{
+	if (need_endwin) {
+		endwin ();
+	}
+}
+
+static void
+bi_create_window (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	int         xpos = P_INT (pr, 0);
+	int         ypos = P_INT (pr, 1);
+	int         xlen = P_INT (pr, 2);
+	int         ylen = P_INT (pr, 3);
+	int         command[] = {
+					qwaq_cmd_create_window, 0,
+					xpos, ypos, xlen, ylen,
+				};
+
+	command[1] = CMD_SIZE(command);
+
+	if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
+		RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
+	}
+	// XXX should just wait on the mutex
+	process_commands (res);
+	process_input (res);
+	// locking and loop until id is correct
+	if (RB_DATA_AVAILABLE (res->results)
+		&& RB_PEEK_DATA (res->results, 0) == qwaq_cmd_create_window) {
+		int         cmd_result[2];	// should results have a size?
+		RB_READ_DATA (res->results, cmd_result, CMD_SIZE (cmd_result));
+		R_INT (pr) = cmd_result[1];
+	}
+}
+
+static void
+bi_destroy_window (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	window_t   *window = get_window (res, __FUNCTION__, P_INT (pr, 0));
+	delwin (window->win);
+	window->win = 0;
+	window_free (res, window);
+}
+
+static void
+bi_create_panel (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	window_t   *window = get_window (res, __FUNCTION__, P_INT (pr, 0));
+
+	panel_t    *panel = panel_new (res);
+	panel->panel = new_panel (window->win);
+	R_INT (pr) = panel_index (res, panel);
+}
+
+static void
+bi_destroy_panel (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	panel_t   *panel = get_panel (res, __FUNCTION__, P_INT (pr, 0));
+	del_panel (panel->panel);
+	panel->panel = 0;
+	panel_free (res, panel);
+}
+
+static void
+bi_mvwprintf (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	int         window_id = P_INT (pr, 0);
+	int         x = P_INT (pr, 1);
+	int         y = P_INT (pr, 2);
+	const char *fmt = P_GSTRING (pr, 3);
+	int         count = pr->pr_argc - 4;
+	pr_type_t **args = pr->pr_params + 4;
+
+	int         string_id = acquire_string (res);
+	dstring_t  *print_buffer = res->strings + string_id;
+	int         command[] = {
+					qwaq_cmd_mvwprint, 0,
+					window_id, x, y, string_id
+				};
+
+	if (get_window (res, __FUNCTION__, window_id)) {
+		command[1] = CMD_SIZE(command);
+
+		dstring_clearstr (print_buffer);
+		PR_Sprintf (pr, print_buffer, "mvwprintf", fmt, count, args);
+		if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
+			RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
+		}
+	}
+}
+
+static void
+bi_wgetch (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	window_t   *window = get_window (res, __FUNCTION__, P_INT (pr, 0));
+
+	R_INT (pr) = wgetch (window->win);
+}
+
 static void
 bi_get_event (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
 	qwaq_event_t *event = &G_STRUCT (pr, qwaq_event_t, P_INT (pr, 0));
 
+	process_commands (res);
+	process_input (res);
 	R_INT (pr) = get_event (res, event);
+}
+
+static void
+bi_initialize (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+
+	initscr ();
+	need_endwin = 1;
+	res->initialized = 1;
+	raw ();
+	keypad (stdscr, TRUE);
+	noecho ();
+	nonl ();
+	nodelay (stdscr, TRUE);
+	mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
+	write(1, MOUSE_MOVES, sizeof (MOUSE_MOVES) - 1);
+	refresh();
 }
 
 static void
@@ -326,28 +515,40 @@ bi_qwaq_clear (progs_t *pr, void *data)
 	}
 	need_endwin = 0;
 	window_reset (res);
+	panel_reset (res);
 }
 
 static builtin_t builtins[] = {
 	{"initialize",		bi_initialize,		-1},
 	{"create_window",	bi_create_window,	-1},
 	{"destroy_window",	bi_destroy_window,	-1},
-	{"wprintf",			bi_wprintf,			-1},
+	{"create_panel",	bi_create_panel,	-1},
+	{"destroy_panel",	bi_destroy_panel,	-1},
 	{"mvwprintf",		bi_mvwprintf,		-1},
 	{"wgetch",			bi_wgetch,			-1},
-	{"process_input",	bi_process_input,	-1},
 	{"get_event",		bi_get_event,		-1},
 	{0}
 };
+
+static __attribute__((format(printf, 1, 0))) void
+qwaq_print (const char *fmt, va_list args)
+{
+	vfprintf (stderr, fmt, args);
+	fflush (stderr);
+}
 
 void
 BI_Init (progs_t *pr)
 {
 	qwaq_resources_t *res = calloc (sizeof (*res), 1);
 	res->pr = pr;
-	res->print_buffer = dstring_newstr ();
+	for (int i = 0; i < STRING_ID_QUEUE_SIZE - 1; i++) {
+		RB_WRITE_DATA (res->string_ids, &i, 1);
+		res->strings[i].mem = &dstring_default_mem;
+	}
 
 	PR_Resources_Register (pr, "qwaq", res, bi_qwaq_clear);
 	PR_RegisterBuiltins (pr, builtins);
 	Sys_RegisterShutdown (bi_shutdown);
+	Sys_SetStdPrintf (qwaq_print);
 }
