@@ -74,8 +74,6 @@
 	tools/qfvis/Makefile
 	tools/qfvis/include/Makefile
 	tools/qfvis/source/Makefile
-	tools/qwaq/Makefile
-	tools/qwaq/progs.src
 	tools/wad/Makefile
 	tools/wav/Makefile
 
@@ -87,6 +85,7 @@
 	ruamoko/gui/Makefile
 	ruamoko/cl_menu/Makefile
 	ruamoko/scheme/Makefile
+	ruamoko/qwaq/Makefile
 
 	pkg-config/Makefile
 	pkg-config/qfcc.pc
