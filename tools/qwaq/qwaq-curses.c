@@ -52,11 +52,11 @@
 #define CMD_SIZE(x) sizeof(x)/sizeof(x[0])
 
 typedef enum qwaq_commands_e {
-	qwaq_cmd_create_window,
-	qwaq_cmd_destroy_window,
-	qwaq_cmd_create_panel,
-	qwaq_cmd_destroy_panel,
-	qwaq_cmd_mvwprint,
+	qwaq_cmd_newwin,
+	qwaq_cmd_delwin,
+	qwaq_cmd_new_panel,
+	qwaq_cmd_del_panel,
+	qwaq_cmd_mvwaddstr,
 } qwaq_commands;
 
 #define RING_BUFFER(type, size) 	\
@@ -253,7 +253,7 @@ release_string (qwaq_resources_t *res, int string_id)
 }
 
 static void
-create_window (qwaq_resources_t *res)
+cmd_newwin (qwaq_resources_t *res)
 {
 	int         xpos = RB_PEEK_DATA (res->command_queue, 2);
 	int         ypos = RB_PEEK_DATA (res->command_queue, 3);
@@ -265,7 +265,7 @@ create_window (qwaq_resources_t *res)
 	keypad (window->win, TRUE);
 
 	int         window_id = window_index (res, window);
-	int         cmd_result[] = { qwaq_cmd_create_window, window_id };
+	int         cmd_result[] = { qwaq_cmd_newwin, window_id };
 
 	// loop
 	if (RB_SPACE_AVAILABLE (res->results) >= CMD_SIZE (cmd_result)) {
@@ -274,7 +274,7 @@ create_window (qwaq_resources_t *res)
 }
 
 static void
-destroy_window (qwaq_resources_t *res)
+cmd_delwin (qwaq_resources_t *res)
 {
 	int         window_id = RB_PEEK_DATA (res->command_queue, 2);
 
@@ -284,7 +284,7 @@ destroy_window (qwaq_resources_t *res)
 }
 
 static void
-create_panel (qwaq_resources_t *res)
+cmd_new_panel (qwaq_resources_t *res)
 {
 	int         window_id = RB_PEEK_DATA (res->command_queue, 2);
 
@@ -293,7 +293,7 @@ create_panel (qwaq_resources_t *res)
 	panel->panel = new_panel (window->win);
 
 	int         panel_id = panel_index (res, panel);
-	int         cmd_result[] = { qwaq_cmd_create_panel, panel_id };
+	int         cmd_result[] = { qwaq_cmd_new_panel, panel_id };
 
 	// loop
 	if (RB_SPACE_AVAILABLE (res->results) >= CMD_SIZE (cmd_result)) {
@@ -302,7 +302,7 @@ create_panel (qwaq_resources_t *res)
 }
 
 static void
-destroy_panel (qwaq_resources_t *res)
+cmd_del_panel (qwaq_resources_t *res)
 {
 	int         panel_id = RB_PEEK_DATA (res->command_queue, 2);
 
@@ -312,7 +312,7 @@ destroy_panel (qwaq_resources_t *res)
 }
 
 static void
-move_print (qwaq_resources_t *res)
+cmd_mvwaddstr (qwaq_resources_t *res)
 {
 	int         window_id = RB_PEEK_DATA (res->command_queue, 2);
 	int         x = RB_PEEK_DATA (res->command_queue, 3);
@@ -330,20 +330,20 @@ process_commands (qwaq_resources_t *res)
 {
 	while (RB_DATA_AVAILABLE (res->command_queue) > 2) {
 		switch ((qwaq_commands) RB_PEEK_DATA (res->command_queue, 0)) {
-			case qwaq_cmd_create_window:
-				create_window (res);
+			case qwaq_cmd_newwin:
+				cmd_newwin (res);
 				break;
-			case qwaq_cmd_destroy_window:
-				destroy_window (res);
+			case qwaq_cmd_delwin:
+				cmd_delwin (res);
 				break;
-			case qwaq_cmd_create_panel:
-				create_panel (res);
+			case qwaq_cmd_new_panel:
+				cmd_new_panel (res);
 				break;
-			case qwaq_cmd_destroy_panel:
-				destroy_panel (res);
+			case qwaq_cmd_del_panel:
+				cmd_del_panel (res);
 				break;
-			case qwaq_cmd_mvwprint:
-				move_print (res);
+			case qwaq_cmd_mvwaddstr:
+				cmd_mvwaddstr (res);
 				break;
 		}
 		RB_DROP_DATA (res->command_queue, RB_PEEK_DATA (res->command_queue, 1));
@@ -418,7 +418,7 @@ bi_shutdown (void)
 }
 
 static void
-bi_create_window (progs_t *pr)
+bi_newwin (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
 	int         xpos = P_INT (pr, 0);
@@ -426,7 +426,7 @@ bi_create_window (progs_t *pr)
 	int         xlen = P_INT (pr, 2);
 	int         ylen = P_INT (pr, 3);
 	int         command[] = {
-					qwaq_cmd_create_window, 0,
+					qwaq_cmd_newwin, 0,
 					xpos, ypos, xlen, ylen,
 				};
 
@@ -440,7 +440,7 @@ bi_create_window (progs_t *pr)
 	process_input (res);
 	// locking and loop until id is correct
 	if (RB_DATA_AVAILABLE (res->results)
-		&& RB_PEEK_DATA (res->results, 0) == qwaq_cmd_create_window) {
+		&& RB_PEEK_DATA (res->results, 0) == qwaq_cmd_newwin) {
 		int         cmd_result[2];	// should results have a size?
 		RB_READ_DATA (res->results, cmd_result, CMD_SIZE (cmd_result));
 		R_INT (pr) = cmd_result[1];
@@ -448,13 +448,13 @@ bi_create_window (progs_t *pr)
 }
 
 static void
-bi_destroy_window (progs_t *pr)
+bi_delwin (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
 	int         window_id = P_INT (pr, 0);
 
 	if (get_window (res, __FUNCTION__, window_id)) {
-		int         command[] = { qwaq_cmd_destroy_window, 0, window_id, };
+		int         command[] = { qwaq_cmd_delwin, 0, window_id, };
 
 		command[1] = CMD_SIZE(command);
 
@@ -465,13 +465,13 @@ bi_destroy_window (progs_t *pr)
 }
 
 static void
-bi_create_panel (progs_t *pr)
+bi_new_panel (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
 	int         window_id = P_INT (pr, 0);
 
 	if (get_window (res, __FUNCTION__, window_id)) {
-		int         command[] = { qwaq_cmd_create_panel, 0, window_id, };
+		int         command[] = { qwaq_cmd_new_panel, 0, window_id, };
 
 		command[1] = CMD_SIZE(command);
 
@@ -481,7 +481,7 @@ bi_create_panel (progs_t *pr)
 
 		// locking and loop until id is correct
 		if (RB_DATA_AVAILABLE (res->results)
-			&& RB_PEEK_DATA (res->results, 0) == qwaq_cmd_create_panel) {
+			&& RB_PEEK_DATA (res->results, 0) == qwaq_cmd_new_panel) {
 			int         cmd_result[2];	// should results have a size?
 			RB_READ_DATA (res->results, cmd_result, CMD_SIZE (cmd_result));
 			R_INT (pr) = cmd_result[1];
@@ -490,11 +490,11 @@ bi_create_panel (progs_t *pr)
 }
 
 static void
-bi_destroy_panel (progs_t *pr)
+bi_del_panel (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
 	int         panel_id = P_INT (pr, 0);
-	int         command[] = { qwaq_cmd_destroy_panel, 0, panel_id, };
+	int         command[] = { qwaq_cmd_del_panel, 0, panel_id, };
 
 	if (get_panel (res, __FUNCTION__, panel_id)) {
 		command[1] = CMD_SIZE(command);
@@ -520,14 +520,14 @@ bi_mvwprintf (progs_t *pr)
 		int         string_id = acquire_string (res);
 		dstring_t  *print_buffer = res->strings + string_id;
 		int         command[] = {
-						qwaq_cmd_mvwprint, 0,
+						qwaq_cmd_mvwaddstr, 0,
 						window_id, x, y, string_id
 					};
 
 		command[1] = CMD_SIZE(command);
 
 		dstring_clearstr (print_buffer);
-		PR_Sprintf (pr, print_buffer, "mvwprintf", fmt, count, args);
+		PR_Sprintf (pr, print_buffer, "mvwaddstr", fmt, count, args);
 		if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
 			RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
 		}
@@ -578,10 +578,10 @@ bi_qwaq_clear (progs_t *pr, void *data)
 
 static builtin_t builtins[] = {
 	{"initialize",		bi_initialize,		-1},
-	{"create_window",	bi_create_window,	-1},
-	{"destroy_window",	bi_destroy_window,	-1},
-	{"create_panel",	bi_create_panel,	-1},
-	{"destroy_panel",	bi_destroy_panel,	-1},
+	{"create_window",	bi_newwin,			-1},
+	{"destroy_window",	bi_delwin,			-1},
+	{"create_panel",	bi_new_panel,		-1},
+	{"destroy_panel",	bi_del_panel,		-1},
 	{"mvwprintf",		bi_mvwprintf,		-1},
 	{"get_event",		bi_get_event,		-1},
 	{0}
