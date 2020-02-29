@@ -1122,12 +1122,11 @@ undefined_def (qfo_def_t *def)
 				if (func->code < 0) {
 					continue;
 				}
-				if ((pr_uint_t) func->code > reloc->offset) {
-					continue;
-				}
-				if (!best || reloc->offset - func->code < best_dist) {
-					best = func;
-					best_dist = reloc->offset - func->code;
+				if ((pr_uint_t) func->code <= reloc->offset) {
+					if (!best || reloc->offset - func->code < best_dist) {
+						best = func;
+						best_dist = reloc->offset - func->code;
+					}
 				}
 				func++;
 			}
