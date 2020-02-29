@@ -452,9 +452,10 @@ bi_destroy_window (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
 	int         window_id = P_INT (pr, 0);
-	int         command[] = { qwaq_cmd_destroy_window, 0, window_id, };
 
 	if (get_window (res, __FUNCTION__, window_id)) {
+		int         command[] = { qwaq_cmd_destroy_window, 0, window_id, };
+
 		command[1] = CMD_SIZE(command);
 
 		if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
@@ -468,9 +469,10 @@ bi_create_panel (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
 	int         window_id = P_INT (pr, 0);
-	int         command[] = { qwaq_cmd_create_panel, 0, window_id, };
 
 	if (get_window (res, __FUNCTION__, window_id)) {
+		int         command[] = { qwaq_cmd_create_panel, 0, window_id, };
+
 		command[1] = CMD_SIZE(command);
 
 		if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
@@ -514,14 +516,14 @@ bi_mvwprintf (progs_t *pr)
 	int         count = pr->pr_argc - 4;
 	pr_type_t **args = pr->pr_params + 4;
 
-	int         string_id = acquire_string (res);
-	dstring_t  *print_buffer = res->strings + string_id;
-	int         command[] = {
-					qwaq_cmd_mvwprint, 0,
-					window_id, x, y, string_id
-				};
-
 	if (get_window (res, __FUNCTION__, window_id)) {
+		int         string_id = acquire_string (res);
+		dstring_t  *print_buffer = res->strings + string_id;
+		int         command[] = {
+						qwaq_cmd_mvwprint, 0,
+						window_id, x, y, string_id
+					};
+
 		command[1] = CMD_SIZE(command);
 
 		dstring_clearstr (print_buffer);
