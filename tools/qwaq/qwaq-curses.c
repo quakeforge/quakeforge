@@ -56,6 +56,11 @@ typedef enum qwaq_commands_e {
 	qwaq_cmd_delwin,
 	qwaq_cmd_new_panel,
 	qwaq_cmd_del_panel,
+	qwaq_cmd_hide_panel,
+	qwaq_cmd_show_panel,
+	qwaq_cmd_top_panel,
+	qwaq_cmd_bottom_panel,
+	qwaq_cmd_move_panel,
 	qwaq_cmd_mvwaddstr,
 } qwaq_commands;
 
@@ -312,6 +317,58 @@ cmd_del_panel (qwaq_resources_t *res)
 }
 
 static void
+cmd_hide_panel (qwaq_resources_t *res)
+{
+	int         panel_id = RB_PEEK_DATA (res->command_queue, 2);
+
+	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
+	hide_panel (panel->panel);
+	panel_free (res, panel);
+}
+
+static void
+cmd_show_panel (qwaq_resources_t *res)
+{
+	int         panel_id = RB_PEEK_DATA (res->command_queue, 2);
+
+	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
+	show_panel (panel->panel);
+	panel_free (res, panel);
+}
+
+static void
+cmd_top_panel (qwaq_resources_t *res)
+{
+	int         panel_id = RB_PEEK_DATA (res->command_queue, 2);
+
+	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
+	top_panel (panel->panel);
+	panel_free (res, panel);
+}
+
+static void
+cmd_bottom_panel (qwaq_resources_t *res)
+{
+	int         panel_id = RB_PEEK_DATA (res->command_queue, 2);
+
+	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
+	bottom_panel (panel->panel);
+	panel_free (res, panel);
+}
+
+static void
+cmd_move_panel (qwaq_resources_t *res)
+{
+	int         panel_id = RB_PEEK_DATA (res->command_queue, 2);
+	int         x = RB_PEEK_DATA (res->command_queue, 3);
+	int         y = RB_PEEK_DATA (res->command_queue, 4);
+
+	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
+	move_panel (panel->panel, y, x);
+	panel_free (res, panel);
+}
+
+static void
 cmd_mvwaddstr (qwaq_resources_t *res)
 {
 	int         window_id = RB_PEEK_DATA (res->command_queue, 2);
@@ -341,6 +398,21 @@ process_commands (qwaq_resources_t *res)
 				break;
 			case qwaq_cmd_del_panel:
 				cmd_del_panel (res);
+				break;
+			case qwaq_cmd_hide_panel:
+				cmd_hide_panel (res);
+				break;
+			case qwaq_cmd_show_panel:
+				cmd_show_panel (res);
+				break;
+			case qwaq_cmd_top_panel:
+				cmd_top_panel (res);
+				break;
+			case qwaq_cmd_bottom_panel:
+				cmd_bottom_panel (res);
+				break;
+			case qwaq_cmd_move_panel:
+				cmd_move_panel (res);
 				break;
 			case qwaq_cmd_mvwaddstr:
 				cmd_mvwaddstr (res);
@@ -490,13 +562,61 @@ bi_new_panel (progs_t *pr)
 }
 
 static void
-bi_del_panel (progs_t *pr)
+panel_command (progs_t *pr, qwaq_commands cmd)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
 	int         panel_id = P_INT (pr, 0);
-	int         command[] = { qwaq_cmd_del_panel, 0, panel_id, };
 
 	if (get_panel (res, __FUNCTION__, panel_id)) {
+		int         command[] = { cmd, 0, panel_id, };
+		command[1] = CMD_SIZE(command);
+
+		if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
+			RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
+		}
+	}
+}
+
+static void
+bi_del_panel (progs_t *pr)
+{
+	panel_command (pr, qwaq_cmd_del_panel);
+}
+
+static void
+bi_hide_panel (progs_t *pr)
+{
+	panel_command (pr, qwaq_cmd_hide_panel);
+}
+
+static void
+bi_show_panel (progs_t *pr)
+{
+	panel_command (pr, qwaq_cmd_show_panel);
+}
+
+static void
+bi_top_panel (progs_t *pr)
+{
+	panel_command (pr, qwaq_cmd_top_panel);
+}
+
+static void
+bi_bottom_panel (progs_t *pr)
+{
+	panel_command (pr, qwaq_cmd_bottom_panel);
+}
+
+static void
+bi_move_panel (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	int         panel_id = P_INT (pr, 0);
+	int         x = P_INT (pr, 1);
+	int         y = P_INT (pr, 2);
+
+	if (get_panel (res, __FUNCTION__, panel_id)) {
+		int         command[] = { qwaq_cmd_move_panel, 0, panel_id, x, y, };
 		command[1] = CMD_SIZE(command);
 
 		if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
@@ -582,6 +702,11 @@ static builtin_t builtins[] = {
 	{"destroy_window",	bi_delwin,			-1},
 	{"create_panel",	bi_new_panel,		-1},
 	{"destroy_panel",	bi_del_panel,		-1},
+	{"hide_panel",		bi_hide_panel,		-1},
+	{"show_panel",		bi_show_panel,		-1},
+	{"top_panel",		bi_top_panel,		-1},
+	{"bottom_panel",	bi_bottom_panel,	-1},
+	{"move_panel",		bi_move_panel,		-1},
 	{"mvwprintf",		bi_mvwprintf,		-1},
 	{"get_event",		bi_get_event,		-1},
 	{0}
