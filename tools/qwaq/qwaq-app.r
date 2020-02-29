@@ -32,5 +32,7 @@ int main (int argc, string *argv)
 			}
 		}
 	} while (ch != 'q' && ch != 'Q');
+	destroy_window (win);
+	get_event (&event);
 	return 0;
 }
