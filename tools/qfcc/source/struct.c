@@ -47,6 +47,7 @@
 #include <QF/sys.h>
 #include <QF/va.h>
 
+#include "class.h"
 #include "def.h"
 #include "defspace.h"
 #include "diagnostic.h"
@@ -123,6 +124,10 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
 	for (s = symtab->symbols; s; s = s->next) {
 		if (s->sy_type != sy_var)
 			continue;
+		if (obj_is_class (s->type)) {
+			error (0, "statically allocated instance of class %s",
+				   s->type->t.class->name);
+		}
 		if (su == 's') {
 			symtab->size = RUP (symtab->size, s->type->alignment);
 			s->s.offset = symtab->size;
