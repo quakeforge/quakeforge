@@ -63,6 +63,8 @@ typedef enum qwaq_commands_e {
 	qwaq_cmd_move_panel,
 	qwaq_cmd_mvwaddstr,
 	qwaq_cmd_wrefresh,
+	qwaq_cmd_init_pair,
+	qwaq_cmd_wbkgd,
 } qwaq_commands;
 
 #define RING_BUFFER(type, size) 	\
@@ -397,6 +399,26 @@ cmd_wrefresh (qwaq_resources_t *res)
 }
 
 static void
+cmd_init_pair (qwaq_resources_t *res)
+{
+	int         pair = RB_PEEK_DATA (res->command_queue, 2);
+	int         f = RB_PEEK_DATA (res->command_queue, 3);
+	int         b = RB_PEEK_DATA (res->command_queue, 4);
+
+	init_pair (pair, f, b);
+}
+
+static void
+cmd_wbkgd (qwaq_resources_t *res)
+{
+	int         window_id = RB_PEEK_DATA (res->command_queue, 2);
+	int         ch = RB_PEEK_DATA (res->command_queue, 3);
+
+	window_t   *window = get_window (res, __FUNCTION__, window_id);
+	wbkgd (window->win, ch);
+}
+
+static void
 process_commands (qwaq_resources_t *res)
 {
 	while (RB_DATA_AVAILABLE (res->command_queue) > 2) {
@@ -433,6 +455,12 @@ process_commands (qwaq_resources_t *res)
 				break;
 			case qwaq_cmd_wrefresh:
 				cmd_wrefresh (res);
+				break;
+			case qwaq_cmd_init_pair:
+				cmd_init_pair (res);
+				break;
+			case qwaq_cmd_wbkgd:
+				cmd_wbkgd (res);
 				break;
 		}
 		RB_DROP_DATA (res->command_queue, RB_PEEK_DATA (res->command_queue, 1));
@@ -699,6 +727,52 @@ bi_get_event (progs_t *pr)
 }
 
 static void
+bi_max_colors (progs_t *pr)
+{
+	R_INT (pr) = COLORS;
+}
+
+static void
+bi_max_color_pairs (progs_t *pr)
+{
+	R_INT (pr) = COLOR_PAIRS;
+}
+
+static void
+bi_init_pair (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	int         pair = P_INT (pr, 0);
+	int         f = P_INT (pr, 1);
+	int         b = P_INT (pr, 2);
+
+	int         command[] = { qwaq_cmd_init_pair, 0, pair, f, b, };
+	command[1] = CMD_SIZE(command);
+
+	if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
+		RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
+	}
+}
+
+static void
+bi_wbkgd (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	int         window_id = P_INT (pr, 0);
+	int         ch = P_INT (pr, 1);
+
+	if (get_window (res, __FUNCTION__, window_id)) {
+		int         command[] = { qwaq_cmd_wbkgd, 0, window_id, ch, };
+
+		command[1] = CMD_SIZE(command);
+
+		if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
+			RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
+		}
+	}
+}
+
+static void
 bi_initialize (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
@@ -706,6 +780,7 @@ bi_initialize (progs_t *pr)
 	initscr ();
 	need_endwin = 1;
 	res->initialized = 1;
+	start_color ();
 	raw ();
 	keypad (stdscr, TRUE);
 	noecho ();
@@ -745,6 +820,10 @@ static builtin_t builtins[] = {
 	{"mvwprintf",		bi_mvwprintf,		-1},
 	{"wrefresh",		bi_wrefresh,		-1},
 	{"get_event",		bi_get_event,		-1},
+	{"max_colors",		bi_max_colors,		-1},
+	{"max_color_pairs",	bi_max_color_pairs,	-1},
+	{"init_pair",		bi_init_pair,		-1},
+	{"wbkgd",			bi_wbkgd,			-1},
 	{0}
 };
 
