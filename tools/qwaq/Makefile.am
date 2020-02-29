@@ -57,11 +57,11 @@ qwaq_x11_DEPENDENCIES= $(qwaq_x11_libs) $(QWAQ_DEPS)
 
 r_depfiles_remade=
 
-qwaq_app_dat_SOURCES=qwaq-app.r
+qwaq_app_dat_SOURCES=qwaq-app.r qwaq-view.r qwaq-window.r
 qwaq_app_obj=$(qwaq_app_dat_SOURCES:.r=.o)
 qwaq_app_dep=$(addprefix ./$(DEPDIR)/,$(qwaq_app_obj:.o=.Qo))
 qwaq-app.dat$(EXEEXT): $(qwaq_app_obj) $(QFCC_DEP)
-	$(QFCC) $(QCFLAGS) -o $@ $(qwaq_app_obj)
+	$(QFCC) $(QCFLAGS) -o $@ $(qwaq_app_obj) -lr
 include $(qwaq_app_dep) # am--include-marker
 r_depfiles_remade += $(qwaq_app_dep)
 

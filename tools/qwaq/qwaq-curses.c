@@ -55,6 +55,7 @@
 typedef enum qwaq_commands_e {
 	qwaq_cmd_newwin,
 	qwaq_cmd_delwin,
+	qwaq_cmd_getwrect,
 	qwaq_cmd_new_panel,
 	qwaq_cmd_del_panel,
 	qwaq_cmd_hide_panel,
@@ -62,7 +63,11 @@ typedef enum qwaq_commands_e {
 	qwaq_cmd_top_panel,
 	qwaq_cmd_bottom_panel,
 	qwaq_cmd_move_panel,
+	qwaq_cmd_panel_window,
+	qwaq_cmd_update_panels,
+	qwaq_cmd_doupdate,
 	qwaq_cmd_mvwaddstr,
+	qwaq_cmd_waddstr,
 	qwaq_cmd_wrefresh,
 	qwaq_cmd_init_pair,
 	qwaq_cmd_wbkgd,
@@ -141,6 +146,7 @@ typedef struct window_s {
 
 typedef struct panel_s {
 	PANEL      *panel;
+	int         window_id;
 } panel_t;
 
 typedef struct qwaq_resources_s {
@@ -298,6 +304,28 @@ cmd_delwin (qwaq_resources_t *res)
 }
 
 static void
+cmd_getwrect (qwaq_resources_t *res)
+{
+	int         window_id = RB_PEEK_DATA (res->command_queue, 2);
+	int         xpos, ypos;
+	int         xlen, ylen;
+
+	window_t   *window = get_window (res, __FUNCTION__, window_id);
+	getparyx (window->win, ypos, xpos);
+	if (xpos == -1 && ypos ==-1) {
+		getbegyx (window->win, ypos, xpos);
+	}
+	getmaxyx (window->win, ylen, xlen);
+
+	int         cmd_result[] = { qwaq_cmd_getwrect, xpos, ypos, xlen, ylen };
+
+	// loop
+	if (RB_SPACE_AVAILABLE (res->results) >= CMD_SIZE (cmd_result)) {
+		RB_WRITE_DATA (res->results, cmd_result, CMD_SIZE (cmd_result));
+	}
+}
+
+static void
 cmd_new_panel (qwaq_resources_t *res)
 {
 	int         window_id = RB_PEEK_DATA (res->command_queue, 2);
@@ -305,6 +333,7 @@ cmd_new_panel (qwaq_resources_t *res)
 	window_t   *window = get_window (res, __FUNCTION__, window_id);
 	panel_t    *panel = panel_new (res);
 	panel->panel = new_panel (window->win);
+	panel->window_id = window_id;
 
 	int         panel_id = panel_index (res, panel);
 	int         cmd_result[] = { qwaq_cmd_new_panel, panel_id };
@@ -378,6 +407,34 @@ cmd_move_panel (qwaq_resources_t *res)
 }
 
 static void
+cmd_panel_window (qwaq_resources_t *res)
+{
+	int         panel_id = RB_PEEK_DATA (res->command_queue, 2);
+
+	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
+
+	int         window_id = panel->window_id;
+	int         cmd_result[] = { qwaq_cmd_panel_window, window_id, };
+
+	// loop
+	if (RB_SPACE_AVAILABLE (res->results) >= CMD_SIZE (cmd_result)) {
+		RB_WRITE_DATA (res->results, cmd_result, CMD_SIZE (cmd_result));
+	}
+}
+
+static void
+cmd_update_panels (qwaq_resources_t *res)
+{
+	update_panels ();
+}
+
+static void
+cmd_doupdate (qwaq_resources_t *res)
+{
+	doupdate ();
+}
+
+static void
 cmd_mvwaddstr (qwaq_resources_t *res)
 {
 	int         window_id = RB_PEEK_DATA (res->command_queue, 2);
@@ -387,6 +444,17 @@ cmd_mvwaddstr (qwaq_resources_t *res)
 
 	window_t   *window = get_window (res, __FUNCTION__, window_id);
 	mvwaddstr (window->win, y, x, res->strings[string_id].str);
+	release_string (res, string_id);
+}
+
+static void
+cmd_waddstr (qwaq_resources_t *res)
+{
+	int         window_id = RB_PEEK_DATA (res->command_queue, 2);
+	int         string_id = RB_PEEK_DATA (res->command_queue, 3);
+
+	window_t   *window = get_window (res, __FUNCTION__, window_id);
+	waddstr (window->win, res->strings[string_id].str);
 	release_string (res, string_id);
 }
 
@@ -430,6 +498,9 @@ process_commands (qwaq_resources_t *res)
 			case qwaq_cmd_delwin:
 				cmd_delwin (res);
 				break;
+			case qwaq_cmd_getwrect:
+				cmd_getwrect (res);
+				break;
 			case qwaq_cmd_new_panel:
 				cmd_new_panel (res);
 				break;
@@ -451,8 +522,20 @@ process_commands (qwaq_resources_t *res)
 			case qwaq_cmd_move_panel:
 				cmd_move_panel (res);
 				break;
+			case qwaq_cmd_panel_window:
+				cmd_panel_window (res);
+				break;
+			case qwaq_cmd_update_panels:
+				cmd_update_panels (res);
+				break;
+			case qwaq_cmd_doupdate:
+				cmd_doupdate (res);
+				break;
 			case qwaq_cmd_mvwaddstr:
 				cmd_mvwaddstr (res);
+				break;
+			case qwaq_cmd_waddstr:
+				cmd_waddstr (res);
 				break;
 			case qwaq_cmd_wrefresh:
 				cmd_wrefresh (res);
@@ -584,6 +667,37 @@ bi_delwin (progs_t *pr)
 }
 
 static void
+bi_getwrect (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	int         window_id = P_INT (pr, 0);
+
+	if (get_window (res, __FUNCTION__, window_id)) {
+		int         command[] = { qwaq_cmd_getwrect, 0, window_id, };
+
+		command[1] = CMD_SIZE(command);
+
+		if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
+			RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
+		}
+		// XXX should just wait on the mutex
+		process_commands (res);
+		process_input (res);
+		// locking and loop until id is correct
+		if (RB_DATA_AVAILABLE (res->results)
+			&& RB_PEEK_DATA (res->results, 0) == qwaq_cmd_getwrect) {
+			int         cmd_result[5];
+			RB_READ_DATA (res->results, cmd_result, CMD_SIZE (cmd_result));
+			// return xpos, ypos, xlen, ylen
+			(&R_INT (pr))[0] = cmd_result[1];
+			(&R_INT (pr))[1] = cmd_result[2];
+			(&R_INT (pr))[2] = cmd_result[3];
+			(&R_INT (pr))[3] = cmd_result[4];
+		}
+	}
+}
+
+static void
 bi_new_panel (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
@@ -673,6 +787,58 @@ bi_move_panel (progs_t *pr)
 }
 
 static void
+bi_panel_window (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	int         panel_id = P_INT (pr, 0);
+
+	if (get_panel (res, __FUNCTION__, panel_id)) {
+		int         command[] = { qwaq_cmd_panel_window, 0, panel_id, };
+		command[1] = CMD_SIZE(command);
+
+		if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
+			RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
+		}
+		// XXX should just wait on the mutex
+		process_commands (res);
+		process_input (res);
+		// locking and loop until id is correct
+		if (RB_DATA_AVAILABLE (res->results)
+			&& RB_PEEK_DATA (res->results, 0) == qwaq_cmd_panel_window) {
+			int         cmd_result[2];
+			RB_READ_DATA (res->results, cmd_result, CMD_SIZE (cmd_result));
+			(&R_INT (pr))[0] = cmd_result[0];
+		}
+	}
+}
+
+static void
+bi_update_panels (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+
+	int         command[] = { qwaq_cmd_update_panels, 0, };
+	command[1] = CMD_SIZE(command);
+
+	if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
+		RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
+	}
+}
+
+static void
+bi_doupdate (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+
+	int         command[] = { qwaq_cmd_doupdate, 0, };
+	command[1] = CMD_SIZE(command);
+
+	if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
+		RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
+	}
+}
+
+static void
 bi_mvwprintf (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
@@ -695,6 +861,33 @@ bi_mvwprintf (progs_t *pr)
 
 		dstring_clearstr (print_buffer);
 		PR_Sprintf (pr, print_buffer, "mvwaddstr", fmt, count, args);
+		if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
+			RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
+		}
+	}
+}
+
+static void
+bi_wprintf (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	int         window_id = P_INT (pr, 0);
+	const char *fmt = P_GSTRING (pr, 1);
+	int         count = pr->pr_argc - 2;
+	pr_type_t **args = pr->pr_params + 2;
+
+	if (get_window (res, __FUNCTION__, window_id)) {
+		int         string_id = acquire_string (res);
+		dstring_t  *print_buffer = res->strings + string_id;
+		int         command[] = {
+						qwaq_cmd_waddstr, 0,
+						window_id, string_id
+					};
+
+		command[1] = CMD_SIZE(command);
+
+		dstring_clearstr (print_buffer);
+		PR_Sprintf (pr, print_buffer, "waddstr", fmt, count, args);
 		if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
 			RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
 		}
@@ -813,6 +1006,7 @@ static builtin_t builtins[] = {
 	{"initialize",		bi_initialize,		-1},
 	{"create_window",	bi_newwin,			-1},
 	{"destroy_window",	bi_delwin,			-1},
+	{"getwrect",		bi_getwrect,		-1},
 	{"create_panel",	bi_new_panel,		-1},
 	{"destroy_panel",	bi_del_panel,		-1},
 	{"hide_panel",		bi_hide_panel,		-1},
@@ -820,7 +1014,11 @@ static builtin_t builtins[] = {
 	{"top_panel",		bi_top_panel,		-1},
 	{"bottom_panel",	bi_bottom_panel,	-1},
 	{"move_panel",		bi_move_panel,		-1},
+	{"panel_window",	bi_panel_window,	-1},
+	{"update_panels",	bi_update_panels,	-1},
+	{"doupdate",		bi_doupdate,		-1},
 	{"mvwprintf",		bi_mvwprintf,		-1},
+	{"wprintf",			bi_wprintf,			-1},
 	{"wrefresh",		bi_wrefresh,		-1},
 	{"get_event",		bi_get_event,		-1},
 	{"max_colors",		bi_max_colors,		-1},
