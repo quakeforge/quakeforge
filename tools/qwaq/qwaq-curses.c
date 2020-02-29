@@ -46,7 +46,8 @@
 
 #define always_inline inline __attribute__((__always_inline__))
 #define QUEUE_SIZE 16
-#define MOUSE_MOVES "\033[?1003h"	// Make the terminal report mouse movements
+#define MOUSE_MOVES_ON "\033[?1003h"// Make the terminal report mouse movements
+#define MOUSE_MOVES_OFF "\033[?1003l"// Make the terminal report mouse movements
 #define STRING_ID_QUEUE_SIZE 8		// must be > 1
 #define COMMAND_QUEUE_SIZE 128
 #define CMD_SIZE(x) sizeof(x)/sizeof(x[0])
@@ -530,6 +531,7 @@ static void
 bi_shutdown (void)
 {
 	if (need_endwin) {
+		write(1, MOUSE_MOVES_OFF, sizeof (MOUSE_MOVES_OFF) - 1);
 		endwin ();
 	}
 }
@@ -787,7 +789,7 @@ bi_initialize (progs_t *pr)
 	nonl ();
 	nodelay (stdscr, TRUE);
 	mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
-	write(1, MOUSE_MOVES, sizeof (MOUSE_MOVES) - 1);
+	write(1, MOUSE_MOVES_ON, sizeof (MOUSE_MOVES_ON) - 1);
 	refresh();
 
 	res->stdscr.win = stdscr;
@@ -799,6 +801,7 @@ bi_qwaq_clear (progs_t *pr, void *data)
 	__auto_type res = (qwaq_resources_t *) data;
 
 	if (res->initialized) {
+		write(1, MOUSE_MOVES_OFF, sizeof (MOUSE_MOVES_OFF) - 1);
 		endwin ();
 	}
 	need_endwin = 0;
