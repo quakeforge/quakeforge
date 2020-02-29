@@ -142,6 +142,7 @@ typedef struct panel_s {
 typedef struct qwaq_resources_s {
 	progs_t    *pr;
 	int         initialized;
+	window_t    stdscr;
 	PR_RESMAP (window_t) window_map;
 	PR_RESMAP (panel_t) panel_map;
 	RING_BUFFER (qwaq_event_t, QUEUE_SIZE) event_queue;
@@ -184,6 +185,10 @@ window_index (qwaq_resources_t *res, window_t *win)
 static always_inline window_t * __attribute__((pure))
 get_window (qwaq_resources_t *res, const char *name, int handle)
 {
+	if (handle == 1) {
+		return &res->stdscr;
+	}
+
 	window_t   *window = window_get (res, handle);
 
 	if (!window || !window->win) {
@@ -681,6 +686,8 @@ bi_initialize (progs_t *pr)
 	mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
 	write(1, MOUSE_MOVES, sizeof (MOUSE_MOVES) - 1);
 	refresh();
+
+	res->stdscr.win = stdscr;
 }
 
 static void
