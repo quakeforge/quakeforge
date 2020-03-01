@@ -1575,7 +1575,6 @@ typedef struct type_view_s {
 	type_view_func enum_view;
 	type_view_func array_view;
 	type_view_func class_view;
-	type_view_func alias_view;
 } type_view_t;
 
 void PR_Debug_Init (progs_t *pr);

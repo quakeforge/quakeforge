@@ -132,8 +132,6 @@ static void pr_debug_array_view (qfot_type_t *type, pr_type_t *value,
 								void *_data);
 static void pr_debug_class_view (qfot_type_t *type, pr_type_t *value,
 								void *_data);
-static void pr_debug_alias_view (qfot_type_t *type, pr_type_t *value,
-								void *_data);
 
 static type_view_t raw_type_view = {
 	pr_debug_void_view,
@@ -154,7 +152,6 @@ static type_view_t raw_type_view = {
 	pr_debug_enum_view,
 	pr_debug_array_view,
 	pr_debug_class_view,
-	pr_debug_alias_view,
 };
 
 static const char *
@@ -226,9 +223,6 @@ pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
 			return type->t.array.size * size;
 		case ty_class:
 			return 1;	//FIXME or should it return sizeof class struct?
-		case ty_alias:
-			aux_type = &G_STRUCT (pr, qfot_type_t, type->t.alias.aux_type);
-			return pr_debug_type_size (pr, aux_type);
 	}
 	return 0;
 }
@@ -860,9 +854,6 @@ value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 		case ty_class:
 			raw_type_view.class_view (type, value, data);
 			break;
-		case ty_alias:
-			raw_type_view.alias_view (type, value, data);
-			break;
 	}
 	return data->dstr->str;
 }
@@ -1169,16 +1160,6 @@ pr_debug_class_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	dstring_t  *dstr = data->dstr;
 
 	dstring_appendstr (dstr, "<class>");
-}
-
-static void
-pr_debug_alias_view (qfot_type_t *type, pr_type_t *value, void *_data)
-{
-	__auto_type data = (pr_debug_data_t *) _data;
-	progs_t    *pr = data->pr;
-
-	type = &G_STRUCT (pr, qfot_type_t, type->t.alias.aux_type);
-	value_string (data, type, value);
 }
 
 VISIBLE void
