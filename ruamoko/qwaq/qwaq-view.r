@@ -96,6 +96,8 @@ rectContainsPoint (Rect *rect, Point *point)
 				}
 			}
 			break;
+		case qe_none:
+			break;
 	}
 	return self;
 }
