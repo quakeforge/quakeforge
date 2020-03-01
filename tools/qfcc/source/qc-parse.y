@@ -192,7 +192,7 @@ int yylex (void);
 %type	<symbol>	overloaded_identifier
 
 %type	<expr>		identifier_list
-%type	<symbol>	selector reserved_word
+%type	<symbol>	protocol_name_list selector reserved_word
 %type	<param>		optional_param_list unaryselector keyworddecl
 %type	<param>		keywordselector
 %type	<method>	methodproto methoddecl
@@ -1443,6 +1443,7 @@ identifier
 obj_def
 	: classdef					{ }
 	| classdecl
+	| protocoldecl
 	| protocoldef
 	| { if (!current_class) PARSE_ERROR; } methoddef
 	| END
@@ -1570,17 +1571,18 @@ category_reference
 		}
 	;
 
-
 protocol_name
 	: identifier
 		{
 			$$ = get_protocol ($1->name, 0);
-			if ($$) {
-				error (0, "redefinition of %s", $1->name);
+			if ($$ && $$->methods) {
+				error (0, "redefinition of protocol %s", $1->name);
 				$$ = get_protocol (0, 1);
-			} else {
+			}
+			if (!$$) {
 				$$ = get_protocol ($1->name, 1);
 			}
+			$$->methods = new_methodlist ();
 			current_class = &$$->class_type;
 		}
 	;
@@ -1673,16 +1675,31 @@ classdef
 	| REFERENCE category_reference ';'	{ }
 	;
 
+protocoldecl
+	: protocol
+	  protocol_name_list ';'
+		{
+			while ($2) {
+				get_protocol ($2->name, 1);
+				$2 = $2->next;
+			}
+		}
+	;
+
 protocoldef
-	: PROTOCOL					{ $<class_type>$ = current_class; }
+	: protocol
 	  protocol_name
-	  protocolrefs			{ protocol_add_protocols ($3, $4); $<class>$ = 0; }
-	  methodprotolist			{ protocol_add_methods ($3, $6); }
+	  protocolrefs			{ protocol_add_protocols ($2, $3); $<class>$ = 0; }
+	  methodprotolist			{ protocol_add_methods ($2, $5); }
 	  END
 		{
-			current_class = $<class_type>2;
-			(void) ($<class>5);
+			current_class = $<class_type>1;
+			(void) ($<class>4);
 		}
+	;
+
+protocol
+	: PROTOCOL					{ $<class_type>$ = current_class; }
 	;
 
 protocolrefs
@@ -1869,6 +1886,10 @@ keywordselector
 	: keyworddecl
 	| keywordselector keyworddecl { $2->next = $1; $$ = $2; }
 	;
+
+protocol_name_list
+	: identifier
+	| protocol_name_list ',' identifier { $3->next = $1; $$ = $3; }
 
 selector
 	: NAME						{ $$ = $1; }
