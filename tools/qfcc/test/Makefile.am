@@ -55,7 +55,6 @@ test_progs_dat=\
 	structstruct.dat \
 	swap.dat \
 	triangle.dat \
-	typedef.dat \
 	vecexpr.dat \
 	vecinit.dat \
 	voidfor.dat \

@@ -297,8 +297,6 @@ types_same (type_t *a, type_t *b)
 			if (a->t.class != b->t.class)
 				return 0;
 			return compare_protocols (a->protos, b->protos);
-		case ty_alias:
-			return !strcmp (a->name, b->name);
 	}
 	internal_error (0, "we be broke");
 }
@@ -347,9 +345,6 @@ find_type (type_t *type)
 				type->t.array.type = find_type (type->t.array.type);
 				break;
 			case ty_class:
-				break;
-			case ty_alias:
-				type->t.alias.type = find_type (type->t.alias.type);
 				break;
 		}
 	}
@@ -450,25 +445,6 @@ based_array_type (type_t *aux, int base, int top)
 	return new;
 }
 
-type_t *
-alias_type (type_t *aux, const char *name)
-{
-	type_t      _new;
-	type_t     *new = &_new;
-
-	if (!aux || !name) {
-		internal_error (0, "alias to null type or with no name");
-	}
-	memset (&_new, 0, sizeof (_new));
-	new->name = save_string (name);
-	new->meta = ty_alias;
-	new->type = aux->type;
-	new->alignment = aux->alignment;
-	new->t.alias.type = aux;
-	new = find_type (new);
-	return new;
-}
-
 void
 print_type_str (dstring_t *str, const type_t *type)
 {
@@ -499,11 +475,6 @@ print_type_str (dstring_t *str, const type_t *type)
 			} else {
 				dasprintf (str, "[%d]", type->t.array.size);
 			}
-			return;
-		case ty_alias:
-			dasprintf (str, "({%s=", type->name);
-			print_type_str (str, type->t.alias.type);
-			dstring_appendstr (str, "})");
 			return;
 		case ty_basic:
 			switch (type->type) {
@@ -658,11 +629,6 @@ encode_type (dstring_t *encoding, const type_t *type)
 			encode_type (encoding, type->t.array.type);
 			dasprintf (encoding, "]");
 			return;
-		case ty_alias:
-			dasprintf (encoding, "{%s>", type->name);
-			encode_type (encoding, type->t.alias.type);
-			dasprintf (encoding, "}");
-			return;
 		case ty_basic:
 			switch (type->type) {
 				case ev_void:
@@ -730,15 +696,6 @@ encode_type (dstring_t *encoding, const type_t *type)
 	internal_error (0, "bad type meta:type %d:%d", type->meta, type->type);
 }
 
-const type_t *
-unalias_type (const type_t *type)
-{
-	while (type->meta == ty_alias) {
-		type = type->t.alias.type;
-	}
-	return type;
-}
-
 int
 is_void (const type_t *type)
 {
@@ -748,7 +705,6 @@ is_void (const type_t *type)
 int
 is_enum (const type_t *type)
 {
-	type = unalias_type (type);
 	if (type->type == ev_invalid && type->meta == ty_enum)
 		return 1;
 	return 0;
@@ -833,7 +789,6 @@ is_math (const type_t *type)
 int
 is_struct (const type_t *type)
 {
-	type = unalias_type (type);
 	if (type->type == ev_invalid
 		&& (type->meta == ty_struct || type->meta == ty_union))
 		return 1;
@@ -859,7 +814,6 @@ is_field (const type_t *type)
 int
 is_array (const type_t *type)
 {
-	type = unalias_type (type);
 	if (type->type == ev_invalid && type->meta == ty_array)
 		return 1;
 	return 0;
@@ -884,8 +838,6 @@ is_string (const type_t *type)
 int
 type_compatible (const type_t *dst, const type_t *src)
 {
-	dst = unalias_type (dst);
-	src = unalias_type (src);
 	// same type
 	if (dst == src) {
 		return 1;
@@ -905,8 +857,6 @@ type_compatible (const type_t *dst, const type_t *src)
 int
 type_assignable (const type_t *dst, const type_t *src)
 {
-	dst = unalias_type (dst);
-	src = unalias_type (src);
 	int         ret;
 
 	// same type
@@ -932,8 +882,8 @@ type_assignable (const type_t *dst, const type_t *src)
 	if (ret >= 0)
 		return ret;
 
-	dst = unalias_type (dst->t.fldptr.type);
-	src = unalias_type (src->t.fldptr.type);
+	dst = dst->t.fldptr.type;
+	src = src->t.fldptr.type;
 	if (dst == src) {
 		return 1;
 	}
@@ -972,8 +922,6 @@ type_size (const type_t *type)
 					size += type_size (class->super_class->type);
 				return size;
 			}
-		case ty_alias:
-			return type_size (type->t.alias.type);
 	}
 	return 0;
 }

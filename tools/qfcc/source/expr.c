@@ -1140,7 +1140,7 @@ append_expr (expr_t *block, expr_t *e)
 static symbol_t *
 get_struct_field (const type_t *t1, expr_t *e1, expr_t *e2)
 {
-	symtab_t   *strct = unalias_type (t1)->t.symtab;
+	symtab_t   *strct = t1->t.symtab;
 	symbol_t   *sym = e2->e.symbol;//FIXME need to check
 	symbol_t   *field;
 
@@ -1165,7 +1165,6 @@ field_expr (expr_t *e1, expr_t *e2)
 	t1 = get_type (e1);
 	if (e1->type == ex_error)
 		return e1;
-	t1 = unalias_type (t1);
 	if (t1->type == ev_entity) {
 		symbol_t   *field = 0;
 
@@ -1639,7 +1638,6 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 	expr_t     *call;
 	expr_t     *err = 0;
 
-	ftype = unalias_type (ftype);
 
 	for (e = params; e; e = e->next) {
 		if (e->type == ex_error)
@@ -2375,7 +2373,7 @@ cast_expr (type_t *dstType, expr_t *e)
 
 	srcType = get_type (e);
 
-	if (unalias_type (dstType) == unalias_type (srcType))
+	if (dstType == srcType)
 		return e;
 
 	if ((dstType == type_default && is_enum (srcType))
