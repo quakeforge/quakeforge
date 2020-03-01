@@ -889,6 +889,10 @@ class_find_ivar (class_t *class, int vis, const char *name)
 {
 	symbol_t   *ivar;
 
+	if (!class->ivars) {
+		error (0, "accessing incomplete type %s", class->name);
+		return 0;
+	}
 	ivar = symtab_lookup (class->ivars, name);
 	if (ivar) {
 		if (ivar->visibility > (vis_t) vis)
