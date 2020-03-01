@@ -925,7 +925,7 @@ class_find_method (class_type_t *class_type, method_t *method)
 	start_methods = methods;
 	start_class = class;
 	while (class) {
-		for (m = methods->head; m; m = m->next)
+		for (m = methods->head; m; m = m->next) {
 			if (method_compare (method, m)) {
 				if (m->type != method->type)
 					error (0, "method type mismatch");
@@ -937,6 +937,7 @@ class_find_method (class_type_t *class_type, method_t *method)
 				method_set_param_names (m, method);
 				return m;
 			}
+		}
 		if (class->methods == methods)
 			class = class->super_class;
 		else

@@ -474,7 +474,7 @@ emit_methods (methodlist_t *methods, const char *name, int instance)
 	if (!methods)
 		return 0;
 
-	for (count = 0, m = methods->head; m; m = m->next)
+	for (count = 0, m = methods->head; m; m = m->next) {
 		if (!m->instance == !instance) {
 			if (!m->def && options.warnings.unimplemented) {
 				warning (0, "Method `%c%s' not implemented",
@@ -483,6 +483,7 @@ emit_methods (methodlist_t *methods, const char *name, int instance)
 			if (m->def)
 				count++;
 		}
+	}
 	if (!count)
 		return 0;
 	methods->count = count;
