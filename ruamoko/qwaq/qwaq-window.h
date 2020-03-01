@@ -1,11 +1,25 @@
 #ifndef __qwaq_window_h
 #define __qwaq_window_h
 
-#include "qwaq-view.h"
+#include "Object.h"
 
-@interface Window: View
+@class View;
+@class Array;
+
+#include "qwaq-rect.h"
+
+@interface Window: Object
 {
+	Rect        rect;
+	Point       point;	// FIXME can't be local :(
+	Array      *views;
+	View       *focusedView;
+	struct window_s *window;
+	struct panel_s *panel;
 }
++windowWithRect: (Rect) rect;
+-addView: (View *) view;
+-setBackground: (int) ch;
 @end
 
 #endif//__qwaq_window_h

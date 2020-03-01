@@ -4,6 +4,8 @@
 #include "qwaq-app.h"
 #include "qwaq-curses.h"
 #include "qwaq-window.h"
+#include "qwaq-screen.h"
+#include "qwaq-view.h"
 
 static AutoreleasePool *autorelease_pool;
 static void
@@ -33,18 +35,18 @@ arp_end (void)
 	initialize ();
 	init_pair (1, COLOR_WHITE, COLOR_BLUE);
 	init_pair (2, COLOR_WHITE, COLOR_BLACK);
-	view = [[View viewFromWindow:stdscr] retain];
-	[view setBackground: COLOR_PAIR (1)];
-	Rect r = view.rect;
-	wprintf (view.window, "%d %d %d %d\n", r.xpos, r.ypos, r.xlen, r.ylen);
+	screen = [[Screen screen] retain];
+	[screen setBackground: COLOR_PAIR (1)];
+	Rect r = screen.rect;
+	wprintf (screen.window, "%d %d %d %d\n", r.xpos, r.ypos, r.xlen, r.ylen);
 	r.xpos = r.xlen / 4;
 	r.ypos = r.ylen / 4;
 	r.xlen /= 2;
 	r.ylen /= 2;
-	wprintf (view.window, "%d %d %d %d\n", r.xpos, r.ypos, r.xlen, r.ylen);
-	wrefresh(view.window);
+	wprintf (screen.window, "%d %d %d %d\n", r.xpos, r.ypos, r.xlen, r.ylen);
+	wrefresh(screen.window);
 	Window *w;
-	[view addView: w=[[Window windowWithRect: r] setBackground: COLOR_PAIR (2)]];
+	[screen add: w=[[Window windowWithRect: r] setBackground: COLOR_PAIR (2)]];
 	wprintf (w.window, "%d %d %d %d\n", r.xpos, r.ypos, r.xlen, r.ylen);
 	return self;
 }
@@ -68,7 +70,7 @@ arp_end (void)
 
 -handleEvent: (qwaq_event_t *) event
 {
-	[view handleEvent: event];
+	[screen handleEvent: event];
 	if (event.event_type == qe_key && event.e.key == '\x18') {
 		event.event_type = qe_command;
 		event.e.message.command = qc_exit;
