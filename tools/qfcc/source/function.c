@@ -46,6 +46,7 @@
 
 #include "qfcc.h"
 
+#include "class.h"
 #include "codespace.h"
 #include "debug.h"
 #include "def.h"
@@ -157,6 +158,11 @@ parse_params (type_t *type, param_t *parms)
 	type_t     *new;
 	int         count = 0;
 
+	if (type && obj_is_class (type)) {
+		error (0, "cannot return an object (forgot *?)");
+		type = &type_id;
+	}
+
 	new = new_type ();
 	new->type = ev_func;
 	new->alignment = 1;
@@ -177,6 +183,10 @@ parse_params (type_t *type, param_t *parms)
 				internal_error (0, 0);
 			new->t.func.num_params = -(new->t.func.num_params + 1);
 		} else if (p->type) {
+			if (obj_is_class (p->type)) {
+				error (0, "cannot use an object as a parameter (forgot *?)");
+				p->type = &type_id;
+			}
 			new->t.func.param_types[new->t.func.num_params] = p->type;
 			new->t.func.num_params++;
 		}
