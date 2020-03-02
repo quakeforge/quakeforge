@@ -513,7 +513,7 @@ cmd_wbkgd (qwaq_resources_t *res)
 static void
 process_commands (qwaq_resources_t *res)
 {
-	while (RB_DATA_AVAILABLE (res->command_queue) > 2) {
+	while (RB_DATA_AVAILABLE (res->command_queue) >= 2) {
 		switch ((qwaq_commands) RB_PEEK_DATA (res->command_queue, 0)) {
 			case qwaq_cmd_newwin:
 				cmd_newwin (res);
