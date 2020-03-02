@@ -66,6 +66,8 @@
 static hashtab_t *class_hash;
 static hashtab_t *category_hash;
 static hashtab_t *protocol_hash;
+static hashtab_t *static_instances;
+static hashtab_t *static_instance_classes;
 
 // these will be built up further
 type_t      type_obj_selector = { ev_invalid, 0, 0, ty_struct};
@@ -177,6 +179,141 @@ static struct_def_t object_struct[] = {
 	{"class_pointer", &type_Class},
 	{0, 0}
 };
+
+static const char *
+static_instance_get_key (const void *instance, void *unused)
+{
+	return ((static_instance_t *) instance)->class;
+}
+
+static void
+add_static_instance (const char *class, def_t *instance_def)
+{
+	static_instance_t *instance = malloc (sizeof (*instance));
+
+	if (!static_instances) {
+		static_instances = Hash_NewTable (1021, static_instance_get_key, 0, 0);
+		static_instance_classes = Hash_NewTable (1021, static_instance_get_key,
+												 0, 0);
+	}
+
+	instance->class = save_string (class);
+	instance->instance = instance_def;
+	Hash_Add (static_instances, instance);
+
+	// uniqued set of class names for all static instances
+	if (!Hash_Find (static_instance_classes, class)) {
+		Hash_Add (static_instance_classes, instance);
+	}
+}
+typedef struct {
+	const char *class_name;
+	int         num_instances;
+	static_instance_t **instances;
+} obj_static_instances_data_t;
+
+static void
+emit_instance_classname (def_t *def, void *data, int index)
+{
+	obj_static_instances_data_t *da = (obj_static_instances_data_t *)data;
+
+	if (def->type != &type_string)
+		internal_error (0, "%s: expected string def", __FUNCTION__);
+	EMIT_STRING (def->space, D_STRING (def), da->class_name);
+}
+
+static void
+emit_instance_defs (def_t *def, void *data, int index)
+{
+	obj_static_instances_data_t *da = (obj_static_instances_data_t *)data;
+
+	if (!is_array (def->type) || def->type->t.array.type->type != ev_pointer)
+		internal_error (0, "%s: expected array of pointers def", __FUNCTION__);
+	if (index < 0 || index >= da->num_instances + 1)
+		internal_error (0, "%s: out of bounds index: %d %d",
+						__FUNCTION__, index, da->num_instances + 1);
+	D_INT (def) = 0;
+	if (index < da->num_instances) {
+		EMIT_DEF (def->space, D_INT (def), da->instances[index]->instance);
+	}
+}
+
+static def_t *
+emit_static_instances (const char *classname)
+{
+	static struct_def_t instances_struct[] = {
+		{"class_name",	&type_string, emit_instance_classname},
+		{"instances",	0,            emit_instance_defs},
+		{0, 0}
+	};
+	obj_static_instances_data_t data = {};
+	def_t      *instances_def;
+
+	data.class_name = classname;
+	data.instances = (static_instance_t **) Hash_FindList (static_instances,
+														   classname);
+	for (static_instance_t **inst = data.instances; *inst; inst++) {
+		data.num_instances++;
+	}
+	instances_struct[1].type = array_type (&type_pointer,
+										   data.num_instances + 1);
+	instances_def = emit_structure (va ("_OBJ_STATIC_INSTANCES_%s", classname),
+									's', instances_struct, 0, &data,
+									sc_static);
+	free (data.instances);
+	return instances_def;
+}
+
+static def_t *
+emit_static_instances_list (void)
+{
+	static_instance_t **classes;
+	int         num_classes = 0;
+	def_t     **instance_lists;
+	type_t     *instance_lists_type;
+	symbol_t   *instance_lists_sym;
+	def_t      *instance_lists_def;
+	pointer_t  *list;
+	defspace_t *space;
+
+	if (!static_instance_classes || !static_instances) {
+		return 0;
+	}
+
+	classes = (static_instance_t **) Hash_GetList (static_instance_classes);
+	for (static_instance_t **c = classes; *c; c++) {
+		num_classes++;
+	}
+	if (!num_classes) {
+		free (classes);
+		return 0;
+	}
+	instance_lists = alloca (num_classes * sizeof (*instance_lists));
+	for (int i = 0; i < num_classes; i++) {
+		instance_lists[i] = emit_static_instances (classes[i]->class);
+	}
+	free (classes);
+
+	// +1 for terminating null
+	instance_lists_type = array_type (&type_pointer, num_classes + 1);
+	instance_lists_sym = make_symbol ("_OBJ_STATIC_INSTANCES",
+									  instance_lists_type,
+									  pr.far_data, sc_static);
+	if (!instance_lists_sym->table) {
+		symtab_addsymbol (pr.symtab, instance_lists_sym);
+	}
+	instance_lists_def = instance_lists_sym->s.def;
+	instance_lists_def->initialized = instance_lists_def->constant = 1;
+	instance_lists_def->nosave = 1;
+
+	list = D_POINTER (pointer_t, instance_lists_def);
+	space = instance_lists_def->space;
+	for (int i = 0; i < num_classes; i++, list++) {
+		EMIT_DEF (space, *list, instance_lists[i]);
+	}
+	*list = 0;
+	return instance_lists_def;
+}
 
 int
 obj_is_id (const type_t *type)
@@ -1185,6 +1322,7 @@ typedef struct {
 	int         cls_def_cnt;
 	category_t **categories;
 	int         cat_def_cnt;
+	def_t      *instances_list;
 } obj_symtab_data_t;
 
 static void
@@ -1238,10 +1376,10 @@ emit_symtab_defs (def_t *def, void *data, int index)
 
 	if (!is_array (def->type) || def->type->t.array.type->type != ev_pointer)
 		internal_error (0, "%s: expected array of pointers def", __FUNCTION__);
-	if (index < 0 || index >= da->cls_def_cnt + da->cat_def_cnt)
+	if (index < 0 || index >= da->cls_def_cnt + da->cat_def_cnt + 1)
 		internal_error (0, "%s: out of bounds index: %d %d",
 						__FUNCTION__, index,
-						da->cls_def_cnt + da->cat_def_cnt);
+						da->cls_def_cnt + da->cat_def_cnt + 1);
 
 	if (index < da->cls_def_cnt) {
 		class_t   **cl;
@@ -1250,7 +1388,7 @@ emit_symtab_defs (def_t *def, void *data, int index)
 				if (!index--)
 					break;
 		EMIT_DEF (def->space, D_INT (def), (*cl)->def);
-	} else {
+	} else if (index < da->cls_def_cnt + da->cat_def_cnt) {
 		category_t **ca;
 		index -= da->cls_def_cnt;
 		for (ca = da->categories; *ca; ca++)
@@ -1258,6 +1396,11 @@ emit_symtab_defs (def_t *def, void *data, int index)
 				if (!index--)
 					break;
 		EMIT_DEF (def->space, D_INT (def), (*ca)->def);
+	} else {
+		D_INT (def) = 0;
+		if (da->instances_list) {
+			EMIT_DEF (def->space, D_INT (def), da->instances_list);
+		}
 	}
 }
 
@@ -1273,7 +1416,7 @@ class_finish_module (void)
 		{0, 0}
 	};
 
-	obj_symtab_data_t data = {0, 0, 0, 0, 0};
+	obj_symtab_data_t data = {};
 
 	class_t   **cl;
 	category_t **ca;
@@ -1299,10 +1442,14 @@ class_finish_module (void)
 			if ((*ca)->def && !(*ca)->def->external)
 				data.cat_def_cnt++;
 	}
-	if (!data.refs && !data.cls_def_cnt && !data.cat_def_cnt)
+	data.instances_list = emit_static_instances_list ();
+	if (!data.refs && !data.cls_def_cnt && !data.cat_def_cnt
+		&& !data.instances_list)
 		return;
 	symtab_struct[4].type = array_type (&type_pointer,
-										data.cls_def_cnt + data.cat_def_cnt);
+										data.cls_def_cnt
+										+ data.cat_def_cnt
+										+ 1);
 	symtab_def = emit_structure ("_OBJ_SYMTAB", 's', symtab_struct, 0, &data,
 								 sc_static);
 	free (data.classes);
@@ -1389,6 +1536,7 @@ protocol_def (protocol_t *protocol)
 {
 	if (!protocol->def) {
 		protocol->def = emit_protocol (protocol);
+		add_static_instance ("Protocol", protocol->def);
 	}
 	return protocol->def;
 }
@@ -1548,6 +1696,10 @@ clear_classes (void)
 		Hash_FlushTable (protocol_hash);
 	if (category_hash)
 		Hash_FlushTable (category_hash);
+	if (static_instances)
+		Hash_FlushTable (static_instances);
+	if (static_instance_classes)
+		Hash_FlushTable (static_instance_classes);
 	obj_initialized = 0;
 }
 

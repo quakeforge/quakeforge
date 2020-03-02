@@ -90,21 +90,40 @@ dump_selector (progs_t *pr, pr_sel_t *sel)
 }
 
 static void
+dump_method_description_list (progs_t *pr, char c,
+							  pr_method_description_list_t *list)
+{
+	if (list) {
+		for (int i = 0; i < list->count; i++) {
+			printf ("%*s%s\n", 20, "", PR_GetString (pr, list->list[i].name));
+			printf ("%*s%s\n", 20, "", PR_GetString (pr, list->list[i].types));
+		}
+	}
+}
+
+static void
 dump_protocol (progs_t *pr, pr_protocol_t *proto)
 {
 	const char *protocol_name = "<invalid string>";
-	printf ("                %d ", proto->class_pointer);
+	printf ("                %x %x ",
+			(pointer_t) ((pr_int_t *) proto - (pr_int_t *) pr->pr_globals),
+			proto->class_pointer);
 	if (PR_StringValid (pr, proto->protocol_name))
 		protocol_name = PR_GetString (pr, proto->protocol_name);
 	printf ("<%s>\n", protocol_name);
+	dump_method_description_list (pr, '-',
+			&G_STRUCT (pr, pr_method_description_list_t,
+					   proto->instance_methods));
+	dump_method_description_list (pr, '-',
+			&G_STRUCT (pr, pr_method_description_list_t,
+					   proto->class_methods));
 }
 
 static void
 dump_protocol_list (progs_t *pr, pr_protocol_list_t *list)
 {
 	int         i;
-	printf ("            %d\n", list->next);
-	printf ("            %d\n", list->count);
+	printf ("            %x %d\n", list->next, list->count);
 	for (i = 0; i < list->count; i++) {
 		if (list->list[i] <= 0 || list->list[i] >= pr->globals_size) {
 			printf ("invalid pointer\n");
@@ -172,6 +191,32 @@ dump_category (progs_t *pr, pr_category_t *category)
 }
 
 static void
+dump_static_instance_lists (progs_t *pr, pointer_t instance_lists)
+{
+	pointer_t  *ptr = &G_STRUCT (pr, pointer_t, instance_lists);
+
+	printf ("    static instance lists @ %x\n", instance_lists);
+	while (*ptr) {
+		__auto_type list = &G_STRUCT (pr, pr_static_instances_t, *ptr);
+		const char *class_name = "*** INVALID ***";
+
+		if (PR_StringValid (pr, list->class_name)) {
+			class_name = PR_GetString (pr, list->class_name);
+		}
+		printf ("        %x %s\n", *ptr, class_name);
+		for (int i = 0; list->instances[i]; i++) {
+			if (!strcmp (class_name, "Protocol")) {
+				dump_protocol (pr, &G_STRUCT (pr, pr_protocol_t,
+											  list->instances[i]));
+			} else {
+				printf ("            %x\n", list->instances[i]);
+			}
+		}
+		ptr++;
+	}
+}
+
+static void
 dump_module (progs_t *pr, pr_module_t *module)
 {
 	pr_symtab_t *symtab = &G_STRUCT (pr, pr_symtab_t, module->symtab);
@@ -197,6 +242,9 @@ dump_module (progs_t *pr, pr_module_t *module)
 		dump_class (pr, &G_STRUCT (pr, pr_class_t, *ptr++));
 	for (i = 0; i < symtab->cat_def_cnt; i++)
 		dump_category (pr, &G_STRUCT (pr, pr_category_t, *ptr++));
+	if (*ptr) {
+		dump_static_instance_lists (pr, *ptr);
+	}
 }
 
 void

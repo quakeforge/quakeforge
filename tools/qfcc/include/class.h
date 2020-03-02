@@ -83,6 +83,11 @@ typedef struct protocollist_s {
 	protocol_t **list;
 } protocollist_t;
 
+typedef struct static_instance_s {
+	const char *class;
+	struct def_s *instance;
+} static_instance_t;
+
 extern struct type_s type_id;
 extern struct type_s type_obj_object;
 extern struct type_s type_obj_class;

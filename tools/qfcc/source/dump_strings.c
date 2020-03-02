@@ -44,14 +44,14 @@ dump_string_block (const char *strblock, unsigned size)
 {
 	const char *s = strblock;
 
-	printf ("%d ", 0);
+	printf ("%x ", 0);
 	while (s - strblock < size) {
 		char        c = *s++;
 		switch (c) {
 			case 0:
 				fputs ("\n", stdout);
 				if (s - strblock < size)
-					printf ("%ld ", s - strblock);
+					printf ("%lx ", s - strblock);
 				break;
 			case 9:
 				fputs ("\\t", stdout);
