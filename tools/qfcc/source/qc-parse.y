@@ -610,9 +610,18 @@ struct_specifier
 			if (!sym->table) {
 				symtab_addsymbol (current_symtab, sym);
 			} else {
-				error (0, "%s %s redefined", $1 == 's' ? "struct" : "union",
-					   $2->name);
-				$1 = 0;
+				if (!sym->type) {
+					internal_error (0, "broken structure symbol?");
+				}
+				if (sym->type->meta == ty_enum
+					|| (sym->type->meta == ty_struct && sym->type->t.symtab)) {
+					error (0, "%s %s redefined",
+						   $1 == 's' ? "struct" : "union", $2->name);
+					$1 = 0;
+				} else if (sym->type->meta != ty_struct) {
+					internal_error (0, "%s is not a struct or union",
+									$2->name);
+				}
 			}
 			current_symtab = new_symtab (current_symtab, stab_local);
 		}
