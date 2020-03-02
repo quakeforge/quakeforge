@@ -656,6 +656,10 @@ build_builtin_function (symbol_t *sym, expr_t *bi_val, int far)
 		bi = expr_integer (bi_val);
 	else
 		bi = expr_float (bi_val);
+	if (bi < 0) {
+		error (bi_val, "builtin functions must be positive or 0");
+		return 0;
+	}
 	sym->s.func->builtin = bi;
 	reloc_def_func (sym->s.func, sym->s.func->def);
 	build_function (sym);
