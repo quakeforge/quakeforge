@@ -208,11 +208,21 @@ new_methodlist (void)
 void
 copy_methods (methodlist_t *dst, methodlist_t *src)
 {
-	method_t *s, *d;
+	method_t   *s, *d;
+	param_t    *self;
 
 	for (s = src->head; s; s = s->next) {
 		d = malloc (sizeof (method_t));
 		*d = *s;
+		// The above is only a shallow copy and thus even though the methods
+		// are not shared between the source and destination lists, the
+		// parameters are. Thus, duplicate the self (first) parameter so
+		// changing its type to match the class into which it is inserted does
+		// not affect the source list. The rest of the parameters do not need
+		// to be copied as they will not be altered.
+		self = malloc (sizeof (param_t));
+		*self = *d->params;
+		d->params = self;
 		d->next = 0;
 		add_method (dst, d);
 	}
