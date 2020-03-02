@@ -97,7 +97,7 @@ typedef enum qwaq_commands_e {
 
 #define RB_WRITE_DATA(ring_buffer, data, count)								\
 	({	__auto_type rb = &(ring_buffer);									\
-		typeof (&rb->buffer[0]) d = (data);									\
+		const typeof (rb->buffer[0]) *d = (data);							\
 		unsigned    c = (count);											\
 		unsigned    h = rb->head;											\
 		rb->head = (h + c) % RB_buffer_size (rb);							\
@@ -273,6 +273,45 @@ release_string (qwaq_resources_t *res, int string_id)
 }
 
 static void
+qwaq_submit_command (qwaq_resources_t *res, const int *cmd)
+{
+	unsigned    len = cmd[1];
+
+	if (RB_SPACE_AVAILABLE (res->command_queue) >= len) {
+		RB_WRITE_DATA (res->command_queue, cmd, len);
+	} else {
+		PR_RunError (res->pr, "command buffer full");
+	}
+}
+
+static void
+qwaq_submit_result (qwaq_resources_t *res, const int *result, unsigned len)
+{
+	// loop
+	if (RB_SPACE_AVAILABLE (res->results) >= len) {
+		RB_WRITE_DATA (res->results, result, len);
+	} else {
+		PR_RunError (res->pr, "result buffer full");
+	}
+}
+
+//XXX goes away with threads
+static void process_commands (qwaq_resources_t *);
+static void process_input (qwaq_resources_t *);
+static void
+qwaq_wait_result (qwaq_resources_t *res, int *result, int cmd, unsigned len)
+{
+	// XXX should just wait on the mutex
+	process_commands (res);
+	process_input (res);
+	// locking and loop until id is correct
+	if (RB_DATA_AVAILABLE (res->results) >= len
+		&& RB_PEEK_DATA (res->results, 0) == cmd) {
+		RB_READ_DATA (res->results, result, len);
+	}
+}
+
+static void
 cmd_newwin (qwaq_resources_t *res)
 {
 	int         xpos = RB_PEEK_DATA (res->command_queue, 2);
@@ -286,11 +325,7 @@ cmd_newwin (qwaq_resources_t *res)
 
 	int         window_id = window_index (res, window);
 	int         cmd_result[] = { qwaq_cmd_newwin, window_id };
-
-	// loop
-	if (RB_SPACE_AVAILABLE (res->results) >= CMD_SIZE (cmd_result)) {
-		RB_WRITE_DATA (res->results, cmd_result, CMD_SIZE (cmd_result));
-	}
+	qwaq_submit_result (res, cmd_result, CMD_SIZE (cmd_result));
 }
 
 static void
@@ -318,11 +353,7 @@ cmd_getwrect (qwaq_resources_t *res)
 	getmaxyx (window->win, ylen, xlen);
 
 	int         cmd_result[] = { qwaq_cmd_getwrect, xpos, ypos, xlen, ylen };
-
-	// loop
-	if (RB_SPACE_AVAILABLE (res->results) >= CMD_SIZE (cmd_result)) {
-		RB_WRITE_DATA (res->results, cmd_result, CMD_SIZE (cmd_result));
-	}
+	qwaq_submit_result (res, cmd_result, CMD_SIZE (cmd_result));
 }
 
 static void
@@ -337,11 +368,7 @@ cmd_new_panel (qwaq_resources_t *res)
 
 	int         panel_id = panel_index (res, panel);
 	int         cmd_result[] = { qwaq_cmd_new_panel, panel_id };
-
-	// loop
-	if (RB_SPACE_AVAILABLE (res->results) >= CMD_SIZE (cmd_result)) {
-		RB_WRITE_DATA (res->results, cmd_result, CMD_SIZE (cmd_result));
-	}
+	qwaq_submit_result (res, cmd_result, CMD_SIZE (cmd_result));
 }
 
 static void
@@ -415,11 +442,7 @@ cmd_panel_window (qwaq_resources_t *res)
 
 	int         window_id = panel->window_id;
 	int         cmd_result[] = { qwaq_cmd_panel_window, window_id, };
-
-	// loop
-	if (RB_SPACE_AVAILABLE (res->results) >= CMD_SIZE (cmd_result)) {
-		RB_WRITE_DATA (res->results, cmd_result, CMD_SIZE (cmd_result));
-	}
+	qwaq_submit_result (res, cmd_result, CMD_SIZE (cmd_result));
 }
 
 static void
@@ -631,22 +654,12 @@ bi_newwin (progs_t *pr)
 					qwaq_cmd_newwin, 0,
 					xpos, ypos, xlen, ylen,
 				};
-
 	command[1] = CMD_SIZE(command);
+	qwaq_submit_command (res, command);
 
-	if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
-		RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
-	}
-	// XXX should just wait on the mutex
-	process_commands (res);
-	process_input (res);
-	// locking and loop until id is correct
-	if (RB_DATA_AVAILABLE (res->results)
-		&& RB_PEEK_DATA (res->results, 0) == qwaq_cmd_newwin) {
-		int         cmd_result[2];	// should results have a size?
-		RB_READ_DATA (res->results, cmd_result, CMD_SIZE (cmd_result));
-		R_INT (pr) = cmd_result[1];
-	}
+	int         cmd_result[2];
+	qwaq_wait_result (res, cmd_result, qwaq_cmd_newwin, CMD_SIZE (cmd_result));
+	R_INT (pr) = cmd_result[1];
 }
 
 static void
@@ -657,12 +670,8 @@ bi_delwin (progs_t *pr)
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_delwin, 0, window_id, };
-
 		command[1] = CMD_SIZE(command);
-
-		if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
-			RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
-		}
+		qwaq_submit_command (res, command);
 	}
 }
 
@@ -674,26 +683,17 @@ bi_getwrect (progs_t *pr)
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_getwrect, 0, window_id, };
-
 		command[1] = CMD_SIZE(command);
+		qwaq_submit_command (res, command);
 
-		if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
-			RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
-		}
-		// XXX should just wait on the mutex
-		process_commands (res);
-		process_input (res);
-		// locking and loop until id is correct
-		if (RB_DATA_AVAILABLE (res->results)
-			&& RB_PEEK_DATA (res->results, 0) == qwaq_cmd_getwrect) {
-			int         cmd_result[5];
-			RB_READ_DATA (res->results, cmd_result, CMD_SIZE (cmd_result));
-			// return xpos, ypos, xlen, ylen
-			(&R_INT (pr))[0] = cmd_result[1];
-			(&R_INT (pr))[1] = cmd_result[2];
-			(&R_INT (pr))[2] = cmd_result[3];
-			(&R_INT (pr))[3] = cmd_result[4];
-		}
+		int         cmd_result[5];
+		qwaq_wait_result (res, cmd_result, qwaq_cmd_getwrect,
+						  CMD_SIZE (cmd_result));
+		// return xpos, ypos, xlen, ylen
+		(&R_INT (pr))[0] = cmd_result[1];
+		(&R_INT (pr))[1] = cmd_result[2];
+		(&R_INT (pr))[2] = cmd_result[3];
+		(&R_INT (pr))[3] = cmd_result[4];
 	}
 }
 
@@ -705,20 +705,13 @@ bi_new_panel (progs_t *pr)
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_new_panel, 0, window_id, };
-
 		command[1] = CMD_SIZE(command);
+		qwaq_submit_command (res, command);
 
-		if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
-			RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
-		}
-
-		// locking and loop until id is correct
-		if (RB_DATA_AVAILABLE (res->results)
-			&& RB_PEEK_DATA (res->results, 0) == qwaq_cmd_new_panel) {
-			int         cmd_result[2];	// should results have a size?
-			RB_READ_DATA (res->results, cmd_result, CMD_SIZE (cmd_result));
-			R_INT (pr) = cmd_result[1];
-		}
+		int         cmd_result[2];
+		qwaq_wait_result (res, cmd_result, qwaq_cmd_new_panel,
+						  CMD_SIZE (cmd_result));
+		R_INT (pr) = cmd_result[1];
 	}
 }
 
@@ -731,10 +724,7 @@ panel_command (progs_t *pr, qwaq_commands cmd)
 	if (get_panel (res, __FUNCTION__, panel_id)) {
 		int         command[] = { cmd, 0, panel_id, };
 		command[1] = CMD_SIZE(command);
-
-		if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
-			RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
-		}
+		qwaq_submit_command (res, command);
 	}
 }
 
@@ -779,10 +769,7 @@ bi_move_panel (progs_t *pr)
 	if (get_panel (res, __FUNCTION__, panel_id)) {
 		int         command[] = { qwaq_cmd_move_panel, 0, panel_id, x, y, };
 		command[1] = CMD_SIZE(command);
-
-		if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
-			RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
-		}
+		qwaq_submit_command (res, command);
 	}
 }
 
@@ -795,20 +782,12 @@ bi_panel_window (progs_t *pr)
 	if (get_panel (res, __FUNCTION__, panel_id)) {
 		int         command[] = { qwaq_cmd_panel_window, 0, panel_id, };
 		command[1] = CMD_SIZE(command);
+		qwaq_submit_command (res, command);
 
-		if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
-			RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
-		}
-		// XXX should just wait on the mutex
-		process_commands (res);
-		process_input (res);
-		// locking and loop until id is correct
-		if (RB_DATA_AVAILABLE (res->results)
-			&& RB_PEEK_DATA (res->results, 0) == qwaq_cmd_panel_window) {
-			int         cmd_result[2];
-			RB_READ_DATA (res->results, cmd_result, CMD_SIZE (cmd_result));
-			(&R_INT (pr))[0] = cmd_result[0];
-		}
+		int         cmd_result[2];
+		qwaq_wait_result (res, cmd_result, qwaq_cmd_panel_window,
+						  CMD_SIZE (cmd_result));
+		(&R_INT (pr))[0] = cmd_result[1];
 	}
 }
 
@@ -819,10 +798,7 @@ bi_update_panels (progs_t *pr)
 
 	int         command[] = { qwaq_cmd_update_panels, 0, };
 	command[1] = CMD_SIZE(command);
-
-	if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
-		RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
-	}
+	qwaq_submit_command (res, command);
 }
 
 static void
@@ -832,10 +808,7 @@ bi_doupdate (progs_t *pr)
 
 	int         command[] = { qwaq_cmd_doupdate, 0, };
 	command[1] = CMD_SIZE(command);
-
-	if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
-		RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
-	}
+	qwaq_submit_command (res, command);
 }
 
 static void
@@ -861,9 +834,8 @@ bi_mvwprintf (progs_t *pr)
 
 		dstring_clearstr (print_buffer);
 		PR_Sprintf (pr, print_buffer, "mvwaddstr", fmt, count, args);
-		if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
-			RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
-		}
+
+		qwaq_submit_command (res, command);
 	}
 }
 
@@ -888,9 +860,8 @@ bi_wprintf (progs_t *pr)
 
 		dstring_clearstr (print_buffer);
 		PR_Sprintf (pr, print_buffer, "waddstr", fmt, count, args);
-		if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
-			RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
-		}
+
+		qwaq_submit_command (res, command);
 	}
 }
 
@@ -903,10 +874,7 @@ bi_wrefresh (progs_t *pr)
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_wrefresh, 0, window_id, };
 		command[1] = CMD_SIZE(command);
-
-		if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
-			RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
-		}
+		qwaq_submit_command (res, command);
 	}
 }
 
@@ -943,10 +911,7 @@ bi_init_pair (progs_t *pr)
 
 	int         command[] = { qwaq_cmd_init_pair, 0, pair, f, b, };
 	command[1] = CMD_SIZE(command);
-
-	if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
-		RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
-	}
+	qwaq_submit_command (res, command);
 }
 
 static void
@@ -958,12 +923,9 @@ bi_wbkgd (progs_t *pr)
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_wbkgd, 0, window_id, ch, };
-
 		command[1] = CMD_SIZE(command);
+		qwaq_submit_command (res, command);
 
-		if (RB_SPACE_AVAILABLE (res->command_queue) >= CMD_SIZE(command)) {
-			RB_WRITE_DATA (res->command_queue, command, CMD_SIZE(command));
-		}
 	}
 }
 
