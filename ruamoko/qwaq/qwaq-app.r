@@ -46,7 +46,6 @@ arp_end (void)
 	wprintf (screen.window, "%d %d %d %d\n", r.xpos, r.ypos, r.xlen, r.ylen);
 	wprintf (screen.window, "%d\n", acs_char(ACS_HLINE));
 	mvwaddch(screen.window, 4, 4, acs_char(ACS_HLINE));
-	wrefresh(screen.window);
 	Window *w;
 	[screen add: w=[[Window windowWithRect: r] setBackground: COLOR_PAIR (2)]];
 	//wprintf (w.window, "%d %d %d %d\n", r.xpos, r.ypos, r.xlen, r.ylen);

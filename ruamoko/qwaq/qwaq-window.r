@@ -96,7 +96,6 @@
 			}
 		}
 	}
-	wrefresh(window);
 	return self;
 }
 @end

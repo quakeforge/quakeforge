@@ -33,7 +33,6 @@
 -setBackground: (int) ch
 {
 	wbkgd (window, ch);
-	wrefresh (window);
 	return self;
 }
 
