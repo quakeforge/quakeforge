@@ -19,6 +19,12 @@
 
 -add: obj
 {
+	if ([obj conformsToProtocol: @protocol (Draw)]) {
+		[views addObject: obj];
+	}
+	if ([obj conformsToProtocol: @protocol (HandleEvent)]) {
+		[event_handlers addObject: obj];
+	}
 	return self;
 }
 
@@ -26,6 +32,16 @@
 {
 	wbkgd (window, ch);
 	wrefresh (window);
+	return self;
+}
+
+-handleEvent: (qwaq_event_t *) event
+{
+	return self;
+}
+
+-draw
+{
 	return self;
 }
 

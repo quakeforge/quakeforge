@@ -68,4 +68,19 @@
 	wbkgd (window, ch);
 	return self;
 }
+
+-takeFocus
+{
+	return self;
+}
+
+-loseFocus
+{
+	return self;
+}
+
+-draw
+{
+	return self;
+}
 @end

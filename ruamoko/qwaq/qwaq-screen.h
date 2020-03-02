@@ -3,14 +3,16 @@
 
 #include <Object.h>
 
+#include "qwaq-draw.h"
 #include "qwaq-rect.h"
 @class View;
 @class Array;
 
-@interface Screen: Object
+@interface Screen: Object <HandleEvent, Draw>
 {
 	Rect        rect;
 	Array      *views;
+	Array      *event_handlers;
 	View       *focusedView;
 	struct window_s *window;
 }

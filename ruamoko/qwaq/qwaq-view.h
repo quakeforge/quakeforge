@@ -4,9 +4,10 @@
 #include <Array.h>
 #include <Object.h>
 
+#include "qwaq-draw.h"
 #include "qwaq-rect.h"
 
-@interface View: Object
+@interface View: Object <Draw>
 {
 	Rect        rect;
 	Rect        absRect;
@@ -14,7 +15,6 @@
 	struct window_s *window;
 }
 -initWithRect: (Rect) rect;
--handleEvent: (struct qwaq_event_s *) event;
 @end
 
 #endif//__qwaq_view_h

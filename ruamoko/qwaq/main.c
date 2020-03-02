@@ -166,6 +166,9 @@ main (int argc, const char **argv)
 		Sys_Error ("couldn't load %s", name);
 	}
 
+	//pr.pr_trace = 1;
+	//pr.pr_trace_depth = -1;
+
 	PR_PushFrame (&pr);
 	if (argc > 2)
 		pr_argc = argc - 1;

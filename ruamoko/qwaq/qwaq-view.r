@@ -28,7 +28,7 @@ rectContainsPoint (Rect *rect, Point *point)
 	return self;
 }
 
--handleEvent: (qwaq_event_t *) event
+-draw
 {
 	return self;
 }

@@ -6,9 +6,10 @@
 @class View;
 @class Array;
 
+#include "qwaq-draw.h"
 #include "qwaq-rect.h"
 
-@interface Window: Object
+@interface Window: Object <Draw, TakeFocus>
 {
 	Rect        rect;
 	Point       point;	// FIXME can't be local :(
