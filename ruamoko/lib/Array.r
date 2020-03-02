@@ -261,7 +261,7 @@
 {
 	local unsigned	i;
 
-	if (index >= count) // FIXME: need exceptions
+	if (index > count) // FIXME: need exceptions
 		[self error: "-insertObject:atIndex: index out of range"];
 
 	if (count == capacity) {	// at capacity, expand
