@@ -74,6 +74,7 @@ typedef struct protocol_s {
 	const char *name;
 	struct methodlist_s *methods;
 	struct protocollist_s *protocols;
+	struct def_s *def;
 	class_type_t class_type;
 } protocol_t;
 

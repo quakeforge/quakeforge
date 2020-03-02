@@ -2470,9 +2470,16 @@ selector_expr (keywordarg_t *selector)
 }
 
 expr_t *
-protocol_expr (const char *protocol)
+protocol_expr (const char *protocol_name)
 {
-	return error (0, "not implemented");
+	protocol_t *protocol = get_protocol (protocol_name, 0);
+
+	if (!protocol) {
+		return error (0, "cannot find protocol declaration for `%s'",
+					  protocol_name);
+	}
+	class_t    *proto_class = get_class (new_symbol ("Protocol"), 1);
+	return new_pointer_expr (0, proto_class->type, protocol_def (protocol));
 }
 
 expr_t *

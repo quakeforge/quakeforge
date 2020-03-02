@@ -1387,8 +1387,10 @@ protocol_add_protocols (protocol_t *protocol, protocollist_t *protocols)
 def_t *
 protocol_def (protocol_t *protocol)
 {
-	return make_symbol (protocol->name, &type_obj_protocol,
-						pr.far_data, sc_static)->s.def;
+	if (!protocol->def) {
+		protocol->def = emit_protocol (protocol);
+	}
+	return protocol->def;
 }
 
 protocollist_t *
