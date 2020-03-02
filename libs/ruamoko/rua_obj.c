@@ -69,6 +69,7 @@ typedef struct probj_resources_s {
 	string_t   *selector_names;
 	hashtab_t  *selector_hash;
 	hashtab_t  *classes;
+	hashtab_t  *protocols;
 	hashtab_t  *load_methods;
 	obj_list   *unresolved_classes;
 	obj_list   *unclaimed_categories;
@@ -324,6 +325,13 @@ class_get_key (const void *c, void *_probj)
 	return PR_GetString (probj->pr, ((pr_class_t *)c)->name);
 }
 
+static const char *
+protocol_get_key (const void *p, void *_probj)
+{
+	__auto_type probj = (probj_t *) _probj;
+	return PR_GetString (probj->pr, ((pr_protocol_t *)p)->protocol_name);
+}
+
 static uintptr_t
 load_methods_get_hash (const void *m, void *_probj)
 {
@@ -490,7 +498,27 @@ sel_register_name (probj_t *probj, const char *name)
 }
 
 static void
-register_selectors_from_list (probj_t *probj, pr_method_list_t *method_list)
+obj_register_selectors_from_description_list (probj_t *probj,
+		pr_method_description_list_t *method_list)
+{
+	progs_t    *pr = probj->pr;
+	int         i;
+
+	if (!method_list) {
+		return;
+	}
+	for (i = 0; i < method_list->count; i++) {
+		pr_method_description_t *method = &method_list->list[i];
+		const char *name = PR_GetString (pr, method->name);
+		const char *types = PR_GetString (pr, method->types);
+		pr_sel_t   *sel = sel_register_typed_name (probj, name, types, 0);
+		method->name = PR_SetPointer (pr, sel);
+	}
+}
+
+static void
+obj_register_selectors_from_list (probj_t *probj,
+								  pr_method_list_t *method_list)
 {
 	progs_t    *pr = probj->pr;
 	int         i;
@@ -511,7 +539,7 @@ obj_register_selectors_from_class (probj_t *probj, pr_class_t *class)
 	pr_method_list_t *method_list = &G_STRUCT (pr, pr_method_list_t,
 											   class->methods);
 	while (method_list) {
-		register_selectors_from_list (probj, method_list);
+		obj_register_selectors_from_list (probj, method_list);
 		method_list = &G_STRUCT (pr, pr_method_list_t,
 								 method_list->method_next);
 	}
@@ -526,7 +554,17 @@ obj_init_protocol (probj_t *probj, pr_class_t *proto_class,
 	progs_t    *pr = probj->pr;
 
 	if (!proto->class_pointer) {
+		const char *protocol_name = PR_GetString (pr, proto->protocol_name);
 		proto->class_pointer = PR_SetPointer (pr, proto_class);
+		obj_register_selectors_from_description_list (probj,
+				&G_STRUCT (pr, pr_method_description_list_t,
+						   proto->instance_methods));
+		obj_register_selectors_from_description_list (probj,
+				&G_STRUCT (pr, pr_method_description_list_t,
+						   proto->class_methods));
+		if (!Hash_Find (probj->protocols, protocol_name)) {
+			Hash_Add (probj->protocols, proto);
+		}
 		obj_init_protocols (probj, &G_STRUCT (pr, pr_protocol_list_t,
 											  proto->protocol_list));
 	} else {
@@ -1815,6 +1853,11 @@ rua_obj_init_runtime (progs_t *pr)
 		probj->classes = Hash_NewTable (1021, class_get_key, 0, probj);
 	else
 		Hash_FlushTable (probj->classes);
+
+	if (!probj->protocols)
+		probj->protocols = Hash_NewTable (1021, protocol_get_key, 0, probj);
+	else
+		Hash_FlushTable (probj->protocols);
 
 	if (!probj->load_methods) {
 		probj->load_methods = Hash_NewTable (1021, 0, 0, probj);
