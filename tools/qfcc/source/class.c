@@ -631,8 +631,7 @@ class_add_methods (class_t *class, methodlist_t *methods)
 	if (!methods)
 		return;
 
-	copy_methods (class->methods, methods);
-	free (methods);
+	merge_method_lists (class->methods, methods);
 
 	methods_set_self_type (class, class->methods);
 }
@@ -1259,8 +1258,7 @@ category_add_methods (category_t *category, methodlist_t *methods)
 {
 	if (!methods)
 		return;
-	copy_methods (category->methods, methods);
-	free (methods);
+	merge_method_lists (category->methods, methods);
 
 	methods_set_self_type (category->class, category->methods);
 }
@@ -1518,8 +1516,7 @@ protocol_add_methods (protocol_t *protocol, methodlist_t *methods)
 {
 	if (!methods)
 		return;
-	copy_methods (protocol->methods, methods);
-	free (methods);
+	merge_method_lists (protocol->methods, methods);
 }
 
 void

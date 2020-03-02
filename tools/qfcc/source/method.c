@@ -205,6 +205,38 @@ new_methodlist (void)
 	return l;
 }
 
+static int
+method_in_list (methodlist_t *method_list, method_t *method)
+{
+	method_t    *m;
+
+	for (m = method_list->head; m; m = m->next) {
+		if (method_compare (m, method)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+void
+merge_method_lists (methodlist_t *dst, methodlist_t *src)
+{
+	while (src->head) {
+		method_t   *s = src->head;
+		src->head = s->next;
+		s->next = 0;
+		if (method_in_list (dst, s)) {
+			debug (0, "dropping duplicate method: %s", s->name);
+			free (s);
+		} else {
+			// add_method does the duplicate check
+			*dst->tail = s;
+			dst->tail = &s->next;
+		}
+	}
+	free (src);
+}
+
 void
 copy_methods (methodlist_t *dst, methodlist_t *src)
 {
@@ -212,6 +244,10 @@ copy_methods (methodlist_t *dst, methodlist_t *src)
 	param_t    *self;
 
 	for (s = src->head; s; s = s->next) {
+		if (method_in_list (dst, s)) {
+			debug (0, "skipping duplicate method: %s", s->name);
+			continue;
+		}
 		d = malloc (sizeof (method_t));
 		*d = *s;
 		// The above is only a shallow copy and thus even though the methods
@@ -224,7 +260,9 @@ copy_methods (methodlist_t *dst, methodlist_t *src)
 		*self = *d->params;
 		d->params = self;
 		d->next = 0;
-		add_method (dst, d);
+		// add_method does the duplicate check
+		*dst->tail = d;
+		dst->tail = &d->next;
 	}
 }
 

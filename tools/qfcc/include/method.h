@@ -80,6 +80,8 @@ struct symbol_s *method_symbol (struct class_type_s *class_type,
 void method_set_param_names (method_t *dst, method_t *src);
 
 methodlist_t *new_methodlist (void);
+//NOTE frees the source list and any methods not copied
+void merge_method_lists (methodlist_t *dst, methodlist_t *src);
 void copy_methods (methodlist_t *dst, methodlist_t *src);
 int method_compare (method_t *m1, method_t *m2);
 
