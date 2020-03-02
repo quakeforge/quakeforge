@@ -1713,15 +1713,88 @@ rua__i_Object_error_error_ (progs_t *pr)
 	obj_verror (probj, self, 0, dstr->str, count, args);
 }
 
+static int
+obj_protocol_conformsToProtocol (probj_t *probj, pr_protocol_t *proto,
+								 pr_protocol_t *protocol)
+{
+	progs_t    *pr = probj->pr;
+
+	pr_protocol_list_t *proto_list;
+
+	if (!proto || !protocol) {
+		return 0;
+	}
+	if (proto == protocol) {
+		return 1;
+	}
+	if (proto->protocol_name == protocol->protocol_name
+		|| strcmp (PR_GetString (pr, proto->protocol_name),
+				   PR_GetString (pr, protocol->protocol_name)) == 0) {
+		return 1;
+	}
+	proto_list = &G_STRUCT (pr, pr_protocol_list_t, proto->protocol_list);
+	while (proto_list) {
+		Sys_MaskPrintf (SYS_RUA_OBJ, "%x %x %d\n",
+						PR_SetPointer (pr, proto_list), proto_list->next,
+						proto_list->count);
+		for (int i = 0; i < proto_list->count; i++) {
+			proto = &G_STRUCT (pr, pr_protocol_t, proto_list->list[i]);
+			if (proto == protocol
+				|| obj_protocol_conformsToProtocol (probj, proto, protocol)) {
+				return 1;
+			}
+		}
+
+		proto_list = &G_STRUCT (pr, pr_protocol_list_t, proto_list->next);
+	}
+	return 0;
+}
+
 static void
 rua__c_Object__conformsToProtocol_ (progs_t *pr)
 {
-	//probj_t    *probj = pr->pr_objective_resources;
-	//pr_id_t    *object = &P_STRUCT (pr, pr_id_t, 0);
-	//pr_protocol_t *proto = &P_STRUCT (pr, pr_protocol_t, 2);
-	//...
-	//XXX
-	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
+	probj_t    *probj = pr->pr_objective_resources;
+	// class points to _OBJ_CLASS_foo, and class->class_pointer points to
+	// _OBJ_METACLASS_foo
+	pr_class_t *class = &P_STRUCT (pr, pr_class_t, 0);
+	// protocol->class_pointer must point to _OBJ_CLASS_Protocol (ie, if
+	// protocol is not actually a protocol, then the class cannot conform
+	// to it)
+	pr_protocol_t *protocol = &P_STRUCT (pr, pr_protocol_t, 2);
+	pr_protocol_list_t *proto_list;
+
+	if (!class || !protocol) {
+		goto not_conforms;
+	}
+	if (protocol->class_pointer != PR_SetPointer (pr,
+												  Hash_Find (probj->classes,
+															 "Protocol"))) {
+		goto not_conforms;
+	}
+	proto_list = &G_STRUCT (pr, pr_protocol_list_t, class->protocols);
+	while (proto_list) {
+		Sys_MaskPrintf (SYS_RUA_OBJ, "%x %x %d\n",
+						PR_SetPointer (pr, proto_list), proto_list->next,
+						proto_list->count);
+		for (int i = 0; i < proto_list->count; i++) {
+			__auto_type proto = &G_STRUCT (pr, pr_protocol_t,
+										   proto_list->list[i]);
+			if (proto == protocol
+				|| obj_protocol_conformsToProtocol (probj, proto, protocol)) {
+				goto conforms;
+			}
+		}
+
+		proto_list = &G_STRUCT (pr, pr_protocol_list_t, proto_list->next);
+	}
+not_conforms:
+	Sys_MaskPrintf (SYS_RUA_OBJ, "does not conform\n");
+	R_INT (pr) = 0;
+	return;
+conforms:
+	Sys_MaskPrintf (SYS_RUA_OBJ, "conforms\n");
+	R_INT (pr) = 1;
+	return;
 }
 
 static void
