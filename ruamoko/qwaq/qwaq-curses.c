@@ -49,7 +49,7 @@
 #define MOUSE_MOVES_ON "\033[?1003h"// Make the terminal report mouse movements
 #define MOUSE_MOVES_OFF "\033[?1003l"// Make the terminal report mouse movements
 #define STRING_ID_QUEUE_SIZE 8		// must be > 1
-#define COMMAND_QUEUE_SIZE 128
+#define COMMAND_QUEUE_SIZE 1280
 #define CMD_SIZE(x) sizeof(x)/sizeof(x[0])
 
 typedef enum qwaq_commands_e {
