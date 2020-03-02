@@ -72,6 +72,7 @@ typedef struct probj_resources_s {
 	hashtab_t  *load_methods;
 	obj_list   *unresolved_classes;
 	obj_list   *unclaimed_categories;
+	obj_list   *uninitialized_statics;
 	obj_list   *unclaimed_proto_list;
 	obj_list   *module_list;
 	obj_list   *class_tree_list;
@@ -516,6 +517,24 @@ obj_register_selectors_from_class (probj_t *probj, pr_class_t *class)
 	}
 }
 
+static void obj_init_protocols (probj_t *probj, pr_protocol_list_t *protos);
+
+static void
+obj_init_protocol (probj_t *probj, pr_class_t *proto_class,
+				   pr_protocol_t *proto)
+{
+	progs_t    *pr = probj->pr;
+
+	if (!proto->class_pointer) {
+		proto->class_pointer = PR_SetPointer (pr, proto_class);
+		obj_init_protocols (probj, &G_STRUCT (pr, pr_protocol_list_t,
+											  proto->protocol_list));
+	} else {
+		if (proto->class_pointer != PR_SetPointer (pr, proto_class))
+			PR_RunError (pr, "protocol broken");
+	}
+}
+
 static void
 obj_init_protocols (probj_t *probj, pr_protocol_list_t *protos)
 {
@@ -535,14 +554,7 @@ obj_init_protocols (probj_t *probj, pr_protocol_list_t *protos)
 
 	for (i = 0; i < protos->count; i++) {
 		proto = &G_STRUCT (pr, pr_protocol_t, protos->list[i]);
-		if (!proto->class_pointer) {
-			proto->class_pointer = PR_SetPointer (pr, proto_class);
-			obj_init_protocols (probj, &G_STRUCT (pr, pr_protocol_list_t,
-												  proto->protocol_list));
-		} else {
-			if (proto->class_pointer != PR_SetPointer (pr, proto_class))
-				PR_RunError (pr, "protocol broken");
-		}
+		obj_init_protocol (probj, proto_class, proto);
 	}
 }
 
@@ -852,6 +864,51 @@ dump_ivars (probj_t *probj, pointer_t _ivars)
 }
 
 static void
+obj_init_statics (probj_t *probj)
+{
+	progs_t    *pr = probj->pr;
+	obj_list  **cell = &probj->uninitialized_statics;
+	pointer_t  *ptr;
+	pointer_t  *inst;
+
+	Sys_MaskPrintf (SYS_RUA_OBJ, "Initializing statics\n");
+	while (*cell) {
+		int         initialized = 1;
+
+		for (ptr = (*cell)->data; *ptr; ptr++) {
+			__auto_type statics = &G_STRUCT (pr, pr_static_instances_t, *ptr);
+			const char *class_name = PR_GetString (pr, statics->class_name);
+			pr_class_t *class = Hash_Find (probj->classes, class_name);
+
+			Sys_MaskPrintf (SYS_RUA_OBJ, "    %s %p\n", class_name, class);
+			if (!class) {
+				initialized = 0;
+				continue;
+			}
+
+			if (strcmp (class_name, "Protocol") == 0) {
+				// protocols are special
+				for (inst = statics->instances; *inst; inst++) {
+					obj_init_protocol (probj, class,
+									   &G_STRUCT (pr, pr_protocol_t, *inst));
+				}
+			} else {
+				for (inst = statics->instances; *inst; inst++) {
+					pr_id_t    *id = &G_STRUCT (pr, pr_id_t, *inst);
+					id->class_pointer = PR_SetPointer (pr, class);
+				}
+			}
+		}
+
+		if (initialized) {
+			list_remove (cell);
+		} else {
+			cell = &(*cell)->next;
+		}
+	}
+}
+
+static void
 rua___obj_exec_class (progs_t *pr)
 {
 	probj_t    *probj = pr->pr_objective_resources;
@@ -869,13 +926,16 @@ rua___obj_exec_class (progs_t *pr)
 		return;
 	Sys_MaskPrintf (SYS_RUA_OBJ, "Initializing %s module\n"
 					"symtab @ %x : %d selector%s @ %x, "
-					"%d class%s and %d categor%s\n",
+					"%d class%s and %d categor%s\n"
+					"static instance lists: %s\n",
 					PR_GetString (pr, module->name), module->symtab,
 					symtab->sel_ref_cnt, symtab->sel_ref_cnt == 1 ? "" : "s",
 					symtab->refs,
 					symtab->cls_def_cnt, symtab->cls_def_cnt == 1 ? "" : "es",
 					symtab->cat_def_cnt,
-					symtab->cat_def_cnt == 1 ? "y" : "ies");
+					symtab->cat_def_cnt == 1 ? "y" : "ies",
+					symtab->defs[symtab->cls_def_cnt
+								 + symtab->cat_def_cnt] ? "yes" : "no");
 
 	probj->module_list = list_cons (module, probj->module_list);
 
@@ -956,6 +1016,16 @@ rua___obj_exec_class (progs_t *pr)
 			probj->unclaimed_categories
 				= list_cons (category, probj->unclaimed_categories);
 		}
+	}
+
+	if (*ptr) {
+		Sys_MaskPrintf (SYS_RUA_OBJ, "Static instances lists: %x\n", *ptr);
+		probj->uninitialized_statics
+			= list_cons (&G_STRUCT (pr, pointer_t, *ptr),
+						 probj->uninitialized_statics);
+	}
+	if (probj->uninitialized_statics) {
+		obj_init_statics (probj);
 	}
 
 	for (cell = &probj->unclaimed_categories; *cell; ) {
