@@ -511,9 +511,11 @@ emit_method_list_item (def_t *def, void *data, int index)
 	method_t   *m;
 	pr_method_description_t *desc;
 
-	if (def->type != &type_obj_method_description)
-		internal_error (0, "%s: expected method_description def",
+	if (!is_array (def->type)
+		|| def->type->t.array.type != &type_obj_method_description) {
+		internal_error (0, "%s: expected array of method_description def",
 						__FUNCTION__);
+	}
 	if (index < 0 || index >= methods->count)
 		internal_error (0, "%s: out of bounds index: %d %d",
 						__FUNCTION__, index, methods->count);
@@ -521,7 +523,7 @@ emit_method_list_item (def_t *def, void *data, int index)
 	desc = D_POINTER (pr_method_description_t, def);
 
 	for (m = methods->head; m; m = m->next) {
-		if (!m->instance != !methods->instance || !m->def)
+		if (!m->instance != !methods->instance)
 			continue;
 		if (!index--)
 			break;
@@ -547,7 +549,7 @@ emit_method_descriptions (methodlist_t *methods, const char *name,
 		return 0;
 
 	for (count = 0, m = methods->head; m; m = m->next)
-		if (!m->instance == !instance && m->def)
+		if (!m->instance == !instance)
 			count++;
 	if (!count)
 		return 0;
