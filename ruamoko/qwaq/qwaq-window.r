@@ -81,6 +81,22 @@
 
 -draw
 {
+	int x = 0, y = 0;
+	for (int i = ACS_ULCORNER; i <= ACS_STERLING; i++) {
+		int ch = acs_char (i);
+		if (ch) {
+			mvwaddch (window, x, y, ch);
+		} else {
+			mvwaddch (window, x, y, '.');
+		}
+		if (++x >= rect.xlen) {
+			x = 0;
+			if (++y >= rect.ylen) {
+				break;
+			}
+		}
+	}
+	wrefresh(window);
 	return self;
 }
 @end

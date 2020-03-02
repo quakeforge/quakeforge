@@ -12,6 +12,8 @@
 	if (!(self = [super init])) {
 		return nil;
 	}
+	views = [[Array array] retain];
+	event_handlers = [[Array array] retain];
 	window = stdscr;
 	rect = getwrect (window);
 	return self;
@@ -42,6 +44,9 @@
 
 -draw
 {
+	[views makeObjectsPerformSelector: @selector (draw)];
+	update_panels ();
+	doupdate ();
 	return self;
 }
 
