@@ -1625,7 +1625,7 @@ rua_PR_FindGlobal (progs_t *pr)
 	R_POINTER (pr) = 0;
 	def = PR_FindGlobal (pr, name);
 	if (def)
-		R_POINTER (pr) = def->ofs;	//FIXME def's can't access > 32k
+		R_POINTER (pr) = def->ofs;
 }
 
 //====================================================================
