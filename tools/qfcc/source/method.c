@@ -147,6 +147,12 @@ add_method (methodlist_t *methodlist, method_t *method)
 	if (method->next)
 		internal_error (0, "add_method: method loop detected");
 
+	for (method_t *m = methodlist->head; m; m = m->next) {
+		if (method_compare (m, method)) {
+			debug (0, "dropping duplicate method: %s", method->name);
+			return;
+		}
+	}
 	*methodlist->tail = method;
 	methodlist->tail = &method->next;
 }
