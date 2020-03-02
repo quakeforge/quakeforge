@@ -1667,7 +1667,7 @@ emit_protocol_list_item (def_t *def, void *data, int index)
 		internal_error (0, "%s: out of bounds index: %d %d",
 						__FUNCTION__, index, protocols->count);
 	}
-	EMIT_DEF (def->space, D_INT(def), emit_protocol (protocol));
+	EMIT_DEF (def->space, D_INT(def), protocol_def (protocol));
 }
 
 def_t *
