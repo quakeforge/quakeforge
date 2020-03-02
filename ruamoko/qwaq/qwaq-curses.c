@@ -68,6 +68,7 @@ typedef enum qwaq_commands_e {
 	qwaq_cmd_doupdate,
 	qwaq_cmd_mvwaddstr,
 	qwaq_cmd_waddstr,
+	qwaq_cmd_mvwaddch,
 	qwaq_cmd_wrefresh,
 	qwaq_cmd_init_pair,
 	qwaq_cmd_wbkgd,
@@ -482,6 +483,18 @@ cmd_waddstr (qwaq_resources_t *res)
 }
 
 static void
+cmd_mvwaddch (qwaq_resources_t *res)
+{
+	int         window_id = RB_PEEK_DATA (res->command_queue, 2);
+	int         x = RB_PEEK_DATA (res->command_queue, 3);
+	int         y = RB_PEEK_DATA (res->command_queue, 4);
+	int         ch = RB_PEEK_DATA (res->command_queue, 5);
+
+	window_t   *window = get_window (res, __FUNCTION__, window_id);
+	mvwaddch (window->win, y, x, ch);
+}
+
+static void
 cmd_wrefresh (qwaq_resources_t *res)
 {
 	int         window_id = RB_PEEK_DATA (res->command_queue, 2);
@@ -559,6 +572,9 @@ process_commands (qwaq_resources_t *res)
 				break;
 			case qwaq_cmd_waddstr:
 				cmd_waddstr (res);
+				break;
+			case qwaq_cmd_mvwaddch:
+				cmd_mvwaddch (res);
 				break;
 			case qwaq_cmd_wrefresh:
 				cmd_wrefresh (res);
@@ -866,6 +882,25 @@ bi_wprintf (progs_t *pr)
 }
 
 static void
+bi_mvwaddch (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	int         window_id = P_INT (pr, 0);
+	int         x = P_INT (pr, 1);
+	int         y = P_INT (pr, 2);
+	int         ch = P_INT (pr, 3);
+
+	if (get_window (res, __FUNCTION__, window_id)) {
+		int         command[] = {
+						qwaq_cmd_mvwaddch, 0,
+						window_id, x, y, ch
+					};
+		command[1] = CMD_SIZE(command);
+		qwaq_submit_command (res, command);
+	}
+}
+
+static void
 bi_wrefresh (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
@@ -925,7 +960,20 @@ bi_wbkgd (progs_t *pr)
 		int         command[] = { qwaq_cmd_wbkgd, 0, window_id, ch, };
 		command[1] = CMD_SIZE(command);
 		qwaq_submit_command (res, command);
+	}
+}
 
+static const char qwaq_acs_char_map[] = "lmkjtuvwqxnos`afg~,+.-hi0pryz{|}";
+static void
+bi_acs_char (progs_t *pr)
+{
+	unsigned    acs = P_INT (pr, 0);
+	if (acs < 256) {
+		R_INT (pr) = NCURSES_ACS(acs);
+	} else if (acs - 256 < sizeof (qwaq_acs_char_map)) {
+		R_INT (pr) = NCURSES_ACS(qwaq_acs_char_map[acs - 256]);
+	} else {
+		R_INT (pr) = 0;
 	}
 }
 
@@ -981,12 +1029,14 @@ static builtin_t builtins[] = {
 	{"doupdate",		bi_doupdate,		-1},
 	{"mvwprintf",		bi_mvwprintf,		-1},
 	{"wprintf",			bi_wprintf,			-1},
+	{"mvwaddch",		bi_mvwaddch,		-1},
 	{"wrefresh",		bi_wrefresh,		-1},
 	{"get_event",		bi_get_event,		-1},
 	{"max_colors",		bi_max_colors,		-1},
 	{"max_color_pairs",	bi_max_color_pairs,	-1},
 	{"init_pair",		bi_init_pair,		-1},
 	{"wbkgd",			bi_wbkgd,			-1},
+	{"acs_char",		bi_acs_char,		-1},
 	{0}
 };
 

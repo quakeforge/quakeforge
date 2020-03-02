@@ -103,11 +103,13 @@ void destroy_window (window_t win) = #0;
 void mvwprintf (window_t win, int x, int y, string fmt, ...) = #0;
 void wprintf (window_t win, string fmt, ...) = #0;
 void wrefresh (window_t win) = #0;
+void mvwaddch (window_t win, int x, int y, int ch) = #0;
 int get_event (qwaq_event_t *event) = #0;
 int max_colors (void) = #0;
 int max_color_pairs (void) = #0;
 int init_pair (int pair, int f, int b) = #0;
 void wbkgd (window_t win, int ch) = #0;
+int acs_char (int acs) = #0;
 
 panel_t create_panel (window_t window) = #0;
 void destroy_panel (panel_t panel) = #0;
