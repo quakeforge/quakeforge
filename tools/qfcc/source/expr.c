@@ -1670,6 +1670,10 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 	for (i = arg_count - 1, e = params; i >= 0; i--, e = e->next) {
 		type_t     *t = get_type (e);
 
+		if (!t) {
+			return e;
+		}
+
 		if (!type_size (t))
 			err = error (e, "type of formal parameter %d is incomplete",
 						 i + 1);
