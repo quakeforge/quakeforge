@@ -1014,11 +1014,20 @@ non_code_func
 		}
 	| '=' expr
 		{
-			symbol_t   *sym = $<symbol>0;
-			specifier_t spec = $<spec>-1;
-			initialize_def (sym, $2, current_symtab->space, spec.storage);
-			if (sym->s.def)
-				sym->s.def->nosave |= spec.nosave;
+			if (local_expr) {
+				symbol_t   *sym = $<symbol>0;
+				specifier_t spec = $<spec>-1;
+				initialize_def (sym, $2, current_symtab->space, spec.storage);
+				if (sym->s.def)
+					sym->s.def->nosave |= spec.nosave;
+			} else {
+				if (is_integer_val ($2) || is_float_val ($2)) {
+					error (0, "invalid function initializer."
+						   " did you forget #?");
+				} else {
+					error (0, "cannot create global function variables");
+				}
+			}
 		}
 	| /* emtpy */
 		{
