@@ -706,6 +706,7 @@ struct_decl
 			$1->type = append_type ($1->type, $<spec>0.type);
 			$1->type = find_type ($1->type);
 			$1->sy_type = sy_var;
+			$1->visibility = current_visibility;
 			symtab_addsymbol (current_symtab, $1);
 		}
 	| var_decl
@@ -715,6 +716,7 @@ struct_decl
 			$1->type = append_type ($1->type, $<spec>0.type);
 			$1->type = find_type ($1->type);
 			$1->sy_type = sy_var;
+			$1->visibility = current_visibility;
 			symtab_addsymbol (current_symtab, $1);
 		}
 	| var_decl ':' expr		%prec COMMA		{}
@@ -1762,6 +1764,7 @@ ivar_decl_list
 			tab = $$->parent;	// preserve the ivars inheritance chain
 			build_struct ('s', 0, $$, 0);
 			$$->parent = tab;
+			current_visibility = vis_public;
 		}
 	;
 

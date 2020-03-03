@@ -1202,8 +1202,9 @@ field_expr (expr_t *e1, expr_t *e2)
 			class_t    *class = t1->t.fldptr.type->t.class;
 			symbol_t   *sym = e2->e.symbol;//FIXME need to check
 			symbol_t   *ivar;
+			int         protected = class_access (current_class, class);
 
-			ivar = class_find_ivar (class, vis_protected, sym->name);
+			ivar = class_find_ivar (class, protected, sym->name);
 			if (!ivar)
 				return new_error_expr ();
 			e2->type = ex_value;
