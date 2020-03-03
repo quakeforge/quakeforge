@@ -2065,6 +2065,8 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 					t = e1->e.expr.type;
 				if (e2) {
 					e2 = binary_expr ('+', e1->e.expr.e2, e2);
+				} else {
+					e2 = e1->e.expr.e2;
 				}
 				return address_expr (e1->e.expr.e1, e2, t);
 			}
