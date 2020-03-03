@@ -205,7 +205,7 @@ new_methodlist (void)
 	return l;
 }
 
-static int
+static int __attribute__((pure))
 method_in_list (methodlist_t *method_list, method_t *method)
 {
 	method_t    *m;
