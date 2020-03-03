@@ -55,6 +55,7 @@ test_progs_dat=\
 	structstruct.dat \
 	swap.dat \
 	triangle.dat \
+	vecaddr.dat \
 	vecexpr.dat \
 	vecinit.dat \
 	voidfor.dat \
@@ -372,6 +373,15 @@ r_depfiles_remade += ./$(DEPDIR)/triangle.Qo
 #	@$(srcdir)/build-run $@
 #include ./$(DEPDIR)/typedef.Qo # am--include-marker
 #r_depfiles_remade += ./$(DEPDIR)/typedef.Qo
+
+vecaddr_dat_SOURCES=vecaddr.r
+vecaddr_obj=$(vecaddr_dat_SOURCES:.r=.qfo)
+vecaddr.dat$(EXEEXT): $(vecaddr_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(vecaddr_obj)
+vecaddr.run: Makefile build-run
+	@$(srcdir)/build-run $@
+include ./$(DEPDIR)/vecaddr.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/vecaddr.Qo
 
 vecexpr_dat_SOURCES=vecexpr.r
 vecexpr_obj=$(vecexpr_dat_SOURCES:.r=.qfo)
