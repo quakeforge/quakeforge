@@ -11,6 +11,7 @@
 
 @interface Window: Object <Draw, TakeFocus>
 {
+	@public
 	Rect        rect;
 	Point       point;	// FIXME can't be local :(
 	Array      *views;

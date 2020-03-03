@@ -10,6 +10,7 @@
 
 @interface Screen: Object <HandleEvent, Draw>
 {
+	@public
 	Rect        rect;
 	Array      *views;
 	Array      *event_handlers;

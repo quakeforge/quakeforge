@@ -9,6 +9,7 @@
 
 @interface View: Object <Draw>
 {
+	@public
 	Rect        rect;
 	Rect        absRect;
 	Point       point;		// can't be local :(
