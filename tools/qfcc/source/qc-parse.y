@@ -1021,6 +1021,9 @@ overloaded_identifier
 non_code_func
 	: '=' '#' expr
 		{
+			if ($<spec>-1.storage == sc_extern) {
+				error (0, "initializing external variable");
+			}
 			build_builtin_function ($<symbol>0, $3, 0);
 		}
 	| '=' expr

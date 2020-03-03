@@ -575,7 +575,7 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 				internal_error (0, "half defined var");
 			if (storage == sc_extern) {
 				if (init)
-					warning (0, "initializing external variable");
+					error (0, "initializing external variable");
 				return;
 			}
 			if (init && check->s.def->initialized) {
@@ -611,7 +611,7 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 		init_field_def (sym->s.def, init, storage);
 	if (storage == sc_extern) {
 		if (init)
-			warning (0, "initializing external variable");
+			error (0, "initializing external variable");
 		return;
 	}
 	if (!init)
