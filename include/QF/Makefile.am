@@ -1,6 +1,9 @@
 AUTOMAKE_OPTIONS = foreign
 pkgincludedir = $(includedir)/QF
-nobase_pkginclude_HEADERS = \
+#for header files that qfcc (ruamoko) will use
+pkgdatadir = $(datarootdir)/qfcc/include/QF
+
+include_qf= \
 	alloc.h bspfile.h cbuf.h cdaudio.h checksum.h clip_hull.h cmd.h \
 	console.h crc.h csqc.h cvar.h dstring.h draw.h gib.h hash.h \
 	idparse.h image.h in_event.h info.h input.h iqm.h joystick.h keys.h \
@@ -26,3 +29,9 @@ nobase_pkginclude_HEADERS = \
 	\
 	plugin/cd.h plugin/console.h plugin/general.h plugin/input.h \
 	plugin/snd_output.h plugin/snd_render.h plugin/vid_render.h
+
+qfcc_include_qf=keys.h
+nobase_pkginclude_HEADERS = @include_qf@
+pkgdata_DATA=@qfcc_include_qf@
+
+EXTRA_HEADERS = $(include_qf) $(qfcc_include_qf)

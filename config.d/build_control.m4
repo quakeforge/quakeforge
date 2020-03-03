@@ -254,7 +254,15 @@ QF_PROCESS_NEED_DIRS(ruamoko,[qwaq])
 
 if test "$ENABLE_tools_qfcc" = "yes" -a "$ENABLE_tools_pak" = "yes"; then
 	QF_NEED(top, [ruamoko])
+	qfcc_include_qf="\$(qfcc_include_qf)"
 fi
+QF_SUBST(qfcc_include_qf)
+
+if test x"${top_need_libs}" = xyes; then
+	include_qf="\$(include_qf)"
+fi
+QF_SUBST(include_qf)
+
 progs_gz=
 if test "$HAVE_ZLIB" = "yes"; then
 	progs_gz=".gz"
