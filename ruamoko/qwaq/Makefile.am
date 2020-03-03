@@ -13,7 +13,9 @@ QFCC=$(top_builddir)/tools/qfcc/source/qfcc
 
 QCFLAGS=-qq -O -g -Werror
 QCPPFLAGS=--no-default-paths -I$(top_srcdir)/ruamoko/include
+QCLINKFLAGS=--no-default-paths -L$(top_builddir)/ruamoko/lib
 QCOMPILE=$(QFCC) $(QCFLAGS) $(QCPPFLAGS)
+QLINK=$(QFCC) $(QCFLAGS) $(QCLINKFLAGS)
 
 SUFFIXES=.o .r
 .r.o:
@@ -61,7 +63,7 @@ qwaq_app_dat_SOURCES=qwaq-app.r qwaq-screen.r qwaq-window.r qwaq-view.r
 qwaq_app_obj=$(qwaq_app_dat_SOURCES:.r=.o)
 qwaq_app_dep=$(addprefix ./$(DEPDIR)/,$(qwaq_app_obj:.o=.Qo))
 qwaq-app.dat$(EXEEXT): $(qwaq_app_obj) $(QFCC_DEP)
-	$(QFCC) $(QCFLAGS) -o $@ $(qwaq_app_obj) -lr
+	$(QLINK) -o $@ $(qwaq_app_obj) -lr
 include $(qwaq_app_dep) # am--include-marker
 r_depfiles_remade += $(qwaq_app_dep)
 
