@@ -1,4 +1,4 @@
-#include "message.h"
+#include <message.h>
 
 void (...) bprint = #23;
 void (entity client, string s) sprint = #24;

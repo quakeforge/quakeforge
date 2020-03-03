@@ -1,5 +1,5 @@
-#include "Object.h"
-#include "AutoreleasePool.h"
+#include <Object.h>
+#include <AutoreleasePool.h>
 
 void *PR_FindGlobal (string name) = #0;	//FIXME where?
 

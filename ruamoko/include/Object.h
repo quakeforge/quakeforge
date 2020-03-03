@@ -1,7 +1,7 @@
 #ifndef __ruamoko_Object_h
 #define __ruamoko_Object_h
 
-#include "runtime.h"
+#include <runtime.h>
 
 @class Protocol;
 

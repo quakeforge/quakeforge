@@ -1,10 +1,10 @@
-#include "Entity.h"
+#include <Entity.h>
 
-#include "debug.h"
-#include "entities.h"
-#include "plist.h"
-#include "script.h"
-#include "string.h"
+#include <debug.h>
+#include <entities.h>
+#include <plist.h>
+#include <script.h>
+#include <string.h>
 
 typedef void () void_function;
 

@@ -4,7 +4,10 @@ pkglibdir=$(datarootdir)/qfcc/lib
 
 QFCC=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)
 QCFLAGS=-qq -O -g -Werror -Wall -Wno-integer-divide --no-default-paths
-QCPPFLAGS=$(AM_CPPFLAGS)
+QCPPFLAGS=--no-default-paths -I$(top_srcdir)/ruamoko/include
+QCLINKFLAGS=--no-default-paths -L$(top_builddir)/ruamoko/lib
+QCOMPILE=$(QFCC) $(QCFLAGS) $(QCPPFLAGS)
+QLINK=$(QFCC) $(QCFLAGS) $(QCLINKFLAGS)
 PAK=$(top_builddir)/tools/pak/pak$(EXEEXT)
 RANLIB=touch
 

@@ -1,6 +1,6 @@
-#include "draw.h"
-#include "gui/InputLine.h"
-#include "gui/Rect.h"
+#include <draw.h>
+#include <gui/InputLine.h>
+#include <gui/Rect.h>
 
 inputline_t InputLine_Create (int lines, int size, int prompt) = #0;
 void InputLine_SetPos (inputline_t il, int x, int y) = #0;

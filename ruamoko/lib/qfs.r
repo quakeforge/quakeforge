@@ -1,4 +1,4 @@
-#include "qfs.h"
+#include <qfs.h>
 
 QFile QFS_Open (string path, string mode) = #0;
 QFile QFS_WOpen (string path, int zip) = #0;

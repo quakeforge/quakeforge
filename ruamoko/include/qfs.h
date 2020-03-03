@@ -1,7 +1,7 @@
 #ifndef __ruamoko_qfs_h
 #define __ruamoko_qfs_h
 
-#include "qfile.h"
+#include <qfile.h>
 
 struct _qfslist_t {
 	int count;

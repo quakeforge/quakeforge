@@ -1,4 +1,4 @@
-#include "string.h"
+#include <string.h>
 
 string (float f) ftos = #26;
 string (vector v) vtos = #27;

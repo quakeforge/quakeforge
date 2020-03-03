@@ -1,4 +1,4 @@
-#include "hash.h"
+#include <hash.h>
 
 hashtab_t *Hash_NewTable (int size, string gk (void *ele, void *data), void f (void *ele, void *data), void *ud) = #0;
 void Hash_SetHashCompare (hashtab_t *tab, unsigned gh (void *ele, void *data), int cmp (void *ele1, void *ele2, void *data)) = #0;

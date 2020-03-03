@@ -1,8 +1,8 @@
 #ifndef __ruamoko_gui_Rect_h
 #define __ruamoko_gui_Rect_h
 
-#include "gui/Point.h"
-#include "gui/Size.h"
+#include <gui/Point.h>
+#include <gui/Size.h>
 
 /**	\addtogroup gui */
 ///@{

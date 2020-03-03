@@ -1,7 +1,7 @@
 #ifndef __ruamoko_AutoreleasePool_h
 #define __ruamoko_AutoreleasePool_h
 
-#include "Object.h"
+#include <Object.h>
 
 @class Array;
 
