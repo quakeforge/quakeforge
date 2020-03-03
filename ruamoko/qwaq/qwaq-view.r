@@ -33,6 +33,17 @@ rectContainsPoint (Rect *rect, Point *point)
 	return self;
 }
 
+-setParent: parent
+{
+	self.parent = parent;
+	return self;
+}
+
+-redraw
+{
+	return [parent redraw];
+}
+
 @end
 
 Rect getwrect (window_t window) = #0;

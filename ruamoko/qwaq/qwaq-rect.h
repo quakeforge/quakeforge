@@ -1,7 +1,7 @@
 #ifndef __qwaq_rect_h
 #define __qwaq_rect_h
 
-typedef struct {
+typedef struct Rect_s {
 	int         xpos;
 	int         ypos;
 	int         xlen;

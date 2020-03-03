@@ -13,6 +13,7 @@
 	Rect        rect;
 	Rect        absRect;
 	Point       point;		// can't be local :(
+	id          parent;
 	struct window_s *window;
 }
 -initWithRect: (Rect) rect;

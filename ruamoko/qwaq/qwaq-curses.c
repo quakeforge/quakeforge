@@ -72,6 +72,7 @@ typedef enum qwaq_commands_e {
 	qwaq_cmd_wrefresh,
 	qwaq_cmd_init_pair,
 	qwaq_cmd_wbkgd,
+	qwaq_cmd_scrollok,
 } qwaq_commands;
 
 #define RING_BUFFER(type, size) 	\
@@ -524,6 +525,16 @@ cmd_wbkgd (qwaq_resources_t *res)
 }
 
 static void
+cmd_scrollok (qwaq_resources_t *res)
+{
+	int         window_id = RB_PEEK_DATA (res->command_queue, 2);
+	int         flag = RB_PEEK_DATA (res->command_queue, 3);
+
+	window_t   *window = get_window (res, __FUNCTION__, window_id);
+	scrollok (window->win, flag);
+}
+
+static void
 process_commands (qwaq_resources_t *res)
 {
 	while (RB_DATA_AVAILABLE (res->command_queue) >= 2) {
@@ -584,6 +595,9 @@ process_commands (qwaq_resources_t *res)
 				break;
 			case qwaq_cmd_wbkgd:
 				cmd_wbkgd (res);
+				break;
+			case qwaq_cmd_scrollok:
+				cmd_scrollok (res);
 				break;
 		}
 		RB_DROP_DATA (res->command_queue, RB_PEEK_DATA (res->command_queue, 1));
@@ -882,6 +896,37 @@ bi_wprintf (progs_t *pr)
 }
 
 static void
+bi_wvprintf (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	int         window_id = P_INT (pr, 0);
+	const char *fmt = P_GSTRING (pr, 1);
+	__auto_type args = (pr_va_list_t *) &P_POINTER (pr, 2);
+	pr_type_t  *list_start = PR_GetPointer (pr, args->list);
+	pr_type_t **list = alloca (args->count);
+
+	for (int i = 0; i < args->count; i++) {
+		list[i] = list_start + i * pr->pr_param_size;
+	}
+
+	if (get_window (res, __FUNCTION__, window_id)) {
+		int         string_id = acquire_string (res);
+		dstring_t  *print_buffer = res->strings + string_id;
+		int         command[] = {
+						qwaq_cmd_waddstr, 0,
+						window_id, string_id
+					};
+
+		command[1] = CMD_SIZE(command);
+
+		dstring_clearstr (print_buffer);
+		PR_Sprintf (pr, print_buffer, "waddstr", fmt, args->count, list);
+
+		qwaq_submit_command (res, command);
+	}
+}
+
+static void
 bi_mvwaddch (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
@@ -963,6 +1008,20 @@ bi_wbkgd (progs_t *pr)
 	}
 }
 
+static void
+bi_scrollok (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	int         window_id = P_INT (pr, 0);
+	int         flag = P_INT (pr, 1);
+
+	if (get_window (res, __FUNCTION__, window_id)) {
+		int         command[] = { qwaq_cmd_scrollok, 0, window_id, flag, };
+		command[1] = CMD_SIZE(command);
+		qwaq_submit_command (res, command);
+	}
+}
+
 static const char qwaq_acs_char_map[] = "lmkjtuvwqxnos`afg~,+.-hi0pryz{|}";
 static void
 bi_acs_char (progs_t *pr)
@@ -1029,6 +1088,7 @@ static builtin_t builtins[] = {
 	{"doupdate",		bi_doupdate,		-1},
 	{"mvwprintf",		bi_mvwprintf,		-1},
 	{"wprintf",			bi_wprintf,			-1},
+	{"wvprintf",		bi_wvprintf,		-1},
 	{"mvwaddch",		bi_mvwaddch,		-1},
 	{"wrefresh",		bi_wrefresh,		-1},
 	{"get_event",		bi_get_event,		-1},
@@ -1036,6 +1096,7 @@ static builtin_t builtins[] = {
 	{"max_color_pairs",	bi_max_color_pairs,	-1},
 	{"init_pair",		bi_init_pair,		-1},
 	{"wbkgd",			bi_wbkgd,			-1},
+	{"scrollok",		bi_scrollok,		-1},
 	{"acs_char",		bi_acs_char,		-1},
 	{0}
 };

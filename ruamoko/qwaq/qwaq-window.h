@@ -9,10 +9,10 @@
 #include "qwaq-draw.h"
 #include "qwaq-rect.h"
 
-@interface Window: Object <Draw, TakeFocus>
+@interface Window: Object <Draw, HandleFocusedEvent, HandleMouseEvent>
 {
-	@public
 	Rect        rect;
+	id          parent;
 	Point       point;	// FIXME can't be local :(
 	Array      *views;
 	View       *focusedView;

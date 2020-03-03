@@ -37,9 +37,13 @@ typedef struct qwaq_event_s {
 -handleEvent: (struct qwaq_event_s *) event;
 @end
 
-@protocol TakeFocus <HandleEvent>
+@protocol HandleFocusedEvent <HandleEvent>
 -takeFocus;
 -loseFocus;
+@end
+
+@protocol HandleMouseEvent <HandleEvent>
+-(struct Rect_s *)getRect;
 @end
 
 #endif

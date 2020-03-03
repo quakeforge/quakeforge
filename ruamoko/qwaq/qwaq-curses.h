@@ -75,6 +75,7 @@ typedef struct panel_s *panel_t;
 @extern void destroy_window (window_t win);
 @extern void mvwprintf (window_t win, int x, int y, string fmt, ...);
 @extern void wprintf (window_t win, string fmt, ...);
+@extern void wvprintf (window_t win, string fmt, @va_list args);
 @extern void wrefresh (window_t win);
 @extern void mvwaddch (window_t win, int x, int y, int ch);
 
@@ -94,6 +95,7 @@ typedef struct panel_s *panel_t;
 @extern int max_color_pairs (void);
 @extern int init_pair (int pair, int f, int b);
 @extern void wbkgd (window_t win, int ch);
+@extern void scrollok (window_t win, int flag);
 
 @extern int acs_char (int acs);
 #endif

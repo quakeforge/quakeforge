@@ -3,6 +3,8 @@
 
 @protocol Draw
 -draw;
+-redraw;
+-setParent: parent;
 @end
 
 #endif

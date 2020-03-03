@@ -17,6 +17,7 @@
 	if (!(self = [super init])) {
 		return nil;
 	}
+	views = [[Array array] retain];
 	self.rect = rect;
 	window = create_window (rect.xpos, rect.ypos, rect.xlen, rect.ylen);
 	panel = create_panel (window);
@@ -27,6 +28,9 @@
 {
 	switch (event.event_type) {
 		case qe_mouse:
+			mvwprintf(window, 0, 3, "%2d %2d %08x",
+					  event.e.mouse.x, event.e.mouse.y, event.e.mouse.buttons);
+			[self redraw];
 			point.x = event.e.mouse.x;
 			point.y = event.e.mouse.y;
 			for (int i = [views count]; i--> 0; ) {
@@ -60,6 +64,7 @@
 	view.absRect.xpos = view.rect.xpos + rect.xpos;
 	view.absRect.ypos = view.rect.ypos + rect.ypos;
 	view.window = window;
+	[view setParent: self];
 	return self;
 }
 
@@ -96,6 +101,23 @@
 			}
 		}
 	}
+	[views makeObjectsPerformSelector: @selector (draw)];
 	return self;
+}
+
+-(Rect *) getRect
+{
+	return &rect;
+}
+
+-setParent: parent
+{
+	self.parent = parent;
+	return self;
+}
+
+-redraw
+{
+	return [parent redraw];
 }
 @end
