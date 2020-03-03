@@ -1119,10 +1119,8 @@ undefined_def (qfo_def_t *def)
 			pr_lineno_t *line;
 
 			while (func - work->funcs < work->num_funcs) {
-				if (func->code < 0) {
-					continue;
-				}
-				if ((pr_uint_t) func->code <= reloc->offset) {
+				if (func->code >= 0
+					&& (pr_uint_t) func->code <= reloc->offset) {
 					if (!best || reloc->offset - func->code < best_dist) {
 						best = func;
 						best_dist = reloc->offset - func->code;
