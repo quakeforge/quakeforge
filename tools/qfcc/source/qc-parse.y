@@ -741,6 +741,9 @@ struct_decl
 			$1->sy_type = sy_var;
 			$1->visibility = current_visibility;
 			symtab_addsymbol (current_symtab, $1);
+			if (!$1->table) {
+				error (0, "duplicate field `%s'", $1->name);
+			}
 		}
 	| var_decl
 		{
@@ -751,6 +754,9 @@ struct_decl
 			$1->sy_type = sy_var;
 			$1->visibility = current_visibility;
 			symtab_addsymbol (current_symtab, $1);
+			if (!$1->table) {
+				error (0, "duplicate field `%s'", $1->name);
+			}
 		}
 	| var_decl ':' expr		%prec COMMA		{}
 	| ':' expr				%prec COMMA		{}
