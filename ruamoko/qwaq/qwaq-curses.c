@@ -903,7 +903,7 @@ bi_wvprintf (progs_t *pr)
 	const char *fmt = P_GSTRING (pr, 1);
 	__auto_type args = (pr_va_list_t *) &P_POINTER (pr, 2);
 	pr_type_t  *list_start = PR_GetPointer (pr, args->list);
-	pr_type_t **list = alloca (args->count);
+	pr_type_t **list = alloca (args->count * sizeof (*list));
 
 	for (int i = 0; i < args->count; i++) {
 		list[i] = list_start + i * pr->pr_param_size;
