@@ -182,7 +182,8 @@ symtab_flat_copy (symtab_t *symtab, symtab_t *parent)
 	newtab = new_symtab (parent, stab_local);
 	do {
 		for (symbol = symtab->symbols; symbol; symbol = symbol->next) {
-			if (Hash_Find (newtab->tab, symbol->name))
+			if (symbol->visibility == vis_anonymous
+				|| Hash_Find (newtab->tab, symbol->name))
 				continue;
 			newsym = copy_symbol (symbol);
 			symtab_addsymbol (newtab, newsym);

@@ -1873,6 +1873,24 @@ ivar_decls
 
 ivar_decl
 	: type ivars
+	| type
+		{
+			if (is_anonymous_struct ($1)) {
+				// anonymous struct/union
+				// type->name always begins with "tag "
+				$1.sym = new_symbol (va (".anonymous.%s", $1.type->name + 4));
+				$1.sym->type = $1.type;
+				$1.sym->sy_type = sy_var;
+				$1.sym->visibility = vis_anonymous;
+				symtab_addsymbol (current_symtab, $1.sym);
+				if (!$1.sym->table) {
+					error (0, "duplicate field `%s'", $1.sym->name);
+				}
+			} else {
+				// bare type
+				warning (0, "declaration does not declare anything");
+			}
+		}
 	;
 
 ivars
