@@ -178,21 +178,30 @@ source_path_f (cvar_t *var)
 	int         i;
 	char       *s;
 
-	if (source_path_string)
+	if (source_path_string) {
 		free (source_path_string);
+	}
 	source_path_string = strdup (var->string);
-	if (source_paths)
+	if (source_paths) {
 		free (source_paths);
-	for (i = 2, s = source_path_string; *s; s++)
-		if (*s == ';')
+	}
+	// i starts at 2 because an empty path is equivalent to "." and the
+	// list is null terminated
+	for (i = 2, s = source_path_string; *s; s++) {
+		if (*s == ';') {
 			i++;
+		}
+	}
 	source_paths = malloc (i * sizeof (char *));
 	source_paths[0] = source_path_string;
-	for (i = 1, s = source_path_string; *s; s++)
+	// i starts at one because the first path is in 0 and any additional
+	// paths come after, then the null terminator
+	for (i = 1, s = source_path_string; *s; s++) {
 		if (*s == ';') {
 			*s++ = 0;
 			source_paths[i++] = s;
 		}
+	}
 	source_paths[i] = 0;
 }
 
