@@ -349,7 +349,7 @@ external_def
 					if (is_anonymous_struct ($1)){
 						warning (0, "unnamed struct/union that defines "
 								 "no instances");
-					} else {
+					} else if (!is_enum ($1.type) && !is_struct ($1.type)) {
 						warning (0, "useless type name in empty declaration");
 					}
 				} else if (!$1.type && $1.sym) {
@@ -1241,7 +1241,7 @@ local_def
 					if (is_anonymous_struct ($1)){
 						warning (0, "unnamed struct/union that defines "
 								 "no instances");
-					} else {
+					} else if (!is_enum ($1.type) && !is_struct ($1.type)) {
 						warning (0, "useless type name in empty declaration");
 					}
 				} else if (!$1.type && $1.sym) {
