@@ -29,7 +29,7 @@ typedef struct qwaq_event_s {
 		int         key;
 		qwaq_mevent_t mouse;
 		qwaq_message_t message;
-	} e;
+	};
 } qwaq_event_t;
 
 #ifdef __QFCC__	// don't want C gcc to see this :)

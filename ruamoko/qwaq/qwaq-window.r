@@ -29,10 +29,10 @@
 	switch (event.event_type) {
 		case qe_mouse:
 			mvwprintf(window, 0, 3, "%2d %2d %08x",
-					  event.e.mouse.x, event.e.mouse.y, event.e.mouse.buttons);
+					  event.mouse.x, event.mouse.y, event.mouse.buttons);
 			[self redraw];
-			point.x = event.e.mouse.x;
-			point.y = event.e.mouse.y;
+			point.x = event.mouse.x;
+			point.y = event.mouse.y;
 			for (int i = [views count]; i--> 0; ) {
 				View       *v = [views objectAtIndex: i];
 				if (rectContainsPoint (&v.absRect, &point)) {

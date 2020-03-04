@@ -71,14 +71,14 @@ arp_end (void)
 -handleEvent: (qwaq_event_t *) event
 {
 	[screen handleEvent: event];
-	if (event.event_type == qe_key && event.e.key == '\x18') {
+	if (event.event_type == qe_key && event.key == '\x18') {
 		event.event_type = qe_command;
-		event.e.message.command = qc_exit;
+		event.message.command = qc_exit;
 	}
 	if (event.event_type == qe_command
-		&& (event.e.message.command == qc_exit
-			|| event.e.message.command == qc_error)) {
-		endState = event.e.message.command;
+		&& (event.message.command == qc_exit
+			|| event.message.command == qc_error)) {
+		endState = event.message.command;
 	}
 	return self;
 }

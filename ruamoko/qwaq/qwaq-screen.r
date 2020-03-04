@@ -65,7 +65,7 @@
 				withObject: (id) event];
 			break;
 		case qe_mouse:
-			Point p = { event.e.mouse.x, event.e.mouse.y };
+			Point p = { event.mouse.x, event.mouse.y };
 			for (int i = [mouse_handler_rects count]; i-->0; ) {
 				//if (rectContainsPoint((Rect*)mouse_handler_rects._objs[i], &p)) {
 				//	[mouse_handlers._objs[i] handleEvent: event];
