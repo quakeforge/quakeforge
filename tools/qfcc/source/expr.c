@@ -1407,6 +1407,7 @@ unary_expr (int op, expr_t *e)
 	quat_t      q;
 	const char *s;
 	expr_t     *new;
+	type_t     *t;
 
 	convert_name (e);
 	if (e->type == ex_error)
@@ -1568,6 +1569,11 @@ unary_expr (int op, expr_t *e)
 					case ev_short:
 						return new_short_expr (~expr_short (e));
 					case ev_invalid:
+						t = get_type (e);
+						if (t->meta == ty_enum) {
+							return new_integer_expr (~expr_integer (e));
+						}
+						break;
 					case ev_type_count:
 					case ev_void:
 						break;
