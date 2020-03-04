@@ -1232,6 +1232,26 @@ local_def
 			local_expr = 0;
 			(void) ($<spec>2);
 		}
+	| specifiers ';'
+		{
+			if (!is_null_spec ($1)) {
+				if (!$1.type && !$1.sym) {
+					warning (0, "useless specifiers");
+				} else if ($1.type && !$1.sym) {
+					if (is_anonymous_struct ($1)){
+						warning (0, "unnamed struct/union that defines "
+								 "no instances");
+					} else {
+						warning (0, "useless type name in empty declaration");
+					}
+				} else if (!$1.type && $1.sym) {
+					bug (0, "wha? %p %p", $1.type, $1.sym);
+				} else {
+					bug (0, "wha? %p %p", $1.type, $1.sym);
+				}
+			}
+			$$ = 0;
+		}
 	;
 
 statement
