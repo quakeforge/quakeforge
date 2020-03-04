@@ -1630,6 +1630,10 @@ class_with_super
 new_class_with_super
 	: new_class_name ':' class_name
 		{
+			if (!$3->ivars) {
+				error (0, "cannot find interface declaration for `%s', "
+					   "superclass of `%s'", $3->name, $1->name);
+			}
 			$1->super_class = $3;
 			$$ = $1;
 		}
