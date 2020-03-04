@@ -285,6 +285,13 @@ is_anonymous_struct (specifier_t spec)
 	return 1;
 }
 
+static int
+is_null_spec (specifier_t spec)
+{
+	static specifier_t null_spec;
+	return memcmp (&spec, &null_spec, sizeof (spec)) == 0;
+}
+
 %}
 
 %expect 0
@@ -333,7 +340,25 @@ external_def_list
 
 external_def
 	: optional_specifiers external_decl_list ';' { }
-	| optional_specifiers ';' { }
+	| optional_specifiers ';'
+		{
+			if (!is_null_spec ($1)) {
+				if (!$1.type && !$1.sym) {
+					warning (0, "useless specifiers");
+				} else if ($1.type && !$1.sym) {
+					if (is_anonymous_struct ($1)){
+						warning (0, "unnamed struct/union that defines "
+								 "no instances");
+					} else {
+						warning (0, "useless type name in empty declaration");
+					}
+				} else if (!$1.type && $1.sym) {
+					bug (0, "wha? %p %p", $1.type, $1.sym);
+				} else {
+					bug (0, "wha? %p %p", $1.type, $1.sym);
+				}
+			}
+		}
 	| optional_specifiers qc_func_params
 		{
 			type_t    **type;
