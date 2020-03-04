@@ -26,7 +26,7 @@
 
 -handleEvent: (qwaq_event_t *) event
 {
-	switch (event.event_type) {
+	switch (event.what) {
 		case qe_mouse:
 			mvwprintf(window, 0, 3, "%2d %2d %08x",
 					  event.mouse.x, event.mouse.y, event.mouse.buttons);
@@ -46,7 +46,7 @@
 			if (focusedView) {
 				[focusedView handleEvent: event];
 				for (int i = [views count];
-					 event.event_type != qe_none && i--> 0; ) {
+					 event.what != qe_none && i--> 0; ) {
 					View       *v = [views objectAtIndex: i];
 					 [v handleEvent: event];
 				}

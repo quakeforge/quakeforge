@@ -55,23 +55,28 @@
 
 -handleEvent: (qwaq_event_t *) event
 {
-	switch (event.event_type) {
+	if (event.what & qe_mouse) {
+		[self printf:"%04x %2d %2d %d %08x\r", event.what, event.mouse.x, event.mouse.y, event.mouse.click, event.mouse.buttons];
+		[self redraw];
+		Point p = { event.mouse.x, event.mouse.y };
+		for (int i = [mouse_handler_rects count]; i-->0; ) {
+			//if (rectContainsPoint((Rect*)mouse_handler_rects._objs[i], &p)) {
+			//	[mouse_handlers._objs[i] handleEvent: event];
+			//	break;
+			//}
+		}
+	} else if (event.what & qe_focused) {
+		[focused_handlers
+			makeObjectsPerformSelector: @selector(handleEvent:)
+			withObject: (id) event];
+	}
+	switch (event.what) {
 		case qe_none:
 			break;
 		case qe_key:
 		case qe_command:
-			[focused_handlers
-				makeObjectsPerformSelector: @selector(handleEvent:)
-				withObject: (id) event];
 			break;
 		case qe_mouse:
-			Point p = { event.mouse.x, event.mouse.y };
-			for (int i = [mouse_handler_rects count]; i-->0; ) {
-				//if (rectContainsPoint((Rect*)mouse_handler_rects._objs[i], &p)) {
-				//	[mouse_handlers._objs[i] handleEvent: event];
-				//	break;
-				//}
-			}
 			break;
 	}
 	return self;
@@ -87,8 +92,8 @@
 
 -redraw
 {
-	[self error:"hmm"];
 	update_panels ();
+	wrefresh(window);
 	doupdate ();
 	return self;
 }
@@ -103,6 +108,11 @@
 {
 	mvwaddch(window, x, y, ch);
 	return self;
+}
+
+- (Rect *) getRect
+{
+	return &rect;
 }
 
 -setParent: parent

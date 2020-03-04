@@ -1,3 +1,4 @@
+int fence;
 #include <AutoreleasePool.h>
 
 #include "color.h"
@@ -47,8 +48,9 @@ arp_end (void)
 	[screen printf:"%d\n", acs_char(ACS_HLINE)];
 	[screen addch: acs_char(ACS_HLINE) atX:4 Y:4];
 	Window *w;
-	[screen add: w=[[Window windowWithRect: r] setBackground: COLOR_PAIR (2)]];
+	//[screen add: w=[[Window windowWithRect: r] setBackground: COLOR_PAIR (2)]];
 	//wprintf (w.window, "%d %d %d %d\n", r.xpos, r.ypos, r.xlen, r.ylen);
+	[screen redraw];
 	return self;
 }
 
@@ -59,7 +61,7 @@ arp_end (void)
 		arp_start ();
 
 		get_event (&event);
-		if (event.event_type != qe_none) {
+		if (event.what != qe_none) {
 			[self handleEvent: &event];
 		}
 
@@ -71,11 +73,11 @@ arp_end (void)
 -handleEvent: (qwaq_event_t *) event
 {
 	[screen handleEvent: event];
-	if (event.event_type == qe_key && event.key == '\x18') {
-		event.event_type = qe_command;
+	if (event.what == qe_key && event.key == '\x18') {
+		event.what = qe_command;
 		event.message.command = qc_exit;
 	}
-	if (event.event_type == qe_command
+	if (event.what == qe_command
 		&& (event.message.command == qc_exit
 			|| event.message.command == qc_error)) {
 		endState = event.message.command;
@@ -86,6 +88,9 @@ arp_end (void)
 
 int main (int argc, string *argv)
 {
+	fence = 0;
+	//while (!fence) {}
+
 	id app = [[QwaqApplication app] retain];
 
 	[app run];

@@ -8,7 +8,7 @@
 @class View;
 @class Array;
 
-@interface Screen: Object <HandleEvent, Draw>
+@interface Screen: Object <HandleMouseEvent, Draw>
 {
 	Rect        rect;
 	Array      *views;

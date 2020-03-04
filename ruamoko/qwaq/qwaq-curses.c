@@ -142,6 +142,11 @@ typedef enum qwaq_commands_e {
 		rb->buffer[(rb->tail + ahead) % RB_buffer_size (rb)];	\
 	})
 
+#define RB_POKE_DATA(ring_buffer, ahead, data)							\
+	({	__auto_type rb = &(ring_buffer);								\
+		rb->buffer[(rb->tail + ahead) % RB_buffer_size (rb)] = (data);	\
+	})
+
 typedef struct window_s {
 	WINDOW     *win;
 } window_t;
@@ -607,6 +612,16 @@ process_commands (qwaq_resources_t *res)
 static void
 add_event (qwaq_resources_t *res, qwaq_event_t *event)
 {
+	// lock
+	// {
+	// merge motion events
+	unsigned    last = RB_DATA_AVAILABLE (res->event_queue);
+	if (event->what == qe_mousemove && last > 1
+		&& RB_PEEK_DATA(res->event_queue, last - 1).what == qe_mousemove) {
+		RB_POKE_DATA(res->event_queue, last - 1, *event);
+		return;	// unlock
+	}
+	// }
 	if (RB_SPACE_AVAILABLE (res->event_queue) >= 1) {
 		RB_WRITE_DATA (res->event_queue, event, 1);
 	}
@@ -624,14 +639,69 @@ get_event (qwaq_resources_t *res, qwaq_event_t *event)
 	return 0;
 }
 
+#define M_MOVE REPORT_MOUSE_POSITION
+#define M_PRESS (  BUTTON1_PRESSED \
+				 | BUTTON2_PRESSED \
+				 | BUTTON3_PRESSED \
+				 | BUTTON4_PRESSED \
+				 | BUTTON5_PRESSED)
+#define M_RELEASE (  BUTTON1_RELEASED \
+				   | BUTTON2_RELEASED \
+				   | BUTTON3_RELEASED \
+				   | BUTTON4_RELEASED \
+				   | BUTTON5_RELEASED)
+#define M_CLICK (  BUTTON1_CLICKED \
+				 | BUTTON2_CLICKED \
+				 | BUTTON3_CLICKED \
+				 | BUTTON4_CLICKED \
+				 | BUTTON5_CLICKED)
+#define M_DCLICK (  BUTTON1_DOUBLE_CLICKED \
+				  | BUTTON2_DOUBLE_CLICKED \
+				  | BUTTON3_DOUBLE_CLICKED \
+				  | BUTTON4_DOUBLE_CLICKED \
+				  | BUTTON5_DOUBLE_CLICKED)
+#define M_TCLICK (  BUTTON1_TRIPLE_CLICKED \
+				  | BUTTON2_TRIPLE_CLICKED \
+				  | BUTTON3_TRIPLE_CLICKED \
+				  | BUTTON4_TRIPLE_CLICKED \
+				  | BUTTON5_TRIPLE_CLICKED)
+
 static void
-mouse_event (qwaq_resources_t *res, MEVENT *mevent)
+mouse_event (qwaq_resources_t *res, const MEVENT *mevent)
 {
+	int         mask = mevent->bstate;
 	qwaq_event_t event = {};
-	event.event_type = qe_mouse;
+
 	event.mouse.x = mevent->x;
 	event.mouse.y = mevent->y;
 	event.mouse.buttons = mevent->bstate;
+	if (mask & M_MOVE) {
+		event.what = qe_mousemove;
+		mask &= ~M_MOVE;
+	}
+	if (mask & M_PRESS) {
+		event.what = qe_mousedown;
+		mask &= ~M_PRESS;
+	}
+	if (mask & M_RELEASE) {
+		event.what = qe_mouseup;
+		mask &= ~M_RELEASE;
+	}
+	if (mask & M_CLICK) {
+		event.what = qe_mouseclick;
+		mask &= ~M_CLICK;
+		event.mouse.click = 1;
+	}
+	if (mask & M_DCLICK) {
+		event.what = qe_mouseclick;
+		mask &= ~M_DCLICK;
+		event.mouse.click = 2;
+	}
+	if (mask & M_TCLICK) {
+		event.what = qe_mouseclick;
+		mask &= ~M_TCLICK;
+		event.mouse.click = 3;
+	}
 	add_event (res, &event);
 }
 
@@ -639,7 +709,7 @@ static void
 key_event (qwaq_resources_t *res, int key)
 {
 	qwaq_event_t event = {};
-	event.event_type = qe_key;
+	event.what = qe_keydown;
 	event.key = key;
 	add_event (res, &event);
 }
