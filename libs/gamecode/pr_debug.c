@@ -198,8 +198,8 @@ source_path_f (cvar_t *var)
 	// paths come after, then the null terminator
 	for (i = 1, s = source_path_string; *s; s++) {
 		if (*s == ';') {
-			*s++ = 0;
-			source_paths[i++] = s;
+			*s = 0;
+			source_paths[i++] = s + 1;
 		}
 	}
 	source_paths[i] = 0;
