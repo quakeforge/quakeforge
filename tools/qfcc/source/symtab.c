@@ -152,7 +152,7 @@ symtab_removesymbol (symtab_t *symtab, symbol_t *symbol)
 	for (s = &symtab->symbols; *s && *s != symbol; s = & (*s)->next)
 		;
 	if (!*s)
-		internal_error (0, "symtab_removesymbol");
+		internal_error (0, "attempt to remove symbol not in symtab");
 	*s = (*s)->next;
 	if (symtab->symtail == &symbol->next)
 		symtab->symtail = s;

@@ -45,6 +45,7 @@ typedef enum vis_e {
 	vis_public,
 	vis_protected,
 	vis_private,
+	vis_anonymous,
 } vis_t;
 
 typedef enum {

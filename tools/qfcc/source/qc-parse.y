@@ -42,6 +42,7 @@
 
 #include <QF/hash.h>
 #include <QF/sys.h>
+#include <QF/va.h>
 
 #include "class.h"
 #include "debug.h"
@@ -262,6 +263,26 @@ default_type (specifier_t spec, symbol_t *sym)
 				 type_default->name, sym->name);
 	}
 	return spec;
+}
+
+static int
+is_anonymous_struct (specifier_t spec)
+{
+	if (spec.sym) {
+		return 0;
+	}
+	if (!is_struct (spec.type)) {
+		return 0;
+	}
+	if (spec.type->t.symtab->parent) {
+		return 0;
+	}
+	// struct and union type names always begin with "tag ". Untagged s/u
+	// are "tag .<filename>.<id>".
+	if (spec.type->name[4] != '.') {
+		return 0;
+	}
+	return 1;
 }
 
 %}
@@ -675,15 +696,27 @@ struct_def
 	: type struct_decl_list
 	| type
 		{
-			if ($1.sym) {
+			if ($1.sym && $1.sym->type != $1.type) {
 				// a type name (id, typedef, etc) was used as a field name.
 				// this is allowed in C
-				print_type ($1.type);
-				printf ("%s\n", $1.sym->name);
 				$1.sym = new_symbol ($1.sym->name);
 				$1.sym->type = $1.type;
 				$1.sym->sy_type = sy_var;
 				symtab_addsymbol (current_symtab, $1.sym);
+				if (!$1.sym->table) {
+					error (0, "duplicate field `%s'", $1.sym->name);
+				}
+			} else if (is_anonymous_struct ($1)) {
+				// anonymous struct/union
+				// type->name always begins with "tag "
+				$1.sym = new_symbol (va (".anonymous.%s", $1.type->name + 4));
+				$1.sym->type = $1.type;
+				$1.sym->sy_type = sy_var;
+				$1.sym->visibility = vis_anonymous;
+				symtab_addsymbol (current_symtab, $1.sym);
+				if (!$1.sym->table) {
+					error (0, "duplicate field `%s'", $1.sym->name);
+				}
 			} else {
 				// bare type
 				warning (0, "declaration does not declare anything");

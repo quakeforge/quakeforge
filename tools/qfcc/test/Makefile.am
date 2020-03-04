@@ -31,6 +31,7 @@ fail_bins=
 test_progs_dat=\
 	address-cast.dat \
 	alignment.dat \
+	anonstruct.dat \
 	chewed-alias.dat \
 	chewed-return.dat \
 	comma-expr.dat \
@@ -118,6 +119,15 @@ alignment.run: Makefile build-run
 	@$(srcdir)/build-run $@
 include ./$(DEPDIR)/alignment.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/alignment.Qo
+
+anonstruct_dat_SOURCES=anonstruct.r
+anonstruct_obj=$(anonstruct_dat_SOURCES:.r=.qfo)
+anonstruct.dat$(EXEEXT): $(anonstruct_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(anonstruct_obj)
+anonstruct.run: Makefile build-run
+	@$(srcdir)/build-run $@
+include ./$(DEPDIR)/anonstruct.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/anonstruct.Qo
 
 chewed_alias_dat_SOURCES=chewed-alias.r
 chewed_alias_obj=$(chewed_alias_dat_SOURCES:.r=.qfo)
