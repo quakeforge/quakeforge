@@ -274,7 +274,7 @@ is_anonymous_struct (specifier_t spec)
 	if (!is_struct (spec.type)) {
 		return 0;
 	}
-	if (spec.type->t.symtab->parent) {
+	if (!spec.type->t.symtab || spec.type->t.symtab->parent) {
 		return 0;
 	}
 	// struct and union type names always begin with "tag ". Untagged s/u
