@@ -445,8 +445,14 @@ obj_types_assignable (const type_t *dst, const type_t *src)
 	int         i;
 
 	//puts ("%$$\"$#%");
-	if (!obj_is_classptr (dst) || !obj_is_classptr (src))
+	if (!obj_is_classptr (src)) {
+		// if dst is a class pointer, then the types are not compatible,
+		// otherwise unknown
+		return obj_is_classptr (dst) - 1;
+	}
+	if (!obj_is_classptr (dst)) {
 		return -1;
+	}
 
 	dst_is_proto = obj_is_id (dst) && (dst_protos = obj_get_protos (dst));
 	src_is_proto = obj_is_id (src) && (src_protos = obj_get_protos (src));
