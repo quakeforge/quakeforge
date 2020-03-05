@@ -103,7 +103,7 @@ array_from_plist (PLArray *plarray)
 	count = [plarray count];
 	for (i = 0; i < count; i++) {
 		ret = object_from_plist ([plarray getObjectAtIndex:i]);
-		[array addObject: ret.pointer_val];
+		[array addObject: (id) ret.pointer_val];
 	}
 	ret.pointer_val = array;
 	return ret;

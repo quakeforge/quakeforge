@@ -45,7 +45,7 @@ Symbol *symbol (string str)
 {
     local Symbol *res;
 
-    if ((res = Hash_Find (symbols, s))) {
+    if ((res = (Symbol *) Hash_Find (symbols, s))) {
             return res;
     } else {
             res = (Symbol*) [self newFromString: s];
