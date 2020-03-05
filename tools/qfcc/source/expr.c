@@ -1645,7 +1645,6 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 	expr_t     *call;
 	expr_t     *err = 0;
 
-
 	for (e = params; e; e = e->next) {
 		if (e->type == ex_error)
 			return e;
