@@ -17,11 +17,6 @@ typedef struct anon_s {
 	};
 } anon_t;
 
-union {
-	int         xsnafu;
-	float       xfizzle;
-};
-
 int foo (float f)
 {
 	anon_t anon;
