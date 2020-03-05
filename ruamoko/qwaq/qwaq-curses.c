@@ -43,6 +43,7 @@
 
 #include "qwaq.h"
 #include "event.h"
+#include "qwaq-curses.h"
 
 #define always_inline inline __attribute__((__always_inline__))
 #define QUEUE_SIZE 16
@@ -75,6 +76,7 @@ typedef enum qwaq_commands_e {
 	qwaq_cmd_scrollok,
 	qwaq_cmd_move,
 	qwaq_cmd_curs_set,
+	qwaq_cmd_wborder,
 } qwaq_commands;
 
 const char *qwaq_command_names[]= {
@@ -100,6 +102,9 @@ const char *qwaq_command_names[]= {
 	"scrollok",
 	"move",
 	"curs_set",
+	"wborder",
+};
+
 #define RING_BUFFER(type, size) 	\
 	struct {						\
 		type        buffer[size];	\
@@ -582,6 +587,23 @@ cmd_curs_set (qwaq_resources_t *res)
 }
 
 static void
+cmd_wborder (qwaq_resources_t *res)
+{
+	int         window_id = RB_PEEK_DATA (res->command_queue, 2);
+	int         ls = RB_PEEK_DATA (res->command_queue, 3);
+	int         rs = RB_PEEK_DATA (res->command_queue, 4);
+	int         ts = RB_PEEK_DATA (res->command_queue, 5);
+	int         bs = RB_PEEK_DATA (res->command_queue, 6);
+	int         tl = RB_PEEK_DATA (res->command_queue, 7);
+	int         tr = RB_PEEK_DATA (res->command_queue, 8);
+	int         bl = RB_PEEK_DATA (res->command_queue, 9);
+	int         br = RB_PEEK_DATA (res->command_queue, 10);
+
+	window_t   *window = get_window (res, __FUNCTION__, window_id);
+	wborder (window->win, ls, rs, ts, bs, tl, tr, bl, br);
+}
+
+static void
 process_commands (qwaq_resources_t *res)
 {
 	while (RB_DATA_AVAILABLE (res->command_queue) >= 2) {
@@ -658,6 +680,9 @@ process_commands (qwaq_resources_t *res)
 				break;
 			case qwaq_cmd_curs_set:
 				cmd_curs_set (res);
+				break;
+			case qwaq_cmd_wborder:
+				cmd_wborder (res);
 				break;
 		}
 		RB_DROP_DATA (res->command_queue, RB_PEEK_DATA (res->command_queue, 1));
@@ -1185,6 +1210,23 @@ bi_curs_set (progs_t *pr)
 }
 
 static void
+bi_wborder (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	int         window_id = P_INT (pr, 0);
+	__auto_type sides = P_PACKED (pr, box_sides_t, 1);
+	__auto_type corns = P_PACKED (pr, box_corners_t, 2);
+
+	if (get_window (res, __FUNCTION__, window_id)) {
+		int         command[] = { qwaq_cmd_wborder, 0, window_id,
+								  sides.ls, sides.rs, sides.ts, sides.bs,
+								  corns.tl, corns.tr, corns.bl, corns.br, };
+		command[1] = CMD_SIZE(command);
+		qwaq_submit_command (res, command);
+	}
+}
+
+static void
 bi_initialize (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
@@ -1248,6 +1290,7 @@ static builtin_t builtins[] = {
 	{"acs_char",		bi_acs_char,		-1},
 	{"move",			bi_move,			-1},
 	{"curs_set",		bi_curs_set,		-1},
+	{"wborder",			bi_wborder,			-1},
 	{0}
 };
 

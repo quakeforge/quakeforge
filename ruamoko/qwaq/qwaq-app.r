@@ -132,3 +132,4 @@ void update_panels (void) = #0;
 void doupdate (void) = #0;
 int curs_set (int visibility) = #0;
 int move (int x, int y) = #0;
+void wborder (window_t window, box_sides_t sides, box_corners_t corners) = #0;

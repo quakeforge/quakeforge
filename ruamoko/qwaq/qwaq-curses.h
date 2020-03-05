@@ -3,6 +3,20 @@
 
 #include "event.h"
 
+typedef struct box_sides_s {
+	int         ls;
+	int         rs;
+	int         ts;
+	int         bs;
+} box_sides_t;
+
+typedef struct box_corners_s {
+	int         tl;
+	int         tr;
+	int         bl;
+	int         br;
+} box_corners_t;
+
 #ifdef __QFCC__
 // names, order and comments lifted from ncurses.h
 typedef enum {
@@ -100,6 +114,9 @@ typedef struct panel_s *panel_t;
 @extern int acs_char (int acs);
 @extern int curs_set (int visibility);
 @extern int move (int x, int y);
+
+@extern void wborder (window_t window,
+					  box_sides_t sides, box_corners_t corners);
 #endif
 
 #endif//__qwaq_curses_h
