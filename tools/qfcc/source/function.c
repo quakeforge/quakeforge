@@ -650,6 +650,9 @@ build_builtin_function (symbol_t *sym, expr_t *bi_val, int far)
 	if (sym->s.func->def->external)
 		return 0;
 
+	sym->s.func->def->initialized = 1;
+	sym->s.func->def->constant = 1;
+	sym->s.func->def->nosave = 1;
 	add_function (sym->s.func);
 
 	if (is_integer_val (bi_val))
