@@ -59,6 +59,7 @@ static const char *sy_type_names[] = {
 	"sy_expr",
 	"sy_func",
 	"sy_class",
+	"sy_convert",
 };
 
 const char *
@@ -165,6 +166,7 @@ symbol_t *
 copy_symbol (symbol_t *symbol)
 {
 	symbol_t   *sym = new_symbol (symbol->name);
+	sym->visibility = symbol->visibility;
 	sym->type = symbol->type;
 	sym->params = copy_params (symbol->params);
 	sym->sy_type = symbol->sy_type;

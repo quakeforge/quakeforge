@@ -101,6 +101,8 @@ check_valid_lvalue (expr_t *expr)
 					break;
 				case sy_class:
 					break;
+				case sy_convert:
+					break;
 			}
 			break;
 		case ex_temp:

@@ -109,6 +109,10 @@ convert_name (expr_t *e)
 		//FIXME need a def
 		return;
 	}
+	if (sym->sy_type == sy_convert) {
+		new = sym->s.convert.conv (sym, sym->s.convert.data);
+		goto convert;
+	}
 	if (sym->sy_type == sy_expr) {
 		new = copy_expr (sym->s.expr);
 		goto convert;

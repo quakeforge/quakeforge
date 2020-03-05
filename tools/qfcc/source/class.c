@@ -1050,8 +1050,11 @@ class_find_ivar (class_t *class, int vis, const char *name)
 	}
 	ivar = symtab_lookup (class->ivars, name);
 	if (ivar) {
-		if (ivar->visibility > (vis_t) vis)
+		if (ivar->visibility > (vis_t) vis
+			|| (ivar->table->class != class
+				&& ivar->visibility > vis_protected)) {
 			goto access_error;
+		}
 		return ivar;
 	}
 	error (0, "%s.%s does not exist", class->name, name);
@@ -1180,6 +1183,7 @@ class_new_ivars (class_t *class)
 	if (class->super_class)
 		super_ivars = class->super_class->ivars;
 	ivars = new_symtab (super_ivars, stab_local);
+	ivars->class = class;
 	return ivars;
 }
 
@@ -1756,6 +1760,15 @@ class_ivar_scope (class_type_t *class_type, symtab_t *parent)
 	return symtab_flat_copy (class->ivars, parent);
 }
 
+static expr_t *
+class_dereference_ivar (symbol_t *sym, void *_self)
+{
+	expr_t     *self = (expr_t *) _self;
+
+	return field_expr (copy_expr (self),
+					   new_symbol_expr (new_symbol (sym->name)));
+}
+
 void
 class_finish_ivar_scope (class_type_t *class_type, symtab_t *ivar_scope,
 						 symtab_t *param_scope)
@@ -1769,8 +1782,9 @@ class_finish_ivar_scope (class_type_t *class_type, symtab_t *ivar_scope,
 	if (!ivar_scope)
 		return;
 	self = symtab_lookup (param_scope, "self");
-	if (!self)
+	if (!self) {
 		internal_error (0, "I've lost my self!");
+	}
 	self_expr = new_symbol_expr (self);
 	if (self->type != class_ptr) {
 		debug (0, "class method scope");
@@ -1780,9 +1794,9 @@ class_finish_ivar_scope (class_type_t *class_type, symtab_t *ivar_scope,
 	for (sym = ivar_scope->symbols; sym; sym = sym->next) {
 		if (sym->sy_type != sy_var)
 			continue;
-		sym->sy_type = sy_expr;
-		sym->s.expr = field_expr (copy_expr (self_expr),
-								  new_symbol_expr (new_symbol (sym->name)));
+		sym->sy_type = sy_convert;
+		sym->s.convert.conv = class_dereference_ivar;
+		sym->s.convert.data = self_expr;
 	}
 }
 

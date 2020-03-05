@@ -56,7 +56,13 @@ typedef enum {
 	sy_expr,					///< symbol refers to an expression
 	sy_func,					///< symbol refers to a function
 	sy_class,					///< symbol refers to a class
+	sy_convert,					///< symbol refers to a conversion function
 } sy_type_e;
+
+typedef struct symconv_s {
+	struct expr_s *(*conv) (struct symbol_s *symbol, void *data);
+	void       *data;
+} symconv_t;
 
 typedef struct symbol_s {
 	struct symbol_s *next;		///< chain of symbols in symbol table
@@ -72,6 +78,7 @@ typedef struct symbol_s {
 		struct ex_value_s *value;	///< sy_const
 		struct expr_s *expr;		///< sy_expr
 		struct function_s *func;	///< sy_func
+		symconv_t   convert;		///< sy_convert
 	} s;
 } symbol_t;
 
@@ -92,6 +99,7 @@ typedef struct symtab_s {
 	symbol_t   *symbols;		///< chain of symbols in this table
 	symbol_t  **symtail;		///< keep chain in declaration order
 	struct defspace_s *space;	///< storage for vars in scope symtabs
+	struct class_s *class;		///< owning class if ivar scope
 } symtab_t;
 
 const char *symtype_str (sy_type_e type) __attribute__((const));

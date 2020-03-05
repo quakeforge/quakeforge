@@ -151,6 +151,9 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
 			}
 			anonymous = s->type->t.symtab;
 			for (as = anonymous->symbols; as; as = as->next) {
+				if (as->visibility == vis_anonymous || as->sy_type!= sy_var) {
+					continue;
+				}
 				if (Hash_Find (symtab->tab, as->name)) {
 					error (0, "ambiguous field `%s' in anonymous %s",
 						   as->name, su == 's' ? "struct" : "union");
@@ -158,6 +161,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
 					s->next = copy_symbol (as);
 					s = s->next;
 					s->s.offset += offset;
+					s->table = symtab;
 					Hash_Add (symtab->tab, s);
 				}
 			}
