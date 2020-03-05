@@ -205,6 +205,52 @@ new_methodlist (void)
 	return l;
 }
 
+static uintptr_t
+methodset_get_hash (const void *_method, void *unused)
+{
+	method_t   *method = (method_t *) _method;
+	uintptr_t   hash;
+
+	hash = Hash_String (method->name);
+	return hash ^ (method->instance << 3);
+}
+
+static int
+methodset_compare (const void *_m1, const void *_m2, void *unused)
+{
+	method_t   *m1 = (method_t *) _m1;
+	method_t   *m2 = (method_t *) _m2;
+	int         cmp;
+
+	cmp = strcmp (m1->name, m2->name) == 0;
+	return cmp && m1->instance == m2->instance;
+}
+
+methodset_t *
+new_methodset (void)
+{
+	methodset_t *s = malloc (sizeof (*s));
+	s->tab = Hash_NewTable (31, 0, 0, 0);
+	Hash_SetHashCompare (s->tab, methodset_get_hash, methodset_compare);
+	return s;
+}
+
+void
+methodset_add_methods (methodset_t *methodset, methodlist_t *methods)
+{
+	method_t   *m;
+
+	for (m = methods->head; m; m = m->next) {
+		Hash_AddElement (methodset->tab, m);
+	}
+}
+
+int
+methodset_contains_method (methodset_t *methodset, method_t *method)
+{
+	return Hash_FindElement (methodset->tab, method) != 0;
+}
+
 static int __attribute__((pure))
 method_in_list (methodlist_t *method_list, method_t *method)
 {
@@ -238,13 +284,13 @@ merge_method_lists (methodlist_t *dst, methodlist_t *src)
 }
 
 void
-copy_methods (methodlist_t *dst, methodlist_t *src)
+copy_methods (methodlist_t *dst, methodlist_t *src, methodset_t *except)
 {
 	method_t   *s, *d;
 	param_t    *self;
 
 	for (s = src->head; s; s = s->next) {
-		if (method_in_list (dst, s)) {
+		if (methodset_contains_method (except, s) || method_in_list (dst, s)) {
 			debug (0, "skipping duplicate method: %s", s->name);
 			continue;
 		}
