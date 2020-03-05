@@ -77,6 +77,29 @@ typedef enum qwaq_commands_e {
 	qwaq_cmd_curs_set,
 } qwaq_commands;
 
+const char *qwaq_command_names[]= {
+	"newwin",
+	"delwin",
+	"getwrect",
+	"new_panel",
+	"del_panel",
+	"hide_panel",
+	"show_panel",
+	"top_panel",
+	"bottom_panel",
+	"move_panel",
+	"panel_window",
+	"update_panels",
+	"doupdate",
+	"mvwaddstr",
+	"waddstr",
+	"mvwaddch",
+	"wrefresh",
+	"init_pair",
+	"wbkgd",
+	"scrollok",
+	"move",
+	"curs_set",
 #define RING_BUFFER(type, size) 	\
 	struct {						\
 		type        buffer[size];	\
@@ -562,7 +585,14 @@ static void
 process_commands (qwaq_resources_t *res)
 {
 	while (RB_DATA_AVAILABLE (res->command_queue) >= 2) {
-		switch ((qwaq_commands) RB_PEEK_DATA (res->command_queue, 0)) {
+		qwaq_commands cmd = RB_PEEK_DATA (res->command_queue, 0);
+		int len = RB_PEEK_DATA (res->command_queue, 1);
+		Sys_Printf ("%s[%d]", qwaq_command_names[cmd], len);
+		for (int i = 2; i < len; i++) {
+			Sys_Printf (" %d", RB_PEEK_DATA (res->command_queue, i));
+		}
+		Sys_Printf ("\n");
+		switch (cmd) {
 			case qwaq_cmd_newwin:
 				cmd_newwin (res);
 				break;
