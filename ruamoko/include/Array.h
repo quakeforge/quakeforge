@@ -271,7 +271,7 @@
 	Iteratively sends #performSelector:withObject: to each contained object.
 */
 - (void) makeObjectsPerformSelector: (SEL)selector
-                         withObject: (id)arg;
+                         withObject: (void *)arg;
 //\}
 
 @end

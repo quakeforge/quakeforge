@@ -162,7 +162,7 @@
 - (id) objectAtIndex: (unsigned)index
 {
 	if (index >= count) // FIXME: need exceptions
-		[self error: "-replaceObjectAtIndex:withObject: index out of range"];
+		[self error: "-objectAtIndex:withObject: index out of range"];
 
 	return _objs[index];
 }
@@ -401,7 +401,7 @@
 }
 
 - (void) makeObjectsPerformSelector: (SEL)selector
-                         withObject: (id)anObject
+                         withObject: (void *)anObject
 {
 	local int	i;
 

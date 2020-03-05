@@ -247,7 +247,7 @@ BOOL (id object) object_is_meta_class = #0;
 	return msg (self, aSelector);
 }
 
-- (id) performSelector: (SEL)aSelector withObject: (id)anObject
+- (id) performSelector: (SEL)aSelector withObject: (void *)anObject
 {
 	local IMP msg = nil;		// FIXME teach qfcc about noreturn
 
@@ -260,8 +260,8 @@ BOOL (id object) object_is_meta_class = #0;
 }
 
 - (id) performSelector: (SEL)aSelector
-			withObject: (id)anObject
-			withObject: (id)anotherObject
+			withObject: (void *)anObject
+			withObject: (void *)anotherObject
 {
 	local IMP msg;
 

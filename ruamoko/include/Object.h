@@ -20,10 +20,10 @@
 
 - (id) performSelector: (SEL)aSelector;
 - (id) performSelector: (SEL)aSelector
-			withObject: (id)anObject;
+			withObject: (void *)anObject;
 - (id) performSelector: (SEL)aSelector
-			withObject: (id)anObject
-			withObject: (id)anotherObject;
+			withObject: (void *)anObject
+			withObject: (void *)anotherObject;
 - (BOOL) respondsToSelector: (SEL)aSelector;
 - (BOOL) conformsToProtocol: (Protocol *)aProtocol;
 
