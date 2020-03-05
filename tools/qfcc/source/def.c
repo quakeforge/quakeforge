@@ -62,7 +62,37 @@
 #include "type.h"
 #include "value.h"
 
+typedef struct element_s {
+	struct element_s *next;
+	int         offset;
+	type_t     *type;
+	expr_t     *expr;
+} element_t;
+
+typedef struct element_chain_s {
+	element_t  *head;
+	element_t **tail;
+} element_chain_t;
+
 static def_t *defs_freelist;
+static element_t *elements_freelist;
+
+static element_t *
+new_element (void)
+{
+	element_t  *element;
+	ALLOC (256, element_t, elements, element);
+	return element;
+}
+
+static element_t *
+append_element (element_chain_t *element_chain, element_t *element)
+{
+	element->next = 0;
+	*element_chain->tail = element;
+	element_chain->tail = &element->next;
+	return element;
+}
 
 static void
 set_storage_bits (def_t *def, storage_class_t storage)
@@ -303,141 +333,158 @@ zero_memory (expr_t *local_expr, def_t *def, type_t *zero_type,
 }
 
 static void
-init_elements (struct def_s *def, expr_t *eles)
+init_elements_nil (def_t *def)
 {
-	expr_t     *e, *c;
-	int         count, i, num_elements, base_offset;
-	pr_type_t  *g;
-	def_t      *elements;
+	if (def->local && local_expr) {
+		// memset to 0
+		int         init_size = type_size (def->type);
+		int         init_offset = 0;
 
-	base_offset = def->offset;
-	if (def->local && local_expr)
-		base_offset = 0;
-	if (eles->type == ex_nil) {
-		if (def->local && local_expr) {
-			// memset to 0
-			int         init_size = type_size (def->type);
-			int         init_offset = 0;
-
-			if (options.code.progsversion != PROG_ID_VERSION) {
-				init_offset = zero_memory (local_expr, def, &type_zero,
-										   init_size, init_offset);
-			}
-			// probably won't happen any time soon, but who knows...
-			if (options.code.progsversion != PROG_ID_VERSION
-				&& init_size - init_offset >= type_size (&type_quaternion)) {
-				init_offset = zero_memory (local_expr, def, &type_quaternion,
-										   init_size, init_offset);
-			}
-			if (init_size - init_offset >= type_size (&type_vector)) {
-				init_offset = zero_memory (local_expr, def, &type_vector,
-										   init_size, init_offset);
-			}
-			if (options.code.progsversion != PROG_ID_VERSION
-				&& init_size - init_offset >= type_size (&type_double)) {
-				init_offset = zero_memory (local_expr, def, &type_double,
-										   init_size, init_offset);
-			}
-			if (init_size - init_offset >= type_size (type_default)) {
-				zero_memory (local_expr, def, type_default,
-							 init_size, init_offset);
-			}
+		if (options.code.progsversion != PROG_ID_VERSION) {
+			init_offset = zero_memory (local_expr, def, &type_zero,
+									   init_size, init_offset);
 		}
-		// it's a global, so already initialized to 0
-		return;
+		// probably won't happen any time soon, but who knows...
+		if (options.code.progsversion != PROG_ID_VERSION
+			&& init_size - init_offset >= type_size (&type_quaternion)) {
+			init_offset = zero_memory (local_expr, def, &type_quaternion,
+									   init_size, init_offset);
+		}
+		if (init_size - init_offset >= type_size (&type_vector)) {
+			init_offset = zero_memory (local_expr, def, &type_vector,
+									   init_size, init_offset);
+		}
+		if (options.code.progsversion != PROG_ID_VERSION
+			&& init_size - init_offset >= type_size (&type_double)) {
+			init_offset = zero_memory (local_expr, def, &type_double,
+									   init_size, init_offset);
+		}
+		if (init_size - init_offset >= type_size (type_default)) {
+			zero_memory (local_expr, def, type_default,
+						 init_size, init_offset);
+		}
 	}
-	if (is_array (def->type)) {
-		type_t     *array_type = def->type->t.array.type;
-		int         array_size = def->type->t.array.size;
-		elements = calloc (array_size, sizeof (def_t));
+	// it's a global, so already initialized to 0
+}
+
+static void
+build_element_chain (element_chain_t *element_chain, type_t *type,
+					 expr_t *eles, int base_offset)
+{
+	expr_t     *e = eles->e.block.head;
+
+	if (is_array (type)) {
+		type_t     *array_type = type->t.array.type;
+		int         array_size = type->t.array.size;
+		int         i;
+
 		for (i = 0; i < array_size; i++) {
-			elements[i].type = array_type;
-			elements[i].space = def->space;
-			elements[i].offset = base_offset + i * type_size (array_type);
+			int         offset = base_offset + i * type_size (array_type);
+			if (e && e->type == ex_block) {
+				build_element_chain (element_chain, array_type, e, offset);
+			} else {
+				element_t  *element = new_element ();
+				element->type = array_type;
+				element->offset = offset;
+				element->expr = e;	// null will be treated as nil
+				append_element (element_chain, element);
+			}
+			if (e) {
+				e = e->next;
+			}
 		}
-		num_elements = i;
-	} else if (is_struct (def->type) || is_vector (def->type)
-			   || is_quaternion (def->type)) {
-		symtab_t   *symtab = def->type->t.symtab;
+	} else if (is_struct (type) || is_vector (type) || is_quaternion (type)) {
+		symtab_t   *symtab = type->t.symtab;
 		symbol_t   *field;
 
-		for (i = 0, field = symtab->symbols; field; field = field->next) {
-			if (field->sy_type != sy_var)
+		for (field = symtab->symbols; field; field = field->next) {
+			int         offset = base_offset + field->s.offset;
+			if (field->sy_type != sy_var
+				|| field->visibility == vis_anonymous) {
 				continue;
-			i++;
+			}
+			if (e && e->type == ex_block) {
+				build_element_chain (element_chain, field->type, e, offset);
+			} else {
+				element_t  *element = new_element ();
+				element->type = field->type;
+				element->offset = offset;
+				element->expr = e;	// null will be treated as nil
+				append_element (element_chain, element);
+			}
+			if (e) {
+				e = e->next;
+			}
 		}
-		elements = calloc (i, sizeof (def_t));
-		for (i = 0, field = symtab->symbols; field; field = field->next) {
-			if (field->sy_type != sy_var)
-				continue;
-			elements[i].type = field->type;
-			elements[i].space = def->space;
-			elements[i].offset = base_offset + field->s.offset;
-			i++;
-		}
-		num_elements = i;
 	} else {
 		error (eles, "invalid initializer");
+	}
+	if (e && e->next && options.warnings.initializer) {
+		warning (eles, "excessive elements in initializer");
+	}
+}
+
+static void
+init_elements (struct def_s *def, expr_t *eles)
+{
+	expr_t     *c;
+	pr_type_t  *g;
+	element_chain_t element_chain;
+	element_t  *element;
+
+	if (eles->type == ex_nil) {
+		init_elements_nil (def);
 		return;
 	}
-	for (count = 0, e = eles->e.block.head; e; count++, e = e->next) {
-		convert_name (e);
-		if (e->type == ex_nil && count < num_elements
-			&& !(is_array (elements[count].type)
-				 || is_struct (elements[count].type))) {
-			convert_nil (e, elements[count].type);
-		}
-		if (e->type == ex_error) {
-			free (elements);
-			return;
-		}
-	}
-	if (count > num_elements) {
-		if (options.warnings.initializer)
-			warning (eles, "excessive elements in initializer");
-		count = num_elements;
-	}
-	for (i = 0, e = eles->e.block.head; i < count; i++, e = e->next) {
-		g = D_POINTER (pr_type_t, &elements[i]);
-		c = constant_expr (e);
-		// nil will not survive as nil to this point if array or struct
-		if (c->type == ex_block || c->type == ex_nil) {
-			if (!is_array (elements[i].type)
-				&& !is_struct (elements[i].type)) {
-				error (e, "type mismatch in initializer");
-				continue;
-			}
-			init_elements (&elements[i], c);
-			continue;
-		} else if (c->type == ex_labelref) {
-			def_t       loc;
-			loc.space = elements[i].space;
-			loc.offset = elements[i].offset;
-			reloc_def_op (c->e.labelref.label, &loc);
-			continue;
-		} else if (c->type == ex_value) {
-			if (c->e.value->lltype == ev_integer
-				&& elements[i].type->type == ev_float)
-				convert_int (c);
-			if (get_type (c) != elements[i].type) {
-				error (e, "type mismatch in initializer");
-				continue;
-			}
-		} else {
-			if (!def->local || !local_expr) {
-				error (e, "non-constant initializer");
-				continue;
-			}
-		}
-		if (def->local && local_expr) {
-			int         offset = elements[i].offset;
-			type_t     *type = elements[i].type;
+
+	element_chain.head = 0;
+	element_chain.tail = &element_chain.head;
+	build_element_chain (&element_chain, def->type, eles, 0);
+
+	if (def->local && local_expr) {
+		for (element = element_chain.head; element; element = element->next) {
+			int         offset = element->offset;
+			type_t     *type = element->type;
 			expr_t     *ptr = new_pointer_expr (offset, type, def);
 
+			if (element->expr) {
+				c = constant_expr (element->expr);
+			} else {
+				c = convert_nil (new_nil_expr (), type);
+			}
 			append_expr (local_expr, assign_expr (unary_expr ('.', ptr), c));
-		} else {
-			if (c->type != ex_value)
+		}
+	} else {
+		def_t       dummy = *def;
+		for (element = element_chain.head; element; element = element->next) {
+			if (element->expr) {
+				c = constant_expr (element->expr);
+			} else {
+				c = convert_nil (new_nil_expr (), element->type);
+			}
+			dummy.offset = def->offset + element->offset;
+			g = D_POINTER (pr_type_t, &dummy);
+			if (c->type == ex_labelref) {
+				reloc_def_op (c->e.labelref.label, &dummy);
+				continue;
+			} else if (c->type == ex_value) {
+				if (c->e.value->lltype == ev_integer
+					&& is_float (element->type)) {
+					convert_int (c);
+				}
+				if (get_type (c) != element->type) {
+					error (c, "type mismatch in initializer");
+					continue;
+				}
+			} else {
+				if (!def->local || !local_expr) {
+					error (c, "non-constant initializer");
+					continue;
+				}
+			}
+			if (c->type != ex_value) {
 				internal_error (c, "bogus expression type in init_elements()");
+			}
 			if (c->e.value->lltype == ev_string) {
 				EMIT_STRING (def->space, g->string_var,
 							 c->e.value->v.string_val);
@@ -446,7 +493,9 @@ init_elements (struct def_s *def, expr_t *eles)
 			}
 		}
 	}
-	free (elements);
+
+	*element_chain.tail = elements_freelist;
+	elements_freelist = element_chain.head;
 }
 
 static void
