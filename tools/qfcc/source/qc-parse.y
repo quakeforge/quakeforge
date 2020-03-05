@@ -1612,6 +1612,7 @@ new_class_name
 				$1 = check_redefined ($1);
 				$$ = get_class ($1, 1);
 			}
+			$$->interface_declared = 1;
 			current_class = &$$->class_type;
 			if (!$1->table)
 				symtab_addsymbol (current_symtab, $1);
@@ -1630,10 +1631,12 @@ class_with_super
 new_class_with_super
 	: new_class_name ':' class_name
 		{
-			if (!$3->ivars) {
+			if (!$3->interface_declared) {
+				$3->interface_declared = 1;
 				error (0, "cannot find interface declaration for `%s', "
 					   "superclass of `%s'", $3->name, $1->name);
 			}
+			$1->interface_declared = 1;
 			$1->super_class = $3;
 			$$ = $1;
 		}

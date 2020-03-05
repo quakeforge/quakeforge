@@ -48,6 +48,7 @@ typedef struct class_type_s {
 
 typedef struct class_s {
 	int         defined;
+	int         interface_declared;
 	const char *name;
 	struct class_s *super_class;
 	struct category_s *categories;

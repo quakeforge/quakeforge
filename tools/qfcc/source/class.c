@@ -1042,7 +1042,10 @@ class_find_ivar (class_t *class, int vis, const char *name)
 	symbol_t   *ivar;
 
 	if (!class->ivars) {
-		error (0, "accessing incomplete type %s", class->name);
+		if (!class->interface_declared) {
+			class->interface_declared = 1;
+			error (0, "accessing incomplete type %s", class->name);
+		}
 		return 0;
 	}
 	ivar = symtab_lookup (class->ivars, name);
@@ -1119,6 +1122,11 @@ class_message_response (class_t *class, int class_msg, expr_t *sel)
 	if (!selector)
 		return 0;
 	if (class && class->type != &type_obj_object) {
+		if (!class->interface_declared) {
+			class->interface_declared = 1;
+			warning (0, "cannot find interface declaration for `%s'",
+					 class->name);
+		}
 		while (c) {
 			for (cat = c->categories; cat; cat = cat->next) {
 				for (m = cat->methods->head; m; m = m->next) {
