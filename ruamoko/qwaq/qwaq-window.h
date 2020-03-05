@@ -3,16 +3,15 @@
 
 #include "Object.h"
 
-@class View;
 @class Array;
 
 #include "qwaq-draw.h"
 #include "qwaq-rect.h"
+#include "qwaq-view.h"
+#include "qwaq-group.h"
 
-@interface Window: Object <Draw, HandleFocusedEvent, HandleMouseEvent>
+@interface Window: Group
 {
-	Rect        rect;
-	id          parent;
 	Point       point;	// FIXME can't be local :(
 	Array      *views;
 	View       *focusedView;

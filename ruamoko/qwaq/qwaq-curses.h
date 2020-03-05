@@ -98,6 +98,8 @@ typedef struct panel_s *panel_t;
 @extern void scrollok (window_t win, int flag);
 
 @extern int acs_char (int acs);
+@extern int curs_set (int visibility);
+@extern int move (int x, int y);
 #endif
 
 #endif//__qwaq_curses_h

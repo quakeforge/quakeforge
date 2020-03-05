@@ -23,8 +23,8 @@ SUFFIXES=.o .r
 	sed -i -e '1s@:@: $(QFCC_DEP)@' $(DEPDIR)/$*.Tqo
 	$(am__mv) $(DEPDIR)/$*.Tqo $(DEPDIR)/$*.Qo
 
-qwaq_dat_src= \
-	$e
+qwaq_app_dat_src= \
+	qwaq-app.r qwaq-group.r qwaq-screen.r qwaq-window.r qwaq-view.r
 
 qwaq_curses_libs=
 qwaq_curses_SOURCES=main.c qwaq-curses.c
@@ -59,7 +59,7 @@ qwaq_x11_DEPENDENCIES= $(qwaq_x11_libs) $(QWAQ_DEPS)
 
 r_depfiles_remade=
 
-qwaq_app_dat_SOURCES=qwaq-app.r qwaq-screen.r qwaq-window.r qwaq-view.r
+qwaq_app_dat_SOURCES=$(qwaq_app_dat_src)
 qwaq_app_obj=$(qwaq_app_dat_SOURCES:.r=.o)
 qwaq_app_dep=$(addprefix ./$(DEPDIR)/,$(qwaq_app_obj:.o=.Qo))
 qwaq-app.dat$(EXEEXT): $(qwaq_app_obj) $(QFCC_DEP)

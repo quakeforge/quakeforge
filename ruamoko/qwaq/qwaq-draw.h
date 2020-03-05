@@ -4,7 +4,8 @@
 @protocol Draw
 -draw;
 -redraw;
--setParent: parent;
+-setOwner: owner;
+-(struct window_s*) getWindow;
 @end
 
 #endif

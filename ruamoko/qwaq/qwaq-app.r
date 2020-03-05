@@ -39,17 +39,19 @@ arp_end (void)
 	screen = [[Screen screen] retain];
 	[screen setBackground: COLOR_PAIR (1)];
 	Rect r = *[screen getRect];
-	[screen printf:"%d %d %d %d\n", r.xpos, r.ypos, r.xlen, r.ylen];
-	r.xpos = r.xlen / 4;
-	r.ypos = r.ylen / 4;
-	r.xlen /= 2;
-	r.ylen /= 2;
-	[screen printf:"%d %d %d %d\n", r.xpos, r.ypos, r.xlen, r.ylen];
+	[screen printf:"%d %d %d %d\n",
+		r.offset.x, r.offset.y, r.extent.width, r.extent.height];
+	r.offset.x = r.extent.width / 4;
+	r.offset.y = r.extent.height / 4;
+	r.extent.width /= 2;
+	r.extent.height /= 2;
+	[screen printf:"%d %d %d %d\n",
+		r.offset.x, r.offset.y, r.extent.width, r.extent.height];
 	[screen printf:"%d\n", acs_char(ACS_HLINE)];
 	[screen addch: acs_char(ACS_HLINE) atX:4 Y:4];
 	Window *w;
 	//[screen add: w=[[Window windowWithRect: r] setBackground: COLOR_PAIR (2)]];
-	//wprintf (w.window, "%d %d %d %d\n", r.xpos, r.ypos, r.xlen, r.ylen);
+	//wprintf (w.window, "%d %d %d %d\n", r.offset.x, r.offset.y, r.extent.width, r.ylen);
 	[screen redraw];
 	return self;
 }
@@ -128,3 +130,5 @@ void move_panel (panel_t panel, int x, int y) = #0;
 window_t panel_window (panel_t panel) = #0;
 void update_panels (void) = #0;
 void doupdate (void) = #0;
+int curs_set (int visibility) = #0;
+int move (int x, int y) = #0;

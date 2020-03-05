@@ -26,6 +26,7 @@ typedef enum {
 	qe_message = 0xfe00,
 
 	qe_focused = qe_key | qe_command,
+	qe_positional = qe_mouse,
 } qwaq_event_mask;
 
 typedef enum {

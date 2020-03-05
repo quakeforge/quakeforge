@@ -1,18 +1,21 @@
 #include "qwaq-curses.h"
 #include "qwaq-view.h"
+#include "qwaq-group.h"
 
 Rect
 makeRect (int xpos, int ypos, int xlen, int ylen)
 {
-	Rect rect = {xpos, ypos, xlen, ylen};
+	Rect rect = {{xpos, ypos}, {xlen, ylen}};
 	return rect;
 }
 
 int
 rectContainsPoint (Rect *rect, Point *point)
 {
-	return ((point.x >= rect.xpos && point.x < rect.xpos + rect.xlen)
-			&& (point.y >= rect.ypos && point.y < rect.ypos + rect.ylen));
+	return ((point.x >= rect.offset.x
+			 && point.x < rect.offset.x + rect.extent.width)
+			&& (point.y >= rect.offset.y
+				&& point.y < rect.offset.y + rect.extent.height));
 }
 
 @implementation View
@@ -24,24 +27,83 @@ rectContainsPoint (Rect *rect, Point *point)
 	}
 	self.rect = rect;
 	self.absRect = rect;
-	self.window = nil;
 	return self;
+}
+
+- (void) dealloc
+{
+	if (owner) {
+		[owner remove:self];
+	}
+	[super dealloc];
+}
+
+static void
+updateScreenCursor (View *view)
+{
+	while ((view.state & sfInFocus) && view.owner) {
+		View       *owner = (View *) view.owner;
+		if (view.cursor.x >= 0 && view.cursor.x < view.xlen
+			&& view.cursor.y >= 0 && view.cursor.y < view.ylen) {
+			owner.cursor.x = view.cursor.x + view.xpos;
+			owner.cursor.y = view.cursor.y + view.ypos;
+			owner.cursorState = view.cursorState;
+		} else {
+			owner.cursorState = 0;
+		}
+		view = owner;
+	}
+	if (view.state & sfInFocus) {
+		if (view.cursor.x >= 0 && view.cursor.x < view.xlen
+			&& view.cursor.y >= 0 && view.cursor.y < view.ylen) {
+			curs_set (view.cursorState);
+			move(view.cursor.x, view.cursor.y);
+		} else {
+			curs_set (0);
+		}
+	}
 }
 
 -draw
 {
+	state |= sfDrawn;
+	updateScreenCursor (self);
 	return self;
 }
 
--setParent: parent
+-hide
 {
-	self.parent = parent;
+	if (state & sfDrawn) {
+		state &= ~sfDrawn;
+		updateScreenCursor (self);
+	}
 	return self;
 }
 
 -redraw
 {
-	return [parent redraw];
+	if ((state & sfDrawn) && !(options & ofDontDraw)) {
+		[self draw];
+		[owner redraw];
+	}
+	return self;
+}
+
+-setOwner: (Group *) owner
+{
+	self.owner = owner;
+	window = [owner getWindow];
+	return self;
+}
+
+-(window_t) getWindow
+{
+	return window;
+}
+
+- (Rect *) getRect
+{
+	return &rect;
 }
 
 @end

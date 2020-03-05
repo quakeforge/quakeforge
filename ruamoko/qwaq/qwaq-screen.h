@@ -1,28 +1,18 @@
 #ifndef __qwaq_screen_h
 #define __qwaq_screen_h
 
-#include <Object.h>
-
 #include "qwaq-draw.h"
 #include "qwaq-rect.h"
-@class View;
-@class Array;
+#include "qwaq-view.h"
 
-@interface Screen: Object <HandleMouseEvent, Draw>
+@interface Screen: View
 {
-	Rect        rect;
-	Array      *views;
-	Array      *event_handlers;
-	Array      *focused_handlers;
-	Array      *mouse_handlers;
-	Array      *mouse_handler_rects;
-	View       *focusedView;
-	struct window_s *window;
 }
 +(Screen *) screen;
--add: obj;
+-handleEvent: (qwaq_event_t *) event;
 -setBackground: (int) ch;
 -printf: (string) fmt, ...;
+-addch: (int) ch atX: (int) x Y: (int) y;
 @end
 
 #endif//__qwaq_screen_h

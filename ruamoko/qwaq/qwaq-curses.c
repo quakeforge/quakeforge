@@ -73,6 +73,8 @@ typedef enum qwaq_commands_e {
 	qwaq_cmd_init_pair,
 	qwaq_cmd_wbkgd,
 	qwaq_cmd_scrollok,
+	qwaq_cmd_move,
+	qwaq_cmd_curs_set,
 } qwaq_commands;
 
 #define RING_BUFFER(type, size) 	\
@@ -540,6 +542,23 @@ cmd_scrollok (qwaq_resources_t *res)
 }
 
 static void
+cmd_move (qwaq_resources_t *res)
+{
+	int         x = RB_PEEK_DATA (res->command_queue, 2);
+	int         y = RB_PEEK_DATA (res->command_queue, 3);
+
+	move (y, x);
+}
+
+static void
+cmd_curs_set (qwaq_resources_t *res)
+{
+	int         visibility = RB_PEEK_DATA (res->command_queue, 2);
+
+	curs_set (visibility);
+}
+
+static void
 process_commands (qwaq_resources_t *res)
 {
 	while (RB_DATA_AVAILABLE (res->command_queue) >= 2) {
@@ -603,6 +622,12 @@ process_commands (qwaq_resources_t *res)
 				break;
 			case qwaq_cmd_scrollok:
 				cmd_scrollok (res);
+				break;
+			case qwaq_cmd_move:
+				cmd_move (res);
+				break;
+			case qwaq_cmd_curs_set:
+				cmd_curs_set (res);
 				break;
 		}
 		RB_DROP_DATA (res->command_queue, RB_PEEK_DATA (res->command_queue, 1));
@@ -1107,6 +1132,29 @@ bi_acs_char (progs_t *pr)
 }
 
 static void
+bi_move (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	int         x = P_INT (pr, 0);
+	int         y = P_INT (pr, 1);
+
+	int         command[] = { qwaq_cmd_move, 0, x, y, };
+	command[1] = CMD_SIZE(command);
+	qwaq_submit_command (res, command);
+}
+
+static void
+bi_curs_set (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	int         visibility = P_INT (pr, 0);
+
+	int         command[] = { qwaq_cmd_curs_set, 0, visibility, };
+	command[1] = CMD_SIZE(command);
+	qwaq_submit_command (res, command);
+}
+
+static void
 bi_initialize (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
@@ -1168,6 +1216,8 @@ static builtin_t builtins[] = {
 	{"wbkgd",			bi_wbkgd,			-1},
 	{"scrollok",		bi_scrollok,		-1},
 	{"acs_char",		bi_acs_char,		-1},
+	{"move",			bi_move,			-1},
+	{"curs_set",		bi_curs_set,		-1},
 	{0}
 };
 

@@ -19,14 +19,14 @@
 	}
 	views = [[Array array] retain];
 	self.rect = rect;
-	window = create_window (rect.xpos, rect.ypos, rect.xlen, rect.ylen);
+	window = create_window (xpos, ypos, xlen, ylen);
 	panel = create_panel (window);
 	return self;
 }
 
 -handleEvent: (qwaq_event_t *) event
 {
-	switch (event.what) {
+/*	switch (event.what) {
 		case qe_mouse:
 			mvwprintf(window, 0, 3, "%2d %2d %08x",
 					  event.mouse.x, event.mouse.y, event.mouse.buttons);
@@ -54,33 +54,23 @@
 			break;
 		case qe_none:
 			break;
-	}
+	}*/
 	return self;
 }
 
 -addView: (View *) view
 {
-	[views addObject: view];
+/*	[views addObject: view];
 	view.absRect.xpos = view.rect.xpos + rect.xpos;
 	view.absRect.ypos = view.rect.ypos + rect.ypos;
 	view.window = window;
-	[view setParent: self];
+	[view setOwner: self];*/
 	return self;
 }
 
 -setBackground: (int) ch
 {
 	wbkgd (window, ch);
-	return self;
-}
-
--takeFocus
-{
-	return self;
-}
-
--loseFocus
-{
 	return self;
 }
 
@@ -94,9 +84,9 @@
 		} else {
 			mvwaddch (window, x, y, '.');
 		}
-		if (++x >= rect.xlen) {
+		if (++x >= xlen) {
 			x = 0;
-			if (++y >= rect.ylen) {
+			if (++y >= ylen) {
 				break;
 			}
 		}
@@ -110,14 +100,14 @@
 	return &rect;
 }
 
--setParent: parent
+-setOwner: owner
 {
-	self.parent = parent;
+	self.owner = owner;
 	return self;
 }
 
 -redraw
 {
-	return [parent redraw];
+	return [owner redraw];
 }
 @end
