@@ -13,13 +13,9 @@
 @interface Window: Group
 {
 	Point       point;	// FIXME can't be local :(
-	Array      *views;
-	View       *focusedView;
-	struct window_s *window;
 	struct panel_s *panel;
 }
 +windowWithRect: (Rect) rect;
--addView: (View *) view;
 -setBackground: (int) ch;
 @end
 

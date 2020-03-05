@@ -12,6 +12,15 @@
 	return self;
 }
 
+-initWithRect: (Rect) rect
+{
+	if (!(self = [super initWithRect: rect])) {
+		return nil;
+	}
+	views = [[Array array] retain];
+	return self;
+}
+
 -(void)dealloc
 {
 	[views release];

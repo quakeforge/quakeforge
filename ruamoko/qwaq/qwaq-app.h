@@ -2,10 +2,11 @@
 #define __qwaq_app_h
 
 #include "event.h"
+#include "qwaq-group.h"
 
 @class Screen;
 
-@interface QwaqApplication: Object
+@interface QwaqApplication: Group
 {
 	qwaq_event_t event;
 	qwaq_command endState;

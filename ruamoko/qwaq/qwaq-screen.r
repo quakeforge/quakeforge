@@ -10,12 +10,11 @@
 
 -init
 {
-	if (!(self = [super init])) {
+	if (!(self = [super initWithRect:getwrect (stdscr)])) {
 		return nil;
 	}
 	window = stdscr;
 	scrollok (window, 1);
-	rect = getwrect (window);
 	return self;
 }
 
@@ -28,7 +27,7 @@
 -handleEvent: (qwaq_event_t *) event
 {
 	if (event.what & qe_mouse) {
-		[self printf:"%04x %2d %2d %d %08x\r", event.what, event.mouse.x, event.mouse.y, event.mouse.click, event.mouse.buttons];
+		[self printf:"%04x %2d %2d %d %08x        \r", event.what, event.mouse.x, event.mouse.y, event.mouse.click, event.mouse.buttons];
 		[self redraw];
 	}
 	return self;
@@ -61,13 +60,9 @@
 	return self;
 }
 
-- (Rect *) getRect
-{
-	return &rect;
-}
-
 -setOwner: owner
 {
+	self.owner = owner;
 	return self;
 }
 

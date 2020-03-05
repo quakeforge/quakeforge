@@ -33,32 +33,28 @@ arp_end (void)
 	if (!(self = [super init])) {
 		return nil;
 	}
+
 	initialize ();
 	init_pair (1, COLOR_WHITE, COLOR_BLUE);
 	init_pair (2, COLOR_WHITE, COLOR_BLACK);
+
 	screen = [[Screen screen] retain];
+	[self insert:screen];
 	[screen setBackground: COLOR_PAIR (1)];
 	Rect r = *[screen getRect];
-	[screen printf:"%d %d %d %d\n",
-		r.offset.x, r.offset.y, r.extent.width, r.extent.height];
 	r.offset.x = r.extent.width / 4;
 	r.offset.y = r.extent.height / 4;
 	r.extent.width /= 2;
 	r.extent.height /= 2;
-	[screen printf:"%d %d %d %d\n",
-		r.offset.x, r.offset.y, r.extent.width, r.extent.height];
-	[screen printf:"%d\n", acs_char(ACS_HLINE)];
-	[screen addch: acs_char(ACS_HLINE) atX:4 Y:4];
 	Window *w;
-	//[screen add: w=[[Window windowWithRect: r] setBackground: COLOR_PAIR (2)]];
+	[self insert: w=[[Window windowWithRect: r] setBackground: COLOR_PAIR (2)]];
 	//wprintf (w.window, "%d %d %d %d\n", r.offset.x, r.offset.y, r.extent.width, r.ylen);
-	[screen redraw];
 	return self;
 }
 
 -run
 {
-	[screen draw];
+	[self draw];
 	do {
 		arp_start ();
 

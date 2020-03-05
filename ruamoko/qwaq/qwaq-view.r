@@ -20,6 +20,11 @@ rectContainsPoint (Rect *rect, Point *point)
 
 @implementation View
 
+-init
+{
+	return [super init];
+}
+
 -initWithRect: (Rect) rect
 {
 	if (!(self = [super init])) {
