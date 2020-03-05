@@ -1589,9 +1589,13 @@ classdecl
 class_name
 	: identifier %prec CLASS_NOT_CATEGORY
 		{
-			$1 = check_undefined ($1);
-			if (!$1->type || !obj_is_class ($1->type)) {
-				error (0, "`%s' is not a class %p", $1->name, $1->type);
+			if (!$1->type) {
+				$$ = get_class ($1, 1);
+				if (!$1->table) {
+					symtab_addsymbol (current_symtab, $1);
+				}
+			} else if (!obj_is_class ($1->type)) {
+				error (0, "`%s' is not a class", $1->name);
 				$$ = get_class (0, 1);
 			} else {
 				$$ = $1->type->t.class;
