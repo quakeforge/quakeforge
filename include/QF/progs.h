@@ -562,6 +562,20 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define P_var(p,n,t)	((p)->pr_params[n]->t##_var)
 
+/** Access a parameter as an arbitray type.
+
+	\par QC type:
+		\c struct etc small enough to fit in a single parameter
+	\param p		pointer to ::progs_t VM struct
+	\param t		C type of the structure
+	\param n		parameter number (0-7)
+	\return			structure lvalue. use & to make a pointer of the
+					appropriate type.
+
+	\hideinitializer
+*/
+#define P_PACKED(p,t,n)	(*(t *) (p)->pr_params[n])
+
 /** Access a float parameter. Can be assigned to.
 
 	\par QC type:
@@ -584,7 +598,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define P_DOUBLE(p,n)	(*(double *) ((p)->pr_params[n]))
+#define P_DOUBLE(p,n)	P_PACKED(p, double, n)
 
 /** Access an integer parameter. Can be assigned to.
 
@@ -669,7 +683,6 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	\hideinitializer
 */
 #define P_POINTER(p,n)	P_var (p, n, pointer)
-
 
 /** Access an entity parameter.
 
@@ -767,6 +780,19 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define R_var(p,t)		((p)->pr_return->t##_var)
 
+/** Access the VM function return value parameter as an arbitray type.
+
+	\par QC type:
+		\c struct etc small enough to fit in the return slot
+	\param p		pointer to ::progs_t VM struct
+	\param t		C type of the structure
+	\return			structure lvalue. use & to make a pointer of the
+					appropriate type.
+
+	\hideinitializer
+*/
+#define R_PACKED(p,t)	(*(t *) (p)->pr_return)
+
 /** Access the VM function return value as a \c float
 
 	\par QC type:
@@ -787,7 +813,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define R_DOUBLE(p)		(*(double *) ((p)->pr_return))
+#define R_DOUBLE(p)		R_PACKED (p, double)
 
 /** Access the VM function return value as a \c ::pr_int_t (AKA int32_t)
 
