@@ -337,6 +337,8 @@ qfo_relocs (qfo_t *qfo)
 	qfo_reloc_t  *reloc;
 	qfo_def_t    *def;
 	qfo_func_t   *func;
+	int           opind;
+	dstatement_t *statement;
 	unsigned      i;
 
 	for (i = 0; i < qfo->num_relocs; i++) {
@@ -399,10 +401,13 @@ qfo_relocs (qfo_t *qfo)
 			case rel_op_b_def_ofs:
 			case rel_op_c_def_ofs:
 				def = qfo->defs + reloc->target;
-				printf (" op.%c@%x def#%d %s",
-						reloc->type - rel_op_a_def_ofs + 'a',
+				opind = reloc->type - rel_op_a_def_ofs;
+				statement = QFO_STATEMENT (qfo, reloc->offset);
+				printf (" op.%c@%x def#%d %s+%d",
+						opind + 'a',
 						reloc->offset, reloc->target,
-						QFO_GETSTR (qfo, def->name));
+						QFO_GETSTR (qfo, def->name),
+						((pr_ushort_t *)statement)[opind + 1]);
 				break;
 			case rel_def_def_ofs:
 				def = qfo->defs + reloc->target;
