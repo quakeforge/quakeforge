@@ -72,6 +72,7 @@ typedef enum qwaq_commands_e {
 	qwaq_cmd_mvwaddstr,
 	qwaq_cmd_waddstr,
 	qwaq_cmd_mvwaddch,
+	qwaq_cmd_waddch,
 	qwaq_cmd_wrefresh,
 	qwaq_cmd_init_pair,
 	qwaq_cmd_wbkgd,
@@ -533,6 +534,16 @@ cmd_mvwaddch (qwaq_resources_t *res)
 }
 
 static void
+cmd_waddch (qwaq_resources_t *res)
+{
+	int         window_id = RB_PEEK_DATA (res->command_queue, 2);
+	int         ch = RB_PEEK_DATA (res->command_queue, 3);
+
+	window_t   *window = get_window (res, __FUNCTION__, window_id);
+	waddch (window->win, ch);
+}
+
+static void
 cmd_wrefresh (qwaq_resources_t *res)
 {
 	int         window_id = RB_PEEK_DATA (res->command_queue, 2);
@@ -664,6 +675,9 @@ process_commands (qwaq_resources_t *res)
 				break;
 			case qwaq_cmd_mvwaddch:
 				cmd_mvwaddch (res);
+				break;
+			case qwaq_cmd_waddch:
+				cmd_waddch (res);
 				break;
 			case qwaq_cmd_wrefresh:
 				cmd_wrefresh (res);
@@ -1103,6 +1117,27 @@ bi_wvprintf (progs_t *pr)
 }
 
 static void
+qwaq_waddch (progs_t *pr, int window_id, int ch)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+
+	if (get_window (res, __FUNCTION__, window_id)) {
+		int         command[] = { qwaq_cmd_waddch, 0, window_id, ch };
+
+		command[1] = CMD_SIZE(command);
+		qwaq_submit_command (res, command);
+	}
+}
+static void
+bi_waddch (progs_t *pr)
+{
+	int         window_id = P_INT (pr, 0);
+	int         ch = P_INT (pr, 0);
+
+	qwaq_waddch (pr, window_id, ch);
+}
+
+static void
 qwaq_mvwvprintf (progs_t *pr, int window_id, int x, int y,
 				 const char *fmt, pr_va_list_t *args)
 {
@@ -1451,13 +1486,22 @@ bi_i_TextContext__printf_ (progs_t *pr)
 }
 
 static void
-bi_i_TextContext__vprintf_ (progs_t *pr)
+bi_i_TextContext__addch_ (progs_t *pr)
 {
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	const char *fmt = P_GSTRING (pr, 2);
 	__auto_type args = (pr_va_list_t *) &P_POINTER (pr, 3);
 
 	qwaq_wvprintf (pr, window_id, fmt, args);
+}
+
+static void
+bi_i_TextContext__vprintf_ (progs_t *pr)
+{
+	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
+	int         ch = P_INT (pr, 1);
+
+	qwaq_waddch (pr, window_id, ch);
 }
 
 static void
@@ -1551,6 +1595,7 @@ static builtin_t builtins[] = {
 	{"wvprintf",		bi_wvprintf,		-1},
 	{"mvwvprintf",		bi_mvwvprintf,		-1},
 	{"mvwaddch",		bi_mvwaddch,		-1},
+	{"waddch",			bi_waddch,			-1},
 	{"wrefresh",		bi_wrefresh,		-1},
 	{"get_event",		bi_get_event,		-1},
 	{"max_colors",		bi_max_colors,		-1},
@@ -1574,6 +1619,7 @@ static builtin_t builtins[] = {
 	{"_i_TextContext__mvprintf_",		bi_i_TextContext__mvprintf_,	   -1},
 	{"_i_TextContext__printf_",			bi_i_TextContext__printf_,		   -1},
 	{"_i_TextContext__vprintf_",		bi_i_TextContext__vprintf_,		   -1},
+	{"_i_TextContext__addch_",			bi_i_TextContext__addch_,		   -1},
 	{"_i_TextContext__mvvprintf_",		bi_i_TextContext__mvvprintf_,	   -1},
 	{"_i_TextContext__refresh",			bi_i_TextContext__refresh,		   -1},
 	{"_i_TextContext__mvaddch_",		bi_i_TextContext__mvaddch_,		   -1},

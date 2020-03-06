@@ -119,11 +119,11 @@ updateScreenCursor (View *view)
 {
 	[textContext refresh];
 }
-/*
+
 - (void) addch: (int) ch
 {
 	[textContext addch:ch];
-}*/
+}
 
 - (void) mvprintf: (Point) pos, string fmt, ...
 {

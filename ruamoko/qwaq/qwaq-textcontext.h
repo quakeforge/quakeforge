@@ -27,6 +27,7 @@
 
 - (void) printf: (string) fmt, ...;
 - (void) vprintf: (string) mft, @va_list args;
+- (void) addch: (int) ch;
 - (void) mvprintf: (Point) pos, string fmt, ...;
 - (void) mvvprintf: (Point) pos, string mft, @va_list args;
 - (void) mvaddch: (Point) pos, int ch;
