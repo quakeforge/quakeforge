@@ -43,6 +43,7 @@ test_progs_dat=\
 	func-static.dat \
 	infloop.dat \
 	ivar-struct-return.dat \
+	methodparams.dat \
 	modulo.dat \
 	paramret.dat \
 	quaternion.dat \
@@ -257,6 +258,15 @@ ivar-struct-return.run: Makefile build-run
 	@$(srcdir)/build-run $@
 include ./$(DEPDIR)/ivar-struct-return.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/ivar-struct-return.Qo
+
+methodparams_dat_SOURCES=methodparams.r
+methodparams_obj=$(methodparams_dat_SOURCES:.r=.qfo)
+methodparams.dat$(EXEEXT): $(methodparams_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(methodparams_obj)
+methodparams.run: Makefile build-run
+	@TEST_HARNESS_OPTS=--float $(srcdir)/build-run $@
+include ./$(DEPDIR)/methodparams.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/methodparams.Qo
 
 modulo_dat_SOURCES=modulo.r
 modulo_obj=$(modulo_dat_SOURCES:.r=.qfo)
