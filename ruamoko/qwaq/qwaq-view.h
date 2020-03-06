@@ -44,7 +44,7 @@ enum {
 	Rect        absRect;
 	Point       point;		// can't be local :(
 	Group      *owner;
-	struct window_s *window;
+	struct window_s *textContext;	//FIXME separate class
 	int         state;
 	int         options;
 	int         cursorState;
@@ -52,7 +52,6 @@ enum {
 }
 -initWithRect: (Rect) rect;
 - (void) dealloc;
--(struct window_s *) getWindow;
 -setOwner: (Group *) owner;
 -(struct Rect_s *)getRect;
 -draw;

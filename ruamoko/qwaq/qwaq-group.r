@@ -91,7 +91,7 @@
 
 -insert: (View *) view
 {
-	[views insertObject: view atIndex: 0];
+	[views addObject: view];
 	return self;
 }
 
@@ -109,9 +109,25 @@
 	return self;
 }
 
+static BOOL
+not_dont_draw (id aView, void *aGroup)
+{
+	View       *view = aView;
+	Group      *group = (Group *) aGroup;
+	if (!(view.options & ofDontDraw)) {
+		if (!view.textContext) {
+			view.textContext = group.window;
+		}
+		return YES;
+	}
+	return NO;
+}
+
 -draw
 {
-	[views makeObjectsPerformSelector: @selector(draw)];
+	[views makeObjectsPerformSelector: @selector(draw)
+								   if: not_dont_draw
+								 with: self];
 	return self;
 }
 

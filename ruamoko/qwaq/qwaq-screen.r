@@ -13,14 +13,14 @@
 	if (!(self = [super initWithRect:getwrect (stdscr)])) {
 		return nil;
 	}
-	window = stdscr;
-	scrollok (window, 1);
+	textContext = stdscr;
+	scrollok (textContext, 1);
 	return self;
 }
 
 -setBackground: (int) ch
 {
-	wbkgd (window, ch);
+	wbkgd (textContext, ch);
 	return self;
 }
 
@@ -43,26 +43,20 @@
 -redraw
 {
 	update_panels ();
-	wrefresh(window);
+	wrefresh(textContext);
 	doupdate ();
 	return self;
 }
 
 -printf: (string) fmt, ...
 {
-	wvprintf (window, fmt, @args);
+	wvprintf (textContext, fmt, @args);
 	return self;
 }
 
 -addch: (int) ch atX: (int) x Y: (int) y
 {
-	mvwaddch(window, x, y, ch);
-	return self;
-}
-
--setOwner: owner
-{
-	self.owner = owner;
+	mvwaddch(textContext, x, y, ch);
 	return self;
 }
 

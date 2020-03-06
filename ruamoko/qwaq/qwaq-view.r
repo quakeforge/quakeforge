@@ -97,13 +97,7 @@ updateScreenCursor (View *view)
 -setOwner: (Group *) owner
 {
 	self.owner = owner;
-	window = [owner getWindow];
 	return self;
-}
-
--(window_t) getWindow
-{
-	return window;
 }
 
 - (Rect *) getRect

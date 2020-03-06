@@ -31,6 +31,7 @@ typedef BOOL condition_func2 (id object, void *anObject, void *data);
 {
 	Array      *views;
 	int         focused;
+	struct window_s *window;
 }
 -insert: (View *) view;
 -remove: (View *) view;
