@@ -450,7 +450,10 @@ init_elements (struct def_s *def, expr_t *eles)
 			if (element->expr) {
 				c = constant_expr (element->expr);
 			} else {
-				c = convert_nil (new_nil_expr (), type);
+				c = new_nil_expr ();
+			}
+			if (c->type == ex_nil) {
+				c = convert_nil (c, type);
 			}
 			append_expr (local_expr, assign_expr (unary_expr ('.', ptr), c));
 		}

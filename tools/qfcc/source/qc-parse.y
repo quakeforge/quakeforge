@@ -1148,7 +1148,8 @@ opt_initializer
 
 var_initializer
 	: '=' expr									{ $$ = $2; }
-	| '=' '{' element_list optional_comma '}'	{ $$ = $3; }
+	| '=' '{'									{ $<spec>$ = $<spec>-1; }
+	  element_list optional_comma '}'			{ $$ = $4; }
 	| '=' '{' '}'
 		{
 			if (is_scalar ($<spec>-1.type)) {
@@ -1169,14 +1170,26 @@ element_list
 			$$ = new_block_expr ();
 			append_expr ($$, $1);
 		}
-	| element_list ',' element
+	| element_list ',' {$<spec>$ = $<spec>0; } element
 		{
-			append_expr ($$, $3);
+			append_expr ($$, $4);
 		}
 	;
 
 element
-	: '{' element_list optional_comma '}'		{ $$ = $2; }
+	: '{'										{ $<spec>$ = $<spec>0; }
+	  element_list optional_comma '}'			{ $$ = $3; }
+	| '{' '}'
+		{
+			// FIXME doesn't check the right type (does prove the inherited
+			// attributes have been passed down correctly though). The problem
+			// is that the type of the sub elements needs to be extracted if
+			// possible
+			if (is_scalar ($<spec>0.type)) {
+				error (0, "empty scalar initializer");
+			}
+			$$ = new_nil_expr ();
+		}
 	| expr										{ $$ = $1; }
 	;
 
