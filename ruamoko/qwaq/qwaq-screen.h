@@ -11,8 +11,6 @@
 +(Screen *) screen;
 -handleEvent: (qwaq_event_t *) event;
 -setBackground: (int) ch;
--printf: (string) fmt, ...;
--addch: (int) ch atX: (int) x Y: (int) y;
 @end
 
 #endif//__qwaq_screen_h

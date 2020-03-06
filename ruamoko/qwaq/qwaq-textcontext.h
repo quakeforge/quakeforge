@@ -17,16 +17,20 @@
 + (void) move: (Point) pos;
 + (void) curs_set: (int) visibility;
 + (void) doupdate;
++ (TextContext *) screen;
 
 -init;
 -initWithRect: (Rect) rect;
 -initWithWindow: (window_t) window;
-- (void) mvprintf: (Point) pos, string fmt, ...;
+
+-(window_t) window;
+
 - (void) printf: (string) fmt, ...;
 - (void) vprintf: (string) mft, @va_list args;
+- (void) mvprintf: (Point) pos, string fmt, ...;
 - (void) mvvprintf: (Point) pos, string mft, @va_list args;
-- (void) refresh;
 - (void) mvaddch: (Point) pos, int ch;
+- (void) refresh;
 - (void) bkgd: (int) ch;
 - (void) scrollok: (int) flag;
 - (void) border: (box_sides_t) sides, box_corners_t corners;

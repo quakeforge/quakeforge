@@ -105,6 +105,47 @@ updateScreenCursor (View *view)
 	return &rect;
 }
 
+- (void) printf: (string) fmt, ...
+{
+	[textContext vprintf: fmt, @args];
+}
+
+- (void) vprintf: (string) fmt, @va_list args
+{
+	[textContext vprintf: fmt, args];
+}
+
+- (void) refresh
+{
+	[textContext refresh];
+}
+/*
+- (void) addch: (int) ch
+{
+	[textContext addch:ch];
+}*/
+
+- (void) mvprintf: (Point) pos, string fmt, ...
+{
+	pos.x += xpos;
+	pos.y += ypos;
+	[textContext mvvprintf: pos, fmt, @args];
+}
+
+- (void) mvvprintf: (Point) pos, string fmt, @va_list args
+{
+	pos.x += xpos;
+	pos.y += ypos;
+	[textContext mvvprintf: pos, fmt, args];
+}
+
+- (void) mvaddch: (Point) pos, int ch
+{
+	pos.x += xpos;
+	pos.y += ypos;
+	[textContext mvaddch: pos, ch];
+}
+
 @end
 
 Rect getwrect (window_t window) = #0;

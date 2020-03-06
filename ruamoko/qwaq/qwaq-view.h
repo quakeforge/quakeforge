@@ -6,6 +6,7 @@
 
 #include "qwaq-draw.h"
 #include "qwaq-rect.h"
+#include "qwaq-textcontext.h"
 
 @class Group;
 
@@ -44,7 +45,7 @@ enum {
 	Rect        absRect;
 	Point       point;		// can't be local :(
 	Group      *owner;
-	struct window_s *textContext;	//FIXME separate class
+	TextContext *textContext;
 	int         state;
 	int         options;
 	int         cursorState;
@@ -56,6 +57,14 @@ enum {
 -(struct Rect_s *)getRect;
 -draw;
 -redraw;
+
+- (void) refresh;
+- (void) printf: (string) fmt, ...;
+- (void) vprintf: (string) fmt, @va_list args;
+//- (void) addch: (int) ch;
+- (void) mvprintf: (Point) pos, string fmt, ...;
+- (void) mvvprintf: (Point) pos, string fmt, @va_list args;
+- (void) mvaddch: (Point) pos, int ch;
 @end
 
 #endif//__qwaq_view_h

@@ -116,7 +116,7 @@ not_dont_draw (id aView, void *aGroup)
 	Group      *group = (Group *) aGroup;
 	if (!(view.options & ofDontDraw)) {
 		if (!view.textContext) {
-			view.textContext = group.window;
+			view.textContext = group.buffer;
 		}
 		return YES;
 	}

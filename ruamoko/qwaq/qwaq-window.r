@@ -18,8 +18,8 @@
 		return nil;
 	}
 	self.rect = rect;
-	window = create_window (xpos, ypos, xlen, ylen);
-	panel = create_panel (window);
+	buffer = [[TextContext alloc] initWithRect: rect];
+	panel = create_panel ([buffer window]);
 	return self;
 }
 
@@ -69,7 +69,7 @@
 
 -setBackground: (int) ch
 {
-	wbkgd (window, ch);
+	[buffer bkgd: ch];
 	return self;
 }
 
@@ -90,24 +90,24 @@
 		}
 	}
 	[super draw];
-	int x = 1, y = 1;
-	wborder (window, box_sides, box_corners);
+	[buffer border: box_sides, box_corners];
+	Point pos = { 1, 1 };
 	//for (int i = ACS_ULCORNER; i <= ACS_STERLING; i++) {
 	for (int i = 32; i <= 127; i++) {
 		int ch = acs_char (i);
 		if (ch) {
-			mvwaddch (window, x, y, ch);
+			[buffer mvaddch: pos, ch];
 		} else {
-			mvwaddch (window, x, y, '.');
+			[buffer mvaddch: pos, '.'];
 		}
-		if (++x > 32) {
-			x = 1;
-			if (++y >= ylen) {
+		if (++pos.x > 32) {
+			pos.x = 1;
+			if (++pos.y >= ylen) {
 				break;
 			}
 		}
 	}
-	wrefresh (window);
+	[buffer refresh];
 	return self;
 }
 

@@ -17,6 +17,15 @@
 + (void) curs_set: (int) visibility = #0;
 + (void) doupdate = #0;
 
+static TextContext *screen;
++ (TextContext *) screen
+{
+	if (!screen) {
+		screen = [[TextContext alloc] init];
+	}
+	return screen;
+}
+
 - init
 {
 	if (!(self = [super init])) {
@@ -43,6 +52,11 @@
 	}
 	self.window = window;
 	return self;
+}
+
+-(window_t) window
+{
+	return window;
 }
 
 - (void) mvprintf: (Point) pos, string fmt, ... = #0;
