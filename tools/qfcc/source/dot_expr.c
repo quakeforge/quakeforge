@@ -551,6 +551,7 @@ dump_dot_expr (void *_e, const char *filename)
 	expr_t     *e = (expr_t *) _e;
 
 	dasprintf (dstr, "digraph expr_%p {\n", e);
+	dasprintf (dstr, "  graph [label=\"%s\"];\n", quote_string (filename));
 	dasprintf (dstr, "  layout=dot; rankdir=TB; compound=true;\n");
 	_print_expr (dstr, e, 0, ++id, 0);
 	dasprintf (dstr, "}\n");
