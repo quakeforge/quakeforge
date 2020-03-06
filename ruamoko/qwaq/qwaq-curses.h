@@ -90,6 +90,8 @@ typedef struct panel_s *panel_t;
 @extern void mvwprintf (window_t win, int x, int y, string fmt, ...);
 @extern void wprintf (window_t win, string fmt, ...);
 @extern void wvprintf (window_t win, string fmt, @va_list args);
+@extern void mvwvprintf (window_t win, int x, int y,
+						 string fmt, @va_list args);
 @extern void wrefresh (window_t win);
 @extern void mvwaddch (window_t win, int x, int y, int ch);
 

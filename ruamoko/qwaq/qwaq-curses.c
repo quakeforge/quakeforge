@@ -44,6 +44,8 @@
 #include "qwaq.h"
 #include "event.h"
 #include "qwaq-curses.h"
+#include "qwaq-rect.h"
+#include "qwaq-textcontext.h"
 
 #define always_inline inline __attribute__((__always_inline__))
 #define QUEUE_SIZE 16
@@ -856,10 +858,9 @@ bi_delwin (progs_t *pr)
 }
 
 static void
-bi_getwrect (progs_t *pr)
+qwaq_getwrect (progs_t *pr, int window_id)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
-	int         window_id = P_INT (pr, 0);
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_getwrect, 0, window_id, };
@@ -875,6 +876,11 @@ bi_getwrect (progs_t *pr)
 		(&R_INT (pr))[2] = cmd_result[3];
 		(&R_INT (pr))[3] = cmd_result[4];
 	}
+}
+static void
+bi_getwrect (progs_t *pr)
+{
+	qwaq_getwrect (pr, P_INT (pr, 0));
 }
 
 static void
@@ -992,15 +998,10 @@ bi_doupdate (progs_t *pr)
 }
 
 static void
-bi_mvwprintf (progs_t *pr)
+qwaq_mvwprintf (progs_t *pr, int window_id, int x, int y, const char *fmt,
+				int count, pr_type_t **args)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
-	int         window_id = P_INT (pr, 0);
-	int         x = P_INT (pr, 1);
-	int         y = P_INT (pr, 2);
-	const char *fmt = P_GSTRING (pr, 3);
-	int         count = pr->pr_argc - 4;
-	pr_type_t **args = pr->pr_params + 4;
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         string_id = acquire_string (res);
@@ -1018,15 +1019,24 @@ bi_mvwprintf (progs_t *pr)
 		qwaq_submit_command (res, command);
 	}
 }
+static void
+bi_mvwprintf (progs_t *pr)
+{
+	int         window_id = P_INT (pr, 0);
+	int         x = P_INT (pr, 1);
+	int         y = P_INT (pr, 2);
+	const char *fmt = P_GSTRING (pr, 3);
+	int         count = pr->pr_argc - 4;
+	pr_type_t **args = pr->pr_params + 4;
+
+	qwaq_mvwprintf (pr, window_id, x, y, fmt, count, args);
+}
 
 static void
-bi_wprintf (progs_t *pr)
+qwaq_wprintf (progs_t *pr, int window_id, const char *fmt,
+			  int count, pr_type_t **args)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
-	int         window_id = P_INT (pr, 0);
-	const char *fmt = P_GSTRING (pr, 1);
-	int         count = pr->pr_argc - 2;
-	pr_type_t **args = pr->pr_params + 2;
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         string_id = acquire_string (res);
@@ -1044,14 +1054,21 @@ bi_wprintf (progs_t *pr)
 		qwaq_submit_command (res, command);
 	}
 }
-
 static void
-bi_wvprintf (progs_t *pr)
+bi_wprintf (progs_t *pr)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
 	int         window_id = P_INT (pr, 0);
 	const char *fmt = P_GSTRING (pr, 1);
-	__auto_type args = (pr_va_list_t *) &P_POINTER (pr, 2);
+	int         count = pr->pr_argc - 2;
+	pr_type_t **args = pr->pr_params + 2;
+
+	qwaq_wprintf (pr, window_id, fmt, count, args);
+}
+
+static void
+qwaq_wvprintf (progs_t *pr, int window_id, const char *fmt, pr_va_list_t *args)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
 	pr_type_t  *list_start = PR_GetPointer (pr, args->list);
 	pr_type_t **list = alloca (args->count * sizeof (*list));
 
@@ -1075,15 +1092,60 @@ bi_wvprintf (progs_t *pr)
 		qwaq_submit_command (res, command);
 	}
 }
+static void
+bi_wvprintf (progs_t *pr)
+{
+	int         window_id = P_INT (pr, 0);
+	const char *fmt = P_GSTRING (pr, 1);
+	__auto_type args = (pr_va_list_t *) &P_POINTER (pr, 2);
+
+	qwaq_wvprintf (pr, window_id, fmt, args);
+}
 
 static void
-bi_mvwaddch (progs_t *pr)
+qwaq_mvwvprintf (progs_t *pr, int window_id, int x, int y,
+				 const char *fmt, pr_va_list_t *args)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	pr_type_t  *list_start = PR_GetPointer (pr, args->list);
+	pr_type_t **list = alloca (args->count * sizeof (*list));
+
+	for (int i = 0; i < args->count; i++) {
+		list[i] = list_start + i * pr->pr_param_size;
+	}
+
+	if (get_window (res, __FUNCTION__, window_id)) {
+		int         string_id = acquire_string (res);
+		dstring_t  *print_buffer = res->strings + string_id;
+		int         command[] = {
+						qwaq_cmd_mvwaddstr, 0,
+						window_id, x, y, string_id
+					};
+
+		command[1] = CMD_SIZE(command);
+
+		dstring_clearstr (print_buffer);
+		PR_Sprintf (pr, print_buffer, "waddstr", fmt, args->count, list);
+
+		qwaq_submit_command (res, command);
+	}
+}
+static void
+bi_mvwvprintf (progs_t *pr)
+{
 	int         window_id = P_INT (pr, 0);
 	int         x = P_INT (pr, 1);
 	int         y = P_INT (pr, 2);
-	int         ch = P_INT (pr, 3);
+	const char *fmt = P_GSTRING (pr, 2);
+	__auto_type args = (pr_va_list_t *) &P_POINTER (pr, 3);
+
+	qwaq_mvwvprintf (pr, x, y, window_id, fmt, args);
+}
+
+static void
+qwaq_mvwaddch (progs_t *pr, int window_id, int x, int y, int ch)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = {
@@ -1094,18 +1156,34 @@ bi_mvwaddch (progs_t *pr)
 		qwaq_submit_command (res, command);
 	}
 }
+static void
+bi_mvwaddch (progs_t *pr)
+{
+	int         window_id = P_INT (pr, 0);
+	int         x = P_INT (pr, 1);
+	int         y = P_INT (pr, 2);
+	int         ch = P_INT (pr, 3);
+
+	qwaq_mvwaddch (pr, window_id, x, y, ch);
+}
 
 static void
-bi_wrefresh (progs_t *pr)
+qwaq_wrefresh (progs_t *pr, int window_id)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
-	int         window_id = P_INT (pr, 0);
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_wrefresh, 0, window_id, };
 		command[1] = CMD_SIZE(command);
 		qwaq_submit_command (res, command);
 	}
+}
+static void
+bi_wrefresh (progs_t *pr)
+{
+	int         window_id = P_INT (pr, 0);
+
+	qwaq_wrefresh (pr, window_id);
 }
 
 static void
@@ -1132,24 +1210,28 @@ bi_max_color_pairs (progs_t *pr)
 }
 
 static void
-bi_init_pair (progs_t *pr)
+qwaq_init_pair (progs_t *pr, int pair, int f, int b)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
-	int         pair = P_INT (pr, 0);
-	int         f = P_INT (pr, 1);
-	int         b = P_INT (pr, 2);
 
 	int         command[] = { qwaq_cmd_init_pair, 0, pair, f, b, };
 	command[1] = CMD_SIZE(command);
 	qwaq_submit_command (res, command);
 }
+static void
+bi_init_pair (progs_t *pr)
+{
+	int         pair = P_INT (pr, 0);
+	int         f = P_INT (pr, 1);
+	int         b = P_INT (pr, 2);
+
+	qwaq_init_pair (pr, pair, f, b);
+}
 
 static void
-bi_wbkgd (progs_t *pr)
+qwaq_wbkgd (progs_t *pr, int window_id, int ch)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
-	int         window_id = P_INT (pr, 0);
-	int         ch = P_INT (pr, 1);
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_wbkgd, 0, window_id, ch, };
@@ -1157,13 +1239,19 @@ bi_wbkgd (progs_t *pr)
 		qwaq_submit_command (res, command);
 	}
 }
+static void
+bi_wbkgd (progs_t *pr)
+{
+	int         window_id = P_INT (pr, 0);
+	int         ch = P_INT (pr, 1);
+
+	qwaq_wbkgd (pr, window_id, ch);
+}
 
 static void
-bi_scrollok (progs_t *pr)
+qwaq_scrollok (progs_t *pr, int window_id, int flag)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
-	int         window_id = P_INT (pr, 0);
-	int         flag = P_INT (pr, 1);
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_scrollok, 0, window_id, flag, };
@@ -1171,12 +1259,19 @@ bi_scrollok (progs_t *pr)
 		qwaq_submit_command (res, command);
 	}
 }
+static void
+bi_scrollok (progs_t *pr)
+{
+	int         window_id = P_INT (pr, 0);
+	int         flag = P_INT (pr, 1);
+
+	qwaq_scrollok (pr, window_id, flag);
+}
 
 static const char qwaq_acs_char_map[] = "lmkjtuvwqxnos`afg~,+.-hi0pryz{|}";
 static void
-bi_acs_char (progs_t *pr)
+qwaq_acs_char (progs_t *pr, unsigned acs)
 {
-	unsigned    acs = P_INT (pr, 0);
 	if (acs < 256) {
 		R_INT (pr) = NCURSES_ACS(acs);
 	} else if (acs - 256 < sizeof (qwaq_acs_char_map)) {
@@ -1185,37 +1280,54 @@ bi_acs_char (progs_t *pr)
 		R_INT (pr) = 0;
 	}
 }
+static void
+bi_acs_char (progs_t *pr)
+{
+	int         acs = P_INT (pr, 0);
+
+	qwaq_acs_char (pr, acs);
+}
 
 static void
-bi_move (progs_t *pr)
+qwaq_move (progs_t *pr, int x, int y)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
-	int         x = P_INT (pr, 0);
-	int         y = P_INT (pr, 1);
 
 	int         command[] = { qwaq_cmd_move, 0, x, y, };
 	command[1] = CMD_SIZE(command);
 	qwaq_submit_command (res, command);
 }
+static void
+bi_move (progs_t *pr)
+{
+	int         x = P_INT (pr, 0);
+	int         y = P_INT (pr, 1);
+
+	qwaq_move (pr, x, y);
+}
 
 static void
-bi_curs_set (progs_t *pr)
+qwaq_curs_set (progs_t *pr, int visibility)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
-	int         visibility = P_INT (pr, 0);
 
 	int         command[] = { qwaq_cmd_curs_set, 0, visibility, };
 	command[1] = CMD_SIZE(command);
 	qwaq_submit_command (res, command);
 }
+static void
+bi_curs_set (progs_t *pr)
+{
+	int         visibility = P_INT (pr, 0);
+
+	qwaq_curs_set (pr, visibility);
+}
 
 static void
-bi_wborder (progs_t *pr)
+qwaq_wborder (progs_t *pr, int window_id,
+			  box_sides_t sides, box_corners_t corns)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
-	int         window_id = P_INT (pr, 0);
-	__auto_type sides = P_PACKED (pr, box_sides_t, 1);
-	__auto_type corns = P_PACKED (pr, box_corners_t, 2);
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_wborder, 0, window_id,
@@ -1224,6 +1336,15 @@ bi_wborder (progs_t *pr)
 		command[1] = CMD_SIZE(command);
 		qwaq_submit_command (res, command);
 	}
+}
+static void
+bi_wborder (progs_t *pr)
+{
+	int         window_id = P_INT (pr, 0);
+	__auto_type sides = P_PACKED (pr, box_sides_t, 1);
+	__auto_type corns = P_PACKED (pr, box_corners_t, 2);
+
+	qwaq_wborder (pr, window_id, sides, corns);
 }
 
 static void
@@ -1245,6 +1366,155 @@ bi_initialize (progs_t *pr)
 	refresh();
 
 	res->stdscr.win = stdscr;
+}
+
+static void
+bi_c_TextContext__is_initialized (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	R_INT (pr) = res->initialized;
+}
+
+static void
+bi_c_TextContext__max_colors (progs_t *pr)
+{
+	bi_max_colors (pr);
+}
+
+static void
+bi_c_TextContext__max_color_pairs (progs_t *pr)
+{
+	bi_max_color_pairs (pr);
+}
+
+static void
+bi_c_TextContext__init_pair_ (progs_t *pr)
+{
+	int         pair = P_INT (pr, 2);
+	int         f = P_INT (pr, 3);
+	int         b = P_INT (pr, 4);
+
+	qwaq_init_pair (pr, pair, f, b);
+}
+
+static void
+bi_c_TextContext__acs_char_ (progs_t *pr)
+{
+	int         acs = P_INT (pr, 2);
+
+	qwaq_acs_char (pr, acs);
+}
+
+static void
+bi_c_TextContext__move_ (progs_t *pr)
+{
+	Point      *pos = &P_PACKED (pr, Point, 2);
+
+	qwaq_move (pr, pos->x, pos->y);
+}
+
+static void
+bi_c_TextContext__curs_set_ (progs_t *pr)
+{
+	int         visibility = P_INT (pr, 2);
+
+	qwaq_curs_set (pr, visibility);
+}
+
+static void
+bi_c_TextContext__doupdate (progs_t *pr)
+{
+	bi_doupdate (pr);
+}
+
+static void
+bi_i_TextContext__mvprintf_ (progs_t *pr)
+{
+	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
+	Point      *pos = &P_PACKED (pr, Point, 2);
+	const char *fmt = P_GSTRING (pr, 3);
+	int         count = pr->pr_argc - 4;
+	pr_type_t **args = pr->pr_params + 4;
+
+	qwaq_mvwprintf (pr, window_id, pos->x, pos->y, fmt, count, args);
+}
+
+static void
+bi_i_TextContext__printf_ (progs_t *pr)
+{
+	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
+	const char *fmt = P_GSTRING (pr, 2);
+	int         count = pr->pr_argc - 3;
+	pr_type_t **args = pr->pr_params + 3;
+
+	qwaq_wprintf (pr, window_id, fmt, count, args);
+}
+
+static void
+bi_i_TextContext__vprintf_ (progs_t *pr)
+{
+	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
+	const char *fmt = P_GSTRING (pr, 2);
+	__auto_type args = (pr_va_list_t *) &P_POINTER (pr, 3);
+
+	qwaq_wvprintf (pr, window_id, fmt, args);
+}
+
+static void
+bi_i_TextContext__mvvprintf_ (progs_t *pr)
+{
+	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
+	Point      *pos = &P_PACKED (pr, Point, 2);
+	const char *fmt = P_GSTRING (pr, 3);
+	__auto_type args = (pr_va_list_t *) &P_POINTER (pr, 4);
+
+	qwaq_mvwvprintf (pr, pos->x, pos->y, window_id, fmt, args);
+}
+
+static void
+bi_i_TextContext__refresh (progs_t *pr)
+{
+	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
+
+	qwaq_wrefresh (pr, window_id);
+}
+
+static void
+bi_i_TextContext__mvaddch_ (progs_t *pr)
+{
+	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
+	Point      *pos = &P_PACKED (pr, Point, 2);
+	int         ch = P_INT (pr, 3);
+
+	qwaq_mvwaddch (pr, window_id, pos->x, pos->y, ch);
+}
+
+static void
+bi_i_TextContext__bkgd_ (progs_t *pr)
+{
+	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
+	int         ch = P_INT (pr, 2);
+
+	qwaq_wbkgd (pr, window_id, ch);
+}
+
+static void
+bi_i_TextContext__scrollok_ (progs_t *pr)
+{
+	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
+	int         flag = P_INT (pr, 2);
+
+	qwaq_scrollok (pr, window_id, flag);
+}
+
+static void
+bi_i_TextContext__border_ (progs_t *pr)
+{
+	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
+	__auto_type sides = P_PACKED (pr, box_sides_t, 2);
+	__auto_type corns = P_PACKED (pr, box_corners_t, 3);
+
+	qwaq_wborder (pr, window_id, sides, corns);
 }
 
 static void
@@ -1279,6 +1549,7 @@ static builtin_t builtins[] = {
 	{"mvwprintf",		bi_mvwprintf,		-1},
 	{"wprintf",			bi_wprintf,			-1},
 	{"wvprintf",		bi_wvprintf,		-1},
+	{"mvwvprintf",		bi_mvwvprintf,		-1},
 	{"mvwaddch",		bi_mvwaddch,		-1},
 	{"wrefresh",		bi_wrefresh,		-1},
 	{"get_event",		bi_get_event,		-1},
@@ -1291,6 +1562,25 @@ static builtin_t builtins[] = {
 	{"move",			bi_move,			-1},
 	{"curs_set",		bi_curs_set,		-1},
 	{"wborder",			bi_wborder,			-1},
+
+	{"_c_TextContext__is_initialized",	bi_c_TextContext__is_initialized,  -1},
+	{"_c_TextContext__max_colors",		bi_c_TextContext__max_colors,	   -1},
+	{"_c_TextContext__max_color_pairs",	bi_c_TextContext__max_color_pairs, -1},
+	{"_c_TextContext__init_pair_",		bi_c_TextContext__init_pair_,	   -1},
+	{"_c_TextContext__acs_char_",		bi_c_TextContext__acs_char_,	   -1},
+	{"_c_TextContext__move_",			bi_c_TextContext__move_,		   -1},
+	{"_c_TextContext__curs_set_",		bi_c_TextContext__curs_set_,	   -1},
+	{"_c_TextContext__doupdate",		bi_c_TextContext__doupdate,		   -1},
+	{"_i_TextContext__mvprintf_",		bi_i_TextContext__mvprintf_,	   -1},
+	{"_i_TextContext__printf_",			bi_i_TextContext__printf_,		   -1},
+	{"_i_TextContext__vprintf_",		bi_i_TextContext__vprintf_,		   -1},
+	{"_i_TextContext__mvvprintf_",		bi_i_TextContext__mvvprintf_,	   -1},
+	{"_i_TextContext__refresh",			bi_i_TextContext__refresh,		   -1},
+	{"_i_TextContext__mvaddch_",		bi_i_TextContext__mvaddch_,		   -1},
+	{"_i_TextContext__bkgd_",			bi_i_TextContext__bkgd_,		   -1},
+	{"_i_TextContext__scrollok_",		bi_i_TextContext__scrollok_,	   -1},
+	{"_i_TextContext__border_",			bi_i_TextContext__border_,		   -1},
+
 	{0}
 };
 

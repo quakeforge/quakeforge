@@ -24,7 +24,12 @@ SUFFIXES=.o .r
 	$(am__mv) $(DEPDIR)/$*.Tqo $(DEPDIR)/$*.Qo
 
 qwaq_app_dat_src= \
-	qwaq-app.r qwaq-group.r qwaq-screen.r qwaq-window.r qwaq-view.r
+	qwaq-app.r \
+	qwaq-group.r \
+	qwaq-screen.r \
+	qwaq-textcontext.r \
+	qwaq-view.r \
+	qwaq-window.r
 
 qwaq_curses_libs=
 qwaq_curses_SOURCES=main.c qwaq-curses.c
