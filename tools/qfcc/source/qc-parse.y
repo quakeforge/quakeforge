@@ -2010,8 +2010,7 @@ optional_param_list
 	| ',' param_list			{ $$ = $2; }
 	| ',' param_list ',' ELLIPSIS
 		{
-			$$ = new_param (0, 0, 0);
-			$$->next = $2;
+			$$ = param_append_identifiers ($2, 0, 0);
 		}
 	;
 

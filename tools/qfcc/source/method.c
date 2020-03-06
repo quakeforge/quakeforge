@@ -89,8 +89,8 @@ new_method (type_t *ret_type, param_t *selector, param_t *opt_params)
 	dstring_t  *name = dstring_newstr ();
 	dstring_t  *types = dstring_newstr ();
 
-	opt_params = reverse_params (opt_params);
-	selector = _reverse_params (selector, opt_params);
+	selector = reverse_params (selector);
+	selector = append_params (selector, opt_params);
 	cmd->next = selector;
 	self->next = cmd;
 
@@ -109,7 +109,7 @@ new_method (type_t *ret_type, param_t *selector, param_t *opt_params)
 	free (name);
 	free (types);
 
-	//print_type (meth->type); puts ("");
+	//print_type (meth->type);
 	meth->def = 0;
 
 	if (!known_methods)

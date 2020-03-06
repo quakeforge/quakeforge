@@ -120,7 +120,7 @@ param_append_identifiers (param_t *params, symbol_t *idents, type_t *type)
 	return params;
 }
 
-param_t *
+static param_t *
 _reverse_params (param_t *params, param_t *next)
 {
 	param_t    *p = params;
@@ -136,6 +136,20 @@ reverse_params (param_t *params)
 	if (!params)
 		return 0;
 	return _reverse_params (params, 0);
+}
+
+param_t *
+append_params (param_t *params, param_t *more_params)
+{
+	if (params) {
+		param_t *p;
+		for (p = params; p->next; ) {
+			p = p->next;
+		}
+		p->next = more_params;
+		return params;
+	}
+	return more_params;
 }
 
 param_t *
