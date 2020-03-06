@@ -127,4 +127,19 @@
 {
 	return [owner redraw];
 }
+
+- (void) mvprintf: (Point) pos, string fmt, ...
+{
+	[textContext mvvprintf: pos, fmt, @args];
+}
+
+- (void) mvvprintf: (Point) pos, string fmt, @va_list args
+{
+	[textContext mvvprintf: pos, fmt, args];
+}
+
+- (void) mvaddch: (Point) pos, int ch
+{
+	[textContext mvaddch: pos, ch];
+}
 @end
