@@ -80,7 +80,7 @@ static uintptr_t
 value_get_hash (const void *_val, void *unused)
 {
 	const ex_value_t *val = (const ex_value_t *) _val;
-	return Hash_Buffer (&val->v, sizeof (val->v)) + val->lltype;
+	return Hash_Buffer (&val->v, sizeof (val->v)) ^ (uintptr_t) val->type;
 }
 
 static int
@@ -88,7 +88,7 @@ value_compare (const void *_val1, const void *_val2, void *unused)
 {
 	const ex_value_t *val1 = (const ex_value_t *) _val1;
 	const ex_value_t *val2 = (const ex_value_t *) _val2;
-	if (val1->lltype != val2->lltype)
+	if (val1->type != val2->type)
 		return 0;
 	return memcmp (&val1->v, &val2->v, sizeof (val1->v)) == 0;
 }
