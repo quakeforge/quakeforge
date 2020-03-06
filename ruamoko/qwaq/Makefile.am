@@ -80,4 +80,4 @@ am--depfiles: $(am__depfiles_remade) $(r_depfiles_remade)
 
 EXTRA_PROGRAMS=qwaq-curses qwaq-x11
 EXTRA_DIST=$(qwaq_dat_src) qwaq.h
-CLEANFILES= *.dat *.sym
+CLEANFILES= *.dat *.sym qwaq-curses.log
