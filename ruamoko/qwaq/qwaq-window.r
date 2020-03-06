@@ -19,6 +19,7 @@
 	}
 	self.rect = rect;
 	buffer = [[TextContext alloc] initWithRect: rect];
+	textContext = buffer;
 	panel = create_panel ([buffer window]);
 	return self;
 }
@@ -96,9 +97,9 @@
 	for (int i = 32; i <= 127; i++) {
 		int ch = acs_char (i);
 		if (ch) {
-			[buffer mvaddch: pos, ch];
+			[self mvaddch: pos, ch];
 		} else {
-			[buffer mvaddch: pos, '.'];
+			[self mvaddch: pos, '.'];
 		}
 		if (++pos.x > 32) {
 			pos.x = 1;
@@ -107,7 +108,7 @@
 			}
 		}
 	}
-	[buffer refresh];
+	[self refresh];
 	return self;
 }
 
