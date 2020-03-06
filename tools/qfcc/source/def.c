@@ -463,7 +463,10 @@ init_elements (struct def_s *def, expr_t *eles)
 			if (element->expr) {
 				c = constant_expr (element->expr);
 			} else {
-				c = convert_nil (new_nil_expr (), element->type);
+				c = new_nil_expr ();
+			}
+			if (c->type == ex_nil) {
+				c = convert_nil (c, element->type);
 			}
 			dummy.offset = def->offset + element->offset;
 			g = D_POINTER (pr_type_t, &dummy);
