@@ -859,8 +859,10 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 					&& s->opc->o.value->lltype == ev_pointer
 					&& s->opc->o.value->v.pointer.def) {
 					operand_t  *op;
+					def_t      *alias;
 					ex_pointer_t *ptr = &s->opc->o.value->v.pointer;
-					op = def_operand (ptr->def, ptr->type);
+					alias = alias_def (ptr->def, ptr->type, ptr->val);
+					op = def_operand (alias, ptr->type);
 					flow_add_op_var (def, op);
 					if (operands)
 						operands[0] = op;

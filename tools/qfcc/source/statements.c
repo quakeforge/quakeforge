@@ -103,7 +103,13 @@ operand_string (operand_t *op)
 							   op->o.value->v.quaternion_val[2],
 							   op->o.value->v.quaternion_val[3]);
 				case ev_pointer:
-					return va ("ptr %d", op->o.value->v.pointer.val);
+					if (op->o.value->v.pointer.def) {
+						return va ("ptr %s+%d",
+								   op->o.value->v.pointer.def->name,
+								   op->o.value->v.pointer.val);
+					} else {
+						return va ("ptr %d", op->o.value->v.pointer.val);
+					}
 				case ev_field:
 					return va ("field %d", op->o.value->v.pointer.val);
 				case ev_entity:
