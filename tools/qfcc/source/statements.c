@@ -890,6 +890,7 @@ expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 	type = e->e.expr.type;
 	sblock = statement_subexpr (sblock, e->e.expr.e1, &aop);
 	if (type_compatible (aop->type, type)) {
+		//FIXME type_compatible??? shouldn't that be type_size ==?
 		if (offset) {
 			internal_error (e, "offset alias of same size type");
 		}
@@ -924,6 +925,7 @@ expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 		*op = def_operand (alias_def (def, type, offset), 0);
 	} else if (aop->op_type == op_value) {
 		*op = value_operand (aop->o.value);
+		(*op)->type = type;
 	} else {
 		internal_error (e, "invalid alias target: %s: %s",
 						optype_str (aop->op_type), operand_string (aop));
