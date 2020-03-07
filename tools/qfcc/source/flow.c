@@ -271,6 +271,9 @@ get_temp_address (function_t *func, operand_t *op)
 		top->o.tempop.flowaddr = func->tmpaddr;
 		func->tmpaddr += top->size;
 	}
+	if (top->o.tempop.offset) {
+		internal_error (0, "real tempop with a non-zero offset");
+	}
 	op->o.tempop.flowaddr = top->o.tempop.flowaddr + op->o.tempop.offset;
 	return op->o.tempop.flowaddr;
 }
