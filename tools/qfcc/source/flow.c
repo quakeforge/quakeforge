@@ -210,18 +210,6 @@ flowvar_is_local (flowvar_t *var)
 {
 	return !(flowvar_is_global (var) || flowvar_is_param (var));
 }
-#if 0
-static int
-flowvar_is_initialized (flowvar_t *var)
-{
-	def_t      *def;
-
-	if (var->op->op_type != op_def)
-		return 0;
-	def = var->op->o.def;
-	return def->initialized;
-}
-#endif
 flowvar_t *
 flow_get_var (operand_t *op)
 {
