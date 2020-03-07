@@ -57,11 +57,11 @@
 #include "symtab.h"
 #include "type.h"
 
-static flowvar_t *vars_freelist;
-static flowloop_t *loops_freelist;
-static flownode_t *nodes_freelist;
-static flowgraph_t *graphs_freelist;
+/// \addtogroup qfcc_flow
+///@{
 
+/**	Static operand definitions for the ever present return and parameter slots.
+ */
 static struct {
 	const char *name;
 	operand_t   op;
@@ -78,6 +78,17 @@ static struct {
 };
 static const int num_flow_params = sizeof(flow_params)/sizeof(flow_params[0]);
 
+/**	\name Flow analysis memory management */
+///@{
+static flowvar_t *vars_freelist;		///< flowvar pool
+static flowloop_t *loops_freelist;		///< flow loop pool
+static flownode_t *nodes_freelist;		///< flow node pool
+static flowgraph_t *graphs_freelist;	///< flow graph pool
+
+/**	Allocate a new flow var.
+ *
+ *	The var's use and define sets are initialized to empty.
+ */
 static flowvar_t *
 new_flowvar (void)
 {
@@ -88,6 +99,10 @@ new_flowvar (void)
 	return var;
 }
 
+/**	Allocate a new flow loop.
+ *
+ *	The loop's nodes set is initialized to the empty set.
+ */
 static flowloop_t *
 new_loop (void)
 {
@@ -97,6 +112,8 @@ new_loop (void)
 	return loop;
 }
 
+/** Free a flow loop and its nodes set.
+ */
 static void
 delete_loop (flowloop_t *loop)
 {
@@ -104,6 +121,10 @@ delete_loop (flowloop_t *loop)
 	FREE (loops, loop);
 }
 
+/**	Allocate a new flow node.
+ *
+ *	The node is completely empty.
+ */
 static flownode_t *
 new_node (void)
 {
@@ -112,6 +133,10 @@ new_node (void)
 	return node;
 }
 
+/**	Free a flow node and its resources.
+ *
+ *	\bug not global_vars or the vars and defs sets?
+ */
 static void
 delete_node (flownode_t *node)
 {
@@ -126,6 +151,10 @@ delete_node (flownode_t *node)
 	FREE (nodes, node);
 }
 
+/**	Allocate a new flow graph.
+ *
+ *	The graph is completely empty.
+ */
 static flowgraph_t *
 new_graph (void)
 {
@@ -134,6 +163,10 @@ new_graph (void)
 	return graph;
 }
 
+/**	Return a flow graph and its resources to the pools.
+ *
+ *	\bug except loops?
+ */
 static void __attribute__((unused))
 delete_graph (flowgraph_t *graph)
 {
@@ -152,7 +185,77 @@ delete_graph (flowgraph_t *graph)
 		free (graph->depth_first);
 	FREE (graphs, graph);
 }
+///@}
 
+/**	\name Flowvar classification */
+///@{
+/**	Check if the flowvar refers to a global variable.
+ *
+ *	For the flowvar to refer to a global variable, the flowvar's operand
+ *	must be a def operand (but the def itself may be an alias of the real def)
+ *	and the rel def must not have its def_t::local flag set. This means that
+ *	function-scope static variables are not considered local (ie, only
+ *	non-static function-scope variables and function parameters are considered
+ *	local (temp vars are local too, but are not represented by \a op_def)).
+ */
+static int
+flowvar_is_global (flowvar_t *var)
+{
+	def_t      *def;
+
+	if (var->op->op_type != op_def)
+		return 0;
+	def = var->op->o.def;
+	if (def->alias)
+		def = def->alias;
+	if (def->local)
+		return 0;
+	return 1;
+}
+
+/**	Check if the flowvar refers to a function parameter.
+ *
+ *	For the flowvar to refer to a function parameter, the flowvar's operand
+ *	must be a def operand (but the def itself may be an alias of the real def)
+ *	and the rel def must have both its def_t::local and def_t::param flags set.
+ *
+ *	Temp vars are are not represented by op_def, so no mistake can be made.
+ */
+static int
+flowvar_is_param (flowvar_t *var)
+{
+	def_t      *def;
+
+	if (var->op->op_type != op_def)
+		return 0;
+	def = var->op->o.def;
+	if (def->alias)
+		def = def->alias;
+	if (!def->local)
+		return 0;
+	if (!def->param)
+		return 0;
+	return 1;
+}
+
+/**	Check if the flowvar refers to a function parameter.
+ *
+ *	As this is simply "neither global nor pamam", all other flowvars are
+ *	considered local, in particular actual non-staic function scope variables
+ *	and temp vars.
+ */
+static int
+flowvar_is_local (flowvar_t *var)
+{
+	return !(flowvar_is_global (var) || flowvar_is_param (var));
+}
+///@}
+
+/**	Extract the def from a def or temp flowvar.
+ *
+ *	It is an error for the operand referenced by the flowvar to be anything
+ *	other than a real def or temp.
+ */
 static __attribute__((pure)) def_t *
 flowvar_get_def (flowvar_t *var)
 {
@@ -173,43 +276,13 @@ flowvar_get_def (flowvar_t *var)
 	return 0;
 }
 
-static int
-flowvar_is_global (flowvar_t *var)
-{
-	def_t      *def;
-
-	if (var->op->op_type != op_def)
-		return 0;
-	def = var->op->o.def;
-	if (def->alias)
-		def = def->alias;
-	if (def->local)
-		return 0;
-	return 1;
-}
-
-static int
-flowvar_is_param (flowvar_t *var)
-{
-	def_t      *def;
-
-	if (var->op->op_type != op_def)
-		return 0;
-	def = var->op->o.def;
-	if (def->alias)
-		def = def->alias;
-	if (!def->local)
-		return 0;
-	if (!def->param)
-		return 0;
-	return 1;
-}
-
-static int
-flowvar_is_local (flowvar_t *var)
-{
-	return !(flowvar_is_global (var) || flowvar_is_param (var));
-}
+/**	Get a def or temp var operand's flowvar.
+ *
+ *	Other operand types never have a flowvar.
+ *
+ *	If the operand does not yet have a flowvar, one is created and assigned
+ *	to the operand.
+ */
 flowvar_t *
 flow_get_var (operand_t *op)
 {
@@ -229,6 +302,12 @@ flow_get_var (operand_t *op)
 	return 0;
 }
 
+/**	Indicate whether the operand should be counted.
+ *
+ *	If the operand is a def or temp var operand, and it has not already been
+ *	counted, then it is counted, otherwise it is not.
+ *	\return		1 if the operand should be counted, 0 if not
+ */
 static int
 count_operand (operand_t *op)
 {
@@ -240,14 +319,15 @@ count_operand (operand_t *op)
 		return 0;
 
 	var = flow_get_var (op);
-	// flowvars are initialized with number == 0, and any global flowvar
-	// used by a function will always have a number >= 0 after flow analysis,
-	// and local flowvars will always be 0 before flow analysis, so use -1
-	// to indicate the variable has been counted.
-	//
-	// Also, since this is the beginning of flow analysis for this function,
-	// ensure the define/use sets for global vars are empty. However, as
-	// checking if a var is global is too much trouble, just clear them all.
+	/**	Flowvars are initialized with number == 0, and any global flowvar
+	 *	used by a function will always have a number >= 0 after flow analysis,
+	 *	and local flowvars will always be 0 before flow analysis, so use -1
+	 *	to indicate the variable has been counted.
+	 *
+	 *	Also, since this is the beginning of flow analysis for this function,
+	 *	ensure the define/use sets for global vars are empty. However, since
+	 *	checking if a var is global is too much trouble, just clear them all.
+	 */
 	if (var && var->number != -1) {
 		set_empty (var->use);
 		set_empty (var->define);
@@ -257,6 +337,22 @@ count_operand (operand_t *op)
 	return 0;
 }
 
+/**	Allocate flow analysis pseudo address space to a temporary variable.
+ *
+ *	If the operand already has an address allocated (flowvar_t::flowaddr is
+ *	not 0), then the already allocated address is returned.
+ *
+ *	If the operand refers to an alias, the alias chain is followed to the
+ *	actual temp var operand and the real temp var is allocated space if it
+ *	has not allready been alloced.
+ *
+ *	The operand is given the address of the real temp var operand plus whatever
+ *	offset the operand has.
+ *
+ *	Real temp var operands must have a zero offset.
+ *
+ *	The operand address is set in \a op and returned.
+ */
 static int
 get_temp_address (function_t *func, operand_t *op)
 {
@@ -278,6 +374,8 @@ get_temp_address (function_t *func, operand_t *op)
 	return op->o.tempop.flowaddr;
 }
 
+/**	Add an operand's flowvar to the function's list of variables.
+ */
 static void
 add_operand (function_t *func, operand_t *op)
 {
@@ -289,8 +387,15 @@ add_operand (function_t *func, operand_t *op)
 		return;
 
 	var = flow_get_var (op);
-	// If the flowvar number is still -1, then the flowvar has not yet been
-	// added to the list of variables referenced by the function.
+	/**	If the flowvar number is still -1, then the flowvar has not yet been
+	 *	added to the list of variables referenced by the function.
+	 *
+	 *	The flowvar's flowvar_t::number is set to its index in the function's
+	 *	list of flowvars.
+	 *
+	 *	Also, temp and local flowvars are assigned addresses from the flow
+	 *	analysys pseudo address space so partial accesses can be analyzed.
+	 */
 	if (var && var->number == -1) {
 		var->number = func->num_vars++;
 		var->op = op;
@@ -303,6 +408,8 @@ add_operand (function_t *func, operand_t *op)
 	}
 }
 
+/**	Create symbols and defs for params/return if not already available.
+ */
 static symbol_t *
 param_symbol (const char *name)
 {
@@ -313,6 +420,15 @@ param_symbol (const char *name)
 	return sym;
 }
 
+/**	Build an array of all the statements in a function.
+
+	The array exists so statements can be referenced by number and thus used
+	in sets.
+
+	The statement references in the array (function_t::statements) are in the
+	same order as they are within the statement blocks (function_t::sblock)
+	and with the blocks in the same order as the linked list of blocks.
+*/
 static void
 flow_build_statements (function_t *func)
 {
@@ -335,6 +451,48 @@ flow_build_statements (function_t *func)
 	}
 }
 
+/**	Build an array of all the variables used by a function
+ *
+ *	The array exists so variables can be referenced by number and thus used
+ *	in sets. However, because larger variables may be aliased by smaller types,
+ *	their representation is more complicated.
+ *
+ *	# Local variable representation
+ *	Defined local vars add their address in local space to the number of
+ *	statements in the function. Thus their flow analysis address in in the
+ *	range:
+ *
+ *		([num_statements ... num_statements+localsize])
+ *
+ *	with a set element in flowvar_t::define for each word used by the var.
+ *	That is, single word types (int, float, pointer, etc) have one element,
+ *	doubles have two adjacant elements, and vectors and quaternions have
+ *	three and four elements respectively (also adjacant). Structural types
+ *	(struct, union, array) have as many adjacant elements as their size
+ *	dictates.
+ *
+ *	Temporary vars are pseudo allocated and their addresses are added as
+ *	for normal local vars.
+ *
+ *	Note, however, that flowvar_t::define also includes real function
+ *	statements that assign to the variable.
+ *
+ *	# Pseudo Address Space
+ *	Temporary variables are _effectively_ local variables and thus will
+ *	be treated as such by the analizer in that their addresses and sizes
+ *	will be used to determine which and how many set elements to use.
+ *
+ *	However, at this stage, temporary variables do not have any address
+ *	space assigned to them because their lifetimes are generally limited
+ *	to a few statements and the memory used for the temp vars may be
+ *	recycled. Thus, give temp vars a pseudo address space just past the
+ *	address space used for source-defined local variables. As each temp
+ *	var is added to the analyzer, get_temp_address() assigns the temp var
+ *	an address using function_t::tmpaddr as a starting point.
+ *
+ *	add_operand() takes care of setting flowvar_t::flowaddr for both locals
+ *	and temps.
+ */
 static void
 flow_build_vars (function_t *func)
 {
@@ -371,6 +529,7 @@ flow_build_vars (function_t *func)
 	// set up pseudo address space for temp vars so accessing tmp vars
 	// though aliases analyses correctly
 	func->tmpaddr = func->num_statements + func->symtab->space->size;
+
 	func->num_vars = 0;	// incremented by add_operand
 	// first, add .return and .param_[0-7] as they are always needed
 	for (i = 0; i < num_flow_params; i++)
@@ -399,15 +558,8 @@ flow_build_vars (function_t *func)
 		if (flowvar_is_global (func->vars[i]))
 			set_add (func->global_vars, i);
 	}
-	// create dummy defs for local vars
-	// defined local vars add their address in local space to the number of
-	// statements in the function:
-	//     ([num_statements ... num_statements+localsize])
-	// with a set element for each def used in the local space
-	//
-	// temporary vars are pseudo allocated and their addresses are added as for
-	// locals
-	// add_operand takes care of setting flowaddr for both locals and temps
+	// Put the local varibals in their place (set var->defined to the addresses
+	// spanned by the var)
 	for (i = 0; i < func->num_vars; i++) {
 		int         j;
 
@@ -424,6 +576,8 @@ flow_build_vars (function_t *func)
 	set_delete (stdef);
 }
 
+/**	Add the tempop's spanned addresses to the kill set
+ */
 static int
 flow_tempop_kill_aliases_visit (tempop_t *tempop, void *_kill)
 {
@@ -435,6 +589,8 @@ flow_tempop_kill_aliases_visit (tempop_t *tempop, void *_kill)
 	return 0;
 }
 
+/**	Add the def's spanned addresses to the kill set
+ */
 static int
 flow_def_kill_aliases_visit (def_t *def, void *_kill)
 {
@@ -446,6 +602,13 @@ flow_def_kill_aliases_visit (def_t *def, void *_kill)
 	return 0;
 }
 
+/**	Add the flowvar's spanned addresses to the kill set
+ *
+ *	If the flowvar refers to an alias, then the real def/tempop and any
+ *	overlapping aliases are aslo killed.
+ *
+ *	However, other aliases cannot kill anything in the uninitialized set.
+ */
 static void
 flow_kill_aliases (set_t *kill, flowvar_t *var, const set_t *uninit)
 {
@@ -455,6 +618,7 @@ flow_kill_aliases (set_t *kill, flowvar_t *var, const set_t *uninit)
 	set_union (kill, var->define);
 	op = var->op;
 	tmp = set_new ();
+	// collect the kill sets from any aliases
 	if (op->op_type == op_temp) {
 		tempop_visit_all (&op->o.tempop, 1, flow_tempop_kill_aliases_visit,
 						  tmp);
@@ -467,6 +631,8 @@ flow_kill_aliases (set_t *kill, flowvar_t *var, const set_t *uninit)
 	set_union (kill, tmp);
 }
 
+/**	Compute reaching defs
+ */
 static void
 flow_reaching_defs (flowgraph_t *graph)
 {
@@ -484,15 +650,37 @@ flow_reaching_defs (flowgraph_t *graph)
 	flowvar_t  *var;
 
 	// First, create out for the entry dummy node using fake statement numbers.
+	//\f[ \bigcup\limits_{i=1}^{\infty} F_{i} \f]
+	//\f[ \bigcap\limits_{i=1}^{\infty} F_{i} \f]
+
+	/**	The dummy entry node reaching defs \a out set is initialized to:
+	 *	\f[ out_{reaching}=[\bigcup\limits_{v \in \{locals\}} define_{v}]
+	 *		\setminus \{statements\} \f]
+	 *	where {\a locals} is the set of local def and tempop flowvars (does
+	 *	not include parameters), \a define is the set of addresses spanned
+	 *	by the flowvar (see flow_build_vars()) (XXX along with statement
+	 *	gens), and {\a statements} is the set of all statements in the
+	 *	function (ensures the \a out set does not include any initializers in
+	 *	the code nodes).
+	 *
+	 *	All other entry node sets are initialized to empty.
+	 */
+	// kill represents the set of all statements in the function
 	kill = set_new ();
 	for (i = 0; i < graph->func->num_statements; i++)
 		set_add (kill, i);
+	// uninit
 	uninit = set_new ();
 	for (i = 0; i < graph->func->num_vars; i++) {
 		var = graph->func->vars[i];
 		set_union (uninit, var->define);// do not want alias handling here
 	}
+	/**	Any possible gens from the function code are removed from the
+	 *	\a uninit set (which becomes the \a out set of the entry node's
+	 *	reaching defs) in order to prevent them leaking into the real nodes.
+	 */
 	set_difference (uninit, kill);	// remove any gens from the function
+	// initialize the reaching defs sets in the entry node
 	graph->nodes[graph->num_nodes]->reaching_defs.out = uninit;
 	graph->nodes[graph->num_nodes]->reaching_defs.in = set_new ();
 	graph->nodes[graph->num_nodes]->reaching_defs.gen = set_new ();
@@ -555,6 +743,8 @@ flow_reaching_defs (flowgraph_t *graph)
 	set_delete (stkill);
 }
 
+/**	Update the node's \a use set from the statement's \a use set
+ */
 static void
 live_set_use (set_t *stuse, set_t *use, set_t *def)
 {
@@ -563,6 +753,8 @@ live_set_use (set_t *stuse, set_t *use, set_t *def)
 	set_union (use, stuse);
 }
 
+/**	Update the node's \a def set from the statement's \a def set
+ */
 static void
 live_set_def (set_t *stdef, set_t *use, set_t *def)
 {
@@ -1240,6 +1432,35 @@ flow_make_node (sblock_t *sblock, int id, function_t *func)
 	return node;
 }
 
+/**	Build the flow graph for the function.
+ *
+ *	In addition to the nodes create by the statement blocks, there are two
+ *	dummy blocks:
+ *
+ *	\dot
+ *	digraph flow_build_graph {
+ *		layout = dot; rankdir = TB; compound =true; nodesp = 1.0;
+ *		dummy_entry [shape=box,label="entry"];
+ *		sblock0 [label="code"]; sblock1 [label="code"];
+ *		sblock2 [label="code"]; sblock3 [label="code"];
+ *		dummy_exit [shape=box,label="exit"];
+ *		dummy_entry -> sblock0; sblock0 -> sblock1;
+ *		sblock1 -> sblock2; sblock2 -> sblock1;
+ *		sblock2 -> dummy_exit; sblock1 -> sblock3;
+ *		sblock3 -> dummy_exit;
+ *	}
+ *	\enddot
+ *
+ *	The entry block is used for detecting use of uninitialized local variables
+ *	and the exit block is used for ensuring global variables are treated as
+ *	live at function exit.
+ *
+ *	The exit block, which also is empty of statements, has its live vars
+ *	\a use set initilized to the set of global defs, which are simply numbered
+ *	by their index in the functions list of flowvars. All other exit node sets
+ *	are initialized to empty.
+ *	\f[ use_{live}=globals \f]
+ */
 static flowgraph_t *
 flow_build_graph (function_t *func)
 {
@@ -1303,3 +1524,5 @@ flow_data_flow (function_t *func)
 	flow_cleanup_dags (graph);
 	func->sblock = flow_generate (graph);
 }
+
+///@}
