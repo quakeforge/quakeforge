@@ -458,12 +458,11 @@ flow_kill_aliases (set_t *kill, flowvar_t *var, const set_t *uninit)
 	if (op->op_type == op_temp) {
 		tempop_visit_all (&op->o.tempop, 1, flow_tempop_kill_aliases_visit,
 						  tmp);
-		set_difference (tmp, uninit);
 	} else if (op->op_type == op_def) {
 		def_visit_all (op->o.def, 1, flow_def_kill_aliases_visit, tmp);
-		// don't allow aliases to kill definitions in the entry dummy block
-		set_difference (tmp, uninit);
 	}
+	// don't allow aliases to kill definitions in the entry dummy block
+	set_difference (tmp, uninit);
 	// merge the alias kills with the current def's kills
 	set_union (kill, tmp);
 }
@@ -492,8 +491,8 @@ flow_reaching_defs (flowgraph_t *graph)
 	for (i = 0; i < graph->func->num_vars; i++) {
 		var = graph->func->vars[i];
 		set_union (uninit, var->define);// do not want alias handling here
-		set_difference (uninit, kill);	// remove any gens from the function
 	}
+	set_difference (uninit, kill);	// remove any gens from the function
 	graph->nodes[graph->num_nodes]->reaching_defs.out = uninit;
 	graph->nodes[graph->num_nodes]->reaching_defs.in = set_new ();
 	graph->nodes[graph->num_nodes]->reaching_defs.gen = set_new ();
