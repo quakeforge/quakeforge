@@ -84,12 +84,6 @@ typedef struct flownode_s {
 		struct set_s *in;
 		struct set_s *out;
 	}           live_vars;
-	struct {
-		struct set_s *use;
-		struct set_s *def;
-		struct set_s *in;
-		struct set_s *out;
-	}           init_vars;
 	struct sblock_s *sblock;	///< original statement block
 	struct dag_s *dag;			///< dag for this node
 } flownode_t;
