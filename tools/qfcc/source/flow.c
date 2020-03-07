@@ -148,8 +148,8 @@ delete_graph (flowgraph_t *graph)
 		free (graph->edges);
 	if (graph->dfst)
 		set_delete (graph->dfst);
-	if (graph->dfo)
-		free (graph->dfo);
+	if (graph->depth_first)
+		free (graph->depth_first);
 	FREE (graphs, graph);
 }
 
@@ -541,7 +541,7 @@ flow_reaching_defs (flowgraph_t *graph)
 		changed = 0;
 		// flow down the graph
 		for (i = 0; i < graph->num_nodes; i++) {
-			node = graph->nodes[graph->dfo[i]];
+			node = graph->nodes[graph->depth_first[i]];
 			in = node->reaching_defs.in;
 			out = node->reaching_defs.out;
 			gen = node->reaching_defs.gen;
@@ -626,7 +626,7 @@ flow_live_vars (flowgraph_t *graph)
 		// flow UP the graph because live variable analysis uses information
 		// from a node's successors rather than its predecessors.
 		for (j = graph->num_nodes - 1; j >= 0; j--) {
-			node = graph->nodes[graph->dfo[j]];
+			node = graph->nodes[graph->depth_first[j]];
 			set_empty (tmp);
 			for (succ = set_first (node->successors); succ;
 				 succ = set_next (succ))
@@ -718,7 +718,7 @@ flow_uninitialized (flowgraph_t *graph)
 	defs = set_new ();
 
 	for (i = 0; i < graph->num_nodes; i++) {
-		node = graph->nodes[graph->dfo[i]];
+		node = graph->nodes[graph->depth_first[i]];
 		set_empty (defs);
 		// collect definitions of all variables "used" in this node. use from
 		// the live vars analysis is perfect for the job
@@ -1177,7 +1177,7 @@ df_search (flowgraph_t *graph, set_t *visited, int *i, int n)
 		}
 	}
 	node->dfn = --*i;
-	graph->dfo[node->dfn] = n;
+	graph->depth_first[node->dfn] = n;
 }
 
 static void
@@ -1190,11 +1190,11 @@ flow_build_dfst (flowgraph_t *graph)
 	set_add (visited, graph->num_nodes);
 	set_add (visited, graph->num_nodes + 1);
 
-	if (graph->dfo)
-		free (graph->dfo);
+	if (graph->depth_first)
+		free (graph->depth_first);
 	if (graph->dfst)
 		set_delete (graph->dfst);
-	graph->dfo = calloc (graph->num_nodes, sizeof (int));
+	graph->depth_first = calloc (graph->num_nodes, sizeof (int));
 	graph->dfst = set_new ();
 	i = graph->num_nodes;
 	df_search (graph, visited, &i, 0);

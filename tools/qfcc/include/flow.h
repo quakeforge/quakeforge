@@ -96,7 +96,7 @@ typedef struct flowgraph_s {
 	flowedge_t *edges;			///< array of all edges in the graph
 	int         num_edges;
 	struct set_s *dfst;			///< edges in the depth-first search tree
-	int        *dfo;			///< depth-first order of nodes
+	int        *depth_first;	///< depth-first order of nodes
 	flowloop_t *loops;			///< linked list of natural loops
 } flowgraph_t;
 
