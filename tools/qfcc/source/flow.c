@@ -579,7 +579,7 @@ flow_build_vars (function_t *func)
 /**	Add the tempop's spanned addresses to the kill set
  */
 static int
-flow_tempop_kill_aliases_visit (tempop_t *tempop, void *_kill)
+flow_tempop_kill_aliases (tempop_t *tempop, void *_kill)
 {
 	set_t      *kill = (set_t *) _kill;
 	flowvar_t  *var;
@@ -592,7 +592,7 @@ flow_tempop_kill_aliases_visit (tempop_t *tempop, void *_kill)
 /**	Add the def's spanned addresses to the kill set
  */
 static int
-flow_def_kill_aliases_visit (def_t *def, void *_kill)
+flow_def_kill_aliases (def_t *def, void *_kill)
 {
 	set_t      *kill = (set_t *) _kill;
 	flowvar_t  *var;
@@ -620,10 +620,9 @@ flow_kill_aliases (set_t *kill, flowvar_t *var, const set_t *uninit)
 	tmp = set_new ();
 	// collect the kill sets from any aliases
 	if (op->op_type == op_temp) {
-		tempop_visit_all (&op->o.tempop, 1, flow_tempop_kill_aliases_visit,
-						  tmp);
+		tempop_visit_all (&op->o.tempop, 1, flow_tempop_kill_aliases, tmp);
 	} else if (op->op_type == op_def) {
-		def_visit_all (op->o.def, 1, flow_def_kill_aliases_visit, tmp);
+		def_visit_all (op->o.def, 1, flow_def_kill_aliases, tmp);
 	}
 	// don't allow aliases to kill definitions in the entry dummy block
 	set_difference (tmp, uninit);
