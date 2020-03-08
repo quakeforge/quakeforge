@@ -99,6 +99,16 @@ new_flowvar (void)
 	return var;
 }
 
+/**	Delete a flow var
+ */
+static void
+delete_flowvar (flowvar_t *var)
+{
+	set_delete (var->use);
+	set_delete (var->define);
+	FREE (vars, var);
+}
+
 /**	Allocate a new flow loop.
  *
  *	The loop's nodes set is initialized to the empty set.
@@ -507,7 +517,16 @@ flow_build_vars (function_t *func)
 
 	// first, count .return and .param_[0-7] as they are always needed
 	for (i = 0; i < num_flow_params; i++) {
-		flow_params[i].op.o.def = param_symbol (flow_params[i].name)->s.def;
+		def_t      *def = param_symbol (flow_params[i].name)->s.def;
+		def_t      *a;
+		for (a = def->alias_defs; a; a = a->next) {
+			if (a->flowvar) {
+				delete_flowvar (a->flowvar);
+				a->flowvar = 0;
+			}
+			//free_def (def->alias_defs);
+		}
+		flow_params[i].op.o.def = def;
 		num_vars += count_operand (&flow_params[i].op);
 	}
 	// then run through the statements in the function looking for accessed
@@ -630,7 +649,9 @@ flow_kill_aliases (set_t *kill, flowvar_t *var, const set_t *uninit)
 		def_visit_all (op->o.def, 1, flow_def_kill_aliases, tmp);
 	}
 	// don't allow aliases to kill definitions in the entry dummy block
-	set_difference (tmp, uninit);
+	if (uninit) {
+		set_difference (tmp, uninit);
+	}
 	// merge the alias kills with the current def's kills
 	set_union (kill, tmp);
 }
@@ -1008,7 +1029,7 @@ static void
 flow_add_op_var (set_t *set, operand_t *op, int is_use)
 {
 	flowvar_t  *var;
-	int         ol = is_use ? 2 : 1;
+	int         ol = is_use ? 1 : 2;
 
 	if (!set)
 		return;
@@ -1016,6 +1037,10 @@ flow_add_op_var (set_t *set, operand_t *op, int is_use)
 		return;
 	set_add (set, var->number);
 
+	// FIXME XXX I think the curent implementation will have problems
+	// for the def set when assinging to an alias as right now the real
+	// var is being treated as assigned as well. Want to handle partial
+	// defs properly, but I am as yet uncertain of how.
 	if (op->op_type == op_temp) {
 		tempop_visit_all (&op->o.tempop, ol, flow_tempop_add_aliases, set);
 	} else {
@@ -1120,8 +1145,9 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 				|| strcmp (s->opcode, "<DONE>") == 0) {
 				flow_add_op_var (use, s->opa, 1);
 			} else if (strcmp (s->opcode, "<RETURN_V>") == 0) {
-				if (use)
-					set_add (use, 0);		//FIXME assumes .return location
+				if (use) {
+					flow_add_op_var (use, &flow_params[0].op, 1);
+				}
 			}
 			if (strncmp (s->opcode, "<CALL", 5) == 0) {
 				start = 0;
@@ -1137,11 +1163,22 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			}
 			if (calln >= 0) {
 				if (use) {
-					for (i = start; i < calln; i++)
-						set_add (use, i + 1);//FIXME assumes .param_N locations
+					for (i = start; i < calln; i++) {
+						flow_add_op_var (use, &flow_params[i + 1].op, 1);
+					}
 				}
-				if (kill)
-					set_add (kill, 0);		//FIXME assumes .return location
+				if (def) {
+					for (i = 0; i < num_flow_params; i++) {
+						flow_add_op_var (def, &flow_params[i].op, 0);
+					}
+				}
+				if (kill) {
+					for (i = 0; i < num_flow_params; i++) {
+						flow_kill_aliases (kill,
+										   flow_get_var (&flow_params[i].op),
+										   0);
+					}
+				}
 			}
 			if (operands) {
 				operands[1] = s->opa;
