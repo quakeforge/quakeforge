@@ -99,6 +99,7 @@ const char *qwaq_command_names[]= {
 	"mvwaddstr",
 	"waddstr",
 	"mvwaddch",
+	"waddch",
 	"wrefresh",
 	"init_pair",
 	"wbkgd",
