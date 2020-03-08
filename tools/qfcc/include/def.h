@@ -293,7 +293,7 @@ int def_size (def_t *def) __attribute__((pure));
 	function will return.
 
 	\param def		The def representing the alias cluster to visit.
-	\param overlap  If non-zero, then any defs that overlap \a def will
+	\param overlap  If non-zero, then only defs that overlap \a def will
 					be visited. If 2, then the given def must fully overlap
 					the visited def.
 	\param visit	The function to call when visiting a def. The first
