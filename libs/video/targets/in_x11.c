@@ -672,7 +672,7 @@ event_focusin (XEvent *event)
 static void
 center_pointer (void)
 {
-	XEvent      event;
+	XEvent      event = {};
 
 	event.type = MotionNotify;
 	event.xmotion.display = x_disp;
