@@ -36,6 +36,7 @@
 */
 ///@{
 
+struct def_s;
 struct ex_value_s;
 struct type_s;
 
