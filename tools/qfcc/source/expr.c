@@ -659,15 +659,23 @@ new_vector_list (expr_t *e)
 		case 3:
 			// quaternion or vector. all expressions must be compatible with
 			// a float (ie, a scalar)
-			for (t = e; t; t = t->next)
-				if (!is_scalar (get_type (t)))
+			for (t = e; t; t = t->next) {
+				if (t->type == ex_error) {
+					return t;
+				}
+				if (!is_scalar (get_type (t))) {
 					return error (t, "invalid type for vector element");
+				}
+			}
 			vec = new_expr ();
 			vec->type = ex_vector;
 			vec->e.vector.type = type;
 			vec->e.vector.list = e;
 			break;
 		case 2:
+			if (e->type == ex_error || e->next->type == ex_error) {
+				return e;
+			}
 			if (is_scalar (get_type (e)) && is_scalar (get_type (e->next))) {
 				// scalar, scalar
 				// expand [x, y] to [x, y, 0]
