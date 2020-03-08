@@ -147,7 +147,7 @@ void (int quick) scan_saves =
 			filenames[i] = str_new ();
 		loadable[i] = 0;
 		string path = sprintf ("%s%i.sav", basename, i);
-		dprint(path + "\n");
+		//dprint(path + "\n");
 		f = QFS_OpenFile (path);
 		if (!f) {
 			str_copy (filenames[i], "--- UNUSED SLOT ---");
