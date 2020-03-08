@@ -362,6 +362,12 @@ tempop_overlap (tempop_t *t1, tempop_t *t2)
 	int         size1 = type_size (t1->type);
 	int         size2 = type_size (t2->type);
 
+	if (t1->alias) {
+		offs1 += t1->alias->o.tempop.offset;
+	}
+	if (t2->alias) {
+		offs2 += t2->alias->o.tempop.offset;
+	}
 	if (offs1 <= offs2 && offs1 + size1 >= offs2 + size2)
 		return 2;	// t1 fully overlaps t2
 	if (offs1 < offs2 + size2 && offs2 < offs1 + size1)
