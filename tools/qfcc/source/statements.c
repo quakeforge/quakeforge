@@ -393,6 +393,8 @@ tempop_visit_all (tempop_t *tempop, int overlap,
 		tempop = &top->o.tempop;
 		if ((ret = visit (tempop, data)))
 			return ret;
+	} else {
+		overlap = 0;
 	}
 	for (top = tempop->alias_ops; top; top = top->next) {
 		if (top->op_type != op_temp) {

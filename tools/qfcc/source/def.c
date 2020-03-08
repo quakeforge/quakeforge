@@ -807,6 +807,8 @@ def_visit_all (def_t *def, int overlap,
 		def = def->alias;
 		if ((ret = visit (def, data)))
 			return ret;
+	} else {
+		overlap = 0;
 	}
 	for (def = def->alias_defs; def; def = def->next) {
 		if (def == start_def)
