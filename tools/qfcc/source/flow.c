@@ -541,7 +541,12 @@ flow_build_vars (function_t *func)
 		flow_analyze_statement (s, 0, 0, 0, operands);
 		for (j = 0; j < 4; j++)
 			add_operand (func, operands[j]);
-
+	}
+	// and set the use/def sets for the vars (has to be a separate pass
+	// because the allias handling reqruires the flow address to be valid
+	// (ie, not -1)
+	for (i = 0; i < func->num_statements; i++) {
+		s = func->statements[i];
 		flow_analyze_statement (s, stuse, stdef, 0, 0);
 		for (var_i = set_first (stdef); var_i; var_i = set_next (var_i)) {
 			var = func->vars[var_i->element];
@@ -977,16 +982,45 @@ flow_generate (flowgraph_t *graph)
 	return code;
 }
 
+static int
+flow_tempop_add_aliases (tempop_t *tempop, void *_set)
+{
+	set_t      *set = (set_t *) _set;
+	flowvar_t  *var;
+	var = tempop->flowvar;
+	if (var)
+		set_add (set, var->number);
+	return 0;
+}
+
+static int
+flow_def_add_aliases (def_t *def, void *_set)
+{
+	set_t      *set = (set_t *) _set;
+	flowvar_t  *var;
+	var = def->flowvar;
+	if (var)
+		set_add (set, var->number);
+	return 0;
+}
+
 static void
-flow_add_op_var (set_t *set, operand_t *op)
+flow_add_op_var (set_t *set, operand_t *op, int is_use)
 {
 	flowvar_t  *var;
+	int         ol = is_use ? 2 : 1;
 
 	if (!set)
 		return;
 	if (!(var = flow_get_var (op)))
 		return;
 	set_add (set, var->number);
+
+	if (op->op_type == op_temp) {
+		tempop_visit_all (&op->o.tempop, ol, flow_tempop_add_aliases, set);
+	} else {
+		def_visit_all (op->o.def, ol, flow_def_add_aliases, set);
+	}
 }
 
 void
@@ -1010,10 +1044,10 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 		case st_none:
 			internal_error (s->expr, "not a statement");
 		case st_expr:
-			flow_add_op_var (def, s->opc);
-			flow_add_op_var (use, s->opa);
+			flow_add_op_var (def, s->opc, 0);
+			flow_add_op_var (use, s->opa, 1);
 			if (s->opb)
-				flow_add_op_var (use, s->opb);
+				flow_add_op_var (use, s->opb, 1);
 			if (operands) {
 				operands[0] = s->opc;
 				operands[1] = s->opa;
@@ -1021,8 +1055,8 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			}
 			break;
 		case st_assign:
-			flow_add_op_var (def, s->opb);
-			flow_add_op_var (use, s->opa);
+			flow_add_op_var (def, s->opb, 0);
+			flow_add_op_var (use, s->opa, 1);
 			if (operands) {
 				operands[0] = s->opb;
 				operands[1] = s->opa;
@@ -1030,12 +1064,12 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			break;
 		case st_ptrassign:
 		case st_move:
-			flow_add_op_var (use, s->opa);
-			flow_add_op_var (use, s->opb);
+			flow_add_op_var (use, s->opa, 1);
+			flow_add_op_var (use, s->opb, 1);
 			if (!strcmp (s->opcode, "<MOVE>")) {
-				flow_add_op_var (def, s->opc);
+				flow_add_op_var (def, s->opc, 0);
 			} else if (!strcmp (s->opcode, "<MOVEP>")) {
-				flow_add_op_var (use, s->opc);
+				flow_add_op_var (use, s->opc, 0);
 				if (s->opc->op_type == op_value
 					&& s->opc->o.value->lltype == ev_pointer
 					&& s->opc->o.value->v.pointer.def) {
@@ -1044,7 +1078,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 					ex_pointer_t *ptr = &s->opc->o.value->v.pointer;
 					alias = alias_def (ptr->def, ptr->type, ptr->val);
 					op = def_operand (alias, ptr->type);
-					flow_add_op_var (def, op);
+					flow_add_op_var (def, op, 0);
 					if (operands)
 						operands[0] = op;
 					else
@@ -1055,7 +1089,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 				}
 			} else {
 				if (s->opc)
-					flow_add_op_var (use, s->opc);
+					flow_add_op_var (use, s->opc, 1);
 			}
 			if (kill) {
 				set_everything (kill);
@@ -1070,10 +1104,10 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			}
 			break;
 		case st_state:
-			flow_add_op_var (use, s->opa);
-			flow_add_op_var (use, s->opb);
+			flow_add_op_var (use, s->opa, 1);
+			flow_add_op_var (use, s->opb, 1);
 			if (s->opc)
-				flow_add_op_var (use, s->opc);
+				flow_add_op_var (use, s->opc, 1);
 			//FIXME entity members
 			if (operands) {
 				operands[1] = s->opa;
@@ -1084,7 +1118,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 		case st_func:
 			if (strcmp (s->opcode, "<RETURN>") == 0
 				|| strcmp (s->opcode, "<DONE>") == 0) {
-				flow_add_op_var (use, s->opa);
+				flow_add_op_var (use, s->opa, 1);
 			} else if (strcmp (s->opcode, "<RETURN_V>") == 0) {
 				if (use)
 					set_add (use, 0);		//FIXME assumes .return location
@@ -1092,14 +1126,14 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			if (strncmp (s->opcode, "<CALL", 5) == 0) {
 				start = 0;
 				calln = s->opcode[5] - '0';
-				flow_add_op_var (use, s->opa);
+				flow_add_op_var (use, s->opa, 1);
 			} else if (strncmp (s->opcode, "<RCALL", 6) == 0) {
 				start = 2;
 				calln = s->opcode[6] - '0';
-				flow_add_op_var (use, s->opa);
-				flow_add_op_var (use, s->opb);
+				flow_add_op_var (use, s->opa, 1);
+				flow_add_op_var (use, s->opb, 1);
 				if (s->opc)
-					flow_add_op_var (use, s->opc);
+					flow_add_op_var (use, s->opc, 1);
 			}
 			if (calln >= 0) {
 				if (use) {
@@ -1117,9 +1151,9 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			break;
 		case st_flow:
 			if (strcmp (s->opcode, "<GOTO>") != 0) {
-				flow_add_op_var (use, s->opa);
+				flow_add_op_var (use, s->opa, 1);
 				if (strcmp (s->opcode, "<JUMPB>") == 0)
-					flow_add_op_var (use, s->opb);
+					flow_add_op_var (use, s->opb, 1);
 			}
 			if (operands) {
 				operands[1] = s->opa;
