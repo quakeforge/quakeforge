@@ -32,6 +32,8 @@
 #endif
 
 #include <stdlib.h>
+#include <stdio.h>
+#include <errno.h>
 
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
@@ -60,7 +62,7 @@ open_file (const char *path, int *len)
 	QFile      *file = Qopen (path, "rbz");
 
 	if (!file) {
-		perror (path);
+		Sys_Printf ("%s\n", sys_errlist[errno]);
 		return 0;
 	}
 	*len = Qfilesize (file);
