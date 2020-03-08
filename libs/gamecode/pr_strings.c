@@ -267,7 +267,7 @@ PR_LoadStrings (progs_t *pr)
 
 	if (res->static_strings)
 		free (res->static_strings);
-	res->static_strings = malloc (count * sizeof (strref_t));
+	res->static_strings = calloc (count, sizeof (strref_t));
 	count = 0;
 	str = pr->pr_strings;
 	while (str < end) {
@@ -344,7 +344,7 @@ get_string (progs_t *pr, string_t num)
 			case str_free:
 				break;
 		}
-		PR_Error (pr, "internal string error");
+		PR_Error (pr, "internal string error: %d", __LINE__);
 	} else {
 		if (num >= pr->pr_stringsize)
 			return 0;
@@ -436,7 +436,8 @@ PR_SetReturnString (progs_t *pr, const char *s)
 			requeue_strref (res, sr);
 		} else if ((sr->type == str_return && !sr->rs_slot)
 				   || (sr->type != str_return && sr->rs_slot)) {
-			PR_Error (pr, "internal string error");
+			PR_Error (pr, "internal string error: %d %d %p", __LINE__,
+					 sr->type, sr->rs_slot);
 		}
 		return string_index (res, sr);
 	}
@@ -445,7 +446,7 @@ PR_SetReturnString (progs_t *pr, const char *s)
 	// slot is empty
 	if ((sr = res->rs_slot->strref)) {
 		if (sr->type != str_return || sr->rs_slot != res->rs_slot) {
-			PR_Error (pr, "internal string error");
+			PR_Error (pr, "internal string error: %d", __LINE__);
 		}
 		pr_strfree (pr, sr->s.string);
 	} else {
@@ -576,7 +577,7 @@ PR_FreeString (progs_t *pr, string_t str)
 				break;
 			case str_return:
 			default:
-				PR_Error (pr, "internal string error");
+				PR_Error (pr, "internal string error: %d", __LINE__);
 		}
 		free_string_ref (res, sr);
 		return;
@@ -593,7 +594,7 @@ PR_FreeTempStrings (progs_t *pr)
 	for (sr = pr->pr_xtstr; sr; sr = t) {
 		t = sr->next;
 		if (sr->type != str_temp)
-			PR_Error (pr, "internal string error");
+			PR_Error (pr, "internal string error: %d", __LINE__);
 		if (R_STRING (pr) < 0 && string_index (res, sr) == R_STRING (pr)
 			&& pr->pr_depth) {
 			prstack_t  *frame = pr->pr_stack + pr->pr_depth - 1;
