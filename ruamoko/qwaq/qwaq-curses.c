@@ -1487,7 +1487,7 @@ bi_i_TextContext__printf_ (progs_t *pr)
 }
 
 static void
-bi_i_TextContext__addch_ (progs_t *pr)
+bi_i_TextContext__vprintf_ (progs_t *pr)
 {
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	const char *fmt = P_GSTRING (pr, 2);
@@ -1497,7 +1497,7 @@ bi_i_TextContext__addch_ (progs_t *pr)
 }
 
 static void
-bi_i_TextContext__vprintf_ (progs_t *pr)
+bi_i_TextContext__addch_ (progs_t *pr)
 {
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	int         ch = P_INT (pr, 1);
