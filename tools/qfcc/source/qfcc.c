@@ -148,6 +148,9 @@ InitData (void)
 	pr.code = codespace_new ();
 	memset (codespace_newstatement (pr.code), 0, sizeof (dstatement_t));
 	pr.strings = strpool_new ();
+	if (options.code.promote_float) {
+		ReuseString ("@float_promoted@");
+	}
 	pr.num_functions = 1;
 
 	pr.num_linenos = 0;

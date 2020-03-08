@@ -203,6 +203,7 @@ code_usage (void)
 "    help                    Display this text.\n"
 "    [no-]local-merging      Merge the local variable blocks into one.\n"
 "    [no-]optimize           Perform various optimizations on the code.\n"
+"    [no-]promote-float      Promote float when passed through ...\n"
 "    [no-]short-circuit      Generate short circuit code for logical\n"
 "                            operators.\n"
 "    [no-]single-cpp         Convert progs.src to cpp input file.\n"
@@ -310,6 +311,7 @@ DecodeArgs (int argc, char **argv)
 	options.code.vector_components = -1;
 	options.code.crc = -1;
 	options.code.fast_float = true;
+	options.code.promote_float = true;
 	options.warnings.uninited_variable = true;
 	options.warnings.unused = true;
 	options.warnings.executable = true;
@@ -489,6 +491,8 @@ DecodeArgs (int argc, char **argv)
 							options.code.debug = flag;
 						} else if (!(strcasecmp (temp, "fast-float"))) {
 							options.code.fast_float = flag;
+						} else if (!(strcasecmp (temp, "promote-float"))) {
+							options.code.promote_float = flag;
 						} else if (!strcasecmp (temp, "help")) {
 							code_usage ();
 						} else if (!(strcasecmp (temp, "local-merging"))) {
@@ -716,8 +720,11 @@ DecodeArgs (int argc, char **argv)
 			options.code.local_merging = true;
 		if (options.code.vector_components == (qboolean) -1)
 			options.code.vector_components = false;
+	} else {
+		options.code.promote_float = 0;
 	}
 	if (options.code.progsversion == PROG_ID_VERSION) {
+		options.code.promote_float = 0;
 		add_cpp_def ("-D__VERSION6__=1");
 		if (options.code.crc == (qboolean) -1)
 			options.code.crc = true;

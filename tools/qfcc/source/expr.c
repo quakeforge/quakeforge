@@ -1718,9 +1718,20 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 			if (is_integer_val (e)
 				&& options.code.progsversion == PROG_ID_VERSION)
 				convert_int (e);
-			if (is_float (get_type (e))
-				&& options.code.progsversion != PROG_ID_VERSION) {
-				t = &type_double;
+			if (options.code.promote_float) {
+				if (is_float (get_type (e))) {
+					t = &type_double;
+				}
+			} else {
+				if (is_double (get_type (e))) {
+					if (!e->implicit) {
+						warning (e, "passing double into ... function");
+					}
+					if (is_constant (e)) {
+						// don't auto-demote non-constant doubles
+						t = &type_float;
+					}
+				}
 			}
 			if (is_integer_val (e) && options.warnings.vararg_integer)
 				warning (e, "passing integer constant into ... function");

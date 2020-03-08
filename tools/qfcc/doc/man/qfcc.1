@@ -296,6 +296,12 @@ older servers or 65535 in most modern servers.
 Defaults to off for traditional mode, and on for advanced mode.
 
 .TP
+.B promote\-float
+Promote float when passed to a function that takes a variable number of
+arguements. Defaults to enabled for advanced code, is forced off for
+traditional or v6only code (mostly because such code does not have doubles).
+
+.TP
 .B short\-circuit
 Generate short circuit code for logical operators (\fB&&\fP and \fB||\fP).
 For \fBA && B\fP, if \fBA\fP is false, the expression is known to be false and
