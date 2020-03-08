@@ -238,8 +238,15 @@ PR_LoadStrings (progs_t *pr)
 	char   *str = pr->pr_strings;
 	int		count = 0;
 
+	pr->float_promoted = 0;
+
 	while (str < end) {
 		count++;
+		if (*str == '@' && pr->progs->version == PROG_VERSION) {
+			if (!strcmp (str, "@float_promoted@")) {
+				pr->float_promoted = 1;
+			}
+		}
 		str += strlen (str) + 1;
 	}
 
