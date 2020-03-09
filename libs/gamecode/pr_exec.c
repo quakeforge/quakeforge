@@ -142,7 +142,9 @@ PR_PopFrame (progs_t *pr)
 	// when calling a function and the callee was another builtin that
 	// did not call a progs function, then the push strings will still be
 	// valid because PR_EnterFunction was never called
-	if (pr->pr_pushtstr) {
+	// however, not if a temp string survived: better to hold on to the push
+	// strings a little longer than lose one erroneously
+	if (!pr->pr_xtstr && pr->pr_pushtstr) {
 		pr->pr_xtstr = pr->pr_pushtstr;
 		pr->pr_pushtstr = 0;
 		PR_FreeTempStrings (pr);
