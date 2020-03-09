@@ -21,6 +21,7 @@ typedef struct Rect_s {
 //XXX will not work if point or rect point to a local variabl
 @extern int rectContainsPoint (Rect *rect, Point *point);
 @extern Rect getwrect (struct window_s *window);
+@extern Rect clipRect (Rect clipRect, Rect rect);
 #endif
 
 #endif//__qwaq_rect_h

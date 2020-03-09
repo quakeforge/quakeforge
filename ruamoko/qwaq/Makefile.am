@@ -25,7 +25,9 @@ SUFFIXES=.o .r
 
 qwaq_app_dat_src= \
 	qwaq-app.r \
+	qwaq-draw.r \
 	qwaq-group.r \
+	qwaq-rect.r \
 	qwaq-screen.r \
 	qwaq-textcontext.r \
 	qwaq-view.r \

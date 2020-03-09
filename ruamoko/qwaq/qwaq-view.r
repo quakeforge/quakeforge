@@ -2,22 +2,6 @@
 #include "qwaq-view.h"
 #include "qwaq-group.h"
 
-Rect
-makeRect (int xpos, int ypos, int xlen, int ylen)
-{
-	Rect rect = {{xpos, ypos}, {xlen, ylen}};
-	return rect;
-}
-
-int
-rectContainsPoint (Rect *rect, Point *point)
-{
-	return ((point.x >= rect.offset.x
-			 && point.x < rect.offset.x + rect.extent.width)
-			&& (point.y >= rect.offset.y
-				&& point.y < rect.offset.y + rect.extent.height));
-}
-
 @implementation View
 
 -init
