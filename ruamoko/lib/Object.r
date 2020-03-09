@@ -9,6 +9,7 @@ static void link__obj_forward (void)
 void *PR_FindGlobal (string name) = #0;	//FIXME where?
 
 void __obj_exec_class (struct obj_module *msg) = #0;
+BOOL __obj_responds_to(id obj, SEL sel) = #0;
 void (id object, int code, string fmt, ...) obj_error = #0;
 void (id object, int code, string fmt, @va_list args) obj_verror = #0;
 //obj_error_handler (objc_error_handler func) obj_set_error_handler = #0;

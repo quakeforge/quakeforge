@@ -38,7 +38,8 @@ typedef enum {
 	YES			///< a true value
 } BOOL;
 
-@extern void __obj_forward(id, SEL, ...);
+@extern void __obj_forward(id obj, SEL sel, ...);
+@extern BOOL __obj_responds_to(id obj, SEL sel);
 @extern void obj_error (id object, int code, string fmt, ...);
 @extern void obj_verror (id object, int code, string fmt, @va_list args);
 //obj_error_handler obj_set_error_handler (objc_error_handler func);
