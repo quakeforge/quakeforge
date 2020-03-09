@@ -1274,6 +1274,18 @@ string_t PR_SetReturnString(progs_t *pr, const char *s);
 */
 string_t PR_SetTempString(progs_t *pr, const char *s);
 
+/** Make a temporary memory block that will be freed when the current progs
+	stack frame is exited. The contents may be anything and a new block is
+	returned every time, and the block is in VM addressible space. To access
+	the contents of the block (for reading, writing, etc), use PR_GetString()
+	and cast the pointer as necessary.
+
+	\param pr		pointer to ::progs_t VM struct
+	\param size		size of block in bytes
+	\return			string index of the block
+*/
+string_t PR_AllocTempBlock (progs_t *pr, size_t size);
+
 /** Make a temporary progs string that is the concatenation of two C strings.
 	\param pr		pointer to ::progs_t VM struct
 	\param a		C string

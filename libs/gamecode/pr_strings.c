@@ -384,10 +384,16 @@ PR_GetMutableString (progs_t *pr, string_t num)
 	PR_RunError (pr, "Invalid string offset: %d", num);
 }
 
+static inline void *
+pr_strmalloc (progs_t *pr, size_t size)
+{
+	return PR_Zone_Malloc (pr, size);
+}
+
 static inline char *
 pr_stralloc (progs_t *pr, size_t len)
 {
-	return PR_Zone_Malloc (pr, len + 1);
+	return pr_strmalloc (pr, len + 1);
 }
 
 static inline void
@@ -505,6 +511,13 @@ PR_SetTempString (progs_t *pr, const char *s)
 	}
 
 	return pr_settempstring (pr, res, pr_strdup (pr, s));
+}
+
+VISIBLE string_t
+PR_AllocTempBlock (progs_t *pr, size_t size)
+{
+	prstr_resources_t *res = pr->pr_string_resources;
+	return pr_settempstring (pr, res, pr_strmalloc (pr, size));
 }
 
 VISIBLE string_t
