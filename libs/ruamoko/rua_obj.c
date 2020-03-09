@@ -76,6 +76,8 @@ typedef struct probj_resources_s {
 	string_t   *selector_names;
 	PR_RESMAP (dtable_t) dtables;
 	func_t      obj_forward;
+	pr_sel_t   *forward_selector;
+	dstring_t  *msg;
 	hashtab_t  *selector_hash;
 	hashtab_t  *classes;
 	hashtab_t  *protocols;
@@ -491,7 +493,6 @@ sel_register_typed_name (probj_t *probj, const char *name, const char *types,
 	int			is_new = 0;
 	obj_list   *l;
 
-	Sys_MaskPrintf (SYS_RUA_OBJ, "    Registering SEL %s %s\n", name, types);
 	index = (intptr_t) Hash_Find (probj->selector_hash, name);
 	if (index) {
 		for (l = probj->selector_sels[index]; l; l = l->next) {
@@ -513,6 +514,8 @@ sel_register_typed_name (probj_t *probj, const char *name, const char *types,
 			}
 		}
 	} else {
+		Sys_MaskPrintf (SYS_RUA_OBJ, "    Registering SEL %s %s\n",
+						name, types);
 		index = add_sel_name (probj, name);
 		is_new = 1;
 	}
@@ -933,6 +936,15 @@ obj_install_dispatch_table_for_class (probj_t *probj, pr_class_t *class)
 											  class->methods));
 }
 
+static inline dtable_t *
+obj_check_dtable_installed (probj_t *probj, pr_class_t *class)
+{
+	if (!class->dtable) {
+		obj_install_dispatch_table_for_class (probj, class);
+	}
+	return get_dtable (probj, __FUNCTION__, class->dtable);
+}
+
 static func_t
 get_imp (probj_t *probj, pr_class_t *class, pr_sel_t *sel)
 {
@@ -953,6 +965,23 @@ get_imp (probj_t *probj, pr_class_t *class, pr_sel_t *sel)
 		}
 	}
 	return imp;
+}
+
+static int
+obj_reponds_to (probj_t *probj, pr_id_t *obj, pr_sel_t *sel)
+{
+	progs_t    *pr = probj->pr;
+	pr_class_t *class;
+	dtable_t   *dtable;
+	func_t      imp = 0;
+
+	class = &G_STRUCT (pr, pr_class_t, obj->class_pointer);
+	dtable = obj_check_dtable_installed (probj, class);
+
+	if (sel->sel_id < dtable->size) {
+		imp = dtable->imp[sel->sel_id];
+	}
+	return imp != 0;
 }
 
 static func_t
@@ -1213,11 +1242,54 @@ static void
 rua___obj_forward (progs_t *pr)
 {
 	probj_t    *probj = pr->pr_objective_resources;
-	pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
-	pr_sel_t   *op = &P_STRUCT (pr, pr_sel_t, 1);
-	PR_RunError (pr, "seriously, dude, %s does not respond to %s",
-				 PR_GetString (pr, object_get_class_name (probj, receiver)),
-				 PR_GetString (pr, probj->selector_names[op->sel_id]));
+	pr_id_t    *obj = &P_STRUCT (pr, pr_id_t, 0);
+	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 1);
+	pr_sel_t   *fwd_sel = probj->forward_selector;
+	pr_sel_t   *err_sel;
+	pr_class_t *class =&G_STRUCT (pr, pr_class_t, obj->class_pointer);
+	func_t      imp;
+
+	if (!fwd_sel) {
+		//FIXME sel_register_typed_name is really not the way to go about
+		//looking for a selector by name
+		fwd_sel = sel_register_typed_name (probj, "forward::", "", 0);
+		probj->forward_selector = fwd_sel;
+	}
+	if (obj_reponds_to (probj, obj, fwd_sel)) {
+		imp = get_imp (probj, class, fwd_sel);
+		PR_CallFunction (pr, imp);
+		return;
+	}
+	//FIXME ditto
+	err_sel = sel_register_typed_name (probj, "doesNotRecognize:", "", 0);
+	if (obj_reponds_to (probj, obj, err_sel)) {
+		imp = get_imp (probj, class, err_sel);
+		PR_RESET_PARAMS (pr);
+		P_POINTER (pr, 0) = PR_SetPointer (pr, obj);
+		P_POINTER (pr, 1) = PR_SetPointer (pr, err_sel);
+		P_POINTER (pr, 2) = PR_SetPointer (pr, sel);
+		PR_CallFunction (pr, imp);
+		return;
+	}
+
+	dsprintf (probj->msg, "(%s) %s does not recognize %s",
+			  PR_CLS_ISMETA (class) ? "class" : "instance",
+			  PR_GetString (pr, class->name),
+			  PR_GetString (pr, probj->selector_names[sel->sel_id]));
+
+	//FIXME ditto
+	err_sel = sel_register_typed_name (probj, "error:", "", 0);
+	if (obj_reponds_to (probj, obj, err_sel)) {
+		imp = get_imp (probj, class, err_sel);
+		PR_RESET_PARAMS (pr);
+		P_POINTER (pr, 0) = PR_SetPointer (pr, obj);
+		P_POINTER (pr, 1) = PR_SetPointer (pr, err_sel);
+		P_POINTER (pr, 2) = PR_SetTempString (pr, probj->msg->str);
+		PR_CallFunction (pr, imp);
+		return;
+	}
+
+	PR_RunError (pr, "%s", probj->msg->str);
 }
 
 static void
@@ -2094,6 +2166,7 @@ RUA_Obj_Init (progs_t *pr, int secure)
 	probj->classes = Hash_NewTable (1021, class_get_key, 0, probj);
 	probj->protocols = Hash_NewTable (1021, protocol_get_key, 0, probj);
 	probj->load_methods = Hash_NewTable (1021, 0, 0, probj);
+	probj->msg = dstring_newstr();
 	Hash_SetHashCompare (probj->load_methods, load_methods_get_hash,
 						 load_methods_compare);
 
