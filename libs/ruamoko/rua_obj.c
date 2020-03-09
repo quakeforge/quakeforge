@@ -1908,43 +1908,6 @@ rua_obj_init_runtime (progs_t *pr)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_def_t   *def;
-	unsigned    i;
-
-	if (!probj->selector_hash)
-		probj->selector_hash = Hash_NewTable (1021, selector_get_key, 0,
-											  probj);
-	else
-		Hash_FlushTable (probj->selector_hash);
-	probj->selector_index = 0;
-	for (i = 0; i < probj->selector_index_max; i++) {
-		obj_list_free (probj->selector_sels[i]);
-		probj->selector_sels[i] = 0;
-		probj->selector_names[i] = 0;
-	}
-
-	if (!probj->classes)
-		probj->classes = Hash_NewTable (1021, class_get_key, 0, probj);
-	else
-		Hash_FlushTable (probj->classes);
-
-	if (!probj->protocols)
-		probj->protocols = Hash_NewTable (1021, protocol_get_key, 0, probj);
-	else
-		Hash_FlushTable (probj->protocols);
-
-	if (!probj->load_methods) {
-		probj->load_methods = Hash_NewTable (1021, 0, 0, probj);
-		Hash_SetHashCompare (probj->load_methods, load_methods_get_hash,
-							 load_methods_compare);
-	} else {
-		Hash_FlushTable (probj->load_methods);
-	}
-
-	probj->unresolved_classes = 0;
-	probj->unclaimed_categories = 0;
-	probj->unclaimed_proto_list = 0;
-	probj->module_list = 0;
-	probj->class_tree_list = 0;
 
 	if ((def = PR_FindField (pr, ".this")))
 		pr->fields.this = def->ofs;
@@ -1956,15 +1919,50 @@ rua_obj_init_runtime (progs_t *pr)
 static void
 rua_obj_cleanup (progs_t *pr, void *data)
 {
+	unsigned    i;
+
 	__auto_type probj = (probj_t *) data;
 	pr->pr_objective_resources = probj;
+
+	Hash_FlushTable (probj->selector_hash);
+	probj->selector_index = 0;
+	for (i = 0; i < probj->selector_index_max; i++) {
+		obj_list_free (probj->selector_sels[i]);
+		probj->selector_sels[i] = 0;
+		probj->selector_names[i] = 0;
+	}
+
+	for (i = 0; i < probj->dtables._size; i++) {
+		dtable_t   *dtable = dtable_get (probj, i);
+		if (!dtable->imp) {
+			break;
+		}
+		free (dtable->imp);
+	}
+	dtable_reset (probj);
+
+	Hash_FlushTable (probj->classes);
+	Hash_FlushTable (probj->protocols);
+	Hash_FlushTable (probj->load_methods);
+	probj->unresolved_classes = 0;
+	probj->unclaimed_categories = 0;
+	probj->unclaimed_proto_list = 0;
+	probj->module_list = 0;
+	probj->class_tree_list = 0;
 }
 
 void
 RUA_Obj_Init (progs_t *pr, int secure)
 {
 	probj_t    *probj = calloc (1, sizeof (*probj));
+
 	probj->pr = pr;
+	probj->selector_hash = Hash_NewTable (1021, selector_get_key, 0, probj);
+	probj->classes = Hash_NewTable (1021, class_get_key, 0, probj);
+	probj->protocols = Hash_NewTable (1021, protocol_get_key, 0, probj);
+	probj->load_methods = Hash_NewTable (1021, 0, 0, probj);
+	Hash_SetHashCompare (probj->load_methods, load_methods_get_hash,
+						 load_methods_compare);
 
 	PR_Resources_Register (pr, "RUA_ObjectiveQuakeC", probj, rua_obj_cleanup);
 
