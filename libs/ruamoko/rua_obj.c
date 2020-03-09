@@ -1386,22 +1386,41 @@ static void
 rua_obj_msg_sendv (progs_t *pr)
 {
 	probj_t    *probj = pr->pr_objective_resources;
+	pointer_t   obj = P_POINTER (pr, 0);
 	pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
+	pointer_t   sel = P_POINTER (pr, 1);
 	pr_sel_t   *op = &P_STRUCT (pr, pr_sel_t, 1);
-	pr_va_list_t *args = (pr_va_list_t *) &P_POINTER (pr, 2);
-	pr_type_t  *params = G_GPOINTER (pr, args->list);
-	int         count = args->count;
 	func_t      imp = obj_msg_lookup (probj, receiver, op);
 
-	count = bound (0, count, 6);
-	if (count && pr_boundscheck->int_val)
+	__auto_type args = &P_PACKED (pr, pr_va_list_t, 2);
+	int         count = args->count;
+	pr_type_t  *params = G_GPOINTER (pr, args->list);
+
+	if (count < 2 || count > MAX_PARMS) {
+		PR_RunError (pr, "bad args count in obj_msg_sendv: %d", count);
+	}
+	if (pr_boundscheck->int_val) {
 		PR_BoundsCheckSize (pr, args->list, count * pr->pr_param_size);
-	if (!imp)
+	}
+
+	if (!imp) {
 		PR_RunError (pr, "%s does not respond to %s",
 					 PR_GetString (pr, object_get_class_name (probj, receiver)),
 					 PR_GetString (pr, probj->selector_names[op->sel_id]));
-	if (count)
-		memcpy (pr->pr_params[2], params, count * 4 * pr->pr_param_size);
+	}
+
+	pr->pr_argc = count;
+	// skip over the first two parameters because receiver and op will
+	// replace them
+	count -= 2;
+	params += 2 * pr->pr_param_size;
+	PR_RESET_PARAMS (pr);
+	P_POINTER (pr, 0) = obj;
+	P_POINTER (pr, 1) = sel;
+	if (count) {
+		memcpy (&P_INT (pr, 2), params,
+				count * sizeof (pr_type_t) * pr->pr_param_size);
+	}
 	PR_CallFunction (pr, imp);
 }
 
