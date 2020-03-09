@@ -733,6 +733,7 @@ get_event (qwaq_resources_t *res, qwaq_event_t *event)
 		}
 		return 1;
 	}
+	event->what = qe_none;
 	return 0;
 }
 
