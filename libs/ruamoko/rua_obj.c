@@ -1260,7 +1260,8 @@ rua___obj_forward (progs_t *pr)
 		// forward:(SEL) sel :(@va_list) args
 		// args is full param list
 		//FIXME oh for a stack
-		size_t      size = pr->pr_argc * pr->pr_param_size * sizeof(pr_type_t);
+		size_t      parm_size = pr->pr_param_size * sizeof(pr_type_t);
+		size_t      size = pr->pr_argc * parm_size;
 		string_t    args_block = PR_AllocTempBlock (pr, size);
 
 		int         argc = pr->pr_argc;
@@ -1268,7 +1269,7 @@ rua___obj_forward (progs_t *pr)
 		// can't memcpy all params because 0 and 1 could be anywhere
 		memcpy (argv + 0, &P_INT (pr, 0), 4 * sizeof (pr_type_t));
 		memcpy (argv + 4, &P_INT (pr, 1), 4 * sizeof (pr_type_t));
-		memcpy (argv + 8, &P_INT (pr, 2), (argc - 2) * sizeof (pr_type_t));
+		memcpy (argv + 8, &P_INT (pr, 2), (argc - 2) * parm_size);
 
 		PR_RESET_PARAMS (pr);
 		P_POINTER (pr, 0) = PR_SetPointer (pr, obj);
