@@ -1313,6 +1313,16 @@ rua___obj_forward (progs_t *pr)
 }
 
 static void
+rua___obj_responds_to (progs_t *pr)
+{
+	probj_t    *probj = pr->pr_objective_resources;
+	pr_id_t    *obj = &P_STRUCT (pr, pr_id_t, 0);
+	pr_sel_t   *sel = &P_STRUCT (pr, pr_sel_t, 1);
+
+	R_INT (pr) = obj_reponds_to (probj, obj, sel);
+}
+
+static void
 rua_obj_error (progs_t *pr)
 {
 	probj_t    *probj = pr->pr_objective_resources;
@@ -2032,6 +2042,7 @@ rua_PR_FindGlobal (progs_t *pr)
 static builtin_t obj_methods [] = {
 	{"__obj_exec_class",			rua___obj_exec_class,			-1},
 	{"__obj_forward",				rua___obj_forward,				-1},
+	{"__obj_responds_to",			rua___obj_responds_to,			-1},
 
 	{"obj_error",					rua_obj_error,					-1},
 	{"obj_verror",					rua_obj_verror,					-1},
