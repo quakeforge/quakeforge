@@ -1491,6 +1491,8 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 	Any memory allocated to the resource must be freed before freeing the
 	resource.
 
+	A reset resource map is guaranteed to allocate elements sequentially.
+
 	\param type		The type of the resource. Must match the \c type parameter
 					used for PR_RESMAP.
 	\param map		The resource map.
@@ -1505,6 +1507,8 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 			*(type **) &map._free[j] = &map._free[j + 1];	\
 		if (i < map._size - 1)								\
 			*(type **) &map._free[j] = &map._map[i + 1][0];	\
+		else												\
+			*(type **) &map._free[j] = 0;					\
 	}														\
 	map._free = map._map[0];
 
