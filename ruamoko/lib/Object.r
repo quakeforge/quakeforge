@@ -1,6 +1,11 @@
 #include <Object.h>
 #include <AutoreleasePool.h>
 
+static void link__obj_forward (void)
+{
+	__obj_forward (nil, nil);
+}
+
 void *PR_FindGlobal (string name) = #0;	//FIXME where?
 
 void __obj_exec_class (struct obj_module *msg) = #0;

@@ -1210,6 +1210,17 @@ rua___obj_exec_class (progs_t *pr)
 }
 
 static void
+rua___obj_forward (progs_t *pr)
+{
+	probj_t    *probj = pr->pr_objective_resources;
+	pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
+	pr_sel_t   *op = &P_STRUCT (pr, pr_sel_t, 1);
+	PR_RunError (pr, "seriously, dude, %s does not respond to %s",
+				 PR_GetString (pr, object_get_class_name (probj, receiver)),
+				 PR_GetString (pr, probj->selector_names[op->sel_id]));
+}
+
+static void
 rua_obj_error (progs_t *pr)
 {
 	probj_t    *probj = pr->pr_objective_resources;
@@ -1928,6 +1939,7 @@ rua_PR_FindGlobal (progs_t *pr)
 
 static builtin_t obj_methods [] = {
 	{"__obj_exec_class",			rua___obj_exec_class,			-1},
+	{"__obj_forward",				rua___obj_forward,				-1},
 
 	{"obj_error",					rua_obj_error,					-1},
 	{"obj_verror",					rua_obj_verror,					-1},

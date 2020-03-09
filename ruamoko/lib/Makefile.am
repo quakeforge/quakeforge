@@ -37,6 +37,7 @@ r_depfiles_remade=
 libr_a_SOURCES=\
 	cbuf.r cmd.r cvar.r hash.r msgbuf.r plist.r qfile.r qfs.r script.r \
 	sound.r string.r math.r types.r \
+	obj_forward.r \
 	Object.r Protocol.r \
 	AutoreleasePool.r Array.r Array+Private.r Entity.r PropertyList.r Set.r
 libr_a_obj=$(libr_a_SOURCES:.r=.o)
