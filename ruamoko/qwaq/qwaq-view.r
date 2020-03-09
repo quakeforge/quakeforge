@@ -89,24 +89,20 @@ updateScreenCursor (View *view)
 	return &rect;
 }
 
-- (void) printf: (string) fmt, ...
+- (void) forward: (SEL) sel : (@va_list) args
 {
-	[textContext vprintf: fmt, @args];
-}
-
-- (void) vprintf: (string) fmt, @va_list args
-{
-	[textContext vprintf: fmt, args];
+	if (!textContext) {
+		return;
+	}
+	if (!__obj_responds_to (textContext, sel)) {
+		[self error: "no implementation for %s", sel_get_name (sel)];
+	}
+	obj_msg_sendv (textContext, sel, args);
 }
 
 - (void) refresh
 {
 	[textContext refresh];
-}
-
-- (void) addch: (int) ch
-{
-	[textContext addch:ch];
 }
 
 - (void) mvprintf: (Point) pos, string fmt, ...

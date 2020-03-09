@@ -59,12 +59,16 @@ enum {
 -redraw;
 
 - (void) refresh;
-- (void) printf: (string) fmt, ...;
-- (void) vprintf: (string) fmt, @va_list args;
-- (void) addch: (int) ch;
 - (void) mvprintf: (Point) pos, string fmt, ...;
 - (void) mvvprintf: (Point) pos, string fmt, @va_list args;
 - (void) mvaddch: (Point) pos, int ch;
+@end
+
+//These are forwarded (FIXME make a protocol)
+@interface View (TextContext)
+- (void) printf: (string) fmt, ...;
+- (void) vprintf: (string) fmt, @va_list args;
+- (void) addch: (int) ch;
 @end
 
 #endif//__qwaq_view_h
