@@ -1276,6 +1276,7 @@ rua___obj_forward (progs_t *pr)
 		P_POINTER (pr, 2) = PR_SetPointer (pr, sel);
 		P_PACKED  (pr, pr_va_list_t, 3).count = argc;
 		P_PACKED  (pr, pr_va_list_t, 3).list = PR_SetPointer (pr, argv);
+		PR_PushTempString (pr, args_block);
 		PR_CallFunction (pr, imp);
 		return;
 	}
