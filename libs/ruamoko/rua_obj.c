@@ -56,10 +56,17 @@
 #include "compat.h"
 #include "rua_internal.h"
 
+#define always_inline inline __attribute__((__always_inline__))
+
 typedef struct obj_list_s {
 	struct obj_list_s *next;
 	void       *data;
 } obj_list;
+
+typedef struct dtable_s {
+	size_t      size;
+	func_t     *imp;
+} dtable_t;
 
 typedef struct probj_resources_s {
 	progs_t    *pr;
@@ -67,6 +74,8 @@ typedef struct probj_resources_s {
 	unsigned    selector_index_max;
 	obj_list  **selector_sels;
 	string_t   *selector_names;
+	PR_RESMAP (dtable_t) dtables;
+	func_t      obj_forward;
 	hashtab_t  *selector_hash;
 	hashtab_t  *classes;
 	hashtab_t  *protocols;
@@ -78,6 +87,41 @@ typedef struct probj_resources_s {
 	obj_list   *module_list;
 	obj_list   *class_tree_list;
 } probj_t;
+
+static dtable_t *
+dtable_new (probj_t *probj)
+{
+	PR_RESNEW (dtable_t, probj->dtables);
+}
+
+static void
+dtable_reset (probj_t *probj)
+{
+	PR_RESRESET (dtable_t, probj->dtables);
+}
+
+static inline dtable_t *
+dtable_get (probj_t *probj, int index)
+{
+	PR_RESGET (probj->dtables, index);
+}
+
+static inline int
+dtable_index (probj_t *probj, dtable_t *dtable)
+{
+	PR_RESINDEX (probj->dtables, dtable);
+}
+
+static always_inline dtable_t * __attribute__((pure))
+get_dtable (probj_t *probj, const char *name, int index)
+{
+	dtable_t   *dtable = dtable_get (probj, index);
+
+	if (!dtable) {
+		PR_RunError (probj->pr, "invalid dtable index in %s", name);
+	}
+	return dtable;
+}
 
 static obj_list *obj_list_free_list;
 
@@ -832,12 +876,83 @@ obj_send_initialize (probj_t *probj, pr_class_t *class)
 	}
 }
 
+static void
+obj_install_methods_in_dtable (probj_t *probj, pr_class_t *class,
+							   pr_method_list_t *method_list)
+{
+	progs_t    *pr = probj->pr;
+	dtable_t   *dtable;
+
+	if (!method_list) {
+		return;
+	}
+	if (method_list->method_next) {
+		obj_install_methods_in_dtable (probj, class,
+									   &G_STRUCT (pr, pr_method_list_t,
+												  method_list->method_next));
+	}
+
+	dtable = get_dtable (probj, __FUNCTION__, class->dtable);
+	for (int i = 0; i < method_list->method_count; i++) {
+		pr_method_t *method = &method_list->method_list[i];
+		pr_sel_t   *sel = &G_STRUCT (pr, pr_sel_t, method->method_name);
+		if (sel->sel_id < dtable->size) {
+			dtable->imp[sel->sel_id] = method->method_imp;
+		}
+	}
+}
+
+static void
+obj_install_dispatch_table_for_class (probj_t *probj, pr_class_t *class)
+{
+	progs_t    *pr = probj->pr;
+	pr_class_t *super = &G_STRUCT (pr, pr_class_t, class->super_class);
+	dtable_t   *dtable;
+
+	Sys_MaskPrintf (SYS_RUA_OBJ, "    install dispatch for class %s %x %d\n",
+					PR_GetString (pr, class->name),
+					class->methods,
+					PR_CLS_ISMETA(class));
+
+	if (super && !super->dtable) {
+		obj_install_dispatch_table_for_class (probj, super);
+	}
+
+	dtable = dtable_new (probj);
+	class->dtable = dtable_index (probj, dtable);
+	dtable->size = probj->selector_index + 1;
+	dtable->imp = calloc (dtable->size, sizeof (func_t));
+	if (super) {
+		dtable_t   *super_dtable = get_dtable (probj, __FUNCTION__,
+											   super->dtable);
+		memcpy (dtable->imp, super_dtable->imp,
+				super_dtable->size * sizeof (*dtable->imp));
+	}
+	obj_install_methods_in_dtable (probj, class,
+								   &G_STRUCT (pr, pr_method_list_t,
+											  class->methods));
+}
+
 static func_t
 get_imp (probj_t *probj, pr_class_t *class, pr_sel_t *sel)
 {
-	pr_method_t *method = obj_find_message (probj, class, sel);
+	func_t     imp = 0;
 
-	return method ? method->method_imp : 0;
+	if (class->dtable) {
+		dtable_t   *dtable = get_dtable (probj, __FUNCTION__, class->dtable);
+		if (sel->sel_id < dtable->size) {
+			imp = dtable->imp[sel->sel_id];
+		}
+	}
+	if (!imp) {
+		if (!class->dtable) {
+			obj_install_dispatch_table_for_class (probj, class);
+			imp = get_imp (probj, class, sel);
+		} else {
+			imp = probj->obj_forward;
+		}
+	}
+	return imp;
 }
 
 static func_t
@@ -1908,9 +2023,15 @@ rua_obj_init_runtime (progs_t *pr)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_def_t   *def;
+	dfunction_t *obj_forward;
 
 	if ((def = PR_FindField (pr, ".this")))
 		pr->fields.this = def->ofs;
+
+	probj->obj_forward = 0;
+	if ((obj_forward = PR_FindFunction (pr, "__obj_forward"))) {
+		probj->obj_forward = (intptr_t) (obj_forward - pr->pr_functions);
+	}
 
 	PR_AddLoadFinishFunc (pr, rua_init_finish);
 	return 1;
