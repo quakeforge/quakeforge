@@ -123,7 +123,8 @@ PR_PushFrame (progs_t *pr)
 	frame->f    = pr->pr_xfunction;
 	frame->tstr = pr->pr_xtstr;
 
-	pr->pr_xtstr = 0;
+	pr->pr_xtstr = pr->pr_pushtstr;
+	pr->pr_pushtstr = 0;
 	pr->pr_xfunction = 0;
 }
 
@@ -137,6 +138,15 @@ PR_PopFrame (progs_t *pr)
 
 	if (pr->pr_xtstr)
 		PR_FreeTempStrings (pr);
+	// normally, this won't happen, but if a builtin pushed a temp string
+	// when calling a function and the callee was another builtin that
+	// did not call a progs function, then the push strings will still be
+	// valid because PR_EnterFunction was never called
+	if (pr->pr_pushtstr) {
+		pr->pr_xtstr = pr->pr_pushtstr;
+		pr->pr_pushtstr = 0;
+		PR_FreeTempStrings (pr);
+	}
 
 	// up stack
 	frame = pr->pr_stack + --pr->pr_depth;

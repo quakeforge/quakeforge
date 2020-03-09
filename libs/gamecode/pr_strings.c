@@ -520,6 +520,27 @@ PR_AllocTempBlock (progs_t *pr, size_t size)
 	return pr_settempstring (pr, res, pr_strmalloc (pr, size));
 }
 
+VISIBLE void
+PR_PushTempString (progs_t *pr, string_t num)
+{
+	prstr_resources_t *res = pr->pr_string_resources;
+	strref_t   *ref = get_strref (res, num);
+	strref_t  **temp_ref;
+
+	if (!ref || ref->type != str_temp) {
+		PR_Error (pr, "attempt to push a non-temp string");
+	}
+	for (temp_ref = &pr->pr_xtstr; *temp_ref; temp_ref = &(*temp_ref)->next) {
+		if (*temp_ref == ref) {
+			*temp_ref = ref->next;
+			ref->next = pr->pr_pushtstr;
+			pr->pr_pushtstr = ref;
+			return;
+		}
+	}
+	PR_Error (pr, "attempt to push stale temp string");
+}
+
 VISIBLE string_t
 PR_SetDynamicString (progs_t *pr, const char *s)
 {

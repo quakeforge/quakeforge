@@ -1286,6 +1286,17 @@ string_t PR_SetTempString(progs_t *pr, const char *s);
 */
 string_t PR_AllocTempBlock (progs_t *pr, size_t size);
 
+/**	Push a temporary string to the callee stack frame
+
+	This is for when the temp string needs to be freed when the called function
+	returns rather than the calling function. It is an error to push a non-temp
+	string.
+
+	\param pr		pointer to ::progs_t VM struct
+	\param num		string index of the temp string
+*/
+void PR_PushTempString (progs_t *pr, string_t num);
+
 /** Make a temporary progs string that is the concatenation of two C strings.
 	\param pr		pointer to ::progs_t VM struct
 	\param a		C string
@@ -1733,6 +1744,7 @@ struct progs_s {
 	///@{
 	struct prstr_resources_s *pr_string_resources;
 	strref_t   *pr_xtstr;
+	strref_t   *pr_pushtstr;
 	int         float_promoted;	///< for PR_Sprintf
 	///@}
 
