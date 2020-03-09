@@ -1260,7 +1260,7 @@ rua___obj_forward (progs_t *pr)
 		// forward:(SEL) sel :(@va_list) args
 		// args is full param list
 		//FIXME oh for a stack
-		size_t      size = pr->pr_argc * sizeof (pr_type_t);
+		size_t      size = pr->pr_argc * pr->pr_param_size * sizeof(pr_type_t);
 		string_t    args_block = PR_AllocTempBlock (pr, size);
 
 		int         argc = pr->pr_argc;
