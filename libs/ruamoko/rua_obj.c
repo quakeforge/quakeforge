@@ -1257,6 +1257,25 @@ rua___obj_forward (progs_t *pr)
 	}
 	if (obj_reponds_to (probj, obj, fwd_sel)) {
 		imp = get_imp (probj, class, fwd_sel);
+		// forward:(SEL) sel :(@va_list) args
+		// args is full param list
+		//FIXME oh for a stack
+		size_t      size = pr->pr_argc * sizeof (pr_type_t);
+		string_t    args_block = PR_AllocTempBlock (pr, size);
+
+		int         argc = pr->pr_argc;
+		__auto_type argv = (pr_type_t *) PR_GetString (pr, args_block);
+		// can't memcpy all params because 0 and 1 could be anywhere
+		memcpy (argv + 0, &P_INT (pr, 0), 4 * sizeof (pr_type_t));
+		memcpy (argv + 4, &P_INT (pr, 1), 4 * sizeof (pr_type_t));
+		memcpy (argv + 8, &P_INT (pr, 2), (argc - 2) * sizeof (pr_type_t));
+
+		PR_RESET_PARAMS (pr);
+		P_POINTER (pr, 0) = PR_SetPointer (pr, obj);
+		P_POINTER (pr, 1) = PR_SetPointer (pr, fwd_sel);
+		P_POINTER (pr, 2) = PR_SetPointer (pr, sel);
+		P_PACKED  (pr, pr_va_list_t, 3).count = argc;
+		P_PACKED  (pr, pr_va_list_t, 3).list = PR_SetPointer (pr, argv);
 		PR_CallFunction (pr, imp);
 		return;
 	}
