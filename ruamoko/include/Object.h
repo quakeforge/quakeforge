@@ -24,6 +24,10 @@
 - (id) performSelector: (SEL)aSelector
 			withObject: (void *)anObject
 			withObject: (void *)anotherObject;
+// void return does not touch the actual return value (effectively retval)
+// so if the target returns a value, and the forwarding method simply returns
+// (and is void), the vallue will get out to the caller
+- (void) performv: (SEL) sel : (@va_list) args;
 - (BOOL) respondsToSelector: (SEL)aSelector;
 - (BOOL) conformsToProtocol: (Protocol *)aProtocol;
 

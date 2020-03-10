@@ -280,6 +280,11 @@ BOOL (id object) object_is_meta_class = #0;
 	return msg (self, aSelector, anObject, anotherObject);
 }
 
+- (void) performv: (SEL) sel : (@va_list) args
+{
+	obj_msg_sendv (self, sel, args);
+}
+
 - (void) doesNotRecognizeSelector: (SEL)aSelector
 {
 	[self error: "%s does not recognize %s",
