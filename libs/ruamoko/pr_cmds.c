@@ -583,6 +583,25 @@ PF_sprintf (progs_t *pr)
 	dstring_delete (dstr);
 }
 
+static void
+PF_vsprintf (progs_t *pr)
+{
+	const char *fmt = P_GSTRING (pr, 0);
+	__auto_type args = &P_PACKED (pr, pr_va_list_t, 1);
+	pr_type_t  *list_start = PR_GetPointer (pr, args->list);
+	pr_type_t **list = alloca (args->count * sizeof (*list));
+	dstring_t  *dstr;
+
+	for (int i = 0; i < args->count; i++) {
+		list[i] = list_start + i * pr->pr_param_size;
+	}
+
+	dstr = dstring_newstr ();
+	PR_Sprintf (pr, dstr, "PF_vsprintf", fmt, args->count, list);
+	RETURN_STRING (pr, dstr->str);
+	dstring_delete (dstr);
+}
+
 /*
 	string () gametype
 */
@@ -643,6 +662,7 @@ static builtin_t builtins[] = {
 	{"strlen",			PF_strlen,			QF 100},
 	{"charcount",		PF_charcount,		QF 101},
 	{"sprintf",			PF_sprintf,			QF 109},
+	{"vsprintf",		PF_vsprintf,		-1},
 	{"ftoi",			PF_ftoi,			QF 110},
 	{"itof",			PF_itof,			QF 111},
 	{"itos",			PF_itos,			QF 112},

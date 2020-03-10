@@ -7,6 +7,7 @@
 @extern float strlen (string s);
 @extern float charcount (string goal, string s);
 @extern string sprintf (string fmt, ...);
+@extern string vsprintf (string fmt, @va_list args);
 @extern string itos (int i);
 @extern int stoi (string s);
 @extern vector stov (string s);
