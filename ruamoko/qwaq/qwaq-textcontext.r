@@ -1,3 +1,4 @@
+#include "qwaq-draw.h"
 #include "qwaq-textcontext.h"
 
 @implementation TextContext
@@ -57,6 +58,39 @@ static TextContext *screen;
 -(window_t) window
 {
 	return window;
+}
+
+- blitFromBuffer: (DrawBuffer *) srcBuffer to: (Point) pos from: (Rect) rect
+{
+	Extent srcSize = [srcBuffer size];
+	Rect r = { {}, srcSize };
+	Rect t = { pos, rect.extent };
+
+	t = clipRect (r, t);
+	if (t.extent.width < 0 || t.extent.height < 0) {
+		return self;
+	}
+
+	rect.offset.x += t.offset.x - pos.x;
+	rect.offset.y += t.offset.y - pos.y;
+	rect.extent = t.extent;
+	pos = t.offset;
+
+	r.offset = nil;
+	r.extent = size;
+
+	rect = clipRect (r, rect);
+	if (rect.extent.width < 0 || rect.extent.height < 0) {
+		return self;
+	}
+
+	int        *src = [srcBuffer buffer]
+					  + rect.offset.y * srcSize.width + rect.offset.x;
+	for (int y = 0; y < rect.extent.height; y++) {
+		mvwblit_line (window, pos.x, y + pos.y, src, rect.extent.width);
+		src += srcSize.width;
+	}
+	return self;
 }
 
 - (void) mvprintf: (Point) pos, string fmt, ... = #0;

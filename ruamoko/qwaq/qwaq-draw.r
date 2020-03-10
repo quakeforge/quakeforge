@@ -18,6 +18,16 @@
 	return self;
 }
 
+- (Extent) size
+{
+	return size;
+}
+
+- (int *) buffer
+{
+	return buffer;
+}
+
 - blitFromBuffer: (DrawBuffer *) srcBuffer to: (Point) pos from: (Rect) rect
 {
 	Extent srcSize = srcBuffer.size;

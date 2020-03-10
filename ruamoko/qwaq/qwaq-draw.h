@@ -13,6 +13,10 @@
 }
 + (DrawBuffer *) buffer: (Extent) size;
 - initWithSize: (Extent) size;
+
+- (Extent) size;
+- (int *) buffer;
+
 - blitFromBuffer: (DrawBuffer *) srcBuffer to: (Point) pos from: (Rect) rect;
 
 - (void) printf: (string) fmt, ...;

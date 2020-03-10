@@ -6,9 +6,24 @@
 #include "qwaq-curses.h"
 #include "qwaq-rect.h"
 
+@class DrawBuffer;
+
 @interface TextContext : Object
 {
 	window_t    window;
+	union {
+		Rect        rect;
+		struct {
+			Point       offset;
+			Extent      size;
+		};
+		struct {
+			int         xpos;
+			int         ypos;
+			int         xlen;
+			int         ylen;
+		};
+	};
 }
 + (int) max_colors;
 + (int) max_color_pairs;
@@ -24,6 +39,8 @@
 -initWithWindow: (window_t) window;
 
 -(window_t) window;
+
+- blitFromBuffer: (DrawBuffer *) srcBuffer to: (Point) pos from: (Rect) rect;
 
 - (void) printf: (string) fmt, ...;
 - (void) vprintf: (string) mft, @va_list args;
