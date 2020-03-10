@@ -1,3 +1,5 @@
+#include <string.h>
+
 #include "qwaq-curses.h"
 #include "qwaq-draw.h"
 
@@ -71,26 +73,94 @@
 
 - (void) printf: (string) fmt, ...
 {
+	string str = vsprintf (fmt, @args);
+	[self addstr: str];
 }
 
 - (void) vprintf: (string) fmt, @va_list args
 {
+	string str = vsprintf (fmt, args);
+	[self addstr: str];
 }
 
 - (void) addch: (int) ch
 {
+	if (cursor.x < 0) {
+		cursor.x = 0;
+	}
+	if (cursor.y < 0) {
+		cursor.y = 0;
+	}
+	if (cursor.x >= size.width && cursor.y < size.height) {
+		cursor.x = 0;
+		cursor.y++;
+	}
+	if (cursor.y >= size.height) {
+		return;
+	}
+	if (ch == '\n') {
+		cursor.x = 0;
+		cursor.y++;
+	} else if (ch == '\r') {
+		cursor.x = 0;
+	} else {
+		buffer[cursor.y * size.width + cursor.x++] = ch;
+	}
+}
+
+- (void) addstr: (string) str
+{
+	int         ind = 0;
+	int         ch;
+
+	if (cursor.y >= size.height) {
+		return;
+	}
+	while (cursor.x < size.width && (ch = str_char (str, ind++))) {
+		[self addch: ch];
+	}
 }
 
 - (void) mvprintf: (Point) pos, string fmt, ...
 {
+	if (pos.x < 0 || pos.x >= size.width
+		|| pos.y < 0 || pos.y >= size.height) {
+		return;
+	}
+	cursor = pos;
+	string str = vsprintf (fmt, @args);
+	[self addstr: str];
 }
 
 - (void) mvvprintf: (Point) pos, string fmt, @va_list args
 {
+	if (pos.x < 0 || pos.x >= size.width
+		|| pos.y < 0 || pos.y >= size.height) {
+		return;
+	}
+	cursor = pos;
+	string str = vsprintf (fmt, args);
+	[self addstr: str];
 }
 
 - (void) mvaddch: (Point) pos, int ch
 {
+	if (pos.x < 0 || pos.x >= size.width
+		|| pos.y < 0 || pos.y >= size.height) {
+		return;
+	}
+	cursor = pos;
+	[self addch: ch];
+}
+
+- (void) mvaddstr: (Point) pos, string str
+{
+	if (pos.x < 0 || pos.x >= size.width
+		|| pos.y < 0 || pos.y >= size.height) {
+		return;
+	}
+	cursor = pos;
+	[self addstr: str];
 }
 
 @end

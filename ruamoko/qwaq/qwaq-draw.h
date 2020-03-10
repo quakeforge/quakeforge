@@ -22,9 +22,11 @@
 - (void) printf: (string) fmt, ...;
 - (void) vprintf: (string) fmt, @va_list args;
 - (void) addch: (int) ch;
+- (void) addstr: (string) str;
 - (void) mvprintf: (Point) pos, string fmt, ...;
 - (void) mvvprintf: (Point) pos, string fmt, @va_list args;
 - (void) mvaddch: (Point) pos, int ch;
+- (void) mvaddstr: (Point) pos, string str;
 @end
 
 #endif
