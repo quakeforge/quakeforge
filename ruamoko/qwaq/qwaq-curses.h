@@ -120,6 +120,7 @@ typedef struct panel_s *panel_t;
 
 @extern void wborder (window_t window,
 					  box_sides_t sides, box_corners_t corners);
+@extern void mvwblit_line (window_t window, int x, int y, int *wch, int len);
 #endif
 
 #endif//__qwaq_curses_h

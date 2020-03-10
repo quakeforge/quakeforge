@@ -80,6 +80,7 @@ typedef enum qwaq_commands_e {
 	qwaq_cmd_move,
 	qwaq_cmd_curs_set,
 	qwaq_cmd_wborder,
+	qwaq_cmd_mvwblit_line,
 } qwaq_commands;
 
 const char *qwaq_command_names[]= {
@@ -107,6 +108,7 @@ const char *qwaq_command_names[]= {
 	"move",
 	"curs_set",
 	"wborder",
+	"mvwblit_line",
 };
 
 #define RING_BUFFER(type, size) 	\
@@ -618,6 +620,22 @@ cmd_wborder (qwaq_resources_t *res)
 }
 
 static void
+cmd_mvwblit_line (qwaq_resources_t *res)
+{
+	int         window_id = RB_PEEK_DATA (res->command_queue, 2);
+	int         x = RB_PEEK_DATA (res->command_queue, 3);
+	int         y = RB_PEEK_DATA (res->command_queue, 4);
+	int         chs_id = RB_PEEK_DATA (res->command_queue, 5);
+	int         len = RB_PEEK_DATA (res->command_queue, 6);
+	int        *chs = (int *) res->strings[chs_id].str;
+
+	window_t   *window = get_window (res, __FUNCTION__, window_id);
+	for (int i = 0; i < len; i++) {
+		mvwaddch (window->win, y, x, chs[i]);
+	}
+}
+
+static void
 process_commands (qwaq_resources_t *res)
 {
 	while (RB_DATA_AVAILABLE (res->command_queue) >= 2) {
@@ -700,6 +718,9 @@ process_commands (qwaq_resources_t *res)
 				break;
 			case qwaq_cmd_wborder:
 				cmd_wborder (res);
+				break;
+			case qwaq_cmd_mvwblit_line:
+				cmd_mvwblit_line (res);
 				break;
 		}
 		RB_DROP_DATA (res->command_queue, RB_PEEK_DATA (res->command_queue, 1));
@@ -1385,6 +1406,38 @@ bi_wborder (progs_t *pr)
 }
 
 static void
+qwaq__mvwblit_line (progs_t *pr, int window_id, int x, int y,
+				    int *chs, int len)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+
+	if (get_window (res, __FUNCTION__, window_id)) {
+		int         chs_id = acquire_string (res);
+		dstring_t  *chs_buf = res->strings + chs_id;
+		int         command[] = { qwaq_cmd_mvwblit_line, 0, window_id,
+								  x, y, chs_id, len,};
+
+		command[1] = CMD_SIZE(command);
+
+		chs_buf->size = len * sizeof (int);
+		dstring_adjust (chs_buf);
+		memcpy (chs_buf->str, chs, len * sizeof (int));
+
+		qwaq_submit_command (res, command);
+	}
+}
+static void
+bi_mvwblit_line (progs_t *pr)
+{
+	int         window_id = P_INT (pr, 0);
+	int         x = P_INT (pr, 1);
+	int         y = P_INT (pr, 2);
+	int        *chs = (int *) P_GPOINTER (pr, 3);
+	int         len = P_INT (pr, 4);
+	qwaq__mvwblit_line (pr, window_id, x, y, chs, len);
+}
+
+static void
 bi_initialize (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
@@ -1609,6 +1662,7 @@ static builtin_t builtins[] = {
 	{"move",			bi_move,			-1},
 	{"curs_set",		bi_curs_set,		-1},
 	{"wborder",			bi_wborder,			-1},
+	{"mvwblit_line",	bi_mvwblit_line,	-1},
 
 	{"_c_TextContext__is_initialized",	bi_c_TextContext__is_initialized,  -1},
 	{"_c_TextContext__max_colors",		bi_c_TextContext__max_colors,	   -1},
