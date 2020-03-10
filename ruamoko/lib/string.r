@@ -19,3 +19,4 @@ string (string str) str_clear = #0;
 string (string str, int start) str_mid = #0;
 string (string str, int start, int len) str_mid = #0;
 string (string haystack, string needle) str_str = #0;
+int str_char (string str, int ind) = #0;

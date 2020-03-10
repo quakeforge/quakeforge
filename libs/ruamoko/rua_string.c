@@ -134,6 +134,18 @@ bi_str_str (progs_t *pr)
 		R_STRING (pr) = res - pr->pr_strings;
 }
 
+static void
+bi_str_char (progs_t *pr)
+{
+	const char *str = P_GSTRING (pr, 0);
+	int         ind = P_INT (pr, 1);
+
+	if (ind < 0) {
+		PR_RunError (pr, "negative index to str_char");
+	}
+	R_INT (pr) = str[ind];
+}
+
 static builtin_t builtins[] = {
 	{"str_new",		bi_str_new,		-1},
 	{"str_free",	bi_str_free,	-1},
@@ -143,6 +155,7 @@ static builtin_t builtins[] = {
 	{"str_mid|*i",	bi_str_mid,		-1},
 	{"str_mid|*ii",	bi_str_mid,		-1},
 	{"str_str",		bi_str_str,		-1},
+	{"str_char",	bi_str_char,	-1},
 	{0}
 };
 
