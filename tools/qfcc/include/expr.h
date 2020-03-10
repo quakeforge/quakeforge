@@ -264,6 +264,14 @@ expr_t *new_expr (void);
 */
 expr_t *copy_expr (expr_t *e);
 
+/**	Copy source expression's file and line to the destination expression
+
+	\param dst		The expression to receive the file and line
+	\param src		The expression from which the file and line will be taken
+	\return			\a dst
+*/
+expr_t *expr_file_line (expr_t *dst, const expr_t *src);
+
 /**	Create a new label name.
 
 	The label name is guaranteed to to the compilation. It is made up of the

@@ -432,6 +432,14 @@ copy_expr (expr_t *e)
 	internal_error (e, "invalid expression");
 }
 
+expr_t *
+expr_file_line (expr_t *dst, const expr_t *src)
+{
+	dst->file = src->file;
+	dst->line = src->line;
+	return dst;
+}
+
 const char *
 new_label_name (void)
 {
@@ -1654,6 +1662,7 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 	type_t     *arg_types[MAX_PARMS];
 	expr_t     *arg_exprs[MAX_PARMS][2];
 	int         arg_expr_count = 0;
+	expr_t     *assign;
 	expr_t     *call;
 	expr_t     *err = 0;
 
@@ -1741,29 +1750,33 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 	if (err)
 		return err;
 
-	call = new_block_expr ();
+	call = expr_file_line (new_block_expr (), fexpr);
 	call->e.block.is_call = 1;
 	for (e = params, i = 0; e; e = e->next, i++) {
 		if (has_function_call (e)) {
-			*a = new_temp_def_expr (arg_types[i]);
-			arg_exprs[arg_expr_count][0] = cast_expr (arg_types[i],
-													  convert_vector (e));
+			expr_t     *cast = cast_expr (arg_types[i], convert_vector (e));
+			expr_t     *tmp = new_temp_def_expr (arg_types[i]);
+			*a = expr_file_line (tmp, e);
+			arg_exprs[arg_expr_count][0] = expr_file_line (cast, e);
 			arg_exprs[arg_expr_count][1] = *a;
 			arg_expr_count++;
 		} else {
-			*a = cast_expr (arg_types[i], convert_vector (e));
+			*a = expr_file_line (cast_expr (arg_types[i], convert_vector (e)),
+								 e);
 		}
 		a = &(*a)->next;
 	}
 	for (i = 0; i < arg_expr_count - 1; i++) {
-		append_expr (call, assign_expr (arg_exprs[i][1], arg_exprs[i][0]));
+		assign = assign_expr (arg_exprs[i][1], arg_exprs[i][0]);
+		append_expr (call, expr_file_line (assign, arg_exprs[i][0]));
 	}
 	if (arg_expr_count) {
 		e = assign_expr (arg_exprs[arg_expr_count - 1][1],
 						 arg_exprs[arg_expr_count - 1][0]);
+		e = expr_file_line (e, arg_exprs[arg_expr_count - 1][0]);
 		append_expr (call, e);
 	}
-	e = new_binary_expr ('c', fexpr, args);
+	e = expr_file_line (new_binary_expr ('c', fexpr, args), fexpr);
 	e->e.expr.type = ftype->t.func.type;
 	append_expr (call, e);
 	if (ftype->t.func.type != &type_void) {
@@ -2637,14 +2650,16 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 
 	for (m = message; m; m = m->next) {
 		*a = m->expr;
-		while ((*a))
+		while ((*a)) {
+			expr_file_line (selector, *a);
 			a = &(*a)->next;
+		}
 	}
 	*a = selector;
 	a = &(*a)->next;
 	*a = receiver;
 
-	send_msg = send_message (super);
+	send_msg = expr_file_line (send_message (super), receiver);
 	if (method) {
 		expr_t      *err;
 		if ((err = method_check_params (method, args)))
