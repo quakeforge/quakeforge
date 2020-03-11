@@ -57,6 +57,7 @@ typedef struct operand_s {
 	op_type_e   op_type;
 	struct type_s *type;		///< possibly override def's type
 	int         size;			///< for structures
+	struct expr_s *expr;		///< expression generating this operand
 	union {
 		struct def_s *def;
 		struct ex_value_s *value;
@@ -115,14 +116,16 @@ struct dstring_s;
 
 const char *optype_str (op_type_e type) __attribute__((const));
 
-operand_t *def_operand (struct def_s *def, struct type_s *type);
-operand_t *return_operand (struct type_s *type);
-operand_t *value_operand (struct ex_value_s *value);
+operand_t *def_operand (struct def_s *def, struct type_s *type,
+						struct expr_s *expr);
+operand_t *return_operand (struct type_s *type, struct expr_s *expr);
+operand_t *value_operand (struct ex_value_s *value, struct expr_s *expr);
 int tempop_overlap (tempop_t *t1, tempop_t *t2) __attribute__((pure));
-operand_t *temp_operand (struct type_s *type);
+operand_t *temp_operand (struct type_s *type, struct expr_s *expr);
 int tempop_visit_all (tempop_t *tempop, int overlap,
 					  int (*visit) (tempop_t *, void *), void *data);
-operand_t *alias_operand (struct type_s *type, operand_t *op);
+operand_t *alias_operand (struct type_s *type, operand_t *op,
+						  struct expr_s *expr);
 void free_operand (operand_t *op);
 
 sblock_t *new_sblock (void);

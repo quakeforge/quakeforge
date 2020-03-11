@@ -821,7 +821,7 @@ static operand_t *
 fix_op_type (operand_t *op, type_t *type)
 {
 	if (op && op->op_type != op_label && op->type != type)
-		op = alias_operand (type, op);
+		op = alias_operand (type, op, op->expr);
 	return op;
 }
 
@@ -882,7 +882,8 @@ generate_moveps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			offset = dstDef->offset;
 			dstDef = dstDef->alias;
 		}
-		operands[2] = value_operand (new_pointer_val (offset, type, dstDef));
+		operands[2] = value_operand (new_pointer_val (offset, type, dstDef),
+									 operands[1]->expr);
 		st = build_statement ("<MOVEP>", operands, var->expr);
 		sblock_add_statement (block, st);
 	}
@@ -937,7 +938,8 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 				operands[1] = make_operand (dag, block, dagnode, 1);
 			type = get_type (dagnode->label->expr);
 			if (!(var_iter = set_first (dagnode->identifiers))) {
-				operands[2] = temp_operand (get_type (dagnode->label->expr));
+				operands[2] = temp_operand (get_type (dagnode->label->expr),
+											dagnode->label->expr);
 			} else {
 				daglabel_t *var = dag->labels[var_iter->element];
 
