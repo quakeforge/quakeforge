@@ -182,7 +182,7 @@ int yylex (void);
 %type	<symbol>	methoddef
 %type	<expr>		opt_initializer var_initializer local_def
 
-%type	<expr>		opt_init opt_expr cexpr expr
+%type	<expr>		opt_init opt_expr comma_expr expr
 %type	<expr>		compound_init element_list
 %type	<element>	element
 %type	<expr>		optional_state_expr texpr vector_expr
@@ -1342,7 +1342,7 @@ statement
 			break_label = $2;
 			continue_label = $3;
 		}
-	| cexpr ';'
+	| comma_expr ';'
 		{
 			$$ = $1;
 		}
@@ -1398,7 +1398,7 @@ switch_block
 	;
 
 opt_init
-	: cexpr
+	: comma_expr
 	| type set_spec_storage init_var_decl_list { $$ = $3; }
 	| /* empty */
 		{
@@ -1431,7 +1431,7 @@ init_var_decl
 	;
 
 opt_expr
-	: cexpr
+	: comma_expr
 	| /* empty */
 		{
 			$$ = 0;
@@ -1521,7 +1521,7 @@ texpr
 	: expr						{ $$ = convert_bool ($1, 1); }
 	;
 
-cexpr
+comma_expr
 	: arg_list
 		{
 			if ($1->next) {
