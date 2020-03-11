@@ -293,28 +293,32 @@ assign_expr (expr_t *dst, expr_t *src)
 	type_t     *dst_type, *src_type;
 
 	convert_name (dst);
-	convert_name (src);
-
 	if (dst->type == ex_error) {
 		return dst;
 	}
-	if (src->type == ex_error) {
-		return src;
-	}
-
-	if (options.traditional
-		&& (expr = check_assign_logic_precedence (dst, src))) {
-		return expr;
-	}
-
-
 	if ((expr = check_valid_lvalue (dst))) {
 		return expr;
 	}
-
 	dst_type = get_type (dst);
 	if (!dst_type) {
 		internal_error (dst, "dst_type broke in assign_expr");
+	}
+
+	if (src) {
+		convert_name (src);
+		if (src->type == ex_error) {
+			return src;
+		}
+
+		if (options.traditional
+			&& (expr = check_assign_logic_precedence (dst, src))) {
+			return expr;
+		}
+	} else {
+		if (is_scalar (dst_type)) {
+			return error (dst, "empty scalar initializer");
+		}
+		src = new_nil_expr ();
 	}
 	if (src->type == ex_compound) {
 		src = initialized_temp_expr (dst_type, src);
