@@ -883,6 +883,12 @@ constant_expr (expr_t *e)
 }
 
 int
+is_nil (expr_t *e)
+{
+	return e->type == ex_nil;
+}
+
+int
 is_string_val (expr_t *e)
 {
 	if (e->type == ex_nil)

@@ -345,21 +345,22 @@ assign_expr (expr_t *dst, expr_t *src)
 		}
 		src_type = get_type (src);
 	}
-	if (!is_void (dst_type) && src->type == ex_nil) {
+	if (!is_struct (dst_type) && is_nil (src)) {
 		// nil is a type-agnostic 0
 		// FIXME: assignment to compound types? error or memset?
 		src_type = dst_type;
 		convert_nil (src, src_type);
 	}
 
-	if ((expr = check_types_compatible (dst, src))) {
-		// expr might be a valid expression, but if so, check_types_compatible
-		// will take care of everything
-		return expr;
-	}
-
-	if ((expr = assign_vector_expr (dst, src))) {
-		return expr;
+	if (!is_nil (src)) {
+		if ((expr = check_types_compatible (dst, src))) {
+			// expr might be a valid expression, but if so,
+			// check_types_compatible will take care of everything
+			return expr;
+		}
+		if ((expr = assign_vector_expr (dst, src))) {
+			return expr;
+		}
 	}
 
 	if (is_indirect (dst) && is_indirect (src)) {
@@ -381,8 +382,18 @@ assign_expr (expr_t *dst, expr_t *src)
 		debug (dst, "here");
 		if (is_struct (dst_type)) {
 			dst = address_expr (dst, 0, 0);
-			src = address_expr (src, 0, 0);
-			return new_move_expr (dst, src, dst_type, 1);
+			if (is_nil (src)) {
+				int         size = type_size (dst_type);
+				return new_memset_expr (dst, new_integer_expr (0),
+										new_integer_expr (size));
+			} else {
+				src = address_expr (src, 0, 0);
+				return new_move_expr (dst, src, dst_type, 1);
+			}
+		}
+		if (is_nil (src)) {
+			src_type = dst_type;
+			convert_nil (src, src_type);
 		}
 		if (dst->type == ex_expr) {
 			if (get_type (dst->e.expr.e1) == &type_entity) {
@@ -420,6 +431,10 @@ assign_expr (expr_t *dst, expr_t *src)
 		}
 	}
 
+	if (is_nil (src)) {
+		src_type = dst_type;
+		convert_nil (src, src_type);
+	}
 	if (is_struct (dst_type)) {
 		return new_move_expr (dst, src, dst_type, 0);
 	}

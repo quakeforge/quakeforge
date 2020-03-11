@@ -595,6 +595,7 @@ int is_logic (int op) __attribute__((const));
 
 int has_function_call (expr_t *e) __attribute__((pure));
 
+int is_nil (expr_t *e) __attribute__((pure));
 int is_string_val (expr_t *e) __attribute__((pure));
 int is_float_val (expr_t *e) __attribute__((pure));
 int is_vector_val (expr_t *e) __attribute__((pure));
