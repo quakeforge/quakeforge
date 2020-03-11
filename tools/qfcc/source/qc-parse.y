@@ -184,7 +184,7 @@ int yylex (void);
 %type	<expr>		opt_init opt_expr cexpr expr element_list element
 %type	<expr>		optional_state_expr texpr vector_expr
 %type	<expr>		statement statements compound_statement
-%type	<expr>		else label break_label continue_label
+%type	<expr>		else bool_label break_label continue_label
 %type	<expr>		unary_expr ident_expr cast_expr opt_arg_list arg_list
 %type	<expr>		init_var_decl_list init_var_decl
 %type	<switch_block> switch_block
@@ -1358,7 +1358,7 @@ else
 		}
 	;
 
-label
+bool_label
 	: /* empty */
 		{
 			$$ = new_label_expr ();
@@ -1489,8 +1489,8 @@ expr
 	| expr '=' expr				{ $$ = assign_expr ($1, $3); }
 	| expr ASX expr				{ $$ = asx_expr ($2, $1, $3); }
 	| expr '?' expr ':' expr 	{ $$ = conditional_expr ($1, $3, $5); }
-	| expr AND label expr		{ $$ = bool_expr (AND, $3, $1, $4); }
-	| expr OR label expr		{ $$ = bool_expr (OR,  $3, $1, $4); }
+	| expr AND bool_label expr	{ $$ = bool_expr (AND, $3, $1, $4); }
+	| expr OR bool_label expr	{ $$ = bool_expr (OR,  $3, $1, $4); }
 	| expr EQ expr				{ $$ = binary_expr (EQ,  $1, $3); }
 	| expr NE expr				{ $$ = binary_expr (NE,  $1, $3); }
 	| expr LE expr				{ $$ = binary_expr (LE,  $1, $3); }
