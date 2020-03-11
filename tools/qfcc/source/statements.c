@@ -1344,7 +1344,11 @@ statement_label (sblock_t *sblock, expr_t *e)
 		e->e.label.next = sblock->labels;
 		sblock->labels = &e->e.label;
 	} else {
-		debug (e, "dropping unused label %s", e->e.label.name);
+		if (e->e.label.symbol) {
+			warning (e, "unused label %s", e->e.label.symbol->name);
+		} else {
+			debug (e, "dropping unused label %s", e->e.label.name);
+		}
 	}
 	return sblock;
 }
