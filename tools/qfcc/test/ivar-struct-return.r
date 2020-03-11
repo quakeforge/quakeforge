@@ -17,6 +17,7 @@ typedef struct Point Point;
 @implementation Object
 -(Point) origin
 {
+	origin = nil;
 	return origin;
 }
 @end
