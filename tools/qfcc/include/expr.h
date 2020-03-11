@@ -56,6 +56,7 @@ typedef enum {
 	ex_nil,			///< umm, nil, null. nuff said (0 of any type)
 	ex_value,		///< constant value (::ex_value_t)
 	ex_compound,	///< compound initializer
+	ex_memset,		///< memset needs three params...
 } expr_type;
 
 /**	Binary and unary expressions.
@@ -142,6 +143,12 @@ typedef struct {
 	struct expr_s *e;
 } ex_bool_t;
 
+typedef struct ex_memset_s {
+	struct expr_s *dst;
+	struct expr_s *val;
+	struct expr_s *count;
+} ex_memset_t;
+
 /**	State expression used for think function state-machines.
 
 	State expressions are of the form <code>[framenum, nextthink]</code>
@@ -225,6 +232,7 @@ typedef struct expr_s {
 		ex_vector_t vector;				///< vector expression list
 		ex_value_t *value;				///< constant value
 		element_chain_t compound;		///< compound initializer
+		ex_memset_t memset;				///< memset expr params
 	} e;
 } expr_t;
 
@@ -639,6 +647,9 @@ expr_t *new_param_expr (struct type_s *type, int num);
 */
 expr_t *new_move_expr (expr_t *e1, expr_t *e2, struct type_s *type,
 					   int indirect);
+
+expr_t *new_memset_expr (expr_t *dst, expr_t *val, expr_t *count);
+
 
 /**	Convert a name to an expression of the appropriate type.
 

@@ -1439,6 +1439,32 @@ statement_uexpr (sblock_t *sblock, expr_t *e)
 }
 
 static sblock_t *
+statement_memset (sblock_t *sblock, expr_t *e)
+{
+	expr_t     *dst = e->e.memset.dst;
+	expr_t     *val = e->e.memset.val;
+	expr_t     *count = e->e.memset.count;
+	const char *opcode = "<MEMSET>";
+	statement_t *s;
+
+	if (is_constant (count)) {
+		if (is_integer (get_type (count))
+			&& (unsigned) expr_integer (count) < 0x10000) {
+			count = new_short_expr (expr_integer (count));
+		}
+		if (is_uinteger (get_type (count)) && expr_integer (count) < 0x10000) {
+			count = new_short_expr (expr_uinteger (count));
+		}
+	}
+	s = new_statement (st_move, opcode, e);
+	sblock = statement_subexpr (sblock, dst, &s->opc);
+	sblock = statement_subexpr (sblock, count, &s->opb);
+	sblock = statement_subexpr (sblock, val, &s->opa);
+	sblock_add_statement (sblock, s);
+	return sblock;
+}
+
+static sblock_t *
 statement_nonexec (sblock_t *sblock, expr_t *e)
 {
 	if (!e->rvalue && options.warnings.executable)
@@ -1463,10 +1489,12 @@ statement_slist (sblock_t *sblock, expr_t *e)
 		statement_nonexec,	// ex_vector
 		statement_nonexec,	// ex_nil
 		statement_nonexec,	// ex_value
+		0,					// ex_compound
+		statement_memset,
 	};
 
 	for (/**/; e; e = e->next) {
-		if (e->type > ex_value)
+		if (e->type > ex_memset)
 			internal_error (e, "bad expression type");
 		sblock = sfuncs[e->type] (sblock, e);
 	}
