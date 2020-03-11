@@ -98,6 +98,7 @@ int yylex (void);
 	void       *pointer;			// for ensuring pointer values are null
 	struct type_s	*type;
 	struct expr_s	*expr;
+	struct ex_initele_s *element;
 	struct function_s *function;
 	struct switch_block_s *switch_block;
 	struct param_s	*param;
@@ -181,7 +182,9 @@ int yylex (void);
 %type	<symbol>	methoddef
 %type	<expr>		opt_initializer var_initializer local_def
 
-%type	<expr>		opt_init opt_expr cexpr expr element_list element
+%type	<expr>		opt_init opt_expr cexpr expr
+%type	<expr>		compound_init element_list
+%type	<element>	element
 %type	<expr>		optional_state_expr texpr vector_expr
 %type	<expr>		statement statements compound_statement
 %type	<expr>		else bool_label break_label continue_label
@@ -1148,15 +1151,18 @@ opt_initializer
 
 var_initializer
 	: '=' expr									{ $$ = $2; }
-	| '=' '{'									{ $<spec>$ = $<spec>-1; }
-	  element_list optional_comma '}'			{ $$ = $4; }
-	| '=' '{' '}'
+	| '=' compound_init
 		{
-			if (is_scalar ($<spec>-1.type)) {
+			if (!$2 && is_scalar ($<spec>-1.type)) {
 				error (0, "empty scalar initializer");
 			}
-			$$ = new_nil_expr ();
+			$$ = $2 ? $2 : new_nil_expr ();
 		}
+	;
+
+compound_init
+	: '{' element_list optional_comma '}'		{ $$ = $2; }
+	| '{' '}'									{ $$ = 0; }
 	;
 
 optional_state_expr
@@ -1167,30 +1173,18 @@ optional_state_expr
 element_list
 	: element
 		{
-			$$ = new_block_expr ();
-			append_expr ($$, $1);
+			$$ = new_compound_init ();
+			append_element ($$, $1);
 		}
-	| element_list ',' {$<spec>$ = $<spec>0; } element
+	| element_list ','  element
 		{
-			append_expr ($$, $4);
+			append_element ($$, $3);
 		}
 	;
 
 element
-	: '{'										{ $<spec>$ = $<spec>0; }
-	  element_list optional_comma '}'			{ $$ = $3; }
-	| '{' '}'
-		{
-			// FIXME doesn't check the right type (does prove the inherited
-			// attributes have been passed down correctly though). The problem
-			// is that the type of the sub elements needs to be extracted if
-			// possible
-			if (is_scalar ($<spec>0.type)) {
-				error (0, "empty scalar initializer");
-			}
-			$$ = new_nil_expr ();
-		}
-	| expr										{ $$ = $1; }
+	: compound_init								{ $$ = new_initele ($1, 0); }
+	| expr										{ $$ = new_initele ($1, 0); }
 	;
 
 optional_comma

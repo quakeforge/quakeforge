@@ -86,7 +86,7 @@ new_element (void)
 }
 
 static element_t *
-append_element (element_chain_t *element_chain, element_t *element)
+append_init_element (element_chain_t *element_chain, element_t *element)
 {
 	element->next = 0;
 	*element_chain->tail = element;
@@ -371,7 +371,7 @@ static void
 build_element_chain (element_chain_t *element_chain, type_t *type,
 					 expr_t *eles, int base_offset)
 {
-	expr_t     *e = eles->e.block.head;
+	ex_initele_t *ele = eles->e.compound.head;
 
 	if (is_array (type)) {
 		type_t     *array_type = type->t.array.type;
@@ -380,17 +380,18 @@ build_element_chain (element_chain_t *element_chain, type_t *type,
 
 		for (i = 0; i < array_size; i++) {
 			int         offset = base_offset + i * type_size (array_type);
-			if (e && e->type == ex_block) {
-				build_element_chain (element_chain, array_type, e, offset);
+			if (ele->expr && ele->expr->type == ex_compound) {
+				build_element_chain (element_chain, array_type,
+									 ele->expr, offset);
 			} else {
 				element_t  *element = new_element ();
 				element->type = array_type;
 				element->offset = offset;
-				element->expr = e;	// null will be treated as nil
-				append_element (element_chain, element);
+				element->expr = ele->expr;	// null will be treated as nil
+				append_init_element (element_chain, element);
 			}
-			if (e) {
-				e = e->next;
+			if (ele) {
+				ele = ele->next;
 			}
 		}
 	} else if (is_struct (type) || is_vector (type) || is_quaternion (type)) {
@@ -403,23 +404,24 @@ build_element_chain (element_chain_t *element_chain, type_t *type,
 				|| field->visibility == vis_anonymous) {
 				continue;
 			}
-			if (e && e->type == ex_block) {
-				build_element_chain (element_chain, field->type, e, offset);
+			if (ele->expr && ele->expr->type == ex_compound) {
+				build_element_chain (element_chain, field->type,
+									 ele->expr, offset);
 			} else {
 				element_t  *element = new_element ();
 				element->type = field->type;
 				element->offset = offset;
-				element->expr = e;	// null will be treated as nil
-				append_element (element_chain, element);
+				element->expr = ele->expr;	// null will be treated as nil
+				append_init_element (element_chain, element);
 			}
-			if (e) {
-				e = e->next;
+			if (ele) {
+				ele = ele->next;
 			}
 		}
 	} else {
 		error (eles, "invalid initializer");
 	}
-	if (e && e->next && options.warnings.initializer) {
+	if (ele && ele->next && options.warnings.initializer) {
 		warning (eles, "excessive elements in initializer");
 	}
 }
@@ -652,7 +654,7 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 	}
 	if (!sym->s.def) {
 		if (is_array (sym->type) && !type_size (sym->type)
-			&& init->type == ex_block && !init->e.block.result) {
+			&& init->type == ex_compound) {
 			sym->type = array_type (sym->type->t.array.type,
 									num_elements (init));
 		}
@@ -676,7 +678,7 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 		return;
 	if ((is_array (sym->type) || is_struct (sym->type)
 		 || sym->type == &type_vector || sym->type == &type_quaternion)
-		&& ((init->type == ex_block && !init->e.block.result)
+		&& ((init->type == ex_compound)
 			|| init->type == ex_nil)) {
 		init_elements (sym->s.def, init);
 		sym->s.def->initialized = 1;

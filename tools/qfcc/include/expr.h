@@ -55,6 +55,7 @@ typedef enum {
 
 	ex_nil,			///< umm, nil, null. nuff said (0 of any type)
 	ex_value,		///< constant value (::ex_value_t)
+	ex_compound,	///< compound initializer
 } expr_type;
 
 /**	Binary and unary expressions.
@@ -83,6 +84,17 @@ typedef struct ex_label_s {
 typedef struct {
 	ex_label_t *label;
 } ex_labelref_t;
+
+typedef struct ex_initele_s {
+	struct ex_initele_s *next;	///< next in chain
+	struct symbol_s *symbol;	///< for labeled initializers
+	struct expr_s *expr;		///< initializer expression
+} ex_initele_t;
+
+typedef struct ex_cmpinit_s {
+	ex_initele_t *head;
+	ex_initele_t **tail;
+} ex_cmpinit_t;
 
 typedef struct {
 	struct expr_s *head;	///< the first expression in the block
@@ -210,6 +222,7 @@ typedef struct expr_s {
 		ex_temp_t   temp;				///< temporary variable expression
 		ex_vector_t vector;				///< vector expression list
 		ex_value_t *value;				///< constant value
+		ex_cmpinit_t compound;			///< compound initializer
 	} e;
 } expr_t;
 
@@ -347,6 +360,10 @@ expr_t *new_block_expr (void);
 	\return		The new block expression (::ex_block_t) node.
 */
 expr_t *build_block_expr (expr_t *expr_list);
+
+ex_initele_t *new_initele (expr_t *expr, struct symbol_s *symbol);
+expr_t *new_compound_init (void);
+expr_t *append_element (expr_t *compound, ex_initele_t *element);
 
 /**	Create a new binary expression node node.
 

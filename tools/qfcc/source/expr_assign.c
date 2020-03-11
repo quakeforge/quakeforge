@@ -123,6 +123,7 @@ check_valid_lvalue (expr_t *expr)
 				return check_valid_lvalue (expr->e.expr.e1);
 			}
 			break;
+		case ex_compound:
 		case ex_state:
 		case ex_bool:
 		case ex_label:

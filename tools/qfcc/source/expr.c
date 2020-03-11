@@ -217,6 +217,7 @@ get_type (expr_t *e)
 			return &type_void;
 		case ex_label:
 		case ex_error:
+		case ex_compound:
 			return 0;					// something went very wrong
 		case ex_bool:
 			if (options.code.progsversion == PROG_ID_VERSION)
@@ -420,12 +421,19 @@ copy_expr (expr_t *e)
 			n = new_expr ();
 			n->e.vector.type = e->e.vector.type;
 			n->e.vector.list = copy_expr (e->e.vector.list);
-			n = n->e.vector.list;
 			t = e->e.vector.list;
+			e = n->e.vector.list;
 			while (t->next) {
-				n->next = copy_expr (t->next);
-				n = n->next;
+				e->next = copy_expr (t->next);
+				e = e->next;
 				t = t->next;
+			}
+			return n;
+		case ex_compound:
+			n = new_expr ();
+			*n = *e;
+			for (ex_initele_t *i = e->e.compound.head; i; i = i->next) {
+				append_element (n, new_initele (i->expr, i->symbol));
 			}
 			return n;
 	}
@@ -541,6 +549,46 @@ new_block_expr (void)
 	b->e.block.head = 0;
 	b->e.block.tail = &b->e.block.head;
 	return b;
+}
+
+ex_initele_t *
+new_initele (expr_t *expr, symbol_t *symbol)
+{
+	ex_initele_t *i = calloc (1, sizeof (*i));
+	i->expr = expr;
+	i->symbol = symbol;
+	return i;
+}
+
+expr_t *
+new_compound_init (void)
+{
+	expr_t     *c = new_expr ();
+	c->type = ex_compound;
+	c->e.compound.head = 0;
+	c->e.compound.tail = &c->e.compound.head;
+	return c;
+}
+
+expr_t *
+append_element (expr_t *compound, ex_initele_t *element)
+{
+	if (compound->type != ex_compound) {
+		internal_error (compound, "not a compound expression");
+	}
+
+	if (!element || (element->expr && element->expr->type == ex_error)) {
+		return compound;
+	}
+
+	if (element->next) {
+		internal_error (compound, "append_element: element loop detected");
+	}
+
+	*compound->e.compound.tail = element;
+	compound->e.compound.tail = &element->next;
+
+	return compound;
 }
 
 expr_t *
@@ -1499,6 +1547,7 @@ unary_expr (int op, expr_t *e)
 				case ex_label:
 				case ex_labelref:
 				case ex_state:
+				case ex_compound:
 					internal_error (e, 0);
 				case ex_uexpr:
 					if (e->e.expr.op == '-')
@@ -1565,6 +1614,7 @@ unary_expr (int op, expr_t *e)
 				case ex_label:
 				case ex_labelref:
 				case ex_state:
+				case ex_compound:
 					internal_error (e, 0);
 				case ex_bool:
 					return new_bool_expr (e->e.bool.false_list,
@@ -1630,6 +1680,7 @@ unary_expr (int op, expr_t *e)
 				case ex_label:
 				case ex_labelref:
 				case ex_state:
+				case ex_compound:
 					internal_error (e, 0);
 				case ex_uexpr:
 					if (e->e.expr.op == '~')
