@@ -62,37 +62,7 @@
 #include "type.h"
 #include "value.h"
 
-typedef struct element_s {
-	struct element_s *next;
-	int         offset;
-	type_t     *type;
-	expr_t     *expr;
-} element_t;
-
-typedef struct element_chain_s {
-	element_t  *head;
-	element_t **tail;
-} element_chain_t;
-
 static def_t *defs_freelist;
-static element_t *elements_freelist;
-
-static element_t *
-new_element (void)
-{
-	element_t  *element;
-	ALLOC (256, element_t, elements, element);
-	return element;
-}
-
-static element_t *
-append_init_element (element_chain_t *element_chain, element_t *element)
-{
-	element->next = 0;
-	*element_chain->tail = element;
-	element_chain->tail = &element->next;
-	return element;
-}
 
 static void
 set_storage_bits (def_t *def, storage_class_t storage)
@@ -368,65 +338,6 @@ init_elements_nil (def_t *def)
 }
 
 static void
-build_element_chain (element_chain_t *element_chain, type_t *type,
-					 expr_t *eles, int base_offset)
-{
-	ex_initele_t *ele = eles->e.compound.head;
-
-	if (is_array (type)) {
-		type_t     *array_type = type->t.array.type;
-		int         array_size = type->t.array.size;
-		int         i;
-
-		for (i = 0; i < array_size; i++) {
-			int         offset = base_offset + i * type_size (array_type);
-			if (ele->expr && ele->expr->type == ex_compound) {
-				build_element_chain (element_chain, array_type,
-									 ele->expr, offset);
-			} else {
-				element_t  *element = new_element ();
-				element->type = array_type;
-				element->offset = offset;
-				element->expr = ele->expr;	// null will be treated as nil
-				append_init_element (element_chain, element);
-			}
-			if (ele) {
-				ele = ele->next;
-			}
-		}
-	} else if (is_struct (type) || is_vector (type) || is_quaternion (type)) {
-		symtab_t   *symtab = type->t.symtab;
-		symbol_t   *field;
-
-		for (field = symtab->symbols; field; field = field->next) {
-			int         offset = base_offset + field->s.offset;
-			if (field->sy_type != sy_var
-				|| field->visibility == vis_anonymous) {
-				continue;
-			}
-			if (ele->expr && ele->expr->type == ex_compound) {
-				build_element_chain (element_chain, field->type,
-									 ele->expr, offset);
-			} else {
-				element_t  *element = new_element ();
-				element->type = field->type;
-				element->offset = offset;
-				element->expr = ele->expr;	// null will be treated as nil
-				append_init_element (element_chain, element);
-			}
-			if (ele) {
-				ele = ele->next;
-			}
-		}
-	} else {
-		error (eles, "invalid initializer");
-	}
-	if (ele && ele->next && options.warnings.initializer) {
-		warning (eles, "excessive elements in initializer");
-	}
-}
-
-static void
 init_elements (struct def_s *def, expr_t *eles)
 {
 	expr_t     *c;
@@ -444,21 +355,8 @@ init_elements (struct def_s *def, expr_t *eles)
 	build_element_chain (&element_chain, def->type, eles, 0);
 
 	if (def->local && local_expr) {
-		for (element = element_chain.head; element; element = element->next) {
-			int         offset = element->offset;
-			type_t     *type = element->type;
-			expr_t     *ptr = new_pointer_expr (offset, type, def);
-
-			if (element->expr) {
-				c = constant_expr (element->expr);
-			} else {
-				c = new_nil_expr ();
-			}
-			if (c->type == ex_nil) {
-				c = convert_nil (c, type);
-			}
-			append_expr (local_expr, assign_expr (unary_expr ('.', ptr), c));
-		}
+		expr_t     *ptr = new_pointer_expr (0, def->type, def);
+		assign_elements (local_expr, pointer_expr (ptr), &element_chain);
 	} else {
 		def_t       dummy = *def;
 		for (element = element_chain.head; element; element = element->next) {
@@ -502,8 +400,7 @@ init_elements (struct def_s *def, expr_t *eles)
 		}
 	}
 
-	*element_chain.tail = elements_freelist;
-	elements_freelist = element_chain.head;
+	free_element_chain (&element_chain);
 }
 
 static void

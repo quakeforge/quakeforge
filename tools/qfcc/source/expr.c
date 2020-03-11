@@ -432,8 +432,8 @@ copy_expr (expr_t *e)
 		case ex_compound:
 			n = new_expr ();
 			*n = *e;
-			for (ex_initele_t *i = e->e.compound.head; i; i = i->next) {
-				append_element (n, new_initele (i->expr, i->symbol));
+			for (element_t *i = e->e.compound.head; i; i = i->next) {
+				append_element (n, new_element (i->expr, i->symbol));
 			}
 			return n;
 	}
@@ -549,46 +549,6 @@ new_block_expr (void)
 	b->e.block.head = 0;
 	b->e.block.tail = &b->e.block.head;
 	return b;
-}
-
-ex_initele_t *
-new_initele (expr_t *expr, symbol_t *symbol)
-{
-	ex_initele_t *i = calloc (1, sizeof (*i));
-	i->expr = expr;
-	i->symbol = symbol;
-	return i;
-}
-
-expr_t *
-new_compound_init (void)
-{
-	expr_t     *c = new_expr ();
-	c->type = ex_compound;
-	c->e.compound.head = 0;
-	c->e.compound.tail = &c->e.compound.head;
-	return c;
-}
-
-expr_t *
-append_element (expr_t *compound, ex_initele_t *element)
-{
-	if (compound->type != ex_compound) {
-		internal_error (compound, "not a compound expression");
-	}
-
-	if (!element || (element->expr && element->expr->type == ex_error)) {
-		return compound;
-	}
-
-	if (element->next) {
-		internal_error (compound, "append_element: element loop detected");
-	}
-
-	*compound->e.compound.tail = element;
-	compound->e.compound.tail = &element->next;
-
-	return compound;
 }
 
 expr_t *
@@ -1731,6 +1691,7 @@ expr_t *
 build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 {
 	expr_t     *e;
+	expr_t     *p;
 	int         arg_count = 0, parm_count = 0;
 	int         i;
 	expr_t     *args = 0, **a = &args;
@@ -1770,8 +1731,18 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 		parm_count = ftype->t.func.num_params;
 	}
 	for (i = arg_count - 1, e = params; i >= 0; i--, e = e->next) {
-		type_t     *t = get_type (e);
+		type_t     *t;
 
+		if (e->type == ex_compound) {
+			if (i < parm_count) {
+				t = ftype->t.func.param_types[i];
+			} else {
+				return error (e, "cannot pass compound initializer "
+							  "through ...");
+			}
+		} else {
+			t = get_type (e);
+		}
 		if (!t) {
 			return e;
 		}
@@ -1827,7 +1798,11 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 
 	call = expr_file_line (new_block_expr (), fexpr);
 	call->e.block.is_call = 1;
-	for (e = params, i = 0; e; e = e->next, i++) {
+	for (p = params, i = 0; p; p = p->next, i++) {
+		expr_t     *e = p;
+		if (e->type == ex_compound) {
+			e = expr_file_line (initialized_temp_expr (arg_types[i], e), e);
+		}
 		if (has_function_call (e)) {
 			expr_t     *cast = cast_expr (arg_types[i], convert_vector (e));
 			expr_t     *tmp = new_temp_def_expr (arg_types[i]);

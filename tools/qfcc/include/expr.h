@@ -85,16 +85,18 @@ typedef struct {
 	ex_label_t *label;
 } ex_labelref_t;
 
-typedef struct ex_initele_s {
-	struct ex_initele_s *next;	///< next in chain
-	struct symbol_s *symbol;	///< for labeled initializers
+typedef struct element_s {
+	struct element_s *next;		///< next in chain
+	int         offset;
+	struct type_s *type;
 	struct expr_s *expr;		///< initializer expression
-} ex_initele_t;
+	struct symbol_s *symbol;	///< for labeled initializers
+} element_t;
 
-typedef struct ex_cmpinit_s {
-	ex_initele_t *head;
-	ex_initele_t **tail;
-} ex_cmpinit_t;
+typedef struct element_chain_s {
+	element_t  *head;
+	element_t **tail;
+} element_chain_t;
 
 typedef struct {
 	struct expr_s *head;	///< the first expression in the block
@@ -222,7 +224,7 @@ typedef struct expr_s {
 		ex_temp_t   temp;				///< temporary variable expression
 		ex_vector_t vector;				///< vector expression list
 		ex_value_t *value;				///< constant value
-		ex_cmpinit_t compound;			///< compound initializer
+		element_chain_t compound;		///< compound initializer
 	} e;
 } expr_t;
 
@@ -361,9 +363,15 @@ expr_t *new_block_expr (void);
 */
 expr_t *build_block_expr (expr_t *expr_list);
 
-ex_initele_t *new_initele (expr_t *expr, struct symbol_s *symbol);
+element_t *new_element (expr_t *expr, struct symbol_s *symbol);
 expr_t *new_compound_init (void);
-expr_t *append_element (expr_t *compound, ex_initele_t *element);
+expr_t *append_element (expr_t *compound, element_t *element);
+expr_t *initialized_temp_expr (struct type_s *type, expr_t *compound);
+void assign_elements (expr_t *local_expr, expr_t *ptr,
+					  element_chain_t *element_chain);
+void build_element_chain (element_chain_t *element_chain, struct type_s *type,
+						  expr_t *eles, int base_offset);
+void free_element_chain (element_chain_t *element_chain);
 
 /**	Create a new binary expression node node.
 

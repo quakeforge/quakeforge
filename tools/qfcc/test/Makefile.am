@@ -35,6 +35,7 @@ test_progs_dat=\
 	chewed-alias.dat \
 	chewed-return.dat \
 	comma-expr.dat \
+	compound.dat \
 	deadbool.dat \
 	double.dat \
 	enum.dat \
@@ -157,6 +158,15 @@ comma-expr.run: Makefile build-run
 	@$(srcdir)/build-run $@
 include ./$(DEPDIR)/comma-expr.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/comma-expr.Qo
+
+compound_dat_SOURCES=compound.r
+compound_obj=$(compound_dat_SOURCES:.r=.qfo)
+compound.dat$(EXEEXT): $(compound_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(compound_obj)
+compound.run: Makefile build-run
+	@$(srcdir)/build-run $@
+include ./$(DEPDIR)/compound.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/compound.Qo
 
 deadbool_dat_SOURCES=deadbool.r
 deadbool_obj=$(deadbool_dat_SOURCES:.r=.qfo)

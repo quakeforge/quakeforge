@@ -313,10 +313,16 @@ assign_expr (expr_t *dst, expr_t *src)
 	}
 
 	dst_type = get_type (dst);
-	src_type = get_type (src);
 	if (!dst_type) {
 		internal_error (dst, "dst_type broke in assign_expr");
 	}
+	if (src->type == ex_compound) {
+		src = initialized_temp_expr (dst_type, src);
+		if (src->type == ex_error) {
+			return src;
+		}
+	}
+	src_type = get_type (src);
 	if (!src_type) {
 		internal_error (src, "src_type broke in assign_expr");
 	}

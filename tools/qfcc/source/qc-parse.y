@@ -98,7 +98,7 @@ int yylex (void);
 	void       *pointer;			// for ensuring pointer values are null
 	struct type_s	*type;
 	struct expr_s	*expr;
-	struct ex_initele_s *element;
+	struct element_s *element;
 	struct function_s *function;
 	struct switch_block_s *switch_block;
 	struct param_s	*param;
@@ -188,7 +188,8 @@ int yylex (void);
 %type	<expr>		optional_state_expr texpr vector_expr
 %type	<expr>		statement statements compound_statement
 %type	<expr>		else bool_label break_label continue_label
-%type	<expr>		unary_expr ident_expr cast_expr opt_arg_list arg_list
+%type	<expr>		unary_expr ident_expr cast_expr expr_list
+%type	<expr>		opt_arg_list arg_list arg_expr
 %type	<expr>		init_var_decl_list init_var_decl
 %type	<switch_block> switch_block
 %type	<symbol>	identifier label
@@ -1183,8 +1184,8 @@ element_list
 	;
 
 element
-	: compound_init								{ $$ = new_initele ($1, 0); }
-	| expr										{ $$ = new_initele ($1, 0); }
+	: compound_init								{ $$ = new_element ($1, 0); }
+	| expr										{ $$ = new_element ($1, 0); }
 	;
 
 optional_comma
@@ -1473,7 +1474,7 @@ ident_expr
 	;
 
 vector_expr
-	: '[' expr ',' arg_list ']'
+	: '[' expr ',' expr_list ']'
 		{
 			expr_t     *t = $4;
 			while (t->next)
@@ -1494,6 +1495,7 @@ cast_expr
 expr
 	: cast_expr
 	| expr '=' expr				{ $$ = assign_expr ($1, $3); }
+	| expr '=' compound_init	{ $$ = assign_expr ($1, $3); }
 	| expr ASX expr				{ $$ = asx_expr ($2, $1, $3); }
 	| expr '?' expr ':' expr 	{ $$ = conditional_expr ($1, $3, $5); }
 	| expr AND bool_label expr	{ $$ = bool_expr (AND, $3, $1, $4); }
@@ -1522,7 +1524,7 @@ texpr
 	;
 
 comma_expr
-	: arg_list
+	: expr_list
 		{
 			if ($1->next) {
 				expr_t     *res = $1;
@@ -1533,18 +1535,32 @@ comma_expr
 		}
 	;
 
+expr_list
+	: expr
+	| expr_list ',' expr
+		{
+			$3->next = $1;
+			$$ = $3;
+		}
+	;
+
 opt_arg_list
 	: /* emtpy */				{ $$ = 0; }
 	| arg_list					{ $$ = $1; }
 	;
 
 arg_list
-	: expr
-	| arg_list ',' expr
+	: arg_expr
+	| arg_list ',' arg_expr
 		{
 			$3->next = $1;
 			$$ = $3;
 		}
+	;
+
+arg_expr
+	: expr
+	| compound_init
 	;
 
 const
