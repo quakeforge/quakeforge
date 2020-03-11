@@ -199,6 +199,7 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 			if (pr->pr_params[i] != pr->pr_real_params[i]) {
 				copy_param (pr->pr_real_params[i], pr->pr_params[i],
 							f->parm_size[i].size);
+				pr->pr_params[i] = pr->pr_real_params[i];
 			}
 		}
 	} else if (f->numparms < 0) {
@@ -210,6 +211,7 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 			if (pr->pr_params[i] != pr->pr_real_params[i]) {
 				copy_param (pr->pr_real_params[i], pr->pr_params[i],
 							f->parm_size[i].size);
+				pr->pr_params[i] = pr->pr_real_params[i];
 			}
 		}
 		dparmsize_t parmsize = { pr->pr_param_size, pr->pr_param_alignment };
@@ -221,6 +223,7 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 			if (pr->pr_params[i] != pr->pr_real_params[i]) {
 				copy_param (pr->pr_real_params[i], pr->pr_params[i],
 							parmsize.size);
+				pr->pr_params[i] = pr->pr_real_params[i];
 			}
 		}
 	}
