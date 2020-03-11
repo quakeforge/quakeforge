@@ -145,8 +145,8 @@ int yylex (void);
 %token	<expr>		VALUE STRING
 
 %token				LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS
-%token				NIL IFBE IFB IFAE IFA SWITCH CASE DEFAULT ENUM TYPEDEF
-%token				ARGS EXTERN STATIC SYSTEM NOSAVE OVERLOAD NOT
+%token				NIL IFBE IFB IFAE IFA GOTO SWITCH CASE DEFAULT ENUM
+%token				ARGS TYPEDEF EXTERN STATIC SYSTEM NOSAVE OVERLOAD NOT
 %token	<op>		STRUCT
 %token	<type>		TYPE
 %token	<symbol>	OBJECT TYPE_NAME
@@ -1309,6 +1309,11 @@ statement
 			$$ = switch_expr (switch_block, break_label, $7);
 			switch_block = $5;
 			break_label = $2;
+		}
+	| GOTO NAME
+		{
+			expr_t     *label = named_label_expr ($2);
+			$$ = goto_expr (label);
 		}
 	| IF not '(' texpr ')' statement %prec IFX
 		{

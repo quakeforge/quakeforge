@@ -1551,7 +1551,7 @@ remove_label_from_dest (ex_label_t *label)
 	sblock_t   *sblock;
 	ex_label_t **l;
 
-	if (!label)
+	if (!label || !label->dest)
 		return;
 
 	debug (0, "dropping deceased label %s", label->name);
@@ -1588,14 +1588,20 @@ thread_jumps (sblock_t *blocks)
 		if (!sblock->statements)
 			continue;
 		s = (statement_t *) sblock->tail;
-		if (statement_is_goto (s))
+		if (statement_is_goto (s)) {
 			label = &s->opa->o.label;
-		else if (statement_is_cond (s))
+			if (!(*label)->dest && s->opa->expr) {
+				error (s->opa->expr, "undefined label `%s'", (*label)->name);
+				s->opa->expr = 0;
+			}
+		} else if (statement_is_cond (s)) {
 			label = &s->opb->o.label;
-		else
+		} else {
 			continue;
+		}
 		for (l = *label;
-			 l->dest->statements && statement_is_goto (l->dest->statements);
+			 l->dest && l->dest->statements
+			 && statement_is_goto (l->dest->statements);
 			 l = l->dest->statements->opa->o.label) {
 		}
 		if (l != *label) {

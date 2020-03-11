@@ -353,6 +353,7 @@ static keyword_t obj_keywords[] = {
 // make the language features available to traditional code.
 static keyword_t at_keywords[] = {
 	{"for",			FOR		},
+	{"goto",		GOTO	},
 	{"break",		BREAK	},
 	{"continue",	CONTINUE},
 	{"switch",		SWITCH	},
