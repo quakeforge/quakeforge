@@ -395,6 +395,9 @@ typedef enum {
 	OP_MOD_I,
 	OP_MOD_F,
 	OP_MOD_D,
+
+	OP_MEMSET,
+	OP_MEMSETI,
 } pr_opcode_e;
 #define OP_BREAK 0x8000
 

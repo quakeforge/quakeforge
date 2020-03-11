@@ -404,6 +404,14 @@ check_stack_pointer (progs_t *pr, pointer_t stack, int size)
 	}
 }
 
+static inline void
+pr_memset (pr_type_t *dst, int val, int count)
+{
+	while (count-- > 0) {
+		(*dst++).integer_var = val;
+	}
+}
+
 /*
 	PR_ExecuteProgram
 
@@ -1608,7 +1616,20 @@ op_call:
 						 pr->pr_globals + OPA.integer_var,
 						 st->b * 4);
 				break;
-
+			case OP_MEMSET:
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheckSize (pr, OPC.pointer_var, OPB.uinteger_var);
+				}
+				pr_memset (pr->pr_globals + OPC.pointer_var, OPA.integer_var,
+						   OPB.integer_var);
+				break;
+			case OP_MEMSETI:
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheckSize (pr, OPC.pointer_var, st->b);
+				}
+				pr_memset (pr->pr_globals + OPC.pointer_var, OPA.integer_var,
+						   st->b);
+				break;
 			case OP_GE_D:
 				OPC.float_var = OPA_double_var >= OPB_double_var;
 				break;
