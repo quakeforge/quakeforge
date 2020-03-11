@@ -536,7 +536,7 @@ statement_get_targetlist (statement_t *s)
 	sblock_t  **target_list;
 	int         count = 0, i;
 	def_t      *table = 0;
-	expr_t     *e;
+	element_t  *e;
 
 	if (statement_is_cond (s)) {
 		count = 1;
@@ -555,9 +555,9 @@ statement_get_targetlist (statement_t *s)
 	} else if (statement_is_jumpb (s)) {
 		if (table->alias)
 			internal_error (0, "aliased jump table");
-		e = table->initializer->e.block.head;	//FIXME check!!!
+		e = table->initializer->e.compound.head;	//FIXME check!!!
 		for (i = 0; i < count; e = e->next, i++)
-			target_list[i] = e->e.labelref.label->dest;
+			target_list[i] = e->expr->e.labelref.label->dest;
 	}
 	return target_list;
 }

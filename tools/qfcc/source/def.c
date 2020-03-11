@@ -371,6 +371,8 @@ init_elements (struct def_s *def, expr_t *eles)
 			dummy.offset = def->offset + element->offset;
 			g = D_POINTER (pr_type_t, &dummy);
 			if (c->type == ex_labelref) {
+				// reloc_def_* use only the def's offset and space, so dummy
+				// is ok
 				reloc_def_op (c->e.labelref.label, &dummy);
 				continue;
 			} else if (c->type == ex_value) {
