@@ -290,6 +290,19 @@ const char *new_label_name (void);
 */
 expr_t *new_label_expr (void);
 
+/**	Create a named label expression node.
+
+	The label name is set using new_label_name(), but the symbol is used to add
+	the label to the function's label scope symbol table. If the label already
+	exists in the function's label scope, then the existing label is returned,
+	allowing for forward label declarations.
+
+	\param label	The name symbol to use for adding the label to the function
+					label scope.
+	\return			The new label expression (::ex_label_t) node.
+*/
+expr_t *named_label_expr (struct symbol_s *label);
+
 /**	Create a new label reference expression node.
 
 	Used for taking the address of a label (eg. jump tables).

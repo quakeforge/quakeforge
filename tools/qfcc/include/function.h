@@ -79,6 +79,7 @@ typedef struct function_s {
 		scope symbol table's defspace.
 	*/
 	struct symtab_s    *symtab;
+	struct symtab_s    *label_scope;
 	struct reloc_s     *refs;		///< relocation targets for this function
 	struct expr_s      *var_init;
 	const char         *name;		///< nice name for __PRETTY_FUNCTION__

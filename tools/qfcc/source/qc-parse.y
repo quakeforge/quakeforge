@@ -188,7 +188,7 @@ int yylex (void);
 %type	<expr>		unary_expr ident_expr cast_expr opt_arg_list arg_list
 %type	<expr>		init_var_decl_list init_var_decl
 %type	<switch_block> switch_block
-%type	<symbol>	identifier
+%type	<symbol>	identifier label
 
 %type	<symbol>	overloaded_identifier
 
@@ -1292,6 +1292,10 @@ statement
 			else
 				error (0, "continue outside of loop");
 		}
+	| label
+		{
+			$$ = named_label_expr ($1);
+		}
 	| CASE expr ':'
 		{
 			$$ = case_label_expr (switch_block, $2);
@@ -1356,6 +1360,10 @@ else
 			// this is only to get the the file and line number info
 			$$ = new_nil_expr ();
 		}
+	;
+
+label
+	: NAME ':'
 	;
 
 bool_label

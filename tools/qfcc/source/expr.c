@@ -496,6 +496,27 @@ new_label_expr (void)
 }
 
 expr_t *
+named_label_expr (symbol_t *label)
+{
+	symbol_t   *sym;
+
+	if (!current_func) {
+		// XXX this might be only an error
+		internal_error (0, "label defined outside of function scope");
+	}
+
+	sym = symtab_lookup (current_func->label_scope, label->name);
+
+	if (sym) {
+		return sym->s.expr;
+	}
+	label->sy_type = sy_expr;
+	label->s.expr = new_label_expr ();
+	symtab_addsymbol (current_func->label_scope, label);
+	return label->s.expr;
+}
+
+expr_t *
 new_label_ref (ex_label_t *label)
 {
 
