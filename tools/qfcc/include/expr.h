@@ -75,6 +75,7 @@ typedef struct ex_label_s {
 	struct reloc_s *refs;		///< relocations associated with this label
 	struct sblock_s *dest;		///< the location of this label if known
 	const char *name;			///< the name of this label
+	struct symbol_s *symbol;	///< symbol used to define this label (maybe 0)
 	int         used;			///< label is used as a target
 	struct daglabel_s *daglabel;
 } ex_label_t;

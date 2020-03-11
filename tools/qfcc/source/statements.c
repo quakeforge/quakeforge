@@ -1590,9 +1590,10 @@ thread_jumps (sblock_t *blocks)
 		s = (statement_t *) sblock->tail;
 		if (statement_is_goto (s)) {
 			label = &s->opa->o.label;
-			if (!(*label)->dest && s->opa->expr) {
-				error (s->opa->expr, "undefined label `%s'", (*label)->name);
-				s->opa->expr = 0;
+			if (!(*label)->dest && (*label)->symbol) {
+				error (s->opa->expr, "undefined label `%s'",
+					   (*label)->symbol->name);
+				(*label)->symbol = 0;
 			}
 		} else if (statement_is_cond (s)) {
 			label = &s->opb->o.label;

@@ -499,6 +499,7 @@ expr_t *
 named_label_expr (symbol_t *label)
 {
 	symbol_t   *sym;
+	expr_t     *l;
 
 	if (!current_func) {
 		// XXX this might be only an error
@@ -510,8 +511,11 @@ named_label_expr (symbol_t *label)
 	if (sym) {
 		return sym->s.expr;
 	}
+	l = new_label_expr ();
+	l->e.label.name = save_string (va ("%s_%s", l->e.label.name, label->name));
+	l->e.label.symbol = label;
 	label->sy_type = sy_expr;
-	label->s.expr = new_label_expr ();
+	label->s.expr = l;
 	symtab_addsymbol (current_func->label_scope, label);
 	return label->s.expr;
 }
