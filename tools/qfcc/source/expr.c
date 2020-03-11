@@ -446,10 +446,9 @@ new_label_name (void)
 	static int  label = 0;
 	int         lnum = ++label;
 	const char *fname = current_func->sym->name;
-	char       *lname;
+	const char *lname;
 
-	lname = nva ("$%s_%d", fname, lnum);
-	SYS_CHECKMEM (lname);
+	lname = save_string (va ("$%s_%d", fname, lnum));
 	return lname;
 }
 
