@@ -274,9 +274,9 @@ expr_t *expr_file_line (expr_t *dst, const expr_t *src);
 
 /**	Create a new label name.
 
-	The label name is guaranteed to to the compilation. It is made up of the
-	name of the current function plus an incrementing number. The number is
-	not reset between functions.
+	The label name is guaranteed to be unique to the compilation. It is made
+	up of the name of the current function plus an incrementing number. The
+	number is not reset between functions.
 
 	\return			The string representing the label name.
 */
