@@ -85,7 +85,7 @@ get_hash (const void *_cl, void *unused)
 	return Hash_Buffer (&val->v, sizeof (val->v)) + val->lltype;
 }
 
-static int
+static int __attribute__((pure))
 compare (const void *_cla, const void *_clb, void *unused)
 {
 	case_label_t *cla = (case_label_t *) _cla;
