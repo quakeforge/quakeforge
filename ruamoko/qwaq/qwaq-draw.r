@@ -29,6 +29,11 @@
 {
 	return buffer;
 }
+- (Rect) rect
+{
+	Rect rect = { nil, size };
+	return rect;
+}
 
 - blitFromBuffer: (DrawBuffer *) srcBuffer to: (Point) pos from: (Rect) rect
 {

@@ -38,7 +38,8 @@
 -initWithRect: (Rect) rect;
 -initWithWindow: (window_t) window;
 
--(window_t) window;
+- (window_t) window;
+- (Extent) size;
 
 - blitFromBuffer: (DrawBuffer *) srcBuffer to: (Point) pos from: (Rect) rect;
 

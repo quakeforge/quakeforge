@@ -33,6 +33,7 @@ static TextContext *screen;
 		return nil;
 	}
 	window = stdscr;
+	rect = getwrect (window);
 	return self;
 }
 

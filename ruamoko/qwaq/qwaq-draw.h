@@ -16,6 +16,7 @@
 
 - (Extent) size;
 - (int *) buffer;
+- (Rect) rect;
 
 - blitFromBuffer: (DrawBuffer *) srcBuffer to: (Point) pos from: (Rect) rect;
 
