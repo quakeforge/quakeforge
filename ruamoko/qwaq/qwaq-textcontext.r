@@ -166,3 +166,5 @@ int curs_set (int visibility) = #0;
 int move (int x, int y) = #0;
 void wborder (window_t window, box_sides_t sides, box_corners_t corners) = #0;
 void mvwblit_line (window_t window, int x, int y, int *wch, int len) = #0;
+
+void printf(string fmt, ...) = #0;
