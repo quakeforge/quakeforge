@@ -322,7 +322,7 @@ assign_expr (expr_t *dst, expr_t *src)
 			return expr;
 		}
 	} else {
-		if (!is_memset (src) && is_scalar (dst_type)) {
+		if (!src && is_scalar (dst_type)) {
 			return error (dst, "empty scalar initializer");
 		}
 		src = new_nil_expr ();
