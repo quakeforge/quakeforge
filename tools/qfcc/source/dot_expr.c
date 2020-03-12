@@ -507,6 +507,29 @@ print_value (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 }
 
 static void
+print_compound (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+	dasprintf (dstr, "%*se_%p [label=\"compound init\"];\n", indent, "", e);
+}
+
+static void
+print_memset (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+	expr_t     *dst = e->e.memset.dst;
+	expr_t     *val = e->e.memset.val;
+	expr_t     *count = e->e.memset.count;
+	_print_expr (dstr, dst, level, id, next);
+	_print_expr (dstr, val, level, id, next);
+	_print_expr (dstr, count, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, dst);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, val);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, count);
+	dasprintf (dstr, "%*se_%p [label=\"memset\"];\n", indent, "", e);
+}
+
+static void
 _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	static print_f print_funcs[] = {
@@ -523,6 +546,8 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		print_vector,
 		print_nil,
 		print_value,
+		print_compound,
+		print_memset,
 	};
 	int         indent = level * 2 + 2;
 
@@ -534,7 +559,7 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		return;
 	e->printid = id;
 
-	if ((int) e->type < 0 || e->type > ex_value) {
+	if ((int) e->type < 0 || e->type > ex_memset) {
 		dasprintf (dstr, "%*se_%p [label=\"(bad expr type)\\n%d\"];\n",
 				   indent, "", e, e->line);
 		return;
