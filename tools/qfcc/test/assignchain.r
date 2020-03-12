@@ -69,6 +69,8 @@ int test_struct_pointer (foo *bar, foo *baz)
 				baz.x, baz.y, foo_init.x, foo_init.y);
 		ret |= 1;
 	}
+	*bar = foo_init;
+	*baz = foo_init;
 	*bar = *baz = nil;
 	if (bar.x || baz.x || bar.y || baz.y) {
 		printf ("test_struct: bar={%d %g} baz={%d %g}\n",
