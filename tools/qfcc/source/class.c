@@ -722,7 +722,7 @@ emit_ivar_list_item (def_t *def, void *data, int index)
 	defspace_t *space;
 
 #if 0
-	//FIXME the type is dynamic, so need a way to pass it before it cn be
+	//FIXME the type is dynamic, so need a way to pass it before it can be
 	//checked
 	if (def->type != &XXX)
 		internal_error (0, "%s: expected XXX def",
