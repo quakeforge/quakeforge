@@ -291,12 +291,18 @@ get_panel (qwaq_resources_t *res, const char *name, int handle)
 	return panel;
 }
 
+//XXX goes away with threads
+static void process_commands (qwaq_resources_t *);
+static void process_input (qwaq_resources_t *);
 static int
 acquire_string (qwaq_resources_t *res)
 {
 	int         string_id = -1;
 
 	// XXX add locking and loop for available
+	if (!RB_DATA_AVAILABLE (res->string_ids)) {
+		process_commands(res);
+	}
 	if (RB_DATA_AVAILABLE (res->string_ids)) {
 		RB_READ_DATA (res->string_ids, &string_id, 1);
 	}
@@ -338,9 +344,6 @@ qwaq_submit_result (qwaq_resources_t *res, const int *result, unsigned len)
 	}
 }
 
-//XXX goes away with threads
-static void process_commands (qwaq_resources_t *);
-static void process_input (qwaq_resources_t *);
 static void
 qwaq_wait_result (qwaq_resources_t *res, int *result, int cmd, unsigned len)
 {
@@ -628,11 +631,18 @@ cmd_mvwblit_line (qwaq_resources_t *res)
 	int         chs_id = RB_PEEK_DATA (res->command_queue, 5);
 	int         len = RB_PEEK_DATA (res->command_queue, 6);
 	int        *chs = (int *) res->strings[chs_id].str;
+	int         save_x;
+	int         save_y;
 
 	window_t   *window = get_window (res, __FUNCTION__, window_id);
+	getyx (window->win, save_y, save_x);
 	for (int i = 0; i < len; i++) {
-		mvwaddch (window->win, y, x, chs[i]);
+		Sys_Printf(" %d", chs[i]);
+		mvwaddch (window->win, y, x + i, chs[i]);
 	}
+	Sys_Printf("\n");
+	wmove (window->win, save_y, save_x);
+	release_string (res, chs_id);
 }
 
 static void

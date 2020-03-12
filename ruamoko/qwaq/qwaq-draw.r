@@ -33,7 +33,7 @@
 - blitFromBuffer: (DrawBuffer *) srcBuffer to: (Point) pos from: (Rect) rect
 {
 	Extent srcSize = srcBuffer.size;
-	Rect r = { {}, srcBuffer.size };
+	Rect r = { {}, size };
 	Rect t = { pos, rect.extent };
 
 	t = clipRect (r, t);

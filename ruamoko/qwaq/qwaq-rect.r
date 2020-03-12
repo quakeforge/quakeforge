@@ -29,6 +29,18 @@ makeRect (int xpos, int ypos, int xlen, int ylen)
 	return rect;
 }
 
+Point makePoint (int x, int y)
+{
+	Point p = {x, y};
+	return p;
+}
+
+Extent makeExtent (int width, int height)
+{
+	Extent e = {width, height};
+	return e;
+}
+
 int
 rectContainsPoint (Rect *rect, Point *point)
 {

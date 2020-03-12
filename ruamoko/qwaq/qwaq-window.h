@@ -14,6 +14,7 @@
 {
 	Point       point;	// FIXME can't be local :(
 	struct panel_s *panel;
+	DrawBuffer *buf;
 }
 +windowWithRect: (Rect) rect;
 -setBackground: (int) ch;

@@ -21,6 +21,10 @@
 	buffer = [[TextContext alloc] initWithRect: rect];
 	textContext = buffer;
 	panel = create_panel ([buffer window]);
+	buf = [DrawBuffer buffer: makeExtent (3, 3)];
+	[buf mvaddstr: makePoint (0, 0), "XOX"];
+	[buf mvaddstr: makePoint (0, 1), "OXO"];
+	[buf mvaddstr: makePoint (0, 2), "XOX"];
 	return self;
 }
 
@@ -108,6 +112,7 @@
 			}
 		}
 	}
+	[textContext blitFromBuffer: buf to: makePoint (6, 3) from: [buf rect]];
 	[self refresh];
 	return self;
 }
