@@ -31,6 +31,7 @@ fail_bins=
 test_progs_dat=\
 	address-cast.dat \
 	alignment.dat \
+	assignchain.dat \
 	anonstruct.dat \
 	chewed-alias.dat \
 	chewed-return.dat \
@@ -131,6 +132,15 @@ anonstruct.run: Makefile build-run
 	@$(srcdir)/build-run $@
 include ./$(DEPDIR)/anonstruct.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/anonstruct.Qo
+
+assignchain_dat_SOURCES=assignchain.r
+assignchain_obj=$(assignchain_dat_SOURCES:.r=.qfo)
+assignchain.dat$(EXEEXT): $(assignchain_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(assignchain_obj)
+assignchain.run: Makefile build-run
+	@$(srcdir)/build-run $@
+include ./$(DEPDIR)/assignchain.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/assignchain.Qo
 
 chewed_alias_dat_SOURCES=chewed-alias.r
 chewed_alias_obj=$(chewed_alias_dat_SOURCES:.r=.qfo)
