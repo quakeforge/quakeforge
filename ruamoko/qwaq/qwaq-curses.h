@@ -18,6 +18,8 @@ typedef struct box_corners_s {
 } box_corners_t;
 
 #ifdef __QFCC__
+#include "qwaq-rect.h"
+
 // names, order and comments lifted from ncurses.h
 typedef enum {
 /* VT100 symbols begin here */
@@ -121,6 +123,8 @@ typedef struct panel_s *panel_t;
 @extern void wborder (window_t window,
 					  box_sides_t sides, box_corners_t corners);
 @extern void mvwblit_line (window_t window, int x, int y, int *wch, int len);
+
+@extern Rect getwrect (struct window_s *window);
 
 @extern void printf(string fmt, ...);
 #endif

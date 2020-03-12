@@ -126,6 +126,5 @@ updateScreenCursor (View *view)
 	[textContext mvaddch: pos, ch];
 }
 
-@end
 
-Rect getwrect (window_t window) = #0;
+@end

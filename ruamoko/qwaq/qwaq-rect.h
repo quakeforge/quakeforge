@@ -22,7 +22,6 @@ typedef struct Rect_s {
 @extern Extent makeExtent (int width, int height);
 //XXX will not work if point or rect point to a local variabl
 @extern int rectContainsPoint (Rect *rect, Point *point);
-@extern Rect getwrect (struct window_s *window);
 @extern Rect clipRect (Rect clipRect, Rect rect);
 #endif
 
