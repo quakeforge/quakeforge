@@ -68,6 +68,13 @@ arp_end (void)
 	return self;
 }
 
+-draw
+{
+	[super draw];
+	[TextContext refresh];
+	return self;
+}
+
 -handleEvent: (qwaq_event_t *) event
 {
 	[screen handleEvent: event];

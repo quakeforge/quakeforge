@@ -49,6 +49,7 @@
 - (void) mvvprintf: (Point) pos, string mft, @va_list args;
 - (void) mvaddch: (Point) pos, int ch;
 - (void) refresh;
++ (void) refresh;
 - (void) bkgd: (int) ch;
 - (void) scrollok: (int) flag;
 - (void) border: (box_sides_t) sides, box_corners_t corners;

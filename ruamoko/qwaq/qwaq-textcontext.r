@@ -124,6 +124,7 @@ static TextContext *screen;
 - (void) addch: (int) ch = #0;
 - (void) mvvprintf: (Point) pos, string mft, @va_list args = #0;
 - (void) refresh = #0;
++ (void) refresh = #0;
 - (void) mvaddch: (Point) pos, int ch = #0;
 - (void) bkgd: (int) ch = #0;
 - (void) scrollok: (int) flag = #0;

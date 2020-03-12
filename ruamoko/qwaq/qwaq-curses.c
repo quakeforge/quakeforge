@@ -1025,7 +1025,7 @@ bi_panel_window (progs_t *pr)
 }
 
 static void
-bi_update_panels (progs_t *pr)
+qwaq_update_panels (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
 
@@ -1033,15 +1033,25 @@ bi_update_panels (progs_t *pr)
 	command[1] = CMD_SIZE(command);
 	qwaq_submit_command (res, command);
 }
+static void
+bi_update_panels (progs_t *pr)
+{
+	qwaq_update_panels (pr);
+}
 
 static void
-bi_doupdate (progs_t *pr)
+qwaq_doupdate (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
 
 	int         command[] = { qwaq_cmd_doupdate, 0, };
 	command[1] = CMD_SIZE(command);
 	qwaq_submit_command (res, command);
+}
+static void
+bi_doupdate (progs_t *pr)
+{
+	qwaq_doupdate (pr);
 }
 
 static void
@@ -1595,11 +1605,22 @@ bi_i_TextContext__mvvprintf_ (progs_t *pr)
 }
 
 static void
+bi_c_TextContext__refresh (progs_t *pr)
+{
+	qwaq_update_panels (pr);
+	qwaq_doupdate (pr);
+}
+
+static void
 bi_i_TextContext__refresh (progs_t *pr)
 {
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 
-	qwaq_wrefresh (pr, window_id);
+	//qwaq_wrefresh (pr, window_id);
+	qwaq_update_panels (pr);
+	if (window_id == 1) {
+		qwaq_doupdate (pr);
+	}
 }
 
 static void
@@ -1703,6 +1724,7 @@ static builtin_t builtins[] = {
 	{"_i_TextContext__vprintf_",		bi_i_TextContext__vprintf_,		   -1},
 	{"_i_TextContext__addch_",			bi_i_TextContext__addch_,		   -1},
 	{"_i_TextContext__mvvprintf_",		bi_i_TextContext__mvvprintf_,	   -1},
+	{"_c_TextContext__refresh",			bi_c_TextContext__refresh,		   -1},
 	{"_i_TextContext__refresh",			bi_i_TextContext__refresh,		   -1},
 	{"_i_TextContext__mvaddch_",		bi_i_TextContext__mvaddch_,		   -1},
 	{"_i_TextContext__bkgd_",			bi_i_TextContext__bkgd_,		   -1},

@@ -36,9 +36,7 @@
 
 -redraw
 {
-	update_panels ();
 	[textContext refresh];
-	[TextContext doupdate];
 	return self;
 }
 
