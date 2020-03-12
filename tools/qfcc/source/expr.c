@@ -214,8 +214,9 @@ get_type (expr_t *e)
 	convert_name (e);
 	switch (e->type) {
 		case ex_labelref:
-		case ex_memset:
 			return &type_void;
+		case ex_memset:
+			return e->e.memset.type;
 		case ex_label:
 		case ex_error:
 		case ex_compound:
@@ -1186,7 +1187,7 @@ new_move_expr (expr_t *e1, expr_t *e2, type_t *type, int indirect)
 }
 
 expr_t *
-new_memset_expr (expr_t *dst, expr_t *val, expr_t *count)
+new_memset_expr (expr_t *dst, expr_t *val, type_t *type)
 {
 	expr_t     *e;
 	if (!is_pointer (get_type (dst))) {
@@ -1195,14 +1196,12 @@ new_memset_expr (expr_t *dst, expr_t *val, expr_t *count)
 	if (!is_scalar (get_type (val))) {
 		return error (val, "memset value must be a scalar");
 	}
-	if (!is_integral (get_type (count))) {
-		return error (val, "memset count must be integral");
-	}
 	e = new_expr ();
 	e->type = ex_memset;
 	e->e.memset.dst = dst;
 	e->e.memset.val = val;
-	e->e.memset.count = count;
+	e->e.memset.count = new_integer_expr (type_size (type));
+	e->e.memset.type = type;
 	return e;
 }
 

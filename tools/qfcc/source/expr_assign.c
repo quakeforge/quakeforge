@@ -286,6 +286,12 @@ is_indirect (expr_t *e)
 	return is_const_ptr (e->e.expr.e1);
 }
 
+static __attribute__((pure)) int
+is_memset (expr_t *e)
+{
+	return e->type == ex_memset;
+}
+
 expr_t *
 assign_expr (expr_t *dst, expr_t *src)
 {
@@ -305,7 +311,7 @@ assign_expr (expr_t *dst, expr_t *src)
 		internal_error (dst, "dst_type broke in assign_expr");
 	}
 
-	if (src) {
+	if (src && !is_memset (src)) {
 		convert_name (src);
 		if (src->type == ex_error) {
 			return src;
@@ -316,7 +322,7 @@ assign_expr (expr_t *dst, expr_t *src)
 			return expr;
 		}
 	} else {
-		if (is_scalar (dst_type)) {
+		if (!is_memset (src) && is_scalar (dst_type)) {
 			return error (dst, "empty scalar initializer");
 		}
 		src = new_nil_expr ();
@@ -347,7 +353,6 @@ assign_expr (expr_t *dst, expr_t *src)
 	}
 	if (!is_struct (dst_type) && is_nil (src)) {
 		// nil is a type-agnostic 0
-		// FIXME: assignment to compound types? error or memset?
 		src_type = dst_type;
 		convert_nil (src, src_type);
 	}
@@ -383,9 +388,7 @@ assign_expr (expr_t *dst, expr_t *src)
 		if (is_struct (dst_type)) {
 			dst = address_expr (dst, 0, 0);
 			if (is_nil (src)) {
-				int         size = type_size (dst_type);
-				return new_memset_expr (dst, new_integer_expr (0),
-										new_integer_expr (size));
+				return new_memset_expr (dst, new_integer_expr (0), dst_type);
 			} else {
 				src = address_expr (src, 0, 0);
 				return new_move_expr (dst, src, dst_type, 1);
