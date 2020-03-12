@@ -380,6 +380,10 @@ init_elements (struct def_s *def, expr_t *eles)
 					&& is_float (element->type)) {
 					convert_int (c);
 				}
+				if (is_double (get_type (c)) && is_float (element->type)
+					&& c->implicit) {
+					convert_double (c);
+				}
 				if (get_type (c) != element->type) {
 					error (c, "type mismatch in initializer");
 					continue;
