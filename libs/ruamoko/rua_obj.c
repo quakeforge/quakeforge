@@ -1289,6 +1289,7 @@ rua___obj_forward (progs_t *pr)
 		P_POINTER (pr, 0) = PR_SetPointer (pr, obj);
 		P_POINTER (pr, 1) = PR_SetPointer (pr, err_sel);
 		P_POINTER (pr, 2) = PR_SetPointer (pr, sel);
+		pr->pr_argc = 3;
 		PR_CallFunction (pr, imp);
 		return;
 	}
@@ -1306,6 +1307,7 @@ rua___obj_forward (progs_t *pr)
 		P_POINTER (pr, 0) = PR_SetPointer (pr, obj);
 		P_POINTER (pr, 1) = PR_SetPointer (pr, err_sel);
 		P_POINTER (pr, 2) = PR_SetTempString (pr, probj->msg->str);
+		pr->pr_argc = 3;
 		PR_CallFunction (pr, imp);
 		return;
 	}
