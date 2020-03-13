@@ -67,6 +67,8 @@ const char *expr_names[] =
 	"vector",
 	"nil",
 	"value",
+	"compound",
+	"memset",
 };
 
 const char *
