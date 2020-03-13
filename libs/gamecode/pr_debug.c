@@ -1139,8 +1139,22 @@ static void
 pr_debug_union_view (qfot_type_t *type, pr_type_t *value, void *_data)
 {
 	__auto_type data = (pr_debug_data_t *) _data;
+	progs_t    *pr = data->pr;
 	dstring_t  *dstr = data->dstr;
+	qfot_struct_t *strct = &type->t.strct;
 
+	dstring_appendstr (dstr, "{");
+	for (int i = 0; i < strct->num_fields; i++) {
+		qfot_var_t *field = strct->fields + i;
+		qfot_type_t *val_type = &G_STRUCT (pr, qfot_type_t, field->type);
+		pr_type_t  *val = value + field->offset;
+		dasprintf (dstr, "%s=", PR_GetString (pr, field->name));
+		value_string (data, val_type, val);
+		if (i < strct->num_fields) {
+			dstring_appendstr (dstr, ", ");
+		}
+	}
+	dstring_appendstr (dstr, "}");
 	dstring_appendstr (dstr, "<union>");
 }
 
