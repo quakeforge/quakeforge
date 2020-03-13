@@ -31,14 +31,12 @@ makeRect (int xpos, int ypos, int xlen, int ylen)
 
 Point makePoint (int x, int y)
 {
-	Point p = {x, y};
-	return p;
+	return {x, y};
 }
 
 Extent makeExtent (int width, int height)
 {
-	Extent e = {width, height};
-	return e;
+	return {width, height};
 }
 
 int
