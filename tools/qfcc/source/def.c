@@ -360,10 +360,11 @@ init_elements (struct def_s *def, expr_t *eles)
 	} else {
 		def_t       dummy = *def;
 		for (element = element_chain.head; element; element = element->next) {
-			if (element->expr) {
-				c = constant_expr (element->expr);
-			} else {
-				c = new_nil_expr ();
+			if (!element->expr
+				|| ((c = constant_expr (element->expr))->type == ex_nil)) {
+				// nil is type agnostic 0 and defspaces are initialized to
+				// 0 on creation
+				continue;
 			}
 			if (c->type == ex_nil) {
 				c = convert_nil (c, element->type);

@@ -226,6 +226,10 @@ get_type (expr_t *e)
 				return &type_float;
 			return &type_integer;
 		case ex_nil:
+			if (e->e.nil) {
+				return e->e.nil;
+			}
+			// fall through
 		case ex_state:
 			return &type_void;
 		case ex_block:
@@ -1414,8 +1418,7 @@ convert_double (expr_t *e)
 expr_t *
 convert_nil (expr_t *e, type_t *t)
 {
-	e->type = ex_value;
-	e->e.value = new_nil_val (t);
+	e->e.nil = t;
 	return e;
 }
 
@@ -1977,8 +1980,6 @@ return_expr (function_t *f, expr_t *e)
 		if (e->type == ex_nil) {
 			t = ret_type;
 			convert_nil (e, t);
-			if (e->type == ex_nil)
-				return error (e, "invalid return type for NIL");
 		} else {
 			if (!options.traditional)
 				return error (e, "void value not ignored as it ought to be");

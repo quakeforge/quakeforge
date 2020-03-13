@@ -1150,6 +1150,23 @@ expr_vector_e (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
+expr_nil (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	type_t     *nil = e->e.nil;
+	expr_t     *ptr;
+	if (!is_struct (nil) && !is_array (nil)) {
+		*op = value_operand (new_nil_val (nil), e);
+		return sblock;
+	}
+	ptr = address_expr (new_temp_def_expr (nil), 0, 0);
+	expr_file_line (ptr, e);
+	sblock = statement_subexpr (sblock, ptr, op);
+	e = expr_file_line (new_memset_expr (ptr, new_integer_expr (0), nil), e);
+	sblock = statement_slist (sblock, e);
+	return sblock;
+}
+
+static sblock_t *
 expr_value (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	*op = value_operand (e->e.value, e);
@@ -1171,18 +1188,20 @@ statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 		expr_symbol,
 		expr_temp,
 		expr_vector_e,		// ex_vector
-		0,					// ex_nil
+		expr_nil,
 		expr_value,
+		0,					// ex_compound
+		0,					// ex_memset
 	};
 	if (!e) {
 		*op = 0;
 		return sblock;
 	}
 
-	if (e->type > ex_value)
-		internal_error (e, "bad expression type");
+	if (e->type > ex_memset)
+		internal_error (e, "bad sub-expression type");
 	if (!sfuncs[e->type])
-		internal_error (e, "unexpected expression type: %s",
+		internal_error (e, "unexpected sub-expression type: %s",
 						expr_names[e->type]);
 
 	sblock = sfuncs[e->type] (sblock, e, op);

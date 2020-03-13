@@ -234,6 +234,7 @@ typedef struct expr_s {
 		ex_value_t *value;				///< constant value
 		element_chain_t compound;		///< compound initializer
 		ex_memset_t memset;				///< memset expr params
+		struct type_s *nil;				///< type for nil if known
 	} e;
 } expr_t;
 
