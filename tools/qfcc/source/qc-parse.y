@@ -1267,10 +1267,8 @@ statement
 	| error ';'					{ $$ = 0; yyerrok; }
 	| compound_statement		{ $$ = $1; }
 	| local_def					{ $$ = $1; }
-	| RETURN opt_expr ';'
-		{
-			$$ = return_expr (current_func, $2);
-		}
+	| RETURN opt_expr ';'		{ $$ = return_expr (current_func, $2); }
+	| RETURN compound_init ';'	{ $$ = return_expr (current_func, $2); }
 	| BREAK ';'
 		{
 			$$ = 0;

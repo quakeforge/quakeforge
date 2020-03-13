@@ -1930,9 +1930,10 @@ expr_t *
 return_expr (function_t *f, expr_t *e)
 {
 	type_t     *t;
+	type_t     *ret_type = f->sym->type->t.func.type;
 
 	if (!e) {
-		if (f->sym->type->t.func.type != &type_void) {
+		if (ret_type != &type_void) {
 			if (options.traditional) {
 				if (options.warnings.traditional)
 					warning (e,
@@ -1950,25 +1951,31 @@ return_expr (function_t *f, expr_t *e)
 		}
 	}
 
+	if (e->type == ex_compound) {
+		e = expr_file_line (initialized_temp_expr (ret_type, e), e);
+	}
+
 	t = get_type (e);
 
-	if (e->type == ex_error)
+	if (e->type == ex_error) {
 		return e;
-	if (f->sym->type->t.func.type == &type_void) {
+	}
+	if (ret_type == &type_void) {
 		if (!options.traditional)
 			return error (e, "returning a value for a void function");
 		if (options.warnings.traditional)
 			warning (e, "returning a value for a void function");
 	}
-	if (e->type == ex_bool)
-		e = convert_from_bool (e, f->sym->type->t.func.type);
-	if (f->sym->type->t.func.type == &type_float && is_integer_val (e)) {
+	if (e->type == ex_bool) {
+		e = convert_from_bool (e, ret_type);
+	}
+	if (ret_type == &type_float && is_integer_val (e)) {
 		convert_int (e);
 		t = &type_float;
 	}
 	if (t == &type_void) {
 		if (e->type == ex_nil) {
-			t = f->sym->type->t.func.type;
+			t = ret_type;
 			convert_nil (e, t);
 			if (e->type == ex_nil)
 				return error (e, "invalid return type for NIL");
@@ -1980,7 +1987,7 @@ return_expr (function_t *f, expr_t *e)
 			//FIXME does anything need to be done here?
 		}
 	}
-	if (!type_assignable (f->sym->type->t.func.type, t)) {
+	if (!type_assignable (ret_type, t)) {
 		if (!options.traditional)
 			return error (e, "type mismatch for return value of %s",
 						  f->sym->name);
@@ -1988,8 +1995,8 @@ return_expr (function_t *f, expr_t *e)
 			warning (e, "type mismatch for return value of %s",
 					 f->sym->name);
 	} else {
-		if (f->sym->type->t.func.type != t) {
-			e = cast_expr (f->sym->type->t.func.type, e);
+		if (ret_type != t) {
+			e = cast_expr (ret_type, e);
 			t = f->sym->type->t.func.type;
 		}
 	}
