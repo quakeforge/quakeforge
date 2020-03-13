@@ -1091,9 +1091,11 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 		case st_move:
 			flow_add_op_var (use, s->opa, 1);
 			flow_add_op_var (use, s->opb, 1);
-			if (!strcmp (s->opcode, "<MOVE>")) {
+			if (!strcmp (s->opcode, "<MOVE>")
+				|| !strcmp (s->opcode, "<MEMSET>")) {
 				flow_add_op_var (def, s->opc, 0);
-			} else if (!strcmp (s->opcode, "<MOVEP>")) {
+			} else if (!strcmp (s->opcode, "<MOVEP>")
+					   || !strcmp (s->opcode, "<MEMSETP>")) {
 				flow_add_op_var (use, s->opc, 0);
 				if (s->opc->op_type == op_value
 					&& s->opc->o.value->lltype == ev_pointer
