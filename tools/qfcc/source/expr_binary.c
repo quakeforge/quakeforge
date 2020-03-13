@@ -924,10 +924,14 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 
 	convert_name (e1);
 	e1 = convert_vector (e1);
+	// FIXME this is target-specific info and should not be in the
+	// expression tree
 	if (e1->type == ex_block && e1->e.block.is_call
 		&& has_function_call (e2) && e1->e.block.result) {
-		e = new_temp_def_expr (get_type (e1->e.block.result));
-		e1 = assign_expr (e, e1);
+		expr_t    *tmp = new_temp_def_expr (get_type (e1->e.block.result));
+		e = assign_expr (tmp, e1->e.block.result);
+		append_expr (e1, e);
+		e1->e.block.result = tmp;
 	}
 	if (e1->type == ex_error)
 		return e1;

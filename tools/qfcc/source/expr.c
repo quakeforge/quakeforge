@@ -1843,6 +1843,9 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 		if (e->type == ex_compound) {
 			e = expr_file_line (initialized_temp_expr (arg_types[i], e), e);
 		}
+		// FIXME this is target-specific info and should not be in the
+		// expression tree
+		// That, or always use a temp, since it should get optimized out
 		if (has_function_call (e)) {
 			expr_t     *cast = cast_expr (arg_types[i], convert_vector (e));
 			expr_t     *tmp = new_temp_def_expr (arg_types[i]);
