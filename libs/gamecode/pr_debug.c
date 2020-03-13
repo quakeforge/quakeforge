@@ -998,7 +998,7 @@ pr_debug_float_view (qfot_type_t *type, pr_type_t *value, void *_data)
 		&& value->uinteger_var != 0x80000000) {
 		dasprintf (dstr, "<%08x>", value->integer_var);
 	} else {
-		dasprintf (dstr, "%g", value->float_var);
+		dasprintf (dstr, "%.9g", value->float_var);
 	}
 }
 
@@ -1008,7 +1008,7 @@ pr_debug_vector_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "'%g %g %g'",
+	dasprintf (dstr, "'%.9g %.9g %.9g'",
 			  value->vector_var[0], value->vector_var[1],
 			  value->vector_var[2]);
 }
@@ -1085,7 +1085,7 @@ pr_debug_quat_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "'%g %g %g %g'",
+	dasprintf (dstr, "'%.9g %.9g %.9g %.9g'",
 			   value->vector_var[0], value->vector_var[1],
 			   value->vector_var[2], value->vector_var[3]);
 }
@@ -1123,7 +1123,7 @@ pr_debug_double_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "%g", *(double *)value);
+	dasprintf (dstr, "%.17g", *(double *)value);
 }
 
 static void
