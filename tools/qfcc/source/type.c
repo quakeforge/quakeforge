@@ -828,6 +828,12 @@ is_func (const type_t *type)
 }
 
 int
+is_structural (const type_t *type)
+{
+	return is_struct (type) || is_array (type);
+}
+
+int
 is_string (const type_t *type)
 {
 	if (type->type == ev_string)

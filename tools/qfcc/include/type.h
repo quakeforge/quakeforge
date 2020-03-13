@@ -164,6 +164,7 @@ int is_pointer (const type_t *type) __attribute__((pure));
 int is_field (const type_t *type) __attribute__((pure));
 int is_struct (const type_t *type) __attribute__((pure));
 int is_array (const type_t *type) __attribute__((pure));
+int is_structural (const type_t *type) __attribute__((pure));
 int is_func (const type_t *type) __attribute__((pure));
 int is_string (const type_t *type) __attribute__((pure));
 int type_compatible (const type_t *dst, const type_t *src) __attribute__((pure));
