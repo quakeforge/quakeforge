@@ -659,11 +659,11 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op)
 	const char **opcode_set = opcode_sets[0];
 	const char *opcode;
 	int         need_ptr = 0;
-	operand_t  *dummy;
+	//operand_t  *dummy;
 
-	if (src_expr->type == ex_expr && src_expr->e.expr.op == '=') {
-		sblock = statement_subexpr (sblock, src_expr, &dummy);
-	}
+	//if (src_expr->type == ex_expr && src_expr->e.expr.op == '=') {
+	//	sblock = statement_subexpr (sblock, src_expr, &dummy);
+	//}
 	// follow the assignment chain to find the actual source expression
 	// (can't take the address of an assignment)
 	while (src_expr->type == ex_expr && src_expr->e.expr.op == '=') {
@@ -726,21 +726,62 @@ expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 	const char *opcode = convert_op (e->e.expr.op);
 	st_type_t   type;
 
-	if (is_structural (dst_type)) {
-		return expr_assign_copy (sblock, e, op);
-	}
-
-	if (e->e.expr.op == '=') {
-		sblock = statement_subexpr (sblock, dst_expr, &dst);
-		src = dst;
+	if (src_expr->type == ex_expr && src_expr->e.expr.op == '=') {
 		sblock = statement_subexpr (sblock, src_expr, &src);
-		ofs = 0;
-		if (op)
-			*op = dst;
-		if (src == dst)
-			return sblock;
-		type = st_assign;
+		if (is_structural (dst_type)) {
+			return expr_assign_copy (sblock, e, op);
+		}
+		if (is_indirect (dst_expr)) {
+			goto dereference_dst;
+		} else {
+			sblock = statement_subexpr (sblock, dst_expr, &dst);
+		}
+	} else {
+		if (is_structural (dst_type)) {
+			return expr_assign_copy (sblock, e, op);
+		}
+
+		if (is_indirect (dst_expr)) {
+			// If both dst_expr and src_expr are indirect, then a staging temp
+			// is needed, but emitting src_expr first generates that temp
+			// because src is null. If src_expr is not indirect and is a simple
+			// variable reference, then just the ref will be generated and thus
+			// will be assigned to the dereferenced destination. If src_expr
+			// is not simple, then a temp will be generated, so all good.
+			sblock = statement_subexpr (sblock, src_expr, &src);
+			goto dereference_dst;
+		} else {
+			// dst_expr is direct and known to be an l-value, so emitting
+			// its expression will simply generate a reference to that l-value
+			// which will be used as the default location to store src_expr's
+			// result
+			sblock = statement_subexpr (sblock, dst_expr, &dst);
+			src = dst;
+			sblock = statement_subexpr (sblock, src_expr, &src);
+		}
 	}
+	if (0) {
+dereference_dst:
+		// dst_expr is a dereferenced pointer, so need to un-dereference it
+		// to get the pointer and switch to storep instructions.
+		dst_expr = address_expr (dst_expr, 0, 0);
+		opcode = ".=";	// FIXME find a nicer representation (lose strings?)
+		if (dst_expr->type == ex_expr && !is_const_ptr (dst_expr->e.expr.e1)) {
+			sblock = statement_subexpr (sblock, dst_expr->e.expr.e1, &dst);
+			sblock = statement_subexpr (sblock, dst_expr->e.expr.e2, &ofs);
+		} else {
+			sblock = statement_subexpr (sblock, dst_expr, &dst);
+			ofs = 0;
+		}
+	}
+	if (op) {
+		*op = src;
+	}
+	if (src == dst) {
+		return sblock;
+	}
+	type = st_assign;
+
 	s = new_statement (type, opcode, e);
 	s->opa = src;
 	s->opb = dst;
