@@ -1616,14 +1616,17 @@ op_call:
 						 pr->pr_globals + OPA.integer_var,
 						 st->b * 4);
 				break;
-			case OP_MEMSET:
+			case OP_MEMSETI:
+				pr_memset (&OPC, OPA.integer_var, st->b);
+				break;
+			case OP_MEMSETP:
 				if (pr_boundscheck->int_val) {
-					PR_BoundsCheckSize (pr, OPC.pointer_var, OPB.uinteger_var);
+					PR_BoundsCheckSize (pr, OPC.pointer_var, OPB.integer_var);
 				}
 				pr_memset (pr->pr_globals + OPC.pointer_var, OPA.integer_var,
 						   OPB.integer_var);
 				break;
-			case OP_MEMSETI:
+			case OP_MEMSETPI:
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheckSize (pr, OPC.pointer_var, st->b);
 				}

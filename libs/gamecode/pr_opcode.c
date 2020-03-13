@@ -1181,17 +1181,22 @@ VISIBLE const opcode_t pr_opcodes[] = {
 	{"<MOVEP>", "movepi", OP_MOVEPI, true,
 	 ev_pointer, ev_short, ev_pointer,
 	 PROG_VERSION,
-	 "%Ga, %Gb, %Gc",
+	 "%Ga, %sb, %Gc",
 	},
-	{"<MEMSET>", "memset", OP_MEMSET, true,
+	{"<MEMSET>", "memseti", OP_MEMSETI, true,
+	 ev_integer, ev_short, ev_void,
+	 PROG_VERSION,
+	 "%Ga, %sb, %gc",
+	},
+	{"<MEMSETP>", "memsetp", OP_MEMSETP, true,
 	 ev_integer, ev_integer, ev_pointer,
 	 PROG_VERSION,
 	 "%Ga, %Gb, %Gc",
 	},
-	{"<MEMSET>", "memseti", OP_MEMSETI, true,
+	{"<MEMSETP>", "memsetpi", OP_MEMSETPI, true,
 	 ev_integer, ev_short, ev_pointer,
 	 PROG_VERSION,
-	 "%Ga, %Gb, %Gc",
+	 "%Ga, %sb, %Gc",
 	},
 
 	{"<PUSH>", "push.s", OP_PUSH_S, false,
@@ -1708,6 +1713,9 @@ PR_Check_Opcodes (progs_t *pr)
 					break;
 				case OP_MOVEI:
 					check_global_size (pr, st, op, st->b, st->a);
+					check_global_size (pr, st, op, st->b, st->c);
+					break;
+				case OP_MEMSETI:
 					check_global_size (pr, st, op, st->b, st->c);
 					break;
 				case OP_PUSHB_F:
