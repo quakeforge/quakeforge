@@ -706,20 +706,27 @@ method_check_params (method_t *method, expr_t *args)
 		arg_list[i--] = a;
 	for (i = 2; i < count; i++) {
 		expr_t     *e = arg_list[i];
-		type_t     *t = get_type (e);
+		type_t     *arg_type = mtype->t.func.param_types[i];
+		type_t     *t;
 
-		if (!t)
+		if (e->type == ex_compound) {
+			e = expr_file_line (initialized_temp_expr (arg_type, e), e);
+		}
+		t = get_type (e);
+		if (!t) {
 			return e;
+		}
 
 		if (i < param_count) {
-			if (e->type != ex_nil)
-				if (!type_assignable (mtype->t.func.param_types[i], t)) {
-					err = param_mismatch (e, i - 1, method->name,
-										  mtype->t.func.param_types[i], t);
+			if (e->type != ex_nil) {
+				if (!type_assignable (arg_type, t)) {
+					err = param_mismatch (e, i - 1, method->name, arg_type, t);
 				}
+			}
 		} else {
-			if (is_integer_val (e) && options.warnings.vararg_integer)
+			if (is_integer_val (e) && options.warnings.vararg_integer) {
 				warning (e, "passing integer consant into ... function");
+			}
 		}
 	}
 	free (arg_list);
