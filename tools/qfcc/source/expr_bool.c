@@ -245,7 +245,7 @@ convert_bool (expr_t *e, int block)
 {
 	expr_t     *b;
 
-	if (e->type == ex_expr && (e->e.expr.op == '=' || e->e.expr.op == PAS)) {
+	if (e->type == ex_expr && e->e.expr.op == '=') {
 		expr_t     *src;
 		if (!e->paren && options.warnings.precedence)
 			warning (e, "suggest parentheses around assignment "

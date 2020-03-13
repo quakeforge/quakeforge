@@ -440,7 +440,6 @@ static const char *
 convert_op (int op)
 {
 	switch (op) {
-		case PAS:	return ".=";
 		case OR:	return "||";
 		case AND:	return "&&";
 		case EQ:	return "==";
@@ -662,14 +661,12 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op)
 	int         need_ptr = 0;
 	operand_t  *dummy;
 
-	if (src_expr->type == ex_expr
-		&& (src_expr->e.expr.op == '=' || src_expr->e.expr.op == PAS)) {
+	if (src_expr->type == ex_expr && src_expr->e.expr.op == '=') {
 		sblock = statement_subexpr (sblock, src_expr, &dummy);
 	}
 	// follow the assignment chain to find the actual source expression
 	// (can't take the address of an assignment)
-	while (src_expr->type == ex_expr
-		   && (src_expr->e.expr.op == '=' || src_expr->e.expr.op == PAS)) {
+	while (src_expr->type == ex_expr && src_expr->e.expr.op == '=') {
 		src_expr = src_expr->e.expr.e2;
 	}
 	if (src_expr->type == ex_nil) {
@@ -743,22 +740,6 @@ expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 		if (src == dst)
 			return sblock;
 		type = st_assign;
-	} else {
-		//FIXME this sucks. find a better way to handle both pointer
-		//dereferences and pointer assignements
-		sblock = statement_subexpr (sblock, src_expr, &src);
-		if (dst_expr->type == ex_expr
-			&& extract_type (dst_expr->e.expr.e1) == ev_pointer
-			&& !is_constant (dst_expr->e.expr.e1)) {
-			sblock = statement_subexpr (sblock, dst_expr->e.expr.e1, &dst);
-			sblock = statement_subexpr (sblock, dst_expr->e.expr.e2, &ofs);
-		} else {
-			sblock = statement_subexpr (sblock, dst_expr, &dst);
-			ofs = 0;
-		}
-		if (op)
-			*op = src;
-		type = st_ptrassign;
 	}
 	s = new_statement (type, opcode, e);
 	s->opa = src;
@@ -1059,7 +1040,6 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 			sblock = expr_call (sblock, e, op);
 			break;
 		case '=':
-		case PAS:
 			sblock = expr_assign (sblock, e, op);
 			break;
 		case 'm':
@@ -1506,7 +1486,6 @@ statement_expr (sblock_t *sblock, expr_t *e)
 			sblock = statement_branch (sblock, e);
 			break;
 		case '=':
-		case PAS:
 			sblock = expr_assign (sblock, e, 0);
 			break;
 		case 'm':

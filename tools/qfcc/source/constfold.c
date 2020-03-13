@@ -226,7 +226,7 @@ do_op_float (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (!valid_op (op, valid))
 		return error (e1, "invalid operator for float");
 
-	if (op == '=' || op == PAS) {
+	if (op == '=') {
 		if ((type = get_type (e1)) != &type_float) {
 			//FIXME optimize casting a constant
 			e->e.expr.e2 = e2 = cf_cast_expr (type, e2);
@@ -355,7 +355,7 @@ do_op_double (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (!valid_op (op, valid))
 		return error (e1, "invalid operator for double");
 
-	if (op == '=' || op == PAS) {
+	if (op == '=') {
 		if ((type = get_type (e1)) != &type_double) {
 			//FIXME optimize casting a constant
 			e->e.expr.e2 = e2 = cf_cast_expr (type, e2);
@@ -616,7 +616,7 @@ static expr_t *
 do_op_pointer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	type_t     *type;
-	static int  valid[] = {'=', PAS, '-', '&', 'M', '.', EQ, NE, 0};
+	static int  valid[] = {'=', '-', '&', 'M', '.', EQ, NE, 0};
 
 	if (is_integral (type = get_type (e2)) && (op == '-' || op == '+')) {
 		// pointer arithmetic
@@ -640,26 +640,13 @@ do_op_pointer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e = binary_expr ('/', e, new_integer_expr (type_size (type)));
 		return e;
 	}
-	if (op == PAS && (type = get_type (e1)->t.fldptr.type) != get_type (e2)) {
-		// make sure auto-convertions happen
-		expr_t     *tmp = new_temp_def_expr (type);
-		expr_t     *ass = new_binary_expr ('=', tmp, e2);
-
-		tmp->file = e1->file;
-		ass->line = e2->line;
-		ass->file = e2->file;
-		ass = fold_constants (ass);
-		if (e->e.expr.e2 == tmp)
-			internal_error (e2, 0);
-		e->e.expr.e2 = ass->e.expr.e2;
-	}
 	if (op == EQ || op == NE) {
 		if (options.code.progsversion > PROG_ID_VERSION)
 			e->e.expr.type = &type_integer;
 		else
 			e->e.expr.type = &type_float;
 	}
-	if (op != PAS && op != '.' && op != '&' && op != 'M'
+	if (op != '.' && op != '&' && op != 'M'
 		&& extract_type (e1) != extract_type (e2))
 		return type_mismatch (e1, e2, op);
 	if ((op == '.' || op == '&') && get_type (e2) == &type_uinteger)

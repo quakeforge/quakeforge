@@ -75,7 +75,6 @@ const char *
 get_op_string (int op)
 {
 	switch (op) {
-		case PAS:	return ".=";
 		case OR:	return "||";
 		case AND:	return "&&";
 		case EQ:	return "==";
