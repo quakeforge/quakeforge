@@ -85,6 +85,7 @@ int main ()
 	int ret = 0;
 	ret |= test_simple_global ();
 	ret |= test_struct_global ();
+	x = 0; y = 0;
 	ret |= test_simple_pointer (&x, &y);
 	ret |= test_struct_pointer (&bar, &baz);
 	return ret;
