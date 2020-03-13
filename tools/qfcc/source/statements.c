@@ -42,6 +42,7 @@
 #include "qfalloca.h"
 
 #include "QF/alloc.h"
+#include "QF/mathlib.h"
 #include "QF/va.h"
 
 #include "dags.h"
@@ -615,17 +616,122 @@ statement_branch (sblock_t *sblock, expr_t *e)
 	return sblock->next;
 }
 
+static __attribute__((pure)) int
+is_const_ptr (expr_t *e)
+{
+	if ((e->type != ex_value || e->e.value->lltype != ev_pointer)
+		|| !(POINTER_VAL (e->e.value->v.pointer) >= 0
+			 && POINTER_VAL (e->e.value->v.pointer) < 65536)) {
+		return 1;
+	}
+	return 0;
+}
+
+static __attribute__((pure)) int
+is_indirect (expr_t *e)
+{
+	if (e->type == ex_block && e->e.block.result)
+		return is_indirect (e->e.block.result);
+	if (e->type == ex_expr && e->e.expr.op == '.')
+		return 1;
+	if (!(e->type == ex_uexpr && e->e.expr.op == '.'))
+		return 0;
+	return is_const_ptr (e->e.expr.e1);
+}
+
+static sblock_t *
+expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	statement_t *s;
+	expr_t     *dst_expr = e->e.expr.e1;
+	expr_t     *src_expr = e->e.expr.e2;
+	type_t     *dst_type = get_type (dst_expr);
+	type_t     *src_type = get_type (src_expr);
+	unsigned    count;
+	expr_t     *count_expr;
+	operand_t  *dst = 0;
+	operand_t  *src = 0;
+	operand_t  *size = 0;
+	static const char *opcode_sets[][2] = {
+		{"<MOVE>", "<MOVEP>"},
+		{"<MEMSET>", "<MEMSETP>"},
+	};
+	const unsigned max_count = 1 << 16;
+	const char **opcode_set = opcode_sets[0];
+	const char *opcode;
+	int         need_ptr = 0;
+	operand_t  *dummy;
+
+	if (src_expr->type == ex_expr
+		&& (src_expr->e.expr.op == '=' || src_expr->e.expr.op == PAS)) {
+		sblock = statement_subexpr (sblock, src_expr, &dummy);
+	}
+	// follow the assignment chain to find the actual source expression
+	// (can't take the address of an assignment)
+	while (src_expr->type == ex_expr
+		   && (src_expr->e.expr.op == '=' || src_expr->e.expr.op == PAS)) {
+		src_expr = src_expr->e.expr.e2;
+	}
+	if (src_expr->type == ex_nil) {
+		// switch to memset because nil is type agnostic 0
+		src_expr = new_integer_expr (0);
+		opcode_set = opcode_sets[1];
+		if (is_indirect (dst_expr)) {
+			need_ptr = 1;
+			dst_expr = address_expr (dst_expr, 0, 0);
+		}
+	} else {
+		if (is_indirect (dst_expr) || is_indirect (src_expr)) {
+			need_ptr = 1;
+			dst_expr = address_expr (dst_expr, 0, 0);
+			src_expr = address_expr (src_expr, 0, 0);
+		}
+	}
+
+	if (type_size (dst_type) != type_size (src_type)) {
+		bug (e, "dst and src sizes differ in expr_assign_copy: %d %d",
+			 type_size (dst_type), type_size (src_type));
+	}
+	count = min (type_size (dst_type), type_size (src_type));
+	if (count < (1 << 16)) {
+		count_expr = expr_file_line (new_short_expr (count), e);
+	} else {
+		count_expr = expr_file_line (new_integer_expr (count), e);
+	}
+
+	if (count < max_count && !need_ptr) {
+		opcode = opcode_set[0];
+	} else {
+		opcode = opcode_set[1];
+	}
+
+	s = new_statement (st_move, opcode, e);
+	sblock = statement_subexpr (sblock, dst_expr, &dst);
+	sblock = statement_subexpr (sblock, src_expr, &src);
+	sblock = statement_subexpr (sblock, count_expr, &size);
+	s->opa = src;
+	s->opb = size;
+	s->opc = dst;
+	sblock_add_statement (sblock, s);
+	return sblock;
+}
+
 static sblock_t *
 expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	statement_t *s;
 	expr_t     *src_expr = e->e.expr.e2;
 	expr_t     *dst_expr = e->e.expr.e1;
+	type_t     *dst_type = get_type (dst_expr);
 	operand_t  *src = 0;
 	operand_t  *dst = 0;
 	operand_t  *ofs = 0;
 	const char *opcode = convert_op (e->e.expr.op);
 	st_type_t   type;
+
+	if (is_structural (dst_type)) {
+		return expr_assign_copy (sblock, e, op);
+	}
 
 	if (e->e.expr.op == '=') {
 		sblock = statement_subexpr (sblock, dst_expr, &dst);

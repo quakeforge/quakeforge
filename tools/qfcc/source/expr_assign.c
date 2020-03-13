@@ -264,29 +264,6 @@ assign_vector_expr (expr_t *dst, expr_t *src)
 }
 
 static __attribute__((pure)) int
-is_const_ptr (expr_t *e)
-{
-	if ((e->type != ex_value || e->e.value->lltype != ev_pointer)
-		|| !(POINTER_VAL (e->e.value->v.pointer) >= 0
-			 && POINTER_VAL (e->e.value->v.pointer) < 65536)) {
-		return 1;
-	}
-	return 0;
-}
-
-static __attribute__((pure)) int
-is_indirect (expr_t *e)
-{
-	if (e->type == ex_block && e->e.block.result)
-		return is_indirect (e->e.block.result);
-	if (e->type == ex_expr && e->e.expr.op == '.')
-		return 1;
-	if (!(e->type == ex_uexpr && e->e.expr.op == '.'))
-		return 0;
-	return is_const_ptr (e->e.expr.e1);
-}
-
-static __attribute__((pure)) int
 is_memset (expr_t *e)
 {
 	return e->type == ex_memset;
@@ -345,16 +322,13 @@ assign_expr (expr_t *dst, expr_t *src)
 		src_type = get_type (src);
 	}
 	if (src->type == ex_bool) {
+		// boolean expressions are chains of tests, so extract the result
+		// of the tests
 		src = convert_from_bool (src, dst_type);
 		if (src->type == ex_error) {
 			return src;
 		}
 		src_type = get_type (src);
-	}
-	if (!is_struct (dst_type) && is_nil (src)) {
-		// nil is a type-agnostic 0
-		src_type = dst_type;
-		convert_nil (src, src_type);
 	}
 
 	if (!is_nil (src)) {
@@ -366,80 +340,8 @@ assign_expr (expr_t *dst, expr_t *src)
 		if ((expr = assign_vector_expr (dst, src))) {
 			return expr;
 		}
-	}
-
-	if (is_indirect (dst) && is_indirect (src)) {
-		debug (dst, "here");
-		if (is_struct (src_type)) {
-			dst = address_expr (dst, 0, 0);
-			src = address_expr (src, 0, 0);
-			expr = new_move_expr (dst, src, src_type, 1);
-		} else {
-			expr_t     *temp = new_temp_def_expr (dst_type);
-
-			expr = new_block_expr ();
-			append_expr (expr, assign_expr (temp, src));
-			append_expr (expr, assign_expr (dst, temp));
-			expr->e.block.result = temp;
-		}
-		return expr;
-	} else if (is_indirect (dst)) {
-		debug (dst, "here");
-		if (is_struct (dst_type)) {
-			dst = address_expr (dst, 0, 0);
-			if (is_nil (src)) {
-				return new_memset_expr (dst, new_integer_expr (0), dst_type);
-			} else {
-				src = address_expr (src, 0, 0);
-				return new_move_expr (dst, src, dst_type, 1);
-			}
-		}
-		if (is_nil (src)) {
-			src_type = dst_type;
-			convert_nil (src, src_type);
-		}
-		if (dst->type == ex_expr) {
-			if (get_type (dst->e.expr.e1) == &type_entity) {
-				dst_type = dst->e.expr.type;
-				dst->e.expr.type = pointer_type (dst_type);
-				dst->e.expr.op = '&';
-			}
-			op = PAS;
-		} else {
-			if (is_const_ptr (dst->e.expr.e1)) {
-				dst = dst->e.expr.e1;
-				op = PAS;
-			}
-		}
-	} else if (is_indirect (src)) {
-		debug (dst, "here");
-		if (is_struct (dst_type)) {
-			dst = address_expr (dst, 0, 0);
-			src = address_expr (src, 0, 0);
-			src->rvalue = 1;
-			return new_move_expr (dst, src, src_type, 1);
-		}
-		if (src->type == ex_uexpr) {
-			expr = src->e.expr.e1;
-			if (is_const_ptr (expr)) {
-				if (expr->type == ex_expr && expr->e.expr.op == '&'
-					&& expr->e.expr.type->type == ev_pointer
-					&& !is_constant (expr)) {
-					src = expr;
-					src->e.expr.op = '.';
-					src->e.expr.type = src_type;
-					src->rvalue = 1;
-				}
-			}
-		}
-	}
-
-	if (is_nil (src)) {
-		src_type = dst_type;
-		convert_nil (src, src_type);
-	}
-	if (is_struct (dst_type)) {
-		return new_move_expr (dst, src, dst_type, 0);
+	} else {
+		convert_nil (src, dst_type);
 	}
 
 	expr = new_binary_expr (op, dst, src);
