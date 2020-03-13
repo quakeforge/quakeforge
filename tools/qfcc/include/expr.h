@@ -264,7 +264,7 @@ extern expr_t *local_expr;
 	\return         Pointer to the type description, or null if the expression
 					type (expr_t::type) is inappropriate.
 */
-struct type_s *get_type (expr_t *e) __attribute__((pure));
+struct type_s *get_type (expr_t *e);
 
 /**	Get the basic type code of the expression result.
 
@@ -272,7 +272,7 @@ struct type_s *get_type (expr_t *e) __attribute__((pure));
 	\return         Pointer to the type description, or ev_type_count if
 					get_type() returns null.
 */
-etype_t extract_type (expr_t *e) __attribute__((pure));
+etype_t extract_type (expr_t *e);
 
 /**	Create a new expression node.
 
