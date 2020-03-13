@@ -1019,9 +1019,13 @@ pr_debug_entity_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	progs_t    *pr = data->pr;
 	dstring_t  *dstr = data->dstr;
-	edict_t    *edict = PROG_TO_EDICT (pr, value->entity_var);
 
-	dasprintf (dstr, "entity %d", NUM_FOR_BAD_EDICT (pr, edict));
+	if (pr->edicts) {
+		edict_t    *edict = PROG_TO_EDICT (pr, value->entity_var);
+		dasprintf (dstr, "entity %d", NUM_FOR_BAD_EDICT (pr, edict));
+	} else {
+		dasprintf (dstr, "entity [%x]",value->entity_var);
+	}
 }
 
 static void
