@@ -760,6 +760,8 @@ expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 			sblock = statement_subexpr (sblock, src_expr, &src);
 		}
 	}
+	type = st_assign;
+
 	if (0) {
 dereference_dst:
 		// dst_expr is a dereferenced pointer, so need to un-dereference it
@@ -773,6 +775,7 @@ dereference_dst:
 			sblock = statement_subexpr (sblock, dst_expr, &dst);
 			ofs = 0;
 		}
+		type = st_ptrassign;
 	}
 	if (op) {
 		*op = src;
@@ -780,7 +783,6 @@ dereference_dst:
 	if (src == dst) {
 		return sblock;
 	}
-	type = st_assign;
 
 	s = new_statement (type, opcode, e);
 	s->opa = src;
