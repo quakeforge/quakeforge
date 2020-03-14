@@ -58,6 +58,7 @@ typedef struct operand_s {
 	struct type_s *type;		///< possibly override def's type
 	int         size;			///< for structures
 	struct expr_s *expr;		///< expression generating this operand
+	void       *return_addr;	///< who created this operand
 	union {
 		struct def_s *def;
 		struct ex_value_s *value;
@@ -126,6 +127,7 @@ int tempop_visit_all (tempop_t *tempop, int overlap,
 					  int (*visit) (tempop_t *, void *), void *data);
 operand_t *alias_operand (struct type_s *type, operand_t *op,
 						  struct expr_s *expr);
+operand_t *label_operand (struct expr_s *label);
 void free_operand (operand_t *op);
 
 sblock_t *new_sblock (void);

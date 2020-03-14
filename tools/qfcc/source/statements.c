@@ -274,12 +274,13 @@ new_statement (st_type_t type, const char *opcode, expr_t *expr)
 }
 
 static operand_t *
-new_operand (op_type_e op, expr_t *expr)
+new_operand (op_type_e op, expr_t *expr, void *return_addr)
 {
 	operand_t *operand;
 	ALLOC (256, operand_t, operands, operand);
 	operand->op_type = op;
 	operand->expr = expr;
+	operand->return_addr = return_addr;
 	return operand;
 }
 
@@ -319,7 +320,7 @@ def_operand (def_t *def, type_t *type, expr_t *expr)
 
 	if (!type)
 		type = def->type;
-	op = new_operand (op_def, expr);
+	op = new_operand (op_def, expr, __builtin_return_address (0));
 	op->type = type;
 	op->size = type_size (type);
 	op->o.def = def;
@@ -339,7 +340,7 @@ operand_t *
 value_operand (ex_value_t *value, expr_t *expr)
 {
 	operand_t  *op;
-	op = new_operand (op_value, expr);
+	op = new_operand (op_value, expr, __builtin_return_address (0));
 	op->type = value->type;
 	op->o.value = value;
 	return op;
@@ -348,7 +349,7 @@ value_operand (ex_value_t *value, expr_t *expr)
 operand_t *
 temp_operand (type_t *type, expr_t *expr)
 {
-	operand_t  *op = new_operand (op_temp, expr);
+	operand_t  *op = new_operand (op_temp, expr, __builtin_return_address (0));
 
 	op->o.tempop.type = type;
 	op->type = type;
@@ -423,11 +424,24 @@ alias_operand (type_t *type, operand_t *op, expr_t *expr)
 						"aliasing operand with type of different size: %d, %d",
 						type_size (type), type_size (op->type));
 	}
-	aop = new_operand (op_alias, expr);
+	aop = new_operand (op_alias, expr, __builtin_return_address (0));
 	aop->o.alias = op;
 	aop->type = type;
 	aop->size = type_size (type);
 	return aop;
+}
+
+operand_t *
+label_operand (expr_t *label)
+{
+	operand_t  *lop;
+
+	if (label->type != ex_label) {
+		internal_error (label, "not a label expression");
+	}
+	lop = new_operand (op_label, label, __builtin_return_address (0));
+	lop->o.label = &label->e.label;
+	return lop;
 }
 
 static operand_t *
@@ -595,8 +609,7 @@ statement_branch (sblock_t *sblock, expr_t *e)
 
 	if (e->type == ex_uexpr && e->e.expr.op == 'g') {
 		s = new_statement (st_flow, "<GOTO>", e);
-		s->opa = new_operand (op_label, e);
-		s->opa->o.label = &e->e.expr.e1->e.label;
+		s->opa = label_operand (e->e.expr.e1);
 	} else {
 		if (e->e.expr.op == 'g') {
 			s = new_statement (st_flow, "<JUMPB>", e);
@@ -606,8 +619,7 @@ statement_branch (sblock_t *sblock, expr_t *e)
 			opcode = convert_op (e->e.expr.op);
 			s = new_statement (st_flow, opcode, e);
 			sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
-			s->opb = new_operand (op_label, e);
-			s->opb->o.label = &e->e.expr.e2->e.label;
+			s->opb = label_operand (e->e.expr.e2);
 		}
 	}
 
