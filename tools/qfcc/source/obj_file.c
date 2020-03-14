@@ -31,6 +31,8 @@
 # include "config.h"
 #endif
 
+#define _GNU_SOURCE	// for qsort_r
+
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -860,6 +862,17 @@ align_globals_size (unsigned size)
 	return RUP (size, 16 / sizeof (pr_type_t));
 }
 
+static int
+qfo_def_compare (const void *i1, const void *i2, void *d)
+{
+	__auto_type defs = (const qfo_def_t *) d;
+	unsigned    ind1 = *(unsigned *) i1;
+	unsigned    ind2 = *(unsigned *) i2;
+	const qfo_def_t *def1 = defs + ind1;
+	const qfo_def_t *def2 = defs + ind2;
+	return def1->offset - def2->offset;
+}
+
 dprograms_t *
 qfo_to_progs (qfo_t *qfo, int *size)
 {
@@ -887,6 +900,9 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	int         big_func = 0;
 	pr_xdefs_t *xdefs = 0;
 	xdef_t     *xdef;
+	unsigned   *def_indices;
+	unsigned   *far_def_indices;
+	unsigned   *field_def_indices;
 
 	*size = RUP (sizeof (dprograms_t), 16);
 	progs = calloc (1, *size);
@@ -895,7 +911,7 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	progs->numglobaldefs = qfo->spaces[qfo_near_data_space].num_defs;
 	//ddef offsets are 16 bits so the ddef ofs will likely be invalid
 	//thus it will be forced invalid and the true offset written to the
-	//symbols file if it is created (fa
+	//.xdefs array in the progs file
 	progs->numglobaldefs += qfo->spaces[qfo_far_data_space].num_defs;
 	progs->numfielddefs = qfo->spaces[qfo_entity_space].num_defs;
 	progs->numfunctions = qfo->num_funcs + 1;
@@ -935,6 +951,29 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	data = (byte *) progs;
 	memset (progs + 1, 0, *size - sizeof (dprograms_t));
 	data += RUP (sizeof (dprograms_t), 16);
+
+	def_indices = alloca ((progs->numglobaldefs + progs->numfielddefs)
+						  * sizeof (*def_indices));
+	far_def_indices = def_indices + qfo->spaces[qfo_near_data_space].num_defs;
+	field_def_indices = def_indices + progs->numglobaldefs;
+	for (unsigned i = 0; i < qfo->spaces[qfo_near_data_space].num_defs; i++) {
+		def_indices[i] = i;
+	}
+	for (unsigned i = 0; i < qfo->spaces[qfo_far_data_space].num_defs; i++) {
+		far_def_indices[i] = i;
+	}
+	for (unsigned i = 0; i < qfo->spaces[qfo_entity_space].num_defs; i++) {
+		field_def_indices[i] = i;
+	}
+	qsort_r (def_indices, qfo->spaces[qfo_near_data_space].num_defs,
+			 sizeof (unsigned), qfo_def_compare,
+			 qfo->spaces[qfo_near_data_space].defs);
+	qsort_r (far_def_indices, qfo->spaces[qfo_far_data_space].num_defs,
+			 sizeof (unsigned), qfo_def_compare,
+			 qfo->spaces[qfo_far_data_space].defs);
+	qsort_r (field_def_indices, qfo->spaces[qfo_entity_space].num_defs,
+			 sizeof (unsigned), qfo_def_compare,
+			 qfo->spaces[qfo_entity_space].defs);
 
 	progs->ofs_strings = data - (byte *) progs;
 	strings = (char *) data;
@@ -992,7 +1031,8 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	}
 
 	for (i = 0; i < qfo->spaces[qfo_near_data_space].num_defs; i++) {
-		qfo_def_t  *def = qfo->spaces[qfo_near_data_space].defs + i;
+		unsigned    ind = def_indices[i];
+		qfo_def_t  *def = qfo->spaces[qfo_near_data_space].defs + ind;
 		const char *defname = QFO_GETSTR (qfo, def->name);
 		if (!strcmp (defname, ".type_encodings"))
 			types_def = def;
@@ -1002,7 +1042,8 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	}
 
 	for (i = 0; i < qfo->spaces[qfo_far_data_space].num_defs; i++) {
-		qfo_def_t  *def = qfo->spaces[qfo_far_data_space].defs + i;
+		unsigned    ind = far_def_indices[i];
+		qfo_def_t  *def = qfo->spaces[qfo_far_data_space].defs + ind;
 		def->offset += far_data - globals;
 		convert_def (qfo, def, globaldefs);
 		// the correct offset will be written to the far data space
@@ -1015,7 +1056,8 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	}
 
 	for (i = 0; i < qfo->spaces[qfo_entity_space].num_defs; i++) {
-		convert_def (qfo, qfo->spaces[qfo_entity_space].defs + i,
+		unsigned    ind = field_def_indices[i];
+		convert_def (qfo, qfo->spaces[qfo_entity_space].defs + ind,
 					 fielddefs + i);
 	}
 
