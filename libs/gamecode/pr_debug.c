@@ -496,6 +496,12 @@ PR_LoadDebug (progs_t *pr)
 	for (i = 0; i < pr->progs->numfunctions; i++)
 		res->auxfunction_map[i] = 0;
 
+	res->type_encodings_def = PR_FindGlobal (pr, ".type_encodings");
+	if (res->type_encodings_def) {
+		encodings = &G_STRUCT (pr, qfot_type_encodings_t,
+							   res->type_encodings_def->ofs);
+		type_encodings = encodings->types;
+	}
 	for (i = 0; i < res->debug->num_auxfunctions; i++) {
 		res->auxfunctions[i].function = LittleLong
 			(res->auxfunctions[i].function);
@@ -508,18 +514,15 @@ PR_LoadDebug (progs_t *pr)
 		res->auxfunctions[i].num_locals = LittleLong
 			(res->auxfunctions[i].num_locals);
 
+		if (type_encodings) {
+			res->auxfunctions[i].return_type += type_encodings;
+		}
 		res->auxfunction_map[res->auxfunctions[i].function] =
 			&res->auxfunctions[i];
 	}
 	for (i = 0; i < res->debug->num_linenos; i++) {
 		res->linenos[i].fa.func = LittleLong (res->linenos[i].fa.func);
 		res->linenos[i].line = LittleLong (res->linenos[i].line);
-	}
-	res->type_encodings_def = PR_FindGlobal (pr, ".type_encodings");
-	if (res->type_encodings_def) {
-		encodings = &G_STRUCT (pr, qfot_type_encodings_t,
-							   res->type_encodings_def->ofs);
-		type_encodings = encodings->types;
 	}
 	for (i = 0; i < res->debug->num_locals; i++) {
 		res->local_defs[i].type = LittleShort (res->local_defs[i].type);
@@ -1320,7 +1323,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 				char        mode = fmt[1], opchar = fmt[2];
 				unsigned    parm_ind = 0;
 				pr_int_t    opval;
-				qfot_type_t *optype = ev_void;
+				qfot_type_t *optype = &res->void_type;
 				func_t      func;
 
 				if (mode == 'P') {
@@ -1355,7 +1358,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 				}
 				switch (mode) {
 					case 'R':
-						optype = ev_void;
+						optype = &res->void_type;
 						aux_func = get_aux_function (pr);
 						if (aux_func) {
 							optype = get_type (res, aux_func->return_type);
@@ -1373,7 +1376,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						break;
 					case 'P':
 						parm_def = PR_Get_Param_Def (pr, call_func, parm_ind);
-						optype = ev_void;
+						optype = &res->void_type;
 						if (parm_def) {
 							optype = get_type (res, parm_def->type_encoding);
 						}
