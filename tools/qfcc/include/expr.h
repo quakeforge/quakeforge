@@ -710,6 +710,7 @@ expr_t *build_for_statement (expr_t *init, expr_t *test, expr_t *next,
 							 expr_t *break_label, expr_t *continue_label);
 expr_t *build_state_expr (expr_t *e);
 expr_t *think_expr (struct symbol_s *think_sym);
+int is_lvalue (const expr_t *expr) __attribute__((pure));
 expr_t *assign_expr (expr_t *dst, expr_t *src);
 expr_t *cast_expr (struct type_s *t, expr_t *e);
 

@@ -81,8 +81,8 @@ check_assign_logic_precedence (expr_t *dst, expr_t *src)
 	return 0;
 }
 
-static expr_t *
-check_valid_lvalue (expr_t *expr)
+int
+is_lvalue (const expr_t *expr)
 {
 	switch (expr->type) {
 		case ex_symbol:
@@ -90,7 +90,7 @@ check_valid_lvalue (expr_t *expr)
 				case sy_name:
 					break;
 				case sy_var:
-					return 0;
+					return 1;
 				case sy_const:
 					break;
 				case sy_type:
@@ -106,21 +106,21 @@ check_valid_lvalue (expr_t *expr)
 			}
 			break;
 		case ex_temp:
-			return 0;
+			return 1;
 		case ex_expr:
 			if (expr->e.expr.op == '.') {
-				return 0;
+				return 1;
 			}
 			if (expr->e.expr.op == 'A') {
-				return check_valid_lvalue (expr->e.expr.e1);
+				return is_lvalue (expr->e.expr.e1);
 			}
 			break;
 		case ex_uexpr:
 			if (expr->e.expr.op == '.') {
-				return 0;
+				return 1;
 			}
 			if (expr->e.expr.op == 'A') {
-				return check_valid_lvalue (expr->e.expr.e1);
+				return is_lvalue (expr->e.expr.e1);
 			}
 			break;
 		case ex_memset:
@@ -136,11 +136,20 @@ check_valid_lvalue (expr_t *expr)
 		case ex_error:
 			break;
 	}
-	if (options.traditional) {
-		warning (expr, "invalid lvalue in assignment");
-		return 0;
+	return 0;
+}
+
+static expr_t *
+check_valid_lvalue (expr_t *expr)
+{
+	if (!is_lvalue (expr)) {
+		if (options.traditional) {
+			warning (expr, "invalid lvalue in assignment");
+			return 0;
+		}
+		return error (expr, "invalid lvalue in assignment");
 	}
-	return error (expr, "invalid lvalue in assignment");
+	return 0;
 }
 
 static expr_t *
