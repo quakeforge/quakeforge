@@ -1147,16 +1147,8 @@ pr_debug_double_view (qfot_type_t *type, pr_type_t *value, void *_data)
 }
 
 static void
-pr_debug_struct_view (qfot_type_t *type, pr_type_t *value, void *_data)
-{
-	__auto_type data = (pr_debug_data_t *) _data;
-	dstring_t  *dstr = data->dstr;
-
-	dstring_appendstr (dstr, "<struct>");
-}
-
-static void
-pr_debug_union_view (qfot_type_t *type, pr_type_t *value, void *_data)
+pr_dump_struct (qfot_type_t *type, pr_type_t *value, void *_data,
+				const char *struct_type)
 {
 	__auto_type data = (pr_debug_data_t *) _data;
 	progs_t    *pr = data->pr;
@@ -1170,12 +1162,23 @@ pr_debug_union_view (qfot_type_t *type, pr_type_t *value, void *_data)
 		pr_type_t  *val = value + field->offset;
 		dasprintf (dstr, "%s=", PR_GetString (pr, field->name));
 		value_string (data, val_type, val);
-		if (i < strct->num_fields) {
+		if (i < strct->num_fields - 1) {
 			dstring_appendstr (dstr, ", ");
 		}
 	}
 	dstring_appendstr (dstr, "}");
-	dstring_appendstr (dstr, "<union>");
+	//dasprintf (dstr, "<%s>", struct_type);
+}
+static void
+pr_debug_struct_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	pr_dump_struct (type, value, _data, "struct");
+}
+
+static void
+pr_debug_union_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	pr_dump_struct (type, value, _data, "union");
 }
 
 static void
