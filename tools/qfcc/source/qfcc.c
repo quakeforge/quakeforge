@@ -448,7 +448,12 @@ finish_link (void)
 	} else {
 		int         size;
 		dprograms_t *progs;
+		pr_debug_header_t *sym = 0;
+		int         sym_size = 0;
 
+		if (options.code.debug) {
+			sym = qfo_to_sym (qfo, &sym_size);
+		}
 		progs = qfo_to_progs (qfo, &size);
 		//finish_compilation ();
 
@@ -462,9 +467,6 @@ finish_link (void)
 
 		WriteProgs (progs, size);
 		if (options.code.debug) {
-			pr_debug_header_t *sym;
-			int         sym_size = 0;
-			sym = qfo_to_sym (qfo, &sym_size);
 			sym->crc = CRC_Block ((byte *) progs, size);
 			WriteSym (sym, sym_size);
 		}

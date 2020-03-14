@@ -1172,6 +1172,7 @@ qfo_to_sym (qfo_t *qfo, int *size)
 			aux->local_defs = ld - locals;
 			for (j = 0; j < num_locals; j++, def++, ld++) {
 				ld->type = get_def_type (qfo, def->type);
+				ld->size = get_type_size (qfo, def->type);
 				ld->ofs = def->offset;
 				ld->name = def->name;
 				ld->type_encoding = def->type;
