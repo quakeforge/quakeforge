@@ -763,12 +763,13 @@ get_type (prdeb_resources_t *res, int typeptr)
 }
 
 pr_def_t *
-PR_Get_Local_Def (progs_t *pr, pointer_t offs)
+PR_Get_Local_Def (progs_t *pr, pointer_t *offset)
 {
 	prdeb_resources_t *res = pr->pr_debug_resources;
-	pr_uint_t   i;
 	dfunction_t *func;
 	pr_auxfunction_t *aux_func;
+	pointer_t   offs = *offset;
+	pr_def_t   *def;
 
 	if (!pr->pr_xfunction)
 		return 0;
@@ -781,10 +782,11 @@ PR_Get_Local_Def (progs_t *pr, pointer_t offs)
 	offs -= func->parm_start;
 	if (offs >= func->locals)
 		return 0;
-	for (i = 0; i < aux_func->num_locals; i++)
-		if (res->local_defs[aux_func->local_defs + i].ofs == offs)
-			return &res->local_defs[aux_func->local_defs + i];
-	return 0;
+	if ((def =  PR_SearchDefs (res->local_defs + aux_func->local_defs,
+							   aux_func->num_locals, offs))) {
+		*offset = offs - def->ofs;
+	}
+	return def;
 }
 
 VISIBLE void
@@ -886,20 +888,28 @@ value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 }
 
 static pr_def_t *
-pr_debug_find_def (progs_t *pr, pr_int_t ofs)
+pr_debug_find_def (progs_t *pr, pointer_t *ofs)
 {
 	prdeb_resources_t *res = pr->pr_debug_resources;
 	pr_def_t   *def = 0;
 
-	if (pr_debug->int_val && res->debug)
+	if (*ofs >= pr->progs->numglobals) {
+		return 0;
+	}
+	if (pr_debug->int_val && res->debug) {
 		def = PR_Get_Local_Def (pr, ofs);
-	if (!def)
-		def = PR_GlobalAtOfs (pr, ofs);
+	}
+	if (!def) {
+		def = PR_GlobalAtOfs (pr, *ofs);
+		if (def) {
+			*ofs -= def->ofs;
+		}
+	}
 	return def;
 }
 
 static const char *
-global_string (pr_debug_data_t *data, pointer_t ofs, qfot_type_t *type,
+global_string (pr_debug_data_t *data, pointer_t offset, qfot_type_t *type,
 			   int contents)
 {
 	progs_t    *pr = data->pr;
@@ -908,29 +918,34 @@ global_string (pr_debug_data_t *data, pointer_t ofs, qfot_type_t *type,
 	pr_def_t   *def = NULL;
 	qfot_type_t dummy_type = { };
 	const char *name = 0;
+	pointer_t   offs = offset;
 
 	dstring_clearstr (dstr);
 
 	if (type && type->meta == ty_basic && type->t.type == ev_short) {
-		dsprintf (dstr, "%04x", (short) ofs);
+		dsprintf (dstr, "%04x", (short) offset);
 		return dstr->str;
 	}
 
-	if (ofs > pr->globals_size) {
-		dsprintf (dstr, "%08x out of bounds", ofs);
+	if (offset > pr->globals_size) {
+		dsprintf (dstr, "%08x out of bounds", offset);
 		return dstr->str;
 	}
 
-	def = pr_debug_find_def (pr, ofs);
+	def = pr_debug_find_def (pr, &offs);
 	if (!def || !PR_StringValid (pr, def->name)
 		|| !*(name = PR_GetString (pr, def->name))) {
-		dsprintf (dstr, "[$%x]", ofs);
+		dsprintf (dstr, "[$%x]", offset);
 	}
 	if (name) {
 		if (strequal (name, "IMMEDIATE") || strequal (name, ".imm")) {
 			contents = 1;
 		} else {
-			dsprintf (dstr, "%s", name);
+			if (offs) {
+				dsprintf (dstr, "{%s + %u}", name, offs);
+			} else {
+				dsprintf (dstr, "%s", name);
+			}
 		}
 	}
 	if (contents) {
@@ -949,7 +964,7 @@ global_string (pr_debug_data_t *data, pointer_t ofs, qfot_type_t *type,
 				type = &res->void_type;
 			}
 		}
-		value_string (data, type, pr->pr_globals + ofs);
+		value_string (data, type, pr->pr_globals + offset);
 		if (name) {
 			dstring_appendstr (dstr, ")");
 		}
@@ -1084,21 +1099,20 @@ pr_debug_pointer_view (qfot_type_t *type, pr_type_t *value, void *_data)
 {
 	__auto_type data = (pr_debug_data_t *) _data;
 	progs_t    *pr = data->pr;
-	prdeb_resources_t *res = pr->pr_debug_resources; //FIXME
 	dstring_t  *dstr = data->dstr;
-	pointer_t   ofs = value->integer_var;
+	pointer_t   offset = value->integer_var;
+	pointer_t   offs = offset;
 	pr_def_t   *def = 0;
 
-	if (pr_debug->int_val && res->debug) {
-		def = PR_Get_Local_Def (pr, ofs);
-	}
-	if (!def) {
-		def = PR_GlobalAtOfs (pr, ofs);
-	}
+	def = pr_debug_find_def (pr, &offs);
 	if (def && def->name) {
-		dasprintf (dstr, "&%s", PR_GetString (pr, def->name));
+		if (offs) {
+			dasprintf (dstr, "&%s + %u", PR_GetString (pr, def->name), offs);
+		} else {
+			dasprintf (dstr, "&%s", PR_GetString (pr, def->name));
+		}
 	} else {
-		dasprintf (dstr, "[$%x]", ofs);
+		dasprintf (dstr, "[$%x]", offset);
 	}
 }
 
