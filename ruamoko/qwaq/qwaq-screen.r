@@ -29,20 +29,14 @@
 
 -draw
 {
-	update_panels ();
-	[TextContext doupdate];
 	return self;
 }
 
 -redraw
 {
-	[textContext refresh];
-	return self;
-}
-
--setBackground: (int) ch
-{
-	[textContext bkgd:ch];
+	//update_panels ();
+	[TextContext refresh];
+	//[TextContext doupdate];
 	return self;
 }
 

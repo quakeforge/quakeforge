@@ -31,8 +31,9 @@ typedef BOOL condition_func2 (id object, void *anObject, void *data);
 {
 	Array      *views;
 	int         focused;
-	TextContext *buffer;
+	id          buffer;	//FIXME id<TextContext> or sim
 }
+-initWithContext: (id) context;	//FIXME id<TextContext> or sim
 -insert: (View *) view;
 -remove: (View *) view;
 @end

@@ -10,7 +10,6 @@
 }
 +(Screen *) screen;
 -handleEvent: (qwaq_event_t *) event;
--setBackground: (int) ch;
 @end
 
 #endif//__qwaq_screen_h

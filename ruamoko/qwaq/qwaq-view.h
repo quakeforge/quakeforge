@@ -57,6 +57,7 @@ enum {
 -(struct Rect_s *)getRect;
 -draw;
 -redraw;
+-handleEvent: (qwaq_event_t *) event;
 
 - (void) refresh;
 - (void) mvprintf: (Point) pos, string fmt, ...;

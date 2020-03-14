@@ -38,16 +38,17 @@ arp_end (void)
 	init_pair (1, COLOR_WHITE, COLOR_BLUE);
 	init_pair (2, COLOR_WHITE, COLOR_BLACK);
 
-	screen = [[Screen screen] retain];
-	[self insert:screen];
-	[screen setBackground: COLOR_PAIR (1)];
-	Rect r = *[screen getRect];
+	TextContext *screen = [TextContext screen];
+	objects = [[Group alloc] initWithContext: screen];
+
+	[screen bkgd: COLOR_PAIR (1)];
+	Rect r = { nil, [screen size] };
 	r.offset.x = r.extent.width / 4;
 	r.offset.y = r.extent.height / 4;
 	r.extent.width /= 2;
 	r.extent.height /= 2;
 	Window *w;
-	[self insert: w=[[Window windowWithRect: r] setBackground: COLOR_PAIR (2)]];
+	[objects insert: w=[[Window windowWithRect: r] setBackground: COLOR_PAIR (2)]];
 	//wprintf (w.window, "%d %d %d %d\n", r.offset.x, r.offset.y, r.extent.width, r.ylen);
 	return self;
 }
@@ -70,14 +71,14 @@ arp_end (void)
 
 -draw
 {
-	[super draw];
+	[objects draw];
 	[TextContext refresh];
 	return self;
 }
 
 -handleEvent: (qwaq_event_t *) event
 {
-	[screen handleEvent: event];
+	[objects handleEvent: event];
 	if (event.what == qe_key && event.key == '\x18') {
 		event.what = qe_command;
 		event.message.command = qc_exit;

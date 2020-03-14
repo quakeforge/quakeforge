@@ -66,11 +66,16 @@
 @end
 
 @implementation Group
--init
+
+-initWithContext: (id) context
 {
 	if (!(self = [super init])) {
 		return nil;
 	}
+	textContext = context;
+	absRect = rect = { nil, [textContext size] };
+	printf ("\n\nsize:%d %d\n\n", rect.extent.width, rect.extent.height);
+	buffer = [DrawBuffer buffer: rect.extent];
 	views = [[Array array] retain];
 	return self;
 }
@@ -92,6 +97,7 @@
 -insert: (View *) view
 {
 	[views addObject: view];
+	view.textContext = buffer;
 	return self;
 }
 
@@ -114,13 +120,8 @@ not_dont_draw (id aView, void *aGroup)
 {
 	View       *view = aView;
 	Group      *group = (Group *) aGroup;
-	if (!(view.options & ofDontDraw)) {
-		if (!view.textContext) {
-			view.textContext = group.buffer;
-		}
-		return YES;
-	}
-	return NO;
+
+	return !(view.options & ofDontDraw);
 }
 
 -draw

@@ -1,18 +1,21 @@
 #ifndef __qwaq_app_h
 #define __qwaq_app_h
 
+#include <Object.h>
+
 #include "event.h"
-#include "qwaq-group.h"
 
-@class Screen;
+@class Group;
 
-@interface QwaqApplication: Group
+@interface QwaqApplication: Object
 {
 	qwaq_event_t event;
 	qwaq_command endState;
-	Screen     *screen;
+
+	Group      *objects;
 }
 -run;
+-draw;
 -handleEvent: (qwaq_event_t *) event;
 @end
 

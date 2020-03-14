@@ -126,5 +126,9 @@ updateScreenCursor (View *view)
 	[textContext mvaddch: pos, ch];
 }
 
+-handleEvent: (qwaq_event_t *) event
+{
+	return self;
+}
 
 @end
