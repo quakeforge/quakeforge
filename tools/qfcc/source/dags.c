@@ -80,7 +80,7 @@ flush_daglabels (void)
 			else if (op->op_type == op_label)
 				op->o.label->daglabel = 0;
 			else
-				internal_error (0, "unexpected operand type");
+				internal_error (op->expr, "unexpected operand type");
 		}
 		daglabel_chain = daglabel_chain->daglabel_chain;
 	}
@@ -186,7 +186,7 @@ operand_label (dag_t *dag, operand_t *op)
 		label->op = op;
 		op->o.label->daglabel = label;
 	} else {
-		internal_error (0, "unexpected operand type: %d", op->op_type);
+		internal_error (op->expr, "unexpected operand type: %d", op->op_type);
 	}
 	return label;
 }
@@ -498,7 +498,7 @@ dag_kill_aliases (daglabel_t *l)
 			def_visit_all (op->o.def, 1, dag_def_kill_aliases_visit, l);
 		}
 	} else {
-		internal_error (0, "rvalue assignment?");
+		internal_error (op->expr, "rvalue assignment?");
 	}
 }
 
@@ -555,7 +555,8 @@ dagnode_attach_label (dagnode_t *n, daglabel_t *l)
 		internal_error (0, "attempt to attach operator label to dagnode "
 						"identifiers");
 	if (!op_is_identifier (l->op))
-		internal_error (0, "attempt to attach non-identifer label to dagnode "
+		internal_error (l->op->expr,
+						"attempt to attach non-identifer label to dagnode "
 						"identifiers");
 	if (l->dagnode) {
 		// if the node is a leaf, then kill its value so no attempt is made

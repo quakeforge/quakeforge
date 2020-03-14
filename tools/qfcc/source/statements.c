@@ -207,7 +207,7 @@ print_operand (operand_t *op)
 				case ev_void:
 				case ev_invalid:
 				case ev_type_count:
-					internal_error (0, "weird value type");
+					internal_error (op->expr, "weird value type");
 			}
 			break;
 		case op_label:
@@ -390,7 +390,7 @@ tempop_visit_all (tempop_t *tempop, int overlap,
 	if (tempop->alias) {
 		top = tempop->alias;
 		if (top->op_type != op_temp) {
-			internal_error (0, "temp alias of non-temp operand");
+			internal_error (top->expr, "temp alias of non-temp operand");
 		}
 		tempop = &top->o.tempop;
 		if ((ret = visit (tempop, data)))
@@ -400,7 +400,7 @@ tempop_visit_all (tempop_t *tempop, int overlap,
 	}
 	for (top = tempop->alias_ops; top; top = top->next) {
 		if (top->op_type != op_temp) {
-			internal_error (0, "temp alias of non-temp operand");
+			internal_error (top->expr, "temp alias of non-temp operand");
 		}
 		tempop = &top->o.tempop;
 		if (tempop == start_tempop)
@@ -419,8 +419,9 @@ alias_operand (type_t *type, operand_t *op, expr_t *expr)
 	operand_t  *aop;
 
 	if (type_size (type) != type_size (op->type)) {
-		internal_error (0, "\naliasing operand with type of different size"
-						" (%d, %d)", type_size (type), type_size (op->type));
+		internal_error (op->expr,
+						"aliasing operand with type of different size: %d, %d",
+						type_size (type), type_size (op->type));
 	}
 	aop = new_operand (op_alias, expr);
 	aop->o.alias = op;
@@ -554,7 +555,7 @@ statement_get_targetlist (statement_t *s)
 		target_list[0] = statement_get_target (s);
 	} else if (statement_is_jumpb (s)) {
 		if (table->alias)
-			internal_error (0, "aliased jump table");
+			internal_error (s->opa->expr, "aliased jump table");
 		e = table->initializer->e.compound.head;	//FIXME check!!!
 		for (i = 0; i < count; e = e->next, i++)
 			target_list[i] = e->expr->e.labelref.label->dest;

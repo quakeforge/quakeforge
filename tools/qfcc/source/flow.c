@@ -280,9 +280,9 @@ flowvar_get_def (flowvar_t *var)
 		case op_temp:
 			return op->o.tempop.def;
 		case op_alias:
-			internal_error (0, "unexpected alias operand");
+			internal_error (op->expr, "unexpected alias operand");
 	}
-	internal_error (0, "oops, blue pill");
+	internal_error (op->expr, "oops, blue pill");
 	return 0;
 }
 
@@ -378,7 +378,7 @@ get_temp_address (function_t *func, operand_t *op)
 		func->tmpaddr += top->size;
 	}
 	if (top->o.tempop.offset) {
-		internal_error (0, "real tempop with a non-zero offset");
+		internal_error (top->expr, "real tempop with a non-zero offset");
 	}
 	op->o.tempop.flowaddr = top->o.tempop.flowaddr + op->o.tempop.offset;
 	return op->o.tempop.flowaddr;
