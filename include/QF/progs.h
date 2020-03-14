@@ -321,6 +321,8 @@ void ED_EntityParseFunction (progs_t *pr);
 */
 ///@{
 
+pr_def_t *PR_SearchDefs (pr_def_t *defs, unsigned num_defs, pointer_t offset)
+	__attribute__((pure));
 pr_def_t *PR_FieldAtOfs (progs_t *pr, pointer_t ofs) __attribute__((pure));
 pr_def_t *PR_GlobalAtOfs (progs_t *pr, pointer_t ofs) __attribute__((pure));
 
