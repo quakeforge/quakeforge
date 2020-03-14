@@ -104,6 +104,7 @@ typedef struct {
 	struct expr_s **tail;	///< last expression in the block, for appending
 	struct expr_s *result;	///< the result of this block if non-void
 	int         is_call;	///< this block exprssion forms a function call
+	void       *return_addr;///< who allocated this
 } ex_block_t;
 
 typedef struct {

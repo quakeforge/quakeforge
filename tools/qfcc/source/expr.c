@@ -561,6 +561,7 @@ new_block_expr (void)
 	b->type = ex_block;
 	b->e.block.head = 0;
 	b->e.block.tail = &b->e.block.head;
+	b->e.block.return_addr = __builtin_return_address (0);
 	return b;
 }
 
