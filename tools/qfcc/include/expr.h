@@ -401,7 +401,7 @@ expr_t *new_binary_expr (int op, expr_t *e1, expr_t *e2);
 /**	Create a new unary expression node node.
 
 	If \a e1 is an error expression, then it will be returned instead of a
-	new binary expression.
+	new unary expression.
 
 	\param op		The op-code of the unary expression.
 	\param e1		The "right" side of the expression.

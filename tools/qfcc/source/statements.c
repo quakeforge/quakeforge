@@ -663,14 +663,22 @@ operand_address (sblock_t *sblock, operand_t *reference, operand_t **op,
 				 expr_t *e)
 {
 	statement_t *s;
+	type_t     *type;
 
 	switch (reference->op_type) {
 		case op_def:
 		case op_temp:
 		case op_alias:
+			// build an address expression so dags can extract the correct
+			// type. address_expr cannot be used because reference might not
+			// be something it likes
+			e = expr_file_line (new_unary_expr ('&', e), e);
+			type = pointer_type (reference->type);
+			e->e.expr.type = type;
+
 			s = new_statement (st_expr, "&", e);
 			s->opa = reference;
-			s->opc = temp_operand (pointer_type (reference->type), e);
+			s->opc = temp_operand (type, e);
 			sblock_add_statement (sblock, s);
 			if (op) {
 				*(op) = s->opc;
