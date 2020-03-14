@@ -153,8 +153,9 @@ dump_def (progs_t *pr, pr_def_t *def, int indent)
 				break;
 		}
 	}
-	printf ("%*s %x %d %s %s:%x %s\n", indent * 12, "",
-			offset, saveglobal, name, type, def->type_encoding, comment);
+	printf ("%*s %x:%d %d %s %s:%x %s\n", indent * 12, "",
+			offset, def->size, saveglobal, name, type, def->type_encoding,
+			comment);
 }
 
 void
