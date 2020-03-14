@@ -83,6 +83,8 @@ typedef struct prdeb_resources_s {
 	struct pr_lineno_s *linenos;
 	pr_def_t   *local_defs;
 	pr_def_t   *type_encodings_def;
+	qfot_type_t void_type;
+	qfot_type_t *type_encodings[ev_type_count];
 } prdeb_resources_t;
 
 typedef struct {
@@ -352,6 +354,10 @@ pr_debug_clear (progs_t *pr, void *data)
 	pr->watch = 0;
 	pr->wp_conditional = 0;
 	pr->wp_val.integer_var = 0;
+
+	for (int i = 0; i < ev_type_count; i++ ) {
+		res->type_encodings[i] = &res->void_type;
+	}
 }
 
 static file_t *
@@ -420,7 +426,10 @@ PR_LoadDebug (progs_t *pr)
 	pr_uint_t   i;
 	pr_def_t   *def;
 	pr_type_t  *str = 0;
+	qfot_type_encodings_t *encodings = 0;
 	pointer_t   type_encodings = 0;
+	pointer_t   type_ptr;
+	qfot_type_t *type;
 
 	if (!pr_debug->int_val)
 		return 1;
@@ -508,8 +517,8 @@ PR_LoadDebug (progs_t *pr)
 	}
 	res->type_encodings_def = PR_FindGlobal (pr, ".type_encodings");
 	if (res->type_encodings_def) {
-		__auto_type encodings = &G_STRUCT (pr, qfot_type_encodings_t,
-										   res->type_encodings_def->ofs);
+		encodings = &G_STRUCT (pr, qfot_type_encodings_t,
+							   res->type_encodings_def->ofs);
 		type_encodings = encodings->types;
 	}
 	for (i = 0; i < res->debug->num_locals; i++) {
@@ -521,6 +530,16 @@ PR_LoadDebug (progs_t *pr)
 			= LittleLong (res->local_defs[i].type_encoding);
 		if (type_encodings) {
 			res->local_defs[i].type_encoding += type_encodings;
+		}
+	}
+	if (encodings) {
+		for (type_ptr = 4; type_ptr < encodings->size;
+			 type_ptr += type->size) {
+			type = &G_STRUCT (pr, qfot_type_t, type_encodings + type_ptr);
+			if (type->meta == ty_basic
+				&& type->t.type >= 0 && type->t.type < ev_type_count) {
+				res->type_encodings[type->t.type] = type;
+			}
 		}
 	}
 	return 1;
@@ -729,19 +748,15 @@ get_aux_function (progs_t *pr)
 	return res->auxfunction_map[func - pr->pr_functions];
 }
 
-static etype_t
-get_etype (progs_t *pr, int typeptr)
+static qfot_type_t *
+get_type (prdeb_resources_t *res, int typeptr)
 {
-	qfot_type_t *type;
+	progs_t    *pr = res->pr;
 
 	if (!typeptr) {
-		return ev_void;
+		return &res->void_type;
 	}
-	type = &G_STRUCT (pr, qfot_type_t, typeptr);
-	if (type->meta == ty_basic) {
-		return type->t.type;
-	}
-	return ev_void;
+	return &G_STRUCT (pr, qfot_type_t, typeptr);
 }
 
 pr_def_t *
@@ -881,19 +896,19 @@ pr_debug_find_def (progs_t *pr, pr_int_t ofs)
 }
 
 static const char *
-global_string (pr_debug_data_t *data, pointer_t ofs, etype_t etype,
+global_string (pr_debug_data_t *data, pointer_t ofs, qfot_type_t *type,
 			   int contents)
 {
 	progs_t    *pr = data->pr;
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	dstring_t  *dstr = data->dstr;
 	pr_def_t   *def = NULL;
 	qfot_type_t dummy_type = { };
-	qfot_type_t *type;
 	const char *name = 0;
 
 	dstring_clearstr (dstr);
 
-	if (etype == ev_short) {
+	if (type && type->meta == ty_basic && type->t.type == ev_short) {
 		dsprintf (dstr, "%04x", (short) ofs);
 		return dstr->str;
 	}
@@ -919,16 +934,17 @@ global_string (pr_debug_data_t *data, pointer_t ofs, etype_t etype,
 		if (name) {
 			dstring_appendstr (dstr, "(");
 		}
-		if (def) {
-			if (!def->type_encoding) {
-				dummy_type.t.type = def->type;
-				type = &dummy_type;
+		if (!type) {
+			if (def) {
+				if (!def->type_encoding) {
+					dummy_type.t.type = def->type;
+					type = &dummy_type;
+				} else {
+					type = &G_STRUCT (pr, qfot_type_t, def->type_encoding);
+				}
 			} else {
-				type = &G_STRUCT (pr, qfot_type_t, def->type_encoding);
+				type = &res->void_type;
 			}
-		} else {
-			dummy_type.t.type = etype;
-			type = &dummy_type;
 		}
 		value_string (data, type, pr->pr_globals + ofs);
 		if (name) {
@@ -1118,7 +1134,7 @@ pr_debug_short_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "%d", (short)value->integer_var);
+	dasprintf (dstr, "%04x", (short)value->integer_var);
 }
 
 static void
@@ -1232,8 +1248,9 @@ PR_Debug_Print (progs_t *pr, const char *expr)
 	}
 
 	print = parse_expression (pr, expr, 0);
-	if (print.type != ev_invalid) {
-		const char *s = global_string (&data, print.ofs, print.type, 1);
+	if (print.type_encoding) {
+		qfot_type_t *type = get_type (res, print.type_encoding);
+		const char *s = global_string (&data, print.ofs, type, 1);
 		Sys_Printf ("[%d] = %s\n", print.ofs, s);
 	}
 }
@@ -1300,7 +1317,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 				char        mode = fmt[1], opchar = fmt[2];
 				unsigned    parm_ind = 0;
 				pr_int_t    opval;
-				etype_t     optype = ev_void;
+				qfot_type_t *optype = ev_void;
 				func_t      func;
 
 				if (mode == 'P') {
@@ -1314,15 +1331,15 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 				switch (opchar) {
 					case 'a':
 						opval = s->a;
-						optype = op->type_a;
+						optype = res->type_encodings[op->type_a];
 						break;
 					case 'b':
 						opval = s->b;
-						optype = op->type_b;
+						optype = res->type_encodings[op->type_b];
 						break;
 					case 'c':
 						opval = s->c;
-						optype = op->type_c;
+						optype = res->type_encodings[op->type_c];
 						break;
 					case 'x':
 						if (mode == 'P') {
@@ -1337,8 +1354,9 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 					case 'R':
 						optype = ev_void;
 						aux_func = get_aux_function (pr);
-						if (aux_func)
-							optype = get_etype (pr, aux_func->return_type);
+						if (aux_func) {
+							optype = get_type (res, aux_func->return_type);
+						}
 						str = global_string (&data, opval, optype,
 											 contents & 1);
 						break;
@@ -1353,8 +1371,9 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 					case 'P':
 						parm_def = PR_Get_Param_Def (pr, call_func, parm_ind);
 						optype = ev_void;
-						if (parm_def)
-							optype = parm_def->type;
+						if (parm_def) {
+							optype = get_type (res, parm_def->type_encoding);
+						}
 						str = global_string (&data, opval, optype,
 											 contents & 1);
 						break;
@@ -1560,6 +1579,14 @@ PR_Debug_Init (progs_t *pr)
 	res->dva = dstring_newstr ();
 	res->line = dstring_newstr ();
 	res->dstr = dstring_newstr ();
+
+	res->void_type.meta = ty_basic;
+	res->void_type.size = 4;
+	res->void_type.encoding = 0;
+	res->void_type.t.type = ev_void;
+	for (int i = 0; i < ev_type_count; i++ ) {
+		res->type_encodings[i] = &res->void_type;
+	}
 
 	PR_Resources_Register (pr, "PR_Debug", res, pr_debug_clear);
 	if (!file_hash) {

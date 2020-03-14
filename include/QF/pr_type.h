@@ -109,7 +109,7 @@ typedef struct qfot_type_s {
 
 typedef struct qfot_type_encodings_s {
 	pointer_t   types;
-	pr_int_t    size;
+	pr_uint_t   size;
 } qfot_type_encodings_t;
 
 ///@}
