@@ -2229,8 +2229,7 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 		case ex_block:
 			if (!e1->e.block.result)
 				return error (e1, "invalid type for unary &");
-			e1->e.block.result = address_expr (e1->e.block.result, e2, t);
-			return e1;
+			return address_expr (e1->e.block.result, e2, t);
 		case ex_label:
 			return new_label_ref (&e1->e.label);
 		case ex_temp:
