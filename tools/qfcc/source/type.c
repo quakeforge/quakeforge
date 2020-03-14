@@ -937,7 +937,6 @@ init_types (void)
 {
 	static struct_def_t zero_struct[] = {
 		{"string_val",       &type_string},
-		{"double_val",       &type_double},
 		{"float_val",        &type_float},
 		{"entity_val",       &type_entity},
 		{"field_val",        &type_field},
@@ -949,6 +948,7 @@ init_types (void)
 		{"integer_val",      &type_integer},
 		{"uinteger_val",     &type_uinteger},
 		{"quaternion_val",   &type_quaternion},
+		{"double_val",       &type_double},
 		{0, 0}
 	};
 	static struct_def_t param_struct[] = {
