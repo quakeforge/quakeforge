@@ -106,6 +106,8 @@ get_operand_def (expr_t *expr, operand_t *op)
 			return op->o.tempop.def;
 		case op_alias:
 			return get_operand_def (expr, op->o.alias);
+		case op_nil:
+			internal_error (expr, "unexpected nil operand");
 	}
 	return 0;
 }

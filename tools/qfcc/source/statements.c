@@ -65,6 +65,8 @@ static const char *op_type_names[] = {
 	"op_value",
 	"op_label",
 	"op_temp",
+	"op_alias",
+	"op_nil",
 };
 
 const char *
@@ -150,6 +152,8 @@ operand_string (operand_t *op)
 				strcpy (buf, alias);
 				return va ("alias(%s,%s)", pr_type_name[op->type->type], buf);
 			}
+		case op_nil:
+			return va ("nil");
 	}
 	return ("??");
 }
@@ -222,6 +226,10 @@ print_operand (operand_t *op)
 			printf ("alias(%s,", pr_type_name[op->type->type]);
 			print_operand (op->o.alias);
 			printf (")");
+			break;
+		case op_nil:
+			printf ("nil");
+			break;
 	}
 }
 
@@ -311,6 +319,16 @@ free_sblock (sblock_t *sblock)
 		free_statement (s);
 	}
 	FREE (sblocks, sblock);
+}
+
+operand_t *
+nil_operand (type_t *type, expr_t *expr)
+{
+	operand_t  *op;
+	op = new_operand (op_nil, expr, __builtin_return_address (0));
+	op->type = type;
+	op->size = type_size (type);
+	return op;
 }
 
 operand_t *

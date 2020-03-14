@@ -281,6 +281,8 @@ flowvar_get_def (flowvar_t *var)
 			return op->o.tempop.def;
 		case op_alias:
 			internal_error (op->expr, "unexpected alias operand");
+		case op_nil:
+			internal_error (op->expr, "unexpected nil operand");
 	}
 	internal_error (op->expr, "oops, blue pill");
 	return 0;

@@ -38,6 +38,7 @@ typedef enum {
 	op_label,
 	op_temp,
 	op_alias,
+	op_nil,
 } op_type_e;
 
 typedef struct {
@@ -55,7 +56,7 @@ typedef struct {
 typedef struct operand_s {
 	struct operand_s *next;
 	op_type_e   op_type;
-	struct type_s *type;		///< possibly override def's type
+	struct type_s *type;		///< possibly override def's/nil's type
 	int         size;			///< for structures
 	struct expr_s *expr;		///< expression generating this operand
 	void       *return_addr;	///< who created this operand
@@ -117,6 +118,7 @@ struct dstring_s;
 
 const char *optype_str (op_type_e type) __attribute__((const));
 
+operand_t *nil_operand (struct type_s *type, struct expr_s *expr);
 operand_t *def_operand (struct def_s *def, struct type_s *type,
 						struct expr_s *expr);
 operand_t *return_operand (struct type_s *type, struct expr_s *expr);
