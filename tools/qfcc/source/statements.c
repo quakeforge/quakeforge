@@ -646,6 +646,46 @@ statement_branch (sblock_t *sblock, expr_t *e)
 	return sblock->next;
 }
 
+static sblock_t *
+expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	statement_t *s;
+	s = new_statement (st_expr, "&", e);
+	sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
+	s->opc = temp_operand (e->e.expr.type, e);
+	sblock_add_statement (sblock, s);
+	*(op) = s->opc;
+	return sblock;
+}
+
+static sblock_t *
+operand_address (sblock_t *sblock, operand_t *reference, operand_t **op,
+				 expr_t *e)
+{
+	statement_t *s;
+
+	switch (reference->op_type) {
+		case op_def:
+		case op_temp:
+		case op_alias:
+			s = new_statement (st_expr, "&", e);
+			s->opa = reference;
+			s->opc = temp_operand (pointer_type (reference->type), e);
+			sblock_add_statement (sblock, s);
+			if (op) {
+				*(op) = s->opc;
+			}
+			return sblock;
+		case op_value:
+		case op_label:
+		case op_nil:
+			break;
+	}
+	internal_error ((*op)->expr,
+					"invalid operand type for operand address: %s",
+					op_type_names[reference->op_type]);
+}
+
 static __attribute__((pure)) int
 is_const_ptr (expr_t *e)
 {
@@ -660,8 +700,6 @@ is_const_ptr (expr_t *e)
 static __attribute__((pure)) int
 is_indirect (expr_t *e)
 {
-	if (e->type == ex_block && e->e.block.result)
-		return is_indirect (e->e.block.result);
 	if (e->type == ex_expr && e->e.expr.op == '.')
 		return 1;
 	if (!(e->type == ex_uexpr && e->e.expr.op == '.'))
@@ -670,7 +708,7 @@ is_indirect (expr_t *e)
 }
 
 static sblock_t *
-expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op)
+expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 {
 	statement_t *s;
 	expr_t     *dst_expr = e->e.expr.e1;
@@ -680,7 +718,6 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op)
 	unsigned    count;
 	expr_t     *count_expr;
 	operand_t  *dst = 0;
-	operand_t  *src = 0;
 	operand_t  *size = 0;
 	static const char *opcode_sets[][2] = {
 		{"<MOVE>", "<MOVEP>"},
@@ -692,29 +729,44 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op)
 	int         need_ptr = 0;
 	//operand_t  *dummy;
 
-	//if (src_expr->type == ex_expr && src_expr->e.expr.op == '=') {
-	//	sblock = statement_subexpr (sblock, src_expr, &dummy);
-	//}
-	// follow the assignment chain to find the actual source expression
-	// (can't take the address of an assignment)
-	while (src_expr->type == ex_expr && src_expr->e.expr.op == '=') {
-		src_expr = src_expr->e.expr.e2;
-	}
-	if (src_expr->type == ex_nil) {
-		// switch to memset because nil is type agnostic 0
+	if ((src && src->op_type == op_nil) || src_expr->type == ex_nil) {
+		// switch to memset because nil is type agnostic 0 and structures
+		// can be any size
 		src_expr = new_integer_expr (0);
+		sblock = statement_subexpr (sblock, src_expr, &src);
 		opcode_set = opcode_sets[1];
+		if (op) {
+			*op = nil_operand (dst_type, src_expr);
+		}
 		if (is_indirect (dst_expr)) {
-			need_ptr = 1;
-			dst_expr = address_expr (dst_expr, 0, 0);
+			goto dereference_dst;
 		}
 	} else {
+		if (!src) {
+			// This is the very right-hand node of a non-nil assignment chain
+			// (there may be more chains somwhere within src_expr, but they
+			// are not part of this chain as they are separated by another
+			// expression).
+			sblock = statement_subexpr (sblock, src_expr, &src);
+		}
+		// send the source operand back up through the assignment chain
+		// before modifying src if its address is needed
+		if (op) {
+			*op = src;
+		}
 		if (is_indirect (dst_expr) || is_indirect (src_expr)) {
-			need_ptr = 1;
-			dst_expr = address_expr (dst_expr, 0, 0);
-			src_expr = address_expr (src_expr, 0, 0);
+			sblock = operand_address (sblock, src, &src, src_expr);
+			goto dereference_dst;
 		}
 	}
+	if (0) {
+dereference_dst:
+		// dst_expr is a dereferenced pointer, so need to un-dereference it
+		// to get the pointer and switch to storep instructions.
+		dst_expr = expr_file_line (address_expr (dst_expr, 0, 0), e);
+		need_ptr = 1;
+	}
+	sblock = statement_subexpr (sblock, dst_expr, &dst);
 
 	if (type_size (dst_type) != type_size (src_type)) {
 		bug (e, "dst and src sizes differ in expr_assign_copy: %d %d",
@@ -726,6 +778,7 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op)
 	} else {
 		count_expr = expr_file_line (new_integer_expr (count), e);
 	}
+	sblock = statement_subexpr (sblock, count_expr, &size);
 
 	if (count < max_count && !need_ptr) {
 		opcode = opcode_set[0];
@@ -734,9 +787,6 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op)
 	}
 
 	s = new_statement (st_move, opcode, e);
-	sblock = statement_subexpr (sblock, dst_expr, &dst);
-	sblock = statement_subexpr (sblock, src_expr, &src);
-	sblock = statement_subexpr (sblock, count_expr, &size);
 	s->opa = src;
 	s->opb = size;
 	s->opc = dst;
@@ -760,7 +810,7 @@ expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 	if (src_expr->type == ex_expr && src_expr->e.expr.op == '=') {
 		sblock = statement_subexpr (sblock, src_expr, &src);
 		if (is_structural (dst_type)) {
-			return expr_assign_copy (sblock, e, op);
+			return expr_assign_copy (sblock, e, op, src);
 		}
 		if (is_indirect (dst_expr)) {
 			goto dereference_dst;
@@ -769,7 +819,7 @@ expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 		}
 	} else {
 		if (is_structural (dst_type)) {
-			return expr_assign_copy (sblock, e, op);
+			return expr_assign_copy (sblock, e, op, src);
 		}
 
 		if (is_indirect (dst_expr)) {
@@ -797,7 +847,7 @@ expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 dereference_dst:
 		// dst_expr is a dereferenced pointer, so need to un-dereference it
 		// to get the pointer and switch to storep instructions.
-		dst_expr = address_expr (dst_expr, 0, 0);
+		dst_expr = expr_file_line (address_expr (dst_expr, 0, 0), e);
 		opcode = ".=";	// FIXME find a nicer representation (lose strings?)
 		if (dst_expr->type == ex_expr && !is_const_ptr (dst_expr->e.expr.e1)) {
 			sblock = statement_subexpr (sblock, dst_expr->e.expr.e1, &dst);
@@ -937,18 +987,6 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 	sblock_add_statement (sblock, s);
 	sblock->next = new_sblock ();
 	return sblock->next;
-}
-
-static sblock_t *
-expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
-{
-	statement_t *s;
-	s = new_statement (st_expr, "&", e);
-	sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
-	s->opc = temp_operand (e->e.expr.type, e);
-	sblock_add_statement (sblock, s);
-	*(op) = s->opc;
-	return sblock;
 }
 
 static statement_t *
@@ -1318,7 +1356,7 @@ expr_nil (sblock_t *sblock, expr_t *e, operand_t **op)
 		*op = value_operand (new_nil_val (nil), e);
 		return sblock;
 	}
-	ptr = address_expr (new_temp_def_expr (nil), 0, 0);
+	ptr = expr_file_line (address_expr (new_temp_def_expr (nil), 0, 0), e);
 	expr_file_line (ptr, e);
 	sblock = statement_subexpr (sblock, ptr, op);
 	e = expr_file_line (new_memset_expr (ptr, new_integer_expr (0), nil), e);
