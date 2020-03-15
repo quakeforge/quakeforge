@@ -98,6 +98,9 @@ keywordarg_t *copy_keywordargs (const keywordarg_t *kwargs);
 struct expr_s *send_message (int super);
 
 method_t *find_method (const char *sel_name);
+method_t *methodlist_find_method (methodlist_t *methodlist,
+								  selector_t *selector, int instance)
+								  __attribute__((pure));
 
 void selector_name (struct dstring_s *sel_id, keywordarg_t *selector);
 void method_types (struct dstring_s *sel_types, method_t *method);

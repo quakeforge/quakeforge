@@ -179,62 +179,45 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	expr_t     *selector = selector_expr (message);
 	expr_t     *call;
 	keywordarg_t *m;
-	int         self = 0, super = 0, class_msg = 0;
-	type_t     *rec_type;
+	int         super = 0, class_msg = 0;
+	type_t     *rec_type = 0;
 	type_t     *return_type;
 	type_t     *method_type = &type_IMP;
-	class_t    *class = 0;
 	method_t   *method;
 	expr_t     *send_msg;
 
-	if (receiver->type == ex_symbol
-		&& strcmp (receiver->e.symbol->name, "super") == 0) {
-		super = 1;
+	if (receiver->type == ex_nil) {
+		rec_type = &type_id;
+		convert_nil (receiver, rec_type);
+	} else if (receiver->type == ex_symbol) {
+		if (strcmp (receiver->e.symbol->name, "self") == 0) {
+			rec_type = get_type (receiver);
+		} else if (strcmp (receiver->e.symbol->name, "super") == 0) {
+			super = 1;
 
-		receiver = super_expr (current_class);
+			receiver = super_expr (current_class);
 
-		if (receiver->type == ex_error)
-			return receiver;
-		receiver = cast_expr (&type_id, receiver);	//FIXME better way?
-		class = extract_class (current_class);
-	} else {
-		if (receiver->type == ex_symbol) {
-			if (strcmp (receiver->e.symbol->name, "self") == 0)
-				self = 1;
-			if (receiver->e.symbol->sy_type == sy_class) {
-				class = receiver->e.symbol->type->t.class;
-				class_msg = 1;
-				receiver = new_symbol_expr (class_pointer_symbol (class));
-			}
-		} else if (receiver->type == ex_nil) {
-			convert_nil (receiver, &type_id);
-		}
-		rec_type = get_type (receiver);
-
-		if (receiver->type == ex_error)
-			return receiver;
-
-		if (rec_type == &type_id || rec_type == &type_Class) {
-		} else {
-			if (rec_type->type == ev_pointer)
-				rec_type = rec_type->t.fldptr.type;
-			if (!obj_is_class (rec_type))
-				return error (receiver, "not a class/object");
-
-			if (self) {
-				if (!class)
-					class = extract_class (current_class);
-				if (rec_type == &type_obj_class)
-					class_msg = 1;
-			} else {
-				if (!class)
-					class = rec_type->t.class;
-			}
+			if (receiver->type == ex_error)
+				return receiver;
+			receiver = cast_expr (&type_id, receiver);	//FIXME better way?
+			rec_type = extract_class (current_class)->type;
+		} else if (receiver->e.symbol->sy_type == sy_class) {
+			class_t    *class;
+			rec_type = receiver->e.symbol->type;
+			class = rec_type->t.class;
+			class_msg = 1;
+			receiver = new_symbol_expr (class_pointer_symbol (class));
 		}
 	}
+	if (!rec_type) {
+		rec_type = get_type (receiver);
+	}
+
+	if (receiver->type == ex_error)
+		return receiver;
 
 	return_type = &type_id;
-	method = class_message_response (class, class_msg, selector);
+	method = class_message_response (rec_type, class_msg, selector);
 	if (method)
 		return_type = method->type->t.func.type;
 

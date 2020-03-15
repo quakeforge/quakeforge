@@ -1104,42 +1104,79 @@ class_find_method (class_type_t *class_type, method_t *method)
 	return method;
 }
 
+static method_t *
+cls_find_method (methodlist_t *methodlist, selector_t *selector,
+				   int class_msg, int is_root)
+{
+	method_t   *m = 0;
+	m = methodlist_find_method (methodlist, selector, !class_msg);
+	if (!m && is_root && class_msg
+		&& (m = methodlist_find_method (methodlist, selector, 1))) {
+		return m;
+	}
+	return m;
+}
+
 method_t *
-class_message_response (class_t *class, int class_msg, expr_t *sel)
+class_message_response (type_t *clstype, int class_msg, expr_t *sel)
 {
 	selector_t *selector;
 	method_t   *m;
-	class_t    *c = class;
+	class_t    *c;
+	class_t    *class = 0;
 	category_t *cat;
+	dstring_t  *dstr;
 
 	selector = get_selector (sel);
 	if (!selector)
 		return 0;
-	if (class && class->type != &type_obj_object) {
-		if (!class->interface_declared) {
-			class->interface_declared = 1;
-			warning (0, "cannot find interface declaration for `%s'",
-					 class->name);
+
+	if (!obj_is_classptr (clstype) && !obj_is_class (clstype)) {
+		error (0, "neither class nor object");
+		return 0;
+	}
+	if (obj_is_id (clstype)) {
+		protocollist_t *protos = clstype->t.fldptr.type->protos;
+		if (protos) {
+			if ((m = protocollist_find_method (protos, selector, !class_msg))) {
+				return m;
+			}
+			dstr = dstring_new ();
+			print_protocollist (dstr, protos);
+			warning (sel, "id%s may not respond to %c%s", dstr->str,
+					 class_msg ? '+' : '-', selector->name);
+			dstring_delete (dstr);
 		}
-		while (c) {
-			for (cat = c->categories; cat; cat = cat->next) {
-				for (m = cat->methods->head; m; m = m->next) {
-					if (((!c->super_class && class_msg)
-						 || class_msg != m->instance)
-						&& strcmp (selector->name, m->name) == 0)
+	} else {
+		if (obj_is_class (clstype)) {
+			class = clstype->t.class;
+		} else if (obj_is_class (clstype->t.fldptr.type)) {
+			class = clstype->t.fldptr.type->t.class;
+		}
+		if (class && class->type != &type_obj_object) {
+			if (!class->interface_declared) {
+				class->interface_declared = 1;
+				warning (0, "cannot find interface declaration for `%s'",
+						 class->name);
+			}
+			c = class;
+			while (c) {
+				for (cat = c->categories; cat; cat = cat->next) {
+					if ((m = cls_find_method (cat->methods, selector,
+											  class_msg,
+											  !c->super_class))) {
 						return m;
+					}
 				}
-			}
-			for (m = c->methods->head; m; m = m->next) {
-				if (((!c->super_class && class_msg)
-					 || class_msg != m->instance)
-					&& strcmp (selector->name, m->name) == 0)
+				if ((m = cls_find_method (c->methods, selector, class_msg,
+										  !c->super_class))) {
 					return m;
+				}
+				c = c->super_class;
 			}
-			c = c->super_class;
+			warning (sel, "%s may not respond to %c%s", class->name,
+					 class_msg ? '+' : '-', selector->name);
 		}
-		warning (sel, "%s may not respond to %c%s", class->name,
-				 class_msg ? '+' : '-', selector->name);
 	}
 	m = find_method (selector->name);
 	if (!m && (!class || class->type == &type_obj_object)) {
@@ -1589,6 +1626,34 @@ procollist_find_protocol (protocollist_t *protocollist, protocol_t *proto)
 	for (i = 0; i < protocollist->count; i++)
 		if (protocollist->list[i] == proto)
 			return 1;
+	return 0;
+}
+
+static method_t *
+protocol_find_method (protocol_t *protocol, selector_t *selector, int instance)
+{
+	method_t   *m = 0;
+	if (protocol->methods) {
+		m = methodlist_find_method (protocol->methods, selector, instance);
+	}
+	if (!m && protocol->protocols) {
+		return protocollist_find_method (protocol->protocols, selector,
+										 instance);
+	}
+	return m;
+}
+
+method_t *
+protocollist_find_method (protocollist_t *protocollist, selector_t *selector,
+						  int instance)
+{
+	method_t   *m;
+	for (int i = 0; i < protocollist->count; i++) {
+		if ((m = protocol_find_method (protocollist->list[i], selector,
+									   instance))) {
+			return m;
+		}
+	}
 	return 0;
 }
 

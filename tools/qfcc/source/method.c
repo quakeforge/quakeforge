@@ -375,6 +375,20 @@ find_method (const char *sel_name)
 	return Hash_Find (known_methods, sel_name);
 }
 
+method_t *
+methodlist_find_method (methodlist_t *methodlist, selector_t *selector,
+						int instance)
+{
+	method_t   *m;
+
+	for (m = methodlist->head; m; m = m->next) {
+		if (m->instance == instance && strcmp (selector->name, m->name) == 0) {
+			return m;
+		}
+	}
+	return 0;
+}
+
 void
 selector_name (dstring_t *sel_id, keywordarg_t *selector)
 {
