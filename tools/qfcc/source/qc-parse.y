@@ -2020,6 +2020,10 @@ methodproto
 			$2->instance = 0;
 			$$ = $2;
 		}
+	| '-' error ';'
+		{ $$ = new_method (&type_id, new_param ("", 0, 0), 0); }
+	| '+' error ';'
+		{ $$ = new_method (&type_id, new_param ("", 0, 0), 0); }
 	| '-' methoddecl ';'
 		{
 			$2->instance = 1;
