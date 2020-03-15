@@ -345,15 +345,6 @@ obj_is_Class (const type_t *type)
 {
 	if (type == &type_Class)
 		return 1;
-	// type may be a qualified Class, in which case it will be a pointer to
-	// a qualified obj_class struct
-	if (type->type != ev_pointer)
-		return 0;
-	if (!is_struct (type->t.fldptr.type))
-		return 0;
-	// if the the symtabs match, then type is Class in disguise
-	if (type->t.fldptr.type->t.symtab == type_obj_class.t.symtab)
-		return 1;
 	return 0;
 }
 
