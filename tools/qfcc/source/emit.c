@@ -121,6 +121,7 @@ get_operand_def (expr_t *expr, operand_t *op)
 		case op_nil:
 			internal_error (expr, "unexpected nil operand");
 	}
+	internal_error (expr, "unexpected operand");
 	return 0;
 }
 
