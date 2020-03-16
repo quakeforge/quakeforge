@@ -884,7 +884,7 @@ generate_moveps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			offset = dstDef->offset;
 			dstDef = dstDef->alias;
 		}
-		operands[2] = value_operand (new_pointer_val (offset, type, dstDef),
+		operands[2] = value_operand (new_pointer_val (offset, type, dstDef, 0),
 									 operands[1]->expr);
 		st = build_statement ("<MOVEP>", operands, var->expr);
 		sblock_add_statement (block, st);

@@ -800,7 +800,7 @@ new_pointer_expr (int val, type_t *type, def_t *def)
 {
 	expr_t     *e = new_expr ();
 	e->type = ex_value;
-	e->e.value = new_pointer_val (val, type, def);
+	e->e.value = new_pointer_val (val, type, def, 0);
 	return e;
 }
 
@@ -2152,7 +2152,7 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 				if (is_array (type)) {
 					e = e1;
 					e->type = ex_value;
-					e->e.value = new_pointer_val (0, t, def);
+					e->e.value = new_pointer_val (0, t, def, 0);
 				} else {
 					e = new_pointer_expr (0, t, def);
 					e->line = e1->line;
@@ -2218,7 +2218,7 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 			return e2;
 		if (e->type == ex_value && e->e.value->lltype == ev_pointer
 			&& is_short_val (e2)) {
-			e->e.value = new_pointer_val (e->e.value->v.pointer.val + expr_short (e2), t, e->e.value->v.pointer.def);
+			e->e.value = new_pointer_val (e->e.value->v.pointer.val + expr_short (e2), t, e->e.value->v.pointer.def, 0);
 		} else {
 			if (!is_short_val (e2) || expr_short (e2)) {
 				if (e->type == ex_expr && e->e.expr.op == '&') {

@@ -138,6 +138,7 @@ init_qf (void)
 
 	cvar_t *debug = Cvar_Get ("pr_debug", "2", 0, 0, 0);
 	Cvar_Get ("pr_boundscheck", "2", 0, 0, 0);
+	Cvar_Get ("pr_deadbeef_locals", "1", 0, 0, 0);
 
 	if (options.trace > 1) {
 		Cvar_SetValue (debug, 4);

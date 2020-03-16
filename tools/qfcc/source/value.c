@@ -197,7 +197,8 @@ new_func_val (int func_val, type_t *type)
 }
 
 ex_value_t *
-new_pointer_val (int pointer_val, type_t *type, def_t *def)
+new_pointer_val (int pointer_val, type_t *type, def_t *def,
+				 struct tempop_s *tempop)
 {
 	ex_value_t  val;
 	if (!type) {
@@ -208,6 +209,7 @@ new_pointer_val (int pointer_val, type_t *type, def_t *def)
 	val.v.pointer.val = pointer_val;
 	val.v.pointer.type = type;
 	val.v.pointer.def = def;
+	val.v.pointer.tempop = tempop;
 	return find_value (&val);
 }
 

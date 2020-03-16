@@ -40,18 +40,20 @@ Rect o = { { 5, 6}, {7, 8} };
 int main (void)
 {
 	int         ret = 0;
+	int         ok;
+
 	bar(&obj, nil, &o, obj.offset);
-	printf ("%d %d %d %d\n", o.offset.x, o.offset.y,
-			o.extent.width, o.extent.height);
-	if not (o.offset.x == 0 && o.offset.y == 0
-		&& o.extent.width == 3 && o.extent.height == 4)
-		ret |= 1;
+	ok = (o.offset.x == 0 && o.offset.y == 0
+		  && o.extent.width == 3 && o.extent.height == 4);
+	ret |= !ok;
+	printf ("%d %d %d %d %d\n", o.offset.x, o.offset.y,
+			o.extent.width, o.extent.height, ok);
 
 	baz(&obj, nil, &o, obj.offset);
-	printf ("%d %d %d %d\n", o.offset.x, o.offset.y,
-			o.extent.width, o.extent.height);
-	if not (o.offset.x == 1 && o.offset.y == 2
-		&& o.extent.width == 3 && o.extent.height == 4)
-		ret |= 1;
+	ok = (o.offset.x == 1 && o.offset.y == 2
+		  && o.extent.width == 3 && o.extent.height == 4);
+	ret |= !ok;
+	printf ("%d %d %d %d %d\n", o.offset.x, o.offset.y,
+			o.extent.width, o.extent.height, ok);
 	return ret;
 }

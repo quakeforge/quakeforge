@@ -41,7 +41,7 @@ typedef enum {
 	op_nil,
 } op_type_e;
 
-typedef struct {
+typedef struct tempop_s {
 	struct def_s   *def;
 	int             offset;
 	struct type_s *type;
