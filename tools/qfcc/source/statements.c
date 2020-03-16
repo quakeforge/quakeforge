@@ -883,6 +883,15 @@ dereference_dst:
 		return sblock;
 	}
 
+	if (is_entity (dst->type) && ofs && is_field (ofs->type)) {
+		s = new_statement (st_expr, "&", dst_expr);
+		s->opa = dst;
+		s->opb = ofs;
+		s->opc = temp_operand (&type_pointer, dst_expr);
+		sblock_add_statement (sblock, s);
+		dst = s->opc;
+		ofs = 0;
+	}
 	s = new_statement (type, opcode, e);
 	s->opa = src;
 	s->opb = dst;
