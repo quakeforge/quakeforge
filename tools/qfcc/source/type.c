@@ -812,6 +812,14 @@ is_field (const type_t *type)
 }
 
 int
+is_entity (const type_t *type)
+{
+	if (type->type == ev_entity)
+		return 1;
+	return 0;
+}
+
+int
 is_array (const type_t *type)
 {
 	if (type->type == ev_invalid && type->meta == ty_array)
