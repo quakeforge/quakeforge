@@ -658,39 +658,42 @@ expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
 	return sblock;
 }
 
-static sblock_t *
-operand_address (sblock_t *sblock, operand_t *reference, operand_t **op,
-				 expr_t *e)
+static operand_t *
+operand_address (operand_t *reference, expr_t *e)
 {
-	statement_t *s;
+	def_t      *def;
 	type_t     *type;
+	int         offset = 0;
 
+	type = reference->type;
 	switch (reference->op_type) {
 		case op_def:
-		case op_temp:
-		case op_alias:
-			// build an address expression so dags can extract the correct
-			// type. address_expr cannot be used because reference might not
-			// be something it likes
-			e = expr_file_line (new_unary_expr ('&', e), e);
-			type = pointer_type (reference->type);
-			e->e.expr.type = type;
-
-			s = new_statement (st_expr, "&", e);
-			s->opa = reference;
-			s->opc = temp_operand (type, e);
-			sblock_add_statement (sblock, s);
-			if (op) {
-				*(op) = s->opc;
+			// assumes aliasing is only one level deep which should be the
+			// case
+			def = reference->o.def;
+			if (def->alias) {
+				offset = def->offset;
+				def = def->alias;
 			}
-			return sblock;
+			return value_operand (new_pointer_val (offset, type, def, 0), e);
+		case op_temp:
+			// assumes aliasing is only one level deep which should be the
+			// case
+			if (reference->o.tempop.alias) {
+				offset = reference->o.tempop.offset;
+				reference = reference->o.tempop.alias;
+			}
+			return value_operand (new_pointer_val (offset, type, 0,
+												   &reference->o.tempop), e);
+		case op_alias:
+			//op_alias comes only from alias_operand and that is called
+			// by dags, so not expected
 		case op_value:
 		case op_label:
 		case op_nil:
 			break;
 	}
-	internal_error ((*op)->expr,
-					"invalid operand type for operand address: %s",
+	internal_error (e, "invalid operand type for operand address: %s",
 					op_type_names[reference->op_type]);
 }
 
@@ -763,7 +766,7 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 			*op = src;
 		}
 		if (is_indirect (dst_expr) || is_indirect (src_expr)) {
-			sblock = operand_address (sblock, src, &src, src_expr);
+			src = operand_address (src, src_expr);
 			goto dereference_dst;
 		}
 	}
