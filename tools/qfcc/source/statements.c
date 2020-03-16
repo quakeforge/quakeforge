@@ -966,7 +966,6 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 			continue;
 		}
 		if (is_struct (get_type (param))) {
-			//FIXME this should be done in the expression tree
 			expr_t     *mov = assign_expr (param, a);
 			mov->line = a->line;
 			mov->file = a->file;
@@ -1010,15 +1009,6 @@ lea_statement (operand_t *pointer, operand_t *offset, expr_t *e)
 	return s;
 }
 
-static statement_t *
-address_statement (operand_t *value, expr_t *e)
-{
-	statement_t *s = new_statement (st_expr, "&", e);
-	s->opa = value;
-	s->opc = temp_operand (&type_pointer, e);
-	return s;
-}
-
 static sblock_t *
 expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 {
@@ -1047,13 +1037,11 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 			src_addr = s->opc;
 			sblock_add_statement (sblock, s);
 
-			//FIXME an address immediate would be nice.
-			s = address_statement (*op, e);
-			dst_addr = s->opc;
-			sblock_add_statement (sblock, s);
+			dst_addr = operand_address (*op, e);
 
 			s = new_statement (st_move, "<MOVEP>", deref);
 			s->opa = src_addr;
+			//FIXME large types
 			s->opb = short_operand (type_size (type), e);
 			s->opc = dst_addr;
 			sblock_add_statement (sblock, s);
