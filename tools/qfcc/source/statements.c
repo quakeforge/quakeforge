@@ -718,11 +718,11 @@ is_const_ptr (expr_t *e)
 static __attribute__((pure)) int
 is_indirect (expr_t *e)
 {
-	if (e->type == ex_expr && e->e.expr.op == '.')
+	if ((e->type == ex_expr || e->type == ex_uexpr)
+		&& e->e.expr.op == '.') {
 		return 1;
-	if (!(e->type == ex_uexpr && e->e.expr.op == '.'))
-		return 0;
-	return 1;
+	}
+	return 0;
 }
 
 static sblock_t *
