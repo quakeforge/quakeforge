@@ -51,6 +51,9 @@ PR_SearchDefs (pr_def_t *defs, unsigned num_defs, pointer_t offset)
 	unsigned    right = num_defs - 1;
 	unsigned    mid;
 
+	if (!num_defs) {
+		return 0;
+	}
 	while (left != right) {
 		mid = (left + right + 1) / 2;
 		if (defs[mid].ofs > offset) {
