@@ -722,7 +722,7 @@ is_indirect (expr_t *e)
 		return 1;
 	if (!(e->type == ex_uexpr && e->e.expr.op == '.'))
 		return 0;
-	return is_const_ptr (e->e.expr.e1);
+	return 1;
 }
 
 static sblock_t *
