@@ -158,8 +158,8 @@ operand_string (operand_t *op)
 	return ("??");
 }
 
-void
-print_operand (operand_t *op)
+static void
+_print_operand (operand_t *op)
 {
 	switch (op->op_type) {
 		case op_def:
@@ -224,7 +224,7 @@ print_operand (operand_t *op)
 			break;
 		case op_alias:
 			printf ("alias(%s,", pr_type_name[op->type->type]);
-			print_operand (op->o.alias);
+			_print_operand (op->o.alias);
 			printf (")");
 			break;
 		case op_nil:
@@ -234,17 +234,24 @@ print_operand (operand_t *op)
 }
 
 void
+print_operand (operand_t *op)
+{
+	_print_operand (op);
+	puts ("");
+}
+
+void
 print_statement (statement_t *s)
 {
 	printf ("(%s, ", s->opcode);
 	if (s->opa)
-		print_operand (s->opa);
+		_print_operand (s->opa);
 	printf (", ");
 	if (s->opb)
-		print_operand (s->opb);
+		_print_operand (s->opb);
 	printf (", ");
 	if (s->opc)
-		print_operand (s->opc);
+		_print_operand (s->opc);
 	printf (")\n");
 }
 
