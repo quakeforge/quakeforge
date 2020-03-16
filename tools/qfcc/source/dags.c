@@ -423,7 +423,8 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n)
 				param_node = def_visit_all (param_def, 0, dag_find_node,
 											&daglabel);
 				if (!param_node) {
-					bug (0, ".param_%d not set for %s", i, n->label->opcode);
+					bug (n->label->expr, ".param_%d not set for %s", i,
+						 n->label->opcode);
 					continue;
 				}
 				daglabel->live = 1;

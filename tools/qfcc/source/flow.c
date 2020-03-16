@@ -1255,7 +1255,7 @@ flow_find_successors (flowgraph_t *graph)
 			if (sb->next) {
 				set_add (node->successors, sb->next->flownode->id);
 			} else {
-				bug (0, "code drops off the end of the function");
+				bug (st->expr, "code drops off the end of the function");
 				// this shouldn't happen
 				// however, make the exit dummy block the node's successor
 				set_add (node->successors, graph->num_nodes + 1);
