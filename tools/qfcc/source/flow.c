@@ -1040,7 +1040,7 @@ flow_add_op_var (set_t *set, operand_t *op, int is_use)
 	set_add (set, var->number);
 
 	// FIXME XXX I think the curent implementation will have problems
-	// for the def set when assinging to an alias as right now the real
+	// for the def set when assigning to an alias as right now the real
 	// var is being treated as assigned as well. Want to handle partial
 	// defs properly, but I am as yet uncertain of how.
 	if (op->op_type == op_temp) {
@@ -1048,6 +1048,28 @@ flow_add_op_var (set_t *set, operand_t *op, int is_use)
 	} else {
 		def_visit_all (op->o.def, ol, flow_def_add_aliases, set);
 	}
+}
+
+static int
+flow_analyize_pointer_operand (operand_t *ptrop, set_t *def,
+							   operand_t *operands[4])
+{
+	if (ptrop->op_type == op_value
+		&& ptrop->o.value->lltype == ev_pointer
+		&& ptrop->o.value->v.pointer.def) {
+		operand_t  *op;
+		def_t      *alias;
+		ex_pointer_t *ptr = &ptrop->o.value->v.pointer;
+		alias = alias_def (ptr->def, ptr->type, ptr->val);
+		op = def_operand (alias, ptr->type, ptrop->expr);
+		flow_add_op_var (def, op, 0);
+		if (operands)
+			operands[0] = op;
+		else
+			free_operand (op);
+		return 1;
+	}
+	return 0;
 }
 
 void
@@ -1099,37 +1121,31 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			} else if (!strcmp (s->opcode, "<MOVEP>")
 					   || !strcmp (s->opcode, "<MEMSETP>")) {
 				flow_add_op_var (use, s->opc, 0);
-				if (s->opc->op_type == op_value
-					&& s->opc->o.value->lltype == ev_pointer
-					&& s->opc->o.value->v.pointer.def) {
-					operand_t  *op;
-					def_t      *alias;
-					ex_pointer_t *ptr = &s->opc->o.value->v.pointer;
-					alias = alias_def (ptr->def, ptr->type, ptr->val);
-					op = def_operand (alias, ptr->type, s->opc->expr);
-					flow_add_op_var (def, op, 0);
-					if (operands)
-						operands[0] = op;
-					else
-						free_operand (op);
-				} else {
-					if (operands)
+				if (!flow_analyize_pointer_operand (s->opc, def, operands)) {
+					if (operands) {
 						operands[3] = s->opc;
+					}
 				}
+			} else if (!strcmp (s->opcode, ".=")) {
+				flow_add_op_var (use, s->opc, 1);
+				flow_analyize_pointer_operand (s->opb, def, operands);
 			} else {
-				if (s->opc)
-					flow_add_op_var (use, s->opc, 1);
+				internal_error (s->expr, "unexpected opcode '%s' for %d",
+								s->opcode, s->type);
 			}
 			if (kill) {
 				set_everything (kill);
 			}
 			if (operands) {
-				if (!strcmp (s->opcode, "<MOVE>"))
+				if (!strcmp (s->opcode, "<MOVE>")
+					|| !strcmp (s->opcode, "<MEMSET>")) {
 					operands[0] = s->opc;
+				}
 				operands[1] = s->opa;
 				operands[2] = s->opb;
-				if (strncmp (s->opcode, "<MOVE", 5))
+				if (strncmp (s->opcode, "<MOVE", 5)) {
 					operands[3] = s->opc;
+				}
 			}
 			break;
 		case st_state:
