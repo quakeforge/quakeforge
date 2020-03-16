@@ -85,6 +85,8 @@ int
 is_lvalue (const expr_t *expr)
 {
 	switch (expr->type) {
+		case ex_def:
+			return !expr->e.def->constant;
 		case ex_symbol:
 			switch (expr->e.symbol->sy_type) {
 				case sy_name:

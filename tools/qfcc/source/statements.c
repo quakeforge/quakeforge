@@ -1268,6 +1268,13 @@ expr_uexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
+expr_def (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	*op = def_operand (e->e.def, e->e.def->type, e);
+	return sblock;
+}
+
+static sblock_t *
 expr_symbol (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	symbol_t   *sym = e->e.symbol;
@@ -1398,6 +1405,7 @@ statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 		expr_block,			// ex_block
 		expr_expr,
 		expr_uexpr,
+		expr_def,
 		expr_symbol,
 		expr_temp,
 		expr_vector_e,		// ex_vector
@@ -1715,6 +1723,7 @@ statement_slist (sblock_t *sblock, expr_t *e)
 		statement_block,
 		statement_expr,
 		statement_uexpr,
+		statement_nonexec,	// ex_def
 		statement_nonexec,	// ex_symbol
 		statement_nonexec,	// ex_temp
 		statement_nonexec,	// ex_vector

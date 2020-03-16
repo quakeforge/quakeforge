@@ -62,6 +62,7 @@ const char *expr_names[] =
 	"block",
 	"expr",
 	"uexpr",
+	"def",
 	"symbol",
 	"temp",
 	"vector",
@@ -355,6 +356,15 @@ print_uexpr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 }
 
 static void
+print_def (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	dasprintf (dstr, "%*se_%p [label=\"d %s\\n%d\"];\n", indent, "", e,
+			   e->e.def->name, e->line);
+}
+
+static void
 print_symbol (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	int         indent = level * 2 + 2;
@@ -542,6 +552,7 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		print_block,
 		print_subexpr,
 		print_uexpr,
+		print_def,
 		print_symbol,
 		print_temp,
 		print_vector,

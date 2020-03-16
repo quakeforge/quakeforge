@@ -239,6 +239,8 @@ get_type (expr_t *e)
 		case ex_expr:
 		case ex_uexpr:
 			return e->e.expr.type;
+		case ex_def:
+			return e->e.def->type;
 		case ex_symbol:
 			return e->e.symbol->type;
 		case ex_temp:
@@ -342,6 +344,7 @@ copy_expr (expr_t *e)
 		return 0;
 	switch (e->type) {
 		case ex_error:
+		case ex_def:
 		case ex_symbol:
 		case ex_nil:
 		case ex_value:
@@ -607,6 +610,15 @@ new_unary_expr (int op, expr_t *e1)
 	e->type = ex_uexpr;
 	e->e.expr.op = op;
 	e->e.expr.e1 = e1;
+	return e;
+}
+
+expr_t *
+new_def_expr (def_t *def)
+{
+	expr_t     *e = new_expr ();
+	e->type = ex_def;
+	e->e.def = def;
 	return e;
 }
 
@@ -1542,6 +1554,13 @@ unary_expr (int op, expr_t *e)
 						n->e.expr.type = e->e.expr.type;
 						return n;
 					}
+				case ex_def:
+					{
+						expr_t     *n = new_unary_expr (op, e);
+
+						n->e.expr.type = e->e.def->type;
+						return n;
+					}
 				case ex_symbol:
 					{
 						expr_t     *n = new_unary_expr (op, e);
@@ -1602,6 +1621,7 @@ unary_expr (int op, expr_t *e)
 						return error (e, "invalid type for unary !");
 				case ex_uexpr:
 				case ex_expr:
+				case ex_def:
 				case ex_symbol:
 				case ex_temp:
 				case ex_vector:
@@ -1671,6 +1691,7 @@ unary_expr (int op, expr_t *e)
 					goto bitnot_expr;
 				case ex_expr:
 				case ex_bool:
+				case ex_def:
 				case ex_symbol:
 				case ex_temp:
 				case ex_vector:

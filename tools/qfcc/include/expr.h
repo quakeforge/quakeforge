@@ -49,6 +49,7 @@ typedef enum {
 	ex_block,		///< statement block expression (::ex_block_t)
 	ex_expr,		///< binary expression (::ex_expr_t)
 	ex_uexpr,		///< unary expression (::ex_expr_t)
+	ex_def,			///< non-temporary variable (::def_t)
 	ex_symbol,		///< non-temporary variable (::symbol_t)
 	ex_temp,		///< temporary variable (::ex_temp_t)
 	ex_vector,		///< "vector" expression (::ex_vector_t)
@@ -230,6 +231,7 @@ typedef struct expr_s {
 		ex_bool_t   bool;				///< boolean logic expression
 		ex_block_t  block;				///< statement block expression
 		ex_expr_t   expr;				///< binary or unary expression
+		struct def_s *def;				///< def reference expression
 		struct symbol_s *symbol;		///< symbol reference expression
 		ex_temp_t   temp;				///< temporary variable expression
 		ex_vector_t vector;				///< vector expression list
@@ -410,6 +412,12 @@ expr_t *new_binary_expr (int op, expr_t *e1, expr_t *e2);
 					is not an error expression, otherwise \a e1.
 */
 expr_t *new_unary_expr (int op, expr_t *e1);
+
+/**	Create a new def reference (non-temporary variable) expression node.
+
+	\return			The new def reference expression node (::def_t).
+*/
+expr_t *new_def_expr (struct def_s *def);
 
 /**	Create a new symbol reference (non-temporary variable) expression node.
 
