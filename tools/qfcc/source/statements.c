@@ -77,6 +77,21 @@ optype_str (op_type_e type)
 	return op_type_names[type];
 }
 
+static const char *
+tempop_string (tempop_t *tempop)
+{
+	if (tempop->alias) {
+		return va ("<tmp %s %p:%d:%p:%d:%d>",
+				   pr_type_name[tempop->type->type],
+				   tempop, tempop->users,
+				   &tempop->alias->o.tempop,
+				   tempop->offset,
+				   tempop->alias->o.tempop.users);
+	}
+	return va ("<tmp %s %p:%d>", pr_type_name[tempop->type->type],
+			   &tempop, tempop->users);
+}
+
 const char *
 operand_string (operand_t *op)
 {
@@ -110,6 +125,10 @@ operand_string (operand_t *op)
 						return va ("ptr %s+%d",
 								   op->o.value->v.pointer.def->name,
 								   op->o.value->v.pointer.val);
+					} else if(op->o.value->v.pointer.tempop) {
+						tempop_t   *tempop = op->o.value->v.pointer.tempop;
+						return va ("ptr %s+%d", tempop_string (tempop),
+								   op->o.value->v.pointer.val);
 					} else {
 						return va ("ptr %d", op->o.value->v.pointer.val);
 					}
@@ -136,15 +155,7 @@ operand_string (operand_t *op)
 		case op_label:
 			return op->o.label->name;
 		case op_temp:
-			if (op->o.tempop.alias)
-				return va ("<tmp %s %p:%d:%p:%d:%d>",
-						   pr_type_name[op->type->type],
-						   op, op->o.tempop.users,
-						   op->o.tempop.alias,
-						   op->o.tempop.offset,
-						   op->o.tempop.alias->o.tempop.users);
-			return va ("<tmp %s %p:%d>", pr_type_name[op->o.tempop.type->type],
-					   op, op->o.tempop.users);
+			return tempop_string (&op->o.tempop);
 		case op_alias:
 			{
 				const char *alias = operand_string (op->o.alias);
