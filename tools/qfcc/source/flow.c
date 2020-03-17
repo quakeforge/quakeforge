@@ -1050,13 +1050,13 @@ flow_add_op_var (set_t *set, operand_t *op, int is_use)
 	}
 }
 
-static int
-flow_analyize_pointer_operand (operand_t *ptrop, set_t *def,
-							   operand_t *operands[FLOW_OPERANDS])
+static operand_t *
+flow_analyze_pointer_operand (operand_t *ptrop, set_t *def)
 {
+	operand_t  *op = 0;
+
 	if (ptrop->op_type == op_value && ptrop->o.value->lltype == ev_pointer) {
 		ex_pointer_t *ptr = &ptrop->o.value->v.pointer;
-		operand_t  *op = 0;
 		if (ptrop->o.value->v.pointer.def) {
 			def_t      *alias;
 			alias = alias_def (ptr->def, ptr->type, ptr->val);
@@ -1067,17 +1067,9 @@ flow_analyize_pointer_operand (operand_t *ptrop, set_t *def,
 		}
 		if (op) {
 			flow_add_op_var (def, op, 0);
-			if (operands) {
-				operands[0] = op;
-			} else {
-				if (op->op_type != op_temp) {
-					free_operand (op);
-				}
-			}
-			return 1;
 		}
 	}
-	return 0;
+	return op;
 }
 
 void
@@ -1085,6 +1077,9 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 						operand_t *operands[FLOW_OPERANDS])
 {
 	int         i, start, calln = -1;
+	operand_t  *res_op = 0;
+	operand_t  *aux_op1 = 0;
+	operand_t  *aux_op2 = 0;
 
 	if (use)
 		set_empty (use);
@@ -1126,17 +1121,19 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			if (!strcmp (s->opcode, "<MOVE>")
 				|| !strcmp (s->opcode, "<MEMSET>")) {
 				flow_add_op_var (def, s->opc, 0);
-			} else if (!strcmp (s->opcode, "<MOVEP>")
-					   || !strcmp (s->opcode, "<MEMSETP>")) {
+				res_op = s->opc;
+			} else if (!strcmp (s->opcode, "<MOVEP>")) {
 				flow_add_op_var (use, s->opc, 0);
-				if (!flow_analyize_pointer_operand (s->opc, def, operands)) {
-					if (operands) {
-						operands[3] = s->opc;
-					}
-				}
+				aux_op2 = flow_analyze_pointer_operand (s->opa, use);
+				res_op = flow_analyze_pointer_operand (s->opc, def);
+				aux_op1 = s->opc;
+			} else if (!strcmp (s->opcode, "<MEMSETP>")) {
+				flow_add_op_var (use, s->opc, 0);
+				res_op = flow_analyze_pointer_operand (s->opc, def);
+				aux_op1 = s->opc;
 			} else if (!strcmp (s->opcode, ".=")) {
 				flow_add_op_var (use, s->opc, 1);
-				flow_analyize_pointer_operand (s->opb, def, operands);
+				res_op = flow_analyze_pointer_operand (s->opb, def);
 			} else {
 				internal_error (s->expr, "unexpected opcode '%s' for %d",
 								s->opcode, s->type);
@@ -1145,15 +1142,11 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 				set_everything (kill);
 			}
 			if (operands) {
-				if (!strcmp (s->opcode, "<MOVE>")
-					|| !strcmp (s->opcode, "<MEMSET>")) {
-					operands[0] = s->opc;
-				}
+				operands[0] = res_op;
 				operands[1] = s->opa;
 				operands[2] = s->opb;
-				if (strncmp (s->opcode, "<MOVE", 5)) {
-					operands[3] = s->opc;
-				}
+				operands[3] = aux_op1;
+				operands[4] = aux_op2;
 			}
 			break;
 		case st_state:
