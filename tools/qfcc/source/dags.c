@@ -898,6 +898,11 @@ generate_moveps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 		operands[2] = make_operand (dag, block, dagnode, 2);
 		st = build_statement ("<MOVEP>", operands, dagnode->label->expr);
 		sblock_add_statement (block, st);
+		if ((var_iter = set_first (dagnode->identifiers))) {
+			var = dag->labels[var_iter->element];
+			dst = var->op;
+			set_del_iter (var_iter);
+		}
 	} else {
 		for (var_iter = set_first (dagnode->identifiers); var_iter;
 			 var_iter = set_next (var_iter)) {
