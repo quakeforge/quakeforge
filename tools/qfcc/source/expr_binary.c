@@ -46,6 +46,7 @@ typedef struct {
 } expr_type_t;
 
 static expr_t *pointer_arithmetic (int op, expr_t *e1, expr_t *e2);
+static expr_t *pointer_compare (int op, expr_t *e1, expr_t *e2);
 static expr_t *inverse_multiply (int op, expr_t *e1, expr_t *e2);
 static expr_t *double_compare (int op, expr_t *e1, expr_t *e2);
 
@@ -176,13 +177,13 @@ static expr_type_t func_func[] = {
 };
 
 static expr_type_t pointer_pointer[] = {
-	{'-',	&type_integer, &type_integer, &type_integer},
-	{EQ,	&type_integer},
-	{NE,	&type_integer},
-	{LE,	&type_integer},
-	{GE,	&type_integer},
-	{LT,	&type_integer},
-	{GT,	&type_integer},
+	{'-',	0, 0, 0, pointer_arithmetic},
+	{EQ,	0, 0, 0, pointer_compare},
+	{NE,	0, 0, 0, pointer_compare},
+	{LE,	0, 0, 0, pointer_compare},
+	{GE,	0, 0, 0, pointer_compare},
+	{LT,	0, 0, 0, pointer_compare},
+	{GT,	0, 0, 0, pointer_compare},
 	{0, 0}
 };
 
@@ -255,7 +256,7 @@ static expr_type_t integer_vector[] = {
 };
 
 static expr_type_t integer_pointer[] = {
-	{'+',	&type_pointer, 0, &type_integer},
+	{'+',	0, 0, 0, pointer_arithmetic},
 	{0, 0}
 };
 
@@ -735,19 +736,56 @@ static expr_t *
 pointer_arithmetic (int op, expr_t *e1, expr_t *e2)
 {
 	expr_t     *e;
-	type_t     *ptype = get_type (e1);
+	type_t     *t1 = get_type (e1);
+	type_t     *t2 = get_type (e2);
+	expr_t     *ptr;
+	expr_t     *offset;
+	expr_t     *psize;
+	type_t     *ptype;
 
-	if (!is_pointer (ptype)) {
-		ptype = get_type (e2);
-	}
-	if (!is_pointer (ptype)) {
+	if (!is_pointer (t1) && !is_pointer (t2)) {
 		internal_error (e1, "pointer arithmetic on non-pointers");
 	}
-
-	e1 = cast_expr (&type_integer, e1);
-	e2 = cast_expr (&type_integer, e2);
-	e = binary_expr (op, e1, e2);
+	if (is_pointer (t1) && is_pointer (t2)) {
+		if (op != '-') {
+			return error (e2, "invalid pointer operation");
+		}
+		if (t1 != t2) {
+			return error (e2, "cannot use %c on pointers of different types",
+						  op);
+		}
+		e1 = cast_expr (&type_integer, e1);
+		e2 = cast_expr (&type_integer, e2);
+		psize = new_integer_expr (type_size (t1->t.fldptr.type));
+		return binary_expr ('/', binary_expr ('-', e1, e2), psize);
+	} else if (is_pointer (t1)) {
+		offset = cast_expr (&type_integer, e2);
+		ptr = cast_expr (&type_integer, e1);
+		ptype = t1;
+	} else if (is_pointer (t2)) {
+		offset = cast_expr (&type_integer, e1);
+		ptr = cast_expr (&type_integer, e2);
+		ptype = t2;
+	}
+	psize = new_integer_expr (type_size (ptype->t.fldptr.type));
+	e = binary_expr (op, ptr, binary_expr ('*', offset, psize));
 	return cast_expr (ptype, e);
+}
+
+static expr_t *
+pointer_compare (int op, expr_t *e1, expr_t *e2)
+{
+	type_t     *t1 = get_type (e1);
+	type_t     *t2 = get_type (e2);
+	expr_t     *e;
+
+	if (!type_assignable (t1, t2)) {
+		return error (e2, "cannot use %s on pointers of different types",
+					  get_op_string (op));
+	}
+	e = new_binary_expr (op, e1, e2);
+	e->e.expr.type = &type_integer;
+	return e;
 }
 
 static expr_t *
@@ -790,7 +828,7 @@ double_compare (int op, expr_t *e1, expr_t *e2)
 		e1 = cast_expr (&type_double, e1);
 	}
 	e = new_binary_expr (op, e1, e2);
-	e->e.expr.type = &type_double;
+	e->e.expr.type = &type_integer;
 	return e;
 }
 
