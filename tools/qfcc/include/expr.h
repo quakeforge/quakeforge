@@ -567,6 +567,8 @@ unsigned expr_uinteger (expr_t *e) __attribute__((pure));
 expr_t *new_short_expr (short short_val);
 short expr_short (expr_t *e) __attribute__((pure));
 
+int expr_integral (expr_t *e) __attribute__((pure));
+
 /**	Check of the expression refers to a constant value.
 
 	\param e		The expression to check.
@@ -613,7 +615,9 @@ int is_float_val (expr_t *e) __attribute__((pure));
 int is_vector_val (expr_t *e) __attribute__((pure));
 int is_quaternion_val (expr_t *e) __attribute__((pure));
 int is_integer_val (expr_t *e) __attribute__((pure));
+int is_uinteger_val (expr_t *e) __attribute__((pure));
 int is_short_val (expr_t *e) __attribute__((pure));
+int is_integral_val (expr_t *e) __attribute__((pure));
 
 /**	Create a reference to the global <code>.self</code> entity variable.
 

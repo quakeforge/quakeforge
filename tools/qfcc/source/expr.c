@@ -1082,6 +1082,26 @@ expr_integer (expr_t *e)
 	internal_error (e, "not an integer constant");
 }
 
+int
+is_uinteger_val (expr_t *e)
+{
+	if (e->type == ex_nil) {
+		return 1;
+	}
+	if (e->type == ex_value && e->e.value->lltype == ev_uinteger) {
+		return 1;
+	}
+	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
+		&& is_integral (e->e.symbol->type)) {
+		return 1;
+	}
+	if (e->type == ex_def && e->e.def->constant
+		&& is_integral (e->e.def->type)) {
+		return 1;
+	}
+	return 0;
+}
+
 unsigned
 expr_uinteger (expr_t *e)
 {
@@ -1137,6 +1157,40 @@ expr_short (expr_t *e)
 		return e->e.symbol->s.value->v.short_val;
 	}
 	internal_error (e, "not a short constant");
+}
+
+int
+is_integral_val (expr_t *e)
+{
+	if (is_constant (e)) {
+		if (is_integer_val (e)) {
+			return 1;
+		}
+		if (is_uinteger_val (e)) {
+			return 1;
+		}
+		if (is_short_val (e)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+int
+expr_integral (expr_t *e)
+{
+	if (is_constant (e)) {
+		if (is_integer_val (e)) {
+			return expr_integer (e);
+		}
+		if (is_uinteger_val (e)) {
+			return expr_uinteger (e);
+		}
+		if (is_short_val (e)) {
+			return expr_short (e);
+		}
+	}
+	internal_error (e, "not an integral constant");
 }
 
 expr_t *
