@@ -1049,7 +1049,10 @@ is_integer_val (expr_t *e)
 		&& is_integral (e->e.symbol->type)) {
 		return 1;
 	}
+	if (e->type == ex_def && e->e.def->constant
+		&& is_integral (e->e.def->type)) {
 		return 1;
+	}
 	return 0;
 }
 
@@ -1072,6 +1075,10 @@ expr_integer (expr_t *e)
 		&& is_integral (e->e.symbol->s.def->type)) {
 		return D_INT (e->e.symbol->s.def);
 	}
+	if (e->type == ex_def && e->e.def->constant
+		&& is_integral (e->e.def->type)) {
+		return D_INT (e->e.def);
+	}
 	internal_error (e, "not an integer constant");
 }
 
@@ -1092,6 +1099,10 @@ expr_uinteger (expr_t *e)
 		&& e->e.symbol->s.def->constant
 		&& is_integral (e->e.symbol->s.def->type)) {
 		return D_INT (e->e.symbol->s.def);
+	}
+	if (e->type == ex_def && e->e.def->constant
+		&& is_integral (e->e.def->type)) {
+		return D_INT (e->e.def);
 	}
 	internal_error (e, "not an unsigned constant");
 }
