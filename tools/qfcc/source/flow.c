@@ -1137,6 +1137,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			} else if (!strcmp (s->opcode, ".=")) {
 				flow_add_op_var (use, s->opc, 1);
 				res_op = flow_analyze_pointer_operand (s->opb, def);
+				aux_op1 = s->opc;
 			} else {
 				internal_error (s->expr, "unexpected opcode '%s' for %d",
 								s->opcode, s->type);
