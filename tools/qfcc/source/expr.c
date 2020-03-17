@@ -2256,6 +2256,22 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 		t = get_type (e1);
 
 	switch (e1->type) {
+		case ex_def:
+			{
+				def_t      *def = e1->e.def;
+				type_t     *type = def->type;
+
+				if (is_array (type)) {
+					e = e1;
+					e->type = ex_value;
+					e->e.value = new_pointer_val (0, t, def, 0);
+				} else {
+					e = new_pointer_expr (0, t, def);
+					e->line = e1->line;
+					e->file = e1->file;
+				}
+			}
+			break;
 		case ex_symbol:
 			if (e1->e.symbol->sy_type == sy_var) {
 				def_t      *def = e1->e.symbol->s.def;
@@ -2328,9 +2344,11 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 	if (e2) {
 		if (e2->type == ex_error)
 			return e2;
-		if (e->type == ex_value && e->e.value->lltype == ev_pointer
-			&& is_short_val (e2)) {
-			e->e.value = new_pointer_val (e->e.value->v.pointer.val + expr_short (e2), t, e->e.value->v.pointer.def, 0);
+		if (is_pointer_val (e) && is_integral_val (e2)) {
+			int         base = e->e.value->v.pointer.val;
+			int         offset = expr_integral (e2);
+			def_t      *def = e->e.value->v.pointer.def;
+			e->e.value = new_pointer_val (base + offset, t, def, 0);
 		} else {
 			if (!is_short_val (e2) || expr_short (e2)) {
 				if (e->type == ex_expr && e->e.expr.op == '&') {

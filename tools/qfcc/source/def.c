@@ -296,8 +296,9 @@ zero_memory (expr_t *local_expr, def_t *def, type_t *zero_type,
 	expr_t     *dst;
 
 	for (; init_offset < init_size + 1 - zero_size; init_offset += zero_size) {
-		dst = new_pointer_expr (init_offset, zero_type, def);
-		append_expr (local_expr, assign_expr (unary_expr ('.', dst), zero));
+		dst = new_def_expr (def);
+		dst = new_offset_alias_expr (zero_type, dst, init_offset);
+		append_expr (local_expr, assign_expr (dst, zero));
 	}
 	return init_offset;
 }
@@ -355,8 +356,8 @@ init_elements (struct def_s *def, expr_t *eles)
 	build_element_chain (&element_chain, def->type, eles, 0);
 
 	if (def->local && local_expr) {
-		expr_t     *ptr = new_pointer_expr (0, def->type, def);
-		assign_elements (local_expr, pointer_expr (ptr), &element_chain);
+		expr_t     *dst = new_def_expr (def);
+		assign_elements (local_expr, dst, &element_chain);
 	} else {
 		def_t       dummy = *def;
 		for (element = element_chain.head; element; element = element->next) {
