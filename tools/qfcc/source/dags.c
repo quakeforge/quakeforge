@@ -700,6 +700,8 @@ dag_create (flownode_t *flownode)
 	dagnode_t **nodes;
 	daglabel_t **labels;
 	int         num_statements = 0;
+	int         num_nodes;
+	int         num_lables;
 	set_t      *live_vars = set_new ();
 
 	flush_daglabels ();
@@ -713,14 +715,16 @@ dag_create (flownode_t *flownode)
 
 	dag = new_dag ();
 	dag->flownode = flownode;
-	// at most 4 per statement
-	dag->nodes = alloca (num_statements * 4 * sizeof (dagnode_t));
-	// at most 4 per statement, + return + params
-	dag->labels = alloca (num_statements * (4 + 1 + 8) * sizeof (daglabel_t));
+	// at most FLOW_OPERANDS per statement
+	num_nodes = num_statements * FLOW_OPERANDS;
+	dag->nodes = alloca (num_nodes * sizeof (dagnode_t));
+	// at most FLOW_OPERANDS per statement, + return + params
+	num_lables = num_statements * (FLOW_OPERANDS + 1 + 8);
+	dag->labels = alloca (num_lables * sizeof (daglabel_t));
 	dag->roots = set_new ();
 
 	for (s = block->statements; s; s = s->next) {
-		operand_t  *operands[4];
+		operand_t  *operands[FLOW_OPERANDS];
 		dagnode_t  *n = 0, *children[3] = {0, 0, 0};
 		daglabel_t *op, *lx;
 		int         i;

@@ -69,10 +69,10 @@ flow_statement (dstring_t *dstr, statement_t *s)
 		set_t      *def = set_new ();
 		set_t      *kill = set_new ();
 		set_t      *ops = set_new ();
-		operand_t  *operands[4];
+		operand_t  *operands[FLOW_OPERANDS];
 
 		flow_analyze_statement (s, use, def, kill, operands);
-		for (int i = 0; i < 4; i++) {
+		for (int i = 0; i < FLOW_OPERANDS; i++) {
 			if (operands[i]) {
 				set_add (ops, i);
 			}

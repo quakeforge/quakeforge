@@ -102,9 +102,10 @@ typedef struct flowgraph_s {
 
 flowvar_t *flow_get_var (struct operand_s *op);
 
+#define FLOW_OPERANDS 5
 void flow_analyze_statement (struct statement_s *s, struct set_s *use,
 							 struct set_s *def, struct set_s *kill,
-							 struct operand_s *operands[4]);
+							 struct operand_s *operands[FLOW_OPERANDS]);
 
 void flow_data_flow (struct function_s *func);
 

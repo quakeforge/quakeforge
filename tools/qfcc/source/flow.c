@@ -509,7 +509,7 @@ static void
 flow_build_vars (function_t *func)
 {
 	statement_t *s;
-	operand_t   *operands[4];
+	operand_t   *operands[FLOW_OPERANDS];
 	int         num_vars = 0;
 	int         i, j;
 	set_t      *stuse;
@@ -1052,7 +1052,7 @@ flow_add_op_var (set_t *set, operand_t *op, int is_use)
 
 static int
 flow_analyize_pointer_operand (operand_t *ptrop, set_t *def,
-							   operand_t *operands[4])
+							   operand_t *operands[FLOW_OPERANDS])
 {
 	if (ptrop->op_type == op_value && ptrop->o.value->lltype == ev_pointer) {
 		ex_pointer_t *ptr = &ptrop->o.value->v.pointer;
@@ -1082,7 +1082,7 @@ flow_analyize_pointer_operand (operand_t *ptrop, set_t *def,
 
 void
 flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
-						operand_t *operands[4])
+						operand_t *operands[FLOW_OPERANDS])
 {
 	int         i, start, calln = -1;
 
@@ -1093,7 +1093,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 	if (kill)
 		set_empty (kill);
 	if (operands) {
-		for (i = 0; i < 4; i++)
+		for (i = 0; i < FLOW_OPERANDS; i++)
 			operands[i] = 0;
 	}
 
