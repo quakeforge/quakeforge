@@ -789,7 +789,8 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 static expr_t *
 do_op_integer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
-	int         i1, i2;
+	int         isval1 = 0, isval2 = 0;
+	int         val1, val2;
 	static int  valid[] = {
 		'=', '+', '-', '*', '/', '&', '|', '^', '%',
 		SHL, SHR, AND, OR, LT, GT, LE, GE, EQ, NE, 0
@@ -798,11 +799,23 @@ do_op_integer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (!valid_op (op, valid))
 		return error (e1, "invalid operator for integer");
 
-	if (is_short_val (e1))
-		convert_short_int (e1);
+	if (is_short_val (e1)) {
+		isval1 = 1;
+		val1 = expr_short (e1);
+	}
+	if (is_integer_val (e1)) {
+		isval1 = 1;
+		val1 = expr_integer (e1);
+	}
 
-	if (is_short_val (e2))
-		convert_short_int (e2);
+	if (is_short_val (e2)) {
+		isval2 = 1;
+		val2 = expr_short (e2);
+	}
+	if (is_integer_val (e2)) {
+		isval2 = 1;
+		val2 = expr_integer (e2);
+	}
 
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion > PROG_ID_VERSION)
@@ -813,89 +826,86 @@ do_op_integer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		e->e.expr.type = &type_integer;
 	}
 
-	if (op == '*' && is_constant (e1) && expr_integer (e1) == 1)
+	if (op == '*' && isval1 && val1 == 1)
 		return e2;
-	if (op == '*' && is_constant (e2) && expr_integer (e2) == 1)
+	if (op == '*' && isval2 && val2 == 1)
 		return e1;
-	if (op == '*' && is_constant (e1) && expr_integer (e1) == 0)
+	if (op == '*' && isval1 && val1 == 0)
 		return e1;
-	if (op == '*' && is_constant (e2) && expr_integer (e2) == 0)
+	if (op == '*' && isval2 && val2 == 0)
 		return e2;
-	if (op == '/' && is_constant (e2) && expr_integer (e2) == 1)
+	if (op == '/' && isval2 && val2 == 1)
 		return e1;
-	if (op == '/' && is_constant (e2) && expr_integer (e2) == 0)
+	if (op == '/' && isval2 && val2 == 0)
 		return error (e, "division by zero");
-	if (op == '/' && is_constant (e1) && expr_integer (e1) == 0)
+	if (op == '/' && isval1 && val1 == 0)
 		return e1;
-	if (op == '+' && is_constant (e1) && expr_integer (e1) == 0)
+	if (op == '+' && isval1 && val1 == 0)
 		return e2;
-	if (op == '+' && is_constant (e2) && expr_integer (e2) == 0)
+	if (op == '+' && isval2 && val2 == 0)
 		return e1;
-	if (op == '-' && is_constant (e2) && expr_integer (e2) == 0)
+	if (op == '-' && isval2 && val2 == 0)
 		return e1;
 
-	if (op == '=' || !is_constant (e1) || !is_constant (e2))
+	if (op == '=' || !isval1 || !isval2)
 		return e;
-
-	i1 = expr_integer (e1);
-	i2 = expr_integer (e2);
 
 	switch (op) {
 		case '+':
-			e = new_integer_expr (i1 + i2);
+			e = new_integer_expr (val1 + val2);
 			break;
 		case '-':
-			e = new_integer_expr (i1 - i2);
+			e = new_integer_expr (val1 - val2);
 			break;
 		case '*':
-			e = new_integer_expr (i1 * i2);
+			e = new_integer_expr (val1 * val2);
 			break;
 		case '/':
 			if (options.warnings.integer_divide)
-				warning (e2, "%d / %d == %d", i1, i2, i1 / i2);
-			e = new_integer_expr (i1 / i2);
+				warning (e2, "%d / %d == %d", val1, val2, val1 / val2);
+			e = new_integer_expr (val1 / val2);
 			break;
 		case '&':
-			e = new_integer_expr (i1 & i2);
+			e = new_integer_expr (val1 & val2);
 			break;
 		case '|':
-			e = new_integer_expr (i1 | i2);
+			e = new_integer_expr (val1 | val2);
 			break;
 		case '^':
-			e = new_integer_expr (i1 ^ i2);
+			e = new_integer_expr (val1 ^ val2);
 			break;
 		case '%':
-			e = new_integer_expr (i1 % i2);
+			e = new_integer_expr (val1 % val2);
 			break;
 		case SHL:
-			e = new_integer_expr (i1 << i2);
+			e = new_integer_expr (val1 << val2);
 			break;
 		case SHR:
-			e = new_integer_expr (i1 >> i2);
+			e = new_integer_expr (val1 >> val2);
 			break;
 		case AND:
-			e = cmp_result_expr (i1 && i2);
+			e = cmp_result_expr (val1 && val2);
 			break;
 		case OR:
-			e = cmp_result_expr (i1 || i2);
+			e = cmp_result_expr (val1 || val2);
 			break;
 		case LT:
-			e = cmp_result_expr (i1 < i2);
+			e = cmp_result_expr (val1 < val2);
 			break;
 		case GT:
-			e = cmp_result_expr (i1 > i2);
+			e = cmp_result_expr (val1 > val2);
 			break;
 		case LE:
-			e = cmp_result_expr (i1 <= i2);
+			e = cmp_result_expr (val1 <= val2);
 			break;
 		case GE:
-			e = cmp_result_expr (i1 >= i2);
+			e = cmp_result_expr (val1 >= val2);
 			break;
 		case EQ:
-			e = cmp_result_expr (i1 == i2);
+			e = cmp_result_expr (val1 == val2);
 			break;
 		case NE:
-			e = cmp_result_expr (i1 != i2);
+			e = cmp_result_expr (val1 != val2);
 			break;
 		default:
 			internal_error (e1, 0);
