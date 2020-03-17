@@ -1,4 +1,5 @@
 #pragma bug die
+#include "test-harness.h"
 
 struct Point {
 	int x;
@@ -11,18 +12,18 @@ typedef struct Point Point;
 	int   foo;
 	Point origin;
 }
--(Point) origin;
++(Point) origin;
 @end
 
 @implementation Object
--(Point) origin
++(Point) origin
 {
-	origin = nil;
+	origin = {1, 2};
 	return origin;
 }
 @end
-void __obj_exec_class (struct obj_module *msg) = #0;
 int main()
 {
-	return 0;	// to survive and prevail
+	Point p = [Object origin];
+	return !(p.x == 1 && p.y == 2);
 }
