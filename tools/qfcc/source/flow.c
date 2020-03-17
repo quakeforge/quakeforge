@@ -1054,20 +1054,28 @@ static int
 flow_analyize_pointer_operand (operand_t *ptrop, set_t *def,
 							   operand_t *operands[4])
 {
-	if (ptrop->op_type == op_value
-		&& ptrop->o.value->lltype == ev_pointer
-		&& ptrop->o.value->v.pointer.def) {
-		operand_t  *op;
-		def_t      *alias;
+	if (ptrop->op_type == op_value && ptrop->o.value->lltype == ev_pointer) {
 		ex_pointer_t *ptr = &ptrop->o.value->v.pointer;
-		alias = alias_def (ptr->def, ptr->type, ptr->val);
-		op = def_operand (alias, ptr->type, ptrop->expr);
-		flow_add_op_var (def, op, 0);
-		if (operands)
-			operands[0] = op;
-		else
-			free_operand (op);
-		return 1;
+		operand_t  *op = 0;
+		if (ptrop->o.value->v.pointer.def) {
+			def_t      *alias;
+			alias = alias_def (ptr->def, ptr->type, ptr->val);
+			op = def_operand (alias, ptr->type, ptrop->expr);
+		}
+		if (ptrop->o.value->v.pointer.tempop) {
+			op = ptrop->o.value->v.pointer.tempop;
+		}
+		if (op) {
+			flow_add_op_var (def, op, 0);
+			if (operands) {
+				operands[0] = op;
+			} else {
+				if (op->op_type != op_temp) {
+					free_operand (op);
+				}
+			}
+			return 1;
+		}
 	}
 	return 0;
 }
