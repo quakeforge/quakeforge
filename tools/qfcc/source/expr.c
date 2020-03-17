@@ -1039,13 +1039,16 @@ expr_quaternion (expr_t *e)
 int
 is_integer_val (expr_t *e)
 {
-	if (e->type == ex_nil)
+	if (e->type == ex_nil) {
 		return 1;
-	if (e->type == ex_value && e->e.value->lltype == ev_integer)
+	}
+	if (e->type == ex_value && e->e.value->lltype == ev_integer) {
 		return 1;
+	}
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
-		&& (e->e.symbol->type->type == ev_integer
-			|| is_enum (e->e.symbol->type)))
+		&& is_integral (e->e.symbol->type)) {
+		return 1;
+	}
 		return 1;
 	return 0;
 }
@@ -1053,61 +1056,75 @@ is_integer_val (expr_t *e)
 int
 expr_integer (expr_t *e)
 {
-	if (e->type == ex_nil)
+	if (e->type == ex_nil) {
 		return 0;
-	if (e->type == ex_value && e->e.value->lltype == ev_integer)
+	}
+	if (e->type == ex_value && e->e.value->lltype == ev_integer) {
 		return e->e.value->v.integer_val;
+	}
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
 		&& (e->e.symbol->type->type == ev_integer
-			|| is_enum (e->e.symbol->type)))
+			|| is_enum (e->e.symbol->type))) {
 		return e->e.symbol->s.value->v.integer_val;
+	}
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
 		&& e->e.symbol->s.def->constant
-		&& is_integral (e->e.symbol->s.def->type))
+		&& is_integral (e->e.symbol->s.def->type)) {
 		return D_INT (e->e.symbol->s.def);
+	}
 	internal_error (e, "not an integer constant");
 }
 
 unsigned
 expr_uinteger (expr_t *e)
 {
-	if (e->type == ex_nil)
+	if (e->type == ex_nil) {
 		return 0;
-	if (e->type == ex_value && e->e.value->lltype == ev_uinteger)
+	}
+	if (e->type == ex_value && e->e.value->lltype == ev_uinteger) {
 		return e->e.value->v.uinteger_val;
+	}
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
-		&& e->e.symbol->type->type == ev_uinteger)
+		&& e->e.symbol->type->type == ev_uinteger) {
 		return e->e.symbol->s.value->v.uinteger_val;
+	}
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
 		&& e->e.symbol->s.def->constant
-		&& is_integral (e->e.symbol->s.def->type))
+		&& is_integral (e->e.symbol->s.def->type)) {
 		return D_INT (e->e.symbol->s.def);
+	}
 	internal_error (e, "not an unsigned constant");
 }
 
 int
 is_short_val (expr_t *e)
 {
-	if (e->type == ex_nil)
+	if (e->type == ex_nil) {
 		return 1;
-	if (e->type == ex_value && e->e.value->lltype == ev_short)
+	}
+	if (e->type == ex_value && e->e.value->lltype == ev_short) {
 		return 1;
+	}
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
-		&& e->e.symbol->type->type == ev_short)
+		&& e->e.symbol->type->type == ev_short) {
 		return 1;
+	}
 	return 0;
 }
 
 short
 expr_short (expr_t *e)
 {
-	if (e->type == ex_nil)
+	if (e->type == ex_nil) {
 		return 0;
-	if (e->type == ex_value && e->e.value->lltype == ev_short)
+	}
+	if (e->type == ex_value && e->e.value->lltype == ev_short) {
 		return e->e.value->v.short_val;
+	}
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
-		&& e->e.symbol->type->type == ev_short)
+		&& e->e.symbol->type->type == ev_short) {
 		return e->e.symbol->s.value->v.short_val;
+	}
 	internal_error (e, "not a short constant");
 }
 
