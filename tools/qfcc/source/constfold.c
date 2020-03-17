@@ -790,7 +790,7 @@ static expr_t *
 do_op_integer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	int         isval1 = 0, isval2 = 0;
-	int         val1, val2;
+	int         val1 = 0, val2 = 0;
 	static int  valid[] = {
 		'=', '+', '-', '*', '/', '&', '|', '^', '%',
 		SHL, SHR, AND, OR, LT, GT, LE, GE, EQ, NE, 0
