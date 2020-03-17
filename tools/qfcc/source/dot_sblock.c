@@ -41,6 +41,7 @@
 
 #include <QF/dstring.h>
 #include <QF/quakeio.h>
+#include <QF/set.h>
 #include <QF/va.h>
 
 #include "dags.h"
@@ -62,6 +63,30 @@ flow_statement (dstring_t *dstr, statement_t *s)
 	dasprintf (dstr, "<td>%s</td>", html_string(operand_string (s->opa)));
 	dasprintf (dstr, "<td>%s</td>", html_string(operand_string (s->opb)));
 	dasprintf (dstr, "<td>%s</td>", html_string(operand_string (s->opc)));
+#if 0
+	if (s->number >= 0) {
+		set_t      *use = set_new ();
+		set_t      *def = set_new ();
+		set_t      *kill = set_new ();
+		set_t      *ops = set_new ();
+		operand_t  *operands[4];
+
+		flow_analyze_statement (s, use, def, kill, operands);
+		for (int i = 0; i < 4; i++) {
+			if (operands[i]) {
+				set_add (ops, i);
+			}
+		}
+		dasprintf (dstr, "<td>%s</td>", html_string(set_as_string (use)));
+		dasprintf (dstr, "<td>%s</td>", html_string(set_as_string (def)));
+		dasprintf (dstr, "<td>%s</td>", html_string(set_as_string (kill)));
+		dasprintf (dstr, "<td>%s</td>", html_string(set_as_string (ops)));
+
+		set_delete (use);
+		set_delete (def);
+		set_delete (kill);
+	}
+#endif
 	dasprintf (dstr, "</tr>\n");
 }
 
