@@ -102,11 +102,10 @@ dot_sblock (dstring_t *dstr, sblock_t *sblock, int blockno)
 	dasprintf (dstr, "      <tr>\n");
 	dasprintf (dstr, "        <td colspan=\"2\" >%p(%d)</td>\n", sblock,
 			   blockno);
-	dasprintf (dstr, "        <td height=\"0\" colspan=\"2\" port=\"s\">\n");
+	dasprintf (dstr, "        <td height=\"0\" colspan=\"3\" port=\"s\">\n");
 	for (l = sblock->labels; l; l = l->next)
 		dasprintf (dstr, "            %s(%d)\n", l->name, l->used);
 	dasprintf (dstr, "        </td>\n");
-	dasprintf (dstr, "        <td></td>\n");
 	dasprintf (dstr, "      </tr>\n");
 	for (s = sblock->statements; s; s = s->next)
 		flow_statement (dstr, s);

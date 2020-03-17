@@ -744,6 +744,11 @@ dag_create (flownode_t *flownode)
 				}
 			}
 		}
+		if (operands[4]) {
+			// a movep instruction knew what it was reading, so mark that
+			// as live
+			dag_make_var_live (live_vars, operands[4]);
+		}
 		op = opcode_label (dag, s->opcode, s->expr);
 		n = children[0];
 		if (s->type != st_assign) {
