@@ -63,8 +63,9 @@ static def_t zero_def;
 static def_t *get_operand_def (expr_t *expr, operand_t *op);
 
 static def_t *
-get_tempop_def (expr_t *expr, tempop_t *tempop, type_t *type)
+get_tempop_def (expr_t *expr, operand_t *tmpop, type_t *type)
 {
+	tempop_t   *tempop = &tmpop->o.tempop;
 	if (tempop->def) {
 		return tempop->def;
 	}
@@ -115,7 +116,7 @@ get_operand_def (expr_t *expr, operand_t *op)
 			zero_def.type = &type_short;
 			return &zero_def;	//FIXME
 		case op_temp:
-			return get_tempop_def (expr, &op->o.tempop, op->type);
+			return get_tempop_def (expr, op, op->type);
 		case op_alias:
 			return get_operand_def (expr, op->o.alias);
 		case op_nil:

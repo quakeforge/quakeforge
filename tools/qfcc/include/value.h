@@ -51,7 +51,7 @@ struct ex_value_s *new_field_val (int field_val, struct type_s *type,
 struct ex_value_s *new_func_val (int func_val, struct type_s *type);
 struct ex_value_s *new_pointer_val (int val, struct type_s *type,
 									struct def_s *def,
-									struct tempop_s *tempop);
+									struct operand_s *tempop);
 struct ex_value_s *new_quaternion_val (const float *quaternion_val);
 struct ex_value_s *new_integer_val (int integer_val);
 struct ex_value_s *new_uinteger_val (int uinteger_val);

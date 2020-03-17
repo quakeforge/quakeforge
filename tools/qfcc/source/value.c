@@ -198,7 +198,7 @@ new_func_val (int func_val, type_t *type)
 
 ex_value_t *
 new_pointer_val (int pointer_val, type_t *type, def_t *def,
-				 struct tempop_s *tempop)
+				 struct operand_s *tempop)
 {
 	ex_value_t  val;
 	if (!type) {

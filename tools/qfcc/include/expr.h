@@ -127,7 +127,7 @@ typedef struct ex_pointer_s {
 	int         val;
 	struct type_s *type;
 	struct def_s *def;
-	struct tempop_s *tempop;
+	struct operand_s *tempop;
 } ex_pointer_t;
 
 typedef struct ex_func_s {

@@ -78,18 +78,19 @@ optype_str (op_type_e type)
 }
 
 static const char *
-tempop_string (tempop_t *tempop)
+tempop_string (operand_t *tmpop)
 {
+	tempop_t   *tempop = &tmpop->o.tempop;
 	if (tempop->alias) {
 		return va ("<tmp %s %p:%d:%p:%d:%d>",
 				   pr_type_name[tempop->type->type],
-				   tempop, tempop->users,
-				   &tempop->alias->o.tempop,
+				   tmpop, tempop->users,
+				   tempop->alias,
 				   tempop->offset,
 				   tempop->alias->o.tempop.users);
 	}
 	return va ("<tmp %s %p:%d>", pr_type_name[tempop->type->type],
-			   &tempop, tempop->users);
+			   tmpop, tempop->users);
 }
 
 const char *
@@ -126,7 +127,7 @@ operand_string (operand_t *op)
 								   op->o.value->v.pointer.def->name,
 								   op->o.value->v.pointer.val);
 					} else if(op->o.value->v.pointer.tempop) {
-						tempop_t   *tempop = op->o.value->v.pointer.tempop;
+						operand_t  *tempop = op->o.value->v.pointer.tempop;
 						return va ("ptr %s+%d", tempop_string (tempop),
 								   op->o.value->v.pointer.val);
 					} else {
@@ -155,7 +156,7 @@ operand_string (operand_t *op)
 		case op_label:
 			return op->o.label->name;
 		case op_temp:
-			return tempop_string (&op->o.tempop);
+			return tempop_string (op);
 		case op_alias:
 			{
 				const char *alias = operand_string (op->o.alias);
@@ -703,7 +704,7 @@ operand_address (operand_t *reference, expr_t *e)
 				reference = reference->o.tempop.alias;
 			}
 			return value_operand (new_pointer_val (offset, type, 0,
-												   &reference->o.tempop), e);
+												   reference), e);
 		case op_alias:
 			//op_alias comes only from alias_operand and that is called
 			// by dags, so not expected
