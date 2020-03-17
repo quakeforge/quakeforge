@@ -296,6 +296,7 @@ new_statement (st_type_t type, const char *opcode, expr_t *expr)
 	statement->type = type;
 	statement->opcode = save_string (opcode);
 	statement->expr = expr;
+	statement->number = -1;	// indicates flow analysis not done yet
 	return statement;
 }
 
