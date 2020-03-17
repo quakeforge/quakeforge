@@ -60,13 +60,27 @@
 #include "value.h"
 #include "qc-parse.h"
 
-static const char *op_type_names[] = {
+const char *op_type_names[] = {
 	"op_def",
 	"op_value",
 	"op_label",
 	"op_temp",
 	"op_alias",
 	"op_nil",
+};
+
+const char *st_type_names[] = {
+	"st_none",
+	"st_expr",
+	"st_assign",
+	"st_ptrassign",
+	"st_move",
+	"st_ptrmove",
+	"st_memset",
+	"st_ptrmemset",
+	"st_state",
+	"st_func",
+	"st_flow",
 };
 
 const char *
