@@ -102,7 +102,9 @@ updateScreenCursor (View *view)
 
 - (void) refresh
 {
-	[textContext refresh];
+	if (__obj_responds_to (textContext, @selector(refresh))) {
+		[(id)textContext refresh];
+	}
 }
 
 - (void) mvprintf: (Point) pos, string fmt, ...

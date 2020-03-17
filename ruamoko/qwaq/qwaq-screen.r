@@ -14,7 +14,7 @@
 		return nil;
 	}
 	textContext = [TextContext screen];
-	[textContext scrollok: 1];
+	[(id)textContext scrollok: 1];
 	return self;
 }
 

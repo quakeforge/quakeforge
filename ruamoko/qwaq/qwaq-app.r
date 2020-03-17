@@ -47,9 +47,7 @@ arp_end (void)
 	r.offset.y = r.extent.height / 4;
 	r.extent.width /= 2;
 	r.extent.height /= 2;
-	Window *w;
-	[objects insert: w=[[Window windowWithRect: r] setBackground: COLOR_PAIR (2)]];
-	//wprintf (w.window, "%d %d %d %d\n", r.offset.x, r.offset.y, r.extent.width, r.ylen);
+	[objects insert: [[Window windowWithRect: r] setBackground: COLOR_PAIR (2)]];
 	return self;
 }
 

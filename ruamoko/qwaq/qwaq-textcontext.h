@@ -4,11 +4,12 @@
 #ifdef __QFCC__
 #include <Object.h>
 #include "qwaq-curses.h"
+#include "qwaq-draw.h"
 #include "qwaq-rect.h"
 
 @class DrawBuffer;
 
-@interface TextContext : Object
+@interface TextContext : Object<TextContext>
 {
 	window_t    window;
 	union {
@@ -43,12 +44,6 @@
 
 - blitFromBuffer: (DrawBuffer *) srcBuffer to: (Point) pos from: (Rect) rect;
 
-- (void) printf: (string) fmt, ...;
-- (void) vprintf: (string) mft, @va_list args;
-- (void) addch: (int) ch;
-- (void) mvprintf: (Point) pos, string fmt, ...;
-- (void) mvvprintf: (Point) pos, string mft, @va_list args;
-- (void) mvaddch: (Point) pos, int ch;
 - (void) refresh;
 + (void) refresh;
 - (void) bkgd: (int) ch;

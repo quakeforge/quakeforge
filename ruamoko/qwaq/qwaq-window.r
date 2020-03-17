@@ -20,7 +20,7 @@
 	self.rect = rect;
 	buffer = [[TextContext alloc] initWithRect: rect];
 	textContext = buffer;
-	panel = create_panel ([buffer window]);
+	panel = create_panel ([(id)buffer window]);
 	buf = [DrawBuffer buffer: {3, 3}];
 	[buf mvaddstr: {0, 0}, "XOX"];
 	[buf mvaddstr: {0, 1}, "OXO"];
@@ -74,7 +74,7 @@
 
 -setBackground: (int) ch
 {
-	[buffer bkgd: ch];
+	[(id)buffer bkgd: ch];
 	return self;
 }
 
@@ -95,7 +95,7 @@
 		}
 	}
 	[super draw];
-	[buffer border: box_sides, box_corners];
+	[(id)buffer border: box_sides, box_corners];
 	Point pos = { 1, 1 };
 	//for (int i = ACS_ULCORNER; i <= ACS_STERLING; i++) {
 	for (int i = 32; i <= 127; i++) {
@@ -112,7 +112,7 @@
 			}
 		}
 	}
-	[textContext blitFromBuffer: buf to: makePoint (6, 3) from: [buf rect]];
+	[(id)textContext blitFromBuffer: buf to: makePoint (6, 3) from: [buf rect]];
 	[self refresh];
 	return self;
 }

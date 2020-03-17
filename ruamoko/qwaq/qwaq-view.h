@@ -45,7 +45,7 @@ enum {
 	Rect        absRect;
 	Point       point;		// can't be local :(
 	Group      *owner;
-	TextContext *textContext;
+	id<TextContext> textContext;
 	int         state;
 	int         options;
 	int         cursorState;
@@ -65,11 +65,7 @@ enum {
 - (void) mvaddch: (Point) pos, int ch;
 @end
 
-//These are forwarded (FIXME make a protocol)
-@interface View (TextContext)
-- (void) printf: (string) fmt, ...;
-- (void) vprintf: (string) fmt, @va_list args;
-- (void) addch: (int) ch;
+@interface View (TextContext) <TextContext>
 @end
 
 #endif//__qwaq_view_h

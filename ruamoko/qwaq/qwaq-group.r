@@ -4,14 +4,13 @@
 
 @implementation Group
 
--initWithContext: (id) context
+-initWithContext: (id<TextContext>) context
 {
 	if (!(self = [super init])) {
 		return nil;
 	}
 	textContext = context;
 	absRect = rect = { nil, [textContext size] };
-	printf ("\n\nsize:%d %d\n\n", rect.extent.width, rect.extent.height);
 	buffer = [DrawBuffer buffer: rect.extent];
 	views = [[Array array] retain];
 	return self;
