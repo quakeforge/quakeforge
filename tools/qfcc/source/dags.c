@@ -49,8 +49,10 @@
 
 #include "dags.h"
 #include "diagnostic.h"
+#include "dot.h"
 #include "flow.h"
 #include "function.h"
+#include "options.h"
 #include "qfcc.h"
 #include "statements.h"
 #include "strpool.h"
@@ -133,6 +135,11 @@ daglabel_string (daglabel_t *label)
 	// operand_string might use quote_string, which returns a pointer to
 	// a static variable.
 	dstring_copystr (str, operand_string (label->op));
+#if 0
+	if (label->op->type) {
+		dstring_appendstr (str, label->op->type->encoding);
+	}
+#endif
 	return quote_string (str->str);
 }
 
@@ -730,10 +737,13 @@ dag_create (flownode_t *flownode)
 		int         i;
 
 		dag_make_children (dag, s, operands, children);
-		if (s->type == st_flow || s->type == st_func)
-			for (i = 0; i < 3; i++)
-				if (children[i])
+		if (s->type == st_flow || s->type == st_func) {
+			for (i = 0; i < 3; i++) {
+				if (children[i]) {
 					dag_make_var_live (live_vars, operands[i + 1]);
+				}
+			}
+		}
 		op = opcode_label (dag, s->opcode, s->expr);
 		n = children[0];
 		if (s->type != st_assign
@@ -759,7 +769,12 @@ dag_create (flownode_t *flownode)
 	labels = malloc (dag->num_labels * sizeof (daglabel_t *));
 	memcpy (labels, dag->labels, dag->num_labels * sizeof (daglabel_t *));
 	dag->labels = labels;
-
+#if 0
+	if (options.block_dot.dags) {
+		flownode->dag = dag;
+		dump_dot ("raw-dags", flownode->graph, dump_dot_flow_dags);
+	}
+#endif
 	dag_remove_dead_vars (dag, live_vars);
 	dag_sort_nodes (dag);
 	set_delete (live_vars);
@@ -972,6 +987,9 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			dst = operands[0];
 			break;
 		case st_move:
+		case st_ptrmove:
+		case st_memset:
+		case st_ptrmemset:
 			if (!strcmp (dagnode->label->opcode, "<MOVE>")) {
 				dst = generate_moves (dag, block, dagnode);
 				break;

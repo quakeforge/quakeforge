@@ -758,7 +758,7 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 	const char **opcode_set = opcode_sets[0];
 	const char *opcode;
 	int         need_ptr = 0;
-	//operand_t  *dummy;
+	st_type_t   type = st_move;
 
 	if ((src && src->op_type == op_nil) || src_expr->type == ex_nil) {
 		// switch to memset because nil is type agnostic 0 and structures
@@ -769,6 +769,7 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 		if (op) {
 			*op = nil_operand (dst_type, src_expr);
 		}
+		type = st_memset;
 		if (is_indirect (dst_expr)) {
 			goto dereference_dst;
 		}
@@ -815,9 +816,10 @@ dereference_dst:
 		opcode = opcode_set[0];
 	} else {
 		opcode = opcode_set[1];
+		type++;	// from st_move/st_memset to st_ptrmove/st_ptrmemset
 	}
 
-	s = new_statement (st_move, opcode, e);
+	s = new_statement (type, opcode, e);
 	s->opa = src;
 	s->opb = size;
 	s->opc = dst;
@@ -932,7 +934,8 @@ expr_move (sblock_t *sblock, expr_t *e, operand_t **op)
 	dst = *op;
 	sblock = statement_subexpr (sblock, src_expr, &src);
 	sblock = statement_subexpr (sblock, size_expr, &size);
-	s = new_statement (st_move, convert_op (e->e.expr.op), e);
+	s = new_statement (e->e.expr.op == 'm' ? st_move : st_ptrmove,
+					   convert_op (e->e.expr.op), e);
 	s->opa = src;
 	s->opb = size;
 	s->opc = dst;
@@ -1068,7 +1071,7 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 
 			dst_addr = operand_address (*op, e);
 
-			s = new_statement (st_move, "<MOVEP>", deref);
+			s = new_statement (st_ptrmove, "<MOVEP>", deref);
 			s->opa = src_addr;
 			//FIXME large types
 			s->opb = short_operand (type_size (type), e);

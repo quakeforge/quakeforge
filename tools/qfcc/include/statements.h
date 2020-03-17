@@ -73,17 +73,20 @@ typedef struct operand_s {
 
 	Statement types are broken down into expressions (binary and unary,
 	includes address and pointer dereferencing (read)), assignment, pointer
-	assignment (write to dereference pointer), move (special case of pointer
-	assignment), state, function related (call, rcall, return and done), and
-	flow control (conditional branches, goto, jump (single pointer and jump
-	table)).
+	assignment (write to dereference pointer), move (special case of
+	assignment), pointer move (special case of pointer assignment), state,
+	function related (call, rcall, return and done), and flow control
+	(conditional branches, goto, jump (single pointer and jump table)).
 */
 typedef enum {
 	st_none,		///< not a (valid) statement. Used in dags.
 	st_expr,		///< c = a op b; or c = op a;
 	st_assign,		///< b = a
 	st_ptrassign,	///< *b = a; or *(b + c) = a;
-	st_move,		///< memcpy (c, a, b);
+	st_move,		///< memcpy (c, a, b); c and a are direct def references
+	st_ptrmove,		///< memcpy (c, a, b); c and a are pointers
+	st_memset,		///< memset (c, a, b); c is direct def reference
+	st_ptrmemset,	///< memset (c, a, b); c is pointer
 	st_state,		///< state (a, b); or state (a, b, c)
 	st_func,		///< call, rcall or return/done
 	st_flow,		///< if/ifa/ifae/ifb/ifbe/ifnot or goto or jump/jumpb

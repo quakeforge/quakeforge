@@ -1116,6 +1116,9 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			break;
 		case st_ptrassign:
 		case st_move:
+		case st_ptrmove:
+		case st_memset:
+		case st_ptrmemset:
 			flow_add_op_var (use, s->opa, 1);
 			flow_add_op_var (use, s->opb, 1);
 			if (!strcmp (s->opcode, "<MOVE>")
