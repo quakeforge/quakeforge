@@ -119,14 +119,19 @@ static TextContext *screen;
 	return self;
 }
 
-- (void) mvprintf: (Point) pos, string fmt, ... = #0;
 - (void) printf: (string) fmt, ... = #0;
 - (void) vprintf: (string) mft, @va_list args = #0;
 - (void) addch: (int) ch = #0;
+- (void) addstr: (string) str = #0;
+
+- (void) mvprintf: (Point) pos, string fmt, ... = #0;
 - (void) mvvprintf: (Point) pos, string mft, @va_list args = #0;
+- (void) mvaddch: (Point) pos, int ch = #0;
+- (void) mvaddstr: (Point) pos, string str = #0;
+
 - (void) refresh = #0;
 + (void) refresh = #0;
-- (void) mvaddch: (Point) pos, int ch = #0;
+
 - (void) bkgd: (int) ch = #0;
 - (void) scrollok: (int) flag = #0;
 - (void) border: (box_sides_t) sides, box_corners_t corners = #0;
@@ -145,6 +150,8 @@ void mvwvprintf (window_t win, int x, int y, string fmt, @va_list args) = #0;
 void wrefresh (window_t win) = #0;
 void mvwaddch (window_t win, int x, int y, int ch) = #0;
 void waddch (window_t win, int ch) = #0;
+void mvwaddstr (window_t win, int x, int y, string str) = #0;
+void waddstr (window_t win, string str) = #0;
 int get_event (qwaq_event_t *event) = #0;
 int max_colors (void) = #0;
 int max_color_pairs (void) = #0;

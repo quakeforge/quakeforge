@@ -1055,6 +1055,64 @@ bi_doupdate (progs_t *pr)
 }
 
 static void
+qwaq_waddstr (progs_t *pr, int window_id, const char *str)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+
+	if (get_window (res, __FUNCTION__, window_id)) {
+		int         string_id = acquire_string (res);
+		dstring_t  *print_buffer = res->strings + string_id;
+		int         command[] = {
+						qwaq_cmd_waddstr, 0,
+						window_id, string_id
+					};
+
+		command[1] = CMD_SIZE(command);
+
+		dstring_copystr (print_buffer, str);
+		qwaq_submit_command (res, command);
+	}
+}
+static void
+bi_waddstr (progs_t *pr)
+{
+	int         window_id = P_INT (pr, 0);
+	const char *str = P_GSTRING (pr, 1);
+
+	qwaq_waddstr (pr, window_id, str);
+}
+
+static void
+qwaq_mvwaddstr (progs_t *pr, int window_id, int x, int y, const char *str)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+
+	if (get_window (res, __FUNCTION__, window_id)) {
+		int         string_id = acquire_string (res);
+		dstring_t  *print_buffer = res->strings + string_id;
+		int         command[] = {
+						qwaq_cmd_mvwaddstr, 0,
+						window_id, x, y, string_id
+					};
+
+		command[1] = CMD_SIZE(command);
+
+		dstring_copystr (print_buffer, str);
+		qwaq_submit_command (res, command);
+	}
+}
+static void
+bi_mvwaddstr (progs_t *pr)
+{
+	int         window_id = P_INT (pr, 0);
+	int         x = P_INT (pr, 1);
+	int         y = P_INT (pr, 2);
+	const char *str = P_GSTRING (pr, 3);
+
+	qwaq_mvwaddstr (pr, window_id, x, y, str);
+}
+
+static void
 qwaq_mvwprintf (progs_t *pr, int window_id, int x, int y, const char *fmt,
 				int count, pr_type_t **args)
 {
@@ -1588,9 +1646,18 @@ static void
 bi_i_TextContext__addch_ (progs_t *pr)
 {
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
-	int         ch = P_INT (pr, 1);
+	int         ch = P_INT (pr, 2);
 
 	qwaq_waddch (pr, window_id, ch);
+}
+
+static void
+bi_i_TextContext__addstr_ (progs_t *pr)
+{
+	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
+	const char *str = P_GSTRING (pr, 2);
+
+	qwaq_waddstr (pr, window_id, str);
 }
 
 static void
@@ -1631,6 +1698,16 @@ bi_i_TextContext__mvaddch_ (progs_t *pr)
 	int         ch = P_INT (pr, 3);
 
 	qwaq_mvwaddch (pr, window_id, pos->x, pos->y, ch);
+}
+
+static void
+bi_i_TextContext__mvaddstr_ (progs_t *pr)
+{
+	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
+	Point      *pos = &P_PACKED (pr, Point, 2);
+	const char *str = P_GSTRING (pr, 3);
+
+	qwaq_mvwaddstr (pr, window_id, pos->x, pos->y, str);
 }
 
 static void
@@ -1696,6 +1773,8 @@ static builtin_t builtins[] = {
 	{"mvwvprintf",		bi_mvwvprintf,		-1},
 	{"mvwaddch",		bi_mvwaddch,		-1},
 	{"waddch",			bi_waddch,			-1},
+	{"mvwaddstr",		bi_mvwaddstr,		-1},
+	{"waddstr",			bi_waddstr,			-1},
 	{"wrefresh",		bi_wrefresh,		-1},
 	{"get_event",		bi_get_event,		-1},
 	{"max_colors",		bi_max_colors,		-1},
@@ -1723,10 +1802,12 @@ static builtin_t builtins[] = {
 	{"_i_TextContext__printf_",			bi_i_TextContext__printf_,		   -1},
 	{"_i_TextContext__vprintf_",		bi_i_TextContext__vprintf_,		   -1},
 	{"_i_TextContext__addch_",			bi_i_TextContext__addch_,		   -1},
+	{"_i_TextContext__addstr_",			bi_i_TextContext__addstr_,		   -1},
 	{"_i_TextContext__mvvprintf_",		bi_i_TextContext__mvvprintf_,	   -1},
 	{"_c_TextContext__refresh",			bi_c_TextContext__refresh,		   -1},
 	{"_i_TextContext__refresh",			bi_i_TextContext__refresh,		   -1},
 	{"_i_TextContext__mvaddch_",		bi_i_TextContext__mvaddch_,		   -1},
+	{"_i_TextContext__mvaddstr_",		bi_i_TextContext__mvaddstr_,	   -1},
 	{"_i_TextContext__bkgd_",			bi_i_TextContext__bkgd_,		   -1},
 	{"_i_TextContext__scrollok_",		bi_i_TextContext__scrollok_,	   -1},
 	{"_i_TextContext__border_",			bi_i_TextContext__border_,		   -1},

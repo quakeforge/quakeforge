@@ -97,6 +97,8 @@ typedef struct panel_s *panel_t;
 @extern void wrefresh (window_t win);
 @extern void mvwaddch (window_t win, int x, int y, int ch);
 @extern void waddch (window_t win, int ch);
+@extern void mvwaddstr (window_t win, int x, int y, string str);
+@extern void waddstr (window_t win, string str);
 
 @extern panel_t create_panel (window_t window);
 @extern void destroy_panel (panel_t panel);
