@@ -618,6 +618,7 @@ int is_integer_val (expr_t *e) __attribute__((pure));
 int is_uinteger_val (expr_t *e) __attribute__((pure));
 int is_short_val (expr_t *e) __attribute__((pure));
 int is_integral_val (expr_t *e) __attribute__((pure));
+int is_pointer_val (expr_t *e) __attribute__((pure));
 
 /**	Create a reference to the global <code>.self</code> entity variable.
 

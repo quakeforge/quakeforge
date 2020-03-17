@@ -1193,6 +1193,15 @@ expr_integral (expr_t *e)
 	internal_error (e, "not an integral constant");
 }
 
+int
+is_pointer_val (expr_t *e)
+{
+	if (e->type == ex_value && e->e.value->lltype == ev_pointer) {
+		return 1;
+	}
+	return 0;
+}
+
 expr_t *
 new_alias_expr (type_t *type, expr_t *expr)
 {
