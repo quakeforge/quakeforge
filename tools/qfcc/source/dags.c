@@ -746,13 +746,14 @@ dag_create (flownode_t *flownode)
 		}
 		op = opcode_label (dag, s->opcode, s->expr);
 		n = children[0];
-		if (s->type != st_assign
-			&& !(n = dagnode_search (dag, op, children))) {
-			n = new_node (dag);
-			n->type = s->type;
-			n->label = op;
-			dagnode_add_children (dag, n, operands, children);
-			dagnode_set_edges (dag, n);
+		if (s->type != st_assign) {
+			if (!(n = dagnode_search (dag, op, children))) {
+				n = new_node (dag);
+				n->type = s->type;
+				n->label = op;
+				dagnode_add_children (dag, n, operands, children);
+				dagnode_set_edges (dag, n);
+			}
 		}
 		lx = operand_label (dag, operands[0]);
 		if (lx && lx->dagnode != n) {
@@ -893,20 +894,87 @@ generate_moveps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 
 	operands[0] = make_operand (dag, block, dagnode, 0);
 	operands[1] = make_operand (dag, block, dagnode, 1);
+	if (dagnode->children[2]) {
+		operands[2] = make_operand (dag, block, dagnode, 2);
+		st = build_statement ("<MOVEP>", operands, dagnode->label->expr);
+		sblock_add_statement (block, st);
+	} else {
+		for (var_iter = set_first (dagnode->identifiers); var_iter;
+			 var_iter = set_next (var_iter)) {
+			var = dag->labels[var_iter->element];
+			dst = var->op;
+			type = dst->o.def->type;
+			dstDef = dst->o.def;
+			if (dstDef->alias) {
+				offset = dstDef->offset;
+				dstDef = dstDef->alias;
+			}
+			operands[2] = value_operand (new_pointer_val (offset, type, dstDef, 0),
+										 operands[1]->expr);
+			st = build_statement ("<MOVEP>", operands, var->expr);
+			sblock_add_statement (block, st);
+		}
+	}
+	return dst;
+}
+
+static operand_t *
+generate_memsets (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
+{
+	set_iter_t *var_iter;
+	daglabel_t  *var;
+	operand_t   *operands[3] = {0, 0, 0};
+	statement_t *st;
+	operand_t   *dst;
+
+	operands[0] = make_operand (dag, block, dagnode, 0);
+	operands[1] = make_operand (dag, block, dagnode, 1);
+	dst = operands[0];
 	for (var_iter = set_first (dagnode->identifiers); var_iter;
 		 var_iter = set_next (var_iter)) {
 		var = dag->labels[var_iter->element];
-		dst = var->op;
-		type = dst->o.def->type;
-		dstDef = dst->o.def;
-		if (dstDef->alias) {
-			offset = dstDef->offset;
-			dstDef = dstDef->alias;
-		}
-		operands[2] = value_operand (new_pointer_val (offset, type, dstDef, 0),
-									 operands[1]->expr);
-		st = build_statement ("<MOVEP>", operands, var->expr);
+		operands[2] = var->op;
+		dst = operands[2];
+		st = build_statement ("<MEMSET>", operands, var->expr);
 		sblock_add_statement (block, st);
+	}
+	return dst;
+}
+
+static operand_t *
+generate_memsetps (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
+{
+	set_iter_t *var_iter;
+	daglabel_t  *var;
+	operand_t   *operands[3] = {0, 0, 0};
+	statement_t *st;
+	operand_t   *dst = 0;
+	type_t      *type;
+	int          offset = 0;
+	def_t       *dstDef;
+
+	operands[0] = make_operand (dag, block, dagnode, 0);
+	operands[1] = make_operand (dag, block, dagnode, 1);
+	if (dagnode->children[2]) {
+		operands[2] = make_operand (dag, block, dagnode, 2);
+		st = build_statement ("<MEMSETP>", operands, dagnode->label->expr);
+		sblock_add_statement (block, st);
+	} else {
+		for (var_iter = set_first (dagnode->identifiers); var_iter;
+			 var_iter = set_next (var_iter)) {
+			var = dag->labels[var_iter->element];
+			dst = var->op;
+			type = dst->o.def->type;
+			dstDef = dst->o.def;
+			if (dstDef->alias) {
+				offset = dstDef->offset;
+				dstDef = dstDef->alias;
+			}
+			operands[2] = value_operand (new_pointer_val (offset, type, dstDef, 0),
+										 operands[1]->expr);
+			st = build_statement ("<MEMSETP>", operands, var->expr);
+			sblock_add_statement (block, st);
+		}
 	}
 	return dst;
 }
@@ -987,19 +1055,17 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			dst = operands[0];
 			break;
 		case st_move:
+			dst = generate_moves (dag, block, dagnode);
+			break;
 		case st_ptrmove:
+			dst = generate_moveps (dag, block, dagnode);
+			break;
 		case st_memset:
+			dst = generate_memsets (dag, block, dagnode);
+			break;
 		case st_ptrmemset:
-			if (!strcmp (dagnode->label->opcode, "<MOVE>")) {
-				dst = generate_moves (dag, block, dagnode);
-				break;
-			}
-			if (!strcmp (dagnode->label->opcode, "<MOVEP>")
-				&& !dagnode->children[2]) {
-				dst = generate_moveps (dag, block, dagnode);
-				break;
-			}
-			//fall through
+			dst = generate_memsetps (dag, block, dagnode);
+			break;
 		case st_state:
 		case st_func:
 			for (i = 0; i < 3; i++)
