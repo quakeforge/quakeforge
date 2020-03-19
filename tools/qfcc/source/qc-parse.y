@@ -914,6 +914,7 @@ abstract_decl
 				$1.type = type_default;
 			$$->type = find_type (append_type ($$->type, $1.type));
 		}
+	| error		{ $$ = new_symbol (""); }
 	;
 
 qc_param_decl
