@@ -74,19 +74,7 @@ static TextContext *screen;
 	Rect r = { {}, size };
 	Rect t = { pos, rect.extent };
 
-	wprintf (stdscr, "src: %p\n", srcBuffer);
-	wprintf (stdscr, "srcSize: %d %d\n", srcSize.width, srcSize.height);
-	wprintf (stdscr, "pos: %d %d\n", pos.x, pos.x);
-	wprintf (stdscr, "rect: %d %d %d %d\n",
-			 rect.offset.x, rect.offset.y,
-			 rect.extent.width, rect.extent.height);
-	wprintf (stdscr, "r: %d %d %d %d\n",
-			 r.offset.x, r.offset.y, r.extent.width, r.extent.height);
-	wprintf (stdscr, "t: %d %d %d %d\n",
-			 t.offset.x, t.offset.y, t.extent.width, t.extent.height);
 	t = clipRect (r, t);
-	wprintf (stdscr, "t: %d %d %d %d\n",
-			 t.offset.x, t.offset.y, t.extent.width, t.extent.height);
 	if (t.extent.width < 0 || t.extent.height < 0) {
 		return self;
 	}
@@ -100,12 +88,6 @@ static TextContext *screen;
 	r.extent = size;
 
 	rect = clipRect (r, rect);
-	wprintf (stdscr, "pos: %d %d\n", pos.x, pos.x);
-	wprintf (stdscr, "rect: %d %d %d %d\n",
-			 rect.offset.x, rect.offset.y,
-			 rect.extent.width, rect.extent.height);
-	wprintf (stdscr, "r: %d %d %d %d\n",
-			 r.offset.x, r.offset.y, r.extent.width, r.extent.height);
 	if (rect.extent.width < 0 || rect.extent.height < 0) {
 		return self;
 	}
