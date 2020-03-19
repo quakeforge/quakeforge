@@ -18,6 +18,8 @@
 - blitFromBuffer: (DrawBuffer *) srcBuffer to: (Point) pos from: (Rect) rect;
 - (Extent) size;
 
+- (void) bkgd: (int) ch;
+- (void) clear;
 - (void) printf: (string) fmt, ...;
 - (void) vprintf: (string) fmt, @va_list args;
 - (void) addch: (int) ch;
@@ -33,6 +35,7 @@
 	int        *buffer;
 	Extent      size;
 	Point       cursor;
+	int         background;
 }
 + (DrawBuffer *) buffer: (Extent) size;
 - initWithSize: (Extent) size;

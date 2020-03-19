@@ -80,6 +80,26 @@
 	return self;
 }
 
+- (void) bkgd: (int) ch
+{
+	if ((ch & 0xff) < 32) {
+		ch = (ch & ~0xff) | 32;
+	}
+	background = ch;
+}
+
+- (void) clear
+{
+	int         ch = background;
+	int        *dst = buffer;
+	int        *end = buffer + size.width * size.height;
+
+	while (dst < end) {
+		*dst++ = ch;
+	}
+	cursor = {0, 0};
+}
+
 - (void) printf: (string) fmt, ...
 {
 	string str = vsprintf (fmt, @args);
@@ -113,6 +133,12 @@
 	} else if (ch == '\r') {
 		cursor.x = 0;
 	} else {
+		if ((ch & 0xff) < 32) {
+			ch = (ch & ~0xff) | 32;
+		}
+		if (!(ch & ~0xff)) {
+			ch |= background & ~0xff;
+		}
 		buffer[cursor.y * size.width + cursor.x++] = ch;
 	}
 }
