@@ -38,13 +38,15 @@
 		switch ((qwaq_mouse_event) (event.what & qe_mouse)) {
 			case qe_mousedown:
 				pressed = 1;
-				[self redraw];
 				action = onPress;
+				[self grabMouse];
+				[self redraw];
 				break;
 			case qe_mouseup:
 				pressed = 0;
-				[self redraw];
 				action = onRelease;
+				[self releaseMouse];
+				[self redraw];
 				break;
 			case qe_mouseclick:
 				action = onClick;

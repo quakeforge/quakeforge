@@ -27,6 +27,7 @@
 -insert: (View *) view
 {
 	[views addObject: view];
+	[view setOwner: self];
 	[view setContext: context];
 	return self;
 }
@@ -135,8 +136,8 @@ find_mouse_view(Group *group, Point pos)
 
 -(void) releaseMouse
 {
-	mouse_grabbed = mouse_within;
-	[owner grabMouse];
+	mouse_grabbed = nil;
+	[owner releaseMouse];
 }
 
 @end
