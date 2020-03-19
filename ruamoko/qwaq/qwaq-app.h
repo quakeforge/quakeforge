@@ -6,6 +6,7 @@
 #include "event.h"
 
 @class Group;
+@class TextContext;
 
 @interface QwaqApplication: Object
 {
@@ -13,6 +14,9 @@
 	qwaq_command endState;
 
 	Group      *objects;
+
+	TextContext *screen;
+	int         autocount;
 }
 -run;
 -draw;

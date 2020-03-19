@@ -3,8 +3,10 @@ int fence;
 
 #include "color.h"
 #include "qwaq-app.h"
+#include "qwaq-button.h"
 #include "qwaq-curses.h"
 #include "qwaq-group.h"
+#include "qwaq-listener.h"
 #include "qwaq-window.h"
 #include "qwaq-screen.h"
 #include "qwaq-view.h"
@@ -38,8 +40,10 @@ arp_end (void)
 	initialize ();
 	init_pair (1, COLOR_WHITE, COLOR_BLUE);
 	init_pair (2, COLOR_WHITE, COLOR_BLACK);
+	init_pair (3, COLOR_WHITE, COLOR_GREEN);
+	init_pair (4, COLOR_YELLOW, COLOR_RED);
 
-	TextContext *screen = [TextContext screen];
+	screen = [TextContext screen];
 	objects = [[Group alloc] initWithContext: screen owner: nil];
 
 	[screen bkgd: COLOR_PAIR (1)];
@@ -48,8 +52,57 @@ arp_end (void)
 	r.offset.y = r.extent.height / 4;
 	r.extent.width /= 2;
 	r.extent.height /= 2;
-	[objects insert: [[Window windowWithRect: r] setBackground: COLOR_PAIR (2)]];
+	Window *w;
+	[objects insert: w = [[Window windowWithRect: r] setBackground: COLOR_PAIR (2)]];
+	DrawBuffer *released = [DrawBuffer buffer: {12, 1}];
+	DrawBuffer *pressed = [DrawBuffer buffer: {12, 1}];
+	Button *b = [[Button alloc] initWithPos: {3, 4} releasedIcon: released
+													pressedIcon: pressed];
+	[w addView: b];
+	[released bkgd: COLOR_PAIR(3)];
+	[released clear];
+	[released mvaddstr: {2, 0}, "press me"];
+	[pressed bkgd: COLOR_PAIR(4)];
+	[pressed clear];
+	[pressed mvaddstr: {1, 0}, "release me"];
+	[[b onPress] addListener: self message: @selector (buttonPressed:)];
+	[[b onRelease] addListener: self message: @selector (buttonReleased:)];
+	[[b onClick] addListener: self message: @selector (buttonClick:)];
+	[[b onDrag] addListener: self message: @selector (buttonDrag:)];
+	[[b onAuto] addListener: self message: @selector (buttonAuto:)];
 	return self;
+}
+
+-(void) buttonPressed: (id) sender
+{
+	[screen mvaddstr: {2, 0}, " pressed"];
+	[screen refresh];
+}
+
+-(void) buttonReleased: (id) sender
+{
+	[screen mvaddstr: {2, 0}, "released"];
+	[screen refresh];
+}
+
+-(void) buttonClick: (id) sender
+{
+	[screen mvaddstr: {2, 0}, "clicked "];
+	[screen refresh];
+}
+
+-(void) buttonDrag: (id) sender
+{
+	[screen mvaddstr: {2, 0}, "dragged "];
+	Rect rect = [sender rect];
+	[screen mvprintf: {15, 0}, "%d %d", rect.offset.x, rect.offset.y];
+	[screen refresh];
+}
+
+-(void) buttonAuto: (id) sender
+{
+	[screen mvprintf: {2, 1}, "%d", autocount++];
+	[screen refresh];
 }
 
 -run
