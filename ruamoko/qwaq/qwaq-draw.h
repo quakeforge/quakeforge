@@ -15,6 +15,7 @@
 @end
 
 @protocol TextContext
+- blitFromBuffer: (DrawBuffer *) srcBuffer to: (Point) pos from: (Rect) rect;
 - (Extent) size;
 
 - (void) printf: (string) fmt, ...;

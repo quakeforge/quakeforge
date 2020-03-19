@@ -118,7 +118,7 @@
 			}
 		}
 	}
-	[(id)textContext blitFromBuffer: buf to: makePoint (6, 3) from: [buf rect]];
+	[textContext blitFromBuffer: buf to: makePoint (6, 3) from: [buf rect]];
 	[self refresh];
 	return self;
 }
