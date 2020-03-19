@@ -12,7 +12,7 @@
 	}
 	self.responder = responder;
 	self.message = message;
-	imp = [responder instanceMethodForSelector: message];
+	imp = [responder methodForSelector: message];
 	return self;
 }
 
@@ -33,7 +33,7 @@
 	if (!(self = [super init])) {
 		return nil;
 	}
-	listeners = [[Array alloc] retain];
+	listeners = [[Array array] retain];
 	return self;
 }
 
