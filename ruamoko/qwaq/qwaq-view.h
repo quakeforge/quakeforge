@@ -53,11 +53,18 @@ enum {
 }
 -initWithRect: (Rect) rect;
 - (void) dealloc;
+
 -setOwner: (Group *) owner;
--(struct Rect_s *)getRect;
+
+-(struct Rect_s *)rect;
+
+-(int) options;
+
+-setContext: (id<TextContext>) context;
 -draw;
 -redraw;
 -handleEvent: (qwaq_event_t *) event;
+
 
 - (void) refresh;
 - (void) mvprintf: (Point) pos, string fmt, ...;

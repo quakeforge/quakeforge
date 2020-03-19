@@ -3,17 +3,17 @@
 
 #include "Object.h"
 
-@class Array;
+@class Group;
 
 #include "qwaq-draw.h"
 #include "qwaq-rect.h"
 #include "qwaq-view.h"
-#include "qwaq-group.h"
 
-@interface Window: Group
+@interface Window: View
 {
-	Point       point;	// FIXME can't be local :(
 	struct panel_s *panel;
+	Group      *objects;
+	Point       point;	// FIXME can't be local :(
 	DrawBuffer *buf;
 }
 +windowWithRect: (Rect) rect;

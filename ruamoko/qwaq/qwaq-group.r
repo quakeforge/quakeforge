@@ -1,7 +1,9 @@
 #include <Array.h>
 #include "event.h"
+#include "qwaq-draw.h"
 #include "qwaq-garray.h"
 #include "qwaq-group.h"
+#include "qwaq-view.h"
 
 @implementation Group
 
@@ -10,18 +12,7 @@
 	if (!(self = [super init])) {
 		return nil;
 	}
-	textContext = context;
-	absRect = rect = { nil, [textContext size] };
-	buffer = [DrawBuffer buffer: rect.extent];
-	views = [[Array array] retain];
-	return self;
-}
-
--initWithRect: (Rect) rect
-{
-	if (!(self = [super initWithRect: rect])) {
-		return nil;
-	}
+	self.context = context;
 	views = [[Array array] retain];
 	return self;
 }
@@ -34,7 +25,7 @@
 -insert: (View *) view
 {
 	[views addObject: view];
-	view.textContext = buffer;
+	[view setContext: context];
 	return self;
 }
 
@@ -58,7 +49,7 @@ not_dont_draw (id aView, void *aGroup)
 	View       *view = aView;
 	Group      *group = (Group *) aGroup;
 
-	return !(view.options & ofDontDraw);
+	return !([view options] & ofDontDraw);
 }
 
 -draw
@@ -69,9 +60,13 @@ not_dont_draw (id aView, void *aGroup)
 	return self;
 }
 
+-redraw
+{
+	return self;
+}
+
 -handleEvent: (qwaq_event_t *) event
 {
-	[super handleEvent: event];
 	if (event.what & qe_focused) {
 		if (focused >= 0) {
 			[[views objectAtIndex:focused] handleEvent: event];

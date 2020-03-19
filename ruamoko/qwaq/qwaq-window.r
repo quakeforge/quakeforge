@@ -2,6 +2,7 @@
 
 #include "event.h"
 #include "qwaq-curses.h"
+#include "qwaq-group.h"
 #include "qwaq-window.h"
 #include "qwaq-view.h"
 
@@ -18,13 +19,18 @@
 		return nil;
 	}
 	self.rect = rect;
-	buffer = [[TextContext alloc] initWithRect: rect];
-	textContext = buffer;
-	panel = create_panel ([(id)buffer window]);
+	textContext = [[TextContext alloc] initWithRect: rect];
+	panel = create_panel ([(id)textContext window]);
+
 	buf = [DrawBuffer buffer: {3, 3}];
 	[buf mvaddstr: {0, 0}, "XOX"];
 	[buf mvaddstr: {0, 1}, "OXO"];
 	[buf mvaddstr: {0, 2}, "XOX"];
+	return self;
+}
+
+-setContext: (id<TextContext>) context
+{
 	return self;
 }
 
@@ -74,7 +80,7 @@
 
 -setBackground: (int) ch
 {
-	[(id)buffer bkgd: ch];
+	[(id)textContext bkgd: ch];
 	return self;
 }
 
@@ -95,7 +101,7 @@
 		}
 	}
 	[super draw];
-	[(id)buffer border: box_sides, box_corners];
+	[(id)textContext border: box_sides, box_corners];
 	Point pos = { 1, 1 };
 	//for (int i = ACS_ULCORNER; i <= ACS_STERLING; i++) {
 	for (int i = 32; i <= 127; i++) {

@@ -27,6 +27,17 @@
 	[super dealloc];
 }
 
+- setContext: (id<TextContext>) context
+{
+	textContext = context;
+	return self;
+}
+
+- (int) options
+{
+	return options;
+}
+
 static void
 updateScreenCursor (View *view)
 {
@@ -84,7 +95,7 @@ updateScreenCursor (View *view)
 	return self;
 }
 
-- (Rect *) getRect
+- (Rect *) rect
 {
 	return &rect;
 }

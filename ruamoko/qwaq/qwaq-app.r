@@ -4,6 +4,7 @@ int fence;
 #include "color.h"
 #include "qwaq-app.h"
 #include "qwaq-curses.h"
+#include "qwaq-group.h"
 #include "qwaq-window.h"
 #include "qwaq-screen.h"
 #include "qwaq-view.h"
