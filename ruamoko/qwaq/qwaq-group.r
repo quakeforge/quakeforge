@@ -94,6 +94,12 @@ find_mouse_view(Group *group, Point pos)
 			[[views objectAtIndex:focused] handleEvent: event];
 		}
 	} else if (event.what & qe_positional) {
+		Point       origin = {};
+		if (owner) {
+			origin = [owner origin];
+		}
+		event.mouse.x -= origin.x;
+		event.mouse.y -= origin.y;
 		Point       pos = {event.mouse.x, event.mouse.y};
 		if (mouse_grabbed) {
 			[mouse_grabbed handleEvent: event];
@@ -112,6 +118,8 @@ find_mouse_view(Group *group, Point pos)
 				[mouse_within handleEvent: event];
 			}
 		}
+		event.mouse.x += origin.x;
+		event.mouse.y += origin.y;
 	} else {
 		// broadcast
 		[views makeObjectsPerformSelector: @selector(draw) withObject: event];

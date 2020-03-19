@@ -23,6 +23,7 @@
 
 -draw
 {
+	[super draw];
 	[textContext blitFromBuffer: icon[pressed]
 							 to: pos
 						   from: [icon[pressed] rect]];
