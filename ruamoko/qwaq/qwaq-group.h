@@ -11,6 +11,8 @@
 @interface Group : Object
 {
 	Array      *views;
+	View       *mouse_grabbed;
+	View       *mouse_within;
 	int         focused;
 	id<TextContext> context;
 }

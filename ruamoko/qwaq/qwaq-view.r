@@ -95,9 +95,14 @@ updateScreenCursor (View *view)
 	return self;
 }
 
-- (Rect *) rect
+- (Rect) rect
 {
-	return &rect;
+	return rect;
+}
+
+-(int) containsPoint: (Point) point
+{
+	return rectContainsPoint (rect, point);
 }
 
 - (void) forward: (SEL) sel : (@va_list) args
@@ -143,5 +148,14 @@ updateScreenCursor (View *view)
 {
 	return self;
 }
+
+- (void) onMouseEnter: (Point) pos
+{
+}
+
+- (void) onMouseLeave: (Point) pos
+{
+}
+
 
 @end

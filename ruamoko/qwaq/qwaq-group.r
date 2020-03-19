@@ -65,6 +65,18 @@ not_dont_draw (id aView, void *aGroup)
 	return self;
 }
 
+static View *
+find_mouse_view(Group *group, Point pos)
+{
+	for (int i = [group.views count]; i--; ) {
+		View       *v = [group.views objectAtIndex: i];
+		if ([v containsPoint: pos]) {
+			return v;
+		}
+	}
+	return nil;
+}
+
 -handleEvent: (qwaq_event_t *) event
 {
 	if (event.what & qe_focused) {
@@ -72,6 +84,24 @@ not_dont_draw (id aView, void *aGroup)
 			[[views objectAtIndex:focused] handleEvent: event];
 		}
 	} else if (event.what & qe_positional) {
+		Point       pos = {event.mouse.x, event.mouse.y};
+		if (mouse_grabbed) {
+			[mouse_grabbed handleEvent: event];
+		} else {
+			if (mouse_within && ![mouse_within containsPoint: pos]) {
+				[mouse_within onMouseLeave: pos];
+				mouse_within = nil;
+			}
+			if (!mouse_within) {
+				mouse_within = find_mouse_view (self, pos);
+				if (mouse_within) {
+					[mouse_within onMouseEnter: pos];
+				}
+			}
+			if (mouse_within) {
+				[mouse_within handleEvent: event];
+			}
+		}
 	} else {
 		// broadcast
 		[views makeObjectsPerformSelector: @selector(draw) withObject: event];

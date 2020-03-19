@@ -60,7 +60,9 @@ enum {
 
 -setOwner: (Group *) owner;
 
--(struct Rect_s *)rect;
+-(Rect)rect;
+
+-(int) containsPoint: (Point) point;
 
 -(int) options;
 
@@ -68,6 +70,9 @@ enum {
 -draw;
 -redraw;
 -handleEvent: (qwaq_event_t *) event;
+
+- (void) onMouseEnter: (Point) pos;
+- (void) onMouseLeave: (Point) pos;
 
 
 - (void) refresh;
