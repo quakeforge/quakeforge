@@ -91,6 +91,9 @@
 	int        *dst = buffer;
 	int        *end = buffer + size.width * size.height;
 
+	if (ch && !(ch & 0xff)) {
+		ch |= ' ';
+	}
 	while (dst < end) {
 		*dst++ = ch;
 	}
@@ -129,10 +132,7 @@
 		cursor.y++;
 	} else if (ch == '\r') {
 		cursor.x = 0;
-	} else if (ch & 0xff) {
-		if ((ch & 0xff) < 32) {
-			ch = (ch & ~0xff) | 32;
-		}
+	} else {
 		if (!(ch & ~0xff)) {
 			ch |= background & ~0xff;
 		}
