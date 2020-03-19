@@ -20,6 +20,7 @@ typedef struct Rect_s {
 @extern Rect makeRect (int xpos, int ypos, int xlen, int ylen);
 @extern Point makePoint (int x, int y);
 @extern Extent makeExtent (int width, int height);
+@extern Extent mergeExtents (Extent a, Extent b);
 //XXX will not work if point or rect point to a local variabl
 @extern int rectContainsPoint (Rect *rect, Point *point);
 @extern Rect clipRect (Rect clipRect, Rect rect);

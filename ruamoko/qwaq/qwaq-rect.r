@@ -39,6 +39,12 @@ Extent makeExtent (int width, int height)
 	return {width, height};
 }
 
+Extent mergeExtents (Extent a, Extent b)
+{
+	return { a.width < b.width ? b.width : a.width,
+			 a.height < b.height ? b.height : a.height };
+}
+
 int
 rectContainsPoint (Rect *rect, Point *point)
 {
