@@ -61,6 +61,8 @@ enum {
 -setOwner: (Group *) owner;
 
 -(Rect)rect;
+-(Point)origin;
+-(Extent)size;
 
 -(int) containsPoint: (Point) point;
 -(void) grabMouse;

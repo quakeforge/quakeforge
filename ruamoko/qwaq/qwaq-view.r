@@ -100,6 +100,17 @@ updateScreenCursor (View *view)
 	return rect;
 }
 
+-(Point)origin
+{
+	return pos;
+}
+
+-(Extent)size
+{
+	return size;
+}
+
+
 -(int) containsPoint: (Point) point
 {
 	return rectContainsPoint (rect, point);
