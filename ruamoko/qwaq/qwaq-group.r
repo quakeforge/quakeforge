@@ -64,6 +64,14 @@ not_dont_draw (id aView, void *aGroup)
 
 -redraw
 {
+	if (owner) {
+		[owner redraw];
+	} else {
+		[self draw];
+		if (__obj_responds_to (context, @selector(refresh))) {
+			[(id)context refresh];
+		}
+	}
 	return self;
 }
 
