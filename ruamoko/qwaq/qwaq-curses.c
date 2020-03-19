@@ -436,7 +436,6 @@ cmd_hide_panel (qwaq_resources_t *res)
 
 	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
 	hide_panel (panel->panel);
-	panel_free (res, panel);
 }
 
 static void
@@ -446,7 +445,6 @@ cmd_show_panel (qwaq_resources_t *res)
 
 	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
 	show_panel (panel->panel);
-	panel_free (res, panel);
 }
 
 static void
@@ -456,7 +454,6 @@ cmd_top_panel (qwaq_resources_t *res)
 
 	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
 	top_panel (panel->panel);
-	panel_free (res, panel);
 }
 
 static void
@@ -466,7 +463,6 @@ cmd_bottom_panel (qwaq_resources_t *res)
 
 	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
 	bottom_panel (panel->panel);
-	panel_free (res, panel);
 }
 
 static void
@@ -478,7 +474,6 @@ cmd_move_panel (qwaq_resources_t *res)
 
 	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
 	move_panel (panel->panel, y, x);
-	panel_free (res, panel);
 }
 
 static void
@@ -648,12 +643,10 @@ cmd_mvwblit_line (qwaq_resources_t *res)
 	window_t   *window = get_window (res, __FUNCTION__, window_id);
 	getyx (window->win, save_y, save_x);
 	for (int i = 0; i < len; i++) {
-		Sys_Printf(" %d", chs[i]);
 		if (chs[i] & 0xff) {
 			mvwaddch (window->win, y, x + i, chs[i]);
 		}
 	}
-	Sys_Printf("\n");
 	wmove (window->win, save_y, save_x);
 	release_string (res, chs_id);
 }
@@ -663,12 +656,12 @@ process_commands (qwaq_resources_t *res)
 {
 	while (RB_DATA_AVAILABLE (res->command_queue) >= 2) {
 		qwaq_commands cmd = RB_PEEK_DATA (res->command_queue, 0);
-		int len = RB_PEEK_DATA (res->command_queue, 1);
-		Sys_Printf ("%s[%d]", qwaq_command_names[cmd], len);
-		for (int i = 2; i < len; i++) {
-			Sys_Printf (" %d", RB_PEEK_DATA (res->command_queue, i));
-		}
-		Sys_Printf ("\n");
+		//int len = RB_PEEK_DATA (res->command_queue, 1);
+		//Sys_Printf ("%s[%d]", qwaq_command_names[cmd], len);
+		//for (int i = 2; i < len; i++) {
+		//	Sys_Printf (" %d", RB_PEEK_DATA (res->command_queue, i));
+		//}
+		//Sys_Printf ("\n");
 		switch (cmd) {
 			case qwaq_cmd_newwin:
 				cmd_newwin (res);
