@@ -15,6 +15,7 @@
 	ListenerGroup *onClick;
 	ListenerGroup *onDrag;
 	ListenerGroup *onAuto;
+	ListenerGroup *onHover;
 }
 -initWithPos: (Point) pos releasedIcon: (DrawBuffer *) released
 						   pressedIcon: (DrawBuffer *) pressed;
@@ -23,6 +24,7 @@
 -(ListenerGroup *) onClick;
 -(ListenerGroup *) onDrag;
 -(ListenerGroup *) onAuto;
+-(ListenerGroup *) onHover;
 @end
 
 #endif//__qwaq_button_h

@@ -17,6 +17,7 @@
 	onClick = [[ListenerGroup alloc] init];
 	onDrag = [[ListenerGroup alloc] init];
 	onAuto = [[ListenerGroup alloc] init];
+	onHover = [[ListenerGroup alloc] init];
 	return self;
 }
 
@@ -88,4 +89,8 @@
 	return onAuto;
 }
 
+-(ListenerGroup *) onHover
+{
+	return onHover;
+}
 @end
