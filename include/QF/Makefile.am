@@ -11,7 +11,8 @@ include_qf= \
 	msg.h object.h pak.h pakfile.h pcx.h png.h plugin.h pr_comp.h pr_debug.h \
 	pr_obj.h pr_type.h progs.h qargs.h qdefs.h qendian.h qfplist.h qtypes.h \
 	quakefs.h \
-	quakeio.h render.h riff.h ruamoko.h screen.h script.h segtext.h set.h \
+	quakeio.h render.h riff.h ringbuffer.h ruamoko.h \
+	screen.h script.h segtext.h set.h \
 	sizebuf.h skin.h sound.h spritegn.h sys.h teamplay.h tga.h va.h \
 	ver_check.h vid.h vrect.h view.h wad.h wadfile.h winding.h zone.h \
 	\
