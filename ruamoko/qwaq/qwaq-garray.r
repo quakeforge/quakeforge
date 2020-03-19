@@ -1,6 +1,6 @@
 #include <Array.h>
 #include "event.h"
-#include "qwaq-group.h"
+#include "qwaq-garray.h"
 
 @implementation Array (Group)
 - (void) makeObjectsPerformSelector: (SEL)selector

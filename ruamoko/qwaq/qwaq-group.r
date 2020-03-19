@@ -1,5 +1,6 @@
 #include <Array.h>
 #include "event.h"
+#include "qwaq-garray.h"
 #include "qwaq-group.h"
 
 @implementation Group
