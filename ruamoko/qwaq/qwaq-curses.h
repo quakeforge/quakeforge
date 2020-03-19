@@ -116,6 +116,7 @@ typedef struct panel_s *panel_t;
 @extern int max_color_pairs (void);
 @extern int init_pair (int pair, int f, int b);
 @extern void wbkgd (window_t win, int ch);
+@extern void werase (window_t win);
 @extern void scrollok (window_t win, int flag);
 
 @extern int acs_char (int acs);

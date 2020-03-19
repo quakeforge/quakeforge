@@ -133,6 +133,7 @@ static TextContext *screen;
 + (void) refresh = #0;
 
 - (void) bkgd: (int) ch = #0;
+- (void) clear = #0;
 - (void) scrollok: (int) flag = #0;
 - (void) border: (box_sides_t) sides, box_corners_t corners = #0;
 
@@ -157,6 +158,7 @@ int max_colors (void) = #0;
 int max_color_pairs (void) = #0;
 int init_pair (int pair, int f, int b) = #0;
 void wbkgd (window_t win, int ch) = #0;
+void werase (window_t win) = #0;
 void scrollok (window_t win, int flag) = #0;
 int acs_char (int acs) = #0;
 

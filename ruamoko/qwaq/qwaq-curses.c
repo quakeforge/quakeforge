@@ -76,6 +76,7 @@ typedef enum qwaq_commands_e {
 	qwaq_cmd_wrefresh,
 	qwaq_cmd_init_pair,
 	qwaq_cmd_wbkgd,
+	qwaq_cmd_werase,
 	qwaq_cmd_scrollok,
 	qwaq_cmd_move,
 	qwaq_cmd_curs_set,
@@ -104,6 +105,7 @@ const char *qwaq_command_names[]= {
 	"wrefresh",
 	"init_pair",
 	"wbkgd",
+	"werase",
 	"scrollok",
 	"move",
 	"curs_set",
@@ -579,6 +581,15 @@ cmd_wbkgd (qwaq_resources_t *res)
 }
 
 static void
+cmd_werase (qwaq_resources_t *res)
+{
+	int         window_id = RB_PEEK_DATA (res->command_queue, 2);
+
+	window_t   *window = get_window (res, __FUNCTION__, window_id);
+	werase (window->win);
+}
+
+static void
 cmd_scrollok (qwaq_resources_t *res)
 {
 	int         window_id = RB_PEEK_DATA (res->command_queue, 2);
@@ -716,6 +727,9 @@ process_commands (qwaq_resources_t *res)
 				break;
 			case qwaq_cmd_wbkgd:
 				cmd_wbkgd (res);
+				break;
+			case qwaq_cmd_werase:
+				cmd_werase (res);
 				break;
 			case qwaq_cmd_scrollok:
 				cmd_scrollok (res);
@@ -1385,6 +1399,26 @@ bi_wbkgd (progs_t *pr)
 }
 
 static void
+qwaq_werase (progs_t *pr, int window_id, int ch)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+
+	if (get_window (res, __FUNCTION__, window_id)) {
+		int         command[] = { qwaq_cmd_werase, 0, window_id, };
+		command[1] = CMD_SIZE(command);
+		qwaq_submit_command (res, command);
+	}
+}
+static void
+bi_werase (progs_t *pr)
+{
+	int         window_id = P_INT (pr, 0);
+	int         ch = P_INT (pr, 1);
+
+	qwaq_werase (pr, window_id, ch);
+}
+
+static void
 qwaq_scrollok (progs_t *pr, int window_id, int flag)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
@@ -1720,6 +1754,15 @@ bi_i_TextContext__bkgd_ (progs_t *pr)
 }
 
 static void
+bi_i_TextContext__clear (progs_t *pr)
+{
+	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
+	int         ch = P_INT (pr, 2);
+
+	qwaq_werase (pr, window_id, ch);
+}
+
+static void
 bi_i_TextContext__scrollok_ (progs_t *pr)
 {
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
@@ -1781,6 +1824,7 @@ static builtin_t builtins[] = {
 	{"max_color_pairs",	bi_max_color_pairs,	-1},
 	{"init_pair",		bi_init_pair,		-1},
 	{"wbkgd",			bi_wbkgd,			-1},
+	{"werase",			bi_werase,			-1},
 	{"scrollok",		bi_scrollok,		-1},
 	{"acs_char",		bi_acs_char,		-1},
 	{"move",			bi_move,			-1},
@@ -1809,6 +1853,7 @@ static builtin_t builtins[] = {
 	{"_i_TextContext__mvaddch_",		bi_i_TextContext__mvaddch_,		   -1},
 	{"_i_TextContext__mvaddstr_",		bi_i_TextContext__mvaddstr_,	   -1},
 	{"_i_TextContext__bkgd_",			bi_i_TextContext__bkgd_,		   -1},
+	{"_i_TextContext__clear",			bi_i_TextContext__clear,		   -1},
 	{"_i_TextContext__scrollok_",		bi_i_TextContext__scrollok_,	   -1},
 	{"_i_TextContext__border_",			bi_i_TextContext__border_,		   -1},
 
