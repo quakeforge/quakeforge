@@ -46,9 +46,23 @@
 - (void) dragWindow: (Button *) sender
 {
 	Point       delta = [sender delta];
-	xpos += delta.x;
-	ypos += delta.y;
-	move_panel (panel, xpos, ypos);
+	Point       p = {xpos + delta.x, ypos + delta.y};
+	Extent      bounds = [owner size];
+	if (p.x < 0) {
+		p.x = 0;
+	}
+	if (p.x + xlen > bounds.width) {
+		p.x = bounds.width - xlen;
+	}
+	if (p.y < 0) {
+		p.y = 0;
+	}
+	if (p.y + ylen > bounds.height) {
+		p.y = bounds.height - ylen;
+	}
+	xpos = p.x;
+	ypos = p.y;
+	move_panel (panel, p.x, p.y);
 	[owner redraw];
 }
 

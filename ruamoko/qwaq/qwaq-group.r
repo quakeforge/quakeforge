@@ -46,6 +46,30 @@
 	return self;
 }
 
+-(Rect) rect
+{
+	if (owner) {
+		return [owner rect];
+	}
+	return {[self origin], [self size]};
+}
+
+-(Point) origin
+{
+	if (owner) {
+		return [owner origin];
+	}
+	return {0, 0};
+}
+
+-(Extent) size
+{
+	if (owner) {
+		return [owner size];
+	}
+	return [context size];
+}
+
 static BOOL
 not_dont_draw (id aView, void *aGroup)
 {

@@ -20,6 +20,9 @@
 -initWithContext: (id<TextContext>) context owner: (View *) owner;
 -insert: (View *) view;
 -remove: (View *) view;
+-(Rect) rect;
+-(Point) origin;
+-(Extent) size;
 -draw;
 -redraw;
 -handleEvent: (qwaq_event_t *) event;
