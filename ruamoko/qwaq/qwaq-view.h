@@ -36,10 +36,14 @@ enum {
 	union {
 		Rect        rect;
 		struct {
-			int    xpos;
-			int    ypos;
-			int    xlen;
-			int    ylen;
+			int     xpos;
+			int     ypos;
+			int     xlen;
+			int     ylen;
+		};
+		struct {
+			Point   pos;
+			Extent  size;
 		};
 	};
 	Rect        absRect;
