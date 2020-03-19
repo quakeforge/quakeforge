@@ -65,11 +65,11 @@ arp_end (void)
 	[pressed bkgd: COLOR_PAIR(4)];
 	[pressed clear];
 	[pressed mvaddstr: {1, 0}, "release me"];
-	[[b onPress] addListener: self message: @selector (buttonPressed:)];
-	[[b onRelease] addListener: self message: @selector (buttonReleased:)];
-	[[b onClick] addListener: self message: @selector (buttonClick:)];
-	[[b onDrag] addListener: self message: @selector (buttonDrag:)];
-	[[b onAuto] addListener: self message: @selector (buttonAuto:)];
+	[[b onPress] addListener: self : @selector (buttonPressed:)];
+	[[b onRelease] addListener: self : @selector (buttonReleased:)];
+	[[b onClick] addListener: self : @selector (buttonClick:)];
+	[[b onDrag] addListener: self : @selector (buttonDrag:)];
+	[[b onAuto] addListener: self : @selector (buttonAuto:)];
 	return self;
 }
 

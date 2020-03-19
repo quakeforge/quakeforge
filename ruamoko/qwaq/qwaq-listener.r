@@ -5,7 +5,7 @@
 @class Array;
 
 @implementation Listener
--initWithResponder: (id) responder message: (SEL) message
+-initWithResponder: (id) responder :(SEL)message
 {
 	if (!(self = [super init])) {
 		return nil;
@@ -21,7 +21,7 @@
 	imp (responder, message, caller);
 }
 
--(BOOL) matchResponder: (id) responder message: (SEL) message
+-(BOOL) matchResponder: (id) responder :(SEL)message
 {
 	return self.responder == responder && self.message == message;
 }
@@ -37,21 +37,21 @@
 	return self;
 }
 
--addListener: (id) responder message: (SEL) message
+-addListener: (id) responder :(SEL)message
 {
 	Listener   *listener = [[Listener alloc] initWithResponder: responder
-													   message: message];
+															  : message];
 	if (listener) {
 		[listeners addObject: listener];
 	}
 	return self;
 }
 
--removeListener: (id) responder message: (SEL) message
+-removeListener: (id) responder :(SEL)message
 {
 	for (int i = [listeners count]; i-- > 0; ) {
 		Listener   *l = [listeners objectAtIndex: i];
-		if ([l matchResponder: responder message: message]) {
+		if ([l matchResponder: responder : message]) {
 			[listeners removeObjectAtIndex: i];
 		}
 	}

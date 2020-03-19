@@ -33,7 +33,7 @@
 
 	Button *b = [[Button alloc] initWithPos: {0, 0} releasedIcon: title
 													 pressedIcon: title];
-	[[b onDrag] addListener: self message: @selector(dragWindow:)];
+	[[b onDrag] addListener: self : @selector(dragWindow:)];
 	[self addView: b];
 
 	buf = [DrawBuffer buffer: {3, 3}];
