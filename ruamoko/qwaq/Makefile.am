@@ -25,6 +25,7 @@ SUFFIXES=.o .r
 
 qwaq_app_dat_src= \
 	qwaq-app.r \
+	qwaq-button.r \
 	qwaq-draw.r \
 	qwaq-garray.r \
 	qwaq-group.r \
