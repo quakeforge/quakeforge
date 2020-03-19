@@ -63,6 +63,8 @@ enum {
 -(Rect)rect;
 
 -(int) containsPoint: (Point) point;
+-(void) grabMouse;
+-(void) releaseMouse;
 
 -(int) options;
 

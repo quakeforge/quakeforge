@@ -22,6 +22,8 @@
 	textContext = [[TextContext alloc] initWithRect: rect];
 	panel = create_panel ([(id)textContext window]);
 
+	objects = [[Group alloc] initWithContext: textContext owner: self];
+
 	buf = [DrawBuffer buffer: {3, 3}];
 	[buf mvaddstr: {0, 0}, "XOX"];
 	[buf mvaddstr: {0, 1}, "OXO"];
@@ -36,45 +38,13 @@
 
 -handleEvent: (qwaq_event_t *) event
 {
-/*	switch (event.what) {
-		case qe_mouse:
-			mvwprintf(window, 0, 3, "%2d %2d %08x",
-					  event.mouse.x, event.mouse.y, event.mouse.buttons);
-			[self redraw];
-			point.x = event.mouse.x;
-			point.y = event.mouse.y;
-			for (int i = [views count]; i--> 0; ) {
-				View       *v = [views objectAtIndex: i];
-				if (rectContainsPoint (&v.absRect, &point)) {
-					[v handleEvent: event];
-					break;
-				}
-			}
-			break;
-		case qe_key:
-		case qe_command:
-			if (focusedView) {
-				[focusedView handleEvent: event];
-				for (int i = [views count];
-					 event.what != qe_none && i--> 0; ) {
-					View       *v = [views objectAtIndex: i];
-					 [v handleEvent: event];
-				}
-			}
-			break;
-		case qe_none:
-			break;
-	}*/
+	[objects handleEvent: event];
 	return self;
 }
 
 -addView: (View *) view
 {
-/*	[views addObject: view];
-	view.absRect.xpos = view.rect.xpos + rect.xpos;
-	view.absRect.ypos = view.rect.ypos + rect.ypos;
-	view.window = window;
-	[view setOwner: self];*/
+	[objects insert: view];
 	return self;
 }
 
@@ -102,35 +72,7 @@
 	}
 	[super draw];
 	[(id)textContext border: box_sides, box_corners];
-	Point pos = { 1, 1 };
-	//for (int i = ACS_ULCORNER; i <= ACS_STERLING; i++) {
-	for (int i = 32; i <= 127; i++) {
-		int ch = acs_char (i);
-		if (ch) {
-			[self mvaddch: pos, ch];
-		} else {
-			[self mvaddch: pos, '.'];
-		}
-		if (++pos.x > 32) {
-			pos.x = 1;
-			if (++pos.y >= ylen) {
-				break;
-			}
-		}
-	}
-	[textContext blitFromBuffer: buf to: makePoint (6, 3) from: [buf rect]];
-	[self refresh];
-	return self;
-}
-
--(Rect *) getRect
-{
-	return &rect;
-}
-
--setOwner: owner
-{
-	self.owner = owner;
+	[objects draw];
 	return self;
 }
 

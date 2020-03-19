@@ -10,18 +10,21 @@
 
 @interface Group : Object
 {
+	View       *owner;
 	Array      *views;
 	View       *mouse_grabbed;
 	View       *mouse_within;
 	int         focused;
 	id<TextContext> context;
 }
--initWithContext: (id<TextContext>) context;
+-initWithContext: (id<TextContext>) context owner: (View *) owner;
 -insert: (View *) view;
 -remove: (View *) view;
 -draw;
 -redraw;
 -handleEvent: (qwaq_event_t *) event;
+-(void) grabMouse;
+-(void) releaseMouse;
 @end
 
 #endif//__qwaq_group_h

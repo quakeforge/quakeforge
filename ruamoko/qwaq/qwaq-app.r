@@ -40,7 +40,7 @@ arp_end (void)
 	init_pair (2, COLOR_WHITE, COLOR_BLACK);
 
 	TextContext *screen = [TextContext screen];
-	objects = [[Group alloc] initWithContext: screen];
+	objects = [[Group alloc] initWithContext: screen owner: nil];
 
 	[screen bkgd: COLOR_PAIR (1)];
 	Rect r = { nil, [screen size] };

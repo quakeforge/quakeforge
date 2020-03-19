@@ -7,12 +7,14 @@
 
 @implementation Group
 
--initWithContext: (id<TextContext>) context
+-initWithContext: (id<TextContext>) context owner: (View *) owner
 {
 	if (!(self = [super init])) {
 		return nil;
 	}
+	self.owner = owner;
 	self.context = context;
+	focused = -1;
 	views = [[Array array] retain];
 	return self;
 }
@@ -108,4 +110,17 @@ find_mouse_view(Group *group, Point pos)
 	}
 	return self;
 }
+
+-(void) grabMouse
+{
+	mouse_grabbed = mouse_within;
+	[owner grabMouse];
+}
+
+-(void) releaseMouse
+{
+	mouse_grabbed = mouse_within;
+	[owner grabMouse];
+}
+
 @end

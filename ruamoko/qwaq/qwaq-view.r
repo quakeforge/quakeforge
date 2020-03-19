@@ -105,6 +105,16 @@ updateScreenCursor (View *view)
 	return rectContainsPoint (rect, point);
 }
 
+-(void) grabMouse
+{
+	[owner grabMouse];
+}
+
+-(void) releaseMouse
+{
+	[owner releaseMouse];
+}
+
 - (void) forward: (SEL) sel : (@va_list) args
 {
 	if (!textContext) {
