@@ -38,25 +38,35 @@
 		switch ((qwaq_mouse_event) (event.what & qe_mouse)) {
 			case qe_mousedown:
 				pressed = 1;
+				click = 0;
+				dragBase = {event.mouse.x, event.mouse.y};
 				action = onPress;
 				[self grabMouse];
 				[self redraw];
 				break;
 			case qe_mouseup:
 				pressed = 0;
+				click = 0;
 				action = onRelease;
 				[self releaseMouse];
+				if ([self containsPoint: {event.mouse.x, event.mouse.y}]) {
+					[onClick respond: self];
+				}
 				[self redraw];
 				break;
 			case qe_mouseclick:
 				action = onClick;
+				click = event.mouse.click;
 				break;
 			case qe_mousemove:
+				click = 0;
 				if (pressed) {
+					dragPos = {event.mouse.x, event.mouse.y};
 					action = onDrag;
 				}
 				break;
 			case qe_mouseauto:
+				click = 0;
 				action = onAuto;
 				break;
 		}
@@ -96,4 +106,15 @@
 {
 	return onHover;
 }
+
+- (int) click
+{
+	return click;
+}
+
+- (Point) delta
+{
+	return {dragPos.x - dragBase.x, dragPos.y - dragBase.y};
+}
+
 @end

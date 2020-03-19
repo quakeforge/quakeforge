@@ -75,33 +75,33 @@ arp_end (void)
 
 -(void) buttonPressed: (id) sender
 {
-	[screen mvaddstr: {2, 0}, " pressed"];
+	[screen mvaddstr: {2, 0}, " pressed "];
 	[screen refresh];
 }
 
 -(void) buttonReleased: (id) sender
 {
-	[screen mvaddstr: {2, 0}, "released"];
+	[screen mvaddstr: {2, 0}, "released "];
 	[screen refresh];
 }
 
 -(void) buttonClick: (id) sender
 {
-	[screen mvaddstr: {2, 0}, "clicked "];
+	[screen mvprintf: {2, 1}, "clicked %d", [sender click]];
 	[screen refresh];
 }
 
 -(void) buttonDrag: (id) sender
 {
 	[screen mvaddstr: {2, 0}, "dragged "];
-	Rect rect = [sender rect];
-	[screen mvprintf: {15, 0}, "%d %d", rect.offset.x, rect.offset.y];
+	Point delta = [sender delta];
+	[screen mvprintf: {15, 0}, "%3d %3d", delta.x, delta.y];
 	[screen refresh];
 }
 
 -(void) buttonAuto: (id) sender
 {
-	[screen mvprintf: {2, 1}, "%d", autocount++];
+	[screen mvprintf: {2, 2}, "%d", autocount++];
 	[screen refresh];
 }
 

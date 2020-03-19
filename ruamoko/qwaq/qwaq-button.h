@@ -10,6 +10,9 @@
 {
 	DrawBuffer *icon[2];
 	int         pressed;
+	int         click;
+	Point       dragBase;
+	Point       dragPos;
 	ListenerGroup *onPress;
 	ListenerGroup *onRelease;
 	ListenerGroup *onClick;
@@ -25,6 +28,9 @@
 -(ListenerGroup *) onDrag;
 -(ListenerGroup *) onAuto;
 -(ListenerGroup *) onHover;
+
+- (int) click;
+- (Point) delta;
 @end
 
 #endif//__qwaq_button_h
