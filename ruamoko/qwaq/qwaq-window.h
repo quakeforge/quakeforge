@@ -18,6 +18,7 @@
 }
 +windowWithRect: (Rect) rect;
 -setBackground: (int) ch;
+-addView: (View *) view;
 @end
 
 #endif//__qwaq_window_h
