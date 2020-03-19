@@ -46,7 +46,7 @@ Extent mergeExtents (Extent a, Extent b)
 }
 
 int
-rectContainsPoint (Rect *rect, Point *point)
+rectContainsPoint (Rect rect, Point point)
 {
 	return ((point.x >= rect.offset.x
 			 && point.x < rect.offset.x + rect.extent.width)
