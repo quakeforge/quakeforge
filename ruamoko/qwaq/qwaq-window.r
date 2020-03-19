@@ -1,8 +1,11 @@
 #include <Array.h>
+#include <string.h>
 
 #include "event.h"
+#include "qwaq-button.h"
 #include "qwaq-curses.h"
 #include "qwaq-group.h"
+#include "qwaq-listener.h"
 #include "qwaq-window.h"
 #include "qwaq-view.h"
 
@@ -24,11 +27,29 @@
 
 	objects = [[Group alloc] initWithContext: textContext owner: self];
 
+	string titlestr = "drag me";
+	DrawBuffer *title = [DrawBuffer buffer: {xlen, 1}];
+	[title mvaddstr: {(xlen - strlen(titlestr)) / 2, 0}, titlestr];
+
+	Button *b = [[Button alloc] initWithPos: {0, 0} releasedIcon: title
+													 pressedIcon: title];
+	[[b onDrag] addListener: self message: @selector(dragWindow:)];
+	[self addView: b];
+
 	buf = [DrawBuffer buffer: {3, 3}];
 	[buf mvaddstr: {0, 0}, "XOX"];
 	[buf mvaddstr: {0, 1}, "OXO"];
 	[buf mvaddstr: {0, 2}, "XOX"];
 	return self;
+}
+
+- (void) dragWindow: (Button *) sender
+{
+	Point       delta = [sender delta];
+	xpos += delta.x;
+	ypos += delta.y;
+	move_panel (panel, xpos, ypos);
+	[owner redraw];
 }
 
 -setContext: (id<TextContext>) context
