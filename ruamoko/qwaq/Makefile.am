@@ -28,6 +28,7 @@ qwaq_app_dat_src= \
 	qwaq-draw.r \
 	qwaq-garray.r \
 	qwaq-group.r \
+	qwaq-listener.r \
 	qwaq-rect.r \
 	qwaq-screen.r \
 	qwaq-textcontext.r \
