@@ -82,9 +82,6 @@
 
 - (void) bkgd: (int) ch
 {
-	if ((ch & 0xff) < 32) {
-		ch = (ch & ~0xff) | 32;
-	}
 	background = ch;
 }
 
@@ -132,7 +129,7 @@
 		cursor.y++;
 	} else if (ch == '\r') {
 		cursor.x = 0;
-	} else {
+	} else if (ch & 0xff) {
 		if ((ch & 0xff) < 32) {
 			ch = (ch & ~0xff) | 32;
 		}

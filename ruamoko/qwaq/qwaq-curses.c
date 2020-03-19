@@ -649,7 +649,9 @@ cmd_mvwblit_line (qwaq_resources_t *res)
 	getyx (window->win, save_y, save_x);
 	for (int i = 0; i < len; i++) {
 		Sys_Printf(" %d", chs[i]);
-		mvwaddch (window->win, y, x + i, chs[i]);
+		if (chs[i] & 0xff) {
+			mvwaddch (window->win, y, x + i, chs[i]);
+		}
 	}
 	Sys_Printf("\n");
 	wmove (window->win, save_y, save_x);
