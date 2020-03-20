@@ -186,10 +186,10 @@
 #define DARRAY_APPEND(array, value)										\
 	({																	\
 		__auto_type ar = (array);										\
-		__auto_type ob = (value);										\
+		typeof(ar->a[0]) ob = (value);									\
 		size_t      sz = ar->size;										\
 		DARRAY_RESIZE (ar, ar->size + 1);								\
-		ar->a[sz] = ob;											\
+		ar->a[sz] = ob;													\
 	})
 
 /**	Open a hole in the array for bulk copying of data.
@@ -259,7 +259,7 @@
 #define DARRAY_INSERT_AT(array, value, index)							\
 	({																	\
 		__auto_type ar = (array);										\
-		__auto_type ob = (value);										\
+		typeof(ar->a[0]) ob = (value);									\
 		*DARRAY_OPEN_AT (ar, index, 1) = ob;							\
 	})
 
