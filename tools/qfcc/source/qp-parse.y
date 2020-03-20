@@ -105,7 +105,7 @@ int yylex (void);
 %nonassoc STORAGEX
 
 %left	COMMA
-%right  <op> '=' ASX PAS /* pointer assign */
+%right  <op> '=' ASX
 %right  '?' ':'
 %left   OR
 %left   AND
