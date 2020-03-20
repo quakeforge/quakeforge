@@ -51,7 +51,7 @@ check_array (int a, int b)
 	return !!intarray.a;
 }
 
-static int
+static int __attribute__((pure))
 check_value (int index, int b)
 {
 	if ((size_t) index >= intarray.size) {
