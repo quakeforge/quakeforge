@@ -80,7 +80,7 @@ typedef struct qwaq_thread_s {
 	func_t      main_func;
 } qwaq_thread_t;
 
-struct DARRAY_TYPE(qwaq_thread_t) thread_data;
+struct DARRAY_TYPE(qwaq_thread_t *) thread_data;
 
 static QFile *
 open_file (const char *path, int *len)
@@ -247,12 +247,12 @@ usage (int status)
 static int
 parse_argset (int argc, char **argv)
 {
-	qwaq_thread_t thread = {};
-	DARRAY_INIT (&thread.args, 8);
+	qwaq_thread_t *thread = calloc (1, sizeof (*thread));
+	DARRAY_INIT (&thread->args, 8);
 
-	DARRAY_APPEND (&thread.args, 0);
+	DARRAY_APPEND (&thread->args, 0);
 	while (optind < argc && strcmp (argv[optind], "--")) {
-		DARRAY_APPEND (&thread.args, argv[optind++]);
+		DARRAY_APPEND (&thread->args, argv[optind++]);
 	}
 	if (optind < argc) {
 		optind++;
@@ -265,21 +265,21 @@ static int
 parse_args (int argc, char **argv)
 {
 	int         c;
-	qwaq_thread_t main_thread = {};
+	qwaq_thread_t *main_thread = calloc (1, sizeof (*main_thread));
 	int         qargs_ind = -1;
 
-	DARRAY_INIT (&main_thread.args, 8);
+	DARRAY_INIT (&main_thread->args, 8);
 
 	while ((c = getopt_long (argc, argv,
 							 short_options, long_options, 0)) != -1) {
 		switch (c) {
 			case 1:
-				DARRAY_APPEND (&main_thread.args, argv[optind - 1]);
+				DARRAY_APPEND (&main_thread->args, argv[optind - 1]);
 				break;
 			case OPT_QARGS:
 				if (qargs_ind < 0) {
 					qargs_ind = parse_argset (argc, argv);
-					thread_data.a[qargs_ind].args.a[0] = "--qargs";
+					thread_data.a[qargs_ind]->args.a[0] = "--qargs";
 					goto done;
 				} else {
 					printf ("more than one set of qargs given");
@@ -292,7 +292,8 @@ parse_args (int argc, char **argv)
 	}
 done:
 
-	free (thread_data.a[0].args.a);
+	free (thread_data.a[0]->args.a);
+	free (thread_data.a[0]);
 	thread_data.a[0] = main_thread;
 
 	while (optind < argc) {
@@ -316,7 +317,7 @@ main (int argc, char **argv)
 		parse_argset (argc, argv);
 	}
 	if (thread_data.size) {
-		qwaq_thread_t *thread = &thread_data.a[0];
+		qwaq_thread_t *thread = thread_data.a[0];
 		// the first arg is initialized to null, but this is for getopt, so
 		// set to main program name
 		thread->args.a[0] = this_program;
@@ -324,13 +325,13 @@ main (int argc, char **argv)
 		qargs_ind = parse_args (thread->args.size, (char **) thread->args.a);
 	} else {
 		// create a blank main thread set
-		qwaq_thread_t thread = {};
-		DARRAY_INIT (&thread.args, 4);
+		qwaq_thread_t *thread = calloc (1, sizeof (*thread));
+		DARRAY_INIT (&thread->args, 4);
 		DARRAY_APPEND (&thread_data, thread);
 	}
 
 	if (qargs_ind >= 0) {
-		qwaq_thread_t *qargs = &thread_data.a[qargs_ind];
+		qwaq_thread_t *qargs = thread_data.a[qargs_ind];
 		// the first arg is initialized to --qargs, so
 		// set to main program name for now
 		qargs->args.a[0] = this_program;
@@ -345,26 +346,26 @@ main (int argc, char **argv)
 
 	init_qf ();
 
-	if (thread_data.a[0].args.size < 1) {
-		DARRAY_APPEND (&thread_data.a[0].args, "qwaq-app.dat");
+	if (thread_data.a[0]->args.size < 1) {
+		DARRAY_APPEND (&thread_data.a[0]->args, "qwaq-app.dat");
 	}
 
-	while (thread_data.size < thread_data.a[0].args.size + num_sys) {
-		qwaq_thread_t thread = {};
-		DARRAY_INIT (&thread.args, 4);
-		DARRAY_APPEND (&thread.args, 0);
+	while (thread_data.size < thread_data.a[0]->args.size + num_sys) {
+		qwaq_thread_t *thread = calloc (1, sizeof (*thread));
+		DARRAY_INIT (&thread->args, 4);
+		DARRAY_APPEND (&thread->args, 0);
 		DARRAY_APPEND (&thread_data, thread);
 	}
 
 	for (size_t i = 1, thread_ind = 0; i < thread_data.size; i++) {
-		qwaq_thread_t *thread = &thread_data.a[i];
+		qwaq_thread_t *thread = thread_data.a[i];
 		if (thread->args.size && thread->args.a[0]
 			&& strcmp (thread->args.a[0], "--qargs")) {
 			// skip the args set that's passed to qargs
 			continue;
 		}
-		if (thread_ind < thread_data.a[0].args.size) {
-			thread->args.a[0] = thread_data.a[0].args.a[thread_ind++];
+		if (thread_ind < thread_data.a[0]->args.size) {
+			thread->args.a[0] = thread_data.a[0]->args.a[thread_ind++];
 		} else {
 			printf ("ignoring extra arg sets\n");
 			break;
@@ -375,7 +376,7 @@ main (int argc, char **argv)
 		spawn_progs (thread);
 	}
 	if (main_ind >= 0) {
-		ret = run_progs (&thread_data.a[main_ind]);
+		ret = run_progs (thread_data.a[main_ind]);
 	}
 	Sys_Shutdown ();
 	return ret;
