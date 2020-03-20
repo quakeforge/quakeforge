@@ -88,6 +88,25 @@
 		ar;																\
 	})
 
+/**	Initialized the array.
+
+	The array will be initialized to be empty but with grow set to the
+	specifed value.
+
+	\param array	*Address* of the array to be modified (ie, pointer to the
+					array struct instance, not the instance itself: use & for
+					static instances of the array struct).
+	\param growSize Number of elements by which the array is to grow when
+					required.
+	\hideinitializer
+*/
+#define DARRAY_INIT(array, growSize)									\
+	do {																\
+		__auto_type ar = (array);										\
+		ar->size = ar->maxSize = 0;										\
+		ar->grow = (growSize);											\
+	} while (0)
+
 /**	Clear the array.
 
 	If the array can grow, its backing will be freed and maxSize and a reset,
