@@ -1553,7 +1553,7 @@ bi_mvwblit_line (progs_t *pr)
 }
 
 static void *
-qwaq_curse_thread (void *data)
+qwaq_curses_thread (void *data)
 {
 	__auto_type thread = (qwaq_thread_t *) data;
 	progs_t    *pr = thread->pr;
@@ -1587,7 +1587,7 @@ bi_initialize (progs_t *pr)
 
 	res->stdscr.win = stdscr;
 
-	create_thread (qwaq_curse_thread);
+	create_thread (qwaq_curses_thread);
 }
 
 static void
