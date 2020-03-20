@@ -33,11 +33,14 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <errno.h>
+#include <getopt.h>
 
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/darray.h"
 #include "QF/gib.h"
 #include "QF/idparse.h"
 #include "QF/progs.h"
@@ -53,6 +56,28 @@
 #define MAX_EDICTS 1024
 
 cbuf_t *qwaq_cbuf;
+
+const char *this_program;
+
+enum {
+	start_opts = 255,
+	OPT_QARGS,
+};
+
+static struct option const long_options[] = {
+	{"qargs", no_argument, 0, OPT_QARGS},
+	{NULL, 0, NULL, 0},
+};
+
+static const char *short_options =
+	"-"		// magic option parsing mode doohicky (must come first)
+	;
+
+typedef struct qwaq_thread_s {
+	struct DARRAY_TYPE (const char *) args;
+} qwaq_thread_t;
+
+struct DARRAY_TYPE(qwaq_thread_t) thread_args;
 
 static QFile *
 open_file (const char *path, int *len)
@@ -156,23 +181,119 @@ load_progs (progs_t *pr, const char *name)
 	return 1;
 }
 
+static void
+usage (int status)
+{
+	printf ("%s - QuakeForge runtime\n", this_program);
+	printf ("sorry, no help yet\n");
+	exit (status);
+}
+
+static int
+parse_argset (int argc, char **argv)
+{
+	qwaq_thread_t thread;
+	DARRAY_INIT (&thread.args, 8);
+
+	DARRAY_APPEND (&thread.args, NULL);
+	while (optind < argc && strcmp (argv[optind], "--")) {
+		DARRAY_APPEND (&thread.args, argv[optind++]);
+	}
+	if (optind < argc) {
+		optind++;
+	}
+	DARRAY_APPEND (&thread_args, thread);
+	return thread_args.size - 1;
+}
+
+static int
+parse_args (int argc, char **argv)
+{
+	int         c;
+	qwaq_thread_t main_thread;
+	int         qargs_ind = -1;
+
+	DARRAY_INIT (&main_thread.args, 8);
+
+	while ((c = getopt_long (argc, argv,
+							 short_options, long_options, 0)) != -1) {
+		switch (c) {
+			case 1:
+				DARRAY_APPEND (&main_thread.args, argv[optind - 1]);
+				break;
+			case OPT_QARGS:
+				if (qargs_ind < 0) {
+					qargs_ind = parse_argset (argc, argv);
+					thread_args.a[qargs_ind].args.a[0] = "--qargs";
+					goto done;
+				} else {
+					printf ("more than one set of qargs given");
+					exit (1);
+				}
+				break;
+			default:
+				usage (1);
+		}
+	}
+done:
+
+	free (thread_args.a[0].args.a);
+	thread_args.a[0] = main_thread;
+
+	while (optind < argc) {
+		parse_argset (argc, argv);
+	}
+	return qargs_ind;
+}
+
 int
-main (int argc, const char **argv)
+main (int argc, char **argv)
 {
 	dfunction_t *dfunc;
 	func_t      main_func = 0;
 	const char *name = "qwaq-app.dat";
 	string_t   *pr_argv;
 	int         pr_argc = 1, i;
+	int         qargs_ind;
 	progs_t    *pr;
 
-	COM_InitArgv (argc, argv);
+	this_program = argv[0];
+
+	DARRAY_INIT (&thread_args, 4);
+	for (optind = 1; optind < argc; ) {
+		parse_argset (argc, argv);
+	}
+	if (thread_args.size) {
+		qwaq_thread_t *thread = &thread_args.a[0];
+		// the first arg is initialized to null, but this is for getopt, so
+		// set to main program name
+		thread->args.a[0] = this_program;
+		optind = 0;
+		qargs_ind = parse_args (thread->args.size, (char **) thread->args.a);
+	} else {
+		// create a blank main thread set
+		qwaq_thread_t thread = {};
+		DARRAY_APPEND (&thread_args, thread);
+	}
+
+	if (qargs_ind >= 0) {
+		qwaq_thread_t *args = &thread_args.a[qargs_ind];
+		// the first arg is initialized to --qargs, so
+		// set to main program name for now
+		args->args.a[0] = this_program;
+		COM_InitArgv (args->args.size, args->args.a);
+	}
+
 	init_qf ();
 
 	pr = create_progs ();
 
-	if (argc > 1)
-		name = argv[1];
+	{
+		qwaq_thread_t *thread = &thread_args.a[0];
+		if (thread->args.size) {
+			name = thread->args.a[0];
+		}
+	}
 
 	if (!load_progs (pr, name)) {
 		Sys_Error ("couldn't load %s", name);
