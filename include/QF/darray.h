@@ -105,6 +105,7 @@
 		__auto_type ar = (array);										\
 		ar->size = ar->maxSize = 0;										\
 		ar->grow = (growSize);											\
+		ar->a = 0;														\
 	} while (0)
 
 /**	Clear the array.
