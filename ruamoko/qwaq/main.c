@@ -1,12 +1,12 @@
 /*
 	#FILENAME#
 
-	#DESCRIPTION#
+	Qwaq
 
-	Copyright (C) 2001 #AUTHOR#
+	Copyright (C) 2001 Bill Currie
 
-	Author: #AUTHOR#
-	Date: #DATE#
+	Author: Bill Currie <bill@taniwha.org>
+	Date: 2001/06/01
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -34,13 +34,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <pthread.h>
 #include <errno.h>
 #include <getopt.h>
 
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
-#include "QF/darray.h"
 #include "QF/gib.h"
 #include "QF/idparse.h"
 #include "QF/progs.h"
@@ -72,13 +72,6 @@ static struct option const long_options[] = {
 static const char *short_options =
 	"-"		// magic option parsing mode doohicky (must come first)
 	;
-
-typedef struct qwaq_thread_s {
-	struct DARRAY_TYPE (const char *) args;
-	sys_printf_t sys_printf;
-	progs_t    *pr;
-	func_t      main_func;
-} qwaq_thread_t;
 
 struct DARRAY_TYPE(qwaq_thread_t *) thread_data;
 
@@ -228,12 +221,31 @@ spawn_progs (qwaq_thread_t *thread)
 	pr->pr_argc = 2;
 }
 
-static int
-run_progs (qwaq_thread_t *thread)
+static void *
+run_progs (void *data)
 {
+	__auto_type thread = (qwaq_thread_t *) data;
+
 	PR_ExecuteProgram (thread->pr, thread->main_func);
 	PR_PopFrame (thread->pr);
-	return R_INT (thread->pr);
+	thread->return_code = R_INT (thread->pr);
+	return thread;
+}
+
+static void
+start_progs_thread (qwaq_thread_t *thread)
+{
+	pthread_create (&thread->thread_id, 0, run_progs, thread);
+}
+
+qwaq_thread_t *
+create_thread (void *(*thread_func) (void *))
+{
+	qwaq_thread_t *thread = calloc (1, sizeof (*thread));
+
+	DARRAY_APPEND (&thread_data, thread);
+	pthread_create (&thread->thread_id, 0, thread_func, thread);
+	return thread;
 }
 
 static void
@@ -376,8 +388,16 @@ main (int argc, char **argv)
 		spawn_progs (thread);
 	}
 	if (main_ind >= 0) {
-		ret = run_progs (thread_data.a[main_ind]);
+		// threads might start new threads before the end is reached
+		size_t      count = thread_data.size;
+		for (size_t i = 0; i < count; i++) {
+			if (thread_data.a[i]->pr && thread_data.a[i]->main_func) {
+				start_progs_thread (thread_data.a[main_ind]);
+			}
+		}
+		pthread_join (thread_data.a[main_ind]->thread_id, 0);
 	}
+
 	Sys_Shutdown ();
 	return ret;
 }

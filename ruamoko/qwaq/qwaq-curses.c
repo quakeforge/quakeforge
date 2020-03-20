@@ -1347,8 +1347,6 @@ bi_get_event (progs_t *pr)
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
 	qwaq_event_t *event = &G_STRUCT (pr, qwaq_event_t, P_INT (pr, 0));
 
-	process_commands (res);
-	process_input (res);
 	R_INT (pr) = get_event (res, event);
 }
 
@@ -1554,6 +1552,21 @@ bi_mvwblit_line (progs_t *pr)
 	qwaq__mvwblit_line (pr, window_id, x, y, chs, len);
 }
 
+static void *
+qwaq_curse_thread (void *data)
+{
+	__auto_type thread = (qwaq_thread_t *) data;
+	progs_t    *pr = thread->pr;
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+
+	while (1) {
+		process_commands (res);
+		process_input (res);
+	}
+	thread->return_code = 0;
+	return thread;
+}
+
 static void
 bi_initialize (progs_t *pr)
 {
@@ -1573,6 +1586,8 @@ bi_initialize (progs_t *pr)
 	refresh();
 
 	res->stdscr.win = stdscr;
+
+	create_thread (qwaq_curse_thread);
 }
 
 static void
