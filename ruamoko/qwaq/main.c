@@ -239,12 +239,14 @@ start_progs_thread (qwaq_thread_t *thread)
 }
 
 qwaq_thread_t *
-create_thread (void *(*thread_func) (void *))
+create_thread (void *(*thread_func) (qwaq_thread_t *), void *data)
 {
 	qwaq_thread_t *thread = calloc (1, sizeof (*thread));
 
+	thread->data = data;
 	DARRAY_APPEND (&thread_data, thread);
-	pthread_create (&thread->thread_id, 0, thread_func, thread);
+	pthread_create (&thread->thread_id, 0,
+					(void*(*)(void*))thread_func, thread);
 	return thread;
 }
 

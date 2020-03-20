@@ -10,10 +10,11 @@ typedef struct qwaq_thread_s {
 	sys_printf_t sys_printf;
 	progs_t    *pr;
 	func_t      main_func;
+	void       *data;
 } qwaq_thread_t;
 
 void BI_Init (progs_t *pr);
 extern struct cbuf_s *qwaq_cbuf;
-qwaq_thread_t *create_thread (void *(*thread_func) (void *));
+qwaq_thread_t *create_thread (void *(*thread_func) (qwaq_thread_t *), void *);
 
 #endif//__qwaq_h
