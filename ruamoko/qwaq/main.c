@@ -52,8 +52,6 @@
 
 #define MAX_EDICTS 1024
 
-static progs_t pr;
-
 cbuf_t *qwaq_cbuf;
 
 static QFile *
@@ -117,20 +115,29 @@ init_qf (void)
 	Cvar_Get ("pr_debug", "2", 0, 0, 0);
 	Cvar_Get ("pr_boundscheck", "0", 0, 0, 0);
 
-	pr.load_file = load_file;
-	pr.allocate_progs_mem = allocate_progs_mem;
-	pr.free_progs_mem = free_progs_mem;
-	pr.no_exec_limit = 1;
+}
+
+static progs_t *
+create_progs (void)
+{
+	progs_t    *pr = calloc (1, sizeof (*pr));
+
+	pr->load_file = load_file;
+	pr->allocate_progs_mem = allocate_progs_mem;
+	pr->free_progs_mem = free_progs_mem;
+	pr->no_exec_limit = 1;
 
 	PR_Init_Cvars ();
-	PR_Init (&pr);
-	RUA_Init (&pr, 0);
-	PR_Cmds_Init (&pr);
-	BI_Init (&pr);
+	PR_Init (pr);
+	RUA_Init (pr, 0);
+	PR_Cmds_Init (pr);
+	BI_Init (pr);
+
+	return pr;
 }
 
 static int
-load_progs (const char *name)
+load_progs (progs_t *pr, const char *name)
 {
 	QFile      *file;
 	int         size;
@@ -139,13 +146,13 @@ load_progs (const char *name)
 	if (!file) {
 		return 0;
 	}
-	pr.progs_name = name;
-	pr.max_edicts = 1;
-	pr.zone_size = 1024*1024;
-	PR_LoadProgsFile (&pr, file, size);
+	pr->progs_name = name;
+	pr->max_edicts = 1;
+	pr->zone_size = 1024*1024;
+	PR_LoadProgsFile (pr, file, size);
 	Qclose (file);
-	if (!PR_RunLoadFuncs (&pr))
-		PR_Error (&pr, "unable to load %s", pr.progs_name);
+	if (!PR_RunLoadFuncs (pr))
+		PR_Error (pr, "unable to load %s", pr->progs_name);
 	return 1;
 }
 
@@ -157,40 +164,43 @@ main (int argc, const char **argv)
 	const char *name = "qwaq-app.dat";
 	string_t   *pr_argv;
 	int         pr_argc = 1, i;
+	progs_t    *pr;
 
 	COM_InitArgv (argc, argv);
 	init_qf ();
 
+	pr = create_progs ();
+
 	if (argc > 1)
 		name = argv[1];
 
-	if (!load_progs (name)) {
+	if (!load_progs (pr, name)) {
 		Sys_Error ("couldn't load %s", name);
 	}
 
-	//pr.pr_trace = 1;
-	//pr.pr_trace_depth = -1;
+	pr->pr_trace = 1;
+	pr->pr_trace_depth = -1;
 
-	PR_PushFrame (&pr);
+	PR_PushFrame (pr);
 	if (argc > 2)
 		pr_argc = argc - 1;
-	pr_argv = PR_Zone_Malloc (&pr, (pr_argc + 1) * 4);
-	pr_argv[0] = PR_SetTempString (&pr, name);
+	pr_argv = PR_Zone_Malloc (pr, (pr_argc + 1) * 4);
+	pr_argv[0] = PR_SetTempString (pr, name);
 	for (i = 1; i < pr_argc; i++)
-		pr_argv[i] = PR_SetTempString (&pr, argv[1 + i]);
+		pr_argv[i] = PR_SetTempString (pr, argv[1 + i]);
 	pr_argv[i] = 0;
 
-	if ((dfunc = PR_FindFunction (&pr, ".main"))
-		|| (dfunc = PR_FindFunction (&pr, "main")))
-		main_func = dfunc - pr.pr_functions;
+	if ((dfunc = PR_FindFunction (pr, ".main"))
+		|| (dfunc = PR_FindFunction (pr, "main")))
+		main_func = dfunc - pr->pr_functions;
 	else
-		PR_Undefined (&pr, "function", "main");
-	PR_RESET_PARAMS (&pr);
-	P_INT (&pr, 0) = pr_argc;
-	P_POINTER (&pr, 1) = PR_SetPointer (&pr, pr_argv);
-	pr.pr_argc = 2;
-	PR_ExecuteProgram (&pr, main_func);
-	PR_PopFrame (&pr);
+		PR_Undefined (pr, "function", "main");
+	PR_RESET_PARAMS (pr);
+	P_INT (pr, 0) = pr_argc;
+	P_POINTER (pr, 1) = PR_SetPointer (pr, pr_argv);
+	pr->pr_argc = 2;
+	PR_ExecuteProgram (pr, main_func);
+	PR_PopFrame (pr);
 	Sys_Shutdown ();
-	return R_INT (&pr);
+	return R_INT (pr);
 }
