@@ -75,6 +75,9 @@ static const char *short_options =
 
 typedef struct qwaq_thread_s {
 	struct DARRAY_TYPE (const char *) args;
+	sys_printf_t sys_printf;
+	progs_t    *pr;
+	func_t      main_func;
 } qwaq_thread_t;
 
 struct DARRAY_TYPE(qwaq_thread_t) thread_args;
@@ -182,6 +185,58 @@ load_progs (progs_t *pr, const char *name)
 }
 
 static void
+spawn_progs (qwaq_thread_t *thread)
+{
+	dfunction_t *dfunc;
+	const char *name = "qwaq-app.dat";
+	string_t   *pr_argv;
+	int         pr_argc = 1, i;
+	progs_t    *pr;
+
+	thread->main_func = 0;
+	pr = thread->pr = create_progs ();
+	if (thread->args.size) {
+		name = thread->args.a[0];
+	}
+
+	if (!load_progs (pr, name)) {
+		Sys_Error ("couldn't load %s", name);
+	}
+
+	//pr->pr_trace = 1;
+	//pr->pr_trace_depth = -1;
+
+	PR_PushFrame (pr);
+	if (thread->args.size > 2) {
+		pr_argc = thread->args.size - 1;
+	}
+	pr_argv = PR_Zone_Malloc (pr, (pr_argc + 1) * 4);
+	pr_argv[0] = PR_SetTempString (pr, name);
+	for (i = 1; i < pr_argc; i++)
+		pr_argv[i] = PR_SetTempString (pr, thread->args.a[1 + i]);
+	pr_argv[i] = 0;
+
+	if ((dfunc = PR_FindFunction (pr, ".main"))
+		|| (dfunc = PR_FindFunction (pr, "main"))) {
+		thread->main_func = dfunc - pr->pr_functions;
+	} else {
+		PR_Undefined (pr, "function", "main");
+	}
+	PR_RESET_PARAMS (pr);
+	P_INT (pr, 0) = pr_argc;
+	P_POINTER (pr, 1) = PR_SetPointer (pr, pr_argv);
+	pr->pr_argc = 2;
+}
+
+static int
+run_progs (qwaq_thread_t *thread)
+{
+	PR_ExecuteProgram (thread->pr, thread->main_func);
+	PR_PopFrame (thread->pr);
+	return R_INT (thread->pr);
+}
+
+static void
 usage (int status)
 {
 	printf ("%s - QuakeForge runtime\n", this_program);
@@ -192,10 +247,10 @@ usage (int status)
 static int
 parse_argset (int argc, char **argv)
 {
-	qwaq_thread_t thread;
+	qwaq_thread_t thread = {};
 	DARRAY_INIT (&thread.args, 8);
 
-	DARRAY_APPEND (&thread.args, NULL);
+	DARRAY_APPEND (&thread.args, 0);
 	while (optind < argc && strcmp (argv[optind], "--")) {
 		DARRAY_APPEND (&thread.args, argv[optind++]);
 	}
@@ -210,7 +265,7 @@ static int
 parse_args (int argc, char **argv)
 {
 	int         c;
-	qwaq_thread_t main_thread;
+	qwaq_thread_t main_thread = {};
 	int         qargs_ind = -1;
 
 	DARRAY_INIT (&main_thread.args, 8);
@@ -249,13 +304,8 @@ done:
 int
 main (int argc, char **argv)
 {
-	dfunction_t *dfunc;
-	func_t      main_func = 0;
-	const char *name = "qwaq-app.dat";
-	string_t   *pr_argv;
-	int         pr_argc = 1, i;
-	int         qargs_ind;
-	progs_t    *pr;
+	int         qargs_ind = -1;
+	int         ret;
 
 	this_program = argv[0];
 
@@ -277,51 +327,30 @@ main (int argc, char **argv)
 	}
 
 	if (qargs_ind >= 0) {
-		qwaq_thread_t *args = &thread_args.a[qargs_ind];
+		qwaq_thread_t *qargs = &thread_args.a[qargs_ind];
 		// the first arg is initialized to --qargs, so
 		// set to main program name for now
-		args->args.a[0] = this_program;
-		COM_InitArgv (args->args.size, args->args.a);
+		qargs->args.a[0] = this_program;
+		COM_InitArgv (qargs->args.size, qargs->args.a);
+	} else {
+		qwaq_thread_t qargs = {};
+		DARRAY_INIT (&qargs.args, 2);
+		DARRAY_APPEND (&qargs.args, this_program);
+		COM_InitArgv (qargs.args.size, qargs.args.a);
 	}
 
 	init_qf ();
 
-	pr = create_progs ();
-
-	{
-		qwaq_thread_t *thread = &thread_args.a[0];
-		if (thread->args.size) {
-			name = thread->args.a[0];
+	for (size_t i = 0; i < thread_args.size; i++) {
+		qwaq_thread_t *thread = &thread_args.a[i];
+		if (thread->args.size && thread->args.a[0]
+			&& strcmp (thread->args.a[0], "--qargs")) {
+			// skip the args set that's passed to qargs
+			continue;
 		}
+		spawn_progs (thread);
 	}
-
-	if (!load_progs (pr, name)) {
-		Sys_Error ("couldn't load %s", name);
-	}
-
-	pr->pr_trace = 1;
-	pr->pr_trace_depth = -1;
-
-	PR_PushFrame (pr);
-	if (argc > 2)
-		pr_argc = argc - 1;
-	pr_argv = PR_Zone_Malloc (pr, (pr_argc + 1) * 4);
-	pr_argv[0] = PR_SetTempString (pr, name);
-	for (i = 1; i < pr_argc; i++)
-		pr_argv[i] = PR_SetTempString (pr, argv[1 + i]);
-	pr_argv[i] = 0;
-
-	if ((dfunc = PR_FindFunction (pr, ".main"))
-		|| (dfunc = PR_FindFunction (pr, "main")))
-		main_func = dfunc - pr->pr_functions;
-	else
-		PR_Undefined (pr, "function", "main");
-	PR_RESET_PARAMS (pr);
-	P_INT (pr, 0) = pr_argc;
-	P_POINTER (pr, 1) = PR_SetPointer (pr, pr_argv);
-	pr->pr_argc = 2;
-	PR_ExecuteProgram (pr, main_func);
-	PR_PopFrame (pr);
+	ret = run_progs (&thread_args.a[0]);
 	Sys_Shutdown ();
-	return R_INT (pr);
+	return ret;
 }
