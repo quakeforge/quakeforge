@@ -80,7 +80,7 @@ typedef struct qwaq_thread_s {
 	func_t      main_func;
 } qwaq_thread_t;
 
-struct DARRAY_TYPE(qwaq_thread_t) thread_args;
+struct DARRAY_TYPE(qwaq_thread_t) thread_data;
 
 static QFile *
 open_file (const char *path, int *len)
@@ -257,8 +257,8 @@ parse_argset (int argc, char **argv)
 	if (optind < argc) {
 		optind++;
 	}
-	DARRAY_APPEND (&thread_args, thread);
-	return thread_args.size - 1;
+	DARRAY_APPEND (&thread_data, thread);
+	return thread_data.size - 1;
 }
 
 static int
@@ -279,7 +279,7 @@ parse_args (int argc, char **argv)
 			case OPT_QARGS:
 				if (qargs_ind < 0) {
 					qargs_ind = parse_argset (argc, argv);
-					thread_args.a[qargs_ind].args.a[0] = "--qargs";
+					thread_data.a[qargs_ind].args.a[0] = "--qargs";
 					goto done;
 				} else {
 					printf ("more than one set of qargs given");
@@ -292,8 +292,8 @@ parse_args (int argc, char **argv)
 	}
 done:
 
-	free (thread_args.a[0].args.a);
-	thread_args.a[0] = main_thread;
+	free (thread_data.a[0].args.a);
+	thread_data.a[0] = main_thread;
 
 	while (optind < argc) {
 		parse_argset (argc, argv);
@@ -311,12 +311,12 @@ main (int argc, char **argv)
 
 	this_program = argv[0];
 
-	DARRAY_INIT (&thread_args, 4);
+	DARRAY_INIT (&thread_data, 4);
 	for (optind = 1; optind < argc; ) {
 		parse_argset (argc, argv);
 	}
-	if (thread_args.size) {
-		qwaq_thread_t *thread = &thread_args.a[0];
+	if (thread_data.size) {
+		qwaq_thread_t *thread = &thread_data.a[0];
 		// the first arg is initialized to null, but this is for getopt, so
 		// set to main program name
 		thread->args.a[0] = this_program;
@@ -326,11 +326,11 @@ main (int argc, char **argv)
 		// create a blank main thread set
 		qwaq_thread_t thread = {};
 		DARRAY_INIT (&thread.args, 4);
-		DARRAY_APPEND (&thread_args, thread);
+		DARRAY_APPEND (&thread_data, thread);
 	}
 
 	if (qargs_ind >= 0) {
-		qwaq_thread_t *qargs = &thread_args.a[qargs_ind];
+		qwaq_thread_t *qargs = &thread_data.a[qargs_ind];
 		// the first arg is initialized to --qargs, so
 		// set to main program name for now
 		qargs->args.a[0] = this_program;
@@ -345,26 +345,26 @@ main (int argc, char **argv)
 
 	init_qf ();
 
-	if (thread_args.a[0].args.size < 1) {
-		DARRAY_APPEND (&thread_args.a[0].args, "qwaq-app.dat");
+	if (thread_data.a[0].args.size < 1) {
+		DARRAY_APPEND (&thread_data.a[0].args, "qwaq-app.dat");
 	}
 
-	while (thread_args.size < thread_args.a[0].args.size + num_sys) {
+	while (thread_data.size < thread_data.a[0].args.size + num_sys) {
 		qwaq_thread_t thread = {};
 		DARRAY_INIT (&thread.args, 4);
 		DARRAY_APPEND (&thread.args, 0);
-		DARRAY_APPEND (&thread_args, thread);
+		DARRAY_APPEND (&thread_data, thread);
 	}
 
-	for (size_t i = 1, thread_ind = 0; i < thread_args.size; i++) {
-		qwaq_thread_t *thread = &thread_args.a[i];
+	for (size_t i = 1, thread_ind = 0; i < thread_data.size; i++) {
+		qwaq_thread_t *thread = &thread_data.a[i];
 		if (thread->args.size && thread->args.a[0]
 			&& strcmp (thread->args.a[0], "--qargs")) {
 			// skip the args set that's passed to qargs
 			continue;
 		}
-		if (thread_ind < thread_args.a[0].args.size) {
-			thread->args.a[0] = thread_args.a[0].args.a[thread_ind++];
+		if (thread_ind < thread_data.a[0].args.size) {
+			thread->args.a[0] = thread_data.a[0].args.a[thread_ind++];
 		} else {
 			printf ("ignoring extra arg sets\n");
 			break;
@@ -375,7 +375,7 @@ main (int argc, char **argv)
 		spawn_progs (thread);
 	}
 	if (main_ind >= 0) {
-		ret = run_progs (&thread_args.a[main_ind]);
+		ret = run_progs (&thread_data.a[main_ind]);
 	}
 	Sys_Shutdown ();
 	return ret;
