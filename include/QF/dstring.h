@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __dstring_h
-#define __dstring_h
+#ifndef __QF_dstring_h
+#define __QF_dstring_h
 
 /** \defgroup dstring Dynamic Strings
 	\ingroup utils
@@ -164,17 +164,17 @@ void dstring_clearstr (dstring_t *dstr);
 /** Formatted printing to dstrings. Existing data is replaced by the formatted
 	string.
 */
-int dvsprintf (dstring_t *dstr, const char *fmt, va_list args) __attribute__((format(printf,2,0)));
-int dsprintf (dstring_t *dstr, const char *fmt, ...) __attribute__((format(printf,2,3)));
+char *dvsprintf (dstring_t *dstr, const char *fmt, va_list args) __attribute__((format(printf,2,0)));
+char *dsprintf (dstring_t *dstr, const char *fmt, ...) __attribute__((format(printf,2,3)));
 ///@}
 ///@{
 /** Formatted printing to dstrings. Formatted string is appened to the dstring.
 	Embedded nulls in the dstring are ignored.
 */
-int davsprintf (dstring_t *dstr, const char *fmt, va_list args) __attribute__((format(printf,2,0)));
-int dasprintf (dstring_t *dstr, const char *fmt, ...) __attribute__((format(printf,2,3)));
+char *davsprintf (dstring_t *dstr, const char *fmt, va_list args) __attribute__((format(printf,2,0)));
+char *dasprintf (dstring_t *dstr, const char *fmt, ...) __attribute__((format(printf,2,3)));
 ///@}
 
 ///@}
 
-#endif // __dstring_h
+#endif//__QF_dstring_h

@@ -85,7 +85,8 @@ No compilation or linking is done.
 
 .TP
 .B \-\-extended
-Allow extended keywords in traditional mode.
+Allow extended keywords in traditional mode. Otherwise, it has \fIall\fP
+the implications of \fB\-\-traditional\fP.
 
 .TP
 .B \-F, \-\-files
@@ -198,9 +199,9 @@ Look for \*[progs.src] in \fBDIR\fP instead of the current directory.
 .TP
 .B \-\-traditional
 Use traditional QuakeC syntax, semantics and \*(lqbugs\*(rq.
-Also implies the \fBv6only\fP, \fBno-short-circuit\fP and
-\fBno-local-merging\fP code generation options (see
-\fBCODE GENERATION OPTIONS\fP).
+Also implies the \fBv6only\fP, \fBno-short-circuit\fP,
+\fBconst-initializers\fP and \fBno-local-merging\fP code generation options
+(see \fBCODE GENERATION OPTIONS\fP).
 This is the default when using \fBprogs.src\fP mode.
 
 .TP
@@ -237,14 +238,22 @@ Unsupported options are ignored.
 The following options are supported by \*[qfcc]'s \fB\-\-code\fP argument:
 
 .TP
+.B const-initializers
+Treat initialized globals as constants.
+This option is implied by \fB\-\-traditional\fP and \fB\-\-extended\fP, and is
+turned off by \fB\-\-advanced\fP.
+
+.TP
 .B cow
 Allow assignment to initialized globals.
-In Quake-C and Ruamoko, a global that has been initialized to a value is not
-a variable, but a named constant.
+When initialized globals are treated as constants (traditional Quake-C, or
+when const-initializers is activated), a global that has been initialized to a
+value is not a variable, but a named constant.
 However, \fBqcc\fP never really enforced this.
 The \fBcow\fP option allows \*[qfcc] to gracefully cope with QuakeC source
 that assigns values to initialized globals in this manner.
-(also known as \*(lqcopy on write\*(rq\(emnever mind the bovine connotations)
+(also known as \*(lqcopy on write\*(rq\(emlo and behold the bovine
+connotations)
 
 .TP
 .B cpp
@@ -285,6 +294,12 @@ data.
 This can be a problem because instructions can access addresses up to 32767 in
 older servers or 65535 in most modern servers.
 Defaults to off for traditional mode, and on for advanced mode.
+
+.TP
+.B promote\-float
+Promote float when passed to a function that takes a variable number of
+arguements. Defaults to enabled for advanced code, is forced off for
+traditional or v6only code (mostly because such code does not have doubles).
 
 .TP
 .B short\-circuit

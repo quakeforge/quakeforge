@@ -26,8 +26,8 @@
 */
 // wad.h
 
-#ifndef _WAD_H
-#define _WAD_H
+#ifndef __QF_wad_h
+#define __QF_wad_h
 
 /** \addtogroup wad
 	Wad Files
@@ -48,4 +48,4 @@ void SwapPic (qpic_t *pic);
 
 ///@}
 
-#endif // _WAD_H
+#endif//__QF_wad_h

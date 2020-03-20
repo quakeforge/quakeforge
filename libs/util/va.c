@@ -51,16 +51,23 @@ VISIBLE char *
 va (const char *fmt, ...)
 {
 	va_list     args;
-	static dstring_t *string;
+	static dstring_t *string[4];
+#define NUM_STRINGS (sizeof (string) / sizeof (string[0]))
+	static int  str_index;
+	dstring_t  *dstr;
 
-	if (!string)
-		string = dstring_new ();
+	if (!string[0]) {
+		for (size_t i = 0; i < NUM_STRINGS; i++) {
+			string[i] = dstring_new ();
+		}
+	}
+	dstr = string[str_index++ % NUM_STRINGS];
 
 	va_start (args, fmt);
-	dvsprintf (string, fmt, args);
+	dvsprintf (dstr, fmt, args);
 	va_end (args);
 
-	return string->str;
+	return dstr->str;
 }
 
 VISIBLE char *

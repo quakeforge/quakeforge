@@ -59,6 +59,7 @@ static const char *sy_type_names[] = {
 	"sy_expr",
 	"sy_func",
 	"sy_class",
+	"sy_convert",
 };
 
 const char *
@@ -152,7 +153,7 @@ symtab_removesymbol (symtab_t *symtab, symbol_t *symbol)
 	for (s = &symtab->symbols; *s && *s != symbol; s = & (*s)->next)
 		;
 	if (!*s)
-		internal_error (0, "symtab_removesymbol");
+		internal_error (0, "attempt to remove symbol not in symtab");
 	*s = (*s)->next;
 	if (symtab->symtail == &symbol->next)
 		symtab->symtail = s;
@@ -165,6 +166,7 @@ symbol_t *
 copy_symbol (symbol_t *symbol)
 {
 	symbol_t   *sym = new_symbol (symbol->name);
+	sym->visibility = symbol->visibility;
 	sym->type = symbol->type;
 	sym->params = copy_params (symbol->params);
 	sym->sy_type = symbol->sy_type;
@@ -182,7 +184,8 @@ symtab_flat_copy (symtab_t *symtab, symtab_t *parent)
 	newtab = new_symtab (parent, stab_local);
 	do {
 		for (symbol = symtab->symbols; symbol; symbol = symbol->next) {
-			if (Hash_Find (newtab->tab, symbol->name))
+			if (symbol->visibility == vis_anonymous
+				|| Hash_Find (newtab->tab, symbol->name))
 				continue;
 			newsym = copy_symbol (symbol);
 			symtab_addsymbol (newtab, newsym);

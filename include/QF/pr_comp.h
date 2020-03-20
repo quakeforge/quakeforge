@@ -18,8 +18,8 @@
 */
 
 // this file is shared by QuakeForge and qfcc
-#ifndef __pr_comp_h
-#define __pr_comp_h
+#ifndef __QF_pr_comp_h
+#define __QF_pr_comp_h
 
 #include "QF/qtypes.h"
 
@@ -27,7 +27,7 @@ typedef int16_t pr_short_t;
 typedef uint16_t pr_ushort_t;
 typedef int32_t pr_int_t;
 typedef uint32_t pr_uint_t;
-typedef pr_int_t func_t;
+typedef pr_uint_t func_t;
 typedef pr_int_t string_t;
 typedef pr_uint_t pointer_t;
 
@@ -50,8 +50,8 @@ typedef enum {
 	ev_type_count		// not a type, gives number of types
 } etype_t;
 
-extern int pr_type_size[ev_type_count];
-extern const char *pr_type_name[ev_type_count];
+extern const pr_ushort_t pr_type_size[ev_type_count];
+extern const char * const pr_type_name[ev_type_count];
 
 #define	OFS_NULL		0
 #define	OFS_RETURN		1
@@ -395,7 +395,12 @@ typedef enum {
 	OP_MOD_I,
 	OP_MOD_F,
 	OP_MOD_D,
+
+	OP_MEMSETI,
+	OP_MEMSETP,
+	OP_MEMSETPI,
 } pr_opcode_e;
+#define OP_BREAK 0x8000
 
 typedef struct opcode_s {
 	const char	*name;
@@ -407,9 +412,9 @@ typedef struct opcode_s {
 	const char	*fmt;
 } opcode_t;
 
-extern opcode_t pr_opcodes[];
+extern const opcode_t pr_opcodes[];
 opcode_t *PR_Opcode (pr_short_t opcode);
-void PR_Opcode_Init (void);
+void PR_Opcode_Init (void);	// idempotent
 
 typedef struct dstatement_s {
 	pr_opcode_e op:16;
@@ -417,11 +422,29 @@ typedef struct dstatement_s {
 } GCC_STRUCT dstatement_t;
 
 typedef struct ddef_s {
-	pr_ushort_t type;			// if DEF_SAVEGLOBGAL bit is set
+	pr_ushort_t type;			// if DEF_SAVEGLOBAL bit is set
 								// the variable needs to be saved in savegames
 	pr_ushort_t ofs;
-	pr_int_t    s_name;
+	string_t    s_name;
 } ddef_t;
+
+typedef struct xdef_s {
+	pointer_t   type;			///< pointer to type definition
+	pointer_t   ofs;			///< 32-bit version of ddef_t.ofs
+} xdef_t;
+
+typedef struct pr_xdefs_s {
+	pointer_t   xdefs;
+	pr_int_t    num_xdefs;
+} pr_xdefs_t;
+
+typedef struct pr_def_s {
+	pr_ushort_t type;
+	pr_ushort_t size;			///< may not be correct
+	pointer_t   ofs;
+	string_t    name;
+	pointer_t   type_encoding;
+} pr_def_t;
 
 typedef struct dparmsize_s {
 	uint8_t     size:5;
@@ -435,11 +458,11 @@ typedef struct dparmsize_s {
 typedef struct dfunction_s {
 	pr_int_t    first_statement;	// negative numbers are builtins
 	pr_int_t    parm_start;
-	pr_int_t    locals;				// total ints of parms + locals
+	pr_uint_t   locals;				// total ints of parms + locals
 
-	pr_int_t    profile;			// runtime
+	pr_uint_t   profile;			// runtime
 
-	pr_int_t    s_name;
+	string_t    s_name;
 	pr_int_t    s_file;				// source file defined in
 
 	pr_int_t    numparms;
@@ -484,10 +507,10 @@ typedef struct dprograms_s {
 	pr_uint_t   numfielddefs;
 
 	pr_uint_t   ofs_functions;
-	pr_int_t    numfunctions;	// function 0 is an empty
+	pr_uint_t   numfunctions;	// function 0 is an empty
 
 	pr_uint_t   ofs_strings;
-	pr_int_t    numstrings;		// first string is a null string
+	pr_uint_t   numstrings;		// first string is a null string
 
 	pr_uint_t   ofs_globals;
 	pr_uint_t   numglobals;
@@ -495,4 +518,4 @@ typedef struct dprograms_s {
 	pr_uint_t   entityfields;
 } dprograms_t;
 
-#endif // __pr_comp_h
+#endif//__QF_pr_comp_h

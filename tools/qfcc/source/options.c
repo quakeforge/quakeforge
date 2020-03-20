@@ -194,14 +194,16 @@ code_usage (void)
 	printf ("%s - QuakeForge Code Compiler\n", this_program);
 	printf ("Code generation options\n");
 	printf (
+"    [no-]const-initializers Treat initialized globals as constants.\n"
 "    [no-]cow                Allow assignment to initialized globals.\n"
 "    [no-]cpp                Preprocess all input files with cpp.\n"
 "    [no-]crc                Write progdefs.h crc to progs.dat.\n"
 "    [no-]debug              Generate debug information.\n"
 "    [no-]fast-float         Use float values directly in \"if\" statements.\n"
-"    help                    Display his text.\n"
+"    help                    Display this text.\n"
 "    [no-]local-merging      Merge the local variable blocks into one.\n"
 "    [no-]optimize           Perform various optimizations on the code.\n"
+"    [no-]promote-float      Promote float when passed through ...\n"
 "    [no-]short-circuit      Generate short circuit code for logical\n"
 "                            operators.\n"
 "    [no-]single-cpp         Convert progs.src to cpp input file.\n"
@@ -309,6 +311,7 @@ DecodeArgs (int argc, char **argv)
 	options.code.vector_components = -1;
 	options.code.crc = -1;
 	options.code.fast_float = true;
+	options.code.promote_float = true;
 	options.warnings.uninited_variable = true;
 	options.warnings.unused = true;
 	options.warnings.executable = true;
@@ -392,16 +395,19 @@ DecodeArgs (int argc, char **argv)
 				options.traditional = 1;
 				options.advanced = false;
 				options.code.progsversion = PROG_ID_VERSION;
+				options.code.const_initializers = true;
 				break;
 			case OPT_TRADITIONAL:
 				options.traditional = 2;
 				options.advanced = false;
 				options.code.progsversion = PROG_ID_VERSION;
+				options.code.const_initializers = true;
 				break;
 			case OPT_ADVANCED:
 				options.traditional = 0;
 				options.advanced = true;
 				options.code.progsversion = PROG_VERSION;
+				options.code.const_initializers = false;
 				break;
 			case OPT_BLOCK_DOT:
 				if (optarg) {
@@ -485,6 +491,8 @@ DecodeArgs (int argc, char **argv)
 							options.code.debug = flag;
 						} else if (!(strcasecmp (temp, "fast-float"))) {
 							options.code.fast_float = flag;
+						} else if (!(strcasecmp (temp, "promote-float"))) {
+							options.code.promote_float = flag;
 						} else if (!strcasecmp (temp, "help")) {
 							code_usage ();
 						} else if (!(strcasecmp (temp, "local-merging"))) {
@@ -506,6 +514,8 @@ DecodeArgs (int argc, char **argv)
 								options.code.progsversion = PROG_ID_VERSION;
 							else
 								options.code.progsversion = PROG_VERSION;
+						} else if (!(strcasecmp (temp, "const-initializers"))) {
+							options.code.const_initializers = flag;
 						}
 						temp = strtok (NULL, ",");
 					}
@@ -710,8 +720,11 @@ DecodeArgs (int argc, char **argv)
 			options.code.local_merging = true;
 		if (options.code.vector_components == (qboolean) -1)
 			options.code.vector_components = false;
+	} else {
+		options.code.promote_float = 0;
 	}
 	if (options.code.progsversion == PROG_ID_VERSION) {
+		options.code.promote_float = 0;
 		add_cpp_def ("-D__VERSION6__=1");
 		if (options.code.crc == (qboolean) -1)
 			options.code.crc = true;

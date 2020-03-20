@@ -818,10 +818,11 @@ cpqw_user_cmd (void)
 
 		PR_PushFrame (pr);
 		P_FLOAT (pr, 0) = argc;
-		for (i = 1; i < argc; i++)
+		for (i = 1; i < argc + 1; i++)
 			P_STRING (pr, i) = PR_SetTempString (pr, Cmd_Argv (i - 1));
-		for (; i < 7; i++)
+		for (; i < 8; i++)
 			P_STRING (pr, i) = 0;
+		pr->pr_argc = 8;
 		PR_ExecuteProgram (pr, cpqw_funcs.ClientCommand);
 		PR_PopFrame (pr);
 		return (int) R_FLOAT (pr);

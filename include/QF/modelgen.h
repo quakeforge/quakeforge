@@ -31,8 +31,8 @@
 // * pass data from one to the other via model files.      *
 // *********************************************************
 
-#ifndef _MODELGEN_H
-#define _MODELGEN_H
+#ifndef __QF_modelgen_h
+#define __QF_modelgen_h
 
 #include "QF/mathlib.h"
 
@@ -142,4 +142,4 @@ typedef struct {
 // little-endian "IDP2"
 #define IDHEADER_MD2	(('2'<<24)+('P'<<16)+('D'<<8)+'I')
 
-#endif // _MODELGEN_H
+#endif//__QF_modelgen_h

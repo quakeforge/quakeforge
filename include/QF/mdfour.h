@@ -26,20 +26,20 @@
 
 */
 
-#ifndef __mdfour_h
-#define __mdfour_h
+#ifndef __QF_mdfour_h
+#define __QF_mdfour_h
+
+#include "QF/qtypes.h"
 
 /** \addtogroup crc
 */
 ///@{
 
-#include "QF/uint32.h"
-
 #define MDFOUR_DIGEST_BYTES 16
 
 struct mdfour {
-	uint32 A, B, C, D;
-	uint32 totalN;
+	uint32_t A, B, C, D;
+	uint32_t totalN;
 };
 
 void mdfour_begin(struct mdfour *md); // old: MD4Init
@@ -49,4 +49,4 @@ void mdfour(unsigned char *out, const unsigned char *in, int n);
 
 ///@}
 
-#endif	// __mdfour_h
+#endif//__QF_mdfour_h

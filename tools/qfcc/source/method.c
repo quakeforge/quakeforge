@@ -89,8 +89,8 @@ new_method (type_t *ret_type, param_t *selector, param_t *opt_params)
 	dstring_t  *name = dstring_newstr ();
 	dstring_t  *types = dstring_newstr ();
 
-	opt_params = reverse_params (opt_params);
-	selector = _reverse_params (selector, opt_params);
+	selector = reverse_params (selector);
+	selector = append_params (selector, opt_params);
 	cmd->next = selector;
 	self->next = cmd;
 
@@ -109,7 +109,7 @@ new_method (type_t *ret_type, param_t *selector, param_t *opt_params)
 	free (name);
 	free (types);
 
-	//print_type (meth->type); puts ("");
+	//print_type (meth->type);
 	meth->def = 0;
 
 	if (!known_methods)
@@ -147,6 +147,12 @@ add_method (methodlist_t *methodlist, method_t *method)
 	if (method->next)
 		internal_error (0, "add_method: method loop detected");
 
+	for (method_t *m = methodlist->head; m; m = m->next) {
+		if (method_compare (m, method)) {
+			debug (0, "dropping duplicate method: %s", method->name);
+			return;
+		}
+	}
 	*methodlist->tail = method;
 	methodlist->tail = &method->next;
 }
@@ -199,16 +205,110 @@ new_methodlist (void)
 	return l;
 }
 
-void
-copy_methods (methodlist_t *dst, methodlist_t *src)
+static uintptr_t
+methodset_get_hash (const void *_method, void *unused)
 {
-	method_t *s, *d;
+	method_t   *method = (method_t *) _method;
+	uintptr_t   hash;
+
+	hash = Hash_String (method->name);
+	return hash ^ (method->instance << 3);
+}
+
+static int
+methodset_compare (const void *_m1, const void *_m2, void *unused)
+{
+	method_t   *m1 = (method_t *) _m1;
+	method_t   *m2 = (method_t *) _m2;
+	int         cmp;
+
+	cmp = strcmp (m1->name, m2->name) == 0;
+	return cmp && m1->instance == m2->instance;
+}
+
+methodset_t *
+new_methodset (void)
+{
+	methodset_t *s = malloc (sizeof (*s));
+	s->tab = Hash_NewTable (31, 0, 0, 0);
+	Hash_SetHashCompare (s->tab, methodset_get_hash, methodset_compare);
+	return s;
+}
+
+void
+methodset_add_methods (methodset_t *methodset, methodlist_t *methods)
+{
+	method_t   *m;
+
+	for (m = methods->head; m; m = m->next) {
+		Hash_AddElement (methodset->tab, m);
+	}
+}
+
+int
+methodset_contains_method (methodset_t *methodset, method_t *method)
+{
+	return Hash_FindElement (methodset->tab, method) != 0;
+}
+
+static int __attribute__((pure))
+method_in_list (methodlist_t *method_list, method_t *method)
+{
+	method_t    *m;
+
+	for (m = method_list->head; m; m = m->next) {
+		if (method_compare (m, method)) {
+			return 1;
+		}
+	}
+	return 0;
+}
+
+void
+merge_method_lists (methodlist_t *dst, methodlist_t *src)
+{
+	while (src->head) {
+		method_t   *s = src->head;
+		src->head = s->next;
+		s->next = 0;
+		if (method_in_list (dst, s)) {
+			debug (0, "dropping duplicate method: %s", s->name);
+			free (s);
+		} else {
+			// add_method does the duplicate check
+			*dst->tail = s;
+			dst->tail = &s->next;
+		}
+	}
+	free (src);
+}
+
+void
+copy_methods (methodlist_t *dst, methodlist_t *src, methodset_t *except)
+{
+	method_t   *s, *d;
+	param_t    *self;
 
 	for (s = src->head; s; s = s->next) {
+		if (methodset_contains_method (except, s) || method_in_list (dst, s)) {
+			debug (0, "skipping duplicate method: %s", s->name);
+			continue;
+		}
 		d = malloc (sizeof (method_t));
 		*d = *s;
+		// The above is only a shallow copy and thus even though the methods
+		// are not shared between the source and destination lists, the
+		// parameters are. Thus, duplicate the self (first) parameter so
+		// changing its type to match the class into which it is inserted does
+		// not affect the source list. The rest of the parameters do not need
+		// to be copied as they will not be altered.
+		self = malloc (sizeof (param_t));
+		*self = *d->params;
+		d->params = self;
 		d->next = 0;
-		add_method (dst, d);
+		// add_method does the duplicate check
+		*dst->tail = d;
+		dst->tail = &d->next;
 	}
 }
 
@@ -273,6 +373,20 @@ find_method (const char *sel_name)
 	if (!known_methods)
 		return 0;
 	return Hash_Find (known_methods, sel_name);
+}
+
+method_t *
+methodlist_find_method (methodlist_t *methodlist, selector_t *selector,
+						int instance)
+{
+	method_t   *m;
+
+	for (m = methodlist->head; m; m = m->next) {
+		if (m->instance == instance && strcmp (selector->name, m->name) == 0) {
+			return m;
+		}
+	}
+	return 0;
 }
 
 void
@@ -474,7 +588,7 @@ emit_methods (methodlist_t *methods, const char *name, int instance)
 	if (!methods)
 		return 0;
 
-	for (count = 0, m = methods->head; m; m = m->next)
+	for (count = 0, m = methods->head; m; m = m->next) {
 		if (!m->instance == !instance) {
 			if (!m->def && options.warnings.unimplemented) {
 				warning (0, "Method `%c%s' not implemented",
@@ -483,6 +597,7 @@ emit_methods (methodlist_t *methods, const char *name, int instance)
 			if (m->def)
 				count++;
 		}
+	}
 	if (!count)
 		return 0;
 	methods->count = count;
@@ -510,9 +625,11 @@ emit_method_list_item (def_t *def, void *data, int index)
 	method_t   *m;
 	pr_method_description_t *desc;
 
-	if (def->type != &type_obj_method_description)
-		internal_error (0, "%s: expected method_description def",
+	if (!is_array (def->type)
+		|| def->type->t.array.type != &type_obj_method_description) {
+		internal_error (0, "%s: expected array of method_description def",
 						__FUNCTION__);
+	}
 	if (index < 0 || index >= methods->count)
 		internal_error (0, "%s: out of bounds index: %d %d",
 						__FUNCTION__, index, methods->count);
@@ -520,7 +637,7 @@ emit_method_list_item (def_t *def, void *data, int index)
 	desc = D_POINTER (pr_method_description_t, def);
 
 	for (m = methods->head; m; m = m->next) {
-		if (!m->instance != !methods->instance || !m->def)
+		if (!m->instance != !methods->instance)
 			continue;
 		if (!index--)
 			break;
@@ -546,7 +663,7 @@ emit_method_descriptions (methodlist_t *methods, const char *name,
 		return 0;
 
 	for (count = 0, m = methods->head; m; m = m->next)
-		if (!m->instance == !instance && m->def)
+		if (!m->instance == !instance)
 			count++;
 	if (!count)
 		return 0;
@@ -603,20 +720,27 @@ method_check_params (method_t *method, expr_t *args)
 		arg_list[i--] = a;
 	for (i = 2; i < count; i++) {
 		expr_t     *e = arg_list[i];
-		type_t     *t = get_type (e);
+		type_t     *arg_type = mtype->t.func.param_types[i];
+		type_t     *t;
 
-		if (!t)
+		if (e->type == ex_compound) {
+			e = expr_file_line (initialized_temp_expr (arg_type, e), e);
+		}
+		t = get_type (e);
+		if (!t) {
 			return e;
+		}
 
 		if (i < param_count) {
-			if (e->type != ex_nil)
-				if (!type_assignable (mtype->t.func.param_types[i], t)) {
-					err = param_mismatch (e, i - 1, method->name,
-										  mtype->t.func.param_types[i], t);
+			if (e->type != ex_nil) {
+				if (!type_assignable (arg_type, t)) {
+					err = param_mismatch (e, i - 1, method->name, arg_type, t);
 				}
+			}
 		} else {
-			if (is_integer_val (e) && options.warnings.vararg_integer)
+			if (is_integer_val (e) && options.warnings.vararg_integer) {
 				warning (e, "passing integer consant into ... function");
+			}
 		}
 	}
 	free (arg_list);

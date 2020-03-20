@@ -28,8 +28,8 @@
 
 */
 
-#ifndef __gib_h
-#define __gib_h
+#ifndef __QF_gib_h
+#define __QF_gib_h
 
 // Dependencies
 
@@ -216,4 +216,4 @@ unsigned long int GIB_Handle_New (gib_object_t *data);
 void GIB_Handle_Free (unsigned long int num);
 gib_object_t *GIB_Handle_Get (unsigned long int num) __attribute__((pure));
 
-#endif
+#endif//__QF_gib_h

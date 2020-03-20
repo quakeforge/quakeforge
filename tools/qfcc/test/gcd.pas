@@ -1,5 +1,5 @@
 program example (input, output);
-var x, y: integer;
+var x, y, g: integer;
 procedure printf (format:string; ...) := #0;
 function gcd (a, b: integer): integer;
 var c: quaternion;
@@ -11,5 +11,7 @@ end;
 begin
 	x := 130;
 	y := 120;
-	printf ("%d\n", gcd (x, y))
+	g := gcd (x, y);
+	printf ("%d\n", g);
+	ExitCode := g <> 10;
 end.

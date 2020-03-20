@@ -58,6 +58,7 @@ class_from_plist (PLDictionary *pldict)
 		return ret;
 	}
 	obj = [class alloc];
+	params[0].pointer_val = obj;
 
 	messages = (PLArray*) [pldict getObjectForKey:"Messages"];
 	message_count = [messages count];
@@ -65,9 +66,10 @@ class_from_plist (PLDictionary *pldict)
 		msg = (PLArray*) [messages getObjectAtIndex:i];
 		selname = [(PLString*) [msg getObjectAtIndex:0] string];
 		sel = sel_get_uid (selname);
-		va_list.count = [msg count] - 1;
-		for (j = 0; j < va_list.count; j++) {
-			paramstr = [(PLString*) [msg getObjectAtIndex:j + 1] string];
+		params[1].pointer_val = sel;
+		va_list.count = [msg count] + 1;
+		for (j = 2; j < va_list.count; j++) {
+			paramstr = [(PLString*) [msg getObjectAtIndex:j - 1] string];
 			switch (str_mid (paramstr, 0, 1)) {
 				case "\"":
 					va_list.list[j].string_val = str_mid (paramstr, 1, -1);
@@ -103,7 +105,7 @@ array_from_plist (PLArray *plarray)
 	count = [plarray count];
 	for (i = 0; i < count; i++) {
 		ret = object_from_plist ([plarray getObjectAtIndex:i]);
-		[array addObject: ret.pointer_val];
+		[array addObject: (id) ret.pointer_val];
 	}
 	ret.pointer_val = array;
 	return ret;

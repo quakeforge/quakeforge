@@ -1211,6 +1211,7 @@ SV_SetUserinfo (client_t *client, const char *key, const char *value)
 		P_STRING (&sv_pr_state, 0) = PR_SetTempString (&sv_pr_state, key);
 		P_STRING (&sv_pr_state, 1) = PR_SetTempString (&sv_pr_state, oldvalue);
 		P_STRING (&sv_pr_state, 2) = PR_SetTempString (&sv_pr_state, value);
+		sv_pr_state.pr_argc = 3;
 		PR_ExecuteProgram (&sv_pr_state, sv_funcs.UserInfoChanged);
 		PR_PopFrame (&sv_pr_state);
 		send_changes = !R_FLOAT (&sv_pr_state);
@@ -1261,6 +1262,7 @@ SV_SetInfo_f (void *unused)
 		PR_RESET_PARAMS (&sv_pr_state);
 		P_STRING (&sv_pr_state, 0) = PR_SetTempString (&sv_pr_state, key);
 		P_STRING (&sv_pr_state, 1) = PR_SetTempString (&sv_pr_state, value);
+		sv_pr_state.pr_argc = 2;
 		PR_ExecuteProgram (&sv_pr_state, sv_funcs.UserInfoCallback);
 		PR_PopFrame (&sv_pr_state);
 		if (R_FLOAT (&sv_pr_state))

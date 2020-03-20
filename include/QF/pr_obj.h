@@ -28,8 +28,8 @@
 
 */
 
-#ifndef __pr_obj_h
-#define __pr_obj_h
+#ifndef __QF_pr_obj_h
+#define __QF_pr_obj_h
 
 #include "QF/pr_comp.h"
 
@@ -94,7 +94,7 @@ typedef struct pr_class_s {
 	pr_int_t    instance_size;
 	pointer_t   ivars;				// pr_ivar_list_t
 	pointer_t   methods;			// pr_method_list_t
-	pointer_t   dtable;
+	pointer_t   dtable;				// resource index
 	pointer_t   subclass_list;		// pr_class_t
 	pointer_t   sibling_class;		// pr_class_t
 	pointer_t   protocols;			// pr_protocol_list_t
@@ -185,4 +185,4 @@ typedef struct pr_super_s {
 	pointer_t   class;
 } pr_super_t;
 
-#endif//__pr_obj_h
+#endif//__QF_pr_obj_h

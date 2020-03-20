@@ -62,18 +62,20 @@ const char *expr_names[] =
 	"block",
 	"expr",
 	"uexpr",
+	"def",
 	"symbol",
 	"temp",
 	"vector",
 	"nil",
 	"value",
+	"compound",
+	"memset",
 };
 
 const char *
 get_op_string (int op)
 {
 	switch (op) {
-		case PAS:	return ".=";
 		case OR:	return "||";
 		case AND:	return "&&";
 		case EQ:	return "==";
@@ -354,6 +356,15 @@ print_uexpr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 }
 
 static void
+print_def (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	dasprintf (dstr, "%*se_%p [label=\"d %s\\n%d\"];\n", indent, "", e,
+			   e->e.def->name, e->line);
+}
+
+static void
 print_symbol (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	int         indent = level * 2 + 2;
@@ -507,6 +518,29 @@ print_value (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 }
 
 static void
+print_compound (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+	dasprintf (dstr, "%*se_%p [label=\"compound init\"];\n", indent, "", e);
+}
+
+static void
+print_memset (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+	expr_t     *dst = e->e.memset.dst;
+	expr_t     *val = e->e.memset.val;
+	expr_t     *count = e->e.memset.count;
+	_print_expr (dstr, dst, level, id, next);
+	_print_expr (dstr, val, level, id, next);
+	_print_expr (dstr, count, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, dst);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, val);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, count);
+	dasprintf (dstr, "%*se_%p [label=\"memset\"];\n", indent, "", e);
+}
+
+static void
 _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	static print_f print_funcs[] = {
@@ -518,11 +552,14 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		print_block,
 		print_subexpr,
 		print_uexpr,
+		print_def,
 		print_symbol,
 		print_temp,
 		print_vector,
 		print_nil,
 		print_value,
+		print_compound,
+		print_memset,
 	};
 	int         indent = level * 2 + 2;
 
@@ -534,7 +571,7 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		return;
 	e->printid = id;
 
-	if ((int) e->type < 0 || e->type > ex_value) {
+	if ((int) e->type < 0 || e->type > ex_memset) {
 		dasprintf (dstr, "%*se_%p [label=\"(bad expr type)\\n%d\"];\n",
 				   indent, "", e, e->line);
 		return;
@@ -551,6 +588,7 @@ dump_dot_expr (void *_e, const char *filename)
 	expr_t     *e = (expr_t *) _e;
 
 	dasprintf (dstr, "digraph expr_%p {\n", e);
+	dasprintf (dstr, "  graph [label=\"%s\"];\n", quote_string (filename));
 	dasprintf (dstr, "  layout=dot; rankdir=TB; compound=true;\n");
 	_print_expr (dstr, e, 0, ++id, 0);
 	dasprintf (dstr, "}\n");

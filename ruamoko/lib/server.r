@@ -1,4 +1,4 @@
-#include "server.h"
+#include <server.h>
 
 void (string s) precache_sound = #19;
 void (string s) precache_model = #20;

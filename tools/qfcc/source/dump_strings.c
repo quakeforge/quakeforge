@@ -36,21 +36,22 @@
 #include "QF/progs.h"
 #include "QF/sys.h"
 
+#include "obj_file.h"
 #include "qfprogs.h"
 
-void
-dump_strings (progs_t *pr)
+static void
+dump_string_block (const char *strblock, unsigned size)
 {
-	int i = 0;
-	char *s = pr->pr_strings;
+	const char *s = strblock;
 
-	printf ("%d ", 0);
-	while (i++ < pr->progs->numstrings) {
-		switch (*s) {
+	printf ("%x ", 0);
+	while (s - strblock < size) {
+		char        c = *s++;
+		switch (c) {
 			case 0:
 				fputs ("\n", stdout);
-				if (i < pr->progs->numstrings)
-					printf ("%d ", i);
+				if (s - strblock < size)
+					printf ("%lx ", s - strblock);
 				break;
 			case 9:
 				fputs ("\\t", stdout);
@@ -62,9 +63,30 @@ dump_strings (progs_t *pr)
 				fputs ("\\r", stdout);
 				break;
 			default:
-				fputc (sys_char_map[(unsigned char)*s], stdout);
+				fputc (sys_char_map[(unsigned char)c], stdout);
 				break;
 		}
-		s++;
 	}
+}
+
+void
+dump_strings (progs_t *pr)
+{
+	dump_string_block (pr->pr_strings, pr->progs->numstrings);
+}
+
+void
+qfo_strings (qfo_t *qfo)
+{
+	qfo_mspace_t *space = &qfo->spaces[qfo_strings_space];
+
+	if (qfo_strings_space >= qfo->num_spaces) {
+		printf ("no strings space\n");
+		return;
+	}
+	if (!space->data_size) {
+		printf ("no strings\n");
+		return;
+	}
+	dump_string_block (space->d.strings, space->data_size);
 }

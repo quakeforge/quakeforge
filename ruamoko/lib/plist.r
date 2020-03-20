@@ -1,4 +1,4 @@
-#include "plist.h"
+#include <plist.h>
 
 plitem_t PL_GetFromFile (QFile file) = #0;
 plitem_t PL_GetPropertyList (string str) = #0;

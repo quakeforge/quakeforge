@@ -25,8 +25,8 @@
 
 */
 
-#ifndef _MODEL_H
-#define _MODEL_H
+#ifndef __QF_model_h
+#define __QF_model_h
 
 #include "QF/qtypes.h"
 #include "QF/bspfile.h"
@@ -468,4 +468,4 @@ extern byte *mod_base;
 extern byte mod_novis[MAX_MAP_LEAFS / 8];
 extern int mod_lightmap_bytes;
 
-#endif	// _MODEL_H
+#endif//__QF_model_h

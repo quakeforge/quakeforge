@@ -27,8 +27,8 @@
 
 */
 
-#ifndef __qendian_h
-#define __qendian_h
+#ifndef __QF_qendian_h
+#define __QF_qendian_h
 
 /** \defgroup qendian Endian handling functions
 	\ingroup utils
@@ -120,4 +120,4 @@ unsigned int ReadLong (struct QFile_s *file);
 
 ///@}
 
-#endif // __qendian_h
+#endif//__QF_qendian_h

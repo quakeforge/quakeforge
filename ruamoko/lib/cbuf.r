@@ -1,4 +1,4 @@
-#include "cbuf.h"
+#include <cbuf.h>
 
 void (string text) Cbuf_AddText = #0;
 void (string text) Cbuf_InsertText = #0;

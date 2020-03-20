@@ -1,8 +1,8 @@
 #ifndef __ruamoko_Array_h
 #define __ruamoko_Array_h
 
-#include "Object.h"
-#include "runtime.h"
+#include <Object.h>
+#include <runtime.h>
 
 /**
 	The Array class is a general ordered collection class.
@@ -271,7 +271,7 @@
 	Iteratively sends #performSelector:withObject: to each contained object.
 */
 - (void) makeObjectsPerformSelector: (SEL)selector
-                         withObject: (id)arg;
+                         withObject: (void *)arg;
 //\}
 
 @end

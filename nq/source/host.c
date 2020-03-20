@@ -893,13 +893,8 @@ Host_Init (void)
 
 	Game_Init ();
 
-	PR_Init_Cvars ();
-	SV_Progs_Init_Cvars ();
-
 	if (!isDedicated)
 		CL_InitCvars ();
-
-	PR_Init ();
 
 	if (isDedicated) {
 		PI_RegisterPlugins (server_plugin_list);

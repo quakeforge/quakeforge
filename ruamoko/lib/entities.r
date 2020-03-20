@@ -1,4 +1,4 @@
-#include "entities.h"
+#include <entities.h>
 
 void setmodel (entity e, string m) = #3;
 void setorigin (entity e, vector o) = #2;

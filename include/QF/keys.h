@@ -26,8 +26,8 @@
 */
 
 
-#ifndef _KEYS_H
-#define _KEYS_H
+#ifndef __QF_keys_h
+#define __QF_keys_h
 
 #ifndef __QFCC__
 # include "QF/qtypes.h"
@@ -661,4 +661,4 @@ void Key_Progs_Init (struct progs_s *pr);
 
 ///@}
 
-#endif // _KEYS_H
+#endif//__QF_keys_h

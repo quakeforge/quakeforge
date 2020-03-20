@@ -1,7 +1,7 @@
 #ifndef __ruamoko_gui_Slider_h
 #define __ruamoko_gui_Slider_h
 
-#include "View.h"
+#include <gui/View.h>
 
 /**	\addtogroup gui */
 ///@{

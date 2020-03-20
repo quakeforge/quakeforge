@@ -1,4 +1,14 @@
 #include "test-harness.h"
+
+vector t1();
+vector t2(float x);
+
+vector
+t3(float x)
+{
+	return [x, t2(9).z, x] * 2;
+}
+
 vector
 t1()
 {
@@ -9,12 +19,6 @@ vector
 t2(float x)
 {
 	return [x, x, x];
-}
-
-vector
-t3(float x)
-{
-	return [x, t2(9).z, x] * 2;
 }
 
 int

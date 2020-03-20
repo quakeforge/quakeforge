@@ -45,6 +45,8 @@ typedef struct {
 	unsigned    progsversion;		// Progs version to generate code for
 	qboolean    vector_components;	// add *_[xyz] symbols for vectors
 	qboolean    ifstring;			// expand if (str) to if (str != "")
+	qboolean    const_initializers;	// initialied globals are constant
+	qboolean    promote_float;		// promote float through ...
 } code_options_t;
 
 typedef struct {

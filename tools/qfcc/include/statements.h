@@ -38,9 +38,10 @@ typedef enum {
 	op_label,
 	op_temp,
 	op_alias,
+	op_nil,
 } op_type_e;
 
-typedef struct {
+typedef struct tempop_s {
 	struct def_s   *def;
 	int             offset;
 	struct type_s *type;
@@ -55,8 +56,10 @@ typedef struct {
 typedef struct operand_s {
 	struct operand_s *next;
 	op_type_e   op_type;
-	struct type_s *type;		///< possibly override def's type
+	struct type_s *type;		///< possibly override def's/nil's type
 	int         size;			///< for structures
+	struct expr_s *expr;		///< expression generating this operand
+	void       *return_addr;	///< who created this operand
 	union {
 		struct def_s *def;
 		struct ex_value_s *value;
@@ -70,17 +73,20 @@ typedef struct operand_s {
 
 	Statement types are broken down into expressions (binary and unary,
 	includes address and pointer dereferencing (read)), assignment, pointer
-	assignment (write to dereference pointer), move (special case of pointer
-	assignment), state, function related (call, rcall, return and done), and
-	flow control (conditional branches, goto, jump (single pointer and jump
-	table)).
+	assignment (write to dereference pointer), move (special case of
+	assignment), pointer move (special case of pointer assignment), state,
+	function related (call, rcall, return and done), and flow control
+	(conditional branches, goto, jump (single pointer and jump table)).
 */
 typedef enum {
 	st_none,		///< not a (valid) statement. Used in dags.
 	st_expr,		///< c = a op b; or c = op a;
 	st_assign,		///< b = a
 	st_ptrassign,	///< *b = a; or *(b + c) = a;
-	st_move,		///< memcpy (c, a, b);
+	st_move,		///< memcpy (c, a, b); c and a are direct def references
+	st_ptrmove,		///< memcpy (c, a, b); c and a are pointers
+	st_memset,		///< memset (c, a, b); c is direct def reference
+	st_ptrmemset,	///< memset (c, a, b); c is pointer
 	st_state,		///< state (a, b); or state (a, b, c)
 	st_func,		///< call, rcall or return/done
 	st_flow,		///< if/ifa/ifae/ifb/ifbe/ifnot or goto or jump/jumpb
@@ -113,16 +119,23 @@ struct expr_s;
 struct type_s;
 struct dstring_s;
 
+extern const char *op_type_names[];
+extern const char *st_type_names[];
+
 const char *optype_str (op_type_e type) __attribute__((const));
 
-operand_t *def_operand (struct def_s *def, struct type_s *type);
-operand_t *return_operand (struct type_s *type);
-operand_t *value_operand (struct ex_value_s *value);
+operand_t *nil_operand (struct type_s *type, struct expr_s *expr);
+operand_t *def_operand (struct def_s *def, struct type_s *type,
+						struct expr_s *expr);
+operand_t *return_operand (struct type_s *type, struct expr_s *expr);
+operand_t *value_operand (struct ex_value_s *value, struct expr_s *expr);
 int tempop_overlap (tempop_t *t1, tempop_t *t2) __attribute__((pure));
-operand_t *temp_operand (struct type_s *type);
+operand_t *temp_operand (struct type_s *type, struct expr_s *expr);
 int tempop_visit_all (tempop_t *tempop, int overlap,
 					  int (*visit) (tempop_t *, void *), void *data);
-operand_t *alias_operand (struct type_s *type, operand_t *op);
+operand_t *alias_operand (struct type_s *type, operand_t *op,
+						  struct expr_s *expr);
+operand_t *label_operand (struct expr_s *label);
 void free_operand (operand_t *op);
 
 sblock_t *new_sblock (void);

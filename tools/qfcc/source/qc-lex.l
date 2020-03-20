@@ -143,6 +143,7 @@ STRING		\"(\\.|[^"\\])*\"
 						if (options.traditional < 1) {
 							double      d = strtod (yytext, 0);
 							qc_yylval.expr = new_double_expr (d);
+							qc_yylval.expr->implicit = 1;
 						} else {
 							float       f = strtof (yytext, 0);
 							qc_yylval.expr = new_float_expr (f);
@@ -352,6 +353,7 @@ static keyword_t obj_keywords[] = {
 // make the language features available to traditional code.
 static keyword_t at_keywords[] = {
 	{"for",			FOR		},
+	{"goto",		GOTO	},
 	{"break",		BREAK	},
 	{"continue",	CONTINUE},
 	{"switch",		SWITCH	},

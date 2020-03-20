@@ -1,7 +1,7 @@
 #ifndef __ruamoko_msgbuf_h
 #define __ruamoko_msgbuf_h
 
-#include "qfile.h"
+#include <qfile.h>
 
 struct msgbuf_s;
 typedef struct msgbuf_s msgbuf_t;

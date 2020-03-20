@@ -131,7 +131,8 @@ opcode_free (void *_op, void *unused)
 void
 opcode_init (void)
 {
-	opcode_t   *op, *mop;
+	const opcode_t *op;
+	opcode_t   *mop;
 
 	if (opcode_type_table) {
 		Hash_FlushTable (opcode_void_table);

@@ -148,6 +148,9 @@ InitData (void)
 	pr.code = codespace_new ();
 	memset (codespace_newstatement (pr.code), 0, sizeof (dstatement_t));
 	pr.strings = strpool_new ();
+	if (options.code.promote_float) {
+		ReuseString ("@float_promoted@");
+	}
 	pr.num_functions = 1;
 
 	pr.num_linenos = 0;
@@ -391,7 +394,9 @@ compile_to_obj (const char *file, const char *obj, lang_t lang)
 			exit (1);
 		}
 	}
-	write_frame_macros (va ("%s.frame", file_basename (file)));
+	if (options.frames_files) {
+		write_frame_macros (va ("%s.frame", file_basename (file)));
+	}
 	if (!err) {
 		qfo_t      *qfo;
 
@@ -423,6 +428,7 @@ finish_link (void)
 						&param_size);
 		linker_add_def (".param_alignment", &type_integer, flags,
 						&param_alignment);
+		linker_add_def (".xdefs", &type_xdefs, flags, 0);
 	}
 
 	if (options.code.debug) {
@@ -442,7 +448,12 @@ finish_link (void)
 	} else {
 		int         size;
 		dprograms_t *progs;
+		pr_debug_header_t *sym = 0;
+		int         sym_size = 0;
 
+		if (options.code.debug) {
+			sym = qfo_to_sym (qfo, &sym_size);
+		}
 		progs = qfo_to_progs (qfo, &size);
 		//finish_compilation ();
 
@@ -456,9 +467,6 @@ finish_link (void)
 
 		WriteProgs (progs, size);
 		if (options.code.debug) {
-			pr_debug_header_t *sym;
-			int         sym_size = 0;
-			sym = qfo_to_sym (qfo, &sym_size);
 			sym->crc = CRC_Block ((byte *) progs, size);
 			WriteSym (sym, sym_size);
 		}
@@ -749,8 +757,10 @@ progs_src_compile (void)
 			} else {
 				if (compile_file (qc_filename->str))
 					return 1;
-				write_frame_macros (va ("%s.frame",
-										file_basename (qc_filename->str)));
+				if (options.frames_files) {
+					write_frame_macros (va ("%s.frame",
+											file_basename (qc_filename->str)));
+				}
 			}
 			if (!Script_TokenAvailable (script, 0))
 				break;

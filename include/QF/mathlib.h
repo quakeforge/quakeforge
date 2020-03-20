@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __mathlib_h
-#define __mathlib_h
+#ifndef __QF_mathlib_h
+#define __QF_mathlib_h
 
 /** \defgroup mathlib Vector and matrix functions
 	\ingroup utils
@@ -220,4 +220,4 @@ void BarycentricCoords (const vec_t **points, int num_points, const vec3_t p,
 
 ///@}
 
-#endif // __mathlib_h
+#endif//__QF_mathlib_h

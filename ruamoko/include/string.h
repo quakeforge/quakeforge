@@ -7,6 +7,7 @@
 @extern float strlen (string s);
 @extern float charcount (string goal, string s);
 @extern string sprintf (string fmt, ...);
+@extern string vsprintf (string fmt, @va_list args);
 @extern string itos (int i);
 @extern int stoi (string s);
 @extern vector stov (string s);
@@ -19,5 +20,6 @@
 @extern @overload string str_mid (string str, int start);
 @extern @overload string str_mid (string str, int start, int len);
 @extern string str_str (string haystack, string needle);
+@extern int str_char (string str, int ind);
 
 #endif//__ruamoko_string_h

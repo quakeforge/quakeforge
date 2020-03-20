@@ -49,4 +49,4 @@ typedef struct tex_s {
 
 tex_t *LoadImage (const char *imageFile);
 
-#endif //__QF_image_h
+#endif//__QF_image_h

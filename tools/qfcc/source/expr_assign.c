@@ -81,16 +81,18 @@ check_assign_logic_precedence (expr_t *dst, expr_t *src)
 	return 0;
 }
 
-static expr_t *
-check_valid_lvalue (expr_t *expr)
+int
+is_lvalue (const expr_t *expr)
 {
 	switch (expr->type) {
+		case ex_def:
+			return !expr->e.def->constant;
 		case ex_symbol:
 			switch (expr->e.symbol->sy_type) {
 				case sy_name:
 					break;
 				case sy_var:
-					return 0;
+					return 1;
 				case sy_const:
 					break;
 				case sy_type:
@@ -101,26 +103,30 @@ check_valid_lvalue (expr_t *expr)
 					break;
 				case sy_class:
 					break;
+				case sy_convert:
+					break;
 			}
 			break;
 		case ex_temp:
-			return 0;
+			return 1;
 		case ex_expr:
 			if (expr->e.expr.op == '.') {
-				return 0;
+				return 1;
 			}
 			if (expr->e.expr.op == 'A') {
-				return check_valid_lvalue (expr->e.expr.e1);
+				return is_lvalue (expr->e.expr.e1);
 			}
 			break;
 		case ex_uexpr:
 			if (expr->e.expr.op == '.') {
-				return 0;
+				return 1;
 			}
 			if (expr->e.expr.op == 'A') {
-				return check_valid_lvalue (expr->e.expr.e1);
+				return is_lvalue (expr->e.expr.e1);
 			}
 			break;
+		case ex_memset:
+		case ex_compound:
 		case ex_state:
 		case ex_bool:
 		case ex_label:
@@ -132,11 +138,20 @@ check_valid_lvalue (expr_t *expr)
 		case ex_error:
 			break;
 	}
-	if (options.traditional) {
-		warning (expr, "invalid lvalue in assignment");
-		return 0;
+	return 0;
+}
+
+static expr_t *
+check_valid_lvalue (expr_t *expr)
+{
+	if (!is_lvalue (expr)) {
+		if (options.traditional) {
+			warning (expr, "invalid lvalue in assignment");
+			return 0;
+		}
+		return error (expr, "invalid lvalue in assignment");
 	}
-	return error (expr, "invalid lvalue in assignment");
+	return 0;
 }
 
 static expr_t *
@@ -151,9 +166,11 @@ check_types_compatible (expr_t *dst, expr_t *src)
 
 	if (type_assignable (dst_type, src_type)) {
 		if (is_scalar (dst_type) && is_scalar (src_type)) {
-			if (is_double (src_type)) {
-				warning (dst, "assignment of double to %s (use a cast)\n",
-						 dst_type->name);
+			if (!src->implicit) {
+				if (is_double (src_type)) {
+					warning (dst, "assignment of double to %s (use a cast)\n",
+							 dst_type->name);
+				}
 			}
 			// the types are different but cast-compatible
 			expr_t     *new = cast_expr (dst_type, src);
@@ -258,26 +275,9 @@ assign_vector_expr (expr_t *dst, expr_t *src)
 }
 
 static __attribute__((pure)) int
-is_const_ptr (expr_t *e)
+is_memset (expr_t *e)
 {
-	if ((e->type != ex_value || e->e.value->lltype != ev_pointer)
-		|| !(POINTER_VAL (e->e.value->v.pointer) >= 0
-			 && POINTER_VAL (e->e.value->v.pointer) < 65536)) {
-		return 1;
-	}
-	return 0;
-}
-
-static __attribute__((pure)) int
-is_indirect (expr_t *e)
-{
-	if (e->type == ex_block && e->e.block.result)
-		return is_indirect (e->e.block.result);
-	if (e->type == ex_expr && e->e.expr.op == '.')
-		return 1;
-	if (!(e->type == ex_uexpr && e->e.expr.op == '.'))
-		return 0;
-	return is_const_ptr (e->e.expr.e1);
+	return e->type == ex_memset;
 }
 
 expr_t *
@@ -288,30 +288,40 @@ assign_expr (expr_t *dst, expr_t *src)
 	type_t     *dst_type, *src_type;
 
 	convert_name (dst);
-	convert_name (src);
-
 	if (dst->type == ex_error) {
 		return dst;
 	}
-	if (src->type == ex_error) {
-		return src;
-	}
-
-	if (options.traditional
-		&& (expr = check_assign_logic_precedence (dst, src))) {
-		return expr;
-	}
-
-
 	if ((expr = check_valid_lvalue (dst))) {
 		return expr;
 	}
-
 	dst_type = get_type (dst);
-	src_type = get_type (src);
 	if (!dst_type) {
 		internal_error (dst, "dst_type broke in assign_expr");
 	}
+
+	if (src && !is_memset (src)) {
+		convert_name (src);
+		if (src->type == ex_error) {
+			return src;
+		}
+
+		if (options.traditional
+			&& (expr = check_assign_logic_precedence (dst, src))) {
+			return expr;
+		}
+	} else {
+		if (!src && is_scalar (dst_type)) {
+			return error (dst, "empty scalar initializer");
+		}
+		src = new_nil_expr ();
+	}
+	if (src->type == ex_compound) {
+		src = initialized_temp_expr (dst_type, src);
+		if (src->type == ex_error) {
+			return src;
+		}
+	}
+	src_type = get_type (src);
 	if (!src_type) {
 		internal_error (src, "src_type broke in assign_expr");
 	}
@@ -323,89 +333,26 @@ assign_expr (expr_t *dst, expr_t *src)
 		src_type = get_type (src);
 	}
 	if (src->type == ex_bool) {
+		// boolean expressions are chains of tests, so extract the result
+		// of the tests
 		src = convert_from_bool (src, dst_type);
 		if (src->type == ex_error) {
 			return src;
 		}
 		src_type = get_type (src);
 	}
-	if (!is_void (dst_type) && src->type == ex_nil) {
-		// nil is a type-agnostic 0
-		// FIXME: assignment to compound types? error or memset?
-		src_type = dst_type;
-		convert_nil (src, src_type);
-	}
 
-	if ((expr = check_types_compatible (dst, src))) {
-		// expr might be a valid expression, but if so, check_types_compatible
-		// will take care of everything
-		return expr;
-	}
-
-	if ((expr = assign_vector_expr (dst, src))) {
-		return expr;
-	}
-
-	if (is_indirect (dst) && is_indirect (src)) {
-		debug (dst, "here");
-		if (is_struct (src_type)) {
-			dst = address_expr (dst, 0, 0);
-			src = address_expr (src, 0, 0);
-			expr = new_move_expr (dst, src, src_type, 1);
-		} else {
-			expr_t     *temp = new_temp_def_expr (dst_type);
-
-			expr = new_block_expr ();
-			append_expr (expr, assign_expr (temp, src));
-			append_expr (expr, assign_expr (dst, temp));
-			expr->e.block.result = temp;
+	if (!is_nil (src)) {
+		if ((expr = check_types_compatible (dst, src))) {
+			// expr might be a valid expression, but if so,
+			// check_types_compatible will take care of everything
+			return expr;
 		}
-		return expr;
-	} else if (is_indirect (dst)) {
-		debug (dst, "here");
-		if (is_struct (dst_type)) {
-			dst = address_expr (dst, 0, 0);
-			src = address_expr (src, 0, 0);
-			return new_move_expr (dst, src, dst_type, 1);
+		if ((expr = assign_vector_expr (dst, src))) {
+			return expr;
 		}
-		if (dst->type == ex_expr) {
-			if (get_type (dst->e.expr.e1) == &type_entity) {
-				dst_type = dst->e.expr.type;
-				dst->e.expr.type = pointer_type (dst_type);
-				dst->e.expr.op = '&';
-			}
-			op = PAS;
-		} else {
-			if (is_const_ptr (dst->e.expr.e1)) {
-				dst = dst->e.expr.e1;
-				op = PAS;
-			}
-		}
-	} else if (is_indirect (src)) {
-		debug (dst, "here");
-		if (is_struct (dst_type)) {
-			dst = address_expr (dst, 0, 0);
-			src = address_expr (src, 0, 0);
-			src->rvalue = 1;
-			return new_move_expr (dst, src, src_type, 1);
-		}
-		if (src->type == ex_uexpr) {
-			expr = src->e.expr.e1;
-			if (is_const_ptr (expr)) {
-				if (expr->type == ex_expr && expr->e.expr.op == '&'
-					&& expr->e.expr.type->type == ev_pointer
-					&& !is_constant (expr)) {
-					src = expr;
-					src->e.expr.op = '.';
-					src->e.expr.type = src_type;
-					src->rvalue = 1;
-				}
-			}
-		}
-	}
-
-	if (is_struct (dst_type)) {
-		return new_move_expr (dst, src, dst_type, 0);
+	} else {
+		convert_nil (src, dst_type);
 	}
 
 	expr = new_binary_expr (op, dst, src);

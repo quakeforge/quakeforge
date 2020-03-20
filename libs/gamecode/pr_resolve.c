@@ -34,59 +34,59 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-#include <stdarg.h>
-#include <stdio.h>
 
-#include "QF/cmd.h"
-#include "QF/crc.h"
-#include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/progs.h"
-#include "QF/qdefs.h"
-#include "QF/qendian.h"
-#include "QF/quakefs.h"
 #include "QF/sys.h"
-#include "QF/zone.h"
-#include "QF/va.h"
 
 #include "compat.h"
 
+static const char param_str[] = ".param_0";
 
-ddef_t *
-PR_GlobalAtOfs (progs_t * pr, pr_int_t ofs)
+pr_def_t *
+PR_SearchDefs (pr_def_t *defs, unsigned num_defs, pointer_t offset)
 {
-	ddef_t     *def;
-	pr_uint_t   i;
+	// fuzzy bsearh
+	unsigned    left = 0;
+	unsigned    right = num_defs - 1;
+	unsigned    mid;
 
-	for (i = 0; i < pr->progs->numglobaldefs; i++) {
-		def = &pr->pr_globaldefs[i];
-		if (def->ofs == ofs)
-			return def;
+	if (!num_defs) {
+		return 0;
 	}
-	return NULL;
+	while (left != right) {
+		mid = (left + right + 1) / 2;
+		if (defs[mid].ofs > offset) {
+			right = mid - 1;
+		} else {
+			left = mid;
+		}
+	}
+	if (defs[left].ofs <= offset) {
+		return defs + left;
+	}
+	return 0;
 }
 
-VISIBLE ddef_t *
-PR_FieldAtOfs (progs_t * pr, pr_int_t ofs)
+pr_def_t *
+PR_GlobalAtOfs (progs_t * pr, pointer_t ofs)
 {
-	ddef_t     *def;
-	pr_uint_t   i;
-
-	for (i = 0; i < pr->progs->numfielddefs; i++) {
-		def = &pr->pr_fielddefs[i];
-		if (def->ofs == ofs)
-			return def;
-	}
-	return NULL;
+	return PR_SearchDefs (pr->pr_globaldefs, pr->progs->numglobaldefs, ofs);
 }
 
-VISIBLE ddef_t *
+VISIBLE pr_def_t *
+PR_FieldAtOfs (progs_t * pr, pointer_t ofs)
+{
+	return PR_SearchDefs (pr->pr_fielddefs, pr->progs->numfielddefs, ofs);
+}
+
+VISIBLE pr_def_t *
 PR_FindField (progs_t * pr, const char *name)
 {
 	return  Hash_Find (pr->field_hash, name);
 }
 
-VISIBLE ddef_t *
+VISIBLE pr_def_t *
 PR_FindGlobal (progs_t * pr, const char *name)
 {
 	return  Hash_Find (pr->global_hash, name);
@@ -108,7 +108,7 @@ VISIBLE int
 PR_ResolveGlobals (progs_t *pr)
 {
 	const char *sym;
-	ddef_t     *def;
+	pr_def_t   *def;
 	int         i;
 
 	if (pr->progs->version == PROG_ID_VERSION) {
@@ -124,11 +124,14 @@ PR_ResolveGlobals (progs_t *pr)
 		pr->pr_param_size = OFS_PARM1 - OFS_PARM0;
 		pr->pr_param_alignment = 0;	// log2
 	} else {
+		char       *param_n = alloca (sizeof (param_str));
+		strcpy (param_n, param_str);
 		if (!(def = PR_FindGlobal (pr, sym = ".return")))
 			goto error;
 		pr->pr_return = &pr->pr_globals[def->ofs];
 		for (i = 0; i < MAX_PARMS; i++) {
-			if (!(def = PR_FindGlobal (pr, sym = va(".param_%d", i))))
+			param_n[sizeof (param_str) - 2] = i + '0';
+			if (!(def = PR_FindGlobal (pr, sym = param_n)))
 				goto error;
 			pr->pr_params[i] = &pr->pr_globals[def->ofs];
 		}
@@ -139,10 +142,6 @@ PR_ResolveGlobals (progs_t *pr)
 			goto error;
 		pr->pr_param_alignment = G_INT (pr, def->ofs);
 	}
-	if (pr->pr_saved_params)
-		free (pr->pr_saved_params);
-	pr->pr_saved_params = calloc (pr->pr_param_size * MAX_PARMS,
-								  sizeof (pr_type_t));
 	memcpy (pr->pr_real_params, pr->pr_params, sizeof (pr->pr_params));
 	if (!pr->globals.time) {
 		if ((def = PR_FindGlobal (pr, "time")))
@@ -180,7 +179,7 @@ int
 PR_AccessField (progs_t *pr, const char *name, etype_t type,
 				const char *file, int line)
 {
-	ddef_t *def = PR_FindField (pr, name);
+	pr_def_t   *def = PR_FindField (pr, name);
 
 	if (!def)
 		PR_Error (pr, "undefined field %s accessed at %s:%d", name, file, line);

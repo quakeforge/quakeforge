@@ -235,7 +235,11 @@ if test "x$ENABLE_tools_qfvis" = xyes; then
 	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qwaq" = xyes; then
-	QF_NEED(tools,[qwaq])
+	if test "x$HAVE_PANEL" = xyes -a "x$HAVE_PTHREAD" = xyes; then
+		QWAQ_TARGETS="$QWAQ_TARGETS qwaq-curses\$(EXEEXT)"
+	fi
+	QF_NEED(tools,[qfcc])
+	QF_NEED(ruamoko,[qwaq])
 	QF_NEED(libs,[ruamoko gamecode util])
 fi
 if test "x$ENABLE_tools_wad" = xyes; then
@@ -249,14 +253,24 @@ fi
 
 QF_NEED(top, [libs hw nq qtv qw])
 
-QF_PROCESS_NEED_DIRS(tools,[bsp2img carne pak qfbsp qfcc qflight qflmp qfmodelgen qfspritegen qfvis qwaq wad wav])
-QF_PROCESS_NEED_FUNC(tools,[bsp2img carne pak qfbsp qfcc qflight qflmp qfmodelgen qfspritegen qfvis qwaq wad wav], QF_NEED(top,tools))
+QF_PROCESS_NEED_DIRS(tools,[bsp2img carne pak qfbsp qfcc qflight qflmp qfmodelgen qfspritegen qfvis wad wav])
+QF_PROCESS_NEED_FUNC(tools,[bsp2img carne pak qfbsp qfcc qflight qflmp qfmodelgen qfspritegen qfvis wad wav], QF_NEED(top,tools))
 
 QF_PROCESS_NEED_DIRS(libs,[util gamecode ruamoko gib audio image models video console net qw client])
 
+QF_PROCESS_NEED_DIRS(ruamoko,[qwaq])
+
 if test "$ENABLE_tools_qfcc" = "yes" -a "$ENABLE_tools_pak" = "yes"; then
 	QF_NEED(top, [ruamoko])
+	qfcc_include_qf="\$(qfcc_include_qf)"
 fi
+QF_SUBST(qfcc_include_qf)
+
+if test x"${top_need_libs}" = xyes; then
+	include_qf="\$(include_qf)"
+fi
+QF_SUBST(include_qf)
+
 progs_gz=
 if test "$HAVE_ZLIB" = "yes"; then
 	progs_gz=".gz"
@@ -380,6 +394,7 @@ QF_DEPS(QFCC,
 QF_DEPS(QFCC_TEST,
 	[],
 	[$(top_builddir)/libs/ruamoko/libQFruamoko.la
+	 $(top_builddir)/libs/gamecode/libQFgamecode.la
 	 $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
@@ -414,6 +429,7 @@ QF_DEPS(QFVIS,
 QF_DEPS(QWAQ,
 	[],
 	[$(top_builddir)/libs/ruamoko/libQFruamoko.la
+	 $(top_builddir)/libs/gamecode/libQFgamecode.la
 	 $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )
@@ -421,6 +437,7 @@ QF_DEPS(CARNE,
 	[],
 	[$(top_builddir)/libs/gib/libQFgib.la
 	 $(top_builddir)/libs/ruamoko/libQFruamoko.la
+	 $(top_builddir)/libs/gamecode/libQFgamecode.la
 	 $(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
 )

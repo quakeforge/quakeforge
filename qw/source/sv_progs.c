@@ -389,7 +389,7 @@ set_address (sv_def_t *def, void *address)
 static int
 resolve_globals (progs_t *pr, sv_def_t *def, int mode)
 {
-	ddef_t     *ddef;
+	pr_def_t   *ddef;
 	int         ret = 1;
 
 	if (mode == 2) {
@@ -435,7 +435,7 @@ resolve_functions (progs_t *pr, sv_def_t *def, int mode)
 static int
 resolve_fields (progs_t *pr, sv_def_t *def, int mode)
 {
-	ddef_t     *ddef;
+	pr_def_t   *ddef;
 	int         ret = 1;
 
 	if (mode == 2) {
@@ -544,6 +544,8 @@ SV_LoadProgs (void)
 void
 SV_Progs_Init (void)
 {
+	SV_Progs_Init_Cvars ();
+
 	pr_gametype = "quakeworld";
 	sv_pr_state.edicts = &sv.edicts;
 	sv_pr_state.num_edicts = &sv.num_edicts;
@@ -555,6 +557,8 @@ SV_Progs_Init (void)
 	sv_pr_state.free_edict = free_edict; // eww, I hate the need for this :(
 	sv_pr_state.bi_map = bi_map;
 	sv_pr_state.resolve = resolve;
+
+	PR_Init (&sv_pr_state);
 
 	SV_PR_Cmds_Init ();
 	SV_PR_QWE_Init (&sv_pr_state);
@@ -575,6 +579,8 @@ SV_Progs_Init (void)
 void
 SV_Progs_Init_Cvars (void)
 {
+	PR_Init_Cvars ();
+
 	r_skyname = Cvar_Get ("r_skyname", "", CVAR_NONE, NULL,
 						 "Default name of skybox if none given by map");
 	sv_progs = Cvar_Get ("sv_progs", "", CVAR_NONE, NULL,

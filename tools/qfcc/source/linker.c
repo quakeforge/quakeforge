@@ -1119,15 +1119,12 @@ undefined_def (qfo_def_t *def)
 			pr_lineno_t *line;
 
 			while (func - work->funcs < work->num_funcs) {
-				if (func->code < 0) {
-					continue;
-				}
-				if ((pr_uint_t) func->code > reloc->offset) {
-					continue;
-				}
-				if (!best || reloc->offset - func->code < best_dist) {
-					best = func;
-					best_dist = reloc->offset - func->code;
+				if (func->code >= 0
+					&& (pr_uint_t) func->code <= reloc->offset) {
+					if (!best || reloc->offset - func->code < best_dist) {
+						best = func;
+						best_dist = reloc->offset - func->code;
+					}
 				}
 				func++;
 			}
@@ -1164,7 +1161,7 @@ check_defs (void)
 			defref_t   *_d = Hash_Find (defined_data_defs, "self");
 			if (_d) {
 				qfo_def_t  *d = REF (_d);
-				if (QFO_TYPEMETA (work, d->type) == ty_none
+				if (QFO_TYPEMETA (work, d->type) == ty_basic
 					&& QFO_TYPETYPE (work, d->type) == ev_entity)
 					def_warning (d, "@self and self used together");
 			}

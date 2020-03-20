@@ -42,6 +42,7 @@
 
 #include <QF/hash.h>
 #include <QF/sys.h>
+#include <QF/va.h>
 
 #include "class.h"
 #include "debug.h"
@@ -97,6 +98,7 @@ int yylex (void);
 	void       *pointer;			// for ensuring pointer values are null
 	struct type_s	*type;
 	struct expr_s	*expr;
+	struct element_s *element;
 	struct function_s *function;
 	struct switch_block_s *switch_block;
 	struct param_s	*param;
@@ -122,7 +124,7 @@ int yylex (void);
 %nonassoc STORAGEX
 
 %left			COMMA
-%right	<op>	'=' ASX PAS /* pointer assign */
+%right	<op>	'=' ASX
 %right			'?' ':'
 %left			OR
 %left			AND
@@ -144,8 +146,8 @@ int yylex (void);
 %token	<expr>		VALUE STRING
 
 %token				LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS
-%token				NIL IFBE IFB IFAE IFA SWITCH CASE DEFAULT ENUM TYPEDEF
-%token				ARGS EXTERN STATIC SYSTEM NOSAVE OVERLOAD NOT
+%token				NIL IFBE IFB IFAE IFA GOTO SWITCH CASE DEFAULT ENUM
+%token				ARGS TYPEDEF EXTERN STATIC SYSTEM NOSAVE OVERLOAD NOT
 %token	<op>		STRUCT
 %token	<type>		TYPE
 %token	<symbol>	OBJECT TYPE_NAME
@@ -153,7 +155,7 @@ int yylex (void);
 %token				PROTECTED PROTOCOL PUBLIC SELECTOR REFERENCE SELF THIS
 
 %type	<spec>		optional_specifiers specifiers local_specifiers
-%type	<spec>		storage_class save_storage
+%type	<spec>		storage_class save_storage set_spec_storage
 %type	<spec>		type_specifier type_specifier_or_storage_class
 %type	<spec>		type
 
@@ -180,19 +182,22 @@ int yylex (void);
 %type	<symbol>	methoddef
 %type	<expr>		opt_initializer var_initializer local_def
 
-%type	<expr>		opt_init opt_expr cexpr expr element_list element
+%type	<expr>		opt_init opt_expr comma_expr expr
+%type	<expr>		compound_init element_list
+%type	<element>	element
 %type	<expr>		optional_state_expr texpr vector_expr
 %type	<expr>		statement statements compound_statement
-%type	<expr>		else label break_label continue_label
-%type	<expr>		unary_expr cast_expr opt_arg_list arg_list
+%type	<expr>		else bool_label break_label continue_label
+%type	<expr>		unary_expr ident_expr cast_expr expr_list
+%type	<expr>		opt_arg_list arg_list arg_expr
 %type	<expr>		init_var_decl_list init_var_decl
 %type	<switch_block> switch_block
-%type	<symbol>	identifier
+%type	<symbol>	identifier label
 
 %type	<symbol>	overloaded_identifier
 
 %type	<expr>		identifier_list
-%type	<symbol>	selector reserved_word
+%type	<symbol>	protocol_name_list selector reserved_word
 %type	<param>		optional_param_list unaryselector keyworddecl
 %type	<param>		keywordselector
 %type	<method>	methodproto methoddecl
@@ -264,6 +269,33 @@ default_type (specifier_t spec, symbol_t *sym)
 	return spec;
 }
 
+static int
+is_anonymous_struct (specifier_t spec)
+{
+	if (spec.sym) {
+		return 0;
+	}
+	if (!is_struct (spec.type)) {
+		return 0;
+	}
+	if (!spec.type->t.symtab || spec.type->t.symtab->parent) {
+		return 0;
+	}
+	// struct and union type names always begin with "tag ". Untagged s/u
+	// are "tag .<filename>.<id>".
+	if (spec.type->name[4] != '.') {
+		return 0;
+	}
+	return 1;
+}
+
+static int
+is_null_spec (specifier_t spec)
+{
+	static specifier_t null_spec;
+	return memcmp (&spec, &null_spec, sizeof (spec)) == 0;
+}
+
 %}
 
 %expect 0
@@ -312,7 +344,25 @@ external_def_list
 
 external_def
 	: optional_specifiers external_decl_list ';' { }
-	| optional_specifiers ';' { }
+	| optional_specifiers ';'
+		{
+			if (!is_null_spec ($1)) {
+				if (!$1.type && !$1.sym) {
+					warning (0, "useless specifiers");
+				} else if ($1.type && !$1.sym) {
+					if (is_anonymous_struct ($1)){
+						warning (0, "unnamed struct/union that defines "
+								 "no instances");
+					} else if (!is_enum ($1.type) && !is_struct ($1.type)) {
+						warning (0, "useless type name in empty declaration");
+					}
+				} else if (!$1.type && $1.sym) {
+					bug (0, "wha? %p %p", $1.type, $1.sym);
+				} else {
+					bug (0, "wha? %p %p", $1.type, $1.sym);
+				}
+			}
+		}
 	| optional_specifiers qc_func_params
 		{
 			type_t    **type;
@@ -345,6 +395,14 @@ external_def
 save_storage
 	: /* emtpy */
 		{
+			$$.storage = current_storage;
+		}
+	;
+
+set_spec_storage
+	: /* emtpy */
+		{
+			$$ = $<spec>0;
 			$$.storage = current_storage;
 		}
 	;
@@ -473,6 +531,15 @@ specifiers
 type
 	: type_specifier
 	| type type_specifier
+		{
+			// deal with eg "int id"
+			$1.sym = $2.sym;
+
+			if (!$1.sym) {
+				error (0, "two or more data types in declaration specifiers");
+			}
+			$$ = $1;
+		}
 	;
 
 type_specifier_or_storage_class
@@ -490,6 +557,7 @@ type_specifier
 	| TYPE_NAME
 		{
 			$$ = make_spec ($1->type, 0, 0, 0);
+			$$.sym = $1;
 		}
 	| OBJECT protocolrefs
 		{
@@ -501,6 +569,7 @@ type_specifier
 			} else {
 				$$ = make_spec (&type_id, 0, 0, 0);
 			}
+			$$.sym = $1;
 		}
 	| CLASS_NAME protocolrefs
 		{
@@ -512,6 +581,7 @@ type_specifier
 			} else {
 				$$ = make_spec ($1->type, 0, 0, 0);
 			}
+			$$.sym = $1;
 		}
 	// NOTE: fields don't parse the way they should. This is not a problem
 	// for basic types, but functions need special treatment
@@ -590,9 +660,18 @@ struct_specifier
 			if (!sym->table) {
 				symtab_addsymbol (current_symtab, sym);
 			} else {
-				error (0, "%s %s redefined", $1 == 's' ? "struct" : "union",
-					   $2->name);
-				$1 = 0;
+				if (!sym->type) {
+					internal_error (0, "broken structure symbol?");
+				}
+				if (sym->type->meta == ty_enum
+					|| (sym->type->meta == ty_struct && sym->type->t.symtab)) {
+					error (0, "%s %s redefined",
+						   $1 == 's' ? "struct" : "union", $2->name);
+					$1 = 0;
+				} else if (sym->type->meta != ty_struct) {
+					internal_error (0, "%s is not a struct or union",
+									$2->name);
+				}
 			}
 			current_symtab = new_symtab (current_symtab, stab_local);
 		}
@@ -645,6 +724,34 @@ struct_def_list
 struct_def
 	: type struct_decl_list
 	| type
+		{
+			if ($1.sym && $1.sym->type != $1.type) {
+				// a type name (id, typedef, etc) was used as a field name.
+				// this is allowed in C
+				$1.sym = new_symbol ($1.sym->name);
+				$1.sym->type = $1.type;
+				$1.sym->sy_type = sy_var;
+				symtab_addsymbol (current_symtab, $1.sym);
+				if (!$1.sym->table) {
+					error (0, "duplicate field `%s'", $1.sym->name);
+				}
+			} else if (is_anonymous_struct ($1)) {
+				// anonymous struct/union
+				// type->name always begins with "tag "
+				$1.sym = new_symbol (va (".anonymous.%s", $1.type->name + 4));
+				$1.sym->type = $1.type;
+				$1.sym->sy_type = sy_var;
+				$1.sym->visibility = vis_anonymous;
+				symtab_addsymbol (current_symtab, $1.sym);
+				if (!$1.sym->table) {
+					error (0, "duplicate field `%s'", $1.sym->name);
+				}
+			} else {
+				// bare type
+				warning (0, "declaration does not declare anything");
+			}
+			$$ = $1;
+		}
 	;
 
 struct_decl_list
@@ -661,7 +768,11 @@ struct_decl
 			$1->type = append_type ($1->type, $<spec>0.type);
 			$1->type = find_type ($1->type);
 			$1->sy_type = sy_var;
+			$1->visibility = current_visibility;
 			symtab_addsymbol (current_symtab, $1);
+			if (!$1->table) {
+				error (0, "duplicate field `%s'", $1->name);
+			}
 		}
 	| var_decl
 		{
@@ -670,7 +781,11 @@ struct_decl
 			$1->type = append_type ($1->type, $<spec>0.type);
 			$1->type = find_type ($1->type);
 			$1->sy_type = sy_var;
+			$1->visibility = current_visibility;
 			symtab_addsymbol (current_symtab, $1);
+			if (!$1->table) {
+				error (0, "duplicate field `%s'", $1->name);
+			}
 		}
 	| var_decl ':' expr		%prec COMMA		{}
 	| ':' expr				%prec COMMA		{}
@@ -799,6 +914,7 @@ abstract_decl
 				$1.type = type_default;
 			$$->type = find_type (append_type ($$->type, $1.type));
 		}
+	| error		{ $$ = new_symbol (""); }
 	;
 
 qc_param_decl
@@ -974,15 +1090,27 @@ overloaded_identifier
 non_code_func
 	: '=' '#' expr
 		{
+			if ($<spec>-1.storage == sc_extern) {
+				error (0, "initializing external variable");
+			}
 			build_builtin_function ($<symbol>0, $3, 0);
 		}
 	| '=' expr
 		{
-			symbol_t   *sym = $<symbol>0;
-			specifier_t spec = $<spec>-1;
-			initialize_def (sym, $2, current_symtab->space, spec.storage);
-			if (sym->s.def)
-				sym->s.def->nosave |= spec.nosave;
+			if (local_expr) {
+				symbol_t   *sym = $<symbol>0;
+				specifier_t spec = $<spec>-1;
+				initialize_def (sym, $2, current_symtab->space, spec.storage);
+				if (sym->s.def)
+					sym->s.def->nosave |= spec.nosave;
+			} else {
+				if (is_integer_val ($2) || is_float_val ($2)) {
+					error (0, "invalid function initializer."
+						   " did you forget #?");
+				} else {
+					error (0, "cannot create global function variables");
+				}
+			}
 		}
 	| /* emtpy */
 		{
@@ -1025,7 +1153,18 @@ opt_initializer
 
 var_initializer
 	: '=' expr									{ $$ = $2; }
-	| '=' '{' element_list optional_comma '}'	{ $$ = $3; }
+	| '=' compound_init
+		{
+			if (!$2 && is_scalar ($<spec>-1.type)) {
+				error (0, "empty scalar initializer");
+			}
+			$$ = $2 ? $2 : new_nil_expr ();
+		}
+	;
+
+compound_init
+	: '{' element_list optional_comma '}'		{ $$ = $2; }
+	| '{' '}'									{ $$ = 0; }
 	;
 
 optional_state_expr
@@ -1036,18 +1175,18 @@ optional_state_expr
 element_list
 	: element
 		{
-			$$ = new_block_expr ();
-			append_expr ($$, $1);
+			$$ = new_compound_init ();
+			append_element ($$, $1);
 		}
-	| element_list ',' element
+	| element_list ','  element
 		{
-			append_expr ($$, $3);
+			append_element ($$, $3);
 		}
 	;
 
 element
-	: '{' element_list optional_comma '}'		{ $$ = $2; }
-	| expr										{ $$ = $1; }
+	: compound_init								{ $$ = new_element ($1, 0); }
+	| expr										{ $$ = new_element ($1, 0); }
 	;
 
 optional_comma
@@ -1102,6 +1241,26 @@ local_def
 			local_expr = 0;
 			(void) ($<spec>2);
 		}
+	| specifiers ';'
+		{
+			if (!is_null_spec ($1)) {
+				if (!$1.type && !$1.sym) {
+					warning (0, "useless specifiers");
+				} else if ($1.type && !$1.sym) {
+					if (is_anonymous_struct ($1)){
+						warning (0, "unnamed struct/union that defines "
+								 "no instances");
+					} else if (!is_enum ($1.type) && !is_struct ($1.type)) {
+						warning (0, "useless type name in empty declaration");
+					}
+				} else if (!$1.type && $1.sym) {
+					bug (0, "wha? %p %p", $1.type, $1.sym);
+				} else {
+					bug (0, "wha? %p %p", $1.type, $1.sym);
+				}
+			}
+			$$ = 0;
+		}
 	;
 
 statement
@@ -1109,10 +1268,8 @@ statement
 	| error ';'					{ $$ = 0; yyerrok; }
 	| compound_statement		{ $$ = $1; }
 	| local_def					{ $$ = $1; }
-	| RETURN opt_expr ';'
-		{
-			$$ = return_expr (current_func, $2);
-		}
+	| RETURN opt_expr ';'		{ $$ = return_expr (current_func, $2); }
+	| RETURN compound_init ';'	{ $$ = return_expr (current_func, $2); }
 	| BREAK ';'
 		{
 			$$ = 0;
@@ -1129,6 +1286,10 @@ statement
 			else
 				error (0, "continue outside of loop");
 		}
+	| label
+		{
+			$$ = named_label_expr ($1);
+		}
 	| CASE expr ':'
 		{
 			$$ = case_label_expr (switch_block, $2);
@@ -1142,6 +1303,11 @@ statement
 			$$ = switch_expr (switch_block, break_label, $7);
 			switch_block = $5;
 			break_label = $2;
+		}
+	| GOTO NAME
+		{
+			expr_t     *label = named_label_expr ($2);
+			$$ = goto_expr (label);
 		}
 	| IF not '(' texpr ')' statement %prec IFX
 		{
@@ -1176,7 +1342,7 @@ statement
 			break_label = $2;
 			continue_label = $3;
 		}
-	| cexpr ';'
+	| comma_expr ';'
 		{
 			$$ = $1;
 		}
@@ -1196,6 +1362,10 @@ else
 	;
 
 label
+	: NAME ':'
+	;
+
+bool_label
 	: /* empty */
 		{
 			$$ = new_label_expr ();
@@ -1228,8 +1398,8 @@ switch_block
 	;
 
 opt_init
-	: cexpr
-	| type init_var_decl_list { $$ = $2; }
+	: comma_expr
+	| type set_spec_storage init_var_decl_list { $$ = $3; }
 	| /* empty */
 		{
 			$$ = 0;
@@ -1261,7 +1431,7 @@ init_var_decl
 	;
 
 opt_expr
-	: cexpr
+	: comma_expr
 	| /* empty */
 		{
 			$$ = 0;
@@ -1277,6 +1447,7 @@ unary_expr
 	| '(' expr ')'				{ $$ = $2; $$->paren = 1; }
 	| unary_expr '(' opt_arg_list ')' { $$ = function_expr ($1, $3); }
 	| unary_expr '[' expr ']'		{ $$ = array_expr ($1, $3); }
+	| unary_expr '.' ident_expr		{ $$ = field_expr ($1, $3); }
 	| unary_expr '.' unary_expr		{ $$ = field_expr ($1, $3); }
 	| INCOP unary_expr				{ $$ = incop_expr ($1, $2, 0); }
 	| unary_expr INCOP				{ $$ = incop_expr ($2, $1, 1); }
@@ -1295,8 +1466,14 @@ unary_expr
 	| obj_expr					{ $$ = $1; }
 	;
 
+ident_expr
+	: OBJECT					{ $$ = new_symbol_expr ($1); }
+	| CLASS_NAME				{ $$ = new_symbol_expr ($1); }
+	| TYPE_NAME					{ $$ = new_symbol_expr ($1); }
+	;
+
 vector_expr
-	: '[' expr ',' arg_list ']'
+	: '[' expr ',' expr_list ']'
 		{
 			expr_t     *t = $4;
 			while (t->next)
@@ -1317,10 +1494,11 @@ cast_expr
 expr
 	: cast_expr
 	| expr '=' expr				{ $$ = assign_expr ($1, $3); }
+	| expr '=' compound_init	{ $$ = assign_expr ($1, $3); }
 	| expr ASX expr				{ $$ = asx_expr ($2, $1, $3); }
 	| expr '?' expr ':' expr 	{ $$ = conditional_expr ($1, $3, $5); }
-	| expr AND label expr		{ $$ = bool_expr (AND, $3, $1, $4); }
-	| expr OR label expr		{ $$ = bool_expr (OR,  $3, $1, $4); }
+	| expr AND bool_label expr	{ $$ = bool_expr (AND, $3, $1, $4); }
+	| expr OR bool_label expr	{ $$ = bool_expr (OR,  $3, $1, $4); }
 	| expr EQ expr				{ $$ = binary_expr (EQ,  $1, $3); }
 	| expr NE expr				{ $$ = binary_expr (NE,  $1, $3); }
 	| expr LE expr				{ $$ = binary_expr (LE,  $1, $3); }
@@ -1344,8 +1522,8 @@ texpr
 	: expr						{ $$ = convert_bool ($1, 1); }
 	;
 
-cexpr
-	: arg_list
+comma_expr
+	: expr_list
 		{
 			if ($1->next) {
 				expr_t     *res = $1;
@@ -1356,18 +1534,32 @@ cexpr
 		}
 	;
 
+expr_list
+	: expr
+	| expr_list ',' expr
+		{
+			$3->next = $1;
+			$$ = $3;
+		}
+	;
+
 opt_arg_list
 	: /* emtpy */				{ $$ = 0; }
 	| arg_list					{ $$ = $1; }
 	;
 
 arg_list
-	: expr
-	| arg_list ',' expr
+	: arg_expr
+	| arg_list ',' arg_expr
 		{
 			$3->next = $1;
 			$$ = $3;
 		}
+	;
+
+arg_expr
+	: expr
+	| compound_init
 	;
 
 const
@@ -1393,6 +1585,7 @@ identifier
 obj_def
 	: classdef					{ }
 	| classdecl
+	| protocoldecl
 	| protocoldef
 	| { if (!current_class) PARSE_ERROR; } methoddef
 	| END
@@ -1431,9 +1624,13 @@ classdecl
 class_name
 	: identifier %prec CLASS_NOT_CATEGORY
 		{
-			$1 = check_undefined ($1);
-			if (!$1->type || !obj_is_class ($1->type)) {
-				error (0, "`%s' is not a class %p", $1->name, $1->type);
+			if (!$1->type) {
+				$$ = get_class ($1, 1);
+				if (!$1->table) {
+					symtab_addsymbol (current_symtab, $1);
+				}
+			} else if (!obj_is_class ($1->type)) {
+				error (0, "`%s' is not a class", $1->name);
 				$$ = get_class (0, 1);
 			} else {
 				$$ = $1->type->t.class;
@@ -1454,6 +1651,7 @@ new_class_name
 				$1 = check_redefined ($1);
 				$$ = get_class ($1, 1);
 			}
+			$$->interface_declared = 1;
 			current_class = &$$->class_type;
 			if (!$1->table)
 				symtab_addsymbol (current_symtab, $1);
@@ -1472,6 +1670,12 @@ class_with_super
 new_class_with_super
 	: new_class_name ':' class_name
 		{
+			if (!$3->interface_declared) {
+				$3->interface_declared = 1;
+				error (0, "cannot find interface declaration for `%s', "
+					   "superclass of `%s'", $3->name, $1->name);
+			}
+			$1->interface_declared = 1;
 			$1->super_class = $3;
 			$$ = $1;
 		}
@@ -1520,17 +1724,18 @@ category_reference
 		}
 	;
 
-
 protocol_name
 	: identifier
 		{
 			$$ = get_protocol ($1->name, 0);
-			if ($$) {
-				error (0, "redefinition of %s", $1->name);
+			if ($$ && $$->methods) {
+				error (0, "redefinition of protocol %s", $1->name);
 				$$ = get_protocol (0, 1);
-			} else {
+			}
+			if (!$$) {
 				$$ = get_protocol ($1->name, 1);
 			}
+			$$->methods = new_methodlist ();
 			current_class = &$$->class_type;
 		}
 	;
@@ -1623,16 +1828,31 @@ classdef
 	| REFERENCE category_reference ';'	{ }
 	;
 
+protocoldecl
+	: protocol
+	  protocol_name_list ';'
+		{
+			while ($2) {
+				get_protocol ($2->name, 1);
+				$2 = $2->next;
+			}
+		}
+	;
+
 protocoldef
-	: PROTOCOL					{ $<class_type>$ = current_class; }
+	: protocol
 	  protocol_name
-	  protocolrefs			{ protocol_add_protocols ($3, $4); $<class>$ = 0; }
-	  methodprotolist			{ protocol_add_methods ($3, $6); }
+	  protocolrefs			{ protocol_add_protocols ($2, $3); $<class>$ = 0; }
+	  methodprotolist			{ protocol_add_methods ($2, $5); }
 	  END
 		{
-			current_class = $<class_type>2;
-			(void) ($<class>5);
+			current_class = $<class_type>1;
+			(void) ($<class>4);
 		}
+	;
+
+protocol
+	: PROTOCOL					{ $<class_type>$ = current_class; }
 	;
 
 protocolrefs
@@ -1677,6 +1897,7 @@ ivar_decl_list
 			tab = $$->parent;	// preserve the ivars inheritance chain
 			build_struct ('s', 0, $$, 0);
 			$$->parent = tab;
+			current_visibility = vis_public;
 		}
 	;
 
@@ -1698,6 +1919,24 @@ ivar_decls
 
 ivar_decl
 	: type ivars
+	| type
+		{
+			if (is_anonymous_struct ($1)) {
+				// anonymous struct/union
+				// type->name always begins with "tag "
+				$1.sym = new_symbol (va (".anonymous.%s", $1.type->name + 4));
+				$1.sym->type = $1.type;
+				$1.sym->sy_type = sy_var;
+				$1.sym->visibility = vis_anonymous;
+				symtab_addsymbol (current_symtab, $1.sym);
+				if (!$1.sym->table) {
+					error (0, "duplicate field `%s'", $1.sym->name);
+				}
+			} else {
+				// bare type
+				warning (0, "declaration does not declare anything");
+			}
+		}
 	;
 
 ivars
@@ -1782,6 +2021,10 @@ methodproto
 			$2->instance = 0;
 			$$ = $2;
 		}
+	| '-' error ';'
+		{ $$ = new_method (&type_id, new_param ("", 0, 0), 0); }
+	| '+' error ';'
+		{ $$ = new_method (&type_id, new_param ("", 0, 0), 0); }
 	| '-' methoddecl ';'
 		{
 			$2->instance = 1;
@@ -1806,8 +2049,7 @@ optional_param_list
 	| ',' param_list			{ $$ = $2; }
 	| ',' param_list ',' ELLIPSIS
 		{
-			$$ = new_param (0, 0, 0);
-			$$->next = $2;
+			$$ = param_append_identifiers ($2, 0, 0);
 		}
 	;
 
@@ -1819,6 +2061,10 @@ keywordselector
 	: keyworddecl
 	| keywordselector keyworddecl { $2->next = $1; $$ = $2; }
 	;
+
+protocol_name_list
+	: identifier
+	| protocol_name_list ',' identifier { $3->next = $1; $$ = $3; }
 
 selector
 	: NAME						{ $$ = $1; }

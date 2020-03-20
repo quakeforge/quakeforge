@@ -31,7 +31,7 @@
 #ifndef __type_h
 #define __type_h
 
-#include "QF/pr_comp.h"
+#include "QF/pr_type.h"
 
 #include "def.h"
 
@@ -51,15 +51,6 @@ typedef struct ty_array_s {
 	int         size;
 } ty_array_t;
 
-typedef enum {
-	ty_none,				///< func/field/pointer or not used
-	ty_struct,
-	ty_union,
-	ty_enum,
-	ty_array,
-	ty_class,
-} ty_meta_e;
-
 typedef struct type_s {
 	etype_t     type;		///< ev_invalid means structure/array etc
 	const char *name;
@@ -67,6 +58,7 @@ typedef struct type_s {
 	/// function/pointer/array/struct types are more complex
 	ty_meta_e   meta;
 	union {
+		// no data for ty_basic when not a func, field or pointer
 		ty_func_t   func;
 		ty_fldptr_t fldptr;
 		ty_array_t  array;
@@ -84,6 +76,7 @@ typedef struct type_s {
 typedef struct {
 	type_t     *type;
 	struct param_s *params;
+	struct symbol_s *sym;	///< for dealing with "int id" etc
 	storage_class_t storage;
 	unsigned    multi_type:1;
 	unsigned    multi_store:1;
@@ -119,6 +112,9 @@ extern	type_t	type_va_list;
 extern	type_t	type_param;
 extern	type_t	type_zero;
 extern	type_t	type_type_encodings;
+extern	type_t	type_xdef;
+extern	type_t	type_xdef_pointer;
+extern	type_t	type_xdefs;
 
 extern struct symtab_s *vector_struct;
 extern struct symtab_s *quaternion_struct;
@@ -132,8 +128,8 @@ void chain_type (type_t *type);
 
 /**	Append a type to the end of a type chain.
 
-	The type chain must be made up of only field, pointer, function and array
-	types, as other types do not have auxiliary type fields.
+	The type chain must be made up of only field, pointer, function, and
+	array types, as other types do not have auxiliary type fields.
 
 	\param type		The type chain to which the type will be appended.
 	\param new		The type to be appended. May be any type.
@@ -154,6 +150,9 @@ void encode_type (struct dstring_s *encoding, const type_t *type);
 const char *type_get_encoding (const type_t *type);
 int is_void (const type_t *type) __attribute__((pure));
 int is_enum (const type_t *type) __attribute__((pure));
+int is_integer (const type_t *type) __attribute__((pure));
+int is_uinteger (const type_t *type) __attribute__((pure));
+int is_short (const type_t *type) __attribute__((pure));
 int is_integral (const type_t *type) __attribute__((pure));
 int is_double (const type_t *type) __attribute__((pure));
 int is_float (const type_t *type) __attribute__((pure));
@@ -163,9 +162,12 @@ int is_quaternion (const type_t *type) __attribute__((pure));
 int is_math (const type_t *type) __attribute__((pure));
 int is_pointer (const type_t *type) __attribute__((pure));
 int is_field (const type_t *type) __attribute__((pure));
+int is_entity (const type_t *type) __attribute__((pure));
 int is_struct (const type_t *type) __attribute__((pure));
 int is_array (const type_t *type) __attribute__((pure));
+int is_structural (const type_t *type) __attribute__((pure));
 int is_func (const type_t *type) __attribute__((pure));
+int is_string (const type_t *type) __attribute__((pure));
 int type_compatible (const type_t *dst, const type_t *src) __attribute__((pure));
 int type_assignable (const type_t *dst, const type_t *src);
 int type_size (const type_t *type) __attribute__((pure));

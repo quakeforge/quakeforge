@@ -25,8 +25,8 @@
 
 */
 
-#ifndef _LLIST_H
-#define _LLIST_H
+#ifndef __QF_llist_h
+#define __QF_llist_h
 
 #include "QF/qtypes.h"
 
@@ -112,4 +112,4 @@ void *llist_createarray (llist_t *list, size_t esize);
 
 //@}
 
-#endif
+#endif//__QF_llist_h

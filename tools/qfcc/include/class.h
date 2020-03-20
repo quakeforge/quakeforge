@@ -48,6 +48,7 @@ typedef struct class_type_s {
 
 typedef struct class_s {
 	int         defined;
+	int         interface_declared;
 	const char *name;
 	struct class_s *super_class;
 	struct category_s *categories;
@@ -74,6 +75,7 @@ typedef struct protocol_s {
 	const char *name;
 	struct methodlist_s *methods;
 	struct protocollist_s *protocols;
+	struct def_s *def;
 	class_type_t class_type;
 } protocol_t;
 
@@ -81,6 +83,11 @@ typedef struct protocollist_s {
 	int         count;
 	protocol_t **list;
 } protocollist_t;
+
+typedef struct static_instance_s {
+	const char *class;
+	struct def_s *instance;
+} static_instance_t;
 
 extern struct type_s type_id;
 extern struct type_s type_obj_object;
@@ -106,10 +113,11 @@ struct dstring_s;
 struct expr_s;
 struct method_s;
 struct symbol_s;
+struct selector_s;
 
 int obj_is_id (const struct type_s *type) __attribute__((pure));
 int obj_is_class (const struct type_s *type) __attribute__((pure));
-int obj_is_Class (const struct type_s *type) __attribute__((pure));
+int obj_is_Class (const struct type_s *type) __attribute__((const));
 int obj_is_classptr (const struct type_s *type) __attribute__((pure));
 int obj_types_assignable (const struct type_s *dst, const struct type_s *src);
 
@@ -134,7 +142,7 @@ void class_finish_ivar_scope (class_type_t *class_type,
 							  struct symtab_s *param_scope);
 struct method_s *class_find_method (class_type_t *class_type,
 									struct method_s *method);
-struct method_s *class_message_response (class_t *class, int class_msg,
+struct method_s *class_message_response (struct type_s *clstype, int class_msg,
 										 struct expr_s *sel);
 struct symbol_s *class_pointer_symbol (class_t *class_type);
 category_t *get_category (struct symbol_s *class_name,
@@ -154,6 +162,11 @@ struct def_s *protocol_def (protocol_t *protocol);
 protocollist_t *new_protocol_list (void);
 protocollist_t *add_protocol (protocollist_t *protocollist, const char *name);
 int procollist_find_protocol (protocollist_t *protocollist, protocol_t *proto) __attribute__((pure));
+struct method_s *protocollist_find_method (protocollist_t *protocollist,
+										   struct selector_s *selector,
+										   int nstance)
+											__attribute__((pure));
+
 int compare_protocols (protocollist_t *protos1, protocollist_t *protos2) __attribute__((pure));
 void print_protocollist (struct dstring_s *dstr, protocollist_t *protocollist);
 struct def_s *emit_protocol (protocol_t *protocol);

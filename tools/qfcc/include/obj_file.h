@@ -60,13 +60,13 @@
 */
 typedef struct qfo_header_s {
 	int8_t      qfo[4];			///< identifier string (includes nul) (#QFO)
-	pr_int_t    version;		///< QFO format version (#QFO_VERSION)
-	pr_int_t    num_spaces;
-	pr_int_t    num_relocs;		///< number of relocation records
-	pr_int_t    num_defs;		///< number of def records
-	pr_int_t    num_funcs;		///< number of function records
-	pr_int_t    num_lines;		///< number of line records
-	pr_int_t    num_loose_relocs;	///< number of loose relocation records
+	pr_uint_t   version;		///< QFO format version (#QFO_VERSION)
+	pr_uint_t   num_spaces;
+	pr_uint_t   num_relocs;		///< number of relocation records
+	pr_uint_t   num_defs;		///< number of def records
+	pr_uint_t   num_funcs;		///< number of function records
+	pr_uint_t   num_lines;		///< number of line records
+	pr_uint_t   num_loose_relocs;	///< number of loose relocation records
 								///< (included in num_relocs)
 } qfo_header_t;
 

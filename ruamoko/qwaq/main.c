@@ -32,6 +32,8 @@
 #endif
 
 #include <stdlib.h>
+#include <stdio.h>
+#include <errno.h>
 
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
@@ -50,9 +52,6 @@
 
 #define MAX_EDICTS 1024
 
-static edict_t *edicts;
-static int num_edicts;
-static int reserved_edicts;
 static progs_t pr;
 
 cbuf_t *qwaq_cbuf;
@@ -63,7 +62,7 @@ open_file (const char *path, int *len)
 	QFile      *file = Qopen (path, "rbz");
 
 	if (!file) {
-		perror (path);
+		Sys_Printf ("%s\n", sys_errlist[errno]);
 		return 0;
 	}
 	*len = Qfilesize (file);
@@ -71,7 +70,7 @@ open_file (const char *path, int *len)
 }
 
 static void *
-load_file (progs_t *pr, const char *name)
+load_file (progs_t *pr, const char *name, off_t *_size)
 {
 	QFile      *file;
 	int         size;
@@ -87,6 +86,7 @@ load_file (progs_t *pr, const char *name)
 	sym = malloc (size + 1);
 	sym[size] = 0;
 	Qread (file, sym, size);
+	*_size = size;
 	return sym;
 }
 
@@ -108,7 +108,6 @@ init_qf (void)
 	qwaq_cbuf = Cbuf_New (&id_interp);
 
 	Sys_Init ();
-	GIB_Init (true);
 	COM_ParseConfig ();
 
 	//Cvar_Set (developer, "1");
@@ -118,16 +117,13 @@ init_qf (void)
 	Cvar_Get ("pr_debug", "2", 0, 0, 0);
 	Cvar_Get ("pr_boundscheck", "0", 0, 0, 0);
 
-	pr.edicts = &edicts;
-	pr.num_edicts = &num_edicts;
-	pr.reserved_edicts = &reserved_edicts;
 	pr.load_file = load_file;
 	pr.allocate_progs_mem = allocate_progs_mem;
 	pr.free_progs_mem = free_progs_mem;
 	pr.no_exec_limit = 1;
 
 	PR_Init_Cvars ();
-	PR_Init ();
+	PR_Init (&pr);
 	RUA_Init (&pr, 0);
 	PR_Cmds_Init (&pr);
 	BI_Init (&pr);
@@ -158,7 +154,7 @@ main (int argc, const char **argv)
 {
 	dfunction_t *dfunc;
 	func_t      main_func = 0;
-	const char *name = "qwaq.dat";
+	const char *name = "qwaq-app.dat";
 	string_t   *pr_argv;
 	int         pr_argc = 1, i;
 
@@ -168,8 +164,12 @@ main (int argc, const char **argv)
 	if (argc > 1)
 		name = argv[1];
 
-	if (!load_progs (name))
+	if (!load_progs (name)) {
 		Sys_Error ("couldn't load %s", name);
+	}
+
+	//pr.pr_trace = 1;
+	//pr.pr_trace_depth = -1;
 
 	PR_PushFrame (&pr);
 	if (argc > 2)
@@ -188,7 +188,9 @@ main (int argc, const char **argv)
 	PR_RESET_PARAMS (&pr);
 	P_INT (&pr, 0) = pr_argc;
 	P_POINTER (&pr, 1) = PR_SetPointer (&pr, pr_argv);
+	pr.pr_argc = 2;
 	PR_ExecuteProgram (&pr, main_func);
 	PR_PopFrame (&pr);
+	Sys_Shutdown ();
 	return R_INT (&pr);
 }

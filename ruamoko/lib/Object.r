@@ -1,9 +1,15 @@
-#include "Object.h"
-#include "AutoreleasePool.h"
+#include <Object.h>
+#include <AutoreleasePool.h>
+
+static void link__obj_forward (void)
+{
+	__obj_forward (nil, nil);
+}
 
 void *PR_FindGlobal (string name) = #0;	//FIXME where?
 
 void __obj_exec_class (struct obj_module *msg) = #0;
+BOOL __obj_responds_to(id obj, SEL sel) = #0;
 void (id object, int code, string fmt, ...) obj_error = #0;
 void (id object, int code, string fmt, @va_list args) obj_verror = #0;
 //obj_error_handler (objc_error_handler func) obj_set_error_handler = #0;
@@ -247,7 +253,7 @@ BOOL (id object) object_is_meta_class = #0;
 	return msg (self, aSelector);
 }
 
-- (id) performSelector: (SEL)aSelector withObject: (id)anObject
+- (id) performSelector: (SEL)aSelector withObject: (void *)anObject
 {
 	local IMP msg = nil;		// FIXME teach qfcc about noreturn
 
@@ -260,8 +266,8 @@ BOOL (id object) object_is_meta_class = #0;
 }
 
 - (id) performSelector: (SEL)aSelector
-			withObject: (id)anObject
-			withObject: (id)anotherObject
+			withObject: (void *)anObject
+			withObject: (void *)anotherObject
 {
 	local IMP msg;
 
@@ -272,6 +278,11 @@ BOOL (id object) object_is_meta_class = #0;
 	}
 
 	return msg (self, aSelector, anObject, anotherObject);
+}
+
+- (void) performv: (SEL) sel : (@va_list) args
+{
+	obj_msg_sendv (self, sel, args);
 }
 
 - (void) doesNotRecognizeSelector: (SEL)aSelector

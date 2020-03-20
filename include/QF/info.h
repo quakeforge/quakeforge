@@ -25,8 +25,8 @@
 
 */
 
-#ifndef _INFO_H
-#define _INFO_H
+#ifndef __QF_info_h
+#define __QF_info_h
 
 /** \defgroup info Info Keys
 	\ingroup utils
@@ -65,4 +65,4 @@ void Info_AddKeys (info_t *info, info_t *keys);
 
 ///@}
 
-#endif	// _INFO_H
+#endif//__QF_info_h

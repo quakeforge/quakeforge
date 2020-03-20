@@ -255,7 +255,7 @@ PF_Find (progs_t *pr)
 	int			i;			// ev_vector
 	int			e, f;
 	etype_t		type;
-	ddef_t	   *field_def;
+	pr_def_t   *field_def;
 	edict_t	   *ed;
 
 	e = P_EDICTNUM (pr, 0);
@@ -583,6 +583,25 @@ PF_sprintf (progs_t *pr)
 	dstring_delete (dstr);
 }
 
+static void
+PF_vsprintf (progs_t *pr)
+{
+	const char *fmt = P_GSTRING (pr, 0);
+	__auto_type args = &P_PACKED (pr, pr_va_list_t, 1);
+	pr_type_t  *list_start = PR_GetPointer (pr, args->list);
+	pr_type_t **list = alloca (args->count * sizeof (*list));
+	dstring_t  *dstr;
+
+	for (int i = 0; i < args->count; i++) {
+		list[i] = list_start + i * pr->pr_param_size;
+	}
+
+	dstr = dstring_newstr ();
+	PR_Sprintf (pr, dstr, "PF_vsprintf", fmt, args->count, list);
+	RETURN_STRING (pr, dstr->str);
+	dstring_delete (dstr);
+}
+
 /*
 	string () gametype
 */
@@ -596,7 +615,7 @@ static void
 PF_PR_SetField (progs_t *pr)
 {
 	edict_t    *ent = P_EDICT (pr, 0);
-	ddef_t     *field = PR_FindField (pr, P_GSTRING (pr, 1));
+	pr_def_t   *field = PR_FindField (pr, P_GSTRING (pr, 1));
 	const char *value = P_GSTRING (pr, 2);
 
 	R_INT (pr) = 0;
@@ -643,6 +662,7 @@ static builtin_t builtins[] = {
 	{"strlen",			PF_strlen,			QF 100},
 	{"charcount",		PF_charcount,		QF 101},
 	{"sprintf",			PF_sprintf,			QF 109},
+	{"vsprintf",		PF_vsprintf,		-1},
 	{"ftoi",			PF_ftoi,			QF 110},
 	{"itof",			PF_itof,			QF 111},
 	{"itos",			PF_itos,			QF 112},

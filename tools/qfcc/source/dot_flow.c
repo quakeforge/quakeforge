@@ -332,6 +332,7 @@ print_flowgraph (flow_dot_t *method, flowgraph_t *graph, const char *filename)
 	dstring_t  *dstr = dstring_newstr();
 
 	dasprintf (dstr, "digraph flowgraph_%s_%p {\n", method->type, graph);
+	dasprintf (dstr, "  graph [label=\"%s\"];\n", quote_string (filename));
 	dasprintf (dstr, "  layout=dot;\n");
 	dasprintf (dstr, "  clusterrank=local;\n");
 	dasprintf (dstr, "  rankdir=TB;\n");

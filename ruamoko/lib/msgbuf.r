@@ -1,4 +1,4 @@
-#include "msgbuf.h"
+#include <msgbuf.h>
 
 msgbuf_t *MsgBuf_New (int size) = #0;
 void MsgBuf_Delete (msgbuf_t *msgbuf) = #0;

@@ -46,6 +46,7 @@
 
 #include "qfcc.h"
 
+#include "class.h"
 #include "codespace.h"
 #include "debug.h"
 #include "def.h"
@@ -119,7 +120,7 @@ param_append_identifiers (param_t *params, symbol_t *idents, type_t *type)
 	return params;
 }
 
-param_t *
+static param_t *
 _reverse_params (param_t *params, param_t *next)
 {
 	param_t    *p = params;
@@ -135,6 +136,20 @@ reverse_params (param_t *params)
 	if (!params)
 		return 0;
 	return _reverse_params (params, 0);
+}
+
+param_t *
+append_params (param_t *params, param_t *more_params)
+{
+	if (params) {
+		param_t *p;
+		for (p = params; p->next; ) {
+			p = p->next;
+		}
+		p->next = more_params;
+		return params;
+	}
+	return more_params;
 }
 
 param_t *
@@ -155,7 +170,12 @@ parse_params (type_t *type, param_t *parms)
 {
 	param_t    *p;
 	type_t     *new;
-	int         count;
+	int         count = 0;
+
+	if (type && obj_is_class (type)) {
+		error (0, "cannot return an object (forgot *?)");
+		type = &type_id;
+	}
 
 	new = new_type ();
 	new->type = ev_func;
@@ -168,13 +188,19 @@ parse_params (type_t *type, param_t *parms)
 			count++;
 		}
 	}
-	new->t.func.param_types = malloc (count * sizeof (type_t));
+	if (count) {
+		new->t.func.param_types = malloc (count * sizeof (type_t));
+	}
 	for (p = parms; p; p = p->next) {
 		if (!p->selector && !p->type && !p->name) {
 			if (p->next)
 				internal_error (0, 0);
 			new->t.func.num_params = -(new->t.func.num_params + 1);
 		} else if (p->type) {
+			if (obj_is_class (p->type)) {
+				error (0, "cannot use an object as a parameter (forgot *?)");
+				p->type = &type_id;
+			}
 			new->t.func.param_types[new->t.func.num_params] = p->type;
 			new->t.func.num_params++;
 		}
@@ -467,6 +493,7 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 
 	symtab = new_symtab (parent, stab_local);
 	fsym->s.func->symtab = symtab;
+	fsym->s.func->label_scope = new_symtab (0, stab_local);
 	symtab->space = defspace_new (ds_virtual);
 	current_symtab = symtab;
 
@@ -638,12 +665,19 @@ build_builtin_function (symbol_t *sym, expr_t *bi_val, int far)
 	if (sym->s.func->def->external)
 		return 0;
 
+	sym->s.func->def->initialized = 1;
+	sym->s.func->def->constant = 1;
+	sym->s.func->def->nosave = 1;
 	add_function (sym->s.func);
 
 	if (is_integer_val (bi_val))
 		bi = expr_integer (bi_val);
 	else
 		bi = expr_float (bi_val);
+	if (bi < 0) {
+		error (bi_val, "builtin functions must be positive or 0");
+		return 0;
+	}
 	sym->s.func->builtin = bi;
 	reloc_def_func (sym->s.func, sym->s.func->def);
 	build_function (sym);

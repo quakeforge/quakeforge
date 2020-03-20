@@ -66,33 +66,36 @@
 static hashtab_t *class_hash;
 static hashtab_t *category_hash;
 static hashtab_t *protocol_hash;
+static hashtab_t *static_instances;
+static hashtab_t *static_instance_classes;
 
 // these will be built up further
 type_t      type_obj_selector = { ev_invalid, 0, 0, ty_struct};
-type_t      type_SEL = { ev_pointer, "SEL", 1, ty_none, {{&type_obj_selector}}};
+type_t      type_SEL = { ev_pointer, "SEL", 1, ty_basic,
+						{{&type_obj_selector}}};
 type_t     *IMP_params[] = {&type_id, &type_SEL};
-type_t      type_IMP = { ev_func, "IMP", 1, ty_none,
+type_t      type_IMP = { ev_func, "IMP", 1, ty_basic,
 						 {{&type_id, -3, IMP_params}}};
 type_t      type_obj_super = { ev_invalid, 0, 0 };
-type_t      type_SuperPtr = { ev_pointer, 0, 1, ty_none, {{&type_obj_super}}};
+type_t      type_SuperPtr = { ev_pointer, 0, 1, ty_basic, {{&type_obj_super}}};
 type_t     *supermsg_params[] = {&type_SuperPtr, &type_SEL};
-type_t      type_supermsg = { ev_func, ".supermsg", 1, ty_none,
+type_t      type_supermsg = { ev_func, ".supermsg", 1, ty_basic,
 							  {{&type_id, -3, supermsg_params}}};
 type_t      type_obj_method = { ev_invalid, 0, 0, ty_struct };
 type_t      type_obj_method_description = { ev_invalid, 0, 0, ty_struct };
 type_t      type_obj_category = { ev_invalid, 0, 0, ty_struct};
 type_t      type_obj_ivar = { ev_invalid, 0, 0, ty_struct};
 type_t      type_obj_module = { ev_invalid, 0, 0, ty_struct};
-type_t      type_moduleptr = { ev_pointer, 0, 1, ty_none,
+type_t      type_moduleptr = { ev_pointer, 0, 1, ty_basic,
 									{{&type_obj_module}}};
 type_t     *obj_exec_class_params[] = { &type_moduleptr };
-type_t      type_obj_exec_class = { ev_func, 0, 1, ty_none,
+type_t      type_obj_exec_class = { ev_func, 0, 1, ty_basic,
 									{{&type_void, 1, obj_exec_class_params}}};
 
 type_t      type_obj_object = {ev_invalid, 0, 0, ty_struct};
-type_t      type_id = { ev_pointer, "id", 1, ty_none, {{&type_obj_object}}};
+type_t      type_id = { ev_pointer, "id", 1, ty_basic, {{&type_obj_object}}};
 type_t      type_obj_class = { ev_invalid, 0, 0, ty_struct};
-type_t      type_Class = { ev_pointer, 0, 1, ty_none, {{&type_obj_class}}};
+type_t      type_Class = { ev_pointer, 0, 1, ty_basic, {{&type_obj_class}}};
 type_t      type_obj_protocol = { ev_invalid, 0, 0, ty_struct};
 
 int         obj_initialized = 0;
@@ -177,6 +180,141 @@ static struct_def_t object_struct[] = {
 	{0, 0}
 };
 
+static const char *
+static_instance_get_key (const void *instance, void *unused)
+{
+	return ((static_instance_t *) instance)->class;
+}
+
+static void
+add_static_instance (const char *class, def_t *instance_def)
+{
+	static_instance_t *instance = malloc (sizeof (*instance));
+
+	if (!static_instances) {
+		static_instances = Hash_NewTable (1021, static_instance_get_key, 0, 0);
+		static_instance_classes = Hash_NewTable (1021, static_instance_get_key,
+												 0, 0);
+	}
+
+	instance->class = save_string (class);
+	instance->instance = instance_def;
+	Hash_Add (static_instances, instance);
+
+	// uniqued set of class names for all static instances
+	if (!Hash_Find (static_instance_classes, class)) {
+		Hash_Add (static_instance_classes, instance);
+	}
+}
+typedef struct {
+	const char *class_name;
+	int         num_instances;
+	static_instance_t **instances;
+} obj_static_instances_data_t;
+
+static void
+emit_instance_classname (def_t *def, void *data, int index)
+{
+	obj_static_instances_data_t *da = (obj_static_instances_data_t *)data;
+
+	if (def->type != &type_string)
+		internal_error (0, "%s: expected string def", __FUNCTION__);
+	EMIT_STRING (def->space, D_STRING (def), da->class_name);
+}
+
+static void
+emit_instance_defs (def_t *def, void *data, int index)
+{
+	obj_static_instances_data_t *da = (obj_static_instances_data_t *)data;
+
+	if (!is_array (def->type) || def->type->t.array.type->type != ev_pointer)
+		internal_error (0, "%s: expected array of pointers def", __FUNCTION__);
+	if (index < 0 || index >= da->num_instances + 1)
+		internal_error (0, "%s: out of bounds index: %d %d",
+						__FUNCTION__, index, da->num_instances + 1);
+	D_INT (def) = 0;
+	if (index < da->num_instances) {
+		EMIT_DEF (def->space, D_INT (def), da->instances[index]->instance);
+	}
+}
+
+static def_t *
+emit_static_instances (const char *classname)
+{
+	static struct_def_t instances_struct[] = {
+		{"class_name",	&type_string, emit_instance_classname},
+		{"instances",	0,            emit_instance_defs},
+		{0, 0}
+	};
+	obj_static_instances_data_t data = {};
+	def_t      *instances_def;
+
+	data.class_name = classname;
+	data.instances = (static_instance_t **) Hash_FindList (static_instances,
+														   classname);
+	for (static_instance_t **inst = data.instances; *inst; inst++) {
+		data.num_instances++;
+	}
+	instances_struct[1].type = array_type (&type_pointer,
+										   data.num_instances + 1);
+	instances_def = emit_structure (va ("_OBJ_STATIC_INSTANCES_%s", classname),
+									's', instances_struct, 0, &data,
+									sc_static);
+	free (data.instances);
+	return instances_def;
+}
+
+static def_t *
+emit_static_instances_list (void)
+{
+	static_instance_t **classes;
+	int         num_classes = 0;
+	def_t     **instance_lists;
+	type_t     *instance_lists_type;
+	symbol_t   *instance_lists_sym;
+	def_t      *instance_lists_def;
+	pointer_t  *list;
+	defspace_t *space;
+
+	if (!static_instance_classes || !static_instances) {
+		return 0;
+	}
+
+	classes = (static_instance_t **) Hash_GetList (static_instance_classes);
+	for (static_instance_t **c = classes; *c; c++) {
+		num_classes++;
+	}
+	if (!num_classes) {
+		free (classes);
+		return 0;
+	}
+	instance_lists = alloca (num_classes * sizeof (*instance_lists));
+	for (int i = 0; i < num_classes; i++) {
+		instance_lists[i] = emit_static_instances (classes[i]->class);
+	}
+	free (classes);
+
+	// +1 for terminating null
+	instance_lists_type = array_type (&type_pointer, num_classes + 1);
+	instance_lists_sym = make_symbol ("_OBJ_STATIC_INSTANCES",
+									  instance_lists_type,
+									  pr.far_data, sc_static);
+	if (!instance_lists_sym->table) {
+		symtab_addsymbol (pr.symtab, instance_lists_sym);
+	}
+	instance_lists_def = instance_lists_sym->s.def;
+	instance_lists_def->initialized = instance_lists_def->constant = 1;
+	instance_lists_def->nosave = 1;
+
+	list = D_POINTER (pointer_t, instance_lists_def);
+	space = instance_lists_def->space;
+	for (int i = 0; i < num_classes; i++, list++) {
+		EMIT_DEF (space, *list, instance_lists[i]);
+	}
+	*list = 0;
+	return instance_lists_def;
+}
+
 int
 obj_is_id (const type_t *type)
 {
@@ -206,15 +344,6 @@ int
 obj_is_Class (const type_t *type)
 {
 	if (type == &type_Class)
-		return 1;
-	// type may be a qualified Class, in which case it will be a pointer to
-	// a qualified obj_class struct
-	if (type->type != ev_pointer)
-		return 0;
-	if (!is_struct (type->t.fldptr.type))
-		return 0;
-	// if the the symtabs match, then type is Class in disguise
-	if (type->t.fldptr.type->t.symtab == type_obj_class.t.symtab)
 		return 1;
 	return 0;
 }
@@ -307,8 +436,14 @@ obj_types_assignable (const type_t *dst, const type_t *src)
 	int         i;
 
 	//puts ("%$$\"$#%");
-	if (!obj_is_classptr (dst) || !obj_is_classptr (src))
+	if (!obj_is_classptr (src)) {
+		// if dst is a class pointer, then the types are not compatible,
+		// otherwise unknown
+		return obj_is_classptr (dst) - 1;
+	}
+	if (!obj_is_classptr (dst)) {
 		return -1;
+	}
 
 	dst_is_proto = obj_is_id (dst) && (dst_protos = obj_get_protos (dst));
 	src_is_proto = obj_is_id (src) && (src_protos = obj_get_protos (src));
@@ -493,9 +628,7 @@ class_add_methods (class_t *class, methodlist_t *methods)
 	if (!methods)
 		return;
 
-	*class->methods->tail = methods->head;
-	class->methods->tail = methods->tail;
-	free (methods);
+	merge_method_lists (class->methods, methods);
 
 	methods_set_self_type (class, class->methods);
 }
@@ -506,15 +639,26 @@ class_add_protocols (class_t *class, protocollist_t *protocols)
 	int         i;
 	protocol_t *p;
 	methodlist_t *methods;
+	methodset_t *except;
+	class_t    *super;
 
 	if (!protocols)
 		return;
 
 	methods = class->methods;
 
+	except = new_methodset ();
+	for (super = class->super_class; super; super = super->super_class) {
+		methodset_add_methods (except, super->methods);
+	}
+
 	for (i = 0; i < protocols->count; i++) {
 		p = protocols->list[i];
-		copy_methods (methods, p->methods);
+		if (p->methods) {
+			copy_methods (methods, p->methods, except);
+		} else {
+			warning (0, "definition of protocol `%s' not found", p->name);
+		}
 		if (p->protocols)
 			class_add_protocols (class, p->protocols);
 	}
@@ -569,7 +713,7 @@ emit_ivar_list_item (def_t *def, void *data, int index)
 	defspace_t *space;
 
 #if 0
-	//FIXME the type is dynamic, so need a way to pass it before it cn be
+	//FIXME the type is dynamic, so need a way to pass it before it can be
 	//checked
 	if (def->type != &XXX)
 		internal_error (0, "%s: expected XXX def",
@@ -888,10 +1032,20 @@ class_find_ivar (class_t *class, int vis, const char *name)
 {
 	symbol_t   *ivar;
 
+	if (!class->ivars) {
+		if (!class->interface_declared) {
+			class->interface_declared = 1;
+			error (0, "accessing incomplete type %s", class->name);
+		}
+		return 0;
+	}
 	ivar = symtab_lookup (class->ivars, name);
 	if (ivar) {
-		if (ivar->visibility > (vis_t) vis)
+		if (ivar->visibility > (vis_t) vis
+			|| (ivar->table->class != class
+				&& ivar->visibility > vis_protected)) {
 			goto access_error;
+		}
 		return ivar;
 	}
 	error (0, "%s.%s does not exist", class->name, name);
@@ -924,7 +1078,7 @@ class_find_method (class_type_t *class_type, method_t *method)
 	start_methods = methods;
 	start_class = class;
 	while (class) {
-		for (m = methods->head; m; m = m->next)
+		for (m = methods->head; m; m = m->next) {
 			if (method_compare (method, m)) {
 				if (m->type != method->type)
 					error (0, "method type mismatch");
@@ -936,6 +1090,7 @@ class_find_method (class_type_t *class_type, method_t *method)
 				method_set_param_names (m, method);
 				return m;
 			}
+		}
 		if (class->methods == methods)
 			class = class->super_class;
 		else
@@ -949,48 +1104,86 @@ class_find_method (class_type_t *class_type, method_t *method)
 	return method;
 }
 
+static method_t *
+cls_find_method (methodlist_t *methodlist, selector_t *selector,
+				   int class_msg, int is_root)
+{
+	method_t   *m = 0;
+	m = methodlist_find_method (methodlist, selector, !class_msg);
+	if (!m && is_root && class_msg
+		&& (m = methodlist_find_method (methodlist, selector, 1))) {
+		return m;
+	}
+	return m;
+}
+
 method_t *
-class_message_response (class_t *class, int class_msg, expr_t *sel)
+class_message_response (type_t *clstype, int class_msg, expr_t *sel)
 {
 	selector_t *selector;
 	method_t   *m;
-	class_t    *c = class;
+	class_t    *c;
+	class_t    *class = 0;
 	category_t *cat;
+	dstring_t  *dstr;
 
 	selector = get_selector (sel);
 	if (!selector)
 		return 0;
-	if (class && class->type != &type_obj_object) {
-		while (c) {
-			for (cat = c->categories; cat; cat = cat->next) {
-				for (m = cat->methods->head; m; m = m->next) {
-					if (((!c->super_class && class_msg)
-						 || class_msg != m->instance)
-						&& strcmp (selector->name, m->name) == 0)
-						return m;
-				}
+
+	if (!obj_is_classptr (clstype) && !obj_is_class (clstype)) {
+		error (0, "neither class nor object");
+		return 0;
+	}
+	if (obj_is_id (clstype)) {
+		protocollist_t *protos = clstype->t.fldptr.type->protos;
+		if (protos) {
+			if ((m = protocollist_find_method (protos, selector, !class_msg))) {
+				return m;
 			}
-			for (m = c->methods->head; m; m = m->next) {
-				if (((!c->super_class && class_msg)
-					 || class_msg != m->instance)
-					&& strcmp (selector->name, m->name) == 0)
-					return m;
-			}
-			c = c->super_class;
+			dstr = dstring_new ();
+			print_protocollist (dstr, protos);
+			warning (sel, "id%s may not respond to %c%s", dstr->str,
+					 class_msg ? '+' : '-', selector->name);
+			dstring_delete (dstr);
 		}
-		//FIXME right option?
-		if (options.warnings.interface_check)
+	} else {
+		if (obj_is_class (clstype)) {
+			class = clstype->t.class;
+		} else if (obj_is_class (clstype->t.fldptr.type)) {
+			class = clstype->t.fldptr.type->t.class;
+		}
+		if (class && class->type != &type_obj_object) {
+			if (!class->interface_declared) {
+				class->interface_declared = 1;
+				warning (0, "cannot find interface declaration for `%s'",
+						 class->name);
+			}
+			c = class;
+			while (c) {
+				for (cat = c->categories; cat; cat = cat->next) {
+					if ((m = cls_find_method (cat->methods, selector,
+											  class_msg,
+											  !c->super_class))) {
+						return m;
+					}
+				}
+				if ((m = cls_find_method (c->methods, selector, class_msg,
+										  !c->super_class))) {
+					return m;
+				}
+				c = c->super_class;
+			}
 			warning (sel, "%s may not respond to %c%s", class->name,
 					 class_msg ? '+' : '-', selector->name);
+		}
 	}
 	m = find_method (selector->name);
-	if (m)
-		return m;
-	//FIXME right option?
-	if (options.warnings.interface_check)
+	if (!m && (!class || class->type == &type_obj_object)) {
 		warning (sel, "could not find method for %c%s",
 				 class_msg ? '+' : '-', selector->name);
-	return 0;
+	}
+	return m;
 }
 
 static uintptr_t
@@ -1018,6 +1211,7 @@ class_new_ivars (class_t *class)
 	if (class->super_class)
 		super_ivars = class->super_class->ivars;
 	ivars = new_symtab (super_ivars, stab_local);
+	ivars->class = class;
 	return ivars;
 }
 
@@ -1113,9 +1307,7 @@ category_add_methods (category_t *category, methodlist_t *methods)
 {
 	if (!methods)
 		return;
-	*category->methods->tail = methods->head;
-	category->methods->tail = methods->tail;
-	free (methods);
+	merge_method_lists (category->methods, methods);
 
 	methods_set_self_type (category->class, category->methods);
 }
@@ -1126,15 +1318,22 @@ category_add_protocols (category_t *category, protocollist_t *protocols)
 	int         i;
 	protocol_t *p;
 	methodlist_t *methods;
+	methodset_t *except;
+	class_t    *class;
 
 	if (!protocols)
 		return;
 
 	methods = category->methods;
 
+	except = new_methodset ();
+	for (class = category->class; class; class = class->super_class) {
+		methodset_add_methods (except, class->methods);
+	}
+
 	for (i = 0; i < protocols->count; i++) {
 		p = protocols->list[i];
-		copy_methods (methods, p->methods);
+		copy_methods (methods, p->methods, except);
 		if (p->protocols)
 			category_add_protocols (category, p->protocols);
 	}
@@ -1175,6 +1374,7 @@ typedef struct {
 	int         cls_def_cnt;
 	category_t **categories;
 	int         cat_def_cnt;
+	def_t      *instances_list;
 } obj_symtab_data_t;
 
 static void
@@ -1228,10 +1428,10 @@ emit_symtab_defs (def_t *def, void *data, int index)
 
 	if (!is_array (def->type) || def->type->t.array.type->type != ev_pointer)
 		internal_error (0, "%s: expected array of pointers def", __FUNCTION__);
-	if (index < 0 || index >= da->cls_def_cnt + da->cat_def_cnt)
+	if (index < 0 || index >= da->cls_def_cnt + da->cat_def_cnt + 1)
 		internal_error (0, "%s: out of bounds index: %d %d",
 						__FUNCTION__, index,
-						da->cls_def_cnt + da->cat_def_cnt);
+						da->cls_def_cnt + da->cat_def_cnt + 1);
 
 	if (index < da->cls_def_cnt) {
 		class_t   **cl;
@@ -1240,7 +1440,7 @@ emit_symtab_defs (def_t *def, void *data, int index)
 				if (!index--)
 					break;
 		EMIT_DEF (def->space, D_INT (def), (*cl)->def);
-	} else {
+	} else if (index < da->cls_def_cnt + da->cat_def_cnt) {
 		category_t **ca;
 		index -= da->cls_def_cnt;
 		for (ca = da->categories; *ca; ca++)
@@ -1248,6 +1448,11 @@ emit_symtab_defs (def_t *def, void *data, int index)
 				if (!index--)
 					break;
 		EMIT_DEF (def->space, D_INT (def), (*ca)->def);
+	} else {
+		D_INT (def) = 0;
+		if (da->instances_list) {
+			EMIT_DEF (def->space, D_INT (def), da->instances_list);
+		}
 	}
 }
 
@@ -1263,7 +1468,7 @@ class_finish_module (void)
 		{0, 0}
 	};
 
-	obj_symtab_data_t data = {0, 0, 0, 0, 0};
+	obj_symtab_data_t data = {};
 
 	class_t   **cl;
 	category_t **ca;
@@ -1289,10 +1494,14 @@ class_finish_module (void)
 			if ((*ca)->def && !(*ca)->def->external)
 				data.cat_def_cnt++;
 	}
-	if (!data.refs && !data.cls_def_cnt && !data.cat_def_cnt)
+	data.instances_list = emit_static_instances_list ();
+	if (!data.refs && !data.cls_def_cnt && !data.cat_def_cnt
+		&& !data.instances_list)
 		return;
 	symtab_struct[4].type = array_type (&type_pointer,
-										data.cls_def_cnt + data.cat_def_cnt);
+										data.cls_def_cnt
+										+ data.cat_def_cnt
+										+ 1);
 	symtab_def = emit_structure ("_OBJ_SYMTAB", 's', symtab_struct, 0, &data,
 								 sc_static);
 	free (data.classes);
@@ -1350,7 +1559,7 @@ get_protocol (const char *name, int create)
 
 	p = calloc (sizeof (protocol_t), 1);
 	p->name = name;
-	p->methods = new_methodlist ();
+	p->methods = 0;
 	p->class_type.type = ct_protocol;
 	p->class_type.c.protocol = p;
 	if (name)
@@ -1363,9 +1572,7 @@ protocol_add_methods (protocol_t *protocol, methodlist_t *methods)
 {
 	if (!methods)
 		return;
-	*protocol->methods->tail = methods->head;
-	protocol->methods->tail = methods->tail;
-	free (methods);
+	merge_method_lists (protocol->methods, methods);
 }
 
 void
@@ -1377,8 +1584,11 @@ protocol_add_protocols (protocol_t *protocol, protocollist_t *protocols)
 def_t *
 protocol_def (protocol_t *protocol)
 {
-	return make_symbol (protocol->name, &type_obj_protocol,
-						pr.far_data, sc_static)->s.def;
+	if (!protocol->def) {
+		protocol->def = emit_protocol (protocol);
+		add_static_instance ("Protocol", protocol->def);
+	}
+	return protocol->def;
 }
 
 protocollist_t *
@@ -1416,6 +1626,34 @@ procollist_find_protocol (protocollist_t *protocollist, protocol_t *proto)
 	for (i = 0; i < protocollist->count; i++)
 		if (protocollist->list[i] == proto)
 			return 1;
+	return 0;
+}
+
+static method_t *
+protocol_find_method (protocol_t *protocol, selector_t *selector, int instance)
+{
+	method_t   *m = 0;
+	if (protocol->methods) {
+		m = methodlist_find_method (protocol->methods, selector, instance);
+	}
+	if (!m && protocol->protocols) {
+		return protocollist_find_method (protocol->protocols, selector,
+										 instance);
+	}
+	return m;
+}
+
+method_t *
+protocollist_find_method (protocollist_t *protocollist, selector_t *selector,
+						  int instance)
+{
+	method_t   *m;
+	for (int i = 0; i < protocollist->count; i++) {
+		if ((m = protocol_find_method (protocollist->list[i], selector,
+									   instance))) {
+			return m;
+		}
+	}
 	return 0;
 }
 
@@ -1507,7 +1745,7 @@ emit_protocol_list_item (def_t *def, void *data, int index)
 		internal_error (0, "%s: out of bounds index: %d %d",
 						__FUNCTION__, index, protocols->count);
 	}
-	EMIT_DEF (def->space, D_INT(def), emit_protocol (protocol));
+	EMIT_DEF (def->space, D_INT(def), protocol_def (protocol));
 }
 
 def_t *
@@ -1536,6 +1774,10 @@ clear_classes (void)
 		Hash_FlushTable (protocol_hash);
 	if (category_hash)
 		Hash_FlushTable (category_hash);
+	if (static_instances)
+		Hash_FlushTable (static_instances);
+	if (static_instance_classes)
+		Hash_FlushTable (static_instance_classes);
 	obj_initialized = 0;
 }
 
@@ -1574,6 +1816,15 @@ class_ivar_scope (class_type_t *class_type, symtab_t *parent)
 	return symtab_flat_copy (class->ivars, parent);
 }
 
+static expr_t *
+class_dereference_ivar (symbol_t *sym, void *_self)
+{
+	expr_t     *self = (expr_t *) _self;
+
+	return field_expr (copy_expr (self),
+					   new_symbol_expr (new_symbol (sym->name)));
+}
+
 void
 class_finish_ivar_scope (class_type_t *class_type, symtab_t *ivar_scope,
 						 symtab_t *param_scope)
@@ -1587,8 +1838,9 @@ class_finish_ivar_scope (class_type_t *class_type, symtab_t *ivar_scope,
 	if (!ivar_scope)
 		return;
 	self = symtab_lookup (param_scope, "self");
-	if (!self)
+	if (!self) {
 		internal_error (0, "I've lost my self!");
+	}
 	self_expr = new_symbol_expr (self);
 	if (self->type != class_ptr) {
 		debug (0, "class method scope");
@@ -1598,9 +1850,9 @@ class_finish_ivar_scope (class_type_t *class_type, symtab_t *ivar_scope,
 	for (sym = ivar_scope->symbols; sym; sym = sym->next) {
 		if (sym->sy_type != sy_var)
 			continue;
-		sym->sy_type = sy_expr;
-		sym->s.expr = field_expr (copy_expr (self_expr),
-								  new_symbol_expr (new_symbol (sym->name)));
+		sym->sy_type = sy_convert;
+		sym->s.convert.conv = class_dereference_ivar;
+		sym->s.convert.data = self_expr;
 	}
 }
 

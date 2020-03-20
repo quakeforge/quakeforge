@@ -18,5 +18,6 @@ o	isset() intrinsic for more consistent string handling.
 o	arrays in entities
 o	optional arguments for functions (alternative to overloading)
 	vector(vector fwd, optional vector up) vectoangles = #51;
+o	rewrite type system to be const-correct (hard!)
 ?	try to reduce memory consumption
 ??	embedded nul characters in strings (why?)

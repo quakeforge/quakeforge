@@ -27,8 +27,8 @@
 
 */
 
-#ifndef __qargs_h
-#define __qargs_h
+#ifndef __QF_qargs_h
+#define __QF_qargs_h
 
 /** \addtogroup misc
 */
@@ -52,4 +52,4 @@ void COM_ParseConfig (void);
 
 ///@}
 
-#endif // __qargs_h
+#endif//__QF_qargs_h

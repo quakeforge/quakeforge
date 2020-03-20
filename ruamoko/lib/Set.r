@@ -1,4 +1,4 @@
-#include "Set.h"
+#include <Set.h>
 
 void set_del_iter (set_iter_t *set_iter) = #0;
 set_t *set_new (void) = #0;
@@ -27,6 +27,15 @@ string set_as_string (set_t *set) = #0;
 
 
 @implementation SetIterator: Object
+- initWithIterator: (set_iter_t *) iter
+{
+	if (!(self = [super init])) {
+		return nil;
+	}
+	self.iter = iter;
+	return self;
+}
+
 - (SetIterator *) next
 {
 	if ((iter = set_next (iter)))
@@ -84,8 +93,7 @@ string set_as_string (set_t *set) = #0;
 
 	if (!iter)
 		return nil;
-	iterator = [[SetIterator alloc] init];
-	iterator.iter = iter;
+	iterator = [[SetIterator alloc] initWithIterator: iter];
 	return iterator;
 }
 

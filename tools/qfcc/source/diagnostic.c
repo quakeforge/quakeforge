@@ -99,17 +99,22 @@ static __attribute__((format(printf, 4, 0))) void
 __warning (expr_t *e, const char *file, int line,
 		   const char *fmt, va_list args)
 {
+	static int  promoted = 0;
 	dstring_t  *message = dstring_new ();
 
 	report_function (e);
 	if (options.warnings.promote) {
-		options.warnings.promote = 0;	// want to do this only once
-		fprintf (stderr, "%s: warnings treated as errors\n", "qfcc");
+		if (!promoted) {
+			promoted = 1;	// want to do this only once
+			fprintf (stderr, "%s: warnings treated as errors\n", "qfcc");
+		}
 		pr.error_count++;
+		format_message (message, "error", e, fmt, args);
+	} else {
+		format_message (message, "warning", e, fmt, args);
 	}
 
-	format_message (message, "warning", e, fmt, args);
-	if (options.verbosity > 1) {
+	if (options.verbosity > 0) {
 		dasprintf (message, " (%s:%d)", file, line);
 	}
 	if (warning_hook) {
@@ -125,7 +130,7 @@ _debug (expr_t *e, const char *file, int line, const char *fmt, ...)
 {
 	va_list     args;
 
-	if (options.verbosity < 1)
+	if (options.verbosity < 2)
 		return;
 
 	report_function (e);
@@ -203,7 +208,7 @@ _notice (expr_t *e, const char *file, int line, const char *fmt, ...)
 		report_function (e);
 
 		format_message (message, "notice", e, fmt, args);
-		if (options.verbosity > 1) {
+		if (options.verbosity > 0) {
 			dasprintf (message, " (%s:%d)", file, line);
 		}
 		if (notice_hook) {
@@ -252,7 +257,7 @@ _error (expr_t *e, const char *file, int line, const char *fmt, ...)
 		dstring_t  *message = dstring_new ();
 
 		format_message (message, "error", e, fmt, args);
-		if (options.verbosity > 1) {
+		if (options.verbosity > 0) {
 			dasprintf (message, " (%s:%d)", file, line);
 		}
 		if (error_hook) {

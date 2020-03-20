@@ -53,8 +53,12 @@ typedef struct edict_s edict_t;
 ///@{
 
 /** Initialize the progs engine.
+
+	The first call will initialize subsystems common to all progs instances.
+
+	\param pr		The progs engine instance to initialize.
 */
-void PR_Init (void);
+void PR_Init (progs_t *pr);
 
 /** Initialize the Cvars for the progs engine. Call before calling PR_Init().
 */
@@ -87,15 +91,63 @@ void PR_RunError (progs_t *pr, const char *error, ...) __attribute__((format(pri
 		(pr)->pr_params[1] = (pr)->pr_real_params[1];	\
 	} while (0)
 
-/** Save the current parameters.
-	\param pr		pointer to ::progs_t VM struct
+/**	\name Detouring Function Calls
+
+	These functions allow a builtin function that uses PR_CallFunction() to
+	safely insert a call to another VM function. The +initialize diversion
+	required by Objective-QuakeC uses this.
+
+		PR_PushFrame (pr);
+		__auto_type params = PR_SaveParams (pr);
+		... set up parameters to detour_function
+		PR_ExecuteProgram (pr, detour_function)
+		PR_RestoreParams (pr, params);
+		PR_PopFrame (pr);
+
 */
-void PR_SaveParams (progs_t *pr);
+///@{
+typedef struct pr_stashed_params_s {
+	pr_type_t  *param_ptrs[2];
+	int         argc;
+	pr_type_t   params[1];
+} pr_stashed_params_t;
+
+/** Save the current parameters to the provided stash.
+
+	\warning	The memory for the parameter stash is allocated using
+				alloca().
+
+	\param pr		pointer to ::progs_t VM struct
+	\return 		Pointer to a newly allocated and initialized parameter
+					stash that has the current parameters saved to it.
+	\hideinitializer
+*/
+#define PR_SaveParams(pr) \
+	_PR_SaveParams((pr), \
+				   alloca (field_offset (pr_stashed_params_t, \
+										 params[(pr)->pr_argc \
+												* (pr)->pr_param_size])))
+
+/** [INTERNAL] Save the current parameters to the provided stash.
+
+	\warning	Requires \a params to be correctly allocated. Use
+				PR_SaveParams instead as it will create a suitable stash for
+				saving the parameters.
+
+	\param pr		pointer to ::progs_t VM struct
+	\param params	location to save the parameters, must be of adequade size
+					to hold \a pr_argc * \a pr_param_size words in \a params
+	\return 		\a params Allows the likes of:
+						__auto_type params = PR_SaveParams (pr);
+*/
+pr_stashed_params_t *_PR_SaveParams (progs_t *pr, pr_stashed_params_t *params);
 
 /** Restore the parameters saved by PR_SaveParams().
 	\param pr		pointer to ::progs_t VM struct
+	\param params	pointer to stash created by PR_SaveParams()
 */
-void PR_RestoreParams (progs_t *pr);
+void PR_RestoreParams (progs_t *pr, pr_stashed_params_t *params);
+///@}
 
 /** Push an execution frame onto the VM stack. Saves current execution state.
 	\param pr		pointer to ::progs_t VM struct
@@ -236,7 +288,7 @@ void ED_PrintNum (progs_t *pr, pr_int_t ent);
 // pr_parse.c
 struct script_s;
 struct plitem_s;
-qboolean ED_ParseEpair (progs_t *pr, pr_type_t *base, ddef_t *key,
+qboolean ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key,
 						const char *s);
 struct plitem_s *ED_EntityDict (progs_t *pr, edict_t *ed);
 struct plitem_s *ED_GlobalsDict (progs_t *pr);
@@ -269,11 +321,13 @@ void ED_EntityParseFunction (progs_t *pr);
 */
 ///@{
 
-ddef_t *PR_FieldAtOfs (progs_t *pr, pr_int_t ofs) __attribute__((pure));
-ddef_t *PR_GlobalAtOfs (progs_t *pr, pr_int_t ofs) __attribute__((pure));
+pr_def_t *PR_SearchDefs (pr_def_t *defs, unsigned num_defs, pointer_t offset)
+	__attribute__((pure));
+pr_def_t *PR_FieldAtOfs (progs_t *pr, pointer_t ofs) __attribute__((pure));
+pr_def_t *PR_GlobalAtOfs (progs_t *pr, pointer_t ofs) __attribute__((pure));
 
-ddef_t *PR_FindField (progs_t *pr, const char *name);
-ddef_t *PR_FindGlobal (progs_t *pr, const char *name);
+pr_def_t *PR_FindField (progs_t *pr, const char *name);
+pr_def_t *PR_FindGlobal (progs_t *pr, const char *name);
 dfunction_t *PR_FindFunction (progs_t *pr, const char *name);
 
 int PR_ResolveGlobals (progs_t *pr);
@@ -510,6 +564,20 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define P_var(p,n,t)	((p)->pr_params[n]->t##_var)
 
+/** Access a parameter as an arbitray type.
+
+	\par QC type:
+		\c struct etc small enough to fit in a single parameter
+	\param p		pointer to ::progs_t VM struct
+	\param t		C type of the structure
+	\param n		parameter number (0-7)
+	\return			structure lvalue. use & to make a pointer of the
+					appropriate type.
+
+	\hideinitializer
+*/
+#define P_PACKED(p,t,n)	(*(t *) (p)->pr_params[n])
+
 /** Access a float parameter. Can be assigned to.
 
 	\par QC type:
@@ -532,7 +600,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define P_DOUBLE(p,n)	(*(double *) ((p)->pr_params[n]))
+#define P_DOUBLE(p,n)	P_PACKED(p, double, n)
 
 /** Access an integer parameter. Can be assigned to.
 
@@ -617,7 +685,6 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	\hideinitializer
 */
 #define P_POINTER(p,n)	P_var (p, n, pointer)
-
 
 /** Access an entity parameter.
 
@@ -715,6 +782,19 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define R_var(p,t)		((p)->pr_return->t##_var)
 
+/** Access the VM function return value parameter as an arbitray type.
+
+	\par QC type:
+		\c struct etc small enough to fit in the return slot
+	\param p		pointer to ::progs_t VM struct
+	\param t		C type of the structure
+	\return			structure lvalue. use & to make a pointer of the
+					appropriate type.
+
+	\hideinitializer
+*/
+#define R_PACKED(p,t)	(*(t *) (p)->pr_return)
+
 /** Access the VM function return value as a \c float
 
 	\par QC type:
@@ -735,7 +815,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define R_DOUBLE(p)		(*(double *) ((p)->pr_return))
+#define R_DOUBLE(p)		R_PACKED (p, double)
 
 /** Access the VM function return value as a \c ::pr_int_t (AKA int32_t)
 
@@ -1142,12 +1222,12 @@ int PR_RelocateBuiltins (progs_t *pr);
 */
 ///@{
 
-/** Initialize the string tables using the strings supplied by the progs.
-	Called automatically during progs load.
-	\param pr		pointer to ::progs_t VM struct
-	\return			true for success, false for failure
+/** Initialize the string management subsystem.
+
+	\param pr		The VM of which the string management subsystem will be
+					initialized;
 */
-int PR_LoadStrings (progs_t *pr);
+void PR_Strings_Init (progs_t *pr);
 
 /** Check the validity of a string index.
 	\param pr		pointer to ::progs_t VM struct
@@ -1196,6 +1276,29 @@ string_t PR_SetReturnString(progs_t *pr, const char *s);
 */
 string_t PR_SetTempString(progs_t *pr, const char *s);
 
+/** Make a temporary memory block that will be freed when the current progs
+	stack frame is exited. The contents may be anything and a new block is
+	returned every time, and the block is in VM addressible space. To access
+	the contents of the block (for reading, writing, etc), use PR_GetString()
+	and cast the pointer as necessary.
+
+	\param pr		pointer to ::progs_t VM struct
+	\param size		size of block in bytes
+	\return			string index of the block
+*/
+string_t PR_AllocTempBlock (progs_t *pr, size_t size);
+
+/**	Push a temporary string to the callee stack frame
+
+	This is for when the temp string needs to be freed when the called function
+	returns rather than the calling function. It is an error to push a non-temp
+	string.
+
+	\param pr		pointer to ::progs_t VM struct
+	\param num		string index of the temp string
+*/
+void PR_PushTempString (progs_t *pr, string_t num);
+
 /** Make a temporary progs string that is the concatenation of two C strings.
 	\param pr		pointer to ::progs_t VM struct
 	\param a		C string
@@ -1225,11 +1328,6 @@ string_t PR_NewMutableString (progs_t *pr);
 	\return			string index of the progs string
 */
 string_t PR_SetDynamicString (progs_t *pr, const char *s);
-
-/** Clear all of the return string slots. Called at progs load.
-	\param pr		pointer to ::progs_t VM struct
-*/
-void PR_ClearReturnStrings (progs_t *pr);
 
 /** Destroy a mutable, dynamic or temporary string.
 	\param pr		pointer to ::progs_t VM struct
@@ -1418,6 +1516,8 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 	Any memory allocated to the resource must be freed before freeing the
 	resource.
 
+	A reset resource map is guaranteed to allocate elements sequentially.
+
 	\param type		The type of the resource. Must match the \c type parameter
 					used for PR_RESMAP.
 	\param map		The resource map.
@@ -1432,6 +1532,8 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 			*(type **) &map._free[j] = &map._free[j + 1];	\
 		if (i < map._size - 1)								\
 			*(type **) &map._free[j] = &map._map[i + 1][0];	\
+		else												\
+			*(type **) &map._free[j] = 0;					\
 	}														\
 	map._free = map._map[0];
 
@@ -1488,19 +1590,66 @@ void *PR_Zone_Realloc (progs_t *pr, void *ptr, pr_int_t size);
 /// \addtogroup debug
 ///@{
 
-void PR_Debug_Init (void);
+struct qfot_type_s;
+
+/**	Callback for viewing progs data
+
+	\param type		C pointer to the type definition by which to view the
+					data.
+	\param value	C pointer to the data to be viewed.
+	\param data		User data.
+*/
+typedef void (*type_view_func) (struct qfot_type_s *type, pr_type_t *value,
+								void *data);
+
+/**	Set of callbacks for viewing progs data
+
+	Each possible type has its own callback. Basic types (those for which the
+	VM has specific instructions) all have separate callbacks, one for each
+	type, but the callbacks for compound types are expected to some
+	interpretation on their own, such as displaying a simple identifier or
+	the entire contents of the data.
+*/
+typedef struct type_view_s {
+	type_view_func void_view;
+	type_view_func string_view;
+	type_view_func float_view;
+	type_view_func vector_view;
+	type_view_func entity_view;
+	type_view_func field_view;
+	type_view_func func_view;
+	type_view_func pointer_view;
+	type_view_func quat_view;
+	type_view_func integer_view;
+	type_view_func uinteger_view;
+	type_view_func short_view;
+	type_view_func double_view;
+
+	type_view_func struct_view;
+	type_view_func union_view;
+	type_view_func enum_view;
+	type_view_func array_view;
+	type_view_func class_view;
+} type_view_t;
+
+void PR_Debug_Init (progs_t *pr);
 void PR_Debug_Init_Cvars (void);
 int PR_LoadDebug (progs_t *pr);
 void PR_Debug_Watch (progs_t *pr, const char *expr);
 void PR_Debug_Print (progs_t *pr, const char *expr);
+pr_auxfunction_t *PR_Debug_AuxFunction (progs_t *pr, pr_uint_t func) __attribute__((pure));
+pr_auxfunction_t *PR_Debug_MappedAuxFunction (progs_t *pr, pr_uint_t func) __attribute__((pure));
+pr_def_t *PR_Debug_LocalDefs (progs_t *pr, pr_auxfunction_t *aux_function) __attribute__((pure));
+pr_lineno_t *PR_Debug_Linenos (progs_t *pr, pr_auxfunction_t *aux_function,
+							   pr_uint_t *num_linenos);
 pr_auxfunction_t *PR_Get_Lineno_Func (progs_t *pr, pr_lineno_t *lineno) __attribute__((pure));
 pr_uint_t PR_Get_Lineno_Addr (progs_t *pr, pr_lineno_t *lineno) __attribute__((pure));
 pr_uint_t PR_Get_Lineno_Line (progs_t *pr, pr_lineno_t *lineno) __attribute__((pure));
 pr_lineno_t *PR_Find_Lineno (progs_t *pr, pr_uint_t addr) __attribute__((pure));
 const char *PR_Get_Source_File (progs_t *pr, pr_lineno_t *lineno) __attribute__((pure));
 const char *PR_Get_Source_Line (progs_t *pr, pr_uint_t addr);
-ddef_t *PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm) __attribute__((pure));
-ddef_t *PR_Get_Local_Def (progs_t *pr, pr_int_t offs) __attribute__((pure));
+pr_def_t *PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm) __attribute__((pure));
+pr_def_t *PR_Get_Local_Def (progs_t *pr, pointer_t *offs) __attribute__((pure));
 void PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents);
 void PR_DumpState (progs_t *pr);
 void PR_StackTrace (progs_t *pr);
@@ -1541,8 +1690,6 @@ typedef struct {
 	strref_t   *tstr;				///< Linked list of temporary strings.
 } prstack_t;
 
-struct obj_list_s;
-
 struct progs_s {
 	int       (*parse_field) (progs_t *pr, const char *key, const char *value);
 
@@ -1550,7 +1697,7 @@ struct progs_s {
 	int         no_exec_limit;
 
 	void      (*file_error) (progs_t *pr, const char *path);
-	void     *(*load_file) (progs_t *pr, const char *path);
+	void     *(*load_file) (progs_t *pr, const char *path, off_t *size);
 	void     *(*allocate_progs_mem) (progs_t *pr, int size);
 	void      (*free_progs_mem) (progs_t *pr, void *mem);
 
@@ -1597,16 +1744,9 @@ struct progs_s {
 
 	/// \name string management
 	///@{
-	struct dstring_mem_s *ds_mem;
-	strref_t   *free_string_refs;
-	strref_t   *static_strings;
-	strref_t  **string_map;
-	strref_t   *return_strings[PR_RS_SLOTS];
-	int         rs_slot;
-	unsigned    dyn_str_size;
-	struct hashtab_s *strref_hash;
-	int         num_strings;
+	struct prstr_resources_s *pr_string_resources;
 	strref_t   *pr_xtstr;
+	strref_t   *pr_pushtstr;
 	int         float_promoted;	///< for PR_Sprintf
 	///@}
 
@@ -1616,8 +1756,8 @@ struct progs_s {
 	bfunction_t *function_table;
 	char       *pr_strings;
 	int         pr_stringsize;
-	ddef_t     *pr_globaldefs;
-	ddef_t     *pr_fielddefs;
+	pr_def_t   *pr_globaldefs;
+	pr_def_t   *pr_fielddefs;
 	dstatement_t *pr_statements;
 	pr_type_t  *pr_globals;
 	unsigned    globals_size;
@@ -1628,14 +1768,12 @@ struct progs_s {
 	pr_type_t  *pr_return;
 	pr_type_t  *pr_params[MAX_PARMS];
 	pr_type_t  *pr_real_params[MAX_PARMS];
-	pr_type_t  *pr_param_ptrs[2];
-	pr_type_t  *pr_saved_params;
-	int         pr_saved_argc;
 	int         pr_param_size;		///< covers both params and return
 	int         pr_param_alignment;	///< covers both params and return
 	///@}
 
 	/// \name edicts
+	/// \todo FIXME should this be outside the VM?
 	///@{
 	edict_t   **edicts;
 	int         max_edicts;			///< set by user
@@ -1652,7 +1790,7 @@ struct progs_s {
 
 	/// \name execution state
 	///@{
-	int         pr_argc;
+	int         pr_argc;	//FIXME need a good way to ensure it is correct
 
 	qboolean    pr_trace;
 	int         pr_trace_depth;
@@ -1687,28 +1825,13 @@ struct progs_s {
 
 	/// \name obj info
 	///@{
-	unsigned    selector_index;
-	unsigned    selector_index_max;
-	struct obj_list_s **selector_sels;
-	string_t   *selector_names;
-	struct hashtab_s *selector_hash;
-	struct hashtab_s *classes;
-	struct hashtab_s *load_methods;
-	struct obj_list_s *unresolved_classes;
-	struct obj_list_s *unclaimed_categories;
-	struct obj_list_s *unclaimed_proto_list;
-	struct obj_list_s *module_list;
-	struct obj_list_s *class_tree_list;
+	struct probj_resources_s *pr_objective_resources;
 	///@}
 
-	/// \name debug info
+	/// \name debugging
 	///@{
-	const char *debugfile;
-	struct pr_debug_header_s *debug;
-	struct pr_auxfunction_s *auxfunctions;
-	struct pr_auxfunction_s **auxfunction_map;
-	struct pr_lineno_s *linenos;
-	ddef_t     *local_defs;
+	struct prdeb_resources_s *pr_debug_resources;
+	void      (*breakpoint_handler) (progs_t *pr);
 	pr_type_t  *watch;
 	int         wp_conditional;
 	pr_type_t   wp_val;
@@ -1740,7 +1863,7 @@ struct progs_s {
 	\return			C pointer represented by the parameter. 0 offset -> NULL
 */
 static inline pr_type_t *
-PR_GetPointer (progs_t *pr, pointer_t o)
+PR_GetPointer (const progs_t *pr, pointer_t o)
 {
 	return o ? pr->pr_globals + o : 0;
 }
@@ -1751,9 +1874,9 @@ PR_GetPointer (progs_t *pr, pointer_t o)
 	\return			Progs offset/pointer represented by \c p. NULL -> 0 offset
 */
 static inline pointer_t
-PR_SetPointer (progs_t *pr, void *p)
+PR_SetPointer (const progs_t *pr, const void *p)
 {
-	return p ? (pr_type_t *) p - pr->pr_globals : 0;
+	return p ? (const pr_type_t *) p - pr->pr_globals : 0;
 }
 
 ///@}

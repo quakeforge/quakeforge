@@ -26,8 +26,8 @@
 */
 // sound.h -- client sound i/o functions
 
-#ifndef _SOUND_H
-#define _SOUND_H
+#ifndef __QF_sound_h
+#define __QF_sound_h
 
 /** \defgroup sound QuakeForge sound engine
 */
@@ -195,4 +195,4 @@ void S_Progs_Init (struct progs_s *pr);
 
 ///@}
 
-#endif // _SOUND_H
+#endif//__QF_sound_h

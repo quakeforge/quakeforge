@@ -30,7 +30,7 @@
 #ifndef __ruamoko_Entity_h
 #define __ruamoko_Entity_h
 
-#include "Object.h"
+#include <Object.h>
 
 @interface Entity: Object
 {

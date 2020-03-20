@@ -1,4 +1,4 @@
-#include "key.h"
+#include <key.h>
 
 int Key_keydown (int keynum) = #0;
 string (string imt, int keynum, string binding) Key_SetBinding = #0;

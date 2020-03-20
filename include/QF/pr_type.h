@@ -28,8 +28,8 @@
 
 */
 
-#ifndef __pr_type_h
-#define __pr_type_h
+#ifndef __QF_pr_type_h
+#define __QF_pr_type_h
 
 /** \defgroup qfcc_qfo_type Object file type encoding
 	\ingroup progs
@@ -39,6 +39,16 @@
 ///@{
 
 #include "QF/pr_comp.h"
+
+typedef enum {
+	ty_basic,				///< VM type (float, int, pointer, field, etc)
+	ty_struct,
+	ty_union,
+	ty_enum,
+	ty_array,
+	ty_class,
+} ty_meta_e;
+
 
 typedef struct qfot_fldptr_s {
 	pr_int_t    type;				///< ev_field or ev_pointer
@@ -88,20 +98,20 @@ typedef struct qfot_type_s {
 	pr_int_t    size;				///< total word size of this encoding
 	string_t    encoding;			///< Objective-QC encoding
 	union {
-		pr_int_t    type;			///< basic type: etype_t
-		qfot_fldptr_t fldptr;		///< ty_none, ev_pointer/ev_field
-		qfot_func_t func;			///< ty_none, ev_func
+		pr_int_t    type;			///< ty_basic: etype_t
+		qfot_fldptr_t fldptr;		///< ty_basic, ev_pointer/ev_field
+		qfot_func_t func;			///< ty_basic, ev_func
 		qfot_struct_t strct;		///< ty_struct/ty_union/ty_enum
 		qfot_array_t array;			///< ty_array
-		pointer_t   class;			///< ty_class
+		string_t    class;			///< ty_class
 	}           t;
 } qfot_type_t;
 
 typedef struct qfot_type_encodings_s {
 	pointer_t   types;
-	pr_int_t    size;
+	pr_uint_t   size;
 } qfot_type_encodings_t;
 
 ///@}
 
-#endif//__pr_type_h
+#endif//__QF_pr_type_h

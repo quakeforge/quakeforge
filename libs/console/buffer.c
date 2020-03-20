@@ -92,7 +92,7 @@ Con_BufferAddText (con_buffer_t *buf, const char *text)
 	}
 	while (len--) {
 		byte        c = *pos++ = *text++;
-		if ((size_t) (pos - buf->buffer) >= buf->buffer_size)
+		if (pos >= buf->buffer + buf->buffer_size)
 			pos = buf->buffer;
 		cur_line->len++;
 		if (pos == tail_line->text) {

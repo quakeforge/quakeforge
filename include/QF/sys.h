@@ -25,10 +25,10 @@
 
 */
 
-#ifndef __sys_h
-#define __sys_h
+#ifndef __QF_sys_h
+#define __QF_sys_h
 
-/** \defgroup sys Portability
+/** \defgroup sys System Portability
 	\ingroup utils
 	Non-portable functions
 */
@@ -65,8 +65,8 @@ int Sys_mkdir (const char *path);
 typedef void (*sys_printf_t) (const char *fmt, va_list args) __attribute__((format(printf, 1, 0)));
 typedef void (*sys_error_t) (void *data);
 
-void Sys_SetStdPrintf (sys_printf_t func);
-void Sys_SetErrPrintf (sys_printf_t func);
+sys_printf_t Sys_SetStdPrintf (sys_printf_t func);
+sys_printf_t Sys_SetErrPrintf (sys_printf_t func);
 
 void Sys_PushErrorHandler (sys_error_t func, void *data);
 void Sys_PopErrorHandler (void);
@@ -161,4 +161,4 @@ char *Sys_ExpandSquiggle (const char *path);
 
 ///@}
 
-#endif // __sys_h
+#endif//__QF_sys_h

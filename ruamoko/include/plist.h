@@ -1,7 +1,7 @@
 #ifndef __ruamoko_plist_h
 #define __ruamoko_plist_h
 
-#include "qfile.h"
+#include <qfile.h>
 
 typedef struct plitem_s *plitem_t;
 typedef enum {QFDictionary, QFArray, QFBinary, QFString} pltype_t;	// possible types

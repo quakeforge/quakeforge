@@ -98,6 +98,7 @@ bi_get_key (const void *key, void *_ht)
 	PR_RESET_PARAMS (ht->pr);
 	P_INT (ht->pr, 0) = (intptr_t) (key);
 	P_INT (ht->pr, 1) = ht->ud;
+	ht->pr->pr_argc = 2;
 	PR_ExecuteProgram (ht->pr, ht->gk);
 	return PR_GetString (ht->pr, R_STRING (ht->pr));
 }
@@ -109,6 +110,7 @@ bi_get_hash (const void *key, void *_ht)
 	PR_RESET_PARAMS (ht->pr);
 	P_INT (ht->pr, 0) = (intptr_t) (key);
 	P_INT (ht->pr, 1) = ht->ud;
+	ht->pr->pr_argc = 2;
 	PR_ExecuteProgram (ht->pr, ht->gh);
 	return R_INT (ht->pr);
 }
@@ -121,6 +123,7 @@ bi_compare (const void *key1, const void *key2, void *_ht)
 	P_INT (ht->pr, 0) = (intptr_t) (key1);
 	P_INT (ht->pr, 1) = (intptr_t) (key2);
 	P_INT (ht->pr, 2) = ht->ud;
+	ht->pr->pr_argc = 3;
 	PR_ExecuteProgram (ht->pr, ht->cmp);
 	return R_INT (ht->pr);
 }
@@ -132,6 +135,7 @@ bi_free (void *key, void *_ht)
 	PR_RESET_PARAMS (ht->pr);
 	P_INT (ht->pr, 0) = (intptr_t) (key);
 	P_INT (ht->pr, 1) = ht->ud;
+	ht->pr->pr_argc = 2;
 	PR_ExecuteProgram (ht->pr, ht->f);
 }
 

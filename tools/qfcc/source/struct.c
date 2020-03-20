@@ -47,6 +47,7 @@
 #include <QF/sys.h>
 #include <QF/va.h>
 
+#include "class.h"
 #include "def.h"
 #include "defspace.h"
 #include "diagnostic.h"
@@ -113,6 +114,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
 	symbol_t   *sym = find_struct (su, tag, type);
 	symbol_t   *s;
 	int         alignment = 1;
+	symbol_t   *as;
 
 	symtab->parent = 0;		// disconnect struct's symtab from parent scope
 
@@ -123,7 +125,12 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
 	for (s = symtab->symbols; s; s = s->next) {
 		if (s->sy_type != sy_var)
 			continue;
+		if (obj_is_class (s->type)) {
+			error (0, "statically allocated instance of class %s",
+				   s->type->t.class->name);
+		}
 		if (su == 's') {
+			symtab->size = RUP (symtab->size, s->type->alignment);
 			s->s.offset = symtab->size;
 			symtab->size += type_size (s->type);
 		} else {
@@ -133,6 +140,32 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
 		}
 		if (s->type->alignment > alignment) {
 			alignment = s->type->alignment;
+		}
+		if (s->visibility == vis_anonymous) {
+			symtab_t   *anonymous;
+			symbol_t   *t = s->next;
+			int         offset = s->s.offset;
+
+			if (!is_struct (s->type)) {
+				internal_error (0, "non-struct/union anonymous field");
+			}
+			anonymous = s->type->t.symtab;
+			for (as = anonymous->symbols; as; as = as->next) {
+				if (as->visibility == vis_anonymous || as->sy_type!= sy_var) {
+					continue;
+				}
+				if (Hash_Find (symtab->tab, as->name)) {
+					error (0, "ambiguous field `%s' in anonymous %s",
+						   as->name, su == 's' ? "struct" : "union");
+				} else {
+					s->next = copy_symbol (as);
+					s = s->next;
+					s->s.offset += offset;
+					s->table = symtab;
+					Hash_Add (symtab->tab, s);
+				}
+			}
+			s->next = t;
 		}
 	}
 	if (!type)

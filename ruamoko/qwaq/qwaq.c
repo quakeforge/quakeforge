@@ -33,14 +33,18 @@
 
 #include <stdlib.h>
 
-#include <QF/cmd.h>
-#include <QF/cvar.h>
-#include <QF/progs.h>
-#include <QF/quakefs.h>
+#include "QF/cbuf.h"
+#include "QF/cmd.h"
+#include "QF/cvar.h"
+#include "QF/gib.h"
+#include "QF/idparse.h"
+#include "QF/progs.h"
+#include "QF/qargs.h"
+#include "QF/quakefs.h"
 #include "QF/ruamoko.h"
-#include <QF/sys.h>
+#include "QF/sys.h"
 #include "QF/va.h"
-#include <QF/zone.h>
+#include "QF/zone.h"
 
 #include "qwaq.h"
 
@@ -50,6 +54,8 @@ static edict_t *edicts;
 static int num_edicts;
 static int reserved_edicts;
 static progs_t pr;
+
+cbuf_t *qwaq_cbuf;
 
 static QFile *
 open_file (const char *path, int *len)
@@ -65,7 +71,7 @@ open_file (const char *path, int *len)
 }
 
 static void *
-load_file (progs_t *pr, const char *name)
+load_file (progs_t *pr, const char *name, off_t *_size)
 {
 	QFile      *file;
 	int         size;
@@ -81,6 +87,7 @@ load_file (progs_t *pr, const char *name)
 	sym = malloc (size + 1);
 	sym[size] = 0;
 	Qread (file, sym, size);
+	*_size = size;
 	return sym;
 }
 
@@ -99,10 +106,15 @@ free_progs_mem (progs_t *pr, void *mem)
 static void
 init_qf (void)
 {
-	Sys_Init ();
-	//Cvar_Get ("developer", "128", 0, 0, 0);
+	qwaq_cbuf = Cbuf_New (&id_interp);
 
-	Memory_Init (malloc (1024 * 1024), 1024 * 1024);
+	Sys_Init ();
+	GIB_Init (true);
+	COM_ParseConfig ();
+
+	//Cvar_Set (developer, "1");
+
+	Memory_Init (malloc (8 * 1024 * 1024), 8 * 1024 * 1024);
 
 	Cvar_Get ("pr_debug", "2", 0, 0, 0);
 	Cvar_Get ("pr_boundscheck", "0", 0, 0, 0);
@@ -116,9 +128,9 @@ init_qf (void)
 	pr.no_exec_limit = 1;
 
 	PR_Init_Cvars ();
-	PR_Init ();
+	PR_Init (&pr);
 	RUA_Init (&pr, 0);
-	PR_Cmds_Init(&pr);
+	PR_Cmds_Init (&pr);
 	BI_Init (&pr);
 }
 
@@ -143,7 +155,7 @@ load_progs (const char *name)
 }
 
 int
-main (int argc, char **argv)
+main (int argc, const char **argv)
 {
 	dfunction_t *dfunc;
 	func_t      main_func = 0;
@@ -151,6 +163,7 @@ main (int argc, char **argv)
 	string_t   *pr_argv;
 	int         pr_argc = 1, i;
 
+	COM_InitArgv (argc, argv);
 	init_qf ();
 
 	if (argc > 1)
@@ -176,6 +189,7 @@ main (int argc, char **argv)
 	PR_RESET_PARAMS (&pr);
 	P_INT (&pr, 0) = pr_argc;
 	P_POINTER (&pr, 1) = PR_SetPointer (&pr, pr_argv);
+	pr.pr_argc = 2;
 	PR_ExecuteProgram (&pr, main_func);
 	PR_PopFrame (&pr);
 	return R_INT (&pr);

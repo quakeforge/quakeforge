@@ -68,41 +68,45 @@ PR_RunError (progs_t * pr, const char *error, ...)
 
 	// dump the stack so PR_Error can shutdown functions
 	pr->pr_depth = 0;
+	pr->localstack_used = 0;
 
 	PR_Error (pr, "Program error: %s", string->str);
 }
 
-VISIBLE void
-PR_SaveParams (progs_t *pr)
+VISIBLE pr_stashed_params_t *
+_PR_SaveParams (progs_t *pr, pr_stashed_params_t *params)
 {
 	int         i;
 	int         size = pr->pr_param_size * sizeof (pr_type_t);
 
-	pr->pr_param_ptrs[0] = pr->pr_params[0];
-	pr->pr_param_ptrs[1] = pr->pr_params[1];
+	params->param_ptrs[0] = pr->pr_params[0];
+	params->param_ptrs[1] = pr->pr_params[1];
 	pr->pr_params[0] = pr->pr_real_params[0];
 	pr->pr_params[1] = pr->pr_real_params[1];
 	for (i = 0; i < pr->pr_argc; i++) {
-		memcpy (pr->pr_saved_params + i * pr->pr_param_size,
+		memcpy (params->params + i * pr->pr_param_size,
 				pr->pr_real_params[i], size);
-		if (i < 2)
-			memcpy (pr->pr_real_params[i], pr->pr_param_ptrs[0], size);
+		if (i < 2) { //XXX FIXME what the what?!?
+			memcpy (pr->pr_real_params[i], params->param_ptrs[0], size);
+		}
 	}
-	pr->pr_saved_argc = pr->pr_argc;
+	params->argc = pr->pr_argc;
+	return params;
 }
 
 VISIBLE void
-PR_RestoreParams (progs_t *pr)
+PR_RestoreParams (progs_t *pr, pr_stashed_params_t *params)
 {
 	int         i;
 	int         size = pr->pr_param_size * sizeof (pr_type_t);
 
-	pr->pr_params[0] = pr->pr_param_ptrs[0];
-	pr->pr_params[1] = pr->pr_param_ptrs[1];
-	pr->pr_argc = pr->pr_saved_argc;
-	for (i = 0; i < pr->pr_argc; i++)
+	pr->pr_params[0] = params->param_ptrs[0];
+	pr->pr_params[1] = params->param_ptrs[1];
+	pr->pr_argc = params->argc;
+	for (i = 0; i < pr->pr_argc; i++) {
 		memcpy (pr->pr_real_params[i],
-				pr->pr_saved_params + i * pr->pr_param_size, size);
+				params->params + i * pr->pr_param_size, size);
+	}
 }
 
 VISIBLE inline void
@@ -119,7 +123,8 @@ PR_PushFrame (progs_t *pr)
 	frame->f    = pr->pr_xfunction;
 	frame->tstr = pr->pr_xtstr;
 
-	pr->pr_xtstr = 0;
+	pr->pr_xtstr = pr->pr_pushtstr;
+	pr->pr_pushtstr = 0;
 	pr->pr_xfunction = 0;
 }
 
@@ -133,6 +138,17 @@ PR_PopFrame (progs_t *pr)
 
 	if (pr->pr_xtstr)
 		PR_FreeTempStrings (pr);
+	// normally, this won't happen, but if a builtin pushed a temp string
+	// when calling a function and the callee was another builtin that
+	// did not call a progs function, then the push strings will still be
+	// valid because PR_EnterFunction was never called
+	// however, not if a temp string survived: better to hold on to the push
+	// strings a little longer than lose one erroneously
+	if (!pr->pr_xtstr && pr->pr_pushtstr) {
+		pr->pr_xtstr = pr->pr_pushtstr;
+		pr->pr_pushtstr = 0;
+		PR_FreeTempStrings (pr);
+	}
 
 	// up stack
 	frame = pr->pr_stack + --pr->pr_depth;
@@ -183,6 +199,7 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 			if (pr->pr_params[i] != pr->pr_real_params[i]) {
 				copy_param (pr->pr_real_params[i], pr->pr_params[i],
 							f->parm_size[i].size);
+				pr->pr_params[i] = pr->pr_real_params[i];
 			}
 		}
 	} else if (f->numparms < 0) {
@@ -194,6 +211,7 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 			if (pr->pr_params[i] != pr->pr_real_params[i]) {
 				copy_param (pr->pr_real_params[i], pr->pr_params[i],
 							f->parm_size[i].size);
+				pr->pr_params[i] = pr->pr_real_params[i];
 			}
 		}
 		dparmsize_t parmsize = { pr->pr_param_size, pr->pr_param_alignment };
@@ -205,6 +223,7 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 			if (pr->pr_params[i] != pr->pr_real_params[i]) {
 				copy_param (pr->pr_real_params[i], pr->pr_params[i],
 							parmsize.size);
+				pr->pr_params[i] = pr->pr_real_params[i];
 			}
 		}
 	}
@@ -385,6 +404,14 @@ check_stack_pointer (progs_t *pr, pointer_t stack, int size)
 	}
 }
 
+static inline void
+pr_memset (pr_type_t *dst, int val, int count)
+{
+	while (count-- > 0) {
+		(*dst++).integer_var = val;
+	}
+}
+
 /*
 	PR_ExecuteProgram
 
@@ -436,7 +463,16 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 		if (pr->pr_trace)
 			PR_PrintStatement (pr, st, 1);
 
-		switch (st->op) {
+		if (st->op & OP_BREAK) {
+			if (pr->breakpoint_handler) {
+				pr->breakpoint_handler (pr);
+			} else {
+				PR_RunError (pr, "breakpoint hit");
+			}
+		}
+
+		pr_opcode_e op = st->op & ~OP_BREAK;
+		switch (op) {
 			case OP_ADD_D:
 				OPC_double_var = OPA_double_var + OPB_double_var;
 				break;
@@ -1580,7 +1616,23 @@ op_call:
 						 pr->pr_globals + OPA.integer_var,
 						 st->b * 4);
 				break;
-
+			case OP_MEMSETI:
+				pr_memset (&OPC, OPA.integer_var, st->b);
+				break;
+			case OP_MEMSETP:
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheckSize (pr, OPC.pointer_var, OPB.integer_var);
+				}
+				pr_memset (pr->pr_globals + OPC.pointer_var, OPA.integer_var,
+						   OPB.integer_var);
+				break;
+			case OP_MEMSETPI:
+				if (pr_boundscheck->int_val) {
+					PR_BoundsCheckSize (pr, OPC.pointer_var, st->b);
+				}
+				pr_memset (pr->pr_globals + OPC.pointer_var, OPA.integer_var,
+						   st->b);
+				break;
 			case OP_GE_D:
 				OPC.float_var = OPA_double_var >= OPB_double_var;
 				break;
@@ -1636,6 +1688,7 @@ op_call:
 						 watch->integer_var);
 	}
 exit_program:
+	pr->pr_argc = 0;
 	Sys_PopErrorHandler ();
 	Sys_PopSignalHook ();
 }

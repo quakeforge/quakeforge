@@ -62,16 +62,18 @@
 
 // simple types.  function types are dynamically allocated
 type_t      type_invalid = { ev_invalid, "invalid" };
-type_t      type_void = { ev_void, "void" };
+type_t      type_void = { ev_void, "void", 1 };
 type_t      type_string = { ev_string, "string", 1 };
 type_t      type_float = { ev_float, "float", 1 };
 type_t      type_vector = { ev_vector, "vector", 1 };
 type_t      type_entity = { ev_entity, "entity", 1 };
-type_t      type_field = {ev_field, "field", 1, ty_none, {{&type_void}} };
+type_t      type_field = {ev_field, "field", 1, ty_basic, {{&type_void}} };
 
 // type_function is a void() function used for state defs
-type_t      type_function = { ev_func, "function", 1, ty_none, {{&type_void}} };
-type_t      type_pointer = { ev_pointer, "pointer", 1, ty_none, {{&type_void}} };
+type_t      type_function = { ev_func, "function", 1, ty_basic,
+								{{&type_void}} };
+type_t      type_pointer = { ev_pointer, "pointer", 1, ty_basic,
+								{{&type_void}} };
 type_t      type_quaternion = { ev_quat, "quaternion", 1 };
 type_t      type_integer = { ev_integer, "int", 1 };
 type_t      type_uinteger = { ev_uinteger, "uint", 1 };
@@ -87,8 +89,11 @@ type_t      type_param = { ev_invalid, 0, 0, ty_struct };
 type_t      type_zero = { ev_invalid, 0, 0, ty_struct };
 type_t      type_type_encodings = { ev_invalid, "@type_encodings", 0,
 									ty_struct };
+type_t      type_xdef = { ev_invalid, "@xdef", 0, ty_struct };
+type_t      type_xdef_pointer = { ev_pointer, 0, 1, ty_basic, {{&type_xdef}} };
+type_t      type_xdefs = { ev_invalid, "@xdefs", 0, ty_struct };
 
-type_t      type_floatfield = { ev_field, ".float", 1, ty_none,
+type_t      type_floatfield = { ev_field, ".float", 1, ty_basic,
 								{{&type_float}} };
 
 type_t     *ev_types[ev_type_count] = {
@@ -252,7 +257,7 @@ types_same (type_t *a, type_t *b)
 	if (a->type != b->type || a->meta != b->meta)
 		return 0;
 	switch (a->meta) {
-		case ty_none:
+		case ty_basic:
 			switch (a->type) {
 				case ev_field:
 				case ev_pointer:
@@ -313,7 +318,7 @@ find_type (type_t *type)
 
 	if (type->freeable) {
 		switch (type->meta) {
-			case ty_none:
+			case ty_basic:
 				switch (type->type) {
 					case ev_field:
 					case ev_pointer:
@@ -447,79 +452,90 @@ print_type_str (dstring_t *str, const type_t *type)
 		dasprintf (str, " (null)");
 		return;
 	}
-	switch (type->type) {
-		case ev_field:
-			dasprintf (str, ".(");
-			print_type_str (str, type->t.fldptr.type);
-			dasprintf (str, ")");
-			break;
-		case ev_func:
-			print_type_str (str, type->t.func.type);
-			if (type->t.func.num_params == -1) {
-				dasprintf (str, "(...)");
+	switch (type->meta) {
+		case ty_class:
+			dasprintf (str, " %s", type->t.class->name);
+			if (type->protos)
+				print_protocollist (str, type->protos);
+			return;
+		case ty_enum:
+			dasprintf (str, " enum %s", type->name);
+			return;
+		case ty_struct:
+			dasprintf (str, " struct %s", type->name);
+			return;
+		case ty_union:
+			dasprintf (str, " union %s", type->name);
+			return;
+		case ty_array:
+			print_type_str (str, type->t.array.type);
+			if (type->t.array.base) {
+				dasprintf (str, "[%d..%d]", type->t.array.base,
+						type->t.array.base + type->t.array.size - 1);
 			} else {
-				int         c, i;
-				dasprintf (str, "(");
-				if ((c = type->t.func.num_params) < 0)
-					c = ~c;		// num_params is one's compliment
-				for (i = 0; i < c; i++) {
-					if (i)
-						dasprintf (str, ", ");
-					print_type_str (str, type->t.func.param_types[i]);
-				}
-				if (type->t.func.num_params < 0)
-						dasprintf (str, ", ...");
-				dasprintf (str, ")");
+				dasprintf (str, "[%d]", type->t.array.size);
 			}
-			break;
-		case ev_pointer:
-			if (obj_is_id (type)) {
-				dasprintf (str, "id");
-				if (type->t.fldptr.type->protos)
-					print_protocollist (str, type->t.fldptr.type->protos);
-				break;
-			}
-			if (type == &type_SEL) {
-				dasprintf (str, "SEL");
-				break;
-			}
-			dasprintf (str, "(*");
-			print_type_str (str, type->t.fldptr.type);
-			dasprintf (str, ")");
-			break;
-		case ev_invalid:
-			switch (type->meta) {
-				case ty_class:
-					dasprintf (str, " %s", type->t.class->name);
-					if (type->protos)
-						print_protocollist (str, type->protos);
-					break;
-				case ty_enum:
-					dasprintf (str, " enum %s", type->name);
-					break;
-				case ty_struct:
-					dasprintf (str, " struct %s", type->name);
-					break;
-				case ty_union:
-					dasprintf (str, " union %s", type->name);
-					break;
-				case ty_array:
-					print_type_str (str, type->t.array.type);
-					if (type->t.array.base) {
-						dasprintf (str, "[%d..%d]", type->t.array.base,
-								type->t.array.base + type->t.array.size - 1);
+			return;
+		case ty_basic:
+			switch (type->type) {
+				case ev_field:
+					dasprintf (str, ".(");
+					print_type_str (str, type->t.fldptr.type);
+					dasprintf (str, ")");
+					return;
+				case ev_func:
+					print_type_str (str, type->t.func.type);
+					if (type->t.func.num_params == -1) {
+						dasprintf (str, "(...)");
 					} else {
-						dasprintf (str, "[%d]", type->t.array.size);
+						int         c, i;
+						dasprintf (str, "(");
+						if ((c = type->t.func.num_params) < 0)
+							c = ~c;		// num_params is one's compliment
+						for (i = 0; i < c; i++) {
+							if (i)
+								dasprintf (str, ", ");
+							print_type_str (str, type->t.func.param_types[i]);
+						}
+						if (type->t.func.num_params < 0)
+								dasprintf (str, ", ...");
+						dasprintf (str, ")");
 					}
-					break;
-				case ty_none:
+					return;
+				case ev_pointer:
+					if (obj_is_id (type)) {
+						dasprintf (str, "id");
+						if (type->t.fldptr.type->protos)
+							print_protocollist (str, type->t.fldptr.type->protos);
+						return;
+					}
+					if (type == &type_SEL) {
+						dasprintf (str, "SEL");
+						return;
+					}
+					dasprintf (str, "(*");
+					print_type_str (str, type->t.fldptr.type);
+					dasprintf (str, ")");
+					return;
+				case ev_void:
+				case ev_string:
+				case ev_float:
+				case ev_vector:
+				case ev_entity:
+				case ev_quat:
+				case ev_integer:
+				case ev_uinteger:
+				case ev_short:
+				case ev_double:
+					dasprintf (str, " %s", pr_type_name[type->type]);
+					return;
+				case ev_invalid:
+				case ev_type_count:
 					break;
 			}
-			break;
-		default:
-			dasprintf (str, " %s", pr_type_name[type->type]);
 			break;
 	}
+	internal_error (0, "bad type meta:type %d:%d", type->meta, type->type);
 }
 
 void
@@ -593,93 +609,91 @@ encode_type (dstring_t *encoding, const type_t *type)
 {
 	if (!type)
 		return;
-	switch (type->type) {
-		case ev_void:
-			dasprintf (encoding, "v");
-			break;
-		case ev_string:
-			dasprintf (encoding, "*");
-			break;
-		case ev_double:
-			dasprintf (encoding, "d");
-			break;
-		case ev_float:
-			dasprintf (encoding, "f");
-			break;
-		case ev_vector:
-			dasprintf (encoding, "V");
-			break;
-		case ev_entity:
-			dasprintf (encoding, "E");
-			break;
-		case ev_field:
-			dasprintf (encoding, "F");
-			encode_type (encoding, type->t.fldptr.type);
-			break;
-		case ev_func:
-			dasprintf (encoding, "(");
-			encode_type (encoding, type->t.func.type);
-			dasprintf (encoding, "%s)", encode_params (type));
-			break;
-		case ev_pointer:
-			if (type == &type_id) {
-				dasprintf (encoding, "@");
+	switch (type->meta) {
+		case ty_class:
+			encode_class (encoding, type);
+			return;
+		case ty_enum:
+			encode_enum (encoding, type);
+			return;
+		case ty_struct:
+		case ty_union:
+			encode_struct (encoding, type);
+			return;
+		case ty_array:
+			dasprintf (encoding, "[");
+			dasprintf (encoding, "%d", type->t.array.size);
+			if (type->t.array.base)
+				dasprintf (encoding, ":%d", type->t.array.base);
+			dasprintf (encoding, "=");
+			encode_type (encoding, type->t.array.type);
+			dasprintf (encoding, "]");
+			return;
+		case ty_basic:
+			switch (type->type) {
+				case ev_void:
+					dasprintf (encoding, "v");
+					return;
+				case ev_string:
+					dasprintf (encoding, "*");
+					return;
+				case ev_double:
+					dasprintf (encoding, "d");
+					return;
+				case ev_float:
+					dasprintf (encoding, "f");
+					return;
+				case ev_vector:
+					dasprintf (encoding, "V");
+					return;
+				case ev_entity:
+					dasprintf (encoding, "E");
+					return;
+				case ev_field:
+					dasprintf (encoding, "F");
+					encode_type (encoding, type->t.fldptr.type);
+					return;
+				case ev_func:
+					dasprintf (encoding, "(");
+					encode_type (encoding, type->t.func.type);
+					dasprintf (encoding, "%s)", encode_params (type));
+					return;
+				case ev_pointer:
+					if (type == &type_id) {
+						dasprintf (encoding, "@");
+						return;
+					}
+					if (type == &type_SEL) {
+						dasprintf (encoding, ":");
+						return;
+					}
+					if (type == &type_Class) {
+						dasprintf (encoding, "#");
+						return;
+					}
+					type = type->t.fldptr.type;
+					dasprintf (encoding, "^");
+					encode_type (encoding, type);
+					return;
+				case ev_quat:
+					dasprintf (encoding, "Q");
+					return;
+				case ev_integer:
+					dasprintf (encoding, "i");
+					return;
+				case ev_uinteger:
+					dasprintf (encoding, "I");
+					return;
+				case ev_short:
+					dasprintf (encoding, "s");
+					return;
+				case ev_invalid:
+				case ev_type_count:
 				break;
 			}
-			if (type == &type_SEL) {
-				dasprintf (encoding, ":");
-				break;
-			}
-			if (type == &type_Class) {
-				dasprintf (encoding, "#");
-				break;
-			}
-			type = type->t.fldptr.type;
-			dasprintf (encoding, "^");
-			encode_type (encoding, type);
-			break;
-		case ev_quat:
-			dasprintf (encoding, "Q");
-			break;
-		case ev_integer:
-			dasprintf (encoding, "i");
-			break;
-		case ev_uinteger:
-			dasprintf (encoding, "I");
-			break;
-		case ev_short:
-			dasprintf (encoding, "s");
-			break;
-		case ev_invalid:
-			switch (type->meta) {
-				case ty_class:
-					encode_class (encoding, type);
-					break;
-				case ty_enum:
-					encode_enum (encoding, type);
-					break;
-				case ty_struct:
-				case ty_union:
-					encode_struct (encoding, type);
-					break;
-				case ty_array:
-					dasprintf (encoding, "[");
-					dasprintf (encoding, "%d", type->t.array.size);
-					if (type->t.array.base)
-						dasprintf (encoding, ":%d", type->t.array.base);
-					dasprintf (encoding, "=");
-					encode_type (encoding, type->t.array.type);
-					dasprintf (encoding, "]");
-					break;
-				case ty_none:
-					dasprintf (encoding, "?");
-					break;
-			}
-			break;
-		case ev_type_count:
-			dasprintf (encoding, "?");
 			break;
 	}
+	internal_error (0, "bad type meta:type %d:%d", type->meta, type->type);
 }
 
 int
@@ -697,11 +711,39 @@ is_enum (const type_t *type)
 }
 
 int
-is_integral (const type_t *type)
+is_integer (const type_t *type)
 {
 	etype_t     t = type->type;
 
-	if (t == ev_integer || t == ev_uinteger || t == ev_short)
+	if (t == ev_integer)
+		return 1;
+	return is_enum (type);
+}
+
+int
+is_uinteger (const type_t *type)
+{
+	etype_t     t = type->type;
+
+	if (t == ev_uinteger)
+		return 1;
+	return is_enum (type);
+}
+
+int
+is_short (const type_t *type)
+{
+	etype_t     t = type->type;
+
+	if (t == ev_short)
+		return 1;
+	return is_enum (type);
+}
+
+int
+is_integral (const type_t *type)
+{
+	if (is_integer (type) || is_uinteger (type) || is_short (type))
 		return 1;
 	return is_enum (type);
 }
@@ -770,6 +812,14 @@ is_field (const type_t *type)
 }
 
 int
+is_entity (const type_t *type)
+{
+	if (type->type == ev_entity)
+		return 1;
+	return 0;
+}
+
+int
 is_array (const type_t *type)
 {
 	if (type->type == ev_invalid && type->meta == ty_array)
@@ -781,6 +831,20 @@ int
 is_func (const type_t *type)
 {
 	if (type->type == ev_func)
+		return 1;
+	return 0;
+}
+
+int
+is_structural (const type_t *type)
+{
+	return is_struct (type) || is_array (type);
+}
+
+int
+is_string (const type_t *type)
+{
+	if (type->type == ev_string)
 		return 1;
 	return 0;
 }
@@ -834,6 +898,9 @@ type_assignable (const type_t *dst, const type_t *src)
 
 	dst = dst->t.fldptr.type;
 	src = src->t.fldptr.type;
+	if (dst == src) {
+		return 1;
+	}
 	if (is_void (dst))
 		return 1;
 	if (is_void (src))
@@ -844,50 +911,31 @@ type_assignable (const type_t *dst, const type_t *src)
 int
 type_size (const type_t *type)
 {
-	switch (type->type) {
-		case ev_void:
-		case ev_string:
-		case ev_float:
-		case ev_vector:
-		case ev_entity:
-		case ev_field:
-		case ev_func:
-		case ev_pointer:
-		case ev_quat:
-		case ev_integer:
-		case ev_uinteger:
-		case ev_short:
-		case ev_double:
-		case ev_type_count:
+	switch (type->meta) {
+		case ty_basic:
 			return pr_type_size[type->type];
-		case ev_invalid:
-			switch (type->meta) {
-				case ty_enum:
-					if (!type->t.symtab)
-						return 0;
-					return type_size (&type_integer);
-				case ty_struct:
-				case ty_union:
-					if (!type->t.symtab)
-						return 0;
-					return type->t.symtab->size;
-				case ty_class:
-					{
-						class_t    *class = type->t.class;
-						int         size;
-						if (!class->ivars)
-							return 0;
-						size = class->ivars->size;
-						if (class->super_class)
-							size += type_size (class->super_class->type);
-						return size;
-					}
-				case ty_array:
-					return type->t.array.size * type_size (type->t.array.type);
-				case ty_none:
+		case ty_struct:
+		case ty_union:
+			if (!type->t.symtab)
+				return 0;
+			return type->t.symtab->size;
+		case ty_enum:
+			if (!type->t.symtab)
+				return 0;
+			return type_size (&type_integer);
+		case ty_array:
+			return type->t.array.size * type_size (type->t.array.type);
+		case ty_class:
+			{
+				class_t    *class = type->t.class;
+				int         size;
+				if (!class->ivars)
 					return 0;
+				size = class->ivars->size;
+				if (class->super_class)
+					size += type_size (class->super_class->type);
+				return size;
 			}
-			break;
 	}
 	return 0;
 }
@@ -897,7 +945,6 @@ init_types (void)
 {
 	static struct_def_t zero_struct[] = {
 		{"string_val",       &type_string},
-		{"double_val",       &type_double},
 		{"float_val",        &type_float},
 		{"entity_val",       &type_entity},
 		{"field_val",        &type_field},
@@ -909,6 +956,7 @@ init_types (void)
 		{"integer_val",      &type_integer},
 		{"uinteger_val",     &type_uinteger},
 		{"quaternion_val",   &type_quaternion},
+		{"double_val",       &type_double},
 		{0, 0}
 	};
 	static struct_def_t param_struct[] = {
@@ -943,6 +991,16 @@ init_types (void)
 		{"size",	&type_integer},
 		{0, 0}
 	};
+	static struct_def_t xdef_struct[] = {
+		{"types",	&type_pointer},
+		{"offset",	&type_pointer},
+		{0, 0}
+	};
+	static struct_def_t xdefs_struct[] = {
+		{"xdefs",	&type_xdef_pointer},
+		{"num_xdefs", &type_pointer},
+		{0, 0}
+	};
 
 	type_nil = &type_quaternion;
 	type_default = &type_integer;
@@ -960,17 +1018,19 @@ init_types (void)
 	make_structure ("@param", 'u', param_struct, &type_param);
 	make_structure ("@vector", 's', vector_struct, &type_vector);
 	type_vector.type = ev_vector;
-	type_vector.meta = ty_none;
+	type_vector.meta = ty_basic;
 
 	make_structure ("@type_encodings", 's', type_encoding_struct,
 					&type_type_encodings);
+	make_structure ("@xdef", 's', xdef_struct, &type_xdef);
+	make_structure ("@xdefs", 's', xdefs_struct, &type_xdefs);
 
 	if (options.traditional)
 		return;
 
 	make_structure ("@quaternion", 's', quaternion_struct, &type_quaternion);
 	type_quaternion.type = ev_quat;
-	type_quaternion.meta = ty_none;
+	type_quaternion.meta = ty_basic;
 	{
 		symbol_t   *sym;
 		sym = new_symbol_type ("x", &type_float);
@@ -1018,6 +1078,9 @@ chain_initial_types (void)
 	chain_type (&type_param);
 	chain_type (&type_zero);
 	chain_type (&type_type_encodings);
+	chain_type (&type_xdef);
+	chain_type (&type_xdef_pointer);
+	chain_type (&type_xdefs);
 
 	va_list_struct[1].type = pointer_type (&type_param);
 	make_structure ("@va_list", 's', va_list_struct, &type_va_list);

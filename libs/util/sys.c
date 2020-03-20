@@ -126,18 +126,18 @@ qboolean    stdin_ready;
 
 /* The translation table between the graphical font and plain ASCII  --KB */
 VISIBLE const char sys_char_map[256] = {
-	'\0', '#', '#', '#', '#', '.', '#', '#',
-	'#', 9, 10, '#', ' ', 13, '.', '.',
+      0, '#', '#', '#', '#', '.', '#', '#',
+	'#',   9,  10, '#', ' ',  13, '.', '.',
 	'[', ']', '0', '1', '2', '3', '4', '5',
 	'6', '7', '8', '9', '.', '<', '=', '>',
-	' ', '!', '"', '#', '$', '%', '&', '\'',
+	' ', '!', '"', '#', '$', '%', '&','\'',
 	'(', ')', '*', '+', ',', '-', '.', '/',
 	'0', '1', '2', '3', '4', '5', '6', '7',
 	'8', '9', ':', ';', '<', '=', '>', '?',
 	'@', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
 	'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
 	'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
-	'X', 'Y', 'Z', '[', '\\', ']', '^', '_',
+	'X', 'Y', 'Z', '[','\\', ']', '^', '_',
 	'`', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
 	'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
 	'p', 'q', 'r', 's', 't', 'u', 'v', 'w',
@@ -147,14 +147,14 @@ VISIBLE const char sys_char_map[256] = {
 	'#', '#', ' ', '#', ' ', '>', '.', '.',
 	'[', ']', '0', '1', '2', '3', '4', '5',
 	'6', '7', '8', '9', '.', '<', '=', '>',
-	' ', '!', '"', '#', '$', '%', '&', '\'',
+	' ', '!', '"', '#', '$', '%', '&','\'',
 	'(', ')', '*', '+', ',', '-', '.', '/',
 	'0', '1', '2', '3', '4', '5', '6', '7',
 	'8', '9', ':', ';', '<', '=', '>', '?',
 	'@', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
 	'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
 	'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
-	'X', 'Y', 'Z', '[', '\\', ']', '^', '_',
+	'X', 'Y', 'Z', '[','\\', ']', '^', '_',
 	'`', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
 	'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
 	'p', 'q', 'r', 's', 't', 'u', 'v', 'w',
@@ -240,16 +240,20 @@ Sys_FileExists (const char *path)
 	for want of a better name, but it sets the function pointer for the
 	actual implementation of Sys_Printf.
 */
-VISIBLE void
+VISIBLE sys_printf_t
 Sys_SetStdPrintf (sys_printf_t func)
 {
+	sys_printf_t prev = sys_std_printf_function;
 	sys_std_printf_function = func;
+	return prev;
 }
 
-VISIBLE void
+VISIBLE sys_printf_t
 Sys_SetErrPrintf (sys_printf_t func)
 {
+	sys_printf_t prev = sys_err_printf_function;
 	sys_err_printf_function = func;
+	return prev;
 }
 
 void
