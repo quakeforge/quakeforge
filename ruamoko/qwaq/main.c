@@ -188,7 +188,7 @@ static void
 spawn_progs (qwaq_thread_t *thread)
 {
 	dfunction_t *dfunc;
-	const char *name = "qwaq-app.dat";
+	const char *name = 0;
 	string_t   *pr_argv;
 	int         pr_argc = 1, i;
 	progs_t    *pr;
@@ -305,7 +305,9 @@ int
 main (int argc, char **argv)
 {
 	int         qargs_ind = -1;
-	int         ret;
+	int         main_ind = -1;
+	int         ret = 0;
+	size_t      num_sys = 1;
 
 	this_program = argv[0];
 
@@ -323,6 +325,7 @@ main (int argc, char **argv)
 	} else {
 		// create a blank main thread set
 		qwaq_thread_t thread = {};
+		DARRAY_INIT (&thread.args, 4);
 		DARRAY_APPEND (&thread_args, thread);
 	}
 
@@ -332,6 +335,7 @@ main (int argc, char **argv)
 		// set to main program name for now
 		qargs->args.a[0] = this_program;
 		COM_InitArgv (qargs->args.size, qargs->args.a);
+		num_sys++;
 	} else {
 		qwaq_thread_t qargs = {};
 		DARRAY_INIT (&qargs.args, 2);
@@ -341,16 +345,38 @@ main (int argc, char **argv)
 
 	init_qf ();
 
-	for (size_t i = 0; i < thread_args.size; i++) {
+	if (thread_args.a[0].args.size < 1) {
+		DARRAY_APPEND (&thread_args.a[0].args, "qwaq-app.dat");
+	}
+
+	while (thread_args.size < thread_args.a[0].args.size + num_sys) {
+		qwaq_thread_t thread = {};
+		DARRAY_INIT (&thread.args, 4);
+		DARRAY_APPEND (&thread.args, 0);
+		DARRAY_APPEND (&thread_args, thread);
+	}
+
+	for (size_t i = 1, thread_ind = 0; i < thread_args.size; i++) {
 		qwaq_thread_t *thread = &thread_args.a[i];
 		if (thread->args.size && thread->args.a[0]
 			&& strcmp (thread->args.a[0], "--qargs")) {
 			// skip the args set that's passed to qargs
 			continue;
 		}
+		if (thread_ind < thread_args.a[0].args.size) {
+			thread->args.a[0] = thread_args.a[0].args.a[thread_ind++];
+		} else {
+			printf ("ignoring extra arg sets\n");
+			break;
+		}
+		if (main_ind < 0) {
+			main_ind = i;
+		}
 		spawn_progs (thread);
 	}
-	ret = run_progs (&thread_args.a[0]);
+	if (main_ind >= 0) {
+		ret = run_progs (&thread_args.a[main_ind]);
+	}
 	Sys_Shutdown ();
 	return ret;
 }
