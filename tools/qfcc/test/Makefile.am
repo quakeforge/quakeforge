@@ -13,8 +13,12 @@ QCFLAGS=-qq -O -g -Werror
 QCPPFLAGS=--no-default-paths -I$(top_srcdir)/ruamoko/include
 QCOMPILE=$(QFCC) $(QCFLAGS) $(QCPPFLAGS)
 
-SUFFIXES=.qfo .r
+SUFFIXES=.qfo .r .pas
 .r.qfo:
+	$(QCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tqo -c -o $@ $<
+	sed -i -e '1s@:@: $(QFCC_DEP)@' $(DEPDIR)/$*.Tqo
+	$(am__mv) $(DEPDIR)/$*.Tqo $(DEPDIR)/$*.Qo
+.pas.qfo:
 	$(QCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tqo -c -o $@ $<
 	sed -i -e '1s@:@: $(QFCC_DEP)@' $(DEPDIR)/$*.Tqo
 	$(am__mv) $(DEPDIR)/$*.Tqo $(DEPDIR)/$*.Qo
@@ -43,6 +47,7 @@ test_progs_dat=\
 	fordecl.dat \
 	func-expr.dat \
 	func-static.dat \
+	gcd.dat \
 	infloop.dat \
 	ivar-struct-return.dat \
 	methodparams.dat \
@@ -261,6 +266,15 @@ func-static.run: Makefile build-run
 	@$(srcdir)/build-run $@
 include ./$(DEPDIR)/func-static.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/func-static.Qo
+
+gcd_dat_SOURCES=gcd.pas
+gcd_obj=$(gcd_dat_SOURCES:.pas=.qfo)
+gcd.dat$(EXEEXT): $(gcd_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(gcd_obj)
+gcd.run: Makefile build-run
+	@$(srcdir)/build-run $@
+include ./$(DEPDIR)/gcd.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/gcd.Qo
 
 infloop_dat_SOURCES=infloop.r
 infloop_obj=$(infloop_dat_SOURCES:.r=.qfo)
