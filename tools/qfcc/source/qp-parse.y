@@ -139,6 +139,29 @@ int yylex (void);
 %type	<op>		sign
 
 %{
+
+static void
+build_dotmain (symbol_t *program)
+{
+	symbol_t   *dotmain = new_symbol (".main");
+	expr_t     *code;
+	expr_t     *exitcode;
+
+	dotmain->params = 0;
+	dotmain->type = parse_params (&type_integer, 0);
+	dotmain->type = find_type (dotmain->type);
+	dotmain = function_symbol (dotmain, 0, 1);
+
+	exitcode = new_symbol_expr (symtab_lookup (current_symtab, "ExitCode"));
+
+	current_func = begin_function (dotmain, 0, current_symtab, 0);
+	current_symtab = current_func->symtab;
+	code = new_block_expr ();
+	append_expr (code, function_expr (new_symbol_expr (program), 0));
+	append_expr (code, return_expr (current_func, exitcode));
+	build_code_function (dotmain, 0, code);
+}
+
 %}
 
 %%
@@ -159,15 +182,7 @@ program
 			build_code_function ($1, 0, $4);
 			current_symtab = st;
 
-			$4 = function_expr (new_symbol_expr ($1), 0);
-			$1 = new_symbol (".main");
-			$1->params = 0;
-			$1->type = parse_params (&type_void, 0);
-			$1->type = find_type ($1->type);
-			$1 = function_symbol ($1, 0, 1);
-			current_func = begin_function ($1, 0, current_symtab, 0);
-			current_symtab = current_func->symtab;
-			build_code_function ($1, 0, $4);
+			build_dotmain ($1);
 			current_symtab = st;
 		}
 	;
@@ -178,6 +193,15 @@ program_head
 		{
 			$$ = $3;
 
+			// FIXME need units and standard units
+			{
+				symbol_t   *sym = new_symbol ("ExitCode");
+				sym->type = &type_integer;
+				initialize_def (sym, 0, current_symtab->space, sc_global);
+				if (sym->s.def) {
+					sym->s.def->nosave = 1;
+				}
+			}
 			$$->type = parse_params (&type_void, 0);
 			$$->type = find_type ($$->type);
 			$$ = function_symbol ($$, 0, 1);
@@ -375,6 +399,7 @@ statement
 else
 	: ELSE
 		{
+			// this is only to get the the file and line number info
 			$$ = new_nil_expr ();
 		}
 	;
