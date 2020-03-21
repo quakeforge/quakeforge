@@ -1,12 +1,12 @@
 /*
-	#FILENAME#
+	qwaq-curses.c
 
-	#DESCRIPTION#
+	Ruamoko ncurses wrapper using threading
 
-	Copyright (C) 2001 #AUTHOR#
+	Copyright (C) 2020 Bill Currie <bill@taniwha.org>
 
-	Author: #AUTHOR#
-	Date: #DATE#
+	Author: Bill Currie <bill@taniwha.org>
+	Date: 2020/03/01
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -54,8 +54,10 @@
 
 #define always_inline inline __attribute__((__always_inline__))
 #define QUEUE_SIZE 16
-#define MOUSE_MOVES_ON "\033[?1003h"// Make the terminal report mouse movements
-#define MOUSE_MOVES_OFF "\033[?1003l"// Make the terminal report mouse movements
+#define MOUSE_MOVES_ON "\033[?1003h"
+#define MOUSE_MOVES_OFF "\033[?1003l"
+#define SGR_ON "\033[?1006h"
+#define SGR_OFF "\033[?1006l"
 #define STRING_ID_QUEUE_SIZE 8		// must be > 1
 #define COMMAND_QUEUE_SIZE 1280
 #define CMD_SIZE(x) sizeof(x)/sizeof(x[0])
@@ -141,6 +143,7 @@ typedef struct qwaq_resources_s {
 	PR_RESMAP (panel_t) panel_map;
 	cond_t      event_cond;
 	RING_BUFFER (qwaq_event_t, QUEUE_SIZE) event_queue;
+	qwaq_button button_state;
 	cond_t      command_cond;
 	RING_BUFFER (int, COMMAND_QUEUE_SIZE) command_queue;
 	cond_t      results_cond;
@@ -820,36 +823,70 @@ static void
 mouse_event (qwaq_resources_t *res, const MEVENT *mevent)
 {
 	int         mask = mevent->bstate;
+	qwaq_button buttons = res->button_state;
 	qwaq_event_t event = {};
 
+	if (mevent->bstate & ~M_MOVE) {
+		mvprintw (1, 0, "%08x", mevent->bstate);
+		doupdate();
+	}
 	event.mouse.x = mevent->x;
 	event.mouse.y = mevent->y;
-	event.mouse.buttons = mevent->bstate;
 	if (mask & M_MOVE) {
 		event.what = qe_mousemove;
-		mask &= ~M_MOVE;
 	}
 	if (mask & M_PRESS) {
 		event.what = qe_mousedown;
-		mask &= ~M_PRESS;
+		if (mask & BUTTON1_PRESSED) {
+			buttons |= qe_mouse1;
+		}
+		if (mask & BUTTON2_PRESSED) {
+			buttons |= qe_mouse2;
+		}
+		if (mask & BUTTON3_PRESSED) {
+			buttons |= qe_mouse3;
+		}
+#if 0	// wheel events don't report release
+		if (mask & BUTTON4_PRESSED) {
+			buttons |= qe_mouse4;
+		}
+		if (mask & BUTTON5_PRESSED) {
+			buttons |= qe_mouse5;
+		}
+#endif
 	}
 	if (mask & M_RELEASE) {
 		event.what = qe_mouseup;
-		mask &= ~M_RELEASE;
+		if (mask & BUTTON1_RELEASED) {
+			buttons &= ~qe_mouse1;
+		}
+		if (mask & BUTTON2_RELEASED) {
+			buttons &= ~qe_mouse2;
+		}
+		if (mask & BUTTON3_RELEASED) {
+			buttons &= ~qe_mouse3;
+		}
+#if 0	// wheel events don't report release
+		if (mask & BUTTON4_RELEASED) {
+			buttons &= ~qe_mouse4;
+		}
+		if (mask & BUTTON5_RELEASED) {
+			buttons &= ~qe_mouse5;
+		}
+#endif
 	}
+	event.mouse.buttons = buttons;
+	res->button_state = buttons;
 	if (mask & M_CLICK) {
 		event.what = qe_mouseclick;
-		mask &= ~M_CLICK;
 		event.mouse.click = 1;
 	}
 	if (mask & M_DCLICK) {
 		event.what = qe_mouseclick;
-		mask &= ~M_DCLICK;
 		event.mouse.click = 2;
 	}
 	if (mask & M_TCLICK) {
 		event.what = qe_mouseclick;
-		mask &= ~M_TCLICK;
 		event.mouse.click = 3;
 	}
 	add_event (res, &event);
