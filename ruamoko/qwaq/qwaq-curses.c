@@ -582,7 +582,7 @@ qwaq_init_timeout (struct timespec *timeout, long time)
 	gettimeofday(&now, 0);
 	timeout->tv_sec = now.tv_sec;
 	timeout->tv_nsec = now.tv_usec * 1000L + time;
-	if (timeout->tv_nsec > SEC) {
+	if (timeout->tv_nsec >= SEC) {
 		timeout->tv_sec += timeout->tv_nsec / SEC;
 		timeout->tv_nsec %= SEC;
 	}
