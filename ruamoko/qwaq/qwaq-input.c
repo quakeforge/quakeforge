@@ -31,6 +31,7 @@
 # include "config.h"
 #endif
 
+#include <ctype.h>
 #include <errno.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -122,11 +123,8 @@ mouse_event (qwaq_resources_t *res, int what, int x, int y)
 }
 
 static void
-parse_mouse (qwaq_resources_t *res)
+parse_mouse (qwaq_resources_t *res, unsigned ctrl, int x, int y, int cmd)
 {
-	int         x = (byte) res->escbuff.str[1] - '!';	// want 0-based
-	int         y = (byte) res->escbuff.str[2] - '!';	// want 0-based
-	unsigned    ctrl = (byte) res->escbuff.str[0] - ' ';
 	int         button = ctrl & 3;
 	int         ext = (ctrl >> 6);
 	int         what = qe_none;
@@ -137,8 +135,8 @@ parse_mouse (qwaq_resources_t *res)
 		what = qe_mousemove;
 	} else {
 		// xterm doesn't send release events for buttons 4-7
-		res->button_state &= ~(0x7c);
-		if (!ext && button == 3) {
+		res->button_state &= ~(0x78);
+		if (!ext && button == 3 && !cmd) {
 			res->button_state = 0;	// unknown which button was released
 			button = -1;
 			what = qe_mouseup;
@@ -146,18 +144,40 @@ parse_mouse (qwaq_resources_t *res)
 			if (ext) {
 				button += 4 * ext - 1;
 			}
-			res->button_state |= 1 << button;
-			if (res->button_state & WHEEL_BUTTONS) {
-				what = qe_mouseclick;
+			if (cmd == 'm') {
+				res->button_state &= ~(1 << button);
+				what = qe_mouseup;
 			} else {
-				what = qe_mousedown;
+				res->button_state |= 1 << button;
+				if (res->button_state & WHEEL_BUTTONS) {
+					what = qe_mouseclick;
+				} else {
+					what = qe_mousedown;
+				}
 			}
 		}
 	}
-	Sys_Printf ("%3d %3d %02x %03x %02x %2d\n", x, y, ctrl, res->button_state,
-				ext, button + 1);
-
 	mouse_event (res, what, x, y);
+}
+
+static void
+parse_x10 (qwaq_resources_t *res)
+{
+	int         x = (byte) res->escbuff.str[1] - '!';	// want 0-based
+	int         y = (byte) res->escbuff.str[2] - '!';	// want 0-based
+	unsigned    ctrl = (byte) res->escbuff.str[0] - ' ';
+
+	parse_mouse (res, ctrl, x, y, 0);
+}
+
+static void
+parse_sgr (qwaq_resources_t *res, char cmd)
+{
+	unsigned    ctrl, x, y;
+
+	sscanf (res->escbuff.str, "%u;%u;%u", &ctrl, &x, &y);
+	// mouse coords are 1-based, but want 0-based
+	parse_mouse (res, ctrl, x - 1, y - 1, cmd);
 }
 
 static void process_char (qwaq_resources_t *res, char ch)
@@ -179,16 +199,30 @@ static void process_char (qwaq_resources_t *res, char ch)
 				if (ch == 'M') {
 					res->escstate = esc_mouse;
 					dstring_clear (&res->escbuff);
+				} else if (ch == '<') {
+					res->escstate = esc_sgr;
+					dstring_clear (&res->escbuff);
+				} else {
+					res->escstate = esc_ground;
 				}
 				break;
 			case esc_mouse:
 				dstring_append (&res->escbuff, &ch, 1);
 				if (res->escbuff.size == 3) {
-					parse_mouse (res);
+					parse_x10 (res);
 					res->escstate = esc_ground;
 				}
 				break;
 			case esc_sgr:
+				if (isdigit (ch) || ch ==';') {
+					dstring_append (&res->escbuff, &ch, 1);
+				} else {
+					if (ch == 'm' || ch == 'M') {
+						dstring_append (&res->escbuff, "", 1);
+						parse_sgr (res, ch);
+					}
+					res->escstate = esc_ground;
+				}
 				break;
 		}
 		//printf("res->escstate %d\n", res->escstate);
@@ -200,14 +234,14 @@ void qwaq_input_init (qwaq_resources_t *res)
 	// ncurses takes care of input mode for us, so need only tell xterm
 	// what we need
 	write(1, MOUSE_MOVES_ON, sizeof (MOUSE_MOVES_ON) - 1);
-//	write(1, SGR_ON, sizeof (SGR_ON) - 1);
+	write(1, SGR_ON, sizeof (SGR_ON) - 1);
 }
 
 void qwaq_input_shutdown (qwaq_resources_t *res)
 {
 	// ncurses takes care of input mode for us, so need only tell xterm
 	// what we need
-//	write(1, SGR_OFF, sizeof (SGR_OFF) - 1);
+	write(1, SGR_OFF, sizeof (SGR_OFF) - 1);
 	write(1, MOUSE_MOVES_OFF, sizeof (MOUSE_MOVES_OFF) - 1);
 }
 
@@ -218,7 +252,6 @@ void qwaq_process_input (qwaq_resources_t *res)
 
 	while (Sys_CheckInput (1, -1)) {
 		len = read(0, buf, sizeof (buf));
-		//Sys_Printf ("%.*s\n", len-1, buf+1);
 		for (int i = 0; i < len; i++) {
 			process_char (res, buf[i]);
 		}
