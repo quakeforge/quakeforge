@@ -242,7 +242,7 @@ acquire_string (qwaq_resources_t *res)
 	int         string_id = -1;
 
 	pthread_mutex_lock (&res->string_id_cond.mut);
-	while (!RB_DATA_AVAILABLE (res->string_ids)) {
+	while (RB_DATA_AVAILABLE (res->string_ids) < 1) {
 		pthread_cond_wait (&res->string_id_cond.rcond,
 						   &res->string_id_cond.mut);
 	}
@@ -256,7 +256,7 @@ static void
 release_string (qwaq_resources_t *res, int string_id)
 {
 	pthread_mutex_lock (&res->string_id_cond.mut);
-	while (RB_SPACE_AVAILABLE (res->string_ids)) {
+	while (RB_SPACE_AVAILABLE (res->string_ids) < 1) {
 		pthread_cond_wait (&res->string_id_cond.wcond,
 						   &res->string_id_cond.mut);
 	}
