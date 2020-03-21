@@ -761,6 +761,7 @@ add_event (qwaq_resources_t *res, qwaq_event_t *event)
 	}
 	RB_WRITE_DATA (res->event_queue, event, 1);
 	pthread_cond_broadcast (&res->event_cond.cond);
+	pthread_mutex_unlock (&res->event_cond.mut);
 }
 
 static int
