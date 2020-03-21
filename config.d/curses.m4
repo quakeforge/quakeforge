@@ -2,7 +2,9 @@ AC_ARG_ENABLE(curses,
 [  --disable-curses        disable curses support]
 )
 if test "x$enable_curses" != "xno"; then
-	AC_CHECK_HEADER(curses.h)
+	AC_CHECK_HEADER([curses.h],
+					[AC_DEFINE([HAVE_CURSES_H], [1],
+						[Define to 1 if you have <curses.h>.])])
 	AC_CHECK_LIB(ncurses, initscr,
 		CURSES_LIBS=-lncurses,
 		AC_CHECK_LIB(pdcurses, initscr,
