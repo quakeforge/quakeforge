@@ -785,7 +785,7 @@ get_event (qwaq_resources_t *res, qwaq_event_t *event)
 		}
 	}
 	pthread_cond_broadcast (&res->event_cond.wcond);
-	pthread_mutex_lock (&res->event_cond.mut);
+	pthread_mutex_unlock (&res->event_cond.mut);
 	return ret != ETIMEDOUT;
 }
 
