@@ -577,11 +577,11 @@ dump_command (qwaq_resources_t *res, int len)
 void
 qwaq_init_timeout (struct timespec *timeout, long time)
 {
-	#define SEC 1000000000
+	#define SEC 1000000000L
 	struct timeval now;
 	gettimeofday(&now, 0);
 	timeout->tv_sec = now.tv_sec;
-	timeout->tv_nsec = now.tv_usec * 1000 + time;
+	timeout->tv_nsec = now.tv_usec * 1000L + time;
 	if (timeout->tv_nsec > SEC) {
 		timeout->tv_sec += timeout->tv_nsec / SEC;
 		timeout->tv_nsec %= SEC;
@@ -598,7 +598,7 @@ process_commands (qwaq_resources_t *res)
 
 	pthread_mutex_lock (&res->command_cond.mut);
 	qwaq_init_timeout (&timeout, 20 * 1000000);
-	while (RB_DATA_AVAILABLE (res->command_queue) < 2 && ret != ETIMEDOUT) {
+	while (RB_DATA_AVAILABLE (res->command_queue) < 2 && ret == 0) {
 		ret = pthread_cond_timedwait (&res->command_cond.rcond,
 									  &res->command_cond.mut, &timeout);
 	}
@@ -700,23 +700,25 @@ get_event (qwaq_resources_t *res, qwaq_event_t *event)
 {
 	struct timespec timeout;
 	int         ret = 0;
+	int         was_event = 0;
 
 	pthread_mutex_lock (&res->event_cond.mut);
 	qwaq_init_timeout (&timeout, 20 * 1000000);
-	while (RB_DATA_AVAILABLE (res->event_queue) < 1 && ret != ETIMEDOUT) {
+	while (RB_DATA_AVAILABLE (res->event_queue) < 1 && ret == 0) {
 		ret = pthread_cond_timedwait (&res->event_cond.rcond,
 									  &res->event_cond.mut, &timeout);
 	}
 	if (event) {
-		if (ret != ETIMEDOUT) {
+		if (ret == 0) {
 			RB_READ_DATA (res->event_queue, event, 1);
+			was_event = 1;
 		} else {
 			event->what = qe_none;
 		}
 	}
 	pthread_cond_broadcast (&res->event_cond.wcond);
 	pthread_mutex_unlock (&res->event_cond.mut);
-	return ret != ETIMEDOUT;
+	return was_event;
 }
 
 static int need_endwin;

@@ -77,7 +77,7 @@ add_event (qwaq_resources_t *res, qwaq_event_t *event)
 
 	pthread_mutex_lock (&res->event_cond.mut);
 	qwaq_init_timeout (&timeout, 5000 * 1000000L);
-	while (RB_SPACE_AVAILABLE (res->event_queue) < 1 && ret != ETIMEDOUT) {
+	while (RB_SPACE_AVAILABLE (res->event_queue) < 1 && ret == 0) {
 		ret = pthread_cond_timedwait (&res->event_cond.wcond,
 									  &res->event_cond.mut, &timeout);
 	}
