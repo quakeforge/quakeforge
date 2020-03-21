@@ -508,7 +508,7 @@ sv_list_f (void)
 }
 
 static void
-server_shutdown (void)
+server_shutdown (void *data)
 {
 	Hash_FlushTable (server_hash);
 	Hash_DelTable (server_hash);
@@ -540,7 +540,7 @@ server_run (server_t *sv)
 void
 Server_Init (void)
 {
-	Sys_RegisterShutdown (server_shutdown);
+	Sys_RegisterShutdown (server_shutdown, 0);
 	server_hash = Hash_NewTable (61, server_get_key, server_free, 0);
 	Cmd_AddCommand ("sv_new", sv_new_f, "Add a new server");
 	Cmd_AddCommand ("sv_del", sv_del_f, "Remove an existing server");

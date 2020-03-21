@@ -85,7 +85,7 @@ startup (void)
 }
 
 static void
-shutdown_f (void)
+shutdown_f (void *data)
 {
 #ifndef _WIN32
 	// change stdin to blocking
@@ -113,8 +113,8 @@ SDL_main (int argc, char *argv[])
 
 	isDedicated = (COM_CheckParm ("-dedicated") != 0);
 
-	Sys_RegisterShutdown (Host_Shutdown);
-	Sys_RegisterShutdown (shutdown_f);
+	Sys_RegisterShutdown (Host_Shutdown, 0);
+	Sys_RegisterShutdown (shutdown_f, 0);
 
 	Host_Init ();
 

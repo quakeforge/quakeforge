@@ -105,7 +105,8 @@ static sys_printf_t sys_err_printf_function = Sys_ErrPrintf;
 
 typedef struct shutdown_list_s {
 	struct shutdown_list_s *next;
-	void (*func)(void);
+	void      (*func) (void *);
+	void       *data;
 } shutdown_list_t;
 
 typedef struct error_handler_s {
@@ -492,7 +493,7 @@ Sys_Shutdown (void)
 	shutdown_list_t *t;
 
 	while (shutdown_list) {
-		shutdown_list->func ();
+		shutdown_list->func (shutdown_list->data);
 		t = shutdown_list;
 		shutdown_list = shutdown_list->next;
 		free (t);
@@ -571,7 +572,7 @@ Sys_Error (const char *error, ...)
 }
 
 VISIBLE void
-Sys_RegisterShutdown (void (*func) (void))
+Sys_RegisterShutdown (void (*func) (void *), void *data)
 {
 	shutdown_list_t *p;
 	if (!func)
@@ -580,6 +581,7 @@ Sys_RegisterShutdown (void (*func) (void))
 	if (!p)
 		Sys_Error ("Sys_RegisterShutdown: insufficient memory");
 	p->func = func;
+	p->data = data;
 	p->next = shutdown_list;
 	shutdown_list = p;
 }

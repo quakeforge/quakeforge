@@ -488,7 +488,7 @@ client_t *SV_AllocClient (int spectator, int server);
 void SV_SavePenaltyFilter (client_t *cl, filtertype_t type, double pentime);
 double SV_RestorePenaltyFilter (client_t *cl, filtertype_t type);
 
-void SV_Shutdown (void);
+void SV_Shutdown (void *data);
 void SV_Frame (float time);
 void SV_FinalMessage (const char *message);
 void SV_DropClient (client_t *drop);

@@ -122,7 +122,7 @@ main (int argc, const char **argv)
 
 	SV_Init ();
 
-	Sys_RegisterShutdown (Net_LogStop);
+	Sys_RegisterShutdown (Net_LogStop, 0);
 
 	// run one frame immediately for first heartbeat
 	SV_Frame (0.1);

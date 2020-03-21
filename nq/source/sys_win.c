@@ -104,7 +104,7 @@ startup (void)
 }
 
 static void
-shutdown_f (void)
+shutdown_f (void *data)
 {
 	if (tevent)
 		CloseHandle (tevent);
@@ -207,8 +207,8 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	if (!isDedicated)
 		init_handles (hInstance);
 
-	Sys_RegisterShutdown (Host_Shutdown);
-	Sys_RegisterShutdown (shutdown_f);
+	Sys_RegisterShutdown (Host_Shutdown, 0);
+	Sys_RegisterShutdown (shutdown_f, 0);
 
 	Host_Init ();
 

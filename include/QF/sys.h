@@ -77,7 +77,7 @@ void Sys_Error (const char *error, ...) __attribute__((format(printf,1,2), noret
 void Sys_FatalError (const char *error, ...) __attribute__((format(printf,1,2), noreturn));
 void Sys_Quit (void) __attribute__((noreturn));
 void Sys_Shutdown (void);
-void Sys_RegisterShutdown (void (*func) (void));
+void Sys_RegisterShutdown (void (*func) (void *), void *data);
 int64_t Sys_LongTime (void);
 double Sys_DoubleTime (void);
 void Sys_TimeOfDay(date_t *date);

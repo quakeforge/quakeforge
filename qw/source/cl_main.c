@@ -1867,7 +1867,7 @@ Host_Init (void)
 }
 
 void
-Host_Shutdown (void)
+Host_Shutdown (void *data)
 {
 	static qboolean isdown = false;
 

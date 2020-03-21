@@ -70,7 +70,7 @@ void Log_Incoming_Packet (const byte *p, int len, int has_sequence,
 						  int is_server);
 void Log_Outgoing_Packet (const byte *p, int len, int has_sequence,
 						  int is_server);
-void Net_LogStop (void);
+void Net_LogStop (void *data);
 void Analyze_Client_Packet (const byte * data, int len, int has_sequence);
 void Analyze_Server_Packet (const byte * data, int len, int has_sequence);
 

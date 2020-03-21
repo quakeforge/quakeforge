@@ -55,7 +55,7 @@
 qboolean    isDedicated = false;
 
 static void
-shutdown_f (void)
+shutdown_f (void *data)
 {
 	// change stdin to blocking
 	fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) & ~O_NONBLOCK);
@@ -75,8 +75,8 @@ main (int argc, const char **argv)
 
 	isDedicated = (COM_CheckParm ("-dedicated") != 0);
 
-	Sys_RegisterShutdown (Host_Shutdown);
-	Sys_RegisterShutdown (shutdown_f);
+	Sys_RegisterShutdown (Host_Shutdown, 0);
+	Sys_RegisterShutdown (shutdown_f, 0);
 
 	Host_Init ();
 

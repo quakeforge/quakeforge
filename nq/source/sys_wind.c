@@ -39,7 +39,7 @@
 qboolean    isDedicated = true;
 
 static void
-shutdown_f (void)
+shutdown_f (void *data)
 {
 }
 
@@ -69,8 +69,8 @@ main (int argc, const char **argv)
 	host_parms.argc = com_argc;
 	host_parms.argv = com_argv;
 
-	Sys_RegisterShutdown (Host_Shutdown);
-	Sys_RegisterShutdown (shutdown_f);
+	Sys_RegisterShutdown (Host_Shutdown, 0);
+	Sys_RegisterShutdown (shutdown_f, 0);
 
 	Host_Init ();
 

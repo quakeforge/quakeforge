@@ -957,7 +957,7 @@ Host_Init (void)
 	better to run quit through here before final handoff to the sys code.
 */
 void
-Host_Shutdown (void)
+Host_Shutdown (void *data)
 {
 	static qboolean isdown = false;
 

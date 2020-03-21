@@ -177,7 +177,7 @@ Net_LogStart (const char *fname)
 }
 
 void
-Net_LogStop (void)
+Net_LogStop (void *data)
 {
 	if (Net_PacketLog)
 		Qclose (Net_PacketLog);
@@ -954,7 +954,7 @@ Net_PacketLog_f (cvar_t *var)
 	if (var->int_val) {
 		Net_LogStart ("qfpacket.log");
 	} else {
-		Net_LogStop ();
+		Net_LogStop (0);
 	}
 }
 

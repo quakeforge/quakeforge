@@ -220,7 +220,7 @@ qtv_memory_init (void)
 }
 
 static void
-qtv_shutdown (void)
+qtv_shutdown (void *data)
 {
 	NET_Shutdown ();
 	Con_Shutdown ();
@@ -253,7 +253,7 @@ qtv_init (void)
 	qtv_cbuf = Cbuf_New (&id_interp);
 	qtv_args = Cbuf_ArgsNew ();
 
-	Sys_RegisterShutdown (qtv_shutdown);
+	Sys_RegisterShutdown (qtv_shutdown, 0);
 
 	Sys_Init ();
 	COM_ParseConfig ();

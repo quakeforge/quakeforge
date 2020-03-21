@@ -237,7 +237,7 @@ Master_Shutdown (void)
 	Quake calls this before calling Sys_Quit or Sys_Error
 */
 void
-SV_Shutdown (void)
+SV_Shutdown (void *data)
 {
 	Master_Shutdown ();
 	if (sv_fraglogfile) {
@@ -2486,7 +2486,7 @@ SV_Init (void)
 	sv_cbuf = Cbuf_New (&id_interp);
 	sv_args = Cbuf_ArgsNew ();
 
-	Sys_RegisterShutdown (SV_Shutdown);
+	Sys_RegisterShutdown (SV_Shutdown, 0);
 
 	Sys_Init ();
 	GIB_Init (true);

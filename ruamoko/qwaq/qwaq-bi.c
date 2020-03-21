@@ -159,7 +159,7 @@ static builtin_t builtins[] = {
 };
 
 static void
-bi_shutdown (void)
+bi_shutdown (void *data)
 {
 	S_Shutdown ();
 	IN_Shutdown ();
@@ -177,7 +177,7 @@ BI_Init (progs_t *pr)
 	PI_Init ();
 	PI_RegisterPlugins (client_plugin_list);
 
-	Sys_RegisterShutdown (bi_shutdown);
+	Sys_RegisterShutdown (bi_shutdown, 0);
 
 	VID_Init_Cvars ();
 	IN_Init_Cvars ();

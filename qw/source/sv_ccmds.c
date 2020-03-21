@@ -223,7 +223,7 @@ SV_Restart_f (void)
 							  net_message->message->data);
 	}
 	Sys_Printf ("Shutting down: server restart, shell must relaunch server\n");
-	SV_Shutdown ();
+	SV_Shutdown (0);
 	// Error code 2 on exit, indication shell must restart the server
 	exit (2);
 }

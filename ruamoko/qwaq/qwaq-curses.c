@@ -921,7 +921,7 @@ process_input (qwaq_resources_t *res)
 
 static int need_endwin;
 static void
-bi_shutdown (void)
+bi_shutdown (void *_pr)
 {
 	if (need_endwin) {
 		write(1, MOUSE_MOVES_OFF, sizeof (MOUSE_MOVES_OFF) - 1);
@@ -1950,7 +1950,7 @@ BI_Init (progs_t *pr)
 
 	PR_Resources_Register (pr, "qwaq", res, bi_qwaq_clear);
 	PR_RegisterBuiltins (pr, builtins);
-	Sys_RegisterShutdown (bi_shutdown);
+	Sys_RegisterShutdown (bi_shutdown, pr);
 	logfile = fopen ("qwaq-curses.log", "wt");
 	Sys_SetStdPrintf (qwaq_print);
 }
