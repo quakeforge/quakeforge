@@ -128,7 +128,8 @@ typedef struct panel_s {
 } panel_t;
 
 typedef struct cond_s {
-	pthread_cond_t cond;
+	pthread_cond_t rcond;
+	pthread_cond_t wcond;
 	pthread_mutex_t mut;
 } cond_t;
 
@@ -242,11 +243,11 @@ acquire_string (qwaq_resources_t *res)
 
 	pthread_mutex_lock (&res->string_id_cond.mut);
 	while (!RB_DATA_AVAILABLE (res->string_ids)) {
-		pthread_cond_wait (&res->string_id_cond.cond,
+		pthread_cond_wait (&res->string_id_cond.rcond,
 						   &res->string_id_cond.mut);
 	}
 	RB_READ_DATA (res->string_ids, &string_id, 1);
-	pthread_cond_broadcast (&res->string_id_cond.cond);
+	pthread_cond_broadcast (&res->string_id_cond.wcond);
 	pthread_mutex_unlock (&res->string_id_cond.mut);
 	return string_id;
 }
@@ -256,11 +257,11 @@ release_string (qwaq_resources_t *res, int string_id)
 {
 	pthread_mutex_lock (&res->string_id_cond.mut);
 	while (RB_SPACE_AVAILABLE (res->string_ids)) {
-		pthread_cond_wait (&res->string_id_cond.cond,
+		pthread_cond_wait (&res->string_id_cond.wcond,
 						   &res->string_id_cond.mut);
 	}
 	RB_WRITE_DATA (res->string_ids, &string_id, 1);
-	pthread_cond_broadcast (&res->string_id_cond.cond);
+	pthread_cond_broadcast (&res->string_id_cond.rcond);
 	pthread_mutex_unlock (&res->string_id_cond.mut);
 }
 
@@ -271,11 +272,11 @@ qwaq_submit_command (qwaq_resources_t *res, const int *cmd)
 
 	pthread_mutex_lock (&res->command_cond.mut);
 	while (RB_SPACE_AVAILABLE (res->command_queue) < len) {
-		pthread_cond_wait (&res->command_cond.cond,
+		pthread_cond_wait (&res->command_cond.wcond,
 						   &res->command_cond.mut);
 	}
 	RB_WRITE_DATA (res->command_queue, cmd, len);
-	pthread_cond_broadcast (&res->command_cond.cond);
+	pthread_cond_broadcast (&res->command_cond.rcond);
 	pthread_mutex_unlock (&res->command_cond.mut);
 }
 
@@ -284,11 +285,11 @@ qwaq_submit_result (qwaq_resources_t *res, const int *result, unsigned len)
 {
 	pthread_mutex_lock (&res->results_cond.mut);
 	while (RB_SPACE_AVAILABLE (res->results) < len) {
-		pthread_cond_wait (&res->results_cond.cond,
+		pthread_cond_wait (&res->results_cond.wcond,
 						   &res->results_cond.mut);
 	}
 	RB_WRITE_DATA (res->results, result, len);
-	pthread_cond_broadcast (&res->results_cond.cond);
+	pthread_cond_broadcast (&res->results_cond.rcond);
 	pthread_mutex_unlock (&res->results_cond.mut);
 }
 
@@ -298,11 +299,11 @@ qwaq_wait_result (qwaq_resources_t *res, int *result, int cmd, unsigned len)
 	pthread_mutex_lock (&res->results_cond.mut);
 	while (RB_DATA_AVAILABLE (res->results) < len
 		   || RB_PEEK_DATA (res->results, 0) != cmd) {
-		pthread_cond_wait (&res->results_cond.cond,
+		pthread_cond_wait (&res->results_cond.rcond,
 						   &res->results_cond.mut);
 	}
 	RB_READ_DATA (res->results, result, len);
-	pthread_cond_broadcast (&res->results_cond.cond);
+	pthread_cond_broadcast (&res->results_cond.wcond);
 	pthread_mutex_unlock (&res->results_cond.mut);
 }
 
@@ -636,7 +637,7 @@ process_commands (qwaq_resources_t *res)
 	pthread_mutex_lock (&res->command_cond.mut);
 	init_timeout (&timeout, 20 * 1000000);
 	while (RB_DATA_AVAILABLE (res->command_queue) < 2 && ret != ETIMEDOUT) {
-		ret = pthread_cond_timedwait (&res->command_cond.cond,
+		ret = pthread_cond_timedwait (&res->command_cond.rcond,
 									  &res->command_cond.mut, &timeout);
 	}
 	pthread_mutex_unlock (&res->command_cond.mut);
@@ -727,7 +728,7 @@ process_commands (qwaq_resources_t *res)
 		}
 		pthread_mutex_lock (&res->command_cond.mut);
 		RB_DROP_DATA (res->command_queue, len);
-		pthread_cond_broadcast (&res->command_cond.cond);
+		pthread_cond_broadcast (&res->command_cond.wcond);
 		pthread_mutex_unlock (&res->command_cond.mut);
 	}
 }
@@ -746,7 +747,7 @@ add_event (qwaq_resources_t *res, qwaq_event_t *event)
 		&& RB_PEEK_DATA(res->event_queue, last - 1).what == qe_mousemove) {
 		RB_POKE_DATA(res->event_queue, last - 1, *event);
 		merged = 1;
-		pthread_cond_broadcast (&res->event_cond.cond);
+		pthread_cond_broadcast (&res->event_cond.rcond);
 	}
 	pthread_mutex_unlock (&res->event_cond.mut);
 	if (merged) {
@@ -756,11 +757,11 @@ add_event (qwaq_resources_t *res, qwaq_event_t *event)
 	pthread_mutex_lock (&res->event_cond.mut);
 	init_timeout (&timeout, 5000 * 1000000L);
 	while (RB_SPACE_AVAILABLE (res->event_queue) < 1 && ret != ETIMEDOUT) {
-		ret = pthread_cond_timedwait (&res->event_cond.cond,
+		ret = pthread_cond_timedwait (&res->event_cond.wcond,
 									  &res->event_cond.mut, &timeout);
 	}
 	RB_WRITE_DATA (res->event_queue, event, 1);
-	pthread_cond_broadcast (&res->event_cond.cond);
+	pthread_cond_broadcast (&res->event_cond.rcond);
 	pthread_mutex_unlock (&res->event_cond.mut);
 }
 
@@ -773,7 +774,7 @@ get_event (qwaq_resources_t *res, qwaq_event_t *event)
 	pthread_mutex_lock (&res->event_cond.mut);
 	init_timeout (&timeout, 20 * 1000000);
 	while (RB_DATA_AVAILABLE (res->event_queue) < 1 && ret != ETIMEDOUT) {
-		ret = pthread_cond_timedwait (&res->event_cond.cond,
+		ret = pthread_cond_timedwait (&res->event_cond.rcond,
 									  &res->event_cond.mut, &timeout);
 	}
 	if (event) {
@@ -783,7 +784,7 @@ get_event (qwaq_resources_t *res, qwaq_event_t *event)
 			event->what = qe_none;
 		}
 	}
-	pthread_cond_broadcast (&res->event_cond.cond);
+	pthread_cond_broadcast (&res->event_cond.wcond);
 	pthread_mutex_lock (&res->event_cond.mut);
 	return ret != ETIMEDOUT;
 }
@@ -1891,7 +1892,8 @@ qwaq_print (const char *fmt, va_list args)
 static void
 qwaq_init_cond (cond_t *cond)
 {
-	pthread_cond_init (&cond->cond, 0);
+	pthread_cond_init (&cond->rcond, 0);
+	pthread_cond_init (&cond->wcond, 0);
 	pthread_mutex_init (&cond->mut, 0);
 }
 
