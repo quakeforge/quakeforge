@@ -297,7 +297,7 @@ qwaq_wait_result (qwaq_resources_t *res, int *result, int cmd, unsigned len)
 {
 	pthread_mutex_lock (&res->results_cond.mut);
 	while (RB_DATA_AVAILABLE (res->results) < len
-		&& RB_PEEK_DATA (res->results, 0) != cmd) {
+		   || RB_PEEK_DATA (res->results, 0) != cmd) {
 		pthread_cond_wait (&res->results_cond.cond,
 						   &res->results_cond.mut);
 	}
