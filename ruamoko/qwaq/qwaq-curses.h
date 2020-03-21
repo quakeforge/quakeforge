@@ -130,6 +130,71 @@ typedef struct panel_s *panel_t;
 @extern Rect getwrect (struct window_s *window);
 
 @extern void printf(string fmt, ...);
+// qfcc stuff
+#else
+// gcc stuff
+
+#include <curses.h>
+#include <panel.h>
+
+#include "QF/dstring.h"
+#include "QF/progs.h"
+#include "QF/ringbuffer.h"
+
+#define QUEUE_SIZE 16
+#define STRING_ID_QUEUE_SIZE 8		// must be > 1
+#define COMMAND_QUEUE_SIZE 1280
+
+typedef struct window_s {
+	WINDOW     *win;
+} window_t;
+
+typedef struct panel_s {
+	PANEL      *panel;
+	int         window_id;
+} panel_t;
+
+typedef struct cond_s {
+	pthread_cond_t rcond;
+	pthread_cond_t wcond;
+	pthread_mutex_t mut;
+} cond_t;
+
+typedef enum {
+	esc_ground,
+	esc_escape,
+	esc_csi,
+	esc_mouse,
+	esc_sgr,
+} esc_state_t;
+
+typedef struct qwaq_resources_s {
+	progs_t    *pr;
+	int         initialized;
+	window_t    stdscr;
+	PR_RESMAP (window_t) window_map;
+	PR_RESMAP (panel_t) panel_map;
+	cond_t      event_cond;
+	RING_BUFFER (qwaq_event_t, QUEUE_SIZE) event_queue;
+	cond_t      command_cond;
+	RING_BUFFER (int, COMMAND_QUEUE_SIZE) command_queue;
+	cond_t      results_cond;
+	RING_BUFFER (int, COMMAND_QUEUE_SIZE) results;
+	cond_t      string_id_cond;
+	RING_BUFFER (int, STRING_ID_QUEUE_SIZE) string_ids;
+	dstring_t   strings[STRING_ID_QUEUE_SIZE - 1];
+
+	dstring_t   escbuff;
+	esc_state_t escstate;
+	unsigned    button_state;
+	qwaq_event_t lastClick;
+} qwaq_resources_t;
+// gcc stuff
+
+void qwaq_input_init (qwaq_resources_t *res);
+void qwaq_input_shutdown (qwaq_resources_t *res);
+void qwaq_process_input (qwaq_resources_t *res);
+void qwaq_init_timeout (struct timespec *timeout, long time);
 #endif
 
 #endif//__qwaq_curses_h

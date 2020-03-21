@@ -2,6 +2,7 @@
 #define __qwaq_h
 
 #include "QF/darray.h"
+#include "QF/progs.h"
 
 typedef struct qwaq_thread_s {
 	pthread_t   thread_id;

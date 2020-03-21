@@ -10,14 +10,6 @@ typedef enum {
 } qwaq_mouse_event;
 
 typedef enum {
-	qe_mouse1    = 0x0001,
-	qe_mouse2    = 0x0002,
-	qe_mouse3    = 0x0004,
-	qe_mouse4    = 0x0008,
-	qe_mouse5    = 0x0010,
-} qwaq_button;
-
-typedef enum {
 	qe_keydown   = 0x0020,
 } qwaq_key_event;
 
@@ -45,7 +37,7 @@ typedef enum {
 
 typedef struct qwaq_mevent_s {
 	int         x, y;
-	qwaq_button buttons;	// current button state
+	int         buttons;	// current button state
 	int         click;
 } qwaq_mevent_t;
 
@@ -55,6 +47,7 @@ typedef struct qwaq_message_s {
 
 typedef struct qwaq_event_s {
 	int         what;
+	double      when;		// NOTE: 1<<32 based
 	union {
 		int         key;
 		qwaq_mevent_t mouse;

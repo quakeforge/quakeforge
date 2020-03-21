@@ -47,19 +47,11 @@
 #include "QF/sys.h"
 
 #include "qwaq.h"
-#include "event.h"
 #include "qwaq-curses.h"
 #include "qwaq-rect.h"
 #include "qwaq-textcontext.h"
 
 #define always_inline inline __attribute__((__always_inline__))
-#define QUEUE_SIZE 16
-#define MOUSE_MOVES_ON "\033[?1003h"
-#define MOUSE_MOVES_OFF "\033[?1003l"
-#define SGR_ON "\033[?1006h"
-#define SGR_OFF "\033[?1006l"
-#define STRING_ID_QUEUE_SIZE 8		// must be > 1
-#define COMMAND_QUEUE_SIZE 1280
 #define CMD_SIZE(x) sizeof(x)/sizeof(x[0])
 
 typedef enum qwaq_commands_e {
@@ -119,39 +111,6 @@ static const char *qwaq_command_names[]= {
 	"wborder",
 	"mvwblit_line",
 };
-
-typedef struct window_s {
-	WINDOW     *win;
-} window_t;
-
-typedef struct panel_s {
-	PANEL      *panel;
-	int         window_id;
-} panel_t;
-
-typedef struct cond_s {
-	pthread_cond_t rcond;
-	pthread_cond_t wcond;
-	pthread_mutex_t mut;
-} cond_t;
-
-typedef struct qwaq_resources_s {
-	progs_t    *pr;
-	int         initialized;
-	window_t    stdscr;
-	PR_RESMAP (window_t) window_map;
-	PR_RESMAP (panel_t) panel_map;
-	cond_t      event_cond;
-	RING_BUFFER (qwaq_event_t, QUEUE_SIZE) event_queue;
-	qwaq_button button_state;
-	cond_t      command_cond;
-	RING_BUFFER (int, COMMAND_QUEUE_SIZE) command_queue;
-	cond_t      results_cond;
-	RING_BUFFER (int, COMMAND_QUEUE_SIZE) results;
-	cond_t      string_id_cond;
-	RING_BUFFER (int, STRING_ID_QUEUE_SIZE) string_ids;
-	dstring_t   strings[STRING_ID_QUEUE_SIZE - 1];
-} qwaq_resources_t;
 
 static window_t *
 window_new (qwaq_resources_t *res)
@@ -320,7 +279,7 @@ cmd_newwin (qwaq_resources_t *res)
 
 	window_t   *window = window_new (res);
 	window->win = newwin (ylen, xlen, ypos, xpos);
-	keypad (window->win, TRUE);
+	keypad (window->win, FALSE);	// do it ourselves
 
 	int         window_id = window_index (res, window);
 	int         cmd_result[] = { qwaq_cmd_newwin, window_id };
@@ -615,8 +574,8 @@ dump_command (qwaq_resources_t *res, int len)
 	}
 }
 
-static void
-init_timeout (struct timespec *timeout, long time)
+void
+qwaq_init_timeout (struct timespec *timeout, long time)
 {
 	#define SEC 1000000000
 	struct timeval now;
@@ -638,7 +597,7 @@ process_commands (qwaq_resources_t *res)
 	int         ret = 0;
 
 	pthread_mutex_lock (&res->command_cond.mut);
-	init_timeout (&timeout, 20 * 1000000);
+	qwaq_init_timeout (&timeout, 20 * 1000000);
 	while (RB_DATA_AVAILABLE (res->command_queue) < 2 && ret != ETIMEDOUT) {
 		ret = pthread_cond_timedwait (&res->command_cond.rcond,
 									  &res->command_cond.mut, &timeout);
@@ -736,38 +695,6 @@ process_commands (qwaq_resources_t *res)
 	}
 }
 
-static void
-add_event (qwaq_resources_t *res, qwaq_event_t *event)
-{
-	struct timespec timeout;
-	int         merged = 0;
-	int         ret = 0;
-
-	// merge motion events
-	pthread_mutex_lock (&res->event_cond.mut);
-	unsigned    last = RB_DATA_AVAILABLE (res->event_queue);
-	if (event->what == qe_mousemove && last > 1
-		&& RB_PEEK_DATA(res->event_queue, last - 1).what == qe_mousemove) {
-		RB_POKE_DATA(res->event_queue, last - 1, *event);
-		merged = 1;
-		pthread_cond_broadcast (&res->event_cond.rcond);
-	}
-	pthread_mutex_unlock (&res->event_cond.mut);
-	if (merged) {
-		return;
-	}
-
-	pthread_mutex_lock (&res->event_cond.mut);
-	init_timeout (&timeout, 5000 * 1000000L);
-	while (RB_SPACE_AVAILABLE (res->event_queue) < 1 && ret != ETIMEDOUT) {
-		ret = pthread_cond_timedwait (&res->event_cond.wcond,
-									  &res->event_cond.mut, &timeout);
-	}
-	RB_WRITE_DATA (res->event_queue, event, 1);
-	pthread_cond_broadcast (&res->event_cond.rcond);
-	pthread_mutex_unlock (&res->event_cond.mut);
-}
-
 static int
 get_event (qwaq_resources_t *res, qwaq_event_t *event)
 {
@@ -775,7 +702,7 @@ get_event (qwaq_resources_t *res, qwaq_event_t *event)
 	int         ret = 0;
 
 	pthread_mutex_lock (&res->event_cond.mut);
-	init_timeout (&timeout, 20 * 1000000);
+	qwaq_init_timeout (&timeout, 20 * 1000000);
 	while (RB_DATA_AVAILABLE (res->event_queue) < 1 && ret != ETIMEDOUT) {
 		ret = pthread_cond_timedwait (&res->event_cond.rcond,
 									  &res->event_cond.mut, &timeout);
@@ -792,139 +719,15 @@ get_event (qwaq_resources_t *res, qwaq_event_t *event)
 	return ret != ETIMEDOUT;
 }
 
-#define M_MOVE REPORT_MOUSE_POSITION
-#define M_PRESS (  BUTTON1_PRESSED \
-				 | BUTTON2_PRESSED \
-				 | BUTTON3_PRESSED \
-				 | BUTTON4_PRESSED \
-				 | BUTTON5_PRESSED)
-#define M_RELEASE (  BUTTON1_RELEASED \
-				   | BUTTON2_RELEASED \
-				   | BUTTON3_RELEASED \
-				   | BUTTON4_RELEASED \
-				   | BUTTON5_RELEASED)
-#define M_CLICK (  BUTTON1_CLICKED \
-				 | BUTTON2_CLICKED \
-				 | BUTTON3_CLICKED \
-				 | BUTTON4_CLICKED \
-				 | BUTTON5_CLICKED)
-#define M_DCLICK (  BUTTON1_DOUBLE_CLICKED \
-				  | BUTTON2_DOUBLE_CLICKED \
-				  | BUTTON3_DOUBLE_CLICKED \
-				  | BUTTON4_DOUBLE_CLICKED \
-				  | BUTTON5_DOUBLE_CLICKED)
-#define M_TCLICK (  BUTTON1_TRIPLE_CLICKED \
-				  | BUTTON2_TRIPLE_CLICKED \
-				  | BUTTON3_TRIPLE_CLICKED \
-				  | BUTTON4_TRIPLE_CLICKED \
-				  | BUTTON5_TRIPLE_CLICKED)
-
-static void
-mouse_event (qwaq_resources_t *res, const MEVENT *mevent)
-{
-	int         mask = mevent->bstate;
-	qwaq_button buttons = res->button_state;
-	qwaq_event_t event = {};
-
-	if (mevent->bstate & ~M_MOVE) {
-		mvprintw (1, 0, "%08x", mevent->bstate);
-		doupdate();
-	}
-	event.mouse.x = mevent->x;
-	event.mouse.y = mevent->y;
-	if (mask & M_MOVE) {
-		event.what = qe_mousemove;
-	}
-	if (mask & M_PRESS) {
-		event.what = qe_mousedown;
-		if (mask & BUTTON1_PRESSED) {
-			buttons |= qe_mouse1;
-		}
-		if (mask & BUTTON2_PRESSED) {
-			buttons |= qe_mouse2;
-		}
-		if (mask & BUTTON3_PRESSED) {
-			buttons |= qe_mouse3;
-		}
-#if 0	// wheel events don't report release
-		if (mask & BUTTON4_PRESSED) {
-			buttons |= qe_mouse4;
-		}
-		if (mask & BUTTON5_PRESSED) {
-			buttons |= qe_mouse5;
-		}
-#endif
-	}
-	if (mask & M_RELEASE) {
-		event.what = qe_mouseup;
-		if (mask & BUTTON1_RELEASED) {
-			buttons &= ~qe_mouse1;
-		}
-		if (mask & BUTTON2_RELEASED) {
-			buttons &= ~qe_mouse2;
-		}
-		if (mask & BUTTON3_RELEASED) {
-			buttons &= ~qe_mouse3;
-		}
-#if 0	// wheel events don't report release
-		if (mask & BUTTON4_RELEASED) {
-			buttons &= ~qe_mouse4;
-		}
-		if (mask & BUTTON5_RELEASED) {
-			buttons &= ~qe_mouse5;
-		}
-#endif
-	}
-	event.mouse.buttons = buttons;
-	res->button_state = buttons;
-	if (mask & M_CLICK) {
-		event.what = qe_mouseclick;
-		event.mouse.click = 1;
-	}
-	if (mask & M_DCLICK) {
-		event.what = qe_mouseclick;
-		event.mouse.click = 2;
-	}
-	if (mask & M_TCLICK) {
-		event.what = qe_mouseclick;
-		event.mouse.click = 3;
-	}
-	add_event (res, &event);
-}
-
-static void
-key_event (qwaq_resources_t *res, int key)
-{
-	qwaq_event_t event = {};
-	event.what = qe_keydown;
-	event.key = key;
-	add_event (res, &event);
-}
-
-static void
-process_input (qwaq_resources_t *res)
-{
-	if (Sys_CheckInput (1, -1)) {
-		int         ch;
-		while ((ch = getch ()) != ERR && ch) {
-			fflush (stderr);
-			if (ch == KEY_MOUSE) {
-				MEVENT    mevent;
-				getmouse (&mevent);
-				mouse_event (res, &mevent);
-			} else {
-				key_event (res, ch);
-			}
-		}
-	}
-}
-
 static int need_endwin;
 static void
 bi_shutdown (void *_pr)
 {
+	__auto_type pr = (progs_t *) _pr;
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+
 	if (need_endwin) {
-		write(1, MOUSE_MOVES_OFF, sizeof (MOUSE_MOVES_OFF) - 1);
+		qwaq_input_shutdown (res);
 		endwin ();
 	}
 }
@@ -1598,7 +1401,7 @@ qwaq_curses_thread (qwaq_thread_t *thread)
 
 	while (1) {
 		process_commands (res);
-		process_input (res);
+		qwaq_process_input (res);
 	}
 	thread->return_code = 0;
 	return thread;
@@ -1614,12 +1417,12 @@ bi_initialize (progs_t *pr)
 	res->initialized = 1;
 	start_color ();
 	raw ();
-	keypad (stdscr, TRUE);
+	keypad (stdscr, FALSE);	// do it ourselves
 	noecho ();
 	nonl ();
 	nodelay (stdscr, TRUE);
 	mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
-	write(1, MOUSE_MOVES_ON, sizeof (MOUSE_MOVES_ON) - 1);
+	qwaq_input_init (res);
 	refresh();
 
 	res->stdscr.win = stdscr;
@@ -1844,7 +1647,7 @@ bi_qwaq_clear (progs_t *pr, void *data)
 	__auto_type res = (qwaq_resources_t *) data;
 
 	if (res->initialized) {
-		write(1, MOUSE_MOVES_OFF, sizeof (MOUSE_MOVES_OFF) - 1);
+		qwaq_input_shutdown (res);
 		endwin ();
 	}
 	need_endwin = 0;
@@ -1939,10 +1742,15 @@ BI_Init (progs_t *pr)
 {
 	qwaq_resources_t *res = calloc (sizeof (*res), 1);
 	res->pr = pr;
+
 	for (int i = 0; i < STRING_ID_QUEUE_SIZE - 1; i++) {
 		RB_WRITE_DATA (res->string_ids, &i, 1);
 		res->strings[i].mem = &dstring_default_mem;
 	}
+	res->escbuff.mem = &dstring_default_mem;
+	// ensure the backing buffer exists
+	dstring_clearstr (&res->escbuff);
+
 	qwaq_init_cond (&res->event_cond);
 	qwaq_init_cond (&res->command_cond);
 	qwaq_init_cond (&res->results_cond);

@@ -37,7 +37,7 @@ qwaq_app_dat_src= \
 	qwaq-window.r
 
 qwaq_curses_libs=
-qwaq_curses_SOURCES=main.c qwaq-curses.c
+qwaq_curses_SOURCES=main.c qwaq-curses.c qwaq-input.c
 qwaq_curses_LDADD= $(qwaq_curses_libs) $(QWAQ_LIBS) \
 				$(PANEL_LIBS) $(CURSES_LIBS) $(PTHREAD_LDFLAGS) $(DL_LIBS)
 qwaq_curses_LDFLAGS=
