@@ -483,10 +483,14 @@ formatLine (txtbuffer_t *buffer, unsigned linePtr, unsigned xpos,
 			c = ' ';
 			count = tabSize - (pos % tabSize);
 		}
-		while (length-- > 0 && count-- > 0) {
+		while (length > 0 && count-- > 0) {
 			*dst++ = col | c;
 			pos++;
+			length--;
 		}
+	}
+	while (c != '\n') {
+		c = getChar (buffer, ptr++);
 	}
 	col = ptr >= sels && ptr < sele ? cols : coln;
 	while (length-- > 0) {
