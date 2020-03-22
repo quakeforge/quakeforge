@@ -54,7 +54,7 @@
 #define MOUSE_MOVES_OFF "\033[?1003l"
 #define SGR_ON "\033[?1006h"
 #define SGR_OFF "\033[?1006l"
-#define WHEEL_BUTTONS 0x7c	// scroll up/down/left/right - always click
+#define WHEEL_BUTTONS 0x78	// scroll up/down/left/right - always click
 
 typedef struct qwaq_key_s {
 	const char *sequence;
