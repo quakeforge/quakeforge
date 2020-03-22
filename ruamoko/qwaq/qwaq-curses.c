@@ -152,7 +152,7 @@ get_window (qwaq_resources_t *res, const char *name, int handle)
 	window_t   *window = window_get (res, handle);
 
 	if (!window || !window->win) {
-		PR_RunError (res->pr, "invalid window passed to %s", name + 3);
+		PR_RunError (res->pr, "invalid window passed to %s", name + 5);
 	}
 	return window;
 }

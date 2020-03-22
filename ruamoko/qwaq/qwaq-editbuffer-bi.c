@@ -469,10 +469,12 @@ formatLine (txtbuffer_t *buffer, unsigned linePtr, unsigned xpos,
 		ptr++;
 	}
 	col = ptr >= sels && ptr < sele ? cols : coln;
-	while (xpos < pos && length-- > 0) {
+	while (xpos < pos && length > 0) {
 		*dst++ = col | ' ';
+		length--;
+		xpos++;
 	}
-	while (length > 0) {
+	while (length > 0 && ptr < buffer->textSize) {
 		col = ptr >= sels && ptr < sele ? cols : coln;
 		c = getChar (buffer, ptr++);
 		if (c == '\n') {
@@ -489,7 +491,7 @@ formatLine (txtbuffer_t *buffer, unsigned linePtr, unsigned xpos,
 			length--;
 		}
 	}
-	while (c != '\n') {
+	while (c != '\n' && ptr < buffer->textSize) {
 		c = getChar (buffer, ptr++);
 	}
 	col = ptr >= sels && ptr < sele ? cols : coln;
