@@ -131,7 +131,7 @@ arp_end (void)
 -handleEvent: (qwaq_event_t *) event
 {
 	[objects handleEvent: event];
-	if (event.what == qe_key && event.key == '\x18') {
+	if (event.what == qe_key && event.key.code == '\x18') {
 		event.what = qe_command;
 		event.message.command = qc_exit;
 	}
