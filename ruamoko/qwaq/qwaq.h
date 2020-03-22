@@ -3,6 +3,7 @@
 
 #include "QF/darray.h"
 #include "QF/progs.h"
+#include "QF/sys.h"
 
 typedef struct qwaq_thread_s {
 	pthread_t   thread_id;
@@ -15,6 +16,7 @@ typedef struct qwaq_thread_s {
 } qwaq_thread_t;
 
 void BI_Init (progs_t *pr);
+void QWAQ_EditBuffer_Init (progs_t *pr);
 extern struct cbuf_s *qwaq_cbuf;
 qwaq_thread_t *create_thread (void *(*thread_func) (qwaq_thread_t *), void *);
 

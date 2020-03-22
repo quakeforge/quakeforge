@@ -27,6 +27,7 @@ qwaq_app_dat_src= \
 	qwaq-app.r \
 	qwaq-button.r \
 	qwaq-draw.r \
+	qwaq-editbuffer.r \
 	qwaq-garray.r \
 	qwaq-group.r \
 	qwaq-listener.r \
@@ -41,7 +42,11 @@ qwaq_curses_libs= \
 	$(top_builddir)/libs/video/targets/libvid_common.la \
 	$(top_builddir)/libs/console/libQFconsole.la \
 	$(top_builddir)/libs/gib/libQFgib.la
-qwaq_curses_SOURCES=main.c qwaq-curses.c qwaq-input.c
+qwaq_curses_SOURCES= \
+	main.c \
+	qwaq-curses.c \
+	qwaq-editbuffer-bi.c \
+	qwaq-input.c
 qwaq_curses_LDADD= $(qwaq_curses_libs) $(QWAQ_LIBS) \
 				$(PANEL_LIBS) $(CURSES_LIBS) $(PTHREAD_LDFLAGS) $(DL_LIBS)
 qwaq_curses_LDFLAGS=

@@ -154,9 +154,10 @@ create_progs (void)
 	PR_Init_Cvars ();
 	PR_Init (pr);
 	RUA_Init (pr, 0);
-	Key_Progs_Init (pr);
-	PR_Cmds_Init (pr);
-	BI_Init (pr);
+	Key_Progs_Init (pr);		// FIXME not all threads
+	PR_Cmds_Init (pr);			// FIXME not all threads
+	BI_Init (pr);				// FIXME not all threads
+	QWAQ_EditBuffer_Init (pr);	// FIXME not all threads
 
 	return pr;
 }
