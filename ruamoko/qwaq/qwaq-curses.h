@@ -166,6 +166,7 @@ typedef enum {
 	esc_csi,
 	esc_mouse,
 	esc_sgr,
+	esc_key,
 } esc_state_t;
 
 typedef struct qwaq_resources_s {
@@ -188,6 +189,7 @@ typedef struct qwaq_resources_s {
 	esc_state_t escstate;
 	unsigned    button_state;
 	qwaq_event_t lastClick;
+	struct hashtab_s *key_sequences;
 } qwaq_resources_t;
 // gcc stuff
 

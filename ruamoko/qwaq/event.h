@@ -41,6 +41,11 @@ typedef struct qwaq_mevent_s {
 	int         click;
 } qwaq_mevent_t;
 
+typedef struct qwaq_kevent_s {
+	int         code;
+	int         shift;
+} qwaq_kevent_t;
+
 typedef struct qwaq_message_s {
 	qwaq_command command;
 } qwaq_message_t;
@@ -49,7 +54,7 @@ typedef struct qwaq_event_s {
 	int         what;
 	double      when;		// NOTE: 1<<32 based
 	union {
-		int         key;
+		qwaq_kevent_t key;
 		qwaq_mevent_t mouse;
 		qwaq_message_t message;
 	};

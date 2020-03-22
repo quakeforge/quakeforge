@@ -43,6 +43,7 @@
 #include "QF/cvar.h"
 #include "QF/gib.h"
 #include "QF/idparse.h"
+#include "QF/keys.h"
 #include "QF/progs.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
@@ -151,6 +152,7 @@ create_progs (void)
 	PR_Init_Cvars ();
 	PR_Init (pr);
 	RUA_Init (pr, 0);
+	Key_Progs_Init (pr);
 	PR_Cmds_Init (pr);
 	BI_Init (pr);
 
