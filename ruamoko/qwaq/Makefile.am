@@ -28,6 +28,7 @@ qwaq_app_dat_src= \
 	qwaq-button.r \
 	qwaq-draw.r \
 	qwaq-editbuffer.r \
+	qwaq-editor.r \
 	qwaq-garray.r \
 	qwaq-group.r \
 	qwaq-listener.r \

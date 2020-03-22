@@ -501,20 +501,23 @@ static void
 bi_i_EditBuffer__init (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	__auto_type self = &P_STRUCT (pr, qwaq_editbuffer_t, 0);
 	txtbuffer_t *txtbuffer = TextBuffer_Create ();
 	editbuffer_t *buffer = editbuffer_new (res);
 
 	buffer->txtbuffer = txtbuffer;
 	buffer->tabSize = 4; // FIXME
 
-	R_INT (pr) = editbuffer_index (res, buffer);
+	self->buffer = editbuffer_index (res, buffer);
+	R_INT (pr) = PR_SetPointer (pr, self);
 }
 
 static void
 bi_i_EditBuffer__initWithFile_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
-	const char *filename = P_GSTRING (pr, 0);
+	__auto_type self = &P_STRUCT (pr, qwaq_editbuffer_t, 0);
+	const char *filename = P_GSTRING (pr, 2);
 	txtbuffer_t *txtbuffer = TextBuffer_Create ();
 	editbuffer_t *buffer = editbuffer_new (res);
 
@@ -522,14 +525,17 @@ bi_i_EditBuffer__initWithFile_ (progs_t *pr)
 	buffer->tabSize = 4; // FIXME
 
 	loadFile (buffer->txtbuffer, filename);
-	R_INT (pr) = editbuffer_index (res, buffer);
+
+	self->buffer = editbuffer_index (res, buffer);
+	R_INT (pr) = PR_SetPointer (pr, self);
 }
 
 static void
 bi_i_EditBuffer__dealloc (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
-	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
+	__auto_type self = &P_STRUCT (pr, qwaq_editbuffer_t, 0);
+	int         buffer_id = self->buffer;
 	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
 
 	TextBuffer_Destroy (buffer->txtbuffer);

@@ -1,10 +1,13 @@
 int fence;
+
 #include <AutoreleasePool.h>
+#include <key.h>
 
 #include "color.h"
 #include "qwaq-app.h"
 #include "qwaq-button.h"
 #include "qwaq-curses.h"
+#include "qwaq-editor.h"
 #include "qwaq-group.h"
 #include "qwaq-listener.h"
 #include "qwaq-window.h"
@@ -47,6 +50,7 @@ arp_end (void)
 	objects = [[Group alloc] initWithContext: screen owner: nil];
 
 	[screen bkgd: COLOR_PAIR (1)];
+	[screen scrollok: 1];
 	Rect r = { nil, [screen size] };
 	r.offset.x = r.extent.width / 4;
 	r.offset.y = r.extent.height / 4;
@@ -54,55 +58,9 @@ arp_end (void)
 	r.extent.height /= 2;
 	Window *w;
 	[objects insert: w = [[Window windowWithRect: r] setBackground: COLOR_PAIR (2)]];
-	DrawBuffer *released = [DrawBuffer buffer: {12, 1}];
-	DrawBuffer *pressed = [DrawBuffer buffer: {12, 1}];
-	Button *b = [[Button alloc] initWithPos: {3, 4} releasedIcon: released
-													pressedIcon: pressed];
-	[w addView: b];
-	[released bkgd: COLOR_PAIR(3)];
-	[released clear];
-	[released mvaddstr: {2, 0}, "press me"];
-	[pressed bkgd: COLOR_PAIR(4)];
-	[pressed clear];
-	[pressed mvaddstr: {1, 0}, "release me"];
-	[[b onPress] addListener: self : @selector (buttonPressed:)];
-	[[b onRelease] addListener: self : @selector (buttonReleased:)];
-	[[b onClick] addListener: self : @selector (buttonClick:)];
-	[[b onDrag] addListener: self : @selector (buttonDrag:)];
-	[[b onAuto] addListener: self : @selector (buttonAuto:)];
+	r = {{1, 1}, {r.extent.width - 2, r.extent.height - 2}};
+	[w addView: [[Editor alloc] initWithRect: r file: "Makefile"]];
 	return self;
-}
-
--(void) buttonPressed: (id) sender
-{
-	[screen mvaddstr: {2, 0}, " pressed "];
-	[screen refresh];
-}
-
--(void) buttonReleased: (id) sender
-{
-	[screen mvaddstr: {2, 0}, "released "];
-	[screen refresh];
-}
-
--(void) buttonClick: (id) sender
-{
-	[screen mvprintf: {2, 1}, "clicked %d", [sender click]];
-	[screen refresh];
-}
-
--(void) buttonDrag: (id) sender
-{
-	[screen mvaddstr: {2, 0}, "dragged "];
-	Point delta = [sender delta];
-	[screen mvprintf: {15, 0}, "%3d %3d", delta.x, delta.y];
-	[screen refresh];
-}
-
--(void) buttonAuto: (id) sender
-{
-	[screen mvprintf: {2, 2}, "%d", autocount++];
-	[screen refresh];
 }
 
 -run
