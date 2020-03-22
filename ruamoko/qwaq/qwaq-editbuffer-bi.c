@@ -454,7 +454,7 @@ formatLine (txtbuffer_t *buffer, unsigned linePtr, unsigned xpos,
 	int         coln = (colors->normal & ~0xff);
 	int         cols = (colors->selected & ~0xff);
 	int         col;
-	byte        c;
+	byte        c = 0;
 	int         count;
 
 	while (pos < xpos && ptr < buffer->textSize) {
