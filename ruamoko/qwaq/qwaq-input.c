@@ -294,10 +294,7 @@ parse_key (qwaq_resources_t *res)
 {
 	qwaq_key_t *key = Hash_Find (res->key_sequences, res->escbuff.str);
 
-	Sys_Printf ("parse_key %s %p\n", res->escbuff.str + 1, key);
 	if (key) {
-		Sys_Printf ("    %d %03x %s\n", key->key, key->shift,
-					Key_KeynumToString (key->key));
 		key_event (res, key->key, key->shift);
 	}
 }
