@@ -188,6 +188,8 @@ typedef struct qwaq_resources_s {
 	dstring_t   escbuff;
 	esc_state_t escstate;
 	unsigned    button_state;
+	int         mouse_x;
+	int         mouse_y;
 	qwaq_event_t lastClick;
 	struct hashtab_s *key_sequences;
 } qwaq_resources_t;

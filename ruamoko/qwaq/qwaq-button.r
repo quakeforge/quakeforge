@@ -66,8 +66,11 @@
 				}
 				break;
 			case qe_mouseauto:
-				click = 0;
-				action = onAuto;
+				if (pressed
+					&& [self containsPoint: {event.mouse.x, event.mouse.y}]) {
+					click = 0;
+					action = onAuto;
+				}
 				break;
 		}
 		if (action) {

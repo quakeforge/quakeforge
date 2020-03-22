@@ -712,6 +712,11 @@ get_event (qwaq_resources_t *res, qwaq_event_t *event)
 		if (ret == 0) {
 			RB_READ_DATA (res->event_queue, event, 1);
 			was_event = 1;
+		} else if (res->button_state) {
+			event->what = qe_mouseauto;
+			event->mouse.buttons = res->button_state;
+			event->mouse.x = res->mouse_x;
+			event->mouse.y = res->mouse_y;
 		} else {
 			event->what = qe_none;
 		}

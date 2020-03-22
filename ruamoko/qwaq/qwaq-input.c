@@ -266,6 +266,8 @@ parse_mouse (qwaq_resources_t *res, unsigned ctrl, int x, int y, int cmd)
 			}
 		}
 	}
+	res->mouse_x = x;
+	res->mouse_y = y;
 	mouse_event (res, what, x, y);
 }
 
