@@ -80,9 +80,11 @@ static QFile *
 open_file (const char *path, int *len)
 {
 	QFile      *file = Qopen (path, "rbz");
+	char        errbuff[1024];
 
 	if (!file) {
-		Sys_Printf ("%s\n", sys_errlist[errno]);
+		strerror_r(errno, errbuff, sizeof (errbuff));
+		Sys_Printf ("%s\n", errbuff);
 		return 0;
 	}
 	*len = Qfilesize (file);
