@@ -6,6 +6,7 @@
 #include "qwaq-curses.h"
 #include "qwaq-group.h"
 #include "qwaq-listener.h"
+#include "qwaq-titlebar.h"
 #include "qwaq-window.h"
 #include "qwaq-view.h"
 
@@ -27,14 +28,41 @@
 
 	objects = [[Group alloc] initWithContext: textContext owner: self];
 
-	string titlestr = "drag me";
-	DrawBuffer *title = [DrawBuffer buffer: {xlen, 1}];
-	[title mvaddstr: {(xlen - strlen(titlestr)) / 2, 0}, titlestr];
+	[self addView: [[TitleBar alloc] initWithTitle:"drag me"]];
 
-	Button *b = [[Button alloc] initWithPos: {0, 0} releasedIcon: title
-													 pressedIcon: title];
-	[[b onDrag] addListener: self : @selector(dragWindow:)];
-	[self addView: b];
+	topDrag         = [[Button alloc] initWithRect: {{1, 0},
+													 {xlen - 2, 1}}];
+	topLeftDrag     = [[Button alloc] initWithRect: {{0, 0},
+													 {1, 1}}];
+	topRightDrag    = [[Button alloc] initWithRect: {{xlen - 1, 0},
+													 {1, 1}}];
+	leftDrag        = [[Button alloc] initWithRect: {{0, 1},
+													 {1, ylen - 2}}];
+	rightDrag       = [[Button alloc] initWithRect: {{xlen - 1, 1},
+													 {1, ylen - 2}}];
+	bottomLeftDrag  = [[Button alloc] initWithRect: {{0, ylen - 1},
+													 {1, 1}}];
+	bottomRightDrag = [[Button alloc] initWithRect: {{xlen - 1, ylen - 1},
+													 {1, 1}}];
+	bottomDrag      = [[Button alloc] initWithRect: {{1, ylen - 1},
+													 {xlen - 2, 1}}];
+	[self addView: [topDrag         setGrowMode: gfGrowHiX]];
+	[self addView: [topLeftDrag     setGrowMode: gfGrowNone]];
+	[self addView: [topRightDrag    setGrowMode: gfGrowX]];
+	[self addView: [leftDrag        setGrowMode: gfGrowHiY]];
+	[self addView: [rightDrag       setGrowMode: gfGrowX | gfGrowHiY]];
+	[self addView: [bottomLeftDrag  setGrowMode: gfGrowY]];
+	[self addView: [bottomRightDrag setGrowMode: gfGrowAll]];
+	[self addView: [bottomDrag      setGrowMode: gfGrowHiX | gfGrowY]];
+
+	[[topDrag         onDrag] addListener: self : @selector(dragWindow:)];
+	[[topLeftDrag     onDrag] addListener: self : @selector(dragWindow:)];
+	[[topRightDrag    onDrag] addListener: self : @selector(dragWindow:)];
+	[[leftDrag        onDrag] addListener: self : @selector(dragWindow:)];
+	[[rightDrag       onDrag] addListener: self : @selector(dragWindow:)];
+	[[bottomLeftDrag  onDrag] addListener: self : @selector(dragWindow:)];
+	[[bottomRightDrag onDrag] addListener: self : @selector(dragWindow:)];
+	[[bottomDrag      onDrag] addListener: self : @selector(dragWindow:)];
 
 	buf = [DrawBuffer buffer: {3, 3}];
 	[buf mvaddstr: {0, 0}, "XOX"];
@@ -45,31 +73,71 @@
 	return self;
 }
 
+#ifndef max
+# define max(a,b) ((a) > (b) ? (a) : (b))
+#endif
+#ifndef min
+# define min(a,b) ((a) < (b) ? (a) : (b))
+#endif
+#ifndef bound
+# define bound(a,b,c) (max(a, min(b, c)))
+#endif
+
 - (void) dragWindow: (Button *) sender
 {
 	Point       delta = [sender delta];
-	Point       p = {xpos + delta.x, ypos + delta.y};
+	Point       dp = nil;
+	Point       ds = nil;
 	Extent      bounds = [owner size];
-	if (p.x < 0) {
-		p.x = 0;
+
+	if (sender == topDrag) {
+		dp.x = bound (0, xpos + delta.x, bounds.width - xlen) - xpos;
+		dp.y = bound (0, ypos + delta.y, bounds.height - ylen) - ypos;
+	} else if (sender == topLeftDrag) {
+		dp.x = bound (0, xpos + delta.x, xpos + xlen - 1) - xpos;
+		dp.y = bound (0, ypos + delta.y, ypos + ylen - 1) - ypos;
+		ds.x = bound (1, xlen - delta.x, bounds.width - xpos) - xlen;
+		ds.y = bound (1, ylen - delta.y, bounds.width - ypos) - ylen;
+	} else if (sender == topRightDrag) {
+		dp.y = bound (0, ypos + delta.y, ypos + ylen - 1) - ypos;
+		ds.x = bound (1, xlen + delta.x, bounds.width - xpos) - xlen;
+		ds.y = bound (1, ylen - delta.y, bounds.width - ypos) - ylen;
+	} else if (sender == leftDrag) {
+		dp.x = bound (0, xpos + delta.x, xpos + xlen - 1) - xpos;
+		ds.x = bound (1, xlen - delta.x, bounds.width - xpos) - xlen;
+	} else if (sender == rightDrag) {
+		ds.x = bound (1, xlen + delta.x, bounds.width - xpos) - xlen;
+	} else if (sender == bottomLeftDrag) {
+		dp.x = bound (0, xpos + delta.x, xpos + xlen - 1) - xpos;
+		ds.x = bound (1, xlen - delta.x, bounds.width - xpos) - xlen;
+		ds.y = bound (1, ylen + delta.y, bounds.width - ypos) - ylen;
+	} else if (sender == bottomRightDrag) {
+		ds.x = bound (1, xlen + delta.x, bounds.width - xpos) - xlen;
+		ds.y = bound (1, ylen + delta.y, bounds.width - ypos) - ylen;
+	} else if (sender == bottomDrag) {
+		ds.y = bound (1, ylen + delta.y, bounds.width - ypos) - ylen;
 	}
-	if (p.x + xlen > bounds.width) {
-		p.x = bounds.width - xlen;
-	}
-	if (p.y < 0) {
-		p.y = 0;
-	}
-	if (p.y + ylen > bounds.height) {
-		p.y = bounds.height - ylen;
-	}
-	xpos = p.x;
-	ypos = p.y;
-	move_panel (panel, p.x, p.y);
-	[owner redraw];
+	int save_state = state;
+	state &= ~sfDrawn;
+	[self move: dp];
+	[self resize: {ds.x, ds.y}];
+	state = save_state;
+	[self redraw];
 }
 
 -setContext: (id<TextContext>) context
 {
+	return self;
+}
+
+-move: (Point) delta
+{
+	int save_state = state;
+	state &= ~sfDrawn;
+	[super move: delta];
+	move_panel (panel, xpos, ypos);
+	state = save_state;
+	[self redraw];
 	return self;
 }
 
@@ -126,7 +194,10 @@
 
 -redraw
 {
-	return [owner redraw];
+	if (state & sfDrawn) {
+		[owner redraw];
+	}
+	return self;
 }
 
 - (void) mvprintf: (Point) pos, string fmt, ...

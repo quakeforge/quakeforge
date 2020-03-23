@@ -138,4 +138,13 @@
 	return {dragPos.x - dragBase.x, dragPos.y - dragBase.y};
 }
 
+-move:(Point) delta
+{
+	Point       pos = self.pos;
+	[super move:delta];
+	dragBase.x += self.pos.x - pos.x;
+	dragBase.y += self.pos.y - pos.y;
+	return self;
+}
+
 @end

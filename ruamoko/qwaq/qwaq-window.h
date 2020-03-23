@@ -4,6 +4,7 @@
 #include "Object.h"
 
 @class Group;
+@class Button;
 
 #include "qwaq-draw.h"
 #include "qwaq-rect.h"
@@ -15,6 +16,15 @@
 	Group      *objects;
 	Point       point;	// FIXME can't be local :(
 	DrawBuffer *buf;
+
+	Button     *topDrag;		// move-only
+	Button     *topLeftDrag;
+	Button     *topRightDrag;
+	Button     *leftDrag;
+	Button     *rightDrag;
+	Button     *bottomLeftDrag;
+	Button     *bottomRightDrag;
+	Button     *bottomDrag;
 }
 +windowWithRect: (Rect) rect;
 -setBackground: (int) ch;
