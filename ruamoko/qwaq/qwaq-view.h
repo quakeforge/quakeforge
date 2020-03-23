@@ -32,6 +32,7 @@ enum {
 };
 
 enum {
+	gfGrowNone      = 0x0000,
 	gfGrowLoX       = 0x0001,
 	gfGrowLoY       = 0x0002,
 	gfGrowHiX       = 0x0004,
@@ -72,6 +73,7 @@ enum {
 - (void) dealloc;
 
 -setOwner: (Group *) owner;
+-setGrowMode: (int) mode;
 
 -(Rect)rect;
 -(Point)origin;

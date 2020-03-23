@@ -95,6 +95,12 @@ updateScreenCursor (View *view)
 	return self;
 }
 
+-setGrowMode: (int) mode
+{
+	growMode = mode;
+	return self;
+}
+
 - (Rect) rect
 {
 	return rect;
