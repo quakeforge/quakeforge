@@ -31,9 +31,11 @@
 # include "config.h"
 #endif
 
+#include <sys/ioctl.h>
 #include <ctype.h>
 #include <errno.h>
 #include <pthread.h>
+#include <signal.h>
 #include <stdio.h>
 #include <string.h>
 #include <termios.h>
@@ -162,6 +164,16 @@ static qwaq_key_t default_keys[] = {
 	{ "\033[1;6D",	QFK_LEFT,		5 },
 };
 
+static struct sigaction save_winch;
+static sigset_t winch_mask;
+static volatile sig_atomic_t winch_arrived;
+
+static void
+handle_winch (int sig)
+{
+	winch_arrived = 1;
+}
+
 static void
 add_event (qwaq_resources_t *res, qwaq_event_t *event)
 {
@@ -192,6 +204,20 @@ add_event (qwaq_resources_t *res, qwaq_event_t *event)
 	RB_WRITE_DATA (res->event_queue, event, 1);
 	pthread_cond_broadcast (&res->event_cond.rcond);
 	pthread_mutex_unlock (&res->event_cond.mut);
+}
+
+static void
+resize_event (qwaq_resources_t *res)
+{
+	qwaq_event_t event = {};
+	struct winsize size;
+	if (ioctl (fileno (stdout), TIOCGWINSZ, &size) != 0) {
+		return;
+	}
+	event.what = qe_resize;
+	event.resize.width = size.ws_col;
+	event.resize.height = size.ws_row;
+	add_event (res, &event);
 }
 
 static void
@@ -396,6 +422,13 @@ void qwaq_input_init (qwaq_resources_t *res)
 		 i++) {
 		Hash_Add (res->key_sequences, &default_keys[i]);
 	}
+
+	sigemptyset (&winch_mask);
+	sigaddset (&winch_mask, SIGWINCH);
+	struct sigaction action = {};
+	action.sa_handler = handle_winch;
+	sigaction (SIGWINCH, &action, &save_winch);
+
 	// ncurses takes care of input mode for us, so need only tell xterm
 	// what we need
 	write(1, MOUSE_MOVES_ON, sizeof (MOUSE_MOVES_ON) - 1);
@@ -408,13 +441,24 @@ void qwaq_input_shutdown (qwaq_resources_t *res)
 	// what we need
 	write(1, SGR_OFF, sizeof (SGR_OFF) - 1);
 	write(1, MOUSE_MOVES_OFF, sizeof (MOUSE_MOVES_OFF) - 1);
+
+	sigaction (SIGWINCH, &save_winch, 0);
 }
 
 void qwaq_process_input (qwaq_resources_t *res)
 {
 	char        buf[256];
 	int         len;
+	sigset_t    save_set;
+	int         saw_winch;
 
+	pthread_sigmask (SIG_BLOCK, &winch_mask, &save_set);
+	saw_winch = winch_arrived;
+	winch_arrived = 0;
+	pthread_sigmask (SIG_SETMASK, &save_set, 0);
+	if (saw_winch) {
+		resize_event (res);
+	}
 	while (Sys_CheckInput (1, -1)) {
 		len = read(0, buf, sizeof (buf));
 		for (int i = 0; i < len; i++) {

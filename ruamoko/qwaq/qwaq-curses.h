@@ -109,6 +109,7 @@ typedef struct panel_s *panel_t;
 @extern void move_panel (panel_t panel, int x, int y);
 @extern window_t panel_window (panel_t panel);
 @extern void update_panels (void);
+@extern void replace_panel (panel_t panel, window_t window);
 @extern void doupdate (void);
 
 @extern int get_event (qwaq_event_t *event);
@@ -126,6 +127,8 @@ typedef struct panel_s *panel_t;
 @extern void wborder (window_t window,
 					  box_sides_t sides, box_corners_t corners);
 @extern void mvwblit_line (window_t window, int x, int y, int *wch, int len);
+@extern void wresize (window_t window, int width, int height);
+@extern void resizeterm (int width, int height);
 
 @extern Rect getwrect (struct window_s *window);
 

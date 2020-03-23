@@ -165,6 +165,69 @@ updateScreenCursor (View *view)
 	[textContext mvaddch: pos, ch];
 }
 
+-move: (Point) delta
+{
+	xpos += delta.x;
+	ypos += delta.y;
+	if (xpos + xlen < 1) {
+		xpos = 1 - xlen;
+	}
+	if (ypos < 0) {
+		ypos = 0;
+	}
+	if (owner) {
+		Extent      s = [owner size];
+		if (xpos > s.width - 1) {
+			xpos = s.width - 1;
+		}
+		if (ypos > s.height - 1) {
+			ypos = s.height - 1;
+		}
+	}
+	return self;
+}
+
+-resize: (Extent) delta
+{
+	xlen += delta.width;
+	ylen += delta.height;
+	if (xlen < 1) {
+		xlen = 1;
+	}
+	if (ylen < 1) {
+		ylen = 1;
+	}
+	return self;
+}
+
+-grow: (Extent) delta
+{
+	Point       dpos = {};
+	Extent      dsize = {};
+
+	if (growMode & gfGrowLoX) {
+		dpos.x += delta.width;
+		dsize.width -= delta.width;
+	}
+	if (growMode & gfGrowHiX) {
+		dsize.width += delta.width;
+	}
+	if (growMode & gfGrowLoY) {
+		dpos.y += delta.height;
+		dsize.height -= delta.height;
+	}
+	if (growMode & gfGrowHiY) {
+		dsize.height += delta.height;
+	}
+	int save_state = state;
+	state &= ~sfDrawn;
+	[self move: dpos];
+	[self resize: dsize];
+	state = save_state;
+	[self redraw];
+	return self;
+}
+
 -handleEvent: (qwaq_event_t *) event
 {
 	return self;

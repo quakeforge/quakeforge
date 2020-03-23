@@ -25,6 +25,12 @@
 	return size;
 }
 
+- (void) resizeTo: (Extent) newSize
+{
+	size = newSize;
+	buffer = obj_realloc (buffer, size.width * size.height);
+}
+
 - (int *) buffer
 {
 	return buffer;

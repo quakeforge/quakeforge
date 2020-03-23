@@ -16,6 +16,7 @@ typedef enum {
 typedef enum {
 	qe_command   = 0x0200,		// application level command
 	qe_broadcast = 0x0400,
+	qe_resize    = 0x0800,		// screen resized
 } qwaq_message_event;
 
 typedef enum {
@@ -46,6 +47,11 @@ typedef struct qwaq_kevent_s {
 	int         shift;
 } qwaq_kevent_t;
 
+typedef struct qwaq_resize_s {
+	int         width;
+	int         height;
+} qwaq_resize_t;
+
 typedef struct qwaq_message_s {
 	qwaq_command command;
 } qwaq_message_t;
@@ -57,6 +63,7 @@ typedef struct qwaq_event_s {
 		qwaq_kevent_t key;
 		qwaq_mevent_t mouse;
 		qwaq_message_t message;
+		qwaq_resize_t resize;
 	};
 } qwaq_event_t;
 

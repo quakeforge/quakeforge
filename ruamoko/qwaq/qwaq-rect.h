@@ -1,12 +1,12 @@
 #ifndef __qwaq_rect_h
 #define __qwaq_rect_h
 
-typedef struct {
+typedef struct Point_s {
 	int         x;
 	int         y;
 } Point;
 
-typedef struct {
+typedef struct Extent_s {
 	int         width;
 	int         height;
 } Extent;

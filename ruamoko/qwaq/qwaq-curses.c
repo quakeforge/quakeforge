@@ -66,6 +66,7 @@ typedef enum qwaq_commands_e {
 	qwaq_cmd_bottom_panel,
 	qwaq_cmd_move_panel,
 	qwaq_cmd_panel_window,
+	qwaq_cmd_replace_panel,
 	qwaq_cmd_update_panels,
 	qwaq_cmd_doupdate,
 	qwaq_cmd_mvwaddstr,
@@ -81,6 +82,8 @@ typedef enum qwaq_commands_e {
 	qwaq_cmd_curs_set,
 	qwaq_cmd_wborder,
 	qwaq_cmd_mvwblit_line,
+	qwaq_cmd_wresize,
+	qwaq_cmd_resizeterm,
 } qwaq_commands;
 
 static const char *qwaq_command_names[]= {
@@ -95,6 +98,7 @@ static const char *qwaq_command_names[]= {
 	"bottom_panel",
 	"move_panel",
 	"panel_window",
+	"replace_panel",
 	"update_panels",
 	"doupdate",
 	"mvwaddstr",
@@ -110,6 +114,8 @@ static const char *qwaq_command_names[]= {
 	"curs_set",
 	"wborder",
 	"mvwblit_line",
+	"wresize",
+	"resizeterm",
 };
 
 static window_t *
@@ -399,6 +405,18 @@ cmd_panel_window (qwaq_resources_t *res)
 }
 
 static void
+cmd_replace_panel (qwaq_resources_t *res)
+{
+	int         panel_id = RB_PEEK_DATA (res->command_queue, 2);
+	int         window_id = RB_PEEK_DATA (res->command_queue, 3);
+
+	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
+	window_t  *window = get_window (res, __FUNCTION__, window_id);
+
+	replace_panel (panel->panel, window->win);
+}
+
+static void
 cmd_update_panels (qwaq_resources_t *res)
 {
 	update_panels ();
@@ -562,9 +580,29 @@ cmd_mvwblit_line (qwaq_resources_t *res)
 }
 
 static void
+cmd_wresize (qwaq_resources_t *res)
+{
+	int         window_id = RB_PEEK_DATA (res->command_queue, 2);
+	int         width = RB_PEEK_DATA (res->command_queue, 3);
+	int         height = RB_PEEK_DATA (res->command_queue, 4);
+
+	window_t   *window = get_window (res, __FUNCTION__, window_id);
+	wresize (window->win, height, width);
+}
+
+static void
+cmd_resizeterm (qwaq_resources_t *res)
+{
+	int         width = RB_PEEK_DATA (res->command_queue, 2);
+	int         height = RB_PEEK_DATA (res->command_queue, 3);
+
+	resizeterm (height, width);
+}
+
+static void
 dump_command (qwaq_resources_t *res, int len)
 {
-	if (0) {
+	if (1) {
 		qwaq_commands cmd = RB_PEEK_DATA (res->command_queue, 0);
 		Sys_Printf ("%s[%d]", qwaq_command_names[cmd], len);
 		for (int i = 2; i < len; i++) {
@@ -642,6 +680,9 @@ process_commands (qwaq_resources_t *res)
 			case qwaq_cmd_panel_window:
 				cmd_panel_window (res);
 				break;
+			case qwaq_cmd_replace_panel:
+				cmd_replace_panel (res);
+				break;
 			case qwaq_cmd_update_panels:
 				cmd_update_panels (res);
 				break;
@@ -686,6 +727,12 @@ process_commands (qwaq_resources_t *res)
 				break;
 			case qwaq_cmd_mvwblit_line:
 				cmd_mvwblit_line (res);
+				break;
+			case qwaq_cmd_wresize:
+				cmd_wresize (res);
+				break;
+			case qwaq_cmd_resizeterm:
+				cmd_resizeterm (res);
 				break;
 		}
 		pthread_mutex_lock (&res->command_cond.mut);
@@ -893,6 +940,22 @@ bi_panel_window (progs_t *pr)
 }
 
 static void
+bi_replace_panel (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	int         panel_id = P_INT (pr, 0);
+	int         window_id = P_INT (pr, 1);
+
+	if (get_panel (res, __FUNCTION__, panel_id)
+		&& get_window (res, __FUNCTION__, window_id)) {
+		int         command[] = { qwaq_cmd_replace_panel, 0,
+								  panel_id, window_id};
+		command[1] = CMD_SIZE(command);
+		qwaq_submit_command (res, command);
+	}
+}
+
+static void
 qwaq_update_panels (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
@@ -948,6 +1011,50 @@ bi_waddstr (progs_t *pr)
 	const char *str = P_GSTRING (pr, 1);
 
 	qwaq_waddstr (pr, window_id, str);
+}
+
+static void
+qwaq_wresize (progs_t *pr, int window_id, int width, int height)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+
+	if (get_window (res, __FUNCTION__, window_id)) {
+		int         command[] = {
+						qwaq_cmd_wresize, 0,
+						window_id, width, height
+					};
+
+		command[1] = CMD_SIZE(command);
+		qwaq_submit_command (res, command);
+	}
+}
+static void
+bi_wresize (progs_t *pr)
+{
+	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
+	int         width = P_INT (pr, 1);
+	int         height = P_INT (pr, 2);
+
+	qwaq_wresize (pr, window_id, width, height);
+}
+
+static void
+qwaq_resizeterm (progs_t *pr, int width, int height)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+
+	int         command[] = { qwaq_cmd_resizeterm, 0, width, height };
+
+	command[1] = CMD_SIZE(command);
+	qwaq_submit_command (res, command);
+}
+static void
+bi_resizeterm (progs_t *pr)
+{
+	int         width = P_INT (pr, 0);
+	int         height = P_INT (pr, 1);
+
+	qwaq_resizeterm (pr, width, height);
 }
 
 static void
@@ -1573,6 +1680,19 @@ bi_i_TextContext__mvvprintf_ (progs_t *pr)
 }
 
 static void
+bi_i_TextContext__resizeTo_ (progs_t *pr)
+{
+	__auto_type self = &P_STRUCT (pr, qwaq_textcontext_t, 0);
+	int         window_id = self->window;
+
+	self->size = P_PACKED (pr, Extent, 2);
+	qwaq_wresize (pr, window_id, self->size.width, self->size.height);
+	if (window_id == 1) {
+		qwaq_wbkgd (pr, window_id, self->background);
+	}
+}
+
+static void
 bi_c_TextContext__refresh (progs_t *pr)
 {
 	qwaq_update_panels (pr);
@@ -1614,9 +1734,11 @@ bi_i_TextContext__mvaddstr_ (progs_t *pr)
 static void
 bi_i_TextContext__bkgd_ (progs_t *pr)
 {
-	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
+	__auto_type self = &P_STRUCT (pr, qwaq_textcontext_t, 0);
+	int         window_id = self->window;
 	int         ch = P_INT (pr, 2);
 
+	self->background = ch;
 	qwaq_wbkgd (pr, window_id, ch);
 }
 
@@ -1675,6 +1797,7 @@ static builtin_t builtins[] = {
 	{"bottom_panel",	bi_bottom_panel,	-1},
 	{"move_panel",		bi_move_panel,		-1},
 	{"panel_window",	bi_panel_window,	-1},
+	{"replace_panel",	bi_replace_panel,	-1},
 	{"update_panels",	bi_update_panels,	-1},
 	{"doupdate",		bi_doupdate,		-1},
 	{"mvwprintf",		bi_mvwprintf,		-1},
@@ -1698,6 +1821,8 @@ static builtin_t builtins[] = {
 	{"curs_set",		bi_curs_set,		-1},
 	{"wborder",			bi_wborder,			-1},
 	{"mvwblit_line",	bi_mvwblit_line,	-1},
+	{"wresize",			bi_wresize,			-1},
+	{"resizeterm",		bi_resizeterm,		-1},
 
 	{"printf",			bi_printf,	-1},
 
@@ -1715,6 +1840,7 @@ static builtin_t builtins[] = {
 	{"_i_TextContext__addch_",			bi_i_TextContext__addch_,		   -1},
 	{"_i_TextContext__addstr_",			bi_i_TextContext__addstr_,		   -1},
 	{"_i_TextContext__mvvprintf_",		bi_i_TextContext__mvvprintf_,	   -1},
+	{"_i_TextContext__resizeTo_",		bi_i_TextContext__resizeTo_,	   -1},
 	{"_c_TextContext__refresh",			bi_c_TextContext__refresh,		   -1},
 	{"_i_TextContext__refresh",			bi_i_TextContext__refresh,		   -1},
 	{"_i_TextContext__mvaddch_",		bi_i_TextContext__mvaddch_,		   -1},

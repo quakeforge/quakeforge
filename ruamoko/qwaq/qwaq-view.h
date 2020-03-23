@@ -31,6 +31,18 @@ enum {
 	sfLocked        =0x0010,
 };
 
+enum {
+	gfGrowLoX       = 0x0001,
+	gfGrowLoY       = 0x0002,
+	gfGrowHiX       = 0x0004,
+	gfGrowHiY       = 0x0008,
+	gfGrowRel       = 0x0010,
+	gfGrowLo        = gfGrowLoX | gfGrowLoY,
+	gfGrowHi        = gfGrowHiX | gfGrowHiY,
+	gfGrowX         = gfGrowLoX | gfGrowHiX,
+	gfGrowY         = gfGrowLoY | gfGrowHiY,
+	gfGrowAll       = gfGrowX | gfGrowY,
+};
 @interface View: Object
 {
 	union {
@@ -52,6 +64,7 @@ enum {
 	id<TextContext> textContext;
 	int         state;
 	int         options;
+	int         growMode;
 	int         cursorState;
 	Point       cursor;
 }
@@ -73,6 +86,9 @@ enum {
 -setContext: (id<TextContext>) context;
 -draw;
 -redraw;
+-move: (Point) delta;
+-resize: (Extent) delta;
+-grow: (Extent) delta;
 -handleEvent: (qwaq_event_t *) event;
 
 - (void) onMouseEnter: (Point) pos;

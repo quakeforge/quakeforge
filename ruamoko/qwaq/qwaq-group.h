@@ -25,6 +25,7 @@
 -(Extent) size;
 -draw;
 -redraw;
+-resize: (Extent) delta;
 -handleEvent: (qwaq_event_t *) event;
 -(void) grabMouse;
 -(void) releaseMouse;

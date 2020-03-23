@@ -4,6 +4,7 @@
 #include <Object.h>
 
 #include "event.h"
+#include "qwaq-rect.h"
 
 @class Group;
 @class TextContext;
@@ -16,6 +17,7 @@
 	Group      *objects;
 
 	TextContext *screen;
+	Extent      screenSize;
 	int         autocount;
 }
 -run;

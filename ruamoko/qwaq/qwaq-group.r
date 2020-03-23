@@ -100,6 +100,14 @@ not_dont_draw (id aView, void *aGroup)
 	return self;
 }
 
+-resize: (Extent) delta
+{
+	for (int i = [views count]; i-- > 0; ) {
+		[[views objectAtIndex: i] grow: delta];
+	}
+	return self;
+}
+
 static View *
 find_mouse_view(Group *group, Point pos)
 {

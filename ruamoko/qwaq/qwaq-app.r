@@ -47,11 +47,13 @@ arp_end (void)
 	init_pair (4, COLOR_YELLOW, COLOR_RED);
 
 	screen = [TextContext screen];
+	screenSize = [screen size];
+	printf ("screenSize = %d x %d", screenSize.width, screenSize.height);
 	objects = [[Group alloc] initWithContext: screen owner: nil];
 
 	[screen bkgd: COLOR_PAIR (1)];
 	[screen scrollok: 1];
-	Rect r = { nil, [screen size] };
+	Rect r = {nil, screenSize};
 	r.offset.x = r.extent.width / 4;
 	r.offset.y = r.extent.height / 4;
 	r.extent.width /= 2;
@@ -88,8 +90,23 @@ arp_end (void)
 
 -handleEvent: (qwaq_event_t *) event
 {
+	if (event.what == qe_resize) {
+		Extent delta;
+		delta.width = event.resize.width - screenSize.width;
+		delta.height = event.resize.height - screenSize.height;
+
+		resizeterm (event.resize.width, event.resize.height);
+		[screen resizeTo: {event.resize.width, event.resize.height}];
+		screenSize = [screen size];
+		[screen printf:"resized to %d x %d, delta: %d x %d\n", event.resize.width, event.resize.height, delta.width, delta.height];
+		[objects resize: delta];
+		[screen refresh];
+		event.what = qe_none;
+		return self;
+	}
 	[objects handleEvent: event];
-	if (event.what == qe_key && event.key.code == '\x18') {
+	if (event.what == qe_key
+		&& (event.key.code == '\x18' || event.key.code == '\x11')) {
 		event.what = qe_command;
 		event.message.command = qc_exit;
 	}

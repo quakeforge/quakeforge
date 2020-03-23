@@ -111,6 +111,7 @@ static TextContext *screen;
 - (void) mvaddch: (Point) pos, int ch = #0;
 - (void) mvaddstr: (Point) pos, string str = #0;
 
+- (void) resizeTo: (Extent) newSize = #0;	// absolute size
 - (void) refresh = #0;
 + (void) refresh = #0;
 
@@ -152,6 +153,7 @@ void top_panel (panel_t panel) = #0;
 void bottom_panel (panel_t panel) = #0;
 void move_panel (panel_t panel, int x, int y) = #0;
 window_t panel_window (panel_t panel) = #0;
+void replace_panel (panel_t panel, window_t window) = #0;
 void update_panels (void) = #0;
 
 void doupdate (void) = #0;
@@ -159,6 +161,8 @@ int curs_set (int visibility) = #0;
 int move (int x, int y) = #0;
 void wborder (window_t window, box_sides_t sides, box_corners_t corners) = #0;
 void mvwblit_line (window_t window, int x, int y, int *wch, int len) = #0;
+void wresize (window_t window, int width, int height) = #0;
+void resizeterm (int width, int height) = #0;
 Rect getwrect (window_t window) = #0;
 
 void printf(string fmt, ...) = #0;

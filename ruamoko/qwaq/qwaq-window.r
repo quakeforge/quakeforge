@@ -40,6 +40,8 @@
 	[buf mvaddstr: {0, 0}, "XOX"];
 	[buf mvaddstr: {0, 1}, "OXO"];
 	[buf mvaddstr: {0, 2}, "XOX"];
+
+	growMode = gfGrowHi;
 	return self;
 }
 
@@ -68,6 +70,17 @@
 
 -setContext: (id<TextContext>) context
 {
+	return self;
+}
+
+-resize: (Extent) delta
+{
+	Extent size = self.size;
+	[super resize:delta];
+	delta = {self.size.width - size.width, self.size.height - size.height};
+	[(id)textContext resizeTo: self.size];
+	replace_panel (panel, [(id)textContext window]);
+	[objects resize:delta];
 	return self;
 }
 

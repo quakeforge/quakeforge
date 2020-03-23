@@ -11,6 +11,7 @@
 	buffer = [[EditBuffer alloc] initWithFile: filename];
 	line_count = [buffer countLines: {0, [buffer textSize]}];
 	linebuffer = [DrawBuffer buffer: { xlen, 1 }];
+	growMode = gfGrowHi;
 	return self;
 }
 
@@ -25,6 +26,13 @@
 		[textContext blitFromBuffer: linebuffer to: {xpos, ypos + y}
 							from: [linebuffer rect]];
 	}
+	return self;
+}
+
+-resize: (Extent) delta
+{
+	[super resize: delta];
+	[linebuffer resizeTo: {xlen, 1}];
 	return self;
 }
 

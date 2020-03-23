@@ -58,6 +58,20 @@
 typedef struct qwaq_textcontext_s {
 	pr_id_t     isa;
 	pointer_t   window;
+	union {
+		Rect        rect;
+		struct {
+			Point       offset;
+			Extent      size;
+		};
+		struct {
+			int         xpos;
+			int         ypos;
+			int         xlen;
+			int         ylen;
+		};
+	};
+	int         background;
 } qwaq_textcontext_t;
 
 #endif
