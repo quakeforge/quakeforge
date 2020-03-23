@@ -154,7 +154,11 @@
 
 -handleEvent: (qwaq_event_t *) event
 {
+	event.mouse.x -= xpos;
+	event.mouse.y -= ypos;
 	[objects handleEvent: event];
+	event.mouse.x += xpos;
+	event.mouse.y += ypos;
 	return self;
 }
 
