@@ -306,7 +306,9 @@ snd_jack_error (const char *desc)
 static int
 snd_jack_xrun (void *arg)
 {
-	fprintf (stderr, "snd_jack: xrun\n");
+	if (developer->int_val & SYS_SND) {
+		fprintf (stderr, "snd_jack: xrun\n");
+	}
 	return 0;
 }
 
