@@ -11,24 +11,24 @@
 @class Group;
 
 enum {
-	ofCanFocus      =0x0001,
-	ofFirstClick    =0x0002,
-	ofDontDraw      =0x0004,
-	ofPreProcess    =0x0008,
-	ofPostProcess   =0x0010,
-	ofMakeFirst     =0x0020,
-	ofTileable      =0x0040,
-	ofCentered      =0x0080,
+	ofCanFocus      = 0x0001,
+	ofFirstClick    = 0x0002,
+	ofDontDraw      = 0x0004,
+	ofPreProcess    = 0x0008,
+	ofPostProcess   = 0x0010,
+	ofMakeFirst     = 0x0020,
+	ofTileable      = 0x0040,
+	ofCentered      = 0x0080,
 
-	ofCallHasObject =0x8000,
+	ofCallHasObject = 0x8000,
 };
 
 enum {
-	sfDrawn         =0x0001,
-	sfDisabled      =0x0002,
-	sfInFocus       =0x0004,
-	sfModal         =0x0008,
-	sfLocked        =0x0010,
+	sfDrawn         = 0x0001,
+	sfDisabled      = 0x0002,
+	sfInFocus       = 0x0004,
+	sfModal         = 0x0008,
+	sfLocked        = 0x0010,
 };
 
 enum {
