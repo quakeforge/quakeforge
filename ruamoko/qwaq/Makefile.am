@@ -35,6 +35,7 @@ qwaq_app_dat_src= \
 	qwaq-rect.r \
 	qwaq-screen.r \
 	qwaq-textcontext.r \
+	qwaq-titlebar.r \
 	qwaq-view.r \
 	qwaq-window.r
 
