@@ -342,13 +342,12 @@ static void
 sigwinch (int sig)
 {
 	interrupted = 1;
-	signal (SIGWINCH, sigwinch);
 }
 #endif
 static void
 get_size (int *xlen, int *ylen)
 {
-#if 0
+#ifdef SIGWINCH
 	struct winsize size;
 
 	*xlen = *ylen = 0;
@@ -356,8 +355,9 @@ get_size (int *xlen, int *ylen)
 		return;
 	*xlen = size.ws_col;
 	*ylen = size.ws_row;
-#endif
+#else
 	getmaxyx (stdscr, *ylen, *xlen);
+#endif
 }
 
 static void
@@ -366,10 +366,11 @@ process_input (void)
 	int         ch;
 	int         escape = 0;
 
-	if (interrupted) {
-#ifdef SIGWINCH
+	if (__builtin_expect (interrupted, 0)) {
 		interrupted = 0;
+#ifdef SIGWINCH
 		get_size (&screen_x, &screen_y);
+		Sys_MaskPrintf (SYS_DEV, "resizing to %d x %d\n", screen_x, screen_y);
 		resizeterm (screen_y, screen_x);
 		con_linewidth = screen_x;
 		view_resize (sv_con_data.view, screen_x, screen_y);
@@ -570,7 +571,9 @@ static void
 init (void)
 {
 #ifdef SIGWINCH
-	signal (SIGWINCH, sigwinch);
+	struct sigaction action = {};
+	action.sa_handler = sigwinch;
+	sigaction (SIGWINCH, &action, 0);
 #endif
 
 	initscr ();
