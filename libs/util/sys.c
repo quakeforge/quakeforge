@@ -103,6 +103,19 @@ int         sys_checksum;
 static sys_printf_t sys_std_printf_function = Sys_StdPrintf;
 static sys_printf_t sys_err_printf_function = Sys_ErrPrintf;
 
+#ifndef _WIN32
+static struct sigaction save_hup;
+static struct sigaction save_quit;
+static struct sigaction save_trap;
+static struct sigaction save_iot;
+static struct sigaction save_bus;
+#endif
+static struct sigaction save_int;
+static struct sigaction save_ill;
+static struct sigaction save_segv;
+static struct sigaction save_term;
+static struct sigaction save_fpe;
+
 typedef struct shutdown_list_s {
 	struct shutdown_list_s *next;
 	void      (*func) (void *);
@@ -812,7 +825,7 @@ aiee (int sig)
 }
 
 static void
-signal_handler (int sig)
+signal_handler (int sig, siginfo_t *info, void *ucontext)
 {
 	int volatile recover = 0;	// volatile for longjump
 
@@ -845,26 +858,19 @@ signal_handler (int sig)
 				Sys_Shutdown ();
 			}
 
-			if (recover) {
+			if (!recover) {
 #ifndef _WIN32
-				signal (SIGQUIT, signal_handler);
-				signal (SIGTRAP, signal_handler);
-				signal (SIGIOT, signal_handler);
-				signal (SIGBUS, signal_handler);
+				sigaction (SIGHUP,  &save_hup,  0);
+				sigaction (SIGQUIT, &save_quit, 0);
+				sigaction (SIGTRAP, &save_trap, 0);
+				sigaction (SIGIOT,  &save_iot,  0);
+				sigaction (SIGBUS,  &save_bus,  0);
 #endif
-				signal (SIGILL, signal_handler);
-				signal (SIGSEGV, signal_handler);
-				signal (SIGFPE, signal_handler);
-			} else {
-#ifndef _WIN32
-				signal (SIGQUIT, SIG_DFL);
-				signal (SIGTRAP, SIG_DFL);
-				signal (SIGIOT, SIG_DFL);
-				signal (SIGBUS, SIG_DFL);
-#endif
-				signal (SIGILL, SIG_DFL);
-				signal (SIGSEGV, SIG_DFL);
-				signal (SIGFPE, SIG_DFL);
+				sigaction (SIGINT,  &save_int,  0);
+				sigaction (SIGILL,  &save_ill,  0);
+				sigaction (SIGSEGV, &save_segv, 0);
+				sigaction (SIGTERM, &save_term, 0);
+				sigaction (SIGFPE,  &save_fpe,  0);
 			}
 	}
 }
@@ -873,18 +879,21 @@ VISIBLE void
 Sys_Init (void)
 {
 	// catch signals
+	struct sigaction action = {};
+	action.sa_flags = SA_SIGINFO;
+	action.sa_sigaction = signal_handler;
 #ifndef _WIN32
-	signal (SIGHUP, signal_handler);
-	signal (SIGQUIT, signal_handler);
-	signal (SIGTRAP, signal_handler);
-	signal (SIGIOT, signal_handler);
-	signal (SIGBUS, signal_handler);
+	sigaction (SIGHUP,  &action, &save_hup);
+	sigaction (SIGQUIT, &action, &save_quit);
+	sigaction (SIGTRAP, &action, &save_trap);
+	sigaction (SIGIOT,  &action, &save_iot);
+	sigaction (SIGBUS,  &action, &save_bus);
 #endif
-	signal (SIGINT, signal_handler);
-	signal (SIGILL, signal_handler);
-	signal (SIGSEGV, signal_handler);
-	signal (SIGTERM, signal_handler);
-	signal (SIGFPE, signal_handler);
+	sigaction (SIGINT,  &action, &save_int);
+	sigaction (SIGILL,  &action, &save_ill);
+	sigaction (SIGSEGV, &action, &save_segv);
+	sigaction (SIGTERM, &action, &save_term);
+	sigaction (SIGFPE,  &action, &save_fpe);
 
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();
