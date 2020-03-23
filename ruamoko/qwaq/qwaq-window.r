@@ -33,17 +33,17 @@
 	topDrag         = [[Button alloc] initWithRect: {{1, 0},
 													 {xlen - 2, 1}}];
 	topLeftDrag     = [[Button alloc] initWithRect: {{0, 0},
-													 {1, 1}}];
-	topRightDrag    = [[Button alloc] initWithRect: {{xlen - 1, 0},
-													 {1, 1}}];
+													 {2, 2}}];
+	topRightDrag    = [[Button alloc] initWithRect: {{xlen - 2, 0},
+													 {2, 2}}];
 	leftDrag        = [[Button alloc] initWithRect: {{0, 1},
 													 {1, ylen - 2}}];
 	rightDrag       = [[Button alloc] initWithRect: {{xlen - 1, 1},
 													 {1, ylen - 2}}];
-	bottomLeftDrag  = [[Button alloc] initWithRect: {{0, ylen - 1},
-													 {1, 1}}];
-	bottomRightDrag = [[Button alloc] initWithRect: {{xlen - 1, ylen - 1},
-													 {1, 1}}];
+	bottomLeftDrag  = [[Button alloc] initWithRect: {{0, ylen - 2},
+													 {2, 2}}];
+	bottomRightDrag = [[Button alloc] initWithRect: {{xlen - 2, ylen - 2},
+													 {2, 2}}];
 	bottomDrag      = [[Button alloc] initWithRect: {{1, ylen - 1},
 													 {xlen - 2, 1}}];
 	[self addView: [topDrag         setGrowMode: gfGrowHiX]];
