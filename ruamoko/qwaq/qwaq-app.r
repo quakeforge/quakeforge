@@ -48,7 +48,6 @@ arp_end (void)
 
 	screen = [TextContext screen];
 	screenSize = [screen size];
-	printf ("screenSize = %d x %d", screenSize.width, screenSize.height);
 	objects = [[Group alloc] initWithContext: screen owner: nil];
 
 	[screen bkgd: COLOR_PAIR (1)];
@@ -98,7 +97,6 @@ arp_end (void)
 		resizeterm (event.resize.width, event.resize.height);
 		[screen resizeTo: {event.resize.width, event.resize.height}];
 		screenSize = [screen size];
-		[screen printf:"resized to %d x %d, delta: %d x %d\n", event.resize.width, event.resize.height, delta.width, delta.height];
 		[objects resize: delta];
 		[screen refresh];
 		event.what = qe_none;
