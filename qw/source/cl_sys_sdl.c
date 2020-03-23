@@ -50,10 +50,6 @@
 # include <sys/fcntl.h>
 #endif
 
-#ifndef _WIN32
-# include <signal.h>
-#endif
-
 #include <SDL.h>
 #include <SDL_main.h>
 
