@@ -137,15 +137,11 @@ find_mouse_view(Group *group, Point pos)
 		if (mouse_grabbed) {
 			[mouse_grabbed handleEvent: event];
 		} else {
-			if (mouse_within && ![mouse_within containsPoint: pos]) {
+			View        *mouse_view = find_mouse_view (self, pos);
+			if (mouse_within != mouse_view) {
 				[mouse_within onMouseLeave: pos];
-				mouse_within = nil;
-			}
-			if (!mouse_within) {
-				mouse_within = find_mouse_view (self, pos);
-				if (mouse_within) {
-					[mouse_within onMouseEnter: pos];
-				}
+				[mouse_view onMouseEnter: pos];
+				mouse_within = mouse_view;
 			}
 			if (mouse_within) {
 				[mouse_within handleEvent: event];
