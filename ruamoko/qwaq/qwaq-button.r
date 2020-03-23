@@ -21,12 +21,30 @@
 	return self;
 }
 
+-initWithRect: (Rect) rect
+{
+	if (!(self = [super initWithRect: rect])) {
+		return nil;
+	}
+	icon[0] = nil;
+	icon[1] = nil;
+	onPress = [[ListenerGroup alloc] init];
+	onRelease = [[ListenerGroup alloc] init];
+	onClick = [[ListenerGroup alloc] init];
+	onDrag = [[ListenerGroup alloc] init];
+	onAuto = [[ListenerGroup alloc] init];
+	onHover = [[ListenerGroup alloc] init];
+	return self;
+}
+
 -draw
 {
 	[super draw];
-	[textContext blitFromBuffer: icon[pressed]
-							 to: pos
-						   from: [icon[pressed] rect]];
+	if (icon[pressed]) {
+		[textContext blitFromBuffer: icon[pressed]
+								 to: pos
+							   from: [icon[pressed] rect]];
+	}
 	return self;
 }
 

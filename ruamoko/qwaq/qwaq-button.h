@@ -22,6 +22,7 @@
 }
 -initWithPos: (Point) pos releasedIcon: (DrawBuffer *) released
 						   pressedIcon: (DrawBuffer *) pressed;
+-initWithRect: (Rect) rect;	// invisible button
 -(ListenerGroup *) onPress;
 -(ListenerGroup *) onRelease;
 -(ListenerGroup *) onClick;
