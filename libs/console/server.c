@@ -99,7 +99,7 @@ static view_t *output;
 static view_t *status;
 static view_t *input;
 static int screen_x, screen_y;
-static int interrupted;
+static volatile sig_atomic_t interrupted;
 static int batch_print;
 
 #define     MAXCMDLINE  256
