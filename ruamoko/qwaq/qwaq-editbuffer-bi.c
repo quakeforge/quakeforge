@@ -456,6 +456,8 @@ formatLine (txtbuffer_t *buffer, unsigned linePtr, unsigned xpos,
 	int         col;
 	byte        c = 0;
 	int         count;
+	int        *startdst = dst;
+	int         startlen = length;
 
 	while (pos < xpos && ptr < buffer->textSize) {
 		c = getChar (buffer, ptr);
@@ -497,6 +499,10 @@ formatLine (txtbuffer_t *buffer, unsigned linePtr, unsigned xpos,
 	col = ptr >= sels && ptr < sele ? cols : coln;
 	while (length-- > 0) {
 		*dst++ = col | ' ';
+	}
+	if (dst - startdst > startlen) {
+		Sys_Error ("formatLine wrote too much: %zd %u %d",
+				   dst - startdst, startlen, length);
 	}
 	return ptr;
 }
