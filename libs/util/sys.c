@@ -817,18 +817,22 @@ Sys_PopSignalHook (void)
 	}
 }
 
-static void
+static void __attribute__((noreturn))
 aiee (int sig)
 {
 	printf ("AIEE, signal %d in shutdown code, giving up\n", sig);
-	longjmp (aiee_abort, 1);
+	siglongjmp (aiee_abort, 1);
 }
 
 static void
 signal_handler (int sig, siginfo_t *info, void *ucontext)
 {
 	int volatile recover = 0;	// volatile for longjump
+	static volatile int in_signal_handler = 0;
 
+	if (in_signal_handler) {
+		aiee (sig);
+	}
 	printf ("Received signal %d, exiting...\n", sig);
 
 	switch (sig) {
@@ -836,23 +840,13 @@ signal_handler (int sig, siginfo_t *info, void *ucontext)
 		case SIGTERM:
 #ifndef _WIN32
 		case SIGHUP:
-			signal (SIGHUP, SIG_DFL);
+			sigaction (SIGHUP,  &save_hup,  0);
 #endif
-			signal (SIGINT, SIG_DFL);
-			signal (SIGTERM, SIG_DFL);
+			sigaction (SIGINT,  &save_int,  0);
+			sigaction (SIGTERM, &save_term, 0);
 			Sys_Quit ();
 		default:
-#ifndef _WIN32
-			signal (SIGQUIT, aiee);
-			signal (SIGTRAP, aiee);
-			signal (SIGIOT, aiee);
-			signal (SIGBUS, aiee);
-#endif
-			signal (SIGILL, aiee);
-			signal (SIGSEGV, aiee);
-			signal (SIGFPE, aiee);
-
-			if (!setjmp (aiee_abort)) {
+			if (!sigsetjmp (aiee_abort, 1)) {
 				if (signal_hook)
 					recover = signal_hook (sig, signal_hook_data);
 				Sys_Shutdown ();
@@ -860,16 +854,13 @@ signal_handler (int sig, siginfo_t *info, void *ucontext)
 
 			if (!recover) {
 #ifndef _WIN32
-				sigaction (SIGHUP,  &save_hup,  0);
 				sigaction (SIGQUIT, &save_quit, 0);
 				sigaction (SIGTRAP, &save_trap, 0);
 				sigaction (SIGIOT,  &save_iot,  0);
 				sigaction (SIGBUS,  &save_bus,  0);
 #endif
-				sigaction (SIGINT,  &save_int,  0);
 				sigaction (SIGILL,  &save_ill,  0);
 				sigaction (SIGSEGV, &save_segv, 0);
-				sigaction (SIGTERM, &save_term, 0);
 				sigaction (SIGFPE,  &save_fpe,  0);
 			}
 	}
