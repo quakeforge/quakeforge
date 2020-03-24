@@ -89,6 +89,7 @@ enum {
 
 -setContext: (id<TextContext>) context;
 -draw;
+-hide;
 -redraw;
 -move: (Point) delta;
 -resize: (Extent) delta;
