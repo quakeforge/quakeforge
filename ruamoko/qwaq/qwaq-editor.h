@@ -18,8 +18,10 @@
 	unsigned    old_cind;		// previous character
 	Point       cursor;
 	unsigned    line_count;
+	string      filename;
 }
 -initWithRect:(Rect) rect file:(string) filename;
+-(string)filename;
 -scrollUp:(unsigned) count;
 -scrollDown:(unsigned) count;
 -scrollLeft:(unsigned) count;

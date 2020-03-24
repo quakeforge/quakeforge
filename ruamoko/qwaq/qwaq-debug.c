@@ -145,7 +145,9 @@ static void
 qwaq_target_clear (progs_t *pr, void *data)
 {
 	qwaq_target_t *target = pr->debug_data;
-	target_free (target->debugger, target);
+	if (target) {
+		target_free (target->debugger, target);
+	}
 }
 
 //FIXME need a better way to get this from one thread to the others
@@ -274,10 +276,12 @@ qdb_get_state (progs_t *pr)
 
 	lineno = PR_Find_Lineno (tpr, staddr);
 	if (lineno) {
-		f = PR_Get_Lineno_Func (pr, lineno);
-		file = pr->pr_functions[f->function].s_file;
+		f = PR_Get_Lineno_Func (tpr, lineno);
+		//FIXME file is a permanent string. dynamic would be better
+		//but they're not merged (and would need refcounting)
+		file = PR_SetString (pr, PR_Get_Source_File (tpr, lineno));
 		func = f->function;
-		line = PR_Get_Lineno_Line (pr, lineno);
+		line = PR_Get_Lineno_Line (tpr, lineno);
 		line += f->source_line;
 	}
 

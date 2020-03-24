@@ -9,12 +9,18 @@
 	if (!(self = [super initWithRect: rect])) {
 		return nil;
 	}
+	self.filename = filename;
 	buffer = [[EditBuffer alloc] initWithFile: filename];
 	line_count = [buffer countLines: {0, [buffer textSize]}];
 	linebuffer = [DrawBuffer buffer: { xlen, 1 }];
 	growMode = gfGrowHi;
 	options = ofCanFocus;
 	return self;
+}
+
+-(string)filename
+{
+	return filename;
 }
 
 -draw
