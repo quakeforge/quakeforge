@@ -43,36 +43,8 @@ enum {
 	gfGrowY         = gfGrowLoY | gfGrowHiY,
 	gfGrowAll       = gfGrowX | gfGrowY,
 };
-@interface View: Object
-{
-	union {
-		Rect        rect;
-		struct {
-			int     xpos;
-			int     ypos;
-			int     xlen;
-			int     ylen;
-		};
-		struct {
-			Point   pos;
-			Extent  size;
-		};
-	};
-	Rect        absRect;
-	Point       point;		// can't be local :(
-	Group      *owner;
-	id<TextContext> textContext;
-	int         state;
-	int         options;
-	int         growMode;
-	int         cursorState;
-	Point       cursor;
-	ListenerGroup *onReceiveFocus;
-	ListenerGroup *onReleaseFocus;
-}
--initWithRect: (Rect) rect;
-- (void) dealloc;
 
+@protocol View
 -setOwner: (Group *) owner;
 -setGrowMode: (int) mode;
 
@@ -107,6 +79,36 @@ enum {
 - (void) mvprintf: (Point) pos, string fmt, ...;
 - (void) mvvprintf: (Point) pos, string fmt, @va_list args;
 - (void) mvaddch: (Point) pos, int ch;
+@end
+
+@interface View: Object <View>
+{
+	union {
+		Rect        rect;
+		struct {
+			int     xpos;
+			int     ypos;
+			int     xlen;
+			int     ylen;
+		};
+		struct {
+			Point   pos;
+			Extent  size;
+		};
+	};
+	Rect        absRect;
+	Point       point;		// can't be local :(
+	Group      *owner;
+	id<TextContext> textContext;
+	int         state;
+	int         options;
+	int         growMode;
+	int         cursorState;
+	Point       cursor;
+	ListenerGroup *onReceiveFocus;
+	ListenerGroup *onReleaseFocus;
+}
+-initWithRect: (Rect) rect;
 @end
 
 @interface View (TextContext) <TextContext>
