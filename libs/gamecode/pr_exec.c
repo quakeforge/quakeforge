@@ -188,6 +188,11 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 	pr_type_t  *dstParams[MAX_PARMS];
 	pointer_t   paramofs = 0;
 
+	if (pr->pr_trace) {
+		Sys_Printf ("Entering function %s\n",
+					PR_GetString (pr, f->descriptor->s_name));
+	}
+
 	PR_PushFrame (pr);
 
 	if (f->numparms > 0) {
@@ -268,11 +273,23 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 }
 
 static void
-PR_LeaveFunction (progs_t *pr)
+PR_LeaveFunction (progs_t *pr, int to_engine)
 {
 	bfunction_t *f = pr->pr_xfunction;
 
 	PR_PopFrame (pr);
+
+	if (pr->pr_trace) {
+		Sys_Printf ("Leaving function %s\n",
+					PR_GetString (pr, f->descriptor->s_name));
+		if (to_engine) {
+			Sys_Printf ("Returning to engine\n");
+		} else {
+			bfunction_t *rf = pr->pr_xfunction;
+			Sys_Printf ("Returning to function %s\n",
+						PR_GetString (pr, rf->descriptor->s_name));
+		}
+	}
 
 	// restore locals from the stack
 	pr->localstack_used -= f->locals;
@@ -1443,7 +1460,7 @@ op_call:
 			case OP_RETURN_V:
 				pr->pr_xfunction->profile += profile - startprofile;
 				startprofile = profile;
-				PR_LeaveFunction (pr);
+				PR_LeaveFunction (pr, pr->pr_depth == exitdepth);
 				st = pr->pr_statements + pr->pr_xstatement;
 				if (pr->pr_depth == exitdepth) {
 					if (pr->pr_trace && pr->pr_depth <= pr->pr_trace_depth)
