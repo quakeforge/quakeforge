@@ -456,7 +456,7 @@ main (int argc, char **argv)
 		size_t      count = thread_data.size;
 		for (size_t i = 0; i < count; i++) {
 			if (thread_data.a[i]->pr && thread_data.a[i]->main_func) {
-				start_progs_thread (thread_data.a[main_ind]);
+				start_progs_thread (thread_data.a[i]);
 			}
 		}
 		pthread_join (thread_data.a[main_ind]->thread_id, 0);
