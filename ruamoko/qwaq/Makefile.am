@@ -32,6 +32,7 @@ qwaq_app_dat_src= \
 	qwaq-garray.r \
 	qwaq-group.r \
 	qwaq-listener.r \
+	qwaq-proxyview.r \
 	qwaq-rect.r \
 	qwaq-screen.r \
 	qwaq-textcontext.r \
