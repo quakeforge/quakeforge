@@ -323,6 +323,7 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 			def->type_encoding = xdef->type;
 		}
 	}
+	pr->error_string = 0;
 	pr->pr_trace = 0;
 	pr->pr_trace_depth = 0;
 	pr->pr_xfunction = 0;
@@ -485,5 +486,10 @@ PR_Error (progs_t *pr, const char *error, ...)
 	dvsprintf (string, error, argptr);
 	va_end (argptr);
 
+	if (pr->debug_handler) {
+		pr->error_string = string->str;
+		pr->debug_handler (prd_error, pr->debug_data);
+		// not expected to return, but if so, behave as if there was no handler
+	}
 	Sys_Error ("%s: %s", pr->progs_name, string->str);
 }

@@ -62,6 +62,12 @@ PR_RunError (progs_t * pr, const char *error, ...)
 	dvsprintf (string, error, argptr);
 	va_end (argptr);
 
+	if (pr->debug_handler) {
+		pr->error_string = string->str;
+		pr->debug_handler (prd_runerror, pr->debug_data);
+		// not expected to return, but if so, behave as if there was no handler
+	}
+
 	Sys_Printf ("%s\n", string->str);
 
 	PR_DumpState (pr);
@@ -477,12 +483,17 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 		op_b = pr->pr_globals + st->b;
 		op_c = pr->pr_globals + st->c;
 
-		if (pr->pr_trace)
-			PR_PrintStatement (pr, st, 1);
+		if (pr->pr_trace) {
+			if (pr->debug_handler) {
+				pr->debug_handler (prd_trace, pr->debug_data);
+			} else {
+				PR_PrintStatement (pr, st, 1);
+			}
+		}
 
 		if (st->op & OP_BREAK) {
-			if (pr->breakpoint_handler) {
-				pr->breakpoint_handler (pr);
+			if (pr->debug_handler) {
+				pr->debug_handler (prd_breakpoint, pr->debug_data);
 			} else {
 				PR_RunError (pr, "breakpoint hit");
 			}
@@ -1701,8 +1712,12 @@ op_call:
 		if (watch && watch->integer_var != old_val.integer_var) {
 			if (!pr->wp_conditional
 				|| watch->integer_var == pr->wp_val.integer_var) {
-				PR_RunError (pr, "watchpoint hit: %d -> %d",
-							 old_val.integer_var, watch->integer_var);
+				if (pr->debug_handler) {
+					pr->debug_handler (prd_watchpoint, pr->debug_data);
+				} else {
+					PR_RunError (pr, "watchpoint hit: %d -> %d",
+								 old_val.integer_var, watch->integer_var);
+				}
 			}
 			old_val.integer_var = watch->integer_var;
 		}

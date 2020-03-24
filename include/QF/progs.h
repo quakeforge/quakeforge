@@ -1690,6 +1690,15 @@ typedef struct {
 	strref_t   *tstr;				///< Linked list of temporary strings.
 } prstack_t;
 
+typedef enum {
+	prd_none,
+	prd_trace,
+	prd_breakpoint,
+	prd_watchpoint,
+	prd_runerror,
+	prd_error,			// lower level error thann prd_runerror
+} prdebug_t;
+
 struct progs_s {
 	int       (*parse_field) (progs_t *pr, const char *key, const char *value);
 
@@ -1831,7 +1840,9 @@ struct progs_s {
 	/// \name debugging
 	///@{
 	struct prdeb_resources_s *pr_debug_resources;
-	void      (*breakpoint_handler) (progs_t *pr);
+	void      (*debug_handler) (prdebug_t event, void *data);
+	void       *debug_data;
+	const char *error_string;
 	pr_type_t  *watch;
 	int         wp_conditional;
 	pr_type_t   wp_val;
