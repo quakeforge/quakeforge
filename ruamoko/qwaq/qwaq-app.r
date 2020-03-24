@@ -103,7 +103,6 @@ arp_end (void)
 		event.what = qe_none;
 		return self;
 	}
-	[objects handleEvent: event];
 	if (event.what == qe_key
 		&& (event.key.code == '\x18' || event.key.code == '\x11')) {
 		event.what = qe_command;
@@ -114,6 +113,7 @@ arp_end (void)
 			|| event.message.command == qc_error)) {
 		endState = event.message.command;
 	}
+	[objects handleEvent: event];
 	return self;
 }
 @end

@@ -1,3 +1,4 @@
+#include <QF/keys.h>
 #include "color.h"
 #include "qwaq-editor.h"
 
@@ -54,7 +55,17 @@
 				[self scrollRight: 1];
 			}
 		}
+	} else if (event.what == qe_keydown) {
+		switch (event.key.code) {
+			case QFK_PAGEUP:
+				[self scrollUp: ylen];
+				break;
+			case QFK_PAGEDOWN:
+				[self scrollDown: ylen];
+				break;
+		}
 	}
+	event.what = qe_none;
 	return self;
 }
 
