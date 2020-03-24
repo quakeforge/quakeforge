@@ -54,7 +54,8 @@
 static void
 updateScreenCursor (View *view)
 {
-	while ((view.state & sfInFocus) && view.owner) {
+	// XXX this does not work
+/*	while ((view.state & sfInFocus) && view.owner) {
 		View       *owner = (View *) view.owner;
 		if (view.cursor.x >= 0 && view.cursor.x < view.xlen
 			&& view.cursor.y >= 0 && view.cursor.y < view.ylen) {
@@ -74,7 +75,7 @@ updateScreenCursor (View *view)
 		} else {
 			curs_set (0);
 		}
-	}
+	}*/
 }
 
 -draw
