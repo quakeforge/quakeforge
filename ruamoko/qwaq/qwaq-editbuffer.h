@@ -5,8 +5,11 @@
 #include <Object.h>
 
 //FIXME add unsigned to qfcc
+#ifndef unsigned
 #define unsigned int
 #define umax 0x7fffffff
+#endif
+
 #endif//__QFCC__
 
 typedef struct eb_sel_s {

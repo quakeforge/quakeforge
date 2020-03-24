@@ -47,6 +47,7 @@ qwaq_curses_libs= \
 qwaq_curses_SOURCES= \
 	main.c \
 	qwaq-curses.c \
+	qwaq-debug.c \
 	qwaq-editbuffer-bi.c \
 	qwaq-input.c
 qwaq_curses_LDADD= $(qwaq_curses_libs) $(QWAQ_LIBS) \
