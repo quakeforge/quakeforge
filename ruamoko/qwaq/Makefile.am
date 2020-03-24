@@ -6,7 +6,7 @@ QWAQ_INCS=@QWAQ_INCS@
 
 AM_CPPFLAGS=	-I$(top_srcdir)/include $(QWAQ_INCS) $(PTHREAD_CFLAGS)
 
-noinst_PROGRAMS=@QWAQ_TARGETS@ qwaq-app.dat$(EXEEXT)
+noinst_PROGRAMS=@QWAQ_TARGETS@ qwaq-app.dat$(EXEEXT) gcd.dat$(EXEEXT)
 
 QFCC_DEP=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)
 QFCC=$(top_builddir)/tools/qfcc/source/qfcc
@@ -89,6 +89,14 @@ qwaq-app.dat$(EXEEXT): $(qwaq_app_obj) $(QFCC_DEP)
 	$(QLINK) -o $@ $(qwaq_app_obj) -lcsqc -lr
 include $(qwaq_app_dep) # am--include-marker
 r_depfiles_remade += $(qwaq_app_dep)
+
+gcd_dat_SOURCES=gcd.r
+gcd_obj=$(gcd_dat_SOURCES:.r=.o)
+gcd_dep=$(addprefix ./$(DEPDIR)/,$(gcd_obj:.o=.Qo))
+gcd.dat$(EXEEXT): $(gcd_obj) $(QFCC_DEP)
+	$(QLINK) -o $@ $(gcd_obj) -lcsqc -lr
+include $(gcd_dep) # am--include-marker
+r_depfiles_remade += $(gcd_dep)
 
 $(r_depfiles_remade):
 	@$(MKDIR_P) $(@D)
