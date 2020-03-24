@@ -3,7 +3,7 @@
 
 #include "event.h"
 
-enum {
+typedef enum {
 	qe_debug_event = 0x0100,
 } qwaq_debug_messages;
 
