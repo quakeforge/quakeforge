@@ -292,8 +292,10 @@ PR_LeaveFunction (progs_t *pr, int to_engine)
 			Sys_Printf ("Returning to engine\n");
 		} else {
 			bfunction_t *rf = pr->pr_xfunction;
-			Sys_Printf ("Returning to function %s\n",
-						PR_GetString (pr, rf->descriptor->s_name));
+			if (rf) {
+				Sys_Printf ("Returning to function %s\n",
+							PR_GetString (pr, rf->descriptor->s_name));
+			}
 		}
 	}
 
@@ -464,7 +466,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 	st = pr->pr_statements + pr->pr_xstatement;
 
 	if (pr->watch) {
-		old_val = pr->watch;
+		old_val = *pr->watch;
 	}
 
 	while (1) {
@@ -1715,10 +1717,10 @@ op_call:
 					pr->debug_handler (prd_watchpoint, pr->debug_data);
 				} else {
 					PR_RunError (pr, "watchpoint hit: %d -> %d",
-								 old_val.integer_var, watch->integer_var);
+								 old_val.integer_var, pr->watch->integer_var);
 				}
 			}
-			old_val.integer_var = watch->integer_var;
+			old_val.integer_var = pr->watch->integer_var;
 		}
 	}
 exit_program:
