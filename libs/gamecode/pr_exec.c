@@ -1698,11 +1698,14 @@ op_call:
 			default:
 				PR_RunError (pr, "Bad opcode %i", st->op);
 		}
-		if (watch && watch->integer_var != old_val.integer_var
-			&& (!pr->wp_conditional
-				|| watch->integer_var == pr->wp_val.integer_var))
-			PR_RunError (pr, "watchpoint hit: %d -> %d", old_val.integer_var,
-						 watch->integer_var);
+		if (watch && watch->integer_var != old_val.integer_var) {
+			if (!pr->wp_conditional
+				|| watch->integer_var == pr->wp_val.integer_var) {
+				PR_RunError (pr, "watchpoint hit: %d -> %d",
+							 old_val.integer_var, watch->integer_var);
+			}
+			old_val.integer_var = watch->integer_var;
+		}
 	}
 exit_program:
 	pr->pr_argc = 0;
