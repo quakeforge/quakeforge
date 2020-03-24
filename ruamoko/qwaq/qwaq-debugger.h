@@ -18,6 +18,7 @@
 	Editor     *current_file;
 	qdb_target_t debug_target;
 }
+-(qdb_target_t)debug_target;
 -initWithTarget:(qdb_target_t) target;
 -handleDebugEvent;
 @end

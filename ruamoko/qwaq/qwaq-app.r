@@ -6,6 +6,7 @@ int fence;
 #include "color.h"
 #include "qwaq-app.h"
 #include "qwaq-curses.h"
+#include "qwaq-debugger.h"
 #include "qwaq-group.h"
 #include "qwaq-view.h"
 
@@ -49,6 +50,8 @@ arp_end (void)
 	[screen scrollok: 1];
 	[screen clear];
 	wrefresh (stdscr);//FIXME
+
+	debuggers = [[Array array] retain];
 	return self;
 }
 
@@ -69,32 +72,50 @@ arp_end (void)
 	return self;
 }
 
+-(Debugger *)find_debugger:(qdb_target_t) target
+{
+	Debugger   *debugger;
+
+	for (int i = [debuggers count]; i-- > 0; ) {
+		debugger = [debuggers objectAtIndex: i];
+		if ([debugger debug_target].handle == target.handle) {
+			return debugger;
+		}
+	}
+	debugger = [[Debugger alloc] initWithTarget: target];
+	[debuggers addObject: debugger];
+	return debugger;
+}
+
 -handleEvent: (qwaq_event_t *) event
 {
-	if (event.what == qe_resize) {
-		Extent delta;
-		delta.width = event.resize.width - screenSize.width;
-		delta.height = event.resize.height - screenSize.height;
+	switch (event.what) {
+		case qe_resize:
+			Extent delta;
+			delta.width = event.resize.width - screenSize.width;
+			delta.height = event.resize.height - screenSize.height;
 
-		resizeterm (event.resize.width, event.resize.height);
-		[screen resizeTo: {event.resize.width, event.resize.height}];
-		screenSize = [screen size];
-		[objects resize: delta];
-		[screen refresh];
-		event.what = qe_none;
-		return self;
+			resizeterm (event.resize.width, event.resize.height);
+			[screen resizeTo: {event.resize.width, event.resize.height}];
+			screenSize = [screen size];
+			[objects resize: delta];
+			[screen refresh];
+			event.what = qe_none;
+			break;
+		case qe_key:
+			if (event.key.code == '\x18' || event.key.code == '\x11') {
+				endState = event.message.int_val;
+				event.what = qe_none;
+			}
+			break;
+		case qe_debug_event:
+			[[self find_debugger:{event.message.int_val}] handleDebugEvent];
+			event.what = qe_none;
+			break;
 	}
-	if (event.what == qe_key
-		&& (event.key.code == '\x18' || event.key.code == '\x11')) {
-		event.what = qe_command;
-		event.message.int_val = qc_exit;
+	if (event.what != qe_none) {
+		[objects handleEvent: event];
 	}
-	if (event.what == qe_command
-		&& (event.message.int_val == qc_exit
-			|| event.message.int_val == qc_error)) {
-		endState = event.message.int_val;;
-	}
-	[objects handleEvent: event];
 	return self;
 }
 
@@ -112,6 +133,13 @@ arp_end (void)
 
 		arp_end ();
 	} while (!endState);
+	return self;
+}
+
+-addView:(View *)view
+{
+	[objects insertSelected: view];
+	[screen refresh];
 	return self;
 }
 @end

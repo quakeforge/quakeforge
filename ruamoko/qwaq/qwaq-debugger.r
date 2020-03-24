@@ -1,5 +1,6 @@
 #include <Array.h>
 
+#include "qwaq-app.h"
 #include "qwaq-curses.h"
 #include "qwaq-debugger.h"
 #include "qwaq-editor.h"
@@ -7,6 +8,10 @@
 #include "qwaq-window.h"
 
 @implementation Debugger
+-(qdb_target_t)debug_target
+{
+	return debug_target;
+}
 
 -initWithTarget:(qdb_target_t) target
 {
@@ -16,8 +21,8 @@
 	debug_target = target;
 
 	files = [[Array array] retain];
-	//FIXME need a window manager
-	source_window = [[Window alloc] initWithRect: getwrect (stdscr)];
+	source_window = [[Window alloc] initWithRect: {nil, [application size]}];
+	[application addView:source_window];
 
 	return self;
 }
@@ -47,6 +52,7 @@
 	file_proxy = [[ProxyView alloc] initWithView: current_file];
 	//FIXME id<View>?
 	[source_window insertSelected: (View *) file_proxy];
+	[source_window redraw];
 }
 
 -handleDebugEvent

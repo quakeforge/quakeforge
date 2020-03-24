@@ -6,8 +6,10 @@
 #include "event.h"
 #include "qwaq-rect.h"
 
+@class Array;
 @class Group;
 @class TextContext;
+@class View;
 
 @interface QwaqApplication: Object
 {
@@ -19,9 +21,12 @@
 	TextContext *screen;
 	Extent      screenSize;
 	int         autocount;
+
+	Array      *debuggers;
 }
 -(Extent)size;
 -(TextContext *)screen;
+-addView:(View *)view;
 -run;
 @end
 
