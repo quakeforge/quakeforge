@@ -46,7 +46,7 @@ libr_a_AR=$(PAK) -cf
 include $(libr_a_dep) # am--include-marker
 r_depfiles_remade += $(libr_a_dep)
 
-common_src=debug.r system.r
+common_src=debug.r system.r legacy_string.r
 server_src= \
 	crudefile.r entities.r infokey.r message.r \
 	physics.r server.r sv_sound.r

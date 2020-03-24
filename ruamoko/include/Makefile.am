@@ -4,6 +4,7 @@ nobase_pkginclude_HEADERS= \
 	crudefile.h debug.h entities.h infokey.h math.h message.h nq_message.h \
 	physics.h msgbuf.h qfile.h qfs.h qw_message.h qw_physics.h qw_sys.h \
 	server.h sound.h script.h string.h sv_sound.h system.h types.h \
+	legacy_string.h \
 	\
 	draw.h key.h \
 	\

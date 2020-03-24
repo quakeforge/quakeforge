@@ -51,6 +51,48 @@
 #include "rua_internal.h"
 
 static void
+bi_strlen (progs_t *pr)
+{
+	const char	*s;
+
+	s = P_GSTRING (pr, 0);
+	R_INT (pr) = strlen(s);
+}
+
+static void
+bi_sprintf (progs_t *pr)
+{
+	const char *fmt = P_GSTRING (pr, 0);
+	int         count = pr->pr_argc - 1;
+	pr_type_t **args = pr->pr_params + 1;
+	dstring_t  *dstr;
+
+	dstr = dstring_newstr ();
+	PR_Sprintf (pr, dstr, "bi_sprintf", fmt, count, args);
+	RETURN_STRING (pr, dstr->str);
+	dstring_delete (dstr);
+}
+
+static void
+bi_vsprintf (progs_t *pr)
+{
+	const char *fmt = P_GSTRING (pr, 0);
+	__auto_type args = &P_PACKED (pr, pr_va_list_t, 1);
+	pr_type_t  *list_start = PR_GetPointer (pr, args->list);
+	pr_type_t **list = alloca (args->count * sizeof (*list));
+	dstring_t  *dstr;
+
+	for (int i = 0; i < args->count; i++) {
+		list[i] = list_start + i * pr->pr_param_size;
+	}
+
+	dstr = dstring_newstr ();
+	PR_Sprintf (pr, dstr, "bi_vsprintf", fmt, args->count, list);
+	RETURN_STRING (pr, dstr->str);
+	dstring_delete (dstr);
+}
+
+static void
 bi_str_new (progs_t *pr)
 {
 	R_STRING (pr) = PR_NewMutableString (pr);
@@ -147,6 +189,9 @@ bi_str_char (progs_t *pr)
 }
 
 static builtin_t builtins[] = {
+	{"strlen",		bi_strlen,		-1},
+	{"sprintf",		bi_sprintf,		-1},
+	{"vsprintf",	bi_vsprintf,	-1},
 	{"str_new",		bi_str_new,		-1},
 	{"str_free",	bi_str_free,	-1},
 	{"str_copy",	bi_str_copy,	-1},
