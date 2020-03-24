@@ -174,8 +174,8 @@ handle_winch (int sig)
 	winch_arrived = 1;
 }
 
-static void
-add_event (qwaq_resources_t *res, qwaq_event_t *event)
+int
+qwaq_add_event (qwaq_resources_t *res, qwaq_event_t *event)
 {
 	struct timespec timeout;
 	int         merged = 0;
@@ -192,7 +192,7 @@ add_event (qwaq_resources_t *res, qwaq_event_t *event)
 	}
 	pthread_mutex_unlock (&res->event_cond.mut);
 	if (merged) {
-		return;
+		return 0;
 	}
 
 	pthread_mutex_lock (&res->event_cond.mut);
@@ -204,6 +204,7 @@ add_event (qwaq_resources_t *res, qwaq_event_t *event)
 	RB_WRITE_DATA (res->event_queue, event, 1);
 	pthread_cond_broadcast (&res->event_cond.rcond);
 	pthread_mutex_unlock (&res->event_cond.mut);
+	return ret;
 }
 
 static void
@@ -217,7 +218,7 @@ resize_event (qwaq_resources_t *res)
 	event.what = qe_resize;
 	event.resize.width = size.ws_col;
 	event.resize.height = size.ws_row;
-	add_event (res, &event);
+	qwaq_add_event (res, &event);
 }
 
 static void
@@ -228,7 +229,7 @@ key_event (qwaq_resources_t *res, int key, unsigned shift)
 	event.when = Sys_DoubleTime ();
 	event.key.code = key;
 	event.key.shift = shift;
-	add_event (res, &event);
+	qwaq_add_event (res, &event);
 }
 
 static void
@@ -254,7 +255,7 @@ mouse_event (qwaq_resources_t *res, int what, int x, int y)
 		// scroll button event, so always single click
 		event.mouse.click = 1;
 	}
-	add_event (res, &event);
+	qwaq_add_event (res, &event);
 }
 
 static void

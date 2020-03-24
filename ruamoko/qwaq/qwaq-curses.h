@@ -202,6 +202,7 @@ void qwaq_input_init (qwaq_resources_t *res);
 void qwaq_input_shutdown (qwaq_resources_t *res);
 void qwaq_process_input (qwaq_resources_t *res);
 void qwaq_init_timeout (struct timespec *timeout, long time);
+int qwaq_add_event (qwaq_resources_t *res, qwaq_event_t *event);
 void qwaq_init_cond (rwcond_t *cond);
 #endif
 
