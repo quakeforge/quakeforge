@@ -28,7 +28,7 @@
 
 	objects = [[Group alloc] initWithContext: textContext owner: self];
 
-	[self insert: [[TitleBar alloc] initWithTitle:"drag me"]];
+	[self insert: titleBar = [[TitleBar alloc] initWithTitle:""]];
 
 	topDrag         = [[Button alloc] initWithRect: {{2, 0},
 													 {xlen - 4, 1}}];
@@ -71,6 +71,12 @@
 
 	growMode = gfGrowHi;
 	options = ofCanFocus | ofMakeFirst;
+	return self;
+}
+
+-setTitle:(string) title
+{
+	[titleBar setTitle:title];
 	return self;
 }
 

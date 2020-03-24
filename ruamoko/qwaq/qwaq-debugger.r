@@ -52,6 +52,7 @@
 	file_proxy = [[ProxyView alloc] initWithView: current_file];
 	//FIXME id<View>?
 	[source_window insertSelected: (View *) file_proxy];
+	[source_window setTitle: [current_file filename]];
 	[source_window redraw];
 }
 

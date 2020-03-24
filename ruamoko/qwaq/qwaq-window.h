@@ -5,6 +5,7 @@
 
 @class Group;
 @class Button;
+@class TitleBar;
 
 #include "qwaq-draw.h"
 #include "qwaq-rect.h"
@@ -25,8 +26,10 @@
 	Button     *bottomLeftDrag;
 	Button     *bottomRightDrag;
 	Button     *bottomDrag;
+	TitleBar   *titleBar;
 }
 +windowWithRect: (Rect) rect;
+-setTitle:(string) title;
 -setBackground: (int) ch;
 -insert: (View *) view;
 -insertDrawn: (View *) view;
