@@ -496,7 +496,6 @@ formatLine (txtbuffer_t *buffer, unsigned linePtr, unsigned xpos,
 	while (c != '\n' && ptr < buffer->textSize) {
 		c = getChar (buffer, ptr++);
 	}
-	col = ptr >= sels && ptr < sele ? cols : coln;
 	while (length-- > 0) {
 		*dst++ = col | ' ';
 	}

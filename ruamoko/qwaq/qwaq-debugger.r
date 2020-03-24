@@ -50,6 +50,7 @@
 
 	current_file = [self find_file: state.file];
 	file_proxy = [[ProxyView alloc] initWithView: current_file];
+	[[current_file gotoLine:state.line - 1] highlightLine];
 	//FIXME id<View>?
 	[source_window insertSelected: (View *) file_proxy];
 	[source_window setTitle: [current_file filename]];

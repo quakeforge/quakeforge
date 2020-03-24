@@ -29,7 +29,7 @@
 	unsigned lind = base_index;
 	int *lbuf = [linebuffer buffer];
 	for (int y = 0; y < ylen; y++) {
-		lind = [buffer formatLine:lind from:x_index into:lbuf width:xlen
+		lind = [buffer formatLine:lind from:scroll.x into:lbuf width:xlen
 				highlight:selection colors: {COLOR_PAIR (1), COLOR_PAIR(2)}];
 		[textContext blitFromBuffer: linebuffer to: {xpos, ypos + y}
 							from: [linebuffer rect]];
@@ -99,10 +99,10 @@
 
 -scrollLeft:(unsigned) count
 {
-	if (x_index > count) {
-		x_index -= count;
+	if (scroll.x > count) {
+		scroll.x -= count;
 	} else {
-		x_index = 0;
+		scroll.x = 0;
 	}
 	[self redraw];
 	return self;
@@ -110,12 +110,56 @@
 
 -scrollRight:(unsigned) count
 {
-	if (1024 - x_index > count) {
-		x_index += count;
+	if (1024 - scroll.x > count) {
+		scroll.x += count;
 	} else {
-		x_index = 1024;
+		scroll.x = 1024;
 	}
 	[self redraw];
+	return self;
+}
+
+-recenter:(int) force
+{
+	if (!force) {
+		if (cursor.y >= scroll.y && cursor.y - scroll.y < ylen) {
+			return self;
+		}
+	}
+	unsigned target;
+	if (cursor.y < ylen / 2) {
+		target = 0;
+	} else {
+		target = cursor.y - ylen / 2;
+	}
+	if (target > scroll.y) {
+		base_index = [buffer nextLine:base_index :target - scroll.y];
+	} else if (target < scroll.y) {
+		base_index = [buffer prevLine:base_index :scroll.y - target];
+	}
+	scroll.y = target;
+	return self;
+}
+
+-gotoLine:(unsigned) line
+{
+	if (line > cursor.y) {
+		line_index = [buffer nextLine:line_index :line - cursor.y];
+	} else if (line < cursor.y) {
+		line_index = [buffer prevLine:line_index :cursor.y - line];
+	}
+	cursor.y = line;
+	[self recenter: 0];
+	return self;
+}
+
+-highlightLine
+{
+	selection.start = line_index;
+	selection.length = [buffer nextLine: line_index] - line_index;
+	if (!selection.length) {
+		selection.length = [buffer getEOL: line_index] - line_index;
+	}
 	return self;
 }
 

@@ -13,9 +13,9 @@
 	eb_sel_t    selection;
 	unsigned    base_index;		// top left corner
 	unsigned    line_index;		// current line
-	unsigned    x_index;		// horizontal scrolling
 	unsigned    char_index;		// current character
 	unsigned    old_cind;		// previous character
+	Point       scroll;
 	Point       cursor;
 	unsigned    line_count;
 	string      filename;
@@ -26,6 +26,10 @@
 -scrollDown:(unsigned) count;
 -scrollLeft:(unsigned) count;
 -scrollRight:(unsigned) count;
+
+-recenter:(int) force;
+-gotoLine:(unsigned) line;
+-highlightLine;
 @end
 
 #endif//__qwaq_editor_h
