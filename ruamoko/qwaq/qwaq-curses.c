@@ -1862,7 +1862,7 @@ qwaq_print (const char *fmt, va_list args)
 	fflush (logfile);
 }
 
-static void
+void
 qwaq_init_cond (rwcond_t *cond)
 {
 	pthread_cond_init (&cond->rcond, 0);
