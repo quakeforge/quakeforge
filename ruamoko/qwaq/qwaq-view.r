@@ -1,4 +1,5 @@
 #include "qwaq-curses.h"
+#include "qwaq-listener.h"
 #include "qwaq-view.h"
 #include "qwaq-group.h"
 
@@ -6,7 +7,12 @@
 
 -init
 {
-	return [super init];
+	if (!(self = [super init])) {
+		return nil;
+	}
+	onReceiveFocus = [[ListenerGroup alloc] init];
+	onReleaseFocus = [[ListenerGroup alloc] init];
+	return self;
 }
 
 -initWithRect: (Rect) rect
@@ -16,6 +22,8 @@
 	}
 	self.rect = rect;
 	self.absRect = rect;
+	onReceiveFocus = [[ListenerGroup alloc] init];
+	onReleaseFocus = [[ListenerGroup alloc] init];
 	return self;
 }
 
@@ -36,6 +44,11 @@
 - (int) options
 {
 	return options;
+}
+
+- (int) state
+{
+	return state;
 }
 
 static void
@@ -236,7 +249,36 @@ updateScreenCursor (View *view)
 
 -handleEvent: (qwaq_event_t *) event
 {
+	if (event.what & (qe_mousedown | qe_mouseclick)
+		&& options & ofCanFocus && !(state & (sfDisabled | sfInFocus))) {
+		[owner selectView: self];
+		if (!(options & ofFirstClick)) {
+			event.what = qe_none;
+		}
+	}
 	return self;
+}
+
+-takeFocus
+{
+	state |= sfInFocus;
+	return self;
+}
+
+-loseFocus
+{
+	state &= ~sfInFocus;
+	return self;
+}
+
+-(ListenerGroup *) onReceiveFocus
+{
+	return onReceiveFocus;
+}
+
+-(ListenerGroup *) onReleaseFocus
+{
+	return onReleaseFocus;
 }
 
 - (void) onMouseEnter: (Point) pos

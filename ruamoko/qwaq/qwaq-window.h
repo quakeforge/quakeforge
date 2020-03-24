@@ -28,7 +28,9 @@
 }
 +windowWithRect: (Rect) rect;
 -setBackground: (int) ch;
--addView: (View *) view;
+-insert: (View *) view;
+-insertDrawn: (View *) view;
+-insertSelected: (View *) view;
 @end
 
 #endif//__qwaq_window_h

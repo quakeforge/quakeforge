@@ -28,7 +28,7 @@
 
 	objects = [[Group alloc] initWithContext: textContext owner: self];
 
-	[self addView: [[TitleBar alloc] initWithTitle:"drag me"]];
+	[self insert: [[TitleBar alloc] initWithTitle:"drag me"]];
 
 	topDrag         = [[Button alloc] initWithRect: {{2, 0},
 													 {xlen - 4, 1}}];
@@ -46,14 +46,14 @@
 													 {2, 2}}];
 	bottomDrag      = [[Button alloc] initWithRect: {{2, ylen - 1},
 													 {xlen - 4, 1}}];
-	[self addView: [topDrag         setGrowMode: gfGrowHiX]];
-	[self addView: [topLeftDrag     setGrowMode: gfGrowNone]];
-	[self addView: [topRightDrag    setGrowMode: gfGrowX]];
-	[self addView: [leftDrag        setGrowMode: gfGrowHiY]];
-	[self addView: [rightDrag       setGrowMode: gfGrowX | gfGrowHiY]];
-	[self addView: [bottomLeftDrag  setGrowMode: gfGrowY]];
-	[self addView: [bottomRightDrag setGrowMode: gfGrowAll]];
-	[self addView: [bottomDrag      setGrowMode: gfGrowHiX | gfGrowY]];
+	[self insert: [topDrag         setGrowMode: gfGrowHiX]];
+	[self insert: [topLeftDrag     setGrowMode: gfGrowNone]];
+	[self insert: [topRightDrag    setGrowMode: gfGrowX]];
+	[self insert: [leftDrag        setGrowMode: gfGrowHiY]];
+	[self insert: [rightDrag       setGrowMode: gfGrowX | gfGrowHiY]];
+	[self insert: [bottomLeftDrag  setGrowMode: gfGrowY]];
+	[self insert: [bottomRightDrag setGrowMode: gfGrowAll]];
+	[self insert: [bottomDrag      setGrowMode: gfGrowHiX | gfGrowY]];
 
 	[[topDrag         onDrag] addListener: self : @selector(dragWindow:)];
 	[[topLeftDrag     onDrag] addListener: self : @selector(dragWindow:)];
@@ -70,6 +70,7 @@
 	[buf mvaddstr: {0, 2}, "XOX"];
 
 	growMode = gfGrowHi;
+	options = ofCanFocus | ofMakeFirst;
 	return self;
 }
 
@@ -162,9 +163,35 @@
 	return self;
 }
 
--addView: (View *) view
+-takeFocus
+{
+	[super takeFocus];
+	[objects takeFocus];
+	return self;
+}
+
+-loseFocus
+{
+	[super loseFocus];
+	[objects loseFocus];
+	return self;
+}
+
+-insert: (View *) view
 {
 	[objects insert: view];
+	return self;
+}
+
+-insertDrawn: (View *) view
+{
+	[objects insertDrawn: view];
+	return self;
+}
+
+-insertSelected: (View *) view
+{
+	[objects insertSelected: view];
 	return self;
 }
 

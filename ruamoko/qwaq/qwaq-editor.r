@@ -12,6 +12,7 @@
 	line_count = [buffer countLines: {0, [buffer textSize]}];
 	linebuffer = [DrawBuffer buffer: { xlen, 1 }];
 	growMode = gfGrowHi;
+	options = ofCanFocus;
 	return self;
 }
 

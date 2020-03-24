@@ -9,6 +9,7 @@
 #include "qwaq-textcontext.h"
 
 @class Group;
+@class ListenerGroup;
 
 enum {
 	ofCanFocus      = 0x0001,
@@ -68,6 +69,8 @@ enum {
 	int         growMode;
 	int         cursorState;
 	Point       cursor;
+	ListenerGroup *onReceiveFocus;
+	ListenerGroup *onReleaseFocus;
 }
 -initWithRect: (Rect) rect;
 - (void) dealloc;
@@ -84,6 +87,7 @@ enum {
 -(void) releaseMouse;
 
 -(int) options;
+-(int) state;
 
 -setContext: (id<TextContext>) context;
 -draw;
@@ -92,10 +96,13 @@ enum {
 -resize: (Extent) delta;
 -grow: (Extent) delta;
 -handleEvent: (qwaq_event_t *) event;
+-takeFocus;
+-loseFocus;
+-(ListenerGroup *) onReceiveFocus;
+-(ListenerGroup *) onReleaseFocus;
 
 - (void) onMouseEnter: (Point) pos;
 - (void) onMouseLeave: (Point) pos;
-
 
 - (void) refresh;
 - (void) mvprintf: (Point) pos, string fmt, ...;

@@ -19,6 +19,8 @@
 }
 -initWithContext: (id<TextContext>) context owner: (View *) owner;
 -insert: (View *) view;
+-insertDrawn: (View *) view;
+-insertSelected: (View *) view;
 -remove: (View *) view;
 -(Rect) rect;
 -(Point) origin;
@@ -27,6 +29,11 @@
 -redraw;
 -resize: (Extent) delta;
 -handleEvent: (qwaq_event_t *) event;
+-takeFocus;
+-loseFocus;
+-selectNext;
+-selectPrev;
+-selectView: (View *) view;
 -(void) grabMouse;
 -(void) releaseMouse;
 @end

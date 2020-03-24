@@ -58,14 +58,15 @@ arp_end (void)
 	r.extent.width /= 2;
 	r.extent.height /= 2;
 	Window *w;
-	[objects insert: w = [[Window windowWithRect: r] setBackground: COLOR_PAIR (2)]];
+	[objects insertSelected: w = [[Window windowWithRect: r] setBackground: COLOR_PAIR (2)]];
 	r = {{1, 1}, {r.extent.width - 2, r.extent.height - 2}};
-	[w addView: [[Editor alloc] initWithRect: r file: "Makefile"]];
+	[w insertSelected: [[Editor alloc] initWithRect: r file: "Makefile"]];
 	return self;
 }
 
 -run
 {
+	[objects takeFocus];
 	[self draw];
 	do {
 		arp_start ();

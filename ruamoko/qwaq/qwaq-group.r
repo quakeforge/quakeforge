@@ -32,16 +32,129 @@
 	return self;
 }
 
+-insertDrawn: (View *) view
+{
+	[self insert: view];
+	[view draw];
+	return self;
+}
+
+-insertSelected: (View *) view
+{
+	[self insertDrawn: view];
+	[self selectView: view];
+	return self;
+}
+
 -remove: (View *) view
 {
 	int         index = [views indexOfObject: view];
 	if (index != NotFound) {
 		if (focused == index) {
-			focused = -1;
+			[self selectPrev];
+			if (focused == index) {
+				focused = -1;
+			}
 		} else if (focused > index) {
 			focused--;
 		}
 		[views removeObjectAtIndex: index];
+		if (mouse_within == view) {
+			mouse_within = nil;
+		}
+		if (mouse_grabbed == view) {
+			[self releaseMouse];
+		}
+	}
+	return self;
+}
+
+static int
+makeFirst (Group *self, int viewIndex)
+{
+	View       *view = [self.views objectAtIndex: viewIndex];
+
+	[self.views addObject: view];
+	[self.views removeObjectAtIndex: viewIndex];
+	return [self.views count] - 1;
+}
+
+static int
+trySetFocus (Group *self, int viewIndex)
+{
+	View       *view = [self.views objectAtIndex:viewIndex];
+	if (([view state] & (sfDrawn | sfDisabled)) == sfDrawn
+		&& [view options] & ofCanFocus) {
+		if (!self.owner || [self.owner state] & sfInFocus) {
+			if (self.focused >= 0) {
+				[[self.views objectAtIndex: self.focused] loseFocus];
+			}
+			self.focused = viewIndex;
+			if ([view options] & ofMakeFirst) {
+				self.focused = makeFirst (self, viewIndex);
+			}
+			[view takeFocus];
+		}
+		return 1;
+	}
+	return 0;
+}
+
+-takeFocus
+{
+	if (focused >= 0) {
+		[[views objectAtIndex:focused] takeFocus];
+	}
+	return self;
+}
+
+-loseFocus
+{
+	if (focused >= 0) {
+		[[views objectAtIndex:focused] loseFocus];
+	}
+	return self;
+}
+
+-selectNext
+{
+	for (int i = focused + 1; i < [views count]; i++) {
+		if (trySetFocus (self, i)) {
+			return self;
+		}
+	}
+	// hit end, start again at the beginning
+	for (int i = 0; i < focused; i++) {
+		if (trySetFocus (self, i)) {
+			return self;
+		}
+	}
+	// did not find another view that can be focused
+	return self;
+}
+
+-selectPrev
+{
+	for (int i = focused - 1; i >= 0; i--) {
+		if (trySetFocus (self, i)) {
+			return self;
+		}
+	}
+	// hit end, start again at the beginning
+	for (int i = [views count] - 1; i > focused; i++) {
+		if (trySetFocus (self, i)) {
+			return self;
+		}
+	}
+	// did not find another view that can be focused
+	return self;
+}
+
+-selectView:(View *)view
+{
+	int         index = [views indexOfObject: view];
+	if (index != NotFound) {
+		trySetFocus (self, index);
 	}
 	return self;
 }
