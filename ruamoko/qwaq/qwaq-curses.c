@@ -1731,8 +1731,9 @@ bi_i_TextContext__bkgd_ (progs_t *pr)
 static void
 bi_i_TextContext__clear (progs_t *pr)
 {
-	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
-	int         ch = P_INT (pr, 2);
+	__auto_type self = &P_STRUCT (pr, qwaq_textcontext_t, 0);
+	int         window_id = self->window;
+	int         ch = self->background;
 
 	qwaq_werase (pr, window_id, ch);
 }

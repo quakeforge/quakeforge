@@ -20,9 +20,11 @@
 	Extent      screenSize;
 	int         autocount;
 }
+-(Extent)size;
+-(TextContext *)screen;
 -run;
--draw;
--handleEvent: (qwaq_event_t *) event;
 @end
+
+@extern QwaqApplication *application;
 
 #endif//__qwaq_app_h

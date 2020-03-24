@@ -5,13 +5,8 @@ int fence;
 
 #include "color.h"
 #include "qwaq-app.h"
-#include "qwaq-button.h"
 #include "qwaq-curses.h"
-#include "qwaq-editor.h"
 #include "qwaq-group.h"
-#include "qwaq-listener.h"
-#include "qwaq-window.h"
-#include "qwaq-screen.h"
 #include "qwaq-view.h"
 
 static AutoreleasePool *autorelease_pool;
@@ -52,33 +47,19 @@ arp_end (void)
 
 	[screen bkgd: COLOR_PAIR (1)];
 	[screen scrollok: 1];
-	Rect r = {nil, screenSize};
-	r.offset.x = r.extent.width / 4;
-	r.offset.y = r.extent.height / 4;
-	r.extent.width /= 2;
-	r.extent.height /= 2;
-	Window *w;
-	[objects insertSelected: w = [[Window windowWithRect: r] setBackground: COLOR_PAIR (2)]];
-	r = {{1, 1}, {r.extent.width - 2, r.extent.height - 2}};
-	[w insertSelected: [[Editor alloc] initWithRect: r file: "Makefile"]];
+	[screen clear];
+	wrefresh (stdscr);//FIXME
 	return self;
 }
 
--run
+-(Extent)size
 {
-	[objects takeFocus];
-	[self draw];
-	do {
-		arp_start ();
+	return screenSize;
+}
 
-		get_event (&event);
-		if (event.what != qe_none) {
-			[self handleEvent: &event];
-		}
-
-		arp_end ();
-	} while (!endState);
-	return self;
+-(TextContext *)screen
+{
+	return screen;
 }
 
 -draw
@@ -116,17 +97,36 @@ arp_end (void)
 	[objects handleEvent: event];
 	return self;
 }
+
+-run
+{
+	[objects takeFocus];
+	[self draw];
+	do {
+		arp_start ();
+
+		get_event (&event);
+		if (event.what != qe_none) {
+			[self handleEvent: &event];
+		}
+
+		arp_end ();
+	} while (!endState);
+	return self;
+}
 @end
+
+QwaqApplication *application;
 
 int main (int argc, string *argv)
 {
 	fence = 0;
 	//while (!fence) {}
 
-	id app = [[QwaqApplication app] retain];
+	application = [[QwaqApplication app] retain];
 
-	[app run];
-	[app release];
+	[application run];
+	[application release];
 	qwaq_event_t event;
 	get_event (&event);	// XXX need a "wait for queue idle"
 	return 0;
