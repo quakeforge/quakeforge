@@ -20,8 +20,6 @@ enum {
 	ofMakeFirst     = 0x0020,
 	ofTileable      = 0x0040,
 	ofCentered      = 0x0080,
-
-	ofCallHasObject = 0x8000,
 };
 
 enum {
