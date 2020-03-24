@@ -203,9 +203,6 @@ spawn_progs (qwaq_thread_t *thread, progsinit_f *funcs)
 		Sys_Error ("couldn't load %s", name);
 	}
 
-	//pr->pr_trace = 1;
-	//pr->pr_trace_depth = -1;
-
 	PR_PushFrame (pr);
 	if (thread->args.size > 2) {
 		pr_argc = thread->args.size - 1;
@@ -323,16 +320,57 @@ done:
 	return qargs_ind;
 }
 
+static void
+bi_printf (progs_t *pr)
+{
+	const char *fmt = P_GSTRING (pr, 0);
+	int         count = pr->pr_argc - 1;
+	pr_type_t **args = pr->pr_params + 1;
+	dstring_t  *dstr = dstring_new ();
+
+	PR_Sprintf (pr, dstr, "bi_printf", fmt, count, args);
+	if (dstr->str)
+		Sys_Printf (dstr->str, stdout);
+	dstring_delete (dstr);
+}
+
+static void
+bi_traceon (progs_t *pr)
+{
+	pr->pr_trace = true;
+	pr->pr_trace_depth = pr->pr_depth;
+}
+
+static void
+bi_traceoff (progs_t *pr)
+{
+	pr->pr_trace = false;
+}
+
+static builtin_t common_builtins[] = {
+	{"printf",			bi_printf,		-1},
+	{"traceon",			bi_traceon,		-1},
+	{"traceoff",		bi_traceoff,	-1},
+	{},
+};
+
+static void
+common_builtins_init (progs_t *pr)
+{
+	PR_RegisterBuiltins (pr, common_builtins);
+}
+
 static progsinit_f main_app[] = {
 	Key_Progs_Init,
-	PR_Cmds_Init,
 	BI_Init,
+	common_builtins_init,
 	QWAQ_EditBuffer_Init,
 	QWAQ_Debug_Init,
 	0
 };
 
 static progsinit_f target_app[] = {
+	common_builtins_init,
 	QWAQ_DebugTarget_Init,
 	0
 };

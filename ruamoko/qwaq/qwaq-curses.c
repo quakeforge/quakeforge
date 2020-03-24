@@ -1545,20 +1545,6 @@ bi_initialize (progs_t *pr)
 }
 
 static void
-bi_printf (progs_t *pr)
-{
-	const char *fmt = P_GSTRING (pr, 0);
-	int         count = pr->pr_argc - 1;
-	pr_type_t **args = pr->pr_params + 1;
-	dstring_t  *dstr = dstring_new ();
-
-	PR_Sprintf (pr, dstr, "bi_printf", fmt, count, args);
-	if (dstr->str)
-		Sys_Printf (dstr->str, stdout);
-	dstring_delete (dstr);
-}
-
-static void
 bi_c_TextContext__is_initialized (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
@@ -1823,8 +1809,6 @@ static builtin_t builtins[] = {
 	{"mvwblit_line",	bi_mvwblit_line,	-1},
 	{"wresize",			bi_wresize,			-1},
 	{"resizeterm",		bi_resizeterm,		-1},
-
-	{"printf",			bi_printf,	-1},
 
 	{"_c_TextContext__is_initialized",	bi_c_TextContext__is_initialized,  -1},
 	{"_c_TextContext__max_colors",		bi_c_TextContext__max_colors,	   -1},
