@@ -67,20 +67,4 @@ typedef struct qwaq_event_s {
 	};
 } qwaq_event_t;
 
-#ifdef __QFCC__	// don't want C gcc to see this :)
-@protocol HandleEvent
--handleEvent: (struct qwaq_event_s *) event;
-@end
-
-@protocol HandleFocusedEvent <HandleEvent>
--takeFocus;
--loseFocus;
-@end
-
-@protocol HandleMouseEvent <HandleEvent>
--(struct Rect_s *)getRect;
-@end
-
-#endif
-
 #endif//__qwaq_event_h
