@@ -23,7 +23,7 @@ typedef enum {
 	qe_none    = 0x0000,
 	qe_mouse   = 0x001f,
 	qe_key     = 0x0020,
-	qe_system  = 0x01c0,
+	qe_system  = 0x01c0,	//FIXME this isn't very manageable
 	qe_message = 0xfe00,
 
 	qe_focused = qe_key | qe_command,
@@ -52,8 +52,18 @@ typedef struct qwaq_resize_s {
 	int         height;
 } qwaq_resize_t;
 
-typedef struct qwaq_message_s {
-	qwaq_command command;
+typedef union qwaq_message_s {
+	int         int_val;
+	float       float_val;
+	float       vector_val[4];	// vector and quaternion
+	double      double_val;
+#ifdef __QFCC__
+	void       *pointer_val;
+	string      string_val;
+#else
+	pointer_t   pointer_val;
+	string_t    string_val;
+#endif
 } qwaq_message_t;
 
 typedef struct qwaq_event_s {
