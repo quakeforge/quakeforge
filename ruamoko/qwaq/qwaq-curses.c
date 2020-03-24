@@ -1863,7 +1863,7 @@ qwaq_print (const char *fmt, va_list args)
 }
 
 static void
-qwaq_init_cond (cond_t *cond)
+qwaq_init_cond (rwcond_t *cond)
 {
 	pthread_cond_init (&cond->rcond, 0);
 	pthread_cond_init (&cond->wcond, 0);

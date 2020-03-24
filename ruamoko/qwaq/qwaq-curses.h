@@ -157,11 +157,11 @@ typedef struct panel_s {
 	int         window_id;
 } panel_t;
 
-typedef struct cond_s {
+typedef struct rwcond_s {
 	pthread_cond_t rcond;
 	pthread_cond_t wcond;
 	pthread_mutex_t mut;
-} cond_t;
+} rwcond_t;
 
 typedef enum {
 	esc_ground,
@@ -178,13 +178,13 @@ typedef struct qwaq_resources_s {
 	window_t    stdscr;
 	PR_RESMAP (window_t) window_map;
 	PR_RESMAP (panel_t) panel_map;
-	cond_t      event_cond;
+	rwcond_t    event_cond;
 	RING_BUFFER (qwaq_event_t, QUEUE_SIZE) event_queue;
-	cond_t      command_cond;
+	rwcond_t    command_cond;
 	RING_BUFFER (int, COMMAND_QUEUE_SIZE) command_queue;
-	cond_t      results_cond;
+	rwcond_t    results_cond;
 	RING_BUFFER (int, COMMAND_QUEUE_SIZE) results;
-	cond_t      string_id_cond;
+	rwcond_t    string_id_cond;
 	RING_BUFFER (int, STRING_ID_QUEUE_SIZE) string_ids;
 	dstring_t   strings[STRING_ID_QUEUE_SIZE - 1];
 
