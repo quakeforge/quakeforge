@@ -362,6 +362,21 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define G_var(p,o,t)	((p)->pr_globals[o].t##_var)
 
+/** Access a global as an arbitray type.
+
+	More direct than G_STRUCT
+	\par QC type:
+		\c struct etc small enough to fit in a single parameter
+	\param p		pointer to ::progs_t VM struct
+	\param t		C type of the structure
+	\param o		offset into global data space
+	\return			structure lvalue. use & to make a pointer of the
+					appropriate type.
+
+	\hideinitializer
+*/
+#define G_PACKED(p,t,o)	(*(t *) &(p)->pr_globals[o])
+
 /** Access a float global. Can be assigned to.
 
 	\par QC type:
