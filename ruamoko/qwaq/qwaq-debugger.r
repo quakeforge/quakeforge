@@ -1,9 +1,11 @@
 #include <Array.h>
+#include <QF/keys.h>
 
 #include "qwaq-app.h"
 #include "qwaq-curses.h"
 #include "qwaq-debugger.h"
 #include "qwaq-editor.h"
+#include "qwaq-listener.h"
 #include "qwaq-proxyview.h"
 #include "qwaq-window.h"
 
@@ -51,10 +53,44 @@
 	current_file = [self find_file: state.file];
 	file_proxy = [[ProxyView alloc] initWithView: current_file];
 	[[current_file gotoLine:state.line - 1] highlightLine];
+	[[current_file onEvent] addListener: self :@selector(key_event:)];
 	//FIXME id<View>?
 	[source_window insertSelected: (View *) file_proxy];
 	[source_window setTitle: [current_file filename]];
 	[source_window redraw];
+}
+
+-(void) show_line
+{
+	qdb_state_t state = qdb_get_state (debug_target);
+	Editor     *file = [self find_file: state.file];
+
+	printf ("%s:%d\n", state.file, state.line);
+	if (current_file != file) {
+		[[current_file onEvent] removeListener:self :@selector(key_event:)];
+		[file_proxy setView:file];
+		[[file onEvent] addListener:self :@selector(key_event:)];
+		[source_window setTitle: [file filename]];
+		current_file = file;
+	}
+	[[current_file gotoLine:state.line - 1] highlightLine];
+	[source_window redraw];
+}
+
+-(void)key_event: (ed_event_t *)_event
+{
+	qwaq_event_t *event = _event.event;
+	if (event.what == qe_keydown) {
+		switch (event.key.code) {
+			case QFK_F7:
+				qdb_set_trace (debug_target, 1);
+				qdb_continue (debug_target);
+				break;
+			default:
+				return;
+		}
+	}
+	event.what = qe_none;
 }
 
 -handleDebugEvent
@@ -62,6 +98,7 @@
 	if (!file_proxy) {
 		[self setup];
 	}
+	[self show_line];
 	return self;
 }
 
