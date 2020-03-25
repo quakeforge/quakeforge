@@ -4,7 +4,15 @@
 #include "qwaq-editbuffer.h"
 #include "qwaq-view.h"
 
+@class Editor;
 @class EditBuffer;
+@class ListenerGroup;
+
+// Data sent to onKeyEvent listeners
+typedef struct ed_event_s {
+	Editor     *editor;
+	struct qwaq_event_s *event;
+} ed_event_t;
 
 @interface Editor : View
 {
@@ -19,8 +27,11 @@
 	Point       cursor;
 	unsigned    line_count;
 	string      filename;
+	ListenerGroup *onEvent;
+	ed_event_t  _event;
 }
 -initWithRect:(Rect) rect file:(string) filename;
+-(ListenerGroup *)onEvent;
 -(string)filename;
 -scrollUp:(unsigned) count;
 -scrollDown:(unsigned) count;

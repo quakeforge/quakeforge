@@ -1,6 +1,7 @@
 #include <QF/keys.h>
 #include "color.h"
 #include "qwaq-editor.h"
+#include "qwaq-listener.h"
 
 @implementation Editor
 
@@ -15,7 +16,13 @@
 	linebuffer = [DrawBuffer buffer: { xlen, 1 }];
 	growMode = gfGrowHi;
 	options = ofCanFocus;
+	onEvent = [[ListenerGroup alloc] init];
 	return self;
+}
+
+-(ListenerGroup *)onEvent
+{
+	return onEvent;
 }
 
 -(string)filename
@@ -46,6 +53,10 @@
 
 -handleEvent:(qwaq_event_t *) event
 {
+	// give any listeners a chance to override or extend event handling
+	_event.editor = self;
+	_event.event = event;
+	[onEvent respond: &_event];
 	if (event.what & qe_mouse) {
 		if (event.what == qe_mouseclick) {
 			if (event.mouse.buttons & (1 << 3)) {
