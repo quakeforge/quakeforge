@@ -640,10 +640,14 @@ process_commands (qwaq_resources_t *res)
 		ret = pthread_cond_timedwait (&res->command_cond.rcond,
 									  &res->command_cond.mut, &timeout);
 	}
-	pthread_mutex_unlock (&res->command_cond.mut);
-
+	// The mutex is unlocked at the top of the loop and locked again
+	// (for broadcast) at the bottom, then finally unlocked after the loop.
+	// It should be only the data availability check that's not threadsafe
+	// as the mutex is not released until after the data has been written to
+	// the buffer.
 	while ((avail = RB_DATA_AVAILABLE (res->command_queue)) >= 2
 		   && avail >= (len = RB_PEEK_DATA (res->command_queue, 1))) {
+		pthread_mutex_unlock (&res->command_cond.mut);
 		dump_command (res, len);
 		qwaq_commands cmd = RB_PEEK_DATA (res->command_queue, 0);
 		switch (cmd) {
@@ -738,8 +742,10 @@ process_commands (qwaq_resources_t *res)
 		pthread_mutex_lock (&res->command_cond.mut);
 		RB_DROP_DATA (res->command_queue, len);
 		pthread_cond_broadcast (&res->command_cond.wcond);
-		pthread_mutex_unlock (&res->command_cond.mut);
+		// unlocked at top of top if there's more data, otherwise just after
+		// the loop
 	}
+	pthread_mutex_unlock (&res->command_cond.mut);
 }
 
 static int
