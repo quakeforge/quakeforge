@@ -95,39 +95,39 @@
 	Point       delta = [sender delta];
 	Point       dp = nil;
 	Point       ds = nil;
-	Extent      bounds = [owner size];
+	Extent      b = [owner size];
 
 	if (sender == topDrag) {
-		dp.x = bound (0, xpos + delta.x, bounds.width - xlen) - xpos;
-		dp.y = bound (0, ypos + delta.y, bounds.height - ylen) - ypos;
+		dp.x = bound (0, xpos + delta.x, b.width  - xlen) - xpos;
+		dp.y = bound (0, ypos + delta.y, b.height - ylen) - ypos;
 	} else if (sender == topLeftDrag) {
-		dp.x = bound (0, xpos + delta.x, xpos + xlen - 1) - xpos;
-		dp.y = bound (0, ypos + delta.y, ypos + ylen - 1) - ypos;
-		ds.x = bound (1, xlen - delta.x, bounds.width - xpos) - xlen;
-		ds.y = bound (1, ylen - delta.y, bounds.width - ypos) - ylen;
+		dp.x = bound (0, xpos + delta.x, xpos     + xlen - delta.x - 1) - xpos;
+		dp.y = bound (0, ypos + delta.y, ypos     + ylen - delta.y - 1) - ypos;
+		ds.x = bound (1, xlen - delta.x, b.width  - xpos - delta.x) - xlen;
+		ds.y = bound (1, ylen - delta.y, b.height - ypos - delta.y) - ylen;
 	} else if (sender == topRightDrag) {
-		dp.y = bound (0, ypos + delta.y, ypos + ylen - 1) - ypos;
-		ds.x = bound (1, xlen + delta.x, bounds.width - xpos) - xlen;
-		ds.y = bound (1, ylen - delta.y, bounds.width - ypos) - ylen;
+		dp.y = bound (0, ypos + delta.y, ypos     + ylen - delta.y - 1) - ypos;
+		ds.x = bound (1, xlen + delta.x, b.width  - xpos) - xlen;
+		ds.y = bound (1, ylen - delta.y, b.height - ypos - delta.y) - ylen;
 	} else if (sender == leftDrag) {
-		dp.x = bound (0, xpos + delta.x, xpos + xlen - 1) - xpos;
-		ds.x = bound (1, xlen - delta.x, bounds.width - xpos) - xlen;
+		dp.x = bound (0, xpos + delta.x, xpos     + xlen - delta.x - 1) - xpos;
+		ds.x = bound (1, xlen - delta.x, b.width  - xpos - delta.x) - xlen;
 	} else if (sender == rightDrag) {
-		ds.x = bound (1, xlen + delta.x, bounds.width - xpos) - xlen;
+		ds.x = bound (1, xlen + delta.x, b.width  - xpos) - xlen;
 	} else if (sender == bottomLeftDrag) {
-		dp.x = bound (0, xpos + delta.x, xpos + xlen - 1) - xpos;
-		ds.x = bound (1, xlen - delta.x, bounds.width - xpos) - xlen;
-		ds.y = bound (1, ylen + delta.y, bounds.width - ypos) - ylen;
+		dp.x = bound (0, xpos + delta.x, xpos     + xlen - delta.x - 1) - xpos;
+		ds.x = bound (1, xlen - delta.x, b.width  - xpos) - xlen;
+		ds.y = bound (1, ylen + delta.y, b.height - ypos) - ylen;
 	} else if (sender == bottomRightDrag) {
-		ds.x = bound (1, xlen + delta.x, bounds.width - xpos) - xlen;
-		ds.y = bound (1, ylen + delta.y, bounds.width - ypos) - ylen;
+		ds.x = bound (1, xlen + delta.x, b.width  - xpos) - xlen;
+		ds.y = bound (1, ylen + delta.y, b.height - ypos) - ylen;
 	} else if (sender == bottomDrag) {
-		ds.y = bound (1, ylen + delta.y, bounds.width - ypos) - ylen;
+		ds.y = bound (1, ylen + delta.y, b.height - ypos) - ylen;
 	}
 	int save_state = state;
 	state &= ~sfDrawn;
-	[self move: dp];
 	[self resize: {ds.x, ds.y}];
+	[self move: dp];
 	state = save_state;
 	[self redraw];
 }
