@@ -116,7 +116,7 @@
 		ds.x = bound (1, xlen + delta.x, b.width  - xpos) - xlen;
 	} else if (sender == bottomLeftDrag) {
 		dp.x = bound (0, xpos + delta.x, xpos     + xlen - delta.x - 1) - xpos;
-		ds.x = bound (1, xlen - delta.x, b.width  - xpos) - xlen;
+		ds.x = bound (1, xlen - delta.x, b.width  - xpos - delta.x) - xlen;
 		ds.y = bound (1, ylen + delta.y, b.height - ypos) - ylen;
 	} else if (sender == bottomRightDrag) {
 		ds.x = bound (1, xlen + delta.x, b.width  - xpos) - xlen;
