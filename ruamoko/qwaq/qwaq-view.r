@@ -220,6 +220,13 @@ updateScreenCursor (View *view)
 	return self;
 }
 
+-move:(Point)dpos andResize:(Extent)dsize
+{
+	[self move: dpos];
+	[self resize: dsize];
+	return self;
+}
+
 -grow: (Extent) delta
 {
 	Point       dpos = {};
@@ -241,8 +248,7 @@ updateScreenCursor (View *view)
 	}
 	int save_state = state;
 	state &= ~sfDrawn;
-	[self move: dpos];
-	[self resize: dsize];
+	[self move: dpos andResize: dsize];
 	state = save_state;
 	[self redraw];
 	return self;

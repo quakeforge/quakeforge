@@ -65,6 +65,7 @@ enum {
 -redraw;
 -move: (Point) delta;
 -resize: (Extent) delta;
+-move:(Point)dpos andResize:(Extent)dsize;
 -grow: (Extent) delta;
 -handleEvent: (qwaq_event_t *) event;
 -takeFocus;

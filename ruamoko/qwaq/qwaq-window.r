@@ -126,14 +126,37 @@
 	}
 	int save_state = state;
 	state &= ~sfDrawn;
-	[self resize: {ds.x, ds.y}];
-	[self move: dp];
+	[self move:dp andResize:{ds.x, ds.y}];
 	state = save_state;
 	[self redraw];
 }
 
 -setContext: (id<TextContext>) context
 {
+	return self;
+}
+
+-move:(Point)dpos andResize:(Extent)dsize
+{
+	int save_state = state;
+	state &= ~sfDrawn;
+
+	Point pos = self.pos;
+	Extent size = self.size;
+	[super resize: dsize];
+	[super move: dpos];
+	// need to move the panel both before and after the resize to avoid
+	// HoM effects or window/panel possition errors
+	move_panel (panel, xpos, ypos);
+	[(id)textContext resizeTo: self.size];
+	replace_panel (panel, [(id)textContext window]);
+	move_panel (panel, xpos, ypos);
+
+	dsize = {self.size.width - size.width, self.size.height - size.height};
+	[objects resize:dsize];
+
+	state = save_state;
+	[self redraw];
 	return self;
 }
 
