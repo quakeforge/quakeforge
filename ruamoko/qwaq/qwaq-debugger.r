@@ -79,8 +79,12 @@
 
 -(void)key_event: (ed_event_t *)_event
 {
+	Editor     *file = _event.editor;
 	qwaq_event_t *event = _event.event;
-	if (event.what == qe_keydown) {
+	if (event.what == qe_mouseclick) {
+		printf ("%s\n", [file getWordAt: {event.mouse.x, event.mouse.y}]);
+		[source_window redraw];
+	} else if (event.what == qe_keydown) {
 		switch (event.key.code) {
 			case QFK_F7:
 				qdb_set_trace (debug_target, 1);

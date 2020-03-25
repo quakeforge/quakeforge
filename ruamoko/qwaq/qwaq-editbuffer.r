@@ -26,6 +26,7 @@
 - (unsigned) getEOL: (unsigned) linePtr = #0;
 - (unsigned) getBOT = #0;
 - (unsigned) getEOT = #0;
+- (string) readString: (eb_sel_t) selection = #0;
 
 - (unsigned) countLines: (eb_sel_t) selection = #0;
 - (eb_sel_t) search: (eb_sel_t) selection

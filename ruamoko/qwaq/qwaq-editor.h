@@ -41,6 +41,7 @@ typedef struct ed_event_s {
 -recenter:(int) force;
 -gotoLine:(unsigned) line;
 -highlightLine;
+-(string)getWordAt:(Point) pos;	// view relative coordinates
 @end
 
 #endif//__qwaq_editor_h

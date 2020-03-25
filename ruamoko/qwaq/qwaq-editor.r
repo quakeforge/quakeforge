@@ -51,38 +51,57 @@
 	return self;
 }
 
--handleEvent:(qwaq_event_t *) event
+static int handleEvent (Editor *self, qwaq_event_t *event)
 {
-	// give any listeners a chance to override or extend event handling
-	_event.editor = self;
-	_event.event = event;
-	[onEvent respond: &_event];
 	if (event.what & qe_mouse) {
 		if (event.what == qe_mouseclick) {
 			if (event.mouse.buttons & (1 << 3)) {
 				[self scrollUp: 1];
+				return 1;
 			}
 			if (event.mouse.buttons & (1 << 4)) {
 				[self scrollDown: 1];
+				return 1;
 			}
 			if (event.mouse.buttons & (1 << 5)) {
 				[self scrollLeft: 1];
+				return 1;
 			}
 			if (event.mouse.buttons & (1 << 6)) {
 				[self scrollRight: 1];
+				return 1;
 			}
 		}
 	} else if (event.what == qe_keydown) {
 		switch (event.key.code) {
 			case QFK_PAGEUP:
-				[self scrollUp: ylen];
-				break;
+				[self scrollUp: self.ylen];
+				return 1;
 			case QFK_PAGEDOWN:
-				[self scrollDown: ylen];
-				break;
+				[self scrollDown: self.ylen];
+				return 1;
 		}
 	}
-	event.what = qe_none;
+	return 0;
+}
+
+-handleEvent:(qwaq_event_t *) event
+{
+	// give any listeners a chance to override or extend event handling
+	_event.editor = self;
+	_event.event = event;
+	if (event.what & qe_positional) {
+		event.mouse.x -= xpos;
+		event.mouse.y -= ypos;
+	}
+	[onEvent respond: &_event];
+	if (handleEvent (self, event)) {
+		event.what = qe_none;
+	}
+	if (event.what & qe_positional) {
+		event.mouse.x += xpos;
+		event.mouse.y += ypos;
+	}
 	return self;
 }
 
@@ -172,6 +191,18 @@
 		selection.length = [buffer getEOL: line_index] - line_index;
 	}
 	return self;
+}
+
+-(string)getWordAt:(Point) pos
+{
+	if (pos.x < 0 || pos.y < 0 || pos.x >= xlen || pos.y >= ylen) {
+		return nil;
+	}
+	pos.x += scroll.x;
+	unsigned lind = [buffer nextLine:base_index :pos.y];
+	unsigned cind = [buffer charPtr:lind at:pos.x];
+	eb_sel_t word = [buffer getWord: cind];
+	return [buffer readString:word];
 }
 
 @end

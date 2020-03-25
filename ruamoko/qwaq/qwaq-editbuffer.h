@@ -49,6 +49,7 @@ typedef struct eb_color_s {
 - (unsigned) getEOL: (unsigned) linePtr;
 - (unsigned) getBOT;
 - (unsigned) getEOT;
+- (string) readString: (eb_sel_t) selection;
 
 - (unsigned) countLines: (eb_sel_t) selection;
 - (eb_sel_t) search: (eb_sel_t) selection

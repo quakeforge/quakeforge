@@ -277,6 +277,25 @@ getEOL (txtbuffer_t *buffer, unsigned ptr)
 	return ptr;
 }
 
+static always_inline void
+readString (txtbuffer_t *buffer, eb_sel_t *sel, char *str)
+{
+	unsigned    start = sel->start;
+	unsigned    length = sel->length;
+	unsigned    end = sel->start + sel->length;
+	const char *ptr = buffer->text + spanGap (buffer, start);
+	if ((start < buffer->gapOffset && end <= buffer->gapOffset)
+		|| start > buffer->gapOffset) {
+		memcpy (str, ptr, length);
+	} else {
+		length = buffer->gapOffset - start;
+		memcpy (str, ptr, length);
+		str += length;
+		ptr += length + buffer->gapOffset;
+		memcpy (str, ptr, sel->length - length);
+	}
+}
+
 static always_inline unsigned
 getBOL (txtbuffer_t *buffer, unsigned ptr)
 {
@@ -774,6 +793,21 @@ bi_i_EditBuffer__getEOT (progs_t *pr)
 }
 
 static void
+bi_i_EditBuffer__readString_ (progs_t *pr)
+{
+	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
+	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
+	__auto_type selection = &P_PACKED (pr, eb_sel_t, 2);
+
+	char       *str = alloca (selection->length + 1);
+	str[selection->length] = 0;
+	readString (buffer->txtbuffer, selection, str);
+
+	RETURN_STRING (pr, str);
+}
+
+static void
 bi_i_EditBuffer__countLines_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
@@ -901,6 +935,7 @@ static builtin_t builtins[] = {
 	{"_i_EditBuffer__getEOL_",			bi_i_EditBuffer__getEOL_,		-1},
 	{"_i_EditBuffer__getBOT",			bi_i_EditBuffer__getBOT,		-1},
 	{"_i_EditBuffer__getEOT",			bi_i_EditBuffer__getEOT,		-1},
+	{"_i_EditBuffer__readString_",		bi_i_EditBuffer__readString_,	-1},
 	{"_i_EditBuffer__countLines_",		bi_i_EditBuffer__countLines_,	-1},
 	{"_i_EditBuffer__search_for_direction_",
 								bi_i_EditBuffer__search_for_direction_,	-1},
