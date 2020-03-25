@@ -4,9 +4,8 @@
 #ifdef __QFCC__
 #include <Object.h>
 
-//FIXME add unsigned to qfcc
-#ifndef unsigned
-#define unsigned int
+//FIXME finish unsigned in qfcc
+#ifndef umax
 #define umax 0x7fffffff
 #endif
 
