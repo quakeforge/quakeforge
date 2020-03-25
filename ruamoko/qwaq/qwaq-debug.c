@@ -294,6 +294,150 @@ qdb_get_state (progs_t *pr)
 	R_PACKED (pr, qdb_state_t) = state;
 }
 
+static void
+qdb_get_data (progs_t *pr)
+{
+	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
+	pointer_t   handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+	progs_t    *tpr = target->pr;
+	pointer_t   srcoff = P_POINTER (pr, 1);
+	unsigned    length = P_UINT (pr, 2);
+	pointer_t   dstoff = P_POINTER(pr, 3);
+
+	pr_type_t  *src = PR_GetPointer(tpr, srcoff);
+	pr_type_t  *dst = PR_GetPointer(pr, dstoff);
+
+	if (srcoff >= tpr->globals_size || srcoff + length >= tpr->globals_size) {
+		R_INT (pr) = -1;
+		return;
+	}
+	if (dstoff >= pr->globals_size || dstoff + length >= pr->globals_size) {
+		R_INT (pr) = -1;
+		return;
+	}
+	memcpy (dst, src, length * sizeof (pr_type_t));
+	R_INT (pr) = 0;
+}
+
+static void
+qdb_find_global (progs_t *pr)
+{
+	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
+	pointer_t   handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+	progs_t    *tpr = target->pr;
+	const char *name = P_GSTRING (pr, 1);
+	pr_def_t   *def = PR_FindGlobal (tpr, name);
+
+	if (def) {
+		R_PACKED (pr, qdb_def_t).type_size = (def->size << 16) | def->type;
+		R_PACKED (pr, qdb_def_t).offset = def->ofs;
+		R_PACKED (pr, qdb_def_t).name = def->name;
+		R_PACKED (pr, qdb_def_t).type_encoding = def->type_encoding;
+	} else {
+		memset (&R_PACKED (pr, qdb_def_t), 0, sizeof (qdb_def_t));
+	}
+}
+
+static void
+qdb_find_field (progs_t *pr)
+{
+	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
+	pointer_t   handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+	progs_t    *tpr = target->pr;
+	const char *name = P_GSTRING (pr, 1);
+	pr_def_t   *def = PR_FindField (tpr, name);
+
+	if (def) {
+		R_PACKED (pr, qdb_def_t).type_size = (def->size << 16) | def->type;
+		R_PACKED (pr, qdb_def_t).offset = def->ofs;
+		R_PACKED (pr, qdb_def_t).name = def->name;
+		R_PACKED (pr, qdb_def_t).type_encoding = def->type_encoding;
+	} else {
+		memset (&R_PACKED (pr, qdb_def_t), 0, sizeof (qdb_def_t));
+	}
+}
+
+static void
+qdb_find_function (progs_t *pr)
+{
+	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
+	pointer_t   handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+	progs_t    *tpr = target->pr;
+	const char *name = P_GSTRING (pr, 1);
+	dfunction_t *func = PR_FindFunction (tpr, name);
+
+	R_INT (pr) = 0;
+	if (func) {
+		__auto_type f
+			= (qdb_function_t *) PR_Zone_Malloc (pr, sizeof (qdb_function_t));
+		f->staddr = func->first_statement;
+		f->local_data = func->parm_start;
+		f->local_size = func->locals;
+		f->profile = func->profile;
+		f->name = func->s_name;
+		f->file = func->s_file;
+		f->num_params = func->numparms;
+		R_INT (pr) = PR_SetPointer (pr, f);
+	}
+}
+
+static void
+qdb_find_auxfunction (progs_t *pr)
+{
+	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
+	pointer_t   handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+	progs_t    *tpr = target->pr;
+	const char *name = P_GSTRING (pr, 1);
+	dfunction_t *func = PR_FindFunction (tpr, name);
+	size_t      fnum = func - tpr->pr_functions;
+	pr_auxfunction_t *aux_func = PR_Debug_MappedAuxFunction (tpr, fnum);
+
+	R_INT (pr) = 0;
+	if (aux_func) {
+		__auto_type f
+			= (qdb_auxfunction_t *) PR_Zone_Malloc (pr,
+												sizeof (qdb_auxfunction_t));
+		f->function = aux_func->function;
+		f->source_line = aux_func->source_line;
+		f->line_info = aux_func->line_info;
+		f->local_defs = aux_func->local_defs;
+		f->num_locals = aux_func->num_locals;
+		f->return_type = aux_func->return_type;
+		R_INT (pr) = PR_SetPointer (pr, f);
+	}
+}
+
+static void
+qdb_get_local_defs (progs_t *pr)
+{
+	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
+	pointer_t   handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+	progs_t    *tpr = target->pr;
+	size_t      fnum = P_UINT (pr, 1);
+	pr_auxfunction_t *auxfunc = PR_Debug_MappedAuxFunction (tpr, fnum);
+
+	R_INT (pr) = 0;
+	if (auxfunc) {
+		pr_def_t   *defs = PR_Debug_LocalDefs (tpr, auxfunc);
+		__auto_type qdefs
+			= (qdb_def_t *) PR_Zone_Malloc (pr,
+								auxfunc->num_locals * sizeof (qdb_def_t));
+		for (unsigned i = 0; i < auxfunc->num_locals; i++) {
+			qdefs[i].type_size = (defs[i].size << 16) | defs[i].type;
+			qdefs[i].offset = defs[i].ofs;
+			qdefs[i].name = defs[i].name;
+			qdefs[i].type_encoding = defs[i].type_encoding;
+		}
+		R_INT (pr) = PR_SetPointer (pr, qdefs);
+	}
+}
+
 static builtin_t builtins[] = {
 	{"qdb_set_trace",			qdb_set_trace,			-1},
 	{"qdb_set_breakpoint",		qdb_set_breakpoint,		-1},
@@ -302,6 +446,12 @@ static builtin_t builtins[] = {
 	{"qdb_clear_watchpoint",	qdb_clear_watchpoint,	-1},
 	{"qdb_continue",			qdb_continue,			-1},
 	{"qdb_get_state",			qdb_get_state,			-1},
+	{"qdb_get_data",			qdb_get_data,			-1},
+	{"qdb_find_global",			qdb_find_global,		-1},
+	{"qdb_find_field",			qdb_find_field,			-1},
+	{"qdb_find_function",		qdb_find_function,		-1},
+	{"qdb_find_auxfunction",	qdb_find_auxfunction,	-1},
+	{"qdb_get_local_defs",		qdb_get_local_defs,		-1},
 	{}
 };
 
