@@ -642,14 +642,14 @@ linker_begin (void)
 
 	linker_current_file = dstring_newstr ();
 
-	extern_data_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
-	defined_data_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
+	extern_data_defs = Hash_NewTable (16381, defs_get_key, 0, 0, 0);
+	defined_data_defs = Hash_NewTable (16381, defs_get_key, 0, 0, 0);
 
-	extern_field_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
-	defined_field_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
+	extern_field_defs = Hash_NewTable (16381, defs_get_key, 0, 0, 0);
+	defined_field_defs = Hash_NewTable (16381, defs_get_key, 0, 0, 0);
 
-	extern_type_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
-	defined_type_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
+	extern_type_defs = Hash_NewTable (16381, defs_get_key, 0, 0, 0);
+	defined_type_defs = Hash_NewTable (16381, defs_get_key, 0, 0, 0);
 
 	work_strings = strpool_new ();
 	work_code = codespace_new ();

@@ -162,7 +162,7 @@ bi_Hash_NewTable (progs_t *pr)
 
 	gk = ht->gk ? bi_get_key : 0;
 	f = ht->f ? bi_free : 0;
-	ht->tab = Hash_NewTable (tsize, gk, f, ht);
+	ht->tab = Hash_NewTable (tsize, gk, f, ht, pr->hashlink_freelist);
 	R_INT (pr) = table_index (res, ht);
 }
 

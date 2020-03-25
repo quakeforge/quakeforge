@@ -63,7 +63,7 @@ strpool_new (void)
 {
 	strpool_t  *strpool = calloc (1, sizeof (strpool_t));
 
-	strpool->str_tab = Hash_NewTable (16381, strpool_get_key, 0, strpool);
+	strpool->str_tab = Hash_NewTable (16381, strpool_get_key, 0, strpool, 0);
 	strpool->size = 1;
 	strpool->max_size = 16384;
 	strpool->strings = malloc (strpool->max_size);
@@ -77,7 +77,7 @@ strpool_build (const char *strings, int size)
 	intptr_t    s;
 
 	strpool_t  *strpool = malloc (sizeof (strpool_t));
-	strpool->str_tab = Hash_NewTable (16381, strpool_get_key, 0, strpool);
+	strpool->str_tab = Hash_NewTable (16381, strpool_get_key, 0, strpool, 0);
 	strpool->size = size + (*strings != 0);
 	strpool->max_size = (strpool->size + 16383) & ~16383;
 	strpool->strings = malloc (strpool->max_size);
@@ -131,7 +131,7 @@ save_string (const char *str)
 {
 	char       *s;
 	if (!saved_strings)
-		saved_strings = Hash_NewTable (16381, ss_get_key, 0, 0);
+		saved_strings = Hash_NewTable (16381, ss_get_key, 0, 0, 0);
 	s = Hash_Find (saved_strings, str);
 	if (s)
 		return s;

@@ -600,7 +600,7 @@ Mod_IQMBuildBlendPalette (iqm_t *iqm, int *size)
 	}
 	num_blends = iqm->num_joints;
 
-	blend_hash = Hash_NewTable (1023, 0, 0, 0);
+	blend_hash = Hash_NewTable (1023, 0, 0, 0, 0);
 	Hash_SetHashCompare (blend_hash, blend_get_hash, blend_compare);
 
 	for (i = 0; i < iqm->num_verts; i++) {

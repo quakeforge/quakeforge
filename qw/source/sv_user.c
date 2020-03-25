@@ -2009,7 +2009,7 @@ static builtin_t builtins[] = {
 void
 SV_UserInit (void)
 {
-	ucmd_table = Hash_NewTable (251, ucmds_getkey, ucmds_free, 0);
+	ucmd_table = Hash_NewTable (251, ucmds_getkey, ucmds_free, 0, 0);
 	Hash_SetHashCompare (ucmd_table, ucmd_get_hash, ucmd_compare);
 	PR_RegisterBuiltins (&sv_pr_state, builtins);
 	cl_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, NULL,

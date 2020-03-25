@@ -193,7 +193,8 @@ GIB_Progs_Init (progs_t *pr)
 	PR_Resources_Register (pr, "GIB", res, bi_gib_builtin_clear);
 
 	bi_gib_builtins = Hash_NewTable (1021, bi_gib_builtin_get_key,
-									 bi_gib_builtin_free, 0);
+									 bi_gib_builtin_free, 0,
+									 pr->hashlink_freelist);
 
 	PR_RegisterBuiltins (pr, builtins);
 }

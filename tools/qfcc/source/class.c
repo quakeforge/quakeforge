@@ -192,9 +192,10 @@ add_static_instance (const char *class, def_t *instance_def)
 	static_instance_t *instance = malloc (sizeof (*instance));
 
 	if (!static_instances) {
-		static_instances = Hash_NewTable (1021, static_instance_get_key, 0, 0);
+		static_instances = Hash_NewTable (1021, static_instance_get_key,
+										  0, 0, 0);
 		static_instance_classes = Hash_NewTable (1021, static_instance_get_key,
-												 0, 0);
+												 0, 0, 0);
 	}
 
 	instance->class = save_string (class);
@@ -561,7 +562,7 @@ _get_class (symbol_t *sym, int create)
 	class_t    *c;
 
 	if (!class_hash)
-		class_hash = Hash_NewTable (1021, class_get_key, 0, 0);
+		class_hash = Hash_NewTable (1021, class_get_key, 0, 0, 0);
 	if (sym) {
 		c = Hash_Find (class_hash, sym->name);
 		if (c || !create)
@@ -1272,7 +1273,7 @@ get_category (symbol_t *class_name, const char *category_name, int create)
 	class_t    *class;
 
 	if (!category_hash) {
-		category_hash = Hash_NewTable (1021, 0, 0, 0);
+		category_hash = Hash_NewTable (1021, 0, 0, 0, 0);
 		Hash_SetHashCompare (category_hash,
 				category_get_hash, category_compare);
 	}
@@ -1549,7 +1550,7 @@ get_protocol (const char *name, int create)
 	protocol_t    *p;
 
 	if (!protocol_hash)
-		protocol_hash = Hash_NewTable (1021, protocol_get_key, 0, 0);
+		protocol_hash = Hash_NewTable (1021, protocol_get_key, 0, 0, 0);
 
 	if (name) {
 		p = Hash_Find (protocol_hash, name);

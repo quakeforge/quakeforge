@@ -53,7 +53,8 @@ resource_get_key (const void *r, void *unused)
 VISIBLE void
 PR_Resources_Init (progs_t *pr)
 {
-	pr->resource_hash = Hash_NewTable (1021, resource_get_key, 0, 0);
+	pr->resource_hash = Hash_NewTable (1021, resource_get_key, 0, 0,
+									   pr->hashlink_freelist);
 	pr->resources = 0;
 }
 

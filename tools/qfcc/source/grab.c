@@ -105,8 +105,8 @@ do_grab (const char *token)
 		size_t      i;
 
 		initialized = 1;
-		frame_tab = Hash_NewTable (1021, frame_get_key, frame_free, 0);
-		grab_tab = Hash_NewTable (1021, frame_get_key, 0, 0);
+		frame_tab = Hash_NewTable (1021, frame_get_key, frame_free, 0, 0);
+		grab_tab = Hash_NewTable (1021, frame_get_key, 0, 0, 0);
 		for (i = 0; i < sizeof (grab_list) / sizeof (grab_list[0]); i++)
 			Hash_Add (grab_tab, &grab_list[i]);
 	}

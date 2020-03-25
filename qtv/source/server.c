@@ -541,7 +541,7 @@ void
 Server_Init (void)
 {
 	Sys_RegisterShutdown (server_shutdown, 0);
-	server_hash = Hash_NewTable (61, server_get_key, server_free, 0);
+	server_hash = Hash_NewTable (61, server_get_key, server_free, 0, 0);
 	Cmd_AddCommand ("sv_new", sv_new_f, "Add a new server");
 	Cmd_AddCommand ("sv_del", sv_del_f, "Remove an existing server");
 	Cmd_AddCommand ("sv_list", sv_list_f, "List available servers");

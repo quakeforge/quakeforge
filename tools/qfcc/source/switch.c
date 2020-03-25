@@ -166,7 +166,7 @@ new_switch_block (void)
 	switch_block_t *switch_block = malloc (sizeof (switch_block_t));
 
 	SYS_CHECKMEM (switch_block);
-	switch_block->labels = Hash_NewTable (127, 0, 0, 0);
+	switch_block->labels = Hash_NewTable (127, 0, 0, 0, 0);
 	Hash_SetHashCompare (switch_block->labels, get_hash, compare);
 	switch_block->test = 0;
 	return switch_block;

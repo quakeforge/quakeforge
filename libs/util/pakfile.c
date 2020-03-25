@@ -66,7 +66,7 @@ pack_new (const char *name)
 		free (pack);
 		return 0;
 	}
-	pack->file_hash = Hash_NewTable (1021, pack_get_key, 0, 0);
+	pack->file_hash = Hash_NewTable (1021, pack_get_key, 0, 0, 0);
 	if (!pack->file_hash) {
 		free (pack->filename);
 		free (pack);

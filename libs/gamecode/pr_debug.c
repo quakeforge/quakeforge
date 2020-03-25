@@ -1610,7 +1610,8 @@ PR_Debug_Init (progs_t *pr)
 
 	PR_Resources_Register (pr, "PR_Debug", res, pr_debug_clear);
 	if (!file_hash) {
-		file_hash = Hash_NewTable (1024, file_get_key, file_free, 0);
+		file_hash = Hash_NewTable (1024, file_get_key, file_free, 0,
+								   pr->hashlink_freelist);
 	}
 	PR_AddLoadFunc (pr, PR_LoadDebug);
 }

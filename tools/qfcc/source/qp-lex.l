@@ -248,7 +248,7 @@ keyword_or_id (const char *token)
 
 	if (!keyword_tab) {
 		size_t      i;
-		keyword_tab = Hash_NewTable (1021, keyword_get_key, 0, 0);
+		keyword_tab = Hash_NewTable (1021, keyword_get_key, 0, 0, 0);
 		for (i = 0; i < sizeof (keywords) / sizeof (keywords[0]); i++)
 			Hash_Add (keyword_tab, &keywords[i]);
 	}

@@ -234,17 +234,20 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	if (pr->function_hash) {
 		Hash_FlushTable (pr->function_hash);
 	} else {
-		pr->function_hash = Hash_NewTable (1021, function_get_key, 0, pr);
+		pr->function_hash = Hash_NewTable (1021, function_get_key, 0, pr,
+										   pr->hashlink_freelist);
 	}
 	if (pr->global_hash) {
 		Hash_FlushTable (pr->global_hash);
 	} else {
-		pr->global_hash = Hash_NewTable (1021, var_get_key, 0, pr);
+		pr->global_hash = Hash_NewTable (1021, var_get_key, 0, pr,
+										 pr->hashlink_freelist);
 	}
 	if (pr->field_hash) {
 		Hash_FlushTable (pr->field_hash);
 	} else {
-		pr->field_hash = Hash_NewTable (1021, var_get_key, 0, pr);
+		pr->field_hash = Hash_NewTable (1021, var_get_key, 0, pr,
+										pr->hashlink_freelist);
 	}
 
 // byte swap the lumps

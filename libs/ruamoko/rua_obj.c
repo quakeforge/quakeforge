@@ -2215,10 +2215,14 @@ RUA_Obj_Init (progs_t *pr, int secure)
 	probj_t    *probj = calloc (1, sizeof (*probj));
 
 	probj->pr = pr;
-	probj->selector_hash = Hash_NewTable (1021, selector_get_key, 0, probj);
-	probj->classes = Hash_NewTable (1021, class_get_key, 0, probj);
-	probj->protocols = Hash_NewTable (1021, protocol_get_key, 0, probj);
-	probj->load_methods = Hash_NewTable (1021, 0, 0, probj);
+	probj->selector_hash = Hash_NewTable (1021, selector_get_key, 0, probj,
+										  pr->hashlink_freelist);
+	probj->classes = Hash_NewTable (1021, class_get_key, 0, probj,
+									pr->hashlink_freelist);
+	probj->protocols = Hash_NewTable (1021, protocol_get_key, 0, probj,
+									  pr->hashlink_freelist);
+	probj->load_methods = Hash_NewTable (1021, 0, 0, probj,
+										 pr->hashlink_freelist);
 	probj->msg = dstring_newstr();
 	Hash_SetHashCompare (probj->load_methods, load_methods_get_hash,
 						 load_methods_compare);

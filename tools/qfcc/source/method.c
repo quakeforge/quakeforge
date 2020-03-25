@@ -113,7 +113,8 @@ new_method (type_t *ret_type, param_t *selector, param_t *opt_params)
 	meth->def = 0;
 
 	if (!known_methods)
-		known_methods = Hash_NewTable (1021, method_get_key, method_free, 0);
+		known_methods = Hash_NewTable (1021, method_get_key,
+									   method_free, 0, 0);
 	Hash_Add (known_methods, meth);
 
 	return meth;
@@ -230,7 +231,7 @@ methodset_t *
 new_methodset (void)
 {
 	methodset_t *s = malloc (sizeof (*s));
-	s->tab = Hash_NewTable (31, 0, 0, 0);
+	s->tab = Hash_NewTable (31, 0, 0, 0, 0);
 	Hash_SetHashCompare (s->tab, methodset_get_hash, methodset_compare);
 	return s;
 }
@@ -455,9 +456,9 @@ selector_index (const char *sel_id)
 	selector_t *sel = &_sel;
 
 	if (!sel_hash) {
-		sel_hash = Hash_NewTable (1021, 0, 0, 0);
+		sel_hash = Hash_NewTable (1021, 0, 0, 0, 0);
 		Hash_SetHashCompare (sel_hash, sel_get_hash, sel_compare);
-		sel_index_hash = Hash_NewTable (1021, 0, 0, 0);
+		sel_index_hash = Hash_NewTable (1021, 0, 0, 0, 0);
 		Hash_SetHashCompare (sel_index_hash, sel_index_get_hash,
 							 sel_index_compare);
 	}

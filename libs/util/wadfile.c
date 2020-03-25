@@ -86,7 +86,7 @@ wad_new (const char *name)
 		free (wad);
 		return 0;
 	}
-	wad->lump_hash = Hash_NewTable (1021, 0, 0, 0);
+	wad->lump_hash = Hash_NewTable (1021, 0, 0, 0, 0);
 	if (!wad->lump_hash) {
 		free (wad->filename);
 		free (wad);

@@ -439,10 +439,10 @@ keyword_or_id (char *token)
 	if (!keyword_tab) {
 		size_t      i;
 
-		keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0);
-		qf_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0);
-		at_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0);
-		obj_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0);
+		keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
+		qf_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
+		at_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
+		obj_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
 
 		#define NUMKEYS(_k) (sizeof (_k) / sizeof (_k[0]))
 

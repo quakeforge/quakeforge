@@ -586,7 +586,7 @@ Menu_Init (void)
 
 	PR_Init (&menu_pr_state);
 
-	menu_hash = Hash_NewTable (61, menu_get_key, menu_free, 0);
+	menu_hash = Hash_NewTable (61, menu_get_key, menu_free, 0, 0);
 
 	PR_RegisterBuiltins (&menu_pr_state, builtins);
 

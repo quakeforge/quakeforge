@@ -241,8 +241,8 @@ get_function (const char *name, type_t *type, int overload, int create)
 	overloaded_function_t *func;
 
 	if (!overloaded_functions) {
-		overloaded_functions = Hash_NewTable (1021, ol_func_get_key, 0, 0);
-		function_map = Hash_NewTable (1021, func_map_get_key, 0, 0);
+		overloaded_functions = Hash_NewTable (1021, ol_func_get_key, 0, 0, 0);
+		function_map = Hash_NewTable (1021, func_map_get_key, 0, 0, 0);
 	}
 
 	name = save_string (name);

@@ -1204,7 +1204,7 @@ Client_Init (void)
 {
 	size_t      i;
 
-	ucmd_table = Hash_NewTable (251, ucmds_getkey, 0, 0);
+	ucmd_table = Hash_NewTable (251, ucmds_getkey, 0, 0, 0);
 	for (i = 0; i < sizeof (ucmds) / sizeof (ucmds[0]); i++)
 		Hash_Add (ucmd_table, &ucmds[i]);
 }

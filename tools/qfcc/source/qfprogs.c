@@ -247,7 +247,7 @@ init_qf (void)
 
 	PR_Init (&pr);
 
-	func_tab = Hash_NewTable (1021, 0, 0, 0);
+	func_tab = Hash_NewTable (1021, 0, 0, 0, 0);
 	Hash_SetHashCompare (func_tab, func_hash, func_compare);
 }
 

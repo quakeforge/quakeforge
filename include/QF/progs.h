@@ -1705,6 +1705,7 @@ struct progs_s {
 	int         null_bad;
 	int         no_exec_limit;
 
+	struct hashlink_s **hashlink_freelist;
 	void      (*file_error) (progs_t *pr, const char *path);
 	void     *(*load_file) (progs_t *pr, const char *path, off_t *size);
 	void     *(*allocate_progs_mem) (progs_t *pr, int size);

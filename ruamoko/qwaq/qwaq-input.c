@@ -323,7 +323,10 @@ parse_key (qwaq_resources_t *res)
 {
 	qwaq_key_t *key = Hash_Find (res->key_sequences, res->escbuff.str);
 
+	//Sys_Printf ("parse_key: %s\n", res->escbuff.str + 1);
 	if (key) {
+		//Sys_Printf ("    %d %03x %s\n", key->key, key->shift,
+		//			Key_KeynumToString (key->key));
 		key_event (res, key->key, key->shift);
 	}
 }
@@ -417,7 +420,8 @@ void qwaq_input_init (qwaq_resources_t *res)
 	if (res->key_sequences) {
 		Hash_FlushTable (res->key_sequences);
 	} else {
-		res->key_sequences = Hash_NewTable (127, key_sequence_getkey, 0, 0);
+		res->key_sequences = Hash_NewTable (127, key_sequence_getkey, 0, 0,
+											res->pr->hashlink_freelist);
 	}
 	for (size_t i = 0; i < sizeof (default_keys) / sizeof (default_keys[0]);
 		 i++) {
