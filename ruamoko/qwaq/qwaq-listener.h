@@ -12,7 +12,7 @@
 	IMP         imp;
 }
 -initWithResponder: (id) responder :(SEL)message;
--(void) respond: (id) caller;
+-(void) respond: (void *) caller_data;
 -(BOOL) matchResponder: (id) responder :(SEL)message;
 @end
 
@@ -23,7 +23,7 @@
 -init;
 -addListener: (id) responder :(SEL)message;
 -removeListener: (id) responder :(SEL)message;
--(void) respond: (id) caller;
+-(void) respond: (void *) caller_data;
 @end
 
 #endif//__qwaq_listener_h

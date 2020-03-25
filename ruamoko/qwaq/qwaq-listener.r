@@ -16,9 +16,9 @@
 	return self;
 }
 
--(void)respond: (id) caller
+-(void)respond: (void *) caller_data
 {
-	imp (responder, message, caller);
+	imp (responder, message, caller_data);
 }
 
 -(BOOL) matchResponder: (id) responder :(SEL)message
@@ -58,9 +58,9 @@
 	return self;
 }
 
--(void)respond: (id) caller
+-(void)respond: (void *) caller_data
 {
 	[listeners makeObjectsPerformSelector: @selector (respond:)
-							   withObject: caller];
+							   withObject: caller_data];
 }
 @end
