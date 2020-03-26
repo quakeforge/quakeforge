@@ -1800,7 +1800,7 @@ rua_method_get_imp (progs_t *pr)
 {
 	pr_method_t *method = &P_STRUCT (pr, pr_method_t, 0);
 
-	R_INT (pr) = method->method_imp;
+	R_INT (pr) = method ? method->method_imp : 0;
 }
 
 static void
