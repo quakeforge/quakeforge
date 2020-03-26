@@ -158,7 +158,8 @@ get_window (qwaq_resources_t *res, const char *name, int handle)
 	window_t   *window = window_get (res, handle);
 
 	if (!window || !window->win) {
-		PR_RunError (res->pr, "invalid window passed to %s", name + 5);
+		PR_RunError (res->pr, "invalid window %d passed to %s",
+					 handle, name + 5);
 	}
 	return window;
 }
@@ -1256,7 +1257,7 @@ bi_mvwvprintf (progs_t *pr)
 	const char *fmt = P_GSTRING (pr, 2);
 	__auto_type args = (pr_va_list_t *) &P_POINTER (pr, 3);
 
-	qwaq_mvwvprintf (pr, x, y, window_id, fmt, args);
+	qwaq_mvwvprintf (pr, window_id, x, y, fmt, args);
 }
 
 static void
@@ -1666,9 +1667,9 @@ bi_i_TextContext__mvvprintf_ (progs_t *pr)
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 	Point      *pos = &P_PACKED (pr, Point, 2);
 	const char *fmt = P_GSTRING (pr, 3);
-	__auto_type args = (pr_va_list_t *) &P_POINTER (pr, 4);
+	__auto_type args = &P_PACKED (pr, pr_va_list_t, 4);
 
-	qwaq_mvwvprintf (pr, pos->x, pos->y, window_id, fmt, args);
+	qwaq_mvwvprintf (pr, window_id, pos->x, pos->y, fmt, args);
 }
 
 static void
