@@ -1,5 +1,5 @@
 #include <QF/keys.h>
-#include "color.h"
+#include "qwaq-app.h"
 #include "qwaq-editor.h"
 #include "qwaq-listener.h"
 
@@ -37,7 +37,8 @@
 	int *lbuf = [linebuffer buffer];
 	for (int y = 0; y < ylen; y++) {
 		lind = [buffer formatLine:lind from:scroll.x into:lbuf width:xlen
-				highlight:selection colors: {COLOR_PAIR (1), COLOR_PAIR(2)}];
+				highlight:selection colors: {color_palette[047],
+											 color_palette[007]}];
 		[textContext blitFromBuffer: linebuffer to: {xpos, ypos + y}
 							from: [linebuffer rect]];
 	}

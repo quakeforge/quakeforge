@@ -11,6 +11,8 @@
 @class TextContext;
 @class View;
 
+extern int color_palette[64];
+
 @interface QwaqApplication: Object
 {
 	qwaq_event_t event;

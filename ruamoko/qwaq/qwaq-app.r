@@ -10,6 +10,8 @@ int fence;
 #include "qwaq-group.h"
 #include "qwaq-view.h"
 
+int color_palette[64];
+
 static AutoreleasePool *autorelease_pool;
 static void
 arp_start (void)
@@ -37,16 +39,16 @@ arp_end (void)
 	}
 
 	initialize ();
-	init_pair (1, COLOR_WHITE, COLOR_BLUE);
-	init_pair (2, COLOR_WHITE, COLOR_BLACK);
-	init_pair (3, COLOR_BLACK, COLOR_GREEN);
-	init_pair (4, COLOR_YELLOW, COLOR_RED);
+	for (int i = 1; i < 64; i++) {
+		init_pair (i, i & 0x7, i >> 3);
+		color_palette[i] = COLOR_PAIR (i);
+	}
 
 	screen = [TextContext screen];
 	screenSize = [screen size];
 	objects = [[Group alloc] initWithContext: screen owner: nil];
 
-	[screen bkgd: COLOR_PAIR (1)];
+	[screen bkgd: color_palette[047]];
 	[screen scrollok: 1];
 	[screen clear];
 	wrefresh (stdscr);//FIXME
