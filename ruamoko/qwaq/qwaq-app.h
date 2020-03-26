@@ -32,6 +32,6 @@ extern int color_palette[64];
 -run;
 @end
 
-@extern QwaqApplication *application;
+extern QwaqApplication *application;
 
 #endif//__qwaq_app_h
