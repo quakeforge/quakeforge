@@ -952,6 +952,11 @@ check_precedence (int op, expr_t *e1, expr_t *e2)
 	return 0;
 }
 
+static int is_call (expr_t *e)
+{
+	return e->type == ex_block && e->e.block.is_call;
+}
+
 expr_t *
 binary_expr (int op, expr_t *e1, expr_t *e2)
 {
@@ -964,8 +969,19 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	e1 = convert_vector (e1);
 	// FIXME this is target-specific info and should not be in the
 	// expression tree
+	if ((e1->type == ex_expr || e1->type == ex_uexpr) && e1->e.expr.op == 'A'
+		&& is_call (e1->e.expr.e1)) {
+		// move the alias expression inside the block so the following check
+		// can detect the call and move the temp assignment into the block
+		expr_t     *block = e1->e.expr.e1;
+		e1->e.expr.e1 = block->e.block.result;
+		block->e.block.result = e1;
+		e1 = block;
+	}
 	if (e1->type == ex_block && e1->e.block.is_call
 		&& has_function_call (e2) && e1->e.block.result) {
+		// the temp assignment needs to be insided the block so assignment
+		// code generation doesn't see it when applying right-associativity
 		expr_t    *tmp = new_temp_def_expr (get_type (e1->e.block.result));
 		e = assign_expr (tmp, e1->e.block.result);
 		append_expr (e1, e);
