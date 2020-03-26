@@ -21,6 +21,11 @@
 	imp (responder, message, caller_data);
 }
 
+-(void)respond: (void *) caller_data withObject:(void *)anObject
+{
+	imp (responder, message, caller_data, anObject);
+}
+
 -(BOOL) matchResponder: (id) responder :(SEL)message
 {
 	return self.responder == responder && self.message == message;
@@ -62,5 +67,12 @@
 {
 	[listeners makeObjectsPerformSelector: @selector (respond:)
 							   withObject: caller_data];
+}
+
+-(void)respond: (void *) caller_data withObject:(void *)anObject
+{
+	[listeners makeObjectsPerformSelector: @selector (respond:)
+							   withObject: caller_data
+							   withObject: anObject];
 }
 @end

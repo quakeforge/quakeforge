@@ -13,6 +13,7 @@
 }
 -initWithResponder: (id) responder :(SEL)message;
 -(void) respond: (void *) caller_data;
+-(void) respond: (void *) caller_data withObject:(void *)anObject;
 -(BOOL) matchResponder: (id) responder :(SEL)message;
 @end
 
@@ -24,6 +25,7 @@
 -addListener: (id) responder :(SEL)message;
 -removeListener: (id) responder :(SEL)message;
 -(void) respond: (void *) caller_data;
+-(void) respond: (void *) caller_data withObject:(void *)anObject;
 @end
 
 #endif//__qwaq_listener_h
