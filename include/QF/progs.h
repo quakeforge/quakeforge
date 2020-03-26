@@ -1710,7 +1710,9 @@ typedef enum {
 	prd_trace,
 	prd_breakpoint,
 	prd_watchpoint,
-	prd_exit,			// not sent by VM
+	prd_subenter,
+	prd_subexit,		// current invocation of PR_ExecuteProgram finished
+	prd_terminate,		// not sent by VM
 	prd_runerror,
 	prd_error,			// lower level error thann prd_runerror
 } prdebug_t;

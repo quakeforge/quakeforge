@@ -233,7 +233,7 @@ run_progs (void *data)
 	PR_ExecuteProgram (thread->pr, thread->main_func);
 	PR_PopFrame (thread->pr);
 	if (thread->pr->debug_handler) {
-		thread->pr->debug_handler (prd_exit, 0, thread->pr->debug_data);
+		thread->pr->debug_handler (prd_terminate, 0, thread->pr->debug_data);
 	}
 	thread->return_code = R_INT (thread->pr);
 	return thread;

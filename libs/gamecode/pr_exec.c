@@ -458,6 +458,10 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 	Sys_PushSignalHook (signal_hook, pr);
 	Sys_PushErrorHandler (error_handler, pr);
 
+	if (pr->debug_handler) {
+		pr->debug_handler (prd_subenter, &fnum, pr->debug_data);
+	}
+
 	if (!PR_CallFunction (pr, fnum)) {
 		// called a builtin instead of progs code
 		goto exit_program;
@@ -1723,6 +1727,9 @@ op_call:
 		}
 	}
 exit_program:
+	if (pr->debug_handler) {
+		pr->debug_handler (prd_subexit, 0, pr->debug_data);
+	}
 	pr->pr_argc = 0;
 	Sys_PopErrorHandler ();
 	Sys_PopSignalHook ();
