@@ -274,12 +274,14 @@ updateScreenCursor (View *view)
 -takeFocus
 {
 	state |= sfInFocus;
+	[onReceiveFocus respond:self];
 	return self;
 }
 
 -loseFocus
 {
 	state &= ~sfInFocus;
+	[onReleaseFocus respond:self];
 	return self;
 }
 
