@@ -259,8 +259,15 @@ updateScreenCursor (View *view)
 	return self;
 }
 
+-(ListenerGroup *)onEvent
+{
+	return onEvent;
+}
+
 -handleEvent: (qwaq_event_t *) event
 {
+	// give any listeners a chance to override or extend event handling
+	[onEvent respond:self withObject:event];
 	if (event.what & (qe_mousedown | qe_mouseclick)
 		&& options & ofCanFocus && !(state & (sfDisabled | sfInFocus))) {
 		[owner selectView: self];

@@ -14,12 +14,12 @@
 enum {
 	ofCanFocus      = 0x0001,
 	ofFirstClick    = 0x0002,
-	ofDontDraw      = 0x0004,
-	ofPreProcess    = 0x0008,
-	ofPostProcess   = 0x0010,
-	ofMakeFirst     = 0x0020,
-	ofTileable      = 0x0040,
-	ofCentered      = 0x0080,
+	ofMakeFirst     = 0x0004,
+	ofDontDraw      = 0x0008,
+	ofRelativeEvents= 0x0010,
+
+	ofTileable      = 0x0020,
+	ofCentered      = 0x0040,
 };
 
 enum {
@@ -68,6 +68,7 @@ enum {
 -resize: (Extent) delta;
 -move:(Point)dpos andResize:(Extent)dsize;
 -grow: (Extent) delta;
+-(ListenerGroup *)onEvent;
 -handleEvent: (qwaq_event_t *) event;
 -takeFocus;
 -loseFocus;
@@ -100,7 +101,6 @@ enum {
 		};
 	};
 	Rect        absRect;
-	Point       point;		// can't be local :(
 	Group      *owner;
 	id<TextContext> textContext;
 	int         state;
@@ -110,6 +110,7 @@ enum {
 	Point       cursor;
 	ListenerGroup *onReceiveFocus;
 	ListenerGroup *onReleaseFocus;
+	ListenerGroup *onEvent;
 }
 -initWithRect: (Rect) rect;
 @end

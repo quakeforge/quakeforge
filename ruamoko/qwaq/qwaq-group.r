@@ -245,6 +245,25 @@ find_mouse_view(Group *group, Point pos)
 	return nil;
 }
 
+static void
+handlePositionalEvent (qwaq_event_t *event, View *view)
+{
+	Point       pos = [view origin];
+	int         options = [view options];
+
+	if (options & ofRelativeEvents) {
+		event.mouse.x -= pos.x;
+		event.mouse.y -= pos.y;
+	}
+
+	[view handleEvent: event];
+
+	if (options & ofRelativeEvents) {
+		event.mouse.x += pos.x;
+		event.mouse.y += pos.y;
+	}
+}
+
 -handleEvent: (qwaq_event_t *) event
 {
 	if (event.what & qe_focused) {
@@ -253,7 +272,7 @@ find_mouse_view(Group *group, Point pos)
 		}
 	} else if (event.what & qe_positional) {
 		if (mouse_grabbed) {
-			[mouse_grabbed handleEvent: event];
+			handlePositionalEvent (event, mouse_grabbed);
 		} else {
 			Point       pos = {event.mouse.x, event.mouse.y};
 			View       *mouse_view = find_mouse_view (self, pos);
@@ -263,7 +282,7 @@ find_mouse_view(Group *group, Point pos)
 				mouse_within = mouse_view;
 			}
 			if (mouse_within) {
-				[mouse_within handleEvent: event];
+				handlePositionalEvent (event, mouse_within);
 			}
 		}
 	} else {

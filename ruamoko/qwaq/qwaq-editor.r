@@ -15,14 +15,9 @@
 	line_count = [buffer countLines: {0, [buffer textSize]}];
 	linebuffer = [DrawBuffer buffer: { xlen, 1 }];
 	growMode = gfGrowHi;
-	options = ofCanFocus;
+	options = ofCanFocus | ofRelativeEvents;
 	onEvent = [[ListenerGroup alloc] init];
 	return self;
-}
-
--(ListenerGroup *)onEvent
-{
-	return onEvent;
 }
 
 -(string)filename
@@ -90,18 +85,8 @@ static int handleEvent (Editor *self, qwaq_event_t *event)
 {
 	[super handleEvent: event];
 
-	// give any listeners a chance to override or extend event handling
-	if (event.what & qe_positional) {
-		event.mouse.x -= xpos;
-		event.mouse.y -= ypos;
-	}
-	[onEvent respond:self withObject:event];
 	if (handleEvent (self, event)) {
 		event.what = qe_none;
-	}
-	if (event.what & qe_positional) {
-		event.mouse.x += xpos;
-		event.mouse.y += ypos;
 	}
 	return self;
 }
