@@ -1251,6 +1251,13 @@ void PR_Strings_Init (progs_t *pr);
 */
 qboolean PR_StringValid (progs_t *pr, string_t num) __attribute__((pure));
 
+/** Check if a string is valid and mutable.
+	\param pr		pointer to ::progs_t VM struct
+	\param num		string index to be checked
+	\return			true if the string is valid and mutable, false otherwise
+*/
+qboolean PR_StringMutable (progs_t *pr, string_t num) __attribute__((pure));
+
 /** Convert a string index to a C string.
 	\param pr		pointer to ::progs_t VM struct
 	\param num		string index to be converted

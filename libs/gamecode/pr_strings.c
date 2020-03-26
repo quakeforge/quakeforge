@@ -361,6 +361,17 @@ PR_StringValid (progs_t *pr, string_t num)
 	return get_strref (pr->pr_string_resources, num) != 0;
 }
 
+VISIBLE qboolean
+PR_StringMutable (progs_t *pr, string_t num)
+{
+	strref_t   *sr;
+	if (num >= 0) {
+		return 0;
+	}
+	sr = get_strref (pr->pr_string_resources, num);
+	return  sr && sr->type == str_mutable;
+}
+
 VISIBLE const char *
 PR_GetString (progs_t *pr, string_t num)
 {
