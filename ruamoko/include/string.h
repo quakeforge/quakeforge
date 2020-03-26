@@ -5,7 +5,10 @@
 @extern string sprintf (string fmt, ...);
 @extern string vsprintf (string fmt, @va_list args);
 @extern string str_new (void);
-@extern string str_free (string str);
+@extern void str_free (string str);
+@extern string str_hold (string str);
+@extern int str_valid (string str);
+@extern int str_mutable (string str);
 @extern string str_copy (string dst, string src);
 @extern string str_cat (string dst, string src);
 @extern string str_clear (string str);
