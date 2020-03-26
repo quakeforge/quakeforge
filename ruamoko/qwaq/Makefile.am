@@ -20,8 +20,8 @@ QLINK=$(QFCC) $(QCFLAGS) $(QCLINKFLAGS)
 SUFFIXES=.o .r
 .r.o:
 	$(QCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tqo -c -o $@ $<
-	sed -i -e '1s@:@: $(QFCC_DEP)@' $(DEPDIR)/$*.Tqo
-	$(am__mv) $(DEPDIR)/$*.Tqo $(DEPDIR)/$*.Qo
+	@sed -i -e '1s@:@: $(QFCC_DEP)@' $(DEPDIR)/$*.Tqo
+	@$(am__mv) $(DEPDIR)/$*.Tqo $(DEPDIR)/$*.Qo
 
 qwaq_app_dat_src= \
 	qwaq-app.r \

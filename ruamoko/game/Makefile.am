@@ -30,8 +30,8 @@ STRIP=`echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c`
 SUFFIXES=.o .r
 .r.o:
 	$(QCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tqo -p $(STRIP) -c -o $@ $<
-	sed -i -e '1s@:@: $(QFCC_DEP)@' $(DEPDIR)/$*.Tqo
-	$(am__mv) $(DEPDIR)/$*.Tqo $(DEPDIR)/$*.Qo
+	@sed -i -e '1s@:@: $(QFCC_DEP)@' $(DEPDIR)/$*.Tqo
+	@$(am__mv) $(DEPDIR)/$*.Tqo $(DEPDIR)/$*.Qo
 
 game_src= Axe.r GameEntity.r World.r tempent.r
 

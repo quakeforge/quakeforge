@@ -36,8 +36,8 @@ RANLIB=touch
 SUFFIXES=.o .r
 .r.o:
 	$(QCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tqo -p $(STRIP) -c -o $@ $<
-	sed -i -e '1s@:@: $(QFCC_DEP)@' $(DEPDIR)/$*.Tqo
-	$(am__mv) $(DEPDIR)/$*.Tqo $(DEPDIR)/$*.Qo
+	@sed -i -e '1s@:@: $(QFCC_DEP)@' $(DEPDIR)/$*.Tqo
+	@$(am__mv) $(DEPDIR)/$*.Tqo $(DEPDIR)/$*.Qo
 
 r_depfiles_remade=
 
