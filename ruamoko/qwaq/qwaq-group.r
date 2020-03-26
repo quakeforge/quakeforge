@@ -97,7 +97,7 @@ trySetFocus (Group *self, int viewIndex)
 	View       *view = [self.views objectAtIndex:viewIndex];
 	if (([view state] & (sfDrawn | sfDisabled)) == sfDrawn
 		&& [view options] & ofCanFocus) {
-		if (!self.owner || [self.owner state] & sfInFocus) {
+		if (!self.owner || ([self.owner state] & sfInFocus)) {
 			if (self.focused >= 0) {
 				[[self.views objectAtIndex: self.focused] loseFocus];
 			}
@@ -106,6 +106,8 @@ trySetFocus (Group *self, int viewIndex)
 				self.focused = makeFirst (self, viewIndex);
 			}
 			[view takeFocus];
+		} else {
+			self.focused = viewIndex;
 		}
 		return 1;
 	}
