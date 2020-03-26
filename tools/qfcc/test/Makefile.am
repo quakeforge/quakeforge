@@ -16,12 +16,12 @@ QCOMPILE=$(QFCC) $(QCFLAGS) $(QCPPFLAGS)
 SUFFIXES=.qfo .r .pas
 .r.qfo:
 	$(QCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tqo -c -o $@ $<
-	sed -i -e '1s@:@: $(QFCC_DEP)@' $(DEPDIR)/$*.Tqo
-	$(am__mv) $(DEPDIR)/$*.Tqo $(DEPDIR)/$*.Qo
+	@sed -i -e '1s@:@: $(QFCC_DEP)@' $(DEPDIR)/$*.Tqo
+	@$(am__mv) $(DEPDIR)/$*.Tqo $(DEPDIR)/$*.Qo
 .pas.qfo:
 	$(QCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tqo -c -o $@ $<
-	sed -i -e '1s@:@: $(QFCC_DEP)@' $(DEPDIR)/$*.Tqo
-	$(am__mv) $(DEPDIR)/$*.Tqo $(DEPDIR)/$*.Qo
+	@sed -i -e '1s@:@: $(QFCC_DEP)@' $(DEPDIR)/$*.Tqo
+	@$(am__mv) $(DEPDIR)/$*.Tqo $(DEPDIR)/$*.Qo
 
 QFCC_TEST_LIBS=@QFCC_TEST_LIBS@
 QFCC_TEST_DEPS=@QFCC_TEST_DEPS@
@@ -46,6 +46,7 @@ test_progs_dat=\
 	enum.dat \
 	fordecl.dat \
 	func-expr.dat \
+	func-expr2.dat \
 	func-static.dat \
 	gcd.dat \
 	infloop.dat \
@@ -257,6 +258,15 @@ func-expr.run: Makefile build-run
 	@$(srcdir)/build-run $@
 include ./$(DEPDIR)/func-expr.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/func-expr.Qo
+
+func_expr2_dat_SOURCES=func-expr2.r
+func_expr2_obj=$(func_expr2_dat_SOURCES:.r=.qfo)
+func-expr2.dat$(EXEEXT): $(func_expr2_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(func_expr2_obj)
+func-expr2.run: Makefile build-run
+	@$(srcdir)/build-run $@
+include ./$(DEPDIR)/func-expr2.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/func-expr2.Qo
 
 func_static_dat_SOURCES=func-static.r
 func_static_obj=$(func_static_dat_SOURCES:.r=.qfo)
