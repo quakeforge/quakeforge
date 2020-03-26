@@ -53,7 +53,7 @@
 	current_file = [self find_file: state.file];
 	file_proxy = [[ProxyView alloc] initWithView: current_file];
 	[[current_file gotoLine:state.line - 1] highlightLine];
-	[[current_file onEvent] addListener: self :@selector(key_event:)];
+	[[current_file onEvent] addListener: self :@selector(key_event::)];
 	//FIXME id<View>?
 	[source_window insertSelected: (View *) file_proxy];
 	[source_window setTitle: [current_file filename]];
@@ -74,9 +74,9 @@
 
 	printf ("%s:%d\n", state.file, state.line);
 	if (current_file != file) {
-		[[current_file onEvent] removeListener:self :@selector(key_event:)];
+		[[current_file onEvent] removeListener:self :@selector(key_event::)];
 		[file_proxy setView:file];
-		[[file onEvent] addListener:self :@selector(key_event:)];
+		[[file onEvent] addListener:self :@selector(key_event::)];
 		[source_window setTitle: [file filename]];
 		current_file = file;
 	}
@@ -150,10 +150,10 @@ key_event (Debugger *self, Editor *file, qwaq_event_t *event)
 	return 0;
 }
 
--(void)key_event: (ed_event_t *)event
+-(void)key_event:(Editor *)editor :(qwaq_event_t *)event
 {
-	if (key_event (self, event.editor, event.event)) {
-		event.event.what = qe_none;
+	if (key_event (self, editor, event)) {
+		event.what = qe_none;
 	}
 }
 

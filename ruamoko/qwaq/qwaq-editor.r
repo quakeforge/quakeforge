@@ -91,13 +91,11 @@ static int handleEvent (Editor *self, qwaq_event_t *event)
 	[super handleEvent: event];
 
 	// give any listeners a chance to override or extend event handling
-	_event.editor = self;
-	_event.event = event;
 	if (event.what & qe_positional) {
 		event.mouse.x -= xpos;
 		event.mouse.y -= ypos;
 	}
-	[onEvent respond: &_event];
+	[onEvent respond:self withObject:event];
 	if (handleEvent (self, event)) {
 		event.what = qe_none;
 	}
