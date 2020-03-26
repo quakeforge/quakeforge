@@ -3,9 +3,12 @@
 
 #include "qwaq-view.h"
 
+@class Group;
+
 @interface ProxyView : Object
 {
 	View       *view;
+	Group      *owner;
 }
 -initWithView:(View *) view;
 -setView: (View *) view;

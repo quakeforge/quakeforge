@@ -1,3 +1,4 @@
+#include "qwaq-group.h"
 #include "qwaq-proxyview.h"
 
 @implementation ProxyView
@@ -18,10 +19,15 @@
 	return self;
 }
 
+-setOwner:(Group *)owner
+{
+	self.owner = owner;
+	return [view setOwner:owner];
+}
+
 -setView:(View *) view
 {
 	int         state = [self.view state];
-	id<TextContext> context = [self.view context];
 
 	if (state & sfInFocus) {
 		[self.view loseFocus];
@@ -30,7 +36,7 @@
 	[self.view setContext:nil];
 
 	self.view = view;
-	[view setContext:context];
+	[view setContext:[owner context]];
 	if (state & sfDrawn) {
 		[view draw];
 	}

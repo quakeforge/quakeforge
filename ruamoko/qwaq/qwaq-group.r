@@ -24,6 +24,17 @@
 	[views release];
 }
 
+-(id<TextContext>)context
+{
+	return context;
+}
+
+-setContext: (id<TextContext>) context
+{
+	self.context = context;
+	return self;
+}
+
 -insert: (View *) view
 {
 	[views addObject: view];
