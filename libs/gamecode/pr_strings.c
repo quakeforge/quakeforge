@@ -449,8 +449,8 @@ PR_SetReturnString (progs_t *pr, const char *s)
 	}
 
 	// grab the string ref from the oldest slot, or make a new one if the
-	// slot is empty
-	if ((sr = res->rs_slot->strref)) {
+	// slot is empty or the string has been held
+	if ((sr = res->rs_slot->strref) && sr->type != str_dynamic) {
 		if (sr->type != str_return || sr->rs_slot != res->rs_slot) {
 			PR_Error (pr, "internal string error: %d", __LINE__);
 		}
@@ -593,6 +593,33 @@ PR_NewMutableString (progs_t *pr)
 }
 
 VISIBLE void
+PR_HoldString (progs_t *pr, string_t str)
+{
+	prstr_resources_t *res = pr->pr_string_resources;
+	strref_t   *sr = get_strref (res, str);
+
+	if (sr) {
+		switch (sr->type) {
+			case str_temp:
+			case str_return:
+				break;
+			case str_static:
+			case str_mutable:
+			case str_dynamic:
+				// non-ephemeral string, no-op
+				return;
+			default:
+				PR_Error (pr, "internal string error: %d", __LINE__);
+		}
+		sr->type = str_dynamic;
+		return;
+	}
+	if (!PR_StringValid (pr, str)) {
+		PR_RunError (pr, "attempt to hold invalid string %d", str);
+	}
+}
+
+VISIBLE void
 PR_FreeString (progs_t *pr, string_t str)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
@@ -629,6 +656,11 @@ PR_FreeTempStrings (progs_t *pr)
 
 	for (sr = pr->pr_xtstr; sr; sr = t) {
 		t = sr->next;
+		if (sr->type == str_dynamic) {
+			// the string has been held, so simply remove the ref from the
+			// queue
+			continue;
+		}
 		if (sr->type != str_temp)
 			PR_Error (pr, "internal string error: %d", __LINE__);
 		if (R_STRING (pr) < 0 && string_index (res, sr) == R_STRING (pr)

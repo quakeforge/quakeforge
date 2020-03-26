@@ -1344,6 +1344,18 @@ string_t PR_NewMutableString (progs_t *pr);
 */
 string_t PR_SetDynamicString (progs_t *pr, const char *s);
 
+/** Convert an ephemeral string to a dynamic string.
+
+	Valid strings that are not ephemeral (static, dynamic, mutable) will not
+	be affected, but temp and return strings will be marked dynamic, requiring
+	a call to PR_FreeString to return their memory.
+
+	\param pr		pointer to ::progs_t VM struct
+	\param str		The string to be "held" (made non-ephemeral). Safe to call
+					on any valid string, but affects only ephemeral strings.
+*/
+void PR_HoldString (progs_t *pr, string_t str);
+
 /** Destroy a mutable, dynamic or temporary string.
 	\param pr		pointer to ::progs_t VM struct
 	\param str		string index of the string to be destroyed
