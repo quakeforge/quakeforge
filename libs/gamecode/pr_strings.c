@@ -602,6 +602,7 @@ PR_FreeString (progs_t *pr, string_t str)
 		switch (sr->type) {
 			case str_static:
 			case str_temp:
+			case str_return:
 				return;
 			case str_mutable:
 				dstring_delete (sr->s.dstring);
@@ -609,14 +610,15 @@ PR_FreeString (progs_t *pr, string_t str)
 			case str_dynamic:
 				pr_strfree (pr, sr->s.string);
 				break;
-			case str_return:
 			default:
 				PR_Error (pr, "internal string error: %d", __LINE__);
 		}
 		free_string_ref (res, sr);
 		return;
 	}
-	PR_RunError (pr, "attempt to free invalid string %d", str);
+	if (!PR_StringValid (pr, str)) {
+		PR_RunError (pr, "attempt to free invalid string %d", str);
+	}
 }
 
 VISIBLE void
