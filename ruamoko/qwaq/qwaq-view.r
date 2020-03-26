@@ -206,6 +206,13 @@ updateScreenCursor (View *view)
 	[textContext mvaddch: pos, ch];
 }
 
+- (void) mvaddstr: (Point) pos, string str
+{
+	pos.x += xpos;
+	pos.y += ypos;
+	[textContext mvaddstr: pos, str];
+}
+
 -move: (Point) delta
 {
 	xpos += delta.x;
