@@ -1,5 +1,7 @@
-#include <Array.h>
 #include <QF/keys.h>
+#include <Array.h>
+#include <string.h>
+#include <types.h>
 
 #include "qwaq-app.h"
 #include "qwaq-curses.h"
@@ -118,16 +120,52 @@ update_current_func (Debugger *self, unsigned fnum)
 		return;
 	}
 	qdb_get_data (debug_target, func.local_data, func.local_size, local_data);
-	[locals_view mvprintf:{0,0}, "%d", func.local_size];
-	for (int y = 1; y < [locals_view size].height; y++) {
-		unsigned    ind = (y - 1) * 4;
-		if (ind < func.local_size) {
-			[locals_view mvprintf:{0, y}, "%02x", ind];
-			for (int x = 0; x < 4 && ind < func.local_size; x++, ind++) {
-				[locals_view mvprintf:{x * 9 + 3, y}, "%08x", local_data[ind]];
+	if (!local_defs) {
+		[locals_view mvprintf:{0,0}, "%d", func.local_size];
+		for (int y = 1; y < [locals_view size].height; y++) {
+			unsigned    ind = (y - 1) * 4;
+			if (ind < func.local_size) {
+				[locals_view mvprintf:{0, y}, "%02x", ind];
+				for (int x = 0; x < 4 && ind < func.local_size; x++, ind++) {
+					[locals_view mvprintf:{x * 9 + 3, y}, "%08x",
+										  local_data[ind]];
+				}
+			} else {
+				break;
 			}
-		} else {
-			break;
+		}
+	} else {
+		for (int y = 0; y < [locals_view size].height; y++) {
+			if (y >= aux_func.num_locals) {
+				break;
+			}
+			qdb_def_t *def = local_defs + y;
+			[locals_view mvprintf:{0, y}, "%s",
+								  qdb_get_string (debug_target, def.name)];
+			string      valstr = "--";
+			printf ("def type_size %d\n", def.type_size);
+			switch (def.type_size & 0xffff) {
+				case ev_void:
+				case ev_invalid:
+				case ev_type_count:
+					break;
+				case ev_string:
+				case ev_float:
+				case ev_vector:
+				case ev_entity:
+				case ev_field:
+				case ev_func:
+				case ev_pointer:
+				case ev_quat:
+				case ev_integer:
+				case ev_uinteger:
+				case ev_short:
+				case ev_double:
+					valstr = sprintf ("%d", def.type_size >> 16);
+					break;
+			}
+			int         x = [locals_view size].width - strlen (valstr) - 1;
+			[locals_view mvaddstr:{x, y}, valstr];
 		}
 	}
 	[TextContext refresh];
