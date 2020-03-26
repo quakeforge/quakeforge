@@ -361,15 +361,8 @@ qdb_find_field (progs_t *pr)
 }
 
 static void
-qdb_find_function (progs_t *pr)
+return_function (progs_t *pr, dfunction_t *func)
 {
-	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
-	pointer_t   handle = P_INT (pr, 0);
-	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
-	progs_t    *tpr = target->pr;
-	const char *name = P_GSTRING (pr, 1);
-	dfunction_t *func = PR_FindFunction (tpr, name);
-
 	R_INT (pr) = 0;
 	if (func) {
 		__auto_type f
@@ -386,6 +379,53 @@ qdb_find_function (progs_t *pr)
 }
 
 static void
+qdb_find_function (progs_t *pr)
+{
+	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
+	pointer_t   handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+	progs_t    *tpr = target->pr;
+	const char *name = P_GSTRING (pr, 1);
+	dfunction_t *func = PR_FindFunction (tpr, name);
+
+	return_function (pr, func);
+}
+
+static void
+qdb_get_function (progs_t *pr)
+{
+	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
+	pointer_t   handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+	progs_t    *tpr = target->pr;
+	pr_uint_t   fnum = P_INT (pr, 1);
+	dfunction_t *func = tpr->pr_functions + fnum;
+
+	if (fnum >= tpr->progs->numfunctions) {
+		func = 0;
+	}
+	return_function (pr, func);
+}
+
+static void
+return_auxfunction (progs_t *pr, pr_auxfunction_t *auxfunc)
+{
+	R_INT (pr) = 0;
+	if (auxfunc) {
+		__auto_type f
+			= (qdb_auxfunction_t *) PR_Zone_Malloc (pr,
+												sizeof (qdb_auxfunction_t));
+		f->function = auxfunc->function;
+		f->source_line = auxfunc->source_line;
+		f->line_info = auxfunc->line_info;
+		f->local_defs = auxfunc->local_defs;
+		f->num_locals = auxfunc->num_locals;
+		f->return_type = auxfunc->return_type;
+		R_INT (pr) = PR_SetPointer (pr, f);
+	}
+}
+
+static void
 qdb_find_auxfunction (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
@@ -394,22 +434,26 @@ qdb_find_auxfunction (progs_t *pr)
 	progs_t    *tpr = target->pr;
 	const char *name = P_GSTRING (pr, 1);
 	dfunction_t *func = PR_FindFunction (tpr, name);
-	size_t      fnum = func - tpr->pr_functions;
-	pr_auxfunction_t *aux_func = PR_Debug_MappedAuxFunction (tpr, fnum);
+	pr_uint_t   fnum = func - tpr->pr_functions;
+	pr_auxfunction_t *auxfunc = PR_Debug_MappedAuxFunction (tpr, fnum);
 
-	R_INT (pr) = 0;
-	if (aux_func) {
-		__auto_type f
-			= (qdb_auxfunction_t *) PR_Zone_Malloc (pr,
-												sizeof (qdb_auxfunction_t));
-		f->function = aux_func->function;
-		f->source_line = aux_func->source_line;
-		f->line_info = aux_func->line_info;
-		f->local_defs = aux_func->local_defs;
-		f->num_locals = aux_func->num_locals;
-		f->return_type = aux_func->return_type;
-		R_INT (pr) = PR_SetPointer (pr, f);
+	if (fnum >= tpr->progs->numfunctions) {
+		func = 0;
 	}
+	return_auxfunction (pr, auxfunc);
+}
+
+static void
+qdb_get_auxfunction (progs_t *pr)
+{
+	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
+	pointer_t   handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+	progs_t    *tpr = target->pr;
+	pr_uint_t   fnum = P_UINT (pr, 1);
+	pr_auxfunction_t *auxfunc = PR_Debug_MappedAuxFunction (tpr, fnum);
+
+	return_auxfunction (pr, auxfunc);
 }
 
 static void
@@ -419,7 +463,7 @@ qdb_get_local_defs (progs_t *pr)
 	pointer_t   handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
-	size_t      fnum = P_UINT (pr, 1);
+	pr_uint_t   fnum = P_UINT (pr, 1);
 	pr_auxfunction_t *auxfunc = PR_Debug_MappedAuxFunction (tpr, fnum);
 
 	R_INT (pr) = 0;
@@ -450,7 +494,9 @@ static builtin_t builtins[] = {
 	{"qdb_find_global",			qdb_find_global,		-1},
 	{"qdb_find_field",			qdb_find_field,			-1},
 	{"qdb_find_function",		qdb_find_function,		-1},
+	{"qdb_get_function",		qdb_get_function,		-1},
 	{"qdb_find_auxfunction",	qdb_find_auxfunction,	-1},
+	{"qdb_get_auxfunction",		qdb_get_auxfunction,	-1},
 	{"qdb_get_local_defs",		qdb_get_local_defs,		-1},
 	{}
 };

@@ -120,6 +120,9 @@ int qdb_get_data (qdb_target_t target, unsigned src, unsigned len,
 qdb_def_t qdb_find_global (qdb_target_t target, string name) = #0;
 qdb_def_t qdb_find_field (qdb_target_t target, string name) = #0;
 qdb_function_t *qdb_find_function (qdb_target_t target, string name) = #0;
+qdb_function_t *qdb_get_function (qdb_target_t target, unsigned fnum) = #0;
 qdb_auxfunction_t *qdb_find_auxfunction (qdb_target_t target,
 										 string name) = #0;
+qdb_auxfunction_t *qdb_get_auxfunction (qdb_target_t target,
+										unsigned fnum) = #0;
 qdb_def_t *qdb_get_local_defs (qdb_target_t target, unsigned fnum) = #0;
