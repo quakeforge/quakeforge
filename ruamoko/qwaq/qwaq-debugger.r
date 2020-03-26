@@ -58,6 +58,13 @@
 	[source_window insertSelected: (View *) file_proxy];
 	[source_window setTitle: [current_file filename]];
 	[source_window redraw];
+
+	locals_window = [[Window alloc] initWithRect: {{0, 0}, {40, 10}}];
+	[locals_window setBackground: color_palette[064]];
+	[locals_window setTitle: "Locals"];
+	locals_view = [[View alloc] initWithRect: {{1, 1}, {38, 8}}];
+	[locals_window insertSelected: locals_view];
+	[application addView: locals_window];
 }
 
 -(void) show_line
@@ -75,6 +82,57 @@
 	}
 	[[current_file gotoLine:state.line - 1] highlightLine];
 	[source_window redraw];
+}
+
+static void
+update_current_func (Debugger *self, unsigned fnum)
+{
+	self.current_fnum = fnum;
+	if (self.aux_func) {
+		obj_free (self.aux_func);
+		self.aux_func = nil;
+	}
+	if (self.local_defs) {
+		obj_free (self.local_defs);
+	}
+	if (self.local_data) {
+		obj_free (self.local_data);
+	}
+	self.func = qdb_get_function (self.debug_target, fnum);
+	self.aux_func = qdb_get_auxfunction (self.debug_target, fnum);
+	if (self.aux_func) {
+		self.local_defs = qdb_get_local_defs (self.debug_target, fnum);
+	}
+	if (self.func) {
+		self.local_data = obj_malloc (self.func.local_size);
+	}
+}
+
+void traceon() = #0;
+
+-(void)update_watchvars
+{
+	qdb_state_t state = qdb_get_state (debug_target);
+	if (state.func != current_fnum) {
+		update_current_func (self, state.func);
+	}
+	if (!local_data) {
+		return;
+	}
+	qdb_get_data (debug_target, func.local_data, func.local_size, local_data);
+	[locals_view mvprintf:{0,0}, "%d", func.local_size];
+	for (int y = 1; y < [locals_view size].height; y++) {
+		unsigned    ind = (y - 1) * 4;
+		if (ind < func.local_size) {
+			[locals_view mvprintf:{0, y}, "%02x", ind];
+			for (int x = 0; x < 4 && ind < func.local_size; x++, ind++) {
+				[locals_view mvprintf:{x * 9 + 3, y}, "%08x", local_data[ind]];
+			}
+		} else {
+			break;
+		}
+	}
+	[TextContext refresh];
 }
 
 -(void)key_event: (ed_event_t *)_event
@@ -103,6 +161,7 @@
 		[self setup];
 	}
 	[self show_line];
+	[self update_watchvars];
 	return self;
 }
 
