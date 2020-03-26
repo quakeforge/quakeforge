@@ -560,7 +560,7 @@ PR_SetDynamicString (progs_t *pr, const char *s)
 	return string_index (res, sr);
 }
 
-void
+VISIBLE void
 PR_MakeTempString (progs_t *pr, string_t str)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
@@ -619,7 +619,7 @@ PR_FreeString (progs_t *pr, string_t str)
 	PR_RunError (pr, "attempt to free invalid string %d", str);
 }
 
-void
+VISIBLE void
 PR_FreeTempStrings (progs_t *pr)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
