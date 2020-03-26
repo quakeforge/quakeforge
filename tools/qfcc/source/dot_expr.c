@@ -249,7 +249,7 @@ print_block (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 				   "</tr>\n", indent + 4, "");
 	for (se = e->e.block.head, i = 0; se; se = se->next, i++)
 		dasprintf (dstr, "%*s<tr><td>%d</td><td port=\"b%d\">%s</td></tr>\n",
-				   indent + 4, "", i, i, expr_names[se->type]);
+				   indent + 4, "", se->line, i, expr_names[se->type]);
 	dasprintf (dstr, "%*s</table>\n", indent + 2, "");
 	dasprintf (dstr, "%*s>];\n", indent, "");
 
