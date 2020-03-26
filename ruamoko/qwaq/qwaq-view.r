@@ -288,6 +288,11 @@ updateScreenCursor (View *view)
 	return onReleaseFocus;
 }
 
+-raise
+{
+	return self;
+}
+
 - (void) onMouseEnter: (Point) pos
 {
 }

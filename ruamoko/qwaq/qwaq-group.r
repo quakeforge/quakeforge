@@ -76,6 +76,7 @@ makeFirst (Group *self, int viewIndex)
 
 	[self.views addObject: view];
 	[self.views removeObjectAtIndex: viewIndex];
+	[view raise];
 	return [self.views count] - 1;
 }
 

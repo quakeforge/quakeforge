@@ -72,6 +72,7 @@ enum {
 -loseFocus;
 -(ListenerGroup *) onReceiveFocus;
 -(ListenerGroup *) onReleaseFocus;
+-raise;
 
 - (void) onMouseEnter: (Point) pos;
 - (void) onMouseLeave: (Point) pos;

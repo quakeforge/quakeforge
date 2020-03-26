@@ -213,6 +213,13 @@
 	return self;
 }
 
+-raise
+{
+	top_panel (panel);
+	[self redraw];
+	return self;
+}
+
 -insert: (View *) view
 {
 	[objects insert: view];
