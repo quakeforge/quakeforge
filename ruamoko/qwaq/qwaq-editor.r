@@ -16,7 +16,6 @@
 	linebuffer = [DrawBuffer buffer: { xlen, 1 }];
 	growMode = gfGrowHi;
 	options = ofCanFocus | ofRelativeEvents;
-	onEvent = [[ListenerGroup alloc] init];
 	return self;
 }
 

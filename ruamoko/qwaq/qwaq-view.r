@@ -12,6 +12,7 @@
 	}
 	onReceiveFocus = [[ListenerGroup alloc] init];
 	onReleaseFocus = [[ListenerGroup alloc] init];
+	onEvent = [[ListenerGroup alloc] init];
 	return self;
 }
 
@@ -24,6 +25,7 @@
 	self.absRect = rect;
 	onReceiveFocus = [[ListenerGroup alloc] init];
 	onReleaseFocus = [[ListenerGroup alloc] init];
+	onEvent = [[ListenerGroup alloc] init];
 	return self;
 }
 
