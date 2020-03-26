@@ -105,6 +105,26 @@ bi_str_free (progs_t *pr)
 }
 
 static void
+bi_str_hold (progs_t *pr)
+{
+	string_t    str = P_STRING (pr, 0);
+	PR_HoldString (pr, str);
+	R_STRING (pr) = str;
+}
+
+static void
+bi_str_valid (progs_t *pr)
+{
+	R_INT (pr) = PR_StringValid (pr, P_STRING (pr, 0));
+}
+
+static void
+bi_str_mutable (progs_t *pr)
+{
+	R_INT (pr) = PR_StringMutable (pr, P_STRING (pr, 0));
+}
+
+static void
 bi_str_copy (progs_t *pr)
 {
 	dstring_t  *dst = P_DSTRING (pr, 0);
@@ -194,6 +214,9 @@ static builtin_t builtins[] = {
 	{"vsprintf",	bi_vsprintf,	-1},
 	{"str_new",		bi_str_new,		-1},
 	{"str_free",	bi_str_free,	-1},
+	{"str_hold",	bi_str_hold,	-1},
+	{"str_valid",	bi_str_valid,	-1},
+	{"str_mutable",	bi_str_mutable,	-1},
 	{"str_copy",	bi_str_copy,	-1},
 	{"str_cat",		bi_str_cat,		-1},
 	{"str_clear",	bi_str_clear,	-1},
