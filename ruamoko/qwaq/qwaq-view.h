@@ -59,6 +59,7 @@ enum {
 -(int) options;
 -(int) state;
 
+-(id<TextContext>)context;
 -setContext: (id<TextContext>) context;
 -draw;
 -hide;

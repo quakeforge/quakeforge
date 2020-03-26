@@ -21,12 +21,16 @@
 -setView:(View *) view
 {
 	int         state = [self.view state];
+	id<TextContext> context = [self.view context];
+
 	if (state & sfInFocus) {
 		[self.view loseFocus];
-		[self.view hide];
 	}
+	[self.view hide];
+	[self.view setContext:nil];
 
 	self.view = view;
+	[view setContext:context];
 	if (state & sfDrawn) {
 		[view draw];
 	}

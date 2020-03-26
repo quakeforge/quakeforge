@@ -35,7 +35,12 @@
 	[super dealloc];
 }
 
-- setContext: (id<TextContext>) context
+-(id<TextContext>)context
+{
+	return textContext;
+}
+
+-setContext: (id<TextContext>) context
 {
 	textContext = context;
 	return self;
