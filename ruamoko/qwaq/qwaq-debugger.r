@@ -145,29 +145,57 @@ update_current_func (Debugger *self, unsigned fnum)
 			qdb_def_t *def = local_defs + y;
 			[locals_view mvprintf:{0, y}, "%s",
 								  qdb_get_string (debug_target, def.name)];
+			@param      value = nil;
 			string      valstr = "--";
-			printf ("def type_size %d\n", def.type_size);
+			unsigned    offset = func.local_data + def.offset;
+			printf ("%d %d %s %d\n", def.type_size, offset,
+					qdb_get_string (debug_target, def.name),
+					def.type_encoding);
+			qdb_get_data (debug_target, offset, def.type_size >> 16,
+						  &value);
 			switch (def.type_size & 0xffff) {
 				case ev_void:
 				case ev_invalid:
 				case ev_type_count:
 					break;
 				case ev_string:
+					valstr = qdb_get_string (debug_target, value.integer_val);
+					break;
 				case ev_float:
+					valstr = sprintf ("%.9g", value.float_val);
+					break;
 				case ev_vector:
+					valstr = sprintf ("%.9v", value.vector_val);
+					break;
 				case ev_entity:
+					valstr = sprintf ("%e", value.entity_val);
+					break;
 				case ev_field:
+					valstr = sprintf ("[%x]", value.field_val);
+					break;
 				case ev_func:
+					valstr = sprintf ("[%x]", value.func_val);
+					break;
 				case ev_pointer:
+					valstr = sprintf ("[%x]", value.pointer_val);
+					break;
 				case ev_quat:
+					valstr = sprintf ("[%q]", value.quaternion_val);
+					break;
 				case ev_integer:
+					valstr = sprintf ("%d", value.integer_val);
+					break;
 				case ev_uinteger:
+					valstr = sprintf ("%d", value.integer_val);
+					break;
 				case ev_short:
+					valstr = sprintf ("%d", value.integer_val);
+					break;
 				case ev_double:
-					valstr = sprintf ("%d", def.type_size >> 16);
+					valstr = sprintf ("%.17g", value.double_val);
 					break;
 			}
-			int         x = [locals_view size].width - strlen (valstr) - 1;
+			int         x = [locals_view size].width - strlen (valstr);
 			[locals_view mvaddstr:{x, y}, valstr];
 		}
 	}
