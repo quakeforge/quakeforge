@@ -28,7 +28,7 @@ typedef struct qdb_state_s {
 typedef struct qdb_def_s {
 	unsigned    type_size;	// type in lower 16, size in upper 16
 	unsigned    offset;
-	string_t    name;
+	unsigned    name;	// string
 	unsigned    type_encoding;
 } qdb_def_t;
 
@@ -37,8 +37,8 @@ typedef struct qdb_function_s {
 	unsigned    local_data;
 	unsigned    local_size;
 	unsigned	profile;
-	string_t    name;
-	string_t    file;
+	unsigned    name;	// string
+	unsigned    file;	// string
 	unsigned    num_params;
 } qdb_function_t;
 
@@ -64,6 +64,7 @@ extern int qdb_continue (qdb_target_t target);
 extern qdb_state_t qdb_get_state (qdb_target_t target);
 extern int qdb_get_data (qdb_target_t target, unsigned src, unsigned len,
 						 void *dst);
+extern string qdb_get_string (qdb_target_t target, unsigned str);
 extern qdb_def_t qdb_find_global (qdb_target_t target, string name);
 extern qdb_def_t qdb_find_field (qdb_target_t target, string name);
 extern qdb_function_t *qdb_find_function (qdb_target_t target, string name);

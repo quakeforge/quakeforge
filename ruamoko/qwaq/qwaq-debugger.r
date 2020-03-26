@@ -181,6 +181,7 @@ int qdb_continue (qdb_target_t target) = #0;
 qdb_state_t qdb_get_state (qdb_target_t target) = #0;
 int qdb_get_data (qdb_target_t target, unsigned src, unsigned len,
 				  void *dst) = #0;
+string qdb_get_string (qdb_target_t target, unsigned str) = #0;
 qdb_def_t qdb_find_global (qdb_target_t target, string name) = #0;
 qdb_def_t qdb_find_field (qdb_target_t target, string name) = #0;
 qdb_function_t *qdb_find_function (qdb_target_t target, string name) = #0;

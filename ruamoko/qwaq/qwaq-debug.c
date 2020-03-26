@@ -321,6 +321,21 @@ qdb_get_data (progs_t *pr)
 }
 
 static void
+qdb_get_string (progs_t *pr)
+{
+	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
+	pointer_t   handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+	progs_t    *tpr = target->pr;
+	string_t    string = P_STRING (pr, 1);
+
+	R_STRING (pr) = 0;
+	if (PR_StringValid (tpr, string)) {
+		RETURN_STRING (pr, PR_GetString (tpr, string));
+	}
+}
+
+static void
 qdb_find_global (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
@@ -491,6 +506,7 @@ static builtin_t builtins[] = {
 	{"qdb_continue",			qdb_continue,			-1},
 	{"qdb_get_state",			qdb_get_state,			-1},
 	{"qdb_get_data",			qdb_get_data,			-1},
+	{"qdb_get_string",			qdb_get_string,			-1},
 	{"qdb_find_global",			qdb_find_global,		-1},
 	{"qdb_find_field",			qdb_find_field,			-1},
 	{"qdb_find_function",		qdb_find_function,		-1},
