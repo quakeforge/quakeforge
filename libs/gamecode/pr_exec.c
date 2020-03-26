@@ -55,7 +55,7 @@
 VISIBLE void
 PR_RunError (progs_t * pr, const char *error, ...)
 {
-	dstring_t  *string = dstring_new ();
+	dstring_t  *string = dstring_new ();//FIXME leaks when debugging
 	va_list     argptr;
 
 	va_start (argptr, error);
@@ -63,8 +63,7 @@ PR_RunError (progs_t * pr, const char *error, ...)
 	va_end (argptr);
 
 	if (pr->debug_handler) {
-		pr->error_string = string->str;
-		pr->debug_handler (prd_runerror, pr->debug_data);
+		pr->debug_handler (prd_runerror, string->str, pr->debug_data);
 		// not expected to return, but if so, behave as if there was no handler
 	}
 
@@ -486,7 +485,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 
 		if (pr->pr_trace) {
 			if (pr->debug_handler) {
-				pr->debug_handler (prd_trace, pr->debug_data);
+				pr->debug_handler (prd_trace, 0, pr->debug_data);
 			} else {
 				PR_PrintStatement (pr, st, 1);
 			}
@@ -494,7 +493,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 
 		if (st->op & OP_BREAK) {
 			if (pr->debug_handler) {
-				pr->debug_handler (prd_breakpoint, pr->debug_data);
+				pr->debug_handler (prd_breakpoint, 0, pr->debug_data);
 			} else {
 				PR_RunError (pr, "breakpoint hit");
 			}
@@ -1714,7 +1713,7 @@ op_call:
 			if (!pr->wp_conditional
 				|| pr->watch->integer_var == pr->wp_val.integer_var) {
 				if (pr->debug_handler) {
-					pr->debug_handler (prd_watchpoint, pr->debug_data);
+					pr->debug_handler (prd_watchpoint, 0, pr->debug_data);
 				} else {
 					PR_RunError (pr, "watchpoint hit: %d -> %d",
 								 old_val.integer_var, pr->watch->integer_var);

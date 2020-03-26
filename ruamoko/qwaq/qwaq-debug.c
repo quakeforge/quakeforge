@@ -109,7 +109,7 @@ get_target (qwaq_debug_t *debug, const char *name, int handle)
 }
 
 static void
-qwaq_debug_handler (prdebug_t debug_event, void *data)
+qwaq_debug_handler (prdebug_t debug_event, void *param, void *data)
 {
 	__auto_type target = (qwaq_target_t *) data;
 	qwaq_debug_t *debug = target->debugger;
@@ -130,7 +130,7 @@ qwaq_debug_handler (prdebug_t debug_event, void *data)
 	pthread_cond_wait (&target->run_cond.rcond, &target->run_cond.mut);
 	pthread_mutex_unlock (&target->run_cond.mut);
 	if (debug_event == prd_runerror || debug_event == prd_error) {
-		pthread_exit ((void *) target->pr->error_string);
+		pthread_exit (param);
 	}
 }
 

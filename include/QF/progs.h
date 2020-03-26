@@ -1857,9 +1857,8 @@ struct progs_s {
 	/// \name debugging
 	///@{
 	struct prdeb_resources_s *pr_debug_resources;
-	void      (*debug_handler) (prdebug_t event, void *data);
+	void      (*debug_handler) (prdebug_t event, void *param, void *data);
 	void       *debug_data;
-	const char *error_string;
 	pr_type_t  *watch;
 	int         wp_conditional;
 	pr_type_t   wp_val;
