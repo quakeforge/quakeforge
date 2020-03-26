@@ -113,6 +113,7 @@ enum {
 	ListenerGroup *onEvent;
 }
 -initWithRect: (Rect) rect;
+-initWithRect: (Rect) rect options:(int)options;
 @end
 
 @interface View (TextContext) <TextContext>

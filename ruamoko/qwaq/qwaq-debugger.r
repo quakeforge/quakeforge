@@ -55,7 +55,7 @@
 	current_file = [self find_file: state.file];
 	file_proxy = [[ProxyView alloc] initWithView: current_file];
 	[[current_file gotoLine:state.line - 1] highlightLine];
-	[[current_file onEvent] addListener: self :@selector(key_event::)];
+	[[current_file onEvent] addListener: self :@selector(proxy_event::)];
 	//FIXME id<View>?
 	[source_window insertSelected: (View *) file_proxy];
 	[source_window setTitle: [current_file filename]];
@@ -64,9 +64,12 @@
 	locals_window = [[Window alloc] initWithRect: {{0, 0}, {40, 10}}];
 	[locals_window setBackground: color_palette[064]];
 	[locals_window setTitle: "Locals"];
-	locals_view = [[View alloc] initWithRect: {{1, 1}, {38, 8}}];
+	locals_view = [[View alloc] initWithRect: {{1, 1}, {38, 8}}
+									 options: ofCanFocus];
 	[locals_window insertSelected: locals_view];
 	[application addView: locals_window];
+
+	[[locals_view onEvent] addListener:self :@selector(proxy_event::)];
 }
 
 -(void) show_line
@@ -76,9 +79,9 @@
 
 	printf ("%s:%d\n", state.file, state.line);
 	if (current_file != file) {
-		[[current_file onEvent] removeListener:self :@selector(key_event::)];
+		[[current_file onEvent] removeListener:self :@selector(proxy_event::)];
 		[file_proxy setView:file];
-		[[file onEvent] addListener:self :@selector(key_event::)];
+		[[file onEvent] addListener:self :@selector(proxy_event::)];
 		[source_window setTitle: [file filename]];
 		current_file = file;
 	}
@@ -172,11 +175,14 @@ update_current_func (Debugger *self, unsigned fnum)
 }
 
 static int
-key_event (Debugger *self, Editor *file, qwaq_event_t *event)
+proxy_event (Debugger *self, id proxy, qwaq_event_t *event)
 {
 	if (event.what == qe_mouseclick && !(event.mouse.buttons & 0x78)) {
-		printf ("%s\n", [file getWordAt: {event.mouse.x, event.mouse.y}]);
-		[self.source_window redraw];
+		if (proxy == self.current_file) {
+			printf ("%s\n", [proxy getWordAt: {event.mouse.x, event.mouse.y}]);
+			[self.source_window redraw];
+			return 1;
+		}
 	} else if (event.what == qe_keydown) {
 		switch (event.key.code) {
 			case QFK_F7:
@@ -188,9 +194,9 @@ key_event (Debugger *self, Editor *file, qwaq_event_t *event)
 	return 0;
 }
 
--(void)key_event:(Editor *)editor :(qwaq_event_t *)event
+-(void)proxy_event:(id)proxy :(qwaq_event_t *)event
 {
-	if (key_event (self, editor, event)) {
+	if (proxy_event (self, proxy, event)) {
 		event.what = qe_none;
 	}
 }

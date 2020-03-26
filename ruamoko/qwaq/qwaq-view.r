@@ -29,6 +29,20 @@
 	return self;
 }
 
+-initWithRect: (Rect) rect options:(int)options
+{
+	if (!(self = [super init])) {
+		return nil;
+	}
+	self.rect = rect;
+	self.absRect = rect;
+	self.options = options;
+	onReceiveFocus = [[ListenerGroup alloc] init];
+	onReleaseFocus = [[ListenerGroup alloc] init];
+	onEvent = [[ListenerGroup alloc] init];
+	return self;
+}
+
 - (void) dealloc
 {
 	if (owner) {

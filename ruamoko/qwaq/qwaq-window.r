@@ -19,6 +19,11 @@
 
 -initWithRect: (Rect) rect
 {
+	return [self initWithRect: rect options:ofCanFocus | ofMakeFirst];
+}
+
+-initWithRect: (Rect) rect options:(int)options
+{
 	if (!(self = [super init])) {
 		return nil;
 	}
@@ -70,7 +75,7 @@
 	[buf mvaddstr: {0, 2}, "XOX"];
 
 	growMode = gfGrowHi;
-	options = ofCanFocus | ofMakeFirst;
+	self.options = options;
 	return self;
 }
 
