@@ -74,6 +74,9 @@ typedef struct qdb_target_s { int handle; } qdb_target_t;
 												unsigned fnum);
 @extern qdb_def_t *qdb_get_local_defs (qdb_target_t target, unsigned fnum);
 
+@extern void traceon();
+@extern void traceoff();
+
 #else//GCC
 
 void QWAQ_Debug_Init (progs_t *pr);

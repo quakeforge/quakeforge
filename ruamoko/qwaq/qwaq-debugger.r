@@ -108,8 +108,6 @@ update_current_func (Debugger *self, unsigned fnum)
 	}
 }
 
-void traceon() = #0;
-
 -(void)update_watchvars
 {
 	qdb_state_t state = qdb_get_state (debug_target);
@@ -170,6 +168,9 @@ key_event (Debugger *self, Editor *file, qwaq_event_t *event)
 }
 
 @end
+
+void traceon() = #0;
+void traceoff() = #0;
 
 void qdb_set_trace (qdb_target_t target, int state) = #0;
 int qdb_set_breakpoint (qdb_target_t target, unsigned staddr) = #0;
