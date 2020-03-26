@@ -184,8 +184,9 @@
 
 -handleEvent: (qwaq_event_t *) event
 {
-	int         offset = event.what & qe_positional;
+	[super handleEvent: event];
 
+	int         offset = event.what & qe_positional;
 	if (offset) {
 		event.mouse.x -= xpos;
 		event.mouse.y -= ypos;

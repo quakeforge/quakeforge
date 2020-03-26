@@ -52,6 +52,8 @@
 {
 	ListenerGroup *action = nil;
 
+	[super handleEvent: event];
+
 	if (event.what & qe_mouse) {
 		switch ((qwaq_mouse_event) (event.what & qe_mouse)) {
 			case qe_mousedown:

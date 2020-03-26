@@ -88,6 +88,8 @@ static int handleEvent (Editor *self, qwaq_event_t *event)
 
 -handleEvent:(qwaq_event_t *) event
 {
+	[super handleEvent: event];
+
 	// give any listeners a chance to override or extend event handling
 	_event.editor = self;
 	_event.event = event;
