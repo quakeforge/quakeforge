@@ -309,7 +309,7 @@ methodparams_obj=$(methodparams_dat_SOURCES:.r=.qfo)
 methodparams.dat$(EXEEXT): $(methodparams_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(methodparams_obj)
 methodparams.run: Makefile build-run
-	@TEST_HARNESS_OPTS=--float $(srcdir)/build-run $@
+	@$(srcdir)/build-run $@
 include ./$(DEPDIR)/methodparams.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/methodparams.Qo
 
@@ -327,7 +327,7 @@ paramret_obj=$(paramret_dat_SOURCES:.r=.qfo)
 paramret.dat$(EXEEXT): $(paramret_obj) $(QFCC_DEP)
 	$(QFCC) $(QCFLAGS) -o $@ $(paramret_obj)
 paramret.run: Makefile build-run
-	@TEST_HARNESS_OPTS=--float $(srcdir)/build-run $@
+	@$(srcdir)/build-run $@
 include ./$(DEPDIR)/paramret.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/paramret.Qo
 
