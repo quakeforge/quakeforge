@@ -1347,7 +1347,7 @@ expr_vector_e (sblock_t *sblock, expr_t *e, operand_t **op)
 	pr.source_line = e->line;
 
 	tmp = new_temp_def_expr (vec_type);
-	if (vec_type == &type_vector) {
+	if (is_vector(vec_type)) {
 		// guaranteed to have three elements
 		x = e->e.vector.list;
 		y = x->next;
@@ -2017,7 +2017,7 @@ check_final_block (sblock_t *sblock)
 		if (statement_is_return (s))
 			return;
 	}
-	if (current_func->sym->type->t.func.type != &type_void)
+	if (!is_void(current_func->sym->type->t.func.type))
 		warning (0, "control reaches end of non-void function");
 	if (s && s->type >= st_func) {
 		// func and flow end blocks, so we need to add a new block to take the

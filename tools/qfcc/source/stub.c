@@ -45,5 +45,7 @@ __attribute__((const)) symbol_t *new_symbol_type (const char *name, type_t *type
 __attribute__((const)) def_t *qfo_encode_type (type_t *type) {return 0;}
 __attribute__((const)) int obj_types_assignable (const type_t *dst, const type_t *src) {return 0;}
 void print_protocollist (struct dstring_s *dstr, protocollist_t *protocollist) {}
-int obj_is_id (const type_t *type){return type->type;}
+int is_id (const type_t *type){return type->type;}
+int is_SEL (const type_t *type){return type->type;}
+int is_Class (const type_t *type){return type->type;}
 int compare_protocols (protocollist_t *protos1, protocollist_t *protos2){return protos1->count - protos2->count;}

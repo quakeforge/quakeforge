@@ -96,7 +96,7 @@ test_expr (expr_t *e)
 		case ev_uinteger:
 		case ev_integer:
 		case ev_short:
-			if (type_default != &type_integer) {
+			if (!is_integer(type_default)) {
 				if (is_constant (e)) {
 					return cast_expr (type_default, e);
 				}
@@ -106,7 +106,7 @@ test_expr (expr_t *e)
 		case ev_float:
 			if (options.code.fast_float
 				|| options.code.progsversion == PROG_ID_VERSION) {
-				if (type_default != &type_float) {
+				if (!is_float(type_default)) {
 					if (is_constant (e)) {
 						return cast_expr (type_default, e);
 					}
@@ -270,7 +270,7 @@ convert_bool (expr_t *e, int block)
 	}
 
 	if (e->type == ex_uexpr && e->e.expr.op == '!'
-		&& get_type (e->e.expr.e1) != &type_string) {
+		&& !is_string(get_type (e->e.expr.e1))) {
 		e = convert_bool (e->e.expr.e1, 0);
 		if (e->type == ex_error)
 			return e;

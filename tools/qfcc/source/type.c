@@ -513,13 +513,13 @@ print_type_str (dstring_t *str, const type_t *type)
 					}
 					return;
 				case ev_pointer:
-					if (obj_is_id (type)) {
+					if (is_id (type)) {
 						dasprintf (str, "id");
 						if (type->t.fldptr.type->protos)
 							print_protocollist (str, type->t.fldptr.type->protos);
 						return;
 					}
-					if (type == &type_SEL) {
+					if (is_SEL(type)) {
 						dasprintf (str, "SEL");
 						return;
 					}
@@ -674,15 +674,15 @@ encode_type (dstring_t *encoding, const type_t *type)
 					dasprintf (encoding, "%s)", encode_params (type));
 					return;
 				case ev_pointer:
-					if (type == &type_id) {
+					if (is_id(type)) {
 						dasprintf (encoding, "@");
 						return;
 					}
-					if (type == &type_SEL) {
+					if (is_SEL(type)) {
 						dasprintf (encoding, ":");
 						return;
 					}
-					if (type == &type_Class) {
+					if (is_Class(type)) {
 						dasprintf (encoding, "#");
 						return;
 					}

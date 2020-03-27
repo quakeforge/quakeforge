@@ -222,7 +222,7 @@ assign_vector_expr (expr_t *dst, expr_t *src)
 		}
 	}
 	if (src->type == ex_vector && dst->type != ex_vector) {
-		if (src->e.vector.type == &type_vector) {
+		if (is_vector(src->e.vector.type)) {
 			// guaranteed to have three elements
 			sx = src->e.vector.list;
 			sy = sx->next;
@@ -237,7 +237,7 @@ assign_vector_expr (expr_t *dst, expr_t *src)
 			block->e.block.result = dst;
 			return block;
 		}
-		if (src->e.vector.type == &type_quaternion) {
+		if (is_quaternion(src->e.vector.type)) {
 			// guaranteed to have two or four elements
 			if (src->e.vector.list->next->next) {
 				// four vals: x, y, z, w

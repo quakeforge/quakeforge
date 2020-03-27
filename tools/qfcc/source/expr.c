@@ -133,7 +133,7 @@ convert_vector (expr_t *e)
 
 	if (e->type != ex_vector)
 		return e;
-	if (e->e.vector.type == &type_vector) {
+	if (is_vector(e->e.vector.type)) {
 		// guaranteed to have three elements
 		expr_t     *x = e->e.vector.list;
 		expr_t     *y = x->next;
@@ -155,7 +155,7 @@ convert_vector (expr_t *e)
 		e->e.vector.list = x;
 		return e;
 	}
-	if (e->e.vector.type == &type_quaternion) {
+	if (is_quaternion(e->e.vector.type)) {
 		// guaranteed to have two or four elements
 		if (e->e.vector.list->next->next) {
 			// four vals: x, y, z, w
@@ -1321,7 +1321,7 @@ get_struct_field (const type_t *t1, expr_t *e1, expr_t *e2)
 		return 0;
 	}
 	field = symtab_lookup (strct, sym->name);
-	if (!field && t1 != &type_entity) {
+	if (!field && !is_entity(t1)) {
 		error (e2, "'%s' has no member named '%s'", t1->name + 4, sym->name);
 		e1->type = ex_error;
 	}
@@ -1370,7 +1370,7 @@ field_expr (expr_t *e1, expr_t *e2)
 			e = new_binary_expr ('&', e1, e2);
 			e->e.expr.type = pointer_type (field->type);
 			return unary_expr ('.', e);
-		} else if (obj_is_class (t1->t.fldptr.type)) {
+		} else if (is_class (t1->t.fldptr.type)) {
 			class_t    *class = t1->t.fldptr.type->t.class;
 			symbol_t   *sym = e2->e.symbol;//FIXME need to check
 			symbol_t   *ivar;
@@ -1394,7 +1394,7 @@ field_expr (expr_t *e1, expr_t *e2)
 			return e1;
 
 		if (e1->type == ex_expr && e1->e.expr.op == '.'
-			&& get_type (e1->e.expr.e1) == &type_entity) {
+			&& is_entity(get_type (e1->e.expr.e1))) {
 			// undo the . expression
 			e2 = e1->e.expr.e2;
 			e1 = e1->e.expr.e1;
@@ -1426,7 +1426,7 @@ field_expr (expr_t *e1, expr_t *e2)
 				return new_offset_alias_expr (field->type, e1, field->s.offset);
 			}
 		}
-	} else if (obj_is_class (t1)) {
+	} else if (is_class (t1)) {
 		//Class instance variables aren't allowed and thus declaring one
 		//is treated as an error, so this is a follow-on error.
 		return error (e1, "class instance access");
@@ -1794,8 +1794,8 @@ bitnot_expr:
 						expr_t     *n = new_unary_expr (op, e);
 						type_t     *t = get_type (e);
 
-						if (t != &type_integer && t != &type_float
-							&& t != &type_quaternion)
+						if (!is_integer(t) && !is_float(t)
+							&& !is_quaternion(t))
 							return error (e, "invalid type for unary ~");
 						n->e.expr.type = t;
 						return n;
@@ -1963,7 +1963,7 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 	e = expr_file_line (new_binary_expr ('c', fexpr, args), fexpr);
 	e->e.expr.type = ftype->t.func.type;
 	append_expr (call, e);
-	if (ftype->t.func.type != &type_void) {
+	if (!is_void(ftype->t.func.type)) {
 		call->e.block.result = new_ret_expr (ftype->t.func.type);
 	} else if (options.traditional) {
 		call->e.block.result = new_ret_expr (&type_float);
@@ -2030,7 +2030,7 @@ return_expr (function_t *f, expr_t *e)
 	type_t     *ret_type = f->sym->type->t.func.type;
 
 	if (!e) {
-		if (ret_type != &type_void) {
+		if (!is_void(ret_type)) {
 			if (options.traditional) {
 				if (options.warnings.traditional)
 					warning (e,
@@ -2057,7 +2057,7 @@ return_expr (function_t *f, expr_t *e)
 	if (e->type == ex_error) {
 		return e;
 	}
-	if (ret_type == &type_void) {
+	if (is_void(ret_type)) {
 		if (!options.traditional)
 			return error (e, "returning a value for a void function");
 		if (options.warnings.traditional)
@@ -2066,11 +2066,11 @@ return_expr (function_t *f, expr_t *e)
 	if (e->type == ex_bool) {
 		e = convert_from_bool (e, ret_type);
 	}
-	if (ret_type == &type_float && is_integer_val (e)) {
+	if (is_float(ret_type) && is_integer_val (e)) {
 		convert_int (e);
 		t = &type_float;
 	}
-	if (t == &type_void) {
+	if (is_void(t)) {
 		if (e->type == ex_nil) {
 			t = ret_type;
 			convert_nil (e, t);

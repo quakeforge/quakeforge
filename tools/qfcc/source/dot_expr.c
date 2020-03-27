@@ -387,7 +387,7 @@ print_vector (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	int         indent = level * 2 + 2;
 
-	if (e->e.vector.type == &type_vector) {
+	if (is_vector(e->e.vector.type)) {
 		expr_t     *x = e->e.vector.list;
 		expr_t     *y = x->next;
 		expr_t     *z = y->next;
@@ -398,7 +398,7 @@ print_vector (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, y);
 		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, z);
 	}
-	if (e->e.vector.type == &type_quaternion) {
+	if (is_quaternion(e->e.vector.type)) {
 		if (e->e.vector.list->next->next) {
 			expr_t     *x = e->e.vector.list;
 			expr_t     *y = x->next;

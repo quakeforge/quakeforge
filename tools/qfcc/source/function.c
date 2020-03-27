@@ -172,7 +172,7 @@ parse_params (type_t *type, param_t *parms)
 	type_t     *new;
 	int         count = 0;
 
-	if (type && obj_is_class (type)) {
+	if (type && is_class (type)) {
 		error (0, "cannot return an object (forgot *?)");
 		type = &type_id;
 	}
@@ -197,7 +197,7 @@ parse_params (type_t *type, param_t *parms)
 				internal_error (0, 0);
 			new->t.func.num_params = -(new->t.func.num_params + 1);
 		} else if (p->type) {
-			if (obj_is_class (p->type)) {
+			if (is_class (p->type)) {
 				error (0, "cannot use an object as a parameter (forgot *?)");
 				p->type = &type_id;
 			}
@@ -216,7 +216,7 @@ check_params (param_t *params)
 	if (!params)
 		return 0;
 	while (p) {
-		if (p->type == &type_void) {
+		if (p->type && is_void(p->type)) {
 			if (p->name) {
 				error (0, "parameter %d ('%s') has incomplete type", num,
 					   p->name);

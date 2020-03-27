@@ -429,8 +429,7 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 	for (l = labels; *l; l++)
 		num_labels++;
 	if (options.code.progsversion == PROG_ID_VERSION
-		|| (type != &type_string
-			&& type != &type_float && !is_integral (type))
+		|| (!is_string(type) && !is_float(type) && !is_integral (type))
 		|| num_labels < 8) {
 		for (l = labels; *l; l++) {
 			expr_t     *cmp = binary_expr (EQ, sw_val, (*l)->value);
@@ -446,7 +445,7 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 		int         op;
 		case_node_t *case_tree;
 
-		if (type == &type_string)
+		if (is_string(type))
 			temp = new_temp_def_expr (&type_integer);
 		else
 			temp = new_temp_def_expr (type);

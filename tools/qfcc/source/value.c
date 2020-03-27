@@ -513,7 +513,7 @@ emit_value (ex_value_t *value, def_t *def)
 			break;
 		case ev_integer:
 		case ev_uinteger:
-			if (!def || def->type != &type_float) {
+			if (!def || !is_float(def->type)) {
 				tab = integer_imm_defs;
 				type = &type_integer;
 				break;

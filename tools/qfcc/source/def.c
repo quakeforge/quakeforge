@@ -140,7 +140,7 @@ new_def (const char *name, type_t *type, defspace_t *space,
 	if (!space && storage != sc_extern)
 		internal_error (0, "non-external def with no storage space");
 
-	if (obj_is_class (type)) {
+	if (is_class (type)) {
 		error (0, "statically allocated instance of class %s",
 			   type->t.class->name);
 		return def;
@@ -498,7 +498,7 @@ init_field_def (def_t *def, expr_t *init, storage_class_t storage)
 			def->nosave = 1;
 		}
 		// no support for initialized field vector componets (yet?)
-		if (type == &type_vector && options.code.vector_components)
+		if (is_vector(type) && options.code.vector_components)
 			init_vector_components (field_sym, 1);
 	} else if (init->type == ex_symbol) {
 		symbol_t   *sym = init->e.symbol;
@@ -566,7 +566,7 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 		sym->s.def = new_def (sym->name, sym->type, space, storage);
 		reloc_attach_relocs (relocs, &sym->s.def->relocs);
 	}
-	if (sym->type == &type_vector && options.code.vector_components)
+	if (is_vector(sym->type) && options.code.vector_components)
 		init_vector_components (sym, 0);
 	if (sym->type->type == ev_field && storage != sc_local
 		&& storage != sc_param)
@@ -582,7 +582,7 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 	if (init->type == ex_error)
 		return;
 	if ((is_array (sym->type) || is_struct (sym->type)
-		 || sym->type == &type_vector || sym->type == &type_quaternion)
+		 || is_vector(sym->type) || is_quaternion(sym->type))
 		&& ((init->type == ex_compound)
 			|| init->type == ex_nil)) {
 		init_elements (sym->s.def, init);

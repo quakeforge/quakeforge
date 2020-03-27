@@ -480,7 +480,7 @@ get_selector (expr_t *sel)
 	selector_t  _sel = {0, 0, 0};
 
 	if (sel->type != ex_expr && sel->e.expr.op != '&'
-		&& sel->e.expr.type != &type_SEL) {
+		&& !is_SEL(sel->e.expr.type)) {
 		error (sel, "not a selector");
 		return 0;
 	}
@@ -525,7 +525,7 @@ emit_selectors (void)
 static void
 emit_methods_next (def_t *def, void *data, int index)
 {
-	if (def->type != &type_pointer)
+	if (!is_pointer(def->type))
 		internal_error (0, "%s: expected pointer def", __FUNCTION__);
 	D_INT (def) = 0;
 }
@@ -535,7 +535,7 @@ emit_methods_count (def_t *def, void *data, int index)
 {
 	methodlist_t *methods = (methodlist_t *) data;
 
-	if (def->type != &type_integer)
+	if (!is_integer(def->type))
 		internal_error (0, "%s: expected integer def", __FUNCTION__);
 	D_INT (def) = methods->count;
 }
@@ -547,7 +547,7 @@ emit_methods_list_item (def_t *def, void *data, int index)
 	method_t   *m;
 	pr_method_t *meth;
 
-	if (!is_array (def->type) || def->type->t.array.type != &type_obj_method)
+	if (!is_array (def->type) || !is_method(def->type->t.array.type))
 		internal_error (0, "%s: expected array of method def",
 						__FUNCTION__);
 	if (index < 0 || index >= methods->count)
@@ -614,7 +614,7 @@ emit_method_list_count (def_t *def, void *data, int index)
 {
 	methodlist_t *methods = (methodlist_t *) data;
 
-	if (def->type != &type_integer)
+	if (!is_integer(def->type))
 		internal_error (0, "%s: expected integer def", __FUNCTION__);
 	D_INT (def) = methods->count;
 }
@@ -627,7 +627,7 @@ emit_method_list_item (def_t *def, void *data, int index)
 	pr_method_description_t *desc;
 
 	if (!is_array (def->type)
-		|| def->type->t.array.type != &type_obj_method_description) {
+		|| !is_method_description(def->type->t.array.type)) {
 		internal_error (0, "%s: expected array of method_description def",
 						__FUNCTION__);
 	}

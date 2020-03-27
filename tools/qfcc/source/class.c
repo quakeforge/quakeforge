@@ -218,7 +218,7 @@ emit_instance_classname (def_t *def, void *data, int index)
 {
 	obj_static_instances_data_t *da = (obj_static_instances_data_t *)data;
 
-	if (def->type != &type_string)
+	if (!is_string(def->type))
 		internal_error (0, "%s: expected string def", __FUNCTION__);
 	EMIT_STRING (def->space, D_STRING (def), da->class_name);
 }
@@ -317,7 +317,7 @@ emit_static_instances_list (void)
 }
 
 int
-obj_is_id (const type_t *type)
+is_id (const type_t *type)
 {
 	if (type == &type_id)
 		return 1;
@@ -334,7 +334,7 @@ obj_is_id (const type_t *type)
 }
 
 int
-obj_is_class (const type_t *type)
+is_class (const type_t *type)
 {
 	if (type->type == ev_invalid && type->meta == ty_class)
 		return 1;
@@ -342,7 +342,7 @@ obj_is_class (const type_t *type)
 }
 
 int
-obj_is_Class (const type_t *type)
+is_Class (const type_t *type)
 {
 	if (type == &type_Class)
 		return 1;
@@ -350,17 +350,41 @@ obj_is_Class (const type_t *type)
 }
 
 int
-obj_is_classptr (const type_t *type)
+is_classptr (const type_t *type)
 {
 	// easy cases first :)
-	if (obj_is_id (type) || obj_is_Class (type))
+	if (is_id (type) || is_Class (type))
 		return 1;
 	if (type->type != ev_pointer)
 		return 0;
 	type = type->t.fldptr.type;
-	if (obj_is_class (type))
+	if (is_class (type))
 		return 1;
 	return 0;
+}
+
+int
+is_SEL (const type_t *type)
+{
+	return type == &type_SEL;
+}
+
+int
+is_object (const type_t *type)
+{
+	return type == &type_obj_object;
+}
+
+int
+is_method (const type_t *type)
+{
+	return type == &type_obj_method;
+}
+
+int
+is_method_description (const type_t *type)
+{
+	return type == &type_obj_method_description;
 }
 
 static protocollist_t *
@@ -368,7 +392,7 @@ obj_get_class_protos (const type_t *type)
 {
 	if (is_pointer (type))
 		type = type->t.fldptr.type;
-	if (obj_is_class (type))
+	if (is_class (type))
 		return type->t.class->protocols;
 	return 0;
 }
@@ -386,7 +410,7 @@ obj_get_categories (const type_t *type)
 {
 	if (is_pointer (type))
 		type = type->t.fldptr.type;
-	if (obj_is_class (type))
+	if (is_class (type))
 		return type->t.class->categories;
 	return 0;
 }
@@ -400,14 +424,14 @@ obj_classname (const type_t *type)
 	if (!str)
 		str = dstring_new ();
 	dstring_clearstr (str);
-	if (obj_is_id (type)) {
+	if (is_id (type)) {
 		dstring_copystr (str, "id");
-	} else if (obj_is_Class (type)) {
+	} else if (is_Class (type)) {
 		dstring_copystr (str, "Class");
 	} else {
 		if (is_pointer (type))
 			type = type->t.fldptr.type;
-		if (obj_is_class (type))
+		if (is_class (type))
 			dstring_copystr (str, type->t.class->name);
 	}
 	if ((protos = obj_get_protos (type)))
@@ -437,17 +461,17 @@ obj_types_assignable (const type_t *dst, const type_t *src)
 	int         i;
 
 	//puts ("%$$\"$#%");
-	if (!obj_is_classptr (src)) {
+	if (!is_classptr (src)) {
 		// if dst is a class pointer, then the types are not compatible,
 		// otherwise unknown
-		return obj_is_classptr (dst) - 1;
+		return is_classptr (dst) - 1;
 	}
-	if (!obj_is_classptr (dst)) {
+	if (!is_classptr (dst)) {
 		return -1;
 	}
 
-	dst_is_proto = obj_is_id (dst) && (dst_protos = obj_get_protos (dst));
-	src_is_proto = obj_is_id (src) && (src_protos = obj_get_protos (src));
+	dst_is_proto = is_id (dst) && (dst_protos = obj_get_protos (dst));
+	src_is_proto = is_id (src) && (src_protos = obj_get_protos (src));
 
 	if (dst_is_proto) {
 		if (src_is_proto) {
@@ -460,7 +484,7 @@ obj_types_assignable (const type_t *dst, const type_t *src)
 					return 1;
 				}
 			}
-		} else if (!obj_is_id (src)) {
+		} else if (!is_id (src)) {
 			src_protos = obj_get_class_protos (src);
 			for (i = 0; i < dst_protos->count; i++) {
 				if (procollist_find_protocol (src_protos, dst_protos->list[i]))
@@ -477,7 +501,7 @@ obj_types_assignable (const type_t *dst, const type_t *src)
 	} else if (src_is_proto) {
 	} else {
 	}
-	if (obj_is_id (dst) || obj_is_id (src))
+	if (is_id (dst) || is_id (src))
 		return 1;
 
 	// check dst is a base class of src
@@ -700,7 +724,7 @@ emit_ivar_count (def_t *def, void *data, int index)
 {
 	ivar_data_t *ivar_data = (ivar_data_t *) data;
 
-	if (def->type != &type_integer)
+	if (!is_integer(def->type))
 		internal_error (0, "%s: expected integer def", __FUNCTION__);
 	D_INT (def) = ivar_data->count;
 }
@@ -1132,11 +1156,11 @@ class_message_response (type_t *clstype, int class_msg, expr_t *sel)
 	if (!selector)
 		return 0;
 
-	if (!obj_is_classptr (clstype) && !obj_is_class (clstype)) {
+	if (!is_classptr (clstype) && !is_class (clstype)) {
 		error (0, "neither class nor object");
 		return 0;
 	}
-	if (obj_is_id (clstype)) {
+	if (is_id (clstype)) {
 		protocollist_t *protos = clstype->t.fldptr.type->protos;
 		if (protos) {
 			if ((m = protocollist_find_method (protos, selector, !class_msg))) {
@@ -1149,12 +1173,12 @@ class_message_response (type_t *clstype, int class_msg, expr_t *sel)
 			dstring_delete (dstr);
 		}
 	} else {
-		if (obj_is_class (clstype)) {
+		if (is_class (clstype)) {
 			class = clstype->t.class;
-		} else if (obj_is_class (clstype->t.fldptr.type)) {
+		} else if (is_class (clstype->t.fldptr.type)) {
 			class = clstype->t.fldptr.type->t.class;
 		}
-		if (class && class->type != &type_obj_object) {
+		if (class && !is_object(class->type)) {
 			if (!class->interface_declared) {
 				class->interface_declared = 1;
 				warning (0, "cannot find interface declaration for `%s'",
@@ -1180,7 +1204,7 @@ class_message_response (type_t *clstype, int class_msg, expr_t *sel)
 		}
 	}
 	m = find_method (selector->name);
-	if (!m && (!class || class->type == &type_obj_object)) {
+	if (!m && (!class || is_object(class->type))) {
 		warning (sel, "could not find method for %c%s",
 				 class_msg ? '+' : '-', selector->name);
 	}
@@ -1383,7 +1407,7 @@ emit_symtab_ref_cnt (def_t *def, void *data, int index)
 {
 	obj_symtab_data_t *da = (obj_symtab_data_t *)data;
 
-	if (def->type != &type_integer)
+	if (!is_integer(def->type))
 		internal_error (0, "%s: expected integer def", __FUNCTION__);
 	D_INT (def) = 0;
 	if (da->refs)
@@ -1395,7 +1419,7 @@ emit_symtab_refs (def_t *def, void *data, int index)
 {
 	obj_symtab_data_t *da = (obj_symtab_data_t *)data;
 
-	if (def->type != &type_SEL)
+	if (!is_SEL(def->type))
 		internal_error (0, "%s: expected SEL def", __FUNCTION__);
 	D_INT (def) = 0;
 	if (da->refs)
@@ -1407,7 +1431,7 @@ emit_symtab_cls_def_cnt (def_t *def, void *data, int index)
 {
 	obj_symtab_data_t *da = (obj_symtab_data_t *)data;
 
-	if (def->type != &type_integer)
+	if (!is_integer(def->type))
 		internal_error (0, "%s: expected integer def", __FUNCTION__);
 	D_INT (def) = da->cls_def_cnt;
 }
@@ -1417,7 +1441,7 @@ emit_symtab_cat_def_cnt (def_t *def, void *data, int index)
 {
 	obj_symtab_data_t *da = (obj_symtab_data_t *)data;
 
-	if (def->type != &type_integer)
+	if (!is_integer(def->type))
 		internal_error (0, "%s: expected integer def", __FUNCTION__);
 	D_INT (def) = da->cat_def_cnt;
 }
@@ -1716,7 +1740,7 @@ emit_protocol (protocol_t *protocol)
 static void
 emit_protocol_next (def_t *def, void *data, int index)
 {
-	if (def->type != &type_pointer) {
+	if (!is_pointer(def->type)) {
 		internal_error (0, "%s: expected pointer def", __FUNCTION__);
 	}
 	D_INT (def) = 0;
@@ -1727,7 +1751,7 @@ emit_protocol_count (def_t *def, void *data, int index)
 {
 	protocollist_t *protocols = (protocollist_t *) data;
 
-	if (def->type != &type_integer) {
+	if (!is_integer(def->type)) {
 		internal_error (0, "%s: expected integer def", __FUNCTION__);
 	}
 	D_INT (def) = protocols->count;
@@ -1739,7 +1763,7 @@ emit_protocol_list_item (def_t *def, void *data, int index)
 	protocollist_t *protocols = (protocollist_t *) data;
 	protocol_t *protocol = protocols->list[index];
 
-	if (!is_array (def->type) || def->type->t.array.type != &type_pointer) {
+	if (!is_array (def->type) || !is_pointer(def->type->t.array.type)) {
 		internal_error (0, "%s: expected array of pointer def", __FUNCTION__);
 	}
 	if (index < 0 || index >= protocols->count) {

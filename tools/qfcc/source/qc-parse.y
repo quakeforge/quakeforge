@@ -704,7 +704,7 @@ struct_defs
 	| DEFS '(' identifier ')'
 		{
 			$3 = check_undefined ($3);
-			if (!$3->type || !obj_is_class ($3->type)) {
+			if (!$3->type || !is_class ($3->type)) {
 				error (0, "`%s' is not a class", $3->name);
 			} else {
 				// replace the struct symbol table with one built from
@@ -860,7 +860,7 @@ qc_func_params
 	| '(' ps qc_var_list ')'				{ $$ = check_params ($3); }
 	| '(' ps TYPE ')'
 		{
-			if ($3 != &type_void)
+			if (!is_void ($3))
 				PARSE_ERROR;
 			$$ = 0;
 		}
@@ -1629,7 +1629,7 @@ class_name
 				if (!$1->table) {
 					symtab_addsymbol (current_symtab, $1);
 				}
-			} else if (!obj_is_class ($1->type)) {
+			} else if (!is_class ($1->type)) {
 				error (0, "`%s' is not a class", $1->name);
 				$$ = get_class (0, 1);
 			} else {
