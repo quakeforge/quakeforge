@@ -487,9 +487,6 @@ external_decl
 				symtab_addsymbol (current_symtab, $1);
 			} else {
 				$1 = function_symbol ($1, spec.is_overload, 1);
-				// things might be a confused mess from earlier errors
-				if ($1->sy_type == sy_func)
-					make_function ($1, 0, $1->table->space, spec.storage);
 			}
 		}
 	;
