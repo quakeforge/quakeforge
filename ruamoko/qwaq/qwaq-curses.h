@@ -86,53 +86,51 @@ typedef struct panel_s *panel_t;
 
 extern window_t stdscr;
 
-extern void initialize (void);
-extern window_t create_window (int xpos, int ypos, int xlen, int ylen);
-extern void destroy_window (window_t win);
-extern void mvwprintf (window_t win, int x, int y, string fmt, ...);
-extern void wprintf (window_t win, string fmt, ...);
-extern void wvprintf (window_t win, string fmt, @va_list args);
-extern void mvwvprintf (window_t win, int x, int y,
-						 string fmt, @va_list args);
-extern void wrefresh (window_t win);
-extern void mvwaddch (window_t win, int x, int y, int ch);
-extern void waddch (window_t win, int ch);
-extern void mvwaddstr (window_t win, int x, int y, string str);
-extern void waddstr (window_t win, string str);
+void initialize (void);
+window_t create_window (int xpos, int ypos, int xlen, int ylen);
+void destroy_window (window_t win);
+void mvwprintf (window_t win, int x, int y, string fmt, ...);
+void wprintf (window_t win, string fmt, ...);
+void wvprintf (window_t win, string fmt, @va_list args);
+void mvwvprintf (window_t win, int x, int y, string fmt, @va_list args);
+void wrefresh (window_t win);
+void mvwaddch (window_t win, int x, int y, int ch);
+void waddch (window_t win, int ch);
+void mvwaddstr (window_t win, int x, int y, string str);
+void waddstr (window_t win, string str);
 
-extern panel_t create_panel (window_t window);
-extern void destroy_panel (panel_t panel);
-extern void hide_panel (panel_t panel);
-extern void show_panel (panel_t panel);
-extern void top_panel (panel_t panel);
-extern void bottom_panel (panel_t panel);
-extern void move_panel (panel_t panel, int x, int y);
-extern window_t panel_window (panel_t panel);
-extern void update_panels (void);
-extern void replace_panel (panel_t panel, window_t window);
-extern void doupdate (void);
+panel_t create_panel (window_t window);
+void destroy_panel (panel_t panel);
+void hide_panel (panel_t panel);
+void show_panel (panel_t panel);
+void top_panel (panel_t panel);
+void bottom_panel (panel_t panel);
+void move_panel (panel_t panel, int x, int y);
+window_t panel_window (panel_t panel);
+void update_panels (void);
+void replace_panel (panel_t panel, window_t window);
+void doupdate (void);
 
-extern int get_event (qwaq_event_t *event);
-extern int max_colors (void);
-extern int max_color_pairs (void);
-extern int init_pair (int pair, int f, int b);
-extern void wbkgd (window_t win, int ch);
-extern void werase (window_t win);
-extern void scrollok (window_t win, int flag);
+int get_event (qwaq_event_t *event);
+int max_colors (void);
+int max_color_pairs (void);
+int init_pair (int pair, int f, int b);
+void wbkgd (window_t win, int ch);
+void werase (window_t win);
+void scrollok (window_t win, int flag);
 
-extern int acs_char (int acs);
-extern int curs_set (int visibility);
-extern int move (int x, int y);
+int acs_char (int acs);
+int curs_set (int visibility);
+int move (int x, int y);
 
-extern void wborder (window_t window,
-					 box_sides_t sides, box_corners_t corners);
-extern void mvwblit_line (window_t window, int x, int y, int *wch, int len);
-extern void wresize (window_t window, int width, int height);
-extern void resizeterm (int width, int height);
+void wborder (window_t window, box_sides_t sides, box_corners_t corners);
+void mvwblit_line (window_t window, int x, int y, int *wch, int len);
+void wresize (window_t window, int width, int height);
+void resizeterm (int width, int height);
 
-extern Rect getwrect (struct window_s *window);
+Rect getwrect (struct window_s *window);
 
-extern void printf(string fmt, ...);
+void printf(string fmt, ...);
 // qfcc stuff
 #else
 // gcc stuff

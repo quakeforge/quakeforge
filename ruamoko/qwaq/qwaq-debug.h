@@ -55,28 +55,25 @@ typedef struct qdb_auxfunction_s {
 
 typedef struct qdb_target_s { int handle; } qdb_target_t;
 
-extern void qdb_set_trace (qdb_target_t target, int state);
-extern int qdb_set_breakpoint (qdb_target_t target, unsigned staddr);
-extern int qdb_clear_breakpoint (qdb_target_t target, unsigned staddr);
-extern int qdb_set_watchpoint (qdb_target_t target, unsigned offset);
-extern int qdb_clear_watchpoint (qdb_target_t target);
-extern int qdb_continue (qdb_target_t target);
-extern qdb_state_t qdb_get_state (qdb_target_t target);
-extern int qdb_get_data (qdb_target_t target, unsigned src, unsigned len,
-						 void *dst);
-extern string qdb_get_string (qdb_target_t target, unsigned str);
-extern qdb_def_t qdb_find_global (qdb_target_t target, string name);
-extern qdb_def_t qdb_find_field (qdb_target_t target, string name);
-extern qdb_function_t *qdb_find_function (qdb_target_t target, string name);
-extern qdb_function_t *qdb_get_function (qdb_target_t target, unsigned fnum);
-extern qdb_auxfunction_t *qdb_find_auxfunction (qdb_target_t target,
-												string name);
-extern qdb_auxfunction_t *qdb_get_auxfunction (qdb_target_t target,
-											   unsigned fnum);
-extern qdb_def_t *qdb_get_local_defs (qdb_target_t target, unsigned fnum);
+void qdb_set_trace (qdb_target_t target, int state);
+int qdb_set_breakpoint (qdb_target_t target, unsigned staddr);
+int qdb_clear_breakpoint (qdb_target_t target, unsigned staddr);
+int qdb_set_watchpoint (qdb_target_t target, unsigned offset);
+int qdb_clear_watchpoint (qdb_target_t target);
+int qdb_continue (qdb_target_t target);
+qdb_state_t qdb_get_state (qdb_target_t target);
+int qdb_get_data (qdb_target_t target, unsigned src, unsigned len, void *dst);
+string qdb_get_string (qdb_target_t target, unsigned str);
+qdb_def_t qdb_find_global (qdb_target_t target, string name);
+qdb_def_t qdb_find_field (qdb_target_t target, string name);
+qdb_function_t *qdb_find_function (qdb_target_t target, string name);
+qdb_function_t *qdb_get_function (qdb_target_t target, unsigned fnum);
+qdb_auxfunction_t *qdb_find_auxfunction (qdb_target_t target, string name);
+qdb_auxfunction_t *qdb_get_auxfunction (qdb_target_t target, unsigned fnum);
+qdb_def_t *qdb_get_local_defs (qdb_target_t target, unsigned fnum);
 
-extern void traceon();
-extern void traceoff();
+void traceon();
+void traceoff();
 
 #else//GCC
 
