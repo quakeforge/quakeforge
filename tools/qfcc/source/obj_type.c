@@ -141,7 +141,7 @@ qfo_encode_fldptr (type_t *type)
 }
 
 static def_t *
-qfo_encode_none (type_t *type)
+qfo_encode_basic (type_t *type)
 {
 	qfot_type_t *enc;
 	def_t      *def;
@@ -260,7 +260,7 @@ qfo_encode_type (type_t *type)
 	reloc_t    *relocs = 0;
 
 	static encode_f funcs[] = {
-		qfo_encode_none,	// ty_none
+		qfo_encode_basic,	// ty_basic
 		qfo_encode_struct,	// ty_struct
 		qfo_encode_struct,	// ty_union
 		qfo_encode_struct,	// ty_enum
