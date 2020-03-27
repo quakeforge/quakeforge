@@ -1428,7 +1428,7 @@ expr_nil (sblock_t *sblock, expr_t *e, operand_t **op)
 	sblock = statement_subexpr (sblock, new_integer_expr(0), &zero);
 	sblock = statement_subexpr (sblock, size_expr, &size);
 
-	s = new_statement (st_move, "<MEMSET>", e);
+	s = new_statement (st_memset, "<MEMSET>", e);
 	s->opa = zero;
 	s->opb = size;
 	s->opc = *op;
