@@ -762,8 +762,7 @@ struct_decl
 		{
 			if (!$<spec>0.type)
 				$<spec>0.type = type_default;
-			$1->type = append_type ($1->type, $<spec>0.type);
-			$1->type = find_type ($1->type);
+			$1->type = find_type (append_type ($1->type, $<spec>0.type));
 			$1->sy_type = sy_var;
 			$1->visibility = current_visibility;
 			symtab_addsymbol (current_symtab, $1);
@@ -775,8 +774,7 @@ struct_decl
 		{
 			if (!$<spec>0.type)
 				$<spec>0.type = type_default;
-			$1->type = append_type ($1->type, $<spec>0.type);
-			$1->type = find_type ($1->type);
+			$1->type = find_type (append_type ($1->type, $<spec>0.type));
 			$1->sy_type = sy_var;
 			$1->visibility = current_visibility;
 			symtab_addsymbol (current_symtab, $1);
@@ -1419,8 +1417,7 @@ init_var_decl
 	: var_decl opt_initializer
 		{
 			specifier_t spec = $<spec>0;
-			$1->type = append_type ($1->type, spec.type);
-			$1->type = find_type ($1->type);
+			$1->type = find_type (append_type ($1->type, spec.type));
 			$1->sy_type = sy_var;
 			initialize_def ($1, 0, current_symtab->space, spec.storage);
 			$$ = assign_expr (new_symbol_expr ($1), $2);
