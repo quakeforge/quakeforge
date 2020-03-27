@@ -90,18 +90,18 @@ typedef struct static_instance_s {
 } static_instance_t;
 
 extern struct type_s type_id;
-extern struct type_s type_obj_object;
-extern struct type_s type_obj_class;
+extern struct type_s type_object;
+extern struct type_s type_class;
 extern struct type_s type_Class;
-extern struct type_s type_obj_protocol;
+extern struct type_s type_protocol;
 extern struct type_s type_SEL;
 extern struct type_s type_IMP;
 extern struct type_s type_supermsg;
-extern struct type_s type_obj_exec_class;
-extern struct type_s type_obj_method;
-extern struct type_s type_obj_super;
-extern struct type_s type_obj_method_description;
-extern struct type_s type_obj_category;
+extern struct type_s type_exec_class;
+extern struct type_s type_method;
+extern struct type_s type_super;
+extern struct type_s type_method_description;
+extern struct type_s type_category;
 extern struct type_s type_ivar;
 extern struct type_s type_module;
 

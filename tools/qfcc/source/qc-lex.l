@@ -319,8 +319,8 @@ typedef struct {
 static keyword_t obj_keywords[] = {
 	{"id",				OBJECT,	&type_id		},
 	{"Class",			TYPE,	&type_Class		},
-	{"Method",			TYPE,	&type_obj_method},
-	{"Super",			TYPE,	&type_obj_super	},
+	{"Method",			TYPE,	&type_method	},
+	{"Super",			TYPE,	&type_super		},
 	{"SEL",				TYPE,	&type_SEL		},
 	{"IMP",				TYPE,	&type_IMP		},
 

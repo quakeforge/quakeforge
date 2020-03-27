@@ -604,7 +604,7 @@ emit_methods (methodlist_t *methods, const char *name, int instance)
 	methods->count = count;
 	methods->instance = instance;
 
-	methods_struct[2].type = array_type (&type_obj_method, count);
+	methods_struct[2].type = array_type (&type_method, count);
 	return emit_structure (va ("_OBJ_%s_METHODS_%s", type, name), 's',
 						   methods_struct, 0, methods, sc_static);
 }
@@ -672,8 +672,7 @@ emit_method_descriptions (methodlist_t *methods, const char *name,
 	methods->count = count;
 	methods->instance = instance;
 
-	method_list_struct[1].type = array_type (&type_obj_method_description,
-											 count);
+	method_list_struct[1].type = array_type (&type_method_description, count);
 	return emit_structure (va ("_OBJ_%s_METHODS_%s", type, name), 's',
 						   method_list_struct, 0, methods, sc_static);
 }

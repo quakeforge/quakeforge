@@ -151,7 +151,7 @@ super_expr (class_type_t *class_type)
 
 	sym = symtab_lookup (current_symtab, ".super");
 	if (!sym || sym->table != current_symtab) {
-		sym = new_symbol_type (".super", &type_obj_super);
+		sym = new_symbol_type (".super", &type_super);
 		initialize_def (sym, 0, current_symtab->space, sc_local);
 	}
 	super = new_symbol_expr (sym);
