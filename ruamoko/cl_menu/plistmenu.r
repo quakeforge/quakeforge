@@ -145,7 +145,7 @@ string_from_plist (PLString *plstring)
 	local @param ret;
 	local string str = [plstring string];
 
-	ret = nil;	//FIXME should be ret = nil;
+	ret = nil;
 	if (str_mid (str, 0, 1) == "[")
 		return rect_from_plist (plstring);
 
