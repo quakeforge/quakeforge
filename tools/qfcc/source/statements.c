@@ -1406,16 +1406,34 @@ static sblock_t *
 expr_nil (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	type_t     *nil = e->e.nil;
-	expr_t     *ptr;
+	expr_t     *size_expr;
+	size_t      nil_size;
+	operand_t  *zero;
+	operand_t  *size;
+	statement_t *s;
+
 	if (!is_struct (nil) && !is_array (nil)) {
 		*op = value_operand (new_nil_val (nil), e);
 		return sblock;
 	}
-	ptr = expr_file_line (address_expr (new_temp_def_expr (nil), 0, 0), e);
-	expr_file_line (ptr, e);
-	sblock = statement_subexpr (sblock, ptr, op);
-	e = expr_file_line (new_memset_expr (ptr, new_integer_expr (0), nil), e);
-	sblock = statement_slist (sblock, e);
+	if (!*op) {
+		*op = temp_operand (nil, e);
+	}
+	nil_size = type_size (nil);
+	if (nil_size < 0x10000) {
+		size_expr = new_short_expr (nil_size);
+	} else {
+		size_expr = new_integer_expr (nil_size);
+	}
+	sblock = statement_subexpr (sblock, new_integer_expr(0), &zero);
+	sblock = statement_subexpr (sblock, size_expr, &size);
+
+	s = new_statement (st_move, "<MEMSET>", e);
+	s->opa = zero;
+	s->opb = size;
+	s->opc = *op;
+	sblock_add_statement (sblock, s);
+
 	return sblock;
 }
 
