@@ -110,7 +110,7 @@ typedef struct def_s {
 /** Specify the storage class of a def.
 */
 typedef enum storage_class_e {
-	sc_global,					///< def is globally visibil across units
+	sc_global,					///< def is globally visible across units
 	sc_system,					///< def may be redefined once
 	sc_extern,					///< def is externally allocated
 	sc_static,					///< def is private to the current unit
