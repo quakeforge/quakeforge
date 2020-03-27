@@ -234,6 +234,9 @@ pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
 			return type->t.array.size * size;
 		case ty_class:
 			return 1;	//FIXME or should it return sizeof class struct?
+		case ty_alias:
+			aux_type = &G_STRUCT (pr, qfot_type_t, type->t.alias.aux_type);
+			return pr_debug_type_size (pr, aux_type);
 	}
 	return 0;
 }
@@ -883,6 +886,9 @@ value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 		case ty_class:
 			raw_type_view.class_view (type, value, data);
 			break;
+		case ty_alias://XXX
+			type = &G_STRUCT (data->pr, qfot_type_t, type->t.alias.aux_type);
+			return value_string (data, type, value);
 	}
 	return data->dstr->str;
 }

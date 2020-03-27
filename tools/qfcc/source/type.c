@@ -297,6 +297,8 @@ types_same (type_t *a, type_t *b)
 			if (a->t.class != b->t.class)
 				return 0;
 			return compare_protocols (a->protos, b->protos);
+		case ty_alias:
+			return !strcmp (a->name, b->name);
 	}
 	internal_error (0, "we be broke");
 }
@@ -345,6 +347,9 @@ find_type (type_t *type)
 				type->t.array.type = find_type (type->t.array.type);
 				break;
 			case ty_class:
+				break;
+			case ty_alias:
+				type->t.alias.type = find_type (type->t.alias.type);
 				break;
 		}
 	}
@@ -453,6 +458,11 @@ print_type_str (dstring_t *str, const type_t *type)
 		return;
 	}
 	switch (type->meta) {
+		case ty_alias:
+			dasprintf (str, "({%s=", type->name);
+			print_type_str (str, type->t.alias.type);
+			dstring_appendstr (str, "})");
+			return;
 		case ty_class:
 			dasprintf (str, " %s", type->t.class->name);
 			if (type->protos)
@@ -610,6 +620,11 @@ encode_type (dstring_t *encoding, const type_t *type)
 	if (!type)
 		return;
 	switch (type->meta) {
+		case ty_alias: // XXX do I want this, or just the unaliased type?
+			dasprintf (encoding, "{%s>", type->name);
+			encode_type (encoding, type->t.alias.type);
+			dasprintf (encoding, "}");
+			return;
 		case ty_class:
 			encode_class (encoding, type);
 			return;
@@ -936,6 +951,8 @@ type_size (const type_t *type)
 					size += type_size (class->super_class->type);
 				return size;
 			}
+		case ty_alias:
+			return type_size (type->t.alias.type);
 	}
 	return 0;
 }

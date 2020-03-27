@@ -649,6 +649,7 @@ get_def_type (qfo_t *qfo, pointer_t type)
 		return ev_void;
 	type_def = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, type);
 	switch ((ty_meta_e)type_def->meta) {
+		case ty_alias:	//XXX
 		case ty_basic:
 			// field, pointer and function types store their basic type in
 			// the same location.
@@ -676,6 +677,8 @@ get_type_size (qfo_t *qfo, pointer_t type)
 		return 1;
 	type_def = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, type);
 	switch ((ty_meta_e)type_def->meta) {
+		case ty_alias:
+			return get_type_size (qfo, type_def->t.alias.aux_type);
 		case ty_basic:
 			// field, pointer and function types store their basic type in
 			// the same location.
@@ -724,6 +727,8 @@ get_type_alignment_log (qfo_t *qfo, pointer_t type)
 		return 0;
 	type_def = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, type);
 	switch ((ty_meta_e)type_def->meta) {
+		case ty_alias:
+			return get_type_alignment_log (qfo, type_def->t.alias.aux_type);
 		case ty_basic:
 			// field, pointer and function types store their basic type in
 			// the same location.

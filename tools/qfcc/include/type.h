@@ -51,6 +51,10 @@ typedef struct ty_array_s {
 	int         size;
 } ty_array_t;
 
+typedef struct ty_alias_s {
+	struct type_s *type;
+} ty_alias_t;
+
 typedef struct type_s {
 	etype_t     type;		///< ev_invalid means structure/array etc
 	const char *name;
@@ -64,6 +68,7 @@ typedef struct type_s {
 		ty_array_t  array;
 		struct symtab_s *symtab;
 		struct class_s *class;
+		ty_alias_t  alias;
 	} t;
 	struct type_s *next;
 	int         freeable;
