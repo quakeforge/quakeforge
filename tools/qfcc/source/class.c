@@ -89,8 +89,10 @@ type_t      type_moduleptr = { ev_pointer, 0, 1, ty_basic, {{&type_module}}};
 type_t     *obj_exec_class_params[] = { &type_moduleptr };
 type_t      type_exec_class = { ev_func, 0, 1, ty_basic,
 								{{&type_void, 1, obj_exec_class_params}}};
-
-type_t      type_object = {ev_invalid, 0, 0, ty_struct};
+// the cast of 1 in the init is to ensure pointers to incomplete types
+// are never misidentified as id. It will be set to the correct value
+// when the obj system is initialized.
+type_t      type_object = {ev_invalid, 0, 0, ty_struct, {{(type_t *)1}}};
 type_t      type_id = { ev_pointer, "id", 1, ty_basic, {{&type_object}}};
 type_t      type_class = { ev_invalid, 0, 0, ty_struct};
 type_t      type_Class = { ev_pointer, 0, 1, ty_basic, {{&type_class}}};
