@@ -53,6 +53,7 @@ test_progs_dat=\
 	ivar-struct-return.dat \
 	methodparams.dat \
 	modulo.dat \
+	nilparamret.dat \
 	paramret.dat \
 	quaternion.dat \
 	return-ivar.dat \
@@ -321,6 +322,15 @@ modulo.run: Makefile build-run
 	@TEST_HARNESS_OPTS=--float $(srcdir)/build-run $@
 include ./$(DEPDIR)/modulo.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/modulo.Qo
+
+nilparamret_dat_SOURCES=nilparamret.r
+nilparamret_obj=$(nilparamret_dat_SOURCES:.r=.qfo)
+nilparamret.dat$(EXEEXT): $(nilparamret_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(nilparamret_obj)
+nilparamret.run: Makefile build-run
+	@$(srcdir)/build-run $@
+include ./$(DEPDIR)/nilparamret.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/nilparamret.Qo
 
 paramret_dat_SOURCES=paramret.r
 paramret_obj=$(paramret_dat_SOURCES:.r=.qfo)
