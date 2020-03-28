@@ -366,14 +366,17 @@ external_def
 	| optional_specifiers qc_func_params
 		{
 			type_t    **type;
+			type_t     *ret_type;
 			$<spec>$ = $1;		// copy spec bits and storage
 			// .float () foo; is a field holding a function variable rather
 			// than a function that returns a float field.
-			for (type = &$<spec>$.type; *type && (*type)->type == ev_field;
-				 type = &(*type)->t.fldptr.type)
-				 ;
-			*type = parse_params (*type, $2);
-			$<spec>$.type = find_type ($<spec>$.type);
+			for (type = &$1.type; *type && (*type)->type == ev_field;
+				 type = &(*type)->t.fldptr.type) {
+			}
+			ret_type = *type;
+			*type = 0;
+			*type = parse_params (0, $2);
+			$<spec>$.type = find_type (append_type ($1.type, ret_type));
 			if ($<spec>$.type->type != ev_field)
 				$<spec>$.params = $2;
 		}
