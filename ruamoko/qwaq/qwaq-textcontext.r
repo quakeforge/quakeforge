@@ -101,6 +101,43 @@ static TextContext *screen;
 	return self;
 }
 
+-clearReact: (Rect) rect
+{
+	Point       pos = rect.offset;
+	int         len = rect.extent.width;
+	int         count = rect.extent.height;
+
+	if (pos.x + len > xlen) {
+		len = xlen - pos.x;
+	}
+	if (pos.x < 0) {
+		len += pos.x;
+		pos.x = 0;
+	}
+	if (len < 1) {
+		return self;
+	}
+	if (pos.y + count > ylen) {
+		count = ylen - pos.y;
+	}
+	if (pos.y < 0) {
+		count += pos.y;
+		pos.y = 0;
+	}
+	if (count < 1) {
+		return self;
+	}
+	int         ch = background;
+	if (!(ch & 0xff)) {
+		ch |= ' ';
+	}
+	while (count-- > 0) {
+		[self mvhline:pos, ch, len];
+		pos.y++;
+	}
+	return self;
+}
+
 - (void) printf: (string) fmt, ... = #0;
 - (void) vprintf: (string) mft, @va_list args = #0;
 - (void) addch: (int) ch = #0;
@@ -110,6 +147,7 @@ static TextContext *screen;
 - (void) mvvprintf: (Point) pos, string mft, @va_list args = #0;
 - (void) mvaddch: (Point) pos, int ch = #0;
 - (void) mvaddstr: (Point) pos, string str = #0;
+- (void) mvhline: (Point) pos, int ch, int n = #0;
 
 - (void) resizeTo: (Extent) newSize = #0;	// absolute size
 - (void) refresh = #0;
@@ -164,5 +202,6 @@ void mvwblit_line (window_t window, int x, int y, int *wch, int len) = #0;
 void wresize (window_t window, int width, int height) = #0;
 void resizeterm (int width, int height) = #0;
 Rect getwrect (window_t window) = #0;
+void mvwhline (window_t win, int x, int y, int ch, int n) = #0;
 
 void printf(string fmt, ...) = #0;

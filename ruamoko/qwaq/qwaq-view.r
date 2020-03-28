@@ -213,6 +213,12 @@ updateScreenCursor (View *view)
 	[textContext mvaddstr: pos, str];
 }
 
+-clear
+{
+	[textContext clearReact:rect];
+	return self;
+}
+
 -move: (Point) delta
 {
 	xpos += delta.x;

@@ -83,6 +83,7 @@ enum {
 - (void) mvprintf: (Point) pos, string fmt, ...;
 - (void) mvvprintf: (Point) pos, string fmt, @va_list args;
 - (void) mvaddch: (Point) pos, int ch;
+-clear;
 @end
 
 @interface View: Object <View>

@@ -98,6 +98,7 @@ void mvwaddch (window_t win, int x, int y, int ch);
 void waddch (window_t win, int ch);
 void mvwaddstr (window_t win, int x, int y, string str);
 void waddstr (window_t win, string str);
+void mvwhline (window_t win, int x, int y, int ch, int n);
 
 panel_t create_panel (window_t window);
 void destroy_panel (panel_t panel);

@@ -86,6 +86,47 @@
 	return self;
 }
 
+- clearReact: (Rect) rect
+{
+	Point       pos = rect.offset;
+	int         len = rect.extent.width;
+	int         count = rect.extent.height;
+
+	if (pos.x + len > size.width) {
+		len = size.width - pos.x;
+	}
+	if (pos.x < 0) {
+		len += pos.x;
+		pos.x = 0;
+	}
+	if (len < 1) {
+		return self;
+	}
+	if (pos.y + count > size.height) {
+		count = size.height - pos.y;
+	}
+	if (pos.y < 0) {
+		count += pos.y;
+		pos.y = 0;
+	}
+	if (count < 1) {
+		return self;
+	}
+	int         width = size.width;
+	int         ch = background;
+	if (!(ch & 0xff)) {
+		ch |= ' ';
+	}
+	while (count-- > 0) {
+		int        *p = buffer + pos.y * width + pos.x;
+		for (int i = 0; i < len; i++) {
+			*p++ = ch;
+		}
+		pos.y++;
+	}
+	return self;
+}
+
 - (void) bkgd: (int) ch
 {
 	background = ch;

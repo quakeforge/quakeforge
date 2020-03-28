@@ -123,6 +123,7 @@ update_current_func (Debugger *self, unsigned fnum)
 		return;
 	}
 	qdb_get_data (debug_target, func.local_data, func.local_size, local_data);
+	[locals_view clear];
 	if (!local_defs) {
 		[locals_view mvprintf:{0,0}, "%d", func.local_size];
 		for (int y = 1; y < [locals_view size].height; y++) {

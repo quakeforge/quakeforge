@@ -16,6 +16,7 @@
 
 @protocol TextContext
 - blitFromBuffer: (DrawBuffer *) srcBuffer to: (Point) pos from: (Rect) rect;
+- clearReact: (Rect) rect;
 - (Extent) size;
 - (void) resizeTo: (Extent) newSize;	// absolute size
 

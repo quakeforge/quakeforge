@@ -25,6 +25,7 @@
 			int         ylen;
 		};
 	};
+	int         background;
 }
 + (int) max_colors;
 + (int) max_color_pairs;
@@ -49,6 +50,8 @@
 - (void) bkgd: (int) ch;
 - (void) scrollok: (int) flag;
 - (void) border: (box_sides_t) sides, box_corners_t corners;
+- (void) mvhline: (Point) pos, int ch, int n;
+-clearReact: (Rect) rect;
 @end
 
 #else
