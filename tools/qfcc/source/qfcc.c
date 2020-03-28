@@ -313,8 +313,8 @@ strip_path (const char *filename)
 	return filename;
 }
 
-static const char *
-file_basename (const char *filename)
+const char *
+file_basename (const char *filename, int keepdot)
 {
 	const char *p;
 	const char *dot;
@@ -325,7 +325,7 @@ file_basename (const char *filename)
 	for (dot = p = filename + strlen (filename); p > filename; p--) {
 		if (p[-1] == '/' || p[-1] == '\\')
 			break;
-		if (p[0] == '.')
+		if (!keepdot && p[0] == '.')
 			dot = p;
 	}
 	dstring_copysubstr (base, p, dot - p);
@@ -395,7 +395,7 @@ compile_to_obj (const char *file, const char *obj, lang_t lang)
 		}
 	}
 	if (options.frames_files) {
-		write_frame_macros (va ("%s.frame", file_basename (file)));
+		write_frame_macros (va ("%s.frame", file_basename (file, 0)));
 	}
 	if (!err) {
 		qfo_t      *qfo;
@@ -753,13 +753,14 @@ progs_src_compile (void)
 				fprintf (single, "#include \"%s\"\n", qc_filename->str);
 				if (options.frames_files)
 					fprintf (single, "$frame_write \"%s.frame\"\n",
-							 file_basename (qc_filename->str));
+							 file_basename (qc_filename->str, 0));
 			} else {
 				if (compile_file (qc_filename->str))
 					return 1;
 				if (options.frames_files) {
 					write_frame_macros (va ("%s.frame",
-											file_basename (qc_filename->str)));
+											file_basename (qc_filename->str,
+														   0)));
 				}
 			}
 			if (!Script_TokenAvailable (script, 0))
