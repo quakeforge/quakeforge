@@ -320,9 +320,10 @@ qfo_globals (qfo_t *qfo)
 	for (space = 0; space < qfo->num_spaces; space++) {
 		for (i = 0; i < qfo->spaces[space].num_defs; i++, count++) {
 			def = &qfo->spaces[space].defs[i];
-			printf ("%-5d %2d:%-5x %s %s %s", count, space, def->offset,
+			printf ("%-5d %2d:%-5x %s %s %x %s", count, space, def->offset,
 					flags_string (def->flags),
 					QFO_GETSTR (qfo, def->name),
+					def->type,
 					QFO_TYPESTR (qfo, def->type));
 			if (!(def->flags & QFOD_EXTERNAL) && qfo->spaces[space].d.data)
 				printf (" %d",
