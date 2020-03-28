@@ -251,7 +251,7 @@ get_function (const char *name, const type_t *type, int overload, int create)
 
 	func = Hash_Find (overloaded_functions, full_name);
 	if (func) {
-		if (unalias_type (func->type) != type) {
+		if (func->type != type) {
 			error (0, "can't overload on return types");
 			return func;
 		}
@@ -277,7 +277,7 @@ get_function (const char *name, const type_t *type, int overload, int create)
 	func = calloc (1, sizeof (overloaded_function_t));
 	func->name = name;
 	func->full_name = full_name;
-	func->type = (type_t *) type;	//FIXME cast
+	func->type = type;
 	func->overloaded = overload;
 	func->file = pr.source_file;
 	func->line = pr.source_line;
@@ -302,7 +302,7 @@ function_symbol (symbol_t *sym, int overload, int create)
 	if ((!s || s->table != current_symtab) && create) {
 		s = new_symbol (name);
 		s->sy_type = sy_func;
-		s->type = sym->type;
+		s->type = (type_t *) unalias_type (sym->type); // FIXME cast
 		s->params = sym->params;
 		s->s.func = 0;				// function not yet defined
 		symtab_addsymbol (current_symtab, s);
@@ -316,8 +316,8 @@ func_compare (const void *a, const void *b)
 {
 	overloaded_function_t *fa = *(overloaded_function_t **) a;
 	overloaded_function_t *fb = *(overloaded_function_t **) b;
-	type_t     *ta = fa->type;
-	type_t     *tb = fb->type;
+	const type_t *ta = fa->type;
+	const type_t *tb = fb->type;
 	int         na = ta->t.func.num_params;
 	int         nb = tb->t.func.num_params;
 	int         ret, i;
@@ -497,7 +497,13 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 	symtab->space = defspace_new (ds_virtual);
 	current_symtab = symtab;
 
-	if (fsym->type->t.func.num_params < 0) {
+	if (!fsym->s.func) {
+		internal_error (0, "function %s not defined", fsym->name);
+	}
+	if (!is_func (fsym->s.func->type)) {
+		internal_error (0, "function type %s not a funciton", fsym->name);
+	}
+	if (fsym->s.func->type->t.func.num_params < 0) {
 		args = new_symbol_type (".args", &type_va_list);
 		initialize_def (args, 0, symtab->space, sc_param);
 	}
@@ -551,6 +557,7 @@ make_function (symbol_t *sym, const char *nice_name, defspace_t *space,
 	if (!sym->s.func) {
 		sym->s.func = new_function (sym->name, nice_name);
 		sym->s.func->sym = sym;
+		sym->s.func->type = unalias_type (sym->type);
 	}
 	if (sym->s.func->def && sym->s.func->def->external
 		&& storage != sc_extern) {
@@ -615,7 +622,7 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 static void
 build_function (symbol_t *fsym)
 {
-	const type_t *func_type = unalias_type (fsym->type);
+	const type_t *func_type = fsym->s.func->type;
 	if (func_type->t.func.num_params > MAX_PARMS) {
 		error (0, "too many params");
 	}

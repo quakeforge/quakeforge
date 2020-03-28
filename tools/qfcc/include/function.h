@@ -51,7 +51,7 @@ typedef struct overloaded_function_s {
 	const char *name;				///< source level name of function
 	const char *full_name;			///< progs name of function, with type
 									///< encoding
-	struct type_s *type;			///< type of this function
+	const struct type_s *type;		///< type of this function
 	int         overloaded;			///< is this function overloaded
 	string_t    file;				///< source file of the function
 	int         line;				///< source line of this function
@@ -68,6 +68,7 @@ typedef struct function_s {
 	int                 local_defs;
 	string_t            s_file;		///< source file with definition
 	string_t            s_name;		///< name of function in output
+	const struct type_s *type;		///< function's type without aliases
 	int                 temp_num;	///< number for next temp var
 	struct def_s       *temp_defs[4];	///< freed temp vars (by size)
 	struct def_s       *def;		///< output def holding function number

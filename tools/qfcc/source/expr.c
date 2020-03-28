@@ -2032,8 +2032,7 @@ expr_t *
 return_expr (function_t *f, expr_t *e)
 {
 	const type_t *t;
-	const type_t *func_type = unalias_type (f->sym->type);
-	const type_t *ret_type = unalias_type (func_type->t.func.type);
+	const type_t *ret_type = unalias_type (f->type->t.func.type);
 
 	if (!e) {
 		if (!is_void(ret_type)) {
