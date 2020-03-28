@@ -170,6 +170,7 @@ parse_params (type_t *type, param_t *parms)
 {
 	param_t    *p;
 	type_t     *new;
+	type_t     *ptype;
 	int         count = 0;
 
 	if (type && is_class (type)) {
@@ -201,7 +202,8 @@ parse_params (type_t *type, param_t *parms)
 				error (0, "cannot use an object as a parameter (forgot *?)");
 				p->type = &type_id;
 			}
-			new->t.func.param_types[new->t.func.num_params] = p->type;
+			ptype = (type_t *) unalias_type (p->type); //FIXME cast
+			new->t.func.param_types[new->t.func.num_params] = ptype;
 			new->t.func.num_params++;
 		}
 	}
