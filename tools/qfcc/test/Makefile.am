@@ -54,6 +54,7 @@ test_progs_dat=\
 	methodparams.dat \
 	modulo.dat \
 	nilparamret.dat \
+	overload.dat \
 	paramret.dat \
 	quaternion.dat \
 	return-ivar.dat \
@@ -333,6 +334,15 @@ nilparamret.run: Makefile build-run
 include ./$(DEPDIR)/nilparamret.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/nilparamret.Qo
 
+overload_dat_SOURCES=overload.r
+overload_obj=$(overload_dat_SOURCES:.r=.qfo)
+overload.dat$(EXEEXT): $(overload_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(overload_obj)
+overload.run: Makefile build-run
+	@$(srcdir)/build-run $@
+include ./$(DEPDIR)/overload.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/overload.Qo
+
 paramret_dat_SOURCES=paramret.r
 paramret_obj=$(paramret_dat_SOURCES:.r=.qfo)
 paramret.dat$(EXEEXT): $(paramret_obj) $(QFCC_DEP)
@@ -512,4 +522,4 @@ $(r_depfiles_remade):
 am--depfiles: $(am__depfiles_remade) $(r_depfiles_remade)
 
 EXTRA_DIST= test-bi.h build-run test-defspace.h
-CLEANFILES= *.dat *.sym *.qfo *.run *.frame
+CLEANFILES= *.dat *.sym *.qfo *.run *.frame *.log *.trs
