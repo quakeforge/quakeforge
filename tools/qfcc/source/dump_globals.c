@@ -446,8 +446,9 @@ qfo_functions (qfo_t *qfo)
 {
 	qfo_def_t  *def;
 	qfo_func_t *func;
-	unsigned    i, d;
+	unsigned    i, j, d;
 	unsigned    space;
+	qfo_mspace_t *locals;
 
 	for (i = 0; i < qfo->num_funcs; i++) {
 		func = &qfo->funcs[i];
@@ -471,7 +472,29 @@ qfo_functions (qfo_t *qfo)
 			printf (" @ %x", func->code);
 		else
 			printf (" = #%d", -func->code);
-		puts ("");
+		printf (" loc: %d\n", func->locals_space);
+		if (func->locals_space) {
+			locals = &qfo->spaces[func->locals_space];
+			printf ("%*s%d %p %d %p %d %d\n", 16, "", locals->type,
+					locals->defs, locals->num_defs,
+					locals->d.data, locals->data_size, locals->id);
+			for (j = 0; j < locals->num_defs; j++) {
+				qfo_def_t  *def = locals->defs + j;
+				int         offset;
+				const char *typestr;
+				const char *name;
+				qfot_type_t *type;
+
+				name = QFO_GETSTR (qfo, def->name);
+				//FIXME check type
+				type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t,
+									def->type);
+				typestr = QFO_GETSTR (qfo, type->encoding);
+				offset = def->offset;
+
+				printf ("%*s%d %s %s\n", 20, "", offset, name, typestr);
+			}
+		}
 	}
 }
 
