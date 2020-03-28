@@ -151,8 +151,7 @@ qfo_encode_basic (type_t *type)
 	else if (type->type == ev_pointer || type->type == ev_field)
 		return qfo_encode_fldptr (type);
 
-	// can't use sizeof on enc->t.type, but pr_uint_t is the backing type
-	def = qfo_new_encoding (type, sizeof (pr_uint_t));
+	def = qfo_new_encoding (type, sizeof (enc->t.type));
 	enc = D_POINTER (qfot_type_t, def);
 	enc->t.type = type->type;
 	return def;
