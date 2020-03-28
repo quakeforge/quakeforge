@@ -69,6 +69,7 @@ test_progs_dat=\
 	swap.dat \
 	triangle.dat \
 	typedef.dat \
+	typelinker.dat \
 	vecaddr.dat \
 	vecexpr.dat \
 	vecinit.dat \
@@ -470,6 +471,15 @@ typedef.run: Makefile build-run
 	@$(srcdir)/build-run $@
 include ./$(DEPDIR)/typedef.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/typedef.Qo
+
+typelinker_dat_SOURCES=typelinker_a.r typelinker_b.r
+typelinker_obj=$(typelinker_dat_SOURCES:.r=.qfo)
+typelinker.dat$(EXEEXT): $(typelinker_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(typelinker_obj)
+typelinker.run: Makefile build-run
+	@$(srcdir)/build-run $@
+include ./$(DEPDIR)/typelinker.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/typelinker.Qo
 
 vecaddr_dat_SOURCES=vecaddr.r
 vecaddr_obj=$(vecaddr_dat_SOURCES:.r=.qfo)
