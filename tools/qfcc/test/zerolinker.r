@@ -27,7 +27,7 @@ main (void)
 	for (type = encodings.types;
 		 ((int *)type - (int *) encodings.types) < encodings.size;
 		type = next_type (type)) {
-		if (type.meta == ty_struct) {
+		if (type.meta == ty_union) {
 			if (type.t.strct.tag == "tag @param") {
 				found_param = 1;
 			}
