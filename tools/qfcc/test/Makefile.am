@@ -73,7 +73,9 @@ test_progs_dat=\
 	vecexpr.dat \
 	vecinit.dat \
 	voidfor.dat \
-	while.dat
+	while.dat \
+	zerolinker.dat \
+	$e
 
 fail_progs_dat=
 
@@ -513,6 +515,15 @@ while.run: Makefile build-run
 	@$(srcdir)/build-run $@
 include ./$(DEPDIR)/while.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/while.Qo
+
+zerolinker_dat_SOURCES=zerolinker.r
+zerolinker_obj=$(zerolinker_dat_SOURCES:.r=.qfo)
+zerolinker.dat$(EXEEXT): $(zerolinker_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(zerolinker_obj)
+zerolinker.run: Makefile build-run
+	@$(srcdir)/build-run $@
+include ./$(DEPDIR)/zerolinker.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/zerolinker.Qo
 
 $(r_depfiles_remade):
 	@$(MKDIR_P) $(@D)
