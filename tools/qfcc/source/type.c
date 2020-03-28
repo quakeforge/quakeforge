@@ -50,7 +50,6 @@
 #include "class.h"
 #include "def.h"
 #include "diagnostic.h"
-#include "dot.h"
 #include "expr.h"
 #include "function.h"
 #include "obj_type.h"
@@ -208,6 +207,60 @@ free_type (type_t *type)
 	FREE (types, type);
 }
 
+static type_t *
+copy_chain (type_t *type, type_t *append)
+{
+	type_t     *new = 0;
+	type_t    **n = &new;
+
+	while (type) {
+		*n = new_type ();
+		**n = *type;
+		switch (type->meta) {
+			case ty_basic:
+				switch (type->type) {
+					case ev_void:
+					case ev_string:
+					case ev_float:
+					case ev_vector:
+					case ev_entity:
+					case ev_type_count:
+					case ev_quat:
+					case ev_integer:
+					case ev_uinteger:
+					case ev_short:
+					case ev_double:
+						internal_error (0, "copy basic type");
+					case ev_field:
+					case ev_pointer:
+						n = &(*n)->t.fldptr.type;
+						type = type->t.fldptr.type;
+						break;
+					case ev_func:
+						n = &(*n)->t.func.type;
+						type = type->t.func.type;
+						break;
+					case ev_invalid:
+						internal_error (0, "invalid basic type");
+						break;
+				}
+				break;
+			case ty_array:
+				n = &(*n)->t.array.type;
+				type = type->t.array.type;
+				break;
+			case ty_struct:
+			case ty_union:
+			case ty_enum:
+			case ty_class:
+			case ty_alias:	//XXX is this correct?
+				internal_error (0, "copy object type %d", type->meta);
+		}
+	}
+	*n = append;
+	return new;
+}
+
 type_t *
 append_type (type_t *type, type_t *new)
 {
@@ -255,9 +308,10 @@ append_type (type_t *type, type_t *new)
 				internal_error (0, "append to object type");
 		}
 	}
-	if (new->meta == ty_alias) {
+	if (type && new->meta == ty_alias) {
+		type_t     *chain = find_type (copy_chain (type, new));
 		*t = new->t.alias.aux_type;
-		type = alias_type (type, new, 0);
+		type = alias_type (type, chain, 0);
 	} else {
 		*t = new;
 	}
