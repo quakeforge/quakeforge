@@ -282,6 +282,8 @@ alloc_data (int space, int size)
 static void
 resolve_external_def (defref_t *ext, defref_t *def)
 {
+	qfot_type_t *ext_type;
+	qfot_type_t *def_type;
 	if (!(REF (ext)->flags & QFOD_EXTERNAL)) {
 		def_error (REF (ext), "%s %x", WORKSTR (REF (ext)->name),
 				   REF (ext)->flags);
@@ -292,7 +294,15 @@ resolve_external_def (defref_t *ext, defref_t *def)
 				   REF (def)->flags);
 		linker_internal_error ("def is an external or local def");
 	}
-	if (REF (ext)->type != REF (def)->type) {
+	ext_type = WORKTYPE (REF(ext)->type);
+	if (ext_type->meta == ty_alias) {
+		ext_type = WORKTYPE (ext_type->t.alias.aux_type);
+	}
+	def_type = WORKTYPE (REF (def)->type);
+	if (def_type->meta == ty_alias) {
+		def_type = WORKTYPE (def_type->t.alias.aux_type);
+	}
+	if (ext_type != def_type) {
 		linker_type_mismatch (REF (ext), REF (def));
 		return;
 	}
