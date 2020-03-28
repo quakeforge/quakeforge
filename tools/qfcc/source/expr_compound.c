@@ -83,10 +83,12 @@ new_compound_init (void)
 }
 
 void
-build_element_chain (element_chain_t *element_chain, type_t *type,
+build_element_chain (element_chain_t *element_chain, const type_t *type,
 					 expr_t *eles, int base_offset)
 {
 	element_t  *ele = eles->e.compound.head;
+
+	type = unalias_type (type);
 
 	if (is_array (type)) {
 		type_t     *array_type = type->t.array.type;
@@ -193,8 +195,9 @@ assign_elements (expr_t *local_expr, expr_t *init,
 }
 
 expr_t *
-initialized_temp_expr (type_t *type, expr_t *compound)
+initialized_temp_expr (const type_t *type, expr_t *compound)
 {
+	type = unalias_type (type);
 	element_chain_t element_chain;
 	expr_t     *temp = new_temp_def_expr (type);
 	expr_t     *block = new_block_expr ();

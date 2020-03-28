@@ -580,8 +580,10 @@ dump_qfo_types (qfo_t *qfo, int base_address)
 				printf (" %-5x\n", type->t.class);
 				break;
 			case ty_alias:
-				printf (" %s %d %-5x\n", QFO_GETSTR (qfo, type->t.alias.name),
-						type->t.alias.type, type->t.alias.aux_type);
+				printf (" %s %d %5x %5x\n",
+						QFO_GETSTR (qfo, type->t.alias.name),
+						type->t.alias.type, type->t.alias.aux_type,
+						type->t.alias.full_type);
 				break;
 		}
 	}

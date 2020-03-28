@@ -235,7 +235,7 @@ check_params (param_t *params)
 }
 
 static overloaded_function_t *
-get_function (const char *name, type_t *type, int overload, int create)
+get_function (const char *name, const type_t *type, int overload, int create)
 {
 	const char *full_name;
 	overloaded_function_t *func;
@@ -251,7 +251,7 @@ get_function (const char *name, type_t *type, int overload, int create)
 
 	func = Hash_Find (overloaded_functions, full_name);
 	if (func) {
-		if (func->type != type) {
+		if (unalias_type (func->type) != type) {
 			error (0, "can't overload on return types");
 			return func;
 		}
@@ -277,7 +277,7 @@ get_function (const char *name, type_t *type, int overload, int create)
 	func = calloc (1, sizeof (overloaded_function_t));
 	func->name = name;
 	func->full_name = full_name;
-	func->type = type;
+	func->type = (type_t *) type;	//FIXME cast
 	func->overloaded = overload;
 	func->file = pr.source_file;
 	func->line = pr.source_line;
@@ -294,7 +294,7 @@ function_symbol (symbol_t *sym, int overload, int create)
 	overloaded_function_t *func;
 	symbol_t   *s;
 
-	func = get_function (name, sym->type, overload, create);
+	func = get_function (name, unalias_type (sym->type), overload, create);
 
 	if (func && func->overloaded)
 		name = func->full_name;
@@ -615,7 +615,8 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 static void
 build_function (symbol_t *fsym)
 {
-	if (fsym->type->t.func.num_params > MAX_PARMS) {
+	const type_t *func_type = unalias_type (fsym->type);
+	if (func_type->t.func.num_params > MAX_PARMS) {
 		error (0, "too many params");
 	}
 	//	FIXME

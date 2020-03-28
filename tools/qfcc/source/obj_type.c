@@ -254,6 +254,28 @@ qfo_encode_class (type_t *type)
 	return def;
 }
 
+static def_t *
+qfo_encode_alias (type_t *type)
+{
+	qfot_type_t *enc;
+	def_t      *def;
+	def_t      *type_def;
+	def_t      *full_def;
+
+	type_def = qfo_encode_type (type->t.alias.aux_type);
+	full_def = qfo_encode_type (type->t.alias.full_type);
+
+	def = qfo_new_encoding (type, sizeof (enc->t.alias));
+	enc = D_POINTER (qfot_type_t, def);
+	enc->t.alias.type = type->type;
+	ENC_DEF (enc->t.alias.aux_type, type_def);
+	ENC_DEF (enc->t.alias.full_type, full_def);
+	if (type->name) {
+		ENC_STR (enc->t.alias.name, type->name);
+	}
+	return def;
+}
+
 def_t *
 qfo_encode_type (type_t *type)
 {
@@ -266,6 +288,7 @@ qfo_encode_type (type_t *type)
 		qfo_encode_struct,	// ty_enum
 		qfo_encode_array,	// ty_array
 		qfo_encode_class,	// ty_class
+		qfo_encode_alias,	// ty_alias
 	};
 
 	if (type->type_def && type->type_def->external) {

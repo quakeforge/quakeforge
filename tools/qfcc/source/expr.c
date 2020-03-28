@@ -211,6 +211,7 @@ convert_vector (expr_t *e)
 type_t *
 get_type (expr_t *e)
 {
+	const type_t *type = 0;
 	convert_name (e);
 	switch (e->type) {
 		case ex_labelref:
@@ -238,19 +239,23 @@ get_type (expr_t *e)
 			return &type_void;
 		case ex_expr:
 		case ex_uexpr:
-			return e->e.expr.type;
+			type = e->e.expr.type;
+			break;
 		case ex_def:
-			return e->e.def->type;
+			type = e->e.def->type;
+			break;
 		case ex_symbol:
-			return e->e.symbol->type;
+			type = e->e.symbol->type;
+			break;
 		case ex_temp:
 			return e->e.temp.type;
 		case ex_value:
-			return e->e.value->type;
+			type = e->e.value->type;
+			break;
 		case ex_vector:
 			return e->e.vector.type;
 	}
-	return 0;
+	return (type_t *) unalias_type (type);//FIXME cast
 }
 
 etype_t
@@ -632,12 +637,12 @@ new_symbol_expr (symbol_t *symbol)
 }
 
 expr_t *
-new_temp_def_expr (type_t *type)
+new_temp_def_expr (const type_t *type)
 {
 	expr_t     *e = new_expr ();
 
 	e->type = ex_temp;
-	e->e.temp.type = type;
+	e->e.temp.type = (type_t *) unalias_type (type);	// FIXME cast
 	return e;
 }
 
@@ -2026,8 +2031,9 @@ goto_expr (expr_t *label)
 expr_t *
 return_expr (function_t *f, expr_t *e)
 {
-	type_t     *t;
-	type_t     *ret_type = f->sym->type->t.func.type;
+	const type_t *t;
+	const type_t *func_type = unalias_type (f->sym->type);
+	const type_t *ret_type = unalias_type (func_type->t.func.type);
 
 	if (!e) {
 		if (!is_void(ret_type)) {
@@ -2064,7 +2070,7 @@ return_expr (function_t *f, expr_t *e)
 			warning (e, "returning a value for a void function");
 	}
 	if (e->type == ex_bool) {
-		e = convert_from_bool (e, ret_type);
+		e = convert_from_bool (e, (type_t *) ret_type); //FIXME cast
 	}
 	if (is_float(ret_type) && is_integer_val (e)) {
 		convert_int (e);
@@ -2073,7 +2079,7 @@ return_expr (function_t *f, expr_t *e)
 	if (is_void(t)) {
 		if (e->type == ex_nil) {
 			t = ret_type;
-			convert_nil (e, t);
+			convert_nil (e, (type_t *) t);//FIXME cast
 		} else {
 			if (!options.traditional)
 				return error (e, "void value not ignored as it ought to be");
@@ -2091,7 +2097,7 @@ return_expr (function_t *f, expr_t *e)
 					 f->sym->name);
 	} else {
 		if (ret_type != t) {
-			e = cast_expr (ret_type, e);
+			e = cast_expr ((type_t *) ret_type, e);//FIXME cast
 			t = f->sym->type->t.func.type;
 		}
 	}
@@ -2621,6 +2627,7 @@ cast_expr (type_t *dstType, expr_t *e)
 	if (e->type == ex_error)
 		return e;
 
+	dstType = (type_t *) unalias_type (dstType); //FIXME cast
 	srcType = get_type (e);
 
 	if (dstType == srcType)

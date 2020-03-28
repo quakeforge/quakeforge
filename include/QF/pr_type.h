@@ -52,8 +52,9 @@ typedef enum {
 
 typedef struct qfot_alias_s {
 	pr_int_t    type;				///< type at end of alias chain
-	pointer_t   aux_type;			///< referenced type
-	string_t    name;				///< alias name
+	pointer_t   aux_type;			///< referenced type: stripped of aliases
+	pointer_t   full_type;			///< includes full alias info
+	string_t    name;				///< alias name, may be null
 } qfot_alias_t;
 
 typedef struct qfot_fldptr_s {
@@ -101,7 +102,7 @@ typedef struct qfot_array_s {
 */
 typedef struct qfot_type_s {
 	ty_meta_e   meta:32;			///< meta type
-	pr_int_t    size;				///< total word size of this encoding
+	pr_uint_t   size;				///< total word size of this encoding
 	string_t    encoding;			///< Objective-QC encoding
 	union {
 		etype_t     type:32;		///< ty_basic: etype_t

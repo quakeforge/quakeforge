@@ -774,7 +774,11 @@ function_params (qfo_t *qfo, qfo_func_t *func, dfunction_t *df)
 	if (func->type >= qfo->spaces[qfo_type_space].data_size)
 		return;
 	type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, func->type);
-	if (type->meta != ty_basic && type->t.type != ev_func)
+	if (type->meta == ty_alias) {
+		type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t,
+							type->t.alias.aux_type);
+	}
+	if (type->meta != ty_basic || type->t.type != ev_func)
 		return;
 	df->numparms = num_params = type->t.func.num_params;
 	if (num_params < 0)
@@ -1228,6 +1232,10 @@ qfo_to_sym (qfo_t *qfo, int *size)
 		aux->num_locals = num_locals;
 		//FIXME check type
 		type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, func->type);
+		if (type->meta == ty_alias) {
+			type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t,
+								type->t.alias.aux_type);
+		}
 		aux->return_type = type->t.func.return_type;
 		aux++;
 	}

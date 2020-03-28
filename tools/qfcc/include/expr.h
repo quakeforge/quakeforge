@@ -380,10 +380,11 @@ expr_t *build_block_expr (expr_t *expr_list);
 element_t *new_element (expr_t *expr, struct symbol_s *symbol);
 expr_t *new_compound_init (void);
 expr_t *append_element (expr_t *compound, element_t *element);
-expr_t *initialized_temp_expr (struct type_s *type, expr_t *compound);
+expr_t *initialized_temp_expr (const struct type_s *type, expr_t *compound);
 void assign_elements (expr_t *local_expr, expr_t *ptr,
 					  element_chain_t *element_chain);
-void build_element_chain (element_chain_t *element_chain, struct type_s *type,
+void build_element_chain (element_chain_t *element_chain,
+						  const struct type_s *type,
 						  expr_t *eles, int base_offset);
 void free_element_chain (element_chain_t *element_chain);
 
@@ -433,7 +434,7 @@ expr_t *new_symbol_expr (struct symbol_s *symbol);
 	\param type		The type of the temporary variable.
 	\return			The new temporary variable expression node (ex_temp_t).
 */
-expr_t *new_temp_def_expr (struct type_s *type);
+expr_t *new_temp_def_expr (const struct type_s *type);
 
 /**	Create a new nil expression node.
 

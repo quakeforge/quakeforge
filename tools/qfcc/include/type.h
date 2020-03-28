@@ -52,7 +52,8 @@ typedef struct ty_array_s {
 } ty_array_t;
 
 typedef struct ty_alias_s {
-	struct type_s *type;
+	struct type_s *aux_type;	///< other aliases stripped
+	struct type_s *full_type;	///< full alias chain
 } ty_alias_t;
 
 typedef struct type_s {
@@ -148,6 +149,8 @@ type_t *field_type (type_t *aux);
 type_t *pointer_type (type_t *aux);
 type_t *array_type (type_t *aux, int size);
 type_t *based_array_type (type_t *aux, int base, int top);
+type_t *alias_type (type_t *type, type_t *alias_chain, const char *name);
+const type_t *unalias_type (const type_t *type) __attribute__((pure));
 void print_type_str (struct dstring_s *str, const type_t *type);
 void print_type (const type_t *type);
 const char *encode_params (const type_t *type);

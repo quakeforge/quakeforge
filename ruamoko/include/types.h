@@ -33,6 +33,7 @@ typedef enum {
 typedef struct qfot_alias_s {
 	etype_t     type;
 	struct qfot_type_s *aux_type;
+	struct qfot_type_s *full_type;
 	string      name;
 } qfot_alias_t;
 
