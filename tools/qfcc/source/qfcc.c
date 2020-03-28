@@ -181,7 +181,6 @@ InitData (void)
 	clear_classes ();
 	clear_immediates ();
 	clear_selectors ();
-	chain_initial_types ();
 }
 
 static int
@@ -384,6 +383,7 @@ compile_to_obj (const char *file, const char *obj, lang_t lang)
 		return !options.preprocess_only;
 
 	InitData ();
+	chain_initial_types ();
 	begin_compilation ();
 	pr.source_file = ReuseString (strip_path (file));
 	err = yyparse () || pr.error_count;
@@ -549,6 +549,7 @@ separate_compile (void)
 	dstring_delete (extension);
 	if (!err && !options.compile) {
 		InitData ();
+		chain_initial_types ();
 		linker_begin ();
 		for (file = source_files; *file; file++) {
 			if (strncmp (*file, "-l", 2)) {
@@ -726,6 +727,7 @@ progs_src_compile (void)
 	setup_sym_file (options.output_file);
 
 	InitData ();
+	chain_initial_types ();
 
 	begin_compilation ();
 
@@ -830,6 +832,7 @@ main (int argc, char **argv)
 	parse_cpp_name ();
 
 	opcode_init ();
+
 	InitData ();
 	init_types ();
 	clear_immediates ();

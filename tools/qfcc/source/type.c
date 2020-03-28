@@ -1075,6 +1075,47 @@ type_size (const type_t *type)
 	return 0;
 }
 
+static void
+chain_basic_types (void)
+{
+	chain_type (&type_void);
+	chain_type (&type_string);
+	chain_type (&type_float);
+	chain_type (&type_vector);
+	type_entity.t.symtab = pr.entity_fields;
+	chain_type (&type_entity);
+	chain_type (&type_field);
+	chain_type (&type_function);
+	chain_type (&type_pointer);
+	chain_type (&type_floatfield);
+	if (!options.traditional) {
+		chain_type (&type_quaternion);
+		chain_type (&type_integer);
+		chain_type (&type_uinteger);
+		chain_type (&type_short);
+		chain_type (&type_double);
+	}
+}
+
+static void
+chain_structural_types (void)
+{
+	chain_type (&type_param);
+	chain_type (&type_zero);
+	chain_type (&type_type_encodings);
+	chain_type (&type_xdef);
+	chain_type (&type_xdef_pointer);
+	chain_type (&type_xdefs);
+	chain_type (&type_va_list);
+}
+
+void
+chain_initial_types (void)
+{
+	chain_basic_types ();
+	chain_structural_types ();
+}
+
 void
 init_types (void)
 {
@@ -1136,6 +1177,13 @@ init_types (void)
 		{"num_xdefs", &type_pointer},
 		{0, 0}
 	};
+	static struct_def_t va_list_struct[] = {
+		{"count", &type_integer},
+		{"list",  0},				// type will be filled in at runtime
+		{0, 0}
+	};
+
+	chain_basic_types ();
 
 	type_nil = &type_quaternion;
 	type_default = &type_integer;
@@ -1160,8 +1208,8 @@ init_types (void)
 	make_structure ("@xdef", 's', xdef_struct, &type_xdef);
 	make_structure ("@xdefs", 's', xdefs_struct, &type_xdefs);
 
-	if (options.traditional)
-		return;
+	va_list_struct[1].type = pointer_type (&type_param);
+	make_structure ("@va_list", 's', va_list_struct, &type_va_list);
 
 	make_structure ("@quaternion", 's', quaternion_struct, &type_quaternion);
 	type_quaternion.type = ev_quat;
@@ -1181,43 +1229,6 @@ init_types (void)
 		sym->s.offset = 3;
 		symtab_addsymbol (type_quaternion.t.symtab, sym);
 	}
-}
 
-void
-chain_initial_types (void)
-{
-	static struct_def_t va_list_struct[] = {
-		{"count", &type_integer},
-		{"list",  0},				// type will be filled in at runtime
-		{0, 0}
-	};
-
-	chain_type (&type_void);
-	chain_type (&type_string);
-	chain_type (&type_float);
-	chain_type (&type_vector);
-	type_entity.t.symtab = pr.entity_fields;
-	chain_type (&type_entity);
-	chain_type (&type_field);
-	chain_type (&type_function);
-	chain_type (&type_pointer);
-	chain_type (&type_floatfield);
-	if (!options.traditional) {
-		chain_type (&type_quaternion);
-		chain_type (&type_integer);
-		chain_type (&type_uinteger);
-		chain_type (&type_short);
-		chain_type (&type_double);
-	}
-
-	chain_type (&type_param);
-	chain_type (&type_zero);
-	chain_type (&type_type_encodings);
-	chain_type (&type_xdef);
-	chain_type (&type_xdef_pointer);
-	chain_type (&type_xdefs);
-
-	va_list_struct[1].type = pointer_type (&type_param);
-	make_structure ("@va_list", 's', va_list_struct, &type_va_list);
-	chain_type (&type_va_list);
+	chain_structural_types ();
 }
