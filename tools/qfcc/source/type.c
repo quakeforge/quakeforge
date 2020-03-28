@@ -156,7 +156,7 @@ chain_type (type_t *type)
 	if (!type->encoding)
 		type->encoding = type_get_encoding (type);
 	if (!type->type_def)
-		type->type_def = qfo_encode_type (type);
+		type->type_def = qfo_encode_type (type, pr.type_data);
 }
 
 type_t *

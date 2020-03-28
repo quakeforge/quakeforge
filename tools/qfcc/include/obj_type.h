@@ -35,7 +35,8 @@
 
 #include "type.h"
 
+struct defspace_s;
 struct type_s;
-struct def_s *qfo_encode_type (struct type_s *type);
+struct def_s *qfo_encode_type (struct type_s *type, struct defspace_s *space);
 
 #endif//__obj_type_h

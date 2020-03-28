@@ -43,7 +43,7 @@ __attribute__((const)) expr_t *_error (expr_t *e, const char *file, int line, co
 __attribute__((const)) symbol_t *make_structure (const char *name, int su, struct_def_t *defs, type_t *type) {return 0;}
 __attribute__((const)) symbol_t *symtab_addsymbol (symtab_t *symtab, symbol_t *symbol) {return 0;}
 __attribute__((const)) symbol_t *new_symbol_type (const char *name, type_t *type) {return 0;}
-__attribute__((const)) def_t *qfo_encode_type (type_t *type) {return 0;}
+__attribute__((const)) def_t *qfo_encode_type (type_t *type, defspace_t *space) {return 0;}
 __attribute__((const)) int obj_types_assignable (const type_t *dst, const type_t *src) {return 0;}
 void print_protocollist (struct dstring_s *dstr, protocollist_t *protocollist) {}
 int is_id (const type_t *type){return type->type;}

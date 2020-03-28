@@ -173,7 +173,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
 	sym->type->t.symtab = symtab;
 	sym->type->alignment = alignment;
 	if (!type && sym->type->type_def->external)	//FIXME should not be necessary
-		sym->type->type_def = qfo_encode_type (sym->type);
+		sym->type->type_def = qfo_encode_type (sym->type, pr.type_data);
 	return sym;
 }
 
