@@ -7,6 +7,7 @@
 #include "class.h"
 #include "codespace.h"
 #include "diagnostic.h"
+#include "dot.h"
 #include "debug.h"
 #include "def.h"
 #include "defspace.h"
@@ -49,3 +50,6 @@ int is_id (const type_t *type){return type->type;}
 int is_SEL (const type_t *type){return type->type;}
 int is_Class (const type_t *type){return type->type;}
 int compare_protocols (protocollist_t *protos1, protocollist_t *protos2){return protos1->count - protos2->count;}
+void dump_dot (const char *stage, void *data,
+		          void (*dump_func) (void *data, const char *fname)){}
+void dump_dot_type (void *_t, const char *filename){}

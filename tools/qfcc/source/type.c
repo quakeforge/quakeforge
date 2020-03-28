@@ -50,6 +50,7 @@
 #include "class.h"
 #include "def.h"
 #include "diagnostic.h"
+#include "dot.h"
 #include "expr.h"
 #include "function.h"
 #include "obj_type.h"

@@ -55,8 +55,12 @@ dump_dot (const char *stage, void *data,
 	} else {
 		dot_index++;
 	}
-	fname = nva ("%s.%s.%03d.%s.dot", options.output_file, current_func->name,
-				 dot_index, stage);
+	if (current_func) {
+		fname = nva ("%s.%s.%03d.%s.dot", options.output_file,
+					 current_func->name, dot_index, stage);
+	} else {
+		fname = nva ("%s.%03d.%s.dot", options.output_file, dot_index, stage);
+	}
 	dump_func (data, fname);
 	free (fname);
 }

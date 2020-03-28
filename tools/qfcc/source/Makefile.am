@@ -40,7 +40,9 @@ bin_SCRIPTS=	qfpreqcc
 
 common_src=\
 	class.c codespace.c constfold.c cpp.c dags.c debug.c def.c defspace.c \
-	diagnostic.c dot.c dot_dag.c dot_expr.c dot_flow.c dot_sblock.c emit.c \
+	diagnostic.c \
+	dot.c dot_dag.c dot_expr.c dot_flow.c dot_sblock.c dot_type.c \
+	emit.c \
 	expr.c expr_assign.c expr_binary.c expr_bool.c expr_compound.c expr_obj.c \
 	flow.c function.c grab.c \
 	idstuff.c \
