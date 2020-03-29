@@ -344,6 +344,9 @@ qfo_relocs (qfo_t *qfo)
 	unsigned      i;
 
 	for (i = 0; i < qfo->num_relocs; i++) {
+		if (i == qfo->num_relocs - qfo->num_loose_relocs) {
+			printf ("---- unbound relocs ----\n");
+		}
 		reloc = qfo->relocs + i;
 		if ((unsigned) reloc->type > rel_def_field_ofs) {
 			printf ("%d unknown reloc: %d\n", i, reloc->type);
