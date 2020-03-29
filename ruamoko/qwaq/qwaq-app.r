@@ -3,12 +3,12 @@ int fence;
 #include <AutoreleasePool.h>
 #include <key.h>
 
-#include "color.h"
+#include "ui/color.h"
+#include "ui/curses.h"
+#include "ui/group.h"
+#include "ui/view.h"
+#include "debugger/debugger.h"
 #include "qwaq-app.h"
-#include "qwaq-curses.h"
-#include "qwaq-debugger.h"
-#include "qwaq-group.h"
-#include "qwaq-view.h"
 
 int color_palette[64];
 

@@ -1,18 +1,20 @@
-AUTOMAKE_OPTIONS= foreign
+AUTOMAKE_OPTIONS= foreign subdir-objects
 
 QWAQ_LIBS=@QWAQ_LIBS@
 QWAQ_DEPS=@QWAQ_DEPS@
 QWAQ_INCS=@QWAQ_INCS@
 
-AM_CPPFLAGS=	-I$(top_srcdir)/include $(QWAQ_INCS) $(PTHREAD_CFLAGS)
+AM_CPPFLAGS= -I$(srcdir) -I$(top_srcdir)/include $(QWAQ_INCS) $(PTHREAD_CFLAGS)
 
 noinst_PROGRAMS=@QWAQ_TARGETS@ qwaq-app.dat$(EXEEXT) gcd.dat$(EXEEXT)
 
 QFCC_DEP=$(top_builddir)/tools/qfcc/source/qfcc$(EXEEXT)
 QFCC=$(top_builddir)/tools/qfcc/source/qfcc
 
+QCSYSTEM=--no-default-paths -I$(top_srcdir)/ruamoko/include -I$(top_srcdir)/include
+QWAQ_INC=-I$(srcdir) -I$(srcdir)/builtins -I$(srcdir)/debugger -I$(srcdir)/editor -I$(srcdir)/ui
 QCFLAGS=-qq -O -g -Werror
-QCPPFLAGS=--no-default-paths -I$(top_srcdir)/ruamoko/include -I$(top_srcdir)/include
+QCPPFLAGS=$(QCSYSTEM) -I$(srcdir)
 QCLINKFLAGS=--no-default-paths -L$(top_builddir)/ruamoko/lib
 QCOMPILE=$(QFCC) $(QCFLAGS) $(QCPPFLAGS)
 QLINK=$(QFCC) $(QCFLAGS) $(QCLINKFLAGS)
@@ -24,34 +26,37 @@ SUFFIXES=.o .r
 	@$(am__mv) $(DEPDIR)/$*.Tqo $(DEPDIR)/$*.Qo
 
 qwaq_app_dat_src= \
-	qwaq-app.r \
-	qwaq-button.r \
-	qwaq-debugger.r \
-	qwaq-draw.r \
-	qwaq-editbuffer.r \
-	qwaq-editor.r \
-	qwaq-garray.r \
-	qwaq-group.r \
-	qwaq-listener.r \
-	qwaq-proxyview.r \
-	qwaq-rect.r \
-	qwaq-screen.r \
-	qwaq-textcontext.r \
-	qwaq-titlebar.r \
-	qwaq-view.r \
-	qwaq-window.r
+	qwaq-app.r	\
+	debugger/debugger.r	\
+	editor/editbuffer.r	\
+	editor/editor.r	\
+	ui/button.r	\
+	ui/draw.r	\
+	ui/garray.r	\
+	ui/group.r	\
+	ui/listener.r	\
+	ui/proxyview.r	\
+	ui/rect.r	\
+	ui/textcontext.r	\
+	ui/titlebar.r	\
+	ui/view.r	\
+	ui/window.r	\
+	$e
 
 #FIXME this coupling is horrible
 qwaq_curses_libs= \
 	$(top_builddir)/libs/video/targets/libvid_common.la \
 	$(top_builddir)/libs/console/libQFconsole.la \
 	$(top_builddir)/libs/gib/libQFgib.la
+
 qwaq_curses_SOURCES= \
-	main.c \
-	qwaq-curses.c \
-	qwaq-debug.c \
-	qwaq-editbuffer-bi.c \
-	qwaq-input.c
+	builtins/main.c \
+	builtins/curses.c \
+	builtins/debug.c \
+	builtins/editbuffer.c \
+	builtins/input.c \
+	$e
+
 qwaq_curses_LDADD= $(qwaq_curses_libs) $(QWAQ_LIBS) \
 				$(PANEL_LIBS) $(CURSES_LIBS) $(PTHREAD_LDFLAGS) $(DL_LIBS)
 qwaq_curses_LDFLAGS=
@@ -74,7 +79,7 @@ qwaq_x11_libs= \
 	$(top_builddir)/libs/video/targets/libQFx11.la \
 	$(client_libs) \
 	$(top_builddir)/libs/gib/libQFgib.la
-qwaq_x11_SOURCES=qwaq.c qwaq-bi.c
+qwaq_x11_SOURCES=builtins/qwaq.c builtins/qwaq-bi.c
 qwaq_x11_LDADD= $(qwaq_x11_libs) $(QWAQ_LIBS) \
 				$(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
 				$(X_EXTRA_LIBS) $(X_SHM_LIB) $(DL_LIBS)
