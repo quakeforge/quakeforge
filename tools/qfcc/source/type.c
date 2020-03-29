@@ -551,7 +551,10 @@ const type_t *
 unalias_type (const type_t *type)
 {
 	if (type->meta == ty_alias) {
-		return type->t.alias.aux_type;
+		type = type->t.alias.aux_type;
+		if (type->meta == ty_alias) {
+			internal_error (0, "alias type node in alias-free chain");
+		}
 	}
 	return type;
 }
