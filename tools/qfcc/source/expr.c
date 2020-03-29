@@ -248,7 +248,8 @@ get_type (expr_t *e)
 			type = e->e.symbol->type;
 			break;
 		case ex_temp:
-			return e->e.temp.type;
+			type = e->e.temp.type;
+			break;
 		case ex_value:
 			type = e->e.value->type;
 			break;

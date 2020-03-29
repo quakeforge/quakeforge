@@ -529,6 +529,16 @@ alias_type (type_t *type, type_t *alias_chain, const char *name)
 	alias->meta = ty_alias;
 	alias->type = type->type;
 	alias->alignment = type->alignment;
+	if (type == alias_chain && type->meta == ty_alias) {
+		// typedef of a type that contains a typedef somewhere
+		// grab the alias-free branch for type
+		type = alias_chain->t.alias.aux_type;
+		if (!alias_chain->name) {
+			// the other typedef is further inside, so replace the unnamed
+			// alias node with the typedef
+			alias_chain = alias_chain->t.alias.full_type;
+		}
+	}
 	alias->t.alias.aux_type = type;
 	alias->t.alias.full_type = alias_chain;
 	if (name) {
