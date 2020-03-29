@@ -872,6 +872,20 @@ process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 			string_t     str;
 			str = linker_add_string (QFOSTR (qfo, reloc->target));
 			QFO_STRING (work, reloc->space, reloc->offset) = str;
+		} else if (reloc->type == rel_def_def || reloc->type == -1) {
+			qfo_def_t  *def;
+			if (reloc->type == -1) {
+				// The reloc has been copied, and the record number of the new
+				// reloc is in the old reloc's offset.
+				reloc = work->relocs + reloc->offset;
+			}
+			if (reloc->target >= work->spaces[reloc->space].num_defs) {
+				linker_error ("Invalid reloc target def %d / %d.\n",
+							  reloc->target, qfo->num_defs);
+				continue;
+			}
+			def = work->spaces[reloc->space].defs + reloc->target;
+			QFO_INT (work, reloc->space, reloc->offset) = def->offset;
 		}
 	}
 	for (i = 0; i < num_builtins; i++) {
@@ -1315,22 +1329,6 @@ build_qfo (void)
 			reloc->target = i;
 			reloc++;
 		}
-	}
-	for (i = 0; i < qfo->num_relocs; i++) {
-		qfo_def_t  *def;
-
-		reloc = qfo->relocs + i;
-		if (reloc->space != qfo_type_space)
-			continue;
-		if (reloc->type != rel_def_def)
-			continue;
-		if (reloc->target >= qfo->num_defs) {
-			linker_error ("Invalid reloc target def %d / %d.\n",
-						  reloc->target, qfo->num_defs);
-			continue;
-		}
-		def = qfo->defs + reloc->target;
-		QFO_INT (qfo, reloc->space, reloc->offset) = def->offset;
 	}
 	return qfo;
 }
