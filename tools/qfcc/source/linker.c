@@ -418,10 +418,13 @@ process_type_def (defref_t *ref, qfo_mspace_t *space, qfo_def_t *old)
 			memcpy (new_type, old_type, old_type->size * sizeof (pr_type_t));
 			define_def (ref, extern_type_defs, defined_type_defs);
 		}
-		// save the new address in the old def's type field so relocation
-		// records can be updated.
+		// Save the new address in the old def's type field so relocation
+		// records can be updated. Type encoding defs start with no type
+		// (type = 0). The old def's offset is not modified because it is used
+		// for finding the def when adjusting relocation records that point
+		// to fields inside the type encoding.
 		old->type = REF (ref)->offset;
-		// mark the old type encoding as having been transfered, and save the
+		// Mark the old type encoding as having been transfered, and save the
 		// new address in the encoding's class field so def and function types
 		// can be updated easily.
 		old_type->meta = -1;
@@ -456,6 +459,8 @@ add_relocs (qfo_t *qfo, int start, int count, int target)
 	oreloc = work->relocs + work->num_relocs;
 	for  ( ; work->num_relocs < size; ireloc++, oreloc++) {
 		*oreloc = *ireloc;
+		// Mark the reloc as having been copied and record the new reloc record
+		// number in the old reloc's offset
 		ireloc->type = -1;
 		ireloc->offset = work->num_relocs++;
 		if (oreloc->space >= qfo->num_spaces) {
@@ -814,15 +819,22 @@ update_type_space_reloc (qfo_mspace_t *space, qfo_reloc_t *reloc)
 	qfo_def_t    dummy;
 	qfo_def_t   *def;
 
-	if (reloc->type == -1)
+	if (reloc->type == -1) {
+		// The reloc has been copied, and the record number of the new reloc
+		// is in the old reloc's offset.
 		reloc = work->relocs + reloc->offset;
+	}
 	dummy.offset = reloc->offset;
 	def = (qfo_def_t *) bsearch (&dummy, space->defs, space->num_defs,
 								 sizeof (qfo_def_t), type_def_compare);
-	if (!def)
+	if (!def) {
 		linker_internal_error ("relocation record with invalid address. "
 							   "corrupt object file?");
-	reloc->offset += def->type - def->offset;
+	}
+	// The new offset of the type encoding is stored in the def's type field.
+	// The old offset is in the def's offset field. The reloc's offset points
+	// to somewhere within the type encoding.
+	reloc->offset = def->type + (reloc->offset - def->offset);
 }
 
 static int
@@ -838,14 +850,15 @@ process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 	}
 	qfo_type_defs = space;
 	add_defs (qfo, space, work->spaces + qfo_type_space, process_type_def);
-	// the defs in qfo are no longer needed by the rest of the linker, so
-	// we're free to mess around with them
+	// The defs in qfo are no longer needed by the rest of the linker, so
+	// we're free to mess around with them.
 
-	// sort the defs by addres. Unfortunately, they will usually be in order,
-	// so qsort will likely be pessimistic, but oh well.
+	// Sort the defs by addres so they can found using bsearch when adjusting
+	// the targets of type encoding relocs. Unfortunately, they will usually
+	// be in order, so qsort will likely be pessimistic, but oh well.
 	qsort (space->defs, space->num_defs, sizeof (qfo_def_t), type_def_compare);
 
-	// update the offsets of all relocation records that point into the type
+	// Update the offsets of all relocation records that point into the type
 	// encoding space.
 	for (i = 0; i < qfo->num_relocs; i++) {
 		qfo_reloc_t *reloc = qfo->relocs + i;
@@ -853,8 +866,8 @@ process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 		if (reloc->space != space->id)
 			continue;
 		update_type_space_reloc (space, reloc);
-		// while we're at it, update the strings so the type space strings
-		// are always correct.
+		// while we're at it, relocate all references in the type encoding
+		// space so the type encodings are always correct.
 		if (reloc->type == rel_def_string) {
 			string_t     str;
 			str = linker_add_string (QFOSTR (qfo, reloc->target));
