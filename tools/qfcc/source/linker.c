@@ -495,8 +495,20 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space,
 		odef->file = linker_add_string (QFOSTR (qfo, idef->file));
 		idef->file = -1;					// mark def as copied
 		idef->line = num_work_defrefs;		// so def can be found
+		// In the first passs, process_type_def sets the type meta to -1 and
+		// class to the offset of the copied type, but the null type encodiing
+		// is not modified. Other defs are processed in the second pass.
 		type = QFOTYPE(idef->type);
+		if (idef->type && (int) type->meta != -1) {
+			linker_internal_error ("reference to type that has not been "
+								   "relocated");
+		}
+		// Type encodings have no type (type = 0) so setting the type
+		// to the idef type class has no effect.
 		odef->type = type->t.class;			// pointer to type in work
+		// don't add unused (no attached relocs) external defs to the work
+		// defref list so they will not cause unused object files to be
+		// pulled in from libraries
 		if (odef->flags & QFOD_EXTERNAL && !odef->num_relocs)
 			continue;
 		ref = get_defref (odef, dest_space);
