@@ -453,9 +453,9 @@ field_type (type_t *aux)
 		new = new_type ();
 	new->type = ev_field;
 	new->alignment = 1;
-	new->t.fldptr.type = aux;
-	if (aux)
-		new = find_type (new);
+	if (aux) {
+		new = find_type (append_type (new, aux));
+	}
 	return new;
 }
 
@@ -471,9 +471,9 @@ pointer_type (type_t *aux)
 		new = new_type ();
 	new->type = ev_pointer;
 	new->alignment = 1;
-	new->t.fldptr.type = aux;
-	if (aux)
-		new = find_type (new);
+	if (aux) {
+		new = find_type (append_type (new, aux));
+	}
 	return new;
 }
 
@@ -487,15 +487,15 @@ array_type (type_t *aux, int size)
 		memset (&_new, 0, sizeof (_new));
 	else
 		new = new_type ();
+	new->meta = ty_array;
 	new->type = ev_invalid;
 	if (aux) {
 		new->alignment = aux->alignment;
 	}
-	new->meta = ty_array;
-	new->t.array.type = aux;
 	new->t.array.size = size;
-	if (aux)
-		new = find_type (new);
+	if (aux) {
+		new = find_type (append_type (new, aux));
+	}
 	return new;
 }
 
