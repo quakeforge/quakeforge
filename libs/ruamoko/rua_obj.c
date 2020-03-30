@@ -2254,3 +2254,17 @@ RUA_Obj_msg_lookup (progs_t *pr, pointer_t _self, pointer_t __cmd)
 
 	return imp;
 }
+
+int
+RUA_obj_increment_retaincount (progs_t *pr)
+{
+	rua_obj_increment_retaincount (pr);
+	return R_INT (pr);
+}
+
+int
+RUA_obj_decrement_retaincount (progs_t *pr)
+{
+	rua_obj_decrement_retaincount (pr);
+	return R_INT (pr);
+}
