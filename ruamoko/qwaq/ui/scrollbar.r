@@ -10,7 +10,8 @@
 	if (!(self = [super initWithRect:rect])) {
 		return nil;
 	}
-	objects = [[Group withContext:textContext owner:self] retain];
+	buffer = [[DrawBuffer buffer:size] retain];
+	objects = [[Group withContext:buffer owner:self] retain];
 	onScroll = [[ListenerGroup listener] retain];
 	vertical = xlen == 1;
 	DrawBuffer *icons[3] = {
@@ -23,14 +24,14 @@
 	SEL thumbSel;
 	growMode = gfGrowAll;
 	if (vertical) {
-		[icons[0]addch:acs_char (ACS_UARROW)];
-		[icons[1]addch:acs_char (ACS_DARROW)];
+		[icons[0] addch:acs_char (ACS_UARROW)];
+		[icons[1] addch:acs_char (ACS_DARROW)];
 		thumbPos = {0, 1};
 		thumbSel = @selector(verticalSlide);
 		growMode &= ~gfGrowLoY;
 	} else {
-		[icons[0]addch:acs_char (ACS_LARROW)];
-		[icons[1]addch:acs_char (ACS_RARROW)];
+		[icons[0] addch:acs_char (ACS_LARROW)];
+		[icons[1] addch:acs_char (ACS_RARROW)];
 		thumbPos = {1, 0};
 		thumbSel = @selector(horizontalSlide);
 		growMode &= ~gfGrowLoX;
@@ -53,6 +54,13 @@
 	[objects insert:forwardButton];
 	[objects insert:thumbTab];
 	return self;
+}
+
+-(void)dealloc
+{
+	[objects release];
+	[buffer release];
+	[onScroll release];
 }
 
 +(ScrollBar *)horizontal:(unsigned)len at:(Point)pos
@@ -78,6 +86,7 @@
 
 -draw
 {
+	syncprintf("scrollbar start");
 	if (vertical) {
 		[self mvvline:pos, bgchar, ylen];
 	} else {
@@ -85,6 +94,8 @@
 	}
 	[super draw];
 	[objects draw];
+	[textContext blitFromBuffer:buffer to:pos from:[buffer rect]];
+	syncprintf("scrollbar end");
 	return self;
 }
 

@@ -38,6 +38,8 @@
 -setContext: (id<TextContext>) context
 {
 	self.context = context;
+	[views makeObjectsPerformSelector:@selector(setContext:)
+						   withObject:context];
 	return self;
 }
 

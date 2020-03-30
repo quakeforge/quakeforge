@@ -4,6 +4,7 @@
 #include "ui/view.h"
 
 @class Button;
+@class DrawBuffer;
 @class Group;
 @class ListenerGroup;
 
@@ -12,6 +13,7 @@
 	int         vertical;
 	int         bgchar;
 	Point       mouseStart;
+	DrawBuffer *buffer;
 	Button     *backButton;
 	Button     *forwardButton;
 	Button     *thumbTab;
