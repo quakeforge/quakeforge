@@ -28,10 +28,10 @@ main (void)
 		 ((int *)type - (int *) encodings.types) < encodings.size;
 		type = next_type (type)) {
 		if (type.meta == ty_union) {
-			if (type.t.strct.tag == "tag @param") {
+			if (type.strct.tag == "tag @param") {
 				found_param = 1;
 			}
-			if (type.t.strct.tag == "tag @zero") {
+			if (type.strct.tag == "tag @zero") {
 				found_zero = 1;
 			}
 		}
