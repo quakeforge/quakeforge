@@ -8,13 +8,14 @@
 #include "ui/proxyview.h"
 #include "ui/window.h"
 #include "debugger/debugger.h"
+#include "debugger/typeencodings.h"
 #include "editor/editor.h"
 #include "qwaq-app.h"
 
 @implementation Debugger
--(qdb_target_t)debug_target
+-(qdb_target_t)target
 {
-	return debug_target;
+	return target;
 }
 
 -initWithTarget:(qdb_target_t) target
@@ -22,12 +23,15 @@
 	if (!(self = [super init])) {
 		return nil;
 	}
-	debug_target = target;
+	self.target = target;
 
 	files = [[Array array] retain];
 	source_window = [[Window alloc] initWithRect: {nil, [application size]}];
 	[application addView:source_window];
 
+	qdb_def_t   encodings_def = qdb_find_global (target, ".type_encodings");
+	qdb_get_data (target, encodings_def.offset, sizeof(target_encodings),
+				  &target_encodings);
 	return self;
 }
 
@@ -50,7 +54,7 @@
 
 -(void) setup
 {
-	qdb_state_t state = qdb_get_state (debug_target);
+	qdb_state_t state = qdb_get_state (target);
 
 	current_file = [self find_file: state.file];
 	file_proxy = [[ProxyView alloc] initWithView: current_file];
@@ -75,7 +79,7 @@
 
 -(void) show_line
 {
-	qdb_state_t state = qdb_get_state (debug_target);
+	qdb_state_t state = qdb_get_state (target);
 	Editor     *file = [self find_file: state.file];
 
 	printf ("%s:%d\n", state.file, state.line);
@@ -104,10 +108,10 @@ update_current_func (Debugger *self, unsigned fnum)
 	if (self.local_data) {
 		obj_free (self.local_data);
 	}
-	self.func = qdb_get_function (self.debug_target, fnum);
-	self.aux_func = qdb_get_auxfunction (self.debug_target, fnum);
+	self.func = qdb_get_function (self.target, fnum);
+	self.aux_func = qdb_get_auxfunction (self.target, fnum);
 	if (self.aux_func) {
-		self.local_defs = qdb_get_local_defs (self.debug_target, fnum);
+		self.local_defs = qdb_get_local_defs (self.target, fnum);
 	}
 	if (self.func) {
 		self.local_data = obj_malloc (self.func.local_size);
@@ -116,14 +120,14 @@ update_current_func (Debugger *self, unsigned fnum)
 
 -(void)update_watchvars
 {
-	qdb_state_t state = qdb_get_state (debug_target);
+	qdb_state_t state = qdb_get_state (target);
 	if (state.func != current_fnum) {
 		update_current_func (self, state.func);
 	}
 	if (!local_data) {
 		return;
 	}
-	qdb_get_data (debug_target, func.local_data, func.local_size, local_data);
+	qdb_get_data (target, func.local_data, func.local_size, local_data);
 	[locals_view clear];
 	if (!local_defs) {
 		[locals_view mvprintf:{0,0}, "%d", func.local_size];
@@ -145,23 +149,25 @@ update_current_func (Debugger *self, unsigned fnum)
 				break;
 			}
 			qdb_def_t *def = local_defs + y;
+			unsigned    te = def.type_encoding + (int) target_encodings.types;
+			qfot_type_t *type;
+			type = [TypeEncodings getType:te fromTarget:target];
 			[locals_view mvprintf:{0, y}, "%s",
-								  qdb_get_string (debug_target, def.name)];
+								  qdb_get_string (target, def.name)];
 			@param      value = nil;
 			string      valstr = "--";
 			unsigned    offset = func.local_data + def.offset;
 			printf ("%d %d %s %d\n", def.type_size, offset,
-					qdb_get_string (debug_target, def.name),
+					qdb_get_string (target, def.name),
 					def.type_encoding);
-			qdb_get_data (debug_target, offset, def.type_size >> 16,
-						  &value);
+			qdb_get_data (target, offset, def.type_size >> 16, &value);
 			switch (def.type_size & 0xffff) {
 				case ev_void:
 				case ev_invalid:
 				case ev_type_count:
 					break;
 				case ev_string:
-					valstr = qdb_get_string (debug_target, value.integer_val);
+					valstr = qdb_get_string (target, value.integer_val);
 					break;
 				case ev_float:
 					valstr = sprintf ("%.9g", value.float_val);
@@ -216,8 +222,8 @@ proxy_event (Debugger *self, id proxy, qwaq_event_t *event)
 	} else if (event.what == qe_keydown) {
 		switch (event.key.code) {
 			case QFK_F7:
-				qdb_set_trace (self.debug_target, 1);
-				qdb_continue (self.debug_target);
+				qdb_set_trace (self.target, 1);
+				qdb_continue (self.target);
 				return 1;
 		}
 	}

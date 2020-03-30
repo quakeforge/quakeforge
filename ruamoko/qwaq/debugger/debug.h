@@ -63,7 +63,10 @@ int qdb_clear_watchpoint (qdb_target_t target);
 int qdb_continue (qdb_target_t target);
 qdb_state_t qdb_get_state (qdb_target_t target);
 int qdb_get_data (qdb_target_t target, unsigned src, unsigned len, void *dst);
-string qdb_get_string (qdb_target_t target, unsigned str);
+@overload string qdb_get_string (qdb_target_t target, unsigned str);
+// note: str is likely not valid in the host progs, it's just a convinience to
+// avoid cast shenanigans when getting type encoding strings
+@overload string qdb_get_string (qdb_target_t target, string str);
 qdb_def_t qdb_find_global (qdb_target_t target, string name);
 qdb_def_t qdb_find_field (qdb_target_t target, string name);
 qdb_function_t *qdb_find_function (qdb_target_t target, string name);

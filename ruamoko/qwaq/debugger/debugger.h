@@ -1,6 +1,7 @@
 #ifndef __qwaq_debugger_debugger_h
 #define __qwaq_debugger_debugger_h
 
+#include <types.h>
 #include <Object.h>
 
 #include "debugger/debug.h"
@@ -12,7 +13,8 @@
 
 @interface Debugger : Object
 {
-	qdb_target_t debug_target;
+	qdb_target_t target;
+	qfot_type_encodings_t target_encodings;
 
 	Window     *source_window;
 	ProxyView  *file_proxy;
@@ -28,7 +30,7 @@
 	qdb_def_t  *local_defs;
 	void       *local_data;
 }
--(qdb_target_t)debug_target;
+-(qdb_target_t)target;
 -initWithTarget:(qdb_target_t) target;
 -handleDebugEvent;
 @end

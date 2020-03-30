@@ -618,7 +618,7 @@ cmd_mvwhline (qwaq_resources_t *res)
 static void
 dump_command (qwaq_resources_t *res, int len)
 {
-	if (1) {
+	if (0) {
 		qwaq_commands cmd = RB_PEEK_DATA (res->command_queue, 0);
 		Sys_Printf ("%s[%d]", qwaq_command_names[cmd], len);
 		for (int i = 2; i < len; i++) {

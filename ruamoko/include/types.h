@@ -82,6 +82,9 @@ typedef struct qfot_type_s {
 	};
 } qfot_type_t;
 
+// the minimum size of a type encoding
+#define TYPESIZE 4
+
 typedef struct qfot_type_encodings_s {
 	qfot_type_t *types;
 	int         size;

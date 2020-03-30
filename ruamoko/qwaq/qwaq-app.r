@@ -80,7 +80,7 @@ arp_end (void)
 
 	for (int i = [debuggers count]; i-- > 0; ) {
 		debugger = [debuggers objectAtIndex: i];
-		if ([debugger debug_target].handle == target.handle) {
+		if ([debugger target].handle == target.handle) {
 			return debugger;
 		}
 	}
