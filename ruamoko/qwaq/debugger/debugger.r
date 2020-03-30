@@ -29,9 +29,6 @@
 	source_window = [[Window alloc] initWithRect: {nil, [application size]}];
 	[application addView:source_window];
 
-	qdb_def_t   encodings_def = qdb_find_global (target, ".type_encodings");
-	qdb_get_data (target, encodings_def.offset, sizeof(target_encodings),
-				  &target_encodings);
 	return self;
 }
 
@@ -68,9 +65,8 @@
 	locals_window = [[Window alloc] initWithRect: {{0, 0}, {40, 10}}];
 	[locals_window setBackground: color_palette[064]];
 	[locals_window setTitle: "Locals"];
-	locals_view = [[View alloc] initWithRect: {{1, 1}, {38, 8}}
-									 options: ofCanFocus];
-	[locals_view setGrowMode:gfGrowHi];
+	locals_view = [[LocalsView alloc] initWithRect: {{1, 1}, {38, 8}}
+											target: target];
 	[locals_window insertSelected: locals_view];
 	[application addView: locals_window];
 
@@ -94,120 +90,11 @@
 	[source_window redraw];
 }
 
-static void
-update_current_func (Debugger *self, unsigned fnum)
-{
-	self.current_fnum = fnum;
-	if (self.aux_func) {
-		obj_free (self.aux_func);
-		self.aux_func = nil;
-	}
-	if (self.local_defs) {
-		obj_free (self.local_defs);
-	}
-	if (self.local_data) {
-		obj_free (self.local_data);
-	}
-	self.func = qdb_get_function (self.target, fnum);
-	self.aux_func = qdb_get_auxfunction (self.target, fnum);
-	if (self.aux_func) {
-		self.local_defs = qdb_get_local_defs (self.target, fnum);
-	}
-	if (self.func) {
-		self.local_data = obj_malloc (self.func.local_size);
-	}
-}
-
 -(void)update_watchvars
 {
 	qdb_state_t state = qdb_get_state (target);
-	if (state.func != current_fnum) {
-		update_current_func (self, state.func);
-	}
-	if (!local_data) {
-		return;
-	}
-	qdb_get_data (target, func.local_data, func.local_size, local_data);
-	[locals_view clear];
-	if (!local_defs) {
-		[locals_view mvprintf:{0,0}, "%d", func.local_size];
-		for (int y = 1; y < [locals_view size].height; y++) {
-			unsigned    ind = (y - 1) * 4;
-			if (ind < func.local_size) {
-				[locals_view mvprintf:{0, y}, "%02x", ind];
-				for (int x = 0; x < 4 && ind < func.local_size; x++, ind++) {
-					[locals_view mvprintf:{x * 9 + 3, y}, "%08x",
-										  local_data[ind]];
-				}
-			} else {
-				break;
-			}
-		}
-	} else {
-		for (int y = 0; y < [locals_view size].height; y++) {
-			if (y >= aux_func.num_locals) {
-				break;
-			}
-			qdb_def_t *def = local_defs + y;
-			unsigned    te = def.type_encoding + (int) target_encodings.types;
-			qfot_type_t *type;
-			type = [TypeEncodings getType:te fromTarget:target];
-			[locals_view mvprintf:{0, y}, "%s",
-								  qdb_get_string (target, def.name)];
-			@param      value = nil;
-			string      valstr = "--";
-			unsigned    offset = func.local_data + def.offset;
-			printf ("%d %d %s %d\n", def.type_size, offset,
-					qdb_get_string (target, def.name),
-					def.type_encoding);
-			qdb_get_data (target, offset, def.type_size >> 16, &value);
-			switch (def.type_size & 0xffff) {
-				case ev_void:
-				case ev_invalid:
-				case ev_type_count:
-					break;
-				case ev_string:
-					valstr = qdb_get_string (target, value.integer_val);
-					break;
-				case ev_float:
-					valstr = sprintf ("%.9g", value.float_val);
-					break;
-				case ev_vector:
-					valstr = sprintf ("%.9v", value.vector_val);
-					break;
-				case ev_entity:
-					valstr = sprintf ("%e", value.entity_val);
-					break;
-				case ev_field:
-					valstr = sprintf ("[%x]", value.field_val);
-					break;
-				case ev_func:
-					valstr = sprintf ("[%x]", value.func_val);
-					break;
-				case ev_pointer:
-					valstr = sprintf ("[%x]", value.pointer_val);
-					break;
-				case ev_quat:
-					valstr = sprintf ("[%q]", value.quaternion_val);
-					break;
-				case ev_integer:
-					valstr = sprintf ("%d", value.integer_val);
-					break;
-				case ev_uinteger:
-					valstr = sprintf ("%d", value.integer_val);
-					break;
-				case ev_short:
-					valstr = sprintf ("%d", value.integer_val);
-					break;
-				case ev_double:
-					valstr = sprintf ("%.17g", value.double_val);
-					break;
-			}
-			int         x = [locals_view size].width - strlen (valstr);
-			[locals_view mvaddstr:{x, y}, valstr];
-		}
-	}
-	[TextContext refresh];
+	[locals_view setFunction:state.func];
+	[locals_view redraw];
 }
 
 static int

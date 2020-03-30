@@ -29,6 +29,7 @@ qwaq_app_dat_src= \
 	qwaq-app.r	\
 	debugger/debug.r	\
 	debugger/debugger.r	\
+	debugger/localsview.r	\
 	debugger/typeencodings.r	\
 	editor/editbuffer.r	\
 	editor/editor.r	\

@@ -5,6 +5,7 @@
 #include <Object.h>
 
 #include "debugger/debug.h"
+#include "debugger/localsview.h"
 
 @class ProxyView;
 @class Editor;
@@ -14,7 +15,6 @@
 @interface Debugger : Object
 {
 	qdb_target_t target;
-	qfot_type_encodings_t target_encodings;
 
 	Window     *source_window;
 	ProxyView  *file_proxy;
@@ -22,13 +22,7 @@
 	Editor     *current_file;
 
 	Window     *locals_window;
-	View       *locals_view;
-
-	unsigned    current_fnum;
-	qdb_function_t *func;
-	qdb_auxfunction_t *aux_func;
-	qdb_def_t  *local_defs;
-	void       *local_data;
+	LocalsView *locals_view;
 }
 -(qdb_target_t)target;
 -initWithTarget:(qdb_target_t) target;
