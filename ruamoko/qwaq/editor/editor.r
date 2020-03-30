@@ -33,6 +33,7 @@
 
 	vScrollBar = scrollbar;
 	[vScrollBar setRange:line_count];
+	[vScrollBar setPageStep: ylen];
 	[[vScrollBar onScroll] addListener:self :@selector(onScroll:)];
 	return self;
 }

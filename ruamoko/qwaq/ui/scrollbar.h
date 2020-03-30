@@ -12,7 +12,9 @@
 {
 	int         vertical;
 	int         bgchar;
+	double      mouseTime;
 	Point       mouseStart;
+	Point       tabStart;
 	DrawBuffer *buffer;
 	Button     *backButton;
 	Button     *forwardButton;

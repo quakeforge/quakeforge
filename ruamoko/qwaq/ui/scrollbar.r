@@ -141,24 +141,24 @@ position_tab (ScrollBar *self)
 	}
 
 	if (index != oind) {
-		position_tab (self);
 		[onScroll respond:self];
+		position_tab (self);
 	}
 	return self;
 }
 
 static void
-page (ScrollBar *self, Point pos)
+page (ScrollBar *self, Point pos, Point thumb)
 {
 	unsigned    pageDir = 0;
 	if (self.vertical) {
-		if (pos.y < [self.thumbTab origin].y) {
+		if (pos.y < thumb.y) {
 			pageDir = 0;
 		} else {
 			pageDir = 1;
 		}
 	} else {
-		if (pos.x < [self.thumbTab origin].x) {
+		if (pos.x < thumb.x) {
 			pageDir = 0;
 		} else {
 			pageDir = 1;
@@ -191,11 +191,16 @@ page (ScrollBar *self, Point pos)
 	[objects handleEvent: event];
 	if (event.what == qe_mousedown) {
 		[self grabMouse];
+		mouseTime = event.when;
 		mouseStart = {event.mouse.x, event.mouse.y};
-		page(self, mouseStart);
+		tabStart = [thumbTab origin];
+		page(self, mouseStart, tabStart);
 		event.what = qe_none;
 	} else if (event.what==qe_mouseauto) {
-		page(self, mouseStart);
+		if (event.when - mouseTime > 0.1) {
+			mouseTime = event.when;
+			page(self, mouseStart, tabStart);
+		}
 		event.what = qe_none;
 	} else if (event.what == qe_mouseup) {
 		[self releaseMouse];

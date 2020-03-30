@@ -117,6 +117,7 @@
 		if (action) {
 			[action respond: self];
 		}
+		event.what = qe_none;
 	}
 	return self;
 }
