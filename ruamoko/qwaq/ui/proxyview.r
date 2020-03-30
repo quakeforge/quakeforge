@@ -39,11 +39,13 @@
 	}
 	[self.view hide];
 	[self.view setContext:nil];
+	[self.view setOwner:nil];
 
 	[view retain];
 	[self.view release];
 	self.view = view;
 
+	[view setOwner:owner];
 	[view setContext:[owner context]];
 	if (state & sfDrawn) {
 		[view draw];
