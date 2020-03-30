@@ -7,6 +7,7 @@
 #include <string.h>
 
 #include "QF/progs.h"
+#include "QF/ruamoko.h"
 #include "QF/quakeio.h"
 #include "QF/txtbuffer.h"
 
@@ -532,6 +533,7 @@ bi_i_EditBuffer__init (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	__auto_type self = &P_STRUCT (pr, qwaq_editbuffer_t, 0);
+	RUA_obj_increment_retaincount (pr);// [super init];
 	txtbuffer_t *txtbuffer = TextBuffer_Create ();
 	editbuffer_t *buffer = editbuffer_new (res);
 
@@ -547,6 +549,7 @@ bi_i_EditBuffer__initWithFile_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	__auto_type self = &P_STRUCT (pr, qwaq_editbuffer_t, 0);
+	RUA_obj_increment_retaincount (pr);// [super init];
 	const char *filename = P_GSTRING (pr, 2);
 	txtbuffer_t *txtbuffer = TextBuffer_Create ();
 	editbuffer_t *buffer = editbuffer_new (res);
