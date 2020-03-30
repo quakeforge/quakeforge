@@ -27,6 +27,7 @@ SUFFIXES=.o .r
 
 qwaq_app_dat_src= \
 	qwaq-app.r	\
+	debugger/debug.r	\
 	debugger/debugger.r	\
 	editor/editbuffer.r	\
 	editor/editor.r	\
