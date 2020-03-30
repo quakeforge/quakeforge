@@ -822,6 +822,7 @@ get_event (qwaq_resources_t *res, qwaq_event_t *event)
 			was_event = 1;
 		} else if (res->button_state) {
 			event->what = qe_mouseauto;
+			event->when = Sys_DoubleTime ();
 			event->mouse.buttons = res->button_state;
 			event->mouse.x = res->mouse_x;
 			event->mouse.y = res->mouse_y;
