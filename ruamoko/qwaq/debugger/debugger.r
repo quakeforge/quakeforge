@@ -94,7 +94,6 @@
 	qdb_state_t state = qdb_get_state (target);
 	Editor     *file = [self find_file: state.file];
 
-	printf ("%s:%d\n", state.file, state.line);
 	if (current_file != file) {
 		[current_file setVerticalScrollBar:nil];
 		[[current_file onEvent] removeListener:self :@selector(proxy_event::)];

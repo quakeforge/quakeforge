@@ -102,9 +102,6 @@
 			@param      value = nil;
 			string      valstr = "--";
 			unsigned    offset = func.local_data + def.offset;
-			printf ("%d %d %s %d\n", def.type_size, offset,
-					qdb_get_string (target, def.name),
-					def.type_encoding);
 			qdb_get_data (target, offset, def.type_size >> 16, &value);
 			switch (def.type_size & 0xffff) {
 				case ev_void:
