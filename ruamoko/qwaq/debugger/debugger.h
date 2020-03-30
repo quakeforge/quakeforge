@@ -9,6 +9,7 @@
 
 @class ProxyView;
 @class Editor;
+@class ScrollBar;
 @class Window;
 @class Array;
 
@@ -22,6 +23,7 @@
 	Editor     *current_file;
 
 	Window     *locals_window;
+	ScrollBar  *scrollbar;
 	LocalsView *locals_view;
 }
 +(Debugger *)withTarget:(qdb_target_t)target;

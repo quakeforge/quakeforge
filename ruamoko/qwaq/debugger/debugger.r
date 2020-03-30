@@ -6,6 +6,7 @@
 #include "ui/curses.h"
 #include "ui/listener.h"
 #include "ui/proxyview.h"
+#include "ui/scrollbar.h"
 #include "ui/window.h"
 #include "debugger/debugger.h"
 #include "debugger/typeencodings.h"
@@ -30,9 +31,13 @@
 	}
 	self.target = target;
 
+	Extent s = [application size];
 	files = [[Array array] retain];
-	source_window = [Window withRect: {nil, [application size]}];
+	source_window = [Window withRect: {nil, s}];
 	[application addView:source_window];
+
+	scrollbar = [ScrollBar vertical:s.height - 2 at:{s.width - 1, 1}];
+	[source_window insert:scrollbar];
 
 	return self;
 }

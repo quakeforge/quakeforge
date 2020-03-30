@@ -2,13 +2,9 @@
 #include "qwaq-app.h"
 #include "editor/editor.h"
 #include "ui/listener.h"
+#include "ui/scrollbar.h"
 
 @implementation Editor
-
-+(Editor *)withRect:(Rect)rect file:(string)filename
-{
-	return [[[self alloc] initWithRect:rect file:filename] autorelease];
-}
 
 -initWithRect:(Rect) rect file:(string) filename
 {
@@ -24,8 +20,30 @@
 	return self;
 }
 
++(Editor *)withRect:(Rect)rect file:(string)filename
+{
+	return [[[self alloc] initWithRect:rect file:filename] autorelease];
+}
+
+-(void)onScroll:(id)sender
+{
+}
+
+-setVerticalScrollBar:(ScrollBar *)scrollbar
+{
+	[scrollbar retain];
+	[[vScrollBar onScroll] removeListener:self :@selector(onScroll)];
+	[vScrollBar release];
+
+	vScrollBar = scrollbar;
+	[vScrollBar setRange:line_count];
+	[[vScrollBar onScroll] addListener:self :@selector(onScroll)];
+	return self;
+}
+
 -(void)dealloc
 {
+	[vScrollBar release];
 	[buffer release];
 	[linebuffer release];
 	[super dealloc];
