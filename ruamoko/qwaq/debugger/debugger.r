@@ -73,6 +73,7 @@
 	file_proxy = [ProxyView withView: current_file];
 	[[current_file gotoLine:state.line - 1] highlightLine];
 	[[current_file onEvent] addListener: self :@selector(proxy_event::)];
+	[current_file setVerticalScrollBar:scrollbar];
 	//FIXME id<View>?
 	[source_window insertSelected: (View *) file_proxy];
 	[source_window setTitle: [current_file filename]];
@@ -95,9 +96,11 @@
 
 	printf ("%s:%d\n", state.file, state.line);
 	if (current_file != file) {
+		[current_file setVerticalScrollBar:nil];
 		[[current_file onEvent] removeListener:self :@selector(proxy_event::)];
 		[file_proxy setView:file];
 		[[file onEvent] addListener:self :@selector(proxy_event::)];
+		[file setVerticalScrollBar:scrollbar];
 		[source_window setTitle: [file filename]];
 		current_file = file;
 	}

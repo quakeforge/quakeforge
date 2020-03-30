@@ -25,19 +25,15 @@
 	return [[[self alloc] initWithRect:rect file:filename] autorelease];
 }
 
--(void)onScroll:(id)sender
-{
-}
-
 -setVerticalScrollBar:(ScrollBar *)scrollbar
 {
 	[scrollbar retain];
-	[[vScrollBar onScroll] removeListener:self :@selector(onScroll)];
+	[[vScrollBar onScroll] removeListener:self :@selector(onScroll:)];
 	[vScrollBar release];
 
 	vScrollBar = scrollbar;
 	[vScrollBar setRange:line_count];
-	[[vScrollBar onScroll] addListener:self :@selector(onScroll)];
+	[[vScrollBar onScroll] addListener:self :@selector(onScroll:)];
 	return self;
 }
 
@@ -164,6 +160,22 @@ static int handleEvent (Editor *self, qwaq_event_t *event)
 	return self;
 }
 
+-scrollTo:(unsigned)target
+{
+	if (target > scroll.y) {
+		base_index = [buffer nextLine:base_index :target - scroll.y];
+	} else if (target < scroll.y) {
+		base_index = [buffer prevLine:base_index :scroll.y - target];
+	}
+	scroll.y = target;
+	return self;
+}
+
+-(void)onScroll:(id)sender
+{
+	[self scrollTo:[sender index]];
+}
+
 -recenter:(int) force
 {
 	if (!force) {
@@ -177,12 +189,7 @@ static int handleEvent (Editor *self, qwaq_event_t *event)
 	} else {
 		target = cursor.y - ylen / 2;
 	}
-	if (target > scroll.y) {
-		base_index = [buffer nextLine:base_index :target - scroll.y];
-	} else if (target < scroll.y) {
-		base_index = [buffer prevLine:base_index :scroll.y - target];
-	}
-	scroll.y = target;
+	[self scrollTo:target];
 	return self;
 }
 

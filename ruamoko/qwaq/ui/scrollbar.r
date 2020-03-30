@@ -10,6 +10,7 @@
 	if (!(self = [super initWithRect:rect])) {
 		return nil;
 	}
+	options = ofRelativeEvents;
 	buffer = [[DrawBuffer buffer:size] retain];
 	objects = [[Group withContext:buffer owner:self] retain];
 	onScroll = [[ListenerGroup listener] retain];
@@ -27,13 +28,13 @@
 		[icons[0] addch:acs_char (ACS_UARROW)];
 		[icons[1] addch:acs_char (ACS_DARROW)];
 		thumbPos = {0, 1};
-		thumbSel = @selector(verticalSlide);
+		thumbSel = @selector(verticalSlide:);
 		growMode &= ~gfGrowLoY;
 	} else {
 		[icons[0] addch:acs_char (ACS_LARROW)];
 		[icons[1] addch:acs_char (ACS_RARROW)];
 		thumbPos = {1, 0};
-		thumbSel = @selector(horizontalSlide);
+		thumbSel = @selector(horizontalSlide:);
 		growMode &= ~gfGrowLoX;
 	}
 	bgchar = acs_char (ACS_CKBOARD);
@@ -44,8 +45,8 @@
 	thumbTab = [Button withPos:thumbPos
 				  releasedIcon:icons[2] pressedIcon:icons[2]];
 
-	[[backButton onPress] addListener:self :@selector(scrollBack:)];
-	[[forwardButton onPress] addListener:self :@selector(scrollForward:)];
+	[[backButton onClick] addListener:self :@selector(scrollBack:)];
+	[[forwardButton onClick] addListener:self :@selector(scrollForward:)];
 	[[thumbTab onPress] addListener:self :thumbSel];
 
 	singleStep = 1;
@@ -86,16 +87,14 @@
 
 -draw
 {
-	syncprintf("scrollbar start");
-	if (vertical) {
-		[self mvvline:pos, bgchar, ylen];
-	} else {
-		[self mvhline:pos, bgchar, xlen];
-	}
 	[super draw];
+	if (vertical) {
+		[buffer mvvline:{0,0}, bgchar, ylen];
+	} else {
+		[buffer mvhline:{0,0}, bgchar, xlen];
+	}
 	[objects draw];
 	[textContext blitFromBuffer:buffer to:pos from:[buffer rect]];
-	syncprintf("scrollbar end");
 	return self;
 }
 
@@ -112,6 +111,7 @@ position_tab (ScrollBar *self)
 		}
 	}
 	[self.thumbTab move:{p.x - o.x, p.y - o.y}];
+	[self redraw];
 }
 
 -resize:(Extent)delta
@@ -177,6 +177,14 @@ page (ScrollBar *self, Point pos)
 	[self page:singleStep dir:1];
 }
 
+-(void)horizontalSlide:(id)sender
+{
+}
+
+-(void)verticalSlide:(id)sender
+{
+}
+
 -handleEvent:(qwaq_event_t *)event
 {
 	[super handleEvent: event];
@@ -222,6 +230,11 @@ page (ScrollBar *self, Point pos)
 		[self page:self.index - index dir:0];
 	}
 	return self;
+}
+
+-(unsigned)index
+{
+	return index;
 }
 
 @end

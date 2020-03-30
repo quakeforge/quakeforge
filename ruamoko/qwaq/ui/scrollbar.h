@@ -32,6 +32,7 @@
 -setPageStep:(unsigned)pageStep;
 -setSingleStep:(unsigned)singleStep;
 -setIndex:(unsigned)index;
+-(unsigned)index;
 @end
 
 #endif//__qwaq_ui_scrollbar_h
