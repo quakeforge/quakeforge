@@ -55,6 +55,7 @@
 #define CMD_SIZE(x) sizeof(x)/sizeof(x[0])
 
 typedef enum qwaq_commands_e {
+	qwaq_cmd_syncprint,
 	qwaq_cmd_newwin,
 	qwaq_cmd_delwin,
 	qwaq_cmd_getwrect,
@@ -89,6 +90,7 @@ typedef enum qwaq_commands_e {
 } qwaq_commands;
 
 static const char *qwaq_command_names[]= {
+	"syncprint",
 	"newwin",
 	"delwin",
 	"getwrect",
@@ -118,8 +120,8 @@ static const char *qwaq_command_names[]= {
 	"mvwblit_line",
 	"wresize",
 	"resizeterm",
-	"mvwhline"
-	"mvwvline"
+	"mvwhline",
+	"mvwvline",
 };
 
 static window_t *
@@ -278,6 +280,15 @@ qwaq_wait_result (qwaq_resources_t *res, int *result, int cmd, unsigned len)
 	RB_READ_DATA (res->results, result, len);
 	pthread_cond_broadcast (&res->results_cond.wcond);
 	pthread_mutex_unlock (&res->results_cond.mut);
+}
+
+static void
+cmd_syncprint (qwaq_resources_t *res)
+{
+	int         string_id = RB_PEEK_DATA (res->command_queue, 2);
+
+	Sys_Printf ("%s\n", res->strings[string_id].str);
+	release_string (res, string_id);
 }
 
 static void
@@ -636,10 +647,14 @@ dump_command (qwaq_resources_t *res, int len)
 	if (0) {
 		qwaq_commands cmd = RB_PEEK_DATA (res->command_queue, 0);
 		Sys_Printf ("%s[%d]", qwaq_command_names[cmd], len);
-		for (int i = 2; i < len; i++) {
-			Sys_Printf (" %d", RB_PEEK_DATA (res->command_queue, i));
+		if (cmd == qwaq_cmd_syncprint) {
+			Sys_Printf (" ");
+		} else {
+			for (int i = 2; i < len; i++) {
+				Sys_Printf (" %d", RB_PEEK_DATA (res->command_queue, i));
+			}
+			Sys_Printf ("\n");
 		}
-		Sys_Printf ("\n");
 	}
 }
 
@@ -682,6 +697,9 @@ process_commands (qwaq_resources_t *res)
 		dump_command (res, len);
 		qwaq_commands cmd = RB_PEEK_DATA (res->command_queue, 0);
 		switch (cmd) {
+			case qwaq_cmd_syncprint:
+				cmd_syncprint (res);
+				break;
 			case qwaq_cmd_newwin:
 				cmd_newwin (res);
 				break;
@@ -827,6 +845,25 @@ bi_shutdown (void *_pr)
 		qwaq_input_shutdown (res);
 		endwin ();
 	}
+}
+
+static void
+bi_syncprintf (progs_t *pr)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	const char *fmt = P_GSTRING (pr, 0);
+	int         count = pr->pr_argc - 1;
+	pr_type_t **args = pr->pr_params + 1;
+	int         string_id = acquire_string (res);
+	dstring_t  *print_buffer = res->strings + string_id;
+	int         command[] = { qwaq_cmd_syncprint, 0, string_id };
+
+	command[1] = CMD_SIZE(command);
+
+	dstring_clearstr (print_buffer);
+	PR_Sprintf (pr, print_buffer, "mvwaddstr", fmt, count, args);
+
+	qwaq_submit_command (res, command);
 }
 
 static void
@@ -1894,6 +1931,7 @@ bi_qwaq_clear (progs_t *pr, void *data)
 
 static builtin_t builtins[] = {
 	{"initialize",		bi_initialize,		-1},
+	{"syncprintf",		bi_syncprintf,		-1},
 	{"create_window",	bi_newwin,			-1},
 	{"destroy_window",	bi_delwin,			-1},
 	{"getwrect",		bi_getwrect,		-1},

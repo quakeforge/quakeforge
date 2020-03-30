@@ -179,6 +179,7 @@ static TextContext *screen;
 window_t stdscr = (window_t) 1;
 
 void initialize (void) = #0;
+void syncprintf (string fnt, ...) = #0;
 window_t create_window (int xpos, int ypos, int xlen, int ylen) = #0;
 void destroy_window (window_t win) = #0;
 void mvwprintf (window_t win, int x, int y, string fmt, ...) = #0;

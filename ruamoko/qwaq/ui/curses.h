@@ -87,6 +87,7 @@ typedef struct panel_s *panel_t;
 extern window_t stdscr;
 
 void initialize (void);
+void syncprintf (string fnt, ...);
 window_t create_window (int xpos, int ypos, int xlen, int ylen);
 void destroy_window (window_t win);
 void mvwprintf (window_t win, int x, int y, string fmt, ...);
