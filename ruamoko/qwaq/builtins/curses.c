@@ -85,6 +85,7 @@ typedef enum qwaq_commands_e {
 	qwaq_cmd_wresize,
 	qwaq_cmd_resizeterm,
 	qwaq_cmd_mvwhline,
+	qwaq_cmd_mvwvline,
 } qwaq_commands;
 
 static const char *qwaq_command_names[]= {
@@ -118,6 +119,7 @@ static const char *qwaq_command_names[]= {
 	"wresize",
 	"resizeterm",
 	"mvwhline"
+	"mvwvline"
 };
 
 static window_t *
@@ -616,6 +618,19 @@ cmd_mvwhline (qwaq_resources_t *res)
 }
 
 static void
+cmd_mvwvline (qwaq_resources_t *res)
+{
+	int         window_id = RB_PEEK_DATA (res->command_queue, 2);
+	int         x = RB_PEEK_DATA (res->command_queue, 3);
+	int         y = RB_PEEK_DATA (res->command_queue, 4);
+	int         ch = RB_PEEK_DATA (res->command_queue, 5);
+	int         n = RB_PEEK_DATA (res->command_queue, 6);
+
+	window_t   *window = get_window (res, __FUNCTION__, window_id);
+	mvwvline (window->win, y, x, ch, n);
+}
+
+static void
 dump_command (qwaq_resources_t *res, int len)
 {
 	if (0) {
@@ -756,6 +771,9 @@ process_commands (qwaq_resources_t *res)
 				break;
 			case qwaq_cmd_mvwhline:
 				cmd_mvwhline (res);
+				break;
+			case qwaq_cmd_mvwvline:
+				cmd_mvwvline (res);
 				break;
 		}
 		pthread_mutex_lock (&res->command_cond.mut);
@@ -1107,6 +1125,33 @@ bi_mvwhline (progs_t *pr)
 	int         n = P_INT (pr, 4);
 
 	qwaq_mvwhline (pr, window_id, x, y, ch, n);
+}
+
+static void
+qwaq_mvwvline (progs_t *pr, int window_id, int x, int y, int ch, int n)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+
+	if (get_window (res, __FUNCTION__, window_id)) {
+		int         command[] = {
+						qwaq_cmd_mvwvline, 0,
+						window_id, x, y, ch, n
+					};
+
+		command[1] = CMD_SIZE(command);
+		qwaq_submit_command (res, command);
+	}
+}
+static void
+bi_mvwvline (progs_t *pr)
+{
+	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
+	int         x = P_INT (pr, 1);
+	int         y = P_INT (pr, 2);
+	int         ch = P_INT (pr, 3);
+	int         n = P_INT (pr, 4);
+
+	qwaq_mvwvline (pr, window_id, x, y, ch, n);
 }
 
 static void
@@ -1822,6 +1867,18 @@ bi_i_TextContext__mvhline_ (progs_t *pr)
 }
 
 static void
+bi_i_TextContext__mvvline_ (progs_t *pr)
+{
+	__auto_type self = &P_STRUCT (pr, qwaq_textcontext_t, 0);
+	int         window_id = self->window;
+	__auto_type pos = &P_PACKED (pr, Point, 2);
+	int         ch = P_INT (pr, 3);
+	int         n = P_INT (pr, 4);
+
+	qwaq_mvwvline (pr, window_id, pos->x, pos->y, ch, n);
+}
+
+static void
 bi_qwaq_clear (progs_t *pr, void *data)
 {
 	__auto_type res = (qwaq_resources_t *) data;
@@ -1875,6 +1932,7 @@ static builtin_t builtins[] = {
 	{"wresize",			bi_wresize,			-1},
 	{"resizeterm",		bi_resizeterm,		-1},
 	{"mvwhline",		bi_mvwhline,		-1},
+	{"mvwvline",		bi_mvwvline,		-1},
 
 	{"_c_TextContext__is_initialized",	bi_c_TextContext__is_initialized,  -1},
 	{"_c_TextContext__max_colors",		bi_c_TextContext__max_colors,	   -1},
@@ -1900,6 +1958,7 @@ static builtin_t builtins[] = {
 	{"_i_TextContext__scrollok_",		bi_i_TextContext__scrollok_,	   -1},
 	{"_i_TextContext__border_",			bi_i_TextContext__border_,		   -1},
 	{"_i_TextContext__mvhline_",		bi_i_TextContext__mvhline_,		   -1},
+	{"_i_TextContext__mvvline_",		bi_i_TextContext__mvvline_,		   -1},
 
 	{0}
 };

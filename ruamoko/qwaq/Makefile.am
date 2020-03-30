@@ -40,6 +40,7 @@ qwaq_app_dat_src= \
 	ui/listener.r	\
 	ui/proxyview.r	\
 	ui/rect.r	\
+	ui/scrollbar.r	\
 	ui/textcontext.r	\
 	ui/titlebar.r	\
 	ui/view.r	\

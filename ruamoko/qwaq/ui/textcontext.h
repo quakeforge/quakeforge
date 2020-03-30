@@ -55,6 +55,7 @@
 - (void) scrollok: (int) flag;
 - (void) border: (box_sides_t) sides, box_corners_t corners;
 - (void) mvhline: (Point) pos, int ch, int n;
+- (void) mvvline: (Point) pos, int ch, int n;
 -clearReact: (Rect) rect;
 @end
 

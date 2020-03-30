@@ -30,6 +30,8 @@
 - (void) mvvprintf: (Point) pos, string fmt, @va_list args;
 - (void) mvaddch: (Point) pos, int ch;
 - (void) mvaddstr: (Point) pos, string str;
+- (void) mvhline:(Point)pos, int ch, int len;
+- (void) mvvline:(Point)pos, int ch, int len;
 @end
 
 @interface DrawBuffer : Object <DrawBuffer, TextContext>

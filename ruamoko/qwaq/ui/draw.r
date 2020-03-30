@@ -248,4 +248,20 @@
 	[self addstr: str];
 }
 
+- (void) mvhline:(Point)pos, int ch, int len
+{
+	while (len-- > 0) {
+		[self mvaddch:pos, ch];
+		pos.x++;
+	}
+}
+
+- (void) mvvline:(Point)pos, int ch, int len
+{
+	while (len-- > 0) {
+		[self mvaddch:pos, ch];
+		pos.y++;
+	}
+}
+
 @end
