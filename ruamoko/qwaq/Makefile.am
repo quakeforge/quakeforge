@@ -94,7 +94,7 @@ r_depfiles_remade=
 qwaq_app_dat_SOURCES=$(qwaq_app_dat_src)
 qwaq_app_obj=$(qwaq_app_dat_SOURCES:.r=.o)
 qwaq_app_dep=$(addprefix ./$(DEPDIR)/,$(qwaq_app_obj:.o=.Qo))
-qwaq-app.dat$(EXEEXT): $(qwaq_app_obj) $(QFCC_DEP)
+qwaq-app.dat$(EXEEXT): $(qwaq_app_obj) $(QFCC_DEP) ../lib/libcsqc.a ../lib/libr.a
 	$(QLINK) -o $@ $(qwaq_app_obj) -lcsqc -lr
 include $(qwaq_app_dep) # am--include-marker
 r_depfiles_remade += $(qwaq_app_dep)
@@ -102,7 +102,7 @@ r_depfiles_remade += $(qwaq_app_dep)
 gcd_dat_SOURCES=gcd.r
 gcd_obj=$(gcd_dat_SOURCES:.r=.o)
 gcd_dep=$(addprefix ./$(DEPDIR)/,$(gcd_obj:.o=.Qo))
-gcd.dat$(EXEEXT): $(gcd_obj) $(QFCC_DEP)
+gcd.dat$(EXEEXT): $(gcd_obj) $(QFCC_DEP) ../lib/libcsqc.a ../lib/libr.a
 	$(QLINK) -o $@ $(gcd_obj) -lcsqc -lr
 include $(gcd_dep) # am--include-marker
 r_depfiles_remade += $(gcd_dep)
