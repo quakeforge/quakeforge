@@ -36,6 +36,10 @@
 + (void) doupdate;
 + (TextContext *) screen;
 
++(TextContext *)textContext;
++(TextContext *)withRect:(Rect)rect;
++(TextContext *)withWindow:(window_t)window;
+
 -init;
 -initWithRect: (Rect) rect;
 -initWithWindow: (window_t) window;

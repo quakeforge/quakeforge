@@ -9,8 +9,9 @@
 	int         length;
 }
 // title always centered at top of owner
--initWithTitle:(string) title;
--setTitle:(string) newTitle;
++(TitleBar *)withTitle:(string)title;
+-initWithTitle:(string)title;
+-setTitle:(string)newTitle;
 @end
 
 #endif//__qwaq_ui_titlebar_h

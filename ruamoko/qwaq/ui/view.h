@@ -113,8 +113,11 @@ enum {
 	ListenerGroup *onReleaseFocus;
 	ListenerGroup *onEvent;
 }
--initWithRect: (Rect) rect;
--initWithRect: (Rect) rect options:(int)options;
++(View *)viewWithRect:(Rect)rect;
++(View *)viewWithRect:(Rect)rect options:(int)options;
+
+-initWithRect:(Rect)rect;
+-initWithRect:(Rect)rect options:(int)options;
 @end
 
 @interface View (TextContext) <TextContext>

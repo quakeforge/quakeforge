@@ -7,6 +7,11 @@
 
 @implementation Group
 
++(Group *)withContext:(id<TextContext>)context owner:(View *)owner
+{
+	return [[[self alloc] initWithContext:context owner:owner] autorelease];
+}
+
 -initWithContext: (id<TextContext>) context owner: (View *) owner
 {
 	if (!(self = [super init])) {
@@ -22,6 +27,7 @@
 -(void)dealloc
 {
 	[views release];
+	[super dealloc];
 }
 
 -(id<TextContext>)context
@@ -85,6 +91,7 @@ makeFirst (Group *self, int viewIndex)
 {
 	View       *view = [self.views objectAtIndex: viewIndex];
 
+	// add before remove to avoid freeing view
 	[self.views addObject: view];
 	[self.views removeObjectAtIndex: viewIndex];
 	[view raise];

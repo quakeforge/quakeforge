@@ -2,6 +2,11 @@
 #include "ui/proxyview.h"
 
 @implementation ProxyView
++(ProxyView *)withView:(View *)view
+{
+	return [[[self alloc] initWithView:view] autorelease];
+}
+
 - (void) forward: (SEL) sel : (@va_list) args
 {
 	if (!view) {
@@ -15,7 +20,7 @@
 	if (!(self = [super init])) {
 		return nil;
 	}
-	self.view = view;
+	self.view = [view retain];
 	return self;
 }
 
@@ -35,7 +40,10 @@
 	[self.view hide];
 	[self.view setContext:nil];
 
+	[view retain];
+	[self.view release];
 	self.view = view;
+
 	[view setContext:[owner context]];
 	if (state & sfDrawn) {
 		[view draw];

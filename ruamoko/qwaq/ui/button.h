@@ -20,6 +20,9 @@
 	ListenerGroup *onAuto;
 	ListenerGroup *onHover;
 }
++(Button *)withPos: (Point) pos releasedIcon: (DrawBuffer *) released
+								 pressedIcon: (DrawBuffer *) pressed;
++(Button *)withRect: (Rect) rect;	// invisible button
 -initWithPos: (Point) pos releasedIcon: (DrawBuffer *) released
 						   pressedIcon: (DrawBuffer *) pressed;
 -initWithRect: (Rect) rect;	// invisible button

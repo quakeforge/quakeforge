@@ -13,6 +13,11 @@
 #include "qwaq-app.h"
 
 @implementation Debugger
++(Debugger *)withTarget:(qdb_target_t)target
+{
+	return [[[self alloc] initWithTarget:target] autorelease];
+}
+
 -(qdb_target_t)target
 {
 	return target;
@@ -26,10 +31,16 @@
 	self.target = target;
 
 	files = [[Array array] retain];
-	source_window = [[Window alloc] initWithRect: {nil, [application size]}];
+	source_window = [Window withRect: {nil, [application size]}];
 	[application addView:source_window];
 
 	return self;
+}
+
+-(void)dealloc
+{
+	[files release];
+	[super dealloc];
 }
 
 -(Editor *) find_file:(string) filename
@@ -44,7 +55,7 @@
 	Rect rect = {{1, 1}, [source_window size]};
 	rect.extent.width -= 2;
 	rect.extent.height -= 2;
-	file = [[Editor alloc] initWithRect: rect file: filename];
+	file = [Editor withRect:rect file:filename];
 	[files addObject: file];
 	return file;
 }
@@ -54,7 +65,7 @@
 	qdb_state_t state = qdb_get_state (target);
 
 	current_file = [self find_file: state.file];
-	file_proxy = [[ProxyView alloc] initWithView: current_file];
+	file_proxy = [ProxyView withView: current_file];
 	[[current_file gotoLine:state.line - 1] highlightLine];
 	[[current_file onEvent] addListener: self :@selector(proxy_event::)];
 	//FIXME id<View>?
@@ -62,11 +73,10 @@
 	[source_window setTitle: [current_file filename]];
 	[source_window redraw];
 
-	locals_window = [[Window alloc] initWithRect: {{0, 0}, {40, 10}}];
+	locals_window = [Window withRect:{{0, 0}, {40, 10}}];
 	[locals_window setBackground: color_palette[064]];
 	[locals_window setTitle: "Locals"];
-	locals_view = [[LocalsView alloc] initWithRect: {{1, 1}, {38, 8}}
-											target: target];
+	locals_view = [LocalsView withRect:{{1, 1}, {38, 8}} target:target];
 	[locals_window insertSelected: locals_view];
 	[application addView: locals_window];
 

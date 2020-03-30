@@ -5,6 +5,11 @@
 
 @implementation TitleBar
 
++(TitleBar *)withTitle:(string)title
+{
+	return [[[self alloc] initWithTitle:title] autorelease];
+}
+
 -initWithTitle:(string) title
 {
 	if (!(self = [super init])) {

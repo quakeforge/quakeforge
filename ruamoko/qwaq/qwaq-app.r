@@ -46,7 +46,7 @@ arp_end (void)
 
 	screen = [TextContext screen];
 	screenSize = [screen size];
-	objects = [[Group alloc] initWithContext: screen owner: nil];
+	objects = [[Group withContext: screen owner: nil] retain];
 
 	[screen bkgd: color_palette[047]];
 	[screen scrollok: 1];
@@ -84,7 +84,7 @@ arp_end (void)
 			return debugger;
 		}
 	}
-	debugger = [[Debugger alloc] initWithTarget: target];
+	debugger = [Debugger withTarget: target];
 	[debuggers addObject: debugger];
 	return debugger;
 }
@@ -153,11 +153,14 @@ int main (int argc, string *argv)
 	fence = 0;
 	//while (!fence) {}
 
+	arp_start ();
 	application = [[QwaqApplication app] retain];
+	arp_end ();
 
 	[application run];
 	[application release];
 	qwaq_event_t event;
 	get_event (&event);	// XXX need a "wait for queue idle"
+
 	return 0;
 }

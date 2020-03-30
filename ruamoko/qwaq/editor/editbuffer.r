@@ -1,6 +1,16 @@
 #include "editor/editbuffer.h"
 
 @implementation EditBuffer
++(EditBuffer *)buffer
+{
+	return [[[self alloc] init] autorelease];
+}
+
++(EditBuffer *)withFile:(string)filename
+{
+	return [[[self alloc] initWithFile:filename] autorelease];
+}
+
 - init = #0;
 - initWithFile: (string) filename = #0;
 - (void) dealloc = #0;

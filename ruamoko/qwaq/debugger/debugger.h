@@ -24,8 +24,9 @@
 	Window     *locals_window;
 	LocalsView *locals_view;
 }
--(qdb_target_t)target;
++(Debugger *)withTarget:(qdb_target_t)target;
 -initWithTarget:(qdb_target_t) target;
+-(qdb_target_t)target;
 -handleDebugEvent;
 @end
 

@@ -12,7 +12,7 @@
 
 @implementation Window
 
-+windowWithRect: (Rect) rect
++(Window *)withRect: (Rect) rect
 {
 	return [[[self alloc] initWithRect: rect] autorelease];
 }
@@ -28,29 +28,21 @@
 		return nil;
 	}
 	self.rect = rect;
-	textContext = [[TextContext alloc] initWithRect: rect];
+	textContext = [[TextContext withRect: rect] retain];
 	panel = create_panel ([(id)textContext window]);
 
-	objects = [[Group alloc] initWithContext: textContext owner: self];
+	objects = [[Group withContext:textContext owner:self] retain];
 
-	[self insert: titleBar = [[TitleBar alloc] initWithTitle:""]];
+	[self insert:titleBar = [TitleBar withTitle:""]];
 
-	topDrag         = [[Button alloc] initWithRect: {{2, 0},
-													 {xlen - 4, 1}}];
-	topLeftDrag     = [[Button alloc] initWithRect: {{0, 0},
-													 {2, 2}}];
-	topRightDrag    = [[Button alloc] initWithRect: {{xlen - 2, 0},
-													 {2, 2}}];
-	leftDrag        = [[Button alloc] initWithRect: {{0, 2},
-													 {1, ylen - 4}}];
-	rightDrag       = [[Button alloc] initWithRect: {{xlen - 1, 2},
-													 {1, ylen - 4}}];
-	bottomLeftDrag  = [[Button alloc] initWithRect: {{0, ylen - 2},
-													 {2, 2}}];
-	bottomRightDrag = [[Button alloc] initWithRect: {{xlen - 2, ylen - 2},
-													 {2, 2}}];
-	bottomDrag      = [[Button alloc] initWithRect: {{2, ylen - 1},
-													 {xlen - 4, 1}}];
+	topDrag         = [Button withRect:{{2, 0},        {xlen - 4, 1}}];
+	topLeftDrag     = [Button withRect:{{0, 0},               {2, 2}}];
+	topRightDrag    = [Button withRect:{{xlen - 2, 0},        {2, 2}}];
+	leftDrag        = [Button withRect:{{0, 2},        {1, ylen - 4}}];
+	rightDrag       = [Button withRect:{{xlen - 1, 2}, {1, ylen - 4}}];
+	bottomLeftDrag  = [Button withRect:{{0, ylen - 2}       , {2, 2}}];
+	bottomRightDrag = [Button withRect:{{xlen - 2, ylen - 2}, {2, 2}}];
+	bottomDrag      = [Button withRect:{{2, ylen - 1}, {xlen - 4, 1}}];
 	[self insert: [topDrag         setGrowMode: gfGrowHiX]];
 	[self insert: [topLeftDrag     setGrowMode: gfGrowNone]];
 	[self insert: [topRightDrag    setGrowMode: gfGrowX]];

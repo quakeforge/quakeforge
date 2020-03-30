@@ -22,9 +22,24 @@ static TextContext *screen;
 + (TextContext *) screen
 {
 	if (!screen) {
-		screen = [[TextContext alloc] init];
+		screen = [[TextContext textContext] retain];
 	}
 	return screen;
+}
+
++(TextContext *)textContext
+{
+	return [[[self alloc] init] autorelease];
+}
+
++(TextContext *)withRect:(Rect)rect
+{
+	return [[[self alloc] initWithRect:rect] autorelease];
+}
+
++(TextContext *)withWindow:(window_t)window
+{
+	return [[[self alloc] initWithWindow:window] autorelease];
 }
 
 - init

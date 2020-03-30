@@ -10,8 +10,9 @@
 	View       *view;
 	Group      *owner;
 }
--initWithView:(View *) view;
--setView: (View *) view;
++(ProxyView *)withView:(View *)view;
+-initWithView:(View *)view;
+-setView:(View *)view;
 @end
 
 @interface ProxyView (View) <View, TextContext>

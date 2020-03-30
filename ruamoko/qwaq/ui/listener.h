@@ -11,6 +11,7 @@
 	SEL         message;
 	IMP         imp;
 }
++(Listener *)listenerWithResponder:(id)responder :(SEL)message;
 -initWithResponder: (id) responder :(SEL)message;
 -(void) respond: (void *) caller_data;
 -(void) respond: (void *) caller_data withObject:(void *)anObject;
@@ -21,6 +22,7 @@
 {
 	Array      *listeners;
 }
++(ListenerGroup *)listener;
 -init;
 -addListener: (id) responder :(SEL)message;
 -removeListener: (id) responder :(SEL)message;

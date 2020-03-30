@@ -15,8 +15,9 @@
 	qdb_def_t  *defs;
 	void       *data;
 }
--initWithRect:(Rect)rect target:(qdb_target_t) target;
--setFunction:(unsigned) fnum;
++(LocalsView *)withRect:(Rect)rect target:(qdb_target_t)target;
+-initWithRect:(Rect)rect target:(qdb_target_t)target;
+-setFunction:(unsigned)fnum;
 @end
 
 #endif

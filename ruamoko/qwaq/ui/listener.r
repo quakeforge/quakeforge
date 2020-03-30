@@ -5,6 +5,11 @@
 @class Array;
 
 @implementation Listener
++(Listener *)listenerWithResponder:(id)responder :(SEL)message
+{
+	return [[[self alloc] initWithResponder:responder :message] autorelease];
+}
+
 -initWithResponder: (id) responder :(SEL)message
 {
 	if (!(self = [super init])) {
@@ -33,6 +38,11 @@
 @end
 
 @implementation ListenerGroup : Object
++(ListenerGroup *)listener
+{
+	return [[[self alloc] init] autorelease];
+}
+
 -init
 {
 	if (!(self = [super init])) {
@@ -44,10 +54,9 @@
 
 -addListener: (id) responder :(SEL)message
 {
-	Listener   *listener = [[Listener alloc] initWithResponder: responder
-															  : message];
+	Listener   *listener = [Listener listenerWithResponder:responder :message];
 	if (listener) {
-		[listeners addObject: listener];
+		[listeners addObject:listener];
 	}
 	return self;
 }

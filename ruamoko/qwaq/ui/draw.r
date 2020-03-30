@@ -5,9 +5,9 @@
 
 @implementation DrawBuffer
 
-+ (DrawBuffer *) buffer: (Extent) size
++(DrawBuffer *)buffer:(Extent)size
 {
-	return [[self alloc] initWithSize: size];
+	return [[[self alloc] initWithSize: size] autorelease];
 }
 
 - initWithSize: (Extent) size
@@ -18,6 +18,12 @@
 	buffer = obj_malloc (size.width * size.height);
 	self.size = size;
 	return self;
+}
+
+-(void)dealloc
+{
+	obj_free (buffer);
+	[super dealloc];
 }
 
 - (Extent) size

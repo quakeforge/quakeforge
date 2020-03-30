@@ -5,18 +5,30 @@
 
 @implementation Editor
 
++(Editor *)withRect:(Rect)rect file:(string)filename
+{
+	return [[[self alloc] initWithRect:rect file:filename] autorelease];
+}
+
 -initWithRect:(Rect) rect file:(string) filename
 {
 	if (!(self = [super initWithRect: rect])) {
 		return nil;
 	}
 	self.filename = filename;
-	buffer = [[EditBuffer alloc] initWithFile: filename];
+	buffer = [[EditBuffer withFile:filename] retain];
 	line_count = [buffer countLines: {0, [buffer textSize]}];
-	linebuffer = [DrawBuffer buffer: { xlen, 1 }];
+	linebuffer = [[DrawBuffer buffer: { xlen, 1 }] retain];
 	growMode = gfGrowHi;
 	options = ofCanFocus | ofRelativeEvents;
 	return self;
+}
+
+-(void)dealloc
+{
+	[buffer release];
+	[linebuffer release];
+	[super dealloc];
 }
 
 -(string)filename

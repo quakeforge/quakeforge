@@ -26,6 +26,8 @@ typedef struct eb_color_s {
 {
 	struct edit_buffer_s *buffer;
 }
++(EditBuffer *)buffer;
++(EditBuffer *)withFile:(string)filename;
 -init;
 -initWithFile: (string) filename;
 - (unsigned) nextChar: (unsigned) charPtr;

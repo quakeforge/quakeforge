@@ -22,6 +22,7 @@
 	unsigned    line_count;
 	string      filename;
 }
++(Editor *)withRect:(Rect)rect file:(string)filename;
 -initWithRect:(Rect) rect file:(string) filename;
 -(string)filename;
 -scrollUp:(unsigned) count;

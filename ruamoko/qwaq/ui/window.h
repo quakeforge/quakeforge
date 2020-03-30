@@ -28,7 +28,7 @@
 	Button     *bottomDrag;
 	TitleBar   *titleBar;
 }
-+windowWithRect: (Rect) rect;
++(Window *)withRect: (Rect) rect;
 -setTitle:(string) title;
 -setBackground: (int) ch;
 -insert: (View *) view;

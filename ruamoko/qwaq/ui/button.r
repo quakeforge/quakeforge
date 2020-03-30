@@ -2,6 +2,20 @@
 #include "ui/listener.h"
 
 @implementation Button
+
++(Button *)withPos:(Point)pos releasedIcon:(DrawBuffer *)released
+							   pressedIcon:(DrawBuffer *)pressed
+{
+	return [[[self alloc] initWithPos:pos
+						 releasedIcon:released
+						  pressedIcon:pressed] autorelease];
+}
+
++(Button *)withRect:(Rect)rect
+{
+	return [[[self alloc] initWithRect:rect] autorelease];
+}
+
 -initWithPos: (Point) pos releasedIcon: (DrawBuffer *) released
 						   pressedIcon: (DrawBuffer *) pressed
 {
@@ -10,14 +24,14 @@
 	if (!(self = [super initWithRect: {pos, size}])) {
 		return nil;
 	}
-	icon[0] = released;
-	icon[1] = pressed;
-	onPress = [[ListenerGroup alloc] init];
-	onRelease = [[ListenerGroup alloc] init];
-	onClick = [[ListenerGroup alloc] init];
-	onDrag = [[ListenerGroup alloc] init];
-	onAuto = [[ListenerGroup alloc] init];
-	onHover = [[ListenerGroup alloc] init];
+	icon[0] = [released retain];
+	icon[1] = [pressed retain];
+	onPress = [ListenerGroup listener];
+	onRelease = [ListenerGroup listener];
+	onClick = [ListenerGroup listener];
+	onDrag = [ListenerGroup listener];
+	onAuto = [ListenerGroup listener];
+	onHover = [ListenerGroup listener];
 	return self;
 }
 
@@ -28,13 +42,20 @@
 	}
 	icon[0] = nil;
 	icon[1] = nil;
-	onPress = [[ListenerGroup alloc] init];
-	onRelease = [[ListenerGroup alloc] init];
-	onClick = [[ListenerGroup alloc] init];
-	onDrag = [[ListenerGroup alloc] init];
-	onAuto = [[ListenerGroup alloc] init];
-	onHover = [[ListenerGroup alloc] init];
+	onPress = [ListenerGroup listener];
+	onRelease = [ListenerGroup listener];
+	onClick = [ListenerGroup listener];
+	onDrag = [ListenerGroup listener];
+	onAuto = [ListenerGroup listener];
+	onHover = [ListenerGroup listener];
 	return self;
+}
+
+-(void)dealloc
+{
+	[icon[0] release];
+	[icon[1] release];
+	[super dealloc];
 }
 
 -draw

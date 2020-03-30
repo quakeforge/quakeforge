@@ -5,6 +5,11 @@
 
 @implementation LocalsView
 
++(LocalsView *)withRect:(Rect)rect target:(qdb_target_t)target
+{
+	return [[[self alloc] initWithRect:rect target:target] autorelease];
+}
+
 -initWithRect:(Rect)rect target:(qdb_target_t) target
 {
 	if (!(self = [super initWithRect:rect])) {
@@ -20,6 +25,18 @@
 				  &target_encodings);
 
 	return self;
+}
+
+-(void)dealloc
+{
+	if (defs) {
+		obj_free (defs);
+		defs = nil;
+	}
+	if (data) {
+		obj_free (data);
+		data = nil;
+	}
 }
 
 -setFunction:(unsigned) fnum

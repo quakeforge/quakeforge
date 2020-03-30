@@ -5,14 +5,29 @@
 
 @implementation View
 
++(View *)viewWithRect:(Rect)rect
+{
+	return [[[self alloc] initWithRect:rect] autorelease];
+}
+
++(View *)viewWithRect:(Rect)rect options:(int)options
+{
+	return [[[self alloc] initWithRect:rect options:options] autorelease];
+}
+
+static void view_init(View *self)
+{
+	self.onReceiveFocus = [ListenerGroup listener];
+	self.onReleaseFocus = [ListenerGroup listener];
+	self.onEvent = [ListenerGroup listener];
+}
+
 -init
 {
 	if (!(self = [super init])) {
 		return nil;
 	}
-	onReceiveFocus = [[ListenerGroup alloc] init];
-	onReleaseFocus = [[ListenerGroup alloc] init];
-	onEvent = [[ListenerGroup alloc] init];
+	view_init (self);
 	return self;
 }
 
@@ -21,11 +36,10 @@
 	if (!(self = [super init])) {
 		return nil;
 	}
+	view_init (self);
+
 	self.rect = rect;
 	self.absRect = rect;
-	onReceiveFocus = [[ListenerGroup alloc] init];
-	onReleaseFocus = [[ListenerGroup alloc] init];
-	onEvent = [[ListenerGroup alloc] init];
 	return self;
 }
 
@@ -34,12 +48,11 @@
 	if (!(self = [super init])) {
 		return nil;
 	}
+	view_init (self);
+
 	self.rect = rect;
 	self.absRect = rect;
 	self.options = options;
-	onReceiveFocus = [[ListenerGroup alloc] init];
-	onReleaseFocus = [[ListenerGroup alloc] init];
-	onEvent = [[ListenerGroup alloc] init];
 	return self;
 }
 
@@ -48,6 +61,9 @@
 	if (owner) {
 		[owner remove:self];
 	}
+	[onReceiveFocus release];
+	[onReleaseFocus release];
+	[onEvent release];
 	[super dealloc];
 }
 

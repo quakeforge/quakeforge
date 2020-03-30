@@ -17,7 +17,8 @@
 	int         focused;
 	id<TextContext> context;
 }
--initWithContext: (id<TextContext>) context owner: (View *) owner;
++(Group *)withContext:(id<TextContext>)context owner:(View *)owner;
+-initWithContext:(id<TextContext>)context owner:(View *)owner;
 -(id<TextContext>)context;
 -setContext: (id<TextContext>) context;
 -insert: (View *) view;

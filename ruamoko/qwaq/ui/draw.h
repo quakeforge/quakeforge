@@ -39,8 +39,8 @@
 	Point       cursor;
 	int         background;
 }
-+ (DrawBuffer *) buffer: (Extent) size;
-- initWithSize: (Extent) size;
++(DrawBuffer *)buffer:(Extent)size;
+-initWithSize:(Extent)size;
 @end
 
 #endif//__qwaq_ui_draw_h
