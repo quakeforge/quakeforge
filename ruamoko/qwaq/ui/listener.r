@@ -18,6 +18,9 @@
 	self.responder = responder;
 	self.message = message;
 	imp = [responder methodForSelector: message];
+	if (!imp) {
+		[self error:"method not found: %s", sel_get_name (message)];
+	}
 	return self;
 }
 
