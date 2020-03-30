@@ -140,7 +140,7 @@ new_def (const char *name, type_t *type, defspace_t *space,
 	if (!space && storage != sc_extern)
 		internal_error (0, "non-external def with no storage space");
 
-	if (is_class (type)) {
+	if (is_class (type) || (is_array (type) && is_class(type->t.array.type))) {
 		error (0, "statically allocated instance of class %s",
 			   type->t.class->name);
 		return def;
@@ -157,7 +157,7 @@ new_def (const char *name, type_t *type, defspace_t *space,
 		}
 		if (alignment < 1) {
 			print_type (type);
-			internal_error (0, "temp type has no alignment");
+			internal_error (0, "type has no alignment");
 		}
 		def->offset = defspace_alloc_aligned_loc (space, size, alignment);
 	}

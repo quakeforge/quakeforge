@@ -5,7 +5,7 @@ shift
 
 cat > $script <<EOF
 #! /bin/sh
-# compile must fail
+# compile must fail with a normal error
 $@
 if test \$? != 1; then
 	exit 1

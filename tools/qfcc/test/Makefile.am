@@ -81,6 +81,7 @@ test_progs_dat=\
 fail_progs_dat=
 
 test_build_errors=\
+	classarray.r \
 	double-demote-float.r \
 	double-demote-float-ainit.r \
 	double-demote-float-ginit.r \
@@ -207,6 +208,9 @@ double.run: Makefile build-run
 	@$(srcdir)/build-run $@
 include ./$(DEPDIR)/double.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/double.Qo
+
+classarray.run$(EXEEXT): classarray.r Makefile build-compile-fail-run
+	@$(srcdir)/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
 
 double-demote-int.run$(EXEEXT): double-demote-int.r Makefile build-compile-fail-run
 	@$(srcdir)/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
