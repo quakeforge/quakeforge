@@ -215,12 +215,12 @@ pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
 	qfot_type_t *aux_type;
 	switch (type->meta) {
 		case ty_basic:
-			return pr_type_size[type->t.type];
+			return pr_type_size[type->type];
 		case ty_struct:
 		case ty_union:
 			size = 0;
-			for (pr_int_t i = 0; i < type->t.strct.num_fields; i++) {
-				const qfot_var_t *field = &type->t.strct.fields[i];
+			for (pr_int_t i = 0; i < type->strct.num_fields; i++) {
+				const qfot_var_t *field = &type->strct.fields[i];
 				aux_type = &G_STRUCT (pr, qfot_type_t, field->type);
 				size = max (size,
 							field->offset + pr_debug_type_size (pr, aux_type));
@@ -229,13 +229,13 @@ pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
 		case ty_enum:
 			return pr_type_size[ev_integer];
 		case ty_array:
-			aux_type = &G_STRUCT (pr, qfot_type_t, type->t.array.type);
+			aux_type = &G_STRUCT (pr, qfot_type_t, type->array.type);
 			size = pr_debug_type_size (pr, aux_type);
-			return type->t.array.size * size;
+			return type->array.size * size;
 		case ty_class:
 			return 1;	//FIXME or should it return sizeof class struct?
 		case ty_alias:
-			aux_type = &G_STRUCT (pr, qfot_type_t, type->t.alias.aux_type);
+			aux_type = &G_STRUCT (pr, qfot_type_t, type->alias.aux_type);
 			return pr_debug_type_size (pr, aux_type);
 	}
 	return 0;
@@ -248,7 +248,7 @@ get_def_type (progs_t *pr, pr_def_t *def, qfot_type_t *type)
 		// no type encoding, so use basic type data to fill in and return
 		// the dummy encoding
 		memset (type, 0, sizeof (*type));
-		type->t.type = def->type;
+		type->type = def->type;
 	} else {
 		type = &G_STRUCT (pr, qfot_type_t, def->type_encoding);
 		if (!def->size) {
@@ -543,8 +543,8 @@ PR_LoadDebug (progs_t *pr)
 			 type_ptr += type->size) {
 			type = &G_STRUCT (pr, qfot_type_t, type_encodings + type_ptr);
 			if (type->meta == ty_basic
-				&& type->t.type >= 0 && type->t.type < ev_type_count) {
-				res->type_encodings[type->t.type] = type;
+				&& type->type >= 0 && type->type < ev_type_count) {
+				res->type_encodings[type->type] = type;
 			}
 		}
 	}
@@ -826,7 +826,7 @@ value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 {
 	switch (type->meta) {
 		case ty_basic:
-			switch (type->t.type) {
+			switch (type->type) {
 				case ev_void:
 					raw_type_view.void_view (type, value, data);
 					break;
@@ -887,7 +887,7 @@ value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 			raw_type_view.class_view (type, value, data);
 			break;
 		case ty_alias://XXX
-			type = &G_STRUCT (data->pr, qfot_type_t, type->t.alias.aux_type);
+			type = &G_STRUCT (data->pr, qfot_type_t, type->alias.aux_type);
 			return value_string (data, type, value);
 	}
 	return data->dstr->str;
@@ -928,7 +928,7 @@ global_string (pr_debug_data_t *data, pointer_t offset, qfot_type_t *type,
 
 	dstring_clearstr (dstr);
 
-	if (type && type->meta == ty_basic && type->t.type == ev_short) {
+	if (type && type->meta == ty_basic && type->type == ev_short) {
 		dsprintf (dstr, "%04x", (short) offset);
 		return dstr->str;
 	}
@@ -961,7 +961,7 @@ global_string (pr_debug_data_t *data, pointer_t offset, qfot_type_t *type,
 		if (!type) {
 			if (def) {
 				if (!def->type_encoding) {
-					dummy_type.t.type = def->type;
+					dummy_type.type = def->type;
 					type = &dummy_type;
 				} else {
 					type = &G_STRUCT (pr, qfot_type_t, def->type_encoding);
@@ -1176,7 +1176,7 @@ pr_dump_struct (qfot_type_t *type, pr_type_t *value, void *_data,
 	__auto_type data = (pr_debug_data_t *) _data;
 	progs_t    *pr = data->pr;
 	dstring_t  *dstr = data->dstr;
-	qfot_struct_t *strct = &type->t.strct;
+	qfot_struct_t *strct = &type->strct;
 
 	dstring_appendstr (dstr, "{");
 	for (int i = 0; i < strct->num_fields; i++) {
@@ -1609,7 +1609,7 @@ PR_Debug_Init (progs_t *pr)
 	res->void_type.meta = ty_basic;
 	res->void_type.size = 4;
 	res->void_type.encoding = 0;
-	res->void_type.t.type = ev_void;
+	res->void_type.type = ev_void;
 	for (int i = 0; i < ev_type_count; i++ ) {
 		res->type_encodings[i] = &res->void_type;
 	}

@@ -548,46 +548,46 @@ dump_qfo_types (qfo_t *qfo, int base_address)
 		}
 		switch ((ty_meta_e) type->meta) {
 			case ty_basic:
-				printf (" %-10s", (type->t.type < 0
-								   || type->t.type >= ev_type_count)
+				printf (" %-10s", (type->type < 0
+								   || type->type >= ev_type_count)
 								  ? "invalid type"
-								  : pr_type_name[type->t.type]);
-				if (type->t.type == ev_func) {
-					printf (" %4x %d", type->t.func.return_type,
-							count = type->t.func.num_params);
+								  : pr_type_name[type->type]);
+				if (type->type == ev_func) {
+					printf (" %4x %d", type->func.return_type,
+							count = type->func.num_params);
 					if (count < 0)
 						count = ~count;	//ones complement
 					for (i = 0; i < count; i++)
-						printf (" %x", type->t.func.param_types[i]);
-				} else if (type->t.type == ev_pointer
-						   || type->t.type == ev_field) {
-					printf (" %4x", type->t.fldptr.aux_type);
+						printf (" %x", type->func.param_types[i]);
+				} else if (type->type == ev_pointer
+						   || type->type == ev_field) {
+					printf (" %4x", type->fldptr.aux_type);
 				}
 				printf ("\n");
 				break;
 			case ty_struct:
 			case ty_union:
 			case ty_enum:
-				printf (" %s\n", QFO_GETSTR (qfo, type->t.strct.tag));
-				for (i = 0; i < type->t.strct.num_fields; i++) {
+				printf (" %s\n", QFO_GETSTR (qfo, type->strct.tag));
+				for (i = 0; i < type->strct.num_fields; i++) {
 					printf ("        %-5x %4x %s\n",
-							type->t.strct.fields[i].type,
-							type->t.strct.fields[i].offset,
-							QFO_GETSTR (qfo, type->t.strct.fields[i].name));
+							type->strct.fields[i].type,
+							type->strct.fields[i].offset,
+							QFO_GETSTR (qfo, type->strct.fields[i].name));
 				}
 				break;
 			case ty_array:
-				printf (" %-5x %d %d\n", type->t.array.type,
-						type->t.array.base, type->t.array.size);
+				printf (" %-5x %d %d\n", type->array.type,
+						type->array.base, type->array.size);
 				break;
 			case ty_class:
-				printf (" %-5x\n", type->t.class);
+				printf (" %-5x\n", type->class);
 				break;
 			case ty_alias:
 				printf (" %s %d %5x %5x\n",
-						QFO_GETSTR (qfo, type->t.alias.name),
-						type->t.alias.type, type->t.alias.aux_type,
-						type->t.alias.full_type);
+						QFO_GETSTR (qfo, type->alias.name),
+						type->alias.type, type->alias.aux_type,
+						type->alias.full_type);
 				break;
 		}
 	}

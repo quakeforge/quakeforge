@@ -296,11 +296,11 @@ resolve_external_def (defref_t *ext, defref_t *def)
 	}
 	ext_type = WORKTYPE (REF(ext)->type);
 	if (ext_type->meta == ty_alias) {
-		ext_type = WORKTYPE (ext_type->t.alias.aux_type);
+		ext_type = WORKTYPE (ext_type->alias.aux_type);
 	}
 	def_type = WORKTYPE (REF (def)->type);
 	if (def_type->meta == ty_alias) {
-		def_type = WORKTYPE (def_type->t.alias.aux_type);
+		def_type = WORKTYPE (def_type->alias.aux_type);
 	}
 	if (ext_type != def_type) {
 		linker_type_mismatch (REF (ext), REF (def));
@@ -428,7 +428,7 @@ process_type_def (defref_t *ref, qfo_mspace_t *space, qfo_def_t *old)
 		// new address in the encoding's class field so def and function types
 		// can be updated easily.
 		old_type->meta = -1;
-		old_type->t.class = REF (ref)->offset;
+		old_type->class = REF (ref)->offset;
 	}
 }
 
@@ -510,7 +510,7 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space,
 		}
 		// Type encodings have no type (type = 0) so setting the type
 		// to the idef type class has no effect.
-		odef->type = type->t.class;			// pointer to type in work
+		odef->type = type->class;			// pointer to type in work
 		// don't add unused (no attached relocs) external defs to the work
 		// defref list so they will not cause unused object files to be
 		// pulled in from libraries
@@ -920,7 +920,7 @@ process_funcs (qfo_t *qfo)
 	while (work->num_funcs < size) {
 		func = work->funcs + work->num_funcs++;
 		type = QFOTYPE(func->type);
-		func->type = type->t.class;
+		func->type = type->class;
 		func->name = linker_add_string (QFOSTR (qfo, func->name));
 		func->file = linker_add_string (QFOSTR (qfo, func->file));
 		if (func->code > 0)

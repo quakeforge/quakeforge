@@ -112,7 +112,7 @@ typedef struct qfot_type_s {
 		qfot_array_t array;			///< ty_array
 		string_t    class;			///< ty_class
 		qfot_alias_t alias;			///< ty_alias
-	}           t;
+	};
 } qfot_type_t;
 
 typedef struct qfot_type_encodings_s {

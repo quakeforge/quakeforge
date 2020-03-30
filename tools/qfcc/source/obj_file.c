@@ -653,7 +653,7 @@ get_def_type (qfo_t *qfo, pointer_t type)
 		case ty_basic:
 			// field, pointer and function types store their basic type in
 			// the same location.
-			return type_def->t.type;
+			return type_def->type;
 		case ty_struct:
 		case ty_union:
 			return ev_invalid;
@@ -678,19 +678,19 @@ get_type_size (qfo_t *qfo, pointer_t type)
 	type_def = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, type);
 	switch ((ty_meta_e)type_def->meta) {
 		case ty_alias:
-			return get_type_size (qfo, type_def->t.alias.aux_type);
+			return get_type_size (qfo, type_def->alias.aux_type);
 		case ty_basic:
 			// field, pointer and function types store their basic type in
 			// the same location.
-			return pr_type_size[type_def->t.type];
+			return pr_type_size[type_def->type];
 		case ty_struct:
-			for (i = size = 0; i < type_def->t.strct.num_fields; i++)
-				size += get_type_size (qfo, type_def->t.strct.fields[i].type);
+			for (i = size = 0; i < type_def->strct.num_fields; i++)
+				size += get_type_size (qfo, type_def->strct.fields[i].type);
 			return size;
 		case ty_union:
-			for (i = size = 0; i < type_def->t.strct.num_fields; i++) {
+			for (i = size = 0; i < type_def->strct.num_fields; i++) {
 				int         s;
-				s = get_type_size (qfo, type_def->t.strct.fields[i].type);
+				s = get_type_size (qfo, type_def->strct.fields[i].type);
 				if (s > size)
 					size = s;
 			}
@@ -698,8 +698,8 @@ get_type_size (qfo_t *qfo, pointer_t type)
 		case ty_enum:
 			return pr_type_size[ev_integer];
 		case ty_array:
-			return type_def->t.array.size
-					* get_type_size (qfo, type_def->t.array.type);
+			return type_def->array.size
+					* get_type_size (qfo, type_def->array.type);
 		case ty_class:
 			return 0;	// FIXME
 	}
@@ -728,15 +728,15 @@ get_type_alignment_log (qfo_t *qfo, pointer_t type)
 	type_def = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, type);
 	switch ((ty_meta_e)type_def->meta) {
 		case ty_alias:
-			return get_type_alignment_log (qfo, type_def->t.alias.aux_type);
+			return get_type_alignment_log (qfo, type_def->alias.aux_type);
 		case ty_basic:
 			// field, pointer and function types store their basic type in
 			// the same location.
-			return qfo_log2 (ev_types[type_def->t.type]->alignment);
+			return qfo_log2 (ev_types[type_def->type]->alignment);
 		case ty_struct:
 		case ty_union:
-			for (i = alignment = 0; i < type_def->t.strct.num_fields; i++) {
-				qfot_var_t *field = type_def->t.strct.fields + i;
+			for (i = alignment = 0; i < type_def->strct.num_fields; i++) {
+				qfot_var_t *field = type_def->strct.fields + i;
 				int         a;
 				a = get_type_alignment_log (qfo, field->type);
 				if (a > alignment) {
@@ -747,7 +747,7 @@ get_type_alignment_log (qfo_t *qfo, pointer_t type)
 		case ty_enum:
 			return qfo_log2 (ev_types[ev_integer]->alignment);
 		case ty_array:
-			return get_type_alignment_log (qfo, type_def->t.array.type);
+			return get_type_alignment_log (qfo, type_def->array.type);
 		case ty_class:
 			return 0;	// FIXME
 	}
@@ -776,15 +776,15 @@ function_params (qfo_t *qfo, qfo_func_t *func, dfunction_t *df)
 	type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, func->type);
 	if (type->meta == ty_alias) {
 		type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t,
-							type->t.alias.aux_type);
+							type->alias.aux_type);
 	}
-	if (type->meta != ty_basic || type->t.type != ev_func)
+	if (type->meta != ty_basic || type->type != ev_func)
 		return;
-	df->numparms = num_params = type->t.func.num_params;
+	df->numparms = num_params = type->func.num_params;
 	if (num_params < 0)
 		num_params = ~num_params;
 	for (i = 0; i < num_params; i++) {
-		df->parm_size[i] = get_parmsize (qfo, type->t.func.param_types[i]);
+		df->parm_size[i] = get_parmsize (qfo, type->func.param_types[i]);
 	}
 }
 
@@ -1234,9 +1234,9 @@ qfo_to_sym (qfo_t *qfo, int *size)
 		type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, func->type);
 		if (type->meta == ty_alias) {
 			type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t,
-								type->t.alias.aux_type);
+								type->alias.aux_type);
 		}
-		aux->return_type = type->t.func.return_type;
+		aux->return_type = type->func.return_type;
 		aux++;
 	}
 	memcpy (linenos, qfo->lines, qfo->num_lines * sizeof (pr_lineno_t));
