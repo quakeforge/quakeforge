@@ -120,6 +120,7 @@ position_tab (ScrollBar *self)
 	[super resize:delta];
 	delta = {self.size.width - size.width, self.size.height - size.height};
 	[objects resize:delta];
+	[buffer resizeTo:self.size];
 	position_tab (self);
 	return self;
 }
