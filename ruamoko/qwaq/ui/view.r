@@ -18,10 +18,10 @@
 
 static void view_init(View *self)
 {
-	self.onReceiveFocus = [ListenerGroup listener];
-	self.onReleaseFocus = [ListenerGroup listener];
-	self.onEvent = [ListenerGroup listener];
-	self.onViewScrolled = [ListenerGroup listener];
+	self.onReceiveFocus = [[ListenerGroup listener] retain];
+	self.onReleaseFocus = [[ListenerGroup listener] retain];
+	self.onEvent = [[ListenerGroup listener] retain];
+	self.onViewScrolled = [[ListenerGroup listener] retain];
 }
 
 -init

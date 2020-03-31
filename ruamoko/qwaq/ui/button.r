@@ -26,12 +26,12 @@
 	}
 	icon[0] = [released retain];
 	icon[1] = [pressed retain];
-	onPress = [ListenerGroup listener];
-	onRelease = [ListenerGroup listener];
-	onClick = [ListenerGroup listener];
-	onDrag = [ListenerGroup listener];
-	onAuto = [ListenerGroup listener];
-	onHover = [ListenerGroup listener];
+	onPress = [[ListenerGroup listener] retain];
+	onRelease = [[ListenerGroup listener] retain];
+	onClick = [[ListenerGroup listener] retain];
+	onDrag = [[ListenerGroup listener] retain];
+	onAuto = [[ListenerGroup listener] retain];
+	onHover = [[ListenerGroup listener] retain];
 	return self;
 }
 
@@ -42,12 +42,12 @@
 	}
 	icon[0] = nil;
 	icon[1] = nil;
-	onPress = [ListenerGroup listener];
-	onRelease = [ListenerGroup listener];
-	onClick = [ListenerGroup listener];
-	onDrag = [ListenerGroup listener];
-	onAuto = [ListenerGroup listener];
-	onHover = [ListenerGroup listener];
+	onPress = [[ListenerGroup listener] retain];
+	onRelease = [[ListenerGroup listener] retain];
+	onClick = [[ListenerGroup listener] retain];
+	onDrag = [[ListenerGroup listener] retain];
+	onAuto = [[ListenerGroup listener] retain];
+	onHover = [[ListenerGroup listener] retain];
 	return self;
 }
 
@@ -55,6 +55,12 @@
 {
 	[icon[0] release];
 	[icon[1] release];
+	[onPress release];
+	[onRelease release];
+	[onClick release];
+	[onDrag release];
+	[onAuto release];
+	[onHover release];
 	[super dealloc];
 }
 
