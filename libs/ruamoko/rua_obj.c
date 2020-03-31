@@ -1702,8 +1702,8 @@ class_create_instance (progs_t *pr, pr_class_t *class)
 	pr_type_t  *mem;
 	pr_id_t    *id;
 
-	mem = PR_Zone_Malloc (pr, size);
-	// redundant memset (id, 0, size);
+	mem = PR_Zone_TagMalloc (pr, size, class->name);
+	memset (mem, 0, size);
 	id = (pr_id_t *) (mem + 1);
 	id->class_pointer = PR_SetPointer (pr, class);
 	return id;

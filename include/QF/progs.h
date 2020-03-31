@@ -1614,6 +1614,7 @@ void PR_Zone_Init (progs_t *pr);
 void PR_Zone_Free (progs_t *pr, void *ptr);
 void *PR_Zone_Malloc (progs_t *pr, pr_int_t size);
 void *PR_Zone_Realloc (progs_t *pr, void *ptr, pr_int_t size);
+void *PR_Zone_TagMalloc (progs_t *pr, int size, int tag);
 
 ///@}
 
