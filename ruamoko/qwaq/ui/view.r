@@ -277,6 +277,18 @@ updateScreenCursor (View *view)
 	return self;
 }
 
+-moveTo:(Point)pos
+{
+	self.pos = pos;
+	return self;
+}
+
+-resizeTo:(Extent)size
+{
+	self.size = size;
+	return self;
+}
+
 -grow: (Extent) delta
 {
 	Point       dpos = {};
