@@ -193,7 +193,7 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 	pr_type_t  *dstParams[MAX_PARMS];
 	pointer_t   paramofs = 0;
 
-	if (pr->pr_trace) {
+	if (pr->pr_trace && !pr->debug_handler) {
 		Sys_Printf ("Entering function %s\n",
 					PR_GetString (pr, f->descriptor->s_name));
 	}
@@ -284,7 +284,7 @@ PR_LeaveFunction (progs_t *pr, int to_engine)
 
 	PR_PopFrame (pr);
 
-	if (pr->pr_trace) {
+	if (pr->pr_trace && !pr->debug_handler) {
 		Sys_Printf ("Leaving function %s\n",
 					PR_GetString (pr, f->descriptor->s_name));
 		if (to_engine) {
@@ -405,7 +405,7 @@ PR_CallFunction (progs_t *pr, func_t fnum)
 	f = pr->function_table + fnum;
 	if (f->first_statement < 0) {
 		// negative statements are built in functions
-		if (pr->pr_trace) {
+		if (pr->pr_trace && !pr->debug_handler) {
 			Sys_Printf ("Calling builtin %s @ %p\n",
 						PR_GetString (pr, f->descriptor->s_name), f->func);
 		}
