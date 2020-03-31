@@ -23,6 +23,17 @@
 	return [[[self alloc] initWithName:name width:width] autorelease];
 }
 
+-setGrowMode: (int) mode
+{
+	growMode = mode;
+	return self;
+}
+
+-(int)growMode
+{
+	return growMode;
+}
+
 -(string)name
 {
 	return name;
@@ -38,6 +49,14 @@
 	self.width = width;
 	return self;
 }
+
+-grow:(Extent)delta
+{
+	if (growMode & gfGrowHiX) {
+		width += delta.width;
+	}
+	return self;
+}
 @end
 
 @implementation TableView
@@ -51,6 +70,7 @@
 	buffer = [[DrawBuffer buffer:size] retain];
 	[buffer bkgd:' '];
 	[onViewScrolled addListener:self :@selector(onScroll:)];
+	growMode = gfGrowHi;
 	return self;
 }
 
@@ -85,6 +105,9 @@
 	Extent size = self.size;
 	[super resize:delta];
 	[buffer resizeTo:self.size];
+	for (int i = [columns count]; i-- > 0; ) {
+		[[columns objectAtIndex: i] grow: delta];
+	}
 	return self;
 }
 

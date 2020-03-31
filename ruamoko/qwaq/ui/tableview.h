@@ -21,9 +21,14 @@
 {
 	string      name;
 	int         width;
+	int         growMode;	// Y flags ignored
 }
 +(TableViewColumn *)named:(string)name;
 +(TableViewColumn *)named:(string)name width:(int)width;
+
+-setGrowMode: (int) mode;
+-(int)growMode;
+
 -(string)name;
 -(int)width;
 @end
