@@ -468,6 +468,7 @@ PR_SetReturnString (progs_t *pr, const char *s)
 		pr_strfree (pr, sr->s.string);
 	} else {
 		sr = new_string_ref (res);
+		res->rs_slot->strref = sr;
 	}
 	sr->type = str_return;
 	sr->rs_slot = res->rs_slot;
