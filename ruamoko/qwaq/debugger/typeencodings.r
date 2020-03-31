@@ -80,7 +80,7 @@ static void type_free (void *t, void *unused)
 	string       encoding;
 	qfot_type_t *type;
 
-	if (!qdb_get_data (target, typeAddr, TYPESIZE, &buffer)) {
+	if (qdb_get_data (target, typeAddr, TYPESIZE, &buffer) < 0) {
 		return nil;
 	}
 	if (!buffer.encoding) {

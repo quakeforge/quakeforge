@@ -121,6 +121,7 @@
 {
 	qdb_state_t state = qdb_get_state (target);
 	[locals_data setFunction:state.func];
+	[locals_data fetchData];
 	[locals_view redraw];
 }
 

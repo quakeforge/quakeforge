@@ -64,6 +64,12 @@
 	return self;
 }
 
+-fetchData
+{
+	qdb_get_data (target, func.local_data, func.local_size, data);
+	return self;
+}
+
 -(int)numberOfRows:(TableView *)tableview
 {
 	if (aux_func) {
@@ -72,12 +78,6 @@
 		return (func.local_size + 3) / 4;
 	}
 	return 0;
-}
-
--(qfot_type_t *)type:(qdb_def_t *)def
-{
-	unsigned encoding = def.type_encoding + (unsigned) target_encodings.types;
-	return [TypeEncodings getType:encoding fromTarget:target];
 }
 
 -(View *)tableView:(TableView *)tableview
@@ -89,7 +89,8 @@
 	if ([column name] == "name") {
 		view = [NameView withName:qdb_get_string (target, defs[row].name)];
 	} else {
-		qfot_type_t *type = [self type:&defs[row]];
+		qfot_type_t *type = [TypeEncodings getType:defs[row].type_encoding
+										fromTarget:target];
 		unsigned    offset = defs[row].offset;
 		view = [DefView withType:type at:offset in:data];
 	}

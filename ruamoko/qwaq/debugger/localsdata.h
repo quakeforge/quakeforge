@@ -17,6 +17,7 @@
 }
 +(LocalsData *)withTarget:(qdb_target_t)target;
 -setFunction:(unsigned)fnum;
+-fetchData;
 @end
 
 #endif
