@@ -1021,10 +1021,11 @@ obj_verror (probj_t *probj, pr_id_t *object, int code, const char *fmt, int coun
 			pr_type_t **args)
 {
 	progs_t    *pr = probj->pr;
+	__auto_type class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
 	dstring_t  *dstr = dstring_newstr ();
 
 	PR_Sprintf (pr, dstr, "obj_verror", fmt, count, args);
-	PR_RunError (pr, "%s", dstr->str);
+	PR_RunError (pr, "%s: %s", PR_GetString (pr, class->name), dstr->str);
 }
 
 static void
