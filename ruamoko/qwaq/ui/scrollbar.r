@@ -13,7 +13,7 @@
 	options = ofRelativeEvents;
 	buffer = [[DrawBuffer buffer:size] retain];
 	objects = [[Group withContext:buffer owner:self] retain];
-	onScroll = [[ListenerGroup listener] retain];
+	onScrollBarModified = [[ListenerGroup listener] retain];
 	vertical = xlen == 1;
 	DrawBuffer *icons[3] = {
 		[DrawBuffer buffer:{1, 1}],
@@ -61,7 +61,7 @@
 {
 	[objects release];
 	[buffer release];
-	[onScroll release];
+	[onScrollBarModified release];
 }
 
 +(ScrollBar *)horizontal:(unsigned)len at:(Point)pos
@@ -80,9 +80,9 @@
 	return [[[self alloc] initWithRect:{pos, {1, len}}] autorelease];
 }
 
--(ListenerGroup *)onScroll
+-(ListenerGroup *)onScrollBarModified
 {
-	return onScroll;
+	return onScrollBarModified;
 }
 
 -draw
@@ -142,7 +142,7 @@ position_tab (ScrollBar *self)
 	}
 
 	if (index != oind) {
-		[onScroll respond:self];
+		[onScrollBarModified respond:self];
 		position_tab (self);
 	}
 	return self;

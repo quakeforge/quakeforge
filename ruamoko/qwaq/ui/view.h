@@ -10,6 +10,7 @@
 
 @class Group;
 @class ListenerGroup;
+@class ScrollBar;
 
 enum {
 	ofCanFocus      = 0x0001,
@@ -58,6 +59,10 @@ enum {
 
 -(int) options;
 -(int) state;
+
+-setVerticalScrollBar:(ScrollBar *)scrollbar;
+-setHorizontalScrollBar:(ScrollBar *)scrollbar;
+-(ListenerGroup *) onViewScrolled;
 
 -(id<TextContext>)context;
 -setContext: (id<TextContext>) context;
@@ -114,6 +119,10 @@ enum {
 	ListenerGroup *onReceiveFocus;
 	ListenerGroup *onReleaseFocus;
 	ListenerGroup *onEvent;
+	ListenerGroup *onViewScrolled;
+	ScrollBar  *hScrollBar;
+	ScrollBar  *vScrollBar;
+	Point       scroll;
 }
 +(View *)viewWithRect:(Rect)rect;
 +(View *)viewWithRect:(Rect)rect options:(int)options;

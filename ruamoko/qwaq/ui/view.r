@@ -1,7 +1,8 @@
 #include "ui/curses.h"
 #include "ui/listener.h"
-#include "ui/view.h"
 #include "ui/group.h"
+#include "ui/scrollbar.h"
+#include "ui/view.h"
 
 @implementation View
 
@@ -20,6 +21,7 @@ static void view_init(View *self)
 	self.onReceiveFocus = [ListenerGroup listener];
 	self.onReleaseFocus = [ListenerGroup listener];
 	self.onEvent = [ListenerGroup listener];
+	self.onViewScrolled = [ListenerGroup listener];
 }
 
 -init
@@ -64,6 +66,7 @@ static void view_init(View *self)
 	[onReceiveFocus release];
 	[onReleaseFocus release];
 	[onEvent release];
+	[onViewScrolled release];
 	[super dealloc];
 }
 
@@ -86,6 +89,40 @@ static void view_init(View *self)
 - (int) state
 {
 	return state;
+}
+
+-(void)onScrollBarModified:(id)sender
+{
+	if (sender == vScrollBar) {
+		scroll.y = [sender index];
+	} else if (sender == hScrollBar) {
+		scroll.x = [sender index];
+	}
+	[onViewScrolled respond:self];
+}
+
+static void
+setScrollBar (View *self, ScrollBar **sb, ScrollBar *scrollbar)
+{
+	SEL         sel = @selector(onScrollBarModified:);
+	[scrollbar retain];
+	[[*sb onScrollBarModified] removeListener:self :sel];
+	[*sb release];
+
+	*sb = scrollbar;
+	[[*sb onScrollBarModified] addListener:self :sel];
+}
+
+-setVerticalScrollBar:(ScrollBar *)scrollbar
+{
+	setScrollBar (self, &vScrollBar, scrollbar);
+	return self;
+}
+
+-setHorizontalScrollBar:(ScrollBar *)scrollbar
+{
+	setScrollBar (self, &hScrollBar, scrollbar);
+	return self;
 }
 
 static void
@@ -319,6 +356,11 @@ updateScreenCursor (View *view)
 -(ListenerGroup *)onEvent
 {
 	return onEvent;
+}
+
+-(ListenerGroup *) onViewScrolled
+{
+	return onViewScrolled;
 }
 
 -handleEvent: (qwaq_event_t *) event

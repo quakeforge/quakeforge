@@ -20,7 +20,7 @@
 	Button     *forwardButton;
 	Button     *thumbTab;
 	Group      *objects;
-	ListenerGroup *onScroll;
+	ListenerGroup *onScrollBarModified;
 
 	unsigned    pageStep;
 	unsigned    singleStep;
@@ -29,7 +29,7 @@
 }
 +(ScrollBar *)horizontal:(unsigned)len at:(Point)pos;
 +(ScrollBar *)vertical:(unsigned)len at:(Point)pos;
--(ListenerGroup *)onScroll;
+-(ListenerGroup *)onScrollBarModified;
 -setRange:(unsigned)range;
 -setPageStep:(unsigned)pageStep;
 -setSingleStep:(unsigned)singleStep;

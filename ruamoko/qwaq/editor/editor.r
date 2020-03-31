@@ -17,25 +17,13 @@
 	linebuffer = [[DrawBuffer buffer: { xlen, 1 }] retain];
 	growMode = gfGrowHi;
 	options = ofCanFocus | ofRelativeEvents;
+	[onViewScrolled addListener:self :@selector(onScroll:)];
 	return self;
 }
 
 +(Editor *)withRect:(Rect)rect file:(string)filename
 {
 	return [[[self alloc] initWithRect:rect file:filename] autorelease];
-}
-
--setVerticalScrollBar:(ScrollBar *)scrollbar
-{
-	[scrollbar retain];
-	[[vScrollBar onScroll] removeListener:self :@selector(onScroll:)];
-	[vScrollBar release];
-
-	vScrollBar = scrollbar;
-	[vScrollBar setRange:line_count];
-	[vScrollBar setPageStep: ylen];
-	[[vScrollBar onScroll] addListener:self :@selector(onScroll:)];
-	return self;
 }
 
 -(void)dealloc
@@ -57,7 +45,7 @@
 	unsigned lind = base_index;
 	int *lbuf = [linebuffer buffer];
 	for (int y = 0; y < ylen; y++) {
-		lind = [buffer formatLine:lind from:scroll.x into:lbuf width:xlen
+		lind = [buffer formatLine:lind from:base.x into:lbuf width:xlen
 				highlight:selection colors: {color_palette[047],
 											 color_palette[007]}];
 		[textContext blitFromBuffer: linebuffer to: {xpos, ypos + y}
@@ -141,10 +129,10 @@ static int handleEvent (Editor *self, qwaq_event_t *event)
 
 -scrollLeft:(unsigned) count
 {
-	if (scroll.x > count) {
-		scroll.x -= count;
+	if (base.x > count) {
+		base.x -= count;
 	} else {
-		scroll.x = 0;
+		base.x = 0;
 	}
 	[self redraw];
 	return self;
@@ -152,10 +140,10 @@ static int handleEvent (Editor *self, qwaq_event_t *event)
 
 -scrollRight:(unsigned) count
 {
-	if (1024 - scroll.x > count) {
-		scroll.x += count;
+	if (1024 - base.x > count) {
+		base.x += count;
 	} else {
-		scroll.x = 1024;
+		base.x = 1024;
 	}
 	[self redraw];
 	return self;
@@ -163,24 +151,33 @@ static int handleEvent (Editor *self, qwaq_event_t *event)
 
 -scrollTo:(unsigned)target
 {
-	if (target > scroll.y) {
-		base_index = [buffer nextLine:base_index :target - scroll.y];
-	} else if (target < scroll.y) {
-		base_index = [buffer prevLine:base_index :scroll.y - target];
+	if (target > base.y) {
+		base_index = [buffer nextLine:base_index :target - base.y];
+	} else if (target < base.y) {
+		base_index = [buffer prevLine:base_index :base.y - target];
 	}
-	scroll.y = target;
+	base.y = target;
 	return self;
 }
 
 -(void)onScroll:(id)sender
 {
-	[self scrollTo:[sender index]];
+	base.x = scroll.x;
+	[self scrollTo:scroll.y];
+}
+
+-setVerticalScrollBar:(ScrollBar *)scrollbar
+{
+	[super setVerticalScrollBar:scrollbar];
+	[vScrollBar setRange:line_count];
+	[vScrollBar setPageStep: ylen];
+	return self;
 }
 
 -recenter:(int) force
 {
 	if (!force) {
-		if (cursor.y >= scroll.y && cursor.y - scroll.y < ylen) {
+		if (cursor.y >= base.y && cursor.y - base.y < ylen) {
 			return self;
 		}
 	}
@@ -221,7 +218,7 @@ static int handleEvent (Editor *self, qwaq_event_t *event)
 	if (pos.x < 0 || pos.y < 0 || pos.x >= xlen || pos.y >= ylen) {
 		return nil;
 	}
-	pos.x += scroll.x;
+	pos.x += base.x;
 	unsigned lind = [buffer nextLine:base_index :pos.y];
 	unsigned cind = [buffer charPtr:lind at:pos.x];
 	eb_sel_t word = [buffer getWord: cind];
