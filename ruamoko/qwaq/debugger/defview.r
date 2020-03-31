@@ -31,10 +31,23 @@ static string meta_views[] = {
 	return self;
 }
 
+-setTarget:(qdb_target_t)target
+{
+	self.target = target;
+	return self;
+}
+
 +(DefView *)withType:(qfot_type_t *)type at:(unsigned)offset in:(void *)data
 {
+	return [self withType:type at:offset in:data target:nil];
+}
+
++(DefView *)withType:(qfot_type_t *)type
+				  at:(unsigned)offset
+				  in:(void *)data
+			  target:(qdb_target_t)target
+{
 	string metaname = nil;
-	//printf("%d %d %d %d\n", type.meta, type.size, type.encoding, type.type);
 	if (type.meta == ty_alias) {
 		type = type.alias.aux_type;
 	}
@@ -44,7 +57,7 @@ static string meta_views[] = {
 	}
 	id class = obj_lookup_class (metaname);
 	if (class) {
-		return [class withType:type at:offset in:data];
+		return [[class withType:type at:offset in:data] setTarget:target];
 	}
 	return [NameView withName:"Invalid Meta"];
 }

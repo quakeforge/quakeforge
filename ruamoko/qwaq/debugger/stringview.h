@@ -5,7 +5,7 @@
 
 @interface StringView : DefView
 {
-	string     *data;
+	int        *data;
 }
 +(StringView *)withType:(qfot_type_t *)type at:(unsigned)offset in:(void *)data;
 @end

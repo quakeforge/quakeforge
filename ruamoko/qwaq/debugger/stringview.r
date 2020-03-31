@@ -8,7 +8,7 @@
 	if (!(self = [super initWithType:type])) {
 		return nil;
 	}
-	self.data = (string *)(data + offset);
+	self.data = (int *)(data + offset);
 	return self;
 }
 
@@ -20,7 +20,7 @@
 -draw
 {
 	[super draw];
-	string val = sprintf ("FIXME %s", data[0]);// quote string
+	string val = sprintf ("FIXME %s", qdb_get_string (target, data[0]));// quote string
 	[self mvaddstr:{0, 0}, str_mid (val, 0, xlen)];
 	return self;
 }

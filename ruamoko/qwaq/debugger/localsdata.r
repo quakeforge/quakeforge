@@ -92,7 +92,7 @@
 		qfot_type_t *type = [TypeEncodings getType:defs[row].type_encoding
 										fromTarget:target];
 		unsigned    offset = defs[row].offset;
-		view = [DefView withType:type at:offset in:data];
+		view = [DefView withType:type at:offset in:data target:target];
 	}
 	[view resizeTo:{[column width], 1}];
 	return view;

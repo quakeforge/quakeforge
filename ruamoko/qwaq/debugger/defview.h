@@ -3,12 +3,17 @@
 
 #include <types.h>
 #include "ui/view.h"
+#include "debugger/debug.h"
 
 @interface DefView : View
 {
 	qfot_type_t *type;
+	qdb_target_t target;
 }
-+(DefView *)withType:(qfot_type_t *)type at:(unsigned)offset in:(void *)data;
++(DefView *)withType:(qfot_type_t *)type
+				  at:(unsigned)offset
+				  in:(void *)data
+			  target:(qdb_target_t)target;
 -initWithType:(qfot_type_t *)type;
 @end
 
