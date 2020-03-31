@@ -41,6 +41,7 @@ qwaq_app_dat_src= \
 	ui/proxyview.r	\
 	ui/rect.r	\
 	ui/scrollbar.r	\
+	ui/tableview.r	\
 	ui/textcontext.r	\
 	ui/titlebar.r	\
 	ui/view.r	\
