@@ -27,9 +27,24 @@ SUFFIXES=.o .r
 
 qwaq_app_dat_src= \
 	qwaq-app.r	\
+	debugger/defview.r	\
+	debugger/nameview.r	\
+	debugger/basicview.r	\
+	debugger/doubleview.r	\
+	debugger/entityview.r	\
+	debugger/fieldview.r	\
+	debugger/floatview.r	\
+	debugger/funcview.r	\
+	debugger/intview.r	\
+	debugger/pointerview.r	\
+	debugger/quatview.r	\
+	debugger/stringview.r	\
+	debugger/uintview.r	\
+	debugger/vectorview.r	\
+	debugger/voidview.r	\
 	debugger/debug.r	\
 	debugger/debugger.r	\
-	debugger/localsview.r	\
+	debugger/localsdata.r	\
 	debugger/typeencodings.r	\
 	editor/editbuffer.r	\
 	editor/editor.r	\

@@ -2,10 +2,10 @@
 #define __qwaq_debugger_localsview_h
 
 #include <types.h>
-#include "ui/view.h"
+#include "ui/tableview.h"
 #include "debugger/debug.h"
 
-@interface LocalsView : View
+@interface LocalsData : Object <TableViewDataSource>
 {
 	qdb_target_t target;
 	qfot_type_encodings_t target_encodings;
@@ -15,8 +15,7 @@
 	qdb_def_t  *defs;
 	void       *data;
 }
-+(LocalsView *)withRect:(Rect)rect target:(qdb_target_t)target;
--initWithRect:(Rect)rect target:(qdb_target_t)target;
++(LocalsData *)withTarget:(qdb_target_t)target;
 -setFunction:(unsigned)fnum;
 @end
 

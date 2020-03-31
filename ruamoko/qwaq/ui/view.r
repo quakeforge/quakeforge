@@ -60,9 +60,6 @@ static void view_init(View *self)
 
 - (void) dealloc
 {
-	if (owner) {
-		[owner remove:self];
-	}
 	[onReceiveFocus release];
 	[onReleaseFocus release];
 	[onEvent release];
@@ -353,6 +350,16 @@ updateScreenCursor (View *view)
 	return self;
 }
 
+-(ListenerGroup *) onReceiveFocus
+{
+	return onReceiveFocus;
+}
+
+-(ListenerGroup *) onReleaseFocus
+{
+	return onReleaseFocus;
+}
+
 -(ListenerGroup *)onEvent
 {
 	return onEvent;
@@ -389,16 +396,6 @@ updateScreenCursor (View *view)
 	state &= ~sfInFocus;
 	[onReleaseFocus respond:self];
 	return self;
-}
-
--(ListenerGroup *) onReceiveFocus
-{
-	return onReceiveFocus;
-}
-
--(ListenerGroup *) onReleaseFocus
-{
-	return onReleaseFocus;
 }
 
 -raise

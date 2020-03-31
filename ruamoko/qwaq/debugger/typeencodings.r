@@ -69,7 +69,6 @@ static void type_free (void *t, void *unused)
 	for (type = encodings.types;
 		 ((int *)type - (int *) encodings.types) < encodings.size;
 		 type = next_type (type)) {
-		printf ("%s\n", type.encoding);
 		Hash_Add (static_encodings, type);
 	}
 	return self;

@@ -5,26 +5,28 @@
 #include <Object.h>
 
 #include "debugger/debug.h"
-#include "debugger/localsview.h"
+#include "debugger/localsdata.h"
 
 @class ProxyView;
 @class Editor;
 @class ScrollBar;
 @class Window;
 @class Array;
+@class TableView;
 
 @interface Debugger : Object
 {
 	qdb_target_t target;
 
 	Window     *source_window;
+	ScrollBar  *source_scrollbar;
 	ProxyView  *file_proxy;
 	Array      *files;
 	Editor     *current_file;
 
 	Window     *locals_window;
-	ScrollBar  *scrollbar;
-	LocalsView *locals_view;
+	LocalsData *locals_data;
+	TableView  *locals_view;
 }
 +(Debugger *)withTarget:(qdb_target_t)target;
 -initWithTarget:(qdb_target_t) target;

@@ -49,6 +49,7 @@
 	options = ofCanFocus | ofRelativeEvents;
 	columns = [[Array array] retain];
 	buffer = [[DrawBuffer buffer:size] retain];
+	[buffer bkgd:' '];
 	[onViewScrolled addListener:self :@selector(onScroll:)];
 	return self;
 }
@@ -58,6 +59,7 @@
 	[columns release];
 	[buffer release];
 	[dataSource release];
+	[super dealloc];
 }
 
 +(TableView *)withRect:(Rect)rect

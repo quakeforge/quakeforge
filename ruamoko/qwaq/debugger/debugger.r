@@ -7,6 +7,7 @@
 #include "ui/listener.h"
 #include "ui/proxyview.h"
 #include "ui/scrollbar.h"
+#include "ui/tableview.h"
 #include "ui/window.h"
 #include "debugger/debugger.h"
 #include "debugger/typeencodings.h"
@@ -36,8 +37,8 @@
 	source_window = [Window withRect: {nil, s}];
 	[application addView:source_window];
 
-	scrollbar = [ScrollBar vertical:s.height - 2 at:{s.width - 1, 1}];
-	[source_window insert:scrollbar];
+	source_scrollbar = [ScrollBar vertical:s.height - 2 at:{s.width - 1, 1}];
+	[source_window insert:source_scrollbar];
 
 	return self;
 }
@@ -45,6 +46,7 @@
 -(void)dealloc
 {
 	[files release];
+	[locals_data release];
 	[super dealloc];
 }
 
@@ -73,7 +75,7 @@
 	file_proxy = [ProxyView withView: current_file];
 	[[current_file gotoLine:state.line - 1] highlightLine];
 	[[current_file onEvent] addListener: self :@selector(proxy_event::)];
-	[current_file setVerticalScrollBar:scrollbar];
+	[current_file setVerticalScrollBar:source_scrollbar];
 	//FIXME id<View>?
 	[source_window insertSelected: (View *) file_proxy];
 	[source_window setTitle: [current_file filename]];
@@ -82,8 +84,15 @@
 	locals_window = [Window withRect:{{0, 0}, {40, 10}}];
 	[locals_window setBackground: color_palette[064]];
 	[locals_window setTitle: "Locals"];
-	locals_view = [LocalsView withRect:{{1, 1}, {38, 8}} target:target];
+	locals_data = [[LocalsData withTarget:target] retain];
+	locals_view = [TableView withRect:{{1, 1}, {38, 8}}];
+	[locals_view addColumn:[TableViewColumn named:"name" width:12]];
+	[locals_view addColumn:[TableViewColumn named:"value" width:26]];
+	ScrollBar *sb = [ScrollBar vertical:8 at:{39, 1}];
+	[locals_view setVerticalScrollBar:sb];
+	[locals_view setDataSource:locals_data];
 	[locals_window insertSelected: locals_view];
+	[locals_window insert: sb];
 	[application addView: locals_window];
 
 	[[locals_view onEvent] addListener:self :@selector(proxy_event::)];
@@ -99,7 +108,7 @@
 		[[current_file onEvent] removeListener:self :@selector(proxy_event::)];
 		[file_proxy setView:file];
 		[[file onEvent] addListener:self :@selector(proxy_event::)];
-		[file setVerticalScrollBar:scrollbar];
+		[file setVerticalScrollBar:source_scrollbar];
 		[source_window setTitle: [file filename]];
 		current_file = file;
 	}
@@ -110,7 +119,7 @@
 -(void)update_watchvars
 {
 	qdb_state_t state = qdb_get_state (target);
-	[locals_view setFunction:state.func];
+	[locals_data setFunction:state.func];
 	[locals_view redraw];
 }
 

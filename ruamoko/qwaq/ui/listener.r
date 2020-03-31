@@ -1,6 +1,7 @@
 #include <Array.h>
 
 #include "ui/listener.h"
+#include "ui/curses.h"
 
 @class Array;
 
@@ -53,6 +54,12 @@
 	}
 	listeners = [[Array array] retain];
 	return self;
+}
+
+-(void)dealloc
+{
+	[listeners release];
+	[super dealloc];
 }
 
 -addListener: (id) responder :(SEL)message

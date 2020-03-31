@@ -62,6 +62,7 @@
 	[objects release];
 	[buffer release];
 	[onScrollBarModified release];
+	[super dealloc];
 }
 
 +(ScrollBar *)horizontal:(unsigned)len at:(Point)pos
