@@ -239,7 +239,7 @@ updateScreenCursor (View *view)
 {
 	pos.x += xpos;
 	pos.y += ypos;
-	[textContext mvvprintf: pos, fmt, @args];
+	[textContext mvvprintf: pos, fmt, va_copy (@args)];
 }
 
 - (void) mvvprintf: (Point) pos, string fmt, @va_list args

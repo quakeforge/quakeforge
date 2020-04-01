@@ -18,4 +18,4 @@ libQFruamoko_la_SOURCES= \
 		pr_cmds.c \
 		rua_cbuf.c rua_cmd.c rua_cvar.c rua_hash.c rua_init.c \
 		rua_math.c rua_msgbuf.c rua_obj.c rua_plist.c rua_qfile.c rua_qfs.c \
-		rua_script.c rua_set.c rua_string.c
+		rua_runtime.c rua_script.c rua_set.c rua_string.c

@@ -36,7 +36,7 @@ r_depfiles_remade=
 
 libr_a_SOURCES=\
 	cbuf.r cmd.r cvar.r hash.r msgbuf.r plist.r qfile.r qfs.r script.r \
-	sound.r string.r math.r types.r \
+	sound.r string.r math.r types.r va_list.r \
 	obj_forward.r \
 	Object.r Protocol.r \
 	AutoreleasePool.r Array.r Array+Private.r Entity.r PropertyList.r Set.r
