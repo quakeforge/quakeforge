@@ -43,6 +43,7 @@ test_progs_dat=\
 	compound.dat \
 	deadbool.dat \
 	double.dat \
+	double-alias.dat \
 	enum.dat \
 	fordecl.dat \
 	func-expr.dat \
@@ -208,6 +209,15 @@ double.run: Makefile build-run
 	@$(srcdir)/build-run $@
 include ./$(DEPDIR)/double.Qo # am--include-marker
 r_depfiles_remade += ./$(DEPDIR)/double.Qo
+
+double_alias_dat_SOURCES=double-alias.r
+double_alias_obj=$(double_alias_dat_SOURCES:.r=.qfo)
+double-alias.dat$(EXEEXT): $(double_alias_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(double_alias_obj)
+double-alias.run: Makefile build-run
+	@$(srcdir)/build-run $@
+include ./$(DEPDIR)/double-alias.Qo # am--include-marker
+r_depfiles_remade += ./$(DEPDIR)/double-alias.Qo
 
 classarray.run$(EXEEXT): classarray.r Makefile build-compile-fail-run
 	@$(srcdir)/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
