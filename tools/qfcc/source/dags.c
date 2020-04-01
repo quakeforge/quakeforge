@@ -1163,6 +1163,19 @@ dag_remove_dead_nodes (dag_t *dag)
 			}
 		}
 	} while (added_root);
+
+	// clean up any stray edges that point to removed nodes
+	for (int i = 0; i < dag->num_nodes; i++) {
+		node = dag->nodes[i];
+		for (child_i = set_first (node->edges); child_i;
+			 child_i = set_next (child_i)) {
+			child = dag->nodes[child_i->element];
+			if (!set_is_member (dag->roots, child->number)
+				&& set_is_empty (child->parents)) {
+				set_remove (node->edges, child->number);
+			}
+		}
+	}
 	dag_sort_nodes (dag);
 }
 
