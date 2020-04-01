@@ -887,7 +887,8 @@ fmt_state_flags (fmt_state_t *state)
 static void
 fmt_state_var_field_width (fmt_state_t *state)
 {
-	// XXX record width
+	(*state->fi)->minFieldWidth = P_INT (pr, state->fmt_count);
+	state->fmt_count++;
 	if (*++state->c == '.') {
 		state->state = fmt_state_precision;
 	} else {
@@ -926,7 +927,9 @@ fmt_state_precision (fmt_state_t *state)
 static void
 fmt_state_var_precision (fmt_state_t *state)
 {
-	// XXX record precision
+	state->c++;	// skip over *
+	(*state->fi)->precision = P_INT (pr, state->fmt_count);
+	state->fmt_count++;
 	state->state = fmt_state_modifiers;
 }
 
