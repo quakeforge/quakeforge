@@ -42,7 +42,7 @@ static string type_views[] = {
 	if (class) {
 		return [class withType:type at:offset in:data];
 	}
-	return [NameView withName:"Invalid Meta"];
+	return [NameView withName:"Invalid Type"];
 }
 
 @end

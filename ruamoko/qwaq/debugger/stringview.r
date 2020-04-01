@@ -21,7 +21,7 @@
 {
 	[super draw];
 	string val = sprintf ("FIXME %s", qdb_get_string (target, data[0]));// quote string
-	[self mvaddstr:{0, 0}, str_mid (val, 0, xlen)];
+	[self mvprintf:{0, 0}, "%*.*s", xlen, xlen, val];
 	return self;
 }
 

@@ -21,7 +21,7 @@
 {
 	[super draw];
 	string val = sprintf ("FIXME [%x]", data[0]);
-	[self mvaddstr:{0, 0}, str_mid (val, 0, xlen)];
+	[self mvprintf:{0, 0}, "%*.*s", xlen, xlen, val];
 	return self;
 }
 

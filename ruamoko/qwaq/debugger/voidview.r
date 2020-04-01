@@ -22,7 +22,7 @@
 	[super draw];
 	string val = sprintf ("%08x %08x %08x %08x",
 						  data[0], data[1], data[2], data[3]);
-	[self mvaddstr:{0, 0}, str_mid (val, 0, xlen)];
+	[self mvprintf:{0, 0}, "%*.*s", xlen, xlen, val];
 	return self;
 }
 
