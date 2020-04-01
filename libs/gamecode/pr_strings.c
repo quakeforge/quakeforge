@@ -835,6 +835,37 @@ fmt_append_item (fmt_state_t *state)
 #undef P_DOUBLE
 #define P_DOUBLE(p,n) (*(double *) (state->args[n]))
 
+/**	State machine for PR_Sprintf
+ *
+ *	Parsing of the format string is implemented via the following state
+ *	machine. Note that in all states, end-of-string terminates the machine.
+ *	If the machine terminates in any state other than format or conversion,
+ *	an error is generated.
+ *	\dot
+ *	digraph PR_Sprintf_fmt_state_machine {
+ *		format          -> flags            [label="{%}"];
+ *		flags           -> flags            [label="{#+0 -}"];
+ *		flags           -> var_field_width  [label="{*}"];
+ *		flags           -> precision        [label="{.}"];
+ *		flags           -> field_width      [label="{[1-9]}"];
+ *		flags           -> modifiers        [label="other"];
+ *		var_field_width -> precision        [label="{.}"];
+ *		var_field_width -> modifiers        [label="other"];
+ *		field_width     -> field_width      [label="{[0-9]}"];
+ *		field_width     -> precision        [label="{.}"];
+ *		field_width     -> modifiers        [label="other"];
+ *		precision       -> var_precision    [label="{*}"];
+ *		precision       -> fixed_precision  [label="{[0-9]}"];
+ *		precision       -> modifiers        [label="other"];
+ *		var_precision   -> modifiers        [label="instant"];
+ *		fixed_precision -> fixed_precision  [label="{[0-9]}"];
+ *		fixed_precision -> modifiers        [label="other"];
+ *		modifiers       -> conversion       [label="instant/other"];
+ *		conversion      -> format           [label="other"];
+ *	}
+ *	\enddot
+ */
+///@{
 static void fmt_state_format (fmt_state_t *state);
 static void fmt_state_flags (fmt_state_t *state);
 static void fmt_state_var_field_width (fmt_state_t *state);
@@ -1105,6 +1136,7 @@ fmt_state_format (fmt_state_t *state)
 		state->state = 0;	// finished
 	}
 }
+///@}
 
 VISIBLE void
 PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
