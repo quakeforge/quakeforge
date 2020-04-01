@@ -808,6 +808,14 @@ free_fmt_item (prstr_resources_t *res, fmt_item_t *fi)
 	res->free_fmt_items = fi;
 }
 
+typedef struct fmtstate_s {
+	const char *c;
+	const char *l;
+	fmt_item_t *fmt_items;
+	fmt_item_t **fi;
+	int         fmt_count;
+} fmt_state_t;
+
 #undef P_var
 #define P_var(p,n,t) (args[n]->t##_var)
 #undef P_DOUBLE
@@ -817,229 +825,228 @@ PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 			const char *format, int count, pr_type_t **args)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
-	const char *c, *l;
 	const char *msg = "";
-	fmt_item_t *fmt_items = 0;
-	fmt_item_t **fi = &fmt_items;
-	int         fmt_count = 0;
+	fmt_state_t state = { };
+
+	state.fi = &state.fmt_items;
 
 	if (!name)
 		name = "PR_Sprintf";
 
-	*fi = new_fmt_item (res);
-	c = l = format;
-	while (*c) {
-		if (*c++ == '%') {
-			if (c != l + 1) {
+	*state.fi = new_fmt_item (res);
+	state.c = state.l = format;
+	while (*state.c) {
+		if (*state.c++ == '%') {
+			if (state.c != state.l + 1) {
 				// have some unformatted text to print
-				(*fi)->precision = c - l - 1;
-				(*fi)->type = 's';
-				(*fi)->data.string_var = l;
+				(*state.fi)->precision = state.c - state.l - 1;
+				(*state.fi)->type = 's';
+				(*state.fi)->data.string_var = state.l;
 
-				(*fi)->next = new_fmt_item (res);
-				fi = &(*fi)->next;
+				(*state.fi)->next = new_fmt_item (res);
+				state.fi = &(*state.fi)->next;
 			}
-			if (*c == '%') {
-				(*fi)->type = 's';
-				(*fi)->data.string_var = "%";
+			if (*state.c == '%') {
+				(*state.fi)->type = 's';
+				(*state.fi)->data.string_var = "%";
 
-				(*fi)->next = new_fmt_item (res);
-				fi = &(*fi)->next;
+				(*state.fi)->next = new_fmt_item (res);
+				state.fi = &(*state.fi)->next;
 			} else {
 				do {
-					switch (*c) {
+					switch (*state.c) {
 						// format options
 						case '\0':
 							msg = "Unexpected end of format string";
 							goto error;
 						case '0':
-							(*fi)->flags |= FMT_ZEROPAD;
-							c++;
+							(*state.fi)->flags |= FMT_ZEROPAD;
+							state.c++;
 							continue;
 						case '#':
-							(*fi)->flags |= FMT_ALTFORM;
-							c++;
+							(*state.fi)->flags |= FMT_ALTFORM;
+							state.c++;
 							continue;
 						case ' ':
-							(*fi)->flags |= FMT_ADDBLANK;
-							c++;
+							(*state.fi)->flags |= FMT_ADDBLANK;
+							state.c++;
 							continue;
 						case '-':
-							(*fi)->flags |= FMT_LJUSTIFY;
-							c++;
+							(*state.fi)->flags |= FMT_LJUSTIFY;
+							state.c++;
 							continue;
 						case '+':
-							(*fi)->flags |= FMT_ADDSIGN;
-							c++;
+							(*state.fi)->flags |= FMT_ADDSIGN;
+							state.c++;
 							continue;
 						case '.':
-							(*fi)->precision = 0;
-							c++;
-							while (isdigit ((byte )*c)) {
-								(*fi)->precision *= 10;
-								(*fi)->precision += *c++ - '0';
+							(*state.fi)->precision = 0;
+							state.c++;
+							while (isdigit ((byte )*state.c)) {
+								(*state.fi)->precision *= 10;
+								(*state.fi)->precision += *state.c++ - '0';
 							}
 							continue;
 						case '1': case '2': case '3': case '4': case '5':
 						case '6': case '7': case '8': case '9':
-							while (isdigit ((byte )*c)) {
-								(*fi)->minFieldWidth *= 10;
-								(*fi)->minFieldWidth += *c++ - '0';
+							while (isdigit ((byte )*state.c)) {
+								(*state.fi)->minFieldWidth *= 10;
+								(*state.fi)->minFieldWidth += *state.c++ - '0';
 							}
 							continue;
 						// format types
 						case '@':
 							// object
-							fmt_count++;
-							(*fi)->next = new_fmt_item (res);
-							fi = &(*fi)->next;
+							state.fmt_count++;
+							(*state.fi)->next = new_fmt_item (res);
+							state.fi = &(*state.fi)->next;
 							break;
 						case 'e':
 							// entity
-							(*fi)->type = 'i';
-							(*fi)->data.integer_var =
-								P_EDICTNUM (pr, fmt_count);
+							(*state.fi)->type = 'i';
+							(*state.fi)->data.integer_var =
+								P_EDICTNUM (pr, state.fmt_count);
 
-							fmt_count++;
-							(*fi)->next = new_fmt_item (res);
-							fi = &(*fi)->next;
+							state.fmt_count++;
+							(*state.fi)->next = new_fmt_item (res);
+							state.fi = &(*state.fi)->next;
 							break;
 						case 'i':
 						case 'd':
 						case 'c':
 							// integer
-							(*fi)->type = *c;
-							(*fi)->data.integer_var = P_INT (pr, fmt_count);
+							(*state.fi)->type = *state.c;
+							(*state.fi)->data.integer_var = P_INT (pr, state.fmt_count);
 
-							fmt_count++;
-							(*fi)->next = new_fmt_item (res);
-							fi = &(*fi)->next;
+							state.fmt_count++;
+							(*state.fi)->next = new_fmt_item (res);
+							state.fi = &(*state.fi)->next;
 							break;
 						case 'f':
 							// float or double
 						case 'g':
 							// float or double, no trailing zeroes, trim "."
 							// if nothing after
-							(*fi)->type = *c;
+							(*state.fi)->type = *state.c;
 							if (pr->float_promoted) {
-								(*fi)->flags |= FMT_LONG;
-								(*fi)->data.double_var
-									= P_DOUBLE (pr, fmt_count);
+								(*state.fi)->flags |= FMT_LONG;
+								(*state.fi)->data.double_var
+									= P_DOUBLE (pr, state.fmt_count);
 							} else {
-								(*fi)->data.float_var
-									= P_FLOAT (pr, fmt_count);
+								(*state.fi)->data.float_var
+									= P_FLOAT (pr, state.fmt_count);
 							}
 
-							fmt_count++;
-							(*fi)->next = new_fmt_item (res);
-							fi = &(*fi)->next;
+							state.fmt_count++;
+							(*state.fi)->next = new_fmt_item (res);
+							state.fi = &(*state.fi)->next;
 							break;
 						case 'p':
 							// pointer
-							(*fi)->flags |= FMT_ALTFORM;
-							(*fi)->type = 'x';
-							(*fi)->data.uinteger_var = P_UINT (pr, fmt_count);
+							(*state.fi)->flags |= FMT_ALTFORM;
+							(*state.fi)->type = 'x';
+							(*state.fi)->data.uinteger_var = P_UINT (pr, state.fmt_count);
 
-							fmt_count++;
-							(*fi)->next = new_fmt_item (res);
-							fi = &(*fi)->next;
+							state.fmt_count++;
+							(*state.fi)->next = new_fmt_item (res);
+							state.fi = &(*state.fi)->next;
 							break;
 						case 's':
 							// string
-							(*fi)->type = *c;
-							(*fi)->data.string_var = P_GSTRING (pr, fmt_count);
+							(*state.fi)->type = *state.c;
+							(*state.fi)->data.string_var = P_GSTRING (pr, state.fmt_count);
 
-							fmt_count++;
-							(*fi)->next = new_fmt_item (res);
-							fi = &(*fi)->next;
+							state.fmt_count++;
+							(*state.fi)->next = new_fmt_item (res);
+							state.fi = &(*state.fi)->next;
 							break;
 						case 'v':
 						case 'q':
 							// vector
 							{
 								int         i, count = 3;
-								int         flags = (*fi)->flags;
-								int         precision = (*fi)->precision;
-								unsigned    minWidth = (*fi)->minFieldWidth;
+								int         flags = (*state.fi)->flags;
+								int         precision = (*state.fi)->precision;
+								unsigned    minWidth = (*state.fi)->minFieldWidth;
 
-								(*fi)->flags = 0;
-								(*fi)->precision = -1;
-								(*fi)->minFieldWidth = 0;
+								(*state.fi)->flags = 0;
+								(*state.fi)->precision = -1;
+								(*state.fi)->minFieldWidth = 0;
 
-								if (*c == 'q')
+								if (*state.c == 'q')
 									count = 4;
 
 								for (i = 0; i < count; i++) {
 									if (i == 0) {
-										(*fi)->type = 's';
-										(*fi)->data.string_var = "'";
+										(*state.fi)->type = 's';
+										(*state.fi)->data.string_var = "'";
 									} else {
-										(*fi)->type = 's';
-										(*fi)->data.string_var = " ";
+										(*state.fi)->type = 's';
+										(*state.fi)->data.string_var = " ";
 									}
-									(*fi)->next = new_fmt_item (res);
-									fi = &(*fi)->next;
+									(*state.fi)->next = new_fmt_item (res);
+									state.fi = &(*state.fi)->next;
 
-									(*fi)->flags = flags;
-									(*fi)->precision = precision;
-									(*fi)->minFieldWidth = minWidth;
-									(*fi)->type = 'g';
-									(*fi)->data.float_var =
-										P_VECTOR (pr, fmt_count)[i];
+									(*state.fi)->flags = flags;
+									(*state.fi)->precision = precision;
+									(*state.fi)->minFieldWidth = minWidth;
+									(*state.fi)->type = 'g';
+									(*state.fi)->data.float_var =
+										P_VECTOR (pr, state.fmt_count)[i];
 
-									(*fi)->next = new_fmt_item (res);
-									fi = &(*fi)->next;
+									(*state.fi)->next = new_fmt_item (res);
+									state.fi = &(*state.fi)->next;
 								}
 							}
 
-							(*fi)->type = 's';
-							(*fi)->data.string_var = "'";
+							(*state.fi)->type = 's';
+							(*state.fi)->data.string_var = "'";
 
-							fmt_count++;
-							(*fi)->next = new_fmt_item (res);
-							fi = &(*fi)->next;
+							state.fmt_count++;
+							(*state.fi)->next = new_fmt_item (res);
+							state.fi = &(*state.fi)->next;
 							break;
 						case 'x':
 							// integer, hex notation
-							(*fi)->type = *c;
-							(*fi)->data.uinteger_var = P_UINT (pr, fmt_count);
+							(*state.fi)->type = *state.c;
+							(*state.fi)->data.uinteger_var = P_UINT (pr, state.fmt_count);
 
-							fmt_count++;
-							(*fi)->next = new_fmt_item (res);
-							fi = &(*fi)->next;
+							state.fmt_count++;
+							(*state.fi)->next = new_fmt_item (res);
+							state.fi = &(*state.fi)->next;
 							break;
 					}
 					break;
 				} while (1);
 			}
-			l = ++c;
+			state.l = ++state.c;
 		}
 	}
-	if (c != l) {
+	if (state.c != state.l) {
 		// have some unformatted text to print
-		(*fi)->precision = c - l;
-		(*fi)->type = 's';
-		(*fi)->data.string_var = l;
+		(*state.fi)->precision = state.c - state.l;
+		(*state.fi)->type = 's';
+		(*state.fi)->data.string_var = state.l;
 
-		(*fi)->next = new_fmt_item (res);
+		(*state.fi)->next = new_fmt_item (res);
 	}
 
-	if (fmt_count != count) {
-		if (fmt_count > count)
+	if (state.fmt_count != count) {
+		if (state.fmt_count > count)
 			msg = "Not enough arguments for format string.";
 		else
 			msg = "Too many arguments for format string.";
-		dsprintf (res->print_str, "%s: %d %d", msg, fmt_count, count);
+		dsprintf (res->print_str, "%s: %d %d", msg, state.fmt_count, count);
 		msg = res->print_str->str;
 		goto error;
 	}
 
 	dstring_clear (res->print_str);
-	I_DoPrint (res->print_str, result, fmt_items);
-	while (fmt_items) {
-		fmt_item_t *t = fmt_items->next;
-		free_fmt_item (res, fmt_items);
-		fmt_items = t;
+	I_DoPrint (res->print_str, result, state.fmt_items);
+	while (state.fmt_items) {
+		fmt_item_t *t = state.fmt_items->next;
+		free_fmt_item (res, state.fmt_items);
+		state.fmt_items = t;
 	}
 	return;
 error:
