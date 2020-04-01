@@ -140,19 +140,22 @@ init_qf (void)
 	Cvar_Get ("pr_debug", "2", 0, 0, 0);
 	Cvar_Get ("pr_boundscheck", "0", 0, 0, 0);
 
+	// Normally, this is done by PR_Init, but PR_Init is not called in the main
+	// thread. However, PR_Opcode_Init() is idempotent.
+	PR_Opcode_Init ();
 }
 
-typedef void (*progsinit_f) (progs_t *pr);
-
 static progs_t *
-create_progs (progsinit_f *funcs)
+create_progs (qwaq_thread_t *thread)
 {
 	progs_t    *pr = calloc (1, sizeof (*pr));
+	progsinit_f *funcs = thread->progsinit;
 
 	pr->load_file = load_file;
 	pr->allocate_progs_mem = allocate_progs_mem;
 	pr->free_progs_mem = free_progs_mem;
 	pr->no_exec_limit = 1;
+	pr->hashlink_freelist = &thread->hashlink_freelist;
 
 	PR_Init_Cvars ();
 	PR_Init (pr);
@@ -185,7 +188,7 @@ load_progs (progs_t *pr, const char *name)
 }
 
 static void
-spawn_progs (qwaq_thread_t *thread, progsinit_f *funcs)
+spawn_progs (qwaq_thread_t *thread)
 {
 	dfunction_t *dfunc;
 	const char *name = 0;
@@ -194,7 +197,7 @@ spawn_progs (qwaq_thread_t *thread, progsinit_f *funcs)
 	progs_t    *pr;
 
 	thread->main_func = 0;
-	pr = thread->pr = create_progs (funcs);
+	pr = thread->pr = create_progs (thread);
 	if (thread->args.size) {
 		name = thread->args.a[0];
 	}
@@ -229,6 +232,9 @@ static void *
 run_progs (void *data)
 {
 	__auto_type thread = (qwaq_thread_t *) data;
+
+	spawn_progs (thread);
+	Sys_Printf ("starthing thread for %s\n", thread->args.a[0]);
 
 	PR_ExecuteProgram (thread->pr, thread->main_func);
 	PR_PopFrame (thread->pr);
@@ -452,13 +458,13 @@ main (int argc, char **argv)
 			main_ind = i;
 			app_funcs = main_app;
 		}
-		spawn_progs (thread, app_funcs);
+		thread->progsinit = app_funcs;
 	}
 	if (main_ind >= 0) {
 		// threads might start new threads before the end is reached
 		size_t      count = thread_data.size;
 		for (size_t i = 0; i < count; i++) {
-			if (thread_data.a[i]->pr && thread_data.a[i]->main_func) {
+			if (thread_data.a[i]->progsinit) {
 				start_progs_thread (thread_data.a[i]);
 			}
 		}
