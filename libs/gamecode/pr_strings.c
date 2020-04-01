@@ -1073,7 +1073,11 @@ fmt_state_conversion (fmt_state_t *state)
 			fmt_append_item (state);
 			break;
 	}
-	state->state = fmt_state_format;
+	if (*state->c) {
+		state->state = fmt_state_format;
+	} else {
+		state->state = 0;	// finished
+	}
 }
 
 static void
