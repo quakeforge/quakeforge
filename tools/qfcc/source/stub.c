@@ -53,5 +53,6 @@ int compare_protocols (protocollist_t *protos1, protocollist_t *protos2){return 
 void dump_dot (const char *stage, void *data,
 		          void (*dump_func) (void *data, const char *fname)){}
 void dump_dot_type (void *_t, const char *filename){}
-const char *strip_path(const char *p) { return p;}
-const char *file_basename(const char *p, int keepdot) { return p;}
+char *fubar;
+const char *strip_path(const char *p) { return fubar;}
+const char *file_basename(const char *p, int keepdot) { return fubar;}
