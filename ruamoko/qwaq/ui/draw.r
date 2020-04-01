@@ -53,8 +53,8 @@
 	Rect r = { {}, size };
 	Rect t = { pos, rect.extent };
 
-	wprintf (stdscr, "src: %p\n", srcBuffer);
-	wprintf (stdscr, "srcSize: %d %d\n", srcSize.width, srcSize.height);
+	//wprintf (stdscr, "src: %p\n", srcBuffer);
+	//wprintf (stdscr, "srcSize: %d %d\n", srcSize.width, srcSize.height);
 
 	t = clipRect (r, t);
 	if (t.extent.width < 0 || t.extent.height < 0) {
