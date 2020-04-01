@@ -16,5 +16,6 @@
 @extern @overload string str_mid (string str, int start, int len);
 @extern string str_str (string haystack, string needle);
 @extern int str_char (string str, int ind);
+string str_quote (string str);
 
 #endif//__ruamoko_string_h

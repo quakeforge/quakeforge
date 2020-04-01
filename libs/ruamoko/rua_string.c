@@ -208,6 +208,45 @@ bi_str_char (progs_t *pr)
 	R_INT (pr) = str[ind];
 }
 
+static void
+bi_str_quote (progs_t *pr)
+{
+	const char *str = P_GSTRING (pr, 0);
+	// can have up to 4 chars per char (a -> \x61)
+	char       *quote = alloca (strlen (str) * 4 + 1);
+	char       *q = quote;
+	char        c;
+	int         h;
+
+	while ((c = *str++)) {
+		if (c >= ' ' && c < 127 && c != '\"') {
+			*q++ = c;
+		} else {
+			*q++ = '\\';
+			switch (c) {
+				case '\a': c = 'a'; break;
+				case '\b': c = 'b'; break;
+				case '\f': c = 'f'; break;
+				case '\n': c = 'n'; break;
+				case '\r': c = 'r'; break;
+				case '\t': c = 't'; break;
+				case '\"': c = '\"'; break;
+				default:
+					*q++ = 'x';
+					h = (c & 0xf0) >> 4;
+					*q++ = h > 9 ? h + 'a' - 10 : h + '0';
+					h = (c & 0x0f);
+					c = h > 9 ? h + 'a' - 10 : h + '0';
+					break;
+			}
+			*q++ = c;
+		}
+	}
+	*q++ = 0;
+
+	RETURN_STRING (pr, quote);
+}
+
 static builtin_t builtins[] = {
 	{"strlen",		bi_strlen,		-1},
 	{"sprintf",		bi_sprintf,		-1},
@@ -224,6 +263,7 @@ static builtin_t builtins[] = {
 	{"str_mid|*ii",	bi_str_mid,		-1},
 	{"str_str",		bi_str_str,		-1},
 	{"str_char",	bi_str_char,	-1},
+	{"str_quote",	bi_str_quote,	-1},
 	{0}
 };
 
