@@ -245,7 +245,21 @@ dag_node (operand_t *op)
 }
 
 static void
-dag_make_children (dag_t *dag, statement_t *s, operand_t *operands[4],
+dag_make_leafs (dag_t *dag, statement_t *s, operand_t *operands[FLOW_OPERANDS])
+{
+	int         i;
+
+	flow_analyze_statement (s, 0, 0, 0, operands);
+	for (i = 1; i < FLOW_OPERANDS; i++) {
+		if (!dag_node (operands[i])) {
+			leaf_node (dag, operands[i], s->expr);
+		}
+	}
+}
+
+static void
+dag_make_children (dag_t *dag, statement_t *s,
+				   operand_t *operands[FLOW_OPERANDS],
 				   dagnode_t *children[3])
 {
 	int         i;
@@ -730,6 +744,13 @@ dag_create (flownode_t *flownode)
 	dag->labels = alloca (num_lables * sizeof (daglabel_t));
 	dag->roots = set_new ();
 
+	// do a first pass to ensure all operands have an "x_0" leaf node
+	// prior do actual dag creation
+	for (s = block->statements; s; s = s->next) {
+		operand_t  *operands[FLOW_OPERANDS];
+		dag_make_leafs (dag, s, operands);
+	}
+	// actual dag creation
 	for (s = block->statements; s; s = s->next) {
 		operand_t  *operands[FLOW_OPERANDS];
 		dagnode_t  *n = 0, *children[3] = {0, 0, 0};
