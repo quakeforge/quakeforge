@@ -58,7 +58,7 @@
 	if (aux_func) {
 		defs = qdb_get_local_defs (target, fnum);
 	}
-	if (func) {
+	if (func && func.local_size) {
 		data = obj_malloc (func.local_size);
 	}
 	return self;

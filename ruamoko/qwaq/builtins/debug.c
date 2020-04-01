@@ -482,7 +482,7 @@ qdb_get_local_defs (progs_t *pr)
 	pr_auxfunction_t *auxfunc = PR_Debug_MappedAuxFunction (tpr, fnum);
 
 	R_INT (pr) = 0;
-	if (auxfunc) {
+	if (auxfunc && auxfunc->num_locals) {
 		pr_def_t   *defs = PR_Debug_LocalDefs (tpr, auxfunc);
 		__auto_type qdefs
 			= (qdb_def_t *) PR_Zone_Malloc (pr,
