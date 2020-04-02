@@ -124,9 +124,9 @@ PR_PushFrame (progs_t *pr)
 
 	frame = pr->pr_stack + pr->pr_depth++;
 
-	frame->s    = pr->pr_xstatement;
-	frame->f    = pr->pr_xfunction;
-	frame->tstr = pr->pr_xtstr;
+	frame->staddr = pr->pr_xstatement;
+	frame->func   = pr->pr_xfunction;
+	frame->tstr   = pr->pr_xtstr;
 
 	pr->pr_xtstr = pr->pr_pushtstr;
 	pr->pr_pushtstr = 0;
@@ -158,8 +158,8 @@ PR_PopFrame (progs_t *pr)
 	// up stack
 	frame = pr->pr_stack + --pr->pr_depth;
 
-	pr->pr_xfunction  = frame->f;
-	pr->pr_xstatement = frame->s;
+	pr->pr_xfunction  = frame->func;
+	pr->pr_xstatement = frame->staddr;
 	pr->pr_xtstr      = frame->tstr;
 }
 

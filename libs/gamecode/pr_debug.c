@@ -1464,35 +1464,35 @@ static void
 dump_frame (progs_t *pr, prstack_t *frame)
 {
 	prdeb_resources_t *res = pr->pr_debug_resources;
-	dfunction_t	   *f = frame->f ? frame->f->descriptor : 0;
+	dfunction_t	   *f = frame->func ? frame->func->descriptor : 0;
 
 	if (!f) {
 		Sys_Printf ("<NO FUNCTION>\n");
 		return;
 	}
 	if (pr_debug->int_val && res->debug) {
-		pr_lineno_t *lineno = PR_Find_Lineno (pr, frame->s);
+		pr_lineno_t *lineno = PR_Find_Lineno (pr, frame->staddr);
 		pr_auxfunction_t *func = PR_Get_Lineno_Func (pr, lineno);
 		pr_uint_t   line = PR_Get_Lineno_Line (pr, lineno);
 		pr_int_t    addr = PR_Get_Lineno_Addr (pr, lineno);
 
 		line += func->source_line;
-		if (addr == frame->s) {
+		if (addr == frame->staddr) {
 			Sys_Printf ("%12s:%u : %s: %x\n",
 						PR_GetString (pr, f->s_file),
 						line,
 						PR_GetString (pr, f->s_name),
-						frame->s);
+						frame->staddr);
 		} else {
 			Sys_Printf ("%12s:%u+%d : %s: %x\n",
 						PR_GetString (pr, f->s_file),
-						line, frame->s - addr,
+						line, frame->staddr - addr,
 						PR_GetString (pr, f->s_name),
-						frame->s);
+						frame->staddr);
 		}
 	} else {
 		Sys_Printf ("%12s : %s: %x\n", PR_GetString (pr, f->s_file),
-					PR_GetString (pr, f->s_name), frame->s);
+					PR_GetString (pr, f->s_name), frame->staddr);
 	}
 }
 
@@ -1507,8 +1507,8 @@ PR_StackTrace (progs_t *pr)
 		return;
 	}
 
-	top.s = pr->pr_xstatement;
-	top.f = pr->pr_xfunction;
+	top.staddr = pr->pr_xstatement;
+	top.func = pr->pr_xfunction;
 	dump_frame (pr, &top);
 	for (i = pr->pr_depth - 1; i >= 0; i--)
 		dump_frame (pr, pr->pr_stack + i);

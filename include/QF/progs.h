@@ -1720,8 +1720,8 @@ extern const char *pr_gametype;
 typedef struct strref_s strref_t;
 
 typedef struct {
-	pr_int_t    s;					///< Return statement.
-	bfunction_t *f;					///< Calling function.
+	pr_int_t    staddr;				///< Return statement.
+	bfunction_t *func;				///< Calling function.
 	strref_t   *tstr;				///< Linked list of temporary strings.
 } prstack_t;
 
