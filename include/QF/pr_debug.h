@@ -73,6 +73,7 @@ typedef enum prdebug_e {
 	prd_watchpoint,
 	prd_subenter,
 	prd_subexit,		// current invocation of PR_ExecuteProgram finished
+	prd_begin,			// not sent by VM
 	prd_terminate,		// not sent by VM
 	prd_runerror,
 	prd_error,			// lower level error thann prd_runerror

@@ -297,6 +297,41 @@ qdb_get_state (progs_t *pr)
 }
 
 static void
+qdb_get_stack_depth (progs_t *pr)
+{
+	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
+	pointer_t   handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+	progs_t    *tpr = target->pr;
+
+	R_INT (pr) = tpr->pr_depth;
+}
+
+static void
+qdb_get_stack (progs_t *pr)
+{
+	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
+	pointer_t   handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+	progs_t    *tpr = target->pr;
+	int         count = tpr->pr_depth;
+
+	R_POINTER (pr) = 0;
+	if (count > 0) {
+		size_t      size = count * sizeof (qdb_stack_t);
+		string_t    stack_block = PR_AllocTempBlock (pr, size);
+		__auto_type stack = (qdb_stack_t *) PR_GetString (pr, stack_block);
+
+		for (int i = 0; i < count; i++) {
+			stack[i].staddr = tpr->pr_stack[i].staddr;
+			stack[i].func = tpr->pr_stack[i].func - tpr->pr_xfunction;
+			//XXX temp strings (need access somehow)
+		}
+		R_POINTER (pr) = PR_SetPointer (pr, stack);
+	}
+}
+
+static void
 qdb_get_event (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
@@ -308,11 +343,14 @@ qdb_get_event (progs_t *pr)
 	event->what = target->event;
 	switch (event->what) {
 		case prd_subenter:
-			event->func = *(func_t *) target->param;
+			event->function = *(func_t *) target->param;
 			break;
 		case prd_runerror:
 		case prd_error:
 			event->message = PR_SetReturnString (pr, *(char **) target->param);
+			break;
+		case prd_begin:
+			event->function = *(func_t *) target->param;
 			break;
 		case prd_terminate:
 			event->exit_code = *(int *) target->param;
@@ -411,7 +449,7 @@ qdb_find_field (progs_t *pr)
 static void
 return_function (progs_t *pr, dfunction_t *func)
 {
-	R_INT (pr) = 0;
+	R_POINTER (pr) = 0;
 	if (func) {
 		__auto_type f
 			= (qdb_function_t *) PR_Zone_Malloc (pr, sizeof (qdb_function_t));
@@ -422,7 +460,7 @@ return_function (progs_t *pr, dfunction_t *func)
 		f->name = func->s_name;
 		f->file = func->s_file;
 		f->num_params = func->numparms;
-		R_INT (pr) = PR_SetPointer (pr, f);
+		R_POINTER (pr) = PR_SetPointer (pr, f);
 	}
 }
 
@@ -458,7 +496,7 @@ qdb_get_function (progs_t *pr)
 static void
 return_auxfunction (progs_t *pr, pr_auxfunction_t *auxfunc)
 {
-	R_INT (pr) = 0;
+	R_POINTER (pr) = 0;
 	if (auxfunc) {
 		__auto_type f
 			= (qdb_auxfunction_t *) PR_Zone_Malloc (pr,
@@ -469,7 +507,7 @@ return_auxfunction (progs_t *pr, pr_auxfunction_t *auxfunc)
 		f->local_defs = auxfunc->local_defs;
 		f->num_locals = auxfunc->num_locals;
 		f->return_type = auxfunc->return_type;
-		R_INT (pr) = PR_SetPointer (pr, f);
+		R_POINTER (pr) = PR_SetPointer (pr, f);
 	}
 }
 
@@ -514,7 +552,7 @@ qdb_get_local_defs (progs_t *pr)
 	pr_uint_t   fnum = P_UINT (pr, 1);
 	pr_auxfunction_t *auxfunc = PR_Debug_MappedAuxFunction (tpr, fnum);
 
-	R_INT (pr) = 0;
+	R_POINTER (pr) = 0;
 	if (auxfunc && auxfunc->num_locals) {
 		pr_def_t   *defs = PR_Debug_LocalDefs (tpr, auxfunc);
 		__auto_type qdefs
@@ -526,7 +564,7 @@ qdb_get_local_defs (progs_t *pr)
 			qdefs[i].name = defs[i].name;
 			qdefs[i].type_encoding = defs[i].type_encoding;
 		}
-		R_INT (pr) = PR_SetPointer (pr, qdefs);
+		R_POINTER (pr) = PR_SetPointer (pr, qdefs);
 	}
 }
 
@@ -538,6 +576,8 @@ static builtin_t builtins[] = {
 	{"qdb_clear_watchpoint",	qdb_clear_watchpoint,	-1},
 	{"qdb_continue",			qdb_continue,			-1},
 	{"qdb_get_state",			qdb_get_state,			-1},
+	{"qdb_get_stack_depth",		qdb_get_stack_depth,	-1},
+	{"qdb_get_stack",			qdb_get_stack,			-1},
 	{"qdb_get_event",			qdb_get_event,			-1},
 	{"qdb_get_data",			qdb_get_data,			-1},
 	{"qdb_get_string|{tag qdb_target_s=}i",	qdb_get_string,	-1},

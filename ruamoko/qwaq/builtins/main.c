@@ -213,6 +213,11 @@ spawn_progs (qwaq_thread_t *thread)
 		PR_Undefined (pr, "function", "main");
 	}
 
+	if (thread->pr->debug_handler) {
+		thread->pr->debug_handler (prd_begin, &thread->main_func,
+								   thread->pr->debug_data);
+	}
+
 	if (!PR_RunPostLoadFuncs (pr)) {
 		PR_Error (pr, "unable to load %s", pr->progs_name);
 	}

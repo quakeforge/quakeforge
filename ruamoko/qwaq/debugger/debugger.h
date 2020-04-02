@@ -18,7 +18,16 @@
 {
 	qdb_target_t target;
 	qdb_event_t event;
-	qdb_state_t last_state;
+	struct {
+		qdb_state_t state;
+		int         depth;
+		int			until_function;
+	}           trace_cond;
+	struct {
+		int         onEnter;
+		int         onExit;
+	}           sub_cond;
+	SEL         traceHandler;
 
 	Window     *source_window;
 	ScrollBar  *source_scrollbar;

@@ -137,8 +137,18 @@ proxy_event (Debugger *self, id proxy, qwaq_event_t *event)
 	} else if (event.what == qe_keydown) {
 		switch (event.key.code) {
 			case QFK_F7:
+			case 's':
+				self.traceHandler = @selector(traceStep);
 				qdb_set_trace (self.target, 1);
-				self.last_state = qdb_get_state (self.target);
+				self.trace_cond.state = qdb_get_state (self.target);
+				qdb_continue (self.target);
+				return 1;
+			case QFK_F8:
+			case 'n':
+				self.traceHandler = @selector(traceNext);
+				qdb_set_trace (self.target, 1);
+				self.trace_cond.state = qdb_get_state (self.target);
+				self.trace_cond.depth = qdb_get_stack_depth (self.target);
 				qdb_continue (self.target);
 				return 1;
 		}
@@ -163,21 +173,50 @@ proxy_event (Debugger *self, id proxy, qwaq_event_t *event)
 	return self;
 }
 
--trace
+// stop only if the progs have not advanced (may be a broken jump)
+// or the progs have advanced to a different source line
+static int
+is_new_line (qdb_state_t last_state, qdb_state_t state)
+{
+	return !(last_state.staddr != state.staddr
+			 && last_state.func == state.func
+			 && last_state.file == state.file
+			 && last_state.line == state.line);
+}
+
+-traceStep
 {
 	qdb_state_t state = qdb_get_state (target);
 
-	// stop only if the progs have not advanced (may be a broken jump)
-	// or the progs have advanced to a different source line
-	if (last_state.staddr != state.staddr
-		&& last_state.func == state.func
-		&& last_state.file == state.file
-		&& last_state.line == state.line) {
-		last_state = state;
-		qdb_continue (self.target);
+	if (trace_cond.until_function && trace_cond.until_function == state.func) {
+		trace_cond.until_function = 0;
+		[self stop:prd_trace];
 		return self;
 	}
-	[self stop:prd_trace];
+	if (is_new_line(trace_cond.state, state)) {
+		[self stop:prd_trace];
+		return self;
+	}
+	trace_cond.state = state;
+	qdb_continue (self.target);
+	return self;
+}
+
+-traceNext
+{
+	qdb_state_t state = qdb_get_state (target);
+	if (trace_cond.until_function && trace_cond.until_function == state.func) {
+		trace_cond.until_function = 0;
+		[self stop:prd_trace];
+		return self;
+	}
+	if (is_new_line(trace_cond.state, state)
+		&& qdb_get_stack_depth (target) <= trace_cond.depth) {
+		[self stop:prd_trace];
+		return self;
+	}
+	trace_cond.state = state;
+	qdb_continue (self.target);
 	return self;
 }
 
@@ -188,16 +227,30 @@ proxy_event (Debugger *self, id proxy, qwaq_event_t *event)
 			case prd_none:
 				break;	// shouldn't happen
 			case prd_trace:
-				[self trace];
+				[self performSelector:traceHandler];
 				break;
 			case prd_breakpoint:
 			case prd_watchpoint:
 				[self stop:event.what];
 				break;
 			case prd_subenter:
-				[self stop:event.what];
+				printf("subenter\n");
+				if (sub_cond.onEnter) {
+					[self stop:event.what];
+				} else {
+					qdb_continue (self.target);
+				}
 				break;
 			case prd_subexit:
+				printf("subexit\n");
+				if (sub_cond.onExit) {
+					[self stop:event.what];
+				} else {
+					qdb_continue (self.target);
+				}
+				break;
+			case prd_begin:
+				trace_cond.until_function = event.function;
 				[self stop:event.what];
 				break;
 			case prd_terminate:
