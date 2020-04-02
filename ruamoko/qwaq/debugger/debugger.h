@@ -17,6 +17,8 @@
 @interface Debugger : Object
 {
 	qdb_target_t target;
+	qdb_event_t event;
+	qdb_state_t last_state;
 
 	Window     *source_window;
 	ScrollBar  *source_scrollbar;

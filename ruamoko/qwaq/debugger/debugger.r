@@ -138,6 +138,7 @@ proxy_event (Debugger *self, id proxy, qwaq_event_t *event)
 		switch (event.key.code) {
 			case QFK_F7:
 				qdb_set_trace (self.target, 1);
+				self.last_state = qdb_get_state (self.target);
 				qdb_continue (self.target);
 				return 1;
 		}
@@ -152,13 +153,64 @@ proxy_event (Debugger *self, id proxy, qwaq_event_t *event)
 	}
 }
 
--handleDebugEvent
+-stop:(prdebug_t)reason
 {
 	if (!file_proxy) {
 		[self setup];
 	}
 	[self show_line];
 	[self update_watchvars];
+	return self;
+}
+
+-trace
+{
+	qdb_state_t state = qdb_get_state (target);
+
+	// stop only if the progs have not advanced (may be a broken jump)
+	// or the progs have advanced to a different source line
+	if (last_state.staddr != state.staddr
+		&& last_state.func == state.func
+		&& last_state.file == state.file
+		&& last_state.line == state.line) {
+		last_state = state;
+		qdb_continue (self.target);
+		return self;
+	}
+	[self stop:prd_trace];
+	return self;
+}
+
+-handleDebugEvent
+{
+	if (qdb_get_event (target, &event)) {
+		switch (event.what) {
+			case prd_none:
+				break;	// shouldn't happen
+			case prd_trace:
+				[self trace];
+				break;
+			case prd_breakpoint:
+			case prd_watchpoint:
+				[self stop:event.what];
+				break;
+			case prd_subenter:
+				[self stop:event.what];
+				break;
+			case prd_subexit:
+				[self stop:event.what];
+				break;
+			case prd_terminate:
+				wprintf(stdscr, "Program ended: %d\n", event.exit_code);
+				[self stop:event.what];
+				break;
+			case prd_runerror:
+			case prd_error:
+				wprintf(stdscr, "%s\n", event.message);
+				[self stop:event.what];
+				break;
+		}
+	}
 	return self;
 }
 
