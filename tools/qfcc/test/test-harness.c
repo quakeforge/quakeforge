@@ -177,6 +177,8 @@ load_progs (const char *name)
 	Qclose (file);
 	if (!PR_RunLoadFuncs (&pr))
 		PR_Error (&pr, "unable to load %s", pr.progs_name);
+	if (!PR_RunPostLoadFuncs (&pr))
+		PR_Error (&pr, "unable to load %s", pr.progs_name);
 	pr.pr_trace_depth = -1;
 	pr.pr_trace = options.trace;
 	return 1;
