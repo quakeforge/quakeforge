@@ -30,12 +30,11 @@ PAK=$(top_builddir)/tools/pak/pak$(EXEEXT)
 GZIP=if echo $@ | grep -q .gz; then gzip -f `basename $@ .gz`; if test -f `basename $@ .dat.gz`.sym; then gzip -f `basename $@ .dat.gz`.sym; fi; fi
 # BSD make can't handle $(shell foo) directives, and GNU make can't handle |=
 # so we have to bite the bullet and pass this to the shell every time.
-STRIP=`echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c`
 RANLIB=touch
 
 SUFFIXES=.o .r
 .r.o:
-	$(QCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tqo -p $(STRIP) -c -o $@ $<
+	$(QCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tqo -c -o $@ $<
 	@sed -i -e '1s@:@: $(QFCC_DEP)@' $(DEPDIR)/$*.Tqo
 	@$(am__mv) $(DEPDIR)/$*.Tqo $(DEPDIR)/$*.Qo
 
@@ -59,7 +58,7 @@ main_dat_SOURCES=$(scheme_src)
 main_obj=$(scheme_src:.r=.o)
 main_dep=$(addprefix ./$(DEPDIR)/,$(main_obj:.o=.Qo))
 main.dat: $(main_obj) $(QFCC_DEP) libscheme.a ../lib/libcsqc.a ../lib/libr.a
-	$(QLINK) -p $(STRIP) -o main.dat $(main_obj) libscheme.a ../lib/libcsqc.a ../lib/libr.a
+	$(QLINK) -o main.dat $(main_obj) libscheme.a ../lib/libcsqc.a ../lib/libr.a
 include $(main_dep) # am--include-marker
 r_depfiles_remade += $(main_dep)
 

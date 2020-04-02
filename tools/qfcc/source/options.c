@@ -94,7 +94,6 @@ static struct option const long_options[] = {
 	{"relocatable", no_argument, 0, 'r'},
 	{"save-temps", no_argument, 0, 'S'},
 	{"source", required_argument, 0, 's'},
-	{"strip-path", required_argument, 0, 'p'},
 	{"traditional", no_argument, 0, OPT_TRADITIONAL},
 	{"undefine", required_argument, 0, 'U'},
 	{"verbose", no_argument, 0, 'v'},
@@ -120,7 +119,6 @@ static const char *short_options =
 	"o:"	// output file
 	"O"		// optimize
 	"P:"	// progs.src name
-	"p:"	// strip path
 	"q"		// quiet
 	"r"		// partial linking
 	"S"		// save temps
@@ -166,8 +164,6 @@ usage (int status)
 "    -o, --output-file FILE    Specify output file name\n"
 "        --progdefs            Genderate progdefs.h\n"
 "    -P, --progs-src FILE      File to use instead of progs.src\n"
-"    -p, --strip-path NUM      Strip NUM leading path elements from file\n"
-"                              names\n"
 "        --qccx-escapes        Use QCCX escape sequences instead of standard\n"
 "                              C/QuakeForge sequences.\n"
 "    -q, --quiet               Inhibit usual output\n"
@@ -325,7 +321,6 @@ DecodeArgs (int argc, char **argv)
 	options.single_cpp = true;
 	options.save_temps = false;
 	options.verbosity = 0;
-	options.strip_path = 0;
 
 	sourcedir = "";
 	progs_src = "progs.src";
@@ -363,9 +358,6 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case 'P':					// progs-src
 				progs_src = save_string (NORMALIZE (optarg));
-				break;
-			case 'p':
-				options.strip_path = atoi (optarg);
 				break;
 			case 'F':
 				options.files_dat = true;

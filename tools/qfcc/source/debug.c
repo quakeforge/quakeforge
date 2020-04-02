@@ -111,7 +111,7 @@ line_info (char *text)
 	while (*p && *p != '\n')	// ignore rest
 		p++;
 	pr.source_line = line - 1;
-	pr.source_file = ReuseString (strip_path (str));
+	pr.source_file = ReuseString (str);
 }
 
 pr_lineno_t *

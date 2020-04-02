@@ -108,7 +108,6 @@ extern	pr_info_t	pr;
 
 #define POINTER_OFS(s,p)	((pr_type_t *) (p) - (s)->data)
 
-const char *strip_path (const char *filename) __attribute__((pure));
 const char *file_basename (const char *filename, int keepdot) __attribute__((pure));
 
 extern FILE *qc_yyin;

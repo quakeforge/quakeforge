@@ -297,22 +297,6 @@ begin_compilation (void)
 }
 
 const char *
-strip_path (const char *filename)
-{
-	const char *p = filename;
-	int         i = options.strip_path;
-
-	while (i-- > 0) {
-		while (*p && *p != '/')
-			p++;
-		if (!*p)
-			break;
-		filename = ++p;
-	}
-	return filename;
-}
-
-const char *
 file_basename (const char *filename, int keepdot)
 {
 	const char *p;
@@ -385,7 +369,7 @@ compile_to_obj (const char *file, const char *obj, lang_t lang)
 	InitData ();
 	chain_initial_types ();
 	begin_compilation ();
-	pr.source_file = ReuseString (strip_path (file));
+	pr.source_file = ReuseString (file);
 	err = yyparse () || pr.error_count;
 	fclose (*yyin);
 	if (cpp_name && !options.save_temps) {
@@ -641,7 +625,7 @@ compile_file (const char *filename)
 	if (!*yyin)
 		return !options.preprocess_only;
 
-	pr.source_file = ReuseString (strip_path (filename));
+	pr.source_file = ReuseString (filename);
 	pr.source_line = 1;
 	clear_frame_macros ();
 	err = yyparse () || pr.error_count;

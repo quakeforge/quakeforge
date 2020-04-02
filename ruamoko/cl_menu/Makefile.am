@@ -27,11 +27,10 @@ am__mv = mv -f
 GZIP=if echo $@ | grep -q .gz; then gzip -f `basename $@ .gz`; if test -f `basename $@ .dat.gz`.sym; then gzip -f `basename $@ .dat.gz`.sym; fi; fi
 # BSD make can't handle $(shell foo) directives, and GNU make can't handle |=
 # so we have to bite the bullet and pass this to the shell every time.
-STRIP=`echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c`
 
 SUFFIXES=.o .r
 .r.o:
-	$(QCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tqo -p $(STRIP) -c -o $@ $<
+	$(QCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tqo -c -o $@ $<
 	@sed -i -e '1s@:@: $(QFCC_DEP)@' $(DEPDIR)/$*.Tqo
 	@$(am__mv) $(DEPDIR)/$*.Tqo $(DEPDIR)/$*.Qo
 
@@ -50,7 +49,7 @@ menu_dat_SOURCES=$(menu_src)
 menu_obj=$(menu_src:.r=.o)
 menu_dep=$(addprefix ./$(DEPDIR)/,$(menu_obj:.o=.Qo))
 menu.dat: $(menu_obj) $(QFCC_DEP) ../lib/libcsqc.a ../lib/libr.a ../gui/libgui.a
-	$(QLINK) -p $(STRIP) -o menu.dat $(menu_obj) ../gui/libgui.a ../lib/libcsqc.a ../lib/libr.a
+	$(QLINK) -o menu.dat $(menu_obj) ../gui/libgui.a ../lib/libcsqc.a ../lib/libr.a
 include $(menu_dep) # am--include-marker
 r_depfiles_remade += $(menu_dep)
 

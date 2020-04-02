@@ -25,11 +25,10 @@ am__mv = mv -f
 GZIP=if echo $@ | grep -q .gz; then gzip -f `basename $@ .gz`; if test -f `basename $@ .dat.gz`.sym; then gzip -f `basename $@ .dat.gz`.sym; fi; fi
 # BSD make can't handle $(shell foo) directives, and GNU make can't handle |=
 # so we have to bite the bullet and pass this to the shell every time.
-STRIP=`echo -n $(srcdir)/ | sed -e 's/[^/]//g' | wc -c`
 
 SUFFIXES=.o .r
 .r.o:
-	$(QCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tqo -p $(STRIP) -c -o $@ $<
+	$(QCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tqo -c -o $@ $<
 	@sed -i -e '1s@:@: $(QFCC_DEP)@' $(DEPDIR)/$*.Tqo
 	@$(am__mv) $(DEPDIR)/$*.Tqo $(DEPDIR)/$*.Qo
 
@@ -41,7 +40,7 @@ game_dat_SOURCES=$(game_src)
 game_obj=$(game_src:.r=.o)
 game_dep=$(addprefix ./$(DEPDIR)/,$(game_obj:.o=.Qo))
 game.dat: $(game_obj) $(QFCC_DEP) ../lib/libr.a ../lib/libqw.a
-	$(QLINK) -p $(STRIP) -o game.dat $(game_obj) ../lib/libr.a ../lib/libqw.a ../lib/libr.a
+	$(QLINK) -o game.dat $(game_obj) ../lib/libr.a ../lib/libqw.a ../lib/libr.a
 include $(game_dep) # am--include-marker
 r_depfiles_remade += $(game_dep)
 
