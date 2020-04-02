@@ -66,7 +66,9 @@
 
 -fetchData
 {
-	qdb_get_data (target, func.local_data, func.local_size, data);
+	if (data && func.local_size && func.local_data) {
+		qdb_get_data (target, func.local_data, func.local_size, data);
+	}
 	return self;
 }
 

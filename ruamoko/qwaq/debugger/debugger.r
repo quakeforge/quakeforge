@@ -234,7 +234,6 @@ is_new_line (qdb_state_t last_state, qdb_state_t state)
 				[self stop:event.what];
 				break;
 			case prd_subenter:
-				printf("subenter\n");
 				if (sub_cond.onEnter) {
 					[self stop:event.what];
 				} else {
@@ -242,7 +241,6 @@ is_new_line (qdb_state_t last_state, qdb_state_t state)
 				}
 				break;
 			case prd_subexit:
-				printf("subexit\n");
 				if (sub_cond.onExit) {
 					[self stop:event.what];
 				} else {

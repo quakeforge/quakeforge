@@ -83,7 +83,7 @@ static void type_free (void *t, void *unused)
 	if (qdb_get_data (target, typeAddr, TYPESIZE, &buffer) < 0) {
 		return nil;
 	}
-	if (!buffer.encoding) {
+	if (!buffer.size) {
 		return nil;
 	}
 	encoding = qdb_get_string (target, buffer.encoding);
@@ -97,7 +97,7 @@ static void type_free (void *t, void *unused)
 		return type;
 	}
 	type = obj_calloc (1, buffer.size);
-	if (!qdb_get_data (target, typeAddr, TYPESIZE, &buffer)) {
+	if (qdb_get_data (target, typeAddr, buffer.size, type) < 0) {
 		goto error;
 	}
 	if (!(type.encoding = qdb_get_string (target, type.encoding))) {
