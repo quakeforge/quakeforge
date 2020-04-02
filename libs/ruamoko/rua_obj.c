@@ -1489,7 +1489,7 @@ rua_obj_realloc (progs_t *pr)
 static void
 rua_obj_calloc (progs_t *pr)
 {
-	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
+	int         size = P_INT (pr, 0) * P_INT (pr, 1) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
 
 	memset (mem, 0, size);
