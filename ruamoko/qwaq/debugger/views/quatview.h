@@ -1,7 +1,7 @@
 #ifndef __qwaq_debugger_quatview_h
 #define __qwaq_debugger_quatview_h
 
-#include "debugger/defview.h"
+#include "debugger/views/defview.h"
 
 @interface QuatView : DefView
 {

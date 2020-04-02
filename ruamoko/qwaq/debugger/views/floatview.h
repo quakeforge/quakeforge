@@ -1,7 +1,7 @@
 #ifndef __qwaq_debugger_floatview_h
 #define __qwaq_debugger_floatview_h
 
-#include "debugger/defview.h"
+#include "debugger/views/defview.h"
 
 @interface FloatView : DefView
 {

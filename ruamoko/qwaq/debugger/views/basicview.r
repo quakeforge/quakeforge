@@ -1,6 +1,6 @@
 #include <string.h>
-#include "debugger/basicview.h"
-#include "debugger/nameview.h"
+#include "debugger/views/basicview.h"
+#include "debugger/views/nameview.h"
 
 static string type_views[] = {
 	"VoidView",

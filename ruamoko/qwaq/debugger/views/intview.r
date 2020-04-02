@@ -1,5 +1,5 @@
 #include <string.h>
-#include "debugger/intview.h"
+#include "debugger/views/intview.h"
 
 @implementation IntView
 

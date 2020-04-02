@@ -1,6 +1,6 @@
 #include <string.h>
-#include "debugger/defview.h"
-#include "debugger/nameview.h"
+#include "debugger/views/defview.h"
+#include "debugger/views/nameview.h"
 
 static string meta_views[] = {
 	"BasicView",

@@ -1,7 +1,7 @@
 #ifndef __qwaq_debugger_basicview_h
 #define __qwaq_debugger_basicview_h
 
-#include "debugger/defview.h"
+#include "debugger/views/defview.h"
 
 @interface BasicView : DefView
 // might return a NameView (which is also a DefView)

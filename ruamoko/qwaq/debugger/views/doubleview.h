@@ -1,7 +1,7 @@
 #ifndef __qwaq_debugger_doubleview_h
 #define __qwaq_debugger_doubleview_h
 
-#include "debugger/defview.h"
+#include "debugger/views/defview.h"
 
 @interface DoubleView : DefView
 {

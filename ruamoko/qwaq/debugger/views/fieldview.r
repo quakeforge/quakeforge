@@ -1,7 +1,7 @@
 #include <string.h>
-#include "debugger/funcview.h"
+#include "debugger/views/fieldview.h"
 
-@implementation FuncView
+@implementation FieldView
 
 -initWithType:(qfot_type_t *)type at:(unsigned)offset in:(void *)data
 {
@@ -12,7 +12,7 @@
 	return self;
 }
 
-+(FuncView *)withType:(qfot_type_t *)type at:(unsigned)offset in:(void *)data
++(FieldView *)withType:(qfot_type_t *)type at:(unsigned)offset in:(void *)data
 {
 	return [[[self alloc] initWithType:type at:offset in:data] autorelease];
 }

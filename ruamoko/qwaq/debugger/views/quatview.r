@@ -1,18 +1,18 @@
 #include <string.h>
-#include "debugger/floatview.h"
+#include "debugger/views/quatview.h"
 
-@implementation FloatView
+@implementation QuatView
 
 -initWithType:(qfot_type_t *)type at:(unsigned)offset in:(void *)data
 {
 	if (!(self = [super initWithType:type])) {
 		return nil;
 	}
-	self.data = (float *)(data + offset);
+	self.data = (quaternion *)(data + offset);
 	return self;
 }
 
-+(FloatView *)withType:(qfot_type_t *)type at:(unsigned)offset in:(void *)data
++(QuatView *)withType:(qfot_type_t *)type at:(unsigned)offset in:(void *)data
 {
 	return [[[self alloc] initWithType:type at:offset in:data] autorelease];
 }
@@ -20,7 +20,7 @@
 -draw
 {
 	[super draw];
-	string val = sprintf ("%.9", data[0]);
+	string val = sprintf ("%.9q", data[0]);
 	[self mvprintf:{0, 0}, "%*.*s", xlen, xlen, val];
 	return self;
 }

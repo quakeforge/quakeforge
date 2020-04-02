@@ -1,7 +1,7 @@
 #include <string.h>
 #include <types.h>
-#include "debugger/defview.h"
-#include "debugger/nameview.h"
+#include "debugger/views/defview.h"
+#include "debugger/views/nameview.h"
 #include "debugger/localsdata.h"
 #include "debugger/typeencodings.h"
 

@@ -1,5 +1,5 @@
 #include <string.h>
-#include "debugger/nameview.h"
+#include "debugger/views/nameview.h"
 
 @implementation NameView
 

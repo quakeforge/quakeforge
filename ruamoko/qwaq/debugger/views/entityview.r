@@ -1,5 +1,5 @@
 #include <string.h>
-#include "debugger/entityview.h"
+#include "debugger/views/entityview.h"
 
 @implementation EntityView
 

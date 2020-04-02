@@ -1,18 +1,18 @@
 #include <string.h>
-#include "debugger/voidview.h"
+#include "debugger/views/floatview.h"
 
-@implementation VoidView
+@implementation FloatView
 
 -initWithType:(qfot_type_t *)type at:(unsigned)offset in:(void *)data
 {
 	if (!(self = [super initWithType:type])) {
 		return nil;
 	}
-	self.data = (unsigned *) (data + offset);
+	self.data = (float *)(data + offset);
 	return self;
 }
 
-+(VoidView *)withType:(qfot_type_t *)type at:(unsigned)offset in:(void *)data
++(FloatView *)withType:(qfot_type_t *)type at:(unsigned)offset in:(void *)data
 {
 	return [[[self alloc] initWithType:type at:offset in:data] autorelease];
 }
@@ -20,8 +20,7 @@
 -draw
 {
 	[super draw];
-	string val = sprintf ("%08x %08x %08x %08x",
-						  data[0], data[1], data[2], data[3]);
+	string val = sprintf ("%.9", data[0]);
 	[self mvprintf:{0, 0}, "%*.*s", xlen, xlen, val];
 	return self;
 }
