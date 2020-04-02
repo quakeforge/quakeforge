@@ -31,6 +31,7 @@
 #ifndef __QF_pr_debug_h
 #define __QF_pr_debug_h
 
+#ifndef __QFCC__
 #include "QF/pr_comp.h"
 
 typedef struct pr_auxfunction_s {
@@ -63,5 +64,18 @@ typedef struct pr_debug_header_s {
 	pr_uint_t   locals;
 	pr_uint_t   num_locals;
 } pr_debug_header_t;
+#endif
+
+typedef enum prdebug_e {
+	prd_none,
+	prd_trace,
+	prd_breakpoint,
+	prd_watchpoint,
+	prd_subenter,
+	prd_subexit,		// current invocation of PR_ExecuteProgram finished
+	prd_terminate,		// not sent by VM
+	prd_runerror,
+	prd_error,			// lower level error thann prd_runerror
+} prdebug_t;
 
 #endif//__QF_pr_debug_h

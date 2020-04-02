@@ -1725,18 +1725,6 @@ typedef struct {
 	strref_t   *tstr;				///< Linked list of temporary strings.
 } prstack_t;
 
-typedef enum {
-	prd_none,
-	prd_trace,
-	prd_breakpoint,
-	prd_watchpoint,
-	prd_subenter,
-	prd_subexit,		// current invocation of PR_ExecuteProgram finished
-	prd_terminate,		// not sent by VM
-	prd_runerror,
-	prd_error,			// lower level error thann prd_runerror
-} prdebug_t;
-
 struct progs_s {
 	int       (*parse_field) (progs_t *pr, const char *key, const char *value);
 
