@@ -10,6 +10,7 @@ int qdb_set_watchpoint (qdb_target_t target, unsigned offset) = #0;
 int qdb_clear_watchpoint (qdb_target_t target) = #0;
 int qdb_continue (qdb_target_t target) = #0;
 qdb_state_t qdb_get_state (qdb_target_t target) = #0;
+int qdb_get_event (qdb_target_t target, qdb_event_t *event) = #0;
 int qdb_get_data (qdb_target_t target, unsigned src, unsigned len,
 				  void *dst) = #0;
 string qdb_get_string (qdb_target_t target, unsigned str) = #0;

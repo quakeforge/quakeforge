@@ -9,6 +9,8 @@ typedef enum {
 
 #ifdef __QFCC__
 
+#include <QF/pr_debug.h>
+
 //FIXME finish unsigned in qfcc
 #ifndef umax
 #define umax 0x7fffffff
@@ -17,6 +19,15 @@ typedef enum {
 typedef string string_t;
 
 #endif
+
+typedef struct qdb_event_s {
+	prdebug_t   what;
+	union {
+		string_t    message;
+		unsigned    func;
+		int         exit_code;
+	};
+} qdb_event_t;
 
 typedef struct qdb_state_s {
 	unsigned    staddr;
@@ -62,6 +73,7 @@ int qdb_set_watchpoint (qdb_target_t target, unsigned offset);
 int qdb_clear_watchpoint (qdb_target_t target);
 int qdb_continue (qdb_target_t target);
 qdb_state_t qdb_get_state (qdb_target_t target);
+int qdb_get_event (qdb_target_t target, qdb_event_t *event);
 int qdb_get_data (qdb_target_t target, unsigned src, unsigned len, void *dst);
 @overload string qdb_get_string (qdb_target_t target, unsigned str);
 // note: str is likely not valid in the host progs, it's just a convinience to

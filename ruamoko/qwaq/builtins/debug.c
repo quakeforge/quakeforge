@@ -56,6 +56,7 @@ typedef struct qwaq_target_s {
 	struct qwaq_debug_s *debugger;
 	int         handle;
 	prdebug_t   event;
+	void       *param;
 	rwcond_t    run_cond;
 } qwaq_target_t;
 
@@ -117,6 +118,7 @@ qwaq_debug_handler (prdebug_t debug_event, void *param, void *data)
 	int         ret;
 
 	target->event = debug_event;
+	target->param = param;
 	event.what = qe_debug_event;
 	event.message.pointer_val = target->handle;
 
@@ -292,6 +294,37 @@ qdb_get_state (progs_t *pr)
 	state.line = line;
 
 	R_PACKED (pr, qdb_state_t) = state;
+}
+
+static void
+qdb_get_event (progs_t *pr)
+{
+	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
+	pointer_t   handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+	__auto_type event = &G_STRUCT (pr, qdb_event_t, P_INT (pr, 1));
+
+	memset (event, 0, sizeof (*event));
+	event->what = target->event;
+	switch (event->what) {
+		case prd_subenter:
+			event->func = *(func_t *) target->param;
+			break;
+		case prd_runerror:
+		case prd_error:
+			event->message = PR_SetReturnString (pr, *(char **) target->param);
+			break;
+		case prd_terminate:
+			event->exit_code = *(int *) target->param;
+			break;
+		case prd_trace:
+		case prd_breakpoint:
+		case prd_watchpoint:
+		case prd_subexit:
+		case prd_none:
+			break;
+	}
+	R_INT (pr) = target->event != prd_none;
 }
 
 static void
@@ -505,6 +538,7 @@ static builtin_t builtins[] = {
 	{"qdb_clear_watchpoint",	qdb_clear_watchpoint,	-1},
 	{"qdb_continue",			qdb_continue,			-1},
 	{"qdb_get_state",			qdb_get_state,			-1},
+	{"qdb_get_event",			qdb_get_event,			-1},
 	{"qdb_get_data",			qdb_get_data,			-1},
 	{"qdb_get_string|{tag qdb_target_s=}i",	qdb_get_string,	-1},
 	{"qdb_get_string|{tag qdb_target_s=}*",	qdb_get_string,	-1},
