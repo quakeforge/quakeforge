@@ -236,13 +236,23 @@ void PR_AddLoadFinishFunc (progs_t *pr, pr_load_func_t *func);
 	\return			true for success, false for failure
 
 	Calls the first set of internal load functions followed by the supplied
-	symbol resolution function, if any (progs_t::resolve), the second set of
-	internal load functions. After that, any primary load functions are called
-	in order of registration followed by any \c .ctor functions in the progs,
-	then any secondary load functions the primary load functions registered
-	in \e reverse order of registration.
+	symbol resolution function, if any (progs_t::resolve), then the second set
+	of internal load functions. After that, any primary load functions are
+	called in order of registration, and if there is no debug handler,
+	PR_RunPostLoadFuncs() is called.
 */
 int PR_RunLoadFuncs (progs_t *pr);
+
+/** Run any progs-dependent load functions.
+	\param pr		pointer to ::progs_t VM struct
+	\return			true for success, false for failure
+	This means any \c .ctor functions in the progs, followed by any secondary
+	load functions registered by either the primary load functions or the
+	\.c ctor functions in \e reverse order of registration. This is called
+	automatically by PR_RunLoadFuncs() if there is no debug handler, otherwise
+	it is up to the host to call this function.
+*/
+int PR_RunPostLoadFuncs (progs_t *pr);
 
 /** Validate the opcodes and statement addresses in the progs. This is an
 	internal load function.

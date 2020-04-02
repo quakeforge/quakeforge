@@ -422,6 +422,12 @@ PR_RunLoadFuncs (progs_t *pr)
 		if (!pr->load_funcs[i] (pr))
 			return 0;
 
+	return 1;
+}
+
+VISIBLE int
+PR_RunPostLoadFuncs (progs_t *pr)
+{
 	if (!pr_run_ctors (pr))
 		return 0;
 
@@ -449,8 +455,12 @@ PR_LoadProgs (progs_t *pr, const char *progsname)
 	if (!pr->progs)
 		return;
 
-	if (!PR_RunLoadFuncs (pr))
+	if (!PR_RunLoadFuncs (pr)) {
 		PR_Error (pr, "unable to load %s", progsname);
+	}
+	if (!pr->debug_handler && !PR_RunPostLoadFuncs (pr)) {
+		PR_Error (pr, "unable to load %s", progsname);
+	}
 }
 
 VISIBLE void

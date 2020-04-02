@@ -206,6 +206,17 @@ spawn_progs (qwaq_thread_t *thread)
 		Sys_Error ("couldn't load %s", name);
 	}
 
+	if ((dfunc = PR_FindFunction (pr, ".main"))
+		|| (dfunc = PR_FindFunction (pr, "main"))) {
+		thread->main_func = dfunc - pr->pr_functions;
+	} else {
+		PR_Undefined (pr, "function", "main");
+	}
+
+	if (!PR_RunPostLoadFuncs (pr)) {
+		PR_Error (pr, "unable to load %s", pr->progs_name);
+	}
+
 	PR_PushFrame (pr);
 	if (thread->args.size > 2) {
 		pr_argc = thread->args.size - 1;
@@ -216,12 +227,6 @@ spawn_progs (qwaq_thread_t *thread)
 		pr_argv[i] = PR_SetTempString (pr, thread->args.a[1 + i]);
 	pr_argv[i] = 0;
 
-	if ((dfunc = PR_FindFunction (pr, ".main"))
-		|| (dfunc = PR_FindFunction (pr, "main"))) {
-		thread->main_func = dfunc - pr->pr_functions;
-	} else {
-		PR_Undefined (pr, "function", "main");
-	}
 	PR_RESET_PARAMS (pr);
 	P_INT (pr, 0) = pr_argc;
 	P_POINTER (pr, 1) = PR_SetPointer (pr, pr_argv);
