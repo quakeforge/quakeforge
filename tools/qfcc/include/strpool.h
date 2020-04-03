@@ -42,6 +42,7 @@ strpool_t *strpool_new (void);
 strpool_t *strpool_build (const char *strings, int size);
 void strpool_delete (strpool_t *strpool);
 int strpool_addstr (strpool_t *strpool, const char *str);
+int strpool_findstr (strpool_t *strpool, const char *str);
 
 /**	Smart strdup.
 

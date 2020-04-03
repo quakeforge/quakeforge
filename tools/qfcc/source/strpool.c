@@ -121,6 +121,14 @@ strpool_addstr (strpool_t *strpool, const char *str)
 	return s;
 }
 
+int
+strpool_findstr (strpool_t *strpool, const char *str)
+{
+	if (!str)
+		return 0;
+	return (intptr_t) Hash_Find (strpool->str_tab, str);
+}
+
 static const char *
 ss_get_key (const void *s, void *unused)
 {
