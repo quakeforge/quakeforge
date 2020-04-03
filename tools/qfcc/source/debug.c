@@ -197,7 +197,7 @@ emit_compunit (const char *modname)
 
 	pr.unit_name = modname;
 	compunit_struct[3].type = array_type (&type_string, count);
-	return emit_structure ("compile_unit", 's', compunit_struct, 0, &pr,
+	return emit_structure (".compile_unit", 's', compunit_struct, 0, &pr,
 						   pr.debug_data, sc_static);
 }
 
