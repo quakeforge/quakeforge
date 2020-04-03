@@ -266,12 +266,16 @@ WriteSym (pr_debug_header_t *sym, int size)
 
 	pr_auxfunction_t *auxfunctions;
 	pr_lineno_t *linenos;
-	ddef_t     *locals;
+	pr_def_t   *locals;
+	pr_def_t   *debug_defs;
+	pr_type_t  *debug_data;
 
 #define P(t,o) ((t *)((char *)sym + sym->o))
 	auxfunctions = P (pr_auxfunction_t, auxfunctions);
 	linenos = P (pr_lineno_t, linenos);
-	locals = P (ddef_t, locals);
+	locals = P (pr_def_t, locals);
+	debug_defs = P (pr_def_t, debug_defs);
+	debug_data = P (pr_type_t, debug_data);
 #undef P
 
 	for (i = 0; i < sym->num_auxfunctions; i++) {
@@ -290,8 +294,20 @@ WriteSym (pr_debug_header_t *sym, int size)
 	}
 	for (i = 0; i < sym->num_locals; i++) {
 		locals[i].type = LittleShort (locals[i].type);
-		locals[i].ofs = LittleShort (locals[i].ofs);
-		locals[i].s_name = LittleLong (locals[i].s_name);
+		locals[i].size = LittleShort (locals[i].size);
+		locals[i].ofs = LittleLong (locals[i].ofs);
+		locals[i].name = LittleLong (locals[i].name);
+		locals[i].type_encoding = LittleLong (locals[i].type_encoding);
+	}
+	for (i = 0; i < sym->num_debug_defs; i++) {
+		debug_defs[i].type = LittleShort (debug_defs[i].type);
+		debug_defs[i].size = LittleShort (debug_defs[i].size);
+		debug_defs[i].ofs = LittleLong (debug_defs[i].ofs);
+		debug_defs[i].name = LittleLong (debug_defs[i].name);
+		debug_defs[i].type_encoding = LittleLong (debug_defs[i].type_encoding);
+	}
+	for (i = 0; i < sym->debug_data_size; i++) {
+		debug_data[i].integer_var = LittleLong (debug_data[i].integer_var);
 	}
 
 	if (!(h = Qopen (options.debug_file, "wb")))

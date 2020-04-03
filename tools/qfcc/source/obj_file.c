@@ -813,7 +813,7 @@ function_params (qfo_t *qfo, qfo_func_t *func, dfunction_t *df)
 }
 
 static void
-convert_def (qfo_t *qfo, const qfo_def_t *def, ddef_t *ddef)
+qfo_def_to_ddef (qfo_t *qfo, const qfo_def_t *def, ddef_t *ddef)
 {
 	ddef->type = get_def_type (qfo, def->type);
 	ddef->ofs = def->offset;
@@ -824,6 +824,16 @@ convert_def (qfo_t *qfo, const qfo_def_t *def, ddef_t *ddef)
 		&& ddef->type != ev_func
 		&& ddef->type != ev_field)
 		ddef->type |= DEF_SAVEGLOBAL;
+}
+
+static void
+qfo_def_to_prdef (qfo_t *qfo, const qfo_def_t *def, pr_def_t *prdef)
+{
+	prdef->type = get_def_type (qfo, def->type);
+	prdef->size = get_type_size (qfo, def->type);
+	prdef->ofs = def->offset;
+	prdef->name = def->name;
+	prdef->type_encoding = def->type;
 }
 
 static void
@@ -1072,14 +1082,14 @@ qfo_to_progs (qfo_t *qfo, int *size)
 			types_def = def;
 		if (!strcmp (defname, ".xdefs"))
 			xdefs_def = def;
-		convert_def (qfo, def, globaldefs++);
+		qfo_def_to_ddef (qfo, def, globaldefs++);
 	}
 
 	for (i = 0; i < qfo->spaces[qfo_far_data_space].num_defs; i++) {
 		unsigned    ind = far_def_indices[i];
 		qfo_def_t  *def = qfo->spaces[qfo_far_data_space].defs + ind;
 		def->offset += far_data - globals;
-		convert_def (qfo, def, globaldefs);
+		qfo_def_to_ddef (qfo, def, globaldefs);
 		// the correct offset will be written to the far data space
 		globaldefs->ofs = -1;
 		globaldefs++;
@@ -1091,7 +1101,7 @@ qfo_to_progs (qfo_t *qfo, int *size)
 
 	for (i = 0; i < qfo->spaces[qfo_entity_space].num_defs; i++) {
 		unsigned    ind = field_def_indices[i];
-		convert_def (qfo, qfo->spaces[qfo_entity_space].defs + ind,
+		qfo_def_to_ddef (qfo, qfo->spaces[qfo_entity_space].defs + ind,
 					 fielddefs + i);
 	}
 
@@ -1192,7 +1202,8 @@ qfo_to_sym (qfo_t *qfo, int *size)
 	pr_auxfunction_t *auxfuncs;
 	pr_auxfunction_t *aux;
 	pr_lineno_t *linenos;
-	pr_def_t   *locals, *ld;
+	pr_def_t   *locals, *ld, *debug_defs;
+	pr_type_t  *debug_data;
 
 	*size = sizeof (pr_debug_header_t);
 	sym = calloc (1, *size);
@@ -1210,19 +1221,27 @@ qfo_to_sym (qfo_t *qfo, int *size)
 		sym->num_locals += num_locals;
 	}
 	sym->num_linenos = qfo->num_lines;
+	sym->num_debug_defs = qfo->spaces[qfo_debug_space].num_defs;
+	sym->debug_data_size = qfo->spaces[qfo_debug_space].data_size;
 
 	*size += sym->num_auxfunctions * sizeof (pr_auxfunction_t);
 	*size += sym->num_linenos * sizeof (pr_lineno_t);
 	*size += sym->num_locals * sizeof (pr_def_t);
+	*size += sym->num_debug_defs * sizeof (pr_def_t);
+	*size += sym->debug_data_size * sizeof (pr_type_t);
 	sym = realloc (sym, *size);
 
 	auxfuncs = (pr_auxfunction_t *)(sym + 1);
 	linenos = (pr_lineno_t *)(auxfuncs + sym->num_auxfunctions);
 	locals = (pr_def_t *)(linenos + sym->num_linenos);
+	debug_defs = locals + sym->num_locals;
+	debug_data = (pr_type_t *)(debug_defs + sym->num_debug_defs);
 
 	sym->auxfunctions = (char *) auxfuncs - (char *) sym;
 	sym->linenos = (char *) linenos - (char *) sym;
 	sym->locals = (char *) locals - (char *) sym;
+	sym->debug_defs = (char *) debug_defs - (char *) sym;
+	sym->debug_data = (char *) debug_data - (char *) sym;
 
 	ld = locals;
 
@@ -1247,11 +1266,7 @@ qfo_to_sym (qfo_t *qfo, int *size)
 		if (num_locals) {
 			aux->local_defs = ld - locals;
 			for (j = 0; j < num_locals; j++, def++, ld++) {
-				ld->type = get_def_type (qfo, def->type);
-				ld->size = get_type_size (qfo, def->type);
-				ld->ofs = def->offset;
-				ld->name = def->name;
-				ld->type_encoding = def->type;
+				qfo_def_to_prdef (qfo, def, ld);
 			}
 		}
 		aux->num_locals = num_locals;
@@ -1265,5 +1280,12 @@ qfo_to_sym (qfo_t *qfo, int *size)
 		aux++;
 	}
 	memcpy (linenos, qfo->lines, qfo->num_lines * sizeof (pr_lineno_t));
+	for (i = 0; i < sym->num_debug_defs; i++) {
+		qfo_def_t  *def = &qfo->spaces[qfo_debug_space].defs[i];
+		pr_def_t   *prdef = &debug_defs[i];
+		qfo_def_to_prdef (qfo, def, prdef);
+	}
+	memcpy (debug_data, qfo->spaces[qfo_debug_space].d.data,
+			sym->debug_data_size * sizeof (*debug_data));
 	return sym;
 }
