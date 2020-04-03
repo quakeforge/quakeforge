@@ -1009,6 +1009,9 @@ process_loose_relocs (qfo_t *qfo)
 		if (reloc->type == rel_def_op)
 			reloc->target += work_base[qfo_code_space];
 		adjust_reloc_offset (reloc);
+		if (reloc->type == rel_def_string) {
+			QFO_STRING (work, reloc->space, reloc->offset) = reloc->target;
+		}
 	}
 }
 
