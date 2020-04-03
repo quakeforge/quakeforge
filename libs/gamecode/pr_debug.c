@@ -85,6 +85,7 @@ typedef struct prdeb_resources_s {
 	pr_def_t   *type_encodings_def;
 	qfot_type_t void_type;
 	qfot_type_t *type_encodings[ev_type_count];
+	hashtab_t  *file_hash;
 } prdeb_resources_t;
 
 typedef struct {
@@ -94,9 +95,8 @@ typedef struct {
 
 cvar_t         *pr_debug;
 cvar_t         *pr_source_path;
-static hashtab_t   *file_hash;
-static char        *source_path_string;
-static char       **source_paths;
+static char    *source_path_string;
+static char   **source_paths;
 
 static void pr_debug_void_view (qfot_type_t *type, pr_type_t *value,
 								void *_data);
@@ -345,6 +345,9 @@ pr_debug_clear (progs_t *pr, void *data)
 
 	if (res->debug)
 		pr->free_progs_mem (pr, res->debug);
+	if (res->file_hash) {
+		Hash_FlushTable (res->file_hash);
+	}
 	res->debug = 0;
 	res->auxfunctions = 0;
 	if (res->auxfunction_map)
@@ -368,7 +371,7 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 {
 	prdeb_resources_t *res = pr->pr_debug_resources;
 	char       *l, *p, **dir;
-	file_t     *f = Hash_Find (file_hash, fname);
+	file_t     *f = Hash_Find (res->file_hash, fname);
 
 	if (f)
 		return f;
@@ -415,7 +418,7 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 		f->num_lines++;
 	}
 	f->pr = pr;
-	Hash_Add (file_hash, f);
+	Hash_Add (res->file_hash, f);
 	return f;
 }
 
@@ -441,7 +444,6 @@ PR_LoadDebug (progs_t *pr)
 	if (def)
 		str = &pr->pr_globals[def->ofs];
 
-	Hash_FlushTable (file_hash);
 	if (!str)
 		return 1;
 	res->debugfile = PR_GetString (pr, str->string_var);
@@ -1613,12 +1615,10 @@ PR_Debug_Init (progs_t *pr)
 	for (int i = 0; i < ev_type_count; i++ ) {
 		res->type_encodings[i] = &res->void_type;
 	}
+	res->file_hash = Hash_NewTable (1024, file_get_key, file_free, 0,
+									pr->hashlink_freelist);
 
 	PR_Resources_Register (pr, "PR_Debug", res, pr_debug_clear);
-	if (!file_hash) {
-		file_hash = Hash_NewTable (1024, file_get_key, file_free, 0,
-								   pr->hashlink_freelist);
-	}
 	PR_AddLoadFunc (pr, PR_LoadDebug);
 }
 
