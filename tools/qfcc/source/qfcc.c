@@ -137,10 +137,15 @@ InitData (void)
 	if (pr.code) {
 		codespace_delete (pr.code);
 		strpool_delete (pr.strings);
+		defspace_delete (pr.near_data);
+		defspace_delete (pr.far_data);
+		defspace_delete (pr.entity_data);
+		defspace_delete (pr.type_data);
 	}
 
-	if (pr.linenos)
+	if (pr.linenos) {
 		free (pr.linenos);
+	}
 
 	memset (&pr, 0, sizeof (pr));
 	pr.source_line = 1;

@@ -139,6 +139,28 @@ defspace_new (ds_type_t type)
 	return space;
 }
 
+void
+defspace_delete (defspace_t *space)
+{
+	locref_t  **lr;
+
+	for (lr = &space->free_locs; *lr; lr = &(*lr)->next) {
+	}
+	*lr = locrefs_freelist;
+	locrefs_freelist = space->free_locs;
+
+	if (space->data) {
+		free (space->data);
+	}
+
+	while (space->defs) {
+		def_t      *def = space->defs;
+		space->defs = def->next;
+		def->space = 0;
+		free_def (def);
+	}
+}
+
 int
 defspace_alloc_loc (defspace_t *space, int size)
 {
