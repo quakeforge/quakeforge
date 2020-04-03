@@ -306,7 +306,7 @@ make_structure (const char *name, int su, struct_def_t *defs, type_t *type)
 
 def_t *
 emit_structure (const char *name, int su, struct_def_t *defs, type_t *type,
-				void *data, storage_class_t storage)
+				void *data, defspace_t *space, storage_class_t storage)
 {
 	int         i, j;
 	int         saw_null = 0;
@@ -341,7 +341,10 @@ emit_structure (const char *name, int su, struct_def_t *defs, type_t *type,
 	if (storage != sc_global && storage != sc_static)
 		internal_error (0, "structure %s must be global or static", name);
 
-	struct_sym = make_symbol (name, type, pr.far_data, storage);
+	if (!space) {
+		space = pr.far_data;
+	}
+	struct_sym = make_symbol (name, type, space, storage);
 
 	struct_def = struct_sym->s.def;
 	if (struct_def->initialized)

@@ -260,7 +260,7 @@ emit_static_instances (const char *classname)
 										   data.num_instances + 1);
 	instances_def = emit_structure (va ("_OBJ_STATIC_INSTANCES_%s", classname),
 									's', instances_struct, 0, &data,
-									sc_static);
+									0, sc_static);
 	free (data.instances);
 	return instances_def;
 }
@@ -787,7 +787,7 @@ emit_ivars (symtab_t *ivars, const char *name)
 	ivar_list_struct[1].type = array_type (&type_ivar, ivar_data.count);
 
 	def = emit_structure (va ("_OBJ_INSTANCE_VARIABLES_%s", name), 's',
-						  ivar_list_struct, 0, &ivar_data, sc_static);
+						  ivar_list_struct, 0, &ivar_data, 0, sc_static);
 
 	dstring_delete (ivar_data.encoding);
 	return def;
@@ -1528,7 +1528,7 @@ class_finish_module (void)
 										+ data.cat_def_cnt
 										+ 1);
 	symtab_def = emit_structure ("_OBJ_SYMTAB", 's', symtab_struct, 0, &data,
-								 sc_static);
+								 0, sc_static);
 	free (data.classes);
 	free (data.categories);
 
@@ -1787,7 +1787,7 @@ emit_protocol_list (protocollist_t *protocols, const char *name)
 		return 0;
 	proto_list_struct[2].type = array_type (&type_pointer, protocols->count);
 	return emit_structure (va ("_OBJ_PROTOCOLS_%s", name), 's',
-						   proto_list_struct, 0, protocols, sc_static);
+						   proto_list_struct, 0, protocols, 0, sc_static);
 }
 
 void
