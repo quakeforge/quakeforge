@@ -53,6 +53,8 @@ int strpool_addstr (strpool_t *strpool, const char *str);
 */
 const char *save_string (const char *str);
 
+const char *save_cwd (void);
+
 const char *make_string (char *token, char **end);
 
 const char *html_string (const char *str);

@@ -39,6 +39,7 @@
 #endif
 #include <stdlib.h>
 #include <ctype.h>
+#include <unistd.h>
 
 #include "QF/dstring.h"
 #include "QF/hash.h"
@@ -138,6 +139,15 @@ save_string (const char *str)
 	s = strdup (str);
 	Hash_Add (saved_strings, s);
 	return s;
+}
+
+const char *
+save_cwd (void)
+{
+	char       *cwd = getcwd (0, 0);
+	const char *str = save_string (cwd);
+	free (cwd);
+	return str;
 }
 
 const char *
