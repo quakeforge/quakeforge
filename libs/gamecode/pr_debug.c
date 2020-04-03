@@ -77,10 +77,10 @@ typedef struct prdeb_resources_s {
 	dstring_t  *line;
 	dstring_t  *dstr;
 	const char *debugfile;
-	struct pr_debug_header_s *debug;
-	struct pr_auxfunction_s *auxfunctions;
-	struct pr_auxfunction_s **auxfunction_map;
-	struct pr_lineno_s *linenos;
+	pr_debug_header_t *debug;
+	pr_auxfunction_t *auxfunctions;
+	pr_auxfunction_t **auxfunction_map;
+	pr_lineno_t *linenos;
 	pr_def_t   *local_defs;
 	pr_def_t   *type_encodings_def;
 	qfot_type_t void_type;
