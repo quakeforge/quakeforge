@@ -154,6 +154,7 @@ static defspace_t *work_near_data;
 static defspace_t *work_far_data;
 static defspace_t *work_entity_data;
 static defspace_t *work_type_data;
+static defspace_t *work_debug_data;
 static qfo_reloc_t *work_loose_relocs;
 static int work_num_loose_relocs;
 
@@ -163,6 +164,7 @@ static defspace_t **work_spaces[qfo_num_spaces] = {
 	&work_far_data,
 	&work_entity_data,
 	&work_type_data,
+	&work_debug_data,
 };
 
 static dstring_t *linker_current_file;
@@ -684,6 +686,7 @@ linker_begin (void)
 	work_far_data = defspace_new (ds_backed);
 	work_entity_data = defspace_new (ds_virtual);
 	work_type_data = defspace_new (ds_backed);
+	work_debug_data = defspace_new (ds_backed);
 
 	pr.strings = work_strings;
 
@@ -709,6 +712,9 @@ linker_begin (void)
 	work->spaces[qfo_type_space].type = qfos_type;
 	work->spaces[qfo_type_space].d.data = work_type_data->data;
 	work->spaces[qfo_type_space].data_size = work_type_data->size;
+	work->spaces[qfo_debug_space].type = qfos_debug;
+	work->spaces[qfo_debug_space].d.data = work_type_data->data;
+	work->spaces[qfo_debug_space].data_size = work_type_data->size;
 	for (i = 0; i < qfo_num_spaces; i++)
 		work->spaces[i].id = i;
 
@@ -906,6 +912,20 @@ process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 	return 0;
 }
 
+static int
+process_debug_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
+{
+	if (pass != 1)
+		return 0;
+	if (space->type != qfos_debug) {
+		linker_internal_error ("bad space type for add_data_space (): %d",
+							   space->type);
+	}
+	add_defs (qfo, space, work->spaces + qfo_debug_space, process_data_def);
+	add_data (qfo_debug_space, space);
+	return 0;
+}
+
 static void
 process_funcs (qfo_t *qfo)
 {
@@ -1002,6 +1022,7 @@ linker_add_qfo (qfo_t *qfo)
 		process_strings_space,
 		process_entity_space,
 		process_type_space,
+		process_debug_space,
 	};
 	unsigned    i;
 	int         pass;
@@ -1014,7 +1035,7 @@ linker_add_qfo (qfo_t *qfo)
 	work_func_base = work->num_funcs;
 	for (pass = 0; pass < 2; pass++) {
 		for (i = 0, space = qfo->spaces; i < qfo->num_spaces; i++, space++) {
-			if ((int) space->type < 0 || space->type > qfos_type) {
+			if ((int) space->type < 0 || space->type > qfos_debug) {
 				linker_error ("bad space type");
 				return 1;
 			}

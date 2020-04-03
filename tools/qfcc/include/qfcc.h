@@ -34,6 +34,7 @@
 */
 
 #include <stdio.h>
+#include "QF/darray.h"
 #include "QF/pr_comp.h"
 
 /** \defgroup qfcc_general General functions
@@ -68,6 +69,11 @@ typedef struct pr_info_s {
 	struct defspace_s *entity_data;		///< entity field address space. no
 										///< data is stored in the progs file
 	struct defspace_s *type_data;		///< encoded type information.
+	struct defspace_s *debug_data;		///< additional debug data.
+	struct strpool_s *comp_file_set;
+	struct DARRAY_TYPE (const char *) comp_files;
+	const char *comp_dir;
+	const char *unit_name;
 
 	struct symtab_s *symtab;
 	struct symtab_s *entity_fields;

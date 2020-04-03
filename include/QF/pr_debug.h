@@ -34,6 +34,13 @@
 #ifndef __QFCC__
 #include "QF/pr_comp.h"
 
+typedef struct pr_compunit_s {
+	pr_uint_t   unit_name;
+	pr_uint_t   basedir;
+	pr_uint_t   num_files;
+	pr_uint_t   files[1];
+} pr_compunit_t;
+
 typedef struct pr_auxfunction_s {
 	pr_uint_t   function;		// function def this aux info is for
 	pr_uint_t   source_line;	// first source line for this function

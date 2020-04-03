@@ -183,6 +183,7 @@ qfo_count_stuff (qfo_t *qfo, pr_info_t *pr)
 	qfo_count_space_stuff (qfo, pr->far_data);
 	qfo_count_space_stuff (qfo, pr->entity_data);
 	qfo_count_space_stuff (qfo, pr->type_data);
+	qfo_count_space_stuff (qfo, pr->debug_data);
 	qfo_count_function_stuff (qfo, pr->func_head);
 	qfo->num_relocs += count_relocs (pr->relocs);
 }
@@ -270,6 +271,24 @@ qfo_init_type_space (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
 }
 
 static void
+qfo_init_debug_space (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
+					  qfo_mspace_t *space, defspace_t *data)
+{
+	size_t      size = data->size * sizeof (*data->data);
+	data->qfo_space = space - qfo->spaces;
+	space->type = qfos_debug;
+	space->defs = *defs;
+	space->num_defs = qfo_encode_defs (qfo, data->defs, defs, relocs);
+	space->d.data = 0;
+	if (data->data) {
+		space->d.data = malloc (size);
+		memcpy (space->d.data, data->data, size);
+	}
+	space->data_size = data->size;
+	space->id = qfo_debug_space;
+}
+
+static void
 qfo_encode_functions (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
 					  qfo_mspace_t *space, function_t *functions)
 {
@@ -333,6 +352,8 @@ qfo_from_progs (pr_info_t *pr)
 						   pr->entity_data);
 	qfo_init_type_space (qfo, &def, &reloc, &qfo->spaces[qfo_type_space],
 						 pr->type_data);
+	qfo_init_debug_space (qfo, &def, &reloc, &qfo->spaces[qfo_debug_space],
+						  pr->debug_data);
 
 	qfo_encode_functions (qfo, &def, &reloc, qfo->spaces + qfo_num_spaces,
 						  pr->func_head);
@@ -382,6 +403,8 @@ qfo_space_size (qfo_mspace_t *space)
 			return 0;
 		case qfos_type:
 			return space->data_size * sizeof (*space->d.data);
+		case qfos_debug:
+			return space->data_size * sizeof (*space->d.data);
 	}
 	return 0;
 }
@@ -407,6 +430,7 @@ qfo_byteswap_space (void *space, int size, qfos_type_t type)
 		case qfos_data:
 		case qfos_entity:
 		case qfos_type:
+		case qfos_debug:
 			for (val = (pr_type_t *) space, c = 0; c < size; c++, val++)
 				val->integer_var = LittleLong (val->integer_var);
 			break;
@@ -949,6 +973,7 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	progs->numglobals += progs->numglobaldefs * type_size (&type_xdef);
 	progs->numglobals += progs->numfielddefs * type_size (&type_xdef);
 	progs->entityfields = qfo->spaces[qfo_entity_space].data_size;
+	// qfo_debug_space does not go in the progs file
 	*size += progs->numstatements * sizeof (dstatement_t);
 	*size += progs->numglobaldefs * sizeof (ddef_t);
 	*size += progs->numfielddefs * sizeof (ddef_t);

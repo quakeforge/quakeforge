@@ -141,6 +141,12 @@ InitData (void)
 		defspace_delete (pr.far_data);
 		defspace_delete (pr.entity_data);
 		defspace_delete (pr.type_data);
+		defspace_delete (pr.debug_data);
+		strpool_delete (pr.comp_file_set);
+	}
+
+	if (pr.comp_files.a) {
+		DARRAY_CLEAR (&pr.comp_files);
 	}
 
 	if (pr.linenos) {
@@ -172,6 +178,10 @@ InitData (void)
 
 	pr.type_data = defspace_new (ds_backed);
 	defspace_alloc_loc (pr.type_data, 4);// reserve space for a null descriptor
+
+	pr.debug_data = defspace_new (ds_backed);
+	pr.comp_file_set = strpool_new ();
+	DARRAY_INIT (&pr.comp_files, 16);
 
 	pr.symtab = new_symtab (0, stab_global);
 	pr.symtab->space = pr.near_data;
@@ -374,7 +384,8 @@ compile_to_obj (const char *file, const char *obj, lang_t lang)
 	InitData ();
 	chain_initial_types ();
 	begin_compilation ();
-	pr.source_file = ReuseString (file);
+	pr.comp_dir = save_cwd ();
+	add_source_file (file);
 	err = yyparse () || pr.error_count;
 	fclose (*yyin);
 	if (cpp_name && !options.save_temps) {
@@ -392,6 +403,7 @@ compile_to_obj (const char *file, const char *obj, lang_t lang)
 		class_finish_module ();
 		err = pr.error_count;
 		if (!err) {
+			debug_finish_module (obj);
 			qfo = qfo_from_progs (&pr);
 			err = qfo_write (qfo, obj);
 			qfo_delete (qfo);
@@ -630,7 +642,7 @@ compile_file (const char *filename)
 	if (!*yyin)
 		return !options.preprocess_only;
 
-	pr.source_file = ReuseString (filename);
+	add_source_file (filename);
 	pr.source_line = 1;
 	clear_frame_macros ();
 	err = yyparse () || pr.error_count;
@@ -774,6 +786,7 @@ progs_src_compile (void)
 	}
 
 	class_finish_module ();
+	debug_finish_module (options.output_file);
 	qfo = qfo_from_progs (&pr);
 	if (options.compile) {
 		qfo_write (qfo, options.output_file);

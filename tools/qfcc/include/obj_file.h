@@ -77,6 +77,7 @@ typedef enum qfos_type_e {
 	qfos_string,				///< strings. char data
 	qfos_entity,				///< entity field defs. no data
 	qfos_type,					///< type encodings
+	qfos_debug,					///< debug data
 } qfos_type_t;
 
 /**	Representation of a space in the object file.
@@ -283,6 +284,7 @@ enum {
 	qfo_far_data_space,
 	qfo_entity_space,
 	qfo_type_space,
+	qfo_debug_space,
 
 	qfo_num_spaces
 };
