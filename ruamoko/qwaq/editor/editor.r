@@ -1,4 +1,5 @@
 #include <QF/keys.h>
+#include <string.h>
 #include "qwaq-app.h"
 #include "editor/editor.h"
 #include "ui/listener.h"
@@ -11,7 +12,7 @@
 	if (!(self = [super initWithRect: rect])) {
 		return nil;
 	}
-	self.filename = filename;
+	self.filename = str_hold (filename);
 	buffer = [[EditBuffer withFile:filename] retain];
 	line_count = [buffer countLines: {0, [buffer textSize]}];
 	linebuffer = [[DrawBuffer buffer: { xlen, 1 }] retain];
@@ -28,6 +29,7 @@
 
 -(void)dealloc
 {
+	str_free (filename);
 	[vScrollBar release];
 	[buffer release];
 	[linebuffer release];
