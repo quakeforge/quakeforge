@@ -62,7 +62,8 @@
 	Rect rect = {{1, 1}, [source_window size]};
 	rect.extent.width -= 2;
 	rect.extent.height -= 2;
-	file = [Editor withRect:rect file:filename];
+	string filepath = qdb_get_file_path (target, filename);
+	file = [Editor withRect:rect file:filepath];
 	[files addObject: file];
 	return file;
 }
@@ -78,7 +79,7 @@
 	[current_file setVerticalScrollBar:source_scrollbar];
 	//FIXME id<View>?
 	[source_window insertSelected: (View *) file_proxy];
-	[source_window setTitle: [current_file filename]];
+	[source_window setTitle:[current_file filename]];
 	[source_window redraw];
 
 	locals_window = [Window withRect:{{0, 0}, {40, 10}}];
@@ -110,7 +111,7 @@
 		[file_proxy setView:file];
 		[[file onEvent] addListener:self :@selector(proxy_event::)];
 		[file setVerticalScrollBar:source_scrollbar];
-		[source_window setTitle: [file filename]];
+		[source_window setTitle:[file filename]];
 		current_file = file;
 	}
 	[[current_file gotoLine:state.line - 1] highlightLine];
