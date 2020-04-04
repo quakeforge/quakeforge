@@ -136,6 +136,24 @@ qwaq_debug_handler (prdebug_t debug_event, void *param, void *data)
 	}
 }
 
+//FIXME need a better way to get this from one thread to the others
+pthread_cond_t debug_data_cond = PTHREAD_COND_INITIALIZER;
+pthread_mutex_t debug_data_mutex = PTHREAD_MUTEX_INITIALIZER;
+static qwaq_debug_t *qwaq_debug_data;
+
+static int
+qwaq_debug_load (progs_t *pr)
+{
+	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
+
+	pthread_mutex_lock (&debug_data_mutex);
+	qwaq_debug_data = debug;	// FIXME ? see decl
+	pthread_cond_broadcast (&debug_data_cond);
+	pthread_mutex_unlock (&debug_data_mutex);
+
+	return 1;
+}
+
 static void
 qwaq_debug_clear (progs_t *pr, void *data)
 {
@@ -152,12 +170,15 @@ qwaq_target_clear (progs_t *pr, void *data)
 	}
 }
 
-//FIXME need a better way to get this from one thread to the others
-static qwaq_debug_t *qwaq_debug_data;
-
 static int
 qwaq_target_load (progs_t *pr)
 {
+	pthread_mutex_lock (&debug_data_mutex);
+	while (!qwaq_debug_data) {
+		pthread_cond_wait (&debug_data_cond, &debug_data_mutex);
+	}
+	pthread_mutex_unlock (&debug_data_mutex);
+
 	qwaq_target_t *target = target_new (qwaq_debug_data);
 	target->pr = pr;
 	target->debugger = qwaq_debug_data;
@@ -596,10 +617,11 @@ void
 QWAQ_Debug_Init (progs_t *pr)
 {
 	qwaq_debug_t *debug = calloc (sizeof (*debug), 1);
-	qwaq_debug_data = debug;	// FIXME ? see decl
+
 	debug->pr = pr;
 	debug->qwaq = PR_Resources_Find (pr, "qwaq");
 
+	PR_AddLoadFunc (pr, qwaq_debug_load);
 	PR_Resources_Register (pr, "qwaq-debug", debug, qwaq_debug_clear);
 	PR_RegisterBuiltins (pr, builtins);
 }
