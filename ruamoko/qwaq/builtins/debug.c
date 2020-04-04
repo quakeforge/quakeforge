@@ -44,6 +44,7 @@
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/keys.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
 
 #include "qwaq.h"
@@ -428,6 +429,31 @@ qdb_get_string (progs_t *pr)
 }
 
 static void
+qdb_get_file_path (progs_t *pr)
+{
+	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
+	pointer_t   handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+	progs_t    *tpr = target->pr;
+	const char *file = P_GSTRING (pr, 1);
+	const char *basedir = PR_Debug_GetBaseDirectory (tpr, file);
+
+	if (basedir) {
+		size_t      baselen = strlen (basedir);
+		size_t      filelen = strlen (file);
+		char       *path = alloca (baselen + filelen + 2);
+		strcpy (path, basedir);
+		path[baselen] = '/';
+		strcpy (path + baselen + 1, file);
+		path = QFS_CompressPath (path);
+		RETURN_STRING (pr, path);
+		free (path);
+	} else {
+		R_STRING (pr) = P_STRING (pr, 1);
+	}
+}
+
+static void
 qdb_find_global (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
@@ -603,6 +629,7 @@ static builtin_t builtins[] = {
 	{"qdb_get_data",			qdb_get_data,			-1},
 	{"qdb_get_string|{tag qdb_target_s=}i",	qdb_get_string,	-1},
 	{"qdb_get_string|{tag qdb_target_s=}*",	qdb_get_string,	-1},
+	{"qdb_get_file_path",		qdb_get_file_path,		-1},
 	{"qdb_find_global",			qdb_find_global,		-1},
 	{"qdb_find_field",			qdb_find_field,			-1},
 	{"qdb_find_function",		qdb_find_function,		-1},
