@@ -441,6 +441,22 @@ PR_SetString (progs_t *pr, const char *s)
 }
 
 VISIBLE string_t
+PR_FindString (progs_t *pr, const char *s)
+{
+	prstr_resources_t *res = pr->pr_string_resources;
+	strref_t   *sr;
+
+	if (!s)
+		s = "";
+	sr = Hash_Find (res->strref_hash, s);
+
+	if (sr) {
+		return string_index (res, sr);
+	}
+	return 0;
+}
+
+VISIBLE string_t
 PR_SetReturnString (progs_t *pr, const char *s)
 {
 	prstr_resources_t *res = pr->pr_string_resources;

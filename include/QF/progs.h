@@ -1290,6 +1290,15 @@ struct dstring_s *PR_GetMutableString(progs_t *pr, string_t num) __attribute__((
 */
 string_t PR_SetString(progs_t *pr, const char *s);
 
+/**	Get the progs string if it exists.
+	Only static strings are searched.
+	\param pr		pointer to ::progs_t VM struct
+	\param s		C string to be found
+	\return			string index of the progs string if it exists, otherwise
+					0 (ambiguous with "").
+*/
+string_t PR_FindString(progs_t *pr, const char *s);
+
 /** Make a temporary progs string that will survive across function returns.
 	Will not duplicate a permanent string. If a new progs string is created,
 	it will be freed after ::PR_RS_SLOTS calls to this function. ie, up to
