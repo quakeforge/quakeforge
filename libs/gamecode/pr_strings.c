@@ -229,7 +229,7 @@ pr_strings_clear (progs_t *pr, void *data)
 	pr->pr_xtstr = 0;
 }
 
-static int
+VISIBLE int
 PR_LoadStrings (progs_t *pr)
 {
 	prstr_resources_t *res = PR_Resources_Find (pr, "Strings");

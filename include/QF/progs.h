@@ -1254,6 +1254,13 @@ int PR_RelocateBuiltins (progs_t *pr);
 */
 void PR_Strings_Init (progs_t *pr);
 
+/**	Initialize the string tables using the strings supplied by the progs.
+	Called automatically during progs load.
+	\param pr		pointer to ::progs_t VM struct
+	\return			true for success, false for failure
+*/
+int PR_LoadStrings (progs_t *pr);
+
 /** Check the validity of a string index.
 	\param pr		pointer to ::progs_t VM struct
 	\param num		string index to be validated

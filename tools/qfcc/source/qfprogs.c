@@ -289,6 +289,7 @@ load_progs (const char *name)
 			return 0;
 
 		PR_ResolveGlobals (&pr);
+		PR_LoadStrings (&pr);
 		PR_LoadDebug (&pr);
 	}
 	for (i = 0; i < pr.progs->numfunctions; i++) {
