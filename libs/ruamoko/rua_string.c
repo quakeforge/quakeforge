@@ -192,9 +192,10 @@ bi_str_str (progs_t *pr)
 	const char *needle = P_GSTRING (pr, 1);
 	char       *res = strstr (haystack, needle);
 
-	R_STRING (pr) = 0;
-	if (res)
-		R_STRING (pr) = res - pr->pr_strings;
+	R_INT (pr) = -1;
+	if (res) {
+		R_INT (pr) = res - haystack;
+	}
 }
 
 static void

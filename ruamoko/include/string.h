@@ -14,7 +14,7 @@
 @extern string str_clear (string str);
 @extern @overload string str_mid (string str, int start);
 @extern @overload string str_mid (string str, int start, int len);
-@extern string str_str (string haystack, string needle);
+int str_str (string haystack, string needle);
 @extern int str_char (string str, int ind);
 string str_quote (string str);
 string str_lower (string str);

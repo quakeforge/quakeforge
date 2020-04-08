@@ -81,7 +81,7 @@ class_from_plist (PLDictionary *pldict)
 					break;
 				case "0": case "1": case "2": case "3": case "4":
 				case "5": case "6": case "7": case "8": case "9":
-					if (str_str (paramstr, "."))
+					if (str_str (paramstr, ".") >= 0)
 						va_list.list[j].float_val = stof (paramstr);
 					else
 						va_list.list[j].integer_val = stoi (paramstr);
