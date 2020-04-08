@@ -1636,11 +1636,25 @@ unary_expr (int op, expr_t *e)
 				case ex_memset:
 					internal_error (e, 0);
 				case ex_uexpr:
-					if (e->e.expr.op == '-')
+					if (e->e.expr.op == '-') {
 						return e->e.expr.e1;
+					}
+					{
+						expr_t     *n = new_unary_expr (op, e);
+
+						n->e.expr.type = get_type (e);
+						return n;
+					}
 				case ex_block:
-					if (!e->e.block.result)
+					if (!e->e.block.result) {
 						return error (e, "invalid type for unary -");
+					}
+					{
+						expr_t     *n = new_unary_expr (op, e);
+
+						n->e.expr.type = get_type (e);
+						return n;
+					}
 				case ex_expr:
 				case ex_bool:
 				case ex_temp:
@@ -1648,7 +1662,7 @@ unary_expr (int op, expr_t *e)
 					{
 						expr_t     *n = new_unary_expr (op, e);
 
-						n->e.expr.type = e->e.expr.type;
+						n->e.expr.type = get_type (e);
 						return n;
 					}
 				case ex_def:
