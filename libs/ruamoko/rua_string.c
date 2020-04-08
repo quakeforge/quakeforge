@@ -38,6 +38,7 @@
 # include <strings.h>
 #endif
 #include <stdlib.h>
+#include <ctype.h>
 
 #include "qfalloca.h"
 
@@ -247,6 +248,22 @@ bi_str_quote (progs_t *pr)
 	RETURN_STRING (pr, quote);
 }
 
+static void
+bi_str_lower (progs_t *pr)
+{
+	const char *str = P_GSTRING (pr, 0);
+	char       *lower = alloca (strlen (str) + 1);
+	char       *l = lower;
+	byte        c;
+
+	while ((c = *str++)) {
+		*l++ = tolower (c);
+	}
+	*l++ = 0;
+
+	RETURN_STRING (pr, lower);
+}
+
 static builtin_t builtins[] = {
 	{"strlen",		bi_strlen,		-1},
 	{"sprintf",		bi_sprintf,		-1},
@@ -264,6 +281,7 @@ static builtin_t builtins[] = {
 	{"str_str",		bi_str_str,		-1},
 	{"str_char",	bi_str_char,	-1},
 	{"str_quote",	bi_str_quote,	-1},
+	{"str_lower",	bi_str_lower,	-1},
 	{0}
 };
 
