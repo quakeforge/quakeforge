@@ -71,6 +71,7 @@ test_progs_dat=\
 	triangle.dat \
 	typedef.dat \
 	typelinker.dat \
+	unaryminus.dat \
 	vecaddr.dat \
 	vecexpr.dat \
 	vecinit.dat \
@@ -532,6 +533,16 @@ typelinker.run: Makefile build-run
 	@$(srcdir)/build-run $@
 include $(typelinker_dep) # am--include-marker
 r_depfiles_remade += $(typelinker_dep)
+
+unaryminus_dat_SOURCES=unaryminus.r
+unaryminus_obj=$(unaryminus_dat_SOURCES:.r=.qfo)
+unaryminus_dep=$(addprefix ./$(DEPDIR)/,$(unaryminus_obj:.qfo=.Qo))
+unaryminus.dat$(EXEEXT): $(unaryminus_obj) $(QFCC_DEP)
+	$(QFCC) $(QCFLAGS) -o $@ $(unaryminus_obj)
+unaryminus.run: Makefile build-run
+	@$(srcdir)/build-run $@
+include $(unaryminus_dep) # am--include-marker
+r_depfiles_remade += $(unaryminus_dep)
 
 vecaddr_dat_SOURCES=vecaddr.r
 vecaddr_obj=$(vecaddr_dat_SOURCES:.r=.qfo)
