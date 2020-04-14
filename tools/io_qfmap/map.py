@@ -38,8 +38,8 @@ class Texinfo:
         norm = s_vec.cross(t_vec)
         q = Quaternion(norm, rotate * pi / 180)
         self.vecs = [None] * 2
-        self.vecs[0] = (q * s_vec / scale[0], s_offs)
-        self.vecs[1] = (q * t_vec / scale[1], t_offs)
+        self.vecs[0] = (q @ s_vec / scale[0], s_offs)
+        self.vecs[1] = (q @ t_vec / scale[1], t_offs)
     def __cmp__(self, other):
         return self.name == other.name and self.vecs == other.vecs
     @classmethod
