@@ -96,7 +96,7 @@ main (int argc, const char **argv)
 		}
 	}
 	end = Sys_DoubleTime ();
-	printf ("%d itterations in %gs: %g itters/second\n", (int) i, end - start,
+	printf ("%d iterations in %gs: %g iters/second\n", (int) i, end - start,
 			i / (end - start));
 	return res;
 }
