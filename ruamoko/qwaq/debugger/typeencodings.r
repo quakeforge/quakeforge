@@ -1,9 +1,9 @@
 #include <runtime.h>
 #include <hash.h>
 #include <string.h>
-#include <ui/curses.h>	// printf FIXME
 
-#include "debugger/typeencodings.h"
+#include "ruamoko/qwaq/ui/curses.h"	// printf FIXME
+#include "ruamoko/qwaq/debugger/typeencodings.h"
 
 @implementation TypeEncodings
 

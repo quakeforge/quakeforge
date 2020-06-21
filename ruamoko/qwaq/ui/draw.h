@@ -3,7 +3,7 @@
 
 #include <Object.h>
 
-#include "ui/rect.h"
+#include "ruamoko/qwaq/ui/rect.h"
 
 @class DrawBuffer;
 

@@ -51,11 +51,11 @@
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
-#include "client.h"
-#include "host.h"
+#include "nq/include/client.h"
+#include "nq/include/host.h"
 
 #ifdef _WIN32
-# include "winquake.h"
+# include "nq/include/winquake.h"
 #endif
 
 int qf_sdl_link;

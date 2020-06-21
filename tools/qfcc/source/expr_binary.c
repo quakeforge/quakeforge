@@ -31,11 +31,12 @@
 # include "config.h"
 #endif
 
-#include "diagnostic.h"
-#include "expr.h"
-#include "options.h"
-#include "type.h"
-#include "qc-parse.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/type.h"
+
+#include "tools/qfcc/source/qc-parse.h"
 
 typedef struct {
 	int         op;

@@ -1,9 +1,9 @@
 #include <string.h>
 #include <types.h>
-#include "debugger/views/defview.h"
-#include "debugger/views/nameview.h"
-#include "debugger/localsdata.h"
-#include "debugger/typeencodings.h"
+#include "ruamoko/qwaq/debugger/views/defview.h"
+#include "ruamoko/qwaq/debugger/views/nameview.h"
+#include "ruamoko/qwaq/debugger/localsdata.h"
+#include "ruamoko/qwaq/debugger/typeencodings.h"
 
 @implementation LocalsData
 

@@ -45,17 +45,17 @@
 #include "QF/mathlib.h"
 #include "QF/va.h"
 
-#include "qfcc.h"
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "expr.h"
-#include "reloc.h"
-#include "strpool.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
 typedef struct {
 	def_t      *def;

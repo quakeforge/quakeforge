@@ -33,15 +33,17 @@
 #include "QF/msg.h"
 #include "QF/screen.h"
 
-#include "qw/bothdefs.h"
-#include "chase.h"
-#include "cl_cam.h"
-#include "cl_ents.h"
-#include "cl_main.h"
-#include "client.h"
 #include "compat.h"
-#include "host.h"
 #include "clview.h"
+
+#include "qw/bothdefs.h"
+
+#include "qw/include/chase.h"
+#include "qw/include/cl_cam.h"
+#include "qw/include/cl_ents.h"
+#include "qw/include/cl_main.h"
+#include "qw/include/client.h"
+#include "qw/include/host.h"
 
 /*
 	The view is allowed to move slightly from it's true position for bobbing,

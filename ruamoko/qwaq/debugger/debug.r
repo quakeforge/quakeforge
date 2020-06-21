@@ -1,4 +1,4 @@
-#include "debugger/debug.h"
+#include "ruamoko/qwaq/debugger/debug.h"
 
 void traceon() = #0;
 void traceoff() = #0;

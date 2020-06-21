@@ -47,10 +47,10 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
-#include "qwaq.h"
-#include "ui/event.h"
-#include "ui/curses.h"
-#include "debugger/debug.h"
+#include "ruamoko/qwaq/qwaq.h"
+#include "ruamoko/qwaq/ui/event.h"
+#include "ruamoko/qwaq/ui/curses.h"
+#include "ruamoko/qwaq/debugger/debug.h"
 
 typedef struct qwaq_target_s {
 	progs_t    *pr;

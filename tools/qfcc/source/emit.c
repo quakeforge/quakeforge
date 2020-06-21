@@ -42,21 +42,21 @@
 #include <QF/mathlib.h>
 #include <QF/va.h>
 
-#include "codespace.h"
-#include "def.h"
-#include "defspace.h"
-#include "debug.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "function.h"
-#include "opcodes.h"
-#include "options.h"
-#include "qfcc.h"
-#include "reloc.h"
-#include "statements.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
+#include "tools/qfcc/include/codespace.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/debug.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/opcodes.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/statements.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
 static def_t zero_def;
 

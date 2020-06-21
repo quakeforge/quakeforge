@@ -44,10 +44,11 @@
 
 #include "QF/plugin/vid_render.h"
 
-#include "chase.h"
-#include "client.h"
 #include "compat.h"
-#include "host.h"
+
+#include "nq/include/chase.h"
+#include "nq/include/client.h"
+#include "nq/include/host.h"
 
 /*
 	KEY BUTTONS

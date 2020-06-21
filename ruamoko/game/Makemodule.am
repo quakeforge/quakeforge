@@ -1,0 +1,27 @@
+ruamoko_game_libexec=ruamoko/game/game.dat$(EXEEXT)
+
+noinst_PROGRAMS += $(ruamoko_game_libexec)
+EXTRA_PROGRAMS += $(ruamoko_game_libexec)
+
+ruamoko_game_src= ruamoko/game/Axe.r ruamoko/game/GameEntity.r ruamoko/game/World.r ruamoko/game/tempent.r
+
+ruamoko_game_game_dat_SOURCES=$(ruamoko_game_src)
+ruamoko_game_obj=$(ruamoko_game_game_dat_SOURCES:.r=.o)
+ruamoko_game_dep=$(call qcautodep,$(ruamoko_game_game_dat_SOURCES))
+ruamoko/game/game.dat$(EXEEXT): $(ruamoko_game_obj) $(QFCC_DEP) ruamoko/lib/libr.a ruamoko/lib/libqw.a
+	$(QLINK) -o $@ $(ruamoko_game_obj) -lqw -lr
+include $(ruamoko_game_dep) # am--include-marker
+r_depfiles_remade += $(ruamoko_game_dep)
+
+ruamoko/game/game.sym: ruamoko/game/game.dat
+
+EXTRA_DIST += $(ruamoko_game_src) \
+	ruamoko/game/Axe.h \
+	ruamoko/game/GameEntity.h \
+	ruamoko/game/tempent.h \
+	ruamoko/game/Weapon.h \
+	ruamoko/game/World.h
+CLEANFILES += \
+	ruamoko/game/*.dat \
+	ruamoko/game/*.sym
+DISTCLEANFILES += $(ruamoko_game_dep)

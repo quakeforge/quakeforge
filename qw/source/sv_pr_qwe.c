@@ -50,10 +50,10 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "server.h"
-#include "sv_pr_qwe.h"
-#include "sv_progs.h"
-#include "sv_recorder.h"
+#include "qw/include/server.h"
+#include "qw/include/sv_pr_qwe.h"
+#include "qw/include/sv_progs.h"
+#include "qw/include/sv_recorder.h"
 
 typedef struct {
 	func_t      timeofday;

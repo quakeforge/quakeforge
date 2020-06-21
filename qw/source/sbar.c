@@ -54,11 +54,12 @@
 
 #include "QF/plugin/console.h"
 
-#include "qw/bothdefs.h"
-#include "cl_cam.h"
-#include "cl_parse.h"
-#include "client.h"
 #include "compat.h"
+
+#include "qw/bothdefs.h"
+#include "qw/include/cl_cam.h"
+#include "qw/include/cl_parse.h"
+#include "qw/include/client.h"
 #include "sbar.h"
 
 int         sb_updates;				// if >= vid.numpages, no update needed

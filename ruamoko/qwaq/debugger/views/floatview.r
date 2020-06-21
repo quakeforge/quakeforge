@@ -1,5 +1,5 @@
 #include <string.h>
-#include "debugger/views/floatview.h"
+#include "ruamoko/qwaq/debugger/views/floatview.h"
 
 @implementation FloatView
 

@@ -1,0 +1,2 @@
+include libs/video/renderer/Makemodule.am
+include libs/video/targets/Makemodule.am

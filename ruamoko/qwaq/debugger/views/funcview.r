@@ -1,5 +1,5 @@
 #include <string.h>
-#include "debugger/views/funcview.h"
+#include "ruamoko/qwaq/debugger/views/funcview.h"
 
 @implementation FuncView
 

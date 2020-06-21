@@ -44,11 +44,11 @@
 #include "QF/set.h"
 #include "QF/va.h"
 
-#include "dags.h"
-#include "statements.h"
-#include "strpool.h"
-#include "symtab.h"
-#include "type.h"
+#include "tools/qfcc/include/dags.h"
+#include "tools/qfcc/include/statements.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
 
 static void
 print_node_def (dstring_t *dstr, dag_t *dag, dagnode_t *node)

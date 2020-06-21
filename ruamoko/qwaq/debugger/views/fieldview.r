@@ -1,5 +1,5 @@
 #include <string.h>
-#include "debugger/views/fieldview.h"
+#include "ruamoko/qwaq/debugger/views/fieldview.h"
 
 @implementation FieldView
 

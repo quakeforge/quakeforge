@@ -46,10 +46,11 @@
 #include "QF/va.h"
 
 #include "compat.h"
-#include "host.h"
-#include "server.h"
-#include "sv_progs.h"
 #include "world.h"
+
+#include "nq/include/host.h"
+#include "nq/include/server.h"
+#include "nq/include/sv_progs.h"
 
 /* BUILT-IN FUNCTIONS */
 

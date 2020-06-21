@@ -1,0 +1,6 @@
+EXTRA_DIST += RPM/build_rpm.in RPM/quakeforge.conf.in RPM/quakeforge.spec.in
+
+rpm: RPM/build_rpm RPM/quakeforge.conf RPM/quakeforge.spec
+	cd RPM && ./build_rpm
+
+CLEANFILES += rpm/*.rpm

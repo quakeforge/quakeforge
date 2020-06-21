@@ -1,7 +1,7 @@
 #include <string.h>
 
-#include "ui/curses.h"
-#include "ui/draw.h"
+#include "ruamoko/qwaq/ui/curses.h"
+#include "ruamoko/qwaq/ui/draw.h"
 
 @implementation DrawBuffer
 

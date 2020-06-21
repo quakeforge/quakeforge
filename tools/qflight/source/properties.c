@@ -46,10 +46,10 @@
 
 #include "compat.h"
 
-#include "entities.h"
-#include "light.h"
-#include "options.h"
-#include "properties.h"
+#include "tools/qflight/include/entities.h"
+#include "tools/qflight/include/light.h"
+#include "tools/qflight/include/options.h"
+#include "tools/qflight/include/properties.h"
 
 static plitem_t *properties;
 

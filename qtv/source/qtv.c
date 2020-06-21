@@ -56,14 +56,15 @@
 
 #include "QF/plugin/console.h"
 
+#include "compat.h"
+#include "netchan.h"
+
 #include "qw/protocol.h"
 
-#include "client.h"
-#include "compat.h"
-#include "connection.h"
-#include "netchan.h"
-#include "qtv.h"
-#include "server.h"
+#include "qtv/include/client.h"
+#include "qtv/include/connection.h"
+#include "qtv/include/qtv.h"
+#include "qtv/include/server.h"
 
 #undef qtv_print
 

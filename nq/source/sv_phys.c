@@ -31,9 +31,10 @@
 #include "QF/cvar.h"
 #include "QF/sys.h"
 
-#include "server.h"
-#include "sv_progs.h"
 #include "world.h"
+
+#include "nq/include/server.h"
+#include "nq/include/sv_progs.h"
 
 /*
 	pushmove objects do not obey gravity, and do not interact with each

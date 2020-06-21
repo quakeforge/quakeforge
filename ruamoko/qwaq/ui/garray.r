@@ -1,6 +1,6 @@
 #include <Array.h>
-#include "ui/event.h"
-#include "ui/garray.h"
+#include "ruamoko/qwaq/ui/event.h"
+#include "ruamoko/qwaq/ui/garray.h"
 
 @implementation Array (Group)
 - (void) makeObjectsPerformSelector: (SEL)selector

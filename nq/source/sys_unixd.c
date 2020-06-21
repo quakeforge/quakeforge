@@ -48,7 +48,7 @@
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
-#include "host.h"
+#include "nq/include/host.h"
 
 qboolean    isDedicated = true;
 

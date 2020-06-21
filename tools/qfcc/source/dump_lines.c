@@ -43,8 +43,8 @@
 #include "QF/progs.h"
 #include "QF/pr_type.h"
 
-#include "obj_file.h"
-#include "qfprogs.h"
+#include "tools/qfcc/include/obj_file.h"
+#include "tools/qfcc/include/qfprogs.h"
 
 typedef struct {
 	const char *source_name;

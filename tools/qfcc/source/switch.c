@@ -42,18 +42,18 @@
 #include <QF/hash.h>
 #include <QF/sys.h>
 
-#include "def.h"
-#include "diagnostic.h"
-#include "expr.h"
-#include "opcodes.h"
-#include "options.h"
-#include "qfcc.h"
-#include "reloc.h"
-#include "switch.h"
-#include "symtab.h"
-#include "type.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/opcodes.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/switch.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
 
-#include "qc-parse.h"
+#include "tools/qfcc/source/qc-parse.h"
 
 typedef struct case_node_s {
 	expr_t     *low;

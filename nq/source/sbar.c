@@ -53,11 +53,12 @@
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
 
-#include "client.h"
 #include "compat.h"
-#include "game.h"
 #include "sbar.h"
-#include "server.h"
+
+#include "nq/include/client.h"
+#include "nq/include/game.h"
+#include "nq/include/server.h"
 
 int         sb_updates;				// if >= vid.numpages, no update needed
 

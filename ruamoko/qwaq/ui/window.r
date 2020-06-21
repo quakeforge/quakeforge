@@ -1,14 +1,14 @@
 #include <Array.h>
 #include <string.h>
 
-#include "ui/event.h"
-#include "ui/button.h"
-#include "ui/curses.h"
-#include "ui/group.h"
-#include "ui/listener.h"
-#include "ui/titlebar.h"
-#include "ui/window.h"
-#include "ui/view.h"
+#include "ruamoko/qwaq/ui/event.h"
+#include "ruamoko/qwaq/ui/button.h"
+#include "ruamoko/qwaq/ui/curses.h"
+#include "ruamoko/qwaq/ui/group.h"
+#include "ruamoko/qwaq/ui/listener.h"
+#include "ruamoko/qwaq/ui/titlebar.h"
+#include "ruamoko/qwaq/ui/window.h"
+#include "ruamoko/qwaq/ui/view.h"
 
 @implementation Window
 

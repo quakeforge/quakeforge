@@ -1,8 +1,8 @@
 #ifndef __qwaq_editor_editor_h
 #define __qwaq_editor_editor_h
 
-#include "editor/editbuffer.h"
-#include "ui/view.h"
+#include "ruamoko/qwaq/editor/editbuffer.h"
+#include "ruamoko/qwaq/ui/view.h"
 
 @class Editor;
 @class EditBuffer;

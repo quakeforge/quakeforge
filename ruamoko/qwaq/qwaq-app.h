@@ -3,8 +3,8 @@
 
 #include <Object.h>
 
-#include "ui/event.h"
-#include "ui/rect.h"
+#include "ruamoko/qwaq/ui/event.h"
+#include "ruamoko/qwaq/ui/rect.h"
 
 @class Array;
 @class Group;

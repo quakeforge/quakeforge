@@ -56,8 +56,9 @@
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
-#include "host.h"
 #include "netchan.h"
+
+#include "qw/include/host.h"
 
 #ifdef _WIN32
 # include "winquake.h"

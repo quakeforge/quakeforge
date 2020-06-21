@@ -1,6 +1,6 @@
 #include <Array.h>
-#include "ui/listener.h"
-#include "ui/tableview.h"
+#include "ruamoko/qwaq/ui/listener.h"
+#include "ruamoko/qwaq/ui/tableview.h"
 
 @implementation TableViewColumn
 -initWithName:(string)name width:(int)width

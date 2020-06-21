@@ -1,9 +1,9 @@
 #include <QF/keys.h>
 #include <string.h>
-#include "qwaq-app.h"
-#include "editor/editor.h"
-#include "ui/listener.h"
-#include "ui/scrollbar.h"
+#include "ruamoko/qwaq/qwaq-app.h"
+#include "ruamoko/qwaq/editor/editor.h"
+#include "ruamoko/qwaq/ui/listener.h"
+#include "ruamoko/qwaq/ui/scrollbar.h"
 
 @implementation Editor
 

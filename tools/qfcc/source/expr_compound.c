@@ -45,11 +45,11 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "diagnostic.h"
-#include "expr.h"
-#include "options.h"
-#include "symtab.h"
-#include "type.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
 
 static element_t *elements_freelist;
 

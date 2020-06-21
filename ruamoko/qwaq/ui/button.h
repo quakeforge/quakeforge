@@ -1,8 +1,8 @@
 #ifndef __qwaq_ui_button_h
 #define __qwaq_ui_button_h
 
-#include "ui/draw.h"
-#include "ui/view.h"
+#include "ruamoko/qwaq/ui/draw.h"
+#include "ruamoko/qwaq/ui/view.h"
 
 @class ListenerGroup;
 

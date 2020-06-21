@@ -44,15 +44,15 @@
 #include <QF/set.h>
 #include <QF/va.h>
 
-#include "dags.h"
-#include "flow.h"
-#include "expr.h"
-#include "qfcc.h"
-#include "function.h"
-#include "statements.h"
-#include "strpool.h"
-#include "symtab.h"
-#include "type.h"
+#include "tools/qfcc/include/dags.h"
+#include "tools/qfcc/include/flow.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/statements.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
 
 static void
 flow_statement (dstring_t *dstr, statement_t *s)

@@ -1,0 +1,84 @@
+include libs/util/test/Makemodule.am
+
+lib_LTLIBRARIES += libs/util/libQFutil.la
+
+if ASM_ARCH
+util_asm= libs/util/libasm.la
+else
+util_asm=
+endif
+
+noinst_LTLIBRARIES +=	$(util_asm)
+#EXTRA_LTLIBRARIES += libasm.la
+
+libs_util_libasm_la_SOURCES =	libs/util/math.S libs/util/sys_ia32.S
+
+
+dirent_src=		libs/util/dirent.c
+fnmatch_src=	libs/util/fnmatch.c
+getopt_src=		libs/util/getopt.c libs/util/getopt1.c
+
+if BUILD_DIRENT
+dirent= $(dirent_src)
+else
+dirent=
+endif
+
+if BUILD_FNMATCH
+fnmatch= $(fnmatch_src)
+else
+fnmatch=
+endif
+
+if BUILD_GETOPT
+getopt= $(getopt_src)
+else
+getopt=
+endif
+
+libs_util_libQFutil_la_LDFLAGS=		$(lib_ldflags)
+libs_util_libQFutil_la_LIBADD=		$(util_asm) $(Z_LIBS) $(DL_LIBS) $(WIN32_LIBS)
+libs_util_libQFutil_la_DEPENDENCIES=	$(util_asm)
+libs_util_libQFutil_la_SOURCES= \
+	libs/util/bspfile.c \
+	libs/util/buildnum.c \
+	libs/util/cbuf.c \
+	libs/util/checksum.c \
+	libs/util/cmd.c \
+	libs/util/crc.c \
+	libs/util/cvar.c \
+	libs/util/dstring.c \
+	libs/util/fendian.c \
+	libs/util/hash.c \
+	libs/util/idparse.c \
+	libs/util/info.c \
+	libs/util/link.c \
+	libs/util/llist.c \
+	libs/util/mathlib.c \
+	libs/util/mdfour.c \
+	libs/util/mersenne.c \
+	libs/util/msg.c \
+	libs/util/pakfile.c \
+	libs/util/plugin.c \
+	libs/util/qargs.c \
+	libs/util/qendian.c \
+	libs/util/qfplist.c \
+	libs/util/quakefs.c \
+	libs/util/quakeio.c \
+	libs/util/riff.c \
+	libs/util/script.c \
+	libs/util/segtext.c \
+	libs/util/set.c \
+	libs/util/sizebuf.c \
+	libs/util/string.c \
+	libs/util/sys.c \
+	libs/util/txtbuffer.c \
+	libs/util/va.c \
+	libs/util/ver_check.c \
+	libs/util/vrect.c \
+	libs/util/wad.c \
+	libs/util/wadfile.c \
+	libs/util/zone.c \
+	$(dirent) $(fnmatch) $(getopt)
+
+EXTRA_DIST += $(fnmatch_src) $(getopt_src)

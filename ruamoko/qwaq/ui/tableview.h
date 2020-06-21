@@ -1,7 +1,7 @@
 #ifndef __qwaq_ui_tableview_h
 #define __qwaq_ui_tableview_h
 
-#include "ui/view.h"
+#include "ruamoko/qwaq/ui/view.h"
 
 @class DrawBuffer;
 @class TableView;

@@ -54,9 +54,10 @@
 #include "QF/va.h"
 
 #include "compat.h"
+
 #include "netchan.h"
 #include "qw/protocol.h"
-#include "server.h"
+#include "qw/include/server.h"
 
 cvar_t     *net_packetlog;
 cvar_t     *net_loglevel;

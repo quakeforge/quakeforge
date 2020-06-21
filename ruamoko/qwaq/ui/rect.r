@@ -1,4 +1,4 @@
-#include "ui/rect.h"
+#include "ruamoko/qwaq/ui/rect.h"
 
 Rect
 clipRect (Rect clipRect, Rect rect)

@@ -2,8 +2,8 @@
 #define __qwaq_debugger_localsview_h
 
 #include <types.h>
-#include "ui/tableview.h"
-#include "debugger/debug.h"
+#include "ruamoko/qwaq/ui/tableview.h"
+#include "ruamoko/qwaq/debugger/debug.h"
 
 @interface LocalsData : Object <TableViewDataSource>
 {

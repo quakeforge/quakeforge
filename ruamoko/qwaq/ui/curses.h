@@ -1,7 +1,7 @@
 #ifndef __qwaq_ui_curses_h
 #define __qwaq_ui_curses_h
 
-#include "ui/event.h"
+#include "ruamoko/qwaq/ui/event.h"
 
 typedef struct box_sides_s {
 	int         ls;
@@ -18,7 +18,7 @@ typedef struct box_corners_s {
 } box_corners_t;
 
 #ifdef __QFCC__
-#include "ui/rect.h"
+#include "ruamoko/qwaq/ui/rect.h"
 
 // names, order and comments lifted from ncurses.h
 typedef enum {

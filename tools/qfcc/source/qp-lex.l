@@ -35,17 +35,17 @@
 
 #include "QF/hash.h"
 
-#include "debug.h"
-#include "diagnostic.h"
-#include "expr.h"
-#include "grab.h"
-#include "qfcc.h"
-#include "shared.h"
-#include "strpool.h"
-#include "symtab.h"
-#include "type.h"
+#include "tools/qfcc/include/debug.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/grab.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
 
-#include "qp-parse.h"
+#include "tools/qfcc/source/qp-parse.h"
 
 #ifndef YY_PROTO
 # define YY_PROTO(x) x

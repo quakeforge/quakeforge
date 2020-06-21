@@ -1,7 +1,7 @@
 #ifndef __qwaq_debugger_debug_h
 #define __qwaq_debugger_debug_h
 
-#include "ui/event.h"
+#include "ruamoko/qwaq/ui/event.h"
 
 typedef enum {
 	qe_debug_event = 0x0100,

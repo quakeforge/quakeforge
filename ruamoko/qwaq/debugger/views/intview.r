@@ -1,5 +1,5 @@
 #include <string.h>
-#include "debugger/views/intview.h"
+#include "ruamoko/qwaq/debugger/views/intview.h"
 
 @implementation IntView
 

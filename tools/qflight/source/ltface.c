@@ -52,11 +52,11 @@
 
 #include "compat.h"
 
-#include "light.h"
-#include "entities.h"
-#include "noise.h"
-#include "options.h"
-#include "threads.h"
+#include "tools/qflight/include/light.h"
+#include "tools/qflight/include/entities.h"
+#include "tools/qflight/include/noise.h"
+#include "tools/qflight/include/options.h"
+#include "tools/qflight/include/threads.h"
 
 int c_bad;
 int c_culldistplane, c_proper;

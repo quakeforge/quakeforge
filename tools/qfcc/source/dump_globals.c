@@ -43,11 +43,11 @@
 #include "QF/progs.h"
 #include "QF/va.h"
 
-#include "obj_file.h"
-#include "obj_type.h"
-#include "qfprogs.h"
-#include "reloc.h"
-#include "strpool.h"
+#include "tools/qfcc/include/obj_file.h"
+#include "tools/qfcc/include/obj_type.h"
+#include "tools/qfcc/include/qfprogs.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/strpool.h"
 
 static int
 cmp (const void *_a, const void *_b)

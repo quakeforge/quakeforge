@@ -42,14 +42,15 @@
 #include <QF/dstring.h>
 #include <QF/mathlib.h>
 
-#include "diagnostic.h"
-#include "expr.h"
-#include "options.h"
-#include "qfcc.h"
-#include "strpool.h"
-#include "type.h"
-#include "value.h"
-#include "qc-parse.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
+
+#include "tools/qfcc/source/qc-parse.h"
 
 typedef expr_t *(*operation_t) (int op, expr_t *e, expr_t *e1, expr_t *e2);
 typedef expr_t *(*unaryop_t) (int op, expr_t *e, expr_t *e1);

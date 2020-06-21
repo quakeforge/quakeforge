@@ -45,11 +45,11 @@
 #include "QF/pr_comp.h"
 #include "QF/va.h"
 
-#include "cpp.h"
-#include "linker.h"
-#include "options.h"
-#include "qfcc.h"
-#include "strpool.h"
+#include "tools/qfcc/include/cpp.h"
+#include "tools/qfcc/include/linker.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/strpool.h"
 
 const char *this_program;
 const char **source_files;

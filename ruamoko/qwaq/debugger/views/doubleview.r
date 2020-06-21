@@ -1,5 +1,5 @@
 #include <string.h>
-#include "debugger/views/doubleview.h"
+#include "ruamoko/qwaq/debugger/views/doubleview.h"
 
 @implementation DoubleView
 

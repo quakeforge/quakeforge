@@ -4,7 +4,7 @@
 #include <types.h>
 #include <Object.h>
 
-#include "debugger/debug.h"
+#include "ruamoko/qwaq/debugger/debug.h"
 
 @interface TypeEncodings : Object
 +(qfot_type_t *)getType:(unsigned)typeAddr fromTarget:(qdb_target_t)target;

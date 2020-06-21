@@ -1,0 +1,11 @@
+## Process this file with automake to produce Makefile.in
+EXTRA_DIST += \
+	nq/include/chase.h \
+	nq/include/cl_skin.h \
+	nq/include/client.h \
+	nq/include/game.h \
+	nq/include/host.h \
+	nq/include/protocol.h \
+	nq/include/server.h \
+	nq/include/sv_pr_cmds.h \
+	nq/include/sv_progs.h

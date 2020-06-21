@@ -1,5 +1,5 @@
 #include <string.h>
-#include "debugger/views/voidview.h"
+#include "ruamoko/qwaq/debugger/views/voidview.h"
 
 @implementation VoidView
 

@@ -7,9 +7,9 @@
 @class Button;
 @class TitleBar;
 
-#include "ui/draw.h"
-#include "ui/rect.h"
-#include "ui/view.h"
+#include "ruamoko/qwaq/ui/draw.h"
+#include "ruamoko/qwaq/ui/rect.h"
+#include "ruamoko/qwaq/ui/view.h"
 
 @interface Window: View
 {

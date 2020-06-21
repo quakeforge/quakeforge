@@ -35,10 +35,10 @@
 
 #include "QF/va.h"
 
-#include "dot.h"
-#include "function.h"
-#include "options.h"
-#include "strpool.h"
+#include "tools/qfcc/include/dot.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/strpool.h"
 
 static function_t *last_func;
 static int dot_index;

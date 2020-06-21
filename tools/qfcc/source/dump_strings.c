@@ -36,8 +36,8 @@
 #include "QF/progs.h"
 #include "QF/sys.h"
 
-#include "obj_file.h"
-#include "qfprogs.h"
+#include "tools/qfcc/include/obj_file.h"
+#include "tools/qfcc/include/qfprogs.h"
 
 static void
 dump_string_block (const char *strblock, unsigned size)

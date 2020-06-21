@@ -56,10 +56,10 @@
 #include "qw/msg_ucmd.h"
 #include "qw/protocol.h"
 
-#include "client.h"
-#include "connection.h"
-#include "qtv.h"
-#include "server.h"
+#include "qtv/include/client.h"
+#include "qtv/include/connection.h"
+#include "qtv/include/qtv.h"
+#include "qtv/include/server.h"
 
 static void
 sv_serverdata (server_t *sv, qmsg_t *msg)

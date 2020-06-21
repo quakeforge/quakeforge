@@ -41,15 +41,15 @@
 
 #include "QF/alloc.h"
 
-#include "codespace.h"
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "expr.h"
-#include "function.h"
-#include "qfcc.h"
-#include "reloc.h"
+#include "tools/qfcc/include/codespace.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/reloc.h"
 
 static reloc_t *refs_freelist;
 

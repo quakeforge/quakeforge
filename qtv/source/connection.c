@@ -46,7 +46,7 @@
 #include "QF/hash.h"
 #include "QF/sys.h"
 
-#include "connection.h"
+#include "qtv/include/connection.h"
 
 static hashtab_t *connections;
 

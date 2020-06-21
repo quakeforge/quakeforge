@@ -1,7 +1,7 @@
 #include <Array.h>
 
-#include "ui/listener.h"
-#include "ui/curses.h"
+#include "ruamoko/qwaq/ui/listener.h"
+#include "ruamoko/qwaq/ui/curses.h"
 
 @class Array;
 

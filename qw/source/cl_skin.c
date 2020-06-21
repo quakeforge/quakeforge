@@ -43,11 +43,12 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "cl_parse.h"
-#include "cl_skin.h"
-#include "client.h"
 #include "compat.h"
-#include "host.h"
+
+#include "qw/include/cl_parse.h"
+#include "qw/include/cl_skin.h"
+#include "qw/include/client.h"
+#include "qw/include/host.h"
 
 cvar_t     *noskins; //XXX FIXME
 cvar_t     *skin;

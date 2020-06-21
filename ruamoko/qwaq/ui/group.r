@@ -1,9 +1,9 @@
 #include <Array.h>
-#include "ui/event.h"
-#include "ui/draw.h"
-#include "ui/garray.h"
-#include "ui/group.h"
-#include "ui/view.h"
+#include "ruamoko/qwaq/ui/event.h"
+#include "ruamoko/qwaq/ui/draw.h"
+#include "ruamoko/qwaq/ui/garray.h"
+#include "ruamoko/qwaq/ui/group.h"
+#include "ruamoko/qwaq/ui/view.h"
 
 @implementation Group
 

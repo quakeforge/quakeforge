@@ -46,9 +46,9 @@
 #include "QF/keys.h"
 #include "QF/sys.h"
 
-#include "qwaq.h"
-#include "ui/event.h"
-#include "ui/curses.h"
+#include "ruamoko/qwaq/qwaq.h"
+#include "ruamoko/qwaq/ui/event.h"
+#include "ruamoko/qwaq/ui/curses.h"
 
 #define always_inline inline __attribute__((__always_inline__))
 

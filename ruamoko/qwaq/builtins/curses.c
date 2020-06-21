@@ -46,10 +46,10 @@
 #include "QF/ringbuffer.h"
 #include "QF/sys.h"
 
-#include "qwaq.h"
-#include "ui/curses.h"
-#include "ui/rect.h"
-#include "ui/textcontext.h"
+#include "ruamoko/qwaq/qwaq.h"
+#include "ruamoko/qwaq/ui/curses.h"
+#include "ruamoko/qwaq/ui/rect.h"
+#include "ruamoko/qwaq/ui/textcontext.h"
 
 #define always_inline inline __attribute__((__always_inline__))
 #define CMD_SIZE(x) sizeof(x)/sizeof(x[0])

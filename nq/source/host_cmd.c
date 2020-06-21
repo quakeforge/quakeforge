@@ -50,12 +50,13 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "client.h"
 #include "compat.h"
-#include "host.h"
-#include "server.h"
-#include "sv_progs.h"
 #include "world.h"
+
+#include "nq/include/client.h"
+#include "nq/include/host.h"
+#include "nq/include/server.h"
+#include "nq/include/sv_progs.h"
 
 int         current_skill;
 

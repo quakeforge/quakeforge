@@ -55,11 +55,11 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "light.h"
-#include "threads.h"
-#include "entities.h"
-#include "options.h"
-#include "properties.h"
+#include "tools/qflight/include/light.h"
+#include "tools/qflight/include/threads.h"
+#include "tools/qflight/include/entities.h"
+#include "tools/qflight/include/options.h"
+#include "tools/qflight/include/properties.h"
 
 entity_t *entities;
 int num_entities;

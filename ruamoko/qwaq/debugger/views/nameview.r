@@ -1,5 +1,5 @@
 #include <string.h>
-#include "debugger/views/nameview.h"
+#include "ruamoko/qwaq/debugger/views/nameview.h"
 
 @implementation NameView
 

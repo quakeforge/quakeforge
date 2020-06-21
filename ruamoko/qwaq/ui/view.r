@@ -1,8 +1,8 @@
-#include "ui/curses.h"
-#include "ui/listener.h"
-#include "ui/group.h"
-#include "ui/scrollbar.h"
-#include "ui/view.h"
+#include "ruamoko/qwaq/ui/curses.h"
+#include "ruamoko/qwaq/ui/listener.h"
+#include "ruamoko/qwaq/ui/group.h"
+#include "ruamoko/qwaq/ui/scrollbar.h"
+#include "ruamoko/qwaq/ui/view.h"
 
 @implementation View
 

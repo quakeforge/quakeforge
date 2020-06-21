@@ -1,7 +1,7 @@
 #include <string.h>
 
-#include "ui/group.h"
-#include "ui/titlebar.h"
+#include "ruamoko/qwaq/ui/group.h"
+#include "ruamoko/qwaq/ui/titlebar.h"
 
 @implementation TitleBar
 

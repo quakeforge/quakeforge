@@ -43,7 +43,7 @@
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
-#include "server.h"
+#include "qw/include/server.h"
 
 #ifdef NeXT
 # include <libc.h>

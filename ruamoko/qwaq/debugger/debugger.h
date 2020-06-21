@@ -4,8 +4,8 @@
 #include <types.h>
 #include <Object.h>
 
-#include "debugger/debug.h"
-#include "debugger/localsdata.h"
+#include "ruamoko/qwaq/debugger/debug.h"
+#include "ruamoko/qwaq/debugger/localsdata.h"
 
 @class ProxyView;
 @class Editor;

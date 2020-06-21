@@ -68,9 +68,9 @@
 #include "QF/va.h"
 
 #include "qw/bothdefs.h"
-#include "cl_main.h"
-#include "cl_slist.h"
-#include "client.h"
+#include "qw/include/cl_main.h"
+#include "qw/include/cl_slist.h"
+#include "qw/include/client.h"
 
 typedef struct server_entry_s {
 	char *server;

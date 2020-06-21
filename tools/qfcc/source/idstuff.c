@@ -43,16 +43,16 @@
 #include <QF/dstring.h>
 #include <QF/quakeio.h>
 
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "qfcc.h"
-#include "expr.h"
-#include "idstuff.h"
-#include "options.h"
-#include "strpool.h"
-#include "symtab.h"
-#include "type.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/idstuff.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
 
 #define	MAX_SOUNDS		1024
 #define	MAX_MODELS		1024

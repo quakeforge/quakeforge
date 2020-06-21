@@ -3,8 +3,8 @@
 
 #include <Array.h>
 
-#include "ui/event.h"
-#include "ui/draw.h"
+#include "ruamoko/qwaq/ui/event.h"
+#include "ruamoko/qwaq/ui/draw.h"
 
 @class View;
 

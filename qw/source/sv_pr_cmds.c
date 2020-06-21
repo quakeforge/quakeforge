@@ -46,11 +46,12 @@
 #include "QF/va.h"
 
 #include "compat.h"
-#include "crudefile.h"
-#include "server.h"
-#include "sv_gib.h"
-#include "sv_progs.h"
-#include "sv_recorder.h"
+
+#include "qw/include/crudefile.h"
+#include "qw/include/server.h"
+#include "qw/include/sv_gib.h"
+#include "qw/include/sv_progs.h"
+#include "qw/include/sv_recorder.h"
 #include "world.h"
 
 /* BUILT-IN FUNCTIONS */

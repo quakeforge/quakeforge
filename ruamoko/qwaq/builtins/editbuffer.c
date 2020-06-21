@@ -11,8 +11,8 @@
 #include "QF/quakeio.h"
 #include "QF/txtbuffer.h"
 
-#include "qwaq.h"
-#include "editor/editbuffer.h"
+#include "ruamoko/qwaq/qwaq.h"
+#include "ruamoko/qwaq/editor/editbuffer.h"
 
 #define always_inline inline __attribute__((__always_inline__))
 

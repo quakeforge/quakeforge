@@ -48,8 +48,9 @@
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
-#include "host.h"
 #include "netchan.h"
+
+#include "qw/include/host.h"
 
 static void
 shutdown_f (void *data)

@@ -44,11 +44,10 @@
 #include <QF/quakeio.h>
 #include <QF/va.h>
 
-#include "class.h"
-#include "symtab.h"
-#include "type.h"
-#include "qc-parse.h"
-#include "strpool.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/strpool.h"
 
 typedef void (*print_f) (dstring_t *dstr, type_t *, int, int);
 static void dot_print_type (dstring_t *dstr, type_t *t, int level, int id);

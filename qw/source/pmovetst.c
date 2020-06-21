@@ -41,6 +41,7 @@
 #include "QF/sys.h"
 
 #include "compat.h"
+
 #include "qw/pmove.h"
 #include "world.h"
 

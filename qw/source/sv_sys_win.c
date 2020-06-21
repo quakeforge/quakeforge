@@ -36,7 +36,7 @@
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
-#include "server.h"
+#include "qw/include/server.h"
 
 qboolean    WinNT;
 server_static_t svs;

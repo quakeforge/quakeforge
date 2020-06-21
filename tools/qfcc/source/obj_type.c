@@ -42,16 +42,16 @@
 
 #include "compat.h"
 
-#include "class.h"
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "obj_type.h"
-#include "qfcc.h"
-#include "reloc.h"
-#include "symtab.h"
-#include "value.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/obj_type.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/value.h"
 
 #define ENC_DEF(dest,def) EMIT_DEF (pr.type_data, dest, def)
 #define ENC_STR(dest,str)									\

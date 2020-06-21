@@ -46,8 +46,9 @@
 
 #include "QF/plugin/vid_render.h"
 
-#include "client.h"
 #include "sbar.h"
+
+#include "nq/include/client.h"
 
 static qpic_t  *scr_net;
 

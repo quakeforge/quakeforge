@@ -1,6 +1,6 @@
 #include <string.h>
-#include "debugger/views/basicview.h"
-#include "debugger/views/nameview.h"
+#include "ruamoko/qwaq/debugger/views/basicview.h"
+#include "ruamoko/qwaq/debugger/views/nameview.h"
 
 static string type_views[] = {
 	"VoidView",

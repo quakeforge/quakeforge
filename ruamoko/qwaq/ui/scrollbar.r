@@ -1,7 +1,7 @@
-#include "ui/button.h"
-#include "ui/group.h"
-#include "ui/listener.h"
-#include "ui/scrollbar.h"
+#include "ruamoko/qwaq/ui/button.h"
+#include "ruamoko/qwaq/ui/group.h"
+#include "ruamoko/qwaq/ui/listener.h"
+#include "ruamoko/qwaq/ui/scrollbar.h"
 
 @implementation ScrollBar
 

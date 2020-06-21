@@ -55,8 +55,8 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
-#include "vis.h"
-#include "options.h"
+#include "tools/qfvis/include/vis.h"
+#include "tools/qfvis/include/options.h"
 
 static int
 CheckStack (cluster_t *cluster, threaddata_t *thread)

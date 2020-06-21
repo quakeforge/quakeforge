@@ -34,8 +34,8 @@
 #include "QF/screen.h"
 #include "QF/sys.h"
 
-#include "client.h"
-#include "host.h"
+#include "qw/include/client.h"
+#include "qw/include/host.h"
 
 #define MAXIMUM_WIN_MEMORY	0x1000000
 #define MINIMUM_WIN_MEMORY	0x0c00000

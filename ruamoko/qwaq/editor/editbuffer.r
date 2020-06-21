@@ -1,4 +1,4 @@
-#include "editor/editbuffer.h"
+#include "ruamoko/qwaq/editor/editbuffer.h"
 
 @implementation EditBuffer
 +(EditBuffer *)buffer

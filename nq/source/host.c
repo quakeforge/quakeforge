@@ -56,11 +56,12 @@
 #include "QF/plugin/vid_render.h"
 
 #include "buildnum.h"
-#include "chase.h"
 #include "compat.h"
-#include "host.h"
-#include "server.h"
-#include "sv_progs.h"
+
+#include "nq/include/chase.h"
+#include "nq/include/host.h"
+#include "nq/include/server.h"
+#include "nq/include/sv_progs.h"
 
 
 /*

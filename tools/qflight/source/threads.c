@@ -46,9 +46,9 @@
 #include "QF/qtypes.h"
 #include "QF/qendian.h"
 
-#include "light.h"
-#include "options.h"
-#include "threads.h"
+#include "tools/qflight/include/light.h"
+#include "tools/qflight/include/options.h"
+#include "tools/qflight/include/threads.h"
 
 #if defined (HAVE_PTHREAD_H) && defined (HAVE_PTHREAD)
 pthread_mutex_t *my_mutex;

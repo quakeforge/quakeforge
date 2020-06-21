@@ -54,10 +54,10 @@
 
 #include "qw/protocol.h"
 
-#include "client.h"
-#include "connection.h"
-#include "qtv.h"
-#include "server.h"
+#include "qtv/include/client.h"
+#include "qtv/include/connection.h"
+#include "qtv/include/qtv.h"
+#include "qtv/include/server.h"
 
 int server_count;
 static hashtab_t *server_hash;

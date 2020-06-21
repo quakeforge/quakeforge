@@ -48,9 +48,10 @@
 #include "QF/va.h"
 
 #include "compat.h"
-#include "server.h"
-#include "sv_qtv.h"
-#include "sv_recorder.h"
+
+#include "qw/include/server.h"
+#include "qw/include/sv_qtv.h"
+#include "qw/include/sv_recorder.h"
 
 typedef struct {
 	netchan_t   netchan;

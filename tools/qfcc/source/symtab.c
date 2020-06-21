@@ -37,16 +37,16 @@
 #include "QF/alloc.h"
 #include "QF/hash.h"
 
-#include "class.h"
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "function.h"
-#include "qfcc.h"
-#include "reloc.h"
-#include "strpool.h"
-#include "symtab.h"
-#include "type.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
 
 static symtab_t *symtabs_freelist;
 static symbol_t *symbols_freelist;

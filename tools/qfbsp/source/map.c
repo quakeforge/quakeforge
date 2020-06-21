@@ -40,7 +40,7 @@
 
 #include "compat.h"
 
-#include "map.h"
+#include "tools/qfbsp/include/map.h"
 
 /**	\addtogroup qfbsp_map
 */

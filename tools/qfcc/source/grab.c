@@ -44,12 +44,12 @@
 #include "QF/hash.h"
 #include "QF/quakeio.h"
 
-#include "diagnostic.h"
-#include "expr.h"
-#include "grab.h"
-#include "options.h"
-#include "qfcc.h"
-#include "strpool.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/grab.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/strpool.h"
 
 int grab_frame;
 int grab_other;

@@ -2,8 +2,8 @@
 #define __qwaq_debugger_defview_h
 
 #include <types.h>
-#include "ui/view.h"
-#include "debugger/debug.h"
+#include "ruamoko/qwaq/ui/view.h"
+#include "ruamoko/qwaq/debugger/debug.h"
 
 @interface DefView : View
 {

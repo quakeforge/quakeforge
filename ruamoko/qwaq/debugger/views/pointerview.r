@@ -1,5 +1,5 @@
 #include <string.h>
-#include "debugger/views/pointerview.h"
+#include "ruamoko/qwaq/debugger/views/pointerview.h"
 
 @implementation PointerView
 

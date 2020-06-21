@@ -52,8 +52,8 @@
 #include "QF/va.h"
 #include "QF/zone.h"
 
-#include "qwaq.h"
-#include "debugger/debug.h"
+#include "ruamoko/qwaq/qwaq.h"
+#include "ruamoko/qwaq/debugger/debug.h"
 
 #define MAX_EDICTS 1024
 

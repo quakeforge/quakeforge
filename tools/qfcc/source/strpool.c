@@ -44,9 +44,9 @@
 #include "QF/dstring.h"
 #include "QF/hash.h"
 
-#include "diagnostic.h"
-#include "options.h"
-#include "strpool.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/strpool.h"
 
 static hashtab_t *saved_strings;
 

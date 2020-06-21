@@ -63,10 +63,10 @@
 #include "QF/va.h"
 #include "QF/zone.h"
 
-#include "obj_file.h"
-#include "obj_type.h"
-#include "qfprogs.h"
-#include "reloc.h"
+#include "tools/qfcc/include/obj_file.h"
+#include "tools/qfcc/include/obj_type.h"
+#include "tools/qfcc/include/qfprogs.h"
+#include "tools/qfcc/include/reloc.h"
 
 const char *reloc_names[] = {
 	"none",

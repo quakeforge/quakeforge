@@ -1,7 +1,7 @@
 #ifndef __qwaq_debugger_funcview_h
 #define __qwaq_debugger_funcview_h
 
-#include "debugger/views/defview.h"
+#include "ruamoko/qwaq/debugger/views/defview.h"
 
 @interface FuncView : DefView
 {

@@ -1,15 +1,9 @@
 ## Process this file with automake to produce Makefile.in
-AUTOMAKE_OPTIONS= foreign
 
 ACLOCAL_AMFLAGS = -I m4
 
-SUBDIRS=desktop pkg-config include @top_dirs@
-DIST_SUBDIRS=desktop pkg-config include \
-			 libs hw nq qtv qw tools ruamoko\
-			 RPM debian doc vc2005 vc2008
-
-## configure.ac needs to be listed here for older autoconfs
-EXTRA_DIST=	ChangeLog configure.ac bootstrap \
+EXTRA_DIST = \
+		ChangeLog configure.ac bootstrap \
 		$(top_srcdir)/.version \
 		config.d/git-version-gen \
 		tools/cross/droid/cross-configure.sh \
@@ -26,8 +20,108 @@ EXTRA_DIST=	ChangeLog configure.ac bootstrap \
 		tools/gas2masm/gas2masm.dsp tools/gas2masm/gas2masm.dsw \
 		tools/gas2masm/gas2masm.mak tools/gas2masm/gas2masm.mdp
 
-NOCONV_DIST=	$(distdir)/include/win32/resources/icon1Vista.ico \
+NOCONV_DIST= \
+	$(distdir)/include/win32/resources/icon1Vista.ico \
 	$(distdir)/include/win32/resources/icon1XP.ico
+
+BUILT_SOURCES = $(top_srcdir)/.version
+#AM_CFLAGS= @PREFER_NON_PIC@
+AM_CPPFLAGS= -I$(top_srcdir)/include $(PTHREAD_CFLAGS)
+
+common_ldflags= -export-dynamic @PTHREAD_LDFLAGS@
+
+TESTS =
+XFAIL_TESTS =
+bin_PROGRAMS =
+bin_SCRIPTS =
+check_PROGRAMS =
+lib_LTLIBRARIES =
+man_MANS =
+noinst_LTLIBRARIES =
+noinst_LIBRARIES =
+noinst_PROGRAMS =
+noinst_HEADERS =
+plugin_LTLIBRARIES =
+
+RANLIB=touch
+
+EXTRA_HEADERS =
+EXTRA_LTLIBRARIES =
+EXTRA_PROGRAMS =
+EXTRA_LIBRARIES =
+
+CLEANFILES =
+DISTCLEANFILES =
+
+YFLAGS = -v -d -Wno-yacc -Werror
+PTHREAD_LDFLAGS=@PTHREAD_LDFLAGS@
+PTHREAD_CFLAGS=@PTHREAD_CFLAGS@
+
+lib_ldflags=-version-info $(QUAKE_LIBRARY_VERSION_INFO) \
+			-rpath $(libdir) -no-undefined
+plugin_ldflags= @plugin_ldflags@ -avoid-version -module -rpath $(plugindir)
+plugin_libadd= @plugin_libadd@
+
+SDL_LIBS= @SDL_LIBS@
+XMMS_LIBS= @XMMS_LIBS@
+
+PAK=$(top_builddir)/pak$(EXEEXT)
+QFCC_DEP=qfcc$(EXEEXT)
+QFCC=$(top_builddir)/$(QFCC_DEP)
+GZ=@progs_gz@
+
+QCSYSTEM=--no-default-paths -I$(top_srcdir) -I$(top_srcdir)/ruamoko/include -I$(top_srcdir)/include
+QCFLAGS=-qq -O -g -Werror -Wall -Wno-integer-divide
+QCPPFLAGS=$(QCSYSTEM)
+QCLINKFLAGS=--no-default-paths -Lruamoko/lib
+QCOMPILE=$(QFCC) $(QCFLAGS) $(QCPPFLAGS)
+QLINK=$(QFCC) $(QCFLAGS) $(QCLINKFLAGS)
+MKDIR_P = @MKDIR_P@
+
+am__mv = mv -f
+
+SUFFIXES=.o .r .pas
+.r.o:
+	depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+	$(QCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tqo -c -o $@ $< &&\
+	sed -i -e '1s@:@: $(QFCC_DEP)@' $$depbase.Tqo &&\
+	$(am__mv) $$depbase.Tqo $$depbase.Qo
+.pas.o:
+	depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+	$(QCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tqo -c -o $@ $< &&\
+	sed -i -e '1s@:@: $(QFCC_DEP)@' $$depbase.Tqo &&\
+	$(am__mv) $$depbase.Tqo $$depbase.Qo
+
+qcautodep = $(join $(addsuffix $(DEPDIR)/,$(dir $(basename $(1)))),$(addsuffix .Qo,$(notdir $(basename $(basename $(1))))))
+r_depfiles_remade=
+pas_depfiles_remade=
+
+include doc/Makemodule.am
+include RPM/Makemodule.am
+include debian/Makemodule.am
+include desktop/Makemodule.am
+include pkg-config/Makemodule.am
+include include/Makemodule.am
+include libs/Makemodule.am
+include hw/Makemodule.am
+include nq/Makemodule.am
+include qtv/Makemodule.am
+include qw/Makemodule.am
+include tools/Makemodule.am
+include ruamoko/Makemodule.am
+
+DISTCLEANFILES += $(r_depfiles_remade) $(pas_depfiles_remade)
+
+$(r_depfiles_remade):
+	$(MKDIR_P) $(@D)
+	echo '$@' | sed -e 's@\$(DEPDIR)/@@' -e 's@\(.*\)\.Qo$$@\1.o: $(top_srcdir)/\1.r qfcc@' >$@-t && $(am__mv) $@-t $@
+
+$(pas_depfiles_remade):
+	$(MKDIR_P) $(@D)
+	echo '$@' | sed -e 's@\$(DEPDIR)/@@' -e 's@\(.*\)\.Qo$$@\1.o: $(top_srcdir)/\1.pas qfcc@' >$@-t && $(am__mv) $@-t $@
+
+am--depfiles: $(am__depfiles_remade) $(r_depfiles_remade) $(pas_depfiles_remade)
+	echo findme $(ruamoko_gui_libgui_a_dep)
 
 changelog: ChangeLog
 ChangeLog: FORCE
@@ -63,7 +157,6 @@ dist-all-local: distdir
 	ZIP="-r9ql" zip $(distdir).zip $(distdir)
 	-rm -rf $(distdir)
 
-BUILT_SOURCES = $(top_srcdir)/.version
 $(top_srcdir)/.version:
 	echo $(VERSION) > $@-t && mv $@-t $@
 dist-hook:

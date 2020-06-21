@@ -1,5 +1,5 @@
-#include "ui/draw.h"
-#include "ui/textcontext.h"
+#include "ruamoko/qwaq/ui/draw.h"
+#include "ruamoko/qwaq/ui/textcontext.h"
 
 @implementation TextContext
 + (int) is_initialized = #0;

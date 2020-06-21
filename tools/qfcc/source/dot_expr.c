@@ -46,11 +46,12 @@
 
 #include "qfalloca.h"
 
-#include "expr.h"
-#include "symtab.h"
-#include "type.h"
-#include "qc-parse.h"
-#include "strpool.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/strpool.h"
+
+#include "tools/qfcc/source/qc-parse.h"
 
 const char *expr_names[] =
 {

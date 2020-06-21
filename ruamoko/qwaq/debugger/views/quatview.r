@@ -1,5 +1,5 @@
 #include <string.h>
-#include "debugger/views/quatview.h"
+#include "ruamoko/qwaq/debugger/views/quatview.h"
 
 @implementation QuatView
 

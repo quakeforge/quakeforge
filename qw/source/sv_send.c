@@ -46,11 +46,12 @@
 #include "QF/sound.h" // FIXME: DEFAULT_SOUND_PACKET_*
 #include "QF/sys.h"
 
-#include "qw/bothdefs.h"
 #include "compat.h"
-#include "server.h"
-#include "sv_progs.h"
-#include "sv_recorder.h"
+
+#include "qw/bothdefs.h"
+#include "qw/include/server.h"
+#include "qw/include/sv_progs.h"
+#include "qw/include/sv_recorder.h"
 
 #define CHAN_AUTO   0
 #define CHAN_WEAPON 1

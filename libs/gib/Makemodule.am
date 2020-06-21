@@ -1,0 +1,29 @@
+gib_deps= \
+	libs/ruamoko/libQFruamoko.la \
+	libs/util/libQFutil.la
+
+lib_LTLIBRARIES += libs/gib/libQFgib.la
+
+libs_gib_libQFgib_la_LDFLAGS=		$(lib_ldflags)
+libs_gib_libQFgib_la_LIBADD=		$(gib_deps)
+libs_gib_libQFgib_la_DEPENDENCIES=	$(gib_deps)
+libs_gib_libQFgib_la_SOURCES= \
+	libs/gib/bi_gib.c \
+	libs/gib/gib_buffer.c \
+	libs/gib/gib_builtin.c \
+	libs/gib/gib_classes.c \
+	libs/gib/gib_execute.c \
+	libs/gib/gib_function.c \
+	libs/gib/gib_parse.c \
+	libs/gib/gib_handle.c \
+	libs/gib/gib_object.c \
+	libs/gib/gib_process.c \
+	libs/gib/gib_regex.c \
+	libs/gib/gib_thread.c \
+	libs/gib/gib_vars.c \
+	libs/gib/gib_init.c \
+	libs/gib/gib_tree.c \
+	libs/gib/gib_semantics.c \
+	libs/gib/ops.c \
+	libs/gib/exp.c \
+	libs/gib/regex.c

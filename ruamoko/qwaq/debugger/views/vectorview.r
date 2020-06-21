@@ -1,5 +1,5 @@
 #include <string.h>
-#include "debugger/views/vectorview.h"
+#include "ruamoko/qwaq/debugger/views/vectorview.h"
 
 @implementation VectorView
 

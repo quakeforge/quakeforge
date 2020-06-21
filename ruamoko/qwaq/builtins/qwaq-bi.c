@@ -60,7 +60,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
 
-#include "qwaq.h"
+#include "ruamoko/qwaq/qwaq.h"
 
 CLIENT_PLUGIN_PROTOS
 static plugin_list_t client_plugin_list[] = {

@@ -1,0 +1,92 @@
+QFCC_LIBS=@QFCC_LIBS@
+QFCC_DEPS=@QFCC_DEPS@
+QFCC_INCS=@QFCC_INCS@
+
+bin_PROGRAMS +=	qfcc qfprogs
+bin_SCRIPTS += tools/qfcc/source/qfpreqcc
+
+qfcc_SOURCES = \
+	tools/qfcc/source/class.c \
+	tools/qfcc/source/codespace.c \
+	tools/qfcc/source/constfold.c \
+	tools/qfcc/source/cpp.c \
+	tools/qfcc/source/dags.c \
+	tools/qfcc/source/debug.c \
+	tools/qfcc/source/def.c \
+	tools/qfcc/source/defspace.c \
+	tools/qfcc/source/diagnostic.c \
+	tools/qfcc/source/dot.c \
+	tools/qfcc/source/dot_dag.c \
+	tools/qfcc/source/dot_expr.c \
+	tools/qfcc/source/dot_flow.c \
+	tools/qfcc/source/dot_sblock.c \
+	tools/qfcc/source/dot_type.c \
+	tools/qfcc/source/emit.c \
+	tools/qfcc/source/expr.c \
+	tools/qfcc/source/expr_assign.c \
+	tools/qfcc/source/expr_binary.c \
+	tools/qfcc/source/expr_bool.c \
+	tools/qfcc/source/expr_compound.c \
+	tools/qfcc/source/expr_obj.c \
+	tools/qfcc/source/flow.c \
+	tools/qfcc/source/function.c \
+	tools/qfcc/source/grab.c \
+	tools/qfcc/source/idstuff.c \
+	tools/qfcc/source/linker.c \
+	tools/qfcc/source/method.c \
+	tools/qfcc/source/obj_file.c \
+	tools/qfcc/source/obj_type.c \
+	tools/qfcc/source/opcodes.c \
+	tools/qfcc/source/options.c \
+	tools/qfcc/source/pragma.c \
+	tools/qfcc/source/qc-lex.l \
+	tools/qfcc/source/qc-parse.y \
+	tools/qfcc/source/qfcc.c \
+	tools/qfcc/source/qp-lex.l \
+	tools/qfcc/source/qp-parse.y  \
+	tools/qfcc/source/reloc.c \
+	tools/qfcc/source/shared.c \
+	tools/qfcc/source/statements.c \
+	tools/qfcc/source/strpool.c \
+	tools/qfcc/source/struct.c \
+	tools/qfcc/source/switch.c \
+	tools/qfcc/source/symtab.c \
+	tools/qfcc/source/type.c \
+	tools/qfcc/source/value.c
+
+qfcc_LDADD=			$(QFCC_LIBS)
+qfcc_DEPENDENCIES=	$(QFCC_DEPS)
+
+qfprogs_SOURCES= \
+	tools/qfcc/source/disassemble.c \
+	tools/qfcc/source/dump_globals.c \
+	tools/qfcc/source/dump_lines.c \
+	tools/qfcc/source/dump_modules.c \
+	tools/qfcc/source/dump_strings.c \
+	tools/qfcc/source/obj_file.c \
+	tools/qfcc/source/qfprogs.c \
+	tools/qfcc/source/strpool.c \
+	tools/qfcc/source/stub.c \
+	tools/qfcc/source/type.c
+qfprogs_LDADD=	$(QFCC_LIBS)
+qfprogs_DEPENDENCIES= $(QFCC_DEPS)
+
+BUILT_SOURCES += \
+	tools/qfcc/source/qc-parse.c \
+	tools/qfcc/source/qc-parse.h \
+	tools/qfcc/source/qc-lex.c \
+	tools/qfcc/source/qp-parse.c \
+	tools/qfcc/source/qp-parse.h \
+	tools/qfcc/source/qp-lex.c
+
+tools/qfcc/source/qc-parse.c: tools/qfcc/source/qc-parse.y
+	$(YACC) $(YFLAGS) -Dapi.prefix={qc_yy} $< -o $@
+tools/qfcc/source/qc-lex.c: tools/qfcc/source/qc-lex.l tools/qfcc/source/qc-parse.h
+	$(LEX) $(LFLAGS) $(AM_LFLAGS) -Pqc_yy -o$@ $<
+tools/qfcc/source/qp-parse.c: tools/qfcc/source/qp-parse.y
+	$(YACC) $(YFLAGS) -Dapi.prefix={qp_yy} $< -o $@
+tools/qfcc/source/qp-lex.c: tools/qfcc/source/qp-lex.l tools/qfcc/source/qp-parse.h
+	$(LEX) $(LFLAGS) $(AM_LFLAGS) -Pqp_yy -o$@ $<
+
+EXTRA_DIST += \
+	tools/qfcc/source/qfpreqcc

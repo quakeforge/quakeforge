@@ -1,5 +1,5 @@
-#include "ui/group.h"
-#include "ui/proxyview.h"
+#include "ruamoko/qwaq/ui/group.h"
+#include "ruamoko/qwaq/ui/proxyview.h"
 
 @implementation ProxyView
 +(ProxyView *)withView:(View *)view

@@ -41,15 +41,15 @@
 
 #include "QF/dstring.h"
 
-#include "codespace.h"
-#include "diagnostic.h"
-#include "expr.h"
-#include "function.h"
-#include "qfcc.h"
-#include "reloc.h"
-#include "shared.h"
-#include "symtab.h"
-#include "type.h"
+#include "tools/qfcc/include/codespace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
 
 #define YYDEBUG 1
 #define YYERROR_VERBOSE 1

@@ -45,22 +45,22 @@
 #include <QF/hash.h>
 #include <QF/sys.h>
 
-#include "class.h"
-#include "debug.h"
-#include "diagnostic.h"
-#include "expr.h"
-#include "grab.h"
-#include "options.h"
-#include "pragma.h"
-#include "qfcc.h"
-#include "shared.h"
-#include "strpool.h"
-#include "struct.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/debug.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/grab.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/pragma.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/struct.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
-#include "qc-parse.h"
+#include "tools/qfcc/source/qc-parse.h"
 
 #ifndef YY_PROTO
 # define YY_PROTO(x) x

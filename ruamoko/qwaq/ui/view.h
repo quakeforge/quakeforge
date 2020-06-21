@@ -4,9 +4,9 @@
 #include <Array.h>
 #include <Object.h>
 
-#include "ui/draw.h"
-#include "ui/rect.h"
-#include "ui/textcontext.h"
+#include "ruamoko/qwaq/ui/draw.h"
+#include "ruamoko/qwaq/ui/rect.h"
+#include "ruamoko/qwaq/ui/textcontext.h"
 
 @class Group;
 @class ListenerGroup;

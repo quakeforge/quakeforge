@@ -1,7 +1,7 @@
 #ifndef __qwaq_debugger_vectorview_h
 #define __qwaq_debugger_vectorview_h
 
-#include "debugger/views/defview.h"
+#include "ruamoko/qwaq/debugger/views/defview.h"
 
 @interface VectorView : DefView
 {

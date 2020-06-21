@@ -41,11 +41,11 @@
 
 #include <QF/hash.h>
 
-#include "opcodes.h"
-#include "options.h"
-#include "qfcc.h"
-#include "statements.h"
-#include "type.h"
+#include "tools/qfcc/include/opcodes.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/statements.h"
+#include "tools/qfcc/include/type.h"
 
 hashtab_t  *opcode_type_table;
 hashtab_t  *opcode_void_table;

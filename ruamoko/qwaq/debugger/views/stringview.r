@@ -1,5 +1,5 @@
 #include <string.h>
-#include "debugger/views/stringview.h"
+#include "ruamoko/qwaq/debugger/views/stringview.h"
 
 @implementation StringView
 

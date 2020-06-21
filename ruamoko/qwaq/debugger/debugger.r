@@ -3,16 +3,16 @@
 #include <string.h>
 #include <types.h>
 
-#include "ui/curses.h"
-#include "ui/listener.h"
-#include "ui/proxyview.h"
-#include "ui/scrollbar.h"
-#include "ui/tableview.h"
-#include "ui/window.h"
-#include "debugger/debugger.h"
-#include "debugger/typeencodings.h"
-#include "editor/editor.h"
-#include "qwaq-app.h"
+#include "ruamoko/qwaq/ui/curses.h"
+#include "ruamoko/qwaq/ui/listener.h"
+#include "ruamoko/qwaq/ui/proxyview.h"
+#include "ruamoko/qwaq/ui/scrollbar.h"
+#include "ruamoko/qwaq/ui/tableview.h"
+#include "ruamoko/qwaq/ui/window.h"
+#include "ruamoko/qwaq/debugger/debugger.h"
+#include "ruamoko/qwaq/debugger/typeencodings.h"
+#include "ruamoko/qwaq/editor/editor.h"
+#include "ruamoko/qwaq/qwaq-app.h"
 
 @implementation Debugger
 +(Debugger *)withTarget:(qdb_target_t)target

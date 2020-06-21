@@ -1,7 +1,7 @@
 #ifndef __qwaq_ui_proxyview_h
 #define __qwaq_ui_proxyview_h
 
-#include "ui/view.h"
+#include "ruamoko/qwaq/ui/view.h"
 
 @class Group;
 
