@@ -628,7 +628,8 @@ Menu_Load (void)
 		PR_LoadProgsFile (&menu_pr_state, file, size);
 		Qclose (file);
 
-		if (!PR_RunLoadFuncs (&menu_pr_state)) {
+		if (!PR_RunLoadFuncs (&menu_pr_state)
+			|| !PR_RunPostLoadFuncs (&menu_pr_state)) {
 			free (menu_pr_state.progs);
 			menu_pr_state.progs = 0;
 		}
