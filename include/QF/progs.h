@@ -236,13 +236,23 @@ void PR_AddLoadFinishFunc (progs_t *pr, pr_load_func_t *func);
 	\return			true for success, false for failure
 
 	Calls the first set of internal load functions followed by the supplied
-	symbol resolution function, if any (progs_t::resolve), the second set of
-	internal load functions. After that, any primary load functions are called
-	in order of registration followed by any \c .ctor functions in the progs,
-	then any secondary load functions the primary load functions registered
-	in \e reverse order of registration.
+	symbol resolution function, if any (progs_t::resolve), then the second set
+	of internal load functions. After that, any primary load functions are
+	called in order of registration, and if there is no debug handler,
+	PR_RunPostLoadFuncs() is called.
 */
 int PR_RunLoadFuncs (progs_t *pr);
+
+/** Run any progs-dependent load functions.
+	\param pr		pointer to ::progs_t VM struct
+	\return			true for success, false for failure
+	This means any \c .ctor functions in the progs, followed by any secondary
+	load functions registered by either the primary load functions or the
+	\.c ctor functions in \e reverse order of registration. This is called
+	automatically by PR_RunLoadFuncs() if there is no debug handler, otherwise
+	it is up to the host to call this function.
+*/
+int PR_RunPostLoadFuncs (progs_t *pr);
 
 /** Validate the opcodes and statement addresses in the progs. This is an
 	internal load function.
@@ -361,6 +371,21 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 	\hideinitializer
 */
 #define G_var(p,o,t)	((p)->pr_globals[o].t##_var)
+
+/** Access a global as an arbitray type.
+
+	More direct than G_STRUCT
+	\par QC type:
+		\c struct etc small enough to fit in a single parameter
+	\param p		pointer to ::progs_t VM struct
+	\param t		C type of the structure
+	\param o		offset into global data space
+	\return			structure lvalue. use & to make a pointer of the
+					appropriate type.
+
+	\hideinitializer
+*/
+#define G_PACKED(p,t,o)	(*(t *) &(p)->pr_globals[o])
 
 /** Access a float global. Can be assigned to.
 
@@ -1229,12 +1254,26 @@ int PR_RelocateBuiltins (progs_t *pr);
 */
 void PR_Strings_Init (progs_t *pr);
 
+/**	Initialize the string tables using the strings supplied by the progs.
+	Called automatically during progs load.
+	\param pr		pointer to ::progs_t VM struct
+	\return			true for success, false for failure
+*/
+int PR_LoadStrings (progs_t *pr);
+
 /** Check the validity of a string index.
 	\param pr		pointer to ::progs_t VM struct
 	\param num		string index to be validated
 	\return			true if the index is valid, false otherwise
 */
 qboolean PR_StringValid (progs_t *pr, string_t num) __attribute__((pure));
+
+/** Check if a string is valid and mutable.
+	\param pr		pointer to ::progs_t VM struct
+	\param num		string index to be checked
+	\return			true if the string is valid and mutable, false otherwise
+*/
+qboolean PR_StringMutable (progs_t *pr, string_t num) __attribute__((pure));
 
 /** Convert a string index to a C string.
 	\param pr		pointer to ::progs_t VM struct
@@ -1257,6 +1296,15 @@ struct dstring_s *PR_GetMutableString(progs_t *pr, string_t num) __attribute__((
 	\return			string index of the progs string
 */
 string_t PR_SetString(progs_t *pr, const char *s);
+
+/**	Get the progs string if it exists.
+	Only static strings are searched.
+	\param pr		pointer to ::progs_t VM struct
+	\param s		C string to be found
+	\return			string index of the progs string if it exists, otherwise
+					0 (ambiguous with "").
+*/
+string_t PR_FindString(progs_t *pr, const char *s);
 
 /** Make a temporary progs string that will survive across function returns.
 	Will not duplicate a permanent string. If a new progs string is created,
@@ -1328,6 +1376,18 @@ string_t PR_NewMutableString (progs_t *pr);
 	\return			string index of the progs string
 */
 string_t PR_SetDynamicString (progs_t *pr, const char *s);
+
+/** Convert an ephemeral string to a dynamic string.
+
+	Valid strings that are not ephemeral (static, dynamic, mutable) will not
+	be affected, but temp and return strings will be marked dynamic, requiring
+	a call to PR_FreeString to return their memory.
+
+	\param pr		pointer to ::progs_t VM struct
+	\param str		The string to be "held" (made non-ephemeral). Safe to call
+					on any valid string, but affects only ephemeral strings.
+*/
+void PR_HoldString (progs_t *pr, string_t str);
 
 /** Destroy a mutable, dynamic or temporary string.
 	\param pr		pointer to ::progs_t VM struct
@@ -1580,6 +1640,7 @@ void PR_Zone_Init (progs_t *pr);
 void PR_Zone_Free (progs_t *pr, void *ptr);
 void *PR_Zone_Malloc (progs_t *pr, pr_int_t size);
 void *PR_Zone_Realloc (progs_t *pr, void *ptr, pr_int_t size);
+void *PR_Zone_TagMalloc (progs_t *pr, int size, int tag);
 
 ///@}
 
@@ -1635,6 +1696,7 @@ typedef struct type_view_s {
 void PR_Debug_Init (progs_t *pr);
 void PR_Debug_Init_Cvars (void);
 int PR_LoadDebug (progs_t *pr);
+const char *PR_Debug_GetBaseDirectory (progs_t *pr, const char *file);
 void PR_Debug_Watch (progs_t *pr, const char *expr);
 void PR_Debug_Print (progs_t *pr, const char *expr);
 pr_auxfunction_t *PR_Debug_AuxFunction (progs_t *pr, pr_uint_t func) __attribute__((pure));
@@ -1685,8 +1747,8 @@ extern const char *pr_gametype;
 typedef struct strref_s strref_t;
 
 typedef struct {
-	pr_int_t    s;					///< Return statement.
-	bfunction_t *f;					///< Calling function.
+	pr_int_t    staddr;				///< Return statement.
+	bfunction_t *func;				///< Calling function.
 	strref_t   *tstr;				///< Linked list of temporary strings.
 } prstack_t;
 
@@ -1696,6 +1758,7 @@ struct progs_s {
 	int         null_bad;
 	int         no_exec_limit;
 
+	struct hashlink_s **hashlink_freelist;
 	void      (*file_error) (progs_t *pr, const char *path);
 	void     *(*load_file) (progs_t *pr, const char *path, off_t *size);
 	void     *(*allocate_progs_mem) (progs_t *pr, int size);
@@ -1831,7 +1894,8 @@ struct progs_s {
 	/// \name debugging
 	///@{
 	struct prdeb_resources_s *pr_debug_resources;
-	void      (*breakpoint_handler) (progs_t *pr);
+	void      (*debug_handler) (prdebug_t event, void *param, void *data);
+	void       *debug_data;
 	pr_type_t  *watch;
 	int         wp_conditional;
 	pr_type_t   wp_val;

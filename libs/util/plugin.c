@@ -241,9 +241,9 @@ VISIBLE void
 PI_Init (void)
 {
 	PI_InitCvars ();
-	registered_plugins = Hash_NewTable (253, plugin_get_key, 0, 0);
+	registered_plugins = Hash_NewTable (253, plugin_get_key, 0, 0, 0);
 	loaded_plugins = Hash_NewTable(253, loaded_plugin_get_key,
-								   loaded_plugin_delete, 0);
+								   loaded_plugin_delete, 0, 0);
 	Cmd_AddCommand("plugin_load", PI_Plugin_Load_f,
 				   "load the plugin of the given type name and name");
 	Cmd_AddCommand("plugin_unload", PI_Plugin_Unload_f,

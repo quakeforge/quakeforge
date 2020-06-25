@@ -33,13 +33,13 @@
 
 #include <QF/dstring.h>
 
-#include "qfcc.h"
-#include "class.h"
-#include "diagnostic.h"
-#include "expr.h"
-#include "function.h"
-#include "options.h"
-#include "strpool.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/strpool.h"
 
 diagnostic_hook bug_hook;
 diagnostic_hook error_hook;

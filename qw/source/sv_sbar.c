@@ -37,9 +37,10 @@
 
 #include "QF/plugin/console.h"
 
-#include "server.h"
 #include "sv_console.h"
-#include "sv_recorder.h"
+
+#include "qw/include/server.h"
+#include "qw/include/sv_recorder.h"
 
 static void
 draw_cpu (view_t *view)

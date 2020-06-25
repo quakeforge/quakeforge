@@ -42,21 +42,22 @@
 #include "QF/skin.h"
 #include "QF/sys.h"
 
-#include "qw/msg_ucmd.h"
+#include "compat.h"
+#include "clview.h"
+#include "d_iface.h"
 
 #include "qw/bothdefs.h"
-#include "chase.h"
-#include "cl_cam.h"
-#include "cl_ents.h"
-#include "cl_main.h"
-#include "cl_parse.h"
-#include "cl_pred.h"
-#include "cl_tent.h"
-#include "compat.h"
-#include "d_iface.h"
-#include "host.h"
+#include "qw/msg_ucmd.h"
 #include "qw/pmove.h"
-#include "clview.h"
+
+#include "qw/include/chase.h"
+#include "qw/include/cl_cam.h"
+#include "qw/include/cl_ents.h"
+#include "qw/include/cl_main.h"
+#include "qw/include/cl_parse.h"
+#include "qw/include/cl_pred.h"
+#include "qw/include/cl_tent.h"
+#include "qw/include/host.h"
 
 entity_t    cl_player_ents[MAX_CLIENTS];
 entity_t    cl_flag_ents[MAX_CLIENTS];

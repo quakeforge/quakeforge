@@ -1,0 +1,88 @@
+ruamoko_scheme_libs=ruamoko/scheme/libscheme.a
+ruamoko_scheme_libexec=ruamoko/scheme/main.dat$(EXEEXT)
+
+ruamoko_lib_LIBRARIES += $(ruamoko_scheme_libs)
+EXTRA_LIBRARIES += $(ruamoko_scheme_libs)
+
+noinst_PROGRAMS += $(ruamoko_scheme_libexec)
+EXTRA_PROGRAMS  += $(ruamoko_scheme_libexec)
+
+ruamoko_scheme_libscheme_a_SOURCES=\
+	ruamoko/scheme/SchemeObject.r \
+	ruamoko/scheme/Cons.r \
+	ruamoko/scheme/Number.r \
+	ruamoko/scheme/SchemeString.r \
+	ruamoko/scheme/Symbol.r \
+	ruamoko/scheme/Lexer.r \
+	ruamoko/scheme/Parser.r \
+	ruamoko/scheme/Nil.r \
+	ruamoko/scheme/Procedure.r \
+	ruamoko/scheme/Primitive.r \
+	ruamoko/scheme/Lambda.r \
+	ruamoko/scheme/Scope.r \
+	ruamoko/scheme/Instruction.r \
+	ruamoko/scheme/builtins.r \
+	ruamoko/scheme/Frame.r \
+	ruamoko/scheme/CompiledCode.r \
+	ruamoko/scheme/Compiler.r \
+	ruamoko/scheme/Continuation.r \
+	ruamoko/scheme/Machine.r \
+	ruamoko/scheme/Void.r \
+	ruamoko/scheme/Error.r \
+	ruamoko/scheme/Boolean.r \
+	ruamoko/scheme/BaseContinuation.r
+ruamoko_scheme_libscheme_a_dep=$(call qcautodep,$(ruamoko_scheme_libscheme_a_SOURCES))
+ruamoko_scheme_libscheme_a_AR=$(PAK) -cf
+EXTRA_ruamoko_scheme_libscheme_a_DEPENDENCIES=pak
+include $(ruamoko_scheme_libscheme_a_dep) # am--include-marker
+r_depfiles_remade += $(ruamoko_scheme_libscheme_a_dep)
+
+ruamoko_scheme_src=\
+	ruamoko/scheme/main.r \
+	ruamoko/scheme/defs.r
+
+ruamoko_scheme_main_dat_SOURCES=$(ruamoko_scheme_src)
+ruamoko_scheme_main_obj=$(ruamoko_scheme_main_dat_SOURCES:.r=.o)
+ruamoko_scheme_main_dep=$(call qcautodep,$(ruamoko_scheme_main_dat_SOURCES))
+ruamoko/scheme/main.dat$(EXEEXT): $(ruamoko_scheme_main_obj) $(QFCC_DEP) ruamoko/scheme/libscheme.a ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
+	$(QLINK) -o $@ $(ruamoko_scheme_main_obj) -Lruamoko/scheme -lscheme -lcsqc -lr
+include $(ruamoko_scheme_main_dep) # am--include-marker
+r_depfiles_remade += $(ruamoko_scheme_main_dep)
+
+ruamoko/scheme/main.sym: ruamoko/scheme/main.dat$(EXEEXT)
+
+EXTRA_DIST += \
+	ruamoko/scheme/BaseContinuation.h \
+	ruamoko/scheme/Boolean.h \
+	ruamoko/scheme/CompiledCode.h \
+	ruamoko/scheme/Compiler.h \
+	ruamoko/scheme/Cons.h \
+	ruamoko/scheme/Continuation.h \
+	ruamoko/scheme/Error.h \
+	ruamoko/scheme/Frame.h \
+	ruamoko/scheme/Instruction.h \
+	ruamoko/scheme/Lambda.h \
+	ruamoko/scheme/Lexer.h \
+	ruamoko/scheme/Machine.h \
+	ruamoko/scheme/Nil.h \
+	ruamoko/scheme/Number.h \
+	ruamoko/scheme/Parser.h \
+	ruamoko/scheme/Primitive.h \
+	ruamoko/scheme/Procedure.h \
+	ruamoko/scheme/SchemeObject.h \
+	ruamoko/scheme/SchemeString.h \
+	ruamoko/scheme/Scope.h \
+	ruamoko/scheme/Symbol.h \
+	ruamoko/scheme/Void.h \
+	ruamoko/scheme/builtins.h \
+	ruamoko/scheme/debug.h \
+	ruamoko/scheme/defs.h \
+	ruamoko/scheme/state.h \
+	ruamoko/scheme/main.r \
+	ruamoko/scheme/defs.r
+CLEANFILES += \
+	ruamoko/scheme/*.dat \
+	ruamoko/scheme/*.sym
+DISTCLEANFILES += \
+	$(ruamoko_scheme_libscheme_a_dep) \
+	$(ruamoko_scheme_main_dep)

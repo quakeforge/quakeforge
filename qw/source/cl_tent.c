@@ -44,12 +44,13 @@
 #include "QF/sound.h"
 #include "QF/sys.h"
 
-#include "cl_ents.h"
-#include "cl_main.h"
-#include "cl_parse.h"
-#include "cl_tent.h"
-#include "client.h"
 #include "compat.h"
+
+#include "qw/include/cl_ents.h"
+#include "qw/include/cl_main.h"
+#include "qw/include/cl_parse.h"
+#include "qw/include/cl_tent.h"
+#include "qw/include/client.h"
 
 typedef struct tent_s {
 	struct tent_s *next;

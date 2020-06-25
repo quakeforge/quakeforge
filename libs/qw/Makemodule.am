@@ -1,0 +1,4 @@
+noinst_LIBRARIES += libs/qw/libqw.a
+
+libs_qw_libqw_a_SOURCES= \
+		libs/qw/msg_backbuf.c libs/qw/msg_ucmd.c

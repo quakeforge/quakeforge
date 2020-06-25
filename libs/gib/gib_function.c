@@ -117,8 +117,8 @@ GIB_Function_Define (const char *name, const char *text, gib_tree_t * program,
 	if (script)
 		script->refs++;
 	if (!gib_functions)
-		gib_functions =
-			Hash_NewTable (1024, GIB_Function_Get_Key, GIB_Function_Free, 0);
+		gib_functions = Hash_NewTable (1024, GIB_Function_Get_Key,
+									   GIB_Function_Free, 0, 0);
 
 	func = Hash_Find (gib_functions, name);
 	if (func) {

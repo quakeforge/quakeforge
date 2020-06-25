@@ -39,8 +39,9 @@
 #include "QF/msg.h"
 #include "QF/va.h"
 
-#include "client.h"
 #include "compat.h"
+
+#include "qw/include/client.h"
 
 void
 Cvar_Info (cvar_t *var)

@@ -45,22 +45,22 @@
 #include <QF/hash.h>
 #include <QF/sys.h>
 
-#include "class.h"
-#include "debug.h"
-#include "diagnostic.h"
-#include "expr.h"
-#include "grab.h"
-#include "options.h"
-#include "pragma.h"
-#include "qfcc.h"
-#include "shared.h"
-#include "strpool.h"
-#include "struct.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/debug.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/grab.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/pragma.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/struct.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
-#include "qc-parse.h"
+#include "tools/qfcc/source/qc-parse.h"
 
 #ifndef YY_PROTO
 # define YY_PROTO(x) x
@@ -319,8 +319,8 @@ typedef struct {
 static keyword_t obj_keywords[] = {
 	{"id",				OBJECT,	&type_id		},
 	{"Class",			TYPE,	&type_Class		},
-	{"Method",			TYPE,	&type_obj_method},
-	{"Super",			TYPE,	&type_obj_super	},
+	{"Method",			TYPE,	&type_method	},
+	{"Super",			TYPE,	&type_super		},
 	{"SEL",				TYPE,	&type_SEL		},
 	{"IMP",				TYPE,	&type_IMP		},
 
@@ -378,8 +378,8 @@ static keyword_t qf_keywords[] = {
 	{"double",		TYPE,	&type_double},
 	{"int",			TYPE,	&type_integer	},
 	{"unsigned",	TYPE,	&type_integer	},//FIXME
-	{"function",	TYPE,	&type_function	},
 
+	{"@function",	TYPE,	&type_function	},
 	{"@args",		ARGS,	0				},
 	{"@va_list",	TYPE,	&type_va_list	},
 	{"@param",		TYPE,	&type_param		},
@@ -439,10 +439,10 @@ keyword_or_id (char *token)
 	if (!keyword_tab) {
 		size_t      i;
 
-		keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0);
-		qf_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0);
-		at_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0);
-		obj_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0);
+		keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
+		qf_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
+		at_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
+		obj_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
 
 		#define NUMKEYS(_k) (sizeof (_k) / sizeof (_k[0]))
 

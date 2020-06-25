@@ -45,8 +45,9 @@
 
 #include "QF/plugin/vid_render.h"
 
-#include "client.h"
 #include "compat.h"
+
+#include "nq/include/client.h"
 
 typedef struct tent_s {
 	struct tent_s *next;

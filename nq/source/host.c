@@ -56,11 +56,12 @@
 #include "QF/plugin/vid_render.h"
 
 #include "buildnum.h"
-#include "chase.h"
 #include "compat.h"
-#include "host.h"
-#include "server.h"
-#include "sv_progs.h"
+
+#include "nq/include/chase.h"
+#include "nq/include/host.h"
+#include "nq/include/server.h"
+#include "nq/include/sv_progs.h"
 
 
 /*
@@ -954,7 +955,7 @@ Host_Init (void)
 	better to run quit through here before final handoff to the sys code.
 */
 void
-Host_Shutdown (void)
+Host_Shutdown (void *data)
 {
 	static qboolean isdown = false;
 

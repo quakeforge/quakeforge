@@ -50,10 +50,11 @@
 #include "QF/sys.h"
 #include "QF/teamplay.h"
 
-#include "qw/bothdefs.h"
-#include "cl_input.h"
-#include "client.h"
 #include "compat.h"
+
+#include "qw/bothdefs.h"
+#include "qw/include/cl_input.h"
+#include "qw/include/client.h"
 
 static qboolean died = false, recorded_location = false;
 static vec3_t   death_location, last_recorded_location;

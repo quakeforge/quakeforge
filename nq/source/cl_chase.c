@@ -42,9 +42,10 @@
 
 #include "QF/plugin/vid_render.h"
 
-#include "chase.h"
-#include "client.h"
 #include "world.h"
+
+#include "nq/include/chase.h"
+#include "nq/include/client.h"
 
 vec3_t camera_origin = {0,0,0};
 vec3_t camera_angles = {0,0,0};

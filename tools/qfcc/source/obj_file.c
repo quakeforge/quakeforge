@@ -46,23 +46,23 @@
 #include "QF/quakeio.h"
 #include "QF/va.h"
 
-#include "codespace.h"
-#include "debug.h"
-#include "def.h"
-#include "defspace.h"
-#include "emit.h"
-#include "expr.h"
-#include "function.h"
-#include "obj_file.h"
-#include "obj_type.h"
-#include "options.h"
-#include "qfcc.h"
-#include "reloc.h"
-#include "statements.h"
-#include "strpool.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
+#include "tools/qfcc/include/codespace.h"
+#include "tools/qfcc/include/debug.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/obj_file.h"
+#include "tools/qfcc/include/obj_type.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/statements.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
 static int
 count_relocs (reloc_t *r)
@@ -183,6 +183,7 @@ qfo_count_stuff (qfo_t *qfo, pr_info_t *pr)
 	qfo_count_space_stuff (qfo, pr->far_data);
 	qfo_count_space_stuff (qfo, pr->entity_data);
 	qfo_count_space_stuff (qfo, pr->type_data);
+	qfo_count_space_stuff (qfo, pr->debug_data);
 	qfo_count_function_stuff (qfo, pr->func_head);
 	qfo->num_relocs += count_relocs (pr->relocs);
 }
@@ -270,6 +271,24 @@ qfo_init_type_space (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
 }
 
 static void
+qfo_init_debug_space (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
+					  qfo_mspace_t *space, defspace_t *data)
+{
+	size_t      size = data->size * sizeof (*data->data);
+	data->qfo_space = space - qfo->spaces;
+	space->type = qfos_debug;
+	space->defs = *defs;
+	space->num_defs = qfo_encode_defs (qfo, data->defs, defs, relocs);
+	space->d.data = 0;
+	if (data->data) {
+		space->d.data = malloc (size);
+		memcpy (space->d.data, data->data, size);
+	}
+	space->data_size = data->size;
+	space->id = qfo_debug_space;
+}
+
+static void
 qfo_encode_functions (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
 					  qfo_mspace_t *space, function_t *functions)
 {
@@ -333,6 +352,8 @@ qfo_from_progs (pr_info_t *pr)
 						   pr->entity_data);
 	qfo_init_type_space (qfo, &def, &reloc, &qfo->spaces[qfo_type_space],
 						 pr->type_data);
+	qfo_init_debug_space (qfo, &def, &reloc, &qfo->spaces[qfo_debug_space],
+						  pr->debug_data);
 
 	qfo_encode_functions (qfo, &def, &reloc, qfo->spaces + qfo_num_spaces,
 						  pr->func_head);
@@ -382,6 +403,8 @@ qfo_space_size (qfo_mspace_t *space)
 			return 0;
 		case qfos_type:
 			return space->data_size * sizeof (*space->d.data);
+		case qfos_debug:
+			return space->data_size * sizeof (*space->d.data);
 	}
 	return 0;
 }
@@ -407,6 +430,7 @@ qfo_byteswap_space (void *space, int size, qfos_type_t type)
 		case qfos_data:
 		case qfos_entity:
 		case qfos_type:
+		case qfos_debug:
 			for (val = (pr_type_t *) space, c = 0; c < size; c++, val++)
 				val->integer_var = LittleLong (val->integer_var);
 			break;
@@ -649,10 +673,11 @@ get_def_type (qfo_t *qfo, pointer_t type)
 		return ev_void;
 	type_def = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, type);
 	switch ((ty_meta_e)type_def->meta) {
+		case ty_alias:	//XXX
 		case ty_basic:
 			// field, pointer and function types store their basic type in
 			// the same location.
-			return type_def->t.type;
+			return type_def->type;
 		case ty_struct:
 		case ty_union:
 			return ev_invalid;
@@ -676,18 +701,20 @@ get_type_size (qfo_t *qfo, pointer_t type)
 		return 1;
 	type_def = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, type);
 	switch ((ty_meta_e)type_def->meta) {
+		case ty_alias:
+			return get_type_size (qfo, type_def->alias.aux_type);
 		case ty_basic:
 			// field, pointer and function types store their basic type in
 			// the same location.
-			return pr_type_size[type_def->t.type];
+			return pr_type_size[type_def->type];
 		case ty_struct:
-			for (i = size = 0; i < type_def->t.strct.num_fields; i++)
-				size += get_type_size (qfo, type_def->t.strct.fields[i].type);
+			for (i = size = 0; i < type_def->strct.num_fields; i++)
+				size += get_type_size (qfo, type_def->strct.fields[i].type);
 			return size;
 		case ty_union:
-			for (i = size = 0; i < type_def->t.strct.num_fields; i++) {
+			for (i = size = 0; i < type_def->strct.num_fields; i++) {
 				int         s;
-				s = get_type_size (qfo, type_def->t.strct.fields[i].type);
+				s = get_type_size (qfo, type_def->strct.fields[i].type);
 				if (s > size)
 					size = s;
 			}
@@ -695,8 +722,8 @@ get_type_size (qfo_t *qfo, pointer_t type)
 		case ty_enum:
 			return pr_type_size[ev_integer];
 		case ty_array:
-			return type_def->t.array.size
-					* get_type_size (qfo, type_def->t.array.type);
+			return type_def->array.size
+					* get_type_size (qfo, type_def->array.type);
 		case ty_class:
 			return 0;	// FIXME
 	}
@@ -724,14 +751,16 @@ get_type_alignment_log (qfo_t *qfo, pointer_t type)
 		return 0;
 	type_def = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, type);
 	switch ((ty_meta_e)type_def->meta) {
+		case ty_alias:
+			return get_type_alignment_log (qfo, type_def->alias.aux_type);
 		case ty_basic:
 			// field, pointer and function types store their basic type in
 			// the same location.
-			return qfo_log2 (ev_types[type_def->t.type]->alignment);
+			return qfo_log2 (ev_types[type_def->type]->alignment);
 		case ty_struct:
 		case ty_union:
-			for (i = alignment = 0; i < type_def->t.strct.num_fields; i++) {
-				qfot_var_t *field = type_def->t.strct.fields + i;
+			for (i = alignment = 0; i < type_def->strct.num_fields; i++) {
+				qfot_var_t *field = type_def->strct.fields + i;
 				int         a;
 				a = get_type_alignment_log (qfo, field->type);
 				if (a > alignment) {
@@ -742,7 +771,7 @@ get_type_alignment_log (qfo_t *qfo, pointer_t type)
 		case ty_enum:
 			return qfo_log2 (ev_types[ev_integer]->alignment);
 		case ty_array:
-			return get_type_alignment_log (qfo, type_def->t.array.type);
+			return get_type_alignment_log (qfo, type_def->array.type);
 		case ty_class:
 			return 0;	// FIXME
 	}
@@ -769,18 +798,22 @@ function_params (qfo_t *qfo, qfo_func_t *func, dfunction_t *df)
 	if (func->type >= qfo->spaces[qfo_type_space].data_size)
 		return;
 	type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, func->type);
-	if (type->meta != ty_basic && type->t.type != ev_func)
+	if (type->meta == ty_alias) {
+		type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t,
+							type->alias.aux_type);
+	}
+	if (type->meta != ty_basic || type->type != ev_func)
 		return;
-	df->numparms = num_params = type->t.func.num_params;
+	df->numparms = num_params = type->func.num_params;
 	if (num_params < 0)
 		num_params = ~num_params;
 	for (i = 0; i < num_params; i++) {
-		df->parm_size[i] = get_parmsize (qfo, type->t.func.param_types[i]);
+		df->parm_size[i] = get_parmsize (qfo, type->func.param_types[i]);
 	}
 }
 
 static void
-convert_def (qfo_t *qfo, const qfo_def_t *def, ddef_t *ddef)
+qfo_def_to_ddef (qfo_t *qfo, const qfo_def_t *def, ddef_t *ddef)
 {
 	ddef->type = get_def_type (qfo, def->type);
 	ddef->ofs = def->offset;
@@ -791,6 +824,16 @@ convert_def (qfo_t *qfo, const qfo_def_t *def, ddef_t *ddef)
 		&& ddef->type != ev_func
 		&& ddef->type != ev_field)
 		ddef->type |= DEF_SAVEGLOBAL;
+}
+
+static void
+qfo_def_to_prdef (qfo_t *qfo, const qfo_def_t *def, pr_def_t *prdef)
+{
+	prdef->type = get_def_type (qfo, def->type);
+	prdef->size = get_type_size (qfo, def->type);
+	prdef->ofs = def->offset;
+	prdef->name = def->name;
+	prdef->type_encoding = def->type;
 }
 
 static void
@@ -940,6 +983,7 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	progs->numglobals += progs->numglobaldefs * type_size (&type_xdef);
 	progs->numglobals += progs->numfielddefs * type_size (&type_xdef);
 	progs->entityfields = qfo->spaces[qfo_entity_space].data_size;
+	// qfo_debug_space does not go in the progs file
 	*size += progs->numstatements * sizeof (dstatement_t);
 	*size += progs->numglobaldefs * sizeof (ddef_t);
 	*size += progs->numfielddefs * sizeof (ddef_t);
@@ -1038,14 +1082,14 @@ qfo_to_progs (qfo_t *qfo, int *size)
 			types_def = def;
 		if (!strcmp (defname, ".xdefs"))
 			xdefs_def = def;
-		convert_def (qfo, def, globaldefs++);
+		qfo_def_to_ddef (qfo, def, globaldefs++);
 	}
 
 	for (i = 0; i < qfo->spaces[qfo_far_data_space].num_defs; i++) {
 		unsigned    ind = far_def_indices[i];
 		qfo_def_t  *def = qfo->spaces[qfo_far_data_space].defs + ind;
 		def->offset += far_data - globals;
-		convert_def (qfo, def, globaldefs);
+		qfo_def_to_ddef (qfo, def, globaldefs);
 		// the correct offset will be written to the far data space
 		globaldefs->ofs = -1;
 		globaldefs++;
@@ -1057,7 +1101,7 @@ qfo_to_progs (qfo_t *qfo, int *size)
 
 	for (i = 0; i < qfo->spaces[qfo_entity_space].num_defs; i++) {
 		unsigned    ind = field_def_indices[i];
-		convert_def (qfo, qfo->spaces[qfo_entity_space].defs + ind,
+		qfo_def_to_ddef (qfo, qfo->spaces[qfo_entity_space].defs + ind,
 					 fielddefs + i);
 	}
 
@@ -1158,7 +1202,8 @@ qfo_to_sym (qfo_t *qfo, int *size)
 	pr_auxfunction_t *auxfuncs;
 	pr_auxfunction_t *aux;
 	pr_lineno_t *linenos;
-	pr_def_t   *locals, *ld;
+	pr_def_t   *locals, *ld, *debug_defs;
+	pr_type_t  *debug_data;
 
 	*size = sizeof (pr_debug_header_t);
 	sym = calloc (1, *size);
@@ -1176,19 +1221,27 @@ qfo_to_sym (qfo_t *qfo, int *size)
 		sym->num_locals += num_locals;
 	}
 	sym->num_linenos = qfo->num_lines;
+	sym->num_debug_defs = qfo->spaces[qfo_debug_space].num_defs;
+	sym->debug_data_size = qfo->spaces[qfo_debug_space].data_size;
 
 	*size += sym->num_auxfunctions * sizeof (pr_auxfunction_t);
 	*size += sym->num_linenos * sizeof (pr_lineno_t);
 	*size += sym->num_locals * sizeof (pr_def_t);
+	*size += sym->num_debug_defs * sizeof (pr_def_t);
+	*size += sym->debug_data_size * sizeof (pr_type_t);
 	sym = realloc (sym, *size);
 
 	auxfuncs = (pr_auxfunction_t *)(sym + 1);
 	linenos = (pr_lineno_t *)(auxfuncs + sym->num_auxfunctions);
 	locals = (pr_def_t *)(linenos + sym->num_linenos);
+	debug_defs = locals + sym->num_locals;
+	debug_data = (pr_type_t *)(debug_defs + sym->num_debug_defs);
 
 	sym->auxfunctions = (char *) auxfuncs - (char *) sym;
 	sym->linenos = (char *) linenos - (char *) sym;
 	sym->locals = (char *) locals - (char *) sym;
+	sym->debug_defs = (char *) debug_defs - (char *) sym;
+	sym->debug_data = (char *) debug_data - (char *) sym;
 
 	ld = locals;
 
@@ -1213,19 +1266,26 @@ qfo_to_sym (qfo_t *qfo, int *size)
 		if (num_locals) {
 			aux->local_defs = ld - locals;
 			for (j = 0; j < num_locals; j++, def++, ld++) {
-				ld->type = get_def_type (qfo, def->type);
-				ld->size = get_type_size (qfo, def->type);
-				ld->ofs = def->offset;
-				ld->name = def->name;
-				ld->type_encoding = def->type;
+				qfo_def_to_prdef (qfo, def, ld);
 			}
 		}
 		aux->num_locals = num_locals;
 		//FIXME check type
 		type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, func->type);
-		aux->return_type = type->t.func.return_type;
+		if (type->meta == ty_alias) {
+			type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t,
+								type->alias.aux_type);
+		}
+		aux->return_type = type->func.return_type;
 		aux++;
 	}
 	memcpy (linenos, qfo->lines, qfo->num_lines * sizeof (pr_lineno_t));
+	for (i = 0; i < sym->num_debug_defs; i++) {
+		qfo_def_t  *def = &qfo->spaces[qfo_debug_space].defs[i];
+		pr_def_t   *prdef = &debug_defs[i];
+		qfo_def_to_prdef (qfo, def, prdef);
+	}
+	memcpy (debug_data, qfo->spaces[qfo_debug_space].d.data,
+			sym->debug_data_size * sizeof (*debug_data));
 	return sym;
 }

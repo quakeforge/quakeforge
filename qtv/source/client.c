@@ -55,10 +55,10 @@
 #include "qw/msg_ucmd.h"
 #include "qw/protocol.h"
 
-#include "client.h"
-#include "connection.h"
-#include "qtv.h"
-#include "server.h"
+#include "qtv/include/client.h"
+#include "qtv/include/connection.h"
+#include "qtv/include/qtv.h"
+#include "qtv/include/server.h"
 
 int client_count;
 static client_t *clients;
@@ -1204,7 +1204,7 @@ Client_Init (void)
 {
 	size_t      i;
 
-	ucmd_table = Hash_NewTable (251, ucmds_getkey, 0, 0);
+	ucmd_table = Hash_NewTable (251, ucmds_getkey, 0, 0, 0);
 	for (i = 0; i < sizeof (ucmds) / sizeof (ucmds[0]); i++)
 		Hash_Add (ucmd_table, &ucmds[i]);
 }

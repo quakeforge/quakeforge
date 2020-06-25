@@ -90,6 +90,8 @@ typedef struct defspace_s {
 */
 defspace_t *defspace_new (ds_type_t type);
 
+void defspace_delete (defspace_t *defspace);
+
 /** Allocate space from the defspace's backing memory.
 
 	If the memory is fragmented, then the first available location at least

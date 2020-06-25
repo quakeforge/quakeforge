@@ -144,7 +144,7 @@ QFV_CreateDescriptorPool (qfv_device_t *device,
 	static hashtab_t *poolsizes;
 
 	if (!poolsizes) {
-		poolsizes = Hash_NewTable (16, 0, 0, 0);
+		poolsizes = Hash_NewTable (16, 0, 0, 0, 0);//FIXME threads
 		Hash_SetHashCompare (poolsizes, poolsize_gethash, poolsize_compmare);
 	} else {
 		Hash_FlushTable (poolsizes);

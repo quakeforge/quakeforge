@@ -45,20 +45,21 @@
 #include "QF/mathlib.h"
 #include "QF/va.h"
 
-#include "dags.h"
-#include "diagnostic.h"
-#include "dot.h"
-#include "expr.h"
-#include "function.h"
-#include "options.h"
-#include "qfcc.h"
-#include "reloc.h"
-#include "statements.h"
-#include "strpool.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
-#include "qc-parse.h"
+#include "tools/qfcc/include/dags.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/dot.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/statements.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
+
+#include "tools/qfcc/source/qc-parse.h"
 
 const char *op_type_names[] = {
 	"op_def",
@@ -1314,6 +1315,9 @@ expr_symbol (sblock_t *sblock, expr_t *e, operand_t **op)
 	} else if (sym->sy_type == sy_const) {
 		*op = value_operand (sym->s.value, e);
 	} else if (sym->sy_type == sy_func) {
+		if (!sym->s.func) {
+			make_function (sym, 0, pr.symtab->space, sc_extern);
+		}
 		*op = def_operand (sym->s.func->def, 0, e);
 	} else {
 		internal_error (e, "unexpected symbol type: %s for %s",
@@ -1347,7 +1351,7 @@ expr_vector_e (sblock_t *sblock, expr_t *e, operand_t **op)
 	pr.source_line = e->line;
 
 	tmp = new_temp_def_expr (vec_type);
-	if (vec_type == &type_vector) {
+	if (is_vector(vec_type)) {
 		// guaranteed to have three elements
 		x = e->e.vector.list;
 		y = x->next;
@@ -1403,16 +1407,34 @@ static sblock_t *
 expr_nil (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	type_t     *nil = e->e.nil;
-	expr_t     *ptr;
+	expr_t     *size_expr;
+	size_t      nil_size;
+	operand_t  *zero;
+	operand_t  *size;
+	statement_t *s;
+
 	if (!is_struct (nil) && !is_array (nil)) {
 		*op = value_operand (new_nil_val (nil), e);
 		return sblock;
 	}
-	ptr = expr_file_line (address_expr (new_temp_def_expr (nil), 0, 0), e);
-	expr_file_line (ptr, e);
-	sblock = statement_subexpr (sblock, ptr, op);
-	e = expr_file_line (new_memset_expr (ptr, new_integer_expr (0), nil), e);
-	sblock = statement_slist (sblock, e);
+	if (!*op) {
+		*op = temp_operand (nil, e);
+	}
+	nil_size = type_size (nil);
+	if (nil_size < 0x10000) {
+		size_expr = new_short_expr (nil_size);
+	} else {
+		size_expr = new_integer_expr (nil_size);
+	}
+	sblock = statement_subexpr (sblock, new_integer_expr(0), &zero);
+	sblock = statement_subexpr (sblock, size_expr, &size);
+
+	s = new_statement (st_memset, "<MEMSET>", e);
+	s->opa = zero;
+	s->opb = size;
+	s->opc = *op;
+	sblock_add_statement (sblock, s);
+
 	return sblock;
 }
 
@@ -2017,7 +2039,7 @@ check_final_block (sblock_t *sblock)
 		if (statement_is_return (s))
 			return;
 	}
-	if (current_func->sym->type->t.func.type != &type_void)
+	if (!is_void(current_func->sym->type->t.func.type))
 		warning (0, "control reaches end of non-void function");
 	if (s && s->type >= st_func) {
 		// func and flow end blocks, so we need to add a new block to take the

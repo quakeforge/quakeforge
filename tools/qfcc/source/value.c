@@ -45,17 +45,17 @@
 #include "QF/mathlib.h"
 #include "QF/va.h"
 
-#include "qfcc.h"
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "expr.h"
-#include "reloc.h"
-#include "strpool.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
 typedef struct {
 	def_t      *def;
@@ -513,7 +513,7 @@ emit_value (ex_value_t *value, def_t *def)
 			break;
 		case ev_integer:
 		case ev_uinteger:
-			if (!def || def->type != &type_float) {
+			if (!def || !is_float(def->type)) {
 				tab = integer_imm_defs;
 				type = &type_integer;
 				break;
@@ -640,41 +640,47 @@ clear_immediates (void)
 		Hash_FlushTable (integer_imm_defs);
 		Hash_FlushTable (double_imm_defs);
 	} else {
-		value_table = Hash_NewTable (16381, 0, 0, 0);
+		value_table = Hash_NewTable (16381, 0, 0, 0, 0);
 		Hash_SetHashCompare (value_table, value_get_hash, value_compare);
 
-		string_imm_defs = Hash_NewTable (16381, 0, imm_free, &string_imm_defs);
+		string_imm_defs = Hash_NewTable (16381, 0, imm_free,
+										 &string_imm_defs, 0);
 		Hash_SetHashCompare (string_imm_defs, imm_get_hash, imm_compare);
 
-		float_imm_defs = Hash_NewTable (16381, 0, imm_free, &float_imm_defs);
+		float_imm_defs = Hash_NewTable (16381, 0, imm_free,
+										&float_imm_defs, 0);
 		Hash_SetHashCompare (float_imm_defs, imm_get_hash, imm_compare);
 
-		vector_imm_defs = Hash_NewTable (16381, 0, imm_free, &vector_imm_defs);
+		vector_imm_defs = Hash_NewTable (16381, 0, imm_free,
+										 &vector_imm_defs, 0);
 		Hash_SetHashCompare (vector_imm_defs, imm_get_hash, imm_compare);
 
-		entity_imm_defs = Hash_NewTable (16381, 0, imm_free, &entity_imm_defs);
+		entity_imm_defs = Hash_NewTable (16381, 0, imm_free,
+										 &entity_imm_defs, 0);
 		Hash_SetHashCompare (entity_imm_defs, imm_get_hash, imm_compare);
 
-		field_imm_defs = Hash_NewTable (16381, 0, imm_free, &field_imm_defs);
+		field_imm_defs = Hash_NewTable (16381, 0, imm_free,
+										&field_imm_defs, 0);
 		Hash_SetHashCompare (field_imm_defs, imm_get_hash, imm_compare);
 
-		func_imm_defs = Hash_NewTable (16381, 0, imm_free, &func_imm_defs);
+		func_imm_defs = Hash_NewTable (16381, 0, imm_free,
+									   &func_imm_defs, 0);
 		Hash_SetHashCompare (func_imm_defs, imm_get_hash, imm_compare);
 
-		pointer_imm_defs =
-			Hash_NewTable (16381, 0, imm_free, &pointer_imm_defs);
+		pointer_imm_defs = Hash_NewTable (16381, 0, imm_free,
+										  &pointer_imm_defs, 0);
 		Hash_SetHashCompare (pointer_imm_defs, imm_get_hash, imm_compare);
 
-		quaternion_imm_defs =
-			Hash_NewTable (16381, 0, imm_free, &quaternion_imm_defs);
+		quaternion_imm_defs = Hash_NewTable (16381, 0, imm_free,
+											 &quaternion_imm_defs, 0);
 		Hash_SetHashCompare (quaternion_imm_defs, imm_get_hash, imm_compare);
 
-		integer_imm_defs =
-			Hash_NewTable (16381, 0, imm_free, &integer_imm_defs);
+		integer_imm_defs = Hash_NewTable (16381, 0, imm_free,
+										  &integer_imm_defs, 0);
 		Hash_SetHashCompare (integer_imm_defs, imm_get_hash, imm_compare);
 
-		double_imm_defs =
-			Hash_NewTable (16381, 0, imm_free, &double_imm_defs);
+		double_imm_defs = Hash_NewTable (16381, 0, imm_free,
+										 &double_imm_defs, 0);
 		Hash_SetHashCompare (double_imm_defs, imm_get_hash, imm_compare);
 	}
 

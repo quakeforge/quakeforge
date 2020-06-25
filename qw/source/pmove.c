@@ -34,8 +34,9 @@
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 
-#include "client.h"
 #include "compat.h"
+
+#include "qw/include/client.h"
 #include "qw/pmove.h"
 
 cvar_t     *no_pogo_stick;

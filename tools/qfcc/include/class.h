@@ -90,18 +90,18 @@ typedef struct static_instance_s {
 } static_instance_t;
 
 extern struct type_s type_id;
-extern struct type_s type_obj_object;
-extern struct type_s type_obj_class;
+extern struct type_s type_object;
+extern struct type_s type_class;
 extern struct type_s type_Class;
-extern struct type_s type_obj_protocol;
+extern struct type_s type_protocol;
 extern struct type_s type_SEL;
 extern struct type_s type_IMP;
 extern struct type_s type_supermsg;
-extern struct type_s type_obj_exec_class;
-extern struct type_s type_obj_method;
-extern struct type_s type_obj_super;
-extern struct type_s type_obj_method_description;
-extern struct type_s type_obj_category;
+extern struct type_s type_exec_class;
+extern struct type_s type_method;
+extern struct type_s type_super;
+extern struct type_s type_method_description;
+extern struct type_s type_category;
 extern struct type_s type_ivar;
 extern struct type_s type_module;
 
@@ -115,10 +115,14 @@ struct method_s;
 struct symbol_s;
 struct selector_s;
 
-int obj_is_id (const struct type_s *type) __attribute__((pure));
-int obj_is_class (const struct type_s *type) __attribute__((pure));
-int obj_is_Class (const struct type_s *type) __attribute__((const));
-int obj_is_classptr (const struct type_s *type) __attribute__((pure));
+int is_id (const struct type_s *type) __attribute__((pure));
+int is_class (const struct type_s *type) __attribute__((pure));
+int is_Class (const struct type_s *type) __attribute__((const));
+int is_classptr (const struct type_s *type) __attribute__((pure));
+int is_SEL (const struct type_s *type) __attribute__((const));
+int is_object (const struct type_s *type) __attribute__((const));
+int is_method (const struct type_s *type) __attribute__((const));
+int is_method_description (const struct type_s *type) __attribute__((const));
 int obj_types_assignable (const struct type_s *dst, const struct type_s *src);
 
 class_t *extract_class (class_type_t *class_type) __attribute__((pure));

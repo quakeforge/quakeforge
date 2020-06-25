@@ -47,18 +47,18 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "class.h"
-#include "def.h"
-#include "diagnostic.h"
-#include "expr.h"
-#include "function.h"
-#include "obj_type.h"
-#include "options.h"
-#include "qfcc.h"
-#include "strpool.h"
-#include "struct.h"
-#include "symtab.h"
-#include "type.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/obj_type.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/struct.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
 
 // simple types.  function types are dynamically allocated
 type_t      type_invalid = { ev_invalid, "invalid" };
@@ -156,7 +156,7 @@ chain_type (type_t *type)
 	if (!type->encoding)
 		type->encoding = type_get_encoding (type);
 	if (!type->type_def)
-		type->type_def = qfo_encode_type (type);
+		type->type_def = qfo_encode_type (type, pr.type_data);
 }
 
 type_t *
@@ -207,45 +207,114 @@ free_type (type_t *type)
 	FREE (types, type);
 }
 
+static type_t *
+copy_chain (type_t *type, type_t *append)
+{
+	type_t     *new = 0;
+	type_t    **n = &new;
+
+	while (type) {
+		*n = new_type ();
+		**n = *type;
+		switch (type->meta) {
+			case ty_basic:
+				switch (type->type) {
+					case ev_void:
+					case ev_string:
+					case ev_float:
+					case ev_vector:
+					case ev_entity:
+					case ev_type_count:
+					case ev_quat:
+					case ev_integer:
+					case ev_uinteger:
+					case ev_short:
+					case ev_double:
+						internal_error (0, "copy basic type");
+					case ev_field:
+					case ev_pointer:
+						n = &(*n)->t.fldptr.type;
+						type = type->t.fldptr.type;
+						break;
+					case ev_func:
+						n = &(*n)->t.func.type;
+						type = type->t.func.type;
+						break;
+					case ev_invalid:
+						internal_error (0, "invalid basic type");
+						break;
+				}
+				break;
+			case ty_array:
+				n = &(*n)->t.array.type;
+				type = type->t.array.type;
+				break;
+			case ty_struct:
+			case ty_union:
+			case ty_enum:
+			case ty_class:
+			case ty_alias:	//XXX is this correct?
+				internal_error (0, "copy object type %d", type->meta);
+		}
+	}
+	*n = append;
+	return new;
+}
+
 type_t *
 append_type (type_t *type, type_t *new)
 {
 	type_t    **t = &type;
 
 	while (*t) {
-		switch ((*t)->type) {
-			case ev_void:
-			case ev_string:
-			case ev_float:
-			case ev_vector:
-			case ev_entity:
-			case ev_type_count:
-			case ev_quat:
-			case ev_integer:
-			case ev_uinteger:
-			case ev_short:
-			case ev_double:
-				internal_error (0, "append to basic type");
-			case ev_field:
-			case ev_pointer:
-				t = &(*t)->t.fldptr.type;
-				type->alignment = 1;
-				break;
-			case ev_func:
-				t = &(*t)->t.func.type;
-				type->alignment = 1;
-				break;
-			case ev_invalid:
-				if ((*t)->meta == ty_array) {
-					t = &(*t)->t.array.type;
-					type->alignment = new->alignment;
-				} else {
-					internal_error (0, "append to object type");
+		switch ((*t)->meta) {
+			case ty_basic:
+				switch ((*t)->type) {
+					case ev_void:
+					case ev_string:
+					case ev_float:
+					case ev_vector:
+					case ev_entity:
+					case ev_type_count:
+					case ev_quat:
+					case ev_integer:
+					case ev_uinteger:
+					case ev_short:
+					case ev_double:
+						internal_error (0, "append to basic type");
+					case ev_field:
+					case ev_pointer:
+						t = &(*t)->t.fldptr.type;
+						type->alignment = 1;
+						break;
+					case ev_func:
+						t = &(*t)->t.func.type;
+						type->alignment = 1;
+						break;
+					case ev_invalid:
+						internal_error (0, "invalid basic type");
+						break;
 				}
 				break;
+			case ty_array:
+				t = &(*t)->t.array.type;
+				type->alignment = new->alignment;
+				break;
+			case ty_struct:
+			case ty_union:
+			case ty_enum:
+			case ty_class:
+			case ty_alias:	//XXX is this correct?
+				internal_error (0, "append to object type");
 		}
 	}
-	*t = new;
+	if (type && new->meta == ty_alias) {
+		type_t     *chain = find_type (copy_chain (type, new));
+		*t = new->t.alias.aux_type;
+		type = alias_type (type, chain, 0);
+	} else {
+		*t = new;
+	}
 	return type;
 }
 
@@ -297,6 +366,11 @@ types_same (type_t *a, type_t *b)
 			if (a->t.class != b->t.class)
 				return 0;
 			return compare_protocols (a->protos, b->protos);
+		case ty_alias:
+			// names have gone through save_string
+			return (a->name == b->name
+					&& a->t.alias.aux_type == b->t.alias.aux_type
+					&& a->t.alias.full_type == b->t.alias.full_type);
 	}
 	internal_error (0, "we be broke");
 }
@@ -346,6 +420,9 @@ find_type (type_t *type)
 				break;
 			case ty_class:
 				break;
+			case ty_alias:
+				type->t.alias.aux_type = find_type (type->t.alias.aux_type);
+				break;
 		}
 	}
 
@@ -376,9 +453,9 @@ field_type (type_t *aux)
 		new = new_type ();
 	new->type = ev_field;
 	new->alignment = 1;
-	new->t.fldptr.type = aux;
-	if (aux)
-		new = find_type (new);
+	if (aux) {
+		new = find_type (append_type (new, aux));
+	}
 	return new;
 }
 
@@ -394,9 +471,9 @@ pointer_type (type_t *aux)
 		new = new_type ();
 	new->type = ev_pointer;
 	new->alignment = 1;
-	new->t.fldptr.type = aux;
-	if (aux)
-		new = find_type (new);
+	if (aux) {
+		new = find_type (append_type (new, aux));
+	}
 	return new;
 }
 
@@ -410,15 +487,15 @@ array_type (type_t *aux, int size)
 		memset (&_new, 0, sizeof (_new));
 	else
 		new = new_type ();
+	new->meta = ty_array;
 	new->type = ev_invalid;
 	if (aux) {
 		new->alignment = aux->alignment;
 	}
-	new->meta = ty_array;
-	new->t.array.type = aux;
 	new->t.array.size = size;
-	if (aux)
-		new = find_type (new);
+	if (aux) {
+		new = find_type (append_type (new, aux));
+	}
 	return new;
 }
 
@@ -445,6 +522,43 @@ based_array_type (type_t *aux, int base, int top)
 	return new;
 }
 
+type_t *
+alias_type (type_t *type, type_t *alias_chain, const char *name)
+{
+	type_t     *alias = new_type ();
+	alias->meta = ty_alias;
+	alias->type = type->type;
+	alias->alignment = type->alignment;
+	if (type == alias_chain && type->meta == ty_alias) {
+		// typedef of a type that contains a typedef somewhere
+		// grab the alias-free branch for type
+		type = alias_chain->t.alias.aux_type;
+		if (!alias_chain->name) {
+			// the other typedef is further inside, so replace the unnamed
+			// alias node with the typedef
+			alias_chain = alias_chain->t.alias.full_type;
+		}
+	}
+	alias->t.alias.aux_type = type;
+	alias->t.alias.full_type = alias_chain;
+	if (name) {
+		alias->name = save_string (name);
+	}
+	return alias;
+}
+
+const type_t *
+unalias_type (const type_t *type)
+{
+	if (type->meta == ty_alias) {
+		type = type->t.alias.aux_type;
+		if (type->meta == ty_alias) {
+			internal_error (0, "alias type node in alias-free chain");
+		}
+	}
+	return type;
+}
+
 void
 print_type_str (dstring_t *str, const type_t *type)
 {
@@ -453,6 +567,11 @@ print_type_str (dstring_t *str, const type_t *type)
 		return;
 	}
 	switch (type->meta) {
+		case ty_alias:
+			dasprintf (str, "({%s=", type->name);
+			print_type_str (str, type->t.alias.aux_type);
+			dstring_appendstr (str, "})");
+			return;
 		case ty_class:
 			dasprintf (str, " %s", type->t.class->name);
 			if (type->protos)
@@ -503,13 +622,13 @@ print_type_str (dstring_t *str, const type_t *type)
 					}
 					return;
 				case ev_pointer:
-					if (obj_is_id (type)) {
+					if (is_id (type)) {
 						dasprintf (str, "id");
 						if (type->t.fldptr.type->protos)
 							print_protocollist (str, type->t.fldptr.type->protos);
 						return;
 					}
-					if (type == &type_SEL) {
+					if (is_SEL(type)) {
 						dasprintf (str, "SEL");
 						return;
 					}
@@ -559,7 +678,7 @@ encode_params (const type_t *type)
 	else
 		count = type->t.func.num_params;
 	for (i = 0; i < count; i++)
-		encode_type (encoding, type->t.func.param_types[i]);
+		encode_type (encoding, unalias_type (type->t.func.param_types[i]));
 	if (type->t.func.num_params < 0)
 		dasprintf (encoding, ".");
 
@@ -610,6 +729,11 @@ encode_type (dstring_t *encoding, const type_t *type)
 	if (!type)
 		return;
 	switch (type->meta) {
+		case ty_alias: // XXX do I want this, or just the unaliased type?
+			dasprintf (encoding, "{%s>", type->name);
+			encode_type (encoding, type->t.alias.aux_type);
+			dasprintf (encoding, "}");
+			return;
 		case ty_class:
 			encode_class (encoding, type);
 			return;
@@ -659,15 +783,15 @@ encode_type (dstring_t *encoding, const type_t *type)
 					dasprintf (encoding, "%s)", encode_params (type));
 					return;
 				case ev_pointer:
-					if (type == &type_id) {
+					if (is_id(type)) {
 						dasprintf (encoding, "@");
 						return;
 					}
-					if (type == &type_SEL) {
+					if (is_SEL(type)) {
 						dasprintf (encoding, ":");
 						return;
 					}
-					if (type == &type_Class) {
+					if (is_Class(type)) {
 						dasprintf (encoding, "#");
 						return;
 					}
@@ -699,12 +823,14 @@ encode_type (dstring_t *encoding, const type_t *type)
 int
 is_void (const type_t *type)
 {
+	type = unalias_type (type);
 	return type->type == ev_void;
 }
 
 int
 is_enum (const type_t *type)
 {
+	type = unalias_type (type);
 	if (type->type == ev_invalid && type->meta == ty_enum)
 		return 1;
 	return 0;
@@ -713,6 +839,7 @@ is_enum (const type_t *type)
 int
 is_integer (const type_t *type)
 {
+	type = unalias_type (type);
 	etype_t     t = type->type;
 
 	if (t == ev_integer)
@@ -723,6 +850,7 @@ is_integer (const type_t *type)
 int
 is_uinteger (const type_t *type)
 {
+	type = unalias_type (type);
 	etype_t     t = type->type;
 
 	if (t == ev_uinteger)
@@ -733,6 +861,7 @@ is_uinteger (const type_t *type)
 int
 is_short (const type_t *type)
 {
+	type = unalias_type (type);
 	etype_t     t = type->type;
 
 	if (t == ev_short)
@@ -743,6 +872,7 @@ is_short (const type_t *type)
 int
 is_integral (const type_t *type)
 {
+	type = unalias_type (type);
 	if (is_integer (type) || is_uinteger (type) || is_short (type))
 		return 1;
 	return is_enum (type);
@@ -751,36 +881,42 @@ is_integral (const type_t *type)
 int
 is_double (const type_t *type)
 {
+	type = unalias_type (type);
 	return type->type == ev_double;
 }
 
 int
 is_float (const type_t *type)
 {
+	type = unalias_type (type);
 	return type->type == ev_float;
 }
 
 int
 is_scalar (const type_t *type)
 {
+	type = unalias_type (type);
 	return is_float (type) || is_integral (type) || is_double (type);
 }
 
 int
 is_vector (const type_t *type)
 {
+	type = unalias_type (type);
 	return type->type == ev_vector;
 }
 
 int
 is_quaternion (const type_t *type)
 {
+	type = unalias_type (type);
 	return type->type == ev_quat;
 }
 
 int
 is_math (const type_t *type)
 {
+	type = unalias_type (type);
 	etype_t     t = type->type;
 
 	return t == ev_vector || t == ev_quat || is_scalar (type);
@@ -789,6 +925,7 @@ is_math (const type_t *type)
 int
 is_struct (const type_t *type)
 {
+	type = unalias_type (type);
 	if (type->type == ev_invalid
 		&& (type->meta == ty_struct || type->meta == ty_union))
 		return 1;
@@ -798,6 +935,7 @@ is_struct (const type_t *type)
 int
 is_pointer (const type_t *type)
 {
+	type = unalias_type (type);
 	if (type->type == ev_pointer)
 		return 1;
 	return 0;
@@ -806,6 +944,7 @@ is_pointer (const type_t *type)
 int
 is_field (const type_t *type)
 {
+	type = unalias_type (type);
 	if (type->type == ev_field)
 		return 1;
 	return 0;
@@ -814,6 +953,7 @@ is_field (const type_t *type)
 int
 is_entity (const type_t *type)
 {
+	type = unalias_type (type);
 	if (type->type == ev_entity)
 		return 1;
 	return 0;
@@ -822,6 +962,7 @@ is_entity (const type_t *type)
 int
 is_array (const type_t *type)
 {
+	type = unalias_type (type);
 	if (type->type == ev_invalid && type->meta == ty_array)
 		return 1;
 	return 0;
@@ -830,6 +971,7 @@ is_array (const type_t *type)
 int
 is_func (const type_t *type)
 {
+	type = unalias_type (type);
 	if (type->type == ev_func)
 		return 1;
 	return 0;
@@ -838,12 +980,14 @@ is_func (const type_t *type)
 int
 is_structural (const type_t *type)
 {
+	type = unalias_type (type);
 	return is_struct (type) || is_array (type);
 }
 
 int
 is_string (const type_t *type)
 {
+	type = unalias_type (type);
 	if (type->type == ev_string)
 		return 1;
 	return 0;
@@ -873,6 +1017,8 @@ type_assignable (const type_t *dst, const type_t *src)
 {
 	int         ret;
 
+	dst = unalias_type (dst);
+	src = unalias_type (src);
 	// same type
 	if (dst == src)
 		return 1;
@@ -936,8 +1082,51 @@ type_size (const type_t *type)
 					size += type_size (class->super_class->type);
 				return size;
 			}
+		case ty_alias:
+			return type_size (type->t.alias.aux_type);
 	}
 	return 0;
+}
+
+static void
+chain_basic_types (void)
+{
+	chain_type (&type_void);
+	chain_type (&type_string);
+	chain_type (&type_float);
+	chain_type (&type_vector);
+	type_entity.t.symtab = pr.entity_fields;
+	chain_type (&type_entity);
+	chain_type (&type_field);
+	chain_type (&type_function);
+	chain_type (&type_pointer);
+	chain_type (&type_floatfield);
+	if (!options.traditional) {
+		chain_type (&type_quaternion);
+		chain_type (&type_integer);
+		chain_type (&type_uinteger);
+		chain_type (&type_short);
+		chain_type (&type_double);
+	}
+}
+
+static void
+chain_structural_types (void)
+{
+	chain_type (&type_param);
+	chain_type (&type_zero);
+	chain_type (&type_type_encodings);
+	chain_type (&type_xdef);
+	chain_type (&type_xdef_pointer);
+	chain_type (&type_xdefs);
+	chain_type (&type_va_list);
+}
+
+void
+chain_initial_types (void)
+{
+	chain_basic_types ();
+	chain_structural_types ();
 }
 
 void
@@ -1001,6 +1190,13 @@ init_types (void)
 		{"num_xdefs", &type_pointer},
 		{0, 0}
 	};
+	static struct_def_t va_list_struct[] = {
+		{"count", &type_integer},
+		{"list",  0},				// type will be filled in at runtime
+		{0, 0}
+	};
+
+	chain_basic_types ();
 
 	type_nil = &type_quaternion;
 	type_default = &type_integer;
@@ -1025,8 +1221,8 @@ init_types (void)
 	make_structure ("@xdef", 's', xdef_struct, &type_xdef);
 	make_structure ("@xdefs", 's', xdefs_struct, &type_xdefs);
 
-	if (options.traditional)
-		return;
+	va_list_struct[1].type = pointer_type (&type_param);
+	make_structure ("@va_list", 's', va_list_struct, &type_va_list);
 
 	make_structure ("@quaternion", 's', quaternion_struct, &type_quaternion);
 	type_quaternion.type = ev_quat;
@@ -1046,43 +1242,6 @@ init_types (void)
 		sym->s.offset = 3;
 		symtab_addsymbol (type_quaternion.t.symtab, sym);
 	}
-}
 
-void
-chain_initial_types (void)
-{
-	static struct_def_t va_list_struct[] = {
-		{"count", &type_integer},
-		{"list",  0},				// type will be filled in at runtime
-		{0, 0}
-	};
-
-	chain_type (&type_void);
-	chain_type (&type_string);
-	chain_type (&type_float);
-	chain_type (&type_vector);
-	type_entity.t.symtab = pr.entity_fields;
-	chain_type (&type_entity);
-	chain_type (&type_field);
-	chain_type (&type_function);
-	chain_type (&type_pointer);
-	chain_type (&type_floatfield);
-	if (!options.traditional) {
-		chain_type (&type_quaternion);
-		chain_type (&type_integer);
-		chain_type (&type_uinteger);
-		chain_type (&type_short);
-		chain_type (&type_double);
-	}
-
-	chain_type (&type_param);
-	chain_type (&type_zero);
-	chain_type (&type_type_encodings);
-	chain_type (&type_xdef);
-	chain_type (&type_xdef_pointer);
-	chain_type (&type_xdefs);
-
-	va_list_struct[1].type = pointer_type (&type_param);
-	make_structure ("@va_list", 's', va_list_struct, &type_va_list);
-	chain_type (&type_va_list);
+	chain_structural_types ();
 }

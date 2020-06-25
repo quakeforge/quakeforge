@@ -44,12 +44,12 @@
 #include "QF/set.h"
 #include "QF/va.h"
 
-#include "dags.h"
-#include "flow.h"
-#include "function.h"
-#include "expr.h"
-#include "statements.h"
-#include "strpool.h"
+#include "tools/qfcc/include/dags.h"
+#include "tools/qfcc/include/flow.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/statements.h"
+#include "tools/qfcc/include/strpool.h"
 
 typedef struct {
 	void (*node) (dstring_t *, flowgraph_t *, flownode_t *, int);

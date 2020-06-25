@@ -47,18 +47,18 @@
 #include "QF/mathlib.h"
 #include "QF/set.h"
 
-#include "dags.h"
-#include "diagnostic.h"
-#include "dot.h"
-#include "flow.h"
-#include "function.h"
-#include "options.h"
-#include "qfcc.h"
-#include "statements.h"
-#include "strpool.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
+#include "tools/qfcc/include/dags.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/dot.h"
+#include "tools/qfcc/include/flow.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/statements.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
 static daglabel_t *labels_freelist;
 static dagnode_t *nodes_freelist;
@@ -239,21 +239,44 @@ dag_node (operand_t *op)
 		if (op->o.label->daglabel)
 			node = op->o.label->daglabel->dagnode;
 	}
-	if (node && node->killed)
-		node = 0;
 	return node;
 }
 
 static void
-dag_make_children (dag_t *dag, statement_t *s, operand_t *operands[4],
+dag_make_leafs (dag_t *dag, statement_t *s, operand_t *operands[FLOW_OPERANDS])
+{
+	int         i;
+
+	flow_analyze_statement (s, 0, 0, 0, operands);
+	for (i = 1; i < FLOW_OPERANDS; i++) {
+		if (!dag_node (operands[i])) {
+			leaf_node (dag, operands[i], s->expr);
+		}
+	}
+}
+
+static void
+dag_make_children (dag_t *dag, statement_t *s,
+				   operand_t *operands[FLOW_OPERANDS],
 				   dagnode_t *children[3])
 {
 	int         i;
 
 	flow_analyze_statement (s, 0, 0, 0, operands);
 	for (i = 0; i < 3; i++) {
-		if (!(children[i] = dag_node (operands[i + 1])))
-			children[i] = leaf_node (dag, operands[i + 1], s->expr);
+		dagnode_t  *node = dag_node (operands[i + 1]);
+		dagnode_t  *killer = 0;
+		if (node && node->killed) {
+			killer = node->killed;
+			node = 0;
+		}
+		if (!node) {
+			node = leaf_node (dag, operands[i + 1], s->expr);
+		}
+		if (killer) {
+			set_add (node->edges, killer->number);
+		}
+		children[i] = node;
 	}
 }
 
@@ -459,7 +482,7 @@ static int
 dag_tempop_kill_aliases_visit (tempop_t *tempop, void *_l)
 {
 	daglabel_t *l = (daglabel_t *) _l;
-	dagnode_t  *node = l->dagnode;;
+	dagnode_t  *node = l->dagnode;
 	daglabel_t *label;
 
 	if (tempop == &l->op->o.tempop)
@@ -468,7 +491,7 @@ dag_tempop_kill_aliases_visit (tempop_t *tempop, void *_l)
 	if (label && label->dagnode) {
 		set_add (node->edges, label->dagnode->number);
 		set_remove (node->edges, node->number);
-		label->dagnode->killed = 1;
+		label->dagnode->killed = node;
 	}
 	return 0;
 }
@@ -486,7 +509,7 @@ dag_def_kill_aliases_visit (def_t *def, void *_l)
 	if (label && label->dagnode) {
 		set_add (node->edges, label->dagnode->number);
 		set_remove (node->edges, node->number);
-		label->dagnode->killed = 1;
+		label->dagnode->killed = node;
 	}
 	return 0;
 }
@@ -570,7 +593,7 @@ dagnode_attach_label (dagnode_t *n, daglabel_t *l)
 		// if the node is a leaf, then kill its value so no attempt is made
 		// to reuse it.
 		if (l->dagnode->type == st_none) {
-			l->dagnode->killed = 1;
+			l->dagnode->killed = n;
 		}
 		dagnode_t  *node = l->dagnode;
 		set_union (n->edges, node->parents);
@@ -693,7 +716,7 @@ dag_kill_nodes (dag_t *dag, dagnode_t *n)
 			// operations.
 			continue;
 		}
-		node->killed = 1;
+		node->killed = n;
 	}
 	n->killed = 0;
 }
@@ -730,6 +753,13 @@ dag_create (flownode_t *flownode)
 	dag->labels = alloca (num_lables * sizeof (daglabel_t));
 	dag->roots = set_new ();
 
+	// do a first pass to ensure all operands have an "x_0" leaf node
+	// prior do actual dag creation
+	for (s = block->statements; s; s = s->next) {
+		operand_t  *operands[FLOW_OPERANDS];
+		dag_make_leafs (dag, s, operands);
+	}
+	// actual dag creation
 	for (s = block->statements; s; s = s->next) {
 		operand_t  *operands[FLOW_OPERANDS];
 		dagnode_t  *n = 0, *children[3] = {0, 0, 0};
@@ -1133,6 +1163,19 @@ dag_remove_dead_nodes (dag_t *dag)
 			}
 		}
 	} while (added_root);
+
+	// clean up any stray edges that point to removed nodes
+	for (int i = 0; i < dag->num_nodes; i++) {
+		node = dag->nodes[i];
+		for (child_i = set_first (node->edges); child_i;
+			 child_i = set_next (child_i)) {
+			child = dag->nodes[child_i->element];
+			if (!set_is_member (dag->roots, child->number)
+				&& set_is_empty (child->parents)) {
+				set_remove (node->edges, child->number);
+			}
+		}
+	}
 	dag_sort_nodes (dag);
 }
 

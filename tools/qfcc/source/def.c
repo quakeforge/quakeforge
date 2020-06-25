@@ -45,22 +45,22 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "qfcc.h"
-#include "class.h"
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "expr.h"
-#include "function.h"
-#include "options.h"
-#include "reloc.h"
-#include "shared.h"
-#include "strpool.h"
-#include "struct.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/struct.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
 static def_t *defs_freelist;
 
@@ -140,7 +140,7 @@ new_def (const char *name, type_t *type, defspace_t *space,
 	if (!space && storage != sc_extern)
 		internal_error (0, "non-external def with no storage space");
 
-	if (obj_is_class (type)) {
+	if (is_class (type) || (is_array (type) && is_class(type->t.array.type))) {
 		error (0, "statically allocated instance of class %s",
 			   type->t.class->name);
 		return def;
@@ -157,7 +157,7 @@ new_def (const char *name, type_t *type, defspace_t *space,
 		}
 		if (alignment < 1) {
 			print_type (type);
-			internal_error (0, "temp type has no alignment");
+			internal_error (0, "type has no alignment");
 		}
 		def->offset = defspace_alloc_aligned_loc (space, size, alignment);
 	}
@@ -498,7 +498,7 @@ init_field_def (def_t *def, expr_t *init, storage_class_t storage)
 			def->nosave = 1;
 		}
 		// no support for initialized field vector componets (yet?)
-		if (type == &type_vector && options.code.vector_components)
+		if (is_vector(type) && options.code.vector_components)
 			init_vector_components (field_sym, 1);
 	} else if (init->type == ex_symbol) {
 		symbol_t   *sym = init->e.symbol;
@@ -566,7 +566,7 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 		sym->s.def = new_def (sym->name, sym->type, space, storage);
 		reloc_attach_relocs (relocs, &sym->s.def->relocs);
 	}
-	if (sym->type == &type_vector && options.code.vector_components)
+	if (is_vector(sym->type) && options.code.vector_components)
 		init_vector_components (sym, 0);
 	if (sym->type->type == ev_field && storage != sc_local
 		&& storage != sc_param)
@@ -582,7 +582,7 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 	if (init->type == ex_error)
 		return;
 	if ((is_array (sym->type) || is_struct (sym->type)
-		 || sym->type == &type_vector || sym->type == &type_quaternion)
+		 || is_vector(sym->type) || is_quaternion(sym->type))
 		&& ((init->type == ex_compound)
 			|| init->type == ex_nil)) {
 		init_elements (sym->s.def, init);

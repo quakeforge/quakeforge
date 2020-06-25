@@ -1,0 +1,223 @@
+#lib_LTLIBRARIES += @VID_REND_TARGETS@
+plugin_LTLIBRARIES += @vid_render_plugins@
+noinst_LTLIBRARIES += libs/video/renderer/libQFrenderer.la @vid_render_static_plugins@
+
+EXTRA_LTLIBRARIES += \
+	libs/video/renderer/vid_render_sw.la \
+	libs/video/renderer/vid_render_sw32.la \
+	libs/video/renderer/vid_render_gl.la \
+	libs/video/renderer/vid_render_glsl.la \
+	libs/video/renderer/vid_render_vulkan.la
+
+video_renderer_common_sources = \
+	libs/video/renderer/crosshair.c \
+	libs/video/renderer/noisetextures.c \
+	libs/video/renderer/r_alias.c \
+	libs/video/renderer/r_bsp.c \
+	libs/video/renderer/r_cvar.c \
+	libs/video/renderer/r_dyn_textures.c \
+	libs/video/renderer/r_efrag.c \
+	libs/video/renderer/r_ent.c \
+	libs/video/renderer/r_graph.c \
+	libs/video/renderer/r_iqm.c \
+	libs/video/renderer/r_light.c \
+	libs/video/renderer/r_main.c \
+	libs/video/renderer/r_part.c \
+	libs/video/renderer/r_screen.c \
+	libs/video/renderer/vid_common.c
+
+renderer_libs= \
+	@vid_render_static_plugin_libs@ \
+	libs/util/libQFutil.la
+
+libs_video_renderer_libQFrenderer_la_LDFLAGS=		@STATIC@
+libs_video_renderer_libQFrenderer_la_LIBADD=		$(renderer_libs)
+libs_video_renderer_libQFrenderer_la_DEPENDENCIES=	$(renderer_libs)
+libs_video_renderer_libQFrenderer_la_SOURCES=\
+	libs/video/renderer/r_init.c \
+	libs/video/renderer/r_progs.c
+
+video_renderer_gl_libs= \
+	libs/models/libmodels_gl.la
+libs_video_renderer_vid_render_gl_la_LDFLAGS=		$(plugin_ldflags)
+libs_video_renderer_vid_render_gl_la_LIBADD=		$(video_renderer_gl_libs)
+libs_video_renderer_vid_render_gl_la_DEPENDENCIES=	$(video_renderer_gl_libs)
+libs_video_renderer_vid_render_gl_la_SOURCES=\
+	$(video_renderer_common_sources) \
+	libs/video/renderer/vid_render_gl.c \
+	libs/video/renderer/gl/gl_draw.c \
+	libs/video/renderer/gl/gl_dyn_lights.c \
+	libs/video/renderer/gl/gl_dyn_part.c \
+	libs/video/renderer/gl/gl_dyn_textures.c \
+	libs/video/renderer/gl/gl_fog.c \
+	libs/video/renderer/gl/gl_graph.c \
+	libs/video/renderer/gl/gl_lightmap.c \
+	libs/video/renderer/gl/gl_mod_alias.c \
+	libs/video/renderer/gl/gl_mod_iqm.c \
+	libs/video/renderer/gl/gl_mod_sprite.c \
+	libs/video/renderer/gl/gl_rmain.c \
+	libs/video/renderer/gl/gl_rmisc.c \
+	libs/video/renderer/gl/gl_rsurf.c \
+	libs/video/renderer/gl/gl_screen.c \
+	libs/video/renderer/gl/gl_sky.c \
+	libs/video/renderer/gl/gl_sky_clip.c \
+	libs/video/renderer/gl/gl_textures.c \
+	libs/video/renderer/gl/gl_warp.c \
+	libs/video/renderer/gl/namehack.h \
+	libs/video/renderer/gl/qfgl_ext.c \
+	libs/video/renderer/gl/vid_common_gl.c \
+	libs/video/renderer/gl/vtxarray.c
+
+shader_src= libs/video/renderer/glsl/quakeforge.glsl
+shader_gen= libs/video/renderer/glsl/quakeforge.slc
+
+BUILT_SOURCES += $(shader_gen)
+
+SUFFICES=.frag .vert .fc .vc .slc .glsl
+.glsl.slc:
+	sed -e 's/^/"/' -e 's/$$/\\n"/' $< > $@
+
+video_renderer_glsl_libs= \
+	libs/models/libmodels_glsl.la
+libs_video_renderer_vid_render_glsl_la_LDFLAGS=		$(plugin_ldflags)
+libs_video_renderer_vid_render_glsl_la_LIBADD=		$(video_renderer_glsl_libs)
+libs_video_renderer_vid_render_glsl_la_DEPENDENCIES=$(video_renderer_glsl_libs)
+libs_video_renderer_vid_render_glsl_la_SOURCES=\
+	$(video_renderer_common_sources) \
+	libs/video/renderer/vid_render_glsl.c \
+	libs/video/renderer/glsl/glsl_alias.c \
+	libs/video/renderer/glsl/glsl_bsp.c \
+	libs/video/renderer/glsl/glsl_draw.c \
+	libs/video/renderer/glsl/glsl_fog.c \
+	libs/video/renderer/glsl/glsl_iqm.c \
+	libs/video/renderer/glsl/glsl_lightmap.c \
+	libs/video/renderer/glsl/glsl_main.c \
+	libs/video/renderer/glsl/glsl_particles.c \
+	libs/video/renderer/glsl/glsl_screen.c \
+	libs/video/renderer/glsl/glsl_shader.c \
+	libs/video/renderer/glsl/glsl_sprite.c \
+	libs/video/renderer/glsl/glsl_textures.c \
+	libs/video/renderer/glsl/namehack.h \
+	libs/video/renderer/glsl/qfglsl.c \
+	libs/video/renderer/glsl/quakeforge.glsl \
+	libs/video/renderer/glsl/vid_common_glsl.c
+
+video_renderer_sw_libs= \
+	libs/models/libmodels_sw.la
+libs_video_renderer_vid_render_sw_la_LDFLAGS=		$(plugin_ldflags)
+libs_video_renderer_vid_render_sw_la_LIBADD=		$(video_renderer_sw_libs)
+libs_video_renderer_vid_render_sw_la_DEPENDENCIES=	$(video_renderer_sw_libs)
+libs_video_renderer_vid_render_sw_la_SOURCES=\
+	$(video_renderer_common_sources) \
+	libs/video/renderer/vid_render_sw.c \
+	libs/video/renderer/sw/d_copy.S \
+	libs/video/renderer/sw/d_draw.S \
+	libs/video/renderer/sw/d_edge.c \
+	libs/video/renderer/sw/d_fill.c \
+	libs/video/renderer/sw/d_init.c \
+	libs/video/renderer/sw/d_modech.c \
+	libs/video/renderer/sw/d_part.c \
+	libs/video/renderer/sw/d_parta.S \
+	libs/video/renderer/sw/d_polysa.S \
+	libs/video/renderer/sw/d_polyse.c \
+	libs/video/renderer/sw/d_scan.c \
+	libs/video/renderer/sw/d_scana.S \
+	libs/video/renderer/sw/d_sky.c \
+	libs/video/renderer/sw/d_spr8.S \
+	libs/video/renderer/sw/d_sprite.c \
+	libs/video/renderer/sw/d_surf.c \
+	libs/video/renderer/sw/d_vars.c \
+	libs/video/renderer/sw/d_varsa.S \
+	libs/video/renderer/sw/d_zpoint.c \
+	libs/video/renderer/sw/draw.c \
+	libs/video/renderer/sw/fpu.c \
+	libs/video/renderer/sw/fpua.S \
+	libs/video/renderer/sw/nonintel.c \
+	libs/video/renderer/sw/screen.c \
+	libs/video/renderer/sw/surf8.S \
+	libs/video/renderer/sw/sw_graph.c \
+	libs/video/renderer/sw/sw_raclip.c \
+	libs/video/renderer/sw/sw_raclipa.S \
+	libs/video/renderer/sw/sw_ralias.c \
+	libs/video/renderer/sw/sw_raliasa.S \
+	libs/video/renderer/sw/sw_rbsp.c \
+	libs/video/renderer/sw/sw_rdraw.c \
+	libs/video/renderer/sw/sw_rdrawa.S \
+	libs/video/renderer/sw/sw_redge.c \
+	libs/video/renderer/sw/sw_redgea.S \
+	libs/video/renderer/sw/sw_riqm.c \
+	libs/video/renderer/sw/sw_rmain.c \
+	libs/video/renderer/sw/sw_rmisc.c \
+	libs/video/renderer/sw/sw_rpart.c \
+	libs/video/renderer/sw/sw_rsky.c \
+	libs/video/renderer/sw/sw_rsprite.c \
+	libs/video/renderer/sw/sw_rsurf.c \
+	libs/video/renderer/sw/sw_rvarsa.S \
+	libs/video/renderer/sw/transform.S \
+	libs/video/renderer/sw/vid_common_sw.c
+
+video_renderer_sw32_libs= \
+	libs/models/libmodels_sw.la
+libs_video_renderer_vid_render_sw32_la_LDFLAGS=		$(plugin_ldflags)
+libs_video_renderer_vid_render_sw32_la_LIBADD=		$(video_renderer_sw32_libs)
+libs_video_renderer_vid_render_sw32_la_DEPENDENCIES=$(video_renderer_sw32_libs)
+libs_video_renderer_vid_render_sw32_la_SOURCES=\
+	$(video_renderer_common_sources) \
+	libs/video/renderer/vid_render_sw32.c \
+	libs/video/renderer/sw32/d_edge.c \
+	libs/video/renderer/sw32/d_fill.c \
+	libs/video/renderer/sw32/d_init.c \
+	libs/video/renderer/sw32/d_modech.c \
+	libs/video/renderer/sw32/d_part.c \
+	libs/video/renderer/sw32/d_polyse.c \
+	libs/video/renderer/sw32/d_scan.c \
+	libs/video/renderer/sw32/d_sky.c \
+	libs/video/renderer/sw32/d_sprite.c \
+	libs/video/renderer/sw32/d_surf.c \
+	libs/video/renderer/sw32/d_vars.c \
+	libs/video/renderer/sw32/d_zpoint.c \
+	libs/video/renderer/sw32/draw.c \
+	libs/video/renderer/sw32/namehack.h \
+	libs/video/renderer/sw32/screen.c \
+	libs/video/renderer/sw32/sw32_graph.c \
+	libs/video/renderer/sw32/sw32_raclip.c \
+	libs/video/renderer/sw32/sw32_ralias.c \
+	libs/video/renderer/sw32/sw32_rbsp.c \
+	libs/video/renderer/sw32/sw32_rdraw.c \
+	libs/video/renderer/sw32/sw32_redge.c \
+	libs/video/renderer/sw32/sw32_riqm.c \
+	libs/video/renderer/sw32/sw32_rmain.c \
+	libs/video/renderer/sw32/sw32_rmisc.c \
+	libs/video/renderer/sw32/sw32_rpart.c \
+	libs/video/renderer/sw32/sw32_rsky.c \
+	libs/video/renderer/sw32/sw32_rsprite.c \
+	libs/video/renderer/sw32/sw32_rsurf.c \
+	libs/video/renderer/sw32/vid_common_sw32.c
+
+vulkan_libs =
+libs_video_renderer_vid_render_vulkan_la_LDFLAGS=       $(plugin_ldflags)
+libs_video_renderer_vid_render_vulkan_la_LIBADD=        $(vulkan_libs)
+libs_video_renderer_vid_render_vulkan_la_DEPENDENCIES=$(vulkan_libs)
+libs_video_renderer_vid_render_vulkan_la_SOURCES = \
+	$(common_sources) \
+	libs/video/renderer/vid_render_vulkan.c \
+	libs/video/renderer/vulkan/buffer.c \
+	libs/video/renderer/vulkan/command.c \
+	libs/video/renderer/vulkan/descriptor.c \
+	libs/video/renderer/vulkan/device.c \
+	libs/video/renderer/vulkan/image.c \
+	libs/video/renderer/vulkan/instance.c \
+	libs/video/renderer/vulkan/memory.c \
+	libs/video/renderer/vulkan/namehack.h \
+	libs/video/renderer/vulkan/pipeline.c \
+	libs/video/renderer/vulkan/renderpass.c \
+	libs/video/renderer/vulkan/swapchain.c \
+	libs/video/renderer/vulkan/util.c \
+	libs/video/renderer/vulkan/util.h \
+	libs/video/renderer/vulkan/vulkan_draw.c \
+	libs/video/renderer/vulkan/vulkan_vid_common.c
+
+CLEANFILES += \
+	libs/video/renderer/glsl/*.vc \
+	libs/video/renderer/glsl/*.fc \
+	libs/video/renderer/glsl/*.slc

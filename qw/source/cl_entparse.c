@@ -42,20 +42,20 @@
 #include "QF/skin.h"
 #include "QF/sys.h"
 
-#include "qw/msg_ucmd.h"
-
-#include "qw/bothdefs.h"
-#include "cl_cam.h"
-#include "cl_ents.h"
-#include "cl_main.h"
-#include "cl_parse.h"
-#include "cl_pred.h"
-#include "cl_tent.h"
 #include "compat.h"
-#include "d_iface.h"
-#include "host.h"
-#include "qw/pmove.h"
 #include "clview.h"
+
+#include "qw/msg_ucmd.h"
+#include "qw/pmove.h"
+#include "qw/bothdefs.h"
+
+#include "qw/include/cl_cam.h"
+#include "qw/include/cl_ents.h"
+#include "qw/include/cl_main.h"
+#include "qw/include/cl_parse.h"
+#include "qw/include/cl_pred.h"
+#include "qw/include/cl_tent.h"
+#include "qw/include/host.h"
 
 static struct predicted_player {
 	int         flags;

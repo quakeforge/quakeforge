@@ -50,7 +50,8 @@
 #include "QF/zone.h"
 
 #include "compat.h"
-#include "crudefile.h"
+
+#include "qw/include/crudefile.h"
 
 int cf_maxsize; // max combined file size (eg quota)
 int cf_cursize; // current combined file size

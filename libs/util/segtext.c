@@ -140,7 +140,7 @@ Segtext_new (const char *source_string)
 	if (!source_string)
 		return 0;
 	text = new_text ();
-	text->tab = Hash_NewTable (61, segtext_getkey, 0, 0);
+	text->tab = Hash_NewTable (61, segtext_getkey, 0, 0, 0);
 
 	src = strdup (source_string);
 	// The first chunk is special in that it holds the pointer to the copied

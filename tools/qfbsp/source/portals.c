@@ -28,11 +28,11 @@
 
 #include "QF/sys.h"
 
-#include "brush.h"
-#include "bsp5.h"
-#include "draw.h"
-#include "options.h"
-#include "portals.h"
+#include "tools/qfbsp/include/brush.h"
+#include "tools/qfbsp/include/bsp5.h"
+#include "tools/qfbsp/include/draw.h"
+#include "tools/qfbsp/include/options.h"
+#include "tools/qfbsp/include/portals.h"
 
 /**	\addtogroup qfbsp_portals
 */

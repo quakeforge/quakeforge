@@ -47,10 +47,10 @@
 #include "QF/bspfile.h"
 #include "QF/mathlib.h"
 
-#include "entities.h"
-#include "light.h"
-#include "options.h"
-#include "threads.h"
+#include "tools/qflight/include/entities.h"
+#include "tools/qflight/include/light.h"
+#include "tools/qflight/include/options.h"
+#include "tools/qflight/include/threads.h"
 
 static struct {
 	int         empty;

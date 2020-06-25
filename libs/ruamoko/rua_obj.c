@@ -1021,10 +1021,11 @@ obj_verror (probj_t *probj, pr_id_t *object, int code, const char *fmt, int coun
 			pr_type_t **args)
 {
 	progs_t    *pr = probj->pr;
+	__auto_type class = &G_STRUCT (pr, pr_class_t, object->class_pointer);
 	dstring_t  *dstr = dstring_newstr ();
 
 	PR_Sprintf (pr, dstr, "obj_verror", fmt, count, args);
-	PR_RunError (pr, "%s", dstr->str);
+	PR_RunError (pr, "%s: %s", PR_GetString (pr, class->name), dstr->str);
 }
 
 static void
@@ -1488,7 +1489,7 @@ rua_obj_realloc (progs_t *pr)
 static void
 rua_obj_calloc (progs_t *pr)
 {
-	int         size = P_INT (pr, 0) * sizeof (pr_type_t);
+	int         size = P_INT (pr, 0) * P_INT (pr, 1) * sizeof (pr_type_t);
 	void       *mem = PR_Zone_Malloc (pr, size);
 
 	memset (mem, 0, size);
@@ -1701,8 +1702,8 @@ class_create_instance (progs_t *pr, pr_class_t *class)
 	pr_type_t  *mem;
 	pr_id_t    *id;
 
-	mem = PR_Zone_Malloc (pr, size);
-	// redundant memset (id, 0, size);
+	mem = PR_Zone_TagMalloc (pr, size, class->name);
+	memset (mem, 0, size);
 	id = (pr_id_t *) (mem + 1);
 	id->class_pointer = PR_SetPointer (pr, class);
 	return id;
@@ -1800,7 +1801,7 @@ rua_method_get_imp (progs_t *pr)
 {
 	pr_method_t *method = &P_STRUCT (pr, pr_method_t, 0);
 
-	R_INT (pr) = method->method_imp;
+	R_INT (pr) = method ? method->method_imp : 0;
 }
 
 static void
@@ -2215,10 +2216,14 @@ RUA_Obj_Init (progs_t *pr, int secure)
 	probj_t    *probj = calloc (1, sizeof (*probj));
 
 	probj->pr = pr;
-	probj->selector_hash = Hash_NewTable (1021, selector_get_key, 0, probj);
-	probj->classes = Hash_NewTable (1021, class_get_key, 0, probj);
-	probj->protocols = Hash_NewTable (1021, protocol_get_key, 0, probj);
-	probj->load_methods = Hash_NewTable (1021, 0, 0, probj);
+	probj->selector_hash = Hash_NewTable (1021, selector_get_key, 0, probj,
+										  pr->hashlink_freelist);
+	probj->classes = Hash_NewTable (1021, class_get_key, 0, probj,
+									pr->hashlink_freelist);
+	probj->protocols = Hash_NewTable (1021, protocol_get_key, 0, probj,
+									  pr->hashlink_freelist);
+	probj->load_methods = Hash_NewTable (1021, 0, 0, probj,
+										 pr->hashlink_freelist);
 	probj->msg = dstring_newstr();
 	Hash_SetHashCompare (probj->load_methods, load_methods_get_hash,
 						 load_methods_compare);
@@ -2249,4 +2254,18 @@ RUA_Obj_msg_lookup (progs_t *pr, pointer_t _self, pointer_t __cmd)
 					 PR_GetString (pr, probj->selector_names[_cmd->sel_id]));
 
 	return imp;
+}
+
+int
+RUA_obj_increment_retaincount (progs_t *pr)
+{
+	rua_obj_increment_retaincount (pr);
+	return R_INT (pr);
+}
+
+int
+RUA_obj_decrement_retaincount (progs_t *pr)
+{
+	rua_obj_decrement_retaincount (pr);
+	return R_INT (pr);
 }

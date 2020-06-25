@@ -42,12 +42,12 @@
 #include "QF/alloc.h"
 #include "QF/pr_comp.h"
 
-#include "diagnostic.h"
-#include "opcodes.h"
-#include "options.h"
-#include "pragma.h"
-#include "strpool.h"
-#include "type.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/opcodes.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/pragma.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/type.h"
 
 typedef struct pragma_arg_s {
 	struct pragma_arg_s *next;

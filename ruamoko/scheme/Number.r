@@ -1,4 +1,5 @@
 #include "Number.h"
+#include "legacy_string.h"
 #include "string.h"
 
 @implementation Number

@@ -44,27 +44,27 @@
 #include "QF/hash.h"
 #include "QF/va.h"
 
-#include "qfcc.h"
+#include "tools/qfcc/include/qfcc.h"
 
-#include "class.h"
-#include "codespace.h"
-#include "debug.h"
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "expr.h"
-#include "flow.h"
-#include "function.h"
-#include "opcodes.h"
-#include "options.h"
-#include "reloc.h"
-#include "shared.h"
-#include "statements.h"
-#include "strpool.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/codespace.h"
+#include "tools/qfcc/include/debug.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/flow.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/opcodes.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/statements.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
 static param_t *params_freelist;
 static function_t *functions_freelist;
@@ -170,9 +170,10 @@ parse_params (type_t *type, param_t *parms)
 {
 	param_t    *p;
 	type_t     *new;
+	type_t     *ptype;
 	int         count = 0;
 
-	if (type && obj_is_class (type)) {
+	if (type && is_class (type)) {
 		error (0, "cannot return an object (forgot *?)");
 		type = &type_id;
 	}
@@ -197,11 +198,12 @@ parse_params (type_t *type, param_t *parms)
 				internal_error (0, 0);
 			new->t.func.num_params = -(new->t.func.num_params + 1);
 		} else if (p->type) {
-			if (obj_is_class (p->type)) {
+			if (is_class (p->type)) {
 				error (0, "cannot use an object as a parameter (forgot *?)");
 				p->type = &type_id;
 			}
-			new->t.func.param_types[new->t.func.num_params] = p->type;
+			ptype = (type_t *) unalias_type (p->type); //FIXME cast
+			new->t.func.param_types[new->t.func.num_params] = ptype;
 			new->t.func.num_params++;
 		}
 	}
@@ -216,7 +218,7 @@ check_params (param_t *params)
 	if (!params)
 		return 0;
 	while (p) {
-		if (p->type == &type_void) {
+		if (p->type && is_void(p->type)) {
 			if (p->name) {
 				error (0, "parameter %d ('%s') has incomplete type", num,
 					   p->name);
@@ -235,14 +237,14 @@ check_params (param_t *params)
 }
 
 static overloaded_function_t *
-get_function (const char *name, type_t *type, int overload, int create)
+get_function (const char *name, const type_t *type, int overload, int create)
 {
 	const char *full_name;
 	overloaded_function_t *func;
 
 	if (!overloaded_functions) {
-		overloaded_functions = Hash_NewTable (1021, ol_func_get_key, 0, 0);
-		function_map = Hash_NewTable (1021, func_map_get_key, 0, 0);
+		overloaded_functions = Hash_NewTable (1021, ol_func_get_key, 0, 0, 0);
+		function_map = Hash_NewTable (1021, func_map_get_key, 0, 0, 0);
 	}
 
 	name = save_string (name);
@@ -294,7 +296,7 @@ function_symbol (symbol_t *sym, int overload, int create)
 	overloaded_function_t *func;
 	symbol_t   *s;
 
-	func = get_function (name, sym->type, overload, create);
+	func = get_function (name, unalias_type (sym->type), overload, create);
 
 	if (func && func->overloaded)
 		name = func->full_name;
@@ -302,7 +304,7 @@ function_symbol (symbol_t *sym, int overload, int create)
 	if ((!s || s->table != current_symtab) && create) {
 		s = new_symbol (name);
 		s->sy_type = sy_func;
-		s->type = sym->type;
+		s->type = (type_t *) unalias_type (sym->type); // FIXME cast
 		s->params = sym->params;
 		s->s.func = 0;				// function not yet defined
 		symtab_addsymbol (current_symtab, s);
@@ -316,8 +318,8 @@ func_compare (const void *a, const void *b)
 {
 	overloaded_function_t *fa = *(overloaded_function_t **) a;
 	overloaded_function_t *fb = *(overloaded_function_t **) b;
-	type_t     *ta = fa->type;
-	type_t     *tb = fb->type;
+	const type_t *ta = fa->type;
+	const type_t *tb = fb->type;
 	int         na = ta->t.func.num_params;
 	int         nb = tb->t.func.num_params;
 	int         ret, i;
@@ -497,7 +499,13 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 	symtab->space = defspace_new (ds_virtual);
 	current_symtab = symtab;
 
-	if (fsym->type->t.func.num_params < 0) {
+	if (!fsym->s.func) {
+		internal_error (0, "function %s not defined", fsym->name);
+	}
+	if (!is_func (fsym->s.func->type)) {
+		internal_error (0, "function type %s not a funciton", fsym->name);
+	}
+	if (fsym->s.func->type->t.func.num_params < 0) {
 		args = new_symbol_type (".args", &type_va_list);
 		initialize_def (args, 0, symtab->space, sc_param);
 	}
@@ -551,6 +559,7 @@ make_function (symbol_t *sym, const char *nice_name, defspace_t *space,
 	if (!sym->s.func) {
 		sym->s.func = new_function (sym->name, nice_name);
 		sym->s.func->sym = sym;
+		sym->s.func->type = unalias_type (sym->type);
 	}
 	if (sym->s.func->def && sym->s.func->def->external
 		&& storage != sc_extern) {
@@ -615,7 +624,8 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 static void
 build_function (symbol_t *fsym)
 {
-	if (fsym->type->t.func.num_params > MAX_PARMS) {
+	const type_t *func_type = fsym->s.func->type;
+	if (func_type->t.func.num_params > MAX_PARMS) {
 		error (0, "too many params");
 	}
 	//	FIXME

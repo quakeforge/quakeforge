@@ -45,25 +45,26 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "qfcc.h"
-#include "class.h"
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "expr.h"
-#include "function.h"
-#include "idstuff.h"
-#include "method.h"
-#include "options.h"
-#include "reloc.h"
-#include "shared.h"
-#include "strpool.h"
-#include "struct.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
-#include "qc-parse.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/idstuff.h"
+#include "tools/qfcc/include/method.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/struct.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
+
+#include "tools/qfcc/source/qc-parse.h"
 
 static expr_t *exprs_freelist;
 
@@ -133,7 +134,7 @@ convert_vector (expr_t *e)
 
 	if (e->type != ex_vector)
 		return e;
-	if (e->e.vector.type == &type_vector) {
+	if (is_vector(e->e.vector.type)) {
 		// guaranteed to have three elements
 		expr_t     *x = e->e.vector.list;
 		expr_t     *y = x->next;
@@ -155,7 +156,7 @@ convert_vector (expr_t *e)
 		e->e.vector.list = x;
 		return e;
 	}
-	if (e->e.vector.type == &type_quaternion) {
+	if (is_quaternion(e->e.vector.type)) {
 		// guaranteed to have two or four elements
 		if (e->e.vector.list->next->next) {
 			// four vals: x, y, z, w
@@ -211,6 +212,7 @@ convert_vector (expr_t *e)
 type_t *
 get_type (expr_t *e)
 {
+	const type_t *type = 0;
 	convert_name (e);
 	switch (e->type) {
 		case ex_labelref:
@@ -238,19 +240,24 @@ get_type (expr_t *e)
 			return &type_void;
 		case ex_expr:
 		case ex_uexpr:
-			return e->e.expr.type;
+			type = e->e.expr.type;
+			break;
 		case ex_def:
-			return e->e.def->type;
+			type = e->e.def->type;
+			break;
 		case ex_symbol:
-			return e->e.symbol->type;
+			type = e->e.symbol->type;
+			break;
 		case ex_temp:
-			return e->e.temp.type;
+			type = e->e.temp.type;
+			break;
 		case ex_value:
-			return e->e.value->type;
+			type = e->e.value->type;
+			break;
 		case ex_vector:
 			return e->e.vector.type;
 	}
-	return 0;
+	return (type_t *) unalias_type (type);//FIXME cast
 }
 
 etype_t
@@ -632,12 +639,12 @@ new_symbol_expr (symbol_t *symbol)
 }
 
 expr_t *
-new_temp_def_expr (type_t *type)
+new_temp_def_expr (const type_t *type)
 {
 	expr_t     *e = new_expr ();
 
 	e->type = ex_temp;
-	e->e.temp.type = type;
+	e->e.temp.type = (type_t *) unalias_type (type);	// FIXME cast
 	return e;
 }
 
@@ -1321,7 +1328,7 @@ get_struct_field (const type_t *t1, expr_t *e1, expr_t *e2)
 		return 0;
 	}
 	field = symtab_lookup (strct, sym->name);
-	if (!field && t1 != &type_entity) {
+	if (!field && !is_entity(t1)) {
 		error (e2, "'%s' has no member named '%s'", t1->name + 4, sym->name);
 		e1->type = ex_error;
 	}
@@ -1370,7 +1377,7 @@ field_expr (expr_t *e1, expr_t *e2)
 			e = new_binary_expr ('&', e1, e2);
 			e->e.expr.type = pointer_type (field->type);
 			return unary_expr ('.', e);
-		} else if (obj_is_class (t1->t.fldptr.type)) {
+		} else if (is_class (t1->t.fldptr.type)) {
 			class_t    *class = t1->t.fldptr.type->t.class;
 			symbol_t   *sym = e2->e.symbol;//FIXME need to check
 			symbol_t   *ivar;
@@ -1394,7 +1401,7 @@ field_expr (expr_t *e1, expr_t *e2)
 			return e1;
 
 		if (e1->type == ex_expr && e1->e.expr.op == '.'
-			&& get_type (e1->e.expr.e1) == &type_entity) {
+			&& is_entity(get_type (e1->e.expr.e1))) {
 			// undo the . expression
 			e2 = e1->e.expr.e2;
 			e1 = e1->e.expr.e1;
@@ -1426,7 +1433,7 @@ field_expr (expr_t *e1, expr_t *e2)
 				return new_offset_alias_expr (field->type, e1, field->s.offset);
 			}
 		}
-	} else if (obj_is_class (t1)) {
+	} else if (is_class (t1)) {
 		//Class instance variables aren't allowed and thus declaring one
 		//is treated as an error, so this is a follow-on error.
 		return error (e1, "class instance access");
@@ -1630,11 +1637,25 @@ unary_expr (int op, expr_t *e)
 				case ex_memset:
 					internal_error (e, 0);
 				case ex_uexpr:
-					if (e->e.expr.op == '-')
+					if (e->e.expr.op == '-') {
 						return e->e.expr.e1;
+					}
+					{
+						expr_t     *n = new_unary_expr (op, e);
+
+						n->e.expr.type = get_type (e);
+						return n;
+					}
 				case ex_block:
-					if (!e->e.block.result)
+					if (!e->e.block.result) {
 						return error (e, "invalid type for unary -");
+					}
+					{
+						expr_t     *n = new_unary_expr (op, e);
+
+						n->e.expr.type = get_type (e);
+						return n;
+					}
 				case ex_expr:
 				case ex_bool:
 				case ex_temp:
@@ -1642,7 +1663,7 @@ unary_expr (int op, expr_t *e)
 					{
 						expr_t     *n = new_unary_expr (op, e);
 
-						n->e.expr.type = e->e.expr.type;
+						n->e.expr.type = get_type (e);
 						return n;
 					}
 				case ex_def:
@@ -1794,8 +1815,8 @@ bitnot_expr:
 						expr_t     *n = new_unary_expr (op, e);
 						type_t     *t = get_type (e);
 
-						if (t != &type_integer && t != &type_float
-							&& t != &type_quaternion)
+						if (!is_integer(t) && !is_float(t)
+							&& !is_quaternion(t))
 							return error (e, "invalid type for unary ~");
 						n->e.expr.type = t;
 						return n;
@@ -1963,7 +1984,7 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 	e = expr_file_line (new_binary_expr ('c', fexpr, args), fexpr);
 	e->e.expr.type = ftype->t.func.type;
 	append_expr (call, e);
-	if (ftype->t.func.type != &type_void) {
+	if (!is_void(ftype->t.func.type)) {
 		call->e.block.result = new_ret_expr (ftype->t.func.type);
 	} else if (options.traditional) {
 		call->e.block.result = new_ret_expr (&type_float);
@@ -2026,11 +2047,11 @@ goto_expr (expr_t *label)
 expr_t *
 return_expr (function_t *f, expr_t *e)
 {
-	type_t     *t;
-	type_t     *ret_type = f->sym->type->t.func.type;
+	const type_t *t;
+	const type_t *ret_type = unalias_type (f->type->t.func.type);
 
 	if (!e) {
-		if (ret_type != &type_void) {
+		if (!is_void(ret_type)) {
 			if (options.traditional) {
 				if (options.warnings.traditional)
 					warning (e,
@@ -2057,23 +2078,23 @@ return_expr (function_t *f, expr_t *e)
 	if (e->type == ex_error) {
 		return e;
 	}
-	if (ret_type == &type_void) {
+	if (is_void(ret_type)) {
 		if (!options.traditional)
 			return error (e, "returning a value for a void function");
 		if (options.warnings.traditional)
 			warning (e, "returning a value for a void function");
 	}
 	if (e->type == ex_bool) {
-		e = convert_from_bool (e, ret_type);
+		e = convert_from_bool (e, (type_t *) ret_type); //FIXME cast
 	}
-	if (ret_type == &type_float && is_integer_val (e)) {
+	if (is_float(ret_type) && is_integer_val (e)) {
 		convert_int (e);
 		t = &type_float;
 	}
-	if (t == &type_void) {
+	if (is_void(t)) {
 		if (e->type == ex_nil) {
 			t = ret_type;
-			convert_nil (e, t);
+			convert_nil (e, (type_t *) t);//FIXME cast
 		} else {
 			if (!options.traditional)
 				return error (e, "void value not ignored as it ought to be");
@@ -2091,7 +2112,7 @@ return_expr (function_t *f, expr_t *e)
 					 f->sym->name);
 	} else {
 		if (ret_type != t) {
-			e = cast_expr (ret_type, e);
+			e = cast_expr ((type_t *) ret_type, e);//FIXME cast
 			t = f->sym->type->t.func.type;
 		}
 	}
@@ -2621,6 +2642,7 @@ cast_expr (type_t *dstType, expr_t *e)
 	if (e->type == ex_error)
 		return e;
 
+	dstType = (type_t *) unalias_type (dstType); //FIXME cast
 	srcType = get_type (e);
 
 	if (dstType == srcType)

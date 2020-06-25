@@ -47,11 +47,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "QF/va.h"
 
 #include "compat.h"
+
 #include "qw/pmove.h"
-#include "server.h"
-#include "sv_demo.h"
-#include "sv_progs.h"
-#include "sv_recorder.h"
+#include "qw/include/server.h"
+#include "qw/include/sv_demo.h"
+#include "qw/include/sv_progs.h"
+#include "qw/include/sv_recorder.h"
 
 static QFile   *demo_file;
 static byte    *demo_mfile;

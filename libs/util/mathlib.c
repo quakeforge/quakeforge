@@ -1257,7 +1257,6 @@ circum_circle (const vec_t **points, int num_points, sphere_t *sphere)
 			VectorMultAdd (sphere->center, bb, ca, sphere->center);
 			VectorMultAdd (sphere->center, cc, ab, sphere->center);
 			VectorAdd (sphere->center, points[0], sphere->center);
-			sphere->radius = VectorDistance (sphere->center, points[0]);
 			return 1;
 	}
 	return 0;
@@ -1284,8 +1283,8 @@ CircumSphere (const vec3_t points[], int num_points, sphere_t *sphere)
 }
 
 static void
-closest_point (const vec_t **points, int num_points, const vec3_t x,
-			   vec3_t closest)
+closest_affine_point (const vec_t **points, int num_points, const vec3_t x,
+					  vec3_t closest)
 {
 	vec3_t      a, b, n, d;
 	vec_t       l;
@@ -1312,6 +1311,74 @@ closest_point (const vec_t **points, int num_points, const vec3_t x,
 	}
 }
 
+static int
+test_support_points(const vec_t **points, int *num_points, const vec3_t center)
+{
+	int         in_affine = 0;
+	int         in_convex = 0;
+	vec3_t      v, d, n, a, b;
+	vec_t       nn, dd, vv, dn;
+
+	switch (*num_points) {
+		case 1:
+			in_affine = VectorCompare (points[0], center);
+			// the convex hull and affine hull for a single point are the same
+			in_convex = in_affine;
+			break;
+		case 2:
+			VectorSubtract (points[1], points[0], v);
+			VectorSubtract (center, points[0], d);
+			CrossProduct (v, d, n);
+			nn = DotProduct (n, n);
+			dd = DotProduct (d, d);
+			vv = DotProduct (v, v);
+			in_affine = nn < 1e-8 * vv * dd;
+			break;
+		case 3:
+			VectorSubtract (points[1], points[0], a);
+			VectorSubtract (points[2], points[0], b);
+			VectorSubtract (center, points[0], d);
+			CrossProduct (a, b, n);
+			dn = DotProduct (d, n);
+			dd = DotProduct (d, d);
+			nn = DotProduct (n, n);
+			in_affine = dn * dn < 1e-8 * dd * nn;
+			break;
+		case 4:
+			in_affine = 1;
+			break;
+		default:
+			Sys_Error ("Invalid number of points (%d) in test_support_points",
+					   *num_points);
+	}
+
+	// if in_convex is not true while in_affine is, then need to test as
+	// there is more than one dimension for the affine hull (a single support
+	// point is never dropped as it cannot be redundant)
+	if (in_affine && !in_convex) {
+		vec_t       lambda[4];
+		int         dropped = 0;
+		int         count = *num_points;
+
+		BarycentricCoords (points, count, center, lambda);
+
+		for (int i = 0; i < count; i++) {
+			points[i - dropped] = points[i];
+			if (lambda[i] < -1e-4) {
+				dropped++;
+				(*num_points)--;
+			}
+		}
+		in_convex = !dropped;
+		if (dropped) {
+			for (int i = count - dropped; i < count; i++) {
+				points[i] = 0;
+			}
+		}
+	}
+	return in_convex;
+}
+
 sphere_t
 SmallestEnclosingBall (const vec3_t points[], int num_points)
 {
@@ -1321,10 +1388,11 @@ SmallestEnclosingBall (const vec3_t points[], int num_points)
 	int         num_support;
 	vec_t       dist, best_dist;
 	int         i;
-	int         itters = 0;
+	int         iters = 0;
 
-	if (num_points < 3) {
-		CircumSphere (points, num_points, &sphere);
+	if (num_points < 1) {
+		VectorZero (sphere.center);
+		sphere.radius = 0;
 		return sphere;
 	}
 
@@ -1333,7 +1401,7 @@ SmallestEnclosingBall (const vec3_t points[], int num_points)
 
 	VectorCopy (points[0], sphere.center);
 	best_dist = dist = 0;
-	best = 0;
+	best = points[0];
 	for (i = 1; i < num_points; i++) {
 		dist = VectorDistance_fast (points[i], sphere.center);
 		if (dist > best_dist) {
@@ -1345,41 +1413,22 @@ SmallestEnclosingBall (const vec3_t points[], int num_points)
 	support[0] = best;
 	sphere.radius = best_dist;	// note: radius squared until the end
 
-	while (1) {
+	while (!test_support_points (support, &num_support, sphere.center)) {
 		vec3_t      affine;
 		vec3_t      center_to_affine, center_to_point;
 		vec_t       affine_dist, point_proj, point_dist, bound;
 		vec_t       scale = 1;
 		int         i;
 
-		if (itters++ > 10)
+		if (iters++ > 10)
 			Sys_Error ("stuck SEB");
 		best = 0;
 
-		if (num_support == 4) {
-			vec_t       lambda[4];
-			int         dropped = 0;
-
-			BarycentricCoords (support, 4, sphere.center, lambda);
-			for (i = 0; i < 4; i++) {
-				support[i - dropped] = support[i];
-				if (lambda[i] < 0) {
-					dropped++;
-					num_support--;
-				}
-			}
-			if (!dropped)
-				break;
-			for (i = 4 - dropped; i < 4; i++)
-				support[i] = 0;
-		}
-		closest_point (support, num_support, sphere.center, affine);
+		closest_affine_point (support, num_support, sphere.center, affine);
 		VectorSubtract (affine, sphere.center, center_to_affine);
 		affine_dist = DotProduct (center_to_affine, center_to_affine);
-		if (affine_dist < 1e-2 * sphere.radius)
-			break;
 		for (i = 0; i < num_points; i++) {
-			if (points[i] == support [0] || points[i] == support[1]
+			if (points[i] == support[0] || points[i] == support[1]
 				|| points[i] == support[2])
 				continue;
 			VectorSubtract (points[i], sphere.center, center_to_point);
@@ -1397,10 +1446,10 @@ SmallestEnclosingBall (const vec3_t points[], int num_points)
 			}
 		}
 		VectorMultAdd (sphere.center, scale, center_to_affine, sphere.center);
-		if (!best)
-			break;
-		sphere.radius = VectorDistance_fast (sphere.center, best);
-		support[num_support++] = best;
+		sphere.radius = VectorDistance_fast (sphere.center, support[0]);
+		if (best) {
+			support[num_support++] = best;
+		}
 	}
 	best_dist = 0;
 	for (i = 0; i < num_points; i++) {

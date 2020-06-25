@@ -44,12 +44,13 @@
 
 #include "QF/plugin/vid_render.h"
 
-#include "chase.h"
-#include "client.h"
 #include "compat.h"
-#include "host.h"
-#include "host.h"
-#include "server.h"
+
+#include "nq/include/chase.h"
+#include "nq/include/client.h"
+#include "nq/include/host.h"
+#include "nq/include/host.h"
+#include "nq/include/server.h"
 
 entity_t        cl_entities[MAX_EDICTS];
 double          cl_msgtime[MAX_EDICTS];

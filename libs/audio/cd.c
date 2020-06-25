@@ -70,7 +70,7 @@ CDAudio_Resume (void)
 }
 
 static void
-CDAudio_shutdown (void)
+CDAudio_shutdown (void *data)
 {
 	if (cdmodule)
 		cdmodule->functions->general->p_Shutdown ();
@@ -93,7 +93,7 @@ CD_f (void)
 VISIBLE int
 CDAudio_Init (void)
 {
-	Sys_RegisterShutdown (CDAudio_shutdown);
+	Sys_RegisterShutdown (CDAudio_shutdown, 0);
 
 	PI_RegisterPlugins (cd_plugin_list);
 	cd_plugin = Cvar_Get ("cd_plugin", CD_DEFAULT, CVAR_ROM, NULL,

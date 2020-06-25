@@ -63,10 +63,10 @@
 #include "QF/va.h"
 #include "QF/zone.h"
 
-#include "obj_file.h"
-#include "obj_type.h"
-#include "qfprogs.h"
-#include "reloc.h"
+#include "tools/qfcc/include/obj_file.h"
+#include "tools/qfcc/include/obj_type.h"
+#include "tools/qfcc/include/qfprogs.h"
+#include "tools/qfcc/include/reloc.h"
 
 const char *reloc_names[] = {
 	"none",
@@ -247,7 +247,7 @@ init_qf (void)
 
 	PR_Init (&pr);
 
-	func_tab = Hash_NewTable (1021, 0, 0, 0);
+	func_tab = Hash_NewTable (1021, 0, 0, 0, 0);
 	Hash_SetHashCompare (func_tab, func_hash, func_compare);
 }
 
@@ -289,6 +289,7 @@ load_progs (const char *name)
 			return 0;
 
 		PR_ResolveGlobals (&pr);
+		PR_LoadStrings (&pr);
 		PR_LoadDebug (&pr);
 	}
 	for (i = 0; i < pr.progs->numfunctions; i++) {

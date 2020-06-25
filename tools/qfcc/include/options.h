@@ -114,8 +114,6 @@ typedef struct {
 	qboolean		partial_link;	// partial linking
 	qboolean		preprocess_only;// run only cpp, don't compile
 	qboolean		gzip;			// compress qfo files when writing
-	int				strip_path;		// number of leading path elements to strip
-									// from source file names
 	const char     *output_file;
 	const char     *debug_file;
 } options_t;

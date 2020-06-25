@@ -54,9 +54,10 @@
 #include "QF/va.h"
 
 #include "compat.h"
+
 #include "netchan.h"
 #include "qw/protocol.h"
-#include "server.h"
+#include "qw/include/server.h"
 
 cvar_t     *net_packetlog;
 cvar_t     *net_loglevel;
@@ -177,7 +178,7 @@ Net_LogStart (const char *fname)
 }
 
 void
-Net_LogStop (void)
+Net_LogStop (void *data)
 {
 	if (Net_PacketLog)
 		Qclose (Net_PacketLog);
@@ -954,7 +955,7 @@ Net_PacketLog_f (cvar_t *var)
 	if (var->int_val) {
 		Net_LogStart ("qfpacket.log");
 	} else {
-		Net_LogStop ();
+		Net_LogStop (0);
 	}
 }
 

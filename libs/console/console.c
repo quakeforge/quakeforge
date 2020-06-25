@@ -85,7 +85,7 @@ Con_Interp_f (cvar_t *var)
 }
 
 static void
-Con_shutdown (void)
+Con_shutdown (void *data)
 {
 	if (con_module) {
 		con_module->functions->general->p_Shutdown ();
@@ -96,7 +96,7 @@ Con_shutdown (void)
 VISIBLE void
 Con_Init (const char *plugin_name)
 {
-	Sys_RegisterShutdown (Con_shutdown);
+	Sys_RegisterShutdown (Con_shutdown, 0);
 
 	con_module = PI_LoadPlugin ("console", plugin_name);
 	if (con_module) {

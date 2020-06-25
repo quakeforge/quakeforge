@@ -54,7 +54,7 @@ static plugin_list_t snd_render_list[] = {
 };
 
 static void
-S_shutdown (void)
+S_shutdown (void *data)
 {
 	if (snd_render_module) {
 		PI_UnloadPlugin (snd_render_module);
@@ -78,7 +78,7 @@ S_Init (int *viewentity, double *host_frametime)
 		return;
 	}
 
-	Sys_RegisterShutdown (S_shutdown);
+	Sys_RegisterShutdown (S_shutdown, 0);
 
 	PI_RegisterPlugins (snd_output_list);
 	PI_RegisterPlugins (snd_render_list);

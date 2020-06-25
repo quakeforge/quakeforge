@@ -36,7 +36,7 @@
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
-#include "server.h"
+#include "qw/include/server.h"
 
 qboolean    WinNT;
 server_static_t svs;
@@ -93,7 +93,7 @@ main (int argc, const char **argv)
 	if (WinNT)
 		Cvar_Set (sys_sleep, "0");
 
-	Sys_RegisterShutdown (Net_LogStop);
+	Sys_RegisterShutdown (Net_LogStop, 0);
 
 	// run one frame immediately for first heartbeat
 	SV_Frame (0.1);

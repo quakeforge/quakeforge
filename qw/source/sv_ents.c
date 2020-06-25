@@ -39,11 +39,12 @@
 #include "QF/msg.h"
 #include "QF/sys.h"
 
+#include "compat.h"
+
 #include "qw/msg_ucmd.h"
 
-#include "compat.h"
-#include "server.h"
-#include "sv_progs.h"
+#include "qw/include/server.h"
+#include "qw/include/sv_progs.h"
 
 
 /*

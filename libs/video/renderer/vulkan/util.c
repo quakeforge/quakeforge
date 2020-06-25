@@ -46,7 +46,7 @@ strset_get_key (const void *_str, void *unused)
 strset_t *
 new_strset (const char * const *strings)
 {
-	hashtab_t  *tab = Hash_NewTable (61, strset_get_key, 0, 0);
+	hashtab_t  *tab = Hash_NewTable (61, strset_get_key, 0, 0, 0);//FIXME threads
 	for ( ; strings && *strings; strings++) {
 		Hash_Add (tab, (void *) *strings);
 	}

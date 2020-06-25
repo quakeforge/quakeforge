@@ -719,7 +719,7 @@ NET_SendToAll (sizebuf_t *data, double blocktime)
 //=============================================================================
 
 static void
-NET_shutdown (void)
+NET_shutdown (void *data)
 {
 	qsocket_t  *sock;
 
@@ -752,7 +752,7 @@ NET_Init (void)
 	int         controlSocket;
 	qsocket_t  *s;
 
-	Sys_RegisterShutdown (NET_shutdown);
+	Sys_RegisterShutdown (NET_shutdown, 0);
 
 	if (COM_CheckParm ("-playback")) {
 		net_numdrivers = 1;

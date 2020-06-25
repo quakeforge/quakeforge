@@ -45,9 +45,10 @@
 #include "QF/script.h"
 #include "QF/sys.h"
 
-#include "lbmlib.h"
-#include "trilib.h"
 #include "compat.h"
+
+#include "tools/qfmodelgen/include/lbmlib.h"
+#include "tools/qfmodelgen/include/trilib.h"
 
 #define MAXVERTS		2048
 #define MAXFRAMES		256

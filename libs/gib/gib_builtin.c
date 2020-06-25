@@ -99,7 +99,7 @@ GIB_Builtin_Add (const char *name, void (*func) (void))
 
 	if (!gib_builtins)
 		gib_builtins =
-			Hash_NewTable (1024, GIB_Builtin_Get_Key, GIB_Builtin_Free, 0);
+			Hash_NewTable (1024, GIB_Builtin_Get_Key, GIB_Builtin_Free, 0, 0);
 
 	new = calloc (1, sizeof (gib_builtin_t));
 	new->func = func;

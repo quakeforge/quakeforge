@@ -47,16 +47,23 @@ typedef enum {
 	ty_enum,
 	ty_array,
 	ty_class,
+	ty_alias,
 } ty_meta_e;
 
+typedef struct qfot_alias_s {
+	etype_t     type;				///< type at end of alias chain
+	pointer_t   aux_type;			///< referenced type: stripped of aliases
+	pointer_t   full_type;			///< includes full alias info
+	string_t    name;				///< alias name, may be null
+} qfot_alias_t;
 
 typedef struct qfot_fldptr_s {
-	pr_int_t    type;				///< ev_field or ev_pointer
+	etype_t     type;				///< ev_field or ev_pointer
 	pointer_t   aux_type;			///< referenced type
 } qfot_fldptr_t;
 
 typedef struct qfot_func_s {
-	pr_int_t    type;				///< always ev_func
+	etype_t     type;				///< always ev_func
 	pointer_t   return_type;		///< return type of the function
 	pr_int_t    num_params;			///< ones compliment count of the
 									///< parameters. -ve values indicate the
@@ -94,17 +101,18 @@ typedef struct qfot_array_s {
 	arrays.
 */
 typedef struct qfot_type_s {
-	pr_int_t    meta;				///< meta type: ty_meta_e
-	pr_int_t    size;				///< total word size of this encoding
+	ty_meta_e   meta;				///< meta type
+	pr_uint_t   size;				///< total word size of this encoding
 	string_t    encoding;			///< Objective-QC encoding
 	union {
-		pr_int_t    type;			///< ty_basic: etype_t
+		etype_t     type;			///< ty_basic: etype_t
 		qfot_fldptr_t fldptr;		///< ty_basic, ev_pointer/ev_field
 		qfot_func_t func;			///< ty_basic, ev_func
 		qfot_struct_t strct;		///< ty_struct/ty_union/ty_enum
 		qfot_array_t array;			///< ty_array
 		string_t    class;			///< ty_class
-	}           t;
+		qfot_alias_t alias;			///< ty_alias
+	};
 } qfot_type_t;
 
 typedef struct qfot_type_encodings_s {

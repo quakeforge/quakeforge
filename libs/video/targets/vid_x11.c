@@ -84,7 +84,7 @@ D_EndDirectRect (int x, int y, int width, int height)
 }
 
 static void
-VID_shutdown (void)
+VID_shutdown (void *data)
 {
 	Sys_MaskPrintf (SYS_VID, "VID_shutdown\n");
 	X11_CloseDisplay ();
@@ -98,7 +98,7 @@ VID_shutdown (void)
 void
 VID_Init (byte *palette, byte *colormap)
 {
-	Sys_RegisterShutdown (VID_shutdown);
+	Sys_RegisterShutdown (VID_shutdown, 0);
 
 	vid_internal.gl_context = X11_GL_Context;
 	vid_internal.sw_context = X11_SW_Context;

@@ -54,9 +54,9 @@
 
 #include "QF/dstring.h"
 
-#include "cpp.h"
-#include "diagnostic.h"
-#include "options.h"
+#include "tools/qfcc/include/cpp.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/options.h"
 
 typedef struct cpp_arg_s {
 	struct cpp_arg_s *next;

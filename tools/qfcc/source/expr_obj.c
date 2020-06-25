@@ -45,25 +45,24 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "qfcc.h"
-#include "class.h"
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "expr.h"
-#include "function.h"
-#include "idstuff.h"
-#include "method.h"
-#include "options.h"
-#include "reloc.h"
-#include "shared.h"
-#include "strpool.h"
-#include "struct.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
-#include "qc-parse.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/idstuff.h"
+#include "tools/qfcc/include/method.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/struct.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
 expr_t *
 new_self_expr (void)
@@ -151,7 +150,7 @@ super_expr (class_type_t *class_type)
 
 	sym = symtab_lookup (current_symtab, ".super");
 	if (!sym || sym->table != current_symtab) {
-		sym = new_symbol_type (".super", &type_obj_super);
+		sym = new_symbol_type (".super", &type_super);
 		initialize_def (sym, 0, current_symtab->space, sc_local);
 	}
 	super = new_symbol_expr (sym);

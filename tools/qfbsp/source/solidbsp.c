@@ -28,12 +28,12 @@
 
 #include "QF/sys.h"
 
-#include "brush.h"
-#include "csg4.h"
-#include "bsp5.h"
-#include "draw.h"
-#include "solidbsp.h"
-#include "surfaces.h"
+#include "tools/qfbsp/include/brush.h"
+#include "tools/qfbsp/include/csg4.h"
+#include "tools/qfbsp/include/bsp5.h"
+#include "tools/qfbsp/include/draw.h"
+#include "tools/qfbsp/include/solidbsp.h"
+#include "tools/qfbsp/include/surfaces.h"
 
 /**	\addtogroup qfbsp_solidbsp
 */

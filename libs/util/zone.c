@@ -337,7 +337,7 @@ Z_Print (memzone_t *zone)
 				zone->size, zone, zone->used);
 
 	for (block = zone->blocklist.next ; ; block = block->next) {
-		Sys_Printf ("block:%p    size:%7i    tag:%3i ofs:%x\n",
+		Sys_Printf ("block:%p    size:%7i    tag:%5x ofs:%x\n",
 					block, z_block_size (block),
 					block->tag, z_offset (zone, block));
 

@@ -44,24 +44,24 @@
 #include <QF/sys.h>
 #include <QF/va.h>
 
-#include "class.h"
-#include "debug.h"
-#include "def.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "expr.h"
-#include "function.h"
-#include "method.h"
-#include "options.h"
-#include "qfcc.h"
-#include "reloc.h"
-#include "shared.h"
-#include "strpool.h"
-#include "struct.h"
-#include "switch.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/debug.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/method.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/struct.h"
+#include "tools/qfcc/include/switch.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
 #define YYDEBUG 1
 #define YYERROR_VERBOSE 1
@@ -366,14 +366,17 @@ external_def
 	| optional_specifiers qc_func_params
 		{
 			type_t    **type;
+			type_t     *ret_type;
 			$<spec>$ = $1;		// copy spec bits and storage
 			// .float () foo; is a field holding a function variable rather
 			// than a function that returns a float field.
-			for (type = &$<spec>$.type; *type && (*type)->type == ev_field;
-				 type = &(*type)->t.fldptr.type)
-				 ;
-			*type = parse_params (*type, $2);
-			$<spec>$.type = find_type ($<spec>$.type);
+			for (type = &$1.type; *type && (*type)->type == ev_field;
+				 type = &(*type)->t.fldptr.type) {
+			}
+			ret_type = *type;
+			*type = 0;
+			*type = parse_params (0, $2);
+			$<spec>$.type = find_type (append_type ($1.type, ret_type));
 			if ($<spec>$.type->type != ev_field)
 				$<spec>$.params = $2;
 		}
@@ -456,6 +459,7 @@ external_decl
 			$1->type = find_type (append_type ($1->type, spec.type));
 			if (spec.is_typedef) {
 				$1->sy_type = sy_type;
+				$1->type=find_type (alias_type ($1->type, $1->type, $1->name));
 				symtab_addsymbol (current_symtab, $1);
 			} else {
 				initialize_def ($1, 0, current_symtab->space, spec.storage);
@@ -471,6 +475,7 @@ external_decl
 			if (spec.is_typedef) {
 				error (0, "typedef %s is initialized", $1->name);
 				$1->sy_type = sy_type;
+				$1->type=find_type (alias_type ($1->type, $1->type, $1->name));
 				symtab_addsymbol (current_symtab, $1);
 			} else {
 				initialize_def ($1, $2, current_symtab->space, spec.storage);
@@ -484,12 +489,10 @@ external_decl
 			$1->type = find_type (append_type ($1->type, spec.type));
 			if (spec.is_typedef) {
 				$1->sy_type = sy_type;
+				$1->type=find_type (alias_type ($1->type, $1->type, $1->name));
 				symtab_addsymbol (current_symtab, $1);
 			} else {
 				$1 = function_symbol ($1, spec.is_overload, 1);
-				// things might be a confused mess from earlier errors
-				if ($1->sy_type == sy_func)
-					make_function ($1, 0, $1->table->space, spec.storage);
 			}
 		}
 	;
@@ -704,7 +707,7 @@ struct_defs
 	| DEFS '(' identifier ')'
 		{
 			$3 = check_undefined ($3);
-			if (!$3->type || !obj_is_class ($3->type)) {
+			if (!$3->type || !is_class ($3->type)) {
 				error (0, "`%s' is not a class", $3->name);
 			} else {
 				// replace the struct symbol table with one built from
@@ -765,8 +768,7 @@ struct_decl
 		{
 			if (!$<spec>0.type)
 				$<spec>0.type = type_default;
-			$1->type = append_type ($1->type, $<spec>0.type);
-			$1->type = find_type ($1->type);
+			$1->type = find_type (append_type ($1->type, $<spec>0.type));
 			$1->sy_type = sy_var;
 			$1->visibility = current_visibility;
 			symtab_addsymbol (current_symtab, $1);
@@ -778,8 +780,7 @@ struct_decl
 		{
 			if (!$<spec>0.type)
 				$<spec>0.type = type_default;
-			$1->type = append_type ($1->type, $<spec>0.type);
-			$1->type = find_type ($1->type);
+			$1->type = find_type (append_type ($1->type, $<spec>0.type));
 			$1->sy_type = sy_var;
 			$1->visibility = current_visibility;
 			symtab_addsymbol (current_symtab, $1);
@@ -860,7 +861,7 @@ qc_func_params
 	| '(' ps qc_var_list ')'				{ $$ = check_params ($3); }
 	| '(' ps TYPE ')'
 		{
-			if ($3 != &type_void)
+			if (!is_void ($3))
 				PARSE_ERROR;
 			$$ = 0;
 		}
@@ -1422,8 +1423,7 @@ init_var_decl
 	: var_decl opt_initializer
 		{
 			specifier_t spec = $<spec>0;
-			$1->type = append_type ($1->type, spec.type);
-			$1->type = find_type ($1->type);
+			$1->type = find_type (append_type ($1->type, spec.type));
 			$1->sy_type = sy_var;
 			initialize_def ($1, 0, current_symtab->space, spec.storage);
 			$$ = assign_expr (new_symbol_expr ($1), $2);
@@ -1629,7 +1629,7 @@ class_name
 				if (!$1->table) {
 					symtab_addsymbol (current_symtab, $1);
 				}
-			} else if (!obj_is_class ($1->type)) {
+			} else if (!is_class ($1->type)) {
 				error (0, "`%s' is not a class", $1->name);
 				$$ = get_class (0, 1);
 			} else {

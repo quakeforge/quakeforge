@@ -77,19 +77,20 @@
 
 #include "QF/plugin/console.h"
 
-#include "qw/bothdefs.h"
 #include "buildnum.h"
 #include "compat.h"
-#include "crudefile.h"
-#include "game.h"
 #include "netchan.h"
+
+#include "qw/bothdefs.h"
+#include "qw/include/crudefile.h"
+#include "qw/include/game.h"
 #include "qw/pmove.h"
-#include "server.h"
-#include "sv_demo.h"
-#include "sv_progs.h"
-#include "sv_gib.h"
-#include "sv_qtv.h"
-#include "sv_recorder.h"
+#include "qw/include/server.h"
+#include "qw/include/sv_demo.h"
+#include "qw/include/sv_progs.h"
+#include "qw/include/sv_gib.h"
+#include "qw/include/sv_qtv.h"
+#include "qw/include/sv_recorder.h"
 
 SERVER_PLUGIN_PROTOS
 static plugin_list_t server_plugin_list[] = {
@@ -237,7 +238,7 @@ Master_Shutdown (void)
 	Quake calls this before calling Sys_Quit or Sys_Error
 */
 void
-SV_Shutdown (void)
+SV_Shutdown (void *data)
 {
 	Master_Shutdown ();
 	if (sv_fraglogfile) {
@@ -2483,7 +2484,7 @@ SV_Init (void)
 	sv_cbuf = Cbuf_New (&id_interp);
 	sv_args = Cbuf_ArgsNew ();
 
-	Sys_RegisterShutdown (SV_Shutdown);
+	Sys_RegisterShutdown (SV_Shutdown, 0);
 
 	Sys_Init ();
 	GIB_Init (true);

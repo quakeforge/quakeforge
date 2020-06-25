@@ -43,8 +43,8 @@
 #include "QF/progs.h"
 #include "QF/pr_type.h"
 
-#include "obj_file.h"
-#include "qfprogs.h"
+#include "tools/qfcc/include/obj_file.h"
+#include "tools/qfcc/include/qfprogs.h"
 
 typedef struct {
 	const char *source_name;
@@ -147,7 +147,7 @@ qfo_set_func_data (qfo_t *qfo, qfo_func_t *func, func_data_t *func_data)
 	func_data->source_line = func->line;
 	//FIXME check type
 	type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, func->type);
-	func_data->return_type = type->t.func.return_type;
+	func_data->return_type = type->func.return_type;
 	func_data->num_locals = -1;
 	if (func->locals_space < qfo->num_spaces) {
 		func_data->num_locals = qfo->spaces[func->locals_space].num_defs;

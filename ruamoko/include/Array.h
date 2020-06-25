@@ -274,6 +274,15 @@
                          withObject: (void *)arg;
 //\}
 
+/**
+	Iteratively sends #performSelector:withObject:withObject: to each
+	contained object.
+*/
+- (void) makeObjectsPerformSelector: (SEL)selector
+                         withObject: (void *)arg
+                         withObject: (void *)arg2;
+//\}
+
 @end
 
 #endif//__ruamoko_Array_h

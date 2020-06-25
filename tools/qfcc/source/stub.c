@@ -4,24 +4,25 @@
 
 #include <stdlib.h>
 
-#include "class.h"
-#include "codespace.h"
-#include "diagnostic.h"
-#include "debug.h"
-#include "def.h"
-#include "defspace.h"
-#include "emit.h"
-#include "expr.h"
-#include "function.h"
-#include "obj_file.h"
-#include "obj_type.h"
-#include "options.h"
-#include "qfcc.h"
-#include "strpool.h"
-#include "struct.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/codespace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/dot.h"
+#include "tools/qfcc/include/debug.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/obj_file.h"
+#include "tools/qfcc/include/obj_type.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/struct.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
 struct dstring_s;
 options_t options;
@@ -42,8 +43,15 @@ __attribute__((const)) expr_t *_error (expr_t *e, const char *file, int line, co
 __attribute__((const)) symbol_t *make_structure (const char *name, int su, struct_def_t *defs, type_t *type) {return 0;}
 __attribute__((const)) symbol_t *symtab_addsymbol (symtab_t *symtab, symbol_t *symbol) {return 0;}
 __attribute__((const)) symbol_t *new_symbol_type (const char *name, type_t *type) {return 0;}
-__attribute__((const)) def_t *qfo_encode_type (type_t *type) {return 0;}
+__attribute__((const)) def_t *qfo_encode_type (type_t *type, defspace_t *space) {return 0;}
 __attribute__((const)) int obj_types_assignable (const type_t *dst, const type_t *src) {return 0;}
 void print_protocollist (struct dstring_s *dstr, protocollist_t *protocollist) {}
-int obj_is_id (const type_t *type){return type->type;}
+int is_id (const type_t *type){return type->type;}
+int is_SEL (const type_t *type){return type->type;}
+int is_Class (const type_t *type){return type->type;}
 int compare_protocols (protocollist_t *protos1, protocollist_t *protos2){return protos1->count - protos2->count;}
+void dump_dot (const char *stage, void *data,
+		          void (*dump_func) (void *data, const char *fname)){}
+void dump_dot_type (void *_t, const char *filename){}
+char *fubar;
+const char *file_basename(const char *p, int keepdot) { return fubar;}

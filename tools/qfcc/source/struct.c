@@ -47,21 +47,21 @@
 #include <QF/sys.h>
 #include <QF/va.h>
 
-#include "class.h"
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "expr.h"
-#include "obj_type.h"
-#include "qfcc.h"
-#include "reloc.h"
-#include "shared.h"
-#include "strpool.h"
-#include "struct.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/obj_type.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/struct.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
 static symbol_t *
 find_tag (ty_meta_e meta, symbol_t *tag, type_t *type)
@@ -125,7 +125,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
 	for (s = symtab->symbols; s; s = s->next) {
 		if (s->sy_type != sy_var)
 			continue;
-		if (obj_is_class (s->type)) {
+		if (is_class (s->type)) {
 			error (0, "statically allocated instance of class %s",
 				   s->type->t.class->name);
 		}
@@ -173,7 +173,7 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
 	sym->type->t.symtab = symtab;
 	sym->type->alignment = alignment;
 	if (!type && sym->type->type_def->external)	//FIXME should not be necessary
-		sym->type->type_def = qfo_encode_type (sym->type);
+		sym->type->type_def = qfo_encode_type (sym->type, pr.type_data);
 	return sym;
 }
 
@@ -306,7 +306,7 @@ make_structure (const char *name, int su, struct_def_t *defs, type_t *type)
 
 def_t *
 emit_structure (const char *name, int su, struct_def_t *defs, type_t *type,
-				void *data, storage_class_t storage)
+				void *data, defspace_t *space, storage_class_t storage)
 {
 	int         i, j;
 	int         saw_null = 0;
@@ -341,7 +341,10 @@ emit_structure (const char *name, int su, struct_def_t *defs, type_t *type,
 	if (storage != sc_global && storage != sc_static)
 		internal_error (0, "structure %s must be global or static", name);
 
-	struct_sym = make_symbol (name, type, pr.far_data, storage);
+	if (!space) {
+		space = pr.far_data;
+	}
+	struct_sym = make_symbol (name, type, space, storage);
 
 	struct_def = struct_sym->s.def;
 	if (struct_def->initialized)

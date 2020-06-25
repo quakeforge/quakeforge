@@ -404,7 +404,7 @@ NET_GetLocalAddress (void)
 }
 
 static void
-NET_shutdown (void)
+NET_shutdown (void *data)
 {
 #ifdef _WIN32
 	closesocket (net_socket);
@@ -427,7 +427,7 @@ NET_Init (int port)
 	if (r)
 		Sys_Error ("Winsock initialization failed.");
 #endif /* _WIN32 */
-	Sys_RegisterShutdown (NET_shutdown);
+	Sys_RegisterShutdown (NET_shutdown, 0);
 
 	net_socket = UDP_OpenSocket (port);
 

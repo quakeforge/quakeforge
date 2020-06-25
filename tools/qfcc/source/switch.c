@@ -42,18 +42,18 @@
 #include <QF/hash.h>
 #include <QF/sys.h>
 
-#include "def.h"
-#include "diagnostic.h"
-#include "expr.h"
-#include "opcodes.h"
-#include "options.h"
-#include "qfcc.h"
-#include "reloc.h"
-#include "switch.h"
-#include "symtab.h"
-#include "type.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/opcodes.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/switch.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
 
-#include "qc-parse.h"
+#include "tools/qfcc/source/qc-parse.h"
 
 typedef struct case_node_s {
 	expr_t     *low;
@@ -166,7 +166,7 @@ new_switch_block (void)
 	switch_block_t *switch_block = malloc (sizeof (switch_block_t));
 
 	SYS_CHECKMEM (switch_block);
-	switch_block->labels = Hash_NewTable (127, 0, 0, 0);
+	switch_block->labels = Hash_NewTable (127, 0, 0, 0, 0);
 	Hash_SetHashCompare (switch_block->labels, get_hash, compare);
 	switch_block->test = 0;
 	return switch_block;
@@ -429,8 +429,7 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 	for (l = labels; *l; l++)
 		num_labels++;
 	if (options.code.progsversion == PROG_ID_VERSION
-		|| (type != &type_string
-			&& type != &type_float && !is_integral (type))
+		|| (!is_string(type) && !is_float(type) && !is_integral (type))
 		|| num_labels < 8) {
 		for (l = labels; *l; l++) {
 			expr_t     *cmp = binary_expr (EQ, sw_val, (*l)->value);
@@ -446,7 +445,7 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 		int         op;
 		case_node_t *case_tree;
 
-		if (type == &type_string)
+		if (is_string(type))
 			temp = new_temp_def_expr (&type_integer);
 		else
 			temp = new_temp_def_expr (type);

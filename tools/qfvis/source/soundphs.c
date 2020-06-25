@@ -54,7 +54,7 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
-#include "vis.h"
+#include "tools/qfvis/include/vis.h"
 
 /*
 	Some textures (sky, water, slime, lava) are considered ambient sound

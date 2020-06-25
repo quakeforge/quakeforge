@@ -245,7 +245,7 @@ s_soundlist_f (void)
 void
 SND_SFX_Init (void)
 {
-	snd_sfx_hash = Hash_NewTable (511, snd_sfx_getkey, snd_sfx_free, 0);
+	snd_sfx_hash = Hash_NewTable (511, snd_sfx_getkey, snd_sfx_free, 0, 0);
 	precache = Cvar_Get ("precache", "1", CVAR_NONE, NULL,
 						 "Toggle the use of a precache");
 

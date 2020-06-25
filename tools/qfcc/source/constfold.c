@@ -42,14 +42,15 @@
 #include <QF/dstring.h>
 #include <QF/mathlib.h>
 
-#include "diagnostic.h"
-#include "expr.h"
-#include "options.h"
-#include "qfcc.h"
-#include "strpool.h"
-#include "type.h"
-#include "value.h"
-#include "qc-parse.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
+
+#include "tools/qfcc/source/qc-parse.h"
 
 typedef expr_t *(*operation_t) (int op, expr_t *e, expr_t *e1, expr_t *e2);
 typedef expr_t *(*unaryop_t) (int op, expr_t *e, expr_t *e1);
@@ -146,7 +147,7 @@ do_op_string (int op, expr_t *e, expr_t *e1, expr_t *e2)
 static expr_t *
 convert_to_float (expr_t *e)
 {
-	if (get_type (e) == &type_float)
+	if (is_float(get_type (e)))
 		return e;
 
 	switch (e->type) {
@@ -181,7 +182,7 @@ convert_to_float (expr_t *e)
 static expr_t *
 convert_to_double (expr_t *e)
 {
-	if (get_type (e) == &type_double)
+	if (is_double(get_type (e)))
 		return e;
 
 	switch (e->type) {
@@ -227,7 +228,7 @@ do_op_float (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		return error (e1, "invalid operator for float");
 
 	if (op == '=') {
-		if ((type = get_type (e1)) != &type_float) {
+		if (!is_float(type = get_type (e1))) {
 			//FIXME optimize casting a constant
 			e->e.expr.e2 = e2 = cf_cast_expr (type, e2);
 		} else if ((conv = convert_to_float (e2)) != e2) {
@@ -356,7 +357,7 @@ do_op_double (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		return error (e1, "invalid operator for double");
 
 	if (op == '=') {
-		if ((type = get_type (e1)) != &type_double) {
+		if (!is_double(type = get_type (e1))) {
 			//FIXME optimize casting a constant
 			e->e.expr.e2 = e2 = cf_cast_expr (type, e2);
 		} else if ((conv = convert_to_double (e2)) != e2) {
@@ -454,7 +455,7 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	static int  valid[] = {'=', '+', '-', '*', EQ, NE, 0};
 	expr_t     *t;
 
-	if (get_type (e1) != &type_vector) {
+	if (!is_vector(get_type (e1))) {
 
 		if (op != '*')
 			return error (e1, "invalid operator for vector");
@@ -463,7 +464,7 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		e->e.expr.e1 = e1 = e2;
 		e2 = t;
 	}
-	if (get_type (e2) != &type_vector) {
+	if (!is_vector(get_type (e2))) {
 		e->e.expr.e2 = e2 = convert_to_float (e2);
 		if (op != '*' && op != '/')
 			return error (e1, "invalid operator for vector");
@@ -476,7 +477,7 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e->e.expr.type = &type_integer;
 		else
 			e->e.expr.type = &type_float;
-	} else if (op == '*' && get_type (e2) == &type_vector) {
+	} else if (op == '*' && is_vector(get_type (e2))) {
 		e->e.expr.type = &type_float;
 	} else if (op == '/' && !is_constant (e1)) {
 		e2 = fold_constants (binary_expr ('/', new_float_expr (1), e2));
@@ -541,7 +542,7 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e = new_vector_expr (v);
 			break;
 		case '*':
-			if (get_type (e2) == &type_vector) {
+			if (is_vector(get_type (e2))) {
 				e = new_float_expr (DotProduct (v1, v2));
 			} else {
 				VectorScale (v1, v2[0], v);
@@ -577,7 +578,7 @@ do_op_entity (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e->e.expr.type = &type_float;
 		return e;
 	}
-	if (op != '=' || type != &type_entity)
+	if (op != '=' || !is_entity(type))
 		return error (e1, "invalid operator for entity");
 	e->e.expr.type = &type_entity;
 	return e;
@@ -649,7 +650,7 @@ do_op_pointer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (op != '.' && op != '&' && op != 'M'
 		&& extract_type (e1) != extract_type (e2))
 		return type_mismatch (e1, e2, op);
-	if ((op == '.' || op == '&') && get_type (e2) == &type_uinteger)
+	if ((op == '.' || op == '&') && is_uinteger(get_type (e2)))
 		e->e.expr.e2 = cf_cast_expr (&type_integer, e2);
 	return e;
 }
@@ -684,7 +685,7 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	static int  valid[] = {'=', '+', '-', '*', EQ, NE, 0};
 	expr_t     *t;
 
-	if (get_type (e1) != &type_quaternion) {
+	if (!is_quaternion(get_type (e1))) {
 
 		if (op != '*' && op != '/')
 			return error (e1, "invalid operator for quaternion");
@@ -695,7 +696,7 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e2 = t;
 		}
 	}
-	if (get_type (e2) != &type_quaternion) {
+	if (!is_quaternion(get_type (e2))) {
 		e->e.expr.e2 = e2 = convert_to_float (e2);
 		if (op != '*' && op != '/')
 			return error (e1, "invalid operator for quaternion");
@@ -765,7 +766,7 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e = new_quaternion_expr (q);
 			break;
 		case '*':
-			if (get_type (e2) == &type_quaternion) {
+			if (is_quaternion(get_type (e2))) {
 				QuatMult (q1, q2, q);
 			} else {
 				QuatScale (q1, q2[3], q);
@@ -1397,7 +1398,7 @@ uop_float (int op, expr_t *e, expr_t *e1)
 	if (op == '+')
 		return e1;
 	type = get_type (e);
-	if (op == 'C' && type != &type_integer && type != &type_double)
+	if (op == 'C' && !is_integer(type) && !is_double(type))
 		return error (e1, "invalid cast of float");
 	if (!is_constant (e1))
 		return e;
@@ -1410,7 +1411,7 @@ uop_float (int op, expr_t *e, expr_t *e1)
 		case '~':
 			return new_float_expr (~(int) expr_float (e1));
 		case 'C':
-			if (type == &type_integer) {
+			if (is_integer(type)) {
 				return new_integer_expr (expr_float (e1));
 			} else {
 				return new_double_expr (expr_float (e1));
@@ -1549,7 +1550,7 @@ uop_integer (int op, expr_t *e, expr_t *e1)
 					  get_op_string (op));
 	if (op == '+')
 		return e1;
-	if (op == 'C' && get_type (e) != &type_float)
+	if (op == 'C' && !is_float(get_type (e)))
 		return error (e1, "invalid cast of int");
 	if (!is_constant (e1))
 		return e;
@@ -1624,7 +1625,7 @@ uop_double (int op, expr_t *e, expr_t *e1)
 	if (op == '+')
 		return e1;
 	type = get_type (e);
-	if (op == 'C' && type != &type_integer && type != &type_float)
+	if (op == 'C' && !is_integer(type) && !is_float(type))
 		return error (e1, "invalid cast of double");
 	if (!is_constant (e1))
 		return e;
@@ -1635,7 +1636,7 @@ uop_double (int op, expr_t *e, expr_t *e1)
 			print_type (get_type (e));
 			return cmp_result_expr (!expr_double (e1));
 		case 'C':
-			if (type == &type_integer) {
+			if (is_integer(type)) {
 				return new_integer_expr (expr_double (e1));
 			} else {
 				return new_float_expr (expr_double (e1));

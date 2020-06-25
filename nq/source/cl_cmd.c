@@ -40,7 +40,7 @@
 #include "QF/sizebuf.h"
 #include "QF/sys.h"
 
-#include "client.h"
+#include "nq/include/client.h"
 
 
 /*

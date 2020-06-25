@@ -32,11 +32,11 @@
 
 #include "compat.h"
 
-#include "brush.h"
-#include "bsp5.h"
-#include "draw.h"
-#include "options.h"
-#include "surfaces.h"
+#include "tools/qfbsp/include/brush.h"
+#include "tools/qfbsp/include/bsp5.h"
+#include "tools/qfbsp/include/draw.h"
+#include "tools/qfbsp/include/options.h"
+#include "tools/qfbsp/include/surfaces.h"
 
 /**	\addtogroup qfbsp_brush
 */

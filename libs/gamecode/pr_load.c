@@ -234,17 +234,20 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	if (pr->function_hash) {
 		Hash_FlushTable (pr->function_hash);
 	} else {
-		pr->function_hash = Hash_NewTable (1021, function_get_key, 0, pr);
+		pr->function_hash = Hash_NewTable (1021, function_get_key, 0, pr,
+										   pr->hashlink_freelist);
 	}
 	if (pr->global_hash) {
 		Hash_FlushTable (pr->global_hash);
 	} else {
-		pr->global_hash = Hash_NewTable (1021, var_get_key, 0, pr);
+		pr->global_hash = Hash_NewTable (1021, var_get_key, 0, pr,
+										 pr->hashlink_freelist);
 	}
 	if (pr->field_hash) {
 		Hash_FlushTable (pr->field_hash);
 	} else {
-		pr->field_hash = Hash_NewTable (1021, var_get_key, 0, pr);
+		pr->field_hash = Hash_NewTable (1021, var_get_key, 0, pr,
+										pr->hashlink_freelist);
 	}
 
 // byte swap the lumps
@@ -419,6 +422,12 @@ PR_RunLoadFuncs (progs_t *pr)
 		if (!pr->load_funcs[i] (pr))
 			return 0;
 
+	return 1;
+}
+
+VISIBLE int
+PR_RunPostLoadFuncs (progs_t *pr)
+{
 	if (!pr_run_ctors (pr))
 		return 0;
 
@@ -446,8 +455,12 @@ PR_LoadProgs (progs_t *pr, const char *progsname)
 	if (!pr->progs)
 		return;
 
-	if (!PR_RunLoadFuncs (pr))
+	if (!PR_RunLoadFuncs (pr)) {
 		PR_Error (pr, "unable to load %s", progsname);
+	}
+	if (!pr->debug_handler && !PR_RunPostLoadFuncs (pr)) {
+		PR_Error (pr, "unable to load %s", progsname);
+	}
 }
 
 VISIBLE void
@@ -479,11 +492,15 @@ VISIBLE void
 PR_Error (progs_t *pr, const char *error, ...)
 {
 	va_list     argptr;
-	dstring_t  *string = dstring_new ();
+	dstring_t  *string = dstring_new ();//FIXME leaks when debugging
 
 	va_start (argptr, error);
 	dvsprintf (string, error, argptr);
 	va_end (argptr);
 
+	if (pr->debug_handler) {
+		pr->debug_handler (prd_error, string->str, pr->debug_data);
+		// not expected to return, but if so, behave as if there was no handler
+	}
 	Sys_Error ("%s: %s", pr->progs_name, string->str);
 }

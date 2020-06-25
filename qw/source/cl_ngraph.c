@@ -41,8 +41,9 @@
 #include "QF/screen.h"
 
 #include "compat.h"
-#include "cl_parse.h"
-#include "client.h"
+
+#include "qw/include/cl_parse.h"
+#include "qw/include/client.h"
 #include "sbar.h"
 
 cvar_t     *r_netgraph;

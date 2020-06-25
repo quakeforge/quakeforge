@@ -583,9 +583,11 @@ Cmd_StuffCmds_f (void)
 VISIBLE void
 Cmd_Init_Hash (void)
 {
-	cmd_hash = Hash_NewTable (1021, cmd_get_key, 0, 0);
-	cmd_alias_hash = Hash_NewTable (1021, cmd_alias_get_key, cmd_alias_free, 0);
-	cmd_provider_hash = Hash_NewTable(1021, cmd_provider_get_key, cmd_provider_free, 0);
+	cmd_hash = Hash_NewTable (1021, cmd_get_key, 0, 0, 0);
+	cmd_alias_hash = Hash_NewTable (1021, cmd_alias_get_key,
+									cmd_alias_free, 0, 0);
+	cmd_provider_hash = Hash_NewTable(1021, cmd_provider_get_key,
+									  cmd_provider_free, 0, 0);
 }
 
 VISIBLE void

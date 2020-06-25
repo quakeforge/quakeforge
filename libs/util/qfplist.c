@@ -149,7 +149,8 @@ VISIBLE plitem_t *
 PL_NewDictionary (void)
 {
 	plitem_t   *item = PL_NewItem (QFDictionary);
-	hashtab_t  *dict = Hash_NewTable (1021, dict_get_key, dict_free, NULL);
+	//FIXME need a per-thread hashlink freelist for plist to be thread-safe
+	hashtab_t  *dict = Hash_NewTable (1021, dict_get_key, dict_free, NULL, 0);
 	item->data = dict;
 	return item;
 }

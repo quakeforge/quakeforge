@@ -49,6 +49,8 @@ void RUA_Obj_Init (struct progs_s *pr, int secure);
 
 void RUA_Plist_Init (struct progs_s *pr, int secure);
 
+void RUA_Runtime_Init (struct progs_s *pr, int secure);
+
 void RUA_Script_Init (progs_t *pr, int secure);
 
 void RUA_Set_Init (progs_t *pr, int secure);

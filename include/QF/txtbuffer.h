@@ -59,6 +59,20 @@ txtbuffer_t *TextBuffer_Create (void);
 */
 void TextBuffer_Destroy (txtbuffer_t *buffer);
 
+/**	Open a gap for writing at the specified offset.
+
+	Text after the offset is moved to be after the opened gap.
+	The buffer is resized as necessary.
+
+	\param buffer	The buffer to be updated
+	\param offset	The offset in the buffer at which to insert the text block
+	\param text_len	The size of the gap to be opened
+	\return			Pointr to beginning of gap if successful, 0 if failure
+					(offset not valid or out of memory)
+*/
+char *TextBuffer_OpenGap (txtbuffer_t *buffer, size_t offset,
+						   size_t text_len);
+
 /**	Insert a block of text at the specified offset.
 
 	Text after the offset is moved to be after the inserted block of text.

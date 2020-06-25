@@ -33,6 +33,7 @@ typedef enum {
 typedef struct qfot_alias_s {
 	etype_t     type;
 	struct qfot_type_s *aux_type;
+	struct qfot_type_s *full_type;
 	string      name;
 } qfot_alias_t;
 
@@ -78,15 +79,18 @@ typedef struct qfot_type_s {
 		qfot_array_t array;
 		string      class;
 		qfot_alias_t alias;
-	}           t;
+	};
 } qfot_type_t;
+
+// the minimum size of a type encoding
+#define TYPESIZE 4
 
 typedef struct qfot_type_encodings_s {
 	qfot_type_t *types;
 	int         size;
 } qfot_type_encodings_t;
 
-@extern string ty_meta_name[6];
+@extern string ty_meta_name[7];
 @extern string pr_type_name[ev_type_count];
 
 #endif

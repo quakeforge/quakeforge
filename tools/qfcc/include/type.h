@@ -51,6 +51,11 @@ typedef struct ty_array_s {
 	int         size;
 } ty_array_t;
 
+typedef struct ty_alias_s {
+	struct type_s *aux_type;	///< other aliases stripped
+	struct type_s *full_type;	///< full alias chain
+} ty_alias_t;
+
 typedef struct type_s {
 	etype_t     type;		///< ev_invalid means structure/array etc
 	const char *name;
@@ -64,10 +69,12 @@ typedef struct type_s {
 		ty_array_t  array;
 		struct symtab_s *symtab;
 		struct class_s *class;
+		ty_alias_t  alias;
 	} t;
 	struct type_s *next;
 	int         freeable;
 	int         allocated;
+	int         printid;	///< for dot output
 	struct protocollist_s *protos;
 	const char *encoding;	///< Objective-QC encoding
 	struct def_s *type_def;	///< offset of qfo encodoing
@@ -143,8 +150,11 @@ type_t *field_type (type_t *aux);
 type_t *pointer_type (type_t *aux);
 type_t *array_type (type_t *aux, int size);
 type_t *based_array_type (type_t *aux, int base, int top);
+type_t *alias_type (type_t *type, type_t *alias_chain, const char *name);
+const type_t *unalias_type (const type_t *type) __attribute__((pure));
 void print_type_str (struct dstring_s *str, const type_t *type);
 void print_type (const type_t *type);
+void dump_dot_type (void *t, const char *filename);
 const char *encode_params (const type_t *type);
 void encode_type (struct dstring_s *encoding, const type_t *type);
 const char *type_get_encoding (const type_t *type);

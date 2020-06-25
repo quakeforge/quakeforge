@@ -39,8 +39,8 @@
 #include "QF/info.h"
 #include "QF/gib.h"
 
-#include "server.h"
-#include "client.h"
+#include "qw/include/server.h"
+#include "qw/include/client.h"
 
 gib_event_t *sv_chat_e;
 gib_event_t *sv_client_connect_e;

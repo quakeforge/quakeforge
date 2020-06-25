@@ -43,8 +43,9 @@
 #include "QF/sys.h"
 
 #include "compat.h"
-#include "server.h"
-#include "sv_progs.h"
+
+#include "qw/include/server.h"
+#include "qw/include/sv_progs.h"
 #include "world.h"
 
 #define always_inline inline __attribute__((__always_inline__))

@@ -45,25 +45,26 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "qfcc.h"
-#include "class.h"
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "expr.h"
-#include "function.h"
-#include "idstuff.h"
-#include "method.h"
-#include "options.h"
-#include "reloc.h"
-#include "shared.h"
-#include "strpool.h"
-#include "struct.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
-#include "qc-parse.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/idstuff.h"
+#include "tools/qfcc/include/method.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/struct.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
+
+#include "tools/qfcc/source/qc-parse.h"
 
 expr_t *
 test_expr (expr_t *e)
@@ -96,7 +97,7 @@ test_expr (expr_t *e)
 		case ev_uinteger:
 		case ev_integer:
 		case ev_short:
-			if (type_default != &type_integer) {
+			if (!is_integer(type_default)) {
 				if (is_constant (e)) {
 					return cast_expr (type_default, e);
 				}
@@ -106,7 +107,7 @@ test_expr (expr_t *e)
 		case ev_float:
 			if (options.code.fast_float
 				|| options.code.progsversion == PROG_ID_VERSION) {
-				if (type_default != &type_float) {
+				if (!is_float(type_default)) {
 					if (is_constant (e)) {
 						return cast_expr (type_default, e);
 					}
@@ -270,7 +271,7 @@ convert_bool (expr_t *e, int block)
 	}
 
 	if (e->type == ex_uexpr && e->e.expr.op == '!'
-		&& get_type (e->e.expr.e1) != &type_string) {
+		&& !is_string(get_type (e->e.expr.e1))) {
 		e = convert_bool (e->e.expr.e1, 0);
 		if (e->type == ex_error)
 			return e;

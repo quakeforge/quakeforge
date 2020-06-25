@@ -44,12 +44,12 @@
 #include "QF/hash.h"
 #include "QF/quakeio.h"
 
-#include "diagnostic.h"
-#include "expr.h"
-#include "grab.h"
-#include "options.h"
-#include "qfcc.h"
-#include "strpool.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/grab.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/strpool.h"
 
 int grab_frame;
 int grab_other;
@@ -105,8 +105,8 @@ do_grab (const char *token)
 		size_t      i;
 
 		initialized = 1;
-		frame_tab = Hash_NewTable (1021, frame_get_key, frame_free, 0);
-		grab_tab = Hash_NewTable (1021, frame_get_key, 0, 0);
+		frame_tab = Hash_NewTable (1021, frame_get_key, frame_free, 0, 0);
+		grab_tab = Hash_NewTable (1021, frame_get_key, 0, 0, 0);
 		for (i = 0; i < sizeof (grab_list) / sizeof (grab_list[0]); i++)
 			Hash_Add (grab_tab, &grab_list[i]);
 	}

@@ -56,14 +56,15 @@
 
 #include "QF/plugin/console.h"
 
+#include "compat.h"
+#include "netchan.h"
+
 #include "qw/protocol.h"
 
-#include "client.h"
-#include "compat.h"
-#include "connection.h"
-#include "netchan.h"
-#include "qtv.h"
-#include "server.h"
+#include "qtv/include/client.h"
+#include "qtv/include/connection.h"
+#include "qtv/include/qtv.h"
+#include "qtv/include/server.h"
 
 #undef qtv_print
 
@@ -220,7 +221,7 @@ qtv_memory_init (void)
 }
 
 static void
-qtv_shutdown (void)
+qtv_shutdown (void *data)
 {
 	Cbuf_Delete (qtv_cbuf);
 	Cbuf_ArgsDelete (qtv_args);
@@ -251,7 +252,7 @@ qtv_init (void)
 	qtv_cbuf = Cbuf_New (&id_interp);
 	qtv_args = Cbuf_ArgsNew ();
 
-	Sys_RegisterShutdown (qtv_shutdown);
+	Sys_RegisterShutdown (qtv_shutdown, 0);
 
 	Sys_Init ();
 	COM_ParseConfig ();

@@ -375,7 +375,7 @@ glsl_Draw_Init (void)
 	qpic_t     *pic;
 	//FIXME glpic_t    *gl;
 
-	pic_cache = Hash_NewTable (127, cachepic_getkey, cachepic_free, 0);
+	pic_cache = Hash_NewTable (127, cachepic_getkey, cachepic_free, 0, 0);
 	QFS_GamedirCallback (Draw_ClearCache);
 	//FIXME temporary work around for the timing of cvar creation and palette
 	//loading

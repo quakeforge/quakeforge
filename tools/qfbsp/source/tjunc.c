@@ -29,10 +29,10 @@
 
 #include "compat.h"
 
-#include "brush.h"
-#include "bsp5.h"
-#include "options.h"
-#include "tjunc.h"
+#include "tools/qfbsp/include/brush.h"
+#include "tools/qfbsp/include/bsp5.h"
+#include "tools/qfbsp/include/options.h"
+#include "tools/qfbsp/include/tjunc.h"
 
 /**	\addtogroup qfbsp_tjunc
 */

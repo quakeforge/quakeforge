@@ -44,12 +44,13 @@
 #include "QF/va.h"
 
 #include "compat.h"
-#include "crudefile.h"
-#include "map_cfg.h"
+
+#include "qw/include/crudefile.h"
+#include "qw/include/map_cfg.h"
 #include "qw/pmove.h"
-#include "server.h"
-#include "sv_progs.h"
-#include "sv_gib.h"
+#include "qw/include/server.h"
+#include "qw/include/sv_progs.h"
+#include "qw/include/sv_gib.h"
 #include "world.h"
 
 info_t     *localinfo;	// local game info

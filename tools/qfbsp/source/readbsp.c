@@ -48,11 +48,11 @@
 #include "QF/va.h"
 #include "QF/wad.h"
 
-#include "brush.h"
-#include "bsp5.h"
-#include "options.h"
-#include "portals.h"
-#include "readbsp.h"
+#include "tools/qfbsp/include/brush.h"
+#include "tools/qfbsp/include/bsp5.h"
+#include "tools/qfbsp/include/options.h"
+#include "tools/qfbsp/include/portals.h"
+#include "tools/qfbsp/include/readbsp.h"
 
 /**	\addtogroup qfbsp_readbsp
 */

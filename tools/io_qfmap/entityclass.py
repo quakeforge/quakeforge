@@ -140,6 +140,8 @@ class EntityClassDict:
     def __len__(self):
         return self.entity_classes.__len__()
     def __getitem__(self, key):
+        if key == '.':
+            return EntityClass.null()
         return self.entity_classes.__getitem__(key)
     def __iter__(self):
         return self.entity_classes.__iter__()

@@ -72,7 +72,7 @@ GLSL_RegisterEffect (const char *name, const char *src)
 	segtext_t  *text;
 
 	if (!effect_tab)
-		effect_tab = Hash_NewTable (61, effect_get_key, 0, 0);
+		effect_tab = Hash_NewTable (61, effect_get_key, 0, 0, 0);
 
 	if (Hash_Find (effect_tab, name)) {
 		Sys_Printf ("WARNING: ignoring duplicate '%s' effect\n", name);

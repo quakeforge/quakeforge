@@ -42,7 +42,7 @@
 #include "QF/sys.h"
 #include "QF/teamplay.h"
 
-#include "client.h"
+#include "qw/include/client.h"
 
 static void
 send_say (const char *str)

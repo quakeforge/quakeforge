@@ -1,0 +1,36 @@
+libs_model_tests = \
+	libs/models/test/testclip \
+	libs/models/test/testcontents \
+	libs/models/test/testportals
+
+TESTS += $(libs_model_tests)
+
+check_PROGRAMS += $(libs_model_tests)
+
+EXTRA_DIST += \
+	libs/models/test/trace-id.c \
+	libs/models/test/trace-qf-bad.c \
+	libs/models/test/hulls.h \
+	libs/models/test/main.c
+
+test_libs= \
+	libs/models/libQFmodels.la \
+	libs/util/libQFutil.la
+
+libs_models_test_testclip_SOURCES= \
+	libs/models/test/testclip.c \
+	libs/models/test/hulls.c
+libs_models_test_testclip_LDADD=			$(test_libs)
+libs_models_test_testclip_DEPENDENCIES=		$(test_libs)
+
+libs_models_test_testcontents_SOURCES= \
+	libs/models/test/testcontents.c \
+	libs/models/test/hulls.c
+libs_models_test_testcontents_LDADD=		$(test_libs)
+libs_models_test_testcontents_DEPENDENCIES=	$(test_libs)
+
+libs_models_test_testportals_SOURCES= \
+	libs/models/test/testportals.c \
+	libs/models/test/hulls.c
+libs_models_test_testportals_LDADD=			$(test_libs)
+libs_models_test_testportals_DEPENDENCIES=	$(test_libs)

@@ -129,7 +129,7 @@ IN_Move (void)
 
 /* Called at shutdown */
 static void
-IN_shutdown (void)
+IN_shutdown (void *data)
 {
 	JOY_Shutdown ();
 
@@ -142,7 +142,7 @@ IN_shutdown (void)
 void
 IN_Init (cbuf_t *cbuf)
 {
-	Sys_RegisterShutdown (IN_shutdown);
+	Sys_RegisterShutdown (IN_shutdown, 0);
 
 	IE_Init ();
 	IN_LL_Init ();

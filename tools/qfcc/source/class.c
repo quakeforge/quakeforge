@@ -44,24 +44,24 @@
 #include "QF/pr_obj.h"
 #include "QF/va.h"
 
-#include "qfcc.h"
+#include "tools/qfcc/include/qfcc.h"
 
-#include "codespace.h"
-#include "class.h"
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "expr.h"
-#include "method.h"
-#include "options.h"
-#include "reloc.h"
-#include "shared.h"
-#include "strpool.h"
-#include "struct.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
+#include "tools/qfcc/include/codespace.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/method.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/struct.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
 static hashtab_t *class_hash;
 static hashtab_t *category_hash;
@@ -70,33 +70,33 @@ static hashtab_t *static_instances;
 static hashtab_t *static_instance_classes;
 
 // these will be built up further
-type_t      type_obj_selector = { ev_invalid, 0, 0, ty_struct};
-type_t      type_SEL = { ev_pointer, "SEL", 1, ty_basic,
-						{{&type_obj_selector}}};
+type_t      type_selector = { ev_invalid, 0, 0, ty_struct};
+type_t      type_SEL = { ev_pointer, "SEL", 1, ty_basic, {{&type_selector}}};
 type_t     *IMP_params[] = {&type_id, &type_SEL};
 type_t      type_IMP = { ev_func, "IMP", 1, ty_basic,
 						 {{&type_id, -3, IMP_params}}};
-type_t      type_obj_super = { ev_invalid, 0, 0 };
-type_t      type_SuperPtr = { ev_pointer, 0, 1, ty_basic, {{&type_obj_super}}};
+type_t      type_super = { ev_invalid, 0, 0 };
+type_t      type_SuperPtr = { ev_pointer, 0, 1, ty_basic, {{&type_super}}};
 type_t     *supermsg_params[] = {&type_SuperPtr, &type_SEL};
 type_t      type_supermsg = { ev_func, ".supermsg", 1, ty_basic,
 							  {{&type_id, -3, supermsg_params}}};
-type_t      type_obj_method = { ev_invalid, 0, 0, ty_struct };
-type_t      type_obj_method_description = { ev_invalid, 0, 0, ty_struct };
-type_t      type_obj_category = { ev_invalid, 0, 0, ty_struct};
-type_t      type_obj_ivar = { ev_invalid, 0, 0, ty_struct};
-type_t      type_obj_module = { ev_invalid, 0, 0, ty_struct};
-type_t      type_moduleptr = { ev_pointer, 0, 1, ty_basic,
-									{{&type_obj_module}}};
+type_t      type_method = { ev_invalid, 0, 0, ty_struct };
+type_t      type_method_description = { ev_invalid, 0, 0, ty_struct };
+type_t      type_category = { ev_invalid, 0, 0, ty_struct};
+type_t      type_ivar = { ev_invalid, 0, 0, ty_struct};
+type_t      type_module = { ev_invalid, 0, 0, ty_struct};
+type_t      type_moduleptr = { ev_pointer, 0, 1, ty_basic, {{&type_module}}};
 type_t     *obj_exec_class_params[] = { &type_moduleptr };
-type_t      type_obj_exec_class = { ev_func, 0, 1, ty_basic,
-									{{&type_void, 1, obj_exec_class_params}}};
-
-type_t      type_obj_object = {ev_invalid, 0, 0, ty_struct};
-type_t      type_id = { ev_pointer, "id", 1, ty_basic, {{&type_obj_object}}};
-type_t      type_obj_class = { ev_invalid, 0, 0, ty_struct};
-type_t      type_Class = { ev_pointer, 0, 1, ty_basic, {{&type_obj_class}}};
-type_t      type_obj_protocol = { ev_invalid, 0, 0, ty_struct};
+type_t      type_exec_class = { ev_func, 0, 1, ty_basic,
+								{{&type_void, 1, obj_exec_class_params}}};
+// the cast of 1 in the init is to ensure pointers to incomplete types
+// are never misidentified as id. It will be set to the correct value
+// when the obj system is initialized.
+type_t      type_object = {ev_invalid, 0, 0, ty_struct, {{(type_t *)1}}};
+type_t      type_id = { ev_pointer, "id", 1, ty_basic, {{&type_object}}};
+type_t      type_class = { ev_invalid, 0, 0, ty_struct};
+type_t      type_Class = { ev_pointer, 0, 1, ty_basic, {{&type_class}}};
+type_t      type_protocol = { ev_invalid, 0, 0, ty_struct};
 
 int         obj_initialized = 0;
 
@@ -192,9 +192,10 @@ add_static_instance (const char *class, def_t *instance_def)
 	static_instance_t *instance = malloc (sizeof (*instance));
 
 	if (!static_instances) {
-		static_instances = Hash_NewTable (1021, static_instance_get_key, 0, 0);
+		static_instances = Hash_NewTable (1021, static_instance_get_key,
+										  0, 0, 0);
 		static_instance_classes = Hash_NewTable (1021, static_instance_get_key,
-												 0, 0);
+												 0, 0, 0);
 	}
 
 	instance->class = save_string (class);
@@ -217,7 +218,7 @@ emit_instance_classname (def_t *def, void *data, int index)
 {
 	obj_static_instances_data_t *da = (obj_static_instances_data_t *)data;
 
-	if (def->type != &type_string)
+	if (!is_string(def->type))
 		internal_error (0, "%s: expected string def", __FUNCTION__);
 	EMIT_STRING (def->space, D_STRING (def), da->class_name);
 }
@@ -259,7 +260,7 @@ emit_static_instances (const char *classname)
 										   data.num_instances + 1);
 	instances_def = emit_structure (va ("_OBJ_STATIC_INSTANCES_%s", classname),
 									's', instances_struct, 0, &data,
-									sc_static);
+									0, sc_static);
 	free (data.instances);
 	return instances_def;
 }
@@ -316,7 +317,7 @@ emit_static_instances_list (void)
 }
 
 int
-obj_is_id (const type_t *type)
+is_id (const type_t *type)
 {
 	if (type == &type_id)
 		return 1;
@@ -327,13 +328,13 @@ obj_is_id (const type_t *type)
 	if (!is_struct (type->t.fldptr.type))
 		return 0;
 	// if the the symtabs match, then type is id in disguise
-	if (type->t.fldptr.type->t.symtab == type_obj_object.t.symtab)
+	if (type->t.fldptr.type->t.symtab == type_object.t.symtab)
 		return 1;
 	return 0;
 }
 
 int
-obj_is_class (const type_t *type)
+is_class (const type_t *type)
 {
 	if (type->type == ev_invalid && type->meta == ty_class)
 		return 1;
@@ -341,7 +342,7 @@ obj_is_class (const type_t *type)
 }
 
 int
-obj_is_Class (const type_t *type)
+is_Class (const type_t *type)
 {
 	if (type == &type_Class)
 		return 1;
@@ -349,17 +350,41 @@ obj_is_Class (const type_t *type)
 }
 
 int
-obj_is_classptr (const type_t *type)
+is_classptr (const type_t *type)
 {
 	// easy cases first :)
-	if (obj_is_id (type) || obj_is_Class (type))
+	if (is_id (type) || is_Class (type))
 		return 1;
 	if (type->type != ev_pointer)
 		return 0;
 	type = type->t.fldptr.type;
-	if (obj_is_class (type))
+	if (is_class (type))
 		return 1;
 	return 0;
+}
+
+int
+is_SEL (const type_t *type)
+{
+	return type == &type_SEL;
+}
+
+int
+is_object (const type_t *type)
+{
+	return type == &type_object;
+}
+
+int
+is_method (const type_t *type)
+{
+	return type == &type_method;
+}
+
+int
+is_method_description (const type_t *type)
+{
+	return type == &type_method_description;
 }
 
 static protocollist_t *
@@ -367,7 +392,7 @@ obj_get_class_protos (const type_t *type)
 {
 	if (is_pointer (type))
 		type = type->t.fldptr.type;
-	if (obj_is_class (type))
+	if (is_class (type))
 		return type->t.class->protocols;
 	return 0;
 }
@@ -385,7 +410,7 @@ obj_get_categories (const type_t *type)
 {
 	if (is_pointer (type))
 		type = type->t.fldptr.type;
-	if (obj_is_class (type))
+	if (is_class (type))
 		return type->t.class->categories;
 	return 0;
 }
@@ -399,14 +424,14 @@ obj_classname (const type_t *type)
 	if (!str)
 		str = dstring_new ();
 	dstring_clearstr (str);
-	if (obj_is_id (type)) {
+	if (is_id (type)) {
 		dstring_copystr (str, "id");
-	} else if (obj_is_Class (type)) {
+	} else if (is_Class (type)) {
 		dstring_copystr (str, "Class");
 	} else {
 		if (is_pointer (type))
 			type = type->t.fldptr.type;
-		if (obj_is_class (type))
+		if (is_class (type))
 			dstring_copystr (str, type->t.class->name);
 	}
 	if ((protos = obj_get_protos (type)))
@@ -436,17 +461,17 @@ obj_types_assignable (const type_t *dst, const type_t *src)
 	int         i;
 
 	//puts ("%$$\"$#%");
-	if (!obj_is_classptr (src)) {
+	if (!is_classptr (src)) {
 		// if dst is a class pointer, then the types are not compatible,
 		// otherwise unknown
-		return obj_is_classptr (dst) - 1;
+		return is_classptr (dst) - 1;
 	}
-	if (!obj_is_classptr (dst)) {
+	if (!is_classptr (dst)) {
 		return -1;
 	}
 
-	dst_is_proto = obj_is_id (dst) && (dst_protos = obj_get_protos (dst));
-	src_is_proto = obj_is_id (src) && (src_protos = obj_get_protos (src));
+	dst_is_proto = is_id (dst) && (dst_protos = obj_get_protos (dst));
+	src_is_proto = is_id (src) && (src_protos = obj_get_protos (src));
 
 	if (dst_is_proto) {
 		if (src_is_proto) {
@@ -459,7 +484,7 @@ obj_types_assignable (const type_t *dst, const type_t *src)
 					return 1;
 				}
 			}
-		} else if (!obj_is_id (src)) {
+		} else if (!is_id (src)) {
 			src_protos = obj_get_class_protos (src);
 			for (i = 0; i < dst_protos->count; i++) {
 				if (procollist_find_protocol (src_protos, dst_protos->list[i]))
@@ -476,7 +501,7 @@ obj_types_assignable (const type_t *dst, const type_t *src)
 	} else if (src_is_proto) {
 	} else {
 	}
-	if (obj_is_id (dst) || obj_is_id (src))
+	if (is_id (dst) || is_id (src))
 		return 1;
 
 	// check dst is a base class of src
@@ -539,11 +564,11 @@ class_symbol (class_type_t *class_type, int external)
 			name = va ("_OBJ_CATEGORY_%s_%s",
 					   class_type->c.category->class->name,
 					   class_type->c.category->name);
-			type = &type_obj_category;
+			type = &type_category;
 			break;
 		case ct_class:
 			name = va ("_OBJ_CLASS_%s", class_type->c.class->name);
-			type = &type_obj_class;
+			type = &type_class;
 			break;
 		case ct_protocol:
 			return 0;		// probably in error recovery
@@ -561,7 +586,7 @@ _get_class (symbol_t *sym, int create)
 	class_t    *c;
 
 	if (!class_hash)
-		class_hash = Hash_NewTable (1021, class_get_key, 0, 0);
+		class_hash = Hash_NewTable (1021, class_get_key, 0, 0, 0);
 	if (sym) {
 		c = Hash_Find (class_hash, sym->name);
 		if (c || !create)
@@ -699,7 +724,7 @@ emit_ivar_count (def_t *def, void *data, int index)
 {
 	ivar_data_t *ivar_data = (ivar_data_t *) data;
 
-	if (def->type != &type_integer)
+	if (!is_integer(def->type))
 		internal_error (0, "%s: expected integer def", __FUNCTION__);
 	D_INT (def) = ivar_data->count;
 }
@@ -759,10 +784,10 @@ emit_ivars (symtab_t *ivars, const char *name)
 			if (s->sy_type == sy_var)
 				ivar_data.count++;
 	}
-	ivar_list_struct[1].type = array_type (&type_obj_ivar, ivar_data.count);
+	ivar_list_struct[1].type = array_type (&type_ivar, ivar_data.count);
 
 	def = emit_structure (va ("_OBJ_INSTANCE_VARIABLES_%s", name), 's',
-						  ivar_list_struct, 0, &ivar_data, sc_static);
+						  ivar_list_struct, 0, &ivar_data, 0, sc_static);
 
 	dstring_delete (ivar_data.encoding);
 	return def;
@@ -779,7 +804,7 @@ begin_class (class_t *class)
 	defspace_t *space;
 
 	sym = make_symbol (va ("_OBJ_METACLASS_%s", class->name),
-					   &type_obj_class, pr.far_data, sc_static);
+					   &type_class, pr.far_data, sc_static);
 	meta_def = sym->s.def;
 	meta_def->initialized = meta_def->constant = meta_def->nosave = 1;
 	space = meta_def->space;
@@ -789,13 +814,13 @@ begin_class (class_t *class)
 		EMIT_STRING (space, meta->super_class, class->super_class->name);
 	EMIT_STRING (space, meta->name, class->name);
 	meta->info = _PR_CLS_META;
-	meta->instance_size = type_size (&type_obj_class);
+	meta->instance_size = type_size (&type_class);
 	if (!class->super_class) {
 		// The ivars list for the meta class struct get emitted only for the
 		// root class of the hierachy.
-		// NOTE: type_obj_class is not actually a class
+		// NOTE: type_class is not actually a class
 		EMIT_DEF (space, meta->ivars,
-				  emit_ivars (type_obj_class.t.symtab, "Class"));
+				  emit_ivars (type_class.t.symtab, "Class"));
 	} else {
 		meta->ivars = 0;
 	}
@@ -1131,11 +1156,11 @@ class_message_response (type_t *clstype, int class_msg, expr_t *sel)
 	if (!selector)
 		return 0;
 
-	if (!obj_is_classptr (clstype) && !obj_is_class (clstype)) {
+	if (!is_classptr (clstype) && !is_class (clstype)) {
 		error (0, "neither class nor object");
 		return 0;
 	}
-	if (obj_is_id (clstype)) {
+	if (is_id (clstype)) {
 		protocollist_t *protos = clstype->t.fldptr.type->protos;
 		if (protos) {
 			if ((m = protocollist_find_method (protos, selector, !class_msg))) {
@@ -1148,12 +1173,12 @@ class_message_response (type_t *clstype, int class_msg, expr_t *sel)
 			dstring_delete (dstr);
 		}
 	} else {
-		if (obj_is_class (clstype)) {
+		if (is_class (clstype)) {
 			class = clstype->t.class;
-		} else if (obj_is_class (clstype->t.fldptr.type)) {
+		} else if (is_class (clstype->t.fldptr.type)) {
 			class = clstype->t.fldptr.type->t.class;
 		}
-		if (class && class->type != &type_obj_object) {
+		if (class && !is_object(class->type)) {
 			if (!class->interface_declared) {
 				class->interface_declared = 1;
 				warning (0, "cannot find interface declaration for `%s'",
@@ -1179,7 +1204,7 @@ class_message_response (type_t *clstype, int class_msg, expr_t *sel)
 		}
 	}
 	m = find_method (selector->name);
-	if (!m && (!class || class->type == &type_obj_object)) {
+	if (!m && (!class || is_object(class->type))) {
 		warning (sel, "could not find method for %c%s",
 				 class_msg ? '+' : '-', selector->name);
 	}
@@ -1272,7 +1297,7 @@ get_category (symbol_t *class_name, const char *category_name, int create)
 	class_t    *class;
 
 	if (!category_hash) {
-		category_hash = Hash_NewTable (1021, 0, 0, 0);
+		category_hash = Hash_NewTable (1021, 0, 0, 0, 0);
 		Hash_SetHashCompare (category_hash,
 				category_get_hash, category_compare);
 	}
@@ -1382,7 +1407,7 @@ emit_symtab_ref_cnt (def_t *def, void *data, int index)
 {
 	obj_symtab_data_t *da = (obj_symtab_data_t *)data;
 
-	if (def->type != &type_integer)
+	if (!is_integer(def->type))
 		internal_error (0, "%s: expected integer def", __FUNCTION__);
 	D_INT (def) = 0;
 	if (da->refs)
@@ -1394,7 +1419,7 @@ emit_symtab_refs (def_t *def, void *data, int index)
 {
 	obj_symtab_data_t *da = (obj_symtab_data_t *)data;
 
-	if (def->type != &type_SEL)
+	if (!is_SEL(def->type))
 		internal_error (0, "%s: expected SEL def", __FUNCTION__);
 	D_INT (def) = 0;
 	if (da->refs)
@@ -1406,7 +1431,7 @@ emit_symtab_cls_def_cnt (def_t *def, void *data, int index)
 {
 	obj_symtab_data_t *da = (obj_symtab_data_t *)data;
 
-	if (def->type != &type_integer)
+	if (!is_integer(def->type))
 		internal_error (0, "%s: expected integer def", __FUNCTION__);
 	D_INT (def) = da->cls_def_cnt;
 }
@@ -1416,7 +1441,7 @@ emit_symtab_cat_def_cnt (def_t *def, void *data, int index)
 {
 	obj_symtab_data_t *da = (obj_symtab_data_t *)data;
 
-	if (def->type != &type_integer)
+	if (!is_integer(def->type))
 		internal_error (0, "%s: expected integer def", __FUNCTION__);
 	D_INT (def) = da->cat_def_cnt;
 }
@@ -1503,15 +1528,15 @@ class_finish_module (void)
 										+ data.cat_def_cnt
 										+ 1);
 	symtab_def = emit_structure ("_OBJ_SYMTAB", 's', symtab_struct, 0, &data,
-								 sc_static);
+								 0, sc_static);
 	free (data.classes);
 	free (data.categories);
 
-	module_sym = make_symbol ("_OBJ_MODULE", &type_obj_module, pr.far_data,
+	module_sym = make_symbol ("_OBJ_MODULE", &type_module, pr.far_data,
 							  sc_static);
 	symtab_addsymbol (current_symtab, module_sym);
 	module = &D_STRUCT (pr_module_t, module_sym->s.def);
-	module->size = type_size (&type_obj_module);
+	module->size = type_size (&type_module);
 	EMIT_STRING (module_sym->s.def->space, module->name,
 				 GETSTR (pr.source_file));
 	EMIT_DEF (module_sym->s.def->space, module->symtab, symtab_def);
@@ -1519,7 +1544,7 @@ class_finish_module (void)
 	exec_class_sym = symtab_lookup (pr.symtab, "__obj_exec_class");
 	if (!exec_class_sym) {
 		exec_class_sym = new_symbol_type ("__obj_exec_class",
-										  &type_obj_exec_class);
+										  &type_exec_class);
 		exec_class_sym = function_symbol (exec_class_sym, 0, 1);
 		make_function (exec_class_sym, 0, exec_class_sym->table->space,
 					   sc_extern);
@@ -1549,7 +1574,7 @@ get_protocol (const char *name, int create)
 	protocol_t    *p;
 
 	if (!protocol_hash)
-		protocol_hash = Hash_NewTable (1021, protocol_get_key, 0, 0);
+		protocol_hash = Hash_NewTable (1021, protocol_get_key, 0, 0, 0);
 
 	if (name) {
 		p = Hash_Find (protocol_hash, name);
@@ -1692,7 +1717,7 @@ emit_protocol (protocol_t *protocol)
 	defspace_t *space;
 
 	proto_def = make_symbol (va ("_OBJ_PROTOCOL_%s", protocol->name),
-							 &type_obj_protocol, pr.far_data, sc_static)->s.def;
+							 &type_protocol, pr.far_data, sc_static)->s.def;
 	if (proto_def->initialized)
 		return proto_def;
 	proto_def->initialized = proto_def->constant = 1;
@@ -1715,7 +1740,7 @@ emit_protocol (protocol_t *protocol)
 static void
 emit_protocol_next (def_t *def, void *data, int index)
 {
-	if (def->type != &type_pointer) {
+	if (!is_pointer(def->type)) {
 		internal_error (0, "%s: expected pointer def", __FUNCTION__);
 	}
 	D_INT (def) = 0;
@@ -1726,7 +1751,7 @@ emit_protocol_count (def_t *def, void *data, int index)
 {
 	protocollist_t *protocols = (protocollist_t *) data;
 
-	if (def->type != &type_integer) {
+	if (!is_integer(def->type)) {
 		internal_error (0, "%s: expected integer def", __FUNCTION__);
 	}
 	D_INT (def) = protocols->count;
@@ -1738,7 +1763,7 @@ emit_protocol_list_item (def_t *def, void *data, int index)
 	protocollist_t *protocols = (protocollist_t *) data;
 	protocol_t *protocol = protocols->list[index];
 
-	if (!is_array (def->type) || def->type->t.array.type != &type_pointer) {
+	if (!is_array (def->type) || !is_pointer(def->type->t.array.type)) {
 		internal_error (0, "%s: expected array of pointer def", __FUNCTION__);
 	}
 	if (index < 0 || index >= protocols->count) {
@@ -1762,7 +1787,7 @@ emit_protocol_list (protocollist_t *protocols, const char *name)
 		return 0;
 	proto_list_struct[2].type = array_type (&type_pointer, protocols->count);
 	return emit_structure (va ("_OBJ_PROTOCOLS_%s", name), 's',
-						   proto_list_struct, 0, protocols, sc_static);
+						   proto_list_struct, 0, protocols, 0, sc_static);
 }
 
 void
@@ -1859,26 +1884,26 @@ class_finish_ivar_scope (class_type_t *class_type, symtab_t *ivar_scope,
 static void
 init_objective_structs (void)
 {
-	make_structure ("obj_selector", 's', sel_struct, &type_obj_selector);
-	chain_type (&type_obj_selector);
+	make_structure ("obj_selector", 's', sel_struct, &type_selector);
+	chain_type (&type_selector);
 	chain_type (&type_SEL);
 	chain_type (&type_IMP);
 
-	make_structure ("obj_method", 's', method_struct, &type_obj_method);
-	chain_type (&type_obj_method);
+	make_structure ("obj_method", 's', method_struct, &type_method);
+	chain_type (&type_method);
 
 	make_structure ("obj_method_description", 's', method_desc_struct,
-					&type_obj_method_description);
-	chain_type (&type_obj_method_description);
+					&type_method_description);
+	chain_type (&type_method_description);
 
-	make_structure ("obj_category", 's', category_struct, &type_obj_category);
-	chain_type (&type_obj_category);
+	make_structure ("obj_category", 's', category_struct, &type_category);
+	chain_type (&type_category);
 
-	make_structure ("obj_ivar", 's', ivar_struct, &type_obj_ivar);
-	chain_type (&type_obj_ivar);
+	make_structure ("obj_ivar", 's', ivar_struct, &type_ivar);
+	chain_type (&type_ivar);
 
-	make_structure ("obj_super", 's', super_struct, &type_obj_super);
-	chain_type (&type_obj_super);
+	make_structure ("obj_super", 's', super_struct, &type_super);
+	chain_type (&type_super);
 	chain_type (&type_SuperPtr);
 	chain_type (&type_supermsg);
 
@@ -1888,24 +1913,24 @@ init_objective_structs (void)
 static void
 init_classes (void)
 {
-	make_structure ("obj_class", 's', class_struct, &type_obj_class);
-	chain_type (&type_obj_class);
+	make_structure ("obj_class", 's', class_struct, &type_class);
+	chain_type (&type_class);
 	chain_type (&type_Class);
-	make_structure ("obj_object", 's', object_struct, &type_obj_object);
-	chain_type (&type_obj_object);
+	make_structure ("obj_object", 's', object_struct, &type_object);
+	chain_type (&type_object);
 	chain_type (&type_id);
-	make_structure ("obj_protocol", 's', protocol_struct, &type_obj_protocol);
-	chain_type (&type_obj_protocol);
+	make_structure ("obj_protocol", 's', protocol_struct, &type_protocol);
+	chain_type (&type_protocol);
 }
 
 static void
 class_init_obj_module (void)
 {
-	make_structure ("obj_module", 's', module_struct, &type_obj_module);
+	make_structure ("obj_module", 's', module_struct, &type_module);
 
-	chain_type (&type_obj_module);
+	chain_type (&type_module);
 	chain_type (&type_moduleptr);
-	chain_type (&type_obj_exec_class);
+	chain_type (&type_exec_class);
 }
 
 void

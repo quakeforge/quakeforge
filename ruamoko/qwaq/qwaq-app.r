@@ -1,15 +1,16 @@
 int fence;
-#include <AutoreleasePool.h>
 
-#include "color.h"
-#include "qwaq-app.h"
-#include "qwaq-button.h"
-#include "qwaq-curses.h"
-#include "qwaq-group.h"
-#include "qwaq-listener.h"
-#include "qwaq-window.h"
-#include "qwaq-screen.h"
-#include "qwaq-view.h"
+#include <AutoreleasePool.h>
+#include <key.h>
+
+#include "ruamoko/qwaq/ui/color.h"
+#include "ruamoko/qwaq/ui/curses.h"
+#include "ruamoko/qwaq/ui/group.h"
+#include "ruamoko/qwaq/ui/view.h"
+#include "ruamoko/qwaq/debugger/debugger.h"
+#include "ruamoko/qwaq/qwaq-app.h"
+
+int color_palette[64];
 
 static AutoreleasePool *autorelease_pool;
 static void
@@ -38,75 +39,91 @@ arp_end (void)
 	}
 
 	initialize ();
-	init_pair (1, COLOR_WHITE, COLOR_BLUE);
-	init_pair (2, COLOR_WHITE, COLOR_BLACK);
-	init_pair (3, COLOR_BLACK, COLOR_GREEN);
-	init_pair (4, COLOR_YELLOW, COLOR_RED);
+	for (int i = 1; i < 64; i++) {
+		init_pair (i, i & 0x7, i >> 3);
+		color_palette[i] = COLOR_PAIR (i);
+	}
 
 	screen = [TextContext screen];
-	objects = [[Group alloc] initWithContext: screen owner: nil];
+	screenSize = [screen size];
+	objects = [[Group withContext: screen owner: nil] retain];
 
-	[screen bkgd: COLOR_PAIR (1)];
-	Rect r = { nil, [screen size] };
-	r.offset.x = r.extent.width / 4;
-	r.offset.y = r.extent.height / 4;
-	r.extent.width /= 2;
-	r.extent.height /= 2;
-	Window *w;
-	[objects insert: w = [[Window windowWithRect: r] setBackground: COLOR_PAIR (2)]];
-	DrawBuffer *released = [DrawBuffer buffer: {12, 1}];
-	DrawBuffer *pressed = [DrawBuffer buffer: {12, 1}];
-	Button *b = [[Button alloc] initWithPos: {3, 4} releasedIcon: released
-													pressedIcon: pressed];
-	[w addView: b];
-	[released bkgd: COLOR_PAIR(3)];
-	[released clear];
-	[released mvaddstr: {2, 0}, "press me"];
-	[pressed bkgd: COLOR_PAIR(4)];
-	[pressed clear];
-	[pressed mvaddstr: {1, 0}, "release me"];
-	[[b onPress] addListener: self : @selector (buttonPressed:)];
-	[[b onRelease] addListener: self : @selector (buttonReleased:)];
-	[[b onClick] addListener: self : @selector (buttonClick:)];
-	[[b onDrag] addListener: self : @selector (buttonDrag:)];
-	[[b onAuto] addListener: self : @selector (buttonAuto:)];
+	[screen bkgd: color_palette[047]];
+	[screen scrollok: 1];
+	[screen clear];
+	wrefresh (stdscr);//FIXME
+
+	debuggers = [[Array array] retain];
 	return self;
 }
 
--(void) buttonPressed: (id) sender
+-(Extent)size
 {
-	[screen mvaddstr: {2, 0}, " pressed "];
-	[screen refresh];
+	return screenSize;
 }
 
--(void) buttonReleased: (id) sender
+-(TextContext *)screen
 {
-	[screen mvaddstr: {2, 0}, "released "];
-	[screen refresh];
+	return screen;
 }
 
--(void) buttonClick: (id) sender
+-draw
 {
-	[screen mvprintf: {2, 1}, "clicked %d", [sender click]];
-	[screen refresh];
+	[objects draw];
+	[TextContext refresh];
+	return self;
 }
 
--(void) buttonDrag: (id) sender
+-(Debugger *)find_debugger:(qdb_target_t) target
 {
-	[screen mvaddstr: {2, 0}, "dragged "];
-	Point delta = [sender delta];
-	[screen mvprintf: {15, 0}, "%3d %3d", delta.x, delta.y];
-	[screen refresh];
+	Debugger   *debugger;
+
+	for (int i = [debuggers count]; i-- > 0; ) {
+		debugger = [debuggers objectAtIndex: i];
+		if ([debugger target].handle == target.handle) {
+			return debugger;
+		}
+	}
+	debugger = [Debugger withTarget: target];
+	[debuggers addObject: debugger];
+	return debugger;
 }
 
--(void) buttonAuto: (id) sender
+-handleEvent: (qwaq_event_t *) event
 {
-	[screen mvprintf: {2, 2}, "%d", autocount++];
-	[screen refresh];
+	switch (event.what) {
+		case qe_resize:
+			Extent delta;
+			delta.width = event.resize.width - screenSize.width;
+			delta.height = event.resize.height - screenSize.height;
+
+			resizeterm (event.resize.width, event.resize.height);
+			[screen resizeTo: {event.resize.width, event.resize.height}];
+			screenSize = [screen size];
+			[objects resize: delta];
+			[screen refresh];
+			event.what = qe_none;
+			break;
+		case qe_key:
+			if (event.key.code == '\x18' || event.key.code == '\x11') {
+				endState = event.message.int_val;
+				event.what = qe_none;
+			}
+			break;
+		case qe_debug_event:
+			[[self find_debugger:{event.message.int_val}] handleDebugEvent];
+			event.what = qe_none;
+			break;
+	}
+	if (event.what != qe_none) {
+		[objects handleEvent: event];
+	}
+	return self;
 }
 
 -run
 {
+	[objects takeFocus];
 	[self draw];
 	do {
 		arp_start ();
@@ -121,39 +138,29 @@ arp_end (void)
 	return self;
 }
 
--draw
+-addView:(View *)view
 {
-	[objects draw];
-	[TextContext refresh];
-	return self;
-}
-
--handleEvent: (qwaq_event_t *) event
-{
-	[objects handleEvent: event];
-	if (event.what == qe_key && event.key == '\x18') {
-		event.what = qe_command;
-		event.message.command = qc_exit;
-	}
-	if (event.what == qe_command
-		&& (event.message.command == qc_exit
-			|| event.message.command == qc_error)) {
-		endState = event.message.command;
-	}
+	[objects insertSelected: view];
+	[screen refresh];
 	return self;
 }
 @end
+
+QwaqApplication *application;
 
 int main (int argc, string *argv)
 {
 	fence = 0;
 	//while (!fence) {}
 
-	id app = [[QwaqApplication app] retain];
+	arp_start ();
+	application = [[QwaqApplication app] retain];
+	arp_end ();
 
-	[app run];
-	[app release];
+	[application run];
+	[application release];
 	qwaq_event_t event;
 	get_event (&event);	// XXX need a "wait for queue idle"
+
 	return 0;
 }

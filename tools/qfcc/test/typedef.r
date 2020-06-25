@@ -24,9 +24,9 @@ next_type (qfot_type_t *type)
 int
 check_alias (string name, qfot_type_t *alias)
 {
-	if (alias.meta != ty_basic || alias.t.type != ev_pointer
-		|| alias.t.fldptr.aux_type.meta != ty_basic
-		|| alias.t.fldptr.aux_type.t.type != ev_integer) {
+	if (alias.meta != ty_basic || alias.type != ev_pointer
+		|| alias.fldptr.aux_type.meta != ty_basic
+		|| alias.fldptr.aux_type.type != ev_integer) {
 		printf ("%s is not a *int alias\n", name);
 		return 0;
 	}
@@ -48,13 +48,13 @@ main (void)
 		 ((int *)type - (int *) encodings.types) < encodings.size;
 		type = next_type (type)) {
 		if (type.meta == ty_alias) {
-			if (type.t.alias.name == "foo") {
-				found_foo = check_alias (type.t.alias.name,
-										 type.t.alias.aux_type);
+			if (type.alias.name == "foo") {
+				found_foo = check_alias (type.alias.name,
+										 type.alias.aux_type);
 			}
-			if (type.t.alias.name == "bar") {
-				found_bar = check_alias (type.t.alias.name,
-										 type.t.alias.aux_type);
+			if (type.alias.name == "bar") {
+				found_bar = check_alias (type.alias.name,
+										 type.alias.aux_type);
 			}
 		}
 	}

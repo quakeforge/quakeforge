@@ -3,10 +3,15 @@
 
 #include <Object.h>
 
-#include "event.h"
+#include "ruamoko/qwaq/ui/event.h"
+#include "ruamoko/qwaq/ui/rect.h"
 
+@class Array;
 @class Group;
 @class TextContext;
+@class View;
+
+extern int color_palette[64];
 
 @interface QwaqApplication: Object
 {
@@ -16,11 +21,17 @@
 	Group      *objects;
 
 	TextContext *screen;
+	Extent      screenSize;
 	int         autocount;
+
+	Array      *debuggers;
 }
+-(Extent)size;
+-(TextContext *)screen;
+-addView:(View *)view;
 -run;
--draw;
--handleEvent: (qwaq_event_t *) event;
 @end
+
+extern QwaqApplication *application;
 
 #endif//__qwaq_app_h

@@ -36,8 +36,8 @@
 
 #include "QF/plugin/vid_render.h"
 
-#include "host.h"
-#include "server.h"
+#include "nq/include/host.h"
+#include "nq/include/server.h"
 
 client_state_t cl;
 client_static_t cls;

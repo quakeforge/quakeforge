@@ -25,6 +25,7 @@
 */
 
 #include "debug.h"
+#include "legacy_string.h"
 #include "string.h"
 #include "qfs.h"
 
@@ -80,7 +81,7 @@ class_from_plist (PLDictionary *pldict)
 					break;
 				case "0": case "1": case "2": case "3": case "4":
 				case "5": case "6": case "7": case "8": case "9":
-					if (str_str (paramstr, "."))
+					if (str_str (paramstr, ".") >= 0)
 						va_list.list[j].float_val = stof (paramstr);
 					else
 						va_list.list[j].integer_val = stoi (paramstr);
@@ -144,7 +145,7 @@ string_from_plist (PLString *plstring)
 	local @param ret;
 	local string str = [plstring string];
 
-	ret = nil;	//FIXME should be ret = nil;
+	ret = nil;
 	if (str_mid (str, 0, 1) == "[")
 		return rect_from_plist (plstring);
 

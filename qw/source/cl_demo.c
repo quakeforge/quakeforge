@@ -54,13 +54,14 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "cl_cam.h"
-#include "cl_demo.h"
-#include "cl_ents.h"
-#include "cl_main.h"
-#include "client.h"
 #include "compat.h"
-#include "host.h"
+
+#include "qw/include/cl_cam.h"
+#include "qw/include/cl_demo.h"
+#include "qw/include/cl_ents.h"
+#include "qw/include/cl_main.h"
+#include "qw/include/client.h"
+#include "qw/include/host.h"
 #include "qw/pmove.h"
 
 typedef struct {

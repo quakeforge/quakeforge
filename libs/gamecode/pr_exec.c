@@ -55,12 +55,17 @@
 VISIBLE void
 PR_RunError (progs_t * pr, const char *error, ...)
 {
-	dstring_t  *string = dstring_new ();
+	dstring_t  *string = dstring_new ();//FIXME leaks when debugging
 	va_list     argptr;
 
 	va_start (argptr, error);
 	dvsprintf (string, error, argptr);
 	va_end (argptr);
+
+	if (pr->debug_handler) {
+		pr->debug_handler (prd_runerror, string->str, pr->debug_data);
+		// not expected to return, but if so, behave as if there was no handler
+	}
 
 	Sys_Printf ("%s\n", string->str);
 
@@ -119,9 +124,9 @@ PR_PushFrame (progs_t *pr)
 
 	frame = pr->pr_stack + pr->pr_depth++;
 
-	frame->s    = pr->pr_xstatement;
-	frame->f    = pr->pr_xfunction;
-	frame->tstr = pr->pr_xtstr;
+	frame->staddr = pr->pr_xstatement;
+	frame->func   = pr->pr_xfunction;
+	frame->tstr   = pr->pr_xtstr;
 
 	pr->pr_xtstr = pr->pr_pushtstr;
 	pr->pr_pushtstr = 0;
@@ -153,8 +158,8 @@ PR_PopFrame (progs_t *pr)
 	// up stack
 	frame = pr->pr_stack + --pr->pr_depth;
 
-	pr->pr_xfunction  = frame->f;
-	pr->pr_xstatement = frame->s;
+	pr->pr_xfunction  = frame->func;
+	pr->pr_xstatement = frame->staddr;
 	pr->pr_xtstr      = frame->tstr;
 }
 
@@ -187,6 +192,11 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 	pr_int_t    i;
 	pr_type_t  *dstParams[MAX_PARMS];
 	pointer_t   paramofs = 0;
+
+	if (pr->pr_trace && !pr->debug_handler) {
+		Sys_Printf ("Entering function %s\n",
+					PR_GetString (pr, f->descriptor->s_name));
+	}
 
 	PR_PushFrame (pr);
 
@@ -268,11 +278,25 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 }
 
 static void
-PR_LeaveFunction (progs_t *pr)
+PR_LeaveFunction (progs_t *pr, int to_engine)
 {
 	bfunction_t *f = pr->pr_xfunction;
 
 	PR_PopFrame (pr);
+
+	if (pr->pr_trace && !pr->debug_handler) {
+		Sys_Printf ("Leaving function %s\n",
+					PR_GetString (pr, f->descriptor->s_name));
+		if (to_engine) {
+			Sys_Printf ("Returning to engine\n");
+		} else {
+			bfunction_t *rf = pr->pr_xfunction;
+			if (rf) {
+				Sys_Printf ("Returning to function %s\n",
+							PR_GetString (pr, rf->descriptor->s_name));
+			}
+		}
+	}
 
 	// restore locals from the stack
 	pr->localstack_used -= f->locals;
@@ -381,7 +405,7 @@ PR_CallFunction (progs_t *pr, func_t fnum)
 	f = pr->function_table + fnum;
 	if (f->first_statement < 0) {
 		// negative statements are built in functions
-		if (pr->pr_trace) {
+		if (pr->pr_trace && !pr->debug_handler) {
 			Sys_Printf ("Calling builtin %s @ %p\n",
 						PR_GetString (pr, f->descriptor->s_name), f->func);
 		}
@@ -425,7 +449,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 	dstatement_t *st;
 	edict_t    *ed;
 	pr_type_t  *ptr;
-	pr_type_t   old_val = {0}, *watch = 0;
+	pr_type_t   old_val = {0};
 
 	// make a stack frame
 	exitdepth = pr->pr_depth;
@@ -434,6 +458,10 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 	Sys_PushSignalHook (signal_hook, pr);
 	Sys_PushErrorHandler (error_handler, pr);
 
+	if (pr->debug_handler) {
+		pr->debug_handler (prd_subenter, &fnum, pr->debug_data);
+	}
+
 	if (!PR_CallFunction (pr, fnum)) {
 		// called a builtin instead of progs code
 		goto exit_program;
@@ -441,8 +469,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 	st = pr->pr_statements + pr->pr_xstatement;
 
 	if (pr->watch) {
-		watch = pr->watch;
-		old_val = *watch;
+		old_val = *pr->watch;
 	}
 
 	while (1) {
@@ -460,12 +487,17 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 		op_b = pr->pr_globals + st->b;
 		op_c = pr->pr_globals + st->c;
 
-		if (pr->pr_trace)
-			PR_PrintStatement (pr, st, 1);
+		if (pr->pr_trace) {
+			if (pr->debug_handler) {
+				pr->debug_handler (prd_trace, 0, pr->debug_data);
+			} else {
+				PR_PrintStatement (pr, st, 1);
+			}
+		}
 
 		if (st->op & OP_BREAK) {
-			if (pr->breakpoint_handler) {
-				pr->breakpoint_handler (pr);
+			if (pr->debug_handler) {
+				pr->debug_handler (prd_breakpoint, 0, pr->debug_data);
 			} else {
 				PR_RunError (pr, "breakpoint hit");
 			}
@@ -1443,7 +1475,7 @@ op_call:
 			case OP_RETURN_V:
 				pr->pr_xfunction->profile += profile - startprofile;
 				startprofile = profile;
-				PR_LeaveFunction (pr);
+				PR_LeaveFunction (pr, pr->pr_depth == exitdepth);
 				st = pr->pr_statements + pr->pr_xstatement;
 				if (pr->pr_depth == exitdepth) {
 					if (pr->pr_trace && pr->pr_depth <= pr->pr_trace_depth)
@@ -1681,13 +1713,23 @@ op_call:
 			default:
 				PR_RunError (pr, "Bad opcode %i", st->op);
 		}
-		if (watch && watch->integer_var != old_val.integer_var
-			&& (!pr->wp_conditional
-				|| watch->integer_var == pr->wp_val.integer_var))
-			PR_RunError (pr, "watchpoint hit: %d -> %d", old_val.integer_var,
-						 watch->integer_var);
+		if (pr->watch && pr->watch->integer_var != old_val.integer_var) {
+			if (!pr->wp_conditional
+				|| pr->watch->integer_var == pr->wp_val.integer_var) {
+				if (pr->debug_handler) {
+					pr->debug_handler (prd_watchpoint, 0, pr->debug_data);
+				} else {
+					PR_RunError (pr, "watchpoint hit: %d -> %d",
+								 old_val.integer_var, pr->watch->integer_var);
+				}
+			}
+			old_val.integer_var = pr->watch->integer_var;
+		}
 	}
 exit_program:
+	if (pr->debug_handler) {
+		pr->debug_handler (prd_subexit, 0, pr->debug_data);
+	}
 	pr->pr_argc = 0;
 	Sys_PopErrorHandler ();
 	Sys_PopSignalHook ();

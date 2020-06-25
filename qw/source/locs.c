@@ -47,8 +47,9 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "client.h"
 #include "compat.h"
+
+#include "qw/include/client.h"
 
 #define LOCATION_BLOCK	128				// 128 locations per block.
 

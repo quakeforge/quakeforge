@@ -229,7 +229,7 @@ pr_strings_clear (progs_t *pr, void *data)
 	pr->pr_xtstr = 0;
 }
 
-static int
+VISIBLE int
 PR_LoadStrings (progs_t *pr)
 {
 	prstr_resources_t *res = PR_Resources_Find (pr, "Strings");
@@ -259,7 +259,7 @@ PR_LoadStrings (progs_t *pr)
 		Hash_FlushTable (res->strref_hash);
 	} else {
 		res->strref_hash = Hash_NewTable (1021, strref_get_key, strref_free,
-										  res);
+										  res, pr->hashlink_freelist);
 		res->string_map = 0;
 		res->free_string_refs = 0;
 		res->dyn_str_size = 0;
@@ -361,6 +361,17 @@ PR_StringValid (progs_t *pr, string_t num)
 	return get_strref (pr->pr_string_resources, num) != 0;
 }
 
+VISIBLE qboolean
+PR_StringMutable (progs_t *pr, string_t num)
+{
+	strref_t   *sr;
+	if (num >= 0) {
+		return 0;
+	}
+	sr = get_strref (pr->pr_string_resources, num);
+	return  sr && sr->type == str_mutable;
+}
+
 VISIBLE const char *
 PR_GetString (progs_t *pr, string_t num)
 {
@@ -430,6 +441,22 @@ PR_SetString (progs_t *pr, const char *s)
 }
 
 VISIBLE string_t
+PR_FindString (progs_t *pr, const char *s)
+{
+	prstr_resources_t *res = pr->pr_string_resources;
+	strref_t   *sr;
+
+	if (!s)
+		s = "";
+	sr = Hash_Find (res->strref_hash, s);
+
+	if (sr) {
+		return string_index (res, sr);
+	}
+	return 0;
+}
+
+VISIBLE string_t
 PR_SetReturnString (progs_t *pr, const char *s)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
@@ -449,14 +476,15 @@ PR_SetReturnString (progs_t *pr, const char *s)
 	}
 
 	// grab the string ref from the oldest slot, or make a new one if the
-	// slot is empty
-	if ((sr = res->rs_slot->strref)) {
+	// slot is empty or the string has been held
+	if ((sr = res->rs_slot->strref) && sr->type != str_dynamic) {
 		if (sr->type != str_return || sr->rs_slot != res->rs_slot) {
 			PR_Error (pr, "internal string error: %d", __LINE__);
 		}
 		pr_strfree (pr, sr->s.string);
 	} else {
 		sr = new_string_ref (res);
+		res->rs_slot->strref = sr;
 	}
 	sr->type = str_return;
 	sr->rs_slot = res->rs_slot;
@@ -560,7 +588,7 @@ PR_SetDynamicString (progs_t *pr, const char *s)
 	return string_index (res, sr);
 }
 
-void
+VISIBLE void
 PR_MakeTempString (progs_t *pr, string_t str)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
@@ -593,6 +621,33 @@ PR_NewMutableString (progs_t *pr)
 }
 
 VISIBLE void
+PR_HoldString (progs_t *pr, string_t str)
+{
+	prstr_resources_t *res = pr->pr_string_resources;
+	strref_t   *sr = get_strref (res, str);
+
+	if (sr) {
+		switch (sr->type) {
+			case str_temp:
+			case str_return:
+				break;
+			case str_static:
+			case str_mutable:
+			case str_dynamic:
+				// non-ephemeral string, no-op
+				return;
+			default:
+				PR_Error (pr, "internal string error: %d", __LINE__);
+		}
+		sr->type = str_dynamic;
+		return;
+	}
+	if (!PR_StringValid (pr, str)) {
+		PR_RunError (pr, "attempt to hold invalid string %d", str);
+	}
+}
+
+VISIBLE void
 PR_FreeString (progs_t *pr, string_t str)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
@@ -602,6 +657,7 @@ PR_FreeString (progs_t *pr, string_t str)
 		switch (sr->type) {
 			case str_static:
 			case str_temp:
+			case str_return:
 				return;
 			case str_mutable:
 				dstring_delete (sr->s.dstring);
@@ -609,17 +665,18 @@ PR_FreeString (progs_t *pr, string_t str)
 			case str_dynamic:
 				pr_strfree (pr, sr->s.string);
 				break;
-			case str_return:
 			default:
 				PR_Error (pr, "internal string error: %d", __LINE__);
 		}
 		free_string_ref (res, sr);
 		return;
 	}
-	PR_RunError (pr, "attempt to free invalid string %d", str);
+	if (!PR_StringValid (pr, str)) {
+		PR_RunError (pr, "attempt to free invalid string %d", str);
+	}
 }
 
-void
+VISIBLE void
 PR_FreeTempStrings (progs_t *pr)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
@@ -627,6 +684,11 @@ PR_FreeTempStrings (progs_t *pr)
 
 	for (sr = pr->pr_xtstr; sr; sr = t) {
 		t = sr->next;
+		if (sr->type == str_dynamic) {
+			// the string has been held, so simply remove the ref from the
+			// queue
+			continue;
+		}
 		if (sr->type != str_temp)
 			PR_Error (pr, "internal string error: %d", __LINE__);
 		if (R_STRING (pr) < 0 && string_index (res, sr) == R_STRING (pr)
@@ -762,242 +824,383 @@ free_fmt_item (prstr_resources_t *res, fmt_item_t *fi)
 	res->free_fmt_items = fi;
 }
 
+struct fmt_state_s;
+typedef void (*fmt_state_f) (struct fmt_state_s *);
+
+typedef struct fmt_state_s {
+	fmt_state_f state;
+	prstr_resources_t *res;
+	progs_t    *pr;
+	pr_type_t **args;
+	const char *c;
+	const char *msg;
+	fmt_item_t *fmt_items;
+	fmt_item_t **fi;
+	int         fmt_count;
+} fmt_state_t;
+
+static inline void
+fmt_append_item (fmt_state_t *state)
+{
+	(*state->fi)->next = new_fmt_item (state->res);
+	state->fi = &(*state->fi)->next;
+}
+
 #undef P_var
-#define P_var(p,n,t) (args[n]->t##_var)
+#define P_var(p,n,t) (state->args[n]->t##_var)
 #undef P_DOUBLE
-#define P_DOUBLE(p,n) (*(double *) (args[n]))
+#define P_DOUBLE(p,n) (*(double *) (state->args[n]))
+
+/**	State machine for PR_Sprintf
+ *
+ *	Parsing of the format string is implemented via the following state
+ *	machine. Note that in all states, end-of-string terminates the machine.
+ *	If the machine terminates in any state other than format or conversion,
+ *	an error is generated.
+ *	\dot
+ *	digraph PR_Sprintf_fmt_state_machine {
+ *		format          -> flags            [label="{%}"];
+ *		flags           -> flags            [label="{#+0 -}"];
+ *		flags           -> var_field_width  [label="{*}"];
+ *		flags           -> precision        [label="{.}"];
+ *		flags           -> field_width      [label="{[1-9]}"];
+ *		flags           -> modifiers        [label="other"];
+ *		var_field_width -> precision        [label="{.}"];
+ *		var_field_width -> modifiers        [label="other"];
+ *		field_width     -> field_width      [label="{[0-9]}"];
+ *		field_width     -> precision        [label="{.}"];
+ *		field_width     -> modifiers        [label="other"];
+ *		precision       -> var_precision    [label="{*}"];
+ *		precision       -> fixed_precision  [label="{[0-9]}"];
+ *		precision       -> modifiers        [label="other"];
+ *		var_precision   -> modifiers        [label="instant"];
+ *		fixed_precision -> fixed_precision  [label="{[0-9]}"];
+ *		fixed_precision -> modifiers        [label="other"];
+ *		modifiers       -> conversion       [label="instant/other"];
+ *		conversion      -> format           [label="other"];
+ *	}
+ *	\enddot
+ */
+///@{
+static void fmt_state_format (fmt_state_t *state);
+static void fmt_state_flags (fmt_state_t *state);
+static void fmt_state_var_field_width (fmt_state_t *state);
+static void fmt_state_field_width (fmt_state_t *state);
+static void fmt_state_precision (fmt_state_t *state);
+static void fmt_state_var_precision (fmt_state_t *state);
+static void fmt_state_fixed_precision (fmt_state_t *state);
+static void fmt_state_modifiers (fmt_state_t *state);
+static void fmt_state_conversion (fmt_state_t *state);
+
+static void
+fmt_state_flags (fmt_state_t *state)
+{
+	state->c++;	// skip over %
+	while (1) {
+		switch (*state->c) {
+			case '0':
+				(*state->fi)->flags |= FMT_ZEROPAD;
+				break;
+			case '#':
+				(*state->fi)->flags |= FMT_ALTFORM;
+				break;
+			case ' ':
+				(*state->fi)->flags |= FMT_ADDBLANK;
+				break;
+			case '-':
+				(*state->fi)->flags |= FMT_LJUSTIFY;
+				break;
+			case '+':
+				(*state->fi)->flags |= FMT_ADDSIGN;
+				break;
+			case '*':
+				state->state = fmt_state_var_field_width;
+				return;
+			case '.':
+				state->state = fmt_state_precision;
+				return;
+			case '1': case '2': case '3': case '4': case '5':
+			case '6': case '7': case '8': case '9':
+				state->state = fmt_state_field_width;
+				return;
+			default:
+				state->state = fmt_state_modifiers;
+				return;
+		}
+		state->c++;
+	}
+}
+
+static void
+fmt_state_var_field_width (fmt_state_t *state)
+{
+	(*state->fi)->minFieldWidth = P_INT (pr, state->fmt_count);
+	state->fmt_count++;
+	if (*++state->c == '.') {
+		state->state = fmt_state_precision;
+	} else {
+		state->state = fmt_state_modifiers;
+	}
+}
+
+static void
+fmt_state_field_width (fmt_state_t *state)
+{
+	while (isdigit ((byte )*state->c)) {
+		(*state->fi)->minFieldWidth *= 10;
+		(*state->fi)->minFieldWidth += *state->c++ - '0';
+	}
+	if (*state->c == '.') {
+		state->state = fmt_state_precision;
+	} else {
+		state->state = fmt_state_modifiers;
+	}
+}
+
+static void
+fmt_state_precision (fmt_state_t *state)
+{
+	state->c++;	// skip over .
+	(*state->fi)->precision = 0;
+	if (isdigit ((byte )*state->c)) {
+		state->state = fmt_state_fixed_precision;
+	} else if (*state->c == '*') {
+		state->state = fmt_state_var_precision;
+	} else {
+		state->state = fmt_state_modifiers;
+	}
+}
+
+static void
+fmt_state_var_precision (fmt_state_t *state)
+{
+	state->c++;	// skip over *
+	(*state->fi)->precision = P_INT (pr, state->fmt_count);
+	state->fmt_count++;
+	state->state = fmt_state_modifiers;
+}
+
+static void
+fmt_state_fixed_precision (fmt_state_t *state)
+{
+	while (isdigit ((byte )*state->c)) {
+		(*state->fi)->precision *= 10;
+		(*state->fi)->precision += *state->c++ - '0';
+	}
+	state->state = fmt_state_modifiers;
+}
+
+static void
+fmt_state_modifiers (fmt_state_t *state)
+{
+	// no modifiers supported
+	state->state = fmt_state_conversion;
+}
+
+static void
+fmt_state_conversion (fmt_state_t *state)
+{
+	progs_t    *pr = state->pr;
+	char        conv;
+	switch ((conv = *state->c++)) {
+		case '@':
+			// object
+			state->fmt_count++;
+			fmt_append_item (state);
+			break;
+		case 'e':
+			// entity
+			(*state->fi)->type = 'i';
+			(*state->fi)->data.integer_var =
+				P_EDICTNUM (pr, state->fmt_count);
+
+			state->fmt_count++;
+			fmt_append_item (state);
+			break;
+		case 'i':
+		case 'd':
+		case 'c':
+			// integer
+			(*state->fi)->type = conv;
+			(*state->fi)->data.integer_var = P_INT (pr, state->fmt_count);
+
+			state->fmt_count++;
+			fmt_append_item (state);
+			break;
+		case 'f':
+			// float or double
+		case 'g':
+			// float or double, no trailing zeroes, trim "."
+			// if nothing after
+			(*state->fi)->type = conv;
+			if (pr->float_promoted) {
+				(*state->fi)->flags |= FMT_LONG;
+				(*state->fi)->data.double_var
+					= P_DOUBLE (pr, state->fmt_count);
+			} else {
+				(*state->fi)->data.float_var
+					= P_FLOAT (pr, state->fmt_count);
+			}
+
+			state->fmt_count++;
+			fmt_append_item (state);
+			break;
+		case 'p':
+			// pointer
+			(*state->fi)->flags |= FMT_ALTFORM;
+			(*state->fi)->type = 'x';
+			(*state->fi)->data.uinteger_var = P_UINT (pr, state->fmt_count);
+
+			state->fmt_count++;
+			fmt_append_item (state);
+			break;
+		case 's':
+			// string
+			(*state->fi)->type = conv;
+			(*state->fi)->data.string_var = P_GSTRING (pr, state->fmt_count);
+
+			state->fmt_count++;
+			fmt_append_item (state);
+			break;
+		case 'v':
+		case 'q':
+			// vector
+			{
+				int         i, count = 3;
+				int         flags = (*state->fi)->flags;
+				int         precision = (*state->fi)->precision;
+				unsigned    minWidth = (*state->fi)->minFieldWidth;
+
+				(*state->fi)->flags = 0;
+				(*state->fi)->precision = -1;
+				(*state->fi)->minFieldWidth = 0;
+
+				if (conv == 'q')
+					count = 4;
+
+				for (i = 0; i < count; i++) {
+					if (i == 0) {
+						(*state->fi)->type = 's';
+						(*state->fi)->data.string_var = "'";
+					} else {
+						(*state->fi)->type = 's';
+						(*state->fi)->data.string_var = " ";
+					}
+					fmt_append_item (state);
+
+					(*state->fi)->flags = flags;
+					(*state->fi)->precision = precision;
+					(*state->fi)->minFieldWidth = minWidth;
+					(*state->fi)->type = 'g';
+					(*state->fi)->data.float_var =
+						P_VECTOR (pr, state->fmt_count)[i];
+
+					fmt_append_item (state);
+				}
+			}
+
+			(*state->fi)->type = 's';
+			(*state->fi)->data.string_var = "'";
+
+			state->fmt_count++;
+			fmt_append_item (state);
+			break;
+		case '%':
+			(*state->fi)->flags = 0;
+			(*state->fi)->precision = 0;
+			(*state->fi)->minFieldWidth = 0;
+			(*state->fi)->type = 's';
+			(*state->fi)->data.string_var = "%";
+
+			fmt_append_item (state);
+			break;
+		case 'x':
+			// integer, hex notation
+			(*state->fi)->type = conv;
+			(*state->fi)->data.uinteger_var = P_UINT (pr, state->fmt_count);
+
+			state->fmt_count++;
+			fmt_append_item (state);
+			break;
+	}
+	if (*state->c) {
+		state->state = fmt_state_format;
+	} else {
+		state->state = 0;	// finished
+	}
+}
+
+static void
+fmt_state_format (fmt_state_t *state)
+{
+	const char *l = state->c;
+	while (*state->c && *state->c != '%') {
+		state->c++;
+	}
+	if (state->c != l) {
+		// have some unformatted text to print
+		(*state->fi)->precision = state->c - l;
+		(*state->fi)->type = 's';
+		(*state->fi)->data.string_var = l;
+		if (*state->c) {
+			fmt_append_item (state);
+		}
+	}
+	if (*state->c) {
+		state->state = fmt_state_flags;
+	} else {
+		state->state = 0;	// finished
+	}
+}
+///@}
+
 VISIBLE void
 PR_Sprintf (progs_t *pr, dstring_t *result, const char *name,
 			const char *format, int count, pr_type_t **args)
 {
 	prstr_resources_t *res = pr->pr_string_resources;
-	const char *c, *l;
-	const char *msg = "";
-	fmt_item_t *fmt_items = 0;
-	fmt_item_t **fi = &fmt_items;
-	int         fmt_count = 0;
+	fmt_state_t state = { };
+
+	state.pr = pr;
+	state.res = res;
+	state.args = args;
+	state.fi = &state.fmt_items;
+	*state.fi = new_fmt_item (res);
+	state.c = format;
+	state.state = fmt_state_format;
 
 	if (!name)
 		name = "PR_Sprintf";
 
-	*fi = new_fmt_item (res);
-	c = l = format;
-	while (*c) {
-		if (*c++ == '%') {
-			if (c != l + 1) {
-				// have some unformatted text to print
-				(*fi)->precision = c - l - 1;
-				(*fi)->type = 's';
-				(*fi)->data.string_var = l;
-
-				(*fi)->next = new_fmt_item (res);
-				fi = &(*fi)->next;
-			}
-			if (*c == '%') {
-				(*fi)->type = 's';
-				(*fi)->data.string_var = "%";
-
-				(*fi)->next = new_fmt_item (res);
-				fi = &(*fi)->next;
-			} else {
-				do {
-					switch (*c) {
-						// format options
-						case '\0':
-							msg = "Unexpected end of format string";
-							goto error;
-						case '0':
-							(*fi)->flags |= FMT_ZEROPAD;
-							c++;
-							continue;
-						case '#':
-							(*fi)->flags |= FMT_ALTFORM;
-							c++;
-							continue;
-						case ' ':
-							(*fi)->flags |= FMT_ADDBLANK;
-							c++;
-							continue;
-						case '-':
-							(*fi)->flags |= FMT_LJUSTIFY;
-							c++;
-							continue;
-						case '+':
-							(*fi)->flags |= FMT_ADDSIGN;
-							c++;
-							continue;
-						case '.':
-							(*fi)->precision = 0;
-							c++;
-							while (isdigit ((byte )*c)) {
-								(*fi)->precision *= 10;
-								(*fi)->precision += *c++ - '0';
-							}
-							continue;
-						case '1': case '2': case '3': case '4': case '5':
-						case '6': case '7': case '8': case '9':
-							while (isdigit ((byte )*c)) {
-								(*fi)->minFieldWidth *= 10;
-								(*fi)->minFieldWidth += *c++ - '0';
-							}
-							continue;
-						// format types
-						case '@':
-							// object
-							fmt_count++;
-							(*fi)->next = new_fmt_item (res);
-							fi = &(*fi)->next;
-							break;
-						case 'e':
-							// entity
-							(*fi)->type = 'i';
-							(*fi)->data.integer_var =
-								P_EDICTNUM (pr, fmt_count);
-
-							fmt_count++;
-							(*fi)->next = new_fmt_item (res);
-							fi = &(*fi)->next;
-							break;
-						case 'i':
-						case 'd':
-						case 'c':
-							// integer
-							(*fi)->type = *c;
-							(*fi)->data.integer_var = P_INT (pr, fmt_count);
-
-							fmt_count++;
-							(*fi)->next = new_fmt_item (res);
-							fi = &(*fi)->next;
-							break;
-						case 'f':
-							// float or double
-						case 'g':
-							// float or double, no trailing zeroes, trim "."
-							// if nothing after
-							(*fi)->type = *c;
-							if (pr->float_promoted) {
-								(*fi)->flags |= FMT_LONG;
-								(*fi)->data.double_var
-									= P_DOUBLE (pr, fmt_count);
-							} else {
-								(*fi)->data.float_var
-									= P_FLOAT (pr, fmt_count);
-							}
-
-							fmt_count++;
-							(*fi)->next = new_fmt_item (res);
-							fi = &(*fi)->next;
-							break;
-						case 'p':
-							// pointer
-							(*fi)->flags |= FMT_ALTFORM;
-							(*fi)->type = 'x';
-							(*fi)->data.uinteger_var = P_UINT (pr, fmt_count);
-
-							fmt_count++;
-							(*fi)->next = new_fmt_item (res);
-							fi = &(*fi)->next;
-							break;
-						case 's':
-							// string
-							(*fi)->type = *c;
-							(*fi)->data.string_var = P_GSTRING (pr, fmt_count);
-
-							fmt_count++;
-							(*fi)->next = new_fmt_item (res);
-							fi = &(*fi)->next;
-							break;
-						case 'v':
-						case 'q':
-							// vector
-							{
-								int         i, count = 3;
-								int         flags = (*fi)->flags;
-								int         precision = (*fi)->precision;
-								unsigned    minWidth = (*fi)->minFieldWidth;
-
-								(*fi)->flags = 0;
-								(*fi)->precision = -1;
-								(*fi)->minFieldWidth = 0;
-
-								if (*c == 'q')
-									count = 4;
-
-								for (i = 0; i < count; i++) {
-									if (i == 0) {
-										(*fi)->type = 's';
-										(*fi)->data.string_var = "'";
-									} else {
-										(*fi)->type = 's';
-										(*fi)->data.string_var = " ";
-									}
-									(*fi)->next = new_fmt_item (res);
-									fi = &(*fi)->next;
-
-									(*fi)->flags = flags;
-									(*fi)->precision = precision;
-									(*fi)->minFieldWidth = minWidth;
-									(*fi)->type = 'g';
-									(*fi)->data.float_var =
-										P_VECTOR (pr, fmt_count)[i];
-
-									(*fi)->next = new_fmt_item (res);
-									fi = &(*fi)->next;
-								}
-							}
-
-							(*fi)->type = 's';
-							(*fi)->data.string_var = "'";
-
-							fmt_count++;
-							(*fi)->next = new_fmt_item (res);
-							fi = &(*fi)->next;
-							break;
-						case 'x':
-							// integer, hex notation
-							(*fi)->type = *c;
-							(*fi)->data.uinteger_var = P_UINT (pr, fmt_count);
-
-							fmt_count++;
-							(*fi)->next = new_fmt_item (res);
-							fi = &(*fi)->next;
-							break;
-					}
-					break;
-				} while (1);
-			}
-			l = ++c;
-		}
-	}
-	if (c != l) {
-		// have some unformatted text to print
-		(*fi)->precision = c - l;
-		(*fi)->type = 's';
-		(*fi)->data.string_var = l;
-
-		(*fi)->next = new_fmt_item (res);
+	while (*state.c && state.state) {
+		state.state (&state);
 	}
 
-	if (fmt_count != count) {
-		if (fmt_count > count)
-			msg = "Not enough arguments for format string.";
+	if (state.state) {
+		state.msg = "Unexpected end of format string";
+	} else if (state.fmt_count != count) {
+		if (state.fmt_count > count)
+			state.msg = "Not enough arguments for format string.";
 		else
-			msg = "Too many arguments for format string.";
-		dsprintf (res->print_str, "%s: %d %d", msg, fmt_count, count);
-		msg = res->print_str->str;
+			state.msg = "Too many arguments for format string.";
+	}
+	if (state.msg) {
+		dsprintf (res->print_str, "%s: %d %d", state.msg, state.fmt_count,
+				  count);
+		state.msg = res->print_str->str;
 		goto error;
 	}
 
 	dstring_clear (res->print_str);
-	I_DoPrint (res->print_str, result, fmt_items);
-	while (fmt_items) {
-		fmt_item_t *t = fmt_items->next;
-		free_fmt_item (res, fmt_items);
-		fmt_items = t;
+	I_DoPrint (res->print_str, result, state.fmt_items);
+	while (state.fmt_items) {
+		fmt_item_t *t = state.fmt_items->next;
+		free_fmt_item (res, state.fmt_items);
+		state.fmt_items = t;
 	}
 	return;
 error:
-	PR_RunError (pr, "%s: %s", name, msg);
+	PR_RunError (pr, "%s: %s", name, state.msg);
 }
 
 void

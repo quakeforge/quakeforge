@@ -41,8 +41,8 @@
 
 #include "QF/dstring.h"
 
-#include "options.h"
-#include "vis.h"
+#include "tools/qfvis/include/options.h"
+#include "tools/qfvis/include/vis.h"
 
 const char *this_program;
 

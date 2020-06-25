@@ -586,7 +586,7 @@ Menu_Init (void)
 
 	PR_Init (&menu_pr_state);
 
-	menu_hash = Hash_NewTable (61, menu_get_key, menu_free, 0);
+	menu_hash = Hash_NewTable (61, menu_get_key, menu_free, 0, 0);
 
 	PR_RegisterBuiltins (&menu_pr_state, builtins);
 
@@ -628,7 +628,8 @@ Menu_Load (void)
 		PR_LoadProgsFile (&menu_pr_state, file, size);
 		Qclose (file);
 
-		if (!PR_RunLoadFuncs (&menu_pr_state)) {
+		if (!PR_RunLoadFuncs (&menu_pr_state)
+			|| !PR_RunPostLoadFuncs (&menu_pr_state)) {
 			free (menu_pr_state.progs);
 			menu_pr_state.progs = 0;
 		}

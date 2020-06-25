@@ -159,6 +159,21 @@ TextBuffer_Destroy (txtbuffer_t *buffer)
 	FREE (txtbuffers, buffer);
 }
 
+VISIBLE char *
+TextBuffer_OpenGap (txtbuffer_t *buffer, size_t offset, size_t text_len)
+{
+	char       *dst;
+
+	if (offset > buffer->textSize) {
+		return 0;
+	}
+	dst = txtbuffer_open_gap (buffer, offset, text_len);
+	if (!dst) {
+		return 0;
+	}
+	return dst;
+}
+
 VISIBLE int
 TextBuffer_InsertAt (txtbuffer_t *buffer, size_t offset,
 					 const char *text, size_t text_len)

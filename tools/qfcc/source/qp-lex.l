@@ -35,17 +35,17 @@
 
 #include "QF/hash.h"
 
-#include "debug.h"
-#include "diagnostic.h"
-#include "expr.h"
-#include "grab.h"
-#include "qfcc.h"
-#include "shared.h"
-#include "strpool.h"
-#include "symtab.h"
-#include "type.h"
+#include "tools/qfcc/include/debug.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/grab.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
 
-#include "qp-parse.h"
+#include "tools/qfcc/source/qp-parse.h"
 
 #ifndef YY_PROTO
 # define YY_PROTO(x) x
@@ -248,7 +248,7 @@ keyword_or_id (const char *token)
 
 	if (!keyword_tab) {
 		size_t      i;
-		keyword_tab = Hash_NewTable (1021, keyword_get_key, 0, 0);
+		keyword_tab = Hash_NewTable (1021, keyword_get_key, 0, 0, 0);
 		for (i = 0; i < sizeof (keywords) / sizeof (keywords[0]); i++)
 			Hash_Add (keyword_tab, &keywords[i]);
 	}

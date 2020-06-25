@@ -70,6 +70,11 @@ typedef struct {
 	progs_t *pr;
 } file_t;
 
+typedef struct compunit_s {
+	const char *file;
+	pr_compunit_t *unit;
+} compunit_t;
+
 typedef struct prdeb_resources_s {
 	progs_t    *pr;
 	dstring_t  *string;
@@ -77,14 +82,20 @@ typedef struct prdeb_resources_s {
 	dstring_t  *line;
 	dstring_t  *dstr;
 	const char *debugfile;
-	struct pr_debug_header_s *debug;
-	struct pr_auxfunction_s *auxfunctions;
-	struct pr_auxfunction_s **auxfunction_map;
-	struct pr_lineno_s *linenos;
+	pr_debug_header_t *debug;
+	pr_auxfunction_t *auxfunctions;
+	pr_auxfunction_t **auxfunction_map;
+	pr_lineno_t *linenos;
 	pr_def_t   *local_defs;
 	pr_def_t   *type_encodings_def;
 	qfot_type_t void_type;
 	qfot_type_t *type_encodings[ev_type_count];
+	pr_def_t   *debug_defs;
+	pr_type_t  *debug_data;
+	hashtab_t  *debug_syms;
+	hashtab_t  *compunits;	// by source file
+	PR_RESMAP (compunit_t) compmap;	// handy allocation/freeing
+	hashtab_t  *file_hash;
 } prdeb_resources_t;
 
 typedef struct {
@@ -94,9 +105,8 @@ typedef struct {
 
 cvar_t         *pr_debug;
 cvar_t         *pr_source_path;
-static hashtab_t   *file_hash;
-static char        *source_path_string;
-static char       **source_paths;
+static char    *source_path_string;
+static char   **source_paths;
 
 static void pr_debug_void_view (qfot_type_t *type, pr_type_t *value,
 								void *_data);
@@ -174,6 +184,21 @@ file_free (void *_f, void *unused)
 	free (f);
 }
 
+static const char *
+def_get_key (const void *d, void *p)
+{
+	__auto_type def = (pr_def_t *) d;
+	__auto_type pr = (progs_t *) p;
+	return PR_GetString (pr, def->name);
+}
+
+static const char *
+compunit_get_key (const void *cu, void *p)
+{
+	__auto_type compunit = (compunit_t *) cu;
+	return compunit->file;
+}
+
 static void
 source_path_f (cvar_t *var)
 {
@@ -215,12 +240,12 @@ pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
 	qfot_type_t *aux_type;
 	switch (type->meta) {
 		case ty_basic:
-			return pr_type_size[type->t.type];
+			return pr_type_size[type->type];
 		case ty_struct:
 		case ty_union:
 			size = 0;
-			for (pr_int_t i = 0; i < type->t.strct.num_fields; i++) {
-				const qfot_var_t *field = &type->t.strct.fields[i];
+			for (pr_int_t i = 0; i < type->strct.num_fields; i++) {
+				const qfot_var_t *field = &type->strct.fields[i];
 				aux_type = &G_STRUCT (pr, qfot_type_t, field->type);
 				size = max (size,
 							field->offset + pr_debug_type_size (pr, aux_type));
@@ -229,11 +254,14 @@ pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
 		case ty_enum:
 			return pr_type_size[ev_integer];
 		case ty_array:
-			aux_type = &G_STRUCT (pr, qfot_type_t, type->t.array.type);
+			aux_type = &G_STRUCT (pr, qfot_type_t, type->array.type);
 			size = pr_debug_type_size (pr, aux_type);
-			return type->t.array.size * size;
+			return type->array.size * size;
 		case ty_class:
 			return 1;	//FIXME or should it return sizeof class struct?
+		case ty_alias:
+			aux_type = &G_STRUCT (pr, qfot_type_t, type->alias.aux_type);
+			return pr_debug_type_size (pr, aux_type);
 	}
 	return 0;
 }
@@ -245,7 +273,7 @@ get_def_type (progs_t *pr, pr_def_t *def, qfot_type_t *type)
 		// no type encoding, so use basic type data to fill in and return
 		// the dummy encoding
 		memset (type, 0, sizeof (*type));
-		type->t.type = def->type;
+		type->type = def->type;
 	} else {
 		type = &G_STRUCT (pr, qfot_type_t, def->type_encoding);
 		if (!def->size) {
@@ -342,6 +370,10 @@ pr_debug_clear (progs_t *pr, void *data)
 
 	if (res->debug)
 		pr->free_progs_mem (pr, res->debug);
+	Hash_FlushTable (res->file_hash);
+	Hash_FlushTable (res->debug_syms);
+	Hash_FlushTable (res->compunits);
+	PR_RESRESET (compunit_t, res->compmap);
 	res->debug = 0;
 	res->auxfunctions = 0;
 	if (res->auxfunction_map)
@@ -365,7 +397,7 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 {
 	prdeb_resources_t *res = pr->pr_debug_resources;
 	char       *l, *p, **dir;
-	file_t     *f = Hash_Find (file_hash, fname);
+	file_t     *f = Hash_Find (res->file_hash, fname);
 
 	if (f)
 		return f;
@@ -412,8 +444,38 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 		f->num_lines++;
 	}
 	f->pr = pr;
-	Hash_Add (file_hash, f);
+	Hash_Add (res->file_hash, f);
 	return f;
+}
+
+static void
+byteswap_def (pr_def_t *def)
+{
+	def->type = LittleShort (def->type);
+	def->size = LittleShort (def->size);
+	def->ofs = LittleLong (def->ofs);
+	def->name = LittleLong (def->name);
+	def->type_encoding = LittleLong (def->type_encoding);
+}
+
+static compunit_t *
+new_compunit (prdeb_resources_t *res)
+{
+	PR_RESNEW (compunit_t, res->compmap);
+}
+
+static void
+process_compunit (prdeb_resources_t *res, pr_def_t *def)
+{
+	progs_t    *pr = res->pr;
+	__auto_type compunit = (pr_compunit_t *) (res->debug_data + def->ofs);
+
+	for (unsigned i = 0; i < compunit->num_files; i++) {
+		compunit_t *cu = new_compunit (res);
+		cu->unit = compunit;
+		cu->file = PR_GetString (pr, compunit->files[i]);
+		Hash_Add (res->compunits, cu);
+	}
 }
 
 VISIBLE int
@@ -430,7 +492,9 @@ PR_LoadDebug (progs_t *pr)
 	pointer_t   type_encodings = 0;
 	pointer_t   type_ptr;
 	qfot_type_t *type;
+	string_t    compunit_str;
 
+	pr->pr_debug_resources = res;
 	if (!pr_debug->int_val)
 		return 1;
 
@@ -438,7 +502,6 @@ PR_LoadDebug (progs_t *pr)
 	if (def)
 		str = &pr->pr_globals[def->ofs];
 
-	Hash_FlushTable (file_hash);
 	if (!str)
 		return 1;
 	res->debugfile = PR_GetString (pr, str->string_var);
@@ -485,11 +548,17 @@ PR_LoadDebug (progs_t *pr)
 	res->debug->num_linenos = LittleLong (res->debug->num_linenos);
 	res->debug->locals = LittleLong (res->debug->locals);
 	res->debug->num_locals = LittleLong (res->debug->num_locals);
+	res->debug->debug_defs = LittleLong (res->debug->debug_defs);
+	res->debug->num_debug_defs = LittleLong (res->debug->num_debug_defs);
+	res->debug->debug_data = LittleLong (res->debug->debug_data);
+	res->debug->debug_data_size = LittleLong (res->debug->debug_data_size);
 
 	res->auxfunctions = (pr_auxfunction_t*)((char*)res->debug +
 										   res->debug->auxfunctions);
 	res->linenos = (pr_lineno_t*)((char*)res->debug + res->debug->linenos);
 	res->local_defs = (pr_def_t*)((char*)res->debug + res->debug->locals);
+	res->debug_defs = (pr_def_t*)((char*)res->debug + res->debug->debug_defs);
+	res->debug_data = (pr_type_t*)((char*)res->debug + res->debug->debug_data);
 
 	i = pr->progs->numfunctions * sizeof (pr_auxfunction_t *);
 	res->auxfunction_map = pr->allocate_progs_mem (pr, i);
@@ -525,14 +594,21 @@ PR_LoadDebug (progs_t *pr)
 		res->linenos[i].line = LittleLong (res->linenos[i].line);
 	}
 	for (i = 0; i < res->debug->num_locals; i++) {
-		res->local_defs[i].type = LittleShort (res->local_defs[i].type);
-		res->local_defs[i].size = LittleShort (res->local_defs[i].size);
-		res->local_defs[i].ofs = LittleLong (res->local_defs[i].ofs);
-		res->local_defs[i].name = LittleLong (res->local_defs[i].name);
-		res->local_defs[i].type_encoding
-			= LittleLong (res->local_defs[i].type_encoding);
+		byteswap_def (&res->local_defs[i]);
 		if (type_encodings) {
 			res->local_defs[i].type_encoding += type_encodings;
+		}
+	}
+	compunit_str = PR_FindString (pr, ".compile_unit");
+	for (i = 0; i < res->debug->num_debug_defs; i++) {
+		pr_def_t   *def = &res->debug_defs[i];
+		byteswap_def (def);
+		if (type_encodings) {
+			def->type_encoding += type_encodings;
+		}
+		Hash_Add (res->debug_syms, def);
+		if (def->name == compunit_str) {
+			process_compunit (res, def);
 		}
 	}
 	if (encodings) {
@@ -540,12 +616,24 @@ PR_LoadDebug (progs_t *pr)
 			 type_ptr += type->size) {
 			type = &G_STRUCT (pr, qfot_type_t, type_encodings + type_ptr);
 			if (type->meta == ty_basic
-				&& type->t.type >= 0 && type->t.type < ev_type_count) {
-				res->type_encodings[type->t.type] = type;
+				&& type->type >= 0 && type->type < ev_type_count) {
+				res->type_encodings[type->type] = type;
 			}
 		}
 	}
 	return 1;
+}
+
+VISIBLE const char *
+PR_Debug_GetBaseDirectory (progs_t *pr, const char *file)
+{
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	__auto_type cu = (compunit_t *) Hash_Find (res->compunits, file);
+
+	if (cu) {
+		return PR_GetString (pr, cu->unit->basedir);
+	}
+	return 0;
 }
 
 VISIBLE pr_auxfunction_t *
@@ -823,7 +911,7 @@ value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 {
 	switch (type->meta) {
 		case ty_basic:
-			switch (type->t.type) {
+			switch (type->type) {
 				case ev_void:
 					raw_type_view.void_view (type, value, data);
 					break;
@@ -883,6 +971,9 @@ value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 		case ty_class:
 			raw_type_view.class_view (type, value, data);
 			break;
+		case ty_alias://XXX
+			type = &G_STRUCT (data->pr, qfot_type_t, type->alias.aux_type);
+			return value_string (data, type, value);
 	}
 	return data->dstr->str;
 }
@@ -922,7 +1013,7 @@ global_string (pr_debug_data_t *data, pointer_t offset, qfot_type_t *type,
 
 	dstring_clearstr (dstr);
 
-	if (type && type->meta == ty_basic && type->t.type == ev_short) {
+	if (type && type->meta == ty_basic && type->type == ev_short) {
 		dsprintf (dstr, "%04x", (short) offset);
 		return dstr->str;
 	}
@@ -955,7 +1046,7 @@ global_string (pr_debug_data_t *data, pointer_t offset, qfot_type_t *type,
 		if (!type) {
 			if (def) {
 				if (!def->type_encoding) {
-					dummy_type.t.type = def->type;
+					dummy_type.type = def->type;
 					type = &dummy_type;
 				} else {
 					type = &G_STRUCT (pr, qfot_type_t, def->type_encoding);
@@ -1170,7 +1261,7 @@ pr_dump_struct (qfot_type_t *type, pr_type_t *value, void *_data,
 	__auto_type data = (pr_debug_data_t *) _data;
 	progs_t    *pr = data->pr;
 	dstring_t  *dstr = data->dstr;
-	qfot_struct_t *strct = &type->t.strct;
+	qfot_struct_t *strct = &type->strct;
 
 	dstring_appendstr (dstr, "{");
 	for (int i = 0; i < strct->num_fields; i++) {
@@ -1458,35 +1549,35 @@ static void
 dump_frame (progs_t *pr, prstack_t *frame)
 {
 	prdeb_resources_t *res = pr->pr_debug_resources;
-	dfunction_t	   *f = frame->f ? frame->f->descriptor : 0;
+	dfunction_t	   *f = frame->func ? frame->func->descriptor : 0;
 
 	if (!f) {
 		Sys_Printf ("<NO FUNCTION>\n");
 		return;
 	}
 	if (pr_debug->int_val && res->debug) {
-		pr_lineno_t *lineno = PR_Find_Lineno (pr, frame->s);
+		pr_lineno_t *lineno = PR_Find_Lineno (pr, frame->staddr);
 		pr_auxfunction_t *func = PR_Get_Lineno_Func (pr, lineno);
 		pr_uint_t   line = PR_Get_Lineno_Line (pr, lineno);
 		pr_int_t    addr = PR_Get_Lineno_Addr (pr, lineno);
 
 		line += func->source_line;
-		if (addr == frame->s) {
+		if (addr == frame->staddr) {
 			Sys_Printf ("%12s:%u : %s: %x\n",
 						PR_GetString (pr, f->s_file),
 						line,
 						PR_GetString (pr, f->s_name),
-						frame->s);
+						frame->staddr);
 		} else {
 			Sys_Printf ("%12s:%u+%d : %s: %x\n",
 						PR_GetString (pr, f->s_file),
-						line, frame->s - addr,
+						line, frame->staddr - addr,
 						PR_GetString (pr, f->s_name),
-						frame->s);
+						frame->staddr);
 		}
 	} else {
 		Sys_Printf ("%12s : %s: %x\n", PR_GetString (pr, f->s_file),
-					PR_GetString (pr, f->s_name), frame->s);
+					PR_GetString (pr, f->s_name), frame->staddr);
 	}
 }
 
@@ -1501,8 +1592,8 @@ PR_StackTrace (progs_t *pr)
 		return;
 	}
 
-	top.s = pr->pr_xstatement;
-	top.f = pr->pr_xfunction;
+	top.staddr = pr->pr_xstatement;
+	top.func = pr->pr_xfunction;
 	dump_frame (pr, &top);
 	for (i = pr->pr_depth - 1; i >= 0; i--)
 		dump_frame (pr, pr->pr_stack + i);
@@ -1603,15 +1694,18 @@ PR_Debug_Init (progs_t *pr)
 	res->void_type.meta = ty_basic;
 	res->void_type.size = 4;
 	res->void_type.encoding = 0;
-	res->void_type.t.type = ev_void;
+	res->void_type.type = ev_void;
 	for (int i = 0; i < ev_type_count; i++ ) {
 		res->type_encodings[i] = &res->void_type;
 	}
+	res->file_hash = Hash_NewTable (509, file_get_key, file_free, 0,
+									pr->hashlink_freelist);
+	res->debug_syms = Hash_NewTable (509, def_get_key, 0, pr,
+									 pr->hashlink_freelist);
+	res->compunits = Hash_NewTable (509, compunit_get_key, 0, pr,
+									pr->hashlink_freelist);
 
 	PR_Resources_Register (pr, "PR_Debug", res, pr_debug_clear);
-	if (!file_hash) {
-		file_hash = Hash_NewTable (1024, file_get_key, file_free, 0);
-	}
 	PR_AddLoadFunc (pr, PR_LoadDebug);
 }
 

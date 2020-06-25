@@ -44,7 +44,7 @@
 #include "QF/progs.h"
 #include "QF/va.h"
 
-#include "qfprogs.h"
+#include "tools/qfcc/include/qfprogs.h"
 
 static void
 dump_methods (progs_t *pr, pr_method_list_t *methods, int class)

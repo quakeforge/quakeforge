@@ -388,8 +388,7 @@ ObjectHash_Construct (gib_object_t *obj)
 {
 	ObjectHash_t *data = malloc (sizeof (ObjectHash_t));
 
-	data->objects = Hash_NewTable (1024, ObjRef_Get_Key, ObjRef_Free,
-			NULL);
+	data->objects = Hash_NewTable (1024, ObjRef_Get_Key, ObjRef_Free, NULL, 0);
 
 	return data;
 }

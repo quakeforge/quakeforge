@@ -659,8 +659,8 @@ calias_get_key (const void *c, void *unused)
 VISIBLE void
 Cvar_Init_Hash (void)
 {
-	cvar_hash = Hash_NewTable (1021, cvar_get_key, cvar_free, 0);
-	calias_hash = Hash_NewTable (1021, calias_get_key, calias_free, 0);
+	cvar_hash = Hash_NewTable (1021, cvar_get_key, cvar_free, 0, 0);
+	calias_hash = Hash_NewTable (1021, calias_get_key, calias_free, 0, 0);
 }
 
 VISIBLE void

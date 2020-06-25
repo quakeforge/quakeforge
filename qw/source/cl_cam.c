@@ -45,13 +45,14 @@
 #include "QF/cvar.h"
 #include "QF/msg.h"
 
-#include "chase.h"
-#include "cl_cam.h"
-#include "cl_input.h"
-#include "client.h"
 #include "compat.h"
-#include "qw/pmove.h"
 #include "sbar.h"
+
+#include "qw/include/chase.h"
+#include "qw/include/cl_cam.h"
+#include "qw/include/cl_input.h"
+#include "qw/include/client.h"
+#include "qw/pmove.h"
 
 #define	PM_SPECTATORMAXSPEED 500
 #define	PM_STOPSPEED 100

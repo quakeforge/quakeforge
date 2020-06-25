@@ -36,22 +36,22 @@
 #include "QF/progs.h"
 #include "QF/sys.h"
 
-#include "obj_file.h"
-#include "qfprogs.h"
+#include "tools/qfcc/include/obj_file.h"
+#include "tools/qfcc/include/qfprogs.h"
 
 static void
 dump_string_block (const char *strblock, unsigned size)
 {
 	const char *s = strblock;
 
-	printf ("%x ", 0);
+	printf ("%x \"", 0);
 	while (s - strblock < size) {
 		char        c = *s++;
 		switch (c) {
 			case 0:
-				fputs ("\n", stdout);
+				fputs ("\"\n", stdout);
 				if (s - strblock < size)
-					printf ("%lx ", s - strblock);
+					printf ("%lx \"", s - strblock);
 				break;
 			case 9:
 				fputs ("\\t", stdout);
@@ -61,6 +61,12 @@ dump_string_block (const char *strblock, unsigned size)
 				break;
 			case 13:
 				fputs ("\\r", stdout);
+				break;
+			case '\"':
+				fputs ("\\\"", stdout);
+				break;
+			case '\\':
+				fputs ("\\\\", stdout);
 				break;
 			default:
 				fputc (sys_char_map[(unsigned char)c], stdout);

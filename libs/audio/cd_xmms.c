@@ -43,9 +43,6 @@
 #ifdef HAVE_SYS_IOCTL_H
 # include <sys/ioctl.h>
 #endif
-#ifdef HAVE_SIGNAL_H
-# include <signal.h>
-#endif
 
 #include <errno.h>
 #include <fcntl.h>

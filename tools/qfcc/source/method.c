@@ -44,23 +44,23 @@
 #include "QF/pr_obj.h"
 #include "QF/va.h"
 
-#include "qfcc.h"
+#include "tools/qfcc/include/qfcc.h"
 
-#include "expr.h"
-#include "class.h"
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "method.h"
-#include "options.h"
-#include "reloc.h"
-#include "shared.h"
-#include "strpool.h"
-#include "struct.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/method.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/struct.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
 static hashtab_t *known_methods;
 
@@ -113,7 +113,8 @@ new_method (type_t *ret_type, param_t *selector, param_t *opt_params)
 	meth->def = 0;
 
 	if (!known_methods)
-		known_methods = Hash_NewTable (1021, method_get_key, method_free, 0);
+		known_methods = Hash_NewTable (1021, method_get_key,
+									   method_free, 0, 0);
 	Hash_Add (known_methods, meth);
 
 	return meth;
@@ -230,7 +231,7 @@ methodset_t *
 new_methodset (void)
 {
 	methodset_t *s = malloc (sizeof (*s));
-	s->tab = Hash_NewTable (31, 0, 0, 0);
+	s->tab = Hash_NewTable (31, 0, 0, 0, 0);
 	Hash_SetHashCompare (s->tab, methodset_get_hash, methodset_compare);
 	return s;
 }
@@ -455,9 +456,9 @@ selector_index (const char *sel_id)
 	selector_t *sel = &_sel;
 
 	if (!sel_hash) {
-		sel_hash = Hash_NewTable (1021, 0, 0, 0);
+		sel_hash = Hash_NewTable (1021, 0, 0, 0, 0);
 		Hash_SetHashCompare (sel_hash, sel_get_hash, sel_compare);
-		sel_index_hash = Hash_NewTable (1021, 0, 0, 0);
+		sel_index_hash = Hash_NewTable (1021, 0, 0, 0, 0);
 		Hash_SetHashCompare (sel_index_hash, sel_index_get_hash,
 							 sel_index_compare);
 	}
@@ -479,7 +480,7 @@ get_selector (expr_t *sel)
 	selector_t  _sel = {0, 0, 0};
 
 	if (sel->type != ex_expr && sel->e.expr.op != '&'
-		&& sel->e.expr.type != &type_SEL) {
+		&& !is_SEL(sel->e.expr.type)) {
 		error (sel, "not a selector");
 		return 0;
 	}
@@ -524,7 +525,7 @@ emit_selectors (void)
 static void
 emit_methods_next (def_t *def, void *data, int index)
 {
-	if (def->type != &type_pointer)
+	if (!is_pointer(def->type))
 		internal_error (0, "%s: expected pointer def", __FUNCTION__);
 	D_INT (def) = 0;
 }
@@ -534,7 +535,7 @@ emit_methods_count (def_t *def, void *data, int index)
 {
 	methodlist_t *methods = (methodlist_t *) data;
 
-	if (def->type != &type_integer)
+	if (!is_integer(def->type))
 		internal_error (0, "%s: expected integer def", __FUNCTION__);
 	D_INT (def) = methods->count;
 }
@@ -546,7 +547,7 @@ emit_methods_list_item (def_t *def, void *data, int index)
 	method_t   *m;
 	pr_method_t *meth;
 
-	if (!is_array (def->type) || def->type->t.array.type != &type_obj_method)
+	if (!is_array (def->type) || !is_method(def->type->t.array.type))
 		internal_error (0, "%s: expected array of method def",
 						__FUNCTION__);
 	if (index < 0 || index >= methods->count)
@@ -603,9 +604,9 @@ emit_methods (methodlist_t *methods, const char *name, int instance)
 	methods->count = count;
 	methods->instance = instance;
 
-	methods_struct[2].type = array_type (&type_obj_method, count);
+	methods_struct[2].type = array_type (&type_method, count);
 	return emit_structure (va ("_OBJ_%s_METHODS_%s", type, name), 's',
-						   methods_struct, 0, methods, sc_static);
+						   methods_struct, 0, methods, 0, sc_static);
 }
 
 static void
@@ -613,7 +614,7 @@ emit_method_list_count (def_t *def, void *data, int index)
 {
 	methodlist_t *methods = (methodlist_t *) data;
 
-	if (def->type != &type_integer)
+	if (!is_integer(def->type))
 		internal_error (0, "%s: expected integer def", __FUNCTION__);
 	D_INT (def) = methods->count;
 }
@@ -626,7 +627,7 @@ emit_method_list_item (def_t *def, void *data, int index)
 	pr_method_description_t *desc;
 
 	if (!is_array (def->type)
-		|| def->type->t.array.type != &type_obj_method_description) {
+		|| !is_method_description(def->type->t.array.type)) {
 		internal_error (0, "%s: expected array of method_description def",
 						__FUNCTION__);
 	}
@@ -671,10 +672,9 @@ emit_method_descriptions (methodlist_t *methods, const char *name,
 	methods->count = count;
 	methods->instance = instance;
 
-	method_list_struct[1].type = array_type (&type_obj_method_description,
-											 count);
+	method_list_struct[1].type = array_type (&type_method_description, count);
 	return emit_structure (va ("_OBJ_%s_METHODS_%s", type, name), 's',
-						   method_list_struct, 0, methods, sc_static);
+						   method_list_struct, 0, methods, 0, sc_static);
 }
 
 void

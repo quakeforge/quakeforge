@@ -42,10 +42,11 @@
 #include "QF/sys.h"
 
 #include "compat.h"
-#include "server.h"
-#include "sv_progs.h"
-#include "sv_pr_cpqw.h"
-#include "sv_pr_qwe.h"
+
+#include "qw/include/server.h"
+#include "qw/include/sv_progs.h"
+#include "qw/include/sv_pr_cpqw.h"
+#include "qw/include/sv_pr_qwe.h"
 #include "world.h"
 
 progs_t     sv_pr_state;

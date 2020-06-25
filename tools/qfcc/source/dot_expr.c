@@ -46,11 +46,12 @@
 
 #include "qfalloca.h"
 
-#include "expr.h"
-#include "symtab.h"
-#include "type.h"
-#include "qc-parse.h"
-#include "strpool.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/strpool.h"
+
+#include "tools/qfcc/source/qc-parse.h"
 
 const char *expr_names[] =
 {
@@ -249,7 +250,7 @@ print_block (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 				   "</tr>\n", indent + 4, "");
 	for (se = e->e.block.head, i = 0; se; se = se->next, i++)
 		dasprintf (dstr, "%*s<tr><td>%d</td><td port=\"b%d\">%s</td></tr>\n",
-				   indent + 4, "", i, i, expr_names[se->type]);
+				   indent + 4, "", se->line, i, expr_names[se->type]);
 	dasprintf (dstr, "%*s</table>\n", indent + 2, "");
 	dasprintf (dstr, "%*s>];\n", indent, "");
 
@@ -387,7 +388,7 @@ print_vector (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	int         indent = level * 2 + 2;
 
-	if (e->e.vector.type == &type_vector) {
+	if (is_vector(e->e.vector.type)) {
 		expr_t     *x = e->e.vector.list;
 		expr_t     *y = x->next;
 		expr_t     *z = y->next;
@@ -398,7 +399,7 @@ print_vector (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, y);
 		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, z);
 	}
-	if (e->e.vector.type == &type_quaternion) {
+	if (is_quaternion(e->e.vector.type)) {
 		if (e->e.vector.list->next->next) {
 			expr_t     *x = e->e.vector.list;
 			expr_t     *y = x->next;

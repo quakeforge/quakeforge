@@ -1,0 +1,164 @@
+## Process this file with automake to produce Makefile.in
+#
+#	Makefile.am
+#
+#	Automake-using build system for QuakeForge
+#
+#	Copyright (C) 2000 Jeff Teunissen <deek@quakeforge.net>
+#
+#	This Makefile is free software; you can redistribute it and/or
+#	modify it under the terms of the GNU General Public License
+#	as published by the Free Software Foundation; either version 2
+#	of the License, or (at your option) any later version.
+#
+#	This program is distributed in the hope that it will be useful,
+#	but WITHOUT ANY WARRANTY; without even the implied warranty of
+#	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	See the GNU General Public License for more details.
+#
+#	You should have received a copy of the GNU General Public License
+#	along with this program; if not, write to:
+#
+#		Free Software Foundation, Inc.
+#		59 Temple Place - Suite 330
+#		Boston, MA  02111-1307, USA
+#
+#	$Id$
+#
+
+# Stuff that is common to both client and server
+#
+bin_PROGRAMS +=	@NQ_TARGETS@
+
+EXTRA_PROGRAMS += nq-fbdev nq-sdl nq-svga nq-wgl nq-x11 nq-server
+
+noinst_LIBRARIES += @nq_libs@
+EXTRA_LIBRARIES += nq/source/libnq_client.a nq/source/libnq_common.a nq/source/libnq_sdl.a nq/source/libnq_server.a
+
+nq_source_libnq_common_a_SOURCES= nq/source/game.c nq/source/world.c
+nq_source_libnq_sdl_a_SOURCES=	nq/source/sys_sdl.c
+nq_source_libnq_sdl_a_CFLAGS=	$(SDL_CFLAGS)
+
+nq_cl_plugin_LIBS= \
+		@server_static_plugin_libs@ \
+		@client_static_plugin_libs@
+
+nq_client_LIBFILES= \
+		libs/video/targets/libQFjs.la \
+		libs/audio/libQFcd.la \
+		libs/audio/libQFsound.la
+
+nq_server_LIBFILES= \
+		@server_static_plugin_libs@ \
+		libs/models/libQFmodels.la
+
+nq_common_LIBFILES= \
+		libs/net/libnet_main.la \
+		libs/console/libQFconsole.la \
+		libs/image/libQFimage.la \
+		libs/gib/libQFgib.la \
+		libs/ruamoko/libQFruamoko.la \
+		libs/gamecode/libQFgamecode.la \
+		libs/util/libQFutil.la
+
+nq_client_LIBS=	$(nq_client_LIBFILES) $(nq_common_LIBFILES)
+
+nq_server_LIBS=	$(nq_server_LIBFILES) $(nq_common_LIBFILES) $(NET_LIBS)
+nq_server_LIB_DEPS=$(nq_server_LIBFILES) $(nq_common_LIBFILES)
+
+nq_source_libnq_client_a_SOURCES= \
+		nq/source/cl_chase.c nq/source/cl_cmd.c nq/source/cl_demo.c nq/source/cl_ents.c nq/source/cl_input.c nq/source/cl_main.c \
+		nq/source/cl_screen.c nq/source/cl_parse.c nq/source/cl_tent.c nq/source/cl_view.c nq/source/sbar.c
+
+nq_source_libnq_server_a_SOURCES= \
+		nq/source/host.c nq/source/host_cmd.c nq/source/sv_cl_phys.c nq/source/sv_cvar.c nq/source/sv_main.c \
+		nq/source/sv_move.c nq/source/sv_phys.c nq/source/sv_pr_cmds.c nq/source/sv_progs.c nq/source/sv_user.c
+
+nq_client_libs= nq/source/libnq_server.a nq/source/libnq_client.a nq/source/libnq_common.a \
+			libs/client/libQFclient.la
+server_libs = nq/source/libnq_server.a nq/source/libnq_common.a
+
+# Software-rendering targets
+
+# ... Linux FBDev
+nq_fbdev_libs=  \
+			$(nq_client_libs) \
+			$(nq_cl_plugin_LIBS) \
+			libs/video/renderer/libQFrenderer.la \
+			libs/models/libQFmodels.la \
+			libs/video/targets/libQFfbdev.la \
+			$(nq_client_LIBS)
+nq_fbdev_SOURCES=	nq/source/sys_unix.c
+nq_fbdev_LDADD= $(nq_fbdev_libs) $(NET_LIBS)
+nq_fbdev_LDFLAGS=	$(common_ldflags)
+nq_fbdev_DEPENDENCIES=	$(nq_fbdev_libs)
+
+# ... SDL, version 1.2 and higher
+nq_sdl_libs=  \
+			nq/source/libnq_sdl.a \
+			$(nq_client_libs) \
+			$(nq_cl_plugin_LIBS) \
+			libs/video/renderer/libQFrenderer.la \
+			libs/models/libQFmodels.la \
+			libs/video/targets/libQFsdl.la \
+			$(nq_client_LIBS)
+nq_sdl_SOURCES=nq/source/sdl_link.c
+nq_sdl_LDADD=		$(nq_sdl_libs) $(SDL_LIBS) $(NET_LIBS)
+nq_sdl_LDFLAGS= 	$(common_ldflags)
+nq_sdl_DEPENDENCIES=	$(nq_sdl_libs)
+
+# ... Linux SVGAlib
+nq_svga_libs=  \
+			$(nq_client_libs) \
+			$(nq_cl_plugin_LIBS) \
+			libs/video/renderer/libQFrenderer.la \
+			libs/models/libQFmodels.la \
+			libs/video/targets/libQFsvga.la \
+			$(nq_client_LIBS)
+nq_svga_SOURCES=	nq/source/sys_unix.c
+nq_svga_LDADD=		$(nq_svga_libs) $(SVGA_LIBS) $(NET_LIBS)
+nq_svga_LDFLAGS=	$(common_ldflags)
+nq_svga_DEPENDENCIES=	$(nq_svga_libs)
+
+# ... X11
+nq_x11_libs=  \
+			$(nq_client_libs) \
+			$(nq_cl_plugin_LIBS) \
+			libs/video/renderer/libQFrenderer.la \
+			libs/models/libQFmodels.la \
+			libs/video/targets/libQFx11.la \
+			$(nq_client_LIBS)
+nq_x11_SOURCES= 	nq/source/sys_unix.c
+nq_x11_LDADD=		$(nq_x11_libs) \
+			$(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
+			$(X_EXTRA_LIBS) $(X_SHM_LIB) $(NET_LIBS) $(DL_LIBS)
+nq_x11_LDFLAGS= 	$(common_ldflags)
+nq_x11_DEPENDENCIES=	$(nq_x11_libs)
+
+# OpenGL-using targets
+
+# ... SGI/Microsoft WGL (Windows OpenGL)
+nq_wgl_libs=  \
+			$(nq_client_libs) \
+			$(nq_cl_plugin_LIBS) \
+			$(opengl_QFLIBS) \
+			libs/video/targets/libQFwgl.la \
+			$(nq_client_LIBS)
+nq_wgl_SOURCES= 	nq/source/sys_win.c
+nq_wgl_LDADD=		$(nq_wgl_libs) -lgdi32 -lcomctl32 -lwinmm $(NET_LIBS)
+nq_wgl_LDFLAGS= 	$(common_ldflags)
+nq_wgl_DEPENDENCIES=	$(nq_wgl_libs)
+
+# Dedicated Server
+if SYSTYPE_WIN32
+ded_sources=	nq/source/sys_wind.c nq/source/sv_ded.c
+else
+ded_sources=	nq/source/sys_unixd.c nq/source/sv_ded.c
+endif
+EXTRA_DIST += nq/source/sys_wind.c nq/source/sys_unixd.c nq/source/sv_ded.c
+
+nq_server_LDFLAGS=	$(common_ldflags)
+nq_server_SOURCES=	$(ded_sources)
+nq_server_LDADD=	$(server_libs) $(nq_server_LIBS)
+nq_server_DEPENDENCIES=	$(server_libs) $(nq_server_LIB_DEPS)

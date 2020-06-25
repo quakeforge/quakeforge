@@ -100,6 +100,10 @@ typedef enum {
 
 @extern void *PR_FindGlobal (string name);	//FIXME where?
 
+// copies the list in src to a temporary buffer that will be freed when the
+// calling function returns, and places the pointer to the buffer into the
+// returned va_list. The count is copies as-is.
+@extern @va_list va_copy(@va_list src);
 #endif	//__ruamoko_runtime_h_
 /**
 	\}

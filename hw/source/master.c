@@ -469,7 +469,7 @@ SV_WriteFilterList (void)
 }
 
 static void
-SV_Shutdown (void)
+SV_Shutdown (void *data)
 {
 	// write filter list
 	SV_WriteFilterList ();
@@ -522,7 +522,7 @@ main (int argc, const char **argv)
 
 	mst_cbuf = Cbuf_New (&id_interp);
 
-	Sys_RegisterShutdown (SV_Shutdown);
+	Sys_RegisterShutdown (SV_Shutdown, 0);
 
 	Sys_Init ();
 

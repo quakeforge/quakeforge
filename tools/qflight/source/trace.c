@@ -50,8 +50,8 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
-#include "light.h"
-#include "options.h"
+#include "tools/qflight/include/light.h"
+#include "tools/qflight/include/options.h"
 
 typedef struct {
 	int         type;

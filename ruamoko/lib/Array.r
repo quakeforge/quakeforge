@@ -410,6 +410,19 @@
 	}
 }
 
+- (void) makeObjectsPerformSelector: (SEL)selector
+                         withObject: (void *)anObject
+                         withObject: (void *)anotherObject
+{
+	local int	i;
+
+	for (i = 0; i < [self count]; i++) {
+		[[self objectAtIndex: i] performSelector: selector
+									  withObject: anObject
+									  withObject: anotherObject];
+	}
+}
+
 - (void) dealloc
 {
 	local unsigned	i;

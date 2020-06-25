@@ -45,17 +45,18 @@
 #include "QF/teamplay.h"
 #include "QF/va.h"
 
+#include "compat.h"
+#include "clview.h"
+
 #include "qw/msg_ucmd.h"
 
-#include "chase.h"
-#include "cl_cam.h"
-#include "cl_demo.h"
-#include "cl_input.h"
-#include "cl_parse.h"
-#include "client.h"
-#include "compat.h"
-#include "host.h"
-#include "clview.h"
+#include "qw/include/chase.h"
+#include "qw/include/cl_cam.h"
+#include "qw/include/cl_demo.h"
+#include "qw/include/cl_input.h"
+#include "qw/include/cl_parse.h"
+#include "qw/include/client.h"
+#include "qw/include/host.h"
 
 cvar_t     *cl_nodelta;
 cvar_t     *cl_maxnetfps;

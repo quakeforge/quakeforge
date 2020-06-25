@@ -1513,7 +1513,7 @@ PR_Opcode_Init (void)
 		// already initialized
 		return;
 	}
-	opcode_table = Hash_NewTable (1021, 0, 0, 0);
+	opcode_table = Hash_NewTable (1021, 0, 0, 0, 0);
 	Hash_SetHashCompare (opcode_table, opcode_get_hash, opcode_compare);
 
 	for (op = pr_opcodes; op->name; op++) {
