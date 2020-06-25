@@ -463,6 +463,15 @@ flow_build_statements (function_t *func)
 	}
 }
 
+static int flow_def_clear_flowvars (def_t *def, void *data)
+{
+	if (def->flowvar) {
+		delete_flowvar (def->flowvar);
+	}
+	def->flowvar = 0;
+	return 0;
+}
+
 /**	Build an array of all the variables used by a function
  *
  *	The array exists so variables can be referenced by number and thus used
@@ -517,17 +526,26 @@ flow_build_vars (function_t *func)
 	set_iter_t *var_i;
 	flowvar_t  *var;
 
-	// first, count .return and .param_[0-7] as they are always needed
+	// First, run through the statements making sure any accessed variables
+	// have their flowvars reset.  Local variables will be fine, but global
+	// variables make have had flowvars added in a previous function, and it's
+	// easier to just clear them all.
+	// This is done before .return and .param so they won't get reset just
+	// after being counted
+	for (i = 0; i < func->num_statements; i++) {
+		s = func->statements[i];
+		flow_analyze_statement (s, 0, 0, 0, operands);
+		for (j = 0; j < FLOW_OPERANDS; j++) {
+			if (operands[j] && operands[j]->op_type == op_def) {
+				def_visit_all (operands[j]->o.def, 0,
+							   flow_def_clear_flowvars, 0);
+			}
+		}
+	}
+	// count .return and .param_[0-7] as they are always needed
 	for (i = 0; i < num_flow_params; i++) {
 		def_t      *def = param_symbol (flow_params[i].name)->s.def;
-		def_t      *a;
-		for (a = def->alias_defs; a; a = a->next) {
-			if (a->flowvar) {
-				delete_flowvar (a->flowvar);
-				a->flowvar = 0;
-			}
-			//free_def (def->alias_defs);
-		}
+		def_visit_all (def, 0, flow_def_clear_flowvars, 0);
 		flow_params[i].op.o.def = def;
 		num_vars += count_operand (&flow_params[i].op);
 	}
