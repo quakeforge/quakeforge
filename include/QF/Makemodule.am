@@ -149,12 +149,13 @@ qf_gl_includedir = $(includedir)/QF/GL
 qf_glsl_includedir = $(includedir)/QF/GLSL
 qf_math_includedir = $(includedir)/QF/math
 qf_plugin_includedir = $(includedir)/QF/plugin
+qf_vulkan_includedir = $(includedir)/QF/vulkan
 qf_include_HEADERS = @qfac_include_qf@
 qf_gl_include_HEADERS = @qfac_include_qf_gl@
 qf_glsl_include_HEADERS = @qfac_include_qf_glsl@
 qf_math_include_HEADERS = @qfac_include_qf_math@
 qf_plugin_include_HEADERS = @qfac_include_qf_plugin@
-qf_plugin_include_HEADERS = @qfac_include_qf_vulkan@
+qf_vulkan_include_HEADERS = @qfac_include_qf_vulkan@
 
 ruamoko_qf_includedir = $(ruamoko_includedir)/QF
 ruamoko_qf_include_HEADERS = @qfac_qfcc_include_qf@
