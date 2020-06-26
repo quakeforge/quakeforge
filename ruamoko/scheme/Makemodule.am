@@ -45,7 +45,7 @@ ruamoko_scheme_main_dat_SOURCES=$(ruamoko_scheme_src)
 ruamoko_scheme_main_obj=$(ruamoko_scheme_main_dat_SOURCES:.r=.o)
 ruamoko_scheme_main_dep=$(call qcautodep,$(ruamoko_scheme_main_dat_SOURCES))
 ruamoko/scheme/main.dat$(EXEEXT): $(ruamoko_scheme_main_obj) $(QFCC_DEP) ruamoko/scheme/libscheme.a ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
-	$(QLINK) -o $@ $(ruamoko_scheme_main_obj) -Lruamoko/scheme -lscheme -lcsqc -lr
+	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_scheme_main_obj) -Lruamoko/scheme -lscheme -lcsqc -lr
 include $(ruamoko_scheme_main_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_scheme_main_dep)
 

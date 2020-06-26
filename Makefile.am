@@ -70,6 +70,16 @@ QFCC_DEP=qfcc$(EXEEXT)
 QFCC=$(top_builddir)/$(QFCC_DEP)
 GZ=@progs_gz@
 
+V_QFCC = $(V_QFCC_@AM_V@)
+V_QFCC_ = $(V_QFCC_@AM_DEFAULT_V@)
+V_QFCC_0 = @echo "  QFCC    " $@;
+V_QFCC_1 =
+
+V_QFCCLD = $(V_QFCCLD_@AM_V@)
+V_QFCCLD_ = $(V_QFCCLD_@AM_DEFAULT_V@)
+V_QFCCLD_0 = @echo "  QFCCLD  " $@;
+V_QFCCLD_1 =
+
 QCSYSTEM=--no-default-paths -I$(top_srcdir) -I$(top_srcdir)/ruamoko/include -I$(top_srcdir)/include
 QCFLAGS=-qq -O -g -Werror -Wall -Wno-integer-divide
 QCPPFLAGS=$(QCSYSTEM)
@@ -82,12 +92,12 @@ am__mv = mv -f
 
 SUFFIXES=.o .r .pas
 .r.o:
-	depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+	$(V_QFCC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
 	$(QCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tqo -c -o $@ $< &&\
 	sed -i -e '1s@:@: $(QFCC_DEP)@' $$depbase.Tqo &&\
 	$(am__mv) $$depbase.Tqo $$depbase.Qo
 .pas.o:
-	depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+	$(V_QFCC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
 	$(QCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tqo -c -o $@ $< &&\
 	sed -i -e '1s@:@: $(QFCC_DEP)@' $$depbase.Tqo &&\
 	$(am__mv) $$depbase.Tqo $$depbase.Qo
