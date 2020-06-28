@@ -56,8 +56,13 @@ bi_va_copy (progs_t *pr)
 	__auto_type src_list = &G_STRUCT (pr, pr_type_t, src_args->list);
 	size_t      parm_size = pr->pr_param_size * sizeof(pr_type_t);
 	size_t      size = src_args->count * parm_size;
-	string_t    dst_list_block = PR_AllocTempBlock (pr, size);
-	__auto_type dst_list = (pr_type_t *) PR_GetString (pr, dst_list_block);
+	string_t    dst_list_block = 0;
+	pr_type_t  *dst_list = 0;
+
+	if (size) {
+		dst_list_block = PR_AllocTempBlock (pr, size);
+		dst_list = (pr_type_t *) PR_GetString (pr, dst_list_block);
+	}
 
 	memcpy (dst_list, src_list, size);
 	R_PACKED (pr, pr_va_list_t).count = src_args->count;
