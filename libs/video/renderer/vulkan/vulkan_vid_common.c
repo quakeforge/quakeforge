@@ -445,9 +445,8 @@ Vulkan_CreateFramebuffers (vulkan_ctx_t *ctx)
 		attachments->a[2] = sc->imageViews->a[i];
 		__auto_type frame = &ctx->framebuffers.a[i];
 		frame->framebuffer = QFV_CreateFramebuffer (device, renderpass,
-												   attachments->size,
-												   attachments->a,
-												   sc->extent, 1);
+												    attachments,
+												    sc->extent, 1);
 		frame->fence = QFV_CreateFence (device, 1);
 		frame->imageAvailableSemaphore = QFV_CreateSemaphore (device);
 		frame->renderDoneSemaphore = QFV_CreateSemaphore (device);

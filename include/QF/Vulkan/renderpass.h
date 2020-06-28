@@ -28,6 +28,7 @@ typedef struct qfv_subpassdependency_s
 	DARRAY_ALLOCFIXED (qfv_subpassdependency_t, num, allocator)
 
 struct qfv_device_s;
+struct qfv_imageviewset_s;
 VkRenderPass
 QFV_CreateRenderPass (struct qfv_device_s *device,
 					  qfv_attachmentdescription_t *attachments,
@@ -37,8 +38,7 @@ QFV_CreateRenderPass (struct qfv_device_s *device,
 VkFramebuffer
 QFV_CreateFramebuffer (struct qfv_device_s *device,
 					   VkRenderPass renderPass,
-					   uint32_t numAttachments,
-					   VkImageView *attachments,
+					   struct qfv_imageviewset_s *attachments,
 					   VkExtent2D, uint32_t layers);
 
 #endif//__QF_Vulkan_renderpass_h

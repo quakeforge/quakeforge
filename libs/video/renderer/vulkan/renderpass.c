@@ -85,7 +85,7 @@ QFV_CreateRenderPass (qfv_device_t *device,
 
 VkFramebuffer
 QFV_CreateFramebuffer (qfv_device_t *device, VkRenderPass renderPass,
-					   uint32_t numAttachments, VkImageView *attachments,
+					   qfv_imageviewset_t *attachments,
 					   VkExtent2D extent, uint32_t layers)
 {
 	VkDevice    dev = device->dev;
@@ -93,7 +93,7 @@ QFV_CreateFramebuffer (qfv_device_t *device, VkRenderPass renderPass,
 
 	VkFramebufferCreateInfo createInfo = {
 		VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO, 0, 0,
-		renderPass, numAttachments, attachments,
+		renderPass, attachments->size, attachments->a,
 		extent.width, extent.height, layers,
 	};
 
