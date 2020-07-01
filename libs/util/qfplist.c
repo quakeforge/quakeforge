@@ -49,6 +49,7 @@
 */
 struct plitem_s {
 	pltype_t	type;
+	int         line;
 	void		*data;
 };
 
@@ -176,17 +177,18 @@ PL_NewData (void *data, size_t size)
 }
 
 static plitem_t *
-new_string (char *str)
+new_string (char *str, int line)
 {
 	plitem_t   *item = PL_NewItem (QFString);
 	item->data = str;
+	item->line = line;
 	return item;
 }
 
 VISIBLE plitem_t *
 PL_NewString (const char *str)
 {
-	return new_string (strdup (str));
+	return new_string (strdup (str), 0);
 }
 
 VISIBLE void
@@ -688,6 +690,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 	case '{':
 	{
 		item = PL_NewDictionary ();
+		item->line = pl->line;
 
 		pl->pos++;
 
@@ -767,6 +770,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 
 	case '(': {
 		item = PL_NewArray ();
+		item->line = pl->line;
 
 		pl->pos++;
 
@@ -812,27 +816,31 @@ PL_ParsePropertyListItem (pldata_t *pl)
 		if (!str) {
 			return NULL;
 		} else {
-			return PL_NewData (str, len);
+			item = PL_NewData (str, len);
+			item->line = pl->line;
+			return item;
 		}
 	}
 
 	case '"': {
+		int line = pl->line;
 		char *str = PL_ParseQuotedString (pl);
 
 		if (!str) {
 			return NULL;
 		} else {
-			return new_string (str);
+			return new_string (str, line);
 		}
 	}
 
 	default: {
+		int line = pl->line;
 		char *str = PL_ParseUnquotedString (pl);
 
 		if (!str) {
 			return NULL;
 		} else {
-			return new_string (str);
+			return new_string (str, line);
 		}
 	}
 	} // switch
@@ -1037,4 +1045,10 @@ VISIBLE pltype_t
 PL_Type (plitem_t *item)
 {
 	return item->type;
+}
+
+VISIBLE int
+PL_Line (plitem_t *item)
+{
+	return item->line;
 }
