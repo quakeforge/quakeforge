@@ -38,11 +38,13 @@
 
 #include "qfalloca.h"
 
+#include "QF/darray.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/qfplist.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 /*
 	Generic property list item.
@@ -96,6 +98,13 @@ typedef struct pldata_s {	// Unparsed property list string
 	(inrange((ch), '0', '9') ? ((ch) - '0') \
 							 : 10 + (inrange((ch), 'a', 'f') ? ((ch) - 'a') \
 															 : ((ch) - 'A')))
+
+static const char *pl_types[] = {
+	"dictionary",
+	"array",
+	"biinary",
+	"string",
+};
 
 static byte quotable_bitmap[32];
 static inline int
@@ -1051,4 +1060,120 @@ VISIBLE int
 PL_Line (plitem_t *item)
 {
 	return item->line;
+}
+
+static void __attribute__((format(printf,3,4)))
+pl_message (plitem_t *messages, const plitem_t *item, const char *fmt, ...)
+{
+	va_list     args;
+	dstring_t  *string;
+
+	string = dstring_new ();
+
+	va_start (args, fmt);
+	dvsprintf (string, fmt, args);
+	va_end (args);
+
+	if (item) {
+		PL_A_AddObject (messages,
+						PL_NewString (va ("%d: %s", item->line, string->str)));
+	} else {
+		PL_A_AddObject (messages,
+						PL_NewString (va ("internal: %s", string->str)));
+	}
+	dstring_delete (string);
+}
+
+static int
+pl_default_parser (const plfield_t *field, const plitem_t *item, void *data,
+				   plitem_t *messages)
+{
+	switch (field->type) {
+		case QFDictionary:
+			{
+				*(hashtab_t **)data = (hashtab_t *)item->data;
+			}
+			return 1;
+		case QFArray:
+			{
+				plarray_t  *array = (plarray_t *)item->data;
+				typedef struct DARRAY_TYPE (plitem_t *) arraydata_t;
+				arraydata_t *arraydata = DARRAY_ALLOCFIXED(arraydata_t,
+														   array->numvals,
+														   malloc);
+				memcpy (arraydata->a, array->values,
+						array->numvals * sizeof (arraydata->a[0]));
+			}
+			return 1;
+		case QFBinary:
+			{
+				plbinary_t *binary = (plbinary_t *)item->data;
+				typedef struct DARRAY_TYPE (byte) bindata_t;
+				bindata_t  *bindata = DARRAY_ALLOCFIXED(bindata_t,
+														binary->size, malloc);
+				memcpy (bindata->a, binary->data, binary->size);
+				*(bindata_t **)data = bindata;
+			}
+			return 1;
+		case QFString:
+			*(char **)data = (char *)item->data;
+			return 1;
+	}
+	pl_message (messages, 0, "invalid item type: %d", field->type);
+	return 0;
+}
+
+VISIBLE int
+PL_ParseDictionary (const plfield_t *fields, const plitem_t *dict, void *data,
+					plitem_t *messages)
+{
+	void      **list, **l;
+	dictkey_t  *current;
+	int         result;
+	int        (*parser) (const plfield_t *, const plitem_t *, void *,
+						  plitem_t *);
+
+	if (dict->type != QFDictionary) {
+		pl_message (messages, dict, "error: not a dictionary object");
+		return 0;
+	}
+
+	if (!(l = list = Hash_GetList ((hashtab_t *) dict->data))) {
+		// empty struct: leave as default
+		return 1;
+	}
+
+	while ((current = (dictkey_t *) *l++)) {
+		const plfield_t *f;
+		for (f = fields; f->name; f++) {
+			if (strcmp (f->name, current->key) == 0) {
+				plitem_t   *item = current->value;
+				void       *flddata = (byte *)data + f->offset;
+
+				if (f->parser) {
+					parser = f->parser;
+				} else {
+					parser = pl_default_parser;
+				}
+				if (item->type != f->type) {
+					pl_message (messages, item, "error: %s is the wrong type"
+								" Got %s, expected %s",current->key,
+								pl_types[f->type],
+								pl_types[item->type]);
+					result = 0;
+				} else {
+					if (!parser (f, item, flddata, messages)) {
+						result = 0;
+					}
+				}
+			}
+		}
+		if (!f->name) {
+			pl_message (messages, dict, "error: unknown field %s",
+						current->key);
+			result = 0;
+		}
+	}
+	free (list);
+	return result;
 }

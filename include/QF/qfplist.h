@@ -53,6 +53,52 @@ typedef enum {
 */
 typedef struct plitem_s plitem_t;
 
+struct plfield_s;
+/** Custom parser for the field.
+
+	With this, custom parsing of any property list object type is
+	supported. For example, parsing of strings into numeric values,
+	converting binary objects to images, and deeper parsing of array and
+	dictionary objects.
+
+	If null, then the default parser for the object type is used:
+	  * QFString: the  point to the actual string. The string continues
+		to be owned by the string object.
+	  * QFBinary: pointer to fixed-size DARRAY_TYPE(byte) (so size isn't
+		lost)
+	  * QFArray: pointer to fixed-size DARRAY_TYPE(plitem_t *) with the
+		indivisual objects. The individual objects continue to be owned
+		by the array object.
+	  * QFDictionary: pointer to the hashtab_t hash table used for the
+		dictionary object. The hash table continues to be owned by the
+		dictionary object.
+
+	\param field	Pointer to this field item.
+	\param item		The property list item being parsed into the field.
+	\param data		Pointer to the field in the structure being parsed.
+	\param messages	An array object the parser can use to store any
+					error messages. Messages should be strings, but no
+					checking is done: it is up to the top-level caller to
+					parse out the messages.
+	\return			0 for error, 1 for success. See \a PL_ParseDictionary.
+*/
+typedef int (*plparser_t) (const struct plfield_s *field,
+						   const struct plitem_s *item,
+						   void *data,
+						   struct plitem_s *messages);
+
+/** A field to be parsed from a dictionary item.
+
+	something
+*/
+typedef struct plfield_s {
+	const char *name;		///< matched by dictionary key
+	size_t      offset;		///< the offset of the field within the structure
+	pltype_t    type;		///< the required type of the dictionary object
+	plparser_t  parser;		///< custom parser function
+	void       *data;		///< additional data for \a parser
+} plfield_t;
+
 /** Create an in-memory representation of the contents of a property list.
 
 	\param string	the saved plist, as read from a file.
@@ -233,6 +279,43 @@ plitem_t *PL_NewString (const char *str);
 	\param item the property list object to be freed
 */
 void PL_Free (plitem_t *item);
+
+/**	Parse a dictionary object into a structure.
+
+	For each key in the dictionary, the corresponding field item is used to
+	determine how to parse the object associated with that key. Duplicate
+	field items are ignored: only the first item is used, and no checking is
+	done. Fields for which there is no key in the dictionary are also ignored,
+	and the destination is left unmodified. However, keys that have no
+	corresponding field are treated as errors and a suitable message is added
+	to the \a messages object.
+
+	When an error occurs (unknown key, incorrect item type (item type does not
+	match the type specified in the field item) or the field item's \a parser
+	returns 0), processing continues but the error result is returned.
+
+	Can be used recursively to parse deep hierarchies.
+
+	\param dict		The dictionary object to parse
+	\param fields	Array of field items describing the structure. Terminated
+					by a field item with a null \a name pointer.
+	\param data     Pointer to the structure into which the data will be
+					parsed.
+	\param messages Array object supplied by the caller used for storing
+					messages. The messages may or may not indicate errors (its
+					contents are not checked). This function itself will add
+					only string objects.
+					If there are any errors, suitable messages will be found in
+					the \a messages object. However, just because there are no
+					errors doesn't mean that \a messages will remain empty as
+					a field's \a parser may add other messages. The standard
+					message format is "[line number]: [message]". If the line
+					number is 0, then the actual line is unknown (due to the
+					source item not being parsed from a file or string).
+	\return			0 if there are any errors, 1 if there are no errors.
+*/
+int PL_ParseDictionary (const plfield_t *fields, const plitem_t *dict,
+						void *data, plitem_t *messages);
 
 ///@}
 
