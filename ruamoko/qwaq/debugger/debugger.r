@@ -53,6 +53,7 @@
 -(Editor *) find_file:(string) filename
 {
 	Editor     *file;
+	filename = qdb_get_file_path (target, filename);
 	for (int i = [files count]; i-- > 0; ) {
 		file = [files objectAtIndex: i];
 		if ([file filename] == filename) {
@@ -62,8 +63,7 @@
 	Rect rect = {{1, 1}, [source_window size]};
 	rect.extent.width -= 2;
 	rect.extent.height -= 2;
-	string filepath = qdb_get_file_path (target, filename);
-	file = [Editor withRect:rect file:filepath];
+	file = [Editor withRect:rect file:filename];
 	[files addObject: file];
 	return file;
 }
