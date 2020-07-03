@@ -59,6 +59,7 @@ typedef struct qwaq_target_s {
 	prdebug_t   event;
 	void       *param;
 	rwcond_t    run_cond;
+	int         run_command;
 } qwaq_target_t;
 
 typedef struct qwaq_debug_s {
@@ -130,7 +131,10 @@ qwaq_debug_handler (prdebug_t debug_event, void *param, void *data)
 		Sys_Error ("event queue broke");
 	}
 	pthread_mutex_lock (&target->run_cond.mut);
-	pthread_cond_wait (&target->run_cond.rcond, &target->run_cond.mut);
+	while (!target->run_command) {
+		pthread_cond_wait (&target->run_cond.rcond, &target->run_cond.mut);
+	}
+	target->run_command = 0;
 	pthread_mutex_unlock (&target->run_cond.mut);
 	if (debug_event == prd_runerror || debug_event == prd_error) {
 		pthread_exit (param);
@@ -185,6 +189,7 @@ qwaq_target_load (progs_t *pr)
 	target->debugger = qwaq_debug_data;
 	target->handle = target_index (qwaq_debug_data, target);
 	qwaq_init_cond (&target->run_cond);
+	target->run_command = 0;
 
 	pr->debug_handler = qwaq_debug_handler;
 	pr->debug_data = target;
@@ -280,6 +285,7 @@ qdb_continue (progs_t *pr)
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 
 	pthread_mutex_lock (&target->run_cond.mut);
+	target->run_command = 1;
 	pthread_cond_signal (&target->run_cond.rcond);
 	pthread_mutex_unlock (&target->run_cond.mut);
 }
