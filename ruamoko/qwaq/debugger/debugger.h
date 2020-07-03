@@ -28,6 +28,7 @@
 		int         onExit;
 	}           sub_cond;
 	SEL         traceHandler;
+	int         running;
 
 	Window     *source_window;
 	ScrollBar  *source_scrollbar;
