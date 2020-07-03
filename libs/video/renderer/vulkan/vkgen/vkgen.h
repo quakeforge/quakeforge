@@ -14,5 +14,6 @@ extern Array *queue;
 extern Array *output_types;
 extern QFile output_file;
 extern hashtab_t *processed_types;
+extern hashtab_t *available_types;
 
 #endif//__renderer_vulkan_vkgen_vkgen_h

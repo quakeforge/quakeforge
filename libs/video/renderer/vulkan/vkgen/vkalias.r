@@ -1,0 +1,52 @@
+#include <string.h>
+
+#include "vkalias.h"
+#include "vkenum.h"
+#include "vkgen.h"
+#include "vkstruct.h"
+
+@implementation Alias
+-(string) name
+{
+	return type.alias.name;
+}
+
+-(Type *) resolveType
+{
+	return [Type findType: type.alias.aux_type];
+}
+
+-(void)addToQueue
+{
+	Type       *alias = [Type findType:type.alias.full_type];
+	string      name = [self name];
+
+	if ([alias name] == "VkFlags") {
+		if (str_mid (name, -5) == "Flags") {
+			string tag = str_mid (name, 0, -1) + "Bits";
+			id enumObj = [(id) Hash_Find (available_types, tag) resolveType];
+			[enumObj addToQueue];
+		}
+	} else if (name == "VkBool32") {
+		// drop
+	} else if ([alias class] == [Enum class]
+			   || [alias class] == [Struct class]) {
+		[alias addToQueue];
+	} else if (alias.type.meta == ty_basic && alias.type.type == ev_pointer) {
+		Type       *type = [Type findType:alias.type.fldptr.aux_type];
+		if (!type) {
+			// pointer to opaque struct. Probably VK_DEFINE_NON_DISPATCHABLE_HANDLE or VK_DEFINE_HANDLE
+			string createInfo = name + "CreateInfo";
+			id structObj = (id) Hash_Find (available_types, createInfo);
+			if (structObj) {
+				[structObj addToQueue];
+			}
+		} else if ([type class] == [Alias class]) {
+			type = [type resolveType];
+			if ([type class] == [Struct class]) {
+				[type addToQueue];
+			}
+		}
+	}
+}
+@end

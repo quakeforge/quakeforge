@@ -219,12 +219,25 @@ libs_video_renderer_vid_render_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/vulkan_draw.c \
 	libs/video/renderer/vulkan/vulkan_vid_common.c
 
+libs/video/renderer/vulkan/vulkan_vid_common.c: $(vkparse_src)
+
 qwaq_curses = ruamoko/qwaq/qwaq-curses$(EXEEXT)
-BUILT_SOURCES += libs/video/renderer/vulkan/vkenum.inc
+vkparse_src = \
+	libs/video/renderer/vulkan/vkenum.inc \
+	libs/video/renderer/vulkan/vkstruct.inc
+
+V_VKGEN = $(V_VKGEN_@AM_V@)
+V_VKGEN_ = $(V_VKGEN_@AM_DEFAULT_V@)
+V_VKGEN_0 = @echo "  VKGEN   " $@;
+V_VKGEN_1 =
+
 libs/video/renderer/vulkan/vkenum.inc: $(vkgen) $(qwaq_curses)
-	$(qwaq_curses) $(vkgen) -- $@
+	$(V_VKGEN)$(qwaq_curses) $(vkgen) -- enum $@
+libs/video/renderer/vulkan/vkstruct.inc: $(vkgen) $(qwaq_curses)
+	$(V_VKGEN)$(qwaq_curses) $(vkgen) -- struct $@
 
 CLEANFILES += \
 	libs/video/renderer/glsl/*.vc \
 	libs/video/renderer/glsl/*.fc \
-	libs/video/renderer/glsl/*.slc
+	libs/video/renderer/glsl/*.slc \
+	$(vkparse_src)

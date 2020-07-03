@@ -40,6 +40,16 @@
 	return str_mid(type.strct.tag, 4);
 }
 
+-(void) addToQueue
+{
+	string name = [self name];
+	if (!Hash_Find (processed_types, name)) {
+		printf ("    +%s\n", name);
+		Hash_Add (processed_types, (void *) name);
+		[queue addObject: self];
+	}
+}
+
 -(void) writeTable
 {
 	int         strip_bit = 0;

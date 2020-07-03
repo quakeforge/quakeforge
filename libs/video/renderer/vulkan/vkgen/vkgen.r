@@ -13,7 +13,6 @@ void printf (string fmt, ...) = #0;
 
 void fprintf (QFile file, string format, ...)
 {
-	printf("fprintf %d\n", @args.count);
 	Qputs (file, vsprintf (format, va_copy (@args)));
 }
 
@@ -87,97 +86,8 @@ void print_type (qfot_type_t *type)
 
 void struct_func (qfot_var_t *var)
 {
-	qfot_type_t *alias;
-	if (var.type.meta == ty_enum) {
-		printf("%s a\n", var.name);
-	} else if (var.type.meta == ty_struct) {
-		printf("%s b\n", var.name);
-	} else if (var.type.meta == ty_union) {
-		printf("%s c\n", var.name);
-	} else if (var.type.meta == ty_alias) {
-		//printf("%s d\n", var.name);
-		// typedef fun ;)
-		alias = var.type.alias.full_type;
-		if (alias.meta == ty_alias) {
-			// double(+) typedef
-			if (alias.alias.name == "VkFlags") {
-				// enum flag fun :P
-				string tag = var.type.alias.name;
-				if (str_mid (tag, -5) == "Flags") {
-					tag = str_mid (tag, 0, -1) + "Bits";
-					id enumObj = (id) Hash_Find (available_types, tag);
-					if (enumObj) {
-						[enumObj addToQueue];
-					}
-				}
-			} else {
-				if (var.type.alias.name == "VkBool32") {
-					// drop
-				} else {
-					printf ("%s =%s\n", var.name, var.type.alias.name);
-				}
-			}
-		} else if (alias.meta == ty_enum) {
-			string tag = str_mid(alias.strct.tag, 4);
-			id enumObj = (id) Hash_Find (available_types, tag);
-			if (enumObj) {
-				[enumObj addToQueue];
-			}
-		} else if (alias.meta == ty_basic && alias.type == ev_pointer) {
-			//printf("e\n");
-			qfot_type_t *type = alias.fldptr.aux_type;
-			if (type.meta == ty_alias) {
-				id structObj = (id) Hash_Find (available_types, type.alias.name);
-				//printf ("    a:%s %p\n", type.alias.name, structObj);
-				if (structObj) {
-					[structObj addToQueue];
-				}
-			} else if (type_is_null (type)) {
-				// pointer to opaque struct. Probably VK_DEFINE_NON_DISPATCHABLE_HANDLE or VK_DEFINE_HANDLE
-				//drop
-				string createInfo = var.type.alias.name + "CreateInfo";
-				id structObj = (id) Hash_Find (available_types, createInfo);
-				if (structObj) {
-					[structObj addToQueue];
-				} else {
-					//printf("    b:%s\n", var.type.alias.name);
-				}
-			} else {
-				print_type (type);
-				printf("%s c:%s:%s\n", var.name, var.type.alias.name, pr_type_name[alias.type]);
-			}
-		} else if (alias.meta == ty_basic) {
-			//drop
-			//printf("    d:%s:%s\n", var.type.alias.name, pr_type_name[alias.type]);
-		} else if (alias.meta == ty_struct) {
-			string tag = str_mid(alias.strct.tag, 4);
-			id structObj = (id) Hash_Find (available_types, tag);
-			if (structObj) {
-				[structObj addToQueue];
-			}
-		} else {
-			printf("    d:%s:%s\n", var.type.alias.name, ty_meta_name[alias.meta]);
-		}
-	} else if (var.type.meta == ty_basic && var.type.type == ev_pointer) {
-		qfot_type_t *type = var.type.fldptr.aux_type;
-		if (type.meta == ty_struct || type.meta == ty_union) {
-			printf("%s f\n", var.name);
-		} else if (type.meta == ty_alias) {
-			printf("%s --- %s\n", var.name, type.alias.name);
-			id obj = (id) Hash_Find (available_types, type.alias.name);
-			if (obj && [obj class] == [Struct class]) {
-				[obj forEachFieldCall:struct_func];
-			}
-		} else if (type.meta == ty_basic && type.type == ev_void) {
-			//drop
-		} else {
-			printf("%s g\n", var.name);
-			print_type (var.type);
-		}
-	} else {
-		//drop
-		//printf("    %s:%s:%s\n", var.name, ty_meta_name[var.type.meta], pr_type_name[var.type.type]);
-	}
+	Type       *type = [Type findType:var.type];
+	[type addToQueue];
 }
 
 void
@@ -188,30 +98,14 @@ scan_types (void)
 	for (type = encodings.types;
 		 ((int *)type - (int *) encodings.types) < encodings.size;
 		 type = next_type (type)) {
-		if (!type.size
-			|| (type.meta != ty_enum
-				&& type.meta != ty_struct
-				&& type.meta != ty_union)) {
-			continue;
+		if (type.size) {
+			string tag = str_mid(type.strct.tag, 4);
+			Type *avail_type = [Type fromType: type];
+			if (avail_type) {
+				Hash_Add (available_types, avail_type);
+			}
 		}
-		string tag = str_mid(type.strct.tag, 4);
-		switch (type.meta) {
-			case ty_enum:
-				Hash_Add (available_types, [[Enum alloc] initWithType: type]);
-				//printf ("+ enum %s\n", tag);
-				break;
-			case ty_struct:
-			case ty_union:
-				Hash_Add (available_types, [[Struct alloc] initWithType: type]);
-				//printf ("+ struct %s\n", tag);
-				break;
-			case ty_basic:
-			case ty_array:
-			case ty_class:
-			case ty_alias:
-				break;
-		}
-	 }
+	}
 }
 
 static string
@@ -226,9 +120,33 @@ get_object_key (void *obj, void *unused)
 	return [(id)obj name];
 }
 
+void
+usage (string name)
+{
+	printf ("%s [struct|enum] [output file]\n", name);
+}
+
 int
 main(int argc, string *argv)
 {
+	int         do_struct = 0;
+	int         do_enum = 0;
+
+	if (argc != 3) {
+		usage (argv[0]);
+		return 1;
+	}
+	switch (argv[1]) {
+		case "struct":
+			do_struct = 1;
+			break;
+		case "enum":
+			do_enum = 1;
+			break;
+		default:
+			usage (argv[0]);
+			return 1;
+	}
 	encodings = PR_FindGlobal (".type_encodings");
 	if (!encodings) {
 		printf ("Can't find encodings\n");
@@ -243,6 +161,8 @@ main(int argc, string *argv)
 	for (int i = 0;
 		 i < sizeof (search_names) / sizeof (search_names[0]); i++) {
 		id obj = (id) Hash_Find (available_types, search_names[i]);
+		obj = [obj resolveType];
+		printf("obj: %d %s\n", obj, class_get_class_name([obj class]));
 		if (obj && [obj class] == [Struct class]) {
 			[obj addToQueue];
 		}
@@ -261,13 +181,17 @@ main(int argc, string *argv)
 		printf ("vkgen %d %s\n", i, argv[i]);
 	}
 
-	output_file = Qopen (argv[1], "wt");
+	output_file = Qopen (argv[2], "wt");
 	for (int i = [output_types count]; i-- > 0; ) {
 		id obj = [output_types objectAtIndex:i];
 		if ([obj name] == "VkStructureType") {
 			continue;
 		}
-		if ([obj class] == [Struct class]) {
+		printf("obj: %d %s\n", obj, class_get_class_name([obj class]));
+		if (do_struct && [obj class] != [Struct class]) {
+			continue;
+		}
+		if (do_enum && [obj class] != [Enum class]) {
 			continue;
 		}
 		[obj writeTable];

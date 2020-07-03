@@ -2,6 +2,7 @@ vkgen = libs/video/renderer/vulkan/vkgen.dat$(EXEEXT)
 noinst_PROGRAMS += $(vkgen)
 
 vkgen_dat_src= \
+	libs/video/renderer/vulkan/vkgen/vkalias.r \
 	libs/video/renderer/vulkan/vkgen/vkenum.r \
 	libs/video/renderer/vulkan/vkgen/vkgen.r \
 	libs/video/renderer/vulkan/vkgen/vkstruct.r \
@@ -33,6 +34,7 @@ libs/video/renderer/vulkan/vkgen/vulkan.o: $(top_srcdir)/libs/video/renderer/vul
 EXTRA_DIST += \
 	libs/video/renderer/vulkan/vkgen/stddef.h \
 	libs/video/renderer/vulkan/vkgen/stdint.h \
+	libs/video/renderer/vulkan/vkgen/vkalias.h \
 	libs/video/renderer/vulkan/vkgen/vkenum.h \
 	libs/video/renderer/vulkan/vkgen/vkgen.h \
 	libs/video/renderer/vulkan/vkgen/vkstruct.h \
