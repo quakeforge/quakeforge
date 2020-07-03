@@ -693,6 +693,11 @@ PR_FreeTempStrings (progs_t *pr)
 			PR_Error (pr, "internal string error: %d", __LINE__);
 		if (R_STRING (pr) < 0 && string_index (res, sr) == R_STRING (pr)
 			&& pr->pr_depth) {
+			// It looks like the temp string is being returned. While this
+			// may be a false positive (just a random integer with the same
+			// value), it is better to hold onto the temp string a little
+			// longer than to remove it prematurely. This allows functions
+			// to return the result of "str a" + "str b"
 			prstack_t  *frame = pr->pr_stack + pr->pr_depth - 1;
 			sr->next = frame->tstr;
 			frame->tstr = sr;
