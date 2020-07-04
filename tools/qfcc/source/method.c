@@ -89,6 +89,10 @@ new_method (type_t *ret_type, param_t *selector, param_t *opt_params)
 	dstring_t  *name = dstring_newstr ();
 	dstring_t  *types = dstring_newstr ();
 
+	if (!ret_type) {
+		ret_type = &type_id;
+	}
+
 	selector = reverse_params (selector);
 	selector = append_params (selector, opt_params);
 	cmd->next = selector;
