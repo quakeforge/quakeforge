@@ -1,0 +1,53 @@
+{
+	search = (
+		VkRenderPassCreateInfo
+	);
+	parse = {
+		VkRenderPassCreateInfo = {
+			flags = auto;
+			attachments = {
+				type = (array, VkAttachmentDescription);
+				size = attachmentCount;
+				values = pAttachments;
+			};
+			subpasses = {
+				type = (array, VkSubpassDescription);
+				size = subpassCount;
+				values = pSubpasses;
+			};
+			dependencies = {
+				type = (array, VkSubpassDependency);
+				size = dependencyCount;
+				values = pDependencies;
+			};
+		};
+		VkSubpassDescription = {
+			flags = auto;
+			pipelineBindPoint = auto;
+			inputAttachments = {
+				type = (array, VkAttachmentReference);
+				size = inputAttachmentCount;
+				values = pInputAttachments;
+			};
+			colorAttachments = {
+				type = (array, VkAttachmentReference);
+				size = colorAttachmentCount;
+				values = pColorAttachments;
+			};
+			resolveAttachments = {
+				type = (array, VkAttachmentReference);
+				values = pResolveAttachments;
+				matchSize = colorAttachments;
+			};
+			depthStencilAttachment = {
+				type = (single, VkAttachmentReference);
+				value = pDepthStencilAttachment;
+			};
+			preserveAttachments = {
+				type = (array, uint32_t);
+				size = preserveAttachmentCount;
+				values = pPreserveAttachments;
+			};
+		}
+	}
+}

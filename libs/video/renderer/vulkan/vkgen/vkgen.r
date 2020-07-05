@@ -4,10 +4,27 @@
 #include <string.h>
 #include <types.h>
 #include <Array.h>
+#include <AutoreleasePool.h>
+#include <PropertyList.h>
 
 #include "vkgen.h"
 #include "vkstruct.h"
 #include "vkenum.h"
+
+static AutoreleasePool *autorelease_pool;
+static void
+arp_start (void)
+{
+	autorelease_pool = [[AutoreleasePool alloc] init];
+}
+
+static void
+arp_end (void)
+{
+	[autorelease_pool release];
+	autorelease_pool = nil;
+}
+
 
 void printf (string fmt, ...) = #0;
 
@@ -16,11 +33,6 @@ void fprintf (QFile file, string format, ...)
 	Qputs (file, vsprintf (format, va_copy (@args)));
 }
 
-string search_names[] = {
-	"VkGraphicsPipelineCreateInfo",
-	"VkComputePipelineCreateInfo",
-};
-#define numsearch (sizeof (search_names) / sizeof (search_names[0]))
 hashtab_t *available_types;
 hashtab_t *processed_types;
 Array *queue;
@@ -123,7 +135,7 @@ get_object_key (void *obj, void *unused)
 void
 usage (string name)
 {
-	printf ("%s [struct|enum] [output file]\n", name);
+	printf ("%s [plist file] [output file]\n", name);
 }
 
 int
@@ -131,36 +143,51 @@ main(int argc, string *argv)
 {
 	int         do_struct = 0;
 	int         do_enum = 0;
+	string      plist_filename;
+	QFile       plist_file;
+	PLItem     *plist;
+	PLItem     *search;
+	PLItem     *parse;
+
+	arp_start ();
 
 	if (argc != 3) {
 		usage (argv[0]);
 		return 1;
 	}
-	switch (argv[1]) {
-		case "struct":
-			do_struct = 1;
-			break;
-		case "enum":
-			do_enum = 1;
-			break;
-		default:
-			usage (argv[0]);
-			return 1;
+	plist_filename = argv[1];
+	plist_file = Qopen (plist_filename, "rt");
+	if (!plist_file) {
+		printf ("could not open property list file: %s\n", plist_filename);
+		return 1;
 	}
+	plist = [[PLItem fromFile: plist_file] retain];
+	if (!plist) {
+		printf ("error parsing: %s\n", plist_filename);
+		return 1;
+	}
+	Qclose (plist_file);
+	if ([plist class] != [PLDictionary class]) {
+		printf ("%s not a dictionary\n", plist_filename);
+	}
+	search = [[plist getObjectForKey: "search"] retain];
+	parse = [[plist getObjectForKey: "parse"] retain];
+
 	encodings = PR_FindGlobal (".type_encodings");
 	if (!encodings) {
 		printf ("Can't find encodings\n");
 		return 1;
 	}
-	queue = [[Array alloc] init];
-	output_types = [[Array alloc] init];
+	queue = [[Array array] retain];
+	output_types = [[Array array] retain];
 	available_types = Hash_NewTable (127, get_object_key, nil, nil);
 	processed_types = Hash_NewTable (127, get_string_key, nil, nil);
 	scan_types ();
 
-	for (int i = 0;
-		 i < sizeof (search_names) / sizeof (search_names[0]); i++) {
-		id obj = (id) Hash_Find (available_types, search_names[i]);
+	for (int i = [search numObjects]; i-- > 0; ) {
+		PLString   *str = (PLString *) [search getObjectAtIndex:i];
+		string search_name = [str string];
+		id obj = (id) Hash_Find (available_types, search_name);
 		obj = [obj resolveType];
 		printf("obj: %d %s\n", obj, class_get_class_name([obj class]));
 		if (obj && [obj class] == [Struct class]) {
@@ -181,20 +208,34 @@ main(int argc, string *argv)
 		printf ("vkgen %d %s\n", i, argv[i]);
 	}
 
+	arp_end ();
+
 	output_file = Qopen (argv[2], "wt");
 	for (int i = [output_types count]; i-- > 0; ) {
 		id obj = [output_types objectAtIndex:i];
 		if ([obj name] == "VkStructureType") {
 			continue;
 		}
-		printf("obj: %d %s\n", obj, class_get_class_name([obj class]));
-		if (do_struct && [obj class] != [Struct class]) {
+		if ([obj class] != [Enum class]) {
 			continue;
 		}
-		if (do_enum && [obj class] != [Enum class]) {
-			continue;
-		}
+
+		arp_start ();
 		[obj writeTable];
+		arp_end ();
+	}
+	for (int i = [output_types count]; i-- > 0; ) {
+		id obj = [output_types objectAtIndex:i];
+		if ([obj name] == "VkStructureType") {
+			continue;
+		}
+		if ([obj class] != [Struct class]) {
+			continue;
+		}
+
+		arp_start ();
+		[obj writeTable:parse];
+		arp_end ();
 	}
 	Qclose (output_file);
 	return 0;

@@ -38,6 +38,11 @@ static string get_type_key (void *type, void *unused)
 	return (Type *) Hash_Find (registered_types, type.encoding);
 }
 
++(Type *) lookup: (string) name
+{
+	return (Type *) Hash_Find (available_types, name);
+}
+
 +fromType: (qfot_type_t *) type
 {
 	if (type.size == 0) {
@@ -84,6 +89,42 @@ static string get_type_key (void *type, void *unused)
 -(Type *) resolveType
 {
 	return self;
+}
+
+-(string) parseType
+{
+	return "no parse";
+}
+
+-(string) parseFunc
+{
+	return "0";
+}
+
+-(string) parseData
+{
+	return "0";
+}
+
+-(int) isPointer
+{
+	if ((type.meta == ty_basic || type.meta == ty_alias)
+		&& type.type == ev_pointer) {
+		return 1;
+	}
+	return 0;
+}
+
+-(Type *) dereference
+{
+	qfot_type_t *t = type;
+	if (t.meta == ty_alias) {
+		t = type.alias.full_type;
+	}
+	if (t.meta == ty_basic && t.type == ev_pointer) {
+		t = type.fldptr.aux_type;
+	}
+	return [Type findType:t];
 }
 
 @end

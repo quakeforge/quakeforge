@@ -18,6 +18,13 @@
 -(void) addToQueue;
 -(Type *) resolveType;
 +(Type *) findType: (qfot_type_t *) type;
++(Type *) lookup: (string) name;
+-(string) parseType;
+-(string) parseFunc;
+-(string) parseData;
+
+-(int) isPointer;
+-(Type *) dereference;
 @end
 
 #endif//__renderer_vulkan_vkgen_vktype_h

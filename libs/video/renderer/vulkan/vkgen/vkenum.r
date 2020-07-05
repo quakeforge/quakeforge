@@ -82,4 +82,22 @@
 	fprintf (output_file, "\t{ }\n");
 	fprintf (output_file, "};\n");
 }
+
+-(string) parseType
+{
+	return "QFString";
+}
+
+-(string) parseFunc
+{
+	if (str_mid([self name], -8) == "FlagBits") {
+		return "parse_flags";
+	}
+	return "parse_enum";
+}
+
+-(string) parseData
+{
+	return [self name] + "_values";
+}
 @end

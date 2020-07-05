@@ -49,4 +49,58 @@
 		}
 	}
 }
+
+-(string) parseType
+{
+	Type       *alias = [Type findType:type.alias.full_type];
+	string      name = [self name];
+
+	if ([alias name] == "VkFlags") {
+		if (str_mid (name, -5) == "Flags") {
+			string tag = str_mid (name, 0, -1) + "Bits";
+			id enumObj = [(id) Hash_Find (available_types, tag) resolveType];
+			return [enumObj parseType];
+		}
+	}
+	if (name == "uint32_t") {
+		return "QFString";
+	}
+	return [alias parseType];
+}
+
+-(string) parseFunc
+{
+	Type       *alias = [Type findType:type.alias.full_type];
+	string      name = [self name];
+
+	if ([alias name] == "VkFlags") {
+		if (str_mid (name, -5) == "Flags") {
+			string tag = str_mid (name, 0, -1) + "Bits";
+			id enumObj = [(id) Hash_Find (available_types, tag) resolveType];
+			return [enumObj parseFunc];
+		}
+	}
+	if (name == "uint32_t") {
+		return "parse_uint32_t";
+	}
+	return [alias parseFunc];
+}
+
+-(string) parseData
+{
+	Type       *alias = [Type findType:type.alias.full_type];
+	string      name = [self name];
+
+	if ([alias name] == "VkFlags") {
+		if (str_mid (name, -5) == "Flags") {
+			string tag = str_mid (name, 0, -1) + "Bits";
+			id enumObj = [(id) Hash_Find (available_types, tag) resolveType];
+			return [enumObj parseData];
+		}
+	}
+	if (name == "uint32_t") {
+		return "0";
+	}
+	return [alias parseData];
+}
 @end
