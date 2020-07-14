@@ -99,6 +99,14 @@ typedef struct plfield_s {
 	void       *data;		///< additional data for \a parser
 } plfield_t;
 
+typedef struct plelement_s {
+	pltype_t    type;		///< the required type of the array elements
+	size_t      stride;		///< the size of each element
+	void     *(*alloc) (size_t size);	///< allocator for array memory
+	plparser_t  parser;		///< custom parser function
+	void       *data;		///< additional data for \a parser
+} plelement_t;
+
 /** Create an in-memory representation of the contents of a property list.
 
 	\param string	the saved plist, as read from a file.
@@ -316,6 +324,8 @@ void PL_Free (plitem_t *item);
 */
 int PL_ParseDictionary (const plfield_t *fields, const plitem_t *dict,
 						void *data, plitem_t *messages);
+int PL_ParseArray (const plfield_t *fields, const plitem_t *dict,
+				   void *data, plitem_t *messages);
 
 ///@}
 

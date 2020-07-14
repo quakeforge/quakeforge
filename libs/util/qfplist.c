@@ -1130,8 +1130,7 @@ PL_ParseDictionary (const plfield_t *fields, const plitem_t *dict, void *data,
 	void      **list, **l;
 	dictkey_t  *current;
 	int         result;
-	int        (*parser) (const plfield_t *, const plitem_t *, void *,
-						  plitem_t *);
+	plparser_t  parser;
 
 	if (dict->type != QFDictionary) {
 		pl_message (messages, dict, "error: not a dictionary object");
@@ -1175,5 +1174,51 @@ PL_ParseDictionary (const plfield_t *fields, const plitem_t *dict, void *data,
 		}
 	}
 	free (list);
+	return result;
+}
+
+VISIBLE int
+PL_ParseArray (const plfield_t *field, const plitem_t *array, void *data,
+			   plitem_t *messages)
+{
+	int         result;
+	plparser_t  parser;
+	plarray_t  *plarray = (plarray_t *) array->data;
+	plelement_t *element = (plelement_t *) field->data;
+	typedef struct arr_s DARRAY_TYPE(byte) arr_t;
+	arr_t      *arr;
+	plfield_t   f = { 0, 0, element->type, element->parser, element->data };
+
+	if (array->type != QFArray) {
+		pl_message (messages, array, "error: not an array object");
+		return 0;
+	}
+	if (field->parser) {
+		parser = field->parser;
+	} else {
+		parser = pl_default_parser;
+	}
+
+	arr = DARRAY_ALLOCFIXED (arr_t, plarray->numvals * element->stride,
+							 element->alloc);
+
+	for (int i = 0; i < plarray->numvals; i++) {
+		plitem_t   *item = plarray->values[i];
+		void       *eledata = &arr->a[i * element->stride];
+
+		if (item->type != element->type) {
+			pl_message (messages, item,
+						"error: element %d is the wrong type"
+						" Got %s, expected %s", i,
+						pl_types[element->type],
+						pl_types[item->type]);
+			result = 0;
+		} else {
+			if (!parser (&f, item, eledata, messages)) {
+				result = 0;
+			}
+		}
+	}
+	*(arr_t **) data = arr;
 	return result;
 }
