@@ -1129,7 +1129,7 @@ PL_ParseDictionary (const plfield_t *fields, const plitem_t *dict, void *data,
 {
 	void      **list, **l;
 	dictkey_t  *current;
-	int         result;
+	int         result = 1;
 	plparser_t  parser;
 
 	if (dict->type != QFDictionary) {
@@ -1182,7 +1182,7 @@ VISIBLE int
 PL_ParseArray (const plfield_t *field, const plitem_t *array, void *data,
 			   plitem_t *messages)
 {
-	int         result;
+	int         result = 1;
 	plparser_t  parser;
 	plarray_t  *plarray = (plarray_t *) array->data;
 	plelement_t *element = (plelement_t *) field->data;
