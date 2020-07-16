@@ -118,7 +118,7 @@ static string get_type_key (void *type, void *unused)
 -(Type *) dereference
 {
 	qfot_type_t *t = type;
-	if (t.meta == ty_alias) {
+	if (t.meta == ty_alias && t.type == ev_pointer) {
 		t = type.alias.full_type;
 	}
 	if (t.meta == ty_basic && t.type == ev_pointer) {
