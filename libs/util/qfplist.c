@@ -1165,6 +1165,7 @@ PL_ParseDictionary (const plfield_t *fields, const plitem_t *dict, void *data,
 						result = 0;
 					}
 				}
+				break;
 			}
 		}
 		if (!f->name) {
@@ -1193,8 +1194,8 @@ PL_ParseArray (const plfield_t *field, const plitem_t *array, void *data,
 		pl_message (messages, array, "error: not an array object");
 		return 0;
 	}
-	if (field->parser) {
-		parser = field->parser;
+	if (f.parser) {
+		parser = f.parser;
 	} else {
 		parser = pl_default_parser;
 	}
