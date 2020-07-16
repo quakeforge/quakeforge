@@ -1202,6 +1202,10 @@ PL_ParseArray (const plfield_t *field, const plitem_t *array, void *data,
 
 	arr = DARRAY_ALLOCFIXED (arr_t, plarray->numvals * element->stride,
 							 element->alloc);
+	memset (arr->a, 0, arr->size);
+	// the array is allocated using bytes, but need the actual number of
+	// elements in the array
+	arr->size = arr->maxSize = plarray->numvals;
 
 	for (int i = 0; i < plarray->numvals; i++) {
 		plitem_t   *item = plarray->values[i];
