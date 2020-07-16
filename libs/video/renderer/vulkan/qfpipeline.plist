@@ -37,20 +37,20 @@
 		);
 		subpasses = (
 			{
-				inputAttachments = (
+				colorAttachments = (
 					{
-						attachmeht = 0;
+						attachment = 0;
 						layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 					}
 				);
 				resolveAttachments = (
 					{
-						attachmeht = 2;
+						attachment = 2;
 						layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 					}
 				);
 				depthStencilAttachment = {
-					attachmeht = 1;
+					attachment = 1;
 					layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 				};
 				preserveAttachments = ();
