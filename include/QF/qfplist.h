@@ -326,6 +326,8 @@ int PL_ParseDictionary (const plfield_t *fields, const plitem_t *dict,
 						void *data, plitem_t *messages);
 int PL_ParseArray (const plfield_t *fields, const plitem_t *dict,
 				   void *data, plitem_t *messages);
+void __attribute__((format(printf,3,4)))
+PL_Message (plitem_t *messages, const plitem_t *item, const char *fmt, ...);
 
 ///@}
 

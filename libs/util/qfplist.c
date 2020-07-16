@@ -1062,8 +1062,8 @@ PL_Line (plitem_t *item)
 	return item->line;
 }
 
-static void __attribute__((format(printf,3,4)))
-pl_message (plitem_t *messages, const plitem_t *item, const char *fmt, ...)
+VISIBLE void
+PL_Message (plitem_t *messages, const plitem_t *item, const char *fmt, ...)
 {
 	va_list     args;
 	dstring_t  *string;
@@ -1119,7 +1119,7 @@ pl_default_parser (const plfield_t *field, const plitem_t *item, void *data,
 			*(char **)data = (char *)item->data;
 			return 1;
 	}
-	pl_message (messages, 0, "invalid item type: %d", field->type);
+	PL_Message (messages, 0, "invalid item type: %d", field->type);
 	return 0;
 }
 
@@ -1133,7 +1133,7 @@ PL_ParseDictionary (const plfield_t *fields, const plitem_t *dict, void *data,
 	plparser_t  parser;
 
 	if (dict->type != QFDictionary) {
-		pl_message (messages, dict, "error: not a dictionary object");
+		PL_Message (messages, dict, "error: not a dictionary object");
 		return 0;
 	}
 
@@ -1155,7 +1155,7 @@ PL_ParseDictionary (const plfield_t *fields, const plitem_t *dict, void *data,
 					parser = pl_default_parser;
 				}
 				if (item->type != f->type) {
-					pl_message (messages, item, "error: %s is the wrong type"
+					PL_Message (messages, item, "error: %s is the wrong type"
 								" Got %s, expected %s",current->key,
 								pl_types[f->type],
 								pl_types[item->type]);
@@ -1169,7 +1169,7 @@ PL_ParseDictionary (const plfield_t *fields, const plitem_t *dict, void *data,
 			}
 		}
 		if (!f->name) {
-			pl_message (messages, dict, "error: unknown field %s",
+			PL_Message (messages, dict, "error: unknown field %s",
 						current->key);
 			result = 0;
 		}
@@ -1191,7 +1191,7 @@ PL_ParseArray (const plfield_t *field, const plitem_t *array, void *data,
 	plfield_t   f = { 0, 0, element->type, element->parser, element->data };
 
 	if (array->type != QFArray) {
-		pl_message (messages, array, "error: not an array object");
+		PL_Message (messages, array, "error: not an array object");
 		return 0;
 	}
 	if (f.parser) {
@@ -1208,7 +1208,7 @@ PL_ParseArray (const plfield_t *field, const plitem_t *array, void *data,
 		void       *eledata = &arr->a[i * element->stride];
 
 		if (item->type != element->type) {
-			pl_message (messages, item,
+			PL_Message (messages, item,
 						"error: element %d is the wrong type"
 						" Got %s, expected %s", i,
 						pl_types[element->type],
