@@ -74,6 +74,8 @@
 			field_type = [[Type lookup: type_type] dereference];
 			fprintf (output_file, "static parse_%s_t parse_%s_%s_data = {\n",
 					 type_record, [self name], field_name);
+			fprintf (output_file, "\t%s,\n", [field_type parseType]);
+			fprintf (output_file, "\tsizeof (%s),\n", type_type);
 			fprintf (output_file, "\tparse_%s,\n", type_type);
 			if (type_record == "single") {
 				value_field = [[field_def getObjectForKey:"value"] string];

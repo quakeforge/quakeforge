@@ -70,44 +70,159 @@ typedef struct enumval_s {
 } enumval_t;
 
 typedef struct parse_single_s {
+	pltype_t    type;
+	size_t      stride;
 	plparser_t  parser;
 	size_t      value_offset;
 } parse_single_t;
 
 typedef struct parse_array_s {
+	pltype_t    type;
+	size_t      stride;
 	plparser_t  parser;
-	size_t      size_offset;
 	size_t      value_offset;
+	size_t      size_offset;
 } parse_array_t;
+
+static int find_enum (const char *valstr, enumval_t *enumval, int *val)
+{
+	while (enumval->name && strcmp (enumval->name, valstr) != 0) {
+		enumval++;
+	}
+	if (enumval->name) {
+		*val = enumval->value;
+		return 1;
+	}
+	return 0;
+}
 
 static int parse_uint32_t (const plfield_t *field, const plitem_t *item,
 						   void *data, plitem_t *messages)
 {
-	return 0;
+	int         ret = 1;
+	const char *valstr = PL_String (item);
+	//Sys_Printf ("parse_uint32_t: %s %zd %d %p %p: %s\n",
+	//			field->name, field->offset, field->type, field->parser,
+	//			field->data, valstr);
+	if (strcmp (valstr, "VK_SUBPASS_EXTERNAL") == 0) {
+		*(uint32_t *) data = VK_SUBPASS_EXTERNAL;
+	} else {
+		char       *end;
+		unsigned long val = strtoul (valstr, &end, 0);
+		if (*valstr && !*end && val <= 0xffffffff) {
+			*(uint32_t *) data = val;
+		} else if (val > 0xffffffff) {
+			PL_Message (messages, item, "%lu bigger than 32 bits", val);
+			ret = 0;
+		} else {
+			PL_Message (messages, item, "invalid char at %d in '%s'\n",
+						(int) (end - valstr), valstr);
+			ret = 0;
+		}
+	}
+
+	return ret;
 }
 
 static int parse_enum (const plfield_t *field, const plitem_t *item,
 					   void *data, plitem_t *messages)
 {
-	return 0;
+	int         ret = 1;
+	int         val;
+	const char *valstr = PL_String (item);
+	__auto_type enumval = (enumval_t *) field->data;
+	//Sys_Printf ("parse_enum: %s %zd %d %p %p %s\n",
+	//			field->name, field->offset, field->type, field->parser,
+	//			field->data, valstr);
+	if (find_enum (valstr, enumval, &val)) {
+		*(int *) data = val;
+	} else {
+		PL_Message (messages, item, "invalid enum: %s", valstr);
+		ret = 0;
+	}
+	return ret;
 }
 
 static int parse_flags (const plfield_t *field, const plitem_t *item,
 						void *data, plitem_t *messages)
 {
-	return 0;
+	int         ret = 1;
+	int         val;
+	const char *valstr = PL_String (item);
+	__auto_type enumval = (enumval_t *) field->data;
+	//Sys_Printf ("parse_flags: %s %zd %d %p %p %s\n",
+	//			field->name, field->offset, field->type, field->parser,
+	//			field->data, valstr);
+	if (find_enum (valstr, enumval, &val)) {
+		*(int *) data = val;
+	} else if (strcmp (valstr, "0") == 0) {
+		*(int *) data = 0;
+	} else {
+		PL_Message (messages, item, "invalid enum: %s", valstr);
+		ret = 0;
+	}
+	return ret;
 }
 
 static int parse_single (const plfield_t *field, const plitem_t *item,
 						 void *data, plitem_t *messages)
 {
-	return 0;
+	__auto_type single = (parse_single_t *) field->data;
+	void       *flddata = (byte *)data + single->value_offset;
+
+	//Sys_Printf ("parse_single: %s %zd %d %p %p\n", field->name, field->offset,
+	//			field->type, field->parser, field->data);
+
+	if (PL_Type (item) != single->type) {
+		PL_Message (messages, item, "error: wrong type");
+		return 0;
+	}
+
+	plfield_t   f = { 0, 0, single->type, single->parser, 0 };
+	void       *value = calloc (1, single->stride);
+	if (!single->parser (&f, item, value, messages)) {
+		free (value);
+		return 0;
+	}
+
+	*(void **) flddata = value;
+	return 1;
 }
 
 static int parse_array (const plfield_t *field, const plitem_t *item,
 						void *data, plitem_t *messages)
 {
-	return 0;
+	__auto_type array = (parse_array_t *) field->data;
+	__auto_type value = (void **) ((byte *)data + array->value_offset);
+	__auto_type size = (uint32_t *) ((byte *)data + array->size_offset);
+
+	plelement_t element = {
+		array->type,
+		array->stride,
+		malloc,
+		array->parser,
+		0,
+	};
+	plfield_t   f = { 0, 0, 0, 0, &element };
+
+	typedef struct arr_s DARRAY_TYPE(byte) arr_t;
+	arr_t      *arr;
+
+	//Sys_Printf ("parse_array: %s %zd %d %p %p %p\n",
+	//			field->name, field->offset, field->type, field->parser,
+	//			field->data, data);
+	//Sys_Printf ("    %d %zd %p %zd %zd\n", array->type, array->stride,
+	//			array->parser, array->value_offset, array->size_offset);
+	if (!PL_ParseArray (&f, item, &arr, messages)) {
+		return 0;
+	}
+	*value = malloc (array->stride * arr->size);
+	memcpy (*value, arr->a, array->stride * arr->size);
+	if ((void *) size > data) {
+		*size = arr->size;
+	}
+	free (arr);
+	return 1;
 }
 
 #include "libs/video/renderer/vulkan/vkparse.inc"
@@ -144,11 +259,11 @@ static plelement_t parse_qfv_renderpass_dependencies_data = {
 
 static plfield_t renderpass_fields[] = {
 	{ "attachments", field_offset (qfv_renderpass_t, attachments), QFArray,
-		parse_array, &parse_qfv_renderpass_attachments_data },
+		PL_ParseArray, &parse_qfv_renderpass_attachments_data },
 	{ "subpasses", field_offset (qfv_renderpass_t, subpasses), QFArray,
-		parse_array, &parse_qfv_renderpass_subpasses_data },
+		PL_ParseArray, &parse_qfv_renderpass_subpasses_data },
 	{ "dependencies", field_offset (qfv_renderpass_t, dependencies), QFArray,
-		parse_array, &parse_qfv_renderpass_dependencies_data },
+		PL_ParseArray, &parse_qfv_renderpass_dependencies_data },
 	{}
 };
 
