@@ -1,26 +1,10 @@
 {
 	search = (
-		VkRenderPassCreateInfo
+		VkAttachmentDescription,
+		VkSubpassDescription,
+		VkSubpassDependency,
 	);
 	parse = {
-		VkRenderPassCreateInfo = {
-			flags = auto;
-			attachments = {
-				type = (array, VkAttachmentDescription);
-				size = attachmentCount;
-				values = pAttachments;
-			};
-			subpasses = {
-				type = (array, VkSubpassDescription);
-				size = subpassCount;
-				values = pSubpasses;
-			};
-			dependencies = {
-				type = (array, VkSubpassDependency);
-				size = dependencyCount;
-				values = pDependencies;
-			};
-		};
 		VkSubpassDescription = {
 			flags = auto;
 			pipelineBindPoint = auto;

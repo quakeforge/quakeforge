@@ -73,11 +73,12 @@ libs_video_renderer_vid_render_gl_la_SOURCES=\
 shader_src= libs/video/renderer/glsl/quakeforge.glsl
 shader_gen= libs/video/renderer/glsl/quakeforge.slc
 
-BUILT_SOURCES += $(shader_gen)
-
-SUFFICES=.frag .vert .fc .vc .slc .glsl
+SUFFICES=.frag .vert .fc .vc .slc .glsl .plist .plc
 .glsl.slc:
 	sed -e 's/^/"/' -e 's/$$/\\n"/' $< > $@
+
+.plist.plc:
+	sed -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' $< > $@
 
 video_renderer_glsl_libs= \
 	libs/models/libmodels_glsl.la
@@ -196,6 +197,9 @@ libs_video_renderer_vid_render_sw32_la_SOURCES=\
 	libs/video/renderer/sw32/sw32_rsurf.c \
 	libs/video/renderer/sw32/vid_common_sw32.c
 
+pipeline_src = libs/video/renderer/vulkan/qfpipeline.plist
+pipeline_gen = libs/video/renderer/vulkan/qfpipeline.plc
+
 vulkan_libs =
 libs_video_renderer_vid_render_vulkan_la_LDFLAGS=       $(plugin_ldflags)
 libs_video_renderer_vid_render_vulkan_la_LIBADD=        $(vulkan_libs)
@@ -216,10 +220,14 @@ libs_video_renderer_vid_render_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/swapchain.c \
 	libs/video/renderer/vulkan/util.c \
 	libs/video/renderer/vulkan/util.h \
+	libs/video/renderer/vulkan/vkparse.c \
 	libs/video/renderer/vulkan/vulkan_draw.c \
 	libs/video/renderer/vulkan/vulkan_vid_common.c
 
-libs/video/renderer/vulkan/vulkan_vid_common.c: $(vkparse_src)
+libs/video/renderer/vulkan/vkparse.lo: libs/video/renderer/vulkan/vkparse.c $(vkparse_src)
+
+libs/video/renderer/vulkan/vulkan_vid_common.lo: libs/video/renderer/vulkan/vulkan_vid_common.c $(pipeline_gen)
+
 
 qwaq_curses = ruamoko/qwaq/qwaq-curses$(EXEEXT)
 vkparse_src = \
@@ -240,4 +248,7 @@ CLEANFILES += \
 	libs/video/renderer/glsl/*.vc \
 	libs/video/renderer/glsl/*.fc \
 	libs/video/renderer/glsl/*.slc \
+	libs/video/renderer/vulkan/*.plc \
 	$(vkparse_src)
+
+BUILT_SOURCES += $(shader_gen)

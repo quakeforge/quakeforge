@@ -44,6 +44,7 @@
 #include "QF/input.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
+#include "QF/qfplist.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
@@ -62,6 +63,10 @@
 #include "vid_vulkan.h"
 
 #include "util.h"
+
+static const char quakeforge_pipeline[] =
+#include "libs/video/renderer/vulkan/qfpipeline.plc"
+;
 
 cvar_t *vulkan_presentation_mode;
 
@@ -232,9 +237,22 @@ static qfv_pipelinestagepair_t imageLayoutTransitionStages[] = {
 		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT },
 };
 
+static plitem_t *
+qfv_load_pipeline (void)
+{
+	return PL_GetPropertyList (quakeforge_pipeline);
+}
+
 void
 Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 {
+	plitem_t   *item = qfv_load_pipeline ();
+
+	if (!item || !(item = PL_ObjectForKey (item, "renderpass"))) {
+		Sys_Printf ("error loading pipeline\n");
+	} else {
+		Sys_Printf ("Found renderer def\n");
+	}
 	qfv_device_t *device = ctx->device;
 	VkDevice    dev = device->dev;
 	qfv_devfuncs_t *df = device->funcs;
