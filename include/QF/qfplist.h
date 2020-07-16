@@ -147,7 +147,7 @@ int PL_Line (plitem_t *item) __attribute__((pure));
 	\note	You are NOT responsible for freeing the returned object. It will
 	be destroyed when its container is.
 */
-const char *PL_String (plitem_t *string) __attribute__((pure));
+const char *PL_String (const plitem_t *string) __attribute__((pure));
 
 /** Retrieve a value from a dictionary object.
 

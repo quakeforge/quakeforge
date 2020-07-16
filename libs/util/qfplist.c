@@ -232,7 +232,7 @@ PL_Free (plitem_t *item)
 }
 
 VISIBLE const char *
-PL_String (plitem_t *string)
+PL_String (const plitem_t *string)
 {
 	if (string->type != QFString)
 		return NULL;
