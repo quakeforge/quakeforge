@@ -480,6 +480,7 @@ main (int argc, char **argv)
 			}
 		}
 		pthread_join (thread_data.a[main_ind]->thread_id, 0);
+		ret = thread_data.a[main_ind]->return_code;
 	}
 
 	Sys_Shutdown ();
