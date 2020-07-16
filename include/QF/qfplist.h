@@ -129,7 +129,7 @@ char *PL_WritePropertyList (plitem_t *pl);
 	\param item The object
 	\return the type of the object
 */
-pltype_t PL_Type (plitem_t *item) __attribute__((pure));
+pltype_t PL_Type (const plitem_t *item) __attribute__((pure));
 
 /** Retrieve the line number of an object.
 
@@ -137,7 +137,7 @@ pltype_t PL_Type (plitem_t *item) __attribute__((pure));
 	\return the line number on which the object began, or 0 if not from a
 			string
 */
-int PL_Line (plitem_t *item) __attribute__((pure));
+int PL_Line (const plitem_t *item) __attribute__((pure));
 
 /** Retrieve a string from a string object.
 

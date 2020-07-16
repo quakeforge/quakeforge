@@ -1051,13 +1051,13 @@ PL_WritePropertyList (plitem_t *pl)
 }
 
 VISIBLE pltype_t
-PL_Type (plitem_t *item)
+PL_Type (const plitem_t *item)
 {
 	return item->type;
 }
 
 VISIBLE int
-PL_Line (plitem_t *item)
+PL_Line (const plitem_t *item)
 {
 	return item->line;
 }
