@@ -2192,7 +2192,10 @@ rua_obj_cleanup (progs_t *pr, void *data)
 	}
 
 	for (i = 0; i < probj->dtables._size; i++) {
-		dtable_t   *dtable = dtable_get (probj, i);
+		/* dtable_get expects a handle, but a handle is the ones-compliment
+		 * negative of the index.
+		 */
+		dtable_t   *dtable = dtable_get (probj, ~i);
 		if (!dtable->imp) {
 			break;
 		}
