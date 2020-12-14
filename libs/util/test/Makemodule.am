@@ -14,9 +14,10 @@ libs_util_tests = \
 	libs/util/test/test-set \
 	libs/util/test/test-txtbuffer \
 	libs/util/test/test-vrect
-check_PROGRAMS += $(libs_util_tests)
 
-TESTS += $(libs_model_tests)
+TESTS += $(libs_util_tests)
+
+check_PROGRAMS += $(libs_util_tests)
 
 libs_util_test_test_bary_SOURCES=libs/util/test/test-bary.c
 libs_util_test_test_bary_LDADD=libs/util/libQFutil.la

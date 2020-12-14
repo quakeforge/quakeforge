@@ -268,7 +268,7 @@ QuatMultVec (const quat_t q, const vec3_t v, vec3_t out)
 	dqq = DotProduct (q, q);
 	VectorScale (tv, s, tv);
 	VectorMultAdd (tv, dqv, q, tv);
-	VectorAdd (tv, tv, tv);
+	VectorScale (tv, 2, tv);
 	VectorMultAdd (tv, s * s - dqq, v, out);
 }
 
