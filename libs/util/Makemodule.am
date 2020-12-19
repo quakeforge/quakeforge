@@ -45,6 +45,7 @@ libs_util_libQFutil_la_SOURCES= \
 	libs/util/cbuf.c \
 	libs/util/checksum.c \
 	libs/util/cmd.c \
+	libs/util/cmem.c \
 	libs/util/crc.c \
 	libs/util/cvar.c \
 	libs/util/dstring.c \
