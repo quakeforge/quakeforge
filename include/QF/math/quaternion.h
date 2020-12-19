@@ -164,6 +164,7 @@ extern const vec_t *const quat_origin;
 
 void QuatMult (const quat_t q1, const quat_t q2, quat_t out);
 void QuatMultVec (const quat_t q, const vec3_t v, vec3_t out);
+void QuatRotation (const vec3_t a, const vec3_t b, quat_t out);
 void QuatInverse (const quat_t in, quat_t out);
 void QuatExp (const quat_t a, quat_t b);
 void QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical);

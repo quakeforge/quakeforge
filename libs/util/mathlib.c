@@ -273,6 +273,24 @@ QuatMultVec (const quat_t q, const vec3_t v, vec3_t out)
 }
 
 VISIBLE void
+QuatRotation(const vec3_t a, const vec3_t b, quat_t out)
+{
+	vec_t       ma, mb;
+	vec_t       den, mba_mab;
+	vec3_t      t;
+
+	ma = VectorLength(a);
+	mb = VectorLength(b);
+	den = 2 * ma * mb;
+	VectorScale (a, mb, t);
+	VectorMultAdd(t, ma, b, t);
+	mba_mab = VectorLength(t);
+	CrossProduct (a, b, t);
+	VectorScale(t, 1 / mba_mab, out);
+	out[3] = mba_mab / den;
+}
+
+VISIBLE void
 QuatInverse (const quat_t in, quat_t out)
 {
 	quat_t      q;
