@@ -86,6 +86,7 @@ open_file (const char *path, int *len)
 	if (!file) {
 		strerror_r(errno, errbuff, sizeof (errbuff));
 		Sys_Printf ("%s\n", errbuff);
+		*len = 0;
 		return 0;
 	}
 	*len = Qfilesize (file);

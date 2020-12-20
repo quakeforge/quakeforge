@@ -101,8 +101,8 @@ free_edict (progs_t *pr, edict_t *ent)
 		ent->v[sv_fields.frame].float_var = 0;
 		ent->v[sv_fields.nextthink].float_var = -1;
 		ent->v[sv_fields.solid].float_var = 0;
-		memset (ent->v[sv_fields.origin].vector_var, 0, 3*sizeof (float));
-		memset (ent->v[sv_fields.angles].vector_var, 0, 3*sizeof (float));
+		memset (&ent->v[sv_fields.origin].vector_var, 0, 3*sizeof (float));
+		memset (&ent->v[sv_fields.angles].vector_var, 0, 3*sizeof (float));
 	} else {
 		ED_ClearEdict (pr, ent, 0);
 	}

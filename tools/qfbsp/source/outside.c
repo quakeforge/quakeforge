@@ -180,6 +180,8 @@ MarkLeakTrail2 (void)
 	vec3_t      wc, pwc;
 	const vec_t *v;
 
+	VectorZero (wc);
+
 	leakfile = fopen (options.pointfile, "w");
 	if (!leakfile)
 		Sys_Error ("Couldn't open %s\n", options.pointfile);

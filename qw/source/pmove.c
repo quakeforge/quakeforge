@@ -738,7 +738,7 @@ SpectatorMove (void)
 	// friction
 	speed = DotProduct (pmove.velocity, pmove.velocity);
 	if (speed < 1) {
-		VectorZero (pmove.velocity)
+		VectorZero (pmove.velocity);
 	} else {
 		speed = sqrt (speed);
 		drop = 0;

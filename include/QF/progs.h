@@ -445,7 +445,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define G_VECTOR(p,o)	G_var (p, o, vector)
+#define G_VECTOR(p,o)	(&G_var (p, o, vector))
 
 /** Access a quaternion global. Can be assigned to.
 
@@ -457,7 +457,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define G_QUAT(p,o)		G_var (p, o, quat)
+#define G_QUAT(p,o)		(&G_var (p, o, quat))
 
 /** Access a string index global. Can be assigned to.
 
@@ -661,7 +661,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define P_VECTOR(p,n)	P_var (p, n, vector)
+#define P_VECTOR(p,n)	(&P_var (p, n, vector))
 
 /** Access a quaterion parameter. Can be used any way a quat_t variable can.
 
@@ -673,7 +673,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define P_QUAT(p,n)		P_var (p, n, quat)
+#define P_QUAT(p,n)		(&P_var (p, n, quat))
 
 /** Access a string index parameter. Can be assigned to.
 
@@ -873,7 +873,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define R_VECTOR(p)		R_var (p, vector)
+#define R_VECTOR(p)		(&R_var (p, vector))
 
 /** Access the VM function return value as a \c ::quat_t quaternion.
 
@@ -884,7 +884,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define R_QUAT(p)		R_var (p, quat)
+#define R_QUAT(p)		(&R_var (p, quat))
 
 /** Access the VM function return value as a ::string_t (a VM string reference).
 
@@ -1054,7 +1054,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define E_VECTOR(e,o)	E_var (e, o, vector)
+#define E_VECTOR(e,o)	(&E_var (e, o, vector))
 
 /** Access a quaternion entity field. Can be used any way a quat_t variable
 	can.

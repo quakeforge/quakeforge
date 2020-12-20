@@ -52,7 +52,7 @@ editbuffer_get (qwaq_ebresources_t *res, unsigned index)
 	PR_RESGET (res->buffers, index);
 }
 
-static inline int
+static inline int __attribute__((pure))
 editbuffer_index (qwaq_ebresources_t *res, editbuffer_t *buffer)
 {
 	PR_RESINDEX (res->buffers, buffer);

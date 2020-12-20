@@ -512,10 +512,10 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 				OPC.float_var = OPA.float_var + OPB.float_var;
 				break;
 			case OP_ADD_V:
-				VectorAdd (OPA.vector_var, OPB.vector_var, OPC.vector_var);
+				VectorAdd (&OPA.vector_var, &OPB.vector_var, &OPC.vector_var);
 				break;
 			case OP_ADD_Q:
-				QuatAdd (OPA.quat_var, OPB.quat_var, OPC.quat_var);
+				QuatAdd (&OPA.quat_var, &OPB.quat_var, &OPC.quat_var);
 				break;
 			case OP_ADD_S:
 				OPC.string_var = PR_CatStrings (pr,
@@ -531,10 +531,11 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 				OPC.float_var = OPA.float_var - OPB.float_var;
 				break;
 			case OP_SUB_V:
-				VectorSubtract (OPA.vector_var, OPB.vector_var, OPC.vector_var);
+				VectorSubtract (&OPA.vector_var, &OPB.vector_var,
+								&OPC.vector_var);
 				break;
 			case OP_SUB_Q:
-				QuatSubtract (OPA.quat_var, OPB.quat_var, OPC.quat_var);
+				QuatSubtract (&OPA.quat_var, &OPB.quat_var, &OPC.quat_var);
 				break;
 			case OP_MUL_D:
 				OPC_double_var = OPA_double_var * OPB_double_var;
@@ -543,14 +544,14 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 				OPC.float_var = OPA.float_var * OPB.float_var;
 				break;
 			case OP_MUL_V:
-				OPC.float_var = DotProduct (OPA.vector_var, OPB.vector_var);
+				OPC.float_var = DotProduct (&OPA.vector_var, &OPB.vector_var);
 				break;
 			case OP_MUL_DV:
 				{
 					// avoid issues with the likes of x = x.x * x;
 					// makes for faster code, too
 					double      scale = OPA_double_var;
-					VectorScale (OPB.vector_var, scale, OPC.vector_var);
+					VectorScale (&OPB.vector_var, scale, &OPC.vector_var);
 				}
 				break;
 			case OP_MUL_VD:
@@ -558,7 +559,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 					// avoid issues with the likes of x = x * x.x;
 					// makes for faster code, too
 					double      scale = OPB_double_var;
-					VectorScale (OPA.vector_var, scale, OPC.vector_var);
+					VectorScale (&OPA.vector_var, scale, &OPC.vector_var);
 				}
 				break;
 			case OP_MUL_FV:
@@ -566,7 +567,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 					// avoid issues with the likes of x = x.x * x;
 					// makes for faster code, too
 					float       scale = OPA.float_var;
-					VectorScale (OPB.vector_var, scale, OPC.vector_var);
+					VectorScale (&OPB.vector_var, scale, &OPC.vector_var);
 				}
 				break;
 			case OP_MUL_VF:
@@ -574,21 +575,21 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 					// avoid issues with the likes of x = x * x.x;
 					// makes for faster code, too
 					float       scale = OPB.float_var;
-					VectorScale (OPA.vector_var, scale, OPC.vector_var);
+					VectorScale (&OPA.vector_var, scale, &OPC.vector_var);
 				}
 				break;
 			case OP_MUL_Q:
-				QuatMult (OPA.quat_var, OPB.quat_var, OPC.quat_var);
+				QuatMult (&OPA.quat_var, &OPB.quat_var, &OPC.quat_var);
 				break;
 			case OP_MUL_QV:
-				QuatMultVec (OPA.quat_var, OPB.vector_var, OPC.vector_var);
+				QuatMultVec (&OPA.quat_var, &OPB.vector_var, &OPC.vector_var);
 				break;
 			case OP_MUL_DQ:
 				{
 					// avoid issues with the likes of x = x.s * x;
 					// makes for faster code, too
 					double      scale = OPA_double_var;
-					QuatScale (OPB.quat_var, scale, OPC.quat_var);
+					QuatScale (&OPB.quat_var, scale, &OPC.quat_var);
 				}
 				break;
 			case OP_MUL_QD:
@@ -596,7 +597,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 					// avoid issues with the likes of x = x * x.s;
 					// makes for faster code, too
 					double      scale = OPB_double_var;
-					QuatScale (OPA.quat_var, scale, OPC.quat_var);
+					QuatScale (&OPA.quat_var, scale, &OPC.quat_var);
 				}
 				break;
 			case OP_MUL_FQ:
@@ -604,7 +605,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 					// avoid issues with the likes of x = x.s * x;
 					// makes for faster code, too
 					float       scale = OPA.float_var;
-					QuatScale (OPB.quat_var, scale, OPC.quat_var);
+					QuatScale (&OPB.quat_var, scale, &OPC.quat_var);
 				}
 				break;
 			case OP_MUL_QF:
@@ -612,11 +613,11 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 					// avoid issues with the likes of x = x * x.s;
 					// makes for faster code, too
 					float       scale = OPB.float_var;
-					QuatScale (OPA.quat_var, scale, OPC.quat_var);
+					QuatScale (&OPA.quat_var, scale, &OPC.quat_var);
 				}
 				break;
 			case OP_CONJ_Q:
-				QuatConj (OPA.quat_var, OPC.quat_var);
+				QuatConj (&OPA.quat_var, &OPC.quat_var);
 				break;
 			case OP_DIV_D:
 				OPC_double_var = OPA_double_var / OPB_double_var;
@@ -673,10 +674,10 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 				OPC.integer_var = !FNZ (OPA);
 				break;
 			case OP_NOT_V:
-				OPC.integer_var = VectorIsZero (OPA.vector_var);
+				OPC.integer_var = VectorIsZero (&OPA.vector_var);
 				break;
 			case OP_NOT_Q:
-				OPC.integer_var = QuatIsZero (OPA.quat_var);
+				OPC.integer_var = QuatIsZero (&OPA.quat_var);
 				break;
 			case OP_NOT_S:
 				OPC.integer_var = !OPA.string_var ||
@@ -692,11 +693,11 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 				OPC.integer_var = OPA.float_var == OPB.float_var;
 				break;
 			case OP_EQ_V:
-				OPC.integer_var = VectorCompare (OPA.vector_var,
-												 OPB.vector_var);
+				OPC.integer_var = VectorCompare (&OPA.vector_var,
+												 &OPB.vector_var);
 				break;
 			case OP_EQ_Q:
-				OPC.integer_var = QuatCompare (OPA.quat_var, OPB.quat_var);
+				OPC.integer_var = QuatCompare (&OPA.quat_var, &OPB.quat_var);
 				break;
 			case OP_EQ_E:
 				OPC.integer_var = OPA.integer_var == OPB.integer_var;
@@ -708,11 +709,11 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 				OPC.integer_var = OPA.float_var != OPB.float_var;
 				break;
 			case OP_NE_V:
-				OPC.integer_var = !VectorCompare (OPA.vector_var,
-												  OPB.vector_var);
+				OPC.integer_var = !VectorCompare (&OPA.vector_var,
+												  &OPB.vector_var);
 				break;
 			case OP_NE_Q:
-				OPC.integer_var = !QuatCompare (OPA.quat_var, OPB.quat_var);
+				OPC.integer_var = !QuatCompare (&OPA.quat_var, &OPB.quat_var);
 				break;
 			case OP_LE_S:
 			case OP_GE_S:
@@ -753,10 +754,10 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 				OPB.integer_var = OPA.integer_var;
 				break;
 			case OP_STORE_V:
-				VectorCopy (OPA.vector_var, OPB.vector_var);
+				VectorCopy (&OPA.vector_var, &OPB.vector_var);
 				break;
 			case OP_STORE_Q:
-				QuatCopy (OPA.quat_var, OPB.quat_var);
+				QuatCopy (&OPA.quat_var, &OPB.quat_var);
 				break;
 			case OP_STORE_D:
 				OPB_double_var = OPA_double_var;
@@ -782,7 +783,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 					PR_BoundsCheck (pr, pointer, ev_vector);
 				}
 				ptr = pr->pr_globals + pointer;
-				VectorCopy (OPA.vector_var, ptr->vector_var);
+				VectorCopy (&OPA.vector_var, &ptr->vector_var);
 				break;
 			case OP_STOREP_Q:
 				pointer = OPB.integer_var;
@@ -790,7 +791,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 					PR_BoundsCheck (pr, pointer, ev_quat);
 				}
 				ptr = pr->pr_globals + pointer;
-				QuatCopy (OPA.quat_var, ptr->quat_var);
+				QuatCopy (&OPA.quat_var, &ptr->quat_var);
 				break;
 			case OP_STOREP_D:
 				pointer = OPB.integer_var;
@@ -909,7 +910,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 					PR_BoundsCheck (pr, pointer, ev_vector);
 				}
 				ptr = pr->pr_globals + pointer;
-				VectorCopy (ptr->vector_var, OPC.vector_var);
+				VectorCopy (&ptr->vector_var, &OPC.vector_var);
 				break;
 			case OP_LOADB_Q:
 				pointer = OPA.integer_var + OPB.integer_var;
@@ -917,7 +918,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 					PR_BoundsCheck (pr, pointer, ev_quat);
 				}
 				ptr = pr->pr_globals + pointer;
-				QuatCopy (ptr->quat_var, OPC.quat_var);
+				QuatCopy (&ptr->quat_var, &OPC.quat_var);
 				break;
 			case OP_LOADB_D:
 				pointer = OPA.integer_var + OPB.integer_var;
@@ -948,7 +949,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 					PR_BoundsCheck (pr, pointer, ev_vector);
 				}
 				ptr = pr->pr_globals + pointer;
-				VectorCopy (ptr->vector_var, OPC.vector_var);
+				VectorCopy (&ptr->vector_var, &OPC.vector_var);
 				break;
 			case OP_LOADBI_Q:
 				pointer = OPA.integer_var + (short) st->b;
@@ -956,7 +957,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 					PR_BoundsCheck (pr, pointer, ev_quat);
 				}
 				ptr = pr->pr_globals + pointer;
-				QuatCopy (ptr->quat_var, OPC.quat_var);
+				QuatCopy (&ptr->quat_var, &OPC.quat_var);
 				break;
 			case OP_LOADBI_D:
 				pointer = OPA.integer_var + (short) st->b;
@@ -997,7 +998,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 					PR_BoundsCheck (pr, pointer, ev_vector);
 				}
 				ptr = pr->pr_globals + pointer;
-				VectorCopy (OPA.vector_var, ptr->vector_var);
+				VectorCopy (&OPA.vector_var, &ptr->vector_var);
 				break;
 			case OP_STOREB_Q:
 				pointer = OPB.integer_var + OPC.integer_var;
@@ -1005,7 +1006,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 					PR_BoundsCheck (pr, pointer, ev_quat);
 				}
 				ptr = pr->pr_globals + pointer;
-				QuatCopy (OPA.quat_var, ptr->quat_var);
+				QuatCopy (&OPA.quat_var, &ptr->quat_var);
 				break;
 			case OP_STOREB_D:
 				pointer = OPB.integer_var + OPC.integer_var;
@@ -1036,7 +1037,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 					PR_BoundsCheck (pr, pointer, ev_vector);
 				}
 				ptr = pr->pr_globals + pointer;
-				VectorCopy (OPA.vector_var, ptr->vector_var);
+				VectorCopy (&OPA.vector_var, &ptr->vector_var);
 				break;
 			case OP_STOREBI_Q:
 				pointer = OPB.integer_var + (short) st->c;
@@ -1044,7 +1045,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 					PR_BoundsCheck (pr, pointer, ev_quat);
 				}
 				ptr = pr->pr_globals + pointer;
-				QuatCopy (OPA.quat_var, ptr->quat_var);
+				QuatCopy (&OPA.quat_var, &ptr->quat_var);
 				break;
 			case OP_STOREBI_D:
 				pointer = OPB.integer_var + (short) st->c;
@@ -1131,7 +1132,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 						PR_BoundsCheck (pr, pointer, ev_integer);
 					}
 
-					VectorCopy (ptr->vector_var, stk->vector_var);
+					VectorCopy (&ptr->vector_var, &stk->vector_var);
 					*pr->globals.stack = stack;
 				}
 				break;
@@ -1148,7 +1149,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 						PR_BoundsCheck (pr, pointer, ev_quat);
 					}
 
-					QuatCopy (ptr->quat_var, stk->quat_var);
+					QuatCopy (&ptr->quat_var, &stk->quat_var);
 					*pr->globals.stack = stack;
 				}
 				break;
@@ -1189,7 +1190,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 						PR_BoundsCheck (pr, pointer, ev_integer);
 					}
 
-					VectorCopy (ptr->vector_var, stk->vector_var);
+					VectorCopy (&ptr->vector_var, &stk->vector_var);
 					*pr->globals.stack = stack;
 				}
 				break;
@@ -1206,7 +1207,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 						PR_BoundsCheck (pr, pointer, ev_quat);
 					}
 
-					QuatCopy (ptr->quat_var, stk->quat_var);
+					QuatCopy (&ptr->quat_var, &stk->quat_var);
 					*pr->globals.stack = stack;
 				}
 				break;
@@ -1287,7 +1288,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 						PR_BoundsCheck (pr, pointer, ev_integer);
 					}
 
-					VectorCopy (ptr->vector_var, stk->vector_var);
+					VectorCopy (&ptr->vector_var, &stk->vector_var);
 					*pr->globals.stack = stack + 3;
 				}
 				break;
@@ -1304,7 +1305,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 						PR_BoundsCheck (pr, pointer, ev_quat);
 					}
 
-					QuatCopy (ptr->quat_var, stk->quat_var);
+					QuatCopy (&ptr->quat_var, &stk->quat_var);
 					*pr->globals.stack = stack + 4;
 				}
 				break;
@@ -1345,7 +1346,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 						PR_BoundsCheck (pr, pointer, ev_integer);
 					}
 
-					VectorCopy (ptr->vector_var, stk->vector_var);
+					VectorCopy (&ptr->vector_var, &stk->vector_var);
 					*pr->globals.stack = stack + 3;
 				}
 				break;
@@ -1362,7 +1363,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 						PR_BoundsCheck (pr, pointer, ev_quat);
 					}
 
-					QuatCopy (ptr->quat_var, stk->quat_var);
+					QuatCopy (&ptr->quat_var, &stk->quat_var);
 					*pr->globals.stack = stack + 4;
 				}
 				break;

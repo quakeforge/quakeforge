@@ -142,7 +142,12 @@ extern const vec_t *const vec3_origin;
 	} while (0)
 
 #define VectorIsZero(a) (!(a)[0] && !(a)[1] && !(a)[2])
-#define VectorZero(a) ((a)[2] = (a)[1] = (a)[0] = 0);
+#define VectorZero(a) \
+	do { \
+		(a)[0] = 0; \
+		(a)[1] = 0; \
+		(a)[2] = 0; \
+	} while (0)
 #define VectorSet(a,b,c,d) \
 	do { \
 		(d)[0] = a; \

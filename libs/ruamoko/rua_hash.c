@@ -85,7 +85,7 @@ table_get (hash_resources_t *res, int index)
 	PR_RESGET(res->table_map, index);
 }
 
-static inline int
+static inline int __attribute__((pure))
 table_index (hash_resources_t *res, bi_hashtab_t *table)
 {
 	PR_RESINDEX(res->table_map, table);

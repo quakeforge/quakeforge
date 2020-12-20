@@ -108,7 +108,7 @@ dtable_get (probj_t *probj, int index)
 	PR_RESGET (probj->dtables, index);
 }
 
-static inline int
+static inline int __attribute__((pure))
 dtable_index (probj_t *probj, dtable_t *dtable)
 {
 	PR_RESINDEX (probj->dtables, dtable);

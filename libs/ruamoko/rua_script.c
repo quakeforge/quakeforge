@@ -78,7 +78,7 @@ script_get (script_resources_t *res, int index)
 	PR_RESGET(res->scripts, index);
 }
 
-static inline int
+static inline int __attribute__((pure))
 script_index (script_resources_t *res, rua_script_t *script)
 {
 	PR_RESINDEX(res->scripts, script);

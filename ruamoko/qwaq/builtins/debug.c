@@ -93,7 +93,7 @@ target_get (qwaq_debug_t *debug, unsigned index)
 	PR_RESGET (debug->targets, index);
 }
 
-static inline int
+static inline int __attribute__((pure))
 target_index (qwaq_debug_t *debug, qwaq_target_t *target)
 {
 	PR_RESINDEX (debug->targets, target);

@@ -148,7 +148,7 @@ window_get (qwaq_resources_t *res, unsigned index)
 	PR_RESGET(res->window_map, index);
 }
 
-static inline int
+static inline int __attribute__((pure))
 window_index (qwaq_resources_t *res, window_t *win)
 {
 	PR_RESINDEX (res->window_map, win);
@@ -194,7 +194,7 @@ panel_get (qwaq_resources_t *res, unsigned index)
 	PR_RESGET(res->panel_map, index);
 }
 
-static inline int
+static inline int __attribute__((pure))
 panel_index (qwaq_resources_t *res, panel_t *win)
 {
 	PR_RESINDEX (res->panel_map, win);
