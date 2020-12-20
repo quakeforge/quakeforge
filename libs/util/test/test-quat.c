@@ -239,11 +239,16 @@ fail:
 	return 0;
 }
 
+// XXX FIXME see usage in test_rotation4. need to investigate whether
+// -ffast-math is any real benefit
+#define ISNAN(x) (((x) & 0x7f800000) == 0x7f800000 && ((x) & 0x7fffff))
+
 static int
 test_rotation4 (const vec3_t a, const vec3_t b, const quat_t expect)
 {
 	int         i;
-	quat_t      quat;
+	union { int x[4]; vec_t q[4]; } q;
+	vec_t      *quat = q.q;
 	vec3_t      t;
 	vec_t       d = 0;
 
@@ -258,13 +263,19 @@ test_rotation4 (const vec3_t a, const vec3_t b, const quat_t expect)
 		}
 		// expect NaN for the vector components because the vectors are
 		// anti-parallel and thus the rotation axis is undefined
-		if (!(isnan(quat[0]) && isnan(quat[1]) && isnan(quat[2]))) {
+		//XXX FIXME(?) still using -ffast-math which implies
+		// -ffinite-math-only which in turn disables nan/inf checks, so have
+		// to do it by hand
+		// if (!(isnan(quat[0]) && isnan(quat[1]) && isnan(quat[2]))) {
+		if (!(ISNAN(q.x[0]) && ISNAN(q.x[1]) && ISNAN(q.x[2]))) {
 			goto fail;
 		}
 	} else {
 		// the vectors are not anti-parallel and thus the rotation axis is
 		// defined, so NaN is invalid
-		if (isnan(quat[0]) || isnan(quat[1]) || isnan(quat[2])) {
+		// XXX FIXME see above
+		//if (isnan(quat[0]) || isnan(quat[1]) || isnan(quat[2])) {
+		if (ISNAN(q.x[0]) || ISNAN(q.x[1]) || ISNAN(q.x[2])) {
 			goto fail;
 		}
 		for (i = 0; i < 4; i++) {
@@ -288,6 +299,7 @@ fail:
 	printf ("%11.9g %11.9g %11.9g\n", VectorExpand(a));
 	printf ("%11.9g %11.9g %11.9g\n", VectorExpand(b));
 	printf ("%11.9g %11.9g %11.9g %11.9g\n", QuatExpand(quat));
+	printf ("%11.9g %11.9g %11.9g %11.9g\n", QuatExpand(expect));
 	printf ("%11.9g %11.9g %11.9g\n", VectorExpand(t));
 	printf ("%11.9g\n", d);
 	return 0;
