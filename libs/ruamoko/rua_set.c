@@ -98,7 +98,7 @@ res_set_get (set_resources_t *res, int index)
 	PR_RESGET(res->set_map, index);
 }
 
-static inline int
+static inline int __attribute__((pure))
 res_set_index (set_resources_t *res, bi_set_t *set)
 {
 	PR_RESINDEX(res->set_map, set);
@@ -128,7 +128,7 @@ res_set_iter_get (set_resources_t *res, int index)
 	PR_RESGET(res->set_iter_map, index);
 }
 
-static inline int
+static inline int __attribute__((pure))
 res_set_iter_index (set_resources_t *res, bi_set_iter_t *set_iter)
 {
 	PR_RESINDEX(res->set_iter_map, set_iter);

@@ -1133,9 +1133,7 @@ pr_debug_vector_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "'%.9g %.9g %.9g'",
-			  value->vector_var[0], value->vector_var[1],
-			  value->vector_var[2]);
+	dasprintf (dstr, "'%.9g %.9g %.9g'", VectorExpand (&value->vector_var));
 }
 
 static void
@@ -1213,9 +1211,7 @@ pr_debug_quat_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "'%.9g %.9g %.9g %.9g'",
-			   value->vector_var[0], value->vector_var[1],
-			   value->vector_var[2], value->vector_var[3]);
+	dasprintf (dstr, "'%.9g %.9g %.9g %.9g'", QuatExpand (&value->quat_var));
 }
 
 static void

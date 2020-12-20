@@ -101,7 +101,7 @@ qpic_get (draw_resources_t *res, int index)
 	PR_RESGET (res->qpic_map, index);
 }
 
-static inline int
+static inline int __attribute__((pure))
 qpic_index (draw_resources_t *res, qpic_res_t *qp)
 {
 	PR_RESINDEX (res->qpic_map, qp);

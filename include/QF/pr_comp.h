@@ -474,8 +474,8 @@ typedef union pr_type_u {
 	string_t    string_var;
 	func_t      func_var;
 	pr_int_t    entity_var;
-	float       vector_var[0];	// really 3, but this structure must be 32 bits
-	float       quat_var[0];	// really 4, but this structure must be 32 bits
+	float       vector_var;	// really [3], but this structure must be 32 bits
+	float       quat_var;	// really [4], but this structure must be 32 bits
 	pr_int_t    integer_var;
 	pointer_t   pointer_var;
 	pr_uint_t   uinteger_var;

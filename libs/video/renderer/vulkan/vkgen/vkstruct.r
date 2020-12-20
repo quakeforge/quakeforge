@@ -48,9 +48,15 @@
 
 -(void) writeTable: (PLItem *) parse
 {
-	PLItem     *field_dict = [parse getObjectForKey:[self name]];
+	string      name = [self name];
+	PLItem     *field_dict = [parse getObjectForKey:name];
 	PLItem     *field_defs = [field_dict allKeys];
 	Type       *field_type;
+	PLItem     *new_name = [field_dict getObjectForKey:".name"];
+
+	if (new_name) {
+		name = [new_name string];
+	}
 
 	if (field_defs) {
 		PLItem     *field_def;
@@ -65,7 +71,7 @@
 			string      size_field = nil;
 			string      value_field = nil;
 
-			if (!type_desc) {
+			if (!type_desc || str_mid(field_name, 0, 1) == ".") {
 				continue;
 			}
 			type_record = [[type_desc getObjectAtIndex:0] string];
@@ -73,22 +79,22 @@
 
 			field_type = [[Type lookup: type_type] dereference];
 			fprintf (output_file, "static parse_%s_t parse_%s_%s_data = {\n",
-					 type_record, [self name], field_name);
+					 type_record, name, field_name);
 			fprintf (output_file, "\t%s,\n", [field_type parseType]);
 			fprintf (output_file, "\tsizeof (%s),\n", type_type);
 			fprintf (output_file, "\tparse_%s,\n", type_type);
 			if (type_record == "single") {
 				value_field = [[field_def getObjectForKey:"value"] string];
 				fprintf (output_file, "\tfield_offset (%s, %s),\n",
-						 [self name], value_field);
+						 name, value_field);
 			} else {
 				value_field = [[field_def getObjectForKey:"values"] string];
 				size_field = [[field_def getObjectForKey:"size"] string];
 				fprintf (output_file, "\tfield_offset (%s, %s),\n",
-						 [self name], value_field);
+						 name, value_field);
 				if (size_field) {
 					fprintf (output_file, "\tfield_offset (%s, %s),\n",
-							 [self name], size_field);
+							 name, size_field);
 				} else {
 					fprintf (output_file, "\t-1,\n");
 				}
@@ -96,13 +102,16 @@
 			fprintf (output_file, "};\n");
 		}
 	}
-	fprintf (output_file, "static plfield_t %s_fields[] = {\n", [self name]);
+	fprintf (output_file, "static plfield_t %s_fields[] = {\n", name);
 	if (field_defs) {
 		PLItem     *field_def;
 		qfot_var_t *field;
 
 		for (int i = [field_defs count]; i-- > 0; ) {
 			string field_name = [[field_defs  getObjectAtIndex:i] string];
+			if (str_mid(field_name, 0, 1) == ".") {
+				continue;
+			}
 			field_def = [field_dict getObjectForKey:field_name];
 			if ([field_def string] == "auto") {
 				field = [self findField:field_name];
@@ -112,7 +121,7 @@
 				field_type = [Type findType: field.type];
 				fprintf (output_file,
 						 "\t{\"%s\", field_offset (%s, %s), %s, %s, %s},\n",
-						 field_name, [self name], field_name,
+						 field_name, name, field_name,
 						 [field_type parseType], [field_type parseFunc],
 						 [field_type parseData]);
 			} else {
@@ -133,7 +142,7 @@
 				fprintf (output_file,
 						 "\t{\"%s\", 0, %s, parse_%s, &parse_%s_%s_data},\n",
 						 field_name, parseType, type_record,
-						 [self name], field_name);
+						 name, field_name);
 			}
 		}
 	} else {
@@ -145,7 +154,7 @@
 			field_type = [Type findType: field.type];
 			fprintf (output_file,
 					 "\t{\"%s\", field_offset (%s, %s), %s, %s, %s},\n",
-					 field.name, [self name], field.name,
+					 field.name, name, field.name,
 					 [field_type parseType], [field_type parseFunc],
 					 [field_type parseData]);
 		}
@@ -154,12 +163,14 @@
 	fprintf (output_file, "};\n");
 
 	fprintf (output_file, "static int parse_%s (const plfield_t *field,"
-			 " const plitem_t *item, void *data, plitem_t *messages)\n",
-			 [self name]);
+			 " const plitem_t *item, void *data, plitem_t *messages,"
+			 " void *context)\n",
+			 name);
 	fprintf (output_file, "{\n");
 	fprintf (output_file,
-			 "\treturn PL_ParseDictionary (%s_fields, item, data, messages);\n",
-			 [self name]);
+			 "\treturn PL_ParseDictionary (%s_fields, item, data, messages,"
+			 " context);\n",
+			 name);
 	fprintf (output_file, "}\n");
 }
 

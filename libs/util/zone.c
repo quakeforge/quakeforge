@@ -577,7 +577,8 @@ Hunk_AllocName (int size, const char *name)
 
 	h->size = size;
 	h->sentinal = HUNK_SENTINAL;
-	strncpy (h->name, name, 8);
+	memcpy (h->name, name, 8);
+	h->name[7] = 0;
 
 	return (void *) (h + 1);
 }

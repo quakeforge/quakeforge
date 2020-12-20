@@ -92,10 +92,10 @@ PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val, dstring_t *line)
 			dsprintf (line, "%d", val->integer_var);
 			break;
 		case ev_vector:
-			dsprintf (line, "%.9g %.9g %.9g", VectorExpand (val->vector_var));
+			dsprintf (line, "%.9g %.9g %.9g", VectorExpand (&val->vector_var));
 			break;
 		case ev_quat:
-			dsprintf (line, "%.9g %.9g %.9g %.9g", QuatExpand (val->quat_var));
+			dsprintf (line, "%.9g %.9g %.9g %.9g", QuatExpand (&val->quat_var));
 			break;
 		default:
 			dsprintf (line, "bad type %i", type);
@@ -241,7 +241,7 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key, const char *s)
 				while (*v && *v != ' ')
 					v++;
 				*v = 0;
-				d->vector_var[i] = atof (w);
+				(&d->vector_var)[i] = atof (w);
 				w = v = v + 1;
 			}
 			free (string);

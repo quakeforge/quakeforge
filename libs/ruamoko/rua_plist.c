@@ -84,7 +84,7 @@ plist_get (plist_resources_t *res, unsigned index)
 	PR_RESGET(res->plist_map, index);
 }
 
-static inline int
+static inline int __attribute__((pure))
 plist_index (plist_resources_t *res, bi_plist_t *plist)
 {
 	PR_RESINDEX(res->plist_map, plist);
