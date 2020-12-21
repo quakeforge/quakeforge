@@ -275,6 +275,7 @@ QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist)
 	VkRenderPass renderpass;
 	exprsym_t   var_syms[] = {
 		{"swapchain", &qfv_swapchain_t_type, ctx->swapchain},
+		{"msaaSamples", &VkSampleCountFlagBits_type, &ctx->msaaSamples},
 		{}
 	};
 	exprtab_t   vars_tab = { var_syms, 0 };

@@ -117,7 +117,7 @@ Vulkan_Init_Cvars (void)
 										 CVAR_NONE, vulkan_presentation_mode_f,
 										 "desired presentation mode (may fall "
 										 "back to fifo).");
-	msaaSamples = Cvar_Get ("msaaSamples", "VK_SAMPLE_COUNT_8_BIT",
+	msaaSamples = Cvar_Get ("msaaSamples", "VK_SAMPLE_COUNT_1_BIT",
 										 CVAR_NONE, msaaSamples_f,
 										 "desired MSAA sample size.");
 }
@@ -284,13 +284,13 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 
 	VkExtent3D extent = {sc->extent.width, sc->extent.height, 1};
 
-	VkSampleCountFlagBits msaaSamples
-		= QFV_GetMaxSampleCount (device->physDev);
+	//FIXME incorporate cvar setting
+	ctx->msaaSamples = QFV_GetMaxSampleCount (device->physDev);
 
 	Sys_MaskPrintf (SYS_VULKAN, "color resource\n");
 	colorImage->image
 		= QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D,
-						   sc->format, extent, 1, 1, msaaSamples,
+						   sc->format, extent, 1, 1, ctx->msaaSamples,
 						   VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT
 							   | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 	colorImage->object
@@ -308,7 +308,7 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 	VkFormat depthFormat = VK_FORMAT_D32_SFLOAT;
 	depthImage->image
 		= QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D,
-						   depthFormat, extent, 1, 1, msaaSamples,
+						   depthFormat, extent, 1, 1, ctx->msaaSamples,
 						   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 	depthImage->object
 		= QFV_AllocImageMemory (device, depthImage->image,
