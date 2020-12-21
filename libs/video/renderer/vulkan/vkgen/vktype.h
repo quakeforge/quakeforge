@@ -19,6 +19,7 @@
 -(Type *) resolveType;
 +(Type *) findType: (qfot_type_t *) type;
 +(Type *) lookup: (string) name;
+-(string) cexprType;
 -(string) parseType;
 -(string) parseFunc;
 -(string) parseData;

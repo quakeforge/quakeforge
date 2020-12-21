@@ -162,7 +162,11 @@
 	fprintf (output_file, "\t{ }\n");
 	fprintf (output_file, "};\n");
 
-	fprintf (output_file, "static int parse_%s (const plfield_t *field,"
+	fprintf (header_file, "int parse_%s (const plfield_t *field,"
+			 " const plitem_t *item, void *data, plitem_t *messages,"
+			 " void *context);\n",
+			 name);
+	fprintf (output_file, "int parse_%s (const plfield_t *field,"
 			 " const plitem_t *item, void *data, plitem_t *messages,"
 			 " void *context)\n",
 			 name);
@@ -172,6 +176,95 @@
 			 " context);\n",
 			 name);
 	fprintf (output_file, "}\n");
+
+	fprintf (output_file, "static exprsym_t %s_symbols[] = {\n", name);
+	if (field_defs) {
+		PLItem     *field_def;
+		qfot_var_t *field;
+
+		for (int i = [field_defs count]; i-- > 0; ) {
+			string field_name = [[field_defs  getObjectAtIndex:i] string];
+			field_def = [field_dict getObjectForKey:field_name];
+			PLItem     *type_desc = [field_def getObjectForKey:"type"];
+			string      type_record;
+			string      type_type;
+			string      size_field = nil;
+			string      value_field = nil;
+
+			if (str_mid(field_name, 0, 1) == ".") {
+				continue;
+			}
+			field_def = [field_dict getObjectForKey:field_name];
+			if ([field_def string] == "auto") {
+				field = [self findField:field_name];
+				if (!field) {
+					continue;
+				}
+				field_type = [Type findType: field.type];
+				fprintf (output_file,
+						 "\t{\"%s\", &%s, (void *) field_offset (%s, %s)},\n",
+						 field_name, [field_type cexprType], name, field_name);
+			} else {
+				type_record = [[type_desc getObjectAtIndex:0] string];
+				if (type_record == "single") {
+					value_field = [[field_def getObjectForKey:"value"] string];
+				} else {
+					value_field = [[field_def getObjectForKey:"values"] string];
+				}
+				if (!value_field) {
+					value_field = field_name;
+				}
+				fprintf (output_file,
+						 "\t{\"%s\", 0/*FIXME*/,"
+						 " (void *) field_offset (%s, %s)},\n",
+						 field_name, name, value_field);
+			}
+		}
+	} else {
+		for (int i = 0; i < type.strct.num_fields; i++) {
+			qfot_var_t *field = &type.strct.fields[i];
+			if (field.name == "sType" || field.name == "pNext") {
+				continue;
+			}
+			field_type = [Type findType: field.type];
+			fprintf (output_file,
+					 "\t{\"%s\", &%s, (void *) field_offset (%s, %s)},\n",
+					 field.name, [field_type cexprType], name, field.name);
+		}
+	}
+	fprintf (output_file, "\t{ }\n");
+	fprintf (output_file, "};\n");
+
+	fprintf (output_file, "static exprtab_t %s_symtab = {\n", name);
+	fprintf (output_file, "\t%s_symbols,\n", name);
+	fprintf (output_file, "};\n");
+
+	fprintf (output_file, "exprtype_t %s_type = {\n", name);
+	fprintf (output_file, "\t\"%s\",\n", name);
+	fprintf (output_file, "\tsizeof (%s),\n", name);
+	fprintf (output_file, "\tcexpr_struct_binops,\n");
+	fprintf (output_file, "\t0,\n");
+	fprintf (output_file, "\t&%s_symtab,\n", name);
+	fprintf (output_file, "};\n");
+	fprintf (header_file, "extern exprtype_t %s_type;\n", name);
+}
+
+-(void) writeSymtabInit:(PLItem *) parse
+{
+	string      name = [self name];
+	PLItem     *field_dict = [parse getObjectForKey:name];
+	PLItem     *new_name = [field_dict getObjectForKey:".name"];
+
+	if (new_name) {
+		name = [new_name string];
+	}
+
+	fprintf (output_file, "\tcexpr_init_symtab (&%s_symtab, context);\n", name);
+}
+
+-(string) cexprType
+{
+	return [self name] + "_type";
 }
 
 -(string) parseType

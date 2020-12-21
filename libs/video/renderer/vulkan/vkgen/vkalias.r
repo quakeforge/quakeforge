@@ -50,6 +50,24 @@
 	}
 }
 
+-(string) cexprType
+{
+	Type       *alias = [Type findType:type.alias.full_type];
+	string      name = [self name];
+
+	if ([alias name] == "VkFlags") {
+		if (str_mid (name, -5) == "Flags") {
+			string tag = str_mid (name, 0, -1) + "Bits";
+			id enumObj = [(id) Hash_Find (available_types, tag) resolveType];
+			return [enumObj cexprType];
+		}
+	}
+	if (name == "uint32_t") {
+		return "cexpr_uint";
+	}
+	return [alias cexprType];
+}
+
 -(string) parseType
 {
 	Type       *alias = [Type findType:type.alias.full_type];

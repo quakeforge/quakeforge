@@ -25,7 +25,6 @@ arp_end (void)
 	autorelease_pool = nil;
 }
 
-
 void printf (string fmt, ...) = #0;
 
 void fprintf (QFile file, string format, ...)
@@ -39,6 +38,7 @@ Array *queue;
 Array *output_types;
 
 QFile output_file;
+QFile header_file;
 
 qfot_type_encodings_t *encodings;
 
@@ -135,7 +135,7 @@ get_object_key (void *obj, void *unused)
 void
 usage (string name)
 {
-	printf ("%s [plist file] [output file]\n", name);
+	printf ("%s [plist file] [output file] [header file]\n", name);
 }
 
 int
@@ -151,7 +151,7 @@ main(int argc, string *argv)
 
 	arp_start ();
 
-	if (argc != 3) {
+	if (argc != 4) {
 		usage (argv[0]);
 		return 1;
 	}
@@ -211,6 +211,7 @@ main(int argc, string *argv)
 	arp_end ();
 
 	output_file = Qopen (argv[2], "wt");
+	header_file = Qopen (argv[3], "wt");
 	for (int i = [output_types count]; i-- > 0; ) {
 		id obj = [output_types objectAtIndex:i];
 		if ([obj name] == "VkStructureType") {
@@ -237,6 +238,20 @@ main(int argc, string *argv)
 		[obj writeTable:parse];
 		arp_end ();
 	}
+	fprintf (output_file, "static void\n");
+	fprintf (output_file, "vkgen_init_symtabs (exprctx_t *context)\n");
+	fprintf (output_file, "{\n");
+	for (int i = [output_types count]; i-- > 0; ) {
+		id obj = [output_types objectAtIndex:i];
+		if ([obj name] == "VkStructureType") {
+			continue;
+		}
+		arp_start ();
+		[obj writeSymtabInit:parse];
+		arp_end ();
+	}
+	fprintf (output_file, "}\n");
 	Qclose (output_file);
+	Qclose (header_file);
 	return 0;
 }

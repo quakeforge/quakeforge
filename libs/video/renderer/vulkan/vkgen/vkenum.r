@@ -50,6 +50,15 @@
 	}
 }
 
+static int
+skip_value(string name)
+{
+	return (str_str (name, "_MAX_ENUM") >= 0
+			|| str_str (name, "_BEGIN_RANGE") >= 0
+			|| str_str (name, "_END_RANGE") >= 0
+			|| str_str (name, "_RANGE_SIZE") >= 0);
+}
+
 -(void) writeTable
 {
 	int         strip_bit = 0;
@@ -57,16 +66,37 @@
 		strip_bit = 1;
 	}
 
-	fprintf (output_file, "enumval_t %s_values[] = {\n", [self name]);
-	for (int i = 0; i < type.strct.num_fields; i++) {
+	fprintf (output_file, "static exprtype_t %s_type = {\n", [self name]);
+	fprintf (output_file, "\t\"%s\",\n", [self name]);
+	fprintf (output_file, "\tsizeof (int),\n");
+	if (strip_bit) {
+		fprintf (output_file, "\tflag_binops,\n");
+		fprintf (output_file, "\tflag_unops,\n");
+	} else {
+		fprintf (output_file, "\t0,\n");
+		fprintf (output_file, "\t0,\n");
+	}
+	fprintf (output_file, "};\n");
+
+	fprintf (output_file, "static %s %s_values[] = {\n", [self name], [self name]);
+	for (int i = 0, index = 0; i < type.strct.num_fields; i++) {
 		qfot_var_t *var = &type.strct.fields[i];
-		if (str_str (var.name, "_MAX_ENUM") >= 0
-			|| str_str (var.name, "_BEGIN_RANGE") >= 0
-			|| str_str (var.name, "_END_RANGE") >= 0
-			|| str_str (var.name, "_RANGE_SIZE") >= 0) {
+		if (skip_value (var.name)) {
 			continue;
 		}
-		fprintf (output_file, "\t{\"%s\", %d},\n", var.name, var.offset);
+		fprintf (output_file, "\t%s,    // %d 0x%x\n",
+				 var.name, var.offset, var.offset);
+		index++;
+	}
+	fprintf (output_file, "};\n");
+	fprintf (output_file, "static exprsym_t %s_symbols[] = {\n", [self name]);
+	for (int i = 0, index = 0; i < type.strct.num_fields; i++) {
+		qfot_var_t *var = &type.strct.fields[i];
+		if (skip_value (var.name)) {
+			continue;
+		}
+		fprintf (output_file, "\t{\"%s\", &%s_type, %s_values + %d},\n",
+				 var.name, [self name], [self name], index);
 		if (prefix_length) {
 			string      shortname = str_mid (var.name, prefix_length);
 			if (strip_bit) {
@@ -75,12 +105,33 @@
 					shortname = str_mid (shortname, 0, bit_pos);
 				}
 			}
-			fprintf (output_file, "\t{\"%s\", %d},\n", str_lower(shortname),
-					 var.offset);
+			fprintf (output_file, "\t{\"%s\", &%s_type, %s_values + %d},\n",
+					 str_lower(shortname), [self name], [self name], index);
 		}
+		index++;
 	}
 	fprintf (output_file, "\t{ }\n");
 	fprintf (output_file, "};\n");
+	fprintf (output_file, "static exprtab_t %s_symtab = {\n", [self name]);
+	fprintf (output_file, "\t%s_symbols,\n", [self name]);
+	fprintf (output_file, "};\n");
+	fprintf (output_file, "exprenum_t %s_enum = {\n", [self name]);
+	fprintf (output_file, "\t&%s_type,\n", [self name]);
+	fprintf (output_file, "\t&%s_symtab,\n", [self name]);
+	fprintf (output_file, "};\n");
+
+	fprintf (header_file, "extern exprenum_t %s_enum;\n", [self name]);
+}
+
+-(void) writeSymtabInit:(PLItem *) parse
+{
+	fprintf (output_file, "\tcexpr_init_symtab (&%s_symtab, context);\n",
+			 [self name]);
+}
+
+-(string) cexprType
+{
+	return [self name] + "_type";
 }
 
 -(string) parseType
@@ -90,14 +141,11 @@
 
 -(string) parseFunc
 {
-	if (str_mid([self name], -8) == "FlagBits") {
-		return "parse_flags";
-	}
 	return "parse_enum";
 }
 
 -(string) parseData
 {
-	return [self name] + "_values";
+	return "&" + [self name] + "_enum";
 }
 @end

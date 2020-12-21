@@ -39,6 +39,8 @@
 # include <strings.h>
 #endif
 
+#include "QF/cexpr.h"
+#include "QF/cmem.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/input.h"
@@ -63,12 +65,14 @@
 #include "vid_vulkan.h"
 
 #include "util.h"
+#include "vkparse.h"
 
 static const char quakeforge_pipeline[] =
 #include "libs/video/renderer/vulkan/qfpipeline.plc"
 ;
 
 cvar_t *vulkan_presentation_mode;
+cvar_t *msaaSamples;
 
 static void
 vulkan_presentation_mode_f (cvar_t *var)
@@ -88,6 +92,19 @@ vulkan_presentation_mode_f (cvar_t *var)
 }
 
 static void
+msaaSamples_f (cvar_t *var)
+{
+	exprctx_t   context = {};
+	context.memsuper = new_memsuper();
+
+	if (cexpr_parse_enum (&VkSampleCountFlagBits_enum, var->string, &context,
+						  &var->int_val)) {
+		Sys_Printf ("Invalid MSAA samples, using 1\n");
+		var->int_val = VK_SAMPLE_COUNT_1_BIT;
+	}
+}
+
+static void
 Vulkan_Init_Cvars (void)
 {
 	vulkan_use_validation = Cvar_Get ("vulkan_use_validation", "1", CVAR_NONE,
@@ -100,6 +117,9 @@ Vulkan_Init_Cvars (void)
 										 CVAR_NONE, vulkan_presentation_mode_f,
 										 "desired presentation mode (may fall "
 										 "back to fifo).");
+	msaaSamples = Cvar_Get ("msaaSamples", "VK_SAMPLE_COUNT_1_BIT",
+										 CVAR_NONE, msaaSamples_f,
+										 "desired MSAA sample size.");
 }
 
 static const char *instance_extensions[] = {
@@ -116,8 +136,8 @@ void
 Vulkan_Init_Common (vulkan_ctx_t *ctx)
 {
 	Sys_Printf ("Vulkan_Init_Common\n");
+	QFV_InitParse ();
 	Vulkan_Init_Cvars ();
-
 	ctx->instance = QFV_CreateInstance (ctx, PACKAGE_STRING, 0x000702ff, 0, instance_extensions);//FIXME version
 }
 

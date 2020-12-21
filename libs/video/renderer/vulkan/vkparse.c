@@ -38,6 +38,8 @@
 # include <strings.h>
 #endif
 
+#include "QF/cexpr.h"
+#include "QF/cmem.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/input.h"
@@ -64,10 +66,41 @@
 #include "util.h"
 #include "vkparse.h"
 
-typedef struct enumval_s {
-	const char *name;
-	int         value;
-} enumval_t;
+static void flag_or (const exprval_t *val1, const exprval_t *val2,
+					 exprval_t *result, exprctx_t *ctx)
+{
+	*(int *) (result->value) = *(int *) (val1->value) | *(int *) (val2->value);
+}
+
+static void flag_and (const exprval_t *val1, const exprval_t *val2,
+					 exprval_t *result, exprctx_t *ctx)
+{
+	*(int *) (result->value) = *(int *) (val1->value) & *(int *) (val2->value);
+}
+
+static void flag_cast_int (const exprval_t *val1, const exprval_t *val2,
+						   exprval_t *result, exprctx_t *ctx)
+{
+	// FIXME should check value is valid
+	*(int *) (result->value) = *(int *) (val2->value);
+}
+
+static void flag_not (const exprval_t *val, exprval_t *result, exprctx_t *ctx)
+{
+	*(int *) (result->value) = ~(*(int *) (val->value));
+}
+
+binop_t flag_binops[] = {
+	{ '|', 0, 0, flag_or },
+	{ '&', 0, 0, flag_and },
+	{ '=', &cexpr_int, 0, flag_cast_int },
+	{}
+};
+
+unop_t flag_unops[] = {
+	{ '~', 0, flag_not },
+	{}
+};
 
 typedef struct parse_single_s {
 	pltype_t    type;
@@ -84,20 +117,8 @@ typedef struct parse_array_s {
 	size_t      size_offset;
 } parse_array_t;
 
-static int find_enum (const char *valstr, enumval_t *enumval, int *val)
-{
-	while (enumval->name && strcmp (enumval->name, valstr) != 0) {
-		enumval++;
-	}
-	if (enumval->name) {
-		*val = enumval->value;
-		return 1;
-	}
-	return 0;
-}
-
 static int parse_uint32_t (const plfield_t *field, const plitem_t *item,
-						   void *data, plitem_t *messages, void *ctx)
+						   void *data, plitem_t *messages, void *context)
 {
 	int         ret = 1;
 	const char *valstr = PL_String (item);
@@ -125,47 +146,25 @@ static int parse_uint32_t (const plfield_t *field, const plitem_t *item,
 }
 
 static int parse_enum (const plfield_t *field, const plitem_t *item,
-					   void *data, plitem_t *messages, void *ctx)
+					   void *data, plitem_t *messages, void *context)
 {
 	int         ret = 1;
-	int         val;
+	__auto_type enm = (exprenum_t *) field->data;
+	exprctx_t   ectx = *(exprctx_t *)context;
+	exprval_t   result = { enm->type, data };
+	ectx.symtab = enm->symtab;
+	ectx.result = &result;
 	const char *valstr = PL_String (item);
-	__auto_type enumval = (enumval_t *) field->data;
-	//Sys_Printf ("parse_enum: %s %zd %d %p %p %s\n",
-	//			field->name, field->offset, field->type, field->parser,
-	//			field->data, valstr);
-	if (find_enum (valstr, enumval, &val)) {
-		*(int *) data = val;
-	} else {
-		PL_Message (messages, item, "invalid enum: %s", valstr);
-		ret = 0;
-	}
-	return ret;
-}
-
-static int parse_flags (const plfield_t *field, const plitem_t *item,
-						void *data, plitem_t *messages, void *ctx)
-{
-	int         ret = 1;
-	int         val;
-	const char *valstr = PL_String (item);
-	__auto_type enumval = (enumval_t *) field->data;
-	//Sys_Printf ("parse_flags: %s %zd %d %p %p %s\n",
-	//			field->name, field->offset, field->type, field->parser,
-	//			field->data, valstr);
-	if (find_enum (valstr, enumval, &val)) {
-		*(int *) data = val;
-	} else if (strcmp (valstr, "0") == 0) {
-		*(int *) data = 0;
-	} else {
-		PL_Message (messages, item, "invalid enum: %s", valstr);
-		ret = 0;
-	}
+	Sys_Printf ("parse_enum: %s %zd %d %p %p %s\n",
+				field->name, field->offset, field->type, field->parser,
+				field->data, valstr);
+	ret = !cexpr_parse_enum (enm, valstr, &ectx, data);
+	Sys_Printf ("    %d\n", *(int *)data);
 	return ret;
 }
 
 static int parse_single (const plfield_t *field, const plitem_t *item,
-						 void *data, plitem_t *messages, void *ctx)
+						 void *data, plitem_t *messages, void *context)
 {
 	__auto_type single = (parse_single_t *) field->data;
 	void       *flddata = (byte *)data + single->value_offset;
@@ -180,7 +179,7 @@ static int parse_single (const plfield_t *field, const plitem_t *item,
 
 	plfield_t   f = { 0, 0, single->type, single->parser, 0 };
 	void       *value = calloc (1, single->stride);
-	if (!single->parser (&f, item, value, messages, ctx)) {
+	if (!single->parser (&f, item, value, messages, context)) {
 		free (value);
 		return 0;
 	}
@@ -190,7 +189,7 @@ static int parse_single (const plfield_t *field, const plitem_t *item,
 }
 
 static int parse_array (const plfield_t *field, const plitem_t *item,
-						void *data, plitem_t *messages, void *ctx)
+						void *data, plitem_t *messages, void *context)
 {
 	__auto_type array = (parse_array_t *) field->data;
 	__auto_type value = (void **) ((byte *)data + array->value_offset);
@@ -213,7 +212,7 @@ static int parse_array (const plfield_t *field, const plitem_t *item,
 	//			field->data, data);
 	//Sys_Printf ("    %d %zd %p %zd %zd\n", array->type, array->stride,
 	//			array->parser, array->value_offset, array->size_offset);
-	if (!PL_ParseArray (&f, item, &arr, messages, ctx)) {
+	if (!PL_ParseArray (&f, item, &arr, messages, context)) {
 		return 0;
 	}
 	*value = malloc (array->stride * arr->size);
@@ -225,7 +224,7 @@ static int parse_array (const plfield_t *field, const plitem_t *item,
 	return 1;
 }
 
-#include "libs/video/renderer/vulkan/vkparse.inc"
+#include "libs/video/renderer/vulkan/vkparse.cinc"
 
 typedef struct qfv_renderpass_s {
 	qfv_attachmentdescription_t *attachments;
@@ -268,20 +267,37 @@ static plfield_t renderpass_fields[] = {
 };
 
 VkRenderPass
-QFV_ParseRenderPass (qfv_device_t *device, plitem_t *plist)
+QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist)
 {
+	qfv_device_t *device = ctx->device;
 	qfv_renderpass_t renderpass_data = {};
 	plitem_t   *messages = PL_NewArray ();
 	VkRenderPass renderpass;
+	exprsym_t   var_syms[] = {
+		{"swapchain", &qfv_swapchain_t_type, ctx->swapchain},
+		{}
+	};
+	exprtab_t   vars_tab = { var_syms, 0 };
+	exprctx_t   exprctx = {};
+
+	exprctx.external_variables = &vars_tab;
+	exprctx.memsuper = new_memsuper ();
+	exprctx.messages = messages;
+	exprctx.hashlinks = ctx->hashlinks;
+
+	cexpr_init_symtab (&vars_tab, &exprctx);
 
 	if (!PL_ParseDictionary (renderpass_fields, plist,
-							 &renderpass_data, messages, 0)) {
+							 &renderpass_data, messages, &exprctx)) {
 		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
 			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
 		}
 		return 0;
 	}
 	PL_Free (messages);
+	delete_memsuper (exprctx.memsuper);
+	ctx->hashlinks = exprctx.hashlinks;
+
 	renderpass = QFV_CreateRenderPass (device,
 									   renderpass_data.attachments,
 									   renderpass_data.subpasses,
@@ -298,4 +314,11 @@ QFV_ParseRenderPass (qfv_device_t *device, plitem_t *plist)
 	free (renderpass_data.subpasses);
 	free (renderpass_data.dependencies);
 	return renderpass;
+}
+
+void
+QFV_InitParse (void)
+{
+	exprctx_t   context = {};
+	vkgen_init_symtabs (&context);
 }

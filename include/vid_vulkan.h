@@ -41,6 +41,7 @@ typedef struct vulkan_ctx_s {
 	struct qfv_instance_s *instance;
 	struct qfv_device_s *device;
 	struct qfv_swapchain_s *swapchain;
+	struct hashlink_s *hashlinks;	//FIXME want per thread
 	VkSurfaceKHR surface;	//FIXME surface = window, so "contains" swapchain
 
 	VkCommandPool cmdpool;

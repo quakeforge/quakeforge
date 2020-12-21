@@ -91,6 +91,11 @@ static string get_type_key (void *type, void *unused)
 	return self;
 }
 
+-(string) cexprType
+{
+	return "cexpr_" + [self name];
+}
+
 -(string) parseType
 {
 	return "no parse";

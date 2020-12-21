@@ -13,6 +13,7 @@
 }
 -(void) forEachFieldCall: (varfunc) func;
 -(void) writeTable: (PLItem *) parse;
+-(void) writeSymtabInit:(PLItem *) parse;
 @end
 
 #endif//__renderer_vulkan_vkgen_vkstruct_h

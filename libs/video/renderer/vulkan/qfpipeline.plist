@@ -14,18 +14,18 @@
 			},
 			{
 				flags = 0;
-				format = $swapchain.format;
-				samples = $msaaSamples;
+				format = VK_FORMAT_D32_SFLOAT;
+				samples = $cvars.msaaSamples;
 				loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-				storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+				storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 				stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 				stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 				initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-				finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+				finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 			},
 			{
 				flags = 0;
-				format = VK_FORMAT_D32_SFLOAT;
+				format = $swapchain.format;
 				samples = VK_SAMPLE_COUNT_1_BIT;
 				loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 				storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -37,6 +37,7 @@
 		);
 		subpasses = (
 			{
+				pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 				colorAttachments = (
 					{
 						attachment = 0;
@@ -51,7 +52,7 @@
 				);
 				depthStencilAttachment = {
 					attachment = 1;
-					layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+					layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 				};
 				preserveAttachments = ();
 			},

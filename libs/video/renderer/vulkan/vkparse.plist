@@ -3,8 +3,13 @@
 		VkAttachmentDescription,
 		VkSubpassDescription,
 		VkSubpassDependency,
+		qfv_swapchain_t,
 	);
 	parse = {
+		qfv_swapchain_s = {
+			.name = qfv_swapchain_t;
+			format = auto;
+		};
 		VkSubpassDescription = {
 			flags = auto;
 			pipelineBindPoint = auto;

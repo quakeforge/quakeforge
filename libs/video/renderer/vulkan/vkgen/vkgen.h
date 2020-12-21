@@ -13,6 +13,7 @@ void fprintf (QFile file, string format, ...);
 extern Array *queue;
 extern Array *output_types;
 extern QFile output_file;
+extern QFile header_file;
 extern hashtab_t *processed_types;
 extern hashtab_t *available_types;
 

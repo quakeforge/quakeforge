@@ -233,12 +233,15 @@ libs_video_renderer_vid_render_vulkan_la_SOURCES = \
 
 libs/video/renderer/vulkan/vkparse.lo: libs/video/renderer/vulkan/vkparse.c $(vkparse_src)
 
-libs/video/renderer/vulkan/vulkan_vid_common.lo: libs/video/renderer/vulkan/vulkan_vid_common.c $(pipeline_gen)
+libs/video/renderer/vulkan/vulkan_vid_common.lo: libs/video/renderer/vulkan/vulkan_vid_common.c ${vkparse_src} $(pipeline_gen)
 
 
 qwaq_curses = ruamoko/qwaq/qwaq-curses$(EXEEXT)
+vkparse_cinc = libs/video/renderer/vulkan/vkparse.cinc
+vkparse_hinc = libs/video/renderer/vulkan/vkparse.hinc
 vkparse_src = \
-	libs/video/renderer/vulkan/vkparse.inc
+	${vkparse_cinc} \
+	${vkparse_hinc}
 vkparse_plist = \
 	$(srcdir)/libs/video/renderer/vulkan/vkparse.plist
 
@@ -247,9 +250,13 @@ V_VKGEN_ = $(V_VKGEN_@AM_DEFAULT_V@)
 V_VKGEN_0 = @echo "  VKGEN   " $@;
 V_VKGEN_1 =
 
-libs/video/renderer/vulkan/vkparse.inc: $(vkgen) $(qwaq_curses) $(vkparse_plist)
-	$(V_VKGEN)$(qwaq_curses) $(vkgen) -- $(vkparse_plist) $@.t &&\
-	$(am__mv) $@.t $@
+${vkparse_cinc}: $(vkgen) $(qwaq_curses) $(vkparse_plist)
+	$(V_VKGEN)$(qwaq_curses) $(vkgen) -- $(vkparse_plist) ${vkparse_cinc}.t ${vkparse_hinc}.t &&\
+	$(am__mv) ${vkparse_cinc}.t ${vkparse_cinc} &&\
+	$(am__mv) ${vkparse_hinc}.t ${vkparse_hinc}
+
+${vkparse_hinc}: ${vkparse_cinc}
+# do nothing: hinc generated at the same time as cinc
 
 CLEANFILES += \
 	libs/video/renderer/glsl/*.vc \
