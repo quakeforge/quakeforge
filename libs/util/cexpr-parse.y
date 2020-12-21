@@ -179,7 +179,7 @@ binary_expr (int op, const exprval_t *a, const exprval_t *b,
 		if (!otype) {
 			otype = a->type;
 		}
-		if (binop->op == op && binop->other == b->type) {
+		if (binop->op == op && otype == b->type) {
 			break;
 		}
 	}
