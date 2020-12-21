@@ -82,6 +82,8 @@ cexpr_error(exprctx_t *ctx, const char *fmt, ...)
 	va_list     args;
 	dstring_t  *string;
 
+	ctx->errors++;
+
 	string = dstring_new ();
 
 	va_start (args, fmt);
@@ -211,6 +213,7 @@ cexpr_eval_string (const char *str, exprctx_t *context)
 	yylex_init_extra (context, &scanner);
 	yy_scan_string (str, scanner);
 
+	context->errors = 0;
 	do {
 		CEXPR_YYSTYPE lval;
 		int         token = yylex (&lval, scanner);
@@ -219,7 +222,7 @@ cexpr_eval_string (const char *str, exprctx_t *context)
 
 	yylex_destroy (scanner);
 	cexpr_yypstate_delete (ps);
-	return status;
+	return status || context->errors;
 }
 
 static exprval_t *parse_int (const char *str, exprctx_t *context)
@@ -271,7 +274,7 @@ parse_variable (const char *name, exprctx_t *context)
 		if (sym) {
 			val = cexpr_value_reference (sym->type, sym->value, context);
 		} else {
-			val = cexpr_cvar (name, context);
+			//val = cexpr_cvar (name, context);
 		}
 	}
 	if (!val) {

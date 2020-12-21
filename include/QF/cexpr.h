@@ -82,6 +82,7 @@ typedef struct exprctx_s {
 	const struct plitem_s *item;
 	struct plitem_s *messages;
 	struct hashlink_s *hashlinks;
+	int         errors;
 } exprctx_t;
 
 typedef struct exprenum_s {

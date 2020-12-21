@@ -34,7 +34,6 @@
 #include "QF/cmem.h"
 #include "QF/cvar.h"
 #include "QF/hash.h"
-#include "QF/qfplist.h"
 
 #include "libs/util/cexpr-parse.h"
 
@@ -65,7 +64,7 @@ cvar_get (const exprval_t *a, const exprval_t *b, exprval_t *c, exprctx_t *ctx)
 	__auto_type name = (const char *) b->value;
 	exprval_t  *var = cexpr_cvar (name, ctx);
 	if (!var) {
-		PL_Message (ctx->messages, ctx->item, "unknown cvar %s", name);
+		cexpr_error (ctx, "unknown cvar %s", name);
 	}
 	*(exprval_t **) c->value = var;
 }
