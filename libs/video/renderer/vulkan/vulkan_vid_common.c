@@ -117,7 +117,7 @@ Vulkan_Init_Cvars (void)
 										 CVAR_NONE, vulkan_presentation_mode_f,
 										 "desired presentation mode (may fall "
 										 "back to fifo).");
-	msaaSamples = Cvar_Get ("msaaSamples", "VK_SAMPLE_COUNT_1_BIT",
+	msaaSamples = Cvar_Get ("msaaSamples", "VK_SAMPLE_COUNT_8_BIT",
 										 CVAR_NONE, msaaSamples_f,
 										 "desired MSAA sample size.");
 }
@@ -366,72 +366,7 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 
 	ctx->renderpass.colorImage = colorImage;
 	ctx->renderpass.depthImage = depthImage;
-
-	__auto_type attachments = QFV_AllocAttachmentDescription (3, alloca);
-	__auto_type attachmentRefs = QFV_AllocAttachmentReference (3, alloca);
-
-	// color attachment
-	attachments->a[0].flags = 0;
-	attachments->a[0].format = sc->format;
-	attachments->a[0].samples = msaaSamples;
-	attachments->a[0].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachments->a[0].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	attachments->a[0].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	attachments->a[0].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments->a[0].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	attachments->a[0].finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-	attachmentRefs->a[0].attachment = 0;
-	attachmentRefs->a[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	// depth attachment
-	attachments->a[1].flags = 0;
-	attachments->a[1].format = depthFormat;
-	attachments->a[1].samples = msaaSamples;
-	attachments->a[1].loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	attachments->a[1].storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments->a[1].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	attachments->a[1].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments->a[1].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	attachments->a[1].finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-	attachmentRefs->a[1].attachment = 1;
-	attachmentRefs->a[1].layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-	// resolve attachment
-	attachments->a[2].flags = 0;
-	attachments->a[2].format = sc->format;
-	attachments->a[2].samples = VK_SAMPLE_COUNT_1_BIT;
-	attachments->a[2].loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	attachments->a[2].storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-	attachments->a[2].stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-	attachments->a[2].stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	attachments->a[2].initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	attachments->a[2].finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-	attachmentRefs->a[2].attachment = 2;
-	attachmentRefs->a[2].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-	__auto_type subpasses = QFV_AllocSubpassParametersSet (1, alloca);
-	subpasses->a[0].flags = 0;
-	subpasses->a[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	subpasses->a[0].inputAttachmentCount = 0;
-	subpasses->a[0].pInputAttachments = 0;
-	subpasses->a[0].colorAttachmentCount = 1;
-	subpasses->a[0].pColorAttachments = &attachmentRefs->a[0];
-	subpasses->a[0].pResolveAttachments = &attachmentRefs->a[2];
-	subpasses->a[0].pDepthStencilAttachment = &attachmentRefs->a[1];
-	subpasses->a[0].preserveAttachmentCount = 0;
-	subpasses->a[0].pPreserveAttachments = 0;
-
-	__auto_type depenencies = QFV_AllocSubpassDependencies (1, alloca);
-	depenencies->a[0].srcSubpass = VK_SUBPASS_EXTERNAL;
-	depenencies->a[0].dstSubpass = 0;
-	depenencies->a[0].srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	depenencies->a[0].dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	depenencies->a[0].srcAccessMask = 0;
-	depenencies->a[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-	depenencies->a[0].dependencyFlags = 0;
-
-	ctx->renderpass.renderpass = QFV_CreateRenderPass (device, attachments,
-													   subpasses, depenencies);
+	ctx->renderpass.renderpass = QFV_ParseRenderPass (ctx, item);
 }
 
 void

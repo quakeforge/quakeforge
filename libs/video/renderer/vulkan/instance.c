@@ -296,6 +296,6 @@ QFV_GetMaxSampleCount (qfv_physdev_t *physdev)
 	while (maxSamples && maxSamples > counts) {
 		maxSamples >>= 1;
 	}
-	Sys_MaskPrintf (SYS_VULKAN, "Max samples: %x\n", maxSamples);
+	Sys_MaskPrintf (SYS_VULKAN, "Max samples: %x (%d)\n", maxSamples, counts);
 	return maxSamples;
 }

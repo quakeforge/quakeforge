@@ -155,11 +155,11 @@ static int parse_enum (const plfield_t *field, const plitem_t *item,
 	ectx.symtab = enm->symtab;
 	ectx.result = &result;
 	const char *valstr = PL_String (item);
-	Sys_Printf ("parse_enum: %s %zd %d %p %p %s\n",
-				field->name, field->offset, field->type, field->parser,
-				field->data, valstr);
+	//Sys_Printf ("parse_enum: %s %zd %d %p %p %s\n",
+	//			field->name, field->offset, field->type, field->parser,
+	//			field->data, valstr);
 	ret = !cexpr_parse_enum (enm, valstr, &ectx, data);
-	Sys_Printf ("    %d\n", *(int *)data);
+	//Sys_Printf ("    %d\n", *(int *)data);
 	return ret;
 }
 

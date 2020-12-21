@@ -71,6 +71,67 @@ QFV_CreateRenderPass (qfv_device_t *device,
 	VkDevice    dev = device->dev;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
+	if (developer->int_val & SYS_VULKAN) {
+		Sys_Printf ("attachments: %ld\n", attachments->size);
+		for (size_t i = 0; i < attachments->size; i++) {
+			Sys_Printf ("    flags: %x\n", attachments->a[i].flags);
+			Sys_Printf ("    format: %d\n", attachments->a[i].format);
+			Sys_Printf ("    samples: %x\n", attachments->a[i].samples);
+			Sys_Printf ("    loadOp: %d\n", attachments->a[i].loadOp);
+			Sys_Printf ("    storeOp: %d\n", attachments->a[i].storeOp);
+			Sys_Printf ("    stencilLoadOp: %d\n",
+						attachments->a[i].stencilLoadOp);
+			Sys_Printf ("    stencilStoreOp: %d\n",
+						attachments->a[i].stencilStoreOp);
+			Sys_Printf ("    initialLayout: %d\n",
+						attachments->a[i].initialLayout);
+			Sys_Printf ("    finalLayout: %d\n",
+						attachments->a[i].finalLayout);
+		}
+		Sys_Printf ("subpassparams: %ld\n", subpassparams->size);
+		for (size_t i = 0; i < subpassparams->size; i++) {
+			VkSubpassDescription *sp = &subpassparams->a[i];
+			Sys_Printf ("    flags: %x\n", sp->flags);
+			Sys_Printf ("    piplineBindPoint: %d\n", sp->pipelineBindPoint);
+			Sys_Printf ("    inputAttachmentCount: %d\n",
+						sp->inputAttachmentCount);
+			for (size_t j = 0; j < sp->inputAttachmentCount; j++) {
+				const VkAttachmentReference *ref = &sp->pInputAttachments[j];
+				Sys_Printf ("      c %d %d\n", ref->attachment, ref->layout);
+			}
+			Sys_Printf ("    colorAttachmentCount: %d\n",
+						sp->colorAttachmentCount);
+			for (size_t j = 0; j < sp->colorAttachmentCount; j++) {
+				const VkAttachmentReference *ref = &sp->pColorAttachments[j];
+				Sys_Printf ("      c %d %d\n", ref->attachment, ref->layout);
+			}
+			for (size_t j = 0; j < sp->colorAttachmentCount; j++) {
+				const VkAttachmentReference *ref = &sp->pResolveAttachments[j];
+				Sys_Printf ("      r %d %d\n", ref->attachment, ref->layout);
+			}
+			Sys_Printf ("    pDepthStencilAttachment: %p\n",
+						sp->pDepthStencilAttachment);
+			if (sp->pDepthStencilAttachment) {
+				const VkAttachmentReference *ref = sp->pDepthStencilAttachment;
+				Sys_Printf ("        %d %d\n", ref->attachment, ref->layout);
+			}
+			Sys_Printf ("    preserveAttachmentCount: %d\n",
+						sp->preserveAttachmentCount);
+			for (size_t j = 0; j < sp->preserveAttachmentCount; j++) {
+				Sys_Printf ("        %d\n", sp->pPreserveAttachments[j]);
+			}
+		}
+		Sys_Printf ("dependencies: %ld\n", dependencies->size);
+		for (size_t i = 0; i < dependencies->size; i++) {
+			Sys_Printf ("    srcSubpass: %d\n", dependencies->a[i].srcSubpass);
+			Sys_Printf ("    dstSubpass: %d\n", dependencies->a[i].dstSubpass);
+			Sys_Printf ("    srcStageMask: %x\n", dependencies->a[i].srcStageMask);
+			Sys_Printf ("    dstStageMask: %x\n", dependencies->a[i].dstStageMask);
+			Sys_Printf ("    srcAccessMask: %x\n", dependencies->a[i].srcAccessMask);
+			Sys_Printf ("    dstAccessMask: %x\n", dependencies->a[i].dstAccessMask);
+			Sys_Printf ("    dependencyFlags: %x\n", dependencies->a[i].dependencyFlags);
+		}
+	}
 	VkRenderPassCreateInfo createInfo = {
 		VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO, 0, 0,
 		attachments->size, attachments->a,
