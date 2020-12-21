@@ -97,7 +97,7 @@ static int find_enum (const char *valstr, enumval_t *enumval, int *val)
 }
 
 static int parse_uint32_t (const plfield_t *field, const plitem_t *item,
-						   void *data, plitem_t *messages)
+						   void *data, plitem_t *messages, void *ctx)
 {
 	int         ret = 1;
 	const char *valstr = PL_String (item);
@@ -125,7 +125,7 @@ static int parse_uint32_t (const plfield_t *field, const plitem_t *item,
 }
 
 static int parse_enum (const plfield_t *field, const plitem_t *item,
-					   void *data, plitem_t *messages)
+					   void *data, plitem_t *messages, void *ctx)
 {
 	int         ret = 1;
 	int         val;
@@ -144,7 +144,7 @@ static int parse_enum (const plfield_t *field, const plitem_t *item,
 }
 
 static int parse_flags (const plfield_t *field, const plitem_t *item,
-						void *data, plitem_t *messages)
+						void *data, plitem_t *messages, void *ctx)
 {
 	int         ret = 1;
 	int         val;
@@ -165,7 +165,7 @@ static int parse_flags (const plfield_t *field, const plitem_t *item,
 }
 
 static int parse_single (const plfield_t *field, const plitem_t *item,
-						 void *data, plitem_t *messages)
+						 void *data, plitem_t *messages, void *ctx)
 {
 	__auto_type single = (parse_single_t *) field->data;
 	void       *flddata = (byte *)data + single->value_offset;
@@ -180,7 +180,7 @@ static int parse_single (const plfield_t *field, const plitem_t *item,
 
 	plfield_t   f = { 0, 0, single->type, single->parser, 0 };
 	void       *value = calloc (1, single->stride);
-	if (!single->parser (&f, item, value, messages)) {
+	if (!single->parser (&f, item, value, messages, ctx)) {
 		free (value);
 		return 0;
 	}
@@ -190,7 +190,7 @@ static int parse_single (const plfield_t *field, const plitem_t *item,
 }
 
 static int parse_array (const plfield_t *field, const plitem_t *item,
-						void *data, plitem_t *messages)
+						void *data, plitem_t *messages, void *ctx)
 {
 	__auto_type array = (parse_array_t *) field->data;
 	__auto_type value = (void **) ((byte *)data + array->value_offset);
@@ -213,7 +213,7 @@ static int parse_array (const plfield_t *field, const plitem_t *item,
 	//			field->data, data);
 	//Sys_Printf ("    %d %zd %p %zd %zd\n", array->type, array->stride,
 	//			array->parser, array->value_offset, array->size_offset);
-	if (!PL_ParseArray (&f, item, &arr, messages)) {
+	if (!PL_ParseArray (&f, item, &arr, messages, ctx)) {
 		return 0;
 	}
 	*value = malloc (array->stride * arr->size);
@@ -275,7 +275,7 @@ QFV_ParseRenderPass (qfv_device_t *device, plitem_t *plist)
 	VkRenderPass renderpass;
 
 	if (!PL_ParseDictionary (renderpass_fields, plist,
-							 &renderpass_data, messages)) {
+							 &renderpass_data, messages, 0)) {
 		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
 			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
 		}

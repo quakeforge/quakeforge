@@ -80,12 +80,14 @@ struct plfield_s;
 					error messages. Messages should be strings, but no
 					checking is done: it is up to the top-level caller to
 					parse out the messages.
+	\param context	Additional context data passed to the parser.
 	\return			0 for error, 1 for success. See \a PL_ParseDictionary.
 */
 typedef int (*plparser_t) (const struct plfield_s *field,
 						   const struct plitem_s *item,
 						   void *data,
-						   struct plitem_s *messages);
+						   struct plitem_s *messages,
+						   void *context);
 
 /** A field to be parsed from a dictionary item.
 
@@ -320,12 +322,13 @@ void PL_Free (plitem_t *item);
 					message format is "[line number]: [message]". If the line
 					number is 0, then the actual line is unknown (due to the
 					source item not being parsed from a file or string).
+	\param context	Additional context data passed to the parser.
 	\return			0 if there are any errors, 1 if there are no errors.
 */
 int PL_ParseDictionary (const plfield_t *fields, const plitem_t *dict,
-						void *data, plitem_t *messages);
+						void *data, plitem_t *messages, void *context);
 int PL_ParseArray (const plfield_t *fields, const plitem_t *dict,
-				   void *data, plitem_t *messages);
+				   void *data, plitem_t *messages, void *context);
 void __attribute__((format(printf,3,4)))
 PL_Message (plitem_t *messages, const plitem_t *item, const char *fmt, ...);
 

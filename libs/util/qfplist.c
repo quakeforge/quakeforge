@@ -1086,7 +1086,7 @@ PL_Message (plitem_t *messages, const plitem_t *item, const char *fmt, ...)
 
 static int
 pl_default_parser (const plfield_t *field, const plitem_t *item, void *data,
-				   plitem_t *messages)
+				   plitem_t *messages, void *context)
 {
 	switch (field->type) {
 		case QFDictionary:
@@ -1125,7 +1125,7 @@ pl_default_parser (const plfield_t *field, const plitem_t *item, void *data,
 
 VISIBLE int
 PL_ParseDictionary (const plfield_t *fields, const plitem_t *dict, void *data,
-					plitem_t *messages)
+					plitem_t *messages, void *context)
 {
 	void      **list, **l;
 	dictkey_t  *current;
@@ -1161,7 +1161,7 @@ PL_ParseDictionary (const plfield_t *fields, const plitem_t *dict, void *data,
 								pl_types[item->type]);
 					result = 0;
 				} else {
-					if (!parser (f, item, flddata, messages)) {
+					if (!parser (f, item, flddata, messages, context)) {
 						result = 0;
 					}
 				}
@@ -1180,7 +1180,7 @@ PL_ParseDictionary (const plfield_t *fields, const plitem_t *dict, void *data,
 
 VISIBLE int
 PL_ParseArray (const plfield_t *field, const plitem_t *array, void *data,
-			   plitem_t *messages)
+			   plitem_t *messages, void *context)
 {
 	int         result = 1;
 	plparser_t  parser;
@@ -1219,7 +1219,7 @@ PL_ParseArray (const plfield_t *field, const plitem_t *array, void *data,
 						pl_types[item->type]);
 			result = 0;
 		} else {
-			if (!parser (&f, item, eledata, messages)) {
+			if (!parser (&f, item, eledata, messages, context)) {
 				result = 0;
 			}
 		}
