@@ -160,6 +160,52 @@ exprtype_t cexpr_uint = {
 	uint_unops,
 };
 
+BINOP(size_t, shl, unsigned, <<)
+BINOP(size_t, shr, unsigned, >>)
+BINOP(size_t, add, unsigned, +)
+BINOP(size_t, sub, unsigned, -)
+BINOP(size_t, mul, unsigned, *)
+BINOP(size_t, div, unsigned, /)
+BINOP(size_t, band, unsigned, &)
+BINOP(size_t, bor, unsigned, |)
+BINOP(size_t, xor, unsigned, ^)
+BINOP(size_t, rem, unsigned, %)
+
+UNOP(size_t, pos, unsigned, +)
+UNOP(size_t, neg, unsigned, -)
+UNOP(size_t, tnot, unsigned, !)
+UNOP(size_t, bnot, unsigned, ~)
+
+binop_t size_t_binops[] = {
+	{ SHL, &cexpr_size_t, &cexpr_size_t, size_t_shl },
+	{ SHR, &cexpr_size_t, &cexpr_size_t, size_t_shr },
+	{ '+', &cexpr_size_t, &cexpr_size_t, size_t_add },
+	{ '-', &cexpr_size_t, &cexpr_size_t, size_t_sub },
+	{ '*', &cexpr_size_t, &cexpr_size_t, size_t_mul },
+	{ '/', &cexpr_size_t, &cexpr_size_t, size_t_div },
+	{ '&', &cexpr_size_t, &cexpr_size_t, size_t_band },
+	{ '|', &cexpr_size_t, &cexpr_size_t, size_t_bor },
+	{ '^', &cexpr_size_t, &cexpr_size_t, size_t_xor },
+	{ '%', &cexpr_size_t, &cexpr_size_t, size_t_rem },
+	{ MOD, &cexpr_size_t, &cexpr_size_t, size_t_rem },
+	{}
+};
+
+unop_t size_t_unops[] = {
+	{ '+', &cexpr_size_t, size_t_pos },
+	{ '-', &cexpr_size_t, size_t_neg },
+	{ '!', &cexpr_size_t, size_t_tnot },
+	{ '~', &cexpr_size_t, size_t_bnot },
+	{}
+};
+
+exprtype_t cexpr_size_t = {
+	"size_t",
+	sizeof (size_t),
+	size_t_binops,
+	size_t_unops,
+};
+
 BINOP(float, add, float, +)
 BINOP(float, sub, float, -)
 BINOP(float, mul, float, *)

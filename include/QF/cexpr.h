@@ -109,6 +109,7 @@ char *cexpr_yyget_text (void *scanner);
 
 extern exprtype_t cexpr_int;
 extern exprtype_t cexpr_uint;
+extern exprtype_t cexpr_size_t;
 extern exprtype_t cexpr_float;
 extern exprtype_t cexpr_double;
 extern exprtype_t cexpr_exprval;

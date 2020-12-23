@@ -65,6 +65,9 @@
 	if (name == "uint32_t") {
 		return "cexpr_uint";
 	}
+	if (name == "size_t") {
+		return "cexpr_size_t";
+	}
 	return [alias cexprType];
 }
 
@@ -80,7 +83,7 @@
 			return [enumObj parseType];
 		}
 	}
-	if (name == "uint32_t") {
+	if (name == "uint32_t" || name == "size_t") {
 		return "QFString";
 	}
 	return [alias parseType];
@@ -116,7 +119,7 @@
 			return [enumObj parseData];
 		}
 	}
-	if (name == "uint32_t") {
+	if (name == "uint32_t" || name == "size_t") {
 		return "0";
 	}
 	return [alias parseData];
