@@ -123,7 +123,7 @@ skip_value(string name)
 	fprintf (header_file, "extern exprenum_t %s_enum;\n", [self name]);
 }
 
--(void) writeSymtabInit:(PLItem *) parse
+-(void) writeSymtabInit
 {
 	fprintf (output_file, "\tcexpr_init_symtab (&%s_symtab, context);\n",
 			 [self name]);

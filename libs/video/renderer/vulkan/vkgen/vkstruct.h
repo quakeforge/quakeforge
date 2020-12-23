@@ -10,10 +10,13 @@
 
 @interface Struct: Type
 {
+	string outname;
 }
 -(void) forEachFieldCall: (varfunc) func;
--(void) writeTable: (PLItem *) parse;
--(void) writeSymtabInit:(PLItem *) parse;
+-(qfot_var_t *)findField:(string) fieldName;
+-(void) writeTable;
+-(void) writeSymtabInit;
+-(string) outname;
 @end
 
 #endif//__renderer_vulkan_vkgen_vkstruct_h

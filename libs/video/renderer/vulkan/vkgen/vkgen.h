@@ -12,6 +12,7 @@ void printf (string fmt, ...);
 void fprintf (QFile file, string format, ...);
 extern Array *queue;
 extern Array *output_types;
+extern PLItem *parse;
 extern QFile output_file;
 extern QFile header_file;
 extern hashtab_t *processed_types;

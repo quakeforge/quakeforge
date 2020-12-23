@@ -37,6 +37,7 @@ hashtab_t *processed_types;
 Array *queue;
 Array *output_types;
 
+PLItem *parse;
 QFile output_file;
 QFile header_file;
 
@@ -147,7 +148,6 @@ main(int argc, string *argv)
 	QFile       plist_file;
 	PLItem     *plist;
 	PLItem     *search;
-	PLItem     *parse;
 
 	arp_start ();
 
@@ -199,6 +199,9 @@ main(int argc, string *argv)
 		id obj = [queue objectAtIndex:0];
 		[queue removeObjectAtIndex:0];
 		if ([obj class] == [Struct class]) {
+			if ([[parse getObjectForKey:[obj name]] string] == "skip") {
+				continue;
+			}
 			[obj forEachFieldCall:struct_func];
 		}
 		[output_types addObject:obj];
@@ -235,7 +238,7 @@ main(int argc, string *argv)
 		}
 
 		arp_start ();
-		[obj writeTable:parse];
+		[obj writeTable];
 		arp_end ();
 	}
 	fprintf (output_file, "static void\n");
@@ -247,7 +250,7 @@ main(int argc, string *argv)
 			continue;
 		}
 		arp_start ();
-		[obj writeSymtabInit:parse];
+		[obj writeSymtabInit];
 		arp_end ();
 	}
 	fprintf (output_file, "}\n");

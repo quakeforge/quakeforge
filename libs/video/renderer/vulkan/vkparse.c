@@ -122,6 +122,10 @@ typedef struct parse_data_s {
 	size_t      size_offset;
 } parse_data_t;
 
+typedef struct parse_string_s {
+	size_t      value_offset;
+} parse_string_t;
+
 static int parse_uint32_t (const plfield_t *field, const plitem_t *item,
 						   void *data, plitem_t *messages, void *context)
 {
@@ -239,7 +243,7 @@ static int parse_data (const plfield_t *field, const plitem_t *item,
 	const void *bindata = PL_BinaryData (item);
 	size_t      binsize = PL_BinarySize (item);
 
-	Sys_Printf ("parse_array: %s %zd %d %p %p %p\n",
+	Sys_Printf ("parse_data: %s %zd %d %p %p %p\n",
 				field->name, field->offset, field->type, field->parser,
 				field->data, data);
 	Sys_Printf ("    %zd %zd\n", datad->value_offset, datad->size_offset);
@@ -250,6 +254,24 @@ static int parse_data (const plfield_t *field, const plitem_t *item,
 	if ((void *) size > data) {
 		*size = binsize;
 	}
+	return 1;
+}
+
+static int parse_string (const plfield_t *field, const plitem_t *item,
+						 void *data, plitem_t *messages, void *context)
+{
+	__auto_type string = (parse_string_t *) field->data;
+	__auto_type value = (char **) ((byte *)data + string->value_offset);
+
+	const char *str = PL_BinaryData (item);
+
+	Sys_Printf ("parse_string: %s %zd %d %p %p %p\n",
+				field->name, field->offset, field->type, field->parser,
+				field->data, data);
+	Sys_Printf ("    %zd\n", string->value_offset);
+	Sys_Printf ("    %s\n", str);
+
+	*value = strdup (str);
 	return 1;
 }
 
