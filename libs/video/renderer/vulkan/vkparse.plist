@@ -3,6 +3,8 @@
 		VkAttachmentDescription,
 		VkSubpassDescription,
 		VkSubpassDependency,
+		VkSpecializationInfo,
+		VkPipelineShaderStageCreateInfo,
 		qfv_swapchain_t,
 	);
 	parse = {
@@ -37,6 +39,35 @@
 				size = preserveAttachmentCount;
 				values = pPreserveAttachments;
 			};
-		}
+		};
+		VkSpecializationInfo = {
+			mapEntries = {
+				type = (array, VkSpecializationMapEntry);
+				size = mapEntryCount;
+				values = pMapEntries;
+			};
+			data = {
+				type = data;
+				size = dataSize;
+				data = pData;
+			};
+		};
+		VkPipelineShaderStageCreateInfo = {
+			flags = auto;
+			stage = auto;
+			name = {
+				type = string;
+				string = pName;
+			};
+			module = {
+				type = (custom, QFString, parse_VkShaderModule);
+				fields = (module);
+			};
+			specializationInfo = {
+				type = (single, VkSpecializationInfo);
+				value = pSpecializationInfo;
+			};
+		};
+		VkShaderModuleCreateInfo = skip;
 	}
 }

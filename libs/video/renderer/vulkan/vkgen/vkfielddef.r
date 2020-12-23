@@ -3,6 +3,7 @@
 
 #include "vkfieldarray.h"
 #include "vkfieldauto.h"
+#include "vkfieldcustom.h"
 #include "vkfielddata.h"
 #include "vkfielddef.h"
 #include "vkfieldsingle.h"
@@ -31,6 +32,8 @@
 	switch (record) {
 		case "auto":
 			return [[[AutoField alloc] init:item struct:strct field:fname] autorelease];
+		case "custom":
+			return [[[CustomField alloc] init:item struct:strct field:fname] autorelease];
 		case "string":
 			return [[[StringField alloc] init:item struct:strct field:fname] autorelease];
 		case "data":

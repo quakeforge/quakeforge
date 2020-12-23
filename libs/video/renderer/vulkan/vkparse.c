@@ -56,6 +56,7 @@
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/renderpass.h"
+#include "QF/Vulkan/shader.h"
 #include "QF/Vulkan/swapchain.h"
 
 #include "compat.h"
@@ -126,8 +127,16 @@ typedef struct parse_string_s {
 	size_t      value_offset;
 } parse_string_t;
 
-static int parse_uint32_t (const plfield_t *field, const plitem_t *item,
-						   void *data, plitem_t *messages, void *context)
+typedef struct parse_custom_s {
+	int       (*parse) (const plitem_t *item, void **data,
+						plitem_t *messages, parsectx_t *context);
+	size_t     *offsets;
+	size_t      num_offsets;
+} parse_custom_t;
+
+static int
+parse_uint32_t (const plfield_t *field, const plitem_t *item,
+				void *data, plitem_t *messages, void *context)
 {
 	int         ret = 1;
 	const char *valstr = PL_String (item);
@@ -154,12 +163,13 @@ static int parse_uint32_t (const plfield_t *field, const plitem_t *item,
 	return ret;
 }
 
-static int parse_enum (const plfield_t *field, const plitem_t *item,
-					   void *data, plitem_t *messages, void *context)
+static int
+parse_enum (const plfield_t *field, const plitem_t *item,
+			void *data, plitem_t *messages, void *context)
 {
 	int         ret = 1;
 	__auto_type enm = (exprenum_t *) field->data;
-	exprctx_t   ectx = *(exprctx_t *)context;
+	exprctx_t   ectx = *((parsectx_t *)context)->ectx;
 	exprval_t   result = { enm->type, data };
 	ectx.symtab = enm->symtab;
 	ectx.result = &result;
@@ -172,8 +182,9 @@ static int parse_enum (const plfield_t *field, const plitem_t *item,
 	return ret;
 }
 
-static int parse_single (const plfield_t *field, const plitem_t *item,
-						 void *data, plitem_t *messages, void *context)
+static int
+parse_single (const plfield_t *field, const plitem_t *item,
+			  void *data, plitem_t *messages, void *context)
 {
 	__auto_type single = (parse_single_t *) field->data;
 	void       *flddata = (byte *)data + single->value_offset;
@@ -197,8 +208,9 @@ static int parse_single (const plfield_t *field, const plitem_t *item,
 	return 1;
 }
 
-static int parse_array (const plfield_t *field, const plitem_t *item,
-						void *data, plitem_t *messages, void *context)
+static int
+parse_array (const plfield_t *field, const plitem_t *item,
+			 void *data, plitem_t *messages, void *context)
 {
 	__auto_type array = (parse_array_t *) field->data;
 	__auto_type value = (void **) ((byte *)data + array->value_offset);
@@ -233,8 +245,9 @@ static int parse_array (const plfield_t *field, const plitem_t *item,
 	return 1;
 }
 
-static int parse_data (const plfield_t *field, const plitem_t *item,
-					   void *data, plitem_t *messages, void *context)
+static int
+parse_data (const plfield_t *field, const plitem_t *item,
+			void *data, plitem_t *messages, void *context)
 {
 	__auto_type datad = (parse_data_t *) field->data;
 	__auto_type value = (void **) ((byte *)data + datad->value_offset);
@@ -257,8 +270,9 @@ static int parse_data (const plfield_t *field, const plitem_t *item,
 	return 1;
 }
 
-static int parse_string (const plfield_t *field, const plitem_t *item,
-						 void *data, plitem_t *messages, void *context)
+static int
+parse_string (const plfield_t *field, const plitem_t *item,
+			  void *data, plitem_t *messages, void *context)
 {
 	__auto_type string = (parse_string_t *) field->data;
 	__auto_type value = (char **) ((byte *)data + string->value_offset);
@@ -273,6 +287,18 @@ static int parse_string (const plfield_t *field, const plitem_t *item,
 
 	*value = strdup (str);
 	return 1;
+}
+
+static int
+parse_custom (const plfield_t *field, const plitem_t *item,
+			  void *data, plitem_t *messages, void *context)
+{
+	__auto_type custom = (parse_custom_t *) field->data;
+	void      **offsets = alloca (custom->num_offsets * sizeof (void *));
+	for (size_t i = 0; i < custom->num_offsets; i++) {
+		offsets[i] = data + custom->offsets[i];
+	}
+	return custom->parse (item, offsets, messages, context);
 }
 
 #include "libs/video/renderer/vulkan/vkparse.cinc"
@@ -331,6 +357,7 @@ QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist)
 	};
 	exprtab_t   vars_tab = { var_syms, 0 };
 	exprctx_t   exprctx = {};
+	parsectx_t  parsectx = { &exprctx, ctx };
 
 	exprctx.external_variables = &vars_tab;
 	exprctx.memsuper = new_memsuper ();
@@ -340,7 +367,7 @@ QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist)
 	cexpr_init_symtab (&vars_tab, &exprctx);
 
 	if (!PL_ParseDictionary (renderpass_fields, plist,
-							 &renderpass_data, messages, &exprctx)) {
+							 &renderpass_data, messages, &parsectx)) {
 		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
 			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
 		}

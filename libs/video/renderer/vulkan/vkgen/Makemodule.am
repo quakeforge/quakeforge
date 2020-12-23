@@ -6,6 +6,7 @@ vkgen_dat_src= \
 	libs/video/renderer/vulkan/vkgen/vkenum.r \
 	libs/video/renderer/vulkan/vkgen/vkfieldarray.r \
 	libs/video/renderer/vulkan/vkgen/vkfieldauto.r \
+	libs/video/renderer/vulkan/vkgen/vkfieldcustom.r \
 	libs/video/renderer/vulkan/vkgen/vkfielddata.r \
 	libs/video/renderer/vulkan/vkgen/vkfielddef.r \
 	libs/video/renderer/vulkan/vkgen/vkfieldsingle.r \

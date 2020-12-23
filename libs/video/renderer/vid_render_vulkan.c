@@ -64,6 +64,9 @@ vulkan_R_Init (void)
 	Vulkan_CreateSwapchain (vulkan_ctx);
 	Vulkan_CreateRenderPass (vulkan_ctx);
 	Vulkan_CreateFramebuffers (vulkan_ctx);
+	// FIXME this should be staged so screen updates can begin while pipelines
+	// are being built
+	Vulkan_CreatePipelines (vulkan_ctx);
 
 	qfv_swapchain_t *sc = vulkan_ctx->swapchain;
 

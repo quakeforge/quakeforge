@@ -42,6 +42,7 @@
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
+#include "QF/qfplist.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/Vulkan/qf_vid.h"
@@ -52,6 +53,7 @@
 #include "QF/Vulkan/shader.h"
 
 #include "vid_vulkan.h"
+#include "vkparse.h"
 
 static
 #include "libs/video/renderer/vulkan/passthrough.vert.spvc"
@@ -92,7 +94,7 @@ QFV_CreateShaderModule (qfv_device_t *device, const char *shader_path)
 	shaderdata_t _data = {};
 	shaderdata_t *data = 0;
 	dstring_t  *path = 0;
-	QFile      *file;
+	QFile      *file = 0;
 	VkShaderModule shader = 0;
 
 	if (strncmp (shader_path, BUILTIN, BUILTIN_SIZE) == 0) {
@@ -142,6 +144,15 @@ QFV_CreateShaderModule (qfv_device_t *device, const char *shader_path)
 	return shader;
 }
 
+void
+QFV_DestroyShaderModule (qfv_device_t *device, VkShaderModule module)
+{
+	VkDevice    dev = device->dev;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	dfunc->vkDestroyShaderModule (dev, module, 0);
+}
+
 static shadermodule_t *
 new_module (vulkan_ctx_t *ctx)
 {
@@ -169,10 +180,21 @@ sm_free (void *sm, void *ctx)
 	del_module (sm, ctx);
 }
 
+VkShaderModule
+QFV_FindShaderModule (vulkan_ctx_t *ctx, const char *name)
+{
+	//FIXME
+	if (!ctx->shadermodules) {
+		ctx->shadermodules = Hash_NewTable (127, sm_getkey, sm_free, ctx, 0);
+	}
+	return Hash_Find (ctx->shadermodules, name);
+}
+
 void
 QFV_RegisterShaderModule (vulkan_ctx_t *ctx, const char *name,
 						  VkShaderModule module)
 {
+	//FIXME
 	if (!ctx->shadermodules) {
 		ctx->shadermodules = Hash_NewTable (127, sm_getkey, sm_free, ctx, 0);
 	}
@@ -189,4 +211,19 @@ QFV_DeregisterShaderModule (vulkan_ctx_t *ctx, const char *name)
 		return;
 	}
 	Hash_Free (ctx->shadermodules, Hash_Del (ctx->shadermodules, name));
+}
+
+int
+parse_VkShaderModule (const plitem_t *item, void **data,
+					  plitem_t *messages, parsectx_t *context)
+{
+	vulkan_ctx_t *ctx = context->vctx;
+	const char *name = PL_String (item);
+	__auto_type mptr = (VkShaderModule *)data[0];
+	VkShaderModule module = QFV_FindShaderModule (ctx, name);
+	if (module) {
+		*mptr = module;
+		return 1;
+	}
+	return 0;
 }

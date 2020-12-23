@@ -57,6 +57,7 @@
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/renderpass.h"
+#include "QF/Vulkan/shader.h"
 #include "QF/Vulkan/swapchain.h"
 
 #include "compat.h"
@@ -260,7 +261,12 @@ static qfv_pipelinestagepair_t imageLayoutTransitionStages[] = {
 static plitem_t *
 qfv_load_pipeline (void)
 {
-	return PL_GetPropertyList (quakeforge_pipeline);
+	static plitem_t *pipeline;
+
+	if (!pipeline) {
+		pipeline = PL_GetPropertyList (quakeforge_pipeline);
+	}
+	return pipeline;
 }
 
 void
@@ -269,9 +275,9 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 	plitem_t   *item = qfv_load_pipeline ();
 
 	if (!item || !(item = PL_ObjectForKey (item, "renderpass"))) {
-		Sys_Printf ("error loading pipeline\n");
+		Sys_Printf ("error loading renderpass\n");
 	} else {
-		Sys_Printf ("Found renderer def\n");
+		Sys_Printf ("Found renderpass def\n");
 	}
 	qfv_device_t *device = ctx->device;
 	VkDevice    dev = device->dev;
@@ -389,6 +395,34 @@ Vulkan_DestroyRenderPass (vulkan_ctx_t *ctx)
 	df->vkFreeMemory (dev, ctx->renderpass.depthImage->object, 0);
 	free (ctx->renderpass.depthImage);
 	ctx->renderpass.depthImage = 0;
+}
+
+void
+Vulkan_CreatePipelines (vulkan_ctx_t *ctx)
+{
+	plitem_t   *item = qfv_load_pipeline ();
+
+	if (!item || !(item = PL_ObjectForKey (item, "modules"))) {
+		Sys_Printf ("error loading modules\n");
+	} else {
+		Sys_Printf ("Found modules def\n");
+	}
+	for (int i = PL_A_NumObjects (item); i-- > 0; ) {
+		plitem_t   *mod = PL_ObjectAtIndex (item, i);
+		const char *name = PL_String (PL_ObjectForKey (mod, "name"));
+		const char *file = PL_String (PL_ObjectForKey (mod, "file"));
+		if (!name || !file) {
+			continue;
+		}
+		if (QFV_FindShaderModule (ctx, name)) {
+			continue;
+		}
+		VkShaderModule module = QFV_CreateShaderModule (ctx->device, file);
+		if (module) {
+			Sys_Printf ("registering shader %s %p\n", name, module);
+			QFV_RegisterShaderModule (ctx, name, module);
+		}
+	}
 }
 
 void

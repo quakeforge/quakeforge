@@ -64,23 +64,6 @@
 
 #include "util.h"
 
-VkShaderModule
-QFV_CreateShaderModule (qfv_device_t *device,
-						size_t size, const uint32_t *code)
-{
-	VkDevice    dev = device->dev;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	VkShaderModuleCreateInfo createInfo = {
-		VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO, 0, 0,
-		size, code,
-	};
-
-	VkShaderModule module;
-	dfunc->vkCreateShaderModule (dev, &createInfo, 0, &module);
-	return module;
-}
-
 VkPipelineCache
 QFV_CreatePipelineCache (qfv_device_t *device, dstring_t *cacheData)
 {

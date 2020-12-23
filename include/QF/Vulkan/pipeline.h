@@ -128,9 +128,6 @@ typedef struct qfv_pipelinecacheset_s
 #define QFV_AllocPipelineCacheSet(num, allocator) \
     DARRAY_ALLOCFIXED (qfv_pipelinecacheset_t, num, allocator)
 
-VkShaderModule QFV_CreateShaderModule (struct qfv_device_s *device,
-											size_t size, const uint32_t *code);
-
 struct dstring_s;
 VkPipelineCache QFV_CreatePipelineCache (struct qfv_device_s *device,
 										 struct dstring_s *cacheData);
