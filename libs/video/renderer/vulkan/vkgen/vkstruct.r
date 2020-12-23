@@ -80,14 +80,17 @@
 			field_type = [[Type lookup: type_type] dereference];
 			fprintf (output_file, "static parse_%s_t parse_%s_%s_data = {\n",
 					 type_record, name, field_name);
-			fprintf (output_file, "\t%s,\n", [field_type parseType]);
-			fprintf (output_file, "\tsizeof (%s),\n", type_type);
-			fprintf (output_file, "\tparse_%s,\n", type_type);
 			if (type_record == "single") {
+				fprintf (output_file, "\t%s,\n", [field_type parseType]);
+				fprintf (output_file, "\tsizeof (%s),\n", type_type);
+				fprintf (output_file, "\tparse_%s,\n", type_type);
 				value_field = [[field_def getObjectForKey:"value"] string];
 				fprintf (output_file, "\tfield_offset (%s, %s),\n",
 						 name, value_field);
-			} else {
+			} else if (type_record == "array") {
+				fprintf (output_file, "\t%s,\n", [field_type parseType]);
+				fprintf (output_file, "\tsizeof (%s),\n", type_type);
+				fprintf (output_file, "\tparse_%s,\n", type_type);
 				value_field = [[field_def getObjectForKey:"values"] string];
 				size_field = [[field_def getObjectForKey:"size"] string];
 				fprintf (output_file, "\tfield_offset (%s, %s),\n",
@@ -98,6 +101,19 @@
 				} else {
 					fprintf (output_file, "\t-1,\n");
 				}
+			} else if (type_record == "data") {
+				value_field = [[field_def getObjectForKey:"data"] string];
+				size_field = [[field_def getObjectForKey:"size"] string];
+				fprintf (output_file, "\tfield_offset (%s, %s),\n",
+						 name, value_field);
+				if (size_field) {
+					fprintf (output_file, "\tfield_offset (%s, %s),\n",
+							 name, size_field);
+				} else {
+					fprintf (output_file, "\t-1,\n");
+				}
+			} else {
+				fprintf (output_file, "\tno type,\n");
 			}
 			fprintf (output_file, "};\n");
 		}
@@ -128,7 +144,7 @@
 				PLItem     *type_desc = [field_def getObjectForKey:"type"];
 				string      type_record;
 				string      type_type;
-				string      parseType;
+				string      parseType = "no type";
 
 				type_record = [[type_desc getObjectAtIndex:0] string];
 				type_type = [[type_desc getObjectAtIndex:1] string];
@@ -136,8 +152,10 @@
 				field_type = [[Type lookup: type_type] dereference];
 				if (type_record == "single") {
 					parseType = [field_type parseType];
-				} else {
+				} else if (type_record == "array") {
 					parseType = "QFArray";
+				} else if (type_record == "data") {
+					parseType = "QFBinary";
 				}
 				fprintf (output_file,
 						 "\t{\"%s\", 0, %s, parse_%s, &parse_%s_%s_data},\n",
@@ -208,8 +226,10 @@
 				type_record = [[type_desc getObjectAtIndex:0] string];
 				if (type_record == "single") {
 					value_field = [[field_def getObjectForKey:"value"] string];
-				} else {
+				} else if (type_record == "array") {
 					value_field = [[field_def getObjectForKey:"values"] string];
+				} else if (type_record == "data") {
+					value_field = [[field_def getObjectForKey:"data"] string];
 				}
 				if (!value_field) {
 					value_field = field_name;

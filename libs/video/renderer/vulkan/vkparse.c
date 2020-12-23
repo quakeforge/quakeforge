@@ -117,6 +117,11 @@ typedef struct parse_array_s {
 	size_t      size_offset;
 } parse_array_t;
 
+typedef struct parse_data_s {
+	size_t      value_offset;
+	size_t      size_offset;
+} parse_data_t;
+
 static int parse_uint32_t (const plfield_t *field, const plitem_t *item,
 						   void *data, plitem_t *messages, void *context)
 {
@@ -221,6 +226,30 @@ static int parse_array (const plfield_t *field, const plitem_t *item,
 		*size = arr->size;
 	}
 	free (arr);
+	return 1;
+}
+
+static int parse_data (const plfield_t *field, const plitem_t *item,
+					   void *data, plitem_t *messages, void *context)
+{
+	__auto_type datad = (parse_data_t *) field->data;
+	__auto_type value = (void **) ((byte *)data + datad->value_offset);
+	__auto_type size = (size_t *) ((byte *)data + datad->size_offset);
+
+	const void *bindata = PL_BinaryData (item);
+	size_t      binsize = PL_BinarySize (item);
+
+	Sys_Printf ("parse_array: %s %zd %d %p %p %p\n",
+				field->name, field->offset, field->type, field->parser,
+				field->data, data);
+	Sys_Printf ("    %zd %zd\n", datad->value_offset, datad->size_offset);
+	Sys_Printf ("    %zd %p\n", binsize, bindata);
+
+	*value = malloc (binsize);
+	memcpy (*value, bindata, binsize);
+	if ((void *) size > data) {
+		*size = binsize;
+	}
 	return 1;
 }
 
