@@ -94,6 +94,11 @@
 	return PL_Type (item);
 }
 
+- (int) line
+{
+	return PL_Line (item);
+}
+
 - (int) count
 {
 	if ([self class] == [PLDictionary class]) {

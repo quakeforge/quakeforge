@@ -42,6 +42,7 @@
 - initWithOwnItem:(plitem_t) item;
 - (string) write;
 - (pltype_t) type;
+- (int) line;
 @end
 
 @interface PLDictionary: PLItem <PLDictionary>

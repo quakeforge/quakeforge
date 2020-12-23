@@ -230,6 +230,15 @@ bi_PL_Type (progs_t *pr)
 }
 
 static void
+bi_PL_Line (progs_t *pr)
+{
+	int         handle = P_INT (pr, 0);
+	bi_plist_t *plist = get_plist (pr, __FUNCTION__, handle);
+
+	R_INT (pr) = PL_Line (plist->plitem);
+}
+
+static void
 bi_PL_String (progs_t *pr)
 {
 	int         handle = P_INT (pr, 0);
@@ -432,6 +441,7 @@ static builtin_t builtins[] = {
 	{"PL_GetPropertyList",			bi_PL_GetPropertyList,			-1},
 	{"PL_WritePropertyList",		bi_PL_WritePropertyList,		-1},
 	{"PL_Type",						bi_PL_Type,						-1},
+	{"PL_Line",						bi_PL_Line,						-1},
 	{"PL_String",					bi_PL_String,					-1},
 	{"PL_ObjectForKey",				bi_PL_ObjectForKey,				-1},
 	{"PL_RemoveObjectForKey",		bi_PL_RemoveObjectForKey,		-1},
