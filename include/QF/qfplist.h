@@ -141,6 +141,23 @@ pltype_t PL_Type (const plitem_t *item) __attribute__((pure));
 */
 int PL_Line (const plitem_t *item) __attribute__((pure));
 
+/** Retrieve the data size from a binary object.
+
+	\param binary The binary object
+	\return the size in bytes of the binary object 0 if binary isn't a binary
+	object.
+*/
+size_t PL_BinarySize (const plitem_t *item) __attribute__((pure));
+
+/** Retrieve the data from a binary object.
+
+	\param binary The binary object
+	\return pointer to the actual data or NULL if binary isn't a binary object.
+	\note	You are NOT responsible for freeing the returned object. It will
+	be destroyed when its container is.
+*/
+const void *PL_BinaryData (const plitem_t *binary) __attribute__((pure));
+
 /** Retrieve a string from a string object.
 
 	\param string The string object

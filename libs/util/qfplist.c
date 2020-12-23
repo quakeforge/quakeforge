@@ -231,6 +231,26 @@ PL_Free (plitem_t *item)
 	free (item);
 }
 
+VISIBLE size_t
+PL_BinarySize (const plitem_t *binary)
+{
+	plbinary_t *bin = (plbinary_t *) binary->data;
+
+	if (binary->type != QFBinary)
+		return 0;
+	return bin->size;
+}
+
+VISIBLE const void *
+PL_BinaryData (const plitem_t *binary)
+{
+	plbinary_t *bin = (plbinary_t *) binary->data;
+
+	if (binary->type != QFBinary)
+		return 0;
+	return bin->data;
+}
+
 VISIBLE const char *
 PL_String (const plitem_t *string)
 {
