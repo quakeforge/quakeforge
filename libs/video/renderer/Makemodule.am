@@ -78,7 +78,7 @@ V_SED_ = $(V_SED_@AM_DEFAULT_V@)
 V_SED_0 = @echo "  SED     " $@;
 V_SED_1 =
 
-SUFFICES=.frag .vert .fc .vc .slc .glsl .plist .plc
+SUFFICES=.frag .vert .spv .spvc .fc .vc .slc .glsl .plist .plc
 .glsl.slc:
 	$(V_SED)sed -e 's/^/"/' -e 's/$$/\\n"/' $< > $@.t &&\
 	$(am__mv) $@.t $@
@@ -224,6 +224,7 @@ libs_video_renderer_vid_render_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/namehack.h \
 	libs/video/renderer/vulkan/pipeline.c \
 	libs/video/renderer/vulkan/renderpass.c \
+	libs/video/renderer/vulkan/shader.c \
 	libs/video/renderer/vulkan/swapchain.c \
 	libs/video/renderer/vulkan/util.c \
 	libs/video/renderer/vulkan/util.h \
@@ -233,29 +234,44 @@ libs_video_renderer_vid_render_vulkan_la_SOURCES = \
 
 libs/video/renderer/vulkan/vkparse.lo: libs/video/renderer/vulkan/vkparse.c $(vkparse_src)
 
-libs/video/renderer/vulkan/vulkan_vid_common.lo: libs/video/renderer/vulkan/vulkan_vid_common.c ${vkparse_src} $(pipeline_gen)
+libs/video/renderer/vulkan/shader.lo: libs/video/renderer/vulkan/shader.c $(vkshader_c)
+
+libs/video/renderer/vulkan/vulkan_vid_common.lo: libs/video/renderer/vulkan/vulkan_vid_common.c $(vkparse_src) $(pipeline_gen)
 
 
 qwaq_curses = ruamoko/qwaq/qwaq-curses$(EXEEXT)
 vkparse_cinc = libs/video/renderer/vulkan/vkparse.cinc
 vkparse_hinc = libs/video/renderer/vulkan/vkparse.hinc
 vkparse_src = \
-	${vkparse_cinc} \
-	${vkparse_hinc}
+	$(vkparse_cinc) \
+	$(vkparse_hinc)
 vkparse_plist = \
 	$(srcdir)/libs/video/renderer/vulkan/vkparse.plist
+
+passthrough_src = libs/video/renderer/vulkan/passthrough.vert
+passthrough_c = libs/video/renderer/vulkan/passthrough.vert.spvc
+pushcolor_src = libs/video/renderer/vulkan/pushcolor.frag
+pushcolor_c = libs/video/renderer/vulkan/pushcolor.frag.spvc
+
+$(passthrough_c): $(passthrough_src)
+
+$(pushcolor_c): $(pushcolor_src)
+
+vkshader_c = \
+	$(passthrough_c) \
+	$(pushcolor_c)
 
 V_VKGEN = $(V_VKGEN_@AM_V@)
 V_VKGEN_ = $(V_VKGEN_@AM_DEFAULT_V@)
 V_VKGEN_0 = @echo "  VKGEN   " $@;
 V_VKGEN_1 =
 
-${vkparse_cinc}: $(vkgen) $(qwaq_curses) $(vkparse_plist)
-	$(V_VKGEN)$(qwaq_curses) $(vkgen) -- $(vkparse_plist) ${vkparse_cinc}.t ${vkparse_hinc}.t &&\
-	$(am__mv) ${vkparse_cinc}.t ${vkparse_cinc} &&\
-	$(am__mv) ${vkparse_hinc}.t ${vkparse_hinc}
+$(vkparse_cinc): $(vkgen) $(qwaq_curses) $(vkparse_plist)
+	$(V_VKGEN)$(qwaq_curses) $(vkgen) -- $(vkparse_plist) $(vkparse_cinc).t $(vkparse_hinc).t &&\
+	$(am__mv) $(vkparse_cinc).t $(vkparse_cinc) &&\
+	$(am__mv) $(vkparse_hinc).t $(vkparse_hinc)
 
-${vkparse_hinc}: ${vkparse_cinc}
+$(vkparse_hinc): $(vkparse_cinc)
 # do nothing: hinc generated at the same time as cinc
 
 CLEANFILES += \
@@ -263,7 +279,15 @@ CLEANFILES += \
 	libs/video/renderer/glsl/*.fc \
 	libs/video/renderer/glsl/*.slc \
 	libs/video/renderer/vulkan/*.plc \
+	libs/video/renderer/vulkan/*.spv \
+	libs/video/renderer/vulkan/*.spvc \
 	libs/video/renderer/vulkan/vkgen.sym \
 	$(vkparse_src)
 
 BUILT_SOURCES += $(shader_gen)
+
+#shader_DATA += \
+#	libs/video/renderer/vulkan/passthrough.vert.spv \
+#	libs/video/renderer/vulkan/pushcolor.frag.spv
+
+EXTRA_DIST += $(shader_DATA:.spv=)

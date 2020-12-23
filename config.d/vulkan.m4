@@ -16,5 +16,6 @@ if test "x$HAVE_VULKAN" = xyes; then
 	AC_DEFINE([HAVE_VULKAN], [1], [Define if yhou have the Vulkan libs])
 fi
 AC_SUBST(VULKAN_LIBS)
+AC_SUBST(GLSLANGVALIDATOR, [$glslangvalidator])
 
 AM_CONDITIONAL(X11_VULKAN, test "x$HAVE_VULKAN" = "xyes")
