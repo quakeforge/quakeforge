@@ -23,7 +23,7 @@
 
 -writeParseData
 {
-	fprintf (output_file, "static size_t parse_%s_%s_offsets = {\n",
+	fprintf (output_file, "static size_t parse_%s_%s_offsets[] = {\n",
 			 struct_name, field_name);
 	for (int i = 0, count = [fields count]; i < count; i++) {
 		string field = [[fields getObjectAtIndex:i] string];
@@ -35,7 +35,7 @@
 	fprintf (output_file, "static parse_custom_t parse_%s_%s_data = {\n",
 			 struct_name, field_name);
 	fprintf (output_file, "\t%s,\n", parser);
-	fprintf (output_file, "\t&parse_%s_%s_offsets,\n",
+	fprintf (output_file, "\tparse_%s_%s_offsets,\n",
 			 struct_name, field_name);
 	fprintf (output_file, "\t%d,\n", [fields count]);
 	fprintf (output_file, "};\n");
