@@ -76,5 +76,6 @@ doc/progs/vm-mem.eps: doc/progs/vm-mem.fig
 doc/qtv/qwtv.svg: doc/qtv/qwtv.fig
 doc/qtv/qwtv.eps: doc/qtv/qwtv.fig
 
-doc: doc/quakeforge.dox.conf doc/progs/vm-mem.svg doc/progs/vm-mem.eps doc/qtv/qwtv.svg qtv/qwtv.eps ${DOX}
+.PHONY: doc
+doc: doc/quakeforge.dox.conf doc/progs/vm-mem.svg doc/progs/vm-mem.eps doc/qtv/qwtv.svg doc/qtv/qwtv.eps ${DOX}
 	doxygen doc/quakeforge.dox.conf
