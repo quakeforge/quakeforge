@@ -109,7 +109,7 @@
 			 [self outname]);
 	fprintf (output_file, "{\n");
 	fprintf (output_file,
-			 "\treturn PL_ParseDictionary (%s_fields, item, data, messages,"
+			 "\treturn PL_ParseStruct (%s_fields, item, data, messages,"
 			 " context);\n",
 			 [self outname]);
 	fprintf (output_file, "}\n");

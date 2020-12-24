@@ -1144,8 +1144,8 @@ pl_default_parser (const plfield_t *field, const plitem_t *item, void *data,
 }
 
 VISIBLE int
-PL_ParseDictionary (const plfield_t *fields, const plitem_t *dict, void *data,
-					plitem_t *messages, void *context)
+PL_ParseStruct (const plfield_t *fields, const plitem_t *dict, void *data,
+				plitem_t *messages, void *context)
 {
 	void      **list, **l;
 	dictkey_t  *current;

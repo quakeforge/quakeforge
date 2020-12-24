@@ -342,8 +342,8 @@ void PL_Free (plitem_t *item);
 	\param context	Additional context data passed to the parser.
 	\return			0 if there are any errors, 1 if there are no errors.
 */
-int PL_ParseDictionary (const plfield_t *fields, const plitem_t *dict,
-						void *data, plitem_t *messages, void *context);
+int PL_ParseStruct (const plfield_t *fields, const plitem_t *dict,
+					void *data, plitem_t *messages, void *context);
 int PL_ParseArray (const plfield_t *fields, const plitem_t *dict,
 				   void *data, plitem_t *messages, void *context);
 void __attribute__((format(printf,3,4)))

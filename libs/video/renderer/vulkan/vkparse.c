@@ -392,8 +392,8 @@ QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist)
 
 	cexpr_init_symtab (&vars_tab, &exprctx);
 
-	if (!PL_ParseDictionary (renderpass_fields, plist,
-							 &renderpass_data, messages, &parsectx)) {
+	if (!PL_ParseStruct (renderpass_fields, plist, &renderpass_data,
+						 messages, &parsectx)) {
 		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
 			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
 		}
