@@ -1247,3 +1247,65 @@ PL_ParseArray (const plfield_t *field, const plitem_t *array, void *data,
 	*(arr_t **) data = arr;
 	return result;
 }
+
+VISIBLE int
+PL_ParseSymtab (const plfield_t *field, const plitem_t *dict, void *data,
+				plitem_t *messages, void *context)
+{
+	void      **list, **l;
+	dictkey_t  *current;
+	int         result = 1;
+	plparser_t  parser;
+	__auto_type tab = (hashtab_t *) data;
+
+	plelement_t *element = (plelement_t *) field->data;
+	plfield_t   f = { 0, 0, element->type, element->parser, element->data };
+
+	if (dict->type != QFDictionary) {
+		PL_Message (messages, dict, "error: not a dictionary object");
+		return 0;
+	}
+
+	if (f.parser) {
+		parser = f.parser;
+	} else {
+		PL_Message (messages, dict, "no parser set");
+		return 0;
+	}
+
+	if (!(l = list = Hash_GetList ((hashtab_t *) dict->data))) {
+		// empty struct: leave as default
+		return 1;
+	}
+
+	void       *obj = element->alloc (element->stride);
+	while ((current = (dictkey_t *) *l++)) {
+		const char *key = current->key;
+		plitem_t   *item = current->value;
+
+		if (item->type != element->type) {
+			PL_Message (messages, item,
+						"error: element %s is the wrong type"
+						" Got %s, expected %s", key,
+						pl_types[element->type],
+						pl_types[item->type]);
+			result = 0;
+			continue;
+		}
+		f.name = key;
+		if (Hash_Find (tab, key)) {
+			PL_Message (messages, item, "duplicate name");
+			result = 0;
+		} else {
+			if (!parser (&f, item, obj, messages, context)) {
+				result = 0;
+			} else {
+				Hash_Add (tab, obj);
+				obj = element->alloc (element->stride);
+			}
+		}
+	}
+	Hash_Free (tab, obj);
+	free (list);
+	return result;
+}

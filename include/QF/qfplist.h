@@ -147,7 +147,7 @@ int PL_Line (const plitem_t *item) __attribute__((pure));
 	\return the size in bytes of the binary object 0 if binary isn't a binary
 	object.
 */
-size_t PL_BinarySize (const plitem_t *item) __attribute__((pure));
+size_t PL_BinarySize (const plitem_t *binary) __attribute__((pure));
 
 /** Retrieve the data from a binary object.
 
@@ -323,9 +323,9 @@ void PL_Free (plitem_t *item);
 
 	Can be used recursively to parse deep hierarchies.
 
-	\param dict		The dictionary object to parse
 	\param fields	Array of field items describing the structure. Terminated
 					by a field item with a null \a name pointer.
+	\param dict		The dictionary object to parse
 	\param data     Pointer to the structure into which the data will be
 					parsed.
 	\param messages Array object supplied by the caller used for storing
@@ -344,8 +344,90 @@ void PL_Free (plitem_t *item);
 */
 int PL_ParseStruct (const plfield_t *fields, const plitem_t *dict,
 					void *data, plitem_t *messages, void *context);
-int PL_ParseArray (const plfield_t *fields, const plitem_t *dict,
+
+/**	Parse an array object into a dynamic arrah (see darray.h).
+
+	For each object in the array, the field item is used to determine how to
+	parse the object. If the array is empty, the destination will be
+	initialized to an empty array.
+
+	When an error occurs (incorrect item type (item type does not match the
+	type specified in the element object) or the element object's \a parser
+	returns 0), processing continues but the error result is returned.
+
+	Can be used recursively to parse deep hierarchies.
+
+	\param field	Pointer to a single field that has the field data pointer
+					set to reference a plelement_t object used to describe
+					the contents of the array.
+	\param array	The array object to parse
+	\param data     Pointer to the pointer to which the dynamic array will
+					be written. The dynamic array is allocated using
+					DARRAY_ALLOCFIXED().
+	\param messages Array object supplied by the caller used for storing
+					messages. The messages may or may not indicate errors (its
+					contents are not checked). This function itself will add
+					only string objects.
+					If there are any errors, suitable messages will be found in
+					the \a messages object. However, just because there are no
+					errors doesn't mean that \a messages will remain empty as
+					a field's \a parser may add other messages. The standard
+					message format is "[line number]: [message]". If the line
+					number is 0, then the actual line is unknown (due to the
+					source item not being parsed from a file or string).
+	\param context	Additional context data passed to the parser.
+	\return			0 if there are any errors, 1 if there are no errors.
+*/
+int PL_ParseArray (const plfield_t *field, const plitem_t *array,
 				   void *data, plitem_t *messages, void *context);
+
+/**	Parse a dictionary object into a hash table.
+
+	For each key in the dictionary, the element object is used to determine
+	how to parse the object associated with that key. Duplicate keys are an
+	error: they must be unique. A suitable message is added to the
+	\a messages object. If the dictionary object is empty, the destination
+	table is left unmodified.
+
+	When an error occurs (duplicate keys, incorrect type, or the element
+	object's \a parser returns 0), processing continues but the error
+	result is returned.
+
+	Can be used recursively to parse deep hierarchies.
+
+	Hash_Add() is used to add objects to the hash table, and Hash_Find() is
+	used to check for duplicates. Hash_Free() is used to free unused
+	objects. The means that the hash table is expected to use standard
+	objects with embedded keys (the parser is expected to put the key in the
+	object) and to have a free function.
+
+	The parser's data paramenter points to a pre-allocated block of memory
+	of the sized indicated by the element object's size field, using the
+	element object's alloc callback. The name field in the field paramenter
+	is set to the object's key and remains owned by the dictionary.
+
+	\param field	Pointer to a single field that has the field data pointer
+					set to reference a plelement_t object used to describe
+					the contents of the dictionary.
+	\param dict		The dictionary object to parse
+	\param data     Pointer to the structure into which the data will be
+					parsed.
+	\param messages Array object supplied by the caller used for storing
+					messages. The messages may or may not indicate errors (its
+					contents are not checked). This function itself will add
+					only string objects.
+					If there are any errors, suitable messages will be found in
+					the \a messages object. However, just because there are no
+					errors doesn't mean that \a messages will remain empty as
+					a field's \a parser may add other messages. The standard
+					message format is "[line number]: [message]". If the line
+					number is 0, then the actual line is unknown (due to the
+					source item not being parsed from a file or string).
+	\param context	Additional context data passed to the parser.
+	\return			0 if there are any errors, 1 if there are no errors.
+*/
+int PL_ParseSymtab (const plfield_t *field, const plitem_t *dict,
+					void *data, plitem_t *messages, void *context);
 void __attribute__((format(printf,3,4)))
 PL_Message (plitem_t *messages, const plitem_t *item, const char *fmt, ...);
 
