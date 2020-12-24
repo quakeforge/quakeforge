@@ -135,29 +135,55 @@ typedef struct parse_custom_s {
 } parse_custom_t;
 
 static int
-parse_uint32_t (const plfield_t *field, const plitem_t *item,
-				void *data, plitem_t *messages, void *context)
+parse_basic (const plfield_t *field, const plitem_t *item,
+			 void *data, plitem_t *messages, void *context)
 {
 	int         ret = 1;
+	__auto_type etype = (exprtype_t *) field->data;
+	exprctx_t   ectx = *((parsectx_t *) context)->ectx;
+	exprval_t   result = { etype, data };
+	ectx.symtab = 0;
+	ectx.result = &result;
 	const char *valstr = PL_String (item);
 	//Sys_Printf ("parse_uint32_t: %s %zd %d %p %p: %s\n",
 	//			field->name, field->offset, field->type, field->parser,
 	//			field->data, valstr);
 	if (strcmp (valstr, "VK_SUBPASS_EXTERNAL") == 0) {
+		//FIXME handle subpass in a separate parser?
 		*(uint32_t *) data = VK_SUBPASS_EXTERNAL;
 	} else {
-		char       *end;
-		unsigned long val = strtoul (valstr, &end, 0);
-		if (*valstr && !*end && val <= 0xffffffff) {
-			*(uint32_t *) data = val;
-		} else if (val > 0xffffffff) {
-			PL_Message (messages, item, "%lu bigger than 32 bits", val);
-			ret = 0;
-		} else {
-			PL_Message (messages, item, "invalid char at %d in '%s'\n",
-						(int) (end - valstr), valstr);
-			ret = 0;
-		}
+		Sys_Printf ("parse_uint32_t: %s %zd %d %p %p %s\n",
+					field->name, field->offset, field->type, field->parser,
+					field->data, valstr);
+		ret = !cexpr_eval_string (valstr, &ectx);
+		Sys_Printf ("    %x\n", *(uint32_t *)data);
+	}
+
+	return ret;
+}
+
+static int
+parse_uint32_t (const plfield_t *field, const plitem_t *item,
+				void *data, plitem_t *messages, void *context)
+{
+	int         ret = 1;
+	exprctx_t   ectx = *((parsectx_t *) context)->ectx;
+	exprval_t   result = { &cexpr_uint, data };
+	ectx.symtab = 0;
+	ectx.result = &result;
+	const char *valstr = PL_String (item);
+	//Sys_Printf ("parse_uint32_t: %s %zd %d %p %p: %s\n",
+	//			field->name, field->offset, field->type, field->parser,
+	//			field->data, valstr);
+	if (strcmp (valstr, "VK_SUBPASS_EXTERNAL") == 0) {
+		//FIXME handle subpass in a separate parser?
+		*(uint32_t *) data = VK_SUBPASS_EXTERNAL;
+	} else {
+		Sys_Printf ("parse_uint32_t: %s %zd %d %p %p %s\n",
+					field->name, field->offset, field->type, field->parser,
+					field->data, valstr);
+		ret = !cexpr_eval_string (valstr, &ectx);
+		Sys_Printf ("    %d\n", *(uint32_t *)data);
 	}
 
 	return ret;

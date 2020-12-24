@@ -74,6 +74,9 @@ static string get_type_key (void *type, void *unused)
 
 -(string) name
 {
+	if (type.meta == ty_basic) {
+		return pr_type_name[type.type];
+	}
 	//FIXME extract alias name and return proper type name
 	return type.encoding;
 }
@@ -98,16 +101,25 @@ static string get_type_key (void *type, void *unused)
 
 -(string) parseType
 {
+	if (type.meta == ty_basic) {
+		return "QFString";
+	}
 	return "no parse";
 }
 
 -(string) parseFunc
 {
+	if (type.meta == ty_basic) {
+		return "parse_basic";
+	}
 	return "0";
 }
 
 -(string) parseData
 {
+	if (type.meta == ty_basic) {
+		return "&cexpr_" + pr_type_name[type.type];
+	}
 	return "0";
 }
 
