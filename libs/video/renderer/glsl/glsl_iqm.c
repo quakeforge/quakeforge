@@ -278,7 +278,7 @@ glsl_R_IQMBegin (void)
 
 	qfeglUseProgram (iqm_shader.program);
 
-	VectorCopy (glsl_Fog_GetColor (), fog);
+	glsl_Fog_GetColor (fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (iqm_shader.fog.location, 1, fog);
 

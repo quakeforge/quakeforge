@@ -333,7 +333,7 @@ glsl_R_AliasBegin (void)
 	qfeglDisableVertexAttribArray (quake_mdl.colora.location);
 	qfeglDisableVertexAttribArray (quake_mdl.colorb.location);
 
-	VectorCopy (glsl_Fog_GetColor (), fog);
+	glsl_Fog_GetColor (fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (quake_mdl.fog.location, 1, fog);
 

@@ -335,7 +335,7 @@ R_SpriteBegin (void)
 	qfeglDisableVertexAttribArray (quake_sprite.colorb.location);
 	qfeglDisableVertexAttribArray (quake_sprite.blend.location);
 
-	VectorCopy (glsl_Fog_GetColor (), fog);
+	glsl_Fog_GetColor (fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (quake_sprite.fog.location, 1, fog);
 

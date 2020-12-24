@@ -360,7 +360,7 @@ static void
 update_lightmap (msurface_t *surf)
 {
 	int         maps;
-
+return;
 	for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255; maps++)
 		if (d_lightstylevalue[surf->styles[maps]] != surf->cached_light[maps])
 			goto dynamic;
@@ -871,7 +871,7 @@ bsp_begin (void)
 
 	qfeglVertexAttrib4fv (quake_bsp.color.location, default_color);
 
-	VectorCopy (glsl_Fog_GetColor (), fog);
+	glsl_Fog_GetColor (fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (quake_bsp.fog.location, 1, fog);
 
@@ -926,7 +926,7 @@ turb_begin (void)
 
 	qfeglVertexAttrib4fv (quake_turb.color.location, default_color);
 
-	VectorCopy (glsl_Fog_GetColor (), fog);
+	glsl_Fog_GetColor (fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (quake_turb.fog.location, 1, fog);
 
@@ -1030,7 +1030,7 @@ sky_begin (void)
 		qfeglEnable (GL_TEXTURE_2D);
 	}
 
-	VectorCopy (glsl_Fog_GetColor (), fog);
+	glsl_Fog_GetColor (fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (sky_params.fog->location, 1, fog);
 

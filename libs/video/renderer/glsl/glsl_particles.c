@@ -1579,7 +1579,7 @@ draw_qf_particles (void)
 	qfeglEnableVertexAttribArray (quake_part.color.location);
 	qfeglEnableVertexAttribArray (quake_part.st.location);
 
-	VectorCopy (glsl_Fog_GetColor (), fog);
+	glsl_Fog_GetColor (fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (quake_part.fog.location, 1, fog);
 
@@ -1725,7 +1725,7 @@ draw_id_particles (void)
 
 	qfeglUniformMatrix4fv (quake_point.mvp_matrix.location, 1, false, vp_mat);
 
-	VectorCopy (glsl_Fog_GetColor (), fog);
+	glsl_Fog_GetColor (fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (quake_point.fog.location, 1, fog);
 
