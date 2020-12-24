@@ -150,11 +150,7 @@ assign_expr (exprval_t *dst, const exprval_t *src, exprctx_t *context)
 	if (!src) {
 		return;
 	}
-	for (binop = dst->type->binops; binop && binop->op; binop++) {
-		if (binop->op == '=' && binop->other == src->type) {
-			break;
-		}
-	}
+	binop = cexpr_find_cast (dst->type, src->type);
 	if (binop && binop->op) {
 		binop->func (dst, src, dst, context);
 	} else {

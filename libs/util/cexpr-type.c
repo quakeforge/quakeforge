@@ -125,6 +125,13 @@ BINOP(uint, bor, unsigned, |)
 BINOP(uint, xor, unsigned, ^)
 BINOP(uint, rem, unsigned, %)
 
+static void
+uint_cast_int (const exprval_t *val1, const exprval_t *src, exprval_t *result,
+			   exprctx_t *ctx)
+{
+	*(unsigned *) result->value = *(int *) src->value;
+}
+
 UNOP(uint, pos, unsigned, +)
 UNOP(uint, neg, unsigned, -)
 UNOP(uint, tnot, unsigned, !)
@@ -142,6 +149,7 @@ binop_t uint_binops[] = {
 	{ '^', &cexpr_uint, &cexpr_uint, uint_xor },
 	{ '%', &cexpr_uint, &cexpr_uint, uint_rem },
 	{ MOD, &cexpr_uint, &cexpr_uint, uint_rem },
+	{ '=', &cexpr_int,  &cexpr_uint, uint_cast_int },
 	{}
 };
 
