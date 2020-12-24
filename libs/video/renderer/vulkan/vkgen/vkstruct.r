@@ -175,7 +175,7 @@
 
 -(string) cexprType
 {
-	return [self name] + "_type";
+	return [self outname] + "_type";
 }
 
 -(string) parseType
@@ -185,7 +185,7 @@
 
 -(string) parseFunc
 {
-	return "fix me";
+	return "parse_" + [self outname];
 }
 
 -(string) parseData

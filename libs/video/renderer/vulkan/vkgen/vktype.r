@@ -75,6 +75,9 @@ static string get_type_key (void *type, void *unused)
 -(string) name
 {
 	if (type.meta == ty_basic) {
+		if (type.type == ev_integer) {
+			return "int";
+		}
 		return pr_type_name[type.type];
 	}
 	//FIXME extract alias name and return proper type name
@@ -118,6 +121,9 @@ static string get_type_key (void *type, void *unused)
 -(string) parseData
 {
 	if (type.meta == ty_basic) {
+		if (type.type == ev_integer) {
+			return "&cexpr_int";
+		}
 		return "&cexpr_" + pr_type_name[type.type];
 	}
 	return "0";

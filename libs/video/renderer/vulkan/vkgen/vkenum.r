@@ -120,6 +120,24 @@ skip_value(string name)
 	fprintf (output_file, "\t&%s_symtab,\n", [self name]);
 	fprintf (output_file, "};\n");
 
+	fprintf (output_file, "static plfield_t %s_field = { 0, 0, QFString,"
+			 " parse_enum, &%s_enum};\n",
+			 [self name], [self name]);
+	fprintf (output_file, "int parse_%s (const plfield_t *field,"
+			 " const plitem_t *item, void *data, plitem_t *messages,"
+			 " void *context)\n",
+			 [self name]);
+	fprintf (output_file, "{\n");
+	fprintf (output_file,
+			 "\treturn parse_enum (&%s_field, item, data, messages,"
+			 " context);\n",
+			 [self name]);
+	fprintf (output_file, "}\n");
+
+	fprintf (header_file, "int parse_%s (const plfield_t *field,"
+			 " const plitem_t *item, void *data, plitem_t *messages,"
+			 " void *context);\n",
+			 [self name]);
 	fprintf (header_file, "extern exprenum_t %s_enum;\n", [self name]);
 }
 
