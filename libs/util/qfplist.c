@@ -1279,6 +1279,7 @@ PL_ParseSymtab (const plfield_t *field, const plitem_t *dict, void *data,
 	}
 
 	void       *obj = element->alloc (element->stride);
+	memset (obj, 0, element->stride);
 	while ((current = (dictkey_t *) *l++)) {
 		const char *key = current->key;
 		plitem_t   *item = current->value;
@@ -1302,6 +1303,7 @@ PL_ParseSymtab (const plfield_t *field, const plitem_t *dict, void *data,
 			} else {
 				Hash_Add (tab, obj);
 				obj = element->alloc (element->stride);
+				memset (obj, 0, element->stride);
 			}
 		}
 	}
