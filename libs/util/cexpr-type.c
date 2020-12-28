@@ -30,6 +30,8 @@
 #include <math.h>
 
 #include "QF/cexpr.h"
+#include "QF/mathlib.h"
+#include "QF/simd/vec4f.h"
 
 #include "libs/util/cexpr-parse.h"
 
@@ -232,7 +234,7 @@ static void
 float_mod (const exprval_t *val1, const exprval_t *val2, exprval_t *result,
 		   exprctx_t *ctx)
 {
-	// implement true modulo for integers:
+	// implement true modulo for floats:
 	//  5 mod  3 = 2
 	// -5 mod  3 = 1
 	//  5 mod -3 = -1
@@ -240,6 +242,26 @@ float_mod (const exprval_t *val1, const exprval_t *val2, exprval_t *result,
 	float       a = *(float *) val1->value;
 	float       b = *(float *) val2->value;
 	*(float *) result->value = a - b * floorf (a / b);
+}
+
+static void
+float_mul_vec4f (const exprval_t *val1, const exprval_t *val2,
+				 exprval_t *result, exprctx_t *ctx)
+{
+	float       s = *(float *) val1->value;
+	__auto_type v = (vec4f_t *) val2->value;
+	__auto_type r = (vec4f_t *) result->value;
+	*r = s * *v;
+}
+
+static void
+float_div_quat (const exprval_t *val1, const exprval_t *val2,
+				exprval_t *result, exprctx_t *ctx)
+{
+	float       a = *(float *) val1->value;
+	vec4f_t     b = *(vec4f_t *) val2->value;
+	__auto_type c = (vec4f_t *) result->value;
+	*c = a * qconjf (b) / dotf (b, b);
 }
 
 UNOP(float, pos, float, +)
@@ -250,7 +272,10 @@ binop_t float_binops[] = {
 	{ '+', &cexpr_float, &cexpr_float, float_add },
 	{ '-', &cexpr_float, &cexpr_float, float_sub },
 	{ '*', &cexpr_float, &cexpr_float, float_mul },
+	{ '*', &cexpr_vector, &cexpr_vector, float_mul_vec4f },
+	{ '*', &cexpr_quaternion, &cexpr_quaternion, float_mul_vec4f },
 	{ '/', &cexpr_float, &cexpr_float, float_div },
+	{ '/', &cexpr_quaternion, &cexpr_quaternion, float_div_quat },
 	{ '%', &cexpr_float, &cexpr_float, float_rem },
 	{ MOD, &cexpr_float, &cexpr_float, float_mod },
 	{}
@@ -288,7 +313,7 @@ static void
 double_mod (const exprval_t *val1, const exprval_t *val2, exprval_t *result,
 			exprctx_t *ctx)
 {
-	// implement true modulo for integers:
+	// implement true modulo for doubles:
 	//  5 mod  3 = 2
 	// -5 mod  3 = 1
 	//  5 mod -3 = -1
@@ -324,6 +349,102 @@ exprtype_t cexpr_double = {
 	sizeof (double),
 	double_binops,
 	double_unops,
+};
+
+BINOP(vector, add, vec4f_t, +)
+BINOP(vector, sub, vec4f_t, -)
+BINOP(vector, mul, vec4f_t, *)
+BINOP(vector, div, vec4f_t, /)
+
+static void
+vector_rem (const exprval_t *val1, const exprval_t *val2, exprval_t *result,
+			exprctx_t *ctx)
+{
+	vec4f_t     a = *(vec4f_t *) val1->value;
+	vec4f_t     b = *(vec4f_t *) val2->value;
+	__auto_type c = (vec4f_t *) result->value;
+	*c = a - b * vtruncf (a / b);
+}
+
+static void
+vector_mod (const exprval_t *val1, const exprval_t *val2, exprval_t *result,
+			exprctx_t *ctx)
+{
+	// implement true modulo for doubles:
+	//  5 mod  3 = 2
+	// -5 mod  3 = 1
+	//  5 mod -3 = -1
+	// -5 mod -3 = -2
+	vec4f_t     a = *(vec4f_t *) val1->value;
+	vec4f_t     b = *(vec4f_t *) val2->value;
+	__auto_type c = (vec4f_t *) result->value;
+	*c = a - b * vfloorf (a / b);
+}
+
+UNOP(vector, pos, vec4f_t, +)
+UNOP(vector, neg, vec4f_t, -)
+
+static void
+vector_tnot (const exprval_t *val, exprval_t *result, exprctx_t *ctx)
+{
+	vec4f_t     v = *(vec4f_t *) val->value;
+	__auto_type c = (vec4i_t *) result->value;
+	*c = v != 0;
+}
+
+binop_t vector_binops[] = {
+	{ '+', &cexpr_vector, &cexpr_vector, vector_add },
+	{ '-', &cexpr_vector, &cexpr_vector, vector_sub },
+	{ '*', &cexpr_vector, &cexpr_vector, vector_mul },
+	{ '/', &cexpr_vector, &cexpr_vector, vector_div },
+	{ '%', &cexpr_vector, &cexpr_vector, vector_rem },
+	{ MOD, &cexpr_vector, &cexpr_vector, vector_mod },
+	{}
+};
+
+unop_t vector_unops[] = {
+	{ '+', &cexpr_vector, vector_pos },
+	{ '-', &cexpr_vector, vector_neg },
+	{ '!', &cexpr_vector, vector_tnot },
+	{}
+};
+
+exprtype_t cexpr_vector = {
+	"vector",
+	sizeof (vec4f_t),
+	vector_binops,
+	vector_unops,
+};
+
+static void
+quaternion_mul (const exprval_t *val1, const exprval_t *val2,
+				exprval_t *result, exprctx_t *ctx)
+{
+	vec4f_t     a = *(vec4f_t *) val1->value;
+	vec4f_t     b = *(vec4f_t *) val2->value;
+	__auto_type c = (vec4f_t *) result->value;
+	*c = qmulf (a, b);
+}
+
+binop_t quaternion_binops[] = {
+	{ '+', &cexpr_quaternion, &cexpr_quaternion, vector_add },
+	{ '-', &cexpr_quaternion, &cexpr_quaternion, vector_sub },
+	{ '*', &cexpr_quaternion, &cexpr_quaternion, quaternion_mul },
+	{}
+};
+
+unop_t quaternion_unops[] = {
+	{ '+', &cexpr_vector, vector_pos },
+	{ '-', &cexpr_vector, vector_neg },
+	{ '!', &cexpr_vector, vector_tnot },
+	{}
+};
+
+exprtype_t cexpr_quaternion = {
+	"quaterion",
+	sizeof (vec4f_t),
+	quaternion_binops,
+	quaternion_unops,
 };
 
 exprtype_t cexpr_exprval = {

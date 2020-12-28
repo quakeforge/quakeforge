@@ -99,8 +99,8 @@ qvmulf (vec4f_t q, vec4f_t v)
 	// zero the scalar of the quaternion. Results in an extra operation, but
 	// avoids adding precision issues.
 	q = _mm_insert_ps (q, q, 0xf8);
-	vec4f_t c = crossf (q, v);	// q.w is 0 so v.w is irrelevant
-	vec4f_t qv = dotf (q, v);
+	vec4f_t c = crossf (q, v);
+	vec4f_t qv = dotf (q, v);	// q.w is 0 so v.w is irrelevant
 	vec4f_t qq = dotf (q, q);
 
 	return (s * s - qq) * v + 2 * (qv * q + s * c);
