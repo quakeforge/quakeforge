@@ -82,6 +82,11 @@ AC_ARG_ENABLE(optimize,
 	optimize=yes
 )
 
+QF_CC_OPTION(-mavx2)
+dnl fma is not used as it is the equivalent of turning on
+dnl -funsafe-math-optimizations
+dnl QF_CC_OPTION(-mfma)
+
 AC_MSG_CHECKING(for optimization)
 if test "x$optimize" = xyes -a "x$leave_cflags_alone" != "xyes"; then
 	AC_MSG_RESULT(yes)
