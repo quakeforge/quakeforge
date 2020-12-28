@@ -296,12 +296,12 @@ test_rotation4 (const vec3_t a, const vec3_t b, const quat_t expect)
 	return 1;
 fail:
 	printf ("\ntest_rotation4\n");
-	printf ("%11.9g %11.9g %11.9g\n", VectorExpand(a));
-	printf ("%11.9g %11.9g %11.9g\n", VectorExpand(b));
-	printf ("%11.9g %11.9g %11.9g %11.9g\n", QuatExpand(quat));
-	printf ("%11.9g %11.9g %11.9g %11.9g\n", QuatExpand(expect));
-	printf ("%11.9g %11.9g %11.9g\n", VectorExpand(t));
-	printf ("%11.9g\n", d);
+	printf ("a: %11.9g %11.9g %11.9g\n", VectorExpand(a));
+	printf ("b: %11.9g %11.9g %11.9g\n", VectorExpand(b));
+	printf ("q: %11.9g %11.9g %11.9g %11.9g\n", QuatExpand(quat));
+	printf ("e: %11.9g %11.9g %11.9g %11.9g\n", QuatExpand(expect));
+	printf ("t: %11.9g %11.9g %11.9g\n", VectorExpand(t));
+	printf ("d: %11.9g\n", d);
 	return 0;
 }
 
@@ -351,6 +351,7 @@ test_quat_mat(const quat_t q, const quat_t expect)
 			goto fail;
 	return 1;
 fail:
+	printf ("\ntest_quat_mat\n");
 	printf ("%11.9g %11.9g %11.9g %11.9g\n", QuatExpand (q));
 	printf ("%11.9g %11.9g %11.9g   %11.9g %11.9g %11.9g\n",
 			VectorExpand (m + 0), VectorExpand (expect + 0));
