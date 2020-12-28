@@ -133,6 +133,14 @@ qrotd (vec4d_t a, vec4d_t b)
 	return q;
 }
 
+vec4d_t qconjd (vec4d_t q) __attribute__((const));
+vec4d_t
+qconjd (vec4d_t q)
+{
+	const vec4l_t neg = { 1lu << 63, 1lu << 63, 1lu << 63, 0 };
+	return _mm256_xor_pd (q, (__m256d) neg);
+}
+
 vec4d_t loadvec3d (const double v3[]) __attribute__((pure, access(read_only, 1)));
 vec4d_t
 loadvec3d (const double v3[])
@@ -151,6 +159,24 @@ void storevec3d (double v3[3], vec4d_t v4)
 	v3[0] = v4[0];
 	v3[1] = v4[1];
 	v3[2] = v4[2];
+}
+
+vec4d_t vceild (vec4d_t v) __attribute__((const));
+vec4d_t vceild (vec4d_t v)
+{
+	return _mm256_ceil_pd (v);
+}
+
+vec4d_t vfloord (vec4d_t v) __attribute__((const));
+vec4d_t vfloord (vec4d_t v)
+{
+	return _mm256_floor_pd (v);
+}
+
+vec4d_t vtruncd (vec4d_t v) __attribute__((const));
+vec4d_t vtruncd (vec4d_t v)
+{
+	return _mm256_round_pd (v, _MM_FROUND_TRUNC);
 }
 
 #endif//__QF_simd_vec4d_h

@@ -127,6 +127,18 @@ qrotf (vec4f_t a, vec4f_t b)
 	return q;
 }
 
+/** Return the conjugate of the quaternion.
+ *
+ * That is, [-x, -y, -z, w].
+ */
+vec4f_t qconjf (vec4f_t q) __attribute__((const));
+vec4f_t
+qconjf (vec4f_t q)
+{
+	const vec4i_t neg = { 1u << 31, 1u << 31, 1u << 31, 0 };
+	return _mm_xor_ps (q, (__m128) neg);
+}
+
 vec4f_t loadvec3f (const float v3[3]) __attribute__((pure, access(read_only, 1)));
 vec4f_t
 loadvec3f (const float v3[3])
@@ -154,6 +166,24 @@ void storevec3f (float v3[3], vec4f_t v4)
 	v3[0] = v4[0];
 	v3[1] = v4[1];
 	v3[2] = v4[2];
+}
+
+vec4f_t vceilf (vec4f_t v) __attribute__((const));
+vec4f_t vceilf (vec4f_t v)
+{
+	return _mm_ceil_ps (v);
+}
+
+vec4f_t vfloorf (vec4f_t v) __attribute__((const));
+vec4f_t vfloorf (vec4f_t v)
+{
+	return _mm_floor_ps (v);
+}
+
+vec4f_t vtruncf (vec4f_t v) __attribute__((const));
+vec4f_t vtruncf (vec4f_t v)
+{
+	return _mm_round_ps (v, _MM_FROUND_TRUNC);
 }
 
 #endif//__QF_simd_vec4f_h

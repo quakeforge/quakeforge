@@ -39,6 +39,46 @@ typedef  struct {
 	vec4f_t     ulp_errors;
 } vec4f_test_t;
 
+static vec4d_t tvtruncd (vec4d_t v, vec4d_t ignore)
+{
+	return vtruncd (v);
+}
+
+static vec4d_t tvceild (vec4d_t v, vec4d_t ignore)
+{
+	return vceild (v);
+}
+
+static vec4d_t tvfloord (vec4d_t v, vec4d_t ignore)
+{
+	return vfloord (v);
+}
+
+static vec4d_t tqconjd (vec4d_t v, vec4d_t ignore)
+{
+	return qconjd (v);
+}
+
+static vec4f_t tvtruncf (vec4f_t v, vec4f_t ignore)
+{
+	return vtruncf (v);
+}
+
+static vec4f_t tvceilf (vec4f_t v, vec4f_t ignore)
+{
+	return vceilf (v);
+}
+
+static vec4f_t tvfloorf (vec4f_t v, vec4f_t ignore)
+{
+	return vfloorf (v);
+}
+
+static vec4f_t tqconjf (vec4f_t v, vec4f_t ignore)
+{
+	return qconjf (v);
+}
+
 static vec4d_test_t vec4d_tests[] = {
 	// 3D dot products
 	{ dotd, right,   right,   one  },
@@ -140,6 +180,11 @@ static vec4d_test_t vec4d_tests[] = {
 	{ qrotd, up,      forward,  { -s05,    0,    0,  s05 },
 	                            { 1.1e-16, 0, 0, 0} },
 	{ qrotd, up,      up,       qident },
+
+	{ tvtruncd, { 1.1, 2.9, -1.1, -2.9 }, {}, { 1, 2, -1, -2 } },
+	{ tvceild,  { 1.1, 2.9, -1.1, -2.9 }, {}, { 2, 3, -1, -2 } },
+	{ tvfloord, { 1.1, 2.9, -1.1, -2.9 }, {}, { 1, 2, -2, -3 } },
+	{ tqconjd,  one, {}, { -1, -1, -1, 1 } },
 };
 #define num_vec4d_tests (sizeof (vec4d_tests) / (sizeof (vec4d_tests[0])))
 
@@ -226,6 +271,11 @@ static vec4f_test_t vec4f_tests[] = {
 	{ qrotf, up,      right,    {    0,  s05,    0,  s05 } },
 	{ qrotf, up,      forward,  { -s05,    0,    0,  s05 } },
 	{ qrotf, up,      up,       qident },
+
+	{ tvtruncf, { 1.1, 2.9, -1.1, -2.9 }, {}, { 1, 2, -1, -2 } },
+	{ tvceilf,  { 1.1, 2.9, -1.1, -2.9 }, {}, { 2, 3, -1, -2 } },
+	{ tvfloorf, { 1.1, 2.9, -1.1, -2.9 }, {}, { 1, 2, -2, -3 } },
+	{ tqconjf,  one, {}, { -1, -1, -1, 1 } },
 };
 #define num_vec4f_tests (sizeof (vec4f_tests) / (sizeof (vec4f_tests[0])))
 
