@@ -51,7 +51,32 @@ delete_memsuper (memsuper_t *super)
 	free (super);
 }
 
-static memblock_t *
+static void
+link_free_line (memsuper_t *super, memline_t *line)
+{
+	if (super->free_lines) {
+		super->free_lines->free_prev = &line->free_next;
+	}
+	line->free_next = super->free_lines;
+	line->free_prev = &super->free_lines;
+	super->free_lines = line;
+}
+
+static void
+unlink_line (memline_t *line)
+{
+	if (line->block_next) {
+		line->block_next->block_prev = line->block_prev;
+	}
+	*line->block_prev = line->block_next;
+
+	if (line->free_next) {
+		line->free_next->free_prev = line->free_prev;
+	}
+	*line->free_prev = line->free_next;
+}
+
+static memblock_t * __attribute__((noinline))
 init_block (memsuper_t *super, void *mem, size_t alloc_size)
 {
 	size_t      size = super->page_size;
@@ -78,14 +103,20 @@ init_block (memsuper_t *super, void *mem, size_t alloc_size)
 		block->pre_size -= MEM_LINE_SIZE;
 	}
 	if (block->pre_size) {
-		block->free_lines = (memline_t *) ((size_t) block - block->pre_size);
-		block->free_lines->next = 0;
-		block->free_lines->size = block->pre_size;
+		memline_t  *line = (memline_t *) ((size_t) block - block->pre_size);
+
+		link_free_line (super, line);
+
+		line->block = block;
+		line->block_next = 0;
+		line->block_prev = &block->free_lines;
+		block->free_lines = line;
+		line->size = block->pre_size;
 	}
 	return block;
 }
 
-static memblock_t *
+static memblock_t * __attribute__((noinline))
 block_alloc (memsuper_t *super, size_t size)
 {
 	memblock_t *block;
@@ -111,38 +142,39 @@ block_alloc (memsuper_t *super, size_t size)
 	return block;
 }
 
-static void *
-line_alloc (memblock_t *block, size_t size)
+static void * __attribute__((noinline))
+alloc_line (memline_t *line, size_t size)
 {
-	memline_t **line = &block->free_lines;
-	memline_t **best = 0;
-	memline_t  *mem;
-	size_t      best_size = ~0u;
+	void       *mem = line;
 
-	while (*line) {
-		if ((*line)->size >= size && (*line)->size < best_size) {
-			best_size = (*line)->size;
-			best = line;
+	if (line->size > size) {
+		// split the line block and insert the new block into the list
+		memline_t  *split = (memline_t *)((size_t) line + size);
+		split->block = line->block;
+		split->size = line->size - size;
+		line->size = size;
+
+		split->block_next = line->block_next;
+		if (split->block_next) {
+			split->block_next->block_prev = &split->block_next;
 		}
-		line = &(*line)->next;
+		line->block_next = split;
+		split->block_prev = &line->block_next;
+
+		split->free_next = line->free_next;
+		if (split->free_next) {
+			split->free_next->free_prev = &split->free_next;
+		}
+		line->free_next = split;
+		split->free_prev = &line->free_next;
 	}
-	if (!best) {
-		return 0;
-	}
-	mem = *best;
-	if (size < best_size) {
-		*best = (memline_t *)((size_t) mem + size);
-		(*best)->next = mem->next;
-		(*best)->size = mem->size - size;
-	} else {
-		*best = (*best)->next;
-	}
-	block->pre_allocated += size;
+	line->block->pre_allocated += line->size;
+	unlink_line (line);
 	return mem;
 }
 
-static void
-line_free (memblock_t *block, void *mem)
+static void __attribute__((noinline))
+line_free (memsuper_t *super, memblock_t *block, void *mem)
 {
 	//FIXME right now, can free only single lines (need allocated lines to
 	// have a control block)
@@ -152,37 +184,55 @@ line_free (memblock_t *block, void *mem)
 
 	block->pre_allocated -= size;
 
-	for (l = &block->free_lines; *l; l = &(*l)->next) {
+	for (l = &block->free_lines; *l; l = &(*l)->block_next) {
 		line = *l;
-
+		if (line->block_next && line->block_next < line) {
+			*(int *)0 = 0;
+		}
 		if ((size_t) mem + size < (size_t) line) {
 			// line to be freed is below the free line
 			break;
 		}
 		if ((size_t) mem + size == (size_t) line) {
 			// line to be freed is immediately below the free line
-			// merge with the free line
+			// merge with the free line by "allocating" the line and then
+			// "freeing" it with the line to be freed
 			size += line->size;
-			line = line->next;
+			unlink_line (line);	// does not modify line->block_next
+			line = line->block_next;
 			break;
 		}
 		if ((size_t) line + line->size == (size_t) mem) {
 			// line to be freed is immediately above the free line
-			// merge with the free line
+			// merge with the free line by growing the line
 			line->size += size;
-			if (line->next && (size_t) line->next == (size_t) mem + size) {
-				line->size += line->next->size;
-				line->next = line->next->next;
+			if (line->block_next
+				&& (size_t) line->block_next == (size_t) mem + size) {
+				// the line to be freed connects two free lines
+				line->size += line->block_next->size;
+				unlink_line (line->block_next);
 			}
 			return;
 		}
+		if ((size_t) mem >= (size_t) line
+			&& (size_t) mem < (size_t) line + line->size) {
+			*(int *) 0 = 0;
+		}
+		line = 0;
 	}
-	((memline_t *) mem)->next = line;
-	((memline_t *) mem)->size = size;
-	*l = mem;
+	memline_t  *memline = (memline_t *) mem;
+	memline->block_next = line;
+	if (memline->block_next) {
+		memline->block_next->block_prev = &memline->block_next;
+	}
+	memline->block_prev = l;
+	memline->size = size;
+	memline->block = block;
+	*l = memline;
+	link_free_line (super, memline);
 }
 
-static memsline_t *
+static memsline_t * __attribute__((noinline))
 sline_new (memsuper_t *super, size_t size_ind)
 {
 	size_t      size = 4 << size_ind;
@@ -224,26 +274,29 @@ cmemalloc (memsuper_t *super, size_t size)
 		size = 4 << ind;
 		if (size >= MEM_LINE_SIZE) {
 			// whole cache lines are required for this object
-			// FIXME slow
-			memblock_t *block = super->memblocks;
-			void       *mem;
+			memline_t  *line = super->free_lines;
 
-			while (block) {
-				if ((mem = line_alloc (block, size))) {
-					return mem;
-				}
-				block = block->next;
+			while (line && line->size < size) {
+				line = line->free_next;
 			}
-			/* The cache-line pool is page aligned for two reasons:
-			 * 1) so it fits exactly within a page
-			 * 2) the control block can be found easily
-			 * And the reason the pool is exactly one page large is so no
-			 * allocated line is ever page-aligned as that would make the line
-			 * indistinguishable from a large block.
-			 */
-			mem = aligned_alloc (super->page_size, super->page_size);
-			block = init_block (super, mem, super->page_size);
-			return line_alloc (block, size);
+			if (!line) {
+				// need a new line, one that doesn't make me fe... wrong song
+				void       *mem;
+				/* The cache-line pool is page aligned for two reasons:
+				 * 1) so it fits exactly within a page
+				 * 2) the control block can be found easily
+				 * And the reason the pool is exactly one page large is so no
+				 * allocated line is ever page-aligned as that would make the
+				 * line indistinguishable from a large block.
+				 */
+				mem = aligned_alloc (super->page_size, super->page_size);
+				// sets super->free_lines, the block is guarnateed to be big
+				// enough to hold the requested allocation as otherwise a full
+				// block allocation would have been used
+				init_block (super, mem, super->page_size);
+				line = super->free_lines;
+			}
+			return alloc_line (line, size);;
 		} else {
 			void       *mem = 0;
 			memsline_t **sline = &super->last_freed[ind];
@@ -273,9 +326,15 @@ cmemalloc (memsuper_t *super, size_t size)
 	return 0;
 }
 
-static void
+static void __attribute__((noinline))
 unlink_block (memblock_t *block)
 {
+	if (block->pre_size) {
+		if (!block->free_lines || block->free_lines->block_next) {
+			*(int *) 0 = 0;
+		}
+		unlink_line (block->free_lines);
+	}
 	if (block->next) {
 		block->next->prev = block->prev;
 	}
@@ -303,7 +362,9 @@ cmemfree (memsuper_t *super, void *mem)
 				*(memsline_t **) (size_t)(sline->prev << 6) = sline->next;
 			}
 
-			(*super_sline)->prev = (size_t) &sline->next >> 6;
+			if (*super_sline) {
+				(*super_sline)->prev = (size_t) &sline->next >> 6;
+			}
 			sline->next = *super_sline;
 			sline->prev = (size_t) super_sline >> 6;
 			(*super_sline) = sline;
@@ -314,7 +375,7 @@ cmemfree (memsuper_t *super, void *mem)
 		size_t      page_size = super->page_size;
 		size_t      page_mask = super->page_mask;
 		block = (memblock_t *) (((size_t) mem + page_size) & ~page_mask) - 1;
-		line_free (block, mem);
+		line_free (super, block, mem);
 	} else {
 		// large block
 		block = (memblock_t *) mem - 1;

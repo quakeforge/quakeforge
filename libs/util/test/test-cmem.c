@@ -90,7 +90,7 @@ test_line (memsuper_t *super)
 		fprintf (stderr, "line3 not contiguous with free lines\n");
 		return 0;
 	}
-	if (block->free_lines->next) {
+	if (block->free_lines->block_next) {
 		fprintf (stderr, "multiple free line blocks\n");
 		return 0;
 	}
@@ -117,11 +117,12 @@ test_line (memsuper_t *super)
 		fprintf (stderr, "free lines not pointing to line2\n");
 		return 0;
 	}
-	if (!block->free_lines->next || block->free_lines->next->next) {
+	if (!block->free_lines->block_next
+		|| block->free_lines->block_next->block_next) {
 		fprintf (stderr, "incorrect number of free blocks\n");
 		return 0;
 	}
-	if (line2->next != old_line || old_line->size != old_size) {
+	if (line2->block_next != old_line || old_line->size != old_size) {
 		fprintf (stderr, "free line blocks corrupted\n");
 		return 0;
 	}
@@ -254,7 +255,7 @@ main (void)
 
 	if (sizeof (memsuper_t) != MEM_LINE_SIZE) {
 		fprintf (stderr, "memsuper_t not cache size: %zd\n",
-				 sizeof (memline_t));
+				 sizeof (memsuper_t));
 		return 1;
 	}
 	if (sizeof (memline_t) != MEM_LINE_SIZE) {

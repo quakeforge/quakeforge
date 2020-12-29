@@ -32,9 +32,21 @@
 #define MEM_LINE_SIZE 64
 
 typedef struct memline_s {
-	struct memline_s *next;
+	/* chain of free line blocks for fast allocation
+	 * chain begins in memsuper_t
+	 */
+	struct memline_s *free_next;
+	struct memline_s **free_prev;
+	/* chain of free line blocks within a membock for merging
+	 * chain begins in memblock_t
+	 */
+	struct memline_s *block_next;
+	struct memline_s **block_prev;
 	size_t      size;
-	size_t      pad[6];
+	/* owning block
+	 */
+	struct memblock_s *block;
+	size_t      pad[2];
 } memline_t;
 
 typedef struct memsline_s {
@@ -85,7 +97,7 @@ typedef struct memsuper_s {
 	 * allocated, and 64 bytes and up consume entire cache lines.
 	 */
 	memsline_t *last_freed[4];
-	size_t      pad;
+	memline_t  *free_lines;
 } memsuper_t;
 
 memsuper_t *new_memsuper (void);
