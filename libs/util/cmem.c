@@ -73,6 +73,15 @@ link_free_line (memsuper_t *super, memline_t *line)
 }
 
 static void
+unlink_free_line (memline_t *line)
+{
+	if (line->free_next) {
+		line->free_next->free_prev = line->free_prev;
+	}
+	*line->free_prev = line->free_next;
+}
+
+static void
 unlink_line (memline_t *line)
 {
 	if (line->block_next) {
@@ -80,10 +89,7 @@ unlink_line (memline_t *line)
 	}
 	*line->block_prev = line->block_next;
 
-	if (line->free_next) {
-		line->free_next->free_prev = line->free_prev;
-	}
-	*line->free_prev = line->free_next;
+	unlink_free_line (line);
 }
 
 static memblock_t * __attribute__((noinline))
@@ -223,6 +229,9 @@ line_free (memsuper_t *super, memblock_t *block, void *mem)
 				line->size += line->block_next->size;
 				unlink_line (line->block_next);
 			}
+			// the line changed size so needs to be relinked in the super
+			unlink_free_line (line);
+			link_free_line (super, line);
 			return;
 		}
 		if ((size_t) mem >= (size_t) line
