@@ -30,6 +30,7 @@
 #include "QF/qtypes.h"
 
 #define MEM_LINE_SIZE 64
+#define MAX_CACHE_LINES 9
 
 typedef struct memline_s {
 	/* chain of free line blocks for fast allocation
@@ -97,7 +98,16 @@ typedef struct memsuper_s {
 	 * allocated, and 64 bytes and up consume entire cache lines.
 	 */
 	memsline_t *last_freed[4];
-	memline_t  *free_lines;
+	/* Free chache lines grouped by size.
+	 *
+	 * The index is the base-2 log of the MINIMUM number of cache lines
+	 * available in each block. ie, blocks with 4, 5, 6 and 7 lines will all
+	 * be in the third list (index 2). For 4k page sizes, only 6 lists are
+	 * needed (32-63 lines) because a page can hold only 62 lines (1 for the
+	 * control block and one to avoid a cache-line being on a page boundary).
+	 * Having 9 (MAX_CACHE_LINES) lists allows page sizes up to 16kB.
+	 */
+	memline_t  *free_lines[MAX_CACHE_LINES];
 } memsuper_t;
 
 memsuper_t *new_memsuper (void);

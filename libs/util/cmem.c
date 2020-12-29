@@ -29,6 +29,15 @@
 #include "QF/alloc.h"
 #include "QF/cmem.h"
 
+static size_t __attribute__((const))
+ilog2 (size_t x)
+{
+	size_t      l = 0;
+	while (x >>= 1) {
+		l++;
+	}
+	return l;
+}
 
 memsuper_t *
 new_memsuper (void)
@@ -54,12 +63,13 @@ delete_memsuper (memsuper_t *super)
 static void
 link_free_line (memsuper_t *super, memline_t *line)
 {
-	if (super->free_lines) {
-		super->free_lines->free_prev = &line->free_next;
+	size_t      ind = ilog2 (line->size) - 6;
+	if (super->free_lines[ind]) {
+		super->free_lines[ind]->free_prev = &line->free_next;
 	}
-	line->free_next = super->free_lines;
-	line->free_prev = &super->free_lines;
-	super->free_lines = line;
+	line->free_next = super->free_lines[ind];
+	line->free_prev = &super->free_lines[ind];
+	super->free_lines[ind] = line;
 }
 
 static void
@@ -105,13 +115,14 @@ init_block (memsuper_t *super, void *mem, size_t alloc_size)
 	if (block->pre_size) {
 		memline_t  *line = (memline_t *) ((size_t) block - block->pre_size);
 
-		link_free_line (super, line);
-
 		line->block = block;
+		line->size = block->pre_size;
+
 		line->block_next = 0;
 		line->block_prev = &block->free_lines;
 		block->free_lines = line;
-		line->size = block->pre_size;
+
+		link_free_line (super, line);
 	}
 	return block;
 }
@@ -274,8 +285,13 @@ cmemalloc (memsuper_t *super, size_t size)
 		size = 4 << ind;
 		if (size >= MEM_LINE_SIZE) {
 			// whole cache lines are required for this object
-			memline_t  *line = super->free_lines;
+			// convert from byte log2 to cache-line log2
+			ind -= 4;
+			memline_t  *line = 0;
 
+			while (!line && ind < MAX_CACHE_LINES) {
+				line = super->free_lines[ind++];
+			}
 			while (line && line->size < size) {
 				line = line->free_next;
 			}
@@ -293,8 +309,8 @@ cmemalloc (memsuper_t *super, size_t size)
 				// sets super->free_lines, the block is guarnateed to be big
 				// enough to hold the requested allocation as otherwise a full
 				// block allocation would have been used
-				init_block (super, mem, super->page_size);
-				line = super->free_lines;
+				memblock_t *block = init_block (super, mem, super->page_size);
+				line = block->free_lines;
 			}
 			return alloc_line (line, size);;
 		} else {
