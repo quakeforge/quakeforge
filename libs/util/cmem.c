@@ -377,7 +377,7 @@ cmemfree (memsuper_t *super, void *mem)
 		// sub line block
 		sline = (memsline_t *) ((size_t) mem & ~(MEM_LINE_SIZE - 1));
 		*(uint16_t *) mem = sline->list << 2;
-		sline->list = (size_t) mem & (MEM_LINE_SIZE - 1);
+		sline->list = ((size_t) mem & (MEM_LINE_SIZE - 1)) >> 2;
 		super_sline = &super->last_freed[sline->size];
 		if (*super_sline != sline) {
 			if (sline->next) {
