@@ -368,40 +368,105 @@ test_line (memsuper_t *super)
 	return 1;
 }
 
+typedef struct {
+	size_t      size;
+	int         group_id;
+} sline_block_t;
+
+static sline_block_t group_tests[] = {
+	{ 2,  4},
+	{ 4,  4},
+	{ 5,  8},
+	{ 3,  4},
+	{ 1,  4},
+	{ 6,  8},
+	{ 9, 16},
+	{ 4,  4},
+	{ 4,  4},
+	{ 7,  8},
+	{ 2,  4},
+	{ 4,  4},
+	{ 8,  8},
+	{13, 16},
+	{ 3,  4},
+	{ 1,  4},
+	{ 8,  8},
+	{ 8,  8},
+	{ 4,  4},
+	{ 4,  4},
+	{16, 16},
+	{32, 32},
+	{32, 33},
+};
+#define num_group_tests (sizeof (group_tests) / sizeof (group_tests[0]))
+#define mask(x) (((size_t) (x)) & ~(MEM_LINE_SIZE - 1))
+#define pagemask(x,o,s) (((size_t) (x)) & (o (s)->page_mask))
+
 static int
 test_sline (memsuper_t *super)
 {
-	void       *mem[] = {
-		//cmemalloc (super, 2),	// smaller than min size
-		cmemalloc (super, 4),
-		cmemalloc (super, 4),
-		cmemalloc (super, 8),
-		cmemalloc (super, 8),
-		cmemalloc (super, 16),
-		cmemalloc (super, 16),
-		cmemalloc (super, 32),
-		cmemalloc (super, 32),
-	};
-#define mem_size (sizeof (mem) / sizeof (mem[0]))
-	int fail = 0;
-	for (size_t i = 0; i < mem_size; i++) {
-		printf("%p\n", mem[i]);
+	void       *mem[num_group_tests];
+	int         ret = 1;
+
+	for (size_t i = 0; i < num_group_tests; i++) {
+		mem[i] = cmemalloc (super, group_tests[i].size);
 		if (!mem[i]) {
 			fprintf (stderr, "mem[%zd] is null\n", i);
-			fail = 1;
+			return 0;
 		}
-		for (size_t j = i + 1; j < mem_size; j++) {
+		if (!((size_t) mem[i] % MEM_LINE_SIZE)) {
+			fprintf (stderr, "mem[%zd] is aligned with chache line\n", i);
+			ret = 0;
+		}
+	}
+	for (size_t i = 0; i < num_group_tests; i++) {
+		for (size_t j = i + 1; j < num_group_tests; j++) {
 			if (mem[i] == mem[j]) {
 				fprintf (stderr, "mem[%zd] is dupped with %zd\n", i, j);
-				fail = 1;
+				ret = 0;
+			}
+			if (mask (mem[i]) == mask (mem[j])) {
+				if (group_tests[i].group_id != group_tests[j].group_id) {
+					fprintf (stderr, "mem[%zd](%d) is grouped with %zd(%d)\n",
+							 i, group_tests[i].group_id,
+							 j, group_tests[j].group_id);
+					ret = 0;
+				}
+			} else {
+				if (group_tests[i].group_id == group_tests[j].group_id) {
+					fprintf (stderr,
+							 "mem[%zd](%d) is not grouped with %zd(%d)\n",
+							 i, group_tests[i].group_id,
+							 j, group_tests[j].group_id);
+					ret = 0;
+				}
+			}
+			if (pagemask (mem[i], ~, super) != pagemask (mem[j], ~, super)) {
+				fprintf (stderr,
+						 "mem[%zd](%d) is not block grouped with %zd(%d)\n",
+						 i, group_tests[i].group_id,
+						 j, group_tests[j].group_id);
 			}
 		}
 	}
-	if (fail) {
-		return 0;
+	for (size_t i = 0; i < num_group_tests; i++) {
+		cmemfree (super, mem[i]);
+		void   *newmem = cmemalloc (super, group_tests[i].size);
+		if (newmem != mem[i]) {
+			fprintf (stderr,
+					"%2zd bytes not recycled (%2zd,%2d) (%06zx %06zx)\n",
+					 group_tests[i].size, i, group_tests[i].group_id,
+					 pagemask (mem[i], ~~, super),
+					 pagemask (newmem, ~~, super));
+			ret = 0;
+		}
+		if (!((size_t) newmem % MEM_LINE_SIZE)) {
+			fprintf (stderr, "newmem is aligned with chache line %p\n",
+					 newmem);
+			ret = 0;
+		}
 	}
-#undef mem_size
-	return 1;
+	return ret;
 }
 
 static int
