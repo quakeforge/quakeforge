@@ -118,7 +118,7 @@ check_block (memblock_t *block, int line_count, int allocated)
 	return ret;
 }
 
-static int
+static int __attribute__ ((pure))
 check_for_loop (memline_t *line, memline_t **stop)
 {
 	memline_t  *next = line->free_next;

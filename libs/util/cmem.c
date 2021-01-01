@@ -92,7 +92,7 @@ unlink_line (memline_t *line)
 	unlink_free_line (line);
 }
 
-static memblock_t * __attribute__((noinline))
+static memblock_t *
 init_block (memsuper_t *super, void *mem, size_t alloc_size)
 {
 	size_t      size = super->page_size;
@@ -133,7 +133,7 @@ init_block (memsuper_t *super, void *mem, size_t alloc_size)
 	return block;
 }
 
-static memblock_t * __attribute__((noinline))
+static memblock_t *
 block_alloc (memsuper_t *super, size_t size)
 {
 	memblock_t *block;
@@ -159,7 +159,7 @@ block_alloc (memsuper_t *super, size_t size)
 	return block;
 }
 
-static void * __attribute__((noinline))
+static void *
 alloc_line (memline_t *line, size_t size)
 {
 	void       *mem = line;
@@ -190,7 +190,7 @@ alloc_line (memline_t *line, size_t size)
 	return mem;
 }
 
-static void __attribute__((noinline))
+static void
 line_free (memsuper_t *super, memblock_t *block, void *mem)
 {
 	//FIXME right now, can free only single lines (need allocated lines to
@@ -252,7 +252,7 @@ line_free (memsuper_t *super, memblock_t *block, void *mem)
 	link_free_line (super, memline);
 }
 
-static memsline_t * __attribute__((noinline))
+static memsline_t *
 sline_new (memsuper_t *super, size_t size_ind)
 {
 	size_t      size = 4 << size_ind;
@@ -351,7 +351,7 @@ cmemalloc (memsuper_t *super, size_t size)
 	return 0;
 }
 
-static void __attribute__((noinline))
+static void
 unlink_block (memblock_t *block)
 {
 	if (block->pre_size) {
