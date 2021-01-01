@@ -115,4 +115,46 @@ void delete_memsuper (memsuper_t *super);
 void *cmemalloc (memsuper_t *super, size_t size);
 void cmemfree (memsuper_t *super, void *mem);
 
+/**	High-tide structure allocator for use in linked lists.
+
+	Using a free-list with the name of \c NAME_freelist, return a single
+	element.
+	The type of the element must be a structure with a field named \c next.
+	When the free-list is empty, memory is claimed from the system in blocks.
+	Elements may be returned to the pool by linking them into the free-list.
+
+	\param s		The number of structures in the block.
+	\param t		The structure type.
+	\param n		The \c NAME portion of the \c NAME_freelist free-list.
+	\param super	The memsuper_t super block from which to allocate memory.
+
+	\hideinitializer
+*/
+#define CMEMALLOC(s, t, n, super)									\
+	({																\
+		if (!n##_freelist) {										\
+			int         i;											\
+			n##_freelist = cmemalloc ((super), (s) * sizeof (t));	\
+			for (i = 0; i < (s) - 1; i++)							\
+				n##_freelist[i].next = &n##_freelist[i + 1];		\
+			n##_freelist[i].next = 0;								\
+		}															\
+		t *v = n##_freelist;										\
+		n##_freelist = n##_freelist->next;							\
+		v;															\
+	})
+
+/** Free a block allocated by #ALLOC
+
+	\param n		The \c NAME portion of the \c NAME_freelist free-list.
+	\param p		The pointer to the block to be freed.
+
+	\hideinitializer
+*/
+#define CMEMFREE(n, p)			\
+	do {						\
+		p->next = n##_freelist;	\
+		n##_freelist = p;		\
+	} while (0)
+
 #endif//__QF_cmem_h

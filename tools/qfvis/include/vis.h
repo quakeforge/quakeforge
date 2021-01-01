@@ -82,10 +82,11 @@ extern pthread_rwlock_t *portal_locks;
 #define MAX_POINTS_ON_WINDING	64
 #define	MAX_PORTALS_ON_CLUSTER	128
 
-typedef struct {
+typedef struct winding_s {
+	struct winding_s *next;
 	qboolean    original;	// don't free, it's part of the portal
 	int	        numpoints;
-	vec3_t      points[8];	// variable sized
+	vec3_t      points[MAX_PORTALS_ON_CLUSTER];	// variable sized
 } winding_t;
 
 typedef enum {
@@ -158,7 +159,9 @@ typedef struct threaddata_s {
 	portal_t   *base;			///< portal for which this thread is being run
 	pstack_t    pstack_head;
 	sep_t      *sep_freelist;	///< per-thread list of free separators
+	winding_t  *winding_freelist;	///< per-thread list of free windings
 	set_pool_t  set_pool;
+	struct memsuper_s *memsuper;
 } threaddata_t;
 
 typedef struct {
@@ -179,10 +182,10 @@ extern cluster_t *clusters;
 extern int *leafcluster;
 extern byte *uncompressed;
 
-void FreeWinding (winding_t *w);
-winding_t *NewWinding (int points);
-winding_t *ClipWinding (winding_t *in, const plane_t *split, qboolean keepon);
-winding_t *CopyWinding (const winding_t *w);
+void FreeWinding (threaddata_t *thread, winding_t *w);
+winding_t *NewWinding (threaddata_t *thread, int points);
+winding_t *ClipWinding (threaddata_t *thread, winding_t *in, const plane_t *split, qboolean keepon);
+winding_t *CopyWinding (threaddata_t *thread, const winding_t *w);
 
 void ClusterFlow (int clusternum);
 void PortalBase (basethread_t *thread, portal_t *portal);

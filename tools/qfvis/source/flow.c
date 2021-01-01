@@ -48,8 +48,8 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "QF/alloc.h"
 #include "QF/bspfile.h"
+#include "QF/cmem.h"
 #include "QF/cmd.h"
 #include "QF/mathlib.h"
 #include "QF/quakefs.h"
@@ -90,14 +90,14 @@ new_separator (threaddata_t *thread)
 {
 	sep_t      *sep;
 
-	ALLOC (128, sep_t, thread->sep, sep);
+	sep = CMEMALLOC (32, sep_t, thread->sep, thread->memsuper);
 	return sep;
 }
 
 static void
 delete_separator (threaddata_t *thread, sep_t *sep)
 {
-	FREE (thread->sep, sep);
+	CMEMFREE (thread->sep, sep);
 }
 
 static void
@@ -247,12 +247,12 @@ FindSeparators (threaddata_t *thread,
 }
 
 static winding_t *
-ClipToSeparators (const sep_t *separators, winding_t *target)
+ClipToSeparators (threaddata_t *thread, const sep_t *separators, winding_t *target)
 {
 	const sep_t *sep;
 
 	for (sep = separators; target && sep; sep = sep->next) {
-		target = ClipWinding (target, &sep->plane, false);
+		target = ClipWinding (thread, target, &sep->plane, false);
 	}
 	return target;
 }
@@ -360,7 +360,7 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		thread->stats.portalcheck++;
 
 		target_winding = target_portal->winding;
-		target_winding = ClipWinding (target_winding, source_plane, false);
+		target_winding = ClipWinding (thread, target_winding, source_plane, false);
 		if (!target_winding)
 			continue;
 
@@ -374,21 +374,21 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 			stack->pass_portal = target_portal;
 
 			RecursiveClusterFlow (target_portal->cluster, thread, stack);
-			FreeWinding (target_winding);
+			FreeWinding (thread, target_winding);
 			continue;
 		}
 
-		target_winding = ClipWinding (target_winding, pass_plane, false);
+		target_winding = ClipWinding (thread, target_winding, pass_plane, false);
 		if (!target_winding)
 			continue;
 
 		// copy source_winding because it likely is already a copy and thus
 		// if it gets clipped away, earlier stack levels will get corrupted
-		source_winding = CopyWinding (prevstack->source_winding);
+		source_winding = CopyWinding (thread, prevstack->source_winding);
 
-		source_winding = ClipWinding (source_winding, &backplane, false);
+		source_winding = ClipWinding (thread, source_winding, &backplane, false);
 		if (!source_winding) {
-			FreeWinding (target_winding);
+			FreeWinding (thread, target_winding);
 			continue;
 		}
 
@@ -402,11 +402,12 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 													   source_winding,
 													   *source_plane,
 													   pass_winding, 0);
-			target_winding = ClipToSeparators (stack->separators[0],
+			target_winding = ClipToSeparators (thread,
+											   stack->separators[0],
 											   target_winding);
 			if (!target_winding) {
 				thread->stats.targetclipped++;
-				FreeWinding (source_winding);
+				FreeWinding (thread, source_winding);
 				continue;
 			}
 			if (target_winding != old)
@@ -420,11 +421,12 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 													   pass_winding,
 													   *pass_plane,
 													   source_winding, 1);
-			target_winding = ClipToSeparators (stack->separators[1],
+			target_winding = ClipToSeparators (thread,
+											   stack->separators[1],
 											   target_winding);
 			if (!target_winding) {
 				thread->stats.targetclipped++;
-				FreeWinding (source_winding);
+				FreeWinding (thread, source_winding);
 				continue;
 			}
 			if (target_winding != old)
@@ -438,11 +440,11 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 			sep = FindSeparators (thread,
 								  target_winding, target_portal->plane,
 								  pass_winding, 0);
-			source_winding = ClipToSeparators (sep, source_winding);
+			source_winding = ClipToSeparators (thread, sep, source_winding);
 			free_separators (thread, sep);
 			if (!source_winding) {
 				thread->stats.sourceclipped++;
-				FreeWinding (target_winding);
+				FreeWinding (thread, target_winding);
 				continue;
 			}
 			if (source_winding != old)
@@ -454,11 +456,11 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 			sep_t      *sep;
 			sep = FindSeparators (thread, pass_winding, *pass_plane,
 								  target_winding, 1);
-			source_winding = ClipToSeparators (sep, source_winding);
+			source_winding = ClipToSeparators (thread, sep, source_winding);
 			free_separators (thread, sep);
 			if (!source_winding) {
 				thread->stats.sourceclipped++;
-				FreeWinding (target_winding);
+				FreeWinding (thread, target_winding);
 				continue;
 			}
 			if (source_winding != old)
@@ -476,8 +478,8 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		// flow through it for real
 		RecursiveClusterFlow (target_portal->cluster, thread, stack);
 
-		FreeWinding (source_winding);
-		FreeWinding (target_winding);
+		FreeWinding (thread, source_winding);
+		FreeWinding (thread, target_winding);
 	}
 	free_separators (thread, stack->separators[1]);
 	free_separators (thread, stack->separators[0]);

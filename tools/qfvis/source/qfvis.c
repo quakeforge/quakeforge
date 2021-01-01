@@ -51,6 +51,7 @@
 
 #include "QF/bspfile.h"
 #include "QF/cmd.h"
+#include "QF/cmem.h"
 #include "QF/dstring.h"
 #include "QF/mathlib.h"
 #include "QF/qtypes.h"
@@ -71,6 +72,7 @@ bsp_t *bsp;
 
 options_t   options;
 
+static threaddata_t main_thread;
 static visstat_t stats;
 int         base_mightsee;
 
@@ -144,7 +146,7 @@ PlaneFromWinding (winding_t *winding, plane_t *plane)
 }
 
 winding_t *
-NewWinding (int points)
+NewWinding (threaddata_t *thread, int points)
 {
 	winding_t  *winding;
 	size_t      size;
@@ -153,38 +155,40 @@ NewWinding (int points)
 		Sys_Error ("NewWinding: %i points", points);
 
 	size = field_offset (winding_t, points[points]);
-	winding = calloc (1, size);
+	winding = CMEMALLOC (13, winding_t, thread->winding, thread->memsuper);
+	memset (winding, 0, size);
 
 	return winding;
 }
 
 void
-FreeWinding (winding_t *w)
+FreeWinding (threaddata_t *thread, winding_t *w)
 {
-	if (!w->original)
-		free (w);
+	if (!w->original) {
+		CMEMFREE (thread->winding, w);
+	}
 }
 
 winding_t *
-CopyWinding (const winding_t *w)
+CopyWinding (threaddata_t *thread, const winding_t *w)
 {
 	size_t      size;
 	winding_t  *copy;
 
 	size = field_offset (winding_t, points[w->numpoints]);
-	copy = malloc (size);
+	copy = CMEMALLOC (13, winding_t, thread->winding, thread->memsuper);
 	memcpy (copy, w, size);
 	copy->original = false;
 	return copy;
 }
 
 static winding_t *
-NewFlippedWinding (const winding_t *w)
+NewFlippedWinding (threaddata_t *thread, const winding_t *w)
 {
 	winding_t  *flipped;
 	int         i;
 
-	flipped = NewWinding (w->numpoints);
+	flipped = NewWinding (thread, w->numpoints);
 	for (i = 0; i < w->numpoints; i++)
 		VectorCopy (w->points[i], flipped->points[w->numpoints - 1 - i]);
 	flipped->numpoints = w->numpoints;
@@ -203,7 +207,7 @@ NewFlippedWinding (const winding_t *w)
 	it will be clipped away.
 */
 winding_t *
-ClipWinding (winding_t *in, const plane_t *split, qboolean keepon)
+ClipWinding (threaddata_t *thread, winding_t *in, const plane_t *split, qboolean keepon)
 {
 	int         maxpts, i, j;
 	int         counts[3], sides[MAX_POINTS_ON_WINDING];
@@ -236,7 +240,7 @@ ClipWinding (winding_t *in, const plane_t *split, qboolean keepon)
 		return in;
 
 	if (!counts[0]) {
-		FreeWinding (in);
+		FreeWinding (thread, in);
 		return NULL;
 	}
 	if (!counts[1])
@@ -244,7 +248,7 @@ ClipWinding (winding_t *in, const plane_t *split, qboolean keepon)
 
 	maxpts = in->numpoints + 4;	// can't use counts[0] + 2 because
 								// of fp grouping errors
-	neww = NewWinding (maxpts);
+	neww = NewWinding (thread, maxpts);
 
 	for (i = 0; i < in->numpoints; i++) {
 		p1 = in->points[i];
@@ -284,7 +288,7 @@ ClipWinding (winding_t *in, const plane_t *split, qboolean keepon)
 	if (neww->numpoints > maxpts)
 		Sys_Error ("ClipWinding: points exceeded estimate");
 	// free the original winding
-	FreeWinding (in);
+	FreeWinding (thread, in);
 
 	return neww;
 }
@@ -384,6 +388,7 @@ LeafThread (void *_thread)
 
 	memset (&data, 0, sizeof (data));
 	set_pool_init (&data.set_pool);
+	data.memsuper = new_memsuper ();
 	do {
 		portal = GetNextPortal ();
 		if (!portal)
@@ -408,6 +413,7 @@ LeafThread (void *_thread)
 		printf ("thread %d done\n", thread);
 	if (working)
 		working[thread] = -1;
+	delete_memsuper (data.memsuper);
 	return NULL;
 }
 
@@ -1033,7 +1039,7 @@ LoadPortals (char *name)
 			|| (unsigned) clusternums[1] > (unsigned) portalclusters)
 			Sys_Error ("LoadPortals: reading portal %i", i);
 
-		winding = portal->winding = NewWinding (numpoints);
+		winding = portal->winding = NewWinding (&main_thread, numpoints);
 		winding->original = true;
 		winding->numpoints = numpoints;
 
@@ -1085,7 +1091,7 @@ LoadPortals (char *name)
 
 		// Use a flipped winding for the reverse portal so the winding
 		// direction and plane normal match.
-		portal->winding = NewFlippedWinding (winding);
+		portal->winding = NewFlippedWinding (&main_thread, winding);
 		portal->winding->original = true;
 		portal->plane = plane;
 		portal->cluster = clusternums[0];
@@ -1114,6 +1120,8 @@ main (int argc, char **argv)
 	double      start, stop;
 	dstring_t  *portalfile = dstring_new ();
 	QFile      *f;
+
+	main_thread.memsuper = new_memsuper ();
 
 	start = Sys_DoubleTime ();
 
