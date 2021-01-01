@@ -35,6 +35,7 @@ typedef struct {
 	int         threads;
 	qboolean    minimal;
 	int         level;
+	size_t      portal_limit;
 	struct dstring_s *bspfile;
 } options_t;
 

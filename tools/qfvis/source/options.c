@@ -46,6 +46,11 @@
 
 const char *this_program;
 
+enum {
+	start_opts = 255,	// not used, starts the enum.
+	OPT_PORTAL_LIMIT,
+};
+
 static struct option const long_options[] = {
 	{"quiet", no_argument, 0, 'q'},
 	{"verbose", no_argument, 0, 'v'},
@@ -55,6 +60,7 @@ static struct option const long_options[] = {
 	{"minimal", no_argument, 0, 'm'},
 	{"level", required_argument, 0, 'l'},
 	{"file", required_argument, 0, 'f'},
+	{"portal-limit", required_argument, 0, OPT_PORTAL_LIMIT},
 	{NULL, 0, NULL, 0}
 };
 
@@ -130,6 +136,9 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case 't':					// threads
 				options.threads = atoi (optarg);
+				break;
+			case OPT_PORTAL_LIMIT:
+				options.portal_limit = atoi (optarg);
 				break;
 			case 'm':					// minimal vis
 				options.minimal = true;

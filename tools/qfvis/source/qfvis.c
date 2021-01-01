@@ -294,16 +294,20 @@ ClipWinding (threaddata_t *thread, winding_t *in, const plane_t *split, qboolean
 }
 
 static portal_t *
-GetNextPortal (void)
+GetNextPortal (int limit)
 {
 	portal_t *p = 0;
 
-	WRLOCK (global_lock);
-	if (portal_count < 2 * numportals) {
-		p = portal_queue[portal_count++];
-		p->status = stat_selected;
+	if (!(limit
+		  && options.portal_limit > 0
+		  && portal_count >= options.portal_limit)) {
+		WRLOCK (global_lock);
+		if (portal_count < 2 * numportals) {
+			p = portal_queue[portal_count++];
+			p->status = stat_selected;
+		}
+		UNLOCK (global_lock);
 	}
-	UNLOCK (global_lock);
 	return p;
 }
 
@@ -390,7 +394,7 @@ LeafThread (void *_thread)
 	set_pool_init (&data.set_pool);
 	data.memsuper = new_memsuper ();
 	do {
-		portal = GetNextPortal ();
+		portal = GetNextPortal (1);
 		if (!portal)
 			break;
 
@@ -430,7 +434,7 @@ BaseVisThread (void *_thread)
 	set_pool_init (&set_pool);
 	data.portalsee = set_new_size_r (&set_pool, numportals * 2);
 	do {
-		portal = GetNextPortal ();
+		portal = GetNextPortal (0);
 		if (!portal)
 			break;
 
@@ -693,8 +697,6 @@ CalcPortalVis (void)
 	unsigned    i;
 	double      start, end;
 
-	portal_count = 0;
-
 	// fastvis just uses mightsee for a very loose bound
 	if (options.minimal) {
 		for (i = 0; i < numportals * 2; i++) {
@@ -713,6 +715,8 @@ CalcPortalVis (void)
 		printf ("Full vis: ");
 	if (options.verbosity >= 1)
 		printf ("\n");
+
+	portal_count = 0;
 
 	RunThreads (LeafThread);
 
