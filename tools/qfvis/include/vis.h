@@ -85,7 +85,7 @@ extern pthread_rwlock_t *portal_locks;
 typedef struct winding_s {
 	struct winding_s *next;
 	qboolean    original;	// don't free, it's part of the portal
-	int	        numpoints;
+	unsigned    numpoints;
 	vec3_t      points[MAX_PORTALS_ON_CLUSTER];	// variable sized
 } winding_t;
 
@@ -169,9 +169,9 @@ typedef struct {
 	int         clustersee;
 } basethread_t;
 
-extern int numportals;
-extern int portalclusters;
-extern int numrealleafs;
+extern unsigned numportals;
+extern unsigned portalclusters;
+extern unsigned numrealleafs;
 extern int bitbytes;
 extern int bitbytes_l;
 extern int bitlongs;

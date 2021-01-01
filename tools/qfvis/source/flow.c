@@ -224,7 +224,7 @@ FindSeparators (threaddata_t *thread,
 				const winding_t *source, const plane_t src_pl,
 				const winding_t *pass, int flip)
 {
-	int         i, j, l;
+	unsigned    i, j, l;
 	vec3_t      v1;
 
 	sep_t      *separators = 0, *sep;

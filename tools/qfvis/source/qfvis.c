@@ -76,11 +76,11 @@ static threaddata_t main_thread;
 static visstat_t stats;
 int         base_mightsee;
 
-int         portal_count;
-int         numportals;
-int         portalclusters;
-int         numrealleafs;
-size_t      originalvismapsize;
+static unsigned portal_count;
+unsigned    numportals;
+unsigned    portalclusters;
+unsigned    numrealleafs;
+unsigned    originalvismapsize;
 int         totalvis;
 int         count_sep;
 int         bitbytes;	// (portalleafs + 63)>>3
@@ -149,7 +149,7 @@ winding_t *
 NewWinding (threaddata_t *thread, int points)
 {
 	winding_t  *winding;
-	size_t      size;
+	unsigned    size;
 
 	if (points > MAX_POINTS_ON_WINDING)
 		Sys_Error ("NewWinding: %i points", points);
@@ -172,7 +172,7 @@ FreeWinding (threaddata_t *thread, winding_t *w)
 winding_t *
 CopyWinding (threaddata_t *thread, const winding_t *w)
 {
-	size_t      size;
+	unsigned    size;
 	winding_t  *copy;
 
 	size = field_offset (winding_t, points[w->numpoints]);
@@ -186,7 +186,7 @@ static winding_t *
 NewFlippedWinding (threaddata_t *thread, const winding_t *w)
 {
 	winding_t  *flipped;
-	int         i;
+	unsigned    i;
 
 	flipped = NewWinding (thread, w->numpoints);
 	for (i = 0; i < w->numpoints; i++)
@@ -209,7 +209,7 @@ NewFlippedWinding (threaddata_t *thread, const winding_t *w)
 winding_t *
 ClipWinding (threaddata_t *thread, winding_t *in, const plane_t *split, qboolean keepon)
 {
-	int         maxpts, i, j;
+	unsigned    maxpts, i, j;
 	int         counts[3], sides[MAX_POINTS_ON_WINDING];
 	vec_t       dot;
 	vec_t       dists[MAX_POINTS_ON_WINDING];
@@ -402,7 +402,7 @@ LeafThread (void *_thread)
 		PortalCompleted (&data, portal);
 
 		if (options.verbosity > 1)
-			printf ("portal:%5i  mightsee:%5i  cansee:%5i %5d/%d\n",
+			printf ("portal:%5i  mightsee:%5i  cansee:%5i %5u/%u\n",
 						(int) (portal - portals),
 						portal->nummightsee,
 						portal->numcansee,
@@ -467,7 +467,7 @@ print_thread_stats (const int *local_work, int thread, int spinner_ind)
 
 	for (i = 0; i < thread; i++)
 		printf ("%6d", local_work[i]);
-	printf ("  %5d / %5d", portal_count, numportals * 2);
+	printf ("  %5u / %5u", portal_count, numportals * 2);
 	fflush (stdout);
 	printf (" %c\r", spinner[spinner_ind % 4]);
 	fflush (stdout);
@@ -495,7 +495,7 @@ WatchThread (void *_thread)
 	int         spinner_ind = 0;
 	int         count = 0;
 	int         prev_prog = 0;
-	int         prev_port = 0;
+	unsigned    prev_port = 0;
 	int         stalled = 0;
 
 	while (1) {
@@ -597,7 +597,7 @@ CompressRow (byte *vis, byte *dest)
 static void
 ClusterFlowExpand (const set_t *src, byte *dest)
 {
-	int         i, j;
+	unsigned    i, j;
 
 	for (j = 1, i = 0; i < numrealleafs; i++) {
 		if (set_is_member (src, leafcluster[i]))
@@ -690,7 +690,7 @@ BasePortalVis (void)
 static void
 CalcPortalVis (void)
 {
-	long        i;
+	unsigned    i;
 	double      start, end;
 
 	portal_count = 0;
@@ -731,7 +731,7 @@ CalcPortalVis (void)
 static void
 CalcVis (void)
 {
-	int         i;
+	unsigned    i;
 
 	printf ("Thread count: %d\n", options.threads);
 	BasePortalVis ();
@@ -745,7 +745,7 @@ CalcVis (void)
 		bsp->leafs[i + 1].visofs = clusters[leafcluster[i]].visofs;
 	}
 	if (options.verbosity >= 0)
-		printf ("average clusters visible: %i\n", totalvis / portalclusters);
+		printf ("average clusters visible: %u\n", totalvis / portalclusters);
 }
 #if 0
 static qboolean
@@ -927,7 +927,7 @@ LoadPortals (char *name)
 {
 	const char *line;
 	char       *err;
-	int         numpoints, i, j, k;
+	unsigned    numpoints, i, j, k;
 	int         read_leafs = 0;
 	int         clusternums[2];
 	cluster_t  *cluster;
@@ -953,34 +953,34 @@ LoadPortals (char *name)
 	if (line && (!strcmp (line, PORTALFILE "\n")
 				 || !strcmp (line, PORTALFILE "\r\n"))) {
 		line = Qgetline (f);
-		if (!line || sscanf (line, "%i\n", &portalclusters) != 1)
+		if (!line || sscanf (line, "%u\n", &portalclusters) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
 		line = Qgetline (f);
-		if (!line || sscanf (line, "%i\n", &numportals) != 1)
+		if (!line || sscanf (line, "%u\n", &numportals) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
 		numrealleafs = portalclusters;
 	} else if (line && (!strcmp (line, PORTALFILE_AM "\n")
 						|| !strcmp (line, PORTALFILE_AM "\r\n"))) {
 		line = Qgetline (f);
-		if (!line || sscanf (line, "%i\n", &portalclusters) != 1)
+		if (!line || sscanf (line, "%u\n", &portalclusters) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
 		line = Qgetline (f);
-		if (!line || sscanf (line, "%i\n", &numportals) != 1)
+		if (!line || sscanf (line, "%u\n", &numportals) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
 		line = Qgetline (f);
-		if (!line || sscanf (line, "%i\n", &numrealleafs) != 1)
+		if (!line || sscanf (line, "%u\n", &numrealleafs) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
 		read_leafs = 1;
 	} else if (line && (!strcmp (line, PORTALFILE2 "\n")
 						|| !strcmp (line, PORTALFILE2 "\r\n"))) {
 		line = Qgetline (f);
-		if (!line || sscanf (line, "%i\n", &numrealleafs) != 1)
+		if (!line || sscanf (line, "%u\n", &numrealleafs) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
 		line = Qgetline (f);
-		if (!line || sscanf (line, "%i\n", &portalclusters) != 1)
+		if (!line || sscanf (line, "%u\n", &portalclusters) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
 		line = Qgetline (f);
-		if (!line || sscanf (line, "%i\n", &numportals) != 1)
+		if (!line || sscanf (line, "%u\n", &numportals) != 1)
 			Sys_Error ("LoadPortals: failed to read header");
 		read_leafs = 1;
 	} else {
@@ -988,9 +988,9 @@ LoadPortals (char *name)
 	}
 
 	if (options.verbosity >= 0) {
-		printf ("%4i portalclusters\n", portalclusters);
-		printf ("%4i numportals\n", numportals);
-		printf ("%4i numrealleafs\n", numrealleafs);
+		printf ("%4u portalclusters\n", portalclusters);
+		printf ("%4u numportals\n", numportals);
+		printf ("%4u numrealleafs\n", numrealleafs);
 	}
 
 	bitbytes = ((portalclusters + 63) & ~63) >> 3;
@@ -1020,24 +1020,24 @@ LoadPortals (char *name)
 	for (i = 0, portal = portals; i < numportals; i++) {
 		line = Qgetline (f);
 		if (!line)
-			Sys_Error ("LoadPortals: reading portal %i", i);
+			Sys_Error ("LoadPortals: reading portal %u", i);
 
 		numpoints = strtol (line, &err, 10);
 		if (err == line)
-			Sys_Error ("LoadPortals: reading portal %i", i);
+			Sys_Error ("LoadPortals: reading portal %u", i);
 		line = err;
 		for (j = 0; j < 2; j++) {
 			clusternums[j] = strtol (line, &err, 10);
 			if (err == line)
-				Sys_Error ("LoadPortals: reading portal %i", i);
+				Sys_Error ("LoadPortals: reading portal %u", i);
 			line = err;
 		}
 
 		if (numpoints > MAX_POINTS_ON_WINDING)
-			Sys_Error ("LoadPortals: portal %i has too many points", i);
+			Sys_Error ("LoadPortals: portal %u has too many points", i);
 		if ((unsigned) clusternums[0] > (unsigned) portalclusters
 			|| (unsigned) clusternums[1] > (unsigned) portalclusters)
-			Sys_Error ("LoadPortals: reading portal %i", i);
+			Sys_Error ("LoadPortals: reading portal %u", i);
 
 		winding = portal->winding = NewWinding (&main_thread, numpoints);
 		winding->original = true;
@@ -1048,19 +1048,19 @@ LoadPortals (char *name)
 			while (isspace ((byte) *line))
 				line++;
 			if (*line++ != '(')
-				Sys_Error ("LoadPortals: reading portal %i", i);
+				Sys_Error ("LoadPortals: reading portal %u", i);
 
 			for (k = 0; k < 3; k++) {
 				winding->points[j][k] = strtod (line, &err);
 				if (err == line)
-					Sys_Error ("LoadPortals: reading portal %i", i);
+					Sys_Error ("LoadPortals: reading portal %u", i);
 				line = err;
 			}
 
 			while (isspace ((byte) *line))
 				line++;
 			if (*line++ != ')')
-				Sys_Error ("LoadPortals: reading portal %i", i);
+				Sys_Error ("LoadPortals: reading portal %u", i);
 		}
 
 		// calc plane

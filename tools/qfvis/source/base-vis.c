@@ -98,7 +98,7 @@ test_sphere (sphere_t *sphere, plane_t *plane)
 void
 PortalBase (basethread_t *thread, portal_t *portal)
 {
-    int			i, j, k;
+    unsigned    i, j, k;
 	float		d;
     portal_t   *tp;
     winding_t  *winding;
