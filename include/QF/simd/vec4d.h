@@ -32,13 +32,107 @@
 
 #include "QF/simd/types.h"
 
+GNU89INLINE inline vec4d_t vsqrtd (vec4d_t v) __attribute__((const));
+GNU89INLINE inline vec4d_t vceild (vec4d_t v) __attribute__((const));
+GNU89INLINE inline vec4d_t vfloord (vec4d_t v) __attribute__((const));
+GNU89INLINE inline vec4d_t vtruncd (vec4d_t v) __attribute__((const));
 /** 3D vector cross product.
  *
  * The w (4th) component can be any value on input, and is guaranteed to be 0
  * in the result. The result is not affected in any way by either vector's w
  * componemnt
  */
-vec4d_t crossd (vec4d_t a, vec4d_t b) __attribute__((const));
+GNU89INLINE inline vec4d_t crossd (vec4d_t a, vec4d_t b) __attribute__((const));
+/** 4D vector dot product.
+ *
+ * The w component *IS* significant, but if it is 0 in either vector, then
+ * the result will be as for a 3D dot product.
+ *
+ * Note that the dot product is in all 4 of the return value's elements. This
+ * helps optimize vector math as the scalar is already pre-spread. If just the
+ * scalar is required, use result[0].
+ */
+GNU89INLINE inline vec4d_t dotd (vec4d_t a, vec4d_t b) __attribute__((const));
+/** Quaternion product.
+ *
+ * The vector is interpreted as a quaternion instead of a regular 4D vector.
+ * The quaternion may be of any magnitude, so this is more generally useful.
+ * than if the quaternion was required to be unit length.
+ */
+GNU89INLINE inline vec4d_t qmuld (vec4d_t a, vec4d_t b) __attribute__((const));
+/** Optimized quaterion-vector multiplication for vector rotation.
+ *
+ * If the vector's w component is not zero, then the result's w component
+ * is the cosine of the full rotation angle scaled by the vector's w component.
+ * The quaternion is assumed to be unit. If the quaternion is not unit, the
+ * vector will be scaled by the square of the quaternion's magnitude.
+ */
+GNU89INLINE inline vec4d_t qvmuld (vec4d_t q, vec4d_t v) __attribute__((const));
+/** Create the quaternion representing the shortest rotation from a to b.
+ *
+ * Both a and b are assumed to be 3D vectors (w components 0), but a resonable
+ * (but incorrect) result will still be produced if either a or b is a 4D
+ * vector. The rotation axis will be the same as if both vectors were 3D, but
+ * the magnitude of the rotation will be different.
+ */
+GNU89INLINE inline vec4d_t qrotd (vec4d_t a, vec4d_t b) __attribute__((const));
+/** Return the conjugate of the quaternion.
+ *
+ * That is, [-x, -y, -z, w].
+ */
+GNU89INLINE inline vec4d_t qconjd (vec4d_t q) __attribute__((const));
+GNU89INLINE inline vec4d_t loadvec3d (const double v3[]) __attribute__((pure, access(read_only, 1)));
+GNU89INLINE inline void storevec3d (double v3[3], vec4d_t v4) __attribute__((access (write_only, 1)));
+
+#ifndef IMPLEMENT_VEC4D_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+vec4d_t
+vsqrtd (vec4d_t v)
+{
+	return _mm256_sqrt_pd (v);
+}
+
+#ifndef IMPLEMENT_VEC4D_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+vec4d_t
+vceild (vec4d_t v)
+{
+	return _mm256_ceil_pd (v);
+}
+
+#ifndef IMPLEMENT_VEC4D_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+vec4d_t
+vfloord (vec4d_t v)
+{
+	return _mm256_floor_pd (v);
+}
+
+#ifndef IMPLEMENT_VEC4D_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+vec4d_t
+vtruncd (vec4d_t v)
+{
+	return _mm256_round_pd (v, _MM_FROUND_TRUNC);
+}
+
+#ifndef IMPLEMENT_VEC4D_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
 vec4d_t
 crossd (vec4d_t a, vec4d_t b)
 {
@@ -49,16 +143,11 @@ crossd (vec4d_t a, vec4d_t b)
 	return __builtin_shuffle(c, A);
 }
 
-/** 4D vector dot product.
- *
- * The w component *IS* significant, but if it is 0 in either vector, then
- * the result will be as for a 3D dot product.
- *
- * Note that the dot product is in all 4 of the return value's elements. This
- * helps optimize vector math as the scalar is already pre-spread. If just the
- * scalar is required, use result[0].
- */
-vec4d_t dotd (vec4d_t a, vec4d_t b) __attribute__((const));
+#ifndef IMPLEMENT_VEC4D_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
 vec4d_t
 dotd (vec4d_t a, vec4d_t b)
 {
@@ -69,13 +158,11 @@ dotd (vec4d_t a, vec4d_t b)
 	return c;
 }
 
-/** Quaternion product.
- *
- * The vector is interpreted as a quaternion instead of a regular 4D vector.
- * The quaternion may be of any magnitude, so this is more generally useful.
- * than if the quaternion was required to be unit length.
- */
-vec4d_t qmuld (vec4d_t a, vec4d_t b) __attribute__((const));
+#ifndef IMPLEMENT_VEC4D_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
 vec4d_t
 qmuld (vec4d_t a, vec4d_t b)
 {
@@ -89,14 +176,11 @@ qmuld (vec4d_t a, vec4d_t b)
 	return c - d;
 }
 
-/** Optimized quaterion-vector multiplication for vector rotation.
- *
- * If the vector's w component is not zero, then the result's w component
- * is the cosine of the full rotation angle scaled by the vector's w component.
- * The quaternion is assumed to be unit. If the quaternion is not unit, the
- * vector will be scaled by the square of the quaternion's magnitude.
- */
-vec4d_t qvmuld (vec4d_t q, vec4d_t v) __attribute__((const));
+#ifndef IMPLEMENT_VEC4D_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
 vec4d_t
 qvmuld (vec4d_t q, vec4d_t v)
 {
@@ -112,19 +196,16 @@ qvmuld (vec4d_t q, vec4d_t v)
 	return (s * s - qq) * v + 2 * (qv * q + s * c);
 }
 
-/** Create the quaternion representing the shortest rotation from a to b.
- *
- * Both a and b are assumed to be 3D vectors (w components 0), but a resonable
- * (but incorrect) result will still be produced if either a or b is a 4D
- * vector. The rotation axis will be the same as if both vectors were 3D, but
- * the magnitude of the rotation will be different.
- */
-vec4d_t qrotd (vec4d_t a, vec4d_t b) __attribute__((const));
+#ifndef IMPLEMENT_VEC4D_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
 vec4d_t
 qrotd (vec4d_t a, vec4d_t b)
 {
-	vec4d_t ma = _mm256_sqrt_pd (dotd (a, a));
-	vec4d_t mb = _mm256_sqrt_pd (dotd (b, b));
+	vec4d_t ma = vsqrtd (dotd (a, a));
+	vec4d_t mb = vsqrtd (dotd (b, b));
 	vec4d_t den = 2 * ma * mb;
 	vec4d_t t = mb * a + ma * b;
 	vec4d_t mba_mab = _mm256_sqrt_pd (dotd (t, t));
@@ -133,7 +214,11 @@ qrotd (vec4d_t a, vec4d_t b)
 	return q;
 }
 
-vec4d_t qconjd (vec4d_t q) __attribute__((const));
+#ifndef IMPLEMENT_VEC4D_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
 vec4d_t
 qconjd (vec4d_t q)
 {
@@ -141,7 +226,11 @@ qconjd (vec4d_t q)
 	return _mm256_xor_pd (q, (__m256d) neg);
 }
 
-vec4d_t loadvec3d (const double v3[]) __attribute__((pure, access(read_only, 1)));
+#ifndef IMPLEMENT_VEC4D_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
 vec4d_t
 loadvec3d (const double v3[])
 {
@@ -153,30 +242,17 @@ loadvec3d (const double v3[])
 	return v4;
 }
 
-void storevec3d (double v3[3], vec4d_t v4) __attribute__((access (write_only, 1)));
-void storevec3d (double v3[3], vec4d_t v4)
+#ifndef IMPLEMENT_VEC4D_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+void
+storevec3d (double v3[3], vec4d_t v4)
 {
 	v3[0] = v4[0];
 	v3[1] = v4[1];
 	v3[2] = v4[2];
-}
-
-vec4d_t vceild (vec4d_t v) __attribute__((const));
-vec4d_t vceild (vec4d_t v)
-{
-	return _mm256_ceil_pd (v);
-}
-
-vec4d_t vfloord (vec4d_t v) __attribute__((const));
-vec4d_t vfloord (vec4d_t v)
-{
-	return _mm256_floor_pd (v);
-}
-
-vec4d_t vtruncd (vec4d_t v) __attribute__((const));
-vec4d_t vtruncd (vec4d_t v)
-{
-	return _mm256_round_pd (v, _MM_FROUND_TRUNC);
 }
 
 #endif//__QF_simd_vec4d_h

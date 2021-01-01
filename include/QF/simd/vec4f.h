@@ -32,21 +32,17 @@
 
 #include "QF/simd/types.h"
 
+GNU89INLINE inline vec4f_t vsqrtf (vec4f_t v) __attribute__((const));
+GNU89INLINE inline vec4f_t vceilf (vec4f_t v) __attribute__((const));
+GNU89INLINE inline vec4f_t vfloorf (vec4f_t v) __attribute__((const));
+GNU89INLINE inline vec4f_t vtruncf (vec4f_t v) __attribute__((const));
 /** 3D vector cross product.
  *
  * The w (4th) component can be any value on input, and is guaranteed to be 0
  * in the result. The result is not affected in any way by either vector's w
  * componemnt
  */
-vec4f_t crossf (vec4f_t a, vec4f_t b) __attribute__((const));
-vec4f_t
-crossf (vec4f_t a, vec4f_t b)
-{
-	static const vec4i_t A = {1, 2, 0, 3};
-	vec4f_t c = a * __builtin_shuffle (b, A) - __builtin_shuffle (a, A) * b;
-	return __builtin_shuffle(c, A);
-}
-
+GNU89INLINE inline vec4f_t crossf (vec4f_t a, vec4f_t b) __attribute__((const));
 /** 4D vector dot product.
  *
  * The w component *IS* significant, but if it is 0 in either vector, then
@@ -56,7 +52,99 @@ crossf (vec4f_t a, vec4f_t b)
  * helps optimize vector math as the scalar is already pre-spread. If just the
  * scalar is required, use result[0].
  */
-vec4f_t dotf (vec4f_t a, vec4f_t b) __attribute__((const));
+GNU89INLINE inline vec4f_t dotf (vec4f_t a, vec4f_t b) __attribute__((const));
+/** Quaternion product.
+ *
+ * The vector is interpreted as a quaternion instead of a regular 4D vector.
+ * The quaternion may be of any magnitude, so this is more generally useful.
+ * than if the quaternion was required to be unit length.
+ */
+GNU89INLINE inline vec4f_t qmulf (vec4f_t a, vec4f_t b) __attribute__((const));
+/** Optimized quaterion-vector multiplication for vector rotation.
+ *
+ * If the vector's w component is not zero, then the result's w component
+ * is the cosine of the full rotation angle scaled by the vector's w component.
+ * The quaternion is assumed to be unit.
+ */
+GNU89INLINE inline vec4f_t qvmulf (vec4f_t q, vec4f_t v) __attribute__((const));
+/** Create the quaternion representing the shortest rotation from a to b.
+ *
+ * Both a and b are assumed to be 3D vectors (w components 0), but a resonable
+ * (but incorrect) result will still be produced if either a or b is a 4D
+ * vector. The rotation axis will be the same as if both vectors were 3D, but
+ * the magnitude of the rotation will be different.
+ */
+GNU89INLINE inline vec4f_t qrotf (vec4f_t a, vec4f_t b) __attribute__((const));
+/** Return the conjugate of the quaternion.
+ *
+ * That is, [-x, -y, -z, w].
+ */
+GNU89INLINE inline vec4f_t qconjf (vec4f_t q) __attribute__((const));
+GNU89INLINE inline vec4f_t loadvec3f (const float v3[3]) __attribute__((pure, access(read_only, 1)));
+GNU89INLINE inline void storevec3f (float v3[3], vec4f_t v4) __attribute__((access (write_only, 1)));
+
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+vec4f_t
+vsqrtf (vec4f_t v)
+{
+	return _mm_sqrt_ps (v);
+}
+
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+vec4f_t
+vceilf (vec4f_t v)
+{
+	return _mm_ceil_ps (v);
+}
+
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+vec4f_t
+vfloorf (vec4f_t v)
+{
+	return _mm_floor_ps (v);
+}
+
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+vec4f_t
+vtruncf (vec4f_t v)
+{
+	return _mm_round_ps (v, _MM_FROUND_TRUNC);
+}
+
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+vec4f_t
+crossf (vec4f_t a, vec4f_t b)
+{
+	static const vec4i_t A = {1, 2, 0, 3};
+	vec4f_t c = a * __builtin_shuffle (b, A) - __builtin_shuffle (a, A) * b;
+	return __builtin_shuffle(c, A);
+}
+
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
 vec4f_t
 dotf (vec4f_t a, vec4f_t b)
 {
@@ -66,13 +154,11 @@ dotf (vec4f_t a, vec4f_t b)
 	return c;
 }
 
-/** Quaternion product.
- *
- * The vector is interpreted as a quaternion instead of a regular 4D vector.
- * The quaternion may be of any magnitude, so this is more generally useful.
- * than if the quaternion was required to be unit length.
- */
-vec4f_t qmulf (vec4f_t a, vec4f_t b) __attribute__((const));
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
 vec4f_t
 qmulf (vec4f_t a, vec4f_t b)
 {
@@ -85,13 +171,11 @@ qmulf (vec4f_t a, vec4f_t b)
 	return c - d;
 }
 
-/** Optimized quaterion-vector multiplication for vector rotation.
- *
- * If the vector's w component is not zero, then the result's w component
- * is the cosine of the full rotation angle scaled by the vector's w component.
- * The quaternion is assumed to be unit.
- */
-vec4f_t qvmulf (vec4f_t q, vec4f_t v) __attribute__((const));
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
 vec4f_t
 qvmulf (vec4f_t q, vec4f_t v)
 {
@@ -106,19 +190,16 @@ qvmulf (vec4f_t q, vec4f_t v)
 	return (s * s - qq) * v + 2 * (qv * q + s * c);
 }
 
-/** Create the quaternion representing the shortest rotation from a to b.
- *
- * Both a and b are assumed to be 3D vectors (w components 0), but a resonable
- * (but incorrect) result will still be produced if either a or b is a 4D
- * vector. The rotation axis will be the same as if both vectors were 3D, but
- * the magnitude of the rotation will be different.
- */
-vec4f_t qrotf (vec4f_t a, vec4f_t b) __attribute__((const));
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
 vec4f_t
 qrotf (vec4f_t a, vec4f_t b)
 {
-	vec4f_t ma = _mm_sqrt_ps (dotf (a, a));
-	vec4f_t mb = _mm_sqrt_ps (dotf (b, b));
+	vec4f_t ma = vsqrtf (dotf (a, a));
+	vec4f_t mb = vsqrtf (dotf (b, b));
 	vec4f_t den = 2 * ma * mb;
 	vec4f_t t = mb * a + ma * b;
 	vec4f_t mba_mab = _mm_sqrt_ps (dotf (t, t));
@@ -127,11 +208,11 @@ qrotf (vec4f_t a, vec4f_t b)
 	return q;
 }
 
-/** Return the conjugate of the quaternion.
- *
- * That is, [-x, -y, -z, w].
- */
-vec4f_t qconjf (vec4f_t q) __attribute__((const));
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
 vec4f_t
 qconjf (vec4f_t q)
 {
@@ -139,7 +220,11 @@ qconjf (vec4f_t q)
 	return _mm_xor_ps (q, (__m128) neg);
 }
 
-vec4f_t loadvec3f (const float v3[3]) __attribute__((pure, access(read_only, 1)));
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
 vec4f_t
 loadvec3f (const float v3[3])
 {
@@ -160,30 +245,17 @@ loadvec3f (const float v3[3])
 	return v4;
 }
 
-void storevec3f (float v3[3], vec4f_t v4) __attribute__((access (write_only, 1)));
-void storevec3f (float v3[3], vec4f_t v4)
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+void
+storevec3f (float v3[3], vec4f_t v4)
 {
 	v3[0] = v4[0];
 	v3[1] = v4[1];
 	v3[2] = v4[2];
-}
-
-vec4f_t vceilf (vec4f_t v) __attribute__((const));
-vec4f_t vceilf (vec4f_t v)
-{
-	return _mm_ceil_ps (v);
-}
-
-vec4f_t vfloorf (vec4f_t v) __attribute__((const));
-vec4f_t vfloorf (vec4f_t v)
-{
-	return _mm_floor_ps (v);
-}
-
-vec4f_t vtruncf (vec4f_t v) __attribute__((const));
-vec4f_t vtruncf (vec4f_t v)
-{
-	return _mm_round_ps (v, _MM_FROUND_TRUNC);
 }
 
 #endif//__QF_simd_vec4f_h

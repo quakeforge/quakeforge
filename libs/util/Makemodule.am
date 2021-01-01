@@ -74,6 +74,7 @@ libs_util_libQFutil_la_SOURCES= \
 	libs/util/script.c \
 	libs/util/segtext.c \
 	libs/util/set.c \
+	libs/util/simd.c \
 	libs/util/sizebuf.c \
 	libs/util/string.c \
 	libs/util/sys.c \
