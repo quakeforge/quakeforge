@@ -357,6 +357,16 @@ BINOP(vector, mul, vec4f_t, *)
 BINOP(vector, div, vec4f_t, /)
 
 static void
+vector_quaternion_mul (const exprval_t *val1, const exprval_t *val2,
+					   exprval_t *result, exprctx_t *ctx)
+{
+	vec4f_t     a = *(vec4f_t *) val1->value;
+	vec4f_t     b = *(vec4f_t *) val2->value;
+	__auto_type c = (vec4f_t *) result->value;
+	*c = vqmulf (a, b);
+}
+
+static void
 vector_rem (const exprval_t *val1, const exprval_t *val2, exprval_t *result,
 			exprctx_t *ctx)
 {
@@ -396,6 +406,7 @@ binop_t vector_binops[] = {
 	{ '+', &cexpr_vector, &cexpr_vector, vector_add },
 	{ '-', &cexpr_vector, &cexpr_vector, vector_sub },
 	{ '*', &cexpr_vector, &cexpr_vector, vector_mul },
+	{ '*', &cexpr_quaternion, &cexpr_vector, vector_quaternion_mul },
 	{ '/', &cexpr_vector, &cexpr_vector, vector_div },
 	{ '%', &cexpr_vector, &cexpr_vector, vector_rem },
 	{ MOD, &cexpr_vector, &cexpr_vector, vector_mod },
@@ -426,10 +437,21 @@ quaternion_mul (const exprval_t *val1, const exprval_t *val2,
 	*c = qmulf (a, b);
 }
 
+static void
+quaternion_vector_mul (const exprval_t *val1, const exprval_t *val2,
+					   exprval_t *result, exprctx_t *ctx)
+{
+	vec4f_t     a = *(vec4f_t *) val1->value;
+	vec4f_t     b = *(vec4f_t *) val2->value;
+	__auto_type c = (vec4f_t *) result->value;
+	*c = qvmulf (a, b);
+}
+
 binop_t quaternion_binops[] = {
 	{ '+', &cexpr_quaternion, &cexpr_quaternion, vector_add },
 	{ '-', &cexpr_quaternion, &cexpr_quaternion, vector_sub },
 	{ '*', &cexpr_quaternion, &cexpr_quaternion, quaternion_mul },
+	{ '*', &cexpr_vector, &cexpr_vector, quaternion_vector_mul },
 	{}
 };
 
