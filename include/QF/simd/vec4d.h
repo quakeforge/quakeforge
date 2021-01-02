@@ -62,12 +62,24 @@ GNU89INLINE inline vec4d_t dotd (vec4d_t a, vec4d_t b) __attribute__((const));
 GNU89INLINE inline vec4d_t qmuld (vec4d_t a, vec4d_t b) __attribute__((const));
 /** Optimized quaterion-vector multiplication for vector rotation.
  *
+ * \note This is the inverse of vqmulf
+ *
  * If the vector's w component is not zero, then the result's w component
  * is the cosine of the full rotation angle scaled by the vector's w component.
  * The quaternion is assumed to be unit. If the quaternion is not unit, the
  * vector will be scaled by the square of the quaternion's magnitude.
  */
 GNU89INLINE inline vec4d_t qvmuld (vec4d_t q, vec4d_t v) __attribute__((const));
+/** Optimized vector-quaterion multiplication for vector rotation.
+ *
+ * \note This is the inverse of qvmulf
+ *
+ * If the vector's w component is not zero, then the result's w component
+ * is the cosine of the full rotation angle scaled by the vector's w component.
+ * The quaternion is assumed to be unit. If the quaternion is not unit, the
+ * vector will be scaled by the square of the quaternion's magnitude.
+ */
+GNU89INLINE inline vec4d_t vqmuld (vec4d_t v, vec4d_t q) __attribute__((const));
 /** Create the quaternion representing the shortest rotation from a to b.
  *
  * Both a and b are assumed to be 3D vectors (w components 0), but a resonable
@@ -183,6 +195,7 @@ VISIBLE
 #endif
 vec4d_t
 qvmuld (vec4d_t q, vec4d_t v)
+//             ^^^        ^^^
 {
 	double s = q[3];
 	// zero the scalar of the quaternion. Results in an extra operation, but
@@ -193,7 +206,30 @@ qvmuld (vec4d_t q, vec4d_t v)
 	vec4d_t qv = dotd (q, v);	// q.w is 0 so v.w is irrelevant
 	vec4d_t qq = dotd (q, q);
 
+	//                                   vvv
 	return (s * s - qq) * v + 2 * (qv * q + s * c);
+}
+
+#ifndef IMPLEMENT_VEC4D_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+vec4d_t
+vqmuld (vec4d_t v, vec4d_t q)
+//             ^^^        ^^^
+{
+	double s = q[3];
+	// zero the scalar of the quaternion. Results in an extra operation, but
+	// avoids adding precision issues.
+	vec4d_t z = {};
+	q = _mm256_blend_pd (q, z, 0x08);
+	vec4d_t c = crossd (q, v);
+	vec4d_t qv = dotd (q, v);	// q.w is 0 so v.w is irrelevant
+	vec4d_t qq = dotd (q, q);
+
+	//                                   vvv
+	return (s * s - qq) * v + 2 * (qv * q - s * c);
 }
 
 #ifndef IMPLEMENT_VEC4D_Funcs

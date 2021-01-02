@@ -153,11 +153,22 @@ static vec4d_test_t vec4d_tests[] = {
 	{ qvmuld, one,    up,        { 4, 0, 0, 0 } },
 	{ qvmuld, one,    {1,1,1,0}, { 4, 4, 4, 0 } },
 	{ qvmuld, one,    one,       { 4, 4, 4, -2 } },
+	// inverse rotation, so x->z->y->x
+	{ vqmuld, right,     one,    { 0, 0, 4, 0 } },
+	{ vqmuld, forward,   one,    { 4, 0, 0, 0 } },
+	{ vqmuld, up,        one,    { 0, 4, 0, 0 } },
+	{ vqmuld, {1,1,1,0}, one,    { 4, 4, 4, 0 } },
+	{ vqmuld, one,       one,    { 4, 4, 4, -2 } },
 	// The half vector is unit.
 	{ qvmuld, half,   right,     forward },
 	{ qvmuld, half,   forward,   up      },
 	{ qvmuld, half,   up,        right   },
 	{ qvmuld, half,   {1,1,1,0}, { 1, 1, 1, 0 } },
+	// inverse
+	{ vqmuld, right,     half,   up      },
+	{ vqmuld, forward,   half,   right   },
+	{ vqmuld, up,        half,   forward },
+	{ vqmuld, {1,1,1,0}, half,   { 1, 1, 1, 0 } },
 	// one is a 4D vector and qvmuld is meant for 3D vectors. However, it
 	// seems that the vector's w has no effect on the 3d portion of the
 	// result, but the result's w is cosine of the full rotation angle
@@ -168,6 +179,13 @@ static vec4d_test_t vec4d_tests[] = {
 	{ qvmuld, qtest,  forward,   {0.6144, 0.1808, 0.768, 0},
 	                             {0, -2.7e-17, 0, 0} },
 	{ qvmuld, qtest,  up,        {0.576, -0.768, -0.28, 0} },
+	// inverse
+	{ vqmuld, one,       half,   { 1, 1, 1, -0.5 } },
+	{ vqmuld, {2,2,2,2}, half,   { 2, 2, 2, -1 } },
+	{ vqmuld, right,     qtest,  {0.5392, 0.6144, 0.576, 0} },
+	{ vqmuld, forward,   qtest,  {0.6144, 0.1808, -0.768, 0},
+	                             {0, -2.7e-17, 0, 0} },
+	{ vqmuld, up,        qtest,  {-0.576, 0.768, -0.28, 0} },
 
 	{ qrotd, right,   right,    qident },
 	{ qrotd, right,   forward,  {    0,    0,  s05,  s05 },
@@ -259,12 +277,25 @@ static vec4f_test_t vec4f_tests[] = {
 	{ qvmulf, one,    up,        { 4, 0, 0, 0 } },
 	{ qvmulf, one,    {1,1,1,0}, { 4, 4, 4, 0 } },
 	{ qvmulf, one,    one,       { 4, 4, 4, -2 } },
+	// inverse rotation, so x->z->y->x
+	{ vqmulf, right,     one,    { 0, 0, 4, 0 } },
+	{ vqmulf, forward,   one,    { 4, 0, 0, 0 } },
+	{ vqmulf, up,        one,    { 0, 4, 0, 0 } },
+	{ vqmulf, {1,1,1,0}, one,    { 4, 4, 4, 0 } },
+	{ vqmulf, one,       one,    { 4, 4, 4, -2 } },
+	//
 	{ qvmulf, qtest,  right,     {0.5392, 0.6144, -0.576, 0},
-	                             {0, -5.9e-08, -6e-8, 0} },
+	                             {0, -5.9e-8, -6e-8, 0} },
 	{ qvmulf, qtest,  forward,   {0.6144, 0.1808, 0.768, 0},
-	                             {-5.9e-08, 1.5e-08, 0, 0} },
+	                             {-5.9e-8, 1.5e-8, 0, 0} },
 	{ qvmulf, qtest,  up,        {0.576, -0.768, -0.28, 0},
 	                             {6e-8, 0, 3e-8, 0} },
+	{ vqmulf, right,     qtest,  {0.5392, 0.6144, 0.576, 0},
+	                             {0, -5.9e-8, 5.9e-8, 0} },
+	{ vqmulf, forward,   qtest,  {0.6144, 0.1808, -0.768, 0},
+	                             {-5.9e-8, 1.5e-8, 0, 0} },
+	{ vqmulf, up,        qtest,  {-0.576, 0.768, -0.28, 0},
+	                             {-5.9e-8, 0, 3e-8, 0} },
 
 	{ qrotf, right,   right,    qident },
 	{ qrotf, right,   forward,  {    0,    0,  s05,  s05 } },

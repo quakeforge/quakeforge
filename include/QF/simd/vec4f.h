@@ -62,11 +62,22 @@ GNU89INLINE inline vec4f_t dotf (vec4f_t a, vec4f_t b) __attribute__((const));
 GNU89INLINE inline vec4f_t qmulf (vec4f_t a, vec4f_t b) __attribute__((const));
 /** Optimized quaterion-vector multiplication for vector rotation.
  *
+ * \note This is the inverse of vqmulf
+ *
  * If the vector's w component is not zero, then the result's w component
  * is the cosine of the full rotation angle scaled by the vector's w component.
  * The quaternion is assumed to be unit.
  */
 GNU89INLINE inline vec4f_t qvmulf (vec4f_t q, vec4f_t v) __attribute__((const));
+/** Optimized vector-quaterion multiplication for vector rotation.
+ *
+ * \note This is the inverse of qvmulf
+ *
+ * If the vector's w component is not zero, then the result's w component
+ * is the cosine of the full rotation angle scaled by the vector's w component.
+ * The quaternion is assumed to be unit.
+ */
+GNU89INLINE inline vec4f_t vqmulf (vec4f_t v, vec4f_t q) __attribute__((const));
 /** Create the quaternion representing the shortest rotation from a to b.
  *
  * Both a and b are assumed to be 3D vectors (w components 0), but a resonable
@@ -188,6 +199,25 @@ qvmulf (vec4f_t q, vec4f_t v)
 	vec4f_t qq = dotf (q, q);
 
 	return (s * s - qq) * v + 2 * (qv * q + s * c);
+}
+
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+vec4f_t
+vqmulf (vec4f_t v, vec4f_t q)
+{
+	float s = q[3];
+	// zero the scalar of the quaternion. Results in an extra operation, but
+	// avoids adding precision issues.
+	q = _mm_insert_ps (q, q, 0xf8);
+	vec4f_t c = crossf (q, v);
+	vec4f_t qv = dotf (q, v);	// q.w is 0 so v.w is irrelevant
+	vec4f_t qq = dotf (q, q);
+
+	return (s * s - qq) * v + 2 * (qv * q - s * c);
 }
 
 #ifndef IMPLEMENT_VEC4F_Funcs
