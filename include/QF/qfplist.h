@@ -44,7 +44,10 @@ typedef enum {
 	QFArray,		///< The property list item represents an array.
 	QFBinary,		///< The property list item represents arbitrary binary
 					///< data.
-	QFString		///< The property list item represents a C string.
+	QFString,		///< The property list item represents a C string.
+
+	QFMultiType = (1 << 31)	///< if bit 31 is set, the type indicates a mask
+					///< of allowed types for plfield_t
 } pltype_t;
 
 /**	Generic property list item.

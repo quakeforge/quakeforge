@@ -227,6 +227,8 @@ PL_Free (plitem_t *item)
 		case QFString:
 			free (item->data);
 			break;
+		case QFMultiType:
+			break;
 	}
 	free (item);
 }
@@ -1138,9 +1140,46 @@ pl_default_parser (const plfield_t *field, const plitem_t *item, void *data,
 		case QFString:
 			*(char **)data = (char *)item->data;
 			return 1;
+		case QFMultiType:
+			break;
 	}
 	PL_Message (messages, 0, "invalid item type: %d", field->type);
 	return 0;
+}
+
+static int
+types_match (pltype_t field_type, pltype_t item_type)
+{
+	if (field_type & QFMultiType) {
+		// field_type is a mask of allowed types
+		return field_type & (1 << item_type);
+	} else {
+		// exact match
+		return field_type == item_type;
+	}
+}
+
+static void
+type_mismatch (plitem_t *messages, const plitem_t *item, const char *name,
+			   pltype_t field_type, pltype_t item_type)
+{
+	const int num_types = sizeof (pl_types) / sizeof (pl_types[0]);
+	if (field_type & QFMultiType) {
+		PL_Message (messages, item,
+					"error: %s is the wrong type. Got %s, expected on of:",
+					name, pl_types[item_type]);
+		field_type &= ~QFMultiType;
+		for (int type = 0; field_type && type < num_types;
+			 type++, field_type >>= 1) {
+			if (field_type & 1) {
+				PL_Message (messages, item, "    %s", pl_types[type]);
+			}
+		}
+	} else {
+		PL_Message (messages, item,
+					"error: %s is the wrong type. Got %s, expected %s", name,
+					pl_types[item_type], pl_types[field_type]);
+	}
 }
 
 VISIBLE int
@@ -1174,11 +1213,9 @@ PL_ParseStruct (const plfield_t *fields, const plitem_t *dict, void *data,
 				} else {
 					parser = pl_default_parser;
 				}
-				if (item->type != f->type) {
-					PL_Message (messages, item, "error: %s is the wrong type"
-								" Got %s, expected %s",current->key,
-								pl_types[f->type],
-								pl_types[item->type]);
+				if (!types_match (f->type, item->type)) {
+					type_mismatch (messages, item, current->key,
+								   f->type, item->type);
 					result = 0;
 				} else {
 					if (!parser (f, item, flddata, messages, context)) {
@@ -1231,12 +1268,11 @@ PL_ParseArray (const plfield_t *field, const plitem_t *array, void *data,
 		plitem_t   *item = plarray->values[i];
 		void       *eledata = &arr->a[i * element->stride];
 
-		if (item->type != element->type) {
-			PL_Message (messages, item,
-						"error: element %d is the wrong type"
-						" Got %s, expected %s", i,
-						pl_types[element->type],
-						pl_types[item->type]);
+		if (!types_match (element->type, item->type)) {
+			char        index[16];
+			snprintf (index, sizeof(index) - 1, "%d", i);
+			index[15] = 0;
+			type_mismatch (messages, item, index, element->type, item->type);
 			result = 0;
 		} else {
 			if (!parser (&f, item, eledata, messages, context)) {
@@ -1284,12 +1320,8 @@ PL_ParseSymtab (const plfield_t *field, const plitem_t *dict, void *data,
 		const char *key = current->key;
 		plitem_t   *item = current->value;
 
-		if (item->type != element->type) {
-			PL_Message (messages, item,
-						"error: element %s is the wrong type"
-						" Got %s, expected %s", key,
-						pl_types[element->type],
-						pl_types[item->type]);
+		if (!types_match (element->type, item->type)) {
+			type_mismatch (messages, item, key, element->type, item->type);
 			result = 0;
 			continue;
 		}
