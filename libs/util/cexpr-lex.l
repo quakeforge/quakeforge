@@ -241,14 +241,14 @@ static exprval_t *parse_uint (const char *str, exprctx_t *context)
 
 static exprval_t *parse_float (const char *str, exprctx_t *context)
 {
-	exprval_t  *val = cexpr_value (&cexpr_int, context);
+	exprval_t  *val = cexpr_value (&cexpr_float, context);
 	*(float *) val->value = strtof (str, 0);
 	return val;
 }
 
 static exprval_t *parse_double (const char *str, exprctx_t *context)
 {
-	exprval_t  *val = cexpr_value (&cexpr_int, context);
+	exprval_t  *val = cexpr_value (&cexpr_double, context);
 	*(double *) val->value = strtod (str, 0);
 	return val;
 }
