@@ -391,6 +391,78 @@ vector_mod (const exprval_t *val1, const exprval_t *val2, exprval_t *result,
 	*c = a - b * vfloorf (a / b);
 }
 
+static void
+vector_swizzle (const exprval_t *val1, const exprval_t *val2,
+				exprval_t *result, exprctx_t *ctx)
+{
+#define m(x) (1 << ((x) - 'a'))
+#define v(x, mask) (((x) & 0x60) == 0x60 && (m(x) & (mask)))
+#define vind(x) ((x) & 3)
+#define cind(x) (-(((x) >> 3) ^ (x)) & 3)
+	const int   color = m('r') | m('g') | m('b') | m('a');
+	const int   vector = m('x') | m('y') | m('z') | m('w');
+	float      *vec = val1->value;
+	const char *name = val2->value;
+	exprval_t  *val = 0;
+
+	if (v (name[0], vector) && v (name[1], vector)
+		&& v (name[2], vector) && v (name[3], vector) && !name[4]) {
+		val = cexpr_value (&cexpr_vector, ctx);
+		float      *res = val->value;
+		res[0] = vec[vind (name[0])];
+		res[1] = vec[vind (name[1])];
+		res[2] = vec[vind (name[2])];
+		res[3] = vec[vind (name[3])];
+	} else if (v (name[0], color) && v (name[1], color)
+			   && v (name[2], color) && v (name[3], color) && !name[4]) {
+		val = cexpr_value (&cexpr_vector, ctx);
+		float      *res = val->value;
+		res[0] = vec[cind (name[0])];
+		res[1] = vec[cind (name[1])];
+		res[2] = vec[cind (name[2])];
+		res[3] = vec[cind (name[3])];
+	} else if (v (name[0], vector) && v (name[1], vector)
+			   && v (name[2], vector) && !name[3]) {
+		val = cexpr_value (&cexpr_vector, ctx);
+		float      *res = val->value;
+		res[0] = vec[vind (name[0])];
+		res[1] = vec[vind (name[1])];
+		res[2] = vec[vind (name[2])];
+		res[3] = 0;
+	} else if (v (name[0], color) && v (name[1], color)
+			   && v (name[2], color) && !name[3]) {
+		val = cexpr_value (&cexpr_vector, ctx);
+		float      *res = val->value;
+		res[0] = vec[cind (name[0])];
+		res[1] = vec[cind (name[1])];
+		res[2] = vec[cind (name[2])];
+		res[3] = 0;
+	} else if (v (name[0], vector) && v (name[1], vector) && !name[2]) {
+		val = cexpr_value (&cexpr_vector, ctx);
+		float      *res = val->value;
+		res[0] = vec[vind (name[0])];
+		res[1] = vec[vind (name[1])];
+		res[2] = 0;
+		res[3] = 0;
+	} else if (v (name[0], color) && v (name[1], color) && !name[2]) {
+		val = cexpr_value (&cexpr_vector, ctx);
+		float      *res = val->value;
+		res[0] = vec[cind (name[0])];
+		res[1] = vec[cind (name[1])];
+		res[2] = 0;
+		res[3] = 0;
+	} else if (v (name[0], vector) && !name[1]) {
+		val = cexpr_value (&cexpr_float, ctx);
+		float      *res = val->value;
+		res[0] = vec[vind (name[0])];
+	} else if (v (name[0], color) && !name[1]) {
+		val = cexpr_value (&cexpr_float, ctx);
+		float      *res = val->value;
+		res[0] = vec[cind (name[0])];
+	}
+	*(exprval_t **) result->value = val;
+}
+
 UNOP(vector, pos, vec4f_t, +)
 UNOP(vector, neg, vec4f_t, -)
 
@@ -410,6 +482,7 @@ binop_t vector_binops[] = {
 	{ '/', &cexpr_vector, &cexpr_vector, vector_div },
 	{ '%', &cexpr_vector, &cexpr_vector, vector_rem },
 	{ MOD, &cexpr_vector, &cexpr_vector, vector_mod },
+	{ '.', &cexpr_field, &cexpr_exprval, vector_swizzle },
 	{}
 };
 
