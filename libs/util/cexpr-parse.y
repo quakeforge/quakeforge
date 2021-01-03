@@ -43,6 +43,7 @@
 #include <stdio.h>
 
 #include "QF/cmem.h"
+#include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/qfplist.h"
 #include "QF/sys.h"
@@ -55,11 +56,17 @@ static exprval_t *binary_expr (int op, const exprval_t *a, const exprval_t *b,
 							   exprctx_t *context);
 static exprval_t *field_expr (const exprval_t *a, const exprval_t *b,
 							  exprctx_t *context);
+static exprval_t *unary_expr (int op, const exprval_t *val,
+							  exprctx_t *context);
+static exprval_t *vector_expr (exprlist_t *list, exprctx_t *context);
+static exprval_t *function_expr (exprsym_t *fsym, exprlist_t *list,
+								 exprctx_t *context);
+static exprlist_t *expr_item (exprval_t *val, exprctx_t *context);
 
 static void
 yyerror (void *scanner, exprctx_t *context, const char *s)
 {
-	cexpr_error (context, "%s before %s\n", s, cexpr_yyget_text (scanner));
+	cexpr_error (context, "%s before %s", s, cexpr_yyget_text (scanner));
 }
 
 %}
@@ -78,19 +85,21 @@ yyerror (void *scanner, exprctx_t *context, const char *s)
 %left			SHL SHR
 %left			'+' '-'
 %left			'*' '/' '%' MOD
-%right			SIZEOF UNARY INCOP
+%right	<op>	SIZEOF UNARY INCOP
 %left			HYPERUNARY
 %left			'.' '(' '['
 
 %token <symbol> NAME
 %token <value>	VALUE
 
-%type <value>	expr field
+%type <value>	expr field uexpr
+%type <list>	opt_arg_list arg_list arg_expr
 
 %union {
 	int        op;
 	exprsym_t *symbol;
 	exprval_t *value;
+	exprlist_t *list;
 	const char *string;
 }
 
@@ -100,20 +109,8 @@ start
 	: expr				{ assign_expr (context->result, $1, context); }
 	;
 
-expr
-	: expr SHL expr		{ $$ = binary_expr (SHL, $1, $3, context); }
-	| expr SHR expr		{ $$ = binary_expr (SHR, $1, $3, context); }
-	| expr '+' expr		{ $$ = binary_expr ('+', $1, $3, context); }
-	| expr '-' expr		{ $$ = binary_expr ('-', $1, $3, context); }
-	| expr '*' expr		{ $$ = binary_expr ('*', $1, $3, context); }
-	| expr '/' expr		{ $$ = binary_expr ('/', $1, $3, context); }
-	| expr '&' expr		{ $$ = binary_expr ('&', $1, $3, context); }
-	| expr '|' expr		{ $$ = binary_expr ('|', $1, $3, context); }
-	| expr '^' expr		{ $$ = binary_expr ('^', $1, $3, context); }
-	| expr '%' expr		{ $$ = binary_expr ('%', $1, $3, context); }
-	| expr '.' field	{ $$ = field_expr ($1, $3, context); }
-	| expr MOD expr		{ $$ = binary_expr (MOD, $1, $3, context); }
-	| NAME
+uexpr
+	: NAME
 		{
 			if ($1) {
 				$$ = (exprval_t *) cmemalloc (context->memsuper, sizeof (*$$));
@@ -125,6 +122,29 @@ expr
 			}
 		}
 	| VALUE
+	| '[' arg_list ']'	{ $$ = vector_expr ($2, context); }
+	| '(' expr ')'		{ $$ = $2; }
+	| NAME '(' opt_arg_list ')'	{ $$ = function_expr ($1, $3, context); }
+	| uexpr '.' field	{ $$ = field_expr ($1, $3, context); }
+	| '+' uexpr %prec UNARY	{ $$ = $2; }
+	| '-' uexpr %prec UNARY	{ $$ = unary_expr ('-', $2, context); }
+	| '!' uexpr %prec UNARY	{ $$ = unary_expr ('!', $2, context); }
+	| '~' uexpr %prec UNARY	{ $$ = unary_expr ('~', $2, context); }
+	;
+
+expr
+	: uexpr
+	| expr SHL expr		{ $$ = binary_expr (SHL, $1, $3, context); }
+	| expr SHR expr		{ $$ = binary_expr (SHR, $1, $3, context); }
+	| expr '+' expr		{ $$ = binary_expr ('+', $1, $3, context); }
+	| expr '-' expr		{ $$ = binary_expr ('-', $1, $3, context); }
+	| expr '*' expr		{ $$ = binary_expr ('*', $1, $3, context); }
+	| expr '/' expr		{ $$ = binary_expr ('/', $1, $3, context); }
+	| expr '&' expr		{ $$ = binary_expr ('&', $1, $3, context); }
+	| expr '|' expr		{ $$ = binary_expr ('|', $1, $3, context); }
+	| expr '^' expr		{ $$ = binary_expr ('^', $1, $3, context); }
+	| expr '%' expr		{ $$ = binary_expr ('%', $1, $3, context); }
+	| expr MOD expr		{ $$ = binary_expr (MOD, $1, $3, context); }
 	;
 
 field
@@ -139,6 +159,23 @@ field
 			$$->value = cmemalloc (ctx->memsuper, size);
 			memcpy ($$->value, name, size);
 		}
+	;
+
+opt_arg_list
+	:					{ $$ = 0; }
+	| arg_list          { $$ = $1; }
+	;
+
+arg_list
+	: arg_expr
+	| arg_list ',' arg_expr
+		{
+			$3-> next = $1;
+			$$ = $3;
+		}
+
+arg_expr
+	: expr				{ $$ = expr_item ($1, context); }
 	;
 
 %%
@@ -156,7 +193,7 @@ assign_expr (exprval_t *dst, const exprval_t *src, exprctx_t *context)
 	} else {
 		if (dst->type != src->type) {
 			cexpr_error (context,
-						 "type mismatch in expression result: %s = %s\n",
+						 "type mismatch in expression result: %s = %s",
 						 dst->type->name, src->type->name);
 			return;
 		}
@@ -185,8 +222,9 @@ binary_expr (int op, const exprval_t *a, const exprval_t *b,
 	}
 	exprval_t  *result = cexpr_value (rtype, context);
 	if (!binop->op) {
-		cexpr_error (context, "invalid binary expression: %s %c %s\n",
+		cexpr_error (context, "invalid binary expression: %s %c %s",
 					 a->type->name, op, b->type->name);
+		memset (result->value, 0, rtype->size);
 	} else {
 		binop->func (a, b, result, context);
 	}
@@ -205,11 +243,126 @@ field_expr (const exprval_t *a, const exprval_t *b, exprctx_t *context)
 		}
 	}
 	if (!binop->op) {
-		cexpr_error (context, "invalid binary expression: %s.%s\n",
+		cexpr_error (context, "invalid binary expression: %s.%s",
 					 a->type->name, b->type->name);
+		result = cexpr_value (&cexpr_int, context);
+		*(int *) result->value = 0;
 	} else {
 		exprval_t   c = { 0, &result };
 		binop->func (a, b, &c, context);
 	}
 	return result;
+}
+
+static exprval_t *
+unary_expr (int op, const exprval_t *val, exprctx_t *context)
+{
+	unop_t     *unop;
+
+	for (unop = val->type->unops; unop->op; unop++) {
+		if (unop->op == op) {
+			break;
+		}
+	}
+	exprtype_t *rtype = unop->result;
+	if (!rtype) {
+		rtype = val->type;
+	}
+	exprval_t  *result = cexpr_value (rtype, context);
+	if (!unop->op) {
+		cexpr_error (context, "invalid unary expression: %c %s",
+					 op, val->type->name);
+	} else {
+		unop->func (val, result, context);
+	}
+	return result;
+}
+
+exprval_t *
+vector_expr (exprlist_t *list, exprctx_t *context)
+{
+	exprlist_t *l;
+	exprval_t  *val = cexpr_value (&cexpr_vector, context);
+	int         i;
+	for (i = 0; i < 4 && list; i++, list = l) {
+		exprval_t   dst = { &cexpr_float, ((float *) val->value) + i };
+		exprval_t  *src = list->value;
+		binop_t    *cast = cexpr_find_cast (&cexpr_float, src->type);
+		if (cast) {
+			cast->func (&dst, src, &dst, context);
+		} else {
+			cexpr_error (context, "invalid vector expression type: [%d] %s",
+						 i, val->type->name);
+		}
+		l = list->next;
+		cmemfree (context->memsuper, list);
+	}
+	for ( ; i < 4; i++) {
+		((float *) val->value)[i] = 0;
+	}
+	if (i == 4 && list) {
+		cexpr_error (context, "excess elements in vector expression");
+	}
+	return val;
+}
+
+static exprval_t *function_expr (exprsym_t *fsym, exprlist_t *list,
+								 exprctx_t *context)
+{
+	exprlist_t *l;
+	int         num_args = 0;
+	exprfunc_t *func = 0;
+	exprval_t  *result;
+
+	for (l = list; l; l = l->next) {
+		num_args++;
+	}
+	__auto_type args = (const exprval_t **) alloca (num_args * sizeof (exprval_t *));
+	__auto_type types = (exprtype_t **) alloca (num_args * sizeof (exprtype_t *));
+	for (num_args = 0; list; list = l, num_args++) {
+		args[num_args] = list->value;
+		types[num_args] = list->value->type;
+		l = list->next;
+		cmemfree (context->memsuper, list);
+	}
+	if (fsym->type != &cexpr_function) {
+		cexpr_error (context, "invalid function %s", fsym->name);
+		result = cexpr_value (&cexpr_int, context);
+		*(int *) result->value = 0;
+		return result;
+	}
+	for (exprfunc_t *f = fsym->value; f->result; f++) {
+		if (f->num_params == num_args
+			&& memcmp (f->param_types, types,
+					   num_args * sizeof (exprtype_t *)) == 0) {
+			func = f;
+			break;
+		}
+	}
+	if (!func) {
+		dstring_t  *argstr = dstring_newstr();
+		for (int i = 0; i < num_args; i++) {
+			dasprintf (argstr, "%s%s", types[i]->name,
+					   i + 1 < num_args ? ", ": "");
+		}
+		cexpr_error (context, "no overload for %s(%s)", fsym->name,
+					 argstr->str);
+		dstring_delete (argstr);
+		result = cexpr_value (&cexpr_int, context);
+		*(int *) result->value = 0;
+		return result;
+	}
+	result = cexpr_value (func->result, context);
+	func->func (args, result, context);
+	return result;
+}
+
+static exprlist_t *
+expr_item (exprval_t *val, exprctx_t *context)
+{
+	__auto_type item = (exprlist_t *) cmemalloc (context->memsuper,
+												 sizeof (exprlist_t));
+	item->next = 0;
+	item->value = val;
+	return item;
 }

@@ -483,6 +483,13 @@ exprtype_t cexpr_field = {
 	0,
 };
 
+exprtype_t cexpr_function = {
+	"function",
+	0,	// has no size of its own
+	0,	// can't actually do anything with a function other than call
+	0,
+};
+
 VISIBLE binop_t *
 cexpr_find_cast (exprtype_t *dst_type, exprtype_t *src_type)
 {

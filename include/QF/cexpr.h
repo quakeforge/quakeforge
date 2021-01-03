@@ -62,12 +62,25 @@ typedef struct exprval_s {
 	void       *value;
 } exprval_t;
 
+typedef struct exprlist_s {
+	struct exprlist_s *next;
+	exprval_t  *value;
+} exprlist_t;
+
 typedef struct exprsym_s {
 	const char *name;
 	exprtype_t *type;
 	void       *value;
 	struct exprsym_s *next;
 } exprsym_t;
+
+typedef struct exprfunc_s {
+	exprtype_t *result;
+	int         num_params;
+	exprtype_t **param_types;
+	void      (*func) (const exprval_t **params, exprval_t *result,
+					   struct exprctx_s *context);
+} exprfunc_t;
 
 typedef struct exprtab_s {
 	exprsym_t  *symbols;
@@ -116,6 +129,7 @@ extern exprtype_t cexpr_vector;
 extern exprtype_t cexpr_quaternion;
 extern exprtype_t cexpr_exprval;
 extern exprtype_t cexpr_field;
+extern exprtype_t cexpr_function;
 
 extern binop_t cexpr_struct_binops[];
 
