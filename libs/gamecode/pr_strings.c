@@ -344,7 +344,7 @@ get_string (progs_t *pr, string_t num)
 			case str_free:
 				break;
 		}
-		PR_Error (pr, "internal string error: %d", __LINE__);
+		PR_Error (pr, "internal string error: line:%d", __LINE__);
 	} else {
 		if (num >= pr->pr_stringsize)
 			return 0;
@@ -469,17 +469,17 @@ PR_SetReturnString (progs_t *pr, const char *s)
 			requeue_strref (res, sr);
 		} else if ((sr->type == str_return && !sr->rs_slot)
 				   || (sr->type != str_return && sr->rs_slot)) {
-			PR_Error (pr, "internal string error: %d %d %p", __LINE__,
+			PR_Error (pr, "internal string error: line:%d %d %p", __LINE__,
 					 sr->type, sr->rs_slot);
 		}
 		return string_index (res, sr);
 	}
 
 	// grab the string ref from the oldest slot, or make a new one if the
-	// slot is empty or the string has been held
-	if ((sr = res->rs_slot->strref) && sr->type != str_dynamic) {
+	// slot is empty
+	if ((sr = res->rs_slot->strref)) {
 		if (sr->type != str_return || sr->rs_slot != res->rs_slot) {
-			PR_Error (pr, "internal string error: %d", __LINE__);
+			PR_Error (pr, "internal string error: line:%d", __LINE__);
 		}
 		pr_strfree (pr, sr->s.string);
 	} else {
@@ -629,7 +629,10 @@ PR_HoldString (progs_t *pr, string_t str)
 	if (sr) {
 		switch (sr->type) {
 			case str_temp:
+				break;
 			case str_return:
+				sr->rs_slot->strref = 0;
+				sr->rs_slot = 0;
 				break;
 			case str_static:
 			case str_mutable:
@@ -637,7 +640,7 @@ PR_HoldString (progs_t *pr, string_t str)
 				// non-ephemeral string, no-op
 				return;
 			default:
-				PR_Error (pr, "internal string error: %d", __LINE__);
+				PR_Error (pr, "internal string error: line:%d", __LINE__);
 		}
 		sr->type = str_dynamic;
 		return;
@@ -666,7 +669,7 @@ PR_FreeString (progs_t *pr, string_t str)
 				pr_strfree (pr, sr->s.string);
 				break;
 			default:
-				PR_Error (pr, "internal string error: %d", __LINE__);
+				PR_Error (pr, "internal string error: line:%d", __LINE__);
 		}
 		free_string_ref (res, sr);
 		return;
@@ -690,7 +693,7 @@ PR_FreeTempStrings (progs_t *pr)
 			continue;
 		}
 		if (sr->type != str_temp)
-			PR_Error (pr, "internal string error: %d", __LINE__);
+			PR_Error (pr, "internal string error: line:%d", __LINE__);
 		if (R_STRING (pr) < 0 && string_index (res, sr) == R_STRING (pr)
 			&& pr->pr_depth) {
 			// It looks like the temp string is being returned. While this
