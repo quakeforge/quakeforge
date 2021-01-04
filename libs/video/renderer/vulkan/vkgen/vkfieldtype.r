@@ -14,6 +14,7 @@
 
 -(void)dealloc
 {
+	str_free (type);
 	str_free (parser);
 	str_free (parse_type);
 }
@@ -42,12 +43,13 @@ parseItemType (PLItem *item)
 	type = [item string];
 	if (type) {
 		Type       *field_type = [[Type lookup:type] dereference];
+		type = str_hold (type);
 		parse_type = [field_type parseType];
 		parser = str_hold ("parse_" + type);
 	} else {
 		parse_type = parseItemType([item getObjectForKey:"parse_type"]);
-		type = [[item getObjectForKey:"type"] string];
-		parser = [[item getObjectForKey:"parser"] string];
+		type = str_hold ([[item getObjectForKey:"type"] string]);
+		parser = str_hold ([[item getObjectForKey:"parser"] string]);
 	}
 
 	return self;

@@ -1,4 +1,5 @@
 #include <PropertyList.h>
+#include <string.h>
 
 #include "vkfieldcustom.h"
 #include "vkgen.h"
@@ -14,11 +15,17 @@
 	}
 
 	PLItem     *desc = [item getObjectForKey:"type"];
-	pltype = [[desc getObjectAtIndex:1] string];
-	parser = [[desc getObjectAtIndex:2] string];
+	pltype = str_hold ([[desc getObjectAtIndex:1] string]);
+	parser = str_hold ([[desc getObjectAtIndex:2] string]);
 
 	fields = [item getObjectForKey:"fields"];
 	return self;
+}
+
+-(void)dealloc
+{
+	str_free (pltype);
+	str_free (parser);
 }
 
 -writeParseData
