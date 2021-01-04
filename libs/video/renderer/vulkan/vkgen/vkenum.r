@@ -115,7 +115,7 @@ skip_value(string name)
 	fprintf (output_file, "static exprtab_t %s_symtab = {\n", [self name]);
 	fprintf (output_file, "\t%s_symbols,\n", [self name]);
 	fprintf (output_file, "};\n");
-	fprintf (output_file, "exprenum_t %s_enum = {\n", [self name]);
+	fprintf (output_file, "static exprenum_t %s_enum = {\n", [self name]);
 	fprintf (output_file, "\t&%s_type,\n", [self name]);
 	fprintf (output_file, "\t&%s_symtab,\n", [self name]);
 	fprintf (output_file, "};\n");
@@ -138,7 +138,6 @@ skip_value(string name)
 			 " const plitem_t *item, void *data, plitem_t *messages,"
 			 " void *context);\n",
 			 [self name]);
-	fprintf (header_file, "extern exprenum_t %s_enum;\n", [self name]);
 }
 
 -(void) writeSymtabInit

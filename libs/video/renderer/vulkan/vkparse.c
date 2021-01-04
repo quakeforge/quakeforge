@@ -361,81 +361,60 @@ parse_VkShaderModule (const plitem_t *item, void **data,
 	return 0;
 }
 
-typedef struct setlayout_s {
+typedef struct handleref_s {
 	char       *name;
-	VkDescriptorSetLayout layout;
-} setlayout_t;
+	uint64_t    handle;
+} handleref_t;
 
 static const char *
-setLayout_getkey (const void *sl, void *unused)
+handleref_getkey (const void *hr, void *unused)
 {
-	return ((setlayout_t *)sl)->name;
+	return ((handleref_t *)hr)->name;
 }
 
 static void
-setLayout_free (void *sl, void *_ctx)
+handleref_free (void *hr, void *_ctx)
 {
-	__auto_type setLayout = (setlayout_t *) sl;
+	__auto_type handleref = (handleref_t *) hr;
+	free (handleref->name);
+	free (handleref);
+}
+
+static void
+setLayout_free (void *hr, void *_ctx)
+{
+	__auto_type handleref = (handleref_t *) hr;
+	__auto_type layout = (VkDescriptorSetLayout) handleref->handle;
 	__auto_type ctx = (vulkan_ctx_t *) _ctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	dfunc->vkDestroyDescriptorSetLayout (device->dev, setLayout->layout, 0);
-	free (setLayout->name);
-	free (setLayout);
+	dfunc->vkDestroyDescriptorSetLayout (device->dev, layout, 0);
+	handleref_free (handleref, ctx);
 }
+
+static hashtab_t *enum_symtab;
 
 static int
-parse_VkDescriptorSetLayout (const plfield_t *field, const plitem_t *item,
-							 void *data, plitem_t *messages, void *context)
+parse_BasePipeline (const plitem_t *item, void **data,
+					plitem_t *messages, parsectx_t *context)
 {
-	__auto_type layout = (setlayout_t *) data;
-	vulkan_ctx_t *ctx = ((parsectx_t *) context)->vctx;
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	if (PL_Type (item) == QFString) {
-		// accessing a named set layout
-		const char *name = PL_String (item);
-		setlayout_t *l = Hash_Find (ctx->setLayouts, name);
-		if (!l) {
-			PL_Message (messages, item, "undefined set layout %s", name);
-			return 0;
-		}
-		*layout = *l;
-		return 1;
-	}
-
-	VkDescriptorSetLayoutCreateInfo createInfo = {};
-
-	if (!parse_VkDescriptorSetLayoutCreateInfo (0, item, &createInfo,
-												messages, context)) {
-		return 0;
-	}
-	layout->name = strdup (field->name);
-	VkResult res;
-	res = dfunc->vkCreateDescriptorSetLayout (device->dev, &createInfo, 0,
-											  &layout->layout);
-	if (res != VK_SUCCESS) {
-		PL_Message (messages, item, "could not create set layout");
-		return 0;
-	}
-	return 1;
+	*(VkPipeline *) data = 0;
+	PL_Message (messages, item, "not implemented");
+	return 0;
 }
+
+#include "libs/video/renderer/vulkan/vkparse.cinc"
 
 static plelement_t setLayout_data = {
 	QFDictionary,
-	sizeof (setlayout_t),
+	sizeof (handleref_t),
 	malloc,
-	parse_VkDescriptorSetLayout,
+	parse_VkDescriptorSetLayout_handleref,
 	0,
 };
 
 static plfield_t setLayout_field = { 0, 0, QFDictionary, 0, &setLayout_data };
-
-static hashtab_t *enum_symtab;
-
-#include "libs/video/renderer/vulkan/vkparse.cinc"
 
 typedef struct qfv_renderpass_s {
 	qfv_attachmentdescription_t *attachments;
@@ -541,7 +520,7 @@ QFV_ParseDescriptorSetLayouts (vulkan_ctx_t *ctx, plitem_t *sets)
 	exprctx.hashlinks = ctx->hashlinks;
 
 	if (!ctx->setLayouts) {
-		ctx->setLayouts = Hash_NewTable (23, setLayout_getkey, setLayout_free,
+		ctx->setLayouts = Hash_NewTable (23, handleref_getkey, setLayout_free,
 										 ctx, &exprctx.hashlinks);
 	}
 	int res = PL_ParseSymtab (&setLayout_field, sets, ctx->setLayouts,

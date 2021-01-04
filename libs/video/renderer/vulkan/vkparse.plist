@@ -17,8 +17,26 @@
 		VkDescriptorSetLayoutCreateInfo,
 		VkPushConstantRange,
 		VkPipelineLayoutCreateInfo,
+		VkGraphicsPipelineCreateInfo,
 		qfv_swapchain_t,
 	);
+	handles = {
+		VkDescriptorSetLayout = {
+			symtab = setLayouts;
+			class = "set layout";
+			create = vkCreateDescriptorSetLayout;
+		};
+		VkRenderPass = {
+			symtab = renderPasses;
+			class = "render pass";
+			create = vkCreateRenderPass;
+		};
+		VkPipelineLayout = {
+			symtab = pipelineLayouts;
+			class = "pipeline layout";
+			create = vkCreatePipelineLayout;
+		};
+	};
 	parse = {
 		qfv_swapchain_s = {
 			.name = qfv_swapchain_t;
@@ -50,6 +68,24 @@
 				type = (array, uint32_t);
 				size = preserveAttachmentCount;
 				values = pPreserveAttachments;
+			};
+		};
+		VkRenderPassCreateInfo = {
+			//flags = auto; reserved for future use (Bits enum does not exist)
+			attachments = {
+				type = (array, VkAttachmentDescription);
+				size = attachmentCount;
+				values = pAttachments;
+			};
+			subpasses = {
+				type = (array, VkSubpassDescription);
+				size = subpassCount;
+				values = pSubpasses;
+			};
+			dependencies = {
+				type = (array, VkSubpassDependency);
+				size = dependencyCount;
+				values = pDependencies;
 			};
 		};
 		VkSpecializationInfo = {
@@ -200,6 +236,75 @@
 				size = pushConstantRangeCount;
 				values = pPushConstantRanges;
 			};
+		};
+		VkPipelineTessellationStateCreateInfo = {
+			//flags = auto; reserved for future use (Bits enum does not exist)
+			patchControlPoints = auto;
+		};
+		VkGraphicsPipelineCreateInfo = {
+			flags = auto;
+			stages = {
+				type = (array, VkPipelineShaderStageCreateInfo);
+				size = stageCount;
+				values = pStages;
+			};
+			vertexInput = {
+				type = (single, VkPipelineVertexInputStateCreateInfo);
+				value = pVertexInputState;
+			};
+			inputAssembly = {
+				type = (single, VkPipelineInputAssemblyStateCreateInfo);
+				value = pInputAssemblyState;
+			};
+			tessellation = {
+				type = (single, VkPipelineTessellationStateCreateInfo);
+				value = pTessellationState;
+			};
+			viewport = {
+				type = (single, VkPipelineViewportStateCreateInfo);
+				value = pViewportState;
+			};
+			rasterization = {
+				type = (single, VkPipelineRasterizationStateCreateInfo);
+				value = pRasterizationState;
+			};
+			multisample = {
+				type = (single, VkPipelineMultisampleStateCreateInfo);
+				value = pMultisampleState;
+			};
+			depthStencil = {
+				type = (single, VkPipelineDepthStencilStateCreateInfo);
+				value = pDepthStencilState;
+			};
+			colorBlend = {
+				type = (single, VkPipelineColorBlendStateCreateInfo);
+				value = pColorBlendState;
+			};
+			dynamic = {
+				type = (single, VkPipelineDynamicStateCreateInfo);
+				value = pDynamicState;
+			};
+			layout = {
+				type = (single,	{
+									parse_type = (QFDictionary, QFString);
+									type = VkPipelineLayout;
+									parser = parse_VkPipelineLayout;
+								});
+				value = layout;
+			};
+			renderPass = {
+				type = (single,	{
+									parse_type = (QFDictionary, QFString);
+									type = VkRenderPass;
+									parser = parse_VkRenderPass;
+								});
+				value = renderPass;
+			};
+			basePipelineHandle = {
+				type = (custom, QFString, parse_BasePipeline);
+				fields = (basePipelineHandle);
+			};
+			basePipelineIndex = auto;
 		}
 	}
 }
