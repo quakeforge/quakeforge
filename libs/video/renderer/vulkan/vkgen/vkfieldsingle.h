@@ -3,9 +3,11 @@
 
 #include "vkfielddef.h"
 
+@class FieldType;
+
 @interface SingleField: FieldDef
 {
-	string type;
+	FieldType *type;
 }
 @end
 

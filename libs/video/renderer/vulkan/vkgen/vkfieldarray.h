@@ -3,9 +3,11 @@
 
 #include "vkfielddef.h"
 
+@class FieldType;
+
 @interface ArrayField: FieldDef
 {
-	string type;
+	FieldType *type;
 }
 @end
 

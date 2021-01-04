@@ -1,6 +1,7 @@
 #include <PropertyList.h>
 
 #include "vkfieldarray.h"
+#include "vkfieldtype.h"
 #include "vkgen.h"
 #include "vktype.h"
 
@@ -14,7 +15,7 @@
 	}
 
 	PLItem     *desc = [item getObjectForKey:"type"];
-	type = [[desc getObjectAtIndex:1] string];
+	type = [[FieldType fieldType:[desc getObjectAtIndex:1]] retain];
 
 	value_field = [[item getObjectForKey:"values"] string];
 	size_field = [[item getObjectForKey:"size"] string];
@@ -23,13 +24,9 @@
 
 -writeParseData
 {
-	Type       *field_type = [[Type lookup: type] dereference];
-
 	fprintf (output_file, "static parse_array_t parse_%s_%s_data = {\n",
 			 struct_name, field_name);
-	fprintf (output_file, "\t%s,\n", [field_type parseType]);
-	fprintf (output_file, "\tsizeof (%s),\n", type);
-	fprintf (output_file, "\tparse_%s,\n", type);
+	[type writeParseData];
 	fprintf (output_file, "\tfield_offset (%s, %s),\n",
 			 struct_name, value_field);
 	if (size_field) {
