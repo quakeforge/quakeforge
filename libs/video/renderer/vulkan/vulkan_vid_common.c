@@ -52,6 +52,7 @@
 #include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/Vulkan/qf_vid.h"
+#include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/instance.h"
@@ -401,8 +402,10 @@ Vulkan_DestroyRenderPass (vulkan_ctx_t *ctx)
 void
 Vulkan_CreatePipelines (vulkan_ctx_t *ctx)
 {
-	plitem_t   *item = qfv_load_pipeline ();
+	plitem_t   *pipeline_def = qfv_load_pipeline ();
+	plitem_t   *item;
 
+	item = pipeline_def;
 	if (!item || !(item = PL_ObjectForKey (item, "modules"))) {
 		Sys_Printf ("error loading modules\n");
 	} else {
@@ -424,6 +427,22 @@ Vulkan_CreatePipelines (vulkan_ctx_t *ctx)
 			QFV_RegisterShaderModule (ctx, name, module);
 		}
 	}
+
+	item = pipeline_def;
+	if (!item || !(item = PL_ObjectForKey (item, "setLayouts"))) {
+		Sys_Printf ("error loading setLayouts\n");
+	} else {
+		Sys_Printf ("Found setLayouts\n");
+		QFV_ParseDescriptorSetLayouts (ctx, item);
+	}
+
+	/*item = pipeline_def;
+	if (!item || !(item = PL_ObjectForKey (item, "pipelineLayouts"))) {
+		Sys_Printf ("error loading pipelineLayouts\n");
+	} else {
+		Sys_Printf ("Found pipelineLayouts\n");
+		QFV_ParsePipelineLayouts (ctx, item);
+	}*/
 }
 
 void

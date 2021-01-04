@@ -12,6 +12,8 @@ typedef struct parsectx_s {
 	struct vulkan_ctx_s *vctx;
 } parsectx_t;
 
+
+void QFV_ParseDescriptorSetLayouts (vulkan_ctx_t *ctx, plitem_t *sets);
 VkRenderPass QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist);
 void QFV_InitParse (void);
 exprenum_t *QFV_GetEnum (const char *name);

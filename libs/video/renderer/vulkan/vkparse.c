@@ -53,6 +53,7 @@
 #include "QF/vid.h"
 #include "QF/simd/vec4f.h"
 #include "QF/Vulkan/qf_vid.h"
+#include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/instance.h"
@@ -329,6 +330,21 @@ parse_custom (const plfield_t *field, const plitem_t *item,
 	return custom->parse (item, offsets, messages, context);
 }
 
+static int
+parse_RGBA (const plitem_t *item, void **data,
+			plitem_t *messages, parsectx_t *context)
+{
+	int         ret = 1;
+	exprctx_t   ectx = *context->ectx;
+	exprval_t   result = { &cexpr_vector, data[0] };
+	ectx.symtab = 0;
+	ectx.result = &result;
+	const char *valstr = PL_String (item);
+	Sys_Printf ("parse_RGBA: %s\n", valstr);
+	ret = !cexpr_eval_string (valstr, &ectx);
+	Sys_Printf ("    "VEC4F_FMT"\n", VEC4_EXP (*(vec4f_t *)data[0]));
+	return ret;
+}
 
 static int
 parse_VkShaderModule (const plitem_t *item, void **data,
@@ -344,6 +360,79 @@ parse_VkShaderModule (const plitem_t *item, void **data,
 	}
 	return 0;
 }
+
+typedef struct setlayout_s {
+	char       *name;
+	VkDescriptorSetLayout layout;
+} setlayout_t;
+
+static const char *
+setLayout_getkey (const void *sl, void *unused)
+{
+	return ((setlayout_t *)sl)->name;
+}
+
+static void
+setLayout_free (void *sl, void *_ctx)
+{
+	__auto_type setLayout = (setlayout_t *) sl;
+	__auto_type ctx = (vulkan_ctx_t *) _ctx;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	dfunc->vkDestroyDescriptorSetLayout (device->dev, setLayout->layout, 0);
+	free (setLayout->name);
+	free (setLayout);
+}
+
+static int
+parse_VkDescriptorSetLayout (const plfield_t *field, const plitem_t *item,
+							 void *data, plitem_t *messages, void *context)
+{
+	__auto_type layout = (setlayout_t *) data;
+	vulkan_ctx_t *ctx = ((parsectx_t *) context)->vctx;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	if (PL_Type (item) == QFString) {
+		// accessing a named set layout
+		const char *name = PL_String (item);
+		setlayout_t *l = Hash_Find (ctx->setLayouts, name);
+		if (!l) {
+			PL_Message (messages, item, "undefined set layout %s", name);
+			return 0;
+		}
+		*layout = *l;
+		return 1;
+	}
+
+	VkDescriptorSetLayoutCreateInfo createInfo = {};
+
+	if (!parse_VkDescriptorSetLayoutCreateInfo (0, item, &createInfo,
+												messages, context)) {
+		return 0;
+	}
+	layout->name = strdup (field->name);
+	VkResult res;
+	res = dfunc->vkCreateDescriptorSetLayout (device->dev, &createInfo, 0,
+											  &layout->layout);
+	if (res != VK_SUCCESS) {
+		PL_Message (messages, item, "could not create set layout");
+		return 0;
+	}
+	return 1;
+}
+
+static plelement_t setLayout_data = {
+	QFDictionary,
+	sizeof (setlayout_t),
+	malloc,
+	parse_VkDescriptorSetLayout,
+	0,
+};
+
+static plfield_t setLayout_field = { 0, 0, QFDictionary, 0, &setLayout_data };
+
 static hashtab_t *enum_symtab;
 
 #include "libs/video/renderer/vulkan/vkparse.cinc"
@@ -438,6 +527,33 @@ QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist)
 	free (renderpass_data.subpasses);
 	free (renderpass_data.dependencies);
 	return renderpass;
+}
+
+void
+QFV_ParseDescriptorSetLayouts (vulkan_ctx_t *ctx, plitem_t *sets)
+{
+	plitem_t   *messages = PL_NewArray ();
+	exprctx_t   exprctx = {};
+	parsectx_t  parsectx = { &exprctx, ctx };
+
+	exprctx.memsuper = new_memsuper ();
+	exprctx.messages = messages;
+	exprctx.hashlinks = ctx->hashlinks;
+
+	if (!ctx->setLayouts) {
+		ctx->setLayouts = Hash_NewTable (23, setLayout_getkey, setLayout_free,
+										 ctx, &exprctx.hashlinks);
+	}
+	int res = PL_ParseSymtab (&setLayout_field, sets, ctx->setLayouts,
+							  messages, &parsectx);
+	if (!res || developer->int_val & SYS_VULKAN) {
+		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
+			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
+		}
+	}
+	PL_Free (messages);
+	delete_memsuper (exprctx.memsuper);
+	ctx->hashlinks = exprctx.hashlinks;
 }
 
 static const char *

@@ -5,6 +5,18 @@
 		VkSubpassDependency,
 		VkSpecializationInfo,
 		VkPipelineShaderStageCreateInfo,
+		VkPipelineVertexInputStateCreateInfo,
+		VkPipelineInputAssemblyStateCreateInfo,
+		VkPipelineViewportStateCreateInfo,
+		VkPipelineRasterizationStateCreateInfo,
+		VkPipelineMultisampleStateCreateInfo,
+		VkPipelineDepthStencilStateCreateInfo,
+		VkPipelineColorBlendStateCreateInfo,
+		VkPipelineDynamicStateCreateInfo,
+		VkDescriptorSetLayoutBinding,
+		VkDescriptorSetLayoutCreateInfo,
+		VkPushConstantRange,
+		VkPipelineLayoutCreateInfo,
 		qfv_swapchain_t,
 	);
 	parse = {
@@ -69,5 +81,125 @@
 			};
 		};
 		VkShaderModuleCreateInfo = skip;
+		VkDescriptorSetLayoutBinding = {
+			binding = auto;
+			descriptorType = auto;
+			descriptorCount = auto;
+			stageFlags = auto;
+			// skip pImmutableSamplers (default to 0) until I know how it works
+		};
+		VkDescriptorSetLayoutCreateInfo = {
+			flags = auto;
+			bindings = {
+				type = (array, VkDescriptorSetLayoutBinding);
+				size = bindingCount;
+				values = pBindings;
+			};
+		};
+		VkPipelineVertexInputStateCreateInfo = {
+			//flags = auto; reserved for future use (Bits enum does not exist)
+			bindings = {
+				type = (array, VkVertexInputBindingDescription);
+				size = vertexBindingDescriptionCount;
+				values = pVertexBindingDescriptions;
+			};
+			attributes = {
+				type = (array, VkVertexInputAttributeDescription);
+				size = vertexAttributeDescriptionCount;
+				values = pVertexAttributeDescriptions;
+			};
+		};
+		VkPipelineInputAssemblyStateCreateInfo = {
+			//flags = auto; reserved for future use (Bits enum does not exist)
+			topology = auto;
+			primitiveRestartEnable = auto;
+		};
+		VkPipelineViewportStateCreateInfo = {
+			//flags = auto; reserved for future use (Bits enum does not exist)
+			//FIXME redo as one array
+			viewports = {
+				type = (array, VkViewport);
+				size = viewportCount;
+				values = pViewports;
+			};
+			scissors = {
+				type = (array, VkRect2D);
+				size = scissorCount;
+				values = pScissors;
+			};
+		};
+		VkPipelineRasterizationStateCreateInfo = {
+			//flags = auto; reserved for future use (Bits enum does not exist)
+			depthClampEnable = auto;
+			rasterizerDiscardEnable = auto;
+			polygonMode = auto;
+			cullMode = auto;
+			frontFace = auto;
+			depthBiasEnable = auto;
+			depthBiasConstantFactor = auto;
+			depthBiasClamp = auto;
+			depthBiasSlopeFactor = auto;
+			lineWidth = auto;
+		};
+		VkPipelineMultisampleStateCreateInfo = {
+			//flags = auto; reserved for future use (Bits enum does not exist)
+			rasterizationSamples = auto;
+			sampleShadingEnable = auto;
+			minSampleShading = auto;
+			//pSampleMask = auto; FIXME disabled until correct size is known
+			alphaToCoverageEnable = auto;
+			alphaToOneEnable = auto;
+		};
+		VkPipelineDepthStencilStateCreateInfo = {
+			//flags = auto; reserved for future use (Bits enum does not exist)
+			depthTestEnable = auto;
+			depthWriteEnable = auto;
+			depthCompareOp = auto;
+			depthBoundsTestEnable = auto;
+			stencilTestEnable = auto;
+			front = auto;
+			back = auto;
+			minDepthBounds = auto;
+			maxDepthBounds = auto;
+		};
+		VkPipelineColorBlendStateCreateInfo = {
+			//flags = auto; reserved for future use (Bits enum does not exist)
+			logicOpEnable = auto;
+			logicOp = auto;
+			attachments = {
+				type = (array, VkPipelineColorBlendAttachmentState);
+				size = attachmentCount;
+				values = pAttachments;
+			};
+			blendConstants = {
+				type = (custom, QFString, parse_RGBA);
+				fields = (blendConstants);
+			};
+		};
+		VkPipelineDynamicStateCreateInfo = {
+			//flags = auto; reserved for future use (Bits enum does not exist)
+			dynamicState = {
+				type = (array, VkDynamicState);
+				size = dynamicStateCount;
+				values = pDynamicStates;
+			};
+		};
+		VkPipelineLayoutCreateInfo = {
+			//flags = auto; reserved for future use (Bits enum does not exist)
+			setLayouts = {
+				type = (array,	{
+									parse_type = (QFDictionary, QFString);
+									type = VkDescriptorSetLayout;
+									parser = parse_VkDescriptorSetLayout;
+								});
+				size = setLayoutCount;
+				values = pSetLayouts;
+			};
+			pushConstantRanges = {
+				type = (array, VkPushConstantRange);
+				size = pushConstantRangeCount;
+				values = pPushConstantRanges;
+			};
+		}
 	}
 }

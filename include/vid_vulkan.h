@@ -45,6 +45,7 @@ typedef struct vulkan_ctx_s {
 	struct hashlink_s *hashlinks;	//FIXME want per thread
 	VkSurfaceKHR surface;	//FIXME surface = window, so "contains" swapchain
 	struct hashtab_s *shadermodules;
+	struct hashtab_s *setLayouts;
 	struct shadermodule_s *shadermodule_freelist;
 
 	VkCommandPool cmdpool;
