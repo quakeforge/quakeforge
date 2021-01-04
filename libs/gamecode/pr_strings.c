@@ -868,6 +868,7 @@ fmt_append_item (fmt_state_t *state)
  *	\dot
  *	digraph PR_Sprintf_fmt_state_machine {
  *		format          -> flags            [label="{%}"];
+ *		flogs           -> format           [label="{%}"];
  *		flags           -> flags            [label="{#+0 -}"];
  *		flags           -> var_field_width  [label="{*}"];
  *		flags           -> precision        [label="{.}"];
@@ -906,6 +907,17 @@ fmt_state_flags (fmt_state_t *state)
 	state->c++;	// skip over %
 	while (1) {
 		switch (*state->c) {
+			case '%':
+				state->c++;
+				(*state->fi)->flags = 0;
+				(*state->fi)->precision = 1;
+				(*state->fi)->minFieldWidth = 0;
+				(*state->fi)->type = 's';
+				(*state->fi)->data.string_var = "%";
+
+				fmt_append_item (state);
+				state->state = fmt_state_format;
+				return;
 			case '0':
 				(*state->fi)->flags |= FMT_ZEROPAD;
 				break;
@@ -1111,15 +1123,6 @@ fmt_state_conversion (fmt_state_t *state)
 			(*state->fi)->data.string_var = "'";
 
 			state->fmt_count++;
-			fmt_append_item (state);
-			break;
-		case '%':
-			(*state->fi)->flags = 0;
-			(*state->fi)->precision = 0;
-			(*state->fi)->minFieldWidth = 0;
-			(*state->fi)->type = 's';
-			(*state->fi)->data.string_var = "%";
-
 			fmt_append_item (state);
 			break;
 		case 'x':
