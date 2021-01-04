@@ -2075,7 +2075,7 @@ return_expr (function_t *f, expr_t *e)
 
 	t = get_type (e);
 
-	if (e->type == ex_error) {
+	if (!t) {
 		return e;
 	}
 	if (is_void(ret_type)) {
