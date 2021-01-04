@@ -232,7 +232,7 @@ qrotf (vec4f_t a, vec4f_t b)
 	vec4f_t mb = vsqrtf (dotf (b, b));
 	vec4f_t den = 2 * ma * mb;
 	vec4f_t t = mb * a + ma * b;
-	vec4f_t mba_mab = _mm_sqrt_ps (dotf (t, t));
+	vec4f_t mba_mab = vsqrtf (dotf (t, t));
 	vec4f_t q = crossf (a, b) / mba_mab;
 	q[3] = (mba_mab / den)[0];
 	return q;

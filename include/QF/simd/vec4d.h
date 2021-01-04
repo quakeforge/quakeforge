@@ -244,7 +244,7 @@ qrotd (vec4d_t a, vec4d_t b)
 	vec4d_t mb = vsqrtd (dotd (b, b));
 	vec4d_t den = 2 * ma * mb;
 	vec4d_t t = mb * a + ma * b;
-	vec4d_t mba_mab = _mm256_sqrt_pd (dotd (t, t));
+	vec4d_t mba_mab = vsqrtd (dotd (t, t));
 	vec4d_t q = crossd (a, b) / mba_mab;
 	q[3] = (mba_mab / den)[0];
 	return q;
