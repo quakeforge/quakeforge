@@ -251,6 +251,7 @@ main(int argc, string *argv)
 		}
 		arp_start ();
 		[obj writeSymtabInit];
+		[obj writeSymtabEntry];
 		arp_end ();
 	}
 	fprintf (output_file, "}\n");

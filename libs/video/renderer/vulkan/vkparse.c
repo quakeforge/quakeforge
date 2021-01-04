@@ -42,6 +42,7 @@
 #include "QF/cmem.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
+#include "QF/hash.h"
 #include "QF/input.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
@@ -50,6 +51,7 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
+#include "QF/simd/vec4f.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/command.h"
@@ -65,7 +67,10 @@
 #include "vid_vulkan.h"
 
 #include "util.h"
+
+#define vkparse_internal
 #include "vkparse.h"
+#undef vkparse_internal
 
 static void flag_or (const exprval_t *val1, const exprval_t *val2,
 					 exprval_t *result, exprctx_t *ctx)
@@ -145,19 +150,16 @@ parse_basic (const plfield_t *field, const plitem_t *item,
 	ectx.symtab = 0;
 	ectx.result = &result;
 	const char *valstr = PL_String (item);
-	//Sys_Printf ("parse_uint32_t: %s %zd %d %p %p: %s\n",
+	//Sys_Printf ("parse_basic: %s %zd %d %p %p: %s\n",
 	//			field->name, field->offset, field->type, field->parser,
 	//			field->data, valstr);
 	if (strcmp (valstr, "VK_SUBPASS_EXTERNAL") == 0) {
 		//FIXME handle subpass in a separate parser?
 		*(uint32_t *) data = VK_SUBPASS_EXTERNAL;
 	} else {
-		Sys_Printf ("parse_uint32_t: %s %zd %d %p %p %s\n",
-					field->name, field->offset, field->type, field->parser,
-					field->data, valstr);
 		ret = !cexpr_eval_string (valstr, &ectx);
-		Sys_Printf ("    %x\n", *(uint32_t *)data);
 	}
+	//Sys_Printf ("    %x\n", *(uint32_t *)data);
 
 	return ret;
 }
@@ -179,11 +181,11 @@ parse_uint32_t (const plfield_t *field, const plitem_t *item,
 		//FIXME handle subpass in a separate parser?
 		*(uint32_t *) data = VK_SUBPASS_EXTERNAL;
 	} else {
-		Sys_Printf ("parse_uint32_t: %s %zd %d %p %p %s\n",
-					field->name, field->offset, field->type, field->parser,
-					field->data, valstr);
+		//Sys_Printf ("parse_uint32_t: %s %zd %d %p %p %s\n",
+		//			field->name, field->offset, field->type, field->parser,
+		//			field->data, valstr);
 		ret = !cexpr_eval_string (valstr, &ectx);
-		Sys_Printf ("    %d\n", *(uint32_t *)data);
+		//Sys_Printf ("    %d\n", *(uint32_t *)data);
 	}
 
 	return ret;
@@ -327,6 +329,23 @@ parse_custom (const plfield_t *field, const plitem_t *item,
 	return custom->parse (item, offsets, messages, context);
 }
 
+
+static int
+parse_VkShaderModule (const plitem_t *item, void **data,
+					  plitem_t *messages, parsectx_t *context)
+{
+	vulkan_ctx_t *ctx = context->vctx;
+	const char *name = PL_String (item);
+	__auto_type mptr = (VkShaderModule *)data[0];
+	VkShaderModule module = QFV_FindShaderModule (ctx, name);
+	if (module) {
+		*mptr = module;
+		return 1;
+	}
+	return 0;
+}
+static hashtab_t *enum_symtab;
+
 #include "libs/video/renderer/vulkan/vkparse.cinc"
 
 typedef struct qfv_renderpass_s {
@@ -421,9 +440,24 @@ QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist)
 	return renderpass;
 }
 
+static const char *
+enum_symtab_getkey (const void *e, void *unused)
+{
+	__auto_type enm = (const exprenum_t *) e;
+	return enm->type->name;
+}
+
 void
 QFV_InitParse (void)
 {
 	exprctx_t   context = {};
+	enum_symtab = Hash_NewTable (61, enum_symtab_getkey, 0, 0,
+								 &context.hashlinks);
 	vkgen_init_symtabs (&context);
+}
+
+exprenum_t *
+QFV_GetEnum (const char *name)
+{
+	return Hash_Find (enum_symtab, name);
 }

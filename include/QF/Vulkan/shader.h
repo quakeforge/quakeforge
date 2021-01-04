@@ -15,8 +15,5 @@ VkShaderModule QFV_FindShaderModule (struct vulkan_ctx_s *ctx,
 void QFV_RegisterShaderModule (struct vulkan_ctx_s *ctx, const char *name,
 							   VkShaderModule module);
 void QFV_DeregisterShaderModule (struct vulkan_ctx_s *ctx, const char *name);
-int parse_VkShaderModule (const struct plitem_s *item, void **data,
-						  struct plitem_s *messages,
-						  struct parsectx_s *context);
 
 #endif//__QF_Vulkan_shader_h

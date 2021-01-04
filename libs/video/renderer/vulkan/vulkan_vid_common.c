@@ -98,11 +98,12 @@ msaaSamples_f (cvar_t *var)
 	exprctx_t   context = {};
 	context.memsuper = new_memsuper();
 
-	if (cexpr_parse_enum (&VkSampleCountFlagBits_enum, var->string, &context,
-						  &var->int_val)) {
+	if (cexpr_parse_enum (QFV_GetEnum ("VkSampleCountFlagBits"), var->string,
+						  &context, &var->int_val)) {
 		Sys_Printf ("Invalid MSAA samples, using 1\n");
 		var->int_val = VK_SAMPLE_COUNT_1_BIT;
 	}
+	delete_memsuper (context.memsuper);
 }
 
 static void

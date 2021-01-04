@@ -147,6 +147,12 @@ skip_value(string name)
 			 [self name]);
 }
 
+-(void) writeSymtabEntry
+{
+	fprintf (output_file, "\tHash_Add (enum_symtab, &%s_enum);\n",
+			 [self name]);
+}
+
 -(string) cexprType
 {
 	return [self name] + "_type";

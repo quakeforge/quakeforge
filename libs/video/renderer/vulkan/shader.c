@@ -53,7 +53,6 @@
 #include "QF/Vulkan/shader.h"
 
 #include "vid_vulkan.h"
-#include "vkparse.h"
 
 static
 #include "libs/video/renderer/vulkan/passthrough.vert.spvc"
@@ -211,19 +210,4 @@ QFV_DeregisterShaderModule (vulkan_ctx_t *ctx, const char *name)
 		return;
 	}
 	Hash_Free (ctx->shadermodules, Hash_Del (ctx->shadermodules, name));
-}
-
-int
-parse_VkShaderModule (const plitem_t *item, void **data,
-					  plitem_t *messages, parsectx_t *context)
-{
-	vulkan_ctx_t *ctx = context->vctx;
-	const char *name = PL_String (item);
-	__auto_type mptr = (VkShaderModule *)data[0];
-	VkShaderModule module = QFV_FindShaderModule (ctx, name);
-	if (module) {
-		*mptr = module;
-		return 1;
-	}
-	return 0;
 }

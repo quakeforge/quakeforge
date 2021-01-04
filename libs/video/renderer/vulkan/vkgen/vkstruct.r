@@ -165,6 +165,10 @@
 			 [self outname]);
 }
 
+-(void) writeSymtabEntry
+{
+}
+
 -(string) outname
 {
 	if (outname) {

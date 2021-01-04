@@ -16,6 +16,7 @@
 -(qfot_var_t *)findField:(string) fieldName;
 -(void) writeTable;
 -(void) writeSymtabInit;
+-(void) writeSymtabEntry;
 -(string) outname;
 @end
 

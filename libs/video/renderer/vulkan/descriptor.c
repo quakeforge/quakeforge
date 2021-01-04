@@ -44,7 +44,6 @@
 #include "QF/hash.h"
 #include "QF/input.h"
 #include "QF/mathlib.h"
-#include "QF/qargs.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
