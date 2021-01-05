@@ -264,6 +264,13 @@ float_div_quat (const exprval_t *val1, const exprval_t *val2,
 	*c = a * qconjf (b) / dotf (b, b);
 }
 
+static void
+float_cast_int (const exprval_t *val1, const exprval_t *src, exprval_t *result,
+			    exprctx_t *ctx)
+{
+	*(float *) result->value = *(int *) src->value;
+}
+
 UNOP(float, pos, float, +)
 UNOP(float, neg, float, -)
 UNOP(float, tnot, float, !)
@@ -278,6 +285,7 @@ binop_t float_binops[] = {
 	{ '/', &cexpr_quaternion, &cexpr_quaternion, float_div_quat },
 	{ '%', &cexpr_float, &cexpr_float, float_rem },
 	{ MOD, &cexpr_float, &cexpr_float, float_mod },
+	{ '=', &cexpr_int,  &cexpr_float, float_cast_int },
 	{}
 };
 
