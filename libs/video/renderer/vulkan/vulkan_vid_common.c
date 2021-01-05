@@ -140,7 +140,7 @@ void
 Vulkan_Init_Common (vulkan_ctx_t *ctx)
 {
 	Sys_Printf ("Vulkan_Init_Common\n");
-	QFV_InitParse ();
+	QFV_InitParse (ctx);
 	Vulkan_Init_Cvars ();
 	ctx->instance = QFV_CreateInstance (ctx, PACKAGE_STRING, 0x000702ff, 0, instance_extensions);//FIXME version
 }
@@ -149,8 +149,9 @@ static void
 clear_table (hashtab_t **table)
 {
 	if (*table) {
-		Hash_DelTable (*table);
+		hashtab_t  *tab = *table;
 		*table = 0;
+		Hash_DelTable (tab);
 	}
 }
 
@@ -166,11 +167,11 @@ Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 	if (ctx->swapchain) {
 		QFV_DestroySwapchain (ctx->swapchain);
 	}
+	ctx->instance->funcs->vkDestroySurfaceKHR (ctx->instance->instance,
+											   ctx->surface, 0);
 	clear_table (&ctx->pipelineLayouts);
 	clear_table (&ctx->setLayouts);
 	clear_table (&ctx->shaderModules);
-	ctx->instance->funcs->vkDestroySurfaceKHR (ctx->instance->instance,
-											   ctx->surface, 0);
 	if (ctx->device) {
 		QFV_DestroyDevice (ctx->device);
 	}

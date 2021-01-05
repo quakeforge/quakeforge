@@ -94,7 +94,7 @@ typedef struct exprctx_s {
 	struct memsuper_s *memsuper;
 	const struct plitem_s *item;
 	struct plitem_s *messages;
-	struct hashlink_s *hashlinks;
+	struct hashlink_s **hashlinks;
 	int         errors;
 } exprctx_t;
 

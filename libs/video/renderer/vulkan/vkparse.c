@@ -513,7 +513,7 @@ QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist)
 	exprctx.external_variables = &vars_tab;
 	exprctx.memsuper = new_memsuper ();
 	exprctx.messages = messages;
-	exprctx.hashlinks = ctx->hashlinks;
+	exprctx.hashlinks = &ctx->hashlinks;
 
 	cexpr_init_symtab (&vars_tab, &exprctx);
 
@@ -526,7 +526,6 @@ QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist)
 	}
 	PL_Free (messages);
 	delete_memsuper (exprctx.memsuper);
-	ctx->hashlinks = exprctx.hashlinks;
 
 	renderpass = QFV_CreateRenderPass (device,
 									   renderpass_data.attachments,
@@ -556,17 +555,17 @@ QFV_ParseResources (vulkan_ctx_t *ctx, plitem_t *pipelinedef)
 
 	exprctx.memsuper = new_memsuper ();
 	exprctx.messages = messages;
-	exprctx.hashlinks = ctx->hashlinks;
+	exprctx.hashlinks = &ctx->hashlinks;
 
 	if (!ctx->setLayouts) {
 		ctx->shaderModules = Hash_NewTable (23, handleref_getkey,
 											shaderModule_free,
-											ctx, &exprctx.hashlinks);
+											ctx, &ctx->hashlinks);
 		ctx->setLayouts = Hash_NewTable (23, handleref_getkey, setLayout_free,
-										 ctx, &exprctx.hashlinks);
+										 ctx, &ctx->hashlinks);
 		ctx->pipelineLayouts = Hash_NewTable (23, handleref_getkey,
 											  pipelineLayout_free,
-											  ctx, &exprctx.hashlinks);
+											  ctx, &ctx->hashlinks);
 	}
 
 	for (parseres_t *res = parse_resources; res->name; res++) {
@@ -586,7 +585,6 @@ QFV_ParseResources (vulkan_ctx_t *ctx, plitem_t *pipelinedef)
 
 	PL_Free (messages);
 	delete_memsuper (exprctx.memsuper);
-	ctx->hashlinks = exprctx.hashlinks;
 }
 
 static const char *
@@ -597,11 +595,12 @@ enum_symtab_getkey (const void *e, void *unused)
 }
 
 void
-QFV_InitParse (void)
+QFV_InitParse (vulkan_ctx_t *ctx)
 {
 	exprctx_t   context = {};
 	enum_symtab = Hash_NewTable (61, enum_symtab_getkey, 0, 0,
-								 &context.hashlinks);
+								 &ctx->hashlinks);
+	context.hashlinks = &ctx->hashlinks;
 	vkgen_init_symtabs (&context);
 }
 

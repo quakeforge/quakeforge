@@ -128,7 +128,7 @@ void cexpr_init_symtab (exprtab_t *symtab, exprctx_t *ctx)
 {
 	exprsym_t  *sym;
 
-	symtab->tab = Hash_NewTable (61, expr_getkey, 0, 0, &ctx->hashlinks);
+	symtab->tab = Hash_NewTable (61, expr_getkey, 0, 0, ctx->hashlinks);
 	for (sym = symtab->symbols; sym->name; sym++) {
 		Hash_Add (symtab->tab, sym);
 	}

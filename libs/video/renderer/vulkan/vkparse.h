@@ -25,7 +25,7 @@ typedef struct handleref_s {
 
 VkRenderPass QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist);
 void QFV_ParseResources (vulkan_ctx_t *ctx, plitem_t *plist);
-void QFV_InitParse (void);
+void QFV_InitParse (vulkan_ctx_t *ctx);
 exprenum_t *QFV_GetEnum (const char *name);
 
 #endif//__vkparse_h
