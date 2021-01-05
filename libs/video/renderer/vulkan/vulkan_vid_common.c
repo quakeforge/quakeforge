@@ -43,6 +43,7 @@
 #include "QF/cmem.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
+#include "QF/hash.h"
 #include "QF/input.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
@@ -144,6 +145,15 @@ Vulkan_Init_Common (vulkan_ctx_t *ctx)
 	ctx->instance = QFV_CreateInstance (ctx, PACKAGE_STRING, 0x000702ff, 0, instance_extensions);//FIXME version
 }
 
+static void
+clear_table (hashtab_t **table)
+{
+	if (*table) {
+		Hash_DelTable (*table);
+		*table = 0;
+	}
+}
+
 void
 Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 {
@@ -156,6 +166,9 @@ Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 	if (ctx->swapchain) {
 		QFV_DestroySwapchain (ctx->swapchain);
 	}
+	clear_table (&ctx->pipelineLayouts);
+	clear_table (&ctx->setLayouts);
+	clear_table (&ctx->shaderModules);
 	ctx->instance->funcs->vkDestroySurfaceKHR (ctx->instance->instance,
 											   ctx->surface, 0);
 	if (ctx->device) {

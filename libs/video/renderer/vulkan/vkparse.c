@@ -405,7 +405,9 @@ setLayout_free (void *hr, void *_ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	dfunc->vkDestroyDescriptorSetLayout (device->dev, layout, 0);
+	if (layout) {
+		dfunc->vkDestroyDescriptorSetLayout (device->dev, layout, 0);
+	}
 	handleref_free (handleref, ctx);
 }
 
@@ -418,7 +420,9 @@ shaderModule_free (void *hr, void *_ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	dfunc->vkDestroyShaderModule (device->dev, module, 0);
+	if (module) {
+		dfunc->vkDestroyShaderModule (device->dev, module, 0);
+	}
 	handleref_free (handleref, ctx);
 }
 
@@ -431,7 +435,9 @@ pipelineLayout_free (void *hr, void *_ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	dfunc->vkDestroyPipelineLayout (device->dev, layout, 0);
+	if (layout) {
+		dfunc->vkDestroyPipelineLayout (device->dev, layout, 0);
+	};
 	handleref_free (handleref, ctx);
 }
 
