@@ -260,22 +260,23 @@ static qfv_pipelinestagepair_t imageLayoutTransitionStages[] = {
 		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT },
 };
 
-static plitem_t *
-qfv_load_pipeline (void)
+static void
+qfv_load_pipeline (vulkan_ctx_t *ctx)
 {
-	static plitem_t *pipeline;
-
-	if (!pipeline) {
-		pipeline = PL_GetPropertyList (quakeforge_pipeline);
+	if (!ctx->pipelineDef) {
+		ctx->pipelineDef = PL_GetPropertyList (quakeforge_pipeline);
+		if (ctx->pipelineDef) {
+			QFV_ParseResources (ctx, ctx->pipelineDef);
+		}
 	}
-	return pipeline;
 }
 
 void
 Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 {
-	plitem_t   *item = qfv_load_pipeline ();
+	qfv_load_pipeline (ctx);
 
+	plitem_t   *item = ctx->pipelineDef;
 	if (!item || !(item = PL_ObjectForKey (item, "renderpass"))) {
 		Sys_Printf ("error loading renderpass\n");
 	} else {
@@ -402,11 +403,6 @@ Vulkan_DestroyRenderPass (vulkan_ctx_t *ctx)
 void
 Vulkan_CreatePipelines (vulkan_ctx_t *ctx)
 {
-	plitem_t   *pipeline_def = qfv_load_pipeline ();
-
-	if (pipeline_def) {
-		QFV_ParseResources (ctx, pipeline_def);
-	}
 }
 
 void
