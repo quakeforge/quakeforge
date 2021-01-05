@@ -310,6 +310,11 @@ plitem_t *PL_NewString (const char *str);
 */
 void PL_Free (plitem_t *item);
 
+int PL_CheckType (pltype_t field_type, pltype_t item_type);
+void PL_TypeMismatch (plitem_t *messages, const plitem_t *item,
+					  const char *name, pltype_t field_type,
+					  pltype_t item_type);
+
 /**	Parse a dictionary object into a structure.
 
 	For each key in the dictionary, the corresponding field item is used to

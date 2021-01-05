@@ -1147,8 +1147,8 @@ pl_default_parser (const plfield_t *field, const plitem_t *item, void *data,
 	return 0;
 }
 
-static int
-types_match (pltype_t field_type, pltype_t item_type)
+VISIBLE int
+PL_CheckType (pltype_t field_type, pltype_t item_type)
 {
 	if (field_type & QFMultiType) {
 		// field_type is a mask of allowed types
@@ -1159,9 +1159,9 @@ types_match (pltype_t field_type, pltype_t item_type)
 	}
 }
 
-static void
-type_mismatch (plitem_t *messages, const plitem_t *item, const char *name,
-			   pltype_t field_type, pltype_t item_type)
+VISIBLE void
+PL_TypeMismatch (plitem_t *messages, const plitem_t *item, const char *name,
+				 pltype_t field_type, pltype_t item_type)
 {
 	const int num_types = sizeof (pl_types) / sizeof (pl_types[0]);
 	if (field_type & QFMultiType) {
@@ -1213,9 +1213,9 @@ PL_ParseStruct (const plfield_t *fields, const plitem_t *dict, void *data,
 				} else {
 					parser = pl_default_parser;
 				}
-				if (!types_match (f->type, item->type)) {
-					type_mismatch (messages, item, current->key,
-								   f->type, item->type);
+				if (!PL_CheckType (f->type, item->type)) {
+					PL_TypeMismatch (messages, item, current->key,
+									 f->type, item->type);
 					result = 0;
 				} else {
 					if (!parser (f, item, flddata, messages, context)) {
@@ -1268,11 +1268,11 @@ PL_ParseArray (const plfield_t *field, const plitem_t *array, void *data,
 		plitem_t   *item = plarray->values[i];
 		void       *eledata = &arr->a[i * element->stride];
 
-		if (!types_match (element->type, item->type)) {
+		if (!PL_CheckType (element->type, item->type)) {
 			char        index[16];
 			snprintf (index, sizeof(index) - 1, "%d", i);
 			index[15] = 0;
-			type_mismatch (messages, item, index, element->type, item->type);
+			PL_TypeMismatch (messages, item, index, element->type, item->type);
 			result = 0;
 		} else {
 			if (!parser (&f, item, eledata, messages, context)) {
@@ -1320,8 +1320,8 @@ PL_ParseSymtab (const plfield_t *field, const plitem_t *dict, void *data,
 		const char *key = current->key;
 		plitem_t   *item = current->value;
 
-		if (!types_match (element->type, item->type)) {
-			type_mismatch (messages, item, key, element->type, item->type);
+		if (!PL_CheckType (element->type, item->type)) {
+			PL_TypeMismatch (messages, item, key, element->type, item->type);
 			result = 0;
 			continue;
 		}
