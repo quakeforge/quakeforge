@@ -265,6 +265,22 @@ bi_str_lower (progs_t *pr)
 	RETURN_STRING (pr, lower);
 }
 
+static void
+bi_str_upper (progs_t *pr)
+{
+	const char *str = P_GSTRING (pr, 0);
+	char       *upper = alloca (strlen (str) + 1);
+	char       *l = upper;
+	byte        c;
+
+	while ((c = *str++)) {
+		*l++ = toupper (c);
+	}
+	*l++ = 0;
+
+	RETURN_STRING (pr, upper);
+}
+
 static builtin_t builtins[] = {
 	{"strlen",		bi_strlen,		-1},
 	{"sprintf",		bi_sprintf,		-1},
@@ -283,6 +299,7 @@ static builtin_t builtins[] = {
 	{"str_char",	bi_str_char,	-1},
 	{"str_quote",	bi_str_quote,	-1},
 	{"str_lower",	bi_str_lower,	-1},
+	{"str_upper",	bi_str_upper,	-1},
 	{0}
 };
 
