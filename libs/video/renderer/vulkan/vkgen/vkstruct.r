@@ -47,11 +47,31 @@
 	return nil;
 }
 
+-(string)sTypeName
+{
+	string s = "VK_STRUCTURE_TYPE";
+	string      name = str_hold ([self outname]);
+	int         length = strlen (name);
+	int         start, end, c;
+	for (start = 2; start < length; start = end) {
+		for (end = start + 1; end < length; end++) {
+			c = str_char (name, end);
+			if (c >= 'A' && c <= 'Z') {
+				break;
+			}
+		}
+		s += "_" + str_mid (name, start, end);
+	}
+	str_free (name);
+	return str_upper (s);
+}
+
 -(void) writeTable
 {
 	PLItem     *field_dict = [parse getObjectForKey:[self name]];
 	PLItem     *new_name = [field_dict getObjectForKey:".name"];
 	Array      *field_defs = [Array array];
+	int         have_sType = 0;
 
 	if ([parse string] == "skip") {
 		return;
@@ -60,6 +80,12 @@
 		outname = str_hold ([new_name string]);
 	}
 
+	for (int i = 0; i < type.strct.num_fields; i++) {
+		qfot_var_t *field = &type.strct.fields[i];
+		if (field.name == "sType") {
+			have_sType = 1;
+		}
+	}
 	if (field_dict) {
 		PLItem     *field_keys = [field_dict allKeys];
 
@@ -108,6 +134,10 @@
 			 " void *context)\n",
 			 [self outname]);
 	fprintf (output_file, "{\n");
+	if (have_sType) {
+		fprintf (output_file, "\t((%s *) data)->sType", [self outname]);
+		fprintf (output_file, " = %s;\n", [self sTypeName]);
+	}
 	fprintf (output_file,
 			 "\treturn PL_ParseStruct (%s_fields, item, data, messages,"
 			 " context);\n",
