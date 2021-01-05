@@ -435,19 +435,6 @@ pipelineLayout_free (void *hr, void *_ctx)
 	handleref_free (handleref, ctx);
 }
 
-static void
-renderPass_free (void *hr, void *_ctx)
-{
-	__auto_type handleref = (handleref_t *) hr;
-	__auto_type renderPass = (VkRenderPass) handleref->handle;
-	__auto_type ctx = (vulkan_ctx_t *) _ctx;
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	dfunc->vkDestroyRenderPass (device->dev, renderPass, 0);
-	handleref_free (handleref, ctx);
-}
-
 static hashtab_t *enum_symtab;
 
 static int
@@ -574,9 +561,6 @@ QFV_ParseResources (vulkan_ctx_t *ctx, plitem_t *pipelinedef)
 		ctx->pipelineLayouts = Hash_NewTable (23, handleref_getkey,
 											  pipelineLayout_free,
 											  ctx, &exprctx.hashlinks);
-		ctx->renderPasses = Hash_NewTable (23, handleref_getkey,
-										   renderPass_free,
-										   ctx, &exprctx.hashlinks);
 	}
 
 	for (parseres_t *res = parse_resources; res->name; res++) {

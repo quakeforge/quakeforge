@@ -31,11 +31,6 @@
 			class = "set layout";
 			create = vkCreateDescriptorSetLayout;
 		};
-		VkRenderPass = {
-			symtab = renderPasses;
-			class = "render pass";
-			create = vkCreateRenderPass;
-		};
 		VkPipelineLayout = {
 			symtab = pipelineLayouts;
 			class = "pipeline layout";
@@ -129,7 +124,7 @@
 			};
 		};
 		VkPipelineShaderStageCreateInfo = {
-			flags = auto;
+			//flags = auto; reserved for future use (Bits enum does not exist)
 			stage = auto;
 			name = {
 				type = string;
@@ -323,14 +318,6 @@
 									parser = parse_VkPipelineLayout;
 								});
 				value = layout;
-			};
-			renderPass = {
-				type = (single,	{
-									parse_type = (QFDictionary, QFString);
-									type = VkRenderPass;
-									parser = parse_VkRenderPass;
-								});
-				value = renderPass;
 			};
 			basePipelineHandle = {
 				type = (custom, QFString, parse_BasePipeline);
