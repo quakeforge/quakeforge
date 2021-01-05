@@ -58,6 +58,7 @@
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/image.h"
+#include "QF/Vulkan/pipeline.h"
 #include "QF/Vulkan/renderpass.h"
 #include "QF/Vulkan/shader.h"
 #include "QF/Vulkan/swapchain.h"
@@ -158,6 +159,9 @@ clear_table (hashtab_t **table)
 void
 Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 {
+	if (ctx->pipeline) {
+		QFV_DestroyPipeline (ctx->device, ctx->pipeline);
+	}
 	if (ctx->framebuffers.size) {
 		Vulkan_DestroyFramebuffers (ctx);
 	}

@@ -150,5 +150,7 @@ qfv_pipelineset_t *
 QFV_CreateComputePipelines (struct qfv_device_s *device,
 							VkPipelineCache cache,
 							qfv_computepipelinecreateinfoset_t *cpciSet);
+void
+QFV_DestroyPipeline (struct qfv_device_s *device, VkPipeline pipeline);
 
 #endif//__QF_Vulkan_pipeline_h

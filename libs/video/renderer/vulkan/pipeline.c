@@ -153,3 +153,12 @@ QFV_CreateComputePipelines (qfv_device_t *device,
 									 pipelines->a);
 	return pipelines;
 }
+
+void
+QFV_DestroyPipeline (qfv_device_t *device, VkPipeline pipeline)
+{
+	VkDevice    dev = device->dev;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	dfunc->vkDestroyPipeline (dev, pipeline, 0);
+}
