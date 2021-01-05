@@ -12,10 +12,10 @@ output_handle (string name, PLItem *handle)
 	string create = str_hold ([[handle getObjectForKey:"create"] string]);
 	string custom = str_hold ([[handle getObjectForKey:"custom"] string]);
 	if (!custom) {
-		fprintf (output_file, "static int parse_%s (const plfield_t *field, const plitem_t *item, void *data, plitem_t *messages, void *context)\n", name);
+		fprintf (output_file, "static int parse_%s (const plitem_t *item, void **data, plitem_t *messages, parsectx_t *context)\n", name);
 		fprintf (output_file, "{\n");
-		fprintf (output_file, "\t__auto_type handle = (%s *) data;\n", name);
-		fprintf (output_file, "\tvulkan_ctx_t *ctx = ((parsectx_t *) context)->vctx;\n");
+		fprintf (output_file, "\t__auto_type handle = (%s *) data[0];\n", name);
+		fprintf (output_file, "\tvulkan_ctx_t *ctx = context->vctx;\n");
 		fprintf (output_file, "\tqfv_device_t *device = ctx->device;\n");
 		fprintf (output_file, "\tqfv_devfuncs_t *dfunc = device->funcs;\n");
 		fprintf (output_file, "\tif (PL_Type (item) == QFString) {\n");
@@ -47,15 +47,18 @@ output_handle (string name, PLItem *handle)
 	fprintf (output_file, "int parse_%s_handleref (const plfield_t *field, const plitem_t *item, void *data, plitem_t *messages, void *context)\n", name);
 	fprintf (output_file, "{\n");
 	fprintf (output_file, "\thandleref_t *handleref = data;\n");
+	fprintf (output_file, "\tvoid *hrdata[] = { &handleref->handle };\n");
 	fprintf (output_file, "\thandleref->name = strdup (field->name);\n");
 	if (custom) {
-		fprintf (output_file, "\treturn %s (field, item, &handleref->handle, messages, context);\n", custom);
+		fprintf (output_file, "\treturn %s (item, hrdata, messages, context);\n", custom);
 	} else {
-		fprintf (output_file, "\treturn parse_%s (field, item, &handleref->handle, messages, context);\n", name);
+		fprintf (output_file, "\treturn parse_%s (item, hrdata, messages, context);\n", name);
 	}
 	fprintf (output_file, "}\n");
 
-	fprintf (header_file, "static int parse_%s (const plfield_t *field, const plitem_t *item, void *data, plitem_t *messages, void *context);\n", name);
+	if (!custom) {
+		fprintf (header_file, "static int parse_%s (const plitem_t *item, void **data, plitem_t *messages, parsectx_t *context);\n", name);
+	}
 	fprintf (header_file, "int parse_%s_handleref (const plfield_t *field, const plitem_t *item, void *data, plitem_t *messages, void *context);\n", name);
 	str_free (custom);
 	str_free (symtab);

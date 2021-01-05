@@ -5,6 +5,21 @@
 #include "vkgen.h"
 #include "vktype.h"
 
+string
+parseItemType (PLItem *item)
+{
+	string      str = [item string];
+	if (str) {
+		return str;
+	}
+	string      mask = "QFMultiType";
+	for (int i = [item count]; i-- > 0; ) {
+		str = [[item getObjectAtIndex:i] string];
+		mask = mask + " | (1 << " + str + ")";
+	}
+	return mask;
+}
+
 @implementation FieldType
 
 +fieldType:(PLItem *)item
@@ -17,21 +32,6 @@
 	str_free (type);
 	str_free (parser);
 	str_free (parse_type);
-}
-
-static string
-parseItemType (PLItem *item)
-{
-	string      str = [item string];
-	if (str) {
-		return str;
-	}
-	string      mask = "QFMultiType";
-	for (int i = [item count]; i-- > 0; ) {
-		str = [[item getObjectAtIndex:i] string];
-		mask = mask + " | (1 << " + str + ")";
-	}
-	return str_hold (mask);
 }
 
 -initWithItem:(PLItem *)item
@@ -47,7 +47,8 @@ parseItemType (PLItem *item)
 		parse_type = [field_type parseType];
 		parser = str_hold ("parse_" + type);
 	} else {
-		parse_type = parseItemType([item getObjectForKey:"parse_type"]);
+		PLItem *typeItem = [item getObjectForKey:"parse_type"];
+		parse_type = str_hold (parseItemType(typeItem));
 		type = str_hold ([[item getObjectForKey:"type"] string]);
 		parser = str_hold ([[item getObjectForKey:"parser"] string]);
 	}

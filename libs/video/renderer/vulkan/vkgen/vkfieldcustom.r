@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "vkfieldcustom.h"
+#include "vkfieldtype.h"
 #include "vkgen.h"
 #include "vktype.h"
 
@@ -15,7 +16,7 @@
 	}
 
 	PLItem     *desc = [item getObjectForKey:"type"];
-	pltype = str_hold ([[desc getObjectAtIndex:1] string]);
+	pltype = str_hold (parseItemType ([desc getObjectAtIndex:1]));
 	parser = str_hold ([[desc getObjectAtIndex:2] string]);
 
 	fields = [item getObjectForKey:"fields"];

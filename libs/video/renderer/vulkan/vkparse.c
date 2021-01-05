@@ -58,6 +58,7 @@
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/image.h"
+#include "QF/Vulkan/pipeline.h"
 #include "QF/Vulkan/renderpass.h"
 #include "QF/Vulkan/shader.h"
 #include "QF/Vulkan/swapchain.h"
@@ -159,6 +160,10 @@ parse_basic (const plfield_t *field, const plitem_t *item,
 		*(uint32_t *) data = VK_SUBPASS_EXTERNAL;
 	} else {
 		ret = !cexpr_eval_string (valstr, &ectx);
+		if (!ret) {
+			PL_Message (messages, item, "error parsing %s: %s",
+						field->name, valstr);
+		}
 	}
 	//Sys_Printf ("    %x\n", *(uint32_t *)data);
 
@@ -224,8 +229,9 @@ parse_single (const plfield_t *field, const plitem_t *item,
 	//Sys_Printf ("parse_single: %s %zd %d %p %p\n", field->name, field->offset,
 	//			field->type, field->parser, field->data);
 
-	if (PL_Type (item) != single->type) {
-		PL_Message (messages, item, "error: wrong type");
+	if (!PL_CheckType (single->type, PL_Type (item))) {
+		PL_TypeMismatch (messages, item, field->name, single->type,
+						 PL_Type (item));
 		return 0;
 	}
 
@@ -309,13 +315,13 @@ parse_string (const plfield_t *field, const plitem_t *item,
 	__auto_type string = (parse_string_t *) field->data;
 	__auto_type value = (char **) ((byte *)data + string->value_offset);
 
-	const char *str = PL_BinaryData (item);
+	const char *str = PL_String (item);
 
-	Sys_Printf ("parse_string: %s %zd %d %p %p %p\n",
-				field->name, field->offset, field->type, field->parser,
-				field->data, data);
-	Sys_Printf ("    %zd\n", string->value_offset);
-	Sys_Printf ("    %s\n", str);
+	//Sys_Printf ("parse_string: %s %zd %d %p %p %p\n",
+	//			field->name, field->offset, field->type, field->parser,
+	//			field->data, data);
+	//Sys_Printf ("    %zd\n", string->value_offset);
+	//Sys_Printf ("    %s\n", str);
 
 	*value = strdup (str);
 	return 1;
@@ -350,11 +356,11 @@ parse_RGBA (const plitem_t *item, void **data,
 }
 
 static int
-parse_VkShaderModule (const plfield_t *field, const plitem_t *item, void *data,
-					  plitem_t *messages, void *context)
+parse_VkShaderModule (const plitem_t *item, void **data,
+					  plitem_t *messages, parsectx_t *context)
 {
-	__auto_type handle = (VkShaderModule *) data;
-	vulkan_ctx_t *ctx = ((parsectx_t *) context)->vctx;
+	__auto_type handle = (VkShaderModule *) data[0];
+	vulkan_ctx_t *ctx = context->vctx;
 
 	const char *name = PL_String (item);
 	handleref_t *hr = Hash_Find (ctx->shaderModules, name);
@@ -367,10 +373,10 @@ parse_VkShaderModule (const plfield_t *field, const plitem_t *item, void *data,
 }
 
 static int
-parse_VkShaderModule_resource (const plfield_t *field, const plitem_t *item,
-							   void *data, plitem_t *messages, void *context)
+parse_VkShaderModule_resource (const plitem_t *item, void **data,
+							   plitem_t *messages, parsectx_t *context)
 {
-	__auto_type handle = (VkShaderModule *) data;
+	__auto_type handle = (VkShaderModule *) data[0];
 	vulkan_ctx_t *ctx = ((parsectx_t *) context)->vctx;
 	qfv_device_t *device = ctx->device;
 
@@ -380,6 +386,15 @@ parse_VkShaderModule_resource (const plfield_t *field, const plitem_t *item,
 		return 0;
 	}
 	return 1;
+}
+
+static int
+parse_VkDescriptorSetLayout_array (const plfield_t *field,
+								   const plitem_t *item, void *data,
+								   plitem_t *messages, void *context)
+{
+	void *layout[] = { data };
+	return parse_VkDescriptorSetLayout (item, layout, messages, context);
 }
 
 static const char *
@@ -494,57 +509,6 @@ static plfield_t renderpass_fields[] = {
 	{}
 };
 
-VkRenderPass
-QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_renderpass_t renderpass_data = {};
-	plitem_t   *messages = PL_NewArray ();
-	VkRenderPass renderpass;
-	exprsym_t   var_syms[] = {
-		{"swapchain", &qfv_swapchain_t_type, ctx->swapchain},
-		{"msaaSamples", &VkSampleCountFlagBits_type, &ctx->msaaSamples},
-		{}
-	};
-	exprtab_t   vars_tab = { var_syms, 0 };
-	exprctx_t   exprctx = {};
-	parsectx_t  parsectx = { &exprctx, ctx };
-
-	exprctx.external_variables = &vars_tab;
-	exprctx.memsuper = new_memsuper ();
-	exprctx.messages = messages;
-	exprctx.hashlinks = &ctx->hashlinks;
-
-	cexpr_init_symtab (&vars_tab, &exprctx);
-
-	if (!PL_ParseStruct (renderpass_fields, plist, &renderpass_data,
-						 messages, &parsectx)) {
-		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
-			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
-		}
-		return 0;
-	}
-	PL_Free (messages);
-	delete_memsuper (exprctx.memsuper);
-
-	renderpass = QFV_CreateRenderPass (device,
-									   renderpass_data.attachments,
-									   renderpass_data.subpasses,
-									   renderpass_data.dependencies);
-
-	free (renderpass_data.attachments);
-	for (size_t i = 0; i < renderpass_data.subpasses->size; i++) {
-		free ((void *) renderpass_data.subpasses->a[i].pInputAttachments);
-		free ((void *) renderpass_data.subpasses->a[i].pColorAttachments);
-		free ((void *) renderpass_data.subpasses->a[i].pResolveAttachments);
-		free ((void *) renderpass_data.subpasses->a[i].pDepthStencilAttachment);
-		free ((void *) renderpass_data.subpasses->a[i].pPreserveAttachments);
-	}
-	free (renderpass_data.subpasses);
-	free (renderpass_data.dependencies);
-	return renderpass;
-}
-
 void
 QFV_ParseResources (vulkan_ctx_t *ctx, plitem_t *pipelinedef)
 {
@@ -608,4 +572,96 @@ exprenum_t *
 QFV_GetEnum (const char *name)
 {
 	return Hash_Find (enum_symtab, name);
+}
+
+VkRenderPass
+QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_renderpass_t renderpass_data = {};
+	plitem_t   *messages = PL_NewArray ();
+	VkRenderPass renderpass;
+	exprsym_t   var_syms[] = {
+		{"swapchain", &qfv_swapchain_t_type, ctx->swapchain},
+		{"msaaSamples", &VkSampleCountFlagBits_type, &ctx->msaaSamples},
+		{}
+	};
+	exprtab_t   vars_tab = { var_syms, 0 };
+	exprctx_t   exprctx = {};
+	parsectx_t  parsectx = { &exprctx, ctx };
+
+	exprctx.external_variables = &vars_tab;
+	exprctx.memsuper = new_memsuper ();
+	exprctx.messages = messages;
+	exprctx.hashlinks = &ctx->hashlinks;
+
+	cexpr_init_symtab (&vars_tab, &exprctx);
+
+	if (!PL_ParseStruct (renderpass_fields, plist, &renderpass_data,
+						 messages, &parsectx)) {
+		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
+			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
+		}
+		return 0;
+	}
+	PL_Free (messages);
+	delete_memsuper (exprctx.memsuper);
+
+	renderpass = QFV_CreateRenderPass (device,
+									   renderpass_data.attachments,
+									   renderpass_data.subpasses,
+									   renderpass_data.dependencies);
+
+	free (renderpass_data.attachments);
+	for (size_t i = 0; i < renderpass_data.subpasses->size; i++) {
+		free ((void *) renderpass_data.subpasses->a[i].pInputAttachments);
+		free ((void *) renderpass_data.subpasses->a[i].pColorAttachments);
+		free ((void *) renderpass_data.subpasses->a[i].pResolveAttachments);
+		free ((void *) renderpass_data.subpasses->a[i].pDepthStencilAttachment);
+		free ((void *) renderpass_data.subpasses->a[i].pPreserveAttachments);
+	}
+	free (renderpass_data.subpasses);
+	free (renderpass_data.dependencies);
+	return renderpass;
+}
+
+VkPipeline
+QFV_ParsePipeline (vulkan_ctx_t *ctx, plitem_t *plist)
+{
+	qfv_device_t *device = ctx->device;
+
+	plitem_t   *messages = PL_NewArray ();
+	exprctx_t   exprctx = {};
+	parsectx_t  parsectx = { &exprctx, ctx };
+	exprsym_t   var_syms[] = {
+		{"msaaSamples", &VkSampleCountFlagBits_type, &ctx->msaaSamples},
+		{}
+	};
+	exprtab_t   vars_tab = { var_syms, 0 };
+
+	exprctx.external_variables = &vars_tab;
+	exprctx.memsuper = new_memsuper ();
+	exprctx.messages = messages;
+	exprctx.hashlinks = &ctx->hashlinks;
+
+	cexpr_init_symtab (&vars_tab, &exprctx);
+
+	__auto_type cInfo = QFV_AllocGraphicsPipelineCreateInfoSet (1, alloca);
+	memset (&cInfo->a[0], 0, sizeof (cInfo->a[0]));
+
+	if (!parse_VkGraphicsPipelineCreateInfo (0, plist, &cInfo->a[0],
+											 messages, &parsectx)) {
+		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
+			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
+		}
+		return 0;
+	}
+	PL_Free (messages);
+	delete_memsuper (exprctx.memsuper);
+
+	cInfo->a[0].renderPass = ctx->renderpass.renderpass;
+	__auto_type plSet = QFV_CreateGraphicsPipelines (device, 0, cInfo);
+	VkPipeline pipeline = plSet->a[0];
+	free (plSet);
+	return pipeline;
 }

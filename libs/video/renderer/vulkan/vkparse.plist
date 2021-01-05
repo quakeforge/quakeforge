@@ -131,12 +131,8 @@
 				string = pName;
 			};
 			module = {
-				type = (single,	{
-									parse_type = QFString;
-									type = VkShaderModule;
-									parser = parse_VkShaderModule;
-								});
-				value = module;
+				type = (custom,	QFString, parse_VkShaderModule);
+				fields = (module);
 			};
 			specializationInfo = {
 				type = (single, VkSpecializationInfo);
@@ -253,7 +249,7 @@
 				type = (array,	{
 									parse_type = (QFDictionary, QFString);
 									type = VkDescriptorSetLayout;
-									parser = parse_VkDescriptorSetLayout;
+									parser = parse_VkDescriptorSetLayout_array;
 								});
 				size = setLayoutCount;
 				values = pSetLayouts;
@@ -312,12 +308,9 @@
 				value = pDynamicState;
 			};
 			layout = {
-				type = (single,	{
-									parse_type = (QFDictionary, QFString);
-									type = VkPipelineLayout;
-									parser = parse_VkPipelineLayout;
-								});
-				value = layout;
+				type = (custom,	(QFDictionary, QFString),
+						parse_VkPipelineLayout);
+				fields = (layout);
 			};
 			basePipelineHandle = {
 				type = (custom, QFString, parse_BasePipeline);

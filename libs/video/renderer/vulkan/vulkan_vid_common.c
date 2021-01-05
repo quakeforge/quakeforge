@@ -417,6 +417,15 @@ Vulkan_DestroyRenderPass (vulkan_ctx_t *ctx)
 void
 Vulkan_CreatePipelines (vulkan_ctx_t *ctx)
 {
+	qfv_load_pipeline (ctx);
+
+	plitem_t   *item = ctx->pipelineDef;
+	if (!item || !(item = PL_ObjectForKey (item, "pipeline"))) {
+		Sys_Printf ("error loading pipeline\n");
+	} else {
+		Sys_Printf ("Found pipeline def\n");
+	}
+	ctx->pipeline = QFV_ParsePipeline (ctx, item);
 }
 
 void

@@ -17,4 +17,6 @@
 -(string)parseType;
 @end
 
+string parseItemType (PLItem *item);
+
 #endif//__renderer_vulkan_vkgen_vkfieldtype_h
