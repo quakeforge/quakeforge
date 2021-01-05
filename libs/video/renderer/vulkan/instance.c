@@ -59,7 +59,7 @@ static VkExtensionProperties *instanceExtensionProperties;
 static strset_t *instanceExtensions;
 
 const char * const vulkanValidationLayers[] = {
-	"VK_LAYER_LUNARG_standard_validation",
+	"VK_LAYER_KHRONOS_validation",
 	0,
 };
 

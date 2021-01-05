@@ -112,8 +112,8 @@ Vulkan_Init_Cvars (void)
 {
 	vulkan_use_validation = Cvar_Get ("vulkan_use_validation", "1", CVAR_NONE,
 									  0,
-									  "enable LunarG Standard Validation "
-									  "Layer if available (requires instance "
+									  "enable KRONOS Validation Layer if "
+									  "available (requires instance "
 									  "restart).");
 	// FIXME implement fallback choices (instead of just fifo)
 	vulkan_presentation_mode = Cvar_Get ("vulkan_presentation_mode", "mailbox",
