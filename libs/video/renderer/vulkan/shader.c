@@ -65,14 +65,6 @@ typedef struct shaderdata_s {
 	size_t      size;
 } shaderdata_t;
 
-typedef struct shadermodule_s {
-	char       *name;
-	union {
-		VkShaderModule module;
-		struct shadermodule_s *next;
-	};
-} shadermodule_t;
-
 static shaderdata_t builtin_shaders[] = {
 	{ "passthrough.vert", passthrough_vert, sizeof (passthrough_vert) },
 	{ "pushcolor.frag", pushcolor_frag, sizeof (pushcolor_frag) },
@@ -122,6 +114,9 @@ QFV_CreateShaderModule (qfv_device_t *device, const char *shader_path)
 	}
 
 	if (data) {
+		Sys_MaskPrintf (SYS_VULKAN,
+						"QFV_CreateShaderModule: creating shader module %s\n",
+						shader_path);
 		VkShaderModuleCreateInfo createInfo = {
 			VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO, 0,
 			0, data->size, data->data
@@ -150,64 +145,4 @@ QFV_DestroyShaderModule (qfv_device_t *device, VkShaderModule module)
 	qfv_devfuncs_t *dfunc = device->funcs;
 
 	dfunc->vkDestroyShaderModule (dev, module, 0);
-}
-
-static shadermodule_t *
-new_module (vulkan_ctx_t *ctx)
-{
-	shadermodule_t *shadermodule;
-	ALLOC (128, shadermodule_t, ctx->shadermodule, shadermodule);
-	return shadermodule;
-}
-
-static void
-del_module (shadermodule_t *shadermodule, vulkan_ctx_t *ctx)
-{
-	free (shadermodule->name);
-	FREE (ctx->shadermodule, shadermodule);
-}
-
-static const char *
-sm_getkey (const void *sm, void *unused)
-{
-	return ((shadermodule_t *) sm)->name;
-}
-
-static void
-sm_free (void *sm, void *ctx)
-{
-	del_module (sm, ctx);
-}
-
-VkShaderModule
-QFV_FindShaderModule (vulkan_ctx_t *ctx, const char *name)
-{
-	//FIXME
-	if (!ctx->shadermodules) {
-		ctx->shadermodules = Hash_NewTable (127, sm_getkey, sm_free, ctx, 0);
-	}
-	return Hash_Find (ctx->shadermodules, name);
-}
-
-void
-QFV_RegisterShaderModule (vulkan_ctx_t *ctx, const char *name,
-						  VkShaderModule module)
-{
-	//FIXME
-	if (!ctx->shadermodules) {
-		ctx->shadermodules = Hash_NewTable (127, sm_getkey, sm_free, ctx, 0);
-	}
-	shadermodule_t *shadermodule = new_module (ctx);
-	shadermodule->name = strdup (name);
-	shadermodule->module = module;
-	Hash_Add (ctx->shadermodules, shadermodule);
-}
-
-void
-QFV_DeregisterShaderModule (vulkan_ctx_t *ctx, const char *name)
-{
-	if (!ctx->shadermodules) {
-		return;
-	}
-	Hash_Free (ctx->shadermodules, Hash_Del (ctx->shadermodules, name));
 }

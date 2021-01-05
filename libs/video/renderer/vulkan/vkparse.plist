@@ -21,6 +21,11 @@
 		qfv_swapchain_t,
 	);
 	handles = {
+		VkShaderModule = {
+			symtab = shaderModules;
+			class = "shader module";
+			custom = parse_VkShaderModule_resource;
+		};
 		VkDescriptorSetLayout = {
 			symtab = setLayouts;
 			class = "set layout";
@@ -37,6 +42,29 @@
 			create = vkCreatePipelineLayout;
 		};
 	};
+	resources = (
+		{
+			name = shaderModules;
+			parse_type = QFString;
+			parser = parse_VkShaderModule_handleref;
+			type = handleref_t;
+			table = shaderModules;
+		},
+		{
+			name = setLayouts;
+			parse_type = QFDictionary;
+			parser = parse_VkDescriptorSetLayout_handleref;
+			type = handleref_t;
+			table = setLayouts;
+		},
+		{
+			name = pipelineLayouts;
+			parse_type = QFDictionary;
+			parser = parse_VkPipelineLayout_handleref;
+			type = handleref_t;
+			table = pipelineLayouts;
+		},
+	);
 	parse = {
 		qfv_swapchain_s = {
 			.name = qfv_swapchain_t;
@@ -108,8 +136,12 @@
 				string = pName;
 			};
 			module = {
-				type = (custom, QFString, parse_VkShaderModule);
-				fields = (module);
+				type = (single,	{
+									parse_type = QFString;
+									type = VkShaderModule;
+									parser = parse_VkShaderModule;
+								});
+				value = module;
 			};
 			specializationInfo = {
 				type = (single, VkSpecializationInfo);

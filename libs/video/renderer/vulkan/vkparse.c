@@ -207,6 +207,9 @@ parse_enum (const plfield_t *field, const plitem_t *item,
 	//			field->name, field->offset, field->type, field->parser,
 	//			field->data, valstr);
 	ret = !cexpr_parse_enum (enm, valstr, &ectx, data);
+	if (!ret) {
+		PL_Message (messages, item, "error parsing enum: %s", valstr);
+	}
 	//Sys_Printf ("    %d\n", *(int *)data);
 	return ret;
 }
@@ -347,24 +350,37 @@ parse_RGBA (const plitem_t *item, void **data,
 }
 
 static int
-parse_VkShaderModule (const plitem_t *item, void **data,
-					  plitem_t *messages, parsectx_t *context)
+parse_VkShaderModule (const plfield_t *field, const plitem_t *item, void *data,
+					  plitem_t *messages, void *context)
 {
-	vulkan_ctx_t *ctx = context->vctx;
+	__auto_type handle = (VkShaderModule *) data;
+	vulkan_ctx_t *ctx = ((parsectx_t *) context)->vctx;
+
 	const char *name = PL_String (item);
-	__auto_type mptr = (VkShaderModule *)data[0];
-	VkShaderModule module = QFV_FindShaderModule (ctx, name);
-	if (module) {
-		*mptr = module;
-		return 1;
+	handleref_t *hr = Hash_Find (ctx->shaderModules, name);
+	if (!hr) {
+		PL_Message (messages, item, "undefined shader module %s", name);
+		return 0;
 	}
-	return 0;
+	*handle = (VkShaderModule) hr->handle;
+	return 1;
 }
 
-typedef struct handleref_s {
-	char       *name;
-	uint64_t    handle;
-} handleref_t;
+static int
+parse_VkShaderModule_resource (const plfield_t *field, const plitem_t *item,
+							   void *data, plitem_t *messages, void *context)
+{
+	__auto_type handle = (VkShaderModule *) data;
+	vulkan_ctx_t *ctx = ((parsectx_t *) context)->vctx;
+	qfv_device_t *device = ctx->device;
+
+	const char *shader_path = PL_String (item);
+	if (!(*handle = QFV_CreateShaderModule (device, shader_path))) {
+		PL_Message (messages, item, "could not find shader %s", shader_path);
+		return 0;
+	}
+	return 1;
+}
 
 static const char *
 handleref_getkey (const void *hr, void *unused)
@@ -393,6 +409,45 @@ setLayout_free (void *hr, void *_ctx)
 	handleref_free (handleref, ctx);
 }
 
+static void
+shaderModule_free (void *hr, void *_ctx)
+{
+	__auto_type handleref = (handleref_t *) hr;
+	__auto_type module = (VkShaderModule) handleref->handle;
+	__auto_type ctx = (vulkan_ctx_t *) _ctx;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	dfunc->vkDestroyShaderModule (device->dev, module, 0);
+	handleref_free (handleref, ctx);
+}
+
+static void
+pipelineLayout_free (void *hr, void *_ctx)
+{
+	__auto_type handleref = (handleref_t *) hr;
+	__auto_type layout = (VkPipelineLayout) handleref->handle;
+	__auto_type ctx = (vulkan_ctx_t *) _ctx;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	dfunc->vkDestroyPipelineLayout (device->dev, layout, 0);
+	handleref_free (handleref, ctx);
+}
+
+static void
+renderPass_free (void *hr, void *_ctx)
+{
+	__auto_type handleref = (handleref_t *) hr;
+	__auto_type renderPass = (VkRenderPass) handleref->handle;
+	__auto_type ctx = (vulkan_ctx_t *) _ctx;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	dfunc->vkDestroyRenderPass (device->dev, renderPass, 0);
+	handleref_free (handleref, ctx);
+}
+
 static hashtab_t *enum_symtab;
 
 static int
@@ -405,16 +460,6 @@ parse_BasePipeline (const plitem_t *item, void **data,
 }
 
 #include "libs/video/renderer/vulkan/vkparse.cinc"
-
-static plelement_t setLayout_data = {
-	QFDictionary,
-	sizeof (handleref_t),
-	malloc,
-	parse_VkDescriptorSetLayout_handleref,
-	0,
-};
-
-static plfield_t setLayout_field = { 0, 0, QFDictionary, 0, &setLayout_data };
 
 typedef struct qfv_renderpass_s {
 	qfv_attachmentdescription_t *attachments;
@@ -509,27 +554,46 @@ QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist)
 }
 
 void
-QFV_ParseDescriptorSetLayouts (vulkan_ctx_t *ctx, plitem_t *sets)
+QFV_ParseResources (vulkan_ctx_t *ctx, plitem_t *pipelinedef)
 {
 	plitem_t   *messages = PL_NewArray ();
 	exprctx_t   exprctx = {};
 	parsectx_t  parsectx = { &exprctx, ctx };
+	int         ret = 1;
 
 	exprctx.memsuper = new_memsuper ();
 	exprctx.messages = messages;
 	exprctx.hashlinks = ctx->hashlinks;
 
 	if (!ctx->setLayouts) {
+		ctx->shaderModules = Hash_NewTable (23, handleref_getkey,
+											shaderModule_free,
+											ctx, &exprctx.hashlinks);
 		ctx->setLayouts = Hash_NewTable (23, handleref_getkey, setLayout_free,
 										 ctx, &exprctx.hashlinks);
+		ctx->pipelineLayouts = Hash_NewTable (23, handleref_getkey,
+											  pipelineLayout_free,
+											  ctx, &exprctx.hashlinks);
+		ctx->renderPasses = Hash_NewTable (23, handleref_getkey,
+										   renderPass_free,
+										   ctx, &exprctx.hashlinks);
 	}
-	int res = PL_ParseSymtab (&setLayout_field, sets, ctx->setLayouts,
-							  messages, &parsectx);
-	if (!res || developer->int_val & SYS_VULKAN) {
+
+	for (parseres_t *res = parse_resources; res->name; res++) {
+		plitem_t   *item = PL_ObjectForKey (pipelinedef, res->name);
+		if (item) {
+			__auto_type table = *(hashtab_t **) ((size_t) ctx + res->offset);
+			Sys_Printf ("found %s\n", res->name);
+			ret &= PL_ParseSymtab (res->field, item, table, messages,
+								   &parsectx);
+		}
+	}
+	if (!ret || developer->int_val & SYS_VULKAN) {
 		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
 			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
 		}
 	}
+
 	PL_Free (messages);
 	delete_memsuper (exprctx.memsuper);
 	ctx->hashlinks = exprctx.hashlinks;

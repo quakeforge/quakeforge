@@ -12,9 +12,19 @@ typedef struct parsectx_s {
 	struct vulkan_ctx_s *vctx;
 } parsectx_t;
 
+typedef struct parseres_s {
+	const char *name;
+	plfield_t  *field;
+	size_t      offset;
+} parseres_t;
 
-void QFV_ParseDescriptorSetLayouts (vulkan_ctx_t *ctx, plitem_t *sets);
+typedef struct handleref_s {
+	char       *name;
+	uint64_t    handle;
+} handleref_t;
+
 VkRenderPass QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist);
+void QFV_ParseResources (vulkan_ctx_t *ctx, plitem_t *plist);
 void QFV_InitParse (void);
 exprenum_t *QFV_GetEnum (const char *name);
 

@@ -403,46 +403,10 @@ void
 Vulkan_CreatePipelines (vulkan_ctx_t *ctx)
 {
 	plitem_t   *pipeline_def = qfv_load_pipeline ();
-	plitem_t   *item;
 
-	item = pipeline_def;
-	if (!item || !(item = PL_ObjectForKey (item, "modules"))) {
-		Sys_Printf ("error loading modules\n");
-	} else {
-		Sys_Printf ("Found modules def\n");
+	if (pipeline_def) {
+		QFV_ParseResources (ctx, pipeline_def);
 	}
-	for (int i = PL_A_NumObjects (item); i-- > 0; ) {
-		plitem_t   *mod = PL_ObjectAtIndex (item, i);
-		const char *name = PL_String (PL_ObjectForKey (mod, "name"));
-		const char *file = PL_String (PL_ObjectForKey (mod, "file"));
-		if (!name || !file) {
-			continue;
-		}
-		if (QFV_FindShaderModule (ctx, name)) {
-			continue;
-		}
-		VkShaderModule module = QFV_CreateShaderModule (ctx->device, file);
-		if (module) {
-			Sys_Printf ("registering shader %s %p\n", name, module);
-			QFV_RegisterShaderModule (ctx, name, module);
-		}
-	}
-
-	item = pipeline_def;
-	if (!item || !(item = PL_ObjectForKey (item, "setLayouts"))) {
-		Sys_Printf ("error loading setLayouts\n");
-	} else {
-		Sys_Printf ("Found setLayouts\n");
-		QFV_ParseDescriptorSetLayouts (ctx, item);
-	}
-
-	/*item = pipeline_def;
-	if (!item || !(item = PL_ObjectForKey (item, "pipelineLayouts"))) {
-		Sys_Printf ("error loading pipelineLayouts\n");
-	} else {
-		Sys_Printf ("Found pipelineLayouts\n");
-		QFV_ParsePipelineLayouts (ctx, item);
-	}*/
 }
 
 void

@@ -1,19 +1,13 @@
 {
-	modules = (
+	shaderModules = {
 		// specify shader modules to load into memory
-		{
-			// the name of the module for referecy by the pipeline
-			name = passthrough;
-			// the path to the spv file to load
-			// $shader refers to the shader install path
-			// $builtin refers to compiled-in shaders
-			file = $builtin/passthrough.vert;
-		},
-		{
-			name = pushcolor;
-			file = $builtin/pushcolor.frag;
-		},
-	);
+		// key is the name of the module for referecy by the pipeline
+		// value the path to the spv file to load
+		// $shader refers to the shader install path
+		// $builtin refers to compiled-in shaders
+		passthrough = $builtin/passthrough.vert;
+		pushcolor = $builtin/pushcolor.frag;
+	};
 	setLayouts = {
 		something = {
 			flags = 0;
