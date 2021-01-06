@@ -310,7 +310,7 @@ plitem_t *PL_NewString (const char *str);
 */
 void PL_Free (plitem_t *item);
 
-int PL_CheckType (pltype_t field_type, pltype_t item_type);
+int PL_CheckType (pltype_t field_type, pltype_t item_type) __attribute__((const));
 void PL_TypeMismatch (plitem_t *messages, const plitem_t *item,
 					  const char *name, pltype_t field_type,
 					  pltype_t item_type);
