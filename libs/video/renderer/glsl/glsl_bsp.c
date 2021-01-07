@@ -360,7 +360,7 @@ static void
 update_lightmap (msurface_t *surf)
 {
 	int         maps;
-return;
+
 	for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255; maps++)
 		if (d_lightstylevalue[surf->styles[maps]] != surf->cached_light[maps])
 			goto dynamic;
