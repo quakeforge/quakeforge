@@ -124,9 +124,7 @@ vulkan_SCR_UpdateScreen (double time,  void (*f)(void), void (**g)(void))
 		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	VkSubmitInfo submitInfo = {
 		VK_STRUCTURE_TYPE_SUBMIT_INFO, 0,
-		1,
-		&framebuffer->imageAvailableSemaphore,
-		&waitStage,
+		1, &framebuffer->imageAvailableSemaphore, &waitStage,
 		1, &framebuffer->cmdBuffer,
 		1, &framebuffer->renderDoneSemaphore,
 	};

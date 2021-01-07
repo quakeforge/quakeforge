@@ -74,6 +74,7 @@ QFV_CreateRenderPass (qfv_device_t *device,
 	if (developer->int_val & SYS_VULKAN) {
 		Sys_Printf ("attachments: %ld\n", attachments->size);
 		for (size_t i = 0; i < attachments->size; i++) {
+			Sys_Printf ("  attachment: %zd\n", i);
 			Sys_Printf ("    flags: %x\n", attachments->a[i].flags);
 			Sys_Printf ("    format: %d\n", attachments->a[i].format);
 			Sys_Printf ("    samples: %x\n", attachments->a[i].samples);
