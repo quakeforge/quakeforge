@@ -13,6 +13,7 @@ EXTRA_LTLIBRARIES += \
 
 video_renderer_common_sources = \
 	libs/video/renderer/crosshair.c \
+	libs/video/renderer/font8x8.c \
 	libs/video/renderer/noisetextures.c \
 	libs/video/renderer/r_alias.c \
 	libs/video/renderer/r_bsp.c \

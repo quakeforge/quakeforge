@@ -346,7 +346,12 @@ extern byte crosshair_data[];
 #define CROSSHAIR_TILEY 2
 #define CROSSHAIR_COUNT (CROSSHAIR_TILEX * CROSSHAIR_TILEY)
 
+//NOTE: This is packed 8x8 bitmap data, one byte per scanline, 8 scanlines
+////per character. Also, it is NOT the quake font, but the IBM charset.
+extern byte font8x8_data[];
+
 struct qpic_s *Draw_CrosshairPic (void);
+struct qpic_s *Draw_Font8x8Pic (void);
 
 struct tex_s *R_DotParticleTexture (void);
 struct tex_s *R_SparkParticleTexture (void);
