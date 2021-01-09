@@ -469,6 +469,36 @@ parse_BasePipeline (const plitem_t *item, void **data,
 
 #include "libs/video/renderer/vulkan/vkparse.cinc"
 
+static exprsym_t imageset_symbols[] = {
+	{"size", &cexpr_size_t, (void *)field_offset (qfv_imageset_t, size)},
+	{ }
+};
+static exprtab_t imageset_symtab = {
+	imageset_symbols,
+};
+exprtype_t imageset_type = {
+	"imageset",
+	sizeof (qfv_imageset_t *),
+	cexpr_struct_pointer_binops,
+	0,
+	&imageset_symtab,
+};
+static exprsym_t qfv_swapchain_t_symbols[] = {
+	{"format", &VkFormat_type, (void *)field_offset (qfv_swapchain_t, format)},
+	{"images", &imageset_type, (void *)field_offset (qfv_swapchain_t, images)},
+	{ }
+};
+static exprtab_t qfv_swapchain_t_symtab = {
+	qfv_swapchain_t_symbols,
+};
+exprtype_t qfv_swapchain_t_type = {
+	"qfv_swapchain_t",
+	sizeof (qfv_swapchain_t),
+	cexpr_struct_binops,
+	0,
+	&qfv_swapchain_t_symtab,
+};
+
 typedef struct qfv_renderpass_s {
 	qfv_attachmentdescription_t *attachments;
 	qfv_subpassparametersset_t *subpasses;
@@ -566,6 +596,8 @@ QFV_InitParse (vulkan_ctx_t *ctx)
 								 &ctx->hashlinks);
 	context.hashlinks = &ctx->hashlinks;
 	vkgen_init_symtabs (&context);
+	cexpr_init_symtab (&qfv_swapchain_t_symtab, &context);
+	cexpr_init_symtab (&imageset_symtab, &context);
 }
 
 exprenum_t *
