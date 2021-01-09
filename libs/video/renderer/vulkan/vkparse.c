@@ -456,6 +456,21 @@ pipelineLayout_free (void *hr, void *_ctx)
 	handleref_free (handleref, ctx);
 }
 
+static void
+descriptorPool_free (void *hr, void *_ctx)
+{
+	__auto_type handleref = (handleref_t *) hr;
+	__auto_type pool = (VkDescriptorPool) handleref->handle;
+	__auto_type ctx = (vulkan_ctx_t *) _ctx;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	if (pool) {
+		dfunc->vkDestroyDescriptorPool (device->dev, pool, 0);
+	};
+	handleref_free (handleref, ctx);
+}
+
 static hashtab_t *enum_symtab;
 
 static int
@@ -559,6 +574,9 @@ QFV_ParseResources (vulkan_ctx_t *ctx, plitem_t *pipelinedef)
 										 ctx, &ctx->hashlinks);
 		ctx->pipelineLayouts = Hash_NewTable (23, handleref_getkey,
 											  pipelineLayout_free,
+											  ctx, &ctx->hashlinks);
+		ctx->descriptorPools = Hash_NewTable (23, handleref_getkey,
+											  descriptorPool_free,
 											  ctx, &ctx->hashlinks);
 	}
 

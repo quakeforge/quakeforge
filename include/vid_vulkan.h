@@ -48,6 +48,7 @@ typedef struct vulkan_ctx_s {
 	struct hashtab_s *shaderModules;
 	struct hashtab_s *setLayouts;
 	struct hashtab_s *pipelineLayouts;
+	struct hashtab_s *descriptorPools;
 
 	VkCommandPool cmdpool;
 	VkCommandBuffer cmdbuffer;

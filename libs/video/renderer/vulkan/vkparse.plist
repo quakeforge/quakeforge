@@ -18,12 +18,18 @@
 		VkPushConstantRange,
 		VkPipelineLayoutCreateInfo,
 		VkGraphicsPipelineCreateInfo,
+		VkDescriptorPoolCreateInfo,
 	);
 	handles = {
 		VkShaderModule = {
 			symtab = shaderModules;
 			class = "shader module";
 			custom = parse_VkShaderModule_resource;
+		};
+		VkDescriptorPool = {
+			symtab = descriptorPools;
+			class = "descriptor pool";
+			create = vkCreateDescriptorPool;
 		};
 		VkDescriptorSetLayout = {
 			symtab = setLayouts;
@@ -148,6 +154,15 @@
 				type = (array, VkDescriptorSetLayoutBinding);
 				size = bindingCount;
 				values = pBindings;
+			};
+		};
+		VkDescriptorPoolCreateInfo = {
+			flags = auto;
+			maxSets = auto;
+			bindings = {
+				type = (array, VkDescriptorPoolSize);
+				size = poolSizeCount;
+				values = pPoolSizes;
 			};
 		};
 		VkPipelineVertexInputStateCreateInfo = {
