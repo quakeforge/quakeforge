@@ -1563,7 +1563,7 @@ class_finish_module (void)
 	save_storage = current_storage;
 	current_storage = sc_static;
 	current_func = begin_function (init_sym, 0, current_symtab, 1);
-	build_code_function (init_sym, 0, init_expr);;
+	build_code_function (init_sym, 0, init_expr);
 	current_func = 0;
 	current_storage = save_storage;
 }

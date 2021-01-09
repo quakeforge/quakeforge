@@ -531,7 +531,7 @@ parse_player_delta (qmsg_t *msg, plent_state_t *from, plent_state_t *to)
 	if (flags & PF_SKINNUM)
 		to->skinnum = MSG_ReadByte (msg);
 	if (flags & PF_EFFECTS)
-		to->effects = (to->effects & 0xff00) | MSG_ReadByte (msg);;
+		to->effects = (to->effects & 0xff00) | MSG_ReadByte (msg);
 	if (flags & PF_WEAPONFRAME)
 		to->weaponframe = MSG_ReadByte (msg);
 	if (flags & PF_QF) {

@@ -519,7 +519,7 @@ GLSL_SubpicUpdate (subpic_t *subpic, byte *data, int batch)
 void
 GLSL_ScrapFlush (scrap_t *scrap)
 {
-	vrect_t    *rect = scrap->batch;;
+	vrect_t    *rect = scrap->batch;
 
 	if (!rect)
 		return;

@@ -189,7 +189,7 @@ InitData (void)
 
 	pr.entity_data = defspace_new (ds_virtual);
 	pr.entity_fields = new_symtab (0, stab_global);
-	pr.entity_fields->space = pr.entity_data;;
+	pr.entity_fields->space = pr.entity_data;
 
 	clear_functions ();
 	clear_frame_macros ();

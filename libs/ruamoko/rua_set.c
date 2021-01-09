@@ -392,7 +392,7 @@ bi_set_first (progs_t *pr)
 		res->set_iters->prev = &set_iter->next;
 	res->set_iters = set_iter;
 
-	set_iter->iter = iter;;
+	set_iter->iter = iter;
 
 	R_INT (pr) = res_set_iter_index (res, set_iter);
 }

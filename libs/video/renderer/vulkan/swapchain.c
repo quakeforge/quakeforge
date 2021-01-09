@@ -43,7 +43,7 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 
 	uint32_t    numModes;
 	VkPresentModeKHR *modes;
-	VkPresentModeKHR useMode = VK_PRESENT_MODE_FIFO_KHR;;
+	VkPresentModeKHR useMode = VK_PRESENT_MODE_FIFO_KHR;
 	ifuncs->vkGetPhysicalDeviceSurfacePresentModesKHR (physDev,
 													   ctx->surface,
 													   &numModes, 0);

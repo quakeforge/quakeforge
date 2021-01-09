@@ -190,7 +190,7 @@ GL_DrawAliasFrameMulti (vert_order_t *vo)
 static void
 GL_DrawAliasShadowTri (const aliashdr_t *paliashdr, const vert_order_t *vo)
 {
-	int         count = vo->count;;
+	int         count = vo->count;
 	const blended_vert_t *verts = vo->verts;
 	float       height, lheight;
 	vec3_t      point;

@@ -89,7 +89,7 @@ typedef struct dag_s {
 	int         num_topo;		///< number of nodes in topo (may be <
 								///< num_nodes after dead node removal)
 	daglabel_t **labels;		///< array of all daglabels in this dag
-	int         num_labels;;
+	int         num_labels;
 	struct set_s *roots;		///< set of root nodes
 	struct flownode_s *flownode;///< flow node this dag represents
 } dag_t;

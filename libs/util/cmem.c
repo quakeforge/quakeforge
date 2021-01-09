@@ -321,7 +321,7 @@ cmemalloc (memsuper_t *super, size_t size)
 				memblock_t *block = init_block (super, mem, super->page_size);
 				line = block->free_lines;
 			}
-			return alloc_line (line, size);;
+			return alloc_line (line, size);
 		} else {
 			void       *mem = 0;
 			memsline_t **sline = &super->last_freed[ind];

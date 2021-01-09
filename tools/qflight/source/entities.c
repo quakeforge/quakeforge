@@ -183,7 +183,7 @@ LoadEntities (void)
 
 	// start parsing
 	num_entities = PL_A_NumObjects (entity_list);
-	entities = malloc (num_entities * sizeof (entity_t));;
+	entities = malloc (num_entities * sizeof (entity_t));
 
 	// go through all the entities
 	for (i = 0; i < num_entities; i++) {

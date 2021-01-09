@@ -89,7 +89,7 @@ R_ClearEfrags (void)
 	if (!efrag_list)
 		efrag_list = calloc (1, sizeof (t_efrag_list));
 
-	r_free_efrags = efrag_list->efrags;;
+	r_free_efrags = efrag_list->efrags;
 	for (efl = efrag_list; efl; efl = efl->next) {
 		init_efrag_list (efl);
 		if (efl->next)

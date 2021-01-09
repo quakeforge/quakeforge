@@ -672,14 +672,14 @@ render_map (bsp_t *bsp)
 				vertexlist[i].X = -vertexlist[i].X;
 				tempf = vertexlist[i].Z;
 				vertexlist[i].Z = vertexlist[i].Y;
-				vertexlist[i].Y = tempf;;
+				vertexlist[i].Y = tempf;
 				break;
 
 			case 2:					/* +Y -- (-x <--> +x; +y out of screen,
 										   +z up) */
 				tempf = vertexlist[i].Z;
 				vertexlist[i].Z = -vertexlist[i].Y;
-				vertexlist[i].Y = tempf;;
+				vertexlist[i].Y = tempf;
 				break;
 
 			case -3:					/* -Z -- negate X and Z (ie. 180 rotate
