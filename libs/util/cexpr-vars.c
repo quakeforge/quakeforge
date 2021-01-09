@@ -58,6 +58,20 @@ VISIBLE binop_t cexpr_struct_binops[] = {
 	{}
 };
 
+VISIBLE void
+cexpr_struct_pointer_getfield (const exprval_t *a, const exprval_t *b,
+							   exprval_t *c, exprctx_t *ctx)
+{
+	// "dereference" the pointer
+	exprval_t   struct_val = { a->type, *(void **) a->value };
+	cexpr_struct_getfield (&struct_val, b, c, ctx);
+}
+
+VISIBLE binop_t cexpr_struct_pointer_binops[] = {
+	{ '.', &cexpr_field, &cexpr_exprval, cexpr_struct_pointer_getfield },
+	{}
+};
+
 static void
 cvar_get (const exprval_t *a, const exprval_t *b, exprval_t *c, exprctx_t *ctx)
 {

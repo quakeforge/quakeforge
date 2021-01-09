@@ -113,6 +113,8 @@ void cexpr_error(exprctx_t *ctx, const char *fmt, ...) __attribute__((format(pri
 
 void cexpr_struct_getfield (const exprval_t *a, const exprval_t *b,
 							exprval_t *c, exprctx_t *ctx);
+void cexpr_struct_pointer_getfield (const exprval_t *a, const exprval_t *b,
+									exprval_t *c, exprctx_t *ctx);
 exprval_t *cexpr_cvar (const char *name, exprctx_t *ctx);
 exprval_t *cexpr_cvar_struct (exprctx_t *ctx);
 
@@ -132,5 +134,6 @@ extern exprtype_t cexpr_field;
 extern exprtype_t cexpr_function;
 
 extern binop_t cexpr_struct_binops[];
+extern binop_t cexpr_struct_pointer_binops[];
 
 #endif
