@@ -119,11 +119,11 @@ V_XXD_1 =
 
 %.spv: %
 	@$(mkdir_p) $(builddir)/`dirname $@`
-	$(V_GLSLANG)$(GLSLANGVALIDATOR) -V $< -o $@ > /dev/null
+	$(V_GLSLANG)(((($(GLSLANGVALIDATOR) -V $< -o $@; echo $$? >&3) | sed -e '1d' 1>&2) 3>&1) | (read xs; exit $$xs))
 
 %.spvc: %
 	@$(mkdir_p) $(builddir)/`dirname $@`
-	$(V_GLSLANG)$(GLSLANGVALIDATOR) --vn `basename $< | tr . _` -V $< -o $@ > /dev/null
+	$(V_GLSLANG)(((($(GLSLANGVALIDATOR) --vn `basename $< | tr . _` -V $< -o $@; echo $$? >&3) | sed -e '1d' 1>&2) 3>&1) | (read xs; exit $$xs))
 
 shaderdir = @shaderdir@
 shader_DATA =
