@@ -52,9 +52,11 @@
 #include "compat.h"
 #include "QF/Vulkan/qf_draw.h"
 #include "QF/Vulkan/qf_vid.h"
+#include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
+#include "QF/Vulkan/staging.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
@@ -134,10 +136,13 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	Sys_RegisterShutdown (Vulkan_Draw_Shutdown, ctx);
 
 	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	VkCommandBuffer cmd = ctx->cmdbuffer;
+
 	qpic_t     *charspic = Draw_Font8x8Pic ();
 	VkExtent3D  extent = { charspic->width, charspic->height, 1 };
 	conchars_image = QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D,
-									  VK_FORMAT_A8B8G8R8_UNORM_PACK32,
+									  VK_FORMAT_A1R5G5B5_UNORM_PACK16,
 									  extent, 1, 1,
 									  VK_SAMPLE_COUNT_1_BIT,
 									  VK_IMAGE_USAGE_TRANSFER_DST_BIT
@@ -149,9 +154,65 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	QFV_BindImageMemory (device, conchars_image, conchars_memory, 0);
 	conchars_view = QFV_CreateImageView (device, conchars_image,
 										 VK_IMAGE_VIEW_TYPE_2D,
-										 VK_FORMAT_A8B8G8R8_UNORM_PACK32,
+										 VK_FORMAT_A1R5G5B5_UNORM_PACK16,
 										 VK_IMAGE_ASPECT_COLOR_BIT);
 	conchars_sampler = Hash_Find (ctx->samplers, "quakepic");
+
+	uint16_t *chars_data = ctx->staging[0]->data;
+	size_t size = charspic->width * charspic->height;
+	for (size_t i = 0; i < size; i++) {
+		// convert 0xff = transparent, 0xfe = white to 0x0000 and 0xffff
+		// for a1r5g5b5
+		uint16_t    pix = (charspic->data[i] & 1) - 1;
+		chars_data[i] = ~pix;
+	}
+	QFV_FlushStagingBuffer (ctx->staging[0], 0, size);
+	VkImageMemoryBarrier barrier;
+	qfv_pipelinestagepair_t stages;
+	dfunc->vkWaitForFences (device->dev, 1, &ctx->fence, VK_TRUE, ~0ull);
+	dfunc->vkResetCommandBuffer (cmd, 0);
+	VkCommandBufferBeginInfo beginInfo = {
+		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, 0,
+		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, 0,
+	};
+	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
+
+	stages = imageLayoutTransitionStages[qfv_LT_Undefined_to_TransferDst];
+	barrier=imageLayoutTransitionBarriers[qfv_LT_Undefined_to_TransferDst];
+	barrier.image = conchars_image;
+	dfunc->vkCmdPipelineBarrier (cmd, stages.src, stages.dst, 0,
+								 0, 0,
+								 0, 0,
+								 1, &barrier);
+
+	VkBufferImageCopy region = {
+		0, 0, 0,
+		{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
+		{ 0, 0, 0 },
+		{ charspic->width, charspic->height, 1 },
+	};
+	dfunc->vkCmdCopyBufferToImage (cmd,
+								   ctx->staging[0]->buffer, conchars_image,
+								   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+								   1, &region);
+
+	stages = imageLayoutTransitionStages[qfv_LT_TransferDst_to_ShaderReadOnly];
+	barrier=imageLayoutTransitionBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+	barrier.image = conchars_image;
+	dfunc->vkCmdPipelineBarrier (cmd, stages.src, stages.dst, 0,
+								 0, 0,
+								 0, 0,
+								 1, &barrier);
+	dfunc->vkEndCommandBuffer (cmd);
+
+	VkSubmitInfo submitInfo = {
+		VK_STRUCTURE_TYPE_SUBMIT_INFO, 0,
+		0, 0, 0,
+		1, &cmd,
+		0, 0,
+	};
+	dfunc->vkResetFences (device->dev, 1, &ctx->fence);
+	dfunc->vkQueueSubmit (device->queue.queue, 1, &submitInfo, ctx->fence);
 
 	twod = Vulkan_CreatePipeline (ctx, "twod");
 
