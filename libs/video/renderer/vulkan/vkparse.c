@@ -175,8 +175,9 @@ parse_uint32_t (const plfield_t *field, const plitem_t *item,
 				void *data, plitem_t *messages, void *context)
 {
 	int         ret = 1;
+	size_t      val = 0;
 	exprctx_t   ectx = *((parsectx_t *) context)->ectx;
-	exprval_t   result = { &cexpr_uint, data };
+	exprval_t   result = { &cexpr_size_t, &val };
 	ectx.symtab = 0;
 	ectx.result = &result;
 	const char *valstr = PL_String (item);
@@ -191,6 +192,11 @@ parse_uint32_t (const plfield_t *field, const plitem_t *item,
 		//			field->name, field->offset, field->type, field->parser,
 		//			field->data, valstr);
 		ret = !cexpr_eval_string (valstr, &ectx);
+		if (!ret) {
+			PL_Message (messages, item, "error parsing %s: %s",
+						field->name, valstr);
+		}
+		*(uint32_t *) data = val;
 		//Sys_Printf ("    %d\n", *(uint32_t *)data);
 	}
 
