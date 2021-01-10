@@ -258,6 +258,9 @@ parse_name (const char *name, exprctx_t *context)
 {
 	exprtab_t  *symtab = context->symtab;
 
+	if (!symtab) {
+		return 0;
+	}
 	__auto_type sym = (exprsym_t *) Hash_Find (symtab->tab, name);
 	return sym;
 }
