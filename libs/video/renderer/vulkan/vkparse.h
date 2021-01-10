@@ -7,6 +7,7 @@ typedef struct parsectx_s {
 } parsectx_t;
 
 #include "QF/cexpr.h"
+#include "QF/qfplist.h"
 #include "QF/Vulkan/renderpass.h"
 #ifdef vkparse_internal
 #include "libs/video/renderer/vulkan/vkparse.hinc"

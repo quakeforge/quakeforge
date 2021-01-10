@@ -176,6 +176,8 @@ Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 	clear_table (&ctx->pipelineLayouts);
 	clear_table (&ctx->setLayouts);
 	clear_table (&ctx->shaderModules);
+	clear_table (&ctx->descriptorPools);
+	clear_table (&ctx->samplers);
 	if (ctx->device) {
 		QFV_DestroyDevice (ctx->device);
 	}

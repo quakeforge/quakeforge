@@ -19,6 +19,7 @@
 		VkPipelineLayoutCreateInfo,
 		VkGraphicsPipelineCreateInfo,
 		VkDescriptorPoolCreateInfo,
+		VkSamplerCreateInfo,
 	);
 	handles = {
 		VkShaderModule = {
@@ -40,6 +41,11 @@
 			symtab = pipelineLayouts;
 			class = "pipeline layout";
 			create = vkCreatePipelineLayout;
+		};
+		VkSampler = {
+			symtab = samplers;
+			class = "sampler";
+			create = vkCreateSampler;
 		};
 	};
 	resources = (
@@ -63,6 +69,20 @@
 			parser = parse_VkPipelineLayout_handleref;
 			type = handleref_t;
 			table = pipelineLayouts;
+		},
+		{
+			name = descriptorPools;
+			parse_type = QFDictionary;
+			parser = parse_VkDescriptorPool_handleref;
+			type = handleref_t;
+			table = descriptorPools;
+		},
+		{
+			name = samplers;
+			parse_type = QFDictionary;
+			parser = parse_VkSampler_handleref;
+			type = handleref_t;
+			table = samplers;
 		},
 	);
 	parse = {

@@ -477,6 +477,21 @@ descriptorPool_free (void *hr, void *_ctx)
 	handleref_free (handleref, ctx);
 }
 
+static void
+sampler_free (void *hr, void *_ctx)
+{
+	__auto_type handleref = (handleref_t *) hr;
+	__auto_type sampler = (VkSampler) handleref->handle;
+	__auto_type ctx = (vulkan_ctx_t *) _ctx;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	if (sampler) {
+		dfunc->vkDestroySampler (device->dev, sampler, 0);
+	};
+	handleref_free (handleref, ctx);
+}
+
 static hashtab_t *enum_symtab;
 
 static int
@@ -560,10 +575,23 @@ static plfield_t renderpass_fields[] = {
 	{}
 };
 
+static hashtab_t *
+handlref_symtab (void (*free_func)(void*,void*), vulkan_ctx_t *ctx)
+{
+	return Hash_NewTable (23, handleref_getkey, free_func,
+						  ctx, &ctx->hashlinks);
+}
+
 void
 QFV_ParseResources (vulkan_ctx_t *ctx, plitem_t *pipelinedef)
 {
 	plitem_t   *messages = PL_NewArray ();
+	exprsym_t   var_syms[] = {
+		{"swapchain", &qfv_swapchain_t_type, ctx->swapchain},
+		{"msaaSamples", &VkSampleCountFlagBits_type, &ctx->msaaSamples},
+		{}
+	};
+	exprtab_t   vars_tab = { var_syms, 0 };
 	exprctx_t   exprctx = {};
 	parsectx_t  parsectx = { &exprctx, ctx };
 	int         ret = 1;
@@ -571,19 +599,15 @@ QFV_ParseResources (vulkan_ctx_t *ctx, plitem_t *pipelinedef)
 	exprctx.memsuper = new_memsuper ();
 	exprctx.messages = messages;
 	exprctx.hashlinks = &ctx->hashlinks;
+	exprctx.external_variables = &vars_tab;
+	cexpr_init_symtab (&vars_tab, &exprctx);
 
 	if (!ctx->setLayouts) {
-		ctx->shaderModules = Hash_NewTable (23, handleref_getkey,
-											shaderModule_free,
-											ctx, &ctx->hashlinks);
-		ctx->setLayouts = Hash_NewTable (23, handleref_getkey, setLayout_free,
-										 ctx, &ctx->hashlinks);
-		ctx->pipelineLayouts = Hash_NewTable (23, handleref_getkey,
-											  pipelineLayout_free,
-											  ctx, &ctx->hashlinks);
-		ctx->descriptorPools = Hash_NewTable (23, handleref_getkey,
-											  descriptorPool_free,
-											  ctx, &ctx->hashlinks);
+		ctx->shaderModules = handlref_symtab (shaderModule_free, ctx);
+		ctx->setLayouts = handlref_symtab (setLayout_free, ctx);
+		ctx->pipelineLayouts = handlref_symtab (pipelineLayout_free, ctx);
+		ctx->descriptorPools = handlref_symtab (descriptorPool_free, ctx);
+		ctx->samplers = handlref_symtab (sampler_free, ctx);
 	}
 
 	for (parseres_t *res = parse_resources; res->name; res++) {
@@ -646,11 +670,10 @@ QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist)
 	exprctx_t   exprctx = {};
 	parsectx_t  parsectx = { &exprctx, ctx };
 
-	exprctx.external_variables = &vars_tab;
 	exprctx.memsuper = new_memsuper ();
 	exprctx.messages = messages;
 	exprctx.hashlinks = &ctx->hashlinks;
-
+	exprctx.external_variables = &vars_tab;
 	cexpr_init_symtab (&vars_tab, &exprctx);
 
 	if (!PL_ParseStruct (renderpass_fields, plist, &renderpass_data,
