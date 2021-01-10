@@ -26,7 +26,7 @@
 			minLod = 0;
 			maxLod = 0.25f;
 			borderColor = float_transparent_black;
-			unnormalizedCoordinates = 0;//FIXME false!!!
+			unnormalizedCoordinates = 1;//FIXME true!!!
 		};
 	};
 	descriptorPools = {

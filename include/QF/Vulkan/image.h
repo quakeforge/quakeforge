@@ -37,8 +37,7 @@ VkImage QFV_CreateImage (struct qfv_device_s *device, int cubemap,
 						 uint32_t num_mipmaps,
 						 uint32_t num_layers,
 						 VkSampleCountFlagBits samples,
-						 VkImageUsageFlags usage_scenarios,
-						 int initialized);
+						 VkImageUsageFlags usage_scenarios);
 
 VkDeviceMemory QFV_AllocImageMemory (struct qfv_device_s *device,
 									 VkImage image,

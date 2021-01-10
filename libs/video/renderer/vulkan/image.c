@@ -69,8 +69,7 @@ QFV_CreateImage (qfv_device_t *device, int cubemap,
 				 uint32_t num_mipmaps,
 				 uint32_t num_layers,
 				 VkSampleCountFlagBits samples,
-				 VkImageUsageFlags usage_scenarios,
-				 int initialized)
+				 VkImageUsageFlags usage_scenarios)
 {
 	VkDevice    dev = device->dev;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -80,12 +79,11 @@ QFV_CreateImage (qfv_device_t *device, int cubemap,
 		type, format, size, num_mipmaps,
 		cubemap ? 6 * num_layers : num_layers,
 		samples,
-		initialized ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_TILING_OPTIMAL,
 		usage_scenarios,
 		VK_SHARING_MODE_EXCLUSIVE,
 		0, 0,
-		initialized ? VK_IMAGE_LAYOUT_PREINITIALIZED
-					: VK_IMAGE_LAYOUT_UNDEFINED,
+		VK_IMAGE_LAYOUT_UNDEFINED,
 	};
 	VkImage image;
 	dfunc->vkCreateImage (dev, &createInfo, 0, &image);

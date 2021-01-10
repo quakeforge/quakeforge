@@ -261,7 +261,7 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 		= QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D,
 						   sc->format, extent, 1, 1, ctx->msaaSamples,
 						   VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT
-							   | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, 0);
+							   | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 	colorImage->object
 		= QFV_AllocImageMemory (device, colorImage->image,
 								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, 0);
@@ -278,7 +278,7 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 	depthImage->image
 		= QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D,
 						   depthFormat, extent, 1, 1, ctx->msaaSamples,
-						   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, 0);
+						   VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
 	depthImage->object
 		= QFV_AllocImageMemory (device, depthImage->image,
 								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, 0, 0);
