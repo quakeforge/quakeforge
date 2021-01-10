@@ -45,5 +45,6 @@ void Vulkan_CreateSwapchain (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateDevice (struct vulkan_ctx_s *ctx);
 void Vulkan_Init_Common (struct vulkan_ctx_s *ctx);
 void Vulkan_Shutdown_Common (struct vulkan_ctx_s *ctx);
+void Vulkan_CreateStagingBuffers (struct vulkan_ctx_s *ctx);
 
 #endif // __QF_Vulkan_vid_h

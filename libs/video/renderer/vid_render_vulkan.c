@@ -62,6 +62,7 @@ vulkan_R_Init (void)
 	qfv_device_t *device = vulkan_ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
+	Vulkan_CreateStagingBuffers (vulkan_ctx);
 	Vulkan_CreateSwapchain (vulkan_ctx);
 	Vulkan_CreateRenderPass (vulkan_ctx);
 	Vulkan_CreateFramebuffers (vulkan_ctx);
