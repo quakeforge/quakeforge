@@ -39,6 +39,7 @@
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
+#include "QF/Vulkan/qf_draw.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/device.h"
@@ -66,7 +67,8 @@ vulkan_R_Init (void)
 	Vulkan_CreateFramebuffers (vulkan_ctx);
 	// FIXME this should be staged so screen updates can begin while pipelines
 	// are being built
-	Vulkan_CreatePipelines (vulkan_ctx);
+	vulkan_ctx->pipeline = Vulkan_CreatePipeline (vulkan_ctx, "pipeline");
+	Vulkan_Draw_Init (vulkan_ctx);
 
 	qfv_swapchain_t *sc = vulkan_ctx->swapchain;
 
@@ -81,7 +83,7 @@ vulkan_R_Init (void)
 		VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, 0,
 		vulkan_ctx->renderpass.renderpass, 0,
 		{ {0, 0}, sc->extent },
-		2, clearValues
+		2, clearValues + 2
 	};
 	for (size_t i = 0; i < vulkan_ctx->framebuffers.size; i++) {
 		__auto_type framebuffer = &vulkan_ctx->framebuffers.a[i];
@@ -153,18 +155,124 @@ vulkan_SCR_UpdateScreen (double time,  void (*f)(void), void (**g)(void))
 	}
 }
 
+static void
+vulkan_Draw_Character (int x, int y, unsigned ch)
+{
+	Vulkan_Draw_Character (x, y, ch, vulkan_ctx);
+}
+
+static void
+vulkan_Draw_String (int x, int y, const char *str)
+{
+	Vulkan_Draw_String (x, y, str, vulkan_ctx);
+}
+
+static void
+vulkan_Draw_nString (int x, int y, const char *str, int count)
+{
+	Vulkan_Draw_nString (x, y, str, count, vulkan_ctx);
+}
+
+static void
+vulkan_Draw_AltString (int x, int y, const char *str)
+{
+	Vulkan_Draw_AltString (x, y, str, vulkan_ctx);
+}
+
+static void
+vulkan_Draw_ConsoleBackground (int lines, byte alpha)
+{
+	Vulkan_Draw_ConsoleBackground (lines, alpha, vulkan_ctx);
+}
+
+static void
+vulkan_Draw_Crosshair (void)
+{
+	Vulkan_Draw_Crosshair (vulkan_ctx);
+}
+
+static void
+vulkan_Draw_CrosshairAt (int ch, int x, int y)
+{
+	Vulkan_Draw_CrosshairAt (ch, x, y, vulkan_ctx);
+}
+
+static void
+vulkan_Draw_TileClear (int x, int y, int w, int h)
+{
+	Vulkan_Draw_TileClear (x, y, w, h, vulkan_ctx);
+}
+
+static void
+vulkan_Draw_Fill (int x, int y, int w, int h, int c)
+{
+	Vulkan_Draw_Fill (x, y, w, h, c, vulkan_ctx);
+}
+
+static void
+vulkan_Draw_TextBox (int x, int y, int width, int lines, byte alpha)
+{
+	Vulkan_Draw_TextBox (x, y, width, lines, alpha, vulkan_ctx);
+}
+
+static void
+vulkan_Draw_FadeScreen (void)
+{
+	Vulkan_Draw_FadeScreen (vulkan_ctx);
+}
+
+static void
+vulkan_Draw_BlendScreen (quat_t color)
+{
+	Vulkan_Draw_BlendScreen (color, vulkan_ctx);
+}
+
 static qpic_t *
 vulkan_Draw_CachePic (const char *path, qboolean alpha)
 {
-	return 0;
+	return Vulkan_Draw_CachePic (path, alpha, vulkan_ctx);
 }
 
-static qpic_t qpic = { 1, 1, {0} };
+static void
+vulkan_Draw_UncachePic (const char *path)
+{
+	Vulkan_Draw_UncachePic (path, vulkan_ctx);
+}
 
 static qpic_t *
 vulkan_Draw_MakePic (int width, int height, const byte *data)
 {
-	return &qpic;
+	return Vulkan_Draw_MakePic (width, height, data, vulkan_ctx);
+}
+
+static void
+vulkan_Draw_DestroyPic (qpic_t *pic)
+{
+	Vulkan_Draw_DestroyPic (pic, vulkan_ctx);
+}
+
+static qpic_t *
+vulkan_Draw_PicFromWad (const char *name)
+{
+	return Vulkan_Draw_PicFromWad (name, vulkan_ctx);
+}
+
+static void
+vulkan_Draw_Pic (int x, int y, qpic_t *pic)
+{
+	Vulkan_Draw_Pic (x, y, pic, vulkan_ctx);
+}
+
+static void
+vulkan_Draw_Picf (float x, float y, qpic_t *pic)
+{
+	Vulkan_Draw_Picf (x, y, pic, vulkan_ctx);
+}
+
+static void
+vulkan_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height)
+{
+	Vulkan_Draw_SubPic (x, y, pic, srcx, srcy, width, height, vulkan_ctx);
 }
 
 static vid_model_funcs_t model_funcs = {
@@ -194,26 +302,26 @@ static vid_model_funcs_t model_funcs = {
 };
 
 vid_render_funcs_t vulkan_vid_render_funcs = {
-	0,//vulkan_Draw_Character,
-	0,//vulkan_Draw_String,
-	0,//vulkan_Draw_nString,
-	0,//vulkan_Draw_AltString,
-	0,//vulkan_Draw_ConsoleBackground,
-	0,//vulkan_Draw_Crosshair,
-	0,//vulkan_Draw_CrosshairAt,
-	0,//vulkan_Draw_TileClear,
-	0,//vulkan_Draw_Fill,
-	0,//vulkan_Draw_TextBox,
-	0,//vulkan_Draw_FadeScreen,
-	0,//vulkan_Draw_BlendScreen,
+	vulkan_Draw_Character,
+	vulkan_Draw_String,
+	vulkan_Draw_nString,
+	vulkan_Draw_AltString,
+	vulkan_Draw_ConsoleBackground,
+	vulkan_Draw_Crosshair,
+	vulkan_Draw_CrosshairAt,
+	vulkan_Draw_TileClear,
+	vulkan_Draw_Fill,
+	vulkan_Draw_TextBox,
+	vulkan_Draw_FadeScreen,
+	vulkan_Draw_BlendScreen,
 	vulkan_Draw_CachePic,
-	0,//vulkan_Draw_UncachePic,
+	vulkan_Draw_UncachePic,
 	vulkan_Draw_MakePic,
-	0,//vulkan_Draw_DestroyPic,
-	0,//vulkan_Draw_PicFromWad,
-	0,//vulkan_Draw_Pic,
-	0,//vulkan_Draw_Picf,
-	0,//vulkan_Draw_SubPic,
+	vulkan_Draw_DestroyPic,
+	vulkan_Draw_PicFromWad,
+	vulkan_Draw_Pic,
+	vulkan_Draw_Picf,
+	vulkan_Draw_SubPic,
 
 	vulkan_SCR_UpdateScreen,
 	SCR_DrawRam,

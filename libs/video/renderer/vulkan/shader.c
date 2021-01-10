@@ -55,6 +55,10 @@
 #include "vid_vulkan.h"
 
 static
+#include "libs/video/renderer/vulkan/twod.vert.spvc"
+static
+#include "libs/video/renderer/vulkan/twod.frag.spvc"
+static
 #include "libs/video/renderer/vulkan/passthrough.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/pushcolor.frag.spvc"
@@ -66,6 +70,8 @@ typedef struct shaderdata_s {
 } shaderdata_t;
 
 static shaderdata_t builtin_shaders[] = {
+	{ "twod.vert", twod_vert, sizeof (twod_vert) },
+	{ "twod.frag", twod_frag, sizeof (twod_frag) },
 	{ "passthrough.vert", passthrough_vert, sizeof (passthrough_vert) },
 	{ "pushcolor.frag", pushcolor_frag, sizeof (pushcolor_frag) },
 	{}

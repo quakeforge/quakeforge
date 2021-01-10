@@ -20,6 +20,8 @@ typedef struct vulkan_framebuffer_s {
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderDoneSemaphore;
 	VkCommandBuffer cmdBuffer;
+
+	VkDescriptorSet twodDescriptors;
 } vulkan_framebuffer_t;
 
 typedef struct vulkan_framebufferset_s
@@ -49,6 +51,7 @@ typedef struct vulkan_ctx_s {
 	struct hashtab_s *setLayouts;
 	struct hashtab_s *pipelineLayouts;
 	struct hashtab_s *descriptorPools;
+	struct hashtab_s *samplers;
 
 	VkCommandPool cmdpool;
 	VkCommandBuffer cmdbuffer;

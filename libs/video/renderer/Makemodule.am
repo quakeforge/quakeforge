@@ -213,7 +213,7 @@ libs_video_renderer_vid_render_vulkan_la_LDFLAGS=       $(plugin_ldflags)
 libs_video_renderer_vid_render_vulkan_la_LIBADD=        $(vulkan_libs)
 libs_video_renderer_vid_render_vulkan_la_DEPENDENCIES=$(vulkan_libs)
 libs_video_renderer_vid_render_vulkan_la_SOURCES = \
-	$(common_sources) \
+	$(video_renderer_common_sources) \
 	libs/video/renderer/vid_render_vulkan.c \
 	libs/video/renderer/vulkan/buffer.c \
 	libs/video/renderer/vulkan/command.c \
@@ -249,16 +249,26 @@ vkparse_src = \
 vkparse_plist = \
 	$(srcdir)/libs/video/renderer/vulkan/vkparse.plist
 
+twodv_src = libs/video/renderer/vulkan/twod.vert
+twodv_c = libs/video/renderer/vulkan/twod.vert.spvc
+twodf_src = libs/video/renderer/vulkan/twod.frag
+twodf_c = libs/video/renderer/vulkan/twod.frag.spvc
 passthrough_src = libs/video/renderer/vulkan/passthrough.vert
 passthrough_c = libs/video/renderer/vulkan/passthrough.vert.spvc
 pushcolor_src = libs/video/renderer/vulkan/pushcolor.frag
 pushcolor_c = libs/video/renderer/vulkan/pushcolor.frag.spvc
+
+$(twodv_c): $(twodv_src)
+
+$(twodf_c): $(twodf_src)
 
 $(passthrough_c): $(passthrough_src)
 
 $(pushcolor_c): $(pushcolor_src)
 
 vkshader_c = \
+	$(twodv_c) \
+	$(twodf_c) \
 	$(passthrough_c) \
 	$(pushcolor_c)
 

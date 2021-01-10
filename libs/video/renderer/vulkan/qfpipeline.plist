@@ -7,8 +7,61 @@
 		// $builtin refers to compiled-in shaders
 		passthrough = $builtin/passthrough.vert;
 		pushcolor = $builtin/pushcolor.frag;
+		twodv = $builtin/twod.vert;
+		twodf = $builtin/twod.frag;
+	};
+	samplers = {
+		quakepic = {
+			magFilter = nearest;
+			minFilter = nearest;
+			mipmapMode = nearest;
+			addressModeU = clamp_to_edge;
+			addressModeV = clamp_to_edge;
+			addressModeW = clamp_to_edge;
+			mipLodBias = 0;
+			anisotropyEnable = 0;//FIXME false!!!
+			maxAnisotropy = 0;
+			compareEnable = 0;//FIXME false!!!
+			compareOp = always;
+			minLod = 0;
+			maxLod = 0.25f;
+			borderColor = float_transparent_black;
+			unnormalizedCoordinates = 0;//FIXME false!!!
+		};
+	};
+	descriptorPools = {
+		twod = {
+			flags = 0;
+			maxSets = $swapchain.images.size;
+			bindings = (
+				{
+					type = uniform_buffer;
+					descriptorCount = $swapchain.images.size;
+				},
+				{
+					type = combined_image_sampler;
+					descriptorCount = $swapchain.images.size;
+				},
+			);
+		};
 	};
 	setLayouts = {
+		twod = {
+			bindings = (
+				{
+					binding = 0;
+					descriptorType = uniform_buffer;
+					descriptorCount = 1;
+					stageFlags = vertex;
+				},
+				{
+					binding = 1;
+					descriptorType = combined_image_sampler;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+			);
+		};
 		something = {
 			flags = 0;
 			bindings = (
@@ -28,6 +81,9 @@
 		};
 	};
 	pipelineLayouts = {
+		twod = {
+			setLayouts = (twod);
+		};
 		something = {
 			setLayouts = (something);
 			pushConstantRanges = (
@@ -39,88 +95,96 @@
 			);
 		};
 	};
-	pipeline = {
-		stages = (
-			{ stage = vertex; name = main; module = passthrough; },
-			{ stage = fragment; name = main; module = pushcolor; },
-		);
-		vertexInput = {
-			bindings = (
-				{
-					binding = 0;
-					stride = "4 * 4";
-					inputRate = vertex;
-				},
+	pipelines = {
+		twod = {
+			stages = (
+				{ stage = vertex; name = main; module = twodv; },
+				{ stage = fragment; name = main; module = twodf; },
 			);
-			attributes = (
-				{
-					location = 0;
-					binding = 0;
-					format = r32g32b32a32_sfloat;
-					offset = 0;
-				},
-			);
+			vertexInput = {
+				bindings = (
+					{
+						binding = 0;
+						stride = "2 * 4 * 4";
+						inputRate = vertex;
+					},
+				);
+				attributes = (
+					{
+						location = 0;
+						binding = 0;
+						format = r32g32b32a32_sfloat;
+						offset = 0;
+					},
+					{
+						location = 1;
+						binding = 0;
+						format = r32g32b32a32_sfloat;
+						offset = 4;
+					},
+				);
+			};
+			inputAssembly = {
+				topology = triangle_list;
+				primitiveRestartEnable = 0;
+			};
+			viewport = {
+				viewports = (
+					{
+						x = 0; y = 0;
+						width = 640; height = 480;
+						minDepth = 0; maxDepth = 1;
+					}
+				);
+				scissors = (
+					{
+						offset = { x = 0; y = 0 };
+						extent = { width = 640; height = 480; };
+					},
+				);
+			};
+			rasterization = {
+				depthClampEnable = 0;
+				rasterizerDiscardEnable = 0;
+				polygonMode = fill;
+				cullMode = back;
+				frontFace = counter_clockwise;
+				depthBiasEnable = 0;
+				lineWidth = 1;
+			};
+			multisample = {
+				rasterizationSamples = $msaaSamples;
+				sampleShadingEnable = 0;
+				minSampleShading = 0.5f;
+				alphaToCoverageEnable = 0;
+				alphaToOneEnable = 0;
+			};
+			depthStencil = {
+				depthTestEnable = 1;
+				depthWriteEnable = 1;
+				depthCompareOp = less;
+				depthBoundsTestEnable = 0;
+				stencilTestEnable = 0;
+			};
+			colorBlend = {
+				logicOpEnable = 0;
+				attachments = ({
+					blendEnable = 0;
+					srcColorBlendFactor = src_color;
+					dstColorBlendFactor = zero;
+					colorBlendOp = add;
+					srcAlphaBlendFactor = src_alpha;
+					dstAlphaBlendFactor = zero;
+					alphaBlendOp = add;
+					colorWriteMask = r|g|b|a;
+				});
+			};
+			dynamic = {
+				dynamicState = ( viewport, scissor );
+			};
+			layout = twod;
+			//renderPass = renderpass;
 		};
-		inputAssembly = {
-			topology = triangle_list;
-			primitiveRestartEnable = 0;
-		};
-		viewport = {
-			viewports = (
-				{
-					x = 0; y = 0;
-					width = 640; height = 480;
-					minDepth = 0; maxDepth = 1;
-				}
-			);
-			scissors = (
-				{
-					offset = { x = 0; y = 0 };
-					extent = { width = 640; height = 480; };
-				},
-			);
-		};
-		rasterization = {
-			depthClampEnable = 0;
-			rasterizerDiscardEnable = 0;
-			polygonMode = fill;
-			cullMode = back;
-			frontFace = counter_clockwise;
-			depthBiasEnable = 0;
-			lineWidth = 1;
-		};
-		multisample = {
-			rasterizationSamples = $msaaSamples;
-			sampleShadingEnable = 0;
-			minSampleShading = 0.5f;
-			alphaToCoverageEnable = 0;
-			alphaToOneEnable = 0;
-		};
-		depthStencil = {
-			depthTestEnable = 1;
-			depthWriteEnable = 1;
-			depthCompareOp = less;
-			depthBoundsTestEnable = 0;
-			stencilTestEnable = 0;
-		};
-		colorBlend = {
-			logicOpEnable = 0;
-			attachments = ({
-				blendEnable = 0;
-				srcColorBlendFactor = src_color;
-				dstColorBlendFactor = zero;
-				colorBlendOp = add;
-				srcAlphaBlendFactor = src_alpha;
-				dstAlphaBlendFactor = zero;
-				alphaBlendOp = add;
-				colorWriteMask = r|g|b|a;
-			});
-		};
-		dynamic = {
-			dynamicState = ( viewport, scissor );
-		};
-		layout = something;
-		//renderPass = renderpass;
 	};
 	renderpass = {
 		attachments = (

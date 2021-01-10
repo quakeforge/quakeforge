@@ -25,13 +25,49 @@
 
 */
 
-#ifndef __gl_draw_h
-#define __gl_draw_h
+#ifndef __QF_Vulkan_qf_draw_h
+#define __QF_Vulkan_qf_draw_h
 
-void Vulkan_Set2D (void);
-void Vulkan_Set2DScaled (void);
-void Vulkan_End2D (void);
-void Vulkan_DrawReset (void);
-void Vulkan_FlushText (void);
+struct vulkan_ctx_s;
 
-#endif//__gl_draw_h
+void Vulkan_Draw_Init (struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_Character (int x, int y, unsigned ch,
+							struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_String (int x, int y, const char *str,
+						 struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_nString (int x, int y, const char *str, int count,
+						  struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_AltString (int x, int y, const char *str,
+							struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_ConsoleBackground (int lines, byte alpha,
+									struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_Crosshair (struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_CrosshairAt (int ch, int x, int y, struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_TileClear (int x, int y, int w, int h,
+							struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_Fill (int x, int y, int w, int h, int c,
+					   struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_TextBox (int x, int y, int width, int lines, byte alpha,
+						  struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_FadeScreen (struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_BlendScreen (quat_t color, struct vulkan_ctx_s *ctx);
+qpic_t *Vulkan_Draw_CachePic (const char *path, qboolean alpha,
+							  struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_UncachePic (const char *path, struct vulkan_ctx_s *ctx);
+qpic_t *Vulkan_Draw_MakePic (int width, int height, const byte *data,
+							 struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_DestroyPic (qpic_t *pic, struct vulkan_ctx_s *ctx);
+qpic_t *Vulkan_Draw_PicFromWad (const char *name, struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_Pic (int x, int y, qpic_t *pic, struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_Picf (float x, float y, qpic_t *pic, struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_SubPic(int x, int y, qpic_t *pic,
+						int srcx, int srcy, int width, int height,
+						struct vulkan_ctx_s *ctx);
+
+void Vulkan_Set2D (struct vulkan_ctx_s *ctx);
+void Vulkan_Set2DScaled (struct vulkan_ctx_s *ctx);
+void Vulkan_End2D (struct vulkan_ctx_s *ctx);
+void Vulkan_DrawReset (struct vulkan_ctx_s *ctx);
+void Vulkan_FlushText (struct vulkan_ctx_s *ctx);
+
+#endif//__QF_Vulkan_qf_draw_h

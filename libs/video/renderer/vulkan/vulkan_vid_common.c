@@ -420,18 +420,25 @@ Vulkan_DestroyRenderPass (vulkan_ctx_t *ctx)
 	ctx->renderpass.depthImage = 0;
 }
 
-void
-Vulkan_CreatePipelines (vulkan_ctx_t *ctx)
+VkPipeline
+Vulkan_CreatePipeline (vulkan_ctx_t *ctx, const char *name)
 {
 	qfv_load_pipeline (ctx);
 
 	plitem_t   *item = ctx->pipelineDef;
-	if (!item || !(item = PL_ObjectForKey (item, "pipeline"))) {
-		Sys_Printf ("error loading pipeline\n");
+	if (!item || !(item = PL_ObjectForKey (item, "pipelines"))) {
+		Sys_Printf ("error loading pipelines\n");
+		return 0;
 	} else {
-		Sys_Printf ("Found pipeline def\n");
+		Sys_Printf ("Found pipelines def\n");
 	}
-	ctx->pipeline = QFV_ParsePipeline (ctx, item);
+	if (!(item = PL_ObjectForKey (item, name))) {
+		Sys_Printf ("error loading pipeline %s\n", name);
+		return 0;
+	} else {
+		Sys_Printf ("Found pipeline def %s\n", name);
+	}
+	return QFV_ParsePipeline (ctx, item);
 }
 
 void

@@ -165,7 +165,7 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 			VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, 0, 0,
 			family, 1, &priority
 		};
-		VkPhysicalDeviceFeatures features;
+		VkPhysicalDeviceFeatures features = {};
 		VkDeviceCreateInfo dCreateInfo = {
 			VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, 0, 0,
 			1, &qCreateInfo,
@@ -173,7 +173,6 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 			next, ext,
 			&features
 		};
-		memset (&features, 0, sizeof (features));
 		qfv_device_t *device = calloc (1, sizeof (qfv_device_t)
 										  + sizeof (qfv_devfuncs_t));
 		device->funcs = (qfv_devfuncs_t *) (device + 1);

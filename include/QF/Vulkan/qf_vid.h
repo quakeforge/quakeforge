@@ -40,7 +40,7 @@ void Vulkan_DestroyFramebuffers (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateFramebuffers (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateRenderPass (struct vulkan_ctx_s *ctx);
 void Vulkan_DestroyRenderPass (struct vulkan_ctx_s *ctx);
-void Vulkan_CreatePipelines (struct vulkan_ctx_s *ctx);
+VkPipeline Vulkan_CreatePipeline (struct vulkan_ctx_s *ctx, const char *name);
 void Vulkan_CreateSwapchain (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateDevice (struct vulkan_ctx_s *ctx);
 void Vulkan_Init_Common (struct vulkan_ctx_s *ctx);
