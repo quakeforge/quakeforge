@@ -31,6 +31,7 @@
 
 #include "QF/cexpr.h"
 #include "QF/mathlib.h"
+#include "QF/qfplist.h"
 #include "QF/simd/vec4f.h"
 
 #include "libs/util/cexpr-parse.h"
@@ -181,6 +182,26 @@ BINOP(size_t, bor, unsigned, |)
 BINOP(size_t, xor, unsigned, ^)
 BINOP(size_t, rem, unsigned, %)
 
+static void
+size_t_cast_int (const exprval_t *val1, const exprval_t *src,
+				 exprval_t *result, exprctx_t *ctx)
+{
+	int         val = *(int *) src->value;
+	if (val < 0) {
+		PL_Message (ctx->messages, ctx->item, "int value clamped to 0: %d",
+					val);
+		val = 0;
+	}
+	*(size_t *) result->value = val;
+}
+
+static void
+size_t_cast_uint (const exprval_t *val1, const exprval_t *src,
+				  exprval_t *result, exprctx_t *ctx)
+{
+	*(size_t *) result->value = *(unsigned *) src->value;
+}
+
 UNOP(size_t, pos, unsigned, +)
 UNOP(size_t, neg, unsigned, -)
 UNOP(size_t, tnot, unsigned, !)
@@ -198,6 +219,8 @@ binop_t size_t_binops[] = {
 	{ '^', &cexpr_size_t, &cexpr_size_t, size_t_xor },
 	{ '%', &cexpr_size_t, &cexpr_size_t, size_t_rem },
 	{ MOD, &cexpr_size_t, &cexpr_size_t, size_t_rem },
+	{ '=', &cexpr_int,    &cexpr_size_t, size_t_cast_int },
+	{ '=', &cexpr_uint,   &cexpr_size_t, size_t_cast_uint },
 	{}
 };
 
