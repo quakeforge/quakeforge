@@ -65,7 +65,6 @@ static vid_model_funcs_t model_funcs = {
 };
 
 vid_render_funcs_t sw_vid_render_funcs = {
-	Draw_Init,
 	Draw_Character,
 	Draw_String,
 	Draw_nString,

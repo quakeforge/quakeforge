@@ -70,7 +70,6 @@ static vid_model_funcs_t model_funcs = {
 };
 
 vid_render_funcs_t sw32_vid_render_funcs = {
-	sw32_Draw_Init,
 	sw32_Draw_Character,
 	sw32_Draw_String,
 	sw32_Draw_nString,

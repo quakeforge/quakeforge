@@ -72,7 +72,6 @@ static vid_model_funcs_t model_funcs = {
 };
 
 vid_render_funcs_t glsl_vid_render_funcs = {
-	glsl_Draw_Init,
 	glsl_Draw_Character,
 	glsl_Draw_String,
 	glsl_Draw_nString,

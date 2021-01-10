@@ -72,7 +72,6 @@ static vid_model_funcs_t model_funcs = {
 };
 
 vid_render_funcs_t gl_vid_render_funcs = {
-	gl_Draw_Init,
 	gl_Draw_Character,
 	gl_Draw_String,
 	gl_Draw_nString,

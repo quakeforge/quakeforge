@@ -194,7 +194,6 @@ static vid_model_funcs_t model_funcs = {
 };
 
 vid_render_funcs_t vulkan_vid_render_funcs = {
-	0,//vulkan_Draw_Init,
 	0,//vulkan_Draw_Character,
 	0,//vulkan_Draw_String,
 	0,//vulkan_Draw_nString,

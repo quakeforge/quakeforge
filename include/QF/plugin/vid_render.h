@@ -108,7 +108,6 @@ typedef struct vid_model_funcs_s {
 } vid_model_funcs_t;
 
 typedef struct vid_render_funcs_s {
-	void (*Draw_Init) (void);
 	void (*Draw_Character) (int x, int y, unsigned ch);
 	void (*Draw_String) (int x, int y, const char *str);
 	void (*Draw_nString) (int x, int y, const char *str, int count);
