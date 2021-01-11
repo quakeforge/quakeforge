@@ -155,8 +155,7 @@ SCR_TileClear (void)
 }
 
 void
-glsl_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc,
-					   SCR_Func *scr_funcs)
+glsl_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 {
 	static int  begun = 0;
 
@@ -169,23 +168,14 @@ glsl_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc,
 		glsl_ctx->end_rendering ();
 	}
 
-	vr_data.realtime = realtime;
-	vr_data.scr_copyeverything = 1;
 	//FIXME useless cvar? vid.numpages = 2 + gl_triplebuffer->int_val;
-
-	if (!scr_initialized)
-		return;
 
 	qfeglClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	begun = 1;
-
-	if (oldfov != scr_fov->value) {
-		oldfov = scr_fov->value;
-		vid.recalc_refdef = true;
-	}
-	if (vid.recalc_refdef)
-		SCR_CalcRefdef ();
+	//FIXME forces the status bar to redraw. needed because it does not fully
+	//update in sw modes but must in glsl mode
+	vr_data.scr_copyeverything = 1;
 
 	scr_3dfunc ();
 

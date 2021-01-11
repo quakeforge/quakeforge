@@ -146,5 +146,5 @@ CL_UpdateScreen (double realtime)
 	scr_funcs_normal[3] = r_funcs->SCR_DrawPause;
 
 	V_PrepBlend ();
-	r_funcs->SCR_UpdateScreen (realtime, V_RenderView, scr_funcs[index]);
+	SCR_UpdateScreen (realtime, V_RenderView, scr_funcs[index]);
 }

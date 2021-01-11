@@ -91,7 +91,6 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 	sw32_Draw_Picf,
 	sw32_Draw_SubPic,
 
-	sw32_SCR_UpdateScreen,
 	SCR_DrawRam,
 	SCR_DrawTurtle,
 	SCR_DrawPause,
@@ -103,6 +102,7 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 	0,
 
 	sw32_R_Init,
+	sw32_R_RenderFrame,
 	sw32_R_ClearState,
 	sw32_R_LoadSkys,
 	sw32_R_NewMap,

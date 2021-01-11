@@ -136,38 +136,10 @@ sw32_SCR_ScreenShot_f (void)
 	dstring_delete (pcxname);
 }
 
-/*
-	SCR_UpdateScreen
-
-	This is called every frame, and can also be called explicitly to flush
-	text to the screen.
-
-	WARNING: be very careful calling this from elsewhere, because the refresh
-	needs almost the entire 256k of stack space!
-*/
 void
-sw32_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
+sw32_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 {
 	vrect_t     vrect;
-
-	if (scr_skipupdate)
-		return;
-
-	vr_data.realtime = realtime;
-
-	scr_copytop = 0;
-	vr_data.scr_copyeverything = 0;
-
-	if (!scr_initialized)
-		return;							// not initialized yet
-
-	if (oldfov != scr_fov->value) {		// determine size of refresh window
-		oldfov = scr_fov->value;
-		vid.recalc_refdef = true;
-	}
-
-	if (vid.recalc_refdef)
-		SCR_CalcRefdef ();
 
 	// do 3D refresh drawing, and then update the screen
 	sw32_D_EnableBackBufferAccess ();		// of all overlay stuff if drawing

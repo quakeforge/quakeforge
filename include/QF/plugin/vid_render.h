@@ -130,9 +130,6 @@ typedef struct vid_render_funcs_s {
 	void (*Draw_SubPic) (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
 
 
-	// scr_funcs is a null terminated array
-	void (*SCR_UpdateScreen) (double realtime, SCR_Func scr_3dfunc,
-							  SCR_Func *scr_funcs);
 	void (*SCR_DrawRam) (void);
 	void (*SCR_DrawTurtle) (void);
 	void (*SCR_DrawPause) (void);
@@ -146,6 +143,7 @@ typedef struct vid_render_funcs_s {
 	void (*Fog_ParseWorldspawn) (struct plitem_s *worldspawn);
 
 	void (*R_Init) (void);
+	void (*R_RenderFrame) (SCR_Func scr_3dfunc, SCR_Func *scr_funcs);
 	void (*R_ClearState) (void);
 	void (*R_LoadSkys) (const char *);
 	void (*R_NewMap) (model_t *worldmodel, model_t **models, int num_models);

@@ -44,7 +44,7 @@ void gl_R_Init (void);
 void glsl_R_Init (void);
 void sw_R_Init (void);
 void sw32_R_Init (void);
-
+void R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs);
 void R_Init_Cvars (void);
 void R_InitEfrags (void);
 void R_ClearState (void);

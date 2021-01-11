@@ -86,7 +86,6 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	Draw_Picf,
 	Draw_SubPic,
 
-	SCR_UpdateScreen,
 	SCR_DrawRam,
 	SCR_DrawTurtle,
 	SCR_DrawPause,
@@ -98,6 +97,7 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	0,
 
 	sw_R_Init,
+	R_RenderFrame,
 	R_ClearState,
 	R_LoadSkys,
 	R_NewMap,

@@ -188,36 +188,22 @@ SCR_TileClear (void)
 	}
 }
 
-/*
-	SCR_UpdateScreen
-
-	This is called every frame, and can also be called explicitly to flush
-	text to the screen.
-
-	WARNING: be very careful calling this from elsewhere, because the refresh
-	needs almost the entire 256k of stack space!
-*/
 void
-gl_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
+gl_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 {
 	double      time1 = 0, time2;
 	static int  begun = 0;
 
-	if (scr_skipupdate)
-		return;
-
-	if (begun)
+	if (begun) {
 		gl_ctx->end_rendering ();
-
-	vr_data.realtime = realtime;
+		begun = 0;
+	}
 
 	vid.numpages = 2 + gl_triplebuffer->int_val;
 
-	scr_copytop = 0;
+	//FIXME forces the status bar to redraw. needed because it does not fully
+	//update in sw modes but must in gl mode
 	vr_data.scr_copyeverything = 1;
-
-	if (!scr_initialized)
-		return;							// not initialized yet
 
 	begun = 1;
 
@@ -226,14 +212,6 @@ gl_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 		gl_c_brush_polys = 0;
 		gl_c_alias_polys = 0;
 	}
-
-	if (oldfov != scr_fov->value) {		// determine size of refresh window
-		oldfov = scr_fov->value;
-		vid.recalc_refdef = true;
-	}
-
-	if (vid.recalc_refdef)
-		SCR_CalcRefdef ();
 
 	// do 3D refresh drawing, and then update the screen
 	scr_3dfunc ();

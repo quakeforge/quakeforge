@@ -93,7 +93,6 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_Draw_Picf,
 	gl_Draw_SubPic,
 
-	gl_SCR_UpdateScreen,
 	SCR_DrawRam,
 	SCR_DrawTurtle,
 	SCR_DrawPause,
@@ -105,6 +104,7 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_Fog_ParseWorldspawn,
 
 	gl_R_Init,
+	gl_R_RenderFrame,
 	gl_R_ClearState,
 	gl_R_LoadSkys,
 	gl_R_NewMap,

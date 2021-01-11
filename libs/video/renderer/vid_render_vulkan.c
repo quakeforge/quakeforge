@@ -105,7 +105,7 @@ vulkan_R_Init (void)
 }
 
 static void
-vulkan_SCR_UpdateScreen (double time,  void (*f)(void), void (**g)(void))
+vulkan_R_RenderFrame (void (*f)(void), void (**g)(void))
 {
 	static int count = 0;
 	static double startTime;
@@ -324,7 +324,6 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_Draw_Picf,
 	vulkan_Draw_SubPic,
 
-	vulkan_SCR_UpdateScreen,
 	SCR_DrawRam,
 	SCR_DrawTurtle,
 	SCR_DrawPause,
@@ -336,6 +335,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	0,//vulkan_Fog_ParseWorldspawn,
 
 	vulkan_R_Init,
+	vulkan_R_RenderFrame,
 	0,//vulkan_R_ClearState,
 	0,//vulkan_R_LoadSkys,
 	0,//vulkan_R_NewMap,

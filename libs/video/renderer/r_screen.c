@@ -170,6 +170,37 @@ SCR_CalcRefdef (void)
 	vr_funcs->R_ViewChanged (vid.aspect);
 }
 
+/*
+	SCR_UpdateScreen
+
+	This is called every frame, and can also be called explicitly to flush
+	text to the screen.
+
+	WARNING: be very careful calling this from elsewhere, because the refresh
+	needs almost the entire 256k of stack space!
+*/
+void
+SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
+{
+	if (scr_skipupdate || !scr_initialized) {
+		return;
+	}
+
+	vr_data.realtime = realtime;
+	scr_copytop = vr_data.scr_copyeverything = 0;
+
+	if (oldfov != scr_fov->value) {
+		oldfov = scr_fov->value;
+		vid.recalc_refdef = true;
+	}
+
+	if (vid.recalc_refdef) {
+		SCR_CalcRefdef ();
+	}
+
+	vr_funcs->R_RenderFrame (scr_3dfunc, scr_funcs);
+}
+
 float
 CalcFov (float fov_x, float width, float height)
 {
