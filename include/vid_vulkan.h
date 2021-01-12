@@ -21,6 +21,8 @@ typedef struct vulkan_framebuffer_s {
 	VkSemaphore renderDoneSemaphore;
 	VkCommandBuffer cmdBuffer;
 
+	struct qfv_cmdbufferset_s *subCommand;
+
 	VkDescriptorSet twodDescriptors;
 } vulkan_framebuffer_t;
 

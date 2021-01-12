@@ -59,9 +59,6 @@ static vulkan_ctx_t *vulkan_ctx;
 static void
 vulkan_R_Init (void)
 {
-	qfv_device_t *device = vulkan_ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
 	Vulkan_CreateStagingBuffers (vulkan_ctx);
 	Vulkan_CreateMatrices (vulkan_ctx);
 	Vulkan_CreateSwapchain (vulkan_ctx);
@@ -72,41 +69,18 @@ vulkan_R_Init (void)
 	vulkan_ctx->pipeline = Vulkan_CreatePipeline (vulkan_ctx, "pipeline");
 	Vulkan_Draw_Init (vulkan_ctx);
 
-	qfv_swapchain_t *sc = vulkan_ctx->swapchain;
-
-	VkCommandBufferBeginInfo beginInfo
-		= { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
-	VkClearValue clearValues[3] = {
-		{ { {0.7294, 0.8549, 0.3333, 1.0} } },
-		{ { {1.0, 0.0} } },
-		{ { {0, 0, 0, 0} } },
-	};
-	VkRenderPassBeginInfo renderPassInfo = {
-		VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, 0,
-		vulkan_ctx->renderpass.renderpass, 0,
-		{ {0, 0}, sc->extent },
-		2, clearValues + 2
-	};
-	for (size_t i = 0; i < vulkan_ctx->framebuffers.size; i++) {
-		__auto_type framebuffer = &vulkan_ctx->framebuffers.a[i];
-		dfunc->vkBeginCommandBuffer (framebuffer->cmdBuffer, &beginInfo);
-		renderPassInfo.framebuffer = framebuffer->framebuffer;
-		dfunc->vkCmdBeginRenderPass (framebuffer->cmdBuffer, &renderPassInfo,
-				VK_SUBPASS_CONTENTS_INLINE);
-
-		dfunc->vkCmdEndRenderPass (framebuffer->cmdBuffer);
-		dfunc->vkEndCommandBuffer (framebuffer->cmdBuffer);
-	}
 	Sys_Printf ("R_Init %p %d", vulkan_ctx->swapchain->swapchain,
 				vulkan_ctx->swapchain->numImages);
 	for (int32_t i = 0; i < vulkan_ctx->swapchain->numImages; i++) {
 		Sys_Printf (" %p", vulkan_ctx->swapchain->images->a[i]);
 	}
 	Sys_Printf ("\n");
+
+	SCR_Init ();
 }
 
 static void
-vulkan_R_RenderFrame (void (*f)(void), void (**g)(void))
+vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 {
 	static int count = 0;
 	static double startTime;
@@ -116,6 +90,12 @@ vulkan_R_RenderFrame (void (*f)(void), void (**g)(void))
 	VkDevice    dev = device->dev;
 	qfv_queue_t *queue = &vulkan_ctx->device->queue;
 
+	scr_3dfunc ();
+	while (*scr_funcs) {
+		(*scr_funcs) ();
+		scr_funcs++;
+	}
+
 	__auto_type framebuffer
 		= &vulkan_ctx->framebuffers.a[vulkan_ctx->curFrame];
 
@@ -123,6 +103,34 @@ vulkan_R_RenderFrame (void (*f)(void), void (**g)(void))
 	QFV_AcquireNextImage (vulkan_ctx->swapchain,
 						  framebuffer->imageAvailableSemaphore,
 						  0, &imageIndex);
+
+	Vulkan_FlushText (vulkan_ctx);
+
+	qfv_swapchain_t *sc = vulkan_ctx->swapchain;
+	VkCommandBufferBeginInfo beginInfo
+		= { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+	VkClearValue clearValues[2] = {
+		{ { {0.0, 0.0, 0.0, 1.0} } },
+		{ { {1.0, 0.0} } },
+	};
+	VkRenderPassBeginInfo renderPassInfo = {
+		VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, 0,
+		vulkan_ctx->renderpass.renderpass, 0,
+		{ {0, 0}, sc->extent },
+		2, clearValues
+	};
+
+	dfunc->vkBeginCommandBuffer (framebuffer->cmdBuffer, &beginInfo);
+	renderPassInfo.framebuffer = framebuffer->framebuffer;
+	dfunc->vkCmdBeginRenderPass (framebuffer->cmdBuffer, &renderPassInfo,
+			VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+
+	dfunc->vkCmdExecuteCommands (framebuffer->cmdBuffer,
+								 framebuffer->subCommand->size,
+								 framebuffer->subCommand->a);
+
+	dfunc->vkCmdEndRenderPass (framebuffer->cmdBuffer);
+	dfunc->vkEndCommandBuffer (framebuffer->cmdBuffer);
 
 	VkPipelineStageFlags waitStage
 		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -425,6 +433,7 @@ vulkan_vid_render_shutdown (void)
 	QFV_DeviceWaitIdle (device);
 	df->vkDestroyFence (dev, vulkan_ctx->fence, 0);
 	df->vkDestroyCommandPool (dev, vulkan_ctx->cmdpool, 0);
+	Vulkan_Draw_Shutdown (vulkan_ctx);
 	Vulkan_Shutdown_Common (vulkan_ctx);
 }
 

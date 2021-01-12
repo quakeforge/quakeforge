@@ -3,7 +3,6 @@
 
 	Common Vulkan video driver functions
 
-	Copyright (C) 1996-1997 Id Software, Inc.
 	Copyright (C) 2019      Bill Currie <bill@taniwha.org>
 
 	This program is free software; you can redistribute it and/or
@@ -54,6 +53,7 @@
 #include "QF/vid.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/barrier.h"
+#include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/command.h"
@@ -127,6 +127,7 @@ Vulkan_Init_Cvars (void)
 	msaaSamples = Cvar_Get ("msaaSamples", "VK_SAMPLE_COUNT_1_BIT",
 										 CVAR_NONE, msaaSamples_f,
 										 "desired MSAA sample size.");
+	R_Init_Cvars ();
 }
 
 static const char *instance_extensions[] = {
@@ -415,7 +416,11 @@ Vulkan_CreateFramebuffers (vulkan_ctx_t *ctx)
 		frame->imageAvailableSemaphore = QFV_CreateSemaphore (device);
 		frame->renderDoneSemaphore = QFV_CreateSemaphore (device);
 		frame->cmdBuffer = cmdBuffers->a[i];
+
+		frame->subCommand = malloc (sizeof (qfv_cmdbufferset_t));
+		DARRAY_INIT (frame->subCommand, 4);
 	}
+	free (cmdBuffers);
 }
 
 void

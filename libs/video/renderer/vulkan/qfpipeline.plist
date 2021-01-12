@@ -24,7 +24,7 @@
 			compareEnable = 0;//FIXME false!!!
 			compareOp = always;
 			minLod = 0;
-			maxLod = 0.25f;
+			maxLod = 0;
 			borderColor = float_transparent_black;
 			unnormalizedCoordinates = 1;//FIXME true!!!
 		};
@@ -113,20 +113,26 @@
 					{
 						location = 0;
 						binding = 0;
-						format = r32g32b32a32_sfloat;
+						format = r32g32_sfloat;
 						offset = 0;
 					},
 					{
 						location = 1;
 						binding = 0;
+						format = r32g32_sint;
+						offset = 8;
+					},
+					{
+						location = 2;
+						binding = 0;
 						format = r32g32b32a32_sfloat;
-						offset = 4;
+						offset = 16;
 					},
 				);
 			};
 			inputAssembly = {
-				topology = triangle_list;
-				primitiveRestartEnable = 0;
+				topology = triangle_strip;
+				primitiveRestartEnable = 1;
 			};
 			viewport = {
 				viewports = (

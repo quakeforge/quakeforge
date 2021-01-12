@@ -31,6 +31,7 @@
 struct vulkan_ctx_s;
 
 void Vulkan_Draw_Init (struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_Shutdown (struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_Character (int x, int y, unsigned ch,
 							struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_String (int x, int y, const char *str,
