@@ -35,7 +35,6 @@ typedef struct subpic_s {
 	const struct subpic_s * const next;
 	const scrap_t * const scrap;
 	const struct vrect_s * const rect;
-	const int   tnum;					///< texture number
 	const int width;					///< requested width
 	const int height;					///< requested height
 	const float size;					///< size factor for tex coords (mult)

@@ -437,7 +437,6 @@ GLSL_ScrapSubpic (scrap_t *scrap, int width, int height)
 	scrap->subpics = subpic;
 	*((scrap_t **) &subpic->scrap) = scrap;
 	*((vrect_t **) &subpic->rect) = rect;
-	*((int *) &subpic->tnum) = scrap->tnum;
 	*((int *) &subpic->width) = width;
 	*((int *) &subpic->height) = height;
 	*((float *) &subpic->size) = 1.0 / scrap->size;
