@@ -24,6 +24,13 @@ typedef struct handleref_s {
 	uint64_t    handle;
 } handleref_t;
 
+VkShaderModule QFV_GetShaderModule (vulkan_ctx_t *ctx, const char *name);
+VkDescriptorPool QFV_GetDescriptorPool (vulkan_ctx_t *ctx, const char *name);
+VkDescriptorSetLayout QFV_GetDescriptorSetLayout (vulkan_ctx_t *ctx,
+												  const char *name);
+VkPipelineLayout QFV_GetPipelineLayout (vulkan_ctx_t *ctx, const char *name);
+VkSampler QFV_GetSampler (vulkan_ctx_t *ctx, const char *name);
+
 void QFV_ParseResources (vulkan_ctx_t *ctx, plitem_t *plist);
 void QFV_InitParse (vulkan_ctx_t *ctx);
 exprenum_t *QFV_GetEnum (const char *name);

@@ -56,10 +56,17 @@ output_handle (string name, PLItem *handle)
 	}
 	fprintf (output_file, "}\n");
 
+	fprintf (output_file, "%s QFV_Get%s (vulkan_ctx_t *ctx, const char *name)\n", name, str_mid (name, 2));
+	fprintf (output_file, "{\n");
+	fprintf (output_file, "\thandleref_t *handleref = Hash_Find (ctx->%s, name);\n", symtab);
+	fprintf (output_file, "\treturn handleref ? (%s) handleref->handle : 0;\n", name);
+	fprintf (output_file, "}\n");
+
 	if (!custom) {
 		fprintf (header_file, "static int parse_%s (const plitem_t *item, void **data, plitem_t *messages, parsectx_t *context);\n", name);
 	}
 	fprintf (header_file, "int parse_%s_handleref (const plfield_t *field, const plitem_t *item, void *data, plitem_t *messages, void *context);\n", name);
+	fprintf (output_file, "%s QFV_Get%s (vulkan_ctx_t *ctx, const char *name);\n", name, str_mid (name, 2));
 	str_free (custom);
 	str_free (symtab);
 	str_free (class);

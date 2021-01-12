@@ -232,9 +232,7 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 										 VK_IMAGE_VIEW_TYPE_2D,
 										 VK_FORMAT_A1R5G5B5_UNORM_PACK16,
 										 VK_IMAGE_ASPECT_COLOR_BIT);
-	handleref_t *h;
-	h = Hash_Find (ctx->samplers, "quakepic");
-	conchars_sampler = (VkSampler) h->handle;
+	conchars_sampler = QFV_GetSampler (ctx, "quakepic");
 
 	uint16_t *chars_data = ctx->staging[0]->data;
 	size_t size = charspic->width * charspic->height;
@@ -294,16 +292,13 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 
 	twod_pipeline = Vulkan_CreatePipeline (ctx, "twod");
 
-	h = Hash_Find (ctx->pipelineLayouts, "twod");
-	twod_layout = (VkPipelineLayout) h->handle;
+	twod_layout = QFV_GetPipelineLayout (ctx, "twod");
 
 	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (ctx->framebuffers.size, alloca);
 	for (size_t i = 0; i < layouts->size; i++) {
-		h = Hash_Find (ctx->setLayouts, "twod");
-		layouts->a[i] = (VkDescriptorSetLayout) h->handle;
+		layouts->a[i] = QFV_GetDescriptorSetLayout (ctx, "twod");
 	}
-	h = Hash_Find (ctx->descriptorPools, "twod");
-	__auto_type pool = (VkDescriptorPool) h->handle;
+	__auto_type pool = QFV_GetDescriptorPool (ctx, "twod");
 
 	VkDescriptorBufferInfo bufferInfo = {
 		ctx->matrices.buffer_2d, 0, VK_WHOLE_SIZE
