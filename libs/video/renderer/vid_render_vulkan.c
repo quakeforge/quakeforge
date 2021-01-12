@@ -63,6 +63,7 @@ vulkan_R_Init (void)
 	qfv_devfuncs_t *dfunc = device->funcs;
 
 	Vulkan_CreateStagingBuffers (vulkan_ctx);
+	Vulkan_CreateMatrices (vulkan_ctx);
 	Vulkan_CreateSwapchain (vulkan_ctx);
 	Vulkan_CreateRenderPass (vulkan_ctx);
 	Vulkan_CreateFramebuffers (vulkan_ctx);
@@ -276,6 +277,12 @@ vulkan_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width, in
 	Vulkan_Draw_SubPic (x, y, pic, srcx, srcy, width, height, vulkan_ctx);
 }
 
+static void
+vulkan_R_ViewChanged (float aspect)
+{
+	Vulkan_CalcProjectionMatrices (vulkan_ctx, aspect);
+}
+
 static vid_model_funcs_t model_funcs = {
 	0,//vulkan_Mod_LoadExternalTextures,
 	0,//vulkan_Mod_LoadLighting,
@@ -347,7 +354,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	R_AllocEntity,
 	0,//vulkan_R_RenderView,
 	R_DecayLights,
-	0,//vulkan_R_ViewChanged,
+	vulkan_R_ViewChanged,
 	0,//vulkan_R_ClearParticles,
 	0,//vulkan_R_InitParticles,
 	0,//vulkan_SCR_ScreenShot_f,

@@ -175,6 +175,7 @@ Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 	}
 	QFV_DestroyStagingBuffer (ctx->staging[0]);
 	QFV_DestroyStagingBuffer (ctx->staging[1]);
+	Vulkan_DestroyMatrices (ctx);
 	ctx->instance->funcs->vkDestroySurfaceKHR (ctx->instance->instance,
 											   ctx->surface, 0);
 	clear_table (&ctx->pipelineLayouts);

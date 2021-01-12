@@ -24,6 +24,15 @@ typedef struct vulkan_framebuffer_s {
 	VkDescriptorSet twodDescriptors;
 } vulkan_framebuffer_t;
 
+typedef struct vulkan_matrices_s {
+	VkBuffer    buffer_2d;
+	VkBuffer    buffer_3d;
+	VkDeviceMemory memory;
+	float      *projection_2d;
+	float      *projection_3d;
+	float      *view_3d;
+} vulkan_matrices_t;
+
 typedef struct vulkan_framebufferset_s
 	DARRAY_TYPE (vulkan_framebuffer_t) vulkan_framebufferset_t;
 
@@ -61,6 +70,9 @@ typedef struct vulkan_ctx_s {
 	VkPipeline  pipeline;
 	size_t      curFrame;
 	vulkan_framebufferset_t framebuffers;
+
+	// projection and view matrices (model is push constant)
+	vulkan_matrices_t matrices;
 
 #define EXPORTED_VULKAN_FUNCTION(fname) PFN_##fname fname;
 #define GLOBAL_LEVEL_VULKAN_FUNCTION(fname) PFN_##fname fname;
