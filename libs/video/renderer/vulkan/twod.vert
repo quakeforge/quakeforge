@@ -11,7 +11,7 @@ layout (set = 0, binding = 0) uniform Matrices {
 	(\a x, \a y) and texture coordinate for the icon (\a s=z, \a t=w).
 */
 layout (location = 0) in vec2 vertex;
-layout (location = 1) in ivec2 uv;
+layout (location = 1) in vec2 uv;
 layout (location = 2) in vec4 vcolor;
 
 layout (location = 0) out vec2 st;
@@ -21,6 +21,6 @@ void
 main (void)
 {
 	gl_Position = Projection * vec4 (vertex.xy, 0.0, 1.0);
-	st = vec2(uv);
+	st = uv;
 	color = vcolor;
 }

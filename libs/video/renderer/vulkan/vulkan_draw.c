@@ -66,7 +66,7 @@
 
 typedef struct {
 	float       xy[2];
-	int         st[2];
+	float       st[2];
 	float       color[4];
 } drawvert_t;
 
@@ -352,10 +352,10 @@ draw_pic (float x, float y, int w, int h, qpic_t *pic,
 	drawvert_t *verts = quad_verts + num_quads * VERTS_PER_QUAD;
 	num_quads += VERTS_PER_QUAD;
 
-	float sl = (srcx);
-	float sr = (srcx + srcw);
-	float st = (srcy);
-	float sb = (srcy + srch);
+	float sl = (srcx + 0.03125) / 128.0;
+	float sr = (srcx + srcw - 0.03125) / 128.0;
+	float st = (srcy + 0.03125) / 128.0;
+	float sb = (srcy + srch - 0.03125) / 128.0;
 
 	verts[0].xy[0] = x;
 	verts[0].xy[1] = y;

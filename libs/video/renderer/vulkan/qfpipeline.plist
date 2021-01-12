@@ -26,7 +26,7 @@
 			minLod = 0;
 			maxLod = 0;
 			borderColor = float_transparent_black;
-			unnormalizedCoordinates = true;
+			unnormalizedCoordinates = false;
 		};
 	};
 	descriptorPools = {
@@ -119,7 +119,7 @@
 					{
 						location = 1;
 						binding = 0;
-						format = r32g32_sint;
+						format = r32g32_sfloat;
 						offset = 8;
 					},
 					{
