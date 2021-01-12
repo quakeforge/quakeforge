@@ -1222,5 +1222,4 @@ PR_Strings_Init (progs_t *pr)
 	res->print_str = dstring_new ();
 
 	PR_Resources_Register (pr, "Strings", res, pr_strings_clear);
-	PR_AddLoadFunc (pr, PR_LoadStrings);
 }
