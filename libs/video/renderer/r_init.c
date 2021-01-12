@@ -46,6 +46,7 @@
 #include "QF/plugin/general.h"
 
 #include "r_internal.h"
+#include "r_scrap.h"
 #include "vid_internal.h"
 
 cvar_t         *vidrend_plugin;
@@ -61,6 +62,7 @@ vid_render_funcs_t *r_funcs;
 
 #define U __attribute__ ((used))
 static U void (*const r_progs_init)(struct progs_s *) = R_Progs_Init;
+static U void (*const r_scrapdelete)(rscrap_t *) = R_ScrapDelete;
 #undef U
 
 static void

@@ -55,6 +55,15 @@ typedef enum {
 extern struct vid_render_funcs_s *r_funcs;
 extern struct vid_render_data_s *r_data;
 
+typedef struct subpic_s {
+	const struct subpic_s *const next;
+	const struct scrap_s *const scrap;	///< renderer specific type
+	const struct vrect_s *const rect;
+	const int width;					///< requested width
+	const int height;					///< requested height
+	const float size;					///< size factor for tex coords (mult)
+} subpic_t;
+
 // dynamic lights ===========================================================
 
 typedef struct dlight_s
