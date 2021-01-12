@@ -153,6 +153,7 @@ typedef struct vid_render_funcs_s {
 	void (*R_LineGraph) (int x, int y, int *h_vals, int count);
 	dlight_t *(*R_AllocDlight) (int key);
 	entity_t *(*R_AllocEntity) (void);
+	void (*R_MaxDlightsCheck) (struct cvar_s *var);
 	void (*R_RenderView) (void);
 	void (*R_DecayLights) (double frametime);
 

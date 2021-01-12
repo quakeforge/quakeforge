@@ -360,6 +360,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	0,//vulkan_R_LineGraph,
 	R_AllocDlight,
 	R_AllocEntity,
+	R_MaxDlightsCheck,
 	0,//vulkan_R_RenderView,
 	R_DecayLights,
 	vulkan_R_ViewChanged,

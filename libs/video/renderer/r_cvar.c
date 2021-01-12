@@ -138,7 +138,7 @@ r_farclip_f (cvar_t *var)
 		Cvar_SetValue (r_particles_nearclip,
 					   bound (r_nearclip->value, r_particles_nearclip->value,
 							  r_farclip->value));
-	vid.recalc_refdef = true;
+	r_data->vid->recalc_refdef = true;
 }
 
 static void
@@ -149,7 +149,7 @@ r_nearclip_f (cvar_t *var)
 		Cvar_SetValue (r_particles_nearclip,
 					   bound (r_nearclip->value, r_particles_nearclip->value,
 							  r_farclip->value));
-	vid.recalc_refdef = true;
+	r_data->vid->recalc_refdef = true;
 }
 
 static void
@@ -176,11 +176,17 @@ viewsize_f (cvar_t *var)
 	if (var->int_val < 30 || var->int_val > 120) {
 		Cvar_SetValue (var, bound (30, var->int_val, 120));
 	} else {
-		vid.recalc_refdef = true;
+		r_data->vid->recalc_refdef = true;
 		r_viewsize = bound (0, var->int_val, 100);
-		if (vr_data.viewsize_callback)
-			vr_data.viewsize_callback (var);
+		if (r_data->viewsize_callback)
+			r_data->viewsize_callback (var);
 	}
+}
+
+static void
+r_dlight_max_f (cvar_t *var)
+{
+	r_funcs->R_MaxDlightsCheck (var);
 }
 
 void
@@ -218,7 +224,7 @@ R_Init_Cvars (void)
 								  NULL, "Set to 1 for high quality dynamic "
 								  "lighting.");
 	r_dlight_max = Cvar_Get ("r_dlight_max", "32", CVAR_ARCHIVE,
-							 R_MaxDlightsCheck, "Number of dynamic lights.");
+							 r_dlight_max_f, "Number of dynamic lights.");
 	r_drawentities = Cvar_Get ("r_drawentities", "1", CVAR_NONE, NULL,
 							   "Toggles drawing of entities (almost "
 							   "everything but the world)");
@@ -309,6 +315,6 @@ R_Init_Cvars (void)
 	scr_viewsize = Cvar_Get ("viewsize", "100", CVAR_ARCHIVE, viewsize_f,
 							 "Set the screen size 30 minimum, 120 maximum");
 
-	vr_data.graphheight = r_graphheight;
-	vr_data.scr_viewsize = scr_viewsize;
+	r_data->graphheight = r_graphheight;
+	r_data->scr_viewsize = scr_viewsize;
 }
