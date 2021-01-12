@@ -77,9 +77,6 @@ const qfv_pipelinestagepair_t imageLayoutTransitionStages[] = {
 	// undefined -> transfer dst optimal
 	{	VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
 		VK_PIPELINE_STAGE_TRANSFER_BIT },
-	// preinitialized -> shader read only optimal
-	{	VK_PIPELINE_STAGE_TRANSFER_BIT,
-		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT },
 	// transfer dst optimal -> shader read only optimal
 	{	VK_PIPELINE_STAGE_TRANSFER_BIT,
 		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT },
