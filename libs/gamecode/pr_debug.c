@@ -1702,7 +1702,6 @@ PR_Debug_Init (progs_t *pr)
 									pr->hashlink_freelist);
 
 	PR_Resources_Register (pr, "PR_Debug", res, pr_debug_clear);
-	PR_AddLoadFunc (pr, PR_LoadDebug);
 }
 
 void
