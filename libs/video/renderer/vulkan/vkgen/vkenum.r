@@ -3,6 +3,12 @@
 #include "vkenum.h"
 #include "vkgen.h"
 
+typedef enum VkBool32 {
+	VK_FALSE,
+	VK_TRUE,
+	VK_MAX_ENUM = VK_TRUE
+} VkBool32;
+
 @implementation Enum
 -(void)process
 {

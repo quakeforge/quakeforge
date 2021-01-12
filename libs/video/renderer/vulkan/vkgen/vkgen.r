@@ -117,7 +117,10 @@ scan_types (void)
 			string tag = str_mid(type.strct.tag, 4);
 			Type *avail_type = [Type fromType: type];
 			if (avail_type) {
-				Hash_Add (available_types, avail_type);
+				if (!Hash_Find (available_types, [avail_type name])) {
+					printf ("scan: %s %s\n", tag, [avail_type name]);
+					Hash_Add (available_types, avail_type);
+				}
 			}
 		}
 	}

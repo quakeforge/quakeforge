@@ -19,14 +19,14 @@
 			addressModeV = clamp_to_edge;
 			addressModeW = clamp_to_edge;
 			mipLodBias = 0;
-			anisotropyEnable = 0;//FIXME false!!!
+			anisotropyEnable = false;
 			maxAnisotropy = 0;
-			compareEnable = 0;//FIXME false!!!
+			compareEnable = false;
 			compareOp = always;
 			minLod = 0;
 			maxLod = 0;
 			borderColor = float_transparent_black;
-			unnormalizedCoordinates = 1;//FIXME true!!!
+			unnormalizedCoordinates = true;
 		};
 	};
 	descriptorPools = {
@@ -132,7 +132,7 @@
 			};
 			inputAssembly = {
 				topology = triangle_strip;
-				primitiveRestartEnable = 1;
+				primitiveRestartEnable = true;
 			};
 			viewport = {
 				viewports = (
@@ -150,32 +150,32 @@
 				);
 			};
 			rasterization = {
-				depthClampEnable = 0;
-				rasterizerDiscardEnable = 0;
+				depthClampEnable = false;
+				rasterizerDiscardEnable = false;
 				polygonMode = fill;
 				cullMode = back;
 				frontFace = counter_clockwise;
-				depthBiasEnable = 0;
+				depthBiasEnable = false;
 				lineWidth = 1;
 			};
 			multisample = {
 				rasterizationSamples = $msaaSamples;
-				sampleShadingEnable = 0;
+				sampleShadingEnable = false;
 				minSampleShading = 0.5f;
-				alphaToCoverageEnable = 0;
-				alphaToOneEnable = 0;
+				alphaToCoverageEnable = false;
+				alphaToOneEnable = false;
 			};
 			depthStencil = {
-				depthTestEnable = 1;
-				depthWriteEnable = 1;
+				depthTestEnable = true;
+				depthWriteEnable = true;
 				depthCompareOp = less;
-				depthBoundsTestEnable = 0;
-				stencilTestEnable = 0;
+				depthBoundsTestEnable = false;
+				stencilTestEnable = false;
 			};
 			colorBlend = {
-				logicOpEnable = 0;
+				logicOpEnable = false;
 				attachments = ({
-					blendEnable = 0;
+					blendEnable = false;
 					srcColorBlendFactor = src_color;
 					dstColorBlendFactor = zero;
 					colorBlendOp = add;

@@ -28,14 +28,16 @@
 			[enumObj addToQueue];
 		}
 	} else if (name == "VkBool32") {
-		// drop
+		id enumObj = [(id) Hash_Find (available_types, name) resolveType];
+		[enumObj addToQueue];
 	} else if ([alias class] == [Enum class]
 			   || [alias class] == [Struct class]) {
 		[alias addToQueue];
 	} else if (alias.type.meta == ty_basic && alias.type.type == ev_pointer) {
 		Type       *type = [Type findType:alias.type.fldptr.aux_type];
 		if (!type) {
-			// pointer to opaque struct. Probably VK_DEFINE_NON_DISPATCHABLE_HANDLE or VK_DEFINE_HANDLE
+			// pointer to opaque struct. Probably
+			// VK_DEFINE_NON_DISPATCHABLE_HANDLE or VK_DEFINE_HANDLE
 			string createInfo = name + "CreateInfo";
 			id structObj = (id) Hash_Find (available_types, createInfo);
 			if (structObj) {
@@ -62,6 +64,10 @@
 			return [enumObj cexprType];
 		}
 	}
+	if (name == "VkBool32") {
+		id enumObj = [(id) Hash_Find (available_types, name) resolveType];
+		return [enumObj cexprType];
+	}
 	if (name == "uint32_t") {
 		return "cexpr_uint";
 	}
@@ -83,6 +89,10 @@
 			return [enumObj parseType];
 		}
 	}
+	if (name == "VkBool32") {
+		id enumObj = [(id) Hash_Find (available_types, name) resolveType];
+		return [enumObj parseType];
+	}
 	if (name == "uint32_t" || name == "size_t") {
 		return "QFString";
 	}
@@ -101,6 +111,10 @@
 			return [enumObj parseFunc];
 		}
 	}
+	if (name == "VkBool32") {
+		id enumObj = [(id) Hash_Find (available_types, name) resolveType];
+		return [enumObj parseFunc];
+	}
 	if (name == "uint32_t") {
 		return "parse_uint32_t";
 	}
@@ -118,6 +132,10 @@
 			id enumObj = [(id) Hash_Find (available_types, tag) resolveType];
 			return [enumObj parseData];
 		}
+	}
+	if (name == "VkBool32") {
+		id enumObj = [(id) Hash_Find (available_types, name) resolveType];
+		return [enumObj parseData];
 	}
 	if (name == "uint32_t" || name == "size_t") {
 		return "0";
