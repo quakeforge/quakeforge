@@ -36,6 +36,7 @@ test_progs_dat=\
 	tools/qfcc/test/return-ivar.dat \
 	tools/qfcc/test/sendv.dat \
 	tools/qfcc/test/state.dat \
+	tools/qfcc/test/static-init.dat \
 	tools/qfcc/test/struct-init-param.dat \
 	tools/qfcc/test/struct-nil-init.dat \
 	tools/qfcc/test/structarray.dat \
@@ -410,6 +411,16 @@ tools/qfcc/test/state.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(state_dep) # am--include-marker
 r_depfiles_remade += $(state_dep)
+
+tools_qfcc_test_static_init_dat_SOURCES=tools/qfcc/test/static-init.r
+static_init_obj=$(tools_qfcc_test_static_init_dat_SOURCES:.r=.o)
+static_init_dep=$(call qcautodep,$(tools_qfcc_test_static_init_dat_SOURCES))
+tools/qfcc/test/static-init.dat$(EXEEXT): $(static_init_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(static_init_obj)
+tools/qfcc/test/static-init.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(static_init_dep) # am--include-marker
+r_depfiles_remade += $(static_init_dep)
 
 tools_qfcc_test_struct_init_param_dat_SOURCES=tools/qfcc/test/struct-init-param.r
 struct_init_param_obj=$(tools_qfcc_test_struct_init_param_dat_SOURCES:.r=.o)
