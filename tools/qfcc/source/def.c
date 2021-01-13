@@ -597,7 +597,7 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 			error (init, "type mismatch in initializer");
 			return;
 		}
-		if (local_expr) {
+		if (storage == sc_local && local_expr) {
 			sym->s.def->initialized = 1;
 			init = assign_expr (new_symbol_expr (sym), init);
 			// fold_constants takes care of int/float conversions
