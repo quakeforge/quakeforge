@@ -90,6 +90,9 @@ QFV_FlushStagingBuffer (qfv_stagebuf_t *stage, size_t offset, size_t size)
 	qfv_device_t *device = stage->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
+	size_t atom = device->physDev->properties.limits.nonCoherentAtomSize;
+	offset &= ~(atom - 1);
+	size = (size + atom - 1) & ~ (atom - 1);
 	VkMappedMemoryRange range = {
 		VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
 		stage->memory, offset, size

@@ -79,7 +79,8 @@ typedef struct {
 //FIXME move into a context struct
 VkSampler       conchars_sampler;
 scrap_t        *draw_scrap;
-subpic_t       *conchars;
+qfv_stagebuf_t *draw_stage;
+qpic_t         *conchars;
 
 VkBuffer        quad_vert_buffer;
 VkBuffer        quad_ind_buffer;
@@ -146,15 +147,58 @@ destroy_quad_buffers (vulkan_ctx_t *ctx)
 	dfunc->vkDestroyBuffer (device->dev, quad_ind_buffer, 0);
 }
 
+static void
+flush_draw_scrap (vulkan_ctx_t *ctx)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	VkCommandBuffer cmd = ctx->cmdbuffer;
+
+	dfunc->vkWaitForFences (device->dev, 1, &ctx->fence, VK_TRUE, ~0ull);
+	dfunc->vkResetCommandBuffer (cmd, 0);
+	VkCommandBufferBeginInfo beginInfo = {
+		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, 0,
+		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, 0,
+	};
+	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
+	QFV_ScrapFlush (draw_scrap, draw_stage, cmd);
+	dfunc->vkEndCommandBuffer (cmd);
+
+	VkSubmitInfo submitInfo = {
+		VK_STRUCTURE_TYPE_SUBMIT_INFO, 0,
+		0, 0, 0,
+		1, &cmd,
+		0, 0,
+	};
+	dfunc->vkResetFences (device->dev, 1, &ctx->fence);
+	dfunc->vkQueueSubmit (device->queue.queue, 1, &submitInfo, ctx->fence);
+	dfunc->vkWaitForFences (device->dev, 1, &ctx->fence, VK_TRUE, ~0ull);//FIXME
+}
+
 static qpic_t *
-pic_data (const char *name, int w, int h, const byte *data)
+pic_data (const char *name, int w, int h, const byte *data, vulkan_ctx_t *ctx)
 {
 	qpic_t     *pic;
+	subpic_t   *subpic;
+	byte       *picdata;
 
-	pic = malloc (field_offset (qpic_t, data[w * h]));
+	pic = malloc (field_offset (qpic_t, data[sizeof (subpic_t)]));
 	pic->width = w;
 	pic->height = h;
-	memcpy (pic->data, data, pic->width * pic->height);
+
+	subpic = QFV_ScrapSubpic (draw_scrap, w, h);
+	*(subpic_t **) pic->data = subpic;
+
+	picdata = QFV_SubpicBatch (subpic, draw_stage);
+	size_t size = w * h;
+	for (size_t i = 0; i < size; i++) {
+		byte        pix = *data++;
+		byte       *col = vid.palette + pix * 3;
+		*picdata++ = *col++;
+		*picdata++ = *col++;
+		*picdata++ = *col++;
+		*picdata++ = (pix == 255) - 1;
+	}
 	return pic;
 }
 
@@ -162,7 +206,7 @@ qpic_t *
 Vulkan_Draw_MakePic (int width, int height, const byte *data,
 					 vulkan_ctx_t *ctx)
 {
-	return pic_data (0, width, height, data);
+	return pic_data (0, width, height, data, ctx);
 }
 
 void
@@ -173,13 +217,18 @@ Vulkan_Draw_DestroyPic (qpic_t *pic, vulkan_ctx_t *ctx)
 qpic_t *
 Vulkan_Draw_PicFromWad (const char *name, vulkan_ctx_t *ctx)
 {
-	return pic_data (0, 1, 1, (const byte *)"");
+	qpic_t     *wadpic = W_GetLumpName (name);
+
+	if (!wadpic) {
+		return 0;
+	}
+	return pic_data (name, wadpic->width, wadpic->height, wadpic->data, ctx);
 }
 
 qpic_t *
 Vulkan_Draw_CachePic (const char *path, qboolean alpha, vulkan_ctx_t *ctx)
 {
-	return pic_data (0, 1, 1, (const byte *)"");
+	return pic_data (0, 1, 1, (const byte *)"", ctx);
 }
 
 void
@@ -203,6 +252,7 @@ Vulkan_Draw_Shutdown (vulkan_ctx_t *ctx)
 
 	dfunc->vkDestroyPipeline (device->dev, twod_pipeline, 0);
 	QFV_DestroyScrap (draw_scrap);
+	QFV_DestroyStagingBuffer (draw_stage);
 }
 
 void
@@ -210,45 +260,17 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	VkCommandBuffer cmd = ctx->cmdbuffer;
 
 	create_quad_buffers (ctx);
 	draw_scrap = QFV_CreateScrap (device, 2048, QFV_RGBA);
+	draw_stage = QFV_CreateStagingBuffer (device, 4 * 1024 * 1024);
 	conchars_sampler = QFV_GetSampler (ctx, "quakepic");
 
 	qpic_t     *charspic = Draw_Font8x8Pic ();
 
-	conchars = QFV_ScrapSubpic (draw_scrap, charspic->width, charspic->height);
+	conchars = pic_data (0, charspic->width, charspic->height, charspic->data, ctx);
 
-	byte *chars_data = QFV_SubpicBatch (conchars, ctx->staging[0]);
-	size_t size = charspic->width * charspic->height;
-	for (size_t i = 0; i < size; i++) {
-		byte        pix = charspic->data[i];
-		byte       *col = vid.palette + pix * 3;
-		*chars_data++ = *col++;
-		*chars_data++ = *col++;
-		*chars_data++ = *col++;
-		*chars_data++ = (pix == 255) - 1;
-	}
-
-	dfunc->vkWaitForFences (device->dev, 1, &ctx->fence, VK_TRUE, ~0ull);
-	dfunc->vkResetCommandBuffer (cmd, 0);
-	VkCommandBufferBeginInfo beginInfo = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, 0,
-		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, 0,
-	};
-	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
-	QFV_ScrapFlush (draw_scrap, ctx->staging[0], cmd);
-	dfunc->vkEndCommandBuffer (cmd);
-
-	VkSubmitInfo submitInfo = {
-		VK_STRUCTURE_TYPE_SUBMIT_INFO, 0,
-		0, 0, 0,
-		1, &cmd,
-		0, 0,
-	};
-	dfunc->vkResetFences (device->dev, 1, &ctx->fence);
-	dfunc->vkQueueSubmit (device->queue.queue, 1, &submitInfo, ctx->fence);
+	flush_draw_scrap (ctx);
 
 	twod_pipeline = Vulkan_CreatePipeline (ctx, "twod");
 
@@ -307,8 +329,11 @@ draw_pic (float x, float y, int w, int h, qpic_t *pic,
 	drawvert_t *verts = quad_verts + num_quads * VERTS_PER_QUAD;
 	num_quads += VERTS_PER_QUAD;
 
-	//FIXME extract subpic from pic
-	float size = conchars->size;
+	subpic_t   *subpic = *(subpic_t **) pic->data;
+	srcx += subpic->rect->x;
+	srcy += subpic->rect->y;
+
+	float size = subpic->size;
 	float sl = (srcx + 0.03125) * size;
 	float sr = (srcx + srcw - 0.03125) * size;
 	float st = (srcy + 0.03125) * size;
@@ -347,7 +372,7 @@ queue_character (int x, int y, byte chr, vulkan_ctx_t *ctx)
 	cx = chr % 16;
 	cy = chr / 16;
 
-	draw_pic (x, y, 8, 8, 0/*FIXME*/, cx * 8, cy * 8, 8, 8, color);
+	draw_pic (x, y, 8, 8, conchars, cx * 8, cy * 8, 8, 8, color);
 }
 
 void
@@ -437,11 +462,17 @@ Vulkan_Draw_Crosshair (vulkan_ctx_t *ctx)
 void
 Vulkan_Draw_Pic (int x, int y, qpic_t *pic, vulkan_ctx_t *ctx)
 {
+	static quat_t color = { 1, 1, 1, 1};
+	draw_pic (x, y, pic->width, pic->height, pic,
+			  0, 0, pic->width, pic->height, color);
 }
 
 void
 Vulkan_Draw_Picf (float x, float y, qpic_t *pic, vulkan_ctx_t *ctx)
 {
+	static quat_t color = { 1, 1, 1, 1};
+	draw_pic (x, y, pic->width, pic->height, pic,
+			  0, 0, pic->width, pic->height, color);
 }
 
 void
@@ -494,6 +525,9 @@ Vulkan_DrawReset (vulkan_ctx_t *ctx)
 void
 Vulkan_FlushText (vulkan_ctx_t *ctx)
 {
+	if (draw_stage->offset) {
+		flush_draw_scrap (ctx);
+	}
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	__auto_type frame = &ctx->framebuffers.a[ctx->curFrame];

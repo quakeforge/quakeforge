@@ -223,6 +223,10 @@ QFV_SubpicBatch (subpic_t *subpic, qfv_stagebuf_t *stage)
 	if (scrap->batch_free) {
 		batch = scrap->batch_free;
 		scrap->batch_free = batch->next;
+		batch->x = rect->x;
+		batch->y = rect->y;
+		batch->width = subpic->width;
+		batch->height = subpic->height;
 	} else {
 		batch = VRect_New (rect->x, rect->y, subpic->width, subpic->height);
 	}
