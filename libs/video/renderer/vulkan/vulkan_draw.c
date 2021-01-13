@@ -72,6 +72,12 @@ typedef struct {
 	float       color[4];
 } drawvert_t;
 
+typedef struct cachepic_s {
+	struct cachepic_s *next;
+	char       *name;
+	qpic_t     *pic;
+} cachepic_t;
+
 #define MAX_QUADS (65536)
 #define VERTS_PER_QUAD (4)
 #define INDS_PER_QUAD (5)	// one per vert plus primitive reset
@@ -81,6 +87,8 @@ VkSampler       conchars_sampler;
 scrap_t        *draw_scrap;
 qfv_stagebuf_t *draw_stage;
 qpic_t         *conchars;
+qpic_t         *white_pic;
+static hashtab_t *pic_cache;
 
 VkBuffer        quad_vert_buffer;
 VkBuffer        quad_ind_buffer;
@@ -175,6 +183,41 @@ flush_draw_scrap (vulkan_ctx_t *ctx)
 	dfunc->vkWaitForFences (device->dev, 1, &ctx->fence, VK_TRUE, ~0ull);//FIXME
 }
 
+static void
+pic_free (qpic_t *pic)
+{
+	subpic_t   *subpic = *(subpic_t **) pic->data;
+	QFV_SubpicDelete (subpic);
+	free (pic);
+}
+
+//FIXME use cmem?
+static cachepic_t *
+new_cachepic (const char *name, qpic_t *pic)
+{
+	cachepic_t *cp;
+
+	cp = malloc (sizeof (cachepic_t));
+	cp->name = strdup (name);
+	cp->pic = pic;
+	return cp;
+}
+
+static void
+cachepic_free (void *_cp, void *unused)
+{
+	cachepic_t *cp = (cachepic_t *) _cp;
+	pic_free (cp->pic);
+	free (cp->name);
+	free (cp);
+}
+
+static const char *
+cachepic_getkey (const void *_cp, void *unused)
+{
+	return ((cachepic_t *) _cp)->name;
+}
+
 static qpic_t *
 pic_data (const char *name, int w, int h, const byte *data, vulkan_ctx_t *ctx)
 {
@@ -228,12 +271,29 @@ Vulkan_Draw_PicFromWad (const char *name, vulkan_ctx_t *ctx)
 qpic_t *
 Vulkan_Draw_CachePic (const char *path, qboolean alpha, vulkan_ctx_t *ctx)
 {
-	return pic_data (0, 1, 1, (const byte *)"", ctx);
+	qpic_t     *p;
+	qpic_t     *pic;
+	cachepic_t *cpic;
+
+	if ((cpic = Hash_Find (pic_cache, path))) {
+		return cpic->pic;
+	}
+	if (strlen (path) < 4 || strcmp (path + strlen (path) - 4, ".lmp")
+		|| !(p = (qpic_t *) QFS_LoadFile (QFS_FOpenFile (path), 0))) {
+		return 0;
+	}
+
+	pic = pic_data (path, p->width, p->height, p->data, ctx);
+	free (p);
+	cpic = new_cachepic (path, pic);
+	Hash_Add (pic_cache, cpic);
+	return pic;
 }
 
 void
 Vulkan_Draw_UncachePic (const char *path, vulkan_ctx_t *ctx)
 {
+	Hash_Free (pic_cache, Hash_Del (pic_cache, path));
 }
 
 void
@@ -261,6 +321,9 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
+	//FIXME move into struct
+	pic_cache = Hash_NewTable (127, cachepic_getkey, cachepic_free, 0, 0);
+
 	create_quad_buffers (ctx);
 	draw_scrap = QFV_CreateScrap (device, 2048, QFV_RGBA);
 	draw_stage = QFV_CreateStagingBuffer (device, 4 * 1024 * 1024);
@@ -269,6 +332,8 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	qpic_t     *charspic = Draw_Font8x8Pic ();
 
 	conchars = pic_data (0, charspic->width, charspic->height, charspic->data, ctx);
+	byte white_block = 0xfe;
+	white_pic = pic_data (0, 1, 1, &white_block, ctx);
 
 	flush_draw_scrap (ctx);
 
@@ -480,6 +545,8 @@ Vulkan_Draw_SubPic (int x, int y, qpic_t *pic,
 					int srcx, int srcy, int width, int height,
 					vulkan_ctx_t *ctx)
 {
+	static quat_t color = { 1, 1, 1, 1};
+	draw_pic (x, y, width, height, pic, srcx, srcy, width, height, color);
 }
 
 void
@@ -495,11 +562,24 @@ Vulkan_Draw_TileClear (int x, int y, int w, int h, vulkan_ctx_t *ctx)
 void
 Vulkan_Draw_Fill (int x, int y, int w, int h, int c, vulkan_ctx_t *ctx)
 {
+	quat_t      color;
+
+	VectorScale (vid.palette + c * 3, 1.0f/255.0f, color);
+	color[3] = 1;
+	draw_pic (x, y, w, h, white_pic, 0, 0, 1, 1, color);
+}
+
+static inline void
+draw_blendscreen (quat_t color)
+{
+	draw_pic (0, 0, vid.conwidth, vid.conheight, white_pic, 0, 0, 1, 1, color);
 }
 
 void
 Vulkan_Draw_FadeScreen (vulkan_ctx_t *ctx)
 {
+	static quat_t color = { 0, 0, 0, 0.7 };
+	draw_blendscreen (color);
 }
 
 void
@@ -577,4 +657,7 @@ Vulkan_FlushText (vulkan_ctx_t *ctx)
 void
 Vulkan_Draw_BlendScreen (quat_t color, vulkan_ctx_t *ctx)
 {
+	if (color[3]) {
+		draw_blendscreen (color);
+	}
 }

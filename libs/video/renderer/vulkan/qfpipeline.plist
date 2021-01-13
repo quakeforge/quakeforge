@@ -168,19 +168,19 @@
 			depthStencil = {
 				depthTestEnable = true;
 				depthWriteEnable = true;
-				depthCompareOp = less;
+				depthCompareOp = less_or_equal;
 				depthBoundsTestEnable = false;
 				stencilTestEnable = false;
 			};
 			colorBlend = {
 				logicOpEnable = false;
 				attachments = ({
-					blendEnable = false;
-					srcColorBlendFactor = src_color;
-					dstColorBlendFactor = zero;
+					blendEnable = true;
+					srcColorBlendFactor = src_alpha;
+					dstColorBlendFactor = one_minus_src_alpha;
 					colorBlendOp = add;
 					srcAlphaBlendFactor = src_alpha;
-					dstAlphaBlendFactor = zero;
+					dstAlphaBlendFactor = one_minus_src_alpha;
 					alphaBlendOp = add;
 					colorWriteMask = r|g|b|a;
 				});

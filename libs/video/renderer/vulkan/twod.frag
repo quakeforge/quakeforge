@@ -13,7 +13,5 @@ main (void)
 	vec4        pix;
 
 	pix = texture (Texture, st);
-	if (pix.a < 0.5)
-		discard;
 	frag_color = pix * color;
 }
