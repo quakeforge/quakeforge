@@ -230,6 +230,7 @@ libs_video_renderer_vid_render_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/shader.c \
 	libs/video/renderer/vulkan/staging.c \
 	libs/video/renderer/vulkan/swapchain.c \
+	libs/video/renderer/vulkan/texture.c \
 	libs/video/renderer/vulkan/util.c \
 	libs/video/renderer/vulkan/util.h \
 	libs/video/renderer/vulkan/vkparse.c \

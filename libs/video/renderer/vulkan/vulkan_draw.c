@@ -46,6 +46,7 @@
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/quakefs.h"
+#include "QF/render.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
 
@@ -59,6 +60,7 @@
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/staging.h"
+#include "QF/Vulkan/texture.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
@@ -75,10 +77,9 @@ typedef struct {
 #define INDS_PER_QUAD (5)	// one per vert plus primitive reset
 
 //FIXME move into a context struct
-VkImage         conchars_image;
-VkDeviceMemory  conchars_memory;
-VkImageView     conchars_view;
 VkSampler       conchars_sampler;
+scrap_t        *draw_scrap;
+subpic_t       *conchars;
 
 VkBuffer        quad_vert_buffer;
 VkBuffer        quad_ind_buffer;
@@ -201,9 +202,7 @@ Vulkan_Draw_Shutdown (vulkan_ctx_t *ctx)
 	destroy_quad_buffers (ctx);
 
 	dfunc->vkDestroyPipeline (device->dev, twod_pipeline, 0);
-	dfunc->vkDestroyImageView (device->dev, conchars_view, 0);
-	dfunc->vkFreeMemory (device->dev, conchars_memory, 0);
-	dfunc->vkDestroyImage (device->dev, conchars_image, 0);
+	QFV_DestroyScrap (draw_scrap);
 }
 
 void
@@ -214,37 +213,24 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	VkCommandBuffer cmd = ctx->cmdbuffer;
 
 	create_quad_buffers (ctx);
-
-	qpic_t     *charspic = Draw_Font8x8Pic ();
-	VkExtent3D  extent = { charspic->width, charspic->height, 1 };
-	conchars_image = QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D,
-									  VK_FORMAT_A1R5G5B5_UNORM_PACK16,
-									  extent, 1, 1,
-									  VK_SAMPLE_COUNT_1_BIT,
-									  VK_IMAGE_USAGE_TRANSFER_DST_BIT
-									  | VK_IMAGE_USAGE_TRANSFER_SRC_BIT
-									  | VK_IMAGE_USAGE_SAMPLED_BIT);
-	conchars_memory = QFV_AllocImageMemory (device, conchars_image,
-											VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-											0, 0);
-	QFV_BindImageMemory (device, conchars_image, conchars_memory, 0);
-	conchars_view = QFV_CreateImageView (device, conchars_image,
-										 VK_IMAGE_VIEW_TYPE_2D,
-										 VK_FORMAT_A1R5G5B5_UNORM_PACK16,
-										 VK_IMAGE_ASPECT_COLOR_BIT);
+	draw_scrap = QFV_CreateScrap (device, 2048, QFV_RGBA);
 	conchars_sampler = QFV_GetSampler (ctx, "quakepic");
 
-	uint16_t *chars_data = ctx->staging[0]->data;
+	qpic_t     *charspic = Draw_Font8x8Pic ();
+
+	conchars = QFV_ScrapSubpic (draw_scrap, charspic->width, charspic->height);
+
+	byte *chars_data = QFV_SubpicBatch (conchars, ctx->staging[0]);
 	size_t size = charspic->width * charspic->height;
 	for (size_t i = 0; i < size; i++) {
-		// convert 0xff = transparent, 0xfe = white to 0x0000 and 0xffff
-		// for a1r5g5b5
-		uint16_t    pix = (charspic->data[i] & 1) - 1;
-		chars_data[i] = pix;
+		byte        pix = charspic->data[i];
+		byte       *col = vid.palette + pix * 3;
+		*chars_data++ = *col++;
+		*chars_data++ = *col++;
+		*chars_data++ = *col++;
+		*chars_data++ = (pix == 255) - 1;
 	}
-	QFV_FlushStagingBuffer (ctx->staging[0], 0, size * sizeof (uint16_t));
-	VkImageMemoryBarrier barrier;
-	qfv_pipelinestagepair_t stages;
+
 	dfunc->vkWaitForFences (device->dev, 1, &ctx->fence, VK_TRUE, ~0ull);
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferBeginInfo beginInfo = {
@@ -252,33 +238,7 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, 0,
 	};
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
-
-	stages = imageLayoutTransitionStages[qfv_LT_Undefined_to_TransferDst];
-	barrier=imageLayoutTransitionBarriers[qfv_LT_Undefined_to_TransferDst];
-	barrier.image = conchars_image;
-	dfunc->vkCmdPipelineBarrier (cmd, stages.src, stages.dst, 0,
-								 0, 0,
-								 0, 0,
-								 1, &barrier);
-
-	VkBufferImageCopy region = {
-		0, 0, 0,
-		{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1 },
-		{ 0, 0, 0 },
-		{ charspic->width, charspic->height, 1 },
-	};
-	dfunc->vkCmdCopyBufferToImage (cmd,
-								   ctx->staging[0]->buffer, conchars_image,
-								   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-								   1, &region);
-
-	stages = imageLayoutTransitionStages[qfv_LT_TransferDst_to_ShaderReadOnly];
-	barrier=imageLayoutTransitionBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
-	barrier.image = conchars_image;
-	dfunc->vkCmdPipelineBarrier (cmd, stages.src, stages.dst, 0,
-								 0, 0,
-								 0, 0,
-								 1, &barrier);
+	QFV_ScrapFlush (draw_scrap, ctx->staging[0], cmd);
 	dfunc->vkEndCommandBuffer (cmd);
 
 	VkSubmitInfo submitInfo = {
@@ -305,7 +265,7 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	};
 	VkDescriptorImageInfo imageInfo = {
 		conchars_sampler,
-		conchars_view,
+		QFV_ScrapImageView (draw_scrap),
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 	};
 	__auto_type cmdBuffers
@@ -347,10 +307,12 @@ draw_pic (float x, float y, int w, int h, qpic_t *pic,
 	drawvert_t *verts = quad_verts + num_quads * VERTS_PER_QUAD;
 	num_quads += VERTS_PER_QUAD;
 
-	float sl = (srcx + 0.03125) / 128.0;
-	float sr = (srcx + srcw - 0.03125) / 128.0;
-	float st = (srcy + 0.03125) / 128.0;
-	float sb = (srcy + srch - 0.03125) / 128.0;
+	//FIXME extract subpic from pic
+	float size = conchars->size;
+	float sl = (srcx + 0.03125) * size;
+	float sr = (srcx + srcw - 0.03125) * size;
+	float st = (srcy + 0.03125) * size;
+	float sb = (srcy + srch - 0.03125) * size;
 
 	verts[0].xy[0] = x;
 	verts[0].xy[1] = y;

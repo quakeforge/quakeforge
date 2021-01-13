@@ -59,6 +59,8 @@ QFV_CreateStagingBuffer (qfv_device_t *device, size_t size)
 	qfv_devfuncs_t *dfunc = device->funcs;
 
 	qfv_stagebuf_t *stage = malloc (sizeof (qfv_stagebuf_t));
+	stage->size = size;
+	stage->offset = 0;
 	stage->device = device;
 	stage->buffer = QFV_CreateBuffer (device, size,
 									  VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
@@ -93,4 +95,15 @@ QFV_FlushStagingBuffer (qfv_stagebuf_t *stage, size_t offset, size_t size)
 		stage->memory, offset, size
 	};
 	dfunc->vkFlushMappedMemoryRanges (device->dev, 1, &range);
+}
+
+void *
+QFV_ClaimStagingBuffer (qfv_stagebuf_t *stage, size_t size)
+{
+	if (stage->offset + size > stage->size) {
+		return 0;
+	}
+	void       *data = (byte *) stage->data + stage->offset;
+	stage->offset += (size + 3) & ~3;
+	return data;
 }

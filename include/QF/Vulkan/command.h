@@ -12,6 +12,12 @@ typedef struct qfv_semaphoreset_s
 typedef struct qfv_fenceset_s
 	DARRAY_TYPE (VkFence) qfv_fenceset_t;
 
+typedef struct qfv_bufferimagecopy_s
+	DARRAY_TYPE (VkBufferImageCopy) qfv_bufferimagecopy_t;
+
+#define QFV_AllocBufferImageCopy(num, allocator) \
+	DARRAY_ALLOCFIXED (qfv_bufferimagecopy_t, num, allocator)
+
 struct qfv_queue_s;
 struct qfv_device_s;
 VkCommandPool QFV_CreateCommandPool (struct qfv_device_s *device,
