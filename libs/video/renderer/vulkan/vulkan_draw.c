@@ -355,12 +355,12 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 		QFV_ScrapImageView (draw_scrap),
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 	};
-	__auto_type cmdBuffers
-		= QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1,
-									  ctx->framebuffers.size);
+	size_t      frames = ctx->framebuffers.size;
+	__auto_type cmdBuffers = QFV_AllocCommandBufferSet (frames, alloca);
+	QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, cmdBuffers);
 
 	__auto_type sets = QFV_AllocateDescriptorSet (device, pool, layouts);
-	for (size_t i = 0; i < ctx->framebuffers.size; i++) {
+	for (size_t i = 0; i < frames; i++) {
 		__auto_type frame = &ctx->framebuffers.a[i];
 		frame->twodDescriptors = sets->a[i];
 
@@ -379,7 +379,6 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 		DARRAY_APPEND (frame->subCommand, cmdBuffers->a[i]);
 	}
 	free (sets);
-	free (cmdBuffers);
 }
 
 static inline void

@@ -389,11 +389,10 @@ vulkan_vid_render_choose_visual (void)
 	vulkan_ctx->cmdpool = QFV_CreateCommandPool (vulkan_ctx->device,
 									 vulkan_ctx->device->queue.queueFamily,
 									 0, 1);
-	__auto_type cmdset = QFV_AllocateCommandBuffers (vulkan_ctx->device,
-													 vulkan_ctx->cmdpool,
-													 0, 1);
+	__auto_type cmdset = QFV_AllocCommandBufferSet (1, alloca);
+	QFV_AllocateCommandBuffers (vulkan_ctx->device, vulkan_ctx->cmdpool, 0,
+								cmdset);
 	vulkan_ctx->cmdbuffer = cmdset->a[0];
-	free (cmdset);
 	vulkan_ctx->fence = QFV_CreateFence (vulkan_ctx->device, 1);
 	Sys_Printf ("vk choose visual %p %p %d %p\n", vulkan_ctx->device->dev,
 				vulkan_ctx->device->queue.queue,

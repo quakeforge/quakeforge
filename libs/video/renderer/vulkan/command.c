@@ -87,9 +87,9 @@ QFV_CreateCommandPool (qfv_device_t *device, uint32_t queueFamily,
 	return pool;
 }
 
-qfv_cmdbufferset_t *
+int
 QFV_AllocateCommandBuffers (qfv_device_t *device, VkCommandPool pool,
-							int secondary, int count)
+							int secondary, qfv_cmdbufferset_t *bufferset)
 {
 	VkDevice    dev = device->dev;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -99,12 +99,10 @@ QFV_AllocateCommandBuffers (qfv_device_t *device, VkCommandPool pool,
 	}
 	VkCommandBufferAllocateInfo allocInfo = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO, 0,
-		pool, level, count
+		pool, level, bufferset->size
 	};
-	qfv_cmdbufferset_t *cmdbufferset;
-	cmdbufferset = DARRAY_ALLOCFIXED (*cmdbufferset, count, malloc);
-	dfunc->vkAllocateCommandBuffers (dev, &allocInfo, cmdbufferset->a);
-	return cmdbufferset;
+	int ret = dfunc->vkAllocateCommandBuffers (dev, &allocInfo, bufferset->a);
+	return ret == VK_SUCCESS;
 }
 
 VkSemaphore

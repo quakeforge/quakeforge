@@ -402,9 +402,9 @@ Vulkan_CreateFramebuffers (vulkan_ctx_t *ctx)
 	attachments->a[0] = ctx->renderpass.colorImage->view;
 	attachments->a[1] = ctx->renderpass.depthImage->view;
 
-	__auto_type cmdBuffers
-		= QFV_AllocateCommandBuffers (device, cmdpool, 0,
-									  ctx->framebuffers.size);
+	__auto_type cmdBuffers = QFV_AllocCommandBufferSet (ctx->framebuffers.size,
+														alloca);
+	QFV_AllocateCommandBuffers (device, cmdpool, 0, cmdBuffers);
 
 	for (size_t i = 0; i < ctx->framebuffers.size; i++) {
 		attachments->a[2] = sc->imageViews->a[i];
@@ -420,7 +420,6 @@ Vulkan_CreateFramebuffers (vulkan_ctx_t *ctx)
 		frame->subCommand = malloc (sizeof (qfv_cmdbufferset_t));
 		DARRAY_INIT (frame->subCommand, 4);
 	}
-	free (cmdBuffers);
 }
 
 void

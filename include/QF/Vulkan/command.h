@@ -6,6 +6,9 @@
 typedef struct qfv_cmdbufferset_s
 	DARRAY_TYPE (VkCommandBuffer) qfv_cmdbufferset_t;
 
+#define QFV_AllocCommandBufferSet(num, allocator) \
+	DARRAY_ALLOCFIXED (qfv_cmdbufferset_t, num, allocator)
+
 typedef struct qfv_semaphoreset_s
 	DARRAY_TYPE (VkSemaphore) qfv_semaphoreset_t;
 
@@ -23,9 +26,11 @@ struct qfv_device_s;
 VkCommandPool QFV_CreateCommandPool (struct qfv_device_s *device,
 									  uint32_t queueFamily,
 									  int transient, int reset);
-qfv_cmdbufferset_t *QFV_AllocateCommandBuffers (struct qfv_device_s *device,
-												VkCommandPool pool,
-											    int secondary, int count);
+/** Allocate bufferset->size command buffers
+ */
+int QFV_AllocateCommandBuffers (struct qfv_device_s *device,
+								VkCommandPool pool, int secondary,
+								qfv_cmdbufferset_t *bufferset);
 
 VkSemaphore QFV_CreateSemaphore (struct qfv_device_s *device);
 VkFence QFV_CreateFence (struct qfv_device_s *device, int signaled);
