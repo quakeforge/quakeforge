@@ -158,29 +158,7 @@ destroy_quad_buffers (vulkan_ctx_t *ctx)
 static void
 flush_draw_scrap (vulkan_ctx_t *ctx)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-	VkCommandBuffer cmd = ctx->cmdbuffer;
-
-	dfunc->vkWaitForFences (device->dev, 1, &ctx->fence, VK_TRUE, ~0ull);
-	dfunc->vkResetCommandBuffer (cmd, 0);
-	VkCommandBufferBeginInfo beginInfo = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, 0,
-		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT, 0,
-	};
-	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
-	QFV_ScrapFlush (draw_scrap, draw_stage, cmd);
-	dfunc->vkEndCommandBuffer (cmd);
-
-	VkSubmitInfo submitInfo = {
-		VK_STRUCTURE_TYPE_SUBMIT_INFO, 0,
-		0, 0, 0,
-		1, &cmd,
-		0, 0,
-	};
-	dfunc->vkResetFences (device->dev, 1, &ctx->fence);
-	dfunc->vkQueueSubmit (device->queue.queue, 1, &submitInfo, ctx->fence);
-	dfunc->vkWaitForFences (device->dev, 1, &ctx->fence, VK_TRUE, ~0ull);//FIXME
+	QFV_ScrapFlush (draw_scrap);
 }
 
 static void
@@ -326,7 +304,8 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 
 	create_quad_buffers (ctx);
 	draw_scrap = QFV_CreateScrap (device, 2048, QFV_RGBA);
-	draw_stage = QFV_CreateStagingBuffer (device, 4 * 1024 * 1024);
+	draw_stage = QFV_CreateStagingBuffer (device, 4 * 1024 * 1024, 4,
+										  ctx->cmdpool);
 	conchars_sampler = QFV_GetSampler (ctx, "quakepic");
 
 	qpic_t     *charspic = Draw_Font8x8Pic ();
@@ -604,9 +583,8 @@ Vulkan_DrawReset (vulkan_ctx_t *ctx)
 void
 Vulkan_FlushText (vulkan_ctx_t *ctx)
 {
-	if (draw_stage->offset) {
-		flush_draw_scrap (ctx);
-	}
+	flush_draw_scrap (ctx);
+
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	__auto_type frame = &ctx->framebuffers.a[ctx->curFrame];

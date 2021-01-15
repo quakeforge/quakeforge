@@ -65,6 +65,7 @@ struct scrap_s {
 	VkDeviceMemory memory;
 	VkImageView view;
 	size_t      bpp;
+	qfv_packet_t *packet;
 	vrect_t    *batch;
 	vrect_t   **batch_tail;
 	vrect_t    *batch_free;
@@ -119,6 +120,7 @@ QFV_CreateScrap (qfv_device_t *device, int size, QFVFormat format)
 	scrap->bpp = bpp;
 	scrap->subpics = 0;
 	scrap->device = device;
+	scrap->packet = 0;
 	scrap->batch = 0;
 	scrap->batch_tail = &scrap->batch;
 	scrap->batch_free = 0;
@@ -215,9 +217,21 @@ QFV_SubpicBatch (subpic_t *subpic, qfv_stagebuf_t *stage)
 	byte       *dest;
 	size_t      size;
 
-	size = subpic->width * subpic->height * scrap->bpp;
-	if (!(dest = QFV_ClaimStagingBuffer (stage, size))) {
-		return 0;
+	if (!scrap->packet) {
+		scrap->packet = QFV_PacketAcquire (stage);
+	}
+	size = (subpic->width * subpic->height * scrap->bpp + 3) & ~3;
+	if (!(dest = QFV_PacketExtend (scrap->packet, size))) {
+		if (scrap->packet->length) {
+			QFV_ScrapFlush (scrap);
+
+			scrap->packet = QFV_PacketAcquire (stage);
+			dest = QFV_PacketExtend (scrap->packet, size);
+		}
+		if (!dest) {
+			printf ("could not get space for update\n");
+			return 0;
+		}
 	}
 
 	if (scrap->batch_free) {
@@ -238,7 +252,7 @@ QFV_SubpicBatch (subpic_t *subpic, qfv_stagebuf_t *stage)
 }
 
 void
-QFV_ScrapFlush (scrap_t *scrap, qfv_stagebuf_t *stage, VkCommandBuffer cmd)
+QFV_ScrapFlush (scrap_t *scrap)
 {
 	qfv_device_t *device = scrap->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -247,6 +261,8 @@ QFV_ScrapFlush (scrap_t *scrap, qfv_stagebuf_t *stage, VkCommandBuffer cmd)
 		return;
 	}
 
+	qfv_packet_t *packet = scrap->packet;
+	qfv_stagebuf_t *stage = packet->stage;
 	size_t      i;
 	__auto_type copy = QFV_AllocBufferImageCopy (128, alloca);
 	memset (copy->a, 0, 128 * sizeof (copy->a[0]));
@@ -257,7 +273,6 @@ QFV_ScrapFlush (scrap_t *scrap, qfv_stagebuf_t *stage, VkCommandBuffer cmd)
 		copy->a[i].imageExtent.depth = 1;
 	}
 
-	QFV_FlushStagingBuffer (stage, 0, stage->offset);
 
 	VkImageMemoryBarrier barrier;
 	qfv_pipelinestagepair_t stages;
@@ -265,10 +280,11 @@ QFV_ScrapFlush (scrap_t *scrap, qfv_stagebuf_t *stage, VkCommandBuffer cmd)
 	stages = imageLayoutTransitionStages[qfv_LT_Undefined_to_TransferDst];
 	barrier = imageLayoutTransitionBarriers[qfv_LT_Undefined_to_TransferDst];
 	barrier.image = scrap->image;
-	dfunc->vkCmdPipelineBarrier (cmd, stages.src, stages.dst, 0, 0, 0, 0, 0,
+	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+								 0, 0, 0, 0, 0,
 								 1, &barrier);
 
-	size_t      offset = 0, size;
+	size_t      offset = packet->offset, size;
 	vrect_t    *batch = scrap->batch;
 	while (scrap->batch_count) {
 		for (i = 0; i < scrap->batch_count && i < 128; i++) {
@@ -283,7 +299,7 @@ QFV_ScrapFlush (scrap_t *scrap, qfv_stagebuf_t *stage, VkCommandBuffer cmd)
 			offset += (size + 3) & ~3;
 			batch = batch->next;
 		}
-		dfunc->vkCmdCopyBufferToImage (cmd, stage->buffer, scrap->image,
+		dfunc->vkCmdCopyBufferToImage (packet->cmd, stage->buffer, scrap->image,
 									   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 									   i, copy->a);
 		scrap->batch_count -= i;
@@ -292,12 +308,15 @@ QFV_ScrapFlush (scrap_t *scrap, qfv_stagebuf_t *stage, VkCommandBuffer cmd)
 	stages = imageLayoutTransitionStages[qfv_LT_TransferDst_to_ShaderReadOnly];
 	barrier=imageLayoutTransitionBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
 	barrier.image = scrap->image;
-	dfunc->vkCmdPipelineBarrier (cmd, stages.src, stages.dst, 0, 0, 0, 0, 0,
+	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+								 0, 0, 0, 0, 0,
 								 1, &barrier);
 
 	*scrap->batch_tail = scrap->batch_free;
 	scrap->batch_free = scrap->batch;
 	scrap->batch = 0;
 	scrap->batch_tail = &scrap->batch;
-	stage->offset = 0;
+
+	QFV_PacketSubmit (scrap->packet);
+	scrap->packet = 0;
 }

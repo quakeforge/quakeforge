@@ -1,3 +1,4 @@
+include libs/video/renderer/vulkan/test/Makemodule.am
 include libs/video/renderer/vulkan/vkgen/Makemodule.am
 
 #lib_LTLIBRARIES += @VID_REND_TARGETS@
