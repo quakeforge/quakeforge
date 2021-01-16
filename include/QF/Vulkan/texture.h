@@ -1,17 +1,12 @@
 #ifndef __QF_Vulkan_texture_h
 #define __QF_Vulkan_texture_h
 
-typedef enum {
-	QFV_LUMINANCE,
-	QFV_LUMINANCE_ALPHA,
-	QFV_RGB,
-	QFV_RGBA,
-} QFVFormat;
+#include "QF/image.h"
 
 typedef struct scrap_s scrap_t;
 
 scrap_t *QFV_CreateScrap (struct qfv_device_s *device, int size,
-						  QFVFormat format);
+						  QFFormat format);
 void QFV_ScrapClear (scrap_t *scrap);
 void QFV_DestroyScrap (scrap_t *scrap);
 VkImageView QFV_ScrapImageView (scrap_t *scrap) __attribute__((pure));

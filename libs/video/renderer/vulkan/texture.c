@@ -42,6 +42,7 @@
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
+#include "QF/image.h"
 #include "QF/qfplist.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
@@ -75,25 +76,27 @@ struct scrap_s {
 };
 
 scrap_t *
-QFV_CreateScrap (qfv_device_t *device, int size, QFVFormat format)
+QFV_CreateScrap (qfv_device_t *device, int size, QFFormat format)
 {
 	int         bpp = 0;
 	VkFormat    fmt = VK_FORMAT_UNDEFINED;
 
 	switch (format) {
-		case QFV_LUMINANCE:
+		case tex_l:
+		case tex_a:
+		case tex_palette:
 			bpp = 1;
 			fmt = VK_FORMAT_R8_UNORM;
 			break;
-		case QFV_LUMINANCE_ALPHA:
+		case tex_la:
 			bpp = 2;
 			fmt = VK_FORMAT_R8G8_UNORM;
 			break;
-		case QFV_RGB:
+		case tex_rgb:
 			bpp = 3;
 			fmt = VK_FORMAT_R8G8B8_UNORM;
 			break;
-		case QFV_RGBA:
+		case tex_rgba:
 			bpp = 4;
 			fmt = VK_FORMAT_R8G8B8A8_UNORM;
 			break;
