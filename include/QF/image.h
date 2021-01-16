@@ -29,23 +29,26 @@
 #ifndef __QF_image_h
 #define __QF_image_h
 
-#include "QF/quakeio.h"
+#include "QF/qtypes.h"
+
+typedef enum QFFormat {
+	tex_palette = 0,
+	tex_l = 0x1909, //GL_LUMINANCE
+	tex_a = 0x1906, //GL_ALPHA
+	tex_la = 2,
+	tex_rgb = 3,
+	tex_rgba = 4,
+} QFFormat;
 
 // could not use texture_t as that is used for models.
 typedef struct tex_s {
-	int				width;
-	int				height;
-	int				format;
-	unsigned char  *palette;					// 0 = 32 bit, otherwise 8
-	unsigned char	data[4];					// variable length
+	int         width;
+	int         height;
+	QFFormat    format;
+	byte       *palette;					// 0 = 32 bit, otherwise 8
+	byte        data[4];					// variable length
 } tex_t;
 
-#define tex_palette 0
-#define tex_l 0x1909 //GL_LUMINANCE
-#define tex_a 0x1906 //GL_ALPHA
-#define tex_la 2
-#define tex_rgb 3
-#define tex_rgba 4
 
 tex_t *LoadImage (const char *imageFile);
 
