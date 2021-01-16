@@ -535,6 +535,21 @@ exprtype_t qfv_swapchain_t_type = {
 	&qfv_swapchain_t_symtab,
 };
 
+static exprsym_t vulkan_framebufferset_t_symbols[] = {
+	{"size", &cexpr_size_t, (void *)field_offset (vulkan_framebufferset_t, size)},
+	{ }
+};
+static exprtab_t vulkan_framebufferset_t_symtab = {
+	vulkan_framebufferset_t_symbols,
+};
+exprtype_t vulkan_framebufferset_t_type = {
+	"framebufferset",
+	sizeof (vulkan_framebufferset_t *),
+	cexpr_struct_binops,
+	0,
+	&vulkan_framebufferset_t_symtab,
+};
+
 typedef struct qfv_renderpass_s {
 	qfv_attachmentdescription_t *attachments;
 	qfv_subpassparametersset_t *subpasses;
@@ -588,6 +603,7 @@ QFV_ParseResources (vulkan_ctx_t *ctx, plitem_t *pipelinedef)
 	plitem_t   *messages = PL_NewArray ();
 	exprsym_t   var_syms[] = {
 		{"swapchain", &qfv_swapchain_t_type, ctx->swapchain},
+		{"framebuffers", &vulkan_framebufferset_t_type, &ctx->framebuffers},
 		{"msaaSamples", &VkSampleCountFlagBits_type, &ctx->msaaSamples},
 		{}
 	};
@@ -645,6 +661,7 @@ QFV_InitParse (vulkan_ctx_t *ctx)
 	context.hashlinks = &ctx->hashlinks;
 	vkgen_init_symtabs (&context);
 	cexpr_init_symtab (&qfv_swapchain_t_symtab, &context);
+	cexpr_init_symtab (&vulkan_framebufferset_t_symtab, &context);
 	cexpr_init_symtab (&imageset_symtab, &context);
 }
 
@@ -663,6 +680,7 @@ QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist)
 	VkRenderPass renderpass;
 	exprsym_t   var_syms[] = {
 		{"swapchain", &qfv_swapchain_t_type, ctx->swapchain},
+		{"framebuffers", &vulkan_framebufferset_t_type, &ctx->framebuffers},
 		{"msaaSamples", &VkSampleCountFlagBits_type, &ctx->msaaSamples},
 		{}
 	};
