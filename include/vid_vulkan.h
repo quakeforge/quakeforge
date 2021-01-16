@@ -68,7 +68,7 @@ typedef struct vulkan_ctx_s {
 	VkCommandBuffer cmdbuffer;
 	VkFence     fence;			// for ctx->cmdbuffer only
 	vulkan_renderpass_t renderpass;
-	struct qfv_stagebuf_s *staging[2];
+	struct qfv_stagebuf_s *staging;
 	VkPipeline  pipeline;
 	size_t      curFrame;
 	vulkan_framebufferset_t framebuffers;
