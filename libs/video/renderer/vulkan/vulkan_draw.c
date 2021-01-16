@@ -131,7 +131,8 @@ create_quad_buffers (vulkan_ctx_t *ctx)
 	vbuf = QFV_CreateBuffer (device, vert_size,
 							 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
 	ibuf = QFV_CreateBuffer (device, ind_size,
-							 VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+							 VK_BUFFER_USAGE_INDEX_BUFFER_BIT
+							 | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
 	vmem = QFV_AllocBufferMemory (device, vbuf,
 								  VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
 								  vert_size, 0);
@@ -168,9 +169,28 @@ create_quad_buffers (vulkan_ctx_t *ctx)
 		// mark end of primitive
 		*ind++ = -1;
 	}
+
+	VkBufferMemoryBarrier wr_barrier = {
+		VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
+		0, VK_ACCESS_TRANSFER_WRITE_BIT,
+		VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, ibuf, 0, ind_size
+	};
+	dfunc->vkCmdPipelineBarrier (packet->cmd,
+								 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+								 VK_PIPELINE_STAGE_TRANSFER_BIT,
+								 0, 0, 0, 1, &wr_barrier, 0, 0);
 	VkBufferCopy copy_region = { packet->offset, 0, ind_size };
 	dfunc->vkCmdCopyBuffer (packet->cmd, ctx->staging->buffer, ibuf,
 							1, &copy_region);
+	VkBufferMemoryBarrier rd_barrier = {
+		VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
+		VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_INDEX_READ_BIT,
+		VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, ibuf, 0, ind_size
+	};
+	dfunc->vkCmdPipelineBarrier (packet->cmd,
+								 VK_PIPELINE_STAGE_TRANSFER_BIT,
+								 VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
+								 0, 0, 0, 1, &rd_barrier, 0, 0);
 	QFV_PacketSubmit (packet);
 }
 
