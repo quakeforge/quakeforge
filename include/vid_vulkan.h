@@ -22,8 +22,6 @@ typedef struct vulkan_framebuffer_s {
 	VkCommandBuffer cmdBuffer;
 
 	struct qfv_cmdbufferset_s *subCommand;
-
-	VkDescriptorSet twodDescriptors;
 } vulkan_framebuffer_t;
 
 typedef struct vulkan_matrices_s {
@@ -63,6 +61,8 @@ typedef struct vulkan_ctx_s {
 	struct hashtab_s *pipelineLayouts;
 	struct hashtab_s *descriptorPools;
 	struct hashtab_s *samplers;
+
+	struct drawctx_s *draw_context;
 
 	VkCommandPool cmdpool;
 	VkCommandBuffer cmdbuffer;

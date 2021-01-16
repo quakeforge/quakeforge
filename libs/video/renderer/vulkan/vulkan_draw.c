@@ -78,28 +78,38 @@ typedef struct cachepic_s {
 	qpic_t     *pic;
 } cachepic_t;
 
-#define MAX_QUADS (65536)
+typedef struct drawframe_s {
+	size_t      vert_offset;
+	drawvert_t *verts;
+	uint32_t    num_quads;
+	VkCommandBuffer cmd;
+	VkDescriptorSet descriptors;
+} drawframe_t;
+
+typedef struct drawframeset_s
+	DARRAY_TYPE (drawframe_t) drawframeset_t;
+
+typedef struct drawctx_s {
+	VkSampler   sampler;
+	scrap_t    *scrap;
+	qfv_stagebuf_t *stage;
+	qpic_t     *conchars;
+	qpic_t     *conback;
+	qpic_t     *white_pic;
+	hashtab_t  *pic_cache;
+	VkBuffer    vert_buffer;
+	VkDeviceMemory vert_memory;
+	VkBuffer    ind_buffer;
+	VkDeviceMemory ind_memory;
+	VkPipeline  pipeline;
+	VkPipelineLayout layout;
+	drawframeset_t frames;
+} drawctx_t;
+
+// enough for a full screen of 8x8 chars at 1920x1080 plus some extras (368)
+#define MAX_QUADS (32768)
 #define VERTS_PER_QUAD (4)
 #define INDS_PER_QUAD (5)	// one per vert plus primitive reset
-
-//FIXME move into a context struct
-VkSampler       conchars_sampler;
-scrap_t        *draw_scrap;
-qfv_stagebuf_t *draw_stage;
-qpic_t         *conchars;
-qpic_t         *white_pic;
-static hashtab_t *pic_cache;
-
-VkBuffer        quad_vert_buffer;
-VkBuffer        quad_ind_buffer;
-VkDeviceMemory  quad_memory;
-drawvert_t     *quad_verts;
-uint32_t       *quad_inds;
-uint32_t        num_quads;
-
-VkPipeline		twod_pipeline;
-VkPipelineLayout twod_layout;
-size_t          draw_cmdBuffer;
 
 static void
 create_quad_buffers (vulkan_ctx_t *ctx)
@@ -107,28 +117,50 @@ create_quad_buffers (vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	//FIXME quad_inds can be a completely separate buffer that is
-	//pre-initialized to draw 2-tri triangle strips as the actual indices will
-	//never change
-	size_t      vert_size = MAX_QUADS * VERTS_PER_QUAD * sizeof (drawvert_t);
-	size_t      ind_size = MAX_QUADS * INDS_PER_QUAD * sizeof (uint32_t);
+	drawctx_t  *dctx = ctx->draw_context;
 
-	quad_vert_buffer = QFV_CreateBuffer (device, vert_size,
-										 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-	quad_ind_buffer = QFV_CreateBuffer (device, ind_size,
-										VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-	quad_memory = QFV_AllocBufferMemory (device, quad_vert_buffer,
-										 VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-										 vert_size + ind_size, 0);
-	QFV_BindBufferMemory (device, quad_vert_buffer, quad_memory, 0);
-	QFV_BindBufferMemory (device, quad_ind_buffer, quad_memory, vert_size);
+	size_t      vert_size;
+	size_t      ind_size;
+	size_t      frames = ctx->framebuffers.size;
+	VkBuffer    vbuf, ibuf;
+	VkDeviceMemory vmem, imem;
+
+	vert_size = frames * MAX_QUADS * VERTS_PER_QUAD * sizeof (drawvert_t);
+	ind_size = MAX_QUADS * INDS_PER_QUAD * sizeof (uint32_t);
+
+	vbuf = QFV_CreateBuffer (device, vert_size,
+							 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+	ibuf = QFV_CreateBuffer (device, ind_size,
+							 VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+	vmem = QFV_AllocBufferMemory (device, vbuf,
+								  VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+								  vert_size, 0);
+	imem = QFV_AllocBufferMemory (device, ibuf,
+								  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+								  ind_size, 0);
+	QFV_BindBufferMemory (device, vbuf, vmem, 0);
+	QFV_BindBufferMemory (device, ibuf, imem, 0);
+
+	dctx->vert_buffer = vbuf;
+	dctx->vert_memory = vmem;
+	dctx->ind_buffer = ibuf;
+	dctx->ind_memory = imem;
+
 	void       *data;
-	dfunc->vkMapMemory (device->dev, quad_memory, 0, vert_size + ind_size,
-						0, &data);
-	quad_verts = data;
-	quad_inds = (uint32_t *) (quad_verts + MAX_QUADS * VERTS_PER_QUAD);
-	// pre-initialize quad_inds as the indices will never change
-	uint32_t   *ind = quad_inds;
+	dfunc->vkMapMemory (device->dev, vmem, 0, vert_size, 0, &data);
+	drawvert_t *vert_data = data;
+
+	for (size_t f = 0; f < frames; f++) {
+		drawframe_t *frame = &dctx->frames.a[f];
+		size_t       ind = f * MAX_QUADS * VERTS_PER_QUAD;
+		frame->vert_offset = ind * sizeof (drawvert_t);
+		frame->verts = vert_data + ind;
+		frame->num_quads = 0;
+	}
+
+	// The indices will never change so pre-generate and stash them
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
+	uint32_t   *ind = QFV_PacketExtend (packet, ind_size);
 	for (int i = 0; i < MAX_QUADS; i++) {
 		for (int j = 0; j < VERTS_PER_QUAD; j++) {
 			*ind++ = i * VERTS_PER_QUAD + j;
@@ -136,11 +168,10 @@ create_quad_buffers (vulkan_ctx_t *ctx)
 		// mark end of primitive
 		*ind++ = -1;
 	}
-	VkMappedMemoryRange range = {
-		VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
-		quad_memory, vert_size, ind_size,
-	};
-	dfunc->vkFlushMappedMemoryRanges (device->dev, 1, &range);
+	VkBufferCopy copy_region = { packet->offset, 0, ind_size };
+	dfunc->vkCmdCopyBuffer (packet->cmd, ctx->staging->buffer, ibuf,
+							1, &copy_region);
+	QFV_PacketSubmit (packet);
 }
 
 static void
@@ -148,17 +179,19 @@ destroy_quad_buffers (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
+	drawctx_t  *dctx = ctx->draw_context;
 
-	dfunc->vkUnmapMemory (device->dev, quad_memory);
-	dfunc->vkFreeMemory (device->dev, quad_memory, 0);
-	dfunc->vkDestroyBuffer (device->dev, quad_vert_buffer, 0);
-	dfunc->vkDestroyBuffer (device->dev, quad_ind_buffer, 0);
+	dfunc->vkUnmapMemory (device->dev, dctx->vert_memory);
+	dfunc->vkFreeMemory (device->dev, dctx->vert_memory, 0);
+	dfunc->vkFreeMemory (device->dev, dctx->ind_memory, 0);
+	dfunc->vkDestroyBuffer (device->dev, dctx->vert_buffer, 0);
+	dfunc->vkDestroyBuffer (device->dev, dctx->ind_buffer, 0);
 }
 
 static void
 flush_draw_scrap (vulkan_ctx_t *ctx)
 {
-	QFV_ScrapFlush (draw_scrap);
+	QFV_ScrapFlush (ctx->draw_context->scrap);
 }
 
 static void
@@ -197,7 +230,7 @@ cachepic_getkey (const void *_cp, void *unused)
 }
 
 static qpic_t *
-pic_data (const char *name, int w, int h, const byte *data, vulkan_ctx_t *ctx)
+pic_data (const char *name, int w, int h, const byte *data, drawctx_t *dctx)
 {
 	qpic_t     *pic;
 	subpic_t   *subpic;
@@ -207,10 +240,10 @@ pic_data (const char *name, int w, int h, const byte *data, vulkan_ctx_t *ctx)
 	pic->width = w;
 	pic->height = h;
 
-	subpic = QFV_ScrapSubpic (draw_scrap, w, h);
+	subpic = QFV_ScrapSubpic (dctx->scrap, w, h);
 	*(subpic_t **) pic->data = subpic;
 
-	picdata = QFV_SubpicBatch (subpic, draw_stage);
+	picdata = QFV_SubpicBatch (subpic, dctx->stage);
 	size_t size = w * h;
 	for (size_t i = 0; i < size; i++) {
 		byte        pix = *data++;
@@ -227,7 +260,7 @@ qpic_t *
 Vulkan_Draw_MakePic (int width, int height, const byte *data,
 					 vulkan_ctx_t *ctx)
 {
-	return pic_data (0, width, height, data, ctx);
+	return pic_data (0, width, height, data, ctx->draw_context);
 }
 
 void
@@ -243,7 +276,7 @@ Vulkan_Draw_PicFromWad (const char *name, vulkan_ctx_t *ctx)
 	if (!wadpic) {
 		return 0;
 	}
-	return pic_data (name, wadpic->width, wadpic->height, wadpic->data, ctx);
+	return pic_data (name, wadpic->width, wadpic->height, wadpic->data, ctx->draw_context);
 }
 
 qpic_t *
@@ -252,8 +285,9 @@ Vulkan_Draw_CachePic (const char *path, qboolean alpha, vulkan_ctx_t *ctx)
 	qpic_t     *p;
 	qpic_t     *pic;
 	cachepic_t *cpic;
+	drawctx_t  *dctx = ctx->draw_context;
 
-	if ((cpic = Hash_Find (pic_cache, path))) {
+	if ((cpic = Hash_Find (dctx->pic_cache, path))) {
 		return cpic->pic;
 	}
 	if (strlen (path) < 4 || strcmp (path + strlen (path) - 4, ".lmp")
@@ -261,17 +295,18 @@ Vulkan_Draw_CachePic (const char *path, qboolean alpha, vulkan_ctx_t *ctx)
 		return 0;
 	}
 
-	pic = pic_data (path, p->width, p->height, p->data, ctx);
+	pic = pic_data (path, p->width, p->height, p->data, dctx);
 	free (p);
 	cpic = new_cachepic (path, pic);
-	Hash_Add (pic_cache, cpic);
+	Hash_Add (dctx->pic_cache, cpic);
 	return pic;
 }
 
 void
 Vulkan_Draw_UncachePic (const char *path, vulkan_ctx_t *ctx)
 {
-	Hash_Free (pic_cache, Hash_Del (pic_cache, path));
+	drawctx_t  *dctx = ctx->draw_context;
+	Hash_Free (dctx->pic_cache, Hash_Del (dctx->pic_cache, path));
 }
 
 void
@@ -285,12 +320,13 @@ Vulkan_Draw_Shutdown (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
+	drawctx_t  *dctx = ctx->draw_context;
 
 	destroy_quad_buffers (ctx);
 
-	dfunc->vkDestroyPipeline (device->dev, twod_pipeline, 0);
-	QFV_DestroyScrap (draw_scrap);
-	QFV_DestroyStagingBuffer (draw_stage);
+	dfunc->vkDestroyPipeline (device->dev, dctx->pipeline, 0);
+	QFV_DestroyScrap (dctx->scrap);
+	QFV_DestroyStagingBuffer (dctx->stage);
 }
 
 void
@@ -299,26 +335,35 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	//FIXME move into struct
-	pic_cache = Hash_NewTable (127, cachepic_getkey, cachepic_free, 0, 0);
+	drawctx_t  *dctx = calloc (1, sizeof (drawctx_t));
+	ctx->draw_context = dctx;
+
+	size_t      frames = ctx->framebuffers.size;
+	DARRAY_INIT (&dctx->frames, frames);
+	DARRAY_RESIZE (&dctx->frames, frames);
+	dctx->frames.grow = 0;
+
+	dctx->pic_cache = Hash_NewTable (127, cachepic_getkey, cachepic_free,
+										 0, 0);
 
 	create_quad_buffers (ctx);
-	draw_scrap = QFV_CreateScrap (device, 2048, QFV_RGBA);
-	draw_stage = QFV_CreateStagingBuffer (device, 4 * 1024 * 1024, 4,
-										  ctx->cmdpool);
-	conchars_sampler = QFV_GetSampler (ctx, "quakepic");
+	dctx->scrap = QFV_CreateScrap (device, 2048, QFV_RGBA);
+	dctx->stage = QFV_CreateStagingBuffer (device, 4 * 1024 * 1024, 4,
+											   ctx->cmdpool);
+	dctx->sampler = QFV_GetSampler (ctx, "quakepic");
 
 	qpic_t     *charspic = Draw_Font8x8Pic ();
 
-	conchars = pic_data (0, charspic->width, charspic->height, charspic->data, ctx);
+	dctx->conchars = pic_data ("conchars", charspic->width, charspic->height,
+							   charspic->data, dctx);
 	byte white_block = 0xfe;
-	white_pic = pic_data (0, 1, 1, &white_block, ctx);
+	dctx->white_pic = pic_data ("white", 1, 1, &white_block, dctx);
 
 	flush_draw_scrap (ctx);
 
-	twod_pipeline = Vulkan_CreatePipeline (ctx, "twod");
+	dctx->pipeline = Vulkan_CreatePipeline (ctx, "twod");
 
-	twod_layout = QFV_GetPipelineLayout (ctx, "twod");
+	dctx->layout = QFV_GetPipelineLayout (ctx, "twod");
 
 	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (ctx->framebuffers.size, alloca);
 	for (size_t i = 0; i < layouts->size; i++) {
@@ -330,32 +375,32 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 		ctx->matrices.buffer_2d, 0, VK_WHOLE_SIZE
 	};
 	VkDescriptorImageInfo imageInfo = {
-		conchars_sampler,
-		QFV_ScrapImageView (draw_scrap),
+		dctx->sampler,
+		QFV_ScrapImageView (dctx->scrap),
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
 	};
-	size_t      frames = ctx->framebuffers.size;
 	__auto_type cmdBuffers = QFV_AllocCommandBufferSet (frames, alloca);
 	QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, cmdBuffers);
 
 	__auto_type sets = QFV_AllocateDescriptorSet (device, pool, layouts);
 	for (size_t i = 0; i < frames; i++) {
-		__auto_type frame = &ctx->framebuffers.a[i];
-		frame->twodDescriptors = sets->a[i];
+		__auto_type cframe = &ctx->framebuffers.a[i];
+		__auto_type dframe = &dctx->frames.a[i];
+		dframe->descriptors = sets->a[i];
 
 		VkWriteDescriptorSet write[] = {
 			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-			  frame->twodDescriptors, 0, 0, 1,
+			  dframe->descriptors, 0, 0, 1,
 			  VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 			  0, &bufferInfo, 0 },
 			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-			  frame->twodDescriptors, 1, 0, 1,
+			  dframe->descriptors, 1, 0, 1,
 			  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 			  &imageInfo, 0, 0 },
 		};
 		dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
-		draw_cmdBuffer = frame->subCommand->size;
-		DARRAY_APPEND (frame->subCommand, cmdBuffers->a[i]);
+		dframe->cmd = cmdBuffers->a[i];
+		DARRAY_APPEND (cframe->subCommand, cmdBuffers->a[i]);
 	}
 	free (sets);
 }
@@ -363,14 +408,14 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 static inline void
 draw_pic (float x, float y, int w, int h, qpic_t *pic,
 		  int srcx, int srcy, int srcw, int srch,
-		  float *color)
+		  float *color, drawframe_t *frame)
 {
-	if (num_quads + VERTS_PER_QUAD > MAX_QUADS) {
+	if (frame->num_quads + VERTS_PER_QUAD > MAX_QUADS) {
 		return;
 	}
 
-	drawvert_t *verts = quad_verts + num_quads * VERTS_PER_QUAD;
-	num_quads += VERTS_PER_QUAD;
+	drawvert_t *verts = frame->verts + frame->num_quads * VERTS_PER_QUAD;
+	frame->num_quads += VERTS_PER_QUAD;
 
 	subpic_t   *subpic = *(subpic_t **) pic->data;
 	srcx += subpic->rect->x;
@@ -410,12 +455,15 @@ draw_pic (float x, float y, int w, int h, qpic_t *pic,
 static inline void
 queue_character (int x, int y, byte chr, vulkan_ctx_t *ctx)
 {
+	drawctx_t  *dctx = ctx->draw_context;
+	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
+
 	quat_t      color = {1, 1, 1, 1};
 	int         cx, cy;
 	cx = chr % 16;
 	cy = chr / 16;
 
-	draw_pic (x, y, 8, 8, conchars, cx * 8, cy * 8, 8, 8, color);
+	draw_pic (x, y, 8, 8, dctx->conchars, cx * 8, cy * 8, 8, 8, color, frame);
 }
 
 void
@@ -505,17 +553,23 @@ Vulkan_Draw_Crosshair (vulkan_ctx_t *ctx)
 void
 Vulkan_Draw_Pic (int x, int y, qpic_t *pic, vulkan_ctx_t *ctx)
 {
+	drawctx_t  *dctx = ctx->draw_context;
+	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
+
 	static quat_t color = { 1, 1, 1, 1};
 	draw_pic (x, y, pic->width, pic->height, pic,
-			  0, 0, pic->width, pic->height, color);
+			  0, 0, pic->width, pic->height, color, frame);
 }
 
 void
 Vulkan_Draw_Picf (float x, float y, qpic_t *pic, vulkan_ctx_t *ctx)
 {
+	drawctx_t  *dctx = ctx->draw_context;
+	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
+
 	static quat_t color = { 1, 1, 1, 1};
 	draw_pic (x, y, pic->width, pic->height, pic,
-			  0, 0, pic->width, pic->height, color);
+			  0, 0, pic->width, pic->height, color, frame);
 }
 
 void
@@ -523,8 +577,12 @@ Vulkan_Draw_SubPic (int x, int y, qpic_t *pic,
 					int srcx, int srcy, int width, int height,
 					vulkan_ctx_t *ctx)
 {
+	drawctx_t  *dctx = ctx->draw_context;
+	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
+
 	static quat_t color = { 1, 1, 1, 1};
-	draw_pic (x, y, width, height, pic, srcx, srcy, width, height, color);
+	draw_pic (x, y, width, height, pic, srcx, srcy, width, height,
+			  color, frame);
 }
 
 void
@@ -540,24 +598,31 @@ Vulkan_Draw_TileClear (int x, int y, int w, int h, vulkan_ctx_t *ctx)
 void
 Vulkan_Draw_Fill (int x, int y, int w, int h, int c, vulkan_ctx_t *ctx)
 {
+	drawctx_t  *dctx = ctx->draw_context;
+	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
+
 	quat_t      color;
 
 	VectorScale (vid.palette + c * 3, 1.0f/255.0f, color);
 	color[3] = 1;
-	draw_pic (x, y, w, h, white_pic, 0, 0, 1, 1, color);
+	draw_pic (x, y, w, h, dctx->white_pic, 0, 0, 1, 1, color, frame);
 }
 
 static inline void
-draw_blendscreen (quat_t color)
+draw_blendscreen (quat_t color, vulkan_ctx_t *ctx)
 {
-	draw_pic (0, 0, vid.conwidth, vid.conheight, white_pic, 0, 0, 1, 1, color);
+	drawctx_t  *dctx = ctx->draw_context;
+	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
+
+	draw_pic (0, 0, vid.conwidth, vid.conheight, dctx->white_pic, 0, 0, 1, 1,
+			  color, frame);
 }
 
 void
 Vulkan_Draw_FadeScreen (vulkan_ctx_t *ctx)
 {
 	static quat_t color = { 0, 0, 0, 0.7 };
-	draw_blendscreen (color);
+	draw_blendscreen (color, ctx);
 }
 
 void
@@ -587,12 +652,16 @@ Vulkan_FlushText (vulkan_ctx_t *ctx)
 
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	__auto_type frame = &ctx->framebuffers.a[ctx->curFrame];
-	VkCommandBuffer cmd = frame->subCommand->a[draw_cmdBuffer];
+	__auto_type cframe = &ctx->framebuffers.a[ctx->curFrame];
+	drawctx_t  *dctx = ctx->draw_context;
+	drawframe_t *dframe = &dctx->frames.a[ctx->curFrame];
+
+	VkCommandBuffer cmd = dframe->cmd;
 
 	VkMappedMemoryRange range = {
 		VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
-		quad_memory, 0, num_quads * VERTS_PER_QUAD * sizeof (drawvert_t),
+		dctx->vert_memory, dframe->vert_offset,
+		dframe->num_quads * VERTS_PER_QUAD * sizeof (drawvert_t),
 	};
 	dfunc->vkFlushMappedMemoryRanges (device->dev, 1, &range);
 
@@ -600,7 +669,7 @@ Vulkan_FlushText (vulkan_ctx_t *ctx)
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
 		ctx->renderpass.renderpass, 0,
-		frame->framebuffer,
+		cframe->framebuffer,
 		0, 0, 0
 	};
 	VkCommandBufferBeginInfo beginInfo = {
@@ -611,30 +680,31 @@ Vulkan_FlushText (vulkan_ctx_t *ctx)
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-							  twod_pipeline);
+							  dctx->pipeline);
 	VkViewport viewport = {0, 0, vid.width, vid.height, 0, 1};
 	VkRect2D scissor = { {0, 0}, {vid.width, vid.height} };
 	dfunc->vkCmdSetViewport (cmd, 0, 1, &viewport);
 	dfunc->vkCmdSetScissor (cmd, 0, 1, &scissor);
-	VkDeviceSize offsets[] = {0};
-	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &quad_vert_buffer, offsets);
-	dfunc->vkCmdBindIndexBuffer (cmd, quad_ind_buffer, 0,
+	VkDeviceSize offsets[] = {dframe->vert_offset};
+	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &dctx->vert_buffer, offsets);
+	dfunc->vkCmdBindIndexBuffer (cmd, dctx->ind_buffer, 0,
 								 VK_INDEX_TYPE_UINT32);
-	VkDescriptorSet set = frame->twodDescriptors;
-	VkPipelineLayout layout = twod_layout;
+	VkDescriptorSet set = dframe->descriptors;
+	VkPipelineLayout layout = dctx->layout;
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									layout, 0, 1, &set, 0, 0);
-	dfunc->vkCmdDrawIndexed (cmd, num_quads * INDS_PER_QUAD, 1, 0, 0, 0);
+	dfunc->vkCmdDrawIndexed (cmd, dframe->num_quads * INDS_PER_QUAD,
+							 1, 0, 0, 0);
 
 	dfunc->vkEndCommandBuffer (cmd);
 
-	num_quads = 0;
+	dframe->num_quads = 0;
 }
 
 void
 Vulkan_Draw_BlendScreen (quat_t color, vulkan_ctx_t *ctx)
 {
 	if (color[3]) {
-		draw_blendscreen (color);
+		draw_blendscreen (color, ctx);
 	}
 }
