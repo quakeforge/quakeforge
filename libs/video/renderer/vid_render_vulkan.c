@@ -45,6 +45,7 @@
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/renderpass.h"
 #include "QF/Vulkan/swapchain.h"
 
 #include "mod_internal.h"
@@ -62,8 +63,8 @@ vulkan_R_Init (void)
 	Vulkan_CreateStagingBuffers (vulkan_ctx);
 	Vulkan_CreateMatrices (vulkan_ctx);
 	Vulkan_CreateSwapchain (vulkan_ctx);
-	Vulkan_CreateRenderPass (vulkan_ctx);
 	Vulkan_CreateFramebuffers (vulkan_ctx);
+	Vulkan_CreateRenderPass (vulkan_ctx);
 	// FIXME this should be staged so screen updates can begin while pipelines
 	// are being built
 	vulkan_ctx->pipeline = Vulkan_CreatePipeline (vulkan_ctx, "pipeline");
@@ -100,13 +101,27 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 		= &vulkan_ctx->framebuffers.a[vulkan_ctx->curFrame];
 
 	dfunc->vkWaitForFences (dev, 1, &framebuffer->fence, VK_TRUE, 2000000000);
+	if (framebuffer->framebuffer) {
+		dfunc->vkDestroyFramebuffer (dev, framebuffer->framebuffer, 0);
+	}
 	QFV_AcquireNextImage (vulkan_ctx->swapchain,
 						  framebuffer->imageAvailableSemaphore,
 						  0, &imageIndex);
 
+	__auto_type attachments = DARRAY_ALLOCFIXED (qfv_imageviewset_t, 3,
+												 alloca);
+	qfv_swapchain_t *sc = vulkan_ctx->swapchain;
+	attachments->a[0] = vulkan_ctx->renderpass.colorImage->view;
+	attachments->a[1] = vulkan_ctx->renderpass.depthImage->view;
+	attachments->a[2] = sc->imageViews->a[imageIndex];
+
+	VkRenderPass renderpass = vulkan_ctx->renderpass.renderpass;
+	framebuffer->framebuffer = QFV_CreateFramebuffer (device, renderpass,
+													  attachments,
+													  sc->extent, 1);
+
 	Vulkan_FlushText (vulkan_ctx);
 
-	qfv_swapchain_t *sc = vulkan_ctx->swapchain;
 	VkCommandBufferBeginInfo beginInfo
 		= { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
 	VkClearValue clearValues[2] = {

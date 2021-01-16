@@ -387,30 +387,20 @@ Vulkan_CreateFramebuffers (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	VkCommandPool cmdpool = ctx->cmdpool;
-	qfv_swapchain_t *sc = ctx->swapchain;
-	VkRenderPass renderpass = ctx->renderpass.renderpass;
 
 	if (!ctx->framebuffers.grow) {
 		DARRAY_INIT (&ctx->framebuffers, 4);
 	}
 
-	DARRAY_RESIZE (&ctx->framebuffers, sc->numImages);
-
-	__auto_type attachments = DARRAY_ALLOCFIXED (qfv_imageviewset_t, 3,
-												 alloca);
-	attachments->a[0] = ctx->renderpass.colorImage->view;
-	attachments->a[1] = ctx->renderpass.depthImage->view;
+	DARRAY_RESIZE (&ctx->framebuffers, 3);//FIXME cvar
 
 	__auto_type cmdBuffers = QFV_AllocCommandBufferSet (ctx->framebuffers.size,
 														alloca);
 	QFV_AllocateCommandBuffers (device, cmdpool, 0, cmdBuffers);
 
 	for (size_t i = 0; i < ctx->framebuffers.size; i++) {
-		attachments->a[2] = sc->imageViews->a[i];
 		__auto_type frame = &ctx->framebuffers.a[i];
-		frame->framebuffer = QFV_CreateFramebuffer (device, renderpass,
-												    attachments,
-												    sc->extent, 1);
+		frame->framebuffer = 0;
 		frame->fence = QFV_CreateFence (device, 1);
 		frame->imageAvailableSemaphore = QFV_CreateSemaphore (device);
 		frame->renderDoneSemaphore = QFV_CreateSemaphore (device);
