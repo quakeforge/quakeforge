@@ -68,7 +68,7 @@ QFV_CreateImage (qfv_device_t *device, int cubemap,
 				 VkExtent3D size,
 				 uint32_t num_mipmaps,
 				 uint32_t num_layers,
-				 VkSampleCountFlagBits samples,
+				 VkSampleCountFlags samples,
 				 VkImageUsageFlags usage_scenarios)
 {
 	VkDevice    dev = device->dev;
