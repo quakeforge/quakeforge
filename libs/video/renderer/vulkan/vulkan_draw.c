@@ -608,6 +608,15 @@ Vulkan_Draw_SubPic (int x, int y, qpic_t *pic,
 void
 Vulkan_Draw_ConsoleBackground (int lines, byte alpha, vulkan_ctx_t *ctx)
 {
+	drawctx_t  *dctx = ctx->draw_context;
+	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
+
+	quat_t      color = { 1, 1, 1, bound (0, alpha, 255) / 255.0};
+	qpic_t     *cpic;
+	cpic = Vulkan_Draw_CachePic ("gfx/conback.lmp", false, ctx);
+	int         ofs = max (0, cpic->height - lines);
+	draw_pic (0, 0, vid.conwidth, lines, cpic,
+			  0, ofs, cpic->width, lines, color, frame);
 }
 
 void
