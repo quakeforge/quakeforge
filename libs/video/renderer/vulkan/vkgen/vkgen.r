@@ -204,7 +204,7 @@ main(int argc, string *argv)
 		}
 	}
 
-	PLItem *handle_keys = [handles allKeys];
+	PLItem *handle_keys = [[handles allKeys] retain];
 	for (int i = [handle_keys count]; i-- > 0; ) {
 		string search_name = [[handle_keys getObjectAtIndex:i] string];
 		id obj = (id) Hash_Find (available_types, search_name);
