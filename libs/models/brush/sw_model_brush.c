@@ -40,22 +40,6 @@
 
 #include "mod_internal.h"
 
-
-void
-sw_Mod_SubdivideSurface (msurface_t *fa)
-{
-}
-
-void
-sw_Mod_ProcessTexture (texture_t *tx)
-{
-}
-
-void
-sw_Mod_LoadExternalTextures (model_t *mod)
-{
-}
-
 void
 sw_Mod_LoadLighting (bsp_t *bsp)
 {

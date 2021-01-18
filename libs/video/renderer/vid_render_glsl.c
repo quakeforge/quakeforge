@@ -46,9 +46,9 @@
 gl_ctx_t *glsl_ctx;
 
 static vid_model_funcs_t model_funcs = {
-	glsl_Mod_LoadExternalTextures,
+	0,//Mod_LoadExternalTextures,
 	glsl_Mod_LoadLighting,
-	glsl_Mod_SubdivideSurface,
+	0,//Mod_SubdivideSurface,
 	glsl_Mod_ProcessTexture,
 
 	Mod_LoadIQM,

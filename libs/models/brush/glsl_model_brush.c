@@ -133,11 +133,6 @@ glsl_Mod_ProcessTexture (texture_t *tx)
 }
 
 void
-glsl_Mod_LoadExternalTextures (model_t *mod)
-{
-}
-
-void
 glsl_Mod_LoadLighting (bsp_t *bsp)
 {
 	// a big hacky, but it's as good a place as any
@@ -149,9 +144,4 @@ glsl_Mod_LoadLighting (bsp_t *bsp)
 	}
 	loadmodel->lightdata = Hunk_AllocName (bsp->lightdatasize, loadname);
 	memcpy (loadmodel->lightdata, bsp->lightdata, bsp->lightdatasize);
-}
-
-void
-glsl_Mod_SubdivideSurface (msurface_t *fa)
-{
 }
