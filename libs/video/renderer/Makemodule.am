@@ -261,6 +261,10 @@ twodv_src = libs/video/renderer/vulkan/twod.vert
 twodv_c = libs/video/renderer/vulkan/twod.vert.spvc
 twodf_src = libs/video/renderer/vulkan/twod.frag
 twodf_c = libs/video/renderer/vulkan/twod.frag.spvc
+quakebspv_src = libs/video/renderer/vulkan/quakebsp.vert
+quakebspv_c = libs/video/renderer/vulkan/quakebsp.vert.spvc
+quakebspf_src = libs/video/renderer/vulkan/quakebsp.frag
+quakebspf_c = libs/video/renderer/vulkan/quakebsp.frag.spvc
 passthrough_src = libs/video/renderer/vulkan/passthrough.vert
 passthrough_c = libs/video/renderer/vulkan/passthrough.vert.spvc
 pushcolor_src = libs/video/renderer/vulkan/pushcolor.frag
@@ -270,6 +274,10 @@ $(twodv_c): $(twodv_src)
 
 $(twodf_c): $(twodf_src)
 
+$(quakebspv_c): $(quakebspv_src)
+
+$(quakebspf_c): $(quakebspf_src)
+
 $(passthrough_c): $(passthrough_src)
 
 $(pushcolor_c): $(pushcolor_src)
@@ -277,6 +285,8 @@ $(pushcolor_c): $(pushcolor_src)
 vkshader_c = \
 	$(twodv_c) \
 	$(twodf_c) \
+	$(quakebspv_c) \
+	$(quakebspf_c) \
 	$(passthrough_c) \
 	$(pushcolor_c)
 

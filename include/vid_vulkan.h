@@ -31,6 +31,7 @@ typedef struct vulkan_matrices_s {
 	float      *projection_2d;
 	float      *projection_3d;
 	float      *view_3d;
+	float      *sky_3d;
 } vulkan_matrices_t;
 
 typedef struct vulkan_framebufferset_s

@@ -134,7 +134,7 @@ Vulkan_CreateMatrices (vulkan_ctx_t *ctx)
 	__auto_type mat = &ctx->matrices;
 	mat->buffer_2d = QFV_CreateBuffer (device, 1 * MAT_SIZE,
 									   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-	mat->buffer_3d = QFV_CreateBuffer (device, 2 * MAT_SIZE,
+	mat->buffer_3d = QFV_CreateBuffer (device, 3 * MAT_SIZE,
 									   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 
 	size_t      size = 0;
@@ -159,6 +159,7 @@ Vulkan_CreateMatrices (vulkan_ctx_t *ctx)
 	mat->projection_2d = data;
 	mat->projection_3d = mat->projection_2d + offset / sizeof (float);
 	mat->view_3d = mat->projection_3d + 16;
+	mat->sky_3d = mat->view_3d + 16;
 }
 
 void
