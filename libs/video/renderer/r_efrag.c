@@ -199,7 +199,7 @@ R_AddEfrags (entity_t *ent)
 {
 	model_t    *entmodel;
 
-	if (!ent->model)
+	if (!ent->model || !r_worldentity.model)
 		return;
 
 	if (ent == &r_worldentity)

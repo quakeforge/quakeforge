@@ -801,6 +801,52 @@ r_particles_style_f (cvar_t *var)
 {
 }
 
+static void
+R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
+			    const vec3_t vel, float die, int color, float alpha, float ramp)
+{
+	particle_t *p;
+
+	if (!free_particles)
+		return;
+	p = free_particles;
+	free_particles = p->next;
+	p->next = active_particles;
+	active_particles = p;
+
+	VectorCopy (org, p->org);
+	p->color = color;
+	p->tex = texnum;
+	p->scale = scale;
+	p->alpha = alpha;
+	VectorCopy (vel, p->vel);
+	p->type = type;
+	p->phys = R_ParticlePhysics (p->type);
+	p->die = die;
+	p->ramp = ramp;
+}
+
+static void
+R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org, int org_fuzz,
+					  float scale, int vel_fuzz, float die, int color,
+					  float alpha, float ramp)
+{
+	float       o_fuzz = org_fuzz, v_fuzz = vel_fuzz;
+	int         rnd;
+	vec3_t      porg, pvel;
+
+	rnd = mtwist_rand (&mt);
+	porg[0] = o_fuzz * ((rnd & 63) - 31.5) / 63.0 + org[0];
+	porg[1] = o_fuzz * (((rnd >> 6) & 63) - 31.5) / 63.0 + org[1];
+	porg[2] = o_fuzz * (((rnd >> 10) & 63) - 31.5) / 63.0 + org[2];
+	rnd = mtwist_rand (&mt);
+	pvel[0] = v_fuzz * ((rnd & 63) - 31.5) / 63.0;
+	pvel[1] = v_fuzz * (((rnd >> 6) & 63) - 31.5) / 63.0;
+	pvel[2] = v_fuzz * (((rnd >> 10) & 63) - 31.5) / 63.0;
+
+	R_Particle_New (type, texnum, porg, scale, pvel, die, color, alpha, ramp);
+}
+
 static vid_particle_funcs_t particles_QF = {
 	R_RocketTrail_QF,
 	R_GrenadeTrail_QF,
@@ -873,50 +919,4 @@ R_Particles_Init_Cvars (void)
 								  r_particles_style_f, "Sets particle style. "
 								  "0 for Id, 1 for QF.");
 	R_ParticleFunctionInit ();
-}
-
-void
-R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
-			    const vec3_t vel, float die, int color, float alpha, float ramp)
-{
-	particle_t *p;
-
-	if (!free_particles)
-		return;
-	p = free_particles;
-	free_particles = p->next;
-	p->next = active_particles;
-	active_particles = p;
-
-	VectorCopy (org, p->org);
-	p->color = color;
-	p->tex = texnum;
-	p->scale = scale;
-	p->alpha = alpha;
-	VectorCopy (vel, p->vel);
-	p->type = type;
-	p->phys = R_ParticlePhysics (p->type);
-	p->die = die;
-	p->ramp = ramp;
-}
-
-void
-R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org, int org_fuzz,
-					  float scale, int vel_fuzz, float die, int color,
-					  float alpha, float ramp)
-{
-	float       o_fuzz = org_fuzz, v_fuzz = vel_fuzz;
-	int         rnd;
-	vec3_t      porg, pvel;
-
-	rnd = mtwist_rand (&mt);
-	porg[0] = o_fuzz * ((rnd & 63) - 31.5) / 63.0 + org[0];
-	porg[1] = o_fuzz * (((rnd >> 6) & 63) - 31.5) / 63.0 + org[1];
-	porg[2] = o_fuzz * (((rnd >> 10) & 63) - 31.5) / 63.0 + org[2];
-	rnd = mtwist_rand (&mt);
-	pvel[0] = v_fuzz * ((rnd & 63) - 31.5) / 63.0;
-	pvel[1] = v_fuzz * (((rnd >> 6) & 63) - 31.5) / 63.0;
-	pvel[2] = v_fuzz * (((rnd >> 10) & 63) - 31.5) / 63.0;
-
-	R_Particle_New (type, texnum, porg, scale, pvel, die, color, alpha, ramp);
 }

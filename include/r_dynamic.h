@@ -49,12 +49,6 @@ void R_PushDlights (const vec3_t entorigin);
 struct cvar_s;
 void R_MaxDlightsCheck (struct cvar_s *var);
 void R_Particles_Init_Cvars (void);
-void R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
-					 const vec3_t vel, float die, int color, float alpha,
-					 float ramp);
-void R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org,
-						   int org_fuzz, float scale, int vel_fuzz, float die,
-						   int color, float alpha, float ramp);
 void R_InitBubble (void);
 
 void R_InitParticles (void);

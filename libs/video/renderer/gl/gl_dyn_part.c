@@ -1591,6 +1591,27 @@ gl_R_DrawParticles (void)
 	qfglDepthMask (GL_TRUE);
 }
 
+static void
+gl_R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
+				   const vec3_t vel, float die, int color, float alpha,
+				   float ramp)
+{
+	if (numparticles >= r_maxparticles)
+		return;
+	particle_new (type, texnum, org, scale, vel, die, color, alpha, ramp);
+}
+
+static void
+gl_R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org,
+						 int org_fuzz, float scale, int vel_fuzz, float die,
+						 int color, float alpha, float ramp)
+{
+	if (numparticles >= r_maxparticles)
+		return;
+	particle_new_random (type, texnum, org, org_fuzz, scale, vel_fuzz, die,
+						 color, alpha, ramp);
+}
+
 static vid_particle_funcs_t particles_QF = {
 	R_RocketTrail_QF,
 	R_GrenadeTrail_QF,
@@ -1774,25 +1795,4 @@ gl_R_Particles_Init_Cvars (void)
 								  r_particles_style_f, "Sets particle style. "
 								  "0 for Id, 1 for QF.");
 	R_ParticleFunctionInit ();
-}
-
-void
-gl_R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
-				   const vec3_t vel, float die, int color, float alpha,
-				   float ramp)
-{
-	if (numparticles >= r_maxparticles)
-		return;
-	particle_new (type, texnum, org, scale, vel, die, color, alpha, ramp);
-}
-
-void
-gl_R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org,
-						 int org_fuzz, float scale, int vel_fuzz, float die,
-						 int color, float alpha, float ramp)
-{
-	if (numparticles >= r_maxparticles)
-		return;
-	particle_new_random (type, texnum, org, org_fuzz, scale, vel_fuzz, die,
-						 color, alpha, ramp);
 }

@@ -40,6 +40,7 @@
 #include "QF/plugin/vid_render.h"
 
 #include "QF/Vulkan/qf_draw.h"
+#include "QF/Vulkan/qf_particles.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/device.h"
@@ -57,6 +58,29 @@
 
 static vulkan_ctx_t *vulkan_ctx;
 
+static tex_t *
+vulkan_SCR_CaptureBGR (void)
+{
+	return 0;
+}
+
+static tex_t *
+vulkan_SCR_ScreenShot (int width, int height)
+{
+	return 0;
+}
+
+static void
+vulkan_Fog_Update (float density, float red, float green, float blue,
+				   float time)
+{
+}
+
+static void
+vulkan_Fog_ParseWorldspawn (struct plitem_s *worldspawn)
+{
+}
+
 static void
 vulkan_R_Init (void)
 {
@@ -69,6 +93,7 @@ vulkan_R_Init (void)
 	// are being built
 	vulkan_ctx->pipeline = Vulkan_CreatePipeline (vulkan_ctx, "pipeline");
 	Vulkan_Draw_Init (vulkan_ctx);
+	Vulkan_Particles_Init (vulkan_ctx);
 
 	Sys_Printf ("R_Init %p %d", vulkan_ctx->swapchain->swapchain,
 				vulkan_ctx->swapchain->numImages);
@@ -178,6 +203,31 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 		fflush (stdout);
 		count = 0;
 	}
+}
+
+static void
+vulkan_R_ClearState (void)
+{
+}
+
+static void
+vulkan_R_LoadSkys (const char *skyname)
+{
+}
+
+static void
+vulkan_R_NewMap (model_t *worldmodel, model_t **models, int num_models)
+{
+}
+
+static void
+vulkan_R_LineGraph (int x, int y, int *h_vals, int count)
+{
+}
+
+static void
+vulkan_R_RenderView (void)
+{
 }
 
 static void
@@ -306,30 +356,127 @@ vulkan_R_ViewChanged (float aspect)
 	Vulkan_CalcProjectionMatrices (vulkan_ctx, aspect);
 }
 
+static void
+vulkan_R_ClearParticles (void)
+{
+	Vulkan_R_ClearParticles (vulkan_ctx);
+}
+
+static void
+vulkan_R_InitParticles (void)
+{
+	Vulkan_R_InitParticles (vulkan_ctx);
+}
+
+static void
+vulkan_SCR_ScreenShot_f (void)
+{
+}
+
+static void
+vulkan_r_easter_eggs_f (struct cvar_s *var)
+{
+	Vulkan_r_easter_eggs_f (var, vulkan_ctx);
+}
+
+static void
+vulkan_r_particles_style_f (struct cvar_s *var)
+{
+	Vulkan_r_particles_style_f (var, vulkan_ctx);
+}
+
+static void
+vulkan_Mod_LoadExternalTextures (model_t *mod)
+{
+}
+
+static void
+vulkan_Mod_LoadLighting (bsp_t *bsp)
+{
+}
+
+static void
+vulkan_Mod_SubdivideSurface (msurface_t *fa)
+{
+}
+
+static void
+vulkan_Mod_ProcessTexture (texture_t *tx)
+{
+}
+
+static void
+vulkan_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr,
+									   void *_m, int _s, int extra)
+{
+}
+
+static void *
+vulkan_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
+					 qboolean group, maliasskindesc_t *skindesc)
+{
+	return skin + skinsize;
+}
+
+static void
+vulkan_Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
+{
+}
+
+static void
+vulkan_Mod_LoadExternalSkins (model_t *mod)
+{
+}
+
+static void
+vulkan_Mod_IQMFinish (model_t *mod)
+{
+}
+
+static void
+vulkan_Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)
+{
+}
+
+static void
+vulkan_Skin_SetupSkin (struct skin_s *skin, int cmap)
+{
+}
+
+static void
+vulkan_Skin_ProcessTranslation (int cmap, const byte *translation)
+{
+}
+
+static void
+vulkan_Skin_InitTranslations (void)
+{
+}
+
 static vid_model_funcs_t model_funcs = {
-	0,//vulkan_Mod_LoadExternalTextures,
-	0,//vulkan_Mod_LoadLighting,
-	0,//vulkan_Mod_SubdivideSurface,
-	0,//vulkan_Mod_ProcessTexture,
+	vulkan_Mod_LoadExternalTextures,
+	vulkan_Mod_LoadLighting,
+	vulkan_Mod_SubdivideSurface,
+	vulkan_Mod_ProcessTexture,
 
 	Mod_LoadIQM,
 	Mod_LoadAliasModel,
 	Mod_LoadSpriteModel,
 
-	0,//vulkan_Mod_MakeAliasModelDisplayLists,
-	0,//vulkan_Mod_LoadSkin,
-	0,//vulkan_Mod_FinalizeAliasModel,
-	0,//vulkan_Mod_LoadExternalSkins,
-	0,//vulkan_Mod_IQMFinish,
+	vulkan_Mod_MakeAliasModelDisplayLists,
+	vulkan_Mod_LoadSkin,
+	vulkan_Mod_FinalizeAliasModel,
+	vulkan_Mod_LoadExternalSkins,
+	vulkan_Mod_IQMFinish,
 	0,
-	0,//vulkan_Mod_SpriteLoadTexture,
+	vulkan_Mod_SpriteLoadTexture,
 
 	Skin_SetColormap,
 	Skin_SetSkin,
-	0,//vulkan_Skin_SetupSkin,
+	vulkan_Skin_SetupSkin,
 	Skin_SetTranslation,
-	0,//vulkan_Skin_ProcessTranslation,
-	0,//vulkan_Skin_InitTranslations,
+	vulkan_Skin_ProcessTranslation,
+	vulkan_Skin_InitTranslations,
 };
 
 vid_render_funcs_t vulkan_vid_render_funcs = {
@@ -357,33 +504,33 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	SCR_DrawRam,
 	SCR_DrawTurtle,
 	SCR_DrawPause,
-	0,//vulkan_SCR_CaptureBGR,
-	0,//vulkan_SCR_ScreenShot,
+	vulkan_SCR_CaptureBGR,
+	vulkan_SCR_ScreenShot,
 	SCR_DrawStringToSnap,
 
-	0,//vulkan_Fog_Update,
-	0,//vulkan_Fog_ParseWorldspawn,
+	vulkan_Fog_Update,
+	vulkan_Fog_ParseWorldspawn,
 
 	vulkan_R_Init,
 	vulkan_R_RenderFrame,
-	0,//vulkan_R_ClearState,
-	0,//vulkan_R_LoadSkys,
-	0,//vulkan_R_NewMap,
+	vulkan_R_ClearState,
+	vulkan_R_LoadSkys,
+	vulkan_R_NewMap,
 	R_AddEfrags,
 	R_RemoveEfrags,
 	R_EnqueueEntity,
-	0,//vulkan_R_LineGraph,
+	vulkan_R_LineGraph,
 	R_AllocDlight,
 	R_AllocEntity,
 	R_MaxDlightsCheck,
-	0,//vulkan_R_RenderView,
+	vulkan_R_RenderView,
 	R_DecayLights,
 	vulkan_R_ViewChanged,
-	0,//vulkan_R_ClearParticles,
-	0,//vulkan_R_InitParticles,
-	0,//vulkan_SCR_ScreenShot_f,
-	0,//vulkan_r_easter_eggs_f,
-	0,//vulkan_r_particles_style_f,
+	vulkan_R_ClearParticles,
+	vulkan_R_InitParticles,
+	vulkan_SCR_ScreenShot_f,
+	vulkan_r_easter_eggs_f,
+	vulkan_r_particles_style_f,
 	0,
 	&model_funcs
 };

@@ -53,7 +53,7 @@
 #include "compat.h"
 
 void *
-gl_Mod_LoadSkin (byte * skin, int skinsize, int snum, int gnum, qboolean group,
+gl_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum, qboolean group,
 				 maliasskindesc_t *skindesc)
 {
 	byte   *pskin;
