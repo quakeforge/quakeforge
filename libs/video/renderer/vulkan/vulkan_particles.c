@@ -48,12 +48,12 @@
 #include "vid_vulkan.h"
 
 void
-Vulkan_R_ClearParticles (struct vulkan_ctx_s *ctx)
+Vulkan_ClearParticles (struct vulkan_ctx_s *ctx)
 {
 }
 
 void
-Vulkan_R_InitParticles (struct vulkan_ctx_s *ctx)
+Vulkan_InitParticles (struct vulkan_ctx_s *ctx)
 {
 }
 
@@ -241,7 +241,12 @@ Vulkan_r_easter_eggs_f (cvar_t *var, struct vulkan_ctx_s *ctx)
 void
 Vulkan_r_particles_style_f (cvar_t *var, struct vulkan_ctx_s *ctx)
 {
-	Vulkan_r_particles_style_f (var, ctx);
+	Vulkan_r_easter_eggs_f (var, ctx);
+}
+
+void
+Vulkan_DrawParticles (struct vulkan_ctx_s *ctx)
+{
 }
 
 void

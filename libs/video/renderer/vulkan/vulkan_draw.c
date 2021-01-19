@@ -369,7 +369,7 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	create_quad_buffers (ctx);
 	dctx->scrap = QFV_CreateScrap (device, 2048, tex_rgba);
 	dctx->stage = QFV_CreateStagingBuffer (device, 4 * 1024 * 1024, 4,
-											   ctx->cmdpool);
+										   ctx->cmdpool);
 	dctx->sampler = QFV_GetSampler (ctx, "quakepic");
 
 	qpic_t     *charspic = Draw_Font8x8Pic ();
@@ -385,7 +385,7 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 
 	dctx->layout = QFV_GetPipelineLayout (ctx, "twod");
 
-	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (ctx->framebuffers.size, alloca);
+	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
 	for (size_t i = 0; i < layouts->size; i++) {
 		layouts->a[i] = QFV_GetDescriptorSetLayout (ctx, "twod");
 	}
