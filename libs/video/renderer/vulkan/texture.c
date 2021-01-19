@@ -135,6 +135,12 @@ QFV_CreateScrap (qfv_device_t *device, int size, QFFormat format)
 	return scrap;
 }
 
+size_t
+QFV_ScrapSize (scrap_t *scrap)
+{
+	return scrap->rscrap.width * scrap->rscrap.height * scrap->bpp;
+}
+
 void
 QFV_ScrapClear (scrap_t *scrap)
 {

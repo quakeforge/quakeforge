@@ -3,8 +3,8 @@
 layout (set = 0, binding = 1) uniform sampler2D Texture;
 layout (set = 0, binding = 2) uniform sampler2D Glowmap;
 layout (set = 0, binding = 3) uniform sampler2D Lightmap;
-layout (set = 0, binding = 4) uniform samplerCube SkyCube;
-layout (set = 0, binding = 5) uniform sampler2DArray SkySheet;
+layout (set = 0, binding = 4) uniform sampler2DArray SkySheet;
+layout (set = 0, binding = 5) uniform samplerCube SkyCube;
 
 layout (push_constant) uniform PushConstants {
 	float       time;
@@ -12,8 +12,7 @@ layout (push_constant) uniform PushConstants {
 };
 
 layout (location = 0) in vec4 tl_st;
-layout (location = 1) in vec4 color;
-layout (location = 2) out vec3 direction;
+layout (location = 1) in vec3 direction;
 
 layout (location = 0) out vec4 frag_color;
 
@@ -111,7 +110,7 @@ main (void)
 	if (doSkyCube || doSkySheet) {
 		c = sky_color (direction, time);
 	} else {
-		c = texture (Texture, t_st) * color;
+		c = texture (Texture, t_st);
 	}
 	if (doLight) {
 		c *= texture (Lightmap, l_st);

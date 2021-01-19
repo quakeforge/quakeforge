@@ -39,7 +39,10 @@
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
+#include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_draw.h"
+#include "QF/Vulkan/qf_lightmap.h"
+#include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_particles.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/command.h"
@@ -92,6 +95,7 @@ vulkan_R_Init (void)
 	// FIXME this should be staged so screen updates can begin while pipelines
 	// are being built
 	vulkan_ctx->pipeline = Vulkan_CreatePipeline (vulkan_ctx, "pipeline");
+	Vulkan_Bsp_Init (vulkan_ctx);
 	Vulkan_Draw_Init (vulkan_ctx);
 	Vulkan_Particles_Init (vulkan_ctx);
 
@@ -116,12 +120,6 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	VkDevice    dev = device->dev;
 	qfv_queue_t *queue = &vulkan_ctx->device->queue;
 
-	scr_3dfunc ();
-	while (*scr_funcs) {
-		(*scr_funcs) ();
-		scr_funcs++;
-	}
-
 	__auto_type framebuffer
 		= &vulkan_ctx->framebuffers.a[vulkan_ctx->curFrame];
 
@@ -144,6 +142,12 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	framebuffer->framebuffer = QFV_CreateFramebuffer (device, renderpass,
 													  attachments,
 													  sc->extent, 1);
+
+	scr_3dfunc ();
+	while (*scr_funcs) {
+		(*scr_funcs) ();
+		scr_funcs++;
+	}
 
 	Vulkan_FlushText (vulkan_ctx);
 
@@ -168,6 +172,8 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	dfunc->vkCmdExecuteCommands (framebuffer->cmdBuffer,
 								 framebuffer->subCommand->size,
 								 framebuffer->subCommand->a);
+	// reset for next time around
+	framebuffer->subCommand->size = 0;
 
 	dfunc->vkCmdEndRenderPass (framebuffer->cmdBuffer);
 	dfunc->vkEndCommandBuffer (framebuffer->cmdBuffer);
@@ -208,6 +214,9 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 static void
 vulkan_R_ClearState (void)
 {
+	R_ClearEfrags ();
+	R_ClearDlights ();
+	Vulkan_ClearParticles (vulkan_ctx);
 }
 
 static void
@@ -218,6 +227,7 @@ vulkan_R_LoadSkys (const char *skyname)
 static void
 vulkan_R_NewMap (model_t *worldmodel, model_t **models, int num_models)
 {
+	Vulkan_NewMap (worldmodel, models, num_models, vulkan_ctx);
 }
 
 static void
@@ -228,6 +238,7 @@ vulkan_R_LineGraph (int x, int y, int *h_vals, int count)
 static void
 vulkan_R_RenderView (void)
 {
+	Vulkan_RenderView (vulkan_ctx);
 }
 
 static void
@@ -359,13 +370,13 @@ vulkan_R_ViewChanged (float aspect)
 static void
 vulkan_R_ClearParticles (void)
 {
-	Vulkan_R_ClearParticles (vulkan_ctx);
+	Vulkan_ClearParticles (vulkan_ctx);
 }
 
 static void
 vulkan_R_InitParticles (void)
 {
-	Vulkan_R_InitParticles (vulkan_ctx);
+	Vulkan_InitParticles (vulkan_ctx);
 }
 
 static void
@@ -593,6 +604,7 @@ vulkan_vid_render_shutdown (void)
 	df->vkDestroyFence (dev, vulkan_ctx->fence, 0);
 	df->vkDestroyCommandPool (dev, vulkan_ctx->cmdpool, 0);
 	Vulkan_Draw_Shutdown (vulkan_ctx);
+	Vulkan_Bsp_Shutdown (vulkan_ctx);
 	Vulkan_Shutdown_Common (vulkan_ctx);
 }
 

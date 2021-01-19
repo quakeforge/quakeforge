@@ -63,6 +63,7 @@ typedef struct vulkan_ctx_s {
 	struct hashtab_s *descriptorPools;
 	struct hashtab_s *samplers;
 
+	struct bspctx_s *bsp_context;
 	struct drawctx_s *draw_context;
 
 	VkCommandPool cmdpool;

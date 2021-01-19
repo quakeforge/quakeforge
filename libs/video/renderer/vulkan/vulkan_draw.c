@@ -404,7 +404,6 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 
 	__auto_type sets = QFV_AllocateDescriptorSet (device, pool, layouts);
 	for (size_t i = 0; i < frames; i++) {
-		__auto_type cframe = &ctx->framebuffers.a[i];
 		__auto_type dframe = &dctx->frames.a[i];
 		dframe->descriptors = sets->a[i];
 
@@ -420,7 +419,6 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 		};
 		dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
 		dframe->cmd = cmdBuffers->a[i];
-		DARRAY_APPEND (cframe->subCommand, cmdBuffers->a[i]);
 	}
 	free (sets);
 }
@@ -686,6 +684,7 @@ Vulkan_FlushText (vulkan_ctx_t *ctx)
 	drawframe_t *dframe = &dctx->frames.a[ctx->curFrame];
 
 	VkCommandBuffer cmd = dframe->cmd;
+	DARRAY_APPEND (cframe->subCommand, cmd);
 
 	VkMappedMemoryRange range = {
 		VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,

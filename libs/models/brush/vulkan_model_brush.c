@@ -217,11 +217,57 @@ Vulkan_Mod_ProcessTexture (texture_t *tx, vulkan_ctx_t *ctx)
 void
 Vulkan_Mod_LoadLighting (bsp_t *bsp, vulkan_ctx_t *ctx)
 {
-	mod_lightmap_bytes = 1;
+	mod_lightmap_bytes = 3;
 	if (!bsp->lightdatasize) {
 		loadmodel->lightdata = NULL;
 		return;
 	}
-	loadmodel->lightdata = Hunk_AllocName (bsp->lightdatasize, loadname);
-	memcpy (loadmodel->lightdata, bsp->lightdata, bsp->lightdatasize);
+
+	byte        d;
+	byte       *in, *out, *data;
+	size_t      i;
+	int         ver;
+	QFile      *lit_file;
+
+	loadmodel->lightdata = 0;
+	if (mod_lightmap_bytes > 1) {
+		// LordHavoc: check for a .lit file to load
+		dstring_t  *litfilename = dstring_new ();
+		dstring_copystr (litfilename, loadmodel->name);
+		QFS_StripExtension (litfilename->str, litfilename->str);
+		dstring_appendstr (litfilename, ".lit");
+		lit_file = QFS_VOpenFile (litfilename->str, 0, loadmodel->vpath);
+		data = (byte *) QFS_LoadHunkFile (lit_file);
+		if (data) {
+			if (data[0] == 'Q' && data[1] == 'L' && data[2] == 'I'
+				&& data[3] == 'T') {
+				ver = LittleLong (((int32_t *) data)[1]);
+				if (ver == 1) {
+					Sys_MaskPrintf (SYS_DEV, "%s loaded", litfilename->str);
+					loadmodel->lightdata = data + 8;
+				} else {
+					Sys_MaskPrintf (SYS_DEV,
+									"Unknown .lit file version (%d)\n", ver);
+				}
+			} else {
+				Sys_MaskPrintf (SYS_DEV, "Corrupt .lit file (old version?)\n");
+			}
+		}
+		dstring_delete (litfilename);
+	}
+	if (loadmodel->lightdata || !bsp->lightdatasize) {
+		return;
+	}
+	// LordHavoc: oh well, expand the white lighting data
+	loadmodel->lightdata = Hunk_AllocName (bsp->lightdatasize * 3,
+										   loadmodel->name);
+	in = bsp->lightdata;
+	out = loadmodel->lightdata;
+
+	for (i = 0; i < bsp->lightdatasize ; i++) {
+		d = *in++;
+		*out++ = d;
+		*out++ = d;
+		*out++ = d;
+	}
 }

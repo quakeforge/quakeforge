@@ -5,8 +5,12 @@
 
 typedef struct scrap_s scrap_t;
 
+struct qfv_stagebuf_s;
+struct qfv_device_s;
+
 scrap_t *QFV_CreateScrap (struct qfv_device_s *device, int size,
 						  QFFormat format);
+size_t QFV_ScrapSize (scrap_t *scrap);
 void QFV_ScrapClear (scrap_t *scrap);
 void QFV_DestroyScrap (scrap_t *scrap);
 VkImageView QFV_ScrapImageView (scrap_t *scrap) __attribute__((pure));

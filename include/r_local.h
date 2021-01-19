@@ -180,6 +180,7 @@ void R_InsertNewEdges (edge_t *edgestoadd, edge_t *edgelist);
 void R_StepActiveU (edge_t *pedge);
 void R_RemoveEdges (edge_t *pedge);
 void R_AddTexture (texture_t *tex);
+struct vulkan_ctx_s;
 void R_ClearTextures (void);
 void R_InitSurfaceChains (model_t *model);
 
@@ -313,6 +314,7 @@ void R_MarkLights (const vec3_t lightorigin, struct dlight_s *light, int bit,
 				   model_t *model);
 
 void R_LoadSkys (const char *);
+//void Vulkan_R_LoadSkys (const char *, struct vulkan_ctx_s *ctx);
 
 void R_LowFPPrecision (void);
 void R_HighFPPrecision (void);
