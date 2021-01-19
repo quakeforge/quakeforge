@@ -72,8 +72,10 @@ static void vulkan_brush_clear (model_t *model, void *data)
 		}
 		vulktex_t  *tex = tx->render;
 		dfunc->vkDestroyImage (device->dev, tex->tex->image, 0);
+		dfunc->vkDestroyImageView (device->dev, tex->tex->view, 0);
 		if (tex->glow) {
 			dfunc->vkDestroyImage (device->dev, tex->glow->image, 0);
+			dfunc->vkDestroyImageView (device->dev, tex->glow->view, 0);
 		}
 	}
 	dfunc->vkFreeMemory (device->dev, mctx->texture_memory, 0);
@@ -133,9 +135,22 @@ load_textures (model_t *model, vulkan_ctx_t *ctx)
 
 		dfunc->vkBindImageMemory (device->dev, tex->tex->image, mem,
 								  tex->tex->offset);
+		VkImageViewType type = VK_IMAGE_VIEW_TYPE_2D;
+		if (strncmp (tx->name, "sky", 3) == 0) {
+			type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+		}
+		tex->tex->view = QFV_CreateImageView (device, tex->tex->image,
+											  type, VK_FORMAT_R8G8B8A8_UNORM,
+											  VK_IMAGE_ASPECT_COLOR_BIT);
 		if (tex->glow) {
 			dfunc->vkBindImageMemory (device->dev, tex->glow->image, mem,
 									  tex->glow->offset);
+			// skys are unlit so never have a glow texture thus glow
+			// textures are always simple 2D
+			tex->glow->view = QFV_CreateImageView (device, tex->tex->image,
+												   VK_IMAGE_VIEW_TYPE_2D,
+												   VK_FORMAT_R8G8B8A8_UNORM,
+												   VK_IMAGE_ASPECT_COLOR_BIT);
 		}
 	}
 }
