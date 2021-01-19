@@ -55,7 +55,7 @@ static vec3_t vertex_normals[NUMVERTEXNORMALS] = {
 };
 
 static void
-glsl_alias_clear (model_t *m)
+glsl_alias_clear (model_t *m, void *data)
 {
 	int         i, j;
 	aliashdr_t *hdr;

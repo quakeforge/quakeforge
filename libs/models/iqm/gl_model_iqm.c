@@ -56,7 +56,7 @@ static byte null_texture[] = {
 };
 
 static void
-gl_iqm_clear (model_t *mod)
+gl_iqm_clear (model_t *mod, void *data)
 {
 	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
 	gliqm_t    *gl = (gliqm_t *) iqm->extra_data;

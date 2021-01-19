@@ -62,7 +62,7 @@
 static glsltex_t glsl_notexture = { };
 
 static void
-glsl_brush_clear (model_t *m)
+glsl_brush_clear (model_t *m, void *data)
 {
 	int         i;
 

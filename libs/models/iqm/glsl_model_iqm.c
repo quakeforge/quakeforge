@@ -68,7 +68,7 @@ static byte null_normmap[] = {
 };
 
 static void
-glsl_iqm_clear (model_t *mod)
+glsl_iqm_clear (model_t *mod, void *data)
 {
 	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
 	glsliqm_t  *glsl = (glsliqm_t *) iqm->extra_data;

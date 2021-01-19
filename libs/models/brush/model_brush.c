@@ -982,10 +982,13 @@ Mod_LoadBrushModel (model_t *mod, void *buffer)
 			char	name[12];
 
 			snprintf (name, sizeof (name), "*%i", i + 1);
-			loadmodel = Mod_FindName (name);
-			*loadmodel = *mod;
-			strcpy (loadmodel->name, name);
-			mod = loadmodel;
+			model_t    *m = Mod_FindName (name);
+			*m = *mod;
+			strcpy (m->name, name);
+			mod = m;
+			// make sure clear is called only for the main model
+			m->clear = 0;
+			m->data = 0;
 		}
 	}
 }

@@ -62,13 +62,6 @@
 #include "r_scrap.h"
 #include "vid_vulkan.h"
 
-struct qfv_tex_s {	// qfv_tex_t
-	VkDeviceMemory memory;
-	size_t      offset;
-	VkImage     image;
-	VkImageView view;
-};
-
 static int
 ilog2 (unsigned x)
 {

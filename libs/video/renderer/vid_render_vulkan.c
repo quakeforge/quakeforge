@@ -388,6 +388,7 @@ vulkan_r_particles_style_f (struct cvar_s *var)
 static void
 vulkan_Mod_LoadLighting (bsp_t *bsp)
 {
+	Vulkan_Mod_LoadLighting (bsp, vulkan_ctx);
 }
 
 static void
@@ -398,6 +399,7 @@ vulkan_Mod_SubdivideSurface (msurface_t *fa)
 static void
 vulkan_Mod_ProcessTexture (texture_t *tx)
 {
+	Vulkan_Mod_ProcessTexture (tx, vulkan_ctx);
 }
 
 static void
@@ -449,7 +451,7 @@ vulkan_Skin_InitTranslations (void)
 }
 
 static vid_model_funcs_t model_funcs = {
-	sizeof (vulktex_t),
+	sizeof (vulktex_t) + 2 * sizeof (struct qfv_tex_s *),
 	vulkan_Mod_LoadLighting,
 	vulkan_Mod_SubdivideSurface,
 	vulkan_Mod_ProcessTexture,

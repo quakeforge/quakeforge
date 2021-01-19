@@ -123,7 +123,7 @@ Mod_ClearAll (void)
 
 	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++) {
 		if (!(*mod)->needload && (*mod)->clear) {
-			(*mod)->clear (*mod);
+			(*mod)->clear (*mod, (*mod)->data);
 		} else {
 			if ((*mod)->type != mod_alias)
 				(*mod)->needload = true;

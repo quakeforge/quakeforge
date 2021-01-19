@@ -29,11 +29,12 @@ typedef struct glsltex_s {
 
 typedef struct vulktex_s {
 	texture_t  *texture;
-	struct qfv_tex_s *tex;
 	instsurf_t *tex_chain;	// for gl_texsort drawing
 	instsurf_t **tex_chain_tail;
 	struct elechain_s *elechain;
 	struct elechain_s **elechain_tail;
+	struct qfv_tex_s *tex;
+	struct qfv_tex_s *glow;
 } vulktex_t;
 
 extern viddef_t 		vid;				// global video state

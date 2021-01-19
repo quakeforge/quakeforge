@@ -68,6 +68,7 @@ static U void (*const r_scrapdelete)(rscrap_t *) = R_ScrapDelete;
 static void
 R_shutdown (void *data)
 {
+	Mod_ClearAll ();
 	if (vidrendmodule->functions->general->p_Shutdown) {
 		vidrendmodule->functions->general->p_Shutdown ();
 	}

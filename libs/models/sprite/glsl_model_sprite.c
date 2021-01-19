@@ -47,7 +47,7 @@
 #include "mod_internal.h"
 
 static void
-glsl_sprite_clear (model_t *m)
+glsl_sprite_clear (model_t *m, void *data)
 {
 	int         i, j;
 	msprite_t  *sprite = (msprite_t *) m->cache.data;

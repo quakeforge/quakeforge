@@ -6,6 +6,8 @@
 #include "QF/skin.h"
 #include "QF/plugin/vid_render.h"
 
+struct vulkan_ctx_s;
+
 extern vid_model_funcs_t *m_funcs;
 
 void gl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
@@ -40,6 +42,10 @@ void glsl_Mod_LoadLighting (bsp_t *bsp);
 void glsl_Mod_ProcessTexture(texture_t *tx);
 
 void sw_Mod_LoadLighting (bsp_t *bsp);
+
+void Vulkan_Mod_LoadLighting (bsp_t *bsp, struct vulkan_ctx_s *ctx);
+void Vulkan_Mod_SubdivideSurface (msurface_t *fa, struct vulkan_ctx_s *ctx);
+void Vulkan_Mod_ProcessTexture(texture_t *tx, struct vulkan_ctx_s *ctx);
 
 void gl_Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum);
 void glsl_Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum);

@@ -58,7 +58,7 @@ static tex_t null_texture = {
 };
 
 static void
-sw_iqm_clear (model_t *mod)
+sw_iqm_clear (model_t *mod, void *data)
 {
 	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
 	swiqm_t    *sw = (swiqm_t *) iqm->extra_data;

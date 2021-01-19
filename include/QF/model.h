@@ -422,7 +422,8 @@ typedef struct model_s {
 
 // additional model data
 	cache_user_t cache;
-	void       (*clear) (struct model_s *m);
+	void      (*clear) (struct model_s *m, void *data);
+	void       *data;
 } model_t;
 
 // ============================================================================

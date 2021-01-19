@@ -2,9 +2,14 @@
 #define __QF_Vulkan_qf_texture_h
 
 #include "QF/image.h"
+#include "QF/Vulkan/qf_vid.h"
 
-typedef struct qfv_tex_s qfv_tex_t;
-struct vulkan_ctx_s;
+typedef struct qfv_tex_s {
+	VkDeviceMemory memory;
+	size_t      offset;
+	VkImage     image;
+	VkImageView view;
+} qfv_tex_t;
 
 qfv_tex_t *Vulkan_LoadTex (struct vulkan_ctx_s *ctx, tex_t *tex, int mip);
 VkImageView Vulkan_TexImageView (qfv_tex_t *tex) __attribute__((pure));
