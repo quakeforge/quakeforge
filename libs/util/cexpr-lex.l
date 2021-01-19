@@ -71,6 +71,7 @@ FILE *cexpr_yyget_in (yyscan_t yyscanner) __attribute__((pure));
 
 static exprval_t *parse_int (const char *str, exprctx_t *context);
 static exprval_t *parse_uint (const char *str, exprctx_t *context);
+static exprval_t *parse_size_t (const char *str, exprctx_t *context);
 static exprval_t *parse_float (const char *str, exprctx_t *context);
 static exprval_t *parse_double (const char *str, exprctx_t *context);
 static exprsym_t *parse_name (const char *str, exprctx_t *context);
@@ -124,6 +125,11 @@ STRING		\"(\\.|[^"\\])*\"
 
 {INT}+[uU]			{
 						yylval->value = parse_uint (yytext, context);
+						return VALUE;
+					}
+
+{INT}+[zZ]			{
+						yylval->value = parse_size_t (yytext, context);
 						return VALUE;
 					}
 
@@ -235,6 +241,13 @@ static exprval_t *parse_int (const char *str, exprctx_t *context)
 static exprval_t *parse_uint (const char *str, exprctx_t *context)
 {
 	exprval_t  *val = cexpr_value (&cexpr_uint, context);
+	*(unsigned *) val->value = strtoumax (str, 0, 0);
+	return val;
+}
+
+static exprval_t *parse_size_t (const char *str, exprctx_t *context)
+{
+	exprval_t  *val = cexpr_value (&cexpr_size_t, context);
 	*(unsigned *) val->value = strtoumax (str, 0, 0);
 	return val;
 }
