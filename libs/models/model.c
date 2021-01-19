@@ -231,10 +231,6 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 		default:					// Version 29: Quake 1 .bsp
 									// Version 38: Quake 2 .bsp
 			Mod_LoadBrushModel (mod, buf);
-
-			if (gl_textures_external && gl_textures_external->int_val
-				&& mod_funcs && mod_funcs->Mod_LoadExternalTextures)
-				mod_funcs->Mod_LoadExternalTextures (mod);
 			break;
 	}
 	free (buf);

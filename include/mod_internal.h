@@ -32,17 +32,14 @@ void sw_Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr);
 void sw_Mod_LoadExternalSkins (model_t *mod);
 void sw_Mod_IQMFinish (model_t *mod);
 
-void gl_Mod_LoadExternalTextures (model_t *mod);
 void gl_Mod_LoadLighting (bsp_t *bsp);
 void gl_Mod_SubdivideSurface (msurface_t *fa);
 void gl_Mod_ProcessTexture(texture_t *tx);
 
-void glsl_Mod_LoadExternalTextures (model_t *mod);
 void glsl_Mod_LoadLighting (bsp_t *bsp);
 void glsl_Mod_SubdivideSurface (msurface_t *fa);
 void glsl_Mod_ProcessTexture(texture_t *tx);
 
-void sw_Mod_LoadExternalTextures (model_t *mod);
 void sw_Mod_LoadLighting (bsp_t *bsp);
 void sw_Mod_SubdivideSurface (msurface_t *fa);
 void sw_Mod_ProcessTexture(texture_t *tx);

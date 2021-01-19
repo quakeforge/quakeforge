@@ -80,7 +80,6 @@ typedef struct vid_particle_funcs_s {
 } vid_particle_funcs_t;
 
 typedef struct vid_model_funcs_s {
-	void (*Mod_LoadExternalTextures) (model_t *mod);
 	void (*Mod_LoadLighting) (bsp_t *bsp);
 	void (*Mod_SubdivideSurface) (msurface_t *fa);
 	void (*Mod_ProcessTexture) (texture_t *tx);

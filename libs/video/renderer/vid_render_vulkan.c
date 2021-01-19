@@ -386,11 +386,6 @@ vulkan_r_particles_style_f (struct cvar_s *var)
 }
 
 static void
-vulkan_Mod_LoadExternalTextures (model_t *mod)
-{
-}
-
-static void
 vulkan_Mod_LoadLighting (bsp_t *bsp)
 {
 }
@@ -454,7 +449,6 @@ vulkan_Skin_InitTranslations (void)
 }
 
 static vid_model_funcs_t model_funcs = {
-	vulkan_Mod_LoadExternalTextures,
 	vulkan_Mod_LoadLighting,
 	vulkan_Mod_SubdivideSurface,
 	vulkan_Mod_ProcessTexture,

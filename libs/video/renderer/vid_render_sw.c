@@ -39,7 +39,6 @@
 sw_ctx_t *sw_ctx;
 
 static vid_model_funcs_t model_funcs = {
-	0,//Mod_LoadExternalTextures,
 	sw_Mod_LoadLighting,
 	0,//Mod_SubdivideSurface,
 	0,//Mod_ProcessTexture,
