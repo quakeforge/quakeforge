@@ -118,6 +118,10 @@ Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip)
 			format = VK_FORMAT_R8G8B8A8_UNORM;
 			bpp = 4;
 			break;
+		case tex_frgba:
+			format = VK_FORMAT_R32G32B32A32_SFLOAT;
+			bpp = 16;
+			break;
 	}
 	if (format == VK_FORMAT_UNDEFINED) {
 		return 0;

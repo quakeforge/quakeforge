@@ -130,6 +130,15 @@ convert_tex (tex_t *tex)
 			for (i = 0; i < pixels; i++)
 				new->data[i] = convert_color (tex->data + i * bpp);
 			break;
+		case tex_frgba:
+			for (i = 0; i < pixels; i++) {
+				byte        col[3];
+				col[0] = ((float *)tex->data)[i * 4 + 0] * 255;
+				col[1] = ((float *)tex->data)[i * 4 + 1] * 255;
+				col[2] = ((float *)tex->data)[i * 4 + 2] * 255;
+				new->data[i] = convert_color (col);
+			}
+			break;
 	}
 	return new;
 }

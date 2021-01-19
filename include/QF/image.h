@@ -38,6 +38,7 @@ typedef enum QFFormat {
 	tex_la = 2,
 	tex_rgb = 3,
 	tex_rgba = 4,
+	tex_frgba = 5,
 } QFFormat;
 
 // could not use texture_t as that is used for models.

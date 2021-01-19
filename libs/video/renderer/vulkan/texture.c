@@ -100,6 +100,10 @@ QFV_CreateScrap (qfv_device_t *device, int size, QFFormat format)
 			bpp = 4;
 			fmt = VK_FORMAT_R8G8B8A8_UNORM;
 			break;
+		case tex_frgba:
+			bpp = 16;
+			fmt = VK_FORMAT_R32G32B32A32_SFLOAT;
+			break;
 	}
 
 	scrap_t    *scrap = malloc (sizeof (scrap_t));
