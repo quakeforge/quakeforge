@@ -12,7 +12,13 @@ EXTRA_LTLIBRARIES += \
 	libs/models/libmodels_sw.la \
 	libs/models/libmodels_vulkan.la
 
-models_sources = libs/models/clip_hull.c libs/models/model.c libs/models/portal.c libs/models/trace.c libs/models/winding.c
+models_sources = \
+	libs/models/clip_hull.c \
+	libs/models/fullbright.c \
+	libs/models/model.c \
+	libs/models/portal.c \
+	libs/models/trace.c \
+	libs/models/winding.c
 
 common_libs = \
 	libs/util/libQFutil.la

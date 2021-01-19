@@ -1,5 +1,5 @@
 /*
-	gl_model_fullbright.c
+	fullbright.c
 
 	fullbright skin handling
 
@@ -31,34 +31,19 @@
 # include "config.h"
 #endif
 
-#include <stdlib.h>
-
-#include "QF/GL/qf_textures.h"
-#include "QF/checksum.h"
-#include "QF/qendian.h"
-#include "QF/sys.h"
-
 #include "r_local.h"
 
-int
-Mod_Fullbright (byte *skin, int width, int height, const char *name)
+
+VISIBLE int
+Mod_CalcFullbright (byte *in, byte *out, int pixels)
 {
-	byte   *ptexels;
-	int		pixels;
-	int		texnum = 0;
+	byte	fb = 0;
 
-	pixels = width * height;
-
-//	ptexels = Hunk_Alloc(s);
-	ptexels = malloc (pixels);
-	SYS_CHECKMEM (ptexels);
-
-	// Check for fullbright pixels
-	if (Mod_CalcFullbright (skin, ptexels, pixels)) {
-		Sys_MaskPrintf (SYS_DEV, "FB Model ID: '%s'\n", name);
-		texnum = GL_LoadTexture (name, width, height, ptexels, true, true, 1);
+	while (pixels--) {
+		byte        pix = *in++;
+		byte        mask = (pix >= 256 - 32) - 1;
+		fb |= mask + 1;
+		*out++ = pix | mask;
 	}
-
-	free (ptexels);
-	return texnum;
+	return fb;
 }
