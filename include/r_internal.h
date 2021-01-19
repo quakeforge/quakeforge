@@ -9,6 +9,33 @@
 #include "r_screen.h"
 #include "r_shared.h"
 
+typedef struct gltex_s {
+	texture_t  *texture;
+	int			gl_texturenum;
+	int			gl_fb_texturenum;
+	instsurf_t *tex_chain;	// for gl_texsort drawing
+	instsurf_t **tex_chain_tail;
+} gltex_t;
+
+typedef struct glsltex_s {
+	texture_t  *texture;
+	int			gl_texturenum;
+	int         sky_tex[2];
+	instsurf_t *tex_chain;	// for gl_texsort drawing
+	instsurf_t **tex_chain_tail;
+	struct elechain_s *elechain;
+	struct elechain_s **elechain_tail;
+} glsltex_t;
+
+typedef struct vulktex_s {
+	texture_t  *texture;
+	struct qfv_tex_s *tex;
+	instsurf_t *tex_chain;	// for gl_texsort drawing
+	instsurf_t **tex_chain_tail;
+	struct elechain_s *elechain;
+	struct elechain_s **elechain_tail;
+} vulktex_t;
+
 extern viddef_t 		vid;				// global video state
 
 extern vid_render_data_t vid_render_data;

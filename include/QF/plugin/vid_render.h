@@ -80,6 +80,7 @@ typedef struct vid_particle_funcs_s {
 } vid_particle_funcs_t;
 
 typedef struct vid_model_funcs_s {
+	size_t      texture_render_size;// size of renderer specific texture data
 	void (*Mod_LoadLighting) (bsp_t *bsp);
 	void (*Mod_SubdivideSurface) (msurface_t *fa);
 	void (*Mod_ProcessTexture) (texture_t *tx);

@@ -91,19 +91,13 @@ typedef struct instsurf_s {
 
 typedef struct texture_s {
 	char		*name;
-	unsigned int	width, height;
-	int			gl_texturenum;
-	int			gl_fb_texturenum;
-	int         sky_tex[2];
-	instsurf_t *tex_chain;	// for gl_texsort drawing
-	instsurf_t **tex_chain_tail;
-	struct elechain_s *elechain;
-	struct elechain_s **elechain_tail;
+	unsigned    width, height;
+	void       *render;		// renderer specific data
 	int			anim_total;				// total tenths in sequence ( 0 = no)
 	int			anim_min, anim_max;		// time for this frame min <=time< max
 	struct texture_s *anim_next;		// in the animation sequence
 	struct texture_s *alternate_anims;	// bmodels in frmae 1 use these
-	unsigned int	offsets[MIPLEVELS];		// four mip maps stored
+	unsigned    offsets[MIPLEVELS];		// four mip maps stored
 } texture_t;
 
 

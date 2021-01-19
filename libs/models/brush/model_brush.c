@@ -204,8 +204,22 @@ Mod_LoadTextures (bsp_t *bsp)
 
 		if (!strncmp (mt->name, "sky", 3))
 			loadmodel->skytexture = tx;
-		if (mod_funcs && mod_funcs->Mod_ProcessTexture)
+	}
+	if (mod_funcs && mod_funcs->Mod_ProcessTexture) {
+		size_t      render_size = mod_funcs->texture_render_size;
+		byte       *render_data = 0;
+		if (render_size) {
+			render_data = Hunk_AllocName (m->nummiptex * render_size,
+										  loadname);
+		}
+		for (i = 0; i < m->nummiptex; i++) {
+			tx = loadmodel->textures[i];
+			tx->render = render_data;
+			render_data += render_size;
 			mod_funcs->Mod_ProcessTexture (tx);
+		}
+		// signal the end of the textures
+		mod_funcs->Mod_ProcessTexture (0);
 	}
 
 	// sequence the animations

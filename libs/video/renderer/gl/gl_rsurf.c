@@ -85,7 +85,7 @@ static instsurf_t **sky_chain_tail;
 		(chain) = inst;										\
 	} while (0)
 
-static texture_t **r_texture_chains;
+static gltex_t   **r_texture_chains;
 static int  r_num_texture_chains;
 static int  max_texture_chains;
 
@@ -129,16 +129,17 @@ release_instsurfs (void)
 }
 
 void
-gl_R_AddTexture (texture_t *tex)
+gl_R_AddTexture (texture_t *tx)
 {
 	int         i;
 	if (r_num_texture_chains == max_texture_chains) {
 		max_texture_chains += 64;
 		r_texture_chains = realloc (r_texture_chains,
-								  max_texture_chains * sizeof (texture_t *));
+								  max_texture_chains * sizeof (gltex_t *));
 		for (i = r_num_texture_chains; i < max_texture_chains; i++)
 			r_texture_chains[i] = 0;
 	}
+	gltex_t    *tex = tx->render;
 	r_texture_chains[r_num_texture_chains++] = tex;
 	tex->tex_chain = NULL;
 	tex->tex_chain_tail = &tex->tex_chain;
@@ -174,7 +175,7 @@ R_RenderFullbrights (void)
 	int         i, j;
 	glpoly_t   *p;
 	instsurf_t *sc;
-	texture_t  *tex;
+	gltex_t    *tex;
 
 	for (i = 0; i < r_num_texture_chains; i++) {
 		if (!(tex = r_texture_chains[i]) || !tex->gl_fb_texturenum)
@@ -332,13 +333,15 @@ gl_R_DrawWaterSurfaces (void)
 
 	i = -1;
 	for (s = waterchain; s; s = s->tex_chain) {
+		gltex_t    *tex;
 		fa = s->surface;
 		if (s->transform)
 			qfglLoadMatrixf (s->transform);
 		else
 			qfglLoadMatrixf (gl_r_world_matrix);
-		if (i != fa->texinfo->texture->gl_texturenum) {
-			i = fa->texinfo->texture->gl_texturenum;
+		tex = fa->texinfo->texture->render;
+		if (i != tex->gl_texturenum) {
+			i = tex->gl_texturenum;
 			qfglBindTexture (GL_TEXTURE_2D, i);
 		}
 		GL_EmitWaterPolys (fa);
@@ -360,7 +363,7 @@ DrawTextureChains (int disable_blend, int do_bind)
 	int			i;
 	instsurf_t *s;
 	msurface_t *fa;
-	texture_t  *tex;
+	gltex_t    *tex;
 
 	if (gl_mtex_active_tmus >= 2) {
 		// Lightmaps
@@ -469,7 +472,7 @@ static void
 clear_texture_chains (void)
 {
 	int			i;
-	texture_t  *tex;
+	gltex_t    *tex;
 
 	for (i = 0; i < r_num_texture_chains; i++) {
 		tex = r_texture_chains[i];
@@ -478,7 +481,7 @@ clear_texture_chains (void)
 		tex->tex_chain = NULL;
 		tex->tex_chain_tail = &tex->tex_chain;
 	}
-	tex = r_notexture_mip;
+	tex = r_notexture_mip->render;
 	tex->tex_chain = NULL;
 	tex->tex_chain_tail = &tex->tex_chain;
 	release_instsurfs ();
@@ -496,12 +499,14 @@ chain_surface (msurface_t *surf, vec_t *transform, float *color)
 	} else if (surf->flags & SURF_DRAWSKY) {
 		CHAIN_SURF_F2B (surf, sky_chain);
 	} else {
-		texture_t  *tex;
+		texture_t  *tx;
+		gltex_t    *tex;
 
 		if (!surf->texinfo->texture->anim_total)
-			tex = surf->texinfo->texture;
+			tx = surf->texinfo->texture;
 		else
-			tex = R_TextureAnimation (surf);
+			tx = R_TextureAnimation (surf);
+		tex = tx->render;
 		CHAIN_SURF_F2B (surf, tex->tex_chain);
 
 		R_AddToLightmapChain (surf);

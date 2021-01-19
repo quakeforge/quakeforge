@@ -449,6 +449,7 @@ vulkan_Skin_InitTranslations (void)
 }
 
 static vid_model_funcs_t model_funcs = {
+	sizeof (vulktex_t),
 	vulkan_Mod_LoadLighting,
 	vulkan_Mod_SubdivideSurface,
 	vulkan_Mod_ProcessTexture,

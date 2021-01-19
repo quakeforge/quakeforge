@@ -51,6 +51,8 @@
 #include "mod_internal.h"
 #include "r_internal.h"
 
+static gltex_t gl_notexture = { };
+
 static tex_t *
 Mod_LoadAnExternalTexture (char *tname, char *mname)
 {
@@ -80,10 +82,13 @@ static int
 Mod_LoadExternalTextures (model_t *mod, texture_t *tx)
 {
 	tex_t	   *base, *luma;
+	gltex_t    *gltx;
 	int         external = 0;
+
+	gltx = tx->render;
 	if ((base = Mod_LoadAnExternalTexture (tx->name, mod->name))) {
 		external = 1;
-		tx->gl_texturenum =
+		gltx->gl_texturenum =
 			GL_LoadTexture (tx->name, base->width, base->height,
 							base->data, true, false,
 							base->format > 2 ? base->format : 1);
@@ -94,15 +99,15 @@ Mod_LoadExternalTextures (model_t *mod, texture_t *tx)
 			luma = Mod_LoadAnExternalTexture (va ("%s_glow", tx->name),
 											  mod->name);
 
-		tx->gl_fb_texturenum = 0;
+		gltx->gl_fb_texturenum = 0;
 
 		if (luma) {
-			tx->gl_fb_texturenum =
+			gltx->gl_fb_texturenum =
 				GL_LoadTexture (va ("fb_%s", tx->name), luma->width,
 								luma->height, luma->data, true, true,
 								luma->format > 2 ? luma->format : 1);
 		} else if (base->format < 3) {
-			tx->gl_fb_texturenum =
+			gltx->gl_fb_texturenum =
 				Mod_Fullbright (base->data, base->width, base->height,
 								va ("fb_%s", tx->name));
 		}
@@ -115,6 +120,10 @@ gl_Mod_ProcessTexture (texture_t *tx)
 {
 	const char *name;
 
+	if (!tx) {
+		r_notexture_mip->render = &gl_notexture;
+		return;
+	}
 	if (gl_textures_external && gl_textures_external->int_val) {
 		if (Mod_LoadExternalTextures (loadmodel, tx)) {
 			return;
@@ -123,10 +132,11 @@ gl_Mod_ProcessTexture (texture_t *tx)
 	if (strncmp (tx->name, "sky", 3) == 0) {
 		return;
 	}
+	gltex_t    *gltex = tx->render;
 	name = va ("fb_%s", tx->name);
-	tx->gl_fb_texturenum =
+	gltex->gl_fb_texturenum =
 		Mod_Fullbright ((byte *) (tx + 1), tx->width, tx->height, name);
-	tx->gl_texturenum =
+	gltex->gl_texturenum =
 		GL_LoadTexture (tx->name, tx->width, tx->height, (byte *) (tx + 1),
 						true, false, 1);
 }

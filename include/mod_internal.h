@@ -37,12 +37,9 @@ void gl_Mod_SubdivideSurface (msurface_t *fa);
 void gl_Mod_ProcessTexture(texture_t *tx);
 
 void glsl_Mod_LoadLighting (bsp_t *bsp);
-void glsl_Mod_SubdivideSurface (msurface_t *fa);
 void glsl_Mod_ProcessTexture(texture_t *tx);
 
 void sw_Mod_LoadLighting (bsp_t *bsp);
-void sw_Mod_SubdivideSurface (msurface_t *fa);
-void sw_Mod_ProcessTexture(texture_t *tx);
 
 void gl_Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum);
 void glsl_Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum);

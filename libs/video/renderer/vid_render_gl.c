@@ -46,6 +46,7 @@
 gl_ctx_t *gl_ctx;
 
 static vid_model_funcs_t model_funcs = {
+	sizeof (gltex_t),
 	gl_Mod_LoadLighting,
 	gl_Mod_SubdivideSurface,
 	gl_Mod_ProcessTexture,

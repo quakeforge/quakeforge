@@ -57,6 +57,9 @@
 
 #include "compat.h"
 #include "mod_internal.h"
+#include "r_internal.h"
+
+static glsltex_t glsl_notexture = { };
 
 static void
 glsl_brush_clear (model_t *m)
@@ -66,11 +69,15 @@ glsl_brush_clear (model_t *m)
 	m->needload = true;
 	for (i = 0; i < m->numtextures; i++) {
 		// NOTE: some maps (eg e1m2) have empty texture slots
-		if (m->textures[i] && m->textures[i]->gl_texturenum) {
-			GLSL_ReleaseTexture (m->textures[i]->gl_texturenum);
-			GLSL_ReleaseTexture (m->textures[i]->sky_tex[0]);
-			GLSL_ReleaseTexture (m->textures[i]->sky_tex[1]);
-			m->textures[i]->gl_texturenum = 0;
+		glsltex_t  *tex = 0;
+		if (m->textures[i]) {
+			tex = m->textures[i]->render;
+		}
+		if (tex && tex->gl_texturenum) {
+			GLSL_ReleaseTexture (tex->gl_texturenum);
+			GLSL_ReleaseTexture (tex->sky_tex[0]);
+			GLSL_ReleaseTexture (tex->sky_tex[1]);
+			tex->gl_texturenum = 0;
 		}
 	}
 	for (i = 0; i < m->numsurfaces; i++) {
@@ -96,6 +103,11 @@ load_skytex (texture_t *tx, byte *data)
 void
 glsl_Mod_ProcessTexture (texture_t *tx)
 {
+	if (!tx) {
+		r_notexture_mip->render = &glsl_notexture;
+		return;
+	}
+	glsltex_t  *tex = tx->render;
 	if (!strncmp (tx->name, "sky", 3)) {
 		// sky textures need to be loaded as two separate textures to allow
 		// wrapping on both sky layers.
@@ -112,23 +124,23 @@ glsl_Mod_ProcessTexture (texture_t *tx)
 			// a square sky texture probably means it's black, but just in
 			// case some other magic is being done, duplicate the square to
 			// both sky layers.
-			tx->sky_tex[0] = load_skytex (tx, tx_data);
-			tx->sky_tex[1] = tx->sky_tex[0];
+			tex->sky_tex[0] = load_skytex (tx, tx_data);
+			tex->sky_tex[1] = tex->sky_tex[0];
 		} else if (tx_w == 2 * tx_h) {
 			data = alloca (tx_h * tx_h);
 			for (i = 0; i < 2; i++) {
 				for (j = 0; j < tx_h; j++)
 					memcpy (&data[j * tx_h], &tx_data[j * tx_w + i * tx_h],
 							tx_h);
-				tx->sky_tex[i] = load_skytex (tx, data);
+				tex->sky_tex[i] = load_skytex (tx, data);
 			}
-			tx->gl_texturenum = 0;
+			tex->gl_texturenum = 0;
 		} else {
 			Sys_Error ("Mod_ProcessTexture: invalid sky texture: %dx%d\n",
 					   tx_w, tx_h);
 		}
 	} else {
-		tx->gl_texturenum = GLSL_LoadQuakeMipTex (tx);
+		tex->gl_texturenum = GLSL_LoadQuakeMipTex (tx);
 	}
 }
 

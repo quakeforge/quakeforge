@@ -73,7 +73,7 @@ static instsurf_t **waterchain_tail = &waterchain;
 static instsurf_t  *sky_chain;
 static instsurf_t **sky_chain_tail = &sky_chain;
 
-static texture_t  **r_texture_chains;
+static glsltex_t  **r_texture_chains;
 static int          r_num_texture_chains;
 static int          max_texture_chains;
 
@@ -293,16 +293,17 @@ GET_RELEASE (instsurf_t, static_instsurf)
 GET_RELEASE (instsurf_t, instsurf)
 
 void
-glsl_R_AddTexture (texture_t *tex)
+glsl_R_AddTexture (texture_t *tx)
 {
 	int         i;
 	if (r_num_texture_chains == max_texture_chains) {
 		max_texture_chains += 64;
 		r_texture_chains = realloc (r_texture_chains,
-								  max_texture_chains * sizeof (texture_t *));
+								  max_texture_chains * sizeof (glsltex_t *));
 		for (i = r_num_texture_chains; i < max_texture_chains; i++)
 			r_texture_chains[i] = 0;
 	}
+	glsltex_t  *tex = tx->render;
 	r_texture_chains[r_num_texture_chains++] = tex;
 	tex->tex_chain = 0;
 	tex->tex_chain_tail = &tex->tex_chain;
@@ -325,7 +326,7 @@ glsl_R_InitSurfaceChains (model_t *model)
 }
 
 static inline void
-clear_tex_chain (texture_t *tex)
+clear_tex_chain (glsltex_t *tex)
 {
 	tex->tex_chain = 0;
 	tex->tex_chain_tail = &tex->tex_chain;
@@ -343,7 +344,7 @@ clear_texture_chains (void)
 			continue;
 		clear_tex_chain (r_texture_chains[i]);
 	}
-	clear_tex_chain (r_notexture_mip);
+	clear_tex_chain (r_notexture_mip->render);
 	release_elechains ();
 	release_elementss ();
 	release_instsurfs ();
@@ -382,12 +383,14 @@ chain_surface (msurface_t *surf, vec_t *transform, float *color)
 	} else if ((surf->flags & SURF_DRAWTURB) || (color && color[3] < 1.0)) {
 		CHAIN_SURF_B2F (surf, waterchain);
 	} else {
-		texture_t  *tex;
+		texture_t  *tx;
+		glsltex_t  *tex;
 
 		if (!surf->texinfo->texture->anim_total)
-			tex = surf->texinfo->texture;
+			tx = surf->texinfo->texture;
 		else
-			tex = R_TextureAnimation (surf);
+			tx = R_TextureAnimation (surf);
+		tex = tx->render;
 		CHAIN_SURF_F2B (surf, tex->tex_chain);
 
 		update_lightmap (surf);
@@ -444,7 +447,7 @@ glsl_R_RegisterTextures (model_t **models, int num_models)
 }
 
 static elechain_t *
-add_elechain (texture_t *tex, int ec_index)
+add_elechain (glsltex_t *tex, int ec_index)
 {
 	elechain_t *ec;
 
@@ -563,7 +566,7 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 		// non-bsp models don't have surfaces.
 		dm = m->submodels;
 		for (j = 0; j < m->numsurfaces; j++) {
-			texture_t  *tex;
+			glsltex_t  *tex;
 			if (j == dm->firstface + dm->numfaces) {
 				dm++;
 				if (dm - m->submodels == m->numsubmodels) {
@@ -578,7 +581,7 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 			surf->ec_index = dm - m->submodels;
 			if (!surf->ec_index && m != r_worldentity.model)
 				surf->ec_index = -1 - i;	// instanced model
-			tex = surf->texinfo->texture;
+			tex = surf->texinfo->texture->render;
 			CHAIN_SURF_F2B (surf, tex->tex_chain);
 		}
 	}
@@ -590,7 +593,7 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 	// For animated textures, if a surface is on one texture of the group, it
 	// will be on all.
 	for (i = 0; i < r_num_texture_chains; i++) {
-		texture_t  *tex;
+		glsltex_t  *tex;
 		instsurf_t *is;
 		elechain_t *ec = 0;
 		elements_t *el = 0;
@@ -1057,7 +1060,7 @@ sky_end (void)
 }
 
 static inline void
-add_surf_elements (texture_t *tex, instsurf_t *is,
+add_surf_elements (glsltex_t *tex, instsurf_t *is,
 				   elechain_t **ec, elements_t **el)
 {
 	msurface_t *surf = is->surface;
@@ -1096,7 +1099,7 @@ add_surf_elements (texture_t *tex, instsurf_t *is,
 }
 
 static void
-build_tex_elechain (texture_t *tex)
+build_tex_elechain (glsltex_t *tex)
 {
 	instsurf_t *is;
 	elechain_t *ec = 0;
@@ -1136,7 +1139,7 @@ glsl_R_DrawWorld (void)
 	bsp_begin ();
 	qfeglActiveTexture (GL_TEXTURE0 + 0);
 	for (i = 0; i < r_num_texture_chains; i++) {
-		texture_t  *tex;
+		glsltex_t  *tex;
 		elechain_t *ec = 0;
 
 		tex = r_texture_chains[i];
@@ -1163,7 +1166,7 @@ glsl_R_DrawWaterSurfaces ()
 {
 	instsurf_t *is;
 	msurface_t *surf;
-	texture_t  *tex = 0;
+	glsltex_t  *tex = 0;
 	elechain_t *ec = 0;
 	elements_t *el = 0;
 
@@ -1173,7 +1176,7 @@ glsl_R_DrawWaterSurfaces ()
 	turb_begin ();
 	for (is = waterchain; is; is = is->tex_chain) {
 		surf = is->surface;
-		if (tex != surf->texinfo->texture) {
+		if (tex != surf->texinfo->texture->render) {
 			if (tex) {
 				qfeglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 				for (ec = tex->elechain; ec; ec = ec->next)
@@ -1184,7 +1187,7 @@ glsl_R_DrawWaterSurfaces ()
 				tex->elechain = 0;
 				tex->elechain_tail = &tex->elechain;
 			}
-			tex = surf->texinfo->texture;
+			tex = surf->texinfo->texture->render;
 		}
 		add_surf_elements (tex, is, &ec, &el);
 	}
@@ -1209,7 +1212,7 @@ glsl_R_DrawSky (void)
 {
 	instsurf_t *is;
 	msurface_t *surf;
-	texture_t  *tex = 0;
+	glsltex_t  *tex = 0;
 	elechain_t *ec = 0;
 	elements_t *el = 0;
 
@@ -1219,7 +1222,7 @@ glsl_R_DrawSky (void)
 	sky_begin ();
 	for (is = sky_chain; is; is = is->tex_chain) {
 		surf = is->surface;
-		if (tex != surf->texinfo->texture) {
+		if (tex != surf->texinfo->texture->render) {
 			if (tex) {
 				if (!skybox_loaded) {
 					qfeglActiveTexture (GL_TEXTURE0 + 0);
@@ -1233,7 +1236,7 @@ glsl_R_DrawSky (void)
 				tex->elechain = 0;
 				tex->elechain_tail = &tex->elechain;
 			}
-			tex = surf->texinfo->texture;
+			tex = surf->texinfo->texture->render;
 		}
 		add_surf_elements (tex, is, &ec, &el);
 	}
