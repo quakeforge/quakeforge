@@ -210,10 +210,11 @@ libs_video_renderer_vid_render_sw32_la_SOURCES=\
 pipeline_src = libs/video/renderer/vulkan/qfpipeline.plist
 pipeline_gen = libs/video/renderer/vulkan/qfpipeline.plc
 
-vulkan_libs =
+video_renderer_vulkan_libs = \
+	libs/models/libmodels_vulkan.la
 libs_video_renderer_vid_render_vulkan_la_LDFLAGS=       $(plugin_ldflags)
-libs_video_renderer_vid_render_vulkan_la_LIBADD=        $(vulkan_libs)
-libs_video_renderer_vid_render_vulkan_la_DEPENDENCIES=$(vulkan_libs)
+libs_video_renderer_vid_render_vulkan_la_LIBADD=        $(video_renderer_vulkan_libs)
+libs_video_renderer_vid_render_vulkan_la_DEPENDENCIES=$(video_renderer_vulkan_libs)
 libs_video_renderer_vid_render_vulkan_la_SOURCES = \
 	$(video_renderer_common_sources) \
 	libs/video/renderer/vid_render_vulkan.c \

@@ -72,10 +72,14 @@ if test "x$HAVE_X" = xyes; then
 		CL_TARGETS="$CL_TARGETS X11"
 		VID_TARGETS="$VID_TARGETS libs/video/targets/libQFx11.la"
 		if test "$HAVE_VULKAN" = "yes"; then
-			QF_NEED(vid_render, [sw sw32 gl glsl vulkan])
-		else
-			QF_NEED(vid_render, [sw sw32 gl glsl])
+			QF_NEED(vid_render, [vulkan])
+			QF_NEED(models, [vulkan])
+			QF_NEED(alias, [vulkan])
+			QF_NEED(brush, [vulkan])
+			QF_NEED(iqm, [vulkan])
+			QF_NEED(sprite, [vulkan])
 		fi
+		QF_NEED(vid_render, [sw sw32 gl glsl])
 		QF_NEED(models, [sw gl glsl])
 		QF_NEED(alias, [sw gl glsl])
 		QF_NEED(brush, [sw gl glsl])
@@ -100,10 +104,13 @@ if test "x$HAVE_SDL" = xyes; then
 		CL_TARGETS="$CL_TARGETS SDL"
 		VID_TARGETS="$VID_TARGETS libs/video/targets/libQFsdl.la"
 		if test "$HAVE_VULKAN" = "yes"; then
-			QF_NEED(vid_render, [sw sw32 gl glsl vulkan])
-		else
-			QF_NEED(vid_render, [sw sw32 gl glsl])
+			QF_NEED(vid_render, [vulkan])
+			QF_NEED(alias, [vulkan])
+			QF_NEED(brush, [vulkan])
+			QF_NEED(iqm, [vulkan])
+			QF_NEED(sprite, [vulkan])
 		fi
+		QF_NEED(vid_render, [sw sw32 gl glsl])
 		QF_NEED(models, [sw gl glsl])
 		QF_NEED(alias, [sw gl glsl])
 		QF_NEED(brush, [sw gl glsl])
@@ -291,11 +298,11 @@ QF_PROCESS_NEED_DIRS(top, [libs hw nq qtv qw tools ruamoko])
 
 QF_PROCESS_NEED_LIBS(swrend, [asm])
 QF_PROCESS_NEED_DIRS(vid_render, [gl glsl sw sw32 vulkan])
-QF_PROCESS_NEED_LIBS(models, [gl glsl sw], [libs/models])
-QF_PROCESS_NEED_LIBS(alias, [gl glsl sw], [libs/models/alias])
-QF_PROCESS_NEED_LIBS(brush, [gl glsl sw], [libs/models/brush])
-QF_PROCESS_NEED_LIBS(iqm, [gl glsl sw], [libs/models/iqm])
-QF_PROCESS_NEED_LIBS(sprite, [gl glsl sw], [libs/models/sprite])
+QF_PROCESS_NEED_LIBS(models, [gl glsl sw vulkan], [libs/models])
+QF_PROCESS_NEED_LIBS(alias, [gl glsl sw vulkan], [libs/models/alias])
+QF_PROCESS_NEED_LIBS(brush, [gl glsl sw vulkan], [libs/models/brush])
+QF_PROCESS_NEED_LIBS(iqm, [gl glsl sw vulkan], [libs/models/iqm])
+QF_PROCESS_NEED_LIBS(sprite, [gl glsl sw vulkan], [libs/models/sprite])
 
 QF_PROCESS_NEED_LIBS(vid, [common sdl svga x11], [libs/video/targets])
 QF_PROCESS_NEED_LIBS(qw, [client common sdl server], [qw/source], a)
