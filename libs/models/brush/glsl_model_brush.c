@@ -135,7 +135,7 @@ glsl_Mod_ProcessTexture (texture_t *tx)
 void
 glsl_Mod_LoadLighting (bsp_t *bsp)
 {
-	// a big hacky, but it's as good a place as any
+	// a bit hacky, but it's as good a place as any
 	loadmodel->clear = glsl_brush_clear;
 	mod_lightmap_bytes = 1;
 	if (!bsp->lightdatasize) {

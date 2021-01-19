@@ -68,7 +68,7 @@ gl_Mod_ProcessTexture (texture_t *tx)
 }
 
 static tex_t *
-Mod_LoadAnExternalTexture (char * tname, char *mname)
+Mod_LoadAnExternalTexture (char *tname, char *mname)
 {
 	char		rname[32];
 	tex_t	   *image;
@@ -78,17 +78,16 @@ Mod_LoadAnExternalTexture (char * tname, char *mname)
 	if (rname[0] == '*') rname[0] = '#';
 
 	image = LoadImage (va ("textures/%.*s/%s", (int) strlen (mname + 5) - 4,
-						   mname + 5, rname));
+						   mname + 5, rname), 1);
 	if (!image)
-		image = LoadImage (va ("maps/%.*s/%s",
-								   (int) strlen (mname + 5) - 4,
-								   mname + 5, rname));
+		image = LoadImage (va ("maps/%.*s/%s", (int) strlen (mname + 5) - 4,
+							   mname + 5, rname), 1);
 //	if (!image)
 //			image = LoadImage (va ("textures/bmodels/%s", rname));
 	if (!image)
-			image = LoadImage (va ("textures/%s", rname));
+			image = LoadImage (va ("textures/%s", rname), 1);
 	if (!image)
-			image = LoadImage (va ("maps/%s", rname));
+			image = LoadImage (va ("maps/%s", rname), 1);
 
 	return image;
 }

@@ -49,7 +49,7 @@ gl_Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)
 	tex_t      *targa;
 	const char *name;
 
-	targa = LoadImage (name = va ("%s_%i", loadmodel->name, framenum));
+	targa = LoadImage (name = va ("%s_%i", loadmodel->name, framenum), 1);
 	if (targa) {
 		if (targa->format < 4)
 			pspriteframe->gl_texturenum = GL_LoadTexture (name,

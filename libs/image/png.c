@@ -115,7 +115,7 @@ readpng_init (QFile *infile, png_structp *png_ptr, png_infop *info_ptr)
 
 /* Load the png file and return a texture */
 VISIBLE tex_t *
-LoadPNG (QFile *infile)
+LoadPNG (QFile *infile, int load)
 {
 	double			gamma;
 	png_structp		png_ptr = NULL;
@@ -131,37 +131,41 @@ LoadPNG (QFile *infile)
 	png_get_IHDR (png_ptr, info_ptr, &width, &height, &bit_depth, &color_type,
 				  NULL, NULL, NULL);
 
-	if (color_type == PNG_COLOR_TYPE_PALETTE)
-		png_set_expand (png_ptr);
+	if (load) {
+		if (color_type == PNG_COLOR_TYPE_PALETTE)
+			png_set_expand (png_ptr);
 
-	if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
-		png_set_expand (png_ptr);
+		if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
+			png_set_expand (png_ptr);
 
-	if (png_get_valid (png_ptr, info_ptr, PNG_INFO_tRNS))
-		png_set_expand (png_ptr);
+		if (png_get_valid (png_ptr, info_ptr, PNG_INFO_tRNS))
+			png_set_expand (png_ptr);
 
-	if (bit_depth == 16)
-		png_set_strip_16 (png_ptr);
+		if (bit_depth == 16)
+			png_set_strip_16 (png_ptr);
 
-	if (color_type == PNG_COLOR_TYPE_GRAY
-		|| color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
-		png_set_gray_to_rgb (png_ptr);
+		if (color_type == PNG_COLOR_TYPE_GRAY
+			|| color_type == PNG_COLOR_TYPE_GRAY_ALPHA)
+			png_set_gray_to_rgb (png_ptr);
 
-	/* NOTE: gamma support? */
-	/* unlike the example in the libpng documentation, we have *no* idea where
-	 * this file may have come from--so if it doesn't have a file gamma, don't
-	 * do any correction ("do no harm")
-	 */
-	if (png_get_gAMA(png_ptr, info_ptr, &gamma))
-		png_set_gamma (png_ptr, 1.0, gamma);
+		/* NOTE: gamma support? */
+		/* unlike the example in the libpng documentation, we have *no* idea
+		 * wherethis file may have come from--so if it doesn't have a file
+		 * gamma, don't do any correction ("do no harm")
+		 */
+		if (png_get_gAMA(png_ptr, info_ptr, &gamma))
+			png_set_gamma (png_ptr, 1.0, gamma);
 
-	/* All transformations have been registered, now update the info_ptr
-	 * structure */
-	png_read_update_info (png_ptr, info_ptr);
+		/* All transformations have been registered, now update the info_ptr
+		 * structure */
+		png_read_update_info (png_ptr, info_ptr);
 
-	/* Allocate tex_t structure */
-	rowbytes = png_get_rowbytes(png_ptr, info_ptr);
-	tex = Hunk_TempAlloc (field_offset (tex_t, data[height * rowbytes]));
+		/* Allocate tex_t structure */
+		rowbytes = png_get_rowbytes(png_ptr, info_ptr);
+		tex = Hunk_TempAlloc (field_offset (tex_t, data[height * rowbytes]));
+	} else {
+		tex = Hunk_TempAlloc (field_offset (tex_t, data[0]));
+	}
 
 	tex->width = width;
 	tex->height = height;
@@ -170,6 +174,12 @@ LoadPNG (QFile *infile)
 	else
 		tex->format = tex_rgb;
 	tex->palette = NULL;
+	tex->loaded = load;
+
+	if (!load) {
+		png_read_end (png_ptr, NULL);
+		return tex;
+	}
 
 	if ((row_pointers = (png_bytepp) malloc (height * sizeof (png_bytep)))
 		== NULL) {

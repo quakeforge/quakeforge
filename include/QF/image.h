@@ -45,11 +45,11 @@ typedef struct tex_s {
 	int         width;
 	int         height;
 	QFFormat    format;
-	byte       *palette;					// 0 = 32 bit, otherwise 8
-	byte        data[4];					// variable length
+	int         loaded;			// 0 if size info only, otherwise data loaded
+	byte       *palette;		// 0 = 32 bit, otherwise 8
+	byte        data[4];		// variable length
 } tex_t;
 
-
-tex_t *LoadImage (const char *imageFile);
+tex_t *LoadImage (const char *imageFile, int load);
 
 #endif//__QF_image_h

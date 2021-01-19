@@ -102,12 +102,12 @@ glsl_iqm_load_textures (iqm_t *iqm)
 	for (i = 0; i < iqm->num_meshes; i++) {
 		dstring_copystr (str, iqm->text + iqm->meshes[i].material);
 		QFS_StripExtension (str->str, str->str);
-		if ((tex = LoadImage (va ("textures/%s", str->str))))
+		if ((tex = LoadImage (va ("textures/%s", str->str), 1)))
 			glsl->textures[i] = GLSL_LoadRGBATexture (str->str, tex->width,
 													  tex->height, tex->data);
 		else
 			glsl->textures[i] = GLSL_LoadRGBATexture ("", 2, 2, null_texture);
-		if ((tex = LoadImage (va ("textures/%s_norm", str->str))))
+		if ((tex = LoadImage (va ("textures/%s_norm", str->str), 1)))
 			glsl->normmaps[i] = GLSL_LoadRGBATexture (str->str, tex->width,
 													  tex->height, tex->data);
 		else

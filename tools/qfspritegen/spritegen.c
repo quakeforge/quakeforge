@@ -190,7 +190,7 @@ LoadScreen (const char *name)
 	file = Qopen (name, "rb");
 	if (!file)
 		Sys_Error ("could not open");
-	image = LoadPCX (file, false, 0);
+	image = LoadPCX (file, false, 0, 1);
 }
 
 

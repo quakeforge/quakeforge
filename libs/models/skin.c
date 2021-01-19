@@ -184,7 +184,7 @@ Skin_SetSkin (skin_t *skin, int cmap, const char *skinname)
 			name = 0;
 			break;
 		}
-		tex = LoadPCX (file, 0, r_data->vid->palette);
+		tex = LoadPCX (file, 0, r_data->vid->palette, 1);
 		Qclose (file);
 		if (!tex || tex->width > 320 || tex->height > 200) {
 			Sys_Printf ("Bad skin %s\n", name);

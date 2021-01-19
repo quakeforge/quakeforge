@@ -67,7 +67,7 @@ typedef struct _TargaHeader {
 # endif
 #endif
 
-struct tex_s *LoadTGA (QFile *fin);
+struct tex_s *LoadTGA (QFile *fin, int load);
 void WriteTGAfile (const char *tganame, byte *data, int width, int height);
 
 #endif//__QF_tga_h

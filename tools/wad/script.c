@@ -92,7 +92,7 @@ load_image (const char *name)
 
 	if (!(file = Qopen (name, "rb")))
 		Sys_Error ("couldn't open %s. %s", name, strerror(errno));
-	if (!(tex = LoadPNG (file)))
+	if (!(tex = LoadPNG (file, 1)))
 		Sys_Error ("couldn't read %s as PNG", name);
 
 	pixels = tex->width * tex->height;

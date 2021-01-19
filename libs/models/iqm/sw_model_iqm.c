@@ -54,7 +54,7 @@
 #include "r_internal.h"
 
 static tex_t null_texture = {
-	2, 2, tex_palette, 0, {15, 15, 15, 15}
+	2, 2, tex_palette, 1, 0, {15, 15, 15, 15}
 };
 
 static void
@@ -165,7 +165,7 @@ sw_iqm_load_textures (iqm_t *iqm)
 			continue;
 		dstring_copystr (str, iqm->text + iqm->meshes[i].material);
 		QFS_StripExtension (str->str, str->str);
-		if ((tex = LoadImage (va ("textures/%s", str->str))))
+		if ((tex = LoadImage (va ("textures/%s", str->str), 1)))
 			tex = sw->skins[i] = convert_tex (tex);
 		else
 			tex = sw->skins[i] = &null_texture;
