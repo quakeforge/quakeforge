@@ -59,6 +59,7 @@ typedef struct elechain_s {
 typedef struct bspframe_s {
 	uint32_t    *index_data;
 	uint32_t     index_count;
+	uint32_t     index_offset;
 	VkCommandBuffer bsp_cmd;
 	VkCommandBuffer turb_cmd;
 	VkCommandBuffer sky_cmd;

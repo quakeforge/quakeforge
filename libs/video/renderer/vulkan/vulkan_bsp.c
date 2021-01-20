@@ -522,7 +522,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		bctx->index_buffer
 			= QFV_CreateBuffer (device, index_buffer_size,
 								VK_BUFFER_USAGE_TRANSFER_DST_BIT
-								| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+								| VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 		bctx->index_memory
 			= QFV_AllocBufferMemory (device, bctx->index_buffer,
 									 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
@@ -535,7 +535,9 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 							index_buffer_size, 0, &data);
 		uint32_t   *index_data = data;
 		for (size_t i = 0; i < frames; i++) {
-			bctx->frames.a[i].index_data = index_data + index_count * i;
+			uint32_t    offset = index_count * i;
+			bctx->frames.a[i].index_data = index_data + offset;
+			bctx->frames.a[i].index_offset = offset * sizeof (uint32_t);
 		}
 	}
 	if (vertex_buffer_size > bctx->vertex_buffer_size) {
@@ -809,9 +811,10 @@ bsp_begin (vulkan_ctx_t *ctx)
 
 	__auto_type cframe = &ctx->framebuffers.a[ctx->curFrame];
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
-	DARRAY_APPEND (cframe->subCommand, bframe->bsp_cmd);
+	VkCommandBuffer cmd = bframe->bsp_cmd;
+	DARRAY_APPEND (cframe->subCommand, cmd);
 
-	dfunc->vkResetCommandBuffer (bframe->bsp_cmd, 0);
+	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
 		ctx->renderpass.renderpass, 0,
@@ -823,7 +826,24 @@ bsp_begin (vulkan_ctx_t *ctx)
 		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
 		| VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &inherit,
 	};
-	dfunc->vkBeginCommandBuffer (bframe->bsp_cmd, &beginInfo);
+	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
+
+	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+							  bctx->main);
+	VkViewport  viewport = {0, 0, vid.width, vid.height, 0, 1};
+	VkRect2D    scissor = { {0, 0}, {vid.width, vid.height} };
+	dfunc->vkCmdSetViewport (cmd, 0, 1, &viewport);
+	dfunc->vkCmdSetScissor (cmd, 0, 1, &scissor);
+
+	VkDeviceSize offsets[] = { 0 };
+	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &bctx->vertex_buffer, offsets);
+	dfunc->vkCmdBindIndexBuffer (cmd, bctx->index_buffer, bframe->index_offset,
+								 VK_INDEX_TYPE_UINT32);
+
+	VkDescriptorSet set = bframe->descriptors;
+	VkPipelineLayout layout = bctx->layout;
+	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									layout, 0, 1, &set, 0, 0);
 
 	//XXX glsl_Fog_GetColor (fog);
 	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;
