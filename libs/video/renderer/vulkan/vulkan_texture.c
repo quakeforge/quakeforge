@@ -85,6 +85,30 @@ ilog2 (unsigned x)
 	return y;
 }
 
+void
+Vulkan_ExpandPalette (byte *dst, const byte *src, const byte *palette,
+					  int alpha, int count)
+{
+	if (alpha) {
+		while (count-- > 0) {
+			byte        pix = *src++;
+			const byte *col = palette + pix;
+			*dst++ = *col++;
+			*dst++ = *col++;
+			*dst++ = *col++;
+			*dst++ = 0xff;
+		}
+	} else {
+		while (count-- > 0) {
+			byte        pix = *src++;
+			const byte *col = palette + pix;
+			*dst++ = *col++;
+			*dst++ = *col++;
+			*dst++ = *col++;
+		}
+	}
+}
+
 qfv_tex_t *
 Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip)
 {
@@ -152,14 +176,8 @@ Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip)
 	byte       *tex_data = QFV_PacketExtend (packet, bytes);
 
 	if (tex->format == tex_palette) {
-		byte       *data = tex->data;
-		for (size_t count = tex->width * tex->height; count-- > 0; ) {
-			byte        pix = *data++;
-			byte       *col = tex->palette + pix;
-			*tex_data++ = *col++;
-			*tex_data++ = *col++;
-			*tex_data++ = *col++;
-		}
+		Vulkan_ExpandPalette (tex_data, tex->data, tex->palette,
+							  0, tex->width * tex->height);
 	} else {
 		memcpy (tex_data, tex->data, bytes);
 	}

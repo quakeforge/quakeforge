@@ -48,9 +48,13 @@
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_model.h"
 #include "QF/Vulkan/qf_texture.h"
+#include "QF/Vulkan/barrier.h"
+#include "QF/Vulkan/command.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
+#include "QF/Vulkan/staging.h"
 
+#include "qfalloca.h"
 #include "compat.h"
 #include "mod_internal.h"
 #include "r_internal.h"
@@ -97,13 +101,85 @@ get_image_size (VkImage image, qfv_device_t *device)
 }
 
 static void
+transfer_mips (byte *dst, const void *_src, const texture_t *tx)
+{
+	const byte *src = _src;
+	unsigned    width = tx->width;
+	unsigned    height = tx->height;
+	unsigned    count, offset;
+
+	for (int i = 0; i < MIPLEVELS; i++) {
+		// mip offsets are relative to the texture pointer rather than the
+		// end of the texture struct
+		offset = tx->offsets[i] - sizeof (texture_t);
+		count = width * height;
+		Vulkan_ExpandPalette (dst, src + offset, vid.palette, 1, count);
+		dst += count;
+		width >>= 1;
+		height >>= 1;
+	}
+}
+
+static void
+copy_mips (qfv_packet_t *packet, texture_t *tx, qfv_tex_t *tex,
+			qfv_devfuncs_t *dfunc)
+{
+	// base copy
+	VkBufferImageCopy copy = {
+		tex->offset, tx->width, 0,
+		{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+		{0, 0, 0}, {tx->width, tx->height, 1},
+	};
+	int         is_sky = 0;
+	int         sky_offset = 0;
+	size_t      size = tx->width * tx->height * 4;
+	int         copy_count = MIPLEVELS;
+
+	if (strncmp (tx->name, "sky", 3) == 0) {
+		if (tx->width == 2 * tx->height) {
+			copy.imageExtent.width /= 2;
+			sky_offset = tx->width * 4 / 2;
+		}
+		is_sky = 1;
+		copy_count *= 2;
+	}
+
+	__auto_type copies = QFV_AllocBufferImageCopy (copy_count, alloca);
+	copies->size = 0;
+
+	for (int i = 0; i < MIPLEVELS; i++) {
+		__auto_type c = &copies->a[copies->size++];
+		*c = copy;
+		if (is_sky) {
+			__auto_type c = &copies->a[copies->size++];
+			*c = copy;
+			c->bufferOffset += sky_offset * 4;
+			c->imageSubresource.baseArrayLayer = 1;
+		}
+		copy.bufferOffset += size;
+		size >>= 2;
+		copy.bufferRowLength >>= 1;
+		copy.imageExtent.width >>= 1;
+		copy.imageExtent.height >>= 1;
+		sky_offset >>= 1;
+	}
+	dfunc->vkCmdCopyBufferToImage (packet->cmd, packet->stage->buffer,
+								   tex->image,
+								   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+								   copies->size, copies->a);
+}
+
+static void
 load_textures (model_t *model, vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	modelctx_t *mctx = model->data;
 	VkImage     image = 0;
+	byte       *buffer;
 
+	size_t      image_count = 0;
+	size_t      copy_count = 0;
 	size_t      memsize = 0;
 	for (int i = 0; i < model->numtextures; i++) {
 		texture_t  *tx = model->textures[i];
@@ -113,11 +189,18 @@ load_textures (model_t *model, vulkan_ctx_t *ctx)
 		vulktex_t  *tex = tx->render;
 		tex->tex->offset = memsize;
 		memsize += get_image_size (tex->tex->image, device);
+		image_count++;
+		copy_count += MIPLEVELS;
+		if (strncmp (tx->name, "sky", 3) == 0) {
+			copy_count += MIPLEVELS;
+		}
 		// just so we have one in the end
 		image = tex->tex->image;
 		if (tex->glow) {
+			copy_count += MIPLEVELS;
 			tex->glow->offset = memsize;
 			memsize += get_image_size (tex->glow->image, device);
+			image_count++;
 		}
 	}
 	VkDeviceMemory mem;
@@ -125,6 +208,11 @@ load_textures (model_t *model, vulkan_ctx_t *ctx)
 								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 								memsize, 0);
 	mctx->texture_memory = mem;
+
+	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device, memsize, 1,
+													 ctx->cmdpool);
+	qfv_packet_t *packet = QFV_PacketAcquire (stage);
+	buffer = QFV_PacketExtend (packet, memsize);
 
 	for (int i = 0; i < model->numtextures; i++) {
 		texture_t  *tx = model->textures[i];
@@ -142,6 +230,7 @@ load_textures (model_t *model, vulkan_ctx_t *ctx)
 		tex->tex->view = QFV_CreateImageView (device, tex->tex->image,
 											  type, VK_FORMAT_R8G8B8A8_UNORM,
 											  VK_IMAGE_ASPECT_COLOR_BIT);
+		transfer_mips (buffer + tex->tex->offset, tx + 1, tx);
 		if (tex->glow) {
 			dfunc->vkBindImageMemory (device->dev, tex->glow->image, mem,
 									  tex->glow->offset);
@@ -151,8 +240,67 @@ load_textures (model_t *model, vulkan_ctx_t *ctx)
 												   VK_IMAGE_VIEW_TYPE_2D,
 												   VK_FORMAT_R8G8B8A8_UNORM,
 												   VK_IMAGE_ASPECT_COLOR_BIT);
+			transfer_mips (buffer + tex->glow->offset, tex->glow->memory, tx);
 		}
 	}
+
+	// base barrier
+	VkImageMemoryBarrier barrier;
+	barrier = imageLayoutTransitionBarriers[qfv_LT_Undefined_to_TransferDst];
+	barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+
+	__auto_type barriers = QFV_AllocImageBarrierSet (image_count, malloc);
+	barriers->size = 0;
+	for (int i = 0; i < model->numtextures; i++) {
+		texture_t  *tx = model->textures[i];
+		if (!tx) {
+			continue;
+		}
+		vulktex_t  *tex = tx->render;
+		__auto_type b = &barriers->a[barriers->size++];
+		*b = barrier;
+		b->image = tex->tex->image;
+		if (tex->glow) {
+			b = &barriers->a[barriers->size++];
+			*b = barrier;
+			b->image = tex->glow->image;
+		}
+	}
+	qfv_pipelinestagepair_t stages;
+
+	stages = imageLayoutTransitionStages[qfv_LT_Undefined_to_TransferDst];
+	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+								 0, 0, 0, 0, 0,
+								 barriers->size, barriers->a);
+	for (int i = 0, j = 0; i < model->numtextures; i++) {
+		texture_t  *tx = model->textures[i];
+		if (!tx) {
+			continue;
+		}
+		vulktex_t  *tex = tx->render;
+		__auto_type b = &barriers->a[j++];
+		b->oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		b->newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		b->srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		b->dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		copy_mips (packet, tx, tex->tex, dfunc);
+		if (tex->glow) {
+			b = &barriers->a[j++];
+			b->oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+			b->newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			b->srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+			b->dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+			copy_mips (packet, tx, tex->glow, dfunc);
+		}
+	}
+
+	stages=imageLayoutTransitionStages[qfv_LT_TransferDst_to_ShaderReadOnly];
+	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+								 0, 0, 0, 0, 0,
+								 barriers->size, barriers->a);
+	QFV_PacketSubmit (packet);
+	QFV_DestroyStagingBuffer (stage);
 }
 
 void
@@ -173,12 +321,18 @@ Vulkan_Mod_ProcessTexture (texture_t *tx, vulkan_ctx_t *ctx)
 	}
 
 	vulktex_t    *tex = tx->render;
+	tex->texture = tx;
 	tex->tex = (qfv_tex_t *) (tx + 1);
 	VkExtent3D extent = { tx->width, tx->height, 1 };
 
 	int layers = 1;
 	if (strncmp (tx->name, "sky", 3) == 0) {
 		layers = 2;
+		// the sky texture is normally 2 side-by-side squares, but
+		// some maps have just a single square
+		if (tx->width == 2 * tx->height) {
+			extent.width /= 2;
+		}
 	}
 
 	tex->tex->image = QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D,

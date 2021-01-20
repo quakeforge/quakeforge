@@ -28,6 +28,8 @@ typedef struct qfv_imagetransitionset_s
 	DARRAY_TYPE (qfv_imagetransition_t) qfv_imagetransitionset_t;
 typedef struct qfv_imagebarrierset_s
 	DARRAY_TYPE (VkImageMemoryBarrier) qfv_imagebarrierset_t;
+#define QFV_AllocImageBarrierSet(num, allocator) \
+	DARRAY_ALLOCFIXED (qfv_imagebarrierset_t, num, allocator)
 
 struct qfv_device_s;
 VkImage QFV_CreateImage (struct qfv_device_s *device, int cubemap,
