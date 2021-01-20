@@ -58,6 +58,7 @@
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_texture.h"
+#include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
@@ -386,6 +387,7 @@ void
 Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
 	int         i, j;
 	int         vertex_index_base;
@@ -450,10 +452,14 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			poly_count++;
 		}
 	}
-	stage = QFV_CreateStagingBuffer (device,
-									 vertex_count * sizeof (bspvert_t), 1,
+
+	size_t frames = bctx->frames.size;
+	size_t index_buffer_size = index_count * frames * sizeof (uint32_t);
+	size_t vertex_buffer_size = vertex_count * sizeof (bspvert_t);
+	stage = QFV_CreateStagingBuffer (device, vertex_buffer_size, 1,
 									 ctx->cmdpool);
-	vertices = stage->data;
+	qfv_packet_t *packet = QFV_PacketAcquire (stage);
+	vertices = QFV_PacketExtend (packet, vertex_buffer_size);
 	vertex_index_base = 0;
 	// holds all the polygon definitions (count + indices)
 	bctx->polys = malloc ((index_count + poly_count) * sizeof (uint32_t));
@@ -468,7 +474,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		vulktex_t  *tex;
 		instsurf_t *is;
 		elechain_t *ec = 0;
-		elements_t *el = 0;
+		//elements_t *el = 0;
 
 		tex = bctx->texture_chains.a[i];
 
@@ -476,20 +482,20 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			msurface_t *surf = is->surface;
 			if (!tex->elechain) {
 				ec = add_elechain (tex, surf->ec_index, bctx);
-				el = ec->elements;
+				//el = ec->elements;
 				vertex_index_base = 0;
 			}
 			if (surf->ec_index != ec->index) {	// next sub-model
 				ec = add_elechain (tex, surf->ec_index, bctx);
-				el = ec->elements;
+				//el = ec->elements;
 				vertex_index_base = 0;
 			}
-			if (vertex_index_base + surf->numedges > 65535) {
+			/*if (vertex_index_base + surf->numedges > 65535) {
 				// elements index overflow
 				el->next = get_elements (bctx);
 				el = el->next;
 				vertex_index_base = 0;
-			}
+			}*/
 			// we don't use it now, but pre-initializing the list won't hurt
 			//XXX if (!el->list)
 			//XXX 	el->list = dstring_new ();
@@ -507,12 +513,73 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 					"R_BuildDisplayLists: verts:%u, inds:%u, polys:%u (%d) %zd\n",
 					vertex_count, index_count, poly_count, count,
 					((size_t) poly - (size_t) bctx->polys)/sizeof(uint32_t));
-	/*XXX if (!bsp_vbo)
-		qfeglGenBuffers (1, &bsp_vbo);
-	qfeglBindBuffer (GL_ARRAY_BUFFER, bsp_vbo);
-	qfeglBufferData (GL_ARRAY_BUFFER, vertices->size, vertices->str,
-					GL_STATIC_DRAW);
-	qfeglBindBuffer (GL_ARRAY_BUFFER, 0);*/
+	if (index_buffer_size > bctx->index_buffer_size) {
+		if (bctx->index_buffer) {
+			dfunc->vkUnmapMemory (device->dev, bctx->index_memory);
+			dfunc->vkDestroyBuffer (device->dev, bctx->index_buffer, 0);
+			dfunc->vkFreeMemory (device->dev, bctx->index_memory, 0);
+		}
+		bctx->index_buffer
+			= QFV_CreateBuffer (device, index_buffer_size,
+								VK_BUFFER_USAGE_TRANSFER_DST_BIT
+								| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+		bctx->index_memory
+			= QFV_AllocBufferMemory (device, bctx->index_buffer,
+									 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+									 index_buffer_size, 0);
+		QFV_BindBufferMemory (device,
+							  bctx->index_buffer, bctx->index_memory, 0);
+		bctx->index_buffer_size = index_buffer_size;
+		void       *data;
+		dfunc->vkMapMemory (device->dev, bctx->index_memory, 0,
+							index_buffer_size, 0, &data);
+		uint32_t   *index_data = data;
+		for (size_t i = 0; i < frames; i++) {
+			bctx->frames.a[i].index_data = index_data + index_count * i;
+		}
+	}
+	if (vertex_buffer_size > bctx->vertex_buffer_size) {
+		if (bctx->vertex_buffer) {
+			dfunc->vkDestroyBuffer (device->dev, bctx->vertex_buffer, 0);
+			dfunc->vkFreeMemory (device->dev, bctx->vertex_memory, 0);
+		}
+		bctx->vertex_buffer
+			= QFV_CreateBuffer (device, vertex_buffer_size,
+								VK_BUFFER_USAGE_TRANSFER_DST_BIT
+								| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+		bctx->vertex_memory
+			= QFV_AllocBufferMemory (device, bctx->vertex_buffer,
+									 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+									 vertex_buffer_size, 0);
+		QFV_BindBufferMemory (device,
+							  bctx->vertex_buffer, bctx->vertex_memory, 0);
+		bctx->vertex_buffer_size = vertex_buffer_size;
+	}
+
+	VkBufferMemoryBarrier wr_barrier = {
+		VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
+		0, VK_ACCESS_TRANSFER_WRITE_BIT,
+		VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
+		bctx->vertex_buffer, 0, vertex_buffer_size,
+	};
+	dfunc->vkCmdPipelineBarrier (packet->cmd,
+								 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+								 VK_PIPELINE_STAGE_TRANSFER_BIT,
+								 0, 0, 0, 1, &wr_barrier, 0, 0);
+	VkBufferCopy copy_region = { packet->offset, 0, vertex_buffer_size };
+	dfunc->vkCmdCopyBuffer (packet->cmd, ctx->staging->buffer,
+							bctx->vertex_buffer, 1, &copy_region);
+	VkBufferMemoryBarrier rd_barrier = {
+		VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
+		VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
+		VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
+		bctx->vertex_buffer, 0, vertex_buffer_size,
+	};
+	dfunc->vkCmdPipelineBarrier (packet->cmd,
+								 VK_PIPELINE_STAGE_TRANSFER_BIT,
+								 VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
+								 0, 0, 0, 1, &rd_barrier, 0, 0);
+	QFV_PacketSubmit (packet);
 	QFV_DestroyStagingBuffer (stage);
 }
 
@@ -1176,6 +1243,14 @@ Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 	DARRAY_CLEAR (&bctx->frames);
 	QFV_DestroyStagingBuffer (bctx->light_stage);
 	QFV_DestroyScrap (bctx->light_scrap);
+	if (bctx->vertex_buffer) {
+		dfunc->vkDestroyBuffer (device->dev, bctx->vertex_buffer, 0);
+		dfunc->vkFreeMemory (device->dev, bctx->vertex_memory, 0);
+	}
+	if (bctx->index_buffer) {
+		dfunc->vkDestroyBuffer (device->dev, bctx->index_buffer, 0);
+		dfunc->vkFreeMemory (device->dev, bctx->index_memory, 0);
+	}
 }
 
 static inline __attribute__((const)) int
