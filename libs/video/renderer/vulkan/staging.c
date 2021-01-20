@@ -1,7 +1,7 @@
 /*
-	shader.c
+	staging.c
 
-	Vulkan shader manager
+	Vulkan staging buffer manager
 
 	Copyright (C) 2021      Bill Currie <bill@taniwha.org>
 
@@ -97,6 +97,12 @@ QFV_DestroyStagingBuffer (qfv_stagebuf_t *stage)
 	qfv_device_t *device = stage->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
+	__auto_type fences = QFV_AllocFenceSet (stage->num_packets, alloca);
+	for (size_t i = 0; i < stage->num_packets; i++) {
+		fences->a[i] = stage->packet[i].fence;
+	}
+	dfunc->vkWaitForFences (device->dev, fences->size, fences->a, VK_TRUE,
+							~0ull);
 	for (size_t i = 0; i < stage->num_packets; i++) {
 		dfunc->vkDestroyFence (device->dev, stage->packet[i].fence, 0);
 	}
