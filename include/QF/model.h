@@ -153,7 +153,7 @@ typedef struct msurface_s {
 
 	int			light_s, light_t;	// gl lightmap coordinates
 
-	glpoly_t	*polys;				// multiple if warped
+	glpoly_t   *polys;				// multiple if warped
 	instsurf_t *instsurf;	///< null if not part of world model/sub-model
 	instsurf_t *tinst;		///< for instance models
 

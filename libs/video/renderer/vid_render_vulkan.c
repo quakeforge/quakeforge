@@ -44,6 +44,7 @@
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_particles.h"
+#include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/device.h"
@@ -462,7 +463,7 @@ vulkan_Skin_InitTranslations (void)
 }
 
 static vid_model_funcs_t model_funcs = {
-	sizeof (vulktex_t) + 2 * sizeof (struct qfv_tex_s *),
+	sizeof (vulktex_t) + 2 * sizeof (qfv_tex_t),
 	vulkan_Mod_LoadLighting,
 	vulkan_Mod_SubdivideSurface,
 	vulkan_Mod_ProcessTexture,

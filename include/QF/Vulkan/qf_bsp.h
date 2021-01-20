@@ -45,7 +45,6 @@ typedef struct elements_s {
 	struct elements_s *_next;
 	struct elements_s *next;
 	byte       *base;
-	struct dstring_s *list;
 } elements_t;
 
 typedef struct elechain_s {
@@ -106,6 +105,8 @@ typedef struct bspctx_s {
 
 	struct scrap_s *light_scrap;
 	struct qfv_stagebuf_s *light_stage;
+
+	struct bsppoly_s *polys;
 
 	VkDeviceMemory texture_memory;
 	VkPipeline   main;

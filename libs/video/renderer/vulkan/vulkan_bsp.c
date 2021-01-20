@@ -70,10 +70,10 @@
 
 #define ALLOC_CHUNK 64
 
-typedef struct {
+typedef struct bsppoly_s {
 	uint32_t    count;
 	uint32_t    indices[1];
-} glslpoly_t;
+} bsppoly_t;
 
 #define CHAIN_SURF_F2B(surf,chain)							\
 	do { 													\
@@ -297,11 +297,18 @@ add_elechain (vulktex_t *tex, int ec_index, bspctx_t *bctx)
 }
 
 static void
+count_verts_inds (model_t **models, msurface_t *fa,
+				  uint32_t *verts, uint32_t *inds)
+{
+	*verts = fa->numedges;
+	*inds = fa->numedges + 1;
+}
+
+static bsppoly_t *
 build_surf_displist (model_t **models, msurface_t *fa, int base,
-					 dstring_t *vert_list)
+					 bspvert_t **vert_list)
 {
 	int         numverts;
-	int         numtris;
 	int         numindices;
 	int         i;
 	vec_t      *vec;
@@ -310,38 +317,41 @@ build_surf_displist (model_t **models, msurface_t *fa, int base,
 	int        *surfedges;
 	int         index;
 	bspvert_t  *verts;
-	glslpoly_t *poly;
+	bsppoly_t  *poly;
 	uint32_t   *ind;
 	float       s, t;
 
 	if (fa->ec_index < 0) {
-		vertices = models[-fa->ec_index - 1]->vertexes;
-		edges = models[-fa->ec_index - 1]->edges;
-		surfedges = models[-fa->ec_index - 1]->surfedges;
+		// instance model
+		vertices  = models[~fa->ec_index]->vertexes;
+		edges     = models[~fa->ec_index]->edges;
+		surfedges = models[~fa->ec_index]->surfedges;
 	} else {
-		vertices = r_worldentity.model->vertexes;
-		edges = r_worldentity.model->edges;
+		// main or sub model
+		vertices  = r_worldentity.model->vertexes;
+		edges     = r_worldentity.model->edges;
 		surfedges = r_worldentity.model->surfedges;
 	}
+	// create a triangle fan
 	numverts = fa->numedges;
-	numtris = numverts - 2;
-	numindices = numtris * 3;
-	verts = alloca (numverts * sizeof (bspvert_t));
-	poly = malloc (field_offset (glslpoly_t, indices[numindices]));
+	numindices = numverts + 1;
+	verts = *vert_list;
+	// surf->polys is set to the next slow before the call
+	poly = (bsppoly_t *) fa->polys;
 	poly->count = numindices;
-	for (i = 0, ind = poly->indices; i < numtris; i++) {
-		*ind++ = base;
-		*ind++ = base + i + 1;
-		*ind++ = base + i + 2;
+	for (i = 0, ind = poly->indices; i < numverts; i++) {
+		*ind++ = base + i;
 	}
+	*ind++ = -1;	// end of primitive
 	fa->polys = (glpoly_t *) poly;
 
 	for (i = 0; i < numverts; i++) {
 		index = surfedges[fa->firstedge + i];
-		if (index > 0)
+		if (index > 0) {
 			vec = vertices[edges[index].v[0]].position;
-		else
+		} else {
 			vec = vertices[edges[-index].v[1]].position;
+		}
 
 		s = DotProduct (vec, fa->texinfo->vecs[0]) + fa->texinfo->vecs[0][3];
 		t = DotProduct (vec, fa->texinfo->vecs[1]) + fa->texinfo->vecs[1][3];
@@ -368,19 +378,23 @@ build_surf_displist (model_t **models, msurface_t *fa, int base,
 		verts[i].tlst[2] = s * fa->lightpic->size;
 		verts[i].tlst[3] = t * fa->lightpic->size;
 	}
-	dstring_append (vert_list, (char *) verts, numverts * sizeof (bspvert_t));
+	*vert_list += numverts;
+	return (bsppoly_t *) &poly->indices[numindices];
 }
 
 void
 Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 {
+	qfv_device_t *device = ctx->device;
 	bspctx_t   *bctx = ctx->bsp_context;
 	int         i, j;
 	int         vertex_index_base;
 	model_t    *m;
 	dmodel_t   *dm;
 	msurface_t *surf;
-	dstring_t  *vertices;
+	qfv_stagebuf_t *stage;
+	bspvert_t  *vertices;
+	bsppoly_t  *poly;
 
 	QuatSet (0, 0, sqrt(0.5), sqrt(0.5), bctx->sky_fix);	// proper skies
 	QuatSet (0, 0, 0, 1, bctx->sky_rotation[0]);
@@ -418,16 +432,38 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			if (!surf->ec_index && m != r_worldentity.model)
 				surf->ec_index = -1 - i;	// instanced model
 			tex = surf->texinfo->texture->render;
+			// append surf to the texture chain
 			CHAIN_SURF_F2B (surf, tex->tex_chain);
 		}
 	}
 	// All vertices from all brush models go into one giant vbo.
-	vertices = dstring_new ();
+	uint32_t    vertex_count = 0;
+	uint32_t    index_count = 0;
+	uint32_t    poly_count = 0;
+	for (size_t i = 0; i < bctx->texture_chains.size; i++) {
+		vulktex_t  *tex = bctx->texture_chains.a[i];
+		for (instsurf_t *is = tex->tex_chain; is; is = is->tex_chain) {
+			uint32_t    verts, inds;
+			count_verts_inds (models, is->surface, &verts, &inds);
+			vertex_count += verts;
+			index_count += inds;
+			poly_count++;
+		}
+	}
+	stage = QFV_CreateStagingBuffer (device,
+									 vertex_count * sizeof (bspvert_t), 1,
+									 ctx->cmdpool);
+	vertices = stage->data;
 	vertex_index_base = 0;
+	// holds all the polygon definitions (count + indices)
+	bctx->polys = malloc ((index_count + poly_count) * sizeof (uint32_t));
+
 	// All usable surfaces have been chained to the (base) texture they use.
 	// Run through the textures, using their chains to build display maps.
 	// For animated textures, if a surface is on one texture of the group, it
 	// will be on all.
+	poly = bctx->polys;
+	int count = 0;
 	for (size_t i = 0; i < bctx->texture_chains.size; i++) {
 		vulktex_t  *tex;
 		instsurf_t *is;
@@ -441,42 +477,43 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			if (!tex->elechain) {
 				ec = add_elechain (tex, surf->ec_index, bctx);
 				el = ec->elements;
-				el->base = (byte *) (intptr_t) vertices->size;
 				vertex_index_base = 0;
 			}
 			if (surf->ec_index != ec->index) {	// next sub-model
 				ec = add_elechain (tex, surf->ec_index, bctx);
 				el = ec->elements;
-				el->base = (byte *) (intptr_t) vertices->size;
 				vertex_index_base = 0;
 			}
 			if (vertex_index_base + surf->numedges > 65535) {
 				// elements index overflow
 				el->next = get_elements (bctx);
 				el = el->next;
-				el->base = (byte *) (intptr_t) vertices->size;
 				vertex_index_base = 0;
 			}
 			// we don't use it now, but pre-initializing the list won't hurt
-			if (!el->list)
-				el->list = dstring_new ();
-			dstring_clear (el->list);
+			//XXX if (!el->list)
+			//XXX 	el->list = dstring_new ();
+			//XXX dstring_clear (el->list);
 
-			surf->base = el->base;
-			build_surf_displist (models, surf, vertex_index_base, vertices);
+			surf->polys = (glpoly_t *) poly;
+			poly = build_surf_displist (models, surf, vertex_index_base,
+										&vertices);
 			vertex_index_base += surf->numedges;
+			count++;
 		}
 	}
 	clear_texture_chains (bctx);
-	Sys_MaskPrintf (SYS_GLSL, "R_BuildDisplayLists: %ld verts total\n",
-					(long) (vertices->size / sizeof (bspvert_t)));
+	Sys_MaskPrintf (SYS_VULKAN,
+					"R_BuildDisplayLists: verts:%u, inds:%u, polys:%u (%d) %zd\n",
+					vertex_count, index_count, poly_count, count,
+					((size_t) poly - (size_t) bctx->polys)/sizeof(uint32_t));
 	/*XXX if (!bsp_vbo)
 		qfeglGenBuffers (1, &bsp_vbo);
 	qfeglBindBuffer (GL_ARRAY_BUFFER, bsp_vbo);
 	qfeglBufferData (GL_ARRAY_BUFFER, vertices->size, vertices->str,
 					GL_STATIC_DRAW);
 	qfeglBindBuffer (GL_ARRAY_BUFFER, 0);*/
-	dstring_delete (vertices);
+	QFV_DestroyStagingBuffer (stage);
 }
 
 static void
@@ -890,38 +927,28 @@ add_surf_elements (vulktex_t *tex, instsurf_t *is,
 				   elechain_t **ec, elements_t **el, bspctx_t *bctx)
 {
 	msurface_t *surf = is->surface;
-	glslpoly_t *poly = (glslpoly_t *) surf->polys;
+	//XXX bsppoly_t  *poly = (bsppoly_t *) surf->polys;
 
 	if (!tex->elechain) {
 		(*ec) = add_elechain (tex, surf->ec_index, bctx);
 		(*ec)->transform = is->transform;
 		(*ec)->color = is->color;
 		(*el) = (*ec)->elements;
-		(*el)->base = surf->base;
-		if (!(*el)->list)
-			(*el)->list = dstring_new ();
-		dstring_clear ((*el)->list);
+		//XXX if (!(*el)->list)
+		//XXX 	(*el)->list = dstring_new ();
+		//XXX dstring_clear ((*el)->list);
 	}
 	if (is->transform != (*ec)->transform || is->color != (*ec)->color) {
 		(*ec) = add_elechain (tex, surf->ec_index, bctx);
 		(*ec)->transform = is->transform;
 		(*ec)->color = is->color;
 		(*el) = (*ec)->elements;
-		(*el)->base = surf->base;
-		if (!(*el)->list)
-			(*el)->list = dstring_new ();
-		dstring_clear ((*el)->list);
+		//XXX if (!(*el)->list)
+		//XXX 	(*el)->list = dstring_new ();
+		//XXX dstring_clear ((*el)->list);
 	}
-	if (surf->base != (*el)->base) {
-		(*el)->next = get_elements (bctx);
-		(*el) = (*el)->next;
-		(*el)->base = surf->base;
-		if (!(*el)->list)
-			(*el)->list = dstring_new ();
-		dstring_clear ((*el)->list);
-	}
-	dstring_append ((*el)->list, (char *) poly->indices,
-					poly->count * sizeof (poly->indices[0]));
+	//XXX dstring_append ((*el)->list, (char *) poly->indices,
+	//XXX 				poly->count * sizeof (poly->indices[0]));
 }
 
 static void
