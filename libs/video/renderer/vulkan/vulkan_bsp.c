@@ -496,10 +496,6 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 				el = el->next;
 				vertex_index_base = 0;
 			}*/
-			// we don't use it now, but pre-initializing the list won't hurt
-			//XXX if (!el->list)
-			//XXX 	el->list = dstring_new ();
-			//XXX dstring_clear (el->list);
 
 			surf->polys = (glpoly_t *) poly;
 			poly = build_surf_displist (models, surf, vertex_index_base,
@@ -757,16 +753,14 @@ R_VisitWorldNodes (model_t *model, vulkan_ctx_t *ctx)
 		visit_leaf ((mleaf_t *) node);
 }
 
-/*static void
-draw_elechain (elechain_t *ec, int matloc, int vertloc, int tlstloc,
-			   int colloc, bspctx_t *bctx)
+static void
+draw_elechain (elechain_t *ec, VkPipelineLayout layout, qfv_devfuncs_t *dfunc,
+			   VkCommandBuffer cmd)
 {
-	mat4_t      mat;
 	elements_t *el;
-	int         count;
-	float      *color;
 
-	if (colloc >= 0) {
+	/*if (colloc >= 0) {
+		float      *color;
 		color = ec->color;
 		if (!color)
 			color = bctx->default_color;
@@ -774,29 +768,31 @@ draw_elechain (elechain_t *ec, int matloc, int vertloc, int tlstloc,
 			QuatCopy (color, bctx->last_color);
 			qfeglVertexAttrib4fv (quake_bsp.color.location, color);
 		}
-	}
+	}*/
 	if (ec->transform) {
-		Mat4Mult (bsp_vp, ec->transform, mat);
-		qfeglUniformMatrix4fv (matloc, 1, false, mat);
-	} else {
-		qfeglUniformMatrix4fv (matloc, 1, false, bsp_vp);
+		dfunc->vkCmdPushConstants (cmd, layout, VK_SHADER_STAGE_VERTEX_BIT,
+								   0, 16 * sizeof (float), ec->transform);
 	}
 	for (el = ec->elements; el; el = el->next) {
-		if (!el->list->size)
+		//FIXME check if these are contiguous and if so merge into one
+		//command
+		if (!el->index_count)
 			continue;
-		count = el->list->size / sizeof (GLushort);
-		qfeglVertexAttribPointer (vertloc, 4, GL_FLOAT,
-								 0, sizeof (bspvert_t),
-								 el->base + field_offset (bspvert_t, vertex));
-		if (tlstloc >= 0)
-			qfeglVertexAttribPointer (tlstloc, 4, GL_FLOAT,
-									 0, sizeof (bspvert_t),
-									 el->base + field_offset (bspvert_t,tlst));
-		qfeglDrawElements (GL_TRIANGLES, count,
-						   GL_UNSIGNED_SHORT, el->list->str);
-		dstring_clear (el->list);
+		dfunc->vkCmdDrawIndexed (cmd, el->index_count, 1, el->first_index,
+								 0, 0);
+		el->first_index = 0;
+		el->index_count = 0;
 	}
-}*/
+}
+
+static VkImageView
+get_view (qfv_tex_t *tex)
+{
+	if (tex) {
+		return tex->view;
+	}
+	return 0;
+}
 
 static void
 bsp_begin (vulkan_ctx_t *ctx)
@@ -813,6 +809,54 @@ bsp_begin (vulkan_ctx_t *ctx)
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 	VkCommandBuffer cmd = bframe->bsp_cmd;
 	DARRAY_APPEND (cframe->subCommand, cmd);
+
+	VkDescriptorBufferInfo bufferInfo = {
+		ctx->matrices.buffer_3d, 0, VK_WHOLE_SIZE
+	};
+	VkDescriptorImageInfo imageInfo[] = {
+		{ bctx->sampler,
+		  QFV_ScrapImageView (bctx->light_scrap),
+		  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
+		{ bctx->sampler,
+		  QFV_ScrapImageView (bctx->light_scrap),
+		  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
+		{ bctx->sampler,
+		  QFV_ScrapImageView (bctx->light_scrap),
+		  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
+		{ bctx->sampler,
+		  get_view (bctx->skysheet_tex),
+		  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
+		{ bctx->sampler,
+		  get_view (bctx->skybox_tex),
+		  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
+	};
+	VkWriteDescriptorSet write[] = {
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+		  bframe->descriptors, 0, 0, 1,
+		  VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+		  0, &bufferInfo, 0 },
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+		  bframe->descriptors, 1, 0, 1,
+		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		  &imageInfo[0], 0, 0 },
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+		  bframe->descriptors, 2, 0, 1,
+		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		  &imageInfo[1], 0, 0 },
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+		  bframe->descriptors, 3, 0, 1,
+		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		  &imageInfo[2], 0, 0 },
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+		  bframe->descriptors, 4, 0, 1,
+		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		  &imageInfo[3], 0, 0 },
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+		  bframe->descriptors, 5, 0, 1,
+		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+		  &imageInfo[4], 0, 0 },
+	};
+	dfunc->vkUpdateDescriptorSets (device->dev, 5, write, 0, 0);
 
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
@@ -1011,55 +1055,65 @@ sky_end (bspctx_t *bctx)
 
 static inline void
 add_surf_elements (vulktex_t *tex, instsurf_t *is,
-				   elechain_t **ec, elements_t **el, bspctx_t *bctx)
+				   elechain_t **ec, elements_t **el,
+				   bspctx_t *bctx, bspframe_t *bframe)
 {
 	msurface_t *surf = is->surface;
-	//XXX bsppoly_t  *poly = (bsppoly_t *) surf->polys;
+	bsppoly_t  *poly = (bsppoly_t *) surf->polys;
 
 	if (!tex->elechain) {
 		(*ec) = add_elechain (tex, surf->ec_index, bctx);
 		(*ec)->transform = is->transform;
 		(*ec)->color = is->color;
 		(*el) = (*ec)->elements;
-		//XXX if (!(*el)->list)
-		//XXX 	(*el)->list = dstring_new ();
-		//XXX dstring_clear ((*el)->list);
+		(*el)-> first_index = bframe->index_count;
 	}
 	if (is->transform != (*ec)->transform || is->color != (*ec)->color) {
 		(*ec) = add_elechain (tex, surf->ec_index, bctx);
 		(*ec)->transform = is->transform;
 		(*ec)->color = is->color;
 		(*el) = (*ec)->elements;
-		//XXX if (!(*el)->list)
-		//XXX 	(*el)->list = dstring_new ();
-		//XXX dstring_clear ((*el)->list);
+		(*el)-> first_index = bframe->index_count;
 	}
-	//XXX dstring_append ((*el)->list, (char *) poly->indices,
-	//XXX 				poly->count * sizeof (poly->indices[0]));
+	memcpy (bframe->index_data + bframe->index_count,
+			poly->indices, poly->count * sizeof (poly->indices[0]));
+	(*el)->index_count += poly->count;
 }
 
 static void
-build_tex_elechain (vulktex_t *tex, bspctx_t *bctx)
+build_tex_elechain (vulktex_t *tex, bspctx_t *bctx, bspframe_t *bframe)
 {
 	instsurf_t *is;
 	elechain_t *ec = 0;
 	elements_t *el = 0;
 
 	for (is = tex->tex_chain; is; is = is->tex_chain) {
-		add_surf_elements (tex, is, &ec, &el, bctx);
+		add_surf_elements (tex, is, &ec, &el, bctx, bframe);
 	}
 }
 
 void
 Vulkan_DrawWorld (vulkan_ctx_t *ctx)
 {
+	static float identity[] = {
+		1, 0, 0, 0,
+		0, 1, 0, 0,
+		0, 0, 1, 0,
+		0, 0, 0, 1,
+	};
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
+	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 	entity_t    worldent;
 
 	clear_texture_chains (bctx);	// do this first for water and skys
 
 	memset (&worldent, 0, sizeof (worldent));
 	worldent.model = r_worldentity.model;
+
+	vulktex_t  *tex = r_worldentity.model->skytexture->render;
+	bctx->skysheet_tex = tex->tex;
 
 	currententity = &worldent;
 
@@ -1077,24 +1131,29 @@ Vulkan_DrawWorld (vulkan_ctx_t *ctx)
 
 	Vulkan_FlushLightmaps (ctx);
 	bsp_begin (ctx);
+
+	dfunc->vkCmdPushConstants (bframe->bsp_cmd, bctx->layout,
+							   VK_SHADER_STAGE_VERTEX_BIT,
+							   0, 16 * sizeof (float), identity);
+	float frag_pc[8] = { };
+	dfunc->vkCmdPushConstants (bframe->bsp_cmd, bctx->layout,
+							   VK_SHADER_STAGE_FRAGMENT_BIT,
+							   64, 8 * sizeof (float), &frag_pc);
 	//XXX qfeglActiveTexture (GL_TEXTURE0 + 0);
 	for (size_t i = 0; i < bctx->texture_chains.size; i++) {
 		vulktex_t  *tex;
-		//XXX elechain_t *ec = 0;
+		elechain_t *ec = 0;
 
 		tex = bctx->texture_chains.a[i];
 
-		build_tex_elechain (tex, bctx);
+		build_tex_elechain (tex, bctx, bframe);
 
 		//XXX if (tex->elechain)
 		//XXX 	qfeglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 
-		/*XXX for (ec = tex->elechain; ec; ec = ec->next) {
-			draw_elechain (ec, quake_bsp.mvp_matrix.location,
-						   quake_bsp.vertex.location,
-						   quake_bsp.tlst.location,
-						   quake_bsp.color.location);
-		}*/
+		for (ec = tex->elechain; ec; ec = ec->next) {
+			draw_elechain (ec, bctx->layout, dfunc, bframe->bsp_cmd);
+		}
 		tex->elechain = 0;
 		tex->elechain_tail = &tex->elechain;
 	}
@@ -1152,6 +1211,7 @@ void
 Vulkan_DrawSky (vulkan_ctx_t *ctx)
 {
 	bspctx_t   *bctx = ctx->bsp_context;
+	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 	instsurf_t *is;
 	msurface_t *surf;
 	vulktex_t  *tex = 0;
@@ -1180,7 +1240,7 @@ Vulkan_DrawSky (vulkan_ctx_t *ctx)
 			}
 			tex = surf->texinfo->texture->render;
 		}
-		add_surf_elements (tex, is, &ec, &el, bctx);
+		add_surf_elements (tex, is, &ec, &el, bctx, bframe);
 	}
 	if (tex) {
 		if (!bctx->skybox_tex) {
@@ -1230,6 +1290,7 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 
 	bctx->main = Vulkan_CreatePipeline (ctx, "quakebsp.main");
 	bctx->layout = QFV_GetPipelineLayout (ctx, "quakebsp");
+	bctx->sampler = QFV_GetSampler (ctx, "quakebsp");
 
 	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
 	for (size_t i = 0; i < layouts->size; i++) {

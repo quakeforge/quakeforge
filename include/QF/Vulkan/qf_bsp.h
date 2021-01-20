@@ -44,7 +44,8 @@ typedef struct bspvert_s {
 typedef struct elements_s {
 	struct elements_s *_next;
 	struct elements_s *next;
-	byte       *base;
+	uint32_t    first_index;
+	uint32_t    index_count;
 } elements_t;
 
 typedef struct elechain_s {
@@ -57,9 +58,9 @@ typedef struct elechain_s {
 } elechain_t;
 
 typedef struct bspframe_s {
-	uint32_t    *index_data;
-	uint32_t     index_count;
-	uint32_t     index_offset;
+	uint32_t    *index_data;	// pointer into mega-buffer for this frame (c)
+	uint32_t     index_offset;	// offset of index_data within mega-buffer (c)
+	uint32_t     index_count;	// number if indices queued (d)
 	VkCommandBuffer bsp_cmd;
 	VkCommandBuffer turb_cmd;
 	VkCommandBuffer sky_cmd;
@@ -96,6 +97,7 @@ typedef struct bspctx_s {
 	instsurf_t **instsurfs_tail;
 	instsurf_t  *free_instsurfs;
 
+	struct qfv_tex_s *skysheet_tex;
 	struct qfv_tex_s *skybox_tex;
 	quat_t       sky_rotation[2];
 	quat_t       sky_velocity;
@@ -110,6 +112,7 @@ typedef struct bspctx_s {
 
 	struct bsppoly_s *polys;
 
+	VkSampler    sampler;
 	VkDeviceMemory texture_memory;
 	VkPipeline   main;
 	VkPipelineLayout layout;

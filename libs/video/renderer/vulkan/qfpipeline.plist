@@ -30,6 +30,23 @@
 			borderColor = float_transparent_black;
 			unnormalizedCoordinates = false;
 		};
+		quakebsp = {
+			magFilter = linear;
+			minFilter = linear;
+			mipmapMode = linear;
+			addressModeU = repeat;
+			addressModeV = repeat;
+			addressModeW = repeat;
+			mipLodBias = 0;
+			anisotropyEnable = false;
+			maxAnisotropy = 0;
+			compareEnable = false;
+			compareOp = always;
+			minLod = 0;
+			maxLod = 1;
+			borderColor = float_transparent_black;
+			unnormalizedCoordinates = false;
+		};
 	};
 	descriptorPools = {
 		twod = {
@@ -110,12 +127,12 @@
 					descriptorCount = 1;
 					stageFlags = fragment;
 				},
-				{
+				/*{
 					binding = 5;
 					descriptorType = combined_image_sampler;
 					descriptorCount = 1;
 					stageFlags = fragment;
-				},
+				},*/
 			);
 		};
 		something = {
@@ -150,7 +167,7 @@
 				},
 				{
 					stageFlags = fragment;
-					offset = 0;
+					offset = 64;
 					size = 32;
 				},
 			);
@@ -176,7 +193,7 @@
 				bindings = (
 					{
 						binding = 0;
-						stride = "3 * 4 * 4";
+						stride = "2 * 4 * 4";
 						inputRate = vertex;
 					},
 				);

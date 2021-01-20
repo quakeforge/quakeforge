@@ -606,6 +606,7 @@ vulkan_vid_render_shutdown (void)
 	df->vkDestroyCommandPool (dev, vulkan_ctx->cmdpool, 0);
 	Vulkan_Draw_Shutdown (vulkan_ctx);
 	Vulkan_Bsp_Shutdown (vulkan_ctx);
+	Mod_ClearAll ();
 	Vulkan_Shutdown_Common (vulkan_ctx);
 }
 

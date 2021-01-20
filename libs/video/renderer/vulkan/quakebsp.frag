@@ -4,9 +4,10 @@ layout (set = 0, binding = 1) uniform sampler2D Texture;
 layout (set = 0, binding = 2) uniform sampler2D Glowmap;
 layout (set = 0, binding = 3) uniform sampler2D Lightmap;
 layout (set = 0, binding = 4) uniform sampler2DArray SkySheet;
-layout (set = 0, binding = 5) uniform samplerCube SkyCube;
+//layout (set = 0, binding = 5) uniform samplerCube SkyCube;
 
 layout (push_constant) uniform PushConstants {
+	layout (offset = 64)
 	float       time;
 	vec4        fog;
 };
@@ -70,7 +71,7 @@ sky_sheet (vec3 dir, float time)
 
 	return c;
 }
-
+/*
 vec4
 sky_cube (vec3 dir, float time)
 {
@@ -80,20 +81,22 @@ sky_cube (vec3 dir, float time)
 	// to do here is swizzle the Y and Z coordinates
 	return texture (SkyCube, dir.xzy);
 }
-
+*/
 vec4
 sky_color (vec3 dir, float time)
 {
 	if (!doSkySheet) {
-		return sky_cube (dir, time);
+		return vec4 (1, 0, 1, 1);
+		//return sky_cube (dir, time);
 	} if (!doSkyCube) {
 		return sky_sheet (dir, time);
 	} else {
-		// can see through the sheet (may look funny when looking down)
+		/*// can see through the sheet (may look funny when looking down)
 		// maybe have 4 sheet layers instead of 2?
 		vec4        c1 = sky_sheet (dir, time);
 		vec4        c2 = sky_cube (dir, time);
-		return vec4 (mix (c2.rgb, c1.rgb, c1.a), max (c1.a, c2.a));
+		return vec4 (mix (c2.rgb, c1.rgb, c1.a), max (c1.a, c2.a));*/
+		return vec4 (1, 0, 1, 1);
 	}
 }
 
@@ -117,5 +120,5 @@ main (void)
 	}
 	c += texture (Glowmap, t_st);
 
-	frag_color = fogBlend (c);
+	frag_color = vec4(t_st, 1, 1);//fogBlend (c);
 }
