@@ -122,14 +122,15 @@ Mod_ClearAll (void)
 	model_t   **mod;
 
 	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++) {
+		//FIXME this seems to be correct but need to double check the behavior
+		//with alias models
 		if (!(*mod)->needload && (*mod)->clear) {
 			(*mod)->clear (*mod, (*mod)->data);
-		} else {
-			if ((*mod)->type != mod_alias)
-				(*mod)->needload = true;
-			if ((*mod)->type == mod_sprite)
-				(*mod)->cache.data = 0;
 		}
+		if ((*mod)->type != mod_alias)
+			(*mod)->needload = true;
+		if ((*mod)->type == mod_sprite)
+			(*mod)->cache.data = 0;
 	}
 }
 
@@ -156,7 +157,8 @@ Mod_FindName (const char *name)
 			for (i = 1; i < MOD_BLOCK; i++)
 				mod[i] = mod[0] + i;
 		}
-		strcpy ((*mod)->name, name);
+		memset ((*mod), 0, sizeof (model_t));
+		strncpy ((*mod)->name, name, sizeof (*mod)->name - 1);
 		(*mod)->needload = true;
 		mod_numknown++;
 		Cache_Add (&(*mod)->cache, *mod, Mod_CallbackLoad);
