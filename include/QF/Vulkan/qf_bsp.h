@@ -64,7 +64,6 @@ typedef struct bspframe_s {
 	VkCommandBuffer bsp_cmd;
 	VkCommandBuffer turb_cmd;
 	VkCommandBuffer sky_cmd;
-	VkDescriptorSet descriptors;
 } bspframe_t;
 
 typedef struct bspframeset_s

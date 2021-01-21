@@ -831,32 +831,31 @@ bsp_begin (vulkan_ctx_t *ctx)
 		  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
 	};
 	VkWriteDescriptorSet write[] = {
-		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-		  bframe->descriptors, 0, 0, 1,
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
+		  0, 0, 1,
 		  VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
 		  0, &bufferInfo, 0 },
-		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-		  bframe->descriptors, 1, 0, 1,
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
+		  1, 0, 1,
 		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 		  &imageInfo[0], 0, 0 },
-		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-		  bframe->descriptors, 2, 0, 1,
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
+		  2, 0, 1,
 		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 		  &imageInfo[1], 0, 0 },
-		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-		  bframe->descriptors, 3, 0, 1,
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
+		  3, 0, 1,
 		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 		  &imageInfo[2], 0, 0 },
-		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-		  bframe->descriptors, 4, 0, 1,
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
+		  4, 0, 1,
 		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 		  &imageInfo[3], 0, 0 },
-		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-		  bframe->descriptors, 5, 0, 1,
+		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
+		  5, 0, 1,
 		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 		  &imageInfo[4], 0, 0 },
 	};
-	dfunc->vkUpdateDescriptorSets (device->dev, 5, write, 0, 0);
 
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
@@ -884,10 +883,8 @@ bsp_begin (vulkan_ctx_t *ctx)
 	dfunc->vkCmdBindIndexBuffer (cmd, bctx->index_buffer, bframe->index_offset,
 								 VK_INDEX_TYPE_UINT32);
 
-	VkDescriptorSet set = bframe->descriptors;
-	VkPipelineLayout layout = bctx->layout;
-	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									layout, 0, 1, &set, 0, 0);
+	dfunc->vkCmdPushDescriptorSetKHR (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									  bctx->layout, 0, 5, write);
 
 	//XXX glsl_Fog_GetColor (fog);
 	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;
@@ -1296,20 +1293,16 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 	for (size_t i = 0; i < layouts->size; i++) {
 		layouts->a[i] = QFV_GetDescriptorSetLayout (ctx, "quakebsp");
 	}
-	__auto_type pool = QFV_GetDescriptorPool (ctx, "quakebsp");
 
 	__auto_type cmdBuffers = QFV_AllocCommandBufferSet (3 * frames, alloca);
 	QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, cmdBuffers);
 
-	__auto_type sets = QFV_AllocateDescriptorSet (device, pool, layouts);
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type bframe = &bctx->frames.a[i];
-		bframe->descriptors = sets->a[i];
 		bframe->bsp_cmd = cmdBuffers->a[i];
 		bframe->turb_cmd = cmdBuffers->a[i];
 		bframe->sky_cmd = cmdBuffers->a[i];
 	}
-	free (sets);
 }
 
 void

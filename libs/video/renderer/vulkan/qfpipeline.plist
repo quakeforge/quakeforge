@@ -63,20 +63,6 @@
 				},
 			);
 		};
-		quakebsp = {
-			flags = 0;
-			maxSets = $framebuffers.size;
-			bindings = (
-				{
-					type = uniform_buffer;
-					descriptorCount = $framebuffers.size;
-				},
-				{
-					type = combined_image_sampler;
-					descriptorCount = "5z * $framebuffers.size";
-				},
-			);
-		};
 	};
 	setLayouts = {
 		twod = {
@@ -96,6 +82,7 @@
 			);
 		};
 		quakebsp = {
+			flags = push_descriptor;
 			bindings = (
 				{
 					binding = 0;

@@ -132,11 +132,13 @@ Vulkan_Init_Cvars (void)
 
 static const char *instance_extensions[] = {
 	VK_KHR_SURFACE_EXTENSION_NAME,
+	VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME,
 	0,
 };
 
 static const char *device_extensions[] = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+	VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
 	0,
 };
 
