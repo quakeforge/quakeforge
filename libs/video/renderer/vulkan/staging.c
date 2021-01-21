@@ -58,10 +58,13 @@ qfv_stagebuf_t *
 QFV_CreateStagingBuffer (qfv_device_t *device, size_t size, int num_packets,
 						 VkCommandPool cmdPool)
 {
+	size_t atom = device->physDev->properties.limits.nonCoherentAtomSize;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
 	qfv_stagebuf_t *stage = malloc (sizeof (qfv_stagebuf_t)
 									+ num_packets * sizeof (qfv_packet_t));
+	stage->atom_mask = atom - 1;
+	size = (size + stage->atom_mask) & ~stage->atom_mask;
 	stage->device = device;
 	stage->buffer = QFV_CreateBuffer (device, size,
 									  VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
@@ -119,9 +122,8 @@ QFV_FlushStagingBuffer (qfv_stagebuf_t *stage, size_t offset, size_t size)
 	qfv_device_t *device = stage->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	size_t atom = device->physDev->properties.limits.nonCoherentAtomSize;
-	offset &= ~(atom - 1);
-	size = (size + atom - 1) & ~ (atom - 1);
+	offset &= ~stage->atom_mask;
+	size = (size + stage->atom_mask) & ~stage->atom_mask;
 	VkMappedMemoryRange range = {
 		VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
 		stage->memory, offset, size

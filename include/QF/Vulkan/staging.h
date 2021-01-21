@@ -17,6 +17,7 @@ typedef struct qfv_stagebuf_s {
 	size_t      num_packets;///< number of packets in array
 	size_t      next_packet;///< index of the next packet to be used
 	size_t      size;		///< actual size of the buffer
+	size_t      atom_mask;	///< for flush size rounding
 	size_t      end;		///< effective end of the buffer due to early wrap
 	size_t      head;
 	size_t      tail;
