@@ -270,7 +270,7 @@ QFV_SubpicBatch (subpic_t *subpic, qfv_stagebuf_t *stage)
 			dest = QFV_PacketExtend (scrap->packet, size);
 		}
 		if (!dest) {
-			printf ("could not get space for update\n");
+			printf ("scrap: could not get space for update\n");
 			return 0;
 		}
 	}

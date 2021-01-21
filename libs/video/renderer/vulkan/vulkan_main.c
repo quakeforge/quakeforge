@@ -78,7 +78,8 @@ setup_frame (vulkan_ctx_t *ctx)
 static void
 setup_view (vulkan_ctx_t *ctx)
 {
-	float      *mat = ctx->matrices.view_3d;
+	mat4_t      mat;
+	float      *view = ctx->matrices.view_3d;
 	static mat4_t z_up = {
 		 0, 0, -1, 0,
 		-1, 0,  0, 0,
@@ -98,11 +99,11 @@ setup_view (vulkan_ctx_t *ctx)
 	VectorCopy (vup, mat + 8);
 	mat[15] = 1;
 	Mat4Transpose (mat, mat);//AngleVectors gives the transpose of what we want
-	Mat4Mult (z_up, mat, glsl_view);
+	Mat4Mult (z_up, mat, view);
 
 	Mat4Identity (mat);
 	VectorNegate (r_refdef.vieworg, mat + 12);
-	Mat4Mult (glsl_view, mat, glsl_view);
+	Mat4Mult (view, mat, view);
 }
 
 static void

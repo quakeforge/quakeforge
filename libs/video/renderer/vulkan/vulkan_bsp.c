@@ -59,6 +59,7 @@
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/scrap.h"
 #include "QF/Vulkan/staging.h"
 
@@ -450,9 +451,13 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		}
 	}
 
+	size_t atom = device->physDev->properties.limits.nonCoherentAtomSize;
+	size_t atom_mask = atom - 1;
 	size_t frames = bctx->frames.size;
 	size_t index_buffer_size = index_count * frames * sizeof (uint32_t);
 	size_t vertex_buffer_size = vertex_count * sizeof (bspvert_t);
+
+	index_buffer_size = (index_buffer_size + atom_mask) & ~atom_mask;
 	stage = QFV_CreateStagingBuffer (device, vertex_buffer_size, 1,
 									 ctx->cmdpool);
 	qfv_packet_t *packet = QFV_PacketAcquire (stage);
@@ -1144,6 +1149,21 @@ Vulkan_DrawWorld (vulkan_ctx_t *ctx)
 		tex->elechain_tail = &tex->elechain;
 	}
 	bsp_end (ctx);
+
+	size_t      atom = device->physDev->properties.limits.nonCoherentAtomSize;
+	size_t      atom_mask = atom - 1;
+	size_t      offset = bframe->index_offset;
+	size_t      size = bframe->index_count * sizeof (uint32_t);
+
+	offset &= ~atom_mask;
+	size = (size + atom_mask) & ~atom_mask;
+
+	//FIXME this needs to come at the end of the frame after all passes
+	VkMappedMemoryRange range = {
+		VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
+		bctx->index_memory, offset, size
+	};
+	dfunc->vkFlushMappedMemoryRanges (device->dev, 1, &range);
 }
 
 void

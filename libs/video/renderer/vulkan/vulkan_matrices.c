@@ -96,14 +96,14 @@ persp_mat (float *proj, float xmin, float xmax, float ymin, float ymax,
 	proj[12] = 0;
 
 	proj[1] = 0;
-	proj[5] = (2 * neard) / (ymax - ymin);
+	proj[5] = -(2 * neard) / (ymax - ymin);
 	proj[9] = (ymax + ymin) / (ymax - ymin);
 	proj[13] = 0;
 
 	proj[2] = 0;
 	proj[6] = 0;
-	proj[10] = (fard + neard) / (neard - fard);
-	proj[14] = (2 * fard * neard) / (neard - fard);
+	proj[10] = (fard) / (neard - fard);
+	proj[14] = (fard * neard) / (neard - fard);
 
 	proj[3] = 0;
 	proj[7] = 0;

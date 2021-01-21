@@ -20,6 +20,6 @@ void
 main (void)
 {
 	gl_Position = Projection * (View * (Model * vertex));
-	direction = (Sky * vertex).xyz;
+	direction = vertex.xyz;//(Sky * vertex).xyz;
 	tl_st = tl_uv;
 }

@@ -195,7 +195,7 @@
 						location = 1;
 						binding = 0;
 						format = r32g32b32a32_sfloat;
-						offset = 8;
+						offset = 16;
 					},
 				);
 			};
