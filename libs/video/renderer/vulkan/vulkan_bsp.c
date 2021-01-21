@@ -59,8 +59,8 @@
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/scrap.h"
 #include "QF/Vulkan/staging.h"
-#include "QF/Vulkan/texture.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"

@@ -49,7 +49,7 @@
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_main.h"
-#include "QF/Vulkan/texture.h"
+#include "QF/Vulkan/scrap.h"
 
 #include "compat.h"
 #include "r_internal.h"

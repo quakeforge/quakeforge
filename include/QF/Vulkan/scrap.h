@@ -1,5 +1,5 @@
-#ifndef __QF_Vulkan_texture_h
-#define __QF_Vulkan_texture_h
+#ifndef __QF_Vulkan_scrap_h
+#define __QF_Vulkan_scrap_h
 
 #include "QF/image.h"
 
@@ -21,4 +21,4 @@ void *QFV_SubpicBatch (subpic_t *subpic, struct qfv_stagebuf_s *stage);
 
 void QFV_ScrapFlush (scrap_t *scrap);
 
-#endif//__QF_Vulkan_texture_h
+#endif//__QF_Vulkan_scrap_h

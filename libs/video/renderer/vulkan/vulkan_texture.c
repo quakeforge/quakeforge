@@ -56,8 +56,8 @@
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/scrap.h"
 #include "QF/Vulkan/staging.h"
-#include "QF/Vulkan/texture.h"
 
 #include "r_scrap.h"
 #include "vid_vulkan.h"
