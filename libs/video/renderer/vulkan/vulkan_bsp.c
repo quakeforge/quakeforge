@@ -67,6 +67,13 @@
 #include "vid_vulkan.h"
 #include "vkparse.h"
 
+static float identity[] = {
+	1, 0, 0, 0,
+	0, 1, 0, 0,
+	0, 0, 1, 0,
+	0, 0, 0, 1,
+};
+
 #define ALLOC_CHUNK 64
 
 typedef struct bsppoly_s {
@@ -764,6 +771,10 @@ draw_elechain (elechain_t *ec, VkPipelineLayout layout, qfv_devfuncs_t *dfunc,
 	if (ec->transform) {
 		dfunc->vkCmdPushConstants (cmd, layout, VK_SHADER_STAGE_VERTEX_BIT,
 								   0, 16 * sizeof (float), ec->transform);
+	} else {
+		//FIXME should cache current transform
+		dfunc->vkCmdPushConstants (cmd, layout, VK_SHADER_STAGE_VERTEX_BIT,
+								   0, 16 * sizeof (float), identity);
 	}
 	for (el = ec->elements; el; el = el->next) {
 		//FIXME check if these are contiguous and if so merge into one
@@ -1085,12 +1096,6 @@ build_tex_elechain (vulktex_t *tex, bspctx_t *bctx, bspframe_t *bframe)
 void
 Vulkan_DrawWorld (vulkan_ctx_t *ctx)
 {
-	static float identity[] = {
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
-		0, 0, 0, 1,
-	};
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
