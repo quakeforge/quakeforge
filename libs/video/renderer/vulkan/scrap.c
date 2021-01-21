@@ -76,8 +76,10 @@ struct scrap_s {
 };
 
 scrap_t *
-QFV_CreateScrap (qfv_device_t *device, int size, QFFormat format)
+QFV_CreateScrap (qfv_device_t *device, int size, QFFormat format,
+				 qfv_stagebuf_t *stage)
 {
+	qfv_devfuncs_t *dfunc = device->funcs;
 	int         bpp = 0;
 	VkFormat    fmt = VK_FORMAT_UNDEFINED;
 
@@ -132,6 +134,32 @@ QFV_CreateScrap (qfv_device_t *device, int size, QFFormat format)
 	scrap->batch_tail = &scrap->batch;
 	scrap->batch_free = 0;
 	scrap->batch_count = 0;
+
+	VkImageMemoryBarrier barrier;
+	qfv_pipelinestagepair_t stages;
+
+	qfv_packet_t *packet = QFV_PacketAcquire (stage);
+	// no data for the packet
+	stages = imageLayoutTransitionStages[qfv_LT_Undefined_to_TransferDst];
+	barrier = imageLayoutTransitionBarriers[qfv_LT_Undefined_to_TransferDst];
+	barrier.image = scrap->image;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+								 0, 0, 0, 0, 0,
+								 1, &barrier);
+	VkClearColorValue color = {
+		float32:{0xde/255.0, 0xad/255.0, 0xbe/255.0, 0xef/255.0},
+	};
+	VkImageSubresourceRange range = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+	dfunc->vkCmdClearColorImage (packet->cmd, scrap->image,
+								 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+								 &color, 1, &range);
+	stages = imageLayoutTransitionStages[qfv_LT_TransferDst_to_ShaderReadOnly];
+	barrier=imageLayoutTransitionBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+	barrier.image = scrap->image;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+								 0, 0, 0, 0, 0,
+								 1, &barrier);
+	QFV_PacketSubmit (packet);
 	return scrap;
 }
 
@@ -286,12 +314,11 @@ QFV_ScrapFlush (scrap_t *scrap)
 		copy->a[i].imageExtent.depth = 1;
 	}
 
-
 	VkImageMemoryBarrier barrier;
 	qfv_pipelinestagepair_t stages;
 
-	stages = imageLayoutTransitionStages[qfv_LT_Undefined_to_TransferDst];
-	barrier = imageLayoutTransitionBarriers[qfv_LT_Undefined_to_TransferDst];
+	stages = imageLayoutTransitionStages[qfv_LT_ShaderReadOnly_to_TransferDst];
+	barrier=imageLayoutTransitionBarriers[qfv_LT_ShaderReadOnly_to_TransferDst];
 	barrier.image = scrap->image;
 	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
 								 0, 0, 0, 0, 0,

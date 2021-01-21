@@ -11,6 +11,7 @@ typedef struct {
 enum {
 	qfv_LT_Undefined_to_TransferDst,
 	qfv_LT_TransferDst_to_ShaderReadOnly,
+	qfv_LT_ShaderReadOnly_to_TransferDst,
 	qfv_LT_Undefined_to_DepthStencil,
 	qfv_LT_Undefined_to_Color,
 };

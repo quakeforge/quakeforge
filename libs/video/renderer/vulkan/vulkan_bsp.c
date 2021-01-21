@@ -1262,7 +1262,7 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 	bctx->elementss_tail = &bctx->elementss;
 	bctx->instsurfs_tail = &bctx->instsurfs;
 
-	bctx->light_scrap = QFV_CreateScrap (device, 2048, tex_frgba);
+	bctx->light_scrap = QFV_CreateScrap (device, 2048, tex_frgba, ctx->staging);
 	size_t      size = QFV_ScrapSize (bctx->light_scrap);
 	bctx->light_stage = QFV_CreateStagingBuffer (device, size, 3,
 												 ctx->cmdpool);
