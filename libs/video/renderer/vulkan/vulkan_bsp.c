@@ -33,9 +33,6 @@
 # include "config.h"
 #endif
 
-#define NH_DEFINE
-//#include "namehack.h"
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -337,7 +334,7 @@ build_surf_displist (model_t **models, msurface_t *fa, int base,
 	numverts = fa->numedges;
 	numindices = numverts + 1;
 	verts = *vert_list;
-	// surf->polys is set to the next slow before the call
+	// surf->polys is set to the next slot before the call
 	poly = (bsppoly_t *) fa->polys;
 	poly->count = numindices;
 	for (i = 0, ind = poly->indices; i < numverts; i++) {
@@ -474,7 +471,6 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		vulktex_t  *tex;
 		instsurf_t *is;
 		elechain_t *ec = 0;
-		//elements_t *el = 0;
 
 		tex = bctx->texture_chains.a[i];
 
@@ -482,20 +478,10 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			msurface_t *surf = is->surface;
 			if (!tex->elechain) {
 				ec = add_elechain (tex, surf->ec_index, bctx);
-				//el = ec->elements;
-				vertex_index_base = 0;
 			}
 			if (surf->ec_index != ec->index) {	// next sub-model
 				ec = add_elechain (tex, surf->ec_index, bctx);
-				//el = ec->elements;
-				vertex_index_base = 0;
 			}
-			/*if (vertex_index_base + surf->numedges > 65535) {
-				// elements index overflow
-				el->next = get_elements (bctx);
-				el = el->next;
-				vertex_index_base = 0;
-			}*/
 
 			surf->polys = (glpoly_t *) poly;
 			poly = build_surf_displist (models, surf, vertex_index_base,
@@ -534,6 +520,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			uint32_t    offset = index_count * i;
 			bctx->frames.a[i].index_data = index_data + offset;
 			bctx->frames.a[i].index_offset = offset * sizeof (uint32_t);
+			bctx->frames.a[i].index_count = 0;
 		}
 	}
 	if (vertex_buffer_size > bctx->vertex_buffer_size) {
@@ -884,7 +871,7 @@ bsp_begin (vulkan_ctx_t *ctx)
 								 VK_INDEX_TYPE_UINT32);
 
 	dfunc->vkCmdPushDescriptorSetKHR (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									  bctx->layout, 0, 5, write);
+									  bctx->layout, 0, 4, write);
 
 	//XXX glsl_Fog_GetColor (fog);
 	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;
@@ -1063,18 +1050,19 @@ add_surf_elements (vulktex_t *tex, instsurf_t *is,
 		(*ec)->transform = is->transform;
 		(*ec)->color = is->color;
 		(*el) = (*ec)->elements;
-		(*el)-> first_index = bframe->index_count;
+		(*el)->first_index = bframe->index_count;
 	}
 	if (is->transform != (*ec)->transform || is->color != (*ec)->color) {
 		(*ec) = add_elechain (tex, surf->ec_index, bctx);
 		(*ec)->transform = is->transform;
 		(*ec)->color = is->color;
 		(*el) = (*ec)->elements;
-		(*el)-> first_index = bframe->index_count;
+		(*el)->first_index = bframe->index_count;
 	}
 	memcpy (bframe->index_data + bframe->index_count,
 			poly->indices, poly->count * sizeof (poly->indices[0]));
 	(*el)->index_count += poly->count;
+	bframe->index_count += poly->count;
 }
 
 static void
@@ -1105,12 +1093,13 @@ Vulkan_DrawWorld (vulkan_ctx_t *ctx)
 	entity_t    worldent;
 
 	clear_texture_chains (bctx);	// do this first for water and skys
+	bframe->index_count = 0;
 
 	memset (&worldent, 0, sizeof (worldent));
 	worldent.model = r_worldentity.model;
 
-	vulktex_t  *tex = r_worldentity.model->skytexture->render;
-	bctx->skysheet_tex = tex->tex;
+	//vulktex_t  *tex = r_worldentity.model->skytexture->render;
+	//bctx->skysheet_tex = tex->tex;
 
 	currententity = &worldent;
 

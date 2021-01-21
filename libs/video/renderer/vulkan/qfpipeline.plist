@@ -108,13 +108,13 @@
 					descriptorCount = 1;
 					stageFlags = fragment;
 				},
-				{
+				/*{
 					binding = 4;
 					descriptorType = combined_image_sampler;
 					descriptorCount = 1;
 					stageFlags = fragment;
 				},
-				/*{
+				{
 					binding = 5;
 					descriptorType = combined_image_sampler;
 					descriptorCount = 1;
