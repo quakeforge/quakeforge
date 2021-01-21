@@ -10,7 +10,7 @@ struct qfv_device_s;
 
 scrap_t *QFV_CreateScrap (struct qfv_device_s *device, int size,
 						  QFFormat format, struct qfv_stagebuf_s *stage);
-size_t QFV_ScrapSize (scrap_t *scrap);
+size_t QFV_ScrapSize (scrap_t *scrap) __attribute__((pure));
 void QFV_ScrapClear (scrap_t *scrap);
 void QFV_DestroyScrap (scrap_t *scrap);
 VkImageView QFV_ScrapImageView (scrap_t *scrap) __attribute__((pure));
