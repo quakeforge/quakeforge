@@ -114,7 +114,7 @@ transfer_mips (byte *dst, const void *_src, const texture_t *tx)
 		offset = tx->offsets[i] - sizeof (texture_t);
 		count = width * height;
 		Vulkan_ExpandPalette (dst, src + offset, vid.palette, 1, count);
-		dst += count;
+		dst += count * 4;
 		width >>= 1;
 		height >>= 1;
 	}
@@ -126,7 +126,7 @@ copy_mips (qfv_packet_t *packet, texture_t *tx, qfv_tex_t *tex,
 {
 	// base copy
 	VkBufferImageCopy copy = {
-		tex->offset, tx->width, 0,
+		tex->offset, tx->width, tx->height,
 		{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
 		{0, 0, 0}, {tx->width, tx->height, 1},
 	};
@@ -153,14 +153,16 @@ copy_mips (qfv_packet_t *packet, texture_t *tx, qfv_tex_t *tex,
 		if (is_sky) {
 			__auto_type c = &copies->a[copies->size++];
 			*c = copy;
-			c->bufferOffset += sky_offset * 4;
+			c->bufferOffset += sky_offset;
 			c->imageSubresource.baseArrayLayer = 1;
 		}
 		copy.bufferOffset += size;
 		size >>= 2;
 		copy.bufferRowLength >>= 1;
+		copy.bufferImageHeight >>= 1;
 		copy.imageExtent.width >>= 1;
 		copy.imageExtent.height >>= 1;
+		copy.imageSubresource.mipLevel++;
 		sky_offset >>= 1;
 	}
 	dfunc->vkCmdCopyBufferToImage (packet->cmd, packet->stage->buffer,
@@ -322,7 +324,7 @@ Vulkan_Mod_ProcessTexture (texture_t *tx, vulkan_ctx_t *ctx)
 
 	vulktex_t    *tex = tx->render;
 	tex->texture = tx;
-	tex->tex = (qfv_tex_t *) (tx + 1);
+	tex->tex = (qfv_tex_t *) (tex + 1);
 	VkExtent3D extent = { tx->width, tx->height, 1 };
 
 	int layers = 1;

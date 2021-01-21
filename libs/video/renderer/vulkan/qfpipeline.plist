@@ -43,7 +43,7 @@
 			compareEnable = false;
 			compareOp = always;
 			minLod = 0;
-			maxLod = 1;
+			maxLod = 4;
 			borderColor = float_transparent_black;
 			unnormalizedCoordinates = false;
 		};

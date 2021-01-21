@@ -92,7 +92,7 @@ Vulkan_ExpandPalette (byte *dst, const byte *src, const byte *palette,
 	if (alpha) {
 		while (count-- > 0) {
 			byte        pix = *src++;
-			const byte *col = palette + pix;
+			const byte *col = palette + pix * 3;
 			*dst++ = *col++;
 			*dst++ = *col++;
 			*dst++ = *col++;
@@ -101,7 +101,7 @@ Vulkan_ExpandPalette (byte *dst, const byte *src, const byte *palette,
 	} else {
 		while (count-- > 0) {
 			byte        pix = *src++;
-			const byte *col = palette + pix;
+			const byte *col = palette + pix * 3;
 			*dst++ = *col++;
 			*dst++ = *col++;
 			*dst++ = *col++;

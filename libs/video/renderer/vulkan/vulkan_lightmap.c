@@ -164,9 +164,10 @@ Vulkan_BuildLightMap (msurface_t *surf, vulkan_ctx_t *ctx)
 			surf->cached_light[maps] = scale;				// 8.8 fraction
 			out = block;
 			for (i = 0; i < smax * tmax; i++) {
-				*out++ += *lightmap++ * scale / 256.0;
-				*out++ += *lightmap++ * scale / 256.0;
-				*out++ += *lightmap++ * scale / 256.0;
+				*out++ += *lightmap++ * scale / 65536.0;
+				*out++ += *lightmap++ * scale / 65536.0;
+				*out++ += *lightmap++ * scale / 65536.0;
+				*out++ = 1;
 			}
 		}
 	}

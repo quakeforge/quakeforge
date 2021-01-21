@@ -552,7 +552,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 								 VK_PIPELINE_STAGE_TRANSFER_BIT,
 								 0, 0, 0, 1, &wr_barrier, 0, 0);
 	VkBufferCopy copy_region = { packet->offset, 0, vertex_buffer_size };
-	dfunc->vkCmdCopyBuffer (packet->cmd, ctx->staging->buffer,
+	dfunc->vkCmdCopyBuffer (packet->cmd, stage->buffer,
 							bctx->vertex_buffer, 1, &copy_region);
 	VkBufferMemoryBarrier rd_barrier = {
 		VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
