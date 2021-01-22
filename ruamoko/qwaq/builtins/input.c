@@ -185,7 +185,7 @@ qwaq_add_event (qwaq_resources_t *res, qwaq_event_t *event)
 	pthread_mutex_lock (&res->event_cond.mut);
 	unsigned    last = RB_DATA_AVAILABLE (res->event_queue);
 	if (event->what == qe_mousemove && last > 1
-		&& RB_PEEK_DATA(res->event_queue, last - 1).what == qe_mousemove) {
+		&& RB_PEEK_DATA(res->event_queue, last - 1)->what == qe_mousemove) {
 		RB_POKE_DATA(res->event_queue, last - 1, *event);
 		merged = 1;
 		pthread_cond_broadcast (&res->event_cond.rcond);

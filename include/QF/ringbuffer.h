@@ -154,21 +154,22 @@
 		rb->tail = (t + c) % RB_buffer_size (rb);							\
 	})
 
-/** Read a single item from the buffer without affecting buffer state.
+/** Access a single item from the buffer without affecting buffer state.
  *
  * \note Does NOT affect buffer state.
  *
  * \note Does NOT check that the data is available. It is the caller's
  * responsitiblity to do so using RB_DATA_AVAILABLE().
  *
- * \param ring_buffer	The ring buffer from which to read the object.
- * \param ahead			The tail-relative index of the object to read from
+ * \param ring_buffer	The ring buffer from which to access the object.
+ * \param ahead			The tail-relative index of the object to access from
  *						the buffer. Valid range is 0 to
  *						`RB_DATA_AVAILABLE() - 1`
+ * \return				Address of the accessed element
  */
 #define RB_PEEK_DATA(ring_buffer, ahead)						\
 	({	__auto_type rb = &(ring_buffer);						\
-		rb->buffer[(rb->tail + ahead) % RB_buffer_size (rb)];	\
+		&rb->buffer[(rb->tail + ahead) % RB_buffer_size (rb)];	\
 	})
 
 /** WRite a single item to the buffer without affecting buffer state.
