@@ -58,7 +58,8 @@ typedef struct sfxstream_s sfxstream_t;
 	\param buffer	sound data
 	\param count	number of frames to paint
 */
-typedef void sfxpaint_t (int, channel_t *, float *, unsigned);
+typedef void sfxpaint_t (int offset, channel_t *ch, float *buffer,
+						 unsigned count);
 
 /** Represent a sound sample in the mixer.
 */
