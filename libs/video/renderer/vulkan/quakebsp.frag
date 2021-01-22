@@ -117,9 +117,9 @@ main (void)
 	}*/
 	c = texture (Texture, t_st);
 	if (doLight) {
-		c *= texture (Lightmap, l_st);
+		c *= vec4 (texture (Lightmap, l_st).xyz, 1);
 	}
 	c += texture (Glowmap, t_st);
-	c = texture (Lightmap, l_st);
+	c = vec4(texture (Lightmap, l_st).xyz, 1);
 	frag_color = c;//fogBlend (c);
 }

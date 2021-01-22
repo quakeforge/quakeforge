@@ -167,7 +167,7 @@ Vulkan_BuildLightMap (msurface_t *surf, vulkan_ctx_t *ctx)
 				*out++ += *lightmap++ * scale / 65536.0;
 				*out++ += *lightmap++ * scale / 65536.0;
 				*out++ += *lightmap++ * scale / 65536.0;
-				*out++ = 1;
+				out++;
 			}
 		}
 	}
