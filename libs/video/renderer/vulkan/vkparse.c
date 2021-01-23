@@ -282,7 +282,7 @@ parse_array (const plfield_t *field, const plitem_t *item,
 	}
 	*value = malloc (array->stride * arr->size);
 	memcpy (*value, arr->a, array->stride * arr->size);
-	if ((void *) size > data) {
+	if ((void *) size >= data) {
 		*size = arr->size;
 	}
 	free (arr);
