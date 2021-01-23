@@ -137,8 +137,11 @@
 		id enumObj = [(id) Hash_Find (available_types, name) resolveType];
 		return [enumObj parseData];
 	}
-	if (name == "uint32_t" || name == "size_t") {
+	if (name == "uint32_t") {
 		return "0";
+	}
+	if (name == "size_t") {
+		return "&cexpr_size_t";
 	}
 	return [alias parseData];
 }
