@@ -57,6 +57,13 @@ typedef struct elechain_s {
 	float      *color;
 } elechain_t;
 
+typedef enum {
+	qfv_bsp_texture,
+	qfv_bsp_glowmap,
+	qfv_bsp_lightmap,
+	qfv_bsp_skysheet,
+	qfv_bsp_skycube,
+} qfv_bsp_tex;
 // view matrix
 #define BSP_BUFFER_INFOS 1
 // Texture, GlowMap, LightMap, SkySheet, SkyCube
@@ -104,7 +111,10 @@ typedef struct bspctx_s {
 	instsurf_t **instsurfs_tail;
 	instsurf_t  *free_instsurfs;
 
+	struct qfv_tex_s *default_skysheet;
 	struct qfv_tex_s *skysheet_tex;
+
+	struct qfv_tex_s *default_skybox;
 	struct qfv_tex_s *skybox_tex;
 	quat_t       sky_rotation[2];
 	quat_t       sky_velocity;
@@ -122,6 +132,7 @@ typedef struct bspctx_s {
 	VkSampler    sampler;
 	VkDeviceMemory texture_memory;
 	VkPipeline   main;
+	VkPipeline   sky;
 	VkPipelineLayout layout;
 	size_t       vertex_buffer_size;
 	size_t       index_buffer_size;

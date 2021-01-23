@@ -56,9 +56,11 @@
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/buffer.h"
+#include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/scrap.h"
 #include "QF/Vulkan/staging.h"
@@ -752,6 +754,17 @@ R_VisitWorldNodes (model_t *model, vulkan_ctx_t *ctx)
 }
 
 static void
+bind_view (qfv_bsp_tex tex, VkImageView view, bspframe_t *bframe,
+		   VkCommandBuffer cmd, VkPipelineLayout layout, qfv_devfuncs_t *dfunc)
+{
+	bframe->imageInfo[tex].imageView = view;
+	dfunc->vkCmdPushDescriptorSetKHR (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									  layout, 0, 1,
+									  bframe->descriptors + tex
+									  + BSP_BUFFER_INFOS);
+}
+
+static void
 draw_elechain (elechain_t *ec, VkPipelineLayout layout, qfv_devfuncs_t *dfunc,
 			   VkCommandBuffer cmd)
 {
@@ -821,9 +834,9 @@ bsp_begin (vulkan_ctx_t *ctx)
 	bframe->imageInfo[1].imageView = 0;	// set by tex chain loop
 	bframe->imageInfo[2].imageView = QFV_ScrapImageView (bctx->light_scrap);
 	bframe->imageInfo[3].imageView = get_view (bctx->skysheet_tex,
-											   ctx->default_skysheet);
+											   bctx->default_skysheet);
 	bframe->imageInfo[4].imageView = get_view (bctx->skybox_tex,
-											   ctx->default_skybox);
+											   bctx->default_skybox);
 
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
@@ -856,10 +869,9 @@ bsp_begin (vulkan_ctx_t *ctx)
 									  bctx->layout,
 									  0, 1, bframe->descriptors + 0);
 	// push static images
-	// XXX sky sheet and box not pushed yet
 	dfunc->vkCmdPushDescriptorSetKHR (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									  bctx->layout,
-									  0, 1, bframe->descriptors + 3);
+									  0, 3, bframe->descriptors + 3);
 
 	//XXX glsl_Fog_GetColor (fog);
 	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;
@@ -926,7 +938,7 @@ turb_end (bspctx_t *bctx)
 	qfeglBindBuffer (GL_ARRAY_BUFFER, 0);
 }*/
 
-/*XXX static void
+static void
 spin (mat4_t mat, bspctx_t *bctx)
 {
 	quat_t      q;
@@ -947,82 +959,88 @@ spin (mat4_t mat, bspctx_t *bctx)
 	VectorNegate (r_origin, mat + 12);
 	QuatToMatrix (q, m, 1, 1);
 	Mat4Mult (m, mat, mat);
-}*/
+}
 
 static void
-sky_begin (bspctx_t *bctx)
+sky_begin (vulkan_ctx_t *ctx)
 {
-	//XXX mat4_t      mat;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	bspctx_t   *bctx = ctx->bsp_context;
 	//XXX quat_t      fog;
 
 	bctx->default_color[3] = 1;
 	QuatCopy (bctx->default_color, bctx->last_color);
-/*	qfeglVertexAttrib4fv (quake_bsp.color.location, bctx->default_color);
 
-	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
+	//XXX glsl_Fog_GetColor (fog);
+	//fog[3] = glsl_Fog_GetDensity () / 64.0;
+	//qfeglUniform4fv (sky_params.fog->location, 1, fog);
 
-	if (bctx->skybox_tex) {
-		sky_params.mvp_matrix = &quake_skybox.mvp_matrix;
-		sky_params.vertex = &quake_skybox.vertex;
-		sky_params.sky_matrix = &quake_skybox.sky_matrix;
-		sky_params.fog = &quake_skybox.fog;
+	spin (ctx->matrices.sky_3d, bctx);
 
-		qfeglUseProgram (quake_skybox.program);
-		qfeglEnableVertexAttribArray (quake_skybox.vertex.location);
+	__auto_type cframe = &ctx->framebuffers.a[ctx->curFrame];
+	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
+	VkCommandBuffer cmd = bframe->sky_cmd;
+	DARRAY_APPEND (cframe->subCommand, cmd);
 
-		qfeglUniform1i (quake_skybox.sky.location, 0);
-		qfeglActiveTexture (GL_TEXTURE0 + 0);
-		qfeglEnable (GL_TEXTURE_CUBE_MAP);
-		qfeglBindTexture (GL_TEXTURE_CUBE_MAP, skybox_tex);
-	} else {
-		sky_params.mvp_matrix = &quake_skyid.mvp_matrix;
-		sky_params.sky_matrix = &quake_skyid.sky_matrix;
-		sky_params.vertex = &quake_skyid.vertex;
-		sky_params.fog = &quake_skyid.fog;
+	//FIXME need per frame matrices
+	bframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
+	bframe->imageInfo[0].imageView = ctx->default_magenta->view;
+	bframe->imageInfo[1].imageView = ctx->default_magenta->view;
+	bframe->imageInfo[2].imageView = QFV_ScrapImageView (bctx->light_scrap);
+	bframe->imageInfo[3].imageView = get_view (bctx->skysheet_tex,
+											   bctx->default_skysheet);
+	bframe->imageInfo[4].imageView = get_view (bctx->skybox_tex,
+											   bctx->default_skybox);
 
-		qfeglUseProgram (quake_skyid.program);
-		qfeglEnableVertexAttribArray (quake_skyid.vertex.location);
+	dfunc->vkResetCommandBuffer (cmd, 0);
+	VkCommandBufferInheritanceInfo inherit = {
+		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
+		ctx->renderpass.renderpass, 0,
+		cframe->framebuffer,
+		0, 0, 0,
+	};
+	VkCommandBufferBeginInfo beginInfo = {
+		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, 0,
+		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+		| VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &inherit,
+	};
+	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 
-		qfeglUniform1i (quake_skyid.palette.location, 2);
-		qfeglActiveTexture (GL_TEXTURE0 + 2);
-		qfeglEnable (GL_TEXTURE_2D);
-		qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
+	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+							  bctx->sky);
+	VkViewport  viewport = {0, 0, vid.width, vid.height, 0, 1};
+	VkRect2D    scissor = { {0, 0}, {vid.width, vid.height} };
+	dfunc->vkCmdSetViewport (cmd, 0, 1, &viewport);
+	dfunc->vkCmdSetScissor (cmd, 0, 1, &scissor);
 
-		qfeglUniform1f (quake_skyid.time.location, vr_data.realtime);
+	VkDeviceSize offsets[] = { 0 };
+	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &bctx->vertex_buffer, offsets);
+	dfunc->vkCmdBindIndexBuffer (cmd, bctx->index_buffer, bframe->index_offset,
+								 VK_INDEX_TYPE_UINT32);
 
-		qfeglUniform1i (quake_skyid.trans.location, 0);
-		qfeglActiveTexture (GL_TEXTURE0 + 0);
-		qfeglEnable (GL_TEXTURE_2D);
+	// push VP matrices
+	dfunc->vkCmdPushDescriptorSetKHR (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									  bctx->layout,
+									  0, 1, bframe->descriptors + 0);
+	// push static images
+	dfunc->vkCmdPushDescriptorSetKHR (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									  bctx->layout,
+									  0, 5, bframe->descriptors + 1);
 
-		qfeglUniform1i (quake_skyid.solid.location, 1);
-		qfeglActiveTexture (GL_TEXTURE0 + 1);
-		qfeglEnable (GL_TEXTURE_2D);
-	}
-
-	glsl_Fog_GetColor (fog);
-	fog[3] = glsl_Fog_GetDensity () / 64.0;
-	qfeglUniform4fv (sky_params.fog->location, 1, fog);
-
-	spin (mat);
-	qfeglUniformMatrix4fv (sky_params.sky_matrix->location, 1, false, mat);
-
-	qfeglBindBuffer (GL_ARRAY_BUFFER, bsp_vbo);*/
+	//XXX glsl_Fog_GetColor (fog);
+	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;
 }
 
 static void
-sky_end (bspctx_t *bctx)
+sky_end (vulkan_ctx_t *ctx)
 {
-	/*XXX qfeglDisableVertexAttribArray (sky_params.vertex->location);
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	bspctx_t   *bctx = ctx->bsp_context;
 
-	qfeglActiveTexture (GL_TEXTURE0 + 0);
-	qfeglDisable (GL_TEXTURE_2D);
-	qfeglDisable (GL_TEXTURE_CUBE_MAP);
-	qfeglActiveTexture (GL_TEXTURE0 + 1);
-	qfeglDisable (GL_TEXTURE_2D);
-	qfeglActiveTexture (GL_TEXTURE0 + 2);
-	qfeglDisable (GL_TEXTURE_2D);
-
-	qfeglBindBuffer (GL_ARRAY_BUFFER, 0);*/
+	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
+	dfunc->vkEndCommandBuffer (bframe->sky_cmd);
 }
 
 static inline void
@@ -1199,6 +1217,8 @@ Vulkan_DrawWaterSurfaces (vulkan_ctx_t *ctx)
 void
 Vulkan_DrawSky (vulkan_ctx_t *ctx)
 {
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 	instsurf_t *is;
@@ -1210,20 +1230,24 @@ Vulkan_DrawSky (vulkan_ctx_t *ctx)
 	if (!bctx->sky_chain)
 		return;
 
-	sky_begin (bctx);
+	sky_begin (ctx);
+	dfunc->vkCmdPushConstants (bframe->sky_cmd, bctx->layout,
+							   VK_SHADER_STAGE_VERTEX_BIT,
+							   0, 16 * sizeof (float), identity);
+	float frag_pc[8] = { };
+	dfunc->vkCmdPushConstants (bframe->sky_cmd, bctx->layout,
+							   VK_SHADER_STAGE_FRAGMENT_BIT,
+							   64, 8 * sizeof (float), &frag_pc);
 	for (is = bctx->sky_chain; is; is = is->tex_chain) {
 		surf = is->surface;
 		if (tex != surf->texinfo->texture->render) {
 			if (tex) {
-				if (!bctx->skybox_tex) {
-					//XXX qfeglActiveTexture (GL_TEXTURE0 + 0);
-					//qfeglBindTexture (GL_TEXTURE_2D, tex->sky_tex[0]);
-					//qfeglActiveTexture (GL_TEXTURE0 + 1);
-					//qfeglBindTexture (GL_TEXTURE_2D, tex->sky_tex[1]);
+				bind_view (qfv_bsp_skysheet,
+						   get_view (tex->tex, ctx->default_black),
+						   bframe, bframe->sky_cmd, bctx->layout, dfunc);
+				for (ec = tex->elechain; ec; ec = ec->next) {
+					draw_elechain (ec, bctx->layout, dfunc, bframe->sky_cmd);
 				}
-				//for (ec = tex->elechain; ec; ec = ec->next)
-				//	draw_elechain (ec, sky_params.mvp_matrix->location,
-				//				   sky_params.vertex->location, -1, -1);
 				tex->elechain = 0;
 				tex->elechain_tail = &tex->elechain;
 			}
@@ -1232,22 +1256,121 @@ Vulkan_DrawSky (vulkan_ctx_t *ctx)
 		add_surf_elements (tex, is, &ec, &el, bctx, bframe);
 	}
 	if (tex) {
-		if (!bctx->skybox_tex) {
-			//XXX qfeglActiveTexture (GL_TEXTURE0 + 0);
-			//qfeglBindTexture (GL_TEXTURE_2D, tex->sky_tex[0]);
-			//qfeglActiveTexture (GL_TEXTURE0 + 1);
-			//qfeglBindTexture (GL_TEXTURE_2D, tex->sky_tex[1]);
+		bind_view (qfv_bsp_skysheet,
+				   get_view (tex->tex, ctx->default_black),
+				   bframe, bframe->sky_cmd, bctx->layout, dfunc);
+		for (ec = tex->elechain; ec; ec = ec->next) {
+			draw_elechain (ec, bctx->layout, dfunc, bframe->sky_cmd);
 		}
-		//for (ec = tex->elechain; ec; ec = ec->next)
-		//	draw_elechain (ec, sky_params.mvp_matrix->location,
-		//				   sky_params.vertex->location, -1, -1);
 		tex->elechain = 0;
 		tex->elechain_tail = &tex->elechain;
 	}
-	sky_end (bctx);
+	sky_end (ctx);
 
 	bctx->sky_chain = 0;
 	bctx->sky_chain_tail = &bctx->sky_chain;
+}
+
+static void
+create_default_skys (vulkan_ctx_t *ctx)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	bspctx_t   *bctx = ctx->bsp_context;
+	VkImage     skybox;
+	VkImage     skysheet;
+	VkDeviceMemory memory;
+	VkImageView boxview;
+	VkImageView sheetview;
+
+	bctx->default_skybox = calloc (2, sizeof (qfv_tex_t));
+	bctx->default_skysheet = bctx->default_skybox + 1;
+
+	VkExtent3D extents = { 1, 1, 1 };
+	skybox = QFV_CreateImage (device, 1, VK_IMAGE_TYPE_2D,
+							  VK_FORMAT_B8G8R8A8_UNORM, extents, 1, 1,
+							  VK_SAMPLE_COUNT_1_BIT,
+							  VK_IMAGE_USAGE_SAMPLED_BIT
+							  | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+
+	skysheet = QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D,
+							  VK_FORMAT_B8G8R8A8_UNORM, extents, 1, 2,
+							  VK_SAMPLE_COUNT_1_BIT,
+							  VK_IMAGE_USAGE_SAMPLED_BIT
+							  | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+	VkMemoryRequirements requirements;
+	dfunc->vkGetImageMemoryRequirements (device->dev, skybox, &requirements);
+	size_t      boxsize = requirements.size;
+	dfunc->vkGetImageMemoryRequirements (device->dev, skysheet, &requirements);
+	size_t      sheetsize = requirements.size;
+
+	memory = QFV_AllocImageMemory (device, skybox,
+								   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+								   boxsize + sheetsize,
+								   VK_IMAGE_USAGE_TRANSFER_DST_BIT
+								   | VK_IMAGE_USAGE_SAMPLED_BIT);
+
+	QFV_BindImageMemory (device, skybox, memory, 0);
+	QFV_BindImageMemory (device, skysheet, memory, boxsize);
+
+	boxview = QFV_CreateImageView (device, skybox, VK_IMAGE_VIEW_TYPE_CUBE,
+								   VK_FORMAT_B8G8R8A8_UNORM,
+								   VK_IMAGE_ASPECT_COLOR_BIT);
+
+	sheetview = QFV_CreateImageView (device, skysheet,
+									 VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+								     VK_FORMAT_B8G8R8A8_UNORM,
+								     VK_IMAGE_ASPECT_COLOR_BIT);
+
+	bctx->default_skybox->image = skybox;
+	bctx->default_skybox->view = boxview;
+	bctx->default_skybox->memory = memory;
+	bctx->default_skysheet->image = skysheet;
+	bctx->default_skysheet->view = sheetview;
+
+	// temporarily commandeer the light map's staging buffer
+	qfv_packet_t *packet = QFV_PacketAcquire (bctx->light_stage);
+	VkImageMemoryBarrier barrier;
+	VkImageMemoryBarrier barriers[2];
+	qfv_pipelinestagepair_t stages;
+
+	stages = imageLayoutTransitionStages[qfv_LT_Undefined_to_TransferDst];
+	barrier = imageLayoutTransitionBarriers[qfv_LT_Undefined_to_TransferDst];
+	barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	barriers[0] = barrier;
+	barriers[1] = barrier;
+	barriers[0].image = skybox;
+	barriers[1].image = skysheet;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+								 0, 0, 0, 0, 0,
+								 2, barriers);
+
+	VkClearColorValue color = {};
+	VkImageSubresourceRange range = {
+		VK_IMAGE_ASPECT_COLOR_BIT,
+		0, VK_REMAINING_MIP_LEVELS,
+		0, VK_REMAINING_ARRAY_LAYERS
+	};
+	dfunc->vkCmdClearColorImage (packet->cmd, skybox,
+								 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+								 &color, 1, &range);
+	dfunc->vkCmdClearColorImage (packet->cmd, skysheet,
+								 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+								 &color, 1, &range);
+
+	stages = imageLayoutTransitionStages[qfv_LT_TransferDst_to_ShaderReadOnly];
+	barrier=imageLayoutTransitionBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+	barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	barriers[0] = barrier;
+	barriers[1] = barrier;
+	barriers[0].image = skybox;
+	barriers[1].image = skysheet;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+								 0, 0, 0, 0, 0,
+								 2, barriers);
+	QFV_PacketSubmit (packet);
 }
 
 static VkDescriptorBufferInfo base_buffer_info = {
@@ -1288,6 +1411,8 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 	size_t      size = QFV_ScrapSize (bctx->light_scrap);
 	bctx->light_stage = QFV_CreateStagingBuffer (device, size, ctx->cmdpool);
 
+	create_default_skys (ctx);
+
 	DARRAY_INIT (&bctx->texture_chains, 64);
 
 	size_t      frames = ctx->framebuffers.size;
@@ -1296,6 +1421,7 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 	bctx->frames.grow = 0;
 
 	bctx->main = Vulkan_CreatePipeline (ctx, "quakebsp.main");
+	bctx->sky = Vulkan_CreatePipeline (ctx, "quakebsp.skysheet");
 	bctx->layout = QFV_GetPipelineLayout (ctx, "quakebsp");
 	bctx->sampler = QFV_GetSampler (ctx, "quakebsp");
 
@@ -1309,9 +1435,9 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type bframe = &bctx->frames.a[i];
-		bframe->bsp_cmd = cmdBuffers->a[i];
-		bframe->turb_cmd = cmdBuffers->a[i];
-		bframe->sky_cmd = cmdBuffers->a[i];
+		bframe->bsp_cmd = cmdBuffers->a[i * 3 + 0];
+		bframe->turb_cmd = cmdBuffers->a[i * 3 + 1];
+		bframe->sky_cmd = cmdBuffers->a[i * 3 + 2];
 
 		for (int j = 0; j < BSP_BUFFER_INFOS; j++) {
 			bframe->bufferInfo[j] = base_buffer_info;
@@ -1338,6 +1464,7 @@ Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 	bspctx_t   *bctx = ctx->bsp_context;
 
 	dfunc->vkDestroyPipeline (device->dev, bctx->main, 0);
+	dfunc->vkDestroyPipeline (device->dev, bctx->sky, 0);
 	DARRAY_CLEAR (&bctx->texture_chains);
 	DARRAY_CLEAR (&bctx->frames);
 	QFV_DestroyStagingBuffer (bctx->light_stage);
@@ -1350,6 +1477,14 @@ Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 		dfunc->vkDestroyBuffer (device->dev, bctx->index_buffer, 0);
 		dfunc->vkFreeMemory (device->dev, bctx->index_memory, 0);
 	}
+
+	dfunc->vkDestroyImageView (device->dev, bctx->default_skysheet->view, 0);
+	dfunc->vkDestroyImage (device->dev, bctx->default_skysheet->image, 0);
+
+	dfunc->vkDestroyImageView (device->dev, bctx->default_skybox->view, 0);
+	dfunc->vkDestroyImage (device->dev, bctx->default_skybox->image, 0);
+	dfunc->vkFreeMemory (device->dev, bctx->default_skybox->memory, 0);
+	free (bctx->default_skybox);
 }
 
 static inline __attribute__((const)) int

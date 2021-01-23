@@ -108,7 +108,7 @@
 					descriptorCount = 1;
 					stageFlags = fragment;
 				},
-				/*{
+				{
 					binding = 4;
 					descriptorType = combined_image_sampler;
 					descriptorCount = 1;
@@ -119,7 +119,7 @@
 					descriptorType = combined_image_sampler;
 					descriptorCount = 1;
 					stageFlags = fragment;
-				},*/
+				},
 			);
 		};
 		something = {
@@ -175,6 +175,108 @@
 			stages = (
 				{ stage = vertex; name = main; module = quakebspv; },
 				{ stage = fragment; name = main; module = quakebspf; },
+			);
+			vertexInput = {
+				bindings = (
+					{
+						binding = 0;
+						stride = "2 * 4 * 4";
+						inputRate = vertex;
+					},
+				);
+				attributes = (
+					{
+						location = 0;
+						binding = 0;
+						format = r32g32b32a32_sfloat;
+						offset = 0;
+					},
+					{
+						location = 1;
+						binding = 0;
+						format = r32g32b32a32_sfloat;
+						offset = 16;
+					},
+				);
+			};
+			inputAssembly = {
+				topology = triangle_fan;
+				primitiveRestartEnable = true;
+			};
+			viewport = {
+				viewports = (
+					{
+						x = 0; y = 0;
+						width = 640; height = 480;
+						minDepth = 0; maxDepth = 1;
+					}
+				);
+				scissors = (
+					{
+						offset = { x = 0; y = 0 };
+						extent = { width = 640; height = 480; };
+					},
+				);
+			};
+			rasterization = {
+				depthClampEnable = false;
+				rasterizerDiscardEnable = false;
+				polygonMode = fill;
+				cullMode = back;
+				frontFace = clockwise;
+				depthBiasEnable = false;
+				lineWidth = 1;
+			};
+			multisample = {
+				rasterizationSamples = $msaaSamples;
+				sampleShadingEnable = false;
+				minSampleShading = 0.5f;
+				alphaToCoverageEnable = false;
+				alphaToOneEnable = false;
+			};
+			depthStencil = {
+				depthTestEnable = true;
+				depthWriteEnable = true;
+				depthCompareOp = less_or_equal;
+				depthBoundsTestEnable = false;
+				stencilTestEnable = false;
+			};
+			colorBlend = {
+				logicOpEnable = false;
+				attachments = ({
+					blendEnable = true;
+					srcColorBlendFactor = src_alpha;
+					dstColorBlendFactor = one_minus_src_alpha;
+					colorBlendOp = add;
+					srcAlphaBlendFactor = src_alpha;
+					dstAlphaBlendFactor = one_minus_src_alpha;
+					alphaBlendOp = add;
+					colorWriteMask = r|g|b|a;
+				});
+			};
+			dynamic = {
+				dynamicState = ( viewport, scissor, blend_constants );
+			};
+			layout = quakebsp;
+			//renderPass = renderpass;
+		};
+		quakebsp.skysheet = {
+			stages = (
+				{ stage = vertex; name = main; module = quakebspv; },
+				{
+					stage = fragment;
+					name = main;
+					module = quakebspf;
+					specializationInfo = {
+						mapEntries = (
+							{ size = 4; offset = 0; constantID = 0; },
+							{ size = 4; offset = 0; constantID = 1; },
+							{ size = 4; offset = 0; constantID = 2; },
+							{ size = 4; offset = 4; constantID = 3; },
+						);
+						data = <00000000ffffffff>;
+					};
+				},
 			);
 			vertexInput = {
 				bindings = (

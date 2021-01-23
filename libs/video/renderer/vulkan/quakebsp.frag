@@ -3,8 +3,8 @@
 layout (set = 0, binding = 1) uniform sampler2D Texture;
 layout (set = 0, binding = 2) uniform sampler2D GlowMap;
 layout (set = 0, binding = 3) uniform sampler2D LightMap;
-//layout (set = 0, binding = 4) uniform sampler2DArray SkySheet;
-//layout (set = 0, binding = 5) uniform samplerCube SkyCube;
+layout (set = 0, binding = 4) uniform sampler2DArray SkySheet;
+layout (set = 0, binding = 5) uniform samplerCube SkyCube;
 
 layout (push_constant) uniform PushConstants {
 	layout (offset = 64)
@@ -46,7 +46,7 @@ fogBlend (vec4 color)
 
 	return vec4 (mix (fog_color.rgb, color.rgb, fog_factor), color.a);
 }
-/*
+
 vec4
 sky_sheet (vec3 dir, float time)
 {
@@ -99,7 +99,7 @@ sky_color (vec3 dir, float time)
 		return vec4 (1, 0, 1, 1);
 	}
 }
-*/
+
 void
 main (void)
 {
@@ -110,15 +110,14 @@ main (void)
 	if (doWarp) {
 		t_st = warp_st (t_st, time);
 	}
-	/*if (doSkyCube || doSkySheet) {
+	if (doSkyCube || doSkySheet) {
 		c = sky_color (direction, time);
 	} else {
 		c = texture (Texture, t_st);
-	}*/
-	c = texture (Texture, t_st);
-	if (doLight) {
-		c *= vec4 (texture (LightMap, l_st).xyz, 1);
+		if (doLight) {
+			c *= vec4 (texture (LightMap, l_st).xyz, 1);
+		}
+		c += texture (GlowMap, t_st);
 	}
-	c += texture (GlowMap, t_st);
 	frag_color = c;//fogBlend (c);
 }
