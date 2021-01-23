@@ -613,6 +613,7 @@ Vulkan_Draw_ConsoleBackground (int lines, byte alpha, vulkan_ctx_t *ctx)
 	qpic_t     *cpic;
 	cpic = Vulkan_Draw_CachePic ("gfx/conback.lmp", false, ctx);
 	int         ofs = max (0, cpic->height - lines);
+	lines = min (lines, cpic->height);
 	draw_pic (0, 0, vid.conwidth, lines, cpic,
 			  0, ofs, cpic->width, lines, color, frame);
 }
