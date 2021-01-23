@@ -1,8 +1,8 @@
 #version 450
 
 layout (set = 0, binding = 1) uniform sampler2D Texture;
-layout (set = 0, binding = 2) uniform sampler2D Glowmap;
-layout (set = 0, binding = 3) uniform sampler2D Lightmap;
+layout (set = 0, binding = 2) uniform sampler2D GlowMap;
+layout (set = 0, binding = 3) uniform sampler2D LightMap;
 //layout (set = 0, binding = 4) uniform sampler2DArray SkySheet;
 //layout (set = 0, binding = 5) uniform samplerCube SkyCube;
 
@@ -117,9 +117,10 @@ main (void)
 	}*/
 	c = texture (Texture, t_st);
 	if (doLight) {
-		c *= vec4 (texture (Lightmap, l_st).xyz, 1);
+		c *= vec4 (texture (LightMap, l_st).xyz, 1);
 	}
-	c += texture (Glowmap, t_st);
-	c = vec4(texture (Lightmap, l_st).xyz, 1);
+	//c += texture (GlowMap, t_st);
+	//c = vec4(texture (LightMap, l_st).xyz, 1);
+	//c = vec4(texture (Texture, t_st).xyz, 1);
 	frag_color = c;//fogBlend (c);
 }

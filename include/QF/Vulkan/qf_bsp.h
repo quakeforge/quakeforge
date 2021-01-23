@@ -57,6 +57,11 @@ typedef struct elechain_s {
 	float      *color;
 } elechain_t;
 
+// view matrix
+#define BSP_BUFFER_INFOS 1
+// Texture, GlowMap, LightMap, SkySheet, SkyCube
+#define BSP_IMAGE_INFOS 5
+
 typedef struct bspframe_s {
 	uint32_t    *index_data;	// pointer into mega-buffer for this frame (c)
 	uint32_t     index_offset;	// offset of index_data within mega-buffer (c)
@@ -64,6 +69,9 @@ typedef struct bspframe_s {
 	VkCommandBuffer bsp_cmd;
 	VkCommandBuffer turb_cmd;
 	VkCommandBuffer sky_cmd;
+	VkDescriptorBufferInfo bufferInfo[BSP_BUFFER_INFOS];
+	VkDescriptorImageInfo imageInfo[BSP_IMAGE_INFOS];
+	VkWriteDescriptorSet descriptors[BSP_BUFFER_INFOS + BSP_IMAGE_INFOS];
 } bspframe_t;
 
 typedef struct bspframeset_s

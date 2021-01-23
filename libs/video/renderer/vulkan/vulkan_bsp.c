@@ -788,12 +788,12 @@ draw_elechain (elechain_t *ec, VkPipelineLayout layout, qfv_devfuncs_t *dfunc,
 }
 
 static VkImageView
-get_view (qfv_tex_t *tex)
+get_view (qfv_tex_t *tex, VkImageView default_view)
 {
 	if (tex) {
 		return tex->view;
 	}
-	return 0;
+	return default_view;
 }
 
 static void
@@ -812,52 +812,13 @@ bsp_begin (vulkan_ctx_t *ctx)
 	VkCommandBuffer cmd = bframe->bsp_cmd;
 	DARRAY_APPEND (cframe->subCommand, cmd);
 
-	VkDescriptorBufferInfo bufferInfo = {
-		ctx->matrices.buffer_3d, 0, VK_WHOLE_SIZE
-	};
-	VkDescriptorImageInfo imageInfo[] = {
-		{ bctx->sampler,
-		  QFV_ScrapImageView (bctx->light_scrap),
-		  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
-		{ bctx->sampler,
-		  QFV_ScrapImageView (bctx->light_scrap),
-		  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
-		{ bctx->sampler,
-		  QFV_ScrapImageView (bctx->light_scrap),
-		  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
-		{ bctx->sampler,
-		  get_view (bctx->skysheet_tex),
-		  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
-		{ bctx->sampler,
-		  get_view (bctx->skybox_tex),
-		  VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL },
-	};
-	VkWriteDescriptorSet write[] = {
-		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
-		  0, 0, 1,
-		  VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-		  0, &bufferInfo, 0 },
-		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
-		  1, 0, 1,
-		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-		  &imageInfo[0], 0, 0 },
-		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
-		  2, 0, 1,
-		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-		  &imageInfo[1], 0, 0 },
-		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
-		  3, 0, 1,
-		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-		  &imageInfo[2], 0, 0 },
-		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
-		  4, 0, 1,
-		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-		  &imageInfo[3], 0, 0 },
-		{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
-		  5, 0, 1,
-		  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-		  &imageInfo[4], 0, 0 },
-	};
+	//FIXME need per frame matrices
+	bframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
+	bframe->imageInfo[0].imageView = 0;	// set by tex chain loop
+	bframe->imageInfo[1].imageView = 0;	// set by tex chain loop
+	bframe->imageInfo[2].imageView = QFV_ScrapImageView (bctx->light_scrap);
+	bframe->imageInfo[3].imageView = get_view (bctx->skysheet_tex, 0);
+	bframe->imageInfo[4].imageView = get_view (bctx->skybox_tex, 0);
 
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
@@ -885,8 +846,15 @@ bsp_begin (vulkan_ctx_t *ctx)
 	dfunc->vkCmdBindIndexBuffer (cmd, bctx->index_buffer, bframe->index_offset,
 								 VK_INDEX_TYPE_UINT32);
 
+	// push VP matrices
 	dfunc->vkCmdPushDescriptorSetKHR (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									  bctx->layout, 0, 4, write);
+									  bctx->layout,
+									  0, 1, bframe->descriptors + 0);
+	// push static images
+	// XXX sky sheet and box not pushed yet
+	dfunc->vkCmdPushDescriptorSetKHR (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									  bctx->layout,
+									  0, 1, bframe->descriptors + 3);
 
 	//XXX glsl_Fog_GetColor (fog);
 	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;
@@ -1140,11 +1108,22 @@ Vulkan_DrawWorld (vulkan_ctx_t *ctx)
 		elechain_t *ec = 0;
 
 		tex = bctx->texture_chains.a[i];
+		if (!tex->tex) {
+			//FIXME bind to whit
+			continue;
+		}
 
 		build_tex_elechain (tex, bctx, bframe);
 
 		//XXX if (tex->elechain)
 		//XXX 	qfeglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
+		bframe->imageInfo[0].imageView = get_view (tex->tex, 0);
+		bframe->imageInfo[1].imageView = get_view (tex->glow, 0);
+		//XXX glow map
+		dfunc->vkCmdPushDescriptorSetKHR (bframe->bsp_cmd,
+										  VK_PIPELINE_BIND_POINT_GRAPHICS,
+										  bctx->layout,
+										  0, 1, bframe->descriptors + 1);
 
 		for (ec = tex->elechain; ec; ec = ec->next) {
 			draw_elechain (ec, bctx->layout, dfunc, bframe->bsp_cmd);
@@ -1271,6 +1250,25 @@ Vulkan_DrawSky (vulkan_ctx_t *ctx)
 	bctx->sky_chain_tail = &bctx->sky_chain;
 }
 
+static VkDescriptorBufferInfo base_buffer_info = {
+	0, 0, VK_WHOLE_SIZE
+};
+static VkDescriptorImageInfo base_image_info = {
+	0, 0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+};
+static VkWriteDescriptorSet base_buffer_write = {
+	VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
+	0, 0, 1,
+	VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+	0, 0, 0
+};
+static VkWriteDescriptorSet base_image_write = {
+	VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
+	0, 0, 1,
+	VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+	0, 0, 0
+};
+
 void
 Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 {
@@ -1314,6 +1312,21 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 		bframe->bsp_cmd = cmdBuffers->a[i];
 		bframe->turb_cmd = cmdBuffers->a[i];
 		bframe->sky_cmd = cmdBuffers->a[i];
+
+		for (int j = 0; j < BSP_BUFFER_INFOS; j++) {
+			bframe->bufferInfo[j] = base_buffer_info;
+			bframe->descriptors[j] = base_buffer_write;
+			bframe->descriptors[j].dstBinding = j;
+			bframe->descriptors[j].pBufferInfo = &bframe->bufferInfo[j];
+		}
+		for (int j = 0; j < BSP_IMAGE_INFOS; j++) {
+			bframe->imageInfo[j] = base_image_info;
+			bframe->imageInfo[j].sampler = bctx->sampler;
+			int k = j + BSP_BUFFER_INFOS;
+			bframe->descriptors[k] = base_image_write;
+			bframe->descriptors[k].dstBinding = k;
+			bframe->descriptors[k].pImageInfo = &bframe->imageInfo[j];
+		}
 	}
 }
 
