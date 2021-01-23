@@ -367,7 +367,7 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 										 0, 0);
 
 	create_quad_buffers (ctx);
-	dctx->stage = QFV_CreateStagingBuffer (device, 4 * 1024 * 1024, 4,
+	dctx->stage = QFV_CreateStagingBuffer (device, 4 * 1024 * 1024,
 										   ctx->cmdpool);
 	dctx->scrap = QFV_CreateScrap (device, 2048, tex_rgba, dctx->stage);
 	dctx->sampler = QFV_GetSampler (ctx, "quakepic");

@@ -211,7 +211,7 @@ load_textures (model_t *model, vulkan_ctx_t *ctx)
 								memsize, 0);
 	mctx->texture_memory = mem;
 
-	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device, memsize, 1,
+	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device, memsize,
 													 ctx->cmdpool);
 	qfv_packet_t *packet = QFV_PacketAcquire (stage);
 	buffer = QFV_PacketExtend (packet, memsize);

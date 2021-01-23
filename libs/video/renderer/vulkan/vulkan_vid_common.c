@@ -204,7 +204,7 @@ Vulkan_CreateDevice (vulkan_ctx_t *ctx)
 void
 Vulkan_CreateStagingBuffers (vulkan_ctx_t *ctx)
 {
-	ctx->staging = QFV_CreateStagingBuffer (ctx->device, 4*1024*1024, 1,
+	ctx->staging = QFV_CreateStagingBuffer (ctx->device, 4*1024*1024,
 											ctx->cmdpool);
 }
 

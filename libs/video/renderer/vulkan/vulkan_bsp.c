@@ -465,8 +465,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	size_t vertex_buffer_size = vertex_count * sizeof (bspvert_t);
 
 	index_buffer_size = (index_buffer_size + atom_mask) & ~atom_mask;
-	stage = QFV_CreateStagingBuffer (device, vertex_buffer_size, 1,
-									 ctx->cmdpool);
+	stage = QFV_CreateStagingBuffer (device, vertex_buffer_size, ctx->cmdpool);
 	qfv_packet_t *packet = QFV_PacketAcquire (stage);
 	vertices = QFV_PacketExtend (packet, vertex_buffer_size);
 	vertex_index_base = 0;
@@ -1289,8 +1288,7 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 
 	bctx->light_scrap = QFV_CreateScrap (device, 2048, tex_frgba, ctx->staging);
 	size_t      size = QFV_ScrapSize (bctx->light_scrap);
-	bctx->light_stage = QFV_CreateStagingBuffer (device, size, 3,
-												 ctx->cmdpool);
+	bctx->light_stage = QFV_CreateStagingBuffer (device, size, ctx->cmdpool);
 
 	DARRAY_INIT (&bctx->texture_chains, 64);
 

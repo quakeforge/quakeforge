@@ -55,14 +55,13 @@
 #include "vid_vulkan.h"
 
 qfv_stagebuf_t *
-QFV_CreateStagingBuffer (qfv_device_t *device, size_t size, int num_packets,
+QFV_CreateStagingBuffer (qfv_device_t *device, size_t size,
 						 VkCommandPool cmdPool)
 {
 	size_t atom = device->physDev->properties.limits.nonCoherentAtomSize;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	qfv_stagebuf_t *stage = malloc (sizeof (qfv_stagebuf_t)
-									+ num_packets * sizeof (qfv_packet_t));
+	qfv_stagebuf_t *stage = calloc (1, sizeof (qfv_stagebuf_t));
 	stage->atom_mask = atom - 1;
 	size = (size + stage->atom_mask) & ~stage->atom_mask;
 	stage->device = device;
@@ -71,25 +70,23 @@ QFV_CreateStagingBuffer (qfv_device_t *device, size_t size, int num_packets,
 	stage->memory = QFV_AllocBufferMemory (device, stage->buffer,
 										   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 										   size, 0);
-	stage->packet = (qfv_packet_t *) (stage + 1);
-	stage->num_packets = num_packets;
-	stage->next_packet = 0;
 	stage->size = size;
 	stage->end = size;
-	stage->head = 0;
-	stage->tail = 0;
 
 	dfunc->vkMapMemory (device->dev, stage->memory, 0, size, 0, &stage->data);
 	QFV_BindBufferMemory (device, stage->buffer, stage->memory, 0);
 
-	__auto_type bufferset = QFV_AllocCommandBufferSet (num_packets, alloca);
+	int         count = RB_buffer_size (&stage->packets);
+
+	__auto_type bufferset = QFV_AllocCommandBufferSet (count, alloca);
 	QFV_AllocateCommandBuffers (device, cmdPool, 0, bufferset);
-	for (int i = 0; i < num_packets; i++) {
-		stage->packet[i].stage = stage;
-		stage->packet[i].cmd = bufferset->a[i];
-		stage->packet[i].fence = QFV_CreateFence (device, 1);
-		stage->packet[i].offset = 0;
-		stage->packet[i].length = 0;
+	for (int i = 0; i < count; i++) {
+		qfv_packet_t *packet = &stage->packets.buffer[i];
+		packet->stage = stage;
+		packet->cmd = bufferset->a[i];
+		packet->fence = QFV_CreateFence (device, 1);
+		packet->offset = 0;
+		packet->length = 0;
 	}
 	return stage;
 }
@@ -100,14 +97,15 @@ QFV_DestroyStagingBuffer (qfv_stagebuf_t *stage)
 	qfv_device_t *device = stage->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	__auto_type fences = QFV_AllocFenceSet (stage->num_packets, alloca);
-	for (size_t i = 0; i < stage->num_packets; i++) {
-		fences->a[i] = stage->packet[i].fence;
+	int         count = RB_buffer_size (&stage->packets);
+	__auto_type fences = QFV_AllocFenceSet (count, alloca);
+	for (int i = 0; i < count; i++) {
+		fences->a[i] = stage->packets.buffer[i].fence;
 	}
 	dfunc->vkWaitForFences (device->dev, fences->size, fences->a, VK_TRUE,
-							~0ull);
-	for (size_t i = 0; i < stage->num_packets; i++) {
-		dfunc->vkDestroyFence (device->dev, stage->packet[i].fence, 0);
+							500000000ull);
+	for (int i = 0; i < count; i++) {
+		dfunc->vkDestroyFence (device->dev, fences->a[i], 0);
 	}
 
 	dfunc->vkUnmapMemory (device->dev, stage->memory);
@@ -132,44 +130,87 @@ QFV_FlushStagingBuffer (qfv_stagebuf_t *stage, size_t offset, size_t size)
 }
 
 static void
-advance_tail (qfv_stagebuf_t *stage, qfv_packet_t *packet)
+release_space (qfv_stagebuf_t *stage, size_t offset, size_t length)
 {
+	if (stage->space_end != offset
+		&& offset != 0
+		&& stage->space_end != stage->end) {
+		Sys_Error ("staging: out of sequence packet release");
+	}
+	if (stage->space_end == stage->end) {
+		stage->space_end = 0;
+		stage->end = stage->size;
+	}
+	stage->space_end += length;
+}
+
+static void *
+acquire_space (qfv_packet_t *packet, size_t size)
+{
+	qfv_stagebuf_t *stage = packet->stage;
 	qfv_device_t *device = stage->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	qfv_packet_t *start = packet;
-
-	while (1) {
-		if ((size_t) (++packet - stage->packet) >= stage->num_packets) {
-			packet = stage->packet;
+	// clean up after any completed packets
+	while (RB_DATA_AVAILABLE (stage->packets) > 1) {
+		qfv_packet_t *p = RB_PEEK_DATA (stage->packets, 0);
+		if (dfunc->vkGetFenceStatus (device->dev, p->fence) != VK_SUCCESS) {
+			break;
 		}
-		if (packet != start
-			&& (dfunc->vkGetFenceStatus (device->dev, packet->fence)
-				== VK_SUCCESS)) {
-			if (packet->length == 0) {
-				continue;
-			}
-			if ((stage->tail == stage->end && packet->offset == 0)
-				|| stage->tail == packet->offset) {
-				stage->tail = packet->offset + packet->length;
-				packet->length = 0;
-				if (stage->tail >= stage->end) {
-					stage->end = stage->size;
-					stage->tail = stage->size;
-				}
-			}
-			continue;
-		}
-		// Packets are always aquired in sequence and thus the first busy
-		// packet after the start packet marks the end of available space.
-		// Alternatively, there is only one packet and we've looped around
-		// back to the start packet. Must ensure the tail is updated
-		if (stage->tail >= stage->end && packet->offset == 0) {
-			stage->end = stage->size;
-			stage->tail = packet->offset;
-		}
-		break;
+		release_space (stage, p->offset, p->length);
+		RB_RELEASE (stage->packets, 1);
 	}
+
+	if (size > stage->size) {
+		// utterly impossible allocation
+		return 0;
+	}
+
+	// if the staging buffer has been freed up and no data is assigned to the
+	// single existing packet, then ensure the packet starts at the beginning
+	// of the staging buffer in order to maximize the space available to it
+	// (some of the tests are redundant since if any space is assigned to a
+	// packet, the buffer cannot be fully freed up)
+	if (stage->space_end == stage->space_start
+		&& RB_DATA_AVAILABLE (stage->packets) == 1
+		&& packet->length == 0) {
+		stage->space_end = 0;
+		stage->space_start = 0;
+		packet->offset = 0;
+	}
+	if (stage->space_start >= stage->space_end) {
+		// all the space to the actual end of the buffer is free
+		if (stage->space_start + size <= stage->size) {
+			void       *data = (byte *) stage->data + stage->space_start;
+			stage->space_start += size;
+			return data;
+		}
+		// doesn't fit at the end of the buffer, try the beginning but only
+		// if the packet can be moved (no spaced has been allocated to it yet)
+		if (packet->length > 0) {
+			// can't move it
+			return 0;
+		}
+		// mark the unused end of the buffer such that it gets reclaimed
+		// properly when the preceeding packet is freed
+		stage->end = stage->space_start;
+		stage->space_start = 0;
+		packet->offset = 0;
+	}
+	while (stage->space_start + size > stage->space_end
+		   && RB_DATA_AVAILABLE (stage->packets) > 1) {
+		packet = RB_PEEK_DATA (stage->packets, 0);
+		dfunc->vkWaitForFences (device->dev, 1, &packet->fence, VK_TRUE,
+								~0ull);
+		release_space (stage, packet->offset, packet->length);
+		RB_RELEASE (stage->packets, 1);
+	}
+	if (stage->space_start + size > stage->space_end) {
+		return 0;
+	}
+	void       *data = (byte *) stage->data + stage->space_start;
+	stage->space_start += size;
+	return data;
 }
 
 qfv_packet_t *
@@ -177,16 +218,19 @@ QFV_PacketAcquire (qfv_stagebuf_t *stage)
 {
 	qfv_device_t *device = stage->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	qfv_packet_t *packet = &stage->packet[stage->next_packet++];
-	stage->next_packet %= stage->num_packets;
 
-	dfunc->vkWaitForFences (device->dev, 1, &packet->fence, VK_TRUE, ~0ull);
-
-	advance_tail (stage, packet);
-	if (stage->head == stage->size) {
-		stage->head = 0;
+	qfv_packet_t *packet = 0;
+	if (!RB_SPACE_AVAILABLE (stage->packets)) {
+		// need to wait for a packet to become available
+		packet = RB_PEEK_DATA (stage->packets, 0);
+		dfunc->vkWaitForFences (device->dev, 1, &packet->fence, VK_TRUE,
+								~0ull);
+		release_space (stage, packet->offset, packet->length);
+		RB_RELEASE (stage->packets, 1);
 	}
-	packet->offset = stage->head;
+	packet = RB_ACQUIRE (stage->packets, 1);
+
+	packet->offset = stage->space_start;
 	packet->length = 0;
 
 	dfunc->vkResetFences (device->dev, 1, &packet->fence);
@@ -203,40 +247,10 @@ QFV_PacketAcquire (qfv_stagebuf_t *stage)
 void *
 QFV_PacketExtend (qfv_packet_t *packet, size_t size)
 {
-	qfv_stagebuf_t *stage = packet->stage;
-	if (!size || size > stage->size) {
-		return 0;
+	void       *data = acquire_space (packet, size);
+	if (data) {
+		packet->length += size;
 	}
-
-	//FIXME extra logic may be needed to wait wait for space to become
-	//available when the requested size should fit but can't due to in-flight
-	//packets
-	advance_tail (stage, packet);
-
-	size_t      head = stage->head;
-	size_t      end = stage->end;
-	if (head + size > stage->end) {
-		if (packet->length) {
-			// packets cannot wrap around the buffer (must use separate
-			// packets)
-			return 0;
-		}
-		if (stage->tail == 0) {
-			// the beginning of the the staging buffer is occupied
-			return 0;
-		}
-		packet->offset = 0;
-		head = 0;
-		end = stage->head;
-	}
-	if (head < stage->tail && head + size > stage->tail) {
-		// not enough room for the sub-packet
-		return 0;
-	}
-	void       *data = (byte *) stage->data + head;
-	stage->end = end;
-	stage->head = head + size;
-	packet->length += size;
 	return data;
 }
 
