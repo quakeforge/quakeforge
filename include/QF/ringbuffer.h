@@ -52,8 +52,8 @@
 
 /** Return the amount of space available for writing in the ring buffer.
  *
- * Use this to know how much data can be written (RB_WRITE_DATA()), or just
- * to see if any space is available.
+ * Use this to know how much data can be written (RB_WRITE_DATA()) or acquired
+ * (RB_ACQUIRE()), or just to see if any space is available.
  *
  * \note Does NOT affect buffer state.
  *
@@ -67,7 +67,7 @@
 /** Return the number of objects available in the ring buffer.
  *
  * Use this to know how much data can be read (RB_READ_DATA()) or discarded
- * (RB_DROP_DATA()), or just to see if any data is available.
+ * (RB_RELEASE()), or just to see if any data is available.
  *
  * \note Does NOT affect buffer state.
  *
@@ -104,6 +104,26 @@
 			h = 0;															\
 		}																	\
 		memcpy (rb->buffer + h, d, c * sizeof (rb->buffer[0]));				\
+	})
+
+/** Acquire \a count objects from the buffer, wrapping if necessary.
+ *
+ * \note Affects buffer state (advances the head).
+ *
+ * \note Does NOT check that the space is available. It is the caller's
+ * responsitiblity to do so using RB_SPACE_AVAILABLE().
+ *
+ * \param ring_buffer	The ring buffer to which the data will be written.
+ * \param count			unsigned int. The number of objects to copy from
+ *						\a data.
+ * \return				Address of the first object acquired.
+ */
+#define RB_ACQUIRE(ring_buffer, count)										\
+	({	__auto_type rb = &(ring_buffer);									\
+		unsigned    c = (count);											\
+		unsigned    h = rb->head;											\
+		rb->head = (h + c) % RB_buffer_size (rb);							\
+		&rb->buffer[h];														\
 	})
 
 /** Read \a count objects from the buffer to \a data, wrapping if necessary.
@@ -147,7 +167,7 @@
  * 						discarded.
  * \param count			The number of objects to discard.
  */
-#define RB_DROP_DATA(ring_buffer, count)									\
+#define RB_RELEASE(ring_buffer, count)										\
 	({	__auto_type rb = &(ring_buffer);									\
 		unsigned    c = (count);											\
 		unsigned    t = rb->tail;											\

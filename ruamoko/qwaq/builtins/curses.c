@@ -795,7 +795,7 @@ process_commands (qwaq_resources_t *res)
 				break;
 		}
 		pthread_mutex_lock (&res->command_cond.mut);
-		RB_DROP_DATA (res->command_queue, len);
+		RB_RELEASE (res->command_queue, len);
 		pthread_cond_broadcast (&res->command_cond.wcond);
 		// unlocked at top of top if there's more data, otherwise just after
 		// the loop
