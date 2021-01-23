@@ -75,6 +75,12 @@ typedef struct vulkan_ctx_s {
 	size_t      curFrame;
 	vulkan_framebufferset_t framebuffers;
 
+	struct qfv_tex_s *default_black;
+	struct qfv_tex_s *default_white;
+	struct qfv_tex_s *default_magenta;
+	struct qfv_tex_s *default_skysheet;
+	struct qfv_tex_s *default_skybox;
+
 	// projection and view matrices (model is push constant)
 	vulkan_matrices_t matrices;
 

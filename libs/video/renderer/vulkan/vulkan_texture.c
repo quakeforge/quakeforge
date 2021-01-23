@@ -170,6 +170,10 @@ Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip)
 										 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 										 0, 0);
 	QFV_BindImageMemory (device, qtex->image, qtex->memory, 0);
+	qtex->view = QFV_CreateImageView (device, qtex->image,
+									  VK_IMAGE_VIEW_TYPE_2D,
+									  VK_FORMAT_R8G8B8A8_UNORM,
+									  VK_IMAGE_ASPECT_COLOR_BIT);
 
 	size_t      bytes = bpp * tex->width * tex->height;
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
@@ -241,8 +245,14 @@ Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip)
 		blit.dstOffsets[1].y = (blit.dstOffsets[1].y + 1) >> 1;
 		barrier.subresourceRange.baseMipLevel++;
 	}
+	stages = imageLayoutTransitionStages[qfv_LT_TransferDst_to_ShaderReadOnly];
+	barrier=imageLayoutTransitionBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+	barrier.image = qtex->image;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+								 0, 0, 0, 0, 0,
+								 1, &barrier);
 	QFV_PacketSubmit (packet);
-	return 0;
+	return qtex;
 }
 
 VkImageView
@@ -261,4 +271,24 @@ Vulkan_UnloadTex (vulkan_ctx_t *ctx, qfv_tex_t *tex)
 	dfunc->vkDestroyImage (device->dev, tex->image, 0);
 	dfunc->vkFreeMemory (device->dev, tex->memory, 0);
 	free (tex);
+}
+
+static tex_t default_black_tex = {1, 1, tex_rgba, 1, 0, {0, 0, 0, 0 }};
+static tex_t default_white_tex = {1, 1, tex_rgba, 1, 0, {255, 255, 255, 255 }};
+static tex_t default_magenta_tex = {1, 1, tex_rgba, 1, 0, {255, 0, 255, 255 }};
+
+void
+Vulkan_Texture_Init (vulkan_ctx_t *ctx)
+{
+	ctx->default_black = Vulkan_LoadTex (ctx, &default_black_tex, 1);
+	ctx->default_white = Vulkan_LoadTex (ctx, &default_white_tex, 1);
+	ctx->default_magenta = Vulkan_LoadTex (ctx, &default_magenta_tex, 1);
+}
+
+void
+Vulkan_Texture_Shutdown (vulkan_ctx_t *ctx)
+{
+	Vulkan_UnloadTex (ctx, ctx->default_black);
+	Vulkan_UnloadTex (ctx, ctx->default_white);
+	Vulkan_UnloadTex (ctx, ctx->default_magenta);
 }

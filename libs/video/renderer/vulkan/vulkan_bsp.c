@@ -788,12 +788,15 @@ draw_elechain (elechain_t *ec, VkPipelineLayout layout, qfv_devfuncs_t *dfunc,
 }
 
 static VkImageView
-get_view (qfv_tex_t *tex, VkImageView default_view)
+get_view (qfv_tex_t *tex, qfv_tex_t *default_tex)
 {
 	if (tex) {
 		return tex->view;
 	}
-	return default_view;
+	if (default_tex) {
+		return default_tex->view;
+	}
+	return 0;
 }
 
 static void
@@ -817,8 +820,10 @@ bsp_begin (vulkan_ctx_t *ctx)
 	bframe->imageInfo[0].imageView = 0;	// set by tex chain loop
 	bframe->imageInfo[1].imageView = 0;	// set by tex chain loop
 	bframe->imageInfo[2].imageView = QFV_ScrapImageView (bctx->light_scrap);
-	bframe->imageInfo[3].imageView = get_view (bctx->skysheet_tex, 0);
-	bframe->imageInfo[4].imageView = get_view (bctx->skybox_tex, 0);
+	bframe->imageInfo[3].imageView = get_view (bctx->skysheet_tex,
+											   ctx->default_skysheet);
+	bframe->imageInfo[4].imageView = get_view (bctx->skybox_tex,
+											   ctx->default_skybox);
 
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
@@ -1108,22 +1113,17 @@ Vulkan_DrawWorld (vulkan_ctx_t *ctx)
 		elechain_t *ec = 0;
 
 		tex = bctx->texture_chains.a[i];
-		if (!tex->tex) {
-			//FIXME bind to whit
-			continue;
-		}
 
 		build_tex_elechain (tex, bctx, bframe);
 
-		//XXX if (tex->elechain)
-		//XXX 	qfeglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
-		bframe->imageInfo[0].imageView = get_view (tex->tex, 0);
-		bframe->imageInfo[1].imageView = get_view (tex->glow, 0);
-		//XXX glow map
+		bframe->imageInfo[0].imageView = get_view (tex->tex,
+												   ctx->default_white);
+		bframe->imageInfo[1].imageView = get_view (tex->glow,
+												   ctx->default_black);
 		dfunc->vkCmdPushDescriptorSetKHR (bframe->bsp_cmd,
 										  VK_PIPELINE_BIND_POINT_GRAPHICS,
 										  bctx->layout,
-										  0, 1, bframe->descriptors + 1);
+										  0, 2, bframe->descriptors + 1);
 
 		for (ec = tex->elechain; ec; ec = ec->next) {
 			draw_elechain (ec, bctx->layout, dfunc, bframe->bsp_cmd);

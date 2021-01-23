@@ -96,6 +96,7 @@ vulkan_R_Init (void)
 	// FIXME this should be staged so screen updates can begin while pipelines
 	// are being built
 	vulkan_ctx->pipeline = Vulkan_CreatePipeline (vulkan_ctx, "pipeline");
+	Vulkan_Texture_Init (vulkan_ctx);
 	Vulkan_Bsp_Init (vulkan_ctx);
 	Vulkan_Draw_Init (vulkan_ctx);
 	Vulkan_Particles_Init (vulkan_ctx);
@@ -607,6 +608,7 @@ vulkan_vid_render_shutdown (void)
 	Vulkan_Draw_Shutdown (vulkan_ctx);
 	Vulkan_Bsp_Shutdown (vulkan_ctx);
 	Mod_ClearAll ();
+	Vulkan_Texture_Shutdown (vulkan_ctx);
 	Vulkan_Shutdown_Common (vulkan_ctx);
 }
 
