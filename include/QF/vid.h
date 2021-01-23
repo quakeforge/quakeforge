@@ -43,6 +43,7 @@ typedef struct {
 	byte			*gammatable;	// 256
 	byte            *basepal;		// 256 * 3
 	byte            *palette;		// 256 * 3
+	byte            *palette32;		// 256 * 4 includes alpha
 	byte			*colormap8;		// 256 * VID_GRADES size
 	unsigned short	*colormap16;	// 256 * VID_GRADES size
 	unsigned int	*colormap32;	// 256 * VID_GRADES size

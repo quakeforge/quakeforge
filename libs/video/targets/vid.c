@@ -200,6 +200,10 @@ void
 VID_UpdateGamma (cvar_t *vid_gamma)
 {
 	double gamma = bound (0.1, vid_gamma->value, 9.9);
+	byte       *p24;
+	byte       *p32;
+	byte       *col;
+	int         i;
 
 	viddef.recalc_refdef = 1;				// force a surface cache flush
 
@@ -207,13 +211,29 @@ VID_UpdateGamma (cvar_t *vid_gamma)
 		Sys_MaskPrintf (SYS_VID, "Setting hardware gamma to %g\n", gamma);
 		VID_BuildGammaTable (1.0);	// hardware gamma wants a linear palette
 		VID_SetGamma (gamma);
-		memcpy (viddef.palette, viddef.basepal, 256 * 3);
+		p24 = viddef.palette;
+		p32 = viddef.palette32;
+		col = viddef.basepal;
+		for (i = 0; i < 256; i++) {
+			*p32++ = *p24++ = *col++;
+			*p32++ = *p24++ = *col++;
+			*p32++ = *p24++ = *col++;
+			*p32++ = 255;
+		}
+		p32[-1] = 0;	// color 255 is transparent
 	} else {	// We have to hack the palette
-		int i;
 		Sys_MaskPrintf (SYS_VID, "Setting software gamma to %g\n", gamma);
 		VID_BuildGammaTable (gamma);
-		for (i = 0; i < 256 * 3; i++)
-			viddef.palette[i] = viddef.gammatable[viddef.basepal[i]];
+		p24 = viddef.palette;
+		p32 = viddef.palette32;
+		col = viddef.basepal;
+		for (i = 0; i < 256; i++) {
+			*p32++ = *p24++ = viddef.gammatable[*col++];
+			*p32++ = *p24++ = viddef.gammatable[*col++];
+			*p32++ = *p24++ = viddef.gammatable[*col++];
+			*p32++ = 255;
+		}
+		p32[-1] = 0;	// color 255 is transparent
 		viddef.vid_internal->set_palette (viddef.palette); // update with the new palette
 	}
 }
@@ -232,6 +252,7 @@ VID_InitGamma (unsigned char *pal)
 	viddef.gammatable = malloc (256);
 	viddef.basepal = pal;
 	viddef.palette = malloc (256 * 3);
+	viddef.palette32 = malloc (256 * 4);
 	if ((i = COM_CheckParm ("-gamma"))) {
 		gamma = atof (com_argv[i + 1]);
 	}
