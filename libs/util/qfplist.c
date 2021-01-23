@@ -85,11 +85,11 @@ struct plbinary_s {
 typedef struct plbinary_s	plbinary_t;
 
 typedef struct pldata_s {	// Unparsed property list string
-	const char		*ptr;
-	unsigned int	end;
-	unsigned int	pos;
-	unsigned int	line;
-	const char		*error;
+	const char *ptr;
+	unsigned    end;
+	unsigned    pos;
+	unsigned    line;
+	plitem_t   *error;
 } pldata_t;
 
 //	Ugly defines for fast checking and conversion from char to number
@@ -454,7 +454,7 @@ PL_SkipSpace (pldata_t *pl)
 						pl->pos++;
 					}
 					if (pl->pos >= pl->end) {
-						pl->error = "Reached end of string in comment";
+						pl->error = PL_NewString ("Reached end of string in comment");
 						return false;
 					}
 				} else if (pl->ptr[pl->pos + 1] == '*') {	// "/*" comments
@@ -473,7 +473,7 @@ PL_SkipSpace (pldata_t *pl)
 						pl->pos++;
 					}
 					if (pl->pos >= pl->end) {
-						pl->error = "Reached end of string in comment";
+						pl->error = PL_NewString ("Reached end of string in comment");
 						return false;
 					}
 				} else {
@@ -488,7 +488,7 @@ PL_SkipSpace (pldata_t *pl)
 		}
 		pl->pos++;
 	}
-	pl->error = "Reached end of string";
+	pl->error = PL_NewString ("Reached end of string");
 	return false;
 }
 
@@ -523,7 +523,7 @@ PL_ParseData (pldata_t *pl, int *len)
 		}
 		if (c == '>') {
 			if (nibbles & 1) {
-				pl->error = "invalid data, missing nibble";
+				pl->error = PL_NewString ("invalid data, missing nibble");
 				return NULL;
 			}
 			*len = nibbles / 2;
@@ -533,10 +533,10 @@ PL_ParseData (pldata_t *pl, int *len)
 									pl->ptr[start + i * 2 + 1]);
 			return str;
 		}
-		pl->error = "invalid character in data";
+		pl->error = PL_NewString (va ("invalid character in data: %02x", c));
 		return NULL;
 	}
-	pl->error = "Reached end of string while parsing data";
+	pl->error = PL_NewString ("Reached end of string while parsing data");
 	return NULL;
 }
 
@@ -603,7 +603,7 @@ PL_ParseQuotedString (pldata_t *pl)
 	}
 
 	if (pl->pos >= pl->end) {
-		pl->error = "Reached end of string while parsing quoted string";
+		pl->error = PL_NewString ("Reached end of string while parsing quoted string");
 		return NULL;
 	}
 
@@ -741,14 +741,14 @@ PL_ParsePropertyListItem (pldata_t *pl)
 			}
 
 			if (key->type != QFString) {
-				pl->error = "Key is not a string";
+				pl->error = PL_NewString ("Key is not a string");
 				PL_Free (key);
 				PL_Free (item);
 				return NULL;
 			}
 
 			if (pl->ptr[pl->pos] != '=') {
-				pl->error = "Unexpected character (expected '=')";
+				pl->error = PL_NewString (va ("Unexpected character %c (expected '=')", pl->ptr[pl->pos]));
 				PL_Free (key);
 				PL_Free (item);
 				return NULL;
@@ -772,7 +772,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 			if (pl->ptr[pl->pos] == ';') {
 				pl->pos++;
 			} else if (pl->ptr[pl->pos] != '}') {
-				pl->error = "Unexpected character (wanted ';' or '}')";
+				pl->error = PL_NewString (va ("Unexpected character %c (wanted ';' or '}')", pl->ptr[pl->pos]));
 				PL_Free (key);
 				PL_Free (value);
 				PL_Free (item);
@@ -790,7 +790,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 		}
 
 		if (pl->pos >= pl->end) {	// Catch the error
-			pl->error = "Unexpected end of string when parsing dictionary";
+			pl->error = PL_NewString ("Unexpected end of string when parsing dictionary");
 			PL_Free (item);
 			return NULL;
 		}
@@ -822,14 +822,14 @@ PL_ParsePropertyListItem (pldata_t *pl)
 			if (pl->ptr[pl->pos] == ',') {
 				pl->pos++;
 			} else if (pl->ptr[pl->pos] != ')') {
-				pl->error = "Unexpected character (wanted ',' or ')')";
+				pl->error = PL_NewString (va ("Unexpected character %c (wanted ',' or ')')", pl->ptr[pl->pos]));
 				PL_Free (value);
 				PL_Free (item);
 				return NULL;
 			}
 
 			if (!PL_A_AddObject (item, value)) {
-				pl->error = "Unexpected character (too many items in array)";
+				pl->error = PL_NewString ("Unexpected character (too many items in array)");
 				PL_Free (value);
 				PL_Free (item);
 				return NULL;
@@ -896,8 +896,13 @@ PL_GetPropertyList (const char *string)
 		free (pl);
 		return newpl;
 	} else {
-		if (pl && pl->error && pl->error[0])
-			Sys_Printf ("plist: %d,%d: %s", pl->line, pl->pos, pl->error);
+		if (pl && pl->error) {
+			const char *error = PL_String (pl->error);
+			if (error[0]) {
+				Sys_Printf ("plist: %d,%d: %s", pl->line, pl->pos, error);
+			}
+			PL_Free (pl->error);
+		}
 		free (pl);
 		return NULL;
 	}
