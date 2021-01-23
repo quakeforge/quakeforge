@@ -114,7 +114,7 @@ add_dynamic_lights (msurface_t *surf, float *block)
 				}
 				if (dist < minlight) {
 					float *out = block + (t * smax + s) * LUXEL_SIZE;
-					float l = (rad - dist) * 256;
+					float l = (rad - dist);
 					VectorMultAdd (out, l, light->color, out);
 					out[3] = 1;
 					out += LUXEL_SIZE;
