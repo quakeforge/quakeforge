@@ -908,6 +908,9 @@ turb_begin (bspctx_t *bctx)
 
 	glsl_Fog_GetColor (fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
+	fragconst_t frag_constants = { time: vr_data.realtime };
+	dfunc->vkCmdPushConstants (cmd, bctx->layout, VK_SHADER_STAGE_FRAGMENT_BIT,
+							   64, sizeof (fragconst_t), &frag_constants);
 	qfeglUniform4fv (quake_turb.fog.location, 1, fog);
 
 	qfeglUniform1i (quake_turb.palette.location, 1);
@@ -967,14 +970,9 @@ sky_begin (vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
-	//XXX quat_t      fog;
 
 	bctx->default_color[3] = 1;
 	QuatCopy (bctx->default_color, bctx->last_color);
-
-	//XXX glsl_Fog_GetColor (fog);
-	//fog[3] = glsl_Fog_GetDensity () / 64.0;
-	//qfeglUniform4fv (sky_params.fog->location, 1, fog);
 
 	spin (ctx->matrices.sky_3d, bctx);
 
@@ -1121,10 +1119,10 @@ Vulkan_DrawWorld (vulkan_ctx_t *ctx)
 	dfunc->vkCmdPushConstants (bframe->bsp_cmd, bctx->layout,
 							   VK_SHADER_STAGE_VERTEX_BIT,
 							   0, 16 * sizeof (float), identity);
-	float frag_pc[8] = { };
+	fragconst_t frag_constants = { time: vr_data.realtime };
 	dfunc->vkCmdPushConstants (bframe->bsp_cmd, bctx->layout,
 							   VK_SHADER_STAGE_FRAGMENT_BIT,
-							   64, 8 * sizeof (float), &frag_pc);
+							   64, sizeof (fragconst_t), &frag_constants);
 	//XXX qfeglActiveTexture (GL_TEXTURE0 + 0);
 	for (size_t i = 0; i < bctx->texture_chains.size; i++) {
 		vulktex_t  *tex;
@@ -1234,10 +1232,10 @@ Vulkan_DrawSky (vulkan_ctx_t *ctx)
 	dfunc->vkCmdPushConstants (bframe->sky_cmd, bctx->layout,
 							   VK_SHADER_STAGE_VERTEX_BIT,
 							   0, 16 * sizeof (float), identity);
-	float frag_pc[8] = { };
+	fragconst_t frag_constants = { time: vr_data.realtime };
 	dfunc->vkCmdPushConstants (bframe->sky_cmd, bctx->layout,
 							   VK_SHADER_STAGE_FRAGMENT_BIT,
-							   64, 8 * sizeof (float), &frag_pc);
+							   64, sizeof (fragconst_t), &frag_constants);
 	for (is = bctx->sky_chain; is; is = is->tex_chain) {
 		surf = is->surface;
 		if (tex != surf->texinfo->texture->render) {

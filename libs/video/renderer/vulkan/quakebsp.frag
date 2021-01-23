@@ -8,8 +8,8 @@ layout (set = 0, binding = 5) uniform samplerCube SkyCube;
 
 layout (push_constant) uniform PushConstants {
 	layout (offset = 64)
-	float       time;
 	vec4        fog;
+	float       time;
 };
 
 layout (location = 0) in vec4 tl_st;

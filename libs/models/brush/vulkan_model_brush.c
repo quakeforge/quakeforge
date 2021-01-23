@@ -101,7 +101,7 @@ get_image_size (VkImage image, qfv_device_t *device)
 }
 
 static void
-transfer_mips (byte *dst, const void *_src, const texture_t *tx)
+transfer_mips (byte *dst, const void *_src, const texture_t *tx, byte *palette)
 {
 	const byte *src = _src;
 	unsigned    width = tx->width;
@@ -113,7 +113,7 @@ transfer_mips (byte *dst, const void *_src, const texture_t *tx)
 		// end of the texture struct
 		offset = tx->offsets[i] - sizeof (texture_t);
 		count = width * height;
-		Vulkan_ExpandPalette (dst, src + offset, vid.palette, 1, count);
+		Vulkan_ExpandPalette (dst, src + offset, palette, 2, count);
 		dst += count * 4;
 		width >>= 1;
 		height >>= 1;
@@ -218,6 +218,7 @@ load_textures (model_t *model, vulkan_ctx_t *ctx)
 
 	for (int i = 0; i < model->numtextures; i++) {
 		texture_t  *tx = model->textures[i];
+		byte       *palette = vid.palette32;
 		if (!tx) {
 			continue;
 		}
@@ -227,12 +228,18 @@ load_textures (model_t *model, vulkan_ctx_t *ctx)
 								  tex->tex->offset);
 		VkImageViewType type = VK_IMAGE_VIEW_TYPE_2D;
 		if (strncmp (tx->name, "sky", 3) == 0) {
+			palette = alloca (256 * 4);
+			memcpy (palette, vid.palette32, 256 * 4);
+			// sky's black is transparent
+			// this hits both layers, but so long as the screen is cleared
+			// to black, no one should notice :)
+			palette[3] = 0;
 			type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
 		}
 		tex->tex->view = QFV_CreateImageView (device, tex->tex->image,
 											  type, VK_FORMAT_R8G8B8A8_UNORM,
 											  VK_IMAGE_ASPECT_COLOR_BIT);
-		transfer_mips (buffer + tex->tex->offset, tx + 1, tx);
+		transfer_mips (buffer + tex->tex->offset, tx + 1, tx, palette);
 		if (tex->glow) {
 			dfunc->vkBindImageMemory (device->dev, tex->glow->image, mem,
 									  tex->glow->offset);
@@ -242,7 +249,8 @@ load_textures (model_t *model, vulkan_ctx_t *ctx)
 												   VK_IMAGE_VIEW_TYPE_2D,
 												   VK_FORMAT_R8G8B8A8_UNORM,
 												   VK_IMAGE_ASPECT_COLOR_BIT);
-			transfer_mips (buffer + tex->glow->offset, tex->glow->memory, tx);
+			transfer_mips (buffer + tex->glow->offset, tex->glow->memory, tx,
+						   palette);
 		}
 	}
 

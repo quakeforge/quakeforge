@@ -81,6 +81,11 @@ typedef struct bspframe_s {
 	VkWriteDescriptorSet descriptors[BSP_BUFFER_INFOS + BSP_IMAGE_INFOS];
 } bspframe_t;
 
+typedef struct fragconst_s {
+	quat_t      fog;
+	float       time;
+} fragconst_t;
+
 typedef struct bspframeset_s
     DARRAY_TYPE (bspframe_t) bspframeset_t;
 
