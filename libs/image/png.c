@@ -162,9 +162,11 @@ LoadPNG (QFile *infile, int load)
 
 		/* Allocate tex_t structure */
 		rowbytes = png_get_rowbytes(png_ptr, info_ptr);
-		tex = Hunk_TempAlloc (field_offset (tex_t, data[height * rowbytes]));
+		tex = Hunk_TempAlloc (sizeof (tex_t) + height * rowbytes);
+		tex->data = (byte *) (tex + 1);
 	} else {
-		tex = Hunk_TempAlloc (field_offset (tex_t, data[0]));
+		tex = Hunk_TempAlloc (sizeof (tex_t));
+		tex->data = 0;
 	}
 
 	tex->width = width;

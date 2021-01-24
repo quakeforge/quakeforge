@@ -67,7 +67,8 @@ sw32_SCR_CaptureBGR (void)
 	byte       *dst;
 
 	count = vid.width * vid.height;
-	tex = malloc (field_offset (tex_t, data[count * 3]));
+	tex = malloc (sizeof (tex_t) + count * 3);
+	tex->data = (byte *) (tex + 1);
 	SYS_CHECKMEM (tex);
 	tex->width = vid.width;
 	tex->height = vid.height;

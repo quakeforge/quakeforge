@@ -193,7 +193,8 @@ Skin_SetSkin (skin_t *skin, int cmap, const char *skinname)
 			tex = 0;
 			break;
 		}
-		out = malloc (field_offset (tex_t, data[PLAYER_WIDTH*PLAYER_HEIGHT]));
+		out = malloc (sizeof (tex_t) + PLAYER_WIDTH*PLAYER_HEIGHT);
+		out->data = (byte *) (out + 1);
 		out->width = PLAYER_WIDTH;
 		out->height = PLAYER_HEIGHT;
 		out->format = tex_palette;

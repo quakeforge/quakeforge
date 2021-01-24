@@ -1409,7 +1409,8 @@ glsl_R_LoadSkys (const char *sky)
 		int         size = tex->height / 2;
 
 		skybox_loaded = true;
-		sub = malloc (field_offset (tex_t, data[size * size * tex->format]));
+		sub = malloc (sizeof (tex_t) + size * size * tex->format);
+		sub->data = (byte *) (sub + 1);
 		sub->width = size;
 		sub->height = size;
 		sub->format = tex->format;

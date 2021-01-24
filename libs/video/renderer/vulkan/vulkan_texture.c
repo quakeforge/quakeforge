@@ -282,9 +282,12 @@ Vulkan_UnloadTex (vulkan_ctx_t *ctx, qfv_tex_t *tex)
 	free (tex);
 }
 
-static tex_t default_black_tex = {1, 1, tex_rgba, 1, 0, {0, 0, 0, 0 }};
-static tex_t default_white_tex = {1, 1, tex_rgba, 1, 0, {255, 255, 255, 255 }};
-static tex_t default_magenta_tex = {1, 1, tex_rgba, 1, 0, {255, 0, 255, 255 }};
+static byte black_data[] = {0, 0, 0, 0};
+static byte white_data[] = {255, 255, 255, 255};
+static byte magenta_data[] = {255, 0, 255, 255};
+static tex_t default_black_tex = {1, 1, tex_rgba, 1, 0, black_data};
+static tex_t default_white_tex = {1, 1, tex_rgba, 1, 0, white_data};
+static tex_t default_magenta_tex = {1, 1, tex_rgba, 1, 0, magenta_data};
 
 void
 Vulkan_Texture_Init (vulkan_ctx_t *ctx)

@@ -53,9 +53,8 @@
 #include "mod_internal.h"
 #include "r_internal.h"
 
-static tex_t null_texture = {
-	2, 2, tex_palette, 1, 0, {15, 15, 15, 15}
-};
+static byte null_data[] = {15, 15, 15, 15};
+static tex_t null_texture = { 2, 2, tex_palette, 1, 0, null_data };
 
 static void
 sw_iqm_clear (model_t *mod, void *data)
@@ -109,7 +108,8 @@ convert_tex (tex_t *tex)
 	int         i;
 
 	pixels = tex->width * tex->height;
-	new = malloc (field_offset (tex_t, data[pixels]));
+	new = malloc (sizeof (tex_t) + pixels);
+	new->data = (byte *) (new + 1);
 	new->width = tex->width;
 	new->height = tex->height;
 	new->format = tex_palette;

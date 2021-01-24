@@ -655,7 +655,8 @@ LoadTGA (QFile *fin, int load)
 	} else {
 		numPixels = 0;
 	}
-	tex = Hunk_TempAlloc (field_offset (tex_t, data[numPixels * 4]));
+	tex = Hunk_TempAlloc (sizeof (tex_t) + numPixels * 4);
+	tex->data = (byte *) (tex + 1);
 	tex->width = targa->width;
 	tex->height = targa->height;
 	tex->palette = 0;

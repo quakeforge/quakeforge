@@ -93,11 +93,13 @@ LoadPCX (QFile *f, qboolean convert, byte *pal, int load)
 
 	count = load ? (pcx->xmax + 1) * (pcx->ymax + 1) : 0;
 	if (convert) {
-		tex = Hunk_TempAlloc (field_offset (tex_t, data[count * 3]));
+		tex = Hunk_TempAlloc (sizeof (tex_t) + count * 3);
+		tex->data = (byte *) (tex + 1);
 		tex->format = tex_rgb;
 		tex->palette = 0;
 	} else {
-		tex = Hunk_TempAlloc (field_offset (tex_t, data[count]));
+		tex = Hunk_TempAlloc (sizeof (tex_t) + count);
+		tex->data = (byte *) (tex + 1);
 		tex->format = tex_palette;
 		if (pal)
 			tex->palette = pal;

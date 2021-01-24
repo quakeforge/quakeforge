@@ -70,7 +70,8 @@ gl_SCR_CaptureBGR (void)
 	tex_t      *tex;
 
 	count = vid.width * vid.height;
-	tex = malloc (field_offset (tex_t, data[count * 3]));
+	tex = malloc (sizeof (tex_t) + count * 3);
+	tex->data = (byte *) (tex + 1);
 	SYS_CHECKMEM (tex);
 	tex->width = vid.width;
 	tex->height = vid.height;
@@ -100,7 +101,8 @@ gl_SCR_ScreenShot (int width, int height)
 	fracw = (float) vid.width / (float) w;
 	frach = (float) vid.height / (float) h;
 
-	tex = malloc (field_offset (tex_t, data[w * h]));
+	tex = malloc (sizeof (tex_t) + w * h);
+	tex->data = (byte *) (tex + 1);
 	if (!tex)
 		return 0;
 
