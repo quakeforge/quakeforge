@@ -51,14 +51,12 @@
 
 aliashdr_t *pheader;
 
-stvert_t    *stverts;
-mtriangle_t *triangles;
-int stverts_size = 0;
-int triangles_size = 0;
+stvertset_t stverts = { 0, 0, 256 };
+mtriangleset_t triangles = { 0, 0, 256 };
 
 // a pose is a single set of vertexes.  a frame may be an animating
 // sequence of poses
-trivertx_t *poseverts[MAXALIASFRAMES];
+trivertxset_t poseverts = { 0, 0, 256 };;
 int         posenum = 0;
 int			aliasbboxmins[3], aliasbboxmaxs[3];
 
@@ -151,7 +149,7 @@ Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame,
 
 	pinframe = (trivertx_t *) (pdaliasframe + 1);
 
-	poseverts[(*posenum)] = pinframe;
+	DARRAY_APPEND (&poseverts, pinframe);
 	(*posenum)++;
 
 	pinframe += pheader->mdl.numverts;
@@ -264,30 +262,20 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 		Sys_Error ("model %s has a skin taller than %d", mod->name,
 				   MAX_LBM_HEIGHT);
 
+	DARRAY_RESIZE (&poseverts, 0);
 	pmodel->numverts = LittleLong (pinmodel->numverts);
 
 	if (pmodel->numverts <= 0)
 		Sys_Error ("model %s has no vertices", mod->name);
 
-	if (pmodel->numverts > stverts_size) {
-		stverts = realloc (stverts, pmodel->numverts * sizeof (stvert_t));
-		if (!stverts)
-			Sys_Error ("model_alias: out of memory");
-		stverts_size = pmodel->numverts;
-	}
+	DARRAY_RESIZE (&stverts, pmodel->numverts);
 
 	pmodel->numtris = LittleLong (pinmodel->numtris);
 
 	if (pmodel->numtris <= 0)
 		Sys_Error ("model %s has no triangles", mod->name);
 
-	if (pmodel->numtris > triangles_size) {
-		triangles = realloc (triangles,
-							 pmodel->numtris * sizeof (mtriangle_t));
-		if (!triangles)
-			Sys_Error ("model_alias: out of memory");
-		triangles_size = pmodel->numtris;
-	}
+	DARRAY_RESIZE (&triangles, pmodel->numtris);
 
 	pmodel->numframes = LittleLong (pinmodel->numframes);
 	numframes = pmodel->numframes;
@@ -313,19 +301,19 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	pinstverts = (stvert_t *) pskintype;
 
 	for (i = 0; i < pheader->mdl.numverts; i++) {
-		stverts[i].onseam = LittleLong (pinstverts[i].onseam);
-		stverts[i].s = LittleLong (pinstverts[i].s);
-		stverts[i].t = LittleLong (pinstverts[i].t);
+		stverts.a[i].onseam = LittleLong (pinstverts[i].onseam);
+		stverts.a[i].s = LittleLong (pinstverts[i].s);
+		stverts.a[i].t = LittleLong (pinstverts[i].t);
 	}
 
 	// load triangle lists
 	pintriangles = (dtriangle_t *) &pinstverts[pheader->mdl.numverts];
 
 	for (i = 0; i < pheader->mdl.numtris; i++) {
-		triangles[i].facesfront = LittleLong (pintriangles[i].facesfront);
+		triangles.a[i].facesfront = LittleLong (pintriangles[i].facesfront);
 
 		for (j = 0; j < 3; j++) {
-			triangles[i].vertindex[j] =
+			triangles.a[i].vertindex[j] =
 				LittleLong (pintriangles[i].vertindex[j]);
 		}
 	}

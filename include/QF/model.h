@@ -28,6 +28,7 @@
 #ifndef __QF_model_h
 #define __QF_model_h
 
+#include "QF/darray.h"
 #include "QF/qtypes.h"
 #include "QF/bspfile.h"
 #include "QF/spritegn.h"
@@ -320,11 +321,13 @@ typedef struct {
 	maliasframedesc_t	frames[1];
 } aliashdr_t;
 
-#define	MAXALIASFRAMES	256
+typedef struct stvertset_s DARRAY_TYPE (stvert_t) stvertset_t;
+typedef struct mtriangleset_s DARRAY_TYPE (mtriangle_t) mtriangleset_t;
+typedef struct trivertxset_s DARRAY_TYPE (trivertx_t *) trivertxset_t;
 extern	aliashdr_t	*pheader;
-extern	stvert_t	*stverts;
-extern	mtriangle_t	*triangles;
-extern	trivertx_t	*poseverts[MAXALIASFRAMES];
+extern	stvertset_t	 stverts;
+extern	mtriangleset_t triangles;
+extern	trivertxset_t poseverts;
 extern  int			 aliasbboxmins[3];
 extern  int			 aliasbboxmaxs[3];
 

@@ -147,7 +147,7 @@ glsl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 
 	// copy triangles before editing them
 	tris = malloc (numtris * sizeof (mtriangle_t));
-	memcpy (tris, triangles, numtris * sizeof (mtriangle_t));
+	memcpy (tris, triangles.a, numtris * sizeof (mtriangle_t));
 
 	// initialize indexmap to -1 (unduplicated). any other value indicates
 	// both that the vertex has been duplicated and the index of the
@@ -157,7 +157,7 @@ glsl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 
 	// copy stverts. need space for duplicates
 	st = malloc (2 * numverts * sizeof (stvert_t));
-	memcpy (st, stverts, numverts * sizeof (stvert_t));
+	memcpy (st, stverts.a, numverts * sizeof (stvert_t));
 
 	// check for onseam verts, and duplicate any that are associated with
 	// back-facing triangles. the s coordinate is shifted right by half
@@ -182,7 +182,7 @@ glsl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 	verts = malloc (vertexsize);
 	for (i = 0, pose = 0; i < hdr->numposes; i++, pose += numverts) {
 		for (j = 0; j < hdr->mdl.numverts; j++) {
-			pv = &poseverts[i][j];
+			pv = &poseverts.a[i][j];
 			if (extra) {
 				VectorMultAdd (pv[hdr->mdl.numverts].v, 256, pv->v,
 							   verts[pose + j].vertex);

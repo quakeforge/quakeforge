@@ -133,7 +133,7 @@ StripLength (int starttri, int startv)
 
 	used[starttri] = 2;
 
-	last = &triangles[starttri];
+	last = &triangles.a[starttri];
 
 	stripcount = 0;
 	add_strip (last->vertindex[(startv) % 3], starttri);
@@ -145,7 +145,7 @@ StripLength (int starttri, int startv)
 
 	// look for a matching triangle
 nexttri:
-	for (j = starttri + 1, check = &triangles[starttri + 1];
+	for (j = starttri + 1, check = &triangles.a[starttri + 1];
 		 j < pheader->mdl.numtris; j++, check++) {
 		if (check->facesfront != last->facesfront)
 			continue;
@@ -191,7 +191,7 @@ FanLength (int starttri, int startv)
 
 	used[starttri] = 2;
 
-	last = &triangles[starttri];
+	last = &triangles.a[starttri];
 
 	stripcount = 0;
 	add_strip (last->vertindex[(startv) % 3], starttri);
@@ -204,7 +204,7 @@ FanLength (int starttri, int startv)
 
 	// look for a matching triangle
   nexttri:
-	for (j = starttri + 1, check = &triangles[starttri + 1];
+	for (j = starttri + 1, check = &triangles.a[starttri + 1];
 		 j < pheader->mdl.numtris; j++, check++) {
 		if (check->facesfront != last->facesfront)
 			continue;
@@ -304,9 +304,9 @@ BuildTris (void)
 			add_vertex (k);
 
 			// emit s/t coords into the commands stream
-			s = stverts[k].s;
-			t = stverts[k].t;
-			if (!triangles[besttris[0]].facesfront && stverts[k].onseam)
+			s = stverts.a[k].s;
+			t = stverts.a[k].t;
+			if (!triangles.a[besttris[0]].facesfront && stverts.a[k].onseam)
 				s += pheader->mdl.skinwidth / 2;	// on back side
 			s = (s + 0.5) / pheader->mdl.skinwidth;
 			t = (t + 0.5) / pheader->mdl.skinheight;
@@ -485,9 +485,9 @@ gl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 
 		numorder = 0;
 		for (i=0; i < pheader->mdl.numtris; i++) {
-			add_vertex(triangles[i].vertindex[0]);
-			add_vertex(triangles[i].vertindex[1]);
-			add_vertex(triangles[i].vertindex[2]);
+			add_vertex(triangles.a[i].vertindex[0]);
+			add_vertex(triangles.a[i].vertindex[1]);
+			add_vertex(triangles.a[i].vertindex[2]);
 		}
 		paliashdr->poseverts = numorder;
 
@@ -497,9 +497,9 @@ gl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 			float s, t;
 			int k;
 			k = vertexorder[i];
-			s = stverts[k].s;
-			t = stverts[k].t;
-			if (!triangles[i/3].facesfront && stverts[k].onseam)
+			s = stverts.a[k].s;
+			t = stverts.a[k].t;
+			if (!triangles.a[i/3].facesfront && stverts.a[k].onseam)
 				s += pheader->mdl.skinwidth / 2;	// on back side
 			s = (s + 0.5) / pheader->mdl.skinwidth;
 			t = (t + 0.5) / pheader->mdl.skinheight;
@@ -514,7 +514,7 @@ gl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 							* sizeof (trivertx16_t));
 		paliashdr->posedata = (byte *) verts - (byte *) paliashdr;
 		for (i = 0; i < paliashdr->numposes; i++) {
-			trivertx_t *pv = poseverts[i];
+			trivertx_t *pv = poseverts.a[i];
 			for (j = 0; j < numorder; j++) {
 				trivertx16_t v;
 				// convert MD16's split coordinates into something a little
@@ -526,7 +526,7 @@ gl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 				VectorMultAdd (pv[vertexorder[j] + hdr->mdl.numverts].v,
 							   256, pv[vertexorder[j]].v, v.v);
 				v.lightnormalindex =
-					poseverts[i][vertexorder[j]].lightnormalindex;
+					poseverts.a[i][vertexorder[j]].lightnormalindex;
 				*verts++ = v;
 			}
 		}
@@ -537,7 +537,7 @@ gl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 		paliashdr->posedata = (byte *) verts - (byte *) paliashdr;
 		for (i = 0; i < paliashdr->numposes; i++) {
 			for (j = 0; j < numorder; j++)
-				*verts++ = poseverts[i][vertexorder[j]];
+				*verts++ = poseverts.a[i][vertexorder[j]];
 		}
 	}
 	dstring_delete (cache);

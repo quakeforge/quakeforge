@@ -79,7 +79,7 @@ process_frame (maliasframedesc_t *frame, int posenum, int extra)
 	// from the high-order bits (see R_AliasTransformFinalVert16 in
 	// sw_ralias.c), but in adjacant arrays. This means we can get away with
 	// just one memcpy as there are no endian issues.
-	memcpy (frame_verts, poseverts[posenum], size);
+	memcpy (frame_verts, poseverts.a[posenum], size);
 }
 
 void
@@ -101,14 +101,14 @@ sw_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 	hdr->triangles = (byte *) ptri - (byte *) hdr;
 
 	for (i = 0; i < numv; i++) {
-		pstverts[i].onseam = stverts[i].onseam;
-		pstverts[i].s = stverts[i].s << 16;
-		pstverts[i].t = stverts[i].t << 16;
+		pstverts[i].onseam = stverts.a[i].onseam;
+		pstverts[i].s = stverts.a[i].s << 16;
+		pstverts[i].t = stverts.a[i].t << 16;
 	}
 
 	for (i = 0; i < numt; i++) {
-		ptri[i].facesfront = triangles[i].facesfront;
-		VectorCopy (triangles[i].vertindex, ptri[i].vertindex);
+		ptri[i].facesfront = triangles.a[i].facesfront;
+		VectorCopy (triangles.a[i].vertindex, ptri[i].vertindex);
 	}
 
 	for (i = 0; i < pheader->mdl.numframes; i++) {
