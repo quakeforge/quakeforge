@@ -39,6 +39,7 @@
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
+#include "QF/Vulkan/qf_alias.h"
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_draw.h"
 #include "QF/Vulkan/qf_lightmap.h"
@@ -419,18 +420,21 @@ static void
 vulkan_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr,
 									   void *_m, int _s, int extra)
 {
+	Vulkan_Mod_MakeAliasModelDisplayLists (m, hdr, _m, _s, extra, vulkan_ctx);
 }
 
 static void *
 vulkan_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
 					 qboolean group, maliasskindesc_t *skindesc)
 {
-	return skin + skinsize;
+	return Vulkan_Mod_LoadSkin (skin, skinsize, snum, gnum, group, skindesc,
+								vulkan_ctx);
 }
 
 static void
 vulkan_Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
 {
+	Vulkan_Mod_FinalizeAliasModel (m, hdr, vulkan_ctx);
 }
 
 static void

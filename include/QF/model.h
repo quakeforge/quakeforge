@@ -277,10 +277,15 @@ typedef struct {
 } maliasframedesc_t;
 
 typedef struct {
-	aliasskintype_t		type;
-	int					skin;
-	int					texnum;
-	int					fb_texnum;
+	aliasskintype_t type;
+	int            skin;
+	union {
+		struct {
+			int     texnum;
+			int     fb_texnum;
+		};
+		void       *tex;
+	};
 } maliasskindesc_t;
 
 typedef struct {

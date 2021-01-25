@@ -1420,13 +1420,8 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 
 	bctx->main = Vulkan_CreatePipeline (ctx, "quakebsp.main");
 	bctx->sky = Vulkan_CreatePipeline (ctx, "quakebsp.skysheet");
-	bctx->layout = QFV_GetPipelineLayout (ctx, "quakebsp");
-	bctx->sampler = QFV_GetSampler (ctx, "quakebsp");
-
-	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
-	for (size_t i = 0; i < layouts->size; i++) {
-		layouts->a[i] = QFV_GetDescriptorSetLayout (ctx, "quakebsp");
-	}
+	bctx->layout = QFV_GetPipelineLayout (ctx, "quakebsp.layout");
+	bctx->sampler = QFV_GetSampler (ctx, "quakebsp.sampler");
 
 	__auto_type cmdBuffers = QFV_AllocCommandBufferSet (3 * frames, alloca);
 	QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, cmdBuffers);
