@@ -74,6 +74,18 @@ extern const vec_t *const vec3_origin;
 		(c)[1] = (a)[1] - (s) * (b)[1]; \
 		(c)[2] = (a)[2] - (s) * (b)[2]; \
 	} while (0)
+#define VectorCompMultAdd(a,b,c,d) \
+	do { \
+		(d)[0] = (a)[0] + (b)[0] * (c)[0]; \
+		(d)[1] = (a)[1] + (b)[1] * (c)[1]; \
+		(d)[2] = (a)[2] + (b)[2] * (c)[2]; \
+	} while (0)
+#define VectorCompMultSub(a,b,c,d) \
+	do { \
+		(d)[0] = (a)[0] - (b)[0] * (c)[0]; \
+		(d)[1] = (a)[1] - (b)[1] * (c)[1]; \
+		(d)[2] = (a)[2] - (b)[2] * (c)[2]; \
+	} while (0)
 #define VectorLength(a) sqrt(DotProduct(a, a))
 
 #define VectorScale(a,b,c) \
