@@ -899,7 +899,7 @@ PL_GetPropertyList (const char *string)
 		if (pl && pl->error) {
 			const char *error = PL_String (pl->error);
 			if (error[0]) {
-				Sys_Printf ("plist: %d,%d: %s", pl->line, pl->pos, error);
+				Sys_Printf ("plist: %d,%d: %s\n", pl->line, pl->pos, error);
 			}
 			PL_Free (pl->error);
 		}
