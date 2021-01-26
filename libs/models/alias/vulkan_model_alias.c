@@ -62,6 +62,34 @@ static vec3_t vertex_normals[NUMVERTEXNORMALS] = {
 static void
 vulkan_alias_clear (model_t *m, void *data)
 {
+	vulkan_ctx_t *ctx = data;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	aliashdr_t *hdr;
+	qfv_alias_mesh_t *mesh;
+
+	m->needload = true;	//FIXME is this right?
+	if (!(hdr = m->aliashdr)) {
+		hdr = Cache_Get (&m->cache);
+	}
+	mesh = (qfv_alias_mesh_t *) ((byte *) hdr + hdr->commands);
+	dfunc->vkDestroyBuffer (device->dev, mesh->vertex_buffer, 0);
+	dfunc->vkDestroyBuffer (device->dev, mesh->uv_buffer, 0);
+	dfunc->vkDestroyBuffer (device->dev, mesh->index_buffer, 0);
+	dfunc->vkFreeMemory (device->dev, mesh->memory, 0);
+
+	__auto_type skins = (maliasskindesc_t *) ((byte *) hdr + hdr->skindesc);
+	for (int i = 0; i < hdr->mdl.numskins; i++) {
+		if (skins[i].type == ALIAS_SKIN_GROUP) {
+			__auto_type group = (maliasskingroup_t *)
+								((byte *) hdr + skins[i].skin);
+			for (int j = 0; j < group->numskins; j++) {
+				Vulkan_UnloadTex (ctx, group->skindescs[j].tex);
+			}
+		} else {
+			Vulkan_UnloadTex (ctx, skins[i].tex);
+		}
+	}
 }
 
 void *
@@ -72,6 +100,8 @@ Vulkan_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
 	byte       *tskin;
 	int         w, h;
 
+	//FIXME move all skins into arrays(?)
+	//FIXME fullbrights
 	w = pheader->mdl.skinwidth;
 	h = pheader->mdl.skinheight;
 	tskin = malloc (skinsize);
@@ -86,14 +116,28 @@ Vulkan_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
 void
 Vulkan_Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr, vulkan_ctx_t *ctx)
 {
-	if (hdr->mdl.ident == HEADER_MDL16)
-		VectorScale (hdr->mdl.scale, 1/256.0, hdr->mdl.scale);
 	m->clear = vulkan_alias_clear;
+	m->data = ctx;
 }
 
 void
 Vulkan_Mod_LoadExternalSkins (model_t *mod, vulkan_ctx_t *ctx)
 {
+}
+
+static size_t
+get_buffer_size (qfv_device_t *device, VkBuffer buffer)
+{
+	qfv_devfuncs_t *dfunc = device->funcs;
+	size_t      size;
+	size_t      align;
+
+	VkMemoryRequirements requirements;
+	dfunc->vkGetBufferMemoryRequirements (device->dev, buffer, &requirements);
+	size = requirements.size;
+	align = requirements.alignment - 1;
+	size = (size + align) & ~(align);
+	return size;
 }
 
 void
@@ -112,6 +156,9 @@ Vulkan_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 	int         i, j;
 	int         pose;
 	vec3_t      pos;
+
+	if (hdr->mdl.ident == HEADER_MDL16)
+		VectorScale (hdr->mdl.scale, 1/256.0, hdr->mdl.scale);
 
 	numverts = hdr->mdl.numverts;
 	numtris = hdr->mdl.numtris;
@@ -148,33 +195,31 @@ Vulkan_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 	// current and previous pose, uvbuff "statically" bound as uvs are not
 	// animated by pose, and the same for ibuf: indices will never change for
 	// the mesh
-	size_t      atom = device->physDev->properties.limits.nonCoherentAtomSize;
-	size_t      atom_mask = atom - 1;
 	size_t      vert_count = numverts * hdr->numposes;
 	size_t      vert_size = vert_count * sizeof (aliasvrt_t);
 	size_t      uv_size = numverts * sizeof (aliasuv_t);
-	size_t      ind_size = numverts * sizeof (uint32_t);
-	vert_size = (vert_size + atom_mask) & ~atom_mask;
-	uv_size = (uv_size + atom_mask) & ~atom_mask;
-	ind_size = (ind_size + atom_mask) & ~atom_mask;
-	size_t      buff_size = vert_size + ind_size + uv_size;
+	size_t      ind_size = 3 * numtris * sizeof (uint32_t);
 
-	VkBuffer    vbuff = QFV_CreateBuffer (device, buff_size,
+	VkBuffer    vbuff = QFV_CreateBuffer (device, vert_size,
 										  VK_BUFFER_USAGE_TRANSFER_DST_BIT
 										  | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-	VkBuffer    uvbuff = QFV_CreateBuffer (device, buff_size,
+	VkBuffer    uvbuff = QFV_CreateBuffer (device, uv_size,
 										   VK_BUFFER_USAGE_TRANSFER_DST_BIT
 										   | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-	VkBuffer    ibuff = QFV_CreateBuffer (device, buff_size,
+	VkBuffer    ibuff = QFV_CreateBuffer (device, ind_size,
 										  VK_BUFFER_USAGE_TRANSFER_DST_BIT
 										  | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+	size_t      voffs = 0;
+	size_t      uvoffs = voffs + get_buffer_size (device, vbuff);
+	size_t      ioffs = uvoffs + get_buffer_size (device, uvbuff);
+	size_t      buff_size = ioffs + get_buffer_size (device, ibuff);
 	VkDeviceMemory mem;
 	mem = QFV_AllocBufferMemory (device, vbuff,
 								 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 								 buff_size, 0);
-	QFV_BindBufferMemory (device, vbuff, mem, 0);
-	QFV_BindBufferMemory (device, uvbuff, mem, vert_size);
-	QFV_BindBufferMemory (device, ibuff, mem, vert_size + uv_size);
+	QFV_BindBufferMemory (device, vbuff, mem, voffs);
+	QFV_BindBufferMemory (device, uvbuff, mem, uvoffs);
+	QFV_BindBufferMemory (device, ibuff, mem, ioffs);
 
 	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device, buff_size,
 													  ctx->cmdpool);
@@ -219,7 +264,7 @@ Vulkan_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 	}
 
 	// now build the indices for DrawElements
-	for (i = 0; i < numverts; i++) {
+	for (i = 0; i < hdr->mdl.numverts; i++) {
 		indexmap[i] = indexmap[i] != -1 ? indexmap[i] : i;
 	}
 	for (i = 0; i < numtris; i++) {
