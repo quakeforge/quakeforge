@@ -65,6 +65,7 @@
 static int
 ilog2 (unsigned x)
 {
+	unsigned o = x;
 	if (x > 0x7fffffff) {
 		// avoid overflow
 		return 31;
@@ -82,7 +83,7 @@ ilog2 (unsigned x)
 	y |= ((x & 0xf0f0f0f0) != 0) << 2;
 	y |= ((x & 0xcccccccc) != 0) << 1;
 	y |= ((x & 0xaaaaaaaa) != 0) << 0;
-	return y;
+	return y - ((o & (x - 1)) != 0);
 }
 
 void
@@ -140,8 +141,8 @@ Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip)
 			if (!tex->palette) {
 				return 0;
 			}
-			format = VK_FORMAT_R8G8B8_UNORM;
-			bpp = 3;
+			format = VK_FORMAT_R8G8B8A8_UNORM;
+			bpp = 4;
 			break;
 		case tex_rgb:
 			format = VK_FORMAT_R8G8B8_UNORM;
@@ -174,6 +175,7 @@ Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip)
 	qtex->image = QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D, format, extent,
 								   mip, 1, VK_SAMPLE_COUNT_1_BIT,
 								   VK_IMAGE_USAGE_TRANSFER_DST_BIT
+								   | VK_IMAGE_USAGE_TRANSFER_SRC_BIT
 								   | VK_IMAGE_USAGE_SAMPLED_BIT);
 	qtex->memory = QFV_AllocImageMemory (device, qtex->image,
 										 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -190,7 +192,7 @@ Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip)
 
 	if (tex->format == tex_palette) {
 		Vulkan_ExpandPalette (tex_data, tex->data, tex->palette,
-							  0, tex->width * tex->height);
+							  1, tex->width * tex->height);
 	} else {
 		memcpy (tex_data, tex->data, bytes);
 	}
@@ -201,6 +203,7 @@ Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip)
 	stages = imageLayoutTransitionStages[qfv_LT_Undefined_to_TransferDst];
 	barrier = imageLayoutTransitionBarriers[qfv_LT_Undefined_to_TransferDst];
 	barrier.image = qtex->image;
+	barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
 	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
 								 0, 0, 0, 0, 0,
 								 1, &barrier);
@@ -214,19 +217,29 @@ Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip)
 								   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 								   1, &copy);
 	barrier.subresourceRange.baseMipLevel = 0;
+	barrier.subresourceRange.levelCount = 1;
 	stages.src = VK_PIPELINE_STAGE_TRANSFER_BIT;
 	stages.dst = VK_PIPELINE_STAGE_TRANSFER_BIT;
 	VkImageBlit blit = {
 		{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
 		{{0, 0, 0}, {tex->width, tex->height, 1}},
 		{VK_IMAGE_ASPECT_COLOR_BIT, 1, 0, 1},
-		{{0, 0, 0}, {(tex->width + 1) >> 1, (tex->height + 1) >> 1, 1}},
+		{{0, 0, 0}, {max (tex->width >> 1, 1), max (tex->height >> 1, 1), 1}},
 	};
+	if (mip == 1) {
+		stages = imageLayoutTransitionStages[qfv_LT_TransferDst_to_ShaderReadOnly];
+		barrier=imageLayoutTransitionBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+		barrier.image = qtex->image;
+		dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+									 0, 0, 0, 0, 0,
+									 1, &barrier);
+	}
 	while (--mip > 0) {
 		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 		barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
 		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+		stages.dst = VK_PIPELINE_STAGE_TRANSFER_BIT;
 
 		dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst, 0,
 									 0, 0, 0, 0,
@@ -242,6 +255,7 @@ Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip)
 		barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
+		stages.dst = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 		dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst, 0,
 									 0, 0, 0, 0,
 									 1, &barrier);
@@ -250,16 +264,10 @@ Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip)
 		blit.srcOffsets[1].x = blit.dstOffsets[1].x;
 		blit.srcOffsets[1].y = blit.dstOffsets[1].y;
 		blit.dstSubresource.mipLevel++;
-		blit.dstOffsets[1].x = (blit.dstOffsets[1].x + 1) >> 1;
-		blit.dstOffsets[1].y = (blit.dstOffsets[1].y + 1) >> 1;
+		blit.dstOffsets[1].x = max (blit.dstOffsets[1].x >> 1, 1);
+		blit.dstOffsets[1].y = max (blit.dstOffsets[1].y >> 1, 1);
 		barrier.subresourceRange.baseMipLevel++;
 	}
-	stages = imageLayoutTransitionStages[qfv_LT_TransferDst_to_ShaderReadOnly];
-	barrier=imageLayoutTransitionBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
-	barrier.image = qtex->image;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
-								 0, 0, 0, 0, 0,
-								 1, &barrier);
 	QFV_PacketSubmit (packet);
 	return qtex;
 }
