@@ -1,9 +1,9 @@
 #version 450
 
-layout (set = 0, binding = 1) uniform sampler2D Texture;
-layout (set = 0, binding = 2) uniform sampler2D GlowMap;
-layout (set = 0, binding = 3) uniform sampler2D ColorA;
-layout (set = 0, binding = 4) uniform sampler2D ColorB;
+layout (set = 2, binding = 0) uniform sampler2D Texture;
+layout (set = 2, binding = 1) uniform sampler2D GlowMap;
+layout (set = 2, binding = 2) uniform sampler2D ColorA;
+layout (set = 2, binding = 3) uniform sampler2D ColorB;
 
 struct LightData {
 	vec3        color;

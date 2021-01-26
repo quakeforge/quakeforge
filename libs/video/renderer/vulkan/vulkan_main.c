@@ -49,7 +49,7 @@
 #include "QF/sys.h"
 
 #include "QF/Vulkan/qf_vid.h"
-//#include "QF/Vulkan/qf_alias.h"
+#include "QF/Vulkan/qf_alias.h"
 #include "QF/Vulkan/qf_bsp.h"
 //#include "QF/Vulkan/qf_iqm.h"
 #include "QF/Vulkan/qf_lightmap.h"
@@ -109,8 +109,8 @@ setup_view (vulkan_ctx_t *ctx)
 static void
 R_RenderEntities (vulkan_ctx_t *ctx)
 {
-	//entity_t   *ent;
-	//int         begun;
+	entity_t   *ent;
+	int         begun;
 
 	if (!r_drawentities->int_val)
 		return;
@@ -121,17 +121,16 @@ R_RenderEntities (vulkan_ctx_t *ctx)
 			if (ent->model->type != mod_##type_name) \
 				continue; \
 			if (!begun) { \
-				glsl_R_##Type##Begin (); \
+				Vulkan_##Type##Begin (ctx); \
 				begun = 1; \
 			} \
-			currententity = ent; \
-			glsl_R_Draw##Type (); \
+			Vulkan_Draw##Type (ent, ctx); \
 		} \
 		if (begun) \
-			glsl_R_##Type##End (); \
+			Vulkan_##Type##End (ctx); \
 	} while (0)
 
-	//RE_LOOP (alias, Alias);
+	RE_LOOP (alias, Alias);
 	//RE_LOOP (iqm, IQM);
 	//RE_LOOP (sprite, Sprite);
 }

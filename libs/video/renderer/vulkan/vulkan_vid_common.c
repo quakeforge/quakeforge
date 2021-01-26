@@ -242,6 +242,7 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 	plitem_t   *item = ctx->pipelineDef;
 	if (!item || !(item = PL_ObjectForKey (item, "renderpass"))) {
 		Sys_Printf ("error loading renderpass\n");
+		return;
 	} else {
 		Sys_Printf ("Found renderpass def\n");
 	}

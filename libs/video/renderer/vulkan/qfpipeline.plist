@@ -49,9 +49,26 @@
 			borderColor = float_transparent_black;
 			unnormalizedCoordinates = false;
 		};
+		alias.sampler = {
+			magFilter = linear;
+			minFilter = linear;
+			mipmapMode = linear;
+			addressModeU = clamp_to_edge;
+			addressModeV = clamp_to_edge;
+			addressModeW = clamp_to_edge;
+			mipLodBias = 0;
+			anisotropyEnable = false;
+			maxAnisotropy = 0;
+			compareEnable = false;
+			compareOp = always;
+			minLod = 0;
+			maxLod = 1000;
+			borderColor = float_transparent_black;
+			unnormalizedCoordinates = false;
+		};
 	};
 	descriptorPools = {
-		twod = {
+		twod.pool = {
 			flags = 0;
 			maxSets = $framebuffers.size;
 			bindings = (
@@ -65,9 +82,19 @@
 				},
 			);
 		};
+		alias.pool = {
+			flags = 0;
+			maxSets = "2z * $framebuffers.size";
+			bindings = (
+				{
+					type = uniform_buffer;
+					descriptorCount = "2z * $framebuffers.size";
+				},
+			);
+		};
 	};
 	setLayouts = {
-		twod = {
+		twod.set = {
 			bindings = (
 				{
 					binding = 0;
@@ -124,14 +151,24 @@
 				},
 			);
 		};
-		alias.textures = {
-			flags = push_descriptor;
+		alias.matrices = {
 			bindings = (
 				{
 					binding = 0;
 					descriptorType = uniform_buffer;
 					descriptorCount = 1;
 					stageFlags = vertex;
+				},
+			);
+		};
+		alias.textures = {
+			flags = push_descriptor;
+			bindings = (
+				{
+					binding = 0;
+					descriptorType = combined_image_sampler;
+					descriptorCount = 1;
+					stageFlags = fragment;
 				},
 				{
 					binding = 1;
@@ -147,12 +184,6 @@
 				},
 				{
 					binding = 3;
-					descriptorType = combined_image_sampler;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 4;
 					descriptorType = combined_image_sampler;
 					descriptorCount = 1;
 					stageFlags = fragment;
@@ -188,8 +219,8 @@
 		};
 	};
 	pipelineLayouts = {
-		twod = {
-			setLayouts = (twod);
+		twod.layout = {
+			setLayouts = (twod.set);
 		};
 		quakebsp.layout = {
 			setLayouts = (quakebsp.textures);
@@ -207,7 +238,7 @@
 			);
 		};
 		alias.layout = {
-			setLayouts = (alias.textures, alias.lights);
+			setLayouts = (alias.matrices, alias.lights, alias.textures);
 			pushConstantRanges = (
 				{
 					stageFlags = vertex;
@@ -244,7 +275,7 @@
 						mapEntries = (
 							{ size = 4; offset = 0; constantID = 0; },
 						);
-						data = <00000000>;
+						data = <00000008>;
 					};
 				},
 			);
@@ -300,7 +331,7 @@
 				);
 			};
 			inputAssembly = {
-				topology = triangle;
+				topology = triangle_list;
 				primitiveRestartEnable = false;
 			};
 			viewport = {
@@ -357,7 +388,7 @@
 			dynamic = {
 				dynamicState = ( viewport, scissor, blend_constants );
 			};
-			layout = alias;
+			layout = alias.layout;
 			//renderPass = renderpass;
 		};
 		quakebsp.main = {
@@ -643,7 +674,7 @@
 			dynamic = {
 				dynamicState = ( viewport, scissor );
 			};
-			layout = twod;
+			layout = twod.layout;
 			//renderPass = renderpass;
 		};
 	};

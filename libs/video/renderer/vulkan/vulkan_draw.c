@@ -383,13 +383,13 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 
 	dctx->pipeline = Vulkan_CreatePipeline (ctx, "twod");
 
-	dctx->layout = QFV_GetPipelineLayout (ctx, "twod");
+	dctx->layout = QFV_GetPipelineLayout (ctx, "twod.layout");
 
 	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
 	for (size_t i = 0; i < layouts->size; i++) {
-		layouts->a[i] = QFV_GetDescriptorSetLayout (ctx, "twod");
+		layouts->a[i] = QFV_GetDescriptorSetLayout (ctx, "twod.set");
 	}
-	__auto_type pool = QFV_GetDescriptorPool (ctx, "twod");
+	__auto_type pool = QFV_GetDescriptorPool (ctx, "twod.pool");
 
 	VkDescriptorBufferInfo bufferInfo = {
 		ctx->matrices.buffer_2d, 0, VK_WHOLE_SIZE

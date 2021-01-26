@@ -98,6 +98,7 @@ vulkan_R_Init (void)
 	// are being built
 	vulkan_ctx->pipeline = Vulkan_CreatePipeline (vulkan_ctx, "pipeline");
 	Vulkan_Texture_Init (vulkan_ctx);
+	Vulkan_Alias_Init (vulkan_ctx);
 	Vulkan_Bsp_Init (vulkan_ctx);
 	Vulkan_Draw_Init (vulkan_ctx);
 	Vulkan_Particles_Init (vulkan_ctx);
@@ -611,6 +612,7 @@ vulkan_vid_render_shutdown (void)
 	df->vkDestroyCommandPool (dev, vulkan_ctx->cmdpool, 0);
 	Vulkan_Draw_Shutdown (vulkan_ctx);
 	Vulkan_Bsp_Shutdown (vulkan_ctx);
+	Vulkan_Alias_Shutdown (vulkan_ctx);
 	Mod_ClearAll ();
 	Vulkan_Texture_Shutdown (vulkan_ctx);
 	Vulkan_Shutdown_Common (vulkan_ctx);

@@ -236,6 +236,7 @@ libs_video_renderer_vid_render_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/util.c \
 	libs/video/renderer/vulkan/util.h \
 	libs/video/renderer/vulkan/vkparse.c \
+	libs/video/renderer/vulkan/vulkan_alias.c \
 	libs/video/renderer/vulkan/vulkan_bsp.c \
 	libs/video/renderer/vulkan/vulkan_draw.c \
 	libs/video/renderer/vulkan/vulkan_lightmap.c \

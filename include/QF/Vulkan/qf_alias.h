@@ -43,6 +43,7 @@ typedef struct aliasskin_s {
 	struct qfv_tex_s *colora;
 	struct qfv_tex_s *colorb;
 } aliasskin_t;
+
 typedef struct aliasvrt_s {
 	float       vertex[4];
 	float       normal[4];
@@ -68,15 +69,39 @@ typedef struct qfv_light_s {
 	float       cone;
 } qfv_light_t;
 
+#define ALIAS_LIGHTS 8
+
 typedef struct qfv_light_buffer_s {
 	int         light_count;
-	qfv_light_t lights[] __attribute__((aligned(16)));
+	qfv_light_t lights[ALIAS_LIGHTS] __attribute__((aligned(16)));
 } qfv_light_buffer_t;
 
-typedef struct alias_ctx_s {
-} alias_ctx_t;
+#define ALIAS_BUFFER_INFOS 2
+#define ALIAS_IMAGE_INFOS 4
+
+typedef struct aliasframe_s {
+	VkCommandBuffer cmd;
+	VkDescriptorBufferInfo bufferInfo[ALIAS_BUFFER_INFOS];
+	VkDescriptorImageInfo imageInfo[ALIAS_IMAGE_INFOS];
+	VkWriteDescriptorSet descriptors[ALIAS_BUFFER_INFOS + ALIAS_IMAGE_INFOS];
+	qfv_light_buffer_t *lights;
+	VkBuffer     light_buffer;
+} aliasframe_t;
+
+typedef struct aliasframeset_s
+    DARRAY_TYPE (aliasframe_t) aliasframeset_t;
+
+typedef struct aliasctx_s {
+	aliasframeset_t frames;
+	VkPipeline   pipeline;
+	VkPipelineLayout layout;
+	VkSampler    sampler;
+
+	VkDeviceMemory light_memory;
+} aliasctx_t;
 
 struct vulkan_ctx_s;
+struct entity_s;
 void *Vulkan_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
 		                   qboolean group, maliasskindesc_t *skindesc,
 						   struct vulkan_ctx_s *ctx);
@@ -86,5 +111,12 @@ void Vulkan_Mod_LoadExternalSkins (model_t *mod, struct vulkan_ctx_s *ctx);
 void Vulkan_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr,
 											void *_m, int _s, int extra,
 											struct vulkan_ctx_s *ctx);
+
+void Vulkan_AliasBegin (struct vulkan_ctx_s *ctx);
+void Vulkan_DrawAlias (struct entity_s *ent, struct vulkan_ctx_s *ctx);
+void Vulkan_AliasEnd (struct vulkan_ctx_s *ctx);
+
+void Vulkan_Alias_Init (struct vulkan_ctx_s *ctx);
+void Vulkan_Alias_Shutdown (struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_qf_alias_h
