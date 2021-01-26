@@ -60,6 +60,22 @@ static vec3_t vertex_normals[NUMVERTEXNORMALS] = {
 };
 
 static void
+skin_clear (int skin_offset, aliashdr_t *hdr, vulkan_ctx_t *ctx)
+{
+	aliasskin_t *skin = (aliasskin_t *) ((byte *) hdr + skin_offset);
+	Vulkan_UnloadTex (ctx, skin->tex);
+	if (skin->glow) {
+		Vulkan_UnloadTex (ctx, skin->glow);
+	}
+	if (skin->colora) {
+		Vulkan_UnloadTex (ctx, skin->colora);
+	}
+	if (skin->colorb) {
+		Vulkan_UnloadTex (ctx, skin->colorb);
+	}
+}
+
+static void
 vulkan_alias_clear (model_t *m, void *data)
 {
 	vulkan_ctx_t *ctx = data;
@@ -84,32 +100,50 @@ vulkan_alias_clear (model_t *m, void *data)
 			__auto_type group = (maliasskingroup_t *)
 								((byte *) hdr + skins[i].skin);
 			for (int j = 0; j < group->numskins; j++) {
-				Vulkan_UnloadTex (ctx, group->skindescs[j].tex);
+				skin_clear (group->skindescs[j].skin, hdr, ctx);
 			}
 		} else {
-			Vulkan_UnloadTex (ctx, skins[i].tex);
+			skin_clear (skins[i].skin, hdr, ctx);
 		}
 	}
 }
 
 void *
-Vulkan_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
+Vulkan_Mod_LoadSkin (byte *skinpix, int skinsize, int snum, int gnum,
 				     qboolean group, maliasskindesc_t *skindesc,
 					 vulkan_ctx_t *ctx)
 {
+	aliasskin_t *skin;
 	byte       *tskin;
 	int         w, h;
 
+	skin = Hunk_Alloc (sizeof (aliasskin_t));
+	skindesc->skin = (byte *) skin - (byte *) pheader;//FIXME pheader global
 	//FIXME move all skins into arrays(?)
-	//FIXME fullbrights
 	w = pheader->mdl.skinwidth;
 	h = pheader->mdl.skinheight;
-	tskin = malloc (skinsize);
+	tskin = malloc (2 * skinsize);
 	memcpy (tskin, skin, skinsize);
 	Mod_FloodFillSkin (tskin, w, h);
-	tex_t skin_tex = {w, h, tex_palette, 1, vid.palette, tskin};
-	skindesc->tex = Vulkan_LoadTex (ctx, &skin_tex, 1);
+
+	tex_t skin_tex = {w, h, tex_palette, 1, vid.palette, tskin + skinsize};
+	if (Mod_CalcFullbright (tskin, tskin + skinsize, skinsize)) {
+		skin->glow = Vulkan_LoadTex (ctx, &skin_tex, 1);
+		Mod_ClearFullbright (tskin, tskin, skinsize);
+	}
+	if (Skin_CalcTopColors (tskin, tskin + skinsize, skinsize)) {
+		skin->colora = Vulkan_LoadTex (ctx, &skin_tex, 1);
+		Skin_ClearTopColors (tskin, tskin, skinsize);
+	}
+	if (Skin_CalcBottomColors (tskin, tskin + skinsize, skinsize)) {
+		skin->colorb = Vulkan_LoadTex (ctx, &skin_tex, 1);
+		Skin_ClearBottomColors (tskin, tskin, skinsize);
+	}
+	skin_tex.data = tskin;
+	skin->tex = Vulkan_LoadTex (ctx, &skin_tex, 1);
+
 	free (tskin);
+
 	return skin + skinsize;
 }
 

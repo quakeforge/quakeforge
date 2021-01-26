@@ -33,17 +33,28 @@
 
 #include "r_local.h"
 
-
 VISIBLE int
-Mod_CalcFullbright (byte *in, byte *out, int pixels)
+Mod_CalcFullbright (const byte *in, byte *out, int pixels)
 {
 	byte	fb = 0;
 
-	while (pixels--) {
+	while (pixels-- > 0) {
 		byte        pix = *in++;
 		byte        mask = (pix >= 256 - 32) - 1;
 		fb |= mask + 1;
+		// mask is 0 for fullbright, otherwise 0xff
 		*out++ = pix | mask;
 	}
 	return fb;
+}
+
+VISIBLE void
+Mod_ClearFullbright (const byte *in, byte *out, int pixels)
+{
+	while (pixels-- > 0) {
+		byte        pix = *in++;
+		byte        mask = ~((pix >= 256 - 32) - 1);
+		// mask is 0xff for fullbright, otherwise 0
+		*out++ = pix | mask;
+	}
 }

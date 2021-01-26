@@ -278,14 +278,9 @@ typedef struct {
 
 typedef struct {
 	aliasskintype_t type;
-	int            skin;
-	union {
-		struct {
-			int     texnum;
-			int     fb_texnum;
-		};
-		void       *tex;
-	};
+	int     skin;
+	int     texnum;
+	int     fb_texnum;
 } maliasskindesc_t;
 
 typedef struct {
@@ -447,7 +442,8 @@ void	Mod_TouchModel (const char *name);
 mleaf_t *Mod_PointInLeaf (const vec3_t p, model_t *model) __attribute__((pure));
 byte	*Mod_LeafPVS (mleaf_t *leaf, model_t *model);
 model_t	*Mod_FindName (const char *name);
-int     Mod_CalcFullbright (byte *in, byte *out, int pixels);
+int     Mod_CalcFullbright (const byte *in, byte *out, int pixels);
+void    Mod_ClearFullbright (const byte *in, byte *out, int pixels);
 int     Mod_Fullbright (byte * skin, int width, int height, const char *name);
 
 void    *Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame,
@@ -457,7 +453,7 @@ void    *Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
 
 void Mod_FindClipDepth (hull_t *hull);
 void	 Mod_LoadBrushModel (model_t *mod, void *buffer);
-void	 Mod_FloodFillSkin (byte * skin, int skinwidth, int skinheight);
+void	 Mod_FloodFillSkin (byte *skin, int skinwidth, int skinheight);
 
 void	 Mod_Print (void);
 

@@ -62,6 +62,10 @@ void Skin_Init (void);
 skin_t *Skin_SetColormap (skin_t *skin, int cmap);
 skin_t *Skin_SetSkin (skin_t *skin, int cmap, const char *skinname);
 void Skin_SetTranslation (int cmap, int top, int bottom);
+int Skin_CalcTopColors (const byte *in, byte *out, int pixels);
+int Skin_CalcBottomColors (const byte *in, byte *out, int pixels);
+void Skin_ClearTopColors (const byte *in, byte *out, int pixels);
+void Skin_ClearBottomColors (const byte *in, byte *out, int pixels);
 
 void sw_Skin_SetupSkin (skin_t *skin, int cmap);
 void sw_Skin_ProcessTranslation (int cmap, const byte *translation);

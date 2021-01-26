@@ -246,3 +246,63 @@ Skin_Init (void)
 	skin_cache = Hash_NewTable (127, skin_getkey, skin_free, 0, 0);
 	m_funcs->Skin_InitTranslations ();
 }
+
+VISIBLE int
+Skin_CalcTopColors (const byte *in, byte *out, int pixels)
+{
+	byte        tc = 0;
+
+	while (pixels-- > 0) {
+		byte        pix = *in++;
+		byte        a = (pix < TOP_RANGE) - 1;
+		byte        b = (pix > TOP_RANGE + 15) - 1;
+		byte        mask = ~(a & b);
+		tc |= mask;
+		// mask is 0 for top color otherwise 0xff
+		*out++ = (pix - TOP_RANGE) | mask;
+	}
+	return tc;
+}
+
+VISIBLE int
+Skin_CalcBottomColors (const byte *in, byte *out, int pixels)
+{
+	byte        bc = 0;
+
+	while (pixels-- > 0) {
+		byte        pix = *in++;
+		byte        a = (pix < BOTTOM_RANGE) - 1;
+		byte        b = (pix > BOTTOM_RANGE + 15) - 1;
+		byte        mask = ~(a & b);
+		bc |= mask;
+		// mask is 0 for bottom color otherwise 0xff
+		*out++ = (pix - BOTTOM_RANGE) | mask;
+	}
+	return bc;
+}
+
+VISIBLE void
+Skin_ClearTopColors (const byte *in, byte *out, int pixels)
+{
+	while (pixels-- > 0) {
+		byte        pix = *in++;
+		byte        a = (pix < TOP_RANGE) - 1;
+		byte        b = (pix > TOP_RANGE + 15) - 1;
+		byte        mask = (a & b);
+		// mask is 0xff for top color otherwise 0
+		*out++ = (pix - TOP_RANGE) | mask;
+	}
+}
+
+VISIBLE void
+Skin_ClearBottomColors (const byte *in, byte *out, int pixels)
+{
+	while (pixels-- > 0) {
+		byte        pix = *in++;
+		byte        a = (pix < BOTTOM_RANGE) - 1;
+		byte        b = (pix > BOTTOM_RANGE + 15) - 1;
+		byte        mask = (a & b);
+		// mask is 0xff for bottom color otherwise 0
+		*out++ = (pix - BOTTOM_RANGE) | mask;
+	}
+}
