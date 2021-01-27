@@ -144,7 +144,7 @@ Vulkan_Mod_LoadSkin (byte *skinpix, int skinsize, int snum, int gnum,
 
 	free (tskin);
 
-	return skin + skinsize;
+	return skinpix + skinsize;
 }
 
 void
@@ -288,8 +288,10 @@ Vulkan_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 			}
 			VectorCompMultAdd (hdr->mdl.scale_origin, hdr->mdl.scale,
 							   pos, verts[pose + j].vertex);
+			verts[pose + j].vertex[3] = 1;
 			VectorCopy (vertex_normals[pv->lightnormalindex],
 						verts[pose + j].normal);
+			verts[pose + j].normal[3] = 0;
 			// duplicate on-seam vert associated with back-facing triangle
 			if (indexmap[j] != -1) {
 				verts[pose + indexmap[j]] = verts[pose + j];
@@ -357,7 +359,7 @@ Vulkan_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 	dfunc->vkCmdPipelineBarrier (packet->cmd,
 								 VK_PIPELINE_STAGE_TRANSFER_BIT,
 								 VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
-								 0, 0, 0, 1, rd_barriers, 0, 0);
+								 0, 0, 0, 3, rd_barriers, 0, 0);
 	QFV_PacketSubmit (packet);
 	QFV_DestroyStagingBuffer (stage);
 
