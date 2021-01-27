@@ -123,7 +123,7 @@ Vulkan_Mod_LoadSkin (byte *skinpix, int skinsize, int snum, int gnum,
 	w = pheader->mdl.skinwidth;
 	h = pheader->mdl.skinheight;
 	tskin = malloc (2 * skinsize);
-	memcpy (tskin, skin, skinsize);
+	memcpy (tskin, skinpix, skinsize);
 	Mod_FloodFillSkin (tskin, w, h);
 
 	tex_t skin_tex = {w, h, tex_palette, 1, vid.palette, tskin + skinsize};

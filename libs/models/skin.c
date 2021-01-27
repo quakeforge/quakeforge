@@ -254,12 +254,12 @@ Skin_CalcTopColors (const byte *in, byte *out, int pixels)
 
 	while (pixels-- > 0) {
 		byte        pix = *in++;
-		byte        a = (pix < TOP_RANGE) - 1;
-		byte        b = (pix > TOP_RANGE + 15) - 1;
-		byte        mask = ~(a & b);
-		tc |= mask;
-		// mask is 0 for top color otherwise 0xff
-		*out++ = (pix - TOP_RANGE) | mask;
+		if (pix >= TOP_RANGE && pix < TOP_RANGE + 16) {
+			tc = 1;
+			*out++ = pix - TOP_RANGE;
+		} else {
+			*out++ = 0;
+		}
 	}
 	return tc;
 }
@@ -271,12 +271,12 @@ Skin_CalcBottomColors (const byte *in, byte *out, int pixels)
 
 	while (pixels-- > 0) {
 		byte        pix = *in++;
-		byte        a = (pix < BOTTOM_RANGE) - 1;
-		byte        b = (pix > BOTTOM_RANGE + 15) - 1;
-		byte        mask = ~(a & b);
-		bc |= mask;
-		// mask is 0 for bottom color otherwise 0xff
-		*out++ = (pix - BOTTOM_RANGE) | mask;
+		if (pix >= BOTTOM_RANGE && pix < BOTTOM_RANGE + 16) {
+			bc = 1;
+			*out++ = pix - BOTTOM_RANGE;
+		} else {
+			*out++ = 0;
+		}
 	}
 	return bc;
 }
@@ -286,11 +286,11 @@ Skin_ClearTopColors (const byte *in, byte *out, int pixels)
 {
 	while (pixels-- > 0) {
 		byte        pix = *in++;
-		byte        a = (pix < TOP_RANGE) - 1;
-		byte        b = (pix > TOP_RANGE + 15) - 1;
-		byte        mask = (a & b);
-		// mask is 0xff for top color otherwise 0
-		*out++ = (pix - TOP_RANGE) | mask;
+		if (pix >= TOP_RANGE && pix < TOP_RANGE + 16) {
+			*out++ = 0;
+		} else {
+			*out++ = pix;
+		}
 	}
 }
 
@@ -299,10 +299,10 @@ Skin_ClearBottomColors (const byte *in, byte *out, int pixels)
 {
 	while (pixels-- > 0) {
 		byte        pix = *in++;
-		byte        a = (pix < BOTTOM_RANGE) - 1;
-		byte        b = (pix > BOTTOM_RANGE + 15) - 1;
-		byte        mask = (a & b);
-		// mask is 0xff for bottom color otherwise 0
-		*out++ = (pix - BOTTOM_RANGE) | mask;
+		if (pix >= BOTTOM_RANGE && pix < BOTTOM_RANGE + 16) {
+			*out++ = 0;
+		} else {
+			*out++ = pix;
+		}
 	}
 }

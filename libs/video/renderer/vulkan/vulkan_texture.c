@@ -119,6 +119,85 @@ Vulkan_ExpandPalette (byte *dst, const byte *src, const byte *palette,
 	}
 }
 
+static void
+blit_mips (int mips, VkImage image, tex_t *tex,
+		   qfv_devfuncs_t *dfunc, VkCommandBuffer cmd)
+{
+	qfv_pipelinestagepair_t pre_stages = {
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+	};
+	qfv_pipelinestagepair_t post_stages = {
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+	};
+	qfv_pipelinestagepair_t final_stages = {
+		VK_PIPELINE_STAGE_TRANSFER_BIT,
+		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+	};
+	VkImageMemoryBarrier pre_barrier = {
+		VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, 0,
+		VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
+		image,
+		{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+	};
+	VkImageMemoryBarrier post_barrier = {
+		VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, 0,
+		VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_SHADER_READ_BIT,
+		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
+		image,
+		{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+	};
+	VkImageMemoryBarrier final_barrier = {
+		VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, 0,
+		VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_SHADER_READ_BIT,
+		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
+		image,
+		{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
+	};
+
+	VkImageBlit blit = {
+		{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+		{{0, 0, 0}, {tex->width, tex->height, 1}},
+		{VK_IMAGE_ASPECT_COLOR_BIT, 1, 0, 1},
+		{{0, 0, 0}, {max (tex->width >> 1, 1), max (tex->height >> 1, 1), 1}},
+	};
+
+	while (--mips > 0) {
+		dfunc->vkCmdPipelineBarrier (cmd, pre_stages.src, pre_stages.dst, 0,
+									 0, 0, 0, 0,
+									 1, &pre_barrier);
+		dfunc->vkCmdBlitImage (cmd,
+							   image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+							   image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+							   1, &blit, VK_FILTER_LINEAR);
+
+		dfunc->vkCmdPipelineBarrier (cmd, post_stages.src, post_stages.dst, 0,
+									 0, 0, 0, 0,
+									 1, &post_barrier);
+
+		blit.srcSubresource.mipLevel++;
+		blit.srcOffsets[1].x = blit.dstOffsets[1].x;
+		blit.srcOffsets[1].y = blit.dstOffsets[1].y;
+		blit.dstSubresource.mipLevel++;
+		blit.dstOffsets[1].x = max (blit.dstOffsets[1].x >> 1, 1);
+		blit.dstOffsets[1].y = max (blit.dstOffsets[1].y >> 1, 1);
+		pre_barrier.subresourceRange.baseMipLevel++;
+		post_barrier.subresourceRange.baseMipLevel++;
+		final_barrier.subresourceRange.baseMipLevel++;
+	}
+	dfunc->vkCmdPipelineBarrier (cmd, final_stages.src, final_stages.dst, 0,
+								 0, 0, 0, 0,
+								 1, &final_barrier);
+}
+
 qfv_tex_t *
 Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip)
 {
@@ -216,16 +295,6 @@ Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip)
 								   qtex->image,
 								   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 								   1, &copy);
-	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = 1;
-	stages.src = VK_PIPELINE_STAGE_TRANSFER_BIT;
-	stages.dst = VK_PIPELINE_STAGE_TRANSFER_BIT;
-	VkImageBlit blit = {
-		{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
-		{{0, 0, 0}, {tex->width, tex->height, 1}},
-		{VK_IMAGE_ASPECT_COLOR_BIT, 1, 0, 1},
-		{{0, 0, 0}, {max (tex->width >> 1, 1), max (tex->height >> 1, 1), 1}},
-	};
 	if (mip == 1) {
 		stages = imageLayoutTransitionStages[qfv_LT_TransferDst_to_ShaderReadOnly];
 		barrier=imageLayoutTransitionBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
@@ -233,40 +302,8 @@ Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip)
 		dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
 									 0, 0, 0, 0, 0,
 									 1, &barrier);
-	}
-	while (--mip > 0) {
-		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-		barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-		stages.dst = VK_PIPELINE_STAGE_TRANSFER_BIT;
-
-		dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst, 0,
-									 0, 0, 0, 0,
-									 1, &barrier);
-
-		dfunc->vkCmdBlitImage (packet->cmd,
-							 qtex->image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-							 qtex->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-							 1, &blit, VK_FILTER_LINEAR);
-
-		barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-		barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
-		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-		stages.dst = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-		dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst, 0,
-									 0, 0, 0, 0,
-									 1, &barrier);
-
-		blit.srcSubresource.mipLevel++;
-		blit.srcOffsets[1].x = blit.dstOffsets[1].x;
-		blit.srcOffsets[1].y = blit.dstOffsets[1].y;
-		blit.dstSubresource.mipLevel++;
-		blit.dstOffsets[1].x = max (blit.dstOffsets[1].x >> 1, 1);
-		blit.dstOffsets[1].y = max (blit.dstOffsets[1].y >> 1, 1);
-		barrier.subresourceRange.baseMipLevel++;
+	} else {
+		blit_mips (mip, qtex->image, tex, dfunc, packet->cmd);
 	}
 	QFV_PacketSubmit (packet);
 	return qtex;
