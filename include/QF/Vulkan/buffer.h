@@ -18,6 +18,11 @@ typedef struct qfv_buffertransitionset_s
 typedef struct qfv_bufferbarrierset_s
 	DARRAY_TYPE (VkBufferMemoryBarrier) qfv_bufferbarrierset_t;
 
+typedef struct qfv_bufferset_s
+	DARRAY_TYPE (VkBuffer) qfv_bufferset_t;
+#define QFV_AllocBufferSet(num, allocator) \
+	DARRAY_ALLOCFIXED (qfv_bufferset_t, num, allocator)
+
 struct qfv_device_s;
 VkBuffer QFV_CreateBuffer (struct qfv_device_s *device,
 						   VkDeviceSize size,

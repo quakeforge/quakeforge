@@ -109,14 +109,12 @@ setup_view (vulkan_ctx_t *ctx)
 static void
 R_RenderEntities (vulkan_ctx_t *ctx)
 {
-	entity_t   *ent;
-	int         begun;
-
 	if (!r_drawentities->int_val)
 		return;
 #define RE_LOOP(type_name, Type) \
 	do { \
-		begun = 0; \
+		entity_t   *ent; \
+		int         begun = 0; \
 		for (ent = r_ent_queue; ent; ent = ent->next) { \
 			if (ent->model->type != mod_##type_name) \
 				continue; \

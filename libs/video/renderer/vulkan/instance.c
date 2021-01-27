@@ -125,6 +125,11 @@ static int message_types =
 	VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
 	VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 
+static void
+debug_breakpoint (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity)
+{
+}
+
 static VKAPI_ATTR VkBool32 VKAPI_CALL
 debug_callback (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 				VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -144,7 +149,9 @@ debug_callback (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 	if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
 		msgSev = "error: ";
 	}
-	fprintf (stderr, "validation layer: %s%s\n", msgSev, callbackData->pMessage);
+	fprintf (stderr, "validation layer: %s%s\n", msgSev,
+			 callbackData->pMessage);
+	debug_breakpoint (messageSeverity);
 	return VK_FALSE;
 }
 

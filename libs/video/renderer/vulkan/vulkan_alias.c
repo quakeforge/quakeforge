@@ -55,6 +55,7 @@
 
 #include "QF/Vulkan/qf_alias.h"
 #include "QF/Vulkan/qf_texture.h"
+#include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
@@ -131,8 +132,9 @@ Vulkan_DrawAlias (struct entity_s *ent, struct vulkan_ctx_s *ctx)
 	dfunc->vkCmdPushDescriptorSetKHR (aframe->cmd,
 									  VK_PIPELINE_BIND_POINT_GRAPHICS,
 									  actx->layout,
-									  0, 2, aframe->descriptors
-											+ ALIAS_BUFFER_INFOS);
+									  ALIAS_BUFFER_INFOS, ALIAS_IMAGE_INFOS,
+									  aframe->descriptors
+									  + ALIAS_BUFFER_INFOS);
 	dfunc->vkCmdDrawIndexed (aframe->cmd, 3 * hdr->mdl.numtris, 1, 0, 0, 0);
 }
 
@@ -142,12 +144,26 @@ Vulkan_AliasBegin (vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	aliasctx_t *actx = ctx->alias_context;
+
+	dlight_t   *lights[ALIAS_LIGHTS];
 	//XXX quat_t      fog;
 
 	__auto_type cframe = &ctx->framebuffers.a[ctx->curFrame];
 	aliasframe_t *aframe = &actx->frames.a[ctx->curFrame];
 	VkCommandBuffer cmd = aframe->cmd;
 	DARRAY_APPEND (cframe->subCommand, cmd);
+
+	R_FindNearLights (r_origin, ALIAS_LIGHTS, lights);
+	aframe->lights->light_count = 0;
+	for (int i = 0; i < ALIAS_LIGHTS; i++) {
+		if (!lights[i]) {
+			break;
+		}
+		aframe->lights->light_count++;
+		VectorCopy (lights[i]->color, aframe->lights->lights[i].color);
+		VectorCopy (lights[i]->origin, aframe->lights->lights[i].position);
+		aframe->lights->lights[i].dist = lights[i]->radius;
+	}
 
 	//FIXME need per frame matrices
 	aframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
@@ -169,6 +185,12 @@ Vulkan_AliasBegin (vulkan_ctx_t *ctx)
 
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 							  actx->pipeline);
+	VkDescriptorSet sets[] = {
+		aframe->descriptors[0].dstSet,
+		aframe->descriptors[1].dstSet,
+	};
+	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									actx->layout, 0, 2, sets, 0, 0);
 	VkViewport  viewport = {0, 0, vid.width, vid.height, 0, 1};
 	VkRect2D    scissor = { {0, 0}, {vid.width, vid.height} };
 	dfunc->vkCmdSetViewport (cmd, 0, 1, &viewport);
@@ -214,6 +236,7 @@ void
 Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
 
 	aliasctx_t *actx = calloc (1, sizeof (aliasctx_t));
 	ctx->alias_context = actx;
@@ -239,10 +262,29 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 	__auto_type cmdBuffers = QFV_AllocCommandBufferSet (frames, alloca);
 	QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, cmdBuffers);
 
+	__auto_type lbuffers = QFV_AllocBufferSet (frames, alloca);
+	for (size_t i = 0; i < frames; i++) {
+		lbuffers->a[i] = QFV_CreateBuffer (device, sizeof (qfv_light_buffer_t),
+										   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+	}
+	VkMemoryRequirements requirements;
+	dfunc->vkGetBufferMemoryRequirements (device->dev, lbuffers->a[0],
+										  &requirements);
+	actx->light_memory = QFV_AllocBufferMemory (device, lbuffers->a[0],
+										VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
+										frames * requirements.size, 0);
+	byte       *light_data;
+	dfunc->vkMapMemory (device->dev, actx->light_memory, 0,
+						frames * requirements.size, 0, (void **) &light_data);
+
 	__auto_type sets = QFV_AllocateDescriptorSet (device, pool, layouts);
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type aframe = &actx->frames.a[i];
 		aframe->cmd = cmdBuffers->a[i];
+		aframe->light_buffer = lbuffers->a[i];
+		aframe->lights = (qfv_light_buffer_t *) (light_data + i * requirements.size);
+		QFV_BindBufferMemory (device, lbuffers->a[i], actx->light_memory,
+							  i * requirements.size);
 
 		for (int j = 0; j < ALIAS_BUFFER_INFOS; j++) {
 			aframe->bufferInfo[j] = base_buffer_info;
