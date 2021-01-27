@@ -105,8 +105,8 @@ Vulkan_DrawAlias (struct entity_s *ent, struct vulkan_ctx_s *ctx)
 	}
 
 	VkDeviceSize offsets[] = {
-		ent->pose1 * hdr->poseverts,
-		ent->pose2 * hdr->poseverts,
+		ent->pose1 * hdr->poseverts * sizeof (aliasvrt_t),
+		ent->pose2 * hdr->poseverts * sizeof (aliasvrt_t),
 		0,
 	};
 	VkBuffer    buffers[] = {
@@ -289,7 +289,7 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 		for (int j = 0; j < ALIAS_BUFFER_INFOS; j++) {
 			aframe->bufferInfo[j] = base_buffer_info;
 			aframe->descriptors[j] = base_buffer_write;
-			aframe->descriptors[j].dstSet = sets->a[2 * i + j];
+			aframe->descriptors[j].dstSet = sets->a[ALIAS_BUFFER_INFOS*i + j];
 			aframe->descriptors[j].dstBinding = 0;
 			aframe->descriptors[j].pBufferInfo = &aframe->bufferInfo[j];
 		}
@@ -311,6 +311,12 @@ Vulkan_Alias_Shutdown (struct vulkan_ctx_s *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	aliasctx_t *actx = ctx->alias_context;
+
+	for (size_t i = 0; i < actx->frames.size; i++) {
+		__auto_type aframe = &actx->frames.a[i];
+		dfunc->vkDestroyBuffer (device->dev, aframe->light_buffer, 0);
+	}
+	dfunc->vkFreeMemory (device->dev, actx->light_memory, 0);
 
 	dfunc->vkDestroyPipeline (device->dev, actx->pipeline, 0);
 	DARRAY_CLEAR (&actx->frames);
