@@ -37,6 +37,22 @@ layout (location = 2) in vec3 normal;
 
 layout (location = 0) out vec4 frag_color;
 
+vec3
+calc_light (LightData light)
+{
+	if (light.type == 0) {
+		vec3 dist = light.position - position;
+		float dd = dot (dist, dist);
+		float mag = max (0.0, dot (dist, normal));
+		return light.color * mag * light.dist / dd;
+	} else if (light.type == 1) {
+	} else if (light.type == 2) {
+		float mag = max (0.0, -dot (light.direction, normal));
+		// position is ambient light
+		return light.color * dot (light.direction, normal) + light.position;
+	}
+}
+
 void
 main (void)
 {
@@ -49,10 +65,7 @@ main (void)
 
 	if (MaxLights > 0) {
 		for (i = 0; i < light_count; i++) {
-			vec3 dist = lights[i].position - position;
-			float dd = dot (dist, dist);
-			float mag = max (0.0, dot (dist, normal));
-			light += lights[i].color * mag * lights[i].dist / dd;
+			light += calc_light (lights[i]);
 		}
 	}
 	c *= vec4 (light, 1);

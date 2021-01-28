@@ -77,7 +77,7 @@ get_view (qfv_tex_t *tex, qfv_tex_t *default_tex)
 }
 
 void
-Vulkan_DrawAlias (struct entity_s *ent, struct vulkan_ctx_s *ctx)
+Vulkan_DrawAlias (entity_t *ent, struct vulkan_ctx_s *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -138,6 +138,22 @@ Vulkan_DrawAlias (struct entity_s *ent, struct vulkan_ctx_s *ctx)
 	dfunc->vkCmdDrawIndexed (aframe->cmd, 3 * hdr->mdl.numtris, 1, 0, 0, 0);
 }
 
+static void
+calc_lighting (qfv_light_t *light, entity_t *ent)
+{
+	vec3_t      ambient_color;
+	//FIXME should be ent->position
+	float       l = R_LightPoint (r_origin) / 128.0;
+
+	//XXX l = max (light, max (ent->model->min_light, ent->min_light));
+	light->type = 2;
+	VectorSet (1, 1, 1, ambient_color);	//FIXME
+	// position doubles as ambient light
+	VectorScale (ambient_color, l, light->position);
+	VectorSet (-1, 0, 0, light->direction);	//FIXME
+	VectorCopy (light->position, light->color);
+}
+
 void
 Vulkan_AliasBegin (vulkan_ctx_t *ctx)
 {
@@ -153,16 +169,19 @@ Vulkan_AliasBegin (vulkan_ctx_t *ctx)
 	VkCommandBuffer cmd = aframe->cmd;
 	DARRAY_APPEND (cframe->subCommand, cmd);
 
-	R_FindNearLights (r_origin, ALIAS_LIGHTS, lights);
-	aframe->lights->light_count = 0;
-	for (int i = 0; i < ALIAS_LIGHTS; i++) {
+	//FIXME ambient needs to be per entity
+	aframe->lights->light_count = 1;
+	calc_lighting (&aframe->lights->lights[0], 0);
+	R_FindNearLights (r_origin, ALIAS_LIGHTS - 1, lights);
+	for (int i = 0; i < ALIAS_LIGHTS - 1; i++) {
 		if (!lights[i]) {
 			break;
 		}
 		aframe->lights->light_count++;
-		VectorCopy (lights[i]->color, aframe->lights->lights[i].color);
-		VectorCopy (lights[i]->origin, aframe->lights->lights[i].position);
-		aframe->lights->lights[i].dist = lights[i]->radius;
+		VectorCopy (lights[i]->color, aframe->lights->lights[i + 1].color);
+		VectorCopy (lights[i]->origin, aframe->lights->lights[i + 1].position);
+		aframe->lights->lights[i + 1].dist = lights[i]->radius;
+		aframe->lights->lights[i + 1].type = 0;
 	}
 
 	//FIXME need per frame matrices
