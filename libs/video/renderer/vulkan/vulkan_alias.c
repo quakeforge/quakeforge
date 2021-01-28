@@ -193,7 +193,7 @@ Vulkan_AliasBegin (vulkan_ctx_t *ctx)
 	//								actx->layout, 0, 2, sets, 0, 0);
 	dfunc->vkCmdPushDescriptorSetKHR (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									  actx->layout,
-									  0, 1, aframe->descriptors + 0);
+									  0, 2, aframe->descriptors + 0);
 	VkViewport  viewport = {0, 0, vid.width, vid.height, 0, 1};
 	VkRect2D    scissor = { {0, 0}, {vid.width, vid.height} };
 	dfunc->vkCmdSetViewport (cmd, 0, 1, &viewport);
@@ -293,7 +293,7 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 			aframe->bufferInfo[j] = base_buffer_info;
 			aframe->descriptors[j] = base_buffer_write;
 			//aframe->descriptors[j].dstSet = sets->a[ALIAS_BUFFER_INFOS*i + j];
-			aframe->descriptors[j].dstBinding = 0;
+			aframe->descriptors[j].dstBinding = j;
 			aframe->descriptors[j].pBufferInfo = &aframe->bufferInfo[j];
 		}
 		for (int j = 0; j < ALIAS_IMAGE_INFOS; j++) {

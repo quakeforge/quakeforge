@@ -8,7 +8,7 @@ layout (set = 2, binding = 0) uniform sampler2D Texture;
 layout (set = 2, binding = 1) uniform sampler2D GlowMap;
 layout (set = 2, binding = 2) uniform sampler2D ColorA;
 layout (set = 2, binding = 3) uniform sampler2D ColorB;
-
+*/
 struct LightData {
 	vec3        color;
 	float       dist;
@@ -19,11 +19,12 @@ struct LightData {
 };
 
 layout (constant_id = 0) const int MaxLights = 8;
-layout (set = 1, binding = 0) uniform Lights {
+//layout (set = 1, binding = 0) uniform Lights {
+layout (set = 0, binding = 1) uniform Lights {
 	int         light_count;
 	LightData   lights[MaxLights];
 };
-*/
+
 layout (push_constant) uniform PushConstants {
 	layout (offset = 80)
 	vec4        fog;
@@ -45,7 +46,7 @@ main (void)
 	c = texture (Texture, st);
 	c += texture (ColorA, st);
 	c += texture (ColorB, st);
-/*
+
 	if (MaxLights > 0) {
 		for (i = 0; i < light_count; i++) {
 			vec3 dist = lights[i].position - position;
@@ -55,7 +56,7 @@ main (void)
 		}
 	}
 	c *= vec4 (light, 1);
-*/
+
 	c += texture (GlowMap, st);
 	//frag_color = vec4((normal + 1)/2, 1);
 	frag_color = c;//fogBlend (c);
