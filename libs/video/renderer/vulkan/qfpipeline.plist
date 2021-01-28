@@ -110,7 +110,7 @@
 				},
 			);
 		};
-		quakebsp.textures = {
+		quakebsp.set = {
 			flags = push_descriptor;
 			bindings = (
 				{
@@ -122,6 +122,47 @@
 				{
 					binding = 1;
 					descriptorType = combined_image_sampler;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+				{
+					binding = 2;
+					descriptorType = combined_image_sampler;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+				{
+					binding = 3;
+					descriptorType = combined_image_sampler;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+				{
+					binding = 4;
+					descriptorType = combined_image_sampler;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+				{
+					binding = 5;
+					descriptorType = combined_image_sampler;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+			);
+		};
+		alias.set = {
+			flags = push_descriptor;
+			bindings = (
+				{
+					binding = 0;
+					descriptorType = uniform_buffer;
+					descriptorCount = 1;
+					stageFlags = vertex;
+				},
+				{
+					binding = 1;
+					descriptorType = uniform_buffer;
 					descriptorCount = 1;
 					stageFlags = fragment;
 				},
@@ -223,7 +264,7 @@
 			setLayouts = (twod.set);
 		};
 		quakebsp.layout = {
-			setLayouts = (quakebsp.textures);
+			setLayouts = (quakebsp.set);
 			pushConstantRanges = (
 				{
 					stageFlags = vertex;
@@ -238,7 +279,8 @@
 			);
 		};
 		alias.layout = {
-			setLayouts = (alias.matrices, alias.lights, alias.textures);
+			//setLayouts = (alias.matrices, alias.lights, alias.textures);
+			setLayouts = (alias.set);
 			pushConstantRanges = (
 				{
 					stageFlags = vertex;

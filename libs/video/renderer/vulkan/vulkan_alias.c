@@ -123,6 +123,7 @@ Vulkan_DrawAlias (struct entity_s *ent, struct vulkan_ctx_s *ctx)
 	dfunc->vkCmdPushConstants (aframe->cmd, actx->layout,
 							   VK_SHADER_STAGE_VERTEX_BIT,
 							   64, sizeof (float), &blend);
+	if (0) {
 	aframe->imageInfo[0].imageView = get_view (skin->tex, ctx->default_white);
 	aframe->imageInfo[1].imageView = get_view (skin->glow, ctx->default_black);
 	aframe->imageInfo[2].imageView = get_view (skin->colora,
@@ -135,6 +136,7 @@ Vulkan_DrawAlias (struct entity_s *ent, struct vulkan_ctx_s *ctx)
 									  ALIAS_BUFFER_INFOS, ALIAS_IMAGE_INFOS,
 									  aframe->descriptors
 									  + ALIAS_BUFFER_INFOS);
+	}
 	dfunc->vkCmdDrawIndexed (aframe->cmd, 3 * hdr->mdl.numtris, 1, 0, 0, 0);
 }
 
@@ -185,18 +187,21 @@ Vulkan_AliasBegin (vulkan_ctx_t *ctx)
 
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 							  actx->pipeline);
-	VkDescriptorSet sets[] = {
-		aframe->descriptors[0].dstSet,
-		aframe->descriptors[1].dstSet,
-	};
-	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									actx->layout, 0, 2, sets, 0, 0);
+	//VkDescriptorSet sets[] = {
+	//	aframe->descriptors[0].dstSet,
+	//	aframe->descriptors[1].dstSet,
+	//};
+	//dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+	//								actx->layout, 0, 2, sets, 0, 0);
+	dfunc->vkCmdPushDescriptorSetKHR (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									  actx->layout,
+									  0, 1, aframe->descriptors + 0);
 	VkViewport  viewport = {0, 0, vid.width, vid.height, 0, 1};
 	VkRect2D    scissor = { {0, 0}, {vid.width, vid.height} };
 	dfunc->vkCmdSetViewport (cmd, 0, 1, &viewport);
 	dfunc->vkCmdSetScissor (cmd, 0, 1, &scissor);
 
-	dfunc->vkUpdateDescriptorSets (device->dev, 2, aframe->descriptors, 0, 0);
+	//dfunc->vkUpdateDescriptorSets (device->dev, 2, aframe->descriptors, 0, 0);
 
 	//XXX glsl_Fog_GetColor (fog);
 	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;
@@ -257,7 +262,7 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 		layouts->a[2 * i + 0] = mats;
 		layouts->a[2 * i + 1] = lights;
 	}
-	__auto_type pool = QFV_GetDescriptorPool (ctx, "alias.pool");
+	//__auto_type pool = QFV_GetDescriptorPool (ctx, "alias.pool");
 
 	__auto_type cmdBuffers = QFV_AllocCommandBufferSet (frames, alloca);
 	QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, cmdBuffers);
@@ -277,7 +282,7 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 	dfunc->vkMapMemory (device->dev, actx->light_memory, 0,
 						frames * requirements.size, 0, (void **) &light_data);
 
-	__auto_type sets = QFV_AllocateDescriptorSet (device, pool, layouts);
+	//__auto_type sets = QFV_AllocateDescriptorSet (device, pool, layouts);
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type aframe = &actx->frames.a[i];
 		aframe->cmd = cmdBuffers->a[i];
@@ -289,7 +294,7 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 		for (int j = 0; j < ALIAS_BUFFER_INFOS; j++) {
 			aframe->bufferInfo[j] = base_buffer_info;
 			aframe->descriptors[j] = base_buffer_write;
-			aframe->descriptors[j].dstSet = sets->a[ALIAS_BUFFER_INFOS*i + j];
+			//aframe->descriptors[j].dstSet = sets->a[ALIAS_BUFFER_INFOS*i + j];
 			aframe->descriptors[j].dstBinding = 0;
 			aframe->descriptors[j].pBufferInfo = &aframe->bufferInfo[j];
 		}
@@ -302,7 +307,7 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 			aframe->descriptors[k].pImageInfo = &aframe->imageInfo[j];
 		}
 	}
-	free (sets);
+	//free (sets);
 }
 
 void
