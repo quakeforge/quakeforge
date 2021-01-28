@@ -1,4 +1,8 @@
 #version 450
+layout (set = 0, binding = 2) uniform sampler2D Texture;
+layout (set = 0, binding = 3) uniform sampler2D GlowMap;
+layout (set = 0, binding = 4) uniform sampler2D ColorA;
+layout (set = 0, binding = 5) uniform sampler2D ColorB;
 /*
 layout (set = 2, binding = 0) uniform sampler2D Texture;
 layout (set = 2, binding = 1) uniform sampler2D GlowMap;
@@ -38,11 +42,10 @@ main (void)
 	vec4        c;
 	int         i;
 	vec3        light = vec3 (0);
-/*
 	c = texture (Texture, st);
 	c += texture (ColorA, st);
 	c += texture (ColorB, st);
-	c += texture (GlowMap, st);
+/*
 	if (MaxLights > 0) {
 		for (i = 0; i < light_count; i++) {
 			vec3 dist = lights[i].position - position;
@@ -51,7 +54,9 @@ main (void)
 			light += lights[i].color * mag * lights[i].dist / dd;
 		}
 	}
-	frag_color = c * vec4(light, 1);//fogBlend (c);
+	c *= vec4 (light, 1);
 */
-	frag_color = vec4((normal + 1)/2, 1);
+	c += texture (GlowMap, st);
+	//frag_color = vec4((normal + 1)/2, 1);
+	frag_color = c;//fogBlend (c);
 }

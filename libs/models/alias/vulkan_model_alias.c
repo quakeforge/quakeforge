@@ -300,12 +300,13 @@ Vulkan_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 	}
 
 	// now build the indices for DrawElements
-	for (i = 0; i < hdr->mdl.numverts; i++) {
-		indexmap[i] = indexmap[i] != -1 ? indexmap[i] : i;
-	}
 	for (i = 0; i < numtris; i++) {
 		for (j = 0; j < 3; j++) {
-			indices[3 * i + j] = indexmap[triangles.a[i].vertindex[j]];
+			int         vind = triangles.a[i].vertindex[j];
+			if (stverts.a[vind].onseam && !triangles.a[i].facesfront) {
+				vind = indexmap[vind];
+			}
+			indices[3 * i + j] = vind;
 		}
 	}
 	// finished with indexmap

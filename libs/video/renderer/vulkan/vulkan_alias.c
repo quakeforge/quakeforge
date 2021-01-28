@@ -123,7 +123,6 @@ Vulkan_DrawAlias (struct entity_s *ent, struct vulkan_ctx_s *ctx)
 	dfunc->vkCmdPushConstants (aframe->cmd, actx->layout,
 							   VK_SHADER_STAGE_VERTEX_BIT,
 							   64, sizeof (float), &blend);
-	if (0) {
 	aframe->imageInfo[0].imageView = get_view (skin->tex, ctx->default_white);
 	aframe->imageInfo[1].imageView = get_view (skin->glow, ctx->default_black);
 	aframe->imageInfo[2].imageView = get_view (skin->colora,
@@ -133,10 +132,9 @@ Vulkan_DrawAlias (struct entity_s *ent, struct vulkan_ctx_s *ctx)
 	dfunc->vkCmdPushDescriptorSetKHR (aframe->cmd,
 									  VK_PIPELINE_BIND_POINT_GRAPHICS,
 									  actx->layout,
-									  ALIAS_BUFFER_INFOS, ALIAS_IMAGE_INFOS,
+									  0, ALIAS_IMAGE_INFOS,
 									  aframe->descriptors
 									  + ALIAS_BUFFER_INFOS);
-	}
 	dfunc->vkCmdDrawIndexed (aframe->cmd, 3 * hdr->mdl.numtris, 1, 0, 0, 0);
 }
 
@@ -303,7 +301,7 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 			aframe->imageInfo[j].sampler = actx->sampler;
 			int k = j + ALIAS_BUFFER_INFOS;
 			aframe->descriptors[k] = base_image_write;
-			aframe->descriptors[k].dstBinding = j;
+			aframe->descriptors[k].dstBinding = k;
 			aframe->descriptors[k].pImageInfo = &aframe->imageInfo[j];
 		}
 	}
