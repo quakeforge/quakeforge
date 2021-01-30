@@ -599,11 +599,11 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 static void
 x11_keydest_callback (keydest_t key_dest)
 {
-	if (key_dest == key_game) {
-		XAutoRepeatOff (x_disp);
-	} else {
-		XAutoRepeatOn (x_disp);
-	}
+//	if (key_dest == key_game) {
+//		XAutoRepeatOff (x_disp);
+//	} else {
+//		XAutoRepeatOn (x_disp);
+//	}
 }
 
 static void
@@ -792,7 +792,7 @@ IN_LL_Shutdown (void)
 	Sys_MaskPrintf (SYS_VID, "IN_LL_Shutdown\n");
 	in_mouse_avail = 0;
 	if (x_disp) {
-		XAutoRepeatOn (x_disp);
+//		XAutoRepeatOn (x_disp);
 		dga_off ();
 	}
 	if (in_mouse_accel && !in_mouse_accel->int_val)
