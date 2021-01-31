@@ -88,7 +88,7 @@ R_ReadPointFile_f (void)
 		Sys_Error ("Can't duplicate mapname!");
 	QFS_StripExtension (mapname, mapname);
 
-	name = va ("maps/%s.pts", mapname);
+	name = va (0, "maps/%s.pts", mapname);
 	free (mapname);
 
 	f = QFS_FOpenFile (name);

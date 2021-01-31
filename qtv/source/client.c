@@ -177,9 +177,9 @@ cl_prespawn_f (client_t *cl, void *unused)
 	if (buf >= sv->num_signon_buffers)
 		buf = 0;
 	if (buf == sv->num_signon_buffers - 1)
-		cmd = va ("cmd spawn %i 0\n", cl->server->spawncount);
+		cmd = va (0, "cmd spawn %i 0\n", cl->server->spawncount);
 	else
-		cmd = va ("cmd prespawn %i %i\n", cl->server->spawncount, buf + 1);
+		cmd = va (0, "cmd prespawn %i %i\n", cl->server->spawncount, buf + 1);
 	size = sv->signon_buffer_size[buf] + 1 + strlen (cmd) + 1;
 	msg = MSG_ReliableCheckBlock (&cl->backbuf, size);
 	SZ_Write (msg, sv->signon_buffers[buf], sv->signon_buffer_size[buf]);
@@ -1234,7 +1234,7 @@ Client_New (client_t *cl)
 	MSG_WriteByte (&cl->netchan.message, sv->cdtrack);
 	MSG_WriteByte (&cl->netchan.message, svc_stufftext);
 	MSG_WriteString (&cl->netchan.message,
-					 va ("fullserverinfo \"%s\"\n",
+					 va (0, "fullserverinfo \"%s\"\n",
 						 Info_MakeString (sv->info, 0)));
 }
 

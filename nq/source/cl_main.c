@@ -106,7 +106,7 @@ CL_WriteConfiguration (void)
 	// dedicated servers initialize the host but don't parse and set the
 	// config.cfg cvars
 	if (host_initialized && !isDedicated && cl_writecfg->int_val) {
-		char       *path = va ("%s/config.cfg", qfs_gamedir->dir.def);
+		char       *path = va (0, "%s/config.cfg", qfs_gamedir->dir.def);
 		f = QFS_WOpen (path, 0);
 		if (!f) {
 			Sys_Printf ("Couldn't write config.cfg.\n");
@@ -344,10 +344,11 @@ CL_SignonReply (void)
 
 	case so_spawn:
 		MSG_WriteByte (&cls.message, clc_stringcmd);
-		MSG_WriteString (&cls.message, va ("name \"%s\"\n", cl_name->string));
+		MSG_WriteString (&cls.message, va (0, "name \"%s\"\n",
+										   cl_name->string));
 		MSG_WriteByte (&cls.message, clc_stringcmd);
 		MSG_WriteString (&cls.message,
-						 va ("color %i %i\n", (cl_color->int_val) >> 4,
+						 va (0, "color %i %i\n", (cl_color->int_val) >> 4,
 							 (cl_color->int_val) & 15));
 		MSG_WriteByte (&cls.message, clc_stringcmd);
 		MSG_WriteString (&cls.message, "spawn");
@@ -389,7 +390,8 @@ CL_NextDemo (void)
 		}
 	}
 
-	Cbuf_InsertText (host_cbuf, va ("playdemo %s\n", cls.demos[cls.demonum]));
+	Cbuf_InsertText (host_cbuf, va (0, "playdemo %s\n",
+									cls.demos[cls.demonum]));
 	cls.demonum++;
 }
 

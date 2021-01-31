@@ -312,7 +312,7 @@ CL_Record_f (void)
 
 // start up the map
 	if (c > 2)
-		Cmd_ExecuteString (va ("map %s", Cmd_Argv (2)), src_command);
+		Cmd_ExecuteString (va (0, "map %s", Cmd_Argv (2)), src_command);
 
 	CL_Record (Cmd_Argv (1), track);
 }

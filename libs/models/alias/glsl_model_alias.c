@@ -104,9 +104,9 @@ glsl_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
 	memcpy (tskin, skin, skinsize);
 	Mod_FloodFillSkin (tskin, w, h);
 	if (group)
-		name = va ("%s_%i_%i", loadmodel->name, snum, gnum);
+		name = va (0, "%s_%i_%i", loadmodel->name, snum, gnum);
 	else
-		name = va ("%s_%i", loadmodel->name, snum);
+		name = va (0, "%s_%i", loadmodel->name, snum);
 	skindesc->texnum = GLSL_LoadQuakeTexture (name, w, h, tskin);
 	free (tskin);
 	return skin + skinsize;

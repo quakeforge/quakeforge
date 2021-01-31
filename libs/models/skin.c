@@ -177,7 +177,7 @@ Skin_SetSkin (skin_t *skin, int cmap, const char *skinname)
 			break;
 		}
 
-		file = QFS_FOpenFile (va ("skins/%s.pcx", name));
+		file = QFS_FOpenFile (va (0, "skins/%s.pcx", name));
 		if (!file) {
 			Sys_Printf ("Couldn't load skin %s\n", name);
 			free (name);

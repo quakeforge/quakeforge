@@ -356,7 +356,7 @@ Vulkan_Mod_ProcessTexture (texture_t *tx, vulkan_ctx_t *ctx)
 		return;
 	}
 
-	const char *name = va ("fb_%s", tx->name);
+	const char *name = va (ctx->va_ctx, "fb_%s", tx->name);
 	int         size = (tx->width * tx->height * 85) / 64;
 	int         fullbright_mark = Hunk_LowMark ();
 	byte       *pixels = Hunk_AllocName (size, name);

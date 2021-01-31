@@ -1607,7 +1607,7 @@ flow_build_graph (function_t *func)
 		flow_make_edges (graph);
 		flow_build_dfst (graph);
 		if (options.block_dot.flow)
-			dump_dot (va ("flow-%d", pass), graph, dump_dot_flow);
+			dump_dot (va (0, "flow-%d", pass), graph, dump_dot_flow);
 		pass++;
 	} while (flow_remove_unreachable_nodes (graph));
 	flow_find_predecessors (graph);

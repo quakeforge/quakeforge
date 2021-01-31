@@ -76,7 +76,7 @@ glsl_Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)
 	const char *name;
 
 	loadmodel->clear = glsl_sprite_clear;
-	name = va ("%s_%i", loadmodel->name, framenum);
+	name = va (0, "%s_%i", loadmodel->name, framenum);
 	pspriteframe->gl_texturenum =
 		GLSL_LoadQuakeTexture (name, pspriteframe->width, pspriteframe->height,
 							   pspriteframe->pixels);

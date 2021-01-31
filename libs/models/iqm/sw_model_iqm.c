@@ -174,7 +174,7 @@ sw_iqm_load_textures (iqm_t *iqm)
 			continue;
 		dstring_copystr (str, iqm->text + iqm->meshes[i].material);
 		QFS_StripExtension (str->str, str->str);
-		if ((tex = LoadImage (va ("textures/%s", str->str), 1)))
+		if ((tex = LoadImage (va (0, "textures/%s", str->str), 1)))
 			tex = sw->skins[i] = convert_tex (tex);
 		else
 			tex = sw->skins[i] = &null_texture;

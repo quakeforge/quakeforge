@@ -1214,7 +1214,7 @@ SV_SpawnServer (const char *server)
 	*sv_globals.serverflags = svs.serverflags;
 
 	*sv_globals.time = sv.time;
-	ent_file = QFS_VOpenFile (va ("maps/%s.ent", server), 0,
+	ent_file = QFS_VOpenFile (va (0, "maps/%s.ent", server), 0,
 							  sv.worldmodel->vpath);
 	if ((buf = QFS_LoadFile (ent_file, 0))) {
 		ED_LoadFromFile (&sv_pr_state, (char *) buf);

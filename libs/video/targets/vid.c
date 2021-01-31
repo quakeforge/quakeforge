@@ -90,9 +90,9 @@ VID_GetWindowSize (int def_w, int def_h)
 {
 	int pnum, conheight;
 
-	vid_width = Cvar_Get ("vid_width", va ("%d", def_w), CVAR_NONE, NULL,
+	vid_width = Cvar_Get ("vid_width", va (0, "%d", def_w), CVAR_NONE, NULL,
 			"screen width");
-	vid_height = Cvar_Get ("vid_height", va ("%d", def_h), CVAR_NONE, NULL,
+	vid_height = Cvar_Get ("vid_height", va (0, "%d", def_h), CVAR_NONE, NULL,
 			"screen height");
 	vid_aspect = Cvar_Get ("vid_aspect", "4:3", CVAR_ROM, vid_aspect_f,
 			"Physical screen aspect ratio in \"width:height\" format. "
@@ -140,7 +140,7 @@ VID_GetWindowSize (int def_w, int def_h)
 	viddef.aspect = ((vid_aspect->vec[0] * viddef.height)
 				  / (vid_aspect->vec[1] * viddef.width));
 
-	con_width = Cvar_Get ("con_width", va ("%d", viddef.width), CVAR_NONE,
+	con_width = Cvar_Get ("con_width", va (0, "%d", viddef.width), CVAR_NONE,
 						  NULL, "console effective width (GL only)");
 	if ((pnum = COM_CheckParm ("-conwidth"))) {
 		if (pnum >= com_argc - 1)
@@ -148,20 +148,20 @@ VID_GetWindowSize (int def_w, int def_h)
 		Cvar_Set (con_width, com_argv[pnum + 1]);
 	}
 	// make con_width a multiple of 8 and >= 320
-	Cvar_Set (con_width, va ("%d", max (con_width->int_val & ~7, 320)));
+	Cvar_Set (con_width, va (0, "%d", max (con_width->int_val & ~7, 320)));
 	Cvar_SetFlags (con_width, con_width->flags | CVAR_ROM);
 	viddef.conwidth = con_width->int_val;
 
 	conheight = (viddef.conwidth * vid_aspect->vec[1]) / vid_aspect->vec[0];
-	con_height = Cvar_Get ("con_height", va ("%d", conheight), CVAR_NONE, NULL,
-						   "console effective height (GL only)");
+	con_height = Cvar_Get ("con_height", va (0, "%d", conheight), CVAR_NONE,
+						   NULL, "console effective height (GL only)");
 	if ((pnum = COM_CheckParm ("-conheight"))) {
 		if (pnum >= com_argc - 1)
 			Sys_Error ("VID: -conheight <width>");
 		Cvar_Set (con_height, com_argv[pnum + 1]);
 	}
 	// make con_height >= 200
-	Cvar_Set (con_height, va ("%d", max (con_height->int_val, 200)));
+	Cvar_Set (con_height, va (0, "%d", max (con_height->int_val, 200)));
 	Cvar_SetFlags (con_height, con_height->flags | CVAR_ROM);
 	viddef.conheight = con_height->int_val;
 
@@ -258,7 +258,7 @@ VID_InitGamma (unsigned char *pal)
 	}
 	gamma = bound (0.1, gamma, 9.9);
 
-	vid_gamma = Cvar_Get ("vid_gamma", va ("%f", gamma), CVAR_ARCHIVE,
+	vid_gamma = Cvar_Get ("vid_gamma", va (0, "%f", gamma), CVAR_ARCHIVE,
 						  VID_UpdateGamma, "Gamma correction");
 
 	VID_BuildGammaTable (vid_gamma->value);

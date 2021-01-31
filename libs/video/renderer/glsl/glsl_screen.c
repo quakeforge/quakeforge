@@ -231,8 +231,8 @@ glsl_SCR_ScreenShot_f (void)
 	dstring_t  *name = dstring_new ();
 
 	// find a file name to save it to
-	if (!QFS_NextFilename (name,
-						   va ("%s/qf", qfs_gamedir->dir.shots), ".png")) {
+	if (!QFS_NextFilename (name, va (0, "%s/qf",
+									 qfs_gamedir->dir.shots), ".png")) {
 		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a PNG file\n");
 	} else {
 		tex_t      *tex;

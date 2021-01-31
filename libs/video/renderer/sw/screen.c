@@ -159,7 +159,7 @@ SCR_ScreenShot_f (void)
 
 	// find a file name to save it to
 	if (!QFS_NextFilename (pcxname,
-						   va ("%s/qf", qfs_gamedir->dir.shots), ".pcx")) {
+						   va (0, "%s/qf", qfs_gamedir->dir.shots), ".pcx")) {
 		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a PCX");
 	} else {
 		// enable direct drawing of console to back buffer

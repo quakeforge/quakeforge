@@ -697,7 +697,7 @@ demo_start_recording (int track)
 
 	// send server info string
 	MSG_WriteByte (&buf, svc_stufftext);
-	MSG_WriteString (&buf, va ("fullserverinfo \"%s\"\n",
+	MSG_WriteString (&buf, va (0, "fullserverinfo \"%s\"\n",
 							   Info_MakeString (cl.serverinfo, 0)));
 
 	// flush packet
@@ -803,7 +803,7 @@ demo_start_recording (int track)
 	}
 
 	MSG_WriteByte (&buf, svc_stufftext);
-	MSG_WriteString (&buf, va ("cmd spawn %i 0\n", cl.servercount));
+	MSG_WriteString (&buf, va (0, "cmd spawn %i 0\n", cl.servercount));
 
 	if (buf.cursize) {
 		CL_WriteRecordDemoMessage (&buf, seq++);
@@ -863,7 +863,7 @@ demo_start_recording (int track)
 	// get the client to check and download skins
 	// when that is completed, a begin command will be issued
 	MSG_WriteByte (&buf, svc_stufftext);
-	MSG_WriteString (&buf, va ("skins\n"));
+	MSG_WriteString (&buf, va (0, "skins\n"));
 
 	CL_WriteRecordDemoMessage (&buf, seq++);
 

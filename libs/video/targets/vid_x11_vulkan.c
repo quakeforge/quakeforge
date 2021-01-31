@@ -53,6 +53,7 @@
 #include "QF/cvar.h"
 #include "QF/set.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "QF/Vulkan/instance.h"
 
@@ -211,6 +212,7 @@ X11_Vulkan_Context (void)
 	ctx->create_window = x11_vulkan_create_window;
 	ctx->create_surface = x11_vulkan_create_surface;
 	ctx->required_extensions = required_extensions;
+	ctx->va_ctx = va_create_context (4);
 	return ctx;
 }
 

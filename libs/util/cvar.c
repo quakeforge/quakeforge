@@ -284,7 +284,7 @@ Cvar_Set (cvar_t *var, const char *value)
 VISIBLE void
 Cvar_SetValue (cvar_t *var, float value)
 {
-	Cvar_Set (var, va ("%g", value));
+	Cvar_Set (var, va (0, "%g", value));
 }
 
 /*
@@ -608,7 +608,7 @@ Cvar_CvarList_f (void)
 			showhelp++;
 	}
 	for (var = cvar_vars, i = 0; var; var = var->next, i++) {
-		flags = va ("%c%c%c%c",
+		flags = va (0, "%c%c%c%c",
 					var->flags & CVAR_ROM ? 'r' : ' ',
 					var->flags & CVAR_ARCHIVE ? '*' : ' ',
 					var->flags & CVAR_USERINFO ? 'u' : ' ',

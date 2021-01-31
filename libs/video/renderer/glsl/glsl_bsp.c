@@ -1402,7 +1402,7 @@ glsl_R_LoadSkys (const char *sky)
 	//blender envmap
 	// bk rt ft
 	// dn up lt
-	tex = LoadImage (name = va ("env/%s_map", sky), 1);
+	tex = LoadImage (name = va (0, "env/%s_map", sky), 1);
 	if (tex && tex->format >= 3 && tex->height * 3 == tex->width * 2
 		&& is_pow2 (tex->height)) {
 		tex_t      *sub;
@@ -1430,11 +1430,11 @@ glsl_R_LoadSkys (const char *sky)
 	} else {
 		skybox_loaded = true;
 		for (i = 0; i < 6; i++) {
-			tex = LoadImage (name = va ("env/%s%s", sky, sky_suffix[i]), 1);
+			tex = LoadImage (name = va (0, "env/%s%s", sky, sky_suffix[i]), 1);
 			if (!tex || tex->format < 3) {	// FIXME pcx support
 				Sys_MaskPrintf (SYS_GLSL, "Couldn't load %s\n", name);
 				// also look in gfx/env, where Darkplaces looks for skies
-				tex = LoadImage (name = va ("gfx/env/%s%s", sky,
+				tex = LoadImage (name = va (0, "gfx/env/%s%s", sky,
 											sky_suffix[i]), 1);
 				if (!tex || tex->format < 3) {  // FIXME pcx support
 					Sys_MaskPrintf (SYS_GLSL, "Couldn't load %s\n", name);

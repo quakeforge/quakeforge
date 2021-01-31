@@ -575,7 +575,7 @@ MSL_ParseServerList (const char *msl_data)
 	unsigned int msl_ptr;
 
 	for (msl_ptr = 0; msl_ptr < strlen (msl_data); msl_ptr = msl_ptr + 6) {
-		slist = SL_Add (slist, va ("%i.%i.%i.%i:%i",
+		slist = SL_Add (slist, va (0, "%i.%i.%i.%i:%i",
 								   (byte) msl_data[msl_ptr],
 								   (byte) msl_data[msl_ptr+1],
 								   (byte) msl_data[msl_ptr+2],

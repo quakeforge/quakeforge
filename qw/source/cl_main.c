@@ -321,7 +321,7 @@ CL_CheckForResend (void)
 
 	connect_time = realtime + t2 - t1;	// for retransmit requests
 
-	VID_SetCaption (va ("Connecting to %s", cls.servername->str));
+	VID_SetCaption (va (0, "Connecting to %s", cls.servername->str));
 	Sys_Printf ("Connecting to %s...\n", cls.servername->str);
 	Netchan_SendPacket (strlen (getchallenge), (void *) getchallenge,
 						cls.server_addr);
@@ -785,7 +785,7 @@ CL_NextDemo (void)
 		}
 	}
 
-	Cbuf_InsertText (cl_cbuf, va ("playdemo %s\n", cls.demos[cls.demonum]));
+	Cbuf_InsertText (cl_cbuf, va (0, "playdemo %s\n", cls.demos[cls.demonum]));
 	cls.demonum++;
 }
 
@@ -1089,7 +1089,7 @@ CL_Download_f (void)
 		cls.downloadtype = dl_single;
 
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-		SZ_Print (&cls.netchan.message, va ("download %s\n", Cmd_Argv (1)));
+		SZ_Print (&cls.netchan.message, va (0, "download %s\n", Cmd_Argv (1)));
 	} else {
 		Sys_Printf ("error downloading %s: %s\n", Cmd_Argv (1),
 					strerror (errno));
@@ -1515,7 +1515,7 @@ Host_WriteConfiguration (void)
 	QFile      *f;
 
 	if (host_initialized && cl_writecfg->int_val) {
-		char       *path = va ("%s/config.cfg", qfs_gamedir->dir.def);
+		char       *path = va (0, "%s/config.cfg", qfs_gamedir->dir.def);
 
 		f = QFS_WOpen (path, 0);
 		if (!f) {
@@ -1700,7 +1700,7 @@ Host_Frame (float time)
 
 	if (cls.demo_capture) {
 		tex_t      *tex = r_funcs->SCR_CaptureBGR ();
-		WritePNGqfs (va ("%s/qfmv%06d.png", qfs_gamedir->dir.shots,
+		WritePNGqfs (va (0, "%s/qfmv%06d.png", qfs_gamedir->dir.shots,
 						 cls.demo_capture++),
 					 tex->data, tex->width, tex->height);
 		free (tex);
@@ -1782,7 +1782,7 @@ CL_Autoexec (int phase)
 		Cbuf_AddText (cl_cbuf, "exec autoexec.cfg\n");
 	}
 
-	Cbuf_AddText (cl_cbuf, va ("cmd_warncmd %d\n", cmd_warncmd_val));
+	Cbuf_AddText (cl_cbuf, va (0, "cmd_warncmd %d\n", cmd_warncmd_val));
 }
 
 void

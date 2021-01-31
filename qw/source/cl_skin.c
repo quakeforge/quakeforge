@@ -78,7 +78,8 @@ Skin_NextDownload (void)
 		//XXX Skin_Find (sc);
 		if (noskins->int_val) //XXX FIXME
 			continue;
-		//XXX if (!CL_CheckOrDownloadFile (va ("skins/%s.pcx", sc->skin->name)))
+		//XXX if (!CL_CheckOrDownloadFile (va (0, "skins/%s.pcx",
+		//									   sc->skin->name)))
 			//XXX return;						// started a download
 	}
 
@@ -99,7 +100,7 @@ Skin_NextDownload (void)
 			// get next signon phase
 			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 			MSG_WriteString (&cls.netchan.message,
-							 va ("begin %i", cl.servercount));
+							 va (0, "begin %i", cl.servercount));
 			Cache_Report ();				// print remaining memory
 		}
 		CL_SetState (ca_active);

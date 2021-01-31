@@ -93,20 +93,20 @@ dump_def (progs_t *pr, pr_def_t *def, int indent)
 				if (string < 0
 					|| (pr_uint_t) string >= pr->progs->numstrings) {
 					str = "invalid string offset";
-					comment = va (" %d %s", string, str);
+					comment = va (0, " %d %s", string, str);
 				} else {
 					str = quote_string (pr->pr_strings + G_INT (pr, offset));
-					comment = va (" %d \"%s\"", string, str);
+					comment = va (0, " %d \"%s\"", string, str);
 				}
 				break;
 			case ev_float:
-				comment = va (" %g", G_FLOAT (pr, offset));
+				comment = va (0, " %g", G_FLOAT (pr, offset));
 				break;
 			case ev_double:
-				comment = va (" %.17g", G_DOUBLE (pr, offset));
+				comment = va (0, " %.17g", G_DOUBLE (pr, offset));
 				break;
 			case ev_vector:
-				comment = va (" '%g %g %g'",
+				comment = va (0, " '%g %g %g'",
 							  G_VECTOR (pr, offset)[0],
 							  G_VECTOR (pr, offset)[1],
 							  G_VECTOR (pr, offset)[2]);
@@ -114,7 +114,7 @@ dump_def (progs_t *pr, pr_def_t *def, int indent)
 			case ev_entity:
 				break;
 			case ev_field:
-				comment = va (" %x", G_INT (pr, offset));
+				comment = va (0, " %x", G_INT (pr, offset));
 				break;
 			case ev_func:
 				{
@@ -123,26 +123,26 @@ dump_def (progs_t *pr, pr_def_t *def, int indent)
 					if (func < pr->progs->numfunctions) {
 						start = pr->pr_functions[func].first_statement;
 						if (start > 0)
-							comment = va (" %d @ %x", func, start);
+							comment = va (0, " %d @ %x", func, start);
 						else
-							comment = va (" %d = #%d", func, -start);
+							comment = va (0, " %d = #%d", func, -start);
 					} else {
-						comment = va (" %d = illegal function", func);
+						comment = va (0, " %d = illegal function", func);
 					}
 				}
 				break;
 			case ev_pointer:
-				comment = va (" %x", G_INT (pr, offset));
+				comment = va (0, " %x", G_INT (pr, offset));
 				break;
 			case ev_quat:
-				comment = va (" '%g %g %g %g'",
+				comment = va (0, " '%g %g %g %g'",
 							  G_QUAT (pr, offset)[0],
 							  G_QUAT (pr, offset)[1],
 							  G_QUAT (pr, offset)[2],
 							  G_QUAT (pr, offset)[3]);
 				break;
 			case ev_integer:
-				comment = va (" %d", G_INT (pr, offset));
+				comment = va (0, " %d", G_INT (pr, offset));
 				break;
 			case ev_short:
 				break;
@@ -255,9 +255,9 @@ dump_functions (progs_t *pr)
 
 		start = func->first_statement;
 		if (start > 0)
-			comment = va (" @ %x", start);
+			comment = va (0, " @ %x", start);
 		else
-			comment = va (" = #%d", -start);
+			comment = va (0, " = #%d", -start);
 
 		printf ("%-5d %s%s: %d (", i, name, comment, func->numparms);
 		if (func->numparms < 0)
@@ -537,7 +537,7 @@ dump_qfo_types (qfo_t *qfo, int base_address)
 			continue;
 		}
 		if (type->meta < 0 || type->meta >= NUM_META)
-			meta = va ("invalid meta: %d", type->meta);
+			meta = va (0, "invalid meta: %d", type->meta);
 		else
 			meta = ty_meta_names[type->meta];
 		printf ("%-5x %-9s %-20s", type_ptr + base_address, meta,

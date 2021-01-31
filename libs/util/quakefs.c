@@ -359,7 +359,7 @@ qfs_var_subst (const char *string, hashtab_t *vars)
 				dstring_appendsubstr (new, s, (e - s));
 				break;
 			}
-			var = va ("%.*s", (int) (e - s) - 1, s + 1);
+			var = va (0, "%.*s", (int) (e - s) - 1, s + 1);
 			sub = Hash_Find (vars, var);
 			if (sub)
 				dstring_appendstr (new, sub->val);
@@ -370,7 +370,7 @@ qfs_var_subst (const char *string, hashtab_t *vars)
 			s = e;
 			while (qfs_isident (*e))
 				e++;
-			var = va ("%.*s", (int) (e - s), s);
+			var = va (0, "%.*s", (int) (e - s), s);
 			sub = Hash_Find (vars, var);
 			if (sub)
 				dstring_appendstr (new, sub->val);
@@ -588,7 +588,7 @@ qfs_build_gamedir (const char **list)
 	gamedir = calloc (1, sizeof (gamedir_t));
 	path = dstring_newstr ();
 	while (j--) {
-		const char *name = va ("%s:%s", qfs_game, dir = list[j]);
+		const char *name = va (0, "%s:%s", qfs_game, dir = list[j]);
 		if (Hash_Find (dirs, name))
 			continue;
 		gdpl = qfs_find_gamedir (name, dirs);
@@ -1661,7 +1661,7 @@ QFS_FilelistAdd (filelist_t *filelist, const char *fname, const char *ext)
 	}
 	str = strdup (fname);
 
-	if (ext && (s = strstr(str, va(".%s", ext))))
+	if (ext && (s = strstr(str, va (0, ".%s", ext))))
 		*s = 0;
 	filelist->list[filelist->count++] = str;
 }
@@ -1680,9 +1680,9 @@ qfs_filelistfill_do (filelist_t *list, const searchpath_t *search, const char *c
 
 		for (i = 0; i < pak->numfiles; i++) {
 			char       *name = pak->files[i].name;
-			if (!fnmatch (va("%s%s*.%s", cp, separator, ext), name,
+			if (!fnmatch (va (0, "%s%s*.%s", cp, separator, ext), name,
 						  FNM_PATHNAME)
-				|| !fnmatch (va("%s%s*.%s.gz", cp, separator, ext), name,
+				|| !fnmatch (va (0, "%s%s*.%s.gz", cp, separator, ext), name,
 							 FNM_PATHNAME))
 				QFS_FilelistAdd (list, name, strip ? ext : 0);
 		}
@@ -1690,12 +1690,12 @@ qfs_filelistfill_do (filelist_t *list, const searchpath_t *search, const char *c
 		DIR        *dir_ptr;
 		struct dirent *dirent;
 
-		dir_ptr = opendir (va ("%s/%s", search->filename, cp));
+		dir_ptr = opendir (va (0, "%s/%s", search->filename, cp));
 		if (!dir_ptr)
 			return;
 		while ((dirent = readdir (dir_ptr)))
-			if (!fnmatch (va("*.%s", ext), dirent->d_name, 0)
-				|| !fnmatch (va("*.%s.gz", ext), dirent->d_name, 0))
+			if (!fnmatch (va (0, "*.%s", ext), dirent->d_name, 0)
+				|| !fnmatch (va (0, "*.%s.gz", ext), dirent->d_name, 0))
 				QFS_FilelistAdd (list, dirent->d_name, strip ? ext : 0);
 		closedir (dir_ptr);
 	}

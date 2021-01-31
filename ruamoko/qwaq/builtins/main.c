@@ -102,7 +102,7 @@ load_file (progs_t *pr, const char *name, off_t *_size)
 
 	file = open_file (name, &size);
 	if (!file) {
-		file = open_file (va ("%s.gz", name), &size);
+		file = open_file (va (0, "%s.gz", name), &size);
 		if (!file) {
 			return 0;
 		}

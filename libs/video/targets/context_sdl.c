@@ -40,10 +40,10 @@ VID_SetCaption (const char *text)
 	if (text && *text) {
 		char		*temp = strdup (text);
 
-		SDL_WM_SetCaption (va ("%s: %s", PACKAGE_STRING, temp), NULL);
+		SDL_WM_SetCaption (va (0, "%s: %s", PACKAGE_STRING, temp), NULL);
 		free (temp);
 	} else {
-		SDL_WM_SetCaption (va ("%s", PACKAGE_STRING), NULL);
+		SDL_WM_SetCaption (va (0, "%s", PACKAGE_STRING), NULL);
 	}
 }
 

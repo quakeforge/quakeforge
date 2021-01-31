@@ -50,6 +50,7 @@ typedef struct vulkan_ctx_s {
 	void        (*create_window) (struct vulkan_ctx_s *ctx);
 	VkSurfaceKHR (*create_surface) (struct vulkan_ctx_s *ctx);
 
+	struct va_ctx_s *va_ctx;
 	struct qfv_instance_s *instance;
 	struct qfv_device_s *device;
 	struct qfv_swapchain_s *swapchain;

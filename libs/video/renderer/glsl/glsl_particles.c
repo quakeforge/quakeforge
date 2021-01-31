@@ -318,7 +318,7 @@ glsl_R_ReadPointFile_f (void)
 		Sys_Error ("Can't duplicate mapname!");
 	QFS_StripExtension (mapname, mapname);
 
-	name = va ("%s.pts", mapname);
+	name = va (0, "%s.pts", mapname);
 	free (mapname);
 
 	f = QFS_FOpenFile (name);

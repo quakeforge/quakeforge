@@ -136,7 +136,7 @@ locs_load (const char *filename)
 	vec3_t      loc;
 	QFile      *file;
 
-	tmp = va ("maps/%s", filename);
+	tmp = va (0, "maps/%s", filename);
 	file = QFS_FOpenFile (tmp);
 	if (!file) {
 		Sys_Printf ("Couldn't load %s\n", tmp);
@@ -196,7 +196,7 @@ locs_save (const char *filename, qboolean gz)
 
 	if (gz) {
 		if (strcmp (QFS_FileExtension (filename), ".gz") != 0)
-			filename = va ("%s.gz", filename);
+			filename = va (0, "%s.gz", filename);
 		locfd = QFS_Open (filename, "z9w+");
 	} else
 		locfd = QFS_Open (filename, "w+");

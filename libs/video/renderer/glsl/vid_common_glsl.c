@@ -268,7 +268,7 @@ type_name (GLenum type)
 		case GL_FIXED:
 			return "fixed";
 	}
-	return va("%x", type);
+	return va (0, "%x", type);
 }
 
 static void

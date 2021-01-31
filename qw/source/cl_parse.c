@@ -265,7 +265,7 @@ CL_CheckOrDownloadFile (const char *filename)
 
 	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 	MSG_WriteString (&cls.netchan.message,
-					 va ("download \"%s\"", cls.downloadname->str));
+					 va (0, "download \"%s\"", cls.downloadname->str));
 
 	cls.downloadnumber++;
 
@@ -373,12 +373,13 @@ Model_NextDownload (void)
 			aliashdr_t *ahdr = cl.model_precache[i]->aliashdr;
 			if (!ahdr)
 				ahdr = Cache_Get (&cl.model_precache[i]->cache);
-			Info_SetValueForKey (cls.userinfo, info_key, va ("%d", ahdr->crc),
+			Info_SetValueForKey (cls.userinfo, info_key, va (0, "%d",
+															 ahdr->crc),
 								 0);
 			if (!cls.demoplayback) {
 				MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-				SZ_Print (&cls.netchan.message, va ("setinfo %s %d", info_key,
-													ahdr->crc));
+				SZ_Print (&cls.netchan.message, va (0, "setinfo %s %d",
+													info_key, ahdr->crc));
 			}
 			if (!cl.model_precache[i]->aliashdr)
 				Cache_Release (&cl.model_precache[i]->cache);
@@ -402,7 +403,7 @@ Model_NextDownload (void)
 	if (!cls.demoplayback) {
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
-						 va (prespawn_name, cl.servercount,
+						 va (0, prespawn_name, cl.servercount,
 							 cl.worldmodel->checksum2));
 	}
 }
@@ -423,7 +424,7 @@ Sound_NextDownload (void)
 	for (; cl.sound_name[cls.downloadnumber][0];
 		 cls.downloadnumber++) {
 		s = cl.sound_name[cls.downloadnumber];
-		if (!CL_CheckOrDownloadFile (va ("sound/%s", s)))
+		if (!CL_CheckOrDownloadFile (va (0, "sound/%s", s)))
 			return;						// started a download
 	}
 
@@ -443,7 +444,7 @@ Sound_NextDownload (void)
 	if (!cls.demoplayback) {
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
-						 va (modellist_name, cl.servercount, 0));
+						 va (0, modellist_name, cl.servercount, 0));
 	}
 }
 
@@ -472,7 +473,7 @@ void
 CL_FinishDownload (void)
 {
 	Qclose (cls.download);
-	VID_SetCaption (va ("Connecting to %s", cls.servername->str));
+	VID_SetCaption (va (0, "Connecting to %s", cls.servername->str));
 
 	// rename the temp file to it's final name
 	if (strcmp (cls.downloadtempname->str, cls.downloadname->str)) {
@@ -662,8 +663,8 @@ CL_ParseDownload (void)
 	if (percent != 100) {
 		// request next block
 		if (percent != cls.downloadpercent)
-			VID_SetCaption (va ("Downloading %s %d%%", cls.downloadname->str,
-								percent));
+			VID_SetCaption (va (0, "Downloading %s %d%%",
+								cls.downloadname->str, percent));
 		cls.downloadpercent = percent;
 
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
@@ -842,7 +843,7 @@ CL_ParseServerData (void)
 	if (!cls.demoplayback) {
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
-						 va (soundlist_name, cl.servercount, 0));
+						 va (0, soundlist_name, cl.servercount, 0));
 	}
 
 	// now waiting for downloads, etc
@@ -878,7 +879,7 @@ CL_ParseSoundlist (void)
 	if (n && !cls.demoplayback) {
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
-						 va (soundlist_name, cl.servercount, n));
+						 va (0, soundlist_name, cl.servercount, n));
 		return;
 	}
 
@@ -929,7 +930,7 @@ CL_ParseModellist (void)
 		if (!cls.demoplayback) {
 			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 			MSG_WriteString (&cls.netchan.message,
-							 va (modellist_name, cl.servercount, n));
+							 va (0, modellist_name, cl.servercount, n));
 		}
 		return;
 	}
@@ -1095,7 +1096,8 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 	while (!(player->name = Info_Key (player->userinfo, "name"))) {
 		if (player->userid)
 			Info_SetValueForKey (player->userinfo, "name",
-								 va ("user-%i [exploit]", player->userid), 1);
+								 va (0, "user-%i [exploit]",
+									 player->userid), 1);
 		else
 			Info_SetValueForKey (player->userinfo, "name", "", 1);
 	}
@@ -1248,7 +1250,8 @@ CL_SetStat (int stat, int value)
 			break;
 		case STAT_HEALTH:
 			if (cl_player_health_e->func)
-				GIB_Event_Callback (cl_player_health_e, 1, va ("%i", value));
+				GIB_Event_Callback (cl_player_health_e, 1,
+									va (0, "%i", value));
 			if (value <= 0)
 				Team_Dead ();
 			break;
@@ -1331,7 +1334,7 @@ CL_ParseServerMessage (void)
 			break;						// end of message
 		}
 
-		SHOWNET (va ("%s(%d)", svc_strings[cmd], cmd));
+		SHOWNET (va (0, "%s(%d)", svc_strings[cmd], cmd));
 
 		// other commands
 		switch (cmd) {

@@ -128,19 +128,28 @@ Vulkan_Mod_LoadSkin (byte *skinpix, int skinsize, int snum, int gnum,
 
 	tex_t skin_tex = {w, h, tex_palette, 1, vid.palette, tskin + skinsize};
 	if (Mod_CalcFullbright (tskin, tskin + skinsize, skinsize)) {
-		skin->glow = Vulkan_LoadTex (ctx, &skin_tex, 1);
+		skin->glow = Vulkan_LoadTex (ctx, &skin_tex, 1,
+									 va (ctx->va_ctx, "%s:%d:%d:glow",
+										 loadmodel->name, snum, gnum));
 		Mod_ClearFullbright (tskin, tskin, skinsize);
 	}
 	if (Skin_CalcTopColors (tskin, tskin + skinsize, skinsize)) {
-		skin->colora = Vulkan_LoadTex (ctx, &skin_tex, 1);
+		skin->colora = Vulkan_LoadTex (ctx, &skin_tex, 1,
+									   va (ctx->va_ctx, "%s:%d:%d:colora",
+										   loadmodel->name, snum, gnum));
 		Skin_ClearTopColors (tskin, tskin, skinsize);
 	}
 	if (Skin_CalcBottomColors (tskin, tskin + skinsize, skinsize)) {
-		skin->colorb = Vulkan_LoadTex (ctx, &skin_tex, 1);
+		skin->colorb = Vulkan_LoadTex (ctx, &skin_tex, 1,
+									   va (ctx->va_ctx, "%s:%d:%d:colorb",
+										   loadmodel->name, snum, gnum));
 		Skin_ClearBottomColors (tskin, tskin, skinsize);
 	}
 	skin_tex.data = tskin;
-	skin->tex = Vulkan_LoadTex (ctx, &skin_tex, 1);
+	skin->tex = Vulkan_LoadTex (ctx, &skin_tex, 1,
+								va (ctx->va_ctx, "%s:%d:%d:tex",
+									loadmodel->name,
+									snum, gnum));
 
 	free (tskin);
 

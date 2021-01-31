@@ -53,7 +53,7 @@ Cvar_Info (cvar_t *var)
 		if (cls.state >= ca_connected && !cls.demoplayback) {
 			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 			MSG_WriteString (&cls.netchan.message,
-							 va ("setinfo \"%s\" \"%s\"\n", var->name,
+							 va (0, "setinfo \"%s\" \"%s\"\n", var->name,
 								 var->string));
 		}
 	}

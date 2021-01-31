@@ -237,7 +237,7 @@ qtv_quit_f (void)
 static void
 qtv_net_init (void)
 {
-	qtv_port = Cvar_Get ("qtv_port", va ("%d", PORT_QTV), 0, 0,
+	qtv_port = Cvar_Get ("qtv_port", va (0, "%d", PORT_QTV), 0, 0,
 						 "udp port to use");
 	sv_timeout = Cvar_Get ("sv_timeout", "60", 0, 0, "server timeout");
 	NET_Init (qtv_port->int_val);

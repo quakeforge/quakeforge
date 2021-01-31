@@ -411,7 +411,7 @@ compile_to_obj (const char *file, const char *obj, lang_t lang)
 		}
 	}
 	if (options.frames_files) {
-		write_frame_macros (va ("%s.frame", file_basename (file, 0)));
+		write_frame_macros (va (0, "%s.frame", file_basename (file, 0)));
 	}
 	if (!err) {
 		qfo_t      *qfo;
@@ -777,7 +777,7 @@ progs_src_compile (void)
 				if (compile_file (qc_filename->str))
 					return 1;
 				if (options.frames_files) {
-					write_frame_macros (va ("%s.frame",
+					write_frame_macros (va (0, "%s.frame",
 											file_basename (qc_filename->str,
 														   0)));
 				}

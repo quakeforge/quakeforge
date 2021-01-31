@@ -374,7 +374,7 @@ SV_SpawnServer (const char *server)
 	SV_LoadProgs ();
 	SV_FreeAllEdictLeafs ();
 	SV_SetupUserCommands ();
-	Info_SetValueForStarKey (svs.info, "*progs", va ("%i", sv_pr_state.crc),
+	Info_SetValueForStarKey (svs.info, "*progs", va (0, "%i", sv_pr_state.crc),
 							 !sv_highchars->int_val);
 
 	// leave slots at start for only clients
@@ -437,7 +437,7 @@ SV_SpawnServer (const char *server)
 
 	// load and spawn all other entities
 	*sv_globals.time = sv.time;
-	ent_file = QFS_VOpenFile (va ("maps/%s.ent", server), 0,
+	ent_file = QFS_VOpenFile (va (0, "maps/%s.ent", server), 0,
 							  sv.worldmodel->vpath);
 	if ((buf = QFS_LoadFile (ent_file, 0))) {
 		ED_LoadFromFile (&sv_pr_state, (char *) buf);

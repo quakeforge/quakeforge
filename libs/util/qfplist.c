@@ -90,6 +90,7 @@ typedef struct pldata_s {	// Unparsed property list string
 	unsigned    pos;
 	unsigned    line;
 	plitem_t   *error;
+	va_ctx_t   *va_ctx;
 } pldata_t;
 
 //	Ugly defines for fast checking and conversion from char to number
@@ -533,7 +534,8 @@ PL_ParseData (pldata_t *pl, int *len)
 									pl->ptr[start + i * 2 + 1]);
 			return str;
 		}
-		pl->error = PL_NewString (va ("invalid character in data: %02x", c));
+		pl->error = PL_NewString (va (pl->va_ctx,
+									  "invalid character in data: %02x", c));
 		return NULL;
 	}
 	pl->error = PL_NewString ("Reached end of string while parsing data");
@@ -748,7 +750,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 			}
 
 			if (pl->ptr[pl->pos] != '=') {
-				pl->error = PL_NewString (va ("Unexpected character %c (expected '=')", pl->ptr[pl->pos]));
+				pl->error = PL_NewString (va (pl->va_ctx, "Unexpected character %c (expected '=')", pl->ptr[pl->pos]));
 				PL_Free (key);
 				PL_Free (item);
 				return NULL;
@@ -772,7 +774,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 			if (pl->ptr[pl->pos] == ';') {
 				pl->pos++;
 			} else if (pl->ptr[pl->pos] != '}') {
-				pl->error = PL_NewString (va ("Unexpected character %c (wanted ';' or '}')", pl->ptr[pl->pos]));
+				pl->error = PL_NewString (va (pl->va_ctx, "Unexpected character %c (wanted ';' or '}')", pl->ptr[pl->pos]));
 				PL_Free (key);
 				PL_Free (value);
 				PL_Free (item);
@@ -822,7 +824,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 			if (pl->ptr[pl->pos] == ',') {
 				pl->pos++;
 			} else if (pl->ptr[pl->pos] != ')') {
-				pl->error = PL_NewString (va ("Unexpected character %c (wanted ',' or ')')", pl->ptr[pl->pos]));
+				pl->error = PL_NewString (va (pl->va_ctx, "Unexpected character %c (wanted ',' or ')')", pl->ptr[pl->pos]));
 				PL_Free (value);
 				PL_Free (item);
 				return NULL;
@@ -891,8 +893,10 @@ PL_GetPropertyList (const char *string)
 	pl->end = strlen (string);
 	pl->error = NULL;
 	pl->line = 1;
+	pl->va_ctx = va_create_context (4);
 
 	if ((newpl = PL_ParsePropertyListItem (pl))) {
+		va_destroy_context (pl->va_ctx);
 		free (pl);
 		return newpl;
 	} else {
@@ -903,6 +907,7 @@ PL_GetPropertyList (const char *string)
 			}
 			PL_Free (pl->error);
 		}
+		va_destroy_context (pl->va_ctx);
 		free (pl);
 		return NULL;
 	}
@@ -1093,22 +1098,25 @@ VISIBLE void
 PL_Message (plitem_t *messages, const plitem_t *item, const char *fmt, ...)
 {
 	va_list     args;
-	dstring_t  *string;
+	dstring_t  *va_str;
+	dstring_t  *msg_str;
+	char       *msg;
 
-	string = dstring_new ();
+	va_str = dstring_new ();
+	msg_str = dstring_new ();
 
 	va_start (args, fmt);
-	dvsprintf (string, fmt, args);
+	dvsprintf (va_str, fmt, args);
 	va_end (args);
 
 	if (item) {
-		PL_A_AddObject (messages,
-						PL_NewString (va ("%d: %s", item->line, string->str)));
+		msg = dsprintf (msg_str, "%d: %s", item->line, va_str->str);
 	} else {
-		PL_A_AddObject (messages,
-						PL_NewString (va ("internal: %s", string->str)));
+		msg = dsprintf (msg_str, "internal: %s", va_str->str);
 	}
-	dstring_delete (string);
+	PL_A_AddObject (messages, PL_NewString (msg));
+	dstring_delete (va_str);
+	dstring_delete (msg_str);
 }
 
 static int

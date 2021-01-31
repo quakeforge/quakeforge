@@ -122,7 +122,7 @@ Mod_LoadExternalSkin (maliasskindesc_t *pskindesc, char *filename)
 
 	tex = LoadImage (filename, 1);
 	if (!tex)
-		tex = LoadImage (va ("textures/%s", ptr + 1), 1);
+		tex = LoadImage (va (0, "textures/%s", ptr + 1), 1);
 	if (tex) {
 		pskindesc->texnum = GL_LoadTexture (filename, tex->width, tex->height,
 											tex->data, true, false,
@@ -130,22 +130,22 @@ Mod_LoadExternalSkin (maliasskindesc_t *pskindesc, char *filename)
 
 		pskindesc->fb_texnum = 0;
 
-		glow = LoadImage (va ("%s_luma", filename), 1);
+		glow = LoadImage (va (0, "%s_luma", filename), 1);
 		if (!glow)
-			glow = LoadImage (va ("%s_glow", filename), 1);
+			glow = LoadImage (va (0, "%s_glow", filename), 1);
 		if (!glow)
-			glow = LoadImage (va ("textures/%s_luma", ptr + 1), 1);
+			glow = LoadImage (va (0, "textures/%s_luma", ptr + 1), 1);
 		if (!glow)
-			glow = LoadImage (va ("textures/%s_glow", ptr + 1), 1);
+			glow = LoadImage (va (0, "textures/%s_glow", ptr + 1), 1);
 		if (glow)
 			pskindesc->fb_texnum =
-				GL_LoadTexture (va ("fb_%s", filename), glow->width,
+				GL_LoadTexture (va (0, "fb_%s", filename), glow->width,
 								glow->height, glow->data, true, true,
 								glow->format > 2 ? glow->format : 1);
 		else if (tex->format < 3)
 			pskindesc->fb_texnum = Mod_Fullbright (tex->data, tex->width,
 												   tex->height,
-												   va ("fb_%s", filename));
+												   va (0, "fb_%s", filename));
 	}
 }
 

@@ -80,7 +80,7 @@ gl_iqm_load_textures (iqm_t *iqm)
 	for (i = 0; i < iqm->num_meshes; i++) {
 		dstring_copystr (str, iqm->text + iqm->meshes[i].material);
 		QFS_StripExtension (str->str, str->str);
-		if ((tex = LoadImage (va ("textures/%s", str->str), 1)))
+		if ((tex = LoadImage (va (0, "textures/%s", str->str), 1)))
 			gl->textures[i] = GL_LoadTexture (str->str, tex->width,
 											  tex->height, tex->data, true,
 											  false,
