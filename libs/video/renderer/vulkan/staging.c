@@ -48,6 +48,7 @@
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/command.h"
+#include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/staging.h"
@@ -55,11 +56,12 @@
 #include "vid_vulkan.h"
 
 qfv_stagebuf_t *
-QFV_CreateStagingBuffer (qfv_device_t *device, size_t size,
+QFV_CreateStagingBuffer (qfv_device_t *device, const char * name, size_t size,
 						 VkCommandPool cmdPool)
 {
 	size_t atom = device->physDev->properties.limits.nonCoherentAtomSize;
 	qfv_devfuncs_t *dfunc = device->funcs;
+	dstring_t  *str = dstring_new ();
 
 	qfv_stagebuf_t *stage = calloc (1, sizeof (qfv_stagebuf_t));
 	stage->atom_mask = atom - 1;
@@ -67,9 +69,13 @@ QFV_CreateStagingBuffer (qfv_device_t *device, size_t size,
 	stage->device = device;
 	stage->buffer = QFV_CreateBuffer (device, size,
 									  VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, stage->buffer,
+						 dsprintf (str, "staging:buffer:%s", name));
 	stage->memory = QFV_AllocBufferMemory (device, stage->buffer,
 										   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 										   size, 0);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, stage->memory,
+						 dsprintf (str, "staging:memory:%s", name));
 	stage->size = size;
 	stage->end = size;
 
@@ -85,9 +91,18 @@ QFV_CreateStagingBuffer (qfv_device_t *device, size_t size,
 		packet->stage = stage;
 		packet->cmd = bufferset->a[i];
 		packet->fence = QFV_CreateFence (device, 1);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
+							 packet->cmd,
+							 dsprintf (str, "staging:packet:cmd:%s:%d",
+									   name, i));
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_FENCE,
+							 packet->fence,
+							 dsprintf (str, "staging:packet:fence:%s:%d",
+									   name, i));
 		packet->offset = 0;
 		packet->length = 0;
 	}
+	dstring_delete (str);
 	return stage;
 }
 

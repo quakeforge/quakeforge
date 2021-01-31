@@ -48,11 +48,13 @@
 #include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/command.h"
+#include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
@@ -199,7 +201,7 @@ blit_mips (int mips, VkImage image, tex_t *tex,
 }
 
 qfv_tex_t *
-Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip)
+Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip, const char *name)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -256,14 +258,20 @@ Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip)
 								   VK_IMAGE_USAGE_TRANSFER_DST_BIT
 								   | VK_IMAGE_USAGE_TRANSFER_SRC_BIT
 								   | VK_IMAGE_USAGE_SAMPLED_BIT);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE, qtex->image,
+						 va (ctx->va_ctx, "image:%s", name));
 	qtex->memory = QFV_AllocImageMemory (device, qtex->image,
 										 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 										 0, 0);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, qtex->memory,
+						 va (ctx->va_ctx, "memory:%s", name));
 	QFV_BindImageMemory (device, qtex->image, qtex->memory, 0);
 	qtex->view = QFV_CreateImageView (device, qtex->image,
 									  VK_IMAGE_VIEW_TYPE_2D,
 									  VK_FORMAT_R8G8B8A8_UNORM,
 									  VK_IMAGE_ASPECT_COLOR_BIT);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, qtex->view,
+						 va (ctx->va_ctx, "iview:%s", name));
 
 	size_t      bytes = bpp * tex->width * tex->height;
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
@@ -337,9 +345,12 @@ static tex_t default_magenta_tex = {1, 1, tex_rgba, 1, 0, magenta_data};
 void
 Vulkan_Texture_Init (vulkan_ctx_t *ctx)
 {
-	ctx->default_black = Vulkan_LoadTex (ctx, &default_black_tex, 1);
-	ctx->default_white = Vulkan_LoadTex (ctx, &default_white_tex, 1);
-	ctx->default_magenta = Vulkan_LoadTex (ctx, &default_magenta_tex, 1);
+	ctx->default_black = Vulkan_LoadTex (ctx, &default_black_tex, 1,
+										 "default_black");
+	ctx->default_white = Vulkan_LoadTex (ctx, &default_white_tex, 1,
+										 "default_white");
+	ctx->default_magenta = Vulkan_LoadTex (ctx, &default_magenta_tex, 1,
+										   "default_magenta");
 }
 
 void

@@ -26,7 +26,8 @@ typedef struct qfv_stagebuf_s {
 
 
 qfv_stagebuf_t *QFV_CreateStagingBuffer (struct qfv_device_s *device,
-										 size_t size, VkCommandPool cmdPool);
+										 const char *name, size_t size,
+										 VkCommandPool cmdPool);
 void QFV_DestroyStagingBuffer (qfv_stagebuf_t *stage);
 void QFV_FlushStagingBuffer (qfv_stagebuf_t *stage, size_t offset, size_t size);
 qfv_packet_t *QFV_PacketAcquire (qfv_stagebuf_t *stage);

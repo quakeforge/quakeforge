@@ -57,6 +57,7 @@
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/command.h"
+#include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 
@@ -270,15 +271,25 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 
 	actx->pipeline = Vulkan_CreatePipeline (ctx, "alias");
 	actx->layout = QFV_GetPipelineLayout (ctx, "alias.layout");
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, actx->layout,
+						 va (ctx->va_ctx, "layout:%s", "alias.layout"));
 	actx->sampler = QFV_GetSampler (ctx, "alias.sampler");
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_SAMPLER, actx->sampler,
+						 va (ctx->va_ctx, "sampler:%s", "alias.sampler"));
 
-	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (2 * frames, alloca);
+	/*__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (2 * frames, alloca);
 	for (size_t i = 0; i < layouts->size / 2; i++) {
 		__auto_type mats = QFV_GetDescriptorSetLayout (ctx, "alias.matrices");
 		__auto_type lights = QFV_GetDescriptorSetLayout (ctx, "alias.lights");
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
+							 mats, va (ctx->va_ctx, "set_layout:%s:%d",
+									   "alias.matrices", i));
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
+							 lights, va (ctx->va_ctx, "set_layout:%s:%d",
+										 "alias.lights", i));
 		layouts->a[2 * i + 0] = mats;
 		layouts->a[2 * i + 1] = lights;
-	}
+	}*/
 	//__auto_type pool = QFV_GetDescriptorPool (ctx, "alias.pool");
 
 	__auto_type cmdBuffers = QFV_AllocCommandBufferSet (frames, alloca);
@@ -288,6 +299,10 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 	for (size_t i = 0; i < frames; i++) {
 		lbuffers->a[i] = QFV_CreateBuffer (device, sizeof (qfv_light_buffer_t),
 										   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER,
+							 lbuffers->a[i],
+							 va (ctx->va_ctx, "buffer:alias:%s:%zd",
+								 "lights", i));
 	}
 	VkMemoryRequirements requirements;
 	dfunc->vkGetBufferMemoryRequirements (device->dev, lbuffers->a[0],
@@ -295,6 +310,9 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 	actx->light_memory = QFV_AllocBufferMemory (device, lbuffers->a[0],
 										VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 										frames * requirements.size, 0);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
+						 actx->light_memory, va (ctx->va_ctx,
+												 "memory:alias:%s", "lights"));
 	byte       *light_data;
 	dfunc->vkMapMemory (device->dev, actx->light_memory, 0,
 						frames * requirements.size, 0, (void **) &light_data);
@@ -303,6 +321,9 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type aframe = &actx->frames.a[i];
 		aframe->cmd = cmdBuffers->a[i];
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
+							 aframe->cmd,
+							 va (ctx->va_ctx, "cmd:alias:%zd", i));
 		aframe->light_buffer = lbuffers->a[i];
 		aframe->lights = (qfv_light_buffer_t *) (light_data + i * requirements.size);
 		QFV_BindBufferMemory (device, lbuffers->a[i], actx->light_memory,

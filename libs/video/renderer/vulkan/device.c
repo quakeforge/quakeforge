@@ -112,10 +112,12 @@ load_device_funcs (qfv_instance_t *inst, qfv_device_t *dev)
 	}
 
 #define DEVICE_LEVEL_VULKAN_FUNCTION_FROM_EXTENSION(name, ext) \
-	if (dev->extension_enabled (dev, ext)) { \
+	if (!ext || dev->extension_enabled (dev, ext)) { \
 		dfunc->name = (PFN_##name) ifunc->vkGetDeviceProcAddr (device, #name); \
 		if (!dfunc->name) { \
 			Sys_Printf ("Couldn't find device level function %s", #name); \
+		} else { \
+			Sys_Printf ("Found device level function %s\n", #name); \
 		} \
 	}
 

@@ -54,6 +54,7 @@
 #include "QF/simd/vec4f.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/descriptor.h"
+#include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/instance.h"
@@ -391,6 +392,8 @@ parse_VkShaderModule_resource (const plitem_t *item, void **data,
 		PL_Message (messages, item, "could not find shader %s", shader_path);
 		return 0;
 	}
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_SHADER_MODULE, *handle,
+						 va (ctx->va_ctx, "shader:%s", shader_path));
 	return 1;
 }
 

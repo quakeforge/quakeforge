@@ -51,6 +51,7 @@
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/command.h"
+#include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
@@ -76,12 +77,13 @@ struct scrap_s {
 };
 
 scrap_t *
-QFV_CreateScrap (qfv_device_t *device, int size, QFFormat format,
-				 qfv_stagebuf_t *stage)
+QFV_CreateScrap (qfv_device_t *device, const char *name, int size,
+				 QFFormat format, qfv_stagebuf_t *stage)
 {
 	qfv_devfuncs_t *dfunc = device->funcs;
 	int         bpp = 0;
 	VkFormat    fmt = VK_FORMAT_UNDEFINED;
+	dstring_t  *str = dstring_new ();
 
 	switch (format) {
 		case tex_l:
@@ -119,13 +121,20 @@ QFV_CreateScrap (qfv_device_t *device, int size, QFFormat format,
 									extent, 1, 1, VK_SAMPLE_COUNT_1_BIT,
 									VK_IMAGE_USAGE_TRANSFER_DST_BIT
 									| VK_IMAGE_USAGE_SAMPLED_BIT);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE, scrap->image,
+						 dsprintf (str, "image:scrap:%s", name));
 	scrap->memory = QFV_AllocImageMemory (device, scrap->image,
 										  VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 										  0, 0);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, scrap->memory,
+						 dsprintf (str, "memory:scrap:%s", name));
 	QFV_BindImageMemory (device, scrap->image, scrap->memory, 0);
 	scrap->view = QFV_CreateImageView (device, scrap->image,
 									   VK_IMAGE_VIEW_TYPE_2D, fmt,
 									   VK_IMAGE_ASPECT_COLOR_BIT);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, scrap->view,
+						 dsprintf (str, "iview:scrap:%s", name));
+	dstring_delete (str);
 	scrap->bpp = bpp;
 	scrap->subpics = 0;
 	scrap->device = device;

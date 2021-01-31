@@ -48,6 +48,7 @@
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/staging.h"
 
@@ -252,6 +253,15 @@ Vulkan_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 	VkBuffer    ibuff = QFV_CreateBuffer (device, ind_size,
 										  VK_BUFFER_USAGE_TRANSFER_DST_BIT
 										  | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, vbuff,
+						 va (ctx->va_ctx, "buffer:alias:vertex:%s",
+							 loadmodel->name));
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, uvbuff,
+						 va (ctx->va_ctx, "buffer:alias:uv:%s",
+							 loadmodel->name));
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, ibuff,
+						 va (ctx->va_ctx, "buffer:alias:index:%s",
+							 loadmodel->name));
 	size_t      voffs = 0;
 	size_t      uvoffs = voffs + get_buffer_size (device, vbuff);
 	size_t      ioffs = uvoffs + get_buffer_size (device, uvbuff);
@@ -260,12 +270,18 @@ Vulkan_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 	mem = QFV_AllocBufferMemory (device, vbuff,
 								 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 								 buff_size, 0);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, mem,
+						 va (ctx->va_ctx, "memory:alias:vuvi:%s",
+							 loadmodel->name));
 	QFV_BindBufferMemory (device, vbuff, mem, voffs);
 	QFV_BindBufferMemory (device, uvbuff, mem, uvoffs);
 	QFV_BindBufferMemory (device, ibuff, mem, ioffs);
 
-	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device, buff_size,
-													  ctx->cmdpool);
+	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device,
+													 va (ctx->va_ctx,
+														 "alias:%s",
+														 loadmodel->name),
+													 buff_size, ctx->cmdpool);
 	qfv_packet_t *packet = QFV_PacketAcquire (stage);
 	verts = QFV_PacketExtend (packet, vert_size);
 	uv = QFV_PacketExtend (packet, uv_size);

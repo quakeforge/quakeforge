@@ -50,6 +50,7 @@
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/command.h"
+#include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/staging.h"
@@ -209,10 +210,16 @@ load_textures (model_t *model, vulkan_ctx_t *ctx)
 	mem = QFV_AllocImageMemory (device, image,
 								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 								memsize, 0);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
+						 mem, va (ctx->va_ctx, "memory:%s:texture",
+								  loadmodel->name));
 	mctx->texture_memory = mem;
 
-	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device, memsize,
-													 ctx->cmdpool);
+	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device,
+													 va (ctx->va_ctx,
+														 "brush:%s",
+														 loadmodel->name),
+													 memsize, ctx->cmdpool);
 	qfv_packet_t *packet = QFV_PacketAcquire (stage);
 	buffer = QFV_PacketExtend (packet, memsize);
 
@@ -239,6 +246,10 @@ load_textures (model_t *model, vulkan_ctx_t *ctx)
 		tex->tex->view = QFV_CreateImageView (device, tex->tex->image,
 											  type, VK_FORMAT_R8G8B8A8_UNORM,
 											  VK_IMAGE_ASPECT_COLOR_BIT);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW,
+							 tex->tex->view,
+							 va (ctx->va_ctx, "iview:%s:%s:tex",
+								 loadmodel->name, tx->name));
 		transfer_mips (buffer + tex->tex->offset, tx + 1, tx, palette);
 		if (tex->glow) {
 			dfunc->vkBindImageMemory (device->dev, tex->glow->image, mem,
@@ -249,6 +260,11 @@ load_textures (model_t *model, vulkan_ctx_t *ctx)
 												   VK_IMAGE_VIEW_TYPE_2D,
 												   VK_FORMAT_R8G8B8A8_UNORM,
 												   VK_IMAGE_ASPECT_COLOR_BIT);
+			QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW,
+								 tex->glow->view,
+								 va (ctx->va_ctx, "iview:%s:%s:glow",
+									 loadmodel->name,
+									 tx->name));
 			transfer_mips (buffer + tex->glow->offset, tex->glow->memory, tx,
 						   palette);
 		}
@@ -351,6 +367,10 @@ Vulkan_Mod_ProcessTexture (texture_t *tx, vulkan_ctx_t *ctx)
 									   VK_SAMPLE_COUNT_1_BIT,
 									   VK_IMAGE_USAGE_TRANSFER_DST_BIT
 									   | VK_IMAGE_USAGE_SAMPLED_BIT);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE,
+						 tex->tex->image,
+						 va (ctx->va_ctx, "image:%s:%s:tex", loadmodel->name,
+							 tx->name));
 	if (layers > 1) {
 		// skys are unlit, so no fullbrights
 		return;
@@ -372,6 +392,10 @@ Vulkan_Mod_ProcessTexture (texture_t *tx, vulkan_ctx_t *ctx)
 										VK_SAMPLE_COUNT_1_BIT,
 										VK_IMAGE_USAGE_TRANSFER_DST_BIT
 										| VK_IMAGE_USAGE_SAMPLED_BIT);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE,
+						 tex->glow->image,
+						 va (ctx->va_ctx, "image:%s:%s:glow", loadmodel->name,
+							 tx->name));
 	// store the pointer to the fullbright data: memory will never be set to
 	// actual device memory because all of the textures will be loaded in one
 	// big buffer

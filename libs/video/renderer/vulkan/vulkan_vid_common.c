@@ -54,6 +54,7 @@
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
+#include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/command.h"
@@ -204,8 +205,8 @@ Vulkan_CreateDevice (vulkan_ctx_t *ctx)
 void
 Vulkan_CreateStagingBuffers (vulkan_ctx_t *ctx)
 {
-	ctx->staging = QFV_CreateStagingBuffer (ctx->device, 4*1024*1024,
-											ctx->cmdpool);
+	ctx->staging = QFV_CreateStagingBuffer (ctx->device, "vulkan_ctx",
+											4*1024*1024, ctx->cmdpool);
 }
 
 void
@@ -238,9 +239,10 @@ void
 Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 {
 	qfv_load_pipeline (ctx);
+	const char *name = "renderpass";//FIXME
 
 	plitem_t   *item = ctx->pipelineDef;
-	if (!item || !(item = PL_ObjectForKey (item, "renderpass"))) {
+	if (!item || !(item = PL_ObjectForKey (item, name))) {
 		Sys_Printf ("error loading renderpass\n");
 		return;
 	} else {
@@ -340,6 +342,9 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 	ctx->renderpass.colorImage = colorImage;
 	ctx->renderpass.depthImage = depthImage;
 	ctx->renderpass.renderpass = QFV_ParseRenderPass (ctx, item);
+	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_RENDER_PASS,
+						 ctx->renderpass.renderpass,
+						 va (ctx->va_ctx, "pipeline:%s", name));
 }
 
 void
@@ -382,7 +387,10 @@ Vulkan_CreatePipeline (vulkan_ctx_t *ctx, const char *name)
 	} else {
 		Sys_Printf ("Found pipeline def %s\n", name);
 	}
-	return QFV_ParsePipeline (ctx, item);
+	VkPipeline pipeline = QFV_ParsePipeline (ctx, item);
+	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_PIPELINE, pipeline,
+						 va (ctx->va_ctx, "pipeline:%s", name));
+	return pipeline;
 }
 
 void

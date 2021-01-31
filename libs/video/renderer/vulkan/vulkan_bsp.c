@@ -58,6 +58,7 @@
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/command.h"
+#include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
@@ -467,7 +468,8 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	size_t vertex_buffer_size = vertex_count * sizeof (bspvert_t);
 
 	index_buffer_size = (index_buffer_size + atom_mask) & ~atom_mask;
-	stage = QFV_CreateStagingBuffer (device, vertex_buffer_size, ctx->cmdpool);
+	stage = QFV_CreateStagingBuffer (device, "bsp", vertex_buffer_size,
+									 ctx->cmdpool);
 	qfv_packet_t *packet = QFV_PacketAcquire (stage);
 	vertices = QFV_PacketExtend (packet, vertex_buffer_size);
 	vertex_index_base = 0;
@@ -518,10 +520,14 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			= QFV_CreateBuffer (device, index_buffer_size,
 								VK_BUFFER_USAGE_TRANSFER_DST_BIT
 								| VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, bctx->index_buffer,
+							 "buffer:bsp:index");
 		bctx->index_memory
 			= QFV_AllocBufferMemory (device, bctx->index_buffer,
 									 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
 									 index_buffer_size, 0);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
+							 bctx->index_memory, "memory:bsp:index");
 		QFV_BindBufferMemory (device,
 							  bctx->index_buffer, bctx->index_memory, 0);
 		bctx->index_buffer_size = index_buffer_size;
@@ -545,10 +551,14 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			= QFV_CreateBuffer (device, vertex_buffer_size,
 								VK_BUFFER_USAGE_TRANSFER_DST_BIT
 								| VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER,
+							 bctx->vertex_buffer, "buffer:bsp:vertex");
 		bctx->vertex_memory
 			= QFV_AllocBufferMemory (device, bctx->vertex_buffer,
 									 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
 									 vertex_buffer_size, 0);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
+							 bctx->vertex_memory, "memory:bsp:vertex");
 		QFV_BindBufferMemory (device,
 							  bctx->vertex_buffer, bctx->vertex_memory, 0);
 		bctx->vertex_buffer_size = vertex_buffer_size;
@@ -1290,12 +1300,17 @@ create_default_skys (vulkan_ctx_t *ctx)
 							  VK_SAMPLE_COUNT_1_BIT,
 							  VK_IMAGE_USAGE_SAMPLED_BIT
 							  | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE, skybox,
+						 "bsp:image:default_skybox");
 
 	skysheet = QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D,
 							  VK_FORMAT_B8G8R8A8_UNORM, extents, 1, 2,
 							  VK_SAMPLE_COUNT_1_BIT,
 							  VK_IMAGE_USAGE_SAMPLED_BIT
 							  | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE, skysheet,
+						 "bsp:image:default_skysheet");
+
 	VkMemoryRequirements requirements;
 	dfunc->vkGetImageMemoryRequirements (device->dev, skybox, &requirements);
 	size_t      boxsize = requirements.size;
@@ -1307,6 +1322,8 @@ create_default_skys (vulkan_ctx_t *ctx)
 								   boxsize + sheetsize,
 								   VK_IMAGE_USAGE_TRANSFER_DST_BIT
 								   | VK_IMAGE_USAGE_SAMPLED_BIT);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, memory,
+						 "bsp:memory:default_skys");
 
 	QFV_BindImageMemory (device, skybox, memory, 0);
 	QFV_BindImageMemory (device, skysheet, memory, boxsize);
@@ -1314,11 +1331,15 @@ create_default_skys (vulkan_ctx_t *ctx)
 	boxview = QFV_CreateImageView (device, skybox, VK_IMAGE_VIEW_TYPE_CUBE,
 								   VK_FORMAT_B8G8R8A8_UNORM,
 								   VK_IMAGE_ASPECT_COLOR_BIT);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, boxview,
+						 "bsp:iview:default_skysheet");
 
 	sheetview = QFV_CreateImageView (device, skysheet,
 									 VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 								     VK_FORMAT_B8G8R8A8_UNORM,
 								     VK_IMAGE_ASPECT_COLOR_BIT);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, sheetview,
+						 "bsp:iview:default_skysheet");
 
 	bctx->default_skybox->image = skybox;
 	bctx->default_skybox->view = boxview;
@@ -1405,9 +1426,11 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 	bctx->elementss_tail = &bctx->elementss;
 	bctx->instsurfs_tail = &bctx->instsurfs;
 
-	bctx->light_scrap = QFV_CreateScrap (device, 2048, tex_frgba, ctx->staging);
+	bctx->light_scrap = QFV_CreateScrap (device, "lightmap_atlas", 2048,
+										 tex_frgba, ctx->staging);
 	size_t      size = QFV_ScrapSize (bctx->light_scrap);
-	bctx->light_stage = QFV_CreateStagingBuffer (device, size, ctx->cmdpool);
+	bctx->light_stage = QFV_CreateStagingBuffer (device, "lightmap", size,
+												 ctx->cmdpool);
 
 	create_default_skys (ctx);
 
@@ -1421,7 +1444,11 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 	bctx->main = Vulkan_CreatePipeline (ctx, "quakebsp.main");
 	bctx->sky = Vulkan_CreatePipeline (ctx, "quakebsp.skysheet");
 	bctx->layout = QFV_GetPipelineLayout (ctx, "quakebsp.layout");
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, bctx->layout,
+						 va (ctx->va_ctx, "layout:%s", "quakebsp.layout"));
 	bctx->sampler = QFV_GetSampler (ctx, "quakebsp.sampler");
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_SAMPLER, bctx->sampler,
+						 va (ctx->va_ctx, "sampler:%s", "quakebsp.sampler"));
 
 	__auto_type cmdBuffers = QFV_AllocCommandBufferSet (3 * frames, alloca);
 	QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, cmdBuffers);
@@ -1431,6 +1458,15 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 		bframe->bsp_cmd = cmdBuffers->a[i * 3 + 0];
 		bframe->turb_cmd = cmdBuffers->a[i * 3 + 1];
 		bframe->sky_cmd = cmdBuffers->a[i * 3 + 2];
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
+							 bframe->bsp_cmd,
+							 va (ctx->va_ctx, "cmd:bsp:%zd", i));
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
+							 bframe->turb_cmd,
+							 va (ctx->va_ctx, "cmd:turb:%zd", i));
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
+							 bframe->sky_cmd,
+							 va (ctx->va_ctx, "cmd:sky:%zd", i));
 
 		for (int j = 0; j < BSP_BUFFER_INFOS; j++) {
 			bframe->bufferInfo[j] = base_buffer_info;
