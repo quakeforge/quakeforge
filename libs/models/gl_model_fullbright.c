@@ -55,6 +55,13 @@ Mod_Fullbright (byte *skin, int width, int height, const char *name)
 
 	// Check for fullbright pixels
 	if (Mod_CalcFullbright (skin, ptexels, pixels)) {
+		//FIXME black should be transparent for fullbrights (or just fix
+		//fullbright rendering in gl)
+		for (int i = 0; i < pixels; i++) {
+			if (!ptexels[i]) {
+				ptexels[i] = 255;
+			}
+		}
 		Sys_MaskPrintf (SYS_DEV, "FB Model ID: '%s'\n", name);
 		texnum = GL_LoadTexture (name, width, height, ptexels, true, true, 1);
 	}
