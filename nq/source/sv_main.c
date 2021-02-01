@@ -432,9 +432,9 @@ SV_AddToFatPVS (vec3_t org, mnode_t *node)
 static byte       *
 SV_FatPVS (vec3_t org)
 {
-	fatbytes = (sv.worldmodel->numleafs + 31) >> 3;
+	fatbytes = (sv.worldmodel->brush.numleafs + 31) >> 3;
 	memset (fatpvs, 0, fatbytes);
-	SV_AddToFatPVS (org, sv.worldmodel->nodes);
+	SV_AddToFatPVS (org, sv.worldmodel->brush.nodes);
 	return fatpvs;
 }
 
@@ -1189,7 +1189,7 @@ SV_SpawnServer (const char *server)
 
 	sv.model_precache[0] = sv_pr_state.pr_strings;
 	sv.model_precache[1] = sv.modelname;
-	for (i = 1; i < sv.worldmodel->numsubmodels; i++) {
+	for (i = 1; i < sv.worldmodel->brush.numsubmodels; i++) {
 		sv.model_precache[1 + i] = localmodels[i];
 		sv.models[i + 1] = Mod_ForName (localmodels[i], false);
 	}
@@ -1220,7 +1220,7 @@ SV_SpawnServer (const char *server)
 		ED_LoadFromFile (&sv_pr_state, (char *) buf);
 		free (buf);
 	} else {
-		ED_LoadFromFile (&sv_pr_state, sv.worldmodel->entities);
+		ED_LoadFromFile (&sv_pr_state, sv.worldmodel->brush.entities);
 	}
 
 	sv.active = true;

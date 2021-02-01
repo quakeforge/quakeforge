@@ -353,6 +353,7 @@ R_RenderFace (msurface_t *fa, int clipflags)
 	vec3_t      p_normal;
 	medge_t    *pedges, tedge;
 	clipplane_t *pclip;
+	mod_brush_t *brush = &currententity->model->brush;
 
 	// skip out if no more surfs
 	if ((surface_p) >= surf_max) {
@@ -382,11 +383,11 @@ R_RenderFace (msurface_t *fa, int clipflags)
 	r_nearzi = 0;
 	r_nearzionly = false;
 	makeleftedge = makerightedge = false;
-	pedges = currententity->model->edges;
+	pedges = brush->edges;
 	r_lastvertvalid = false;
 
 	for (i = 0; i < fa->numedges; i++) {
-		lindex = currententity->model->surfedges[fa->firstedge + i];
+		lindex = brush->surfedges[fa->firstedge + i];
 
 		if (lindex > 0) {
 			r_pedge = &pedges[lindex];
@@ -623,6 +624,7 @@ R_RenderPoly (msurface_t *fa, int clipflags)
 	polyvert_t  pverts[100];			// FIXME: do real number, safely
 	int         vertpage, newverts, newpage, lastvert;
 	qboolean    visible;
+	mod_brush_t *brush = &currententity->model->brush;
 
 	// FIXME: clean this up and make it faster
 	// FIXME: guard against running out of vertices
@@ -641,12 +643,12 @@ R_RenderPoly (msurface_t *fa, int clipflags)
 
 	// reconstruct the polygon
 	// FIXME: these should be precalculated and loaded off disk
-	pedges = currententity->model->edges;
+	pedges = brush->edges;
 	lnumverts = fa->numedges;
 	vertpage = 0;
 
 	for (i = 0; i < lnumverts; i++) {
-		lindex = currententity->model->surfedges[fa->firstedge + i];
+		lindex = brush->surfedges[fa->firstedge + i];
 
 		if (lindex > 0) {
 			r_pedge = &pedges[lindex];
@@ -777,15 +779,16 @@ R_RenderPoly (msurface_t *fa, int clipflags)
 
 
 void
-R_ZDrawSubmodelPolys (model_t *pmodel)
+R_ZDrawSubmodelPolys (model_t *model)
 {
 	int         i, numsurfaces;
 	msurface_t *psurf;
 	float       dot;
 	plane_t    *pplane;
+	mod_brush_t *brush = &model->brush;
 
-	psurf = &pmodel->surfaces[pmodel->firstmodelsurface];
-	numsurfaces = pmodel->nummodelsurfaces;
+	psurf = &brush->surfaces[brush->firstmodelsurface];
+	numsurfaces = brush->nummodelsurfaces;
 
 	for (i = 0; i < numsurfaces; i++, psurf++) {
 		// find which side of the node we are on

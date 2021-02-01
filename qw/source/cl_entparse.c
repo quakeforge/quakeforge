@@ -542,7 +542,7 @@ CL_SetSolidEntities (void)
 			continue;
 		if (!cl.model_precache[state->modelindex])
 			continue;
-		if (cl.model_precache[state->modelindex]->hulls[1].firstclipnode
+		if (cl.model_precache[state->modelindex]->brush.hulls[1].firstclipnode
 			|| cl.model_precache[state->modelindex]->clipbox) {
 			if (pmove.numphysent == MAX_PHYSENTS) {
 				Sys_Printf ("WARNING: entity physent overflow, email "

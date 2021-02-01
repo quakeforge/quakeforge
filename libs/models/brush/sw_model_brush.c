@@ -45,9 +45,9 @@ sw_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
 {
 	mod_lightmap_bytes = 1;
 	if (!bsp->lightdatasize) {
-		mod->lightdata = NULL;
+		mod->brush.lightdata = NULL;
 		return;
 	}
-	mod->lightdata = Hunk_AllocName (bsp->lightdatasize, mod->name);
-	memcpy (mod->lightdata, bsp->lightdata, bsp->lightdatasize);
+	mod->brush.lightdata = Hunk_AllocName (bsp->lightdatasize, mod->name);
+	memcpy (mod->brush.lightdata, bsp->lightdata, bsp->lightdatasize);
 }

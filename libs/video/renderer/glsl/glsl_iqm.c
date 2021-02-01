@@ -217,7 +217,7 @@ glsl_R_DrawIQM (void)
 	float       blend;
 	iqmframe_t *frame;
 
-	R_LightPoint (ent->origin);	//FIXME min_light?
+	R_LightPoint (&r_worldentity.model->brush, ent->origin);//FIXME min_light?
 	VectorScale (ambientcolor, 1/255.0, ambientcolor);
 	R_FindNearLights (ent->origin, MAX_IQM_LIGHTS, lights);
 

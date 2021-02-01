@@ -65,13 +65,14 @@ static void
 glsl_brush_clear (model_t *m, void *data)
 {
 	int         i;
+	mod_brush_t *brush = &m->brush;
 
 	m->needload = true;
-	for (i = 0; i < m->numtextures; i++) {
+	for (i = 0; i < brush->numtextures; i++) {
 		// NOTE: some maps (eg e1m2) have empty texture slots
 		glsltex_t  *tex = 0;
-		if (m->textures[i]) {
-			tex = m->textures[i]->render;
+		if (brush->textures[i]) {
+			tex = brush->textures[i]->render;
 		}
 		if (tex && tex->gl_texturenum) {
 			GLSL_ReleaseTexture (tex->gl_texturenum);
@@ -80,10 +81,10 @@ glsl_brush_clear (model_t *m, void *data)
 			tex->gl_texturenum = 0;
 		}
 	}
-	for (i = 0; i < m->numsurfaces; i++) {
-		if (m->surfaces[i].polys) {
-			free (m->surfaces[i].polys);
-			m->surfaces[i].polys = 0;
+	for (i = 0; i < brush->numsurfaces; i++) {
+		if (brush->surfaces[i].polys) {
+			free (brush->surfaces[i].polys);
+			brush->surfaces[i].polys = 0;
 		}
 	}
 }
@@ -151,9 +152,9 @@ glsl_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
 	mod->clear = glsl_brush_clear;
 	mod_lightmap_bytes = 1;
 	if (!bsp->lightdatasize) {
-		mod->lightdata = NULL;
+		mod->brush.lightdata = NULL;
 		return;
 	}
-	mod->lightdata = Hunk_AllocName (bsp->lightdatasize, mod->name);
-	memcpy (mod->lightdata, bsp->lightdata, bsp->lightdatasize);
+	mod->brush.lightdata = Hunk_AllocName (bsp->lightdatasize, mod->name);
+	memcpy (mod->brush.lightdata, bsp->lightdata, bsp->lightdatasize);
 }

@@ -167,13 +167,13 @@ gl_R_Init (void)
 }
 
 static void
-register_textures (model_t *model)
+register_textures (mod_brush_t *brush)
 {
 	int         i;
 	texture_t  *tex;
 
-	for (i = 0; i < model->numtextures; i++) {
-		tex = model->textures[i];
+	for (i = 0; i < brush->numtextures; i++) {
+		tex = brush->textures[i];
 		if (!tex)
 			continue;
 		gl_R_AddTexture (tex);
@@ -185,18 +185,20 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
 	int         i;
 	texture_t  *tex;
+	mod_brush_t *brush;
 
 	for (i = 0; i < 256; i++)
 		d_lightstylevalue[i] = 264;		// normal light value
 
 	memset (&r_worldentity, 0, sizeof (r_worldentity));
 	r_worldentity.model = worldmodel;
+	brush = &worldmodel->brush;
 
 	R_FreeAllEntities ();
 
 	// clear out efrags in case the level hasn't been reloaded
-	for (i = 0; i < r_worldentity.model->numleafs; i++)
-		r_worldentity.model->leafs[i].efrags = NULL;
+	for (i = 0; i < brush->numleafs; i++)
+		brush->leafs[i].efrags = NULL;
 
 	// Force a vis update
 	r_viewleaf = NULL;
@@ -209,8 +211,8 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	// identify sky texture
 	gl_mirrortexturenum = -1;
 	gl_R_ClearTextures ();
-	for (i = 0; i < r_worldentity.model->numtextures; i++) {
-		tex = r_worldentity.model->textures[i];
+	for (i = 0; i < brush->numtextures; i++) {
+		tex = brush->textures[i];
 		if (!tex)
 			continue;
 		if (!strncmp (tex->name, "sky", 3)) {
@@ -220,16 +222,16 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 			gl_mirrortexturenum = i;
 	}
 
-	gl_R_InitSurfaceChains (r_worldentity.model);
+	gl_R_InitSurfaceChains (brush);
 	gl_R_AddTexture (r_notexture_mip);
-	register_textures (r_worldentity.model);
+	register_textures (brush);
 	for (i = 0; i < num_models; i++) {
 		if (!models[i])
 			continue;
 		if (*models[i]->path == '*')
 			continue;
 		if (models[i] != r_worldentity.model && models[i]->type == mod_brush)
-			register_textures (models[i]);
+			register_textures (&models[i]->brush);
 	}
 }
 

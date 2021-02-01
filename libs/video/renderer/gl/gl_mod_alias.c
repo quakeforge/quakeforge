@@ -436,7 +436,7 @@ gl_R_DrawAliasModel (entity_t *e)
 		float lightadj;
 
 		// get lighting information
-		R_LightPoint (e->origin);
+		R_LightPoint (&r_worldentity.model->brush, e->origin);
 
 		lightadj = (ambientcolor[0] + ambientcolor[1] + ambientcolor[2]) / 765.0;
 

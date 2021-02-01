@@ -335,7 +335,7 @@ CL_LinkPacketEntities (void)
 			if (i != cl.viewentity || chase_active->int_val) {
 				if (ent->efrag)
 					r_funcs->R_RemoveEfrags (ent);
-				r_funcs->R_AddEfrags (ent);
+				r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 			}
 			VectorCopy (ent->origin, ent->old_origin);
 		} else {
@@ -370,15 +370,15 @@ CL_LinkPacketEntities (void)
 				if (ent->efrag) {
 					if (!VectorCompare (ent->origin, ent->old_origin)) {
 						r_funcs->R_RemoveEfrags (ent);
-						r_funcs->R_AddEfrags (ent);
+						r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 					}
 				} else {
-					r_funcs->R_AddEfrags (ent);
+					r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 				}
 			}
 		}
 		if (!ent->efrag)
-			r_funcs->R_AddEfrags (ent);
+			r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 
 		// rotate binary objects locally
 		if (ent->model->flags & EF_ROTATE) {
@@ -567,7 +567,7 @@ CL_LinkPlayers (void)
 		}
 
 		// stuff entity in map
-		r_funcs->R_AddEfrags (ent);
+		r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 
 		if (state->pls.effects & EF_FLAG1)
 			CL_AddFlagModels (ent, 0, j);

@@ -52,7 +52,6 @@
 #define R_InitParticles glsl_R_InitParticles
 #define R_InitSky glsl_R_InitSky
 #define R_InitSprites glsl_R_InitSprites
-#define R_InitSurfaceChains glsl_R_InitSurfaceChains
 #define R_LineGraph glsl_R_LineGraph
 #define R_LoadSky_f glsl_R_LoadSky_f
 #define R_LoadSkys glsl_R_LoadSkys

@@ -83,7 +83,7 @@ void R_RenderView (void);			// must set r_refdef first
 void R_ViewChanged (float aspect);	// must set r_refdef first
 								// called whenever r_refdef or vid change
 
-void R_AddEfrags (entity_t *ent);
+void R_AddEfrags (mod_brush_t *, entity_t *ent);
 void R_RemoveEfrags (entity_t *ent);
 
 void R_NewMap (model_t *worldmodel, model_t **models, int num_models);

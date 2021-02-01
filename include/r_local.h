@@ -182,7 +182,7 @@ void R_RemoveEdges (edge_t *pedge);
 void R_AddTexture (texture_t *tex);
 struct vulkan_ctx_s;
 void R_ClearTextures (void);
-void R_InitSurfaceChains (model_t *model);
+void R_InitSurfaceChains (mod_brush_t *brush);
 
 extern void R_Surf8Start (void);
 extern void R_Surf8End (void);
@@ -303,13 +303,13 @@ void R_ZGraph (void);
 void R_PrintAliasStats (void);
 void R_PrintTimes (void);
 void R_AnimateLight (void);
-int R_LightPoint (const vec3_t p);
+int R_LightPoint (mod_brush_t *brush, const vec3_t p);
 void R_SetupFrame (void);
 void R_cshift_f (void);
 void R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1);
 void R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip);
-void R_RecursiveMarkLights (const vec3_t lightorigin, struct dlight_s *light,
-							int bit, mnode_t *node);
+void R_RecursiveMarkLights (mod_brush_t *brush, const vec3_t lightorigin,
+							struct dlight_s *light, int bit, mnode_t *node);
 void R_MarkLights (const vec3_t lightorigin, struct dlight_s *light, int bit,
 				   model_t *model);
 

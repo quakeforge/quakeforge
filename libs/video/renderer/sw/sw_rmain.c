@@ -164,6 +164,7 @@ void
 R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
 	int         i;
+	mod_brush_t *brush = &worldmodel->brush;
 
 	memset (&r_worldentity, 0, sizeof (r_worldentity));
 	r_worldentity.model = worldmodel;
@@ -172,11 +173,11 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 
 	// clear out efrags in case the level hasn't been reloaded
 	// FIXME: is this one short?
-	for (i = 0; i < r_worldentity.model->numleafs; i++)
-		r_worldentity.model->leafs[i].efrags = NULL;
+	for (i = 0; i < brush->numleafs; i++)
+		brush->leafs[i].efrags = NULL;
 
-	if (worldmodel->skytexture)
-		R_InitSky (worldmodel->skytexture);
+	if (brush->skytexture)
+		R_InitSky (brush->skytexture);
 
 	// Force a vis update
 	r_viewleaf = NULL;
@@ -381,7 +382,8 @@ R_DrawEntitiesOnList (void)
 				if (currententity->model->type == mod_iqm//FIXME
 					|| R_AliasCheckBBox ()) {
 					// 128 instead of 255 due to clamping below
-					j = max (R_LightPoint (currententity->origin), minlight * 128);
+					j = max (R_LightPoint (&r_worldentity.model->brush,
+										   currententity->origin), minlight * 128);
 
 					lighting.ambientlight = j;
 					lighting.shadelight = j;
@@ -448,7 +450,8 @@ R_DrawViewModel (void)
 
 	minlight = max (currententity->min_light, currententity->model->min_light);
 
-	j = max (R_LightPoint (currententity->origin), minlight * 128);
+	j = max (R_LightPoint (&r_worldentity.model->brush,
+						   currententity->origin), minlight * 128);
 
 	r_viewlighting.ambientlight = j;
 	r_viewlighting.shadelight = j;
@@ -568,19 +571,20 @@ R_DrawBEntitiesOnList (void)
 				clipflags = R_BmodelCheckBBox (clmodel, minmaxs);
 
 				if (clipflags != BMODEL_FULLY_CLIPPED) {
+					mod_brush_t *brush = &clmodel->brush;
 					VectorCopy (currententity->origin, r_entorigin);
 					VectorSubtract (r_origin, r_entorigin, modelorg);
 
 					// FIXME: is this needed?
 					VectorCopy (modelorg, r_worldmodelorg);
-					r_pcurrentvertbase = clmodel->vertexes;
+					r_pcurrentvertbase = brush->vertexes;
 
 					// FIXME: stop transforming twice
 					R_RotateBmodel ();
 
 					// calculate dynamic lighting for bmodel if it's not an
 					// instanced model
-					if (clmodel->firstmodelsurface != 0) {
+					if (brush->firstmodelsurface != 0) {
 						vec3_t      lightorigin;
 
 						for (k = 0; k < r_maxdlights; k++) {
@@ -590,9 +594,10 @@ R_DrawBEntitiesOnList (void)
 							VectorSubtract (r_dlights[k].origin,
 											currententity->origin,
 											lightorigin);
-							R_RecursiveMarkLights (lightorigin, &r_dlights[k],
-												   k, clmodel->nodes +
-										  clmodel->hulls[0].firstclipnode);
+							R_RecursiveMarkLights (brush, lightorigin,
+												   &r_dlights[k], k,
+												   brush->nodes
+										+ brush->hulls[0].firstclipnode);
 						}
 					}
 					// if the driver wants polygons, deliver those.

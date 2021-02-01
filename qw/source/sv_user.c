@@ -335,14 +335,15 @@ SV_PreSpawn_f (void *unused)
 
 //      Sys_MaskPrintf (SYS_DEV, , "Client check = %d\n", check);
 
-		if (sv_mapcheck->int_val && check != sv.worldmodel->checksum &&
-			check != sv.worldmodel->checksum2) {
+		if (sv_mapcheck->int_val && check != sv.worldmodel->brush.checksum &&
+			check != sv.worldmodel->brush.checksum2) {
 			SV_ClientPrintf (1, host_client, PRINT_HIGH, "Map model file does "
 							 "not match (%s), %i != %i/%i.\n"
 							 "You may need a new version of the map, or the "
 							 "proper install files.\n",
-							 sv.modelname, check, sv.worldmodel->checksum,
-							 sv.worldmodel->checksum2);
+							 sv.modelname, check,
+							 sv.worldmodel->brush.checksum,
+							 sv.worldmodel->brush.checksum2);
 			SV_DropClient (host_client);
 			return;
 		}

@@ -195,7 +195,7 @@ R_SplitEntityOnNode (mnode_t *node)
 }
 
 void
-R_AddEfrags (entity_t *ent)
+R_AddEfrags (mod_brush_t *brush, entity_t *ent)
 {
 	model_t    *entmodel;
 
@@ -215,7 +215,7 @@ R_AddEfrags (entity_t *ent)
 	VectorAdd (ent->origin, entmodel->mins, r_emins);
 	VectorAdd (ent->origin, entmodel->maxs, r_emaxs);
 
-	R_SplitEntityOnNode (r_worldentity.model->nodes);
+	R_SplitEntityOnNode (brush->nodes);
 
 	ent->topnode = r_pefragtopnode;
 }

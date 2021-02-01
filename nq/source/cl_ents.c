@@ -381,7 +381,7 @@ CL_RelinkEntities (void)
 			if (i != cl.viewentity || chase_active->int_val) {
 				if (ent->efrag)
 					r_funcs->R_RemoveEfrags (ent);
-				r_funcs->R_AddEfrags (ent);
+				r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 			}
 			VectorCopy (ent->origin, ent->old_origin);
 		} else {
@@ -416,10 +416,10 @@ CL_RelinkEntities (void)
 				if (ent->efrag) {
 					if (!VectorCompare (ent->origin, ent->old_origin)) {
 						r_funcs->R_RemoveEfrags (ent);
-						r_funcs->R_AddEfrags (ent);
+						r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 					}
 				} else {
-					r_funcs->R_AddEfrags (ent);
+					r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 				}
 			}
 		}

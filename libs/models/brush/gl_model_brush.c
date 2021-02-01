@@ -150,9 +150,10 @@ gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
 	size_t      i;
 	int         ver;
 	QFile      *lit_file;
+	mod_brush_t *brush = &mod->brush;
 
 	dstring_copystr (litfilename, mod->path);
-	mod->lightdata = NULL;
+	brush->lightdata = NULL;
 	if (mod_lightmap_bytes > 1) {
 		// LordHavoc: check for a .lit file to load
 		QFS_StripExtension (litfilename->str, litfilename->str);
@@ -165,7 +166,7 @@ gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
 				ver = LittleLong (((int32_t *) data)[1]);
 				if (ver == 1) {
 					Sys_MaskPrintf (SYS_DEV, "%s loaded", litfilename->str);
-					mod->lightdata = data + 8;
+					brush->lightdata = data + 8;
 					return;
 				} else
 					Sys_MaskPrintf (SYS_DEV,
@@ -179,10 +180,10 @@ gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
 		dstring_delete (litfilename);
 		return;
 	}
-	mod->lightdata = Hunk_AllocName (bsp->lightdatasize * mod_lightmap_bytes,
-									 litfilename->str);
+	brush->lightdata = Hunk_AllocName (bsp->lightdatasize * mod_lightmap_bytes,
+									   litfilename->str);
 	in = bsp->lightdata;
-	out = mod->lightdata;
+	out = brush->lightdata;
 
 	if (mod_lightmap_bytes > 1)
 		for (i = 0; i < bsp->lightdatasize ; i++) {
@@ -308,18 +309,19 @@ gl_Mod_SubdivideSurface (model_t *mod, msurface_t *fa)
 	float      *vec;
 	int         lindex, numverts, i;
 	vec3_t      verts[64];
+	mod_brush_t *brush = &mod->brush;
 
 	warpface = fa;
 
 	// convert edges back to a normal polygon
 	numverts = 0;
 	for (i = 0; i < fa->numedges; i++) {
-		lindex = mod->surfedges[fa->firstedge + i];
+		lindex = brush->surfedges[fa->firstedge + i];
 
 		if (lindex > 0)
-			vec = mod->vertexes[mod->edges[lindex].v[0]].position;
+			vec = brush->vertexes[brush->edges[lindex].v[0]].position;
 		else
-			vec = mod->vertexes[mod->edges[-lindex].v[1]].position;
+			vec = brush->vertexes[brush->edges[-lindex].v[1]].position;
 		VectorCopy (vec, verts[numverts]);
 		numverts++;
 	}

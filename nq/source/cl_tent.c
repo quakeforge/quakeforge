@@ -294,7 +294,7 @@ beam_setup (beam_t *b, qboolean transform)
 			CL_TransformEntity (&tent->ent, ang, true);
 		}
 		VectorCopy (ang, tent->ent.angles);
-		r_funcs->R_AddEfrags (&tent->ent);
+		r_funcs->R_AddEfrags (&cl.worldmodel->brush, &tent->ent);
 	}
 }
 
@@ -588,7 +588,7 @@ CL_UpdateExplosions (void)
 
 		ent->frame = f;
 		if (!ent->efrag)
-			r_funcs->R_AddEfrags (ent);
+			r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 	}
 }
 

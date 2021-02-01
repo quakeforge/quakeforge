@@ -229,7 +229,7 @@ SV_CalcPHS (void)
 
 	SV_Printf ("Building PHS...\n");
 
-	num = sv.worldmodel->numleafs;
+	num = sv.worldmodel->brush.numleafs;
 	rowwords = (num + 31) >> 5;
 	rowbytes = rowwords * 4;
 
@@ -237,7 +237,8 @@ SV_CalcPHS (void)
 	scan = sv.pvs;
 	vcount = 0;
 	for (i = 0; i < num; i++, scan += rowbytes) {
-		memcpy (scan, Mod_LeafPVS (sv.worldmodel->leafs + i, sv.worldmodel),
+		memcpy (scan, Mod_LeafPVS (sv.worldmodel->brush.leafs + i,
+								   sv.worldmodel),
 				rowbytes);
 		if (i == 0)
 			continue;
@@ -402,7 +403,7 @@ SV_SpawnServer (const char *server)
 	sv.model_precache[0] = sv_pr_state.pr_strings;
 	sv.model_precache[1] = sv.modelname;
 	sv.models[1] = sv.worldmodel;
-	for (i = 1; i < sv.worldmodel->numsubmodels; i++) {
+	for (i = 1; i < sv.worldmodel->brush.numsubmodels; i++) {
 		sv.model_precache[1 + i] = localmodels[i];
 		sv.models[i + 1] = Mod_ForName (localmodels[i], false);
 	}
@@ -443,7 +444,7 @@ SV_SpawnServer (const char *server)
 		ED_LoadFromFile (&sv_pr_state, (char *) buf);
 		free (buf);
 	} else {
-		ED_LoadFromFile (&sv_pr_state, sv.worldmodel->entities);
+		ED_LoadFromFile (&sv_pr_state, sv.worldmodel->brush.entities);
 	}
 
 	// look up some model indexes for specialized message compression

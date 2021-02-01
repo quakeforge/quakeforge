@@ -86,7 +86,7 @@ TraceLine (vec3_t start, vec3_t end, vec3_t impact)
 
 	memset (&trace, 0, sizeof (trace));
 	trace.fraction = 1;
-	MOD_TraceLine (cl.worldmodel->hulls, 0, start, end, &trace);
+	MOD_TraceLine (cl.worldmodel->brush.hulls, 0, start, end, &trace);
 
 	VectorCopy (trace.endpos, impact);
 }

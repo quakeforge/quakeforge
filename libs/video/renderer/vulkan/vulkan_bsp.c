@@ -153,7 +153,7 @@ add_texture (texture_t *tx, vulkan_ctx_t *ctx)
 }
 
 static void
-init_surface_chains (model_t *model, vulkan_ctx_t *ctx)
+init_surface_chains (mod_brush_t *brush, vulkan_ctx_t *ctx)
 {
 	bspctx_t   *bctx = ctx->bsp_context;
 	int         i;
@@ -161,9 +161,9 @@ init_surface_chains (model_t *model, vulkan_ctx_t *ctx)
 	release_static_instsurfs (bctx);
 	release_instsurfs (bctx);
 
-	for (i = 0; i < model->nummodelsurfaces; i++) {
-		model->surfaces[i].instsurf = get_static_instsurf (bctx);
-		model->surfaces[i].instsurf->surface = &model->surfaces[i];
+	for (i = 0; i < brush->nummodelsurfaces; i++) {
+		brush->surfaces[i].instsurf = get_static_instsurf (bctx);
+		brush->surfaces[i].instsurf->surface = &brush->surfaces[i];
 	}
 }
 
@@ -199,7 +199,7 @@ Vulkan_ClearElements (vulkan_ctx_t *ctx)
 }
 
 static void
-update_lightmap (msurface_t *surf, vulkan_ctx_t *ctx)
+update_lightmap (mod_brush_t *brush, msurface_t *surf, vulkan_ctx_t *ctx)
 {
 	int         maps;
 
@@ -210,13 +210,13 @@ update_lightmap (msurface_t *surf, vulkan_ctx_t *ctx)
 	if ((surf->dlightframe == r_framecount) || surf->cached_dlight) {
 dynamic:
 		if (r_dynamic->int_val)
-			Vulkan_BuildLightMap (surf, ctx);
+			Vulkan_BuildLightMap (brush, surf, ctx);
 	}
 }
 
 static inline void
-chain_surface (msurface_t *surf, vec_t *transform, float *color,
-			   vulkan_ctx_t *ctx)
+chain_surface (mod_brush_t *brush, msurface_t *surf, vec_t *transform,
+			   float *color, vulkan_ctx_t *ctx)
 {
 	bspctx_t   *bctx = ctx->bsp_context;
 	instsurf_t *is;
@@ -236,7 +236,7 @@ chain_surface (msurface_t *surf, vec_t *transform, float *color,
 		tex = tx->render;
 		CHAIN_SURF_F2B (surf, tex->tex_chain);
 
-		update_lightmap (surf, ctx);
+		update_lightmap (brush, surf, ctx);
 	}
 	if (!(is = surf->instsurf))
 		is = surf->tinst;
@@ -245,13 +245,13 @@ chain_surface (msurface_t *surf, vec_t *transform, float *color,
 }
 
 static void
-register_textures (model_t *model, vulkan_ctx_t *ctx)
+register_textures (mod_brush_t *brush, vulkan_ctx_t *ctx)
 {
 	int         i;
 	texture_t  *tex;
 
-	for (i = 0; i < model->numtextures; i++) {
-		tex = model->textures[i];
+	for (i = 0; i < brush->numtextures; i++) {
+		tex = brush->textures[i];
 		if (!tex)
 			continue;
 		add_texture (tex, ctx);
@@ -270,11 +270,12 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 {
 	int         i;
 	model_t    *m;
+	mod_brush_t *brush = &r_worldentity.model->brush;
 
 	clear_textures (ctx);
-	init_surface_chains (r_worldentity.model, ctx);
+	init_surface_chains (brush, ctx);
 	add_texture (r_notexture_mip, ctx);
-	register_textures (r_worldentity.model, ctx);
+	register_textures (brush, ctx);
 	for (i = 0; i < num_models; i++) {
 		m = models[i];
 		if (!m)
@@ -285,8 +286,9 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		// world has already been done, not interested in non-brush models
 		if (m == r_worldentity.model || m->type != mod_brush)
 			continue;
-		m->numsubmodels = 1; // no support for submodels in non-world model
-		register_textures (m, ctx);
+		brush = &m->brush;
+		brush->numsubmodels = 1; // no support for submodels in non-world model
+		register_textures (brush, ctx);
 	}
 }
 
@@ -329,18 +331,18 @@ build_surf_displist (model_t **models, msurface_t *fa, int base,
 	bsppoly_t  *poly;
 	uint32_t   *ind;
 	float       s, t;
+	mod_brush_t *brush;
 
 	if (fa->ec_index < 0) {
 		// instance model
-		vertices  = models[~fa->ec_index]->vertexes;
-		edges     = models[~fa->ec_index]->edges;
-		surfedges = models[~fa->ec_index]->surfedges;
+		brush = &models[~fa->ec_index]->brush;
 	} else {
 		// main or sub model
-		vertices  = r_worldentity.model->vertexes;
-		edges     = r_worldentity.model->edges;
-		surfedges = r_worldentity.model->surfedges;
+		brush = &r_worldentity.model->brush;
 	}
+	vertices  = brush->vertexes;
+	edges     = brush->edges;
+	surfedges = brush->surfedges;
 	// create a triangle fan
 	numverts = fa->numedges;
 	numindices = numverts + 1;
@@ -405,6 +407,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	qfv_stagebuf_t *stage;
 	bspvert_t  *vertices;
 	bsppoly_t  *poly;
+	mod_brush_t *brush;
 
 	QuatSet (0, 0, sqrt(0.5), sqrt(0.5), bctx->sky_fix);	// proper skies
 	QuatSet (0, 0, 0, 1, bctx->sky_rotation[0]);
@@ -421,24 +424,25 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		if (!m)
 			continue;
 		// sub-models are done as part of the main model
-		if (*m->path == '*')
+		if (*m->path == '*' || m->type != mod_brush)
 			continue;
+		brush = &m->brush;
 		// non-bsp models don't have surfaces.
-		dm = m->submodels;
-		for (j = 0; j < m->numsurfaces; j++) {
+		dm = brush->submodels;
+		for (j = 0; j < brush->numsurfaces; j++) {
 			vulktex_t  *tex;
 			if (j == dm->firstface + dm->numfaces) {
 				dm++;
-				if (dm - m->submodels == m->numsubmodels) {
+				if (dm - brush->submodels == brush->numsubmodels) {
 					// limit the surfaces
 					// probably never hit
 					Sys_Printf ("R_BuildDisplayLists: too many surfaces\n");
-					m->numsurfaces = j;
+					brush->numsurfaces = j;
 					break;
 				}
 			}
-			surf = m->surfaces + j;
-			surf->ec_index = dm - m->submodels;
+			surf = brush->surfaces + j;
+			surf->ec_index = dm - brush->submodels;
 			if (!surf->ec_index && m != r_worldentity.model)
 				surf->ec_index = -1 - i;	// instanced model
 			tex = surf->texinfo->texture->render;
@@ -602,8 +606,10 @@ R_DrawBrushModel (entity_t *e, vulkan_ctx_t *ctx)
 	msurface_t *surf;
 	qboolean    rotated;
 	vec3_t      mins, maxs, org;
+	mod_brush_t *brush;
 
 	model = e->model;
+	brush = &model->brush;
 	if (e->transform[0] != 1 || e->transform[5] != 1 || e->transform[10] != 1) {
 		rotated = true;
 		radius = model->radius;
@@ -628,7 +634,7 @@ R_DrawBrushModel (entity_t *e, vulkan_ctx_t *ctx)
 	}
 
 	// calculate dynamic lighting for bmodel if it's not an instanced model
-	if (model->firstmodelsurface != 0 && r_dlight_lightmap->int_val) {
+	if (brush->firstmodelsurface != 0 && r_dlight_lightmap->int_val) {
 		vec3_t      lightorigin;
 
 		for (k = 0; k < r_maxdlights; k++) {
@@ -637,14 +643,14 @@ R_DrawBrushModel (entity_t *e, vulkan_ctx_t *ctx)
 				continue;
 
 			VectorSubtract (r_dlights[k].origin, e->origin, lightorigin);
-			R_RecursiveMarkLights (lightorigin, &r_dlights[k], k,
-							model->nodes + model->hulls[0].firstclipnode);
+			R_RecursiveMarkLights (brush, lightorigin, &r_dlights[k], k,
+							brush->nodes + brush->hulls[0].firstclipnode);
 		}
 	}
 
-	surf = &model->surfaces[model->firstmodelsurface];
+	surf = &brush->surfaces[brush->firstmodelsurface];
 
-	for (i = 0; i < model->nummodelsurfaces; i++, surf++) {
+	for (i = 0; i < brush->nummodelsurfaces; i++, surf++) {
 		// find the node side on which we are
 		plane = surf->plane;
 
@@ -653,7 +659,7 @@ R_DrawBrushModel (entity_t *e, vulkan_ctx_t *ctx)
 		// enqueue the polygon
 		if (((surf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON))
 			|| (!(surf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
-			chain_surface (surf, e->transform, e->colormod, ctx);
+			chain_surface (brush, surf, e->transform, e->colormod, ctx);
 		}
 	}
 }
@@ -678,7 +684,7 @@ get_side (mnode_t *node)
 }
 
 static inline void
-visit_node (mnode_t *node, int side, vulkan_ctx_t *ctx)
+visit_node (mod_brush_t *brush, mnode_t *node, int side, vulkan_ctx_t *ctx)
 {
 	int         c;
 	msurface_t *surf;
@@ -687,7 +693,7 @@ visit_node (mnode_t *node, int side, vulkan_ctx_t *ctx)
 	side = (~side + 1) & SURF_PLANEBACK;
 	// draw stuff
 	if ((c = node->numsurfaces)) {
-		surf = r_worldentity.model->surfaces + node->firstsurface;
+		surf = brush->surfaces + node->firstsurface;
 		for (; c; c--, surf++) {
 			if (surf->visframe != r_visframecount)
 				continue;
@@ -696,7 +702,7 @@ visit_node (mnode_t *node, int side, vulkan_ctx_t *ctx)
 			if (side ^ (surf->flags & SURF_PLANEBACK))
 				continue;               // wrong side
 
-			chain_surface (surf, 0, 0, ctx);
+			chain_surface (brush, surf, 0, 0, ctx);
 		}
 	}
 }
@@ -714,7 +720,7 @@ test_node (mnode_t *node)
 }
 
 static void
-R_VisitWorldNodes (model_t *model, vulkan_ctx_t *ctx)
+R_VisitWorldNodes (mod_brush_t *brush, vulkan_ctx_t *ctx)
 {
 	typedef struct {
 		mnode_t    *node;
@@ -726,9 +732,9 @@ R_VisitWorldNodes (model_t *model, vulkan_ctx_t *ctx)
 	mnode_t    *front;
 	int         side;
 
-	node = model->nodes;
+	node = brush->nodes;
 	// +2 for paranoia
-	node_stack = alloca ((model->depth + 2) * sizeof (rstack_t));
+	node_stack = alloca ((brush->depth + 2) * sizeof (rstack_t));
 	node_ptr = node_stack;
 
 	while (1) {
@@ -744,7 +750,7 @@ R_VisitWorldNodes (model_t *model, vulkan_ctx_t *ctx)
 			}
 			if (front->contents < 0 && front->contents != CONTENTS_SOLID)
 				visit_leaf ((mleaf_t *) front);
-			visit_node (node, side, ctx);
+			visit_node (brush, node, side, ctx);
 			node = node->children[!side];
 		}
 		if (node->contents < 0 && node->contents != CONTENTS_SOLID)
@@ -753,7 +759,7 @@ R_VisitWorldNodes (model_t *model, vulkan_ctx_t *ctx)
 			node_ptr--;
 			node = node_ptr->node;
 			side = node_ptr->side;
-			visit_node (node, side, ctx);
+			visit_node (brush, node, side, ctx);
 			node = node->children[!side];
 			continue;
 		}
@@ -1099,19 +1105,21 @@ Vulkan_DrawWorld (vulkan_ctx_t *ctx)
 	bspctx_t   *bctx = ctx->bsp_context;
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 	entity_t    worldent;
+	mod_brush_t *brush;
 
 	clear_texture_chains (bctx);	// do this first for water and skys
 	bframe->index_count = 0;
 
 	memset (&worldent, 0, sizeof (worldent));
 	worldent.model = r_worldentity.model;
+	brush = &r_worldentity.model->brush;
 
 	//vulktex_t  *tex = r_worldentity.model->skytexture->render;
 	//bctx->skysheet_tex = tex->tex;
 
 	currententity = &worldent;
 
-	R_VisitWorldNodes (worldent.model, ctx);
+	R_VisitWorldNodes (brush, ctx);
 	if (r_drawentities->int_val) {
 		entity_t   *ent;
 		for (ent = r_ent_queue; ent; ent = ent->next) {

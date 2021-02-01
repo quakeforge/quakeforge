@@ -62,7 +62,6 @@ typedef struct efrag_s {
 	struct efrag_s		*entnext;
 } efrag_t;
 
-
 // in memory representation ===================================================
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
@@ -228,6 +227,58 @@ typedef struct hull_s {
 	int         depth;				///< maximum depth of the tree
 } hull_t;
 
+typedef struct mod_brush_s {
+	int			 firstmodelsurface, nummodelsurfaces;
+
+	int			 numsubmodels;
+	dmodel_t	*submodels;
+
+	int			 numplanes;
+	plane_t		*planes;
+
+	int			 numleafs;		// number of visible leafs, not counting 0
+	mleaf_t		*leafs;
+
+	int			 numvertexes;
+	mvertex_t	*vertexes;
+
+	int			 numedges;
+	medge_t		*edges;
+
+	int			 numnodes;
+	mnode_t		*nodes;
+	int          depth;				///< maximum depth of the tree
+
+	int			 numtexinfo;
+	mtexinfo_t	*texinfo;
+
+	int			 numsurfaces;
+	msurface_t	*surfaces;
+
+	int			 numsurfedges;
+	int			*surfedges;
+
+	int			 numclipnodes;
+	mclipnode_t	*clipnodes;
+
+	int			 nummarksurfaces;
+	msurface_t	**marksurfaces;
+
+	hull_t		 hulls[MAX_MAP_HULLS];
+	hull_t		*hull_list[MAX_MAP_HULLS];
+
+	int			 numtextures;
+	texture_t	**textures;
+	texture_t	*skytexture;
+
+	byte		*visdata;
+	byte		*lightdata;
+	char		*entities;	//FIXME should not be here
+
+	unsigned int checksum;
+	unsigned int checksum2;
+} mod_brush_t;
+
 // SPRITE MODELS ==============================================================
 
 // FIXME: shorten these?
@@ -375,55 +426,8 @@ typedef struct model_s {
 	vec3_t		 clipmins, clipmaxs;
 
 // brush model
-	int			 firstmodelsurface, nummodelsurfaces;
-
-	int			 numsubmodels;
-	dmodel_t	*submodels;
-
-	int			 numplanes;
-	plane_t		*planes;
-
-	int			 numleafs;		// number of visible leafs, not counting 0
-	mleaf_t		*leafs;
-
-	int			 numvertexes;
-	mvertex_t	*vertexes;
-
-	int			 numedges;
-	medge_t		*edges;
-
-	int			 numnodes;
-	mnode_t		*nodes;
-	int          depth;				///< maximum depth of the tree
-
-	int			 numtexinfo;
-	mtexinfo_t	*texinfo;
-
-	int			 numsurfaces;
-	msurface_t	*surfaces;
-
-	int			 numsurfedges;
-	int			*surfedges;
-
-	int			 numclipnodes;
-	mclipnode_t	*clipnodes;
-
-	int			 nummarksurfaces;
-	msurface_t	**marksurfaces;
-
-	hull_t		 hulls[MAX_MAP_HULLS];
-	hull_t		*hull_list[MAX_MAP_HULLS];
-
-	int			 numtextures;
-	texture_t	**textures;
-	texture_t	*skytexture;
-
-	byte		*visdata;
-	byte		*lightdata;
-	char		*entities;
-
-	unsigned int checksum;
-	unsigned int checksum2;
+	//FIXME should be a pointer (submodels make things tricky)
+	mod_brush_t brush;
 
 // additional model data
 	cache_user_t cache;

@@ -144,7 +144,7 @@ calc_lighting (qfv_light_t *light, entity_t *ent)
 {
 	vec3_t      ambient_color;
 	//FIXME should be ent->position
-	float       l = R_LightPoint (r_origin) / 128.0;
+	float       l = R_LightPoint (&r_worldentity.model->brush, r_origin) / 128.0;
 
 	//XXX l = max (light, max (ent->model->min_light, ent->min_light));
 	light->type = 2;

@@ -74,7 +74,7 @@ glRect_t	 gl_lightmap_rectchange[MAX_LIGHTMAPS];
 
 static int	 lmshift = 7;
 
-void (*gl_R_BuildLightMap) (msurface_t *surf);
+void (*gl_R_BuildLightMap) (mod_brush_t *brush, msurface_t *surf);
 
 extern void gl_multitexture_f (cvar_t *var);
 
@@ -240,7 +240,7 @@ R_AddDynamicLights_3 (msurface_t *surf)
 }
 
 static void
-R_BuildLightMap_1 (msurface_t *surf)
+R_BuildLightMap_1 (mod_brush_t *brush, msurface_t *surf)
 {
 	byte		   *dest;
 	int				maps, size, stride, smax, tmax, i, j;
@@ -254,7 +254,7 @@ R_BuildLightMap_1 (msurface_t *surf)
 	size = smax * tmax * gl_internalformat;
 
 	// set to full bright if no light data
-	if (!r_worldentity.model->lightdata) {
+	if (!brush->lightdata) {
 		memset (&blocklights[0], 0xff, size * sizeof(int));
 		goto store;
 	}
@@ -300,7 +300,7 @@ R_BuildLightMap_1 (msurface_t *surf)
 }
 
 static void
-R_BuildLightMap_3 (msurface_t *surf)
+R_BuildLightMap_3 (mod_brush_t *brush, msurface_t *surf)
 {
 	byte		   *dest;
 	int				maps, size, stride, smax, tmax, i, j;
@@ -314,7 +314,7 @@ R_BuildLightMap_3 (msurface_t *surf)
 	size = smax * tmax * gl_internalformat;
 
 	// set to full bright if no light data
-	if (!r_worldentity.model->lightdata) {
+	if (!brush->lightdata) {
 		memset (&blocklights[0], 0xff, size * sizeof(int));
 		goto store;
 	}
@@ -365,7 +365,7 @@ R_BuildLightMap_3 (msurface_t *surf)
 }
 
 static void
-R_BuildLightMap_4 (msurface_t *surf)
+R_BuildLightMap_4 (mod_brush_t *brush, msurface_t *surf)
 {
 	byte		   *dest;
 	int				maps, size, smax, tmax, i, j, stride;
@@ -379,7 +379,7 @@ R_BuildLightMap_4 (msurface_t *surf)
 	size = smax * tmax * gl_internalformat;
 
 	// set to full bright if no light data
-	if (!r_worldentity.model->lightdata) {
+	if (!brush->lightdata) {
 		memset (&blocklights[0], 0xff, size * sizeof(int));
 		goto store;
 	}
@@ -535,6 +535,7 @@ gl_overbright_f (cvar_t *var)
 	model_t		*m;
 	msurface_t  *fa;
 	entity_t    *ent;
+	mod_brush_t *brush;
 
 	if (!var)
 		return;
@@ -588,7 +589,8 @@ gl_overbright_f (cvar_t *var)
 		if (m->path[0] == '*')
 			continue;
 
-		for (j = 0, fa = m->surfaces; j < m->numsurfaces; j++, fa++) {
+		brush = &m->brush;
+		for (j = 0, fa = brush->surfaces; j < brush->numsurfaces; j++, fa++) {
 			if (fa->flags & (SURF_DRAWTURB | SURF_DRAWSKY))
 				continue;
 
@@ -599,13 +601,13 @@ gl_overbright_f (cvar_t *var)
 			gl_lightmap_rectchange[num].w = BLOCK_WIDTH;
 			gl_lightmap_rectchange[num].h = BLOCK_HEIGHT;
 
-			gl_R_BuildLightMap (fa);
+			gl_R_BuildLightMap (brush, fa);
 		}
 	}
 
-	m = r_worldentity.model;
+	brush = &r_worldentity.model->brush;
 
-	for (i = 0, fa = m->surfaces; i < m->numsurfaces; i++, fa++) {
+	for (i = 0, fa = brush->surfaces; i < brush->numsurfaces; i++, fa++) {
 		if (fa->flags & (SURF_DRAWTURB | SURF_DRAWSKY))
 			continue;
 
@@ -616,7 +618,7 @@ gl_overbright_f (cvar_t *var)
 		gl_lightmap_rectchange[num].w = BLOCK_WIDTH;
 		gl_lightmap_rectchange[num].h = BLOCK_HEIGHT;
 
-		gl_R_BuildLightMap (fa);
+		gl_R_BuildLightMap (brush, fa);
 	}
 }
 
@@ -665,7 +667,7 @@ AllocBlock (int w, int h, int *x, int *y)
 }
 
 static void
-GL_CreateSurfaceLightmap (msurface_t *surf)
+GL_CreateSurfaceLightmap (mod_brush_t *brush, msurface_t *surf)
 {
 	int         smax, tmax;
 
@@ -677,7 +679,7 @@ GL_CreateSurfaceLightmap (msurface_t *surf)
 
 	surf->lightmaptexturenum =
 		AllocBlock (smax, tmax, &surf->light_s, &surf->light_t);
-	gl_R_BuildLightMap (surf);
+	gl_R_BuildLightMap (brush, surf);
 }
 
 /*
@@ -690,6 +692,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 {
 	int         i, j;
 	model_t    *m;
+	mod_brush_t *brush;
 
 	memset (allocated, 0, sizeof (allocated));
 
@@ -732,21 +735,22 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		m = models[j];
 		if (!m)
 			break;
-		if (m->path[0] == '*') {
+		if (m->path[0] == '*' || m->type != mod_brush) {
 			// sub model surfaces are processed as part of the main model
 			continue;
 		}
-		r_pcurrentvertbase = m->vertexes;
+		brush = &m->brush;
+		r_pcurrentvertbase = brush->vertexes;
 		gl_currentmodel = m;
 		// non-bsp models don't have surfaces.
-		for (i = 0; i < m->numsurfaces; i++) {
-			if (m->surfaces[i].flags & SURF_DRAWTURB)
+		for (i = 0; i < brush->numsurfaces; i++) {
+			if (brush->surfaces[i].flags & SURF_DRAWTURB)
 				continue;
-			if (gl_sky_divide->int_val && (m->surfaces[i].flags &
+			if (gl_sky_divide->int_val && (brush->surfaces[i].flags &
 										   SURF_DRAWSKY))
 				continue;
-			GL_CreateSurfaceLightmap (m->surfaces + i);
-			GL_BuildSurfaceDisplayList (m->surfaces + i);
+			GL_CreateSurfaceLightmap (brush, brush->surfaces + i);
+			GL_BuildSurfaceDisplayList (brush->surfaces + i);
 		}
 	}
 

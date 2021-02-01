@@ -288,7 +288,7 @@ map_ent (const char *mapname)
 		edicts = ED_Parse (&edpr, buf);
 		free (buf);
 	} else {
-		edicts = ED_Parse (&edpr, cl.model_precache[1]->entities);
+		edicts = ED_Parse (&edpr, cl.model_precache[1]->brush.entities);
 	}
 	free (name);
 	return edicts;
@@ -305,7 +305,7 @@ CL_NewMap (const char *mapname)
 	Hunk_Check ();								// make sure nothing is hurt
 	Sbar_CenterPrint (0);
 
-	if (cl.model_precache[1] && cl.model_precache[1]->entities) {
+	if (cl.model_precache[1] && cl.model_precache[1]->brush.entities) {
 		cl.edicts = map_ent (mapname);
 		if (cl.edicts) {
 			cl.worldspawn = PL_ObjectAtIndex (cl.edicts, 0);
@@ -404,7 +404,7 @@ Model_NextDownload (void)
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
 						 va (0, prespawn_name, cl.servercount,
-							 cl.worldmodel->checksum2));
+							 cl.worldmodel->brush.checksum2));
 	}
 }
 
@@ -986,7 +986,7 @@ CL_ParseStatic (void)
 	VectorCopy (es.origin, ent->origin);
 	CL_TransformEntity (ent, es.angles, true);
 
-	r_funcs->R_AddEfrags (ent);
+	r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 }
 
 static void

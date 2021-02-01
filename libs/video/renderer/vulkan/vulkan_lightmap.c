@@ -125,7 +125,7 @@ add_dynamic_lights (msurface_t *surf, float *block)
 }
 
 void
-Vulkan_BuildLightMap (msurface_t *surf, vulkan_ctx_t *ctx)
+Vulkan_BuildLightMap (mod_brush_t *brush, msurface_t *surf, vulkan_ctx_t *ctx)
 {
 	bspctx_t   *bctx = ctx->bsp_context;
 	int         smax, tmax, size;
@@ -142,7 +142,7 @@ Vulkan_BuildLightMap (msurface_t *surf, vulkan_ctx_t *ctx)
 	block = QFV_SubpicBatch (surf->lightpic, bctx->light_stage);
 
 	// set to full bright if no light data
-	if (!r_worldentity.model->lightdata) {
+	if (!brush->lightdata) {
 		out = block;
 		while (size-- > 0) {
 			*out++ = 1;
@@ -219,6 +219,7 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	bspctx_t   *bctx = ctx->bsp_context;
 	int         i, j;
 	model_t    *m;
+	mod_brush_t *brush;
 
 	QFV_ScrapClear (bctx->light_scrap);
 
@@ -228,13 +229,14 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		m = models[j];
 		if (!m)
 			break;
-		if (m->path[0] == '*') {
+		if (m->path[0] == '*' || m->type != mod_brush) {
 			// sub model surfaces are processed as part of the main model
 			continue;
 		}
+		brush = &m->brush;
 		// non-bsp models don't have surfaces.
-		for (i = 0; i < m->numsurfaces; i++) {
-			msurface_t *surf = m->surfaces + i;
+		for (i = 0; i < brush->numsurfaces; i++) {
+			msurface_t *surf = brush->surfaces + i;
 			surf->lightpic = 0;     // paranoia
 			if (surf->flags & SURF_DRAWTURB) {
 				continue;
@@ -251,15 +253,16 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		if (!m) {
 			break;
 		}
-		if (m->path[0] == '*') {
+		if (m->path[0] == '*' || m->type != mod_brush) {
 			// sub model surfaces are processed as part of the main model
 			continue;
 		}
+		brush = &m->brush;
 		// non-bsp models don't have surfaces.
-		for (i = 0; i < m->numsurfaces; i++) {
-			msurface_t *surf = m->surfaces + i;
+		for (i = 0; i < brush->numsurfaces; i++) {
+			msurface_t *surf = brush->surfaces + i;
 			if (surf->lightpic) {
-				Vulkan_BuildLightMap (surf, ctx);
+				Vulkan_BuildLightMap (brush, surf, ctx);
 			}
 		}
 	}

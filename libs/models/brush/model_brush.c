@@ -67,10 +67,10 @@ Mod_PointInLeaf (const vec3_t p, model_t *model)
 	mnode_t    *node;
 	plane_t    *plane;
 
-	if (!model || !model->nodes)
+	if (!model || !model->brush.nodes)
 		Sys_Error ("Mod_PointInLeaf: bad model");
 
-	node = model->nodes;
+	node = model->brush.nodes;
 	while (1) {
 		if (node->contents < 0)
 			return (mleaf_t *) node;
@@ -86,13 +86,13 @@ Mod_PointInLeaf (const vec3_t p, model_t *model)
 }
 
 static inline byte *
-Mod_DecompressVis (byte * in, model_t *model)
+Mod_DecompressVis (byte * in, mod_brush_t *brush)
 {
 	static byte decompressed[MAX_MAP_LEAFS / 8];
 	byte       *out;
 	int			row, c;
 
-	row = (model->numleafs + 7) >> 3;
+	row = (brush->numleafs + 7) >> 3;
 	out = decompressed;
 
 	if (!in) {							// no vis info, so make all visible
@@ -123,13 +123,13 @@ Mod_DecompressVis (byte * in, model_t *model)
 VISIBLE byte *
 Mod_LeafPVS (mleaf_t *leaf, model_t *model)
 {
-	if (leaf == model->leafs) {
+	if (leaf == model->brush.leafs) {
 		if (!mod_novis[0]) {
 			memset (mod_novis, 0xff, sizeof (mod_novis));
 		}
 		return mod_novis;
 	}
-	return Mod_DecompressVis (leaf->compressed_vis, model);
+	return Mod_DecompressVis (leaf->compressed_vis, &model->brush);
 }
 
 // BRUSHMODEL LOADING =========================================================
@@ -170,16 +170,17 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 	miptex_t	   *mt;
 	texture_t	   *tx, *tx2;
 	texture_t	   *anims[10], *altanims[10];
+	mod_brush_t    *brush = &mod->brush;
 
 	if (!bsp->texdatasize) {
-		mod->textures = NULL;
+		brush->textures = NULL;
 		return;
 	}
 	m = (dmiptexlump_t *) bsp->texdata;
 
-	mod->numtextures = m->nummiptex;
-	mod->textures = Hunk_AllocName (m->nummiptex * sizeof (*mod->textures),
-									mod->name);
+	brush->numtextures = m->nummiptex;
+	brush->textures = Hunk_AllocName (m->nummiptex * sizeof (*brush->textures),
+									  mod->name);
 
 	for (i = 0; i < m->nummiptex; i++) {
 		if (m->dataofs[i] == -1)
@@ -195,10 +196,10 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 		pixels = mt->width * mt->height / 64 * 85;
 		tx = Hunk_AllocName (sizeof (texture_t) + pixels, mod->name);
 
-		mod->textures[i] = tx;
+		brush->textures[i] = tx;
 
 		tx->name = strndup(mt->name, sizeof (mt->name));
-		mod_unique_miptex_name (mod->textures, tx, i);
+		mod_unique_miptex_name (brush->textures, tx, i);
 		tx->width = mt->width;
 		tx->height = mt->height;
 		for (j = 0; j < MIPLEVELS; j++)
@@ -208,7 +209,7 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 		memcpy (tx + 1, mt + 1, pixels);
 
 		if (!strncmp (mt->name, "sky", 3))
-			mod->skytexture = tx;
+			brush->skytexture = tx;
 	}
 	if (mod_funcs && mod_funcs->Mod_ProcessTexture) {
 		size_t      render_size = mod_funcs->texture_render_size;
@@ -218,7 +219,7 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 										  mod->name);
 		}
 		for (i = 0; i < m->nummiptex; i++) {
-			tx = mod->textures[i];
+			tx = brush->textures[i];
 			tx->render = render_data;
 			render_data += render_size;
 			mod_funcs->Mod_ProcessTexture (mod, tx);
@@ -229,7 +230,7 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 
 	// sequence the animations
 	for (i = 0; i < m->nummiptex; i++) {
-		tx = mod->textures[i];
+		tx = brush->textures[i];
 		if (!tx || tx->name[0] != '+')
 			continue;
 		if (tx->anim_next)
@@ -256,7 +257,7 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 			Sys_Error ("Bad animating texture %s", tx->name);
 
 		for (j = i + 1; j < m->nummiptex; j++) {
-			tx2 = mod->textures[j];
+			tx2 = brush->textures[j];
 			if (!tx2 || tx2->name[0] != '+')
 				continue;
 			if (strcmp (tx2->name + 2, tx->name + 2))
@@ -310,22 +311,22 @@ static void
 Mod_LoadVisibility (model_t *mod, bsp_t *bsp)
 {
 	if (!bsp->visdatasize) {
-		mod->visdata = NULL;
+		mod->brush.visdata = NULL;
 		return;
 	}
-	mod->visdata = Hunk_AllocName (bsp->visdatasize, mod->name);
-	memcpy (mod->visdata, bsp->visdata, bsp->visdatasize);
+	mod->brush.visdata = Hunk_AllocName (bsp->visdatasize, mod->name);
+	memcpy (mod->brush.visdata, bsp->visdata, bsp->visdatasize);
 }
 
 static void
 Mod_LoadEntities (model_t *mod, bsp_t *bsp)
 {
 	if (!bsp->entdatasize) {
-		mod->entities = NULL;
+		mod->brush.entities = NULL;
 		return;
 	}
-	mod->entities = Hunk_AllocName (bsp->entdatasize, mod->name);
-	memcpy (mod->entities, bsp->entdata, bsp->entdatasize);
+	mod->brush.entities = Hunk_AllocName (bsp->entdatasize, mod->name);
+	memcpy (mod->brush.entities, bsp->entdata, bsp->entdatasize);
 }
 
 static void
@@ -339,8 +340,8 @@ Mod_LoadVertexes (model_t *mod, bsp_t *bsp)
 	count = bsp->numvertexes;
 	out = Hunk_AllocName (count * sizeof (*out), mod->name);
 
-	mod->vertexes = out;
-	mod->numvertexes = count;
+	mod->brush.vertexes = out;
+	mod->brush.numvertexes = count;
 
 	for (i = 0; i < count; i++, in++, out++)
 		VectorCopy (in->point, out->position);
@@ -351,13 +352,14 @@ Mod_LoadSubmodels (model_t *mod, bsp_t *bsp)
 {
 	dmodel_t   *in, *out;
 	int         count, i, j;
+	mod_brush_t *brush = &mod->brush;
 
 	in = bsp->models;
 	count = bsp->nummodels;
 	out = Hunk_AllocName (count * sizeof (*out), mod->name);
 
-	mod->submodels = out;
-	mod->numsubmodels = count;
+	brush->submodels = out;
+	brush->numsubmodels = count;
 
 	for (i = 0; i < count; i++, in++, out++) {
 		static vec3_t offset = {1, 1, 1};
@@ -372,7 +374,7 @@ Mod_LoadSubmodels (model_t *mod, bsp_t *bsp)
 		out->numfaces = in->numfaces;
 	}
 
-	out = mod->submodels;
+	out = brush->submodels;
 
 	if (out->visleafs > MAX_MAP_LEAFS) {
 		Sys_Error ("Mod_LoadSubmodels: too many visleafs (%d, max = %d) in %s",
@@ -396,8 +398,8 @@ Mod_LoadEdges (model_t *mod, bsp_t *bsp)
 	count = bsp->numedges;
 	out = Hunk_AllocName ((count + 1) * sizeof (*out), mod->name);
 
-	mod->edges = out;
-	mod->numedges = count;
+	mod->brush.edges = out;
+	mod->brush.numedges = count;
 
 	for (i = 0; i < count; i++, in++, out++) {
 		out->v[0] = in->v[0];
@@ -417,8 +419,8 @@ Mod_LoadTexinfo (model_t *mod, bsp_t *bsp)
 	count = bsp->numtexinfo;
 	out = Hunk_AllocName (count * sizeof (*out), mod->name);
 
-	mod->texinfo = out;
-	mod->numtexinfo = count;
+	mod->brush.texinfo = out;
+	mod->brush.numtexinfo = count;
 
 	for (i = 0; i < count; i++, in++, out++) {
 		for (j = 0; j < 4; j++) {
@@ -441,13 +443,13 @@ Mod_LoadTexinfo (model_t *mod, bsp_t *bsp)
 		miptex = in->miptex;
 		out->flags = in->flags;
 
-		if (!mod->textures) {
+		if (!mod->brush.textures) {
 			out->texture = r_notexture_mip;	// checkerboard texture
 			out->flags = 0;
 		} else {
-			if (miptex >= mod->numtextures)
-				Sys_Error ("miptex >= mod->numtextures");
-			out->texture = mod->textures[miptex];
+			if (miptex >= mod->brush.numtextures)
+				Sys_Error ("miptex >= mod->brush.numtextures");
+			out->texture = mod->brush.textures[miptex];
 			if (!out->texture) {
 				out->texture = r_notexture_mip;	// texture not found
 				out->flags = 0;
@@ -469,6 +471,7 @@ CalcSurfaceExtents (model_t *mod, msurface_t *s)
 	int			bmins[2], bmaxs[2];
 	mtexinfo_t *tex;
 	mvertex_t  *v;
+	mod_brush_t *brush = &mod->brush;
 
 	mins[0] = mins[1] = 999999;
 	maxs[0] = maxs[1] = -99999;
@@ -476,11 +479,11 @@ CalcSurfaceExtents (model_t *mod, msurface_t *s)
 	tex = s->texinfo;
 
 	for (i = 0; i < s->numedges; i++) {
-		e = mod->surfedges[s->firstedge + i];
+		e = brush->surfedges[s->firstedge + i];
 		if (e >= 0)
-			v = &mod->vertexes[mod->edges[e].v[0]];
+			v = &brush->vertexes[brush->edges[e].v[0]];
 		else
-			v = &mod->vertexes[mod->edges[-e].v[1]];
+			v = &brush->vertexes[brush->edges[-e].v[1]];
 
 		for (j = 0; j < 2; j++) {
 			val = v->position[0] * tex->vecs[j][0] +
@@ -512,6 +515,7 @@ Mod_LoadFaces (model_t *mod, bsp_t *bsp)
 	dface_t    *in;
 	int			count, planenum, side, surfnum, i;
 	msurface_t *out;
+	mod_brush_t *brush = &mod->brush;
 
 	in = bsp->faces;
 	count = bsp->numfaces;
@@ -522,8 +526,8 @@ Mod_LoadFaces (model_t *mod, bsp_t *bsp)
 						"%i faces exceeds standard limit of 32767.\n", count);
 	}
 
-	mod->surfaces = out;
-	mod->numsurfaces = count;
+	brush->surfaces = out;
+	brush->numsurfaces = count;
 
 	for (surfnum = 0; surfnum < count; surfnum++, in++, out++) {
 		out->firstedge = in->firstedge;
@@ -535,9 +539,9 @@ Mod_LoadFaces (model_t *mod, bsp_t *bsp)
 		if (side)
 			out->flags |= SURF_PLANEBACK;
 
-		out->plane = mod->planes + planenum;
+		out->plane = brush->planes + planenum;
 
-		out->texinfo = mod->texinfo + in->texinfo;
+		out->texinfo = brush->texinfo + in->texinfo;
 
 		CalcSurfaceExtents (mod, out);
 
@@ -549,7 +553,7 @@ Mod_LoadFaces (model_t *mod, bsp_t *bsp)
 		if (i == -1)
 			out->samples = NULL;
 		else
-			out->samples = mod->lightdata + (i * mod_lightmap_bytes);
+			out->samples = brush->lightdata + (i * mod_lightmap_bytes);
 
 		// set the drawing flags flag
 		if (!out->texinfo->texture || !out->texinfo->texture->name)
@@ -596,6 +600,7 @@ Mod_LoadNodes (model_t *mod, bsp_t *bsp)
 	dnode_t    *in;
 	int			count, i, j, p;
 	mnode_t    *out;
+	mod_brush_t *brush = &mod->brush;
 
 	in = bsp->nodes;
 	count = bsp->numnodes;
@@ -606,8 +611,8 @@ Mod_LoadNodes (model_t *mod, bsp_t *bsp)
 						"%i nodes exceeds standard limit of 32767.\n", count);
 	}
 
-	mod->nodes = out;
-	mod->numnodes = count;
+	brush->nodes = out;
+	brush->numnodes = count;
 
 	for (i = 0; i < count; i++, in++, out++) {
 		for (j = 0; j < 3; j++) {
@@ -616,7 +621,7 @@ Mod_LoadNodes (model_t *mod, bsp_t *bsp)
 		}
 
 		p = in->planenum;
-		out->plane = mod->planes + p;
+		out->plane = brush->planes + p;
 
 		out->firstsurface = in->firstface;
 		out->numsurfaces = in->numfaces;
@@ -625,23 +630,23 @@ Mod_LoadNodes (model_t *mod, bsp_t *bsp)
 			p = in->children[j];
 			// this check is for extended bsp 29 files
 			if (p >= 0) {
-				out->children[j] = mod->nodes + p;
+				out->children[j] = brush->nodes + p;
 			} else {
 				p = ~p;
-				if (p < mod->numleafs) {
-					out->children[j] = (mnode_t *) (mod->leafs + p);
+				if (p < brush->numleafs) {
+					out->children[j] = (mnode_t *) (brush->leafs + p);
 				} else {
 					Sys_Printf ("Mod_LoadNodes: invalid leaf index %i "
 								"(file has only %i leafs)\n", p,
-								mod->numleafs);
+								brush->numleafs);
 					//map it to the solid leaf
-					out->children[j] = (mnode_t *)(mod->leafs);
+					out->children[j] = (mnode_t *)(brush->leafs);
 				}
 			}
 		}
 	}
 
-	Mod_SetParent (mod->nodes, NULL);	// sets nodes and leafs
+	Mod_SetParent (brush->nodes, NULL);	// sets nodes and leafs
 }
 
 static void
@@ -651,13 +656,14 @@ Mod_LoadLeafs (model_t *mod, bsp_t *bsp)
 	int			count, i, j, p;
 	mleaf_t    *out;
 	qboolean    isnotmap = true;
+	mod_brush_t *brush = &mod->brush;
 
 	in = bsp->leafs;
 	count = bsp->numleafs;
 	out = Hunk_AllocName (count * sizeof (*out), mod->name);
 
-	mod->leafs = out;
-	mod->numleafs = count;
+	brush->leafs = out;
+	brush->numleafs = count;
 //	snprintf(s, sizeof (s), "maps/%s.bsp",
 //	Info_ValueForKey(cl.serverinfo,"map"));
 	if (!strncmp ("maps/", mod->path, 5))
@@ -671,14 +677,14 @@ Mod_LoadLeafs (model_t *mod, bsp_t *bsp)
 		p = in->contents;
 		out->contents = p;
 
-		out->firstmarksurface = mod->marksurfaces + in->firstmarksurface;
+		out->firstmarksurface = brush->marksurfaces + in->firstmarksurface;
 		out->nummarksurfaces = in->nummarksurfaces;
 
 		p = in->visofs;
 		if (p == -1)
 			out->compressed_vis = NULL;
 		else
-			out->compressed_vis = mod->visdata + p;
+			out->compressed_vis = brush->visdata + p;
 		out->efrags = NULL;
 
 		for (j = 0; j < 4; j++)
@@ -703,6 +709,7 @@ Mod_LoadClipnodes (model_t *mod, bsp_t *bsp)
 	mclipnode_t *out;
 	hull_t		*hull;
 	int			 count, i;
+	mod_brush_t *brush = &mod->brush;
 
 	in = bsp->clipnodes;
 	count = bsp->numclipnodes;
@@ -714,15 +721,15 @@ Mod_LoadClipnodes (model_t *mod, bsp_t *bsp)
 						count);
 	}
 
-	mod->clipnodes = out;
-	mod->numclipnodes = count;
+	brush->clipnodes = out;
+	brush->numclipnodes = count;
 
-	hull = &mod->hulls[1];
-	mod->hull_list[1] = hull;
+	hull = &brush->hulls[1];
+	brush->hull_list[1] = hull;
 	hull->clipnodes = out;
 	hull->firstclipnode = 0;
 	hull->lastclipnode = count - 1;
-	hull->planes = mod->planes;
+	hull->planes = brush->planes;
 	hull->clip_mins[0] = -16;
 	hull->clip_mins[1] = -16;
 	hull->clip_mins[2] = -24;
@@ -730,12 +737,12 @@ Mod_LoadClipnodes (model_t *mod, bsp_t *bsp)
 	hull->clip_maxs[1] = 16;
 	hull->clip_maxs[2] = 32;
 
-	hull = &mod->hulls[2];
-	mod->hull_list[2] = hull;
+	hull = &brush->hulls[2];
+	brush->hull_list[2] = hull;
 	hull->clipnodes = out;
 	hull->firstclipnode = 0;
 	hull->lastclipnode = count - 1;
-	hull->planes = mod->planes;
+	hull->planes = brush->planes;
 	hull->clip_mins[0] = -32;
 	hull->clip_mins[1] = -32;
 	hull->clip_mins[2] = -24;
@@ -745,7 +752,7 @@ Mod_LoadClipnodes (model_t *mod, bsp_t *bsp)
 
 	for (i = 0; i < count; i++, out++, in++) {
 		out->planenum = in->planenum;
-		if (out->planenum < 0 || out->planenum >= mod->numplanes)
+		if (out->planenum < 0 || out->planenum >= brush->numplanes)
 			Sys_Error ("Mod_LoadClipnodes: planenum out of bounds");
 		out->children[0] = in->children[0];
 		out->children[1] = in->children[1];
@@ -776,27 +783,28 @@ Mod_MakeHull0 (model_t *mod)
 	hull_t		*hull;
 	int			 count, i, j;
 	mnode_t		*in, *child;
+	mod_brush_t *brush = &mod->brush;
 
-	hull = &mod->hulls[0];
-	mod->hull_list[0] = hull;
+	hull = &brush->hulls[0];
+	brush->hull_list[0] = hull;
 
-	in = mod->nodes;
-	count = mod->numnodes;
+	in = brush->nodes;
+	count = brush->numnodes;
 	out = Hunk_AllocName (count * sizeof (*out), mod->name);
 
 	hull->clipnodes = out;
 	hull->firstclipnode = 0;
 	hull->lastclipnode = count - 1;
-	hull->planes = mod->planes;
+	hull->planes = brush->planes;
 
 	for (i = 0; i < count; i++, out++, in++) {
-		out->planenum = in->plane - mod->planes;
+		out->planenum = in->plane - brush->planes;
 		for (j = 0; j < 2; j++) {
 			child = in->children[j];
 			if (child->contents < 0)
 				out->children[j] = child->contents;
 			else
-				out->children[j] = child - mod->nodes;
+				out->children[j] = child - brush->nodes;
 		}
 	}
 }
@@ -807,6 +815,7 @@ Mod_LoadMarksurfaces (model_t *mod, bsp_t *bsp)
 	int			 count, i, j;
 	msurface_t **out;
 	uint32_t    *in;
+	mod_brush_t *brush = &mod->brush;
 
 	in = bsp->marksurfaces;
 	count = bsp->nummarksurfaces;
@@ -818,14 +827,14 @@ Mod_LoadMarksurfaces (model_t *mod, bsp_t *bsp)
 						count);
 	}
 
-	mod->marksurfaces = out;
-	mod->nummarksurfaces = count;
+	brush->marksurfaces = out;
+	brush->nummarksurfaces = count;
 
 	for (i = 0; i < count; i++) {
 		j = in[i];
-		if (j >= mod->numsurfaces)
+		if (j >= brush->numsurfaces)
 			Sys_Error ("Mod_ParseMarksurfaces: bad surface number");
-		out[i] = mod->surfaces + j;
+		out[i] = brush->surfaces + j;
 	}
 }
 
@@ -835,13 +844,14 @@ Mod_LoadSurfedges (model_t *mod, bsp_t *bsp)
 	int          count, i;
 	int32_t     *in;
 	int         *out;
+	mod_brush_t *brush = &mod->brush;
 
 	in = bsp->surfedges;
 	count = bsp->numsurfedges;
 	out = Hunk_AllocName (count * sizeof (*out), mod->name);
 
-	mod->surfedges = out;
-	mod->numsurfedges = count;
+	brush->surfedges = out;
+	brush->numsurfedges = count;
 
 	for (i = 0; i < count; i++)
 		out[i] = in[i];
@@ -853,13 +863,14 @@ Mod_LoadPlanes (model_t *mod, bsp_t *bsp)
 	dplane_t   *in;
 	int			bits, count, i, j;
 	plane_t    *out;
+	mod_brush_t *brush = &mod->brush;
 
 	in = bsp->planes;
 	count = bsp->numplanes;
 	out = Hunk_AllocName (count * 2 * sizeof (*out), mod->name);
 
-	mod->planes = out;
-	mod->numplanes = count;
+	brush->planes = out;
+	brush->numplanes = count;
 
 	for (i = 0; i < count; i++, in++, out++) {
 		bits = 0;
@@ -881,12 +892,13 @@ do_checksums (const bsp_t *bsp, void *_mod)
 	int         i;
 	model_t    *mod = (model_t *) _mod;
 	byte       *base;
+	mod_brush_t *brush = &mod->brush;
 
 	base = (byte *) bsp->header;
 
 	// checksum all of the map, except for entities
-	mod->checksum = 0;
-	mod->checksum2 = 0;
+	brush->checksum = 0;
+	brush->checksum2 = 0;
 	for (i = 0; i < HEADER_LUMPS; i++) {
 		lump_t     *lump = bsp->header->lumps + i;
 		int         csum;
@@ -894,30 +906,30 @@ do_checksums (const bsp_t *bsp, void *_mod)
 		if (i == LUMP_ENTITIES)
 			continue;
 		csum = Com_BlockChecksum (base + lump->fileofs, lump->filelen);
-		mod->checksum ^= csum;
+		brush->checksum ^= csum;
 
 		if (i != LUMP_VISIBILITY && i != LUMP_LEAFS && i != LUMP_NODES)
-			mod->checksum2 ^= csum;
+			brush->checksum2 ^= csum;
 	}
 }
 
 static void
-recurse_draw_tree (model_t *mod, mnode_t *node, int depth)
+recurse_draw_tree (mod_brush_t *brush, mnode_t *node, int depth)
 {
 	if (!node || node->contents < 0) {
-		if (depth > mod->depth)
-			mod->depth = depth;
+		if (depth > brush->depth)
+			brush->depth = depth;
 		return;
 	}
-	recurse_draw_tree (mod, node->children[0], depth + 1);
-	recurse_draw_tree (mod, node->children[1], depth + 1);
+	recurse_draw_tree (brush, node->children[0], depth + 1);
+	recurse_draw_tree (brush, node->children[1], depth + 1);
 }
 
 static void
-Mod_FindDrawDepth (model_t *mod)
+Mod_FindDrawDepth (mod_brush_t *brush)
 {
-	mod->depth = 0;
-	recurse_draw_tree (mod, mod->nodes, 1);
+	brush->depth = 0;
+	recurse_draw_tree (brush, brush->nodes, 1);
 }
 
 void
@@ -954,35 +966,35 @@ Mod_LoadBrushModel (model_t *mod, void *buffer)
 
 	Mod_MakeHull0 (mod);
 
-	Mod_FindDrawDepth (mod);
+	Mod_FindDrawDepth (&mod->brush);
 	for (i = 0; i < MAX_MAP_HULLS; i++)
-		Mod_FindClipDepth (&mod->hulls[i]);
+		Mod_FindClipDepth (&mod->brush.hulls[i]);
 
 	mod->numframes = 2;					// regular and alternate animation
 
 	// set up the submodels (FIXME: this is confusing)
-	for (i = 0; i < mod->numsubmodels; i++) {
-		bm = &mod->submodels[i];
+	for (i = 0; i < mod->brush.numsubmodels; i++) {
+		bm = &mod->brush.submodels[i];
 
-		mod->hulls[0].firstclipnode = bm->headnode[0];
-		mod->hull_list[0] = &mod->hulls[0];
+		mod->brush.hulls[0].firstclipnode = bm->headnode[0];
+		mod->brush.hull_list[0] = &mod->brush.hulls[0];
 		for (j = 1; j < MAX_MAP_HULLS; j++) {
-			mod->hulls[j].firstclipnode = bm->headnode[j];
-			mod->hulls[j].lastclipnode = mod->numclipnodes - 1;
-			mod->hull_list[j] = &mod->hulls[j];
+			mod->brush.hulls[j].firstclipnode = bm->headnode[j];
+			mod->brush.hulls[j].lastclipnode = mod->brush.numclipnodes - 1;
+			mod->brush.hull_list[j] = &mod->brush.hulls[j];
 		}
 
-		mod->firstmodelsurface = bm->firstface;
-		mod->nummodelsurfaces = bm->numfaces;
+		mod->brush.firstmodelsurface = bm->firstface;
+		mod->brush.nummodelsurfaces = bm->numfaces;
 
 		VectorCopy (bm->maxs, mod->maxs);
 		VectorCopy (bm->mins, mod->mins);
 
 		mod->radius = RadiusFromBounds (mod->mins, mod->maxs);
 
-		mod->numleafs = bm->visleafs;
+		mod->brush.numleafs = bm->visleafs;
 
-		if (i < mod->numsubmodels - 1) {
+		if (i < mod->brush.numsubmodels - 1) {
 			// duplicate the basic information
 			char	name[12];
 

@@ -69,9 +69,10 @@ static void vulkan_brush_clear (model_t *mod, void *data)
 	vulkan_ctx_t *ctx = mctx->ctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
+	mod_brush_t *brush = &mod->brush;
 
-	for (int i = 0; i < mod->numtextures; i++) {
-		texture_t  *tx = mod->textures[i];
+	for (int i = 0; i < brush->numtextures; i++) {
+		texture_t  *tx = brush->textures[i];
 		if (!tx) {
 			continue;
 		}
@@ -180,12 +181,13 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 	modelctx_t *mctx = mod->data;
 	VkImage     image = 0;
 	byte       *buffer;
+	mod_brush_t *brush = &mod->brush;
 
 	size_t      image_count = 0;
 	size_t      copy_count = 0;
 	size_t      memsize = 0;
-	for (int i = 0; i < mod->numtextures; i++) {
-		texture_t  *tx = mod->textures[i];
+	for (int i = 0; i < brush->numtextures; i++) {
+		texture_t  *tx = brush->textures[i];
 		if (!tx) {
 			continue;
 		}
@@ -221,8 +223,8 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 	qfv_packet_t *packet = QFV_PacketAcquire (stage);
 	buffer = QFV_PacketExtend (packet, memsize);
 
-	for (int i = 0; i < mod->numtextures; i++) {
-		texture_t  *tx = mod->textures[i];
+	for (int i = 0; i < brush->numtextures; i++) {
+		texture_t  *tx = brush->textures[i];
 		byte       *palette = vid.palette32;
 		if (!tx) {
 			continue;
@@ -275,8 +277,8 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 
 	__auto_type barriers = QFV_AllocImageBarrierSet (image_count, malloc);
 	barriers->size = 0;
-	for (int i = 0; i < mod->numtextures; i++) {
-		texture_t  *tx = mod->textures[i];
+	for (int i = 0; i < brush->numtextures; i++) {
+		texture_t  *tx = brush->textures[i];
 		if (!tx) {
 			continue;
 		}
@@ -296,8 +298,8 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
 								 0, 0, 0, 0, 0,
 								 barriers->size, barriers->a);
-	for (int i = 0, j = 0; i < mod->numtextures; i++) {
-		texture_t  *tx = mod->textures[i];
+	for (int i = 0, j = 0; i < brush->numtextures; i++) {
+		texture_t  *tx = brush->textures[i];
 		if (!tx) {
 			continue;
 		}
@@ -401,9 +403,11 @@ Vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx, vulkan_ctx_t *ctx)
 void
 Vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp, vulkan_ctx_t *ctx)
 {
+	mod_brush_t *brush = &mod->brush;
+
 	mod_lightmap_bytes = 3;
 	if (!bsp->lightdatasize) {
-		mod->lightdata = NULL;
+		brush->lightdata = NULL;
 		return;
 	}
 
@@ -413,7 +417,7 @@ Vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp, vulkan_ctx_t *ctx)
 	int         ver;
 	QFile      *lit_file;
 
-	mod->lightdata = 0;
+	brush->lightdata = 0;
 	if (mod_lightmap_bytes > 1) {
 		// LordHavoc: check for a .lit file to load
 		dstring_t  *litfilename = dstring_new ();
@@ -428,7 +432,7 @@ Vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp, vulkan_ctx_t *ctx)
 				ver = LittleLong (((int32_t *) data)[1]);
 				if (ver == 1) {
 					Sys_MaskPrintf (SYS_DEV, "%s loaded", litfilename->str);
-					mod->lightdata = data + 8;
+					brush->lightdata = data + 8;
 				} else {
 					Sys_MaskPrintf (SYS_DEV,
 									"Unknown .lit file version (%d)\n", ver);
@@ -439,13 +443,13 @@ Vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp, vulkan_ctx_t *ctx)
 		}
 		dstring_delete (litfilename);
 	}
-	if (mod->lightdata || !bsp->lightdatasize) {
+	if (brush->lightdata || !bsp->lightdatasize) {
 		return;
 	}
 	// LordHavoc: oh well, expand the white lighting data
-	mod->lightdata = Hunk_AllocName (bsp->lightdatasize * 3, mod->name);
+	brush->lightdata = Hunk_AllocName (bsp->lightdatasize * 3, mod->name);
 	in = bsp->lightdata;
-	out = mod->lightdata;
+	out = brush->lightdata;
 
 	for (i = 0; i < bsp->lightdatasize ; i++) {
 		d = *in++;

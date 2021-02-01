@@ -146,15 +146,15 @@ gl_R_AddTexture (texture_t *tx)
 }
 
 void
-gl_R_InitSurfaceChains (model_t *model)
+gl_R_InitSurfaceChains (mod_brush_t *brush)
 {
 	int         i;
 
 	if (static_chains)
 		free (static_chains);
-	static_chains = calloc (model->nummodelsurfaces, sizeof (instsurf_t));
-	for (i = 0; i < model->nummodelsurfaces; i++)
-		model->surfaces[i].instsurf = static_chains + i;
+	static_chains = calloc (brush->nummodelsurfaces, sizeof (instsurf_t));
+	for (i = 0; i < brush->nummodelsurfaces; i++)
+		brush->surfaces[i].instsurf = static_chains + i;
 
 	release_instsurfs ();
 }
@@ -267,7 +267,7 @@ R_RenderBrushPoly_1 (msurface_t *fa)
 }
 
 static inline void
-R_AddToLightmapChain (msurface_t *fa)
+R_AddToLightmapChain (mod_brush_t *brush, msurface_t *fa)
 {
 	int		maps, smax, tmax;
 	glRect_t 	*theRect;
@@ -306,7 +306,7 @@ R_AddToLightmapChain (msurface_t *fa)
 				theRect->w = (fa->light_s - theRect->l) + smax;
 			if ((theRect->h + theRect->t) < (fa->light_t + tmax))
 				theRect->h = (fa->light_t - theRect->t) + tmax;
-			gl_R_BuildLightMap (fa);
+			gl_R_BuildLightMap (brush, fa);
 		}
 	}
 }
@@ -490,7 +490,8 @@ clear_texture_chains (void)
 }
 
 static inline void
-chain_surface (msurface_t *surf, vec_t *transform, float *color)
+chain_surface (mod_brush_t *brush, msurface_t *surf, vec_t *transform,
+			   float *color)
 {
 	instsurf_t *sc;
 
@@ -509,7 +510,7 @@ chain_surface (msurface_t *surf, vec_t *transform, float *color)
 		tex = tx->render;
 		CHAIN_SURF_F2B (surf, tex->tex_chain);
 
-		R_AddToLightmapChain (surf);
+		R_AddToLightmapChain (brush, surf);
 	}
 	if (!(sc = surf->instsurf))
 		sc = surf->tinst;
@@ -528,8 +529,10 @@ gl_R_DrawBrushModel (entity_t *e)
 	msurface_t *psurf;
 	qboolean    rotated;
 	vec3_t      mins, maxs;
+	mod_brush_t *brush;
 
 	model = e->model;
+	brush = &model->brush;
 
 	if (e->transform[0] != 1 || e->transform[5] != 1 || e->transform[10] != 1) {
 		rotated = true;
@@ -565,7 +568,7 @@ gl_R_DrawBrushModel (entity_t *e)
 	}
 
 	// calculate dynamic lighting for bmodel if it's not an instanced model
-	if (model->firstmodelsurface != 0 && r_dlight_lightmap->int_val) {
+	if (brush->firstmodelsurface != 0 && r_dlight_lightmap->int_val) {
 		vec3_t      lightorigin;
 
 		for (k = 0; k < r_maxdlights; k++) {
@@ -574,8 +577,8 @@ gl_R_DrawBrushModel (entity_t *e)
 				continue;
 
 			VectorSubtract (r_dlights[k].origin, e->origin, lightorigin);
-			R_RecursiveMarkLights (lightorigin, &r_dlights[k], k,
-							model->nodes + model->hulls[0].firstclipnode);
+			R_RecursiveMarkLights (brush, lightorigin, &r_dlights[k], k,
+							brush->nodes + brush->hulls[0].firstclipnode);
 		}
 	}
 
@@ -584,10 +587,10 @@ gl_R_DrawBrushModel (entity_t *e)
 	qfglGetFloatv (GL_MODELVIEW_MATRIX, e->full_transform);
 	qfglPopMatrix ();
 
-	psurf = &model->surfaces[model->firstmodelsurface];
+	psurf = &brush->surfaces[brush->firstmodelsurface];
 
 	// draw texture
-	for (i = 0; i < model->nummodelsurfaces; i++, psurf++) {
+	for (i = 0; i < brush->nummodelsurfaces; i++, psurf++) {
 		// find which side of the node we are on
 		pplane = psurf->plane;
 
@@ -596,7 +599,7 @@ gl_R_DrawBrushModel (entity_t *e)
 		// draw the polygon
 		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
 			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
-			chain_surface (psurf, e->full_transform, e->colormod);
+			chain_surface (brush, psurf, e->full_transform, e->colormod);
 		}
 	}
 }
@@ -623,7 +626,7 @@ get_side (mnode_t *node)
 }
 
 static inline void
-visit_node (mnode_t *node, int side)
+visit_node (mod_brush_t *brush, mnode_t *node, int side)
 {
 	int         c;
 	msurface_t *surf;
@@ -632,7 +635,7 @@ visit_node (mnode_t *node, int side)
 	side = (~side + 1) & SURF_PLANEBACK;
 	// draw stuff
 	if ((c = node->numsurfaces)) {
-		surf = r_worldentity.model->surfaces + node->firstsurface;
+		surf = brush->surfaces + node->firstsurface;
 		for (; c; c--, surf++) {
 			if (surf->visframe != r_visframecount)
 				continue;
@@ -641,7 +644,7 @@ visit_node (mnode_t *node, int side)
 			if (side ^ (surf->flags & SURF_PLANEBACK))
 				continue;				// wrong side
 
-			chain_surface (surf, 0, 0);
+			chain_surface (brush, surf, 0, 0);
 		}
 	}
 }
@@ -659,7 +662,7 @@ test_node (mnode_t *node)
 }
 
 static void
-R_VisitWorldNodes (model_t *model)
+R_VisitWorldNodes (mod_brush_t *brush)
 {
 	typedef struct {
 		mnode_t    *node;
@@ -671,9 +674,9 @@ R_VisitWorldNodes (model_t *model)
 	mnode_t    *front;
 	int         side;
 
-	node = model->nodes;
+	node = brush->nodes;
 	// +2 for paranoia
-	node_stack = alloca ((model->depth + 2) * sizeof (rstack_t));
+	node_stack = alloca ((brush->depth + 2) * sizeof (rstack_t));
 	node_ptr = node_stack;
 
 	while (1) {
@@ -689,7 +692,7 @@ R_VisitWorldNodes (model_t *model)
 			}
 			if (front->contents < 0 && front->contents != CONTENTS_SOLID)
 				visit_leaf ((mleaf_t *) front);
-			visit_node (node, side);
+			visit_node (brush, node, side);
 			node = node->children[!side];
 		}
 		if (node->contents < 0 && node->contents != CONTENTS_SOLID)
@@ -698,7 +701,7 @@ R_VisitWorldNodes (model_t *model)
 			node_ptr--;
 			node = node_ptr->node;
 			side = node_ptr->side;
-			visit_node (node, side);
+			visit_node (brush, node, side);
 			node = node->children[!side];
 			continue;
 		}
@@ -726,7 +729,7 @@ gl_R_DrawWorld (void)
 		gl_R_DrawSky ();
 	}
 
-	R_VisitWorldNodes (r_worldentity.model);
+	R_VisitWorldNodes (&r_worldentity.model->brush);
 	if (r_drawentities->int_val) {
 		entity_t   *ent;
 		for (ent = r_ent_queue; ent; ent = ent->next) {
@@ -821,7 +824,7 @@ GL_BuildSurfaceDisplayList (msurface_t *fa)
 	medge_t    *pedges, *r_pedge;
 
 	// reconstruct the polygon
-	pedges = gl_currentmodel->edges;
+	pedges = gl_currentmodel->brush.edges;
 	lnumverts = fa->numedges;
 
 	// draw texture
@@ -833,7 +836,7 @@ GL_BuildSurfaceDisplayList (msurface_t *fa)
 	poly->numverts = lnumverts;
 
 	for (i = 0; i < lnumverts; i++) {
-		lindex = gl_currentmodel->surfedges[fa->firstedge + i];
+		lindex = gl_currentmodel->brush.surfedges[fa->firstedge + i];
 
 		if (lindex > 0) {
 			r_pedge = &pedges[lindex];

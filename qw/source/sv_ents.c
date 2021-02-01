@@ -99,9 +99,9 @@ SV_AddToFatPVS (vec3_t org, mnode_t *node)
 static byte *
 SV_FatPVS (vec3_t org)
 {
-	fatbytes = (sv.worldmodel->numleafs + 31) >> 3;
+	fatbytes = (sv.worldmodel->brush.numleafs + 31) >> 3;
 	memset (fatpvs, 0, fatbytes);
-	SV_AddToFatPVS (org, sv.worldmodel->nodes);
+	SV_AddToFatPVS (org, sv.worldmodel->brush.nodes);
 	return fatpvs;
 }
 
@@ -738,7 +738,7 @@ calc_pvs (delta_t *delta)
 			if (pvs == NULL) {
 				pvs = SV_FatPVS (org);
 			} else {
-				SV_AddToFatPVS (org, sv.worldmodel->nodes);
+				SV_AddToFatPVS (org, sv.worldmodel->brush.nodes);
 			}
 		}
 	}

@@ -67,13 +67,13 @@ R_MarkLeaves (void)
 		r_oldviewleaf = 0;	// so vis will be recalcualted when novis gets
 							// turned off
 		vis = solid;
-		memset (solid, 0xff, (r_worldentity.model->numleafs + 7) >> 3);
+		memset (solid, 0xff, (r_worldentity.model->brush.numleafs + 7) >> 3);
 	} else
 		vis = Mod_LeafPVS (r_viewleaf, r_worldentity.model);
 
-	for (i = 0; (int) i < r_worldentity.model->numleafs; i++) {
+	for (i = 0; (int) i < r_worldentity.model->brush.numleafs; i++) {
 		if (vis[i >> 3] & (1 << (i & 7))) {
-			leaf = &r_worldentity.model->leafs[i + 1];
+			leaf = &r_worldentity.model->brush.leafs[i + 1];
 			if ((c = leaf->nummarksurfaces)) {
 				mark = leaf->firstmarksurface;
 				do {
