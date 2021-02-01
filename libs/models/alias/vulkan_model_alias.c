@@ -46,9 +46,11 @@
 #include "QF/vid.h"
 #include "QF/Vulkan/qf_alias.h"
 #include "QF/Vulkan/qf_texture.h"
+#include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/debug.h"
+#include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/staging.h"
 
@@ -63,17 +65,13 @@ static vec3_t vertex_normals[NUMVERTEXNORMALS] = {
 static void
 skin_clear (int skin_offset, aliashdr_t *hdr, vulkan_ctx_t *ctx)
 {
-	aliasskin_t *skin = (aliasskin_t *) ((byte *) hdr + skin_offset);
-	Vulkan_UnloadTex (ctx, skin->tex);
-	if (skin->glow) {
-		Vulkan_UnloadTex (ctx, skin->glow);
-	}
-	if (skin->colora) {
-		Vulkan_UnloadTex (ctx, skin->colora);
-	}
-	if (skin->colorb) {
-		Vulkan_UnloadTex (ctx, skin->colorb);
-	}
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	qfv_tex_t  *skin = (qfv_tex_t *) ((byte *) hdr + skin_offset);
+
+	dfunc->vkDestroyImageView (device->dev, skin->view, 0);
+	dfunc->vkDestroyImage (device->dev, skin->image, 0);
+	dfunc->vkFreeMemory (device->dev, skin->memory, 0);
 }
 
 static void
@@ -114,12 +112,14 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 					 int snum, int gnum, qboolean group,
 					 maliasskindesc_t *skindesc, vulkan_ctx_t *ctx)
 {
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
 	aliashdr_t *header = alias_ctx->header;
-	aliasskin_t *skin;
+	qfv_tex_t  *skin;
 	byte       *tskin;
 	int         w, h;
 
-	skin = Hunk_Alloc (sizeof (aliasskin_t));
+	skin = Hunk_Alloc (sizeof (qfv_tex_t));
 	skindesc->skin = (byte *) skin - (byte *) header;
 	//FIXME move all skins into arrays(?)
 	w = header->mdl.skinwidth;
@@ -128,30 +128,97 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 	memcpy (tskin, skinpix, skinsize);
 	Mod_FloodFillSkin (tskin, w, h);
 
-	tex_t skin_tex = {w, h, tex_palette, 1, vid.palette, tskin + skinsize};
-	if (Mod_CalcFullbright (tskin, tskin + skinsize, skinsize)) {
-		skin->glow = Vulkan_LoadTex (ctx, &skin_tex, 1,
-									 va (ctx->va_ctx, "%s:%d:%d:glow",
-										 alias_ctx->mod->name, snum, gnum));
-		Mod_ClearFullbright (tskin, tskin, skinsize);
+	int         mipLevels = QFV_MipLevels (w, h);
+	VkExtent3D  extent = { w, h, 1 };
+	skin->offset = 0;
+	skin->image = QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D,
+								   VK_FORMAT_R8G8B8A8_UNORM, extent,
+								   mipLevels, 4, VK_SAMPLE_COUNT_1_BIT,
+								   VK_IMAGE_USAGE_SAMPLED_BIT
+								   | VK_IMAGE_USAGE_TRANSFER_DST_BIT
+								   | VK_IMAGE_USAGE_TRANSFER_SRC_BIT);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE, skin->image,
+						 va (ctx->va_ctx, "image:%s:%d:%d",
+							 alias_ctx->mod->name, snum, gnum));
+	skin->memory = QFV_AllocImageMemory (device, skin->image,
+										 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+										 0, 0);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, skin->memory,
+						 va (ctx->va_ctx, "memory:%s:%d:%d",
+							 alias_ctx->mod->name, snum, gnum));
+	QFV_BindImageMemory (device, skin->image, skin->memory, 0);
+	skin->view = QFV_CreateImageView (device, skin->image,
+									  VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+									  VK_FORMAT_R8G8B8A8_UNORM,
+									  VK_IMAGE_ASPECT_COLOR_BIT);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, skin->view,
+						 va (ctx->va_ctx, "iview:%s:%d:%d",
+							 alias_ctx->mod->name, snum, gnum));
+
+	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device, "alias stage",
+													 4 * skinsize * 4,
+													 ctx->cmdpool);
+	qfv_packet_t *packet = QFV_PacketAcquire (stage);
+	byte       *base_data = QFV_PacketExtend (packet, skinsize * 4);
+	byte       *cola_data = QFV_PacketExtend (packet, skinsize * 4);
+	byte       *colb_data = QFV_PacketExtend (packet, skinsize * 4);
+	byte       *glow_data = QFV_PacketExtend (packet, skinsize * 4);
+
+	Mod_CalcFullbright (tskin, tskin + skinsize, skinsize);
+	Vulkan_ExpandPalette (glow_data, tskin + skinsize, vid.palette, 1,
+						  skinsize);
+	Mod_ClearFullbright (tskin, tskin, skinsize);
+
+	Skin_CalcTopColors (tskin, tskin + skinsize, skinsize);
+	Vulkan_ExpandPalette (cola_data, tskin + skinsize, vid.palette, 1,
+						  skinsize);
+	Skin_ClearTopColors (tskin, tskin, skinsize);
+
+	Skin_CalcBottomColors (tskin, tskin + skinsize, skinsize);
+	Vulkan_ExpandPalette (colb_data, tskin + skinsize, vid.palette, 1,
+						  skinsize);
+	Skin_ClearBottomColors (tskin, tskin, skinsize);
+
+	Vulkan_ExpandPalette (base_data, tskin, vid.palette, 1, skinsize);
+
+	VkImageMemoryBarrier barrier;
+	qfv_pipelinestagepair_t stages;
+
+	stages = imageLayoutTransitionStages[qfv_LT_Undefined_to_TransferDst];
+	barrier = imageLayoutTransitionBarriers[qfv_LT_Undefined_to_TransferDst];
+	barrier.image = skin->image;
+	barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+								 0, 0, 0, 0, 0,
+								 1, &barrier);
+
+	VkBufferImageCopy copy = {
+		packet->offset, 0, 0,
+		{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 4},
+		{0, 0, 0}, {w, h, 1},
+	};
+	dfunc->vkCmdCopyBufferToImage (packet->cmd, packet->stage->buffer,
+								   skin->image,
+								   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+								   1, &copy);
+
+	if (mipLevels == 1) {
+		stages = imageLayoutTransitionStages[qfv_LT_TransferDst_to_ShaderReadOnly];
+		barrier=imageLayoutTransitionBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+		barrier.image = skin->image;
+		barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+		barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+		dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+									 0, 0, 0, 0, 0,
+									 1, &barrier);
+
+	} else {
+		QFV_GenerateMipMaps (device, packet->cmd, skin->image,
+							 mipLevels, w, h, 4);
 	}
-	if (Skin_CalcTopColors (tskin, tskin + skinsize, skinsize)) {
-		skin->colora = Vulkan_LoadTex (ctx, &skin_tex, 1,
-									   va (ctx->va_ctx, "%s:%d:%d:colora",
-										   alias_ctx->mod->name, snum, gnum));
-		Skin_ClearTopColors (tskin, tskin, skinsize);
-	}
-	if (Skin_CalcBottomColors (tskin, tskin + skinsize, skinsize)) {
-		skin->colorb = Vulkan_LoadTex (ctx, &skin_tex, 1,
-									   va (ctx->va_ctx, "%s:%d:%d:colorb",
-										   alias_ctx->mod->name, snum, gnum));
-		Skin_ClearBottomColors (tskin, tskin, skinsize);
-	}
-	skin_tex.data = tskin;
-	skin->tex = Vulkan_LoadTex (ctx, &skin_tex, 1,
-								va (ctx->va_ctx, "%s:%d:%d:tex",
-									alias_ctx->mod->name,
-									snum, gnum));
+	QFV_PacketSubmit (packet);
+	QFV_DestroyStagingBuffer (stage);
 
 	free (tskin);
 

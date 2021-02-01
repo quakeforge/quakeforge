@@ -1,8 +1,5 @@
 #version 450
-layout (set = 0, binding = 2) uniform sampler2D Texture;
-layout (set = 0, binding = 3) uniform sampler2D GlowMap;
-layout (set = 0, binding = 4) uniform sampler2D ColorA;
-layout (set = 0, binding = 5) uniform sampler2D ColorB;
+layout (set = 0, binding = 2) uniform sampler2DArray Skin;
 /*
 layout (set = 2, binding = 0) uniform sampler2D Texture;
 layout (set = 2, binding = 1) uniform sampler2D GlowMap;
@@ -59,9 +56,9 @@ main (void)
 	vec4        c;
 	int         i;
 	vec3        light = vec3 (0);
-	c = texture (Texture, st);
-	c += texture (ColorA, st);
-	c += texture (ColorB, st);
+	c = texture (Skin, vec3 (st, 0));
+	c += texture (Skin, vec3 (st, 1));
+	c += texture (Skin, vec3 (st, 2));
 
 	if (MaxLights > 0) {
 		for (i = 0; i < light_count; i++) {
@@ -70,7 +67,7 @@ main (void)
 	}
 	c *= vec4 (light, 1);
 
-	c += texture (GlowMap, st);
+	c += texture (Skin, vec3 (st, 3));
 	//frag_color = vec4((normal + 1)/2, 1);
 	frag_color = c;//fogBlend (c);
 }

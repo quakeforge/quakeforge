@@ -37,13 +37,6 @@
 #include "QF/modelgen.h"
 #include "QF/Vulkan/qf_vid.h"
 
-typedef struct aliasskin_s {
-	struct qfv_tex_s *tex;
-	struct qfv_tex_s *glow;
-	struct qfv_tex_s *colora;
-	struct qfv_tex_s *colorb;
-} aliasskin_t;
-
 typedef struct aliasvrt_s {
 	float       vertex[4];
 	float       normal[4];
@@ -77,7 +70,7 @@ typedef struct qfv_light_buffer_s {
 } qfv_light_buffer_t;
 
 #define ALIAS_BUFFER_INFOS 2
-#define ALIAS_IMAGE_INFOS 4
+#define ALIAS_IMAGE_INFOS 1
 
 typedef struct aliasframe_s {
 	VkCommandBuffer cmd;

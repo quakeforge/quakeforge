@@ -88,7 +88,7 @@ Vulkan_DrawAlias (entity_t *ent, struct vulkan_ctx_s *ctx)
 	aliashdr_t *hdr;
 	qfv_alias_mesh_t *mesh;
 	float       blend;
-	aliasskin_t *skin;
+	qfv_tex_t  *skin;
 
 	if (!(hdr = model->aliashdr)) {
 		hdr = Cache_Get (&model->cache);
@@ -102,7 +102,7 @@ Vulkan_DrawAlias (entity_t *ent, struct vulkan_ctx_s *ctx)
 	} else {
 		maliasskindesc_t *skindesc;
 		skindesc = R_AliasGetSkindesc (ent->skinnum, hdr);
-		skin = (aliasskin_t *) ((byte *) hdr + skindesc->skin);
+		skin = (qfv_tex_t *) ((byte *) hdr + skindesc->skin);
 	}
 
 	VkDeviceSize offsets[] = {
@@ -124,12 +124,7 @@ Vulkan_DrawAlias (entity_t *ent, struct vulkan_ctx_s *ctx)
 	dfunc->vkCmdPushConstants (aframe->cmd, actx->layout,
 							   VK_SHADER_STAGE_VERTEX_BIT,
 							   64, sizeof (float), &blend);
-	aframe->imageInfo[0].imageView = get_view (skin->tex, ctx->default_white);
-	aframe->imageInfo[1].imageView = get_view (skin->glow, ctx->default_black);
-	aframe->imageInfo[2].imageView = get_view (skin->colora,
-											   ctx->default_black);
-	aframe->imageInfo[3].imageView = get_view (skin->colorb,
-											   ctx->default_black);
+	aframe->imageInfo[0].imageView = get_view (skin, 0);
 	dfunc->vkCmdPushDescriptorSetKHR (aframe->cmd,
 									  VK_PIPELINE_BIND_POINT_GRAPHICS,
 									  actx->layout,
