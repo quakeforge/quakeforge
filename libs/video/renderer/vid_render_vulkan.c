@@ -418,28 +418,30 @@ vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx)
 }
 
 static void
-vulkan_Mod_MakeAliasModelDisplayLists (model_t *mod, aliashdr_t *hdr,
+vulkan_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx,
 									   void *_m, int _s, int extra)
 {
-	Vulkan_Mod_MakeAliasModelDisplayLists (mod, hdr, _m, _s, extra, vulkan_ctx);
+	Vulkan_Mod_MakeAliasModelDisplayLists (alias_ctx, _m, _s, extra,
+										   vulkan_ctx);
 }
 
 static void *
-vulkan_Mod_LoadSkin (model_t *mod, byte *skin, int skinsize, int snum,
-					 int gnum, qboolean group, maliasskindesc_t *skindesc)
+vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skin, int skinsize,
+					 int snum, int gnum, qboolean group,
+					 maliasskindesc_t *skindesc)
 {
-	return Vulkan_Mod_LoadSkin (mod, skin, skinsize, snum, gnum, group,
+	return Vulkan_Mod_LoadSkin (alias_ctx, skin, skinsize, snum, gnum, group,
 								skindesc, vulkan_ctx);
 }
 
 static void
-vulkan_Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
+vulkan_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx)
 {
-	Vulkan_Mod_FinalizeAliasModel (m, hdr, vulkan_ctx);
+	Vulkan_Mod_FinalizeAliasModel (alias_ctx, vulkan_ctx);
 }
 
 static void
-vulkan_Mod_LoadExternalSkins (model_t *mod)
+vulkan_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx)
 {
 }
 

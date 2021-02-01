@@ -37,6 +37,8 @@ struct plitem_s;
 struct cvar_s;
 struct skin_s;
 
+struct mod_alias_ctx_s;
+
 /*
 	All video plugins must export these functions
 */
@@ -88,13 +90,13 @@ typedef struct vid_model_funcs_s {
 	void (*Mod_LoadAliasModel) (model_t *mod, void *buffer,
 								cache_allocator_t allocator);
 	void (*Mod_LoadSpriteModel) (model_t *mod, void *buffer);
-	void (*Mod_MakeAliasModelDisplayLists) (model_t *m, aliashdr_t *hdr,
+	void (*Mod_MakeAliasModelDisplayLists) (struct mod_alias_ctx_s *alias_ctx,
 											void *_m, int _s, int extra);
-	void *(*Mod_LoadSkin) (model_t *mod, byte *skin, int skinsize, int snum,
-						   int gnum,
+	void *(*Mod_LoadSkin) (struct mod_alias_ctx_s *alias_ctx, byte *skin,
+						   int skinsize, int snum, int gnum,
 						   qboolean group, maliasskindesc_t *skindesc);
-	void (*Mod_FinalizeAliasModel) (model_t *m, aliashdr_t *hdr);
-	void (*Mod_LoadExternalSkins) (model_t *mod);
+	void (*Mod_FinalizeAliasModel) (struct mod_alias_ctx_s *alias_ctx);
+	void (*Mod_LoadExternalSkins) (struct mod_alias_ctx_s *alias_ctx);
 	void (*Mod_IQMFinish) (model_t *mod);
 	int alias_cache;
 	void (*Mod_SpriteLoadTexture) (model_t *mod, mspriteframe_t *pspriteframe,

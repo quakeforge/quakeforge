@@ -50,13 +50,14 @@
 
 
 void *
-sw_Mod_LoadSkin (model_t *mod, byte *skin, int skinsize, int snum, int gnum,
+sw_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skin,
+				 int skinsize, int snum, int gnum,
 				 qboolean group, maliasskindesc_t *skindesc)
 {
 	byte		*pskin;
 
-	pskin = Hunk_AllocName (skinsize, mod->name);
-	skindesc->skin = (byte *) pskin - (byte *) pheader;
+	pskin = Hunk_AllocName (skinsize, alias_ctx->mod->name);
+	skindesc->skin = (byte *) pskin - (byte *) alias_ctx->header;
 
 	memcpy (pskin, skin, skinsize);
 
@@ -64,73 +65,67 @@ sw_Mod_LoadSkin (model_t *mod, byte *skin, int skinsize, int snum, int gnum,
 }
 
 static void
-process_frame (model_t *mod, maliasframedesc_t *frame, int posenum, int extra)
+process_frame (mod_alias_ctx_t *alias_ctx, maliasframedesc_t *frame,
+			   int posenum, int extra)
 {
-	int         size = pheader->mdl.numverts * sizeof (trivertx_t);
+	aliashdr_t *header = alias_ctx->header;
+	int         size = header->mdl.numverts * sizeof (trivertx_t);
 	trivertx_t *frame_verts;
 
 	if (extra)
 		size *= 2;
 
-	frame_verts = Hunk_AllocName (size, mod->name);
-	frame->frame = (byte *) frame_verts - (byte *) pheader;
+	frame_verts = Hunk_AllocName (size, alias_ctx->mod->name);
+	frame->frame = (byte *) frame_verts - (byte *) header;
 
 	// The low-order 8 bits (actually, fractional) are completely separate
 	// from the high-order bits (see R_AliasTransformFinalVert16 in
 	// sw_ralias.c), but in adjacant arrays. This means we can get away with
 	// just one memcpy as there are no endian issues.
-	memcpy (frame_verts, poseverts.a[posenum], size);
+	memcpy (frame_verts, alias_ctx->poseverts.a[posenum], size);
 }
 
 void
-sw_Mod_MakeAliasModelDisplayLists (model_t *mod, aliashdr_t *hdr, void *_m,
+sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 								   int _s, int extra)
 {
+	aliashdr_t *header = alias_ctx->header;
 	int			 i, j;
 	int          posenum = 0;
-	int			 numv = hdr->mdl.numverts, numt = hdr->mdl.numtris;
-	stvert_t	*pstverts;
-	mtriangle_t *ptri;
+	int			 numv = header->mdl.numverts, numt = header->mdl.numtris;
+	stvert_t	*stverts;
+	mtriangle_t *tris;
 
-	pstverts = (stvert_t *) Hunk_AllocName (numv * sizeof (stvert_t),
-											mod->name);
-	ptri = (mtriangle_t *) Hunk_AllocName (numt * sizeof (mtriangle_t),
-										   mod->name);
+	stverts = (stvert_t *) Hunk_AllocName (numv * sizeof (stvert_t),
+										   alias_ctx->mod->name);
+	tris = (mtriangle_t *) Hunk_AllocName (numt * sizeof (mtriangle_t),
+										   alias_ctx->mod->name);
 
-	hdr->stverts = (byte *) pstverts - (byte *) hdr;
-	hdr->triangles = (byte *) ptri - (byte *) hdr;
+	header->stverts = (byte *) stverts - (byte *) header;
+	header->triangles = (byte *) tris - (byte *) header;
 
 	for (i = 0; i < numv; i++) {
-		pstverts[i].onseam = stverts.a[i].onseam;
-		pstverts[i].s = stverts.a[i].s << 16;
-		pstverts[i].t = stverts.a[i].t << 16;
+		stverts[i].onseam = alias_ctx->stverts.a[i].onseam;
+		stverts[i].s = alias_ctx->stverts.a[i].s << 16;
+		stverts[i].t = alias_ctx->stverts.a[i].t << 16;
 	}
 
 	for (i = 0; i < numt; i++) {
-		ptri[i].facesfront = triangles.a[i].facesfront;
-		VectorCopy (triangles.a[i].vertindex, ptri[i].vertindex);
+		tris[i].facesfront = alias_ctx->triangles.a[i].facesfront;
+		VectorCopy (alias_ctx->triangles.a[i].vertindex, tris[i].vertindex);
 	}
 
-	for (i = 0; i < pheader->mdl.numframes; i++) {
-		maliasframedesc_t *frame = pheader->frames + i;
+	for (i = 0; i < header->mdl.numframes; i++) {
+		maliasframedesc_t *frame = header->frames + i;
 		if (frame->type) {
 			maliasgroup_t *group;
-			group = (maliasgroup_t *) ((byte *) pheader + frame->frame);
-			for (j = 0; j < group->numframes; j++)
-				process_frame (mod, (maliasframedesc_t *) &group->frames[j],
-							   posenum++, extra);
+			group = (maliasgroup_t *) ((byte *) header + frame->frame);
+			for (j = 0; j < group->numframes; j++) {
+				__auto_type frame = (maliasframedesc_t *) &group->frames[j];
+				process_frame (alias_ctx, frame, posenum++, extra);
+			}
 		} else {
-			process_frame (mod, frame, posenum++, extra);
+			process_frame (alias_ctx, frame, posenum++, extra);
 		}
 	}
-}
-
-void
-sw_Mod_FinalizeAliasModel (model_t *mod, aliashdr_t *hdr)
-{
-}
-
-void
-sw_Mod_LoadExternalSkins (model_t *mod)
-{
 }

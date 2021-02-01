@@ -58,24 +58,24 @@ static void
 glsl_alias_clear (model_t *m, void *data)
 {
 	int         i, j;
-	aliashdr_t *hdr;
+	aliashdr_t *header;
 	GLuint      bufs[2];
 	maliasskindesc_t *skins;
 	maliasskingroup_t *group;
 
 	m->needload = true;
 
-	if (!(hdr = m->aliashdr))
-		hdr = Cache_Get (&m->cache);
+	if (!(header = m->aliashdr))
+		header = Cache_Get (&m->cache);
 
-	bufs[0] = hdr->posedata;
-	bufs[1] = hdr->commands;
+	bufs[0] = header->posedata;
+	bufs[1] = header->commands;
 	qfeglDeleteBuffers (2, bufs);
 
-	skins = ((maliasskindesc_t *) ((byte *) hdr + hdr->skindesc));
-	for (i = 0; i < hdr->mdl.numskins; i++) {
+	skins = ((maliasskindesc_t *) ((byte *) header + header->skindesc));
+	for (i = 0; i < header->mdl.numskins; i++) {
 		if (skins[i].type == ALIAS_SKIN_GROUP) {
-			group = (maliasskingroup_t *) ((byte *) hdr + skins[i].skin);
+			group = (maliasskingroup_t *) ((byte *) header + skins[i].skin);
 			for (j = 0; j < group->numskins; j++) {
 				GLSL_ReleaseTexture (group->skindescs[j].texnum);
 			}
@@ -91,44 +91,49 @@ glsl_alias_clear (model_t *m, void *data)
 }
 
 void *
-glsl_Mod_LoadSkin (model_t *mod, byte *skin, int skinsize, int snum, int gnum,
-				   qboolean group, maliasskindesc_t *skindesc)
+glsl_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skin, int skinsize,
+				   int snum, int gnum, qboolean group,
+				   maliasskindesc_t *skindesc)
 {
+	aliashdr_t *header = alias_ctx->header;
 	byte       *tskin;
 	const char *name;
 	int         w, h;
 
-	w = pheader->mdl.skinwidth;
-	h = pheader->mdl.skinheight;
+	w = header->mdl.skinwidth;
+	h = header->mdl.skinheight;
 	tskin = malloc (skinsize);
 	memcpy (tskin, skin, skinsize);
 	Mod_FloodFillSkin (tskin, w, h);
 	if (group)
-		name = va (0, "%s_%i_%i", mod->path, snum, gnum);
+		name = va (0, "%s_%i_%i", alias_ctx->mod->path, snum, gnum);
 	else
-		name = va (0, "%s_%i", mod->path, snum);
+		name = va (0, "%s_%i", alias_ctx->mod->path, snum);
 	skindesc->texnum = GLSL_LoadQuakeTexture (name, w, h, tskin);
 	free (tskin);
 	return skin + skinsize;
 }
 
 void
-glsl_Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
+glsl_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx)
 {
-	if (hdr->mdl.ident == HEADER_MDL16)
-		VectorScale (hdr->mdl.scale, 1/256.0, hdr->mdl.scale);
-	m->clear = glsl_alias_clear;
+	aliashdr_t *header = alias_ctx->header;
+
+	if (header->mdl.ident == HEADER_MDL16)
+		VectorScale (header->mdl.scale, 1/256.0, header->mdl.scale);
+	alias_ctx->mod->clear = glsl_alias_clear;
 }
 
 void
-glsl_Mod_LoadExternalSkins (model_t *mod)
+glsl_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx)
 {
 }
 
 void
-glsl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
+glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 									 int _s, int extra)
 {
+	aliashdr_t *header = alias_ctx->header;
 	mtriangle_t *tris;
 	stvert_t   *st;
 	aliasvrt_t *verts;
@@ -142,12 +147,12 @@ glsl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 	int         i, j;
 	int         pose;
 
-	numverts = hdr->mdl.numverts;
-	numtris = hdr->mdl.numtris;
+	numverts = header->mdl.numverts;
+	numtris = header->mdl.numtris;
 
 	// copy triangles before editing them
 	tris = malloc (numtris * sizeof (mtriangle_t));
-	memcpy (tris, triangles.a, numtris * sizeof (mtriangle_t));
+	memcpy (tris, alias_ctx->triangles.a, numtris * sizeof (mtriangle_t));
 
 	// initialize indexmap to -1 (unduplicated). any other value indicates
 	// both that the vertex has been duplicated and the index of the
@@ -157,7 +162,7 @@ glsl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 
 	// copy stverts. need space for duplicates
 	st = malloc (2 * numverts * sizeof (stvert_t));
-	memcpy (st, stverts.a, numverts * sizeof (stvert_t));
+	memcpy (st, alias_ctx->stverts.a, numverts * sizeof (stvert_t));
 
 	// check for onseam verts, and duplicate any that are associated with
 	// back-facing triangles. the s coordinate is shifted right by half
@@ -168,7 +173,7 @@ glsl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 			if (st[vind].onseam && !tris[i].facesfront) {
 				if (indexmap[vind] == -1) {
 					st[numverts] = st[vind];
-					st[numverts].s += hdr->mdl.skinwidth / 2;
+					st[numverts].s += header->mdl.skinwidth / 2;
 					indexmap[vind] = numverts++;
 				}
 				tris[i].vertindex[j] = indexmap[vind];
@@ -178,13 +183,13 @@ glsl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 
 	// we now know exactly how many vertices we need, so built the vertex
 	// array
-	vertexsize = hdr->numposes * numverts * sizeof (aliasvrt_t);
+	vertexsize = header->numposes * numverts * sizeof (aliasvrt_t);
 	verts = malloc (vertexsize);
-	for (i = 0, pose = 0; i < hdr->numposes; i++, pose += numverts) {
-		for (j = 0; j < hdr->mdl.numverts; j++) {
-			pv = &poseverts.a[i][j];
+	for (i = 0, pose = 0; i < header->numposes; i++, pose += numverts) {
+		for (j = 0; j < header->mdl.numverts; j++) {
+			pv = &alias_ctx->poseverts.a[i][j];
 			if (extra) {
-				VectorMultAdd (pv[hdr->mdl.numverts].v, 256, pv->v,
+				VectorMultAdd (pv[header->mdl.numverts].v, 256, pv->v,
 							   verts[pose + j].vertex);
 			} else {
 				VectorCopy (pv->v, verts[pose + j].vertex);
@@ -218,14 +223,14 @@ glsl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 	// finished with tris
 	free (tris);
 
-	hdr->poseverts = numverts;
+	header->poseverts = numverts;
 
 	// load the vertex data and indices into GL
 	qfeglGenBuffers (2, bnum);
-	hdr->posedata = bnum[0];
-	hdr->commands = bnum[1];
-	qfeglBindBuffer (GL_ARRAY_BUFFER, hdr->posedata);
-	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, hdr->commands);
+	header->posedata = bnum[0];
+	header->commands = bnum[1];
+	qfeglBindBuffer (GL_ARRAY_BUFFER, header->posedata);
+	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, header->commands);
 	qfeglBufferData (GL_ARRAY_BUFFER, vertexsize, verts, GL_STATIC_DRAW);
 	qfeglBufferData (GL_ELEMENT_ARRAY_BUFFER, indexsize, indices,
 					GL_STATIC_DRAW);

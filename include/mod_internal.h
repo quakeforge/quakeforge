@@ -1,10 +1,26 @@
 #ifndef __mod_internal_h
 #define __mod_internal_h
 
+#include "QF/darray.h"
 #include "QF/iqm.h"
 #include "QF/model.h"
 #include "QF/skin.h"
 #include "QF/plugin/vid_render.h"
+
+typedef struct stvertset_s DARRAY_TYPE (stvert_t) stvertset_t;
+typedef struct mtriangleset_s DARRAY_TYPE (mtriangle_t) mtriangleset_t;
+typedef struct trivertxset_s DARRAY_TYPE (trivertx_t *) trivertxset_t;
+
+typedef struct mod_alias_ctx_s {
+	aliashdr_t *header;
+	model_t    *mod;
+	stvertset_t stverts;
+	mtriangleset_t triangles;
+	trivertxset_t poseverts;
+	int         aliasbboxmins[3];
+	int         aliasbboxmaxs[3];
+
+} mod_alias_ctx_t;
 
 int Mod_CalcFullbright (const byte *in, byte *out, int pixels);
 void Mod_ClearFullbright (const byte *in, byte *out, int pixels);
@@ -22,28 +38,29 @@ struct vulkan_ctx_s;
 
 extern vid_model_funcs_t *m_funcs;
 
-void gl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
+void gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 										int _s, int extra);
-void *gl_Mod_LoadSkin (model_t *mod, byte *skin, int skinsize, int snum,
-					   int gnum, qboolean group, maliasskindesc_t *skindesc);
-void gl_Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr);
-void gl_Mod_LoadExternalSkins (model_t *mod);
+void *gl_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skin, int skinsize,
+					   int snum, int gnum, qboolean group,
+					   maliasskindesc_t *skindesc);
+void gl_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx);
+void gl_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx);
 void gl_Mod_IQMFinish (model_t *mod);
 
-void glsl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr,
+void glsl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx,
 										  void *_m, int _s, int extra);
-void *glsl_Mod_LoadSkin (model_t *mod, byte *skin, int skinsize, int snum,
-						 int gnum, qboolean group, maliasskindesc_t *skindesc);
-void glsl_Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr);
-void glsl_Mod_LoadExternalSkins (model_t *mod);
+void *glsl_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skin, int skinsize,
+						 int snum, int gnum, qboolean group,
+						 maliasskindesc_t *skindesc);
+void glsl_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx);
+void glsl_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx);
 void glsl_Mod_IQMFinish (model_t *mod);
 
-void sw_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
+void sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 										int _s, int extra);
-void *sw_Mod_LoadSkin (model_t *mod, byte *skin, int skinsize, int snum,
-					   int gnum, qboolean group, maliasskindesc_t *skindesc);
-void sw_Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr);
-void sw_Mod_LoadExternalSkins (model_t *mod);
+void *sw_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skin, int skinsize,
+					   int snum, int gnum, qboolean group,
+					   maliasskindesc_t *skindesc);
 void sw_Mod_IQMFinish (model_t *mod);
 
 void gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp);

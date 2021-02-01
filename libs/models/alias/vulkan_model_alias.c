@@ -110,19 +110,20 @@ vulkan_alias_clear (model_t *m, void *data)
 }
 
 void *
-Vulkan_Mod_LoadSkin (model_t *mod, byte *skinpix, int skinsize, int snum,
-					 int gnum, qboolean group, maliasskindesc_t *skindesc,
-					 vulkan_ctx_t *ctx)
+Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
+					 int snum, int gnum, qboolean group,
+					 maliasskindesc_t *skindesc, vulkan_ctx_t *ctx)
 {
+	aliashdr_t *header = alias_ctx->header;
 	aliasskin_t *skin;
 	byte       *tskin;
 	int         w, h;
 
 	skin = Hunk_Alloc (sizeof (aliasskin_t));
-	skindesc->skin = (byte *) skin - (byte *) pheader;//FIXME pheader global
+	skindesc->skin = (byte *) skin - (byte *) header;
 	//FIXME move all skins into arrays(?)
-	w = pheader->mdl.skinwidth;
-	h = pheader->mdl.skinheight;
+	w = header->mdl.skinwidth;
+	h = header->mdl.skinheight;
 	tskin = malloc (2 * skinsize);
 	memcpy (tskin, skinpix, skinsize);
 	Mod_FloodFillSkin (tskin, w, h);
@@ -131,25 +132,25 @@ Vulkan_Mod_LoadSkin (model_t *mod, byte *skinpix, int skinsize, int snum,
 	if (Mod_CalcFullbright (tskin, tskin + skinsize, skinsize)) {
 		skin->glow = Vulkan_LoadTex (ctx, &skin_tex, 1,
 									 va (ctx->va_ctx, "%s:%d:%d:glow",
-										 mod->name, snum, gnum));
+										 alias_ctx->mod->name, snum, gnum));
 		Mod_ClearFullbright (tskin, tskin, skinsize);
 	}
 	if (Skin_CalcTopColors (tskin, tskin + skinsize, skinsize)) {
 		skin->colora = Vulkan_LoadTex (ctx, &skin_tex, 1,
 									   va (ctx->va_ctx, "%s:%d:%d:colora",
-										   mod->name, snum, gnum));
+										   alias_ctx->mod->name, snum, gnum));
 		Skin_ClearTopColors (tskin, tskin, skinsize);
 	}
 	if (Skin_CalcBottomColors (tskin, tskin + skinsize, skinsize)) {
 		skin->colorb = Vulkan_LoadTex (ctx, &skin_tex, 1,
 									   va (ctx->va_ctx, "%s:%d:%d:colorb",
-										   mod->name, snum, gnum));
+										   alias_ctx->mod->name, snum, gnum));
 		Skin_ClearBottomColors (tskin, tskin, skinsize);
 	}
 	skin_tex.data = tskin;
 	skin->tex = Vulkan_LoadTex (ctx, &skin_tex, 1,
 								va (ctx->va_ctx, "%s:%d:%d:tex",
-									mod->name,
+									alias_ctx->mod->name,
 									snum, gnum));
 
 	free (tskin);
@@ -158,14 +159,14 @@ Vulkan_Mod_LoadSkin (model_t *mod, byte *skinpix, int skinsize, int snum,
 }
 
 void
-Vulkan_Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr, vulkan_ctx_t *ctx)
+Vulkan_Mod_FinalizeAliasModel (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
 {
-	m->clear = vulkan_alias_clear;
-	m->data = ctx;
+	alias_ctx->mod->clear = vulkan_alias_clear;
+	alias_ctx->mod->data = ctx;
 }
 
 void
-Vulkan_Mod_LoadExternalSkins (model_t *mod, vulkan_ctx_t *ctx)
+Vulkan_Mod_LoadExternalSkins (mod_alias_ctx_t *alias_ctx, vulkan_ctx_t *ctx)
 {
 }
 
@@ -185,9 +186,10 @@ get_buffer_size (qfv_device_t *device, VkBuffer buffer)
 }
 
 void
-Vulkan_Mod_MakeAliasModelDisplayLists (model_t *mod, aliashdr_t *hdr, void *_m,
+Vulkan_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 									   int _s, int extra, vulkan_ctx_t *ctx)
 {
+	aliashdr_t *header = alias_ctx->header;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	aliasvrt_t *verts;
@@ -201,11 +203,11 @@ Vulkan_Mod_MakeAliasModelDisplayLists (model_t *mod, aliashdr_t *hdr, void *_m,
 	int         pose;
 	vec3_t      pos;
 
-	if (hdr->mdl.ident == HEADER_MDL16)
-		VectorScale (hdr->mdl.scale, 1/256.0, hdr->mdl.scale);
+	if (header->mdl.ident == HEADER_MDL16)
+		VectorScale (header->mdl.scale, 1/256.0, header->mdl.scale);
 
-	numverts = hdr->mdl.numverts;
-	numtris = hdr->mdl.numtris;
+	numverts = header->mdl.numverts;
+	numtris = header->mdl.numtris;
 
 	// initialize indexmap to -1 (unduplicated). any other value indicates
 	// both that the vertex has been duplicated and the index of the
@@ -217,8 +219,9 @@ Vulkan_Mod_MakeAliasModelDisplayLists (model_t *mod, aliashdr_t *hdr, void *_m,
 	// back-facing triangles
 	for (i = 0; i < numtris; i++) {
 		for (j = 0; j < 3; j++) {
-			int         vind = triangles.a[i].vertindex[j];
-			if (stverts.a[vind].onseam && !triangles.a[i].facesfront) {
+			int         vind = alias_ctx->triangles.a[i].vertindex[j];
+			if (alias_ctx->stverts.a[vind].onseam
+				&& !alias_ctx->triangles.a[i].facesfront) {
 				// duplicate the vertex if it has not alreaddy been
 				// duplicated
 				if (indexmap[vind] == -1) {
@@ -239,7 +242,7 @@ Vulkan_Mod_MakeAliasModelDisplayLists (model_t *mod, aliashdr_t *hdr, void *_m,
 	// current and previous pose, uvbuff "statically" bound as uvs are not
 	// animated by pose, and the same for ibuf: indices will never change for
 	// the mesh
-	size_t      vert_count = numverts * hdr->numposes;
+	size_t      vert_count = numverts * header->numposes;
 	size_t      vert_size = vert_count * sizeof (aliasvrt_t);
 	size_t      uv_size = numverts * sizeof (aliasuv_t);
 	size_t      ind_size = 3 * numtris * sizeof (uint32_t);
@@ -255,13 +258,13 @@ Vulkan_Mod_MakeAliasModelDisplayLists (model_t *mod, aliashdr_t *hdr, void *_m,
 										  | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, vbuff,
 						 va (ctx->va_ctx, "buffer:alias:vertex:%s",
-							 mod->name));
+							 alias_ctx->mod->name));
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, uvbuff,
 						 va (ctx->va_ctx, "buffer:alias:uv:%s",
-							 mod->name));
+							 alias_ctx->mod->name));
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, ibuff,
 						 va (ctx->va_ctx, "buffer:alias:index:%s",
-							 mod->name));
+							 alias_ctx->mod->name));
 	size_t      voffs = 0;
 	size_t      uvoffs = voffs + get_buffer_size (device, vbuff);
 	size_t      ioffs = uvoffs + get_buffer_size (device, uvbuff);
@@ -272,7 +275,7 @@ Vulkan_Mod_MakeAliasModelDisplayLists (model_t *mod, aliashdr_t *hdr, void *_m,
 								 buff_size, 0);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, mem,
 						 va (ctx->va_ctx, "memory:alias:vuvi:%s",
-							 mod->name));
+							 alias_ctx->mod->name));
 	QFV_BindBufferMemory (device, vbuff, mem, voffs);
 	QFV_BindBufferMemory (device, uvbuff, mem, uvoffs);
 	QFV_BindBufferMemory (device, ibuff, mem, ioffs);
@@ -280,7 +283,7 @@ Vulkan_Mod_MakeAliasModelDisplayLists (model_t *mod, aliashdr_t *hdr, void *_m,
 	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device,
 													 va (ctx->va_ctx,
 														 "alias:%s",
-														 mod->name),
+														 alias_ctx->mod->name),
 													 buff_size, ctx->cmdpool);
 	qfv_packet_t *packet = QFV_PacketAcquire (stage);
 	verts = QFV_PacketExtend (packet, vert_size);
@@ -291,10 +294,10 @@ Vulkan_Mod_MakeAliasModelDisplayLists (model_t *mod, aliashdr_t *hdr, void *_m,
 	// and associated with back-facing triangles (marked by non-negative
 	// indexmap entry).
 	// the s coordinate is shifted right by half the skin width.
-	for (i = 0; i < hdr->mdl.numverts; i++) {
+	for (i = 0; i < header->mdl.numverts; i++) {
 		int         vind = indexmap[i];
-		uv[i].u = (float) stverts.a[i].s / hdr->mdl.skinwidth;
-		uv[i].v = (float) stverts.a[i].t / hdr->mdl.skinheight;
+		uv[i].u = (float) alias_ctx->stverts.a[i].s / header->mdl.skinwidth;
+		uv[i].v = (float) alias_ctx->stverts.a[i].t / header->mdl.skinheight;
 		if (vind != -1) {
 			uv[vind] = uv[i];
 			uv[vind].u += 0.5;
@@ -303,15 +306,15 @@ Vulkan_Mod_MakeAliasModelDisplayLists (model_t *mod, aliashdr_t *hdr, void *_m,
 
 	// poputlate the vertex position and normal data, duplicating for
 	// back-facing on-seam verts (indicated by non-negative indexmap entry)
-	for (i = 0, pose = 0; i < hdr->numposes; i++, pose += numverts) {
-		for (j = 0; j < hdr->mdl.numverts; j++) {
-			pv = &poseverts.a[i][j];
+	for (i = 0, pose = 0; i < header->numposes; i++, pose += numverts) {
+		for (j = 0; j < header->mdl.numverts; j++) {
+			pv = &alias_ctx->poseverts.a[i][j];
 			if (extra) {
-				VectorMultAdd (pv[hdr->mdl.numverts].v, 256, pv->v, pos);
+				VectorMultAdd (pv[header->mdl.numverts].v, 256, pv->v, pos);
 			} else {
 				VectorCopy (pv->v, pos);
 			}
-			VectorCompMultAdd (hdr->mdl.scale_origin, hdr->mdl.scale,
+			VectorCompMultAdd (header->mdl.scale_origin, header->mdl.scale,
 							   pos, verts[pose + j].vertex);
 			verts[pose + j].vertex[3] = 1;
 			VectorCopy (vertex_normals[pv->lightnormalindex],
@@ -327,8 +330,9 @@ Vulkan_Mod_MakeAliasModelDisplayLists (model_t *mod, aliashdr_t *hdr, void *_m,
 	// now build the indices for DrawElements
 	for (i = 0; i < numtris; i++) {
 		for (j = 0; j < 3; j++) {
-			int         vind = triangles.a[i].vertindex[j];
-			if (stverts.a[vind].onseam && !triangles.a[i].facesfront) {
+			int         vind = alias_ctx->triangles.a[i].vertindex[j];
+			if (alias_ctx->stverts.a[vind].onseam
+				&& !alias_ctx->triangles.a[i].facesfront) {
 				vind = indexmap[vind];
 			}
 			indices[3 * i + j] = vind;
@@ -337,7 +341,7 @@ Vulkan_Mod_MakeAliasModelDisplayLists (model_t *mod, aliashdr_t *hdr, void *_m,
 	// finished with indexmap
 	free (indexmap);
 
-	hdr->poseverts = numverts;
+	header->poseverts = numverts;
 
 	VkBufferMemoryBarrier wr_barriers[] = {
 		{	VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
@@ -394,5 +398,5 @@ Vulkan_Mod_MakeAliasModelDisplayLists (model_t *mod, aliashdr_t *hdr, void *_m,
 	mesh->uv_buffer = uvbuff;
 	mesh->index_buffer = ibuff;
 	mesh->memory = mem;
-	hdr->commands = (byte *) mesh - (byte *) hdr;
+	header->commands = (byte *) mesh - (byte *) header;
 }
