@@ -57,4 +57,30 @@ VkImageView QFV_CreateImageView (struct qfv_device_s *device,
 								 VkImage image, VkImageViewType type,
 								 VkFormat format, VkImageAspectFlags aspect);
 
+/** Generate all mipmaps for a given texture down to a 1x1 pixel.
+ *
+ * Uses the GPU blit command from one mip level to the next, thus the base mip
+ * level data must have already been transfered to the image and the image is
+ * expected to be in VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL. This includes any
+ * array levels.
+ *
+ *	\param device	The device owning the command buffer.
+ *	\param cmd		The command buffer to which the barrier and blit commands
+ *					will be written.
+ *	\param image	The image to be processed. All array layers of the base mip
+ *					level must be initialized and in "transfer dst optimal"
+ *					layout. All remaining mip levels must be in "undefined"
+ *					oayout.
+ *	\param mips		The total number of mip levels of the processed image.
+ *	\param width	The pixel width of the base image.
+ *	\param height	The pixel height of the base image.
+ *	\param layers	The number of array layers in the mbase image.
+ *
+ *	\note	The processed image will be in "shader read only optimal" layout on
+ *			completion.
+ */
+void QFV_GenerateMipMaps (struct qfv_device_s *device, VkCommandBuffer cmd,
+						  VkImage image, unsigned mips,
+						  unsigned width, unsigned height, unsigned layers);
+
 #endif//__QF_Vulkan_image_h
