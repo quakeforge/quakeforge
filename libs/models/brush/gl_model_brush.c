@@ -86,7 +86,7 @@ Mod_LoadExternalTextures (model_t *mod, texture_t *tx)
 	int         external = 0;
 
 	gltx = tx->render;
-	if ((base = Mod_LoadAnExternalTexture (tx->name, mod->name))) {
+	if ((base = Mod_LoadAnExternalTexture (tx->name, mod->path))) {
 		external = 1;
 		gltx->gl_texturenum =
 			GL_LoadTexture (tx->name, base->width, base->height,
@@ -94,10 +94,10 @@ Mod_LoadExternalTextures (model_t *mod, texture_t *tx)
 							base->format > 2 ? base->format : 1);
 
 		luma = Mod_LoadAnExternalTexture (va (0, "%s_luma", tx->name),
-										  mod->name);
+										  mod->path);
 		if (!luma)
 			luma = Mod_LoadAnExternalTexture (va (0, "%s_glow", tx->name),
-											  mod->name);
+											  mod->path);
 
 		gltx->gl_fb_texturenum = 0;
 
@@ -116,7 +116,7 @@ Mod_LoadExternalTextures (model_t *mod, texture_t *tx)
 }
 
 void
-gl_Mod_ProcessTexture (texture_t *tx)
+gl_Mod_ProcessTexture (model_t *mod, texture_t *tx)
 {
 	const char *name;
 
@@ -125,7 +125,7 @@ gl_Mod_ProcessTexture (texture_t *tx)
 		return;
 	}
 	if (gl_textures_external && gl_textures_external->int_val) {
-		if (Mod_LoadExternalTextures (loadmodel, tx)) {
+		if (Mod_LoadExternalTextures (mod, tx)) {
 			return;
 		}
 	}
@@ -142,7 +142,7 @@ gl_Mod_ProcessTexture (texture_t *tx)
 }
 
 void
-gl_Mod_LoadLighting (bsp_t *bsp)
+gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
 {
 	byte        d;
 	byte       *in, *out, *data;
@@ -151,13 +151,13 @@ gl_Mod_LoadLighting (bsp_t *bsp)
 	int         ver;
 	QFile      *lit_file;
 
-	dstring_copystr (litfilename, loadmodel->name);
-	loadmodel->lightdata = NULL;
+	dstring_copystr (litfilename, mod->path);
+	mod->lightdata = NULL;
 	if (mod_lightmap_bytes > 1) {
 		// LordHavoc: check for a .lit file to load
 		QFS_StripExtension (litfilename->str, litfilename->str);
 		dstring_appendstr (litfilename, ".lit");
-		lit_file = QFS_VOpenFile (litfilename->str, 0, loadmodel->vpath);
+		lit_file = QFS_VOpenFile (litfilename->str, 0, mod->vpath);
 		data = (byte *) QFS_LoadHunkFile (lit_file);
 		if (data) {
 			if (data[0] == 'Q' && data[1] == 'L' && data[2] == 'I'
@@ -165,7 +165,7 @@ gl_Mod_LoadLighting (bsp_t *bsp)
 				ver = LittleLong (((int32_t *) data)[1]);
 				if (ver == 1) {
 					Sys_MaskPrintf (SYS_DEV, "%s loaded", litfilename->str);
-					loadmodel->lightdata = data + 8;
+					mod->lightdata = data + 8;
 					return;
 				} else
 					Sys_MaskPrintf (SYS_DEV,
@@ -179,11 +179,10 @@ gl_Mod_LoadLighting (bsp_t *bsp)
 		dstring_delete (litfilename);
 		return;
 	}
-	loadmodel->lightdata = Hunk_AllocName (bsp->lightdatasize
-											* mod_lightmap_bytes,
-										   litfilename->str);
+	mod->lightdata = Hunk_AllocName (bsp->lightdatasize * mod_lightmap_bytes,
+									 litfilename->str);
 	in = bsp->lightdata;
-	out = loadmodel->lightdata;
+	out = mod->lightdata;
 
 	if (mod_lightmap_bytes > 1)
 		for (i = 0; i < bsp->lightdatasize ; i++) {
@@ -304,7 +303,7 @@ SubdividePolygon (int numverts, float *verts)
 	can be done reasonably.
 */
 void
-gl_Mod_SubdivideSurface (msurface_t *fa)
+gl_Mod_SubdivideSurface (model_t *mod, msurface_t *fa)
 {
 	float      *vec;
 	int         lindex, numverts, i;
@@ -315,12 +314,12 @@ gl_Mod_SubdivideSurface (msurface_t *fa)
 	// convert edges back to a normal polygon
 	numverts = 0;
 	for (i = 0; i < fa->numedges; i++) {
-		lindex = loadmodel->surfedges[fa->firstedge + i];
+		lindex = mod->surfedges[fa->firstedge + i];
 
 		if (lindex > 0)
-			vec = loadmodel->vertexes[loadmodel->edges[lindex].v[0]].position;
+			vec = mod->vertexes[mod->edges[lindex].v[0]].position;
 		else
-			vec = loadmodel->vertexes[loadmodel->edges[-lindex].v[1]].position;
+			vec = mod->vertexes[mod->edges[-lindex].v[1]].position;
 		VectorCopy (vec, verts[numverts]);
 		numverts++;
 	}

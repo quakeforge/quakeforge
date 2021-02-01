@@ -48,11 +48,9 @@
 #include "QF/plugin/vid_render.h"
 
 #include "compat.h"
+#include "mod_internal.h"
 
 vid_model_funcs_t *mod_funcs;
-
-model_t    *loadmodel;
-char       *loadname;					// for hunk tags
 
 #define	MOD_BLOCK	16					// allocate 16 models at a time
 model_t   **mod_known;
@@ -75,7 +73,6 @@ Mod_Init (void)
 	int		m, x, y;
 	int		mip0size = 16*16, mip1size = 8*8, mip2size = 4*4, mip3size = 2*2;
 
-	memset (mod_novis, 0xff, sizeof (mod_novis));
 	r_notexture_mip = Hunk_AllocName (sizeof (texture_t) + mip0size + mip1size
 									  + mip2size + mip3size, "notexture");
 
@@ -145,7 +142,7 @@ Mod_FindName (const char *name)
 
 	// search the currently loaded models
 	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++)
-		if (!strcmp ((*mod)->name, name))
+		if (!strcmp ((*mod)->path, name))
 			break;
 
 	if (i == mod_numknown) {
@@ -158,7 +155,7 @@ Mod_FindName (const char *name)
 				mod[i] = mod[0] + i;
 		}
 		memset ((*mod), 0, sizeof (model_t));
-		strncpy ((*mod)->name, name, sizeof (*mod)->name - 1);
+		strncpy ((*mod)->path, name, sizeof (*mod)->path - 1);
 		(*mod)->needload = true;
 		mod_numknown++;
 		Cache_Add (&(*mod)->cache, *mod, Mod_CallbackLoad);
@@ -173,17 +170,17 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 	uint32_t   *buf;
 
 	// load the file
-	buf = (uint32_t *) QFS_LoadFile (QFS_FOpenFile (mod->name), 0);
+	buf = (uint32_t *) QFS_LoadFile (QFS_FOpenFile (mod->path), 0);
 	if (!buf) {
 		if (crash)
-			Sys_Error ("Mod_LoadModel: %s not found", mod->name);
+			Sys_Error ("Mod_LoadModel: %s not found", mod->path);
 		return NULL;
 	}
 
-	if (loadname)
-		free (loadname);
-	loadname = QFS_FileBase (mod->name);
-	loadmodel = mod;
+	char *name = QFS_FileBase (mod->path);
+	strncpy (mod->name, name, sizeof (mod->name - 1));
+	mod->name[sizeof (mod->name) - 1] = 0;
+	free (name);
 
 	// fill it in
 	mod->vpath = qfs_foundfile.vpath;
@@ -204,17 +201,17 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 			break;
 		case IDHEADER_MDL:			// Type 6: Quake 1 .mdl
 		case HEADER_MDL16:			// QF Type 6 extended for 16bit precision
-			if (strequal (mod->name, "progs/grenade.mdl")) {
+			if (strequal (mod->path, "progs/grenade.mdl")) {
 				mod->fullbright = 0;
 				mod->shadow_alpha = 255;
-			} else if (strnequal (mod->name, "progs/flame", 11)
-					   || strnequal (mod->name, "progs/bolt", 10)) {
+			} else if (strnequal (mod->path, "progs/flame", 11)
+					   || strnequal (mod->path, "progs/bolt", 10)) {
 				mod->fullbright = 1;
 				mod->shadow_alpha = 0;
 			}
-			if (strnequal (mod->name, "progs/v_", 8)) {
+			if (strnequal (mod->path, "progs/v_", 8)) {
 				mod->min_light = 0.12;
-			} else if (strequal (mod->name, "progs/player.mdl")) {
+			} else if (strequal (mod->path, "progs/player.mdl")) {
 				mod->min_light = 0.04;
 			}
 			if (mod_funcs)
@@ -309,7 +306,7 @@ Mod_Print (void)
 
 	Sys_Printf ("Cached models:\n");
 	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++) {
-		Sys_Printf ("%8p : %s\n", (*mod)->cache.data, (*mod)->name);
+		Sys_Printf ("%8p : %s\n", (*mod)->cache.data, (*mod)->path);
 	}
 }
 

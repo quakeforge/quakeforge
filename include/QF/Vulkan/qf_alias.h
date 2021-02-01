@@ -102,13 +102,14 @@ typedef struct aliasctx_s {
 
 struct vulkan_ctx_s;
 struct entity_s;
-void *Vulkan_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
-		                   qboolean group, maliasskindesc_t *skindesc,
+void *Vulkan_Mod_LoadSkin (model_t *mod, byte *skin, int skinsize, int snum,
+						   int gnum, qboolean group,
+						   maliasskindesc_t *skindesc,
 						   struct vulkan_ctx_s *ctx);
 void Vulkan_Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr,
 									struct vulkan_ctx_s *ctx);
 void Vulkan_Mod_LoadExternalSkins (model_t *mod, struct vulkan_ctx_s *ctx);
-void Vulkan_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr,
+void Vulkan_Mod_MakeAliasModelDisplayLists (model_t *mod, aliashdr_t *hdr,
 											void *_m, int _s, int extra,
 											struct vulkan_ctx_s *ctx);
 

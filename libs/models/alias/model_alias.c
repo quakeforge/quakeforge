@@ -62,7 +62,8 @@ int			aliasbboxmins[3], aliasbboxmaxs[3];
 
 
 static void *
-Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
+Mod_LoadAllSkins (model_t *mod, int numskins, daliasskintype_t *pskintype,
+				  int *pskinindex)
 {
 	byte       *skin;
 	float      *poutskinintervals;
@@ -77,7 +78,7 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 
 	skinsize = pheader->mdl.skinwidth * pheader->mdl.skinheight;
 	pskindesc = Hunk_AllocName (numskins * sizeof (maliasskindesc_t),
-								loadname);
+								mod->name);
 
 	*pskinindex = (byte *) pskindesc - (byte *) pheader;
 
@@ -85,7 +86,7 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 		pskindesc[snum].type = pskintype->type;
 		if (pskintype->type == ALIAS_SKIN_SINGLE) {
 			skin = (byte *) (pskintype + 1);
-			skin = m_funcs->Mod_LoadSkin (skin, skinsize, snum, 0, false,
+			skin = m_funcs->Mod_LoadSkin (mod, skin, skinsize, snum, 0, false,
 										  &pskindesc[snum]);
 		} else {
 			pskintype++;
@@ -93,14 +94,14 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 			groupskins = LittleLong (pinskingroup->numskins);
 
 			t = field_offset (maliasskingroup_t, skindescs[groupskins]);
-			paliasskingroup = Hunk_AllocName (t, loadname);
+			paliasskingroup = Hunk_AllocName (t, mod->name);
 			paliasskingroup->numskins = groupskins;
 
 			pskindesc[snum].skin = (byte *) paliasskingroup - (byte *) pheader;
 
 			pinskinintervals = (daliasskininterval_t *) (pinskingroup + 1);
 			poutskinintervals = Hunk_AllocName (groupskins * sizeof (float),
-												loadname);
+												mod->name);
 			paliasskingroup->intervals =
 				(byte *) poutskinintervals - (byte *) pheader;
 			for (gnum = 0; gnum < groupskins; gnum++) {
@@ -117,8 +118,9 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 
 			for (gnum = 0; gnum < groupskins; gnum++) {
 				paliasskingroup->skindescs[gnum].type = ALIAS_SKIN_SINGLE;
-				skin = mod_funcs->Mod_LoadSkin (skin, skinsize, snum, gnum,
-									true, &paliasskingroup->skindescs[gnum]);
+				skin = mod_funcs->Mod_LoadSkin (mod, skin, skinsize, snum,
+												gnum, true,
+											&paliasskingroup->skindescs[gnum]);
 			}
 		}
 		pskintype = (daliasskintype_t *) skin;
@@ -127,9 +129,9 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 	return pskintype;
 }
 
-void *
-Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame,
-					int extra)
+static void *
+Mod_LoadAliasFrame (model_t *mod, void *pin, int *posenum,
+					maliasframedesc_t *frame, int extra)
 {
 	daliasframe_t  *pdaliasframe;
 	trivertx_t	   *pinframe;
@@ -159,9 +161,9 @@ Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame,
 	return pinframe;
 }
 
-void *
-Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
-					int extra)
+static void *
+Mod_LoadAliasGroup (model_t *mod, void *pin, int *posenum,
+					maliasframedesc_t *frame, int extra)
 {
 	daliasgroup_t	 *pingroup;
 	daliasinterval_t *pin_intervals;
@@ -178,7 +180,7 @@ Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
 	frame->numposes = numframes;
 
 	paliasgroup = Hunk_AllocName (field_offset (maliasgroup_t,
-												frames[numframes]), loadname);
+												frames[numframes]), mod->name);
 	paliasgroup->numframes = numframes;
 	frame->frame = (byte *) paliasgroup - (byte *) pheader;
 
@@ -189,7 +191,7 @@ Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
 	VectorCompMax (frame->bboxmax.v, aliasbboxmaxs, aliasbboxmaxs);
 
 	pin_intervals = (daliasinterval_t *) (pingroup + 1);
-	poutintervals = Hunk_AllocName (numframes * sizeof (float), loadname);
+	poutintervals = Hunk_AllocName (numframes * sizeof (float), mod->name);
 	paliasgroup->intervals = (byte *) poutintervals - (byte *) pheader;
 	frame->interval = LittleFloat (pin_intervals->interval);
 	for (i = 0; i < numframes; i++) {
@@ -203,7 +205,7 @@ Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
 	ptemp = (void *) pin_intervals;
 	for (i = 0; i < numframes; i++) {
 		maliasframedesc_t temp_frame;
-		ptemp = Mod_LoadAliasFrame (ptemp, posenum, &temp_frame, extra);
+		ptemp = Mod_LoadAliasFrame (mod, ptemp, posenum, &temp_frame, extra);
 		memcpy (&paliasgroup->frames[i], &temp_frame,
 				sizeof (paliasgroup->frames[i]));
 	}
@@ -242,7 +244,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	// allocate space for a working header, plus all the data except the
 	// frames, skin and group info
 	size = field_offset (aliashdr_t, frames[LittleLong (pinmodel->numframes)]);
-	pheader = Hunk_AllocName (size, loadname);
+	pheader = Hunk_AllocName (size, mod->name);
 	memset (pheader, 0, size);
 	pmodel = &pheader->mdl;
 	pheader->model = (byte *) pmodel - (byte *) pheader;
@@ -294,7 +296,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 
 	// load the skins
 	pskintype = (daliasskintype_t *) &pinmodel[1];
-	pskintype = Mod_LoadAllSkins (pheader->mdl.numskins, pskintype,
+	pskintype = Mod_LoadAllSkins (mod, pheader->mdl.numskins, pskintype,
 								  &pheader->skindesc);
 
 	// load base s and t vertices
@@ -332,11 +334,11 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 
 		if (frametype == ALIAS_SINGLE) {
 			pframetype = (daliasframetype_t *)
-				Mod_LoadAliasFrame (pframetype + 1, &posenum,
+				Mod_LoadAliasFrame (mod, pframetype + 1, &posenum,
 									&pheader->frames[i], extra);
 		} else {
 			pframetype = (daliasframetype_t *)
-				Mod_LoadAliasGroup (pframetype + 1, &posenum,
+				Mod_LoadAliasGroup (mod, pframetype + 1, &posenum,
 									&pheader->frames[i], extra);
 		}
 	}
@@ -367,7 +369,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 		end = Hunk_LowMark ();
 		total = end - start;
 
-		mem = allocator (&mod->cache, total, loadname);
+		mem = allocator (&mod->cache, total, mod->name);
 		if (mem)
 			memcpy (mem, pheader, total);
 

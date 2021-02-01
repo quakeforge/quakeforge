@@ -585,7 +585,7 @@ gl_overbright_f (cvar_t *var)
 
 		if (m->type != mod_brush)
 			continue;
-		if (m->name[0] == '*')
+		if (m->path[0] == '*')
 			continue;
 
 		for (j = 0, fa = m->surfaces; j < m->numsurfaces; j++, fa++) {
@@ -732,7 +732,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		m = models[j];
 		if (!m)
 			break;
-		if (m->name[0] == '*') {
+		if (m->path[0] == '*') {
 			// sub model surfaces are processed as part of the main model
 			continue;
 		}

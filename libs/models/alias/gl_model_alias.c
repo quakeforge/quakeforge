@@ -53,15 +53,15 @@
 #include "compat.h"
 
 void *
-gl_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum, qboolean group,
-				 maliasskindesc_t *skindesc)
+gl_Mod_LoadSkin (model_t *mod, byte *skin, int skinsize, int snum, int gnum,
+				 qboolean group, maliasskindesc_t *skindesc)
 {
 	byte   *pskin;
 	char	modname[MAX_QPATH + 4];
 	int		fb_texnum = 0, texnum = 0;
 	dstring_t  *name = dstring_new ();
 
-	pskin = Hunk_AllocName (skinsize, loadname);
+	pskin = Hunk_AllocName (skinsize, mod->name);
 	skindesc->skin = (byte *) pskin - (byte *) pheader;
 
 	memcpy (pskin, skin, skinsize);
@@ -69,13 +69,13 @@ gl_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum, qboolean group,
 	Mod_FloodFillSkin (pskin, pheader->mdl.skinwidth, pheader->mdl.skinheight);
 	// save 8 bit texels for the player model to remap
 	// FIXME remove model restriction
-	if (strequal (loadmodel->name, "progs/player.mdl"))
+	if (strequal (mod->path, "progs/player.mdl"))
 		gl_Skin_SetPlayerSkin (pheader->mdl.skinwidth, pheader->mdl.skinheight,
 							   pskin);
 
-	QFS_StripExtension (loadmodel->name, modname);
+	QFS_StripExtension (mod->path, modname);
 
-	if (!loadmodel->fullbright) {
+	if (!mod->fullbright) {
 		if (group) {
 			dsprintf (name, "fb_%s_%i_%i", modname, snum, gnum);
 		} else {
@@ -95,7 +95,7 @@ gl_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum, qboolean group,
 	Sys_MaskPrintf (SYS_GLT, "%s %d\n", name->str, texnum);
 	skindesc->texnum = texnum;
 	skindesc->fb_texnum = fb_texnum;
-	loadmodel->hasfullbrights = fb_texnum;
+	mod->hasfullbrights = fb_texnum;
 	dstring_delete (name);
 	// alpha param was true for non group skins
 	return skin + skinsize;
@@ -104,7 +104,7 @@ gl_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum, qboolean group,
 void
 gl_Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
 {
-	if (strequal (m->name, "progs/eyes.mdl")) {
+	if (strequal (m->path, "progs/eyes.mdl")) {
 		hdr->mdl.scale_origin[2] -= (22 + 8);
 		VectorScale (hdr->mdl.scale, 2, hdr->mdl.scale);
 	}
@@ -158,7 +158,7 @@ gl_Mod_LoadExternalSkins (model_t *mod)
 	maliasskingroup_t *pskingroup;
 	dstring_t  *filename = dstring_new ();
 
-	QFS_StripExtension (mod->name, modname);
+	QFS_StripExtension (mod->path, modname);
 
 	for (i = 0; i < pheader->mdl.numskins; i++) {
 		pskindesc = ((maliasskindesc_t *)

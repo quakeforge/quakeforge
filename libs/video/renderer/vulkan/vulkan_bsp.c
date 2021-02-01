@@ -280,7 +280,7 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		if (!m)
 			continue;
 		// sub-models are done as part of the main model
-		if (*m->name == '*')
+		if (*m->path == '*')
 			continue;
 		// world has already been done, not interested in non-brush models
 		if (m == r_worldentity.model || m->type != mod_brush)
@@ -421,7 +421,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		if (!m)
 			continue;
 		// sub-models are done as part of the main model
-		if (*m->name == '*')
+		if (*m->path == '*')
 			continue;
 		// non-bsp models don't have surfaces.
 		dm = m->submodels;

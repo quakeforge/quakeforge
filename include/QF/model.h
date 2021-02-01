@@ -346,6 +346,8 @@ typedef enum {mod_brush, mod_sprite, mod_alias, mod_iqm} modtype_t;
 #define EF_GLOWTRAIL	4096		// glowcolor particle trail
 
 typedef struct model_s {
+	//FIXME use pointers. needs care in bsp submodel loading
+	char		 path[MAX_QPATH];
 	char		 name[MAX_QPATH];
 	const struct vpath_s *vpath;// virtual path where this model was found
 	qboolean	 needload;		// bmodels and sprites don't cache normally
@@ -431,40 +433,20 @@ typedef struct model_s {
 
 // ============================================================================
 
-extern float RadiusFromBounds (const vec3_t mins, const vec3_t maxs) __attribute__((pure));
-void	Mod_Init (void);
-void	Mod_Init_Cvars (void);
-void	Mod_ClearAll (void);
+void Mod_Init (void);
+void Mod_Init_Cvars (void);
+void Mod_ClearAll (void);
 model_t *Mod_ForName (const char *name, qboolean crash);
-void	*Mod_Extradata (model_t *mod);	// handles caching
-void	Mod_TouchModel (const char *name);
-
+void Mod_TouchModel (const char *name);
+// brush specific
 mleaf_t *Mod_PointInLeaf (const vec3_t p, model_t *model) __attribute__((pure));
-byte	*Mod_LeafPVS (mleaf_t *leaf, model_t *model);
-model_t	*Mod_FindName (const char *name);
-int     Mod_CalcFullbright (const byte *in, byte *out, int pixels);
-void    Mod_ClearFullbright (const byte *in, byte *out, int pixels);
-int     Mod_Fullbright (byte * skin, int width, int height, const char *name);
-
-void    *Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame,
-							 int extra);
-void    *Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
-							 int extra);
-
-void Mod_FindClipDepth (hull_t *hull);
-void	 Mod_LoadBrushModel (model_t *mod, void *buffer);
-void	 Mod_FloodFillSkin (byte *skin, int skinwidth, int skinheight);
-
-void	 Mod_Print (void);
+byte *Mod_LeafPVS (mleaf_t *leaf, model_t *model);
+void Mod_Print (void);
 
 extern struct cvar_s *gl_mesh_cache;
 extern struct cvar_s *gl_subdivide_size;
 extern struct cvar_s *gl_alias_render_tri;
 extern struct cvar_s *gl_textures_external;
-extern model_t *loadmodel;
-extern char *loadname;
-extern byte *mod_base;
-extern byte mod_novis[MAX_MAP_LEAFS / 8];
 extern int mod_lightmap_bytes;
 
 #endif//__QF_model_h

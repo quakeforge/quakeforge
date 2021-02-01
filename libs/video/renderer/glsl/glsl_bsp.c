@@ -436,7 +436,7 @@ glsl_R_RegisterTextures (model_t **models, int num_models)
 		if (!m)
 			continue;
 		// sub-models are done as part of the main model
-		if (*m->name == '*')
+		if (*m->path == '*')
 			continue;
 		// world has already been done, not interested in non-brush models
 		if (m == r_worldentity.model || m->type != mod_brush)
@@ -561,7 +561,7 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 		if (!m)
 			continue;
 		// sub-models are done as part of the main model
-		if (*m->name == '*')
+		if (*m->path == '*')
 			continue;
 		// non-bsp models don't have surfaces.
 		dm = m->submodels;

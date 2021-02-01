@@ -408,7 +408,7 @@ CL_PrintEntities_f (void)
 			continue;
 		}
 		Sys_Printf ("%s:%2i  (%5.1f,%5.1f,%5.1f) [%5.1f %5.1f %5.1f]\n",
-					ent->model->name, ent->frame, VectorExpand (ent->origin),
+					ent->model->path, ent->frame, VectorExpand (ent->origin),
 					VectorExpand (ent->angles));
 	}
 }

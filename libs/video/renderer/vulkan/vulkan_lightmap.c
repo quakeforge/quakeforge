@@ -228,7 +228,7 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		m = models[j];
 		if (!m)
 			break;
-		if (m->name[0] == '*') {
+		if (m->path[0] == '*') {
 			// sub model surfaces are processed as part of the main model
 			continue;
 		}
@@ -251,7 +251,7 @@ Vulkan_BuildLightmaps (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		if (!m) {
 			break;
 		}
-		if (m->name[0] == '*') {
+		if (m->path[0] == '*') {
 			// sub model surfaces are processed as part of the main model
 			continue;
 		}

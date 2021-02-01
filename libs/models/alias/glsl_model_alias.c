@@ -91,7 +91,7 @@ glsl_alias_clear (model_t *m, void *data)
 }
 
 void *
-glsl_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
+glsl_Mod_LoadSkin (model_t *mod, byte *skin, int skinsize, int snum, int gnum,
 				   qboolean group, maliasskindesc_t *skindesc)
 {
 	byte       *tskin;
@@ -104,9 +104,9 @@ glsl_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
 	memcpy (tskin, skin, skinsize);
 	Mod_FloodFillSkin (tskin, w, h);
 	if (group)
-		name = va (0, "%s_%i_%i", loadmodel->name, snum, gnum);
+		name = va (0, "%s_%i_%i", mod->path, snum, gnum);
 	else
-		name = va (0, "%s_%i", loadmodel->name, snum);
+		name = va (0, "%s_%i", mod->path, snum);
 	skindesc->texnum = GLSL_LoadQuakeTexture (name, w, h, tskin);
 	free (tskin);
 	return skin + skinsize;

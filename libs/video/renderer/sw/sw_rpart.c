@@ -83,7 +83,7 @@ R_ReadPointFile_f (void)
 	const char *name;
 	char       *mapname;
 
-	mapname = strdup (r_worldentity.model->name);
+	mapname = strdup (r_worldentity.model->path);
 	if (!mapname)
 		Sys_Error ("Can't duplicate mapname!");
 	QFS_StripExtension (mapname, mapname);

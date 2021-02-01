@@ -338,7 +338,7 @@ demo_default_name (const char *argv1)
 	strftime (timestring, 19, "%Y-%m-%d-%H-%M", localtime (&tim));
 
 	// the leading path-name is to be removed from cl.worldmodel->name
-	mapname = QFS_SkipPath (cl.worldmodel->name);
+	mapname = QFS_SkipPath (cl.worldmodel->path);
 
 	// the map name is cut off after any "." because this would prevent
 	// an extension being appended

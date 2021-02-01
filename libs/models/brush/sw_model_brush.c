@@ -41,13 +41,13 @@
 #include "mod_internal.h"
 
 void
-sw_Mod_LoadLighting (bsp_t *bsp)
+sw_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
 {
 	mod_lightmap_bytes = 1;
 	if (!bsp->lightdatasize) {
-		loadmodel->lightdata = NULL;
+		mod->lightdata = NULL;
 		return;
 	}
-	loadmodel->lightdata = Hunk_AllocName (bsp->lightdatasize, loadname);
-	memcpy (loadmodel->lightdata, bsp->lightdata, bsp->lightdatasize);
+	mod->lightdata = Hunk_AllocName (bsp->lightdatasize, mod->name);
+	memcpy (mod->lightdata, bsp->lightdata, bsp->lightdatasize);
 }

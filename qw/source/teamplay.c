@@ -288,8 +288,8 @@ Team_NewMap (void)
 
 	died = false;
 	recorded_location = false;
-	mapname = strdup (cl.worldmodel->name);
-	t2 = malloc (sizeof (cl.worldmodel->name));
+	mapname = strdup (cl.worldmodel->path);
+	t2 = malloc (sizeof (cl.worldmodel->path));
 	if (!mapname || !t2)
 		Sys_Error ("Can't duplicate mapname!");
 	map_to_loc (mapname,t2);
@@ -345,10 +345,10 @@ locs_loc (void)
 	}
 	if (Cmd_Argc () >= 3)
 		desc = Cmd_Args (2);
-	mapname = malloc (sizeof (cl.worldmodel->name));
+	mapname = malloc (sizeof (cl.worldmodel->path));
 	if (!mapname)
 		Sys_Error ("Can't duplicate mapname!");
-	map_to_loc (cl.worldmodel->name, mapname);
+	map_to_loc (cl.worldmodel->path, mapname);
 	snprintf (locfile, sizeof (locfile), "%s/%s",
 			  qfs_gamedir->dir.def, mapname);
 	free (mapname);

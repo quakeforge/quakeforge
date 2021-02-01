@@ -110,8 +110,8 @@ vulkan_alias_clear (model_t *m, void *data)
 }
 
 void *
-Vulkan_Mod_LoadSkin (byte *skinpix, int skinsize, int snum, int gnum,
-				     qboolean group, maliasskindesc_t *skindesc,
+Vulkan_Mod_LoadSkin (model_t *mod, byte *skinpix, int skinsize, int snum,
+					 int gnum, qboolean group, maliasskindesc_t *skindesc,
 					 vulkan_ctx_t *ctx)
 {
 	aliasskin_t *skin;
@@ -131,25 +131,25 @@ Vulkan_Mod_LoadSkin (byte *skinpix, int skinsize, int snum, int gnum,
 	if (Mod_CalcFullbright (tskin, tskin + skinsize, skinsize)) {
 		skin->glow = Vulkan_LoadTex (ctx, &skin_tex, 1,
 									 va (ctx->va_ctx, "%s:%d:%d:glow",
-										 loadmodel->name, snum, gnum));
+										 mod->name, snum, gnum));
 		Mod_ClearFullbright (tskin, tskin, skinsize);
 	}
 	if (Skin_CalcTopColors (tskin, tskin + skinsize, skinsize)) {
 		skin->colora = Vulkan_LoadTex (ctx, &skin_tex, 1,
 									   va (ctx->va_ctx, "%s:%d:%d:colora",
-										   loadmodel->name, snum, gnum));
+										   mod->name, snum, gnum));
 		Skin_ClearTopColors (tskin, tskin, skinsize);
 	}
 	if (Skin_CalcBottomColors (tskin, tskin + skinsize, skinsize)) {
 		skin->colorb = Vulkan_LoadTex (ctx, &skin_tex, 1,
 									   va (ctx->va_ctx, "%s:%d:%d:colorb",
-										   loadmodel->name, snum, gnum));
+										   mod->name, snum, gnum));
 		Skin_ClearBottomColors (tskin, tskin, skinsize);
 	}
 	skin_tex.data = tskin;
 	skin->tex = Vulkan_LoadTex (ctx, &skin_tex, 1,
 								va (ctx->va_ctx, "%s:%d:%d:tex",
-									loadmodel->name,
+									mod->name,
 									snum, gnum));
 
 	free (tskin);
@@ -185,7 +185,7 @@ get_buffer_size (qfv_device_t *device, VkBuffer buffer)
 }
 
 void
-Vulkan_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
+Vulkan_Mod_MakeAliasModelDisplayLists (model_t *mod, aliashdr_t *hdr, void *_m,
 									   int _s, int extra, vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
@@ -255,13 +255,13 @@ Vulkan_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 										  | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, vbuff,
 						 va (ctx->va_ctx, "buffer:alias:vertex:%s",
-							 loadmodel->name));
+							 mod->name));
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, uvbuff,
 						 va (ctx->va_ctx, "buffer:alias:uv:%s",
-							 loadmodel->name));
+							 mod->name));
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, ibuff,
 						 va (ctx->va_ctx, "buffer:alias:index:%s",
-							 loadmodel->name));
+							 mod->name));
 	size_t      voffs = 0;
 	size_t      uvoffs = voffs + get_buffer_size (device, vbuff);
 	size_t      ioffs = uvoffs + get_buffer_size (device, uvbuff);
@@ -272,7 +272,7 @@ Vulkan_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 								 buff_size, 0);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, mem,
 						 va (ctx->va_ctx, "memory:alias:vuvi:%s",
-							 loadmodel->name));
+							 mod->name));
 	QFV_BindBufferMemory (device, vbuff, mem, voffs);
 	QFV_BindBufferMemory (device, uvbuff, mem, uvoffs);
 	QFV_BindBufferMemory (device, ibuff, mem, ioffs);
@@ -280,7 +280,7 @@ Vulkan_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (device,
 													 va (ctx->va_ctx,
 														 "alias:%s",
-														 loadmodel->name),
+														 mod->name),
 													 buff_size, ctx->cmdpool);
 	qfv_packet_t *packet = QFV_PacketAcquire (stage);
 	verts = QFV_PacketExtend (packet, vert_size);

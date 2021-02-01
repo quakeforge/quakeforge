@@ -109,7 +109,7 @@ sw32_R_AliasCheckBBox (void)
 	frame = currententity->frame;
 // TODO: don't repeat this check when drawing?
 	if ((frame >= pmdl->numframes) || (frame < 0)) {
-		Sys_MaskPrintf (SYS_DEV, "No such frame %d %s\n", frame, pmodel->name);
+		Sys_MaskPrintf (SYS_DEV, "No such frame %d %s\n", frame, pmodel->path);
 		frame = 0;
 	}
 

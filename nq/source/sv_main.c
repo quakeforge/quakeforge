@@ -1198,7 +1198,7 @@ SV_SpawnServer (const char *server)
 	ent = EDICT_NUM (&sv_pr_state, 0);
 	memset (&ent->v, 0, sv_pr_state.progs->entityfields * 4);
 	ent->free = false;
-	SVstring (ent, model) = PR_SetString (&sv_pr_state, sv.worldmodel->name);
+	SVstring (ent, model) = PR_SetString (&sv_pr_state, sv.worldmodel->path);
 	SVfloat (ent, modelindex) = 1;			// world model
 	SVfloat (ent, solid) = SOLID_BSP;
 	SVfloat (ent, movetype) = MOVETYPE_PUSH;

@@ -31,7 +31,7 @@
 # include "config.h"
 #endif
 
-#include "r_local.h"
+#include "mod_internal.h"
 
 VISIBLE int
 Mod_CalcFullbright (const byte *in, byte *out, int pixels)

@@ -50,12 +50,12 @@
 
 
 void *
-sw_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
+sw_Mod_LoadSkin (model_t *mod, byte *skin, int skinsize, int snum, int gnum,
 				 qboolean group, maliasskindesc_t *skindesc)
 {
 	byte		*pskin;
 
-	pskin = Hunk_AllocName (skinsize, loadname);
+	pskin = Hunk_AllocName (skinsize, mod->name);
 	skindesc->skin = (byte *) pskin - (byte *) pheader;
 
 	memcpy (pskin, skin, skinsize);
@@ -64,7 +64,7 @@ sw_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
 }
 
 static void
-process_frame (maliasframedesc_t *frame, int posenum, int extra)
+process_frame (model_t *mod, maliasframedesc_t *frame, int posenum, int extra)
 {
 	int         size = pheader->mdl.numverts * sizeof (trivertx_t);
 	trivertx_t *frame_verts;
@@ -72,7 +72,7 @@ process_frame (maliasframedesc_t *frame, int posenum, int extra)
 	if (extra)
 		size *= 2;
 
-	frame_verts = Hunk_AllocName (size, loadname);
+	frame_verts = Hunk_AllocName (size, mod->name);
 	frame->frame = (byte *) frame_verts - (byte *) pheader;
 
 	// The low-order 8 bits (actually, fractional) are completely separate
@@ -83,7 +83,7 @@ process_frame (maliasframedesc_t *frame, int posenum, int extra)
 }
 
 void
-sw_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
+sw_Mod_MakeAliasModelDisplayLists (model_t *mod, aliashdr_t *hdr, void *_m,
 								   int _s, int extra)
 {
 	int			 i, j;
@@ -93,9 +93,9 @@ sw_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 	mtriangle_t *ptri;
 
 	pstverts = (stvert_t *) Hunk_AllocName (numv * sizeof (stvert_t),
-											loadname);
+											mod->name);
 	ptri = (mtriangle_t *) Hunk_AllocName (numt * sizeof (mtriangle_t),
-										   loadname);
+										   mod->name);
 
 	hdr->stverts = (byte *) pstverts - (byte *) hdr;
 	hdr->triangles = (byte *) ptri - (byte *) hdr;
@@ -117,16 +117,16 @@ sw_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 			maliasgroup_t *group;
 			group = (maliasgroup_t *) ((byte *) pheader + frame->frame);
 			for (j = 0; j < group->numframes; j++)
-				process_frame ((maliasframedesc_t *) &group->frames[j],
+				process_frame (mod, (maliasframedesc_t *) &group->frames[j],
 							   posenum++, extra);
 		} else {
-			process_frame (frame, posenum++, extra);
+			process_frame (mod, frame, posenum++, extra);
 		}
 	}
 }
 
 void
-sw_Mod_FinalizeAliasModel (model_t *m, aliashdr_t *hdr)
+sw_Mod_FinalizeAliasModel (model_t *mod, aliashdr_t *hdr)
 {
 }
 

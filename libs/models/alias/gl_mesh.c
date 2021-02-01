@@ -361,8 +361,8 @@ gl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 
 			// look for a cached version
 			dstring_copystr (cache, "glquake/");
-			dstring_appendstr (cache, m->name);
-			QFS_StripExtension (m->name + strlen ("progs/"),
+			dstring_appendstr (cache, m->path);
+			QFS_StripExtension (m->path + strlen ("progs/"),
 							cache->str + strlen ("glquake/"));
 			dstring_appendstr (cache, ".qfms");
 
@@ -433,7 +433,7 @@ gl_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr, void *_m,
 		}
 		if (remesh) {
 			// build it from scratch
-			Sys_MaskPrintf (SYS_DEV, "meshing %s...\n", m->name);
+			Sys_MaskPrintf (SYS_DEV, "meshing %s...\n", m->path);
 
 			BuildTris ();					// trifans or lists
 

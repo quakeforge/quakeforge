@@ -38,7 +38,7 @@
 #include "QF/qendian.h"
 #include "QF/sys.h"
 
-#include "r_local.h"
+#include "mod_internal.h"
 
 int
 Mod_Fullbright (byte *skin, int width, int height, const char *name)

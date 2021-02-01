@@ -101,7 +101,7 @@ load_skytex (texture_t *tx, byte *data)
 }
 
 void
-glsl_Mod_ProcessTexture (texture_t *tx)
+glsl_Mod_ProcessTexture (model_t *mod, texture_t *tx)
 {
 	if (!tx) {
 		r_notexture_mip->render = &glsl_notexture;
@@ -145,15 +145,15 @@ glsl_Mod_ProcessTexture (texture_t *tx)
 }
 
 void
-glsl_Mod_LoadLighting (bsp_t *bsp)
+glsl_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
 {
 	// a bit hacky, but it's as good a place as any
-	loadmodel->clear = glsl_brush_clear;
+	mod->clear = glsl_brush_clear;
 	mod_lightmap_bytes = 1;
 	if (!bsp->lightdatasize) {
-		loadmodel->lightdata = NULL;
+		mod->lightdata = NULL;
 		return;
 	}
-	loadmodel->lightdata = Hunk_AllocName (bsp->lightdatasize, loadname);
-	memcpy (loadmodel->lightdata, bsp->lightdata, bsp->lightdatasize);
+	mod->lightdata = Hunk_AllocName (bsp->lightdatasize, mod->name);
+	memcpy (mod->lightdata, bsp->lightdata, bsp->lightdatasize);
 }

@@ -226,7 +226,7 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	for (i = 0; i < num_models; i++) {
 		if (!models[i])
 			continue;
-		if (*models[i]->name == '*')
+		if (*models[i]->path == '*')
 			continue;
 		if (models[i] != r_worldentity.model && models[i]->type == mod_brush)
 			register_textures (models[i]);

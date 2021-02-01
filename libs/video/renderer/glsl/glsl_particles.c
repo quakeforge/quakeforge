@@ -313,7 +313,7 @@ glsl_R_ReadPointFile_f (void)
 	vec3_t      org;
 	QFile      *f;
 
-	mapname = strdup (r_worldentity.model->name);
+	mapname = strdup (r_worldentity.model->path);
 	if (!mapname)
 		Sys_Error ("Can't duplicate mapname!");
 	QFS_StripExtension (mapname, mapname);

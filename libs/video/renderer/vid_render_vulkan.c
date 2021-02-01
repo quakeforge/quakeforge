@@ -401,35 +401,35 @@ vulkan_r_particles_style_f (struct cvar_s *var)
 }
 
 static void
-vulkan_Mod_LoadLighting (bsp_t *bsp)
+vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
 {
-	Vulkan_Mod_LoadLighting (bsp, vulkan_ctx);
+	Vulkan_Mod_LoadLighting (mod, bsp, vulkan_ctx);
 }
 
 static void
-vulkan_Mod_SubdivideSurface (msurface_t *fa)
+vulkan_Mod_SubdivideSurface (model_t *mod, msurface_t *fa)
 {
 }
 
 static void
-vulkan_Mod_ProcessTexture (texture_t *tx)
+vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx)
 {
-	Vulkan_Mod_ProcessTexture (tx, vulkan_ctx);
+	Vulkan_Mod_ProcessTexture (mod, tx, vulkan_ctx);
 }
 
 static void
-vulkan_Mod_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr,
+vulkan_Mod_MakeAliasModelDisplayLists (model_t *mod, aliashdr_t *hdr,
 									   void *_m, int _s, int extra)
 {
-	Vulkan_Mod_MakeAliasModelDisplayLists (m, hdr, _m, _s, extra, vulkan_ctx);
+	Vulkan_Mod_MakeAliasModelDisplayLists (mod, hdr, _m, _s, extra, vulkan_ctx);
 }
 
 static void *
-vulkan_Mod_LoadSkin (byte *skin, int skinsize, int snum, int gnum,
-					 qboolean group, maliasskindesc_t *skindesc)
+vulkan_Mod_LoadSkin (model_t *mod, byte *skin, int skinsize, int snum,
+					 int gnum, qboolean group, maliasskindesc_t *skindesc)
 {
-	return Vulkan_Mod_LoadSkin (skin, skinsize, snum, gnum, group, skindesc,
-								vulkan_ctx);
+	return Vulkan_Mod_LoadSkin (mod, skin, skinsize, snum, gnum, group,
+								skindesc, vulkan_ctx);
 }
 
 static void
@@ -449,7 +449,8 @@ vulkan_Mod_IQMFinish (model_t *mod)
 }
 
 static void
-vulkan_Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)
+vulkan_Mod_SpriteLoadTexture (model_t *mod, mspriteframe_t *pspriteframe,
+							  int framenum)
 {
 }
 
