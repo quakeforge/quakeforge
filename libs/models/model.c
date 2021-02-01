@@ -39,6 +39,7 @@
 #endif
 
 #include "QF/cvar.h"
+#include "QF/darray.h"
 #include "QF/iqm.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
@@ -53,9 +54,8 @@
 vid_model_funcs_t *mod_funcs;
 
 #define	MOD_BLOCK	16					// allocate 16 models at a time
-model_t   **mod_known;
-int         mod_numknown;
-int         mod_maxknown;
+static struct DARRAY_TYPE (model_t *) mod_known = {0, 0, MOD_BLOCK};
+static size_t mod_numknown;
 
 VISIBLE texture_t  *r_notexture_mip;
 
@@ -115,10 +115,10 @@ Mod_Init_Cvars (void)
 VISIBLE void
 Mod_ClearAll (void)
 {
-	int         i;
+	size_t      i;
 	model_t   **mod;
 
-	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++) {
+	for (i = 0, mod = mod_known.a; i < mod_numknown; i++, mod++) {
 		//FIXME this seems to be correct but need to double check the behavior
 		//with alias models
 		if (!(*mod)->needload && (*mod)->clear) {
@@ -134,25 +134,24 @@ Mod_ClearAll (void)
 model_t *
 Mod_FindName (const char *name)
 {
-	int         i;
+	size_t      i;
 	model_t   **mod;
 
 	if (!name[0])
 		Sys_Error ("Mod_FindName: empty name");
 
 	// search the currently loaded models
-	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++)
+	for (i = 0, mod = mod_known.a; i < mod_numknown; i++, mod++)
 		if (!strcmp ((*mod)->path, name))
 			break;
 
 	if (i == mod_numknown) {
-		if (mod_numknown == mod_maxknown) {
-			mod_maxknown += MOD_BLOCK;
-			mod_known = realloc (mod_known, mod_maxknown * sizeof (model_t *));
-			mod = mod_known + mod_numknown;
-			*mod = calloc (MOD_BLOCK, sizeof (model_t));
-			for (i = 1; i < MOD_BLOCK; i++)
-				mod[i] = mod[0] + i;
+		if (mod_numknown == mod_known.size) {
+			model_t    *block = calloc (MOD_BLOCK, sizeof (model_t));
+			for (i = 0; i < MOD_BLOCK; i++) {
+				DARRAY_APPEND (&mod_known, &block[i]);
+			}
+			mod = &mod_known.a[mod_numknown];
 		}
 		memset ((*mod), 0, sizeof (model_t));
 		strncpy ((*mod)->path, name, sizeof (*mod)->path - 1);
@@ -301,11 +300,11 @@ Mod_TouchModel (const char *name)
 VISIBLE void
 Mod_Print (void)
 {
-	int			i;
+	size_t      i;
 	model_t	  **mod;
 
 	Sys_Printf ("Cached models:\n");
-	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++) {
+	for (i = 0, mod = mod_known.a; i < mod_numknown; i++, mod++) {
 		Sys_Printf ("%8p : %s\n", (*mod)->cache.data, (*mod)->path);
 	}
 }
