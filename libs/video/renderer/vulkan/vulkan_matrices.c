@@ -175,7 +175,7 @@ Vulkan_CalcProjectionMatrices (vulkan_ctx_t *ctx, float aspect)
 
 	ortho_mat (mat->projection_2d, 0, width, 0, height, -99999, 99999);
 	persp_mat (mat->projection_3d, 0, width, 0, height, aspect);
-
+#if 0
 	Sys_MaskPrintf (SYS_VULKAN, "ortho:\n");
 	Sys_MaskPrintf (SYS_VULKAN, "   [[%g, %g, %g, %g],\n",
 					QuatExpand (mat->projection_2d + 0));
@@ -194,7 +194,7 @@ Vulkan_CalcProjectionMatrices (vulkan_ctx_t *ctx, float aspect)
 					QuatExpand (mat->projection_3d + 8));
 	Sys_MaskPrintf (SYS_VULKAN, "    [%g, %g, %g, %g]]\n",
 					QuatExpand (mat->projection_3d + 12));
-
+#endif
 	VkMappedMemoryRange ranges[] = {
 		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0, mat->memory, 0, MAT_SIZE },
 		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0, mat->memory,
