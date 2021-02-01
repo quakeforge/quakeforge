@@ -275,3 +275,33 @@ QFV_GenerateMipMaps (qfv_device_t *device, VkCommandBuffer cmd,
 								 0, 0, 0, 0,
 								 1, &final_barrier);
 }
+
+static int
+ilog2 (unsigned x)
+{
+	unsigned o = x;
+	if (x > 0x7fffffff) {
+		// avoid overflow
+		return 31;
+	}
+	x--;
+	x |= x >> 1;
+	x |= x >> 2;
+	x |= x >> 4;
+	x |= x >> 8;
+	x |= x >> 16;
+	x++;
+	int y = 0;
+	y |= ((x & 0xffff0000) != 0) << 4;
+	y |= ((x & 0xff00ff00) != 0) << 3;
+	y |= ((x & 0xf0f0f0f0) != 0) << 2;
+	y |= ((x & 0xcccccccc) != 0) << 1;
+	y |= ((x & 0xaaaaaaaa) != 0) << 0;
+	return y - ((o & (x - 1)) != 0);
+}
+
+int
+QFV_MipLevels (int width, int height)
+{
+	return ilog2 (max (width, height)) + 1;
+}

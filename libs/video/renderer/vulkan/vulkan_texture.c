@@ -64,30 +64,6 @@
 #include "r_scrap.h"
 #include "vid_vulkan.h"
 
-static int
-ilog2 (unsigned x)
-{
-	unsigned o = x;
-	if (x > 0x7fffffff) {
-		// avoid overflow
-		return 31;
-	}
-	x--;
-	x |= x >> 1;
-	x |= x >> 2;
-	x |= x >> 4;
-	x |= x >> 8;
-	x |= x >> 16;
-	x++;
-	int y = 0;
-	y |= ((x & 0xffff0000) != 0) << 4;
-	y |= ((x & 0xff00ff00) != 0) << 3;
-	y |= ((x & 0xf0f0f0f0) != 0) << 2;
-	y |= ((x & 0xcccccccc) != 0) << 1;
-	y |= ((x & 0xaaaaaaaa) != 0) << 0;
-	return y - ((o & (x - 1)) != 0);
-}
-
 void
 Vulkan_ExpandPalette (byte *dst, const byte *src, const byte *palette,
 					  int alpha, int count)
@@ -164,7 +140,7 @@ Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip, const char *name)
 	}
 
 	if (mip) {
-		mip = ilog2 (max (tex->width, tex->height)) + 1;
+		mip = QFV_MipLevels (tex->width, tex->height);
 	} else {
 		mip = 1;
 	}

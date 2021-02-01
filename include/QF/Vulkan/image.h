@@ -82,5 +82,6 @@ VkImageView QFV_CreateImageView (struct qfv_device_s *device,
 void QFV_GenerateMipMaps (struct qfv_device_s *device, VkCommandBuffer cmd,
 						  VkImage image, unsigned mips,
 						  unsigned width, unsigned height, unsigned layers);
+int QFV_MipLevels (int width, int height) __attribute__((const));
 
 #endif//__QF_Vulkan_image_h
