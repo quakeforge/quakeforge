@@ -65,18 +65,6 @@
 #include "vid_vulkan.h"
 #include "vkparse.h"
 
-static VkImageView
-get_view (qfv_tex_t *tex, qfv_tex_t *default_tex)
-{
-	if (tex) {
-		return tex->view;
-	}
-	if (default_tex) {
-		return default_tex->view;
-	}
-	return 0;
-}
-
 void
 Vulkan_DrawAlias (entity_t *ent, struct vulkan_ctx_s *ctx)
 {
@@ -87,23 +75,28 @@ Vulkan_DrawAlias (entity_t *ent, struct vulkan_ctx_s *ctx)
 	model_t    *model = ent->model;
 	aliashdr_t *hdr;
 	qfv_alias_mesh_t *mesh;
-	float       blend;
-	qfv_tex_t  *skin;
+	qfv_alias_skin_t *skin;
+	float       vertex_constants[17];
+	byte        fragment_constants[3][4];
 
 	if (!(hdr = model->aliashdr)) {
 		hdr = Cache_Get (&model->cache);
 	}
 	mesh = (qfv_alias_mesh_t *) ((byte *) hdr + hdr->commands);
 
-	blend = R_AliasGetLerpedFrames (ent, hdr);
+	memcpy (vertex_constants, ent->transform, sizeof (ent->transform));
+	vertex_constants[16] = R_AliasGetLerpedFrames (ent, hdr);
 
 	if (0/*XXX ent->skin && ent->skin->tex*/) {
 		//skin = ent->skin->tex;
 	} else {
 		maliasskindesc_t *skindesc;
 		skindesc = R_AliasGetSkindesc (ent->skinnum, hdr);
-		skin = (qfv_tex_t *) ((byte *) hdr + skindesc->skin);
+		skin = (qfv_alias_skin_t *) ((byte *) hdr + skindesc->skin);
 	}
+	QuatScale (ent->colormod, 255, fragment_constants[0]);
+	QuatCopy (skin->colora, fragment_constants[1]);
+	QuatCopy (skin->colorb, fragment_constants[2]);
 
 	VkDeviceSize offsets[] = {
 		ent->pose1 * hdr->poseverts * sizeof (aliasvrt_t),
@@ -120,11 +113,12 @@ Vulkan_DrawAlias (entity_t *ent, struct vulkan_ctx_s *ctx)
 								 VK_INDEX_TYPE_UINT32);
 	dfunc->vkCmdPushConstants (aframe->cmd, actx->layout,
 							   VK_SHADER_STAGE_VERTEX_BIT,
-							   0, 16 * sizeof (float), ent->transform);
+							   0, sizeof (vertex_constants), vertex_constants);
 	dfunc->vkCmdPushConstants (aframe->cmd, actx->layout,
-							   VK_SHADER_STAGE_VERTEX_BIT,
-							   64, sizeof (float), &blend);
-	aframe->imageInfo[0].imageView = get_view (skin, 0);
+							   VK_SHADER_STAGE_FRAGMENT_BIT,
+							   68, sizeof (fragment_constants),
+							   fragment_constants);
+	aframe->imageInfo[0].imageView = skin->view;
 	dfunc->vkCmdPushDescriptorSetKHR (aframe->cmd,
 									  VK_PIPELINE_BIND_POINT_GRAPHICS,
 									  actx->layout,

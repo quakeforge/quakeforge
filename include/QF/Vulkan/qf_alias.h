@@ -53,6 +53,14 @@ typedef struct qfv_alias_mesh_s {
 	VkDeviceMemory memory;
 } qfv_alias_mesh_t;
 
+typedef struct qfv_alias_skin_s {
+	VkDeviceMemory memory;
+	VkImage     image;
+	VkImageView view;
+	byte        colora[4];
+	byte        colorb[4];
+} qfv_alias_skin_t;
+
 typedef struct qfv_light_s {
 	vec3_t      color;
 	float       dist;

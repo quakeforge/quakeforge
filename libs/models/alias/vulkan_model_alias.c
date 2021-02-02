@@ -67,7 +67,7 @@ skin_clear (int skin_offset, aliashdr_t *hdr, vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	qfv_tex_t  *skin = (qfv_tex_t *) ((byte *) hdr + skin_offset);
+	qfv_alias_skin_t *skin = (qfv_alias_skin_t *) ((byte *) hdr + skin_offset);
 
 	dfunc->vkDestroyImageView (device->dev, skin->view, 0);
 	dfunc->vkDestroyImage (device->dev, skin->image, 0);
@@ -115,11 +115,13 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	aliashdr_t *header = alias_ctx->header;
-	qfv_tex_t  *skin;
+	qfv_alias_skin_t *skin;
 	byte       *tskin;
 	int         w, h;
 
-	skin = Hunk_Alloc (sizeof (qfv_tex_t));
+	skin = Hunk_Alloc (sizeof (qfv_alias_skin_t));
+	QuatCopy (vid.palette32 + (TOP_RANGE + 15) * 4, skin->colora);
+	QuatCopy (vid.palette32 + (BOTTOM_RANGE + 15) * 4, skin->colorb);
 	skindesc->skin = (byte *) skin - (byte *) header;
 	//FIXME move all skins into arrays(?)
 	w = header->mdl.skinwidth;
@@ -130,7 +132,6 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 
 	int         mipLevels = QFV_MipLevels (w, h);
 	VkExtent3D  extent = { w, h, 1 };
-	skin->offset = 0;
 	skin->image = QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D,
 								   VK_FORMAT_R8G8B8A8_UNORM, extent,
 								   mipLevels, 4, VK_SAMPLE_COUNT_1_BIT,
@@ -212,7 +213,6 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 		dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
 									 0, 0, 0, 0, 0,
 									 1, &barrier);
-
 	} else {
 		QFV_GenerateMipMaps (device, packet->cmd, skin->image,
 							 mipLevels, w, h, 4);

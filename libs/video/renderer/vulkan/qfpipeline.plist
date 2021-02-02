@@ -271,8 +271,8 @@
 				},
 				{
 					stageFlags = fragment;
-					offset = 80;
-					size = "2 * 4 * 4";
+					offset = 68;
+					size = "3 * 4 + 2 * 4 * 4";
 				},
 			);
 		};
