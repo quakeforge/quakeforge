@@ -240,27 +240,30 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 {
 	qfv_load_pipeline (ctx);
 	const char *name = "renderpass";//FIXME
-
-	plitem_t   *item = ctx->pipelineDef;
-	if (!item || !(item = PL_ObjectForKey (item, name))) {
-		Sys_Printf ("error loading renderpass\n");
-		return;
-	} else {
-		Sys_Printf ("Found renderpass def\n");
-	}
 	qfv_device_t *device = ctx->device;
 	VkDevice    dev = device->dev;
 	qfv_devfuncs_t *df = device->funcs;
 	VkCommandBuffer cmd = ctx->cmdbuffer;
 	qfv_swapchain_t *sc = ctx->swapchain;
 
+	ctx->msaaSamples = min ((VkSampleCountFlagBits) msaaSamples->int_val,
+							QFV_GetMaxSampleCount (device->physDev));
+	if (ctx->msaaSamples > 1) {
+		name = "renderpass.msaa";
+	}
+
+	plitem_t   *item = ctx->pipelineDef;
+	if (!item || !(item = PL_ObjectForKey (item, name))) {
+		Sys_Printf ("error loading renderpass: %s\n", name);
+		return;
+	} else {
+		Sys_Printf ("Found renderpass def: %s\n", name);
+	}
+
 	qfv_imageresource_t *colorImage = malloc (sizeof (*colorImage));
 	qfv_imageresource_t *depthImage = malloc (sizeof (*depthImage));
 
 	VkExtent3D extent = {sc->extent.width, sc->extent.height, 1};
-
-	//FIXME incorporate cvar setting
-	ctx->msaaSamples = QFV_GetMaxSampleCount (device->physDev);
 
 	Sys_MaskPrintf (SYS_VULKAN, "color resource\n");
 	colorImage->image

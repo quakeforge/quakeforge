@@ -106,9 +106,13 @@ QFV_CreateRenderPass (qfv_device_t *device,
 				const VkAttachmentReference *ref = &sp->pColorAttachments[j];
 				Sys_Printf ("      c %d %d\n", ref->attachment, ref->layout);
 			}
-			for (size_t j = 0; j < sp->colorAttachmentCount; j++) {
-				const VkAttachmentReference *ref = &sp->pResolveAttachments[j];
-				Sys_Printf ("      r %d %d\n", ref->attachment, ref->layout);
+			if (sp->pResolveAttachments) {
+				for (size_t j = 0; j < sp->colorAttachmentCount; j++) {
+					const VkAttachmentReference *ref
+						= &sp->pResolveAttachments[j];
+					Sys_Printf ("      r %d %d\n", ref->attachment,
+								ref->layout);
+				}
 			}
 			Sys_Printf ("    pDepthStencilAttachment: %p\n",
 						sp->pDepthStencilAttachment);

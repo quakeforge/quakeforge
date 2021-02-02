@@ -135,12 +135,15 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 						  framebuffer->imageAvailableSemaphore,
 						  0, &imageIndex);
 
-	__auto_type attachments = DARRAY_ALLOCFIXED (qfv_imageviewset_t, 3,
-												 alloca);
+	int         attachCount = vulkan_ctx->msaaSamples > 1 ? 3 : 2;
+	__auto_type attachments = DARRAY_ALLOCFIXED (qfv_imageviewset_t,
+												 attachCount, alloca);
 	qfv_swapchain_t *sc = vulkan_ctx->swapchain;
-	attachments->a[0] = vulkan_ctx->renderpass.colorImage->view;
+	attachments->a[0] = sc->imageViews->a[imageIndex];
 	attachments->a[1] = vulkan_ctx->renderpass.depthImage->view;
-	attachments->a[2] = sc->imageViews->a[imageIndex];
+	if (attachCount > 2) {
+		attachments->a[2] = vulkan_ctx->renderpass.colorImage->view;
+	}
 
 	VkRenderPass renderpass = vulkan_ctx->renderpass.renderpass;
 	framebuffer->framebuffer = QFV_CreateFramebuffer (device, renderpass,
@@ -157,15 +160,16 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 
 	VkCommandBufferBeginInfo beginInfo
 		= { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
-	VkClearValue clearValues[2] = {
+	VkClearValue clearValues[3] = {
 		{ { {0.0, 0.0, 0.0, 1.0} } },
 		{ { {1.0, 0.0} } },
+		{ { {0.0, 0.0, 0.0, 1.0} } },
 	};
 	VkRenderPassBeginInfo renderPassInfo = {
 		VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, 0,
 		vulkan_ctx->renderpass.renderpass, 0,
 		{ {0, 0}, sc->extent },
-		2, clearValues
+		3, clearValues
 	};
 
 	dfunc->vkBeginCommandBuffer (framebuffer->cmdBuffer, &beginInfo);
