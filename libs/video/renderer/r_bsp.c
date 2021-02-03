@@ -54,6 +54,7 @@ R_MarkLeaves (void)
 	mleaf_t     *leaf;
 	mnode_t     *node;
 	msurface_t **mark;
+	mod_brush_t *brush = &r_worldentity.model->brush;
 
 	if (r_oldviewleaf == r_viewleaf && !r_novis->int_val)
 		return;
@@ -67,13 +68,13 @@ R_MarkLeaves (void)
 		r_oldviewleaf = 0;	// so vis will be recalcualted when novis gets
 							// turned off
 		vis = solid;
-		memset (solid, 0xff, (r_worldentity.model->brush.numleafs + 7) >> 3);
+		memset (solid, 0xff, (brush->numleafs + 7) >> 3);
 	} else
 		vis = Mod_LeafPVS (r_viewleaf, r_worldentity.model);
 
-	for (i = 0; (int) i < r_worldentity.model->brush.numleafs; i++) {
+	for (i = 0; (int) i < brush->numleafs; i++) {
 		if (vis[i >> 3] & (1 << (i & 7))) {
-			leaf = &r_worldentity.model->brush.leafs[i + 1];
+			leaf = &brush->leafs[i + 1];
 			if ((c = leaf->nummarksurfaces)) {
 				mark = leaf->firstmarksurface;
 				do {
@@ -81,13 +82,14 @@ R_MarkLeaves (void)
 					mark++;
 				} while (--c);
 			}
-			node = (mnode_t *) leaf;
-			do {
+			leaf->visframe = r_visframecount;
+			node = brush->leaf_parents[leaf - brush->leafs];
+			while (node) {
 				if (node->visframe == r_visframecount)
 					break;
 				node->visframe = r_visframecount;
-				node = node->parent;
-			} while (node);
+				node = brush->node_parents[node - brush->nodes];
+			}
 		}
 	}
 }

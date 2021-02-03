@@ -585,13 +585,15 @@ Mod_LoadFaces (model_t *mod, bsp_t *bsp)
 }
 
 static void
-Mod_SetParent (mnode_t *node, mnode_t *parent)
+Mod_SetParent (mod_brush_t *brush, mnode_t *node, mnode_t *parent)
 {
-	node->parent = parent;
-	if (node->contents < 0)
+	if (node->contents < 0) {
+		brush->leaf_parents[(mleaf_t *)node - brush->leafs] = parent;
 		return;
-	Mod_SetParent (node->children[0], node);
-	Mod_SetParent (node->children[1], node);
+	}
+	brush->node_parents[node - brush->nodes] = parent;
+	Mod_SetParent (brush, node->children[0], node);
+	Mod_SetParent (brush, node->children[1], node);
 }
 
 static void
@@ -646,7 +648,10 @@ Mod_LoadNodes (model_t *mod, bsp_t *bsp)
 		}
 	}
 
-	Mod_SetParent (brush->nodes, NULL);	// sets nodes and leafs
+	size_t      size = (brush->numleafs + brush->numnodes) * sizeof (mnode_t *);
+	brush->node_parents = Hunk_AllocName (size, mod->name);
+	brush->leaf_parents = brush->node_parents + brush->numnodes;
+	Mod_SetParent (brush, brush->nodes, NULL);	// sets nodes and leafs
 }
 
 static void

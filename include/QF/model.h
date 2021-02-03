@@ -179,8 +179,6 @@ typedef struct mnode_s {
 
 	float		minmaxs[6];		// for bounding box culling
 
-	struct mnode_s	*parent;
-
 // node specific
 	plane_t		*plane;
 	struct mnode_s	*children[2];
@@ -197,8 +195,6 @@ typedef struct mleaf_s {
 	// for bounding box culling
 	float		mins[3];
 	float		maxs[3];
-
-	struct mnode_s	*parent;
 
 // leaf specific
 	byte		*compressed_vis;
@@ -273,6 +269,9 @@ typedef struct mod_brush_s {
 	byte		*visdata;
 	byte		*lightdata;
 	char		*entities;	//FIXME should not be here
+
+	mnode_t    **node_parents;
+	mnode_t    **leaf_parents;
 
 	unsigned int checksum;
 	unsigned int checksum2;
