@@ -114,7 +114,7 @@ init_qf (void)
 
 	//Cvar_Set (developer, "1");
 
-	Memory_Init (malloc (8 * 1024 * 1024), 8 * 1024 * 1024);
+	Memory_Init (Sys_Alloc (8 * 1024 * 1024), 8 * 1024 * 1024);
 
 	Cvar_Get ("pr_debug", "2", 0, 0, 0);
 	Cvar_Get ("pr_boundscheck", "0", 0, 0, 0);

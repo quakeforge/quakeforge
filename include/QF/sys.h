@@ -122,7 +122,8 @@ void Sys_Init_Cvars (void);
 // memory protection
 //
 void Sys_MakeCodeWriteable (uintptr_t startaddr, size_t length);
-void Sys_PageIn (void *ptr, int size);
+void Sys_PageIn (void *ptr, size_t size);
+void *Sys_Alloc (size_t size);
 
 //
 // system IO

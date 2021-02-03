@@ -134,7 +134,7 @@ init_qf (void)
 	Sys_Init ();
 	Cvar_Get ("developer", va ("%d", options.developer), 0, 0, 0);
 
-	Memory_Init (malloc (1024 * 1024), 1024 * 1024);
+	Memory_Init (Sys_Alloc (1024 * 1024), 1024 * 1024);
 
 	cvar_t *debug = Cvar_Get ("pr_debug", "2", 0, 0, 0);
 	Cvar_Get ("pr_boundscheck", "2", 0, 0, 0);

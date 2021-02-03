@@ -334,7 +334,7 @@ main (int argc, char **argv)
 	this_program = argv[0];
 
 	Sys_Init ();
-	Memory_Init (malloc (MEMSIZE), MEMSIZE);
+	Memory_Init (Sys_Alloc (MEMSIZE), MEMSIZE);
 
 	decode_args (argc, argv);
 

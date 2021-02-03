@@ -925,7 +925,7 @@ write_pcx (image_t *image)
 
 	Sys_Init ();
 
-	Memory_Init (malloc (MEMSIZE), MEMSIZE);
+	Memory_Init (Sys_Alloc (MEMSIZE), MEMSIZE);
 	pcx = EncodePCX (image->image, image->width, image->height,
 					 image->width, palette, false, &pcx_len);
 	if (Qwrite (outfile, pcx, pcx_len) != pcx_len) {

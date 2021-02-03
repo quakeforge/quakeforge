@@ -56,6 +56,7 @@ static qboolean Cache_FreeLRU (void);
 #define	HUNK_SENTINAL	0x1df001ed
 
 #define MINFRAGMENT	64
+#define HUNK_ALIGN 64
 
 /*
    						ZONE MEMORY ALLOCATION
@@ -413,6 +414,7 @@ typedef struct {
 	int         sentinal;
 	int         size;			// including sizeof(hunk_t), -1 = not allocated
 	char        name[8];
+	char        fill[48];		// pad out to 64 bytes
 } hunk_t;
 
 byte       *hunk_base;
@@ -551,7 +553,7 @@ Hunk_AllocName (int size, const char *name)
 	if (size < 0)
 		Sys_Error ("Hunk_Alloc: bad size: %i", size);
 
-	size = sizeof (hunk_t) + ((size + 15) & ~15);
+	size = sizeof (hunk_t) + ((size + HUNK_ALIGN - 1) & ~(HUNK_ALIGN - 1));
 
 	if (hunk_size - hunk_low_used - hunk_high_used < size) {
 		Hunk_HighMark();
@@ -618,7 +620,7 @@ Hunk_HighAlloc (int size)
 	Hunk_Check ();
 #endif
 
-	size = ((size + 15) & ~15);
+	size = ((size + HUNK_ALIGN - 1) & ~(HUNK_ALIGN - 1));
 
 	if (hunk_size - hunk_low_used - hunk_high_used < size) {
 		Sys_Printf ("Hunk_HighAlloc: failed on %i bytes\n", size);
@@ -640,7 +642,7 @@ Hunk_TempAlloc (int size)
 {
 	void       *buf;
 
-	size = (size + 15) & ~15;
+	size = (size + HUNK_ALIGN - 1) & ~(HUNK_ALIGN - 1);
 
 	if (hunk_tempactive) {
 		if (hunk_high_used - hunk_tempmark >= size + (int) sizeof (hunk_t)) {
@@ -1009,7 +1011,7 @@ Cache_Alloc (cache_user_t *c, int size, const char *name)
 	if (size <= 0)
 		Sys_Error ("Cache_Alloc: size %i", size);
 
-	size = (size + sizeof (cache_system_t) + 15) & ~15;
+	size = (size + sizeof (cache_system_t) + HUNK_ALIGN - 1) & ~(HUNK_ALIGN-1);
 
 	// find memory for it
 	while (1) {

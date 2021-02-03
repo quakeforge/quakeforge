@@ -214,7 +214,7 @@ qtv_memory_init (void)
 
 	Cvar_SetFlags (qtv_mem_size, qtv_mem_size->flags | CVAR_ROM);
 	mem_size = (int) (qtv_mem_size->value * 1024 * 1024);
-	mem_base = malloc (mem_size);
+	mem_base = Sys_Alloc (mem_size);
 	if (!mem_base)
 		Sys_Error ("Can't allocate %d", mem_size);
 	Memory_Init (mem_base, mem_size);

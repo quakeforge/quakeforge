@@ -774,7 +774,7 @@ Demo_Init (void)
 		if (p < com_argc - 1)
 			size = atoi (com_argv[p + 1]) * 1024;
 		else
-			Sys_Error ("Memory_Init: you must specify a size in KB after "
+			Sys_Error ("Demo_Init: you must specify a size in KB after "
 					   "-democache");
 	}
 

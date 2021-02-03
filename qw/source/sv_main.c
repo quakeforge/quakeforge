@@ -2470,7 +2470,7 @@ SV_Init_Memory (void)
 		Sys_Error ("Only %4.1f megs of memory reported, can't execute game",
 				   mem_size / (float) 0x100000);
 
-	mem_base = malloc (mem_size);
+	mem_base = Sys_Alloc (mem_size);
 
 	if (!mem_base)
 		Sys_Error ("Can't allocate %d", mem_size);
