@@ -529,7 +529,7 @@ Host_FilterTime (float time)
 	//FIXME not having the framerate cap is nice, but it breaks net play
 	timedifference = (timescale / 72.0) - (realtime - oldrealtime);
 
-	if (!cls.timedemo && (timedifference > 0))
+	if (!cls.demoplayback && (timedifference > 0))
 		return timedifference;                   // framerate is too high
 
 	host_frametime = realtime - oldrealtime;
@@ -541,7 +541,7 @@ Host_FilterTime (float time)
 	if (host_framerate->value > 0)
 		host_frametime = host_framerate->value;
 	else	// don't allow really long or short frames
-		host_frametime = bound (0.001, host_frametime, 0.1);
+		host_frametime = bound (0.000, host_frametime, 0.1);
 
 	return 0;
 }
