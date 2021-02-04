@@ -393,6 +393,14 @@ Vulkan_CreatePipeline (vulkan_ctx_t *ctx, const char *name)
 VkDescriptorPool
 Vulkan_CreateDescriptorPool (vulkan_ctx_t *ctx, const char *name)
 {
+	hashtab_t  *tab = ctx->descriptorPools;
+	const char *path;
+	path = va (ctx->va_ctx, "$"QFV_PROPERTIES".descriptorPools.%s", name);
+	__auto_type pool = (VkDescriptorPool) QFV_GetHandle (tab, path);
+	if (pool) {
+		return pool;
+	}
+
 	plitem_t   *item = qfv_load_pipeline (ctx, "descriptorPools");
 	if (!(item = PL_ObjectForKey (item, name))) {
 		Sys_Printf ("error loading descriptor pool %s\n", name);
@@ -400,7 +408,8 @@ Vulkan_CreateDescriptorPool (vulkan_ctx_t *ctx, const char *name)
 	} else {
 		Sys_Printf ("Found descriptor pool def %s\n", name);
 	}
-	VkDescriptorPool pool = QFV_ParseDescriptorPool (ctx, item);
+	pool = QFV_ParseDescriptorPool (ctx, item);
+	QFV_AddHandle (tab, path, (uint64_t) pool);
 	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_DESCRIPTOR_POOL, pool,
 						 va (ctx->va_ctx, "descriptor_pool:%s", name));
 	return pool;
@@ -409,6 +418,14 @@ Vulkan_CreateDescriptorPool (vulkan_ctx_t *ctx, const char *name)
 VkPipelineLayout
 Vulkan_CreatePipelineLayout (vulkan_ctx_t *ctx, const char *name)
 {
+	hashtab_t  *tab = ctx->pipelineLayouts;
+	const char *path;
+	path = va (ctx->va_ctx, "$"QFV_PROPERTIES".pipelineLayouts.%s", name);
+	__auto_type layout = (VkPipelineLayout) QFV_GetHandle (tab, path);
+	if (layout) {
+		return layout;
+	}
+
 	plitem_t   *item = qfv_load_pipeline (ctx, "pipelineLayouts");
 	if (!(item = PL_ObjectForKey (item, name))) {
 		Sys_Printf ("error loading pipeline layout %s\n", name);
@@ -416,7 +433,8 @@ Vulkan_CreatePipelineLayout (vulkan_ctx_t *ctx, const char *name)
 	} else {
 		Sys_Printf ("Found pipeline layout def %s\n", name);
 	}
-	VkPipelineLayout layout = QFV_ParsePipelineLayout (ctx, item);
+	layout = QFV_ParsePipelineLayout (ctx, item);
+	QFV_AddHandle (tab, path, (uint64_t) layout);
 	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, layout,
 						 va (ctx->va_ctx, "pipeline_layout:%s", name));
 	return layout;
@@ -425,6 +443,14 @@ Vulkan_CreatePipelineLayout (vulkan_ctx_t *ctx, const char *name)
 VkSampler
 Vulkan_CreateSampler (vulkan_ctx_t *ctx, const char *name)
 {
+	hashtab_t  *tab = ctx->samplers;
+	const char *path;
+	path = va (ctx->va_ctx, "$"QFV_PROPERTIES".samplers.%s", name);
+	__auto_type sampler = (VkSampler) QFV_GetHandle (tab, path);
+	if (sampler) {
+		return sampler;
+	}
+
 	plitem_t   *item = qfv_load_pipeline (ctx, "samplers");
 	if (!(item = PL_ObjectForKey (item, name))) {
 		Sys_Printf ("error loading sampler %s\n", name);
@@ -432,7 +458,8 @@ Vulkan_CreateSampler (vulkan_ctx_t *ctx, const char *name)
 	} else {
 		Sys_Printf ("Found sampler def %s\n", name);
 	}
-	VkSampler sampler = QFV_ParseSampler (ctx, item);
+	sampler = QFV_ParseSampler (ctx, item);
+	QFV_AddHandle (tab, path, (uint64_t) sampler);
 	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_SAMPLER, sampler,
 						 va (ctx->va_ctx, "sampler:%s", name));
 	return sampler;
@@ -441,6 +468,14 @@ Vulkan_CreateSampler (vulkan_ctx_t *ctx, const char *name)
 VkDescriptorSetLayout
 Vulkan_CreateDescriptorSetLayout(vulkan_ctx_t *ctx, const char *name)
 {
+	hashtab_t  *tab = ctx->setLayouts;
+	const char *path;
+	path = va (ctx->va_ctx, "$"QFV_PROPERTIES".setLayouts.%s", name);
+	__auto_type set = (VkDescriptorSetLayout) QFV_GetHandle (tab, path);
+	if (set) {
+		return set;
+	}
+
 	plitem_t   *item = qfv_load_pipeline (ctx, "setLayouts");
 	if (!(item = PL_ObjectForKey (item, name))) {
 		Sys_Printf ("error loading descriptor set %s\n", name);
@@ -448,7 +483,8 @@ Vulkan_CreateDescriptorSetLayout(vulkan_ctx_t *ctx, const char *name)
 	} else {
 		Sys_Printf ("Found descriptor set def %s\n", name);
 	}
-	VkDescriptorSetLayout set = QFV_ParseDescriptorSetLayout (ctx, item);
+	set = QFV_ParseDescriptorSetLayout (ctx, item);
+	QFV_AddHandle (tab, path, (uint64_t) set);
 	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
 						 set, va (ctx->va_ctx, "descriptor_set:%s", name));
 	return set;

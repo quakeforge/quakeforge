@@ -13,6 +13,8 @@ typedef struct parsectx_s {
 #include "libs/video/renderer/vulkan/vkparse.hinc"
 #endif
 
+#define QFV_PROPERTIES "properties"
+
 typedef struct parseres_s {
 	const char *name;
 	plfield_t  *field;
@@ -26,6 +28,9 @@ typedef struct handleref_s {
 
 void QFV_InitParse (vulkan_ctx_t *ctx);
 exprenum_t *QFV_GetEnum (const char *name);
+
+uint64_t QFV_GetHandle (struct hashtab_s *tab, const char *name);
+void QFV_AddHandle (struct hashtab_s *tab, const char *name, uint64_t handle);
 
 VkRenderPass QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist);
 VkPipeline QFV_ParsePipeline (vulkan_ctx_t *ctx, plitem_t *plist);

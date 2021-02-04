@@ -362,8 +362,18 @@ parse_RGBA (const plitem_t *item, void **data,
 	return ret;
 }
 
-static void
-add_handle (hashtab_t *tab, const char *name, uint64_t handle)
+uint64_t
+QFV_GetHandle (hashtab_t *tab, const char *name)
+{
+	handleref_t *hr = Hash_Find (tab, name);
+	if (hr) {
+		return hr->handle;
+	}
+	return 0;
+}
+
+void
+QFV_AddHandle (hashtab_t *tab, const char *name, uint64_t handle)
 {
 	handleref_t *hr = malloc (sizeof (handleref_t));
 	hr->name = strdup (name);
@@ -380,16 +390,15 @@ parse_VkShaderModule (const plitem_t *item, void **data,
 	qfv_device_t *device = ctx->device;
 
 	const char *name = PL_String (item);
-	handleref_t *hr = Hash_Find (ctx->shaderModules, name);
-	if (hr) {
-		*handle = (VkShaderModule) hr->handle;
+	*handle = (VkShaderModule) QFV_GetHandle (ctx->shaderModules, name);
+	if (*handle) {
 		return 1;
 	}
 	if (!(*handle = QFV_CreateShaderModule (device, name))) {
 		PL_Message (messages, item, "could not find shader %s", name);
 		return 0;
 	}
-	add_handle (ctx->shaderModules, name, (uint64_t) *handle);
+	QFV_AddHandle (ctx->shaderModules, name, (uint64_t) *handle);
 	return 1;
 }
 
@@ -404,11 +413,10 @@ parse_VkDescriptorSetLayout (const plfield_t *field, const plitem_t *item,
 
 	const char *name = PL_String (item);
 	Sys_Printf ("parse_VkDescriptorSetLayout: %s\n", name);
-	name = va (ctx->va_ctx, "$properties.setLayouts.%s", name);
+	name = va (ctx->va_ctx, "$"QFV_PROPERTIES".setLayouts.%s", name);
 
-	handleref_t *hr = Hash_Find (ctx->setLayouts, name);
-	if (hr) {
-		*handle = (VkDescriptorSetLayout) hr->handle;
+	*handle = (VkDescriptorSetLayout) QFV_GetHandle (ctx->setLayouts, name);
+	if (*handle) {
 		return 1;
 	}
 
@@ -422,7 +430,7 @@ parse_VkDescriptorSetLayout (const plfield_t *field, const plitem_t *item,
 		setLayout = QFV_ParseDescriptorSetLayout (ctx, setItem);
 		*handle = (VkDescriptorSetLayout) setLayout;
 
-		add_handle (ctx->setLayouts, name, (uint64_t) setLayout);
+		QFV_AddHandle (ctx->setLayouts, name, (uint64_t) setLayout);
 	}
 	return ret;
 }
@@ -438,11 +446,10 @@ parse_VkPipelineLayout (const plitem_t *item, void **data,
 
 	const char *name = PL_String (item);
 	Sys_Printf ("parse_VkPipelineLayout: %s\n", name);
-	name = va (ctx->va_ctx, "$properties.pipelineLayouts.%s", name);
+	name = va (ctx->va_ctx, "$"QFV_PROPERTIES".pipelineLayouts.%s", name);
 
-	handleref_t *hr = Hash_Find (ctx->pipelineLayouts, name);
-	if (hr) {
-		*handle = (VkPipelineLayout) hr->handle;
+	*handle = (VkPipelineLayout) QFV_GetHandle (ctx->pipelineLayouts, name);
+	if (*handle) {
 		return 1;
 	}
 
@@ -456,7 +463,7 @@ parse_VkPipelineLayout (const plitem_t *item, void **data,
 		layout = QFV_ParsePipelineLayout (ctx, setItem);
 		*handle = (VkPipelineLayout) layout;
 
-		add_handle (ctx->pipelineLayouts, name, (uint64_t) layout);
+		QFV_AddHandle (ctx->pipelineLayouts, name, (uint64_t) layout);
 	}
 	return ret;
 }
@@ -700,7 +707,7 @@ parse_object (vulkan_ctx_t *ctx, plitem_t *plist,
 		{"swapchain", &qfv_swapchain_t_type, ctx->swapchain},
 		{"framebuffers", &vulkan_framebufferset_t_type, &ctx->framebuffers},
 		{"msaaSamples", &VkSampleCountFlagBits_type, &ctx->msaaSamples},
-		{"properties", &cexpr_plitem, &ctx->pipelineDef},
+		{QFV_PROPERTIES, &cexpr_plitem, &ctx->pipelineDef},
 		{}
 	};
 	exprtab_t   vars_tab = { var_syms, 0 };
