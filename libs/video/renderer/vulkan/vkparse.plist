@@ -21,70 +21,6 @@
 		VkDescriptorPoolCreateInfo,
 		VkSamplerCreateInfo,
 	);
-	handles = {
-		VkShaderModule = {
-			symtab = shaderModules;
-			class = "shader module";
-			custom = parse_VkShaderModule_resource;
-		};
-		VkDescriptorPool = {
-			symtab = descriptorPools;
-			class = "descriptor pool";
-			create = vkCreateDescriptorPool;
-		};
-		VkDescriptorSetLayout = {
-			symtab = setLayouts;
-			class = "set layout";
-			create = vkCreateDescriptorSetLayout;
-		};
-		VkPipelineLayout = {
-			symtab = pipelineLayouts;
-			class = "pipeline layout";
-			create = vkCreatePipelineLayout;
-		};
-		VkSampler = {
-			symtab = samplers;
-			class = "sampler";
-			create = vkCreateSampler;
-		};
-	};
-	resources = (
-		{
-			name = shaderModules;
-			parse_type = QFString;
-			parser = parse_VkShaderModule_handleref;
-			type = handleref_t;
-			table = shaderModules;
-		},
-		{
-			name = setLayouts;
-			parse_type = QFDictionary;
-			parser = parse_VkDescriptorSetLayout_handleref;
-			type = handleref_t;
-			table = setLayouts;
-		},
-		{
-			name = pipelineLayouts;
-			parse_type = QFDictionary;
-			parser = parse_VkPipelineLayout_handleref;
-			type = handleref_t;
-			table = pipelineLayouts;
-		},
-		{
-			name = descriptorPools;
-			parse_type = QFDictionary;
-			parser = parse_VkDescriptorPool_handleref;
-			type = handleref_t;
-			table = descriptorPools;
-		},
-		{
-			name = samplers;
-			parse_type = QFDictionary;
-			parser = parse_VkSampler_handleref;
-			type = handleref_t;
-			table = samplers;
-		},
-	);
 	parse = {
 		VkSubpassDescription = {
 			flags = auto;
@@ -279,7 +215,7 @@
 				type = (array,	{
 									parse_type = (QFDictionary, QFString);
 									type = VkDescriptorSetLayout;
-									parser = parse_VkDescriptorSetLayout_array;
+									parser = parse_VkDescriptorSetLayout;
 								});
 				size = setLayoutCount;
 				values = pSetLayouts;
@@ -338,8 +274,7 @@
 				value = pDynamicState;
 			};
 			layout = {
-				type = (custom,	(QFDictionary, QFString),
-						parse_VkPipelineLayout);
+				type = (custom,	QFString, parse_VkPipelineLayout);
 				fields = (layout);
 			};
 			basePipelineHandle = {

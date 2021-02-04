@@ -13,8 +13,6 @@ vkgen_dat_src= \
 	libs/video/renderer/vulkan/vkgen/vkfieldstring.r \
 	libs/video/renderer/vulkan/vkgen/vkfieldtype.r \
 	libs/video/renderer/vulkan/vkgen/vkgen.r \
-	libs/video/renderer/vulkan/vkgen/vkhandle.r \
-	libs/video/renderer/vulkan/vkgen/vkresource.r \
 	libs/video/renderer/vulkan/vkgen/vkstruct.r \
 	libs/video/renderer/vulkan/vkgen/vktype.r \
 	libs/video/renderer/vulkan/vkgen/vulkan.r

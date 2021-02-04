@@ -68,7 +68,6 @@
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
-#include "vkparse.h"
 
 static float identity[] = {
 	1, 0, 0, 0,
@@ -1449,14 +1448,10 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&bctx->frames, frames);
 	bctx->frames.grow = 0;
 
-	bctx->main = Vulkan_CreatePipeline (ctx, "quakebsp.main");
-	bctx->sky = Vulkan_CreatePipeline (ctx, "quakebsp.skysheet");
-	bctx->layout = QFV_GetPipelineLayout (ctx, "quakebsp.layout");
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, bctx->layout,
-						 va (ctx->va_ctx, "layout:%s", "quakebsp.layout"));
-	bctx->sampler = QFV_GetSampler (ctx, "quakebsp.sampler");
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_SAMPLER, bctx->sampler,
-						 va (ctx->va_ctx, "sampler:%s", "quakebsp.sampler"));
+	bctx->main = Vulkan_CreatePipeline (ctx, "quakebsp_main");
+	bctx->sky = Vulkan_CreatePipeline (ctx, "quakebsp_skysheet");
+	bctx->layout = Vulkan_CreatePipelineLayout (ctx, "quakebsp_layout");
+	bctx->sampler = Vulkan_CreateSampler (ctx, "quakebsp_sampler");
 
 	__auto_type cmdBuffers = QFV_AllocCommandBufferSet (3 * frames, alloca);
 	QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, cmdBuffers);

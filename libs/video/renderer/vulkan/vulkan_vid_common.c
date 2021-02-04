@@ -224,21 +224,25 @@ Vulkan_CreateSwapchain (vulkan_ctx_t *ctx)
 	}
 }
 
-static void
-qfv_load_pipeline (vulkan_ctx_t *ctx)
+static plitem_t *
+qfv_load_pipeline (vulkan_ctx_t *ctx, const char *name)
 {
 	if (!ctx->pipelineDef) {
 		ctx->pipelineDef = PL_GetPropertyList (quakeforge_pipeline);
-		if (ctx->pipelineDef) {
-			QFV_ParseResources (ctx, ctx->pipelineDef);
-		}
 	}
+
+	plitem_t   *item = ctx->pipelineDef;
+	if (!item || !(item = PL_ObjectForKey (item, name))) {
+		Sys_Printf ("error loading %s\n", name);
+	} else {
+		Sys_Printf ("Found %s def\n", name);
+	}
+	return item;
 }
 
 void
 Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 {
-	qfv_load_pipeline (ctx);
 	const char *name = "renderpass";//FIXME
 	qfv_device_t *device = ctx->device;
 	VkDevice    dev = device->dev;
@@ -249,15 +253,13 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 	ctx->msaaSamples = min ((VkSampleCountFlagBits) msaaSamples->int_val,
 							QFV_GetMaxSampleCount (device->physDev));
 	if (ctx->msaaSamples > 1) {
-		name = "renderpass.msaa";
+		name = "renderpass_msaa";
 	}
 
-	plitem_t   *item = ctx->pipelineDef;
-	if (!item || !(item = PL_ObjectForKey (item, name))) {
-		Sys_Printf ("error loading renderpass: %s\n", name);
+	//FIXME a tad inconsistent
+	plitem_t   *item = qfv_load_pipeline (ctx, name);
+	if (!item) {
 		return;
-	} else {
-		Sys_Printf ("Found renderpass def: %s\n", name);
 	}
 
 	qfv_imageresource_t *colorImage = malloc (sizeof (*colorImage));
@@ -375,15 +377,7 @@ Vulkan_DestroyRenderPass (vulkan_ctx_t *ctx)
 VkPipeline
 Vulkan_CreatePipeline (vulkan_ctx_t *ctx, const char *name)
 {
-	qfv_load_pipeline (ctx);
-
-	plitem_t   *item = ctx->pipelineDef;
-	if (!item || !(item = PL_ObjectForKey (item, "pipelines"))) {
-		Sys_Printf ("error loading pipelines\n");
-		return 0;
-	} else {
-		Sys_Printf ("Found pipelines def\n");
-	}
+	plitem_t   *item = qfv_load_pipeline (ctx, "pipelines");
 	if (!(item = PL_ObjectForKey (item, name))) {
 		Sys_Printf ("error loading pipeline %s\n", name);
 		return 0;
@@ -394,6 +388,70 @@ Vulkan_CreatePipeline (vulkan_ctx_t *ctx, const char *name)
 	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_PIPELINE, pipeline,
 						 va (ctx->va_ctx, "pipeline:%s", name));
 	return pipeline;
+}
+
+VkDescriptorPool
+Vulkan_CreateDescriptorPool (vulkan_ctx_t *ctx, const char *name)
+{
+	plitem_t   *item = qfv_load_pipeline (ctx, "descriptorPools");
+	if (!(item = PL_ObjectForKey (item, name))) {
+		Sys_Printf ("error loading descriptor pool %s\n", name);
+		return 0;
+	} else {
+		Sys_Printf ("Found descriptor pool def %s\n", name);
+	}
+	VkDescriptorPool pool = QFV_ParseDescriptorPool (ctx, item);
+	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_DESCRIPTOR_POOL, pool,
+						 va (ctx->va_ctx, "descriptor_pool:%s", name));
+	return pool;
+}
+
+VkPipelineLayout
+Vulkan_CreatePipelineLayout (vulkan_ctx_t *ctx, const char *name)
+{
+	plitem_t   *item = qfv_load_pipeline (ctx, "pipelineLayouts");
+	if (!(item = PL_ObjectForKey (item, name))) {
+		Sys_Printf ("error loading pipeline layout %s\n", name);
+		return 0;
+	} else {
+		Sys_Printf ("Found pipeline layout def %s\n", name);
+	}
+	VkPipelineLayout layout = QFV_ParsePipelineLayout (ctx, item);
+	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, layout,
+						 va (ctx->va_ctx, "pipeline_layout:%s", name));
+	return layout;
+}
+
+VkSampler
+Vulkan_CreateSampler (vulkan_ctx_t *ctx, const char *name)
+{
+	plitem_t   *item = qfv_load_pipeline (ctx, "samplers");
+	if (!(item = PL_ObjectForKey (item, name))) {
+		Sys_Printf ("error loading sampler %s\n", name);
+		return 0;
+	} else {
+		Sys_Printf ("Found sampler def %s\n", name);
+	}
+	VkSampler sampler = QFV_ParseSampler (ctx, item);
+	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_SAMPLER, sampler,
+						 va (ctx->va_ctx, "sampler:%s", name));
+	return sampler;
+}
+
+VkDescriptorSetLayout
+Vulkan_CreateDescriptorSetLayout(vulkan_ctx_t *ctx, const char *name)
+{
+	plitem_t   *item = qfv_load_pipeline (ctx, "setLayouts");
+	if (!(item = PL_ObjectForKey (item, name))) {
+		Sys_Printf ("error loading descriptor set %s\n", name);
+		return 0;
+	} else {
+		Sys_Printf ("Found descriptor set def %s\n", name);
+	}
+	VkDescriptorSetLayout set = QFV_ParseDescriptorSetLayout (ctx, item);
+	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
+						 set, va (ctx->va_ctx, "descriptor_set:%s", name));
+	return set;
 }
 
 void

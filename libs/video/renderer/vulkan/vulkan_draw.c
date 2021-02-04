@@ -64,7 +64,6 @@
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
-#include "vkparse.h"
 
 typedef struct {
 	float       xy[2];
@@ -371,7 +370,7 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 										   ctx->cmdpool);
 	dctx->scrap = QFV_CreateScrap (device, "draw_atlas", 2048, tex_rgba,
 								   dctx->stage);
-	dctx->sampler = QFV_GetSampler (ctx, "quakepic");
+	dctx->sampler = Vulkan_CreateSampler (ctx, "quakepic");
 
 	qpic_t     *charspic = Draw_Font8x8Pic ();
 
@@ -384,13 +383,13 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 
 	dctx->pipeline = Vulkan_CreatePipeline (ctx, "twod");
 
-	dctx->layout = QFV_GetPipelineLayout (ctx, "twod.layout");
+	dctx->layout = Vulkan_CreatePipelineLayout (ctx, "twod_layout");
 
 	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
 	for (size_t i = 0; i < layouts->size; i++) {
-		layouts->a[i] = QFV_GetDescriptorSetLayout (ctx, "twod.set");
+		layouts->a[i] = Vulkan_CreateDescriptorSetLayout (ctx, "twod_set");
 	}
-	__auto_type pool = QFV_GetDescriptorPool (ctx, "twod.pool");
+	__auto_type pool = Vulkan_CreateDescriptorPool (ctx, "twod_pool");
 
 	VkDescriptorBufferInfo bufferInfo = {
 		ctx->matrices.buffer_2d, 0, VK_WHOLE_SIZE

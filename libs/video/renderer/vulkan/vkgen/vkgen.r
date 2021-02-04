@@ -10,8 +10,6 @@
 #include "vkgen.h"
 #include "vkstruct.h"
 #include "vkenum.h"
-#include "vkhandle.h"
-#include "vkresource.h"
 
 static AutoreleasePool *autorelease_pool;
 static void
@@ -154,7 +152,6 @@ main(int argc, string *argv)
 	PLItem     *plist;
 	PLItem     *search;
 	PLItem     *handles;
-	PLItem     *resources;
 
 	arp_start ();
 
@@ -179,7 +176,6 @@ main(int argc, string *argv)
 	}
 	search = [[plist getObjectForKey: "search"] retain];
 	handles = [[plist getObjectForKey: "handles"] retain];
-	resources = [[plist getObjectForKey: "resources"] retain];
 	parse = [[plist getObjectForKey: "parse"] retain];
 
 	encodings = PR_FindGlobal (".type_encodings");
@@ -199,17 +195,6 @@ main(int argc, string *argv)
 		id obj = (id) Hash_Find (available_types, search_name);
 		obj = [obj resolveType];
 		printf("obj: %d %s\n", obj, class_get_class_name([obj class]));
-		if (obj && [obj class] == [Struct class]) {
-			[obj addToQueue];
-		}
-	}
-
-	PLItem *handle_keys = [[handles allKeys] retain];
-	for (int i = [handle_keys count]; i-- > 0; ) {
-		string search_name = [[handle_keys getObjectAtIndex:i] string];
-		id obj = (id) Hash_Find (available_types, search_name);
-		obj = [obj resolveType];
-		printf("handle: %d %s\n", obj, class_get_class_name([obj class]));
 		if (obj && [obj class] == [Struct class]) {
 			[obj addToQueue];
 		}
@@ -261,23 +246,6 @@ main(int argc, string *argv)
 		[obj writeTable];
 		arp_end ();
 	}
-	for (int i = [handle_keys count]; i-- > 0; ) {
-		string      key = [[handle_keys getObjectAtIndex:i] string];
-		output_handle (key, [handles getObjectForKey: key]);
-	}
-	for (int i = [resources count]; i-- > 0; ) {
-		PLItem     *res = [resources getObjectAtIndex:i];
-		output_resource_data (res);
-	}
-	// keep the order intuitive (since it matters)
-	fprintf (output_file, "static parseres_t parse_resources[] = {\n");
-	for (int i = 0; i < [resources count]; i++) {
-		PLItem     *res = [resources getObjectAtIndex:i];
-		output_resource_entry (res);
-	}
-	fprintf (output_file, "\t{}\n");
-	fprintf (output_file, "};\n");
-
 	fprintf (output_file, "static void\n");
 	fprintf (output_file, "vkgen_init_symtabs (exprctx_t *context)\n");
 	fprintf (output_file, "{\n");

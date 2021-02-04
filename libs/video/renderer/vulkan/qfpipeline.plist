@@ -1,19 +1,4 @@
 {
-	shaderModules = {
-		// specify shader modules to load into memory
-		// key is the name of the module for referecy by the pipeline
-		// value the path to the spv file to load
-		// $shader refers to the shader install path
-		// $builtin refers to compiled-in shaders
-		passthrough = $builtin/passthrough.vert;
-		pushcolor = $builtin/pushcolor.frag;
-		twodv = $builtin/twod.vert;
-		twodf = $builtin/twod.frag;
-		quakebspv = $builtin/quakebsp.vert;
-		quakebspf = $builtin/quakebsp.frag;
-		aliasv = $builtin/alias.vert;
-		aliasf = $builtin/alias.frag;
-	};
 	samplers = {
 		quakepic = {
 			magFilter = nearest;
@@ -32,7 +17,7 @@
 			borderColor = float_transparent_black;
 			unnormalizedCoordinates = false;
 		};
-		quakebsp.sampler = {
+		quakebsp_sampler = {
 			magFilter = linear;
 			minFilter = linear;
 			mipmapMode = linear;
@@ -49,7 +34,7 @@
 			borderColor = float_transparent_black;
 			unnormalizedCoordinates = false;
 		};
-		alias.sampler = {
+		alias_sampler = {
 			magFilter = linear;
 			minFilter = linear;
 			mipmapMode = linear;
@@ -68,7 +53,7 @@
 		};
 	};
 	descriptorPools = {
-		twod.pool = {
+		twod_pool = {
 			flags = 0;
 			maxSets = $framebuffers.size;
 			bindings = (
@@ -82,7 +67,7 @@
 				},
 			);
 		};
-		alias.pool = {
+		alias_pool = {
 			flags = 0;
 			maxSets = "2z * $framebuffers.size";
 			bindings = (
@@ -94,7 +79,7 @@
 		};
 	};
 	setLayouts = {
-		twod.set = {
+		twod_set = {
 			bindings = (
 				{
 					binding = 0;
@@ -110,7 +95,7 @@
 				},
 			);
 		};
-		quakebsp.set = {
+		quakebsp_set = {
 			flags = push_descriptor;
 			bindings = (
 				{
@@ -151,7 +136,7 @@
 				},
 			);
 		};
-		alias.set = {
+		alias_set = {
 			flags = push_descriptor;
 			bindings = (
 				{
@@ -174,7 +159,7 @@
 				},
 			);
 		};
-		alias.matrices = {
+		alias_matrices = {
 			bindings = (
 				{
 					binding = 0;
@@ -184,7 +169,7 @@
 				},
 			);
 		};
-		alias.textures = {
+		alias_textures = {
 			flags = push_descriptor;
 			bindings = (
 				{
@@ -213,7 +198,7 @@
 				},
 			);
 		};
-		alias.lights = {
+		alias_lights = {
 			bindings = (
 				{
 					binding = 0;
@@ -242,11 +227,11 @@
 		};
 	};
 	pipelineLayouts = {
-		twod.layout = {
-			setLayouts = (twod.set);
+		twod_layout = {
+			setLayouts = (twod_set);
 		};
-		quakebsp.layout = {
-			setLayouts = (quakebsp.set);
+		quakebsp_layout = {
+			setLayouts = (quakebsp_set);
 			pushConstantRanges = (
 				{
 					stageFlags = vertex;
@@ -260,9 +245,9 @@
 				},
 			);
 		};
-		alias.layout = {
-			//setLayouts = (alias.matrices, alias.lights, alias.textures);
-			setLayouts = (alias.set);
+		alias_layout = {
+			//setLayouts = (alias_matrices, alias_lights, alias_textures);
+			setLayouts = (alias_set);
 			pushConstantRanges = (
 				{
 					stageFlags = vertex;
@@ -290,11 +275,15 @@
 	pipelines = {
 		alias = {
 			stages = (
-				{ stage = vertex; name = main; module = aliasv; },
+				{
+					stage = vertex;
+					name = main;
+					module = $builtin/alias.vert;
+				},
 				{
 					stage = fragment;
 					name = main;
-					module = aliasf;
+					module = $builtin/alias.frag;
 					specializationInfo = {
 						mapEntries = (
 							{ size = 4; offset = 0; constantID = 0; },
@@ -412,13 +401,21 @@
 			dynamic = {
 				dynamicState = ( viewport, scissor, blend_constants );
 			};
-			layout = alias.layout;
+			layout = alias_layout;
 			//renderPass = renderpass;
 		};
-		quakebsp.main = {
+		quakebsp_main = {
 			stages = (
-				{ stage = vertex; name = main; module = quakebspv; },
-				{ stage = fragment; name = main; module = quakebspf; },
+				{
+					stage = vertex;
+					name = main;
+					module = $builtin/quakebsp.vert;
+				},
+				{
+					stage = fragment;
+					name = main;
+					module = $builtin/quakebsp.frag;
+				},
 			);
 			vertexInput = {
 				bindings = (
@@ -501,16 +498,20 @@
 			dynamic = {
 				dynamicState = ( viewport, scissor, blend_constants );
 			};
-			layout = quakebsp.layout;
+			layout = quakebsp_layout;
 			//renderPass = renderpass;
 		};
-		quakebsp.skysheet = {
+		quakebsp_skysheet = {
 			stages = (
-				{ stage = vertex; name = main; module = quakebspv; },
+				{
+					stage = vertex;
+					name = main;
+					module = $builtin/quakebsp.vert;
+				},
 				{
 					stage = fragment;
 					name = main;
-					module = quakebspf;
+					module = $builtin/quakebsp.frag;
 					specializationInfo = {
 						mapEntries = (
 							{ size = 4; offset = 0; constantID = 0; },
@@ -603,13 +604,21 @@
 			dynamic = {
 				dynamicState = ( viewport, scissor, blend_constants );
 			};
-			layout = quakebsp.layout;
+			layout = quakebsp_layout;
 			//renderPass = renderpass;
 		};
 		twod = {
 			stages = (
-				{ stage = vertex; name = main; module = twodv; },
-				{ stage = fragment; name = main; module = twodf; },
+				{
+					stage = vertex;
+					name = main;
+					module = $builtin/twod.vert;
+				},
+				{
+					stage = fragment;
+					name = main;
+					module = $builtin/twod.frag;
+				},
 			);
 			vertexInput = {
 				bindings = (
@@ -698,7 +707,7 @@
 			dynamic = {
 				dynamicState = ( viewport, scissor );
 			};
-			layout = twod.layout;
+			layout = twod_layout;
 			//renderPass = renderpass;
 		};
 	};
@@ -764,7 +773,7 @@
 			},
 		);
 	};
-	renderpass.msaa = {
+	renderpass_msaa = {
 		attachments = (
 			{
 				flags = 0;

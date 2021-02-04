@@ -362,48 +362,103 @@ parse_RGBA (const plitem_t *item, void **data,
 	return ret;
 }
 
+static void
+add_handle (hashtab_t *tab, const char *name, uint64_t handle)
+{
+	handleref_t *hr = malloc (sizeof (handleref_t));
+	hr->name = strdup (name);
+	hr->handle = handle;
+	Hash_Add (tab, hr);
+}
+
 static int
 parse_VkShaderModule (const plitem_t *item, void **data,
 					  plitem_t *messages, parsectx_t *context)
 {
 	__auto_type handle = (VkShaderModule *) data[0];
 	vulkan_ctx_t *ctx = context->vctx;
+	qfv_device_t *device = ctx->device;
 
 	const char *name = PL_String (item);
 	handleref_t *hr = Hash_Find (ctx->shaderModules, name);
-	if (!hr) {
-		PL_Message (messages, item, "undefined shader module %s", name);
+	if (hr) {
+		*handle = (VkShaderModule) hr->handle;
+		return 1;
+	}
+	if (!(*handle = QFV_CreateShaderModule (device, name))) {
+		PL_Message (messages, item, "could not find shader %s", name);
 		return 0;
 	}
-	*handle = (VkShaderModule) hr->handle;
+	add_handle (ctx->shaderModules, name, (uint64_t) *handle);
 	return 1;
 }
 
 static int
-parse_VkShaderModule_resource (const plitem_t *item, void **data,
-							   plitem_t *messages, parsectx_t *context)
+parse_VkDescriptorSetLayout (const plfield_t *field, const plitem_t *item,
+							 void *data, plitem_t *messages, void *context)
 {
-	__auto_type handle = (VkShaderModule *) data[0];
+	__auto_type handle = (VkDescriptorSetLayout *) data;
+	int         ret = 1;
+	exprctx_t   ectx = *((parsectx_t *) context)->ectx;
 	vulkan_ctx_t *ctx = ((parsectx_t *) context)->vctx;
-	qfv_device_t *device = ctx->device;
 
-	const char *shader_path = PL_String (item);
-	if (!(*handle = QFV_CreateShaderModule (device, shader_path))) {
-		PL_Message (messages, item, "could not find shader %s", shader_path);
-		return 0;
+	const char *name = PL_String (item);
+	Sys_Printf ("parse_VkDescriptorSetLayout: %s\n", name);
+	name = va (ctx->va_ctx, "$properties.setLayouts.%s", name);
+
+	handleref_t *hr = Hash_Find (ctx->setLayouts, name);
+	if (hr) {
+		*handle = (VkDescriptorSetLayout) hr->handle;
+		return 1;
 	}
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_SHADER_MODULE, *handle,
-						 va (ctx->va_ctx, "shader:%s", shader_path));
-	return 1;
+
+	plitem_t   *setItem = 0;
+	exprval_t   result = { &cexpr_plitem, &setItem };
+	ectx.symtab = 0;
+	ectx.result = &result;
+	ret = !cexpr_eval_string (name, &ectx);
+	if (ret) {
+		VkDescriptorSetLayout setLayout;
+		setLayout = QFV_ParseDescriptorSetLayout (ctx, setItem);
+		*handle = (VkDescriptorSetLayout) setLayout;
+
+		add_handle (ctx->setLayouts, name, (uint64_t) setLayout);
+	}
+	return ret;
 }
 
 static int
-parse_VkDescriptorSetLayout_array (const plfield_t *field,
-								   const plitem_t *item, void *data,
-								   plitem_t *messages, void *context)
+parse_VkPipelineLayout (const plitem_t *item, void **data,
+						plitem_t *messages, parsectx_t *context)
 {
-	void *layout[] = { data };
-	return parse_VkDescriptorSetLayout (item, layout, messages, context);
+	__auto_type handle = (VkPipelineLayout *) data[0];
+	int         ret = 1;
+	exprctx_t   ectx = *((parsectx_t *) context)->ectx;
+	vulkan_ctx_t *ctx = ((parsectx_t *) context)->vctx;
+
+	const char *name = PL_String (item);
+	Sys_Printf ("parse_VkPipelineLayout: %s\n", name);
+	name = va (ctx->va_ctx, "$properties.pipelineLayouts.%s", name);
+
+	handleref_t *hr = Hash_Find (ctx->pipelineLayouts, name);
+	if (hr) {
+		*handle = (VkPipelineLayout) hr->handle;
+		return 1;
+	}
+
+	plitem_t   *setItem = 0;
+	exprval_t   result = { &cexpr_plitem, &setItem };
+	ectx.symtab = 0;
+	ectx.result = &result;
+	ret = !cexpr_eval_string (name, &ectx);
+	if (ret) {
+		VkPipelineLayout layout;
+		layout = QFV_ParsePipelineLayout (ctx, setItem);
+		*handle = (VkPipelineLayout) layout;
+
+		add_handle (ctx->pipelineLayouts, name, (uint64_t) layout);
+	}
+	return ret;
 }
 
 static const char *
@@ -600,54 +655,6 @@ handlref_symtab (void (*free_func)(void*,void*), vulkan_ctx_t *ctx)
 						  ctx, &ctx->hashlinks);
 }
 
-void
-QFV_ParseResources (vulkan_ctx_t *ctx, plitem_t *pipelinedef)
-{
-	plitem_t   *messages = PL_NewArray ();
-	exprsym_t   var_syms[] = {
-		{"swapchain", &qfv_swapchain_t_type, ctx->swapchain},
-		{"framebuffers", &vulkan_framebufferset_t_type, &ctx->framebuffers},
-		{"msaaSamples", &VkSampleCountFlagBits_type, &ctx->msaaSamples},
-		{}
-	};
-	exprtab_t   vars_tab = { var_syms, 0 };
-	exprctx_t   exprctx = {};
-	parsectx_t  parsectx = { &exprctx, ctx };
-	int         ret = 1;
-
-	exprctx.memsuper = new_memsuper ();
-	exprctx.messages = messages;
-	exprctx.hashlinks = &ctx->hashlinks;
-	exprctx.external_variables = &vars_tab;
-	cexpr_init_symtab (&vars_tab, &exprctx);
-
-	if (!ctx->setLayouts) {
-		ctx->shaderModules = handlref_symtab (shaderModule_free, ctx);
-		ctx->setLayouts = handlref_symtab (setLayout_free, ctx);
-		ctx->pipelineLayouts = handlref_symtab (pipelineLayout_free, ctx);
-		ctx->descriptorPools = handlref_symtab (descriptorPool_free, ctx);
-		ctx->samplers = handlref_symtab (sampler_free, ctx);
-	}
-
-	for (parseres_t *res = parse_resources; res->name; res++) {
-		plitem_t   *item = PL_ObjectForKey (pipelinedef, res->name);
-		if (item) {
-			__auto_type table = *(hashtab_t **) ((size_t) ctx + res->offset);
-			Sys_Printf ("found %s\n", res->name);
-			ret &= PL_ParseSymtab (res->field, item, table, messages,
-								   &parsectx);
-		}
-	}
-	if (!ret || developer->int_val & SYS_VULKAN) {
-		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
-			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
-		}
-	}
-
-	PL_Free (messages);
-	delete_memsuper (exprctx.memsuper);
-}
-
 static const char *
 enum_symtab_getkey (const void *e, void *unused)
 {
@@ -666,6 +673,14 @@ QFV_InitParse (vulkan_ctx_t *ctx)
 	cexpr_init_symtab (&qfv_swapchain_t_symtab, &context);
 	cexpr_init_symtab (&vulkan_framebufferset_t_symtab, &context);
 	cexpr_init_symtab (&imageset_symtab, &context);
+
+	if (!ctx->setLayouts) {
+		ctx->shaderModules = handlref_symtab (shaderModule_free, ctx);
+		ctx->setLayouts = handlref_symtab (setLayout_free, ctx);
+		ctx->pipelineLayouts = handlref_symtab (pipelineLayout_free, ctx);
+		ctx->descriptorPools = handlref_symtab (descriptorPool_free, ctx);
+		ctx->samplers = handlref_symtab (sampler_free, ctx);
+	}
 }
 
 exprenum_t *
@@ -674,13 +689,79 @@ QFV_GetEnum (const char *name)
 	return Hash_Find (enum_symtab, name);
 }
 
+static int
+parse_object (vulkan_ctx_t *ctx, plitem_t *plist,
+			  plparser_t parser, void *object)
+{
+	plitem_t   *messages = PL_NewArray ();
+	exprctx_t   exprctx = {};
+	parsectx_t  parsectx = { &exprctx, ctx };
+	exprsym_t   var_syms[] = {
+		{"swapchain", &qfv_swapchain_t_type, ctx->swapchain},
+		{"framebuffers", &vulkan_framebufferset_t_type, &ctx->framebuffers},
+		{"msaaSamples", &VkSampleCountFlagBits_type, &ctx->msaaSamples},
+		{"properties", &cexpr_plitem, &ctx->pipelineDef},
+		{}
+	};
+	exprtab_t   vars_tab = { var_syms, 0 };
+
+	exprctx.external_variables = &vars_tab;
+	exprctx.memsuper = new_memsuper ();
+	exprctx.messages = messages;
+	exprctx.hashlinks = &ctx->hashlinks;
+
+	cexpr_init_symtab (&vars_tab, &exprctx);
+
+
+	if (!parser (0, plist, object, messages, &parsectx)) {
+		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
+			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
+		}
+		return 0;
+	}
+	PL_Free (messages);
+	delete_memsuper (exprctx.memsuper);
+
+	return 1;
+}
+
+static int
+parse_qfv_renderpass (const plfield_t *field, const plitem_t *item, void *data,
+					  plitem_t *messages, void *context)
+{
+	return PL_ParseStruct (renderpass_fields, item, data, messages, context);
+}
+
 VkRenderPass
 QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist)
 {
 	qfv_device_t *device = ctx->device;
+
 	qfv_renderpass_t renderpass_data = {};
-	plitem_t   *messages = PL_NewArray ();
+
+	if (!parse_object (ctx, plist, parse_qfv_renderpass, &renderpass_data)) {
+		return 0;
+	}
+
 	VkRenderPass renderpass;
+	renderpass = QFV_CreateRenderPass (device,
+									   renderpass_data.attachments,
+									   renderpass_data.subpasses,
+									   renderpass_data.dependencies);
+
+	free (renderpass_data.attachments);
+	for (size_t i = 0; i < renderpass_data.subpasses->size; i++) {
+		free ((void *) renderpass_data.subpasses->a[i].pInputAttachments);
+		free ((void *) renderpass_data.subpasses->a[i].pColorAttachments);
+		free ((void *) renderpass_data.subpasses->a[i].pResolveAttachments);
+		free ((void *) renderpass_data.subpasses->a[i].pDepthStencilAttachment);
+		free ((void *) renderpass_data.subpasses->a[i].pPreserveAttachments);
+	}
+	free (renderpass_data.subpasses);
+	free (renderpass_data.dependencies);
+	return renderpass;
+
+/*	plitem_t   *messages = PL_NewArray ();
 	exprsym_t   var_syms[] = {
 		{"swapchain", &qfv_swapchain_t_type, ctx->swapchain},
 		{"framebuffers", &vulkan_framebufferset_t_type, &ctx->framebuffers},
@@ -707,11 +788,6 @@ QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist)
 	PL_Free (messages);
 	delete_memsuper (exprctx.memsuper);
 
-	renderpass = QFV_CreateRenderPass (device,
-									   renderpass_data.attachments,
-									   renderpass_data.subpasses,
-									   renderpass_data.dependencies);
-
 	free (renderpass_data.attachments);
 	for (size_t i = 0; i < renderpass_data.subpasses->size; i++) {
 		free ((void *) renderpass_data.subpasses->a[i].pInputAttachments);
@@ -722,7 +798,7 @@ QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist)
 	}
 	free (renderpass_data.subpasses);
 	free (renderpass_data.dependencies);
-	return renderpass;
+	return renderpass;*/
 }
 
 VkPipeline
@@ -730,38 +806,91 @@ QFV_ParsePipeline (vulkan_ctx_t *ctx, plitem_t *plist)
 {
 	qfv_device_t *device = ctx->device;
 
-	plitem_t   *messages = PL_NewArray ();
-	exprctx_t   exprctx = {};
-	parsectx_t  parsectx = { &exprctx, ctx };
-	exprsym_t   var_syms[] = {
-		{"msaaSamples", &VkSampleCountFlagBits_type, &ctx->msaaSamples},
-		{}
-	};
-	exprtab_t   vars_tab = { var_syms, 0 };
-
-	exprctx.external_variables = &vars_tab;
-	exprctx.memsuper = new_memsuper ();
-	exprctx.messages = messages;
-	exprctx.hashlinks = &ctx->hashlinks;
-
-	cexpr_init_symtab (&vars_tab, &exprctx);
-
 	__auto_type cInfo = QFV_AllocGraphicsPipelineCreateInfoSet (1, alloca);
 	memset (&cInfo->a[0], 0, sizeof (cInfo->a[0]));
 
-	if (!parse_VkGraphicsPipelineCreateInfo (0, plist, &cInfo->a[0],
-											 messages, &parsectx)) {
-		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
-			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
-		}
+	if (!parse_object (ctx, plist, parse_VkGraphicsPipelineCreateInfo,
+					   &cInfo->a[0])) {
 		return 0;
 	}
-	PL_Free (messages);
-	delete_memsuper (exprctx.memsuper);
 
 	cInfo->a[0].renderPass = ctx->renderpass.renderpass;
 	__auto_type plSet = QFV_CreateGraphicsPipelines (device, 0, cInfo);
 	VkPipeline pipeline = plSet->a[0];
 	free (plSet);
 	return pipeline;
+}
+
+VkDescriptorPool
+QFV_ParseDescriptorPool (vulkan_ctx_t *ctx, plitem_t *plist)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	VkDescriptorPoolCreateInfo cInfo = {};
+
+	if (!parse_object (ctx, plist, parse_VkDescriptorPoolCreateInfo, &cInfo)) {
+		return 0;
+	}
+
+	VkDescriptorPool pool;
+	dfunc->vkCreateDescriptorPool (device->dev, &cInfo, 0, &pool);
+
+	return pool;
+}
+
+VkDescriptorSetLayout
+QFV_ParseDescriptorSetLayout (vulkan_ctx_t *ctx, plitem_t *plist)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	VkDescriptorSetLayoutCreateInfo cInfo = {};
+
+	if (!parse_object (ctx, plist, parse_VkDescriptorSetLayoutCreateInfo,
+					   &cInfo)) {
+		return 0;
+	}
+
+	VkDescriptorSetLayout setLayout;
+	dfunc->vkCreateDescriptorSetLayout (device->dev, &cInfo, 0, &setLayout);
+
+	return setLayout;
+}
+
+VkPipelineLayout
+QFV_ParsePipelineLayout (vulkan_ctx_t *ctx, plitem_t *plist)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	VkPipelineLayoutCreateInfo cInfo = {};
+
+	if (!parse_object (ctx, plist, parse_VkPipelineLayoutCreateInfo,
+					   &cInfo)) {
+		return 0;
+	}
+
+	VkPipelineLayout layout;
+	dfunc->vkCreatePipelineLayout (device->dev, &cInfo, 0, &layout);
+
+	return layout;
+}
+
+VkSampler
+QFV_ParseSampler (vulkan_ctx_t *ctx, plitem_t *plist)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	VkSamplerCreateInfo cInfo = {};
+
+	if (!parse_object (ctx, plist, parse_VkSamplerCreateInfo, &cInfo)) {
+		return 0;
+	}
+
+	VkSampler sampler;
+	dfunc->vkCreateSampler (device->dev, &cInfo, 0, &sampler);
+
+	return sampler;
 }

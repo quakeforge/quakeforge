@@ -63,7 +63,6 @@
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
-#include "vkparse.h"
 
 void
 Vulkan_DrawAlias (entity_t *ent, struct vulkan_ctx_s *ctx)
@@ -259,12 +258,8 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 	actx->frames.grow = 0;
 
 	actx->pipeline = Vulkan_CreatePipeline (ctx, "alias");
-	actx->layout = QFV_GetPipelineLayout (ctx, "alias.layout");
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, actx->layout,
-						 va (ctx->va_ctx, "layout:%s", "alias.layout"));
-	actx->sampler = QFV_GetSampler (ctx, "alias.sampler");
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_SAMPLER, actx->sampler,
-						 va (ctx->va_ctx, "sampler:%s", "alias.sampler"));
+	actx->layout = Vulkan_CreatePipelineLayout (ctx, "alias_layout");
+	actx->sampler = Vulkan_CreateSampler (ctx, "alias_sampler");
 
 	/*__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (2 * frames, alloca);
 	for (size_t i = 0; i < layouts->size / 2; i++) {

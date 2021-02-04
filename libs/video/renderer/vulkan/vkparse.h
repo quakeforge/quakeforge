@@ -24,18 +24,15 @@ typedef struct handleref_s {
 	uint64_t    handle;
 } handleref_t;
 
-VkShaderModule QFV_GetShaderModule (vulkan_ctx_t *ctx, const char *name);
-VkDescriptorPool QFV_GetDescriptorPool (vulkan_ctx_t *ctx, const char *name);
-VkDescriptorSetLayout QFV_GetDescriptorSetLayout (vulkan_ctx_t *ctx,
-												  const char *name);
-VkPipelineLayout QFV_GetPipelineLayout (vulkan_ctx_t *ctx, const char *name);
-VkSampler QFV_GetSampler (vulkan_ctx_t *ctx, const char *name);
-
-void QFV_ParseResources (vulkan_ctx_t *ctx, plitem_t *plist);
 void QFV_InitParse (vulkan_ctx_t *ctx);
 exprenum_t *QFV_GetEnum (const char *name);
 
 VkRenderPass QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist);
 VkPipeline QFV_ParsePipeline (vulkan_ctx_t *ctx, plitem_t *plist);
+VkDescriptorPool QFV_ParseDescriptorPool (vulkan_ctx_t *ctx, plitem_t *plist);
+VkDescriptorSetLayout QFV_ParseDescriptorSetLayout (vulkan_ctx_t *ctx,
+													plitem_t *plist);
+VkPipelineLayout QFV_ParsePipelineLayout (vulkan_ctx_t *ctx, plitem_t *plist);
+VkSampler QFV_ParseSampler (vulkan_ctx_t *ctx, plitem_t *plist);
 
 #endif//__vkparse_h
