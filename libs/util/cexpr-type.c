@@ -30,6 +30,7 @@
 #include <math.h>
 
 #include "QF/cexpr.h"
+#include "QF/cmem.h"
 #include "QF/mathlib.h"
 #include "QF/qfplist.h"
 #include "QF/simd/vec4f.h"
@@ -591,6 +592,88 @@ exprtype_t cexpr_function = {
 	"function",
 	0,	// has no size of its own
 	0,	// can't actually do anything with a function other than call
+	0,
+};
+
+static void
+plitem_field (const exprval_t *a, const exprval_t *b, exprval_t *c,
+			  exprctx_t *ctx)
+{
+	__auto_type dict = *(plitem_t **) a->value;
+	__auto_type key = (const char *) b->value;
+
+	if (PL_Type (dict) != QFDictionary) {
+		cexpr_error(ctx, "not a dictionary object");
+		return;
+	}
+	plitem_t   *item = PL_ObjectForKey (dict, key);
+	exprval_t *val = 0;
+	if (!item) {
+		cexpr_error (ctx, "key not found: %s", key);
+	} else {
+		val = cexpr_value (&cexpr_plitem, ctx);
+		*(plitem_t **) val->value = item;
+	}
+	*(exprval_t **) c->value = val;
+}
+
+static void
+plitem_index (const exprval_t *a, int index, exprval_t *c,
+			  exprctx_t *ctx)
+{
+	__auto_type array = *(plitem_t **) a->type->data;
+
+	if (PL_Type (array) != QFArray) {
+		cexpr_error(ctx, "not an array object");
+		return;
+	}
+	plitem_t   *item = PL_ObjectAtIndex (array, index);
+	exprval_t *val = 0;
+	if (!item) {
+		cexpr_error (ctx, "invalid index: %d", index);
+	} else {
+		val = cexpr_value (&cexpr_plitem, ctx);
+		*(plitem_t **) val->value = item;
+	}
+	*(exprval_t **) c->value = val;
+}
+
+static void
+plitem_int (const exprval_t *a, const exprval_t *b, exprval_t *c,
+			exprctx_t *ctx)
+{
+	int         index = *(int *) a->value;
+	plitem_index (a, index, c, ctx);
+}
+
+static void
+plitem_uint (const exprval_t *a, const exprval_t *b, exprval_t *c,
+			 exprctx_t *ctx)
+{
+	int         index = *(int *) a->value;
+	plitem_index (a, index, c, ctx);
+}
+
+static void
+plitem_size_t (const exprval_t *a, const exprval_t *b, exprval_t *c,
+			   exprctx_t *ctx)
+{
+	int         index = *(int *) a->value;
+	plitem_index (a, index, c, ctx);
+}
+
+binop_t plitem_binops[] = {
+	{ '.', &cexpr_field, &cexpr_plitem, plitem_field },
+	{ '[', &cexpr_int, &cexpr_plitem, plitem_int },
+	{ '[', &cexpr_uint, &cexpr_plitem, plitem_uint },
+	{ '[', &cexpr_size_t, &cexpr_plitem, plitem_size_t },
+	{}
+};
+
+exprtype_t cexpr_plitem = {
+	"plitem",
+	sizeof (plitem_t *),
+	plitem_binops,
 	0,
 };
 

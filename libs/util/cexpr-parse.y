@@ -56,6 +56,8 @@ static exprval_t *binary_expr (int op, const exprval_t *a, const exprval_t *b,
 							   exprctx_t *context);
 static exprval_t *field_expr (const exprval_t *a, const exprval_t *b,
 							  exprctx_t *context);
+static exprval_t *index_expr (const exprval_t *a, const exprval_t *b,
+							  exprctx_t *context);
 static exprval_t *unary_expr (int op, const exprval_t *val,
 							  exprctx_t *context);
 static exprval_t *vector_expr (exprlist_t *list, exprctx_t *context);
@@ -126,6 +128,7 @@ uexpr
 	| '(' expr ')'		{ $$ = $2; }
 	| NAME '(' opt_arg_list ')'	{ $$ = function_expr ($1, $3, context); }
 	| uexpr '.' field	{ $$ = field_expr ($1, $3, context); }
+	| uexpr '[' field ']'	{ $$ = index_expr ($1, $3, context); }
 	| '+' uexpr %prec UNARY	{ $$ = $2; }
 	| '-' uexpr %prec UNARY	{ $$ = unary_expr ('-', $2, context); }
 	| '!' uexpr %prec UNARY	{ $$ = unary_expr ('!', $2, context); }
@@ -237,6 +240,10 @@ field_expr (const exprval_t *a, const exprval_t *b, exprctx_t *context)
 	binop_t    *binop;
 	exprval_t  *result = 0;
 
+	if (!a) {
+		return 0;
+	}
+
 	for (binop = a->type->binops; binop->op; binop++) {
 		if (binop->op == '.' && binop->other == b->type) {
 			break;
@@ -244,6 +251,29 @@ field_expr (const exprval_t *a, const exprval_t *b, exprctx_t *context)
 	}
 	if (!binop->op) {
 		cexpr_error (context, "invalid binary expression: %s.%s",
+					 a->type->name, b->type->name);
+		result = cexpr_value (&cexpr_int, context);
+		*(int *) result->value = 0;
+	} else {
+		exprval_t   c = { 0, &result };
+		binop->func (a, b, &c, context);
+	}
+	return result;
+}
+
+static exprval_t *
+index_expr (const exprval_t *a, const exprval_t *b, exprctx_t *context)
+{
+	binop_t    *binop;
+	exprval_t  *result = 0;
+
+	for (binop = a->type->binops; binop->op; binop++) {
+		if (binop->op == '[' && binop->other == b->type) {
+			break;
+		}
+	}
+	if (!binop->op) {
+		cexpr_error (context, "invalid index expression: %s.%s",
 					 a->type->name, b->type->name);
 		result = cexpr_value (&cexpr_int, context);
 		*(int *) result->value = 0;

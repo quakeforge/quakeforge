@@ -132,6 +132,7 @@ extern exprtype_t cexpr_quaternion;
 extern exprtype_t cexpr_exprval;
 extern exprtype_t cexpr_field;
 extern exprtype_t cexpr_function;
+extern exprtype_t cexpr_plitem;
 
 extern binop_t cexpr_struct_binops[];
 extern binop_t cexpr_struct_pointer_binops[];
