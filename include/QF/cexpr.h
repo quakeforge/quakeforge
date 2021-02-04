@@ -118,6 +118,9 @@ void cexpr_struct_pointer_getfield (const exprval_t *a, const exprval_t *b,
 exprval_t *cexpr_cvar (const char *name, exprctx_t *ctx);
 exprval_t *cexpr_cvar_struct (exprctx_t *ctx);
 
+void cexpr_cast_plitem (const exprval_t *val1, const exprval_t *src,
+						exprval_t *result, exprctx_t *ctx);
+
 void cexpr_init_symtab (exprtab_t *symtab, exprctx_t *ctx);
 
 char *cexpr_yyget_text (void *scanner);

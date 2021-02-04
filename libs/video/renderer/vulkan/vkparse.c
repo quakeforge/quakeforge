@@ -103,6 +103,12 @@ binop_t flag_binops[] = {
 	{ '|', 0, 0, flag_or },
 	{ '&', 0, 0, flag_and },
 	{ '=', &cexpr_int, 0, flag_cast_int },
+	{ '=', &cexpr_plitem, 0, cexpr_cast_plitem },
+	{}
+};
+
+binop_t enum_binops[] = {
+	{ '=', &cexpr_plitem, 0, cexpr_cast_plitem },
 	{}
 };
 

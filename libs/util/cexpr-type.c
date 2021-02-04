@@ -100,6 +100,7 @@ binop_t int_binops[] = {
 	{ '^', &cexpr_int, &cexpr_int, int_xor },
 	{ '%', &cexpr_int, &cexpr_int, int_rem },
 	{ MOD, &cexpr_int, &cexpr_int, int_mod },
+	{ '=', &cexpr_plitem, &cexpr_int, cexpr_cast_plitem },
 	{}
 };
 
@@ -154,6 +155,7 @@ binop_t uint_binops[] = {
 	{ '%', &cexpr_uint, &cexpr_uint, uint_rem },
 	{ MOD, &cexpr_uint, &cexpr_uint, uint_rem },
 	{ '=', &cexpr_int,  &cexpr_uint, uint_cast_int },
+	{ '=', &cexpr_plitem, &cexpr_uint, cexpr_cast_plitem },
 	{}
 };
 
@@ -222,6 +224,7 @@ binop_t size_t_binops[] = {
 	{ MOD, &cexpr_size_t, &cexpr_size_t, size_t_rem },
 	{ '=', &cexpr_int,    &cexpr_size_t, size_t_cast_int },
 	{ '=', &cexpr_uint,   &cexpr_size_t, size_t_cast_uint },
+	{ '=', &cexpr_plitem, &cexpr_size_t, cexpr_cast_plitem },
 	{}
 };
 
@@ -310,6 +313,7 @@ binop_t float_binops[] = {
 	{ '%', &cexpr_float, &cexpr_float, float_rem },
 	{ MOD, &cexpr_float, &cexpr_float, float_mod },
 	{ '=', &cexpr_int,  &cexpr_float, float_cast_int },
+	{ '=', &cexpr_plitem, &cexpr_float, cexpr_cast_plitem },
 	{}
 };
 
@@ -366,6 +370,7 @@ binop_t double_binops[] = {
 	{ '/', &cexpr_double, &cexpr_double, double_div },
 	{ '%', &cexpr_double, &cexpr_double, double_rem },
 	{ MOD, &cexpr_double, &cexpr_double, double_mod },
+	{ '=', &cexpr_plitem, &cexpr_double, cexpr_cast_plitem },
 	{}
 };
 
@@ -594,6 +599,26 @@ exprtype_t cexpr_function = {
 	0,	// can't actually do anything with a function other than call
 	0,
 };
+
+void
+cexpr_cast_plitem (const exprval_t *val1, const exprval_t *src,
+				   exprval_t *result, exprctx_t *ctx)
+{
+	plitem_t   *item = *(plitem_t **) src->value;
+	const char *str = PL_String (item);
+	if (!str) {
+		cexpr_error (ctx, "not a string object: %d", PL_Line (item));
+		return;
+	}
+
+	exprctx_t   ectx = *ctx;
+	ectx.result = result;
+	cexpr_eval_string (str, &ectx);
+	ctx->errors += ectx.errors;
+	if (ectx.errors) {
+		cexpr_error (ctx, "could not convert: %d", PL_Line (item));
+	}
+}
 
 static void
 plitem_field (const exprval_t *a, const exprval_t *b, exprval_t *c,

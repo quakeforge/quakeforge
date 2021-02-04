@@ -79,7 +79,7 @@ skip_value(string name)
 		fprintf (output_file, "\tflag_binops,\n");
 		fprintf (output_file, "\tflag_unops,\n");
 	} else {
-		fprintf (output_file, "\t0,\n");
+		fprintf (output_file, "\tenum_binops,\n");
 		fprintf (output_file, "\t0,\n");
 	}
 	fprintf (output_file, "};\n");
