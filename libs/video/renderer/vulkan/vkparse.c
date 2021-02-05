@@ -773,45 +773,6 @@ QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist)
 	free (renderpass_data.subpasses);
 	free (renderpass_data.dependencies);
 	return renderpass;
-
-/*	plitem_t   *messages = PL_NewArray ();
-	exprsym_t   var_syms[] = {
-		{"swapchain", &qfv_swapchain_t_type, ctx->swapchain},
-		{"framebuffers", &vulkan_framebufferset_t_type, &ctx->framebuffers},
-		{"msaaSamples", &VkSampleCountFlagBits_type, &ctx->msaaSamples},
-		{}
-	};
-	exprtab_t   vars_tab = { var_syms, 0 };
-	exprctx_t   exprctx = {};
-	parsectx_t  parsectx = { &exprctx, ctx };
-
-	exprctx.memsuper = new_memsuper ();
-	exprctx.messages = messages;
-	exprctx.hashlinks = &ctx->hashlinks;
-	exprctx.external_variables = &vars_tab;
-	cexpr_init_symtab (&vars_tab, &exprctx);
-
-	if (!PL_ParseStruct (renderpass_fields, plist, &renderpass_data,
-						 messages, &parsectx)) {
-		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
-			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
-		}
-		return 0;
-	}
-	PL_Free (messages);
-	delete_memsuper (exprctx.memsuper);
-
-	free (renderpass_data.attachments);
-	for (size_t i = 0; i < renderpass_data.subpasses->size; i++) {
-		free ((void *) renderpass_data.subpasses->a[i].pInputAttachments);
-		free ((void *) renderpass_data.subpasses->a[i].pColorAttachments);
-		free ((void *) renderpass_data.subpasses->a[i].pResolveAttachments);
-		free ((void *) renderpass_data.subpasses->a[i].pDepthStencilAttachment);
-		free ((void *) renderpass_data.subpasses->a[i].pPreserveAttachments);
-	}
-	free (renderpass_data.subpasses);
-	free (renderpass_data.dependencies);
-	return renderpass;*/
 }
 
 VkPipeline
