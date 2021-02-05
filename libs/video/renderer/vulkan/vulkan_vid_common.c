@@ -78,6 +78,7 @@ static const char quakeforge_pipeline[] =
 #include "libs/video/renderer/vulkan/qfpipeline.plc"
 ;
 
+cvar_t *vulkan_frame_count;
 cvar_t *vulkan_presentation_mode;
 cvar_t *msaaSamples;
 
@@ -95,6 +96,15 @@ vulkan_presentation_mode_f (cvar_t *var)
 	} else {
 		Sys_Printf ("Invalid presentation mode, using fifo\n");
 		var->int_val = VK_PRESENT_MODE_FIFO_KHR;
+	}
+}
+
+static void
+vulkan_frame_count_f (cvar_t *var)
+{
+	if (var->int_val < 1) {
+		Sys_Printf ("Invalid frame count: %d. Setting to 1\n", var->int_val);
+		Cvar_Set (var, "1");
 	}
 }
 
@@ -125,6 +135,12 @@ Vulkan_Init_Cvars (void)
 										 CVAR_NONE, vulkan_presentation_mode_f,
 										 "desired presentation mode (may fall "
 										 "back to fifo).");
+	vulkan_frame_count = Cvar_Get ("vulkan_frame_count", "3", CVAR_NONE,
+								   vulkan_frame_count_f,
+								   "Number of frames to render in the"
+								   " background. More frames can increase"
+								   " performance, but at the cost of latency."
+								   " The default of 3 is recommended.");
 	msaaSamples = Cvar_Get ("msaaSamples", "VK_SAMPLE_COUNT_1_BIT",
 										 CVAR_NONE, msaaSamples_f,
 										 "desired MSAA sample size.");
@@ -500,7 +516,7 @@ Vulkan_CreateFramebuffers (vulkan_ctx_t *ctx)
 		DARRAY_INIT (&ctx->frames, 4);
 	}
 
-	DARRAY_RESIZE (&ctx->frames, 3);//FIXME cvar
+	DARRAY_RESIZE (&ctx->frames, vulkan_frame_count->int_val);
 
 	__auto_type cmdBuffers = QFV_AllocCommandBufferSet (ctx->frames.size,
 														alloca);
