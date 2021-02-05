@@ -35,7 +35,7 @@
 /** \defgroup sound_render Sound rendering sub-system.
 	\ingroup sound
 */
-//@{
+///@{
 
 #include "QF/plugin/general.h"
 #include "QF/plugin/snd_render.h"
@@ -234,12 +234,12 @@ extern snd_render_data_t snd_render_data;
 #define PAINTBUFFER_SIZE    512
 extern portable_samplepair_t snd_paintbuffer[PAINTBUFFER_SIZE * 2];
 
-//@}
+///@}
 
 /** \defgroup sound_render_sfx Sound sfx
 	\ingroup sound_render_mix
 */
-//@{
+///@{
 /** Cache sound data. Initializes caching fields of sfx.
 	\param sfx
 	\param realname
@@ -289,7 +289,7 @@ sfx_t *SND_LoadSound (const char *name);
 */
 void SND_SFX_Init (void);
 
-//@}
+///@}
 
 /** \defgroup sound_render_mix_channels Sound channels
 	\ingroup sound_render_mix
@@ -302,7 +302,7 @@ void SND_SFX_Init (void);
 	- MAX_DYNAMIC_CHANNELS + NUM_AMBIENTS to total_channels - 1 <br>
 		static sounds
 */
-//@{
+///@{
 #define	MAX_CHANNELS			512	//!< number of available mixing channels
 #define	MAX_DYNAMIC_CHANNELS	128	//!< number of dynamic channels
 #define MAX_STATIC_CHANNELS		256	//!< number of static channels
@@ -390,13 +390,13 @@ void SND_StopSound (int entnum, int entchannel);
 	\param s name of sound to play
 */
 void SND_LocalSound (const char *s);
-//@}
+///@}
 
 
 /** \defgroup sound_render_mix Mixer engine.
 	\ingroup sound_render
 */
-//@{
+///@{
 /** sound clock in samples
 */
 extern unsigned snd_paintedtime;
@@ -414,13 +414,13 @@ void SND_InitScaletable (void);
 	\param sc		sfxbuffer to set.
 */
 void SND_SetPaint (sfxbuffer_t *sc);
-//@}
+///@}
 
 
 /** \defgroup sound_render_resample Resampling functions
 	\ingroup sound_render
 */
-//@{
+///@{
 /** Set up the various parameters that depend on the actual sample rate.
 	\param sc		buffer to setup
 	\param streamed	non-zero if this is for a stream.
@@ -448,13 +448,13 @@ void SND_Resample (sfxbuffer_t *sc, float *data, int length);
 */
 void SND_Convert (byte *idata, float *fdata, int frames, int channels,
 				  int width);
-//@}
+///@}
 
 
 /** \defgroup sound_render_load Sound loading functions
 	\ingroup sound_render
 */
-//@{
+///@{
 /** Load the referenced sound.
 	\param sfx		sound reference
 	\return			0 if ok, -1 on error
@@ -492,23 +492,23 @@ int SND_LoadWav (QFile *file, sfx_t *sfx, char *realname);
 	\return			0 if ok, -1 on error
 */
 int SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname);
-//@}
+///@}
 
 /** \defgroup sound_render_cache_stream Cache/Stream Functions.
 	\ingroup sound_render
 */
-//@{
+///@{
 /** Retrieve wavinfo from a cached sound.
 	\param sfx		sound reference
 	\return			pointer to sound's wavinfo
 */
-wavinfo_t *SND_CacheWavinfo (sfx_t *sfx);
+wavinfo_t *SND_CacheWavinfo (sfx_t *sfx) __attribute__((pure));
 
 /** Retrieve wavinfo from a streamed sound.
 	\param sfx		sound reference
 	\return			pointer to sound's wavinfo
 */
-wavinfo_t *SND_StreamWavinfo (sfx_t *sfx);
+wavinfo_t *SND_StreamWavinfo (sfx_t *sfx) __attribute__((pure));
 
 /** Ensure a cached sound is in memory.
 	\param sfx		sound reference
@@ -522,7 +522,7 @@ sfxbuffer_t *SND_CacheTouch (sfx_t *sfx);
 	\note	The sound must be retained with SND_CacheRetain() for the returned
 			buffer to be valid.
 */
-sfxbuffer_t *SND_CacheGetBuffer (sfx_t *sfx);
+sfxbuffer_t *SND_CacheGetBuffer (sfx_t *sfx) __attribute__((pure));
 
 /** Lock a cached sound into memory. After calling this, SND_CacheGetBffer()
 	will return a valid buffer.
@@ -541,14 +541,14 @@ void SND_CacheRelease (sfx_t *sfx);
 	\param sfx		sound reference
 	\return			poitner to sound buffer
 */
-sfxbuffer_t *SND_StreamGetBuffer (sfx_t *sfx);
+sfxbuffer_t *SND_StreamGetBuffer (sfx_t *sfx) __attribute__((pure));
 
 /** Lock a streamed sound into memory. Doesn't actually do anything other than
 	return a pointer to the buffer.
 	\param sfx		sound reference
 	\return			poitner to sound buffer
 */
-sfxbuffer_t *SND_StreamRetain (sfx_t *sfx);
+sfxbuffer_t *SND_StreamRetain (sfx_t *sfx) __attribute__((pure));
 
 /** Unlock a streamed sound from memory. Doesn't actually do anything.
 	\param sfx		sound reference
@@ -579,6 +579,6 @@ void SND_StreamSetPos (sfxbuffer_t *buffer, unsigned int pos);
 */
 sfxbuffer_t *SND_GetCache (long samples, int rate, int channels,
 						   sfxblock_t *block, cache_allocator_t allocator);
-//@}
+///@}
 
 #endif//__snd_internal_h

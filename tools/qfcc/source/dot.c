@@ -35,10 +35,13 @@
 
 #include "QF/va.h"
 
-#include "dot.h"
-#include "function.h"
-#include "qfcc.h"
-#include "strpool.h"
+#include "tools/qfcc/include/dot.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/strpool.h"
+
+static function_t *last_func;
+static int dot_index;
 
 void
 dump_dot (const char *stage, void *data,
@@ -46,8 +49,18 @@ dump_dot (const char *stage, void *data,
 {
 	char       *fname;
 
-	fname = nva ("%s.%s.%s.dot", GETSTR (pr.source_file), current_func->name,
-				 stage);
+	if (last_func != current_func) {
+		last_func = current_func;
+		dot_index = 0;
+	} else {
+		dot_index++;
+	}
+	if (current_func) {
+		fname = nva ("%s.%s.%03d.%s.dot", options.output_file,
+					 current_func->name, dot_index, stage);
+	} else {
+		fname = nva ("%s.%03d.%s.dot", options.output_file, dot_index, stage);
+	}
 	dump_func (data, fname);
 	free (fname);
 }

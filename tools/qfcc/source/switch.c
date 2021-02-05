@@ -42,18 +42,18 @@
 #include <QF/hash.h>
 #include <QF/sys.h>
 
-#include "def.h"
-#include "diagnostic.h"
-#include "expr.h"
-#include "opcodes.h"
-#include "options.h"
-#include "qfcc.h"
-#include "reloc.h"
-#include "switch.h"
-#include "symtab.h"
-#include "type.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/opcodes.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/switch.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
 
-#include "qc-parse.h"
+#include "tools/qfcc/source/qc-parse.h"
 
 typedef struct case_node_s {
 	expr_t     *low;
@@ -63,7 +63,7 @@ typedef struct case_node_s {
 	struct case_node_s *left, *right;
 } case_node_t;
 
-static ex_value_t *
+static __attribute__((pure)) ex_value_t *
 get_value (expr_t *e)
 {
 	if (e->type == ex_symbol)
@@ -73,7 +73,7 @@ get_value (expr_t *e)
 	return e->e.value;
 }
 
-static uintptr_t
+static __attribute__((pure)) uintptr_t
 get_hash (const void *_cl, void *unused)
 {
 	case_label_t *cl = (case_label_t *) _cl;
@@ -82,7 +82,7 @@ get_hash (const void *_cl, void *unused)
 	if (!cl->value)
 		return 0;
 	val = get_value (cl->value);
-	return Hash_Buffer (&val->v, sizeof (val->v)) + val->type;
+	return Hash_Buffer (&val->v, sizeof (val->v)) + val->lltype;
 }
 
 static int
@@ -166,13 +166,13 @@ new_switch_block (void)
 	switch_block_t *switch_block = malloc (sizeof (switch_block_t));
 
 	SYS_CHECKMEM (switch_block);
-	switch_block->labels = Hash_NewTable (127, 0, 0, 0);
+	switch_block->labels = Hash_NewTable (127, 0, 0, 0, 0);
 	Hash_SetHashCompare (switch_block->labels, get_hash, compare);
 	switch_block->test = 0;
 	return switch_block;
 }
 
-static int
+static __attribute__((pure)) int
 label_compare (const void *_a, const void *_b)
 {
 	const case_label_t **a = (const case_label_t **) _a;
@@ -213,7 +213,7 @@ new_case_node (expr_t *low, expr_t *high)
 		if (!is_integer_val (low))
 			internal_error (low, "switch");
 		size = expr_integer (high) - expr_integer (low) + 1;
-		node->labels = calloc (size, sizeof (case_node_t *));
+		node->labels = calloc (size, sizeof (expr_t *));
 	}
 	node->left = node->right = 0;
 	return node;
@@ -337,17 +337,18 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 		const char *table_name = new_label_name ();
 		int         i;
 		expr_t     *range = binary_expr ('-', tree->high, tree->low);
+		expr_t     *label;
 
-		range = fold_constants (range);
-
-		table_init = new_block_expr ();
+		table_init = new_compound_init ();
 		for (i = 0; i <= high - low; i++) {
 			tree->labels[i]->e.label.used++;
-			append_expr (table_init, address_expr (tree->labels[i], 0, 0));
+			label = address_expr (tree->labels[i], 0, 0);
+			append_element (table_init, new_element (label, 0));
 		}
-		table_sym = new_symbol (table_name);
-		initialize_def (table_sym, array_type (&type_integer, high - low + 1),
-						table_init, pr.near_data, sc_static);
+		table_sym = new_symbol_type (table_name,
+									 array_type (&type_integer,
+												 high - low + 1));
+		initialize_def (table_sym, table_init, pr.near_data, sc_static);
 		table_expr = new_symbol_expr (table_sym);
 
 		if (tree->left) {
@@ -428,8 +429,7 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 	for (l = labels; *l; l++)
 		num_labels++;
 	if (options.code.progsversion == PROG_ID_VERSION
-		|| (type != &type_string
-			&& type != &type_float && !is_integral (type))
+		|| (!is_string(type) && !is_float(type) && !is_integral (type))
 		|| num_labels < 8) {
 		for (l = labels; *l; l++) {
 			expr_t     *cmp = binary_expr (EQ, sw_val, (*l)->value);
@@ -445,7 +445,7 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 		int         op;
 		case_node_t *case_tree;
 
-		if (type == &type_string)
+		if (is_string(type))
 			temp = new_temp_def_expr (&type_integer);
 		else
 			temp = new_temp_def_expr (type);

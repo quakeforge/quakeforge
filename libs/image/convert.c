@@ -93,7 +93,7 @@ ColorCache_New (void)
 	colcache_t *cache;
 
 	ALLOC (16, colcache_t, colcache, cache);
-	cache->tab = Hash_NewTable (1023, 0, colcache_free_color, 0);
+	cache->tab = Hash_NewTable (1023, 0, colcache_free_color, 0, 0);
 	Hash_SetHashCompare (cache->tab, colcache_get_hash, colcache_compare);
 	return cache;
 }

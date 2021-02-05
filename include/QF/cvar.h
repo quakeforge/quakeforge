@@ -25,13 +25,13 @@
 
 */
 
-#ifndef __cvar_h
-#define __cvar_h
+#ifndef __QF_cvar_h
+#define __QF_cvar_h
 
 /** \defgroup cvar Configuration variables
 	\ingroup utils
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 #include "QF/quakeio.h"
@@ -72,7 +72,7 @@ typedef struct cvar_alias_s {
 	code goes "look, the user made fs_basepath already", uses the users value,
 	but sets CVAR_ROM as per the call.
 */
-//@{
+///@{
 #define CVAR_NONE			0		///< normal cvar
 #define	CVAR_ARCHIVE		1		///< set to cause it to be saved to
 									///< config.cfg
@@ -85,7 +85,7 @@ typedef struct cvar_alias_s {
 #define CVAR_LATCH			2048	///< will change only when C code next does
 									///< a Cvar_Get(), so it can't be changed
 									///< (not implemented)
-//@}
+///@}
 
 
 // Returns the Cvar if found, creates it with value if not.  Description and
@@ -122,12 +122,12 @@ void 	Cvar_WriteVariables (QFile *f);
 
 // attempts to match a partial variable name for command line completion
 // returns NULL if nothing fits
-const char 	*Cvar_CompleteVariable (const char *partial);
+const char 	*Cvar_CompleteVariable (const char *partial) __attribute__((pure));
 
 // Added by EvilTypeGuy - functions for tab completion system
 // Thanks to Fett erich@heintz.com
 // Thanks to taniwha
-int		Cvar_CompleteCountPossible (const char *partial);
+int		Cvar_CompleteCountPossible (const char *partial) __attribute__((pure));
 const char	**Cvar_CompleteBuildList (const char *partial);
 
 // Returns a pointer to the Cvar, NULL if not found
@@ -138,6 +138,6 @@ void Cvar_Init (void);
 
 extern cvar_t	*cvar_vars;
 
-//@}
+///@}
 
-#endif // __cvar_h
+#endif//__QF_cvar_h

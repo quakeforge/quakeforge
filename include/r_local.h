@@ -151,7 +151,7 @@ void R_TransformPlane (plane_t *p, float *normal, float *dist);
 void R_TransformFrustum (void);
 void R_SetSkyFrame (void);
 void R_DrawSurfaceBlock (void);
-texture_t *R_TextureAnimation (msurface_t *surf);
+texture_t *R_TextureAnimation (msurface_t *surf) __attribute__((pure));
 
 void R_GenSkyTile (void *pdest);
 void R_SurfPatch (void);

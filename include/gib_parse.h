@@ -43,5 +43,5 @@ gib_tree_t *GIB_Parse_Embedded (gib_tree_t *token);
 
 extern qboolean gib_parse_error;
 void GIB_Parse_Error (const char *msg, unsigned int pos);
-const char *GIB_Parse_ErrorMsg (void);
-unsigned int GIB_Parse_ErrorPos (void);
+const char *GIB_Parse_ErrorMsg (void) __attribute__((pure));
+unsigned int GIB_Parse_ErrorPos (void) __attribute__((pure));

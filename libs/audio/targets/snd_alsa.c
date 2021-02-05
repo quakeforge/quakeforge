@@ -103,7 +103,7 @@ SNDDMA_Init_Cvars (void)
 
 static int SNDDMA_GetDMAPos (void);
 
-static snd_pcm_uframes_t
+static __attribute__((const)) snd_pcm_uframes_t
 round_buffer_size (snd_pcm_uframes_t sz)
 {
 	snd_pcm_uframes_t mask = ~0;

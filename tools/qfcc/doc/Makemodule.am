@@ -1,0 +1,5 @@
+man_MANS += tools/qfcc/doc/man/qfcc.1
+
+EXTRA_DIST += \
+	tools/qfcc/doc/expressions.txt \
+	tools/qfcc/doc/dot/vector-alias.dot

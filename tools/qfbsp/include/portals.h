@@ -31,7 +31,7 @@
 	Decision nodes will not have portals on them, though as part of the
 	portal building process, they will temporarily have portals.
 */
-//@{
+///@{
 
 struct node_s;
 
@@ -89,6 +89,6 @@ void FreeAllPortals (struct node_s *node);
 */
 void WritePortalfile (struct node_s *headnode);
 
-//@}
+///@}
 
 #endif//qfbsp_portals_h

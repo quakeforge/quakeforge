@@ -34,7 +34,7 @@
 /** \defgroup mathlib_matrix4 4x4 matrix functions
 	\ingroup utils
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 
@@ -130,6 +130,6 @@ void Mat4as3MultVec (const mat4_t a, const vec3_t b, vec3_t c);
 int Mat4Decompose (const mat4_t mat, quat_t rot, vec3_t shear, vec3_t scale,
 				   vec3_t trans);
 
-//@}
+///@}
 
 #endif // __QF_math_matrix4_h

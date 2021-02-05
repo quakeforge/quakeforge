@@ -37,10 +37,11 @@
 
 #include "QF/plugin/console.h"
 
-#include "client.h"
-#include "server.h"
 #include "sv_console.h"
-#include "qtv.h"
+
+#include "qtv/include/client.h"
+#include "qtv/include/server.h"
+#include "qtv/include/qtv.h"
 
 static void
 draw_clients (view_t *view)

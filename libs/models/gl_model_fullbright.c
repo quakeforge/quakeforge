@@ -59,7 +59,7 @@ Mod_CalcFullbright (byte *in, byte *out, int pixels)
 }
 
 int
-Mod_Fullbright (byte *skin, int width, int height, char *name)
+Mod_Fullbright (byte *skin, int width, int height, const char *name)
 {
 	byte   *ptexels;
 	int		pixels;

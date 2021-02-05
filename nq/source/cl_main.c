@@ -48,15 +48,16 @@
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
 
-#include "chase.h"
-#include "cl_skin.h"
-#include "client.h"
-#include "clview.h"
 #include "compat.h"
-#include "host.h"
-#include "host.h"
-#include "server.h"
+#include "clview.h"
 #include "sbar.h"
+
+#include "nq/include/chase.h"
+#include "nq/include/cl_skin.h"
+#include "nq/include/client.h"
+#include "nq/include/host.h"
+#include "nq/include/host.h"
+#include "nq/include/server.h"
 
 CLIENT_PLUGIN_PROTOS
 static plugin_list_t client_plugin_list[] = {

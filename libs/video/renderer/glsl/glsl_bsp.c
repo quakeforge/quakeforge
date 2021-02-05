@@ -543,8 +543,8 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 	msurface_t *surf;
 	dstring_t  *vertices;
 
-	QuatSet (sqrt(0.5), 0, 0, sqrt(0.5), sky_fix);	// proper skies
-	QuatSet (1, 0, 0, 0, sky_rotation[0]);
+	QuatSet (0, 0, sqrt(0.5), sqrt(0.5), sky_fix);	// proper skies
+	QuatSet (0, 0, 0, 1, sky_rotation[0]);
 	QuatCopy (sky_rotation[0], sky_rotation[1]);
 	QuatSet (0, 0, 0, 0, sky_velocity);
 	QuatExp (sky_velocity, sky_velocity);
@@ -1321,7 +1321,7 @@ glsl_R_InitBsp (void)
 	GLSL_FreeShader (frag_shader);
 }
 
-static inline int
+static inline __attribute__((const)) int
 is_pow2 (unsigned x)
 {
 	int         count;

@@ -58,21 +58,21 @@
 #include "QF/pakfile.h"
 #include "QF/va.h"
 
-#include "class.h"
-#include "codespace.h"
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "expr.h"
-#include "linker.h"
-#include "obj_file.h"
-#include "obj_type.h"
-#include "options.h"
-#include "qfcc.h"
-#include "reloc.h"
-#include "strpool.h"
-#include "type.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/codespace.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/linker.h"
+#include "tools/qfcc/include/obj_file.h"
+#include "tools/qfcc/include/obj_type.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/type.h"
 
 static void linker_internal_error (const char *fmt, ...)
 	__attribute__ ((format (printf, 1, 2), noreturn));
@@ -128,8 +128,8 @@ static builtin_sym_t builtin_symbols[] __attribute__ ((used)) = {
 	{".param_6",	&type_param,	QFOD_NOSAVE | QFOD_GLOBAL},
 	{".param_7",	&type_param,	QFOD_NOSAVE | QFOD_GLOBAL},
 };
-static const int num_builtins = sizeof (builtin_symbols)
-								/ sizeof (builtin_symbols[0]);
+static const unsigned num_builtins = sizeof (builtin_symbols)
+									 / sizeof (builtin_symbols[0]);
 
 static defref_t *defrefs_freelist;
 
@@ -147,13 +147,14 @@ static qfo_t *work;
 static int work_base[qfo_num_spaces];
 static int work_func_base;
 static defref_t **work_defrefs;
-static int num_work_defrefs;
+static unsigned num_work_defrefs;
 static strpool_t *work_strings;
 static codespace_t *work_code;
 static defspace_t *work_near_data;
 static defspace_t *work_far_data;
 static defspace_t *work_entity_data;
 static defspace_t *work_type_data;
+static defspace_t *work_debug_data;
 static qfo_reloc_t *work_loose_relocs;
 static int work_num_loose_relocs;
 
@@ -163,6 +164,7 @@ static defspace_t **work_spaces[qfo_num_spaces] = {
 	&work_far_data,
 	&work_entity_data,
 	&work_type_data,
+	&work_debug_data,
 };
 
 static dstring_t *linker_current_file;
@@ -282,6 +284,8 @@ alloc_data (int space, int size)
 static void
 resolve_external_def (defref_t *ext, defref_t *def)
 {
+	qfot_type_t *ext_type;
+	qfot_type_t *def_type;
 	if (!(REF (ext)->flags & QFOD_EXTERNAL)) {
 		def_error (REF (ext), "%s %x", WORKSTR (REF (ext)->name),
 				   REF (ext)->flags);
@@ -292,7 +296,15 @@ resolve_external_def (defref_t *ext, defref_t *def)
 				   REF (def)->flags);
 		linker_internal_error ("def is an external or local def");
 	}
-	if (REF (ext)->type != REF (def)->type) {
+	ext_type = WORKTYPE (REF(ext)->type);
+	if (ext_type->meta == ty_alias) {
+		ext_type = WORKTYPE (ext_type->alias.aux_type);
+	}
+	def_type = WORKTYPE (REF (def)->type);
+	if (def_type->meta == ty_alias) {
+		def_type = WORKTYPE (def_type->alias.aux_type);
+	}
+	if (ext_type != def_type) {
 		linker_type_mismatch (REF (ext), REF (def));
 		return;
 	}
@@ -408,14 +420,17 @@ process_type_def (defref_t *ref, qfo_mspace_t *space, qfo_def_t *old)
 			memcpy (new_type, old_type, old_type->size * sizeof (pr_type_t));
 			define_def (ref, extern_type_defs, defined_type_defs);
 		}
-		// save the new address in the old def's type field so relocation
-		// records can be updated.
+		// Save the new address in the old def's type field so relocation
+		// records can be updated. Type encoding defs start with no type
+		// (type = 0). The old def's offset is not modified because it is used
+		// for finding the def when adjusting relocation records that point
+		// to fields inside the type encoding.
 		old->type = REF (ref)->offset;
-		// mark the old type encoding as having been transfered, and save the
+		// Mark the old type encoding as having been transfered, and save the
 		// new address in the encoding's class field so def and function types
 		// can be updated easily.
-		old_type->ty = -1;
-		old_type->t.class = REF (ref)->offset;
+		old_type->meta = -1;
+		old_type->class = REF (ref)->offset;
 	}
 }
 
@@ -436,7 +451,7 @@ adjust_reloc_offset (qfo_reloc_t *reloc)
 static int
 add_relocs (qfo_t *qfo, int start, int count, int target)
 {
-	int         size;
+	unsigned    size;
 	qfo_reloc_t *ireloc;
 	qfo_reloc_t *oreloc;
 
@@ -446,9 +461,11 @@ add_relocs (qfo_t *qfo, int start, int count, int target)
 	oreloc = work->relocs + work->num_relocs;
 	for  ( ; work->num_relocs < size; ireloc++, oreloc++) {
 		*oreloc = *ireloc;
+		// Mark the reloc as having been copied and record the new reloc record
+		// number in the old reloc's offset
 		ireloc->type = -1;
 		ireloc->offset = work->num_relocs++;
-		if (oreloc->space < 0 || oreloc->space >= qfo->num_spaces) {
+		if (oreloc->space >= qfo->num_spaces) {
 			linker_error ("bad reloc space: %d (%d)", oreloc->space,
 						  qfo->num_spaces);
 			oreloc->type = rel_none;
@@ -485,8 +502,20 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space,
 		odef->file = linker_add_string (QFOSTR (qfo, idef->file));
 		idef->file = -1;					// mark def as copied
 		idef->line = num_work_defrefs;		// so def can be found
+		// In the first passs, process_type_def sets the type meta to -1 and
+		// class to the offset of the copied type, but the null type encodiing
+		// is not modified. Other defs are processed in the second pass.
 		type = QFOTYPE(idef->type);
-		odef->type = type->t.class;			// pointer to type in work
+		if (idef->type && (int) type->meta != -1) {
+			linker_internal_error ("reference to type that has not been "
+								   "relocated");
+		}
+		// Type encodings have no type (type = 0) so setting the type
+		// to the idef type class has no effect.
+		odef->type = type->class;			// pointer to type in work
+		// don't add unused (no attached relocs) external defs to the work
+		// defref list so they will not cause unused object files to be
+		// pulled in from libraries
 		if (odef->flags & QFOD_EXTERNAL && !odef->num_relocs)
 			continue;
 		ref = get_defref (odef, dest_space);
@@ -638,18 +667,18 @@ linker_find_def (const char *name)
 void
 linker_begin (void)
 {
-	int         i;
+	unsigned    i;
 
 	linker_current_file = dstring_newstr ();
 
-	extern_data_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
-	defined_data_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
+	extern_data_defs = Hash_NewTable (16381, defs_get_key, 0, 0, 0);
+	defined_data_defs = Hash_NewTable (16381, defs_get_key, 0, 0, 0);
 
-	extern_field_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
-	defined_field_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
+	extern_field_defs = Hash_NewTable (16381, defs_get_key, 0, 0, 0);
+	defined_field_defs = Hash_NewTable (16381, defs_get_key, 0, 0, 0);
 
-	extern_type_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
-	defined_type_defs = Hash_NewTable (16381, defs_get_key, 0, 0);
+	extern_type_defs = Hash_NewTable (16381, defs_get_key, 0, 0, 0);
+	defined_type_defs = Hash_NewTable (16381, defs_get_key, 0, 0, 0);
 
 	work_strings = strpool_new ();
 	work_code = codespace_new ();
@@ -657,6 +686,7 @@ linker_begin (void)
 	work_far_data = defspace_new (ds_backed);
 	work_entity_data = defspace_new (ds_virtual);
 	work_type_data = defspace_new (ds_backed);
+	work_debug_data = defspace_new (ds_backed);
 
 	pr.strings = work_strings;
 
@@ -682,6 +712,9 @@ linker_begin (void)
 	work->spaces[qfo_type_space].type = qfos_type;
 	work->spaces[qfo_type_space].d.data = work_type_data->data;
 	work->spaces[qfo_type_space].data_size = work_type_data->size;
+	work->spaces[qfo_debug_space].type = qfos_debug;
+	work->spaces[qfo_debug_space].d.data = work_type_data->data;
+	work->spaces[qfo_debug_space].data_size = work_type_data->size;
 	for (i = 0; i < qfo_num_spaces; i++)
 		work->spaces[i].id = i;
 
@@ -792,21 +825,28 @@ update_type_space_reloc (qfo_mspace_t *space, qfo_reloc_t *reloc)
 	qfo_def_t    dummy;
 	qfo_def_t   *def;
 
-	if (reloc->type == -1)
+	if (reloc->type == -1) {
+		// The reloc has been copied, and the record number of the new reloc
+		// is in the old reloc's offset.
 		reloc = work->relocs + reloc->offset;
+	}
 	dummy.offset = reloc->offset;
 	def = (qfo_def_t *) bsearch (&dummy, space->defs, space->num_defs,
 								 sizeof (qfo_def_t), type_def_compare);
-	if (!def)
+	if (!def) {
 		linker_internal_error ("relocation record with invalid address. "
 							   "corrupt object file?");
-	reloc->offset += def->type - def->offset;
+	}
+	// The new offset of the type encoding is stored in the def's type field.
+	// The old offset is in the def's offset field. The reloc's offset points
+	// to somewhere within the type encoding.
+	reloc->offset = def->type + (reloc->offset - def->offset);
 }
 
 static int
 process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
-	int         i;
+	unsigned    i;
 
 	if (pass != 0)
 		return 0;
@@ -816,14 +856,15 @@ process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 	}
 	qfo_type_defs = space;
 	add_defs (qfo, space, work->spaces + qfo_type_space, process_type_def);
-	// the defs in qfo are no longer needed by the rest of the linker, so
-	// we're free to mess around with them
+	// The defs in qfo are no longer needed by the rest of the linker, so
+	// we're free to mess around with them.
 
-	// sort the defs by addres. Unfortunately, they will usually be in order,
-	// so qsort will likely be pessimistic, but oh well.
+	// Sort the defs by addres so they can found using bsearch when adjusting
+	// the targets of type encoding relocs. Unfortunately, they will usually
+	// be in order, so qsort will likely be pessimistic, but oh well.
 	qsort (space->defs, space->num_defs, sizeof (qfo_def_t), type_def_compare);
 
-	// update the offsets of all relocation records that point into the type
+	// Update the offsets of all relocation records that point into the type
 	// encoding space.
 	for (i = 0; i < qfo->num_relocs; i++) {
 		qfo_reloc_t *reloc = qfo->relocs + i;
@@ -831,12 +872,26 @@ process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 		if (reloc->space != space->id)
 			continue;
 		update_type_space_reloc (space, reloc);
-		// while we're at it, update the strings so the type space strings
-		// are always correct.
+		// while we're at it, relocate all references in the type encoding
+		// space so the type encodings are always correct.
 		if (reloc->type == rel_def_string) {
 			string_t     str;
 			str = linker_add_string (QFOSTR (qfo, reloc->target));
 			QFO_STRING (work, reloc->space, reloc->offset) = str;
+		} else if (reloc->type == rel_def_def || reloc->type == -1) {
+			qfo_def_t  *def;
+			if (reloc->type == -1) {
+				// The reloc has been copied, and the record number of the new
+				// reloc is in the old reloc's offset.
+				reloc = work->relocs + reloc->offset;
+			}
+			if (reloc->target >= work->spaces[reloc->space].num_defs) {
+				linker_error ("Invalid reloc target def %d / %d.\n",
+							  reloc->target, qfo->num_defs);
+				continue;
+			}
+			def = work->spaces[reloc->space].defs + reloc->target;
+			QFO_INT (work, reloc->space, reloc->offset) = def->offset;
 		}
 	}
 	for (i = 0; i < num_builtins; i++) {
@@ -857,10 +912,24 @@ process_type_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 	return 0;
 }
 
+static int
+process_debug_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
+{
+	if (pass != 1)
+		return 0;
+	if (space->type != qfos_debug) {
+		linker_internal_error ("bad space type for add_data_space (): %d",
+							   space->type);
+	}
+	add_defs (qfo, space, work->spaces + qfo_debug_space, process_data_def);
+	add_data (qfo_debug_space, space);
+	return 0;
+}
+
 static void
 process_funcs (qfo_t *qfo)
 {
-	int         size;
+	unsigned    size;
 	qfo_func_t *func;
 	qfot_type_t *type;
 
@@ -871,7 +940,7 @@ process_funcs (qfo_t *qfo)
 	while (work->num_funcs < size) {
 		func = work->funcs + work->num_funcs++;
 		type = QFOTYPE(func->type);
-		func->type = type->t.class;
+		func->type = type->class;
 		func->name = linker_add_string (QFOSTR (qfo, func->name));
 		func->file = linker_add_string (QFOSTR (qfo, func->file));
 		if (func->code > 0)
@@ -888,7 +957,7 @@ process_funcs (qfo_t *qfo)
 static void
 process_lines (qfo_t *qfo)
 {
-	int         size;
+	unsigned    size;
 	pr_lineno_t *line;
 
 	if (!qfo->num_lines)
@@ -920,7 +989,7 @@ process_loose_relocs (qfo_t *qfo)
 			qfo->num_loose_relocs * sizeof (qfo_reloc_t));
 	while (work_num_loose_relocs < size) {
 		reloc = work_loose_relocs + work_num_loose_relocs++;
-		if (reloc->space < 0 || reloc->space >= qfo->num_spaces) {
+		if (reloc->space >= qfo->num_spaces) {
 			linker_error ("bad reloc space");
 			reloc->type = rel_none;
 			continue;
@@ -940,6 +1009,9 @@ process_loose_relocs (qfo_t *qfo)
 		if (reloc->type == rel_def_op)
 			reloc->target += work_base[qfo_code_space];
 		adjust_reloc_offset (reloc);
+		if (reloc->type == rel_def_string) {
+			QFO_STRING (work, reloc->space, reloc->offset) = reloc->target;
+		}
 	}
 }
 
@@ -953,8 +1025,9 @@ linker_add_qfo (qfo_t *qfo)
 		process_strings_space,
 		process_entity_space,
 		process_type_space,
+		process_debug_space,
 	};
-	int         i;
+	unsigned    i;
 	int         pass;
 	qfo_mspace_t *space;
 
@@ -965,7 +1038,7 @@ linker_add_qfo (qfo_t *qfo)
 	work_func_base = work->num_funcs;
 	for (pass = 0; pass < 2; pass++) {
 		for (i = 0, space = qfo->spaces; i < qfo->num_spaces; i++, space++) {
-			if ((int) space->type < 0 || space->type > qfos_type) {
+			if ((int) space->type < 0 || space->type > qfos_debug) {
 				linker_error ("bad space type");
 				return 1;
 			}
@@ -1027,7 +1100,8 @@ linker_add_lib (const char *libname)
 	path_t      start = {path_head, "."};
 	path_t     *path = &start;
 	const char *path_name = 0;
-	int         i, j;
+	int         i;
+	unsigned    j;
 	int         did_something;
 
 	if (strncmp (libname, "-l", 2) == 0) {
@@ -1101,7 +1175,7 @@ static __attribute__ ((used)) void
 undefined_def (qfo_def_t *def)
 {
 	qfo_def_t   line_def;
-	pr_int_t    i;
+	pr_uint_t   i;
 	qfo_reloc_t *reloc = work->relocs + def->relocs;
 
 	for (i = 0; i < def->num_relocs; i++, reloc++) {
@@ -1113,14 +1187,14 @@ undefined_def (qfo_def_t *def)
 			 || reloc->type == rel_op_c_def_ofs)
 			&& work->lines) {
 			qfo_func_t *func = work->funcs;
-			qfo_func_t *best = func;
-			pr_int_t    best_dist = reloc->offset - func->code;
+			qfo_func_t *best = 0;
+			pr_uint_t    best_dist;
 			pr_lineno_t *line;
 
-			while (best_dist && func - work->funcs < work->num_funcs) {
-				if (func->code <= reloc->offset) {
-					if (best_dist < 0
-						|| reloc->offset - func->code < best_dist) {
+			while (func - work->funcs < work->num_funcs) {
+				if (func->code >= 0
+					&& (pr_uint_t) func->code <= reloc->offset) {
+					if (!best || reloc->offset - func->code < best_dist) {
 						best = func;
 						best_dist = reloc->offset - func->code;
 					}
@@ -1160,7 +1234,7 @@ check_defs (void)
 			defref_t   *_d = Hash_Find (defined_data_defs, "self");
 			if (_d) {
 				qfo_def_t  *d = REF (_d);
-				if (QFO_TYPEMETA (work, d->type) == ty_none
+				if (QFO_TYPEMETA (work, d->type) == ty_basic
 					&& QFO_TYPETYPE (work, d->type) == ev_entity)
 					def_warning (d, "@self and self used together");
 			}
@@ -1195,7 +1269,7 @@ build_qfo (void)
 {
 	qfo_t      *qfo;
 	int         size;
-	int         i, j;
+	unsigned    i, j;
 	qfo_reloc_t *reloc;
 	qfo_def_t **defs;
 
@@ -1279,17 +1353,6 @@ build_qfo (void)
 			reloc->target = i;
 			reloc++;
 		}
-	}
-	for (i = 0; i < qfo->num_relocs; i++) {
-		qfo_def_t  *def;
-
-		reloc = qfo->relocs + i;
-		if (reloc->space != qfo_type_space)
-			continue;
-		if (reloc->type != rel_def_def)
-			continue;
-		def = qfo->defs + reloc->target;
-		QFO_INT (qfo, reloc->space, reloc->offset) = def->offset;
 	}
 	return qfo;
 }

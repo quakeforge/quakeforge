@@ -1,0 +1,5 @@
+EXTRA_DIST += \
+	qtv/include/client.h \
+	qtv/include/connection.h \
+	qtv/include/qtv.h \
+	qtv/include/server.h

@@ -63,7 +63,7 @@ GIB_Regex_Free (void *ele, void *ptr)
 void
 GIB_Regex_Init (void)
 {
-	gib_regexs = Hash_NewTable (512, GIB_Regex_Get_Key, GIB_Regex_Free, 0);
+	gib_regexs = Hash_NewTable (512, GIB_Regex_Get_Key, GIB_Regex_Free, 0, 0);
 }
 
 regex_t *

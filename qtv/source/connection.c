@@ -46,7 +46,7 @@
 #include "QF/hash.h"
 #include "QF/sys.h"
 
-#include "connection.h"
+#include "qtv/include/connection.h"
 
 static hashtab_t *connections;
 
@@ -79,7 +79,7 @@ connection_compare (const void *_c1, const void *_c2, void *unused)
 void
 Connection_Init (void)
 {
-	connections = Hash_NewTable (1023, 0, connection_free, 0);
+	connections = Hash_NewTable (1023, 0, connection_free, 0, 0);
 	Hash_SetHashCompare (connections, connection_get_hash, connection_compare);
 }
 

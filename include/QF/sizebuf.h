@@ -24,14 +24,14 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef __sizebuf_h
-#define __sizebuf_h
+#ifndef __QF_sizebuf_h
+#define __QF_sizebuf_h
 
 /** \defgroup sizebuf Fixed Size Buffers
 	\ingroup utils
 	Fixed size buffer management
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 
@@ -50,7 +50,8 @@ void SZ_Clear (sizebuf_t *buf);
 void *SZ_GetSpace (sizebuf_t *buf, int length);
 void SZ_Write (sizebuf_t *buf, const void *data, int length);
 void SZ_Print (sizebuf_t *buf, const char *data);	// strcats onto the sizebuf
+void SZ_Dump (sizebuf_t *buf);
 
-//@}
+///@}
 
-#endif // __sizebuf_h
+#endif//__QF_sizebuf_h

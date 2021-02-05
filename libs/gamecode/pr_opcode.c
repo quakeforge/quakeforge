@@ -44,9 +44,11 @@
 #include "QF/progs.h"
 #include "QF/sys.h"
 
-hashtab_t *opcode_table;
+#include "compat.h"
 
-VISIBLE int pr_type_size[ev_type_count] = {
+static hashtab_t *opcode_table;
+
+VISIBLE const pr_ushort_t pr_type_size[ev_type_count] = {
 	1,			// ev_void
 	1,			// ev_string
 	1,			// ev_float
@@ -59,9 +61,11 @@ VISIBLE int pr_type_size[ev_type_count] = {
 	1,			// ev_integer
 	1,			// ev_uinteger
 	0,			// ev_short        value in opcode
+	2,			// ev_double
+	0,			// ev_invalid      not a valid/simple type
 };
 
-VISIBLE const char *pr_type_name[ev_type_count] = {
+VISIBLE const char * const pr_type_name[ev_type_count] = {
 	"void",
 	"string",
 	"float",
@@ -74,6 +78,7 @@ VISIBLE const char *pr_type_name[ev_type_count] = {
 	"integer",
 	"uinteger",
 	"short",
+	"double",
 	"invalid",
 };
 
@@ -93,13 +98,17 @@ VISIBLE const char *pr_type_name[ev_type_count] = {
 // c  operand c
 // x  place holder for P (padding)
 // 0-7 parameter index (for P)
-VISIBLE opcode_t pr_opcodes[] = {
+VISIBLE const opcode_t pr_opcodes[] = {
 	{"<DONE>", "done", OP_DONE, false,	// OP_DONE is actually the same as
 	 ev_entity, ev_field, ev_void,		// OP_RETURN, the types are bogus
 	 PROG_ID_VERSION,
 	 "%Va",
 	},
 
+	{"*", "mul.d", OP_MUL_D, false,
+	 ev_double, ev_double, ev_double,
+	 PROG_VERSION,
+	},
 	{"*", "mul.f", OP_MUL_F, false,
 	 ev_float, ev_float, ev_float,
 	 PROG_ID_VERSION,
@@ -116,6 +125,14 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 ev_vector, ev_float, ev_vector,
 	 PROG_ID_VERSION,
 	},
+	{"*", "mul.dv", OP_MUL_DV, false,
+	 ev_double, ev_vector, ev_vector,
+	 PROG_ID_VERSION,
+	},
+	{"*", "mul.vd", OP_MUL_VD, false,
+	 ev_vector, ev_double, ev_vector,
+	 PROG_ID_VERSION,
+	},
 	{"*", "mul.q", OP_MUL_Q, false,
 	 ev_quat, ev_quat, ev_quat,
 	 PROG_VERSION,
@@ -126,6 +143,14 @@ VISIBLE opcode_t pr_opcodes[] = {
 	},
 	{"*", "mul.qf", OP_MUL_QF, false,
 	 ev_quat, ev_float, ev_quat,
+	 PROG_VERSION,
+	},
+	{"*", "mul.dq", OP_MUL_DQ, false,
+	 ev_double, ev_quat, ev_quat,
+	 PROG_VERSION,
+	},
+	{"*", "mul.qd", OP_MUL_QD, false,
+	 ev_quat, ev_double, ev_quat,
 	 PROG_VERSION,
 	},
 	{"*", "mul.qv", OP_MUL_QV, false,
@@ -143,7 +168,23 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 ev_float, ev_float, ev_float,
 	 PROG_ID_VERSION,
 	},
+	{"/", "div.d", OP_DIV_D, false,
+	 ev_double, ev_double, ev_double,
+	 PROG_VERSION,
+	},
+	{"%", "rem.d", OP_REM_D, false,
+	 ev_double, ev_double, ev_double,
+	 PROG_VERSION,
+	},
+	{"%%", "mod.d", OP_MOD_D, false,
+	 ev_double, ev_double, ev_double,
+	 PROG_VERSION,
+	},
 
+	{"+", "add.d", OP_ADD_D, false,
+	 ev_double, ev_double, ev_double,
+	 PROG_VERSION,
+	},
 	{"+", "add.f", OP_ADD_F, false,
 	 ev_float, ev_float, ev_float,
 	 PROG_ID_VERSION,
@@ -161,6 +202,10 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 PROG_VERSION,
 	},
 
+	{"-", "sub.d", OP_SUB_D, false,
+	 ev_double, ev_double, ev_double,
+	 PROG_VERSION,
+	},
 	{"-", "sub.f", OP_SUB_F, false,
 	 ev_float, ev_float, ev_float,
 	 PROG_ID_VERSION,
@@ -174,6 +219,10 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 PROG_VERSION,
 	},
 
+	{"==", "eq.d", OP_EQ_D, false,
+	 ev_double, ev_double, ev_integer,
+	 PROG_VERSION,
+	},
 	{"==", "eq.f", OP_EQ_F, false,
 	 ev_float, ev_float, ev_integer,
 	 PROG_ID_VERSION,
@@ -199,6 +248,10 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 PROG_ID_VERSION,
 	},
 
+	{"!=", "ne.d", OP_NE_D, false,
+	 ev_double, ev_double, ev_integer,
+	 PROG_VERSION,
+	},
 	{"!=", "ne.f", OP_NE_F, false,
 	 ev_float, ev_float, ev_integer,
 	 PROG_ID_VERSION,
@@ -224,9 +277,17 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 PROG_ID_VERSION,
 	},
 
+	{"<=", "le.d", OP_LE_D,	false,
+	 ev_double, ev_double, ev_integer,
+	 PROG_VERSION,
+	},
 	{"<=", "le.f", OP_LE_F,	false,
 	 ev_float, ev_float, ev_integer,
 	 PROG_ID_VERSION,
+	},
+	{">=", "ge.d", OP_GE_D,	false,
+	 ev_double, ev_double, ev_integer,
+	 PROG_VERSION,
 	},
 	{">=", "ge.f", OP_GE_F,	false,
 	 ev_float, ev_float, ev_integer,
@@ -240,9 +301,17 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 ev_string, ev_string, ev_integer,
 	 PROG_VERSION,
 	},
+	{"<", "lt.d", OP_LT_D,	false,
+	 ev_double, ev_double, ev_integer,
+	 PROG_VERSION,
+	},
 	{"<", "lt.f", OP_LT_F,	false,
 	 ev_float, ev_float, ev_integer,
 	 PROG_ID_VERSION,
+	},
+	{">", "gt.d", OP_GT_D,	false,
+	 ev_double, ev_double, ev_integer,
+	 PROG_VERSION,
 	},
 	{">", "gt.f", OP_GT_F,	false,
 	 ev_float, ev_float, ev_integer,
@@ -261,6 +330,11 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 ev_entity, ev_field, ev_float,
 	 PROG_ID_VERSION,
 	 "%Ga.%Gb(%Ec), %gc",//FIXME %E more flexible?
+	},
+	{".", "load.d", OP_LOAD_D, false,
+	 ev_entity, ev_field, ev_double,
+	 PROG_VERSION,
+	 "%Ga.%Gb(%Ec), %gc",
 	},
 	{".", "load.v", OP_LOAD_V, false,
 	 ev_entity, ev_field, ev_vector,
@@ -303,6 +377,11 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 "%Ga.%Gb(%Ec), %gc",
 	},
 
+	{".", "loadb.d", OP_LOADB_D, false,
+	 ev_pointer, ev_integer, ev_double,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb), %gc",
+	},
 	{".", "loadb.f", OP_LOADB_F, false,
 	 ev_pointer, ev_integer, ev_float,
 	 PROG_VERSION,
@@ -349,6 +428,11 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 "*(%Ga + %Gb), %gc",
 	},
 
+	{".", "loadbi.d", OP_LOADBI_D, false,
+	 ev_pointer, ev_short, ev_double,
+	 PROG_VERSION,
+	 "*(%Ga + %sb), %gc",
+	},
 	{".", "loadbi.f", OP_LOADBI_F, false,
 	 ev_pointer, ev_short, ev_float,
 	 PROG_VERSION,
@@ -406,6 +490,11 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 PROG_VERSION,
 	 "%Ga, %gc",
 	},
+	{"&", "address.d", OP_ADDRESS_D, false,
+	 ev_double, ev_invalid, ev_pointer,
+	 PROG_VERSION,
+	 "%Ga, %gc",
+	},
 	{"&", "address.f", OP_ADDRESS_F, false,
 	 ev_float, ev_invalid, ev_pointer,
 	 PROG_VERSION,
@@ -455,12 +544,12 @@ VISIBLE opcode_t pr_opcodes[] = {
 	{"&", "lea", OP_LEA, false,
 	 ev_pointer, ev_integer, ev_pointer,
 	 PROG_VERSION,
-	 "%Ga, %Gb, %gc",
+	 "(%Ga + %Gb), %gc",
 	},
 	{"&", "leai", OP_LEAI, false,
 	 ev_pointer, ev_short, ev_pointer,
 	 PROG_VERSION,
-	 "%Ga, %sb, %gc",
+	 "(%Ga + %sb), %gc",
 	},
 
 	{"<CONV>", "conv.if", OP_CONV_IF, false,
@@ -473,7 +562,32 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 PROG_VERSION,
 	 "%Ga, %gc",
 	},
+	{"<CONV>", "conv.id", OP_CONV_ID, false,
+	 ev_integer, ev_invalid, ev_double,
+	 PROG_VERSION,
+	 "%Ga, %gc",
+	},
+	{"<CONV>", "conv.di", OP_CONV_DI, false,
+	 ev_double, ev_invalid, ev_integer,
+	 PROG_VERSION,
+	 "%Ga, %gc",
+	},
+	{"<CONV>", "conv.fd", OP_CONV_FD, false,
+	 ev_float, ev_invalid, ev_double,
+	 PROG_VERSION,
+	 "%Ga, %gc",
+	},
+	{"<CONV>", "conv.df", OP_CONV_DF, false,
+	 ev_double, ev_invalid, ev_float,
+	 PROG_VERSION,
+	 "%Ga, %gc",
+	},
 
+	{"=", "store.d", OP_STORE_D, true,
+	 ev_double, ev_double, ev_invalid,
+	 PROG_VERSION,
+	 "%Ga, %gb",
+	},
 	{"=", "store.f", OP_STORE_F, true,
 	 ev_float, ev_float, ev_invalid,
 	 PROG_ID_VERSION,
@@ -520,6 +634,11 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 "%Ga, %gb",
 	},
 
+	{".=", "storep.d", OP_STOREP_D, true,
+	 ev_double, ev_pointer, ev_invalid,
+	 PROG_ID_VERSION,
+	 "%Ga, *%Gb",
+	},
 	{".=", "storep.f", OP_STOREP_F, true,
 	 ev_float, ev_pointer, ev_invalid,
 	 PROG_ID_VERSION,
@@ -566,6 +685,11 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 "%Ga, *%Gb",
 	},
 
+	{".=", "storeb.d", OP_STOREB_D, true,
+	 ev_double, ev_pointer, ev_integer,
+	 PROG_VERSION,
+	 "%Ga, *(%Gb + %Gc)",
+	},
 	{".=", "storeb.f", OP_STOREB_F, true,
 	 ev_float, ev_pointer, ev_integer,
 	 PROG_VERSION,
@@ -612,6 +736,11 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 "%Ga, *(%Gb + %Gc)",
 	},
 
+	{".=", "storebi.d", OP_STOREBI_D, true,
+	 ev_double, ev_pointer, ev_short,
+	 PROG_VERSION,
+	 "%Ga, *(%Gb + %sc)",
+	},
 	{".=", "storebi.f", OP_STOREBI_F, true,
 	 ev_float, ev_pointer, ev_short,
 	 PROG_VERSION,
@@ -670,6 +799,11 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 "",
 	},
 
+	{"!", "not.d", OP_NOT_D, false,
+	 ev_double, ev_invalid, ev_integer,
+	 PROG_VERSION,
+	 "%Ga, %gc",
+	},
 	{"!", "not.f", OP_NOT_F, false,
 	 ev_float, ev_invalid, ev_integer,
 	 PROG_ID_VERSION,
@@ -907,7 +1041,11 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 ev_integer, ev_integer, ev_integer,
 	 PROG_VERSION,
 	},
-	{"%", "mod.i", OP_MOD_I, false,
+	{"%", "rem.i", OP_REM_I, false,
+	 ev_integer, ev_integer, ev_integer,
+	 PROG_VERSION,
+	},
+	{"%%", "mod.i", OP_MOD_I, false,
 	 ev_integer, ev_integer, ev_integer,
 	 PROG_VERSION,
 	},
@@ -920,7 +1058,12 @@ VISIBLE opcode_t pr_opcodes[] = {
 	 PROG_VERSION,
 	},
 
-	{"%", "mod.f", OP_MOD_F, false,
+	{"%", "rem.f", OP_REM_F, false,
+	 ev_float, ev_float, ev_float,
+	 PROG_VERSION,
+	},
+
+	{"%%", "mod.f", OP_MOD_F, false,
 	 ev_float, ev_float, ev_float,
 	 PROG_VERSION,
 	},
@@ -1038,7 +1181,298 @@ VISIBLE opcode_t pr_opcodes[] = {
 	{"<MOVEP>", "movepi", OP_MOVEPI, true,
 	 ev_pointer, ev_short, ev_pointer,
 	 PROG_VERSION,
+	 "%Ga, %sb, %Gc",
+	},
+	{"<MEMSET>", "memseti", OP_MEMSETI, true,
+	 ev_integer, ev_short, ev_void,
+	 PROG_VERSION,
+	 "%Ga, %sb, %gc",
+	},
+	{"<MEMSETP>", "memsetp", OP_MEMSETP, true,
+	 ev_integer, ev_integer, ev_pointer,
+	 PROG_VERSION,
 	 "%Ga, %Gb, %Gc",
+	},
+	{"<MEMSETP>", "memsetpi", OP_MEMSETPI, true,
+	 ev_integer, ev_short, ev_pointer,
+	 PROG_VERSION,
+	 "%Ga, %sb, %Gc",
+	},
+
+	{"<PUSH>", "push.s", OP_PUSH_S, false,
+	 ev_string, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%Ga",
+	},
+	{"<PUSH>", "push.f", OP_PUSH_F, false,
+	 ev_float, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%Ga",
+	},
+	{"<PUSH>", "push.v", OP_PUSH_V, false,
+	 ev_vector, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%Ga",
+	},
+	{"<PUSH>", "push.ent", OP_PUSH_ENT, false,
+	 ev_entity, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%Ga",
+	},
+	{"<PUSH>", "push.fld", OP_PUSH_FLD, false,
+	 ev_field, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%Ga",
+	},
+	{"<PUSH>", "push.fn", OP_PUSH_FN, false,
+	 ev_func, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%Ga",
+	},
+	{"<PUSH>", "push.p", OP_PUSH_P, false,
+	 ev_pointer, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%Ga",
+	},
+	{"<PUSH>", "push.q", OP_PUSH_Q, false,
+	 ev_quat, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%Ga",
+	},
+	{"<PUSH>", "push.i", OP_PUSH_I, false,
+	 ev_integer, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%Ga",
+	},
+
+	{"<PUSH>", "pushb.s", OP_PUSHB_S, false,
+	 ev_pointer, ev_integer, ev_string,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<PUSH>", "pushb.f", OP_PUSHB_F, false,
+	 ev_pointer, ev_integer, ev_float,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<PUSH>", "pushb.v", OP_PUSHB_V, false,
+	 ev_pointer, ev_integer, ev_vector,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<PUSH>", "pushb.ent", OP_PUSHB_ENT, false,
+	 ev_pointer, ev_integer, ev_entity,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<PUSH>", "pushb.fld", OP_PUSHB_FLD, false,
+	 ev_pointer, ev_integer, ev_field,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<PUSH>", "pushb.fn", OP_PUSHB_FN, false,
+	 ev_pointer, ev_integer, ev_func,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<PUSH>", "pushb.p", OP_PUSHB_P, false,
+	 ev_pointer, ev_integer, ev_pointer,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<PUSH>", "pushb.q", OP_PUSHB_Q, false,
+	 ev_pointer, ev_integer, ev_quat,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<PUSH>", "pushb.i", OP_PUSHB_I, false,
+	 ev_pointer, ev_integer, ev_integer,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+
+	{"<PUSH>", "pushbi.s", OP_PUSHBI_S, false,
+	 ev_pointer, ev_short, ev_string,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<PUSH>", "pushbi.f", OP_PUSHBI_F, false,
+	 ev_pointer, ev_short, ev_float,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<PUSH>", "pushbi.v", OP_PUSHBI_V, false,
+	 ev_pointer, ev_short, ev_vector,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<PUSH>", "pushbi.ent", OP_PUSHBI_ENT, false,
+	 ev_pointer, ev_short, ev_entity,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<PUSH>", "pushbi.fld", OP_PUSHBI_FLD, false,
+	 ev_pointer, ev_short, ev_field,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<PUSH>", "pushbi.fn", OP_PUSHBI_FN, false,
+	 ev_pointer, ev_short, ev_func,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<PUSH>", "pushbi.p", OP_PUSHBI_P, false,
+	 ev_pointer, ev_short, ev_pointer,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<PUSH>", "pushbi.q", OP_PUSHBI_Q, false,
+	 ev_pointer, ev_short, ev_quat,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<PUSH>", "pushbi.i", OP_PUSHBI_I, false,
+	 ev_pointer, ev_short, ev_integer,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+
+	{"<POP>", "pop.s", OP_POP_S, false,
+	 ev_string, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%ga",
+	},
+	{"<POP>", "pop.f", OP_POP_F, false,
+	 ev_float, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%ga",
+	},
+	{"<POP>", "pop.v", OP_POP_V, false,
+	 ev_vector, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%ga",
+	},
+	{"<POP>", "pop.ent", OP_POP_ENT, false,
+	 ev_entity, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%ga",
+	},
+	{"<POP>", "pop.fld", OP_POP_FLD, false,
+	 ev_field, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%ga",
+	},
+	{"<POP>", "pop.fn", OP_POP_FN, false,
+	 ev_func, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%ga",
+	},
+	{"<POP>", "pop.p", OP_POP_P, false,
+	 ev_pointer, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%ga",
+	},
+	{"<POP>", "pop.q", OP_POP_Q, false,
+	 ev_quat, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%ga",
+	},
+	{"<POP>", "pop.i", OP_POP_I, false,
+	 ev_integer, ev_invalid, ev_invalid,
+	 PROG_VERSION,
+	 "%ga",
+	},
+
+	{"<POP>", "popb.s", OP_POPB_S, false,
+	 ev_pointer, ev_integer, ev_string,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<POP>", "popb.f", OP_POPB_F, false,
+	 ev_pointer, ev_integer, ev_float,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<POP>", "popb.v", OP_POPB_V, false,
+	 ev_pointer, ev_integer, ev_vector,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<POP>", "popb.ent", OP_POPB_ENT, false,
+	 ev_pointer, ev_integer, ev_entity,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<POP>", "popb.fld", OP_POPB_FLD, false,
+	 ev_pointer, ev_integer, ev_field,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<POP>", "popb.fn", OP_POPB_FN, false,
+	 ev_pointer, ev_integer, ev_func,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<POP>", "popb.p", OP_POPB_P, false,
+	 ev_pointer, ev_integer, ev_pointer,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<POP>", "popb.q", OP_POPB_Q, false,
+	 ev_pointer, ev_integer, ev_quat,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+	{"<POP>", "popb.i", OP_POPB_I, false,
+	 ev_pointer, ev_integer, ev_integer,
+	 PROG_VERSION,
+	 "*(%Ga + %Gb)",
+	},
+
+	{"<POP>", "popbi.s", OP_POPBI_S, false,
+	 ev_pointer, ev_short, ev_string,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<POP>", "popbi.f", OP_POPBI_F, false,
+	 ev_pointer, ev_short, ev_float,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<POP>", "popbi.v", OP_POPBI_V, false,
+	 ev_pointer, ev_short, ev_vector,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<POP>", "popbi.ent", OP_POPBI_ENT, false,
+	 ev_pointer, ev_short, ev_entity,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<POP>", "popbi.fld", OP_POPBI_FLD, false,
+	 ev_pointer, ev_short, ev_field,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<POP>", "popbi.fn", OP_POPBI_FN, false,
+	 ev_pointer, ev_short, ev_func,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<POP>", "popbi.p", OP_POPBI_P, false,
+	 ev_pointer, ev_short, ev_pointer,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<POP>", "popbi.q", OP_POPBI_Q, false,
+	 ev_pointer, ev_short, ev_quat,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
+	},
+	{"<POP>", "popbi.i", OP_POPBI_I, false,
+	 ev_pointer, ev_short, ev_integer,
+	 PROG_VERSION,
+	 "*(%Ga + %sb)",
 	},
 
 	// end of table
@@ -1073,13 +1507,17 @@ PR_Opcode (pr_short_t opcode)
 VISIBLE void
 PR_Opcode_Init (void)
 {
-	opcode_t   *op;
+	const opcode_t *op;
 
-	opcode_table = Hash_NewTable (1021, 0, 0, 0);
+	if (opcode_table) {
+		// already initialized
+		return;
+	}
+	opcode_table = Hash_NewTable (1021, 0, 0, 0, 0);
 	Hash_SetHashCompare (opcode_table, opcode_get_hash, opcode_compare);
 
 	for (op = pr_opcodes; op->name; op++) {
-		Hash_AddElement (opcode_table, op);
+		Hash_AddElement (opcode_table, (void *) op);
 	}
 }
 
@@ -1117,7 +1555,7 @@ check_global (progs_t *pr, dstatement_t *st, opcode_t *op, etype_t type,
 			  unsigned short operand, int check_denorm)
 {
 	const char *msg;
-	ddef_t     *def;
+	pr_def_t   *def;
 
 	switch (type) {
 		case ev_short:
@@ -1192,11 +1630,16 @@ PR_Check_Opcodes (progs_t *pr)
 	opcode_t   *op;
 	dstatement_t *st;
 	int         state_ok = 0;
+	int         pushpop_ok = 0;
 	pr_uint_t   i;
 
 	if (pr->globals.time && pr->globals.self && pr->fields.nextthink != -1
-		&& pr->fields.think != -1 && pr->fields.frame != -1)
+		&& pr->fields.think != -1 && pr->fields.frame != -1) {
 		state_ok = 1;
+	}
+	if (pr->globals.stack) {
+		pushpop_ok = 1;
+	}
 
 	//FIXME need to decide if I really want to always do static bounds checking
 	// the only problem is that it slows progs load a little, but it's the only
@@ -1213,6 +1656,11 @@ PR_Check_Opcodes (progs_t *pr)
 			if ((st->op == OP_STATE || st->op == OP_STATE_F) && !state_ok) {
 				PR_Error (pr, "PR_Check_Opcodes: %s used with missing fields "
 						  "or globals", op->opname);
+			}
+			if ((strequal(op->name, "<PUSH>") || strequal(op->name, "<POP>"))
+				&& !pushpop_ok) {
+				PR_Error (pr, "PR_Check_Opcodes: %s used with missing .stack "
+						  "globals", op->opname);
 			}
 		}
 	} else {
@@ -1266,6 +1714,72 @@ PR_Check_Opcodes (progs_t *pr)
 				case OP_MOVEI:
 					check_global_size (pr, st, op, st->b, st->a);
 					check_global_size (pr, st, op, st->b, st->c);
+					break;
+				case OP_MEMSETI:
+					check_global_size (pr, st, op, st->b, st->c);
+					break;
+				case OP_PUSHB_F:
+				case OP_PUSHB_S:
+				case OP_PUSHB_ENT:
+				case OP_PUSHB_FLD:
+				case OP_PUSHB_FN:
+				case OP_PUSHB_I:
+				case OP_PUSHB_P:
+				case OP_PUSHB_V:
+				case OP_PUSHB_Q:
+				case OP_PUSHBI_F:
+				case OP_PUSHBI_S:
+				case OP_PUSHBI_ENT:
+				case OP_PUSHBI_FLD:
+				case OP_PUSHBI_FN:
+				case OP_PUSHBI_I:
+				case OP_PUSHBI_P:
+				case OP_PUSHBI_V:
+				case OP_PUSHBI_Q:
+					// op->type_c is used for selecting the operator during
+					// compilation, but is invalid when running
+					check_global (pr, st, op, op->type_a, st->a, 1);
+					check_global (pr, st, op, op->type_b, st->b, 1);
+					check_global (pr, st, op, ev_invalid, st->c, 1);
+					break;
+				case OP_POP_F:
+				case OP_POP_FLD:
+				case OP_POP_ENT:
+				case OP_POP_S:
+				case OP_POP_FN:
+				case OP_POP_I:
+				case OP_POP_P:
+				case OP_POP_V:
+				case OP_POP_Q:
+					// don't want to check for denormal floats, otherwise
+					// OP_POP_* could use the defualt rule
+					check_global (pr, st, op, op->type_a, st->a, 0);
+					check_global (pr, st, op, ev_invalid, st->b, 1);
+					check_global (pr, st, op, ev_invalid, st->c, 1);
+					break;
+				case OP_POPB_F:
+				case OP_POPB_S:
+				case OP_POPB_ENT:
+				case OP_POPB_FLD:
+				case OP_POPB_FN:
+				case OP_POPB_I:
+				case OP_POPB_P:
+				case OP_POPB_V:
+				case OP_POPB_Q:
+				case OP_POPBI_F:
+				case OP_POPBI_S:
+				case OP_POPBI_ENT:
+				case OP_POPBI_FLD:
+				case OP_POPBI_FN:
+				case OP_POPBI_I:
+				case OP_POPBI_P:
+				case OP_POPBI_V:
+				case OP_POPBI_Q:
+					// op->type_c is used for selecting the operator during
+					// compilation, but is invalid when running
+					check_global (pr, st, op, op->type_a, st->a, 1);
+					check_global (pr, st, op, op->type_b, st->b, 1);
+					check_global (pr, st, op, ev_invalid, st->c, 1);
 					break;
 				default:
 					check_global (pr, st, op, op->type_a, st->a, 1);

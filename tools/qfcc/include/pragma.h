@@ -33,10 +33,11 @@
 /** \defgroup qfcc_pragma pragma handling
 	\ingroup qfcc
 */
-//@{
+///@{
 
-void pragma (const char *id);
+void pragma_process (void);
+void pragma_add_arg (const char *id);
 
-//@}
+///@}
 
 #endif//pragma_h

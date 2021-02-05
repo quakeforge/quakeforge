@@ -34,7 +34,7 @@
 /** \defgroup qfcc_function Internal function structures.
 	\ingroup qfcc
 */
-//@{
+///@{
 
 #include "QF/pr_comp.h"
 #include "QF/pr_debug.h"
@@ -51,7 +51,7 @@ typedef struct overloaded_function_s {
 	const char *name;				///< source level name of function
 	const char *full_name;			///< progs name of function, with type
 									///< encoding
-	struct type_s *type;			///< type of this function
+	const struct type_s *type;		///< type of this function
 	int         overloaded;			///< is this function overloaded
 	string_t    file;				///< source file of the function
 	int         line;				///< source line of this function
@@ -68,6 +68,7 @@ typedef struct function_s {
 	int                 local_defs;
 	string_t            s_file;		///< source file with definition
 	string_t            s_name;		///< name of function in output
+	const struct type_s *type;		///< function's type without aliases
 	int                 temp_num;	///< number for next temp var
 	struct def_s       *temp_defs[4];	///< freed temp vars (by size)
 	struct def_s       *def;		///< output def holding function number
@@ -79,6 +80,7 @@ typedef struct function_s {
 		scope symbol table's defspace.
 	*/
 	struct symtab_s    *symtab;
+	struct symtab_s    *label_scope;
 	struct reloc_s     *refs;		///< relocation targets for this function
 	struct expr_s      *var_init;
 	const char         *name;		///< nice name for __PRETTY_FUNCTION__
@@ -94,6 +96,7 @@ typedef struct function_s {
 	struct set_s       *global_vars;///< set indicating which vars are global
 	struct statement_s **statements;
 	int                 num_statements;
+	int                 tmpaddr;	///< tmp var "address" for flow analysis
 } function_t;
 
 extern function_t *current_func;
@@ -105,9 +108,9 @@ extern function_t *current_func;
 typedef struct param_s {
 	struct param_s *next;
 	const char *selector;
-	struct type_s *type;		//FIXME redundant
-	const char *name;			//FIXME redundant
-	struct symbol_s *symbol;
+	struct type_s *type;
+	const char *name;
+	struct symbol_s *symbol;	//FIXME what is this for?
 } param_t;
 
 struct expr_s;
@@ -118,8 +121,8 @@ param_t *new_param (const char *selector, struct type_s *type,
 					const char *name);
 param_t *param_append_identifiers (param_t *params, struct symbol_s *idents,
 								   struct type_s *type);
-param_t *_reverse_params (param_t *params, param_t *next);
 param_t *reverse_params (param_t *params);
+param_t *append_params (param_t *params, param_t *more_params);
 param_t *copy_params (param_t *params);
 struct type_s *parse_params (struct type_s *type, param_t *params);
 param_t *check_params (param_t *params);
@@ -140,12 +143,11 @@ function_t *build_code_function (struct symbol_s *fsym,
 								 struct expr_s *statements);
 function_t *build_builtin_function (struct symbol_s *sym,
 									struct expr_s *bi_val, int far);
-void build_function (function_t *f);
 void finish_function (function_t *f);
 void emit_function (function_t *f, struct expr_s *e);
 int function_parms (function_t *f, byte *parm_size);
 void clear_functions (void);
 
-//@}
+///@}
 
 #endif//__function_h

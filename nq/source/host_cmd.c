@@ -50,12 +50,13 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "client.h"
 #include "compat.h"
-#include "host.h"
-#include "server.h"
-#include "sv_progs.h"
 #include "world.h"
+
+#include "nq/include/client.h"
+#include "nq/include/host.h"
+#include "nq/include/server.h"
+#include "nq/include/sv_progs.h"
 
 int         current_skill;
 
@@ -78,7 +79,7 @@ Host_Status_f (void)
 	int         minutes;
 	int         hours = 0;
 	int         j;
-	void        (*print) (const char *fmt, ...);
+	__attribute__((format(printf, 1, 2))) void (*print) (const char *fmt, ...);
 
 	if (cmd_source == src_command) {
 		if (!sv.active) {
@@ -90,7 +91,7 @@ Host_Status_f (void)
 		print = SV_ClientPrintf;
 
 	print ("host:    %s\n", Cvar_VariableString ("hostname"));
-	print ("version: %4.2f\n", PACKAGE_VERSION);
+	print ("version: %4.2s\n", PACKAGE_VERSION);
 	if (tcpipAvailable)
 		print ("tcp/ip:  %s\n", my_tcpip_address);
 	print ("map:     %s\n", sv.name);
@@ -657,6 +658,7 @@ Host_Loadgame_f (void)
 		game = convert_to_game_dict (script);
 	}
 
+	memset (spawn_parms, 0, sizeof (spawn_parms));
 	item = PL_ObjectForKey (game, "spawn_parms");
 	for (i = 0; i < NUM_SPAWN_PARMS; i++) {
 		if (i >= PL_A_NumObjects (item))
@@ -692,7 +694,6 @@ Host_Loadgame_f (void)
 	ED_InitGlobals (&sv_pr_state, PL_ObjectForKey (game, "globals"));
 
 	list = PL_ObjectForKey (game, "entities");
-	entnum = 0;
 	count = PL_A_NumObjects (list);
 	if (count > sv.max_edicts)
 		Host_Error ("too many entities in saved game. adjust max_edicts\n");

@@ -41,11 +41,11 @@
 
 #include <QF/hash.h>
 
-#include "opcodes.h"
-#include "options.h"
-#include "qfcc.h"
-#include "statements.h"
-#include "type.h"
+#include "tools/qfcc/include/opcodes.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/statements.h"
+#include "tools/qfcc/include/type.h"
 
 hashtab_t  *opcode_type_table;
 hashtab_t  *opcode_void_table;
@@ -102,9 +102,9 @@ opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 	int         i;
 
 	search_op.name = name;
-	search_op.type_a = op_a ? op_a->type : ev_invalid;
-	search_op.type_b = op_b ? op_b->type : ev_invalid;
-	search_op.type_c = op_c ? op_c->type : ev_invalid;
+	search_op.type_a = op_a ? low_level_type (op_a->type) : ev_invalid;
+	search_op.type_b = op_b ? low_level_type (op_b->type) : ev_invalid;
+	search_op.type_c = op_c ? low_level_type (op_c->type) : ev_invalid;
 	op = Hash_FindElement (opcode_type_table, &search_op);
 	if (op)
 		return op;
@@ -131,16 +131,17 @@ opcode_free (void *_op, void *unused)
 void
 opcode_init (void)
 {
-	opcode_t   *op, *mop;
+	const opcode_t *op;
+	opcode_t   *mop;
 
 	if (opcode_type_table) {
 		Hash_FlushTable (opcode_void_table);
 		Hash_FlushTable (opcode_type_table);
 	} else {
 		PR_Opcode_Init ();
-		opcode_type_table = Hash_NewTable (1021, 0, opcode_free, 0);
+		opcode_type_table = Hash_NewTable (1021, 0, opcode_free, 0, 0);
 		Hash_SetHashCompare (opcode_type_table, get_hash, compare);
-		opcode_void_table = Hash_NewTable (1021, get_key, 0, 0);
+		opcode_void_table = Hash_NewTable (1021, get_key, 0, 0, 0);
 	}
 	for (op = pr_opcodes; op->name; op++) {
 		if (op->min_version > options.code.progsversion)

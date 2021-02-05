@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __vid_h_
-#define __vid_h_
+#ifndef __QF_vid_h
+#define __QF_vid_h
 
 #include "QF/qtypes.h"
 #include "QF/vrect.h"
@@ -89,4 +89,4 @@ void VID_Init (byte *palette, byte *colormap);
 void VID_Shutdown (void);
 void VID_SetCaption (const char *text);
 
-#endif	// __vid_h_
+#endif//__QF_vid_h

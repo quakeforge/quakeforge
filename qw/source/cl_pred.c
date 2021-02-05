@@ -34,11 +34,12 @@
 #include "QF/cvar.h"
 #include "QF/keys.h"
 
-#include "qw/bothdefs.h"
 #include "compat.h"
-#include "cl_ents.h"
-#include "cl_pred.h"
-#include "client.h"
+
+#include "qw/bothdefs.h"
+#include "qw/include/cl_ents.h"
+#include "qw/include/cl_pred.h"
+#include "qw/include/client.h"
 #include "qw/pmove.h"
 
 cvar_t     *cl_predict;

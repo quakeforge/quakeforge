@@ -388,8 +388,7 @@ ObjectHash_Construct (gib_object_t *obj)
 {
 	ObjectHash_t *data = malloc (sizeof (ObjectHash_t));
 
-	data->objects = Hash_NewTable (1024, ObjRef_Get_Key, ObjRef_Free,
-			NULL);
+	data->objects = Hash_NewTable (1024, ObjRef_Get_Key, ObjRef_Free, NULL, 0);
 
 	return data;
 }
@@ -445,7 +444,7 @@ ObjectHash_Get_f (gib_object_t *obj, gib_method_t *method, void *data,
 	if ((refs = (ObjRef_t **) Hash_FindList (objh->objects,
 					mesg.argv[1]))) {
 		for (r = refs, len = 0; *r; r++, len++);
-		reply = malloc (sizeof (char **) * len);
+		reply = malloc (sizeof (char *) * len);
 		for (r = refs, i = 0; *r; r++, i++)
 			reply[i] = (*r)->obj->handstr;
 		GIB_Reply (obj, mesg, len, reply);

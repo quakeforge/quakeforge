@@ -25,8 +25,8 @@
 
 */
 
-#ifndef _MODEL_H
-#define _MODEL_H
+#ifndef __QF_model_h
+#define __QF_model_h
 
 #include "QF/qtypes.h"
 #include "QF/bspfile.h"
@@ -90,7 +90,7 @@ typedef struct instsurf_s {
 } instsurf_t;
 
 typedef struct texture_s {
-	char		name[16];
+	char		*name;
 	unsigned int	width, height;
 	int			gl_texturenum;
 	int			gl_fb_texturenum;
@@ -433,7 +433,7 @@ typedef struct model_s {
 
 // ============================================================================
 
-extern float RadiusFromBounds (const vec3_t mins, const vec3_t maxs);
+extern float RadiusFromBounds (const vec3_t mins, const vec3_t maxs) __attribute__((pure));
 void	Mod_Init (void);
 void	Mod_Init_Cvars (void);
 void	Mod_ClearAll (void);
@@ -441,11 +441,11 @@ model_t *Mod_ForName (const char *name, qboolean crash);
 void	*Mod_Extradata (model_t *mod);	// handles caching
 void	Mod_TouchModel (const char *name);
 
-mleaf_t *Mod_PointInLeaf (const vec3_t p, model_t *model);
+mleaf_t *Mod_PointInLeaf (const vec3_t p, model_t *model) __attribute__((pure));
 byte	*Mod_LeafPVS (mleaf_t *leaf, model_t *model);
 model_t	*Mod_FindName (const char *name);
 int     Mod_CalcFullbright (byte *in, byte *out, int pixels);
-int     Mod_Fullbright (byte * skin, int width, int height, char *name);
+int     Mod_Fullbright (byte * skin, int width, int height, const char *name);
 
 void    *Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame,
 							 int extra);
@@ -468,4 +468,4 @@ extern byte *mod_base;
 extern byte mod_novis[MAX_MAP_LEAFS / 8];
 extern int mod_lightmap_bytes;
 
-#endif	// _MODEL_H
+#endif//__QF_model_h

@@ -90,8 +90,8 @@
 
 #include "compat.h"
 
-static void Sys_StdPrintf (const char *fmt, va_list args);
-static void Sys_ErrPrintf (const char *fmt, va_list args);
+static void Sys_StdPrintf (const char *fmt, va_list args) __attribute__((format(printf, 1, 0)));
+static void Sys_ErrPrintf (const char *fmt, va_list args) __attribute__((format(printf, 1, 0)));
 
 VISIBLE cvar_t *sys_nostdout;
 VISIBLE cvar_t *sys_extrasleep;
@@ -103,9 +103,23 @@ int         sys_checksum;
 static sys_printf_t sys_std_printf_function = Sys_StdPrintf;
 static sys_printf_t sys_err_printf_function = Sys_ErrPrintf;
 
+#ifndef _WIN32
+static struct sigaction save_hup;
+static struct sigaction save_quit;
+static struct sigaction save_trap;
+static struct sigaction save_iot;
+static struct sigaction save_bus;
+#endif
+static struct sigaction save_int;
+static struct sigaction save_ill;
+static struct sigaction save_segv;
+static struct sigaction save_term;
+static struct sigaction save_fpe;
+
 typedef struct shutdown_list_s {
 	struct shutdown_list_s *next;
-	void (*func)(void);
+	void      (*func) (void *);
+	void       *data;
 } shutdown_list_t;
 
 typedef struct error_handler_s {
@@ -126,18 +140,18 @@ qboolean    stdin_ready;
 
 /* The translation table between the graphical font and plain ASCII  --KB */
 VISIBLE const char sys_char_map[256] = {
-	'\0', '#', '#', '#', '#', '.', '#', '#',
-	'#', 9, 10, '#', ' ', 13, '.', '.',
+      0, '#', '#', '#', '#', '.', '#', '#',
+	'#',   9,  10, '#', ' ',  13, '.', '.',
 	'[', ']', '0', '1', '2', '3', '4', '5',
 	'6', '7', '8', '9', '.', '<', '=', '>',
-	' ', '!', '"', '#', '$', '%', '&', '\'',
+	' ', '!', '"', '#', '$', '%', '&','\'',
 	'(', ')', '*', '+', ',', '-', '.', '/',
 	'0', '1', '2', '3', '4', '5', '6', '7',
 	'8', '9', ':', ';', '<', '=', '>', '?',
 	'@', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
 	'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
 	'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
-	'X', 'Y', 'Z', '[', '\\', ']', '^', '_',
+	'X', 'Y', 'Z', '[','\\', ']', '^', '_',
 	'`', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
 	'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
 	'p', 'q', 'r', 's', 't', 'u', 'v', 'w',
@@ -147,14 +161,14 @@ VISIBLE const char sys_char_map[256] = {
 	'#', '#', ' ', '#', ' ', '>', '.', '.',
 	'[', ']', '0', '1', '2', '3', '4', '5',
 	'6', '7', '8', '9', '.', '<', '=', '>',
-	' ', '!', '"', '#', '$', '%', '&', '\'',
+	' ', '!', '"', '#', '$', '%', '&','\'',
 	'(', ')', '*', '+', ',', '-', '.', '/',
 	'0', '1', '2', '3', '4', '5', '6', '7',
 	'8', '9', ':', ';', '<', '=', '>', '?',
 	'@', 'A', 'B', 'C', 'D', 'E', 'F', 'G',
 	'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O',
 	'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W',
-	'X', 'Y', 'Z', '[', '\\', ']', '^', '_',
+	'X', 'Y', 'Z', '[','\\', ']', '^', '_',
 	'`', 'a', 'b', 'c', 'd', 'e', 'f', 'g',
 	'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o',
 	'p', 'q', 'r', 's', 't', 'u', 'v', 'w',
@@ -240,16 +254,20 @@ Sys_FileExists (const char *path)
 	for want of a better name, but it sets the function pointer for the
 	actual implementation of Sys_Printf.
 */
-VISIBLE void
+VISIBLE sys_printf_t
 Sys_SetStdPrintf (sys_printf_t func)
 {
+	sys_printf_t prev = sys_std_printf_function;
 	sys_std_printf_function = func;
+	return prev;
 }
 
-VISIBLE void
+VISIBLE sys_printf_t
 Sys_SetErrPrintf (sys_printf_t func)
 {
+	sys_printf_t prev = sys_err_printf_function;
 	sys_err_printf_function = func;
+	return prev;
 }
 
 void
@@ -488,7 +506,7 @@ Sys_Shutdown (void)
 	shutdown_list_t *t;
 
 	while (shutdown_list) {
-		shutdown_list->func ();
+		shutdown_list->func (shutdown_list->data);
 		t = shutdown_list;
 		shutdown_list = shutdown_list->next;
 		free (t);
@@ -567,7 +585,7 @@ Sys_Error (const char *error, ...)
 }
 
 VISIBLE void
-Sys_RegisterShutdown (void (*func) (void))
+Sys_RegisterShutdown (void (*func) (void *), void *data)
 {
 	shutdown_list_t *p;
 	if (!func)
@@ -576,6 +594,7 @@ Sys_RegisterShutdown (void (*func) (void))
 	if (!p)
 		Sys_Error ("Sys_RegisterShutdown: insufficient memory");
 	p->func = func;
+	p->data = data;
 	p->next = shutdown_list;
 	shutdown_list = p;
 }
@@ -798,18 +817,22 @@ Sys_PopSignalHook (void)
 	}
 }
 
-static void
+static void __attribute__((noreturn))
 aiee (int sig)
 {
 	printf ("AIEE, signal %d in shutdown code, giving up\n", sig);
-	longjmp (aiee_abort, 1);
+	siglongjmp (aiee_abort, 1);
 }
 
 static void
-signal_handler (int sig)
+signal_handler (int sig, siginfo_t *info, void *ucontext)
 {
 	int volatile recover = 0;	// volatile for longjump
+	static volatile int in_signal_handler = 0;
 
+	if (in_signal_handler) {
+		aiee (sig);
+	}
 	printf ("Received signal %d, exiting...\n", sig);
 
 	switch (sig) {
@@ -817,48 +840,28 @@ signal_handler (int sig)
 		case SIGTERM:
 #ifndef _WIN32
 		case SIGHUP:
-			signal (SIGHUP, SIG_DFL);
+			sigaction (SIGHUP,  &save_hup,  0);
 #endif
-			signal (SIGINT, SIG_DFL);
-			signal (SIGTERM, SIG_DFL);
+			sigaction (SIGINT,  &save_int,  0);
+			sigaction (SIGTERM, &save_term, 0);
 			Sys_Quit ();
 		default:
-#ifndef _WIN32
-			signal (SIGQUIT, aiee);
-			signal (SIGTRAP, aiee);
-			signal (SIGIOT, aiee);
-			signal (SIGBUS, aiee);
-#endif
-			signal (SIGILL, aiee);
-			signal (SIGSEGV, aiee);
-			signal (SIGFPE, aiee);
-
-			if (!setjmp (aiee_abort)) {
+			if (!sigsetjmp (aiee_abort, 1)) {
 				if (signal_hook)
 					recover = signal_hook (sig, signal_hook_data);
 				Sys_Shutdown ();
 			}
 
-			if (recover) {
+			if (!recover) {
 #ifndef _WIN32
-				signal (SIGQUIT, signal_handler);
-				signal (SIGTRAP, signal_handler);
-				signal (SIGIOT, signal_handler);
-				signal (SIGBUS, signal_handler);
+				sigaction (SIGQUIT, &save_quit, 0);
+				sigaction (SIGTRAP, &save_trap, 0);
+				sigaction (SIGIOT,  &save_iot,  0);
+				sigaction (SIGBUS,  &save_bus,  0);
 #endif
-				signal (SIGILL, signal_handler);
-				signal (SIGSEGV, signal_handler);
-				signal (SIGFPE, signal_handler);
-			} else {
-#ifndef _WIN32
-				signal (SIGQUIT, SIG_DFL);
-				signal (SIGTRAP, SIG_DFL);
-				signal (SIGIOT, SIG_DFL);
-				signal (SIGBUS, SIG_DFL);
-#endif
-				signal (SIGILL, SIG_DFL);
-				signal (SIGSEGV, SIG_DFL);
-				signal (SIGFPE, SIG_DFL);
+				sigaction (SIGILL,  &save_ill,  0);
+				sigaction (SIGSEGV, &save_segv, 0);
+				sigaction (SIGFPE,  &save_fpe,  0);
 			}
 	}
 }
@@ -867,18 +870,21 @@ VISIBLE void
 Sys_Init (void)
 {
 	// catch signals
+	struct sigaction action = {};
+	action.sa_flags = SA_SIGINFO;
+	action.sa_sigaction = signal_handler;
 #ifndef _WIN32
-	signal (SIGHUP, signal_handler);
-	signal (SIGQUIT, signal_handler);
-	signal (SIGTRAP, signal_handler);
-	signal (SIGIOT, signal_handler);
-	signal (SIGBUS, signal_handler);
+	sigaction (SIGHUP,  &action, &save_hup);
+	sigaction (SIGQUIT, &action, &save_quit);
+	sigaction (SIGTRAP, &action, &save_trap);
+	sigaction (SIGIOT,  &action, &save_iot);
+	sigaction (SIGBUS,  &action, &save_bus);
 #endif
-	signal (SIGINT, signal_handler);
-	signal (SIGILL, signal_handler);
-	signal (SIGSEGV, signal_handler);
-	signal (SIGTERM, signal_handler);
-	signal (SIGFPE, signal_handler);
+	sigaction (SIGINT,  &action, &save_int);
+	sigaction (SIGILL,  &action, &save_ill);
+	sigaction (SIGSEGV, &action, &save_segv);
+	sigaction (SIGTERM, &action, &save_term);
+	sigaction (SIGFPE,  &action, &save_fpe);
 
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();

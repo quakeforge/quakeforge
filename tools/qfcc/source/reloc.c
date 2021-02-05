@@ -41,15 +41,15 @@
 
 #include "QF/alloc.h"
 
-#include "codespace.h"
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "expr.h"
-#include "function.h"
-#include "qfcc.h"
-#include "reloc.h"
+#include "tools/qfcc/include/codespace.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/reloc.h"
 
 static reloc_t *refs_freelist;
 
@@ -210,7 +210,7 @@ reloc_op_def_ofs (def_t *def, int offset, int field)
 }
 
 void
-reloc_def_def (def_t *def, def_t *location)
+reloc_def_def (def_t *def, const def_t *location)
 {
 	reloc_t    *ref;
 
@@ -221,7 +221,7 @@ reloc_def_def (def_t *def, def_t *location)
 }
 
 void
-reloc_def_def_ofs (def_t *def, def_t *location)
+reloc_def_def_ofs (def_t *def, const def_t *location)
 {
 	reloc_t    *ref;
 
@@ -232,7 +232,7 @@ reloc_def_def_ofs (def_t *def, def_t *location)
 }
 
 void
-reloc_def_func (function_t *func, def_t *location)
+reloc_def_func (function_t *func, const def_t *location)
 {
 	reloc_t    *ref;
 
@@ -243,7 +243,7 @@ reloc_def_func (function_t *func, def_t *location)
 }
 
 void
-reloc_def_string (def_t *location)
+reloc_def_string (const def_t *location)
 {
 	reloc_t    *ref;
 
@@ -254,7 +254,7 @@ reloc_def_string (def_t *location)
 }
 
 void
-reloc_def_field (def_t *def, def_t *location)
+reloc_def_field (def_t *def, const def_t *location)
 {
 	reloc_t    *ref;
 
@@ -265,7 +265,7 @@ reloc_def_field (def_t *def, def_t *location)
 }
 
 void
-reloc_def_field_ofs (def_t *def, def_t *location)
+reloc_def_field_ofs (def_t *def, const def_t *location)
 {
 	reloc_t    *ref;
 
@@ -276,7 +276,7 @@ reloc_def_field_ofs (def_t *def, def_t *location)
 }
 
 void
-reloc_def_op (ex_label_t *label, def_t *location)
+reloc_def_op (const ex_label_t *label, const def_t *location)
 {
 	reloc_t    *ref;
 

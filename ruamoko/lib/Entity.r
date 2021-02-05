@@ -1,15 +1,15 @@
-#include "Entity.h"
+#include <Entity.h>
 
-#include "debug.h"
-#include "entities.h"
-#include "plist.h"
-#include "script.h"
-#include "string.h"
+#include <debug.h>
+#include <entities.h>
+#include <plist.h>
+#include <script.h>
+#include <string.h>
 
 typedef void () void_function;
 
 int PR_SetField (entity ent, string field, string value) = #0;
-function PR_FindFunction (string func) = #0;
+@function PR_FindFunction (string func) = #0;
 
 @static void ParseEntities (string ent_data);
 
@@ -66,7 +66,7 @@ function PR_FindFunction (string func) = #0;
 	local int count;
 	local string field, value;
 	local plitem_t keys;
-	local function func;
+	local @function func;
 	local Entity *e;
 
 	classname = PL_String (PL_ObjectForKey (dict, "classname"));

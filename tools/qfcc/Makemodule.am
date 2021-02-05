@@ -1,0 +1,4 @@
+include tools/qfcc/include/Makemodule.am
+include tools/qfcc/source/Makemodule.am
+include tools/qfcc/doc/Makemodule.am
+include tools/qfcc/test/Makemodule.am

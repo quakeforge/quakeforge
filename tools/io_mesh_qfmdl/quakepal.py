@@ -1,4 +1,27 @@
-palette = (
+# vim:ts=4:et
+# ##### BEGIN GPL LICENSE BLOCK #####
+#
+#  This program is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU General Public License
+#  as published by the Free Software Foundation; either version 2
+#  of the License, or (at your option) any later version.
+#
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
+#
+#  You should have received a copy of the GNU General Public License
+#  along with this program; if not, write to the Free Software Foundation,
+#  Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#
+# ##### END GPL LICENSE BLOCK #####
+
+# <pep8 compliant>
+
+from struct import unpack
+
+default_palette = (
     (0x00, 0x00, 0x00),
     (0x0f, 0x0f, 0x0f),
     (0x1f, 0x1f, 0x1f),
@@ -256,3 +279,23 @@ palette = (
     (0xff, 0xff, 0xff),
     (0x9f, 0x5b, 0x53),
 )
+
+palette = default_palette
+
+def load_palette(filepath):
+    if not filepath:
+        palette = default_palette
+    else:
+        try:
+            f = open(filepath, "rb")
+            pal = f.read(768)
+            if len(pal) < 768:
+                pal = pal + b'\0' * (768 - len(pal))
+            palette = []
+            for i in range(256):
+                palette.append(unpack("<3B", pal[i * 3 : i * 3 + 3]))
+            palette = tuple(palette)
+        except IOError:
+            palette = default_palette
+            return None
+    return palette

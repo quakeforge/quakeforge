@@ -38,9 +38,7 @@
 
 #include "QF/dstring.h"
 #include "QF/progs.h"
-#include "QF/quakefs.h"
-#include "QF/va.h"
-#include "QF/zone.h"
+#include "QF/quakeio.h"
 
 #include "rua_internal.h"
 
@@ -79,7 +77,7 @@ handle_get (qfile_resources_t *res, int index)
 	PR_RESGET(res->handle_map, index);
 }
 
-static inline int
+static inline int __attribute__((pure))
 handle_index (qfile_resources_t *res, qfile_t *handle)
 {
 	PR_RESINDEX(res->handle_map, handle);

@@ -91,7 +91,7 @@ GLF_FindFunctions (void)
   It takes a bit of care to be fool-proof about parsing an OpenGL extensions
   string. Don't be fooled by sub-strings, etc.
 */
-static qboolean
+static __attribute__((pure)) qboolean
 QFGL_ParseExtensionList (const GLubyte *list, const char *name)
 {
 	const char *start;

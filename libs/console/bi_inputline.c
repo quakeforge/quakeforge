@@ -83,7 +83,7 @@ il_data_get (il_resources_t *res, unsigned index)
 	PR_RESGET (res->line_map, index);
 }
 
-static inline int
+static inline int __attribute__((pure))
 il_data_index (il_resources_t *res, il_data_t *line)
 {
 	PR_RESINDEX (res->line_map, line);
@@ -130,9 +130,11 @@ bi_inputline_enter (inputline_t *il)
 		P_POINTER (pr, 0) = data->data[0];
 		P_POINTER (pr, 1) = data->data[1];
 		P_STRING (pr, 2) = PR_SetTempString (pr, line);
+		pr->pr_argc = 3;
 	} else {
 		P_STRING (pr, 0) = PR_SetTempString (pr, line);
 		P_POINTER (pr, 1) = data->data[0];
+		pr->pr_argc = 2;
 	}
 	PR_ExecuteProgram (pr, data->enter);
 	PR_PopFrame (pr);

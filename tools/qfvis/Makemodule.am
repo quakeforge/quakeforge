@@ -1,0 +1,4 @@
+include tools/qfvis/include/Makemodule.am
+include tools/qfvis/source/Makemodule.am
+
+man_MANS +=	tools/qfvis/qfvis.1

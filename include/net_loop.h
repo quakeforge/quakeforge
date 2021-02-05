@@ -34,7 +34,7 @@
 /** \defgroup nq-loop NetQuake loopback network driver.
 	\ingroup nq-nd
 */
-//@{
+///@{
 
 int			Loop_Init (void);
 void		Loop_Listen (qboolean state);
@@ -49,6 +49,6 @@ qboolean	Loop_CanSendUnreliableMessage (qsocket_t *sock);
 void		Loop_Close (qsocket_t *sock);
 void		Loop_Shutdown (void);
 
-//@}
+///@}
 
 #endif//__net_loop_h

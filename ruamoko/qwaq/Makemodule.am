@@ -1,0 +1,149 @@
+QWAQ_LIBS=@QWAQ_LIBS@
+QWAQ_DEPS=@QWAQ_DEPS@
+QWAQ_INCS=@QWAQ_INCS@
+
+noinst_PROGRAMS += @QWAQ_TARGETS@ ruamoko/qwaq/qwaq-app.dat$(EXEEXT) ruamoko/qwaq/gcd.dat$(EXEEXT)
+
+qwaq_app_dat_src= \
+	ruamoko/qwaq/qwaq-app.r	\
+	ruamoko/qwaq/debugger/views/basicview.r	\
+	ruamoko/qwaq/debugger/views/defview.r	\
+	ruamoko/qwaq/debugger/views/doubleview.r	\
+	ruamoko/qwaq/debugger/views/entityview.r	\
+	ruamoko/qwaq/debugger/views/fieldview.r	\
+	ruamoko/qwaq/debugger/views/floatview.r	\
+	ruamoko/qwaq/debugger/views/funcview.r	\
+	ruamoko/qwaq/debugger/views/intview.r	\
+	ruamoko/qwaq/debugger/views/nameview.r	\
+	ruamoko/qwaq/debugger/views/pointerview.r\
+	ruamoko/qwaq/debugger/views/quatview.r	\
+	ruamoko/qwaq/debugger/views/stringview.r	\
+	ruamoko/qwaq/debugger/views/uintview.r	\
+	ruamoko/qwaq/debugger/views/vectorview.r	\
+	ruamoko/qwaq/debugger/views/voidview.r	\
+	ruamoko/qwaq/debugger/debug.r	\
+	ruamoko/qwaq/debugger/debugger.r	\
+	ruamoko/qwaq/debugger/localsdata.r	\
+	ruamoko/qwaq/debugger/typeencodings.r	\
+	ruamoko/qwaq/editor/editbuffer.r	\
+	ruamoko/qwaq/editor/editor.r	\
+	ruamoko/qwaq/ui/button.r	\
+	ruamoko/qwaq/ui/draw.r	\
+	ruamoko/qwaq/ui/garray.r	\
+	ruamoko/qwaq/ui/group.r	\
+	ruamoko/qwaq/ui/listener.r	\
+	ruamoko/qwaq/ui/proxyview.r	\
+	ruamoko/qwaq/ui/rect.r	\
+	ruamoko/qwaq/ui/scrollbar.r	\
+	ruamoko/qwaq/ui/tableview.r	\
+	ruamoko/qwaq/ui/textcontext.r	\
+	ruamoko/qwaq/ui/titlebar.r	\
+	ruamoko/qwaq/ui/view.r	\
+	ruamoko/qwaq/ui/window.r	\
+	$e
+
+#FIXME this coupling is horrible
+qwaq_curses_libs= \
+	libs/video/targets/libvid_common.la \
+	libs/console/libQFconsole.la \
+	libs/gib/libQFgib.la
+
+ruamoko_qwaq_qwaq_curses_SOURCES= \
+	ruamoko/qwaq/builtins/main.c \
+	ruamoko/qwaq/builtins/curses.c \
+	ruamoko/qwaq/builtins/debug.c \
+	ruamoko/qwaq/builtins/editbuffer.c \
+	ruamoko/qwaq/builtins/input.c \
+	$e
+
+ruamoko_qwaq_qwaq_curses_LDADD= $(qwaq_curses_libs) $(QWAQ_LIBS) \
+				$(PANEL_LIBS) $(CURSES_LIBS) $(PTHREAD_LDFLAGS) $(DL_LIBS)
+ruamoko_qwaq_qwaq_curses_LDFLAGS=
+ruamoko_qwaq_qwaq_curses_DEPENDENCIES= $(qwaq_curses_libs) $(QWAQ_DEPS)
+
+qwaq_cl_plugin_libs= \
+	@client_static_plugin_libs@
+
+qwaq_client_libs= \
+	$(top_builddir)/libs/console/libQFconsole.la \
+	$(top_builddir)/libs/video/targets/libQFjs.la \
+	$(top_builddir)/libs/audio/libQFcd.la \
+	$(top_builddir)/libs/audio/libQFsound.la \
+	$(top_builddir)/libs/image/libQFimage.la
+
+qwaq_x11_libs= \
+	$(qwaq_cl_plugin_libs) \
+	$(top_builddir)/libs/video/renderer/libQFrenderer.la \
+	$(top_builddir)/libs/models/libQFmodels.la \
+	$(top_builddir)/libs/video/targets/libQFx11.la \
+	$(qwaq_client_libs) \
+	$(top_builddir)/libs/gib/libQFgib.la
+ruamoko_qwaq_qwaq_x11_SOURCES=ruamoko/qwaq/builtins/qwaq.c ruamoko/qwaq/builtins/qwaq-bi.c
+ruamoko_qwaq_qwaq_x11_LDADD= $(qwaq_x11_libs) $(QWAQ_LIBS) \
+				$(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
+				$(X_EXTRA_LIBS) $(X_SHM_LIB) $(DL_LIBS)
+ruamoko_qwaq_qwaq_x11_LDFLAGS=
+ruamoko_qwaq_qwaq_x11_DEPENDENCIES= $(qwaq_x11_libs) $(QWAQ_DEPS)
+
+ruamoko_qwaq_qwaq_app_dat_SOURCES=$(qwaq_app_dat_src)
+ruamoko_qwaq_qwaq_app_obj=$(ruamoko_qwaq_qwaq_app_dat_SOURCES:.r=.o)
+ruamoko_qwaq_qwaq_app_dep=$(call qcautodep,$(ruamoko_qwaq_qwaq_app_dat_SOURCES:.o=.Qo))
+ruamoko/qwaq/qwaq-app.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_app_obj) $(QFCC_DEP) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
+	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_qwaq_app_obj) -lcsqc -lr
+include $(ruamoko_qwaq_qwaq_app_dep) # am--include-marker
+r_depfiles_remade += $(ruamoko_qwaq_qwaq_app_dep)
+
+ruamoko_qwaq_gcd_dat_SOURCES=ruamoko/qwaq/gcd.r
+ruamoko_qwaq_gcd_obj=$(ruamoko_qwaq_gcd_dat_SOURCES:.r=.o)
+ruamoko_qwaq_gcd_dep=$(call qcautodep,$(ruamoko_qwaq_gcd_dat_SOURCES:.o=.Qo))
+ruamoko/qwaq/gcd.dat$(EXEEXT): $(ruamoko_qwaq_gcd_obj) $(QFCC_DEP) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
+	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_gcd_obj) -lcsqc -lr
+include $(ruamoko_qwaq_gcd_dep) # am--include-marker
+r_depfiles_remade += $(ruamoko_qwaq_gcd_dep)
+
+EXTRA_PROGRAMS += ruamoko/qwaq/qwaq-curses ruamoko/qwaq/qwaq-x11
+EXTRA_DIST += \
+	$(qwaq_dat_src) \
+	ruamoko/qwaq/debugger/debug.h \
+	ruamoko/qwaq/debugger/debugger.h \
+	ruamoko/qwaq/debugger/localsdata.h \
+	ruamoko/qwaq/debugger/typeencodings.h \
+	ruamoko/qwaq/debugger/views/basicview.h \
+	ruamoko/qwaq/debugger/views/defview.h \
+	ruamoko/qwaq/debugger/views/doubleview.h \
+	ruamoko/qwaq/debugger/views/entityview.h \
+	ruamoko/qwaq/debugger/views/fieldview.h \
+	ruamoko/qwaq/debugger/views/floatview.h \
+	ruamoko/qwaq/debugger/views/funcview.h \
+	ruamoko/qwaq/debugger/views/intview.h \
+	ruamoko/qwaq/debugger/views/nameview.h \
+	ruamoko/qwaq/debugger/views/pointerview.h \
+	ruamoko/qwaq/debugger/views/quatview.h \
+	ruamoko/qwaq/debugger/views/stringview.h \
+	ruamoko/qwaq/debugger/views/uintview.h \
+	ruamoko/qwaq/debugger/views/vectorview.h \
+	ruamoko/qwaq/debugger/views/voidview.h \
+	ruamoko/qwaq/editor/editbuffer.h \
+	ruamoko/qwaq/editor/editor.h \
+	ruamoko/qwaq/qwaq-app.h \
+	ruamoko/qwaq/qwaq.h \
+	ruamoko/qwaq/ui/button.h \
+	ruamoko/qwaq/ui/color.h \
+	ruamoko/qwaq/ui/curses.h \
+	ruamoko/qwaq/ui/draw.h \
+	ruamoko/qwaq/ui/event.h \
+	ruamoko/qwaq/ui/garray.h \
+	ruamoko/qwaq/ui/group.h \
+	ruamoko/qwaq/ui/listener.h \
+	ruamoko/qwaq/ui/proxyview.h \
+	ruamoko/qwaq/ui/rect.h \
+	ruamoko/qwaq/ui/scrollbar.h \
+	ruamoko/qwaq/ui/tableview.h \
+	ruamoko/qwaq/ui/textcontext.h \
+	ruamoko/qwaq/ui/titlebar.h \
+	ruamoko/qwaq/ui/view.h \
+	ruamoko/qwaq/ui/window.h
+CLEANFILES += \
+	ruamoko/qwaq/qwaq-curses.log \
+	ruamoko/qwaq/*.dat \
+	ruamoko/qwaq/*.sym

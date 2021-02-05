@@ -168,7 +168,7 @@ SCR_CalcRefdef (void)
 	vr_funcs->R_ViewChanged (vid.aspect);
 }
 
-static float
+static float __attribute__((pure))
 CalcFov (float fov_x, float width, float height)
 {
 	float       a, x;

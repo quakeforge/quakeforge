@@ -48,7 +48,6 @@ typedef struct {
 	script_t    script;
 	string_t    dstr;
 	progs_t    *pr;
-	string_t    err_msg;
 } rua_script_t;
 
 typedef struct {
@@ -79,7 +78,7 @@ script_get (script_resources_t *res, int index)
 	PR_RESGET(res->scripts, index);
 }
 
-static inline int
+static inline int __attribute__((pure))
 script_index (script_resources_t *res, rua_script_t *script)
 {
 	PR_RESINDEX(res->scripts, script);
@@ -93,13 +92,6 @@ bi_script_clear (progs_t *pr, void *data)
 }
 
 static void
-bi_script_error (script_t *_script, const char *msg)
-{
-	rua_script_t *script = (rua_script_t *)_script;
-	script->err_msg = PR_SetString (script->pr, msg);
-}
-
-static void
 bi_Script_New (progs_t *pr)
 {
 	script_resources_t *res = PR_Resources_Find (pr, "Script");
@@ -110,7 +102,6 @@ bi_Script_New (progs_t *pr)
 
 	script->dstr = PR_NewMutableString (pr);
 	script->script.token = PR_GetMutableString (pr, script->dstr);
-	script->script.error = bi_script_error;
 	script->pr = pr;
 	R_INT (pr) = script_index (res, script);
 }
@@ -180,8 +171,8 @@ bi_Script_Error (progs_t *pr)
 
 	if (!script)
 		PR_RunError (pr, "invalid script handle");
-	R_STRING (pr) = script->err_msg;
-	script->err_msg = 0;
+	R_STRING (pr) = PR_SetString (pr, script->script.error);
+	script->script.error = 0;
 }
 
 static void

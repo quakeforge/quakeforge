@@ -56,4 +56,4 @@ void ColorCache_Delete (colcache_t *cache);
 byte ConvertColor (const byte *rgb, const byte *pal, colcache_t *cache);
 tex_t *ConvertImage (const tex_t *tex, const byte *pal);
 
-#endif //__QF_image_h
+#endif//__QF_image_h

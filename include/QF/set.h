@@ -36,7 +36,7 @@
 /**	\defgroup set Set handling
 	\ingroup utils
 */
-//@{
+///@{
 
 //FIXME other archs
 #ifdef __x86_64__
@@ -251,19 +251,19 @@ set_t *set_empty (set_t *set);
 */
 set_t *set_everything (set_t *set);
 
-/** Test if a set is the set of everything.
+/** Test if a set is the empty set.
 
 	\param set		The set to test.
 	\return			1 if \a set is empty (non-inverted).
 */
-int set_is_empty (const set_t *set);
+int set_is_empty (const set_t *set) __attribute__((pure));
 
 /** Test if a set is the set of everything.
 
 	\param set		The set to test.
 	\return			1 if \a set is the set of everything (empty inverted set).
 */
-int set_is_everything (const set_t *set);
+int set_is_everything (const set_t *set) __attribute__((pure));
 
 /** Test if two sets are disjoint.
 
@@ -273,7 +273,7 @@ int set_is_everything (const set_t *set);
 
 	\note	The emtpy set is disjoint with itself.
 */
-int set_is_disjoint (const set_t *s1, const set_t *s2);
+int set_is_disjoint (const set_t *s1, const set_t *s2) __attribute__((pure));
 
 /** Test if two sets intersect.
 
@@ -283,7 +283,7 @@ int set_is_disjoint (const set_t *s1, const set_t *s2);
 
 	\note	Equivalent non-empty sets are treated as intersecting.
 */
-int set_is_intersecting (const set_t *s1, const set_t *s2);
+int set_is_intersecting (const set_t *s1, const set_t *s2) __attribute__((pure));
 
 /** Test if two sets are equivalent.
 
@@ -291,7 +291,7 @@ int set_is_intersecting (const set_t *s1, const set_t *s2);
 	\param s2		The second set to test.
 	\return			1 if \a s2 is equivalent to \a s1, 0 if not.
 */
-int set_is_equivalent (const set_t *s1, const set_t *s2);
+int set_is_equivalent (const set_t *s1, const set_t *s2) __attribute__((pure));
 
 /** Test if a set is a subset of another set.
 
@@ -302,7 +302,7 @@ int set_is_equivalent (const set_t *s1, const set_t *s2);
 	\return			1 if \a sub is a subset of \a set, or if the sets are
 					equivalent.
 */
-int set_is_subset (const set_t *set, const set_t *sub);
+int set_is_subset (const set_t *set, const set_t *sub) __attribute__((pure));
 
 /** Test an element for membership in a set.
 
@@ -310,7 +310,7 @@ int set_is_subset (const set_t *set, const set_t *sub);
 	\param x		The element to test.
 	\return			1 if the element is a member of the set, otherwise 0.
 */
-int set_is_member (const set_t *set, unsigned x);
+int set_is_member (const set_t *set, unsigned x) __attribute__((pure));
 
 /** Obtain the number of members (or non-members) of a set.
 
@@ -322,7 +322,7 @@ int set_is_member (const set_t *set, unsigned x);
 	\return			The number of (non-)members. Both empty sets and sets of
 					evertything will return 0.
 */
-unsigned set_size (const set_t *set);
+unsigned set_size (const set_t *set) __attribute__((pure));
 
 /** Find the first "member" of the set.
 
@@ -358,8 +358,8 @@ set_iter_t *set_next_r (set_pool_t *set_pool, set_iter_t *set_iter);
 
 /** Return a human-readable string representing the set.
 
-	Empty sets will be represented by the string "[empty]". Sets of everything
-	will be represented by the string "[everything]". Inverted sets will have
+	Empty sets will be represented by the string "{}". Sets of everything
+	will be represented by the string "{...}". Inverted sets will have
 	the first implicit member followed by "..." (eg, "256 ...").
 
 	\param set		The set to be converted to a string.
@@ -370,5 +370,5 @@ set_iter_t *set_next_r (set_pool_t *set_pool, set_iter_t *set_iter);
 */
 const char *set_as_string (const set_t *set);
 
-//@}
+///@}
 #endif//__QF_set_h

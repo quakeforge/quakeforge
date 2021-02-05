@@ -130,7 +130,7 @@ typedef struct {
 #define CSQCstring(e,f)     CSQCFIELD (e, f, string)
 #define CSQCfunc(e,f)       CSQCFIELD (e, f, func)
 #define CSQCentity(e,f)     CSQCFIELD (e, f, entity)
-#define CSQCvector(e,f)     CSQCFIELD (e, f, vector)
+#define CSQCvector(e,f)     (&CSQCFIELD (e, f, vector))
 #define CSQCinteger(e,f)    CSQCFIELD (e, f, integer)
 
 extern progs_t csqc_pr_state;

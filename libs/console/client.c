@@ -360,7 +360,7 @@ Linefeed (void)
 	All console printing must go through this in order to be logged to disk
 	If no console is visible, the notify window will pop up.
 */
-static void
+static __attribute__((format(printf, 1, 0))) void
 C_Print (const char *fmt, va_list args)
 {
 	char       *s;

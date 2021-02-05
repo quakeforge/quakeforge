@@ -100,7 +100,7 @@ vrect_t *VRect_Intersect (const vrect_t *r1, const vrect_t *r2);
 vrect_t *VRect_HSplit (const vrect_t *r, int y);
 
 /** Return two rectangles representing the portions of \a r to the left and
-	right of \a y.
+	right of \a x.
 
 	One of the returned rectangles may be empty. Use VRect_IsEmpty to check.
 	The first rectangle represents the portion of \a r that is to the left of
@@ -111,7 +111,7 @@ vrect_t *VRect_HSplit (const vrect_t *r, int y);
 	\param r		The rectangle to split.
 	\param x		The vertical line by which \a r will be split.
 	\return			The two linked rectangles representing the portions to the
-					left and right of \a y. The returned pointer points to the
+					left and right of \a x. The returned pointer points to the
 					first (left) rectangle, which links to the second (right)
 					rectangle.
 	\note	It is the caller's responsibility to delete the returned

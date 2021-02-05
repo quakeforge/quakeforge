@@ -39,7 +39,7 @@ def make_verts(mdl, framenum, subframenum=0):
                 (  0,  0,s.z,o.z),
                 (  0,  0,  0,  1)))
     for v in frame.verts:
-        verts.append(m * Vector(v.r))
+        verts.append(m @ Vector(v.r))
     return verts
 
 def make_faces(mdl):
@@ -87,7 +87,7 @@ def load_skins(mdl):
                 p[l + 2] = c[2] / 255.0
                 p[l + 3] = 1.0
         img.pixels[:] = p[:]
-        img.pack(True)
+        img.pack()
         img.use_fake_user = True
 
     mdl.images=[]
@@ -98,30 +98,80 @@ def load_skins(mdl):
         else:
             load_skin(skin, "%s_%d" % (mdl.name, i))
 
+def setup_main_material(mdl):
+    mat = bpy.data.materials.new(mdl.name)
+    mat.blend_method = 'OPAQUE'
+    mat.diffuse_color = (1, 1, 1, 1)
+    mat.metallic = 1
+    mat.roughness = 1
+    mat.specular_intensity = 0
+    mat.use_nodes = True
+    return mat
+
 def setup_skins(mdl, uvs):
     load_skins(mdl)
-    img = mdl.images[0]   # use the first skin for now
-    uvlay = mdl.mesh.uv_textures.new(mdl.name)
-    uvloop = mdl.mesh.uv_layers[0]
-    for i, texpoly in enumerate(uvlay.data):
+#    img = mdl.images[0]   # use the first skin for now
+#    uvlay = mdl.mesh.uv_textures.new(mdl.name)
+#    uvloop = mdl.mesh.uv_layers[0]
+#    for i, texpoly in enumerate(uvlay.data):
+    uvloop = mdl.mesh.uv_layers.new(name = mdl.name)
+    for i in range(len(mdl.mesh.polygons)):
         poly = mdl.mesh.polygons[i]
         mdl_uv = uvs[i]
-        texpoly.image = img
+#        texpoly.image = img	# TODO: commented out by jazz
         for j,k in enumerate(poly.loop_indices):
             uvloop.data[k].uv = mdl_uv[j]
-    mat = bpy.data.materials.new(mdl.name)
-    mat.diffuse_color = (1,1,1)
-    mat.use_raytrace = False
-    tex = bpy.data.textures.new(mdl.name, 'IMAGE')
-    tex.extension = 'CLIP'
-    tex.use_preview_alpha = True
-    tex.image = img
-    mat.texture_slots.add()
-    ts = mat.texture_slots[0]
-    ts.texture = tex
-    ts.use_map_alpha = True
-    ts.texture_coords = 'UV'
-    mdl.mesh.materials.append(mat)
+
+    #Load all skins
+    img_counter = 0
+    for i, skin in enumerate(mdl.skins):
+        if skin.type:
+            mat = setup_main_material(mdl)
+            emissionNode = mat.node_tree.nodes.new("ShaderNodeEmission")
+            shaderOut = mat.node_tree.nodes["Material Output"]
+            mat.node_tree.nodes.remove(mat.node_tree.nodes["Principled BSDF"])
+
+            emissionNode.location = (0, 0)
+            shaderOut.location = (200, 0)
+
+            yPos = 0
+
+            for j, subskin in enumerate(skin.skins):
+                tex_node = mat.node_tree.nodes.new("ShaderNodeTexImage")
+                tex_node.image = mdl.images[img_counter]
+                img_counter += 1
+                tex_node.interpolation = "Closest"
+
+                tex_node.location = (-300, yPos)
+                yPos -= 280
+
+                if j == 0:
+                    # connect only first texture (we'll need something smarter in the future)
+                    mat.node_tree.links.new(tex_node.outputs[0], emissionNode.inputs[0])
+
+            mat.node_tree.links.new(emissionNode.outputs[0], shaderOut.inputs[0])
+            mdl.mesh.materials.append(mat)
+
+        else:
+            mat = setup_main_material(mdl)
+
+            # TODO: turn transform to True and position it properly in editor
+            emissionNode = mat.node_tree.nodes.new("ShaderNodeEmission")
+            shaderOut = mat.node_tree.nodes["Material Output"]
+            mat.node_tree.nodes.remove(mat.node_tree.nodes["Principled BSDF"])
+
+            tex_node = mat.node_tree.nodes.new("ShaderNodeTexImage")
+            tex_node.image = mdl.images[img_counter]
+            img_counter += 1
+            tex_node.interpolation = "Closest"
+
+            emissionNode.location = (0, 0)
+            shaderOut.location = (200, 0)
+            tex_node.location = (-300, 0)
+
+            mat.node_tree.links.new(tex_node.outputs[0], emissionNode.inputs[0])
+            mat.node_tree.links.new(emissionNode.outputs[0], shaderOut.inputs[0])
+            mdl.mesh.materials.append(mat)
 
 def make_shape_key(mdl, framenum, subframenum=0):
     frame = mdl.frames[framenum]
@@ -133,7 +183,7 @@ def make_shape_key(mdl, framenum, subframenum=0):
         name = frame.name
     else:
         frame.name = name
-    frame.key = mdl.obj.shape_key_add(name)
+    frame.key = mdl.obj.shape_key_add(name=name)
     frame.key.value = 0.0
     mdl.keys.append(frame.key)
     s = Vector(mdl.scale)
@@ -143,20 +193,25 @@ def make_shape_key(mdl, framenum, subframenum=0):
                 (  0,  0,s.z,o.z),
                 (  0,  0,  0,  1)))
     for i, v in enumerate(frame.verts):
-        frame.key.data[i].co = m * Vector(v.r)
+        frame.key.data[i].co = m @ Vector(v.r)
 
 def build_shape_keys(mdl):
     mdl.keys = []
-    mdl.obj.shape_key_add("Basis")
+    mdl.obj.shape_key_add(name="Basis",from_mix=False)
     mdl.mesh.shape_keys.name = mdl.name
     mdl.obj.active_shape_key_index = 0
+    bpy.context.scene.frame_end = 0
     for i, frame in enumerate(mdl.frames):
         frame = mdl.frames[i]
         if frame.type:
             for j in range(len(frame.frames)):
                 make_shape_key(mdl, i, j)
+                bpy.context.scene.frame_end += 1
         else:
             make_shape_key(mdl, i)
+            bpy.context.scene.frame_end += 1
+
+    bpy.context.scene.frame_start = 1
 
 def set_keys(act, data):
     for d in data:
@@ -241,8 +296,8 @@ def write_text(mdl):
     /*  This script represents the animation data within the model file. It
         is generated automatically on import, and is optional when exporting.
         If no script is used when exporting, frames will be exported one per
-        blender frame from frame 1 to the current frame (inclusive), and only
-        one skin will be exported.
+        blender frame from the scene start frame to the scene end frame
+        (inclusive), and one skin per teximage node will be exported.
 
         The fundamental format of the script is documented at
         http://quakeforge.net/doxygen/property-list.html
@@ -335,14 +390,14 @@ def set_properties(mdl):
         mdl.obj.qfmdl.synctype = 'ST_SYNC'
     mdl.obj.qfmdl.rotate = (mdl.flags & MDL.EF_ROTATE) and True or False
     mdl.obj.qfmdl.effects = parse_flags(mdl.flags)
-    mdl.obj.qfmdl.script = mdl.text.name #FIXME really want the text object
+    mdl.obj.qfmdl.script = mdl.text
     mdl.obj.qfmdl.md16 = (mdl.ident == "MD16")
 
-def import_mdl(operator, context, filepath):
-    bpy.context.user_preferences.edit.use_global_undo = False
+def import_mdl(operator, context, filepath, **opts):
+    bpy.context.preferences.edit.use_global_undo = False
 
-    for obj in bpy.context.scene.objects:
-        obj.select = False
+    for obj in bpy.context.scene.collection.objects:
+        obj.select_set(False)
 
     mdl = MDL()
     if not mdl.read(filepath):
@@ -354,10 +409,14 @@ def import_mdl(operator, context, filepath):
     mdl.mesh = bpy.data.meshes.new(mdl.name)
     mdl.mesh.from_pydata(verts, [], faces)
     mdl.obj = bpy.data.objects.new(mdl.name, mdl.mesh)
-    bpy.context.scene.objects.link(mdl.obj)
-    bpy.context.scene.objects.active = mdl.obj
-    mdl.obj.select = True
+
+    bpy.context.scene.collection.objects.link(mdl.obj)
+    mdl.obj.select_set(True)
+    bpy.context.view_layer.objects.active = mdl.obj
     setup_skins(mdl, uvs)
+
+    bpy.context.scene.frame_start = 1
+    bpy.context.scene.frame_end = 1
     if len(mdl.frames) > 1 or mdl.frames[0].type:
         build_shape_keys(mdl)
         merge_frames(mdl)
@@ -367,5 +426,5 @@ def import_mdl(operator, context, filepath):
 
     mdl.mesh.update()
 
-    bpy.context.user_preferences.edit.use_global_undo = True
+    bpy.context.preferences.edit.use_global_undo = True
     return {'FINISHED'}

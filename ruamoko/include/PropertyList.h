@@ -1,8 +1,8 @@
 #ifndef __ruamoko_PropertyList_h
 #define __ruamoko_PropertyList_h
 
-#include "plist.h"
-#include "Object.h"
+#include <plist.h>
+#include <Object.h>
 
 @interface PLItem: Object
 {

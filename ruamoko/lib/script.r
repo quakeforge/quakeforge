@@ -1,4 +1,4 @@
-#include "script.h"
+#include <script.h>
 
 script_t Script_New (void) = #0;
 void Script_Delete (script_t script) = #0;

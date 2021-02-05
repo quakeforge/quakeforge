@@ -40,7 +40,7 @@ typedef struct {
 
 extern options_t options;
 int DecodeArgs (int argc, char **argv);
-void usage (int status);
+void usage (int status) __attribute__((noreturn));
 extern const char *this_program;
 
 #endif//__options_h

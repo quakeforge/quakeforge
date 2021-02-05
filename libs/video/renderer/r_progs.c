@@ -101,7 +101,7 @@ qpic_get (draw_resources_t *res, int index)
 	PR_RESGET (res->qpic_map, index);
 }
 
-static inline int
+static inline int __attribute__((pure))
 qpic_index (draw_resources_t *res, qpic_res_t *qp)
 {
 	PR_RESINDEX (res->qpic_map, qp);
@@ -345,7 +345,8 @@ void
 R_Progs_Init (progs_t *pr)
 {
 	draw_resources_t *res = calloc (1, sizeof (draw_resources_t));
-	res->pic_hash = Hash_NewTable (61, bi_draw_get_key, 0, 0);
+	res->pic_hash = Hash_NewTable (61, bi_draw_get_key, 0, 0,
+								   pr->hashlink_freelist);
 
 	PR_Resources_Register (pr, "Draw", res, bi_draw_clear);
 	PR_RegisterBuiltins (pr, builtins);

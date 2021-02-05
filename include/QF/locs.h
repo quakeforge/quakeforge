@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __locs_h
-#define __locs_h
+#ifndef __QF_locs_h
+#define __QF_locs_h
 
 #include "QF/qtypes.h"
 
@@ -36,15 +36,15 @@ typedef struct
 	char	*name;
 } location_t;
 
-location_t *locs_find(const vec3_t target);
+location_t *locs_find(const vec3_t target) __attribute__((pure));
 void locs_add (const vec3_t location, const char *name);
 void locs_del (const vec3_t loc);
 void locs_edit (const vec3_t loc, const char *desc);
 void locs_load(const char *filename);
 void locs_mark (const vec3_t loc, const char *desc);
-int  locs_nearest (const vec3_t loc);
+int  locs_nearest (const vec3_t loc) __attribute__((pure));
 void locs_reset (void);
 void locs_save (const char *filename, qboolean gz);
 void map_to_loc (const char *mapname, char *filename);
 
-#endif // __locs_h
+#endif//__QF_locs_h

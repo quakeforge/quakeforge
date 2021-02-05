@@ -46,10 +46,11 @@
 #include "QF/va.h"
 
 #include "compat.h"
-#include "host.h"
-#include "server.h"
-#include "sv_progs.h"
 #include "world.h"
+
+#include "nq/include/host.h"
+#include "nq/include/server.h"
+#include "nq/include/sv_progs.h"
 
 /* BUILT-IN FUNCTIONS */
 
@@ -1069,7 +1070,7 @@ PF_changeyaw (progs_t *pr)
 #define	MSG_ALL			2				// reliable to all
 #define	MSG_INIT		3				// write to the init string
 
-static sizebuf_t *
+static __attribute__((pure)) sizebuf_t *
 WriteDest (progs_t *pr)
 {
 	int         entnum;

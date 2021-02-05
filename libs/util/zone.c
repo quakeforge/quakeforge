@@ -337,7 +337,7 @@ Z_Print (memzone_t *zone)
 				zone->size, zone, zone->used);
 
 	for (block = zone->blocklist.next ; ; block = block->next) {
-		Sys_Printf ("block:%p    size:%7i    tag:%3i ofs:%x\n",
+		Sys_Printf ("block:%p    size:%7i    tag:%5x ofs:%x\n",
 					block, z_block_size (block),
 					block->tag, z_offset (zone, block));
 
@@ -577,7 +577,8 @@ Hunk_AllocName (int size, const char *name)
 
 	h->size = size;
 	h->sentinal = HUNK_SENTINAL;
-	strncpy (h->name, name, 8);
+	memcpy (h->name, name, 8);
+	h->name[7] = 0;
 
 	return (void *) (h + 1);
 }

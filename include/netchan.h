@@ -39,7 +39,7 @@
 /** \defgroup qw-net QuakeWorld network support.
 	\ingroup network
 */
-//{
+///@{
 #define MAX_MSGLEN		1450		///< max length of a reliable message
 #define MAX_DATAGRAM	1450		///< max length of unreliable message
 
@@ -70,17 +70,17 @@ void Log_Incoming_Packet (const byte *p, int len, int has_sequence,
 						  int is_server);
 void Log_Outgoing_Packet (const byte *p, int len, int has_sequence,
 						  int is_server);
-void Net_LogStop (void);
+void Net_LogStop (void *data);
 void Analyze_Client_Packet (const byte * data, int len, int has_sequence);
 void Analyze_Server_Packet (const byte * data, int len, int has_sequence);
 
 extern struct cvar_s *net_packetlog;
-//@}
+///@}
 
 /** \defgroup qw-udp QuakeWorld udp support.
 	\ingroup qw-net
 */
-//@{
+///@{
 
 /** Initialize the UDP network interface.
 
@@ -116,7 +116,7 @@ void NET_SendPacket (int length, const void *data, netadr_t to);
 	\param b		The second address to compare.
 	\return			True of the addresses match, otherwise false.
 */
-qboolean NET_CompareAdr (netadr_t a, netadr_t b);
+qboolean NET_CompareAdr (netadr_t a, netadr_t b) __attribute__((pure));
 
 /** Compare two network addresses.
 
@@ -126,7 +126,7 @@ qboolean NET_CompareAdr (netadr_t a, netadr_t b);
 	\param b		The second address to compare.
 	\return			True of the addresses match, otherwise false.
 */
-qboolean NET_CompareBaseAdr (netadr_t a, netadr_t b);
+qboolean NET_CompareBaseAdr (netadr_t a, netadr_t b) __attribute__((pure));
 
 /** Convert an address to a string.
 
@@ -165,7 +165,7 @@ const char *NET_BaseAdrToString (netadr_t a);
 */
 qboolean NET_StringToAdr (const char *s, netadr_t *a);
 
-//@}
+///@}
 
 /** \defgroup netchan Netchan
 	\ingroup qw-net
@@ -220,7 +220,7 @@ qboolean NET_StringToAdr (const char *s, netadr_t *a);
 	the channel matches even if the IP port differs.  The IP port should be
 	updated to the new value before sending out any replies.
 */
-//@{
+///@{
 #define	OLD_AVG		0.99		// total = oldtotal*OLD_AVG + new*(1-OLD_AVG)
 
 #define	MAX_LATENT	32
@@ -362,7 +362,7 @@ void Netchan_Setup (netchan_t *chan, netadr_t adr, int qport, ncqport_e flags);
 	\param chan     The netchan representing the connection.
 	\return			True if the connection isn't chocked.
 */
-qboolean Netchan_CanPacket (netchan_t *chan);
+qboolean Netchan_CanPacket (netchan_t *chan) __attribute__((pure));
 
 /** Check if a reliable packet can be sent to the connection.
 
@@ -370,7 +370,7 @@ qboolean Netchan_CanPacket (netchan_t *chan);
 	\return			True if there is no outstanding reliable packet and the
 					connection isn't chocked.
 */
-qboolean Netchan_CanReliable (netchan_t *chan);
+qboolean Netchan_CanReliable (netchan_t *chan) __attribute__((pure));
 
 /** Send a packet.
 
@@ -381,6 +381,6 @@ qboolean Netchan_CanReliable (netchan_t *chan);
 */
 void Netchan_SendPacket (int length, const void *data, netadr_t to);
 
-//@}
+///@}
 
 #endif // _NET_H

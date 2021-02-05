@@ -1,4 +1,4 @@
-#include "qfile.h"
+#include <qfile.h>
 
 int Qrename (string old, string new) = #0;
 int Qremove (string path) = #0;

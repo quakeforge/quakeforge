@@ -242,6 +242,6 @@ skin_free (void *_sb, void *unused)
 void
 Skin_Init (void)
 {
-	skin_cache = Hash_NewTable (127, skin_getkey, skin_free, 0);
+	skin_cache = Hash_NewTable (127, skin_getkey, skin_free, 0, 0);
 	m_funcs->Skin_InitTranslations ();
 }

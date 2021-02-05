@@ -1,4 +1,4 @@
-#include "debug.h"
+#include <debug.h>
 
 void abort (void) = #6;
 void coredump (void) = #28;

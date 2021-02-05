@@ -57,7 +57,7 @@
 #include "r_internal.h"
 
 static const char quakeforge_effect[] =
-#include "quakeforge.slc"
+#include "libs/video/renderer/glsl/quakeforge.slc"
 ;
 
 int					glsl_palette;

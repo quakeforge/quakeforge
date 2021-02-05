@@ -1,0 +1,115 @@
+lib_LTLIBRARIES += @JOY_TARGETS@
+
+noinst_LTLIBRARIES += @VID_TARGETS@ @vid_libs@
+
+EXTRA_LTLIBRARIES += \
+	libs/video/targets/libQFjs.la \
+	libs/video/targets/libQFfbdev.la \
+	libs/video/targets/libQFsvga.la \
+	libs/video/targets/libQFx11.la \
+	libs/video/targets/libQFsdl.la \
+	libs/video/targets/libQFwgl.la \
+	libs/video/targets/libvid_common.la \
+	libs/video/targets/libvid_sdl.la \
+	libs/video/targets/libvid_svga.la \
+	libs/video/targets/libvid_x11.la
+
+joy_linux_src= libs/video/targets/joy_linux.c
+joy_win_src= libs/video/targets/joy_win.c
+joy_null_src= libs/video/targets/joy_null.c
+if JOYTYPE_LINUX
+joy_src=      $(joy_linux_src)
+else
+if JOYTYPE_WIN32
+joy_src=      $(joy_win_src)
+else
+joy_src=      $(joy_null_src)
+endif
+endif
+
+js_libs=libs/util/libQFutil.la
+
+libs_video_targets_libQFjs_la_LDFLAGS=		$(lib_ldflags)
+libs_video_targets_libQFjs_la_LIBADD=		$(js_libs)
+libs_video_targets_libQFjs_la_DEPENDENCIES=$(js_libs)
+libs_video_targets_libQFjs_la_CFLAGS=		@PREFER_PIC@ $(JOY_CFLAGS)
+libs_video_targets_libQFjs_la_SOURCES=		libs/video/targets/joy.c $(joy_src)
+EXTRA_libs_video_targets_libQFjs_la_SOURCES= $(joy_linux_src) $(joy_win_src) $(joy_null_src)
+
+libs_video_targets_libvid_common_la_SOURCES=	\
+		libs/video/targets/in_common.c libs/video/targets/in_event.c libs/video/targets/keys.c libs/video/targets/old_keys.c libs/video/targets/pr_keys.c libs/video/targets/vid.c
+libs_video_targets_libvid_common_la_CFLAGS=	@PREFER_NON_PIC@
+libs_video_targets_libvid_common_la_LDFLAGS=	@STATIC@
+
+libs_video_targets_libvid_x11_la_SOURCES=		libs/video/targets/in_x11.c libs/video/targets/context_x11.c libs/video/targets/dga_check.c
+libs_video_targets_libvid_x11_la_CFLAGS=		@PREFER_NON_PIC@ $(X_CFLAGS)
+libs_video_targets_libvid_x11_la_LDFLAGS=		@STATIC@
+
+libs_video_targets_libvid_svga_la_SOURCES=		libs/video/targets/in_svgalib.c
+libs_video_targets_libvid_svga_la_CFLAGS=		@PREFER_NON_PIC@ $(SVGA_CFLAGS)
+libs_video_targets_libvid_svga_la_LDFLAGS=		@STATIC@
+
+libs_video_targets_libvid_sdl_la_SOURCES=		libs/video/targets/in_sdl.c libs/video/targets/context_sdl.c
+libs_video_targets_libvid_sdl_la_CFLAGS=		@PREFER_NON_PIC@ $(SDL_CFLAGS)
+libs_video_targets_libvid_sdl_la_LDFLAGS=		@STATIC@
+
+#
+# Linux FBdev
+#
+fbdev_c= libs/video/targets/fbset_modes_y.c libs/video/targets/fbset_modes_l.c
+fbdev_h= libs/video/targets/fbset_modes_y.h
+YACCLEX_CLEANFILES = $(fbdev_c) $(fbdev_h)
+BUILT_SOURCES += $(fbdev_c) $(fbdev_h)
+
+fbdev_libs=libs/video/targets/libvid_common.la
+libs_video_targets_libQFfbdev_la_CFLAGS=		@PREFER_NON_PIC@
+libs_video_targets_libQFfbdev_la_SOURCES=		libs/video/targets/fbset.c libs/video/targets/fbset_modes_y.y libs/video/targets/fbset_modes_l.l \
+							libs/video/targets/in_fbdev.c libs/video/targets/vid_fbdev.c
+libs_video_targets_libQFfbdev_la_LDFLAGS=		@STATIC@
+libs_video_targets_libQFfbdev_la_LIBADD=		$(fbdev_libs)
+libs_video_targets_libQFfbdev_la_DEPENDENCIES=	$(fbdev_libs)
+
+
+#
+# Simple DirectMedia Library
+#
+sdl_libs=libs/video/targets/libvid_common.la libs/video/targets/libvid_sdl.la
+libs_video_targets_libQFsdl_la_CFLAGS=			@PREFER_NON_PIC@ $(SDL_CFLAGS)
+libs_video_targets_libQFsdl_la_SOURCES=		libs/video/targets/vid_sdl.c
+libs_video_targets_libQFsdl_la_LDFLAGS=		@STATIC@
+libs_video_targets_libQFsdl_la_LIBADD=			$(sdl_libs)
+libs_video_targets_libQFsdl_la_DEPENDENCIES=	$(sdl_libs)
+
+#
+# SVGAlib
+#
+svga_libs=libs/video/targets/libvid_common.la libs/video/targets/libvid_svga.la
+libs_video_targets_libQFsvga_la_CFLAGS=		@PREFER_NON_PIC@ $(SVGA_CFLAGS)
+libs_video_targets_libQFsvga_la_SOURCES=		libs/video/targets/vid_svgalib.c
+libs_video_targets_libQFsvga_la_LDFLAGS=		@STATIC@
+libs_video_targets_libQFsvga_la_LIBADD=		$(svga_libs)
+libs_video_targets_libQFsvga_la_DEPENDENCIES=	$(svga_libs)
+
+#
+# OpenGL in Win32
+#
+wgl_libs=libs/video/targets/libvid_common.la libs/video/targets/libvid_gl.la
+libs_video_targets_libQFwgl_la_CFLAGS=			@PREFER_NON_PIC@ $(WGL_CFLAGS)
+libs_video_targets_libQFwgl_la_SOURCES=		libs/video/targets/in_win.c libs/video/targets/vid_wgl.c
+libs_video_targets_libQFwgl_la_LDFLAGS=		@STATIC@
+libs_video_targets_libQFwgl_la_LIBADD=			$(wgl_libs)
+libs_video_targets_libQFwgl_la_DEPENDENCIES=	$(wgl_libs)
+
+#
+# X11 software rendering
+#
+x11_libs=libs/video/targets/libvid_common.la libs/video/targets/libvid_x11.la
+libs_video_targets_libQFx11_la_CFLAGS=			@PREFER_NON_PIC@ $(X_CFLAGS)
+libs_video_targets_libQFx11_la_SOURCES=		libs/video/targets/vid_x11.c
+libs_video_targets_libQFx11_la_LDFLAGS=		@STATIC@
+libs_video_targets_libQFx11_la_LIBADD=			$(x11_libs)
+libs_video_targets_libQFx11_la_DEPENDENCIES=	$(x11_libs)
+
+CLEANFILES += *.i *.s $(YACCLEX_CLEANFILES)
+
+EXTRA_DIST += $(fbdev_c) $(fbdev_h)

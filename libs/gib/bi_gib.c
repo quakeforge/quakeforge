@@ -91,6 +91,7 @@ bi_gib_builtin_f (void)
 	PR_RESET_PARAMS (builtin->pr);
 	P_INT (builtin->pr, 0) = GIB_Argc();
 	P_INT (builtin->pr, 1) = PR_SetPointer (builtin->pr, pr_list);
+	builtin->pr->pr_argc = 2;
 	PR_ExecuteProgram (builtin->pr, builtin->func);
 	PR_PopFrame (builtin->pr);
 	PR_Zone_Free (builtin->pr, pr_list);
@@ -192,7 +193,8 @@ GIB_Progs_Init (progs_t *pr)
 	PR_Resources_Register (pr, "GIB", res, bi_gib_builtin_clear);
 
 	bi_gib_builtins = Hash_NewTable (1021, bi_gib_builtin_get_key,
-									 bi_gib_builtin_free, 0);
+									 bi_gib_builtin_free, 0,
+									 pr->hashlink_freelist);
 
 	PR_RegisterBuiltins (pr, builtins);
 }

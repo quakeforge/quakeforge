@@ -39,11 +39,12 @@
 #include "QF/msg.h"
 #include "QF/sys.h"
 
+#include "compat.h"
+
 #include "qw/msg_ucmd.h"
 
-#include "compat.h"
-#include "server.h"
-#include "sv_progs.h"
+#include "qw/include/server.h"
+#include "qw/include/sv_progs.h"
 
 
 /*
@@ -577,7 +578,6 @@ SV_WritePlayersToClient (delta_t *delta, byte *pvs, sizebuf_t *msg)
 	if (delta->client) {
 		clent = delta->client->edict;
 		spec_track = delta->client->spec_track;
-		stdver = delta->client->stdver;
 		null_player_state.modelindex = sv_playermodel;
 		full = 0;		// normal qw clients don't get real deltas on players
 	}

@@ -40,7 +40,7 @@
 
 #include "compat.h"
 
-#include "map.h"
+#include "tools/qfbsp/include/map.h"
 
 /**	\addtogroup qfbsp_map
 */
@@ -97,7 +97,7 @@ FindMiptex (const char *name)
 	if (strcmp (name, "skip") == 0)
 		return TEX_SKIP;
 	if (!miptex_hash)
-		miptex_hash = Hash_NewTable (1023, miptex_getkey, 0, 0);
+		miptex_hash = Hash_NewTable (1023, miptex_getkey, 0, 0, 0);
 	if (miptexnames) {
 		index = (intptr_t) Hash_Find (miptex_hash, mpname);
 		if (index)

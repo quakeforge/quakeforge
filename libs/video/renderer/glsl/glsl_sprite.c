@@ -143,7 +143,6 @@ R_GetSpriteFrames (entity_t *ent, msprite_t *sprite, mspriteframe_t **frame1,
 	if (framenum >= sprite->numframes || framenum < 0)
 		framenum = 0;
 
-	numframes = sprite->numframes;
 	framedesc = &sprite->frames[framenum];
 	if (framedesc->type == SPR_SINGLE) {
 		frame_interval = 0.1;

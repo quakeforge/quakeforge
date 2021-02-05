@@ -702,7 +702,7 @@ version_number (void)
 }
 
 static int
-check_type (const csqc_def_t *def, const ddef_t *ddef)
+check_type (const csqc_def_t *def, const pr_def_t *ddef)
 {
 	etype_t     ddef_type = ddef->type & ~DEF_SAVEGLOBAL;
 
@@ -728,6 +728,9 @@ set_address (const csqc_def_t *def, void *address)
 		case ev_quat:
 			*(float **)def->field = (float *) address;
 			break;
+		case ev_double:
+			*(double **)def->field = (double *) address;
+			break;
 		case ev_string:
 		case ev_entity:
 		case ev_field:
@@ -743,7 +746,7 @@ set_address (const csqc_def_t *def, void *address)
 static int
 resolve_globals (progs_t *pr, csqc_def_t *def)
 {
-	ddef_t     *ddef;
+	pr_def_t   *ddef;
 	int         ret = 1;
 
 	for (; def->name; def++) {
@@ -762,7 +765,7 @@ resolve_globals (progs_t *pr, csqc_def_t *def)
 static int
 resolve_fields (progs_t *pr, csqc_def_t *def)
 {
-	ddef_t     *ddef;
+	pr_def_t   *ddef;
 	int         ret = 1;
 
 	for (; def->name; def++) {

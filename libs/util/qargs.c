@@ -100,13 +100,13 @@ COM_InitArgv (int argc, const char **argv)
 	safe = false;
 
 	largv = (const char **) calloc (1, (argc + NUM_SAFE_ARGVS + 1) *
-									sizeof (const char **));
+									sizeof (const char *));
 
 	for (com_argc = 0, len = 0; com_argc < argc; com_argc++) {
 		largv[com_argc] = argv[com_argc];
 		if ((argv[com_argc]) && !strcmp ("-safe", argv[com_argc]))
 			safe = true;
-		if (com_argc)
+		if (argv[com_argc])
 			len += strlen (argv[com_argc]) + 1;
 	}
 

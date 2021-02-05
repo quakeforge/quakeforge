@@ -454,7 +454,7 @@ Mus_VolChange (cvar_t *bgmvolume)
 static void
 Mus_gamedir (int phase)
 {
-	if (phase);
+	if (phase)
 		Mus_OggChange (mus_ogglist);
 }
 

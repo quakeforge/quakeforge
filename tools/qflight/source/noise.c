@@ -35,7 +35,7 @@
 
 #include "QF/qtypes.h"
 
-#include "noise.h"
+#include "tools/qflight/include/noise.h"
 
 // returns the 3D noise value for a point in space
 float

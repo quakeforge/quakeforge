@@ -47,7 +47,6 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/zone.h"
-#include "QF/va.h"
 
 #include "compat.h"
 
@@ -93,8 +92,10 @@ PR_RegisterBuiltins (progs_t *pr, builtin_t *builtins)
 	int         count;
 
 	if (!pr->builtin_hash) {
-		pr->builtin_hash = Hash_NewTable (1021, builtin_get_key, 0, pr);
-		pr->builtin_num_hash = Hash_NewTable (1021, 0, 0, pr);
+		pr->builtin_hash = Hash_NewTable (1021, builtin_get_key, 0, pr,
+										  pr->hashlink_freelist);
+		pr->builtin_num_hash = Hash_NewTable (1021, 0, 0, pr,
+											  pr->hashlink_freelist);
 		Hash_SetHashCompare (pr->builtin_num_hash, builtin_get_hash,
 							 builtin_compare);
 	}
@@ -158,7 +159,8 @@ bi_no_function (progs_t *pr)
 VISIBLE int
 PR_RelocateBuiltins (progs_t *pr)
 {
-	pr_int_t    i, ind;
+	pr_uint_t   i;
+	pr_int_t    ind;
 	int         bad = 0;
 	dfunction_t *desc;
 	bfunction_t *func;

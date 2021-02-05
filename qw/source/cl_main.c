@@ -91,29 +91,31 @@
 
 #include "QF/plugin/console.h"
 
-#include "qw/bothdefs.h"
 #include "buildnum.h"
-#include "cl_cam.h"
-#include "cl_chat.h"
-#include "cl_demo.h"
-#include "cl_ents.h"
-#include "cl_http.h"
-#include "cl_input.h"
-#include "cl_main.h"
-#include "cl_parse.h"
-#include "cl_pred.h"
-#include "cl_skin.h"
-#include "cl_slist.h"
-#include "cl_tent.h"
-#include "client.h"
+#include "clview.h"
 #include "compat.h"
 #include "csqc.h"
-#include "game.h"
-#include "host.h"
-#include "netchan.h"
-#include "qw/pmove.h"
 #include "sbar.h"
-#include "clview.h"
+
+#include "qw/bothdefs.h"
+#include "qw/pmove.h"
+
+#include "qw/include/cl_cam.h"
+#include "qw/include/cl_chat.h"
+#include "qw/include/cl_demo.h"
+#include "qw/include/cl_ents.h"
+#include "qw/include/cl_http.h"
+#include "qw/include/cl_input.h"
+#include "qw/include/cl_main.h"
+#include "qw/include/cl_parse.h"
+#include "qw/include/cl_pred.h"
+#include "qw/include/cl_skin.h"
+#include "qw/include/cl_slist.h"
+#include "qw/include/cl_tent.h"
+#include "qw/include/client.h"
+#include "qw/include/game.h"
+#include "qw/include/host.h"
+#include "netchan.h"
 
 CLIENT_PLUGIN_PROTOS
 static plugin_list_t client_plugin_list[] = {
@@ -1811,11 +1813,9 @@ Host_Init (void)
 
 	Netchan_Init_Cvars ();
 
-	PR_Init_Cvars ();
+	PR_Init_Cvars ();		// FIXME location
 
 	CL_Init_Cvars ();
-
-	PR_Init ();
 
 	CL_Chat_Init ();
 
@@ -1876,7 +1876,7 @@ Host_Init (void)
 }
 
 void
-Host_Shutdown (void)
+Host_Shutdown (void *data)
 {
 	static qboolean isdown = false;
 

@@ -24,8 +24,8 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef __bspfile_h_
-#define __bspfile_h_
+#ifndef __QF_bspfile_h
+#define __QF_bspfile_h
 
 #include "QF/qtypes.h"
 #include "QF/quakeio.h"
@@ -310,4 +310,4 @@ void BSP_AddVisibility (bsp_t *bsp, const byte *visdata, size_t visdatasize);
 void BSP_AddEntities (bsp_t *bsp, const char *entdata, size_t entdatasize);
 void BSP_AddTextures (bsp_t *bsp, const byte *texdata, size_t texdatasize);
 
-#endif//__bspfile_h_
+#endif//__QF_bspfile_h

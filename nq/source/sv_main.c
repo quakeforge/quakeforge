@@ -36,16 +36,17 @@
 #include "QF/va.h"
 
 #include "compat.h"
-#include "host.h"
-#include "server.h"
-#include "sv_progs.h"
 #include "world.h"
+
+#include "nq/include/host.h"
+#include "nq/include/server.h"
+#include "nq/include/sv_progs.h"
 
 server_t    sv;
 server_static_t svs;
 double      sv_frametime;
 
-char        localmodels[MAX_MODELS][5];	// inline model names for precache
+char        localmodels[MAX_MODELS][6];	// inline model names for precache
 
 int sv_protocol = PROTOCOL_FITZQUAKE;
 

@@ -307,7 +307,7 @@ qfs_var_free (void *_v, void *unused)
 static hashtab_t *
 qfs_new_vars (void)
 {
-	return Hash_NewTable (61, qfs_var_get_key, qfs_var_free, 0);
+	return Hash_NewTable (61, qfs_var_get_key, qfs_var_free, 0, 0);
 }
 
 static void
@@ -549,7 +549,7 @@ qfs_build_gamedir (const char **list)
 	gamedir_t  *gamedir;
 	plitem_t   *gdpl;
 	dstring_t  *path;
-	hashtab_t  *dirs = Hash_NewTable (31, qfs_dir_get_key, qfs_dir_free, 0);
+	hashtab_t  *dirs = Hash_NewTable (31, qfs_dir_get_key, qfs_dir_free, 0, 0);
 	hashtab_t  *vars = qfs_new_vars ();
 	const char *dir = 0;
 
@@ -1209,7 +1209,7 @@ qfs_file_sort (char **os1, char **os2)
 	s2 = *os2;
 
 	while (1) {
-		in1 = in2 = n1 = n2 = 0;
+		n1 = n2 = 0;
 
 		if ((in1 = isdigit ((byte) *s1)))
 			n1 = strtol (s1, &s1, 10);

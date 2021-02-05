@@ -1,4 +1,4 @@
-#include "cmd.h"
+#include <cmd.h>
 
 void (string name, void () func) Cmd_AddCommand = #0;
 int () Cmd_Argc = #0;

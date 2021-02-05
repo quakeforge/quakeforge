@@ -49,10 +49,10 @@
 #include "QF/sys.h"
 
 #include "qw/bothdefs.h"
-#include "server.h"
-#include "sv_demo.h"
-#include "sv_progs.h"
-#include "sv_recorder.h"
+#include "qw/include/server.h"
+#include "qw/include/sv_demo.h"
+#include "qw/include/sv_progs.h"
+#include "qw/include/sv_recorder.h"
 
 typedef struct dbuffer_s {
 	byte       *data;

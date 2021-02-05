@@ -1,0 +1,17 @@
+noinst_LTLIBRARIES += libs/models/brush/libbrush.la @brush_libs@
+EXTRA_LTLIBRARIES += libs/models/brush/libbrush_gl.la libs/models/brush/libbrush_glsl.la libs/models/brush/libbrush_sw.la
+
+brush_src= libs/models/brush/model_brush.c
+brush_gl_src= libs/models/brush/gl_model_brush.c
+brush_glsl_src= libs/models/brush/glsl_model_brush.c
+brush_sw_src= libs/models/brush/sw_model_brush.c
+
+libs_models_brush_libbrush_la_SOURCES= $(brush_src)
+
+libs_models_brush_libbrush_gl_la_SOURCES= $(brush_gl_src) $(brush_src)
+
+libs_models_brush_libbrush_glsl_la_SOURCES= $(brush_glsl_src) $(brush_src)
+
+libs_models_brush_libbrush_sw_la_SOURCES= $(brush_sw_src) $(brush_src)
+
+EXTRA_DIST += $(brush_gl_src) $(brush_glsl_src) $(brush_sw_src) $(brush_src)

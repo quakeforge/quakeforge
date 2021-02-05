@@ -45,6 +45,8 @@ typedef struct {
 	unsigned    progsversion;		// Progs version to generate code for
 	qboolean    vector_components;	// add *_[xyz] symbols for vectors
 	qboolean    ifstring;			// expand if (str) to if (str != "")
+	qboolean    const_initializers;	// initialied globals are constant
+	qboolean    promote_float;		// promote float through ...
 } code_options_t;
 
 typedef struct {
@@ -71,12 +73,18 @@ typedef struct {
 } notice_options_t;
 
 typedef struct {
+	qboolean	promote;			// Promote bugs to internal errors
+	qboolean	silent;				// don't even bother (overrides promote)
+} bug_options_t;
+
+typedef struct {
 	qboolean    initial;
 	qboolean    thread;
 	qboolean    dead;
 	qboolean    final;
 	qboolean    dags;
 	qboolean    expr;
+	qboolean    statements;
 	qboolean    reaching;
 	qboolean    live;
 	qboolean    flow;
@@ -87,6 +95,7 @@ typedef struct {
 	code_options_t	code;			// Code generation options
 	warn_options_t	warnings;		// Warning options
 	notice_options_t notices;		// Notice options
+	bug_options_t   bug;			// Bug options
 	blockdot_options_t block_dot;	// Statement block flow diagrams
 
 	int				verbosity;		// 0=silent, goes up to 2 currently
@@ -105,8 +114,6 @@ typedef struct {
 	qboolean		partial_link;	// partial linking
 	qboolean		preprocess_only;// run only cpp, don't compile
 	qboolean		gzip;			// compress qfo files when writing
-	int				strip_path;		// number of leading path elements to strip
-									// from source file names
 	const char     *output_file;
 	const char     *debug_file;
 } options_t;

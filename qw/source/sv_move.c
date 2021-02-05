@@ -28,8 +28,8 @@
 # include "config.h"
 #endif
 
-#include "server.h"
-#include "sv_progs.h"
+#include "qw/include/server.h"
+#include "qw/include/sv_progs.h"
 #include "world.h"
 
 #define	STEPSIZE	18

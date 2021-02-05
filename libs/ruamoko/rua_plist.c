@@ -84,7 +84,7 @@ plist_get (plist_resources_t *res, unsigned index)
 	PR_RESGET(res->plist_map, index);
 }
 
-static inline int
+static inline int __attribute__((pure))
 plist_index (plist_resources_t *res, bi_plist_t *plist)
 {
 	PR_RESINDEX(res->plist_map, plist);
@@ -455,7 +455,7 @@ void
 RUA_Plist_Init (progs_t *pr, int secure)
 {
 	plist_resources_t *res = calloc (1, sizeof (plist_resources_t));
-	res->plist_tab = Hash_NewTable (1021, 0, 0, 0);
+	res->plist_tab = Hash_NewTable (1021, 0, 0, 0, pr->hashlink_freelist);
 	Hash_SetHashCompare (res->plist_tab, plist_get_hash, plist_compare);
 
 	PR_Resources_Register (pr, "plist", res, bi_plist_clear);

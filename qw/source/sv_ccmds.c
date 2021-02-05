@@ -49,13 +49,14 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "qw/bothdefs.h"
 #include "compat.h"
-#include "server.h"
-#include "sv_demo.h"
-#include "sv_progs.h"
-#include "sv_qtv.h"
-#include "sv_recorder.h"
+
+#include "qw/bothdefs.h"
+#include "qw/include/server.h"
+#include "qw/include/sv_demo.h"
+#include "qw/include/sv_progs.h"
+#include "qw/include/sv_qtv.h"
+#include "qw/include/sv_recorder.h"
 
 qboolean    sv_allow_cheats;
 
@@ -223,7 +224,7 @@ SV_Restart_f (void)
 							  net_message->message->data);
 	}
 	Sys_Printf ("Shutting down: server restart, shell must relaunch server\n");
-	SV_Shutdown ();
+	SV_Shutdown (0);
 	// Error code 2 on exit, indication shell must restart the server
 	exit (2);
 }
@@ -950,6 +951,7 @@ SV_SetLocalinfo (const char *key, const char *value)
 		P_STRING (&sv_pr_state, 0) = PR_SetTempString (&sv_pr_state, key);
 		P_STRING (&sv_pr_state, 1) = PR_SetTempString (&sv_pr_state, oldvalue);
 		P_STRING (&sv_pr_state, 2) = PR_SetTempString (&sv_pr_state, value);
+		sv_pr_state.pr_argc = 3;
 		PR_ExecuteProgram (&sv_pr_state, sv_funcs.LocalinfoChanged);
 		PR_PopFrame (&sv_pr_state);
 	}

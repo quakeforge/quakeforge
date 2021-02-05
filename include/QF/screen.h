@@ -26,8 +26,8 @@
 */
 // screen.h
 
-#ifndef __screen_h
-#define __screen_h
+#ifndef __QF_screen_h
+#define __QF_screen_h
 
 #include "QF/qtypes.h"
 
@@ -67,4 +67,4 @@ extern struct qpic_s *scr_turtle;
 
 extern struct cvar_s *hud_fps, *hud_time;
 
-#endif // __screen_h
+#endif//__QF_screen_h

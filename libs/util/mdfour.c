@@ -37,7 +37,6 @@
 #endif
 
 #include "QF/mdfour.h"
-#include "QF/uint32.h"
 
 /* NOTE: This code makes no attempt to be fast!
    It assumes that a int is at least 32 bits long
@@ -62,12 +61,12 @@ static struct mdfour *m;
 
 /* this applies md4 to 64 byte chunks */
 static void
-mdfour64 (uint32 * M)
+mdfour64 (uint32_t * M)
 {
 	int         j;
-	uint32      AA, BB, CC, DD;
-	uint32      X[16];
-	uint32      A, B, C, D;
+	uint32_t    AA, BB, CC, DD;
+	uint32_t    X[16];
+	uint32_t    A, B, C, D;
 
 	for (j = 0; j < 16; j++)
 		X[j] = M[j];
@@ -154,7 +153,7 @@ mdfour64 (uint32 * M)
 }
 
 static void
-copy64 (uint32 * M, const unsigned char *in)
+copy64 (uint32_t * M, const unsigned char *in)
 {
 	int         i;
 
@@ -164,7 +163,7 @@ copy64 (uint32 * M, const unsigned char *in)
 }
 
 static void
-copy4 (unsigned char *out, uint32 x)
+copy4 (unsigned char *out, uint32_t x)
 {
 	out[0] = x & 0xFF;
 	out[1] = (x >> 8) & 0xFF;
@@ -186,8 +185,8 @@ static void
 mdfour_tail (const unsigned char *in, int n)
 {
 	unsigned char buf[128];
-	uint32      M[16];
-	uint32      b;
+	uint32_t    M[16];
+	uint32_t    b;
 
 	m->totalN += n;
 
@@ -214,7 +213,7 @@ mdfour_tail (const unsigned char *in, int n)
 VISIBLE void
 mdfour_update (struct mdfour *md, const unsigned char *in, int n)
 {
-	uint32      M[16];
+	uint32_t    M[16];
 
 	if (n == 0)
 		mdfour_tail (in, n);

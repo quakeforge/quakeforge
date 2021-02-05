@@ -51,7 +51,7 @@ GIB_Var_New (const char *key)
 {
 	gib_var_t  *new = calloc (1, sizeof (gib_var_t));
 
-	new->array = calloc (1, sizeof (dstring_t *));
+	new->array = calloc (1, sizeof (struct gib_varray_s));
 	new->key = strdup (key);
 	return new;
 }
@@ -117,7 +117,8 @@ GIB_Var_Get_Complex (hashtab_t ** first, hashtab_t ** second, char *key,
 			if (!(var = GIB_Var_Get (*first, *second, key+start)) && create) {
 				var = GIB_Var_New (key+start);
 				if (!*first)
-					*first = Hash_NewTable (256, GIB_Var_Get_Key, GIB_Var_Free, 0);
+					*first = Hash_NewTable (256, GIB_Var_Get_Key,
+											GIB_Var_Free, 0, 0);
 				Hash_Add (*first, var);
 			}
 
@@ -181,7 +182,8 @@ GIB_Var_Get_Very_Complex (hashtab_t ** first, hashtab_t ** second, dstring_t *ke
 				if (create) {
 					var = GIB_Var_New (key->str+start);
 					if (!*first)
-						*first = Hash_NewTable (256, GIB_Var_Get_Key, GIB_Var_Free, 0);
+						*first = Hash_NewTable (256, GIB_Var_Get_Key,
+												GIB_Var_Free, 0, 0);
 					Hash_Add (*first, var);
 				} else
 					return 0;
@@ -293,7 +295,7 @@ GIB_Domain_Get (const char *name)
 	if (!d) {
 		d = calloc (1, sizeof (gib_domain_t));
 		d->name = strdup (name);
-		d->vars = Hash_NewTable (1024, GIB_Var_Get_Key, GIB_Var_Free, 0);
+		d->vars = Hash_NewTable (1024, GIB_Var_Get_Key, GIB_Var_Free, 0, 0);
 		Hash_Add (gib_domains, d);
 	}
 	return d->vars;
@@ -302,12 +304,13 @@ GIB_Domain_Get (const char *name)
 hashtab_t *
 GIB_Var_Hash_New (void)
 {
-	return Hash_NewTable (1024, GIB_Var_Get_Key, GIB_Var_Free, 0);
+	return Hash_NewTable (1024, GIB_Var_Get_Key, GIB_Var_Free, 0, 0);
 }
 
 void
 GIB_Var_Init (void)
 {
-	gib_globals = Hash_NewTable (1024, GIB_Var_Get_Key, GIB_Var_Free, 0);
-	gib_domains = Hash_NewTable (1024, GIB_Domain_Get_Key, GIB_Domain_Free, 0);
+	gib_globals = Hash_NewTable (1024, GIB_Var_Get_Key, GIB_Var_Free, 0, 0);
+	gib_domains = Hash_NewTable (1024, GIB_Domain_Get_Key,
+								 GIB_Domain_Free, 0, 0);
 }

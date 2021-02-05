@@ -77,19 +77,20 @@
 
 #include "QF/plugin/console.h"
 
-#include "qw/bothdefs.h"
 #include "buildnum.h"
 #include "compat.h"
-#include "crudefile.h"
-#include "game.h"
 #include "netchan.h"
+
+#include "qw/bothdefs.h"
+#include "qw/include/crudefile.h"
+#include "qw/include/game.h"
 #include "qw/pmove.h"
-#include "server.h"
-#include "sv_demo.h"
-#include "sv_progs.h"
-#include "sv_gib.h"
-#include "sv_qtv.h"
-#include "sv_recorder.h"
+#include "qw/include/server.h"
+#include "qw/include/sv_demo.h"
+#include "qw/include/sv_progs.h"
+#include "qw/include/sv_gib.h"
+#include "qw/include/sv_qtv.h"
+#include "qw/include/sv_recorder.h"
 
 SERVER_PLUGIN_PROTOS
 static plugin_list_t server_plugin_list[] = {
@@ -237,7 +238,7 @@ Master_Shutdown (void)
 	Quake calls this before calling Sys_Quit or Sys_Error
 */
 void
-SV_Shutdown (void)
+SV_Shutdown (void *data)
 {
 	Master_Shutdown ();
 	if (sv_fraglogfile) {
@@ -257,7 +258,7 @@ SV_Shutdown (void)
 	Sends a datagram to all the clients informing them of the server crash,
 	then exits
 */
-static void
+static __attribute__((format(printf, 1, 0))) void
 SV_Error (const char *error, va_list argptr)
 {
 	static qboolean inerror = false;
@@ -1206,7 +1207,7 @@ SV_MaskIPTrim (byte *ip, int mask)
 }
 
 // assumes b has already been masked
-static inline qboolean
+static inline __attribute__((pure)) qboolean
 SV_MaskIPCompare (byte *a, byte *b, int mask)
 {
 	int i;
@@ -1430,7 +1431,7 @@ SV_AddIP_f (void)
 		// FIXME: this should boot any matching clients
 	    for (i = 0; i < MAX_CLIENTS; i++) {
 			client_t *cl = &svs.clients[i];
-			char text[1024];
+			const char *text;
 			const char *typestr;
 			char timestr[1024];
 
@@ -1461,9 +1462,9 @@ SV_AddIP_f (void)
 							  bantime / 60);
 				else
 					strncpy (timestr, "permanently", sizeof (timestr));
-				snprintf (text, sizeof (text), "You are %s %s\n%s",
-						  typestr, timestr, type == ft_ban ? "" :
-						  "\nReconnecting won't help...");
+				text = va ("You are %s %s\n%s",
+						   typestr, timestr, type == ft_ban ? "" :
+						   "\nReconnecting won't help...");
 				MSG_ReliableWrite_Begin (&cl->backbuf, svc_centerprint,
 										 strlen (text) + 2);
 				MSG_ReliableWrite_String (&cl->backbuf, text);
@@ -2486,7 +2487,7 @@ SV_Init (void)
 	sv_cbuf = Cbuf_New (&id_interp);
 	sv_args = Cbuf_ArgsNew ();
 
-	Sys_RegisterShutdown (SV_Shutdown);
+	Sys_RegisterShutdown (SV_Shutdown, 0);
 
 	Sys_Init ();
 	GIB_Init (true);
@@ -2523,8 +2524,6 @@ SV_Init (void)
 	Mod_Init_Cvars ();
 	Netchan_Init_Cvars ();
 	Pmove_Init_Cvars ();
-	SV_Progs_Init_Cvars ();
-	PR_Init_Cvars ();
 
 	// and now reprocess the cmdline's sets for overrides
 	Cmd_StuffCmds (sv_cbuf);
@@ -2534,7 +2533,6 @@ SV_Init (void)
 
 	Game_Init ();
 
-	PR_Init ();
 	SV_Progs_Init ();
 	Mod_Init ();
 

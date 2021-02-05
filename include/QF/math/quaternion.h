@@ -34,7 +34,7 @@
 /** \defgroup mathlib_quaternion Quaternion functions
 	\ingroup utils
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 
@@ -58,10 +58,10 @@ extern const vec_t *const quat_origin;
 	} while (0)
 #define QuatConj(a,b) \
 	do { \
-		(b)[0] = (a)[0]; \
+		(b)[0] = -(a)[0]; \
 		(b)[1] = -(a)[1]; \
 		(b)[2] = -(a)[2]; \
-		(b)[3] = -(a)[3]; \
+		(b)[3] = (a)[3]; \
 	} while (0)
 #define QuatAdd(a,b,c) \
 	do { \
@@ -168,6 +168,6 @@ void QuatInverse (const quat_t in, quat_t out);
 void QuatExp (const quat_t a, quat_t b);
 void QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical);
 
-//@}
+///@}
 
 #endif // __QF_math_quaternion_h

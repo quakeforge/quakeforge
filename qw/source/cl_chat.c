@@ -44,8 +44,8 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "client.h"
-#include "cl_chat.h"
+#include "qw/include/client.h"
+#include "qw/include/cl_chat.h"
 
 llist_t *ignore_list, *dead_ignore_list;
 

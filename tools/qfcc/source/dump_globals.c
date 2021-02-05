@@ -43,23 +43,23 @@
 #include "QF/progs.h"
 #include "QF/va.h"
 
-#include "obj_file.h"
-#include "obj_type.h"
-#include "qfprogs.h"
-#include "reloc.h"
-#include "strpool.h"
+#include "tools/qfcc/include/obj_file.h"
+#include "tools/qfcc/include/obj_type.h"
+#include "tools/qfcc/include/qfprogs.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/strpool.h"
 
 static int
 cmp (const void *_a, const void *_b)
 {
-	const ddef_t *a = (const ddef_t *)_a;
-	const ddef_t *b = (const ddef_t *)_b;
+	const pr_def_t *a = (const pr_def_t *)_a;
+	const pr_def_t *b = (const pr_def_t *)_b;
 
 	return a->ofs - b->ofs;
 }
 
 static void
-dump_def (progs_t *pr, ddef_t *def, int indent)
+dump_def (progs_t *pr, pr_def_t *def, int indent)
 {
 	const char *name;
 	const char *type;
@@ -69,10 +69,10 @@ dump_def (progs_t *pr, ddef_t *def, int indent)
 	const char *str;
 	int         saveglobal;
 
-	if (!def->type && !def->ofs && !def->s_name)
+	if (!def->type && !def->ofs && !def->name)
 		return;
 
-	name = PR_GetString (pr, def->s_name);
+	name = PR_GetString (pr, def->name);
 	type = pr_type_name[def->type & ~DEF_SAVEGLOBAL];
 	saveglobal = (def->type & DEF_SAVEGLOBAL) != 0;
 	offset = def->ofs;
@@ -86,7 +86,12 @@ dump_def (progs_t *pr, ddef_t *def, int indent)
 				break;
 			case ev_string:
 				string = G_INT (pr, offset);
-				if (string < 0 || string >= pr->progs->numstrings) {
+				// at runtime, strings can be negative (thus string_t is
+				// signed), but negative strings means they have been
+				// dynamically allocated, thus a negative string index should
+				// never appear in compiled code
+				if (string < 0
+					|| (pr_uint_t) string >= pr->progs->numstrings) {
 					str = "invalid string offset";
 					comment = va (" %d %s", string, str);
 				} else {
@@ -96,6 +101,9 @@ dump_def (progs_t *pr, ddef_t *def, int indent)
 				break;
 			case ev_float:
 				comment = va (" %g", G_FLOAT (pr, offset));
+				break;
+			case ev_double:
+				comment = va (" %.17g", G_DOUBLE (pr, offset));
 				break;
 			case ev_vector:
 				comment = va (" '%g %g %g'",
@@ -112,7 +120,7 @@ dump_def (progs_t *pr, ddef_t *def, int indent)
 				{
 					func_t      func = G_FUNCTION (pr, offset);
 					int         start;
-					if (func >= 0 && func < pr->progs->numfunctions) {
+					if (func < pr->progs->numfunctions) {
 						start = pr->pr_functions[func].first_statement;
 						if (start > 0)
 							comment = va (" %d @ %x", func, start);
@@ -145,15 +153,16 @@ dump_def (progs_t *pr, ddef_t *def, int indent)
 				break;
 		}
 	}
-	printf ("%*s %x %d %s %s%s\n", indent * 12, "",
-			offset, saveglobal, name, type, comment);
+	printf ("%*s %x:%d %d %s %s:%x %s\n", indent * 12, "",
+			offset, def->size, saveglobal, name, type, def->type_encoding,
+			comment);
 }
 
 void
 dump_globals (progs_t *pr)
 {
 	unsigned int i;
-	ddef_t     *global_defs = pr->pr_globaldefs;
+	pr_def_t   *global_defs = pr->pr_globaldefs;
 
 	if (sorted) {
 		global_defs = malloc (pr->progs->numglobaldefs * sizeof (ddef_t));
@@ -162,7 +171,7 @@ dump_globals (progs_t *pr)
 		qsort (global_defs, pr->progs->numglobaldefs, sizeof (ddef_t), cmp);
 	}
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
-		ddef_t *def = &global_defs[i];
+		pr_def_t   *def = &global_defs[i];
 		dump_def (pr, def, 0);
 	}
 }
@@ -177,9 +186,9 @@ dump_fields (progs_t *pr)
 	const char *comment;
 
 	for (i = 0; i < pr->progs->numfielddefs; i++) {
-		ddef_t *def = &pr->pr_fielddefs[i];
+		pr_def_t   *def = &pr->pr_fielddefs[i];
 
-		name = PR_GetString (pr, def->s_name);
+		name = PR_GetString (pr, def->name);
 		type = pr_type_name[def->type & ~DEF_SAVEGLOBAL];
 		offset = def->ofs;
 
@@ -190,19 +199,59 @@ dump_fields (progs_t *pr)
 }
 
 void
+qfo_fields (qfo_t *qfo)
+{
+	unsigned int i;
+	const char *name;
+	const char *typestr;
+	qfot_type_t *type;
+	int         offset;
+	const char *comment;
+	qfo_mspace_t *space = &qfo->spaces[qfo_entity_space];
+
+	if (qfo_entity_space >= qfo->num_spaces) {
+		printf ("no entity space\n");
+		return;
+	}
+	if (!space->num_defs) {
+		printf ("no fields\n");
+		return;
+	}
+
+	for (i = 0; i < space->num_defs; i++) {
+		qfo_def_t  *def = space->defs + i;
+
+		name = QFO_GETSTR (qfo, def->name);
+		//FIXME check type
+		type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t, def->type);
+		typestr = QFO_GETSTR (qfo, type->encoding);
+		offset = def->offset;
+
+		comment = "";
+
+		printf ("%d %s %s%s\n", offset, name, typestr, comment);
+	}
+}
+
+void
 dump_functions (progs_t *pr)
 {
-	int         i, j;
+	pr_uint_t   i, j, count;
 	const char *name;
-	int         start, count;
+	int         start;
 	const char *comment;
+	pr_def_t   *encodings_def;
+	pointer_t type_encodings = 0;
+
+	encodings_def = PR_FindGlobal (pr, ".type_encodings");
+	if (encodings_def) {
+		type_encodings = encodings_def->ofs;
+	}
 
 	for (i = 0; i < pr->progs->numfunctions; i++) {
 		dfunction_t *func = &pr->pr_functions[i];
 
 		name = PR_GetString (pr, func->s_name);
-
-		comment = "";
 
 		start = func->first_statement;
 		if (start > 0)
@@ -216,20 +265,27 @@ dump_functions (progs_t *pr)
 		else
 			count = func->numparms;
 		for (j = 0; j < count; j++)
-			printf (" %d", func->parm_size[j]);
+			printf (" %d:%d", func->parm_size[j].alignment,
+					func->parm_size[j].size);
 		printf (") %d @ %x", func->locals, func->parm_start);
 		puts ("");
-		if (pr->debug) {
-			pr_auxfunction_t *aux = pr->auxfunction_map[i];
-			if (!aux)
+		if (type_encodings) {
+			pr_auxfunction_t *aux = PR_Debug_MappedAuxFunction (pr, i);
+			if (!aux) {
 				continue;
+			}
 			printf ("        %d %s:%d %d %d %d %x\n", aux->function,
 					PR_GetString (pr, func->s_file), aux->source_line,
 					aux->line_info,
 					aux->local_defs, aux->num_locals,
 					aux->return_type);
-			for (j = 0; j < (int)aux->num_locals; j++)
-				dump_def (pr, pr->local_defs + aux->local_defs + j, 1);
+			pr_def_t   *local_defs = PR_Debug_LocalDefs (pr, aux);
+			if (!local_defs) {
+				continue;
+			}
+			for (j = 0; j < aux->num_locals; j++) {
+				dump_def (pr, local_defs + j, 1);
+			}
 		}
 	}
 }
@@ -257,16 +313,17 @@ void
 qfo_globals (qfo_t *qfo)
 {
 	qfo_def_t  *def;
-	int         i;
-	int         space;
+	unsigned    i;
+	unsigned    space;
 	int         count = 0;
 
 	for (space = 0; space < qfo->num_spaces; space++) {
 		for (i = 0; i < qfo->spaces[space].num_defs; i++, count++) {
 			def = &qfo->spaces[space].defs[i];
-			printf ("%-5d %2d:%-5x %s %s %s", count, space, def->offset,
+			printf ("%-5d %2d:%-5x %s %s %x %s", count, space, def->offset,
 					flags_string (def->flags),
 					QFO_GETSTR (qfo, def->name),
+					def->type,
 					QFO_TYPESTR (qfo, def->type));
 			if (!(def->flags & QFOD_EXTERNAL) && qfo->spaces[space].d.data)
 				printf (" %d",
@@ -282,9 +339,14 @@ qfo_relocs (qfo_t *qfo)
 	qfo_reloc_t  *reloc;
 	qfo_def_t    *def;
 	qfo_func_t   *func;
-	int           i;
+	int           opind;
+	dstatement_t *statement;
+	unsigned      i;
 
 	for (i = 0; i < qfo->num_relocs; i++) {
+		if (i == qfo->num_relocs - qfo->num_loose_relocs) {
+			printf ("---- unbound relocs ----\n");
+		}
 		reloc = qfo->relocs + i;
 		if ((unsigned) reloc->type > rel_def_field_ofs) {
 			printf ("%d unknown reloc: %d\n", i, reloc->type);
@@ -344,10 +406,13 @@ qfo_relocs (qfo_t *qfo)
 			case rel_op_b_def_ofs:
 			case rel_op_c_def_ofs:
 				def = qfo->defs + reloc->target;
-				printf (" op.%c@%x def#%d %s",
-						reloc->type - rel_op_a_def_ofs + 'a',
+				opind = reloc->type - rel_op_a_def_ofs;
+				statement = QFO_STATEMENT (qfo, reloc->offset);
+				printf (" op.%c@%x def#%d %s+%d",
+						opind + 'a',
 						reloc->offset, reloc->target,
-						QFO_GETSTR (qfo, def->name));
+						QFO_GETSTR (qfo, def->name),
+						((pr_ushort_t *)statement)[opind + 1]);
 				break;
 			case rel_def_def_ofs:
 				def = qfo->defs + reloc->target;
@@ -385,8 +450,9 @@ qfo_functions (qfo_t *qfo)
 {
 	qfo_def_t  *def;
 	qfo_func_t *func;
-	int         i, d;
-	int         space;
+	unsigned    i, j, d;
+	unsigned    space;
+	qfo_mspace_t *locals;
 
 	for (i = 0; i < qfo->num_funcs; i++) {
 		func = &qfo->funcs[i];
@@ -410,17 +476,40 @@ qfo_functions (qfo_t *qfo)
 			printf (" @ %x", func->code);
 		else
 			printf (" = #%d", -func->code);
-		puts ("");
+		printf (" loc: %d\n", func->locals_space);
+		if (func->locals_space) {
+			locals = &qfo->spaces[func->locals_space];
+			printf ("%*s%d %p %d %p %d %d\n", 16, "", locals->type,
+					locals->defs, locals->num_defs,
+					locals->d.data, locals->data_size, locals->id);
+			for (j = 0; j < locals->num_defs; j++) {
+				qfo_def_t  *def = locals->defs + j;
+				int         offset;
+				const char *typestr;
+				const char *name;
+				qfot_type_t *type;
+
+				name = QFO_GETSTR (qfo, def->name);
+				//FIXME check type
+				type = QFO_POINTER (qfo, qfo_type_space, qfot_type_t,
+									def->type);
+				typestr = QFO_GETSTR (qfo, type->encoding);
+				offset = def->offset;
+
+				printf ("%*s%d %s %s\n", 20, "", offset, name, typestr);
+			}
+		}
 	}
 }
 
 static const char *ty_meta_names[] = {
-	"ty_none",
+	"ty_basic",
 	"ty_struct",
 	"ty_union",
 	"ty_enum",
 	"ty_array",
 	"ty_class",
+	"ty_alias",
 };
 #define NUM_META ((int)(sizeof (ty_meta_names) / sizeof (ty_meta_names[0])))
 
@@ -447,52 +536,58 @@ dump_qfo_types (qfo_t *qfo, int base_address)
 					qfo->spaces[qfo_type_space].data_size);
 			continue;
 		}
-		if (type->ty < 0 || type->ty >= NUM_META)
-			meta = va ("invalid meta: %d", type->ty);
+		if (type->meta < 0 || type->meta >= NUM_META)
+			meta = va ("invalid meta: %d", type->meta);
 		else
-			meta = ty_meta_names[type->ty];
+			meta = ty_meta_names[type->meta];
 		printf ("%-5x %-9s %-20s", type_ptr + base_address, meta,
 				QFO_TYPESTR (qfo, type_ptr));
-		if (type->ty < 0 || type->ty >= NUM_META) {
+		if (type->meta < 0 || type->meta >= NUM_META) {
 			puts ("");
 			break;
 		}
-		switch ((ty_meta_e) type->ty) {
-			case ty_none:
-				printf (" %-10s", (type->t.type < 0
-								   || type->t.type >= ev_type_count)
+		switch ((ty_meta_e) type->meta) {
+			case ty_basic:
+				printf (" %-10s", (type->type < 0
+								   || type->type >= ev_type_count)
 								  ? "invalid type"
-								  : pr_type_name[type->t.type]);
-				if (type->t.type == ev_func) {
-					printf (" %4x %d", type->t.func.return_type,
-							count = type->t.func.num_params);
+								  : pr_type_name[type->type]);
+				if (type->type == ev_func) {
+					printf (" %4x %d", type->func.return_type,
+							count = type->func.num_params);
 					if (count < 0)
 						count = ~count;	//ones complement
 					for (i = 0; i < count; i++)
-						printf (" %x", type->t.func.param_types[i]);
-				} else if (type->t.type == ev_pointer
-						   || type->t.type == ev_field) {
-					printf (" %4x", type->t.fldptr.aux_type);
+						printf (" %x", type->func.param_types[i]);
+				} else if (type->type == ev_pointer
+						   || type->type == ev_field) {
+					printf (" %4x", type->fldptr.aux_type);
 				}
 				printf ("\n");
 				break;
 			case ty_struct:
 			case ty_union:
 			case ty_enum:
-				printf (" %s\n", QFO_GETSTR (qfo, type->t.strct.tag));
-				for (i = 0; i < type->t.strct.num_fields; i++) {
+				printf (" %s\n", QFO_GETSTR (qfo, type->strct.tag));
+				for (i = 0; i < type->strct.num_fields; i++) {
 					printf ("        %-5x %4x %s\n",
-							type->t.strct.fields[i].type,
-							type->t.strct.fields[i].offset,
-							QFO_GETSTR (qfo, type->t.strct.fields[i].name));
+							type->strct.fields[i].type,
+							type->strct.fields[i].offset,
+							QFO_GETSTR (qfo, type->strct.fields[i].name));
 				}
 				break;
 			case ty_array:
-				printf (" %-5x %d %d\n", type->t.array.type,
-						type->t.array.base, type->t.array.size);
+				printf (" %-5x %d %d\n", type->array.type,
+						type->array.base, type->array.size);
 				break;
 			case ty_class:
-				printf (" %-5x\n", type->t.class);
+				printf (" %-5x\n", type->class);
+				break;
+			case ty_alias:
+				printf (" %s %d %5x %5x\n",
+						QFO_GETSTR (qfo, type->alias.name),
+						type->alias.type, type->alias.aux_type,
+						type->alias.full_type);
 				break;
 		}
 	}
@@ -509,7 +604,7 @@ dump_types (progs_t *pr)
 {
 	qfo_mspace_t spaces[qfo_num_spaces];
 	qfo_t       qfo;
-	ddef_t     *encodings_def;
+	pr_def_t   *encodings_def;
 	qfot_type_encodings_t *encodings;
 
 	encodings_def = PR_FindGlobal (pr, ".type_encodings");

@@ -55,7 +55,7 @@ void GLSL_TextureInit (void);
 scrap_t *GLSL_CreateScrap (int size, int format, int linear);
 void GLSL_DestroyScrap (scrap_t *scrap);
 void GLSL_ScrapClear (scrap_t *scrap);
-int GLSL_ScrapTexture (scrap_t *scrap);
+int GLSL_ScrapTexture (scrap_t *scrap) __attribute__((pure));
 subpic_t *GLSL_ScrapSubpic (scrap_t *scrap, int width, int height);	//XXX slow!
 void GLSL_SubpicDelete (subpic_t *subpic);	//XXX slow!
 void GLSL_SubpicUpdate (subpic_t *subpic, byte *data, int batch);

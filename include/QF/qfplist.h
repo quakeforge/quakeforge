@@ -25,13 +25,13 @@
 
 */
 
-#ifndef __QF_qfplist_h_
-#define __QF_qfplist_h_
+#ifndef __QF_qfplist_h
+#define __QF_qfplist_h
 
 /** \defgroup qfplist Property lists
 	\ingroup utils
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 
@@ -75,7 +75,7 @@ char *PL_WritePropertyList (plitem_t *pl);
 	\param item The object
 	\return the type of the object
 */
-pltype_t PL_Type (plitem_t *item);
+pltype_t PL_Type (plitem_t *item) __attribute__((pure));
 
 /** Retrieve a string from a string object.
 
@@ -85,7 +85,7 @@ pltype_t PL_Type (plitem_t *item);
 	\note	You are NOT responsible for freeing the returned object. It will
 	be destroyed when its container is.
 */
-const char *PL_String (plitem_t *string);
+const char *PL_String (plitem_t *string) __attribute__((pure));
 
 /** Retrieve a value from a dictionary object.
 
@@ -117,7 +117,7 @@ plitem_t *PL_RemoveObjectForKey (plitem_t *dict, const char *key);
 	\note	You are NOT responsible for freeing the returned object. It will
 	be destroyed when its container is.
 */
-plitem_t *PL_ObjectAtIndex (plitem_t *array, int index);
+plitem_t *PL_ObjectAtIndex (plitem_t *array, int index) __attribute__((pure));
 
 /** Retrieve a list of all keys in a dictionary.
 
@@ -133,7 +133,7 @@ plitem_t *PL_D_AllKeys (plitem_t *dict);
 
 	\return Returns the number of keys in the dictionary.
 */
-int PL_D_NumKeys (plitem_t *dict);
+int PL_D_NumKeys (plitem_t *dict) __attribute__((pure));
 
 /** Add a key/value pair to a dictionary.
 
@@ -164,7 +164,7 @@ qboolean PL_A_AddObject (plitem_t *array, plitem_t *item);
 
 	\return number of objects in the array
 */
-int PL_A_NumObjects (plitem_t *array);
+int PL_A_NumObjects (plitem_t *array) __attribute__((pure));
 
 /** Insert an item into an array before the specified location.
 
@@ -226,6 +226,6 @@ plitem_t *PL_NewString (const char *str);
 */
 void PL_Free (plitem_t *item);
 
-//@}
+///@}
 
-#endif	// __QF_qfplist_h_
+#endif//__QF_qfplist_h

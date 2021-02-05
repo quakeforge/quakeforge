@@ -312,6 +312,39 @@ keyname_t   keynames[] = {
 	{ "K_F13",			QFK_F13 },
 	{ "K_F14",			QFK_F14 },
 	{ "K_F15",			QFK_F15 },
+	{ "K_F16",			QFK_F16 },
+	{ "K_F17",			QFK_F17 },
+	{ "K_F18",			QFK_F18 },
+	{ "K_F19",			QFK_F19 },
+	{ "K_F20",			QFK_F20 },
+	{ "K_F21",			QFK_F21 },
+	{ "K_F22",			QFK_F22 },
+	{ "K_F23",			QFK_F23 },
+	{ "K_F24",			QFK_F24 },
+	{ "K_F25",			QFK_F25 },
+	{ "K_F26",			QFK_F26 },
+	{ "K_F27",			QFK_F27 },
+	{ "K_F28",			QFK_F28 },
+	{ "K_F29",			QFK_F29 },
+	{ "K_F30",			QFK_F30 },
+	{ "K_F31",			QFK_F31 },
+	{ "K_F32",			QFK_F32 },
+	{ "K_F33",			QFK_F33 },
+	{ "K_F34",			QFK_F34 },
+	{ "K_F35",			QFK_F35 },
+	{ "K_F36",			QFK_F36 },
+	{ "K_F37",			QFK_F37 },
+	{ "K_F38",			QFK_F38 },
+	{ "K_F39",			QFK_F39 },
+	{ "K_F40",			QFK_F40 },
+	{ "K_F41",			QFK_F41 },
+	{ "K_F42",			QFK_F42 },
+	{ "K_F43",			QFK_F43 },
+	{ "K_F44",			QFK_F44 },
+	{ "K_F45",			QFK_F45 },
+	{ "K_F46",			QFK_F46 },
+	{ "K_F47",			QFK_F47 },
+	{ "K_F48",			QFK_F48 },
 	{ "K_NUMLOCK",		QFK_NUMLOCK },
 	{ "K_CAPSLOCK",		QFK_CAPSLOCK },
 	{ "K_SCROLLOCK",	QFK_SCROLLOCK },
@@ -511,7 +544,7 @@ keyname_t   keynames[] = {
 	{NULL, 0}
 };
 
-static imt_t *
+static __attribute__((pure)) imt_t *
 key_target_find_imt (keytarget_t *kt, const char *imt_name)
 {
 	imt_t      *imt;
@@ -850,7 +883,7 @@ Key_In_Bind_f (void)
 {
 	int         c, i;
 	const char *imt, *key, *cmd = 0;
-	char        cmd_buf[1024];
+	dstring_t  *cmd_buf = 0;
 
 	c = Cmd_Argc ();
 
@@ -865,17 +898,17 @@ Key_In_Bind_f (void)
 	key = Cmd_Argv (2);
 
 	if (c >= 4) {
-		cmd = cmd_buf;
-		cmd_buf[0] = 0;
+		cmd_buf = dstring_newstr ();
 		for (i = 3; i < c; i++) {
-			strncat (cmd_buf, Cmd_Argv (i), sizeof (cmd_buf) -
-					 strlen (cmd_buf));
-			if (i != (c - 1))
-				strncat (cmd_buf, " ", sizeof (cmd_buf) - strlen (cmd_buf));
+			dasprintf (cmd_buf, "%s%s", i > 3 ? " " : "", Cmd_Argv (i));
 		}
+		cmd = cmd_buf->str;
 	}
 
 	Key_In_Bind (imt, key, cmd);
+	if (cmd_buf) {
+		dstring_delete (cmd_buf);
+	}
 }
 
 static void
@@ -896,7 +929,7 @@ Key_Bind_f (void)
 {
 	int         c, i;
 	const char *key, *cmd = 0;
-	char        cmd_buf[1024];
+	dstring_t  *cmd_buf = 0;
 
 	c = Cmd_Argc ();
 
@@ -908,17 +941,17 @@ Key_Bind_f (void)
 	key = OK_TranslateKeyName (Cmd_Argv (1));
 
 	if (c >= 3) {
-		cmd = cmd_buf;
-		cmd_buf[0] = 0;
+		cmd_buf = dstring_newstr ();
 		for (i = 2; i < c; i++) {
-			strncat (cmd_buf, Cmd_Argv (i), sizeof (cmd_buf) -
-					 strlen (cmd_buf));
-			if (i != (c - 1))
-				strncat (cmd_buf, " ", sizeof (cmd_buf) - strlen (cmd_buf));
+			dasprintf (cmd_buf, "%s%s", i > 2 ? " " : "", Cmd_Argv (i));
 		}
+		cmd = cmd_buf->str;
 	}
 
 	Key_In_Bind ("imt_mod", key, cmd);
+	if (cmd_buf) {
+		dstring_delete (cmd_buf);
+	}
 }
 
 static void

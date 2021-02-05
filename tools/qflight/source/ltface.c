@@ -52,11 +52,11 @@
 
 #include "compat.h"
 
-#include "light.h"
-#include "entities.h"
-#include "noise.h"
-#include "options.h"
-#include "threads.h"
+#include "tools/qflight/include/light.h"
+#include "tools/qflight/include/entities.h"
+#include "tools/qflight/include/noise.h"
+#include "tools/qflight/include/options.h"
+#include "tools/qflight/include/threads.h"
 
 int c_bad;
 int c_culldistplane, c_proper;
@@ -488,7 +488,6 @@ SkyLightFace (entity_t *ent, int sun, lightinfo_t *l)
 	// Check each point...
 	VectorCopy (sun_dir, incoming);
 	VectorNormalize (incoming);
-	angle = DotProduct (incoming, l->facenormal);
 	//anglesense = 0.5;	//FIXME
 
 	// FIXME global
@@ -499,11 +498,9 @@ SkyLightFace (entity_t *ent, int sun, lightinfo_t *l)
 
 		if (!TestSky (l, point->v, sun_dir))
 			continue;
+
 		add = sun_light;
-			continue;
-
 		add *= angle;
-
 		add *= options.extrascale;
 
 		sample = &l->sample[mapnum][point->samplepos];

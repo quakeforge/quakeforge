@@ -1,0 +1,10 @@
+if HAVE_XDG
+desktopdir=$(datarootdir)/applications
+desktop_DATA = @NQ_DESKTOP_DATA@ @QW_DESKTOP_DATA@
+endif
+
+EXTRA_DIST += \
+	desktop/quakeforge-nq-sdl.desktop \
+	desktop/quakeforge-nq-x11.desktop \
+	desktop/quakeforge-qw-sdl.desktop \
+	desktop/quakeforge-qw-x11.desktop

@@ -8,12 +8,13 @@ int obj_increment_retaincount (id object) = #0;
 void
 send (id obj, string cmd, string str)
 {
-	@static @param params[1];
-	@va_list va_list = {1, params};
-	SEL sel;
+	@static @param params[3];
+	@va_list va_list = {3, params};
+	SEL sel = sel_get_uid (cmd);
 
-	params[0].string_val = str;
-	sel = sel_get_uid (cmd);
+	params[0].pointer_val = obj;
+	params[1].pointer_val = sel;
+	params[2].string_val = str;
 	obj_msg_sendv (obj, sel, va_list);
 }
 

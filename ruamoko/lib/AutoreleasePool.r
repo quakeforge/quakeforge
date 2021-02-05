@@ -1,7 +1,6 @@
-#include "AutoreleasePool.h"
-#include "Array+Private.h"
+#include <AutoreleasePool.h>
 
-#include "Array.h"
+#include <Array.h>
 #include "Array+Private.h"
 
 @static Array	*poolStack;

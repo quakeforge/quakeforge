@@ -1,0 +1,15 @@
+noinst_LTLIBRARIES += @iqm_libs@
+EXTRA_LTLIBRARIES += libs/models/iqm/libiqm_gl.la libs/models/iqm/libiqm_glsl.la libs/models/iqm/libiqm_sw.la
+
+iqm_src= libs/models/iqm/model_iqm.c
+iqm_gl_src= libs/models/iqm/gl_model_iqm.c
+iqm_glsl_src= libs/models/iqm/glsl_model_iqm.c
+iqm_sw_src= libs/models/iqm/sw_model_iqm.c
+
+libs_models_iqm_libiqm_gl_la_SOURCES= $(iqm_gl_src) $(iqm_src)
+
+libs_models_iqm_libiqm_glsl_la_SOURCES= $(iqm_glsl_src) $(iqm_src)
+
+libs_models_iqm_libiqm_sw_la_SOURCES= $(iqm_sw_src) $(iqm_src)
+
+EXTRA_DIST += $(iqm_gl_src) $(iqm_glsl_src) $(iqm_sw_src) $(iqm_src)

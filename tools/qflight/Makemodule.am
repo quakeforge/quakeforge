@@ -1,0 +1,4 @@
+include tools/qflight/include/Makemodule.am
+include tools/qflight/source/Makemodule.am
+
+man_MANS +=	tools/qflight/qflight.1

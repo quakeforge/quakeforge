@@ -53,16 +53,17 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "compat.h"
+
 #include "qw/msg_ucmd.h"
 #include "qw/msg_ucmd.h"
 
 #include "qw/bothdefs.h"
-#include "compat.h"
 #include "qw/pmove.h"
-#include "server.h"
-#include "sv_gib.h"
-#include "sv_progs.h"
-#include "sv_recorder.h"
+#include "qw/include/server.h"
+#include "qw/include/sv_gib.h"
+#include "qw/include/sv_progs.h"
+#include "qw/include/sv_recorder.h"
 #include "world.h"
 
 typedef struct ucmd_s {
@@ -1211,6 +1212,7 @@ SV_SetUserinfo (client_t *client, const char *key, const char *value)
 		P_STRING (&sv_pr_state, 0) = PR_SetTempString (&sv_pr_state, key);
 		P_STRING (&sv_pr_state, 1) = PR_SetTempString (&sv_pr_state, oldvalue);
 		P_STRING (&sv_pr_state, 2) = PR_SetTempString (&sv_pr_state, value);
+		sv_pr_state.pr_argc = 3;
 		PR_ExecuteProgram (&sv_pr_state, sv_funcs.UserInfoChanged);
 		PR_PopFrame (&sv_pr_state);
 		send_changes = !R_FLOAT (&sv_pr_state);
@@ -1261,6 +1263,7 @@ SV_SetInfo_f (void *unused)
 		PR_RESET_PARAMS (&sv_pr_state);
 		P_STRING (&sv_pr_state, 0) = PR_SetTempString (&sv_pr_state, key);
 		P_STRING (&sv_pr_state, 1) = PR_SetTempString (&sv_pr_state, value);
+		sv_pr_state.pr_argc = 2;
 		PR_ExecuteProgram (&sv_pr_state, sv_funcs.UserInfoCallback);
 		PR_PopFrame (&sv_pr_state);
 		if (R_FLOAT (&sv_pr_state))
@@ -2007,7 +2010,7 @@ static builtin_t builtins[] = {
 void
 SV_UserInit (void)
 {
-	ucmd_table = Hash_NewTable (251, ucmds_getkey, ucmds_free, 0);
+	ucmd_table = Hash_NewTable (251, ucmds_getkey, ucmds_free, 0, 0);
 	Hash_SetHashCompare (ucmd_table, ucmd_get_hash, ucmd_compare);
 	PR_RegisterBuiltins (&sv_pr_state, builtins);
 	cl_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, NULL,

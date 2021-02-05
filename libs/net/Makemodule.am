@@ -1,0 +1,14 @@
+
+noinst_LTLIBRARIES +=	libs/net/libnet_chan.la libs/net/libnet_main.la
+
+include libs/net/nc/Makemodule.am
+include libs/net/nm/Makemodule.am
+
+libs_net_libnet_chan_la_LDFLAGS=		@STATIC@
+libs_net_libnet_chan_la_SOURCES= 	libs/net/net_chan.c ${nc_src}
+EXTRA_libs_net_libnet_chan_la_SOURCES = $(ipv4_src) $(ipv6_src)
+
+nm_libs=nm/libnm.la
+libs_net_libnet_main_la_LDFLAGS=		@STATIC@
+libs_net_libnet_main_la_SOURCES=		libs/net/net_main.c ${nm_src}
+EXTRA_libs_net_libnet_main_la_SOURCES = $(nm_extra)

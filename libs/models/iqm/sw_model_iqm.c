@@ -100,7 +100,7 @@ sw_iqm_load_textures (iqm_t *iqm)
 	bytes = (iqm->num_verts + 7) / 8;
 	done_verts = alloca (bytes);
 	memset (done_verts, 0, bytes);
-	sw->skins = malloc (iqm->num_meshes * sizeof (tex_t));
+	sw->skins = malloc (iqm->num_meshes * sizeof (tex_t *));
 	for (i = 0; i < iqm->num_meshes; i++) {
 		for (j = 0; j < i; j++) {
 			if (iqm->meshes[j].material == iqm->meshes[i].material) {

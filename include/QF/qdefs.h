@@ -27,8 +27,8 @@
 
 */
 
-#ifndef __qdefs_h
-#define __qdefs_h
+#ifndef __QF_qdefs_h
+#define __QF_qdefs_h
 
 #define MAX_QPATH		64
 #define MAX_CL_STATS	32
@@ -40,4 +40,4 @@
 
 #define clc_stringcmd	4
 
-#endif // __qdefs_h
+#endif//__QF_qdefs_h

@@ -1,0 +1,16 @@
+QFVIS_LIBS=@QFVIS_LIBS@
+QFVIS_DEPS=@QFVIS_DEPS@
+QFVIS_INCS=@QFVIS_INCS@
+
+bin_PROGRAMS += qfvis
+
+qfvis_SOURCES = \
+	tools/qfvis/source/base-vis.c \
+	tools/qfvis/source/flow.c \
+	tools/qfvis/source/options.c \
+	tools/qfvis/source/qfvis.c \
+	tools/qfvis/source/soundphs.c
+
+qfvis_LDFLAGS=		$(PTHREAD_LDFLAGS)
+qfvis_LDADD=		$(QFVIS_LIBS)
+qfvis_DEPENDENCIES=	$(QFVIS_DEPS)

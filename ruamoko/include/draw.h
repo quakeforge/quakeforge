@@ -1,7 +1,7 @@
 #ifndef __ruamoko_draw_h
 #define __ruamoko_draw_h
 
-#include "Object.h"
+#include <Object.h>
 
 struct _qpic_t {
 	int width;

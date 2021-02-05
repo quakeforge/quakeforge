@@ -35,6 +35,6 @@ void CF_Close (int desc);
 const char * CF_Read (int desc);
 int CF_Write (int desc, const char *buf);
 int CF_EOF (int desc);
-int CF_Quota (void);
+int CF_Quota (void) __attribute__((pure));
 
 #endif // _CRUDEFILE_H

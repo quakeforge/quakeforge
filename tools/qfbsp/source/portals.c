@@ -28,11 +28,11 @@
 
 #include "QF/sys.h"
 
-#include "brush.h"
-#include "bsp5.h"
-#include "draw.h"
-#include "options.h"
-#include "portals.h"
+#include "tools/qfbsp/include/brush.h"
+#include "tools/qfbsp/include/bsp5.h"
+#include "tools/qfbsp/include/draw.h"
+#include "tools/qfbsp/include/options.h"
+#include "tools/qfbsp/include/portals.h"
 
 /**	\addtogroup qfbsp_portals
 */
@@ -280,7 +280,6 @@ CutNodePortals_r (node_t *node)
 	/// cutting plane and clipping it by all of the planes from the other
 	/// portals on the node.
 	w = BaseWindingForPlane (plane);
-	side = 0;
 	for (p = node->portals; p; p = p->next[side]) {
 		clipplane = planes[p->planenum];	// copy the plane
 		if (p->nodes[0] == node)
@@ -423,7 +422,7 @@ int         num_realleafs;
 	\param cont		The contents for which to check.
 	\return			1 if the node has the specified contents, otherwise 0.
 */
-static int
+static __attribute__((pure)) int
 HasContents (const node_t *n, int cont)
 {
 	if (n->contents == cont)
@@ -440,7 +439,7 @@ HasContents (const node_t *n, int cont)
 	\param n1		The first node to check.
 	\param n2		The second node to check.
 */
-static int
+static __attribute__((pure)) int
 ShareContents (const node_t *n1, const node_t *n2)
 {
 	if (n1->contents) {
@@ -462,7 +461,7 @@ ShareContents (const node_t *n1, const node_t *n2)
 	\param n1		The first node to check.
 	\param n2		The second node to check.
 */
-static int
+static __attribute__((pure)) int
 SameContents (const node_t *n1, const node_t *n2)
 {
 	if (n1->contents == CONTENTS_SOLID || n2->contents == CONTENTS_SOLID)
@@ -472,7 +471,7 @@ SameContents (const node_t *n1, const node_t *n2)
 	if (options.watervis)	//FIXME be more picky?
 		return 1;
 	if (n1->detail && n2->detail)
-		ShareContents (n1, n2);
+		return ShareContents (n1, n2);
 	if (n1->detail)
 		return HasContents (n1, n2->contents);
 	if (n2->detail)

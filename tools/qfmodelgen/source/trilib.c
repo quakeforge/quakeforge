@@ -31,7 +31,7 @@
 #include "QF/quakeio.h"
 #include "QF/sys.h"
 
-#include "trilib.h"
+#include "tools/qfmodelgen/include/trilib.h"
 
 // on disk representation of a face
 

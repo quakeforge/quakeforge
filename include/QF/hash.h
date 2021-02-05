@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __hash_h
-#define __hash_h
+#ifndef __QF_hash_h
+#define __QF_hash_h
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -34,9 +34,10 @@
 /** \defgroup hash Hash tables
 	\ingroup utils
 */
-//@{
+///@{
 
 typedef struct hashtab_s hashtab_t;
+typedef struct hashlink_s hashlink_t;
 
 /** create a new hash table.
 	\param tsize	table size. larger values will give better distribution, but
@@ -50,6 +51,13 @@ typedef struct hashtab_s hashtab_t;
 				element to be freed and the second is the user data pointer.
 	\param ud	user data pointer. set to whatever you want, it will be passed
 				to the get key and free functions as the second parameter.
+	\param hlfl Address of opaque pointer used for per-thread allocation of
+				internal memory. If null, a local static pointer will be used,
+				but the hash table will not be thread-safe unless all tables
+				created with a null \a hlfl (hashlink freelist) are used in
+				only the one thread. However, this applys only to updating a
+				hash table; hash tables that are not updated can be safely
+				shared between threads.
 	\return		pointer to the hash table (to be passed to the other functions)
 				or 0 on error.
 
@@ -59,7 +67,8 @@ typedef struct hashtab_s hashtab_t;
 	previous ones until the later one is removed (Hash_Del).
 */
 hashtab_t *Hash_NewTable (int tsize, const char *(*gk)(const void*,void*),
-						  void (*f)(void*,void*), void *ud);
+						  void (*f)(void*,void*), void *ud,
+						  hashlink_t **hlfl);
 
 /** change the hash and compare functions used by the Hash_*Element functions.
 	the default hash function just returns the address of the element, and the
@@ -177,20 +186,20 @@ void Hash_Free (hashtab_t *tab, void *ele);
 
 	this is the same function as used internally.
 */
-unsigned long Hash_String (const char *str);
+unsigned long Hash_String (const char *str) __attribute__((pure));
 
 /** hash a buffer.
 	\param buf	the buffer to hash
 	\param len	the size of the buffer
 	\return		the hash value of the string.
 */
-unsigned long Hash_Buffer (const void *buf, int len);
+unsigned long Hash_Buffer (const void *buf, int len) __attribute__((pure));
 
 /** get the size of the table
 	\param tab	the table in question
 	\return		the number of elements in the table.
 */
-size_t Hash_NumElements (hashtab_t *tab);
+size_t Hash_NumElements (hashtab_t *tab) __attribute__((pure));
 
 /** list of all elements in the table.
 	\param tab	the table to list
@@ -209,6 +218,6 @@ void **Hash_GetList (hashtab_t *tab);
 */
 void Hash_Stats (hashtab_t *tab);
 
-//@}
+///@}
 
-#endif // __hash_h
+#endif//__QF_hash_h

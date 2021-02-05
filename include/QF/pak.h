@@ -28,12 +28,12 @@
 
 */
 
-#ifndef __qf_pak_h
-#define __qf_pak_h
+#ifndef __QF_pak_h
+#define __QF_pak_h
 
 /** \addtogroup pak
 */
-//@{
+///@{
 
 // little-endian PACK
 #define IDPAKHEADER		(('K'<<24)+('C'<<16)+('A'<<8)+'P')
@@ -51,6 +51,6 @@ typedef struct {
 	int			dirlen;
 } dpackheader_t;
 
-//@}
+///@}
 
-#endif//__qf_pak_h
+#endif//__QF_pak_h

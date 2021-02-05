@@ -1,0 +1,16 @@
+EXTRA_DIST += \
+	tools/qfbsp/include/brush.h \
+	tools/qfbsp/include/bsp5.h \
+	tools/qfbsp/include/csg4.h \
+	tools/qfbsp/include/draw.h \
+	tools/qfbsp/include/map.h \
+	tools/qfbsp/include/merge.h \
+	tools/qfbsp/include/options.h \
+	tools/qfbsp/include/outside.h \
+	tools/qfbsp/include/portals.h \
+	tools/qfbsp/include/readbsp.h \
+	tools/qfbsp/include/region.h \
+	tools/qfbsp/include/solidbsp.h \
+	tools/qfbsp/include/surfaces.h \
+	tools/qfbsp/include/tjunc.h \
+	tools/qfbsp/include/writebsp.h

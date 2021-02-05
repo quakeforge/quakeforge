@@ -42,6 +42,7 @@
 
 #include "QF/checksum.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
@@ -132,25 +133,28 @@ Mod_LeafPVS (mleaf_t *leaf, model_t *model)
 static void
 mod_unique_miptex_name (texture_t **textures, texture_t *tx, int ind)
 {
-	char        name[17];
+	char       *name;
 	int         num = 0, i;
-	const char *tag;
+	dstring_t  *tag = 0;
 
-	strncpy (name, tx->name, 16);
-	name[16] = 0;
+	name = tx->name;
 	do {
 		for (i = 0; i < ind; i++)
 			if (textures[i] && !strcmp (textures[i]->name, tx->name))
 				break;
 		if (i == ind)
 			break;
-		tag = va ("~%x", num++);
-		strncpy (tx->name, name, 16);
-		if (strlen (name) + strlen (tag) <= 15)
-			strcat (tx->name, tag);
-		else
-			strcpy (tx->name + 15 - strlen (tag), tag);
+		if (!tag) {
+			tag = dstring_new ();
+		}
+		dsprintf (tag, "%s~%x", name, num++);
+		tx->name = tag->str;
 	} while (1);
+
+	if (tag) {
+		tx->name = dstring_freeze (tag);
+		free(name);
+	}
 }
 
 static void
@@ -188,7 +192,7 @@ Mod_LoadTextures (bsp_t *bsp)
 
 		loadmodel->textures[i] = tx;
 
-		memcpy (tx->name, mt->name, sizeof (tx->name));
+		tx->name = strndup(mt->name, sizeof (mt->name));
 		mod_unique_miptex_name (loadmodel->textures, tx, i);
 		tx->width = mt->width;
 		tx->height = mt->height;
@@ -217,7 +221,6 @@ Mod_LoadTextures (bsp_t *bsp)
 		memset (altanims, 0, sizeof (altanims));
 
 		max = tx->name[1];
-		altmax = 0;
 		if (max >= 'a' && max <= 'z')
 			max -= 'a' - 'A';
 		if (max >= '0' && max <= '9') {
@@ -959,7 +962,7 @@ Mod_LoadBrushModel (model_t *mod, void *buffer)
 
 		if (i < mod->numsubmodels - 1) {
 			// duplicate the basic information
-			char	name[10];
+			char	name[12];
 
 			snprintf (name, sizeof (name), "*%i", i + 1);
 			loadmodel = Mod_FindName (name);

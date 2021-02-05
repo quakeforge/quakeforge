@@ -356,8 +356,8 @@ set_cvar (const char *cmd, int orflags)
 			Cvar_SetFlags (var, var->flags | orflags);
 		}
 	} else {
-		var = Cvar_Get (var_name, value, CVAR_USER_CREATED | orflags, NULL,
-						USER_CVAR);
+		Cvar_Get (var_name, value, CVAR_USER_CREATED | orflags, NULL,
+				  USER_CVAR);
 	}
 }
 
@@ -580,8 +580,8 @@ calias_get_key (const void *c, void *unused)
 VISIBLE void
 Cvar_Init_Hash (void)
 {
-	cvar_hash = Hash_NewTable (1021, cvar_get_key, cvar_free, 0);
-	calias_hash = Hash_NewTable (1021, calias_get_key, calias_free, 0);
+	cvar_hash = Hash_NewTable (1021, cvar_get_key, cvar_free, 0, 0);
+	calias_hash = Hash_NewTable (1021, calias_get_key, calias_free, 0, 0);
 }
 
 VISIBLE void

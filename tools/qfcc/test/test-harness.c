@@ -96,7 +96,7 @@ open_file (const char *path, int *len)
 }
 
 static void *
-load_file (progs_t *pr, const char *name)
+load_file (progs_t *pr, const char *name, off_t *_size)
 {
 	QFile      *file;
 	int         size;
@@ -112,6 +112,7 @@ load_file (progs_t *pr, const char *name)
 	sym = malloc (size + 1);
 	sym[size] = 0;
 	Qread (file, sym, size);
+	*_size = size;
 	return sym;
 }
 
@@ -135,8 +136,13 @@ init_qf (void)
 
 	Memory_Init (malloc (1024 * 1024), 1024 * 1024);
 
-	Cvar_Get ("pr_debug", "2", 0, 0, 0);
+	cvar_t *debug = Cvar_Get ("pr_debug", "2", 0, 0, 0);
 	Cvar_Get ("pr_boundscheck", "2", 0, 0, 0);
+	Cvar_Get ("pr_deadbeef_locals", "1", 0, 0, 0);
+
+	if (options.trace > 1) {
+		Cvar_SetValue (debug, 4);
+	}
 
 	pr.pr_edicts = &edicts;
 	pr.num_edicts = &num_edicts;
@@ -145,10 +151,9 @@ init_qf (void)
 	pr.allocate_progs_mem = allocate_progs_mem;
 	pr.free_progs_mem = free_progs_mem;
 	pr.no_exec_limit = 0;	// absolutely want a limit!
-	pr.pr_trace = options.trace;
 
 	PR_Init_Cvars ();
-	PR_Init ();
+	PR_Init (&pr);
 	RUA_Init (&pr, 0);
 	PR_Cmds_Init(&pr);
 	BI_Init (&pr);
@@ -165,10 +170,17 @@ load_progs (const char *name)
 		return 0;
 	}
 	pr.progs_name = name;
-	PR_LoadProgsFile (&pr, file, size, 16, 1024 * 1024);
+	pr.max_edicts = 16;
+	pr.zone_size = 1024 * 1024;
+	pr.stack_size = 64 * 1024;
+	PR_LoadProgsFile (&pr, file, size);
 	Qclose (file);
 	if (!PR_RunLoadFuncs (&pr))
 		PR_Error (&pr, "unable to load %s", pr.progs_name);
+	if (!PR_RunPostLoadFuncs (&pr))
+		PR_Error (&pr, "unable to load %s", pr.progs_name);
+	pr.pr_trace_depth = -1;
+	pr.pr_trace = options.trace;
 	return 1;
 }
 
@@ -204,7 +216,7 @@ parse_options (int argc, char **argv)
 				options.flote = 1;
 				break;
 			case 't':
-				options.trace = 1;
+				options.trace++;
 				break;
 			case 'h':
 				usage (0);
@@ -242,11 +254,11 @@ main (int argc, char **argv)
 
 	PR_PushFrame (&pr);
 	if (argc > 2)
-		pr_argc = argc - 1;
+		pr_argc = argc;
 	pr_argv = PR_Zone_Malloc (&pr, (pr_argc + 1) * 4);
 	pr_argv[0] = PR_SetTempString (&pr, name);
 	for (i = 1; i < pr_argc; i++)
-		pr_argv[i] = PR_SetTempString (&pr, argv[1 + i]);
+		pr_argv[i] = PR_SetTempString (&pr, argv[i]);
 	pr_argv[i] = 0;
 
 	if ((dfunc = PR_FindFunction (&pr, ".main"))
@@ -257,6 +269,7 @@ main (int argc, char **argv)
 	PR_RESET_PARAMS (&pr);
 	P_INT (&pr, 0) = pr_argc;
 	P_POINTER (&pr, 1) = PR_SetPointer (&pr, pr_argv);
+	pr.pr_argc = 2;
 	PR_ExecuteProgram (&pr, main_func);
 	PR_PopFrame (&pr);
 	if (options.flote)

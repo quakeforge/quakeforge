@@ -1,10 +1,10 @@
 #ifndef __ruamoko_gui_Group_h
 #define __ruamoko_gui_Group_h
 
-#include "View.h"
+#include <gui/View.h>
 
 /**	\addtogroup gui */
-//@{
+///@{
 
 @class Array;
 
@@ -41,6 +41,6 @@
 - (id) addViews: (Array*)viewlist;
 @end
 
-//@}
+///@}
 
 #endif//__ruamoko_gui_Group_h

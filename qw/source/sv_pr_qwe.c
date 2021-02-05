@@ -50,10 +50,10 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "server.h"
-#include "sv_pr_qwe.h"
-#include "sv_progs.h"
-#include "sv_recorder.h"
+#include "qw/include/server.h"
+#include "qw/include/sv_pr_qwe.h"
+#include "qw/include/sv_progs.h"
+#include "qw/include/sv_recorder.h"
 
 typedef struct {
 	func_t      timeofday;
@@ -353,6 +353,7 @@ PF_calltimeofday (progs_t *pr)
 		P_FLOAT (pr, 5) = (float) date.year;
 		P_STRING (pr, 6) = PR_SetReturnString (pr, date.str);
 
+		pr->pr_argc = 7;
 		PR_ExecuteProgram (pr, (func_t) (f - sv_pr_state.pr_functions));
 		PR_PopFrame (&sv_pr_state);
 	}
@@ -551,7 +552,7 @@ static int
 qwe_load_finish (progs_t *pr)
 {
 	edict_t    *ent;
-	ddef_t     *targetname;
+	pr_def_t   *targetname;
 
 	targetname = PR_FindField (pr, "targetname");
 	ent = EDICT_NUM (pr, 0);

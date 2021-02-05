@@ -31,14 +31,14 @@
 # include "config.h"
 #endif
 
-#include "class.h"
-#include "diagnostic.h"
-#include "expr.h"
-#include "function.h"
-#include "options.h"
-#include "shared.h"
-#include "symtab.h"
-#include "type.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
 
 function_t *current_func;
 class_type_t *current_class;

@@ -47,10 +47,10 @@
 #include "QF/bspfile.h"
 #include "QF/mathlib.h"
 
-#include "entities.h"
-#include "light.h"
-#include "options.h"
-#include "threads.h"
+#include "tools/qflight/include/entities.h"
+#include "tools/qflight/include/light.h"
+#include "tools/qflight/include/options.h"
+#include "tools/qflight/include/threads.h"
 
 static struct {
 	int         empty;
@@ -73,7 +73,7 @@ int num_alllights;
 entity_t **novislights;
 int num_novislights;
 
-static dleaf_t *
+static __attribute__((pure)) dleaf_t *
 Light_PointInLeaf (vec3_t point)
 {
 	int         num = 0, side;

@@ -27,12 +27,12 @@
 
 */
 
-#ifndef __qargs_h
-#define __qargs_h
+#ifndef __QF_qargs_h
+#define __QF_qargs_h
 
 /** \addtogroup misc
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 
@@ -42,7 +42,7 @@ extern const char *com_cmdline;
 extern struct cvar_s *fs_globalcfg;
 extern struct cvar_s *fs_usercfg;
 
-int COM_CheckParm (const char *parm);
+int COM_CheckParm (const char *parm) __attribute__((pure));
 void COM_AddParm (const char *parm);
 
 void COM_Init (void);
@@ -50,6 +50,6 @@ void COM_Init_Cvars (void);
 void COM_InitArgv (int argc, const char **argv);
 void COM_ParseConfig (void);
 
-//@}
+///@}
 
-#endif // __qargs_h
+#endif//__QF_qargs_h

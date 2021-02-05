@@ -74,9 +74,9 @@ AH_VERBATIM([HAVE___ATTRIBUTE__GCC_STRUCT],
 #endif])
 
 AC_MSG_CHECKING(for __builtin_expect)
-AC_TRY_COMPILE(
-	[long (*foo) (long, long) = __builtin_expect;],
-	[],
+AC_TRY_LINK(
+	[int x;],
+	[if (__builtin_expect(!x, 1)) {}],
 	AC_DEFINE(HAVE___BUILTIN_EXPECT)
 	AC_MSG_RESULT(yes),
 	AC_MSG_RESULT(no)

@@ -299,7 +299,7 @@ dstring_clearstr (dstring_t *dstr)
 	dstr->str[0] = 0;
 }
 
-static int
+static __attribute__((format(printf, 3, 0))) char *
 _dvsprintf (dstring_t *dstr, int offs, const char *fmt, va_list args)
 {
 	int         size;
@@ -325,20 +325,20 @@ _dvsprintf (dstring_t *dstr, int offs, const char *fmt, va_list args)
 	}
 	dstr->size = size + offs + 1;
 	dstr->str[dstr->size - 1] = 0;
-	return size;
+	return dstr->str;
 }
 
-VISIBLE int
+VISIBLE char *
 dvsprintf (dstring_t *dstr, const char *fmt, va_list args)
 {
 	return _dvsprintf (dstr, 0, fmt, args);
 }
 
-VISIBLE int
+VISIBLE char *
 dsprintf (dstring_t *dstr, const char *fmt, ...)
 {
 	va_list     args;
-	int         ret;
+	char       *ret;
 
 	va_start (args, fmt);
 	ret = _dvsprintf (dstr, 0, fmt, args);
@@ -347,7 +347,7 @@ dsprintf (dstring_t *dstr, const char *fmt, ...)
 	return ret;
 }
 
-VISIBLE int
+VISIBLE char *
 davsprintf (dstring_t *dstr, const char *fmt, va_list args)
 {
 	int         offs = 0;
@@ -357,11 +357,11 @@ davsprintf (dstring_t *dstr, const char *fmt, va_list args)
 	return _dvsprintf (dstr, offs, fmt, args);
 }
 
-VISIBLE int
+VISIBLE char *
 dasprintf (dstring_t *dstr, const char *fmt, ...)
 {
 	va_list     args;
-	int         ret;
+	char       *ret;
 	int         offs = 0;
 
 	if (dstr->size)

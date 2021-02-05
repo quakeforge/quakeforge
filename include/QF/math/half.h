@@ -34,14 +34,14 @@
 /** \defgroup mathlib_half Half-float functions
 	\ingroup utils
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 
 
-int16_t FloatToHalf (float x);
-float HalfToFloat (int16_t x);
+int16_t FloatToHalf (float x) __attribute__((const));
+float HalfToFloat (int16_t x) __attribute__((const));
 
-//@}
+///@}
 
 #endif // __QF_math_half_h

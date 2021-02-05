@@ -31,7 +31,7 @@
 /** \defgroup cmd Command management.
 	\ingroup utils
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 #include "QF/cbuf.h"
@@ -60,14 +60,14 @@ int		Cmd_AddCommand (const char *cmd_name, xcommand_t function, const char *desc
 int		Cmd_RemoveCommand (const char *cmd_name);
 
 qboolean Cmd_Exists (const char *cmd_name);
-const char 	*Cmd_CompleteCommand (const char *partial);
-int		Cmd_CompleteCountPossible (const char *partial);
+const char 	*Cmd_CompleteCommand (const char *partial) __attribute__((pure));
+int		Cmd_CompleteCountPossible (const char *partial) __attribute__((pure));
 const char	**Cmd_CompleteBuildList (const char *partial);
 
 
-int Cmd_Argc (void);
-const char *Cmd_Argv (int arg);
-const char *Cmd_Args (int start);
+int Cmd_Argc (void) __attribute__((pure));
+const char *Cmd_Argv (int arg) __attribute__((pure));
+const char *Cmd_Args (int start) __attribute__((pure));
 struct cbuf_args_s;
 int Cmd_Command (struct cbuf_args_s *args);
 int Cmd_ExecuteString (const char *text, cmd_source_t src);
@@ -81,6 +81,6 @@ struct cbuf_interpreter_s *Cmd_GetProvider(const char *name);
 extern struct cbuf_args_s *cmd_args;
 extern struct cvar_s *cmd_warncmd;
 
-//@}
+///@}
 
 #endif//__QF_cmd_h

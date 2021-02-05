@@ -154,7 +154,7 @@ EXP_FindFuncByStr (const char *str)
 		return 0;
 }
 
-static int
+static __attribute__((pure)) int
 EXP_ContainsCommas (token * chain)
 {
 	token      *cur;

@@ -223,7 +223,7 @@ glsl_SCR_CaptureBGR (void)
 	return tex;
 }
 
-tex_t *
+__attribute__((const)) tex_t *
 glsl_SCR_ScreenShot (int width, int height)
 {
 	return 0;

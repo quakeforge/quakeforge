@@ -32,7 +32,7 @@
 /** \defgroup qflight_threads Light thread handling.
 	\ingroup qflight
 */
-//@{
+///@{
 
 #if defined (HAVE_PTHREAD_H) && defined (HAVE_PTHREAD)
 
@@ -66,6 +66,6 @@ typedef void *(threadfunc_t) (void *);
 void InitThreads (void);
 void RunThreadsOn (threadfunc_t func);
 
-//@}
+///@}
 
 #endif// __threads_h

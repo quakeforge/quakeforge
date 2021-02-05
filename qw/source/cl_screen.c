@@ -44,9 +44,10 @@
 #include "QF/pcx.h"
 #include "QF/screen.h"
 
-#include "client.h"
 #include "clview.h"
 #include "sbar.h"
+
+#include "qw/include/client.h"
 
 static qpic_t  *scr_net;
 

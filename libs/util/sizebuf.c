@@ -99,3 +99,34 @@ SZ_Print (sizebuf_t *buf, const char *data)
 
 	memcpy (SZ_GetSpace (buf, len), data, len);
 }
+
+VISIBLE void
+SZ_Dump (sizebuf_t *buf)
+{
+	int         i;
+	char        chars[17], c;
+
+	chars[16] = 0;
+	for (i = 0; i < buf->cursize; i++) {
+		if (i % 16 == 0) {
+			Sys_Printf ("%04x:", i);
+		} else if (i % 16 == 8) {
+			Sys_Printf (" ");
+		}
+		Sys_Printf (" %02x", buf->data[i]);
+		c = buf->data[i] & 0x7f;
+		if (c < ' ') {
+			c = '.';
+		}
+		chars[i % 16] = c;
+		if (i % 16 == 15) {
+			Sys_Printf ("  %s\n", chars);
+		}
+	}
+	i %= 16;
+	if (i) {
+		chars[i] = 0;
+		i = 16 - i;
+		Sys_Printf ("%*s  %s\n", i * 3 + (i > 7), "", chars);
+	}
+}

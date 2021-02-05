@@ -20,14 +20,14 @@
 	local unsigned	i = count;
 	local unsigned	tmp;
 
-	do {
-		if (_objs[--i] == anObject) {
+	while (i-- > 0) {
+		if (_objs[i] == anObject) {
 			for (tmp = i; tmp < count - 1; tmp++) {
 				_objs[tmp] = _objs[tmp + 1];
 			}
 			count--;
 		}
-	} while (i);
+	}
 }
 
 @end

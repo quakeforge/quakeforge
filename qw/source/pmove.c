@@ -34,8 +34,9 @@
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 
-#include "client.h"
 #include "compat.h"
+
+#include "qw/include/client.h"
 #include "qw/pmove.h"
 
 cvar_t     *no_pogo_stick;
@@ -737,7 +738,7 @@ SpectatorMove (void)
 	// friction
 	speed = DotProduct (pmove.velocity, pmove.velocity);
 	if (speed < 1) {
-		VectorZero (pmove.velocity)
+		VectorZero (pmove.velocity);
 	} else {
 		speed = sqrt (speed);
 		drop = 0;

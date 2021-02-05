@@ -1,0 +1,26 @@
+ruamoko_rua_libs= \
+	libs/gamecode/libQFgamecode.la \
+	libs/util/libQFutil.la
+
+lib_LTLIBRARIES += libs/ruamoko/libQFruamoko.la
+
+libs_ruamoko_libQFruamoko_la_LDFLAGS=		$(lib_ldflags)
+libs_ruamoko_libQFruamoko_la_LIBADD=		$(ruamoko_rua_libs)
+libs_ruamoko_libQFruamoko_la_DEPENDENCIES=	$(ruamoko_rua_libs)
+libs_ruamoko_libQFruamoko_la_SOURCES= \
+	libs/ruamoko/pr_cmds.c \
+	libs/ruamoko/rua_cbuf.c \
+	libs/ruamoko/rua_cmd.c \
+	libs/ruamoko/rua_cvar.c \
+	libs/ruamoko/rua_hash.c \
+	libs/ruamoko/rua_init.c \
+	libs/ruamoko/rua_math.c \
+	libs/ruamoko/rua_msgbuf.c \
+	libs/ruamoko/rua_obj.c \
+	libs/ruamoko/rua_plist.c \
+	libs/ruamoko/rua_qfile.c \
+	libs/ruamoko/rua_qfs.c \
+	libs/ruamoko/rua_runtime.c \
+	libs/ruamoko/rua_script.c \
+	libs/ruamoko/rua_set.c \
+	libs/ruamoko/rua_string.c

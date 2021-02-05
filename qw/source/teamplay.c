@@ -50,10 +50,11 @@
 #include "QF/sys.h"
 #include "QF/teamplay.h"
 
-#include "qw/bothdefs.h"
-#include "cl_input.h"
-#include "client.h"
 #include "compat.h"
+
+#include "qw/bothdefs.h"
+#include "qw/include/cl_input.h"
+#include "qw/include/client.h"
 
 static qboolean died = false, recorded_location = false;
 static vec3_t   death_location, last_recorded_location;
@@ -117,13 +118,12 @@ Team_BestWeaponImpulse (void)
 		in_impulse = best;
 }
 
-
-const char       *
-Team_ParseSay (const char *s)
+//FIXME slow use of dstring
+const char *
+Team_ParseSay (dstring_t *buf, const char *s)
 {
-	char        chr, t2[128], t3[128];
+	char        chr, t2[128], t3[2];
 	const char *t1;
-	static char buf[1024];
 	size_t      i, bracket;
 	static location_t *location = NULL;
 
@@ -157,7 +157,6 @@ Team_ParseSay (const char *s)
 			case 'S':
 				bracket = 0;
 				t1 = skin->string;
-				t1 = "FIXME";
 				break;
 			case 'd':
 				bracket = 0;
@@ -213,8 +212,9 @@ Team_ParseSay (const char *s)
 
 					snprintf (t2, sizeof (t2), "%sa:%i", t3,
 							  cl.stats[STAT_ARMOR]);
-				} else
+				} else {
 					snprintf (t2, sizeof (t2), "%i", cl.stats[STAT_ARMOR]);
+				}
 				break;
 			case 'A':
 				bracket = 0;
@@ -254,29 +254,24 @@ Team_ParseSay (const char *s)
 				t1 = t2;
 			}
 
-			if (bracket)
-				buf[i++] = 0x90;		// '['
-
-			if (t1) {
-				int         len;
-
-				len = strlen (t1);
-				if (i + len >= sizeof (buf))
-					continue;			// No more space in buffer, icky.
-				strncpy (buf + i, t1, len);
-				i += len;
+			if (bracket) {
+				dstring_appendstr (buf, "\x90");	// '['
 			}
 
-			if (bracket)
-				buf[i++] = 0x91;		// ']'
+			if (t1) {
+				dstring_appendstr (buf, t1);
+			}
+
+			if (bracket) {
+				dstring_appendstr (buf, "\x91");	// ']'
+			}
 
 			continue;
 		}
-		buf[i++] = *s++;
+		dstring_appendsubstr (buf, s++, 1);
 	}
-	buf[i] = 0;
 
-	return buf;
+	return buf->str;
 }
 
 void
@@ -480,7 +475,6 @@ Team_ParseChat (const char *string)
 	if (!cl_freply->value)
 		return;
 
-	s = strchr (string, ':');
 	if (!(s = strchr (string, ':')))
 		return;
 	s++;
