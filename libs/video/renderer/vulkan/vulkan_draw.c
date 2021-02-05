@@ -38,6 +38,7 @@
 # include <strings.h>
 #endif
 
+#include "QF/cmem.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/dstring.h"
@@ -69,7 +70,6 @@ typedef struct {
 } drawvert_t;
 
 typedef struct cachepic_s {
-	struct cachepic_s *next;
 	char       *name;
 	qpic_t     *pic;
 } cachepic_t;
@@ -92,6 +92,11 @@ typedef struct drawctx_s {
 	qpic_t     *conchars;
 	qpic_t     *conback;
 	qpic_t     *white_pic;
+	// use two separate cmem blocks for pics and strings (cachepic names)
+	// to ensure the names are never in the same cacheline as a pic since the
+	// names are used only for lookup
+	memsuper_t *pic_memsuper;
+	memsuper_t *string_memsuper;
 	hashtab_t  *pic_cache;
 	VkBuffer    vert_buffer;
 	VkDeviceMemory vert_memory;
@@ -211,32 +216,34 @@ flush_draw_scrap (vulkan_ctx_t *ctx)
 }
 
 static void
-pic_free (qpic_t *pic)
+pic_free (drawctx_t *dctx, qpic_t *pic)
 {
 	subpic_t   *subpic = *(subpic_t **) pic->data;
 	QFV_SubpicDelete (subpic);
-	free (pic);
+	cmemfree (dctx->pic_memsuper, pic);
 }
 
-//FIXME use cmem?
 static cachepic_t *
-new_cachepic (const char *name, qpic_t *pic)
+new_cachepic (drawctx_t *dctx, const char *name, qpic_t *pic)
 {
 	cachepic_t *cp;
+	size_t      size = strlen (name) + 1;
 
-	cp = malloc (sizeof (cachepic_t));
-	cp->name = strdup (name);
+	cp = cmemalloc (dctx->pic_memsuper, sizeof (cachepic_t));
+	cp->name = cmemalloc (dctx->string_memsuper, size);
+	memcpy (cp->name, name, size);
 	cp->pic = pic;
 	return cp;
 }
 
 static void
-cachepic_free (void *_cp, void *unused)
+cachepic_free (void *_cp, void *_dctx)
 {
+	drawctx_t  *dctx = _dctx;
 	cachepic_t *cp = (cachepic_t *) _cp;
-	pic_free (cp->pic);
-	free (cp->name);
-	free (cp);
+	pic_free (dctx, cp->pic);
+	cmemfree (dctx->string_memsuper, cp->name);
+	cmemfree (dctx->pic_memsuper, cp);
 }
 
 static const char *
@@ -252,7 +259,8 @@ pic_data (const char *name, int w, int h, const byte *data, drawctx_t *dctx)
 	subpic_t   *subpic;
 	byte       *picdata;
 
-	pic = malloc (field_offset (qpic_t, data[sizeof (subpic_t)]));
+	pic = cmemalloc (dctx->pic_memsuper,
+					 field_offset (qpic_t, data[sizeof (subpic_t *)]));
 	pic->width = w;
 	pic->height = h;
 
@@ -292,7 +300,8 @@ Vulkan_Draw_PicFromWad (const char *name, vulkan_ctx_t *ctx)
 	if (!wadpic) {
 		return 0;
 	}
-	return pic_data (name, wadpic->width, wadpic->height, wadpic->data, ctx->draw_context);
+	return pic_data (name, wadpic->width, wadpic->height, wadpic->data,
+					 ctx->draw_context);
 }
 
 qpic_t *
@@ -313,7 +322,7 @@ Vulkan_Draw_CachePic (const char *path, qboolean alpha, vulkan_ctx_t *ctx)
 
 	pic = pic_data (path, p->width, p->height, p->data, dctx);
 	free (p);
-	cpic = new_cachepic (path, pic);
+	cpic = new_cachepic (dctx, path, pic);
 	Hash_Add (dctx->pic_cache, cpic);
 	return pic;
 }
@@ -341,6 +350,9 @@ Vulkan_Draw_Shutdown (vulkan_ctx_t *ctx)
 	destroy_quad_buffers (ctx);
 
 	dfunc->vkDestroyPipeline (device->dev, dctx->pipeline, 0);
+	Hash_DelTable (dctx->pic_cache);
+	delete_memsuper (dctx->pic_memsuper);
+	delete_memsuper (dctx->string_memsuper);
 	QFV_DestroyScrap (dctx->scrap);
 	QFV_DestroyStagingBuffer (dctx->stage);
 }
@@ -359,8 +371,10 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&dctx->frames, frames);
 	dctx->frames.grow = 0;
 
+	dctx->pic_memsuper = new_memsuper ();
+	dctx->string_memsuper = new_memsuper ();
 	dctx->pic_cache = Hash_NewTable (127, cachepic_getkey, cachepic_free,
-										 0, 0);
+									 dctx, 0);
 
 	create_quad_buffers (ctx);
 	dctx->stage = QFV_CreateStagingBuffer (device, "draw", 4 * 1024 * 1024,
