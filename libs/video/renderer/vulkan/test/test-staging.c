@@ -179,7 +179,7 @@ _error (int line, const char *fmt, ...)
 int
 main (void)
 {
-	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (&device, 1024, 0);
+	qfv_stagebuf_t *stage = QFV_CreateStagingBuffer (&device, "", 1024, 0);
 
 	if (stage->size != 1024) {
 		error ("stage has incorrect size: %zd", stage->size);
