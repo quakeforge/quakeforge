@@ -22,7 +22,7 @@ typedef struct vulkan_framebuffer_s {
 	VkCommandBuffer cmdBuffer;
 
 	struct qfv_cmdbufferset_s *subCommand;
-} vulkan_framebuffer_t;
+} vulkan_frame_t;
 
 typedef struct vulkan_matrices_s {
 	VkBuffer    buffer_2d;
@@ -34,8 +34,8 @@ typedef struct vulkan_matrices_s {
 	float      *sky_3d;
 } vulkan_matrices_t;
 
-typedef struct vulkan_framebufferset_s
-	DARRAY_TYPE (vulkan_framebuffer_t) vulkan_framebufferset_t;
+typedef struct vulkan_frameset_s
+	DARRAY_TYPE (vulkan_frame_t) vulkan_frameset_t;
 
 typedef struct vulkan_ctx_s {
 	void        (*load_vulkan) (struct vulkan_ctx_s *ctx);
@@ -76,7 +76,7 @@ typedef struct vulkan_ctx_s {
 	struct qfv_stagebuf_s *staging;
 	VkPipeline  pipeline;
 	size_t      curFrame;
-	vulkan_framebufferset_t framebuffers;
+	vulkan_frameset_t frames;
 
 	struct qfv_tex_s *default_black;
 	struct qfv_tex_s *default_white;

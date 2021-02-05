@@ -838,7 +838,7 @@ bsp_begin (vulkan_ctx_t *ctx)
 	bctx->default_color[3] = 1;
 	QuatCopy (bctx->default_color, bctx->last_color);
 
-	__auto_type cframe = &ctx->framebuffers.a[ctx->curFrame];
+	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 	VkCommandBuffer cmd = bframe->bsp_cmd;
 	DARRAY_APPEND (cframe->subCommand, cmd);
@@ -991,7 +991,7 @@ sky_begin (vulkan_ctx_t *ctx)
 
 	spin (ctx->matrices.sky_3d, bctx);
 
-	__auto_type cframe = &ctx->framebuffers.a[ctx->curFrame];
+	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 	VkCommandBuffer cmd = bframe->sky_cmd;
 	DARRAY_APPEND (cframe->subCommand, cmd);
@@ -1443,7 +1443,7 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 
 	DARRAY_INIT (&bctx->texture_chains, 64);
 
-	size_t      frames = ctx->framebuffers.size;
+	size_t      frames = ctx->frames.size;
 	DARRAY_INIT (&bctx->frames, frames);
 	DARRAY_RESIZE (&bctx->frames, frames);
 	bctx->frames.grow = 0;

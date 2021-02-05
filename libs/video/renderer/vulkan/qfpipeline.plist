@@ -55,25 +55,25 @@
 	descriptorPools = {
 		twod_pool = {
 			flags = 0;
-			maxSets = $framebuffers.size;
+			maxSets = $frames.size;
 			bindings = (
 				{
 					type = uniform_buffer;
-					descriptorCount = $framebuffers.size;
+					descriptorCount = $frames.size;
 				},
 				{
 					type = combined_image_sampler;
-					descriptorCount = $framebuffers.size;
+					descriptorCount = $frames.size;
 				},
 			);
 		};
 		alias_pool = {
 			flags = 0;
-			maxSets = "2z * $framebuffers.size";
+			maxSets = "2z * $frames.size";
 			bindings = (
 				{
 					type = uniform_buffer;
-					descriptorCount = "2z * $framebuffers.size";
+					descriptorCount = "2z * $frames.size";
 				},
 			);
 		};

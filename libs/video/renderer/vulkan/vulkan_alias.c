@@ -153,7 +153,7 @@ Vulkan_AliasBegin (vulkan_ctx_t *ctx)
 	dlight_t   *lights[ALIAS_LIGHTS];
 	//XXX quat_t      fog;
 
-	__auto_type cframe = &ctx->framebuffers.a[ctx->curFrame];
+	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	aliasframe_t *aframe = &actx->frames.a[ctx->curFrame];
 	VkCommandBuffer cmd = aframe->cmd;
 	DARRAY_APPEND (cframe->subCommand, cmd);
@@ -252,7 +252,7 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 	aliasctx_t *actx = calloc (1, sizeof (aliasctx_t));
 	ctx->alias_context = actx;
 
-	size_t      frames = ctx->framebuffers.size;
+	size_t      frames = ctx->frames.size;
 	DARRAY_INIT (&actx->frames, frames);
 	DARRAY_RESIZE (&actx->frames, frames);
 	actx->frames.grow = 0;

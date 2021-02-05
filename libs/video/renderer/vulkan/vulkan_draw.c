@@ -120,7 +120,7 @@ create_quad_buffers (vulkan_ctx_t *ctx)
 
 	size_t      vert_size;
 	size_t      ind_size;
-	size_t      frames = ctx->framebuffers.size;
+	size_t      frames = ctx->frames.size;
 	VkBuffer    vbuf, ibuf;
 	VkDeviceMemory vmem, imem;
 
@@ -357,7 +357,7 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	drawctx_t  *dctx = calloc (1, sizeof (drawctx_t));
 	ctx->draw_context = dctx;
 
-	size_t      frames = ctx->framebuffers.size;
+	size_t      frames = ctx->frames.size;
 	DARRAY_INIT (&dctx->frames, frames);
 	DARRAY_RESIZE (&dctx->frames, frames);
 	dctx->frames.grow = 0;
@@ -680,7 +680,7 @@ Vulkan_FlushText (vulkan_ctx_t *ctx)
 
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	__auto_type cframe = &ctx->framebuffers.a[ctx->curFrame];
+	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *dframe = &dctx->frames.a[ctx->curFrame];
 

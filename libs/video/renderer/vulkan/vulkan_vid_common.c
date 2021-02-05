@@ -168,7 +168,7 @@ Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 	if (ctx->pipeline) {
 		QFV_DestroyPipeline (ctx->device, ctx->pipeline);
 	}
-	if (ctx->framebuffers.size) {
+	if (ctx->frames.size) {
 		Vulkan_DestroyFramebuffers (ctx);
 	}
 	if (ctx->renderpass.colorImage) {
@@ -496,18 +496,18 @@ Vulkan_CreateFramebuffers (vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	VkCommandPool cmdpool = ctx->cmdpool;
 
-	if (!ctx->framebuffers.grow) {
-		DARRAY_INIT (&ctx->framebuffers, 4);
+	if (!ctx->frames.grow) {
+		DARRAY_INIT (&ctx->frames, 4);
 	}
 
-	DARRAY_RESIZE (&ctx->framebuffers, 3);//FIXME cvar
+	DARRAY_RESIZE (&ctx->frames, 3);//FIXME cvar
 
-	__auto_type cmdBuffers = QFV_AllocCommandBufferSet (ctx->framebuffers.size,
+	__auto_type cmdBuffers = QFV_AllocCommandBufferSet (ctx->frames.size,
 														alloca);
 	QFV_AllocateCommandBuffers (device, cmdpool, 0, cmdBuffers);
 
-	for (size_t i = 0; i < ctx->framebuffers.size; i++) {
-		__auto_type frame = &ctx->framebuffers.a[i];
+	for (size_t i = 0; i < ctx->frames.size; i++) {
+		__auto_type frame = &ctx->frames.a[i];
 		frame->framebuffer = 0;
 		frame->fence = QFV_CreateFence (device, 1);
 		frame->imageAvailableSemaphore = QFV_CreateSemaphore (device);
@@ -526,13 +526,13 @@ Vulkan_DestroyFramebuffers (vulkan_ctx_t *ctx)
 	qfv_devfuncs_t *df = device->funcs;
 	VkDevice    dev = device->dev;
 
-	for (size_t i = 0; i < ctx->framebuffers.size; i++) {
-		__auto_type frame = &ctx->framebuffers.a[i];
+	for (size_t i = 0; i < ctx->frames.size; i++) {
+		__auto_type frame = &ctx->frames.a[i];
 		df->vkDestroyFence (dev, frame->fence, 0);
 		df->vkDestroySemaphore (dev, frame->imageAvailableSemaphore, 0);
 		df->vkDestroySemaphore (dev, frame->renderDoneSemaphore, 0);
 		df->vkDestroyFramebuffer (dev, frame->framebuffer, 0);
 	}
 
-	DARRAY_CLEAR (&ctx->framebuffers);
+	DARRAY_CLEAR (&ctx->frames);
 }

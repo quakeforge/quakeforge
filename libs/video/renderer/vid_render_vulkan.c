@@ -124,15 +124,14 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	VkDevice    dev = device->dev;
 	qfv_queue_t *queue = &vulkan_ctx->device->queue;
 
-	__auto_type framebuffer
-		= &vulkan_ctx->framebuffers.a[vulkan_ctx->curFrame];
+	__auto_type frame = &vulkan_ctx->frames.a[vulkan_ctx->curFrame];
 
-	dfunc->vkWaitForFences (dev, 1, &framebuffer->fence, VK_TRUE, 2000000000);
-	if (framebuffer->framebuffer) {
-		dfunc->vkDestroyFramebuffer (dev, framebuffer->framebuffer, 0);
+	dfunc->vkWaitForFences (dev, 1, &frame->fence, VK_TRUE, 2000000000);
+	if (frame->framebuffer) {
+		dfunc->vkDestroyFramebuffer (dev, frame->framebuffer, 0);
 	}
 	QFV_AcquireNextImage (vulkan_ctx->swapchain,
-						  framebuffer->imageAvailableSemaphore,
+						  frame->imageAvailableSemaphore,
 						  0, &imageIndex);
 
 	int         attachCount = vulkan_ctx->msaaSamples > 1 ? 3 : 2;
@@ -146,9 +145,8 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	}
 
 	VkRenderPass renderpass = vulkan_ctx->renderpass.renderpass;
-	framebuffer->framebuffer = QFV_CreateFramebuffer (device, renderpass,
-													  attachments,
-													  sc->extent, 1);
+	frame->framebuffer = QFV_CreateFramebuffer (device, renderpass,
+											    attachments, sc->extent, 1);
 
 	scr_3dfunc ();
 	while (*scr_funcs) {
@@ -172,41 +170,40 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 		3, clearValues
 	};
 
-	dfunc->vkBeginCommandBuffer (framebuffer->cmdBuffer, &beginInfo);
-	renderPassInfo.framebuffer = framebuffer->framebuffer;
-	dfunc->vkCmdBeginRenderPass (framebuffer->cmdBuffer, &renderPassInfo,
-			VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+	dfunc->vkBeginCommandBuffer (frame->cmdBuffer, &beginInfo);
+	renderPassInfo.framebuffer = frame->framebuffer;
+	dfunc->vkCmdBeginRenderPass (frame->cmdBuffer, &renderPassInfo,
+								 VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
 
-	dfunc->vkCmdExecuteCommands (framebuffer->cmdBuffer,
-								 framebuffer->subCommand->size,
-								 framebuffer->subCommand->a);
+	dfunc->vkCmdExecuteCommands (frame->cmdBuffer, frame->subCommand->size,
+								 frame->subCommand->a);
 	// reset for next time around
-	framebuffer->subCommand->size = 0;
+	frame->subCommand->size = 0;
 
-	dfunc->vkCmdEndRenderPass (framebuffer->cmdBuffer);
-	dfunc->vkEndCommandBuffer (framebuffer->cmdBuffer);
+	dfunc->vkCmdEndRenderPass (frame->cmdBuffer);
+	dfunc->vkEndCommandBuffer (frame->cmdBuffer);
 
 	VkPipelineStageFlags waitStage
 		= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	VkSubmitInfo submitInfo = {
 		VK_STRUCTURE_TYPE_SUBMIT_INFO, 0,
-		1, &framebuffer->imageAvailableSemaphore, &waitStage,
-		1, &framebuffer->cmdBuffer,
-		1, &framebuffer->renderDoneSemaphore,
+		1, &frame->imageAvailableSemaphore, &waitStage,
+		1, &frame->cmdBuffer,
+		1, &frame->renderDoneSemaphore,
 	};
-	dfunc->vkResetFences (dev, 1, &framebuffer->fence);
-	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, framebuffer->fence);
+	dfunc->vkResetFences (dev, 1, &frame->fence);
+	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, frame->fence);
 
 	VkPresentInfoKHR presentInfo = {
 		VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, 0,
-		1, &framebuffer->renderDoneSemaphore,
+		1, &frame->renderDoneSemaphore,
 		1, &vulkan_ctx->swapchain->swapchain, &imageIndex,
 		0
 	};
 	dfunc->vkQueuePresentKHR (queue->queue, &presentInfo);
 
 	vulkan_ctx->curFrame++;
-	vulkan_ctx->curFrame %= vulkan_ctx->framebuffers.size;
+	vulkan_ctx->curFrame %= vulkan_ctx->frames.size;
 
 	if (++count >= 100) {
 		double currenTime = Sys_DoubleTime ();
