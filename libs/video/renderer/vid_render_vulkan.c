@@ -30,9 +30,6 @@
 
 #include <stdlib.h>
 
-//#define NH_DEFINE
-//#include "vulkan/namehack.h"
-
 #include "QF/darray.h"
 #include "QF/sys.h"
 
@@ -58,8 +55,6 @@
 #include "r_internal.h"
 #include "vid_internal.h"
 #include "vid_vulkan.h"
-
-#include "vulkan/namehack.h"
 
 static vulkan_ctx_t *vulkan_ctx;
 
