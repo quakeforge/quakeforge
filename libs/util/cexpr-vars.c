@@ -49,6 +49,8 @@ cexpr_struct_getfield (const exprval_t *a, const exprval_t *b, exprval_t *c,
 		val = cmemalloc (ctx->memsuper, sizeof (exprval_t));
 		val->type = field->type;
 		val->value = a->value + (ptrdiff_t) field->value;
+	} else {
+		cexpr_error (ctx, "%s has no field %s", a->type->name, name);
 	}
 	*(exprval_t **) c->value = val;
 }

@@ -646,14 +646,14 @@ static void
 plitem_index (const exprval_t *a, int index, exprval_t *c,
 			  exprctx_t *ctx)
 {
-	__auto_type array = *(plitem_t **) a->type->data;
+	__auto_type array = *(plitem_t **) a->value;
 
 	if (PL_Type (array) != QFArray) {
 		cexpr_error(ctx, "not an array object");
 		return;
 	}
 	plitem_t   *item = PL_ObjectAtIndex (array, index);
-	exprval_t *val = 0;
+	exprval_t  *val = 0;
 	if (!item) {
 		cexpr_error (ctx, "invalid index: %d", index);
 	} else {
@@ -667,7 +667,7 @@ static void
 plitem_int (const exprval_t *a, const exprval_t *b, exprval_t *c,
 			exprctx_t *ctx)
 {
-	int         index = *(int *) a->value;
+	int         index = *(int *) b->value;
 	plitem_index (a, index, c, ctx);
 }
 
@@ -675,7 +675,7 @@ static void
 plitem_uint (const exprval_t *a, const exprval_t *b, exprval_t *c,
 			 exprctx_t *ctx)
 {
-	int         index = *(int *) a->value;
+	int         index = *(unsigned *) b->value;
 	plitem_index (a, index, c, ctx);
 }
 
@@ -683,7 +683,7 @@ static void
 plitem_size_t (const exprval_t *a, const exprval_t *b, exprval_t *c,
 			   exprctx_t *ctx)
 {
-	int         index = *(int *) a->value;
+	int         index = *(size_t *) b->value;
 	plitem_index (a, index, c, ctx);
 }
 

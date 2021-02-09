@@ -129,7 +129,7 @@ uexpr
 	| '(' expr ')'		{ $$ = $2; }
 	| NAME '(' opt_arg_list ')'	{ $$ = function_expr ($1, $3, context); }
 	| uexpr '.' field	{ $$ = field_expr ($1, $3, context); }
-	| uexpr '[' field ']'	{ $$ = index_expr ($1, $3, context); }
+	| uexpr '[' expr ']'	{ $$ = index_expr ($1, $3, context); }
 	| '+' uexpr %prec UNARY	{ $$ = $2; }
 	| '-' uexpr %prec UNARY	{ $$ = unary_expr ('-', $2, context); }
 	| '!' uexpr %prec UNARY	{ $$ = unary_expr ('!', $2, context); }
@@ -268,6 +268,9 @@ index_expr (const exprval_t *a, const exprval_t *b, exprctx_t *context)
 	binop_t    *binop;
 	exprval_t  *result = 0;
 
+	if (!a || !b) {
+		return 0;
+	}
 	for (binop = a->type->binops; binop->op; binop++) {
 		if (binop->op == '[' && binop->other == b->type) {
 			break;
