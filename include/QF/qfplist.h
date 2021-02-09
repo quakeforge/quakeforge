@@ -185,7 +185,7 @@ const char *PL_String (const plitem_t *string) __attribute__((pure));
 	\note	You are NOT responsible for freeing the returned object. It will
 	be destroyed when its container is.
 */
-plitem_t *PL_ObjectForKey (plitem_t *dict, const char *key);
+plitem_t *PL_ObjectForKey (const plitem_t *dict, const char *key);
 
 /** Remove a value from a dictionary object.
 
@@ -195,7 +195,7 @@ plitem_t *PL_ObjectForKey (plitem_t *dict, const char *key);
 	isn't a dictionary.
 	\note	You are responsible for freeing the returned object.
 */
-plitem_t *PL_RemoveObjectForKey (plitem_t *dict, const char *key);
+plitem_t *PL_RemoveObjectForKey (const plitem_t *dict, const char *key);
 
 /** Retrieve a value from an array object.
 
@@ -206,7 +206,7 @@ plitem_t *PL_RemoveObjectForKey (plitem_t *dict, const char *key);
 	\note	You are NOT responsible for freeing the returned object. It will
 	be destroyed when its container is.
 */
-plitem_t *PL_ObjectAtIndex (plitem_t *array, int index) __attribute__((pure));
+plitem_t *PL_ObjectAtIndex (const plitem_t *array, int index) __attribute__((pure));
 
 /** Retrieve a list of all keys in a dictionary.
 
@@ -222,7 +222,7 @@ plitem_t *PL_D_AllKeys (plitem_t *dict);
 
 	\return Returns the number of keys in the dictionary.
 */
-int PL_D_NumKeys (plitem_t *dict) __attribute__((pure));
+int PL_D_NumKeys (const plitem_t *dict) __attribute__((pure));
 
 /** Add a key/value pair to a dictionary.
 

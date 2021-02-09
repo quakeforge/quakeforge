@@ -264,7 +264,7 @@ PL_String (const plitem_t *string)
 }
 
 VISIBLE plitem_t *
-PL_ObjectForKey (plitem_t *dict, const char *key)
+PL_ObjectForKey (const plitem_t *dict, const char *key)
 {
 	hashtab_t  *table = (hashtab_t *) dict->data;
 	dictkey_t  *k;
@@ -277,7 +277,7 @@ PL_ObjectForKey (plitem_t *dict, const char *key)
 }
 
 VISIBLE plitem_t *
-PL_RemoveObjectForKey (plitem_t *dict, const char *key)
+PL_RemoveObjectForKey (const plitem_t *dict, const char *key)
 {
 	hashtab_t  *table = (hashtab_t *) dict->data;
 	dictkey_t  *k;
@@ -320,7 +320,7 @@ PL_D_AllKeys (plitem_t *dict)
 }
 
 VISIBLE int
-PL_D_NumKeys (plitem_t *dict)
+PL_D_NumKeys (const plitem_t *dict)
 {
 	if (dict->type != QFDictionary)
 		return 0;
@@ -328,7 +328,7 @@ PL_D_NumKeys (plitem_t *dict)
 }
 
 VISIBLE plitem_t *
-PL_ObjectAtIndex (plitem_t *array, int index)
+PL_ObjectAtIndex (const plitem_t *array, int index)
 {
 	plarray_t  *arr = (plarray_t *) array->data;
 
