@@ -396,6 +396,45 @@ int PL_ParseStruct (const plfield_t *fields, const plitem_t *dict,
 int PL_ParseArray (const plfield_t *field, const plitem_t *array,
 				   void *data, plitem_t *messages, void *context);
 
+/**	Parse a dictionary object into a dynamic array (see darray.h).
+
+	This is useful when the dictionary object is meant to be a labeled list
+	rather than a representation of a structure.
+
+	For each object in the array, the field item is used to determine how to
+	parse the object. If the array is empty, the destination will be
+	initialized to an empty array.
+
+	When an error occurs (incorrect item type (item type does not match the
+	type specified in the element object) or the element object's \a parser
+	returns 0), processing continues but the error result is returned.
+
+	Can be used recursively to parse deep hierarchies.
+
+	\param field	Pointer to a single field that has the field data pointer
+					set to reference a plelement_t object used to describe
+					the contents of the array.
+	\param dict		The dict object to parse
+	\param data     Pointer to the pointer to which the dynamic array will
+					be written. The dynamic array is allocated using
+					DARRAY_ALLOCFIXED_OBJ().
+	\param messages Array object supplied by the caller used for storing
+					messages. The messages may or may not indicate errors (its
+					contents are not checked). This function itself will add
+					only string objects.
+					If there are any errors, suitable messages will be found in
+					the \a messages object. However, just because there are no
+					errors doesn't mean that \a messages will remain empty as
+					a field's \a parser may add other messages. The standard
+					message format is "[line number]: [message]". If the line
+					number is 0, then the actual line is unknown (due to the
+					source item not being parsed from a file or string).
+	\param context	Additional context data passed to the parser and allocator.
+	\return			0 if there are any errors, 1 if there are no errors.
+*/
+int PL_ParseLabeledArray (const plfield_t *field, const plitem_t *dict,
+						  void *data, plitem_t *messages, void *context);
+
 /**	Parse a dictionary object into a hash table.
 
 	For each key in the dictionary, the element object is used to determine

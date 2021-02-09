@@ -1211,10 +1211,7 @@ PL_ParseStruct (const plfield_t *fields, const plitem_t *dict, void *data,
 		return 0;
 	}
 
-	if (!(l = list = Hash_GetList ((hashtab_t *) dict->data))) {
-		// empty struct: leave as default
-		return 1;
-	}
+	l = list = Hash_GetList ((hashtab_t *) dict->data);
 
 	while ((current = (dictkey_t *) *l++)) {
 		const plfield_t *f;
@@ -1281,6 +1278,64 @@ PL_ParseArray (const plfield_t *field, const plitem_t *array, void *data,
 
 	for (int i = 0; i < plarray->numvals; i++) {
 		plitem_t   *item = plarray->values[i];
+		void       *eledata = &arr->a[i * element->stride];
+
+		if (!PL_CheckType (element->type, item->type)) {
+			char        index[16];
+			snprintf (index, sizeof(index) - 1, "%d", i);
+			index[15] = 0;
+			PL_TypeMismatch (messages, item, index, element->type, item->type);
+			result = 0;
+		} else {
+			if (!parser (&f, item, eledata, messages, context)) {
+				result = 0;
+			}
+		}
+	}
+	*(arr_t **) data = arr;
+	return result;
+}
+
+VISIBLE int
+PL_ParseLabeledArray (const plfield_t *field, const plitem_t *dict,
+					  void *data, plitem_t *messages, void *context)
+{
+	void      **list, **l;
+	dictkey_t  *current;
+	int         result = 1;
+	plparser_t  parser;
+	plelement_t *element = (plelement_t *) field->data;
+	typedef struct arr_s DARRAY_TYPE(byte) arr_t;
+	arr_t      *arr;
+	plfield_t   f = { 0, 0, element->type, element->parser, element->data };
+
+	if (dict->type != QFDictionary) {
+		PL_Message (messages, dict, "error: not a dictionary object");
+		return 0;
+	}
+	if (f.parser) {
+		parser = f.parser;
+	} else {
+		parser = pl_default_parser;
+	}
+
+	list = Hash_GetList ((hashtab_t *) dict->data);
+
+	int         numvals = 0;
+	for (l = list; *l; l++) {
+		numvals++;
+	}
+
+	arr = DARRAY_ALLOCFIXED_OBJ (arr_t, numvals * element->stride,
+								 element->alloc, context);
+	memset (arr->a, 0, arr->size);
+	// the array is allocated using bytes, but need the actual number of
+	// elements in the array
+	arr->size = arr->maxSize = numvals;
+
+	for (int i = 0; i < numvals; i++) {
+		current = list[i];
+		plitem_t   *item = current->value;
 		void       *eledata = &arr->a[i * element->stride];
 
 		if (!PL_CheckType (element->type, item->type)) {
