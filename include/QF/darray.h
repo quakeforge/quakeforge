@@ -88,6 +88,30 @@
 		ar;																\
 	})
 
+/**	Allocate a fixed-size array using the given allocator
+
+	The allocated array is initilized to be ungrowable, and with both size
+	and maxSize set to the given size.
+
+	\param array_type	Expression acceptable by typeof for determining the
+						type of the array.
+	\param array_size   The size of the array.
+	\param alloc		Allocator taking (obj, size) where obj is allocator
+						specific data (eg, a memory pool).
+	\param data			Additional data for the allocator.
+*/
+#define DARRAY_ALLOCFIXED_OBJ(array_type, array_size, alloc, obj)		\
+	({																	\
+		__auto_type s = (array_size);									\
+		typeof (array_type) *ar = alloc ((obj),							\
+										 sizeof(*ar)					\
+										 + s * sizeof (*ar->a));		\
+		ar->size = ar->maxSize = s;										\
+		ar->grow = 0;													\
+		ar->a = (typeof (ar->a)) (ar + 1);								\
+		ar;																\
+	})
+
 /**	Initialized the array.
 
 	The array will be initialized to be empty but with grow set to the
