@@ -1272,8 +1272,8 @@ PL_ParseArray (const plfield_t *field, const plitem_t *array, void *data,
 		parser = pl_default_parser;
 	}
 
-	arr = DARRAY_ALLOCFIXED (arr_t, plarray->numvals * element->stride,
-							 element->alloc);
+	arr = DARRAY_ALLOCFIXED_OBJ (arr_t, plarray->numvals * element->stride,
+								 element->alloc, context);
 	memset (arr->a, 0, arr->size);
 	// the array is allocated using bytes, but need the actual number of
 	// elements in the array
@@ -1329,7 +1329,7 @@ PL_ParseSymtab (const plfield_t *field, const plitem_t *dict, void *data,
 		return 1;
 	}
 
-	void       *obj = element->alloc (element->stride);
+	void       *obj = element->alloc (context, element->stride);
 	memset (obj, 0, element->stride);
 	while ((current = (dictkey_t *) *l++)) {
 		const char *key = current->key;
@@ -1349,7 +1349,7 @@ PL_ParseSymtab (const plfield_t *field, const plitem_t *dict, void *data,
 				result = 0;
 			} else {
 				Hash_Add (tab, obj);
-				obj = element->alloc (element->stride);
+				obj = element->alloc (context, element->stride);
 				memset (obj, 0, element->stride);
 			}
 		}

@@ -259,6 +259,12 @@ parse_single (const plfield_t *field, const plitem_t *item,
 	return 1;
 }
 
+static void *
+array_alloc (void *context, size_t size)
+{
+	return malloc (size);
+}
+
 static int
 parse_array (const plfield_t *field, const plitem_t *item,
 			 void *data, plitem_t *messages, void *context)
@@ -270,7 +276,7 @@ parse_array (const plfield_t *field, const plitem_t *item,
 	plelement_t element = {
 		array->type,
 		array->stride,
-		malloc,
+		array_alloc,
 		array->parser,
 		0,
 	};
@@ -630,7 +636,7 @@ typedef struct qfv_renderpass_s {
 static plelement_t parse_qfv_renderpass_attachments_data = {
 	QFDictionary,
 	sizeof (VkAttachmentDescription),
-	malloc,
+	array_alloc,
 	parse_VkAttachmentDescription,
 	0,
 };
@@ -638,7 +644,7 @@ static plelement_t parse_qfv_renderpass_attachments_data = {
 static plelement_t parse_qfv_renderpass_subpasses_data = {
 	QFDictionary,
 	sizeof (VkSubpassDescription),
-	malloc,
+	array_alloc,
 	parse_VkSubpassDescription,
 	0,
 };
@@ -646,7 +652,7 @@ static plelement_t parse_qfv_renderpass_subpasses_data = {
 static plelement_t parse_qfv_renderpass_dependencies_data = {
 	QFDictionary,
 	sizeof (VkSubpassDependency),
-	malloc,
+	array_alloc,
 	parse_VkSubpassDependency,
 	0,
 };

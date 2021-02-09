@@ -109,7 +109,7 @@ typedef struct plfield_s {
 typedef struct plelement_s {
 	pltype_t    type;		///< the required type of the array elements
 	size_t      stride;		///< the size of each element
-	void     *(*alloc) (size_t size);	///< allocator for array memory
+	void     *(*alloc) (void *ctx, size_t size);///< allocator for array memory
 	plparser_t  parser;		///< custom parser function
 	void       *data;		///< additional data for \a parser
 } plelement_t;
@@ -360,7 +360,7 @@ void PL_TypeMismatch (plitem_t *messages, const plitem_t *item,
 int PL_ParseStruct (const plfield_t *fields, const plitem_t *dict,
 					void *data, plitem_t *messages, void *context);
 
-/**	Parse an array object into a dynamic arrah (see darray.h).
+/**	Parse an array object into a dynamic array (see darray.h).
 
 	For each object in the array, the field item is used to determine how to
 	parse the object. If the array is empty, the destination will be
@@ -378,7 +378,7 @@ int PL_ParseStruct (const plfield_t *fields, const plitem_t *dict,
 	\param array	The array object to parse
 	\param data     Pointer to the pointer to which the dynamic array will
 					be written. The dynamic array is allocated using
-					DARRAY_ALLOCFIXED().
+					DARRAY_ALLOCFIXED_OBJ().
 	\param messages Array object supplied by the caller used for storing
 					messages. The messages may or may not indicate errors (its
 					contents are not checked). This function itself will add
@@ -390,7 +390,7 @@ int PL_ParseStruct (const plfield_t *fields, const plitem_t *dict,
 					message format is "[line number]: [message]". If the line
 					number is 0, then the actual line is unknown (due to the
 					source item not being parsed from a file or string).
-	\param context	Additional context data passed to the parser.
+	\param context	Additional context data passed to the parser and allocator.
 	\return			0 if there are any errors, 1 if there are no errors.
 */
 int PL_ParseArray (const plfield_t *field, const plitem_t *array,
@@ -438,7 +438,7 @@ int PL_ParseArray (const plfield_t *field, const plitem_t *array,
 					message format is "[line number]: [message]". If the line
 					number is 0, then the actual line is unknown (due to the
 					source item not being parsed from a file or string).
-	\param context	Additional context data passed to the parser.
+	\param context	Additional context data passed to the parser and allocator.
 	\return			0 if there are any errors, 1 if there are no errors.
 */
 int PL_ParseSymtab (const plfield_t *field, const plitem_t *dict,
