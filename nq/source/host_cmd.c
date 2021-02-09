@@ -434,7 +434,7 @@ entities_array (void)
 static plitem_t *
 game_dict (void)
 {
-	plitem_t   *game = PL_NewDictionary ();
+	plitem_t   *game = PL_NewDictionary (0);
 
 	PL_D_AddObject (game, "comment",
 					PL_NewString (va (0, "%-21s kills:%3i/%3i", cl.levelname,
@@ -455,7 +455,7 @@ game_dict (void)
 static plitem_t *
 convert_to_game_dict (script_t *script)
 {
-	plitem_t   *game = PL_NewDictionary ();
+	plitem_t   *game = PL_NewDictionary (0);
 	plitem_t   *item;
 	plitem_t   *list;
 	int         skill;
@@ -500,7 +500,7 @@ convert_to_game_dict (script_t *script)
 	PL_D_AddObject (game, "lightstyles", item);
 
 	// load the edicts out of the savegame file
-	list = ED_ConvertToPlist (script, 0);
+	list = ED_ConvertToPlist (script, 0, 0);
 	item = PL_RemoveObjectAtIndex (list, 0);
 	PL_D_AddObject (game, "globals", item);
 	PL_D_AddObject (game, "entities", list);
@@ -647,7 +647,7 @@ Host_Loadgame_f (void)
 			Sys_Printf ("Unexpected EOF reading %s\n", name->str);
 			goto end;
 		}
-		game = PL_GetPropertyList (script->p);
+		game = PL_GetPropertyList (script->p, 0);
 	} else {
 		sscanf (script->token->str, "%i", &version);
 		if (version != SAVEGAME_VERSION) {

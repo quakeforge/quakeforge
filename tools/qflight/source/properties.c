@@ -334,6 +334,6 @@ LoadProperties (const char *filename)
 	Qread (f, buf, len);
 	Qclose (f);
 	buf[len] = 0;
-	properties = PL_GetPropertyList (buf);
+	properties = PL_GetPropertyList (buf, 0);
 	free (buf);
 }

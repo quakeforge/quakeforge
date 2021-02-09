@@ -109,7 +109,7 @@ VISIBLE plitem_t *
 ED_EntityDict (progs_t *pr, edict_t *ed)
 {
 	dstring_t  *dstr = dstring_newstr ();
-	plitem_t   *entity = PL_NewDictionary ();
+	plitem_t   *entity = PL_NewDictionary (pr->hashlink_freelist);
 	pr_uint_t   i;
 	int         j;
 	int         type;
@@ -155,7 +155,7 @@ VISIBLE plitem_t *
 ED_GlobalsDict (progs_t *pr)
 {
 	dstring_t  *dstr = dstring_newstr ();
-	plitem_t   *globals = PL_NewDictionary ();
+	plitem_t   *globals = PL_NewDictionary (pr->hashlink_freelist);
 	pr_uint_t   i;
 	const char *name;
 	const char *value;
@@ -290,7 +290,7 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key, const char *s)
 */
 
 VISIBLE plitem_t *
-ED_ConvertToPlist (script_t *script, int nohack)
+ED_ConvertToPlist (script_t *script, int nohack, struct hashlink_s **hashlinks)
 {
 	dstring_t  *dstr = dstring_newstr ();
 	plitem_t   *plist = PL_NewArray ();
@@ -304,7 +304,7 @@ ED_ConvertToPlist (script_t *script, int nohack)
 		token = script->token->str;
 		if (!strequal (token, "{"))
 			Sys_Error ("ED_ConvertToPlist: EOF without closing brace");
-		ent = PL_NewDictionary ();
+		ent = PL_NewDictionary (hashlinks);
 		while (1) {
 			int         n;
 
@@ -499,11 +499,11 @@ ED_Parse (progs_t *pr, const char *data)
 	if (Script_GetToken (script, 1)) {
 		if (strequal (script->token->str, "(")) {
 			// new style (plist) entity data
-			entity_list = PL_GetPropertyList (data);
+			entity_list = PL_GetPropertyList (data, pr->hashlink_freelist);
 		} else {
 			// oldstyle entity data
 			Script_UngetToken (script);
-			entity_list = ED_ConvertToPlist (script, 0);
+			entity_list = ED_ConvertToPlist (script, 0, pr->hashlink_freelist);
 		}
 	}
 	Script_Delete (script);

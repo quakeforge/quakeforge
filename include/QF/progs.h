@@ -298,13 +298,15 @@ void ED_PrintNum (progs_t *pr, pr_int_t ent);
 // pr_parse.c
 struct script_s;
 struct plitem_s;
+struct hashlink_s;
 qboolean ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key,
 						const char *s);
 struct plitem_s *ED_EntityDict (progs_t *pr, edict_t *ed);
 struct plitem_s *ED_GlobalsDict (progs_t *pr);
 void ED_InitGlobals (progs_t *pr, struct plitem_s *globals);
 void ED_InitEntity (progs_t *pr, struct plitem_s *entity, edict_t *ent);
-struct plitem_s *ED_ConvertToPlist (struct script_s *script, int nohack);
+struct plitem_s *ED_ConvertToPlist (struct script_s *script, int nohack,
+									struct hashlink_s **hashlinks);
 struct plitem_s *ED_Parse (progs_t *pr, const char *data);
 void ED_LoadFromFile (progs_t *pr, const char *data);
 void ED_EntityParseFunction (progs_t *pr);

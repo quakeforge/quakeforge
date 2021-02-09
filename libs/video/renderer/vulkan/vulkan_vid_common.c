@@ -244,7 +244,8 @@ static plitem_t *
 qfv_load_pipeline (vulkan_ctx_t *ctx, const char *name)
 {
 	if (!ctx->pipelineDef) {
-		ctx->pipelineDef = PL_GetPropertyList (quakeforge_pipeline);
+		ctx->pipelineDef = PL_GetPropertyList (quakeforge_pipeline,
+											   &ctx->hashlinks);
 	}
 
 	plitem_t   *item = ctx->pipelineDef;

@@ -195,7 +195,7 @@ bi_PL_GetFromFile (progs_t *pr)
 	Qread (file, buf, len);
 	buf[len] = 0;
 
-	plitem = PL_GetPropertyList (buf);
+	plitem = PL_GetPropertyList (buf, pr->hashlink_freelist);
 
 	R_INT (pr) = plist_retain (res, plitem);
 }
@@ -204,7 +204,8 @@ static void
 bi_PL_GetPropertyList (progs_t *pr)
 {
 	plist_resources_t *res = PR_Resources_Find (pr, "plist");
-	plitem_t   *plitem = PL_GetPropertyList (P_GSTRING (pr, 0));
+	plitem_t   *plitem = PL_GetPropertyList (P_GSTRING (pr, 0),
+											 pr->hashlink_freelist);
 
 	R_INT (pr) = plist_retain (res, plitem);
 }
@@ -373,7 +374,7 @@ static void
 bi_PL_NewDictionary (progs_t *pr)
 {
 	plist_resources_t *res = PR_Resources_Find (pr, "plist");
-	plitem_t   *plitem = PL_NewDictionary ();
+	plitem_t   *plitem = PL_NewDictionary (pr->hashlink_freelist);
 
 	R_INT (pr) = plist_retain (res, plitem);
 }

@@ -179,7 +179,7 @@ LoadEntities (void)
 
 	script = Script_New ();
 	Script_Start (script, "ent data", bsp->entdata);
-	entity_list = ED_ConvertToPlist (script, 1);
+	entity_list = ED_ConvertToPlist (script, 1, 0);
 	Script_Delete (script);
 
 	// start parsing
@@ -208,7 +208,7 @@ LoadEntities (void)
 		}
 		entity->dict = PL_ObjectAtIndex (entity_list, i);
 
-		dict = PL_NewDictionary ();
+		dict = PL_NewDictionary (0);
 
 		// go through all the keys in this entity
 		keys = PL_D_AllKeys (entity->dict);

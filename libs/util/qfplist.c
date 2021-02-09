@@ -91,6 +91,7 @@ typedef struct pldata_s {	// Unparsed property list string
 	unsigned    line;
 	plitem_t   *error;
 	va_ctx_t   *va_ctx;
+	hashlink_t **hashlinks;
 } pldata_t;
 
 //	Ugly defines for fast checking and conversion from char to number
@@ -157,11 +158,11 @@ PL_NewItem (pltype_t type)
 }
 
 VISIBLE plitem_t *
-PL_NewDictionary (void)
+PL_NewDictionary (hashlink_t **hashlinks)
 {
 	plitem_t   *item = PL_NewItem (QFDictionary);
-	//FIXME need a per-thread hashlink freelist for plist to be thread-safe
-	hashtab_t  *dict = Hash_NewTable (1021, dict_get_key, dict_free, NULL, 0);
+	hashtab_t  *dict = Hash_NewTable (1021, dict_get_key, dict_free, NULL,
+									  hashlinks);
 	item->data = dict;
 	return item;
 }
@@ -722,7 +723,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 	switch (pl->ptr[pl->pos]) {
 	case '{':
 	{
-		item = PL_NewDictionary ();
+		item = PL_NewDictionary (pl->hashlinks);
 		item->line = pl->line;
 
 		pl->pos++;
@@ -880,7 +881,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 }
 
 VISIBLE plitem_t *
-PL_GetPropertyList (const char *string)
+PL_GetPropertyList (const char *string, hashlink_t **hashlinks)
 {
 	pldata_t	*pl = calloc (1, sizeof (pldata_t));
 	plitem_t	*newpl = NULL;
@@ -894,6 +895,7 @@ PL_GetPropertyList (const char *string)
 	pl->error = NULL;
 	pl->line = 1;
 	pl->va_ctx = va_create_context (4);
+	pl->hashlinks = hashlinks;
 
 	if ((newpl = PL_ParsePropertyListItem (pl))) {
 		va_destroy_context (pl->va_ctx);
