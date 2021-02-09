@@ -121,9 +121,9 @@
 #define DARRAY_CLEAR(array)												\
 	do {																\
 		__auto_type ar = (array);										\
-		free (ar->a);													\
 		ar->size = 0;													\
 		if (ar->grow) {													\
+			free (ar->a);												\
 			ar->maxSize = 0;											\
 			ar->a = 0;													\
 		}																\
