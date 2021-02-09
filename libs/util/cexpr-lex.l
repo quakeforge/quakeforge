@@ -50,6 +50,8 @@
 #include "QF/qfplist.h"
 #include "QF/sys.h"
 
+#define CEXPR_YYDEBUG 1
+
 #include "QF/cexpr.h"
 #include "libs/util/cexpr-parse.h"
 

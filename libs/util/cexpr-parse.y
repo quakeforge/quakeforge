@@ -27,6 +27,7 @@
 %define api.prefix {cexpr_yy}
 %define api.pure full
 %define api.push-pull push
+%define parse.trace
 %parse-param {void *scanner} {exprctx_t *context}
 
 %{
