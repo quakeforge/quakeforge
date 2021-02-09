@@ -197,12 +197,24 @@ plitem_t *PL_ObjectForKey (const plitem_t *dict, const char *key);
 */
 plitem_t *PL_RemoveObjectForKey (const plitem_t *dict, const char *key);
 
+/** Retrieve a key from a dictionary object.
+
+	\param dict		The dictionary to get the key from
+	\param index	The index of the key
+	\return the key at the specified index, or NULL if index is out of range or
+	dict is not a dictionaly
+	isn't an array.
+	\note	You are NOT responsible for freeing the returned object. It will
+	be destroyed when its container is.
+*/
+const char *PL_KeyAtIndex (const plitem_t *array, int index) __attribute__((pure));
+
 /** Retrieve a value from an array object.
 
 	\param array	The array to get the value from
 	\param index	The index within the array to retrieve
-	\return the value associated with the key, or NULL if not found or array
-	isn't an array.
+	\return the value at the specified index, or NULL if index is out of range
+	or array is not an array.
 	\note	You are NOT responsible for freeing the returned object. It will
 	be destroyed when its container is.
 */

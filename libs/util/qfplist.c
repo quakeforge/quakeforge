@@ -64,6 +64,12 @@ struct dictkey_s {
 };
 typedef struct dictkey_s	dictkey_t;
 
+struct pldict_s {
+	hashtab_t  *tab;
+	struct DARRAY_TYPE (dictkey_t *) keys;
+};
+typedef struct pldict_s     pldict_t;
+
 /*
 	Arrays
 */
@@ -161,8 +167,9 @@ VISIBLE plitem_t *
 PL_NewDictionary (hashlink_t **hashlinks)
 {
 	plitem_t   *item = PL_NewItem (QFDictionary);
-	hashtab_t  *dict = Hash_NewTable (1021, dict_get_key, dict_free, NULL,
-									  hashlinks);
+	pldict_t   *dict = malloc (sizeof (pldict_t));
+	dict->tab = Hash_NewTable (1021, dict_get_key, dict_free, NULL, hashlinks);
+	DARRAY_INIT (&dict->keys, 8);
 	item->data = dict;
 	return item;
 }
@@ -205,18 +212,25 @@ PL_NewString (const char *str)
 VISIBLE void
 PL_Free (plitem_t *item)
 {
+	pldict_t   *dict;
+	plarray_t  *array;
+
 	switch (item->type) {
 		case QFDictionary:
-			Hash_DelTable (item->data);
+			dict = item->data;
+			Hash_DelTable (dict->tab);
+			DARRAY_CLEAR (&dict->keys);
 			break;
 
-		case QFArray: {
-				int 	i = ((plarray_t *) item->data)->numvals;
+		case QFArray:
+			{
+				array = item->data;
+				int 	i = array->numvals;
 
 				while (i-- > 0) {
-					PL_Free (((plarray_t *) item->data)->values[i]);
+					PL_Free (array->values[i]);
 				}
-				free (((plarray_t *) item->data)->values);
+				free (array->values);
 				free (item->data);
 			}
 			break;
@@ -264,67 +278,85 @@ PL_String (const plitem_t *string)
 }
 
 VISIBLE plitem_t *
-PL_ObjectForKey (const plitem_t *dict, const char *key)
+PL_ObjectForKey (const plitem_t *item, const char *key)
 {
-	hashtab_t  *table = (hashtab_t *) dict->data;
+	pldict_t   *dict = (pldict_t *) item->data;
 	dictkey_t  *k;
 
-	if (dict->type != QFDictionary)
+	if (item->type != QFDictionary)
 		return NULL;
 
-	k = (dictkey_t *) Hash_Find (table, key);
+	k = (dictkey_t *) Hash_Find (dict->tab, key);
 	return k ? k->value : NULL;
 }
 
-VISIBLE plitem_t *
-PL_RemoveObjectForKey (const plitem_t *dict, const char *key)
+VISIBLE const char *
+PL_KeyAtIndex (const plitem_t *item, int index)
 {
-	hashtab_t  *table = (hashtab_t *) dict->data;
+	pldict_t   *dict = (pldict_t *) item->data;
+
+	if (item->type != QFDictionary)
+		return NULL;
+	if (index < 0 || (size_t) index >= dict->keys.size) {
+		return NULL;
+	}
+
+	return dict->keys.a[index]->key;
+}
+
+VISIBLE plitem_t *
+PL_RemoveObjectForKey (const plitem_t *item, const char *key)
+{
+	pldict_t   *dict = (pldict_t *) item->data;
 	dictkey_t  *k;
 	plitem_t   *value;
 
-	if (dict->type != QFDictionary)
+	if (item->type != QFDictionary)
 		return NULL;
 
-	k = (dictkey_t *) Hash_Del (table, key);
+	k = (dictkey_t *) Hash_Del (dict->tab, key);
 	if (!k)
 		return NULL;
 	value = k->value;
 	k->value = 0;
+	for (size_t i = 0; i < dict->keys.size; i++) {
+		if (dict->keys.a[i] == k) {
+			DARRAY_REMOVE_AT (&dict->keys, i);
+			break;
+		}
+	}
 	dict_free (k, 0);
 	return value;
 }
 
 VISIBLE plitem_t *
-PL_D_AllKeys (plitem_t *dict)
+PL_D_AllKeys (plitem_t *item)
 {
-	void		**list, **l;
-	dictkey_t	*current;
-	plitem_t	*array;
+	pldict_t   *dict = (pldict_t *) item->data;
+	dictkey_t  *current;
+	plitem_t   *array;
 
-	if (dict->type != QFDictionary)
-		return NULL;
-
-	if (!(l = list = Hash_GetList ((hashtab_t *) dict->data)))
+	if (item->type != QFDictionary)
 		return NULL;
 
 	if (!(array = PL_NewArray ()))
 		return NULL;
 
-	while ((current = (dictkey_t *) *l++)) {
+	for (size_t i = 0; i < dict->keys.size; i++) {
+		current = dict->keys.a[i];
 		PL_A_AddObject (array, PL_NewString (current->key));
 	}
-	free (list);
 
 	return array;
 }
 
 VISIBLE int
-PL_D_NumKeys (const plitem_t *dict)
+PL_D_NumKeys (const plitem_t *item)
 {
-	if (dict->type != QFDictionary)
+	pldict_t   *dict = (pldict_t *) item->data;
+	if (item->type != QFDictionary)
 		return 0;
-	return Hash_NumElements ((hashtab_t *) dict->data);
+	return Hash_NumElements (dict->tab);
 }
 
 VISIBLE plitem_t *
@@ -339,14 +371,15 @@ PL_ObjectAtIndex (const plitem_t *array, int index)
 }
 
 VISIBLE qboolean
-PL_D_AddObject (plitem_t *dict, const char *key, plitem_t *value)
+PL_D_AddObject (plitem_t *item, const char *key, plitem_t *value)
 {
+	pldict_t   *dict = (pldict_t *) item->data;
 	dictkey_t	*k;
 
-	if (dict->type != QFDictionary)
+	if (item->type != QFDictionary)
 		return false;
 
-	if ((k = Hash_Find ((hashtab_t *)dict->data, key))) {
+	if ((k = Hash_Find (dict->tab, key))) {
 		PL_Free ((plitem_t *) k->value);
 		k->value = value;
 	} else {
@@ -358,7 +391,8 @@ PL_D_AddObject (plitem_t *dict, const char *key, plitem_t *value)
 		k->key = strdup (key);
 		k->value = value;
 
-		Hash_Add ((hashtab_t *)dict->data, k);
+		Hash_Add (dict->tab, k);
+		DARRAY_APPEND (&dict->keys, k);
 	}
 	return true;
 }
@@ -1024,24 +1058,24 @@ write_string (dstring_t *dstr, const char *str)
 static void
 write_item (dstring_t *dstr, plitem_t *item, int level)
 {
-	void		**list, **l;
 	dictkey_t	*current;
 	plarray_t	*array;
+	pldict_t    *dict;
 	plbinary_t	*binary;
 	int			i;
 
 	switch (item->type) {
 		case QFDictionary:
 			write_string_len (dstr, "{\n", 2);
-			l = list = Hash_GetList ((hashtab_t *) item->data);
-			while ((current = (dictkey_t *) *l++)) {
+			dict = (pldict_t *) item->data;
+			for (size_t i = 0; i < dict->keys.size; i++) {
+				current = dict->keys.a[i];
 				write_tabs (dstr, level + 1);
 				write_string (dstr, current->key);
 				write_string_len (dstr, " = ", 3);
 				write_item (dstr, current->value, level + 1);
 				write_string_len (dstr, ";\n", 2);
 			}
-			free (list);
 			write_tabs (dstr, level);
 			write_string_len (dstr, "}", 1);
 			break;
@@ -1128,7 +1162,7 @@ pl_default_parser (const plfield_t *field, const plitem_t *item, void *data,
 	switch (field->type) {
 		case QFDictionary:
 			{
-				*(hashtab_t **)data = (hashtab_t *)item->data;
+				*(hashtab_t **)data = ((pldict_t *)item->data)->tab;
 			}
 			return 1;
 		case QFArray:
@@ -1198,23 +1232,23 @@ PL_TypeMismatch (plitem_t *messages, const plitem_t *item, const char *name,
 }
 
 VISIBLE int
-PL_ParseStruct (const plfield_t *fields, const plitem_t *dict, void *data,
+PL_ParseStruct (const plfield_t *fields, const plitem_t *item, void *data,
 				plitem_t *messages, void *context)
 {
-	void      **list, **l;
+	pldict_t   *dict = item->data;
 	dictkey_t  *current;
 	int         result = 1;
 	plparser_t  parser;
 
-	if (dict->type != QFDictionary) {
-		PL_Message (messages, dict, "error: not a dictionary object");
+	if (item->type != QFDictionary) {
+		PL_Message (messages, item, "error: not a dictionary object");
 		return 0;
 	}
 
-	l = list = Hash_GetList ((hashtab_t *) dict->data);
 
-	while ((current = (dictkey_t *) *l++)) {
+	for (size_t i = 0; i < dict->keys.size; i++) {
 		const plfield_t *f;
+		current = dict->keys.a[i];
 		for (f = fields; f->name; f++) {
 			if (strcmp (f->name, current->key) == 0) {
 				plitem_t   *item = current->value;
@@ -1238,12 +1272,11 @@ PL_ParseStruct (const plfield_t *fields, const plitem_t *dict, void *data,
 			}
 		}
 		if (!f->name) {
-			PL_Message (messages, dict, "error: unknown field %s",
+			PL_Message (messages, item, "error: unknown field %s",
 						current->key);
 			result = 0;
 		}
 	}
-	free (list);
 	return result;
 }
 
@@ -1297,10 +1330,10 @@ PL_ParseArray (const plfield_t *field, const plitem_t *array, void *data,
 }
 
 VISIBLE int
-PL_ParseLabeledArray (const plfield_t *field, const plitem_t *dict,
+PL_ParseLabeledArray (const plfield_t *field, const plitem_t *item,
 					  void *data, plitem_t *messages, void *context)
 {
-	void      **list, **l;
+	pldict_t   *dict = item->data;
 	dictkey_t  *current;
 	int         result = 1;
 	plparser_t  parser;
@@ -1309,8 +1342,8 @@ PL_ParseLabeledArray (const plfield_t *field, const plitem_t *dict,
 	arr_t      *arr;
 	plfield_t   f = { 0, 0, element->type, element->parser, element->data };
 
-	if (dict->type != QFDictionary) {
-		PL_Message (messages, dict, "error: not a dictionary object");
+	if (item->type != QFDictionary) {
+		PL_Message (messages, item, "error: not a dictionary object");
 		return 0;
 	}
 	if (f.parser) {
@@ -1319,28 +1352,21 @@ PL_ParseLabeledArray (const plfield_t *field, const plitem_t *dict,
 		parser = pl_default_parser;
 	}
 
-	list = Hash_GetList ((hashtab_t *) dict->data);
-
-	int         numvals = 0;
-	for (l = list; *l; l++) {
-		numvals++;
-	}
-
-	arr = DARRAY_ALLOCFIXED_OBJ (arr_t, numvals * element->stride,
+	arr = DARRAY_ALLOCFIXED_OBJ (arr_t, dict->keys.size * element->stride,
 								 element->alloc, context);
 	memset (arr->a, 0, arr->size);
 	// the array is allocated using bytes, but need the actual number of
 	// elements in the array
-	arr->size = arr->maxSize = numvals;
+	arr->size = arr->maxSize = dict->keys.size;
 
-	for (int i = 0; i < numvals; i++) {
-		current = list[i];
+	for (size_t i = 0; i < dict->keys.size; i++) {
+		current = dict->keys.a[i];
 		plitem_t   *item = current->value;
 		void       *eledata = &arr->a[i * element->stride];
 
 		if (!PL_CheckType (element->type, item->type)) {
 			char        index[16];
-			snprintf (index, sizeof(index) - 1, "%d", i);
+			snprintf (index, sizeof(index) - 1, "%zd", i);
 			index[15] = 0;
 			PL_TypeMismatch (messages, item, index, element->type, item->type);
 			result = 0;
@@ -1355,10 +1381,10 @@ PL_ParseLabeledArray (const plfield_t *field, const plitem_t *dict,
 }
 
 VISIBLE int
-PL_ParseSymtab (const plfield_t *field, const plitem_t *dict, void *data,
+PL_ParseSymtab (const plfield_t *field, const plitem_t *item, void *data,
 				plitem_t *messages, void *context)
 {
-	void      **list, **l;
+	pldict_t   *dict = item->data;
 	dictkey_t  *current;
 	int         result = 1;
 	plparser_t  parser;
@@ -1367,26 +1393,22 @@ PL_ParseSymtab (const plfield_t *field, const plitem_t *dict, void *data,
 	plelement_t *element = (plelement_t *) field->data;
 	plfield_t   f = { 0, 0, element->type, element->parser, element->data };
 
-	if (dict->type != QFDictionary) {
-		PL_Message (messages, dict, "error: not a dictionary object");
+	if (item->type != QFDictionary) {
+		PL_Message (messages, item, "error: not a dictionary object");
 		return 0;
 	}
 
 	if (f.parser) {
 		parser = f.parser;
 	} else {
-		PL_Message (messages, dict, "no parser set");
+		PL_Message (messages, item, "no parser set");
 		return 0;
-	}
-
-	if (!(l = list = Hash_GetList ((hashtab_t *) dict->data))) {
-		// empty struct: leave as default
-		return 1;
 	}
 
 	void       *obj = element->alloc (context, element->stride);
 	memset (obj, 0, element->stride);
-	while ((current = (dictkey_t *) *l++)) {
+	for (size_t i = 0; i < dict->keys.size; i++) {
+		current = dict->keys.a[i];
 		const char *key = current->key;
 		plitem_t   *item = current->value;
 
@@ -1410,6 +1432,5 @@ PL_ParseSymtab (const plfield_t *field, const plitem_t *dict, void *data,
 		}
 	}
 	Hash_Free (tab, obj);
-	free (list);
 	return result;
 }
