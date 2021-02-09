@@ -191,6 +191,10 @@ assign_expr (exprval_t *dst, const exprval_t *src, exprctx_t *context)
 	if (!src) {
 		return;
 	}
+	if (dst->type == &cexpr_exprval) {
+		*(exprval_t **) dst->value = (exprval_t *) src;
+		return;
+	}
 	binop = cexpr_find_cast (dst->type, src->type);
 	if (binop && binop->op) {
 		binop->func (dst, src, dst, context);
