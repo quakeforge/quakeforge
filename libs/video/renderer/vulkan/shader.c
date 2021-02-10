@@ -55,21 +55,21 @@
 #include "vid_vulkan.h"
 
 static
-#include "libs/video/renderer/vulkan/twod.vert.spvc"
+#include "libs/video/renderer/vulkan/shader/twod.vert.spvc"
 static
-#include "libs/video/renderer/vulkan/twod.frag.spvc"
+#include "libs/video/renderer/vulkan/shader/twod.frag.spvc"
 static
-#include "libs/video/renderer/vulkan/quakebsp.vert.spvc"
+#include "libs/video/renderer/vulkan/shader/quakebsp.vert.spvc"
 static
-#include "libs/video/renderer/vulkan/quakebsp.frag.spvc"
+#include "libs/video/renderer/vulkan/shader/quakebsp.frag.spvc"
 static
-#include "libs/video/renderer/vulkan/alias.vert.spvc"
+#include "libs/video/renderer/vulkan/shader/alias.vert.spvc"
 static
-#include "libs/video/renderer/vulkan/alias.frag.spvc"
+#include "libs/video/renderer/vulkan/shader/alias.frag.spvc"
 static
-#include "libs/video/renderer/vulkan/passthrough.vert.spvc"
+#include "libs/video/renderer/vulkan/shader/passthrough.vert.spvc"
 static
-#include "libs/video/renderer/vulkan/pushcolor.frag.spvc"
+#include "libs/video/renderer/vulkan/shader/pushcolor.frag.spvc"
 
 typedef struct shaderdata_s {
 	const char *name;

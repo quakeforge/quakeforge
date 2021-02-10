@@ -262,22 +262,24 @@ vkparse_src = \
 vkparse_plist = \
 	$(srcdir)/libs/video/renderer/vulkan/vkparse.plist
 
-twodv_src = libs/video/renderer/vulkan/twod.vert
-twodv_c = libs/video/renderer/vulkan/twod.vert.spvc
-twodf_src = libs/video/renderer/vulkan/twod.frag
-twodf_c = libs/video/renderer/vulkan/twod.frag.spvc
-quakebspv_src = libs/video/renderer/vulkan/quakebsp.vert
-quakebspv_c = libs/video/renderer/vulkan/quakebsp.vert.spvc
-quakebspf_src = libs/video/renderer/vulkan/quakebsp.frag
-quakebspf_c = libs/video/renderer/vulkan/quakebsp.frag.spvc
-aliasv_src = libs/video/renderer/vulkan/alias.vert
-aliasv_c = libs/video/renderer/vulkan/alias.vert.spvc
-aliasf_src = libs/video/renderer/vulkan/alias.frag
-aliasf_c = libs/video/renderer/vulkan/alias.frag.spvc
-passthrough_src = libs/video/renderer/vulkan/passthrough.vert
-passthrough_c = libs/video/renderer/vulkan/passthrough.vert.spvc
-pushcolor_src = libs/video/renderer/vulkan/pushcolor.frag
-pushcolor_c = libs/video/renderer/vulkan/pushcolor.frag.spvc
+vkshaderpath = libs/video/renderer/vulkan/shader
+
+twodv_src = $(vkshaderpath)/twod.vert
+twodv_c = $(vkshaderpath)/twod.vert.spvc
+twodf_src = $(vkshaderpath)/twod.frag
+twodf_c = $(vkshaderpath)/twod.frag.spvc
+quakebspv_src = $(vkshaderpath)/quakebsp.vert
+quakebspv_c = $(vkshaderpath)/quakebsp.vert.spvc
+quakebspf_src = $(vkshaderpath)/quakebsp.frag
+quakebspf_c = $(vkshaderpath)/quakebsp.frag.spvc
+aliasv_src = $(vkshaderpath)/alias.vert
+aliasv_c = $(vkshaderpath)/alias.vert.spvc
+aliasf_src = $(vkshaderpath)/alias.frag
+aliasf_c = $(vkshaderpath)/alias.frag.spvc
+passthrough_src = $(vkshaderpath)/passthrough.vert
+passthrough_c = $(vkshaderpath)/passthrough.vert.spvc
+pushcolor_src = $(vkshaderpath)/pushcolor.frag
+pushcolor_c = $(vkshaderpath)/pushcolor.frag.spvc
 
 $(twodv_c): $(twodv_src)
 
