@@ -8,20 +8,15 @@
 
 #include "QF/darray.h"
 
-typedef struct vulkan_renderpass_s {
-	VkRenderPass renderpass;
-	struct qfv_imageresource_s *colorImage;
-	struct qfv_imageresource_s *depthImage;
-} vulkan_renderpass_t;
-
-typedef struct vulkan_framebuffer_s {
+typedef struct vulkan_frame_s {
 	VkFramebuffer framebuffer;
 	VkFence     fence;
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderDoneSemaphore;
 	VkCommandBuffer cmdBuffer;
 
-	struct qfv_cmdbufferset_s *subCommand;
+	int         cmdSetCount;
+	struct qfv_cmdbufferset_s *cmdSets;
 } vulkan_frame_t;
 
 typedef struct vulkan_matrices_s {
@@ -59,11 +54,22 @@ typedef struct vulkan_ctx_s {
 	VkSurfaceKHR surface;	//FIXME surface = window, so "contains" swapchain
 	struct plitem_s  *pipelineDef;
 
+	struct plitem_s  *renderpassDef;
+	VkRenderPass renderpass;
+	struct qfv_imageset_s *attachment_images;
+	struct qfv_imageviewset_s *attachment_views;
+	VkDeviceMemory attachmentMemory;
+
+	uint32_t    swapImageIndex;
+	struct qfv_framebufferset_s *framebuffers;
+
 	struct hashtab_s *shaderModules;
 	struct hashtab_s *setLayouts;
 	struct hashtab_s *pipelineLayouts;
 	struct hashtab_s *descriptorPools;
 	struct hashtab_s *samplers;
+	struct hashtab_s *images;
+	struct hashtab_s *imageViews;
 
 	struct aliasctx_s *alias_context;
 	struct bspctx_s *bsp_context;
@@ -72,7 +78,6 @@ typedef struct vulkan_ctx_s {
 	VkCommandPool cmdpool;
 	VkCommandBuffer cmdbuffer;
 	VkFence     fence;			// for ctx->cmdbuffer only
-	vulkan_renderpass_t renderpass;
 	struct qfv_stagebuf_s *staging;
 	VkPipeline  pipeline;
 	size_t      curFrame;

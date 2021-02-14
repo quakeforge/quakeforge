@@ -3,8 +3,17 @@
 
 #include "QF/darray.h"
 
-typedef struct qfv_imageset_s DARRAY_TYPE (VkImage) qfv_imageset_t;
-typedef struct qfv_imageviewset_s DARRAY_TYPE (VkImageView) qfv_imageviewset_t;
+typedef struct qfv_imageset_s
+	DARRAY_TYPE (VkImage) qfv_imageset_t;
+
+#define QFV_AllocImages(num, allocator) \
+	DARRAY_ALLOCFIXED (qfv_imageset_t, num, allocator)
+
+typedef struct qfv_imageviewset_s
+	DARRAY_TYPE (VkImageView) qfv_imageviewset_t;
+
+#define QFV_AllocImageViews(num, allocator) \
+	DARRAY_ALLOCFIXED (qfv_imageviewset_t, num, allocator)
 
 typedef struct qfv_imageresource_s {
 	struct qfv_device_s *device;

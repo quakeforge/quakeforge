@@ -20,6 +20,9 @@
 		VkGraphicsPipelineCreateInfo,
 		VkDescriptorPoolCreateInfo,
 		VkSamplerCreateInfo,
+		VkImageCreateInfo,
+		VkImageViewCreateInfo,
+		VkFramebufferCreateInfo,
 	);
 	parse = {
 		VkSubpassDescription = {
@@ -282,6 +285,48 @@
 				fields = (basePipelineHandle);
 			};
 			basePipelineIndex = auto;
+		};
+		VkImageCreateInfo = {
+			flags = auto;
+			imageType = auto;
+			format = auto;
+			extent = auto;
+			mipLevels = auto;
+			arrayLayers = auto;
+			samples = auto;
+			tiling = auto;
+			usage = auto;
+			sharingMode = skip;	// FIXME for now
+			queueFamilyIndexCount = skip;	// FIXME for now
+			pQueueFamilyIndices = skip;	// FIXME for now
+			initialLayout = auto;
+		};
+		VkImageViewCreateInfo = {
+			flags = auto;
+			image = {
+				type = (custom,	(QFDictionary, QFString),
+						parse_VkImage);
+				fields = (image);
+			};
+			viewType = auto;
+			format = auto;
+			components = auto;
+			subresourceRange = auto;
+		};
+		VkFramebufferCreateInfo = {
+			//flags = auto; reserved for future use (Bits enum does not exist)
+			renderPass = {
+				type = (custom,	QFString, parse_VkShaderModule);
+				fields = (renderPass);
+			};
+			attachments = {
+				type = (array, VkImageView);
+				size = attachmentCount;
+				values = pAttachments;
+			};
+			width = auto;
+			height = auto;
+			layers = auto;
 		}
 	}
 }

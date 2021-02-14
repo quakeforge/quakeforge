@@ -87,8 +87,9 @@ vulkan_R_Init (void)
 	Vulkan_CreateStagingBuffers (vulkan_ctx);
 	Vulkan_CreateMatrices (vulkan_ctx);
 	Vulkan_CreateSwapchain (vulkan_ctx);
-	Vulkan_CreateFramebuffers (vulkan_ctx);
+	Vulkan_CreateFrames (vulkan_ctx);
 	Vulkan_CreateRenderPass (vulkan_ctx);
+	Vulkan_CreateFramebuffers (vulkan_ctx);
 	// FIXME this should be staged so screen updates can begin while pipelines
 	// are being built
 	vulkan_ctx->pipeline = Vulkan_CreatePipeline (vulkan_ctx, "pipeline");
@@ -111,6 +112,8 @@ vulkan_R_Init (void)
 static void
 vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 {
+	const VkSubpassContents subpassContents
+		= VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
 	static int count = 0;
 	static double startTime;
 	uint32_t imageIndex = 0;
@@ -128,20 +131,9 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	QFV_AcquireNextImage (vulkan_ctx->swapchain,
 						  frame->imageAvailableSemaphore,
 						  0, &imageIndex);
+	vulkan_ctx->swapImageIndex = imageIndex;
 
-	int         attachCount = vulkan_ctx->msaaSamples > 1 ? 3 : 2;
-	__auto_type attachments = DARRAY_ALLOCFIXED (qfv_imageviewset_t,
-												 attachCount, alloca);
-	qfv_swapchain_t *sc = vulkan_ctx->swapchain;
-	attachments->a[0] = sc->imageViews->a[imageIndex];
-	attachments->a[1] = vulkan_ctx->renderpass.depthImage->view;
-	if (attachCount > 2) {
-		attachments->a[2] = vulkan_ctx->renderpass.colorImage->view;
-	}
-
-	VkRenderPass renderpass = vulkan_ctx->renderpass.renderpass;
-	frame->framebuffer = QFV_CreateFramebuffer (device, renderpass,
-											    attachments, sc->extent, 1);
+	frame->framebuffer = vulkan_ctx->framebuffers->a[imageIndex];
 
 	scr_3dfunc ();
 	while (*scr_funcs) {
@@ -160,20 +152,26 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	};
 	VkRenderPassBeginInfo renderPassInfo = {
 		VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, 0,
-		vulkan_ctx->renderpass.renderpass, 0,
-		{ {0, 0}, sc->extent },
+		vulkan_ctx->renderpass, 0,
+		{ {0, 0}, vulkan_ctx->swapchain->extent },
 		3, clearValues
 	};
 
 	dfunc->vkBeginCommandBuffer (frame->cmdBuffer, &beginInfo);
 	renderPassInfo.framebuffer = frame->framebuffer;
 	dfunc->vkCmdBeginRenderPass (frame->cmdBuffer, &renderPassInfo,
-								 VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS);
+								 subpassContents);
 
-	dfunc->vkCmdExecuteCommands (frame->cmdBuffer, frame->subCommand->size,
-								 frame->subCommand->a);
-	// reset for next time around
-	frame->subCommand->size = 0;
+	for (int i = 0; i < frame->cmdSetCount; i++) {
+		dfunc->vkCmdExecuteCommands (frame->cmdBuffer, frame->cmdSets[i].size,
+									 frame->cmdSets[i].a);
+		// reset for next time around
+		frame->cmdSets[i].size = 0;
+
+		if (i < frame->cmdSetCount) {
+			dfunc->vkCmdNextSubpass (frame->cmdBuffer, subpassContents);
+		}
+	}
 
 	dfunc->vkCmdEndRenderPass (frame->cmdBuffer);
 	dfunc->vkEndCommandBuffer (frame->cmdBuffer);

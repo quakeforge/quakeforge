@@ -64,16 +64,65 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
-void
-Vulkan_DrawAlias (entity_t *ent, struct vulkan_ctx_s *ctx)
+static const char *alias_pass_names[] = {
+	"depth",
+	"g-buffer",
+	"translucent",
+};
+
+static void
+emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
+			   qfv_alias_skin_t *skin,
+			   void *vert_constants, int vert_size,
+			   void *frag_constants, int frag_size,
+			   aliashdr_t *hdr, vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	aliasctx_t *actx = ctx->alias_context;
 	aliasframe_t *aframe = &actx->frames.a[ctx->curFrame];
+
+	__auto_type mesh = (qfv_alias_mesh_t *) ((byte *) hdr + hdr->commands);
+
+	VkDeviceSize offsets[] = {
+		pose1 * hdr->poseverts * sizeof (aliasvrt_t),
+		pose2 * hdr->poseverts * sizeof (aliasvrt_t),
+		0,
+	};
+	VkBuffer    buffers[] = {
+		mesh->vertex_buffer,
+		mesh->vertex_buffer,
+		mesh->uv_buffer,
+	};
+	int         bindingCount = skin ? 3 : 2;
+
+	dfunc->vkCmdBindVertexBuffers (cmd, 0, bindingCount, buffers, offsets);
+	dfunc->vkCmdBindIndexBuffer (cmd, mesh->index_buffer, 0,
+								 VK_INDEX_TYPE_UINT32);
+	dfunc->vkCmdPushConstants (cmd, actx->layout, VK_SHADER_STAGE_VERTEX_BIT,
+							   0, vert_size, vert_constants);
+	if (skin) {
+		dfunc->vkCmdPushConstants (cmd, actx->layout,
+								   VK_SHADER_STAGE_FRAGMENT_BIT,
+								   68, frag_size, frag_constants);
+		aframe->imageInfo[0].imageView = skin->view;
+		dfunc->vkCmdPushDescriptorSetKHR (cmd,
+										  VK_PIPELINE_BIND_POINT_GRAPHICS,
+										  actx->layout,
+										  0, ALIAS_IMAGE_INFOS,
+										  aframe->descriptors
+										  + ALIAS_BUFFER_INFOS);
+	}
+	dfunc->vkCmdDrawIndexed (cmd, 3 * hdr->mdl.numtris, 1, 0, 0, 0);
+}
+
+void
+Vulkan_DrawAlias (entity_t *ent, vulkan_ctx_t *ctx)
+{
+	aliasctx_t *actx = ctx->alias_context;
+	aliasframe_t *aframe = &actx->frames.a[ctx->curFrame];
 	model_t    *model = ent->model;
 	aliashdr_t *hdr;
-	qfv_alias_mesh_t *mesh;
 	qfv_alias_skin_t *skin;
 	float       vertex_constants[17];
 	byte        fragment_constants[3][4];
@@ -81,7 +130,6 @@ Vulkan_DrawAlias (entity_t *ent, struct vulkan_ctx_s *ctx)
 	if (!(hdr = model->aliashdr)) {
 		hdr = Cache_Get (&model->cache);
 	}
-	mesh = (qfv_alias_mesh_t *) ((byte *) hdr + hdr->commands);
 
 	memcpy (vertex_constants, ent->transform, sizeof (ent->transform));
 	vertex_constants[16] = R_AliasGetLerpedFrames (ent, hdr);
@@ -97,90 +145,26 @@ Vulkan_DrawAlias (entity_t *ent, struct vulkan_ctx_s *ctx)
 	QuatCopy (skin->colora, fragment_constants[1]);
 	QuatCopy (skin->colorb, fragment_constants[2]);
 
-	VkDeviceSize offsets[] = {
-		ent->pose1 * hdr->poseverts * sizeof (aliasvrt_t),
-		ent->pose2 * hdr->poseverts * sizeof (aliasvrt_t),
-		0,
-	};
-	VkBuffer    buffers[] = {
-		mesh->vertex_buffer,
-		mesh->vertex_buffer,
-		mesh->uv_buffer,
-	};
-	dfunc->vkCmdBindVertexBuffers (aframe->cmd, 0, 3, buffers, offsets);
-	dfunc->vkCmdBindIndexBuffer (aframe->cmd, mesh->index_buffer, 0,
-								 VK_INDEX_TYPE_UINT32);
-	dfunc->vkCmdPushConstants (aframe->cmd, actx->layout,
-							   VK_SHADER_STAGE_VERTEX_BIT,
-							   0, sizeof (vertex_constants), vertex_constants);
-	dfunc->vkCmdPushConstants (aframe->cmd, actx->layout,
-							   VK_SHADER_STAGE_FRAGMENT_BIT,
-							   68, sizeof (fragment_constants),
-							   fragment_constants);
-	aframe->imageInfo[0].imageView = skin->view;
-	dfunc->vkCmdPushDescriptorSetKHR (aframe->cmd,
-									  VK_PIPELINE_BIND_POINT_GRAPHICS,
-									  actx->layout,
-									  0, ALIAS_IMAGE_INFOS,
-									  aframe->descriptors
-									  + ALIAS_BUFFER_INFOS);
-	dfunc->vkCmdDrawIndexed (aframe->cmd, 3 * hdr->mdl.numtris, 1, 0, 0, 0);
+	emit_commands (aframe->cmdSet.a[QFV_aliasDepth], ent->pose1, ent->pose2,
+				   0, vertex_constants, sizeof (vertex_constants),
+				   fragment_constants, sizeof (fragment_constants),
+				   hdr, ctx);
 }
 
 static void
-calc_lighting (qfv_light_t *light, entity_t *ent)
-{
-	vec3_t      ambient_color;
-	//FIXME should be ent->position
-	float       l = R_LightPoint (&r_worldentity.model->brush, r_origin) / 128.0;
-
-	//XXX l = max (light, max (ent->model->min_light, ent->min_light));
-	light->type = 2;
-	VectorSet (1, 1, 1, ambient_color);	//FIXME
-	// position doubles as ambient light
-	VectorScale (ambient_color, l, light->position);
-	VectorSet (-1, 0, 0, light->direction);	//FIXME
-	VectorCopy (light->position, light->color);
-}
-
-void
-Vulkan_AliasBegin (vulkan_ctx_t *ctx)
+alias_begin_subpass (VkCommandBuffer cmd, VkPipeline pipeline,
+					 vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	aliasctx_t *actx = ctx->alias_context;
-
-	dlight_t   *lights[ALIAS_LIGHTS];
-	//XXX quat_t      fog;
-
 	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	aliasframe_t *aframe = &actx->frames.a[ctx->curFrame];
-	VkCommandBuffer cmd = aframe->cmd;
-	DARRAY_APPEND (cframe->subCommand, cmd);
-
-	//FIXME ambient needs to be per entity
-	aframe->lights->light_count = 1;
-	calc_lighting (&aframe->lights->lights[0], 0);
-	R_FindNearLights (r_origin, ALIAS_LIGHTS - 1, lights);
-	for (int i = 0; i < ALIAS_LIGHTS - 1; i++) {
-		if (!lights[i]) {
-			break;
-		}
-		aframe->lights->light_count++;
-		VectorCopy (lights[i]->color, aframe->lights->lights[i + 1].color);
-		VectorCopy (lights[i]->origin, aframe->lights->lights[i + 1].position);
-		aframe->lights->lights[i + 1].dist = lights[i]->radius;
-		aframe->lights->lights[i + 1].type = 0;
-	}
-
-	//FIXME need per frame matrices
-	aframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
-	aframe->bufferInfo[1].buffer = aframe->light_buffer;
 
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		ctx->renderpass.renderpass, 0,
+		ctx->renderpass, 0,
 		cframe->framebuffer,
 		0, 0, 0,
 	};
@@ -192,7 +176,7 @@ Vulkan_AliasBegin (vulkan_ctx_t *ctx)
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-							  actx->pipeline);
+							  pipeline);
 	//VkDescriptorSet sets[] = {
 	//	aframe->descriptors[0].dstSet,
 	//	aframe->descriptors[1].dstSet,
@@ -213,15 +197,43 @@ Vulkan_AliasBegin (vulkan_ctx_t *ctx)
 	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;
 }
 
-void
-Vulkan_AliasEnd (vulkan_ctx_t *ctx)
+static void
+alias_end_subpass (VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	aliasctx_t *actx = ctx->alias_context;
 
+	dfunc->vkEndCommandBuffer (cmd);
+}
+
+void
+Vulkan_AliasBegin (vulkan_ctx_t *ctx)
+{
+	aliasctx_t *actx = ctx->alias_context;
+	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	aliasframe_t *aframe = &actx->frames.a[ctx->curFrame];
-	dfunc->vkEndCommandBuffer (aframe->cmd);
+
+	//XXX quat_t      fog;
+	DARRAY_APPEND (&cframe->cmdSets[QFV_passDepth],
+				   aframe->cmdSet.a[QFV_aliasDepth]);
+	DARRAY_APPEND (&cframe->cmdSets[QFV_passGBuffer],
+				   aframe->cmdSet.a[QFV_aliasGBuffer]);
+
+	//FIXME need per frame matrices
+	aframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
+
+	alias_begin_subpass (aframe->cmdSet.a[QFV_aliasDepth], actx->depth, ctx);
+	alias_begin_subpass (aframe->cmdSet.a[QFV_aliasGBuffer], actx->gbuf, ctx);
+}
+
+void
+Vulkan_AliasEnd (vulkan_ctx_t *ctx)
+{
+	aliasctx_t *actx = ctx->alias_context;
+	aliasframe_t *aframe = &actx->frames.a[ctx->curFrame];
+
+	alias_end_subpass (aframe->cmdSet.a[QFV_aliasDepth], ctx);
+	alias_end_subpass (aframe->cmdSet.a[QFV_aliasGBuffer], ctx);
 }
 
 static VkDescriptorBufferInfo base_buffer_info = {
@@ -247,7 +259,6 @@ void
 Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
 
 	aliasctx_t *actx = calloc (1, sizeof (aliasctx_t));
 	ctx->alias_context = actx;
@@ -257,7 +268,8 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&actx->frames, frames);
 	actx->frames.grow = 0;
 
-	actx->pipeline = Vulkan_CreatePipeline (ctx, "alias");
+	actx->depth = Vulkan_CreatePipeline (ctx, "alias_depth");
+	actx->gbuf = Vulkan_CreatePipeline (ctx, "alias_gbuf");
 	actx->layout = Vulkan_CreatePipelineLayout (ctx, "alias_layout");
 	actx->sampler = Vulkan_CreateSampler (ctx, "alias_sampler");
 
@@ -276,43 +288,22 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 	}*/
 	//__auto_type pool = QFV_GetDescriptorPool (ctx, "alias.pool");
 
-	__auto_type cmdBuffers = QFV_AllocCommandBufferSet (frames, alloca);
-	QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, cmdBuffers);
-
-	__auto_type lbuffers = QFV_AllocBufferSet (frames, alloca);
-	for (size_t i = 0; i < frames; i++) {
-		lbuffers->a[i] = QFV_CreateBuffer (device, sizeof (qfv_light_buffer_t),
-										   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER,
-							 lbuffers->a[i],
-							 va (ctx->va_ctx, "buffer:alias:%s:%zd",
-								 "lights", i));
-	}
-	VkMemoryRequirements requirements;
-	dfunc->vkGetBufferMemoryRequirements (device->dev, lbuffers->a[0],
-										  &requirements);
-	actx->light_memory = QFV_AllocBufferMemory (device, lbuffers->a[0],
-										VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT,
-										frames * requirements.size, 0);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
-						 actx->light_memory, va (ctx->va_ctx,
-												 "memory:alias:%s", "lights"));
-	byte       *light_data;
-	dfunc->vkMapMemory (device->dev, actx->light_memory, 0,
-						frames * requirements.size, 0, (void **) &light_data);
-
 	//__auto_type sets = QFV_AllocateDescriptorSet (device, pool, layouts);
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type aframe = &actx->frames.a[i];
-		aframe->cmd = cmdBuffers->a[i];
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
-							 aframe->cmd,
-							 va (ctx->va_ctx, "cmd:alias:%zd", i));
-		aframe->light_buffer = lbuffers->a[i];
-		aframe->lights = (qfv_light_buffer_t *) (light_data + i * requirements.size);
-		QFV_BindBufferMemory (device, lbuffers->a[i], actx->light_memory,
-							  i * requirements.size);
 
+		DARRAY_INIT (&aframe->cmdSet, QFV_aliasNumPasses);
+		DARRAY_RESIZE (&aframe->cmdSet, QFV_aliasNumPasses);
+		aframe->cmdSet.grow = 0;
+
+		QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, &aframe->cmdSet);
+
+		for (int j = 0; j < QFV_aliasNumPasses; j++) {
+			QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
+								 aframe->cmdSet.a[j],
+								 va (ctx->va_ctx, "cmd:alias:%zd:%s", i,
+									 alias_pass_names[j]));
+		}
 		for (int j = 0; j < ALIAS_BUFFER_INFOS; j++) {
 			aframe->bufferInfo[j] = base_buffer_info;
 			aframe->descriptors[j] = base_buffer_write;
@@ -333,7 +324,7 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_Alias_Shutdown (struct vulkan_ctx_s *ctx)
+Vulkan_Alias_Shutdown (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -341,11 +332,11 @@ Vulkan_Alias_Shutdown (struct vulkan_ctx_s *ctx)
 
 	for (size_t i = 0; i < actx->frames.size; i++) {
 		__auto_type aframe = &actx->frames.a[i];
-		dfunc->vkDestroyBuffer (device->dev, aframe->light_buffer, 0);
+		free (aframe->cmdSet.a);
 	}
-	dfunc->vkFreeMemory (device->dev, actx->light_memory, 0);
 
-	dfunc->vkDestroyPipeline (device->dev, actx->pipeline, 0);
-	DARRAY_CLEAR (&actx->frames);
+	dfunc->vkDestroyPipeline (device->dev, actx->depth, 0);
+	dfunc->vkDestroyPipeline (device->dev, actx->gbuf, 0);
+	free (actx->frames.a);
 	free (actx);
 }

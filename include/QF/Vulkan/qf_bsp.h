@@ -35,6 +35,7 @@
 #include "QF/darray.h"
 #include "QF/model.h"
 #include "QF/Vulkan/qf_vid.h"
+#include "QF/Vulkan/command.h"
 
 typedef struct bspvert_s {
 	quat_t      vertex;
@@ -69,13 +70,19 @@ typedef enum {
 // Texture, GlowMap, LightMap, SkySheet, SkyCube
 #define BSP_IMAGE_INFOS 5
 
+enum {
+	QFV_bspDepth,
+	QFV_bspGBuffer,
+	QFV_bspTranslucent,
+
+	QFV_bspNumPasses
+};
+
 typedef struct bspframe_s {
 	uint32_t    *index_data;	// pointer into mega-buffer for this frame (c)
 	uint32_t     index_offset;	// offset of index_data within mega-buffer (c)
 	uint32_t     index_count;	// number if indices queued (d)
-	VkCommandBuffer bsp_cmd;
-	VkCommandBuffer turb_cmd;
-	VkCommandBuffer sky_cmd;
+	qfv_cmdbufferset_t cmdSet;
 	VkDescriptorBufferInfo bufferInfo[BSP_BUFFER_INFOS];
 	VkDescriptorImageInfo imageInfo[BSP_IMAGE_INFOS];
 	VkWriteDescriptorSet descriptors[BSP_BUFFER_INFOS + BSP_IMAGE_INFOS];

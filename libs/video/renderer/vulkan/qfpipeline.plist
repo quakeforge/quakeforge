@@ -273,7 +273,45 @@
 		};
 	};
 	pipelines = {
-		alias = {
+		alias_depth = {
+			stages = (
+				{
+					stage = vertex;
+					name = main;
+					module = $builtin/alias.vert;
+				},
+			);
+			vertexInput = {
+				bindings = (
+					"$properties.pipelines.alias_gbuf.vertexInput.bindings[0]",
+					"$properties.pipelines.alias_gbuf.vertexInput.bindings[1]",
+				);
+				attributes = (
+					"$properties.pipelines.alias_gbuf.vertexInput.attributes[0]",
+					"$properties.pipelines.alias_gbuf.vertexInput.attributes[1]",
+					"$properties.pipelines.alias_gbuf.vertexInput.attributes[2]",
+					"$properties.pipelines.alias_gbuf.vertexInput.attributes[3]",
+				);
+			};
+			inputAssembly = $properties.pipelines.alias_gbuf.inputAssembly;
+			viewport = $properties.pipelines.alias_gbuf.viewport;
+			rasterization = $properties.pipelines.alias_gbuf.rasterization;
+			multisample = $properties.pipelines.alias_gbuf.multisample;
+			depthStencil = {
+				depthTestEnable = true;
+				depthWriteEnable = true;
+				depthCompareOp = less_or_equal;
+				depthBoundsTestEnable = false;
+				stencilTestEnable = false;
+			};
+			colorBlend = $properties.pipelines.alias_gbuf.colorBlend;
+			dynamic = {
+				dynamicState = ( viewport, scissor );
+			};
+			layout = alias_layout;
+			//renderPass = renderpass;
+		};
+		alias_gbuf = {
 			stages = (
 				{
 					stage = vertex;
@@ -404,7 +442,41 @@
 			layout = alias_layout;
 			//renderPass = renderpass;
 		};
-		quakebsp_main = {
+		bsp_depth = {
+			stages = (
+				{
+					stage = vertex;
+					name = main;
+					module = $builtin/quakebsp.vert;
+				},
+			);
+			vertexInput = {
+				bindings = (
+					"$properties.pipelines.bsp_gbuf.vertexInput.bindings[0]",
+				);
+				attributes = (
+					"$properties.pipelines.bsp_gbuf.vertexInput.attributes[0]",
+				);
+			};
+			inputAssembly = $properties.pipelines.bsp_main.inputAssembly;
+			viewport = $properties.pipelines.bsp_main.viewport;
+			rasterization = $properties.pipelines.bsp_main.rasterization;
+			multisample = $properties.pipelines.bsp_main.multisample;
+			depthStencil = {
+				depthTestEnable = true;
+				depthWriteEnable = true;
+				depthCompareOp = less_or_equal;
+				depthBoundsTestEnable = false;
+				stencilTestEnable = false;
+			};
+			colorBlend = $properties.pipelines.bsp_gbuf.colorBlend;
+			dynamic = {
+				dynamicState = ( viewport, scissor );
+			};
+			layout = quakebsp_layout;
+			//renderPass = renderpass;
+		};
+		bsp_gbuf = {
 			stages = (
 				{
 					stage = vertex;
@@ -523,86 +595,15 @@
 					};
 				},
 			);
-			vertexInput = {
-				bindings = (
-					{
-						binding = 0;
-						stride = "2 * 4 * 4";
-						inputRate = vertex;
-					},
-				);
-				attributes = (
-					{
-						location = 0;
-						binding = 0;
-						format = r32g32b32a32_sfloat;
-						offset = 0;
-					},
-					{
-						location = 1;
-						binding = 0;
-						format = r32g32b32a32_sfloat;
-						offset = 16;
-					},
-				);
-			};
-			inputAssembly = {
-				topology = triangle_fan;
-				primitiveRestartEnable = true;
-			};
-			viewport = {
-				viewports = (
-					{
-						x = 0; y = 0;
-						width = 640; height = 480;
-						minDepth = 0; maxDepth = 1;
-					}
-				);
-				scissors = (
-					{
-						offset = { x = 0; y = 0 };
-						extent = { width = 640; height = 480; };
-					},
-				);
-			};
-			rasterization = {
-				depthClampEnable = false;
-				rasterizerDiscardEnable = false;
-				polygonMode = fill;
-				cullMode = back;
-				frontFace = clockwise;
-				depthBiasEnable = false;
-				lineWidth = 1;
-			};
-			multisample = {
-				rasterizationSamples = $msaaSamples;
-				sampleShadingEnable = false;
-				minSampleShading = 0.5f;
-				alphaToCoverageEnable = false;
-				alphaToOneEnable = false;
-			};
-			depthStencil = {
-				depthTestEnable = true;
-				depthWriteEnable = true;
-				depthCompareOp = less_or_equal;
-				depthBoundsTestEnable = false;
-				stencilTestEnable = false;
-			};
-			colorBlend = {
-				logicOpEnable = false;
-				attachments = ({
-					blendEnable = true;
-					srcColorBlendFactor = src_alpha;
-					dstColorBlendFactor = one_minus_src_alpha;
-					colorBlendOp = add;
-					srcAlphaBlendFactor = src_alpha;
-					dstAlphaBlendFactor = one_minus_src_alpha;
-					alphaBlendOp = add;
-					colorWriteMask = r|g|b|a;
-				});
-			};
+			vertexInput = $properties.pipelines.bsp_gbuf.vertexInput;
+			inputAssembly = $properties.pipelines.bsp_gbuf.inputAssembly;
+			viewport = $properties.pipelines.bsp_gbuf.viewport;
+			rasterization = $properties.pipelines.bsp_gbuf.rasterization;
+			multisample = $properties.pipelines.bsp_gbuf.multisample;
+			depthStencil = $properties.pipelines.bsp_gbuf.depthStencil;
+			colorBlend = $properties.pipelines.bsp_gbuf.colorBlend;
 			dynamic = {
-				dynamicState = ( viewport, scissor, blend_constants );
+				dynamicState = ( viewport, scissor );
 			};
 			layout = quakebsp_layout;
 			//renderPass = renderpass;

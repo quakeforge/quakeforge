@@ -35,9 +35,22 @@
 #endif
 #include <vulkan/vulkan.h>
 
+//FIXME location
+enum {
+	QFV_passDepth,			// geometry
+	QFV_passGBuffer,		// geometry
+	QFV_passTranslucent,	// geometry
+	QFV_passLighting,		// single quad
+	QFV_passCompose,		// single quad
+
+	QFV_NumPasses
+};
+
 struct vulkan_ctx_s;
-void Vulkan_DestroyFramebuffers (struct vulkan_ctx_s *ctx);
+void Vulkan_DestroyFrames (struct vulkan_ctx_s *ctx);
+void Vulkan_CreateFrames (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateFramebuffers (struct vulkan_ctx_s *ctx);
+void Vulkan_DestroyFramebuffers (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateRenderPass (struct vulkan_ctx_s *ctx);
 void Vulkan_DestroyRenderPass (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateMatrices (struct vulkan_ctx_s *ctx);

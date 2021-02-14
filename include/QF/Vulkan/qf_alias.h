@@ -36,6 +36,7 @@
 #include "QF/model.h"
 #include "QF/modelgen.h"
 #include "QF/Vulkan/qf_vid.h"
+#include "QF/Vulkan/command.h"
 
 typedef struct aliasvrt_s {
 	float       vertex[4];
@@ -61,32 +62,22 @@ typedef struct qfv_alias_skin_s {
 	byte        colorb[4];
 } qfv_alias_skin_t;
 
-typedef struct qfv_light_s {
-	vec3_t      color;
-	float       dist;
-	vec3_t      position;
-	int         type;
-	vec3_t      direction;
-	float       cone;
-} qfv_light_t;
-
-#define ALIAS_LIGHTS 8
-
-typedef struct qfv_light_buffer_s {
-	int         light_count;
-	qfv_light_t lights[ALIAS_LIGHTS] __attribute__((aligned(16)));
-} qfv_light_buffer_t;
-
-#define ALIAS_BUFFER_INFOS 2
+#define ALIAS_BUFFER_INFOS 1
 #define ALIAS_IMAGE_INFOS 1
 
+enum {
+	QFV_aliasDepth,
+	QFV_aliasGBuffer,
+	//QFV_aliasTranslucent,
+
+	QFV_aliasNumPasses
+};
+
 typedef struct aliasframe_s {
-	VkCommandBuffer cmd;
+	qfv_cmdbufferset_t cmdSet;
 	VkDescriptorBufferInfo bufferInfo[ALIAS_BUFFER_INFOS];
 	VkDescriptorImageInfo imageInfo[ALIAS_IMAGE_INFOS];
 	VkWriteDescriptorSet descriptors[ALIAS_BUFFER_INFOS + ALIAS_IMAGE_INFOS];
-	qfv_light_buffer_t *lights;
-	VkBuffer     light_buffer;
 } aliasframe_t;
 
 typedef struct aliasframeset_s
@@ -94,11 +85,10 @@ typedef struct aliasframeset_s
 
 typedef struct aliasctx_s {
 	aliasframeset_t frames;
-	VkPipeline   pipeline;
+	VkPipeline   depth;
+	VkPipeline   gbuf;
 	VkPipelineLayout layout;
 	VkSampler    sampler;
-
-	VkDeviceMemory light_memory;
 } aliasctx_t;
 
 struct vulkan_ctx_s;

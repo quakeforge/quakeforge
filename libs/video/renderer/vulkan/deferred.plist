@@ -1,0 +1,342 @@
+{
+	images = {
+		depth = {
+			imageType = VK_IMAGE_TYPE_2D;	//FIXME short form is 2d...
+			format = x8_d24_unorm_pack32;
+			samples = 1;
+			extent = {
+				width = $swapchain.extent.width;
+				height = $swapchain.extent.height;
+				depth = 1;
+			};
+			mipLevels = 1;
+			arrayLayers = 1;
+			tiling = optimal;
+			usage = depth_stencil_attachment|input_attachment;
+		};
+		color = {
+			imageType = VK_IMAGE_TYPE_2D;
+			format = r8g8b8a8_unorm;
+			samples = 1;
+			extent = {
+				width = $swapchain.extent.width;
+				height = $swapchain.extent.height;
+				depth = 1;
+			};
+			mipLevels = 1;
+			arrayLayers = 1;
+			tiling = optimal;
+			usage = color_attachment|input_attachment;
+		};
+		normals = {
+			imageType = VK_IMAGE_TYPE_2D;
+			format = r16g16b16a16_sfloat;
+			samples = 1;
+			extent = {
+				width = $swapchain.extent.width;
+				height = $swapchain.extent.height;
+				depth = 1;
+			};
+			mipLevels = 1;
+			arrayLayers = 1;
+			tiling = optimal;
+			usage = color_attachment|input_attachment;
+		};
+		opaque = {
+			imageType = VK_IMAGE_TYPE_2D;
+			format = r8g8b8a8_unorm;
+			samples = 1;
+			extent = {
+				width = $swapchain.extent.width;
+				height = $swapchain.extent.height;
+				depth = 1;
+			};
+			mipLevels = 1;
+			arrayLayers = 1;
+			tiling = optimal;
+			usage = color_attachment|input_attachment;
+		};
+		translucent = {
+			imageType = VK_IMAGE_TYPE_2D;
+			format = r8g8b8a8_unorm;
+			samples = 1;
+			extent = {
+				width = $swapchain.extent.width;
+				height = $swapchain.extent.height;
+				depth = 1;
+			};
+			mipLevels = 1;
+			arrayLayers = 1;
+			tiling = optimal;
+			usage = color_attachment|input_attachment;
+		};
+	};
+	imageViews = {
+		depth = {
+			image = depth;
+			viewType = VK_IMAGE_VIEW_TYPE_2D;
+			format = $properties.images.depth.format;
+			components = {
+				r = identity;
+				g = identity;
+				b = identity;
+				a = identity;
+			};
+			subresourceRange = {
+				aspectMask = depth;
+				levelCount = 1;
+				layerCount = 1;
+			};
+		};
+		color = {
+			image = color;
+			viewType = VK_IMAGE_VIEW_TYPE_2D;
+			format = $properties.images.color.format;
+			components = {
+				r = identity;
+				g = identity;
+				b = identity;
+				a = identity;
+			};
+			subresourceRange = {
+				aspectMask = color;
+				levelCount = 1;
+				layerCount = 1;
+			};
+		};
+		normals = {
+			image = normals;
+			viewType = VK_IMAGE_VIEW_TYPE_2D;
+			format = $properties.images.normals.format;
+			components = {
+				r = identity;
+				g = identity;
+				b = identity;
+				a = identity;
+			};
+			subresourceRange = {
+				aspectMask = color;
+				levelCount = 1;
+				layerCount = 1;
+			};
+		};
+		opaque = {
+			image = opaque;
+			viewType = VK_IMAGE_VIEW_TYPE_2D;
+			format = $properties.images.opaque.format;
+			components = {
+				r = identity;
+				g = identity;
+				b = identity;
+				a = identity;
+			};
+			subresourceRange = {
+				aspectMask = color;
+				levelCount = 1;
+				layerCount = 1;
+			};
+		};
+		translucent = {
+			image = translucent;
+			viewType = VK_IMAGE_VIEW_TYPE_2D;
+			format = $properties.images.translucent.format;
+			components = {
+				r = identity;
+				g = identity;
+				b = identity;
+				a = identity;
+			};
+			subresourceRange = {
+				aspectMask = color;
+				levelCount = 1;
+				layerCount = 1;
+			};
+		};
+	};
+	framebuffer = {
+		renderPass = renderpass;
+		attachments = (depth, color, normals, opaque, translucent,
+					   "$swapchain.views[$swapImageIndex]");
+		width = $swapchain.extent.width;
+		height = $swapchain.extent.height;
+	};
+	renderpass = {
+		attachments = (
+			{
+				format = $properties.images.depth.format;
+				samples = 1;
+				loadOp = dont_care;
+				storeOp = dont_care;
+				stencilLoadOp = dont_care;
+				stencilStoreOp = dont_care;
+				initialLayout = undefined;
+				finalLayout = depth_stencil_attachment_optimal;
+			},
+			{
+				format = $properties.images.color.format;
+				samples = 1;
+				loadOp = dont_care;
+				storeOp = dont_care;
+				stencilLoadOp = dont_care;
+				stencilStoreOp = dont_care;
+				initialLayout = undefined;
+				finalLayout = color_attachment_optimal;
+			},
+			{
+				format = $properties.images.normals.format;
+				samples = 1;
+				loadOp = dont_care;
+				storeOp = dont_care;
+				stencilLoadOp = dont_care;
+				stencilStoreOp = dont_care;
+				initialLayout = undefined;
+				finalLayout = color_attachment_optimal;
+			},
+			{
+				format = $properties.images.opaque.format;
+				samples = 1;
+				loadOp = dont_care;
+				storeOp = dont_care;
+				stencilLoadOp = dont_care;
+				stencilStoreOp = dont_care;
+				initialLayout = undefined;
+				finalLayout = color_attachment_optimal;
+			},
+			{
+				format = $properties.images.translucent.format;
+				samples = 1;
+				loadOp = dont_care;
+				storeOp = dont_care;
+				stencilLoadOp = dont_care;
+				stencilStoreOp = dont_care;
+				initialLayout = undefined;
+				finalLayout = color_attachment_optimal;
+			},
+			{
+				format = $swapchain.format;
+				samples = 1;
+				loadOp = clear;
+				storeOp = store;
+				stencilLoadOp = dont_care;
+				stencilStoreOp = dont_care;
+				initialLayout = undefined;
+				finalLayout = present_src_khr;
+			},
+		);
+		subpasses = (
+			{	// depth
+				pipelineBindPoint = graphics;
+				depthStencilAttachment = {
+					attachment = 0;
+					layout = depth_stencil_attachment_optimal;
+				};
+			},
+			{	// g-buffer generation
+				pipelineBindPoint = graphics;
+				colorAttachments = (
+					{	// color
+						attachment = 1;
+						layout = color_attachment_optimal;
+					},
+					{	// normals
+						attachment = 2;
+						layout = color_attachment_optimal;
+					},
+				);
+				depthStencilAttachment = {
+					attachment = 0;
+					layout = depth_stencil_attachment_optimal;
+				};
+			},
+			{	// lighting
+				pipelineBindPoint = graphics;
+				inputAttachments = (
+					{	// depth
+						attachment = 0;
+						layout = shader_read_only_optimal;
+					},
+					{	// color
+						attachment = 1;
+						layout = shader_read_only_optimal;
+					},
+					{	// normals
+						attachment = 2;
+						layout = shader_read_only_optimal;
+					},
+				);
+				colorAttachments = (
+					{	// opaque
+						attachment = 3;
+						layout = color_attachment_optimal;
+					},
+				);
+			},
+			{	// translucent
+				pipelineBindPoint = graphics;
+				colorAttachments = (
+					{	// translucent
+						attachment = 4;
+						layout = color_attachment_optimal;
+					},
+				);
+			},
+			{	// compose
+				pipelineBindPoint = graphics;
+				inputAttachments = (
+					{	// opaque
+						attachment = 3;
+						layout = shader_read_only_optimal;
+					},
+					{	// translucent
+						attachment = 4;
+						layout = shader_read_only_optimal;
+					},
+				);
+				colorAttachments = (
+					{	// swapchain
+						attachment = 5;
+						layout = color_attachment_optimal;
+					},
+				);
+			},
+		);
+		dependencies = (
+			{
+				srcSubpass = 0;
+				dstSubpass = 1;
+				srcStageMask = color_attachment_output;
+				dstStageMask = fragment_shader;
+				srcAccessMask = color_attachment_write;
+				dstAccessMask = shader_read;
+				dependencyFlags = by_region;
+			},
+			{
+				srcSubpass = 1;
+				dstSubpass = 2;
+				srcStageMask = color_attachment_output;
+				dstStageMask = fragment_shader;
+				srcAccessMask = color_attachment_write;
+				dstAccessMask = shader_read;
+				dependencyFlags = by_region;
+			},
+			{
+				srcSubpass = 2;
+				dstSubpass = 4;
+				srcStageMask = color_attachment_output;
+				dstStageMask = fragment_shader;
+				srcAccessMask = color_attachment_write;
+				dstAccessMask = shader_read;
+				dependencyFlags = by_region;
+			},
+			{
+				srcSubpass = 3;
+				dstSubpass = 4;
+				srcStageMask = color_attachment_output;
+				dstStageMask = fragment_shader;
+				srcAccessMask = color_attachment_write;
+				dstAccessMask = shader_read;
+				dependencyFlags = by_region;
+			},
+		);
+	};
+}

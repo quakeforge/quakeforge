@@ -27,6 +27,12 @@ typedef struct qfv_subpassdependency_s
 #define QFV_AllocSubpassDependencies(num, allocator) \
 	DARRAY_ALLOCFIXED (qfv_subpassdependency_t, num, allocator)
 
+typedef struct qfv_framebufferset_s
+	DARRAY_TYPE (VkFramebuffer) qfv_framebufferset_t;
+
+#define QFV_AllocFrameBuffers(num, allocator) \
+	DARRAY_ALLOCFIXED (qfv_framebufferset_t, num, allocator)
+
 struct qfv_device_s;
 struct qfv_imageviewset_s;
 VkRenderPass

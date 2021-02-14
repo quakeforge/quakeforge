@@ -69,6 +69,12 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
+static const char *bsp_pass_names[] = {
+	"depth",
+	"g-buffer",
+	"translucent",
+};
+
 static float identity[] = {
 	1, 0, 0, 0,
 	0, 1, 0, 0,
@@ -780,32 +786,43 @@ bind_view (qfv_bsp_tex tex, VkImageView view, bspframe_t *bframe,
 }
 
 static void
+push_transform (vec_t *transform, VkPipelineLayout layout,
+				qfv_devfuncs_t *dfunc, VkCommandBuffer cmd)
+{
+	dfunc->vkCmdPushConstants (cmd, layout, VK_SHADER_STAGE_VERTEX_BIT,
+							   0, 16 * sizeof (float), transform);
+}
+
+static void
+push_fragconst (fragconst_t *fragconst, VkPipelineLayout layout,
+				qfv_devfuncs_t *dfunc, VkCommandBuffer cmd)
+{
+	dfunc->vkCmdPushConstants (cmd, layout, VK_SHADER_STAGE_FRAGMENT_BIT,
+							   0, sizeof (fragconst_t), fragconst);
+}
+
+static void
+push_descriptors (int count, VkWriteDescriptorSet *descriptors,
+				  VkPipelineLayout layout, qfv_devfuncs_t *dfunc,
+				  VkCommandBuffer cmd)
+{
+	dfunc->vkCmdPushDescriptorSetKHR (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									  layout, 0, count, descriptors);
+}
+
+static void
 draw_elechain (elechain_t *ec, VkPipelineLayout layout, qfv_devfuncs_t *dfunc,
 			   VkCommandBuffer cmd)
 {
 	elements_t *el;
 
-	/*if (colloc >= 0) {
-		float      *color;
-		color = ec->color;
-		if (!color)
-			color = bctx->default_color;
-		if (!QuatCompare (color, bctx->last_color)) {
-			QuatCopy (color, bctx->last_color);
-			qfeglVertexAttrib4fv (quake_bsp.color.location, color);
-		}
-	}*/
 	if (ec->transform) {
-		dfunc->vkCmdPushConstants (cmd, layout, VK_SHADER_STAGE_VERTEX_BIT,
-								   0, 16 * sizeof (float), ec->transform);
+		push_transform (ec->transform, layout, dfunc, cmd);
 	} else {
 		//FIXME should cache current transform
-		dfunc->vkCmdPushConstants (cmd, layout, VK_SHADER_STAGE_VERTEX_BIT,
-								   0, 16 * sizeof (float), identity);
+		push_transform (identity, layout, dfunc, cmd);
 	}
 	for (el = ec->elements; el; el = el->next) {
-		//FIXME check if these are contiguous and if so merge into one
-		//command
 		if (!el->index_count)
 			continue;
 		dfunc->vkCmdDrawIndexed (cmd, el->index_count, 1, el->first_index,
@@ -828,35 +845,18 @@ get_view (qfv_tex_t *tex, qfv_tex_t *default_tex)
 }
 
 static void
-bsp_begin (vulkan_ctx_t *ctx)
+bsp_begin_subpass (VkCommandBuffer cmd, VkPipeline pipeline, vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
-	//XXX quat_t      fog;
-
-	bctx->default_color[3] = 1;
-	QuatCopy (bctx->default_color, bctx->last_color);
-
 	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
-	VkCommandBuffer cmd = bframe->bsp_cmd;
-	DARRAY_APPEND (cframe->subCommand, cmd);
-
-	//FIXME need per frame matrices
-	bframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
-	bframe->imageInfo[0].imageView = 0;	// set by tex chain loop
-	bframe->imageInfo[1].imageView = 0;	// set by tex chain loop
-	bframe->imageInfo[2].imageView = QFV_ScrapImageView (bctx->light_scrap);
-	bframe->imageInfo[3].imageView = get_view (bctx->skysheet_tex,
-											   bctx->default_skysheet);
-	bframe->imageInfo[4].imageView = get_view (bctx->skybox_tex,
-											   bctx->default_skybox);
 
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		ctx->renderpass.renderpass, 0,
+		ctx->renderpass, 0,
 		cframe->framebuffer,
 		0, 0, 0,
 	};
@@ -868,7 +868,7 @@ bsp_begin (vulkan_ctx_t *ctx)
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-							  bctx->main);
+							  pipeline);
 	VkViewport  viewport = {0, 0, vid.width, vid.height, 0, 1};
 	VkRect2D    scissor = { {0, 0}, {vid.width, vid.height} };
 	dfunc->vkCmdSetViewport (cmd, 0, 1, &viewport);
@@ -893,14 +893,54 @@ bsp_begin (vulkan_ctx_t *ctx)
 }
 
 static void
-bsp_end (vulkan_ctx_t *ctx)
+bsp_end_subpass (VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	bspctx_t   *bctx = ctx->bsp_context;
 
+	dfunc->vkEndCommandBuffer (cmd);
+}
+
+static void
+bsp_begin (vulkan_ctx_t *ctx)
+{
+	bspctx_t   *bctx = ctx->bsp_context;
+	//XXX quat_t      fog;
+
+	bctx->default_color[3] = 1;
+	QuatCopy (bctx->default_color, bctx->last_color);
+
+	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
-	dfunc->vkEndCommandBuffer (bframe->bsp_cmd);
+
+	DARRAY_APPEND (&cframe->cmdSets[QFV_passDepth],
+				   bframe->cmdSet.a[QFV_bspDepth]);
+	DARRAY_APPEND (&cframe->cmdSets[QFV_passGBuffer],
+				   bframe->cmdSet.a[QFV_bspGBuffer]);
+
+	//FIXME need per frame matrices
+	bframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
+	bframe->imageInfo[0].imageView = 0;	// set by tex chain loop
+	bframe->imageInfo[1].imageView = 0;	// set by tex chain loop
+	bframe->imageInfo[2].imageView = QFV_ScrapImageView (bctx->light_scrap);
+	bframe->imageInfo[3].imageView = get_view (bctx->skysheet_tex,
+											   bctx->default_skysheet);
+	bframe->imageInfo[4].imageView = get_view (bctx->skybox_tex,
+											   bctx->default_skybox);
+
+	//FIXME pipeline
+	bsp_begin_subpass (bframe->cmdSet.a[QFV_bspDepth], bctx->main, ctx);
+	bsp_begin_subpass (bframe->cmdSet.a[QFV_bspGBuffer], bctx->main, ctx);
+}
+
+static void
+bsp_end (vulkan_ctx_t *ctx)
+{
+	bspctx_t   *bctx = ctx->bsp_context;
+	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
+
+	bsp_end_subpass (bframe->cmdSet.a[QFV_bspDepth], ctx);
+	bsp_end_subpass (bframe->cmdSet.a[QFV_bspGBuffer], ctx);
 }
 
 /*static void
@@ -982,8 +1022,6 @@ spin (mat4_t mat, bspctx_t *bctx)
 static void
 sky_begin (vulkan_ctx_t *ctx)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
 
 	bctx->default_color[3] = 1;
@@ -993,8 +1031,10 @@ sky_begin (vulkan_ctx_t *ctx)
 
 	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
-	VkCommandBuffer cmd = bframe->sky_cmd;
-	DARRAY_APPEND (cframe->subCommand, cmd);
+
+	//FIXME where should skys go? g-buffer is overkill. Translucent pre-pass?
+	DARRAY_APPEND (&cframe->cmdSets[QFV_passTranslucent],
+				   bframe->cmdSet.a[QFV_bspTranslucent]);
 
 	//FIXME need per frame matrices
 	bframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
@@ -1006,54 +1046,18 @@ sky_begin (vulkan_ctx_t *ctx)
 	bframe->imageInfo[4].imageView = get_view (bctx->skybox_tex,
 											   bctx->default_skybox);
 
-	dfunc->vkResetCommandBuffer (cmd, 0);
-	VkCommandBufferInheritanceInfo inherit = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		ctx->renderpass.renderpass, 0,
-		cframe->framebuffer,
-		0, 0, 0,
-	};
-	VkCommandBufferBeginInfo beginInfo = {
-		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, 0,
-		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
-		| VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &inherit,
-	};
-	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
-
-	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-							  bctx->sky);
-	VkViewport  viewport = {0, 0, vid.width, vid.height, 0, 1};
-	VkRect2D    scissor = { {0, 0}, {vid.width, vid.height} };
-	dfunc->vkCmdSetViewport (cmd, 0, 1, &viewport);
-	dfunc->vkCmdSetScissor (cmd, 0, 1, &scissor);
-
-	VkDeviceSize offsets[] = { 0 };
-	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &bctx->vertex_buffer, offsets);
-	dfunc->vkCmdBindIndexBuffer (cmd, bctx->index_buffer, bframe->index_offset,
-								 VK_INDEX_TYPE_UINT32);
-
-	// push VP matrices
-	dfunc->vkCmdPushDescriptorSetKHR (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									  bctx->layout,
-									  0, 1, bframe->descriptors + 0);
-	// push static images
-	dfunc->vkCmdPushDescriptorSetKHR (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									  bctx->layout,
-									  0, 5, bframe->descriptors + 1);
-
-	//XXX glsl_Fog_GetColor (fog);
-	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;
+	//FIXME sky pass
+	bsp_begin_subpass (bframe->cmdSet.a[QFV_bspTranslucent], bctx->sky, ctx);
 }
 
 static void
 sky_end (vulkan_ctx_t *ctx)
 {
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
-
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
-	dfunc->vkEndCommandBuffer (bframe->sky_cmd);
+
+	//FIXME sky pass
+	bsp_end_subpass (bframe->cmdSet.a[QFV_bspTranslucent], ctx);
 }
 
 static inline void
@@ -1133,13 +1137,13 @@ Vulkan_DrawWorld (vulkan_ctx_t *ctx)
 	Vulkan_FlushLightmaps (ctx);
 	bsp_begin (ctx);
 
-	dfunc->vkCmdPushConstants (bframe->bsp_cmd, bctx->layout,
-							   VK_SHADER_STAGE_VERTEX_BIT,
-							   0, 16 * sizeof (float), identity);
+	push_transform (identity, bctx->layout, dfunc,
+					bframe->cmdSet.a[QFV_bspDepth]);
+	push_transform (identity, bctx->layout, dfunc,
+					bframe->cmdSet.a[QFV_bspGBuffer]);
 	fragconst_t frag_constants = { time: vr_data.realtime };
-	dfunc->vkCmdPushConstants (bframe->bsp_cmd, bctx->layout,
-							   VK_SHADER_STAGE_FRAGMENT_BIT,
-							   64, sizeof (fragconst_t), &frag_constants);
+	push_fragconst (&frag_constants, bctx->layout, dfunc,
+					bframe->cmdSet.a[QFV_bspGBuffer]);
 	//XXX qfeglActiveTexture (GL_TEXTURE0 + 0);
 	for (size_t i = 0; i < bctx->texture_chains.size; i++) {
 		vulktex_t  *tex;
@@ -1153,13 +1157,15 @@ Vulkan_DrawWorld (vulkan_ctx_t *ctx)
 												   ctx->default_white);
 		bframe->imageInfo[1].imageView = get_view (tex->glow,
 												   ctx->default_black);
-		dfunc->vkCmdPushDescriptorSetKHR (bframe->bsp_cmd,
-										  VK_PIPELINE_BIND_POINT_GRAPHICS,
-										  bctx->layout,
-										  0, 2, bframe->descriptors + 1);
+
+		push_descriptors (2, bframe->descriptors + 1, bctx->layout, dfunc,
+						  bframe->cmdSet.a[QFV_bspGBuffer]);
 
 		for (ec = tex->elechain; ec; ec = ec->next) {
-			draw_elechain (ec, bctx->layout, dfunc, bframe->bsp_cmd);
+			draw_elechain (ec, bctx->layout, dfunc,
+						   bframe->cmdSet.a[QFV_bspDepth]);
+			draw_elechain (ec, bctx->layout, dfunc,
+						   bframe->cmdSet.a[QFV_bspGBuffer]);
 		}
 		tex->elechain = 0;
 		tex->elechain_tail = &tex->elechain;
@@ -1246,22 +1252,24 @@ Vulkan_DrawSky (vulkan_ctx_t *ctx)
 		return;
 
 	sky_begin (ctx);
-	dfunc->vkCmdPushConstants (bframe->sky_cmd, bctx->layout,
-							   VK_SHADER_STAGE_VERTEX_BIT,
-							   0, 16 * sizeof (float), identity);
+	//FIXME sky pass
+	push_transform (identity, bctx->layout, dfunc,
+					bframe->cmdSet.a[QFV_bspTranslucent]);
 	fragconst_t frag_constants = { time: vr_data.realtime };
-	dfunc->vkCmdPushConstants (bframe->sky_cmd, bctx->layout,
-							   VK_SHADER_STAGE_FRAGMENT_BIT,
-							   64, sizeof (fragconst_t), &frag_constants);
+	push_fragconst (&frag_constants, bctx->layout, dfunc,
+					bframe->cmdSet.a[QFV_bspTranslucent]);
 	for (is = bctx->sky_chain; is; is = is->tex_chain) {
 		surf = is->surface;
 		if (tex != surf->texinfo->texture->render) {
 			if (tex) {
 				bind_view (qfv_bsp_skysheet,
 						   get_view (tex->tex, ctx->default_black),
-						   bframe, bframe->sky_cmd, bctx->layout, dfunc);
+						   bframe,
+						   bframe->cmdSet.a[QFV_bspTranslucent],//FIXME
+						   bctx->layout, dfunc);
 				for (ec = tex->elechain; ec; ec = ec->next) {
-					draw_elechain (ec, bctx->layout, dfunc, bframe->sky_cmd);
+					draw_elechain (ec, bctx->layout, dfunc,//FIXME
+								   bframe->cmdSet.a[QFV_bspTranslucent]);
 				}
 				tex->elechain = 0;
 				tex->elechain_tail = &tex->elechain;
@@ -1271,11 +1279,12 @@ Vulkan_DrawSky (vulkan_ctx_t *ctx)
 		add_surf_elements (tex, is, &ec, &el, bctx, bframe);
 	}
 	if (tex) {
-		bind_view (qfv_bsp_skysheet,
-				   get_view (tex->tex, ctx->default_black),
-				   bframe, bframe->sky_cmd, bctx->layout, dfunc);
+		bind_view (qfv_bsp_skysheet, get_view (tex->tex, ctx->default_black),
+				   bframe, bframe->cmdSet.a[QFV_bspTranslucent],//FIXME
+				   bctx->layout, dfunc);
 		for (ec = tex->elechain; ec; ec = ec->next) {
-			draw_elechain (ec, bctx->layout, dfunc, bframe->sky_cmd);
+			draw_elechain (ec, bctx->layout, dfunc,//FIXME
+						   bframe->cmdSet.a[QFV_bspTranslucent]);
 		}
 		tex->elechain = 0;
 		tex->elechain_tail = &tex->elechain;
@@ -1453,23 +1462,21 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 	bctx->layout = Vulkan_CreatePipelineLayout (ctx, "quakebsp_layout");
 	bctx->sampler = Vulkan_CreateSampler (ctx, "quakebsp_sampler");
 
-	__auto_type cmdBuffers = QFV_AllocCommandBufferSet (3 * frames, alloca);
-	QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, cmdBuffers);
-
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type bframe = &bctx->frames.a[i];
-		bframe->bsp_cmd = cmdBuffers->a[i * 3 + 0];
-		bframe->turb_cmd = cmdBuffers->a[i * 3 + 1];
-		bframe->sky_cmd = cmdBuffers->a[i * 3 + 2];
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
-							 bframe->bsp_cmd,
-							 va (ctx->va_ctx, "cmd:bsp:%zd", i));
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
-							 bframe->turb_cmd,
-							 va (ctx->va_ctx, "cmd:turb:%zd", i));
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
-							 bframe->sky_cmd,
-							 va (ctx->va_ctx, "cmd:sky:%zd", i));
+
+		DARRAY_INIT (&bframe->cmdSet, QFV_bspNumPasses);
+		DARRAY_RESIZE (&bframe->cmdSet, QFV_bspNumPasses);
+		bframe->cmdSet.grow = 0;
+
+		QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, &bframe->cmdSet);
+
+		for (int j = 0; j < QFV_bspNumPasses; j++) {
+			QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
+								 bframe->cmdSet.a[i],
+								 va (ctx->va_ctx, "cmd:bsp:%zd:%s", i,
+									 bsp_pass_names[j]));
+		}
 
 		for (int j = 0; j < BSP_BUFFER_INFOS; j++) {
 			bframe->bufferInfo[j] = base_buffer_info;
@@ -1494,6 +1501,11 @@ Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
+
+	for (size_t i = 0; i < bctx->frames.size; i++) {
+		__auto_type bframe = &bctx->frames.a[i];
+		free (bframe->cmdSet.a);
+	}
 
 	dfunc->vkDestroyPipeline (device->dev, bctx->main, 0);
 	dfunc->vkDestroyPipeline (device->dev, bctx->sky, 0);

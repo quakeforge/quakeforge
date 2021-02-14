@@ -209,6 +209,8 @@ libs_video_renderer_vid_render_sw32_la_SOURCES=\
 
 pipeline_src = libs/video/renderer/vulkan/qfpipeline.plist
 pipeline_gen = libs/video/renderer/vulkan/qfpipeline.plc
+renderpass_src = libs/video/renderer/vulkan/deferred.plist
+renderpass_gen = libs/video/renderer/vulkan/deferred.plc
 
 video_renderer_vulkan_libs = \
 	libs/models/libmodels_vulkan.la
@@ -250,7 +252,7 @@ libs/video/renderer/vulkan/vkparse.lo: libs/video/renderer/vulkan/vkparse.c $(vk
 
 libs/video/renderer/vulkan/shader.lo: libs/video/renderer/vulkan/shader.c $(vkshader_c)
 
-libs/video/renderer/vulkan/vulkan_vid_common.lo: libs/video/renderer/vulkan/vulkan_vid_common.c $(vkparse_src) $(pipeline_gen)
+libs/video/renderer/vulkan/vulkan_vid_common.lo: libs/video/renderer/vulkan/vulkan_vid_common.c $(vkparse_src) $(pipeline_gen) ${renderpass_gen}
 
 
 qwaq_curses = ruamoko/qwaq/qwaq-curses$(EXEEXT)

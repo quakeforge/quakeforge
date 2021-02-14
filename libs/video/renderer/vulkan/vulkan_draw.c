@@ -696,7 +696,8 @@ Vulkan_FlushText (vulkan_ctx_t *ctx)
 	drawframe_t *dframe = &dctx->frames.a[ctx->curFrame];
 
 	VkCommandBuffer cmd = dframe->cmd;
-	DARRAY_APPEND (cframe->subCommand, cmd);
+	//FIXME which pass?
+	DARRAY_APPEND (&cframe->cmdSets[QFV_passTranslucent], cmd);
 
 	VkMappedMemoryRange range = {
 		VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
@@ -708,7 +709,7 @@ Vulkan_FlushText (vulkan_ctx_t *ctx)
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		ctx->renderpass.renderpass, 0,
+		ctx->renderpass, 0,
 		cframe->framebuffer,
 		0, 0, 0
 	};
