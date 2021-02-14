@@ -139,9 +139,13 @@
 		fprintf (output_file, " = %s;\n", [self sTypeName]);
 	}
 	fprintf (output_file,
+			 "\tif (PL_Type (item) == QFString\n"
+			 "\t\t&& !(item = parse_reference (item, \"%s\", messages, context))) {\n"
+			 "\t\treturn 0;\n"
+			 "\t}\n"
 			 "\treturn PL_ParseStruct (%s_fields, item, data, messages,"
 			 " context);\n",
-			 [self outname]);
+			 [self outname], [self outname]);
 	fprintf (output_file, "}\n");
 
 	fprintf (output_file, "static exprsym_t %s_symbols[] = {\n", [self outname]);
@@ -214,7 +218,7 @@
 
 -(string) parseType
 {
-	return "QFDictionary";
+	return "QFMultiType | (1 << QFString) | (1 << QFDictionary)";
 }
 
 -(string) parseFunc

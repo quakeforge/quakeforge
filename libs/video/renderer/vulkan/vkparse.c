@@ -232,6 +232,24 @@ parse_enum (const plfield_t *field, const plitem_t *item,
 	return ret;
 }
 
+static const plitem_t *
+parse_reference (const plitem_t *item, const char *type, plitem_t *messages,
+				 parsectx_t *pctx)
+{
+	exprctx_t   ectx = *pctx->ectx;
+	vulkan_ctx_t *ctx = pctx->vctx;
+	plitem_t   *refItem = 0;
+	exprval_t   result = { &cexpr_plitem, &refItem };
+	ectx.symtab = 0;
+	ectx.result = &result;
+	const char *name = PL_String (item);
+	if (cexpr_eval_string (name, &ectx)) {
+		PL_Message (messages, item, va (ctx->va_ctx, "not a %s reference", type));
+		return 0;
+	}
+	return refItem;
+}
+
 static int
 parse_single (const plfield_t *field, const plitem_t *item,
 			  void *data, plitem_t *messages, void *context)
@@ -420,12 +438,15 @@ parse_VkDescriptorSetLayout (const plfield_t *field, const plitem_t *item,
 {
 	__auto_type handle = (VkDescriptorSetLayout *) data;
 	int         ret = 1;
-	exprctx_t   ectx = *((parsectx_t *) context)->ectx;
-	vulkan_ctx_t *ctx = ((parsectx_t *) context)->vctx;
+	parsectx_t *pctx = context;
+	exprctx_t   ectx = *pctx->ectx;
+	vulkan_ctx_t *ctx = pctx->vctx;
 
 	const char *name = PL_String (item);
 	Sys_Printf ("parse_VkDescriptorSetLayout: %s\n", name);
-	name = va (ctx->va_ctx, "$"QFV_PROPERTIES".setLayouts.%s", name);
+	if (name[0] != '$') {
+		name = va (ctx->va_ctx, "$"QFV_PROPERTIES".setLayouts.%s", name);
+	}
 
 	*handle = (VkDescriptorSetLayout) QFV_GetHandle (ctx->setLayouts, name);
 	if (*handle) {
@@ -453,12 +474,14 @@ parse_VkPipelineLayout (const plitem_t *item, void **data,
 {
 	__auto_type handle = (VkPipelineLayout *) data[0];
 	int         ret = 1;
-	exprctx_t   ectx = *((parsectx_t *) context)->ectx;
-	vulkan_ctx_t *ctx = ((parsectx_t *) context)->vctx;
+	exprctx_t   ectx = *context->ectx;
+	vulkan_ctx_t *ctx = context->vctx;
 
 	const char *name = PL_String (item);
 	Sys_Printf ("parse_VkPipelineLayout: %s\n", name);
-	name = va (ctx->va_ctx, "$"QFV_PROPERTIES".pipelineLayouts.%s", name);
+	if (name[0] != '$') {
+		name = va (ctx->va_ctx, "$"QFV_PROPERTIES".pipelineLayouts.%s", name);
+	}
 
 	*handle = (VkPipelineLayout) QFV_GetHandle (ctx->pipelineLayouts, name);
 	if (*handle) {
