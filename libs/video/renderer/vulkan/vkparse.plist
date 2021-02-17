@@ -280,6 +280,7 @@
 				type = (custom,	QFString, parse_VkPipelineLayout);
 				fields = (layout);
 			};
+			subpass = auto;
 			basePipelineHandle = {
 				type = (custom, QFString, parse_BasePipeline);
 				fields = (basePipelineHandle);
