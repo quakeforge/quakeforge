@@ -182,9 +182,11 @@ parse_uint32_t (const plfield_t *field, const plitem_t *item,
 				void *data, plitem_t *messages, void *context)
 {
 	int         ret = 1;
+	// use size_t (and cexpr_size_t) for val so references to array sizes
+	// can be used
 	size_t      val = 0;
-	exprctx_t   ectx = *((parsectx_t *) context)->ectx;
 	exprval_t   result = { &cexpr_size_t, &val };
+	exprctx_t   ectx = *((parsectx_t *) context)->ectx;
 	ectx.symtab = 0;
 	ectx.result = &result;
 	const char *valstr = PL_String (item);
