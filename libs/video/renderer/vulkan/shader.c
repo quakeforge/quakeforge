@@ -65,7 +65,11 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/alias.vert.spvc"
 static
+#include "libs/video/renderer/vulkan/shader/alias_depth.vert.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/alias.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/alias_gbuf.frag.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/passthrough.vert.spvc"
 static
@@ -83,7 +87,9 @@ static shaderdata_t builtin_shaders[] = {
 	{ "quakebsp.vert", quakebsp_vert, sizeof (quakebsp_vert) },
 	{ "quakebsp.frag", quakebsp_frag, sizeof (quakebsp_frag) },
 	{ "alias.vert", alias_vert, sizeof (alias_vert) },
+	{ "alias_depth.vert", alias_depth_vert, sizeof (alias_depth_vert) },
 	{ "alias.frag", alias_frag, sizeof (alias_frag) },
+	{ "alias_gbuf.frag", alias_gbuf_frag, sizeof (alias_gbuf_frag) },
 	{ "passthrough.vert", passthrough_vert, sizeof (passthrough_vert) },
 	{ "pushcolor.frag", pushcolor_frag, sizeof (pushcolor_frag) },
 	{}

@@ -278,7 +278,7 @@
 				{
 					stage = vertex;
 					name = main;
-					module = $builtin/alias.vert;
+					module = $builtin/alias_depth.vert;
 				},
 			);
 			vertexInput = {
@@ -321,7 +321,7 @@
 				{
 					stage = fragment;
 					name = main;
-					module = $builtin/alias.frag;
+					module = $builtin/alias_gbuf.frag;
 					specializationInfo = {
 						mapEntries = (
 							{ size = 4; offset = 0; constantID = 0; },
@@ -447,7 +447,7 @@
 				{
 					stage = vertex;
 					name = main;
-					module = $builtin/quakebsp.vert;
+					module = $builtin/bsp_depth.vert;
 				},
 			);
 			vertexInput = {
@@ -481,12 +481,12 @@
 				{
 					stage = vertex;
 					name = main;
-					module = $builtin/quakebsp.vert;
+					module = $builtin/bsp_gbuf.vert;
 				},
 				{
 					stage = fragment;
 					name = main;
-					module = $builtin/quakebsp.frag;
+					module = $builtin/bsp_gbuf.frag;
 				},
 			);
 			vertexInput = {

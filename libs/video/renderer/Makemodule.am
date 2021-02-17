@@ -278,6 +278,10 @@ aliasv_src = $(vkshaderpath)/alias.vert
 aliasv_c = $(vkshaderpath)/alias.vert.spvc
 aliasf_src = $(vkshaderpath)/alias.frag
 aliasf_c = $(vkshaderpath)/alias.frag.spvc
+alias_depth_src = $(vkshaderpath)/alias_depth.vert
+alias_depth_c = $(vkshaderpath)/alias_depth.vert.spvc
+alias_gbuf_src = $(vkshaderpath)/alias_gbuf.frag
+alias_gbuf_c = $(vkshaderpath)/alias_gbuf.frag.spvc
 passthrough_src = $(vkshaderpath)/passthrough.vert
 passthrough_c = $(vkshaderpath)/passthrough.vert.spvc
 pushcolor_src = $(vkshaderpath)/pushcolor.frag
@@ -293,7 +297,11 @@ $(quakebspf_c): $(quakebspf_src)
 
 $(aliasv_c): $(aliasv_src)
 
+$(alias_depth_c): $(alias_depth_src)
+
 $(aliasf_c): $(aliasf_src)
+
+$(alias_gbuf_c): $(alias_gbuf_src)
 
 $(passthrough_c): $(passthrough_src)
 
@@ -305,7 +313,9 @@ vkshader_c = \
 	$(quakebspv_c) \
 	$(quakebspf_c) \
 	$(aliasv_c) \
+	$(alias_depth_c) \
 	$(aliasf_c) \
+	$(alias_gbuf_c) \
 	$(passthrough_c) \
 	$(pushcolor_c)
 
