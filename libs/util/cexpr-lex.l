@@ -120,13 +120,13 @@ STRING		\"(\\.|[^"\\])*\"
 	__auto_type context = yyget_extra (yyscanner);
 %}
 
-{INT}+				{
-						yylval->value = parse_int (yytext, context);
+{INT}+[uU]			{
+						yylval->value = parse_uint (yytext, context);
 						return VALUE;
 					}
 
-{INT}+[uU]			{
-						yylval->value = parse_uint (yytext, context);
+{INT}+				{
+						yylval->value = parse_int (yytext, context);
 						return VALUE;
 					}
 
