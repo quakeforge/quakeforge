@@ -709,7 +709,7 @@ Vulkan_FlushText (vulkan_ctx_t *ctx)
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		ctx->renderpass, 0,
+		ctx->renderpass, QFV_passTranslucent,
 		cframe->framebuffer,
 		0, 0, 0
 	};

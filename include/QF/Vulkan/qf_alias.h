@@ -65,13 +65,13 @@ typedef struct qfv_alias_skin_s {
 #define ALIAS_BUFFER_INFOS 1
 #define ALIAS_IMAGE_INFOS 1
 
-enum {
+typedef enum {
 	QFV_aliasDepth,
 	QFV_aliasGBuffer,
-	//QFV_aliasTranslucent,
+	QFV_aliasTranslucent,
 
 	QFV_aliasNumPasses
-};
+} QFV_AliasSubpass;
 
 typedef struct aliasframe_s {
 	qfv_cmdbufferset_t cmdSet;

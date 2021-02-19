@@ -167,7 +167,9 @@ QFV_CreateDevice (vulkan_ctx_t *ctx, const char **extensions)
 			VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, 0, 0,
 			family, 1, &priority
 		};
-		VkPhysicalDeviceFeatures features = {};
+		VkPhysicalDeviceFeatures features = {
+			.geometryShader = 1,
+		};
 		VkDeviceCreateInfo dCreateInfo = {
 			VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO, 0, 0,
 			1, &qCreateInfo,

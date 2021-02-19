@@ -152,7 +152,7 @@ Vulkan_DrawAlias (entity_t *ent, vulkan_ctx_t *ctx)
 }
 
 static void
-alias_begin_subpass (VkCommandBuffer cmd, VkPipeline pipeline,
+alias_begin_subpass (QFV_AliasSubpass subpass, VkPipeline pipeline,
 					 vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
@@ -160,11 +160,12 @@ alias_begin_subpass (VkCommandBuffer cmd, VkPipeline pipeline,
 	aliasctx_t *actx = ctx->alias_context;
 	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	aliasframe_t *aframe = &actx->frames.a[ctx->curFrame];
+	VkCommandBuffer cmd = aframe->cmdSet.a[subpass];
 
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		ctx->renderpass, 0,
+		ctx->renderpass, subpass,
 		cframe->framebuffer,
 		0, 0, 0,
 	};
@@ -222,8 +223,8 @@ Vulkan_AliasBegin (vulkan_ctx_t *ctx)
 	//FIXME need per frame matrices
 	aframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
 
-	alias_begin_subpass (aframe->cmdSet.a[QFV_aliasDepth], actx->depth, ctx);
-	alias_begin_subpass (aframe->cmdSet.a[QFV_aliasGBuffer], actx->gbuf, ctx);
+	alias_begin_subpass (QFV_aliasDepth, actx->depth, ctx);
+	alias_begin_subpass (QFV_aliasGBuffer, actx->gbuf, ctx);
 }
 
 void

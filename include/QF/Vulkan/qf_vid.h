@@ -39,8 +39,8 @@
 enum {
 	QFV_passDepth,			// geometry
 	QFV_passGBuffer,		// geometry
-	QFV_passTranslucent,	// geometry
 	QFV_passLighting,		// single quad
+	QFV_passTranslucent,	// geometry
 	QFV_passCompose,		// single quad
 
 	QFV_NumPasses

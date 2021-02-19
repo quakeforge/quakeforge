@@ -845,18 +845,20 @@ get_view (qfv_tex_t *tex, qfv_tex_t *default_tex)
 }
 
 static void
-bsp_begin_subpass (VkCommandBuffer cmd, VkPipeline pipeline, vulkan_ctx_t *ctx)
+bsp_begin_subpass (QFV_BspSubpass subpass, VkPipeline pipeline,
+				   vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
 	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
+	VkCommandBuffer cmd = bframe->cmdSet.a[subpass];
 
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		ctx->renderpass, 0,
+		ctx->renderpass, subpass,
 		cframe->framebuffer,
 		0, 0, 0,
 	};
@@ -928,9 +930,8 @@ bsp_begin (vulkan_ctx_t *ctx)
 	bframe->imageInfo[4].imageView = get_view (bctx->skybox_tex,
 											   bctx->default_skybox);
 
-	//FIXME pipeline
-	bsp_begin_subpass (bframe->cmdSet.a[QFV_bspDepth], bctx->main, ctx);
-	bsp_begin_subpass (bframe->cmdSet.a[QFV_bspGBuffer], bctx->main, ctx);
+	bsp_begin_subpass (QFV_bspDepth, bctx->depth, ctx);
+	bsp_begin_subpass (QFV_bspGBuffer, bctx->gbuf, ctx);
 }
 
 static void
@@ -1047,7 +1048,7 @@ sky_begin (vulkan_ctx_t *ctx)
 											   bctx->default_skybox);
 
 	//FIXME sky pass
-	bsp_begin_subpass (bframe->cmdSet.a[QFV_bspTranslucent], bctx->sky, ctx);
+	bsp_begin_subpass (QFV_bspTranslucent, bctx->sky, ctx);
 }
 
 static void
@@ -1457,8 +1458,9 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&bctx->frames, frames);
 	bctx->frames.grow = 0;
 
-	bctx->main = Vulkan_CreatePipeline (ctx, "quakebsp_main");
-	bctx->sky = Vulkan_CreatePipeline (ctx, "quakebsp_skysheet");
+	bctx->depth = Vulkan_CreatePipeline (ctx, "bsp_depth");
+	bctx->gbuf = Vulkan_CreatePipeline (ctx, "bsp_gbuf");
+	bctx->sky = Vulkan_CreatePipeline (ctx, "bsp_skysheet");
 	bctx->layout = Vulkan_CreatePipelineLayout (ctx, "quakebsp_layout");
 	bctx->sampler = Vulkan_CreateSampler (ctx, "quakebsp_sampler");
 
@@ -1507,7 +1509,8 @@ Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 		free (bframe->cmdSet.a);
 	}
 
-	dfunc->vkDestroyPipeline (device->dev, bctx->main, 0);
+	dfunc->vkDestroyPipeline (device->dev, bctx->depth, 0);
+	dfunc->vkDestroyPipeline (device->dev, bctx->gbuf, 0);
 	dfunc->vkDestroyPipeline (device->dev, bctx->sky, 0);
 	DARRAY_CLEAR (&bctx->texture_chains);
 	DARRAY_CLEAR (&bctx->frames);

@@ -70,13 +70,13 @@ typedef enum {
 // Texture, GlowMap, LightMap, SkySheet, SkyCube
 #define BSP_IMAGE_INFOS 5
 
-enum {
+typedef enum {
 	QFV_bspDepth,
 	QFV_bspGBuffer,
 	QFV_bspTranslucent,
 
 	QFV_bspNumPasses
-};
+} QFV_BspSubpass;
 
 typedef struct bspframe_s {
 	uint32_t    *index_data;	// pointer into mega-buffer for this frame (c)
@@ -143,7 +143,8 @@ typedef struct bspctx_s {
 
 	VkSampler    sampler;
 	VkDeviceMemory texture_memory;
-	VkPipeline   main;
+	VkPipeline   depth;
+	VkPipeline   gbuf;
 	VkPipeline   sky;
 	VkPipelineLayout layout;
 	size_t       vertex_buffer_size;

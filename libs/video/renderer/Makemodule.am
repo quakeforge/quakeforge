@@ -274,6 +274,15 @@ quakebspv_src = $(vkshaderpath)/quakebsp.vert
 quakebspv_c = $(vkshaderpath)/quakebsp.vert.spvc
 quakebspf_src = $(vkshaderpath)/quakebsp.frag
 quakebspf_c = $(vkshaderpath)/quakebsp.frag.spvc
+
+bsp_depth_src = $(vkshaderpath)/bsp_depth.vert
+bsp_depth_c = $(vkshaderpath)/bsp_depth.vert.spvc
+bsp_gbufv_src = $(vkshaderpath)/bsp_gbuf.vert
+bsp_gbufv_c = $(vkshaderpath)/bsp_gbuf.vert.spvc
+bsp_gbufg_src = $(vkshaderpath)/bsp_gbuf.geom
+bsp_gbufg_c = $(vkshaderpath)/bsp_gbuf.geom.spvc
+bsp_gbuff_src = $(vkshaderpath)/bsp_gbuf.frag
+bsp_gbuff_c = $(vkshaderpath)/bsp_gbuf.frag.spvc
 aliasv_src = $(vkshaderpath)/alias.vert
 aliasv_c = $(vkshaderpath)/alias.vert.spvc
 aliasf_src = $(vkshaderpath)/alias.frag
@@ -295,6 +304,14 @@ $(quakebspv_c): $(quakebspv_src)
 
 $(quakebspf_c): $(quakebspf_src)
 
+$(bsp_depth_c): $(bsp_depth_src)
+
+$(bsp_gbufv_c): $(bsp_gbufv_src)
+
+$(bsp_gbufg_c): $(bsp_gbufg_src)
+
+$(bsp_gbuff_c): $(bsp_gbuff_src)
+
 $(aliasv_c): $(aliasv_src)
 
 $(alias_depth_c): $(alias_depth_src)
@@ -312,6 +329,10 @@ vkshader_c = \
 	$(twodf_c) \
 	$(quakebspv_c) \
 	$(quakebspf_c) \
+	$(bsp_depth_c) \
+	$(bsp_gbufv_c) \
+	$(bsp_gbufg_c) \
+	$(bsp_gbuff_c) \
 	$(aliasv_c) \
 	$(alias_depth_c) \
 	$(aliasf_c) \

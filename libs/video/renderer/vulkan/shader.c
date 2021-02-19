@@ -63,6 +63,14 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/quakebsp.frag.spvc"
 static
+#include "libs/video/renderer/vulkan/shader/bsp_depth.vert.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/bsp_gbuf.vert.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/bsp_gbuf.geom.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/bsp_gbuf.frag.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/alias.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/alias_depth.vert.spvc"
@@ -86,6 +94,10 @@ static shaderdata_t builtin_shaders[] = {
 	{ "twod.frag", twod_frag, sizeof (twod_frag) },
 	{ "quakebsp.vert", quakebsp_vert, sizeof (quakebsp_vert) },
 	{ "quakebsp.frag", quakebsp_frag, sizeof (quakebsp_frag) },
+	{ "bsp_depth.vert", bsp_depth_vert, sizeof (bsp_depth_vert) },
+	{ "bsp_gbuf.vert", bsp_gbuf_vert, sizeof (bsp_gbuf_vert) },
+	{ "bsp_gbuf.geom", bsp_gbuf_geom, sizeof (bsp_gbuf_geom) },
+	{ "bsp_gbuf.frag", bsp_gbuf_frag, sizeof (bsp_gbuf_frag) },
 	{ "alias.vert", alias_vert, sizeof (alias_vert) },
 	{ "alias_depth.vert", alias_depth_vert, sizeof (alias_depth_vert) },
 	{ "alias.frag", alias_frag, sizeof (alias_frag) },

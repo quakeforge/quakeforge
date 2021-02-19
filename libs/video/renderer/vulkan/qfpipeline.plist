@@ -457,6 +457,7 @@
 			//renderPass = renderpass;
 		};
 		bsp_depth = {
+			subpass = 0;
 			stages = (
 				{
 					stage = vertex;
@@ -472,10 +473,10 @@
 					"$properties.pipelines.bsp_gbuf.vertexInput.attributes[0]",
 				);
 			};
-			inputAssembly = $properties.pipelines.bsp_main.inputAssembly;
-			viewport = $properties.pipelines.bsp_main.viewport;
-			rasterization = $properties.pipelines.bsp_main.rasterization;
-			multisample = $properties.pipelines.bsp_main.multisample;
+			inputAssembly = $properties.pipelines.bsp_gbuf.inputAssembly;
+			viewport = $properties.pipelines.bsp_gbuf.viewport;
+			rasterization = $properties.pipelines.bsp_gbuf.rasterization;
+			multisample = $properties.pipelines.bsp_gbuf.multisample;
 			depthStencil = {
 				depthTestEnable = true;
 				depthWriteEnable = true;
@@ -491,11 +492,17 @@
 			//renderPass = renderpass;
 		};
 		bsp_gbuf = {
+			subpass = 1;
 			stages = (
 				{
 					stage = vertex;
 					name = main;
 					module = $builtin/bsp_gbuf.vert;
+				},
+				{
+					stage = geometry;
+					name = main;
+					module = $builtin/bsp_gbuf.geom;
 				},
 				{
 					stage = fragment;
@@ -570,16 +577,28 @@
 			};
 			colorBlend = {
 				logicOpEnable = false;
-				attachments = ({
-					blendEnable = true;
-					srcColorBlendFactor = src_alpha;
-					dstColorBlendFactor = one_minus_src_alpha;
-					colorBlendOp = add;
-					srcAlphaBlendFactor = src_alpha;
-					dstAlphaBlendFactor = one_minus_src_alpha;
-					alphaBlendOp = add;
-					colorWriteMask = r|g|b|a;
-				});
+				attachments = (
+					{
+						blendEnable = false;
+						srcColorBlendFactor = src_alpha;
+						dstColorBlendFactor = one_minus_src_alpha;
+						colorBlendOp = add;
+						srcAlphaBlendFactor = src_alpha;
+						dstAlphaBlendFactor = one_minus_src_alpha;
+						alphaBlendOp = add;
+						colorWriteMask = r|g|b|a;
+					},
+					{
+						blendEnable = false;
+						srcColorBlendFactor = src_alpha;
+						dstColorBlendFactor = one_minus_src_alpha;
+						colorBlendOp = add;
+						srcAlphaBlendFactor = src_alpha;
+						dstAlphaBlendFactor = one_minus_src_alpha;
+						alphaBlendOp = add;
+						colorWriteMask = r|g|b|a;
+					}
+				);
 			};
 			dynamic = {
 				dynamicState = ( viewport, scissor, blend_constants );
@@ -587,17 +606,23 @@
 			layout = quakebsp_layout;
 			//renderPass = renderpass;
 		};
-		quakebsp_skysheet = {
+		bsp_skysheet = {
+			subpass = 1;
 			stages = (
 				{
 					stage = vertex;
 					name = main;
-					module = $builtin/quakebsp.vert;
+					module = $builtin/bsp_gbuf.vert;
+				},
+				{
+					stage = geometry;
+					name = main;
+					module = $builtin/bsp_gbuf.geom;
 				},
 				{
 					stage = fragment;
 					name = main;
-					module = $builtin/quakebsp.frag;
+					module = $builtin/bsp_gbuf.frag;
 					specializationInfo = {
 						mapEntries = (
 							{ size = 4; offset = 0; constantID = 0; },
@@ -623,6 +648,7 @@
 			//renderPass = renderpass;
 		};
 		twod = {
+			subpass = 3;
 			stages = (
 				{
 					stage = vertex;
