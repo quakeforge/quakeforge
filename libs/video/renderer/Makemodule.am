@@ -283,6 +283,8 @@ bsp_gbufg_src = $(vkshaderpath)/bsp_gbuf.geom
 bsp_gbufg_c = $(vkshaderpath)/bsp_gbuf.geom.spvc
 bsp_gbuff_src = $(vkshaderpath)/bsp_gbuf.frag
 bsp_gbuff_c = $(vkshaderpath)/bsp_gbuf.frag.spvc
+bsp_skyf_src = $(vkshaderpath)/bsp_sky.frag
+bsp_skyf_c = $(vkshaderpath)/bsp_sky.frag.spvc
 aliasv_src = $(vkshaderpath)/alias.vert
 aliasv_c = $(vkshaderpath)/alias.vert.spvc
 aliasf_src = $(vkshaderpath)/alias.frag
@@ -312,6 +314,8 @@ $(bsp_gbufg_c): $(bsp_gbufg_src)
 
 $(bsp_gbuff_c): $(bsp_gbuff_src)
 
+$(bsp_skyf_c): $(bsp_skyf_src)
+
 $(aliasv_c): $(aliasv_src)
 
 $(alias_depth_c): $(alias_depth_src)
@@ -333,6 +337,7 @@ vkshader_c = \
 	$(bsp_gbufv_c) \
 	$(bsp_gbufg_c) \
 	$(bsp_gbuff_c) \
+	$(bsp_skyf_c) \
 	$(aliasv_c) \
 	$(alias_depth_c) \
 	$(aliasf_c) \

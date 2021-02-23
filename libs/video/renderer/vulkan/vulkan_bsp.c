@@ -798,7 +798,7 @@ push_fragconst (fragconst_t *fragconst, VkPipelineLayout layout,
 				qfv_devfuncs_t *dfunc, VkCommandBuffer cmd)
 {
 	dfunc->vkCmdPushConstants (cmd, layout, VK_SHADER_STAGE_FRAGMENT_BIT,
-							   0, sizeof (fragconst_t), fragconst);
+							   64, sizeof (fragconst_t), fragconst);//FIXME 64
 }
 
 static void
@@ -1259,6 +1259,15 @@ Vulkan_DrawSky (vulkan_ctx_t *ctx)
 	fragconst_t frag_constants = { time: vr_data.realtime };
 	push_fragconst (&frag_constants, bctx->layout, dfunc,
 					bframe->cmdSet.a[QFV_bspTranslucent]);
+	bind_view (qfv_bsp_texture, ctx->default_black->view, bframe,
+			   bframe->cmdSet.a[QFV_bspTranslucent],//FIXME
+			   bctx->layout, dfunc);
+	bind_view (qfv_bsp_glowmap, ctx->default_black->view, bframe,
+			   bframe->cmdSet.a[QFV_bspTranslucent],//FIXME
+			   bctx->layout, dfunc);
+	bind_view (qfv_bsp_lightmap, ctx->default_black->view, bframe,
+			   bframe->cmdSet.a[QFV_bspTranslucent],//FIXME
+			   bctx->layout, dfunc);
 	for (is = bctx->sky_chain; is; is = is->tex_chain) {
 		surf = is->surface;
 		if (tex != surf->texinfo->texture->render) {

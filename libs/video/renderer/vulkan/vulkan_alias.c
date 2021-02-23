@@ -186,7 +186,7 @@ alias_begin_subpass (QFV_AliasSubpass subpass, VkPipeline pipeline,
 	//								actx->layout, 0, 2, sets, 0, 0);
 	dfunc->vkCmdPushDescriptorSetKHR (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									  actx->layout,
-									  0, 2, aframe->descriptors + 0);
+									  0, 1, aframe->descriptors + 0);
 	VkViewport  viewport = {0, 0, vid.width, vid.height, 0, 1};
 	VkRect2D    scissor = { {0, 0}, {vid.width, vid.height} };
 	dfunc->vkCmdSetViewport (cmd, 0, 1, &viewport);

@@ -607,7 +607,7 @@
 			//renderPass = renderpass;
 		};
 		bsp_skysheet = {
-			subpass = 1;
+			subpass = 2;
 			stages = (
 				{
 					stage = vertex;
@@ -615,20 +615,13 @@
 					module = $builtin/bsp_gbuf.vert;
 				},
 				{
-					stage = geometry;
-					name = main;
-					module = $builtin/bsp_gbuf.geom;
-				},
-				{
 					stage = fragment;
 					name = main;
-					module = $builtin/bsp_gbuf.frag;
+					module = $builtin/bsp_sky.frag;
 					specializationInfo = {
 						mapEntries = (
 							{ size = 4; offset = 0; constantID = 0; },
-							{ size = 4; offset = 0; constantID = 1; },
-							{ size = 4; offset = 0; constantID = 2; },
-							{ size = 4; offset = 4; constantID = 3; },
+							{ size = 4; offset = 4; constantID = 1; },
 						);
 						data = <00000000ffffffff>;
 					};
@@ -640,7 +633,21 @@
 			rasterization = $properties.pipelines.bsp_gbuf.rasterization;
 			multisample = $properties.pipelines.bsp_gbuf.multisample;
 			depthStencil = $properties.pipelines.bsp_gbuf.depthStencil;
-			colorBlend = $properties.pipelines.bsp_gbuf.colorBlend;
+			colorBlend = {
+				logicOpEnable = false;
+				attachments = (
+					{
+						blendEnable = false;
+						srcColorBlendFactor = src_alpha;
+						dstColorBlendFactor = one_minus_src_alpha;
+						colorBlendOp = add;
+						srcAlphaBlendFactor = src_alpha;
+						dstAlphaBlendFactor = one_minus_src_alpha;
+						alphaBlendOp = add;
+						colorWriteMask = r|g|b|a;
+					},
+				);
+			};
 			dynamic = {
 				dynamicState = ( viewport, scissor );
 			};
