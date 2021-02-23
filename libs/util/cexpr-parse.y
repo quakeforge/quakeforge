@@ -321,9 +321,22 @@ vector_expr (exprlist_t *list, exprctx_t *context)
 {
 	exprlist_t *l;
 	exprval_t  *val = cexpr_value (&cexpr_vector, context);
+	float      *vector = val->value;
 	int         i;
+	exprlist_t *rlist = 0;
+
+	// list is built in reverse order, so need to reverse it to make converting
+	// to an array easier
+	while (list) {
+		exprlist_t *t = list->next;
+		list->next = rlist;
+		rlist = list;
+		list = t;
+	}
+	list = rlist;
+
 	for (i = 0; i < 4 && list; i++, list = l) {
-		exprval_t   dst = { &cexpr_float, ((float *) val->value) + i };
+		exprval_t   dst = { &cexpr_float, &vector[i] };
 		exprval_t  *src = list->value;
 		binop_t    *cast = cexpr_find_cast (&cexpr_float, src->type);
 		if (cast) {
@@ -335,11 +348,11 @@ vector_expr (exprlist_t *list, exprctx_t *context)
 		l = list->next;
 		cmemfree (context->memsuper, list);
 	}
-	for ( ; i < 4; i++) {
-		((float *) val->value)[i] = 0;
-	}
 	if (i == 4 && list) {
 		cexpr_error (context, "excess elements in vector expression");
+	}
+	for ( ; i < 4; i++) {
+		vector[i] = 0;
 	}
 	return val;
 }
