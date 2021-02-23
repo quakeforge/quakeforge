@@ -308,12 +308,25 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 {
 	const char *name = "renderpass";//FIXME
 
+	hashtab_t  *tab = ctx->renderpasses;
+	const char *path;
+	path = va (ctx->va_ctx, "$"QFV_PROPERTIES".%s", name);
+	__auto_type renderpass = (VkRenderPass) QFV_GetHandle (tab, path);
+	if (renderpass) {
+		ctx->renderpass = renderpass;
+		return;
+	}
+
 	plitem_t   *item = qfv_load_renderpass (ctx, name);
 
 	ctx->renderpass = QFV_ParseRenderPass (ctx, item, ctx->renderpassDef);
+	QFV_AddHandle (tab, path, (uint64_t) ctx->renderpass);
 	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_RENDER_PASS,
 						 ctx->renderpass, va (ctx->va_ctx, "renderpass:%s",
 											  name));
+	item = qfv_load_renderpass (ctx, "clearValues");
+	QFV_ParseClearValues (ctx, item, ctx->renderpassDef);
+	printf ("renderpass: %p\n", ctx->renderpass);
 }
 
 void

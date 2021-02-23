@@ -32,6 +32,9 @@ typedef struct vulkan_matrices_s {
 typedef struct vulkan_frameset_s
 	DARRAY_TYPE (vulkan_frame_t) vulkan_frameset_t;
 
+typedef struct clearvalueset_s
+	DARRAY_TYPE (VkClearValue) clearvalueset_t;
+
 typedef struct vulkan_ctx_s {
 	void        (*load_vulkan) (struct vulkan_ctx_s *ctx);
 	void        (*unload_vulkan) (struct vulkan_ctx_s *ctx);
@@ -56,6 +59,7 @@ typedef struct vulkan_ctx_s {
 
 	struct plitem_s  *renderpassDef;
 	VkRenderPass renderpass;
+	clearvalueset_t *clearValues;
 	struct qfv_imageset_s *attachment_images;
 	struct qfv_imageviewset_s *attachment_views;
 	VkDeviceMemory attachmentMemory;
@@ -70,6 +74,7 @@ typedef struct vulkan_ctx_s {
 	struct hashtab_s *samplers;
 	struct hashtab_s *images;
 	struct hashtab_s *imageViews;
+	struct hashtab_s *renderpasses;
 
 	struct aliasctx_s *alias_context;
 	struct bspctx_s *bsp_context;

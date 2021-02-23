@@ -414,6 +414,42 @@ QFV_AddHandle (hashtab_t *tab, const char *name, uint64_t handle)
 }
 
 static int
+parse_VkRenderPass (const plitem_t *item, void **data,
+					plitem_t *messages, parsectx_t *context)
+{
+	__auto_type handle = (VkRenderPass *) data[0];
+	int         ret = 1;
+	parsectx_t *pctx = context;
+	exprctx_t   ectx = *pctx->ectx;
+	vulkan_ctx_t *ctx = pctx->vctx;
+
+	const char *name = PL_String (item);
+	Sys_Printf ("parse_VkRenderPass: %s\n", name);
+	if (name[0] != '$') {
+		name = va (ctx->va_ctx, "$"QFV_PROPERTIES".%s", name);
+	}
+
+	*handle = (VkRenderPass) QFV_GetHandle (ctx->renderpasses, name);
+	if (*handle) {
+		return 1;
+	}
+
+	plitem_t   *setItem = 0;
+	exprval_t   result = { &cexpr_plitem, &setItem };
+	ectx.symtab = 0;
+	ectx.result = &result;
+	ret = !cexpr_eval_string (name, &ectx);
+	if (ret) {
+		VkRenderPass setLayout;
+		setLayout = QFV_ParseRenderPass (ctx, setItem, pctx->properties);
+		*handle = (VkRenderPass) setLayout;
+
+		QFV_AddHandle (ctx->setLayouts, name, (uint64_t) setLayout);
+	}
+	return ret;
+}
+
+static int
 parse_VkShaderModule (const plitem_t *item, void **data,
 					  plitem_t *messages, parsectx_t *context)
 {
@@ -711,6 +747,21 @@ imageView_free (void *hr, void *_ctx)
 	handleref_free (handleref, ctx);
 }
 
+static void
+renderpass_free (void *hr, void *_ctx)
+{
+	__auto_type handleref = (handleref_t *) hr;
+	__auto_type renderpass = (VkRenderPass) handleref->handle;
+	__auto_type ctx = (vulkan_ctx_t *) _ctx;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	if (renderpass) {
+		dfunc->vkDestroyRenderPass (device->dev, renderpass, 0);
+	};
+	handleref_free (handleref, ctx);
+}
+
 static hashtab_t *enum_symtab;
 
 static int
@@ -891,6 +942,7 @@ QFV_InitParse (vulkan_ctx_t *ctx)
 		ctx->samplers = handlref_symtab (sampler_free, ctx);
 		ctx->images = handlref_symtab (image_free, ctx);
 		ctx->imageViews = handlref_symtab (imageView_free, ctx);
+		ctx->renderpasses = handlref_symtab (renderpass_free, ctx);
 	}
 }
 
@@ -1262,6 +1314,39 @@ QFV_ParseFramebuffer (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 
 	VkFramebuffer framebuffer;
 	dfunc->vkCreateFramebuffer (device->dev, &cInfo, 0, &framebuffer);
+	printf ("framebuffer, renderPass: %p, %p\n", framebuffer, cInfo.renderPass);
 
 	return framebuffer;
+}
+
+static int
+parse_clearvalueset (const plfield_t *field, const plitem_t *item, void *data,
+					 plitem_t *messages, void *context)
+{
+	parsectx_t *parsectx = context;
+	vulkan_ctx_t *ctx = parsectx->vctx;
+
+	plelement_t element = {
+		QFDictionary,
+		sizeof (VkClearValue),
+		array_alloc,
+		parse_VkClearValue,
+		0,
+	};
+	plfield_t   f = { 0, 0, 0, 0, &element };
+
+	if (!PL_ParseArray (&f, item, &ctx->clearValues, messages, context)) {
+		return 0;
+	}
+	return 1;
+}
+
+int
+QFV_ParseClearValues (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
+{
+	if (!parse_object (ctx, plist, parse_clearvalueset, &ctx->clearValues,
+					   properties)) {
+		return 0;
+	}
+	return 1;
 }

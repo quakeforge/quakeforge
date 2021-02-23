@@ -125,9 +125,6 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	__auto_type frame = &vulkan_ctx->frames.a[vulkan_ctx->curFrame];
 
 	dfunc->vkWaitForFences (dev, 1, &frame->fence, VK_TRUE, 2000000000);
-	if (frame->framebuffer) {
-		dfunc->vkDestroyFramebuffer (dev, frame->framebuffer, 0);
-	}
 	QFV_AcquireNextImage (vulkan_ctx->swapchain,
 						  frame->imageAvailableSemaphore,
 						  0, &imageIndex);
@@ -145,16 +142,11 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 
 	VkCommandBufferBeginInfo beginInfo
 		= { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
-	VkClearValue clearValues[3] = {
-		{ { {0.0, 0.0, 0.0, 1.0} } },
-		{ { {1.0, 0.0} } },
-		{ { {0.0, 0.0, 0.0, 1.0} } },
-	};
 	VkRenderPassBeginInfo renderPassInfo = {
 		VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, 0,
 		vulkan_ctx->renderpass, 0,
 		{ {0, 0}, vulkan_ctx->swapchain->extent },
-		3, clearValues
+		vulkan_ctx->clearValues->size, vulkan_ctx->clearValues->a
 	};
 
 	dfunc->vkBeginCommandBuffer (frame->cmdBuffer, &beginInfo);
@@ -163,12 +155,15 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 								 subpassContents);
 
 	for (int i = 0; i < frame->cmdSetCount; i++) {
-		dfunc->vkCmdExecuteCommands (frame->cmdBuffer, frame->cmdSets[i].size,
-									 frame->cmdSets[i].a);
+		if (frame->cmdSets[i].size) {
+			dfunc->vkCmdExecuteCommands (frame->cmdBuffer,
+										 frame->cmdSets[i].size,
+										 frame->cmdSets[i].a);
+		}
 		// reset for next time around
 		frame->cmdSets[i].size = 0;
 
-		if (i < frame->cmdSetCount) {
+		if (i < frame->cmdSetCount - 1) {
 			dfunc->vkCmdNextSubpass (frame->cmdBuffer, subpassContents);
 		}
 	}

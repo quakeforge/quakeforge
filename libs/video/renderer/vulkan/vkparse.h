@@ -58,5 +58,8 @@ struct qfv_imageviewset_s *QFV_ParseImageViewSet (vulkan_ctx_t *ctx,
 												  plitem_t *properties);
 VkFramebuffer QFV_ParseFramebuffer (vulkan_ctx_t *ctx, plitem_t *plist,
 									plitem_t *properties);
+int QFV_ParseClearValues (vulkan_ctx_t *ctx, plitem_t *plist,
+						  plitem_t *properties);
+
 
 #endif//__vkparse_h

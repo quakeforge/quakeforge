@@ -23,6 +23,7 @@
 		VkImageCreateInfo,
 		VkImageViewCreateInfo,
 		VkFramebufferCreateInfo,
+		VkClearValue,
 	);
 	parse = {
 		VkSubpassDescription = {
@@ -317,7 +318,7 @@
 		VkFramebufferCreateInfo = {
 			//flags = auto; reserved for future use (Bits enum does not exist)
 			renderPass = {
-				type = (custom,	QFString, parse_VkShaderModule);
+				type = (custom,	QFString, parse_VkRenderPass);
 				fields = (renderPass);
 			};
 			attachments = {
@@ -328,6 +329,14 @@
 			width = auto;
 			height = auto;
 			layers = auto;
-		}
+		};
+		VkClearColorValue = skip;
+		VkClearValue = {
+			color = {
+				type = (custom, QFString, parse_RGBA);
+				fields = (color);
+			};
+			depthStencil = auto;
+		};
 	}
 }

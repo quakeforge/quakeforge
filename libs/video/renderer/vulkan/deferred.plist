@@ -13,6 +13,7 @@
 			arrayLayers = 1;
 			tiling = optimal;
 			usage = depth_stencil_attachment|input_attachment;
+			initialLayout = undefined;
 		};
 		color = {
 			imageType = VK_IMAGE_TYPE_2D;
@@ -27,6 +28,7 @@
 			arrayLayers = 1;
 			tiling = optimal;
 			usage = color_attachment|input_attachment;
+			initialLayout = undefined;
 		};
 		normals = {
 			imageType = VK_IMAGE_TYPE_2D;
@@ -41,6 +43,7 @@
 			arrayLayers = 1;
 			tiling = optimal;
 			usage = color_attachment|input_attachment;
+			initialLayout = undefined;
 		};
 		opaque = {
 			imageType = VK_IMAGE_TYPE_2D;
@@ -55,6 +58,7 @@
 			arrayLayers = 1;
 			tiling = optimal;
 			usage = color_attachment|input_attachment;
+			initialLayout = undefined;
 		};
 		translucent = {
 			imageType = VK_IMAGE_TYPE_2D;
@@ -69,6 +73,7 @@
 			arrayLayers = 1;
 			tiling = optimal;
 			usage = color_attachment|input_attachment;
+			initialLayout = undefined;
 		};
 	};
 	imageViews = {
@@ -154,12 +159,21 @@
 		};
 	};
 	framebuffer = {
-		renderPass = renderpass;
+		renderPass = $properties.renderpass;
 		attachments = (depth, color, normals, opaque, translucent,
 					   "$swapchain.views[$swapImageIndex]");
 		width = $swapchain.extent.width;
 		height = $swapchain.extent.height;
+		layers = 1;
 	};
+	clearValues = (
+		{ depthStencil = { depth = 1; stencil = 0; }; },
+		{ color = "[0, 0, 0, 1]"; },	// color
+		{ color = "[0, 0, 0, 1]"; },	// normals
+		{ color = "[0, 0, 0, 1]"; },	// opaque
+		{ color = "[0, 0, 0, 0]"; },	// translucent
+		{ color = "[0, 0, 0, 1]"; },	// swapchain
+	);
 	renderpass = {
 		attachments = (
 			{
