@@ -827,6 +827,15 @@ draw_elechain (elechain_t *ec, VkPipelineLayout layout, qfv_devfuncs_t *dfunc,
 			continue;
 		dfunc->vkCmdDrawIndexed (cmd, el->index_count, 1, el->first_index,
 								 0, 0);
+	}
+}
+
+static void
+reset_elechain (elechain_t *ec)
+{
+	elements_t *el;
+
+	for (el = ec->elements; el; el = el->next) {
 		el->first_index = 0;
 		el->index_count = 0;
 	}
@@ -1167,6 +1176,7 @@ Vulkan_DrawWorld (vulkan_ctx_t *ctx)
 						   bframe->cmdSet.a[QFV_bspDepth]);
 			draw_elechain (ec, bctx->layout, dfunc,
 						   bframe->cmdSet.a[QFV_bspGBuffer]);
+			reset_elechain (ec);
 		}
 		tex->elechain = 0;
 		tex->elechain_tail = &tex->elechain;
@@ -1280,6 +1290,7 @@ Vulkan_DrawSky (vulkan_ctx_t *ctx)
 				for (ec = tex->elechain; ec; ec = ec->next) {
 					draw_elechain (ec, bctx->layout, dfunc,//FIXME
 								   bframe->cmdSet.a[QFV_bspTranslucent]);
+					reset_elechain (ec);
 				}
 				tex->elechain = 0;
 				tex->elechain_tail = &tex->elechain;
@@ -1295,6 +1306,7 @@ Vulkan_DrawSky (vulkan_ctx_t *ctx)
 		for (ec = tex->elechain; ec; ec = ec->next) {
 			draw_elechain (ec, bctx->layout, dfunc,//FIXME
 						   bframe->cmdSet.a[QFV_bspTranslucent]);
+			reset_elechain (ec);
 		}
 		tex->elechain = 0;
 		tex->elechain_tail = &tex->elechain;

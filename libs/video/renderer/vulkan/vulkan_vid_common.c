@@ -324,6 +324,53 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 	item = qfv_load_renderpass (ctx, "clearValues");
 	QFV_ParseClearValues (ctx, item, ctx->renderpassDef);
 	printf ("renderpass: %p\n", ctx->renderpass);
+
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	static float quad_vertices[] = {
+		-1, -1, 0, 1,
+		-1,  1, 0, 1,
+		 1, -1, 0, 1,
+		 1,  1, 0, 1,
+	};
+	ctx->quad_buffer = QFV_CreateBuffer (device, sizeof (quad_vertices),
+										 VK_BUFFER_USAGE_VERTEX_BUFFER_BIT
+										 | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+	ctx->quad_memory = QFV_AllocBufferMemory (device, ctx->quad_buffer,
+										VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+										0, 0);
+	QFV_BindBufferMemory (device, ctx->quad_buffer, ctx->quad_memory, 0);
+
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
+	float      *verts = QFV_PacketExtend (packet, sizeof (quad_vertices));
+	memcpy (verts, quad_vertices, sizeof (quad_vertices));
+
+	VkBufferMemoryBarrier wr_barriers[] = {
+		{   VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
+			0, VK_ACCESS_TRANSFER_WRITE_BIT,
+			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
+			ctx->quad_buffer, 0, sizeof (quad_vertices) },
+	};
+	dfunc->vkCmdPipelineBarrier (packet->cmd,
+								 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+								 VK_PIPELINE_STAGE_TRANSFER_BIT,
+								 0, 0, 0, 1, wr_barriers, 0, 0);
+	VkBufferCopy copy_region[] = {
+		{ packet->offset, 0, sizeof (quad_vertices) },
+	};
+	dfunc->vkCmdCopyBuffer (packet->cmd, ctx->staging->buffer,
+							ctx->quad_buffer, 1, &copy_region[0]);
+	VkBufferMemoryBarrier rd_barriers[] = {
+		{   VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
+			VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
+			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
+			ctx->quad_buffer, 0, sizeof (quad_vertices) },
+	};
+	dfunc->vkCmdPipelineBarrier (packet->cmd,
+								 VK_PIPELINE_STAGE_TRANSFER_BIT,
+								 VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
+								 0, 0, 0, 1, rd_barriers, 0, 0);
+	QFV_PacketSubmit (packet);
 }
 
 void
@@ -333,6 +380,9 @@ Vulkan_DestroyRenderPass (vulkan_ctx_t *ctx)
 	qfv_devfuncs_t *dfunc = device->funcs;
 
 	dfunc->vkDestroyRenderPass (device->dev, ctx->renderpass, 0);
+
+	dfunc->vkFreeMemory (device->dev, ctx->quad_memory, 0);
+	dfunc->vkDestroyBuffer (device->dev, ctx->quad_buffer, 0);
 }
 
 VkPipeline

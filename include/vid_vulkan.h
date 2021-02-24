@@ -79,6 +79,11 @@ typedef struct vulkan_ctx_s {
 	struct aliasctx_s *alias_context;
 	struct bspctx_s *bsp_context;
 	struct drawctx_s *draw_context;
+	struct lightingctx_s *lighting_context;
+	struct composectx_s *compose_context;
+
+	VkBuffer    quad_buffer;
+	VkDeviceMemory quad_memory;
 
 	VkCommandPool cmdpool;
 	VkCommandBuffer cmdbuffer;

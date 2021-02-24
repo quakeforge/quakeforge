@@ -38,7 +38,9 @@
 
 #include "QF/Vulkan/qf_alias.h"
 #include "QF/Vulkan/qf_bsp.h"
+#include "QF/Vulkan/qf_compose.h"
 #include "QF/Vulkan/qf_draw.h"
+#include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_particles.h"
@@ -98,6 +100,8 @@ vulkan_R_Init (void)
 	Vulkan_Bsp_Init (vulkan_ctx);
 	Vulkan_Draw_Init (vulkan_ctx);
 	Vulkan_Particles_Init (vulkan_ctx);
+	Vulkan_Lighting_Init (vulkan_ctx);
+	Vulkan_Compose_Init (vulkan_ctx);
 
 	Sys_Printf ("R_Init %p %d", vulkan_ctx->swapchain->swapchain,
 				vulkan_ctx->swapchain->numImages);
@@ -139,6 +143,9 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	}
 
 	Vulkan_FlushText (vulkan_ctx);
+
+	Vulkan_Lighting_Draw (vulkan_ctx);
+	Vulkan_Compose_Draw (vulkan_ctx);
 
 	VkCommandBufferBeginInfo beginInfo
 		= { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
@@ -602,6 +609,8 @@ vulkan_vid_render_shutdown (void)
 	QFV_DeviceWaitIdle (device);
 	df->vkDestroyFence (dev, vulkan_ctx->fence, 0);
 	df->vkDestroyCommandPool (dev, vulkan_ctx->cmdpool, 0);
+	Vulkan_Compose_Shutdown (vulkan_ctx);
+	Vulkan_Lighting_Shutdown (vulkan_ctx);
 	Vulkan_Draw_Shutdown (vulkan_ctx);
 	Vulkan_Bsp_Shutdown (vulkan_ctx);
 	Vulkan_Alias_Shutdown (vulkan_ctx);

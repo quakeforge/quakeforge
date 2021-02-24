@@ -77,6 +77,36 @@
 				},
 			);
 		};
+		lighting_attach_pool = {
+			flags = 0;
+			maxSets = $frames.size;
+			bindings = (
+				{
+					type = input_attachment;
+					descriptorCount = "3z * $frames.size";
+				},
+			);
+		};
+		lighting_lights_pool = {
+			flags = 0;
+			maxSets = $frames.size;
+			bindings = (
+				{
+					type = uniform_buffer;
+					descriptorCount = $frames.size;
+				},
+			);
+		};
+		compose_attach_pool = {
+			flags = 0;
+			maxSets = $frames.size;
+			bindings = (
+				{
+					type = input_attachment;
+					descriptorCount = "2z * $frames.size";
+				},
+			);
+		};
 	};
 	setLayouts = {
 		twod_set = {
@@ -208,20 +238,51 @@
 				},
 			);
 		};
-		something = {
-			flags = 0;
+		lighting_attach = {
 			bindings = (
 				{
 					binding = 0;
-					descriptorType = sampled_image;
+					descriptorType = input_attachment;
 					descriptorCount = 1;
 					stageFlags = fragment;
 				},
 				{
 					binding = 1;
+					descriptorType = input_attachment;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+				{
+					binding = 2;
+					descriptorType = input_attachment;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+			);
+		};
+		lighting_lights = {
+			bindings = (
+				{
+					binding = 0;
 					descriptorType = uniform_buffer;
 					descriptorCount = 1;
-					stageFlags = vertex;
+					stageFlags = fragment;
+				},
+			);
+		};
+		compose_attach = {
+			bindings = (
+				{
+					binding = 0;
+					descriptorType = input_attachment;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+				{
+					binding = 1;
+					descriptorType = input_attachment;
+					descriptorCount = 1;
+					stageFlags = fragment;
 				},
 			);
 		};
@@ -261,15 +322,11 @@
 				},
 			);
 		};
-		something = {
-			setLayouts = (something);
-			pushConstantRanges = (
-				{
-					stageFlags = fragment;
-					offset = 0;
-					size = "4 * 4";
-				},
-			);
+		lighting_layout = {
+			setLayouts = (lighting_attach, lighting_lights);
+		};
+		compose_layout = {
+			setLayouts = (compose_attach);
 		};
 	};
 	pipelines = {
@@ -756,6 +813,194 @@
 				dynamicState = ( viewport, scissor );
 			};
 			layout = twod_layout;
+			//renderPass = renderpass;
+		};
+		lighting = {
+			subpass = 2;
+			stages = (
+				{
+					stage = vertex;
+					name = main;
+					module = $builtin/passthrough.vert;
+				},
+				{
+					stage = fragment;
+					name = main;
+					module = $builtin/lighting.frag;
+				},
+			);
+			vertexInput = {
+				bindings = (
+					{
+						binding = 0;
+						stride = "4 * 4";
+						inputRate = vertex;
+					},
+				);
+				attributes = (
+					{
+						location = 0;
+						binding = 0;
+						format = r32g32b32a32_sfloat;
+						offset = 0;
+					},
+				);
+			};
+			inputAssembly = {
+				topology = triangle_strip;
+				primitiveRestartEnable = false;
+			};
+			viewport = {
+				viewports = (
+					{
+						x = 0; y = 0;
+						width = 640; height = 480;
+						minDepth = 0; maxDepth = 1;
+					}
+				);
+				scissors = (
+					{
+						offset = { x = 0; y = 0 };
+						extent = { width = 640; height = 480; };
+					},
+				);
+			};
+			rasterization = {
+				depthClampEnable = false;
+				rasterizerDiscardEnable = false;
+				polygonMode = fill;
+				cullMode = back;
+				frontFace = counter_clockwise;
+				depthBiasEnable = false;
+				lineWidth = 1;
+			};
+			multisample = {
+				rasterizationSamples = $msaaSamples;
+				sampleShadingEnable = false;
+				minSampleShading = 0.5f;
+				alphaToCoverageEnable = false;
+				alphaToOneEnable = false;
+			};
+			depthStencil = {
+				depthTestEnable = false;
+				depthWriteEnable = false;
+				depthCompareOp = less_or_equal;
+				depthBoundsTestEnable = false;
+				stencilTestEnable = false;
+			};
+			colorBlend = {
+				logicOpEnable = false;
+				attachments = (
+					{
+						blendEnable = false;
+						srcColorBlendFactor = src_alpha;
+						dstColorBlendFactor = one_minus_src_alpha;
+						colorBlendOp = add;
+						srcAlphaBlendFactor = src_alpha;
+						dstAlphaBlendFactor = one_minus_src_alpha;
+						alphaBlendOp = add;
+						colorWriteMask = r|g|b|a;
+					},
+				);
+			};
+			dynamic = {
+				dynamicState = ( viewport, scissor );
+			};
+			layout = lighting_layout;
+			//renderPass = renderpass;
+		};
+		compose = {
+			subpass = 4;
+			stages = (
+				{
+					stage = vertex;
+					name = main;
+					module = $builtin/passthrough.vert;
+				},
+				{
+					stage = fragment;
+					name = main;
+					module = $builtin/compose.frag;
+				},
+			);
+			vertexInput = {
+				bindings = (
+					{
+						binding = 0;
+						stride = "4 * 4";
+						inputRate = vertex;
+					},
+				);
+				attributes = (
+					{
+						location = 0;
+						binding = 0;
+						format = r32g32b32a32_sfloat;
+						offset = 0;
+					},
+				);
+			};
+			inputAssembly = {
+				topology = triangle_strip;
+				primitiveRestartEnable = false;
+			};
+			viewport = {
+				viewports = (
+					{
+						x = 0; y = 0;
+						width = 640; height = 480;
+						minDepth = 0; maxDepth = 1;
+					}
+				);
+				scissors = (
+					{
+						offset = { x = 0; y = 0 };
+						extent = { width = 640; height = 480; };
+					},
+				);
+			};
+			rasterization = {
+				depthClampEnable = false;
+				rasterizerDiscardEnable = false;
+				polygonMode = fill;
+				cullMode = back;
+				frontFace = counter_clockwise;
+				depthBiasEnable = false;
+				lineWidth = 1;
+			};
+			multisample = {
+				rasterizationSamples = $msaaSamples;
+				sampleShadingEnable = false;
+				minSampleShading = 0.5f;
+				alphaToCoverageEnable = false;
+				alphaToOneEnable = false;
+			};
+			depthStencil = {
+				depthTestEnable = false;
+				depthWriteEnable = false;
+				depthCompareOp = less_or_equal;
+				depthBoundsTestEnable = false;
+				stencilTestEnable = false;
+			};
+			colorBlend = {
+				logicOpEnable = false;
+				attachments = (
+					{
+						blendEnable = false;
+						srcColorBlendFactor = src_alpha;
+						dstColorBlendFactor = one_minus_src_alpha;
+						colorBlendOp = add;
+						srcAlphaBlendFactor = src_alpha;
+						dstAlphaBlendFactor = one_minus_src_alpha;
+						alphaBlendOp = add;
+						colorWriteMask = r|g|b|a;
+					},
+				);
+			};
+			dynamic = {
+				dynamicState = ( viewport, scissor );
+			};
+			layout = compose_layout;
 			//renderPass = renderpass;
 		};
 	};

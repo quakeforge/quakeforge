@@ -1259,6 +1259,8 @@ QFV_ParseImageSet (vulkan_ctx_t *ctx, plitem_t *item, plitem_t *properties)
 		dfunc->vkCreateImage (device->dev, &create.info[i], 0, &set->a[i]);
 
 		const char *name = PL_KeyAtIndex (item, i);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE, set->a[i],
+							 va (ctx->va_ctx, "image:%s", name));
 		name = va (ctx->va_ctx, "$"QFV_PROPERTIES".images.%s", name);
 		QFV_AddHandle (ctx->images, name, (uint64_t) set->a[i]);
 	}

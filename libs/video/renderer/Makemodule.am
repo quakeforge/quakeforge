@@ -240,7 +240,9 @@ libs_video_renderer_vid_render_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/vkparse.c \
 	libs/video/renderer/vulkan/vulkan_alias.c \
 	libs/video/renderer/vulkan/vulkan_bsp.c \
+	libs/video/renderer/vulkan/vulkan_compose.c \
 	libs/video/renderer/vulkan/vulkan_draw.c \
+	libs/video/renderer/vulkan/vulkan_lighting.c \
 	libs/video/renderer/vulkan/vulkan_lightmap.c \
 	libs/video/renderer/vulkan/vulkan_main.c \
 	libs/video/renderer/vulkan/vulkan_matrices.c \
@@ -285,6 +287,10 @@ bsp_gbuff_src = $(vkshaderpath)/bsp_gbuf.frag
 bsp_gbuff_c = $(vkshaderpath)/bsp_gbuf.frag.spvc
 bsp_skyf_src = $(vkshaderpath)/bsp_sky.frag
 bsp_skyf_c = $(vkshaderpath)/bsp_sky.frag.spvc
+lightingf_src = $(vkshaderpath)/lighting.frag
+lightingf_c = $(vkshaderpath)/lighting.frag.spvc
+composef_src = $(vkshaderpath)/compose.frag
+composef_c = $(vkshaderpath)/compose.frag.spvc
 aliasv_src = $(vkshaderpath)/alias.vert
 aliasv_c = $(vkshaderpath)/alias.vert.spvc
 aliasf_src = $(vkshaderpath)/alias.frag
@@ -316,6 +322,10 @@ $(bsp_gbuff_c): $(bsp_gbuff_src)
 
 $(bsp_skyf_c): $(bsp_skyf_src)
 
+$(lightingf_c): $(lightingf_src)
+
+$(composef_c): $(composef_src)
+
 $(aliasv_c): $(aliasv_src)
 
 $(alias_depth_c): $(alias_depth_src)
@@ -338,6 +348,8 @@ vkshader_c = \
 	$(bsp_gbufg_c) \
 	$(bsp_gbuff_c) \
 	$(bsp_skyf_c) \
+	$(lightingf_c) \
+	$(composef_c) \
 	$(aliasv_c) \
 	$(alias_depth_c) \
 	$(aliasf_c) \

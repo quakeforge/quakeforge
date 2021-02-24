@@ -176,8 +176,7 @@ alias_begin_subpass (QFV_AliasSubpass subpass, VkPipeline pipeline,
 	};
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 
-	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-							  pipeline);
+	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 	//VkDescriptorSet sets[] = {
 	//	aframe->descriptors[0].dstSet,
 	//	aframe->descriptors[1].dstSet,
