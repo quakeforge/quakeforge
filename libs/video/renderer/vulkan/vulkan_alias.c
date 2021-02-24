@@ -149,6 +149,10 @@ Vulkan_DrawAlias (entity_t *ent, vulkan_ctx_t *ctx)
 				   0, vertex_constants, sizeof (vertex_constants),
 				   fragment_constants, sizeof (fragment_constants),
 				   hdr, ctx);
+	emit_commands (aframe->cmdSet.a[QFV_aliasGBuffer], ent->pose1, ent->pose2,
+				   skin, vertex_constants, sizeof (vertex_constants),
+				   fragment_constants, sizeof (fragment_constants),
+				   hdr, ctx);
 }
 
 static void

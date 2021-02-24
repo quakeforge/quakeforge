@@ -177,12 +177,6 @@
 				},
 				{
 					binding = 1;
-					descriptorType = uniform_buffer;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 2;
 					descriptorType = combined_image_sampler;
 					descriptorCount = 1;
 					stageFlags = fragment;

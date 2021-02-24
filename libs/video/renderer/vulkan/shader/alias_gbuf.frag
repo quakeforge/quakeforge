@@ -1,5 +1,5 @@
 #version 450
-layout (set = 0, binding = 2) uniform sampler2DArray Skin;
+layout (set = 0, binding = 1) uniform sampler2DArray Skin;
 
 layout (push_constant) uniform PushConstants {
 	layout (offset = 68)
@@ -28,5 +28,5 @@ main (void)
 	c += texture (Skin, vec3 (st, 2)) * unpackUnorm4x8(colorB);
 
 	frag_color = c;
-	frag_normal = vec4(normal, 0);
+	frag_normal = vec4(normal, 1);
 }
