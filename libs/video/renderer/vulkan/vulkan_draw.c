@@ -718,7 +718,6 @@ Vulkan_FlushText (vulkan_ctx_t *ctx)
 		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
 		| VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &inherit,
 	};
-	printf ("Vulkan_FlushText: %p %p\n", inherit.renderPass, inherit.framebuffer);
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,

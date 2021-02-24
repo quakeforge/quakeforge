@@ -607,6 +607,8 @@ vulkan_vid_render_shutdown (void)
 	Vulkan_Alias_Shutdown (vulkan_ctx);
 	Mod_ClearAll ();
 	Vulkan_Texture_Shutdown (vulkan_ctx);
+	Vulkan_DestroyFramebuffers (vulkan_ctx);
+	Vulkan_DestroyRenderPass (vulkan_ctx);
 	Vulkan_Shutdown_Common (vulkan_ctx);
 }
 

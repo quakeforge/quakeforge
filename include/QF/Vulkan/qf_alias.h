@@ -1,7 +1,7 @@
 /*
 	qf_alias.h
 
-	Vulkan specific brush model stuff
+	Vulkan specific alias model stuff
 
 	Copyright (C) 2012 Bill Currie <bill@taniwha.org>
 	Copyright (C) 2021 Bill Currie <bill@taniwha.org>

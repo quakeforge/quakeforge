@@ -192,9 +192,6 @@ Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 	if (ctx->frames.size) {
 		Vulkan_DestroyFrames (ctx);
 	}
-	if (ctx->renderpass) {
-		Vulkan_DestroyRenderPass (ctx);
-	}
 	if (ctx->swapchain) {
 		QFV_DestroySwapchain (ctx->swapchain);
 	}
@@ -332,6 +329,10 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 void
 Vulkan_DestroyRenderPass (vulkan_ctx_t *ctx)
 {
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	dfunc->vkDestroyRenderPass (device->dev, ctx->renderpass, 0);
 }
 
 VkPipeline
@@ -554,4 +555,14 @@ Vulkan_CreateFramebuffers (vulkan_ctx_t *ctx)
 void
 Vulkan_DestroyFramebuffers (vulkan_ctx_t *ctx)
 {
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	for (size_t i = 0; i < ctx->attachment_views->size; i++) {
+		dfunc->vkDestroyImageView (device->dev, ctx->attachment_views->a[i], 0);
+	}
+	for (size_t i = 0; i < ctx->attachment_images->size; i++) {
+		dfunc->vkDestroyImage (device->dev, ctx->attachment_images->a[i], 0);
+	}
+	dfunc->vkFreeMemory (device->dev, ctx->attachmentMemory, 0);
 }
