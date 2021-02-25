@@ -29,12 +29,12 @@ calc_light (LightData light, vec3 position, vec3 normal)
 	vec3        incoming = normalize (dist);
 	float       spotdot = -dot (incoming, light.direction);
 	float       lightdot = dot (incoming, normal);
-	float       d = dot (dist, dist);
+	float       d = sqrt (dot (dist, dist));
 	float       r = light.radius;
 
-	float       intensity = light.intensity * step (d, r * r);
+	float       intensity = light.intensity * step (d, r);
 	intensity *= step (spotdot, light.cone) * clamp (lightdot, 0, 1);
-	return light.color * intensity;
+	return light.color * intensity * (r - d);
 }
 
 void
