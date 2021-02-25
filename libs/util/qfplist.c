@@ -330,7 +330,7 @@ PL_RemoveObjectForKey (const plitem_t *item, const char *key)
 }
 
 VISIBLE plitem_t *
-PL_D_AllKeys (plitem_t *item)
+PL_D_AllKeys (const plitem_t *item)
 {
 	pldict_t   *dict = (pldict_t *) item->data;
 	dictkey_t  *current;
@@ -440,7 +440,7 @@ PL_A_AddObject (plitem_t *array, plitem_t *item)
 }
 
 VISIBLE int
-PL_A_NumObjects (plitem_t *array)
+PL_A_NumObjects (const plitem_t *array)
 {
 	if (array->type != QFArray)
 		return 0;
@@ -1056,7 +1056,7 @@ write_string (dstring_t *dstr, const char *str)
 }
 
 static void
-write_item (dstring_t *dstr, plitem_t *item, int level)
+write_item (dstring_t *dstr, const plitem_t *item, int level)
 {
 	dictkey_t	*current;
 	plarray_t	*array;
@@ -1107,7 +1107,7 @@ write_item (dstring_t *dstr, plitem_t *item, int level)
 }
 
 VISIBLE char *
-PL_WritePropertyList (plitem_t *pl)
+PL_WritePropertyList (const plitem_t *pl)
 {
 	dstring_t  *dstr = dstring_newstr ();
 

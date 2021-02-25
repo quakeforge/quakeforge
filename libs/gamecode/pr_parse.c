@@ -501,7 +501,7 @@ ED_Parse (progs_t *pr, const char *data)
 			// new style (plist) entity data
 			entity_list = PL_GetPropertyList (data, pr->hashlink_freelist);
 		} else {
-			// oldstyle entity data
+			// old style entity data
 			Script_UngetToken (script);
 			entity_list = ED_ConvertToPlist (script, 0, pr->hashlink_freelist);
 		}

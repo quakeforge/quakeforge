@@ -132,7 +132,7 @@ plitem_t *PL_GetPropertyList (const char *string,
 	\return the text representation of the property list
 	\note You are responsible for freeing the returned string.
 */
-char *PL_WritePropertyList (plitem_t *pl);
+char *PL_WritePropertyList (const plitem_t *pl);
 
 /** Retrieve the type of an object.
 
@@ -226,7 +226,7 @@ plitem_t *PL_ObjectAtIndex (const plitem_t *array, int index) __attribute__((pur
 	\return an Array containing Strings or NULL if dict isn't a dictionary
 	\note You are responsible for freeing this array.
 */
-plitem_t *PL_D_AllKeys (plitem_t *dict);
+plitem_t *PL_D_AllKeys (const plitem_t *dict);
 
 /** Retrieve the number of keys in a dictionary.
 
@@ -265,7 +265,7 @@ qboolean PL_A_AddObject (plitem_t *array, plitem_t *item);
 
 	\return number of objects in the array
 */
-int PL_A_NumObjects (plitem_t *array) __attribute__((pure));
+int PL_A_NumObjects (const plitem_t *array) __attribute__((pure));
 
 /** Insert an item into an array before the specified location.
 
