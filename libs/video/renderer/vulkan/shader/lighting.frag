@@ -7,31 +7,49 @@ layout (input_attachment_index = 3, set = 0, binding = 3) uniform subpassInput p
 
 struct LightData {
 	vec3        color;
-	float       dist;
+	float       intensity;
 	vec3        position;
-	int         type;
+	int         radius;
 	vec3        direction;
 	float       cone;
 };
 
-layout (constant_id = 0) const int MaxLights = 8;
-/*layout (set = 1, binding = 0) uniform Lights {
+layout (constant_id = 0) const int MaxLights = 128;
+layout (set = 1, binding = 0) uniform Lights {
 	int         lightCount;
 	LightData   lights[MaxLights];
-};*/
+};
 
 layout (location = 0) out vec4 frag_color;
+
+vec3
+calc_light (LightData light, vec3 position, vec3 normal)
+{
+	vec3        dist = light.position - position;
+	vec3        incoming = normalize (dist);
+	float       spotdot = -dot (incoming, light.direction);
+	float       lightdot = dot (incoming, normal);
+	float       d = dot (dist, dist);
+	float       r = light.radius;
+
+	float       intensity = light.intensity * step (d, r * r);
+	intensity *= step (spotdot, light.cone) * clamp (lightdot, 0, 1);
+	return light.color * intensity;
+}
 
 void
 main (void)
 {
-	float       d = subpassLoad (depth).r;
+	//float       d = subpassLoad (depth).r;
 	vec3        c = subpassLoad (color).rgb;
 	vec3        n = subpassLoad (normal).rgb;
 	vec3        p = subpassLoad (position).rgb;
+	vec3        light = vec3 (0);
 
-	c = vec3 (d, d, d);
-	c = (n + 1)/2;
-	c = (p / 1024 + 1) / 2;
-	frag_color = vec4 (c, 1);
+	if (MaxLights > 0) {
+		for (int i = 0; i < lightCount; i++) {
+			light += calc_light (lights[i], p, n);
+		}
+	}
+	frag_color = vec4 (c * light, 1);
 }

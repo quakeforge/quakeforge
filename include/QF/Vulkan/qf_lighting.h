@@ -36,11 +36,29 @@
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/command.h"
 
+typedef struct qfv_light_s {
+	vec3_t      color;
+	float       intensity;
+	vec3_t      position;
+	int         radius;
+	vec3_t      direction;
+	float       cone;
+} qfv_light_t;
+
+#define NUM_LIGHTS 128
+
+typedef struct qfv_light_buffer_s {
+	int         lightCount;
+	qfv_light_t lights[NUM_LIGHTS] __attribute__((aligned(16)));
+} qfv_light_buffer_t;
+
+
 #define LIGHTING_BUFFER_INFOS 1
 #define LIGHTING_IMAGE_INFOS 4
 
 typedef struct lightingframe_s {
 	VkCommandBuffer cmd;
+	VkBuffer    light_buffer;
 	VkDescriptorBufferInfo bufferInfo[LIGHTING_BUFFER_INFOS];
 	VkDescriptorImageInfo imageInfo[LIGHTING_IMAGE_INFOS];
 	VkWriteDescriptorSet descriptors[LIGHTING_BUFFER_INFOS
@@ -54,6 +72,7 @@ typedef struct lightingctx_s {
 	lightingframeset_t frames;
 	VkPipeline   pipeline;
 	VkPipelineLayout layout;
+	VkDeviceMemory light_memory;
 } lightingctx_t;
 
 struct vulkan_ctx_s;

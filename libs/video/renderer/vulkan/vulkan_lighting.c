@@ -42,21 +42,84 @@
 #include "qfalloca.h"
 
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "QF/Vulkan/qf_lighting.h"
+#include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
+#include "QF/Vulkan/staging.h"
+
+#include "compat.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
+
+static void
+update_lights (vulkan_ctx_t *ctx)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	lightingctx_t *lctx = ctx->lighting_context;
+	lightingframe_t *lframe = &lctx->frames.a[ctx->curFrame];
+
+	dlight_t   *lights[NUM_LIGHTS];
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
+	qfv_light_buffer_t *light_data = QFV_PacketExtend (packet,
+													   sizeof (*light_data));
+
+	light_data->lightCount = 0;
+	R_FindNearLights (r_origin, NUM_LIGHTS - 1, lights);
+	for (int i = 0; i < NUM_LIGHTS - 1; i++) {
+		if (!lights[i]) {
+			break;
+		}
+		light_data->lightCount++;
+		VectorCopy (lights[i]->color, light_data->lights[i].color);
+		VectorCopy (lights[i]->origin, light_data->lights[i].position);
+		light_data->lights[i].radius = lights[i]->radius;
+		light_data->lights[i].intensity = 1;
+		VectorZero (light_data->lights[i].direction);
+		light_data->lights[i].cone = 1;
+	}
+
+	VkBufferMemoryBarrier wr_barriers[] = {
+		{   VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
+			0, VK_ACCESS_TRANSFER_WRITE_BIT,
+			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
+			lframe->light_buffer, 0, sizeof (qfv_light_buffer_t) },
+	};
+	dfunc->vkCmdPipelineBarrier (packet->cmd,
+								 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+								 VK_PIPELINE_STAGE_TRANSFER_BIT,
+								 0, 0, 0, 1, wr_barriers, 0, 0);
+	VkBufferCopy copy_region[] = {
+		{ packet->offset, 0, sizeof (qfv_light_buffer_t) },
+	};
+	dfunc->vkCmdCopyBuffer (packet->cmd, ctx->staging->buffer,
+							lframe->light_buffer, 1, &copy_region[0]);
+	VkBufferMemoryBarrier rd_barriers[] = {
+		{   VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
+			VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
+			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
+			lframe->light_buffer, 0, sizeof (qfv_light_buffer_t) },
+	};
+	dfunc->vkCmdPipelineBarrier (packet->cmd,
+								 VK_PIPELINE_STAGE_TRANSFER_BIT,
+								 VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
+								 0, 0, 0, 1, rd_barriers, 0, 0);
+	QFV_PacketSubmit (packet);
+}
 
 void
 Vulkan_Lighting_Draw (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
+
+	update_lights (ctx);
 
 	lightingctx_t *lctx = ctx->lighting_context;
 	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
@@ -82,15 +145,16 @@ Vulkan_Lighting_Draw (vulkan_ctx_t *ctx)
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 							  lctx->pipeline);
 
+	lframe->bufferInfo[0].buffer = lframe->light_buffer;
 	lframe->imageInfo[0].imageView = ctx->attachment_views->a[QFV_attachDepth];
 	lframe->imageInfo[1].imageView = ctx->attachment_views->a[QFV_attachColor];
 	lframe->imageInfo[2].imageView
 		= ctx->attachment_views->a[QFV_attachNormal];
 	lframe->imageInfo[3].imageView
 		= ctx->attachment_views->a[QFV_attachPosition];
-	dfunc->vkUpdateDescriptorSets (device->dev, LIGHTING_IMAGE_INFOS,
-								   lframe->descriptors + LIGHTING_BUFFER_INFOS,
-								   0, 0);
+	dfunc->vkUpdateDescriptorSets (device->dev,
+								   LIGHTING_BUFFER_INFOS + LIGHTING_IMAGE_INFOS,
+								   lframe->descriptors, 0, 0);
 
 	VkDescriptorSet sets[] = {
 		lframe->descriptors[1].dstSet,
@@ -134,6 +198,7 @@ void
 Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
 
 	lightingctx_t *lctx = calloc (1, sizeof (lightingctx_t));
 	ctx->lighting_context = lctx;
@@ -145,6 +210,25 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 
 	lctx->pipeline = Vulkan_CreatePipeline (ctx, "lighting");
 	lctx->layout = Vulkan_CreatePipelineLayout (ctx, "lighting_layout");
+
+	__auto_type lbuffers = QFV_AllocBufferSet (frames, alloca);
+	for (size_t i = 0; i < frames; i++) {
+		lbuffers->a[i] = QFV_CreateBuffer (device, sizeof (qfv_light_buffer_t),
+										   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
+										   | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER,
+							 lbuffers->a[i],
+							 va (ctx->va_ctx, "buffer:lighting:%zd", i));
+	}
+	VkMemoryRequirements requirements;
+	dfunc->vkGetBufferMemoryRequirements (device->dev, lbuffers->a[0],
+										  &requirements);
+	lctx->light_memory = QFV_AllocBufferMemory (device, lbuffers->a[0],
+										VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+										frames * requirements.size, 0);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
+						 lctx->light_memory, "memory:lighting");
+
 
 	__auto_type cmdSet = QFV_AllocCommandBufferSet (1, alloca);
 
@@ -170,6 +254,10 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 
 		QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, cmdSet);
 		lframe->cmd = cmdSet->a[0];
+
+		lframe->light_buffer = lbuffers->a[i];
+		QFV_BindBufferMemory (device, lbuffers->a[i], lctx->light_memory,
+							  i * requirements.size);
 
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
 							 lframe->cmd, "cmd:lighting");
@@ -201,6 +289,11 @@ Vulkan_Lighting_Shutdown (vulkan_ctx_t *ctx)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	lightingctx_t *lctx = ctx->lighting_context;
 
+	for (size_t i = 0; i < lctx->frames.size; i++) {
+		lightingframe_t *lframe = &lctx->frames.a[i];
+		dfunc->vkDestroyBuffer (device->dev, lframe->light_buffer, 0);
+	}
+	dfunc->vkFreeMemory (device->dev, lctx->light_memory, 0);
 	dfunc->vkDestroyPipeline (device->dev, lctx->pipeline, 0);
 	free (lctx->frames.a);
 	free (lctx);
