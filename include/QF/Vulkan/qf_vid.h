@@ -46,6 +46,16 @@ enum {
 	QFV_NumPasses
 };
 
+enum {
+	QFV_attachDepth,
+	QFV_attachColor,
+	QFV_attachNormal,
+	QFV_attachPosition,
+	QFV_attachOpaque,
+	QFV_attachTranslucent,
+	QFV_attachSwapchain,
+};
+
 struct vulkan_ctx_s;
 void Vulkan_DestroyFrames (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateFrames (struct vulkan_ctx_s *ctx);

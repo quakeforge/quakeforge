@@ -15,9 +15,11 @@ layout (push_constant) uniform PushConstants {
 layout (location = 0) in vec4 tl_st;
 layout (location = 1) in vec3 direction;
 layout (location = 2) in vec3 normal;
+layout (location = 3) in vec4 position;
 
 layout (location = 0) out vec4 frag_color;
 layout (location = 1) out vec4 frag_normal;
+layout (location = 2) out vec4 frag_position;
 
 layout (constant_id = 0) const bool doWarp = false;
 layout (constant_id = 1) const bool doLight = true;
@@ -123,4 +125,5 @@ main (void)
 	}
 	frag_color = c;//fogBlend (c);
 	frag_normal = vec4 (normal, 0);
+	frag_position = position;
 }

@@ -12,7 +12,7 @@
 			mipLevels = 1;
 			arrayLayers = 1;
 			tiling = optimal;
-			usage = depth_stencil_attachment|input_attachment;
+			usage = depth_stencil_attachment|input_attachment|transient_attachment;
 			initialLayout = undefined;
 		};
 		color = {
@@ -27,10 +27,10 @@
 			mipLevels = 1;
 			arrayLayers = 1;
 			tiling = optimal;
-			usage = color_attachment|input_attachment;
+			usage = color_attachment|input_attachment|transient_attachment;
 			initialLayout = undefined;
 		};
-		normals = {
+		normal = {
 			imageType = VK_IMAGE_TYPE_2D;
 			format = r16g16b16a16_sfloat;
 			samples = 1;
@@ -42,7 +42,22 @@
 			mipLevels = 1;
 			arrayLayers = 1;
 			tiling = optimal;
-			usage = color_attachment|input_attachment;
+			usage = color_attachment|input_attachment|transient_attachment;
+			initialLayout = undefined;
+		};
+		position = {
+			imageType = VK_IMAGE_TYPE_2D;
+			format = r32g32b32a32_sfloat;
+			samples = 1;
+			extent = {
+				width = $swapchain.extent.width;
+				height = $swapchain.extent.height;
+				depth = 1;
+			};
+			mipLevels = 1;
+			arrayLayers = 1;
+			tiling = optimal;
+			usage = color_attachment|input_attachment|transient_attachment;
 			initialLayout = undefined;
 		};
 		opaque = {
@@ -57,7 +72,7 @@
 			mipLevels = 1;
 			arrayLayers = 1;
 			tiling = optimal;
-			usage = color_attachment|input_attachment;
+			usage = color_attachment|input_attachment|transient_attachment;
 			initialLayout = undefined;
 		};
 		translucent = {
@@ -72,7 +87,7 @@
 			mipLevels = 1;
 			arrayLayers = 1;
 			tiling = optimal;
-			usage = color_attachment|input_attachment;
+			usage = color_attachment|input_attachment|transient_attachment;
 			initialLayout = undefined;
 		};
 	};
@@ -109,10 +124,26 @@
 				layerCount = 1;
 			};
 		};
-		normals = {
-			image = normals;
+		normal = {
+			image = normal;
 			viewType = VK_IMAGE_VIEW_TYPE_2D;
-			format = $properties.images.normals.format;
+			format = $properties.images.normal.format;
+			components = {
+				r = identity;
+				g = identity;
+				b = identity;
+				a = identity;
+			};
+			subresourceRange = {
+				aspectMask = color;
+				levelCount = 1;
+				layerCount = 1;
+			};
+		};
+		position = {
+			image = position;
+			viewType = VK_IMAGE_VIEW_TYPE_2D;
+			format = $properties.images.position.format;
 			components = {
 				r = identity;
 				g = identity;
@@ -160,7 +191,7 @@
 	};
 	framebuffer = {
 		renderPass = $properties.renderpass;
-		attachments = (depth, color, normals, opaque, translucent,
+		attachments = (depth, color, normal, position, opaque, translucent,
 					   "$swapchain.views[$swapImageIndex]");
 		width = $swapchain.extent.width;
 		height = $swapchain.extent.height;
@@ -169,7 +200,8 @@
 	clearValues = (
 		{ depthStencil = { depth = 1; stencil = 0; }; },
 		{ color = "[0, 0, 0, 1]"; },	// color
-		{ color = "[0, 0, 0, 1]"; },	// normals
+		{ color = "[0, 0, 0, 1]"; },	// normal
+		{ color = "[0, 0, 0, 1]"; },	// position
 		{ color = "[0, 0, 0, 1]"; },	// opaque
 		{ color = "[0, 0, 0, 0]"; },	// translucent
 		{ color = "[0, 0, 0, 1]"; },	// swapchain
@@ -197,7 +229,17 @@
 				finalLayout = color_attachment_optimal;
 			},
 			{
-				format = $properties.images.normals.format;
+				format = $properties.images.normal.format;
+				samples = 1;
+				loadOp = dont_care;
+				storeOp = dont_care;
+				stencilLoadOp = dont_care;
+				stencilStoreOp = dont_care;
+				initialLayout = undefined;
+				finalLayout = color_attachment_optimal;
+			},
+			{
+				format = $properties.images.position.format;
 				samples = 1;
 				loadOp = dont_care;
 				storeOp = dont_care;
@@ -252,8 +294,12 @@
 						attachment = 1;
 						layout = color_attachment_optimal;
 					},
-					{	// normals
+					{	// normal
 						attachment = 2;
+						layout = color_attachment_optimal;
+					},
+					{	// position
+						attachment = 3;
 						layout = color_attachment_optimal;
 					},
 				);
@@ -261,7 +307,7 @@
 					attachment = 0;
 					layout = depth_stencil_attachment_optimal;
 				};
-				preserveAttachments = (4);
+				preserveAttachments = (5);
 			},
 			{	// 2 lighting
 				pipelineBindPoint = graphics;
@@ -274,48 +320,52 @@
 						attachment = 1;
 						layout = shader_read_only_optimal;
 					},
-					{	// normals
+					{	// normal
 						attachment = 2;
+						layout = shader_read_only_optimal;
+					},
+					{	// position
+						attachment = 3;
 						layout = shader_read_only_optimal;
 					},
 				);
 				colorAttachments = (
 					{	// opaque
-						attachment = 3;
+						attachment = 4;
 						layout = color_attachment_optimal;
 					},
 				);
-				preserveAttachments = (4);
+				preserveAttachments = (5);
 			},
 			{	// 3 translucent
 				pipelineBindPoint = graphics;
 				colorAttachments = (
 					{	// translucent
-						attachment = 4;
+						attachment = 5;
 						layout = color_attachment_optimal;
 					},
 				);
-				preserveAttachments = (0, 1, 2, 3);
+				preserveAttachments = (0, 1, 2, 3, 4);
 			},
 			{	// 4 compose
 				pipelineBindPoint = graphics;
 				inputAttachments = (
 					{	// opaque
-						attachment = 3;
+						attachment = 4;
 						layout = shader_read_only_optimal;
 					},
 					{	// translucent
-						attachment = 4;
+						attachment = 5;
 						layout = shader_read_only_optimal;
 					},
 				);
 				colorAttachments = (
 					{	// swapchain
-						attachment = 5;
+						attachment = 6;
 						layout = color_attachment_optimal;
 					},
 				);
-				preserveAttachments = (0, 1, 2);
+				preserveAttachments = (0, 1, 2, 3);
 			},
 		);
 		dependencies = (

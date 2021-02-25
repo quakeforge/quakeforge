@@ -19,7 +19,8 @@ layout (location = 1) out vec3 direction;
 void
 main (void)
 {
-	gl_Position = Projection * (View * (Model * vertex));
+	// geometry shader will take care of Projection and View
+	gl_Position = Model * vertex;
 	direction = (Sky * vertex).xyz;
 	tl_st = tl_uv;
 }

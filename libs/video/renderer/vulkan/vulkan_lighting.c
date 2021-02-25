@@ -82,10 +82,15 @@ Vulkan_Lighting_Draw (vulkan_ctx_t *ctx)
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 							  lctx->pipeline);
 
-	lframe->imageInfo[0].imageView = ctx->attachment_views->a[0];
-	lframe->imageInfo[1].imageView = ctx->attachment_views->a[1];
-	lframe->imageInfo[2].imageView = ctx->attachment_views->a[2];
-	dfunc->vkUpdateDescriptorSets (device->dev, 3, lframe->descriptors+1, 0, 0);
+	lframe->imageInfo[0].imageView = ctx->attachment_views->a[QFV_attachDepth];
+	lframe->imageInfo[1].imageView = ctx->attachment_views->a[QFV_attachColor];
+	lframe->imageInfo[2].imageView
+		= ctx->attachment_views->a[QFV_attachNormal];
+	lframe->imageInfo[3].imageView
+		= ctx->attachment_views->a[QFV_attachPosition];
+	dfunc->vkUpdateDescriptorSets (device->dev, LIGHTING_IMAGE_INFOS,
+								   lframe->descriptors + LIGHTING_BUFFER_INFOS,
+								   0, 0);
 
 	VkDescriptorSet sets[] = {
 		lframe->descriptors[1].dstSet,

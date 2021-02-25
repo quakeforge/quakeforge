@@ -37,7 +37,7 @@
 #include "QF/Vulkan/command.h"
 
 #define LIGHTING_BUFFER_INFOS 1
-#define LIGHTING_IMAGE_INFOS 3
+#define LIGHTING_IMAGE_INFOS 4
 
 typedef struct lightingframe_s {
 	VkCommandBuffer cmd;

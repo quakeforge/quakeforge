@@ -82,8 +82,10 @@ Vulkan_Compose_Draw (vulkan_ctx_t *ctx)
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 							  cctx->pipeline);
 
-	cframe->imageInfo[0].imageView = ctx->attachment_views->a[3];
-	cframe->imageInfo[1].imageView = ctx->attachment_views->a[4];
+	cframe->imageInfo[0].imageView
+		= ctx->attachment_views->a[QFV_attachOpaque];
+	cframe->imageInfo[1].imageView
+		= ctx->attachment_views->a[QFV_attachTranslucent];
 	dfunc->vkUpdateDescriptorSets (device->dev, 2, cframe->descriptors, 0, 0);
 
 	VkDescriptorSet sets[] = {

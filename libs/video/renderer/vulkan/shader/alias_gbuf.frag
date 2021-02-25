@@ -11,11 +11,12 @@ layout (push_constant) uniform PushConstants {
 };
 
 layout (location = 0) in vec2 st;
-layout (location = 1) in vec3 position;
+layout (location = 1) in vec4 position;
 layout (location = 2) in vec3 normal;
 
 layout (location = 0) out vec4 frag_color;
 layout (location = 1) out vec4 frag_normal;
+layout (location = 2) out vec4 frag_position;
 
 void
 main (void)
@@ -29,4 +30,5 @@ main (void)
 
 	frag_color = c;
 	frag_normal = vec4(normal, 1);
+	frag_position = position;
 }

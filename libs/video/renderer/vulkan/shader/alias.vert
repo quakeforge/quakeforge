@@ -18,7 +18,7 @@ layout (location = 3) in vec3 normalb;
 layout (location = 4) in vec2 uv;
 
 layout (location = 0) out vec2 st;
-layout (location = 1) out vec3 position;
+layout (location = 1) out vec4 position;
 layout (location = 2) out vec3 normal;
 
 void
@@ -32,7 +32,7 @@ main (void)
 	norm = mix (normala, normalb, blend);
 	pos = (Model * vertex);
 	gl_Position = Projection * (View * pos);
-	position = pos.xyz;
+	position = pos;
 	normal = mat3 (Model) * norm;
 	st = uv;
 }
