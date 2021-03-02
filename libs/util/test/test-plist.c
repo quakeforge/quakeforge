@@ -29,7 +29,7 @@ test_string_io (const char *str)
 	item = PL_NewString (str);
 	saved = PL_WritePropertyList (item);
 	PL_Free (item);
-	item = PL_GetPropertyList (saved);
+	item = PL_GetPropertyList (saved, 0);
 	res = PL_String (item);
 	if (!strcmp (str, res))
 		return 1;
