@@ -7,7 +7,7 @@ TESTS += $(libs_video_renderer_vulkan_tests)
 check_PROGRAMS += $(libs_video_renderer_vulkan_tests)
 
 libs_video_renderer_vulkan_test_libs= \
-	libs/video/renderer/vid_render_vulkan.la \
+	libs/video/renderer/librender_vulkan.la \
 	libs/util/libQFutil.la
 
 libs_video_renderer_vulkan_test_test_staging_SOURCES= 		\

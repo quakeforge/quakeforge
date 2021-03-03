@@ -41,6 +41,7 @@ if test "x$HAVE_FBDEV" = xyes; then
 		CL_TARGETS="$CL_TARGETS FBDEV"
 		VID_TARGETS="$VID_TARGETS libs/video/targets/libQFfbdev.la"
 		QF_NEED(vid_render, [sw])
+		QF_NEED(render, [sw])
 		QF_NEED(models, [sw])
 		QF_NEED(alias, [sw])
 		QF_NEED(brush, [sw])
@@ -73,6 +74,7 @@ if test "x$HAVE_X" = xyes; then
 		VID_TARGETS="$VID_TARGETS libs/video/targets/libQFx11.la"
 		if test "$HAVE_VULKAN" = "yes"; then
 			QF_NEED(vid_render, [vulkan])
+			QF_NEED(render, [vulkan])
 			QF_NEED(models, [vulkan])
 			QF_NEED(alias, [vulkan])
 			QF_NEED(brush, [vulkan])
@@ -80,6 +82,7 @@ if test "x$HAVE_X" = xyes; then
 			QF_NEED(sprite, [vulkan])
 		fi
 		QF_NEED(vid_render, [sw sw32 gl glsl])
+		QF_NEED(render, [sw sw32 gl glsl])
 		QF_NEED(models, [sw gl glsl])
 		QF_NEED(alias, [sw gl glsl])
 		QF_NEED(brush, [sw gl glsl])
@@ -105,12 +108,14 @@ if test "x$HAVE_SDL" = xyes; then
 		VID_TARGETS="$VID_TARGETS libs/video/targets/libQFsdl.la"
 		if test "$HAVE_VULKAN" = "yes"; then
 			QF_NEED(vid_render, [vulkan])
+			QF_NEED(render, [vulkan])
 			QF_NEED(alias, [vulkan])
 			QF_NEED(brush, [vulkan])
 			QF_NEED(iqm, [vulkan])
 			QF_NEED(sprite, [vulkan])
 		fi
 		QF_NEED(vid_render, [sw sw32 gl glsl])
+		QF_NEED(render, [sw sw32 gl glsl])
 		QF_NEED(models, [sw gl glsl])
 		QF_NEED(alias, [sw gl glsl])
 		QF_NEED(brush, [sw gl glsl])
@@ -133,6 +138,7 @@ if test "x$HAVE_SVGA" = xyes; then
 		CL_TARGETS="$CL_TARGETS SVGAlib"
 		VID_TARGETS="$VID_TARGETS libs/video/targets/libQFsvga.la"
 		QF_NEED(vid_render, [sw])
+		QF_NEED(render, [sw])
 		QF_NEED(models, [sw])
 		QF_NEED(alias, [sw])
 		QF_NEED(brush, [sw])
@@ -155,6 +161,7 @@ fi
 #		CL_TARGETS="$CL_TARGETS WGL"
 #		VID_TARGETS="$VID_TARGETS libs/video/targets/libQFwgl.la"
 #		QF_NEED(vid_render, [gl])
+#		QF_NEED(render, [gl])
 #		QF_NEED(models, [gl])
 #		QF_NEED(alias, [gl])
 #		QF_NEED(brush, [gl])
@@ -290,6 +297,7 @@ fi
 QF_SUBST(progs_gz)
 
 QF_PROCESS_NEED_LIBS(swrend, [asm])
+QF_PROCESS_NEED_LIBS(render, [gl glsl sw sw32 vulkan], [libs/video/renderer])
 QF_PROCESS_NEED_LIBS(models, [gl glsl sw vulkan], [libs/models])
 QF_PROCESS_NEED_LIBS(alias, [gl glsl sw vulkan], [libs/models/alias])
 QF_PROCESS_NEED_LIBS(brush, [gl glsl sw vulkan], [libs/models/brush])

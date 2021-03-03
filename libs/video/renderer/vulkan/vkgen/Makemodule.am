@@ -47,5 +47,7 @@ EXTRA_DIST += \
 	libs/video/renderer/vulkan/vkgen/vkgen.h \
 	libs/video/renderer/vulkan/vkgen/vkstruct.h \
 	libs/video/renderer/vulkan/vkgen/vktype.h \
+	$e
+
 CLEANFILES += \
 	libs/video/renderer/vkgen/*.sym

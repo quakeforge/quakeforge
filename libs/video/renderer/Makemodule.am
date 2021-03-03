@@ -3,14 +3,26 @@ include libs/video/renderer/vulkan/vkgen/Makemodule.am
 
 #lib_LTLIBRARIES += @VID_REND_TARGETS@
 plugin_LTLIBRARIES += @vid_render_plugins@
-noinst_LTLIBRARIES += libs/video/renderer/libQFrenderer.la @vid_render_static_plugins@
+noinst_LTLIBRARIES += \
+	libs/video/renderer/libQFrenderer.la \
+	@render_libs@ \
+	@vid_render_static_plugins@
 
+#plugins
 EXTRA_LTLIBRARIES += \
 	libs/video/renderer/vid_render_sw.la \
 	libs/video/renderer/vid_render_sw32.la \
 	libs/video/renderer/vid_render_gl.la \
 	libs/video/renderer/vid_render_glsl.la \
 	libs/video/renderer/vid_render_vulkan.la
+
+#helper libraries
+EXTRA_LTLIBRARIES += \
+	libs/video/renderer/librender_sw.la \
+	libs/video/renderer/librender_sw32.la \
+	libs/video/renderer/librender_gl.la \
+	libs/video/renderer/librender_glsl.la \
+	libs/video/renderer/librender_vulkan.la
 
 video_renderer_common_sources = \
 	libs/video/renderer/crosshair.c \
@@ -43,13 +55,16 @@ libs_video_renderer_libQFrenderer_la_SOURCES=\
 	libs/video/renderer/r_progs.c
 
 video_renderer_gl_libs= \
+	libs/video/renderer/librender_gl.la \
 	libs/models/libmodels_gl.la
 libs_video_renderer_vid_render_gl_la_LDFLAGS=		$(plugin_ldflags)
 libs_video_renderer_vid_render_gl_la_LIBADD=		$(video_renderer_gl_libs)
 libs_video_renderer_vid_render_gl_la_DEPENDENCIES=	$(video_renderer_gl_libs)
 libs_video_renderer_vid_render_gl_la_SOURCES=\
 	$(video_renderer_common_sources) \
-	libs/video/renderer/vid_render_gl.c \
+	libs/video/renderer/vid_render_gl.c
+
+libs_video_renderer_librender_gl_la_SOURCES = \
 	libs/video/renderer/gl/gl_draw.c \
 	libs/video/renderer/gl/gl_dyn_lights.c \
 	libs/video/renderer/gl/gl_dyn_part.c \
@@ -91,13 +106,16 @@ SUFFICES=.frag .vert .spv .spvc .fc .vc .slc .glsl .plist .plc
 	$(am__mv) $@.t $@
 
 video_renderer_glsl_libs= \
+	libs/video/renderer/librender_glsl.la \
 	libs/models/libmodels_glsl.la
 libs_video_renderer_vid_render_glsl_la_LDFLAGS=		$(plugin_ldflags)
 libs_video_renderer_vid_render_glsl_la_LIBADD=		$(video_renderer_glsl_libs)
 libs_video_renderer_vid_render_glsl_la_DEPENDENCIES=$(video_renderer_glsl_libs)
 libs_video_renderer_vid_render_glsl_la_SOURCES=\
 	$(video_renderer_common_sources) \
-	libs/video/renderer/vid_render_glsl.c \
+	libs/video/renderer/vid_render_glsl.c
+
+libs_video_renderer_librender_glsl_la_SOURCES = \
 	libs/video/renderer/glsl/glsl_alias.c \
 	libs/video/renderer/glsl/glsl_bsp.c \
 	libs/video/renderer/glsl/glsl_draw.c \
@@ -116,13 +134,16 @@ libs_video_renderer_vid_render_glsl_la_SOURCES=\
 	libs/video/renderer/glsl/vid_common_glsl.c
 
 video_renderer_sw_libs= \
+	libs/video/renderer/librender_sw.la \
 	libs/models/libmodels_sw.la
 libs_video_renderer_vid_render_sw_la_LDFLAGS=		$(plugin_ldflags)
 libs_video_renderer_vid_render_sw_la_LIBADD=		$(video_renderer_sw_libs)
 libs_video_renderer_vid_render_sw_la_DEPENDENCIES=	$(video_renderer_sw_libs)
 libs_video_renderer_vid_render_sw_la_SOURCES=\
 	$(video_renderer_common_sources) \
-	libs/video/renderer/vid_render_sw.c \
+	libs/video/renderer/vid_render_sw.c
+
+libs_video_renderer_librender_sw_la_SOURCES = \
 	libs/video/renderer/sw/d_copy.S \
 	libs/video/renderer/sw/d_draw.S \
 	libs/video/renderer/sw/d_edge.c \
@@ -170,13 +191,16 @@ libs_video_renderer_vid_render_sw_la_SOURCES=\
 	libs/video/renderer/sw/vid_common_sw.c
 
 video_renderer_sw32_libs= \
+	libs/video/renderer/librender_sw32.la \
 	libs/models/libmodels_sw.la
 libs_video_renderer_vid_render_sw32_la_LDFLAGS=		$(plugin_ldflags)
 libs_video_renderer_vid_render_sw32_la_LIBADD=		$(video_renderer_sw32_libs)
 libs_video_renderer_vid_render_sw32_la_DEPENDENCIES=$(video_renderer_sw32_libs)
 libs_video_renderer_vid_render_sw32_la_SOURCES=\
 	$(video_renderer_common_sources) \
-	libs/video/renderer/vid_render_sw32.c \
+	libs/video/renderer/vid_render_sw32.c
+
+libs_video_renderer_librender_sw32_la_SOURCES = \
 	libs/video/renderer/sw32/d_edge.c \
 	libs/video/renderer/sw32/d_fill.c \
 	libs/video/renderer/sw32/d_init.c \
@@ -213,13 +237,16 @@ renderpass_src = libs/video/renderer/vulkan/deferred.plist
 renderpass_gen = libs/video/renderer/vulkan/deferred.plc
 
 video_renderer_vulkan_libs = \
+	libs/video/renderer/librender_vulkan.la \
 	libs/models/libmodels_vulkan.la
 libs_video_renderer_vid_render_vulkan_la_LDFLAGS=       $(plugin_ldflags)
 libs_video_renderer_vid_render_vulkan_la_LIBADD=        $(video_renderer_vulkan_libs)
 libs_video_renderer_vid_render_vulkan_la_DEPENDENCIES=$(video_renderer_vulkan_libs)
 libs_video_renderer_vid_render_vulkan_la_SOURCES = \
 	$(video_renderer_common_sources) \
-	libs/video/renderer/vid_render_vulkan.c \
+	libs/video/renderer/vid_render_vulkan.c
+
+libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/barrier.c \
 	libs/video/renderer/vulkan/buffer.c \
 	libs/video/renderer/vulkan/command.c \
