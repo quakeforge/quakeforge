@@ -9,6 +9,7 @@
 
 #include "QF/simd/vec4d.h"
 #include "QF/simd/vec4f.h"
+#include "QF/simd/mat4f.h"
 
 #define right   { 1, 0, 0 }
 #define forward { 0, 1, 0 }
@@ -24,6 +25,22 @@
 #define nup      {  0,  0, -1 }
 #define none     { -1, -1, -1, -1 }
 #define nqident  {  0,  0,  0, -1 }
+
+#define identity \
+	{	{ 1, 0, 0, 0 }, \
+		{ 0, 1, 0, 0 }, \
+		{ 0, 0, 1, 0 }, \
+		{ 0, 0, 0, 1 } }
+#define rotate120 \
+	{	{ 0, 1, 0, 0 }, \
+		{ 0, 0, 1, 0 }, \
+		{ 1, 0, 0, 0 }, \
+		{ 0, 0, 0, 1 } }
+#define rotate240 \
+	{	{ 0, 0, 1, 0 }, \
+		{ 1, 0, 0, 0 }, \
+		{ 0, 1, 0, 0 }, \
+		{ 0, 0, 0, 1 } }
 
 #define s05 0.70710678118654757
 
@@ -42,6 +59,22 @@ typedef  struct {
 	vec4f_t     expect;
 	vec4f_t     ulp_errors;
 } vec4f_test_t;
+
+typedef  struct {
+	void   (*op) (mat4f_t c, const mat4f_t a, const mat4f_t b);
+	mat4f_t     a;
+	mat4f_t     b;
+	mat4f_t     expect;
+	mat4f_t     ulp_errors;
+} mat4f_test_t;
+
+typedef  struct {
+	vec4f_t   (*op) (const mat4f_t a, vec4f_t b);
+	mat4f_t     a;
+	vec4f_t     b;
+	vec4f_t     expect;
+	vec4f_t     ulp_errors;
+} mv4f_test_t;
 
 static vec4d_t tvtruncd (vec4d_t v, vec4d_t ignore)
 {
@@ -314,6 +347,26 @@ static vec4f_test_t vec4f_tests[] = {
 };
 #define num_vec4f_tests (sizeof (vec4f_tests) / (sizeof (vec4f_tests[0])))
 
+static mat4f_test_t mat4f_tests[] = {
+	{ mmulf, identity, identity, identity },
+	{ mmulf, rotate120, identity, rotate120 },
+	{ mmulf, identity, rotate120, rotate120 },
+	{ mmulf, rotate120, rotate120, rotate240 },
+	{ mmulf, rotate120, rotate240, identity },
+	{ mmulf, rotate240, rotate120, identity },
+};
+#define num_mat4f_tests (sizeof (mat4f_tests) / (sizeof (mat4f_tests[0])))
+
+static mv4f_test_t mv4f_tests[] = {
+	{ mvmulf, identity, { 1, 0, 0, 0 }, { 1, 0, 0, 0 } },
+	{ mvmulf, identity, { 0, 1, 0, 0 }, { 0, 1, 0, 0 } },
+	{ mvmulf, identity, { 0, 0, 1, 0 }, { 0, 0, 1, 0 } },
+	{ mvmulf, identity, { 0, 0, 0, 1 }, { 0, 0, 0, 1 } },
+	{ mvmulf, rotate120, { 1, 2, 3, 4 }, { 3, 1, 2, 4 } },
+	{ mvmulf, rotate240, { 1, 2, 3, 4 }, { 2, 3, 1, 4 } },
+};
+#define num_mv4f_tests (sizeof (mv4f_tests) / (sizeof (mv4f_tests[0])))
+
 static int
 run_vec4d_tests (void)
 {
@@ -326,7 +379,7 @@ run_vec4d_tests (void)
 		vec4l_t     res = result != expect;
 		if (res[0] || res[1] || res[2] || res[3]) {
 			ret |= 1;
-			printf ("\nrun_vec4d_tests\n");
+			printf ("\nrun_vec4d_tests %zd\n", i);
 			printf ("a: " VEC4D_FMT "\n", VEC4_EXP(test->a));
 			printf ("b: " VEC4D_FMT "\n", VEC4_EXP(test->b));
 			printf ("r: " VEC4D_FMT "\n", VEC4_EXP(result));
@@ -351,8 +404,92 @@ run_vec4f_tests (void)
 		vec4i_t     res = result != expect;
 		if (res[0] || res[1] || res[2] || res[3]) {
 			ret |= 1;
-			printf ("\nrun_vec4f_tests\n");
+			printf ("\nrun_vec4f_tests %zd\n", i);
 			printf ("a: " VEC4F_FMT "\n", VEC4_EXP(test->a));
+			printf ("b: " VEC4F_FMT "\n", VEC4_EXP(test->b));
+			printf ("r: " VEC4F_FMT "\n", VEC4_EXP(result));
+			printf ("t: " VEC4I_FMT "\n", VEC4_EXP(res));
+			printf ("E: " VEC4F_FMT "\n", VEC4_EXP(expect));
+			printf ("e: " VEC4F_FMT "\n", VEC4_EXP(test->expect));
+			printf ("u: " VEC4F_FMT "\n", VEC4_EXP(test->ulp_errors));
+		}
+	}
+	return ret;
+}
+
+static int
+run_mat4f_tests (void)
+{
+	int         ret = 0;
+
+	for (size_t i = 0; i < num_mat4f_tests; i++) {
+		__auto_type test = &mat4f_tests[i];
+		mat4f_t     result;
+		mat4f_t     expect;
+		mat4i_t     res = {};
+
+		test->op (result, test->a, test->b);
+		maddf (expect, test->expect, test->ulp_errors);
+
+		int         fail = 0;
+		for (int j = 0; j < 4; j++) {
+			res[j] = result[j] != expect[j];
+			fail |= res[j][0] || res[j][1] || res[j][2] || res[j][3];
+		}
+		if (fail) {
+			ret |= 1;
+			printf ("\nrun_mat4f_tests %zd\n", i);
+			printf ("a: " VEC4F_FMT "\n", MAT4_ROW(test->a, 0));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(test->a, 1));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(test->a, 2));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(test->a, 3));
+			printf ("b: " VEC4F_FMT "\n", MAT4_ROW(test->b, 0));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(test->b, 1));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(test->b, 2));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(test->b, 3));
+			printf ("r: " VEC4F_FMT "\n", MAT4_ROW(result, 0));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(result, 1));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(result, 2));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(result, 3));
+			printf ("t: " VEC4I_FMT "\n", MAT4_ROW(res, 0));
+			printf ("   " VEC4I_FMT "\n", MAT4_ROW(res, 1));
+			printf ("   " VEC4I_FMT "\n", MAT4_ROW(res, 2));
+			printf ("   " VEC4I_FMT "\n", MAT4_ROW(res, 3));
+			printf ("E: " VEC4F_FMT "\n", MAT4_ROW(expect, 0));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(expect, 1));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(expect, 2));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(expect, 3));
+			printf ("e: " VEC4F_FMT "\n", MAT4_ROW(test->expect, 0));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(test->expect, 1));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(test->expect, 2));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(test->expect, 3));
+			printf ("u: " VEC4F_FMT "\n", MAT4_ROW(test->ulp_errors, 0));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(test->ulp_errors, 1));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(test->ulp_errors, 2));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(test->ulp_errors, 3));
+		}
+	}
+	return ret;
+}
+
+static int
+run_mv4f_tests (void)
+{
+	int         ret = 0;
+
+	for (size_t i = 0; i < num_mv4f_tests; i++) {
+		__auto_type test = &mv4f_tests[i];
+		vec4f_t     result = test->op (test->a, test->b);
+		vec4f_t     expect = test->expect + test->ulp_errors;
+		vec4i_t     res = result != expect;
+
+		if (res[0] || res[1] || res[2] || res[3]) {
+			ret |= 1;
+			printf ("\nrun_mat4f_tests %zd\n", i);
+			printf ("a: " VEC4F_FMT "\n", MAT4_ROW(test->a, 0));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(test->a, 1));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(test->a, 2));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(test->a, 3));
 			printf ("b: " VEC4F_FMT "\n", VEC4_EXP(test->b));
 			printf ("r: " VEC4F_FMT "\n", VEC4_EXP(result));
 			printf ("t: " VEC4I_FMT "\n", VEC4_EXP(res));
@@ -370,5 +507,7 @@ main (void)
 	int         ret = 0;
 	ret |= run_vec4d_tests ();
 	ret |= run_vec4f_tests ();
+	ret |= run_mat4f_tests ();
+	ret |= run_mv4f_tests ();
 	return ret;
 }

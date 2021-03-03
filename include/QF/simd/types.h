@@ -82,4 +82,8 @@ VEC_TYPE (int, vec4i_t);
 #define VEC4I_FMT "[%d, %d, %d, %d]"
 #define VEC4_EXP(v) (v)[0], (v)[1], (v)[2], (v)[3]
 
+#define MAT4_ROW(m, r) (m)[0][r], (m)[1][r], (m)[2][r], (m)[3][r]
+
+typedef vec4f_t mat4f_t[4];
+typedef vec4i_t mat4i_t[4];
 #endif//__QF_simd_types_h
