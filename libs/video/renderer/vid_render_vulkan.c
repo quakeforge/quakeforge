@@ -118,8 +118,6 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 {
 	const VkSubpassContents subpassContents
 		= VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
-	static int count = 0;
-	static double startTime;
 	uint32_t imageIndex = 0;
 	qfv_device_t *device = vulkan_ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -199,16 +197,6 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 
 	vulkan_ctx->curFrame++;
 	vulkan_ctx->curFrame %= vulkan_ctx->frames.size;
-
-	if (++count >= 100) {
-		double currenTime = Sys_DoubleTime ();
-		double time = currenTime - startTime;
-		startTime = currenTime;
-		printf ("%d frames in %g s: %g fps         \r",
-				count, time, count / time);
-		fflush (stdout);
-		count = 0;
-	}
 }
 
 static void
