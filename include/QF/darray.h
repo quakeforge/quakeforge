@@ -100,7 +100,7 @@
 	\param array_size   The size of the array.
 	\param alloc		Allocator taking (obj, size) where obj is allocator
 						specific data (eg, a memory pool).
-	\param data			Additional data for the allocator.
+	\param obj			Additional data for the allocator.
 */
 #define DARRAY_ALLOCFIXED_OBJ(array_type, array_size, alloc, obj)		\
 	({																	\
