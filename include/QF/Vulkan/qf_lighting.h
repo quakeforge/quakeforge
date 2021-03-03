@@ -40,10 +40,12 @@ typedef struct qfv_light_s {
 	vec3_t      color;
 	float       intensity;
 	vec3_t      position;
-	int         radius;
+	float       radius;
 	vec3_t      direction;
 	float       cone;
 } qfv_light_t;
+
+typedef struct qfv_lightset_s DARRAY_TYPE (qfv_light_t) qfv_lightset_t;
 
 #define NUM_LIGHTS 128
 
@@ -51,7 +53,6 @@ typedef struct qfv_light_buffer_s {
 	int         lightCount;
 	qfv_light_t lights[NUM_LIGHTS] __attribute__((aligned(16)));
 } qfv_light_buffer_t;
-
 
 #define LIGHTING_BUFFER_INFOS 1
 #define LIGHTING_IMAGE_INFOS 4
@@ -73,6 +74,7 @@ typedef struct lightingctx_s {
 	VkPipeline   pipeline;
 	VkPipelineLayout layout;
 	VkDeviceMemory light_memory;
+	qfv_lightset_t lights;
 } lightingctx_t;
 
 struct vulkan_ctx_s;
@@ -80,5 +82,6 @@ struct vulkan_ctx_s;
 void Vulkan_Lighting_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Lighting_Shutdown (struct vulkan_ctx_s *ctx);
 void Vulkan_Lighting_Draw (struct vulkan_ctx_s *ctx);
+void Vulkan_LoadLights (const char *entity_data, struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_qf_lighting_h

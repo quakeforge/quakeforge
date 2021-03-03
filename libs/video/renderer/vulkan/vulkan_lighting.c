@@ -41,6 +41,10 @@
 
 #include "qfalloca.h"
 
+#include "QF/dstring.h"
+#include "QF/progs.h"
+#include "QF/qfplist.h"
+#include "QF/script.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
@@ -203,6 +207,8 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	lightingctx_t *lctx = calloc (1, sizeof (lightingctx_t));
 	ctx->lighting_context = lctx;
 
+	DARRAY_INIT (&lctx->lights, 16);
+
 	size_t      frames = ctx->frames.size;
 	DARRAY_INIT (&lctx->frames, frames);
 	DARRAY_RESIZE (&lctx->frames, frames);
@@ -295,6 +301,108 @@ Vulkan_Lighting_Shutdown (vulkan_ctx_t *ctx)
 	}
 	dfunc->vkFreeMemory (device->dev, lctx->light_memory, 0);
 	dfunc->vkDestroyPipeline (device->dev, lctx->pipeline, 0);
+	DARRAY_CLEAR (&lctx->lights);
 	free (lctx->frames.a);
 	free (lctx);
+}
+
+static void
+parse_light (qfv_light_t *light, const plitem_t *entity,
+			 const plitem_t *targets)
+{
+	const char *str;
+
+	if ((str = PL_String (PL_ObjectForKey (entity, "origin")))) {
+		sscanf (str, "%f %f %f", VectorExpandAddr (light->position));
+	}
+
+	light->cone = 1;
+	if ((str = PL_String (PL_ObjectForKey (entity, "target")))) {
+		vec3_t      position = {};
+		plitem_t   *target = PL_ObjectForKey (targets, str);
+		if (target) {
+			if ((str = PL_String (PL_ObjectForKey (target, "origin")))) {
+				sscanf (str, "%f %f %f", VectorExpandAddr (position));
+			}
+			VectorSubtract (position, light->position, light->direction);
+			VectorNormalize (light->direction);
+		}
+
+		float angle = 40;
+		if ((str = PL_String (PL_ObjectForKey (entity, "angle")))) {
+			angle = atof (str);
+		}
+		light->cone = -cos (angle * M_PI / 360); // half angle
+	}
+
+	light->intensity = 1;
+	if ((str = PL_String (PL_ObjectForKey (entity, "light")))
+		|| (str = PL_String (PL_ObjectForKey (entity, "_light")))) {
+		light->radius = atof (str);
+	}
+
+	VectorSet (1, 1, 1, light->color);
+}
+
+void
+Vulkan_LoadLights (const char *entity_data, vulkan_ctx_t *ctx)
+{
+	lightingctx_t *lctx = ctx->lighting_context;
+	plitem_t   *entities = 0;
+
+	lctx->lights.size = 0;
+
+	script_t   *script = Script_New ();
+	Script_Start (script, "ent data", entity_data);
+
+	if (Script_GetToken (script, 1)) {
+		if (strequal (script->token->str, "(")) {
+			// new style (plist) entity data
+			entities = PL_GetPropertyList (entity_data, &ctx->hashlinks);
+		} else {
+			// old style entity data
+			Script_UngetToken (script);
+			// FIXME ED_ConvertToPlist aborts if an error is encountered.
+			entities = ED_ConvertToPlist (script, 0, &ctx->hashlinks);
+		}
+	}
+	Script_Delete (script);
+
+	if (entities) {
+		plitem_t   *targets = PL_NewDictionary (&ctx->hashlinks);
+
+		// find all the targets so spotlights can be aimed
+		for (int i = 1; i < PL_A_NumObjects (entities); i++) {
+			plitem_t   *entity = PL_ObjectAtIndex (entities, i);
+			const char *targetname = PL_String (PL_ObjectForKey (entity,
+																 "targetname"));
+			if (targetname && !PL_ObjectForKey (targets, targetname)) {
+				PL_D_AddObject (targets, targetname, entity);
+			}
+		}
+
+		for (int i = 1; i < PL_A_NumObjects (entities); i++) {
+			plitem_t   *entity = PL_ObjectAtIndex (entities, i);
+			const char *classname = PL_String (PL_ObjectForKey (entity,
+																"classname"));
+			if (classname && strnequal (classname, "light", 5)) {
+				qfv_light_t light = {};
+
+				parse_light (&light, entity, targets);
+				printf ("[%g, %g, %g] %g, [%g %g %g] %g, [%g %g %g] %g\n",
+						VectorExpand (light.color), light.intensity,
+						VectorExpand (light.position), light.radius,
+						VectorExpand (light.direction), light.cone);
+				DARRAY_APPEND (&lctx->lights, light);
+			}
+		}
+		// targets does not own the objects, so need to remove them before
+		// freeing targets
+		for (int i = PL_D_NumKeys (targets); i-- > 0; ) {
+			PL_RemoveObjectForKey (targets, PL_KeyAtIndex (targets, i));
+		}
+		PL_Free (targets);
+		PL_Free (entities);
+	}
+	printf ("loaded %zd lights\n", lctx->lights.size);
 }

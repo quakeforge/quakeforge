@@ -9,7 +9,7 @@ struct LightData {
 	vec3        color;
 	float       intensity;
 	vec3        position;
-	int         radius;
+	float       radius;
 	vec3        direction;
 	float       cone;
 };

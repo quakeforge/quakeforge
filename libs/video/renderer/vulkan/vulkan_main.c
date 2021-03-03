@@ -49,6 +49,7 @@
 #include "QF/Vulkan/qf_alias.h"
 #include "QF/Vulkan/qf_bsp.h"
 //#include "QF/Vulkan/qf_iqm.h"
+#include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_particles.h"
@@ -217,6 +218,7 @@ Vulkan_NewMap (model_t *worldmodel, struct model_s **models, int num_models,
 	Vulkan_RegisterTextures (models, num_models, ctx);
 	Vulkan_BuildLightmaps (models, num_models, ctx);
 	Vulkan_BuildDisplayLists (models, num_models, ctx);
+	Vulkan_LoadLights (worldmodel->brush.entities, ctx);
 }
 
 /*void
