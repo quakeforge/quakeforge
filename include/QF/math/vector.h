@@ -176,6 +176,8 @@ extern const vec_t *const vec3_origin;
 
 //For printf etc
 #define VectorExpand(v) (v)[0], (v)[1], (v)[2]
+//For scanf etc
+#define VectorExpandAddr(v) &(v)[0], &(v)[1], &(v)[2]
 
 /*
  * VectorDistance, the distance between two points.
