@@ -24,8 +24,8 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef __expr_h
-#define __expr_h
+#ifndef __QF_expr_h
+#define __QF_expr_h
 
 #include <stdlib.h>
 
@@ -140,4 +140,4 @@ extern exprtype_t cexpr_plitem;
 extern binop_t cexpr_struct_binops[];
 extern binop_t cexpr_struct_pointer_binops[];
 
-#endif
+#endif//__QF_expr_h

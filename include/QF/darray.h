@@ -28,8 +28,10 @@
 
 */
 
-#ifndef __darray_h
-#define __darray_h
+#ifndef __QF_darray_h
+#define __QF_darray_h
+
+#include "QF/sys.h"
 
 /** \defgroup darray Dynamic Arrays
 	\ingroup utils
@@ -363,4 +365,4 @@
 
 ///@}
 
-#endif//__darray_h
+#endif//__QF_darray_h

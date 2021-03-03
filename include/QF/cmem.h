@@ -24,8 +24,8 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef __cmem_h
-#define __cmem_h
+#ifndef __QF_cmem_h
+#define __QF_cmem_h
 
 #include "QF/qtypes.h"
 
@@ -115,4 +115,4 @@ void delete_memsuper (memsuper_t *super);
 void *cmemalloc (memsuper_t *super, size_t size);
 void cmemfree (memsuper_t *super, void *mem);
 
-#endif//__cmem_h
+#endif//__QF_cmem_h
