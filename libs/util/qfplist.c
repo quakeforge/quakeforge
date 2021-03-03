@@ -132,11 +132,11 @@ init_quotables (void)
 		quotable_bitmap[*c / 8] &= ~(1 << (*c % 8));
 }
 
-static plitem_t *PL_ParsePropertyListItem (pldata_t *);
-static qboolean PL_SkipSpace (pldata_t *);
-static char *PL_ParseQuotedString (pldata_t *);
-static char *PL_ParseUnquotedString (pldata_t *);
-static char *PL_ParseData (pldata_t *, int *);
+static plitem_t *pl_parsepropertylistitem (pldata_t *);
+static qboolean pl_skipspace (pldata_t *);
+static char *pl_parsequotedstring (pldata_t *);
+static char *pl_parseunquotedstring (pldata_t *);
+static char *pl_parsedata (pldata_t *, int *);
 
 static const char *
 dict_get_key (const void *i, void *unused)
@@ -156,7 +156,7 @@ dict_free (void *i, void *unused)
 }
 
 static plitem_t *
-PL_NewItem (pltype_t type)
+pl_newitem (pltype_t type)
 {
 	plitem_t   *item = calloc (1, sizeof (plitem_t));
 	item->type = type;
@@ -166,7 +166,7 @@ PL_NewItem (pltype_t type)
 VISIBLE plitem_t *
 PL_NewDictionary (hashlink_t **hashlinks)
 {
-	plitem_t   *item = PL_NewItem (QFDictionary);
+	plitem_t   *item = pl_newitem (QFDictionary);
 	pldict_t   *dict = malloc (sizeof (pldict_t));
 	dict->tab = Hash_NewTable (1021, dict_get_key, dict_free, NULL, hashlinks);
 	DARRAY_INIT (&dict->keys, 8);
@@ -177,7 +177,7 @@ PL_NewDictionary (hashlink_t **hashlinks)
 VISIBLE plitem_t *
 PL_NewArray (void)
 {
-	plitem_t   *item = PL_NewItem (QFArray);
+	plitem_t   *item = pl_newitem (QFArray);
 	plarray_t  *array = calloc (1, sizeof (plarray_t));
 	item->data = array;
 	return item;
@@ -186,7 +186,7 @@ PL_NewArray (void)
 VISIBLE plitem_t *
 PL_NewData (void *data, size_t size)
 {
-	plitem_t   *item = PL_NewItem (QFBinary);
+	plitem_t   *item = pl_newitem (QFBinary);
 	plbinary_t *bin = malloc (sizeof (plbinary_t));
 	item->data = bin;
 	bin->data = data;
@@ -197,7 +197,7 @@ PL_NewData (void *data, size_t size)
 static plitem_t *
 new_string (char *str, int line)
 {
-	plitem_t   *item = PL_NewItem (QFString);
+	plitem_t   *item = pl_newitem (QFString);
 	item->data = str;
 	item->line = line;
 	return item;
@@ -215,6 +215,9 @@ PL_Free (plitem_t *item)
 	pldict_t   *dict;
 	plarray_t  *array;
 
+	if (!item) {
+		return;
+	}
 	switch (item->type) {
 		case QFDictionary:
 			dict = item->data;
@@ -252,51 +255,54 @@ PL_Free (plitem_t *item)
 VISIBLE size_t
 PL_BinarySize (const plitem_t *binary)
 {
-	plbinary_t *bin = (plbinary_t *) binary->data;
-
-	if (binary->type != QFBinary)
+	if (!binary || binary->type != QFBinary) {
 		return 0;
+	}
+
+	plbinary_t *bin = (plbinary_t *) binary->data;
 	return bin->size;
 }
 
 VISIBLE const void *
 PL_BinaryData (const plitem_t *binary)
 {
-	plbinary_t *bin = (plbinary_t *) binary->data;
-
-	if (binary->type != QFBinary)
+	if (!binary || binary->type != QFBinary) {
 		return 0;
+	}
+
+	plbinary_t *bin = (plbinary_t *) binary->data;
 	return bin->data;
 }
 
 VISIBLE const char *
 PL_String (const plitem_t *string)
 {
-	if (string->type != QFString)
+	if (!string || string->type != QFString) {
 		return NULL;
+	}
 	return string->data;
 }
 
 VISIBLE plitem_t *
 PL_ObjectForKey (const plitem_t *item, const char *key)
 {
-	pldict_t   *dict = (pldict_t *) item->data;
-	dictkey_t  *k;
-
-	if (item->type != QFDictionary)
+	if (!item || item->type != QFDictionary) {
 		return NULL;
+	}
 
-	k = (dictkey_t *) Hash_Find (dict->tab, key);
+	pldict_t   *dict = (pldict_t *) item->data;
+	dictkey_t  *k = (dictkey_t *) Hash_Find (dict->tab, key);
 	return k ? k->value : NULL;
 }
 
 VISIBLE const char *
 PL_KeyAtIndex (const plitem_t *item, int index)
 {
-	pldict_t   *dict = (pldict_t *) item->data;
-
-	if (item->type != QFDictionary)
+	if (!item || item->type != QFDictionary) {
 		return NULL;
+	}
+
+	pldict_t   *dict = (pldict_t *) item->data;
 	if (index < 0 || (size_t) index >= dict->keys.size) {
 		return NULL;
 	}
@@ -307,12 +313,13 @@ PL_KeyAtIndex (const plitem_t *item, int index)
 VISIBLE plitem_t *
 PL_RemoveObjectForKey (const plitem_t *item, const char *key)
 {
+	if (!item || item->type != QFDictionary) {
+		return NULL;
+	}
+
 	pldict_t   *dict = (pldict_t *) item->data;
 	dictkey_t  *k;
 	plitem_t   *value;
-
-	if (item->type != QFDictionary)
-		return NULL;
 
 	k = (dictkey_t *) Hash_Del (dict->tab, key);
 	if (!k)
@@ -332,12 +339,13 @@ PL_RemoveObjectForKey (const plitem_t *item, const char *key)
 VISIBLE plitem_t *
 PL_D_AllKeys (const plitem_t *item)
 {
+	if (!item || item->type != QFDictionary) {
+		return NULL;
+	}
+
 	pldict_t   *dict = (pldict_t *) item->data;
 	dictkey_t  *current;
 	plitem_t   *array;
-
-	if (item->type != QFDictionary)
-		return NULL;
 
 	if (!(array = PL_NewArray ()))
 		return NULL;
@@ -353,31 +361,34 @@ PL_D_AllKeys (const plitem_t *item)
 VISIBLE int
 PL_D_NumKeys (const plitem_t *item)
 {
-	pldict_t   *dict = (pldict_t *) item->data;
-	if (item->type != QFDictionary)
+	if (!item || item->type != QFDictionary) {
 		return 0;
+	}
+
+	pldict_t   *dict = (pldict_t *) item->data;
 	return Hash_NumElements (dict->tab);
 }
 
 VISIBLE plitem_t *
 PL_ObjectAtIndex (const plitem_t *array, int index)
 {
-	plarray_t  *arr = (plarray_t *) array->data;
-
-	if (array->type != QFArray)
+	if (!array || array->type != QFArray) {
 		return NULL;
+	}
 
+	plarray_t  *arr = (plarray_t *) array->data;
 	return index >= 0 && index < arr->numvals ? arr->values[index] : NULL;
 }
 
 VISIBLE qboolean
 PL_D_AddObject (plitem_t *item, const char *key, plitem_t *value)
 {
+	if (!item || item->type != QFDictionary || !value) {
+		return false;
+	}
+
 	pldict_t   *dict = (pldict_t *) item->data;
 	dictkey_t	*k;
-
-	if (item->type != QFDictionary)
-		return false;
 
 	if ((k = Hash_Find (dict->tab, key))) {
 		PL_Free ((plitem_t *) k->value);
@@ -400,10 +411,11 @@ PL_D_AddObject (plitem_t *item, const char *key, plitem_t *value)
 VISIBLE qboolean
 PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index)
 {
-	plarray_t  *arr;
-
-	if (array->type != QFArray)
+	if (!array || array->type != QFArray || !item) {
 		return false;
+	}
+
+	plarray_t  *arr;
 
 	arr = (plarray_t *)array->data;
 
@@ -442,19 +454,21 @@ PL_A_AddObject (plitem_t *array, plitem_t *item)
 VISIBLE int
 PL_A_NumObjects (const plitem_t *array)
 {
-	if (array->type != QFArray)
+	if (!array || array->type != QFArray) {
 		return 0;
+	}
 	return ((plarray_t *) array->data)->numvals;
 }
 
 VISIBLE plitem_t *
 PL_RemoveObjectAtIndex (plitem_t *array, int index)
 {
+	if (!array || array->type != QFArray) {
+		return 0;
+	}
+
 	plarray_t  *arr;
 	plitem_t   *item;
-
-	if (array->type != QFArray)
-		return 0;
 
 	arr = (plarray_t *)array->data;
 
@@ -472,7 +486,7 @@ PL_RemoveObjectAtIndex (plitem_t *array, int index)
 }
 
 static qboolean
-PL_SkipSpace (pldata_t *pl)
+pl_skipspace (pldata_t *pl)
 {
 	while (pl->pos < pl->end) {
 		char	c = pl->ptr[pl->pos];
@@ -545,7 +559,7 @@ make_byte (byte h, byte l)
 }
 
 static char *
-PL_ParseData (pldata_t *pl, int *len)
+pl_parsedata (pldata_t *pl, int *len)
 {
 	unsigned    start = ++pl->pos;
 	int         nibbles = 0, i;
@@ -578,7 +592,7 @@ PL_ParseData (pldata_t *pl, int *len)
 }
 
 static char *
-PL_ParseQuotedString (pldata_t *pl)
+pl_parsequotedstring (pldata_t *pl)
 {
 	unsigned int	start = ++pl->pos;
 	unsigned int	escaped = 0;
@@ -731,7 +745,7 @@ PL_ParseQuotedString (pldata_t *pl)
 }
 
 static char *
-PL_ParseUnquotedString (pldata_t *pl)
+pl_parseunquotedstring (pldata_t *pl)
 {
 	unsigned int	start = pl->pos;
 	char			*str;
@@ -747,11 +761,11 @@ PL_ParseUnquotedString (pldata_t *pl)
 }
 
 static plitem_t *
-PL_ParsePropertyListItem (pldata_t *pl)
+pl_parsepropertylistitem (pldata_t *pl)
 {
 	plitem_t	*item = NULL;
 
-	if (!PL_SkipSpace (pl))
+	if (!pl_skipspace (pl))
 		return NULL;
 
 	switch (pl->ptr[pl->pos]) {
@@ -762,16 +776,16 @@ PL_ParsePropertyListItem (pldata_t *pl)
 
 		pl->pos++;
 
-		while (PL_SkipSpace (pl) && pl->ptr[pl->pos] != '}') {
+		while (pl_skipspace (pl) && pl->ptr[pl->pos] != '}') {
 			plitem_t	*key;
 			plitem_t	*value;
 
-			if (!(key = PL_ParsePropertyListItem (pl))) {
+			if (!(key = pl_parsepropertylistitem (pl))) {
 				PL_Free (item);
 				return NULL;
 			}
 
-			if (!(PL_SkipSpace (pl))) {
+			if (!(pl_skipspace (pl))) {
 				PL_Free (key);
 				PL_Free (item);
 				return NULL;
@@ -793,13 +807,13 @@ PL_ParsePropertyListItem (pldata_t *pl)
 			pl->pos++;
 
 			// If there is no value, lose the key
-			if (!(value = PL_ParsePropertyListItem (pl))) {
+			if (!(value = pl_parsepropertylistitem (pl))) {
 				PL_Free (key);
 				PL_Free (item);
 				return NULL;
 			}
 
-			if (!(PL_SkipSpace (pl))) {
+			if (!(pl_skipspace (pl))) {
 				PL_Free (key);
 				PL_Free (value);
 				PL_Free (item);
@@ -842,15 +856,15 @@ PL_ParsePropertyListItem (pldata_t *pl)
 
 		pl->pos++;
 
-		while (PL_SkipSpace (pl) && pl->ptr[pl->pos] != ')') {
+		while (pl_skipspace (pl) && pl->ptr[pl->pos] != ')') {
 			plitem_t	*value;
 
-			if (!(value = PL_ParsePropertyListItem (pl))) {
+			if (!(value = pl_parsepropertylistitem (pl))) {
 				PL_Free (item);
 				return NULL;
 			}
 
-			if (!(PL_SkipSpace (pl))) {
+			if (!(pl_skipspace (pl))) {
 				PL_Free (value);
 				PL_Free (item);
 				return NULL;
@@ -879,7 +893,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 
 	case '<': {
 		int len;
-		char *str = PL_ParseData (pl, &len);
+		char *str = pl_parsedata (pl, &len);
 
 		if (!str) {
 			return NULL;
@@ -892,7 +906,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 
 	case '"': {
 		int line = pl->line;
-		char *str = PL_ParseQuotedString (pl);
+		char *str = pl_parsequotedstring (pl);
 
 		if (!str) {
 			return NULL;
@@ -903,7 +917,7 @@ PL_ParsePropertyListItem (pldata_t *pl)
 
 	default: {
 		int line = pl->line;
-		char *str = PL_ParseUnquotedString (pl);
+		char *str = pl_parseunquotedstring (pl);
 
 		if (!str) {
 			return NULL;
@@ -931,7 +945,7 @@ PL_GetPropertyList (const char *string, hashlink_t **hashlinks)
 	pl->va_ctx = va_create_context (4);
 	pl->hashlinks = hashlinks;
 
-	if ((newpl = PL_ParsePropertyListItem (pl))) {
+	if ((newpl = pl_parsepropertylistitem (pl))) {
 		va_destroy_context (pl->va_ctx);
 		free (pl);
 		return newpl;
@@ -1111,10 +1125,12 @@ PL_WritePropertyList (const plitem_t *pl)
 {
 	dstring_t  *dstr = dstring_newstr ();
 
-	if (!quotable_bitmap[0])
-		init_quotables ();
-	write_item (dstr, pl, 0);
-	write_string_len (dstr, "\n", 1);
+	if (pl) {
+		if (!quotable_bitmap[0])
+			init_quotables ();
+		write_item (dstr, pl, 0);
+		write_string_len (dstr, "\n", 1);
+	}
 	return dstring_freeze (dstr);
 }
 

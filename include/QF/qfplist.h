@@ -136,14 +136,14 @@ char *PL_WritePropertyList (const plitem_t *pl);
 
 /** Retrieve the type of an object.
 
-	\param item The object
+	\param item The object. Must not be null.
 	\return the type of the object
 */
 pltype_t PL_Type (const plitem_t *item) __attribute__((pure));
 
 /** Retrieve the line number of an object.
 
-	\param item The object
+	\param item The object. Must not be null.
 	\return the line number on which the object began, or 0 if not from a
 			string
 */
@@ -152,15 +152,16 @@ int PL_Line (const plitem_t *item) __attribute__((pure));
 /** Retrieve the data size from a binary object.
 
 	\param binary The binary object
-	\return the size in bytes of the binary object 0 if binary isn't a binary
-	object.
+	\return the size in bytes of the binary object 0 if \a binary isn't a
+	binary object (includes if \a binary is null).
 */
 size_t PL_BinarySize (const plitem_t *binary) __attribute__((pure));
 
 /** Retrieve the data from a binary object.
 
 	\param binary The binary object
-	\return pointer to the actual data or NULL if binary isn't a binary object.
+	\return pointer to the actual data or NULL if \b binary isn't a binary
+	object (includes if \a binary is null).
 	\note	You are NOT responsible for freeing the returned object. It will
 	be destroyed when its container is.
 */
@@ -170,7 +171,7 @@ const void *PL_BinaryData (const plitem_t *binary) __attribute__((pure));
 
 	\param string The string object
 	\return pointer to the actual string value or NULL if string isn't a
-	string.
+	string (includes if \a string is null).
 	\note	You are NOT responsible for freeing the returned object. It will
 	be destroyed when its container is.
 */
@@ -180,8 +181,8 @@ const char *PL_String (const plitem_t *string) __attribute__((pure));
 
 	\param dict	The dictionary to retrieve a value from
 	\param key	The unique key associated with the value
-	\return the value associated with the key, or NULL if not found or dict
-	isn't a dictionary.
+	\return the value associated with the key, or NULL if not found or \a dict
+	isn't a dictionary (includes if \a dict is null).
 	\note	You are NOT responsible for freeing the returned object. It will
 	be destroyed when its container is.
 */
@@ -191,8 +192,8 @@ plitem_t *PL_ObjectForKey (const plitem_t *dict, const char *key);
 
 	\param dict	The Dictionary to remove the value from
 	\param key	The unique key associated with the value to be removed
-	\return the value associated with the key, or NULL if not found or dict
-	isn't a dictionary.
+	\return the value associated with the key, or NULL if not found or \a dict
+	isn't a dictionary (includes if \a dict is null).
 	\note	You are responsible for freeing the returned object.
 */
 plitem_t *PL_RemoveObjectForKey (const plitem_t *dict, const char *key);
@@ -202,19 +203,18 @@ plitem_t *PL_RemoveObjectForKey (const plitem_t *dict, const char *key);
 	\param dict		The dictionary to get the key from
 	\param index	The index of the key
 	\return the key at the specified index, or NULL if index is out of range or
-	dict is not a dictionaly
-	isn't an array.
+	dict is not a dictionary (includes if \a dict is null).
 	\note	You are NOT responsible for freeing the returned object. It will
 	be destroyed when its container is.
 */
-const char *PL_KeyAtIndex (const plitem_t *array, int index) __attribute__((pure));
+const char *PL_KeyAtIndex (const plitem_t *dict, int index) __attribute__((pure));
 
 /** Retrieve a value from an array object.
 
 	\param array	The array to get the value from
 	\param index	The index within the array to retrieve
-	\return the value at the specified index, or NULL if index is out of range
-	or array is not an array.
+	\return the value at the specified index, or NULL if \a index is out of
+	range or \a array is not an array (includes in \a array is null).
 	\note	You are NOT responsible for freeing the returned object. It will
 	be destroyed when its container is.
 */
@@ -223,7 +223,8 @@ plitem_t *PL_ObjectAtIndex (const plitem_t *array, int index) __attribute__((pur
 /** Retrieve a list of all keys in a dictionary.
 
 	\param dict The dictionary to list
-	\return an Array containing Strings or NULL if dict isn't a dictionary
+	\return an Array containing Strings or NULL if \a dict isn't a dictionary
+	(includes if \a dict is null).
 	\note You are responsible for freeing this array.
 */
 plitem_t *PL_D_AllKeys (const plitem_t *dict);
@@ -232,7 +233,8 @@ plitem_t *PL_D_AllKeys (const plitem_t *dict);
 
 	\param dict The dictionary to get the number of keys of.
 
-	\return Returns the number of keys in the dictionary.
+	\return Returns the number of keys in the dictionary or 0 if \a dict isn't
+	a dictionary (includes if \a dict is null).
 */
 int PL_D_NumKeys (const plitem_t *dict) __attribute__((pure));
 
@@ -242,7 +244,8 @@ int PL_D_NumKeys (const plitem_t *dict) __attribute__((pure));
 	\param key The key of the key/value pair to be added to the dictionary
 	\param value The value of the key/value pair to be added to the dictionary
 
-	\return true on success, false on failure
+	\return true on success, false on failure (\a dict is null or not a
+	dictionary)
 
 	\note the dictionary becomes the owner of the value.
 */
@@ -253,7 +256,8 @@ qboolean PL_D_AddObject (plitem_t *dict, const char *key, plitem_t *value);
 	\param array The array to which the item will be added
 	\param item The item to be added to the array
 
-	\return true on success, false on failure
+	\return true on success, false on failure (\a array is null or not an
+	array)
 
 	\note the array becomes the owner of the added item.
 */
@@ -263,7 +267,8 @@ qboolean PL_A_AddObject (plitem_t *array, plitem_t *item);
 
 	\param array The array from which to get the number of objects
 
-	\return number of objects in the array
+	\return number of objects in the array or 0 if \a array is null or not
+	an array.
 */
 int PL_A_NumObjects (const plitem_t *array) __attribute__((pure));
 
@@ -273,7 +278,8 @@ int PL_A_NumObjects (const plitem_t *array) __attribute__((pure));
 	\param item The item to be added to the array
 	\param index The location at which to insert the item into the array
 
-	\return true on success, false on failure
+	\return true on success, false on failure (\a array is null or not an
+	array).
 
 	\note the array becomes the owner of the added item.
 */
@@ -285,7 +291,7 @@ qboolean PL_A_InsertObjectAtIndex (plitem_t *array, plitem_t *item, int index);
 	\param array	The array from which to remove the value
 	\param index	The index within the array to remove
 	\return the value associated with the index, or NULL if not found or array
-	isn't an array.
+	is noll or an array.
 	\note	You are responsible for freeing the returned object.
 */
 plitem_t *PL_RemoveObjectAtIndex (plitem_t *array, int index);
@@ -323,7 +329,7 @@ plitem_t *PL_NewString (const char *str);
 /** Free a property list object.
 
 	This function takes care of freeing any referenced property list data, so
-	call it only on top-level objects.
+	call it only on top-level objects. Safe to call with a null argument.
 
 	\param item the property list object to be freed
 */
