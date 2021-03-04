@@ -7,6 +7,7 @@
 #include <string.h>
 #include <unistd.h>
 
+#include "QF/mathlib.h"
 #include "QF/simd/vec4d.h"
 #include "QF/simd/vec4f.h"
 #include "QF/simd/mat4f.h"
@@ -75,6 +76,13 @@ typedef  struct {
 	vec4f_t     expect;
 	vec4f_t     ulp_errors;
 } mv4f_test_t;
+
+typedef  struct {
+	void   (*op) (mat4f_t m, vec4f_t q);
+	vec4f_t     q;
+	mat4f_t     expect;
+	mat4f_t     ulp_errors;
+} mq4f_test_t;
 
 static vec4d_t tvtruncd (vec4d_t v, vec4d_t ignore)
 {
@@ -367,6 +375,20 @@ static mv4f_test_t mv4f_tests[] = {
 };
 #define num_mv4f_tests (sizeof (mv4f_tests) / (sizeof (mv4f_tests[0])))
 
+// expect filled in using non-simd QuatToMatrix (has its own tests)
+static mq4f_test_t mq4f_tests[] = {
+	{ mat4fquat, { 0, 0, 0, 1 } },
+	{ mat4fquat, {  0.5,  0.5,  0.5, 0.5 } },
+	{ mat4fquat, {  0.5,  0.5, -0.5, 0.5 } },
+	{ mat4fquat, {  0.5, -0.5,  0.5, 0.5 } },
+	{ mat4fquat, {  0.5, -0.5, -0.5, 0.5 } },
+	{ mat4fquat, { -0.5,  0.5,  0.5, 0.5 } },
+	{ mat4fquat, { -0.5,  0.5, -0.5, 0.5 } },
+	{ mat4fquat, { -0.5, -0.5,  0.5, 0.5 } },
+	{ mat4fquat, { -0.5, -0.5, -0.5, 0.5 } },
+};
+#define num_mq4f_tests (sizeof (mq4f_tests) / (sizeof (mq4f_tests[0])))
+
 static int
 run_vec4d_tests (void)
 {
@@ -485,7 +507,7 @@ run_mv4f_tests (void)
 
 		if (res[0] || res[1] || res[2] || res[3]) {
 			ret |= 1;
-			printf ("\nrun_mat4f_tests %zd\n", i);
+			printf ("\nrun_mv4f_tests %zd\n", i);
 			printf ("a: " VEC4F_FMT "\n", MAT4_ROW(test->a, 0));
 			printf ("   " VEC4F_FMT "\n", MAT4_ROW(test->a, 1));
 			printf ("   " VEC4F_FMT "\n", MAT4_ROW(test->a, 2));
@@ -501,6 +523,63 @@ run_mv4f_tests (void)
 	return ret;
 }
 
+static int
+run_mq4f_tests (void)
+{
+	int         ret = 0;
+
+	for (size_t i = 0; i < num_mq4f_tests; i++) {
+		__auto_type test = &mq4f_tests[i];
+		quat_t      q;
+		vec_t       m[16];
+		memcpy (q, &test->q, sizeof (quat_t));
+		QuatToMatrix (q, m, 1, 1);
+		memcpy (&test->expect, m, sizeof (mat4f_t));
+	}
+	for (size_t i = 0; i < num_mq4f_tests; i++) {
+		__auto_type test = &mq4f_tests[i];
+		mat4f_t     result;
+		mat4f_t     expect;
+		mat4i_t     res = {};
+
+		test->op (result, test->q);
+		maddf (expect, test->expect, test->ulp_errors);
+		memcpy (expect, (void *) &test->expect, sizeof (mat4f_t));
+
+		int         fail = 0;
+		for (int j = 0; j < 4; j++) {
+			res[j] = result[j] != expect[j];
+			fail |= res[j][0] || res[j][1] || res[j][2] || res[j][3];
+		}
+		if (fail) {
+			ret |= 1;
+			printf ("\nrun_mq4f_tests %zd\n", i);
+			printf ("q: " VEC4F_FMT "\n", VEC4_EXP(test->q));
+			printf ("r: " VEC4F_FMT "\n", MAT4_ROW(result, 0));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(result, 1));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(result, 2));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(result, 3));
+			printf ("t: " VEC4I_FMT "\n", MAT4_ROW(res, 0));
+			printf ("   " VEC4I_FMT "\n", MAT4_ROW(res, 1));
+			printf ("   " VEC4I_FMT "\n", MAT4_ROW(res, 2));
+			printf ("   " VEC4I_FMT "\n", MAT4_ROW(res, 3));
+			printf ("E: " VEC4F_FMT "\n", MAT4_ROW(expect, 0));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(expect, 1));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(expect, 2));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(expect, 3));
+			printf ("e: " VEC4F_FMT "\n", MAT4_ROW(test->expect, 0));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(test->expect, 1));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(test->expect, 2));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(test->expect, 3));
+			printf ("u: " VEC4F_FMT "\n", MAT4_ROW(test->ulp_errors, 0));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(test->ulp_errors, 1));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(test->ulp_errors, 2));
+			printf ("   " VEC4F_FMT "\n", MAT4_ROW(test->ulp_errors, 3));
+		}
+	}
+	return ret;
+}
+
 int
 main (void)
 {
@@ -509,5 +588,6 @@ main (void)
 	ret |= run_vec4f_tests ();
 	ret |= run_mat4f_tests ();
 	ret |= run_mv4f_tests ();
+	ret |= run_mq4f_tests ();
 	return ret;
 }

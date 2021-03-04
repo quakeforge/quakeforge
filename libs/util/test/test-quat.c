@@ -362,6 +362,31 @@ fail:
 	return 0;
 }
 
+static int
+test_quat_mat2(const quat_t q, const quat_t expect)
+{
+	int         i;
+	vec_t       m[9];
+
+	QuatToMatrix (q, m, 0, 1);
+	Mat3Transpose (m, m);
+
+	for (i = 0; i < 9; i++)
+		if (m[i] != expect[i])	// exact tests here
+			goto fail;
+	return 1;
+fail:
+	printf ("\ntest_quat_mat\n");
+	printf ("%11.9g %11.9g %11.9g %11.9g\n", QuatExpand (q));
+	printf ("%11.9g %11.9g %11.9g   %11.9g %11.9g %11.9g\n",
+			VectorExpand (m + 0), VectorExpand (expect + 0));
+	printf ("%11.9g %11.9g %11.9g   %11.9g %11.9g %11.9g\n",
+			VectorExpand (m + 3), VectorExpand (expect + 3));
+	printf ("%11.9g %11.9g %11.9g   %11.9g %11.9g %11.9g\n",
+			VectorExpand (m + 6), VectorExpand (expect + 6));
+	return 0;
+}
+
 int
 main (int argc, const char **argv)
 {
@@ -404,6 +429,13 @@ main (int argc, const char **argv)
 		vec_t      *q = quat_mat_tests[i].q;
 		vec_t      *expect = quat_mat_tests[i].expect;
 		if (!test_quat_mat (q, expect))
+			res = 1;
+	}
+
+	for (i = 0; i < num_quat_mat_tests; i ++) {
+		vec_t      *q = quat_mat_tests[i].q;
+		vec_t      *expect = quat_mat_tests[i].expect;
+		if (!test_quat_mat2 (q, expect))
 			res = 1;
 	}
 
