@@ -33,6 +33,8 @@
 #include "QF/model.h"
 #include "QF/render.h"
 #include "QF/vid.h"
+#include "QF/simd/mat4f.h"
+#include "QF/simd/vec4f.h"
 #include "r_shared.h"
 
 #define ALIAS_BASE_SIZE_RATIO		(1.0 / 11.0)
@@ -136,8 +138,8 @@ extern qboolean	r_cache_thrash;	// set if thrashing the surface cache
 extern	qboolean		insubmodel;
 extern	vec3_t			r_worldmodelorg;
 
-extern mat4_t   glsl_projection;
-extern mat4_t   glsl_view;
+extern mat4f_t   glsl_projection;
+extern mat4f_t   glsl_view;
 
 void R_SetFrustum (void);
 

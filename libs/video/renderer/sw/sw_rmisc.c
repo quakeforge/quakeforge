@@ -244,7 +244,7 @@ R_SetupFrame (void)
 	R_SetFrustum ();
 
 	// current viewleaf
-	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.model);
+	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.renderer.model);
 
 	r_dowarpold = r_dowarp;
 	r_dowarp = r_waterwarp->int_val && (r_viewleaf->contents <=

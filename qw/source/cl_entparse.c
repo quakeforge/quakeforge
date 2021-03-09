@@ -482,7 +482,7 @@ CL_ParsePlayerinfo (void)
 		bits = MSG_ReadByte (net_message);
 		if (bits & PF_ALPHA) {
 			val = MSG_ReadByte (net_message);
-			ent->colormod[3] = val / 255.0;
+			ent->renderer.colormod[3] = val / 255.0;
 		}
 		if (bits & PF_SCALE) {
 			val = MSG_ReadByte (net_message);
@@ -505,7 +505,7 @@ CL_ParsePlayerinfo (void)
 				g = (float) ((val >> 2) & 7) * (1.0 / 7.0);
 				b = (float) (val & 3) * (1.0 / 3.0);
 			}
-			VectorSet (r, g, b, ent->colormod);
+			VectorSet (r, g, b, ent->renderer.colormod);
 		}
 		if (bits & PF_FRAME2) {
 			state->pls.frame |= MSG_ReadByte (net_message) << 8;

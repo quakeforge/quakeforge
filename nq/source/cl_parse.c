@@ -433,7 +433,7 @@ CL_ParseServerInfo (void)
 	}
 
 	// local state
-	cl_entities[0].model = cl.worldmodel = cl.model_precache[1];
+	cl_entities[0].renderer.model = cl.worldmodel = cl.model_precache[1];
 	if (!centerprint)
 		centerprint = dstring_newstr ();
 	else
@@ -766,9 +766,9 @@ CL_ParseClientdata (void)
 		cl.stats[STAT_WEAPONFRAME] |= MSG_ReadByte (net_message) << 8;
 	if (bits & SU_WEAPONALPHA) {
 		byte alpha = MSG_ReadByte (net_message);
-		cl.viewent.colormod[3] = ENTALPHA_DECODE (alpha);
+		cl.viewent.renderer.colormod[3] = ENTALPHA_DECODE (alpha);
 	} else {
-		cl.viewent.colormod[3] = 1.0;
+		cl.viewent.renderer.colormod[3] = 1.0;
 	}
 }
 
@@ -785,12 +785,12 @@ CL_ParseStatic (int version)
 
 	// copy it to the current state
 	//FIXME alpha & lerp
-	ent->model = cl.model_precache[baseline.modelindex];
-	ent->frame = baseline.frame;
-	ent->skin = 0;
-	ent->skinnum = baseline.skinnum;
-	VectorCopy (ent_colormod[baseline.colormod], ent->colormod);
-	ent->colormod[3] = ENTALPHA_DECODE (baseline.alpha);
+	ent->renderer.model = cl.model_precache[baseline.modelindex];
+	ent->animation.frame = baseline.frame;
+	ent->renderer.skin = 0;
+	ent->renderer.skinnum = baseline.skinnum;
+	VectorCopy (ent_colormod[baseline.colormod], ent->renderer.colormod);
+	ent->renderer.colormod[3] = ENTALPHA_DECODE (baseline.alpha);
 	ent->scale = baseline.scale / 16.0;
 	VectorCopy (baseline.origin, ent->origin);
 	CL_TransformEntity (ent, baseline.angles, true);
@@ -1024,7 +1024,9 @@ CL_ParseServerMessage (void)
 						mod_funcs->Skin_SetTranslation (i + 1, top, bot);
 					cl.scores[i].topcolor = top;
 					cl.scores[i].bottomcolor = bot;
-					ent->skin = mod_funcs->Skin_SetColormap (ent->skin, i + 1);
+					ent->renderer.skin
+						= mod_funcs->Skin_SetColormap (ent->renderer.skin,
+													   i + 1);
 				}
 				break;
 

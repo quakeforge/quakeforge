@@ -45,7 +45,7 @@
 
 #include "QF/cvar.h"
 #include "QF/darray.h"
-#include "QF/dstring.h"
+#include "QF/entity.h"
 #include "QF/image.h"
 #include "QF/render.h"
 #include "QF/sys.h"
@@ -275,7 +275,7 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 {
 	int         i;
 	model_t    *m;
-	mod_brush_t *brush = &r_worldentity.model->brush;
+	mod_brush_t *brush = &r_worldentity.renderer.model->brush;
 
 	clear_textures (ctx);
 	init_surface_chains (brush, ctx);
@@ -289,7 +289,7 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		if (*m->path == '*')
 			continue;
 		// world has already been done, not interested in non-brush models
-		if (m == r_worldentity.model || m->type != mod_brush)
+		if (m == r_worldentity.renderer.model || m->type != mod_brush)
 			continue;
 		brush = &m->brush;
 		brush->numsubmodels = 1; // no support for submodels in non-world model
@@ -343,7 +343,7 @@ build_surf_displist (model_t **models, msurface_t *fa, int base,
 		brush = &models[~fa->ec_index]->brush;
 	} else {
 		// main or sub model
-		brush = &r_worldentity.model->brush;
+		brush = &r_worldentity.renderer.model->brush;
 	}
 	vertices  = brush->vertexes;
 	edges     = brush->edges;
@@ -448,7 +448,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			}
 			surf = brush->surfaces + j;
 			surf->ec_index = dm - brush->submodels;
-			if (!surf->ec_index && m != r_worldentity.model)
+			if (!surf->ec_index && m != r_worldentity.renderer.model)
 				surf->ec_index = -1 - i;	// instanced model
 			tex = surf->texinfo->texture->render;
 			// append surf to the texture chain
@@ -613,9 +613,12 @@ R_DrawBrushModel (entity_t *e, vulkan_ctx_t *ctx)
 	vec3_t      mins, maxs, org;
 	mod_brush_t *brush;
 
-	model = e->model;
+	model = e->renderer.model;
 	brush = &model->brush;
-	if (e->transform[0] != 1 || e->transform[5] != 1 || e->transform[10] != 1) {
+	mat4f_t mat;
+	Transform_GetWorldMatrix (e->transform, mat);
+	memcpy (e->renderer.full_transform, mat, sizeof (mat));//FIXME
+	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
 		rotated = true;
 		radius = model->radius;
 		if (R_CullSphere (e->origin, radius))
@@ -633,9 +636,9 @@ R_DrawBrushModel (entity_t *e, vulkan_ctx_t *ctx)
 		vec3_t      temp;
 
 		VectorCopy (org, temp);
-		org[0] = DotProduct (temp, e->transform + 0);
-		org[1] = DotProduct (temp, e->transform + 4);
-		org[2] = DotProduct (temp, e->transform + 8);
+		org[0] = DotProduct (temp, mat[0]);
+		org[1] = DotProduct (temp, mat[1]);
+		org[2] = DotProduct (temp, mat[2]);
 	}
 
 	// calculate dynamic lighting for bmodel if it's not an instanced model
@@ -664,7 +667,8 @@ R_DrawBrushModel (entity_t *e, vulkan_ctx_t *ctx)
 		// enqueue the polygon
 		if (((surf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON))
 			|| (!(surf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
-			chain_surface (brush, surf, e->transform, e->colormod, ctx);
+			chain_surface (brush, surf, e->renderer.full_transform,
+						   e->renderer.colormod, ctx);
 		}
 	}
 }
@@ -1124,10 +1128,10 @@ Vulkan_DrawWorld (vulkan_ctx_t *ctx)
 	bframe->index_count = 0;
 
 	memset (&worldent, 0, sizeof (worldent));
-	worldent.model = r_worldentity.model;
-	brush = &r_worldentity.model->brush;
+	worldent.renderer.model = r_worldentity.renderer.model;
+	brush = &r_worldentity.renderer.model->brush;
 
-	//vulktex_t  *tex = r_worldentity.model->skytexture->render;
+	//vulktex_t  *tex = r_worldentity.renderer.model->skytexture->render;
 	//bctx->skysheet_tex = tex->tex;
 
 	currententity = &worldent;
@@ -1136,7 +1140,7 @@ Vulkan_DrawWorld (vulkan_ctx_t *ctx)
 	if (r_drawentities->int_val) {
 		entity_t   *ent;
 		for (ent = r_ent_queue; ent; ent = ent->next) {
-			if (ent->model->type != mod_brush)
+			if (ent->renderer.model->type != mod_brush)
 				continue;
 			currententity = ent;
 

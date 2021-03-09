@@ -42,6 +42,7 @@
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/entity.h"
 #include "QF/locs.h"
 #include "QF/mathlib.h"
 #include "QF/render.h"
@@ -167,7 +168,7 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	mod_brush_t *brush = &worldmodel->brush;
 
 	memset (&r_worldentity, 0, sizeof (r_worldentity));
-	r_worldentity.model = worldmodel;
+	r_worldentity.renderer.model = worldmodel;
 
 	R_FreeAllEntities ();
 
@@ -362,7 +363,7 @@ R_DrawEntitiesOnList (void)
 	for (ent = r_ent_queue; ent; ent = ent->next) {
 		currententity = ent;
 
-		switch (currententity->model->type) {
+		switch (currententity->renderer.model->type) {
 			case mod_sprite:
 				VectorCopy (currententity->origin, r_entorigin);
 				VectorSubtract (r_origin, r_entorigin, modelorg);
@@ -374,15 +375,16 @@ R_DrawEntitiesOnList (void)
 				VectorCopy (currententity->origin, r_entorigin);
 				VectorSubtract (r_origin, r_entorigin, modelorg);
 
-				minlight = max (currententity->model->min_light, currententity->min_light);
+				minlight = max (currententity->renderer.model->min_light,
+							    currententity->renderer.min_light);
 
 				// see if the bounding box lets us trivially reject, also
 				// sets trivial accept status
-				currententity->trivial_accept = 0;	//FIXME
-				if (currententity->model->type == mod_iqm//FIXME
+				currententity->visibility.trivial_accept = 0;	//FIXME
+				if (currententity->renderer.model->type == mod_iqm//FIXME
 					|| R_AliasCheckBBox ()) {
 					// 128 instead of 255 due to clamping below
-					j = max (R_LightPoint (&r_worldentity.model->brush,
+					j = max (R_LightPoint (&r_worldentity.renderer.model->brush,
 										   currententity->origin), minlight * 128);
 
 					lighting.ambientlight = j;
@@ -407,7 +409,7 @@ R_DrawEntitiesOnList (void)
 					if (lighting.ambientlight + lighting.shadelight > 192)
 						lighting.shadelight = 192 - lighting.ambientlight;
 
-					if (currententity->model->type == mod_iqm)
+					if (currententity->renderer.model->type == mod_iqm)
 						R_IQMDrawModel (&lighting);
 					else
 						R_AliasDrawModel (&lighting);
@@ -439,7 +441,7 @@ R_DrawViewModel (void)
 		return;
 
 	currententity = vr_data.view_model;
-	if (!currententity->model)
+	if (!currententity->renderer.model)
 		return;
 
 	VectorCopy (currententity->origin, r_entorigin);
@@ -448,9 +450,10 @@ R_DrawViewModel (void)
 	VectorCopy (vup, viewlightvec);
 	VectorNegate (viewlightvec, viewlightvec);
 
-	minlight = max (currententity->min_light, currententity->model->min_light);
+	minlight = max (currententity->renderer.min_light,
+					currententity->renderer.model->min_light);
 
-	j = max (R_LightPoint (&r_worldentity.model->brush,
+	j = max (R_LightPoint (&r_worldentity.renderer.model->brush,
 						   currententity->origin), minlight * 128);
 
 	r_viewlighting.ambientlight = j;
@@ -489,11 +492,12 @@ R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
 	int         i, *pindex, clipflags;
 	vec3_t      acceptpt, rejectpt;
 	double      d;
+	mat4f_t     mat;
 
 	clipflags = 0;
 
-	if (currententity->transform[0] != 1 || currententity->transform[5] != 1
-		|| currententity->transform[10] != 1) {
+	Transform_GetWorldMatrix (currententity->transform, mat);
+	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
 		for (i = 0; i < 4; i++) {
 			d = DotProduct (currententity->origin, view_clipplanes[i].normal);
 			d -= view_clipplanes[i].dist;
@@ -556,9 +560,9 @@ R_DrawBEntitiesOnList (void)
 	for (ent = r_ent_queue; ent; ent = ent->next) {
 		currententity = ent;
 
-		switch (currententity->model->type) {
+		switch (currententity->renderer.model->type) {
 			case mod_brush:
-				clmodel = currententity->model;
+				clmodel = currententity->renderer.model;
 
 				// see if the bounding box lets us trivially reject, also
 				// sets trivial accept status
@@ -606,8 +610,9 @@ R_DrawBEntitiesOnList (void)
 					if (r_drawpolys | r_drawculledpolys) {
 						R_ZDrawSubmodelPolys (clmodel);
 					} else {
-						if (currententity->topnode) {
-							mnode_t    *topnode = currententity->topnode;
+						if (currententity->visibility.topnode) {
+							mnode_t    *topnode
+								= currententity->visibility.topnode;
 
 							if (topnode->contents >= 0) {
 								// not a leaf; has to be clipped to the world
@@ -756,7 +761,7 @@ R_RenderView_ (void)
 // done in screen.c
 	R_LowFPPrecision ();
 
-	if (!r_worldentity.model)
+	if (!r_worldentity.renderer.model)
 		Sys_Error ("R_RenderView: NULL worldmodel");
 
 	if (!r_dspeeds->int_val) {

@@ -582,7 +582,7 @@ gl_overbright_f (cvar_t *var)
 		return;
 
 	for (ent = r_ent_queue; ent; ent = ent->next) {
-		m = ent->model;
+		m = ent->renderer.model;
 
 		if (m->type != mod_brush)
 			continue;
@@ -605,7 +605,7 @@ gl_overbright_f (cvar_t *var)
 		}
 	}
 
-	brush = &r_worldentity.model->brush;
+	brush = &r_worldentity.renderer.model->brush;
 
 	for (i = 0, fa = brush->surfaces; i < brush->numsurfaces; i++, fa++) {
 		if (fa->flags & (SURF_DRAWTURB | SURF_DRAWSKY))

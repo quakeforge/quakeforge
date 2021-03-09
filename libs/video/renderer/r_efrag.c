@@ -101,7 +101,7 @@ R_RemoveEfrags (entity_t *ent)
 {
 	efrag_t    *ef, *old, *walk, **prev;
 
-	ef = ent->efrag;
+	ef = ent->visibility.efrag;
 
 	while (ef) {
 		prev = &ef->leaf->efrags;
@@ -124,7 +124,7 @@ R_RemoveEfrags (entity_t *ent)
 		r_free_efrags = old;
 	}
 
-	ent->efrag = 0;
+	ent->visibility.efrag = 0;
 }
 
 static void
@@ -143,15 +143,15 @@ R_SplitEntityOnNode (mod_brush_t *brush, entity_t *ent,
 	node_stack = alloca ((brush->depth + 2) * sizeof (mnode_t *));
 	node_ptr = node_stack;
 
-	lastlink = &ent->efrag;
+	lastlink = &ent->visibility.efrag;
 
 	*node_ptr++ = 0;
 
 	while (node) {
 		// add an efrag if the node is a leaf
 		if (__builtin_expect (node->contents < 0, 0)) {
-			if (!ent->topnode) {
-				ent->topnode = node;
+			if (!ent->visibility.topnode) {
+				ent->visibility.topnode = node;
 			}
 
 			leaf = (mleaf_t *) node;
@@ -177,8 +177,8 @@ R_SplitEntityOnNode (mod_brush_t *brush, entity_t *ent,
 			if (sides == 3) {
 				// split on this plane
 				// if this is the first splitter of this bmodel, remember it
-				if (!ent->topnode) {
-					ent->topnode = node;
+				if (!ent->visibility.topnode) {
+					ent->visibility.topnode = node;
 				}
 			}
 			// recurse down the contacted sides
@@ -202,18 +202,18 @@ R_AddEfrags (mod_brush_t *brush, entity_t *ent)
 	model_t    *entmodel;
 	vec3_t      emins, emaxs;
 
-	if (!ent->model || !r_worldentity.model)
+	if (!ent->renderer.model || !r_worldentity.renderer.model)
 		return;
 
 	if (ent == &r_worldentity)
 		return;							// never add the world
 
-	entmodel = ent->model;
+	entmodel = ent->renderer.model;
 
 	VectorAdd (ent->origin, entmodel->mins, emins);
 	VectorAdd (ent->origin, entmodel->maxs, emaxs);
 
-	ent->topnode = 0;
+	ent->visibility.topnode = 0;
 	R_SplitEntityOnNode (brush, ent, emins, emaxs);
 }
 
@@ -225,17 +225,17 @@ R_StoreEfrags (const efrag_t *efrag)
 
 	while (efrag) {
 		ent = efrag->entity;
-		model = ent->model;
+		model = ent->renderer.model;
 
 		switch (model->type) {
 			case mod_alias:
 			case mod_brush:
 			case mod_sprite:
 			case mod_iqm:
-				if (ent->visframe != r_framecount) {
+				if (ent->visibility.visframe != r_framecount) {
 					R_EnqueueEntity (ent);
 					// mark that we've recorded this entity for this frame
-					ent->visframe = r_framecount;
+					ent->visibility.visframe = r_framecount;
 				}
 				efrag = efrag->leafnext;
 				break;

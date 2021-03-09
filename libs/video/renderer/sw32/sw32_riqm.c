@@ -43,6 +43,7 @@
 #include "namehack.h"
 
 #include "QF/cvar.h"
+#include "QF/entity.h"
 #include "QF/image.h"
 #include "QF/render.h"
 #include "QF/skin.h"
@@ -222,9 +223,12 @@ R_IQMSetupLighting (entity_t *ent, alight_t *plighting)
 	r_shadelight *= VID_GRADES;
 
 	// rotate the lighting vector into the model's frame of reference
-	r_plightvec[0] = DotProduct (plighting->plightvec, ent->transform + 0);
-	r_plightvec[1] = DotProduct (plighting->plightvec, ent->transform + 4);
-	r_plightvec[2] = DotProduct (plighting->plightvec, ent->transform + 8);
+	mat4f_t     mat;
+	Transform_GetWorldMatrix (ent->transform, mat);
+	//FIXME vectorize
+	r_plightvec[0] = DotProduct (plighting->plightvec, mat[0]);
+	r_plightvec[1] = DotProduct (plighting->plightvec, mat[1]);
+	r_plightvec[2] = DotProduct (plighting->plightvec, mat[2]);
 }
 
 static void
@@ -235,9 +239,11 @@ R_IQMSetUpTransform (int trivial_accept)
 	static float viewmatrix[3][4];
 	vec3_t      forward, left, up;
 
-	VectorCopy (currententity->transform + 0, forward);
-	VectorCopy (currententity->transform + 4, left);
-	VectorCopy (currententity->transform + 8, up);
+	mat4f_t     mat;
+	Transform_GetWorldMatrix (currententity->transform, mat);
+	VectorCopy (mat[0], forward);
+	VectorCopy (mat[1], left);
+	VectorCopy (mat[2], up);
 
 // TODO: can do this with simple matrix rearrangement
 
@@ -284,7 +290,7 @@ void
 sw32_R_IQMDrawModel (alight_t *plighting)
 {
 	entity_t   *ent = currententity;
-	model_t    *model = ent->model;
+	model_t    *model = ent->renderer.model;
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
 	swiqm_t    *sw = (swiqm_t *) iqm->extra_data;
 	int         size;
@@ -295,7 +301,8 @@ sw32_R_IQMDrawModel (alight_t *plighting)
 		+ sizeof (finalvert_t) * (iqm->num_verts + 1)
 		+ sizeof (auxvert_t) * iqm->num_verts;
 	blend = R_IQMGetLerpedFrames (ent, iqm);
-	frame = R_IQMBlendPalette (iqm, ent->pose1, ent->pose2, blend, size,
+	frame = R_IQMBlendPalette (iqm, ent->animation.pose1, ent->animation.pose2,
+							   blend, size,
 							   sw->blend_palette, sw->palette_size);
 
 	pfinalverts = (finalvert_t *) &frame[sw->palette_size];
@@ -303,7 +310,7 @@ sw32_R_IQMDrawModel (alight_t *plighting)
 		(((intptr_t) &pfinalverts[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 	pauxverts = (auxvert_t *) &pfinalverts[iqm->num_verts + 1];
 
-	R_IQMSetUpTransform (ent->trivial_accept);
+	R_IQMSetUpTransform (ent->visibility.trivial_accept);
 
 	R_IQMSetupLighting (ent, plighting);
 
@@ -315,7 +322,7 @@ sw32_R_IQMDrawModel (alight_t *plighting)
 	else
 		sw32_ziscale = (float) 0x8000 *(float) 0x10000 *3.0;
 
-	if (ent->trivial_accept)
+	if (ent->visibility.trivial_accept)
 		R_IQMPrepareUnclippedPoints (iqm, sw, frame);
 	else
 		R_IQMPreparePoints (iqm, sw, frame);

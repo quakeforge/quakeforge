@@ -295,18 +295,35 @@ Transform_GetWorldScale (const transform_t *transform)
 	return h->worldScale.a[transform->index];
 }
 
+void
+Transform_SetLocalTransform (transform_t *transform, vec4f_t scale,
+							 vec4f_t rotation, vec4f_t position)
+{
+	hierarchy_t *h = transform->hierarchy;
+	mat4f_t     mat;
+	mat4fquat (mat, rotation);
+
+	position[3] = 1;
+	h->localMatrix.a[transform->index][0] = mat[0] * scale[0];
+	h->localMatrix.a[transform->index][1] = mat[1] * scale[1];
+	h->localMatrix.a[transform->index][2] = mat[2] * scale[2];
+	h->localMatrix.a[transform->index][3] = position;
+	h->modified.a[transform->index] = 1;
+	Hierarchy_UpdateMatrices (h);
+}
+
 vec4f_t
 Transform_Forward (const transform_t *transform)
 {
 	hierarchy_t *h = transform->hierarchy;
-	return h->worldMatrix.a[transform->index][1];
+	return h->worldMatrix.a[transform->index][0];
 }
 
 vec4f_t
 Transform_Right (const transform_t *transform)
 {
 	hierarchy_t *h = transform->hierarchy;
-	return h->worldMatrix.a[transform->index][0];
+	return -h->worldMatrix.a[transform->index][1];
 }
 
 vec4f_t

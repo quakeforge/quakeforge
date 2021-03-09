@@ -32,6 +32,7 @@
 #include "QF/cmd.h"
 #include "QF/console.h"
 #include "QF/cvar.h"
+#include "QF/entity.h"
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
@@ -179,41 +180,40 @@ CL_LerpPoint (void)
 void
 CL_TransformEntity (entity_t *ent, const vec3_t angles, qboolean force)
 {
-	vec3_t      ang;
-	vec_t      *forward, *left, *up;
+	union {
+		quat_t      q;
+		vec4f_t     v;
+	}           rotation;
+	vec4f_t     position;
+	vec4f_t     scale;
 
+	VectorCopy (ent->origin, position);
+	position[3] = 1;
+	VectorSet (ent->scale, ent->scale, ent->scale, scale);
+	scale[3] = 1;
 	if (VectorIsZero (angles)) {
-		VectorSet (1, 0, 0, ent->transform + 0);
-		VectorSet (0, 1, 0, ent->transform + 4);
-		VectorSet (0, 0, 1, ent->transform + 8);
-	} else if (force || !VectorCompare (angles, ent->angles)) {
-		forward = ent->transform + 0;
-		left = ent->transform + 4;
-		up = ent->transform + 8;
+		QuatSet (0, 0, 0, 1, rotation.q);
+	} else {
+		vec3_t      ang;
 		VectorCopy (angles, ang);
-		if (ent->model && ent->model->type == mod_alias) {
+		if (ent->renderer.model && ent->renderer.model->type == mod_alias) {
 			// stupid quake bug
 			// why, oh, why, do alias models pitch in the opposite direction
 			// to everything else?
 			ang[PITCH] = -ang[PITCH];
 		}
-		AngleVectors (ang, forward, left, up);
-		VectorNegate (left, left);  // AngleVectors is right-handed
+		AngleQuat (ang, rotation.q);
 	}
-	VectorCopy (angles, ent->angles);
-	ent->transform[3] = 0;
-	ent->transform[7] = 0;
-	ent->transform[11] = 0;
-	VectorCopy (ent->origin, ent->transform + 12);
-	ent->transform[15] = 1;
+	Transform_SetLocalTransform (ent->transform, scale, rotation.v, position);
 }
 
 static void
 CL_ModelEffects (entity_t *ent, int num, int glow_color)
 {
 	dlight_t   *dl;
-	model_t    *model = ent->model;
+	model_t    *model = ent->renderer.model;
 
+	// add automatic particle trails
 	if (model->flags & EF_ROCKET) {
 		dl = r_funcs->R_AllocDlight (num);
 		if (dl) {
@@ -250,11 +250,12 @@ CL_EntityEffects (int num, entity_t *ent, entity_state_t *state)
 	if (state->effects & EF_BRIGHTFIELD)
 		r_funcs->particles->R_EntityParticles (ent);
 	if (state->effects & EF_MUZZLEFLASH) {
-		vec_t      *fv = ent->transform;
-
 		dl = r_funcs->R_AllocDlight (num);
 		if (dl) {
-			VectorMultAdd (ent->origin, 18, fv, dl->origin);
+			vec4f_t     position = Transform_GetWorldPosition (ent->transform);
+			vec4f_t     fv = Transform_Forward (ent->transform);
+			position += 18 * fv;
+			VectorCopy (position, dl->origin);
 			dl->origin[2] += 16;
 			dl->radius = 200 + (rand () & 31);
 			dl->die = cl.time + 0.1;
@@ -271,19 +272,24 @@ static void
 set_entity_model (entity_t *ent, int modelindex)
 {
 	int         i = ent - cl_entities;
-	ent->model = cl.model_precache[modelindex];
+	renderer_t *renderer = &ent->renderer;
+	animation_t *animation = &ent->animation;
+	renderer->model = cl.model_precache[modelindex];
 	// automatic animation (torches, etc) can be either all together
 	// or randomized
-	if (ent->model) {
-		if (ent->model->synctype == ST_RAND)
-			ent->syncbase = (float) (rand () & 0x7fff) / 0x7fff;
-		else
-			ent->syncbase = 0.0;
+	if (renderer->model) {
+		if (renderer->model->synctype == ST_RAND) {
+			animation->syncbase = (float) (rand () & 0x7fff) / 0x7fff;
+		} else {
+			animation->syncbase = 0.0;
+		}
 	} else {
 		cl_forcelink[i] = true;	// hack to make null model players work
 	}
-	if (i <= cl.maxclients)
-		ent->skin = mod_funcs->Skin_SetColormap (ent->skin, i);
+	animation->nolerp = 1; // don't try to lerp when the model has changed
+	if (i <= cl.maxclients) {
+		renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin, i);
+	}
 }
 
 void
@@ -291,6 +297,8 @@ CL_RelinkEntities (void)
 {
 	entity_t   *ent;
 	entity_state_t *new, *old;
+	renderer_t *renderer;
+	animation_t *animation;
 	float       bobjrotate, frac, f, d;
 	int         i, j;
 	int         entvalid;
@@ -326,6 +334,9 @@ CL_RelinkEntities (void)
 		new = &nq_entstates.frame[0 + cl.mindex][i];
 		old = &nq_entstates.frame[1 - cl.mindex][i];
 		ent = &cl_entities[i];
+		renderer = &ent->renderer;
+		animation = &ent->animation;
+
 		// if the object wasn't included in the last packet, remove it
 		entvalid = cl_msgtime[i] == cl.mtime[0];
 		if (entvalid && !new->modelindex) {
@@ -334,10 +345,11 @@ CL_RelinkEntities (void)
 			entvalid = 0;
 		}
 		if (!entvalid) {
-			ent->model = NULL;
-			ent->pose1 = ent->pose2 = -1;
-			if (ent->efrag)
+			renderer->model = NULL;
+			animation->pose1 = animation->pose2 = -1;
+			if (ent->visibility.efrag) {
 				r_funcs->R_RemoveEfrags (ent);	// just became empty
+			}
 			continue;
 		}
 
@@ -348,39 +360,43 @@ CL_RelinkEntities (void)
 			old->modelindex = new->modelindex;
 			set_entity_model (ent, new->modelindex);
 		}
-		ent->frame = new->frame;
+		animation->frame = new->frame;
 		if (cl_forcelink[i] || new->colormap != old->colormap) {
 			old->colormap = new->colormap;
-			ent->skin = mod_funcs->Skin_SetColormap (ent->skin, new->colormap);
+			renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin,
+														  new->colormap);
 		}
 		if (cl_forcelink[i] || new->skinnum != old->skinnum) {
 			old->skinnum = new->skinnum;
-			ent->skinnum = new->skinnum;
+			renderer->skinnum = new->skinnum;
 			if (i <= cl.maxclients) {
-				ent->skin = mod_funcs->Skin_SetColormap (ent->skin, i);
+				renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin,
+															  i);
 				mod_funcs->Skin_SetTranslation (i, cl.scores[i - 1].topcolor,
 												cl.scores[i - 1].bottomcolor);
 			}
 		}
 		ent->scale = new->scale / 16.0;
 
-		VectorCopy (ent_colormod[new->colormod], ent->colormod);
-		ent->colormod[3] = ENTALPHA_DECODE (new->alpha);
+		VectorCopy (ent_colormod[new->colormod], renderer->colormod);
+		renderer->colormod[3] = ENTALPHA_DECODE (new->alpha);
 
 		model_flags = 0;
-		if (ent->model)
-			model_flags = ent->model->flags;
+		if (renderer->model) {
+			model_flags = renderer->model->flags;
+		}
 
 		if (cl_forcelink[i]) {
 			// The entity was not updated in the last message so move to the
 			// final spot
-			ent->pose1 = ent->pose2 = -1;
+			animation->pose1 = animation->pose2 = -1;
 			VectorCopy (new->origin, ent->origin);
 			if (!(model_flags & EF_ROTATE))
 				CL_TransformEntity (ent, new->angles, true);
 			if (i != cl.viewentity || chase_active->int_val) {
-				if (ent->efrag)
+				if (ent->visibility.efrag) {
 					r_funcs->R_RemoveEfrags (ent);
+				}
 				r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 			}
 			VectorCopy (ent->origin, ent->old_origin);
@@ -395,7 +411,7 @@ CL_RelinkEntities (void)
 				VectorCopy (new->origin, ent->origin);
 				if (!(model_flags & EF_ROTATE))
 					CL_TransformEntity (ent, new->angles, true);
-				ent->pose1 = ent->pose2 = -1;
+				animation->pose1 = animation->pose2 = -1;
 			} else {
 				vec3_t      angles, d;
 				// interpolate the origin and angles
@@ -413,7 +429,7 @@ CL_RelinkEntities (void)
 				}
 			}
 			if (i != cl.viewentity || chase_active->int_val) {
-				if (ent->efrag) {
+				if (ent->visibility.efrag) {
 					if (!VectorCompare (ent->origin, ent->old_origin)) {
 						r_funcs->R_RemoveEfrags (ent);
 						r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);

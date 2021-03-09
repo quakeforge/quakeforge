@@ -90,47 +90,56 @@ typedef struct
 
 //===============
 
+typedef struct animation_s {
+	int         frame;
+	float       syncbase;	// randomize time base for local animations
+	float       frame_start_time;
+	float       frame_interval;
+	int         pose1;
+	int         pose2;
+	float       blend;
+	int         nolerp;		// don't lerp this frame (pose data invalid)
+} animation_t;
+
+typedef struct visibility_s {
+	struct entity_s *entity;	// owning entity
+	struct efrag_s *efrag;		// linked list of efrags
+	struct mnode_s *topnode;	// bmodels, first world node that
+								// splits bmodel, or NULL if not split
+								// applies to other models, too
+	int         visframe;		// last frame this entity was
+								// found in an active leaf
+	int         trivial_accept;	// view clipping (frustum and depth)
+} visibility_t;
+
+typedef struct renderer_s {
+	struct model_s *model;			// NULL = no model
+	struct skin_s *skin;
+	float       colormod[4];	// color tint and alpha for model
+	int         skinnum;		// for Alias models
+	int         fullbright;
+	float       min_light;
+	mat4_t      full_transform;
+} renderer_t;
+
 typedef struct entity_s {
 	struct entity_s *next;
 	struct entity_s *unext;	//FIXME this shouldn't be here. for qw demos
 
+	struct transform_s *transform;
+	animation_t animation;
+	visibility_t visibility;
+	renderer_t  renderer;
+	int         active;
+	//XXX FIXME XXX should not be here
+	float                   scale;
 	vec3_t					origin;
 	vec3_t					old_origin;
 	vec3_t					angles;
-	vec_t					transform[4 * 4];
-	vec_t					full_transform[4 * 4];
-	struct model_s			*model;			// NULL = no model
-	int						frame;
-	int						skinnum;		// for Alias models
-	struct skin_s			*skin;
-
-	float					syncbase;		// for client-side animations
-
-	struct efrag_s			*efrag;			// linked list of efrags
-	int						visframe;		// last frame this entity was
-											// found in an active leaf
-	float					colormod[4];	// color tint and alpha for model
-	float					scale;			// size scaler of the model
-
-	int						fullbright;
-	float					min_light;
-
-	// FIXME: could turn these into a union
-	int						trivial_accept;
-	struct mnode_s			*topnode; // for bmodels, first world node that
-									  // splits bmodel, or NULL if not split
-
-	// Animation interpolation
-	float                   frame_start_time;
-	float                   frame_interval;
-	int						pose1;
-	int						pose2;
-	struct model_s			*pose_model;	// no lerp if not the same as model
 } entity_t;
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
-typedef struct
-{
+typedef struct {
 	vrect_t		vrect;				// subwindow in video for refresh
 									// FIXME: not need vrect next field here?
 	vrect_t		aliasvrect;			// scaled Alias version

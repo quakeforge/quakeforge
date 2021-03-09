@@ -614,7 +614,7 @@ V_CalcIntermissionRefdef (void)
 
 	VectorCopy (origin, r_data->refdef->vieworg);
 	VectorCopy (angles, r_data->refdef->viewangles);
-	view->model = NULL;
+	view->renderer.model = NULL;
 
 	// always idle in intermission
 	old = v_idlescale->value;
@@ -699,9 +699,9 @@ V_CalcRefdef (void)
 	else if (r_data->scr_viewsize->int_val == 80)
 		view->origin[2] += 0.5;
 
-	view->model = cl.model_precache[cl.stats[STAT_WEAPON]];
-	view->frame = cl.stats[STAT_WEAPONFRAME];
-	view->skin = 0;
+	view->renderer.model = cl.model_precache[cl.stats[STAT_WEAPON]];
+	view->animation.frame = cl.stats[STAT_WEAPONFRAME];
+	view->renderer.skin = 0;
 
 	// set up the refresh position
 	VectorAdd (r_data->refdef->viewangles, cl.punchangle,

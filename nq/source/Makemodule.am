@@ -45,6 +45,7 @@ nq_cl_plugin_LIBS= \
 		@client_static_plugin_libs@
 
 nq_client_LIBFILES= \
+		libs/entity/libQFentity.la \
 		libs/video/targets/libQFjs.la \
 		libs/audio/libQFcd.la \
 		libs/audio/libQFsound.la

@@ -403,12 +403,13 @@ CL_PrintEntities_f (void)
 
 	for (i = 0, ent = cl_entities; i < cl.num_entities; i++, ent++) {
 		Sys_Printf ("%3i:", i);
-		if (!ent->model) {
+		if (!ent->renderer.model) {
 			Sys_Printf ("EMPTY\n");
 			continue;
 		}
 		Sys_Printf ("%s:%2i  (%5.1f,%5.1f,%5.1f) [%5.1f %5.1f %5.1f]\n",
-					ent->model->path, ent->frame, VectorExpand (ent->origin),
+					ent->renderer.model->path, ent->animation.frame,
+					VectorExpand (ent->origin),
 					VectorExpand (ent->angles));
 	}
 }

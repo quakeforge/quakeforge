@@ -92,16 +92,18 @@ void Transform_GetLocalInverse (const transform_t *transform, mat4f_t mat);
 void Transform_GetWorldMatrix (const transform_t *transform, mat4f_t mat);
 void Transform_GetWorldInverse (const transform_t *transform, mat4f_t mat);
 vec4f_t Transform_GetLocalPosition (const transform_t *transform) __attribute__((pure));
-void Transform_SetLocalPosition (transform_t *transform_t, vec4f_t position);
+void Transform_SetLocalPosition (transform_t *transform, vec4f_t position);
 vec4f_t Transform_GetLocalRotation (const transform_t *transform) __attribute__((pure));
-void Transform_SetLocalRotation (transform_t *transform_t, vec4f_t rotation);
+void Transform_SetLocalRotation (transform_t *transform, vec4f_t rotation);
 vec4f_t Transform_GetLocalScale (const transform_t *transform) __attribute__((pure));
-void Transform_SetLocalScale (transform_t *transform_t, vec4f_t scale);
+void Transform_SetLocalScale (transform_t *transform, vec4f_t scale);
 vec4f_t Transform_GetWorldPosition (const transform_t *transform) __attribute__((pure));
-void Transform_SetWorldPosition (transform_t *transform_t, vec4f_t position);
+void Transform_SetWorldPosition (transform_t *transform, vec4f_t position);
 vec4f_t Transform_GetWorldRotation (const transform_t *transform) __attribute__((pure));
-void Transform_SetWorldRotation (transform_t *transform_t, vec4f_t rotation);
+void Transform_SetWorldRotation (transform_t *transform, vec4f_t rotation);
 vec4f_t Transform_GetWorldScale (const transform_t *transform) __attribute__((pure));
+void Transform_SetLocalTransform (transform_t *transform, vec4f_t scale,
+								  vec4f_t rotation, vec4f_t position);
 // NOTE: these use X: right, Y: forward, Z:up
 // aslo, not guaranteed to be normalized or even orthogonal
 vec4f_t Transform_Forward (const transform_t *transform) __attribute__((pure));

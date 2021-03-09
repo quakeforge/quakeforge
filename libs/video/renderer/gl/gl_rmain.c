@@ -44,6 +44,7 @@
 
 #include "QF/cvar.h"
 #include "QF/draw.h"
+#include "QF/entity.h"
 #include "QF/locs.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
@@ -178,7 +179,9 @@ glrmain_init (void)
 void
 gl_R_RotateForEntity (entity_t *e)
 {
-	qfglMultMatrixf (e->transform);
+	mat4f_t     mat;
+	Transform_GetWorldMatrix (e->transform, mat);
+	qfglMultMatrixf (&mat[0][0]);
 }
 
 /*
@@ -217,7 +220,7 @@ R_DrawEntitiesOnList (void)
 	}
 
 	for (ent = r_ent_queue; ent; ent = ent->next) {
-		if (ent->model->type != mod_alias)
+		if (ent->renderer.model->type != mod_alias)
 			continue;
 		currententity = ent;
 
@@ -249,7 +252,7 @@ R_DrawEntitiesOnList (void)
 	}
 
 	for (ent = r_ent_queue; ent; ent = ent->next) {
-		if (ent->model->type != mod_iqm)
+		if (ent->renderer.model->type != mod_iqm)
 			continue;
 		currententity = ent;
 
@@ -262,7 +265,7 @@ R_DrawEntitiesOnList (void)
 	if (gl_va_capable)
 		qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, gl_spriteVertexArray);
 	for (ent = r_ent_queue; ent; ent = ent->next) {
-		if (ent->model->type != mod_sprite)
+		if (ent->renderer.model->type != mod_sprite)
 			continue;
 		currententity = ent;
 
@@ -279,7 +282,7 @@ R_DrawViewModel (void)
 		|| !r_drawviewmodel->int_val
 		|| gl_envmap
 		|| !r_drawentities->int_val
-		|| !currententity->model)
+		|| !currententity->renderer.model)
 		return;
 
 	// hack the depth range to prevent view model from poking into walls
@@ -349,7 +352,7 @@ gl_R_SetupFrame (void)
 	R_SetFrustum ();
 
 	// current viewleaf
-	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.model);
+	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.renderer.model);
 
 	r_cache_thrash = false;
 
@@ -559,10 +562,12 @@ R_Mirror (void)
 static void
 R_RenderView_ (void)
 {
-	if (r_norefresh->int_val)
+	if (r_norefresh->int_val) {
 		return;
-	if (!r_worldentity.model)
+	}
+	if (!r_worldentity.renderer.model) {
 		Sys_Error ("R_RenderView: NULL worldmodel");
+	}
 
 	gl_mirror = false;
 
@@ -892,7 +897,7 @@ R_RenderViewFishEye (void)
 void
 gl_R_ClearState (void)
 {
-	r_worldentity.model = 0;
+	r_worldentity.renderer.model = 0;
 	R_ClearEfrags ();
 	R_ClearDlights ();
 	gl_R_ClearParticles ();

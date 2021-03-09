@@ -36,6 +36,7 @@
 #endif
 
 #include "QF/cvar.h"
+#include "QF/entity.h"
 #include "QF/locs.h"
 #include "QF/msg.h"
 #include "QF/render.h"
@@ -172,40 +173,38 @@ is_gib (entity_state_t *s1)
 void
 CL_TransformEntity (entity_t *ent, const vec3_t angles, qboolean force)
 {
-	vec3_t      ang;
-	vec_t      *forward, *left, *up;
+	union {
+		quat_t      q;
+		vec4f_t     v;
+	}           rotation;
+	vec4f_t     position;
+	vec4f_t     scale;
 
+	VectorCopy (ent->origin, position);
+	position[3] = 1;
+	VectorSet (ent->scale, ent->scale, ent->scale, scale);
+	scale[3] = 1;
 	if (VectorIsZero (angles)) {
-		VectorSet (1, 0, 0, ent->transform + 0);
-		VectorSet (0, 1, 0, ent->transform + 4);
-		VectorSet (0, 0, 1, ent->transform + 8);
-	} else if (force || !VectorCompare (angles, ent->angles)) {
-		forward = ent->transform + 0;
-		left = ent->transform + 4;
-		up = ent->transform + 8;
+		QuatSet (0, 0, 0, 1, rotation.q);
+	} else {
+		vec3_t      ang;
 		VectorCopy (angles, ang);
-		if (ent->model && ent->model->type == mod_alias) {
+		if (ent->renderer.model && ent->renderer.model->type == mod_alias) {
 			// stupid quake bug
 			// why, oh, why, do alias models pitch in the opposite direction
 			// to everything else?
 			ang[PITCH] = -ang[PITCH];
 		}
-		AngleVectors (ang, forward, left, up);
-		VectorNegate (left, left);  // AngleVectors is right-handed
+		AngleQuat (ang, rotation.q);
 	}
-	VectorCopy (angles, ent->angles);
-	ent->transform[3] = 0;
-	ent->transform[7] = 0;
-	ent->transform[11] = 0;
-	VectorCopy (ent->origin, ent->transform + 12);
-	ent->transform[15] = 1;
+	Transform_SetLocalTransform (ent->transform, scale, rotation.v, position);
 }
 
 static void
 CL_ModelEffects (entity_t *ent, int num, int glow_color)
 {
 	dlight_t   *dl;
-	model_t    *model = ent->model;
+	model_t    *model = ent->renderer.model;
 
 	// add automatic particle trails
 	if (model->flags & EF_ROCKET) {
@@ -239,14 +238,17 @@ CL_ModelEffects (entity_t *ent, int num, int glow_color)
 static void
 set_entity_model (entity_t *ent, int modelindex)
 {
-	ent->model = cl.model_precache[modelindex];
+	renderer_t *renderer = &ent->renderer;
+	animation_t *animation = &ent->animation;
+	renderer->model = cl.model_precache[modelindex];
 	// automatic animation (torches, etc) can be either all together
 	// or randomized
-	if (ent->model) {
-		if (ent->model->synctype == ST_RAND)
-			ent->syncbase = (float) (rand () & 0x7fff) / 0x7fff;
-		else
-			ent->syncbase = 0.0;
+	if (renderer->model) {
+		if (renderer->model->synctype == ST_RAND) {
+			animation->syncbase = (float) (rand () & 0x7fff) / 0x7fff;
+		} else {
+			animation->syncbase = 0.0;
+		}
 	}
 }
 
@@ -257,6 +259,8 @@ CL_LinkPacketEntities (void)
 	float       frac, f;
 	entity_t   *ent;
 	entity_state_t *new, *old;
+	renderer_t *renderer;
+	animation_t *animation;
 	vec3_t      delta;
 
 	frac = 1;
@@ -264,14 +268,17 @@ CL_LinkPacketEntities (void)
 		new = &qw_entstates.frame[cl.link_sequence & UPDATE_MASK][i];
 		old = &qw_entstates.frame[cl.prev_sequence & UPDATE_MASK][i];
 		ent = &cl_entities[i];
+		renderer = &ent->renderer;
+		animation = &ent->animation;
 		forcelink = cl_entity_valid[0][i] != cl_entity_valid[1][i];
 		cl_entity_valid[1][i] = cl_entity_valid[0][i];
 		// if the object wasn't included in the last packet, remove it
 		if (!cl_entity_valid[0][i]) {
-			ent->model = NULL;
-			ent->pose1 = ent->pose2 = -1;
-			if (ent->efrag)
+			renderer->model = NULL;
+			animation->pose1 = animation->pose2 = -1;
+			if (ent->visibility.efrag) {
 				r_funcs->R_RemoveEfrags (ent);	// just became empty
+			}
 			continue;
 		}
 
@@ -283,8 +290,9 @@ CL_LinkPacketEntities (void)
 		if (!new->modelindex
 			|| (cl_deadbodyfilter->int_val && is_dead_body (new))
 			|| (cl_gibfilter->int_val && is_gib (new))) {
-			if (ent->efrag)
+			if (ent->visibility.efrag) {
 				r_funcs->R_RemoveEfrags (ent);
+			}
 			continue;
 		}
 
@@ -295,46 +303,50 @@ CL_LinkPacketEntities (void)
 			old->modelindex = new->modelindex;
 			set_entity_model (ent, new->modelindex);
 		}
-		ent->frame = new->frame;
+		animation->frame = new->frame;
 		if (forcelink || new->colormap != old->colormap
 			|| new->skinnum != old->skinnum) {
 			old->skinnum = new->skinnum;
-			ent->skinnum = new->skinnum;
+			renderer->skinnum = new->skinnum;
 			old->colormap = new->colormap;
 			if (new->colormap && (new->colormap <= MAX_CLIENTS)
 				&& cl.players[new->colormap - 1].name
 				&& cl.players[new->colormap - 1].name->value[0]
 				&& new->modelindex == cl_playerindex) {
 				player_info_t *player = &cl.players[new->colormap - 1];
-				ent->skin = mod_funcs->Skin_SetSkin (ent->skin, new->colormap,
-													 player->skinname->value);
-				ent->skin = mod_funcs->Skin_SetColormap (ent->skin,
-														 new->colormap);
+				renderer->skin
+					= mod_funcs->Skin_SetSkin (renderer->skin, new->colormap,
+											   player->skinname->value);
+				renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin,
+															  new->colormap);
 			} else {
-				ent->skin = mod_funcs->Skin_SetColormap (ent->skin, 0);
+				renderer->skin = mod_funcs->Skin_SetColormap (renderer->skin,
+															  0);
 			}
 		}
 		ent->scale = new->scale / 16.0;
 
-		VectorCopy (ent_colormod[new->colormod], ent->colormod);
-		ent->colormod[3] = new->alpha / 255.0;
+		VectorCopy (ent_colormod[new->colormod], renderer->colormod);
+		renderer->colormod[3] = new->alpha / 255.0;
 
-		ent->min_light = 0;
-		ent->fullbright = 0;
+		renderer->min_light = 0;
+		renderer->fullbright = 0;
 		if (new->modelindex == cl_playerindex) {
-			ent->min_light = min (cl.fbskins, cl_fb_players->value);
-			if (ent->min_light >= 1.0)
-				ent->fullbright = 1;
+			renderer->min_light = min (cl.fbskins, cl_fb_players->value);
+			if (renderer->min_light >= 1.0) {
+				renderer->fullbright = 1;
+			}
 		}
 
 		if (forcelink) {
-			ent->pose1 = ent->pose2 = -1;
+			animation->pose1 = animation->pose2 = -1;
 			VectorCopy (new->origin, ent->origin);
-			if (!(ent->model->flags & EF_ROTATE))
+			if (!(renderer->model->flags & EF_ROTATE))
 				CL_TransformEntity (ent, new->angles, true);
 			if (i != cl.viewentity || chase_active->int_val) {
-				if (ent->efrag)
+				if (ent->visibility.efrag) {
 					r_funcs->R_RemoveEfrags (ent);
+				}
 				r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 			}
 			VectorCopy (ent->origin, ent->old_origin);
@@ -347,14 +359,15 @@ CL_LinkPacketEntities (void)
 				|| fabs (delta[2]) > 100) {
 				// assume a teleportation, not a motion
 				VectorCopy (new->origin, ent->origin);
-				if (!(ent->model->flags & EF_ROTATE))
+				if (!(renderer->model->flags & EF_ROTATE)) {
 					CL_TransformEntity (ent, new->angles, true);
-				ent->pose1 = ent->pose2 = -1;
+				}
+				animation->pose1 = animation->pose2 = -1;
 			} else {
 				vec3_t      angles, d;
 				// interpolate the origin and angles
 				VectorMultAdd (old->origin, f, delta, ent->origin);
-				if (!(ent->model->flags & EF_ROTATE)) {
+				if (!(renderer->model->flags & EF_ROTATE)) {
 					VectorSubtract (new->angles, old->angles, d);
 					for (j = 0; j < 3; j++) {
 						if (d[j] > 180)
@@ -367,7 +380,7 @@ CL_LinkPacketEntities (void)
 				}
 			}
 			if (i != cl.viewentity || chase_active->int_val) {
-				if (ent->efrag) {
+				if (ent->visibility.efrag) {
 					if (!VectorCompare (ent->origin, ent->old_origin)) {
 						r_funcs->R_RemoveEfrags (ent);
 						r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
@@ -377,11 +390,12 @@ CL_LinkPacketEntities (void)
 				}
 			}
 		}
-		if (!ent->efrag)
+		if (!ent->visibility.efrag) {
 			r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
+		}
 
 		// rotate binary objects locally
-		if (ent->model->flags & EF_ROTATE) {
+		if (renderer->model->flags & EF_ROTATE) {
 			vec3_t      angles;
 			angles[PITCH] = 0;
 			angles[YAW] = anglemod (100 * cl.time);
@@ -392,8 +406,9 @@ CL_LinkPacketEntities (void)
 		//CL_NewDlight (i, ent->origin, new->effects, 0, 0);
 		if (VectorDistance_fast (old->origin, ent->origin) > (256 * 256))
 			VectorCopy (ent->origin, old->origin);
-		if (ent->model->flags & ~EF_ROTATE)
+		if (renderer->model->flags & ~EF_ROTATE) {
 			CL_ModelEffects (ent, -new->number, new->glow_color);
+		}
 	}
 }
 
@@ -414,36 +429,40 @@ CL_AddFlagModels (entity_t *ent, int team, int key)
 	};
 	float       f;
 	entity_t   *fent;
-	vec_t      *v_forward, *v_left;
-	vec3_t      ang;
-
-	if (cl_flagindex == -1)
-		return;
-
-	f = 14.0;
-	if (ent->frame >= 29 && ent->frame <= 40) {
-		f = flag_offsets[ent->frame - 29];
-	} else if (ent->frame >= 103 && ent->frame <= 118) {
-		if (ent->frame <= 106)							// 103-104 nailattack
-			f = 20.0;									// 105-106 light
-		else											// 107-112 rocketattack
-			f = 21.0;									// 112-118 shotattack
-	}
 
 	fent = &cl_flag_ents[key];
-	fent->model = cl.model_precache[cl_flagindex];
-	fent->skinnum = team;
 
-	v_forward = ent->transform + 0;
-	v_left = ent->transform + 4;
+	if (cl_flagindex == -1) {
+		fent->active = 0;
+		return;
+	}
 
-	VectorMultAdd (ent->origin, -f, v_forward, fent->origin);
-	VectorMultAdd (fent->origin, -22, v_left, fent->origin);
-	fent->origin[2] -= 16.0;
+	fent->active = 1;
+	f = 14.0;
+	if (ent->animation.frame >= 29 && ent->animation.frame <= 40) {
+		f = flag_offsets[ent->animation.frame - 29];
+	} else if (ent->animation.frame >= 103 && ent->animation.frame <= 118) {
+		if (ent->animation.frame <= 106) {			// 103-104 nailattack
+			f = 20.0;								// 105-106 light
+		} else {									// 107-112 rocketattack
+			f = 21.0;								// 112-118 shotattack
+		}
+	}
 
-	VectorCopy (ent->angles, ang);
-	ang[2] -= 45.0;
-	CL_TransformEntity (fent, ang, false);
+	vec4f_t     position = { 22, -f, -16, 1};
+
+	if (!Transform_GetParent (fent->transform)) {
+		vec4f_t     scale = { 1, 1, 1, 1 };
+		// -45 degree roll (x is forward)
+		vec4f_t     rotation = { -0.382683432, 0, 0, 0.923879533 };
+		Transform_SetParent (fent->transform, ent->transform);
+		Transform_SetLocalTransform (fent->transform, scale, rotation,
+									 position);
+	} else {
+		Transform_SetLocalPosition (fent->transform, position);
+	}
+	fent->renderer.model = cl.model_precache[cl_flagindex];
+	fent->renderer.skinnum = team;
 
 	r_funcs->R_EnqueueEntity (fent);//FIXME should use efrag (needs smarter
 									// handling //in the player code)
@@ -477,7 +496,7 @@ CL_LinkPlayers (void)
 	for (j = 0, info = cl.players, state = frame->playerstate; j < MAX_CLIENTS;
 		 j++, info++, state++) {
 		ent = &cl_player_ents[j];
-		if (ent->efrag)
+		if (ent->visibility.efrag)
 			r_funcs->R_RemoveEfrags (ent);
 		if (state->messagenum != cl.parsecount)
 			continue;							// not present this frame
@@ -544,26 +563,27 @@ CL_LinkPlayers (void)
 		}
 		ang[ROLL] = V_CalcRoll (ang, state->pls.velocity) * 4.0;
 
-		ent->model = cl.model_precache[state->pls.modelindex];
-		ent->frame = state->pls.frame;
-		ent->skinnum = state->pls.skinnum;
+		ent->renderer.model = cl.model_precache[state->pls.modelindex];
+		ent->animation.frame = state->pls.frame;
+		ent->renderer.skinnum = state->pls.skinnum;
 
 		CL_TransformEntity (ent, ang, false);
 
-		ent->min_light = 0;
-		ent->fullbright = 0;
+		ent->renderer.min_light = 0;
+		ent->renderer.fullbright = 0;
 
 		if (state->pls.modelindex == cl_playerindex) { //XXX
 			// use custom skin
-			ent->skin = info->skin;
+			ent->renderer.skin = info->skin;
 
-			ent->min_light = min (cl.fbskins, cl_fb_players->value);
+			ent->renderer.min_light = min (cl.fbskins, cl_fb_players->value);
 
-			if (ent->min_light >= 1.0)
-				ent->fullbright = 1;
+			if (ent->renderer.min_light >= 1.0) {
+				ent->renderer.fullbright = 1;
+			}
 		} else {
 			// FIXME no team colors on nonstandard player models
-			ent->skin = 0;
+			ent->renderer.skin = 0;
 		}
 
 		// stuff entity in map

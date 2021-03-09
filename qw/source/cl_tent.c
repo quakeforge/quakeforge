@@ -39,6 +39,7 @@
 #include <stdlib.h>
 
 #include "QF/console.h"
+#include "QF/entity.h"
 #include "QF/model.h"
 #include "QF/msg.h"
 #include "QF/sound.h"
@@ -136,12 +137,16 @@ CL_TEnts_Init (void)
 void
 CL_Init_Entity (entity_t *ent)
 {
+	if (ent->transform) {
+		Transform_Delete (ent->transform);
+	}
 	memset (ent, 0, sizeof (*ent));
 
-	ent->skin = 0;
-	QuatSet (1.0, 1.0, 1.0, 1.0, ent->colormod);
+	ent->transform = Transform_New (0);
+	ent->renderer.skin = 0;
+	QuatSet (1.0, 1.0, 1.0, 1.0, ent->renderer.colormod);
 	ent->scale = 1.0;
-	ent->pose1 = ent->pose2 = -1;
+	ent->animation.pose1 = ent->animation.pose2 = -1;
 }
 
 static tent_t *
@@ -154,8 +159,10 @@ new_temp_entity (void)
 		temp_entities = malloc (TEMP_BATCH * sizeof (tent_t));
 		for (i = 0; i < TEMP_BATCH - 1; i++) {
 			temp_entities[i].next = &temp_entities[i + 1];
+			temp_entities[i].ent.transform = 0;
 		}
 		temp_entities[i].next = 0;
+		temp_entities[i].ent.transform = 0;
 	}
 	tent = temp_entities;
 	temp_entities = tent->next;
@@ -211,16 +218,18 @@ CL_ClearTEnts (void)
 	tent_obj_t *to;
 
 	for (to = cl_beams; to; to = to->next) {
-		for (t = to->to.beam.tents; t; t = t->next)
-			t->ent.efrag = 0;
+		for (t = to->to.beam.tents; t; t = t->next) {
+			t->ent.visibility.efrag = 0;
+		}
 		free_temp_entities (to->to.beam.tents);
 	}
 	free_tent_objects (cl_beams);
 	cl_beams = 0;
 
 	for (to = cl_explosions; to; to = to->next) {
-		for (t = to->to.ex.tent; t; t = t->next)
-			t->ent.efrag = 0;
+		for (t = to->to.ex.tent; t; t = t->next) {
+			t->ent.visibility.efrag = 0;
+		}
 		free_temp_entities (to->to.ex.tent);
 	}
 	free_tent_objects (cl_explosions);
@@ -235,7 +244,7 @@ beam_clear (beam_t *b)
 
 		for (t = b->tents; t; t = t->next) {
 			r_funcs->R_RemoveEfrags (&t->ent);
-			t->ent.efrag = 0;
+			t->ent.visibility.efrag = 0;
 		}
 		free_temp_entities (b->tents);
 		b->tents = 0;
@@ -289,7 +298,7 @@ beam_setup (beam_t *b, qboolean transform)
 
 		VectorMultAdd (org, d, dist, tent->ent.origin);
 		d += 1.0;
-		tent->ent.model = b->model;
+		tent->ent.renderer.model = b->model;
 		ang[PITCH] = pitch;
 		ang[YAW] = yaw;
 		if (transform) {
@@ -432,7 +441,7 @@ CL_ParseTEnt (void)
 			//FIXME need better model management
 			if (!cl_spr_explod->cache.data)
 				cl_spr_explod = Mod_ForName ("progs/s_explod.spr", true);
-			ex->tent->ent.model = cl_spr_explod;
+			ex->tent->ent.renderer.model = cl_spr_explod;
 			CL_TransformEntity (&ex->tent->ent, ex->tent->ent.angles, true);
 			break;
 
@@ -580,10 +589,10 @@ CL_UpdateExplosions (void)
 		ex = &(*to)->to.ex;
 		ent = &ex->tent->ent;
 		f = 10 * (cl.time - ex->start);
-		if (f >= ent->model->numframes) {
+		if (f >= ent->renderer.model->numframes) {
 			tent_obj_t *_to;
 			r_funcs->R_RemoveEfrags (ent);
-			ent->efrag = 0;
+			ent->visibility.efrag = 0;
 			free_temp_entities (ex->tent);
 			_to = *to;
 			*to = _to->next;
@@ -593,9 +602,10 @@ CL_UpdateExplosions (void)
 		}
 		to = &(*to)->next;
 
-		ent->frame = f;
-		if (!ent->efrag)
+		ent->animation.frame = f;
+		if (!ent->visibility.efrag) {
 			r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
+		}
 	}
 }
 
@@ -613,7 +623,7 @@ CL_ClearProjectiles (void)
 
 	for (tent = cl_projectiles; tent; tent = tent->next) {
 		r_funcs->R_RemoveEfrags (&tent->ent);
-		tent->ent.efrag = 0;
+		tent->ent.visibility.efrag = 0;
 	}
 	free_temp_entities (cl_projectiles);
 	cl_projectiles = 0;
@@ -648,8 +658,8 @@ CL_ParseProjectiles (qboolean nail2)
 		tail = &tent->next;
 
 		pr = &tent->ent;
-		pr->model = cl.model_precache[cl_spikeindex];
-		pr->skin = 0;
+		pr->renderer.model = cl.model_precache[cl_spikeindex];
+		pr->renderer.skin = 0;
 		pr->origin[0] = ((bits[0] + ((bits[1] & 15) << 8)) << 1) - 4096;
 		pr->origin[1] = (((bits[1] >> 4) + (bits[2] << 4)) << 1) - 4096;
 		pr->origin[2] = ((bits[3] + ((bits[4] & 15) << 8)) << 1) - 4096;

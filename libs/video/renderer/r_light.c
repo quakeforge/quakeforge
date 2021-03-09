@@ -328,7 +328,7 @@ R_PushDlights (const vec3_t entorigin)
 		if (l->die < vr_data.realtime || !l->radius)
 			continue;
 		VectorSubtract (l->origin, entorigin, lightorigin);
-		R_MarkLights (lightorigin, l, i, r_worldentity.model);
+		R_MarkLights (lightorigin, l, i, r_worldentity.renderer.model);
 	}
 }
 

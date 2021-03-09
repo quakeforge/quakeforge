@@ -45,6 +45,7 @@
 #include <stdio.h>
 
 #include "QF/cvar.h"
+#include "QF/entity.h"
 #include "QF/render.h"
 #include "QF/sys.h"
 #include "QF/GL/defines.h"
@@ -530,11 +531,14 @@ gl_R_DrawBrushModel (entity_t *e)
 	qboolean    rotated;
 	vec3_t      mins, maxs;
 	mod_brush_t *brush;
+	mat4f_t     worldMatrix;
 
-	model = e->model;
+	model = e->renderer.model;
 	brush = &model->brush;
 
-	if (e->transform[0] != 1 || e->transform[5] != 1 || e->transform[10] != 1) {
+	Transform_GetWorldMatrix (e->transform, worldMatrix);
+	if (worldMatrix[0][0] != 1 || worldMatrix[1][1] != 1
+		|| worldMatrix[2][2] != 1) {
 		rotated = true;
 		radius = model->radius;
 #if 0 //QSG FIXME
@@ -559,12 +563,11 @@ gl_R_DrawBrushModel (entity_t *e)
 
 	VectorSubtract (r_refdef.vieworg, e->origin, modelorg);
 	if (rotated) {
-		vec3_t      temp;
+		vec4f_t     temp = { modelorg[0], modelorg[1], modelorg[2], 0 };
 
-		VectorCopy (modelorg, temp);
-		modelorg[0] = DotProduct (temp, e->transform + 0);
-		modelorg[1] = DotProduct (temp, e->transform + 4);
-		modelorg[2] = DotProduct (temp, e->transform + 8);
+		modelorg[0] = dotf (temp, worldMatrix[0])[0];
+		modelorg[1] = dotf (temp, worldMatrix[1])[0];
+		modelorg[2] = dotf (temp, worldMatrix[2])[0];
 	}
 
 	// calculate dynamic lighting for bmodel if it's not an instanced model
@@ -584,7 +587,7 @@ gl_R_DrawBrushModel (entity_t *e)
 
 	qfglPushMatrix ();
 	gl_R_RotateForEntity (e);
-	qfglGetFloatv (GL_MODELVIEW_MATRIX, e->full_transform);
+	qfglGetFloatv (GL_MODELVIEW_MATRIX, e->renderer.full_transform);
 	qfglPopMatrix ();
 
 	psurf = &brush->surfaces[brush->firstmodelsurface];
@@ -599,7 +602,8 @@ gl_R_DrawBrushModel (entity_t *e)
 		// draw the polygon
 		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
 			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
-			chain_surface (brush, psurf, e->full_transform, e->colormod);
+			chain_surface (brush, psurf, e->renderer.full_transform,
+						   e->renderer.colormod);
 		}
 	}
 }
@@ -717,7 +721,7 @@ gl_R_DrawWorld (void)
 	entity_t    worldent;
 
 	memset (&worldent, 0, sizeof (worldent));
-	worldent.model = r_worldentity.model;
+	worldent.renderer.model = r_worldentity.renderer.model;
 
 	VectorCopy (r_refdef.vieworg, modelorg);
 
@@ -729,12 +733,13 @@ gl_R_DrawWorld (void)
 		gl_R_DrawSky ();
 	}
 
-	R_VisitWorldNodes (&r_worldentity.model->brush);
+	R_VisitWorldNodes (&r_worldentity.renderer.model->brush);
 	if (r_drawentities->int_val) {
 		entity_t   *ent;
 		for (ent = r_ent_queue; ent; ent = ent->next) {
-			if (ent->model->type != mod_brush)
+			if (ent->renderer.model->type != mod_brush) {
 				continue;
+			}
 			currententity = ent;
 
 			gl_R_DrawBrushModel (currententity);

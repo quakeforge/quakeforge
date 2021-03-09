@@ -191,7 +191,7 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 		d_lightstylevalue[i] = 264;		// normal light value
 
 	memset (&r_worldentity, 0, sizeof (r_worldentity));
-	r_worldentity.model = worldmodel;
+	r_worldentity.renderer.model = worldmodel;
 	brush = &worldmodel->brush;
 
 	R_FreeAllEntities ();
@@ -230,7 +230,8 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 			continue;
 		if (*models[i]->path == '*')
 			continue;
-		if (models[i] != r_worldentity.model && models[i]->type == mod_brush)
+		if (models[i] != r_worldentity.renderer.model
+			&& models[i]->type == mod_brush)
 			register_textures (&models[i]->brush);
 	}
 }

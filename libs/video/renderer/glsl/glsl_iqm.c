@@ -43,6 +43,7 @@
 #include <stdlib.h>
 
 #include "QF/cvar.h"
+#include "QF/entity.h"
 #include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
@@ -137,7 +138,7 @@ static struct va_attr_s {
 	{&iqm_shader.vcolor,   4, GL_UNSIGNED_BYTE, 1},
 };
 
-static mat4_t iqm_vp;
+static mat4f_t iqm_vp;
 
 void
 glsl_R_InitIQM (void)
@@ -207,28 +208,31 @@ glsl_R_DrawIQM (void)
 {
 	static quat_t color = { 1, 1, 1, 1};
 	entity_t   *ent = currententity;
-	model_t    *model = ent->model;
+	model_t    *model = ent->renderer.model;
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
 	glsliqm_t  *glsl = (glsliqm_t *) iqm->extra_data;
 	dlight_t   *lights[MAX_IQM_LIGHTS];
 	int         i;
 	vec_t       norm_mat[9];
-	mat4_t      mvp_mat;
+	mat4f_t     mvp_mat;
 	float       blend;
 	iqmframe_t *frame;
 
-	R_LightPoint (&r_worldentity.model->brush, ent->origin);//FIXME min_light?
+	R_LightPoint (&r_worldentity.renderer.model->brush, ent->origin);//FIXME min_light?
 	VectorScale (ambientcolor, 1/255.0, ambientcolor);
 	R_FindNearLights (ent->origin, MAX_IQM_LIGHTS, lights);
 
 	// we need only the rotation for normals.
-	VectorCopy (ent->transform + 0, norm_mat + 0);
-	VectorCopy (ent->transform + 4, norm_mat + 3);
-	VectorCopy (ent->transform + 8, norm_mat + 6);
-	Mat4Mult (iqm_vp, ent->transform, mvp_mat);
+	mat4f_t mat;
+	Transform_GetWorldMatrix (ent->transform, mat);
+	VectorCopy (mat[0], norm_mat + 0);
+	VectorCopy (mat[1], norm_mat + 3);
+	VectorCopy (mat[2], norm_mat + 6);
+	mmulf (mvp_mat, iqm_vp, mat);
 
 	blend = R_IQMGetLerpedFrames (ent, iqm);
-	frame = R_IQMBlendFrames (iqm, ent->pose1, ent->pose2, blend, 0);
+	frame = R_IQMBlendFrames (iqm, ent->animation.pose1, ent->animation.pose2,
+							  blend, 0);
 
 	qfeglUniform3fv (iqm_shader.ambient.location, 1, ambientcolor);
 	for (i = 0; i < MAX_IQM_LIGHTS; i++) {
@@ -249,7 +253,8 @@ glsl_R_DrawIQM (void)
 	qfeglBindBuffer (GL_ARRAY_BUFFER, glsl->vertex_array);
 	qfeglBindBuffer (GL_ELEMENT_ARRAY_BUFFER, glsl->element_array);
 
-	qfeglUniformMatrix4fv (iqm_shader.mvp_matrix.location, 1, false, mvp_mat);
+	qfeglUniformMatrix4fv (iqm_shader.mvp_matrix.location, 1, false,
+						   &mvp_mat[0][0]);
 	qfeglUniformMatrix3fv (iqm_shader.norm_matrix.location, 1, false,
 						   norm_mat);
 	qfeglUniformMatrix4fv (iqm_shader.bonemats.location, iqm->num_joints,
@@ -274,7 +279,7 @@ glsl_R_IQMBegin (void)
 	quat_t      fog;
 
 	// pre-multiply the view and projection matricies
-	Mat4Mult (glsl_projection, glsl_view, iqm_vp);
+	mmulf (iqm_vp, glsl_projection, glsl_view);
 
 	qfeglUseProgram (iqm_shader.program);
 

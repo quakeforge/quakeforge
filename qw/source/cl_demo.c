@@ -758,17 +758,19 @@ demo_start_recording (int track)
 	for (ent = cl_static_entities; ent; ent = ent->unext) {
 		MSG_WriteByte (&buf, svc_spawnstatic);
 
-		for (j = 1; j < cl.nummodels; j++)
-			if (ent->model == cl.model_precache[j])
+		for (j = 1; j < cl.nummodels; j++) {
+			if (ent->renderer.model == cl.model_precache[j]) {
 				break;
+			}
+		}
 		if (j == cl.nummodels)
 			MSG_WriteByte (&buf, 0);
 		else
 			MSG_WriteByte (&buf, j);
 
-		MSG_WriteByte (&buf, ent->frame);
+		MSG_WriteByte (&buf, ent->animation.frame);
 		MSG_WriteByte (&buf, 0);
-		MSG_WriteByte (&buf, ent->skinnum);
+		MSG_WriteByte (&buf, ent->renderer.skinnum);
 		MSG_WriteCoordAngleV (&buf, ent->origin, ent->angles);
 
 		if (buf.cursize > MAX_MSGLEN / 2) {

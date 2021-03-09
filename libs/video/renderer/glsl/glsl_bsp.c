@@ -46,6 +46,7 @@
 
 #include "QF/cvar.h"
 #include "QF/dstring.h"
+#include "QF/entity.h"
 #include "QF/image.h"
 #include "QF/render.h"
 #include "QF/sys.h"
@@ -94,7 +95,7 @@ static instsurf_t **instsurfs_tail = &instsurfs;
 static instsurf_t  *free_instsurfs;
 
 static GLuint   bsp_vbo;
-static mat4_t   bsp_vp;
+static mat4f_t  bsp_vp;
 
 static GLuint   skybox_tex;
 static qboolean skybox_loaded;
@@ -430,9 +431,9 @@ glsl_R_RegisterTextures (model_t **models, int num_models)
 	mod_brush_t *brush;
 
 	glsl_R_ClearTextures ();
-	glsl_R_InitSurfaceChains (&r_worldentity.model->brush);
+	glsl_R_InitSurfaceChains (&r_worldentity.renderer.model->brush);
 	glsl_R_AddTexture (r_notexture_mip);
-	register_textures (&r_worldentity.model->brush);
+	register_textures (&r_worldentity.renderer.model->brush);
 	for (i = 0; i < num_models; i++) {
 		m = models[i];
 		if (!m)
@@ -441,7 +442,7 @@ glsl_R_RegisterTextures (model_t **models, int num_models)
 		if (*m->path == '*')
 			continue;
 		// world has already been done, not interested in non-brush models
-		if (m == r_worldentity.model || m->type != mod_brush)
+		if (m == r_worldentity.renderer.model || m->type != mod_brush)
 			continue;
 		brush = &m->brush;
 		brush->numsubmodels = 1; // no support for submodels in non-world model
@@ -486,7 +487,7 @@ build_surf_displist (model_t **models, msurface_t *fa, int base,
 	if (fa->ec_index < 0) {
 		brush = &models[-fa->ec_index - 1]->brush;
 	} else {
-		brush = &r_worldentity.model->brush;
+		brush = &r_worldentity.renderer.model->brush;
 	}
 	vertices = brush->vertexes;
 	edges = brush->edges;
@@ -585,7 +586,7 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 			}
 			surf = brush->surfaces + j;
 			surf->ec_index = dm - brush->submodels;
-			if (!surf->ec_index && m != r_worldentity.model)
+			if (!surf->ec_index && m != r_worldentity.renderer.model)
 				surf->ec_index = -1 - i;	// instanced model
 			tex = surf->texinfo->texture->render;
 			CHAIN_SURF_F2B (surf, tex->tex_chain);
@@ -662,9 +663,12 @@ R_DrawBrushModel (entity_t *e)
 	vec3_t      mins, maxs, org;
 	mod_brush_t *brush;
 
-	model = e->model;
+	model = e->renderer.model;
 	brush = &model->brush;
-	if (e->transform[0] != 1 || e->transform[5] != 1 || e->transform[10] != 1) {
+	mat4f_t mat;
+	Transform_GetWorldMatrix (e->transform, mat);
+	memcpy (e->renderer.full_transform, mat, sizeof (mat));//FIXME
+	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
 		rotated = true;
 		radius = model->radius;
 		if (R_CullSphere (e->origin, radius))
@@ -679,12 +683,11 @@ R_DrawBrushModel (entity_t *e)
 
 	VectorSubtract (r_refdef.vieworg, e->origin, org);
 	if (rotated) {
-		vec3_t      temp;
+		vec4f_t     temp = { org[0], org[1], org[2], 0 };
 
-		VectorCopy (org, temp);
-		org[0] = DotProduct (temp, e->transform + 0);
-		org[1] = DotProduct (temp, e->transform + 4);
-		org[2] = DotProduct (temp, e->transform + 8);
+		org[0] = dotf (temp, mat[0])[0];
+		org[1] = dotf (temp, mat[1])[0];
+		org[2] = dotf (temp, mat[2])[0];
 	}
 
 	// calculate dynamic lighting for bmodel if it's not an instanced model
@@ -713,7 +716,8 @@ R_DrawBrushModel (entity_t *e)
 		// enqueue the polygon
 		if (((surf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON))
 			|| (!(surf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
-			chain_surface (brush, surf, e->transform, e->colormod);
+			chain_surface (brush, surf, e->renderer.full_transform,
+						   e->renderer.colormod);
 		}
 	}
 }
@@ -842,10 +846,10 @@ draw_elechain (elechain_t *ec, int matloc, int vertloc, int tlstloc,
 		}
 	}
 	if (ec->transform) {
-		Mat4Mult (bsp_vp, ec->transform, mat);
+		Mat4Mult (&bsp_vp[0][0], ec->transform, mat);//FIXME
 		qfeglUniformMatrix4fv (matloc, 1, false, mat);
 	} else {
-		qfeglUniformMatrix4fv (matloc, 1, false, bsp_vp);
+		qfeglUniformMatrix4fv (matloc, 1, false, &bsp_vp[0][0]);
 	}
 	for (el = ec->elements; el; el = el->next) {
 		if (!el->list->size)
@@ -873,7 +877,7 @@ bsp_begin (void)
 	QuatCopy (default_color, last_color);
 	qfeglVertexAttrib4fv (quake_bsp.color.location, default_color);
 
-	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
+	mmulf (bsp_vp, glsl_projection, glsl_view);
 
 	qfeglUseProgram (quake_bsp.program);
 	qfeglEnableVertexAttribArray (quake_bsp.vertex.location);
@@ -928,7 +932,7 @@ turb_begin (void)
 	QuatCopy (default_color, last_color);
 	qfeglVertexAttrib4fv (quake_bsp.color.location, default_color);
 
-	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
+	mmulf (bsp_vp, glsl_projection, glsl_view);
 
 	qfeglUseProgram (quake_turb.program);
 	qfeglEnableVertexAttribArray (quake_turb.vertex.location);
@@ -1001,7 +1005,7 @@ sky_begin (void)
 	QuatCopy (default_color, last_color);
 	qfeglVertexAttrib4fv (quake_bsp.color.location, default_color);
 
-	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
+	mmulf (bsp_vp, glsl_projection, glsl_view);
 
 	if (skybox_loaded) {
 		sky_params.mvp_matrix = &quake_skybox.mvp_matrix;
@@ -1127,15 +1131,15 @@ glsl_R_DrawWorld (void)
 	clear_texture_chains ();	// do this first for water and skys
 
 	memset (&worldent, 0, sizeof (worldent));
-	worldent.model = r_worldentity.model;
+	worldent.renderer.model = r_worldentity.renderer.model;
 
 	currententity = &worldent;
 
-	R_VisitWorldNodes (&worldent.model->brush);
+	R_VisitWorldNodes (&worldent.renderer.model->brush);
 	if (r_drawentities->int_val) {
 		entity_t   *ent;
 		for (ent = r_ent_queue; ent; ent = ent->next) {
-			if (ent->model->type != mod_brush)
+			if (ent->renderer.model->type != mod_brush)
 				continue;
 			currententity = ent;
 

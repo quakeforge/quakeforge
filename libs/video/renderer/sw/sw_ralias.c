@@ -30,6 +30,7 @@
 
 #include <stdlib.h>
 
+#include "QF/entity.h"
 #include "QF/image.h"
 #include "QF/render.h"
 #include "QF/skin.h"
@@ -94,8 +95,8 @@ R_AliasCheckBBox (void)
 	int         minz;
 
 	// expand, rotate, and translate points into worldspace
-	currententity->trivial_accept = 0;
-	pmodel = currententity->model;
+	currententity->visibility.trivial_accept = 0;
+	pmodel = currententity->renderer.model;
 	if (!(pahdr = pmodel->aliashdr))
 		pahdr = Cache_Get (&pmodel->cache);
 	pmdl = (mdl_t *) ((byte *) pahdr + pahdr->model);
@@ -103,7 +104,7 @@ R_AliasCheckBBox (void)
 	R_AliasSetUpTransform (0);
 
 	// construct the base bounding box for this frame
-	frame = currententity->frame;
+	frame = currententity->animation.frame;
 // TODO: don't repeat this check when drawing?
 	if ((frame >= pmdl->numframes) || (frame < 0)) {
 		Sys_MaskPrintf (SYS_DEV, "No such frame %d %s\n", frame, pmodel->path);
@@ -218,11 +219,11 @@ R_AliasCheckBBox (void)
 		return false;					// trivial reject off one side
 	}
 
-	currententity->trivial_accept = !anyclip & !zclipped;
+	currententity->visibility.trivial_accept = !anyclip & !zclipped;
 
-	if (currententity->trivial_accept) {
+	if (currententity->visibility.trivial_accept) {
 		if (minz > (r_aliastransition + (pmdl->size * r_resfudge))) {
-			currententity->trivial_accept |= 2;
+			currententity->visibility.trivial_accept |= 2;
 		}
 	}
 
@@ -355,10 +356,12 @@ R_AliasSetUpTransform (int trivial_accept)
 	float       rotationmatrix[3][4], t2matrix[3][4];
 	static float tmatrix[3][4];
 	static float viewmatrix[3][4];
+	mat4f_t     mat;
 
-	VectorCopy (currententity->transform + 0, alias_forward);
-	VectorNegate (currententity->transform + 4, alias_right);
-	VectorCopy (currententity->transform + 8, alias_up);
+	Transform_GetWorldMatrix (currententity->transform, mat);
+	VectorCopy (mat[0], alias_forward);
+	VectorNegate (mat[1], alias_right);
+	VectorCopy (mat[2], alias_up);
 
 	tmatrix[0][0] = pmdl->scale[0];
 	tmatrix[1][1] = pmdl->scale[1];
@@ -542,7 +545,7 @@ R_AliasSetupSkin (void)
 {
 	int         skinnum;
 
-	skinnum = currententity->skinnum;
+	skinnum = currententity->renderer.skinnum;
 	if ((skinnum >= pmdl->numskins) || (skinnum < 0)) {
 		Sys_MaskPrintf (SYS_DEV, "R_AliasSetupSkin: no such skin # %d\n",
 						skinnum);
@@ -559,16 +562,16 @@ R_AliasSetupSkin (void)
 	r_affinetridesc.skinheight = pmdl->skinheight;
 
 	acolormap = vid.colormap8;
-	if (currententity->skin) {
+	if (currententity->renderer.skin) {
 		tex_t      *base;
 
-		base = currententity->skin->texels;
+		base = currententity->renderer.skin->texels;
 		if (base) {
 			r_affinetridesc.pskin = base->data;
 			r_affinetridesc.skinwidth = base->width;
 			r_affinetridesc.skinheight = base->height;
 		}
-		acolormap = currententity->skin->colormap;
+		acolormap = currententity->renderer.skin->colormap;
 	}
 }
 
@@ -611,7 +614,7 @@ R_AliasSetupFrame (void)
 {
 	maliasframedesc_t *frame;
 
-	frame = R_AliasGetFramedesc (currententity->frame, paliashdr);
+	frame = R_AliasGetFramedesc (currententity->animation.frame, paliashdr);
 	r_apverts = (trivertx_t *) ((byte *) paliashdr + frame->frame);
 }
 
@@ -624,8 +627,8 @@ R_AliasDrawModel (alight_t *plighting)
 
 	r_amodels_drawn++;
 
-	if (!(paliashdr = currententity->model->aliashdr))
-		paliashdr = Cache_Get (&currententity->model->cache);
+	if (!(paliashdr = currententity->renderer.model->aliashdr))
+		paliashdr = Cache_Get (&currententity->renderer.model->cache);
 	pmdl = (mdl_t *) ((byte *) paliashdr + paliashdr->model);
 
 	size = (CACHE_SIZE - 1)
@@ -641,12 +644,12 @@ R_AliasDrawModel (alight_t *plighting)
 	pauxverts = (auxvert_t *) &pfinalverts[pmdl->numverts + 1];
 
 	R_AliasSetupSkin ();
-	R_AliasSetUpTransform (currententity->trivial_accept);
+	R_AliasSetUpTransform (currententity->visibility.trivial_accept);
 	R_AliasSetupLighting (plighting);
 	R_AliasSetupFrame ();
 
-	r_affinetridesc.drawtype = (currententity->trivial_accept == 3) &&
-		r_recursiveaffinetriangles;
+	r_affinetridesc.drawtype = ((currententity->visibility.trivial_accept == 3)
+								&& r_recursiveaffinetriangles);
 
 	if (!acolormap)
 		acolormap = vid.colormap8;
@@ -664,11 +667,14 @@ R_AliasDrawModel (alight_t *plighting)
 	else
 		ziscale = (float) 0x8000 *(float) 0x10000 *3.0;
 
-	if (currententity->trivial_accept && pmdl->ident != HEADER_MDL16)
+	if (currententity->visibility.trivial_accept
+		&& pmdl->ident != HEADER_MDL16) {
 		R_AliasPrepareUnclippedPoints ();
-	else
+	} else {
 		R_AliasPreparePoints ();
+	}
 
-	if (!currententity->model->aliashdr)
-		Cache_Release (&currententity->model->cache);
+	if (!currententity->renderer.model->aliashdr) {
+		Cache_Release (&currententity->renderer.model->cache);
+	}
 }

@@ -353,7 +353,7 @@ R_RenderFace (msurface_t *fa, int clipflags)
 	vec3_t      p_normal;
 	medge_t    *pedges, tedge;
 	clipplane_t *pclip;
-	mod_brush_t *brush = &currententity->model->brush;
+	mod_brush_t *brush = &currententity->renderer.model->brush;
 
 	// skip out if no more surfs
 	if ((surface_p) >= surf_max) {
@@ -624,7 +624,7 @@ R_RenderPoly (msurface_t *fa, int clipflags)
 	polyvert_t  pverts[100];			// FIXME: do real number, safely
 	int         vertpage, newverts, newpage, lastvert;
 	qboolean    visible;
-	mod_brush_t *brush = &currententity->model->brush;
+	mod_brush_t *brush = &currententity->renderer.model->brush;
 
 	// FIXME: clean this up and make it faster
 	// FIXME: guard against running out of vertices

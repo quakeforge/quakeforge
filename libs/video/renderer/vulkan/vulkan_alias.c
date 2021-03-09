@@ -45,7 +45,7 @@
 
 #include "QF/cvar.h"
 #include "QF/darray.h"
-#include "QF/dstring.h"
+#include "QF/entity.h"
 #include "QF/image.h"
 #include "QF/render.h"
 #include "QF/skin.h"
@@ -121,36 +121,41 @@ Vulkan_DrawAlias (entity_t *ent, vulkan_ctx_t *ctx)
 {
 	aliasctx_t *actx = ctx->alias_context;
 	aliasframe_t *aframe = &actx->frames.a[ctx->curFrame];
-	model_t    *model = ent->model;
+	model_t    *model = ent->renderer.model;
 	aliashdr_t *hdr;
 	qfv_alias_skin_t *skin;
-	float       vertex_constants[17];
+	struct {
+		mat4f_t     mat;
+		float       blend;
+	}           vertex_constants;
 	byte        fragment_constants[3][4];
 
 	if (!(hdr = model->aliashdr)) {
 		hdr = Cache_Get (&model->cache);
 	}
 
-	memcpy (vertex_constants, ent->transform, sizeof (ent->transform));
-	vertex_constants[16] = R_AliasGetLerpedFrames (ent, hdr);
+	Transform_GetWorldMatrix (ent->transform, vertex_constants.mat);
+	vertex_constants.blend = R_AliasGetLerpedFrames (ent, hdr);
 
 	if (0/*XXX ent->skin && ent->skin->tex*/) {
 		//skin = ent->skin->tex;
 	} else {
 		maliasskindesc_t *skindesc;
-		skindesc = R_AliasGetSkindesc (ent->skinnum, hdr);
+		skindesc = R_AliasGetSkindesc (ent->renderer.skinnum, hdr);
 		skin = (qfv_alias_skin_t *) ((byte *) hdr + skindesc->skin);
 	}
-	QuatScale (ent->colormod, 255, fragment_constants[0]);
+	QuatScale (ent->renderer.colormod, 255, fragment_constants[0]);
 	QuatCopy (skin->colora, fragment_constants[1]);
 	QuatCopy (skin->colorb, fragment_constants[2]);
 
-	emit_commands (aframe->cmdSet.a[QFV_aliasDepth], ent->pose1, ent->pose2,
-				   0, vertex_constants, sizeof (vertex_constants),
+	emit_commands (aframe->cmdSet.a[QFV_aliasDepth],
+				   ent->animation.pose1, ent->animation.pose2,
+				   0, &vertex_constants, 17 * sizeof (float),
 				   fragment_constants, sizeof (fragment_constants),
 				   hdr, ctx);
-	emit_commands (aframe->cmdSet.a[QFV_aliasGBuffer], ent->pose1, ent->pose2,
-				   skin, vertex_constants, sizeof (vertex_constants),
+	emit_commands (aframe->cmdSet.a[QFV_aliasGBuffer],
+				   ent->animation.pose1, ent->animation.pose2,
+				   skin, &vertex_constants, 17 * sizeof (float),
 				   fragment_constants, sizeof (fragment_constants),
 				   hdr, ctx);
 }

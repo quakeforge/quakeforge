@@ -36,6 +36,7 @@
 
 #include "qfalloca.h"
 
+#include "QF/entity.h"
 #include "QF/render.h"
 #include "QF/sys.h"
 
@@ -80,9 +81,11 @@ R_EntityRotate (vec3_t vec)
 void
 sw32_R_RotateBmodel (void)
 {
-	VectorCopy (currententity->transform + 0, entity_rotation[0]);
-	VectorCopy (currententity->transform + 4, entity_rotation[1]);
-	VectorCopy (currententity->transform + 8, entity_rotation[2]);
+	mat4f_t     mat;
+	Transform_GetWorldMatrix (currententity->transform, mat);
+	VectorCopy (mat[0], entity_rotation[0]);
+	VectorCopy (mat[1], entity_rotation[1]);
+	VectorCopy (mat[2], entity_rotation[2]);
 
 	// rotate modelorg and the transformation matrix
 	R_EntityRotate (modelorg);
@@ -300,7 +303,9 @@ sw32_R_DrawSolidClippedSubmodelPolygons (model_t *model)
 
 				pbedge[j - 1].pnext = NULL;	// mark end of edges
 
-				R_RecursiveClipBPoly (pbedge, currententity->topnode, psurf);
+				R_RecursiveClipBPoly (pbedge,
+									  currententity->visibility.topnode,
+									  psurf);
 			} else {
 				Sys_Error ("no edges in bmodel");
 			}
@@ -333,7 +338,8 @@ sw32_R_DrawSubmodelPolygons (model_t *model, int clipflags)
 		// draw the polygon
 		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
 			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
-			sw32_r_currentkey = ((mleaf_t *) currententity->topnode)->key;
+			sw32_r_currentkey
+				= ((mleaf_t *) currententity->visibility.topnode)->key;
 
 			// FIXME: use bounding-box-based frustum clipping info?
 			sw32_R_RenderFace (psurf, clipflags);
@@ -514,7 +520,7 @@ sw32_R_RenderWorld (void)
 
 	currententity = &r_worldentity;
 	VectorCopy (r_origin, modelorg);
-	brush = &currententity->model->brush;
+	brush = &currententity->renderer.model->brush;
 	r_pcurrentvertbase = brush->vertexes;
 
 	R_VisitWorldNodes (brush, 15);

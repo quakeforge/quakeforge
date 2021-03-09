@@ -313,7 +313,7 @@ glsl_R_ReadPointFile_f (void)
 	vec3_t      org;
 	QFile      *f;
 
-	mapname = strdup (r_worldentity.model->path);
+	mapname = strdup (r_worldentity.renderer.model->path);
 	if (!mapname)
 		Sys_Error ("Can't duplicate mapname!");
 	QFS_StripExtension (mapname, mapname);
@@ -1568,10 +1568,10 @@ draw_qf_particles (void)
 	particle_t *part;
 	vec3_t      up_scale, right_scale, up_right_scale, down_right_scale;
 	partvert_t *VA;
-	mat4_t      vp_mat;
+	mat4f_t     vp_mat;
 	quat_t      fog;
 
-	Mat4Mult (glsl_projection, glsl_view, vp_mat);
+	mmulf (vp_mat, glsl_projection, glsl_view);
 
 	qfeglDepthMask (GL_FALSE);
 	qfeglUseProgram (quake_part.program);
@@ -1583,7 +1583,8 @@ draw_qf_particles (void)
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (quake_part.fog.location, 1, fog);
 
-	qfeglUniformMatrix4fv (quake_part.mvp_matrix.location, 1, false, vp_mat);
+	qfeglUniformMatrix4fv (quake_part.mvp_matrix.location, 1, false,
+						   &vp_mat[0][0]);
 
 	qfeglUniform1i (quake_part.texture.location, 0);
 	qfeglActiveTexture (GL_TEXTURE0 + 0);
@@ -1712,10 +1713,10 @@ draw_id_particles (void)
 	float       minparticledist;
 	particle_t *part;
 	partvert_t *VA;
-	mat4_t      vp_mat;
+	mat4f_t     vp_mat;
 	quat_t      fog;
 
-	Mat4Mult (glsl_projection, glsl_view, vp_mat);
+	mmulf (vp_mat, glsl_projection, glsl_view);
 
 	// LordHavoc: particles should not affect zbuffer
 	qfeglDepthMask (GL_FALSE);
@@ -1723,7 +1724,8 @@ draw_id_particles (void)
 	qfeglEnableVertexAttribArray (quake_point.vertex.location);
 	qfeglEnableVertexAttribArray (quake_point.color.location);
 
-	qfeglUniformMatrix4fv (quake_point.mvp_matrix.location, 1, false, vp_mat);
+	qfeglUniformMatrix4fv (quake_point.mvp_matrix.location, 1, false,
+						   &vp_mat[0][0]);
 
 	glsl_Fog_GetColor (fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;

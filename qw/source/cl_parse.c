@@ -979,9 +979,9 @@ CL_ParseStatic (void)
 	cl_static_tail = &ent->unext;
 
 	// copy it to the current state
-	ent->model = cl.model_precache[es.modelindex];
-	ent->frame = es.frame;
-	ent->skinnum = es.skinnum;
+	ent->renderer.model = cl.model_precache[es.modelindex];
+	ent->animation.frame = es.frame;
+	ent->renderer.skinnum = es.skinnum;
 
 	VectorCopy (es.origin, ent->origin);
 	CL_TransformEntity (ent, es.angles, true);

@@ -70,7 +70,7 @@ setup_frame (vulkan_ctx_t *ctx)
 	AngleVectors (r_refdef.viewangles, vpn, vright, vup);
 	R_SetFrustum ();
 
-	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.model);
+	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.renderer.model);
 }
 
 static void
@@ -114,7 +114,7 @@ R_RenderEntities (vulkan_ctx_t *ctx)
 		entity_t   *ent; \
 		int         begun = 0; \
 		for (ent = r_ent_queue; ent; ent = ent->next) { \
-			if (ent->model->type != mod_##type_name) \
+			if (ent->renderer.model->type != mod_##type_name) \
 				continue; \
 			if (!begun) { \
 				Vulkan_##Type##Begin (ctx); \
@@ -138,7 +138,7 @@ R_DrawViewModel (void)
 	if (vr_data.inhibit_viewmodel
 		|| !r_drawviewmodel->int_val
 		|| !r_drawentities->int_val
-		|| !currententity->model)
+		|| !currententity->renderer.model)
 		return;
 
 	// hack the depth range to prevent view model from poking into walls
@@ -207,7 +207,7 @@ Vulkan_NewMap (model_t *worldmodel, struct model_s **models, int num_models,
 	}
 
 	memset (&r_worldentity, 0, sizeof (r_worldentity));
-	r_worldentity.model = worldmodel;
+	r_worldentity.renderer.model = worldmodel;
 
 	// Force a vis update
 	r_viewleaf = NULL;

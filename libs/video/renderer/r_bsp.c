@@ -54,7 +54,7 @@ R_MarkLeaves (void)
 	mleaf_t     *leaf;
 	mnode_t     *node;
 	msurface_t **mark;
-	mod_brush_t *brush = &r_worldentity.model->brush;
+	mod_brush_t *brush = &r_worldentity.renderer.model->brush;
 
 	if (r_oldviewleaf == r_viewleaf && !r_novis->int_val)
 		return;
@@ -70,7 +70,7 @@ R_MarkLeaves (void)
 		vis = solid;
 		memset (solid, 0xff, (brush->numleafs + 7) >> 3);
 	} else
-		vis = Mod_LeafPVS (r_viewleaf, r_worldentity.model);
+		vis = Mod_LeafPVS (r_viewleaf, r_worldentity.renderer.model);
 
 	for (i = 0; (int) i < brush->numleafs; i++) {
 		if (vis[i >> 3] & (1 << (i & 7))) {
@@ -105,7 +105,7 @@ R_TextureAnimation (msurface_t *surf)
 	texture_t  *base = surf->texinfo->texture;
 	int         count, relative;
 
-	if (currententity->frame) {
+	if (currententity->animation.frame) {
 		if (base->alternate_anims)
 			base = base->alternate_anims;
 	}
