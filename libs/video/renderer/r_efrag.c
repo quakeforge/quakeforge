@@ -218,26 +218,26 @@ R_AddEfrags (mod_brush_t *brush, entity_t *ent)
 }
 
 void
-R_StoreEfrags (const efrag_t *pefrag)
+R_StoreEfrags (const efrag_t *efrag)
 {
-	entity_t   *pent;
+	entity_t   *ent;
 	model_t    *model;
 
-	while (pefrag) {
-		pent = pefrag->entity;
-		model = pent->model;
+	while (efrag) {
+		ent = efrag->entity;
+		model = ent->model;
 
 		switch (model->type) {
 			case mod_alias:
 			case mod_brush:
 			case mod_sprite:
 			case mod_iqm:
-				if (pent->visframe != r_framecount) {
-					R_EnqueueEntity (pent);
+				if (ent->visframe != r_framecount) {
+					R_EnqueueEntity (ent);
 					// mark that we've recorded this entity for this frame
-					pent->visframe = r_framecount;
+					ent->visframe = r_framecount;
 				}
-				pefrag = pefrag->leafnext;
+				efrag = efrag->leafnext;
 				break;
 
 			default:
