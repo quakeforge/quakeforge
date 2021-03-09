@@ -38,6 +38,7 @@ GNU89INLINE inline void mmulf (mat4f_t c, const mat4f_t a, const mat4f_t b);
 GNU89INLINE inline vec4f_t mvmulf (const mat4f_t m, vec4f_t v) __attribute__((const));
 GNU89INLINE inline vec4f_t m3vmulf (const mat4f_t m, vec4f_t v) __attribute__((const));
 GNU89INLINE inline void mat4fidentity (mat4f_t m);
+GNU89INLINE inline void mat4ftranspose (mat4f_t t, const mat4f_t m);
 GNU89INLINE inline void mat4fquat (mat4f_t m, vec4f_t q);
 
 #ifndef IMPLEMENT_MAT4F_Funcs
@@ -119,6 +120,24 @@ mat4fidentity (mat4f_t m)
 	m[1] = (vec4f_t) { 0, 1, 0, 0 };
 	m[2] = (vec4f_t) { 0, 0, 1, 0 };
 	m[3] = (vec4f_t) { 0, 0, 0, 1 };
+}
+
+#ifndef IMPLEMENT_MAT4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+void
+mat4ftranspose (mat4f_t t, const mat4f_t m)
+{
+	vec4f_t     a = m[0];
+	vec4f_t     b = m[1];
+	vec4f_t     c = m[2];
+	vec4f_t     d = m[3];
+	t[0] = (vec4f_t) { a[0], b[0], c[0], d[0] };
+	t[1] = (vec4f_t) { a[1], b[1], c[1], d[1] };
+	t[2] = (vec4f_t) { a[2], b[2], c[2], d[2] };
+	t[3] = (vec4f_t) { a[3], b[3], c[3], d[3] };
 }
 
 #ifndef IMPLEMENT_MAT4F_Funcs
