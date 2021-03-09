@@ -253,7 +253,7 @@
 		}																\
 		DARRAY_RESIZE (ar, ar->size + sp);								\
 		memmove (&ar->a[po + sp], &ar->a[po],							\
-				 (ar->size - po) * sizeof (*ar->a));					\
+				 (ar->size - po - sp) * sizeof (*ar->a));				\
 		&ar->a[po];														\
 	})
 
