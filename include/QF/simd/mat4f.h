@@ -104,7 +104,7 @@ m3vmulf (const mat4f_t m, vec4f_t v)
 {
 	vec4f_t     w;
 	w = m[0] * v[0] + m[1] * v[1] + m[2] * v[2];
-	w[3] = 1;
+	w[3] = v[3];
 	return w;
 }
 
