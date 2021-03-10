@@ -105,7 +105,7 @@ R_DrawSpriteModel_f (entity_t *e)
 {
 	float			 modelalpha, color[4];
 	vec4f_t          up = {}, right = {};
-	vec4f_t          origin, point1, point2;
+	vec4f_t          origin, point;
 	msprite_t		*psprite;
 	mspriteframe_t	*frame;
 
@@ -140,23 +140,23 @@ R_DrawSpriteModel_f (entity_t *e)
 	qfglColor4fv (color);
 
 	origin = Transform_GetWorldPosition (e->transform);
-	point1 = origin + frame->down * up + frame->left * right;
-	point2 = origin + frame->up * up + frame->left * right;
+	point = origin + frame->down * up + frame->left * right;
 
 	qfglTexCoord2f (0, 1);
-	qfglVertex3fv (&point1[0]);
+	qfglVertex3fv (&point[0]);
 
+	point = origin + frame->up * up + frame->left * right;
 	qfglTexCoord2f (0, 0);
-	qfglVertex3fv (&point2[0]);
+	qfglVertex3fv (&point[0]);
 
-	point2 += frame->right * right;
-	point1 += frame->right * right;
+	point = origin + frame->up * up + frame->right * right;
 
 	qfglTexCoord2f (1, 0);
-	qfglVertex3fv (&point2[0]);
+	qfglVertex3fv (&point[0]);
 
+	point = origin + frame->down * up + frame->right * right;
 	qfglTexCoord2f (1, 1);
-	qfglVertex3fv (&point1[0]);
+	qfglVertex3fv (&point[0]);
 
 	qfglEnd ();
 
@@ -169,7 +169,7 @@ R_DrawSpriteModel_VA_f (entity_t *e)
 {
 	unsigned char	 modelalpha, color[4];
 	vec4f_t          up = {}, right = {};
-	vec4f_t          origin, point1, point2;
+	vec4f_t          origin, point;
 	int				 i;
 //	unsigned int	 vacount;
 	msprite_t		*psprite;
@@ -212,16 +212,18 @@ R_DrawSpriteModel_VA_f (entity_t *e)
 		qfglDepthMask (GL_FALSE);
 
 	origin = Transform_GetWorldPosition (e->transform);
-	point1 = origin + frame->down * up + frame->left * right;
-	VectorCopy (point1, VA[0].vertex);
 
-	point2 = origin + frame->up * up + frame->left * right;
-	VectorCopy (point2, VA[1].vertex);
+	point = origin + frame->down * up + frame->left * right;
+	VectorCopy (point, VA[0].vertex);
 
-	point2 += frame->right * right;
-	point1 += frame->right * right;
-	VectorCopy (point2, VA[2].vertex);
-	VectorCopy (point1, VA[3].vertex);
+	point = origin + frame->up * up + frame->left * right;
+	VectorCopy (point, VA[1].vertex);
+
+	point = origin + frame->up * up + frame->right * right;
+	VectorCopy (point, VA[2].vertex);
+
+	point = origin + frame->down * up + frame->right * right;
+	VectorCopy (point, VA[3].vertex);
 
 //	VA += 4;
 //	vacount += 4;
@@ -242,7 +244,7 @@ gl_R_InitSprites (void)
 	int		i;
 
 	if (r_init) {
-		if (gl_va_capable) {			// 0 == gl_va_capable
+		if (gl_va_capable) {
 			gl_R_DrawSpriteModel = R_DrawSpriteModel_VA_f;
 
 #if 0
