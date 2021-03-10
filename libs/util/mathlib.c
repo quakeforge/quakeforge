@@ -501,6 +501,8 @@ BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, plane_t *p)
 #endif
 
 /*
+	FIXME these comments are a confused mess (the code is fine)
+
 	angles is a left(?) handed system: 'pitch yaw roll' with x (pitch) axis to
 	the right, y (yaw) axis up and z (roll) axis forward.
 
