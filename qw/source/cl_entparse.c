@@ -45,6 +45,8 @@
 #include "compat.h"
 #include "clview.h"
 
+#include "client/temp_entities.h"
+
 #include "qw/msg_ucmd.h"
 #include "qw/pmove.h"
 #include "qw/bothdefs.h"
@@ -54,7 +56,6 @@
 #include "qw/include/cl_main.h"
 #include "qw/include/cl_parse.h"
 #include "qw/include/cl_pred.h"
-#include "qw/include/cl_tent.h"
 #include "qw/include/host.h"
 
 static struct predicted_player {

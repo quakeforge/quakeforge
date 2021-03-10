@@ -52,6 +52,8 @@
 #include "clview.h"
 #include "sbar.h"
 
+#include "client/temp_entities.h"
+
 #include "nq/include/chase.h"
 #include "nq/include/cl_skin.h"
 #include "nq/include/client.h"
@@ -423,6 +425,10 @@ int
 CL_ReadFromServer (void)
 {
 	int         ret;
+	TEntContext_t tentCtx = {
+		{VectorExpand (cl_entities[cl.viewentity].origin), 1},
+		cl.worldmodel, cl.viewentity
+	};
 
 	cl.oldtime = cl.time;
 	cl.time += host_frametime;
@@ -442,7 +448,7 @@ CL_ReadFromServer (void)
 		Sys_Printf ("\n");
 
 	CL_RelinkEntities ();
-	CL_UpdateTEnts ();
+	CL_UpdateTEnts (cl.time, &tentCtx);
 
 	// bring the links up to date
 	return 0;

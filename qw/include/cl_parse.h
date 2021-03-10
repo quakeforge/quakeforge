@@ -40,7 +40,6 @@ extern int	parsecountmod;
 extern double	parsecounttime;
 extern int	cl_playerindex;
 extern int	cl_flagindex;
-extern int	cl_spikeindex;
 extern int	viewentity;
 extern int	cl_h_playerindex;
 extern int	cl_gib1index;

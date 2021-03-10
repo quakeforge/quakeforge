@@ -53,6 +53,8 @@
 
 #include "QF/plugin/vid_render.h"
 
+#include "client/temp_entities.h"
+
 #include "compat.h"
 #include "sbar.h"
 
@@ -591,7 +593,7 @@ CL_ParseUpdate (int bits)
 		//VectorCopy (state->msg_origins[0], state->msg_origins[1]);
 		//VectorCopy (state->msg_origins[0], ent->origin);
 		//VectorCopy (state->msg_angles[0], state->msg_angles[1]);
-		//CL_TransformEntity (ent, state->msg_angles[0], true);
+		//CL_TransformEntity (ent, state->msg_angles[0]);
 		//state->forcelink = true;
 		cl_forcelink[num] = true;
 	}
@@ -793,7 +795,7 @@ CL_ParseStatic (int version)
 	ent->renderer.colormod[3] = ENTALPHA_DECODE (baseline.alpha);
 	ent->scale = baseline.scale / 16.0;
 	VectorCopy (baseline.origin, ent->origin);
-	CL_TransformEntity (ent, baseline.angles, true);
+	CL_TransformEntity (ent, baseline.angles);
 
 	r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 }
@@ -834,6 +836,11 @@ CL_ParseServerMessage (void)
 	const char *str;
 	static dstring_t *stuffbuf;
 	signon_t    so;
+
+	TEntContext_t tentCtx = {
+		{VectorExpand (cl_entities[cl.viewentity].origin), 1},
+		cl.worldmodel, cl.viewentity
+	};
 
 	// if recording demos, copy the message out
 	if (cl_shownet->int_val == 1)
@@ -1031,7 +1038,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_particle:
-				CL_ParseParticleEffect ();
+				CL_ParseParticleEffect (net_message);
 				break;
 
 			case svc_damage:
@@ -1051,7 +1058,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_temp_entity:
-				CL_ParseTEnt ();
+				CL_ParseTEnt_nq (net_message, cl.time, &tentCtx);
 				break;
 
 			case svc_setpause:

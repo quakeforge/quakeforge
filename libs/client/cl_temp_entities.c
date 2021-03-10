@@ -1,9 +1,12 @@
 /*
-	cl_tent.c
+	cl_temp_entities.c
 
-	client side temporary entities
+	Client side temporary entity management
 
-	Copyright (C) 1996-1997  Id Software, Inc.
+	Copyright (C) 2021 Bill Currie <bill@taniwha.org>
+
+	Author: Bill Currie <bill@taniwha.org>
+	Date: 2021/3/10
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -27,7 +30,6 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
-
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -35,23 +37,16 @@
 # include <strings.h>
 #endif
 
-#include <math.h>
-#include <stdlib.h>
-
-#include "QF/console.h"
 #include "QF/entity.h"
-#include "QF/model.h"
 #include "QF/msg.h"
+#include "QF/quakefs.h"
+#include "QF/render.h"
 #include "QF/sound.h"
-#include "QF/sys.h"
 
-#include "compat.h"
+#include "QF/plugin/vid_render.h"	//FIXME
 
-#include "qw/include/cl_ents.h"
-#include "qw/include/cl_main.h"
-#include "qw/include/cl_parse.h"
-#include "qw/include/cl_tent.h"
-#include "qw/include/client.h"
+#include "client/entities.h"
+#include "client/temp_entities.h"
 
 typedef struct tent_s {
 	struct tent_s *next;
@@ -94,28 +89,29 @@ static tent_t *cl_projectiles;
 static sfx_t *cl_sfx_wizhit;
 static sfx_t *cl_sfx_knighthit;
 static sfx_t *cl_sfx_tink1;
-static sfx_t *cl_sfx_ric1;
-static sfx_t *cl_sfx_ric2;
-static sfx_t *cl_sfx_ric3;
 static sfx_t *cl_sfx_r_exp3;
+static sfx_t *cl_sfx_ric[4];
 
 static model_t *cl_mod_beam;
 static model_t *cl_mod_bolt;
 static model_t *cl_mod_bolt2;
 static model_t *cl_mod_bolt3;
 static model_t *cl_spr_explod;
+static model_t *cl_spike;
 
 static void
 CL_TEnts_Precache (int phase)
 {
-	if (!phase)
+	if (!phase) {
 		return;
+	}
 	cl_sfx_wizhit = S_PrecacheSound ("wizard/hit.wav");
 	cl_sfx_knighthit = S_PrecacheSound ("hknight/hit.wav");
 	cl_sfx_tink1 = S_PrecacheSound ("weapons/tink1.wav");
-	cl_sfx_ric1 = S_PrecacheSound ("weapons/ric1.wav");
-	cl_sfx_ric2 = S_PrecacheSound ("weapons/ric2.wav");
-	cl_sfx_ric3 = S_PrecacheSound ("weapons/ric3.wav");
+	cl_sfx_ric[3] = S_PrecacheSound ("weapons/ric1.wav");
+	cl_sfx_ric[2] = S_PrecacheSound ("weapons/ric2.wav");
+	cl_sfx_ric[1] = S_PrecacheSound ("weapons/ric3.wav");
+	cl_sfx_ric[0] = cl_sfx_ric[1];
 	cl_sfx_r_exp3 = S_PrecacheSound ("weapons/r_exp3.wav");
 
 	cl_mod_bolt = Mod_ForName ("progs/bolt.mdl", true);
@@ -123,8 +119,11 @@ CL_TEnts_Precache (int phase)
 	cl_mod_bolt3 = Mod_ForName ("progs/bolt3.mdl", true);
 	cl_spr_explod = Mod_ForName ("progs/s_explod.spr", true);
 	cl_mod_beam = Mod_ForName ("progs/beam.mdl", false);
-	if (!cl_mod_beam)
+	cl_spike = Mod_ForName ("progs/spike.mdl", false);
+
+	if (!cl_mod_beam) {
 		cl_mod_beam = cl_mod_bolt;
+	}
 }
 
 void
@@ -214,23 +213,23 @@ free_tent_objects (tent_obj_t *tobjs)
 void
 CL_ClearTEnts (void)
 {
-	tent_t     *t;
-	tent_obj_t *to;
+	tent_t     *tent;
+	tent_obj_t *tobj;
 
-	for (to = cl_beams; to; to = to->next) {
-		for (t = to->to.beam.tents; t; t = t->next) {
-			t->ent.visibility.efrag = 0;
+	for (tobj = cl_beams; tobj; tobj = tobj->next) {
+		for (tent = tobj->to.beam.tents; tent; tent = tent->next) {
+			tent->ent.visibility.efrag = 0;
 		}
-		free_temp_entities (to->to.beam.tents);
+		free_temp_entities (tobj->to.beam.tents);
 	}
 	free_tent_objects (cl_beams);
 	cl_beams = 0;
 
-	for (to = cl_explosions; to; to = to->next) {
-		for (t = to->to.ex.tent; t; t = t->next) {
-			t->ent.visibility.efrag = 0;
+	for (tobj = cl_explosions; tobj; tobj = tobj->next) {
+		for (tent = tobj->to.ex.tent; tent; tent = tent->next) {
+			tent->ent.visibility.efrag = 0;
 		}
-		free_temp_entities (to->to.ex.tent);
+		free_temp_entities (tobj->to.ex.tent);
 	}
 	free_tent_objects (cl_explosions);
 	cl_explosions = 0;
@@ -252,7 +251,7 @@ beam_clear (beam_t *b)
 }
 
 static inline void
-beam_setup (beam_t *b, qboolean transform)
+beam_setup (beam_t *b, qboolean transform, double time, TEntContext_t *ctx)
 {
 	tent_t     *tent;
 	float       forward, pitch, yaw, d;
@@ -287,8 +286,7 @@ beam_setup (beam_t *b, qboolean transform)
 	ent_count = ceil (d / 30);
 	d = 0;
 
-	seed = b->seed + ((int) (cl.time * BEAM_SEED_INTERVAL) %
-					  BEAM_SEED_INTERVAL);
+	seed = b->seed + ((int) (time * BEAM_SEED_INTERVAL) % BEAM_SEED_INTERVAL);
 
 	ang[ROLL] = 0;
 	while (ent_count--) {
@@ -304,15 +302,15 @@ beam_setup (beam_t *b, qboolean transform)
 		if (transform) {
 			seed = seed * BEAM_SEED_PRIME;
 			ang[ROLL] = seed % 360;
-			CL_TransformEntity (&tent->ent, ang, true);
+			CL_TransformEntity (&tent->ent, ang);
 		}
 		VectorCopy (ang, tent->ent.angles);
-		r_funcs->R_AddEfrags (&cl.worldmodel->brush, &tent->ent);
+		r_funcs->R_AddEfrags (&ctx->worldModel->brush, &tent->ent);
 	}
 }
 
 static void
-CL_ParseBeam (model_t *m)
+CL_ParseBeam (qmsg_t *net_message, model_t *m, double time, TEntContext_t *ctx)
 {
 	tent_obj_t *to;
 	beam_t     *b;
@@ -326,9 +324,11 @@ CL_ParseBeam (model_t *m)
 
 	to = 0;
 	if (ent) {
-		for (to = cl_beams; to; to = to->next)
-			if (to->to.beam.entity == ent)
+		for (to = cl_beams; to; to = to->next) {
+			if (to->to.beam.entity == ent) {
 				break;
+			}
+		}
 	}
 	if (!to) {
 		to = new_tent_object ();
@@ -341,93 +341,60 @@ CL_ParseBeam (model_t *m)
 
 	beam_clear (b);
 	b->model = m;
-	b->endtime = cl.time + 0.2;
+	b->endtime = time + 0.2;
 	b->seed = rand ();
 	VectorCopy (end, b->end);
-	if (b->entity != cl.viewentity) {
+	if (b->entity != ctx->playerEntity) {
 		// this will be done in CL_UpdateBeams
 		VectorCopy (start, b->start);
-		beam_setup (b, true);
+		beam_setup (b, true, time, ctx);
 	}
 }
 
-void
-CL_ParseTEnt (void)
+static void
+parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
+			TE_Effect type)
 {
-	byte        type;
 	dlight_t   *dl;
 	tent_obj_t *to;
 	explosion_t *ex;
 	int         colorStart, colorLength;
-	int         cnt = -1;
-	vec3_t      pos;
-	sfx_t      *spike_sound[] = {
-		cl_sfx_ric3, cl_sfx_ric3, cl_sfx_ric2, cl_sfx_ric1,
-	};
+	quat_t      color;
+	vec3_t      position;
+	int         count;
+	const char *name;
 
-	type = MSG_ReadByte (net_message);
 	switch (type) {
-		case TE_WIZSPIKE:				// spike hitting wall
-			MSG_ReadCoordV (net_message, pos);
-			r_funcs->particles->R_WizSpikeEffect (pos);
-			S_StartSound (-1, 0, cl_sfx_wizhit, pos, 1, 1);
+		case TE_NoEffect:
+			// invalid mapping, can't do anything
 			break;
-
-		case TE_KNIGHTSPIKE:			// spike hitting wall
-			MSG_ReadCoordV (net_message, pos);
-			r_funcs->particles->R_KnightSpikeEffect (pos);
-			S_StartSound (-1, 0, cl_sfx_knighthit, pos, 1, 1);
+		case TE_Beam:
+			CL_ParseBeam (net_message, cl_mod_beam, time, ctx);
 			break;
-
-		case TE_SPIKE:					// spike hitting wall
-			MSG_ReadCoordV (net_message, pos);
-			r_funcs->particles->R_SpikeEffect (pos);
-			{
-				int		i;
-				sfx_t  *sound;
-
-				i = (rand () % 20) - 16;
-				if (i >= 0)
-					sound = spike_sound[i];
-				else
-					sound = cl_sfx_tink1;
-				S_StartSound (-1, 0, sound, pos, 1, 1);
-			}
+		case TE_Blood:
+			count = MSG_ReadByte (net_message) * 20;
+			MSG_ReadCoordV (net_message, position);
+			r_funcs->particles->R_BloodPuffEffect (position, count);
 			break;
+		case TE_Explosion:
+			MSG_ReadCoordV (net_message, position);
 
-		case TE_SUPERSPIKE:				// super spike hitting wall
-			MSG_ReadCoordV (net_message, pos);
-			r_funcs->particles->R_SuperSpikeEffect (pos);
-			{
-				int		i;
-				sfx_t  *sound;
-
-				i = (rand () % 20) - 16;
-				if (i >= 0)
-					sound = spike_sound[i];
-				else
-					sound = cl_sfx_tink1;
-				S_StartSound (-1, 0, sound, pos, 1, 1);
-			}
-			break;
-
-		case TE_EXPLOSION:				// rocket explosion
 			// particles
-			MSG_ReadCoordV (net_message, pos);
-			r_funcs->particles->R_ParticleExplosion (pos);
+			r_funcs->particles->R_ParticleExplosion (position);
 
 			// light
 			dl = r_funcs->R_AllocDlight (0);
 			if (dl) {
-				VectorCopy (pos, dl->origin);
+				VectorCopy (position, dl->origin);
 				dl->radius = 350;
-				dl->die = cl.time + 0.5;
+				dl->die = time + 0.5;
 				dl->decay = 300;
 				QuatSet (0.86, 0.31, 0.24, 0.7, dl->color);
+				//FIXME? nq: QuatSet (1.0, 0.5, 0.25, 0.7, dl->color);
 			}
 
 			// sound
-			S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
+			S_StartSound (-1, 0, cl_sfx_r_exp3, position, 1, 1);
 
 			// sprite
 			to = new_tent_object ();
@@ -436,105 +403,201 @@ CL_ParseTEnt (void)
 			ex = &to->to.ex;
 			ex->tent = new_temp_entity ();
 
-			VectorCopy (pos, ex->tent->ent.origin);
-			ex->start = cl.time;
+			VectorCopy (position, ex->tent->ent.origin);
+			ex->start = time;
 			//FIXME need better model management
-			if (!cl_spr_explod->cache.data)
+			if (!cl_spr_explod->cache.data) {
 				cl_spr_explod = Mod_ForName ("progs/s_explod.spr", true);
+			}
 			ex->tent->ent.renderer.model = cl_spr_explod;
-			CL_TransformEntity (&ex->tent->ent, ex->tent->ent.angles, true);
+			CL_TransformEntity (&ex->tent->ent, ex->tent->ent.angles);
 			break;
-
-		case TE_TAREXPLOSION:			// tarbaby explosion
-			MSG_ReadCoordV (net_message, pos);
-			r_funcs->particles->R_BlobExplosion (pos);
-
-			S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
-			break;
-
-		case TE_LIGHTNING1:				// lightning bolts
-			CL_ParseBeam (cl_mod_bolt);
-			break;
-
-		case TE_LIGHTNING2:				// lightning bolts
-			CL_ParseBeam (cl_mod_bolt2);
-			break;
-
-		case TE_LIGHTNING3:				// lightning bolts
-			CL_ParseBeam (cl_mod_bolt3);
-			break;
-
-		// PGM 01/21/97
-		case TE_BEAM:					// grappling hook beam
-			CL_ParseBeam (cl_mod_beam);
-			break;
-		// PGM 01/21/97
-
-		case TE_LAVASPLASH:
-			MSG_ReadCoordV (net_message, pos);
-			r_funcs->particles->R_LavaSplash (pos);
-			break;
-
-		case TE_TELEPORT:
-			MSG_ReadCoordV (net_message, pos);
-			r_funcs->particles->R_TeleportSplash (pos);
-			break;
-
-		case TE_EXPLOSION2:				// color mapped explosion
-			MSG_ReadCoordV (net_message, pos);
+		case TE_Explosion2:
+			MSG_ReadCoordV (net_message, position);
 			colorStart = MSG_ReadByte (net_message);
 			colorLength = MSG_ReadByte (net_message);
-			S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
-			r_funcs->particles->R_ParticleExplosion2 (pos, colorStart,
+			S_StartSound (-1, 0, cl_sfx_r_exp3, position, 1, 1);
+			r_funcs->particles->R_ParticleExplosion2 (position, colorStart,
 													  colorLength);
 			dl = r_funcs->R_AllocDlight (0);
 			if (!dl)
 				break;
-			VectorCopy (pos, dl->origin);
+			VectorCopy (position, dl->origin);
 			dl->radius = 350;
-			dl->die = cl.time + 0.5;
+			dl->die = time + 0.5;
 			dl->decay = 300;
 			colorStart = (colorStart + (rand () % colorLength)) * 3;
 			VectorScale (&r_data->vid->palette[colorStart], 1.0 / 255.0,
 						 dl->color);
 			dl->color[3] = 0.7;
 			break;
-
-		case TE_GUNSHOT:				// bullet hitting wall
-			cnt = MSG_ReadByte (net_message) * 20;
-			MSG_ReadCoordV (net_message, pos);
-			r_funcs->particles->R_GunshotEffect (pos, cnt);
+		case TE_Explosion3:
+			MSG_ReadCoordV (net_message, position);
+			MSG_ReadCoordV (net_message, color);		// OUCH!
+			color[3] = 0.7;
+			r_funcs->particles->R_ParticleExplosion (position);
+			S_StartSound (-1, 0, cl_sfx_r_exp3, position, 1, 1);
+			dl = r_funcs->R_AllocDlight (0);
+			if (dl) {
+				VectorCopy (position, dl->origin);
+				dl->radius = 350;
+				dl->die = time + 0.5;
+				dl->decay = 300;
+				QuatCopy (color, dl->color);
+			}
 			break;
-
-		case TE_BLOOD:					// bullet hitting body
-			cnt = MSG_ReadByte (net_message) * 20;
-			MSG_ReadCoordV (net_message, pos);
-			r_funcs->particles->R_BloodPuffEffect (pos, cnt);
+		case TE_Gunshot1:
+			MSG_ReadCoordV (net_message, position);
+			r_funcs->particles->R_GunshotEffect (position, 20);
 			break;
-
-		case TE_LIGHTNINGBLOOD:			// lightning hitting body
-			MSG_ReadCoordV (net_message, pos);
+		case TE_Gunshot2:
+			count = MSG_ReadByte (net_message) * 20;
+			MSG_ReadCoordV (net_message, position);
+			r_funcs->particles->R_GunshotEffect (position, count);
+			break;
+		case TE_KnightSpike:
+			MSG_ReadCoordV (net_message, position);
+			r_funcs->particles->R_KnightSpikeEffect (position);
+			S_StartSound (-1, 0, cl_sfx_knighthit, position, 1, 1);
+			break;
+		case TE_LavaSplash:
+			MSG_ReadCoordV (net_message, position);
+			r_funcs->particles->R_LavaSplash (position);
+			break;
+		case TE_Lightning1:
+			CL_ParseBeam (net_message, cl_mod_bolt, time, ctx);
+			break;
+		case TE_Lightning2:
+			CL_ParseBeam (net_message, cl_mod_bolt2, time, ctx);
+			break;
+		case TE_Lightning3:
+			CL_ParseBeam (net_message, cl_mod_bolt3, time, ctx);
+			break;
+		case TE_Lightning4:
+			name = MSG_ReadString (net_message);
+			CL_ParseBeam (net_message, Mod_ForName (name, true), time, ctx);
+			break;
+		case TE_LightningBlood:
+			MSG_ReadCoordV (net_message, position);
 
 			// light
 			dl = r_funcs->R_AllocDlight (0);
 			if (dl) {
-				VectorCopy (pos, dl->origin);
+				VectorCopy (position, dl->origin);
 				dl->radius = 150;
-				dl->die = cl.time + 0.1;
+				dl->die = time + 0.1;
 				dl->decay = 200;
 				QuatSet (0.25, 0.40, 0.65, 1, dl->color);
 			}
 
-			r_funcs->particles->R_LightningBloodEffect (pos);
+			r_funcs->particles->R_LightningBloodEffect (position);
 			break;
+		case TE_Spike:
+			MSG_ReadCoordV (net_message, position);
+			r_funcs->particles->R_SpikeEffect (position);
+			{
+				int		i;
+				sfx_t  *sound;
 
-		default:
-			Sys_Error ("CL_ParseTEnt: bad type %d", type);
+				i = (rand () % 20) - 16;
+				if (i >= 0) {
+					sound = cl_sfx_ric[i];
+				} else {
+					sound = cl_sfx_tink1;
+				}
+				S_StartSound (-1, 0, sound, position, 1, 1);
+			}
+			break;
+		case TE_SuperSpike:
+			MSG_ReadCoordV (net_message, position);
+			r_funcs->particles->R_SuperSpikeEffect (position);
+			{
+				int		i;
+				sfx_t  *sound;
+
+				i = (rand () % 20) - 16;
+				if (i >= 0) {
+					sound = cl_sfx_ric[i];
+				} else {
+					sound = cl_sfx_tink1;
+				}
+				S_StartSound (-1, 0, sound, position, 1, 1);
+			}
+			break;
+		case TE_TarExplosion:
+			MSG_ReadCoordV (net_message, position);
+			r_funcs->particles->R_BlobExplosion (position);
+
+			S_StartSound (-1, 0, cl_sfx_r_exp3, position, 1, 1);
+			break;
+		case TE_Teleport:
+			MSG_ReadCoordV (net_message, position);
+			r_funcs->particles->R_TeleportSplash (position);
+			break;
+		case TE_WizSpike:
+			MSG_ReadCoordV (net_message, position);
+			r_funcs->particles->R_WizSpikeEffect (position);
+			S_StartSound (-1, 0, cl_sfx_wizhit, position, 1, 1);
+			break;
 	}
 }
 
+// the effect type is a byte so a max of 256 values
+static const TE_Effect nqEffects[256] = {
+	[TE_nqSpike]        = TE_Spike,
+	[TE_nqSuperSpike]   = TE_SuperSpike,
+	[TE_nqGunshot]      = TE_Gunshot1,
+	[TE_nqExplosion]    = TE_Explosion,
+	[TE_nqTarExplosion] = TE_TarExplosion,
+	[TE_nqLightning1]   = TE_Lightning1,
+	[TE_nqLightning2]   = TE_Lightning2,
+	[TE_nqWizSpike]     = TE_WizSpike,
+	[TE_nqKnightSpike]  = TE_KnightSpike,
+	[TE_nqLightning3]   = TE_Lightning3,
+	[TE_nqLavaSplash]   = TE_LavaSplash,
+	[TE_nqTeleport]     = TE_Teleport,
+	[TE_nqExplosion2]   = TE_Explosion2,
+	[TE_nqBeam]         = TE_Beam,
+	[TE_nqExplosion3]   = TE_Explosion3,
+	[TE_nqLightning4]   = TE_Lightning4,
+};
+
+void
+CL_ParseTEnt_nq (qmsg_t *net_message, double time, TEntContext_t *ctx)
+{
+	byte        type = MSG_ReadByte (net_message);
+	parse_tent (net_message, time, ctx, nqEffects[type]);
+}
+
+// the effect type is a byte so a max of 256 values
+static const TE_Effect qwEffects[256] = {
+	[TE_qwSpike]          = TE_Spike,
+	[TE_qwSuperSpike]     = TE_SuperSpike,
+	[TE_qwGunshot]        = TE_Gunshot2,
+	[TE_qwExplosion]      = TE_Explosion,
+	[TE_qwTarExplosion]   = TE_TarExplosion,
+	[TE_qwLightning1]     = TE_Lightning1,
+	[TE_qwLightning2]     = TE_Lightning2,
+	[TE_qwWizSpike]       = TE_WizSpike,
+	[TE_qwKnightSpike]    = TE_KnightSpike,
+	[TE_qwLightning3]     = TE_Lightning3,
+	[TE_qwLavaSplash]     = TE_LavaSplash,
+	[TE_qwTeleport]       = TE_Teleport,
+	[TE_qwBlood]          = TE_Blood,
+	[TE_qwLightningBlood] = TE_LightningBlood,
+	[TE_qwExplosion2]     = TE_Explosion2,
+	[TE_qwBeam]           = TE_Beam,
+};
+
+void
+CL_ParseTEnt_qw (qmsg_t *net_message, double time, TEntContext_t *ctx)
+{
+	byte        type = MSG_ReadByte (net_message);
+	parse_tent (net_message, time, ctx, qwEffects[type]);
+}
+
 static void
-CL_UpdateBeams (void)
+CL_UpdateBeams (double time, TEntContext_t *ctx)
 {
 	tent_obj_t **to;
 	beam_t     *b;
@@ -546,7 +609,7 @@ CL_UpdateBeams (void)
 		b = &(*to)->to.beam;
 		if (!b->endtime)
 			continue;
-		if (!b->model || b->endtime < cl.time) {
+		if (!b->model || b->endtime < time) {
 			tent_obj_t *_to;
 			b->endtime = 0;
 			beam_clear (b);
@@ -559,26 +622,26 @@ CL_UpdateBeams (void)
 		to = &(*to)->next;
 
 		// if coming from the player, update the start position
-		if (b->entity == cl.viewentity) {
+		if (b->entity == ctx->playerEntity) {
 			beam_clear (b);
-			VectorCopy (cl.simorg, b->start);
-			beam_setup (b, false);
+			VectorCopy (ctx->simorg, b->start);
+			beam_setup (b, false, time, ctx);
 		}
 
-		seed = b->seed + ((int) (cl.time * BEAM_SEED_INTERVAL) %
+		seed = b->seed + ((int) (time * BEAM_SEED_INTERVAL) %
 						  BEAM_SEED_INTERVAL);
 
 		// add new entities for the lightning
 		for (t = b->tents; t; t = t->next) {
 			seed = seed * BEAM_SEED_PRIME;
 			t->ent.angles[ROLL] = seed % 360;
-			CL_TransformEntity (&t->ent, t->ent.angles, true);
+			CL_TransformEntity (&t->ent, t->ent.angles);
 		}
 	}
 }
 
 static void
-CL_UpdateExplosions (void)
+CL_UpdateExplosions (double time, TEntContext_t *ctx)
 {
 	int         f;
 	tent_obj_t **to;
@@ -588,7 +651,7 @@ CL_UpdateExplosions (void)
 	for (to = &cl_explosions; *to; ) {
 		ex = &(*to)->to.ex;
 		ent = &ex->tent->ent;
-		f = 10 * (cl.time - ex->start);
+		f = 10 * (time - ex->start);
 		if (f >= ent->renderer.model->numframes) {
 			tent_obj_t *_to;
 			r_funcs->R_RemoveEfrags (ent);
@@ -604,16 +667,39 @@ CL_UpdateExplosions (void)
 
 		ent->animation.frame = f;
 		if (!ent->visibility.efrag) {
-			r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
+			r_funcs->R_AddEfrags (&ctx->worldModel->brush, ent);
 		}
 	}
 }
 
 void
-CL_UpdateTEnts (void)
+CL_UpdateTEnts (double time, TEntContext_t *ctx)
 {
-	CL_UpdateBeams ();
-	CL_UpdateExplosions ();
+	CL_UpdateBeams (time, ctx);
+	CL_UpdateExplosions (time, ctx);
+}
+
+/*
+	CL_ParseParticleEffect
+
+	Parse an effect out of the server message
+*/
+void
+CL_ParseParticleEffect (qmsg_t *net_message)
+{
+	int         i, count, color;
+	vec3_t      org, dir;
+
+	MSG_ReadCoordV (net_message, org);
+	for (i = 0; i < 3; i++)
+		dir[i] = ((signed char) MSG_ReadByte (net_message)) * (15.0 / 16.0);
+	count = MSG_ReadByte (net_message);
+	color = MSG_ReadByte (net_message);
+
+	if (count == 255)
+		r_funcs->particles->R_ParticleExplosion (org);
+	else
+		r_funcs->particles->R_RunParticleEffect (org, dir, color, count);
 }
 
 void
@@ -633,7 +719,7 @@ CL_ClearProjectiles (void)
 	Nails are passed as efficient temporary entities
 */
 void
-CL_ParseProjectiles (qboolean nail2)
+CL_ParseProjectiles (qmsg_t *net_message, qboolean nail2, TEntContext_t *ctx)
 {
 	tent_t     *tent;
 	tent_t     *head = 0, **tail = &head;
@@ -658,7 +744,7 @@ CL_ParseProjectiles (qboolean nail2)
 		tail = &tent->next;
 
 		pr = &tent->ent;
-		pr->renderer.model = cl.model_precache[cl_spikeindex];
+		pr->renderer.model = cl_spike;
 		pr->renderer.skin = 0;
 		pr->origin[0] = ((bits[0] + ((bits[1] & 15) << 8)) << 1) - 4096;
 		pr->origin[1] = (((bits[1] >> 4) + (bits[2] << 4)) << 1) - 4096;
@@ -666,9 +752,9 @@ CL_ParseProjectiles (qboolean nail2)
 		pr->angles[0] = (bits[4] >> 4) * (360.0 / 16.0);
 		pr->angles[1] = bits[5] * (360.0 / 256.0);
 		pr->angles[2] = 0;
-		CL_TransformEntity (&tent->ent, tent->ent.angles, true);
+		CL_TransformEntity (&tent->ent, tent->ent.angles);
 
-		r_funcs->R_AddEfrags (&cl.worldmodel->brush, &tent->ent);
+		r_funcs->R_AddEfrags (&ctx->worldModel->brush, &tent->ent);
 	}
 
 	*tail = cl_projectiles;

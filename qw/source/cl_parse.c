@@ -65,6 +65,8 @@
 #include "clview.h"
 #include "sbar.h"
 
+#include "client/temp_entities.h"
+
 #include "qw/bothdefs.h"
 #include "qw/pmove.h"
 #include "qw/protocol.h"
@@ -77,7 +79,6 @@
 #include "qw/include/cl_main.h"
 #include "qw/include/cl_parse.h"
 #include "qw/include/cl_skin.h"
-#include "qw/include/cl_tent.h"
 #include "qw/include/client.h"
 #include "qw/include/host.h"
 #include "qw/include/map_cfg.h"
@@ -161,7 +162,7 @@ int         oldparsecountmod;
 int         parsecountmod;
 double      parsecounttime;
 
-int         cl_spikeindex, cl_playerindex, cl_flagindex;
+int         cl_playerindex, cl_flagindex;
 int         cl_h_playerindex, cl_gib1index, cl_gib2index, cl_gib3index;
 
 int         packet_latency[NET_TIMINGS];
@@ -437,7 +438,6 @@ Sound_NextDownload (void)
 	// done with sounds, request models now
 	memset (cl.model_precache, 0, sizeof (cl.model_precache));
 	cl_playerindex = -1;
-	cl_spikeindex = -1;
 	cl_flagindex = -1;
 	cl_h_playerindex = -1;
 	cl_gib1index = cl_gib2index = cl_gib3index = -1;
@@ -906,9 +906,7 @@ CL_ParseModellist (void)
 			Host_Error ("Server sent too many model_precache");
 		strcpy (cl.model_name[cl.nummodels], str);
 
-		if (!strcmp (cl.model_name[cl.nummodels], "progs/spike.mdl"))
-			cl_spikeindex = cl.nummodels;
-		else if (!strcmp (cl.model_name[cl.nummodels], "progs/player.mdl"))
+		if (!strcmp (cl.model_name[cl.nummodels], "progs/player.mdl"))
 			cl_playerindex = cl.nummodels;
 		else if (!strcmp (cl.model_name[cl.nummodels], "progs/flag.mdl"))
 			cl_flagindex = cl.nummodels;
@@ -984,7 +982,7 @@ CL_ParseStatic (void)
 	ent->renderer.skinnum = es.skinnum;
 
 	VectorCopy (es.origin, ent->origin);
-	CL_TransformEntity (ent, es.angles, true);
+	CL_TransformEntity (ent, es.angles);
 
 	r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 }
@@ -1305,6 +1303,9 @@ CL_ParseServerMessage (void)
 	int         cmd = 0, i, j;
 	const char *str;
 	static dstring_t *stuffbuf;
+	TEntContext_t tentCtx = {
+		{VectorExpand (cl.simorg), 1}, cl.worldmodel, cl.viewentity
+	};
 
 	received_framecount = host_framecount;
 	cl.last_servermessage = realtime;
@@ -1507,7 +1508,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_temp_entity:
-				CL_ParseTEnt ();
+				CL_ParseTEnt_qw (net_message, cl.time, &tentCtx);
 				break;
 
 			case svc_setpause:
@@ -1639,7 +1640,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_nails:
-				CL_ParseProjectiles (false);
+				CL_ParseProjectiles (net_message, false, &tentCtx);
 				break;
 
 			case svc_chokecount:		// some preceding packets were choked
@@ -1690,7 +1691,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_nails2:			// FIXME from qwex
-				CL_ParseProjectiles (true);
+				CL_ParseProjectiles (net_message, true, &tentCtx);
 				break;
 		}
 	}

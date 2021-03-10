@@ -47,6 +47,8 @@
 
 #include "compat.h"
 
+#include "client/temp_entities.h"
+
 #include "nq/include/chase.h"
 #include "nq/include/client.h"
 #include "nq/include/host.h"
@@ -175,36 +177,6 @@ CL_LerpPoint (void)
 	}
 
 	return frac;
-}
-
-void
-CL_TransformEntity (entity_t *ent, const vec3_t angles, qboolean force)
-{
-	union {
-		quat_t      q;
-		vec4f_t     v;
-	}           rotation;
-	vec4f_t     position;
-	vec4f_t     scale;
-
-	VectorCopy (ent->origin, position);
-	position[3] = 1;
-	VectorSet (ent->scale, ent->scale, ent->scale, scale);
-	scale[3] = 1;
-	if (VectorIsZero (angles)) {
-		QuatSet (0, 0, 0, 1, rotation.q);
-	} else {
-		vec3_t      ang;
-		VectorCopy (angles, ang);
-		if (ent->renderer.model && ent->renderer.model->type == mod_alias) {
-			// stupid quake bug
-			// why, oh, why, do alias models pitch in the opposite direction
-			// to everything else?
-			ang[PITCH] = -ang[PITCH];
-		}
-		AngleQuat (ang, rotation.q);
-	}
-	Transform_SetLocalTransform (ent->transform, scale, rotation.v, position);
 }
 
 static void
@@ -392,7 +364,7 @@ CL_RelinkEntities (void)
 			animation->pose1 = animation->pose2 = -1;
 			VectorCopy (new->origin, ent->origin);
 			if (!(model_flags & EF_ROTATE))
-				CL_TransformEntity (ent, new->angles, true);
+				CL_TransformEntity (ent, new->angles);
 			if (i != cl.viewentity || chase_active->int_val) {
 				if (ent->visibility.efrag) {
 					r_funcs->R_RemoveEfrags (ent);
@@ -410,7 +382,7 @@ CL_RelinkEntities (void)
 				// assume a teleportation, not a motion
 				VectorCopy (new->origin, ent->origin);
 				if (!(model_flags & EF_ROTATE))
-					CL_TransformEntity (ent, new->angles, true);
+					CL_TransformEntity (ent, new->angles);
 				animation->pose1 = animation->pose2 = -1;
 			} else {
 				vec3_t      angles, d;
@@ -425,7 +397,7 @@ CL_RelinkEntities (void)
 							d[j] += 360;
 					}
 					VectorMultAdd (old->angles, f, d, angles);
-					CL_TransformEntity (ent, angles, false);
+					CL_TransformEntity (ent, angles);
 				}
 			}
 			if (i != cl.viewentity || chase_active->int_val) {
@@ -445,7 +417,7 @@ CL_RelinkEntities (void)
 			vec3_t      angles;
 			VectorCopy (new->angles, angles);
 			angles[YAW] = bobjrotate;
-			CL_TransformEntity (ent, angles, false);
+			CL_TransformEntity (ent, angles);
 		}
 		CL_EntityEffects (i, ent, new);
 		CL_NewDlight (i, ent->origin, new->effects, new->glow_size,

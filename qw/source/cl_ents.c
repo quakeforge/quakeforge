@@ -47,6 +47,8 @@
 #include "clview.h"
 #include "d_iface.h"
 
+#include "client/temp_entities.h"
+
 #include "qw/bothdefs.h"
 #include "qw/msg_ucmd.h"
 #include "qw/pmove.h"
@@ -57,7 +59,6 @@
 #include "qw/include/cl_main.h"
 #include "qw/include/cl_parse.h"
 #include "qw/include/cl_pred.h"
-#include "qw/include/cl_tent.h"
 #include "qw/include/host.h"
 
 entity_t    cl_player_ents[MAX_CLIENTS];
@@ -168,36 +169,6 @@ is_gib (entity_state_t *s1)
 		|| s1->modelindex == cl_gib2index || s1->modelindex == cl_gib3index)
 		return 1;
 	return 0;
-}
-
-void
-CL_TransformEntity (entity_t *ent, const vec3_t angles, qboolean force)
-{
-	union {
-		quat_t      q;
-		vec4f_t     v;
-	}           rotation;
-	vec4f_t     position;
-	vec4f_t     scale;
-
-	VectorCopy (ent->origin, position);
-	position[3] = 1;
-	VectorSet (ent->scale, ent->scale, ent->scale, scale);
-	scale[3] = 1;
-	if (VectorIsZero (angles)) {
-		QuatSet (0, 0, 0, 1, rotation.q);
-	} else {
-		vec3_t      ang;
-		VectorCopy (angles, ang);
-		if (ent->renderer.model && ent->renderer.model->type == mod_alias) {
-			// stupid quake bug
-			// why, oh, why, do alias models pitch in the opposite direction
-			// to everything else?
-			ang[PITCH] = -ang[PITCH];
-		}
-		AngleQuat (ang, rotation.q);
-	}
-	Transform_SetLocalTransform (ent->transform, scale, rotation.v, position);
 }
 
 static void
@@ -342,7 +313,7 @@ CL_LinkPacketEntities (void)
 			animation->pose1 = animation->pose2 = -1;
 			VectorCopy (new->origin, ent->origin);
 			if (!(renderer->model->flags & EF_ROTATE))
-				CL_TransformEntity (ent, new->angles, true);
+				CL_TransformEntity (ent, new->angles);
 			if (i != cl.viewentity || chase_active->int_val) {
 				if (ent->visibility.efrag) {
 					r_funcs->R_RemoveEfrags (ent);
@@ -360,7 +331,7 @@ CL_LinkPacketEntities (void)
 				// assume a teleportation, not a motion
 				VectorCopy (new->origin, ent->origin);
 				if (!(renderer->model->flags & EF_ROTATE)) {
-					CL_TransformEntity (ent, new->angles, true);
+					CL_TransformEntity (ent, new->angles);
 				}
 				animation->pose1 = animation->pose2 = -1;
 			} else {
@@ -376,7 +347,7 @@ CL_LinkPacketEntities (void)
 							d[j] += 360;
 					}
 					VectorMultAdd (old->angles, f, d, angles);
-					CL_TransformEntity (ent, angles, false);
+					CL_TransformEntity (ent, angles);
 				}
 			}
 			if (i != cl.viewentity || chase_active->int_val) {
@@ -400,7 +371,7 @@ CL_LinkPacketEntities (void)
 			angles[PITCH] = 0;
 			angles[YAW] = anglemod (100 * cl.time);
 			angles[ROLL] = 0;
-			CL_TransformEntity (ent, angles, false);
+			CL_TransformEntity (ent, angles);
 		}
 		//CL_EntityEffects (i, ent, new);
 		//CL_NewDlight (i, ent->origin, new->effects, 0, 0);
@@ -567,7 +538,7 @@ CL_LinkPlayers (void)
 		ent->animation.frame = state->pls.frame;
 		ent->renderer.skinnum = state->pls.skinnum;
 
-		CL_TransformEntity (ent, ang, false);
+		CL_TransformEntity (ent, ang);
 
 		ent->renderer.min_light = 0;
 		ent->renderer.fullbright = 0;
@@ -611,9 +582,13 @@ CL_EmitEntities (void)
 	if (!cl.validsequence)
 		return;
 
+	TEntContext_t tentCtx = {
+		{VectorExpand (cl.simorg), 1}, cl.worldmodel, cl.viewentity
+	};
+
 	CL_LinkPlayers ();
 	CL_LinkPacketEntities ();
-	CL_UpdateTEnts ();
+	CL_UpdateTEnts (cl.time, &tentCtx);
 	if (cl_draw_locs->int_val) {
 		//FIXME custom ent rendering code would be nice
 		dlight_t   *dl;

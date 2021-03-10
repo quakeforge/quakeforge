@@ -304,10 +304,6 @@ void CL_Input_Init (void);
 void CL_SendCmd (void);
 void CL_SendMove (usercmd_t *cmd);
 
-void CL_ParseParticleEffect (void);
-void CL_ParseTEnt (void);
-void CL_UpdateTEnts (void);
-
 void CL_ClearState (void);
 
 int  CL_ReadFromServer (void);
@@ -344,13 +340,7 @@ void V_SetContentsColor (int contents);
 void V_PrepBlend (void);
 
 // cl_tent
-void CL_TEnts_Init (void);
-void CL_ClearTEnts (void);
-void CL_Init_Entity (struct entity_s *ent);
-void CL_ParseTEnt (void);
 void CL_SignonReply (void);
-void CL_TransformEntity (struct entity_s *ent, const vec3_t
-						 angles, qboolean force);
 void CL_RelinkEntities (void);
 void CL_ClearEnts (void);
 

@@ -96,6 +96,8 @@
 #include "compat.h"
 #include "sbar.h"
 
+#include "client/temp_entities.h"
+
 #include "qw/bothdefs.h"
 #include "qw/pmove.h"
 
@@ -110,7 +112,6 @@
 #include "qw/include/cl_pred.h"
 #include "qw/include/cl_skin.h"
 #include "qw/include/cl_slist.h"
-#include "qw/include/cl_tent.h"
 #include "qw/include/client.h"
 #include "qw/include/game.h"
 #include "qw/include/host.h"
