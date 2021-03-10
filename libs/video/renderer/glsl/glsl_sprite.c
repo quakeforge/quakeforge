@@ -183,20 +183,20 @@ static void
 make_quad (mspriteframe_t *frame, vec4f_t vpn, vec4f_t vright,
 		   vec4f_t vup, float verts[6][3])
 {
-	vec3_t      left, up, right, down;
-	vec3_t      ul, ur, ll, lr;
+	vec4f_t     left, up, right, down;
+	vec4f_t     ul, ur, ll, lr;
 
 	// build the sprite poster in worldspace
 	// first, rotate the sprite axes into world space
-	VectorScale (vright, frame->right, right);
-	VectorScale (vup, frame->up, up);
-	VectorScale (vright, frame->left, left);
-	VectorScale (vup, frame->down, down);
+	right = frame->right * vright;
+	up = frame->up * vup;
+	left = frame->left * vright;
+	down = frame->down * vup;
 	// next, build the sprite corners from the axes
-	VectorAdd (up, left, ul);
-	VectorAdd (up, right, ur);
-	VectorAdd (down, left, ll);
-	VectorAdd (down, right, lr);
+	ul = up + left;
+	ur = up + right;
+	ll = down + left;
+	lr = down + right;
 	// finally, translate the sprite corners, creating two triangles
 	VectorAdd (currententity->origin, ul, verts[0]);	// first triangle
 	VectorAdd (currententity->origin, ur, verts[1]);
