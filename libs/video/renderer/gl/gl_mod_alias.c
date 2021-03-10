@@ -701,10 +701,10 @@ gl_R_DrawAliasModel (entity_t *e)
 			qfglColor4ubv (color_black);
 		}
 		//FIXME fully vectorize
-		vec4f_t     vec = { 707106781, 0, 707106781, 0 };
+		vec4f_t     vec = { 0.707106781, 0, 0.707106781, 0 };
 		Transform_GetWorldMatrix (e->transform, shadow_mat);
 		mat4ftranspose (shadow_mat, shadow_mat);
-		vec = mvmulf (shadow_mat, vec);
+		vec = m3vmulf (shadow_mat, vec);
 		VectorCopy (vec, shadevector);
 		if (vo->tex_coord)
 			GL_DrawAliasShadowTri (paliashdr, vo);
