@@ -169,8 +169,7 @@ int         packet_latency[NET_TIMINGS];
 
 extern cvar_t *hud_scoreboard_uid;
 
-entity_t *cl_static_entities;
-static entity_t **cl_static_tail;
+entityset_t cl_static_entities = DARRAY_STATIC_INIT (32);
 
 static void
 CL_LoadSky (void)
@@ -298,8 +297,7 @@ map_ent (const char *mapname)
 static void
 CL_NewMap (const char *mapname)
 {
-	cl_static_entities = 0;
-	cl_static_tail = &cl_static_entities;
+	cl_static_entities.size = 0;
 	r_funcs->R_NewMap (cl.worldmodel, cl.model_precache, cl.nummodels);
 	Team_NewMap ();
 	Con_NewMap ();
@@ -973,8 +971,7 @@ CL_ParseStatic (void)
 	ent = r_funcs->R_AllocEntity ();
 	CL_Init_Entity (ent);
 
-	*cl_static_tail = ent;
-	cl_static_tail = &ent->unext;
+	DARRAY_APPEND (&cl_static_entities, ent);
 
 	// copy it to the current state
 	ent->renderer.model = cl.model_precache[es.modelindex];

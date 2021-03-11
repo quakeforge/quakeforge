@@ -755,7 +755,9 @@ demo_start_recording (int track)
 		SZ_Clear (&buf);
 	}
 	// spawnstatic
-	for (ent = cl_static_entities; ent; ent = ent->unext) {
+	for (size_t staticIndex = 0; staticIndex < cl_static_entities.size;
+		 staticIndex++) {
+		ent = cl_static_entities.a[staticIndex];
 		MSG_WriteByte (&buf, svc_spawnstatic);
 
 		for (j = 1; j < cl.nummodels; j++) {

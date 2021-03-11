@@ -28,6 +28,7 @@
 #ifndef _CLIENT_H
 #define _CLIENT_H
 
+#include "QF/entity.h"
 #include "QF/info.h"
 #include "QF/quakefs.h"
 #include "QF/vid.h"
@@ -341,7 +342,7 @@ extern	struct cvar_s	*cl_fb_players;
 
 extern	client_state_t	cl;
 
-extern	entity_t		*cl_static_entities;
+extern	entityset_t		cl_static_entities;
 extern	entity_t		cl_entities[512];
 extern	byte			cl_entity_valid[2][512];
 

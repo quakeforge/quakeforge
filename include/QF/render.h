@@ -124,7 +124,6 @@ typedef struct renderer_s {
 
 typedef struct entity_s {
 	struct entity_s *next;
-	struct entity_s *unext;	//FIXME this shouldn't be here. for qw demos
 
 	struct transform_s *transform;
 	animation_t animation;

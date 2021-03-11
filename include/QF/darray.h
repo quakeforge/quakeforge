@@ -69,6 +69,8 @@
 		ele_type   *a;			\
 	}
 
+#define DARRAY_STATIC_INIT(g) { .grow = g }
+
 /**	Allocate a fixed-size array using the given allocator
 
 	The allocated array is initilized to be ungrowable, and with both size
