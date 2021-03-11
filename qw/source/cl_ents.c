@@ -47,6 +47,7 @@
 #include "clview.h"
 #include "d_iface.h"
 
+#include "client/effects.h"
 #include "client/temp_entities.h"
 
 #include "qw/bothdefs.h"
@@ -82,73 +83,6 @@ CL_ClearEnts (void)
 		CL_Init_Entity (&cl_player_ents[i]);
 }
 
-static void
-CL_NewDlight (int key, vec3_t org, int effects, byte glow_size,
-			  byte glow_color)
-{
-	float       radius;
-	dlight_t   *dl;
-	static quat_t normal = {0.4, 0.2, 0.05, 0.7};
-	static quat_t red = {0.5, 0.05, 0.05, 0.7};
-	static quat_t blue = {0.05, 0.05, 0.5, 0.7};
-	static quat_t purple = {0.5, 0.05, 0.5, 0.7};
-
-	effects &= EF_BLUE | EF_RED | EF_BRIGHTLIGHT | EF_DIMLIGHT;
-	if (!effects) {
-		if (!glow_size)
-			return;
-	}
-
-	dl = r_funcs->R_AllocDlight (key);
-	if (!dl)
-		return;
-	VectorCopy (org, dl->origin);
-
-	if (effects & (EF_BLUE | EF_RED | EF_BRIGHTLIGHT | EF_DIMLIGHT)) {
-		radius = 200 + (rand () & 31);
-		if (effects & EF_BRIGHTLIGHT) {
-			radius += 200;
-			dl->origin[2] += 16;
-		}
-		if (effects & EF_DIMLIGHT)
-			if (effects & ~EF_DIMLIGHT)
-				radius -= 100;
-		dl->radius = radius;
-		dl->die = cl.time + 0.1;
-
-		switch (effects & (EF_RED | EF_BLUE)) {
-			case EF_RED | EF_BLUE:
-				QuatCopy (purple, dl->color);
-				break;
-			case EF_RED:
-				QuatCopy (red, dl->color);
-				break;
-			case EF_BLUE:
-				QuatCopy (blue, dl->color);
-				break;
-			default:
-				QuatCopy (normal, dl->color);
-				break;
-		}
-	}
-
-	if (glow_size) {
-		dl->radius += glow_size < 128 ? glow_size * 8.0 :
-			(glow_size - 256) * 8.0;
-		dl->die = cl.time + 0.1;
-		if (glow_color) {
-			if (glow_color == 255) {
-				dl->color[0] = dl->color[1] = dl->color[2] = 1.0;
-			} else {
-				byte        *tempcolor;
-
-				tempcolor = (byte *) &d_8to24table[glow_color];
-				VectorScale (tempcolor, 1 / 255.0, dl->color);
-			}
-		}
-	}
-}
-
 // Hack hack hack
 static inline int
 is_dead_body (entity_state_t *s1)
@@ -172,41 +106,6 @@ is_gib (entity_state_t *s1)
 }
 
 static void
-CL_ModelEffects (entity_t *ent, int num, int glow_color)
-{
-	dlight_t   *dl;
-	model_t    *model = ent->renderer.model;
-
-	// add automatic particle trails
-	if (model->flags & EF_ROCKET) {
-		dl = r_funcs->R_AllocDlight (num);
-		if (dl) {
-			VectorCopy (ent->origin, dl->origin);
-			dl->radius = 200.0;
-			dl->die = cl.time + 0.1;
-			//FIXME VectorCopy (r_firecolor->vec, dl->color);
-			VectorSet (0.9, 0.7, 0.0, dl->color);
-			dl->color[3] = 0.7;
-		}
-		r_funcs->particles->R_RocketTrail (ent);
-	} else if (model->flags & EF_GRENADE)
-		r_funcs->particles->R_GrenadeTrail (ent);
-	else if (model->flags & EF_GIB)
-		r_funcs->particles->R_BloodTrail (ent);
-	else if (model->flags & EF_ZOMGIB)
-		r_funcs->particles->R_SlightBloodTrail (ent);
-	else if (model->flags & EF_TRACER)
-		r_funcs->particles->R_WizTrail (ent);
-	else if (model->flags & EF_TRACER2)
-		r_funcs->particles->R_FlameTrail (ent);
-	else if (model->flags & EF_TRACER3)
-		r_funcs->particles->R_VoorTrail (ent);
-	else if (model->flags & EF_GLOWTRAIL)
-		if (r_funcs->particles->R_GlowTrail)
-			r_funcs->particles->R_GlowTrail (ent, glow_color);
-}
-
-static void
 set_entity_model (entity_t *ent, int modelindex)
 {
 	renderer_t *renderer = &ent->renderer;
@@ -221,6 +120,7 @@ set_entity_model (entity_t *ent, int modelindex)
 			animation->syncbase = 0.0;
 		}
 	}
+	animation->nolerp = 1; // don't try to lerp when the model has changed
 }
 
 static void
@@ -255,7 +155,7 @@ CL_LinkPacketEntities (void)
 
 		// spawn light flashes, even ones coming from invisible objects
 		CL_NewDlight (i, new->origin, new->effects, new->glow_size,
-					  new->glow_color);
+					  new->glow_color, cl.time);
 
 		// if set to invisible, skip
 		if (!new->modelindex
@@ -374,11 +274,11 @@ CL_LinkPacketEntities (void)
 			CL_TransformEntity (ent, angles);
 		}
 		//CL_EntityEffects (i, ent, new);
-		//CL_NewDlight (i, ent->origin, new->effects, 0, 0);
+		//CL_NewDlight (i, ent->origin, new->effects, 0, 0, cl.time);
 		if (VectorDistance_fast (old->origin, ent->origin) > (256 * 256))
 			VectorCopy (ent->origin, old->origin);
 		if (renderer->model->flags & ~EF_ROTATE) {
-			CL_ModelEffects (ent, -new->number, new->glow_color);
+			CL_ModelEffects (ent, -new->number, new->glow_color, cl.time);
 		}
 	}
 }
@@ -492,7 +392,7 @@ CL_LinkPlayers (void)
 			QuatSet (0.0, 1.0, 0.0, 1.0, dl->color);
 		} else {
 			CL_NewDlight (j + 1, org, state->pls.effects, state->pls.glow_size,
-						  state->pls.glow_color);
+						  state->pls.glow_color, cl.time);
 		}
 
 		// Draw player?
