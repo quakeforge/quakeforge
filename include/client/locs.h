@@ -46,5 +46,6 @@ int  locs_nearest (const vec3_t loc) __attribute__((pure));
 void locs_reset (void);
 void locs_save (const char *filename, qboolean gz);
 void map_to_loc (const char *mapname, char *filename);
+void locs_draw (vec3_t simorg);
 
 #endif//__QF_locs_h

@@ -45,7 +45,6 @@
 #include "QF/cvar.h"
 #include "QF/draw.h"
 #include "QF/entity.h"
-#include "QF/locs.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
 #include "QF/render.h"

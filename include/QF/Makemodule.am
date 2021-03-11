@@ -25,7 +25,6 @@ include_qf = \
 	include/QF/keys.h \
 	include/QF/link.h \
 	include/QF/llist.h \
-	include/QF/locs.h \
 	include/QF/mathlib.h \
 	include/QF/mdfour.h \
 	include/QF/mersenne.h \

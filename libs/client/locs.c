@@ -41,15 +41,19 @@
 
 #include <limits.h>
 
-#include "QF/locs.h"
+#include "QF/mathlib.h"
+#include "QF/render.h"
 #include "QF/qtypes.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "compat.h"
+#include "QF/plugin/vid_render.h"	//FIXME
 
-#include "qw/include/client.h"
+#include "compat.h"
+#include "d_iface.h"	//FIXME part_tex_smoke and part_tex_dot
+
+#include "client/locs.h"
 
 #define LOCATION_BLOCK	128				// 128 locations per block.
 
@@ -275,4 +279,38 @@ map_to_loc (const char *mapname, char *filename)
 		Sys_Error ("Can't find .!");
 	t1++;
 	strcpy (t1, "loc");
+}
+
+void
+locs_draw (vec3_t simorg)
+{
+	//FIXME custom ent rendering code would be nice
+	dlight_t   *dl;
+	location_t *nearloc;
+	vec3_t      trueloc;
+	int         i;
+
+	nearloc = locs_find (simorg);
+	if (nearloc) {
+		dl = r_funcs->R_AllocDlight (4096);
+		if (dl) {
+			VectorCopy (nearloc->loc, dl->origin);
+			dl->radius = 200;
+			dl->die = r_data->realtime + 0.1;
+			dl->color[0] = 0;
+			dl->color[1] = 1;
+			dl->color[2] = 0;
+			dl->color[3] = 0.7;
+		}
+		VectorCopy (nearloc->loc, trueloc);
+		r_funcs->particles->R_Particle_New (pt_smokecloud, part_tex_smoke,
+				trueloc, 2.0,
+				vec3_origin, r_data->realtime + 9.0, 254,
+				0.25 + qfrandom (0.125), 0.0);
+		for (i = 0; i < 15; i++)
+			r_funcs->particles->R_Particle_NewRandom (pt_fallfade,
+					part_tex_dot, trueloc, 12,
+					0.7, 96, r_data->realtime + 5.0,
+					104 + (rand () & 7), 1.0, 0.0);
+	}
 }

@@ -43,7 +43,6 @@
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/entity.h"
-#include "QF/locs.h"
 #include "QF/mathlib.h"
 #include "QF/render.h"
 #include "QF/screen.h"

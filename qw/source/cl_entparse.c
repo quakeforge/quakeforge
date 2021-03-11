@@ -36,7 +36,6 @@
 #endif
 
 #include "QF/cvar.h"
-#include "QF/locs.h"
 #include "QF/msg.h"
 #include "QF/render.h"
 #include "QF/skin.h"

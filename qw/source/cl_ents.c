@@ -37,7 +37,6 @@
 
 #include "QF/cvar.h"
 #include "QF/entity.h"
-#include "QF/locs.h"
 #include "QF/msg.h"
 #include "QF/render.h"
 #include "QF/skin.h"
@@ -48,6 +47,7 @@
 #include "d_iface.h"
 
 #include "client/effects.h"
+#include "client/locs.h"
 #include "client/temp_entities.h"
 
 #include "qw/bothdefs.h"
@@ -490,35 +490,7 @@ CL_EmitEntities (void)
 	CL_LinkPacketEntities ();
 	CL_UpdateTEnts (cl.time, &tentCtx);
 	if (cl_draw_locs->int_val) {
-		//FIXME custom ent rendering code would be nice
-		dlight_t   *dl;
-		location_t *nearloc;
-		vec3_t      trueloc;
-		int         i;
-
-		nearloc = locs_find (cl.simorg);
-		if (nearloc) {
-			dl = r_funcs->R_AllocDlight (4096);
-			if (dl) {
-				VectorCopy (nearloc->loc, dl->origin);
-				dl->radius = 200;
-				dl->die = r_data->realtime + 0.1;
-				dl->color[0] = 0;
-				dl->color[1] = 1;
-				dl->color[2] = 0;
-				dl->color[3] = 0.7;
-			}
-			VectorCopy (nearloc->loc, trueloc);
-			r_funcs->particles->R_Particle_New (pt_smokecloud, part_tex_smoke,
-					trueloc, 2.0,
-					vec3_origin, r_data->realtime + 9.0, 254,
-					0.25 + qfrandom (0.125), 0.0);
-			for (i = 0; i < 15; i++)
-				r_funcs->particles->R_Particle_NewRandom (pt_fallfade,
-						part_tex_dot, trueloc, 12,
-						0.7, 96, r_data->realtime + 5.0,
-						104 + (rand () & 7), 1.0, 0.0);
-		}
+		locs_draw (cl.simorg);
 	}
 }
 

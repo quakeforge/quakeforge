@@ -43,7 +43,6 @@
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/gib.h"
-#include "QF/locs.h"
 #include "QF/model.h"
 #include "QF/va.h"
 #include "QF/skin.h"
@@ -51,6 +50,8 @@
 #include "QF/teamplay.h"
 
 #include "compat.h"
+
+#include "client/locs.h"
 
 #include "qw/bothdefs.h"
 #include "qw/include/cl_input.h"
