@@ -446,9 +446,9 @@ spectator_move (client_t *cl, usercmd_t *ucmd)
 
 	AngleVectors (cl->state.cmd.angles, forward, right, up);
 
-	speed = DotProduct (cl->state.velocity, cl->state.velocity);
+	speed = DotProduct (cl->state.es.velocity, cl->state.es.velocity);
 	if (speed < 1) {
-		VectorZero (cl->state.velocity);
+		VectorZero (cl->state.es.velocity);
 	} else {
 		speed = sqrt (speed);
 		drop = 0;
@@ -462,7 +462,7 @@ spectator_move (client_t *cl, usercmd_t *ucmd)
 			newspeed = 0;
 		newspeed /= speed;
 
-		VectorScale (cl->state.velocity, newspeed, cl->state.velocity);
+		VectorScale (cl->state.es.velocity, newspeed, cl->state.es.velocity);
 	}
 
 	fmove = ucmd->forwardmove;
@@ -484,7 +484,7 @@ spectator_move (client_t *cl, usercmd_t *ucmd)
 		wishspeed = sv->movevars.spectatormaxspeed;
 	}
 
-	currentspeed = DotProduct (cl->state.velocity, wishdir);
+	currentspeed = DotProduct (cl->state.es.velocity, wishdir);
 	addspeed = wishspeed - currentspeed;
 	if (addspeed <= 0)
 		return;
@@ -492,10 +492,10 @@ spectator_move (client_t *cl, usercmd_t *ucmd)
 	if (accelspeed > addspeed)
 		accelspeed = addspeed;
 
-	VectorMultAdd (cl->state.velocity, accelspeed, wishdir,
-				   cl->state.velocity);
-	VectorMultAdd (cl->state.origin, frametime, cl->state.velocity,
-				   cl->state.origin);
+	VectorMultAdd (cl->state.es.velocity, accelspeed, wishdir,
+				   cl->state.es.velocity);
+	VectorMultAdd (cl->state.es.origin, frametime, cl->state.es.velocity,
+				   cl->state.es.origin);
 }
 
 static void
@@ -612,7 +612,7 @@ client_parse_message (client_t *cl)
 				break;
 			case clc_tmove:
 				MSG_ReadCoordV (net_message, o);
-				VectorCopy (o, cl->state.origin);
+				VectorCopy (o, cl->state.es.origin);
 				break;
 			case clc_upload:
 				size = MSG_ReadShort (net_message);
@@ -627,18 +627,18 @@ static void
 write_player (int num, plent_state_t *pl, server_t *sv, sizebuf_t *msg)
 {
 	int         i;
-	int         pflags = (pl->flags & (PF_GIB | PF_DEAD))
+	int         pflags = (pl->es.flags & (PF_GIB | PF_DEAD))
 						| PF_MSEC | PF_COMMAND;
 	int         qf_bits = 0;
 
-	if (pl->modelindex != sv->playermodel)
+	if (pl->es.modelindex != sv->playermodel)
 		pflags |= PF_MODEL;
 	for (i = 0; i < 3; i++)
-		if (pl->velocity[i])
+		if (pl->es.velocity[i])
 			pflags |= PF_VELOCITY1 << i;
-	if (pl->effects & 0xff)
+	if (pl->es.effects & 0xff)
 		pflags |= PF_EFFECTS;
-	if (pl->skinnum)
+	if (pl->es.skinnum)
 		pflags |= PF_SKINNUM;
 
 	qf_bits = 0;
@@ -670,21 +670,21 @@ write_player (int num, plent_state_t *pl, server_t *sv, sizebuf_t *msg)
 //	} else if (ent == clent) {
 //		// don't send a lot of data on personal entity
 //		pflags &= ~(PF_MSEC | PF_COMMAND);
-//		if (pl->weaponframe)
+//		if (pl->es.weaponframe)
 //			pflags |= PF_WEAPONFRAME;
 //	}
 
 //	if (client->spec_track && client->spec_track - 1 == j
-//		&& pl->weaponframe)
+//		&& pl->es.weaponframe)
 //		pflags |= PF_WEAPONFRAME;
 
 	MSG_WriteByte (msg, svc_playerinfo);
 	MSG_WriteByte (msg, num);
 	MSG_WriteShort (msg, pflags);
 
-	MSG_WriteCoordV (msg, pl->origin);
+	MSG_WriteCoordV (msg, pl->es.origin);
 
-	MSG_WriteByte (msg, pl->frame);
+	MSG_WriteByte (msg, pl->es.frame);
 
 	if (pflags & PF_MSEC) {
 		//msec = 1000 * (sv.time - cl->localtime);
@@ -699,36 +699,36 @@ write_player (int num, plent_state_t *pl, server_t *sv, sizebuf_t *msg)
 
 	for (i = 0; i < 3; i++)
 		if (pflags & (PF_VELOCITY1 << i))
-			MSG_WriteShort (msg, pl->velocity[i]);
+			MSG_WriteShort (msg, pl->es.velocity[i]);
 
 	if (pflags & PF_MODEL)
-		MSG_WriteByte (msg, pl->modelindex);
+		MSG_WriteByte (msg, pl->es.modelindex);
 
 	if (pflags & PF_SKINNUM)
-		MSG_WriteByte (msg, pl->skinnum);
+		MSG_WriteByte (msg, pl->es.skinnum);
 
 	if (pflags & PF_EFFECTS)
-		MSG_WriteByte (msg, pl->effects);
+		MSG_WriteByte (msg, pl->es.effects);
 
 	if (pflags & PF_WEAPONFRAME)
-		MSG_WriteByte (msg, pl->weaponframe);
+		MSG_WriteByte (msg, pl->es.weaponframe);
 
 	if (pflags & PF_QF) {
 		MSG_WriteByte (msg, qf_bits);
 		if (qf_bits & PF_ALPHA)
-			MSG_WriteByte (msg, pl->alpha);
+			MSG_WriteByte (msg, pl->es.alpha);
 		if (qf_bits & PF_SCALE)
-			MSG_WriteByte (msg, pl->scale);
+			MSG_WriteByte (msg, pl->es.scale);
 		if (qf_bits & PF_EFFECTS2)
-			MSG_WriteByte (msg, pl->effects >> 8);
+			MSG_WriteByte (msg, pl->es.effects >> 8);
 		if (qf_bits & PF_GLOWSIZE)
-			MSG_WriteByte (msg, pl->scale);
+			MSG_WriteByte (msg, pl->es.glow_size);
 		if (qf_bits & PF_GLOWCOLOR)
-			MSG_WriteByte (msg, pl->glow_color);
+			MSG_WriteByte (msg, pl->es.glow_color);
 		if (qf_bits & PF_COLORMOD)
-			MSG_WriteByte (msg, pl->colormod);
+			MSG_WriteByte (msg, pl->es.colormod);
 		if (qf_bits & PF_FRAME2)
-			MSG_WriteByte (msg, pl->frame >> 8);
+			MSG_WriteByte (msg, pl->es.frame >> 8);
 	}
 }
 #if 0

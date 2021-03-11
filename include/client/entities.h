@@ -40,9 +40,11 @@ typedef struct entity_state_s {
 	unsigned    flags;			// nolerp, etc
 
 	vec3_t      origin;
+	vec3_t      velocity;
 	vec3_t      angles;
-	unsigned short modelindex;
-	unsigned short frame;
+	uint16_t    modelindex;
+	uint16_t    frame;
+	int         weaponframe;
 	int         effects;
 	byte        colormap;
 	byte        skinnum;

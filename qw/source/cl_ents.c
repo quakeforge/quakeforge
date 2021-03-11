@@ -349,7 +349,7 @@ static void
 CL_LinkPlayers (void)
 {
 	double			playertime;
-	int				msec, oldphysent, i, j;
+	int				msec, oldphysent, j;
 	entity_t	   *ent;
 	frame_t		   *frame;
 	player_info_t  *info;
@@ -381,7 +381,7 @@ CL_LinkPlayers (void)
 			r_data->player_entity = &cl_player_ents[j];
 			clientplayer = true;
 		} else {
-			VectorCopy (state->pls.origin, org);
+			VectorCopy (state->pls.es.origin, org);
 			clientplayer = false;
 		}
 		if (info->chat && info->chat->value[0] != '0') {
@@ -391,28 +391,28 @@ CL_LinkPlayers (void)
 			dl->die = cl.time + 0.1;
 			QuatSet (0.0, 1.0, 0.0, 1.0, dl->color);
 		} else {
-			CL_NewDlight (j + 1, org, state->pls.effects, state->pls.glow_size,
-						  state->pls.glow_color, cl.time);
+			CL_NewDlight (j + 1, org, state->pls.es.effects,
+						  state->pls.es.glow_size, state->pls.es.glow_color,
+						  cl.time);
 		}
 
 		// Draw player?
 		if (!Cam_DrawPlayer (j))
 			continue;
 
-		if (!state->pls.modelindex)
+		if (!state->pls.es.modelindex)
 			continue;
 
 		// Hack hack hack
 		if (cl_deadbodyfilter->int_val
-			&& state->pls.modelindex == cl_playerindex
-			&& ((i = state->pls.frame) == 49 || i == 60 || i == 69 || i == 84
-				|| i == 93 || i == 102))
+			&& state->pls.es.modelindex == cl_playerindex
+			&& is_dead_body (&state->pls.es))
 			continue;
 
 		// predict only half the move to minimize overruns
 		msec = 500 * (playertime - state->state_time);
 		if (msec <= 0 || (!cl_predict_players->int_val) || cls.demoplayback2) {
-			VectorCopy (state->pls.origin, ent->origin);
+			VectorCopy (state->pls.es.origin, ent->origin);
 		} else {									// predict players movement
 			state->pls.cmd.msec = msec = min (msec, 255);
 
@@ -420,7 +420,7 @@ CL_LinkPlayers (void)
 			CL_SetSolidPlayers (j);
 			CL_PredictUsercmd (state, &exact, &state->pls.cmd, clientplayer);
 			pmove.numphysent = oldphysent;
-			VectorCopy (exact.pls.origin, ent->origin);
+			VectorCopy (exact.pls.es.origin, ent->origin);
 		}
 
 		// angles
@@ -432,18 +432,18 @@ CL_LinkPlayers (void)
 			ang[PITCH] = -state->viewangles[PITCH] / 3.0;
 			ang[YAW] = state->viewangles[YAW];
 		}
-		ang[ROLL] = V_CalcRoll (ang, state->pls.velocity) * 4.0;
+		ang[ROLL] = V_CalcRoll (ang, state->pls.es.velocity) * 4.0;
 
-		ent->renderer.model = cl.model_precache[state->pls.modelindex];
-		ent->animation.frame = state->pls.frame;
-		ent->renderer.skinnum = state->pls.skinnum;
+		ent->renderer.model = cl.model_precache[state->pls.es.modelindex];
+		ent->animation.frame = state->pls.es.frame;
+		ent->renderer.skinnum = state->pls.es.skinnum;
 
 		CL_TransformEntity (ent, ang);
 
 		ent->renderer.min_light = 0;
 		ent->renderer.fullbright = 0;
 
-		if (state->pls.modelindex == cl_playerindex) { //XXX
+		if (state->pls.es.modelindex == cl_playerindex) { //XXX
 			// use custom skin
 			ent->renderer.skin = info->skin;
 
@@ -460,9 +460,9 @@ CL_LinkPlayers (void)
 		// stuff entity in map
 		r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 
-		if (state->pls.effects & EF_FLAG1)
+		if (state->pls.es.effects & EF_FLAG1)
 			CL_AddFlagModels (ent, 0, j);
-		else if (state->pls.effects & EF_FLAG2)
+		else if (state->pls.es.effects & EF_FLAG2)
 			CL_AddFlagModels (ent, 1, j);
 	}
 }

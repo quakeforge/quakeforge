@@ -600,7 +600,7 @@ V_CalcViewRoll (void)
 		v_dmg_time -= host_frametime;
 	}
 
-	if (view_state->pls.flags & PF_DEAD)		// PF_GIB will also set PF_DEAD
+	if (view_state->pls.es.flags & PF_DEAD)		// PF_GIB will also set PF_DEAD
 		r_data->refdef->viewangles[ROLL] = 80;	// dead view angle
 }
 
@@ -700,12 +700,12 @@ V_CalcRefdef (void)
 	else if (r_data->scr_viewsize->int_val == 80)
 		view->origin[2] += 0.5;
 
-	if (view_state->pls.flags & (PF_GIB | PF_DEAD)) {
+	if (view_state->pls.es.flags & (PF_GIB | PF_DEAD)) {
 		view->renderer.model = NULL;
 	} else {
 		view->renderer.model = cl.model_precache[cl.stats[STAT_WEAPON]];
 	}
-	view->animation.frame = view_state->pls.weaponframe;
+	view->animation.frame = view_state->pls.es.weaponframe;
 	view->renderer.skin = 0;
 
 	// set up the refresh position
@@ -757,9 +757,9 @@ V_RenderView (void)
 	view_frame = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK];
 	view_state = &view_frame->playerstate[cl.playernum];
 
-	if (view_state->pls.flags & PF_GIB)
+	if (view_state->pls.es.flags & PF_GIB)
 		cl.viewheight = 8;			// gib view height
-	else if (view_state->pls.flags & PF_DEAD)
+	else if (view_state->pls.es.flags & PF_DEAD)
 		cl.viewheight = -16;			// corpse view height
 	else {
 		cl.viewheight = DEFAULT_VIEWHEIGHT;	// view height

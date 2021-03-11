@@ -514,9 +514,9 @@ parse_player_delta (qmsg_t *msg, plent_state_t *from, plent_state_t *to)
 	int          i;
 	int          flags;
 
-	flags = to->flags = MSG_ReadShort (msg);
-	MSG_ReadCoordV (msg, to->origin);
-	to->frame = (to->frame & 0xff00) | MSG_ReadByte (msg);
+	flags = to->es.flags = MSG_ReadShort (msg);
+	MSG_ReadCoordV (msg, to->es.origin);
+	to->es.frame = (to->es.frame & 0xff00) | MSG_ReadByte (msg);
 	if (flags & PF_MSEC)
 		to->msec = MSG_ReadByte (msg);
 //	qtv_printf ("%02x\n", msg->message->data[msg->readcount]);
@@ -524,36 +524,36 @@ parse_player_delta (qmsg_t *msg, plent_state_t *from, plent_state_t *to)
 		MSG_ReadDeltaUsercmd (msg, &from->cmd, &to->cmd);
 	for (i = 0; i < 3; i++) {
 		if (flags & (PF_VELOCITY1 << i))
-			to->velocity[i] = (short) MSG_ReadShort (msg);
+			to->es.velocity[i] = (short) MSG_ReadShort (msg);
 	}
 	if (flags & PF_MODEL)
-		to->modelindex = MSG_ReadByte (msg);
+		to->es.modelindex = MSG_ReadByte (msg);
 	if (flags & PF_SKINNUM)
-		to->skinnum = MSG_ReadByte (msg);
+		to->es.skinnum = MSG_ReadByte (msg);
 	if (flags & PF_EFFECTS)
-		to->effects = (to->effects & 0xff00) | MSG_ReadByte (msg);
+		to->es.effects = (to->es.effects & 0xff00) | MSG_ReadByte (msg);
 	if (flags & PF_WEAPONFRAME)
-		to->weaponframe = MSG_ReadByte (msg);
+		to->es.weaponframe = MSG_ReadByte (msg);
 	if (flags & PF_QF) {
 		int         bits;
 
 		bits = MSG_ReadByte (msg);
 		if (bits & PF_ALPHA)
-			to->alpha = MSG_ReadByte (msg);
+			to->es.alpha = MSG_ReadByte (msg);
 		if (bits & PF_SCALE)
-			to->scale = MSG_ReadByte (msg);
+			to->es.scale = MSG_ReadByte (msg);
 		if (bits & PF_EFFECTS2)
-			to->effects = (to->effects & 0x00ff)
-						| (MSG_ReadByte (msg) << 8);
+			to->es.effects = (to->es.effects & 0x00ff)
+						   | (MSG_ReadByte (msg) << 8);
 		if (bits & PF_GLOWSIZE)
-			to->glow_size = MSG_ReadByte (msg);
+			to->es.glow_size = MSG_ReadByte (msg);
 		if (bits & PF_GLOWCOLOR)
-			to->glow_color = MSG_ReadByte (msg);
+			to->es.glow_color = MSG_ReadByte (msg);
 		if (bits & PF_COLORMOD)
-			to->colormod = MSG_ReadByte (msg);
+			to->es.colormod = MSG_ReadByte (msg);
 		if (bits & PF_FRAME2)
-			to->frame = (to->frame & 0xff)
-					  | (MSG_ReadByte (msg) << 8);
+			to->es.frame = (to->es.frame & 0xff)
+						 | (MSG_ReadByte (msg) << 8);
 	}
 }
 
@@ -567,12 +567,12 @@ sv_playerinfo (server_t *sv, qmsg_t *msg)
 	int          fromind, toind;
 	static plent_state_t null_player_state;
 
-	if (!null_player_state.alpha) {
-		null_player_state.alpha = 255;
-		null_player_state.scale = 16;
-		null_player_state.glow_size = 0;
-		null_player_state.glow_color = 254;
-		null_player_state.colormod = 255;
+	if (!null_player_state.es.alpha) {
+		null_player_state.es.alpha = 255;
+		null_player_state.es.scale = 16;
+		null_player_state.es.glow_size = 0;
+		null_player_state.es.glow_color = 254;
+		null_player_state.es.colormod = 255;
 	}
 	fromind = MSG_ReadByte (msg);
 	toind = sv->netchan.incoming_sequence & UPDATE_MASK;

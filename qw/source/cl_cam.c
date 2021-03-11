@@ -218,23 +218,23 @@ Cam_TryFlyby (player_state_t * self, player_state_t * player, vec3_t vec,
 	vectoangles (vec, v);
 	VectorCopy (v, pmove.angles);
 	VectorNormalize (vec);
-	VectorMultAdd (player->pls.origin, 800, vec, v);
+	VectorMultAdd (player->pls.es.origin, 800, vec, v);
 	// v is endpos
 	// fake a player move
-	trace = Cam_DoTrace (player->pls.origin, v);
+	trace = Cam_DoTrace (player->pls.es.origin, v);
 	if ( /* trace.inopen || */ trace.inwater)
 		return 9999;
 	VectorCopy (trace.endpos, vec);
-	len = VectorDistance (trace.endpos, player->pls.origin);
+	len = VectorDistance (trace.endpos, player->pls.es.origin);
 
 	if (len < 32 || len > 800)
 		return 9999;
 	if (checkvis) {
-		trace = Cam_DoTrace (self->pls.origin, vec);
+		trace = Cam_DoTrace (self->pls.es.origin, vec);
 		if (trace.fraction != 1 || trace.inwater)
 			return 9999;
 
-		len = VectorDistance (trace.endpos, self->pls.origin);
+		len = VectorDistance (trace.endpos, self->pls.es.origin);
 	}
 
 	return len;
@@ -248,11 +248,11 @@ Cam_IsVisible (player_state_t * player, vec3_t vec)
 	trace_t     trace;
 	vec3_t      v;
 
-	trace = Cam_DoTrace (player->pls.origin, vec);
+	trace = Cam_DoTrace (player->pls.es.origin, vec);
 	if (trace.fraction != 1 || /* trace.inopen || */ trace.inwater)
 		return false;
 	// check distance, don't let the player get too far away or too close
-	VectorSubtract (player->pls.origin, vec, v);
+	VectorSubtract (player->pls.es.origin, vec, v);
 	d = VectorLength (v);
 
 	return (d > 16.0);
@@ -440,22 +440,22 @@ Cam_Track (usercmd_t *cmd)
 		cmd->forwardmove = cmd->sidemove = cmd->upmove = 0;
 
 		VectorCopy (player->viewangles, cl.viewangles);
-		VectorCopy (player->pls.origin, desired_position);
-		if (memcmp (&desired_position, &self->pls.origin,
+		VectorCopy (player->pls.es.origin, desired_position);
+		if (memcmp (&desired_position, &self->pls.es.origin,
 					sizeof (desired_position)) != 0) {
 			if (!cls.demoplayback) {
 				MSG_WriteByte (&cls.netchan.message, clc_tmove);
 				MSG_WriteCoordV (&cls.netchan.message, desired_position);
 			}
 			// move there locally immediately
-			VectorCopy (desired_position, self->pls.origin);
+			VectorCopy (desired_position, self->pls.es.origin);
 		}
-		self->pls.weaponframe = player->pls.weaponframe;
+		self->pls.es.weaponframe = player->pls.es.weaponframe;
 
 	} else {
 		// Ok, move to our desired position and set our angles to view
 		// the player
-		VectorSubtract (desired_position, self->pls.origin, vec);
+		VectorSubtract (desired_position, self->pls.es.origin, vec);
 		len = VectorLength (vec);
 		cmd->forwardmove = cmd->sidemove = cmd->upmove = 0;
 		if (len > 16) {					// close enough?
@@ -465,9 +465,9 @@ Cam_Track (usercmd_t *cmd)
 			}
 		}
 		// move there locally immediately
-		VectorCopy (desired_position, self->pls.origin);
+		VectorCopy (desired_position, self->pls.es.origin);
 
-		VectorSubtract (player->pls.origin, desired_position, vec);
+		VectorSubtract (player->pls.es.origin, desired_position, vec);
 		vectoangles (vec, cl.viewangles);
 		cl.viewangles[0] = -cl.viewangles[0];
 	}
@@ -520,7 +520,7 @@ Cam_SetView (void)
 	player = frame->playerstate + spec_track;
 	self = frame->playerstate + cl.playernum;
 
-	VectorSubtract (player->pls.origin, cl.simorg, vec);
+	VectorSubtract (player->pls.es.origin, cl.simorg, vec);
 	if (cam_forceview) {
 		cam_forceview = false;
 		vectoangles (vec, cam_viewangles);
@@ -560,7 +560,7 @@ Cam_FinishMove (usercmd_t *cmd)
 		player = frame->playerstate + spec_track;
 		self = frame->playerstate + cl.playernum;
 
-		VectorSubtract (player->pls.origin, self->pls.origin, vec);
+		VectorSubtract (player->pls.es.origin, self->pls.es.origin, vec);
 		if (cam_forceview) {
 			cam_forceview = false;
 			vectoangles (vec, cam_viewangles);
