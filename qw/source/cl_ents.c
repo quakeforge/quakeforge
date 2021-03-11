@@ -356,7 +356,8 @@ CL_LinkPlayers (void)
 	player_state_t	exact;
 	player_state_t *state;
 	qboolean		clientplayer;
-	vec3_t			org, ang = {0, 0, 0};
+	vec3_t			ang = {0, 0, 0};
+	vec4f_t         org;
 
 	playertime = realtime - cls.latency + 0.02;
 	if (playertime > realtime)
@@ -377,11 +378,11 @@ CL_LinkPlayers (void)
 
 		// spawn light flashes, even ones coming from invisible objects
 		if (j == cl.playernum) {
-			VectorCopy (cl.simorg, org);
+			org = cl.simorg;
 			r_data->player_entity = &cl_player_ents[j];
 			clientplayer = true;
 		} else {
-			VectorCopy (state->pls.es.origin, org);
+			org = state->pls.es.origin;
 			clientplayer = false;
 		}
 		if (info->chat && info->chat->value[0] != '0') {

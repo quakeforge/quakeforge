@@ -945,7 +945,8 @@ CL_ParseBaseline (entity_state_t *es)
 	es->colormap = MSG_ReadByte (net_message);
 	es->skinnum = MSG_ReadByte (net_message);
 
-	MSG_ReadCoordAngleV (net_message, es->origin, es->angles);
+	MSG_ReadCoordAngleV (net_message, &es->origin[0], es->angles);//FIXME
+	es->origin[3] = 1;
 
 	// LordHavoc: set up baseline to for new effects (alpha, colormod, etc)
 	es->colormod = 255;
@@ -1541,7 +1542,8 @@ CL_ParseServerMessage (void)
 				cl.completed_time = realtime;
 				r_data->vid->recalc_refdef = true;		// go to full screen
 				Sys_MaskPrintf (SYS_DEV, "intermission simorg: ");
-				MSG_ReadCoordV (net_message, cl.simorg);
+				MSG_ReadCoordV (net_message, &cl.simorg[0]);//FIXME
+				cl.simorg[3] = 1;
 				for (i = 0; i < 3; i++)
 					Sys_MaskPrintf (SYS_DEV, "%f ", cl.simorg[i]);
 				Sys_MaskPrintf (SYS_DEV, "\nintermission simangles: ");

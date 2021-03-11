@@ -1037,7 +1037,8 @@ SV_CreateBaseline (void)
 		MSG_WriteByte (&sv.signon, baseline->colormap);
 		MSG_WriteByte (&sv.signon, baseline->skinnum);
 
-		MSG_WriteCoordAngleV (&sv.signon, baseline->origin, baseline->angles);
+		MSG_WriteCoordAngleV (&sv.signon, &baseline->origin[0],//FIXME
+							  baseline->angles);
 
 		if (bits & B_ALPHA)
 			MSG_WriteByte (&sv.signon, baseline->alpha);

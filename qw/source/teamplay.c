@@ -58,7 +58,7 @@
 #include "qw/include/client.h"
 
 static qboolean died = false, recorded_location = false;
-static vec3_t   death_location, last_recorded_location;
+static vec4f_t  death_location, last_recorded_location;
 
 cvar_t         *cl_deadbodyfilter;
 cvar_t         *cl_gibfilter;
@@ -165,7 +165,7 @@ Team_ParseSay (dstring_t *buf, const char *s)
 					location = locs_find (death_location);
 					if (location) {
 						recorded_location = true;
-						VectorCopy (death_location, last_recorded_location);
+						last_recorded_location = death_location;
 						t1 = location->name;
 						break;
 					}
@@ -187,7 +187,7 @@ Team_ParseSay (dstring_t *buf, const char *s)
 				location = locs_find (cl.simorg);
 				if (location) {
 					recorded_location = true;
-					VectorCopy (cl.simorg, last_recorded_location);
+					last_recorded_location = cl.simorg;
 					t1 = location->name;
 				} else
 					snprintf (t2, sizeof (t2), "Unknown!");
@@ -279,7 +279,7 @@ void
 Team_Dead (void)
 {
 	died = true;
-	VectorCopy (cl.simorg, death_location);
+	death_location = cl.simorg;
 }
 
 void

@@ -33,6 +33,8 @@
 #include "QF/msg.h"
 #include "QF/screen.h"
 
+#include "QF/simd/vec4f.h"
+
 #include "QF/plugin/vid_render.h"
 
 #include "compat.h"
@@ -87,7 +89,7 @@ cshift_t    cshift_bonus = { {215, 186, 60}, 50};
 #define sqr(x) ((x) * (x))
 
 float
-V_CalcRoll (const vec3_t angles, const vec3_t velocity)
+V_CalcRoll (const vec3_t angles, vec4f_t velocity)
 {
 	float       side, sign, value;
 	vec3_t      forward, right, up;
@@ -110,7 +112,7 @@ V_CalcRoll (const vec3_t angles, const vec3_t velocity)
 static float
 V_CalcBob (void)
 {
-	vec_t      *velocity = cl.velocity;
+	vec4f_t     velocity = cl.velocity;
 	float       cycle;
 	static double bobtime;
 	static float bob;
@@ -132,8 +134,8 @@ V_CalcBob (void)
 
 	// bob is proportional to velocity in the xy plane
 	// (don't count Z, or jumping messes it up)
-
-	bob = sqrt (sqr (velocity[0]) + sqr (velocity[1])) * cl_bob->value;
+	velocity[2] = 0;
+	bob = sqrt (dotf (velocity, velocity)[0]) * cl_bob->value;
 	bob = bob * 0.3 + bob * 0.7 * sin (cycle * M_PI);
 	if (bob > 4)
 		bob = 4;
@@ -582,7 +584,7 @@ V_CalcViewRoll (void)
 {
 	float       side;
 	vec_t      *angles = cl_entities[cl.viewentity].angles;
-	vec_t      *velocity = cl.velocity;
+	vec4f_t     velocity = cl.velocity;
 
 	side = V_CalcRoll (angles, velocity);
 	r_data->refdef->viewangles[ROLL] += side;

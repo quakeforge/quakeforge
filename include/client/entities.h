@@ -32,6 +32,7 @@
 #define __client_entities_h
 
 #include "QF/qtypes.h"
+#include "QF/simd/types.h"
 
 // entity_state_t is the information conveyed from the server
 // in an update message
@@ -39,8 +40,8 @@ typedef struct entity_state_s {
 	int         number;			// edict index
 	unsigned    flags;			// nolerp, etc
 
-	vec3_t      origin;
-	vec3_t      velocity;
+	vec4f_t     origin;
+	vec4f_t     velocity;
 	vec3_t      angles;
 	uint16_t    modelindex;
 	uint16_t    frame;

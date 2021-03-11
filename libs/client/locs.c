@@ -48,6 +48,8 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "QF/simd/vec4f.h"
+
 #include "QF/plugin/vid_render.h"	//FIXME
 
 #include "compat.h"
@@ -63,7 +65,7 @@ int          locations_count = 0;
 int          location_blocks = 0;
 
 int
-locs_nearest (const vec3_t loc)
+locs_nearest (vec4f_t loc)
 {
 	float       best_distance = 9999999, distance;
 	int         i, j = -1;
@@ -71,7 +73,8 @@ locs_nearest (const vec3_t loc)
 
 	for (i = 0; i < locations_count; i++) {
 		cur = locations[i];
-		distance = VectorDistance_fast (loc, cur->loc);
+		vec4f_t     d = loc - cur->loc;
+		distance = dotf (d, d)[0];
 		if ((distance < best_distance)) {
 			best_distance = distance;
 			j = i;
@@ -81,7 +84,7 @@ locs_nearest (const vec3_t loc)
 }
 
 location_t *
-locs_find (const vec3_t target)
+locs_find (vec4f_t target)
 {
 	int i;
 
@@ -110,7 +113,7 @@ locs_more (void)
 }
 
 void
-locs_add (const vec3_t location, const char *name)
+locs_add (vec4f_t location, const char *name)
 {
 	int         num;
 
@@ -137,7 +140,7 @@ locs_load (const char *filename)
 	const char *tmp;
 	char       *t1, *t2;
 	const char *line;
-	vec3_t      loc;
+	vec4f_t     loc;
 	QFile      *file;
 
 	tmp = va (0, "maps/%s", filename);
@@ -216,7 +219,7 @@ locs_save (const char *filename, qboolean gz)
 }
 
 void
-locs_mark (const vec3_t loc, const char *desc)
+locs_mark (vec4f_t loc, const char *desc)
 {
 	locs_add (loc, desc);
 	Sys_Printf ("Marked current location: %s\n", desc);
@@ -229,14 +232,14 @@ locs_mark (const vec3_t loc, const char *desc)
     call with NULL description to modify location vectors
 */
 void
-locs_edit (const vec3_t loc, const char *desc)
+locs_edit (vec4f_t loc, const char *desc)
 {
 	int i;
 
 	if (locations_count) {
 		i = locs_nearest (loc);
 		if (!desc) {
-			VectorCopy (loc, locations[i]->loc);
+			locations[i]->loc = loc;
 			Sys_Printf ("Moving location marker for %s\n",
 					locations[i]->name);
 		} else {
@@ -250,7 +253,7 @@ locs_edit (const vec3_t loc, const char *desc)
 }
 
 void
-locs_del (const vec3_t loc)
+locs_del (vec4f_t loc)
 {
 	int i;
 
@@ -282,12 +285,12 @@ map_to_loc (const char *mapname, char *filename)
 }
 
 void
-locs_draw (vec3_t simorg)
+locs_draw (vec4f_t simorg)
 {
 	//FIXME custom ent rendering code would be nice
 	dlight_t   *dl;
 	location_t *nearloc;
-	vec3_t      trueloc;
+	vec4f_t     trueloc;
 	int         i;
 
 	nearloc = locs_find (simorg);
@@ -302,14 +305,14 @@ locs_draw (vec3_t simorg)
 			dl->color[2] = 0;
 			dl->color[3] = 0.7;
 		}
-		VectorCopy (nearloc->loc, trueloc);
+		trueloc = nearloc->loc;
 		r_funcs->particles->R_Particle_New (pt_smokecloud, part_tex_smoke,
-				trueloc, 2.0,
+				&trueloc[0], 2.0,//FIXME
 				vec3_origin, r_data->realtime + 9.0, 254,
 				0.25 + qfrandom (0.125), 0.0);
 		for (i = 0; i < 15; i++)
 			r_funcs->particles->R_Particle_NewRandom (pt_fallfade,
-					part_tex_dot, trueloc, 12,
+					part_tex_dot, &trueloc[0], 12,//FIXME
 					0.7, 96, r_data->realtime + 5.0,
 					104 + (rand () & 7), 1.0, 0.0);
 	}

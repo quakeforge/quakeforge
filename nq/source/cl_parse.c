@@ -491,7 +491,7 @@ CL_ParseUpdate (int bits)
 		num = MSG_ReadByte (net_message);
 
 	baseline = CL_EntityNum (num);
-	state = &nq_entstates.frame[0 + cl.mindex][num];
+	state = &nq_entstates.frame[0 + cl.frameIndex][num];
 
 	for (i = 0; i < 16; i++)
 		if (bits & (1 << i))
@@ -620,7 +620,8 @@ CL_ParseBaseline (entity_state_t *baseline, int version)
 	baseline->colormap = MSG_ReadByte (net_message);
 	baseline->skinnum = MSG_ReadByte (net_message);
 
-	MSG_ReadCoordAngleV (net_message, baseline->origin, baseline->angles);
+	MSG_ReadCoordAngleV (net_message, &baseline->origin[0], baseline->angles);
+	baseline->origin[3] = 1;//FIXME
 
 	if (bits & B_ALPHA)
 		baseline->alpha = MSG_ReadByte (net_message);
@@ -659,17 +660,17 @@ CL_ParseClientdata (void)
 	else
 		cl.idealpitch = 0;
 
-	VectorCopy (cl.mvelocity[0], cl.mvelocity[1]);
+	cl.frameVelocity[1] = cl.frameVelocity[0];
 	for (i = 0; i < 3; i++) {
 		if (bits & (SU_PUNCH1 << i))
 			cl.punchangle[i] = ((signed char) MSG_ReadByte (net_message));
 		else
 			cl.punchangle[i] = 0;
 		if (bits & (SU_VELOCITY1 << i))
-			cl.mvelocity[0][i] = ((signed char) MSG_ReadByte (net_message))
+			cl.frameVelocity[0][i] = ((signed char) MSG_ReadByte (net_message))
 				* 16;
 		else
-			cl.mvelocity[0][i] = 0;
+			cl.frameVelocity[0][i] = 0;
 	}
 
 	//FIXME
@@ -918,7 +919,7 @@ CL_ParseServerMessage (void)
 			case svc_time:
 				cl.mtime[1] = cl.mtime[0];
 				cl.mtime[0] = MSG_ReadFloat (net_message);
-				cl.mindex = !cl.mindex;
+				cl.frameIndex = !cl.frameIndex;
 				break;
 
 			case svc_print:

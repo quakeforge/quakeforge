@@ -182,14 +182,14 @@ read_demopacket (void)
 	if (net_message->message->cursize > MAX_DEMMSG)
 		Host_Error ("Demo message > MAX_DEMMSG: %d/%d",
 					net_message->message->cursize, MAX_DEMMSG);
-	VectorCopy (cl.mviewangles[0], cl.mviewangles[1]);
+	VectorCopy (cl.frameViewAngles[0], cl.frameViewAngles[1]);
 	for (i = 0; i < 3; i++) {
 		r = Qread (cls.demofile, &f, 4);
 		if (r != 4) {
 			CL_StopPlayback ();
 			return 0;
 		}
-		cl.mviewangles[0][i] = LittleFloat (f);
+		cl.frameViewAngles[0][i] = LittleFloat (f);
 	}
 	r = Qread (cls.demofile, net_message->message->data,
 			   net_message->message->cursize);

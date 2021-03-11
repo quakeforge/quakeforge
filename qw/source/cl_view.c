@@ -33,6 +33,8 @@
 #include "QF/msg.h"
 #include "QF/screen.h"
 
+#include "QF/simd/vec4f.h"
+
 #include "compat.h"
 #include "clview.h"
 
@@ -93,7 +95,7 @@ cshift_t    cshift_bonus = { {215, 186, 60}, 50};
 #define sqr(x) ((x) * (x))
 
 float
-V_CalcRoll (const vec3_t angles, const vec3_t velocity)
+V_CalcRoll (const vec3_t angles, const vec4f_t velocity)
 {
 	float       side, sign, value;
 	vec3_t      forward, right, up;
@@ -116,7 +118,7 @@ V_CalcRoll (const vec3_t angles, const vec3_t velocity)
 static float
 V_CalcBob (void)
 {
-	vec_t      *velocity = cl.simvel;
+	vec4f_t     velocity = cl.simvel;
 	float       cycle;
 	static double bobtime;
 	static float bob;
@@ -138,8 +140,8 @@ V_CalcBob (void)
 
 	// bob is proportional to velocity in the xy plane
 	// (don't count Z, or jumping messes it up)
-
-	bob = sqrt (sqr (velocity[0]) + sqr (velocity[1])) * cl_bob->value;
+	velocity[2] = 0;
+	bob = sqrt (dotf (velocity, velocity)[0]) * cl_bob->value;
 	bob = bob * 0.3 + bob * 0.7 * sin (cycle * M_PI);
 	if (bob > 4)
 		bob = 4;
@@ -240,7 +242,7 @@ V_ParseDamage (void)
 {
 	float       count, side;
 	int         armor, blood;
-	vec_t      *origin = cl.simorg;
+	vec4f_t     origin = cl.simorg;
 	vec_t      *angles = cl.simangles;
 	vec3_t      from, forward, right, up;
 
@@ -535,7 +537,7 @@ CalcGunAngle (void)
 static void
 V_BoundOffsets (void)
 {
-	vec_t      *origin = cl.simorg;
+	vec4f_t     origin = cl.simorg;
 
 	// absolutely bound refresh reletive to entity clipping hull
 	// so the view can never be inside a solid wall
@@ -587,7 +589,7 @@ V_CalcViewRoll (void)
 {
 	float       side;
 	vec_t      *angles = cl.simangles;
-	vec_t      *velocity = cl.simvel;
+	vec4f_t     velocity = cl.simvel;
 
 	side = V_CalcRoll (angles, velocity);
 	r_data->refdef->viewangles[ROLL] += side;
@@ -609,7 +611,7 @@ V_CalcIntermissionRefdef (void)
 {
 	entity_t   *view;
 	float       old;
-	vec_t      *origin = cl.simorg;
+	vec4f_t     origin = cl.simorg;
 	vec_t      *angles = cl.simangles;
 
 	// view is the weapon model (visible only from inside body)
@@ -635,7 +637,7 @@ V_CalcRefdef (void)
 	static float oldz = 0;
 	int         i;
 	vec3_t      forward, right, up;
-	vec_t      *origin = cl.simorg;
+	vec4f_t     origin = cl.simorg;
 	vec_t      *viewangles = cl.simangles;
 
 	V_DriftPitch ();

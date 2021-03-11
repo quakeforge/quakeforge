@@ -184,14 +184,9 @@ CL_PredictMove (void)
 			return;
 		}
 
-	for (i = 0; i < 3; i++) {
-		cl.simorg[i] = from->playerstate[cl.playernum].pls.es.origin[i] +
-			f * (to->playerstate[cl.playernum].pls.es.origin[i] -
-				   from->playerstate[cl.playernum].pls.es.origin[i]);
-		cl.simvel[i] = from->playerstate[cl.playernum].pls.es.velocity[i] +
-			f * (to->playerstate[cl.playernum].pls.es.velocity[i] -
-				 from->playerstate[cl.playernum].pls.es.velocity[i]);
-	}
+	cl.simorg = from->playerstate[cl.playernum].pls.es.origin
+				+ f * (to->playerstate[cl.playernum].pls.es.origin -
+					   from->playerstate[cl.playernum].pls.es.origin);
 }
 
 void

@@ -162,13 +162,13 @@ typedef struct {
 // server each frame.  The server sets punchangle when the view is temporarily
 // offset, and an angle reset commands at the start of each level and after
 // teleporting.
-	int         mindex;
-	vec3_t      mviewangles[2];	// During demo playback viewangles is lerped
+	int         frameIndex;
+	vec3_t      frameViewAngles[2];	// During demo playback viewangles is lerped
 								// between these
 	vec3_t      viewangles;
-	vec3_t      mvelocity[2];	// Update by server, used for lean+bob
+	vec4f_t     frameVelocity[2];	// Update by server, used for lean+bob
 								// (0 is newest)
-	vec3_t      velocity;		// Lerped between mvelocity[0] and [1]
+	vec4f_t     velocity;		// Lerped between frameVelocity[0] and [1]
 	vec3_t      punchangle;		// Temporary offset
 
 // pitch drifting vars

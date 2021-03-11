@@ -156,19 +156,18 @@ CL_RelinkEntities (void)
 	frac = CL_LerpPoint ();
 
 	// interpolate player info
-	for (i = 0; i < 3; i++)
-		cl.velocity[i] = cl.mvelocity[1][i] +
-			frac * (cl.mvelocity[0][i] - cl.mvelocity[1][i]);
+	cl.velocity = cl.frameVelocity[1]
+		+ frac * (cl.frameVelocity[0] - cl.frameVelocity[1]);
 
 	if (cls.demoplayback) {
 		// interpolate the angles
 		for (j = 0; j < 3; j++) {
-			d = cl.mviewangles[0][j] - cl.mviewangles[1][j];
+			d = cl.frameViewAngles[0][j] - cl.frameViewAngles[1][j];
 			if (d > 180)
 				d -= 360;
 			else if (d < -180)
 				d += 360;
-			cl.viewangles[j] = cl.mviewangles[1][j] + frac * d;
+			cl.viewangles[j] = cl.frameViewAngles[1][j] + frac * d;
 		}
 	}
 
@@ -176,8 +175,8 @@ CL_RelinkEntities (void)
 
 	// start on the entity after the world
 	for (i = 1; i < cl.num_entities; i++) {
-		new = &nq_entstates.frame[0 + cl.mindex][i];
-		old = &nq_entstates.frame[1 - cl.mindex][i];
+		new = &nq_entstates.frame[0 + cl.frameIndex][i];
+		old = &nq_entstates.frame[1 - cl.frameIndex][i];
 		ent = &cl_entities[i];
 		renderer = &ent->renderer;
 		animation = &ent->animation;
@@ -293,7 +292,8 @@ CL_RelinkEntities (void)
 			CL_TransformEntity (ent, angles);
 		}
 		CL_EntityEffects (i, ent, new, cl.time);
-		CL_NewDlight (i, ent->origin, new->effects, new->glow_size,
+		vec4f_t org = { VectorExpand (ent->origin), 1}; //FIXME
+		CL_NewDlight (i, org, new->effects, new->glow_size,
 					  new->glow_color, cl.time);
 		if (VectorDistance_fast (old->origin, ent->origin) > (256 * 256))
 			VectorCopy (ent->origin, old->origin);

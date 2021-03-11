@@ -29,23 +29,24 @@
 #define __QF_locs_h
 
 #include "QF/qtypes.h"
+#include "QF/simd/types.h"
 
 typedef struct
 {
-	vec3_t	loc;
-	char	*name;
+	vec4f_t     loc;
+	char       *name;
 } location_t;
 
-location_t *locs_find(const vec3_t target) __attribute__((pure));
-void locs_add (const vec3_t location, const char *name);
-void locs_del (const vec3_t loc);
-void locs_edit (const vec3_t loc, const char *desc);
+location_t *locs_find(vec4f_t target) __attribute__((pure));
+void locs_add (vec4f_t location, const char *name);
+void locs_del (vec4f_t loc);
+void locs_edit (vec4f_t loc, const char *desc);
 void locs_load(const char *filename);
-void locs_mark (const vec3_t loc, const char *desc);
-int  locs_nearest (const vec3_t loc) __attribute__((pure));
+void locs_mark (vec4f_t loc, const char *desc);
+int  locs_nearest (vec4f_t loc) __attribute__((pure));
 void locs_reset (void);
 void locs_save (const char *filename, qboolean gz);
 void map_to_loc (const char *mapname, char *filename);
-void locs_draw (vec3_t simorg);
+void locs_draw (vec4f_t simorg);
 
 #endif//__QF_locs_h

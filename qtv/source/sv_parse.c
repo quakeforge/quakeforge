@@ -515,7 +515,7 @@ parse_player_delta (qmsg_t *msg, plent_state_t *from, plent_state_t *to)
 	int          flags;
 
 	flags = to->es.flags = MSG_ReadShort (msg);
-	MSG_ReadCoordV (msg, to->es.origin);
+	MSG_ReadCoordV (msg, &to->es.origin[0]);
 	to->es.frame = (to->es.frame & 0xff00) | MSG_ReadByte (msg);
 	if (flags & PF_MSEC)
 		to->msec = MSG_ReadByte (msg);
@@ -752,7 +752,8 @@ parse_baseline (qmsg_t *msg, entity_state_t *ent)
 	ent->frame = MSG_ReadByte (msg);
 	ent->colormap = MSG_ReadByte (msg);
 	ent->skinnum = MSG_ReadByte (msg);
-	MSG_ReadCoordAngleV (msg, ent->origin, ent->angles);
+	MSG_ReadCoordAngleV (msg, &ent->origin[0], ent->angles); //FIXME
+	ent->origin[3] = 1;
 	ent->colormod = 255;
 	ent->alpha = 255;
 	ent->scale = 16;

@@ -797,7 +797,7 @@ demo_start_recording (int track)
 			MSG_WriteByte (&buf, es->frame);
 			MSG_WriteByte (&buf, es->colormap);
 			MSG_WriteByte (&buf, es->skinnum);
-			MSG_WriteCoordAngleV (&buf, es->origin, es->angles);
+			MSG_WriteCoordAngleV (&buf, &es->origin[0], es->angles);//FIXME
 
 			if (buf.cursize > MAX_MSGLEN / 2) {
 				CL_WriteRecordDemoMessage (&buf, seq++);

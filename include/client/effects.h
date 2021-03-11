@@ -35,7 +35,7 @@
 struct entity_s;
 struct entity_state_s;
 
-void CL_NewDlight (int key, vec3_t org, int effects, byte glow_size,
+void CL_NewDlight (int key, vec4f_t org, int effects, byte glow_size,
 				   byte glow_color, double time);
 void CL_ModelEffects (struct entity_s *ent, int num, int glow_color,
 					  double time);

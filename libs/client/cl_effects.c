@@ -47,7 +47,7 @@
 #include "client/effects.h"
 
 void
-CL_NewDlight (int key, vec3_t org, int effects, byte glow_size,
+CL_NewDlight (int key, vec4f_t org, int effects, byte glow_size,
 			  byte glow_color, double time)
 {
 	float       radius;

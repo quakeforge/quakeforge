@@ -221,7 +221,7 @@ Cam_TryFlyby (player_state_t * self, player_state_t * player, vec3_t vec,
 	VectorMultAdd (player->pls.es.origin, 800, vec, v);
 	// v is endpos
 	// fake a player move
-	trace = Cam_DoTrace (player->pls.es.origin, v);
+	trace = Cam_DoTrace (&player->pls.es.origin[0], v);//FIXME
 	if ( /* trace.inopen || */ trace.inwater)
 		return 9999;
 	VectorCopy (trace.endpos, vec);
@@ -230,7 +230,7 @@ Cam_TryFlyby (player_state_t * self, player_state_t * player, vec3_t vec,
 	if (len < 32 || len > 800)
 		return 9999;
 	if (checkvis) {
-		trace = Cam_DoTrace (self->pls.es.origin, vec);
+		trace = Cam_DoTrace (&self->pls.es.origin[0], vec);//FIXME
 		if (trace.fraction != 1 || trace.inwater)
 			return 9999;
 
@@ -242,13 +242,13 @@ Cam_TryFlyby (player_state_t * self, player_state_t * player, vec3_t vec,
 
 // Is player visible?
 static qboolean
-Cam_IsVisible (player_state_t * player, vec3_t vec)
+Cam_IsVisible (player_state_t *player, vec3_t vec)
 {
 	float       d;
 	trace_t     trace;
 	vec3_t      v;
 
-	trace = Cam_DoTrace (player->pls.es.origin, vec);
+	trace = Cam_DoTrace (&player->pls.es.origin[0], vec);//FIXME
 	if (trace.fraction != 1 || /* trace.inopen || */ trace.inwater)
 		return false;
 	// check distance, don't let the player get too far away or too close

@@ -222,8 +222,8 @@ typedef struct {
 // the client simulates or interpolates movement to get these values
 	double      time;			// this is the time value that the client
 								// is rendering at.  always <= realtime
-	vec3_t      simorg;
-	vec3_t      simvel;
+	vec4f_t     simorg;
+	vec4f_t     simvel;
 	vec3_t      simangles;
 
 	vec3_t      punchangle;		// temporary view kick from weapon firing
