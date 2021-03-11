@@ -149,27 +149,32 @@ CL_ModelEffects (entity_t *ent, int num, int glow_color, double time)
 }
 
 void
+CL_MuzzleFlash (vec4f_t position, vec4f_t fv, float zoffset, int num,
+				double time)
+{
+	dlight_t   *dl = r_funcs->R_AllocDlight (num);
+	if (dl) {
+		position += 18 * fv;
+		VectorCopy (position, dl->origin);
+		dl->origin[2] += zoffset;
+		dl->radius = 200 + (rand () & 31);
+		dl->die = time + 0.1;
+		dl->minlight = 32;
+		dl->color[0] = 0.2;
+		dl->color[1] = 0.1;
+		dl->color[2] = 0.05;
+		dl->color[3] = 0.7;
+	}
+}
+
+void
 CL_EntityEffects (int num, entity_t *ent, entity_state_t *state, double time)
 {
-	dlight_t   *dl;
-
 	if (state->effects & EF_BRIGHTFIELD)
 		r_funcs->particles->R_EntityParticles (ent);
 	if (state->effects & EF_MUZZLEFLASH) {
-		dl = r_funcs->R_AllocDlight (num);
-		if (dl) {
-			vec4f_t     position = Transform_GetWorldPosition (ent->transform);
-			vec4f_t     fv = Transform_Forward (ent->transform);
-			position += 18 * fv;
-			VectorCopy (position, dl->origin);
-			dl->origin[2] += 16;
-			dl->radius = 200 + (rand () & 31);
-			dl->die = time + 0.1;
-			dl->minlight = 32;
-			dl->color[0] = 0.2;
-			dl->color[1] = 0.1;
-			dl->color[2] = 0.05;
-			dl->color[3] = 0.7;
-		}
+		vec4f_t     position = Transform_GetWorldPosition (ent->transform);
+		vec4f_t     fv = Transform_Forward (ent->transform);
+		CL_MuzzleFlash (position, fv, 16, num, time);
 	}
 }

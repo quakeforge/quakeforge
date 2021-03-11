@@ -30,6 +30,8 @@
 #ifndef __client_effects_h
 #define __client_effects_h
 
+#include "QF/simd/types.h"
+
 struct entity_s;
 struct entity_state_s;
 
@@ -39,5 +41,7 @@ void CL_ModelEffects (struct entity_s *ent, int num, int glow_color,
 					  double time);
 void CL_EntityEffects (int num, struct entity_s *ent,
 					   struct entity_state_s *state, double time);
+void CL_MuzzleFlash (vec4f_t position, vec4f_t fv, float zoffset, int num,
+					 double time);
 
 #endif//__client_effects_h

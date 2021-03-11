@@ -65,6 +65,7 @@
 #include "clview.h"
 #include "sbar.h"
 
+#include "client/effects.h"
 #include "client/temp_entities.h"
 
 #include "qw/bothdefs.h"
@@ -1255,12 +1256,14 @@ CL_SetStat (int stat, int value)
 }
 
 static void
-CL_MuzzleFlash (void)
+CL_ParseMuzzleFlash (void)
 {
-	dlight_t   *dl;
+	//FIXME this should just enable the effect on the relevant entity and
+	//then automatic entity updates take care of the rest
 	int			i;
 	player_state_t *pl;
-	vec3_t		fv, rv, uv;
+	vec3_t		f, r, u;
+	vec4f_t     position = { 0, 0, 0, 1}, fv = {};
 
 	i = MSG_ReadShort (net_message);
 
@@ -1269,23 +1272,14 @@ CL_MuzzleFlash (void)
 
 	pl = &cl.frames[parsecountmod].playerstate[i - 1];
 
-	dl = r_funcs->R_AllocDlight (i);
-	if (!dl)
-		return;
-
 	if (i - 1 == cl.playernum)
-		AngleVectors (cl.viewangles, fv, rv, uv);
+		AngleVectors (cl.viewangles, f, r, u);
 	else
-		AngleVectors (pl->viewangles, fv, rv, uv);
+		AngleVectors (pl->viewangles, f, r, u);
 
-	VectorMultAdd (pl->pls.origin, 18, fv, dl->origin);
-	dl->radius = 200 + (rand () & 31);
-	dl->die = cl.time + 0.1;
-	dl->minlight = 32;
-	dl->color[0] = 0.2;
-	dl->color[1] = 0.1;
-	dl->color[2] = 0.05;
-	dl->color[3] = 0.7;
+	VectorCopy (f, fv);
+	VectorCopy (pl->pls.es.origin, position);
+	CL_MuzzleFlash (position, fv, 0, i, cl.time);
 }
 
 #define SHOWNET(x) \
@@ -1621,7 +1615,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_muzzleflash:
-				CL_MuzzleFlash ();
+				CL_ParseMuzzleFlash ();
 				break;
 
 			case svc_updateuserinfo:
