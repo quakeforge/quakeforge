@@ -36,7 +36,8 @@
 #include "QF/simd/vec4f.h"
 
 #include "compat.h"
-#include "clview.h"
+
+#include "client/view.h"
 
 #include "qw/bothdefs.h"
 
@@ -95,7 +96,7 @@ cshift_t    cshift_bonus = { {215, 186, 60}, 50};
 #define sqr(x) ((x) * (x))
 
 float
-V_CalcRoll (const vec3_t angles, const vec4f_t velocity)
+V_CalcRoll (const vec3_t angles, vec4f_t velocity)
 {
 	float       side, sign, value;
 	vec3_t      forward, right, up;
@@ -399,7 +400,7 @@ V_CalcPowerupCshift (void)
   LordHavoc made this a real, true alpha blend.  Cleaned it up
   a bit, but otherwise this is his code.  --KB
 */
-void
+static void
 V_CalcBlend (void)
 {
 	float       a2, a3;

@@ -46,7 +46,8 @@
 #include "QF/va.h"
 
 #include "compat.h"
-#include "clview.h"
+
+#include "client/view.h"
 
 #include "qw/msg_ucmd.h"
 

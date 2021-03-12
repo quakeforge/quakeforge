@@ -38,7 +38,8 @@
 #include "QF/plugin/vid_render.h"
 
 #include "compat.h"
-#include "clview.h"
+
+#include "client/view.h"
 
 #include "nq/include/chase.h"
 #include "nq/include/client.h"
@@ -393,7 +394,7 @@ V_CalcPowerupCshift (void)
   LordHavoc made this a real, true alpha blend.  Cleaned it up
   a bit, but otherwise this is his code.  --KB
 */
-void
+static void
 V_CalcBlend (void)
 {
 	float       a2, a3;

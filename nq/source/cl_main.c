@@ -49,10 +49,10 @@
 #include "QF/plugin/vid_render.h"
 
 #include "compat.h"
-#include "clview.h"
 #include "sbar.h"
 
 #include "client/temp_entities.h"
+#include "client/view.h"
 
 #include "nq/include/chase.h"
 #include "nq/include/cl_skin.h"

@@ -44,8 +44,9 @@
 #include "QF/pcx.h"
 #include "QF/screen.h"
 
-#include "clview.h"
 #include "sbar.h"
+
+#include "client/view.h"
 
 #include "qw/include/client.h"
 

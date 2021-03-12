@@ -1362,6 +1362,7 @@ sw32_Draw_BlendScreen (quat_t color)
 	}
 	break;
 	default:
-		Sys_Error("V_UpdatePalette: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("sw32_Draw_BlendScreen: unsupported r_pixbytes %i",
+				  sw32_r_pixbytes);
 	}
 }

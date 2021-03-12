@@ -42,9 +42,9 @@
 #include "QF/sys.h"
 
 #include "compat.h"
-#include "clview.h"
 
 #include "client/temp_entities.h"
+#include "client/view.h"
 
 #include "qw/msg_ucmd.h"
 #include "qw/pmove.h"

@@ -92,11 +92,11 @@
 #include "QF/plugin/console.h"
 
 #include "buildnum.h"
-#include "clview.h"
 #include "compat.h"
 #include "sbar.h"
 
 #include "client/temp_entities.h"
+#include "client/view.h"
 
 #include "qw/bothdefs.h"
 #include "qw/pmove.h"

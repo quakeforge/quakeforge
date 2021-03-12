@@ -43,12 +43,12 @@
 #include "QF/sys.h"
 
 #include "compat.h"
-#include "clview.h"
 #include "d_iface.h"
 
 #include "client/effects.h"
 #include "client/locs.h"
 #include "client/temp_entities.h"
+#include "client/view.h"
 
 #include "qw/bothdefs.h"
 #include "qw/msg_ucmd.h"

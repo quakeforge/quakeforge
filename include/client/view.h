@@ -1,5 +1,5 @@
 /*
-	clview.h
+	view.h
 
 	(description)
 
@@ -26,8 +26,8 @@
 */
 // view.h
 
-#ifndef __clview_h_
-#define __clview_h_
+#ifndef __client_view_h_
+#define __client_view_h_
 
 #include "QF/mathlib.h"
 #include "QF/simd/types.h"
@@ -41,14 +41,9 @@ void V_Init (void);
 void V_Init_Cvars (void);
 void V_RenderView (void);
 float V_CalcRoll (const vec3_t angles, vec4f_t velocity);
-void V_UpdatePalette (void);
 void V_StartPitchDrift (void);
 void V_StopPitchDrift (void);
 
-void V_RenderView (void);
-void V_UpdatePalette (void);
-void V_Register (void);
 void V_SetContentsColor (int contents);
-void V_CalcBlend (void);
 
-#endif // __clview_h_
+#endif // __client_view_h_
