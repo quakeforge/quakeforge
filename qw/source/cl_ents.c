@@ -433,7 +433,11 @@ CL_LinkPlayers (void)
 		}
 		ang[ROLL] = V_CalcRoll (ang, state->pls.es.velocity) * 4.0;
 
-		ent->renderer.model = cl.model_precache[state->pls.es.modelindex];
+		if (ent->renderer.model
+			!= cl.model_precache[state->pls.es.modelindex]) {
+			ent->renderer.model = cl.model_precache[state->pls.es.modelindex];
+			ent->animation.nolerp = 1;
+		}
 		ent->animation.frame = state->pls.es.frame;
 		ent->renderer.skinnum = state->pls.es.skinnum;
 
