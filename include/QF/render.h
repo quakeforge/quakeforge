@@ -32,6 +32,7 @@
 #include "QF/model.h"
 #include "QF/qdefs.h" // FIXME
 #include "QF/vid.h"
+#include "QF/simd/types.h"
 
 typedef enum {
 	pt_static,
@@ -131,10 +132,7 @@ typedef struct entity_s {
 	renderer_t  renderer;
 	int         active;
 	//XXX FIXME XXX should not be here
-	float                   scale;
-	vec3_t					origin;
-	vec3_t					old_origin;
-	vec3_t					angles;
+	vec4f_t     old_origin;
 } entity_t;
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
@@ -159,8 +157,9 @@ typedef struct {
 	float		xOrigin;			// should probably always be 0.5
 	float		yOrigin;			// between be around 0.3 to 0.5
 
-	vec3_t		vieworg;
-	vec3_t		viewangles;
+	//FIXME was vec3_t, need to deal with asm (maybe? is it worth it?)
+	vec4f_t     viewposition;
+	vec4f_t     viewrotation;
 
 	float		fov_x, fov_y;
 

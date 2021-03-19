@@ -1605,6 +1605,8 @@ Host_Frame (float time)
 	oldrealtime = realtime;
 	host_frametime = min (host_frametime, 0.2);
 
+	cl.viewstate.frametime = host_frametime;
+
 	con_frametime = con_realtime - oldcon_realtime;
 	oldcon_realtime = con_realtime;
 

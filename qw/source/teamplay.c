@@ -184,10 +184,10 @@ Team_ParseSay (dstring_t *buf, const char *s)
 			case 'l':
 			location:
 				bracket = 0;
-				location = locs_find (cl.simorg);
+				location = locs_find (cl.viewstate.origin);
 				if (location) {
 					recorded_location = true;
-					last_recorded_location = cl.simorg;
+					last_recorded_location = cl.viewstate.origin;
 					t1 = location->name;
 				} else
 					snprintf (t2, sizeof (t2), "Unknown!");
@@ -279,7 +279,7 @@ void
 Team_Dead (void)
 {
 	died = true;
-	death_location = cl.simorg;
+	death_location = cl.viewstate.origin;
 }
 
 void
@@ -370,7 +370,7 @@ locs_loc (void)
 
 	if (strcasecmp (Cmd_Argv (1), "add") == 0) {
 		if (Cmd_Argc () >= 3)
-			locs_mark (cl.simorg, desc);
+			locs_mark (cl.viewstate.origin, desc);
 		else
 			Sys_Printf ("loc add <description> :marks the current location "
 						"with the description and records the information "
@@ -379,7 +379,7 @@ locs_loc (void)
 
 	if (strcasecmp (Cmd_Argv (1), "rename") == 0) {
 		if (Cmd_Argc () >= 3)
-			locs_edit (cl.simorg, desc);
+			locs_edit (cl.viewstate.origin, desc);
 		else
 			Sys_Printf ("loc rename <description> :changes the description of "
 					    "the nearest location marker\n");
@@ -387,14 +387,14 @@ locs_loc (void)
 
 	if (strcasecmp (Cmd_Argv (1),"delete") == 0) {
 		if (Cmd_Argc () == 2)
-			locs_del (cl.simorg);
+			locs_del (cl.viewstate.origin);
 		else
 			Sys_Printf ("loc delete :removes nearest location marker\n");
 	}
 
 	if (strcasecmp (Cmd_Argv (1),"move") == 0) {
 		if (Cmd_Argc () == 2)
-			locs_edit (cl.simorg, NULL);
+			locs_edit (cl.viewstate.origin, NULL);
 		else
 			Sys_Printf ("loc move :moves the nearest location marker to your "
 						"current location\n");
@@ -409,7 +409,7 @@ Locs_Loc_Get (void)
 	if (GIB_Argc () != 1)
 		GIB_USAGE ("");
 	else {
-		location = locs_find (cl.simorg);
+		location = locs_find (cl.viewstate.origin);
 		GIB_Return (location ? location->name : "unknown");
 	}
 }

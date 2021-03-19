@@ -61,7 +61,8 @@ typedef struct {
 	int         entity;
 	struct model_s *model;
 	float       endtime;
-	vec3_t      start, end;
+	vec4f_t     start, end;
+	vec4f_t     rotation;
 	tent_t     *tents;
 	int         seed;
 } beam_t;
@@ -100,6 +101,8 @@ static model_t *cl_mod_bolt3;
 static model_t *cl_spr_explod;
 static model_t *cl_spike;
 
+static vec4f_t beam_rolls[360];
+
 static void
 CL_TEnts_Precache (int phase)
 {
@@ -132,6 +135,10 @@ CL_TEnts_Init (void)
 {
 	QFS_GamedirCallback (CL_TEnts_Precache);
 	CL_TEnts_Precache (1);
+	for (int i = 0; i < 360; i++) {
+		float       ang = i * M_PI / 360;
+		beam_rolls[i] = (vec4f_t) { sin (ang), 0, 0, cos (ang) };
+	}
 }
 
 void
@@ -145,7 +152,6 @@ CL_Init_Entity (entity_t *ent)
 	ent->transform = Transform_New (0);
 	ent->renderer.skin = 0;
 	QuatSet (1.0, 1.0, 1.0, 1.0, ent->renderer.colormod);
-	ent->scale = 1.0;
 	ent->animation.pose1 = ent->animation.pose2 = -1;
 }
 
@@ -255,57 +261,52 @@ static inline void
 beam_setup (beam_t *b, qboolean transform, double time, TEntContext_t *ctx)
 {
 	tent_t     *tent;
-	float       forward, pitch, yaw, d;
+	float       d;
 	int         ent_count;
-	vec3_t      dist, org, ang;
+	vec4f_t     dist, org;
+	vec4f_t     rotation;
+	vec4f_t     scale = { 1, 1, 1, 1 };
 	unsigned    seed;
 
 	// calculate pitch and yaw
-	VectorSubtract (b->end, b->start, dist);
+	dist = b->end - b->start;
 
-	if (dist[1] == 0 && dist[0] == 0) {
-		yaw = 0;
-		if (dist[2] > 0)
-			pitch = 90;
-		else
-			pitch = 270;
+	// FIXME interpolation may be off when passing through the -x axis
+	if (dist[0] < 0 && dist[1] == 0 && dist[2] == 0) {
+		// anti-parallel with the +x axis, so assome 180 degree rotation around
+		// the z-axis
+		rotation = (vec4f_t) { 0, 0, 1, 0 };
 	} else {
-		yaw = (int) (atan2 (dist[1], dist[0]) * 180 / M_PI);
-		if (yaw < 0)
-			yaw += 360;
-
-		forward = sqrt (dist[0] * dist[0] + dist[1] * dist[1]);
-		pitch = (int) (atan2 (dist[2], forward) * 180 / M_PI);
-		if (pitch < 0)
-			pitch += 360;
+		rotation = qrotf ((vec4f_t) { 1, 0, 0, 0 }, dist);
 	}
+	b->rotation = rotation;
 
 	// add new entities for the lightning
-	VectorCopy (b->start, org);
-	d = VectorNormalize (dist);
-	VectorScale (dist, 30, dist);
+	org = b->start;
+	d = magnitudef (dist)[0];
+	dist = normalf (dist) * 30;
 	ent_count = ceil (d / 30);
 	d = 0;
 
 	seed = b->seed + ((int) (time * BEAM_SEED_INTERVAL) % BEAM_SEED_INTERVAL);
 
-	ang[ROLL] = 0;
 	while (ent_count--) {
 		tent = new_temp_entity ();
 		tent->next = b->tents;
 		b->tents = tent;
 
-		VectorMultAdd (org, d, dist, tent->ent.origin);
+		vec4f_t     position = org + d * dist;
 		d += 1.0;
 		tent->ent.renderer.model = b->model;
-		ang[PITCH] = pitch;
-		ang[YAW] = yaw;
 		if (transform) {
 			seed = seed * BEAM_SEED_PRIME;
-			ang[ROLL] = seed % 360;
-			CL_TransformEntity (&tent->ent, ang);
+			Transform_SetLocalTransform (tent->ent.transform, scale,
+										 qmulf (rotation,
+												beam_rolls[seed % 360]),
+										 position);
+		} else {
+			Transform_SetLocalPosition (tent->ent.transform, position);
 		}
-		VectorCopy (ang, tent->ent.angles);
 		r_funcs->R_AddEfrags (&ctx->worldModel->brush, &tent->ent);
 	}
 }
@@ -404,14 +405,14 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			ex = &to->to.ex;
 			ex->tent = new_temp_entity ();
 
-			VectorCopy (position, ex->tent->ent.origin);
 			ex->start = time;
 			//FIXME need better model management
 			if (!cl_spr_explod->cache.data) {
 				cl_spr_explod = Mod_ForName ("progs/s_explod.spr", true);
 			}
 			ex->tent->ent.renderer.model = cl_spr_explod;
-			CL_TransformEntity (&ex->tent->ent, ex->tent->ent.angles);
+			Transform_SetLocalPosition (ex->tent->ent.transform,//FIXME
+										(vec4f_t) {VectorExpand (position), 1});
 			break;
 		case TE_Explosion2:
 			MSG_ReadCoordV (net_message, position);
@@ -635,8 +636,9 @@ CL_UpdateBeams (double time, TEntContext_t *ctx)
 		// add new entities for the lightning
 		for (t = b->tents; t; t = t->next) {
 			seed = seed * BEAM_SEED_PRIME;
-			t->ent.angles[ROLL] = seed % 360;
-			CL_TransformEntity (&t->ent, t->ent.angles);
+			Transform_SetLocalRotation (t->ent.transform,
+										qmulf (b->rotation,
+											   beam_rolls[seed % 360]));
 		}
 	}
 }
@@ -727,6 +729,8 @@ CL_ParseProjectiles (qmsg_t *net_message, qboolean nail2, TEntContext_t *ctx)
 	byte		bits[6];
 	int			i, c, j, num;
 	entity_t   *pr;
+	vec4f_t     position = { 0, 0, 0, 1 };
+	vec3_t      angles;
 
 	c = MSG_ReadByte (net_message);
 
@@ -747,13 +751,13 @@ CL_ParseProjectiles (qmsg_t *net_message, qboolean nail2, TEntContext_t *ctx)
 		pr = &tent->ent;
 		pr->renderer.model = cl_spike;
 		pr->renderer.skin = 0;
-		pr->origin[0] = ((bits[0] + ((bits[1] & 15) << 8)) << 1) - 4096;
-		pr->origin[1] = (((bits[1] >> 4) + (bits[2] << 4)) << 1) - 4096;
-		pr->origin[2] = ((bits[3] + ((bits[4] & 15) << 8)) << 1) - 4096;
-		pr->angles[0] = (bits[4] >> 4) * (360.0 / 16.0);
-		pr->angles[1] = bits[5] * (360.0 / 256.0);
-		pr->angles[2] = 0;
-		CL_TransformEntity (&tent->ent, tent->ent.angles);
+		position[0] = ((bits[0] + ((bits[1] & 15) << 8)) << 1) - 4096;
+		position[1] = (((bits[1] >> 4) + (bits[2] << 4)) << 1) - 4096;
+		position[2] = ((bits[3] + ((bits[4] & 15) << 8)) << 1) - 4096;
+		angles[0] = (bits[4] >> 4) * (360.0 / 16.0);
+		angles[1] = bits[5] * (360.0 / 256.0);
+		angles[2] = 0;
+		CL_TransformEntity (&tent->ent, 1, angles, position);
 
 		r_funcs->R_AddEfrags (&ctx->worldModel->brush, &tent->ent);
 	}

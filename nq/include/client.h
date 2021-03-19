@@ -38,6 +38,7 @@
 #include "QF/render.h"
 
 #include "client/entities.h"
+#include "client/view.h"
 
 #include "game.h"
 #include "netmain.h"
@@ -165,11 +166,9 @@ typedef struct {
 	int         frameIndex;
 	vec3_t      frameViewAngles[2];	// During demo playback viewangles is lerped
 								// between these
-	vec3_t      viewangles;
 	vec4f_t     frameVelocity[2];	// Update by server, used for lean+bob
 								// (0 is newest)
-	vec4f_t     velocity;		// Lerped between frameVelocity[0] and [1]
-	vec3_t      punchangle;		// Temporary offset
+	viewstate_t viewstate;
 
 // pitch drifting vars
 	float       idealpitch;

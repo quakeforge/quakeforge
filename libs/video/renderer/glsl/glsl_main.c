@@ -113,8 +113,11 @@ glsl_R_SetupFrame (void)
 	R_ClearEnts ();
 	r_framecount++;
 
-	VectorCopy (r_refdef.vieworg, r_origin);
-	AngleVectors (r_refdef.viewangles, vpn, vright, vup);
+	VectorCopy (r_refdef.viewposition, r_origin);
+	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 1, 0, 0, 0 }), vpn);
+	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 0, -1, 0, 0 }), vright);
+	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 0, 0, 1, 0 }), vup);
+
 
 	R_SetFrustum ();
 
@@ -131,7 +134,6 @@ R_SetupView (void)
 		{ 0, 1,  0, 0},
 		{ 0, 0,  0, 1},
 	};
-	vec4f_t     rotation;
 	vec4f_t     offset = { 0, 0, 0, 1 };
 
 	x = r_refdef.vrect.x;
@@ -140,11 +142,10 @@ R_SetupView (void)
 	h = r_refdef.vrect.height;
 	qfeglViewport (x, y, w, h);
 
-	AngleQuat (r_refdef.viewangles, &rotation[0]);
-	rotation = qconjf (rotation);
-	mat4fquat (glsl_view, rotation);
+	mat4fquat (glsl_view, qconjf (r_refdef.viewrotation));
 	mmulf (glsl_view, z_up, glsl_view);
-	VectorNegate (r_refdef.vieworg, offset);
+	offset = -r_refdef.viewposition;
+	offset[3] = 1;
 	glsl_view[3] = mvmulf (glsl_view, offset);
 
 	qfeglEnable (GL_CULL_FACE);
@@ -304,6 +305,7 @@ glsl_R_ClearState (void)
 void
 glsl_R_TimeRefresh_f (void)
 {
+/* FIXME update for simd
 	double      start, stop, time;
 	int         i;
 
@@ -319,4 +321,5 @@ glsl_R_TimeRefresh_f (void)
 	stop = Sys_DoubleTime ();
 	time = stop - start;
 	Sys_Printf ("%g seconds (%g fps)\n", time, 128 / time);
+*/
 }

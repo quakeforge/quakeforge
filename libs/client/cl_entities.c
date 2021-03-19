@@ -346,21 +346,14 @@ vec3_t ent_colormod[256] = {
 };
 
 void
-CL_TransformEntity (entity_t *ent, const vec3_t angles)
+CL_TransformEntity (entity_t *ent, float scale, const vec3_t angles,
+					vec4f_t position)
 {
-	union {
-		quat_t      q;
-		vec4f_t     v;
-	}           rotation;
-	vec4f_t     position;
-	vec4f_t     scale;
+	vec4f_t     rotation;
+	vec4f_t     scalevec = { scale, scale, scale, 1};
 
-	VectorCopy (ent->origin, position);
-	position[3] = 1;
-	VectorSet (ent->scale, ent->scale, ent->scale, scale);
-	scale[3] = 1;
 	if (VectorIsZero (angles)) {
-		QuatSet (0, 0, 0, 1, rotation.q);
+		rotation = (vec4f_t) { 0, 0, 0, 1 };
 	} else {
 		vec3_t      ang;
 		VectorCopy (angles, ang);
@@ -370,7 +363,7 @@ CL_TransformEntity (entity_t *ent, const vec3_t angles)
 			// to everything else?
 			ang[PITCH] = -ang[PITCH];
 		}
-		AngleQuat (ang, rotation.q);
+		AngleQuat (ang, &rotation[0]);//FIXME
 	}
-	Transform_SetLocalTransform (ent->transform, scale, rotation.v, position);
+	Transform_SetLocalTransform (ent->transform, scalevec, rotation, position);
 }

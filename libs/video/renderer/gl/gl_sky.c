@@ -189,9 +189,9 @@ R_DrawSkyBox (void)
 			float *v = (float *) gl_skyvec[i][j];
 
 			qfglTexCoord2fv (v);
-			qfglVertex3f (r_refdef.vieworg[0] + v[2],
-						  r_refdef.vieworg[1] + v[3],
-						  r_refdef.vieworg[2] + v[4]);
+			qfglVertex3f (r_refdef.viewposition[0] + v[2],
+						  r_refdef.viewposition[1] + v[3],
+						  r_refdef.viewposition[2] + v[4]);
 		}
 		qfglEnd ();
 	}
@@ -219,7 +219,7 @@ skydome_vertex (const vec3_t v, float speedscale)
 	s = speedscale + dir[0];
 	t = speedscale + dir[1];
 
-	VectorAdd (r_refdef.vieworg, v, point);
+	VectorAdd (r_refdef.viewposition, v, point);
 
 	qfglTexCoord2f (s, t);
 	qfglVertex3fv (point);
@@ -242,7 +242,7 @@ skydome_debug (void)
 
 		h = 1;
 		t = 0;
-		VectorAdd (zenith, r_refdef.vieworg, v[0]);
+		VectorAdd (zenith, r_refdef.viewposition, v[0]);
 		for (b = 1; b <= 8; b++) {
 			x = gl_bubble_costable[b + 8];
 			y = -gl_bubble_sintable[b + 8];
@@ -250,7 +250,7 @@ skydome_debug (void)
 			v[h][0] = a1x * x;
 			v[h][1] = a1y * x;
 			v[h][2] = y * domescale[2];
-			VectorAdd (v[h], r_refdef.vieworg, v[h]);
+			VectorAdd (v[h], r_refdef.viewposition, v[h]);
 			for (i = t; i != h; i = (i + 1) % 3) {
 				qfglVertex3fv (v[i]);
 				qfglVertex3fv (v[h]);
@@ -262,7 +262,7 @@ skydome_debug (void)
 			v[h][0] = a2x * x;
 			v[h][1] = a2y * x;
 			v[h][2] = y * domescale[2];
-			VectorAdd (v[h], r_refdef.vieworg, v[h]);
+			VectorAdd (v[h], r_refdef.viewposition, v[h]);
 			for (i = t; i != h; i = (i + 1) % 3) {
 				qfglVertex3fv (v[i]);
 				qfglVertex3fv (v[h]);
@@ -274,7 +274,7 @@ skydome_debug (void)
 
 		h = 1;
 		t = 0;
-		VectorAdd (nadir, r_refdef.vieworg, v[0]);
+		VectorAdd (nadir, r_refdef.viewposition, v[0]);
 		for (b = 15; b >= 8; b--) {
 			x = gl_bubble_costable[b + 8];
 			y = -gl_bubble_sintable[b + 8];
@@ -282,7 +282,7 @@ skydome_debug (void)
 			v[h][0] = a2x * x;
 			v[h][1] = a2y * x;
 			v[h][2] = y * domescale[2];
-			VectorAdd (v[h], r_refdef.vieworg, v[h]);
+			VectorAdd (v[h], r_refdef.viewposition, v[h]);
 			for (i = t; i != h; i = (i + 1) % 3) {
 				qfglVertex3fv (v[i]);
 				qfglVertex3fv (v[h]);
@@ -294,7 +294,7 @@ skydome_debug (void)
 			v[h][0] = a1x * x;
 			v[h][1] = a1y * x;
 			v[h][2] = y * domescale[2];
-			VectorAdd (v[h], r_refdef.vieworg, v[h]);
+			VectorAdd (v[h], r_refdef.viewposition, v[h]);
 			for (i = t; i != h; i = (i + 1) % 3) {
 				qfglVertex3fv (v[i]);
 				qfglVertex3fv (v[h]);

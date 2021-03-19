@@ -43,6 +43,7 @@
 #include <stdio.h>
 
 #include "QF/cvar.h"
+#include "QF/entity.h"
 #include "QF/render.h"
 #include "QF/sys.h"
 #include "QF/GL/defines.h"
@@ -117,16 +118,22 @@ R_AddDynamicLights_1 (msurface_t *surf)
 	unsigned int    sdtable[18];
 	unsigned int   *bl;
 	vec3_t			impact, local;
+	vec4f_t         entorigin = { 0, 0, 0, 1 };
 
 	smax = (surf->extents[0] >> 4) + 1;
 	smax_bytes = smax * gl_internalformat;
 	tmax = (surf->extents[1] >> 4) + 1;
 
+	if (currententity->transform) {
+		//FIXME give world entity a transform
+		entorigin = Transform_GetWorldPosition (currententity->transform);
+	}
+
 	for (lnum = 0; lnum < r_maxdlights; lnum++) {
 		if (!(surf->dlightbits[lnum / 32] & (1 << (lnum % 32))))
 			continue;					// not lit by this light
 
-		VectorSubtract (r_dlights[lnum].origin, currententity->origin, local);
+		VectorSubtract (r_dlights[lnum].origin, entorigin, local);
 		dist = DotProduct (local, surf->plane->normal) - surf->plane->dist;
 		VectorMultSub (r_dlights[lnum].origin, dist, surf->plane->normal,
 					   impact);
@@ -182,16 +189,21 @@ R_AddDynamicLights_3 (msurface_t *surf)
 	unsigned int    sdtable[18];
 	unsigned int   *bl;
 	vec3_t			impact, local;
+	vec4f_t         entorigin = { 0, 0, 0, 1 };
 
 	smax = (surf->extents[0] >> 4) + 1;
 	smax_bytes = smax * gl_internalformat;
 	tmax = (surf->extents[1] >> 4) + 1;
 
+	if (currententity->transform) {
+		entorigin = Transform_GetWorldPosition (currententity->transform);
+	}
+
 	for (lnum = 0; lnum < r_maxdlights; lnum++) {
 		if (!(surf->dlightbits[lnum / 32] & (1 << (lnum % 32))))
 			continue;					// not lit by this light
 
-		VectorSubtract (r_dlights[lnum].origin, currententity->origin, local);
+		VectorSubtract (r_dlights[lnum].origin, entorigin, local);
 		dist = DotProduct (local, surf->plane->normal) - surf->plane->dist;
 		VectorMultSub (r_dlights[lnum].origin, dist, surf->plane->normal,
 					   impact);

@@ -34,6 +34,7 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
+#include "QF/entity.h"
 #include "QF/input.h"
 #include "QF/joystick.h"
 #include "QF/keys.h"
@@ -52,7 +53,6 @@
 #include "sbar.h"
 
 #include "client/temp_entities.h"
-#include "client/view.h"
 
 #include "nq/include/chase.h"
 #include "nq/include/cl_skin.h"
@@ -409,10 +409,11 @@ CL_PrintEntities_f (void)
 			Sys_Printf ("EMPTY\n");
 			continue;
 		}
-		Sys_Printf ("%s:%2i  (%5.1f,%5.1f,%5.1f) [%5.1f %5.1f %5.1f]\n",
+		vec4f_t     org = Transform_GetWorldPosition (ent->transform);
+		vec4f_t     rot = Transform_GetWorldRotation (ent->transform);
+		Sys_Printf ("%s:%2i  "VEC4F_FMT" "VEC4F_FMT"\n",
 					ent->renderer.model->path, ent->animation.frame,
-					VectorExpand (ent->origin),
-					VectorExpand (ent->angles));
+					VEC4_EXP (org), VEC4_EXP (rot));
 	}
 }
 
@@ -426,12 +427,13 @@ CL_ReadFromServer (void)
 {
 	int         ret;
 	TEntContext_t tentCtx = {
-		{VectorExpand (cl_entities[cl.viewentity].origin), 1},
+		Transform_GetWorldPosition (cl_entities[cl.viewentity].transform),
 		cl.worldmodel, cl.viewentity
 	};
 
 	cl.oldtime = cl.time;
 	cl.time += host_frametime;
+	cl.viewstate.frametime = host_frametime;
 
 	do {
 		ret = CL_GetMessage ();
@@ -535,7 +537,7 @@ CL_SetState (cactive_t state)
 static void
 Force_CenterView_f (void)
 {
-	cl.viewangles[PITCH] = 0;
+	cl.viewstate.angles[PITCH] = 0;
 }
 
 void

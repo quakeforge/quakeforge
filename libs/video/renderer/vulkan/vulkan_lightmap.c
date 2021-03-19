@@ -41,6 +41,7 @@
 #include <stdio.h>
 
 #include "QF/cvar.h"
+#include "QF/entity.h"
 #include "QF/render.h"
 #include "QF/sys.h"
 #include "QF/Vulkan/qf_bsp.h"
@@ -61,6 +62,7 @@ add_dynamic_lights (msurface_t *surf, float *block)
 	int         sd, td;
 	float       dist, rad, minlight;
 	vec3_t      impact, local, lightorigin;
+	vec4f_t     entorigin = { 0, 0, 0, 1 };
 	int         smax, tmax;
 	int         s, t;
 	mtexinfo_t *tex;
@@ -71,13 +73,18 @@ add_dynamic_lights (msurface_t *surf, float *block)
 	tex = surf->texinfo;
 	plane = surf->plane;
 
+	if (currententity->transform) {
+		//FIXME give world entity a transform
+		entorigin = Transform_GetWorldPosition (currententity->transform);
+	}
+
 	for (lnum = 0; lnum < r_maxdlights; lnum++) {
 		if (!(surf->dlightbits[lnum / 32] & (1 << (lnum % 32))))
 			continue;					// not lit by this light
 
 		dlight_t   *light = &r_dlights[lnum];
 
-		VectorSubtract (light->origin, currententity->origin, lightorigin);
+		VectorSubtract (light->origin, entorigin, lightorigin);
 		rad = light->radius;
 		dist = DotProduct (lightorigin, plane->normal) - plane->dist;
 		rad -= fabs (dist);

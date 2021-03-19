@@ -140,7 +140,7 @@ locs_load (const char *filename)
 	const char *tmp;
 	char       *t1, *t2;
 	const char *line;
-	vec4f_t     loc;
+	vec4f_t     loc = { 0, 0, 0, 1 };
 	QFile      *file;
 
 	tmp = va (0, "maps/%s", filename);

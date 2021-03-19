@@ -282,7 +282,7 @@ sw32_R_DrawSprite (void)
 	int         i;
 	msprite_t  *psprite;
 	vec3_t      tvec;
-	float       dot, angle, sr, cr;
+	float       dot, sr, cr;
 
 	psprite = currententity->renderer.model->cache.data;
 
@@ -367,9 +367,10 @@ sw32_R_DrawSprite (void)
 		// generate the sprite's axes, parallel to the viewplane, but rotated
 		// in that plane around the center according to the sprite entity's
 		// roll angle. So vpn stays the same, but vright and vup rotate
-		angle = currententity->angles[ROLL] * (M_PI * 2 / 360);
-		sr = sin (angle);
-		cr = cos (angle);
+		vec4f_t     rot = Transform_GetLocalRotation (currententity->transform);
+		//FIXME assumes the entity is only rolled
+		sr = 2 * rot[0] * rot[3];
+		cr = rot[3] * rot[3] - rot[0] * rot[0];
 
 		for (i = 0; i < 3; i++) {
 			sw32_r_spritedesc.vpn[i] = vpn[i];

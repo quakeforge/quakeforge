@@ -123,7 +123,8 @@ CL_ModelEffects (entity_t *ent, int num, int glow_color, double time)
 	if (model->flags & EF_ROCKET) {
 		dl = r_funcs->R_AllocDlight (num);
 		if (dl) {
-			VectorCopy (ent->origin, dl->origin);
+			VectorCopy (Transform_GetWorldPosition (ent->transform),
+						dl->origin);
 			dl->radius = 200.0;
 			dl->die = time + 0.1;
 			//FIXME VectorCopy (r_firecolor->vec, dl->color);

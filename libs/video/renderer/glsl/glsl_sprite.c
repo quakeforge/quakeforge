@@ -185,6 +185,7 @@ make_quad (mspriteframe_t *frame, vec4f_t vpn, vec4f_t vright,
 {
 	vec4f_t     left, up, right, down;
 	vec4f_t     ul, ur, ll, lr;
+	vec4f_t     origin = Transform_GetWorldPosition (currententity->transform);
 
 	// build the sprite poster in worldspace
 	// first, rotate the sprite axes into world space
@@ -198,12 +199,12 @@ make_quad (mspriteframe_t *frame, vec4f_t vpn, vec4f_t vright,
 	ll = down + left;
 	lr = down + right;
 	// finally, translate the sprite corners, creating two triangles
-	VectorAdd (currententity->origin, ul, verts[0]);	// first triangle
-	VectorAdd (currententity->origin, ur, verts[1]);
-	VectorAdd (currententity->origin, lr, verts[2]);
-	VectorAdd (currententity->origin, ul, verts[3]);	// second triangle
-	VectorAdd (currententity->origin, lr, verts[4]);
-	VectorAdd (currententity->origin, ll, verts[5]);
+	VectorAdd (origin, ul, verts[0]);	// first triangle
+	VectorAdd (origin, ur, verts[1]);
+	VectorAdd (origin, lr, verts[2]);
+	VectorAdd (origin, ul, verts[3]);	// second triangle
+	VectorAdd (origin, lr, verts[4]);
+	VectorAdd (origin, ll, verts[5]);
 }
 
 void
@@ -212,9 +213,9 @@ R_DrawSprite (void)
 	entity_t   *ent = currententity;
 	msprite_t  *sprite = (msprite_t *) ent->renderer.model->cache.data;
 	mspriteframe_t *frame1, *frame2;
-	float       blend, sr, cr, dot, angle;
+	float       blend, sr, cr, dot;
 	vec3_t      tvec;
-	vec4f_t     svpn = {}, svright = {}, svup = {};
+	vec4f_t     svpn = {}, svright = {}, svup = {}, rot;
 	static quat_t color = { 1, 1, 1, 1};
 	float       vertsa[6][3], vertsb[6][3];
 	static float uvab[6][4] = {
@@ -284,9 +285,10 @@ R_DrawSprite (void)
 			// rotated in that plane round the center according to the sprite
 			// entity's roll angle. Thus svpn stays the same, but svright and
 			// svup rotate
-			angle = currententity->angles[ROLL] * (M_PI / 180);
-			sr = sin (angle);
-			cr = cos (angle);
+			rot = Transform_GetLocalRotation (currententity->transform);
+			//FIXME assumes the entity is only rolled
+			sr = 2 * rot[0] * rot[3];
+			cr = rot[3] * rot[3] - rot[0] * rot[0];
 			VectorCopy (vpn, svpn);
 			VectorScale (vright, cr, svright);
 			VectorMultAdd (svright, sr, vup, svright);

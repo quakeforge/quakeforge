@@ -41,16 +41,19 @@
 #include "QF/mathlib.h"
 
 #include "QF/plugin/vid_render.h"
+#include "QF/simd/vec4f.h"
 
 #include "qw/include/chase.h"
 #include "qw/include/cl_input.h"
 #include "qw/include/client.h"
 #include "world.h"
 
-vec3_t camera_origin = {0,0,0};
-vec3_t camera_angles = {0,0,0};
-vec3_t player_origin = {0,0,0};
-vec3_t player_angles = {0,0,0};
+
+vec4f_t     camera_origin = {0,0,0,1};
+vec4f_t     player_origin = {0,0,0,1};
+vec4f_t     player_angles = {0,0,0,1};
+
+vec3_t      camera_angles = {0,0,0};
 
 vec3_t      chase_angles;
 vec3_t      chase_dest;
@@ -94,19 +97,17 @@ TraceLine (vec3_t start, vec3_t end, vec3_t impact)
 void
 Chase_Update (void)
 {
-	float		pitch, yaw, fwd;
-	int			i;
-	usercmd_t	cmd;	// movement direction
-	vec3_t		forward, up, right, stop, dir;
+	float       pitch, yaw, fwd;
+	usercmd_t   cmd;	// movement direction
+	vec4f_t	    forward = {}, up = {}, right = {}, stop = {}, dir = {};
 
 	// lazy camera, look toward player entity
 
 	if (chase_active->int_val == 2 || chase_active->int_val == 3) {
 		// control camera angles with key/mouse/joy-look
-
-		camera_angles[PITCH] += cl.viewangles[PITCH] - player_angles[PITCH];
-		camera_angles[YAW] += cl.viewangles[YAW] - player_angles[YAW];
-		camera_angles[ROLL] += cl.viewangles[ROLL] - player_angles[ROLL];
+		vec3_t      d;
+		VectorSubtract (cl.viewstate.angles, player_angles, d);
+		VectorAdd (camera_angles, d, camera_angles);
 
 		if (chase_active->int_val == 2) {
 			if (camera_angles[PITCH] < -60)
@@ -118,48 +119,48 @@ Chase_Update (void)
 		// move camera, it's not enough to just change the angles because
 		// the angles are automatically changed to look toward the player
 
-		if (chase_active->int_val == 3)
-			VectorCopy (r_data->refdef->vieworg, player_origin);
+		if (chase_active->int_val == 3) {
+			player_origin = r_data->refdef->viewposition;
+		}
 
-		AngleVectors (camera_angles, forward, right, up);
-		VectorScale (forward, chase_back->value, forward);
-		VectorSubtract (player_origin, forward, camera_origin);
+		AngleVectors (camera_angles, &forward[0], &right[0], &up[0]);
+		camera_origin = player_origin - chase_back->value * forward;
 
 		if (chase_active->int_val == 2) {
-			VectorCopy (r_data->refdef->vieworg, player_origin);
+			player_origin = r_data->refdef->viewposition;
 
 			// don't let camera get too low
-			if (camera_origin[2] < player_origin[2] + chase_up->value)
+			if (camera_origin[2] < player_origin[2] + chase_up->value) {
 				camera_origin[2] = player_origin[2] + chase_up->value;
+			}
 		}
 
 		// don't let camera get too far from player
 
-		VectorSubtract  (camera_origin, player_origin, dir);
-		VectorCopy      (dir, forward);
-		VectorNormalize (forward);
+		dir = camera_origin - player_origin;
+		forward = normalf (dir);
 
-		if (VectorLength (dir) > chase_back->value) {
-			VectorScale (forward, chase_back->value, dir);
-			VectorAdd (player_origin, dir, camera_origin);
+		if (magnitudef (dir)[0] > chase_back->value) {
+			camera_origin = player_origin + forward * chase_back->value;
 		}
 
 		// check for walls between player and camera
 
-		VectorScale (forward, 8, forward);
-		VectorAdd (camera_origin, forward, camera_origin);
-		TraceLine (player_origin, camera_origin, stop);
-		if (VectorLength (stop) != 0)
-			VectorSubtract (stop, forward, camera_origin);
+		camera_origin += 8 * forward;
+		//FIXME
+		TraceLine (&player_origin[0], &camera_origin[0], &stop[0]);
+		stop[3] = 1;
+		if (magnitude3f (stop)[0] != 0) {
+			camera_origin = stop - forward;
+		}
 
-		VectorSubtract (camera_origin, r_data->refdef->vieworg, dir);
-		VectorCopy (dir, forward);
-		VectorNormalize (forward);
+		dir = camera_origin - r_data->refdef->viewposition;
+		forward = normalf (dir);
 
 		if (chase_active->int_val == 2) {
 			if (dir[1] == 0 && dir[0] == 0) {
 				// look straight up or down
-//				camera_angles[YAW] = r_data->refdef->viewangles[YAW];
+//				camera_angles[YAW] = r_data->refdef->viewstate.angles[YAW];
 				if (dir[2] > 0)
 					camera_angles[PITCH] = 90;
 				else
@@ -182,13 +183,13 @@ Chase_Update (void)
 			}
 		}
 
-		VectorCopy (camera_angles, r_data->refdef->viewangles);// rotate camera
-		VectorCopy (camera_origin, r_data->refdef->vieworg);    // move camera
+		AngleQuat (camera_angles, &r_data->refdef->viewrotation[0]);//FIXME rotate camera
+		r_data->refdef->viewposition = camera_origin;    // move camera
 
 		// get basic movement from keyboard
 
 		memset (&cmd, 0, sizeof (cmd));
-//		VectorCopy (cl.viewangles, cmd.angles);
+//		VectorCopy (cl.viewstate.angles, cmd.angles);
 
 		if (in_strafe.state & 1) {
 			cmd.sidemove += cl_sidespeed->value * CL_KeyState (&in_right);
@@ -208,54 +209,54 @@ Chase_Update (void)
 		}
 
 		// mouse and joystick controllers add to movement
-		VectorSet (0, cl.viewangles[1] - camera_angles[1], 0, dir);
-		AngleVectors (dir, forward, right, up);
-		VectorScale  (forward, viewdelta.position[2] * m_forward->value,
-					  forward);
-		VectorScale  (right, viewdelta.position[0] * m_side->value, right);
-		VectorAdd    (forward, right, dir);
+		VectorSet (0, cl.viewstate.angles[1] - camera_angles[1], 0, dir);
+		AngleVectors (&dir[0], &forward[0], &right[0], &up[0]); //FIXME
+		forward *= viewdelta.position[2] * m_forward->value;
+		right *= viewdelta.position[0] * m_side->value;
+		dir = forward + right;
 		cmd.forwardmove += dir[0];
 		cmd.sidemove    -= dir[1];
 
 		VectorSet (0, camera_angles[1], 0, dir);
-		AngleVectors (dir, forward, right, up);
+		AngleVectors (&dir[0], &forward[0], &right[0], &up[0]); //FIXME
 
 		VectorScale (forward, cmd.forwardmove, forward);
 		VectorScale (right,   cmd.sidemove,    right);
 		VectorAdd   (forward, right, dir);
 
 		if (dir[1] || dir[0]) {
-			cl.viewangles[YAW] = (atan2 (dir[1], dir[0]) * 180 / M_PI);
-			if (cl.viewangles[YAW] <   0) cl.viewangles[YAW] += 360;
-//			if (cl.viewangles[YAW] < 180)
-//				cl.viewangles[YAW] += 180;
-//			else
-//				cl.viewangles[YAW] -= 180;
+			cl.viewstate.angles[YAW] = (atan2 (dir[1], dir[0]) * 180 / M_PI);
+			if (cl.viewstate.angles[YAW] <   0) {
+				cl.viewstate.angles[YAW] += 360;
+			}
 		}
 
-		cl.viewangles[PITCH] = 0;
+		cl.viewstate.angles[PITCH] = 0;
 
 		// remember the new angle to calculate the difference next frame
-		VectorCopy (cl.viewangles, player_angles);
+		VectorCopy (cl.viewstate.angles, player_angles);
 
 		return;
 	}
 
 	// regular camera, faces same direction as player
 
-	AngleVectors (cl.viewangles, forward, right, up);
+	//FIXME
+	AngleVectors (cl.viewstate.angles, &forward[0], &right[0], &up[0]);
 
 	// calc exact destination
-	for (i = 0; i < 3; i++)
-		camera_origin[i] = r_data->refdef->vieworg[i]
-			- forward[i] * chase_back->value - right[i] * chase_right->value;
+	camera_origin = r_data->refdef->viewposition
+		- forward * chase_back->value - right * chase_right->value;
+	// chase_up is world up
 	camera_origin[2] += chase_up->value;
 
 	// check for walls between player and camera
-	TraceLine (r_data->refdef->vieworg, camera_origin, stop);
-	if (VectorLength (stop) != 0)
-		for (i = 0; i < 3; i++)
-			camera_origin[i] = stop[i] + forward[i] * 8;
+	//FIXME
+	TraceLine (&r_data->refdef->viewposition[0], &camera_origin[0], &stop[0]);
+	stop[3] = 1;
+	if (magnitude3f (stop)[0] != 0) {
+		camera_origin = stop + forward * 8;
+	}
 
-	VectorCopy (camera_origin, r_data->refdef->vieworg);
+	r_data->refdef->viewposition = camera_origin;
 }

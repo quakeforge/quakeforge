@@ -37,6 +37,7 @@
 #include "QF/plugin/vid_render.h"
 
 #include "client/entities.h"
+#include "client/view.h"
 
 #include "netchan.h"
 #include "qw/bothdefs.h"
@@ -222,12 +223,7 @@ typedef struct {
 // the client simulates or interpolates movement to get these values
 	double      time;			// this is the time value that the client
 								// is rendering at.  always <= realtime
-	vec4f_t     simorg;
-	vec4f_t     simvel;
-	vec3_t      simangles;
-
-	vec3_t      punchangle;		// temporary view kick from weapon firing
-
+	viewstate_t viewstate;
 // pitch drifting vars
 	float       idealpitch;
 	float       pitchvel;
@@ -342,7 +338,9 @@ extern	struct cvar_s	*cl_fb_players;
 
 extern	client_state_t	cl;
 
-extern	entityset_t		cl_static_entities;
+typedef struct entitystateset_s DARRAY_TYPE (struct entity_state_s)
+		entitystateset_t;
+extern	entitystateset_t cl_static_entities;
 extern	entity_t		cl_entities[512];
 extern	byte			cl_entity_valid[2][512];
 

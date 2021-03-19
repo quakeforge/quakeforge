@@ -37,6 +37,21 @@
 #define INFO_CSHIFT_DAMAGE		(1 << 2)
 #define INFO_CSHIFT_POWERUP		(1 << 3)
 
+typedef struct viewstate_s {
+	vec4f_t     movecmd;
+	vec4f_t     velocity;
+	vec4f_t     origin;
+	vec3_t      angles;
+	int         weaponframe;
+	int         onground;
+	uint32_t    flags;
+	float       frametime;
+	vec4f_t     punchangle;
+} viewstate_t;
+
+#define VF_DEAD 1
+#define VF_GIB 2
+
 void V_Init (void);
 void V_Init_Cvars (void);
 void V_RenderView (void);

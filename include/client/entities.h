@@ -71,6 +71,7 @@ extern entstates_t qw_entstates;
 extern vec3_t ent_colormod[256];
 
 struct entity_s;
-void CL_TransformEntity (struct entity_s *ent, const vec3_t angles);
+void CL_TransformEntity (struct entity_s *ent, float scale,
+						 const vec3_t angles, vec4f_t position);
 
 #endif//__client_entities_h

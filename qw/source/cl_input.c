@@ -530,6 +530,7 @@ CL_BaseMove (usercmd_t *cmd)
 	IN_Move ();
 
 	// adjust for chase camera angles
+	/*FIXME:chase figure out just what this does and get it working
 	if (cl.chase
 		&& (chase_active->int_val == 2 || chase_active->int_val == 3)) {
 		vec3_t      forward, right, up, f, r;
@@ -546,6 +547,7 @@ CL_BaseMove (usercmd_t *cmd)
 		viewdelta.position[2] = f[0] + r[0];
 		viewdelta.position[0] = (f[1] + r[1]) * -1;
 	}
+	*/
 
 	cmd->forwardmove += viewdelta.position[2] * m_forward->value;
 	cmd->sidemove += viewdelta.position[0] * m_side->value;

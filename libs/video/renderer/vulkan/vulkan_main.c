@@ -66,8 +66,11 @@ setup_frame (vulkan_ctx_t *ctx)
 	R_ClearEnts ();
 	r_framecount++;
 
-	VectorCopy (r_refdef.vieworg, r_origin);
-	AngleVectors (r_refdef.viewangles, vpn, vright, vup);
+	VectorCopy (r_refdef.viewposition, r_origin);
+	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 1, 0, 0, 0 }), vpn);
+	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 0, -1, 0, 0 }), vright);
+	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 0, 0, 1, 0 }), vup);
+
 	R_SetFrustum ();
 
 	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.renderer.model);
@@ -76,14 +79,14 @@ setup_frame (vulkan_ctx_t *ctx)
 static void
 setup_view (vulkan_ctx_t *ctx)
 {
-	mat4_t      mat;
-	float      *view = ctx->matrices.view_3d;
-	static mat4_t z_up = {
-		 0, 0, -1, 0,
-		-1, 0,  0, 0,
-		 0, 1,  0, 0,
-		 0, 0,  0, 1,
+	mat4f_t     view;
+	static mat4f_t z_up = {
+		{ 0, 0, -1, 0},
+		{-1, 0,  0, 0},
+		{ 0, 1,  0, 0},
+		{ 0, 0,  0, 1},
 	};
+	vec4f_t     offset = { 0, 0, 0, 1 };
 
 	/*x = r_refdef.vrect.x;
 	y = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height));
@@ -91,17 +94,12 @@ setup_view (vulkan_ctx_t *ctx)
 	h = r_refdef.vrect.height;
 	qfeglViewport (x, y, w, h);*/
 
-	Mat4Zero (mat);
-	VectorCopy (vpn, mat + 0);
-	VectorNegate (vright, mat + 4);			// we want vleft
-	VectorCopy (vup, mat + 8);
-	mat[15] = 1;
-	Mat4Transpose (mat, mat);//AngleVectors gives the transpose of what we want
-	Mat4Mult (z_up, mat, view);
-
-	Mat4Identity (mat);
-	VectorNegate (r_refdef.vieworg, mat + 12);
-	Mat4Mult (view, mat, view);
+	mat4fquat (view, qconjf (r_refdef.viewrotation));
+	mmulf (view, z_up, view);
+	offset = -r_refdef.viewposition;
+	offset[3] = 1;
+	view[3] = mvmulf (view, offset);
+	memcpy (ctx->matrices.view_3d, view, sizeof (view));
 }
 
 static void

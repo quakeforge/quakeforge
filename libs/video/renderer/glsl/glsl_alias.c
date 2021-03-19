@@ -157,17 +157,20 @@ calc_lighting (entity_t *ent, float *ambient, float *shadelight,
 	unsigned    i;
 	float       add;
 	vec3_t      dist;
+	vec4f_t     entorigin;
 	int         light;
 
+	entorigin = Transform_GetWorldPosition (ent->transform);
+
 	VectorSet ( -1, 0, 0, lightvec);	//FIXME
-	light = R_LightPoint (&r_worldentity.renderer.model->brush, ent->origin);
+	light = R_LightPoint (&r_worldentity.renderer.model->brush, &entorigin[0]);
 	*ambient = max (light, max (ent->renderer.model->min_light,
 								ent->renderer.min_light) * 128);
 	*shadelight = *ambient;
 
 	for (i = 0; i < r_maxdlights; i++) {
 		if (r_dlights[i].die >= vr_data.realtime) {
-			VectorSubtract (ent->origin, r_dlights[i].origin, dist);
+			VectorSubtract (entorigin, r_dlights[i].origin, dist);
 			add = r_dlights[i].radius - VectorLength (dist);
 			if (add > 0)
 				*ambient += add;

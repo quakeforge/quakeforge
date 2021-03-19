@@ -47,7 +47,7 @@ cvar_t     *cl_pushlatency;
 
 
 void
-CL_PredictUsercmd (player_state_t * from, player_state_t * to, usercmd_t *u,
+CL_PredictUsercmd (player_state_t *from, player_state_t *to, usercmd_t *u,
 				   qboolean clientplayer)
 {
 	if (!clientplayer) {
@@ -105,6 +105,8 @@ CL_PredictMove (void)
 	float       f;
 	int         oldphysent, i;
 	frame_t    *from, *to = NULL;
+	entity_state_t *fromes;
+	entity_state_t *toes;
 
 	if (cl_pushlatency->value > 0)
 		Cvar_Set (cl_pushlatency, "0");
@@ -130,15 +132,16 @@ CL_PredictMove (void)
 		UPDATE_BACKUP - 1)
 		return;
 
-	VectorCopy (cl.viewangles, cl.simangles);
-	cl.simangles[ROLL] = 0;						// FIXME @@@
+	VectorCopy (cl.viewangles, cl.viewstate.angles);
+	cl.viewstate.angles[ROLL] = 0;						// FIXME @@@
 
 	// this is the last frame received from the server
 	from = &cl.frames[cls.netchan.incoming_sequence & UPDATE_MASK];
+	fromes = &from->playerstate[cl.playernum].pls.es;
 
 	if (!cl_predict->int_val) {
-		VectorCopy (from->playerstate[cl.playernum].pls.es.velocity, cl.simvel);
-		VectorCopy (from->playerstate[cl.playernum].pls.es.origin, cl.simorg);
+		cl.viewstate.velocity = fromes->velocity;
+		cl.viewstate.origin = fromes->origin;
 		return;
 	}
 
@@ -165,6 +168,7 @@ CL_PredictMove (void)
 	if (i == UPDATE_BACKUP - 1 || !to)
 		return;							// net hasn't deliver packets in a
 										// long time...
+	toes = &to->playerstate[cl.playernum].pls.es;
 
 	// now interpolate some fraction of the final frame
 	if (to->senttime == from->senttime)
@@ -175,18 +179,14 @@ CL_PredictMove (void)
 	}
 
 	for (i = 0; i < 3; i++)
-		if (fabs (from->playerstate[cl.playernum].pls.es.origin[i] -
-				  to->playerstate[cl.playernum].pls.es.origin[i]) > 128) {
+		if (fabs (fromes->origin[i] - toes->origin[i]) > 128) {
 			// teleported, so don't lerp
-			VectorCopy (to->playerstate[cl.playernum].pls.es.velocity,
-						cl.simvel);
-			VectorCopy (to->playerstate[cl.playernum].pls.es.origin, cl.simorg);
+			cl.viewstate.velocity = toes->velocity;
+			cl.viewstate.origin = toes->origin;
 			return;
 		}
 
-	cl.simorg = from->playerstate[cl.playernum].pls.es.origin
-				+ f * (to->playerstate[cl.playernum].pls.es.origin -
-					   from->playerstate[cl.playernum].pls.es.origin);
+	cl.viewstate.origin = fromes->origin + f * (toes->origin - fromes->origin);
 }
 
 void

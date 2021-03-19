@@ -123,10 +123,6 @@ R_DrawSpriteModel_f (entity_t *e)
 		VectorCopy (vup, up);
 		VectorCopy (vright, right);
 	}
-	if (e->scale != 1.0) {
-		up *= e->scale;
-		right *= e->scale;
-	}
 
 	VectorCopy (e->renderer.colormod, color);
 	modelalpha = color[3] = e->renderer.colormod[3];
@@ -193,10 +189,6 @@ R_DrawSpriteModel_VA_f (entity_t *e)
 	} else {								// normal sprite
 		VectorCopy (vup, up);
 		VectorCopy (vright, right);
-	}
-	if (e->scale != 1.0) {
-		up *= e->scale;
-		right *= e->scale;
 	}
 
 	for (i = 0; i < 4; i++) {

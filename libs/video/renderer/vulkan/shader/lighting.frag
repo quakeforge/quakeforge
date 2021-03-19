@@ -44,7 +44,7 @@ main (void)
 	vec3        c = subpassLoad (color).rgb;
 	vec3        n = subpassLoad (normal).rgb;
 	vec3        p = subpassLoad (position).rgb;
-	vec3        light = vec3 (0);
+	vec3        light = vec3 (0.8);
 
 	if (MaxLights > 0) {
 		for (int i = 0; i < lightCount; i++) {

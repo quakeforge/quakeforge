@@ -130,6 +130,8 @@ CL_ParseDelta (entity_state_t *from, entity_state_t *to, int bits)
 	if (bits & U_ANGLE3)
 		to->angles[2] = MSG_ReadAngle (net_message);
 
+	to->origin[3] = 1;
+
 	if (bits & U_SOLID) {
 		// FIXME
 	}
@@ -428,6 +430,7 @@ CL_ParsePlayerinfo (void)
 
 	state->messagenum = cl.parsecount;
 	MSG_ReadCoordV (net_message, &state->pls.es.origin[0]);//FIXME
+	state->pls.es.origin[3] = 1;
 
 	state->pls.es.frame = MSG_ReadByte (net_message);
 
@@ -486,7 +489,7 @@ CL_ParsePlayerinfo (void)
 		}
 		if (bits & PF_SCALE) {
 			val = MSG_ReadByte (net_message);
-			ent->scale = val / 16.0;
+			state->pls.es.scale = val;
 		}
 		if (bits & PF_EFFECTS2) {
 			state->pls.es.effects |= MSG_ReadByte (net_message) << 8;

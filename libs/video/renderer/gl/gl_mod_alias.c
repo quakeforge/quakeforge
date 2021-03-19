@@ -196,8 +196,10 @@ GL_DrawAliasShadowTri (const aliashdr_t *paliashdr, const vert_order_t *vo)
 	vec3_t      point;
 	const vec_t *scale = paliashdr->mdl.scale;
 	const vec_t *scale_origin = paliashdr->mdl.scale_origin;
+	vec4f_t     entorigin;
 
-	lheight = currententity->origin[2] - lightspot[2];
+	entorigin = Transform_GetWorldPosition (currententity->transform);
+	lheight = entorigin[2] - lightspot[2];
 	height = -lheight + 1.0;
 
 	qfglBegin (GL_TRIANGLES);
@@ -232,8 +234,10 @@ GL_DrawAliasShadow (const aliashdr_t *paliashdr, const vert_order_t *vo)
 	const int  *order = vo->order;
 	vec3_t      point;
 	const blended_vert_t *verts = vo->verts;
+	vec4f_t     entorigin;
 
-	lheight = currententity->origin[2] - lightspot[2];
+	entorigin = Transform_GetWorldPosition (currententity->transform);
+	lheight = entorigin[2] - lightspot[2];
 	height = -lheight + 1.0;
 
 	while ((count = *order++)) {
@@ -413,17 +417,23 @@ gl_R_DrawAliasModel (entity_t *e)
 	dlight_t   *l;
 	model_t    *model;
 	vec3_t      dist, scale;
+	vec4f_t     origin;
 	vert_order_t *vo;
 
 	model = e->renderer.model;
 
 	radius = model->radius;
-	if (e->scale != 1.0)
-		radius *= e->scale;
-	if (R_CullSphere (e->origin, radius))
+	origin = Transform_GetWorldPosition (e->transform);
+	VectorCopy (Transform_GetWorldScale (e->transform), scale);
+	//FIXME assumes uniform scale
+	if (scale[0] != 1.0) {
+		radius *= scale[0];
+	}
+	if (R_CullSphere (&origin[0], radius)) {//FIXME
 		return;
+	}
 
-	VectorSubtract (r_origin, e->origin, modelorg);
+	VectorSubtract (r_origin, origin, modelorg);
 
 	gl_modelalpha = e->renderer.colormod[3];
 
@@ -436,7 +446,7 @@ gl_R_DrawAliasModel (entity_t *e)
 		float lightadj;
 
 		// get lighting information
-		R_LightPoint (&r_worldentity.renderer.model->brush, e->origin);
+		R_LightPoint (&r_worldentity.renderer.model->brush, &origin[0]);//FIXME
 
 		lightadj = (ambientcolor[0] + ambientcolor[1] + ambientcolor[2]) / 765.0;
 
@@ -457,7 +467,7 @@ gl_R_DrawAliasModel (entity_t *e)
 		if (gl_vector_light->int_val) {
 			for (l = r_dlights, lnum = 0; lnum < r_maxdlights; lnum++, l++) {
 				if (l->die >= vr_data.realtime) {
-					VectorSubtract (l->origin, e->origin, dist);
+					VectorSubtract (l->origin, origin, dist);
 					if ((d = DotProduct (dist, dist)) >	// Out of range
 						((l->radius + radius) * (l->radius + radius))) {
 						continue;
@@ -508,7 +518,7 @@ gl_R_DrawAliasModel (entity_t *e)
 
 			for (l = r_dlights, lnum = 0; lnum < r_maxdlights; lnum++, l++) {
 				if (l->die >= vr_data.realtime) {
-					VectorSubtract (l->origin, e->origin, dist);
+					VectorSubtract (l->origin, origin, dist);
 
 					if ((d = DotProduct (dist, dist)) > (l->radius + radius) *
 						(l->radius + radius)) {
@@ -567,10 +577,12 @@ gl_R_DrawAliasModel (entity_t *e)
 	if (paliashdr->mdl.ident == HEADER_MDL16) {
 		// because we multipled by 256 when we loaded the verts, we have to
 		// scale by 1/256 when drawing.
-		VectorScale (paliashdr->mdl.scale, e->scale / 256.0, scale);
+		//FIXME see scaling above
+		VectorScale (paliashdr->mdl.scale, 1 / 256.0, scale);
 		vo = GL_GetAliasFrameVerts16 (paliashdr, e);
 	} else {
-		VectorScale (paliashdr->mdl.scale, e->scale, scale);
+		//FIXME see scaling above
+		VectorScale (paliashdr->mdl.scale, 1, scale);
 		vo = GL_GetAliasFrameVerts (paliashdr, e);
 	}
 

@@ -30,6 +30,7 @@
 
 #include <stdlib.h>
 
+#include "QF/entity.h"
 #include "QF/render.h"
 #include "QF/sys.h"
 
@@ -210,8 +211,9 @@ R_AddEfrags (mod_brush_t *brush, entity_t *ent)
 
 	entmodel = ent->renderer.model;
 
-	VectorAdd (ent->origin, entmodel->mins, emins);
-	VectorAdd (ent->origin, entmodel->maxs, emaxs);
+	vec4f_t     org = Transform_GetWorldPosition (ent->transform);
+	VectorAdd (org, entmodel->mins, emins);
+	VectorAdd (org, entmodel->maxs, emaxs);
 
 	ent->visibility.topnode = 0;
 	R_SplitEntityOnNode (brush, ent, emins, emaxs);

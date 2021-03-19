@@ -660,7 +660,8 @@ R_DrawBrushModel (entity_t *e)
 	plane_t    *plane;
 	msurface_t *surf;
 	qboolean    rotated;
-	vec3_t      mins, maxs, org;
+	vec3_t      mins, maxs;
+	vec4f_t     org;
 	mod_brush_t *brush;
 
 	model = e->renderer.model;
@@ -671,19 +672,20 @@ R_DrawBrushModel (entity_t *e)
 	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
 		rotated = true;
 		radius = model->radius;
-		if (R_CullSphere (e->origin, radius))
+		if (R_CullSphere (&mat[3][0], radius)) { // FIXME
 			return;
+		}
 	} else {
 		rotated = false;
-		VectorAdd (e->origin, model->mins, mins);
-		VectorAdd (e->origin, model->maxs, maxs);
+		VectorAdd (mat[3], model->mins, mins);
+		VectorAdd (mat[3], model->maxs, maxs);
 		if (R_CullBox (mins, maxs))
 			return;
 	}
 
-	VectorSubtract (r_refdef.vieworg, e->origin, org);
+	org = r_refdef.viewposition - mat[3];
 	if (rotated) {
-		vec4f_t     temp = { org[0], org[1], org[2], 0 };
+		vec4f_t     temp = org;
 
 		org[0] = dotf (temp, mat[0])[0];
 		org[1] = dotf (temp, mat[1])[0];
@@ -699,7 +701,7 @@ R_DrawBrushModel (entity_t *e)
 				|| (!r_dlights[k].radius))
 				continue;
 
-			VectorSubtract (r_dlights[k].origin, e->origin, lightorigin);
+			VectorSubtract (r_dlights[k].origin, mat[3], lightorigin);
 			R_RecursiveMarkLights (brush, lightorigin, &r_dlights[k], k,
 							brush->nodes + brush->hulls[0].firstclipnode);
 		}

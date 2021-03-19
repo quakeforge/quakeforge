@@ -37,6 +37,7 @@
 #endif
 
 #include "QF/cvar.h"
+#include "QF/entity.h"
 #include "QF/mersenne.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
@@ -386,9 +387,7 @@ R_DarkFieldParticles_ID (const entity_t *ent)
 	if (!r_particles->int_val)
 		return;
 
-	org[0] = ent->origin[0];
-	org[1] = ent->origin[1];
-	org[2] = ent->origin[2];
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
 	for (i = -16; i < 16; i += 8) {
 		for (j = -16; j < 16; j += 8) {
 			for (k = 0; k < 32; k += 8) {
@@ -431,9 +430,12 @@ R_EntityParticles_ID (const entity_t *ent)
 	float		beamlength = 16.0, dist = 64.0;
 	particle_t *p;
 	vec3_t		forward;
+	vec3_t      org;
 
 	if (!r_particles->int_val)
 		return;
+
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
 
 	for (i = 0; i < NUMVERTEXNORMALS; i++) {
 		int         k;
@@ -470,11 +472,11 @@ R_EntityParticles_ID (const entity_t *ent)
 		p->type = pt_explode;
 		p->phys = R_ParticlePhysics (p->type);
 
-		p->org[0] = ent->origin[0] + r_avertexnormals[i][0] * dist +
+		p->org[0] = org[0] + r_avertexnormals[i][0] * dist +
 			forward[0] * beamlength;
-		p->org[1] = ent->origin[1] + r_avertexnormals[i][1] * dist +
+		p->org[1] = org[1] + r_avertexnormals[i][1] * dist +
 			forward[1] * beamlength;
-		p->org[2] = ent->origin[2] + r_avertexnormals[i][2] * dist +
+		p->org[2] = org[2] + r_avertexnormals[i][2] * dist +
 			forward[2] * beamlength;
 	}
 }
@@ -486,12 +488,14 @@ R_RocketTrail_QF (const entity_t *ent)
 	int			j;
 	particle_t *p;
 	vec3_t		old_origin, vec;
+	vec3_t		org;
 
 	if (!r_particles->int_val)
 		return;
 
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorSubtract (org, old_origin, vec);
 	len = VectorNormalize (vec);
 
 	while (len > 0) {
@@ -525,12 +529,14 @@ R_GrenadeTrail_QF (const entity_t *ent)
 	int			j;
 	particle_t *p;
 	vec3_t		old_origin, vec;
+	vec3_t		org;
 
 	if (!r_particles->int_val)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	len = VectorNormalize (vec);
 
 	while (len > 0) {
@@ -564,12 +570,14 @@ R_BloodTrail_QF (const entity_t *ent)
 	int			j;
 	particle_t *p;
 	vec3_t		old_origin, vec;
+	vec3_t      org;
 
 	if (!r_particles->int_val)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	len = VectorNormalize (vec);
 
 	while (len > 0) {
@@ -602,12 +610,14 @@ R_SlightBloodTrail_QF (const entity_t *ent)
 	int			j;
 	particle_t *p;
 	vec3_t		old_origin, vec;
+	vec3_t		org;
 
 	if (!r_particles->int_val)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	len = VectorNormalize (vec);
 
 	while (len > 0) {
@@ -639,12 +649,14 @@ R_WizTrail_QF (const entity_t *ent)
 	float		len;
 	particle_t *p;
 	vec3_t		old_origin, vec;
+	vec3_t		org;
 
 	if (!r_particles->int_val)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	len = VectorNormalize (vec);
 
 	while (len > 0) {
@@ -686,12 +698,14 @@ R_FlameTrail_QF (const entity_t *ent)
 	float		len;
 	particle_t *p;
 	vec3_t		old_origin, vec;
+	vec3_t		org;
 
 	if (!r_particles->int_val)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	len = VectorNormalize (vec);
 
 	while (len > 0) {
@@ -734,12 +748,14 @@ R_VoorTrail_QF (const entity_t *ent)
 	int			j;
 	particle_t *p;
 	vec3_t		old_origin, vec;
+	vec3_t      org;
 
 	if (!r_particles->int_val)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	len = VectorNormalize (vec);
 
 	while (len > 0) {

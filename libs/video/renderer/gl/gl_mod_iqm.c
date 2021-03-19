@@ -103,7 +103,6 @@ gl_R_DrawIQMModel (entity_t *ent)
 
 	qfglPushMatrix ();
 	gl_R_RotateForEntity (ent);
-	qfglScalef (ent->scale, ent->scale, ent->scale);
 
 	for (i = 0; i < iqm->num_meshes; i++) {
 		qfglBindTexture (GL_TEXTURE_2D, gl->textures[i]);

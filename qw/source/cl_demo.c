@@ -652,9 +652,8 @@ demo_start_recording (int track)
 {
 	byte        buf_data[MAX_MSGLEN + 10];	// + 10 for header
 	char       *s;
-	int         n, i, j;
+	int         n, i;
 	int         seq = 1;
-	entity_t   *ent;
 	entity_state_t *es, blankes;
 	player_info_t *player;
 	sizebuf_t   buf;
@@ -757,23 +756,16 @@ demo_start_recording (int track)
 	// spawnstatic
 	for (size_t staticIndex = 0; staticIndex < cl_static_entities.size;
 		 staticIndex++) {
-		ent = cl_static_entities.a[staticIndex];
+		entity_state_t *es = &cl_static_entities.a[staticIndex];
+
 		MSG_WriteByte (&buf, svc_spawnstatic);
 
-		for (j = 1; j < cl.nummodels; j++) {
-			if (ent->renderer.model == cl.model_precache[j]) {
-				break;
-			}
-		}
-		if (j == cl.nummodels)
-			MSG_WriteByte (&buf, 0);
-		else
-			MSG_WriteByte (&buf, j);
+		MSG_WriteByte (&buf, es->modelindex);
 
-		MSG_WriteByte (&buf, ent->animation.frame);
+		MSG_WriteByte (&buf, es->frame);
 		MSG_WriteByte (&buf, 0);
-		MSG_WriteByte (&buf, ent->renderer.skinnum);
-		MSG_WriteCoordAngleV (&buf, ent->origin, ent->angles);
+		MSG_WriteByte (&buf, es->skinnum);
+		MSG_WriteCoordAngleV (&buf, &es->origin[0], &es->angles[0]);
 
 		if (buf.cursize > MAX_MSGLEN / 2) {
 			CL_WriteRecordDemoMessage (&buf, seq++);

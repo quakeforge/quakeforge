@@ -132,7 +132,6 @@ CL_LinkPacketEntities (void)
 	entity_state_t *new, *old;
 	renderer_t *renderer;
 	animation_t *animation;
-	vec3_t      delta;
 
 	frac = 1;
 	for (i = 0; i < 512; i++) {
@@ -195,7 +194,6 @@ CL_LinkPacketEntities (void)
 															  0);
 			}
 		}
-		ent->scale = new->scale / 16.0;
 
 		VectorCopy (ent_colormod[new->colormod], renderer->colormod);
 		renderer->colormod[3] = new->alpha / 255.0;
@@ -209,35 +207,31 @@ CL_LinkPacketEntities (void)
 			}
 		}
 
+		ent->old_origin = Transform_GetWorldPosition (ent->transform);
 		if (forcelink) {
 			animation->pose1 = animation->pose2 = -1;
-			VectorCopy (new->origin, ent->origin);
-			if (!(renderer->model->flags & EF_ROTATE))
-				CL_TransformEntity (ent, new->angles);
+			CL_TransformEntity (ent, new->scale / 16, new->angles,
+								new->origin);
 			if (i != cl.viewentity || chase_active->int_val) {
 				if (ent->visibility.efrag) {
 					r_funcs->R_RemoveEfrags (ent);
 				}
 				r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 			}
-			VectorCopy (ent->origin, ent->old_origin);
 		} else {
+			vec4f_t     delta = new->origin - old->origin;
 			f = frac;
-			VectorCopy (ent->origin, ent->old_origin);
-			VectorSubtract (new->origin, old->origin, delta);
 			// If the delta is large, assume a teleport and don't lerp
 			if (fabs (delta[0]) > 100 || fabs (delta[1] > 100)
 				|| fabs (delta[2]) > 100) {
 				// assume a teleportation, not a motion
-				VectorCopy (new->origin, ent->origin);
-				if (!(renderer->model->flags & EF_ROTATE)) {
-					CL_TransformEntity (ent, new->angles);
-				}
+				CL_TransformEntity (ent, new->scale / 16, new->angles,
+									new->origin);
 				animation->pose1 = animation->pose2 = -1;
 			} else {
 				vec3_t      angles, d;
+				vec4f_t     origin = old->origin + f * delta;
 				// interpolate the origin and angles
-				VectorMultAdd (old->origin, f, delta, ent->origin);
 				if (!(renderer->model->flags & EF_ROTATE)) {
 					VectorSubtract (new->angles, old->angles, d);
 					for (j = 0; j < 3; j++) {
@@ -247,12 +241,14 @@ CL_LinkPacketEntities (void)
 							d[j] += 360;
 					}
 					VectorMultAdd (old->angles, f, d, angles);
-					CL_TransformEntity (ent, angles);
 				}
+				CL_TransformEntity (ent, new->scale / 16.0, angles, origin);
 			}
 			if (i != cl.viewentity || chase_active->int_val) {
 				if (ent->visibility.efrag) {
-					if (!VectorCompare (ent->origin, ent->old_origin)) {
+					vec4f_t     org
+						= Transform_GetWorldPosition (ent->transform);
+					if (!VectorCompare (org, ent->old_origin)) {//FIXME
 						r_funcs->R_RemoveEfrags (ent);
 						r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 					}
@@ -271,12 +267,13 @@ CL_LinkPacketEntities (void)
 			angles[PITCH] = 0;
 			angles[YAW] = anglemod (100 * cl.time);
 			angles[ROLL] = 0;
-			CL_TransformEntity (ent, angles);
+			CL_TransformEntity (ent, new->scale / 16.0, angles, new->origin);
 		}
 		//CL_EntityEffects (i, ent, new);
 		//CL_NewDlight (i, ent->origin, new->effects, 0, 0, cl.time);
-		if (VectorDistance_fast (old->origin, ent->origin) > (256 * 256))
-			VectorCopy (ent->origin, old->origin);
+		vec4f_t org = Transform_GetWorldPosition (ent->transform);
+		if (VectorDistance_fast (old->origin, org) > (256 * 256))
+			old->origin = org;
 		if (renderer->model->flags & ~EF_ROTATE) {
 			CL_ModelEffects (ent, -new->number, new->glow_color, cl.time);
 		}
@@ -378,7 +375,7 @@ CL_LinkPlayers (void)
 
 		// spawn light flashes, even ones coming from invisible objects
 		if (j == cl.playernum) {
-			org = cl.simorg;
+			org = cl.viewstate.origin;
 			r_data->player_entity = &cl_player_ents[j];
 			clientplayer = true;
 		} else {
@@ -413,15 +410,16 @@ CL_LinkPlayers (void)
 		// predict only half the move to minimize overruns
 		msec = 500 * (playertime - state->state_time);
 		if (msec <= 0 || (!cl_predict_players->int_val) || cls.demoplayback2) {
-			VectorCopy (state->pls.es.origin, ent->origin);
+			Sys_Printf("a\n");
+			exact.pls.es.origin = state->pls.es.origin;
 		} else {									// predict players movement
 			state->pls.cmd.msec = msec = min (msec, 255);
 
 			oldphysent = pmove.numphysent;
 			CL_SetSolidPlayers (j);
+			exact.pls.es.origin[3] = 1;//FIXME should be done by prediction
 			CL_PredictUsercmd (state, &exact, &state->pls.cmd, clientplayer);
 			pmove.numphysent = oldphysent;
-			VectorCopy (exact.pls.es.origin, ent->origin);
 		}
 
 		// angles
@@ -439,7 +437,8 @@ CL_LinkPlayers (void)
 		ent->animation.frame = state->pls.es.frame;
 		ent->renderer.skinnum = state->pls.es.skinnum;
 
-		CL_TransformEntity (ent, ang);
+		//FIXME scale
+		CL_TransformEntity (ent, 1, ang, exact.pls.es.origin);
 
 		ent->renderer.min_light = 0;
 		ent->renderer.fullbright = 0;
@@ -484,14 +483,14 @@ CL_EmitEntities (void)
 		return;
 
 	TEntContext_t tentCtx = {
-		{VectorExpand (cl.simorg), 1}, cl.worldmodel, cl.viewentity
+		cl.viewstate.origin, cl.worldmodel, cl.viewentity
 	};
 
 	CL_LinkPlayers ();
 	CL_LinkPacketEntities ();
 	CL_UpdateTEnts (cl.time, &tentCtx);
 	if (cl_draw_locs->int_val) {
-		locs_draw (cl.simorg);
+		locs_draw (cl.viewstate.origin);
 	}
 }
 

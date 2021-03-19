@@ -545,12 +545,13 @@ gl_R_DrawBrushModel (entity_t *e)
 		if (e->scale != 1.0)
 			radius *= e->scale;
 #endif
-		if (R_CullSphere (e->origin, radius))
+		if (R_CullSphere (&worldMatrix[3][0], radius)) {//FIXME
 			return;
+		}
 	} else {
 		rotated = false;
-		VectorAdd (e->origin, model->mins, mins);
-		VectorAdd (e->origin, model->maxs, maxs);
+		VectorAdd (worldMatrix[3], model->mins, mins);
+		VectorAdd (worldMatrix[3], model->maxs, maxs);
 #if 0 // QSG FIXME
 		if (e->scale != 1.0) {
 			VectorScale (mins, e->scale, mins);
@@ -561,7 +562,7 @@ gl_R_DrawBrushModel (entity_t *e)
 			return;
 	}
 
-	VectorSubtract (r_refdef.vieworg, e->origin, modelorg);
+	VectorSubtract (r_refdef.viewposition, worldMatrix[3], modelorg);
 	if (rotated) {
 		vec4f_t     temp = { modelorg[0], modelorg[1], modelorg[2], 0 };
 
@@ -579,7 +580,7 @@ gl_R_DrawBrushModel (entity_t *e)
 				 || (!r_dlights[k].radius))
 				continue;
 
-			VectorSubtract (r_dlights[k].origin, e->origin, lightorigin);
+			VectorSubtract (r_dlights[k].origin, worldMatrix[3], lightorigin);
 			R_RecursiveMarkLights (brush, lightorigin, &r_dlights[k], k,
 							brush->nodes + brush->hulls[0].firstclipnode);
 		}
@@ -723,7 +724,7 @@ gl_R_DrawWorld (void)
 	memset (&worldent, 0, sizeof (worldent));
 	worldent.renderer.model = r_worldentity.renderer.model;
 
-	VectorCopy (r_refdef.vieworg, modelorg);
+	VectorCopy (r_refdef.viewposition, modelorg);
 
 	currententity = &worldent;
 

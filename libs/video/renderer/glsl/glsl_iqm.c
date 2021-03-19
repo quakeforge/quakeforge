@@ -214,13 +214,10 @@ glsl_R_DrawIQM (void)
 	dlight_t   *lights[MAX_IQM_LIGHTS];
 	int         i;
 	vec_t       norm_mat[9];
+	vec4f_t     entorigin;
 	mat4f_t     mvp_mat;
 	float       blend;
 	iqmframe_t *frame;
-
-	R_LightPoint (&r_worldentity.renderer.model->brush, ent->origin);//FIXME min_light?
-	VectorScale (ambientcolor, 1/255.0, ambientcolor);
-	R_FindNearLights (ent->origin, MAX_IQM_LIGHTS, lights);
 
 	// we need only the rotation for normals.
 	mat4f_t mat;
@@ -228,7 +225,12 @@ glsl_R_DrawIQM (void)
 	VectorCopy (mat[0], norm_mat + 0);
 	VectorCopy (mat[1], norm_mat + 3);
 	VectorCopy (mat[2], norm_mat + 6);
+	entorigin = mat[3];
 	mmulf (mvp_mat, iqm_vp, mat);
+
+	R_LightPoint (&r_worldentity.renderer.model->brush, &entorigin[0]);//FIXME min_light?
+	VectorScale (ambientcolor, 1/255.0, ambientcolor);
+	R_FindNearLights (&entorigin[0], MAX_IQM_LIGHTS, lights);//FIXME
 
 	blend = R_IQMGetLerpedFrames (ent, iqm);
 	frame = R_IQMBlendFrames (iqm, ent->animation.pose1, ent->animation.pose2,
@@ -240,7 +242,7 @@ glsl_R_DrawIQM (void)
 		lightpar_t *l = &iqm_shader.lights[i];
 		if (!lights[i])
 			break;
-		VectorSubtract (lights[i]->origin, ent->origin, val);
+		VectorSubtract (lights[i]->origin, entorigin, val);
 		val[3] = lights[i]->radius;
 		qfeglUniform4fv (l->position.location, 1, val);
 		qfeglUniform4fv (l->color.location, 1, lights[i]->color);

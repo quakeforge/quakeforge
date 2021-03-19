@@ -55,6 +55,7 @@ R_CheckVariables (void)
 void
 sw32_R_TimeRefresh_f (void)
 {
+/* FIXME update for simd
 	int         i;
 	float       start, stop, time;
 	int         startangle;
@@ -84,6 +85,7 @@ sw32_R_TimeRefresh_f (void)
 	Sys_Printf ("%g seconds (%g fps)\n", time, 128 / time);
 
 	r_refdef.viewangles[1] = startangle;
+*/
 }
 
 void
@@ -233,10 +235,12 @@ sw32_R_SetupFrame (void)
 #endif
 
 	// build the transformation matrix for the given view angles
-	VectorCopy (r_refdef.vieworg, modelorg);
-	VectorCopy (r_refdef.vieworg, r_origin);
+	VectorCopy (r_refdef.viewposition, modelorg);
+	VectorCopy (r_refdef.viewposition, r_origin);
 
-	AngleVectors (r_refdef.viewangles, vpn, vright, vup);
+	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 1, 0, 0, 0 }), vpn);
+	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 0, -1, 0, 0 }), vright);
+	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 0, 0, 1, 0 }), vup);
 	R_SetFrustum ();
 
 	// current viewleaf

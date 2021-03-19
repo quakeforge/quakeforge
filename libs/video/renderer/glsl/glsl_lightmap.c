@@ -44,6 +44,7 @@
 #endif
 #include <stdlib.h>
 
+#include "QF/entity.h"
 #include "QF/render.h"
 #include "QF/sys.h"
 
@@ -70,6 +71,7 @@ R_AddDynamicLights_1 (msurface_t *surf)
 	int         sd, td;
 	float       dist, rad, minlight;
 	vec3_t      impact, local, lightorigin;
+	vec4f_t     entorigin = { 0, 0, 0, 1};
 	int         s, t;
 	int         smax, tmax;
 	mtexinfo_t *tex;
@@ -78,12 +80,16 @@ R_AddDynamicLights_1 (msurface_t *surf)
 	tmax = (surf->extents[1] >> 4) + 1;
 	tex = surf->texinfo;
 
+	if (currententity->transform) {
+		//FIXME give world entity a transform
+		entorigin = Transform_GetWorldPosition (currententity->transform);
+	}
+
 	for (lnum = 0; lnum < r_maxdlights; lnum++) {
 		if (!(surf->dlightbits[lnum / 32] & (1 << (lnum % 32))))
 			continue;					// not lit by this light
 
-		VectorSubtract (r_dlights[lnum].origin, currententity->origin,
-						lightorigin);
+		VectorSubtract (r_dlights[lnum].origin, entorigin, lightorigin);
 		rad = r_dlights[lnum].radius;
 		dist = DotProduct (lightorigin, surf->plane->normal)
 				- surf->plane->dist;

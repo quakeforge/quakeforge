@@ -170,7 +170,7 @@ int         packet_latency[NET_TIMINGS];
 
 extern cvar_t *hud_scoreboard_uid;
 
-entityset_t cl_static_entities = DARRAY_STATIC_INIT (32);
+entitystateset_t cl_static_entities = DARRAY_STATIC_INIT (32);
 
 static void
 CL_LoadSky (void)
@@ -973,15 +973,14 @@ CL_ParseStatic (void)
 	ent = r_funcs->R_AllocEntity ();
 	CL_Init_Entity (ent);
 
-	DARRAY_APPEND (&cl_static_entities, ent);
+	DARRAY_APPEND (&cl_static_entities, es);
 
 	// copy it to the current state
 	ent->renderer.model = cl.model_precache[es.modelindex];
 	ent->animation.frame = es.frame;
 	ent->renderer.skinnum = es.skinnum;
 
-	VectorCopy (es.origin, ent->origin);
-	CL_TransformEntity (ent, es.angles);
+	CL_TransformEntity (ent, es.scale / 16.0, es.angles, es.origin);
 
 	r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 }
@@ -1296,7 +1295,7 @@ CL_ParseServerMessage (void)
 	const char *str;
 	static dstring_t *stuffbuf;
 	TEntContext_t tentCtx = {
-		{VectorExpand (cl.simorg), 1}, cl.worldmodel, cl.viewentity
+		cl.viewstate.origin, cl.worldmodel, cl.viewentity
 	};
 
 	received_framecount = host_framecount;
@@ -1542,17 +1541,17 @@ CL_ParseServerMessage (void)
 				cl.completed_time = realtime;
 				r_data->vid->recalc_refdef = true;		// go to full screen
 				Sys_MaskPrintf (SYS_DEV, "intermission simorg: ");
-				MSG_ReadCoordV (net_message, &cl.simorg[0]);//FIXME
-				cl.simorg[3] = 1;
-				for (i = 0; i < 3; i++)
-					Sys_MaskPrintf (SYS_DEV, "%f ", cl.simorg[i]);
+				MSG_ReadCoordV (net_message, &cl.viewstate.origin[0]);//FIXME
+				cl.viewstate.origin[3] = 1;
+				Sys_MaskPrintf (SYS_DEV, VEC4F_FMT,
+								VEC4_EXP (cl.viewstate.origin));
 				Sys_MaskPrintf (SYS_DEV, "\nintermission simangles: ");
-				MSG_ReadAngleV (net_message, cl.simangles);
-				cl.simangles[ROLL] = 0;						// FIXME @@@
-				for (i = 0; i < 3; i++)
-					Sys_MaskPrintf (SYS_DEV, "%f ", cl.simangles[i]);
+				MSG_ReadAngleV (net_message, cl.viewstate.angles);
+				cl.viewstate.angles[ROLL] = 0;			// FIXME @@@
+				Sys_MaskPrintf (SYS_DEV, "%f %f %f",
+								VectorExpand (cl.viewstate.angles));
 				Sys_MaskPrintf (SYS_DEV, "\n");
-				VectorZero (cl.simvel);
+				cl.viewstate.velocity = (vec4f_t) { };
 
 				// automatic fraglogging (by elmex)
 				// XXX: Should this _really_ called here?
@@ -1585,11 +1584,17 @@ CL_ParseServerMessage (void)
 			//   svc_cutscene (same value as svc_smallkick)
 
 			case svc_smallkick:
-				cl.punchangle[PITCH] = -2;
+				cl.viewstate.punchangle = (vec4f_t) {
+					// -2 degrees pitch
+					0, -0.0174524064, 0, 0.999847695
+				};
 				break;
 
 			case svc_bigkick:
-				cl.punchangle[PITCH] = -4;
+				cl.viewstate.punchangle = (vec4f_t) {
+					// -4 degrees pitch
+					0, -0.0348994967, 0, 0.999390827
+				};
 				break;
 
 			case svc_updateping:

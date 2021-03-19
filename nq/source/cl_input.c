@@ -438,35 +438,35 @@ CL_AdjustAngles (void)
 	yawspeed *= host_frametime;
 
 	if (!(in_strafe.state & 1)) {
-		cl.viewangles[YAW] -= yawspeed * CL_KeyState (&in_right);
-		cl.viewangles[YAW] += yawspeed * CL_KeyState (&in_left);
-		cl.viewangles[YAW] = anglemod (cl.viewangles[YAW]);
+		cl.viewstate.angles[YAW] -= yawspeed * CL_KeyState (&in_right);
+		cl.viewstate.angles[YAW] += yawspeed * CL_KeyState (&in_left);
+		cl.viewstate.angles[YAW] = anglemod (cl.viewstate.angles[YAW]);
 	}
 	if (in_klook.state & 1) {
 		V_StopPitchDrift ();
-		cl.viewangles[PITCH] -= pitchspeed * CL_KeyState (&in_forward);
-		cl.viewangles[PITCH] += pitchspeed * CL_KeyState (&in_back);
+		cl.viewstate.angles[PITCH] -= pitchspeed * CL_KeyState (&in_forward);
+		cl.viewstate.angles[PITCH] += pitchspeed * CL_KeyState (&in_back);
 	}
 
 	up = CL_KeyState (&in_lookup);
 	down = CL_KeyState (&in_lookdown);
 
-	cl.viewangles[PITCH] -= pitchspeed * up;
-	cl.viewangles[PITCH] += pitchspeed * down;
+	cl.viewstate.angles[PITCH] -= pitchspeed * up;
+	cl.viewstate.angles[PITCH] += pitchspeed * down;
 
 	if (up || down)
 		V_StopPitchDrift ();
 
 	// FIXME: Need to clean up view angle limits
-	if (cl.viewangles[PITCH] > 80)
-		cl.viewangles[PITCH] = 80;
-	if (cl.viewangles[PITCH] < -70)
-		cl.viewangles[PITCH] = -70;
+	if (cl.viewstate.angles[PITCH] > 80)
+		cl.viewstate.angles[PITCH] = 80;
+	if (cl.viewstate.angles[PITCH] < -70)
+		cl.viewstate.angles[PITCH] = -70;
 
-	if (cl.viewangles[ROLL] > 50)
-		cl.viewangles[ROLL] = 50;
-	if (cl.viewangles[ROLL] < -50)
-		cl.viewangles[ROLL] = -50;
+	if (cl.viewstate.angles[ROLL] > 50)
+		cl.viewstate.angles[ROLL] = 50;
+	if (cl.viewstate.angles[ROLL] < -50)
+		cl.viewstate.angles[ROLL] = -50;
 }
 
 /*
@@ -516,12 +516,13 @@ CL_BaseMove (usercmd_t *cmd)
 	IN_Move ();
 
 	// adjust for chase camera angles
+	/*FIXME:chase figure out just what this does and get it working
 	if (cl.chase
 		&& (chase_active->int_val == 2 || chase_active->int_val == 3)) {
 		vec3_t      forward, right, up, f, r;
 		vec3_t      dir = {0, 0, 0};
 
-		dir[1] = r_data->refdef->viewangles[1] - cl.viewangles[1];
+		dir[1] = r_data->refdef->viewangles[1] - cl.viewstate.angles[1];
 		AngleVectors (dir, forward, right, up);
 		VectorScale (forward, cmd->forwardmove, f);
 		VectorScale (right, cmd->sidemove, r);
@@ -532,16 +533,18 @@ CL_BaseMove (usercmd_t *cmd)
 		viewdelta.position[2] = f[0] + r[0];
 		viewdelta.position[0] = (f[1] + r[1]) * -1;
 	}
+	*/
 
 	cmd->forwardmove += viewdelta.position[2] * m_forward->value;
 	cmd->sidemove += viewdelta.position[0] * m_side->value;
 	cmd->upmove += viewdelta.position[1];
-	cl.viewangles[PITCH] += viewdelta.angles[PITCH] * m_pitch->value;
-	cl.viewangles[YAW] += viewdelta.angles[YAW] * m_yaw->value;
-	cl.viewangles[ROLL] += viewdelta.angles[ROLL];
+	cl.viewstate.angles[PITCH] += viewdelta.angles[PITCH] * m_pitch->value;
+	cl.viewstate.angles[YAW] += viewdelta.angles[YAW] * m_yaw->value;
+	cl.viewstate.angles[ROLL] += viewdelta.angles[ROLL];
 
 	if (freelook && !(in_strafe.state & 1)) {
-		cl.viewangles[PITCH] = bound (-70, cl.viewangles[PITCH], 80);
+		cl.viewstate.angles[PITCH]
+			= bound (-70, cl.viewstate.angles[PITCH], 80);
 	}
 }
 
@@ -564,7 +567,7 @@ CL_SendMove (usercmd_t *cmd)
 
 	MSG_WriteFloat (&buf, cl.mtime[0]);		// so server can get ping times
 
-	write_angles (&buf, cl.viewangles);
+	write_angles (&buf, cl.viewstate.angles);
 
 	MSG_WriteShort (&buf, cmd->forwardmove);
 	MSG_WriteShort (&buf, cmd->sidemove);

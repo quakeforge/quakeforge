@@ -86,7 +86,9 @@ SCR_CShift (void)
 	int         contents = CONTENTS_EMPTY;
 
 	if (cls.state == ca_active && cl.worldmodel) {
-		leaf = Mod_PointInLeaf (r_data->refdef->vieworg, cl.worldmodel);
+		//FIXME
+		leaf = Mod_PointInLeaf (&r_data->refdef->viewposition[0],
+								cl.worldmodel);
 		contents = leaf->contents;
 	}
 	V_SetContentsColor (contents);

@@ -369,16 +369,16 @@ R_DrawEntitiesOnList (void)
 	for (ent = r_ent_queue; ent; ent = ent->next) {
 		currententity = ent;
 
+		VectorCopy (Transform_GetWorldPosition (currententity->transform),
+					r_entorigin);
 		switch (currententity->renderer.model->type) {
 			case mod_sprite:
-				VectorCopy (currententity->origin, r_entorigin);
 				VectorSubtract (r_origin, r_entorigin, modelorg);
 				sw32_R_DrawSprite ();
 				break;
 
 			case mod_alias:
 			case mod_iqm:
-				VectorCopy (currententity->origin, r_entorigin);
 				VectorSubtract (r_origin, r_entorigin, modelorg);
 
 				minlight = max (currententity->renderer.min_light,
@@ -391,7 +391,7 @@ R_DrawEntitiesOnList (void)
 					|| sw32_R_AliasCheckBBox ()) {
 					// 128 instead of 255 due to clamping below
 					j = max (R_LightPoint (&r_worldentity.renderer.model->brush,
-										   currententity->origin),
+										   r_entorigin),
 							 minlight * 128);
 
 					lighting.ambientlight = j;
@@ -401,7 +401,7 @@ R_DrawEntitiesOnList (void)
 
 					for (lnum = 0; lnum < r_maxdlights; lnum++) {
 						if (r_dlights[lnum].die >= vr_data.realtime) {
-							VectorSubtract (currententity->origin,
+							VectorSubtract (r_entorigin,
 											r_dlights[lnum].origin, dist);
 							add = r_dlights[lnum].radius - VectorLength (dist);
 
@@ -450,7 +450,8 @@ R_DrawViewModel (void)
 	if (!currententity->renderer.model)
 		return;
 
-	VectorCopy (currententity->origin, r_entorigin);
+	VectorCopy (Transform_GetWorldPosition (currententity->transform),
+				r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);
 
 	VectorCopy (vup, viewlightvec);
@@ -460,7 +461,7 @@ R_DrawViewModel (void)
 					currententity->renderer.model->min_light);
 
 	j = max (R_LightPoint (&r_worldentity.renderer.model->brush,
-						   currententity->origin), minlight * 128);
+						   r_entorigin), minlight * 128);
 
 	r_viewlighting.ambientlight = j;
 	r_viewlighting.shadelight = j;
@@ -475,7 +476,7 @@ R_DrawViewModel (void)
 		if (dl->die < vr_data.realtime)
 			continue;
 
-		VectorSubtract (currententity->origin, dl->origin, dist);
+		VectorSubtract (r_entorigin, dl->origin, dist);
 		add = dl->radius - VectorLength (dist);
 		if (add > 0)
 			r_viewlighting.ambientlight += add;
@@ -505,7 +506,7 @@ R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
 	Transform_GetWorldMatrix (currententity->transform, mat);
 	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
 		for (i = 0; i < 4; i++) {
-			d = DotProduct (currententity->origin, sw32_view_clipplanes[i].normal);
+			d = DotProduct (mat[3], sw32_view_clipplanes[i].normal);
 			d -= sw32_view_clipplanes[i].dist;
 
 			if (d <= -clmodel->radius)
@@ -553,6 +554,7 @@ R_DrawBEntitiesOnList (void)
 	int         j, clipflags;
 	unsigned int k;
 	vec3_t      oldorigin;
+	vec3_t      origin;
 	model_t    *clmodel;
 	float       minmaxs[6];
 	entity_t   *ent;
@@ -566,6 +568,8 @@ R_DrawBEntitiesOnList (void)
 	for (ent = r_ent_queue; ent; ent = ent->next) {
 		currententity = ent;
 
+		VectorCopy (Transform_GetWorldPosition (currententity->transform),
+					origin);
 		switch (currententity->renderer.model->type) {
 			case mod_brush:
 				clmodel = currententity->renderer.model;
@@ -573,16 +577,15 @@ R_DrawBEntitiesOnList (void)
 				// see if the bounding box lets us trivially reject, also
 				// sets trivial accept status
 				for (j = 0; j < 3; j++) {
-					minmaxs[j] = currententity->origin[j] + clmodel->mins[j];
-					minmaxs[3 + j] = currententity->origin[j] +
-						clmodel->maxs[j];
+					minmaxs[j] = origin[j] + clmodel->mins[j];
+					minmaxs[3 + j] = origin[j] + clmodel->maxs[j];
 				}
 
 				clipflags = R_BmodelCheckBBox (clmodel, minmaxs);
 
 				if (clipflags != BMODEL_FULLY_CLIPPED) {
 					mod_brush_t *brush = &clmodel->brush;
-					VectorCopy (currententity->origin, r_entorigin);
+					VectorCopy (origin, r_entorigin);
 					VectorSubtract (r_origin, r_entorigin, modelorg);
 
 					// FIXME: is this needed?
@@ -601,8 +604,7 @@ R_DrawBEntitiesOnList (void)
 							if ((r_dlights[k].die < vr_data.realtime) ||
 								(!r_dlights[k].radius)) continue;
 
-							VectorSubtract (r_dlights[k].origin,
-											currententity->origin,
+							VectorSubtract (r_dlights[k].origin, origin,
 											lightorigin);
 							R_RecursiveMarkLights (brush, lightorigin,
 												   &r_dlights[k], k,

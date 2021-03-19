@@ -144,10 +144,9 @@ CL_RelinkEntities (void)
 	entity_state_t *new, *old;
 	renderer_t *renderer;
 	animation_t *animation;
-	float       bobjrotate, frac, f, d;
+	float       bobjrotate, frac, f;
 	int         i, j;
 	int         entvalid;
-	vec3_t      delta;
 	int         model_flags;
 
 	r_data->player_entity = &cl_entities[cl.viewentity];
@@ -156,19 +155,21 @@ CL_RelinkEntities (void)
 	frac = CL_LerpPoint ();
 
 	// interpolate player info
-	cl.velocity = cl.frameVelocity[1]
+	cl.viewstate.velocity = cl.frameVelocity[1]
 		+ frac * (cl.frameVelocity[0] - cl.frameVelocity[1]);
 
 	if (cls.demoplayback) {
 		// interpolate the angles
+		vec3_t      d;
+		VectorSubtract (cl.frameViewAngles[0], cl.frameViewAngles[1], d);
 		for (j = 0; j < 3; j++) {
-			d = cl.frameViewAngles[0][j] - cl.frameViewAngles[1][j];
-			if (d > 180)
-				d -= 360;
-			else if (d < -180)
-				d += 360;
-			cl.viewangles[j] = cl.frameViewAngles[1][j] + frac * d;
+			if (d[j] > 180) {
+				d[j] -= 360;
+			} else if (d[j] < -180) {
+				d[j] += 360;
+			}
 		}
+		VectorMultAdd (cl.frameViewAngles[1], frac, d, cl.viewstate.angles);
 	}
 
 	bobjrotate = anglemod (100 * cl.time);
@@ -184,8 +185,8 @@ CL_RelinkEntities (void)
 		// if the object wasn't included in the last packet, remove it
 		entvalid = cl_msgtime[i] == cl.mtime[0];
 		if (entvalid && !new->modelindex) {
-			VectorCopy (new->origin, ent->origin);
-			VectorCopy (new->angles, ent->angles);
+			CL_TransformEntity (ent, new->scale / 16.0, new->angles,
+								new->origin);
 			entvalid = 0;
 		}
 		if (!entvalid) {
@@ -220,7 +221,6 @@ CL_RelinkEntities (void)
 												cl.scores[i - 1].bottomcolor);
 			}
 		}
-		ent->scale = new->scale / 16.0;
 
 		VectorCopy (ent_colormod[new->colormod], renderer->colormod);
 		renderer->colormod[3] = ENTALPHA_DECODE (new->alpha);
@@ -234,32 +234,30 @@ CL_RelinkEntities (void)
 			// The entity was not updated in the last message so move to the
 			// final spot
 			animation->pose1 = animation->pose2 = -1;
-			VectorCopy (new->origin, ent->origin);
-			if (!(model_flags & EF_ROTATE))
-				CL_TransformEntity (ent, new->angles);
+			CL_TransformEntity (ent, new->scale / 16.0, new->angles,
+								new->origin);
 			if (i != cl.viewentity || chase_active->int_val) {
 				if (ent->visibility.efrag) {
 					r_funcs->R_RemoveEfrags (ent);
 				}
 				r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 			}
-			VectorCopy (ent->origin, ent->old_origin);
+			ent->old_origin = new->origin;
 		} else {
+			vec4f_t     delta = new->origin - old->origin;
 			f = frac;
-			VectorCopy (ent->origin, ent->old_origin);
-			VectorSubtract (new->origin, old->origin, delta);
+			ent->old_origin = Transform_GetWorldPosition (ent->transform);
 			// If the delta is large, assume a teleport and don't lerp
 			if (fabs (delta[0]) > 100 || fabs (delta[1] > 100)
 				|| fabs (delta[2]) > 100) {
 				// assume a teleportation, not a motion
-				VectorCopy (new->origin, ent->origin);
-				if (!(model_flags & EF_ROTATE))
-					CL_TransformEntity (ent, new->angles);
+				CL_TransformEntity (ent, new->scale / 16.0, new->angles,
+									new->origin);
 				animation->pose1 = animation->pose2 = -1;
 			} else {
-				vec3_t      angles, d;
 				// interpolate the origin and angles
-				VectorMultAdd (old->origin, f, delta, ent->origin);
+				vec3_t      angles, d;
+				vec4f_t     origin = old->origin + f * delta;
 				if (!(model_flags & EF_ROTATE)) {
 					VectorSubtract (new->angles, old->angles, d);
 					for (j = 0; j < 3; j++) {
@@ -269,12 +267,14 @@ CL_RelinkEntities (void)
 							d[j] += 360;
 					}
 					VectorMultAdd (old->angles, f, d, angles);
-					CL_TransformEntity (ent, angles);
 				}
+				CL_TransformEntity (ent, new->scale / 16.0, angles, origin);
 			}
 			if (i != cl.viewentity || chase_active->int_val) {
 				if (ent->visibility.efrag) {
-					if (!VectorCompare (ent->origin, ent->old_origin)) {
+					vec4f_t     org
+						= Transform_GetWorldPosition (ent->transform);
+					if (!VectorCompare (org, ent->old_origin)) {//FIXME
 						r_funcs->R_RemoveEfrags (ent);
 						r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 					}
@@ -289,17 +289,20 @@ CL_RelinkEntities (void)
 			vec3_t      angles;
 			VectorCopy (new->angles, angles);
 			angles[YAW] = bobjrotate;
-			CL_TransformEntity (ent, angles);
+			CL_TransformEntity (ent, new->scale / 16.0, angles, new->origin);
 		}
 		CL_EntityEffects (i, ent, new, cl.time);
-		vec4f_t org = { VectorExpand (ent->origin), 1}; //FIXME
+		vec4f_t org = Transform_GetWorldPosition (ent->transform);
 		CL_NewDlight (i, org, new->effects, new->glow_size,
 					  new->glow_color, cl.time);
-		if (VectorDistance_fast (old->origin, ent->origin) > (256 * 256))
-			VectorCopy (ent->origin, old->origin);
+		if (VectorDistance_fast (old->origin, org) > (256 * 256)) {
+			old->origin = org;
+		}
 		if (model_flags & ~EF_ROTATE)
 			CL_ModelEffects (ent, i, new->glow_color, cl.time);
 
 		cl_forcelink[i] = false;
 	}
+	cl.viewstate.origin
+		= Transform_GetWorldPosition (cl_entities[cl.viewentity].transform);
 }

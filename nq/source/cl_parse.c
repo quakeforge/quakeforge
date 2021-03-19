@@ -41,6 +41,7 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
+#include "QF/entity.h"
 #include "QF/idparse.h"
 #include "QF/input.h"
 #include "QF/msg.h"
@@ -661,17 +662,18 @@ CL_ParseClientdata (void)
 		cl.idealpitch = 0;
 
 	cl.frameVelocity[1] = cl.frameVelocity[0];
+	vec3_t      punchangle = { };
 	for (i = 0; i < 3; i++) {
-		if (bits & (SU_PUNCH1 << i))
-			cl.punchangle[i] = ((signed char) MSG_ReadByte (net_message));
-		else
-			cl.punchangle[i] = 0;
+		if (bits & (SU_PUNCH1 << i)) {
+			punchangle[i] = ((signed char) MSG_ReadByte (net_message));
+		}
 		if (bits & (SU_VELOCITY1 << i))
 			cl.frameVelocity[0][i] = ((signed char) MSG_ReadByte (net_message))
 				* 16;
 		else
 			cl.frameVelocity[0][i] = 0;
 	}
+	AngleQuat (punchangle, &cl.viewstate.punchangle[0]);//FIXME
 
 	//FIXME
 	//if (!VectorCompare (v_punchangles[0], cl.punchangle[0])) {
@@ -794,9 +796,9 @@ CL_ParseStatic (int version)
 	ent->renderer.skinnum = baseline.skinnum;
 	VectorCopy (ent_colormod[baseline.colormod], ent->renderer.colormod);
 	ent->renderer.colormod[3] = ENTALPHA_DECODE (baseline.alpha);
-	ent->scale = baseline.scale / 16.0;
-	VectorCopy (baseline.origin, ent->origin);
-	CL_TransformEntity (ent, baseline.angles);
+
+	CL_TransformEntity (ent, baseline.scale / 16.0, baseline.angles,
+						baseline.origin);
 
 	r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 }
@@ -839,7 +841,7 @@ CL_ParseServerMessage (void)
 	signon_t    so;
 
 	TEntContext_t tentCtx = {
-		{VectorExpand (cl_entities[cl.viewentity].origin), 1},
+		Transform_GetWorldPosition (cl_entities[cl.viewentity].transform),
 		cl.worldmodel, cl.viewentity
 	};
 
@@ -948,7 +950,7 @@ CL_ParseServerMessage (void)
 
 			case svc_setangle:
 			{
-				vec_t      *dest = cl.viewangles;
+				vec_t      *dest = cl.viewstate.angles;
 
 				MSG_ReadAngleV (net_message, dest);
 				break;

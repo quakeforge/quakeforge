@@ -74,6 +74,7 @@
 static void
 R_Envmap_f (void)
 {
+	/*FIXME update for simd
 	byte        buffer[256 * 256 * 4];
 
 	qfglDrawBuffer (GL_FRONT);
@@ -122,7 +123,7 @@ R_Envmap_f (void)
 	gl_envmap = false;
 	qfglDrawBuffer (GL_BACK);
 	qfglReadBuffer (GL_BACK);
-	gl_ctx->end_rendering ();
+	gl_ctx->end_rendering ();*/
 }
 
 void
@@ -250,6 +251,7 @@ gl_R_ViewChanged (float aspect)
 void
 gl_R_TimeRefresh_f (void)
 {
+/*FIXME update for simd
 	double      start, stop, time;
 	int         i;
 
@@ -265,4 +267,5 @@ gl_R_TimeRefresh_f (void)
 	stop = Sys_DoubleTime ();
 	time = stop - start;
 	Sys_Printf ("%g seconds (%g fps)\n", time, 128 / time);
+*/
 }
