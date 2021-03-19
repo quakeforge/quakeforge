@@ -178,7 +178,6 @@ typedef struct {
 	double      laststop;
 
 	qboolean    paused;			// Sent over by server
-	int         onground;
 	float       viewheight;
 	float       crouch;			// Local amount for smoothing stepups
 	qboolean    inwater;

@@ -124,7 +124,7 @@ V_CalcBob (void)
 	if (cl.spectator)
 		return 0;
 
-	if (cl.onground == -1)
+	if (cl.viewstate.onground == -1)
 		return bob;						// just use old value
 
 	bobtime += cl.viewstate.frametime;
@@ -666,7 +666,7 @@ V_CalcRefdef (void)
 										  r_data->refdef->viewrotation);
 
 	// smooth out stair step ups
-	if ((cl.onground != -1) && (origin[2] - oldz > 0)) {
+	if ((cl.viewstate.onground != -1) && (origin[2] - oldz > 0)) {
 		float       steptime;
 
 		steptime = cl.viewstate.frametime;

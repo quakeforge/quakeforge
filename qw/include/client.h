@@ -232,7 +232,6 @@ typedef struct {
 	double      laststop;
 
 	qboolean    paused;			// Sent over by server
-	int         onground;		// -1 when in air
 	float       viewheight;
 	float       crouch;			// local amount for smoothing stepups
 

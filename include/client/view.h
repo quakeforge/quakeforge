@@ -43,7 +43,7 @@ typedef struct viewstate_s {
 	vec4f_t     origin;
 	vec3_t      angles;
 	int         weaponframe;
-	int         onground;
+	int         onground;		// -1 when in air
 	uint32_t    flags;
 	float       frametime;
 	vec4f_t     punchangle;
