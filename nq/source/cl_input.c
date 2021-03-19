@@ -477,8 +477,9 @@ CL_AdjustAngles (void)
 void
 CL_BaseMove (usercmd_t *cmd)
 {
-	if (cls.state != ca_active)
+	if (cls.state != ca_active) {
 		return;
+	}
 
 	CL_AdjustAngles ();
 

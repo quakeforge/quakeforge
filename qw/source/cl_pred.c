@@ -132,7 +132,7 @@ CL_PredictMove (void)
 		UPDATE_BACKUP - 1)
 		return;
 
-	VectorCopy (cl.viewangles, cl.viewstate.angles);
+	//VectorCopy (cl.viewstate.angles, cl.viewstate.angles);
 	cl.viewstate.angles[ROLL] = 0;						// FIXME @@@
 
 	// this is the last frame received from the server

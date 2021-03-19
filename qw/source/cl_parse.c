@@ -1273,7 +1273,7 @@ CL_ParseMuzzleFlash (void)
 	pl = &cl.frames[parsecountmod].playerstate[i - 1];
 
 	if (i - 1 == cl.playernum)
-		AngleVectors (cl.viewangles, f, r, u);
+		AngleVectors (cl.viewstate.angles, f, r, u);
 	else
 		AngleVectors (pl->viewangles, f, r, u);
 
@@ -1415,7 +1415,7 @@ CL_ParseServerMessage (void)
 
 			case svc_setangle:
 			{
-				vec_t      *dest = cl.viewangles;
+				vec_t      *dest = cl.viewstate.angles;
 				vec3_t      dummy;
 
 				if (cls.demoplayback2) {

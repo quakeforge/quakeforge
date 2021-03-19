@@ -425,8 +425,8 @@ CL_LinkPlayers (void)
 		// angles
 		if (j == cl.playernum)
 		{
-			ang[PITCH] = -cl.viewangles[PITCH] / 3.0;
-			ang[YAW] = cl.viewangles[YAW];
+			ang[PITCH] = -cl.viewstate.angles[PITCH] / 3.0;
+			ang[YAW] = cl.viewstate.angles[YAW];
 		} else {
 			ang[PITCH] = -state->viewangles[PITCH] / 3.0;
 			ang[YAW] = state->viewangles[YAW];
