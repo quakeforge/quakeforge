@@ -102,6 +102,7 @@ vulkan_R_Init (void)
 	Vulkan_Particles_Init (vulkan_ctx);
 	Vulkan_Lighting_Init (vulkan_ctx);
 	Vulkan_Compose_Init (vulkan_ctx);
+	Skin_Init ();
 
 	Sys_Printf ("R_Init %p %d", vulkan_ctx->swapchain->swapchain,
 				vulkan_ctx->swapchain->numImages);
