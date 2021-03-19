@@ -243,7 +243,7 @@ R_DrawSprite (void)
 			VectorSet (0, 0, 1, svup);
 			// CrossProduct (svup, -r_origin, svright)
 			VectorSet (tvec[1], -tvec[0], 0, svright);
-			svright /= vsqrtf (dotf (svright, svright));
+			svright = normalf (svright);
 			// CrossProduct (svright, svup, svpn);
 			VectorSet (-svright[1], svright[0], 0, svpn);
 			break;
@@ -268,7 +268,7 @@ R_DrawSprite (void)
 			VectorSet (0, 0, 1, svup);
 			// CrossProduct (svup, -r_origin, svright)
 			VectorSet (vpn[1], -vpn[0], 0, svright);
-			svright /= vsqrtf (dotf (svright, svright));
+			svright = normalf (svright);
 			// CrossProduct (svright, svup, svpn);
 			VectorSet (-svright[1], svright[0], 0, svpn);
 			break;
