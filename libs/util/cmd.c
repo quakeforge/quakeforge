@@ -118,6 +118,8 @@ Cmd_Command (cbuf_args_t *args)
 	if (cmd) {
 		if (cmd->function) {
 			cmd->function ();
+		} else if (cmd->datafunc) {
+			cmd->datafunc (cmd->data);
 		}
 		return 0;
 	}
@@ -133,10 +135,9 @@ Cmd_Command (cbuf_args_t *args)
 	return 0;
 }
 
-/* Registers a command and handler function */
-VISIBLE int
-Cmd_AddCommand (const char *cmd_name, xcommand_t function,
-				const char *description)
+static int
+add_command (const char *cmd_name, xcommand_t func, xdatacmd_t datafunc,
+			 void *data, const char *description)
 {
 	cmd_function_t *cmd;
 	cmd_function_t **c;
@@ -152,7 +153,9 @@ Cmd_AddCommand (const char *cmd_name, xcommand_t function,
 	cmd = calloc (1, sizeof (cmd_function_t));
 	SYS_CHECKMEM (cmd);
 	cmd->name = cmd_name;
-	cmd->function = function;
+	cmd->function = func;
+	cmd->datafunc = datafunc;
+	cmd->data = data;
 	cmd->description = description;
 	Hash_Add (cmd_hash, cmd);
 	for (c = &cmd_functions; *c; c = &(*c)->next)
@@ -161,6 +164,22 @@ Cmd_AddCommand (const char *cmd_name, xcommand_t function,
 	cmd->next = *c;
 	*c = cmd;
 	return 1;
+}
+
+/* Registers a command and handler function */
+VISIBLE int
+Cmd_AddCommand (const char *cmd_name, xcommand_t function,
+				const char *description)
+{
+	return add_command (cmd_name, function, 0, 0, description);
+}
+
+/* Registers a command and handler function with data */
+VISIBLE int
+Cmd_AddDataCommand (const char *cmd_name, xdatacmd_t function,
+					void *data, const char *description)
+{
+	return add_command (cmd_name, 0, function, data, description);
 }
 
 /* Unregisters a command */
