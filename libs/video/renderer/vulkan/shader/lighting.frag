@@ -33,8 +33,8 @@ calc_light (LightData light, vec3 position, vec3 normal)
 	float       r = light.radius;
 
 	float       intensity = light.intensity * step (d, r);
-	intensity *= step (spotdot, light.cone) * clamp (lightdot, 0, 1);
-	return light.color * intensity * (r - d) / 255.0;
+	intensity *= smoothstep (spotdot, 1 - (1 - spotdot) * 0.995, light.cone) * clamp (lightdot, 0, 1);
+	return light.color * intensity * (r - d);
 }
 
 void
@@ -51,5 +51,5 @@ main (void)
 			light += calc_light (lights[i], p, n);
 		}
 	}
-	frag_color = vec4 (c * light, 1);
+	frag_color = vec4 (c * light / 255.0, 1);
 }

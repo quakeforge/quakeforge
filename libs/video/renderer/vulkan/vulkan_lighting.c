@@ -131,7 +131,7 @@ update_lights (vulkan_ctx_t *ctx)
 		VectorCopy (lights[i]->color, light_data->lights[i].color);
 		VectorCopy (lights[i]->origin, light_data->lights[i].position);
 		light_data->lights[i].radius = lights[i]->radius;
-		light_data->lights[i].intensity = 1;
+		light_data->lights[i].intensity = 16;
 		VectorZero (light_data->lights[i].direction);
 		light_data->lights[i].cone = 1;
 	}
@@ -370,19 +370,23 @@ parse_light (qfv_light_t *light, const plitem_t *entity,
 {
 	const char *str;
 
-	Sys_Printf ("{\n");
+	/*Sys_Printf ("{\n");
 	for (int i = PL_D_NumKeys (entity); i-- > 0; ) {
 		const char *field = PL_KeyAtIndex (entity, i);
 		const char *value = PL_String (PL_ObjectForKey (entity, field));
 		Sys_Printf ("\t%s = %s\n", field, value);
 	}
-	Sys_Printf ("}\n");
+	Sys_Printf ("}\n");*/
+
+	light->cone = 1;
+	light->intensity = 1;
+	light->radius = 300;
+	VectorSet (1, 1, 1, light->color);
 
 	if ((str = PL_String (PL_ObjectForKey (entity, "origin")))) {
 		sscanf (str, "%f %f %f", VectorExpandAddr (light->position));
 	}
 
-	light->cone = 1;
 	if ((str = PL_String (PL_ObjectForKey (entity, "target")))) {
 		vec3_t      position = {};
 		plitem_t   *target = PL_ObjectForKey (targets, str);
@@ -401,13 +405,11 @@ parse_light (qfv_light_t *light, const plitem_t *entity,
 		light->cone = -cos (angle * M_PI / 360); // half angle
 	}
 
-	light->intensity = 1;
 	if ((str = PL_String (PL_ObjectForKey (entity, "light_lev")))
 		|| (str = PL_String (PL_ObjectForKey (entity, "_light")))) {
 		light->radius = atof (str);
 	}
 
-	VectorSet (1, 1, 1, light->color);
 	if ((str = PL_String (PL_ObjectForKey (entity, "color")))
 		|| (str = PL_String (PL_ObjectForKey (entity, "_color")))) {
 		sscanf (str, "%f %f %f", VectorExpandAddr (light->color));

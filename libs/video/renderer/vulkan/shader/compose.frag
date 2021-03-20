@@ -15,6 +15,6 @@ main (void)
 	o = subpassLoad (opaque).rgb;
 	t = subpassLoad (translucent);
 	c = mix (o, t.rgb, t.a);
-	c = pow (c, vec3(0.67));//FIXME make gamma correction configurable
+	c = pow (c, vec3(0.83));//FIXME make gamma correction configurable
 	frag_color = vec4 (c, 1);
 }
