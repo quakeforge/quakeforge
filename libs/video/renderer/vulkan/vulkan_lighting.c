@@ -408,6 +408,10 @@ parse_light (qfv_light_t *light, const plitem_t *entity,
 	}
 
 	VectorSet (1, 1, 1, light->color);
+	if ((str = PL_String (PL_ObjectForKey (entity, "color")))
+		|| (str = PL_String (PL_ObjectForKey (entity, "_color")))) {
+		sscanf (str, "%f %f %f", VectorExpandAddr (light->color));
+	}
 }
 
 void
