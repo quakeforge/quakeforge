@@ -202,7 +202,7 @@ Vulkan_ClearElements (vulkan_ctx_t *ctx)
 	release_elechains (bctx);
 	release_elementss (bctx);
 }
-
+/*
 static void
 update_lightmap (mod_brush_t *brush, msurface_t *surf, vulkan_ctx_t *ctx)
 {
@@ -218,7 +218,7 @@ dynamic:
 			Vulkan_BuildLightMap (brush, surf, ctx);
 	}
 }
-
+*/
 static inline void
 chain_surface (mod_brush_t *brush, msurface_t *surf, vec_t *transform,
 			   float *color, vulkan_ctx_t *ctx)
@@ -241,7 +241,7 @@ chain_surface (mod_brush_t *brush, msurface_t *surf, vec_t *transform,
 		tex = tx->render;
 		CHAIN_SURF_F2B (surf, tex->tex_chain);
 
-		update_lightmap (brush, surf, ctx);
+		//update_lightmap (brush, surf, ctx);
 	}
 	if (!(is = surf->instsurf))
 		is = surf->tinst;
@@ -1149,7 +1149,7 @@ Vulkan_DrawWorld (vulkan_ctx_t *ctx)
 		}
 	}
 
-	Vulkan_FlushLightmaps (ctx);
+	//Vulkan_FlushLightmaps (ctx);
 	bsp_begin (ctx);
 
 	push_transform (identity, bctx->layout, dfunc,

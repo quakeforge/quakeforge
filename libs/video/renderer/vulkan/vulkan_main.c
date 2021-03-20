@@ -214,7 +214,7 @@ Vulkan_NewMap (model_t *worldmodel, struct model_s **models, int num_models,
 	R_FreeAllEntities ();
 	Vulkan_ClearParticles (ctx);
 	Vulkan_RegisterTextures (models, num_models, ctx);
-	Vulkan_BuildLightmaps (models, num_models, ctx);
+	//Vulkan_BuildLightmaps (models, num_models, ctx);
 	Vulkan_BuildDisplayLists (models, num_models, ctx);
 	Vulkan_LoadLights (worldmodel, worldmodel->brush.entities, ctx);
 }
