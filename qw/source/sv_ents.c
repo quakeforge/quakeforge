@@ -54,7 +54,7 @@
 	when the bob crosses a waterline.
 */
 
-byte		fatpvs[MAX_MAP_LEAFS / 8];
+byte		fatpvs[MAP_PVS_BYTES];
 int			fatbytes;
 
 

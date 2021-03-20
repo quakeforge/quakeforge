@@ -55,7 +55,7 @@
 #include "compat.h"
 #include "mod_internal.h"
 
-static byte mod_novis[MAX_MAP_LEAFS / 8];
+static byte mod_novis[MAP_PVS_BYTES];
 
 VISIBLE cvar_t		*gl_sky_divide; //FIXME visibility?
 VISIBLE int   mod_lightmap_bytes = 1;	//FIXME should this be visible?
@@ -85,22 +85,21 @@ Mod_PointInLeaf (const vec3_t p, model_t *model)
 	return NULL;						// never reached
 }
 
-static inline byte *
-Mod_DecompressVis (byte * in, mod_brush_t *brush)
+static inline void
+Mod_DecompressVis (const byte *in, const mod_brush_t *brush, byte defvis,
+				   byte *out)
 {
-	static byte decompressed[MAX_MAP_LEAFS / 8];
-	byte       *out;
+	byte       *start = out;
 	int			row, c;
 
 	row = (brush->numleafs + 7) >> 3;
-	out = decompressed;
 
 	if (!in) {							// no vis info, so make all visible
 		while (row) {
-			*out++ = 0xff;
+			*out++ = defvis;
 			row--;
 		}
-		return decompressed;
+		return;
 	}
 
 	do {
@@ -115,21 +114,32 @@ Mod_DecompressVis (byte * in, mod_brush_t *brush)
 			*out++ = 0;
 			c--;
 		}
-	} while (out - decompressed < row);
-
-	return decompressed;
+	} while (out - start < row);
 }
 
 VISIBLE byte *
-Mod_LeafPVS (mleaf_t *leaf, model_t *model)
+Mod_LeafPVS (const mleaf_t *leaf, const model_t *model)
 {
+	static byte decompressed[MAP_PVS_BYTES];
 	if (leaf == model->brush.leafs) {
 		if (!mod_novis[0]) {
 			memset (mod_novis, 0xff, sizeof (mod_novis));
 		}
 		return mod_novis;
 	}
-	return Mod_DecompressVis (leaf->compressed_vis, &model->brush);
+	Mod_DecompressVis (leaf->compressed_vis, &model->brush, 0xff, decompressed);
+	return decompressed;
+}
+
+VISIBLE void
+Mod_LeafPVS_r (const mleaf_t *leaf, const model_t *model, byte defvis,
+			   byte *out)
+{
+	if (leaf == model->brush.leafs) {
+		memset (out, defvis, sizeof (mod_novis));
+		return;
+	}
+	return Mod_DecompressVis (leaf->compressed_vis, &model->brush, defvis, out);
 }
 
 // BRUSHMODEL LOADING =========================================================

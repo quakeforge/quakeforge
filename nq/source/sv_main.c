@@ -389,7 +389,7 @@ SV_ClearDatagram (void)
 */
 
 int         fatbytes;
-byte        fatpvs[MAX_MAP_LEAFS / 8];
+byte        fatpvs[MAP_PVS_BYTES];
 
 static void
 SV_AddToFatPVS (vec3_t org, mnode_t *node)

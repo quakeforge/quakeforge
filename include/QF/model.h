@@ -432,7 +432,12 @@ model_t *Mod_ForName (const char *name, qboolean crash);
 void Mod_TouchModel (const char *name);
 // brush specific
 mleaf_t *Mod_PointInLeaf (const vec3_t p, model_t *model) __attribute__((pure));
-byte *Mod_LeafPVS (mleaf_t *leaf, model_t *model);
+byte *Mod_LeafPVS (const mleaf_t *leaf, const model_t *model);
+
+// NOTE: the buffer pointed to by out must be at least MAP_PVS_BYTES in size
+void Mod_LeafPVS_r (const mleaf_t *leaf, const model_t *model, byte defvis,
+					byte *out);
+
 void Mod_Print (void);
 
 extern struct cvar_s *gl_mesh_cache;

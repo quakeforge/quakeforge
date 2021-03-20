@@ -460,7 +460,7 @@ PF_checkpos (progs_t *pr)
 {
 }
 
-byte        checkpvs[MAX_MAP_LEAFS / 8];
+byte        checkpvs[MAP_PVS_BYTES];
 
 static int
 PF_newcheckclient (progs_t *pr, int check)
