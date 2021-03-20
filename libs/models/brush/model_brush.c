@@ -86,8 +86,8 @@ Mod_PointInLeaf (const vec3_t p, model_t *model)
 }
 
 static inline void
-Mod_DecompressVis (const byte *in, const mod_brush_t *brush, byte defvis,
-				   byte *out)
+Mod_DecompressVis_set (const byte *in, const mod_brush_t *brush, byte defvis,
+					   byte *out)
 {
 	byte       *start = out;
 	int			row, c;
@@ -117,6 +117,35 @@ Mod_DecompressVis (const byte *in, const mod_brush_t *brush, byte defvis,
 	} while (out - start < row);
 }
 
+static inline void
+Mod_DecompressVis_mix (const byte *in, const mod_brush_t *brush, byte defvis,
+					   byte *out)
+{
+	byte       *start = out;
+	int			row, c;
+
+	row = (brush->numleafs + 7) >> 3;
+
+	if (!in) {							// no vis info, so make all visible
+		while (row) {
+			*out++ |= defvis;
+			row--;
+		}
+		return;
+	}
+
+	do {
+		if (*in) {
+			*out++ |= *in++;
+			continue;
+		}
+
+		c = in[1];
+		in += 2;
+		out += c;
+	} while (out - start < row);
+}
+
 VISIBLE byte *
 Mod_LeafPVS (const mleaf_t *leaf, const model_t *model)
 {
@@ -127,19 +156,35 @@ Mod_LeafPVS (const mleaf_t *leaf, const model_t *model)
 		}
 		return mod_novis;
 	}
-	Mod_DecompressVis (leaf->compressed_vis, &model->brush, 0xff, decompressed);
+	Mod_DecompressVis_set (leaf->compressed_vis, &model->brush, 0xff,
+						   decompressed);
 	return decompressed;
 }
 
 VISIBLE void
-Mod_LeafPVS_r (const mleaf_t *leaf, const model_t *model, byte defvis,
-			   byte *out)
+Mod_LeafPVS_set (const mleaf_t *leaf, const model_t *model, byte defvis,
+				 byte *out)
 {
 	if (leaf == model->brush.leafs) {
 		memset (out, defvis, sizeof (mod_novis));
 		return;
 	}
-	return Mod_DecompressVis (leaf->compressed_vis, &model->brush, defvis, out);
+	return Mod_DecompressVis_set (leaf->compressed_vis, &model->brush, defvis,
+								  out);
+}
+
+VISIBLE void
+Mod_LeafPVS_mix (const mleaf_t *leaf, const model_t *model, byte defvis,
+				 byte *out)
+{
+	if (leaf == model->brush.leafs) {
+		for (int i = MAP_PVS_BYTES; i-- > 0; ) {
+			*out++ |= defvis;
+		}
+		return;
+	}
+	return Mod_DecompressVis_mix (leaf->compressed_vis, &model->brush, defvis,
+								  out);
 }
 
 // BRUSHMODEL LOADING =========================================================

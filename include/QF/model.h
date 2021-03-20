@@ -435,8 +435,10 @@ mleaf_t *Mod_PointInLeaf (const vec3_t p, model_t *model) __attribute__((pure));
 byte *Mod_LeafPVS (const mleaf_t *leaf, const model_t *model);
 
 // NOTE: the buffer pointed to by out must be at least MAP_PVS_BYTES in size
-void Mod_LeafPVS_r (const mleaf_t *leaf, const model_t *model, byte defvis,
-					byte *out);
+void Mod_LeafPVS_set (const mleaf_t *leaf, const model_t *model, byte defvis,
+					  byte *out);
+void Mod_LeafPVS_mix (const mleaf_t *leaf, const model_t *model, byte defvis,
+					  byte *out);
 
 void Mod_Print (void);
 
