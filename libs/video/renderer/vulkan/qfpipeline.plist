@@ -856,6 +856,12 @@
 					stage = fragment;
 					name = main;
 					module = $builtin/lighting.frag;
+					specializationInfo = {
+						mapEntries = (
+							{ size = 4; offset = 0; constantID = 0; },
+						);
+						data = <00000100>;
+					};
 				},
 			);
 			vertexInput = {

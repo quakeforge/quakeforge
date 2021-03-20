@@ -26,15 +26,15 @@ vec3
 calc_light (LightData light, vec3 position, vec3 normal)
 {
 	vec3        dist = light.position - position;
-	vec3        incoming = normalize (dist);
-	float       spotdot = -dot (incoming, light.direction);
-	float       lightdot = dot (incoming, normal);
 	float       d = sqrt (dot (dist, dist));
+	vec3        incoming = dist / d;
+	float       spotdot = dot (incoming, light.direction);
+	float       lightdot = dot (incoming, normal);
 	float       r = light.radius;
 
 	float       intensity = light.intensity * step (d, r);
 	intensity *= step (spotdot, light.cone) * clamp (lightdot, 0, 1);
-	return light.color * intensity * (r - d);
+	return light.color * intensity * (r - d) / 255.0;
 }
 
 void
@@ -44,7 +44,7 @@ main (void)
 	vec3        c = subpassLoad (color).rgb;
 	vec3        n = subpassLoad (normal).rgb;
 	vec3        p = subpassLoad (position).rgb;
-	vec3        light = vec3 (0.8);
+	vec3        light = vec3 (0);
 
 	if (MaxLights > 0) {
 		for (int i = 0; i < lightCount; i++) {

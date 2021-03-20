@@ -62,12 +62,59 @@
 #include "vid_vulkan.h"
 
 static void
+find_visible_lights (vulkan_ctx_t *ctx)
+{
+	//qfv_device_t *device = ctx->device;
+	//qfv_devfuncs_t *dfunc = device->funcs;
+	lightingctx_t *lctx = ctx->lighting_context;
+	lightingframe_t *lframe = &lctx->frames.a[ctx->curFrame];
+
+	mleaf_t    *leaf = r_viewleaf;
+	model_t    *model = r_worldentity.renderer.model;
+
+	if (!leaf || !model) {
+		return;
+	}
+
+	if (leaf != lframe->leaf) {
+		double start = Sys_DoubleTime ();
+		byte        pvs[MAP_PVS_BYTES];
+
+		Mod_LeafPVS_set (leaf, model, 0, pvs);
+		memcpy (lframe->pvs, pvs, sizeof (pvs));
+		for (int i = 0; i < model->brush.numleafs; i++) {
+			if (pvs[i / 8] & (1 << (i % 8))) {
+				Mod_LeafPVS_mix (model->brush.leafs + i, model, 0, lframe->pvs);
+			}
+		}
+		lframe->leaf = leaf;
+
+		double end = Sys_DoubleTime ();
+		Sys_Printf ("find_visible_lights: %.5gus\n", (end - start) * 1e6);
+
+		int visible = 0;
+		memset (lframe->lightvis.a, 0, lframe->lightvis.size * sizeof (byte));
+		for (size_t i = 0; i < lctx->lightleafs.size; i++) {
+			int         l = lctx->lightleafs.a[i];
+			if (lframe->pvs[l / 8] & (1 << (l % 8))) {
+				lframe->lightvis.a[i] = 1;
+				visible++;
+			}
+		}
+		Sys_Printf ("find_visible_lights: %d / %zd visible\n", visible,
+					 lframe->lightvis.size);
+	}
+}
+
+static void
 update_lights (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	lightingctx_t *lctx = ctx->lighting_context;
 	lightingframe_t *lframe = &lctx->frames.a[ctx->curFrame];
+
+	find_visible_lights (ctx);
 
 	dlight_t   *lights[NUM_LIGHTS];
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
@@ -87,6 +134,12 @@ update_lights (vulkan_ctx_t *ctx)
 		light_data->lights[i].intensity = 1;
 		VectorZero (light_data->lights[i].direction);
 		light_data->lights[i].cone = 1;
+	}
+	for (size_t i = 0;
+		 i < lframe->lightvis.size && light_data->lightCount < NUM_LIGHTS; i++) {
+		if (lframe->lightvis.a[i]) {
+			light_data->lights[light_data->lightCount++] = lctx->lights.a[i];
+		}
 	}
 
 	VkBufferMemoryBarrier wr_barriers[] = {
@@ -208,6 +261,7 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	ctx->lighting_context = lctx;
 
 	DARRAY_INIT (&lctx->lights, 16);
+	DARRAY_INIT (&lctx->lightleafs, 16);
 
 	size_t      frames = ctx->frames.size;
 	DARRAY_INIT (&lctx->frames, frames);
@@ -258,6 +312,8 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type lframe = &lctx->frames.a[i];
 
+		DARRAY_INIT (&lframe->lightvis, 16);
+
 		QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, cmdSet);
 		lframe->cmd = cmdSet->a[0];
 
@@ -298,10 +354,12 @@ Vulkan_Lighting_Shutdown (vulkan_ctx_t *ctx)
 	for (size_t i = 0; i < lctx->frames.size; i++) {
 		lightingframe_t *lframe = &lctx->frames.a[i];
 		dfunc->vkDestroyBuffer (device->dev, lframe->light_buffer, 0);
+		DARRAY_CLEAR (&lframe->lightvis);
 	}
 	dfunc->vkFreeMemory (device->dev, lctx->light_memory, 0);
 	dfunc->vkDestroyPipeline (device->dev, lctx->pipeline, 0);
 	DARRAY_CLEAR (&lctx->lights);
+	DARRAY_CLEAR (&lctx->lightleafs);
 	free (lctx->frames.a);
 	free (lctx);
 }
@@ -311,6 +369,14 @@ parse_light (qfv_light_t *light, const plitem_t *entity,
 			 const plitem_t *targets)
 {
 	const char *str;
+
+	Sys_Printf ("{\n");
+	for (int i = PL_D_NumKeys (entity); i-- > 0; ) {
+		const char *field = PL_KeyAtIndex (entity, i);
+		const char *value = PL_String (PL_ObjectForKey (entity, field));
+		Sys_Printf ("\t%s = %s\n", field, value);
+	}
+	Sys_Printf ("}\n");
 
 	if ((str = PL_String (PL_ObjectForKey (entity, "origin")))) {
 		sscanf (str, "%f %f %f", VectorExpandAddr (light->position));
@@ -336,7 +402,7 @@ parse_light (qfv_light_t *light, const plitem_t *entity,
 	}
 
 	light->intensity = 1;
-	if ((str = PL_String (PL_ObjectForKey (entity, "light")))
+	if ((str = PL_String (PL_ObjectForKey (entity, "light_lev")))
 		|| (str = PL_String (PL_ObjectForKey (entity, "_light")))) {
 		light->radius = atof (str);
 	}
@@ -345,12 +411,13 @@ parse_light (qfv_light_t *light, const plitem_t *entity,
 }
 
 void
-Vulkan_LoadLights (const char *entity_data, vulkan_ctx_t *ctx)
+Vulkan_LoadLights (model_t *model, const char *entity_data, vulkan_ctx_t *ctx)
 {
 	lightingctx_t *lctx = ctx->lighting_context;
 	plitem_t   *entities = 0;
 
 	lctx->lights.size = 0;
+	lctx->lightleafs.size = 0;
 
 	script_t   *script = Script_New ();
 	Script_Start (script, "ent data", entity_data);
@@ -389,12 +456,21 @@ Vulkan_LoadLights (const char *entity_data, vulkan_ctx_t *ctx)
 				qfv_light_t light = {};
 
 				parse_light (&light, entity, targets);
-				printf ("[%g, %g, %g] %g, [%g %g %g] %g, [%g %g %g] %g\n",
+				DARRAY_APPEND (&lctx->lights, light);
+				mleaf_t    *leaf = Mod_PointInLeaf (&light.position[0],
+													model);
+				DARRAY_APPEND (&lctx->lightleafs, leaf - model->brush.leafs);
+				printf ("[%g, %g, %g] %g, [%g %g %g] %g, [%g %g %g] %g, %zd\n",
 						VectorExpand (light.color), light.intensity,
 						VectorExpand (light.position), light.radius,
-						VectorExpand (light.direction), light.cone);
-				DARRAY_APPEND (&lctx->lights, light);
+						VectorExpand (light.direction), light.cone,
+						leaf - model->brush.leafs);
 			}
+		}
+		printf ("%zd frames\n", ctx->frames.size);
+		for (size_t i = 0; i < ctx->frames.size; i++) {
+			lightingframe_t *lframe = &lctx->frames.a[i];
+			DARRAY_RESIZE (&lframe->lightvis, lctx->lights.size);
 		}
 		// targets does not own the objects, so need to remove them before
 		// freeing targets

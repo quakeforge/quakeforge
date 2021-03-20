@@ -46,8 +46,10 @@ typedef struct qfv_light_s {
 } qfv_light_t;
 
 typedef struct qfv_lightset_s DARRAY_TYPE (qfv_light_t) qfv_lightset_t;
+typedef struct qfv_lightleafset_s DARRAY_TYPE (int) qfv_lightleafset_t;
+typedef struct qfv_lightvisset_s DARRAY_TYPE (byte) qfv_lightvisset_t;
 
-#define NUM_LIGHTS 128
+#define NUM_LIGHTS 256
 
 typedef struct qfv_light_buffer_s {
 	int         lightCount;
@@ -64,6 +66,11 @@ typedef struct lightingframe_s {
 	VkDescriptorImageInfo imageInfo[LIGHTING_IMAGE_INFOS];
 	VkWriteDescriptorSet descriptors[LIGHTING_BUFFER_INFOS
 									 + LIGHTING_IMAGE_INFOS];
+	// A fat PVS of leafs visible from visible leafs so hidden lights can
+	// illuminate the leafs visible to the player
+	byte        pvs[MAP_PVS_BYTES];
+	struct mleaf_s *leaf;	// the last leaf used to generate the pvs
+	qfv_lightleafset_t lightvis;
 } lightingframe_t;
 
 typedef struct lightingframeset_s
@@ -75,6 +82,7 @@ typedef struct lightingctx_s {
 	VkPipelineLayout layout;
 	VkDeviceMemory light_memory;
 	qfv_lightset_t lights;
+	qfv_lightleafset_t lightleafs;
 } lightingctx_t;
 
 struct vulkan_ctx_s;
@@ -82,6 +90,7 @@ struct vulkan_ctx_s;
 void Vulkan_Lighting_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Lighting_Shutdown (struct vulkan_ctx_s *ctx);
 void Vulkan_Lighting_Draw (struct vulkan_ctx_s *ctx);
-void Vulkan_LoadLights (const char *entity_data, struct vulkan_ctx_s *ctx);
+void Vulkan_LoadLights (model_t *model, const char *entity_data,
+						struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_qf_lighting_h
