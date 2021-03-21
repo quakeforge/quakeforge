@@ -274,7 +274,9 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 										  mod->name);
 		}
 		for (i = 0; i < m->nummiptex; i++) {
-			tx = brush->textures[i];
+			if (!(tx = brush->textures[i])) {
+				continue;
+			}
 			tx->render = render_data;
 			render_data += render_size;
 			mod_funcs->Mod_ProcessTexture (mod, tx);
