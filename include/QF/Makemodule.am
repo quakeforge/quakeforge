@@ -36,6 +36,7 @@ include_qf = \
 	include/QF/pakfile.h \
 	include/QF/pcx.h \
 	include/QF/png.h \
+	include/QF/plist.h \
 	include/QF/plugin.h \
 	include/QF/pr_comp.h \
 	include/QF/pr_debug.h \
@@ -45,7 +46,6 @@ include_qf = \
 	include/QF/qargs.h \
 	include/QF/qdefs.h \
 	include/QF/qendian.h \
-	include/QF/qfplist.h \
 	include/QF/qtypes.h \
 	include/QF/quakefs.h \
 	include/QF/quakeio.h \
