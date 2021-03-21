@@ -65,15 +65,15 @@ CL_ClearEnts (void)
 {
 	size_t      i;
 
+	for (i = 0; i < MAX_EDICTS; i++) {
+		CL_Init_Entity (cl_entities + i);
+	}
+
 	// clear other arrays
-	memset (cl_entities, 0, sizeof (cl_entities));
 	i = nq_entstates.num_frames * nq_entstates.num_entities;
 	memset (nq_entstates.frame[0], 0, i * sizeof (entity_state_t));
 	memset (cl_msgtime, 0, sizeof (cl_msgtime));
 	memset (cl_forcelink, 0, sizeof (cl_forcelink));
-
-	for (i = 0; i < MAX_EDICTS; i++)
-		CL_Init_Entity (cl_entities + i);
 }
 
 /*

@@ -40,6 +40,7 @@
 
 #include "QF/entity.h"
 #include "QF/msg.h"
+#include "QF/progs.h"	// for PR_RESMAP
 #include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/sound.h"
@@ -53,9 +54,6 @@ typedef struct tent_s {
 	struct tent_s *next;
 	entity_t    ent;
 } tent_t;
-
-#define TEMP_BATCH 64
-static tent_t *temp_entities = 0;
 
 typedef struct {
 	int         entity;
@@ -83,9 +81,11 @@ typedef struct tent_obj_s {
 	} to;
 } tent_obj_t;
 
-static tent_obj_t *tent_objects;
+static PR_RESMAP (tent_t) temp_entities;
+static PR_RESMAP (tent_obj_t) tent_objects;
 static tent_obj_t *cl_beams;
 static tent_obj_t *cl_explosions;
+
 static tent_t *cl_projectiles;
 
 static sfx_t *cl_sfx_wizhit;
@@ -158,20 +158,8 @@ CL_Init_Entity (entity_t *ent)
 static tent_t *
 new_temp_entity (void)
 {
-	tent_t     *tent;
-	if (!temp_entities) {
-		int         i;
-
-		temp_entities = malloc (TEMP_BATCH * sizeof (tent_t));
-		for (i = 0; i < TEMP_BATCH - 1; i++) {
-			temp_entities[i].next = &temp_entities[i + 1];
-			temp_entities[i].ent.transform = 0;
-		}
-		temp_entities[i].next = 0;
-		temp_entities[i].ent.transform = 0;
-	}
-	tent = temp_entities;
-	temp_entities = tent->next;
+	tent_t     *tent = PR_RESNEW_NC (temp_entities);
+	tent->ent.transform = 0;
 	tent->next = 0;
 	CL_Init_Entity (&tent->ent);
 	return tent;
@@ -182,63 +170,35 @@ free_temp_entities (tent_t *tents)
 {
 	tent_t    **t = &tents;
 
-	while (*t)
+	while (*t) {
+		Transform_Delete ((*t)->ent.transform);//FIXME reuse?
 		t = &(*t)->next;
-	*t = temp_entities;
-	temp_entities = tents;
+	}
+	*t = temp_entities._free;
+	temp_entities._free = tents;
 }
 
 static tent_obj_t *
 new_tent_object (void)
 {
-	tent_obj_t *tobj;
-	if (!tent_objects) {
-		int         i;
-
-		tent_objects = malloc (TEMP_BATCH * sizeof (tent_obj_t));
-		for (i = 0; i < TEMP_BATCH - 1; i++)
-			tent_objects[i].next = &tent_objects[i + 1];
-		tent_objects[i].next = 0;
-	}
-	tobj = tent_objects;
-	tent_objects = tobj->next;
+	tent_obj_t *tobj = PR_RESNEW_NC (tent_objects);
 	tobj->next = 0;
 	return tobj;
 }
 
 static void
-free_tent_objects (tent_obj_t *tobjs)
+free_tent_object (tent_obj_t *tobj)
 {
-	tent_obj_t **t = &tobjs;
-
-	while (*t)
-		t = &(*t)->next;
-	*t = tent_objects;
-	tent_objects = tobjs;
+	tobj->next = tent_objects._free;
+	tent_objects._free = tobj;
 }
 
 void
 CL_ClearTEnts (void)
 {
-	tent_t     *tent;
-	tent_obj_t *tobj;
-
-	for (tobj = cl_beams; tobj; tobj = tobj->next) {
-		for (tent = tobj->to.beam.tents; tent; tent = tent->next) {
-			tent->ent.visibility.efrag = 0;
-		}
-		free_temp_entities (tobj->to.beam.tents);
-	}
-	free_tent_objects (cl_beams);
+	PR_RESRESET (temp_entities);
+	PR_RESRESET (tent_objects);
 	cl_beams = 0;
-
-	for (tobj = cl_explosions; tobj; tobj = tobj->next) {
-		for (tent = tobj->to.ex.tent; tent; tent = tent->next) {
-			tent->ent.visibility.efrag = 0;
-		}
-		free_temp_entities (tobj->to.ex.tent);
-	}
-	free_tent_objects (cl_explosions);
 	cl_explosions = 0;
 }
 
@@ -618,8 +578,7 @@ CL_UpdateBeams (double time, TEntContext_t *ctx)
 			beam_clear (b);
 			_to = *to;
 			*to = _to->next;
-			_to->next = tent_objects;
-			tent_objects = _to;
+			free_tent_object (_to);
 			continue;
 		}
 		to = &(*to)->next;
@@ -663,8 +622,7 @@ CL_UpdateExplosions (double time, TEntContext_t *ctx)
 			free_temp_entities (ex->tent);
 			_to = *to;
 			*to = _to->next;
-			_to->next = tent_objects;
-			tent_objects = _to;
+			free_tent_object (_to);
 			continue;
 		}
 		to = &(*to)->next;
