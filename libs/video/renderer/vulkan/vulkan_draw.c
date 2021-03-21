@@ -383,10 +383,20 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 								   dctx->stage);
 	dctx->sampler = Vulkan_CreateSampler (ctx, "quakepic");
 
-	qpic_t     *charspic = Draw_Font8x8Pic ();
+	draw_chars = W_GetLumpName ("conchars");
+	if (draw_chars) {
+		for (int i = 0; i < 256 * 64; i++) {
+			if (draw_chars[i] == 0) {
+				draw_chars[i] = 255;		// proper transparent color
+			}
+		}
+		dctx->conchars = pic_data ("conchars", 128, 128, draw_chars, dctx);
+	} else {
+		qpic_t     *charspic = Draw_Font8x8Pic ();
+		dctx->conchars = pic_data ("conchars", charspic->width,
+								   charspic->height, charspic->data, dctx);
+	}
 
-	dctx->conchars = pic_data ("conchars", charspic->width, charspic->height,
-							   charspic->data, dctx);
 	byte white_block = 0xfe;
 	dctx->white_pic = pic_data ("white", 1, 1, &white_block, dctx);
 
