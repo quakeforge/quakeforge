@@ -118,7 +118,7 @@ typedef struct pr_stashed_params_s {
 				alloca().
 
 	\param pr		pointer to ::progs_t VM struct
-	\return 		Pointer to a newly allocated and initialized parameter
+	\return			Pointer to a newly allocated and initialized parameter
 					stash that has the current parameters saved to it.
 	\hideinitializer
 */
@@ -137,7 +137,7 @@ typedef struct pr_stashed_params_s {
 	\param pr		pointer to ::progs_t VM struct
 	\param params	location to save the parameters, must be of adequade size
 					to hold \a pr_argc * \a pr_param_size words in \a params
-	\return 		\a params Allows the likes of:
+	\return			\a params Allows the likes of:
 						__auto_type params = PR_SaveParams (pr);
 */
 pr_stashed_params_t *_PR_SaveParams (progs_t *pr, pr_stashed_params_t *params);
@@ -1536,7 +1536,7 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 	\return			A pointer to the new resource, or null if no more could
 					be allocated.
 */
-#define PR_RESNEW(map)														\
+#define PR_RESNEW_NC(map)													\
 	({																		\
 		if (!map._free) {													\
 			int         i, size;											\
@@ -1545,7 +1545,7 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 			map._map = realloc (map._map, size);							\
 			if (!map._map)													\
 				return 0;													\
-			map._free = calloc (1024, sizeof (*map._free));					\
+			map._free = malloc (1024 * sizeof (*map._free));				\
 			if (!map._free)													\
 				return 0;													\
 			map._map[map._size - 1] = map._free;							\
@@ -1555,6 +1555,12 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 		}																	\
 		__auto_type t = map._free;											\
 		map._free = *(typeof (map._free) *) t;								\
+		t;																	\
+	})
+
+#define PR_RESNEW(map)														\
+	({																		\
+		__auto_type t = PR_RESNEW_NC (map);									\
 		memset (t, 0, sizeof (*map._free));									\
 		t;																	\
 	})
