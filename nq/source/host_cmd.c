@@ -44,7 +44,7 @@
 #include "QF/keys.h"
 #include "QF/model.h"
 #include "QF/msg.h"
-#include "QF/qfplist.h"
+#include "QF/plist.h"
 #include "QF/screen.h"
 #include "QF/script.h"
 #include "QF/sys.h"

@@ -42,7 +42,6 @@
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
-#include "QF/qfplist.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/Vulkan/qf_vid.h"

@@ -1,5 +1,5 @@
 /*
-	qfplist.h
+	plist.h
 
 	Property list management types and prototypes
 
@@ -25,12 +25,12 @@
 
 */
 
-#ifndef __QF_qfplist_h
-#define __QF_qfplist_h
+#ifndef __QF_plist_h
+#define __QF_plist_h
 
 struct hashlink_s;
 
-/** \defgroup qfplist Property lists
+/** \defgroup plist Property lists
 	\ingroup utils
 */
 ///@{
@@ -505,4 +505,4 @@ PL_Message (plitem_t *messages, const plitem_t *item, const char *fmt, ...);
 
 ///@}
 
-#endif//__QF_qfplist_h
+#endif//__QF_plist_h

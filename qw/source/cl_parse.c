@@ -52,7 +52,7 @@
 #include "QF/idparse.h"
 #include "QF/msg.h"
 #include "QF/progs.h"
-#include "QF/qfplist.h"
+#include "QF/plist.h"
 #include "QF/quakeio.h"
 #include "QF/screen.h"
 #include "QF/skin.h"

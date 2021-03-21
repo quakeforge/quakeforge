@@ -1,5 +1,5 @@
 /*
-	qfplist.c
+	plist.c
 
 	Property list management
 
@@ -41,7 +41,7 @@
 #include "QF/darray.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
-#include "QF/qfplist.h"
+#include "QF/plist.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
 #include "QF/va.h"

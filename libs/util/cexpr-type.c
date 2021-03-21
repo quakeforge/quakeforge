@@ -32,7 +32,7 @@
 #include "QF/cexpr.h"
 #include "QF/cmem.h"
 #include "QF/mathlib.h"
-#include "QF/qfplist.h"
+#include "QF/plist.h"
 #include "QF/simd/vec4f.h"
 
 #include "libs/util/cexpr-parse.h"

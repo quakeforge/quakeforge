@@ -64,10 +64,10 @@ libs_util_libQFutil_la_SOURCES= \
 	libs/util/mersenne.c \
 	libs/util/msg.c \
 	libs/util/pakfile.c \
+	libs/util/plist.c \
 	libs/util/plugin.c \
 	libs/util/qargs.c \
 	libs/util/qendian.c \
-	libs/util/qfplist.c \
 	libs/util/quakefs.c \
 	libs/util/quakeio.c \
 	libs/util/riff.c \

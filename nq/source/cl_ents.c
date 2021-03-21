@@ -36,7 +36,7 @@
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
-#include "QF/qfplist.h"
+#include "QF/plist.h"
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/skin.h"

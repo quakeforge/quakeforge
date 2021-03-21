@@ -45,7 +45,7 @@
 #include "QF/idparse.h"
 #include "QF/input.h"
 #include "QF/msg.h"
-#include "QF/qfplist.h"
+#include "QF/plist.h"
 #include "QF/sys.h"
 #include "QF/screen.h"
 #include "QF/skin.h"

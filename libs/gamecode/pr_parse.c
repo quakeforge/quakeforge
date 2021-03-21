@@ -45,8 +45,8 @@
 
 #include "QF/dstring.h"
 #include "QF/mathlib.h"
+#include "QF/plist.h"
 #include "QF/progs.h"
-#include "QF/qfplist.h"
 #include "QF/script.h"
 #include "QF/sys.h"
 

@@ -44,7 +44,6 @@
 #include "QF/hash.h"
 #include "QF/image.h"
 #include "QF/mathlib.h"
-#include "QF/qfplist.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/sys.h"

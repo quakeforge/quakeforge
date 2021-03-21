@@ -40,8 +40,8 @@
 #include <stdlib.h>
 
 #include "QF/hash.h"
+#include "QF/plist.h"
 #include "QF/progs.h"
-#include "QF/qfplist.h"
 
 #include "rua_internal.h"
 

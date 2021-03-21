@@ -41,7 +41,7 @@
 #include <errno.h>
 
 #include "QF/mathlib.h"
-#include "QF/qfplist.h"
+#include "QF/plist.h"
 #include "QF/quakeio.h"
 
 #include "compat.h"

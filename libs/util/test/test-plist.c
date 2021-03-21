@@ -2,7 +2,7 @@
 # include "config.h"
 #endif
 #include <string.h>
-#include "QF/qfplist.h"
+#include "QF/plist.h"
 
 static const char *test_strings[] = {
 	"Guarding the entrance to the Grendal\n"

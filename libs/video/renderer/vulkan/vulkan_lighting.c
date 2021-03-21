@@ -42,8 +42,8 @@
 #include "qfalloca.h"
 
 #include "QF/dstring.h"
+#include "QF/plist.h"
 #include "QF/progs.h"
-#include "QF/qfplist.h"
 #include "QF/script.h"
 #include "QF/sys.h"
 #include "QF/va.h"
