@@ -97,8 +97,6 @@ extern vec3_t bsp_yvector;
 
 extern qboolean extrasamples;
 
-extern float minlights[MAX_MAP_FACES];
-
 void LoadNodes (const char *file);
 qboolean TestLine (lightinfo_t *l, const vec3_t start, const vec3_t stop);
 qboolean TestSky (lightinfo_t *l, const vec3_t start, const vec3_t stop);

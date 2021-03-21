@@ -78,9 +78,6 @@ vec3_t bsp_origin;
 
 qboolean extrasamples;
 
-float minlights[MAX_MAP_FACES];
-
-
 int
 GetFileSpace (int size)
 {
