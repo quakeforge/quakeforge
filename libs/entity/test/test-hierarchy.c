@@ -595,11 +595,11 @@ test_frames (void)
 					   (vec4f_t) { 0, 0, 1, 1 }, "world position")) {
 		return 1;
 	}
-	if (!check_vector (root, Transform_Right, (vec4f_t) { 1, 0, 0, 0 },
-					   "right")) {
+	if (!check_vector (root, Transform_Forward, (vec4f_t) { 1, 0, 0, 0 },
+					   "forward")) {
 		return 1;
 	}
-	if (!check_vector (root, Transform_Forward, (vec4f_t) { 0, 1, 0, 0 },
+	if (!check_vector (root, Transform_Right, (vec4f_t) { 0, -1, 0, 0 },
 					   "right")) {
 		return 1;
 	}
@@ -616,12 +616,12 @@ test_frames (void)
 					   "world position")) {
 		return 1;
 	}
-	if (!check_vector (A, Transform_Right, (vec4f_t) { 0, 1, 0, 0 },
-					   "right")) {
+	if (!check_vector (A, Transform_Forward, (vec4f_t) { 0, 1, 0, 0 },
+					   "forward")) {
 		return 1;
 	}
-	if (!check_vector (A, Transform_Forward, (vec4f_t) { 0, 0, 1, 0 },
-					   "forward")) {
+	if (!check_vector (A, Transform_Right, (vec4f_t) { 0, 0, -1, 0 },
+					   "right")) {
 		return 1;
 	}
 	if (!check_vector (A, Transform_Up, (vec4f_t) { 1, 0, 0, 0 },
@@ -636,12 +636,12 @@ test_frames (void)
 					   "world position")) {
 		return 1;
 	}
-	if (!check_vector (A1, Transform_Right, (vec4f_t) { 1, 0, 0, 0 },
-					   "right")) {
+	if (!check_vector (A1, Transform_Forward, (vec4f_t) { 1, 0, 0, 0 },
+					   "forward")) {
 		return 1;
 	}
-	if (!check_vector (A1, Transform_Forward, (vec4f_t) { 0, 1, 0, 0 },
-					   "forward")) {
+	if (!check_vector (A1, Transform_Right, (vec4f_t) { 0, -1, 0, 0 },
+					   "right")) {
 		return 1;
 	}
 	if (!check_vector (A1, Transform_Up, (vec4f_t) { 0, 0, 1, 0 },
@@ -657,12 +657,12 @@ test_frames (void)
 					   "world position")) {
 		return 1;
 	}
-	if (!check_vector (B, Transform_Right, (vec4f_t) { 0, 0, 1, 0 },
-					   "right")) {
+	if (!check_vector (B, Transform_Forward, (vec4f_t) { 0, 0, 1, 0 },
+					   "forward")) {
 		return 1;
 	}
-	if (!check_vector (B, Transform_Forward, (vec4f_t) {-1, 0, 0, 0 },
-					   "forward")) {
+	if (!check_vector (B, Transform_Right, (vec4f_t) { 1, 0, 0, 0 },
+					   "right")) {
 		return 1;
 	}
 	if (!check_vector (B, Transform_Up, (vec4f_t) { 0,-1, 0, 0 },
@@ -677,12 +677,12 @@ test_frames (void)
 					   "world position")) {
 		return 1;
 	}
-	if (!check_vector (B1, Transform_Right, (vec4f_t) { 1, 0, 0, 0 },
-					   "right")) {
+	if (!check_vector (B1, Transform_Forward, (vec4f_t) { 1, 0, 0, 0 },
+					   "forward")) {
 		return 1;
 	}
-	if (!check_vector (B1, Transform_Forward, (vec4f_t) { 0, 1, 0, 0 },
-					   "forward")) {
+	if (!check_vector (B1, Transform_Right, (vec4f_t) { 0, -1, 0, 0 },
+					   "right")) {
 		return 1;
 	}
 	if (!check_vector (B1, Transform_Up, (vec4f_t) { 0, 0, 1, 0 },
