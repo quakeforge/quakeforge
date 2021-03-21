@@ -62,31 +62,31 @@ typedef struct {
 static il_data_t *
 il_data_new (il_resources_t *res)
 {
-	PR_RESNEW (il_data_t, res->line_map);
+	return PR_RESNEW (res->line_map);
 }
 
 static void
 il_data_free (il_resources_t *res, il_data_t *line)
 {
-	PR_RESFREE (il_data_t, res->line_map, line);
+	PR_RESFREE (res->line_map, line);
 }
 
 static void
 il_data_reset (il_resources_t *res)
 {
-	PR_RESRESET (il_data_t, res->line_map);
+	PR_RESRESET (res->line_map);
 }
 
 static inline il_data_t *
 il_data_get (il_resources_t *res, unsigned index)
 {
-	PR_RESGET (res->line_map, index);
+	return PR_RESGET (res->line_map, index);
 }
 
 static inline int __attribute__((pure))
 il_data_index (il_resources_t *res, il_data_t *line)
 {
-	PR_RESINDEX (res->line_map, line);
+	return PR_RESINDEX (res->line_map, line);
 }
 
 static void

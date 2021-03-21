@@ -63,31 +63,31 @@ typedef struct {
 static bi_plist_t *
 plist_new (plist_resources_t *res)
 {
-	PR_RESNEW (bi_plist_t, res->plist_map);
+	return PR_RESNEW (res->plist_map);
 }
 
 static void
 plist_free (plist_resources_t *res, bi_plist_t *plist)
 {
-	PR_RESFREE (bi_plist_t, res->plist_map, plist);
+	PR_RESFREE (res->plist_map, plist);
 }
 
 static void
 plist_reset (plist_resources_t *res)
 {
-	PR_RESRESET (bi_plist_t, res->plist_map);
+	PR_RESRESET (res->plist_map);
 }
 
 static inline bi_plist_t *
 plist_get (plist_resources_t *res, unsigned index)
 {
-	PR_RESGET(res->plist_map, index);
+	return PR_RESGET(res->plist_map, index);
 }
 
 static inline int __attribute__((pure))
 plist_index (plist_resources_t *res, bi_plist_t *plist)
 {
-	PR_RESINDEX(res->plist_map, plist);
+	return PR_RESINDEX(res->plist_map, plist);
 }
 
 static void

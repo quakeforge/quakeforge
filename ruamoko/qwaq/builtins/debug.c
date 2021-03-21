@@ -73,31 +73,31 @@ typedef struct qwaq_debug_s {
 static qwaq_target_t *
 target_new (qwaq_debug_t *debug)
 {
-	PR_RESNEW (qwaq_target_t, debug->targets);
+	return PR_RESNEW (debug->targets);
 }
 
 static void
 target_free (qwaq_debug_t *debug, qwaq_target_t *target)
 {
-	PR_RESFREE (qwaq_target_t, debug->targets, target);
+	PR_RESFREE (debug->targets, target);
 }
 
 static void
 target_reset (qwaq_debug_t *debug)
 {
-	PR_RESRESET (qwaq_target_t, debug->targets);
+	PR_RESRESET (debug->targets);
 }
 
 static inline qwaq_target_t *
 target_get (qwaq_debug_t *debug, unsigned index)
 {
-	PR_RESGET (debug->targets, index);
+	return PR_RESGET (debug->targets, index);
 }
 
 static inline int __attribute__((pure))
 target_index (qwaq_debug_t *debug, qwaq_target_t *target)
 {
-	PR_RESINDEX (debug->targets, target);
+	return PR_RESINDEX (debug->targets, target);
 }
 
 static always_inline qwaq_target_t * __attribute__((pure))

@@ -93,25 +93,25 @@ typedef struct probj_resources_s {
 static dtable_t *
 dtable_new (probj_t *probj)
 {
-	PR_RESNEW (dtable_t, probj->dtables);
+	return PR_RESNEW (probj->dtables);
 }
 
 static void
 dtable_reset (probj_t *probj)
 {
-	PR_RESRESET (dtable_t, probj->dtables);
+	PR_RESRESET (probj->dtables);
 }
 
 static inline dtable_t *
 dtable_get (probj_t *probj, int index)
 {
-	PR_RESGET (probj->dtables, index);
+	return PR_RESGET (probj->dtables, index);
 }
 
 static inline int __attribute__((pure))
 dtable_index (probj_t *probj, dtable_t *dtable)
 {
-	PR_RESINDEX (probj->dtables, dtable);
+	return PR_RESINDEX (probj->dtables, dtable);
 }
 
 static always_inline dtable_t * __attribute__((pure))

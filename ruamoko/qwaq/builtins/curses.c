@@ -127,31 +127,31 @@ static const char *qwaq_command_names[]= {
 static window_t *
 window_new (qwaq_resources_t *res)
 {
-	PR_RESNEW (window_t, res->window_map);
+	return PR_RESNEW (res->window_map);
 }
 
 static void
 window_free (qwaq_resources_t *res, window_t *win)
 {
-	PR_RESFREE (window_t, res->window_map, win);
+	PR_RESFREE (res->window_map, win);
 }
 
 static void
 window_reset (qwaq_resources_t *res)
 {
-	PR_RESRESET (window_t, res->window_map);
+	PR_RESRESET (res->window_map);
 }
 
 static inline window_t *
 window_get (qwaq_resources_t *res, unsigned index)
 {
-	PR_RESGET(res->window_map, index);
+	return PR_RESGET(res->window_map, index);
 }
 
 static inline int __attribute__((pure))
 window_index (qwaq_resources_t *res, window_t *win)
 {
-	PR_RESINDEX (res->window_map, win);
+	return PR_RESINDEX (res->window_map, win);
 }
 
 static always_inline window_t * __attribute__((pure))
@@ -173,31 +173,31 @@ get_window (qwaq_resources_t *res, const char *name, int handle)
 static panel_t *
 panel_new (qwaq_resources_t *res)
 {
-	PR_RESNEW (panel_t, res->panel_map);
+	return PR_RESNEW (res->panel_map);
 }
 
 static void
 panel_free (qwaq_resources_t *res, panel_t *win)
 {
-	PR_RESFREE (panel_t, res->panel_map, win);
+	PR_RESFREE (res->panel_map, win);
 }
 
 static void
 panel_reset (qwaq_resources_t *res)
 {
-	PR_RESRESET (panel_t, res->panel_map);
+	PR_RESRESET (res->panel_map);
 }
 
 static inline panel_t *
 panel_get (qwaq_resources_t *res, unsigned index)
 {
-	PR_RESGET(res->panel_map, index);
+	return PR_RESGET(res->panel_map, index);
 }
 
 static inline int __attribute__((pure))
 panel_index (qwaq_resources_t *res, panel_t *win)
 {
-	PR_RESINDEX (res->panel_map, win);
+	return PR_RESINDEX (res->panel_map, win);
 }
 
 static always_inline panel_t * __attribute__((pure))
