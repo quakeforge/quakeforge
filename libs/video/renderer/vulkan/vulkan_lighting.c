@@ -77,7 +77,7 @@ find_visible_lights (vulkan_ctx_t *ctx)
 	}
 
 	if (leaf != lframe->leaf) {
-		double start = Sys_DoubleTime ();
+		//double start = Sys_DoubleTime ();
 		byte        pvs[MAP_PVS_BYTES];
 
 		Mod_LeafPVS_set (leaf, model, 0, pvs);
@@ -89,8 +89,8 @@ find_visible_lights (vulkan_ctx_t *ctx)
 		}
 		lframe->leaf = leaf;
 
-		double end = Sys_DoubleTime ();
-		Sys_Printf ("find_visible_lights: %.5gus\n", (end - start) * 1e6);
+		//double end = Sys_DoubleTime ();
+		//Sys_Printf ("find_visible_lights: %.5gus\n", (end - start) * 1e6);
 
 		int visible = 0;
 		memset (lframe->lightvis.a, 0, lframe->lightvis.size * sizeof (byte));
@@ -101,8 +101,8 @@ find_visible_lights (vulkan_ctx_t *ctx)
 				visible++;
 			}
 		}
-		Sys_Printf ("find_visible_lights: %d / %zd visible\n", visible,
-					 lframe->lightvis.size);
+		//Sys_Printf ("find_visible_lights: %d / %zd visible\n", visible,
+		//			 lframe->lightvis.size);
 	}
 }
 
@@ -313,6 +313,7 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 		__auto_type lframe = &lctx->frames.a[i];
 
 		DARRAY_INIT (&lframe->lightvis, 16);
+		lframe->leaf = 0;
 
 		QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, cmdSet);
 		lframe->cmd = cmdSet->a[0];

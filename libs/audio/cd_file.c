@@ -172,6 +172,7 @@ Load_Tracklist (void)
 	buffile = calloc (size+10, sizeof (char));
 	Qread (oggfile, buffile, size);
 
+	PL_Free (tracklist);
 	tracklist = PL_GetPropertyList (buffile, 0);
 	if (!tracklist || PL_Type (tracklist) != QFDictionary) {
 		Sys_Printf ("Malformed or empty tracklist file. check mus_ogglist\n");

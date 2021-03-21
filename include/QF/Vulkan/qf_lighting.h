@@ -70,7 +70,7 @@ typedef struct lightingframe_s {
 	// illuminate the leafs visible to the player
 	byte        pvs[MAP_PVS_BYTES];
 	struct mleaf_s *leaf;	// the last leaf used to generate the pvs
-	qfv_lightleafset_t lightvis;
+	qfv_lightvisset_t lightvis;
 } lightingframe_t;
 
 typedef struct lightingframeset_s

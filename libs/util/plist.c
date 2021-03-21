@@ -223,6 +223,7 @@ PL_Free (plitem_t *item)
 			dict = item->data;
 			Hash_DelTable (dict->tab);
 			DARRAY_CLEAR (&dict->keys);
+			free (item->data);
 			break;
 
 		case QFArray:

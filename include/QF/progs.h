@@ -1782,6 +1782,7 @@ struct progs_s {
 	///@{
 	struct hashtab_s *builtin_hash;
 	struct hashtab_s *builtin_num_hash;
+	struct biblock_s *builtin_blocks;
 	unsigned    bi_next;
 	unsigned  (*bi_map) (progs_t *pr, unsigned binum);
 	///@}

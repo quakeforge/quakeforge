@@ -326,6 +326,7 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 								 barriers->size, barriers->a);
 	QFV_PacketSubmit (packet);
 	QFV_DestroyStagingBuffer (stage);
+	free (barriers);
 }
 
 void

@@ -252,6 +252,13 @@ parse_reference (const plitem_t *item, const char *type, plitem_t *messages,
 	return refItem;
 }
 
+static void *
+vkparse_alloc (void *context, size_t size)
+{
+	parsectx_t *pctx = context;
+	return cmemalloc (pctx->ectx->memsuper, size);
+}
+
 static int
 parse_single (const plfield_t *field, const plitem_t *item,
 			  void *data, plitem_t *messages, void *context)
@@ -269,20 +276,14 @@ parse_single (const plfield_t *field, const plitem_t *item,
 	}
 
 	plfield_t   f = { 0, 0, single->type, single->parser, 0 };
-	void       *value = calloc (1, single->stride);
+	void       *value = vkparse_alloc (context, single->stride);
+	memset (value, 0, single->stride);
 	if (!single->parser (&f, item, value, messages, context)) {
-		free (value);
 		return 0;
 	}
 
 	*(void **) flddata = value;
 	return 1;
-}
-
-static void *
-array_alloc (void *context, size_t size)
-{
-	return malloc (size);
 }
 
 static int
@@ -296,7 +297,7 @@ parse_array (const plfield_t *field, const plitem_t *item,
 	plelement_t element = {
 		array->type,
 		array->stride,
-		array_alloc,
+		vkparse_alloc,
 		array->parser,
 		0,
 	};
@@ -313,12 +314,11 @@ parse_array (const plfield_t *field, const plitem_t *item,
 	if (!PL_ParseArray (&f, item, &arr, messages, context)) {
 		return 0;
 	}
-	*value = malloc (array->stride * arr->size);
+	*value = vkparse_alloc (context, array->stride * arr->size);
 	memcpy (*value, arr->a, array->stride * arr->size);
 	if ((void *) size >= data) {
 		*size = arr->size;
 	}
-	free (arr);
 	return 1;
 }
 
@@ -339,7 +339,7 @@ parse_data (const plfield_t *field, const plitem_t *item,
 	Sys_Printf ("    %zd %zd\n", datad->value_offset, datad->size_offset);
 	Sys_Printf ("    %zd %p\n", binsize, bindata);
 
-	*value = malloc (binsize);
+	*value = vkparse_alloc (context, binsize);
 	memcpy (*value, bindata, binsize);
 	if ((void *) size > data) {
 		*size = binsize;
@@ -362,7 +362,9 @@ parse_string (const plfield_t *field, const plitem_t *item,
 	//Sys_Printf ("    %zd\n", string->value_offset);
 	//Sys_Printf ("    %s\n", str);
 
-	*value = strdup (str);
+	size_t      len = strlen (str) + 1;
+	*value = vkparse_alloc (context, len);
+	memcpy (*value, str, len);
 	return 1;
 }
 
@@ -877,7 +879,7 @@ typedef struct qfv_renderpass_s {
 static plelement_t parse_qfv_renderpass_attachments_data = {
 	QFDictionary,
 	sizeof (VkAttachmentDescription),
-	array_alloc,
+	vkparse_alloc,
 	parse_VkAttachmentDescription,
 	0,
 };
@@ -885,7 +887,7 @@ static plelement_t parse_qfv_renderpass_attachments_data = {
 static plelement_t parse_qfv_renderpass_subpasses_data = {
 	QFDictionary,
 	sizeof (VkSubpassDescription),
-	array_alloc,
+	vkparse_alloc,
 	parse_VkSubpassDescription,
 	0,
 };
@@ -893,7 +895,7 @@ static plelement_t parse_qfv_renderpass_subpasses_data = {
 static plelement_t parse_qfv_renderpass_dependencies_data = {
 	QFDictionary,
 	sizeof (VkSubpassDependency),
-	array_alloc,
+	vkparse_alloc,
 	parse_VkSubpassDependency,
 	0,
 };
@@ -953,7 +955,7 @@ QFV_GetEnum (const char *name)
 }
 
 static int
-parse_object (vulkan_ctx_t *ctx, plitem_t *plist,
+parse_object (vulkan_ctx_t *ctx, memsuper_t *memsuper, plitem_t *plist,
 			  plparser_t parser, void *object, plitem_t *properties)
 {
 	plitem_t   *messages = PL_NewArray ();
@@ -970,9 +972,9 @@ parse_object (vulkan_ctx_t *ctx, plitem_t *plist,
 	exprtab_t   vars_tab = { var_syms, 0 };
 
 	exprctx.external_variables = &vars_tab;
-	exprctx.memsuper = new_memsuper ();
 	exprctx.messages = messages;
 	exprctx.hashlinks = &ctx->hashlinks;
+	exprctx.memsuper = memsuper;
 
 	cexpr_init_symtab (&vars_tab, &exprctx);
 
@@ -983,8 +985,8 @@ parse_object (vulkan_ctx_t *ctx, plitem_t *plist,
 		}
 		return 0;
 	}
+	Hash_DelTable (vars_tab.tab);
 	PL_Free (messages);
-	delete_memsuper (exprctx.memsuper);
 
 	return 1;
 }
@@ -999,12 +1001,14 @@ parse_qfv_renderpass (const plfield_t *field, const plitem_t *item, void *data,
 VkRenderPass
 QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 {
+	memsuper_t *memsuper = new_memsuper ();
 	qfv_device_t *device = ctx->device;
 
 	qfv_renderpass_t renderpass_data = {};
 
-	if (!parse_object (ctx, plist, parse_qfv_renderpass, &renderpass_data,
-					   properties)) {
+	if (!parse_object (ctx, memsuper, plist, parse_qfv_renderpass,
+					   &renderpass_data, properties)) {
+		delete_memsuper (memsuper);
 		return 0;
 	}
 
@@ -1014,29 +1018,22 @@ QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 									   renderpass_data.subpasses,
 									   renderpass_data.dependencies);
 
-	free (renderpass_data.attachments);
-	for (size_t i = 0; i < renderpass_data.subpasses->size; i++) {
-		free ((void *) renderpass_data.subpasses->a[i].pInputAttachments);
-		free ((void *) renderpass_data.subpasses->a[i].pColorAttachments);
-		free ((void *) renderpass_data.subpasses->a[i].pResolveAttachments);
-		free ((void *) renderpass_data.subpasses->a[i].pDepthStencilAttachment);
-		free ((void *) renderpass_data.subpasses->a[i].pPreserveAttachments);
-	}
-	free (renderpass_data.subpasses);
-	free (renderpass_data.dependencies);
+	delete_memsuper (memsuper);
 	return renderpass;
 }
 
 VkPipeline
 QFV_ParsePipeline (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 {
+	memsuper_t *memsuper = new_memsuper ();
 	qfv_device_t *device = ctx->device;
 
 	__auto_type cInfo = QFV_AllocGraphicsPipelineCreateInfoSet (1, alloca);
 	memset (&cInfo->a[0], 0, sizeof (cInfo->a[0]));
 
-	if (!parse_object (ctx, plist, parse_VkGraphicsPipelineCreateInfo,
+	if (!parse_object (ctx, memsuper, plist, parse_VkGraphicsPipelineCreateInfo,
 					   &cInfo->a[0], properties)) {
+		delete_memsuper (memsuper);
 		return 0;
 	}
 
@@ -1044,6 +1041,7 @@ QFV_ParsePipeline (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 	__auto_type plSet = QFV_CreateGraphicsPipelines (device, 0, cInfo);
 	VkPipeline pipeline = plSet->a[0];
 	free (plSet);
+	delete_memsuper (memsuper);
 	return pipeline;
 }
 
@@ -1053,17 +1051,20 @@ QFV_ParseDescriptorPool (vulkan_ctx_t *ctx, plitem_t *plist,
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
+	memsuper_t *memsuper = new_memsuper ();
 
 	VkDescriptorPoolCreateInfo cInfo = {};
 
-	if (!parse_object (ctx, plist, parse_VkDescriptorPoolCreateInfo, &cInfo,
-					   properties)) {
+	if (!parse_object (ctx, memsuper, plist, parse_VkDescriptorPoolCreateInfo,
+					   &cInfo, properties)) {
+		delete_memsuper (memsuper);
 		return 0;
 	}
 
 	VkDescriptorPool pool;
 	dfunc->vkCreateDescriptorPool (device->dev, &cInfo, 0, &pool);
 
+	delete_memsuper (memsuper);
 	return pool;
 }
 
@@ -1073,17 +1074,21 @@ QFV_ParseDescriptorSetLayout (vulkan_ctx_t *ctx, plitem_t *plist,
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
+	memsuper_t *memsuper = new_memsuper ();
 
 	VkDescriptorSetLayoutCreateInfo cInfo = {};
 
-	if (!parse_object (ctx, plist, parse_VkDescriptorSetLayoutCreateInfo,
+	if (!parse_object (ctx, memsuper, plist,
+					   parse_VkDescriptorSetLayoutCreateInfo,
 					   &cInfo, properties)) {
+		delete_memsuper (memsuper);
 		return 0;
 	}
 
 	VkDescriptorSetLayout setLayout;
 	dfunc->vkCreateDescriptorSetLayout (device->dev, &cInfo, 0, &setLayout);
 
+	delete_memsuper (memsuper);
 	return setLayout;
 }
 
@@ -1093,17 +1098,20 @@ QFV_ParsePipelineLayout (vulkan_ctx_t *ctx, plitem_t *plist,
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
+	memsuper_t *memsuper = new_memsuper ();
 
 	VkPipelineLayoutCreateInfo cInfo = {};
 
-	if (!parse_object (ctx, plist, parse_VkPipelineLayoutCreateInfo,
+	if (!parse_object (ctx, memsuper, plist, parse_VkPipelineLayoutCreateInfo,
 					   &cInfo, properties)) {
+		delete_memsuper (memsuper);
 		return 0;
 	}
 
 	VkPipelineLayout layout;
 	dfunc->vkCreatePipelineLayout (device->dev, &cInfo, 0, &layout);
 
+	delete_memsuper (memsuper);
 	return layout;
 }
 
@@ -1112,17 +1120,20 @@ QFV_ParseSampler (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
+	memsuper_t *memsuper = new_memsuper ();
 
 	VkSamplerCreateInfo cInfo = {};
 
-	if (!parse_object (ctx, plist, parse_VkSamplerCreateInfo, &cInfo,
+	if (!parse_object (ctx, memsuper, plist, parse_VkSamplerCreateInfo, &cInfo,
 					   properties)) {
+		delete_memsuper (memsuper);
 		return 0;
 	}
 
 	VkSampler sampler;
 	dfunc->vkCreateSampler (device->dev, &cInfo, 0, &sampler);
 
+	delete_memsuper (memsuper);
 	return sampler;
 }
 
@@ -1131,17 +1142,20 @@ QFV_ParseImage (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
+	memsuper_t *memsuper = new_memsuper ();
 
 	VkImageCreateInfo cInfo = {};
 
-	if (!parse_object (ctx, plist, parse_VkImageCreateInfo, &cInfo,
+	if (!parse_object (ctx, memsuper, plist, parse_VkImageCreateInfo, &cInfo,
 					   properties)) {
+		delete_memsuper (memsuper);
 		return 0;
 	}
 
 	VkImage image;
 	dfunc->vkCreateImage (device->dev, &cInfo, 0, &image);
 
+	delete_memsuper (memsuper);
 	return image;
 }
 
@@ -1150,17 +1164,20 @@ QFV_ParseImageView (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
+	memsuper_t *memsuper = new_memsuper ();
 
 	VkImageViewCreateInfo cInfo = {};
 
-	if (!parse_object (ctx, plist, parse_VkImageViewCreateInfo, &cInfo,
-					   properties)) {
+	if (!parse_object (ctx, memsuper, plist, parse_VkImageViewCreateInfo,
+					   &cInfo, properties)) {
+		delete_memsuper (memsuper);
 		return 0;
 	}
 
 	VkImageView imageView;
 	dfunc->vkCreateImageView (device->dev, &cInfo, 0, &imageView);
 
+	delete_memsuper (memsuper);
 	return imageView;
 }
 
@@ -1177,14 +1194,14 @@ typedef struct {
 static plelement_t qfv_imagecreate_dict = {
 	QFDictionary,
 	sizeof (VkImageCreateInfo),
-	array_alloc,
+	vkparse_alloc,
 	parse_VkImageCreateInfo,
 };
 
 static plelement_t qfv_imageviewcreate_dict = {
 	QFDictionary,
 	sizeof (VkImageViewCreateInfo),
-	array_alloc,
+	vkparse_alloc,
 	parse_VkImageViewCreateInfo,
 };
 
@@ -1202,11 +1219,6 @@ parse_imagecreate_dict (const plfield_t *field, const plitem_t *item,
 		imagecreate_t  *imagecreate = data;
 		imagecreate->count = arr->size;
 		imagecreate->info = (VkImageCreateInfo *) arr->a;
-	} else {
-		//FIXME leaky boat when succeeds
-		if (arr) {
-			free (arr);
-		}
 	}
 	return ret;
 }
@@ -1239,18 +1251,21 @@ QFV_ParseImageSet (vulkan_ctx_t *ctx, plitem_t *item, plitem_t *properties)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
+	memsuper_t *memsuper = new_memsuper ();
 
 	imagecreate_t create = {};
 
 	pltype_t    type = PL_Type (item);
 
 	if (type == QFDictionary) {
-		if (!parse_object (ctx, item, parse_imagecreate_dict, &create,
-						   properties)) {
+		if (!parse_object (ctx, memsuper, item, parse_imagecreate_dict,
+						   &create, properties)) {
+			delete_memsuper (memsuper);
 			return 0;
 		}
 	} else {
 		Sys_Printf ("Neither array nor dictionary: %d\n", PL_Line (item));
+		delete_memsuper (memsuper);
 		return 0;
 	}
 
@@ -1265,6 +1280,7 @@ QFV_ParseImageSet (vulkan_ctx_t *ctx, plitem_t *item, plitem_t *properties)
 		QFV_AddHandle (ctx->images, name, (uint64_t) set->a[i]);
 	}
 
+	delete_memsuper (memsuper);
 	return set;
 }
 
@@ -1274,18 +1290,21 @@ QFV_ParseImageViewSet (vulkan_ctx_t *ctx, plitem_t *item,
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
+	memsuper_t *memsuper = new_memsuper ();
 
 	imageviewcreate_t create = {};
 
 	pltype_t    type = PL_Type (item);
 
 	if (type == QFDictionary) {
-		if (!parse_object (ctx, item, parse_imageviewcreate_dict, &create,
-						   properties)) {
+		if (!parse_object (ctx, memsuper, item, parse_imageviewcreate_dict,
+						   &create, properties)) {
+			delete_memsuper (memsuper);
 			return 0;
 		}
 	} else {
 		Sys_Printf ("Neither array nor dictionary: %d\n", PL_Line (item));
+		delete_memsuper (memsuper);
 		return 0;
 	}
 
@@ -1298,6 +1317,7 @@ QFV_ParseImageViewSet (vulkan_ctx_t *ctx, plitem_t *item,
 		QFV_AddHandle (ctx->imageViews, name, (uint64_t) set->a[i]);
 	}
 
+	delete_memsuper (memsuper);
 	return set;
 }
 
@@ -1306,11 +1326,13 @@ QFV_ParseFramebuffer (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
+	memsuper_t *memsuper = new_memsuper ();
 
 	VkFramebufferCreateInfo cInfo = {};
 
-	if (!parse_object (ctx, plist, parse_VkFramebufferCreateInfo, &cInfo,
-					   properties)) {
+	if (!parse_object (ctx, memsuper, plist, parse_VkFramebufferCreateInfo,
+					   &cInfo, properties)) {
+		delete_memsuper (memsuper);
 		return 0;
 	}
 
@@ -1318,6 +1340,7 @@ QFV_ParseFramebuffer (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 	dfunc->vkCreateFramebuffer (device->dev, &cInfo, 0, &framebuffer);
 	printf ("framebuffer, renderPass: %p, %p\n", framebuffer, cInfo.renderPass);
 
+	delete_memsuper (memsuper);
 	return framebuffer;
 }
 
@@ -1325,19 +1348,16 @@ static int
 parse_clearvalueset (const plfield_t *field, const plitem_t *item, void *data,
 					 plitem_t *messages, void *context)
 {
-	parsectx_t *parsectx = context;
-	vulkan_ctx_t *ctx = parsectx->vctx;
-
 	plelement_t element = {
 		QFDictionary,
 		sizeof (VkClearValue),
-		array_alloc,
+		vkparse_alloc,
 		parse_VkClearValue,
 		0,
 	};
 	plfield_t   f = { 0, 0, 0, 0, &element };
 
-	if (!PL_ParseArray (&f, item, &ctx->clearValues, messages, context)) {
+	if (!PL_ParseArray (&f, item, data, messages, context)) {
 		return 0;
 	}
 	return 1;
@@ -1346,9 +1366,19 @@ parse_clearvalueset (const plfield_t *field, const plitem_t *item, void *data,
 int
 QFV_ParseClearValues (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 {
-	if (!parse_object (ctx, plist, parse_clearvalueset, &ctx->clearValues,
-					   properties)) {
-		return 0;
+	int         ret = 0;
+	memsuper_t *memsuper = new_memsuper ();
+	clearvalueset_t *clearValues = 0;
+
+	ctx->clearValues = 0;
+	if (parse_object (ctx, memsuper, plist, parse_clearvalueset, &clearValues,
+					  properties)) {
+		ret = 1;
+		ctx->clearValues = DARRAY_ALLOCFIXED (clearvalueset_t,
+											  clearValues->size, malloc);
+		memcpy (ctx->clearValues->a, clearValues->a,
+				clearValues->size * sizeof (clearValues->a[0]));
 	}
-	return 1;
+	delete_memsuper (memsuper);
+	return ret;
 }

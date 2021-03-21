@@ -387,4 +387,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	} else {
 		mod->aliashdr = header;
 	}
+	DARRAY_CLEAR (&alias_ctx.poseverts);
+	DARRAY_CLEAR (&alias_ctx.stverts);
+	DARRAY_CLEAR (&alias_ctx.triangles);
 }

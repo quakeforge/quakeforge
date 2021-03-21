@@ -285,11 +285,14 @@ void
 QFV_DestroyInstance (qfv_instance_t *instance)
 {
 	qfv_instfuncs_t *ifunc = instance->funcs;
+
 	if (instance->debug_handle) {
 		ifunc->vkDestroyDebugUtilsMessengerEXT (instance->instance,
 												instance->debug_handle, 0);
 	}
 	instance->funcs->vkDestroyInstance (instance->instance, 0);
+	del_strset (instance->enabled_extensions);
+	free (instance->devices);
 	free (instance);
 }
 

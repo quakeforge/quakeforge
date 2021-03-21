@@ -252,12 +252,11 @@ static void
 delete_searchpath (searchpath_t *searchpath)
 {
 	if (searchpath->pack) {
-		Qclose (searchpath->pack->handle);
-		free (searchpath->pack->files);
-		free (searchpath->pack);
+		pack_del (searchpath->pack);
 	}
-	if (searchpath->filename)
+	if (searchpath->filename) {
 		free (searchpath->filename);
+	}
 	FREE (searchpaths, searchpath);
 }
 
@@ -274,8 +273,9 @@ delete_vpath (vpath_t *vpath)
 {
 	searchpath_t *next;
 
-	if (vpath->name)
+	if (vpath->name) {
 		free (vpath->name);
+	}
 	while (vpath->user) {
 		next = vpath->user->next;
 		delete_searchpath (vpath->user);
@@ -859,6 +859,7 @@ qfs_findfile_search (const vpath_t *vpath, const searchpath_t *sp,
 				found.ff.realname = strdup (*fn);
 				found.path = strdup (path->str);
 				found.fname_index = fn - fnames;
+				dstring_delete (path);
 				return &found;
 			}
 		}
@@ -1416,6 +1417,16 @@ qfs_path_cvar (cvar_t *var)
 	free (cpath);
 }
 
+static void
+qfs_shutdown (void *data)
+{
+	while (qfs_vpaths) {
+		vpath_t    *next = qfs_vpaths->next;
+		delete_vpath (qfs_vpaths);
+		qfs_vpaths = next;
+	}
+}
+
 VISIBLE void
 QFS_Init (const char *game)
 {
@@ -1465,6 +1476,7 @@ QFS_Init (const char *game)
 	} else {
 		QFS_Gamedir ("");
 	}
+	Sys_RegisterShutdown (qfs_shutdown, 0);
 }
 
 VISIBLE const char *

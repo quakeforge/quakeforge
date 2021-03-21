@@ -842,6 +842,11 @@ Key_IMT_Drop_All_f (void)
 		while (key_targets[kd].imts) {
 			imt = key_targets[kd].imts;
 			key_targets[kd].imts = imt->next;
+			for (int i = 0; i < QFK_LAST; i++) {
+				if (imt->bindings[i].str) {
+					free (imt->bindings[i].str);
+				}
+			}
 			free ((char *) imt->name);
 			free (imt);
 		}

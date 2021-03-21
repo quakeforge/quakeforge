@@ -186,6 +186,8 @@ clear_table (hashtab_t **table)
 void
 Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 {
+	PL_Free (ctx->pipelineDef);
+	PL_Free (ctx->renderpassDef);
 	if (ctx->pipeline) {
 		QFV_DestroyPipeline (ctx->device, ctx->pipeline);
 	}
@@ -546,6 +548,10 @@ Vulkan_DestroyFrames (vulkan_ctx_t *ctx)
 		df->vkDestroySemaphore (dev, frame->imageAvailableSemaphore, 0);
 		df->vkDestroySemaphore (dev, frame->renderDoneSemaphore, 0);
 		df->vkDestroyFramebuffer (dev, frame->framebuffer, 0);
+		for (int j = 0; j < frame->cmdSetCount; j++) {
+			DARRAY_CLEAR (&frame->cmdSets[j]);
+		}
+		free (frame->cmdSets);
 	}
 
 	DARRAY_CLEAR (&ctx->frames);

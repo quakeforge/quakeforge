@@ -317,12 +317,13 @@ CL_ParseBeam (qmsg_t *net_message, model_t *m, double time, TEntContext_t *ctx)
 	tent_obj_t *to;
 	beam_t     *b;
 	int         ent;
-	vec3_t      start, end;
+	vec4f_t     start, end;
 
 	ent = MSG_ReadShort (net_message);
 
-	MSG_ReadCoordV (net_message, start);
-	MSG_ReadCoordV (net_message, end);
+	MSG_ReadCoordV (net_message, &start[0]);//FIXME
+	MSG_ReadCoordV (net_message, &end[0]);//FIXME
+	start[3] = end[3] = 1;//FIXME
 
 	to = 0;
 	if (ent) {
@@ -345,10 +346,10 @@ CL_ParseBeam (qmsg_t *net_message, model_t *m, double time, TEntContext_t *ctx)
 	b->model = m;
 	b->endtime = time + 0.2;
 	b->seed = rand ();
-	VectorCopy (end, b->end);
+	b->end = end;
 	if (b->entity != ctx->playerEntity) {
 		// this will be done in CL_UpdateBeams
-		VectorCopy (start, b->start);
+		b->start = start;
 		beam_setup (b, true, time, ctx);
 	}
 }
@@ -626,7 +627,7 @@ CL_UpdateBeams (double time, TEntContext_t *ctx)
 		// if coming from the player, update the start position
 		if (b->entity == ctx->playerEntity) {
 			beam_clear (b);
-			VectorCopy (ctx->simorg, b->start);
+			b->start = ctx->simorg;
 			beam_setup (b, false, time, ctx);
 		}
 

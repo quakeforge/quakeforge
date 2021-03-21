@@ -311,9 +311,9 @@ void
 X11_CreateNullCursor (void)
 {
 	Pixmap		cursormask;
-	XGCValues	xgc;
+	XGCValues	xgc = { };
 	GC			gc;
-	XColor		dummycolour;
+	XColor		dummycolour = { };
 
 	if (nullcursor != None)
 		return;
