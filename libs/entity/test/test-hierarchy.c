@@ -690,6 +690,8 @@ test_frames (void)
 		return 1;
 	}
 
+	Transform_Delete (root);
+
 	return 0;
 }
 
