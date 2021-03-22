@@ -28,12 +28,17 @@ layout (location = 0) out vec4 frag_color;
 vec3
 calc_light (LightData light, vec3 position, vec3 normal)
 {
+	float       r = light.radius;
 	vec3        dist = light.position - position;
 	float       d = sqrt (dot (dist, dist));
+	if (d > r) {
+		// the light is too far away
+		return vec3 (0);
+	}
+
 	vec3        incoming = dist / d;
 	float       spotdot = dot (incoming, light.direction);
 	float       lightdot = dot (incoming, normal);
-	float       r = light.radius;
 
 	int         style = light.data & 0x7f;
 	// deliberate array index error: access intensity2 as well
