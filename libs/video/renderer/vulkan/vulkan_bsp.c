@@ -75,6 +75,12 @@ static const char *bsp_pass_names[] = {
 	"translucent",
 };
 
+static QFV_Subpass subpass_map[] = {
+	QFV_passDepth,			// QFV_bspDepth
+	QFV_passGBuffer,		// QFV_bspGBuffer
+	QFV_passTranslucent,	// QFV_bspTranslucent
+};
+
 static float identity[] = {
 	1, 0, 0, 0,
 	0, 1, 0, 0,
@@ -872,7 +878,7 @@ bsp_begin_subpass (QFV_BspSubpass subpass, VkPipeline pipeline,
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		ctx->renderpass, subpass,
+		ctx->renderpass, subpass_map[subpass],
 		cframe->framebuffer,
 		0, 0, 0,
 	};
@@ -882,6 +888,9 @@ bsp_begin_subpass (QFV_BspSubpass subpass, VkPipeline pipeline,
 		| VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &inherit,
 	};
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
+
+	QFV_duCmdBeginLabel (device, cmd, bsp_pass_names[subpass],
+						 {0, 0.5, 0.6, 1});
 
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 							  pipeline);
@@ -914,6 +923,7 @@ bsp_end_subpass (VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
+	QFV_duCmdEndLabel (device, cmd);
 	dfunc->vkEndCommandBuffer (cmd);
 }
 
@@ -1274,15 +1284,6 @@ Vulkan_DrawSky (vulkan_ctx_t *ctx)
 	fragconst_t frag_constants = { time: vr_data.realtime };
 	push_fragconst (&frag_constants, bctx->layout, dfunc,
 					bframe->cmdSet.a[QFV_bspTranslucent]);
-	bind_view (qfv_bsp_texture, ctx->default_black->view, bframe,
-			   bframe->cmdSet.a[QFV_bspTranslucent],//FIXME
-			   bctx->layout, dfunc);
-	bind_view (qfv_bsp_glowmap, ctx->default_black->view, bframe,
-			   bframe->cmdSet.a[QFV_bspTranslucent],//FIXME
-			   bctx->layout, dfunc);
-	bind_view (qfv_bsp_lightmap, ctx->default_black->view, bframe,
-			   bframe->cmdSet.a[QFV_bspTranslucent],//FIXME
-			   bctx->layout, dfunc);
 	for (is = bctx->sky_chain; is; is = is->tex_chain) {
 		surf = is->surface;
 		if (tex != surf->texinfo->texture->render) {

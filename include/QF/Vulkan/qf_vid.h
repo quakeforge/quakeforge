@@ -36,7 +36,7 @@
 #include <vulkan/vulkan.h>
 
 //FIXME location
-enum {
+typedef enum {
 	QFV_passDepth,			// geometry
 	QFV_passGBuffer,		// geometry
 	QFV_passLighting,		// single quad
@@ -44,7 +44,7 @@ enum {
 	QFV_passCompose,		// single quad
 
 	QFV_NumPasses
-};
+} QFV_Subpass;
 
 enum {
 	QFV_attachDepth,

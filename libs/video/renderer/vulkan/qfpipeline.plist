@@ -719,12 +719,12 @@
 			//renderPass = renderpass;
 		};
 		bsp_skysheet = {
-			subpass = 2;
+			subpass = 3;
 			stages = (
 				{
 					stage = vertex;
 					name = main;
-					module = $builtin/bsp_gbuf.vert;
+					module = $builtin/quakebsp.vert;
 				},
 				{
 					stage = fragment;
