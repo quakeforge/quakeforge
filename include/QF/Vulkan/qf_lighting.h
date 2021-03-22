@@ -38,7 +38,7 @@
 
 typedef struct qfv_light_s {
 	vec3_t      color;
-	float       intensity;
+	int         data;
 	vec3_t      position;
 	float       radius;
 	vec3_t      direction;
@@ -50,8 +50,10 @@ typedef struct qfv_lightleafset_s DARRAY_TYPE (int) qfv_lightleafset_t;
 typedef struct qfv_lightvisset_s DARRAY_TYPE (byte) qfv_lightvisset_t;
 
 #define NUM_LIGHTS 256
+#define NUM_STYLES 64
 
 typedef struct qfv_light_buffer_s {
+	float       intensity[NUM_STYLES + 3];
 	int         lightCount;
 	qfv_light_t lights[NUM_LIGHTS] __attribute__((aligned(16)));
 } qfv_light_buffer_t;

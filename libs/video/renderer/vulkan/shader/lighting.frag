@@ -7,7 +7,7 @@ layout (input_attachment_index = 3, set = 0, binding = 3) uniform subpassInput p
 
 struct LightData {
 	vec3        color;
-	float       intensity;
+	int         data;// bits 0-6: intensity key (however, values 0-66)
 	vec3        position;
 	float       radius;
 	vec3        direction;
@@ -16,6 +16,8 @@ struct LightData {
 
 layout (constant_id = 0) const int MaxLights = 128;
 layout (set = 1, binding = 0) uniform Lights {
+	vec4        intensity[16]; // 64 floats
+	vec3        intensity2;
 	int         lightCount;
 	LightData   lights[MaxLights];
 };
@@ -32,9 +34,12 @@ calc_light (LightData light, vec3 position, vec3 normal)
 	float       lightdot = dot (incoming, normal);
 	float       r = light.radius;
 
-	float       intensity = light.intensity * step (d, r);
-	intensity *= smoothstep (spotdot, 1 - (1 - spotdot) * 0.995, light.cone) * clamp (lightdot, 0, 1);
-	return light.color * intensity * (r - d);
+	int         style = light.data & 0x7f;
+	// deliberate array index error: access intensity2 as well
+	float       i = intensity[style / 4][style % 4];
+	i *= step (d, r) * clamp (lightdot, 0, 1);
+	i *= smoothstep (spotdot, 1 - (1 - spotdot) * 0.995, light.cone);
+	return light.color * i * (r - d);
 }
 
 void
@@ -51,5 +56,5 @@ main (void)
 			light += calc_light (lights[i], p, n);
 		}
 	}
-	frag_color = vec4 (c * light / 255.0, 1);
+	frag_color = vec4 (c * light, 1);
 }

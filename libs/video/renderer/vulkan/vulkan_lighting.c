@@ -121,6 +121,14 @@ update_lights (vulkan_ctx_t *ctx)
 	qfv_light_buffer_t *light_data = QFV_PacketExtend (packet,
 													   sizeof (*light_data));
 
+	for (int i = 0; i < NUM_STYLES; i++) {
+		light_data->intensity[i] = d_lightstylevalue[i] / 65536.0;
+	}
+	// dynamic lights seem a tad fiant, so 16x map lights
+	light_data->intensity[64] = 1 / 16.0;
+	light_data->intensity[65] = 1 / 16.0;
+	light_data->intensity[66] = 1 / 16.0;
+
 	light_data->lightCount = 0;
 	R_FindNearLights (r_origin, NUM_LIGHTS - 1, lights);
 	for (int i = 0; i < NUM_LIGHTS - 1; i++) {
@@ -131,7 +139,7 @@ update_lights (vulkan_ctx_t *ctx)
 		VectorCopy (lights[i]->color, light_data->lights[i].color);
 		VectorCopy (lights[i]->origin, light_data->lights[i].position);
 		light_data->lights[i].radius = lights[i]->radius;
-		light_data->lights[i].intensity = 16;
+		light_data->lights[i].data = 64;	// default dynamic light
 		VectorZero (light_data->lights[i].direction);
 		light_data->lights[i].cone = 1;
 	}
@@ -380,7 +388,7 @@ parse_light (qfv_light_t *light, const plitem_t *entity,
 	Sys_Printf ("}\n");*/
 
 	light->cone = 1;
-	light->intensity = 1;
+	light->data = 0;
 	light->radius = 300;
 	VectorSet (1, 1, 1, light->color);
 
@@ -409,6 +417,10 @@ parse_light (qfv_light_t *light, const plitem_t *entity,
 	if ((str = PL_String (PL_ObjectForKey (entity, "light_lev")))
 		|| (str = PL_String (PL_ObjectForKey (entity, "_light")))) {
 		light->radius = atof (str);
+	}
+
+	if ((str = PL_String (PL_ObjectForKey (entity, "style")))) {
+		light->data = atoi (str) & 0x3f;
 	}
 
 	if ((str = PL_String (PL_ObjectForKey (entity, "color")))
@@ -467,8 +479,8 @@ Vulkan_LoadLights (model_t *model, const char *entity_data, vulkan_ctx_t *ctx)
 				mleaf_t    *leaf = Mod_PointInLeaf (&light.position[0],
 													model);
 				DARRAY_APPEND (&lctx->lightleafs, leaf - model->brush.leafs);
-				printf ("[%g, %g, %g] %g, [%g %g %g] %g, [%g %g %g] %g, %zd\n",
-						VectorExpand (light.color), light.intensity,
+				printf ("[%g, %g, %g] %d, [%g %g %g] %g, [%g %g %g] %g, %zd\n",
+						VectorExpand (light.color), light.data,
 						VectorExpand (light.position), light.radius,
 						VectorExpand (light.direction), light.cone,
 						leaf - model->brush.leafs);
