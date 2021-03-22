@@ -30,6 +30,21 @@
 			usage = color_attachment|input_attachment|transient_attachment;
 			initialLayout = undefined;
 		};
+		emission = {
+			imageType = VK_IMAGE_TYPE_2D;
+			format = r16g16b16a16_sfloat;
+			samples = 1;
+			extent = {
+				width = $swapchain.extent.width;
+				height = $swapchain.extent.height;
+				depth = 1;
+			};
+			mipLevels = 1;
+			arrayLayers = 1;
+			tiling = optimal;
+			usage = color_attachment|input_attachment|transient_attachment;
+			initialLayout = undefined;
+		};
 		normal = {
 			imageType = VK_IMAGE_TYPE_2D;
 			format = r16g16b16a16_sfloat;
@@ -124,6 +139,22 @@
 				layerCount = 1;
 			};
 		};
+		emission = {
+			image = emission;
+			viewType = VK_IMAGE_VIEW_TYPE_2D;
+			format = $properties.images.emission.format;
+			components = {
+				r = identity;
+				g = identity;
+				b = identity;
+				a = identity;
+			};
+			subresourceRange = {
+				aspectMask = color;
+				levelCount = 1;
+				layerCount = 1;
+			};
+		};
 		normal = {
 			image = normal;
 			viewType = VK_IMAGE_VIEW_TYPE_2D;
@@ -191,8 +222,8 @@
 	};
 	framebuffer = {
 		renderPass = $properties.renderpass;
-		attachments = (depth, color, normal, position, opaque, translucent,
-					   "$swapchain.views[$swapImageIndex]");
+		attachments = (depth, color, emission, normal, position, opaque,
+					   translucent, "$swapchain.views[$swapImageIndex]");
 		width = $swapchain.extent.width;
 		height = $swapchain.extent.height;
 		layers = 1;
@@ -200,6 +231,7 @@
 	clearValues = (
 		{ depthStencil = { depth = 1; stencil = 0; }; },
 		{ color = "[0, 0, 0, 1]"; },	// color
+		{ color = "[0, 0, 0, 1]"; },	// emission
 		{ color = "[0, 0, 0, 1]"; },	// normal
 		{ color = "[0, 0, 0, 1]"; },	// position
 		{ color = "[0, 0, 0, 1]"; },	// opaque
@@ -220,6 +252,16 @@
 			},
 			{
 				format = $properties.images.color.format;
+				samples = 1;
+				loadOp = dont_care;
+				storeOp = dont_care;
+				stencilLoadOp = dont_care;
+				stencilStoreOp = dont_care;
+				initialLayout = undefined;
+				finalLayout = color_attachment_optimal;
+			},
+			{
+				format = $properties.images.emission.format;
 				samples = 1;
 				loadOp = dont_care;
 				storeOp = dont_care;
@@ -294,12 +336,16 @@
 						attachment = 1;
 						layout = color_attachment_optimal;
 					},
-					{	// normal
+					{	// emission
 						attachment = 2;
 						layout = color_attachment_optimal;
 					},
-					{	// position
+					{	// normal
 						attachment = 3;
+						layout = color_attachment_optimal;
+					},
+					{	// position
+						attachment = 4;
 						layout = color_attachment_optimal;
 					},
 				);
@@ -307,7 +353,7 @@
 					attachment = 0;
 					layout = depth_stencil_attachment_optimal;
 				};
-				preserveAttachments = (5);
+				preserveAttachments = (6);
 			},
 			{	// 2 lighting
 				pipelineBindPoint = graphics;
@@ -320,52 +366,56 @@
 						attachment = 1;
 						layout = shader_read_only_optimal;
 					},
-					{	// normal
+					{	// emission
 						attachment = 2;
 						layout = shader_read_only_optimal;
 					},
-					{	// position
+					{	// normal
 						attachment = 3;
+						layout = shader_read_only_optimal;
+					},
+					{	// position
+						attachment = 4;
 						layout = shader_read_only_optimal;
 					},
 				);
 				colorAttachments = (
 					{	// opaque
-						attachment = 4;
+						attachment = 5;
 						layout = color_attachment_optimal;
 					},
 				);
-				preserveAttachments = (5);
+				preserveAttachments = (6);
 			},
 			{	// 3 translucent
 				pipelineBindPoint = graphics;
 				colorAttachments = (
 					{	// translucent
-						attachment = 5;
+						attachment = 6;
 						layout = color_attachment_optimal;
 					},
 				);
-				preserveAttachments = (0, 1, 2, 3, 4);
+				preserveAttachments = (0, 1, 2, 3, 4, 5);
 			},
 			{	// 4 compose
 				pipelineBindPoint = graphics;
 				inputAttachments = (
 					{	// opaque
-						attachment = 4;
+						attachment = 5;
 						layout = shader_read_only_optimal;
 					},
 					{	// translucent
-						attachment = 5;
+						attachment = 6;
 						layout = shader_read_only_optimal;
 					},
 				);
 				colorAttachments = (
 					{	// swapchain
-						attachment = 6;
+						attachment = 7;
 						layout = color_attachment_optimal;
 					},
 				);
-				preserveAttachments = (0, 1, 2, 3);
+				preserveAttachments = (0, 1, 2, 3, 4);
 			},
 		);
 		dependencies = (

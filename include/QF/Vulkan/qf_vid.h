@@ -49,6 +49,7 @@ enum {
 enum {
 	QFV_attachDepth,
 	QFV_attachColor,
+	QFV_attachEmission,
 	QFV_attachNormal,
 	QFV_attachPosition,
 	QFV_attachOpaque,

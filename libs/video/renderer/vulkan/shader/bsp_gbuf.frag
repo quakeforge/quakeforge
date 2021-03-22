@@ -18,8 +18,9 @@ layout (location = 2) in vec3 normal;
 layout (location = 3) in vec4 position;
 
 layout (location = 0) out vec4 frag_color;
-layout (location = 1) out vec4 frag_normal;
-layout (location = 2) out vec4 frag_position;
+layout (location = 1) out vec4 frag_emission;
+layout (location = 2) out vec4 frag_normal;
+layout (location = 3) out vec4 frag_position;
 
 layout (constant_id = 0) const bool doWarp = false;
 layout (constant_id = 1) const bool doLight = true;
@@ -107,7 +108,8 @@ sky_color (vec3 dir, float time)
 void
 main (void)
 {
-	vec4        c;
+	vec4        c = vec4 (0);
+	vec4        e;
 	vec2        t_st = tl_st.xy;
 	vec2        l_st = tl_st.zw;
 
@@ -115,15 +117,16 @@ main (void)
 		t_st = warp_st (t_st, time);
 	}
 	if (doSkyCube || doSkySheet) {
-		c = sky_color (direction, time);
+		e = sky_color (direction, time);
 	} else {
 		c = texture (Texture, t_st);
 		if (doLight) {
 			c *= vec4 (texture (LightMap, l_st).xyz, 1);
 		}
-		c += texture (GlowMap, t_st);
+		e = texture (GlowMap, t_st);
 	}
 	frag_color = c;//fogBlend (c);
+	frag_emission = e;
 	frag_normal = vec4 (normal, 0);
 	frag_position = position;
 }

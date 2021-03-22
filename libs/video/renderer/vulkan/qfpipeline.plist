@@ -83,7 +83,7 @@
 			bindings = (
 				{
 					type = input_attachment;
-					descriptorCount = "4z * $frames.size";
+					descriptorCount = "5z * $frames.size";
 				},
 			);
 		};
@@ -254,6 +254,12 @@
 				},
 				{
 					binding = 3;
+					descriptorType = input_attachment;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+				{
+					binding = 4;
 					descriptorType = input_attachment;
 					descriptorCount = 1;
 					stageFlags = fragment;
@@ -515,6 +521,16 @@
 						alphaBlendOp = add;
 						colorWriteMask = r|g|b|a;
 					},
+					{
+						blendEnable = false;
+						srcColorBlendFactor = src_alpha;
+						dstColorBlendFactor = one_minus_src_alpha;
+						colorBlendOp = add;
+						srcAlphaBlendFactor = src_alpha;
+						dstAlphaBlendFactor = one_minus_src_alpha;
+						alphaBlendOp = add;
+						colorWriteMask = r|g|b|a;
+					},
 				);
 			};
 			dynamic = {
@@ -654,6 +670,16 @@
 			colorBlend = {
 				logicOpEnable = false;
 				attachments = (
+					{
+						blendEnable = false;
+						srcColorBlendFactor = src_alpha;
+						dstColorBlendFactor = one_minus_src_alpha;
+						colorBlendOp = add;
+						srcAlphaBlendFactor = src_alpha;
+						dstAlphaBlendFactor = one_minus_src_alpha;
+						alphaBlendOp = add;
+						colorWriteMask = r|g|b|a;
+					},
 					{
 						blendEnable = false;
 						srcColorBlendFactor = src_alpha;

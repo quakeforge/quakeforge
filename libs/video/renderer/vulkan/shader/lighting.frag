@@ -2,8 +2,9 @@
 
 layout (input_attachment_index = 0, set = 0, binding = 0) uniform subpassInput depth;
 layout (input_attachment_index = 1, set = 0, binding = 1) uniform subpassInput color;
-layout (input_attachment_index = 2, set = 0, binding = 2) uniform subpassInput normal;
-layout (input_attachment_index = 3, set = 0, binding = 3) uniform subpassInput position;
+layout (input_attachment_index = 2, set = 0, binding = 2) uniform subpassInput emission;
+layout (input_attachment_index = 3, set = 0, binding = 3) uniform subpassInput normal;
+layout (input_attachment_index = 4, set = 0, binding = 4) uniform subpassInput position;
 
 struct LightData {
 	vec3        color;
@@ -47,6 +48,7 @@ main (void)
 {
 	//float       d = subpassLoad (depth).r;
 	vec3        c = subpassLoad (color).rgb;
+	vec3        e = subpassLoad (emission).rgb;
 	vec3        n = subpassLoad (normal).rgb;
 	vec3        p = subpassLoad (position).rgb;
 	vec3        light = vec3 (0);
@@ -56,5 +58,5 @@ main (void)
 			light += calc_light (lights[i], p, n);
 		}
 	}
-	frag_color = vec4 (c * light, 1);
+	frag_color = vec4 (c * light + e, 1);
 }

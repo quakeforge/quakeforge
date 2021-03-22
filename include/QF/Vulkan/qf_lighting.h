@@ -59,7 +59,7 @@ typedef struct qfv_light_buffer_s {
 } qfv_light_buffer_t;
 
 #define LIGHTING_BUFFER_INFOS 1
-#define LIGHTING_IMAGE_INFOS 4
+#define LIGHTING_IMAGE_INFOS 5
 
 typedef struct lightingframe_s {
 	VkCommandBuffer cmd;

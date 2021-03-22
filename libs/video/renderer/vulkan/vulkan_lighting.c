@@ -214,8 +214,10 @@ Vulkan_Lighting_Draw (vulkan_ctx_t *ctx)
 	lframe->imageInfo[0].imageView = ctx->attachment_views->a[QFV_attachDepth];
 	lframe->imageInfo[1].imageView = ctx->attachment_views->a[QFV_attachColor];
 	lframe->imageInfo[2].imageView
-		= ctx->attachment_views->a[QFV_attachNormal];
+		= ctx->attachment_views->a[QFV_attachEmission];
 	lframe->imageInfo[3].imageView
+		= ctx->attachment_views->a[QFV_attachNormal];
+	lframe->imageInfo[4].imageView
 		= ctx->attachment_views->a[QFV_attachPosition];
 	dfunc->vkUpdateDescriptorSets (device->dev,
 								   LIGHTING_BUFFER_INFOS + LIGHTING_IMAGE_INFOS,
