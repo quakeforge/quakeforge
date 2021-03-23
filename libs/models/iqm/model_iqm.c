@@ -497,25 +497,25 @@ Mod_LoadIQM (model_t *mod, void *buffer)
 	uint32_t   *swap;
 
 	if (!strequal (hdr->magic, IQM_MAGIC))
-		Sys_Error ("%s: not an IQM", loadname);
+		Sys_Error ("%s: not an IQM", mod->path);
 	// Byte swap the header. Everything is the same type, so no problem :)
 	for (swap = &hdr->version; swap <= &hdr->ofs_extensions; swap++)
 		*swap = LittleLong (*swap);
 	//if (hdr->version < 1 || hdr->version > IQM_VERSION)
 	if (hdr->version != IQM_VERSION)
-		Sys_Error ("%s: unable to handle iqm version %d", loadname,
+		Sys_Error ("%s: unable to handle iqm version %d", mod->path,
 				   hdr->version);
 	if (hdr->filesize != (uint32_t) qfs_filesize)
-		Sys_Error ("%s: invalid filesize", loadname);
+		Sys_Error ("%s: invalid filesize", mod->path);
 	iqm = calloc (1, sizeof (iqm_t));
 	iqm->text = malloc (hdr->num_text);
 	memcpy (iqm->text, (byte *) buffer + hdr->ofs_text, hdr->num_text);
 	mod->aliashdr = (aliashdr_t *) iqm;
 	mod->type = mod_iqm;
 	if (hdr->num_meshes && !load_iqm_meshes (mod, hdr, (byte *) buffer))
-		Sys_Error ("%s: error loading meshes", loadname);
+		Sys_Error ("%s: error loading meshes", mod->path);
 	if (hdr->num_anims && !load_iqm_anims (mod, hdr, (byte *) buffer))
-		Sys_Error ("%s: error loading anims", loadname);
+		Sys_Error ("%s: error loading anims", mod->path);
 	m_funcs->Mod_IQMFinish (mod);
 }
 

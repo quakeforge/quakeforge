@@ -53,6 +53,7 @@
 -(Editor *) find_file:(string) filename
 {
 	Editor     *file;
+	filename = qdb_get_file_path (target, filename);
 	for (int i = [files count]; i-- > 0; ) {
 		file = [files objectAtIndex: i];
 		if ([file filename] == filename) {
@@ -62,8 +63,7 @@
 	Rect rect = {{1, 1}, [source_window size]};
 	rect.extent.width -= 2;
 	rect.extent.height -= 2;
-	string filepath = qdb_get_file_path (target, filename);
-	file = [Editor withRect:rect file:filepath];
+	file = [Editor withRect:rect file:filename];
 	[files addObject: file];
 	return file;
 }
@@ -127,7 +127,7 @@
 }
 
 static int
-proxy_event (Debugger *self, id proxy, qwaq_event_t *event)
+proxy_event_stopped (Debugger *self, id proxy, qwaq_event_t *event)
 {
 	if (event.what == qe_mouseclick && !(event.mouse.buttons & 0x78)) {
 		if (proxy == self.current_file) {
@@ -142,6 +142,7 @@ proxy_event (Debugger *self, id proxy, qwaq_event_t *event)
 				self.traceHandler = @selector(traceStep);
 				qdb_set_trace (self.target, 1);
 				self.trace_cond.state = qdb_get_state (self.target);
+				self.running = 1;
 				qdb_continue (self.target);
 				return 1;
 			case QFK_F8:
@@ -150,6 +151,7 @@ proxy_event (Debugger *self, id proxy, qwaq_event_t *event)
 				qdb_set_trace (self.target, 1);
 				self.trace_cond.state = qdb_get_state (self.target);
 				self.trace_cond.depth = qdb_get_stack_depth (self.target);
+				self.running = 1;
 				qdb_continue (self.target);
 				return 1;
 		}
@@ -157,15 +159,28 @@ proxy_event (Debugger *self, id proxy, qwaq_event_t *event)
 	return 0;
 }
 
+static int
+proxy_event_running (Debugger *self, id proxy, qwaq_event_t *event)
+{
+	return 0;
+}
+
 -(void)proxy_event:(id)proxy :(qwaq_event_t *)event
 {
-	if (proxy_event (self, proxy, event)) {
-		event.what = qe_none;
+	if (running) {
+		if (proxy_event_running (self, proxy, event)) {
+			event.what = qe_none;
+		}
+	} else {
+		if (proxy_event_stopped (self, proxy, event)) {
+			event.what = qe_none;
+		}
 	}
 }
 
 -stop:(prdebug_t)reason
 {
+	running = 0;
 	if (!file_proxy) {
 		[self setup];
 	}

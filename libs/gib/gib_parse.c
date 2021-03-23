@@ -333,7 +333,8 @@ GIB_Parse_Tokens (const char *program, unsigned int *i, unsigned int pofs)
 	return nodes;
   ERROR:
 	if (c)
-		GIB_Parse_Error (va ("Could not find match for '%c'.", c), *i + pofs);
+		GIB_Parse_Error (va (0, "Could not find match for '%c'.", c),
+							 *i + pofs);
 	if (nodes)
 		GIB_Tree_Unref (&nodes);
 	return 0;
@@ -496,7 +497,8 @@ GIB_Parse_Embedded (gib_tree_t *token)
 	return lines;
   ERROR:
 	if (c)
-		GIB_Parse_Error (va ("Could not find match for '%c'.", c), i + token->start);
+		GIB_Parse_Error (va (0, "Could not find match for '%c'.", c),
+							 i + token->start);
 	if (lines)
 		GIB_Tree_Unref (&lines);
 	return 0;

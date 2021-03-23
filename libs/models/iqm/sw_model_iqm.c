@@ -53,12 +53,11 @@
 #include "mod_internal.h"
 #include "r_internal.h"
 
-static tex_t null_texture = {
-	2, 2, tex_palette, 0, {15, 15, 15, 15}
-};
+static byte null_data[] = {15, 15, 15, 15};
+static tex_t null_texture = { 2, 2, tex_palette, 1, 0, null_data };
 
 static void
-sw_iqm_clear (model_t *mod)
+sw_iqm_clear (model_t *mod, void *data)
 {
 	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
 	swiqm_t    *sw = (swiqm_t *) iqm->extra_data;
@@ -109,7 +108,8 @@ convert_tex (tex_t *tex)
 	int         i;
 
 	pixels = tex->width * tex->height;
-	new = malloc (field_offset (tex_t, data[pixels]));
+	new = malloc (sizeof (tex_t) + pixels);
+	new->data = (byte *) (new + 1);
 	new->width = tex->width;
 	new->height = tex->height;
 	new->format = tex_palette;
@@ -129,6 +129,15 @@ convert_tex (tex_t *tex)
 		case tex_rgb:
 			for (i = 0; i < pixels; i++)
 				new->data[i] = convert_color (tex->data + i * bpp);
+			break;
+		case tex_frgba:
+			for (i = 0; i < pixels; i++) {
+				byte        col[3];
+				col[0] = ((float *)tex->data)[i * 4 + 0] * 255;
+				col[1] = ((float *)tex->data)[i * 4 + 1] * 255;
+				col[2] = ((float *)tex->data)[i * 4 + 2] * 255;
+				new->data[i] = convert_color (col);
+			}
 			break;
 	}
 	return new;
@@ -165,7 +174,7 @@ sw_iqm_load_textures (iqm_t *iqm)
 			continue;
 		dstring_copystr (str, iqm->text + iqm->meshes[i].material);
 		QFS_StripExtension (str->str, str->str);
-		if ((tex = LoadImage (va ("textures/%s", str->str))))
+		if ((tex = LoadImage (va (0, "textures/%s", str->str), 1)))
 			tex = sw->skins[i] = convert_tex (tex);
 		else
 			tex = sw->skins[i] = &null_texture;

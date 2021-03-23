@@ -118,7 +118,7 @@ typedef struct pr_stashed_params_s {
 				alloca().
 
 	\param pr		pointer to ::progs_t VM struct
-	\return 		Pointer to a newly allocated and initialized parameter
+	\return			Pointer to a newly allocated and initialized parameter
 					stash that has the current parameters saved to it.
 	\hideinitializer
 */
@@ -137,7 +137,7 @@ typedef struct pr_stashed_params_s {
 	\param pr		pointer to ::progs_t VM struct
 	\param params	location to save the parameters, must be of adequade size
 					to hold \a pr_argc * \a pr_param_size words in \a params
-	\return 		\a params Allows the likes of:
+	\return			\a params Allows the likes of:
 						__auto_type params = PR_SaveParams (pr);
 */
 pr_stashed_params_t *_PR_SaveParams (progs_t *pr, pr_stashed_params_t *params);
@@ -298,13 +298,15 @@ void ED_PrintNum (progs_t *pr, pr_int_t ent);
 // pr_parse.c
 struct script_s;
 struct plitem_s;
+struct hashlink_s;
 qboolean ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key,
 						const char *s);
 struct plitem_s *ED_EntityDict (progs_t *pr, edict_t *ed);
 struct plitem_s *ED_GlobalsDict (progs_t *pr);
 void ED_InitGlobals (progs_t *pr, struct plitem_s *globals);
 void ED_InitEntity (progs_t *pr, struct plitem_s *entity, edict_t *ent);
-struct plitem_s *ED_ConvertToPlist (struct script_s *script, int nohack);
+struct plitem_s *ED_ConvertToPlist (struct script_s *script, int nohack,
+									struct hashlink_s **hashlinks);
 struct plitem_s *ED_Parse (progs_t *pr, const char *data);
 void ED_LoadFromFile (progs_t *pr, const char *data);
 void ED_EntityParseFunction (progs_t *pr);
@@ -1530,46 +1532,50 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 
 /** Allocate a new resource from the resource map.
 
-	\param type		The type of the resource. Must match the \c type parameter
-					used for PR_RESMAP.
 	\param map		The resource map.
 	\return			A pointer to the new resource, or null if no more could
 					be allocated.
 */
-#define PR_RESNEW(type,map)									\
-	type       *t;											\
-															\
-	if (!map._free) {										\
-		int         i, size;								\
-		map._size++;										\
-		size = map._size * sizeof (type *);					\
-		map._map = realloc (map._map, size);				\
-		if (!map._map)										\
-			return 0;										\
-		map._free = calloc (1024, sizeof (type));			\
-		if (!map._free)										\
-			return 0;										\
-		map._map[map._size - 1] = map._free;				\
-		for (i = 0; i < 1023; i++)							\
-			*(type **) &map._free[i] = &map._free[i + 1];	\
-		*(type **) &map._free[i] = 0;						\
-	}														\
-	t = map._free;											\
-	map._free = *(type **) t;								\
-	memset (t, 0, sizeof (type));							\
-	return t
+#define PR_RESNEW_NC(map)													\
+	({																		\
+		if (!map._free) {													\
+			int         i, size;											\
+			map._size++;													\
+			size = map._size * sizeof (map._free);							\
+			map._map = realloc (map._map, size);							\
+			if (!map._map)													\
+				return 0;													\
+			map._free = malloc (1024 * sizeof (*map._free));				\
+			if (!map._free)													\
+				return 0;													\
+			map._map[map._size - 1] = map._free;							\
+			for (i = 0; i < 1023; i++)										\
+				*(typeof (map._free) *) &map._free[i] = &map._free[i + 1];	\
+			*(typeof (map._free) *) &map._free[i] = 0;						\
+		}																	\
+		__auto_type t = map._free;											\
+		map._free = *(typeof (map._free) *) t;								\
+		t;																	\
+	})
+
+#define PR_RESNEW(map)														\
+	({																		\
+		__auto_type t = PR_RESNEW_NC (map);									\
+		memset (t, 0, sizeof (*map._free));									\
+		t;																	\
+	})
 
 /** Free a resource returning it to the resource map.
 
-	\param type		The type of the resource. Must match the \c type parameter
-					used for PR_RESMAP.
 	\param map		The resource map.
 	\param t		Pointer to the resource to be freed.
 */
-#define PR_RESFREE(type,map,t)								\
-	memset (t, 0, sizeof (type));							\
-	*(type **) t = map._free;								\
-	map._free = t
+#define PR_RESFREE(map,t)									\
+	do {													\
+		memset (t, 0, sizeof (*map._free));					\
+		*(typeof (map._free) *) t = map._free;				\
+		map._free = t;										\
+	} while (0)
 
 /** Free all resources in the resource map.
 
@@ -1578,24 +1584,24 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 
 	A reset resource map is guaranteed to allocate elements sequentially.
 
-	\param type		The type of the resource. Must match the \c type parameter
-					used for PR_RESMAP.
 	\param map		The resource map.
 */
-#define PR_RESRESET(type,map)								\
-	unsigned    i, j;										\
-	if (!map._size)											\
-		return;												\
-	for (i = 0; i < map._size; i++) {						\
-		map._free = map._map[i];							\
-		for (j = 0; j < 1023; j++)							\
-			*(type **) &map._free[j] = &map._free[j + 1];	\
-		if (i < map._size - 1)								\
-			*(type **) &map._free[j] = &map._map[i + 1][0];	\
-		else												\
-			*(type **) &map._free[j] = 0;					\
-	}														\
-	map._free = map._map[0];
+#define PR_RESRESET(map)													\
+	do {																	\
+		unsigned    i, j;													\
+		if (!map._size)														\
+			return;															\
+		for (i = 0; i < map._size; i++) {									\
+			map._free = map._map[i];										\
+			for (j = 0; j < 1023; j++)										\
+				*(typeof (map._free) *) &map._free[j] = &map._free[j + 1];	\
+			if (i < map._size - 1)											\
+				*(typeof (map._free) *) &map._free[j] = &map._map[i + 1][0];\
+			else															\
+				*(typeof (map._free) *) &map._free[j] = 0;					\
+		}																	\
+		map._free = map._map[0];											\
+	} while (0)
 
 /** Retrieve a resource from the resource map using a handle.
 
@@ -1604,12 +1610,14 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 	\return			A pointer to the resource, or NULL if the handle is
 					invalid.
 */
-#define PR_RESGET(map,col)									\
-	unsigned    row = ~col / 1024;							\
-	col = ~col % 1024;										\
-	if (row >= map._size)									\
-		return 0;											\
-	return &map._map[row][col]
+#define PR_RESGET(map,col)										\
+	({															\
+		unsigned    row = ~col / 1024;							\
+		col = ~col % 1024;										\
+		if (row >= map._size)									\
+			return 0;											\
+		&map._map[row][col];									\
+	})
 
 /** Convert a resource pointer to a handle.
 
@@ -1617,14 +1625,19 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 	\param ptr		The resource pointer.
 	\return			The handle or 0 if the pointer is invalid.
 */
-#define PR_RESINDEX(map,ptr)								\
-	unsigned    i;											\
-	for (i = 0; i < map._size; i++) {						\
-		long d = ptr - map._map[i];							\
-		if (d >= 0 && d < 1024)								\
-			return ~(i * 1024 + d);							\
-	}														\
-	return 0
+#define PR_RESINDEX(map,ptr)									\
+	({															\
+		unsigned    i;											\
+		unsigned    index = 0;									\
+		for (i = 0; i < map._size; i++) {						\
+			long d = ptr - map._map[i];							\
+			if (d >= 0 && d < 1024)	{							\
+				index = ~(i * 1024 + d);						\
+				break;											\
+			}													\
+		}														\
+		index;													\
+	})
 ///@}
 
 ///@}
@@ -1780,6 +1793,7 @@ struct progs_s {
 	///@{
 	struct hashtab_s *builtin_hash;
 	struct hashtab_s *builtin_num_hash;
+	struct biblock_s *builtin_blocks;
 	unsigned    bi_next;
 	unsigned  (*bi_map) (progs_t *pr, unsigned binum);
 	///@}

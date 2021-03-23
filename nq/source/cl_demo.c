@@ -105,7 +105,7 @@ CL_WriteDemoMessage (sizebuf_t *msg)
 	len = LittleLong (msg->cursize);
 	Qwrite (cls.demofile, &len, 4);
 	for (i = 0; i < 3; i++) {
-		f = LittleFloat (cl.viewangles[i]);
+		f = LittleFloat (cl.viewstate.angles[i]);
 		Qwrite (cls.demofile, &f, 4);
 	}
 	Qwrite (cls.demofile, msg->data, msg->cursize);
@@ -182,14 +182,14 @@ read_demopacket (void)
 	if (net_message->message->cursize > MAX_DEMMSG)
 		Host_Error ("Demo message > MAX_DEMMSG: %d/%d",
 					net_message->message->cursize, MAX_DEMMSG);
-	VectorCopy (cl.mviewangles[0], cl.mviewangles[1]);
+	VectorCopy (cl.frameViewAngles[0], cl.frameViewAngles[1]);
 	for (i = 0; i < 3; i++) {
 		r = Qread (cls.demofile, &f, 4);
 		if (r != 4) {
 			CL_StopPlayback ();
 			return 0;
 		}
-		cl.mviewangles[0][i] = LittleFloat (f);
+		cl.frameViewAngles[0][i] = LittleFloat (f);
 	}
 	r = Qread (cls.demofile, net_message->message->data,
 			   net_message->message->cursize);
@@ -312,7 +312,7 @@ CL_Record_f (void)
 
 // start up the map
 	if (c > 2)
-		Cmd_ExecuteString (va ("map %s", Cmd_Argv (2)), src_command);
+		Cmd_ExecuteString (va (0, "map %s", Cmd_Argv (2)), src_command);
 
 	CL_Record (Cmd_Argv (1), track);
 }
@@ -338,7 +338,7 @@ demo_default_name (const char *argv1)
 	strftime (timestring, 19, "%Y-%m-%d-%H-%M", localtime (&tim));
 
 	// the leading path-name is to be removed from cl.worldmodel->name
-	mapname = QFS_SkipPath (cl.worldmodel->name);
+	mapname = QFS_SkipPath (cl.worldmodel->path);
 
 	// the map name is cut off after any "." because this would prevent
 	// an extension being appended

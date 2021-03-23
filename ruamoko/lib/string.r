@@ -17,3 +17,4 @@ int str_str (string haystack, string needle) = #0;
 int str_char (string str, int ind) = #0;
 string str_quote (string str) = #0;
 string str_lower (string str) = #0;
+string str_upper (string str) = #0;

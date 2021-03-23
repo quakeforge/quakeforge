@@ -77,61 +77,61 @@ typedef struct {
 static bi_set_t *
 res_set_new (set_resources_t *res)
 {
-	PR_RESNEW (bi_set_t, res->set_map);
+	return PR_RESNEW (res->set_map);
 }
 
 static void
 res_set_free (set_resources_t *res, bi_set_t *set)
 {
-	PR_RESFREE (bi_set_t, res->set_map, set);
+	PR_RESFREE (res->set_map, set);
 }
 
 static void
 res_set_reset (set_resources_t *res)
 {
-	PR_RESRESET (bi_set_t, res->set_map);
+	PR_RESRESET (res->set_map);
 }
 
 static inline bi_set_t *
 res_set_get (set_resources_t *res, int index)
 {
-	PR_RESGET(res->set_map, index);
+	return PR_RESGET(res->set_map, index);
 }
 
 static inline int __attribute__((pure))
 res_set_index (set_resources_t *res, bi_set_t *set)
 {
-	PR_RESINDEX(res->set_map, set);
+	return PR_RESINDEX(res->set_map, set);
 }
 
 static bi_set_iter_t *
 res_set_iter_new (set_resources_t *res)
 {
-	PR_RESNEW (bi_set_iter_t, res->set_iter_map);
+	return PR_RESNEW (res->set_iter_map);
 }
 
 static void
 res_set_iter_free (set_resources_t *res, bi_set_iter_t *set_iter)
 {
-	PR_RESFREE (bi_set_iter_t, res->set_iter_map, set_iter);
+	PR_RESFREE (res->set_iter_map, set_iter);
 }
 
 static void
 res_set_iter_reset (set_resources_t *res)
 {
-	PR_RESRESET (bi_set_iter_t, res->set_iter_map);
+	PR_RESRESET (res->set_iter_map);
 }
 
 static inline bi_set_iter_t *
 res_set_iter_get (set_resources_t *res, int index)
 {
-	PR_RESGET(res->set_iter_map, index);
+	return PR_RESGET(res->set_iter_map, index);
 }
 
 static inline int __attribute__((pure))
 res_set_iter_index (set_resources_t *res, bi_set_iter_t *set_iter)
 {
-	PR_RESINDEX(res->set_iter_map, set_iter);
+	return PR_RESINDEX(res->set_iter_map, set_iter);
 }
 
 static bi_set_t *
@@ -392,7 +392,7 @@ bi_set_first (progs_t *pr)
 		res->set_iters->prev = &set_iter->next;
 	res->set_iters = set_iter;
 
-	set_iter->iter = iter;;
+	set_iter->iter = iter;
 
 	R_INT (pr) = res_set_iter_index (res, set_iter);
 }

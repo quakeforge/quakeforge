@@ -612,11 +612,11 @@ Sys_TimeID (void) //FIXME I need a new name, one that doesn't make me feel 3 fee
 }
 
 VISIBLE void
-Sys_PageIn (void *ptr, int size)
+Sys_PageIn (void *ptr, size_t size)
 {
 //may or may not be useful in linux #ifdef _WIN32
 	byte       *x;
-	int         m, n;
+	size_t      m, n;
 
 	// touch all the memory to make sure it's there. The 16-page skip is to
 	// keep Win 95 from thinking we're trying to page ourselves in (we are
@@ -630,6 +630,16 @@ Sys_PageIn (void *ptr, int size)
 		}
 	}
 //#endif
+}
+
+VISIBLE void *
+Sys_Alloc (size_t size)
+{
+	size_t      page_size = sysconf (_SC_PAGESIZE);
+	size_t      page_mask = page_size - 1;
+	size = (size + page_mask) & ~page_mask;
+	return mmap (0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS,
+				 -1, 0);
 }
 
 VISIBLE void

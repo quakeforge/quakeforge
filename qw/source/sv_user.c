@@ -141,7 +141,7 @@ SV_WriteWorldVars (netchan_t *netchan)
 	// send server info string
 	MSG_WriteByte (&netchan->message, svc_stufftext);
 	MSG_WriteString (&netchan->message,
-					 va ("fullserverinfo \"%s\"\n",
+					 va (0, "fullserverinfo \"%s\"\n",
 						 Info_MakeString (svs.info, 0)));
 }
 
@@ -194,7 +194,7 @@ SV_New_f (void *unused)
 	// Trigger GIB connection event
 	if (sv_client_connect_e->func)
 		GIB_Event_Callback (sv_client_connect_e, 1,
-							va ("%u", host_client->userid));
+							va (0, "%u", host_client->userid));
 }
 
 void
@@ -335,14 +335,15 @@ SV_PreSpawn_f (void *unused)
 
 //      Sys_MaskPrintf (SYS_DEV, , "Client check = %d\n", check);
 
-		if (sv_mapcheck->int_val && check != sv.worldmodel->checksum &&
-			check != sv.worldmodel->checksum2) {
+		if (sv_mapcheck->int_val && check != sv.worldmodel->brush.checksum &&
+			check != sv.worldmodel->brush.checksum2) {
 			SV_ClientPrintf (1, host_client, PRINT_HIGH, "Map model file does "
 							 "not match (%s), %i != %i/%i.\n"
 							 "You may need a new version of the map, or the "
 							 "proper install files.\n",
-							 sv.modelname, check, sv.worldmodel->checksum,
-							 sv.worldmodel->checksum2);
+							 sv.modelname, check,
+							 sv.worldmodel->brush.checksum,
+							 sv.worldmodel->brush.checksum2);
 			SV_DropClient (host_client);
 			return;
 		}
@@ -351,9 +352,9 @@ SV_PreSpawn_f (void *unused)
 	host_client->prespawned = true;
 
 	if (buf == sv.num_signon_buffers - 1)
-		command = va ("cmd spawn %i 0\n", svs.spawncount);
+		command = va (0, "cmd spawn %i 0\n", svs.spawncount);
 	else
-		command = va ("cmd prespawn %i %i\n", svs.spawncount, buf + 1);
+		command = va (0, "cmd prespawn %i %i\n", svs.spawncount, buf + 1);
 
 	size = sv.signon_buffer_size[buf] + 1 + strlen (command) + 1;
 
@@ -605,7 +606,7 @@ SV_Begin_f (void *unused)
 
 	// Trigger GIB events
 	if (sv_client_spawn_e->func)
-		GIB_Event_Callback (sv_client_spawn_e, 1, va ("%u",
+		GIB_Event_Callback (sv_client_spawn_e, 1, va (0, "%u",
 													  host_client->userid));
 }
 
@@ -787,7 +788,7 @@ SV_BeginDownload_f (void *unused)
 		MSG_ReliableWrite_Short (&host_client->backbuf, DL_HTTP);
 		MSG_ReliableWrite_Byte (&host_client->backbuf, 0);
 		MSG_ReliableWrite_String (&host_client->backbuf,
-								  va ("%s/%s", sv_http_url_base->string,
+								  va (0, "%s/%s", sv_http_url_base->string,
 									  ren ? qfs_foundfile.realname : name));
 		MSG_ReliableWrite_String (&host_client->backbuf,
 								  ren ? qfs_foundfile.realname : "");
@@ -914,7 +915,7 @@ SV_Say (qboolean team)
 	dsprintf (text, fmt, host_client->name);
 
 	if (sv_chat_e->func)
-		GIB_Event_Callback (sv_chat_e, 2, va ("%i", host_client->userid), p,
+		GIB_Event_Callback (sv_chat_e, 2, va (0, "%i", host_client->userid), p,
 							type);
 
 	dstring_appendstr (text, p);
@@ -1201,7 +1202,7 @@ SV_SetUserinfo (client_t *client, const char *key, const char *value)
 
 	// trigger a GIB event
 	if (sv_setinfo_e->func)
-		GIB_Event_Callback (sv_setinfo_e, 4, va("%d", client->userid),
+		GIB_Event_Callback (sv_setinfo_e, 4, va (0, "%d", client->userid),
 							key, oldvalue, value);
 
 	if (sv_funcs.UserInfoChanged) {

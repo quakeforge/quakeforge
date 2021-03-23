@@ -1,15 +1,44 @@
+include libs/video/renderer/vulkan/test/Makemodule.am
+include libs/video/renderer/vulkan/vkgen/Makemodule.am
+
 #lib_LTLIBRARIES += @VID_REND_TARGETS@
 plugin_LTLIBRARIES += @vid_render_plugins@
-noinst_LTLIBRARIES += libs/video/renderer/libQFrenderer.la @vid_render_static_plugins@
+noinst_LTLIBRARIES += \
+	libs/video/renderer/libQFrenderer.la \
+	@render_libs@ \
+	@vid_render_static_plugins@
 
-EXTRA_LTLIBRARIES +=	\
-					libs/video/renderer/vid_render_sw.la libs/video/renderer/vid_render_sw32.la \
-					libs/video/renderer/vid_render_gl.la libs/video/renderer/vid_render_glsl.la
+#plugins
+EXTRA_LTLIBRARIES += \
+	libs/video/renderer/vid_render_sw.la \
+	libs/video/renderer/vid_render_sw32.la \
+	libs/video/renderer/vid_render_gl.la \
+	libs/video/renderer/vid_render_glsl.la \
+	libs/video/renderer/vid_render_vulkan.la
 
-video_renderer_common_sources= \
-	libs/video/renderer/crosshair.c libs/video/renderer/noisetextures.c libs/video/renderer/r_alias.c libs/video/renderer/r_bsp.c libs/video/renderer/r_cvar.c libs/video/renderer/r_dyn_textures.c \
-	libs/video/renderer/r_efrag.c libs/video/renderer/r_ent.c libs/video/renderer/r_graph.c libs/video/renderer/r_iqm.c libs/video/renderer/r_light.c libs/video/renderer/r_main.c libs/video/renderer/r_part.c \
-	libs/video/renderer/r_screen.c libs/video/renderer/vid_common.c
+#helper libraries
+EXTRA_LTLIBRARIES += \
+	libs/video/renderer/librender_sw.la \
+	libs/video/renderer/librender_sw32.la \
+	libs/video/renderer/librender_gl.la \
+	libs/video/renderer/librender_glsl.la \
+	libs/video/renderer/librender_vulkan.la
+
+video_renderer_common_sources = \
+	libs/video/renderer/crosshair.c \
+	libs/video/renderer/font8x8.c \
+	libs/video/renderer/noisetextures.c \
+	libs/video/renderer/r_alias.c \
+	libs/video/renderer/r_bsp.c \
+	libs/video/renderer/r_dyn_textures.c \
+	libs/video/renderer/r_efrag.c \
+	libs/video/renderer/r_ent.c \
+	libs/video/renderer/r_graph.c \
+	libs/video/renderer/r_iqm.c \
+	libs/video/renderer/r_light.c \
+	libs/video/renderer/r_main.c \
+	libs/video/renderer/r_part.c \
+	libs/video/renderer/vid_common.c
 
 renderer_libs= \
 	@vid_render_static_plugin_libs@ \
@@ -19,17 +48,23 @@ libs_video_renderer_libQFrenderer_la_LDFLAGS=		@STATIC@
 libs_video_renderer_libQFrenderer_la_LIBADD=		$(renderer_libs)
 libs_video_renderer_libQFrenderer_la_DEPENDENCIES=	$(renderer_libs)
 libs_video_renderer_libQFrenderer_la_SOURCES=\
+	libs/video/renderer/r_cvar.c \
 	libs/video/renderer/r_init.c \
+	libs/video/renderer/r_scrap.c \
+	libs/video/renderer/r_screen.c \
 	libs/video/renderer/r_progs.c
 
 video_renderer_gl_libs= \
+	libs/video/renderer/librender_gl.la \
 	libs/models/libmodels_gl.la
 libs_video_renderer_vid_render_gl_la_LDFLAGS=		$(plugin_ldflags)
 libs_video_renderer_vid_render_gl_la_LIBADD=		$(video_renderer_gl_libs)
 libs_video_renderer_vid_render_gl_la_DEPENDENCIES=	$(video_renderer_gl_libs)
 libs_video_renderer_vid_render_gl_la_SOURCES=\
 	$(video_renderer_common_sources) \
-	libs/video/renderer/vid_render_gl.c \
+	libs/video/renderer/vid_render_gl.c
+
+libs_video_renderer_librender_gl_la_SOURCES = \
 	libs/video/renderer/gl/gl_draw.c \
 	libs/video/renderer/gl/gl_dyn_lights.c \
 	libs/video/renderer/gl/gl_dyn_part.c \
@@ -56,20 +91,31 @@ libs_video_renderer_vid_render_gl_la_SOURCES=\
 shader_src= libs/video/renderer/glsl/quakeforge.glsl
 shader_gen= libs/video/renderer/glsl/quakeforge.slc
 
-BUILT_SOURCES += $(shader_gen)
+V_SED = $(V_SED_@AM_V@)
+V_SED_ = $(V_SED_@AM_DEFAULT_V@)
+V_SED_0 = @echo "  SED     " $@;
+V_SED_1 =
 
-SUFFICES=.frag .vert .fc .vc .slc .glsl
+SUFFICES=.frag .vert .spv .spvc .fc .vc .slc .glsl .plist .plc
 .glsl.slc:
-	sed -e 's/^/"/' -e 's/$$/\\n"/' $< > $@
+	$(V_SED)sed -e 's/^/"/' -e 's/$$/\\n"/' $< > $@.t &&\
+	$(am__mv) $@.t $@
+
+.plist.plc:
+	$(V_SED)sed -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' $< > $@.t &&\
+	$(am__mv) $@.t $@
 
 video_renderer_glsl_libs= \
+	libs/video/renderer/librender_glsl.la \
 	libs/models/libmodels_glsl.la
 libs_video_renderer_vid_render_glsl_la_LDFLAGS=		$(plugin_ldflags)
 libs_video_renderer_vid_render_glsl_la_LIBADD=		$(video_renderer_glsl_libs)
 libs_video_renderer_vid_render_glsl_la_DEPENDENCIES=$(video_renderer_glsl_libs)
 libs_video_renderer_vid_render_glsl_la_SOURCES=\
 	$(video_renderer_common_sources) \
-	libs/video/renderer/vid_render_glsl.c \
+	libs/video/renderer/vid_render_glsl.c
+
+libs_video_renderer_librender_glsl_la_SOURCES = \
 	libs/video/renderer/glsl/glsl_alias.c \
 	libs/video/renderer/glsl/glsl_bsp.c \
 	libs/video/renderer/glsl/glsl_draw.c \
@@ -88,13 +134,16 @@ libs_video_renderer_vid_render_glsl_la_SOURCES=\
 	libs/video/renderer/glsl/vid_common_glsl.c
 
 video_renderer_sw_libs= \
+	libs/video/renderer/librender_sw.la \
 	libs/models/libmodels_sw.la
 libs_video_renderer_vid_render_sw_la_LDFLAGS=		$(plugin_ldflags)
 libs_video_renderer_vid_render_sw_la_LIBADD=		$(video_renderer_sw_libs)
 libs_video_renderer_vid_render_sw_la_DEPENDENCIES=	$(video_renderer_sw_libs)
 libs_video_renderer_vid_render_sw_la_SOURCES=\
 	$(video_renderer_common_sources) \
-	libs/video/renderer/vid_render_sw.c \
+	libs/video/renderer/vid_render_sw.c
+
+libs_video_renderer_librender_sw_la_SOURCES = \
 	libs/video/renderer/sw/d_copy.S \
 	libs/video/renderer/sw/d_draw.S \
 	libs/video/renderer/sw/d_edge.c \
@@ -142,13 +191,16 @@ libs_video_renderer_vid_render_sw_la_SOURCES=\
 	libs/video/renderer/sw/vid_common_sw.c
 
 video_renderer_sw32_libs= \
+	libs/video/renderer/librender_sw32.la \
 	libs/models/libmodels_sw.la
 libs_video_renderer_vid_render_sw32_la_LDFLAGS=		$(plugin_ldflags)
 libs_video_renderer_vid_render_sw32_la_LIBADD=		$(video_renderer_sw32_libs)
 libs_video_renderer_vid_render_sw32_la_DEPENDENCIES=$(video_renderer_sw32_libs)
 libs_video_renderer_vid_render_sw32_la_SOURCES=\
 	$(video_renderer_common_sources) \
-	libs/video/renderer/vid_render_sw32.c \
+	libs/video/renderer/vid_render_sw32.c
+
+libs_video_renderer_librender_sw32_la_SOURCES = \
 	libs/video/renderer/sw32/d_edge.c \
 	libs/video/renderer/sw32/d_fill.c \
 	libs/video/renderer/sw32/d_init.c \
@@ -179,7 +231,190 @@ libs_video_renderer_vid_render_sw32_la_SOURCES=\
 	libs/video/renderer/sw32/sw32_rsurf.c \
 	libs/video/renderer/sw32/vid_common_sw32.c
 
+pipeline_src = libs/video/renderer/vulkan/qfpipeline.plist
+pipeline_gen = libs/video/renderer/vulkan/qfpipeline.plc
+renderpass_src = libs/video/renderer/vulkan/deferred.plist
+renderpass_gen = libs/video/renderer/vulkan/deferred.plc
+
+video_renderer_vulkan_libs = \
+	libs/video/renderer/librender_vulkan.la \
+	libs/models/libmodels_vulkan.la
+libs_video_renderer_vid_render_vulkan_la_LDFLAGS=       $(plugin_ldflags)
+libs_video_renderer_vid_render_vulkan_la_LIBADD=        $(video_renderer_vulkan_libs)
+libs_video_renderer_vid_render_vulkan_la_DEPENDENCIES=$(video_renderer_vulkan_libs)
+libs_video_renderer_vid_render_vulkan_la_SOURCES = \
+	$(video_renderer_common_sources) \
+	libs/video/renderer/vid_render_vulkan.c
+
+libs_video_renderer_librender_vulkan_la_SOURCES = \
+	libs/video/renderer/vulkan/barrier.c \
+	libs/video/renderer/vulkan/buffer.c \
+	libs/video/renderer/vulkan/command.c \
+	libs/video/renderer/vulkan/descriptor.c \
+	libs/video/renderer/vulkan/device.c \
+	libs/video/renderer/vulkan/image.c \
+	libs/video/renderer/vulkan/instance.c \
+	libs/video/renderer/vulkan/memory.c \
+	libs/video/renderer/vulkan/namehack.h \
+	libs/video/renderer/vulkan/pipeline.c \
+	libs/video/renderer/vulkan/renderpass.c \
+	libs/video/renderer/vulkan/scrap.c \
+	libs/video/renderer/vulkan/shader.c \
+	libs/video/renderer/vulkan/staging.c \
+	libs/video/renderer/vulkan/swapchain.c \
+	libs/video/renderer/vulkan/util.c \
+	libs/video/renderer/vulkan/util.h \
+	libs/video/renderer/vulkan/vkparse.c \
+	libs/video/renderer/vulkan/vulkan_alias.c \
+	libs/video/renderer/vulkan/vulkan_bsp.c \
+	libs/video/renderer/vulkan/vulkan_compose.c \
+	libs/video/renderer/vulkan/vulkan_draw.c \
+	libs/video/renderer/vulkan/vulkan_lighting.c \
+	libs/video/renderer/vulkan/vulkan_main.c \
+	libs/video/renderer/vulkan/vulkan_matrices.c \
+	libs/video/renderer/vulkan/vulkan_particles.c \
+	libs/video/renderer/vulkan/vulkan_texture.c \
+	libs/video/renderer/vulkan/vulkan_vid_common.c
+
+libs/video/renderer/vulkan/vkparse.lo: libs/video/renderer/vulkan/vkparse.c $(vkparse_src)
+
+libs/video/renderer/vulkan/shader.lo: libs/video/renderer/vulkan/shader.c $(vkshader_c)
+
+libs/video/renderer/vulkan/vulkan_vid_common.lo: libs/video/renderer/vulkan/vulkan_vid_common.c $(vkparse_src) $(pipeline_gen) ${renderpass_gen}
+
+
+qwaq_curses = ruamoko/qwaq/qwaq-curses$(EXEEXT)
+vkparse_cinc = libs/video/renderer/vulkan/vkparse.cinc
+vkparse_hinc = libs/video/renderer/vulkan/vkparse.hinc
+vkparse_src = \
+	$(vkparse_cinc) \
+	$(vkparse_hinc)
+vkparse_plist = \
+	$(srcdir)/libs/video/renderer/vulkan/vkparse.plist
+
+vkshaderpath = libs/video/renderer/vulkan/shader
+
+twodv_src = $(vkshaderpath)/twod.vert
+twodv_c = $(vkshaderpath)/twod.vert.spvc
+twodf_src = $(vkshaderpath)/twod.frag
+twodf_c = $(vkshaderpath)/twod.frag.spvc
+quakebspv_src = $(vkshaderpath)/quakebsp.vert
+quakebspv_c = $(vkshaderpath)/quakebsp.vert.spvc
+quakebspf_src = $(vkshaderpath)/quakebsp.frag
+quakebspf_c = $(vkshaderpath)/quakebsp.frag.spvc
+
+bsp_depth_src = $(vkshaderpath)/bsp_depth.vert
+bsp_depth_c = $(vkshaderpath)/bsp_depth.vert.spvc
+bsp_gbufv_src = $(vkshaderpath)/bsp_gbuf.vert
+bsp_gbufv_c = $(vkshaderpath)/bsp_gbuf.vert.spvc
+bsp_gbufg_src = $(vkshaderpath)/bsp_gbuf.geom
+bsp_gbufg_c = $(vkshaderpath)/bsp_gbuf.geom.spvc
+bsp_gbuff_src = $(vkshaderpath)/bsp_gbuf.frag
+bsp_gbuff_c = $(vkshaderpath)/bsp_gbuf.frag.spvc
+bsp_skyf_src = $(vkshaderpath)/bsp_sky.frag
+bsp_skyf_c = $(vkshaderpath)/bsp_sky.frag.spvc
+bsp_turbf_src = $(vkshaderpath)/bsp_turb.frag
+bsp_turbf_c = $(vkshaderpath)/bsp_turb.frag.spvc
+lightingf_src = $(vkshaderpath)/lighting.frag
+lightingf_c = $(vkshaderpath)/lighting.frag.spvc
+composef_src = $(vkshaderpath)/compose.frag
+composef_c = $(vkshaderpath)/compose.frag.spvc
+aliasv_src = $(vkshaderpath)/alias.vert
+aliasv_c = $(vkshaderpath)/alias.vert.spvc
+aliasf_src = $(vkshaderpath)/alias.frag
+aliasf_c = $(vkshaderpath)/alias.frag.spvc
+alias_depth_src = $(vkshaderpath)/alias_depth.vert
+alias_depth_c = $(vkshaderpath)/alias_depth.vert.spvc
+alias_gbuf_src = $(vkshaderpath)/alias_gbuf.frag
+alias_gbuf_c = $(vkshaderpath)/alias_gbuf.frag.spvc
+passthrough_src = $(vkshaderpath)/passthrough.vert
+passthrough_c = $(vkshaderpath)/passthrough.vert.spvc
+pushcolor_src = $(vkshaderpath)/pushcolor.frag
+pushcolor_c = $(vkshaderpath)/pushcolor.frag.spvc
+
+$(twodv_c): $(twodv_src)
+
+$(twodf_c): $(twodf_src)
+
+$(quakebspv_c): $(quakebspv_src)
+
+$(quakebspf_c): $(quakebspf_src)
+
+$(bsp_depth_c): $(bsp_depth_src)
+
+$(bsp_gbufv_c): $(bsp_gbufv_src)
+
+$(bsp_gbufg_c): $(bsp_gbufg_src)
+
+$(bsp_gbuff_c): $(bsp_gbuff_src)
+
+$(bsp_skyf_c): $(bsp_skyf_src)
+
+$(bsp_turbf_c): $(bsp_turbf_src)
+
+$(lightingf_c): $(lightingf_src)
+
+$(composef_c): $(composef_src)
+
+$(aliasv_c): $(aliasv_src)
+
+$(alias_depth_c): $(alias_depth_src)
+
+$(aliasf_c): $(aliasf_src)
+
+$(alias_gbuf_c): $(alias_gbuf_src)
+
+$(passthrough_c): $(passthrough_src)
+
+$(pushcolor_c): $(pushcolor_src)
+
+vkshader_c = \
+	$(twodv_c) \
+	$(twodf_c) \
+	$(quakebspv_c) \
+	$(quakebspf_c) \
+	$(bsp_depth_c) \
+	$(bsp_gbufv_c) \
+	$(bsp_gbufg_c) \
+	$(bsp_gbuff_c) \
+	$(bsp_skyf_c) \
+	$(bsp_turbf_c) \
+	$(lightingf_c) \
+	$(composef_c) \
+	$(aliasv_c) \
+	$(alias_depth_c) \
+	$(aliasf_c) \
+	$(alias_gbuf_c) \
+	$(passthrough_c) \
+	$(pushcolor_c)
+
+V_VKGEN = $(V_VKGEN_@AM_V@)
+V_VKGEN_ = $(V_VKGEN_@AM_DEFAULT_V@)
+V_VKGEN_0 = @echo "  VKGEN   " $@;
+V_VKGEN_1 =
+
+$(vkparse_cinc): $(vkgen) $(qwaq_curses) $(vkparse_plist)
+	$(V_VKGEN)$(qwaq_curses) $(vkgen) -- $(vkparse_plist) $(vkparse_cinc).t $(vkparse_hinc).t &&\
+	$(am__mv) $(vkparse_cinc).t $(vkparse_cinc) &&\
+	$(am__mv) $(vkparse_hinc).t $(vkparse_hinc)
+
+$(vkparse_hinc): $(vkparse_cinc)
+# do nothing: hinc generated at the same time as cinc
+
 CLEANFILES += \
 	libs/video/renderer/glsl/*.vc \
 	libs/video/renderer/glsl/*.fc \
-	libs/video/renderer/glsl/*.slc
+	libs/video/renderer/glsl/*.slc \
+	libs/video/renderer/vulkan/*.plc \
+	libs/video/renderer/vulkan/*.spv \
+	libs/video/renderer/vulkan/*.spvc \
+	libs/video/renderer/vulkan/vkgen.sym \
+	$(vkparse_src)
+
+BUILT_SOURCES += $(shader_gen)
+
+#shader_DATA += \
+#	libs/video/renderer/vulkan/passthrough.vert.spv \
+#	libs/video/renderer/vulkan/pushcolor.frag.spv
+
+EXTRA_DIST += $(shader_DATA:.spv=)

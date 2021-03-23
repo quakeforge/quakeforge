@@ -18,5 +18,6 @@ int str_str (string haystack, string needle);
 @extern int str_char (string str, int ind);
 string str_quote (string str);
 string str_lower (string str);
+string str_upper (string str);
 
 #endif//__ruamoko_string_h

@@ -333,7 +333,7 @@ nextdemomessage:
 			cls.netchan.outgoing_sequence++;
 			for (i = 0; i < 3; i++) {
 				Qread (cls.demofile, &f, 4);
-				cl.viewangles[i] = LittleFloat (f);
+				cl.viewstate.angles[i] = LittleFloat (f);
 			}
 			break;
 
@@ -462,7 +462,7 @@ CL_WriteDemoCmd (usercmd_t *pcmd)
 	Qwrite (cls.demofile, &cmd, sizeof (cmd));
 
 	for (i = 0; i < 3; i++) {
-		fl = LittleFloat (cl.viewangles[i]);
+		fl = LittleFloat (cl.viewstate.angles[i]);
 		Qwrite (cls.demofile, &fl, 4);
 	}
 
@@ -634,7 +634,7 @@ demo_default_name (const char *argv1)
 	strftime (timestring, 19, "%Y-%m-%d-%H-%M", localtime (&tim));
 
 	// the leading path-name is to be removed from cl.worldmodel->name
-	mapname = QFS_SkipPath (cl.worldmodel->name);
+	mapname = QFS_SkipPath (cl.worldmodel->path);
 
 	// the map name is cut off after any "." because this would prevent
 	// an extension being appended
@@ -652,9 +652,8 @@ demo_start_recording (int track)
 {
 	byte        buf_data[MAX_MSGLEN + 10];	// + 10 for header
 	char       *s;
-	int         n, i, j;
+	int         n, i;
 	int         seq = 1;
-	entity_t   *ent;
 	entity_state_t *es, blankes;
 	player_info_t *player;
 	sizebuf_t   buf;
@@ -697,7 +696,7 @@ demo_start_recording (int track)
 
 	// send server info string
 	MSG_WriteByte (&buf, svc_stufftext);
-	MSG_WriteString (&buf, va ("fullserverinfo \"%s\"\n",
+	MSG_WriteString (&buf, va (0, "fullserverinfo \"%s\"\n",
 							   Info_MakeString (cl.serverinfo, 0)));
 
 	// flush packet
@@ -755,21 +754,18 @@ demo_start_recording (int track)
 		SZ_Clear (&buf);
 	}
 	// spawnstatic
-	for (ent = cl_static_entities; ent; ent = ent->unext) {
+	for (size_t staticIndex = 0; staticIndex < cl_static_entities.size;
+		 staticIndex++) {
+		entity_state_t *es = &cl_static_entities.a[staticIndex];
+
 		MSG_WriteByte (&buf, svc_spawnstatic);
 
-		for (j = 1; j < cl.nummodels; j++)
-			if (ent->model == cl.model_precache[j])
-				break;
-		if (j == cl.nummodels)
-			MSG_WriteByte (&buf, 0);
-		else
-			MSG_WriteByte (&buf, j);
+		MSG_WriteByte (&buf, es->modelindex);
 
-		MSG_WriteByte (&buf, ent->frame);
+		MSG_WriteByte (&buf, es->frame);
 		MSG_WriteByte (&buf, 0);
-		MSG_WriteByte (&buf, ent->skinnum);
-		MSG_WriteCoordAngleV (&buf, ent->origin, ent->angles);
+		MSG_WriteByte (&buf, es->skinnum);
+		MSG_WriteCoordAngleV (&buf, &es->origin[0], &es->angles[0]);
 
 		if (buf.cursize > MAX_MSGLEN / 2) {
 			CL_WriteRecordDemoMessage (&buf, seq++);
@@ -793,7 +789,7 @@ demo_start_recording (int track)
 			MSG_WriteByte (&buf, es->frame);
 			MSG_WriteByte (&buf, es->colormap);
 			MSG_WriteByte (&buf, es->skinnum);
-			MSG_WriteCoordAngleV (&buf, es->origin, es->angles);
+			MSG_WriteCoordAngleV (&buf, &es->origin[0], es->angles);//FIXME
 
 			if (buf.cursize > MAX_MSGLEN / 2) {
 				CL_WriteRecordDemoMessage (&buf, seq++);
@@ -803,7 +799,7 @@ demo_start_recording (int track)
 	}
 
 	MSG_WriteByte (&buf, svc_stufftext);
-	MSG_WriteString (&buf, va ("cmd spawn %i 0\n", cl.servercount));
+	MSG_WriteString (&buf, va (0, "cmd spawn %i 0\n", cl.servercount));
 
 	if (buf.cursize) {
 		CL_WriteRecordDemoMessage (&buf, seq++);
@@ -863,7 +859,7 @@ demo_start_recording (int track)
 	// get the client to check and download skins
 	// when that is completed, a begin command will be issued
 	MSG_WriteByte (&buf, svc_stufftext);
-	MSG_WriteString (&buf, va ("skins\n"));
+	MSG_WriteString (&buf, va (0, "skins\n"));
 
 	CL_WriteRecordDemoMessage (&buf, seq++);
 

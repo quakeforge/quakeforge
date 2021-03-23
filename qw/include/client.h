@@ -28,6 +28,7 @@
 #ifndef _CLIENT_H
 #define _CLIENT_H
 
+#include "QF/entity.h"
 #include "QF/info.h"
 #include "QF/quakefs.h"
 #include "QF/vid.h"
@@ -36,6 +37,7 @@
 #include "QF/plugin/vid_render.h"
 
 #include "client/entities.h"
+#include "client/view.h"
 
 #include "netchan.h"
 #include "qw/bothdefs.h"
@@ -214,19 +216,12 @@ typedef struct {
 	cshift_t    cshifts[NUM_CSHIFTS];	// Color shifts for damage, powerups
 	cshift_t    prev_cshifts[NUM_CSHIFTS];	// and content types
 
-// the client maintains its own idea of view angles, which are sent to the
-// server each frame.  And reset only at level change and teleport times
-	vec3_t      viewangles;
-
 // the client simulates or interpolates movement to get these values
 	double      time;			// this is the time value that the client
 								// is rendering at.  always <= realtime
-	vec3_t      simorg;
-	vec3_t      simvel;
-	vec3_t      simangles;
-
-	vec3_t      punchangle;		// temporary view kick from weapon firing
-
+// the client maintains its own idea of view angles, which are sent to the
+// server each frame.  And reset only at level change and teleport times
+	viewstate_t viewstate;
 // pitch drifting vars
 	float       idealpitch;
 	float       pitchvel;
@@ -235,7 +230,6 @@ typedef struct {
 	double      laststop;
 
 	qboolean    paused;			// Sent over by server
-	int         onground;		// -1 when in air
 	float       viewheight;
 	float       crouch;			// local amount for smoothing stepups
 
@@ -341,7 +335,9 @@ extern	struct cvar_s	*cl_fb_players;
 
 extern	client_state_t	cl;
 
-extern	entity_t		*cl_static_entities;
+typedef struct entitystateset_s DARRAY_TYPE (struct entity_state_s)
+		entitystateset_t;
+extern	entitystateset_t cl_static_entities;
 extern	entity_t		cl_entities[512];
 extern	byte			cl_entity_valid[2][512];
 

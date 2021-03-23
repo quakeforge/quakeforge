@@ -613,7 +613,7 @@ void
 ClusterFlow (int clusternum)
 {
 	set_t      *visclusters;
-	byte        compressed[MAX_MAP_LEAFS / 8];
+	byte        compressed[MAP_PVS_BYTES];
 	byte       *outbuffer;
 	int         numvis, i;
 	cluster_t  *cluster;

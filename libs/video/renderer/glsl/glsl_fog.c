@@ -34,7 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #endif
 
 #include "QF/cmd.h"
-#include "QF/qfplist.h"
+#include "QF/plist.h"
 #include "QF/render.h"
 #include "QF/sys.h"
 
@@ -189,32 +189,29 @@ glsl_Fog_ParseWorldspawn (plitem_t *worldspawn)
 
 	calculates fog color for this frame, taking into account fade times
 */
-float *
-glsl_Fog_GetColor (void)
+void
+glsl_Fog_GetColor (quat_t fogcolor)
 {
-	static float c[4];
 	float       f;
 	int         i;
 
 	if (fade_done > vr_data.realtime) {
 		f = (fade_done - vr_data.realtime) / fade_time;
-		c[0] = f * old_red + (1.0 - f) * fog_red;
-		c[1] = f * old_green + (1.0 - f) * fog_green;
-		c[2] = f * old_blue + (1.0 - f) * fog_blue;
-		c[3] = 1.0;
+		fogcolor[0] = f * old_red + (1.0 - f) * fog_red;
+		fogcolor[1] = f * old_green + (1.0 - f) * fog_green;
+		fogcolor[2] = f * old_blue + (1.0 - f) * fog_blue;
+		fogcolor[3] = 1.0;
 	} else {
-		c[0] = fog_red;
-		c[1] = fog_green;
-		c[2] = fog_blue;
-		c[3] = 1.0;
+		fogcolor[0] = fog_red;
+		fogcolor[1] = fog_green;
+		fogcolor[2] = fog_blue;
+		fogcolor[3] = 1.0;
 	}
 
 	//find closest 24-bit RGB value, so solid-colored sky can match the fog
 	//perfectly
 	for (i = 0; i < 3; i++)
-		c[i] = (float) (rint (c[i] * 255)) / 255.0f;
-
-	return c;
+		fogcolor[i] = (float) (rint (fogcolor[i] * 255)) / 255.0f;
 }
 
 /*

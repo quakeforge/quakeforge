@@ -97,14 +97,14 @@ byte       *draw_chars;					// 8*8 graphic characters FIXME location
 float       oldfov;
 int         oldsbar;
 
+qboolean    r_cache_thrash;		// set if surface cache is thrashing
+
 qboolean    scr_initialized;			// ready to draw
 
 qpic_t     *scr_ram;
 qpic_t     *scr_turtle;
 
 int         clearconsole;
-
-viddef_t    vid;						// global video state
 
 vrect_t    *pconupdate;
 vrect_t     scr_vrect;
@@ -119,7 +119,7 @@ R_SetVrect (vrect_t *vrectin, vrect_t *vrect, int lineadj)
 
 	// intermission is always full screen
 	size = min (r_viewsize, 100);
-	if (vr_data.force_fullscreen) {
+	if (r_data->force_fullscreen) {
 		size = 100.0;
 		lineadj = 0;
 	}
@@ -150,18 +150,18 @@ SCR_CalcRefdef (void)
 	refdef_t   *refdef = r_data->refdef;
 
 	// force a background redraw
-	vr_data.scr_fullupdate = 0;
-	vid.recalc_refdef = 0;
+	r_data->scr_fullupdate = 0;
+	r_data->vid->recalc_refdef = 0;
 
 	// bound field of view
 	Cvar_SetValue (scr_fov, bound (1, scr_fov->value, 170));
 
 	vrect.x = 0;
 	vrect.y = 0;
-	vrect.width = vid.width;
-	vrect.height = vid.height;
+	vrect.width = r_data->vid->width;
+	vrect.height = r_data->vid->height;
 
-	R_SetVrect (&vrect, &scr_vrect, vr_data.lineadj);
+	R_SetVrect (&vrect, &scr_vrect, r_data->lineadj);
 
 	refdef->vrect = scr_vrect;
 	refdef->fov_x = scr_fov->value;
@@ -169,7 +169,38 @@ SCR_CalcRefdef (void)
 		CalcFov (refdef->fov_x, refdef->vrect.width, refdef->vrect.height);
 
 	// notify the refresh of the change
-	vr_funcs->R_ViewChanged (vid.aspect);
+	r_funcs->R_ViewChanged (r_data->vid->aspect);
+}
+
+/*
+	SCR_UpdateScreen
+
+	This is called every frame, and can also be called explicitly to flush
+	text to the screen.
+
+	WARNING: be very careful calling this from elsewhere, because the refresh
+	needs almost the entire 256k of stack space!
+*/
+void
+SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
+{
+	if (scr_skipupdate || !scr_initialized) {
+		return;
+	}
+
+	r_data->realtime = realtime;
+	scr_copytop = r_data->scr_copyeverything = 0;
+
+	if (oldfov != scr_fov->value) {
+		oldfov = scr_fov->value;
+		r_data->vid->recalc_refdef = true;
+	}
+
+	if (r_data->vid->recalc_refdef) {
+		SCR_CalcRefdef ();
+	}
+
+	r_funcs->R_RenderFrame (scr_3dfunc, scr_funcs);
 }
 
 float
@@ -192,7 +223,7 @@ CalcFov (float fov_x, float width, float height)
 static void
 ScreenShot_f (void)
 {
-	vr_funcs->SCR_ScreenShot_f ();
+	r_funcs->SCR_ScreenShot_f ();
 }
 
 /*
@@ -205,7 +236,7 @@ SCR_SizeUp_f (void)
 {
 	if (scr_viewsize->int_val < 120) {
 		Cvar_SetValue (scr_viewsize, scr_viewsize->int_val + 10);
-		vid.recalc_refdef = 1;
+		r_data->vid->recalc_refdef = 1;
 	}
 }
 
@@ -218,7 +249,7 @@ static void
 SCR_SizeDown_f (void)
 {
 	Cvar_SetValue (scr_viewsize, scr_viewsize->int_val - 10);
-	vid.recalc_refdef = 1;
+	r_data->vid->recalc_refdef = 1;
 }
 
 void
@@ -230,7 +261,7 @@ SCR_DrawRam (void)
 	if (!r_cache_thrash)
 		return;
 
-	vr_funcs->Draw_Pic (scr_vrect.x + 32, scr_vrect.y, scr_ram);
+	r_funcs->Draw_Pic (scr_vrect.x + 32, scr_vrect.y, scr_ram);
 }
 
 void
@@ -241,7 +272,7 @@ SCR_DrawTurtle (void)
 	if (!scr_showturtle->int_val)
 		return;
 
-	if (vr_data.frametime < 0.1) {
+	if (r_data->frametime < 0.1) {
 		count = 0;
 		return;
 	}
@@ -250,7 +281,7 @@ SCR_DrawTurtle (void)
 	if (count < 3)
 		return;
 
-	vr_funcs->Draw_Pic (scr_vrect.x, scr_vrect.y, scr_turtle);
+	r_funcs->Draw_Pic (scr_vrect.x, scr_vrect.y, scr_turtle);
 }
 
 void
@@ -261,12 +292,12 @@ SCR_DrawPause (void)
 	if (!scr_showpause->int_val)		// turn off for screenshots
 		return;
 
-	if (!vr_data.paused)
+	if (!r_data->paused)
 		return;
 
-	pic = vr_funcs->Draw_CachePic ("gfx/pause.lmp", true);
-	vr_funcs->Draw_Pic ((vid.conwidth - pic->width) / 2,
-					    (vid.conheight - 48 - pic->height) / 2, pic);
+	pic = r_funcs->Draw_CachePic ("gfx/pause.lmp", true);
+	r_funcs->Draw_Pic ((r_data->vid->conwidth - pic->width) / 2,
+					   (r_data->vid->conheight - 48 - pic->height) / 2, pic);
 }
 
 void
@@ -294,9 +325,9 @@ MipColor (int r, int g, int b)
 	for (i = 0; i < 256; i++) {
 		int         j;
 		j = i * 3;
-		r1 = vid.palette[j] - r;
-		g1 = vid.palette[j + 1] - g;
-		b1 = vid.palette[j + 2] - b;
+		r1 = r_data->vid->palette[j] - r;
+		g1 = r_data->vid->palette[j + 1] - g;
+		b1 = r_data->vid->palette[j + 2] - b;
 		dist = r1 * r1 + g1 * g1 + b1 * b1;
 		if (dist < bestdist) {
 			bestdist = dist;
@@ -362,9 +393,8 @@ SCR_Init (void)
 	Cmd_AddCommand ("sizeup", SCR_SizeUp_f, "Increases the screen size");
 	Cmd_AddCommand ("sizedown", SCR_SizeDown_f, "Decreases the screen size");
 
-	scr_ram = vr_funcs->Draw_PicFromWad ("ram");
-	scr_turtle = vr_funcs->Draw_PicFromWad ("turtle");
+	scr_ram = r_funcs->Draw_PicFromWad ("ram");
+	scr_turtle = r_funcs->Draw_PicFromWad ("turtle");
 
-	vid = *vr_data.vid;	// cache
 	scr_initialized = true;
 }

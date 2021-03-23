@@ -41,10 +41,11 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
+#include "QF/entity.h"
 #include "QF/idparse.h"
 #include "QF/input.h"
 #include "QF/msg.h"
-#include "QF/qfplist.h"
+#include "QF/plist.h"
 #include "QF/sys.h"
 #include "QF/screen.h"
 #include "QF/skin.h"
@@ -52,6 +53,8 @@
 #include "QF/va.h"
 
 #include "QF/plugin/vid_render.h"
+
+#include "client/temp_entities.h"
 
 #include "compat.h"
 #include "sbar.h"
@@ -301,7 +304,7 @@ map_ent (const char *mapname)
 		edicts = ED_Parse (&edpr, buf);
 		free (buf);
 	} else {
-		edicts = ED_Parse (&edpr, cl.model_precache[1]->entities);
+		edicts = ED_Parse (&edpr, cl.model_precache[1]->brush.entities);
 	}
 	free (name);
 	return edicts;
@@ -315,7 +318,7 @@ CL_NewMap (const char *mapname)
 	Hunk_Check ();								// make sure nothing is hurt
 	Sbar_CenterPrint (0);
 
-	if (cl.model_precache[1] && cl.model_precache[1]->entities) {
+	if (cl.model_precache[1] && cl.model_precache[1]->brush.entities) {
 		cl.edicts = map_ent (mapname);
 		if (cl.edicts) {
 			cl.worldspawn = PL_ObjectAtIndex (cl.edicts, 0);
@@ -433,7 +436,7 @@ CL_ParseServerInfo (void)
 	}
 
 	// local state
-	cl_entities[0].model = cl.worldmodel = cl.model_precache[1];
+	cl_entities[0].renderer.model = cl.worldmodel = cl.model_precache[1];
 	if (!centerprint)
 		centerprint = dstring_newstr ();
 	else
@@ -489,7 +492,7 @@ CL_ParseUpdate (int bits)
 		num = MSG_ReadByte (net_message);
 
 	baseline = CL_EntityNum (num);
-	state = &nq_entstates.frame[0 + cl.mindex][num];
+	state = &nq_entstates.frame[0 + cl.frameIndex][num];
 
 	for (i = 0; i < 16; i++)
 		if (bits & (1 << i))
@@ -591,7 +594,7 @@ CL_ParseUpdate (int bits)
 		//VectorCopy (state->msg_origins[0], state->msg_origins[1]);
 		//VectorCopy (state->msg_origins[0], ent->origin);
 		//VectorCopy (state->msg_angles[0], state->msg_angles[1]);
-		//CL_TransformEntity (ent, state->msg_angles[0], true);
+		//CL_TransformEntity (ent, state->msg_angles[0]);
 		//state->forcelink = true;
 		cl_forcelink[num] = true;
 	}
@@ -618,7 +621,8 @@ CL_ParseBaseline (entity_state_t *baseline, int version)
 	baseline->colormap = MSG_ReadByte (net_message);
 	baseline->skinnum = MSG_ReadByte (net_message);
 
-	MSG_ReadCoordAngleV (net_message, baseline->origin, baseline->angles);
+	MSG_ReadCoordAngleV (net_message, &baseline->origin[0], baseline->angles);
+	baseline->origin[3] = 1;//FIXME
 
 	if (bits & B_ALPHA)
 		baseline->alpha = MSG_ReadByte (net_message);
@@ -657,18 +661,19 @@ CL_ParseClientdata (void)
 	else
 		cl.idealpitch = 0;
 
-	VectorCopy (cl.mvelocity[0], cl.mvelocity[1]);
+	cl.frameVelocity[1] = cl.frameVelocity[0];
+	vec3_t      punchangle = { };
 	for (i = 0; i < 3; i++) {
-		if (bits & (SU_PUNCH1 << i))
-			cl.punchangle[i] = ((signed char) MSG_ReadByte (net_message));
-		else
-			cl.punchangle[i] = 0;
+		if (bits & (SU_PUNCH1 << i)) {
+			punchangle[i] = ((signed char) MSG_ReadByte (net_message));
+		}
 		if (bits & (SU_VELOCITY1 << i))
-			cl.mvelocity[0][i] = ((signed char) MSG_ReadByte (net_message))
+			cl.frameVelocity[0][i] = ((signed char) MSG_ReadByte (net_message))
 				* 16;
 		else
-			cl.mvelocity[0][i] = 0;
+			cl.frameVelocity[0][i] = 0;
 	}
+	AngleQuat (punchangle, &cl.viewstate.punchangle[0]);//FIXME
 
 	//FIXME
 	//if (!VectorCompare (v_punchangles[0], cl.punchangle[0])) {
@@ -687,7 +692,7 @@ CL_ParseClientdata (void)
 		cl.stats[STAT_ITEMS] = i;
 	}
 
-	cl.onground = (bits & SU_ONGROUND) ? 0 : -1;
+	cl.viewstate.onground = (bits & SU_ONGROUND) ? 0 : -1;
 	cl.inwater = (bits & SU_INWATER) != 0;
 
 	if (bits & SU_WEAPONFRAME)
@@ -766,9 +771,9 @@ CL_ParseClientdata (void)
 		cl.stats[STAT_WEAPONFRAME] |= MSG_ReadByte (net_message) << 8;
 	if (bits & SU_WEAPONALPHA) {
 		byte alpha = MSG_ReadByte (net_message);
-		cl.viewent.colormod[3] = ENTALPHA_DECODE (alpha);
+		cl.viewent.renderer.colormod[3] = ENTALPHA_DECODE (alpha);
 	} else {
-		cl.viewent.colormod[3] = 1.0;
+		cl.viewent.renderer.colormod[3] = 1.0;
 	}
 }
 
@@ -785,17 +790,17 @@ CL_ParseStatic (int version)
 
 	// copy it to the current state
 	//FIXME alpha & lerp
-	ent->model = cl.model_precache[baseline.modelindex];
-	ent->frame = baseline.frame;
-	ent->skin = 0;
-	ent->skinnum = baseline.skinnum;
-	VectorCopy (ent_colormod[baseline.colormod], ent->colormod);
-	ent->colormod[3] = ENTALPHA_DECODE (baseline.alpha);
-	ent->scale = baseline.scale / 16.0;
-	VectorCopy (baseline.origin, ent->origin);
-	CL_TransformEntity (ent, baseline.angles, true);
+	ent->renderer.model = cl.model_precache[baseline.modelindex];
+	ent->animation.frame = baseline.frame;
+	ent->renderer.skin = 0;
+	ent->renderer.skinnum = baseline.skinnum;
+	VectorCopy (ent_colormod[baseline.colormod], ent->renderer.colormod);
+	ent->renderer.colormod[3] = ENTALPHA_DECODE (baseline.alpha);
 
-	r_funcs->R_AddEfrags (ent);
+	CL_TransformEntity (ent, baseline.scale / 16.0, baseline.angles,
+						baseline.origin);
+
+	r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 }
 
 static void
@@ -835,13 +840,18 @@ CL_ParseServerMessage (void)
 	static dstring_t *stuffbuf;
 	signon_t    so;
 
+	TEntContext_t tentCtx = {
+		Transform_GetWorldPosition (cl_entities[cl.viewentity].transform),
+		cl.worldmodel, cl.viewentity
+	};
+
 	// if recording demos, copy the message out
 	if (cl_shownet->int_val == 1)
 		Sys_Printf ("%i ", net_message->message->cursize);
 	else if (cl_shownet->int_val == 2)
 		Sys_Printf ("------------------\n");
 
-	cl.onground = -1;				// unless the server says otherwise
+	cl.viewstate.onground = -1;		// unless the server says otherwise
 
 	// parse the message
 	MSG_BeginReading (net_message);
@@ -866,7 +876,7 @@ CL_ParseServerMessage (void)
 			continue;
 		}
 
-		SHOWNET (va ("%s(%d)", svc_strings[cmd], cmd));
+		SHOWNET (va (0, "%s(%d)", svc_strings[cmd], cmd));
 
 		// other commands
 		switch (cmd) {
@@ -911,7 +921,7 @@ CL_ParseServerMessage (void)
 			case svc_time:
 				cl.mtime[1] = cl.mtime[0];
 				cl.mtime[0] = MSG_ReadFloat (net_message);
-				cl.mindex = !cl.mindex;
+				cl.frameIndex = !cl.frameIndex;
 				break;
 
 			case svc_print:
@@ -940,7 +950,7 @@ CL_ParseServerMessage (void)
 
 			case svc_setangle:
 			{
-				vec_t      *dest = cl.viewangles;
+				vec_t      *dest = cl.viewstate.angles;
 
 				MSG_ReadAngleV (net_message, dest);
 				break;
@@ -1024,12 +1034,14 @@ CL_ParseServerMessage (void)
 						mod_funcs->Skin_SetTranslation (i + 1, top, bot);
 					cl.scores[i].topcolor = top;
 					cl.scores[i].bottomcolor = bot;
-					ent->skin = mod_funcs->Skin_SetColormap (ent->skin, i + 1);
+					ent->renderer.skin
+						= mod_funcs->Skin_SetColormap (ent->renderer.skin,
+													   i + 1);
 				}
 				break;
 
 			case svc_particle:
-				CL_ParseParticleEffect ();
+				CL_ParseParticleEffect (net_message);
 				break;
 
 			case svc_damage:
@@ -1049,7 +1061,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_temp_entity:
-				CL_ParseTEnt ();
+				CL_ParseTEnt_nq (net_message, cl.time, &tentCtx);
 				break;
 
 			case svc_setpause:

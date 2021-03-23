@@ -247,9 +247,6 @@ SV_Shutdown (void *data)
 	}
 	if (sv.recording_demo)
 		SV_Stop (0);
-
-	NET_Shutdown ();
-	Con_Shutdown ();
 }
 
 /*
@@ -371,7 +368,7 @@ SV_DropClient (client_t *drop)
 	// Trigger GIB event
 	if (sv_client_disconnect_e->func)
 		GIB_Event_Callback (sv_client_disconnect_e, 1,
-							va ("%u", drop->userid));
+							va (0, "%u", drop->userid));
 }
 
 int
@@ -1462,7 +1459,7 @@ SV_AddIP_f (void)
 							  bantime / 60);
 				else
 					strncpy (timestr, "permanently", sizeof (timestr));
-				text = va ("You are %s %s\n%s",
+				text = va (0, "You are %s %s\n%s",
 						   typestr, timestr, type == ft_ban ? "" :
 						   "\nReconnecting won't help...");
 				MSG_ReliableWrite_Begin (&cl->backbuf, svc_centerprint,
@@ -1887,7 +1884,7 @@ SV_CheckVars (void)
 		Info_SetValueForKey (svs.info, "needpass", "",
 							 !sv_highchars->int_val);
 	else
-		Info_SetValueForKey (svs.info, "needpass", va ("%i", v),
+		Info_SetValueForKey (svs.info, "needpass", va (0, "%i", v),
 							 !sv_highchars->int_val);
 }
 
@@ -2473,7 +2470,7 @@ SV_Init_Memory (void)
 		Sys_Error ("Only %4.1f megs of memory reported, can't execute game",
 				   mem_size / (float) 0x100000);
 
-	mem_base = malloc (mem_size);
+	mem_base = Sys_Alloc (mem_size);
 
 	if (!mem_base)
 		Sys_Error ("Can't allocate %d", mem_size);

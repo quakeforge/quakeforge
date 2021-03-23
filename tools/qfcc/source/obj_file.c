@@ -455,7 +455,7 @@ qfo_write (qfo_t *qfo, const char *filename)
 
 	file = Qopen (filename, options.gzip ? "wbz9" : "wb");
 	if (!file) {
-		perror (va ("failed to open %s for writing", filename));
+		perror (va (0, "failed to open %s for writing", filename));
 		return -1;
 	}
 
@@ -1168,7 +1168,7 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	if (options.verbosity >= 0) {
 		const char *big_function = "";
 		if (big_func)
-			big_function = va (" (%s)", strings + qfo->funcs[big_func].name);
+			big_function = va (0, " (%s)", strings + qfo->funcs[big_func].name);
 		printf ("%6i strofs\n", progs->numstrings);
 		printf ("%6i statements\n", progs->numstatements);
 		printf ("%6i functions\n", progs->numfunctions);

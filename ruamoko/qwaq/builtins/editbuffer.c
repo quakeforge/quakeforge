@@ -31,31 +31,31 @@ typedef struct qwaq_ebresources_s {
 static editbuffer_t *
 editbuffer_new (qwaq_ebresources_t *res)
 {
-	PR_RESNEW (editbuffer_t, res->buffers);
+	return PR_RESNEW (res->buffers);
 }
 
 static void
 editbuffer_free (qwaq_ebresources_t *res, editbuffer_t *buffer)
 {
-	PR_RESFREE (editbuffer_t, res->buffers, buffer);
+	PR_RESFREE (res->buffers, buffer);
 }
 
 static void
 editbuffer_reset (qwaq_ebresources_t *res)
 {
-	PR_RESRESET (editbuffer_t, res->buffers);
+	PR_RESRESET (res->buffers);
 }
 
 static inline editbuffer_t *
 editbuffer_get (qwaq_ebresources_t *res, unsigned index)
 {
-	PR_RESGET (res->buffers, index);
+	return PR_RESGET (res->buffers, index);
 }
 
 static inline int __attribute__((pure))
 editbuffer_index (qwaq_ebresources_t *res, editbuffer_t *buffer)
 {
-	PR_RESINDEX (res->buffers, buffer);
+	return PR_RESINDEX (res->buffers, buffer);
 }
 
 static always_inline editbuffer_t * __attribute__((pure))

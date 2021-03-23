@@ -471,11 +471,8 @@ SV_WriteFilterList (void)
 static void
 SV_Shutdown (void *data)
 {
-	NET_Shutdown ();
-
 	// write filter list
 	SV_WriteFilterList ();
-	Con_Shutdown ();
 }
 
 static void

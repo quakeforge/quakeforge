@@ -68,7 +68,7 @@ init (void)
 	COM_ParseConfig ();
 	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
 
-	Memory_Init (malloc (MEMSIZE), MEMSIZE);
+	Memory_Init (Sys_Alloc (MEMSIZE), MEMSIZE);
 
 	QFS_Init ("qw");
 	PI_Init ();

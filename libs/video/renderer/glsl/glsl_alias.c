@@ -43,6 +43,7 @@
 #include <stdlib.h>
 
 #include "QF/cvar.h"
+#include "QF/entity.h"
 #include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
@@ -111,7 +112,7 @@ static struct {
 	{"fog", 1},
 };
 
-static mat4_t alias_vp;
+static mat4f_t alias_vp;
 
 void
 glsl_R_InitAlias (void)
@@ -156,16 +157,20 @@ calc_lighting (entity_t *ent, float *ambient, float *shadelight,
 	unsigned    i;
 	float       add;
 	vec3_t      dist;
+	vec4f_t     entorigin;
 	int         light;
 
+	entorigin = Transform_GetWorldPosition (ent->transform);
+
 	VectorSet ( -1, 0, 0, lightvec);	//FIXME
-	light = R_LightPoint (ent->origin);
-	*ambient = max (light, max (ent->model->min_light, ent->min_light) * 128);
+	light = R_LightPoint (&r_worldentity.renderer.model->brush, &entorigin[0]);
+	*ambient = max (light, max (ent->renderer.model->min_light,
+								ent->renderer.min_light) * 128);
 	*shadelight = *ambient;
 
 	for (i = 0; i < r_maxdlights; i++) {
 		if (r_dlights[i].die >= vr_data.realtime) {
-			VectorSubtract (ent->origin, r_dlights[i].origin, dist);
+			VectorSubtract (entorigin, r_dlights[i].origin, dist);
 			add = r_dlights[i].radius - VectorLength (dist);
 			if (add > 0)
 				*ambient += add;
@@ -228,50 +233,52 @@ glsl_R_DrawAlias (void)
 	float       skin_size[2];
 	float       blend;
 	entity_t   *ent = currententity;
-	model_t    *model = ent->model;
+	model_t    *model = ent->renderer.model;
 	aliashdr_t *hdr;
 	vec_t       norm_mat[9];
-	mat4_t      mvp_mat;
 	int         skin_tex;
 	int         colormap;
 	aliasvrt_t *pose1 = 0;		// VBO's are null based
 	aliasvrt_t *pose2 = 0;		// VBO's are null based
+	mat4f_t     worldMatrix;
 
 	if (!(hdr = model->aliashdr))
 		hdr = Cache_Get (&model->cache);
 
 	calc_lighting (ent, &ambient, &shadelight, lightvec);
 
+	Transform_GetWorldMatrix (ent->transform, worldMatrix);
 	// we need only the rotation for normals.
-	VectorCopy (ent->transform + 0, norm_mat + 0);
-	VectorCopy (ent->transform + 4, norm_mat + 3);
-	VectorCopy (ent->transform + 8, norm_mat + 6);
+	VectorCopy (worldMatrix[0], norm_mat + 0);
+	VectorCopy (worldMatrix[1], norm_mat + 3);
+	VectorCopy (worldMatrix[2], norm_mat + 6);
 
 	// ent model scaling and offset
-	Mat4Zero (mvp_mat);
-	mvp_mat[0] = hdr->mdl.scale[0];
-	mvp_mat[5] = hdr->mdl.scale[1];
-	mvp_mat[10] = hdr->mdl.scale[2];
-	mvp_mat[15] = 1;
-	VectorCopy (hdr->mdl.scale_origin, mvp_mat + 12);
-	Mat4Mult (ent->transform, mvp_mat, mvp_mat);
-	Mat4Mult (alias_vp, mvp_mat, mvp_mat);
+	mat4f_t     mvp_mat = {
+		{ hdr->mdl.scale[0], 0, 0, 0 },
+		{ 0, hdr->mdl.scale[1], 0, 0 },
+		{ 0, 0, hdr->mdl.scale[2], 0 },
+		{ hdr->mdl.scale_origin[0], hdr->mdl.scale_origin[1],
+		  hdr->mdl.scale_origin[2], 1 },
+	};
+	mmulf (mvp_mat, worldMatrix, mvp_mat);
+	mmulf (mvp_mat, alias_vp, mvp_mat);
 
 	colormap = glsl_colormap;
-	if (ent->skin && ent->skin->auxtex)
-		colormap = ent->skin->auxtex;
-	if (ent->skin && ent->skin->texnum) {
-		skin_t     *skin = ent->skin;
+	if (ent->renderer.skin && ent->renderer.skin->auxtex)
+		colormap = ent->renderer.skin->auxtex;
+	if (ent->renderer.skin && ent->renderer.skin->texnum) {
+		skin_t     *skin = ent->renderer.skin;
 		skin_tex = skin->texnum;
 	} else {
 		maliasskindesc_t *skindesc;
-		skindesc = R_AliasGetSkindesc (ent->skinnum, hdr);
+		skindesc = R_AliasGetSkindesc (ent->renderer.skinnum, hdr);
 		skin_tex = skindesc->texnum;
 	}
 	blend = R_AliasGetLerpedFrames (ent, hdr);
 
-	pose1 += ent->pose1 * hdr->poseverts;
-	pose2 += ent->pose2 * hdr->poseverts;
+	pose1 += ent->animation.pose1 * hdr->poseverts;
+	pose2 += ent->animation.pose2 * hdr->poseverts;
 
 	skin_size[0] = hdr->mdl.skinwidth;
 	skin_size[1] = hdr->mdl.skinheight;
@@ -293,7 +300,8 @@ glsl_R_DrawAlias (void)
 	qfeglUniform1f (quake_mdl.shadelight.location, shadelight);
 	qfeglUniform3fv (quake_mdl.lightvec.location, 1, lightvec);
 	qfeglUniform2fv (quake_mdl.skin_size.location, 1, skin_size);
-	qfeglUniformMatrix4fv (quake_mdl.mvp_matrix.location, 1, false, mvp_mat);
+	qfeglUniformMatrix4fv (quake_mdl.mvp_matrix.location, 1, false,
+						   &mvp_mat[0][0]);
 	qfeglUniformMatrix3fv (quake_mdl.norm_matrix.location, 1, false, norm_mat);
 
 #ifndef TETRAHEDRON
@@ -321,7 +329,7 @@ glsl_R_AliasBegin (void)
 	quat_t      fog;
 
 	// pre-multiply the view and projection matricies
-	Mat4Mult (glsl_projection, glsl_view, alias_vp);
+	mmulf (alias_vp, glsl_projection, glsl_view);
 
 	qfeglUseProgram (quake_mdl.program);
 	qfeglEnableVertexAttribArray (quake_mdl.vertexa.location);
@@ -333,7 +341,7 @@ glsl_R_AliasBegin (void)
 	qfeglDisableVertexAttribArray (quake_mdl.colora.location);
 	qfeglDisableVertexAttribArray (quake_mdl.colorb.location);
 
-	VectorCopy (glsl_Fog_GetColor (), fog);
+	glsl_Fog_GetColor (fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (quake_mdl.fog.location, 1, fog);
 

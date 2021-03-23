@@ -146,7 +146,8 @@ bi_QFS_WriteFile (progs_t *pr)
 	int         count = P_INT (pr, 2);
 
 	check_buffer (pr, buf, count, "QFS_WriteFile");
-	QFS_WriteFile (va ("%s/%s", qfs_gamedir->dir.def, filename), buf, count);
+	QFS_WriteFile (va (0, "%s/%s", qfs_gamedir->dir.def, filename), buf,
+					   count);
 }
 
 static void

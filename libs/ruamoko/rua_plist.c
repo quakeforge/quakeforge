@@ -40,8 +40,8 @@
 #include <stdlib.h>
 
 #include "QF/hash.h"
+#include "QF/plist.h"
 #include "QF/progs.h"
-#include "QF/qfplist.h"
 
 #include "rua_internal.h"
 
@@ -63,31 +63,31 @@ typedef struct {
 static bi_plist_t *
 plist_new (plist_resources_t *res)
 {
-	PR_RESNEW (bi_plist_t, res->plist_map);
+	return PR_RESNEW (res->plist_map);
 }
 
 static void
 plist_free (plist_resources_t *res, bi_plist_t *plist)
 {
-	PR_RESFREE (bi_plist_t, res->plist_map, plist);
+	PR_RESFREE (res->plist_map, plist);
 }
 
 static void
 plist_reset (plist_resources_t *res)
 {
-	PR_RESRESET (bi_plist_t, res->plist_map);
+	PR_RESRESET (res->plist_map);
 }
 
 static inline bi_plist_t *
 plist_get (plist_resources_t *res, unsigned index)
 {
-	PR_RESGET(res->plist_map, index);
+	return PR_RESGET(res->plist_map, index);
 }
 
 static inline int __attribute__((pure))
 plist_index (plist_resources_t *res, bi_plist_t *plist)
 {
-	PR_RESINDEX(res->plist_map, plist);
+	return PR_RESINDEX(res->plist_map, plist);
 }
 
 static void
@@ -195,7 +195,7 @@ bi_PL_GetFromFile (progs_t *pr)
 	Qread (file, buf, len);
 	buf[len] = 0;
 
-	plitem = PL_GetPropertyList (buf);
+	plitem = PL_GetPropertyList (buf, pr->hashlink_freelist);
 
 	R_INT (pr) = plist_retain (res, plitem);
 }
@@ -204,7 +204,8 @@ static void
 bi_PL_GetPropertyList (progs_t *pr)
 {
 	plist_resources_t *res = PR_Resources_Find (pr, "plist");
-	plitem_t   *plitem = PL_GetPropertyList (P_GSTRING (pr, 0));
+	plitem_t   *plitem = PL_GetPropertyList (P_GSTRING (pr, 0),
+											 pr->hashlink_freelist);
 
 	R_INT (pr) = plist_retain (res, plitem);
 }
@@ -227,6 +228,15 @@ bi_PL_Type (progs_t *pr)
 	bi_plist_t *plist = get_plist (pr, __FUNCTION__, handle);
 
 	R_INT (pr) = PL_Type (plist->plitem);
+}
+
+static void
+bi_PL_Line (progs_t *pr)
+{
+	int         handle = P_INT (pr, 0);
+	bi_plist_t *plist = get_plist (pr, __FUNCTION__, handle);
+
+	R_INT (pr) = PL_Line (plist->plitem);
 }
 
 static void
@@ -364,7 +374,7 @@ static void
 bi_PL_NewDictionary (progs_t *pr)
 {
 	plist_resources_t *res = PR_Resources_Find (pr, "plist");
-	plitem_t   *plitem = PL_NewDictionary ();
+	plitem_t   *plitem = PL_NewDictionary (pr->hashlink_freelist);
 
 	R_INT (pr) = plist_retain (res, plitem);
 }
@@ -432,6 +442,7 @@ static builtin_t builtins[] = {
 	{"PL_GetPropertyList",			bi_PL_GetPropertyList,			-1},
 	{"PL_WritePropertyList",		bi_PL_WritePropertyList,		-1},
 	{"PL_Type",						bi_PL_Type,						-1},
+	{"PL_Line",						bi_PL_Line,						-1},
 	{"PL_String",					bi_PL_String,					-1},
 	{"PL_ObjectForKey",				bi_PL_ObjectForKey,				-1},
 	{"PL_RemoveObjectForKey",		bi_PL_RemoveObjectForKey,		-1},

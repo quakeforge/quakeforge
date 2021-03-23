@@ -46,7 +46,7 @@ typedef struct hashlink_s hashlink_t;
 				inserting or finding the element. First parameter is a pointer
 				to the element from which to extract the key, the second is
 				the user data pointer.
-	\param f	a function to free the element. Only ever called from
+	\param f	a function to free the element. Called from only
 				Hash_FlushTable and Hash_DelTable. The first parameter is the
 				element to be freed and the second is the user data pointer.
 	\param ud	user data pointer. set to whatever you want, it will be passed

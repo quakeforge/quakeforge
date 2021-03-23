@@ -341,7 +341,7 @@ DecodeArgs (int argc, char **argv)
 				}
 				break;
 			case 'l':					// lib file
-				add_file (va ("-l%s", NORMALIZE (optarg)));
+				add_file (va (0, "-l%s", NORMALIZE (optarg)));
 				break;
 			case 'L':
 				linker_add_path (NORMALIZE (optarg));

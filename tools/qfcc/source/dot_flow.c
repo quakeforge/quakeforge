@@ -114,7 +114,7 @@ print_flow_node_dag (dstring_t *dstr, flowgraph_t *graph, flownode_t *node,
 					 int level)
 {
 	if (node->dag)
-		print_dag (dstr, node->dag, va ("%d (%d)", node->id, node->dfn));
+		print_dag (dstr, node->dag, va (0, "%d (%d)", node->id, node->dfn));
 	else
 		print_flow_node (dstr, graph, node, level);
 }

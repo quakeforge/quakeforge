@@ -11,7 +11,6 @@ EXTRA_DIST += \
 	qw/include/cl_pred.h \
 	qw/include/cl_skin.h \
 	qw/include/cl_slist.h \
-	qw/include/cl_tent.h \
 	qw/include/client.h \
 	qw/include/crudefile.h \
 	qw/include/game.h \

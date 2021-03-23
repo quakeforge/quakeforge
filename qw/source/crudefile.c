@@ -150,7 +150,7 @@ CF_BuildQuota (void)
 	cf_cursize = 0;
 
 	while ((i = readdir (dir))) {
-		cf_cursize += CF_GetFileSize (va ("%s/%s", path->str, i->d_name));
+		cf_cursize += CF_GetFileSize (va (0, "%s/%s", path->str, i->d_name));
 	}
 	closedir (dir);
 }

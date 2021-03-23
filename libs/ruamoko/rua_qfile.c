@@ -56,31 +56,31 @@ typedef struct {
 static qfile_t *
 handle_new (qfile_resources_t *res)
 {
-	PR_RESNEW (qfile_t, res->handle_map);
+	return PR_RESNEW (res->handle_map);
 }
 
 static void
 handle_free (qfile_resources_t *res, qfile_t *handle)
 {
-	PR_RESFREE (qfile_t, res->handle_map, handle);
+	PR_RESFREE (res->handle_map, handle);
 }
 
 static void
 handle_reset (qfile_resources_t *res)
 {
-	PR_RESRESET (qfile_t, res->handle_map);
+	PR_RESRESET (res->handle_map);
 }
 
 static inline qfile_t *
 handle_get (qfile_resources_t *res, int index)
 {
-	PR_RESGET(res->handle_map, index);
+	return PR_RESGET(res->handle_map, index);
 }
 
 static inline int __attribute__((pure))
 handle_index (qfile_resources_t *res, qfile_t *handle)
 {
-	PR_RESINDEX(res->handle_map, handle);
+	return PR_RESINDEX(res->handle_map, handle);
 }
 
 static void

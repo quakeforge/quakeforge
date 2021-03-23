@@ -36,6 +36,7 @@
 #include "QF/clip_hull.h"
 #include "QF/model.h"
 
+#include "mod_internal.h"
 
 VISIBLE clip_hull_t *
 MOD_Alloc_Hull (int nodes, int planes)

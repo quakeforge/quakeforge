@@ -452,7 +452,8 @@ sv_new_f (void)
 	sv->qport = qport->int_val;
 	sv->info = Info_ParseString ("", MAX_INFO_STRING, 0);
 	Info_SetValueForStarKey (sv->info, "*ver",
-							 va ("%s QTV %s", QW_VERSION, PACKAGE_VERSION), 0);
+							 va (0, "%s QTV %s", QW_VERSION, PACKAGE_VERSION),
+							 0);
 	Info_SetValueForStarKey (sv->info, "*qsg_version", QW_QSG_VERSION, 0);
 	Info_SetValueForKey (sv->info, "name", "QTV Proxy", 0);
 	Hash_Add (server_hash, sv);
@@ -628,7 +629,7 @@ Server_Broadcast (server_t *sv, int reliable, int all, const byte *msg,
 void
 Server_BroadcastCommand (server_t *sv, const char *cmd)
 {
-	const char *msg = va ("%c%s", svc_stufftext, cmd);
+	const char *msg = va (0, "%c%s", svc_stufftext, cmd);
 	int         len = strlen (msg) + 1;
 	Server_Broadcast (sv, 1, 1, (const byte *) msg, len);
 }

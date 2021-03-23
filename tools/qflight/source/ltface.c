@@ -508,38 +508,6 @@ SkyLightFace (entity_t *ent, int sun, lightinfo_t *l)
 	}
 }
 
-#if 0
-static void
-FixMinlight (lightinfo_t *l)
-{
-	float		minlight;
-	int			i, j;
-
-	minlight = minlights[l->surfnum];
-
-	// if minlight is set, there must be a style 0 light map
-	if (!minlight)
-		return;
-
-	for (i = 0; i < l->numlightstyles; i++) {
-		if (l->lightstyles[i] == 0)
-			break;
-	}
-	if (i == l->numlightstyles) {
-		if (l->numlightstyles == MAXLIGHTMAPS)
-			return;		// oh well..
-		for (j = 0; j < l->numsurfpt; j++)
-			l->lightmaps[i][j] = minlight;
-			l->lightstyles[i] = 0;
-			l->numlightstyles++;
-	} else {
-		for (j = 0; j < l->numsurfpt; j++)
-			if (l->lightmaps[i][j] < minlight)
-				l->lightmaps[i][j] = minlight;
-	}
-}
-#endif
-
 void
 LightFace (lightinfo_t *l, int surfnum)
 {
@@ -589,8 +557,6 @@ LightFace (lightinfo_t *l, int surfnum)
 		for (i = 0; i < world_entity->num_suns; i++)
 			SkyLightFace (world_entity, i, l);
 	}
-
-//	FixMinlight (&l);
 
 	for (i = 0; i < MAXLIGHTMAPS; i++)
 		if (l->lightstyles[i] == 255)

@@ -33,6 +33,8 @@
 #include "QF/model.h"
 #include "QF/render.h"
 #include "QF/vid.h"
+#include "QF/simd/mat4f.h"
+#include "QF/simd/vec4f.h"
 #include "r_shared.h"
 
 #define ALIAS_BASE_SIZE_RATIO		(1.0 / 11.0)
@@ -136,8 +138,8 @@ extern qboolean	r_cache_thrash;	// set if thrashing the surface cache
 extern	qboolean		insubmodel;
 extern	vec3_t			r_worldmodelorg;
 
-extern mat4_t   glsl_projection;
-extern mat4_t   glsl_view;
+extern mat4f_t   glsl_projection;
+extern mat4f_t   glsl_view;
 
 void R_SetFrustum (void);
 
@@ -180,8 +182,9 @@ void R_InsertNewEdges (edge_t *edgestoadd, edge_t *edgelist);
 void R_StepActiveU (edge_t *pedge);
 void R_RemoveEdges (edge_t *pedge);
 void R_AddTexture (texture_t *tex);
+struct vulkan_ctx_s;
 void R_ClearTextures (void);
-void R_InitSurfaceChains (model_t *model);
+void R_InitSurfaceChains (mod_brush_t *brush);
 
 extern void R_Surf8Start (void);
 extern void R_Surf8End (void);
@@ -302,17 +305,18 @@ void R_ZGraph (void);
 void R_PrintAliasStats (void);
 void R_PrintTimes (void);
 void R_AnimateLight (void);
-int R_LightPoint (const vec3_t p);
+int R_LightPoint (mod_brush_t *brush, const vec3_t p);
 void R_SetupFrame (void);
 void R_cshift_f (void);
 void R_EmitEdge (mvertex_t *pv0, mvertex_t *pv1);
 void R_ClipEdge (mvertex_t *pv0, mvertex_t *pv1, clipplane_t *clip);
-void R_RecursiveMarkLights (const vec3_t lightorigin, struct dlight_s *light,
-							int bit, mnode_t *node);
+void R_RecursiveMarkLights (mod_brush_t *brush, const vec3_t lightorigin,
+							struct dlight_s *light, int bit, mnode_t *node);
 void R_MarkLights (const vec3_t lightorigin, struct dlight_s *light, int bit,
 				   model_t *model);
 
 void R_LoadSkys (const char *);
+//void Vulkan_R_LoadSkys (const char *, struct vulkan_ctx_s *ctx);
 
 void R_LowFPPrecision (void);
 void R_HighFPPrecision (void);
@@ -346,7 +350,12 @@ extern byte crosshair_data[];
 #define CROSSHAIR_TILEY 2
 #define CROSSHAIR_COUNT (CROSSHAIR_TILEX * CROSSHAIR_TILEY)
 
+//NOTE: This is packed 8x8 bitmap data, one byte per scanline, 8 scanlines
+////per character. Also, it is NOT the quake font, but the IBM charset.
+extern byte font8x8_data[];
+
 struct qpic_s *Draw_CrosshairPic (void);
+struct qpic_s *Draw_Font8x8Pic (void);
 
 struct tex_s *R_DotParticleTexture (void);
 struct tex_s *R_SparkParticleTexture (void);

@@ -403,6 +403,17 @@ NET_GetLocalAddress (void)
 	Sys_Printf ("IP address %s\n", NET_AdrToString (net_local_adr));
 }
 
+static void
+NET_shutdown (void *data)
+{
+#ifdef _WIN32
+	closesocket (net_socket);
+	WSACleanup ();
+#else
+	close (net_socket);
+#endif
+}
+
 void
 NET_Init (int port)
 {
@@ -416,6 +427,7 @@ NET_Init (int port)
 	if (r)
 		Sys_Error ("Winsock initialization failed.");
 #endif /* _WIN32 */
+	Sys_RegisterShutdown (NET_shutdown, 0);
 
 	net_socket = UDP_OpenSocket (port);
 
@@ -430,15 +442,4 @@ NET_Init (int port)
 	net_loopback_adr.ip[3] = 1;
 
 	Sys_Printf ("UDP (IPv4) Initialized\n");
-}
-
-void
-NET_Shutdown (void)
-{
-#ifdef _WIN32
-	closesocket (net_socket);
-	WSACleanup ();
-#else
-	close (net_socket);
-#endif
 }

@@ -63,7 +63,7 @@ R_AliasGetSkindesc (int skinnum, aliashdr_t *ahdr)
 		numskins = paliasskingroup->numskins;
 		fullskininterval = pskinintervals[numskins - 1];
 
-		skintime = vr_data.realtime + currententity->syncbase;
+		skintime = vr_data.realtime + currententity->animation.syncbase;
 
 		// when loading in Mod_LoadAliasSkinGroup, we guaranteed all interval
 		// values are positive, so we don't have to worry about division by 0
@@ -118,7 +118,7 @@ alias_get_frame (int framenum, aliashdr_t *hdr, float *frame_interval)
 	numframes = group->numframes;
 	fullinterval = intervals[numframes - 1];
 
-	time = vr_data.realtime + currententity->syncbase;
+	time = vr_data.realtime + currententity->animation.syncbase;
 
 	// when loading in Mod_LoadAliasGroup, we guaranteed all interval values
 	// are positive, so we don't have to worry about division by 0
@@ -148,6 +148,6 @@ R_AliasGetLerpedFrames (entity_t *ent, aliashdr_t *hdr)
 	maliasframedesc_t *frame;
 	float       interval;
 
-	frame = alias_get_frame (ent->frame, hdr, &interval);
+	frame = alias_get_frame (ent->animation.frame, hdr, &interval);
 	return R_EntityBlend (ent, frame->firstpose, interval);
 }

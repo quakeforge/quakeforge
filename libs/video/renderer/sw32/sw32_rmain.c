@@ -42,7 +42,7 @@
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
-#include "QF/locs.h"
+#include "QF/entity.h"
 #include "QF/mathlib.h"
 #include "QF/render.h"
 #include "QF/screen.h"
@@ -180,19 +180,20 @@ void
 sw32_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
 	int         i;
+	mod_brush_t *brush = &worldmodel->brush;
 
 	memset (&r_worldentity, 0, sizeof (r_worldentity));
-	r_worldentity.model = worldmodel;
+	r_worldentity.renderer.model = worldmodel;
 
 	R_FreeAllEntities ();
 
 	// clear out efrags in case the level hasn't been reloaded
 	// FIXME: is this one short?
-	for (i = 0; i < r_worldentity.model->numleafs; i++)
-		r_worldentity.model->leafs[i].efrags = NULL;
+	for (i = 0; i < brush->numleafs; i++)
+		brush->leafs[i].efrags = NULL;
 
-	if (worldmodel->skytexture)
-		sw32_R_InitSky (worldmodel->skytexture);
+	if (brush->skytexture)
+		sw32_R_InitSky (brush->skytexture);
 
 	// Force a vis update
 	r_viewleaf = NULL;
@@ -368,27 +369,30 @@ R_DrawEntitiesOnList (void)
 	for (ent = r_ent_queue; ent; ent = ent->next) {
 		currententity = ent;
 
-		switch (currententity->model->type) {
+		VectorCopy (Transform_GetWorldPosition (currententity->transform),
+					r_entorigin);
+		switch (currententity->renderer.model->type) {
 			case mod_sprite:
-				VectorCopy (currententity->origin, r_entorigin);
 				VectorSubtract (r_origin, r_entorigin, modelorg);
 				sw32_R_DrawSprite ();
 				break;
 
 			case mod_alias:
 			case mod_iqm:
-				VectorCopy (currententity->origin, r_entorigin);
 				VectorSubtract (r_origin, r_entorigin, modelorg);
 
-				minlight = max (currententity->min_light, currententity->model->min_light);
+				minlight = max (currententity->renderer.min_light,
+								currententity->renderer.model->min_light);
 
 				// see if the bounding box lets us trivially reject, also
 				// sets trivial accept status
-				currententity->trivial_accept = 0;	//FIXME
-				if (currententity->model->type == mod_iqm//FIXME
+				currententity->visibility.trivial_accept = 0;	//FIXME
+				if (currententity->renderer.model->type == mod_iqm//FIXME
 					|| sw32_R_AliasCheckBBox ()) {
 					// 128 instead of 255 due to clamping below
-					j = max (R_LightPoint (currententity->origin), minlight * 128);
+					j = max (R_LightPoint (&r_worldentity.renderer.model->brush,
+										   r_entorigin),
+							 minlight * 128);
 
 					lighting.ambientlight = j;
 					lighting.shadelight = j;
@@ -397,7 +401,7 @@ R_DrawEntitiesOnList (void)
 
 					for (lnum = 0; lnum < r_maxdlights; lnum++) {
 						if (r_dlights[lnum].die >= vr_data.realtime) {
-							VectorSubtract (currententity->origin,
+							VectorSubtract (r_entorigin,
 											r_dlights[lnum].origin, dist);
 							add = r_dlights[lnum].radius - VectorLength (dist);
 
@@ -412,7 +416,7 @@ R_DrawEntitiesOnList (void)
 					if (lighting.ambientlight + lighting.shadelight > 192)
 						lighting.shadelight = 192 - lighting.ambientlight;
 
-					if (currententity->model->type == mod_iqm)
+					if (currententity->renderer.model->type == mod_iqm)
 						sw32_R_IQMDrawModel (&lighting);
 					else
 						sw32_R_AliasDrawModel (&lighting);
@@ -443,18 +447,21 @@ R_DrawViewModel (void)
 		return;
 
 	currententity = vr_data.view_model;
-	if (!currententity->model)
+	if (!currententity->renderer.model)
 		return;
 
-	VectorCopy (currententity->origin, r_entorigin);
+	VectorCopy (Transform_GetWorldPosition (currententity->transform),
+				r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);
 
 	VectorCopy (vup, viewlightvec);
 	VectorNegate (viewlightvec, viewlightvec);
 
-	minlight = max (currententity->min_light, currententity->model->min_light);
+	minlight = max (currententity->renderer.min_light,
+					currententity->renderer.model->min_light);
 
-	j = max (R_LightPoint (currententity->origin), minlight * 128);
+	j = max (R_LightPoint (&r_worldentity.renderer.model->brush,
+						   r_entorigin), minlight * 128);
 
 	r_viewlighting.ambientlight = j;
 	r_viewlighting.shadelight = j;
@@ -469,7 +476,7 @@ R_DrawViewModel (void)
 		if (dl->die < vr_data.realtime)
 			continue;
 
-		VectorSubtract (currententity->origin, dl->origin, dist);
+		VectorSubtract (r_entorigin, dl->origin, dist);
 		add = dl->radius - VectorLength (dist);
 		if (add > 0)
 			r_viewlighting.ambientlight += add;
@@ -492,13 +499,14 @@ R_BmodelCheckBBox (model_t *clmodel, float *minmaxs)
 	int         i, *pindex, clipflags;
 	vec3_t      acceptpt, rejectpt;
 	double      d;
+	mat4f_t     mat;
 
 	clipflags = 0;
 
-	if (currententity->transform[0] != 1 || currententity->transform[5] != 1
-		|| currententity->transform[10] != 1) {
+	Transform_GetWorldMatrix (currententity->transform, mat);
+	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
 		for (i = 0; i < 4; i++) {
-			d = DotProduct (currententity->origin, sw32_view_clipplanes[i].normal);
+			d = DotProduct (mat[3], sw32_view_clipplanes[i].normal);
 			d -= sw32_view_clipplanes[i].dist;
 
 			if (d <= -clmodel->radius)
@@ -546,6 +554,7 @@ R_DrawBEntitiesOnList (void)
 	int         j, clipflags;
 	unsigned int k;
 	vec3_t      oldorigin;
+	vec3_t      origin;
 	model_t    *clmodel;
 	float       minmaxs[6];
 	entity_t   *ent;
@@ -559,46 +568,48 @@ R_DrawBEntitiesOnList (void)
 	for (ent = r_ent_queue; ent; ent = ent->next) {
 		currententity = ent;
 
-		switch (currententity->model->type) {
+		VectorCopy (Transform_GetWorldPosition (currententity->transform),
+					origin);
+		switch (currententity->renderer.model->type) {
 			case mod_brush:
-				clmodel = currententity->model;
+				clmodel = currententity->renderer.model;
 
 				// see if the bounding box lets us trivially reject, also
 				// sets trivial accept status
 				for (j = 0; j < 3; j++) {
-					minmaxs[j] = currententity->origin[j] + clmodel->mins[j];
-					minmaxs[3 + j] = currententity->origin[j] +
-						clmodel->maxs[j];
+					minmaxs[j] = origin[j] + clmodel->mins[j];
+					minmaxs[3 + j] = origin[j] + clmodel->maxs[j];
 				}
 
 				clipflags = R_BmodelCheckBBox (clmodel, minmaxs);
 
 				if (clipflags != BMODEL_FULLY_CLIPPED) {
-					VectorCopy (currententity->origin, r_entorigin);
+					mod_brush_t *brush = &clmodel->brush;
+					VectorCopy (origin, r_entorigin);
 					VectorSubtract (r_origin, r_entorigin, modelorg);
 
 					// FIXME: is this needed?
 					VectorCopy (modelorg, sw32_r_worldmodelorg);
-					r_pcurrentvertbase = clmodel->vertexes;
+					r_pcurrentvertbase = brush->vertexes;
 
 					// FIXME: stop transforming twice
 					sw32_R_RotateBmodel ();
 
 					// calculate dynamic lighting for bmodel if it's not an
 					// instanced model
-					if (clmodel->firstmodelsurface != 0) {
+					if (brush->firstmodelsurface != 0) {
 						vec3_t      lightorigin;
 
 						for (k = 0; k < r_maxdlights; k++) {
 							if ((r_dlights[k].die < vr_data.realtime) ||
 								(!r_dlights[k].radius)) continue;
 
-							VectorSubtract (r_dlights[k].origin,
-											currententity->origin,
+							VectorSubtract (r_dlights[k].origin, origin,
 											lightorigin);
-							R_RecursiveMarkLights (lightorigin, &r_dlights[k],
-												   k, clmodel->nodes +
-										  clmodel->hulls[0].firstclipnode);
+							R_RecursiveMarkLights (brush, lightorigin,
+												   &r_dlights[k], k,
+												   brush->nodes
+										+ brush->hulls[0].firstclipnode);
 						}
 					}
 					// if the driver wants polygons, deliver those.
@@ -607,8 +618,9 @@ R_DrawBEntitiesOnList (void)
 					if (sw32_r_drawpolys | sw32_r_drawculledpolys) {
 						sw32_R_ZDrawSubmodelPolys (clmodel);
 					} else {
-						if (currententity->topnode) {
-							mnode_t    *topnode = currententity->topnode;
+						if (currententity->visibility.topnode) {
+							mnode_t    *topnode
+								= currententity->visibility.topnode;
 
 							if (topnode->contents >= 0) {
 								// not a leaf; has to be clipped to the world
@@ -753,7 +765,7 @@ R_RenderView_ (void)
 #endif
 	R_PushDlights (vec3_origin);
 
-	if (!r_worldentity.model)
+	if (!r_worldentity.renderer.model)
 		Sys_Error ("R_RenderView: NULL worldmodel");
 
 	if (!r_dspeeds->int_val) {

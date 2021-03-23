@@ -107,6 +107,27 @@ qcautodep = $(join $(addsuffix $(DEPDIR)/,$(dir $(basename $(1)))),$(addsuffix .
 r_depfiles_remade=
 pas_depfiles_remade=
 
+V_GLSLANG = $(V_GLSLANG_@AM_V@)
+V_GLSLANG_ = $(V_GLSLANG_@AM_DEFAULT_V@)
+V_GLSLANG_0 = @echo "  GLSLANG " $@;
+V_GLSLANG_1 =
+
+V_XXD = $(V_XXD_@AM_V@)
+V_XXD_ = $(V_XXD_@AM_DEFAULT_V@)
+V_XXD_0 = @echo "  XXD     " $@;
+V_XXD_1 =
+
+%.spv: %
+	@$(mkdir_p) $(builddir)/`dirname $@`
+	$(V_GLSLANG)(((($(GLSLANGVALIDATOR) -V $< -o $@; echo $$? >&3) | sed -e '1d' 1>&2) 3>&1) | (read xs; exit $$xs))
+
+%.spvc: %
+	@$(mkdir_p) $(builddir)/`dirname $@`
+	$(V_GLSLANG)(((($(GLSLANGVALIDATOR) --vn `basename $< | tr . _` -V $< -o $@; echo $$? >&3) | sed -e '1d' 1>&2) 3>&1) | (read xs; exit $$xs))
+
+shaderdir = @shaderdir@
+shader_DATA =
+
 include doc/Makemodule.am
 include RPM/Makemodule.am
 include debian/Makemodule.am
@@ -122,6 +143,7 @@ include tools/Makemodule.am
 include ruamoko/Makemodule.am
 
 DISTCLEANFILES += $(r_depfiles_remade) $(pas_depfiles_remade)
+CLEANFILES += $(shader_DATA)
 
 $(r_depfiles_remade):
 	$(MKDIR_P) $(@D)

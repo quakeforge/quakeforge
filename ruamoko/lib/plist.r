@@ -4,6 +4,7 @@ plitem_t PL_GetFromFile (QFile file) = #0;
 plitem_t PL_GetPropertyList (string str) = #0;
 string PL_WritePropertyList (plitem_t pl) = #0;
 pltype_t PL_Type (plitem_t str) = #0;
+int PL_Line (plitem_t str) = #0;
 string PL_String (plitem_t str) = #0;
 plitem_t PL_ObjectForKey (plitem_t item, string key) = #0;
 plitem_t PL_RemoveObjectForKey (plitem_t item, string key) = #0;

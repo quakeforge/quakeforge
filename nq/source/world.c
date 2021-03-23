@@ -245,7 +245,7 @@ SV_HullForEntity (edict_t *ent, const vec3_t mins, const vec3_t maxs,
 					   PR_GetString (&sv_pr_state,
 						   			 SVstring (ent, classname)));
 
-		hull_list = model->hull_list;
+		hull_list = model->brush.hull_list;
 	}
 	if (hull_list) {
 		// decide which clipping hull to use, based on the size
@@ -425,7 +425,7 @@ SV_FindTouchedLeafs (edict_t *ent, mnode_t *node)
 		leaf = (mleaf_t *) node;
 
 		edict_leaf = alloc_edict_leaf ();
-		edict_leaf->leafnum = leaf - sv.worldmodel->leafs - 1;
+		edict_leaf->leafnum = leaf - sv.worldmodel->brush.leafs - 1;
 		edict_leaf->next = SVdata (ent)->leafs;
 		SVdata (ent)->leafs = edict_leaf;
 		return;
@@ -497,7 +497,7 @@ SV_LinkEdict (edict_t *ent, qboolean touch_triggers)
 	// link to PVS leafs
 	free_edict_leafs (&SVdata (ent)->leafs);
 	if (SVfloat (ent, modelindex))
-		SV_FindTouchedLeafs (ent, sv.worldmodel->nodes);
+		SV_FindTouchedLeafs (ent, sv.worldmodel->brush.nodes);
 
 	if (SVfloat (ent, solid) == SOLID_NOT)
 		return;
@@ -560,7 +560,7 @@ SV_PointContents (const vec3_t p)
 {
 	int         cont;
 
-	cont = SV_HullPointContents (&sv.worldmodel->hulls[0], 0, p);
+	cont = SV_HullPointContents (&sv.worldmodel->brush.hulls[0], 0, p);
 	if (cont <= CONTENTS_CURRENT_0 && cont >= CONTENTS_CURRENT_DOWN)
 		cont = CONTENTS_WATER;
 	return cont;
@@ -569,7 +569,7 @@ SV_PointContents (const vec3_t p)
 int
 SV_TruePointContents (const vec3_t p)
 {
-	return SV_HullPointContents (&sv.worldmodel->hulls[0], 0, p);
+	return SV_HullPointContents (&sv.worldmodel->brush.hulls[0], 0, p);
 }
 
 /*
@@ -903,7 +903,7 @@ SV_TestPlayerPosition (edict_t *ent, const vec3_t origin)
 	vec3_t      boxmins, boxmaxs, offset;
 
 	// check world first
-	hull = &sv.worldmodel->hulls[1];
+	hull = &sv.worldmodel->brush.hulls[1];
 	if (SV_HullPointContents (hull, hull->firstclipnode, origin) !=
 		CONTENTS_EMPTY) return sv.edicts;
 

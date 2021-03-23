@@ -6,9 +6,19 @@ include libs/models/test/Makemodule.am
 
 lib_LTLIBRARIES +=	libs/models/libQFmodels.la
 noinst_LTLIBRARIES += @models_libs@
-EXTRA_LTLIBRARIES += libs/models/libmodels_gl.la libs/models/libmodels_glsl.la libs/models/libmodels_sw.la
+EXTRA_LTLIBRARIES += \
+	libs/models/libmodels_gl.la \
+	libs/models/libmodels_glsl.la \
+	libs/models/libmodels_sw.la \
+	libs/models/libmodels_vulkan.la
 
-models_sources = libs/models/clip_hull.c libs/models/model.c libs/models/portal.c libs/models/trace.c libs/models/winding.c
+models_sources = \
+	libs/models/clip_hull.c \
+	libs/models/fullbright.c \
+	libs/models/model.c \
+	libs/models/portal.c \
+	libs/models/trace.c \
+	libs/models/winding.c
 
 common_libs = \
 	libs/util/libQFutil.la
@@ -53,3 +63,14 @@ libs_models_libmodels_sw_la_LDFLAGS=
 libs_models_libmodels_sw_la_LIBADD=			$(sw_libs)
 libs_models_libmodels_sw_la_DEPENDENCIES=	$(sw_libs)
 libs_models_libmodels_sw_la_SOURCES=		libs/models/sw_skin.c libs/models/skin.c
+
+vulkan_libs= \
+	libs/models/alias/libalias_vulkan.la \
+	libs/models/brush/libbrush_vulkan.la \
+	libs/models/iqm/libiqm_vulkan.la \
+	libs/models/sprite/libsprite_vulkan.la \
+	libs/image/libQFimage.la
+libs_models_libmodels_vulkan_la_LDFLAGS=
+libs_models_libmodels_vulkan_la_LIBADD=			$(vulkan_libs)
+libs_models_libmodels_vulkan_la_DEPENDENCIES=	$(vulkan_libs)
+libs_models_libmodels_vulkan_la_SOURCES=		libs/models/vulkan_skin.c libs/models/skin.c

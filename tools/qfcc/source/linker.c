@@ -1106,7 +1106,7 @@ linker_add_lib (const char *libname)
 
 	if (strncmp (libname, "-l", 2) == 0) {
 		while (path) {
-			path_name = va ("%s/lib%s.a", path->path, libname + 2);
+			path_name = va (0, "%s/lib%s.a", path->path, libname + 2);
 			pack = pack_open (path_name);
 			if (pack)
 				break;

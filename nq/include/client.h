@@ -38,6 +38,7 @@
 #include "QF/render.h"
 
 #include "client/entities.h"
+#include "client/view.h"
 
 #include "game.h"
 #include "netmain.h"
@@ -162,14 +163,12 @@ typedef struct {
 // server each frame.  The server sets punchangle when the view is temporarily
 // offset, and an angle reset commands at the start of each level and after
 // teleporting.
-	int         mindex;
-	vec3_t      mviewangles[2];	// During demo playback viewangles is lerped
+	int         frameIndex;
+	vec3_t      frameViewAngles[2];	// During demo playback viewangles is lerped
 								// between these
-	vec3_t      viewangles;
-	vec3_t      mvelocity[2];	// Update by server, used for lean+bob
+	vec4f_t     frameVelocity[2];	// Update by server, used for lean+bob
 								// (0 is newest)
-	vec3_t      velocity;		// Lerped between mvelocity[0] and [1]
-	vec3_t      punchangle;		// Temporary offset
+	viewstate_t viewstate;
 
 // pitch drifting vars
 	float       idealpitch;
@@ -179,7 +178,6 @@ typedef struct {
 	double      laststop;
 
 	qboolean    paused;			// Sent over by server
-	int         onground;
 	float       viewheight;
 	float       crouch;			// Local amount for smoothing stepups
 	qboolean    inwater;
@@ -286,7 +284,7 @@ extern void (*write_angles) (sizebuf_t *sb, const vec3_t angles);
 struct cbuf_s;
 void CL_Init (struct cbuf_s *cbuf);
 void CL_InitCvars (void);
-void CL_Shutdown (void);
+void CL_ClearMemory (void);
 
 void CL_EstablishConnection (const char *host);
 void CL_Signon1 (void);
@@ -303,10 +301,6 @@ void CL_NextDemo (void);
 void CL_Input_Init (void);
 void CL_SendCmd (void);
 void CL_SendMove (usercmd_t *cmd);
-
-void CL_ParseParticleEffect (void);
-void CL_ParseTEnt (void);
-void CL_UpdateTEnts (void);
 
 void CL_ClearState (void);
 
@@ -344,13 +338,7 @@ void V_SetContentsColor (int contents);
 void V_PrepBlend (void);
 
 // cl_tent
-void CL_TEnts_Init (void);
-void CL_ClearTEnts (void);
-void CL_Init_Entity (struct entity_s *ent);
-void CL_ParseTEnt (void);
 void CL_SignonReply (void);
-void CL_TransformEntity (struct entity_s *ent, const vec3_t
-						 angles, qboolean force);
 void CL_RelinkEntities (void);
 void CL_ClearEnts (void);
 

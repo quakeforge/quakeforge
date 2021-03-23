@@ -37,6 +37,7 @@
 #endif
 
 #include "QF/cvar.h"
+#include "QF/entity.h"
 #include "QF/mersenne.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
@@ -83,12 +84,12 @@ R_ReadPointFile_f (void)
 	const char *name;
 	char       *mapname;
 
-	mapname = strdup (r_worldentity.model->name);
+	mapname = strdup (r_worldentity.renderer.model->path);
 	if (!mapname)
 		Sys_Error ("Can't duplicate mapname!");
 	QFS_StripExtension (mapname, mapname);
 
-	name = va ("maps/%s.pts", mapname);
+	name = va (0, "maps/%s.pts", mapname);
 	free (mapname);
 
 	f = QFS_FOpenFile (name);
@@ -386,9 +387,7 @@ R_DarkFieldParticles_ID (const entity_t *ent)
 	if (!r_particles->int_val)
 		return;
 
-	org[0] = ent->origin[0];
-	org[1] = ent->origin[1];
-	org[2] = ent->origin[2];
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
 	for (i = -16; i < 16; i += 8) {
 		for (j = -16; j < 16; j += 8) {
 			for (k = 0; k < 32; k += 8) {
@@ -431,9 +430,12 @@ R_EntityParticles_ID (const entity_t *ent)
 	float		beamlength = 16.0, dist = 64.0;
 	particle_t *p;
 	vec3_t		forward;
+	vec3_t      org;
 
 	if (!r_particles->int_val)
 		return;
+
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
 
 	for (i = 0; i < NUMVERTEXNORMALS; i++) {
 		int         k;
@@ -470,11 +472,11 @@ R_EntityParticles_ID (const entity_t *ent)
 		p->type = pt_explode;
 		p->phys = R_ParticlePhysics (p->type);
 
-		p->org[0] = ent->origin[0] + r_avertexnormals[i][0] * dist +
+		p->org[0] = org[0] + r_avertexnormals[i][0] * dist +
 			forward[0] * beamlength;
-		p->org[1] = ent->origin[1] + r_avertexnormals[i][1] * dist +
+		p->org[1] = org[1] + r_avertexnormals[i][1] * dist +
 			forward[1] * beamlength;
-		p->org[2] = ent->origin[2] + r_avertexnormals[i][2] * dist +
+		p->org[2] = org[2] + r_avertexnormals[i][2] * dist +
 			forward[2] * beamlength;
 	}
 }
@@ -486,12 +488,14 @@ R_RocketTrail_QF (const entity_t *ent)
 	int			j;
 	particle_t *p;
 	vec3_t		old_origin, vec;
+	vec3_t		org;
 
 	if (!r_particles->int_val)
 		return;
 
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorSubtract (org, old_origin, vec);
 	len = VectorNormalize (vec);
 
 	while (len > 0) {
@@ -525,12 +529,14 @@ R_GrenadeTrail_QF (const entity_t *ent)
 	int			j;
 	particle_t *p;
 	vec3_t		old_origin, vec;
+	vec3_t		org;
 
 	if (!r_particles->int_val)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	len = VectorNormalize (vec);
 
 	while (len > 0) {
@@ -564,12 +570,14 @@ R_BloodTrail_QF (const entity_t *ent)
 	int			j;
 	particle_t *p;
 	vec3_t		old_origin, vec;
+	vec3_t      org;
 
 	if (!r_particles->int_val)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	len = VectorNormalize (vec);
 
 	while (len > 0) {
@@ -602,12 +610,14 @@ R_SlightBloodTrail_QF (const entity_t *ent)
 	int			j;
 	particle_t *p;
 	vec3_t		old_origin, vec;
+	vec3_t		org;
 
 	if (!r_particles->int_val)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	len = VectorNormalize (vec);
 
 	while (len > 0) {
@@ -639,12 +649,14 @@ R_WizTrail_QF (const entity_t *ent)
 	float		len;
 	particle_t *p;
 	vec3_t		old_origin, vec;
+	vec3_t		org;
 
 	if (!r_particles->int_val)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	len = VectorNormalize (vec);
 
 	while (len > 0) {
@@ -686,12 +698,14 @@ R_FlameTrail_QF (const entity_t *ent)
 	float		len;
 	particle_t *p;
 	vec3_t		old_origin, vec;
+	vec3_t		org;
 
 	if (!r_particles->int_val)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	len = VectorNormalize (vec);
 
 	while (len > 0) {
@@ -734,12 +748,14 @@ R_VoorTrail_QF (const entity_t *ent)
 	int			j;
 	particle_t *p;
 	vec3_t		old_origin, vec;
+	vec3_t      org;
 
 	if (!r_particles->int_val)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	len = VectorNormalize (vec);
 
 	while (len > 0) {
@@ -799,6 +815,52 @@ r_easter_eggs_f (cvar_t *var)
 void
 r_particles_style_f (cvar_t *var)
 {
+}
+
+static void
+R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
+			    const vec3_t vel, float die, int color, float alpha, float ramp)
+{
+	particle_t *p;
+
+	if (!free_particles)
+		return;
+	p = free_particles;
+	free_particles = p->next;
+	p->next = active_particles;
+	active_particles = p;
+
+	VectorCopy (org, p->org);
+	p->color = color;
+	p->tex = texnum;
+	p->scale = scale;
+	p->alpha = alpha;
+	VectorCopy (vel, p->vel);
+	p->type = type;
+	p->phys = R_ParticlePhysics (p->type);
+	p->die = die;
+	p->ramp = ramp;
+}
+
+static void
+R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org, int org_fuzz,
+					  float scale, int vel_fuzz, float die, int color,
+					  float alpha, float ramp)
+{
+	float       o_fuzz = org_fuzz, v_fuzz = vel_fuzz;
+	int         rnd;
+	vec3_t      porg, pvel;
+
+	rnd = mtwist_rand (&mt);
+	porg[0] = o_fuzz * ((rnd & 63) - 31.5) / 63.0 + org[0];
+	porg[1] = o_fuzz * (((rnd >> 6) & 63) - 31.5) / 63.0 + org[1];
+	porg[2] = o_fuzz * (((rnd >> 10) & 63) - 31.5) / 63.0 + org[2];
+	rnd = mtwist_rand (&mt);
+	pvel[0] = v_fuzz * ((rnd & 63) - 31.5) / 63.0;
+	pvel[1] = v_fuzz * (((rnd >> 6) & 63) - 31.5) / 63.0;
+	pvel[2] = v_fuzz * (((rnd >> 10) & 63) - 31.5) / 63.0;
+
+	R_Particle_New (type, texnum, porg, scale, pvel, die, color, alpha, ramp);
 }
 
 static vid_particle_funcs_t particles_QF = {
@@ -873,50 +935,4 @@ R_Particles_Init_Cvars (void)
 								  r_particles_style_f, "Sets particle style. "
 								  "0 for Id, 1 for QF.");
 	R_ParticleFunctionInit ();
-}
-
-void
-R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
-			    const vec3_t vel, float die, int color, float alpha, float ramp)
-{
-	particle_t *p;
-
-	if (!free_particles)
-		return;
-	p = free_particles;
-	free_particles = p->next;
-	p->next = active_particles;
-	active_particles = p;
-
-	VectorCopy (org, p->org);
-	p->color = color;
-	p->tex = texnum;
-	p->scale = scale;
-	p->alpha = alpha;
-	VectorCopy (vel, p->vel);
-	p->type = type;
-	p->phys = R_ParticlePhysics (p->type);
-	p->die = die;
-	p->ramp = ramp;
-}
-
-void
-R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org, int org_fuzz,
-					  float scale, int vel_fuzz, float die, int color,
-					  float alpha, float ramp)
-{
-	float       o_fuzz = org_fuzz, v_fuzz = vel_fuzz;
-	int         rnd;
-	vec3_t      porg, pvel;
-
-	rnd = mtwist_rand (&mt);
-	porg[0] = o_fuzz * ((rnd & 63) - 31.5) / 63.0 + org[0];
-	porg[1] = o_fuzz * (((rnd >> 6) & 63) - 31.5) / 63.0 + org[1];
-	porg[2] = o_fuzz * (((rnd >> 10) & 63) - 31.5) / 63.0 + org[2];
-	rnd = mtwist_rand (&mt);
-	pvel[0] = v_fuzz * ((rnd & 63) - 31.5) / 63.0;
-	pvel[1] = v_fuzz * (((rnd >> 6) & 63) - 31.5) / 63.0;
-	pvel[2] = v_fuzz * (((rnd >> 10) & 63) - 31.5) / 63.0;
-
-	R_Particle_New (type, texnum, porg, scale, pvel, die, color, alpha, ramp);
 }

@@ -49,7 +49,7 @@
 float
 R_IQMGetLerpedFrames (entity_t *ent, iqm_t *iqm)
 {
-	int         frame = ent->frame;
+	int         frame = ent->animation.frame;
 	float       time, fullinterval;
 	iqmanim    *anim;
 
@@ -62,7 +62,7 @@ R_IQMGetLerpedFrames (entity_t *ent, iqm_t *iqm)
 	}
 	anim = &iqm->anims[frame];
 	fullinterval = anim->num_frames / anim->framerate;
-	time = vr_data.realtime + currententity->syncbase;
+	time = vr_data.realtime + currententity->animation.syncbase;
 	time -= ((int) (time / fullinterval)) * fullinterval;
 	frame = (int) (time * anim->framerate) + anim->first_frame;
 	return R_EntityBlend (ent, frame, 1.0 / anim->framerate);

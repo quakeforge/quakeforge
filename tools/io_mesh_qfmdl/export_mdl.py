@@ -137,7 +137,7 @@ def make_skin(operator, mdl, mesh):
         else:
             operator.report({'WARNING'},
                             "Texture '%s' invalid (missing?)." % image.name)
-    
+
     mdl.skins.append(skin)
     '''
 

@@ -38,11 +38,15 @@
 
 #include "mod_internal.h"
 #include "r_internal.h"
+#include "vid_internal.h"
+#include "vid_gl.h"
 
 #include "gl/namehack.h"
 
+gl_ctx_t *gl_ctx;
+
 static vid_model_funcs_t model_funcs = {
-	gl_Mod_LoadExternalTextures,
+	sizeof (gltex_t),
 	gl_Mod_LoadLighting,
 	gl_Mod_SubdivideSurface,
 	gl_Mod_ProcessTexture,
@@ -68,7 +72,6 @@ static vid_model_funcs_t model_funcs = {
 };
 
 vid_render_funcs_t gl_vid_render_funcs = {
-	gl_Draw_Init,
 	gl_Draw_Character,
 	gl_Draw_String,
 	gl_Draw_nString,
@@ -90,7 +93,6 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_Draw_Picf,
 	gl_Draw_SubPic,
 
-	gl_SCR_UpdateScreen,
 	SCR_DrawRam,
 	SCR_DrawTurtle,
 	SCR_DrawPause,
@@ -102,6 +104,7 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_Fog_ParseWorldspawn,
 
 	gl_R_Init,
+	gl_R_RenderFrame,
 	gl_R_ClearState,
 	gl_R_LoadSkys,
 	gl_R_NewMap,
@@ -111,6 +114,7 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_R_LineGraph,
 	R_AllocDlight,
 	R_AllocEntity,
+	R_MaxDlightsCheck,
 	gl_R_RenderView,
 	R_DecayLights,
 	gl_R_ViewChanged,
@@ -124,11 +128,28 @@ vid_render_funcs_t gl_vid_render_funcs = {
 };
 
 static void
+gl_vid_render_choose_visual (void)
+{
+	gl_ctx->choose_visual (gl_ctx);
+}
+
+static void
+gl_vid_render_create_context (void)
+{
+	gl_ctx->create_context (gl_ctx);
+}
+
+static void
 gl_vid_render_init (void)
 {
-	vr_data.vid->set_palette = GL_SetPalette;
-	vr_data.vid->init_gl = GL_Init_Common;
-	vr_data.vid->load_gl ();
+	gl_ctx = vr_data.vid->vid_internal->gl_context ();
+	gl_ctx->init_gl = GL_Init_Common;
+	gl_ctx->load_gl ();
+
+	vr_data.vid->vid_internal->set_palette = GL_SetPalette;
+	vr_data.vid->vid_internal->choose_visual = gl_vid_render_choose_visual;
+	vr_data.vid->vid_internal->create_context = gl_vid_render_create_context;
+
 	vr_funcs = &gl_vid_render_funcs;
 	m_funcs = &model_funcs;
 }
@@ -166,7 +187,7 @@ static plugin_data_t plugin_info_data = {
 };
 
 static plugin_t plugin_info = {
-	qfp_snd_render,
+	qfp_vid_render,
 	0,
 	QFPLUGIN_VERSION,
 	"0.1",

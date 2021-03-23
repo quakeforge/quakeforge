@@ -31,15 +31,6 @@
 #include "QF/qtypes.h"
 
 typedef struct scrap_s scrap_t;
-typedef struct subpic_s {
-	const struct subpic_s * const next;
-	const scrap_t * const scrap;
-	const struct vrect_s * const rect;
-	const int   tnum;					///< texture number
-	const int width;					///< requested width
-	const int height;					///< requested height
-	const float size;					///< size factor for tex coords (mult)
-} subpic_t;
 
 int GLSL_LoadQuakeTexture (const char *identifier, int width, int height,
 						   byte *data);
@@ -56,9 +47,11 @@ scrap_t *GLSL_CreateScrap (int size, int format, int linear);
 void GLSL_DestroyScrap (scrap_t *scrap);
 void GLSL_ScrapClear (scrap_t *scrap);
 int GLSL_ScrapTexture (scrap_t *scrap) __attribute__((pure));
-subpic_t *GLSL_ScrapSubpic (scrap_t *scrap, int width, int height);	//XXX slow!
-void GLSL_SubpicDelete (subpic_t *subpic);	//XXX slow!
-void GLSL_SubpicUpdate (subpic_t *subpic, byte *data, int batch);
+//XXX slow!
+struct subpic_s *GLSL_ScrapSubpic (scrap_t *scrap, int width, int height);
+//XXX slow!
+void GLSL_SubpicDelete (struct subpic_s *subpic);
+void GLSL_SubpicUpdate (struct subpic_s *subpic, byte *data, int batch);
 void GLSL_ScrapFlush (scrap_t *scrap);
 
 #endif//__QF_GLSL_textures_h

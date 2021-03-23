@@ -44,8 +44,6 @@ struct cvar_s;
 void IN_Init (struct cbuf_s *cbuf);
 void IN_Init_Cvars (void);
 
-void IN_Shutdown (void);
-
 void IN_ProcessEvents (void);
 
 void IN_UpdateGrab (struct cvar_s *);

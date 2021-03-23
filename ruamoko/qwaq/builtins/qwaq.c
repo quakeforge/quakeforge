@@ -79,7 +79,7 @@ load_file (progs_t *pr, const char *name, off_t *_size)
 
 	file = open_file (name, &size);
 	if (!file) {
-		file = open_file (va ("%s.gz", name), &size);
+		file = open_file (va (0, "%s.gz", name), &size);
 		if (!file) {
 			return 0;
 		}
@@ -114,7 +114,7 @@ init_qf (void)
 
 	//Cvar_Set (developer, "1");
 
-	Memory_Init (malloc (8 * 1024 * 1024), 8 * 1024 * 1024);
+	Memory_Init (Sys_Alloc (8 * 1024 * 1024), 8 * 1024 * 1024);
 
 	Cvar_Get ("pr_debug", "2", 0, 0, 0);
 	Cvar_Get ("pr_boundscheck", "0", 0, 0, 0);

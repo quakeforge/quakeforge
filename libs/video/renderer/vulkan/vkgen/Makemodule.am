@@ -1,0 +1,53 @@
+vkgen = libs/video/renderer/vulkan/vkgen.dat$(EXEEXT)
+noinst_PROGRAMS += $(vkgen)
+
+vkgen_dat_src= \
+	libs/video/renderer/vulkan/vkgen/vkalias.r \
+	libs/video/renderer/vulkan/vkgen/vkenum.r \
+	libs/video/renderer/vulkan/vkgen/vkfieldarray.r \
+	libs/video/renderer/vulkan/vkgen/vkfieldauto.r \
+	libs/video/renderer/vulkan/vkgen/vkfieldcustom.r \
+	libs/video/renderer/vulkan/vkgen/vkfielddata.r \
+	libs/video/renderer/vulkan/vkgen/vkfielddef.r \
+	libs/video/renderer/vulkan/vkgen/vkfieldsingle.r \
+	libs/video/renderer/vulkan/vkgen/vkfieldstring.r \
+	libs/video/renderer/vulkan/vkgen/vkfieldtype.r \
+	libs/video/renderer/vulkan/vkgen/vkgen.r \
+	libs/video/renderer/vulkan/vkgen/vkstruct.r \
+	libs/video/renderer/vulkan/vkgen/vktype.r \
+	libs/video/renderer/vulkan/vkgen/vulkan.r
+
+VKGENFLAGS = -I$(top_srcdir)/libs/video/renderer/vulkan/vkgen
+
+libs_video_renderer_vulkan_vkgen_dat_SOURCES=$(vkgen_dat_src)
+libs_video_renderer_vkgen_obj=$(libs_video_renderer_vulkan_vkgen_dat_SOURCES:.r=.o)
+libs_video_renderer_vkgen_dep=$(call qcautodep,$(libs_video_renderer_vulkan_vkgen_dat_SOURCES:.o=.Qo))
+libs/video/renderer/vulkan/vkgen.dat$(EXEEXT): $(libs_video_renderer_vkgen_obj) $(QFCC_DEP) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
+	$(V_QFCCLD)$(QLINK) -o $@ $(libs_video_renderer_vkgen_obj) -lcsqc -lr
+include $(libs_video_renderer_vkgen_dep) # am--include-marker
+r_depfiles_remade += $(libs_video_renderer_vkgen_dep)
+
+libs/video/renderer/vulkan/vkgen/vkgen.o: $(top_srcdir)/libs/video/renderer/vulkan/vkgen/vkgen.r
+	$(V_QFCC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+	$(QCOMPILE) ${VKGENFLAGS} -MT $@ -MD -MP -MF $$depbase.Tqo -c -o $@ $< &&\
+	sed -i -e '1s@:@: $(QFCC_DEP)@' $$depbase.Tqo &&\
+	$(am__mv) $$depbase.Tqo $$depbase.Qo
+
+libs/video/renderer/vulkan/vkgen/vulkan.o: $(top_srcdir)/libs/video/renderer/vulkan/vkgen/vulkan.r
+	$(V_QFCC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+	$(QCOMPILE) ${VKGENFLAGS} -MT $@ -MD -MP -MF $$depbase.Tqo -c -o $@ $< &&\
+	sed -i -e '1s@:@: $(QFCC_DEP)@' $$depbase.Tqo &&\
+	$(am__mv) $$depbase.Tqo $$depbase.Qo
+
+EXTRA_DIST += \
+	libs/video/renderer/vulkan/vkgen/stddef.h \
+	libs/video/renderer/vulkan/vkgen/stdint.h \
+	libs/video/renderer/vulkan/vkgen/vkalias.h \
+	libs/video/renderer/vulkan/vkgen/vkenum.h \
+	libs/video/renderer/vulkan/vkgen/vkgen.h \
+	libs/video/renderer/vulkan/vkgen/vkstruct.h \
+	libs/video/renderer/vulkan/vkgen/vktype.h \
+	$e
+
+CLEANFILES += \
+	libs/video/renderer/vkgen/*.sym

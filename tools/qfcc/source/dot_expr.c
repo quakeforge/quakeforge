@@ -180,13 +180,13 @@ print_bool (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 	for ( ; i < tl_count; i++)
 		dasprintf (dstr, "%*s<tr><td port=\"t%d\">t</td>%s</tr>\n",
 				   indent, "", i,
-				   i == count ? va ("<td rowspan=\"%d\"></td>",
+				   i == count ? va (0, "<td rowspan=\"%d\"></td>",
 									bool->true_list->size - count)
 							  : "");
 	for ( ; i < fl_count; i++)
 		dasprintf (dstr, "%*s<tr>%s<td port=\"f%d\">f</td></tr>\n",
 				   indent, "",
-				   i == count ? va ("<td rowspan=\"%d\"></td>",
+				   i == count ? va (0, "<td rowspan=\"%d\"></td>",
 									bool->false_list->size - count)
 							  : "",
 				   i);
@@ -449,22 +449,23 @@ print_value (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 
 	switch (e->e.value->lltype) {
 		case ev_string:
-			label = va ("\\\"%s\\\"", quote_string (e->e.value->v.string_val));
+			label = va (0, "\\\"%s\\\"",
+						quote_string (e->e.value->v.string_val));
 			break;
 		case ev_double:
-			label = va ("f %g", e->e.value->v.double_val);
+			label = va (0, "f %g", e->e.value->v.double_val);
 			break;
 		case ev_float:
-			label = va ("f %g", e->e.value->v.float_val);
+			label = va (0, "f %g", e->e.value->v.float_val);
 			break;
 		case ev_vector:
-			label = va ("'%g %g %g'",
+			label = va (0, "'%g %g %g'",
 						e->e.value->v.vector_val[0],
 						e->e.value->v.vector_val[1],
 						e->e.value->v.vector_val[2]);
 			break;
 		case ev_quat:
-			label = va ("'%g %g %g %g'",
+			label = va (0, "'%g %g %g %g'",
 						e->e.value->v.quaternion_val[0],
 						e->e.value->v.quaternion_val[1],
 						e->e.value->v.quaternion_val[2],
@@ -477,32 +478,32 @@ print_value (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 				print_type_str (type_str, type);
 			}
 			if (e->e.value->v.pointer.def)
-				label = va ("(*%s)[%d]<%s>",
+				label = va (0, "(*%s)[%d]<%s>",
 							type ? type_str->str : "???",
 							e->e.value->v.pointer.val,
 							e->e.value->v.pointer.def->name);
 			else
-				label = va ("(*%s)[%d]",
+				label = va (0, "(*%s)[%d]",
 							type ? type_str->str : "???",
 							e->e.value->v.pointer.val);
 			break;
 		case ev_field:
-			label = va ("field %d", e->e.value->v.pointer.val);
+			label = va (0, "field %d", e->e.value->v.pointer.val);
 			break;
 		case ev_entity:
-			label = va ("ent %d", e->e.value->v.integer_val);
+			label = va (0, "ent %d", e->e.value->v.integer_val);
 			break;
 		case ev_func:
-			label = va ("func %d", e->e.value->v.integer_val);
+			label = va (0, "func %d", e->e.value->v.integer_val);
 			break;
 		case ev_integer:
-			label = va ("i %d", e->e.value->v.integer_val);
+			label = va (0, "i %d", e->e.value->v.integer_val);
 			break;
 		case ev_uinteger:
-			label = va ("u %u", e->e.value->v.uinteger_val);
+			label = va (0, "u %u", e->e.value->v.uinteger_val);
 			break;
 		case ev_short:
-			label = va ("s %d", e->e.value->v.short_val);
+			label = va (0, "s %d", e->e.value->v.short_val);
 			break;
 		case ev_void:
 			label = "<void>";

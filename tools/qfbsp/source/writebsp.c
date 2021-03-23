@@ -301,7 +301,7 @@ TEX_InitFromWad (const char *path)
 	wad = wad_open (path);
 #ifdef HAVE_ZLIB
 	if (!wad)
-		wad = wad_open (path = va ("%s.gz", path));
+		wad = wad_open (path = va (0, "%s.gz", path));
 #endif
 	if (!wad)
 		return -1;

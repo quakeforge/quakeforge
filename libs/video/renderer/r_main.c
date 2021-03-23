@@ -70,8 +70,6 @@ vec3_t      r_entorigin;		// the currently rendering entity in world
 entity_t   *currententity;
 entity_t    r_worldentity;
 
-qboolean    r_cache_thrash;		// set if surface cache is thrashing
-
 // view origin
 vec3_t      vup, base_vup;
 vec3_t      vpn, base_vpn;

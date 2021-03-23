@@ -44,15 +44,9 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/def.h"
 #include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/diagnostic.h"
-#include "tools/qfcc/include/expr.h"
-#include "tools/qfcc/include/options.h"
-#include "tools/qfcc/include/reloc.h"
-#include "tools/qfcc/include/strpool.h"
-#include "tools/qfcc/include/struct.h"
-#include "tools/qfcc/include/type.h"
 
 typedef struct locref_s {
 	struct locref_s *next;

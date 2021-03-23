@@ -42,7 +42,8 @@
 #include "mod_internal.h"
 
 static void *
-Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe, int framenum)
+Mod_LoadSpriteFrame (model_t *mod, void *pin, mspriteframe_t **ppframe,
+					 int framenum)
 {
 	dspriteframe_t *pinframe;
 	int				width, height, size, origin[2];
@@ -54,7 +55,7 @@ Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe, int framenum)
 	height = LittleLong (pinframe->height);
 	size = width * height;
 
-	pspriteframe = Hunk_AllocName (sizeof (mspriteframe_t) + size, loadname);
+	pspriteframe = Hunk_AllocName (sizeof (mspriteframe_t) + size, mod->name);
 
 	memset (pspriteframe, 0, sizeof (mspriteframe_t) + size);
 
@@ -72,13 +73,14 @@ Mod_LoadSpriteFrame (void *pin, mspriteframe_t **ppframe, int framenum)
 
 	memcpy (pspriteframe->pixels, (byte *) (pinframe + 1), size);
 
-	m_funcs->Mod_SpriteLoadTexture (pspriteframe, framenum);
+	m_funcs->Mod_SpriteLoadTexture (mod, pspriteframe, framenum);
 
 	return (void *) ((byte *) pinframe + sizeof (dspriteframe_t) + size);
 }
 
 static void *
-Mod_LoadSpriteGroup (void *pin, mspriteframe_t **ppframe, int framenum)
+Mod_LoadSpriteGroup (model_t *mod, void *pin, mspriteframe_t **ppframe,
+					 int framenum)
 {
 	dspritegroup_t		*pingroup;
 	dspriteinterval_t	*pin_intervals;
@@ -92,7 +94,8 @@ Mod_LoadSpriteGroup (void *pin, mspriteframe_t **ppframe, int framenum)
 	numframes = LittleLong (pingroup->numframes);
 
 	pspritegroup = Hunk_AllocName (field_offset (mspritegroup_t,
-												 frames[numframes]), loadname);
+												 frames[numframes]),
+								   mod->name);
 
 	pspritegroup->numframes = numframes;
 
@@ -100,7 +103,7 @@ Mod_LoadSpriteGroup (void *pin, mspriteframe_t **ppframe, int framenum)
 
 	pin_intervals = (dspriteinterval_t *) (pingroup + 1);
 
-	poutintervals = Hunk_AllocName (numframes * sizeof (float), loadname);
+	poutintervals = Hunk_AllocName (numframes * sizeof (float), mod->name);
 
 	pspritegroup->intervals = poutintervals;
 
@@ -117,7 +120,7 @@ Mod_LoadSpriteGroup (void *pin, mspriteframe_t **ppframe, int framenum)
 
 	for (i = 0; i < numframes; i++) {
 		ptemp =
-			Mod_LoadSpriteFrame (ptemp, &pspritegroup->frames[i],
+			Mod_LoadSpriteFrame (mod, ptemp, &pspritegroup->frames[i],
 								 framenum * 100 + i);
 	}
 
@@ -136,14 +139,14 @@ Mod_LoadSpriteModel (model_t *mod, void *buffer)
 
 	version = LittleLong (pin->version);
 	if (version != SPR_VERSION)
-		Sys_Error ("%s has wrong version number "
-				  "(%i should be %i)", mod->name, version, SPR_VERSION);
+		Sys_Error ("%s has wrong version number (%i should be %i)",
+				   mod->path, version, SPR_VERSION);
 
 	numframes = LittleLong (pin->numframes);
 
 	size = field_offset (msprite_t, frames[numframes]);
 
-	psprite = Hunk_AllocName (size, loadname);
+	psprite = Hunk_AllocName (size, mod->name);
 
 	mod->cache.data = psprite;
 
@@ -175,11 +178,11 @@ Mod_LoadSpriteModel (model_t *mod, void *buffer)
 
 		if (frametype == SPR_SINGLE) {
 			pframetype = (dspriteframetype_t *)
-				Mod_LoadSpriteFrame (pframetype + 1,
+				Mod_LoadSpriteFrame (mod, pframetype + 1,
 									 &psprite->frames[i].frameptr, i);
 		} else {
 			pframetype = (dspriteframetype_t *)
-				Mod_LoadSpriteGroup (pframetype + 1,
+				Mod_LoadSpriteGroup (mod, pframetype + 1,
 									 &psprite->frames[i].frameptr, i);
 		}
 	}

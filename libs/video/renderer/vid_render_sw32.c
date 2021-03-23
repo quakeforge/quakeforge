@@ -36,14 +36,18 @@
 
 #include "mod_internal.h"
 #include "r_internal.h"
+#include "vid_internal.h"
+#include "vid_sw.h"
 
 #include "sw32/namehack.h"
 
+sw_ctx_t *sw32_ctx;
+
 static vid_model_funcs_t model_funcs = {
-	sw_Mod_LoadExternalTextures,
+	0,
 	sw_Mod_LoadLighting,
-	sw_Mod_SubdivideSurface,
-	sw_Mod_ProcessTexture,
+	0,//Mod_SubdivideSurface,
+	0,//Mod_ProcessTexture,
 
 	Mod_LoadIQM,
 	Mod_LoadAliasModel,
@@ -51,8 +55,8 @@ static vid_model_funcs_t model_funcs = {
 
 	sw_Mod_MakeAliasModelDisplayLists,
 	sw_Mod_LoadSkin,
-	sw_Mod_FinalizeAliasModel,
-	sw_Mod_LoadExternalSkins,
+	0,
+	0,
 	sw_Mod_IQMFinish,
 	1,
 	sw_Mod_SpriteLoadTexture,
@@ -66,7 +70,6 @@ static vid_model_funcs_t model_funcs = {
 };
 
 vid_render_funcs_t sw32_vid_render_funcs = {
-	sw32_Draw_Init,
 	sw32_Draw_Character,
 	sw32_Draw_String,
 	sw32_Draw_nString,
@@ -88,7 +91,6 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 	sw32_Draw_Picf,
 	sw32_Draw_SubPic,
 
-	sw32_SCR_UpdateScreen,
 	SCR_DrawRam,
 	SCR_DrawTurtle,
 	SCR_DrawPause,
@@ -100,6 +102,7 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 	0,
 
 	sw32_R_Init,
+	sw32_R_RenderFrame,
 	sw32_R_ClearState,
 	sw32_R_LoadSkys,
 	sw32_R_NewMap,
@@ -109,6 +112,7 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 	sw32_R_LineGraph,
 	R_AllocDlight,
 	R_AllocEntity,
+	R_MaxDlightsCheck,
 	sw32_R_RenderView,
 	R_DecayLights,
 	sw32_R_ViewChanged,
@@ -122,8 +126,26 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 };
 
 static void
+sw32_vid_render_choose_visual (void)
+{
+    sw32_ctx->choose_visual (sw32_ctx);
+}
+
+static void
+sw32_vid_render_create_context (void)
+{
+    sw32_ctx->create_context (sw32_ctx);
+}
+
+static void
 sw32_vid_render_init (void)
 {
+	sw32_ctx = vr_data.vid->vid_internal->sw_context ();
+
+	vr_data.vid->vid_internal->set_palette = sw32_ctx->set_palette;
+	vr_data.vid->vid_internal->choose_visual = sw32_vid_render_choose_visual;
+	vr_data.vid->vid_internal->create_context = sw32_vid_render_create_context;
+
 	vr_funcs = &sw32_vid_render_funcs;
 	m_funcs = &model_funcs;
 }
@@ -161,7 +183,7 @@ static plugin_data_t plugin_info_data = {
 };
 
 static plugin_t plugin_info = {
-	qfp_snd_render,
+	qfp_vid_render,
 	0,
 	QFPLUGIN_VERSION,
 	"0.1",

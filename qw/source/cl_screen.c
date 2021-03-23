@@ -44,8 +44,9 @@
 #include "QF/pcx.h"
 #include "QF/screen.h"
 
-#include "clview.h"
 #include "sbar.h"
+
+#include "client/view.h"
 
 #include "qw/include/client.h"
 
@@ -86,7 +87,9 @@ SCR_CShift (void)
 	int         contents = CONTENTS_EMPTY;
 
 	if (cls.state == ca_active && cl.worldmodel) {
-		leaf = Mod_PointInLeaf (r_data->refdef->vieworg, cl.worldmodel);
+		//FIXME
+		leaf = Mod_PointInLeaf (&r_data->refdef->viewposition[0],
+								cl.worldmodel);
 		contents = leaf->contents;
 	}
 	V_SetContentsColor (contents);
@@ -147,5 +150,5 @@ CL_UpdateScreen (double realtime)
 	scr_funcs_normal[3] = r_funcs->SCR_DrawPause;
 
 	V_PrepBlend ();
-	r_funcs->SCR_UpdateScreen (realtime, V_RenderView, scr_funcs[index]);
+	SCR_UpdateScreen (realtime, V_RenderView, scr_funcs[index]);
 }
