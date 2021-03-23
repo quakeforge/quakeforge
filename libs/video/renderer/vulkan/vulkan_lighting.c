@@ -481,14 +481,15 @@ Vulkan_LoadLights (model_t *model, const char *entity_data, vulkan_ctx_t *ctx)
 				mleaf_t    *leaf = Mod_PointInLeaf (&light.position[0],
 													model);
 				DARRAY_APPEND (&lctx->lightleafs, leaf - model->brush.leafs);
-				printf ("[%g, %g, %g] %d, [%g %g %g] %g, [%g %g %g] %g, %zd\n",
-						VectorExpand (light.color), light.data,
-						VectorExpand (light.position), light.radius,
-						VectorExpand (light.direction), light.cone,
-						leaf - model->brush.leafs);
+				Sys_MaskPrintf (SYS_VULKAN,
+								"[%g, %g, %g] %d, "
+								"[%g %g %g] %g, [%g %g %g] %g, %zd\n",
+								VectorExpand (light.color), light.data,
+								VectorExpand (light.position), light.radius,
+								VectorExpand (light.direction), light.cone,
+								leaf - model->brush.leafs);
 			}
 		}
-		printf ("%zd frames\n", ctx->frames.size);
 		for (size_t i = 0; i < ctx->frames.size; i++) {
 			lightingframe_t *lframe = &lctx->frames.a[i];
 			DARRAY_RESIZE (&lframe->lightvis, lctx->lights.size);
@@ -501,5 +502,5 @@ Vulkan_LoadLights (model_t *model, const char *entity_data, vulkan_ctx_t *ctx)
 		PL_Free (targets);
 		PL_Free (entities);
 	}
-	printf ("loaded %zd lights\n", lctx->lights.size);
+	Sys_MaskPrintf (SYS_VULKAN, "loaded %zd lights\n", lctx->lights.size);
 }

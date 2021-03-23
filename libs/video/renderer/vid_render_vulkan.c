@@ -92,9 +92,6 @@ vulkan_R_Init (void)
 	Vulkan_CreateFrames (vulkan_ctx);
 	Vulkan_CreateRenderPass (vulkan_ctx);
 	Vulkan_CreateFramebuffers (vulkan_ctx);
-	// FIXME this should be staged so screen updates can begin while pipelines
-	// are being built
-	vulkan_ctx->pipeline = Vulkan_CreatePipeline (vulkan_ctx, "pipeline");
 	Vulkan_Texture_Init (vulkan_ctx);
 	Vulkan_Alias_Init (vulkan_ctx);
 	Vulkan_Bsp_Init (vulkan_ctx);
@@ -103,13 +100,6 @@ vulkan_R_Init (void)
 	Vulkan_Lighting_Init (vulkan_ctx);
 	Vulkan_Compose_Init (vulkan_ctx);
 	Skin_Init ();
-
-	Sys_Printf ("R_Init %p %d", vulkan_ctx->swapchain->swapchain,
-				vulkan_ctx->swapchain->numImages);
-	for (int32_t i = 0; i < vulkan_ctx->swapchain->numImages; i++) {
-		Sys_Printf (" %p", vulkan_ctx->swapchain->images->a[i]);
-	}
-	Sys_Printf ("\n");
 
 	SCR_Init ();
 }
@@ -559,10 +549,10 @@ vulkan_vid_render_choose_visual (void)
 								cmdset);
 	vulkan_ctx->cmdbuffer = cmdset->a[0];
 	vulkan_ctx->fence = QFV_CreateFence (vulkan_ctx->device, 1);
-	Sys_Printf ("vk choose visual %p %p %d %p\n", vulkan_ctx->device->dev,
-				vulkan_ctx->device->queue.queue,
-				vulkan_ctx->device->queue.queueFamily,
-				vulkan_ctx->cmdpool);
+	Sys_MaskPrintf (SYS_VULKAN, "vk choose visual %p %p %d %p\n",
+					vulkan_ctx->device->dev, vulkan_ctx->device->queue.queue,
+					vulkan_ctx->device->queue.queueFamily,
+					vulkan_ctx->cmdpool);
 }
 
 static void
@@ -570,7 +560,7 @@ vulkan_vid_render_create_context (void)
 {
 	vulkan_ctx->create_window (vulkan_ctx);
 	vulkan_ctx->surface = vulkan_ctx->create_surface (vulkan_ctx);
-	Sys_Printf ("vk create context %p\n", vulkan_ctx->surface);
+	Sys_MaskPrintf (SYS_VULKAN, "vk create context %p\n", vulkan_ctx->surface);
 }
 
 static void
