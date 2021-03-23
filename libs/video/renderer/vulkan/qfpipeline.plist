@@ -534,7 +534,7 @@
 			//renderPass = renderpass;
 		};
 		alias_gbuf = {
-			subpass = 1;
+			subpass = 2;
 			stages = (
 				{
 					stage = vertex;
@@ -604,7 +604,7 @@
 			//renderPass = renderpass;
 		};
 		bsp_gbuf = {
-			subpass = 1;
+			subpass = 2;
 			stages = (
 				{
 					stage = vertex;
@@ -653,7 +653,7 @@
 			//renderPass = renderpass;
 		};
 		bsp_skysheet = {
-			subpass = 3;
+			subpass = 1;
 			stages = (
 				{
 					stage = vertex;
@@ -690,7 +690,7 @@
 			//renderPass = renderpass;
 		};
 		twod = {
-			subpass = 3;
+			subpass = 1;
 			stages = (
 				{
 					stage = vertex;
@@ -708,7 +708,7 @@
 			viewport      = $properties.viewport;
 			rasterization = $properties.rasterization.counter_cw_cull_back;
 			multisample   = $properties.multisample;
-			depthStencil  = $properties.depthStencil.test_and_write;
+			depthStencil  = $properties.depthStencil.test_only;
 			colorBlend = {
 				logicOpEnable = false;
 				attachments = ($properties.attachmentBlendOp.alpha_blend);
@@ -720,7 +720,7 @@
 			//renderPass = renderpass;
 		};
 		lighting = {
-			subpass = 2;
+			subpass = 3;
 			stages = (
 				{
 					stage = vertex;

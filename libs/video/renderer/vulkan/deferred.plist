@@ -329,7 +329,21 @@
 					layout = depth_stencil_attachment_optimal;
 				};
 			},
-			{	// 1 g-buffer generation
+			{	// 1 translucent
+				pipelineBindPoint = graphics;
+				colorAttachments = (
+					{	// translucent
+						attachment = 6;
+						layout = color_attachment_optimal;
+					},
+				);
+				depthStencilAttachment = {
+					attachment = 0;
+					layout = depth_stencil_read_only_optimal;
+				};
+				preserveAttachments = (1, 2, 3, 4, 5);
+			},
+			{	// 2 g-buffer generation
 				pipelineBindPoint = graphics;
 				colorAttachments = (
 					{	// color
@@ -351,11 +365,11 @@
 				);
 				depthStencilAttachment = {
 					attachment = 0;
-					layout = depth_stencil_attachment_optimal;
+					layout = depth_stencil_read_only_optimal;
 				};
 				preserveAttachments = (6);
 			},
-			{	// 2 lighting
+			{	// 3 lighting
 				pipelineBindPoint = graphics;
 				inputAttachments = (
 					{	// depth
@@ -387,16 +401,6 @@
 				);
 				preserveAttachments = (6);
 			},
-			{	// 3 translucent
-				pipelineBindPoint = graphics;
-				colorAttachments = (
-					{	// translucent
-						attachment = 6;
-						layout = color_attachment_optimal;
-					},
-				);
-				preserveAttachments = (0, 1, 2, 3, 4, 5);
-			},
 			{	// 4 compose
 				pipelineBindPoint = graphics;
 				inputAttachments = (
@@ -421,7 +425,7 @@
 		dependencies = (
 			{
 				srcSubpass = 0;	// depth
-				dstSubpass = 1; // g-buffer
+				dstSubpass = 1; // translucent
 				srcStageMask = color_attachment_output;
 				dstStageMask = fragment_shader;
 				srcAccessMask = color_attachment_write;
@@ -429,8 +433,8 @@
 				dependencyFlags = by_region;
 			},
 			{
-				srcSubpass = 1;	// g-buffer
-				dstSubpass = 2;	// lighting
+				srcSubpass = 0;	// depth
+				dstSubpass = 2; // g-buffer
 				srcStageMask = color_attachment_output;
 				dstStageMask = fragment_shader;
 				srcAccessMask = color_attachment_write;
@@ -438,7 +442,16 @@
 				dependencyFlags = by_region;
 			},
 			{
-				srcSubpass = 2;	// lighting
+				srcSubpass = 2;	// g-buffer
+				dstSubpass = 3;	// lighting
+				srcStageMask = color_attachment_output;
+				dstStageMask = fragment_shader;
+				srcAccessMask = color_attachment_write;
+				dstAccessMask = shader_read;
+				dependencyFlags = by_region;
+			},
+			{
+				srcSubpass = 3;	// lighting
 				dstSubpass = 4;	// compose
 				srcStageMask = color_attachment_output;
 				dstStageMask = fragment_shader;
@@ -447,7 +460,7 @@
 				dependencyFlags = by_region;
 			},
 			{
-				srcSubpass = 3;	// translucent
+				srcSubpass = 1;	// translucent
 				dstSubpass = 4;	// compose
 				srcStageMask = color_attachment_output;
 				dstStageMask = fragment_shader;

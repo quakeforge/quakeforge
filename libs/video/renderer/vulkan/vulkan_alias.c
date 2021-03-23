@@ -70,6 +70,12 @@ static const char *alias_pass_names[] = {
 	"translucent",
 };
 
+static QFV_Subpass subpass_map[] = {
+	QFV_passDepth,			// QFV_aliasDepth
+	QFV_passGBuffer,		// QFV_aliasGBuffer
+	QFV_passTranslucent,	// QFV_aliasTranslucent
+};
+
 static void
 emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 			   qfv_alias_skin_t *skin,
@@ -174,7 +180,7 @@ alias_begin_subpass (QFV_AliasSubpass subpass, VkPipeline pipeline,
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		ctx->renderpass, subpass,
+		ctx->renderpass, subpass_map[subpass],
 		cframe->framebuffer,
 		0, 0, 0,
 	};
