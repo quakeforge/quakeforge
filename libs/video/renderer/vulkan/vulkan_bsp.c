@@ -72,13 +72,15 @@
 static const char *bsp_pass_names[] = {
 	"depth",
 	"g-buffer",
-	"translucent",
+	"sky",
+	"turb",
 };
 
 static QFV_Subpass subpass_map[] = {
 	QFV_passDepth,			// QFV_bspDepth
 	QFV_passGBuffer,		// QFV_bspGBuffer
-	QFV_passTranslucent,	// QFV_bspTranslucent
+	QFV_passTranslucent,	// QFV_bspSky
+	QFV_passTranslucent,	// QFV_bspTurb
 };
 
 static float identity[] = {
@@ -968,58 +970,40 @@ bsp_end (vulkan_ctx_t *ctx)
 	bsp_end_subpass (bframe->cmdSet.a[QFV_bspGBuffer], ctx);
 }
 
-/*static void
-turb_begin (bspctx_t *bctx)
+static void
+turb_begin (vulkan_ctx_t *ctx)
 {
-	quat_t      fog;
+	bspctx_t   *bctx = ctx->bsp_context;
 
 	bctx->default_color[3] = bound (0, r_wateralpha->value, 1);
+
 	QuatCopy (bctx->default_color, bctx->last_color);
-	qfeglVertexAttrib4fv (quake_bsp.color.location, default_color);
 
-	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
+	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
+	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 
-	qfeglUseProgram (quake_turb.program);
-	qfeglEnableVertexAttribArray (quake_turb.vertex.location);
-	qfeglEnableVertexAttribArray (quake_turb.tlst.location);
-	qfeglDisableVertexAttribArray (quake_turb.color.location);
+	DARRAY_APPEND (&cframe->cmdSets[QFV_passTranslucent],
+				   bframe->cmdSet.a[QFV_bspTurb]);
 
-	qfeglVertexAttrib4fv (quake_turb.color.location, default_color);
+	//FIXME need per frame matrices
+	bframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
+	bframe->imageInfo[0].imageView = ctx->default_magenta->view;
+	bframe->imageInfo[1].imageView = ctx->default_magenta->view;
+	bframe->imageInfo[2].imageView = QFV_ScrapImageView (bctx->light_scrap);
+	bframe->imageInfo[3].imageView = bctx->default_skysheet->view;
+	bframe->imageInfo[4].imageView = bctx->default_skybox->view;
 
-	glsl_Fog_GetColor (fog);
-	fog[3] = glsl_Fog_GetDensity () / 64.0;
-	fragconst_t frag_constants = { time: vr_data.realtime };
-	dfunc->vkCmdPushConstants (cmd, bctx->layout, VK_SHADER_STAGE_FRAGMENT_BIT,
-							   64, sizeof (fragconst_t), &frag_constants);
-	qfeglUniform4fv (quake_turb.fog.location, 1, fog);
+	bsp_begin_subpass (QFV_bspTurb, bctx->turb, ctx);
+}
 
-	qfeglUniform1i (quake_turb.palette.location, 1);
-	qfeglActiveTexture (GL_TEXTURE0 + 1);
-	qfeglEnable (GL_TEXTURE_2D);
-	qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
-
-	qfeglUniform1f (quake_turb.time.location, vr_data.realtime);
-
-	qfeglUniform1i (quake_turb.texture.location, 0);
-	qfeglActiveTexture (GL_TEXTURE0 + 0);
-	qfeglEnable (GL_TEXTURE_2D);
-
-	qfeglBindBuffer (GL_ARRAY_BUFFER, bsp_vbo);
-}*/
-
-/*static void
-turb_end (bspctx_t *bctx)
+static void
+turb_end (vulkan_ctx_t *ctx)
 {
-	qfeglDisableVertexAttribArray (quake_turb.vertex.location);
-	qfeglDisableVertexAttribArray (quake_turb.tlst.location);
+	bspctx_t   *bctx = ctx->bsp_context;
+	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 
-	qfeglActiveTexture (GL_TEXTURE0 + 0);
-	qfeglDisable (GL_TEXTURE_2D);
-	qfeglActiveTexture (GL_TEXTURE0 + 1);
-	qfeglDisable (GL_TEXTURE_2D);
-
-	qfeglBindBuffer (GL_ARRAY_BUFFER, 0);
-}*/
+	bsp_end_subpass (bframe->cmdSet.a[QFV_bspTurb], ctx);
+}
 
 static void
 spin (mat4_t mat, bspctx_t *bctx)
@@ -1057,9 +1041,8 @@ sky_begin (vulkan_ctx_t *ctx)
 	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 
-	//FIXME where should skys go? g-buffer is overkill. Translucent pre-pass?
 	DARRAY_APPEND (&cframe->cmdSets[QFV_passTranslucent],
-				   bframe->cmdSet.a[QFV_bspTranslucent]);
+				   bframe->cmdSet.a[QFV_bspSky]);
 
 	//FIXME need per frame matrices
 	bframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
@@ -1071,8 +1054,7 @@ sky_begin (vulkan_ctx_t *ctx)
 	bframe->imageInfo[4].imageView = get_view (bctx->skybox_tex,
 											   bctx->default_skybox);
 
-	//FIXME sky pass
-	bsp_begin_subpass (QFV_bspTranslucent, bctx->sky, ctx);
+	bsp_begin_subpass (QFV_bspSky, bctx->sky, ctx);
 }
 
 static void
@@ -1081,8 +1063,7 @@ sky_end (vulkan_ctx_t *ctx)
 	bspctx_t   *bctx = ctx->bsp_context;
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 
-	//FIXME sky pass
-	bsp_end_subpass (bframe->cmdSet.a[QFV_bspTranslucent], ctx);
+	bsp_end_subpass (bframe->cmdSet.a[QFV_bspSky], ctx);
 }
 
 static inline void
@@ -1217,7 +1198,10 @@ Vulkan_DrawWorld (vulkan_ctx_t *ctx)
 void
 Vulkan_DrawWaterSurfaces (vulkan_ctx_t *ctx)
 {
-/*	bspctx_t   *bctx = ctx->bsp_context;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	bspctx_t   *bctx = ctx->bsp_context;
+	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 	instsurf_t *is;
 	msurface_t *surf;
 	vulktex_t  *tex = 0;
@@ -1227,38 +1211,49 @@ Vulkan_DrawWaterSurfaces (vulkan_ctx_t *ctx)
 	if (!bctx->waterchain)
 		return;
 
-	turb_begin (bctx);
+	turb_begin (ctx);
+	push_transform (identity, bctx->layout, dfunc,
+					bframe->cmdSet.a[QFV_bspTurb]);
+	fragconst_t frag_constants = { time: vr_data.realtime };
+	push_fragconst (&frag_constants, bctx->layout, dfunc,
+					bframe->cmdSet.a[QFV_bspTurb]);
 	for (is = bctx->waterchain; is; is = is->tex_chain) {
 		surf = is->surface;
-		if (tex != surf->texinfo->texture) {
+		if (tex != surf->texinfo->texture->render) {
 			if (tex) {
-				//XXX qfeglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
-				//for (ec = tex->elechain; ec; ec = ec->next)
-				//	draw_elechain (ec, quake_turb.mvp_matrix.location,
-				//				   quake_turb.vertex.location,
-				//				   quake_turb.tlst.location,
-				//				   quake_turb.color.location);
+				bind_view (qfv_bsp_texture,
+						   get_view (tex->tex, ctx->default_black),
+						   bframe,
+						   bframe->cmdSet.a[QFV_bspTurb],
+						   bctx->layout, dfunc);
+				for (ec = tex->elechain; ec; ec = ec->next) {
+					draw_elechain (ec, bctx->layout, dfunc,
+								   bframe->cmdSet.a[QFV_bspTurb]);
+					reset_elechain (ec);
+				}
 				tex->elechain = 0;
 				tex->elechain_tail = &tex->elechain;
 			}
-			tex = surf->texinfo->texture;
+			tex = surf->texinfo->texture->render;
 		}
-		add_surf_elements (tex, is, &ec, &el, bctx);
+		add_surf_elements (tex, is, &ec, &el, bctx, bframe);
 	}
 	if (tex) {
-		//XXX qfeglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
-		//for (ec = tex->elechain; ec; ec = ec->next)
-		//	draw_elechain (ec, quake_turb.mvp_matrix.location,
-		//				   quake_turb.vertex.location,
-		//				   quake_turb.tlst.location,
-		//				   quake_turb.color.location);
+		bind_view (qfv_bsp_texture, get_view (tex->tex, ctx->default_black),
+				   bframe, bframe->cmdSet.a[QFV_bspTurb],
+				   bctx->layout, dfunc);
+		for (ec = tex->elechain; ec; ec = ec->next) {
+			draw_elechain (ec, bctx->layout, dfunc,
+						   bframe->cmdSet.a[QFV_bspTurb]);
+			reset_elechain (ec);
+		}
 		tex->elechain = 0;
 		tex->elechain_tail = &tex->elechain;
 	}
-	turb_end (bctx);
+	turb_end (ctx);
 
 	bctx->waterchain = 0;
-	bctx->waterchain_tail = &bctx->waterchain;*/
+	bctx->waterchain_tail = &bctx->waterchain;
 }
 
 void
@@ -1278,12 +1273,11 @@ Vulkan_DrawSky (vulkan_ctx_t *ctx)
 		return;
 
 	sky_begin (ctx);
-	//FIXME sky pass
 	push_transform (identity, bctx->layout, dfunc,
-					bframe->cmdSet.a[QFV_bspTranslucent]);
+					bframe->cmdSet.a[QFV_bspSky]);
 	fragconst_t frag_constants = { time: vr_data.realtime };
 	push_fragconst (&frag_constants, bctx->layout, dfunc,
-					bframe->cmdSet.a[QFV_bspTranslucent]);
+					bframe->cmdSet.a[QFV_bspSky]);
 	for (is = bctx->sky_chain; is; is = is->tex_chain) {
 		surf = is->surface;
 		if (tex != surf->texinfo->texture->render) {
@@ -1291,11 +1285,11 @@ Vulkan_DrawSky (vulkan_ctx_t *ctx)
 				bind_view (qfv_bsp_skysheet,
 						   get_view (tex->tex, ctx->default_black),
 						   bframe,
-						   bframe->cmdSet.a[QFV_bspTranslucent],//FIXME
+						   bframe->cmdSet.a[QFV_bspSky],
 						   bctx->layout, dfunc);
 				for (ec = tex->elechain; ec; ec = ec->next) {
-					draw_elechain (ec, bctx->layout, dfunc,//FIXME
-								   bframe->cmdSet.a[QFV_bspTranslucent]);
+					draw_elechain (ec, bctx->layout, dfunc,
+								   bframe->cmdSet.a[QFV_bspSky]);
 					reset_elechain (ec);
 				}
 				tex->elechain = 0;
@@ -1307,11 +1301,11 @@ Vulkan_DrawSky (vulkan_ctx_t *ctx)
 	}
 	if (tex) {
 		bind_view (qfv_bsp_skysheet, get_view (tex->tex, ctx->default_black),
-				   bframe, bframe->cmdSet.a[QFV_bspTranslucent],//FIXME
+				   bframe, bframe->cmdSet.a[QFV_bspSky],
 				   bctx->layout, dfunc);
 		for (ec = tex->elechain; ec; ec = ec->next) {
-			draw_elechain (ec, bctx->layout, dfunc,//FIXME
-						   bframe->cmdSet.a[QFV_bspTranslucent]);
+			draw_elechain (ec, bctx->layout, dfunc,
+						   bframe->cmdSet.a[QFV_bspSky]);
 			reset_elechain (ec);
 		}
 		tex->elechain = 0;
@@ -1488,6 +1482,7 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 	bctx->depth = Vulkan_CreatePipeline (ctx, "bsp_depth");
 	bctx->gbuf = Vulkan_CreatePipeline (ctx, "bsp_gbuf");
 	bctx->sky = Vulkan_CreatePipeline (ctx, "bsp_skysheet");
+	bctx->turb = Vulkan_CreatePipeline (ctx, "bsp_turb");
 	bctx->layout = Vulkan_CreatePipelineLayout (ctx, "quakebsp_layout");
 	bctx->sampler = Vulkan_CreateSampler (ctx, "quakebsp_sampler");
 
@@ -1539,6 +1534,7 @@ Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 	dfunc->vkDestroyPipeline (device->dev, bctx->depth, 0);
 	dfunc->vkDestroyPipeline (device->dev, bctx->gbuf, 0);
 	dfunc->vkDestroyPipeline (device->dev, bctx->sky, 0);
+	dfunc->vkDestroyPipeline (device->dev, bctx->turb, 0);
 	DARRAY_CLEAR (&bctx->texture_chains);
 	DARRAY_CLEAR (&bctx->frames);
 	QFV_DestroyStagingBuffer (bctx->light_stage);

@@ -689,6 +689,43 @@
 			layout = quakebsp_layout;
 			//renderPass = renderpass;
 		};
+		bsp_turb = {
+			subpass = 1;
+			stages = (
+				{
+					stage = vertex;
+					name = main;
+					module = $builtin/quakebsp.vert;
+				},
+				{
+					stage = fragment;
+					name = main;
+					module = $builtin/bsp_turb.frag;
+					specializationInfo = {
+						mapEntries = (
+							{ size = 4; offset = 0; constantID = 0; },
+							{ size = 4; offset = 4; constantID = 1; },
+						);
+						data = <00000000ffffffff>;
+					};
+				},
+			);
+			vertexInput   = $properties.vertexInput.brush;
+			inputAssembly = $properties.inputAssembly.brush;
+			viewport      = $properties.viewport;
+			rasterization = $properties.rasterization.cw_cull_back;
+			multisample   = $properties.multisample;
+			depthStencil  = $properties.depthStencil.test_only;
+			colorBlend = {
+				logicOpEnable = false;
+				attachments = ($properties.attachmentBlendOp.disabled);
+			};
+			dynamic = {
+				dynamicState = ( viewport, scissor );
+			};
+			layout = quakebsp_layout;
+			//renderPass = renderpass;
+		};
 		twod = {
 			subpass = 1;
 			stages = (

@@ -72,6 +72,8 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/bsp_sky.frag.spvc"
 static
+#include "libs/video/renderer/vulkan/shader/bsp_turb.frag.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/lighting.frag.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/compose.frag.spvc"
@@ -104,6 +106,7 @@ static shaderdata_t builtin_shaders[] = {
 	{ "bsp_gbuf.geom", bsp_gbuf_geom, sizeof (bsp_gbuf_geom) },
 	{ "bsp_gbuf.frag", bsp_gbuf_frag, sizeof (bsp_gbuf_frag) },
 	{ "bsp_sky.frag", bsp_sky_frag, sizeof (bsp_sky_frag) },
+	{ "bsp_turb.frag", bsp_turb_frag, sizeof (bsp_turb_frag) },
 	{ "lighting.frag", lighting_frag, sizeof (lighting_frag) },
 	{ "compose.frag", compose_frag, sizeof (compose_frag) },
 	{ "alias.vert", alias_vert, sizeof (alias_vert) },

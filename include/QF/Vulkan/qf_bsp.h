@@ -73,7 +73,8 @@ typedef enum {
 typedef enum {
 	QFV_bspDepth,
 	QFV_bspGBuffer,
-	QFV_bspTranslucent,
+	QFV_bspSky,
+	QFV_bspTurb,
 
 	QFV_bspNumPasses
 } QFV_BspSubpass;
@@ -146,6 +147,7 @@ typedef struct bspctx_s {
 	VkPipeline   depth;
 	VkPipeline   gbuf;
 	VkPipeline   sky;
+	VkPipeline   turb;
 	VkPipelineLayout layout;
 	size_t       vertex_buffer_size;
 	size_t       index_buffer_size;

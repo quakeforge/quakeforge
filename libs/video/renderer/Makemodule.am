@@ -313,6 +313,8 @@ bsp_gbuff_src = $(vkshaderpath)/bsp_gbuf.frag
 bsp_gbuff_c = $(vkshaderpath)/bsp_gbuf.frag.spvc
 bsp_skyf_src = $(vkshaderpath)/bsp_sky.frag
 bsp_skyf_c = $(vkshaderpath)/bsp_sky.frag.spvc
+bsp_turbf_src = $(vkshaderpath)/bsp_turb.frag
+bsp_turbf_c = $(vkshaderpath)/bsp_turb.frag.spvc
 lightingf_src = $(vkshaderpath)/lighting.frag
 lightingf_c = $(vkshaderpath)/lighting.frag.spvc
 composef_src = $(vkshaderpath)/compose.frag
@@ -348,6 +350,8 @@ $(bsp_gbuff_c): $(bsp_gbuff_src)
 
 $(bsp_skyf_c): $(bsp_skyf_src)
 
+$(bsp_turbf_c): $(bsp_turbf_src)
+
 $(lightingf_c): $(lightingf_src)
 
 $(composef_c): $(composef_src)
@@ -374,6 +378,7 @@ vkshader_c = \
 	$(bsp_gbufg_c) \
 	$(bsp_gbuff_c) \
 	$(bsp_skyf_c) \
+	$(bsp_turbf_c) \
 	$(lightingf_c) \
 	$(composef_c) \
 	$(aliasv_c) \
