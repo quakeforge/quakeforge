@@ -83,8 +83,10 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 					imageSize.width, imageSize.height);
 
 	VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-	imageUsage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+	imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 	imageUsage &= surfCaps.supportedUsageFlags;
+	Sys_MaskPrintf (SYS_VULKAN, "%x %x\n", imageUsage,
+					surfCaps.supportedUsageFlags);
 
 	VkSurfaceTransformFlagBitsKHR surfTransform
 		= VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
@@ -147,6 +149,7 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 	sc->format = useFormat.format;
 	sc->extent = imageSize;
 	sc->numImages = numImages;
+	sc->usage = imageUsage;
 	sc->images = DARRAY_ALLOCFIXED (qfv_imageset_t, numImages, malloc);
 	sc->imageViews = DARRAY_ALLOCFIXED (qfv_imageviewset_t, numImages, malloc);
 	dfuncs->vkGetSwapchainImagesKHR (dev, swapchain, &numImages, sc->images->a);

@@ -66,6 +66,8 @@ VkImageView QFV_CreateImageView (struct qfv_device_s *device,
 								 VkImage image, VkImageViewType type,
 								 VkFormat format, VkImageAspectFlags aspect);
 
+size_t QFV_GetImageSize (struct qfv_device_s *device, VkImage image);
+
 /** Generate all mipmaps for a given texture down to a 1x1 pixel.
  *
  * Uses the GPU blit command from one mip level to the next, thus the base mip

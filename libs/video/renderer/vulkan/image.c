@@ -194,6 +194,21 @@ QFV_CreateImageView (qfv_device_t *device, VkImage image,
 	return view;
 }
 
+size_t
+QFV_GetImageSize (qfv_device_t *device, VkImage image)
+{
+	qfv_devfuncs_t *dfunc = device->funcs;
+	size_t      size;
+	size_t      align;
+
+	VkMemoryRequirements requirements;
+	dfunc->vkGetImageMemoryRequirements (device->dev, image, &requirements);
+	size = requirements.size;
+	align = requirements.alignment - 1;
+	size = (size + align) & ~(align);
+	return size;
+}
+
 void
 QFV_GenerateMipMaps (qfv_device_t *device, VkCommandBuffer cmd,
 					 VkImage image, unsigned mips,

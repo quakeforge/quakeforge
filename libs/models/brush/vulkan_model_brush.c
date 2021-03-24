@@ -87,21 +87,6 @@ static void vulkan_brush_clear (model_t *mod, void *data)
 	dfunc->vkFreeMemory (device->dev, mctx->texture_memory, 0);
 }
 
-static size_t
-get_image_size (VkImage image, qfv_device_t *device)
-{
-	qfv_devfuncs_t *dfunc = device->funcs;
-	size_t      size;
-	size_t      align;
-
-	VkMemoryRequirements requirements;
-	dfunc->vkGetImageMemoryRequirements (device->dev, image, &requirements);
-	size = requirements.size;
-	align = requirements.alignment - 1;
-	size = (size + align) & ~(align);
-	return size;
-}
-
 static void
 transfer_mips (byte *dst, const void *_src, const texture_t *tx, byte *palette)
 {
@@ -193,7 +178,7 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 		}
 		vulktex_t  *tex = tx->render;
 		tex->tex->offset = memsize;
-		memsize += get_image_size (tex->tex->image, device);
+		memsize += QFV_GetImageSize (device, tex->tex->image);
 		image_count++;
 		copy_count += MIPLEVELS;
 		if (strncmp (tx->name, "sky", 3) == 0) {
@@ -204,7 +189,7 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 		if (tex->glow) {
 			copy_count += MIPLEVELS;
 			tex->glow->offset = memsize;
-			memsize += get_image_size (tex->glow->image, device);
+			memsize += QFV_GetImageSize (device, tex->glow->image);
 			image_count++;
 		}
 	}

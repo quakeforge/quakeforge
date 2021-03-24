@@ -31,7 +31,10 @@
 #include <stdlib.h>
 
 #include "QF/darray.h"
+#include "QF/dstring.h"
+#include "QF/quakefs.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
@@ -46,6 +49,7 @@
 #include "QF/Vulkan/qf_particles.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/qf_vid.h"
+#include "QF/Vulkan/capture.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
@@ -90,6 +94,7 @@ vulkan_R_Init (void)
 	Vulkan_CreateMatrices (vulkan_ctx);
 	Vulkan_CreateSwapchain (vulkan_ctx);
 	Vulkan_CreateFrames (vulkan_ctx);
+	Vulkan_CreateCapture (vulkan_ctx);
 	Vulkan_CreateRenderPass (vulkan_ctx);
 	Vulkan_CreateFramebuffers (vulkan_ctx);
 	Vulkan_Texture_Init (vulkan_ctx);
@@ -165,6 +170,12 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	}
 
 	dfunc->vkCmdEndRenderPass (frame->cmdBuffer);
+	if (vulkan_ctx->capture_callback) {
+		VkImage     srcImage = vulkan_ctx->swapchain->images->a[imageIndex];
+		VkCommandBuffer cmd = QFV_CaptureImage (vulkan_ctx->capture, srcImage,
+												vulkan_ctx->curFrame);
+		dfunc->vkCmdExecuteCommands (frame->cmdBuffer, 1, &cmd);
+	}
 	dfunc->vkEndCommandBuffer (frame->cmdBuffer);
 
 	VkPipelineStageFlags waitStage
@@ -177,6 +188,17 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	};
 	dfunc->vkResetFences (dev, 1, &frame->fence);
 	dfunc->vkQueueSubmit (queue->queue, 1, &submitInfo, frame->fence);
+
+	if (vulkan_ctx->capture_callback) {
+		//FIXME look into "threading" this rather than waiting here
+		dfunc->vkWaitForFences (device->dev, 1, &frame->fence, VK_TRUE,
+								1000000000ull);
+		vulkan_ctx->capture_callback (QFV_CaptureData (vulkan_ctx->capture,
+													   vulkan_ctx->curFrame),
+									  vulkan_ctx->capture->extent.width,
+									  vulkan_ctx->capture->extent.height);
+		vulkan_ctx->capture_callback = 0;
+	}
 
 	VkPresentInfoKHR presentInfo = {
 		VK_STRUCTURE_TYPE_PRESENT_INFO_KHR, 0,
@@ -358,9 +380,55 @@ vulkan_R_InitParticles (void)
 	Vulkan_InitParticles (vulkan_ctx);
 }
 
+static int
+is_bgr (VkFormat format)
+{
+	return (format >= VK_FORMAT_B8G8R8A8_UNORM
+			&& format <= VK_FORMAT_B8G8R8A8_SRGB);
+}
+
+static void
+capture_screenshot (const byte *data, int width, int height)
+{
+	dstring_t  *name = dstring_new ();
+	// find a file name to save it to
+	if (!QFS_NextFilename (name, va (vulkan_ctx->va_ctx, "%s/qf",
+									 qfs_gamedir->dir.shots),
+						   ".ppm")) {
+		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a ppm file\n");
+	} else {
+		QFile      *file = QFS_Open (name->str, "wb");
+		if (!file) {
+			Sys_Printf ("Couldn't open %s\n", name->str);
+		} else {
+			Qprintf (file, "P6\n%d\n%d\n255\n", width, height);
+			if (vulkan_ctx->capture->canBlit ||
+				!is_bgr (vulkan_ctx->swapchain->format)) {
+				for (int count = width * height; count-- > 0; ) {
+					Qwrite (file, data, 3);
+					data += 4;
+				}
+			} else {
+				for (int count = width * height; count-- > 0; ) {
+					byte        rgb[] = { data[2], data[1], data[0] };
+					Qwrite (file, rgb, 3);
+					data += 4;
+				}
+			}
+			Qclose (file);
+		}
+	}
+	dstring_delete (name);
+}
+
 static void
 vulkan_SCR_ScreenShot_f (void)
 {
+	if (!vulkan_ctx->capture) {
+		Sys_Printf ("Screenshot not supported\n");
+		return;
+	}
+	vulkan_ctx->capture_callback = capture_screenshot;
 }
 
 static void

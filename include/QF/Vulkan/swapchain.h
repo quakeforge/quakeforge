@@ -8,6 +8,7 @@ typedef struct qfv_swapchain_s {
 	VkFormat    format;
 	VkExtent2D  extent;
 	int32_t     numImages;
+	VkImageUsageFlags usage;
 	struct qfv_imageset_s *images;
 	struct qfv_imageviewset_s *imageViews;
 } qfv_swapchain_t;

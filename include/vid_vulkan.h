@@ -92,6 +92,9 @@ typedef struct vulkan_ctx_s {
 	size_t      curFrame;
 	vulkan_frameset_t frames;
 
+	struct qfv_capture_s *capture;
+	void      (*capture_callback) (const byte *data, int width, int height);
+
 	struct qfv_tex_s *default_black;
 	struct qfv_tex_s *default_white;
 	struct qfv_tex_s *default_magenta;

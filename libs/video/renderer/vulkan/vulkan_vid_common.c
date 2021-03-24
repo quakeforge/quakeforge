@@ -54,6 +54,7 @@
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
+#include "QF/Vulkan/capture.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
@@ -189,6 +190,9 @@ Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 {
 	PL_Free (ctx->pipelineDef);
 	PL_Free (ctx->renderpassDef);
+	if (ctx->capture) {
+		QFV_DestroyCapture (ctx->capture);
+	}
 	if (ctx->frames.size) {
 		Vulkan_DestroyFrames (ctx);
 	}
@@ -533,6 +537,13 @@ Vulkan_CreateFrames (vulkan_ctx_t *ctx)
 			DARRAY_INIT (&frame->cmdSets[j], 4);
 		}
 	}
+}
+
+void
+Vulkan_CreateCapture (vulkan_ctx_t *ctx)
+{
+	ctx->capture = QFV_CreateCapture (ctx->device, ctx->frames.size,
+									  ctx->swapchain, ctx->cmdpool);
 }
 
 void
