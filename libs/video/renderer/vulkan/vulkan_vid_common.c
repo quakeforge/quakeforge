@@ -245,7 +245,7 @@ Vulkan_CreateSwapchain (vulkan_ctx_t *ctx)
 		free (ctx->swapchain);
 	}
 	ctx->swapchain = QFV_CreateSwapchain (ctx, old_swapchain);
-	if (ctx->swapchain->swapchain == old_swapchain) {
+	if (old_swapchain && ctx->swapchain->swapchain != old_swapchain) {
 		ctx->device->funcs->vkDestroySwapchainKHR (ctx->device->dev,
 												   old_swapchain, 0);
 	}
