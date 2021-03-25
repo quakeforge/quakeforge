@@ -16,7 +16,7 @@ void SymbolFree (void *ele, void *data)
     [s release];
 }
     
-hashtab_t symbols;
+hashtab_t *symbols;
 Symbol *lparen;
 Symbol *rparen;
 Symbol *quote;
@@ -45,7 +45,7 @@ Symbol *symbol (string str)
 {
     local Symbol *res;
 
-    if ((res = Hash_Find (symbols, s))) {
+    if ((res = (Symbol *) Hash_Find (symbols, s))) {
             return res;
     } else {
             res = (Symbol*) [self newFromString: s];

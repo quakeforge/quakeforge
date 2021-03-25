@@ -41,10 +41,11 @@
 #include "QF/sys.h"
 
 #include "compat.h"
-#include "host.h"
-#include "server.h"
-#include "sv_progs.h"
 #include "world.h"
+
+#include "nq/include/host.h"
+#include "nq/include/server.h"
+#include "nq/include/sv_progs.h"
 
 progs_t     sv_pr_state;
 sv_globals_t sv_globals;
@@ -339,6 +340,9 @@ set_address (sv_def_t *def, void *address)
 		case ev_quat:
 			*(float **)def->field = (float *) address;
 			break;
+		case ev_double:
+			*(double **)def->field = (double *) address;
+			break;
 		case ev_string:
 		case ev_entity:
 		case ev_field:
@@ -354,7 +358,7 @@ set_address (sv_def_t *def, void *address)
 static int
 resolve_globals (progs_t *pr, sv_def_t *def, int mode)
 {
-	ddef_t     *ddef;
+	pr_def_t   *ddef;
 	int         ret = 1;
 
 	if (mode == 2) {
@@ -400,7 +404,7 @@ resolve_functions (progs_t *pr, sv_def_t *def, int mode)
 static int
 resolve_fields (progs_t *pr, sv_def_t *def, int mode)
 {
-	ddef_t     *ddef;
+	pr_def_t   *ddef;
 	int         ret = 1;
 
 	if (mode == 2) {
@@ -496,9 +500,11 @@ SV_LoadProgs (void)
 	if (*sv_progs->string)
 		progs_name = sv_progs->string;
 
+	sv_pr_state.max_edicts = sv.max_edicts;
+	sv_pr_state.zone_size = sv_progs_zone->int_val * 1024;
 	sv.edicts = sv_edicts;
-	PR_LoadProgs (&sv_pr_state, progs_name, sv.max_edicts,
-				  sv_progs_zone->int_val * 1024);
+
+	PR_LoadProgs (&sv_pr_state, progs_name);
 	if (!sv_pr_state.progs)
 		Host_Error ("SV_LoadProgs: couldn't load %s", progs_name);
 }
@@ -506,6 +512,8 @@ SV_LoadProgs (void)
 void
 SV_Progs_Init (void)
 {
+	SV_Progs_Init_Cvars ();
+
 	pr_gametype = "netquake";
 	sv_pr_state.pr_edicts = &sv.edicts;
 	sv_pr_state.num_edicts = &sv.num_edicts;
@@ -517,6 +525,7 @@ SV_Progs_Init (void)
 	sv_pr_state.resolve = resolve;
 
 	PR_AddLoadFunc (&sv_pr_state, sv_init_edicts);
+	PR_Init (&sv_pr_state);
 
 	SV_PR_Cmds_Init ();
 
@@ -535,6 +544,7 @@ SV_Progs_Init (void)
 void
 SV_Progs_Init_Cvars (void)
 {
+	PR_Init_Cvars ();
 	sv_progs = Cvar_Get ("sv_progs", "", CVAR_NONE, NULL,
 						 "Override the default game progs.");
 	sv_progs_zone = Cvar_Get ("sv_progs_zone", "256", CVAR_NONE, NULL,

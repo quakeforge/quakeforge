@@ -66,11 +66,12 @@ sw32_D_Init (void)
 			sw32_d_zitable[i] = (65536.0 * 65536.0 / (double) i);
 	}
 
-	vr_data.vid->surf_cache_size = sw32_D_SurfaceCacheForRes;
-	vr_data.vid->flush_caches = sw32_D_FlushCaches;
-	vr_data.vid->init_caches = sw32_D_InitCaches;
+	vr_data.vid->vid_internal->surf_cache_size = sw32_D_SurfaceCacheForRes;
+	vr_data.vid->vid_internal->flush_caches = sw32_D_FlushCaches;
+	vr_data.vid->vid_internal->init_caches = sw32_D_InitCaches;
 
 	VID_InitBuffers ();
+	VID_MakeColormaps();
 }
 
 void

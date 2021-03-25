@@ -14,6 +14,27 @@ if test "x$CFLAGS" != "x"; then
 fi
 AC_MSG_RESULT([$leave_cflags_alone])
 
+AC_MSG_CHECKING(for C99 inline)
+c99_inline=no
+AC_TRY_LINK(
+	[inline int foo (int x) { return x * x; }
+	 int (*bar) (int) = foo;],
+	[],
+	c99_inline=no
+	AC_MSG_RESULT(no),
+	c99_inline=yes
+	AC_DEFINE(HAVE_C99INLINE, extern, [define this if using c99 inline])
+	AC_MSG_RESULT(yes)
+)
+AH_VERBATIM([HAVE_C99INLINE],
+[/* Define this if the GCC __attribute__ keyword is available */
+#undef HAVE_C99INLINE
+#ifdef HAVE_C99INLINE
+# define GNU89INLINE
+#else
+# define GNU89INLINE extern
+#endif])
+
 if test "x$GCC" = xyes; then
 	set $CC
 	shift
@@ -60,6 +81,11 @@ AC_ARG_ENABLE(optimize,
 	optimize=$enable_optimize,
 	optimize=yes
 )
+
+QF_CC_OPTION(-mavx2)
+dnl fma is not used as it is the equivalent of turning on
+dnl -funsafe-math-optimizations
+dnl QF_CC_OPTION(-mfma)
 
 AC_MSG_CHECKING(for optimization)
 if test "x$optimize" = xyes -a "x$leave_cflags_alone" != "xyes"; then
@@ -192,6 +218,16 @@ if test $CC_MAJ -gt 4 -o $CC_MAJ -eq 4 -a $CC_MIN -ge 5; then
 fi
 QF_CC_OPTION(-Wtype-limits)
 QF_CC_OPTION_TEST([-fvisibility=hidden], [VISIBILITY=-fvisibility=hidden])
+QF_CC_OPTION(-Wsuggest-attribute=pure)
+QF_CC_OPTION(-Wsuggest-attribute=const)
+QF_CC_OPTION(-Wsuggest-attribute=noreturn)
+QF_CC_OPTION(-Wsuggest-attribute=format)
+
+AC_ARG_ENABLE(coverage,
+[  --enable-coverage       Enable generation of data for gcov])
+if test "x$enable_coverage" = xyes; then
+	QF_CC_OPTION(-fprofile-arcs -ftest-coverage)
+fi
 
 dnl QuakeForge uses lots of BCPL-style (//) comments, which can cause problems
 dnl with many compilers that do not support the latest ISO standards. Well,
@@ -220,8 +256,7 @@ if test "x$GCC" != xyes; then
 fi
 
 AC_ARG_ENABLE(Werror,
-[  --disable-Werror        Do not treat warnings as errors]
-)
+[  --disable-Werror        Do not treat warnings as errors])
 dnl We want warnings, lots of warnings...
 dnl The help text should be INVERTED before release!
 dnl when in git, this test defaults to ENABLED.

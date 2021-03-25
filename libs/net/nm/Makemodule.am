@@ -1,0 +1,8 @@
+if SYSTYPE_WIN32
+net_sources= libs/net/nm/net_win.c libs/net/nm/net_wins.c
+else
+net_sources= libs/net/nm/net_bsd.c libs/net/nm/net_udp.c
+endif
+nm_src= libs/net/nm/net_dgrm.c libs/net/nm/net_loop.c libs/net/nm/net_vcr.c $(net_sources)
+
+nm_extra = libs/net/nm/net_bsd.c libs/net/nm/net_win.c libs/net/nm/net_wins.c libs/net/nm/net_udp.c

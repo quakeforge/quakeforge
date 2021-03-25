@@ -25,8 +25,8 @@
 
 */
 
-#ifndef _MODEL_H
-#define _MODEL_H
+#ifndef __QF_model_h
+#define __QF_model_h
 
 #include "QF/qtypes.h"
 #include "QF/bspfile.h"
@@ -61,7 +61,6 @@ typedef struct efrag_s {
 	struct efrag_s		*entnext;
 } efrag_t;
 
-
 // in memory representation ===================================================
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
@@ -90,20 +89,14 @@ typedef struct instsurf_s {
 } instsurf_t;
 
 typedef struct texture_s {
-	char		name[16];
-	unsigned int	width, height;
-	int			gl_texturenum;
-	int			gl_fb_texturenum;
-	int         sky_tex[2];
-	instsurf_t *tex_chain;	// for gl_texsort drawing
-	instsurf_t **tex_chain_tail;
-	struct elechain_s *elechain;
-	struct elechain_s **elechain_tail;
+	char		*name;
+	unsigned    width, height;
+	void       *render;		// renderer specific data
 	int			anim_total;				// total tenths in sequence ( 0 = no)
 	int			anim_min, anim_max;		// time for this frame min <=time< max
 	struct texture_s *anim_next;		// in the animation sequence
 	struct texture_s *alternate_anims;	// bmodels in frmae 1 use these
-	unsigned int	offsets[MIPLEVELS];		// four mip maps stored
+	unsigned    offsets[MIPLEVELS];		// four mip maps stored
 } texture_t;
 
 
@@ -159,7 +152,7 @@ typedef struct msurface_s {
 
 	int			light_s, light_t;	// gl lightmap coordinates
 
-	glpoly_t	*polys;				// multiple if warped
+	glpoly_t   *polys;				// multiple if warped
 	instsurf_t *instsurf;	///< null if not part of world model/sub-model
 	instsurf_t *tinst;		///< for instance models
 
@@ -186,8 +179,6 @@ typedef struct mnode_s {
 
 	float		minmaxs[6];		// for bounding box culling
 
-	struct mnode_s	*parent;
-
 // node specific
 	plane_t		*plane;
 	struct mnode_s	*children[2];
@@ -204,8 +195,6 @@ typedef struct mleaf_s {
 	// for bounding box culling
 	float		mins[3];
 	float		maxs[3];
-
-	struct mnode_s	*parent;
 
 // leaf specific
 	byte		*compressed_vis;
@@ -232,6 +221,61 @@ typedef struct hull_s {
 	struct nodeleaf_s *nodeleafs;
 	int         depth;				///< maximum depth of the tree
 } hull_t;
+
+typedef struct mod_brush_s {
+	int			 firstmodelsurface, nummodelsurfaces;
+
+	int			 numsubmodels;
+	dmodel_t	*submodels;
+
+	int			 numplanes;
+	plane_t		*planes;
+
+	int			 numleafs;		// number of visible leafs, not counting 0
+	mleaf_t		*leafs;
+
+	int			 numvertexes;
+	mvertex_t	*vertexes;
+
+	int			 numedges;
+	medge_t		*edges;
+
+	int			 numnodes;
+	mnode_t		*nodes;
+	int          depth;				///< maximum depth of the tree
+
+	int			 numtexinfo;
+	mtexinfo_t	*texinfo;
+
+	int			 numsurfaces;
+	msurface_t	*surfaces;
+
+	int			 numsurfedges;
+	int			*surfedges;
+
+	int			 numclipnodes;
+	mclipnode_t	*clipnodes;
+
+	int			 nummarksurfaces;
+	msurface_t	**marksurfaces;
+
+	hull_t		 hulls[MAX_MAP_HULLS];
+	hull_t		*hull_list[MAX_MAP_HULLS];
+
+	int			 numtextures;
+	texture_t	**textures;
+	texture_t	*skytexture;
+
+	byte		*visdata;
+	byte		*lightdata;
+	char		*entities;	//FIXME should not be here
+
+	mnode_t    **node_parents;
+	mnode_t    **leaf_parents;
+
+	unsigned int checksum;
+	unsigned int checksum2;
+} mod_brush_t;
 
 // SPRITE MODELS ==============================================================
 
@@ -282,10 +326,10 @@ typedef struct {
 } maliasframedesc_t;
 
 typedef struct {
-	aliasskintype_t		type;
-	int					skin;
-	int					texnum;
-	int					fb_texnum;
+	aliasskintype_t type;
+	int     skin;
+	int     texnum;
+	int     fb_texnum;
 } maliasskindesc_t;
 
 typedef struct {
@@ -326,14 +370,6 @@ typedef struct {
 	maliasframedesc_t	frames[1];
 } aliashdr_t;
 
-#define	MAXALIASFRAMES	256
-extern	aliashdr_t	*pheader;
-extern	stvert_t	*stverts;
-extern	mtriangle_t	*triangles;
-extern	trivertx_t	*poseverts[MAXALIASFRAMES];
-extern  int			 aliasbboxmins[3];
-extern  int			 aliasbboxmaxs[3];
-
 // Whole model ================================================================
 
 typedef enum {mod_brush, mod_sprite, mod_alias, mod_iqm} modtype_t;
@@ -349,7 +385,10 @@ typedef enum {mod_brush, mod_sprite, mod_alias, mod_iqm} modtype_t;
 #define EF_GLOWTRAIL	4096		// glowcolor particle trail
 
 typedef struct model_s {
+	//FIXME use pointers. needs care in bsp submodel loading
+	char		 path[MAX_QPATH];
 	char		 name[MAX_QPATH];
+	const struct vpath_s *vpath;// virtual path where this model was found
 	qboolean	 needload;		// bmodels and sprites don't cache normally
 	aliashdr_t  *aliashdr;		// if not null, alias model is not cached
 	qboolean	 hasfullbrights;
@@ -375,96 +414,38 @@ typedef struct model_s {
 	vec3_t		 clipmins, clipmaxs;
 
 // brush model
-	int			 firstmodelsurface, nummodelsurfaces;
-
-	int			 numsubmodels;
-	dmodel_t	*submodels;
-
-	int			 numplanes;
-	plane_t		*planes;
-
-	int			 numleafs;		// number of visible leafs, not counting 0
-	mleaf_t		*leafs;
-
-	int			 numvertexes;
-	mvertex_t	*vertexes;
-
-	int			 numedges;
-	medge_t		*edges;
-
-	int			 numnodes;
-	mnode_t		*nodes;
-	int          depth;				///< maximum depth of the tree
-
-	int			 numtexinfo;
-	mtexinfo_t	*texinfo;
-
-	int			 numsurfaces;
-	msurface_t	*surfaces;
-
-	int			 numsurfedges;
-	int			*surfedges;
-
-	int			 numclipnodes;
-	mclipnode_t	*clipnodes;
-
-	int			 nummarksurfaces;
-	msurface_t	**marksurfaces;
-
-	hull_t		 hulls[MAX_MAP_HULLS];
-	hull_t		*hull_list[MAX_MAP_HULLS];
-
-	int			 numtextures;
-	texture_t	**textures;
-	texture_t	*skytexture;
-
-	byte		*visdata;
-	byte		*lightdata;
-	char		*entities;
-
-	unsigned int checksum;
-	unsigned int checksum2;
+	//FIXME should be a pointer (submodels make things tricky)
+	mod_brush_t brush;
 
 // additional model data
 	cache_user_t cache;
-	void       (*clear) (struct model_s *m);
+	void      (*clear) (struct model_s *m, void *data);
+	void       *data;
 } model_t;
 
 // ============================================================================
 
-extern float RadiusFromBounds (const vec3_t mins, const vec3_t maxs);
-void	Mod_Init (void);
-void	Mod_Init_Cvars (void);
-void	Mod_ClearAll (void);
+void Mod_Init (void);
+void Mod_Init_Cvars (void);
+void Mod_ClearAll (void);
 model_t *Mod_ForName (const char *name, qboolean crash);
-void	*Mod_Extradata (model_t *mod);	// handles caching
-void	Mod_TouchModel (const char *name);
+void Mod_TouchModel (const char *name);
+// brush specific
+mleaf_t *Mod_PointInLeaf (const vec3_t p, model_t *model) __attribute__((pure));
+byte *Mod_LeafPVS (const mleaf_t *leaf, const model_t *model);
 
-mleaf_t *Mod_PointInLeaf (const vec3_t p, model_t *model);
-byte	*Mod_LeafPVS (mleaf_t *leaf, model_t *model);
-model_t	*Mod_FindName (const char *name);
-int     Mod_CalcFullbright (byte *in, byte *out, int pixels);
-int     Mod_Fullbright (byte * skin, int width, int height, char *name);
+// NOTE: the buffer pointed to by out must be at least MAP_PVS_BYTES in size
+void Mod_LeafPVS_set (const mleaf_t *leaf, const model_t *model, byte defvis,
+					  byte *out);
+void Mod_LeafPVS_mix (const mleaf_t *leaf, const model_t *model, byte defvis,
+					  byte *out);
 
-void    *Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame,
-							 int extra);
-void    *Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
-							 int extra);
-
-void Mod_FindClipDepth (hull_t *hull);
-void	 Mod_LoadBrushModel (model_t *mod, void *buffer);
-void	 Mod_FloodFillSkin (byte * skin, int skinwidth, int skinheight);
-
-void	 Mod_Print (void);
+void Mod_Print (void);
 
 extern struct cvar_s *gl_mesh_cache;
 extern struct cvar_s *gl_subdivide_size;
 extern struct cvar_s *gl_alias_render_tri;
 extern struct cvar_s *gl_textures_external;
-extern model_t *loadmodel;
-extern char *loadname;
-extern byte *mod_base;
-extern byte mod_novis[MAX_MAP_LEAFS / 8];
 extern int mod_lightmap_bytes;
 
-#endif	// _MODEL_H
+#endif//__QF_model_h

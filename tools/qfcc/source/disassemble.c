@@ -56,7 +56,7 @@
 #include "QF/progs.h"
 #include "QF/sys.h"
 
-#include "qfprogs.h"
+#include "tools/qfcc/include/qfprogs.h"
 
 void
 disassemble_progs (progs_t *pr)

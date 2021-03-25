@@ -43,21 +43,12 @@
 #include <malloc.h>
 #endif
 
-#include "QF/cbuf.h"
-#include "QF/crc.h"
-#include "QF/cvar.h"
 #include "QF/dstring.h"
-#include "QF/hash.h"
 #include "QF/mathlib.h"
+#include "QF/plist.h"
 #include "QF/progs.h"
-#include "QF/qdefs.h"
-#include "QF/qfplist.h"
-#include "QF/qendian.h"
-#include "QF/quakefs.h"
 #include "QF/script.h"
 #include "QF/sys.h"
-#include "QF/zone.h"
-#include "QF/va.h"
 
 #include "compat.h"
 
@@ -68,14 +59,10 @@
 	Easier to parse than PR_ValueString
 */
 static const char *
-PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val)
+PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val, dstring_t *line)
 {
-	static dstring_t *line = 0;
-	ddef_t		*def;
+	pr_def_t    *def;
 	dfunction_t	*f;
-
-	if (!line)
-		line = dstring_new ();
 
 	type &= ~DEF_SAVEGLOBAL;
 
@@ -93,7 +80,7 @@ PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val)
 			break;
 		case ev_field:
 			def = PR_FieldAtOfs (pr, val->integer_var);
-			dsprintf (line, "%s", PR_GetString (pr, def->s_name));
+			dsprintf (line, "%s", PR_GetString (pr, def->name));
 			break;
 		case ev_void:
 			dstring_copystr (line, "void");
@@ -105,10 +92,10 @@ PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val)
 			dsprintf (line, "%d", val->integer_var);
 			break;
 		case ev_vector:
-			dsprintf (line, "%.9g %.9g %.9g", VectorExpand (val->vector_var));
+			dsprintf (line, "%.9g %.9g %.9g", VectorExpand (&val->vector_var));
 			break;
 		case ev_quat:
-			dsprintf (line, "%.9g %.9g %.9g %.9g", QuatExpand (val->quat_var));
+			dsprintf (line, "%.9g %.9g %.9g %.9g", QuatExpand (&val->quat_var));
 			break;
 		default:
 			dsprintf (line, "bad type %i", type);
@@ -121,7 +108,8 @@ PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val)
 VISIBLE plitem_t *
 ED_EntityDict (progs_t *pr, edict_t *ed)
 {
-	plitem_t   *entity = PL_NewDictionary ();
+	dstring_t  *dstr = dstring_newstr ();
+	plitem_t   *entity = PL_NewDictionary (pr->hashlink_freelist);
 	pr_uint_t   i;
 	int         j;
 	int         type;
@@ -131,9 +119,9 @@ ED_EntityDict (progs_t *pr, edict_t *ed)
 
 	if (!ed->free) {
 		for (i = 0; i < pr->progs->numfielddefs; i++) {
-			ddef_t     *d = &pr->pr_fielddefs[i];
+			pr_def_t   *d = &pr->pr_fielddefs[i];
 
-			name = PR_GetString (pr, d->s_name);
+			name = PR_GetString (pr, d->name);
 			if (!name[0])
 				continue;					// skip unnamed fields
 			if (name[strlen (name) - 2] == '_')
@@ -149,10 +137,11 @@ ED_EntityDict (progs_t *pr, edict_t *ed)
 			if (j == pr_type_size[type])
 				continue;
 
-			value = PR_UglyValueString (pr, type, v);
+			value = PR_UglyValueString (pr, type, v, dstr);
 			PL_D_AddObject (entity, name, PL_NewString (value));
 		}
 	}
+	dstring_delete (dstr);
 	return entity;
 }
 
@@ -165,11 +154,12 @@ ED_EntityDict (progs_t *pr, edict_t *ed)
 VISIBLE plitem_t *
 ED_GlobalsDict (progs_t *pr)
 {
-	plitem_t   *globals = PL_NewDictionary ();
+	dstring_t  *dstr = dstring_newstr ();
+	plitem_t   *globals = PL_NewDictionary (pr->hashlink_freelist);
 	pr_uint_t   i;
 	const char *name;
 	const char *value;
-	ddef_t     *def;
+	pr_def_t   *def;
 	int         type;
 
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
@@ -182,10 +172,11 @@ ED_GlobalsDict (progs_t *pr)
 		if (type != ev_string && type != ev_float && type != ev_entity)
 			continue;
 
-		name = PR_GetString (pr, def->s_name);
-		value = PR_UglyValueString (pr, type, &pr->pr_globals[def->ofs]);
+		name = PR_GetString (pr, def->name);
+		value = PR_UglyValueString (pr, type, &pr->pr_globals[def->ofs], dstr);
 		PL_D_AddObject (globals, name, PL_NewString (value));
 	}
+	dstring_delete (dstr);
 	return globals;
 }
 
@@ -222,11 +213,11 @@ ED_NewString (progs_t *pr, const char *string)
 	returns false if error
 */
 VISIBLE qboolean
-ED_ParseEpair (progs_t *pr, pr_type_t *base, ddef_t *key, const char *s)
+ED_ParseEpair (progs_t *pr, pr_type_t *base, pr_def_t *key, const char *s)
 {
 	int			i;
 	char		*string;
-	ddef_t		*def;
+	pr_def_t    *def;
 	char		*v, *w;
 	pr_type_t	*d;
 	dfunction_t	*func;
@@ -250,7 +241,7 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, ddef_t *key, const char *s)
 				while (*v && *v != ' ')
 					v++;
 				*v = 0;
-				d->vector_var[i] = atof (w);
+				(&d->vector_var)[i] = atof (w);
 				w = v = v + 1;
 			}
 			free (string);
@@ -299,26 +290,34 @@ ED_ParseEpair (progs_t *pr, pr_type_t *base, ddef_t *key, const char *s)
 */
 
 VISIBLE plitem_t *
-ED_ConvertToPlist (script_t *script, int nohack)
+ED_ConvertToPlist (script_t *script, int nohack, struct hashlink_s **hashlinks)
 {
+	dstring_t  *dstr = dstring_newstr ();
 	plitem_t   *plist = PL_NewArray ();
 	plitem_t   *ent;
 	plitem_t   *key;
 	plitem_t   *value;
-	const char *token;
+	char       *token;
 	int         anglehack;
 
 	while (Script_GetToken (script, 1)) {
 		token = script->token->str;
 		if (!strequal (token, "{"))
 			Sys_Error ("ED_ConvertToPlist: EOF without closing brace");
-		ent = PL_NewDictionary ();
+		ent = PL_NewDictionary (hashlinks);
 		while (1) {
+			int         n;
+
 			if (!Script_GetToken (script, 1))
 				Sys_Error ("ED_ConvertToPlist: EOF without closing brace");
 			token = script->token->str;
 			if (strequal (token, "}"))
 				break;
+			// hack to take care of trailing spaces in field names
+			// (looking at you, Rogue)
+			for (n = strlen (token); n && token[n - 1] == ' '; n--) {
+				token[n - 1] = 0;
+			}
 			anglehack = 0;
 			if (!nohack && strequal (token, "angle")) {
 				key = PL_NewString ("angles");
@@ -334,15 +333,18 @@ ED_ConvertToPlist (script_t *script, int nohack)
 			token = script->token->str;
 			if (strequal (token, "}"))
 				Sys_Error ("ED_ConvertToPlist: closing brace without data");
-			if (anglehack)
-				value = PL_NewString (va ("0 %s 0", token));
-			else
+			if (anglehack) {
+				dsprintf (dstr, "0 %s 0", token);
+				value = PL_NewString (dstr->str);
+			} else {
 				value = PL_NewString (token);
+			}
 			PL_D_AddObject (ent, PL_String (key), value);
 			PL_Free (key);
 		}
 		PL_A_AddObject (plist, ent);
 	}
+	dstring_delete (dstr);
 	return plist;
 }
 
@@ -350,8 +352,8 @@ ED_ConvertToPlist (script_t *script, int nohack)
 VISIBLE void
 ED_InitGlobals (progs_t *pr, plitem_t *globals)
 {
-	ddef_t      vector_def;
-	ddef_t     *global;
+	pr_def_t    vector_def;
+	pr_def_t   *global;
 	plitem_t   *keys;
 	int         count;
 	const char *global_name;
@@ -398,7 +400,7 @@ ED_InitGlobals (progs_t *pr, plitem_t *globals)
 VISIBLE void
 ED_InitEntity (progs_t *pr, plitem_t *entity, edict_t *ent)
 {
-	ddef_t     *field;
+	pr_def_t   *field;
 	plitem_t   *keys;
 	const char *field_name;
 	const char *value;
@@ -497,11 +499,11 @@ ED_Parse (progs_t *pr, const char *data)
 	if (Script_GetToken (script, 1)) {
 		if (strequal (script->token->str, "(")) {
 			// new style (plist) entity data
-			entity_list = PL_GetPropertyList (data);
+			entity_list = PL_GetPropertyList (data, pr->hashlink_freelist);
 		} else {
-			// oldstyle entity data
+			// old style entity data
 			Script_UngetToken (script);
-			entity_list = ED_ConvertToPlist (script, 0);
+			entity_list = ED_ConvertToPlist (script, 0, pr->hashlink_freelist);
 		}
 	}
 	Script_Delete (script);
@@ -517,6 +519,7 @@ ED_LoadFromFile (progs_t *pr, const char *data)
 		PR_PushFrame (pr);
 		PR_RESET_PARAMS (pr);
 		P_INT (pr, 0) = PR_SetTempString (pr, data);
+		pr->pr_argc = 1;
 		PR_ExecuteProgram (pr, pr->edict_parse);
 		PR_PopFrame (pr);
 		return;

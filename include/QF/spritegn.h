@@ -45,8 +45,8 @@
 // <endrepeat>
 //-------------------------------------------------------
 
-#ifndef _SPRITEGN_H
-#define _SPRITEGN_H
+#ifndef __QF_sprintgn_h
+#define __QF_sprintgn_h
 
 #define SPR_VERSION		1
 #define SP2_VERSION		2
@@ -102,4 +102,4 @@ typedef struct {
 // little-endian "IDS2"
 #define IDHEADER_SP2 (('2'<<24)+('S'<<16)+('D'<<8)+'I')
 
-#endif // _SPRITEGN_H
+#endif//__QF_sprintgn_h

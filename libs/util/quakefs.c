@@ -74,7 +74,7 @@
 #include <limits.h>
 
 #include "qfalloca.h"
-
+#include "QF/alloc.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
@@ -82,9 +82,9 @@
 #include "QF/mathlib.h"
 #include "QF/pak.h"
 #include "QF/pakfile.h"
+#include "QF/plist.h"
 #include "QF/qargs.h"
 #include "QF/qendian.h"
-#include "QF/qfplist.h"
 #include "QF/qtypes.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
@@ -136,7 +136,34 @@ typedef struct searchpath_s {
 	struct searchpath_s *next;
 } searchpath_t;
 
-static searchpath_t *qfs_searchpaths;
+/** Represent a single game directory.
+
+	A vpath is the union of all locations searched for a single gamedir. This
+	includes all pak files in the gamedir in the user's directory, the
+	filesystem in the user's gamedir, then all pak files in the share
+	game directory, and finally share's gamedir filesystem.
+
+	The purpose is to enable searches to be limited to a single gamedir or to
+	not search past a certain gamedir.
+*/
+struct vpath_s {			// typedef to vpath_t is in quakefs.h
+	char       *name;		// usually the gamedir name
+	searchpath_t *user;
+	searchpath_t *share;
+	struct vpath_s *next;
+};
+
+typedef struct int_findfile_s {
+	findfile_t ff;
+	struct pack_s *pack;
+	dpackfile_t *packfile;
+	const char *path;
+	int         fname_index;
+} int_findfile_t;
+
+static searchpath_t *searchpaths_freelist;
+static vpath_t *vpaths_freelist;
+static vpath_t *qfs_vpaths;
 
 //QFS
 
@@ -145,7 +172,7 @@ typedef struct qfs_var_s {
 	char       *val;
 } qfs_var_t;
 
-static void qfs_add_gamedir (const char *dir);
+static void qfs_add_gamedir (vpath_t *vpath, const char *dir);
 
 VISIBLE gamedir_t  *qfs_gamedir;
 static plitem_t *qfs_gd_plist;
@@ -213,6 +240,55 @@ static gamedir_callback_t **gamedir_callbacks;
 static int num_gamedir_callbacks;
 static int max_gamedir_callbacks;
 
+static searchpath_t *
+new_searchpath (void)
+{
+	searchpath_t *searchpath;
+	ALLOC (16, searchpath_t, searchpaths, searchpath);
+	return searchpath;
+}
+
+static void
+delete_searchpath (searchpath_t *searchpath)
+{
+	if (searchpath->pack) {
+		pack_del (searchpath->pack);
+	}
+	if (searchpath->filename) {
+		free (searchpath->filename);
+	}
+	FREE (searchpaths, searchpath);
+}
+
+static vpath_t *
+new_vpath (void)
+{
+	vpath_t    *vpath;
+	ALLOC (16, vpath_t, vpaths, vpath);
+	return vpath;
+}
+
+static void
+delete_vpath (vpath_t *vpath)
+{
+	searchpath_t *next;
+
+	if (vpath->name) {
+		free (vpath->name);
+	}
+	while (vpath->user) {
+		next = vpath->user->next;
+		delete_searchpath (vpath->user);
+		vpath->user = next;
+	}
+	while (vpath->share) {
+		next = vpath->share->next;
+		delete_searchpath (vpath->share);
+		vpath->share = next;
+	}
+	FREE (vpaths, vpath);
+}
+
 static const char *
 qfs_var_get_key (const void *_v, void *unused)
 {
@@ -231,7 +307,7 @@ qfs_var_free (void *_v, void *unused)
 static hashtab_t *
 qfs_new_vars (void)
 {
-	return Hash_NewTable (61, qfs_var_get_key, qfs_var_free, 0);
+	return Hash_NewTable (61, qfs_var_get_key, qfs_var_free, 0, 0);
 }
 
 static void
@@ -283,7 +359,7 @@ qfs_var_subst (const char *string, hashtab_t *vars)
 				dstring_appendsubstr (new, s, (e - s));
 				break;
 			}
-			var = va ("%.*s", (int) (e - s) - 1, s + 1);
+			var = va (0, "%.*s", (int) (e - s) - 1, s + 1);
 			sub = Hash_Find (vars, var);
 			if (sub)
 				dstring_appendstr (new, sub->val);
@@ -294,7 +370,7 @@ qfs_var_subst (const char *string, hashtab_t *vars)
 			s = e;
 			while (qfs_isident (*e))
 				e++;
-			var = va ("%.*s", (int) (e - s), s);
+			var = va (0, "%.*s", (int) (e - s), s);
 			sub = Hash_Find (vars, var);
 			if (sub)
 				dstring_appendstr (new, sub->val);
@@ -448,18 +524,22 @@ qfs_process_path (const char *path, const char *gamedir)
 {
 	const char *e = path + strlen (path);
 	const char *s = e;
-	dstring_t  *dir = dstring_new ();
+	char       *dir;
+	vpath_t    *vpath;
 
 	while (s >= path) {
 		while (s != path && s[-1] !=':')
 			s--;
 		if (s != e) {
-			dsprintf (dir, "%.*s", (int) (e - s), s);
-			qfs_add_gamedir (dir->str);
+			dir = nva ("%.*s", (int) (e - s), s);
+			vpath = new_vpath ();
+			vpath->name = dir;
+			qfs_add_gamedir (vpath, dir);
+			vpath->next = qfs_vpaths;
+			qfs_vpaths = vpath;
 		}
 		e = --s;
 	}
-	dstring_delete (dir);
 }
 
 static void
@@ -469,7 +549,7 @@ qfs_build_gamedir (const char **list)
 	gamedir_t  *gamedir;
 	plitem_t   *gdpl;
 	dstring_t  *path;
-	hashtab_t  *dirs = Hash_NewTable (31, qfs_dir_get_key, qfs_dir_free, 0);
+	hashtab_t  *dirs = Hash_NewTable (31, qfs_dir_get_key, qfs_dir_free, 0, 0);
 	hashtab_t  *vars = qfs_new_vars ();
 	const char *dir = 0;
 
@@ -497,20 +577,10 @@ qfs_build_gamedir (const char **list)
 		free (qfs_gamedir);
 	}
 
-	while (qfs_searchpaths) {
-		searchpath_t *next;
-
-		if (qfs_searchpaths->pack) {
-			Qclose (qfs_searchpaths->pack->handle);
-			free (qfs_searchpaths->pack->files);
-			free (qfs_searchpaths->pack);
-		}
-		if (qfs_searchpaths->filename)
-			free (qfs_searchpaths->filename);
-
-		next = qfs_searchpaths->next;
-		free (qfs_searchpaths);
-		qfs_searchpaths = next;
+	while (qfs_vpaths) {
+		vpath_t    *next = qfs_vpaths->next;
+		delete_vpath (qfs_vpaths);
+		qfs_vpaths = next;
 	}
 
 	for (j = 0; list[j]; j++)
@@ -518,7 +588,7 @@ qfs_build_gamedir (const char **list)
 	gamedir = calloc (1, sizeof (gamedir_t));
 	path = dstring_newstr ();
 	while (j--) {
-		const char *name = va ("%s:%s", qfs_game, dir = list[j]);
+		const char *name = va (0, "%s:%s", qfs_game, dir = list[j]);
 		if (Hash_Find (dirs, name))
 			continue;
 		gdpl = qfs_find_gamedir (name, dirs);
@@ -602,7 +672,7 @@ qfs_load_config (void)
 	buf[len + 2] = 0;
 	if (qfs_gd_plist)
 		PL_Free (qfs_gd_plist);
-	qfs_gd_plist = PL_GetPropertyList (buf);
+	qfs_gd_plist = PL_GetPropertyList (buf, 0);
 	free (buf);
 	if (qfs_gd_plist && PL_Type (qfs_gd_plist) == QFDictionary)
 		return;		// done
@@ -610,7 +680,7 @@ qfs_load_config (void)
 no_config:
 	if (qfs_gd_plist)
 		PL_Free (qfs_gd_plist);
-	qfs_gd_plist = PL_GetPropertyList (qfs_default_dirconf);
+	qfs_gd_plist = PL_GetPropertyList (qfs_default_dirconf, 0);
 }
 
 /*
@@ -688,19 +758,31 @@ QFS_FileBase (const char *in)
 	return out;
 }
 
+static void
+qfs_path_print (searchpath_t *sp)
+{
+	if (sp->pack) {
+		Sys_Printf ("%s (%i files)\n", sp->pack->filename, sp->pack->numfiles);
+	} else {
+		Sys_Printf ("%s\n", sp->filename);
+	}
+}
 
 static void
 qfs_path_f (void)
 {
-	searchpath_t *s;
+	vpath_t    *vp;
+	searchpath_t *sp;
 
 	Sys_Printf ("Current search path:\n");
-	for (s = qfs_searchpaths; s; s = s->next) {
-		if (s->pack)
-			Sys_Printf ("%s (%i files)\n", s->pack->filename,
-						s->pack->numfiles);
-		else
-			Sys_Printf ("%s\n", s->filename);
+	for (vp = qfs_vpaths; vp; vp = vp->next) {
+		Sys_Printf ("%s\n", vp->name);
+		for (sp = vp->user; sp; sp = sp->next) {
+			qfs_path_print (sp);
+		}
+		for (sp = vp->share; sp; sp = sp->next) {
+			qfs_path_print (sp);
+		}
 	}
 }
 
@@ -716,6 +798,129 @@ QFS_WriteFile (const char *filename, const void *data, int len)
 
 	Qwrite (f, data, len);
 	Qclose (f);
+}
+
+static int_findfile_t *
+qfs_findfile_search (const vpath_t *vpath, const searchpath_t *sp,
+					 const char **fnames)
+{
+	static int_findfile_t found;
+	const char **fn;
+
+	found.ff.vpath = 0;
+	found.ff.in_pak = false;
+	found.pack = 0;
+	found.packfile = 0;
+	found.fname_index = 0;
+	if (found.ff.realname) {
+		free ((char *) found.ff.realname);
+		found.ff.realname = 0;
+	}
+	if (found.path) {
+		free ((char *) found.path);
+		found.path = 0;
+	}
+	// is the element a pak file?
+	if (sp->pack) {
+		dpackfile_t *packfile = 0;
+
+		for (fn = fnames; *fn; fn++) {
+			packfile = pack_find_file (sp->pack, *fn);
+			if (packfile) {
+				break;
+			}
+		}
+		if (packfile) {
+			Sys_MaskPrintf (SYS_FS_F, "PackFile: %s : %s\n",
+							sp->pack->filename, packfile->name);
+			found.ff.vpath = vpath;
+			found.ff.in_pak = true;
+			found.ff.realname = strdup (*fn);
+			found.pack = sp->pack;
+			found.packfile = packfile;
+			found.fname_index = fn - fnames;
+			found.path = strdup (sp->pack->filename);
+			return &found;
+		}
+	} else {
+		// check a file in the directory tree
+		dstring_t  *path = dstring_new ();
+
+		for (fn = fnames; *fn; fn++) {
+			if (qfs_expand_path (path, sp->filename, *fn, 1) == 0) {
+				if (Sys_FileExists (path->str) == -1) {
+					continue;
+				}
+
+				Sys_MaskPrintf (SYS_FS_F, "FindFile: %s\n", path->str);
+
+				found.ff.vpath = vpath;
+				found.ff.in_pak = false;
+				found.ff.realname = strdup (*fn);
+				found.path = strdup (path->str);
+				found.fname_index = fn - fnames;
+				dstring_delete (path);
+				return &found;
+			}
+		}
+		dstring_delete (path);
+	}
+	return 0;
+}
+
+static int_findfile_t *
+qfs_findfile (const char **fnames, const vpath_t *start, const vpath_t *end)
+{
+	const vpath_t *vp;
+	searchpath_t *sp;
+	int_findfile_t *found;
+
+	if (!start) {
+		start = qfs_vpaths;
+	}
+	if (end) {
+		for (vp = start; vp; vp = vp->next) {
+			if (vp == end) {
+				break;
+			}
+		}
+		if (!vp) {
+			Sys_Error ("QFS_FindFile: end vpath not in search list");
+		}
+		end = end->next;
+	}
+	for (vp = start; vp && vp != end; vp = vp->next) {
+		for (sp = vp->user; sp; sp = sp->next) {
+			found = qfs_findfile_search (vp, sp, fnames);
+			if (found) {
+				return found;
+			}
+		}
+		for (sp = vp->share; sp; sp = sp->next) {
+			found = qfs_findfile_search (vp, sp, fnames);
+			if (found) {
+				return found;
+			}
+		}
+	}
+	// file not found
+	return 0;
+}
+
+VISIBLE findfile_t *
+QFS_FindFile (const char *fname, const vpath_t *start, const vpath_t *end)
+{
+	int_findfile_t *found;
+	const char *fname_list[2];
+
+	fname_list[0] = fname;
+	fname_list[1] = 0;
+
+	found = qfs_findfile (fname_list, start, end);
+	if (found) {
+		return &found->ff;
+	}
+	return 0;
 }
 
 static QFile *
@@ -805,7 +1010,7 @@ QFS_CompressPath (const char *pth)
 	return path;
 }
 
-VISIBLE int file_from_pak; // global indicating file came from pack file ZOID
+VISIBLE findfile_t qfs_foundfile;
 
 /*
 	QFS_FOpenFile
@@ -814,69 +1019,29 @@ VISIBLE int file_from_pak; // global indicating file came from pack file ZOID
 	Sets qfs_filesize and one of handle or file
 */
 
-static int
-open_file (searchpath_t *search, const char *filename, QFile **gzfile,
-		   dstring_t *foundname, int zip)
+static void
+open_file (int_findfile_t *found, QFile **gzfile, int zip)
 {
-	file_from_pak = 0;
-
-	// is the element a pak file?
-	if (search->pack) {
-		dpackfile_t *packfile;
-
-		packfile = pack_find_file (search->pack, filename);
-		if (packfile) {
-			Sys_MaskPrintf (SYS_FS_F, "PackFile: %s : %s\n",
-							search->pack->filename, packfile->name);
-			// open a new file on the pakfile
-			if (foundname) {
-				dstring_clearstr (foundname);
-				dstring_appendstr (foundname, packfile->name);
-			}
-			*gzfile = qfs_openread (search->pack->filename, packfile->filepos,
-									packfile->filelen, zip);
-			file_from_pak = 1;
-			return qfs_filesize;
-		}
+	qfs_foundfile = found->ff;
+	if (found->ff.in_pak) {
+		*gzfile = qfs_openread (found->pack->filename,
+								found->packfile->filepos,
+								found->packfile->filelen, zip);
 	} else {
-		// check a file in the directory tree
-		dstring_t  *netpath = dstring_new ();
-
-		if (qfs_expand_path (netpath, search->filename, filename, 1) == 0) {
-			if (foundname) {
-				dstring_clearstr (foundname);
-				dstring_appendstr (foundname, filename);
-			}
-			if (Sys_FileExists (netpath->str) == -1) {
-				dstring_delete (netpath);
-				return -1;
-			}
-
-			Sys_MaskPrintf (SYS_FS_F, "FindFile: %s\n", netpath->str);
-
-			*gzfile = qfs_openread (netpath->str, -1, -1, zip);
-			dstring_delete (netpath);
-			return qfs_filesize;
-		}
-		dstring_delete (netpath);
-		return -1;
+		*gzfile = qfs_openread (found->path, -1, -1, zip);
 	}
-
-	return -1;
 }
 
-VISIBLE int
-_QFS_FOpenFile (const char *filename, QFile **gzfile,
-				dstring_t *foundname, int zip)
+VISIBLE QFile *
+_QFS_VOpenFile (const char *filename, int zip,
+				const vpath_t *start, const vpath_t *end)
 {
-	searchpath_t *search;
+	QFile      *gzfile;
+	int_findfile_t *found;
 	char       *path;
-#ifdef HAVE_VORBIS
-	char       *oggfilename;
-#endif
-#ifdef HAVE_ZLIB
-	char       *gzfilename;
-#endif
+	const char *fnames[4];
+	int         zip_flags[3];
+	int         ind;
 
 	// make sure they're not trying to do weird stuff with our private files
 	path = QFS_CompressPath (filename);
@@ -887,57 +1052,70 @@ _QFS_FOpenFile (const char *filename, QFile **gzfile,
 		goto error;
 	}
 
+	ind = 0;
 #ifdef HAVE_VORBIS
 	if (strequal (".wav", QFS_FileExtension (path))) {
+		char       *oggfilename;
 		oggfilename = alloca (strlen (path) + 1);
 		QFS_StripExtension (path, oggfilename);
 		strncat (oggfilename, ".ogg",
 				 sizeof (oggfilename) - strlen (oggfilename) - 1);
-	} else {
-		oggfilename = 0;
+		fnames[ind] = oggfilename;
+		zip_flags[ind] = 0;
+		ind++;
 	}
 #endif
 #ifdef HAVE_ZLIB
-	gzfilename = alloca (strlen (path) + 3 + 1);
-	sprintf (gzfilename, "%s.gz", path);
+	{
+		char       *gzfilename;
+		gzfilename = alloca (strlen (path) + 3 + 1);
+		sprintf (gzfilename, "%s.gz", path);
+		fnames[ind] = gzfilename;
+		zip_flags[ind] = zip;
+		ind++;
+	}
 #endif
 
-	// search through the path, one element at a time
-	for (search = qfs_searchpaths; search; search = search->next) {
-#ifdef HAVE_VORBIS
-		//NOTE gzipped oggs not supported
-		if (oggfilename
-			&& open_file (search, oggfilename, gzfile, foundname, false) != -1)
-			goto ok;
-#endif
-#ifdef HAVE_ZLIB
-		if (open_file (search, gzfilename, gzfile, foundname, zip) != -1)
-			goto ok;
-#endif
-		if (open_file (search, path, gzfile, foundname, zip) != -1)
-			goto ok;
+	fnames[ind] = path;
+	zip_flags[ind] = zip;
+	ind++;
+
+	fnames[ind] = 0;
+
+	found = qfs_findfile (fnames, start, end);
+
+	if (found) {
+		open_file (found, &gzfile, zip_flags[found->fname_index]);
+		free(path);
+		return gzfile;
 	}
 
 	Sys_MaskPrintf (SYS_FS_NF, "FindFile: can't find %s\n", filename);
 error:
-	*gzfile = NULL;
 	qfs_filesize = -1;
 	free (path);
-	return -1;
-ok:
-	free(path);
-	return qfs_filesize;
+	return 0;
 }
 
-VISIBLE int
-QFS_FOpenFile (const char *filename, QFile **gzfile)
+VISIBLE QFile *
+QFS_VOpenFile (const char *filename, const vpath_t *start, const vpath_t *end)
 {
-	return _QFS_FOpenFile (filename, gzfile, 0, 1);
+	return _QFS_VOpenFile (filename, 1, start, end);
 }
 
-cache_user_t *loadcache;
-byte       *loadbuf;
-int         loadsize;
+VISIBLE QFile *
+_QFS_FOpenFile (const char *filename, int zip)
+{
+	return _QFS_VOpenFile (filename, zip, 0, 0);
+}
+
+VISIBLE QFile *
+QFS_FOpenFile (const char *filename)
+{
+	return _QFS_VOpenFile (filename, 1, 0, 0);
+}
+
+static cache_user_t *loadcache;
 
 /*
 	QFS_LoadFile
@@ -946,20 +1124,22 @@ int         loadsize;
 	Always appends a 0 byte to the loaded data.
 */
 VISIBLE byte *
-QFS_LoadFile (const char *path, int usehunk)
+QFS_LoadFile (QFile *file, int usehunk)
 {
-	QFile      *h;
 	byte       *buf = NULL;
 	char       *base;
 	int         len;
 
 	// look for it in the filesystem or pack files
-	len = qfs_filesize = QFS_FOpenFile (path, &h);
-	if (!h)
+	if (!file)
 		return NULL;
 
+	base = strdup ("QFS_LoadFile");
+
+	len = qfs_filesize = Qfilesize (file);
+
 	// extract the filename base name for hunk tag
-	base = QFS_FileBase (path);
+	//base = QFS_FileBase (path);
 
 	if (usehunk == 1)
 		buf = Hunk_AllocName (len + 1, base);
@@ -969,20 +1149,16 @@ QFS_LoadFile (const char *path, int usehunk)
 		buf = calloc (1, len + 1);
 	else if (usehunk == 3)
 		buf = Cache_Alloc (loadcache, len + 1, base);
-	else if (usehunk == 4) {
-		if (len + 1 > loadsize)
-			buf = Hunk_TempAlloc (len + 1);
-		else
-			buf = loadbuf;
-	} else
+	else
 		Sys_Error ("QFS_LoadFile: bad usehunk");
 
 	if (!buf)
-		Sys_Error ("QFS_LoadFile: not enough space for %s", path);
+		Sys_Error ("QFS_LoadFile: not enough space");
+		//Sys_Error ("QFS_LoadFile: not enough space for %s", path);
 
 	buf[len] = 0;
-	Qread (h, buf, len);
-	Qclose (h);
+	Qread (file, buf, len);
+	Qclose (file);
 
 	free (base);
 
@@ -990,29 +1166,16 @@ QFS_LoadFile (const char *path, int usehunk)
 }
 
 VISIBLE byte *
-QFS_LoadHunkFile (const char *path)
+QFS_LoadHunkFile (QFile *file)
 {
-	return QFS_LoadFile (path, 1);
+	return QFS_LoadFile (file, 1);
 }
 
 VISIBLE void
-QFS_LoadCacheFile (const char *path, struct cache_user_s *cu)
+QFS_LoadCacheFile (QFile *file, struct cache_user_s *cu)
 {
 	loadcache = cu;
-	QFS_LoadFile (path, 3);
-}
-
-// uses temp hunk if larger than bufsize
-VISIBLE byte *
-QFS_LoadStackFile (const char *path, void *buffer, int bufsize)
-{
-	byte       *buf;
-
-	loadbuf = (byte *) buffer;
-	loadsize = bufsize;
-	buf = QFS_LoadFile (path, 4);
-
-	return buf;
+	QFS_LoadFile (file, 3);
 }
 
 /*
@@ -1047,7 +1210,7 @@ qfs_file_sort (char **os1, char **os2)
 	s2 = *os2;
 
 	while (1) {
-		in1 = in2 = n1 = n2 = 0;
+		n1 = n2 = 0;
 
 		if ((in1 = isdigit ((byte) *s1)))
 			n1 = strtol (s1, &s1, 10);
@@ -1070,9 +1233,9 @@ qfs_file_sort (char **os1, char **os2)
 }
 
 static void
-qfs_load_gamedir (const char *dir)
+qfs_load_gamedir (searchpath_t **searchpath, const char *dir)
 {
-	searchpath_t *search;
+	searchpath_t *sp;
 	pack_t     *pak;
 	DIR        *dir_ptr;
 	struct dirent *dirent;
@@ -1126,11 +1289,10 @@ qfs_load_gamedir (const char *dir)
 		if (!pak) {
 			Sys_Error ("Bad pakfile %s!!", pakfiles[i]);
 		} else {
-			search = malloc (sizeof (searchpath_t));
-			search->filename = 0;
-			search->pack = pak;
-			search->next = qfs_searchpaths;
-			qfs_searchpaths = search;
+			sp = new_searchpath ();
+			sp->pack = pak;
+			sp->next = *searchpath;
+			*searchpath = sp;
 		}
 	}
 
@@ -1147,23 +1309,22 @@ qfs_load_gamedir (const char *dir)
 	pak1.pak ...
 */
 static void
-qfs_add_dir (const char *dir)
+qfs_add_dir (searchpath_t **searchpath, const char *dir)
 {
-	searchpath_t *search;
+	searchpath_t *sp;
 
 	// add the directory to the search path
-	search = malloc (sizeof (searchpath_t));
-	search->filename = strdup (dir);
-	search->pack = 0;
-	search->next = qfs_searchpaths;
-	qfs_searchpaths = search;
+	sp = new_searchpath ();
+	sp->filename = strdup (dir);
+	sp->next = *searchpath;
+	*searchpath = sp;
 
 	// add any pak files in the format pak0.pak pak1.pak, ...
-	qfs_load_gamedir (dir);
+	qfs_load_gamedir (searchpath, dir);
 }
 
 static void
-qfs_add_gamedir (const char *dir)
+qfs_add_gamedir (vpath_t *vpath, const char *dir)
 {
 	const char *e;
 	const char *s;
@@ -1190,7 +1351,7 @@ qfs_add_gamedir (const char *dir)
 				Sys_MaskPrintf (SYS_FS, "qfs_add_gamedir (\"%s\")\n",
 								f_dir->str);
 
-				qfs_add_dir (f_dir->str);
+				qfs_add_dir (&vpath->share, f_dir->str);
 			}
 		}
 		e = --s;
@@ -1198,7 +1359,7 @@ qfs_add_gamedir (const char *dir)
 
 	qfs_expand_userpath (f_dir, dir);
 	Sys_MaskPrintf (SYS_FS, "qfs_add_gamedir (\"%s\")\n", f_dir->str);
-	qfs_add_dir (f_dir->str);
+	qfs_add_dir (&vpath->user, f_dir->str);
 
 	dstring_delete (f_dir);
 	dstring_delete (s_dir);
@@ -1256,6 +1417,16 @@ qfs_path_cvar (cvar_t *var)
 	free (cpath);
 }
 
+static void
+qfs_shutdown (void *data)
+{
+	while (qfs_vpaths) {
+		vpath_t    *next = qfs_vpaths->next;
+		delete_vpath (qfs_vpaths);
+		qfs_vpaths = next;
+	}
+}
+
 VISIBLE void
 QFS_Init (const char *game)
 {
@@ -1305,6 +1476,7 @@ QFS_Init (const char *game)
 	} else {
 		QFS_Gamedir ("");
 	}
+	Sys_RegisterShutdown (qfs_shutdown, 0);
 }
 
 VISIBLE const char *
@@ -1501,50 +1673,62 @@ QFS_FilelistAdd (filelist_t *filelist, const char *fname, const char *ext)
 	}
 	str = strdup (fname);
 
-	if (ext && (s = strstr(str, va(".%s", ext))))
+	if (ext && (s = strstr(str, va (0, ".%s", ext))))
 		*s = 0;
 	filelist->list[filelist->count++] = str;
+}
+
+static void
+qfs_filelistfill_do (filelist_t *list, const searchpath_t *search, const char *cp, const char *ext, int strip)
+{
+	const char *separator = "/";
+
+	if (*cp && cp[strlen (cp) - 1] == '/')
+		separator = "";
+
+	if (search->pack) {
+		int         i;
+		pack_t     *pak = search->pack;
+
+		for (i = 0; i < pak->numfiles; i++) {
+			char       *name = pak->files[i].name;
+			if (!fnmatch (va (0, "%s%s*.%s", cp, separator, ext), name,
+						  FNM_PATHNAME)
+				|| !fnmatch (va (0, "%s%s*.%s.gz", cp, separator, ext), name,
+							 FNM_PATHNAME))
+				QFS_FilelistAdd (list, name, strip ? ext : 0);
+		}
+	} else {
+		DIR        *dir_ptr;
+		struct dirent *dirent;
+
+		dir_ptr = opendir (va (0, "%s/%s", search->filename, cp));
+		if (!dir_ptr)
+			return;
+		while ((dirent = readdir (dir_ptr)))
+			if (!fnmatch (va (0, "*.%s", ext), dirent->d_name, 0)
+				|| !fnmatch (va (0, "*.%s.gz", ext), dirent->d_name, 0))
+				QFS_FilelistAdd (list, dirent->d_name, strip ? ext : 0);
+		closedir (dir_ptr);
+	}
 }
 
 VISIBLE void
 QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 				  int strip)
 {
+	vpath_t    *vpath;
 	searchpath_t *search;
-	DIR        *dir_ptr;
-	struct dirent *dirent;
 	char       *cpath, *cp;
-	const char *separator = "/";
 
 	if (strchr (ext, '/') || strchr (ext, '\\'))
 		return;
 
 	cp = cpath = QFS_CompressPath (path);
-	if (*cp && cp[strlen (cp) - 1] == '/')
-		separator = "";
 
-	for (search = qfs_searchpaths; search != NULL; search = search->next) {
-		if (search->pack) {
-			int         i;
-			pack_t     *pak = search->pack;
-
-			for (i = 0; i < pak->numfiles; i++) {
-				char       *name = pak->files[i].name;
-				if (!fnmatch (va("%s%s*.%s", cp, separator, ext), name,
-							  FNM_PATHNAME)
-					|| !fnmatch (va("%s%s*.%s.gz", cp, separator, ext), name,
-								 FNM_PATHNAME))
-					QFS_FilelistAdd (list, name, strip ? ext : 0);
-			}
-		} else {
-			dir_ptr = opendir (va ("%s/%s", search->filename, cp));
-			if (!dir_ptr)
-				continue;
-			while ((dirent = readdir (dir_ptr)))
-				if (!fnmatch (va("*.%s", ext), dirent->d_name, 0)
-					|| !fnmatch (va("*.%s.gz", ext), dirent->d_name, 0))
-					QFS_FilelistAdd (list, dirent->d_name, strip ? ext : 0);
-			closedir (dir_ptr);
+	for (vpath = qfs_vpaths; vpath; vpath = vpath->next) {
+		for (search = vpath->user; search; search = search->next) {
+			qfs_filelistfill_do (list, search, cp, ext, strip);
 		}
 	}
 	free (cpath);

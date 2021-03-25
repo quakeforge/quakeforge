@@ -42,37 +42,62 @@
 #include <QF/mathlib.h>
 #include <QF/va.h>
 
-#include "codespace.h"
-#include "def.h"
-#include "defspace.h"
-#include "debug.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "function.h"
-#include "opcodes.h"
-#include "options.h"
-#include "qfcc.h"
-#include "reloc.h"
-#include "statements.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
+#include "tools/qfcc/include/codespace.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/debug.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/opcodes.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/statements.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
 static def_t zero_def;
 
+static def_t *get_operand_def (expr_t *expr, operand_t *op);
+
 static def_t *
-get_value_def (ex_value_t *value, etype_t type)
+get_tempop_def (expr_t *expr, operand_t *tmpop, type_t *type)
+{
+	tempop_t   *tempop = &tmpop->o.tempop;
+	if (tempop->def) {
+		return tempop->def;
+	}
+	if (tempop->alias) {
+		def_t      *tdef = get_operand_def (expr, tempop->alias);
+		int         offset = tempop->offset;
+		tempop->def = alias_def (tdef, type, offset);
+	}
+	if (!tempop->def) {
+		tempop->def = temp_def (type);
+	}
+	return tempop->def;
+}
+
+static def_t *
+get_value_def (expr_t *expr, ex_value_t *value, type_t *type)
 {
 	def_t      *def;
 
-	if (type == ev_short) {
+	if (is_short (type)) {
 		def = new_def (0, &type_short, 0, sc_extern);
 		def->offset = value->v.short_val;
 		return def;
 	}
+	if (is_pointer (type) && value->v.pointer.tempop
+		&& !value->v.pointer.def) {
+		value->v.pointer.def = get_tempop_def (expr, value->v.pointer.tempop,
+											   type->t.fldptr.type);
+	}
 	def = emit_value (value, 0);
-	if (type != def->type->type)
-		return alias_def (def, ev_types[type], 0);
+	if (type != def->type)
+		return alias_def (def, type, 0);
 	return def;
 }
 
@@ -85,20 +110,19 @@ get_operand_def (expr_t *expr, operand_t *op)
 		case op_def:
 			return op->o.def;
 		case op_value:
-			return get_value_def (op->o.value, op->type);
+			return get_value_def (expr, op->o.value, op->type);
 		case op_label:
-			op->type = ev_short;
+			op->type = &type_short;
 			zero_def.type = &type_short;
 			return &zero_def;	//FIXME
 		case op_temp:
-			while (op->o.tempop.alias)
-				op = op->o.tempop.alias;
-			if (!op->o.tempop.def)
-				op->o.tempop.def = temp_def (op->type, op->size);
-			return op->o.tempop.def;
+			return get_tempop_def (expr, op, op->type);
 		case op_alias:
 			return get_operand_def (expr, op->o.alias);
+		case op_nil:
+			internal_error (expr, "unexpected nil operand");
 	}
+	internal_error (expr, "unexpected operand");
 	return 0;
 }
 

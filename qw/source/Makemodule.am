@@ -1,0 +1,176 @@
+## Process this file with automake to produce Makefile.in
+#
+#	Makefile.am
+#
+#	Automake-using build system for QuakeForge
+#
+#	Copyright (C) 2000 Jeff Teunissen <deek@quakeforge.net>
+#
+#	This Makefile is free software; you can redistribute it and/or
+#	modify it under the terms of the GNU General Public License
+#	as published by the Free Software Foundation; either version 2
+#	of the License, or (at your option) any later version.
+#
+#	This program is distributed in the hope that it will be useful,
+#	but WITHOUT ANY WARRANTY; without even the implied warranty of
+#	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+#
+#	See the GNU General Public License for more details.
+#
+#	You should have received a copy of the GNU General Public License
+#	along with this program; if not, write to:
+#
+#		Free Software Foundation, Inc.
+#		59 Temple Place - Suite 330
+#		Boston, MA  02111-1307, USA
+#
+#	$Id$
+#
+
+bin_PROGRAMS += @QW_TARGETS@
+
+EXTRA_PROGRAMS += \
+	qw-client-fbdev qw-client-sdl qw-client-svga qw-client-wgl qw-client-x11 \
+	qw-server qw-master
+
+noinst_LIBRARIES += @qw_libs@
+EXTRA_LIBRARIES += qw/source/libqw_client.a qw/source/libqw_common.a qw/source/libqw_sdl.a qw/source/libqw_server.a
+
+
+qw_source_libqw_common_a_SOURCES=\
+	qw/source/game.c qw/source/map_cfg.c qw/source/pmove.c qw/source/pmovetst.c qw/source/net_packetlog.c
+qw_source_libqw_sdl_a_SOURCES=qw/source/cl_sys_sdl.c
+qw_source_libqw_sdl_a_CFLAGS=$(SDL_CFLAGS)
+
+# Server builds
+#
+# ... System type
+if SYSTYPE_WIN32
+syssv_SRC=	qw/source/sv_sys_win.c
+else
+syssv_SRC=	qw/source/sv_sys_unix.c
+endif
+
+EXTRA_DIST+=qw/source/sv_sys_win.c qw/source/sv_sys_unix.c
+
+qw_source_libqw_server_a_SOURCES= \
+	qw/source/crudefile.c qw/source/sv_ccmds.c qw/source/sv_demo.c qw/source/sv_ents.c qw/source/sv_gib.c qw/source/sv_init.c qw/source/sv_main.c \
+	qw/source/sv_move.c qw/source/sv_phys.c qw/source/sv_pr_cmds.c qw/source/sv_pr_cpqw.c qw/source/sv_pr_qwe.c qw/source/sv_progs.c \
+	qw/source/sv_qtv.c qw/source/sv_recorder.c qw/source/sv_sbar.c qw/source/sv_send.c qw/source/sv_user.c qw/source/world.c
+
+qw_server_LIBS= \
+		@server_static_plugin_libs@ \
+		libs/qw/libqw.a \
+		libs/net/libnet_chan.la \
+		libs/models/libQFmodels.la \
+		libs/gib/libQFgib.la \
+		libs/ruamoko/libQFruamoko.la \
+		libs/gamecode/libQFgamecode.la \
+		libs/console/libQFconsole.la \
+		libs/util/libQFutil.la
+
+qw_server_deps=qw/source/libqw_server.a qw/source/libqw_common.a $(qw_server_LIBS)
+qw_server_SOURCES=		$(syssv_SRC)
+qw_server_LDADD=		$(qw_server_deps) $(NET_LIBS) $(DL_LIBS) $(CURSES_LIBS)
+qw_server_LDFLAGS=		$(common_ldflags)
+qw_server_DEPENDENCIES=	$(qw_server_deps)
+
+qw_master_deps=libs/util/libQFutil.la
+qw_master_SOURCES=		qw/source/master.c
+qw_master_LDADD=		$(qw_master_deps) $(NET_LIBS)
+qw_master_DEPENDENCIES=	$(qw_master_deps)
+qw_master_LDFLAGS=		$(common_ldflags)
+
+qw_cl_plugin_LIBS= \
+		@client_static_plugin_libs@
+
+qw_client_LIBS= \
+		libs/qw/libqw.a \
+		libs/net/libnet_chan.la \
+		libs/entity/libQFentity.la \
+		libs/console/libQFconsole.la \
+		libs/video/targets/libQFjs.la \
+		libs/audio/libQFcd.la \
+		libs/audio/libQFsound.la \
+		libs/image/libQFimage.la \
+		libs/gib/libQFgib.la \
+		libs/ruamoko/libQFruamoko.la \
+		libs/util/libQFutil.la
+qw_client_libs= qw/source/libqw_client.a qw/source/libqw_common.a \
+			libs/client/libQFclient.la
+
+qw_source_libqw_client_a_SOURCES= \
+		qw/source/cl_cam.c qw/source/cl_chase.c qw/source/cl_chat.c qw/source/cl_cmd.c qw/source/cl_cvar.c qw/source/cl_demo.c \
+		qw/source/cl_entparse.c qw/source/cl_ents.c qw/source/cl_http.c qw/source/cl_input.c qw/source/cl_main.c qw/source/cl_ngraph.c \
+		qw/source/cl_parse.c qw/source/cl_pred.c qw/source/cl_rss.c qw/source/cl_screen.c qw/source/cl_skin.c qw/source/cl_slist.c \
+		qw/source/cl_view.c \
+		qw/source/sbar.c qw/source/teamplay.c
+
+# Software-rendering clients
+
+# ... Linux FBDev
+qw_client_fbdev_libs= \
+			$(qw_client_libs) \
+			$(qw_cl_plugin_LIBS) \
+			libs/video/renderer/libQFrenderer.la \
+			libs/models/libQFmodels.la \
+			libs/video/targets/libQFfbdev.la \
+			$(qw_client_LIBS)
+qw_client_fbdev_SOURCES= qw/source/cl_sys_unix.c
+qw_client_fbdev_LDADD= $(qw_client_fbdev_libs) $(NET_LIBS) $(LIBCURL_LIBS)
+qw_client_fbdev_LDFLAGS= $(common_ldflags)
+qw_client_fbdev_DEPENDENCIES= $(qw_client_fbdev_libs)
+
+# ... Simple DirectMedia Layer, version 1.2 and higher
+qw_client_sdl_libs= \
+			qw/source/libqw_sdl.a \
+			$(qw_client_libs) \
+			$(qw_cl_plugin_LIBS) \
+			libs/video/renderer/libQFrenderer.la \
+			libs/models/libQFmodels.la \
+			libs/video/targets/libQFsdl.la \
+			$(qw_client_LIBS)
+qw_client_sdl_SOURCES=qw/source/sdl_link.c
+qw_client_sdl_LDADD= qw/source/libqw_sdl.a $(qw_client_sdl_libs) $(SDL_LIBS) $(NET_LIBS) $(LIBCURL_LIBS)
+qw_client_sdl_LDFLAGS=  $(common_ldflags)
+qw_client_sdl_DEPENDENCIES= qw/source/libqw_sdl.a $(qw_client_sdl_libs)
+
+# ... Linux SVGAlib
+qw_client_svga_libs= \
+			$(qw_client_libs) \
+			$(qw_cl_plugin_LIBS) \
+			libs/video/renderer/libQFrenderer.la \
+			libs/models/libQFmodels.la \
+			libs/video/targets/libQFsvga.la \
+			$(qw_client_LIBS)
+qw_client_svga_SOURCES= qw/source/cl_sys_unix.c
+qw_client_svga_LDADD= $(qw_client_svga_libs) $(SVGA_LIBS) $(NET_LIBS) $(LIBCURL_LIBS)
+qw_client_svga_LDFLAGS=  $(common_ldflags)
+qw_client_svga_DEPENDENCIES= $(qw_client_svga_libs)
+
+# ... X11
+qw_client_x11_libs= \
+			$(qw_client_libs) \
+			$(qw_cl_plugin_LIBS) \
+			libs/video/renderer/libQFrenderer.la \
+			libs/models/libQFmodels.la \
+			libs/video/targets/libQFx11.la \
+			$(qw_client_LIBS)
+qw_client_x11_SOURCES=	qw/source/cl_sys_unix.c
+qw_client_x11_LDADD= $(qw_client_x11_libs) \
+			$(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
+			$(X_EXTRA_LIBS) $(X_SHM_LIB) $(NET_LIBS) $(LIBCURL_LIBS) $(DL_LIBS)
+qw_client_x11_LDFLAGS=	$(common_ldflags)
+qw_client_x11_DEPENDENCIES= $(qw_client_x11_libs)
+
+# ... SGI/Microsoft WGL (Windows OpenGL)
+qw_client_wgl_libs= \
+			$(qw_client_libs) \
+			$(qw_cl_plugin_LIBS) \
+			$(opengl_LIBS) \
+			libs/video/targets/libQFwgl.la \
+			$(qw_client_LIBS)
+qw_client_wgl_SOURCES=	qw/source/cl_sys_win.c
+qw_client_wgl_LDADD= $(qw_client_wgl_libs) -lgdi32 -lwinmm $(NET_LIBS) $(LIBCURL_LIBS)
+qw_client_wgl_LDFLAGS=  $(common_ldflags)
+qw_client_wgl_DEPENDENCIES= $(qw_client_wgl_libs)

@@ -28,12 +28,12 @@
 
 #include "QF/sys.h"
 
-#include "brush.h"
-#include "csg4.h"
-#include "bsp5.h"
-#include "draw.h"
-#include "solidbsp.h"
-#include "surfaces.h"
+#include "tools/qfbsp/include/brush.h"
+#include "tools/qfbsp/include/csg4.h"
+#include "tools/qfbsp/include/bsp5.h"
+#include "tools/qfbsp/include/draw.h"
+#include "tools/qfbsp/include/solidbsp.h"
+#include "tools/qfbsp/include/surfaces.h"
 
 /**	\addtogroup qfbsp_solidbsp
 */
@@ -121,7 +121,7 @@ FaceSide (const face_t *in, const plane_t *split)
 	\param maxs		The maximum coordinate of the boundiing box.
 	\return			The chosen surface.
 */
-static surface_t *
+static __attribute__((pure)) surface_t *
 ChooseMidPlaneFromList (surface_t *surfaces,
 						const vec3_t mins, const vec3_t maxs)
 {
@@ -186,7 +186,7 @@ ChooseMidPlaneFromList (surface_t *surfaces,
 	\return			The chosen surface, or NULL if a suitable surface could
 					not be found.
 */
-static surface_t *
+static __attribute__((pure)) surface_t *
 ChoosePlaneFromList (surface_t *surfaces, const vec3_t mins, const vec3_t maxs,
 					 qboolean usefloors, qboolean usedetail)
 {

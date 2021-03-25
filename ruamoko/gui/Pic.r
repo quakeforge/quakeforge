@@ -1,6 +1,6 @@
-#include "draw.h"
-#include "string.h"
-#include "gui/Pic.h"
+#include <draw.h>
+#include <string.h>
+#include <gui/Pic.h>
 
 @implementation Pic
 -(id)init

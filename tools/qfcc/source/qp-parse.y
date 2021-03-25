@@ -41,15 +41,15 @@
 
 #include "QF/dstring.h"
 
-#include "codespace.h"
-#include "diagnostic.h"
-#include "expr.h"
-#include "function.h"
-#include "qfcc.h"
-#include "reloc.h"
-#include "shared.h"
-#include "symtab.h"
-#include "type.h"
+#include "tools/qfcc/include/codespace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
 
 #define YYDEBUG 1
 #define YYERROR_VERBOSE 1
@@ -105,7 +105,7 @@ int yylex (void);
 %nonassoc STORAGEX
 
 %left	COMMA
-%right  <op> '=' ASX PAS /* pointer assign */
+%right  <op> '=' ASX
 %right  '?' ':'
 %left   OR
 %left   AND
@@ -139,6 +139,29 @@ int yylex (void);
 %type	<op>		sign
 
 %{
+
+static void
+build_dotmain (symbol_t *program)
+{
+	symbol_t   *dotmain = new_symbol (".main");
+	expr_t     *code;
+	expr_t     *exitcode;
+
+	dotmain->params = 0;
+	dotmain->type = parse_params (&type_integer, 0);
+	dotmain->type = find_type (dotmain->type);
+	dotmain = function_symbol (dotmain, 0, 1);
+
+	exitcode = new_symbol_expr (symtab_lookup (current_symtab, "ExitCode"));
+
+	current_func = begin_function (dotmain, 0, current_symtab, 0);
+	current_symtab = current_func->symtab;
+	code = new_block_expr ();
+	append_expr (code, function_expr (new_symbol_expr (program), 0));
+	append_expr (code, return_expr (current_func, exitcode));
+	build_code_function (dotmain, 0, code);
+}
+
 %}
 
 %%
@@ -159,15 +182,7 @@ program
 			build_code_function ($1, 0, $4);
 			current_symtab = st;
 
-			$4 = function_expr (new_symbol_expr ($1), 0);
-			$1 = new_symbol (".main");
-			$1->params = 0;
-			$1->type = parse_params (&type_void, 0);
-			$1->type = find_type ($1->type);
-			$1 = function_symbol ($1, 0, 1);
-			current_func = begin_function ($1, 0, current_symtab, 0);
-			current_symtab = current_func->symtab;
-			build_code_function ($1, 0, $4);
+			build_dotmain ($1);
 			current_symtab = st;
 		}
 	;
@@ -178,6 +193,15 @@ program_head
 		{
 			$$ = $3;
 
+			// FIXME need units and standard units
+			{
+				symbol_t   *sym = new_symbol ("ExitCode");
+				sym->type = &type_integer;
+				initialize_def (sym, 0, current_symtab->space, sc_global);
+				if (sym->s.def) {
+					sym->s.def->nosave = 1;
+				}
+			}
 			$$->type = parse_params (&type_void, 0);
 			$$->type = find_type ($$->type);
 			$$ = function_symbol ($$, 0, 1);
@@ -207,8 +231,8 @@ declarations
 		{
 			while ($3) {
 				symbol_t   *next = $3->next;
-				initialize_def ($3, $5, 0, current_symtab->space,
-								current_storage);
+				$3->type = $5;
+				initialize_def ($3, 0, current_symtab->space, current_storage);
 				$3 = next;
 			}
 		}
@@ -354,15 +378,15 @@ statement
 	| compound_statement
 	| IF expression THEN statement else statement
 		{
-			$$ = build_if_statement ($2, $4, $5, $6);
+			$$ = build_if_statement (0, $2, $4, $5, $6);
 		}
 	| IF expression THEN statement %prec IFX
 		{
-			$$ = build_if_statement ($2, $4, 0, 0);
+			$$ = build_if_statement (0, $2, $4, 0, 0);
 		}
 	| WHILE expression DO statement
 		{
-			$$ = build_while_statement ($2, $4,
+			$$ = build_while_statement (0, $2, $4,
 										new_label_expr (),
 										new_label_expr ());
 		}
@@ -375,6 +399,7 @@ statement
 else
 	: ELSE
 		{
+			// this is only to get the the file and line number info
 			$$ = new_nil_expr ();
 		}
 	;

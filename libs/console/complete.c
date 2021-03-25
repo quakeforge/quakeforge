@@ -157,7 +157,7 @@ Con_BasicCompleteCommandLine (inputline_t *il)
 				   && strncmp (s + bound, cmd, strlen (s + bound)))
 				bound++;
 
-		overwrite = va("%.*s%.*s", bound, s, cmd_len, cmd);
+		overwrite = va (0, "%.*s%.*s", bound, s, cmd_len, cmd);
 
 		il->lines[il->edit_line][1] = '/';
 		strncpy (il->lines[il->edit_line] + 2, overwrite, il->line_size - 3);

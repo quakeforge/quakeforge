@@ -293,7 +293,6 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 int
 SND_Load (sfx_t *sfx)
 {
-	dstring_t  *foundname = dstring_new ();
 	char       *realname;
 	char        buf[4];
 	QFile      *file;
@@ -303,16 +302,14 @@ SND_Load (sfx_t *sfx)
 	sfx->close = snd_noop;
 	sfx->open = snd_open_fail;
 
-	_QFS_FOpenFile (sfx->name, &file, foundname, 1);
+	file = QFS_FOpenFile (sfx->name);
 	if (!file) {
 		Sys_Printf ("Couldn't load %s\n", sfx->name);
-		dstring_delete (foundname);
 		return -1;
 	}
 	sfx->open = snd_open;
-	if (!strequal (foundname->str, sfx->name)) {
-		realname = foundname->str;
-		free (foundname);
+	if (!strequal (qfs_foundfile.realname, sfx->name)) {
+		realname = strdup (qfs_foundfile.realname);
 	} else {
 		realname = (char *) sfx->name;	// won't free if realname == sfx->name
 	}

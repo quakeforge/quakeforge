@@ -42,10 +42,11 @@
 #include "QF/sys.h"
 
 #include "compat.h"
-#include "server.h"
-#include "sv_progs.h"
-#include "sv_pr_cpqw.h"
-#include "sv_pr_qwe.h"
+
+#include "qw/include/server.h"
+#include "qw/include/sv_progs.h"
+#include "qw/include/sv_pr_cpqw.h"
+#include "qw/include/sv_pr_qwe.h"
 #include "world.h"
 
 progs_t     sv_pr_state;
@@ -101,8 +102,8 @@ free_edict (progs_t *pr, edict_t *ent)
 		E_fld (ent, sv_fields.frame).float_var = 0;
 		E_fld (ent, sv_fields.nextthink).float_var = -1;
 		E_fld (ent, sv_fields.solid).float_var = 0;
-		memset (E_fld (ent, sv_fields.origin).vector_var, 0, 3*sizeof (float));
-		memset (E_fld (ent, sv_fields.angles).vector_var, 0, 3*sizeof (float));
+		memset (&E_fld (ent, sv_fields.origin).vector_var, 0, 3*sizeof (float));
+		memset (&E_fld (ent, sv_fields.angles).vector_var, 0, 3*sizeof (float));
 	} else {
 		ED_ClearEdict (pr, ent, 0);
 	}
@@ -372,6 +373,9 @@ set_address (sv_def_t *def, void *address)
 		case ev_quat:
 			*(float **)def->field = (float *) address;
 			break;
+		case ev_double:
+			*(double **)def->field = (double *) address;
+			break;
 		case ev_string:
 		case ev_entity:
 		case ev_field:
@@ -387,7 +391,7 @@ set_address (sv_def_t *def, void *address)
 static int
 resolve_globals (progs_t *pr, sv_def_t *def, int mode)
 {
-	ddef_t     *ddef;
+	pr_def_t   *ddef;
 	int         ret = 1;
 
 	if (mode == 2) {
@@ -433,7 +437,7 @@ resolve_functions (progs_t *pr, sv_def_t *def, int mode)
 static int
 resolve_fields (progs_t *pr, sv_def_t *def, int mode)
 {
-	ddef_t     *ddef;
+	pr_def_t   *ddef;
 	int         ret = 1;
 
 	if (mode == 2) {
@@ -542,9 +546,11 @@ SV_LoadProgs (void)
 	if (*sv_progs->string)
 		progs_name = sv_progs->string;
 
+	sv_pr_state.max_edicts = MAX_EDICTS;
+	sv_pr_state.zone_size = sv_progs_zone->int_val * 1024;
 	sv.edicts = sv_edicts;
-	PR_LoadProgs (&sv_pr_state, progs_name, MAX_EDICTS,
-				  sv_progs_zone->int_val * 1024);
+
+	PR_LoadProgs (&sv_pr_state, progs_name);
 	if (!sv_pr_state.progs)
 		Sys_Error ("SV_LoadProgs: couldn't load %s", progs_name);
 }
@@ -552,6 +558,8 @@ SV_LoadProgs (void)
 void
 SV_Progs_Init (void)
 {
+	SV_Progs_Init_Cvars ();
+
 	pr_gametype = "quakeworld";
 	sv_pr_state.pr_edicts = &sv.edicts;
 	sv_pr_state.num_edicts = &sv.num_edicts;
@@ -565,6 +573,7 @@ SV_Progs_Init (void)
 	sv_pr_state.resolve = resolve;
 
 	PR_AddLoadFunc (&sv_pr_state, sv_init_edicts);
+	PR_Init (&sv_pr_state);
 
 	SV_PR_Cmds_Init ();
 	SV_PR_QWE_Init (&sv_pr_state);
@@ -585,6 +594,8 @@ SV_Progs_Init (void)
 void
 SV_Progs_Init_Cvars (void)
 {
+	PR_Init_Cvars ();
+
 	r_skyname = Cvar_Get ("r_skyname", "", CVAR_NONE, NULL,
 						 "Default name of skybox if none given by map");
 	sv_progs = Cvar_Get ("sv_progs", "", CVAR_NONE, NULL,

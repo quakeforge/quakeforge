@@ -44,34 +44,6 @@ unsigned short sw32_8to16table[256];
 
 
 /*
-	lhfindcolor
-
-	LordHavoc: finds nearest matching color in a palette
-*/
-static int
-lhfindcolor (byte *pal, int colors, int r, int g, int b)
-{
-	int i, dist, best, bestdist, rd, gd, bd;
-	best = 0;
-	bestdist = 1000000000;
-	for (i = 0;i < colors;i++)
-	{
-		rd = pal[i*3+0] - r;
-		gd = pal[i*3+1] - g;
-		bd = pal[i*3+2] - b;
-		dist = rd*rd+gd*gd+bd*bd;
-		if (dist < bestdist)
-		{
-			if (!dist) // exact match
-				return i;
-			best = i;
-			bestdist = dist;
-		}
-	}
-	return best;
-}
-
-/*
 	VID_MakeColormap32
 
 	LordHavoc: makes a 32bit color*light table, RGBA order, no endian,
@@ -83,31 +55,41 @@ VID_MakeColormap32 (void *outcolormap, byte *pal)
 	int c, l;
 	byte *out;
 	out = (byte *)&d_8to24table;
+
+	/*
+	 * Generates colors not affected by lighting, such as
+	 * HUD pieces and general sprites (such as explosions)
+	 */
 	for (c = 0; c < 256; c++) {
-		*out++ = pal[c*3+0];
-		*out++ = pal[c*3+1];
 		*out++ = pal[c*3+2];
+		*out++ = pal[c*3+1];
+		*out++ = pal[c*3+0];
 		*out++ = 255;
 	}
 	d_8to24table[255] = 0;				// 255 is transparent
 	out = (byte *) outcolormap;
+
+	/*
+	 * Generates colors affected by lighting, such as the
+	 * world and other models that give it life, like foes and pickups.
+	 */
 	for (l = 0;l < VID_GRADES;l++)
 	{
 		for (c = 0;c < vid.fullbright;c++)
 		{
-			out[(l*256+c)*4+0] = bound(0, (pal[c*3+0] * l) >> (VID_CBITS - 1),
+			out[(l*256+c)*4+0] = bound(0, (pal[c*3+2] * l) >> (VID_CBITS - 1),
 									   255);
 			out[(l*256+c)*4+1] = bound(0, (pal[c*3+1] * l) >> (VID_CBITS - 1),
 									   255);
-			out[(l*256+c)*4+2] = bound(0, (pal[c*3+2] * l) >> (VID_CBITS - 1),
+			out[(l*256+c)*4+2] = bound(0, (pal[c*3+0] * l) >> (VID_CBITS - 1),
 									   255);
 			out[(l*256+c)*4+3] = 255;
 		}
 		for (;c < 255;c++)
 		{
-			out[(l*256+c)*4+0] = pal[c*3+0];
+			out[(l*256+c)*4+0] = pal[c*3+2];
 			out[(l*256+c)*4+1] = pal[c*3+1];
-			out[(l*256+c)*4+2] = pal[c*3+2];
+			out[(l*256+c)*4+2] = pal[c*3+0];
 			out[(l*256+c)*4+3] = 255;
 		}
 		out[(l*256+255)*4+0] = 0;
@@ -161,42 +143,16 @@ VID_MakeColormap16 (void *outcolormap, byte *pal)
 }
 
 /*
-	VID_MakeColormap8
-
-	LordHavoc: makes a 8bit color*light table
-*/
-static void
-VID_MakeColormap8 (void *outcolormap, byte *pal)
-{
-	int c, l;
-	byte *out;
-	out = (byte *) outcolormap;
-	for (l = 0;l < VID_GRADES;l++)
-	{
-		for (c = 0;c < vid.fullbright;c++)
-			out[l*256+c] = lhfindcolor(pal, 256,
-									   (pal[c*3+0] * l) >> (VID_CBITS - 1),
-									   (pal[c*3+1] * l) >> (VID_CBITS - 1),
-									   (pal[c*3+2] * l) >> (VID_CBITS - 1));
-		for (;c < 256;c++)
-			out[l*256+c] = c;
-	}
-}
-
-/*
 	VID_MakeColormaps
 
 	LordHavoc: makes 8bit, 16bit, and 32bit colormaps and palettes
 */
-static __attribute__((used)) void //FIXME
-VID_MakeColormaps (int fullbrights, byte *pal)
+void
+VID_MakeColormaps (void)
 {
-	vid.fullbright = fullbrights;
-	vid.colormap8 = malloc (256*VID_GRADES * sizeof (byte));
-	vid.colormap16 = malloc (256*VID_GRADES * sizeof (short));
-	vid.colormap32 = malloc (256*VID_GRADES * sizeof (int));
-	SYS_CHECKMEM (vid.colormap8 && vid.colormap16 && vid.colormap32);
-	VID_MakeColormap8(vid.colormap8, pal);
-	VID_MakeColormap16(vid.colormap16, pal);
-	VID_MakeColormap32(vid.colormap32, pal);
+	vid.colormap16 = malloc (256*VID_GRADES * sizeof (unsigned short));
+	vid.colormap32 = malloc (256*VID_GRADES * sizeof (unsigned int));
+	SYS_CHECKMEM (vid.colormap16 && vid.colormap32);
+	VID_MakeColormap16(vid.colormap16, vid.palette);
+	VID_MakeColormap32(vid.colormap32, vid.palette);
 }

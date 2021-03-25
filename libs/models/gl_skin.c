@@ -72,7 +72,8 @@ do_fb_skin (glskin_t *s)
 {
 	int         size = s->tex->width * s->tex->height;
 
-	s->fb_tex = realloc (s->fb_tex, field_offset(tex_t, data[size]));
+	s->fb_tex = realloc (s->fb_tex, sizeof (tex_t) + size);
+	s->fb_tex->data = (byte *) (s->fb_tex + 1);
 	s->fb_tex->width = s->tex->width;
 	s->fb_tex->height = s->tex->height;
 	s->fb_tex->format = tex_palette;
@@ -87,7 +88,8 @@ gl_Skin_SetPlayerSkin (int width, int height, const byte *data)
 	glskin_t   *s;
 
 	s = &player_skin;
-	s->tex = realloc (s->tex, field_offset(tex_t, data[size]));
+	s->tex = realloc (s->tex, sizeof (tex_t) + size);
+	s->tex->data = (byte *) (s->tex + 1);
 	s->tex->width = width;
 	s->tex->height = height;
 	s->tex->format = tex_palette;
@@ -185,6 +187,7 @@ build_skin (skin_t *skin, int cmap)
 		s = &player_skin;
 	if (!s->tex)	// we haven't loaded the player model yet
 		return;
+
 	texnum = skin_textures + cmap;
 	fb_texnum = 0;
 	if (s->fb)
@@ -196,13 +199,13 @@ build_skin (skin_t *skin, int cmap)
 	if (vid.is8bit) {
 		build_skin_8 (s->tex, texnum, skin_cmap[cmap],
 					  scaled_width, scaled_height, false);
-		if (s->fb)
+		if (s->fb && s->fb_tex)
 			build_skin_8 (s->fb_tex, fb_texnum, skin_cmap[cmap],
 						  scaled_width, scaled_height, true);
 	} else {
 		build_skin_32 (s->tex, texnum, skin_cmap[cmap],
 					   scaled_width, scaled_height, false);
-		if (s->fb)
+		if (s->fb && s->fb_tex)
 			build_skin_32 (s->fb_tex, fb_texnum, skin_cmap[cmap],
 						   scaled_width, scaled_height, true);
 	}
@@ -230,19 +233,20 @@ gl_Skin_SetupSkin (skin_t *skin, int cmap)
 	int         changed;
 	glskin_t   *s;
 
+	skin->texnum = 0;
+	skin->auxtex = 0;
+	if (!cmap) {
+		return;
+	}
 	// simplify cmap usage (texture offset/array index)
 	cmap--;
 	s = skins + cmap;
 	changed = (s->tex != skin->texels);
 	s->tex = skin->texels;
 	if (!changed) {
-		skin->texnum = 0;
-		skin->auxtex = 0;
-		if (cmap >= 0) {
-			skin->texnum = skin_textures + cmap;
-			if (s->fb)
-				skin->auxtex = skin_fb_textures + cmap;
-		}
+		skin->texnum = skin_textures + cmap;
+		if (s->fb)
+			skin->auxtex = skin_fb_textures + cmap;
 		return;
 	}
 	if (s->tex)

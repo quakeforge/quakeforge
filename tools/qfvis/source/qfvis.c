@@ -57,10 +57,8 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
-#include "vis.h"
-#include "options.h"
-
-#define	MAX_THREADS		4
+#include "tools/qfvis/include/vis.h"
+#include "tools/qfvis/include/options.h"
 
 #ifdef USE_PTHREADS
 pthread_attr_t threads_attrib;
@@ -113,6 +111,9 @@ InitThreads (void)
 	stats_lock = malloc (sizeof (pthread_rwlock_t));
 	if (pthread_rwlock_init (stats_lock, 0))
 		Sys_Error ("pthread_rwlock_init failed");
+#else
+	// Unable to run multi-threaded, so force threadcount to 1
+	options.threads = 1;
 #endif
 }
 
@@ -151,7 +152,7 @@ NewWinding (int points)
 	if (points > MAX_POINTS_ON_WINDING)
 		Sys_Error ("NewWinding: %i points", points);
 
-	size = (size_t)(uintptr_t) ((winding_t *) 0)->points[points];
+	size = field_offset (winding_t, points[points]);
 	winding = calloc (1, size);
 
 	return winding;
@@ -170,7 +171,7 @@ CopyWinding (const winding_t *w)
 	size_t      size;
 	winding_t  *copy;
 
-	size = (size_t) (uintptr_t) ((winding_t *) 0)->points[w->numpoints];
+	size = field_offset (winding_t, points[w->numpoints]);
 	copy = malloc (size);
 	memcpy (copy, w, size);
 	copy->original = false;
@@ -528,11 +529,12 @@ static void
 RunThreads (void *(*thread_func) (void *))
 {
 #ifdef USE_PTHREADS
-	pthread_t   work_threads[MAX_THREADS + 1];
+	pthread_t  *work_threads;
 	void       *status;
 	int         i;
 
 	if (options.threads > 1) {
+		work_threads = alloca ((options.threads + 1) * sizeof (pthread_t *));
 		working = calloc (options.threads, sizeof (int));
 		for (i = 0; i < options.threads; i++) {
 			if (pthread_create (&work_threads[i], &threads_attrib,
@@ -611,7 +613,7 @@ void
 ClusterFlow (int clusternum)
 {
 	set_t      *visclusters;
-	byte        compressed[MAX_MAP_LEAFS / 8];
+	byte        compressed[MAP_PVS_BYTES];
 	byte       *outbuffer;
 	int         numvis, i;
 	cluster_t  *cluster;
@@ -725,6 +727,7 @@ CalcVis (void)
 {
 	int         i;
 
+	printf ("Thread count: %d\n", options.threads);
 	BasePortalVis ();
 	CalcPortalVis ();
 
@@ -1112,13 +1115,13 @@ main (int argc, char **argv)
 	dstring_t  *portalfile = dstring_new ();
 	QFile      *f;
 
-	InitThreads ();
-
 	start = Sys_DoubleTime ();
 
 	this_program = argv[0];
 
 	DecodeArgs (argc, argv);
+
+	InitThreads ();
 
 	if (!options.bspfile) {
 		usage (1);

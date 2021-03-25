@@ -1,0 +1,9 @@
+void *obj_malloc (int size) = #0;
+void printf (string fmt, ...) = #0;
+int errno (void) = #0;
+string strerror (int err) = #0;
+void exit (int code) = #0;
+entity spawn (void) = #0;
+void remove (entity e) = #0;
+id obj_msgSend (id receiver, SEL op, ...) = #0;
+void __obj_exec_class (struct obj_module *msg) = #0;

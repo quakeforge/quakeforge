@@ -42,8 +42,8 @@
 #include "QF/pcx.h"
 #include "QF/sys.h"
 
-#include "cl_parse.h"
-#include "client.h"
+#include "qw/include/cl_parse.h"
+#include "qw/include/client.h"
 
 void
 CL_RSShot_f (void)

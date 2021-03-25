@@ -30,30 +30,34 @@
 #define __QF_image_h
 
 #include "QF/qtypes.h"
-#include "QF/quakeio.h"
+
+typedef enum QFFormat {
+	tex_palette = 0,
+	tex_l = 0x1909, //GL_LUMINANCE
+	tex_a = 0x1906, //GL_ALPHA
+	tex_la = 2,
+	tex_rgb = 3,
+	tex_rgba = 4,
+	tex_frgba = 5,
+} QFFormat;
 
 // could not use texture_t as that is used for models.
 typedef struct tex_s {
 	int         width;
 	int         height;
-	int         format;
-	const byte *palette;					// 0 = 32 bit, otherwise 8
-	byte	    data[4];					// variable length
+	QFFormat    format;
+	int         loaded;			// 0 if size info only, otherwise data loaded
+	const byte *palette;		// 0 = 32 bit, otherwise 8
+	byte       *data;
 } tex_t;
 
-#define tex_palette 0
-#define tex_l 0x1909 //GL_LUMINANCE
-#define tex_a 0x1906 //GL_ALPHA
-#define tex_la 2
-#define tex_rgb 3
-#define tex_rgba 4
+tex_t *LoadImage (const char *imageFile, int load);
 
 typedef struct colcache_s colcache_t;
 
-tex_t *LoadImage (const char *imageFile);
 colcache_t *ColorCache_New (void);
 void ColorCache_Delete (colcache_t *cache);
 byte ConvertColor (const byte *rgb, const byte *pal, colcache_t *cache);
 tex_t *ConvertImage (const tex_t *tex, const byte *pal);
 
-#endif //__QF_image_h
+#endif//__QF_image_h

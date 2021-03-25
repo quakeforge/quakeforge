@@ -183,7 +183,7 @@ JOY_Init (void)
 static void
 joyamp_f (cvar_t *var)
 {
-	Cvar_Set (var, va ("%g", max (0.0001, var->value)));
+	Cvar_Set (var, va (0, "%g", max (0.0001, var->value)));
 }
 
 typedef struct {
@@ -360,8 +360,8 @@ in_joy_f (void)
 	int         i, ax, c = Cmd_Argc ();
 
 	if (c == 2) {
-		ax = JOY_GetOption_i (Cmd_Argv (1));
-		switch (ax) {
+		int         var = JOY_GetOption_i (Cmd_Argv (1));
+		switch (var) {
 			case js_clear:
 				Sys_Printf ("Clearing all joystick settings...\n");
 				for (i = 0; i < JOY_MAX_AXES; i++) {
@@ -406,7 +406,7 @@ in_joy_f (void)
 		}
 		return;
 	} else if (c < 4) {
-		if (JOY_GetOption_i (Cmd_Argv (2)) == js_clear) {
+		if (c == 3 && JOY_GetOption_i (Cmd_Argv (2)) == js_clear) {
 			ax = strtol (Cmd_Argv (1), NULL, 0);
 
 			joy_clear_axis (ax);

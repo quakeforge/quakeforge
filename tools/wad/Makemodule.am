@@ -1,0 +1,13 @@
+WAD_LIBS=@WAD_LIBS@
+WAD_DEPS=@WAD_DEPS@
+WAD_INCS=@WAD_INCS@
+
+bin_PROGRAMS +=	wad
+
+man_MANS += tools/wad/wad.1
+
+wad_SOURCES=	tools/wad/grab.c tools/wad/script.c tools/wad/wad.c
+wad_LDADD=	$(WAD_LIBS)
+wad_DEPENDENCIES= $(WAD_DEPS)
+
+EXTRA_DIST += tools/wad/wad.h

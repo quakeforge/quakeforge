@@ -25,14 +25,14 @@
 
 */
 
-#ifndef __sys_h
-#define __sys_h
+#ifndef __QF_sys_h
+#define __QF_sys_h
 
-/** \defgroup sys Portability
+/** \defgroup sys System Portability
 	\ingroup utils
 	Non-portable functions
 */
-//@{
+///@{
 
 #include <stdio.h>
 #include <stdint.h>
@@ -62,36 +62,44 @@ int	Sys_FileExists (const char *path);
 int Sys_isdir (const char *path);
 int Sys_mkdir (const char *path);
 
-typedef void (*sys_printf_t) (const char *fmt, va_list args);
+typedef void (*sys_printf_t) (const char *fmt, va_list args) __attribute__((format(printf, 1, 0)));
+typedef void (*sys_error_t) (void *data);
 
-void Sys_SetStdPrintf (sys_printf_t func);
-void Sys_SetErrPrintf (sys_printf_t func);
+sys_printf_t Sys_SetStdPrintf (sys_printf_t func);
+sys_printf_t Sys_SetErrPrintf (sys_printf_t func);
 
-void Sys_Print (FILE *stream, const char *fmt, va_list args);
+void Sys_PushErrorHandler (sys_error_t func, void *data);
+void Sys_PopErrorHandler (void);
+
+void Sys_Print (FILE *stream, const char *fmt, va_list args) __attribute__((format(printf, 2, 0)));
 void Sys_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void Sys_Error (const char *error, ...) __attribute__((format(printf,1,2), noreturn));
+void Sys_FatalError (const char *error, ...) __attribute__((format(printf,1,2), noreturn));
 void Sys_Quit (void) __attribute__((noreturn));
 void Sys_Shutdown (void);
-void Sys_RegisterShutdown (void (*func) (void));
+void Sys_RegisterShutdown (void (*func) (void *), void *data);
 int64_t Sys_LongTime (void);
 double Sys_DoubleTime (void);
 void Sys_TimeOfDay(date_t *date);
 
 void Sys_MaskPrintf (int mask, const char *fmt, ...) __attribute__((format(printf,2,3)));
-#define SYS_DEV     (1|0)
-#define SYS_WARN    (1|2)	// bit 0 so developer 1 will pick it up
-#define SYS_VID     (1|4)
-#define SYS_FS_NF   (1|8)
-#define SYS_FS_F    (1|16)
-#define SYS_FS      (1|32)
-#define SYS_NET     (1|64)
-#define SYS_RUA_OBJ (1|128)
-#define SYS_RUA_MSG (1|256)
-#define SYS_SND     (1|512)
-#define SYS_GLT     (1|1024)
-#define SYS_GLSL    (1|2048)
-#define SYS_SKIN    (1|4096)
-#define SYS_MODEL   (1|8192)
+// remember to update developer_flags in cvar.c
+#define SYS_DEV             (1|0)
+#define SYS_WARN            (1|2)	// bit 0 so developer 1 will pick it up
+#define SYS_VID             (1|4)
+#define SYS_FS_NF           (1|8)
+#define SYS_FS_F            (1|16)
+#define SYS_FS              (1|32)
+#define SYS_NET             (1|64)
+#define SYS_RUA_OBJ         (1|128)
+#define SYS_RUA_MSG         (1|256)
+#define SYS_SND             (1|512)
+#define SYS_GLT             (1|1024)
+#define SYS_GLSL            (1|2048)
+#define SYS_SKIN            (1|4096)
+#define SYS_MODEL           (1|8192)
+#define SYS_VULKAN          (1|16384)
+#define SYS_VULKAN_PARSE    (1|32768)
 
 int Sys_CheckInput (int idle, int net_socket);
 const char *Sys_ConsoleInput (void);
@@ -115,7 +123,8 @@ void Sys_Init_Cvars (void);
 // memory protection
 //
 void Sys_MakeCodeWriteable (uintptr_t startaddr, size_t length);
-void Sys_PageIn (void *ptr, int size);
+void Sys_PageIn (void *ptr, size_t size);
+void *Sys_Alloc (size_t size);
 
 //
 // system IO
@@ -152,6 +161,6 @@ int Sys_CreatePath (const char *path);
 */
 char *Sys_ExpandSquiggle (const char *path);
 
-//@}
+///@}
 
-#endif // __sys_h
+#endif//__QF_sys_h

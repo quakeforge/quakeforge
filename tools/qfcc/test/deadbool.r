@@ -9,7 +9,7 @@ void foo (void)
 	return;
 	if (!time) {
 		ent = spawn ();
-		ent.f = time + 0.1;
+		ent.f = time + 0.1f;
 	}
 }
 

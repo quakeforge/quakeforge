@@ -45,9 +45,10 @@
 #include "QF/script.h"
 #include "QF/sys.h"
 
-#include "lbmlib.h"
-#include "trilib.h"
 #include "compat.h"
+
+#include "tools/qfmodelgen/include/lbmlib.h"
+#include "tools/qfmodelgen/include/trilib.h"
 
 #define MAXVERTS		2048
 #define MAXFRAMES		256
@@ -177,15 +178,17 @@ SetQdirFromPath (char *path)
 static const char *
 ExpandPath (const char *path)
 {
-	static char full[1024];
+	static dstring_t *full;
 
-	//FIXME buffer overflow central
+	if (!full) {
+		full = dstring_new();
+	}
 	//if (!qdir)
 	//	Sys_Error ("ExpandPath called without qdir set");
 	if (path[0] == '/' || path[0] == '\\' || path[1] == ':')
 		return path;
-	sprintf (full, "%s%s", qdir, path);
-	return full;
+	dsprintf (full, "%s%s", qdir, path);
+	return full->str;
 }
 
 static void

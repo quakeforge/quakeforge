@@ -56,6 +56,7 @@ static qboolean Cache_FreeLRU (void);
 #define	HUNK_SENTINAL	0x1df001ed
 
 #define MINFRAGMENT	64
+#define HUNK_ALIGN 64
 
 /*
    						ZONE MEMORY ALLOCATION
@@ -337,7 +338,7 @@ Z_Print (memzone_t *zone)
 				zone->size, zone, zone->used);
 
 	for (block = zone->blocklist.next ; ; block = block->next) {
-		Sys_Printf ("block:%p    size:%7i    tag:%3i ofs:%x\n",
+		Sys_Printf ("block:%p    size:%7i    tag:%5x ofs:%x\n",
 					block, z_block_size (block),
 					block->tag, z_offset (zone, block));
 
@@ -413,6 +414,7 @@ typedef struct {
 	int         sentinal;
 	int         size;			// including sizeof(hunk_t), -1 = not allocated
 	char        name[8];
+	char        fill[48];		// pad out to 64 bytes
 } hunk_t;
 
 byte       *hunk_base;
@@ -436,7 +438,8 @@ Hunk_Check (void)
 	for (h = (hunk_t *) hunk_base; (byte *) h != hunk_base + hunk_low_used;) {
 		if (h->sentinal != HUNK_SENTINAL)
 			Sys_Error ("Hunk_Check: trashed sentinal");
-		if (h->size < 16 || h->size + (byte *) h - hunk_base > hunk_size)
+		if (h->size < (int) sizeof (hunk_t)
+			|| h->size + (byte *) h - hunk_base > hunk_size)
 			Sys_Error ("Hunk_Check: bad size");
 		h = (hunk_t *) ((byte *) h + h->size);
 	}
@@ -449,15 +452,13 @@ Hunk_Check (void)
 	Otherwise, allocations with the same name will be totaled up before
 	printing.
 */
-/*
-static void
+
+VISIBLE void
 Hunk_Print (qboolean all)
 {
-	char        name[9];
 	hunk_t     *h, *next, *endlow, *starthigh, *endhigh;
 	int         count, sum, totalblocks;
 
-	name[8] = 0;
 	count = 0;
 	sum = 0;
 	totalblocks = 0;
@@ -486,7 +487,8 @@ Hunk_Print (qboolean all)
 		// run consistancy checks
 		if (h->sentinal != HUNK_SENTINAL)
 			Sys_Error ("Hunk_Check: trahsed sentinal");
-		if (h->size < 16 || h->size + (byte *) h - hunk_base > hunk_size)
+		if (h->size < (int) sizeof (hunk_t)
+			|| h->size + (byte *) h - hunk_base > hunk_size)
 			Sys_Error ("Hunk_Check: bad size");
 
 		next = (hunk_t *) ((byte *) h + h->size);
@@ -495,15 +497,14 @@ Hunk_Print (qboolean all)
 		sum += h->size;
 
 		// print the single block
-		memcpy (name, h->name, 8);
 		if (all)
-			Sys_Printf ("%8p :%8i %8s\n", h, h->size, name);
+			Sys_Printf ("%8p :%8i %8.8s\n", h, h->size, h->name);
 
 		// print the total
 		if (next == endlow || next == endhigh ||
 			strncmp (h->name, next->name, 8)) {
 			if (!all)
-				Sys_Printf ("          :%8i %8s (TOTAL)\n", sum, name);
+				Sys_Printf ("          :%8i %8.8s (TOTAL)\n", sum, h->name);
 			count = 0;
 			sum = 0;
 		}
@@ -514,7 +515,7 @@ Hunk_Print (qboolean all)
 	Sys_Printf ("-------------------------\n");
 	Sys_Printf ("%8i total blocks\n", totalblocks);
 }
-*/
+
 static void
 Hunk_FreeToHighMark (int mark)
 {
@@ -551,7 +552,7 @@ Hunk_AllocName (int size, const char *name)
 	if (size < 0)
 		Sys_Error ("Hunk_Alloc: bad size: %i", size);
 
-	size = sizeof (hunk_t) + ((size + 15) & ~15);
+	size = sizeof (hunk_t) + ((size + HUNK_ALIGN - 1) & ~(HUNK_ALIGN - 1));
 
 	if (hunk_size - hunk_low_used - hunk_high_used < size) {
 		Hunk_HighMark();
@@ -577,7 +578,8 @@ Hunk_AllocName (int size, const char *name)
 
 	h->size = size;
 	h->sentinal = HUNK_SENTINAL;
-	strncpy (h->name, name, 8);
+	memcpy (h->name, name, 8);
+	h->name[7] = 0;
 
 	return (void *) (h + 1);
 }
@@ -606,6 +608,8 @@ Hunk_FreeToLowMark (int mark)
 static void *
 Hunk_HighAlloc (int size)
 {
+	hunk_t     *h;
+
 	if (size < 0)
 		Sys_Error ("Hunk_HighAlloc: bad size: %i", size);
 
@@ -617,7 +621,7 @@ Hunk_HighAlloc (int size)
 	Hunk_Check ();
 #endif
 
-	size = ((size + 15) & ~15);
+	size = sizeof (hunk_t) + ((size + HUNK_ALIGN - 1) & ~(HUNK_ALIGN - 1));
 
 	if (hunk_size - hunk_low_used - hunk_high_used < size) {
 		Sys_Printf ("Hunk_HighAlloc: failed on %i bytes\n", size);
@@ -626,7 +630,11 @@ Hunk_HighAlloc (int size)
 
 	hunk_high_used += size;
 
-	return (void *) (hunk_base + hunk_size - hunk_high_used);
+	h = (void *) (hunk_base + hunk_size - hunk_high_used);
+	h->sentinal = HUNK_SENTINAL;
+	h->size = size;
+	h->name[0] = 0;
+	return h + 1;
 }
 
 /*
@@ -639,7 +647,7 @@ Hunk_TempAlloc (int size)
 {
 	void       *buf;
 
-	size = (size + 15) & ~15;
+	size = (size + HUNK_ALIGN - 1) & ~(HUNK_ALIGN - 1);
 
 	if (hunk_tempactive) {
 		if (hunk_high_used - hunk_tempmark >= size + (int) sizeof (hunk_t)) {
@@ -741,7 +749,7 @@ static inline void
 Cache_UnlinkLRU (cache_system_t * cs)
 {
 	if (!cs->lru_next || !cs->lru_prev)
-		Sys_Error ("Cache_UnlinkLRU: NULL link: %s %p %p",
+		Sys_Error ("Cache_UnlinkLRU: NULL link: %.16s %p %p",
 				   cs->name, cs->lru_next, cs->lru_prev);
 
 	cs->lru_next->lru_prev = cs->lru_prev;
@@ -754,7 +762,7 @@ static void
 Cache_MakeLRU (cache_system_t * cs)
 {
 	if (cs->lru_next || cs->lru_prev)
-		Sys_Error ("Cache_MakeLRU: active link: %s %p %p",
+		Sys_Error ("Cache_MakeLRU: active link: %.16s %p %p",
 				   cs->name, cs->lru_next, cs->lru_prev);
 
 	cache_head.lru_next->lru_prev = cs;
@@ -893,7 +901,7 @@ Cache_Print (void)
 	cache_system_t *cd;
 
 	for (cd = cache_head.next; cd != &cache_head; cd = cd->next) {
-		Sys_Printf ("%8d : %s\n", (int) cd->size, cd->name);
+		Sys_Printf ("%8d : %.16s\n", (int) cd->size, cd->name);
 	}
 }
 
@@ -926,7 +934,7 @@ Cache_Flush (void)
 	while (cache_head.prev != &cache_head) {
 		if (!cache_head.prev->user->data)
 			Sys_Error ("Cache_Flush: user/system out of sync for "
-					   "'%s' with %d size",
+					   "'%.16s' with %d size",
 					   cache_head.prev->name, (int) cache_head.prev->size);
 		Cache_Free (cache_head.prev->user);	// reclaim the space
 	}
@@ -967,7 +975,7 @@ Cache_Free (cache_user_t *c)
 	if (cs->readlock)
 		Sys_Error ("Cache_Free: attempt to free locked block");
 
-	Sys_MaskPrintf (SYS_DEV, "Cache_Free: freeing '%s' %p\n", cs->name, cs);
+	Sys_MaskPrintf (SYS_DEV, "Cache_Free: freeing '%.16s' %p\n", cs->name, cs);
 
 	Cache_UnlinkLRU (cs);
 
@@ -1008,7 +1016,7 @@ Cache_Alloc (cache_user_t *c, int size, const char *name)
 	if (size <= 0)
 		Sys_Error ("Cache_Alloc: size %i", size);
 
-	size = (size + sizeof (cache_system_t) + 15) & ~15;
+	size = (size + sizeof (cache_system_t) + HUNK_ALIGN - 1) & ~(HUNK_ALIGN-1);
 
 	// find memory for it
 	while (1) {

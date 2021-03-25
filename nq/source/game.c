@@ -35,8 +35,8 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
-#include "game.h"
-#include "server.h"
+#include "nq/include/game.h"
+#include "nq/include/server.h"
 
 qboolean standard_quake = false;
 
@@ -57,7 +57,7 @@ Game_CheckRegistered (void)
 {
 	QFile      *h;
 
-	QFS_FOpenFile ("gfx/pop.lmp", &h);
+	h = QFS_FOpenFile ("gfx/pop.lmp");
 	static_registered = 0;
 
 	if (h) {

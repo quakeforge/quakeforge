@@ -51,24 +51,10 @@
 #include "mod_internal.h"
 #include "r_internal.h"
 
-
-void
-gl_Mod_ProcessTexture (texture_t *tx)
-{
-	char		name[32];
-
-	if (!strncmp (tx->name, "sky", 3))
-		return;
-	snprintf (name, sizeof (name), "fb_%s", tx->name);
-	tx->gl_fb_texturenum =
-		Mod_Fullbright ((byte *) (tx + 1), tx->width, tx->height, name);
-	tx->gl_texturenum =
-		GL_LoadTexture (tx->name, tx->width, tx->height, (byte *) (tx + 1),
-						true, false, 1);
-}
+static gltex_t gl_notexture = { };
 
 static tex_t *
-Mod_LoadAnExternalTexture (char * tname, char *mname)
+Mod_LoadAnExternalTexture (char *tname, char *mname)
 {
 	char		rname[32];
 	tex_t	   *image;
@@ -77,85 +63,110 @@ Mod_LoadAnExternalTexture (char * tname, char *mname)
 
 	if (rname[0] == '*') rname[0] = '#';
 
-	image = LoadImage (va ("textures/%.*s/%s", (int) strlen (mname + 5) - 4,
-						   mname + 5, rname));
+	image = LoadImage (va (0, "textures/%.*s/%s", (int) strlen (mname + 5) - 4,
+						   mname + 5, rname), 1);
 	if (!image)
-		image = LoadImage (va ("maps/%.*s/%s",
-								   (int) strlen (mname + 5) - 4,
-								   mname + 5, rname));
+		image = LoadImage (va (0, "maps/%.*s/%s", (int) strlen (mname + 5) - 4,
+							   mname + 5, rname), 1);
 //	if (!image)
-//			image = LoadImage (va ("textures/bmodels/%s", rname));
+//			image = LoadImage (va (0, "textures/bmodels/%s", rname));
 	if (!image)
-			image = LoadImage (va ("textures/%s", rname));
+			image = LoadImage (va (0, "textures/%s", rname), 1);
 	if (!image)
-			image = LoadImage (va ("maps/%s", rname));
+			image = LoadImage (va (0, "maps/%s", rname), 1);
 
 	return image;
 }
 
-void
-gl_Mod_LoadExternalTextures (model_t *mod)
+static int
+Mod_LoadExternalTextures (model_t *mod, texture_t *tx)
 {
-	int			i;
 	tex_t	   *base, *luma;
-	texture_t  *tx;
+	gltex_t    *gltx;
+	int         external = 0;
 
-	for (i = 0; i < mod->numtextures; i++) {
-		tx = mod->textures[i];
-		if (!tx)
-			continue;
+	gltx = tx->render;
+	if ((base = Mod_LoadAnExternalTexture (tx->name, mod->path))) {
+		external = 1;
+		gltx->gl_texturenum =
+			GL_LoadTexture (tx->name, base->width, base->height,
+							base->data, true, false,
+							base->format > 2 ? base->format : 1);
 
-		if ((base = Mod_LoadAnExternalTexture (tx->name, mod->name))) {
-			tx->gl_texturenum =
-				GL_LoadTexture (tx->name, base->width, base->height,
-								base->data, true, false,
-								base->format > 2 ? base->format : 1);
+		luma = Mod_LoadAnExternalTexture (va (0, "%s_luma", tx->name),
+										  mod->path);
+		if (!luma)
+			luma = Mod_LoadAnExternalTexture (va (0, "%s_glow", tx->name),
+											  mod->path);
 
-			luma = Mod_LoadAnExternalTexture (va ("%s_luma", tx->name),
-											  mod->name);
-			if (!luma)
-				luma = Mod_LoadAnExternalTexture (va ("%s_glow", tx->name),
-												  mod->name);
+		gltx->gl_fb_texturenum = 0;
 
-			tx->gl_fb_texturenum = 0;
-
-			if (luma) {
-				tx->gl_fb_texturenum =
-					GL_LoadTexture (va ("fb_%s", tx->name), luma->width,
-									luma->height, luma->data, true, true,
-									luma->format > 2 ? luma->format : 1);
-			} else if (base->format < 3) {
-				tx->gl_fb_texturenum =
-					Mod_Fullbright (base->data, base->width, base->height,
-									va ("fb_%s", tx->name));
-			}
+		if (luma) {
+			gltx->gl_fb_texturenum =
+				GL_LoadTexture (va (0, "fb_%s", tx->name), luma->width,
+								luma->height, luma->data, true, true,
+								luma->format > 2 ? luma->format : 1);
+		} else if (base->format < 3) {
+			gltx->gl_fb_texturenum =
+				Mod_Fullbright (base->data, base->width, base->height,
+								va (0, "fb_%s", tx->name));
 		}
 	}
+	return external;
 }
 
 void
-gl_Mod_LoadLighting (bsp_t *bsp)
+gl_Mod_ProcessTexture (model_t *mod, texture_t *tx)
+{
+	const char *name;
+
+	if (!tx) {
+		r_notexture_mip->render = &gl_notexture;
+		return;
+	}
+	if (gl_textures_external && gl_textures_external->int_val) {
+		if (Mod_LoadExternalTextures (mod, tx)) {
+			return;
+		}
+	}
+	if (strncmp (tx->name, "sky", 3) == 0) {
+		return;
+	}
+	gltex_t    *gltex = tx->render;
+	name = va (0, "fb_%s", tx->name);
+	gltex->gl_fb_texturenum =
+		Mod_Fullbright ((byte *) (tx + 1), tx->width, tx->height, name);
+	gltex->gl_texturenum =
+		GL_LoadTexture (tx->name, tx->width, tx->height, (byte *) (tx + 1),
+						true, false, 1);
+}
+
+void
+gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
 {
 	byte        d;
 	byte       *in, *out, *data;
 	dstring_t  *litfilename = dstring_new ();
 	size_t      i;
 	int         ver;
+	QFile      *lit_file;
+	mod_brush_t *brush = &mod->brush;
 
-	dstring_copystr (litfilename, loadmodel->name);
-	loadmodel->lightdata = NULL;
+	dstring_copystr (litfilename, mod->path);
+	brush->lightdata = NULL;
 	if (mod_lightmap_bytes > 1) {
 		// LordHavoc: check for a .lit file to load
 		QFS_StripExtension (litfilename->str, litfilename->str);
 		dstring_appendstr (litfilename, ".lit");
-		data = (byte *) QFS_LoadHunkFile (litfilename->str);
+		lit_file = QFS_VOpenFile (litfilename->str, 0, mod->vpath);
+		data = (byte *) QFS_LoadHunkFile (lit_file);
 		if (data) {
 			if (data[0] == 'Q' && data[1] == 'L' && data[2] == 'I'
 				&& data[3] == 'T') {
 				ver = LittleLong (((int32_t *) data)[1]);
 				if (ver == 1) {
 					Sys_MaskPrintf (SYS_DEV, "%s loaded", litfilename->str);
-					loadmodel->lightdata = data + 8;
+					brush->lightdata = data + 8;
 					return;
 				} else
 					Sys_MaskPrintf (SYS_DEV,
@@ -169,11 +180,10 @@ gl_Mod_LoadLighting (bsp_t *bsp)
 		dstring_delete (litfilename);
 		return;
 	}
-	loadmodel->lightdata = Hunk_AllocName (bsp->lightdatasize
-											* mod_lightmap_bytes,
-										   litfilename->str);
+	brush->lightdata = Hunk_AllocName (bsp->lightdatasize * mod_lightmap_bytes,
+									   litfilename->str);
 	in = bsp->lightdata;
-	out = loadmodel->lightdata;
+	out = brush->lightdata;
 
 	if (mod_lightmap_bytes > 1)
 		for (i = 0; i < bsp->lightdatasize ; i++) {
@@ -220,7 +230,7 @@ SubdividePolygon (int numverts, float *verts)
 	vec3_t      mins, maxs;
 	vec3_t      front[64], back[64];
 
-	if (numverts > 60)
+	if (numverts < 3 || numverts > 60)
 		Sys_Error ("numverts = %i", numverts);
 
 	BoundPoly (numverts, verts, mins, maxs);
@@ -294,26 +304,29 @@ SubdividePolygon (int numverts, float *verts)
 	can be done reasonably.
 */
 void
-gl_Mod_SubdivideSurface (msurface_t *fa)
+gl_Mod_SubdivideSurface (model_t *mod, msurface_t *fa)
 {
 	float      *vec;
 	int         lindex, numverts, i;
 	vec3_t      verts[64];
+	mod_brush_t *brush = &mod->brush;
 
 	warpface = fa;
 
 	// convert edges back to a normal polygon
 	numverts = 0;
 	for (i = 0; i < fa->numedges; i++) {
-		lindex = loadmodel->surfedges[fa->firstedge + i];
+		lindex = brush->surfedges[fa->firstedge + i];
 
 		if (lindex > 0)
-			vec = loadmodel->vertexes[loadmodel->edges[lindex].v[0]].position;
+			vec = brush->vertexes[brush->edges[lindex].v[0]].position;
 		else
-			vec = loadmodel->vertexes[loadmodel->edges[-lindex].v[1]].position;
+			vec = brush->vertexes[brush->edges[-lindex].v[1]].position;
 		VectorCopy (vec, verts[numverts]);
 		numverts++;
 	}
 
-	SubdividePolygon (numverts, verts[0]);
+	if (numverts > 3) {
+		SubdividePolygon (numverts, verts[0]);
+	}
 }

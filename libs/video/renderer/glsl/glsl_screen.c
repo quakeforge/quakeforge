@@ -60,6 +60,7 @@
 #include "QF/GLSL/qf_vid.h"
 
 #include "r_internal.h"
+#include "vid_gl.h"
 
 /* Unknown renamed to GLErr_Unknown to solve conflict with winioctl.h */
 static unsigned int GLErr_InvalidEnum;
@@ -154,8 +155,7 @@ SCR_TileClear (void)
 }
 
 void
-glsl_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc,
-					   SCR_Func *scr_funcs)
+glsl_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 {
 	static int  begun = 0;
 
@@ -165,22 +165,17 @@ glsl_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc,
 
 	if (begun) {
 		begun = 0;
-		vid.end_rendering ();
+		glsl_ctx->end_rendering ();
 	}
 
-	vr_data.realtime = realtime;
-	vr_data.scr_copyeverything = 1;
 	//FIXME useless cvar? vid.numpages = 2 + gl_triplebuffer->int_val;
-
-	if (!scr_initialized)
-		return;
 
 	qfeglClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	begun = 1;
-
-	if (vid.recalc_refdef)
-		SCR_CalcRefdef ();
+	//FIXME forces the status bar to redraw. needed because it does not fully
+	//update in sw modes but must in glsl mode
+	vr_data.scr_copyeverything = 1;
 
 	scr_3dfunc ();
 
@@ -206,7 +201,8 @@ glsl_SCR_CaptureBGR (void)
 	tex_t      *tex;
 
 	count = vid.width * vid.height;
-	tex = malloc (field_offset (tex_t, data[count * 3]));
+	tex = malloc (sizeof (tex_t) + count * 3);
+	tex->data = (byte *) (tex + 1);
 	SYS_CHECKMEM (tex);
 	tex->width = vid.width;
 	tex->height = vid.height;
@@ -223,7 +219,7 @@ glsl_SCR_CaptureBGR (void)
 	return tex;
 }
 
-tex_t *
+__attribute__((const)) tex_t *
 glsl_SCR_ScreenShot (int width, int height)
 {
 	return 0;
@@ -235,8 +231,8 @@ glsl_SCR_ScreenShot_f (void)
 	dstring_t  *name = dstring_new ();
 
 	// find a file name to save it to
-	if (!QFS_NextFilename (name,
-						   va ("%s/qf", qfs_gamedir->dir.shots), ".png")) {
+	if (!QFS_NextFilename (name, va (0, "%s/qf",
+									 qfs_gamedir->dir.shots), ".png")) {
 		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a PNG file\n");
 	} else {
 		tex_t      *tex;

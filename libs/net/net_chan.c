@@ -257,12 +257,16 @@ Netchan_Transmit (netchan_t *chan, int length, byte *data)
 	if (net_nochoke)
 		chan->cleartime = *net_realtime;
 
-	if (showpackets->int_val & 1)
+	if (showpackets->int_val & 1) {
 		Sys_Printf ("--> s=%i(%i) a=%i(%i) %-4i %i\n",
 					chan->outgoing_sequence, send_reliable,
 					chan->incoming_sequence, chan->incoming_reliable_sequence,
 					send.cursize,
 					chan->outgoing_sequence - chan->incoming_sequence);
+		if (showpackets->int_val & 4) {
+			SZ_Dump (&send);
+		}
+	}
 }
 
 qboolean
@@ -289,9 +293,13 @@ Netchan_Process (netchan_t *chan)
 	sequence &= ~(1 << 31);
 	sequence_ack &= ~(1 << 31);
 
-	if (showpackets->int_val & 2)
+	if (showpackets->int_val & 2) {
 		Sys_Printf ("<-- s=%i(%i) a=%i(%i) %i\n", sequence, reliable_message,
 					sequence_ack, reliable_ack, net_message->message->cursize);
+		if (showpackets->int_val & 8) {
+			SZ_Dump (net_message->message);
+		}
+	}
 
 	// get a rate estimation
 #if 0 // FIXME: Dead code

@@ -1,4 +1,4 @@
-#include "PropertyList.h"
+#include <PropertyList.h>
 
 @implementation PLItem
 
@@ -92,6 +92,86 @@
 - (pltype_t) type
 {
 	return PL_Type (item);
+}
+
+- (int) line
+{
+	return PL_Line (item);
+}
+
+- (int) count
+{
+	if ([self class] == [PLDictionary class]) {
+		return PL_D_NumKeys (item);
+	} else {
+		return PL_A_NumObjects (item);
+	}
+}
+
+- (int) numKeys
+{
+	return PL_D_NumKeys (item);
+}
+
+- (PLItem *) getObjectForKey:(string) key
+{
+	return [[PLItem itemClass: PL_ObjectForKey (item, key)] autorelease];
+}
+
+- (PLItem *) allKeys
+{
+	return [[PLItem itemClass: PL_D_AllKeys (item)] autorelease];
+}
+
+- addKey:(string) key value:(PLItem *) value
+{
+	if (!value.own) {
+		obj_error (self, 0, "add of unowned key/value to PLDictionary");
+		return self;
+	}
+	PL_D_AddObject (item, key, value.item);
+	value.own = 0;
+	[value release];
+	return self;
+}
+
+- (int) numObjects
+{
+	return PL_A_NumObjects (item);
+}
+
+- (PLItem *) getObjectAtIndex:(int) index
+{
+	return [[PLItem itemClass: PL_ObjectAtIndex (item, index)] autorelease];
+}
+
+- addObject:(PLItem *) object
+{
+	if (!object.own) {
+		obj_error (self, 0, "add of unowned object to PLArray");
+		return self;
+	}
+	PL_A_AddObject (item, object.item);
+	object.own = 0;
+	[object release];
+	return self;
+}
+
+- insertObject:(PLItem *) object atIndex:(int) index
+{
+	if (!object.own) {
+		obj_error (self, 0, "add of unowned object to PLArray");
+		return self;
+	}
+	PL_A_InsertObjectAtIndex (item, object.item, index);
+	object.own = 0;
+	[object release];
+	return self;
+}
+
+- (string) string
+{
+	return PL_String (item);
 }
 
 @end

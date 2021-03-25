@@ -26,16 +26,22 @@
 */
 
 
-#ifndef _KEYS_H
-#define _KEYS_H
+#ifndef __QF_keys_h
+#define __QF_keys_h
 
 #ifndef __QFCC__
 # include "QF/qtypes.h"
 # include "QF/quakeio.h"
 #endif
 
-// these are the key numbers that should be passed to Key_Event
+/** \defgroup input Input Sub-system */
 
+/** \defgroup input_keybinding Key Binding Sub-system
+	\ingroup input
+*/
+///@{
+
+/// these are the key numbers that should be passed to Key_Event
 typedef enum {
 	/* The keyboard syms have been cleverly chosen to map to ASCII */
 	QFK_UNKNOWN		= 0,
@@ -221,77 +227,110 @@ typedef enum {
 
 	/* Numeric keypad */
 	QFK_KP0			= 256,
-	QFK_KP1			= 257,
-	QFK_KP2			= 258,
-	QFK_KP3			= 259,
-	QFK_KP4			= 260,
-	QFK_KP5			= 261,
-	QFK_KP6			= 262,
-	QFK_KP7			= 263,
-	QFK_KP8			= 264,
-	QFK_KP9			= 265,
-	QFK_KP_PERIOD		= 266,
-	QFK_KP_DIVIDE		= 267,
-	QFK_KP_MULTIPLY	= 268,
-	QFK_KP_MINUS		= 269,
-	QFK_KP_PLUS		= 270,
-	QFK_KP_ENTER		= 271,
-	QFK_KP_EQUALS		= 272,
+	QFK_KP1,
+	QFK_KP2,
+	QFK_KP3,
+	QFK_KP4,
+	QFK_KP5,
+	QFK_KP6,
+	QFK_KP7,
+	QFK_KP8,
+	QFK_KP9,
+	QFK_KP_PERIOD,
+	QFK_KP_DIVIDE,
+	QFK_KP_MULTIPLY,
+	QFK_KP_MINUS,
+	QFK_KP_PLUS,
+	QFK_KP_ENTER,
+	QFK_KP_EQUALS,
 
 	/* Arrows + Home/End pad */
-	QFK_UP			= 273,
-	QFK_DOWN			= 274,
-	QFK_RIGHT			= 275,
-	QFK_LEFT			= 276,
-	QFK_INSERT		= 277,
-	QFK_HOME			= 278,
-	QFK_END			= 279,
-	QFK_PAGEUP		= 280,
-	QFK_PAGEDOWN		= 281,
+	QFK_UP,
+	QFK_DOWN,
+	QFK_RIGHT,
+	QFK_LEFT,
+	QFK_INSERT,
+	QFK_HOME,
+	QFK_END,
+	QFK_PAGEUP,
+	QFK_PAGEDOWN,
 
 	/* Function keys */
-	QFK_F1			= 282,
-	QFK_F2			= 283,
-	QFK_F3			= 284,
-	QFK_F4			= 285,
-	QFK_F5			= 286,
-	QFK_F6			= 287,
-	QFK_F7			= 288,
-	QFK_F8			= 289,
-	QFK_F9			= 290,
-	QFK_F10			= 291,
-	QFK_F11			= 292,
-	QFK_F12			= 293,
-	QFK_F13			= 294,
-	QFK_F14			= 295,
-	QFK_F15			= 296,
+	QFK_F1,
+	QFK_F2,
+	QFK_F3,
+	QFK_F4,
+	QFK_F5,
+	QFK_F6,
+	QFK_F7,
+	QFK_F8,
+	QFK_F9,
+	QFK_F10,
+	QFK_F11,
+	QFK_F12,
+	QFK_F13,
+	QFK_F14,
+	QFK_F15,
+	QFK_F16,
+	QFK_F17,
+	QFK_F18,
+	QFK_F19,
+	QFK_F20,
+	QFK_F21,
+	QFK_F22,
+	QFK_F23,
+	QFK_F24,
+	QFK_F25,
+	QFK_F26,
+	QFK_F27,
+	QFK_F28,
+	QFK_F29,
+	QFK_F30,
+	QFK_F31,
+	QFK_F32,
+	QFK_F33,
+	QFK_F34,
+	QFK_F35,
+	QFK_F36,
+	QFK_F37,
+	QFK_F38,
+	QFK_F39,
+	QFK_F40,
+	QFK_F41,
+	QFK_F42,
+	QFK_F43,
+	QFK_F44,
+	QFK_F45,
+	QFK_F46,
+	QFK_F47,
+	QFK_F48,
 
 	/* Key state modifier keys */
-	QFK_NUMLOCK		= 300,
-	QFK_CAPSLOCK		= 301,
-	QFK_SCROLLOCK		= 302,
-	QFK_RSHIFT		= 303,
-	QFK_LSHIFT		= 304,
-	QFK_RCTRL			= 305,
-	QFK_LCTRL			= 306,
-	QFK_RALT			= 307,
-	QFK_LALT			= 308,
-	QFK_RMETA			= 309,
-	QFK_LMETA			= 310,
-	QFK_LSUPER		= 311,		/* Left "Windows" key */
-	QFK_RSUPER		= 312,		/* Right "Windows" key */
-	QFK_MODE			= 313,		/* "Alt Gr" key */
-	QFK_COMPOSE		= 314,		/* Multi-key compose key */
+	QFK_NUMLOCK,
+	QFK_CAPSLOCK,
+	QFK_SCROLLOCK,
+	QFK_RSHIFT,
+	QFK_LSHIFT,
+	QFK_RCTRL,
+	QFK_LCTRL,
+	QFK_RALT,
+	QFK_LALT,
+	QFK_RMETA,
+	QFK_LMETA,
+	QFK_LSUPER,		/* Left "Windows" key */
+	QFK_RSUPER,		/* Right "Windows" key */
+	QFK_MODE,		/* "Alt Gr" key */
+	QFK_COMPOSE,		/* Multi-key compose key */
 
 	/* Miscellaneous function keys */
-	QFK_HELP			= 315,
-	QFK_PRINT			= 316,
-	QFK_SYSREQ		= 317,
-	QFK_BREAK			= 318,
-	QFK_MENU			= 319,
-	QFK_POWER			= 320,		/* Power Macintosh power key */
-	QFK_EURO			= 321,		/* Some european keyboards */
-	QFK_UNDO			= 322,
+	QFK_HELP,
+	QFK_PRINT,
+	QFK_SYSREQ,
+	QFK_BREAK,
+	QFK_MENU,
+	QFK_POWER,		/* Power Macintosh power key */
+	QFK_EURO,		/* Some european keyboards */
+	QFK_UNDO,
 
 	/* Japanese keys */
 	QFK_KANJI,						/* Kanji, Kanji convert */
@@ -409,6 +448,38 @@ typedef enum {
 	QFJ_BUTTON30,
 	QFJ_BUTTON31,
 	QFJ_BUTTON32,
+	QFJ_BUTTON33,
+	QFJ_BUTTON34,
+	QFJ_BUTTON35,
+	QFJ_BUTTON36,
+	QFJ_BUTTON37,
+	QFJ_BUTTON38,
+	QFJ_BUTTON39,
+	QFJ_BUTTON40,
+	QFJ_BUTTON41,
+	QFJ_BUTTON42,
+	QFJ_BUTTON43,
+	QFJ_BUTTON44,
+	QFJ_BUTTON45,
+	QFJ_BUTTON46,
+	QFJ_BUTTON47,
+	QFJ_BUTTON48,
+	QFJ_BUTTON49,
+	QFJ_BUTTON50,
+	QFJ_BUTTON51,
+	QFJ_BUTTON52,
+	QFJ_BUTTON53,
+	QFJ_BUTTON54,
+	QFJ_BUTTON55,
+	QFJ_BUTTON56,
+	QFJ_BUTTON57,
+	QFJ_BUTTON58,
+	QFJ_BUTTON59,
+	QFJ_BUTTON60,
+	QFJ_BUTTON61,
+	QFJ_BUTTON62,
+	QFJ_BUTTON63,
+	QFJ_BUTTON64,
 
 //
 // joystick axes (for button emulation without consuming buttons)
@@ -450,14 +521,14 @@ typedef enum {
 } knum_t;
 
 typedef enum {
-	key_unfocused,			// engine has lost input focus
-	key_game,
-	key_demo,
-	key_console,
-	key_message,
-	key_menu,
+	key_unfocused,			///< engine has lost input focus
+	key_game,				///< Normal in-game key bindings
+	key_demo,				///< Demo playback key bindings
+	key_console,			///< Command console key bindings
+	key_message,			///< Message input line key bindings
+	key_menu,				///< Menu key bindings.
 
-	key_last				// enum size
+	key_last				///< enum size
 } keydest_t;
 
 #ifndef __QFCC__
@@ -483,35 +554,144 @@ typedef struct imt_s {
 	int         written;			///< avoid duplicate config file writes
 } imt_t;
 
+/**	Chain of input mapping tables ascociated with a keydest sub-system (game,
+	menu, etc).
+*/
 typedef struct keytarget_s {
-	imt_t      *imts;
-	imt_t      *active;
+	imt_t      *imts;				///< list of tables attached to this target
+	imt_t      *active;				///< currently active table in this target
 } keytarget_t;
 
 extern int		keydown[QFK_LAST];
 
-imt_t *Key_FindIMT (const char *imt_name);
+struct cbuf_s;
+
+void Key_Init (struct cbuf_s *cb);
+void Key_Init_Cvars (void);
+
+/**	Find an Input Mapping Table by name.
+
+	Searches through all keydest targets for the named imt. The search is case
+	insensitive.
+
+	\param imt_name	The name of the imt to find. Case insensitive.
+	\return			The named imt, or null if not found.
+*/
+imt_t *Key_FindIMT (const char *imt_name) __attribute__((pure));
+
+/**	Create a new imt and attach it to the specified keydest target.
+
+	The name of the new imt must be unique (case insensitive) across all
+	keydest targets. This is to simplify the in_bind command.
+
+	If \a chain_imt_name is not null, then it species the fallback imt for when
+	the key is not bound in the new imt. It must be an already existing imt in
+	the specified keydest target. This is to prevent loops and other weird
+	behavior.
+
+	\param kd		The keydest target to which the new imt will be attached.
+	\param imt_name	The name for the new imt. Must be unique (case
+					insensitive).
+	\param chain_imt_name	The name of the fallback imt if not null. Must
+					already exist on the specified keydest target.
+*/
 void Key_CreateIMT (keydest_t kd, const char *imt_name,
 					const char *chain_imt_name);
 
-struct cbuf_s;
+/**	Handle a key press/release event.
+
+	\param key		The key that was pressed or released for this event.
+	\param unicode	The unicode value of the key.
+	\param down		True if a press event, false if a release event.
+*/
 void Key_Event (knum_t key, short unicode, qboolean down);
+
+/**	Handle loss or gain of input focus (usually in windowed enviroments).
+
+	Sets the keydest target to key_unfocuses when input focus is lost.
+
+	Triggers keydest callbacks.
+
+	\bug			Always sets the target to key_game when focus is gained.
+
+	\param gain		True if focus is gained, false if focus is lost.
+*/
 void Key_FocusEvent (int gain);
-void Key_Init (struct cbuf_s *cb);
-void Key_Init_Cvars (void);
+
 void Key_WriteBindings (QFile *f);
+
+/**	Force all key states to unpressed.
+
+	Sends a key release event for any keys that are seen as down.
+*/
 void Key_ClearStates (void);
-const char *Key_GetBinding (const char *imt_name, knum_t key);
+
+/**	Return a key binding in the specified input mapping table.
+
+	\param imt		The input mapping table from which to get the binding.
+	\param key		The key for which to get the binding.
+	\return			The command string bound to the key, or null if unbound.
+*/
+const char *Key_GetBinding (imt_t *imt, knum_t key) __attribute__((pure));
+
+/** Bind a command string to a key in the specified input mapping table.
+
+	Only one command string can be bound to a key, but the command string may
+	contain multiple commands.
+
+	\param imt		The input mapping table in which the key will be bound.
+	\param keynum	The key to which the command string will be bound.
+	\param binding	The command string that will be bound.
+*/
 void Key_SetBinding (imt_t *imt, knum_t keynum, const char *binding);
+
+/**	Set the current keydest target.
+
+	Triggers keydest callbacks.
+
+	\param kd		The keydest target to make current.
+*/
 void Key_SetKeyDest(keydest_t kd);
-typedef void keydest_callback_t (keydest_t);
+
+/** keydest callback signature.
+
+	\param kd		The new current keydest target.
+*/
+typedef void keydest_callback_t (keydest_t kd);
+
+/**	Add a callback for when the keydest target changes.
+
+	\param callback	The callback to be added.
+*/
 void Key_KeydestCallback (keydest_callback_t *callback);
 
+/**	Get the string representation of a key.
 
-const char *Key_KeynumToString (knum_t keynum);
-int Key_StringToKeynum (const char *str);
+	Returns a string (a QFK_* name) for the given keynum.
+
+	\param keynum	The key for which to get the string.
+	\return			The string representation of the key.
+*/
+const char *Key_KeynumToString (knum_t keynum) __attribute__((pure));
+
+/**	Get the keynum for the named key.
+
+	Returns a key number to be used to index keybindings[] by looking at
+	the given string.  Single ascii characters return themselves, while
+	the QFK_* names are matched up.
+
+	\param str		The name of the key.
+	\return			The named key if valid, otherwise -1
+*/
+int Key_StringToKeynum (const char *str) __attribute__((pure));
+
 struct progs_s;
+
+/**	Add the Key builtins to the specified progs instance.
+*/
 void Key_Progs_Init (struct progs_s *pr);
 #endif
 
-#endif // _KEYS_H
+///@}
+
+#endif//__QF_keys_h

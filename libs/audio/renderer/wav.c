@@ -67,7 +67,7 @@ wav_callback_load (void *object, cache_allocator_t allocator)
 	sfxbuffer_t *buffer;
 	wavinfo_t  *info = &block->wavinfo;
 
-	QFS_FOpenFile (name, &file);
+	file = QFS_FOpenFile (name);
 	if (!file)
 		return; //FIXME Sys_Error?
 
@@ -152,7 +152,7 @@ wav_stream_open (sfx_t *sfx)
 	QFile      *file;
 	wav_file_t *wf;
 
-	QFS_FOpenFile (stream->file, &file);
+	file = QFS_FOpenFile (stream->file);
 	if (!file)
 		return 0;
 

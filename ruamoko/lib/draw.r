@@ -1,4 +1,4 @@
-#include "draw.h"
+#include <draw.h>
 
 void Draw_FreePic (qpic_t pic) = #0;
 qpic_t Draw_MakePic (int width, int heiight, string data) = #0;

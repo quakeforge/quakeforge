@@ -27,13 +27,13 @@
 
 */
 
-#ifndef __quakefs_h
-#define __quakefs_h
+#ifndef __QF_quakefs_h
+#define __QF_quakefs_h
 
 /** \defgroup quakefs Quake Filesystem
 	\ingroup utils
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 #include "QF/quakeio.h"
@@ -67,6 +67,17 @@ typedef struct gamedir_s {
 	} dir;
 } gamedir_t;
 
+typedef struct vpath_s vpath_t;
+
+typedef struct findfile_s {
+	const vpath_t *vpath;		///< vpath in which file was found
+	qboolean    in_pak;			///< if true, path refers to a pak file rather
+								///< than a directory
+	const char *realname;		///< the name of the file as found (may have
+								///< .gz appended, or .ogg substituded for
+								///< .wav) does not include the path
+} findfile_t;
+
 /**	Cached information about the current game directory. \see \ref dirconf.
 */
 extern gamedir_t *qfs_gamedir;
@@ -77,20 +88,20 @@ extern gamedir_t *qfs_gamedir;
 typedef void gamedir_callback_t (int phase);
 
 /**	Base of the QFS user directory tree. The QFS functions, except for
-	QFS_FOpenFIle() and _QFS_FOpenFile(),  will never access a file outside of
+	QFS_FOpenFile() and _QFS_FOpenFile(),  will never access a file outside of
 	this tree. Set via the \c fs_userpath directory.
 */
 extern const char *qfs_userpath;
 
-/**	Indicates the found file came from a pak file.
+/**	Gives information about the last file opened by the FOpenFile functions.
 
-	Set by QFS_FOpenFIle() and _QFS_FOpenFile().
+	Set by QFS_FOpenFile() and _QFS_FOpenFile().
 */
-extern int file_from_pak;
+extern findfile_t qfs_foundfile;
 
-/**	The size of the file found via QFS_FOpenFIle() or _QFS_FOpenFile().
+/**	The size of the file found via QFS_FOpenFile() or _QFS_FOpenFile().
 
-	Set by QFS_FOpenFIle() and _QFS_FOpenFile().
+	Set by QFS_FOpenFile() and _QFS_FOpenFile().
 */
 extern int qfs_filesize;
 
@@ -120,6 +131,34 @@ void QFS_Init (const char *game);
 	\param gamedir	The directory to which the game directory will be set.
 */
 void QFS_Gamedir (const char *gamedir);
+
+/** Search for a file in the quake file-system.
+
+	The search will begin in the \a start vpath and end in the \a end vpath.
+	If \a start is null, the search will begin in the vpath specified by
+	qfs_vpaths (ie, the first directory in the \c Path attribute
+	(\ref dirconf)). If \a end is null, the search will continue to the end
+	of the list of vpaths. If \a start and \a end are the same (and non-null),
+	then only the one vpath will be searched.
+
+	\note	All search paths in a vpath will be searched. This keeps \QF's
+			directory system transparent.
+
+	\note	It is a fatal error for \a end to be non-null but not in the list
+			of vpaths.
+
+	\warning	The returned pointer is to a static instance of findfile_t and
+				thus will be overwritten on the next call to any of the search
+				functions (QFS_FindFile, QFS_FOpenFile, _QFS_FOpenFile)
+
+	\param fname	The name of the file to be searched for.
+	\param start	The first vpath (gamedir) to search.
+	\param end		The last vpath (gamedir) to search.
+	\return			Pointer to the findfile_t record indicating the location
+					of the file, or null if the file was not found.
+*/
+findfile_t *QFS_FindFile (const char *fname, const vpath_t *start,
+						  const vpath_t *end);
 
 /** Open a file from within the user directory.
 
@@ -163,6 +202,11 @@ QFile *QFS_WOpen (const char *path, int zip);
 */
 void QFS_WriteFile (const char *filename, const void *data, int len);
 
+QFile *_QFS_VOpenFile (const char *filename, int zip,
+					   const vpath_t *start, const vpath_t *end);
+QFile *QFS_VOpenFile (const char *filename,
+					  const vpath_t *start, const vpath_t *end);
+
 /**	Open a file for reading.
 
 	The file will be searched for through all the subdirectories given in the
@@ -177,19 +221,12 @@ void QFS_WriteFile (const char *filename, const void *data, int len);
 	substitution.
 
 	\param filename	The name of the file to open.
-	\param gzfile	Address of file handle pointer.
-	\param foundname If not NULL, will be set to the real name of the file.
 	\param zip		If true and the file has been compressed with gzip, the
 					file will be opened such that it decompresses on the fly.
 					Otherwise, the file will be read as-is.
-	\return			The amount of bytes that can be read from the file handle.
-					This will be either the files true size if \a zip is true,
-					or the compressed size of \a zip is false. If an error
-					occurs while opening the file, this will be -1 and
-					\a *gzfile will be set to NULL.
+	\return			The file handle or NULL if there is an error.
 */
-int _QFS_FOpenFile (const char *filename, QFile **gzfile,
-					struct dstring_s *foundname, int zip);
+QFile *_QFS_FOpenFile (const char *filename, int zip);
 
 /**	Open a file for reading.
 
@@ -198,39 +235,28 @@ int _QFS_FOpenFile (const char *filename, QFile **gzfile,
 	_QFS_FOpenFile() for more details.
 
 	\param filename	The name of the file to open.
-	\param gzfile	Address of file handle pointer.
-	\return			The amount of bytes that can be read from the file handle.
-					If an error occurs while opening the file, this will be
-					-1 and \a *gzfile will be set to NULL.
+	\return			The file handle pointer, or NULL if there is an error.
 */
-int QFS_FOpenFile (const char *filename, QFile **gzfile);
+QFile *QFS_FOpenFile (const char *filename);
 
 /**	Load a file into memory.
 
-	This is a convenience wrapper for QFS_FOpenFile(). The file will be loaded
-	in memory allocated from the location inicated by usehunk.
+	The file will be loaded into memory allocated from the location indicated
+	by \a usehunk.
 
-	\param path		The name of the file to load.
+	\param file		The handle of the file to load.
 	\param usehunk	The location from which to allocate memory for the file's
 					data. Use 0.
 	\return			Pointer to the file's data, or NULL on error.
 	\todo remove \a usehunk
 */
-byte *QFS_LoadFile (const char *path, int usehunk);
-
-/** Load a file into memeory.
-
-	This is a wrapper for QFS_LoadFile().
-
-	\deprecated This should go away soon.
-*/
-byte *QFS_LoadStackFile (const char *path, void *buffer, int bufsize);
+byte *QFS_LoadFile (QFile *file, int usehunk);
 
 /** Load a file into memeory.
 
 	The file is loaded into memory allocated from the hunk.
 */
-byte *QFS_LoadHunkFile (const char *path);
+byte *QFS_LoadHunkFile (QFile *file);
 
 /** Load a file into memeory.
 
@@ -238,7 +264,7 @@ byte *QFS_LoadHunkFile (const char *path);
 
 	\deprecated This should go away soon.
 */
-void QFS_LoadCacheFile (const char *path, struct cache_user_s *cu);
+void QFS_LoadCacheFile (QFile *file, struct cache_user_s *cu);
 
 /**	Rename a file.
 
@@ -330,7 +356,7 @@ char *QFS_CompressPath (const char *pth);
 	\return			Pointer to the beginning of the filename. This points
 					inside \a pathname.
 */
-const char *QFS_SkipPath (const char *pathname);
+const char *QFS_SkipPath (const char *pathname) __attribute__((pure));
 
 /**	Return a pointer to the start of the extention part of the path.
 
@@ -340,7 +366,7 @@ const char *QFS_SkipPath (const char *pathname);
 					the returned pointer will point to the terminating nul
 					of the path.
 */
-const char *QFS_FileExtension (const char *in);
+const char *QFS_FileExtension (const char *in) __attribute__((pure));
 
 /**	Register a callback function for when the gamedir changes.
 
@@ -392,6 +418,6 @@ void QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 */
 void QFS_FilelistFree (filelist_t *list);
 
-//@}
+///@}
 
-#endif // __quakefs_h
+#endif//__QF_quakefs_h

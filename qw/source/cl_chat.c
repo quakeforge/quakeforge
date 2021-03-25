@@ -44,8 +44,8 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "client.h"
-#include "cl_chat.h"
+#include "qw/include/client.h"
+#include "qw/include/cl_chat.h"
 
 llist_t *ignore_list, *dead_ignore_list;
 
@@ -166,7 +166,7 @@ static qboolean cam_iterator (ignore_t *ig, llist_node_t *node)
 	}
 	dsprintf (g_cam_test, "%s: ",
 			  Info_ValueForKey (cl.players[ig->slot].userinfo, "name"));
-	if (!strncmp (g_cam_test->str, g_cam_str, sizeof (g_cam_test->str))) {
+	if (!strncmp (g_cam_test->str, g_cam_str, g_cam_test->size - 1)) {
 		return g_cam_allowed = false;
 	} else
 		return true;
@@ -245,7 +245,7 @@ CL_ChatInfo (int val)
 		val = 0;
 	if (cls.chat != val) {
 		cls.chat = val;
-		Cbuf_AddText(cl_cbuf, va ("setinfo chat \"%d\"\n", val));
+		Cbuf_AddText(cl_cbuf, va (0, "setinfo chat \"%d\"\n", val));
 	}
 }
 

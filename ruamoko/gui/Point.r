@@ -1,4 +1,4 @@
-#include "gui/Point.h"
+#include <gui/Point.h>
 
 Point makePoint (int x, int y)
 {

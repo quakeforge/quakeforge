@@ -37,10 +37,10 @@
 #include "QF/va.h"
 #include "QF/wad.h"
 
-#include "brush.h"
-#include "bsp5.h"
-#include "options.h"
-#include "writebsp.h"
+#include "tools/qfbsp/include/brush.h"
+#include "tools/qfbsp/include/bsp5.h"
+#include "tools/qfbsp/include/options.h"
+#include "tools/qfbsp/include/writebsp.h"
 
 /**	\addtogroup qfbsp_writebsp
 */
@@ -301,7 +301,7 @@ TEX_InitFromWad (const char *path)
 	wad = wad_open (path);
 #ifdef HAVE_ZLIB
 	if (!wad)
-		wad = wad_open (path = va ("%s.gz", path));
+		wad = wad_open (path = va (0, "%s.gz", path));
 #endif
 	if (!wad)
 		return -1;

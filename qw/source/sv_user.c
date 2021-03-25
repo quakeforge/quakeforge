@@ -53,16 +53,17 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "compat.h"
+
 #include "qw/msg_ucmd.h"
 #include "qw/msg_ucmd.h"
 
 #include "qw/bothdefs.h"
-#include "compat.h"
 #include "qw/pmove.h"
-#include "server.h"
-#include "sv_gib.h"
-#include "sv_progs.h"
-#include "sv_recorder.h"
+#include "qw/include/server.h"
+#include "qw/include/sv_gib.h"
+#include "qw/include/sv_progs.h"
+#include "qw/include/sv_recorder.h"
 #include "world.h"
 
 typedef struct ucmd_s {
@@ -140,7 +141,7 @@ SV_WriteWorldVars (netchan_t *netchan)
 	// send server info string
 	MSG_WriteByte (&netchan->message, svc_stufftext);
 	MSG_WriteString (&netchan->message,
-					 va ("fullserverinfo \"%s\"\n",
+					 va (0, "fullserverinfo \"%s\"\n",
 						 Info_MakeString (svs.info, 0)));
 }
 
@@ -193,7 +194,7 @@ SV_New_f (void *unused)
 	// Trigger GIB connection event
 	if (sv_client_connect_e->func)
 		GIB_Event_Callback (sv_client_connect_e, 1,
-							va ("%u", host_client->userid));
+							va (0, "%u", host_client->userid));
 }
 
 void
@@ -334,14 +335,15 @@ SV_PreSpawn_f (void *unused)
 
 //      Sys_MaskPrintf (SYS_DEV, , "Client check = %d\n", check);
 
-		if (sv_mapcheck->int_val && check != sv.worldmodel->checksum &&
-			check != sv.worldmodel->checksum2) {
+		if (sv_mapcheck->int_val && check != sv.worldmodel->brush.checksum &&
+			check != sv.worldmodel->brush.checksum2) {
 			SV_ClientPrintf (1, host_client, PRINT_HIGH, "Map model file does "
 							 "not match (%s), %i != %i/%i.\n"
 							 "You may need a new version of the map, or the "
 							 "proper install files.\n",
-							 sv.modelname, check, sv.worldmodel->checksum,
-							 sv.worldmodel->checksum2);
+							 sv.modelname, check,
+							 sv.worldmodel->brush.checksum,
+							 sv.worldmodel->brush.checksum2);
 			SV_DropClient (host_client);
 			return;
 		}
@@ -350,9 +352,9 @@ SV_PreSpawn_f (void *unused)
 	host_client->prespawned = true;
 
 	if (buf == sv.num_signon_buffers - 1)
-		command = va ("cmd spawn %i 0\n", svs.spawncount);
+		command = va (0, "cmd spawn %i 0\n", svs.spawncount);
 	else
-		command = va ("cmd prespawn %i %i\n", svs.spawncount, buf + 1);
+		command = va (0, "cmd prespawn %i %i\n", svs.spawncount, buf + 1);
 
 	size = sv.signon_buffer_size[buf] + 1 + strlen (command) + 1;
 
@@ -604,7 +606,7 @@ SV_Begin_f (void *unused)
 
 	// Trigger GIB events
 	if (sv_client_spawn_e->func)
-		GIB_Event_Callback (sv_client_spawn_e, 1, va ("%u",
+		GIB_Event_Callback (sv_client_spawn_e, 1, va (0, "%u",
 													  host_client->userid));
 }
 
@@ -717,8 +719,7 @@ static void
 SV_BeginDownload_f (void *unused)
 {
 	const char *name;
-	dstring_t  *realname;
-	int			http, size, zip;
+	int			http, zip;
 	QFile	   *file;
 
 	name = Cmd_Argv (1);
@@ -754,17 +755,16 @@ SV_BeginDownload_f (void *unused)
 	http = sv_http_url_base->string[0]
 			&& strchr (Info_ValueForKey (host_client->userinfo, "*cap"), 'h');
 
-	realname = dstring_newstr ();
-	size = _QFS_FOpenFile (name, &file, realname, !zip);
+	file = _QFS_FOpenFile (name, !zip);
 
 	host_client->download = file;
-	host_client->downloadsize = size;
+	host_client->downloadsize = Qfilesize (file);
 	host_client->downloadcount = 0;
 
 	if (!host_client->download
 		// ZOID: special check for maps, if it came from a pak file, don't
 		// allow download
-		|| (strncmp (name, "maps/", 5) == 0 && file_from_pak)) {
+		|| (strncmp (name, "maps/", 5) == 0 && qfs_foundfile.in_pak)) {
 		if (host_client->download) {
 			Qclose (host_client->download);
 			host_client->download = NULL;
@@ -774,41 +774,40 @@ SV_BeginDownload_f (void *unused)
 		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_download, 4);
 		MSG_ReliableWrite_Short (&host_client->backbuf, DL_NOFILE);
 		MSG_ReliableWrite_Byte (&host_client->backbuf, 0);
-		dstring_delete (realname);
 		return;
 	}
 
 	if (http) {
 		int         size;
-		int         ren = zip && strcmp (realname->str, name);
+		int         ren = zip && strcmp (qfs_foundfile.realname, name);
 		SV_Printf ("http redirect: %s/%s\n", sv_http_url_base->string,
-				   realname->str);
-		size = ren ? strlen (realname->str) * 2 : strlen (name);
+				   qfs_foundfile.realname);
+		size = ren ? strlen (qfs_foundfile.realname) * 2 : strlen (name);
 		size += strlen (sv_http_url_base->string) + 7;
 		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_download, size);
 		MSG_ReliableWrite_Short (&host_client->backbuf, DL_HTTP);
 		MSG_ReliableWrite_Byte (&host_client->backbuf, 0);
 		MSG_ReliableWrite_String (&host_client->backbuf,
-								  va ("%s/%s", sv_http_url_base->string,
-									  ren ? realname->str : name));
+								  va (0, "%s/%s", sv_http_url_base->string,
+									  ren ? qfs_foundfile.realname : name));
 		MSG_ReliableWrite_String (&host_client->backbuf,
-								  ren ? realname->str : "");
+								  ren ? qfs_foundfile.realname : "");
 		if (host_client->download) {
 			Qclose (host_client->download);
 			host_client->download = NULL;
 		}
 	} else {
-		if (zip && strcmp (realname->str, name)) {
-			SV_Printf ("download renamed to %s\n", realname->str);
+		if (zip && strcmp (qfs_foundfile.realname, name)) {
+			SV_Printf ("download renamed to %s\n", qfs_foundfile.realname);
 			MSG_ReliableWrite_Begin (&host_client->backbuf, svc_download,
-									 strlen (realname->str) + 5);
+									 strlen (qfs_foundfile.realname) + 5);
 			MSG_ReliableWrite_Short (&host_client->backbuf, DL_RENAME);
 			MSG_ReliableWrite_Byte (&host_client->backbuf, 0);
-			MSG_ReliableWrite_String (&host_client->backbuf, realname->str);
+			MSG_ReliableWrite_String (&host_client->backbuf,
+									  qfs_foundfile.realname);
 			MSG_Reliable_FinishWrite (&host_client->backbuf);
 		}
 	}
-	dstring_delete (realname);
 
 	SV_NextDownload_f (0);
 	SV_Printf ("Downloading %s to %s\n", name, host_client->name);
@@ -916,7 +915,7 @@ SV_Say (qboolean team)
 	dsprintf (text, fmt, host_client->name);
 
 	if (sv_chat_e->func)
-		GIB_Event_Callback (sv_chat_e, 2, va ("%i", host_client->userid), p,
+		GIB_Event_Callback (sv_chat_e, 2, va (0, "%i", host_client->userid), p,
 							type);
 
 	dstring_appendstr (text, p);
@@ -1203,7 +1202,7 @@ SV_SetUserinfo (client_t *client, const char *key, const char *value)
 
 	// trigger a GIB event
 	if (sv_setinfo_e->func)
-		GIB_Event_Callback (sv_setinfo_e, 4, va("%d", client->userid),
+		GIB_Event_Callback (sv_setinfo_e, 4, va (0, "%d", client->userid),
 							key, oldvalue, value);
 
 	if (sv_funcs.UserInfoChanged) {
@@ -1214,6 +1213,7 @@ SV_SetUserinfo (client_t *client, const char *key, const char *value)
 		P_STRING (&sv_pr_state, 0) = PR_SetTempString (&sv_pr_state, key);
 		P_STRING (&sv_pr_state, 1) = PR_SetTempString (&sv_pr_state, oldvalue);
 		P_STRING (&sv_pr_state, 2) = PR_SetTempString (&sv_pr_state, value);
+		sv_pr_state.pr_argc = 3;
 		PR_ExecuteProgram (&sv_pr_state, sv_funcs.UserInfoChanged);
 		PR_PopFrame (&sv_pr_state);
 		send_changes = !R_FLOAT (&sv_pr_state);
@@ -1264,6 +1264,7 @@ SV_SetInfo_f (void *unused)
 		PR_RESET_PARAMS (&sv_pr_state);
 		P_STRING (&sv_pr_state, 0) = PR_SetTempString (&sv_pr_state, key);
 		P_STRING (&sv_pr_state, 1) = PR_SetTempString (&sv_pr_state, value);
+		sv_pr_state.pr_argc = 2;
 		PR_ExecuteProgram (&sv_pr_state, sv_funcs.UserInfoCallback);
 		PR_PopFrame (&sv_pr_state);
 		if (R_FLOAT (&sv_pr_state))
@@ -2010,7 +2011,7 @@ static builtin_t builtins[] = {
 void
 SV_UserInit (void)
 {
-	ucmd_table = Hash_NewTable (251, ucmds_getkey, ucmds_free, 0);
+	ucmd_table = Hash_NewTable (251, ucmds_getkey, ucmds_free, 0, 0);
 	Hash_SetHashCompare (ucmd_table, ucmd_get_hash, ucmd_compare);
 	PR_RegisterBuiltins (&sv_pr_state, builtins);
 	cl_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, NULL,

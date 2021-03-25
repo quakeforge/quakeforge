@@ -63,10 +63,10 @@
 #include "QF/va.h"
 #include "QF/zone.h"
 
-#include "obj_file.h"
-#include "obj_type.h"
-#include "qfprogs.h"
-#include "reloc.h"
+#include "tools/qfcc/include/obj_file.h"
+#include "tools/qfcc/include/obj_type.h"
+#include "tools/qfcc/include/qfprogs.h"
+#include "tools/qfcc/include/reloc.h"
 
 const char *reloc_names[] = {
 	"none",
@@ -128,7 +128,6 @@ static edict_t *edicts;
 static int      num_edicts;
 static int      reserved_edicts = 1;
 static progs_t  pr;
-static int      need_progs;
 static qfo_t   *qfo;
 
 static const char *source_path = "";
@@ -176,7 +175,7 @@ file_error (progs_t *pr, const char *name)
 }
 
 static void *
-load_file (progs_t *pr, const char *name)
+load_file (progs_t *pr, const char *name, off_t *_size)
 {
 	QFile      *file;
 	int         size;
@@ -184,13 +183,14 @@ load_file (progs_t *pr, const char *name)
 
 	file = open_file (name, &size);
 	if (!file) {
-		file = open_file (va ("%s.gz", name), &size);
+		file = open_file (va (0, "%s.gz", name), &size);
 		if (!file)
 			return 0;
 	}
 	sym = malloc (size + 1);
 	sym[size] = 0;
 	Qread (file, sym, size);
+	*_size = size;
 	return sym;
 }
 
@@ -233,10 +233,9 @@ init_qf (void)
 {
 	Sys_Init ();
 
-	Cvar_Get ("pr_debug", va ("%d", verbosity), 0, 0, "");
+	Cvar_Get ("pr_debug", va (0, "%d", 1+verbosity), 0, 0, "");
 	Cvar_Get ("pr_source_path", source_path, 0, 0, "");
 	PR_Init_Cvars ();
-	PR_Init ();
 
 	pr.pr_edicts = &edicts;
 	pr.num_edicts = &num_edicts;
@@ -246,58 +245,18 @@ init_qf (void)
 	pr.allocate_progs_mem = allocate_progs_mem;
 	pr.free_progs_mem = free_progs_mem;
 
-	func_tab = Hash_NewTable (1021, 0, 0, 0);
+	PR_Init (&pr);
+
+	func_tab = Hash_NewTable (1021, 0, 0, 0, 0);
 	Hash_SetHashCompare (func_tab, func_hash, func_compare);
-}
-
-static void
-convert_qfo (void)
-{
-	int         size;
-	int         i;
-
-	pr.progs = qfo_to_progs (qfo, &size);
-
-#define P(t,o) ((t *)((char *)pr.progs + pr.progs->o))
-	pr.pr_statements = P (dstatement_t, ofs_statements);
-	pr.pr_strings = P (char, ofs_strings);
-	pr.pr_stringsize = pr.progs->numstrings;
-	pr.pr_functions = P (dfunction_t, ofs_functions);
-	pr.pr_globaldefs = P (ddef_t, ofs_globaldefs);
-	pr.pr_fielddefs = P (ddef_t, ofs_fielddefs);
-	pr.pr_globals = P (pr_type_t, ofs_globals);
-	pr.globals_size = pr.progs->numglobals;
-	pr.pr_edict_size = max (1, pr.progs->entityfields);
-	pr.pr_edict_area_size = 1 * pr.pr_edict_size;
-#undef P
-
-	if (verbosity) {
-		pr.debug = qfo_to_sym (qfo, &size);
-#define P(t,o) ((t *)((char *)pr.debug + pr.debug->o))
-		pr.auxfunctions = P (pr_auxfunction_t, auxfunctions);
-		pr.linenos = P (pr_lineno_t, linenos);
-		pr.local_defs = P (ddef_t, locals);
-#undef P
-
-		pr.local_defs = calloc (qfo->num_defs, sizeof (ddef_t));
-
-		pr.auxfunction_map = calloc (pr.progs->numfunctions,
-									 sizeof (pr_auxfunction_t *));
-		for (i = 0; (int) i < pr.progs->numfunctions; i++)	//FIXME (cast)
-			pr.auxfunction_map[i] = 0;
-
-		for (i = 0; i < (int) pr.debug->num_auxfunctions; i++) {
-			pr_auxfunction_t *aux = pr.auxfunctions + i;
-			pr.auxfunction_map[aux->function] = aux;
-		}
-	}
 }
 
 static int
 load_progs (const char *name)
 {
 	QFile      *file;
-	int         i, size;
+	int         size;
+	pr_uint_t   i;
 	char        buff[5];
 
 	Hash_FlushTable (func_tab);
@@ -310,6 +269,7 @@ load_progs (const char *name)
 	Qread (file, buff, 4);
 	buff[4] = 0;
 	Qseek (file, 0, SEEK_SET);
+	qfo = 0;
 	if (!strcmp (buff, QFO)) {
 		qfo = qfo_read (file);
 		Qclose (file);
@@ -317,19 +277,19 @@ load_progs (const char *name)
 		if (!qfo)
 			return 0;
 
-		if (!need_progs)
-			return 1;
-		convert_qfo ();
+		return 1;
 	} else {
 		pr.progs_name = name;
-		PR_LoadProgsFile (&pr, file, size, 1, 0);
+		pr.max_edicts = 1;
+		pr.zone_size = 0;
+		PR_LoadProgsFile (&pr, file, size);
 		Qclose (file);
 
 		if (!pr.progs)
 			return 0;
 
-		PR_LoadStrings (&pr);
 		PR_ResolveGlobals (&pr);
+		PR_LoadStrings (&pr);
 		PR_LoadDebug (&pr);
 	}
 	for (i = 0; i < pr.progs->numfunctions; i++) {
@@ -348,10 +308,10 @@ typedef struct {
 operation_t operations[] = {
 	{disassemble_progs, 0},					// disassemble
 	{dump_globals,		qfo_globals},		// globals
-	{dump_strings,		0},					// strings
-	{dump_fields,		0},					// fields
+	{dump_strings,		qfo_strings},		// strings
+	{dump_fields,		qfo_fields},		// fields
 	{dump_functions,	qfo_functions},		// functions
-	{dump_lines,		0},					// lines
+	{dump_lines,		qfo_lines},			// lines
 	{dump_modules,		0},					// modules
 	{0,					qfo_relocs},		// relocs
 	{dump_types,		qfo_types},			// types
@@ -410,12 +370,11 @@ main (int argc, char **argv)
 	}
 	init_qf ();
 	while (optind < argc) {
-		need_progs = !func->qfo;
 		if (!load_progs (argv[optind++]))
 			return 1;
 		if (qfo && func->qfo)
 			func->qfo (qfo);
-		else if (func->progs)
+		else if (!qfo && func->progs)
 			func->progs (&pr);
 		else
 			fprintf (stderr, "can't process %s\n", argv[optind - 1]);

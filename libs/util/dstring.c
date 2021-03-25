@@ -299,23 +299,13 @@ dstring_clearstr (dstring_t *dstr)
 	dstr->str[0] = 0;
 }
 
-#if defined (HAVE_VA_COPY)
-# define VA_COPY(a,b) va_copy (a, b)
-#elif defined (HAVE__VA_COPY)
-# define VA_COPY(a,b) __va_copy (a, b)
-#else
-# define VA_COPY(a,b) memcpy (a, b, sizeof (a))
-#endif
-
-static int
+static __attribute__((format(printf, 3, 0))) char *
 _dvsprintf (dstring_t *dstr, int offs, const char *fmt, va_list args)
 {
 	int         size;
 
-#ifdef VA_LIST_IS_ARRAY
 	va_list     tmp_args;
-	VA_COPY (tmp_args, args);
-#endif
+	va_copy (tmp_args, args);
 
 	if (!dstr->truesize)
 		dstring_clearstr (dstr); // Make it a string
@@ -324,35 +314,31 @@ _dvsprintf (dstring_t *dstr, int offs, const char *fmt, va_list args)
 							  args)) == -1) {
 		dstr->size = (dstr->truesize & ~1023) + 1024;
 		dstring_adjust (dstr);
-#ifdef VA_LIST_IS_ARRAY
-		VA_COPY (args, tmp_args);
-#endif
+		va_copy (args, tmp_args);
 	}
 	dstr->size = size + offs + 2;
 	// "Proper" implementations return the required size
 	if (dstr->size > dstr->truesize) {
 		dstring_adjust (dstr);
-#ifdef VA_LIST_IS_ARRAY
-		VA_COPY (args, tmp_args);
-#endif
+		va_copy (args, tmp_args);
 		vsnprintf (dstr->str + offs, dstr->truesize - offs - 1, fmt, args);
 	}
 	dstr->size = size + offs + 1;
 	dstr->str[dstr->size - 1] = 0;
-	return size;
+	return dstr->str;
 }
 
-VISIBLE int
+VISIBLE char *
 dvsprintf (dstring_t *dstr, const char *fmt, va_list args)
 {
 	return _dvsprintf (dstr, 0, fmt, args);
 }
 
-VISIBLE int
+VISIBLE char *
 dsprintf (dstring_t *dstr, const char *fmt, ...)
 {
 	va_list     args;
-	int         ret;
+	char       *ret;
 
 	va_start (args, fmt);
 	ret = _dvsprintf (dstr, 0, fmt, args);
@@ -361,7 +347,7 @@ dsprintf (dstring_t *dstr, const char *fmt, ...)
 	return ret;
 }
 
-VISIBLE int
+VISIBLE char *
 davsprintf (dstring_t *dstr, const char *fmt, va_list args)
 {
 	int         offs = 0;
@@ -371,11 +357,11 @@ davsprintf (dstring_t *dstr, const char *fmt, va_list args)
 	return _dvsprintf (dstr, offs, fmt, args);
 }
 
-VISIBLE int
+VISIBLE char *
 dasprintf (dstring_t *dstr, const char *fmt, ...)
 {
 	va_list     args;
-	int         ret;
+	char       *ret;
 	int         offs = 0;
 
 	if (dstr->size)

@@ -79,11 +79,29 @@ bi_exit (progs_t *pr)
 	exit (P_INT (pr, 0));
 }
 
+static void
+bi_spawn (progs_t *pr)
+{
+	edict_t    *ed;
+	ed = ED_Alloc (pr);
+	RETURN_EDICT (pr, ed);
+}
+
+static void
+bi_remove (progs_t *pr)
+{
+	edict_t    *ed;
+	ed = P_EDICT (pr, 0);
+	ED_Free (pr, ed);
+}
+
 static builtin_t builtins[] = {
 	{"printf",		bi_printf,		-1},
 	{"errno",		bi_errno,		-1},
 	{"strerror",	bi_strerror,	-1},
 	{"exit",		bi_exit,		-1},
+	{"spawn",		bi_spawn,		-1},
+	{"remove",		bi_remove,		-1},
 	{0}
 };
 

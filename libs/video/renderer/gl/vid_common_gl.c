@@ -744,7 +744,7 @@ GL_SetPalette (const byte *palette)
 		return;
 	palflag = true;
 
-	QFS_FOpenFile ("glquake/15to8.pal", &f);
+	f = QFS_FOpenFile ("glquake/15to8.pal");
 	if (f) {
 		Qread (f, gl_15to8table, 1 << 15);
 		Qclose (f);

@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __QF_input_h_
-#define __QF_input_h_
+#ifndef __QF_input_h
+#define __QF_input_h
 
 #include "QF/keys.h"
 
@@ -43,8 +43,6 @@ struct cvar_s;
 
 void IN_Init (struct cbuf_s *cbuf);
 void IN_Init_Cvars (void);
-
-void IN_Shutdown (void);
 
 void IN_ProcessEvents (void);
 
@@ -75,4 +73,4 @@ void IN_LL_Grab_Input (int grab);
 
 extern kbutton_t   in_strafe, in_klook, in_speed, in_mlook;
 
-#endif // __QF_input_h_
+#endif//__QF_input_h

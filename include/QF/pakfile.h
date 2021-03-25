@@ -33,7 +33,7 @@
 /** \defgroup pak pakfile proccessing
 	\ingroup utils
 */
-//@{
+///@{
 
 #include "QF/hash.h"
 #include "QF/pak.h"
@@ -64,6 +64,6 @@ int pack_add (pack_t *pack, const char *filename);
 int pack_extract (pack_t *pack, dpackfile_t *pf);
 dpackfile_t *pack_find_file (pack_t *pack, const char *filename);
 
-//@}
+///@}
 
 #endif//__QF_pakfile_h

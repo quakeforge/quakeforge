@@ -45,22 +45,22 @@
 #include <QF/hash.h>
 #include <QF/sys.h>
 
-#include "class.h"
-#include "debug.h"
-#include "diagnostic.h"
-#include "expr.h"
-#include "grab.h"
-#include "options.h"
-#include "pragma.h"
-#include "qfcc.h"
-#include "shared.h"
-#include "strpool.h"
-#include "struct.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/debug.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/grab.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/pragma.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/struct.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
-#include "qc-parse.h"
+#include "tools/qfcc/source/qc-parse.h"
 
 #ifndef YY_PROTO
 # define YY_PROTO(x) x
@@ -72,6 +72,13 @@
 #define YY_DECL int yylex YY_PROTO(( void ))
 YY_DECL;
 
+int yyget_lineno (void) __attribute__((pure));
+int yyget_leng (void) __attribute__((pure));
+int yywrap (void) __attribute__((const));
+char *yyget_text (void) __attribute__((pure));
+int yyget_debug (void) __attribute__((pure));
+FILE *yyget_in (void) __attribute__((pure));
+FILE *yyget_out (void) __attribute__((pure));
 
 static int keyword_or_id (char *token);
 
@@ -86,6 +93,8 @@ B			[01]
 X			[0-9a-fA-F]
 ID			[a-zA-Z_][a-zA-Z_0-9]*
 FLOAT		({D}+|{D}*\.{D}+|{D}+\.{D}*)([eE]{m}?{D}+)?
+FLOATf		{FLOAT}[fF]
+FLOATd		{FLOAT}[dD]
 INT			({D}+|0[xX]{X}+|0[bB]{B})
 RANGE		\.\.
 ELLIPSIS	\.\.\.
@@ -129,8 +138,34 @@ STRING		\"(\\.|[^"\\])*\"
 					}
 
 {FLOAT}				{
+						// advanced code defaults to double, but traditional
+						// and extended code defaults to float
+						if (options.traditional < 1) {
+							double      d = strtod (yytext, 0);
+							qc_yylval.expr = new_double_expr (d);
+							qc_yylval.expr->implicit = 1;
+						} else {
+							float       f = strtof (yytext, 0);
+							qc_yylval.expr = new_float_expr (f);
+						}
+						return VALUE;
+					}
+{FLOATf}			{
 						float       f = strtof (yytext, 0);
 						qc_yylval.expr = new_float_expr (f);
+						return VALUE;
+					}
+{FLOATd}			{
+						// advanced code defaults to double, but traditional
+						// and extended code defaults to float
+						if (options.traditional < 1) {
+							double      d = strtod (yytext, 0);
+							qc_yylval.expr = new_double_expr (d);
+						} else {
+							float       f = strtof (yytext, 0);
+							qc_yylval.expr = new_float_expr (f);
+							warning (0, "truncating double constant to float");
+						}
 						return VALUE;
 					}
 
@@ -182,6 +217,11 @@ STRING		\"(\\.|[^"\\])*\"
 						return ASX;
 					}
 
+"%%="				{
+						qc_yylval.op = MOD;
+						return ASX;
+					}
+
 "<<="				{
 						qc_yylval.op = SHL;
 						return ASX;
@@ -195,6 +235,11 @@ STRING		\"(\\.|[^"\\])*\"
 [!(){}.*/&|^~+\-=\[\];,#%?:] {
 						qc_yylval.pointer = 0;	// ensure pointer vals are null
 						return yytext[0];
+					}
+
+"%%"				{
+						qc_yylval.pointer = 0;	// ensure pointer vals are null
+						return MOD;
 					}
 
 {ELLIPSIS}			return ELLIPSIS;
@@ -238,9 +283,12 @@ STRING		\"(\\.|[^"\\])*\"
 							write_frame_macros (s);
 							BEGIN (GRAB_OTHER);	// ignore rest of line
 						}
-<PRAGMA>{ID}		{ pragma (yytext); }
+<PRAGMA>{ID}		{ pragma_add_arg (yytext); }
 
 <*>\r*\n			{
+						if (YY_START == PRAGMA) {
+							pragma_process ();
+						}
 						pr.source_line++;
 						BEGIN (INITIAL);
 					}
@@ -271,8 +319,8 @@ typedef struct {
 static keyword_t obj_keywords[] = {
 	{"id",				OBJECT,	&type_id		},
 	{"Class",			TYPE,	&type_Class		},
-	{"Method",			TYPE,	&type_obj_method},
-	{"Super",			TYPE,	&type_obj_super	},
+	{"Method",			TYPE,	&type_method	},
+	{"Super",			TYPE,	&type_super		},
 	{"SEL",				TYPE,	&type_SEL		},
 	{"IMP",				TYPE,	&type_IMP		},
 
@@ -305,6 +353,7 @@ static keyword_t obj_keywords[] = {
 // make the language features available to traditional code.
 static keyword_t at_keywords[] = {
 	{"for",			FOR		},
+	{"goto",		GOTO	},
 	{"break",		BREAK	},
 	{"continue",	CONTINUE},
 	{"switch",		SWITCH	},
@@ -319,16 +368,18 @@ static keyword_t at_keywords[] = {
 	{"static",		STATIC	},
 	{"sizeof",		SIZEOF	},
 	{"nosave",		NOSAVE	},
+	{"not",			NOT		},
 };
 
 // These keywords require the QuakeForge VM to be of any use. ie, they cannot
 // be supported (sanely) by v6 progs.
 static keyword_t qf_keywords[] = {
 	{"quaternion",	TYPE,	&type_quaternion},
+	{"double",		TYPE,	&type_double},
 	{"int",			TYPE,	&type_integer	},
 	{"unsigned",	TYPE,	&type_integer	},//FIXME
-	{"function",	TYPE,	&type_function	},
 
+	{"@function",	TYPE,	&type_function	},
 	{"@args",		ARGS,	0				},
 	{"@va_list",	TYPE,	&type_va_list	},
 	{"@param",		TYPE,	&type_param		},
@@ -388,10 +439,10 @@ keyword_or_id (char *token)
 	if (!keyword_tab) {
 		size_t      i;
 
-		keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0);
-		qf_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0);
-		at_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0);
-		obj_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0);
+		keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
+		qf_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
+		at_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
+		obj_keyword_tab = Hash_NewTable (253, keyword_get_key, 0, 0, 0);
 
 		#define NUMKEYS(_k) (sizeof (_k) / sizeof (_k[0]))
 
@@ -441,6 +492,8 @@ keyword_or_id (char *token)
 #ifdef YY_FLEX_REALLOC_HACK
 static __attribute__ ((used)) void *(*const yy_flex_realloc_hack)(void *,yy_size_t) = yy_flex_realloc;
 #else
+#ifdef yyunput
 static __attribute__ ((used)) void (*yyunput_hack)(int, char*) = yyunput;
+#endif
 static __attribute__ ((used)) int (*input_hack)(void) = input;
 #endif

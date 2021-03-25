@@ -27,13 +27,13 @@
 
 */
 
-#ifndef __qendian_h
-#define __qendian_h
+#ifndef __QF_qendian_h
+#define __QF_qendian_h
 
 /** \defgroup qendian Endian handling functions
 	\ingroup utils
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 
@@ -75,12 +75,12 @@
 
 extern qboolean		bigendien;
 
-uint16_t	_ShortSwap (uint16_t l);
-uint16_t	_ShortNoSwap (uint16_t l);
-uint32_t _LongSwap (uint32_t l);
-uint32_t _LongNoSwap (uint32_t l);
-float	_FloatSwap (float f);
-float	_FloatNoSwap (float f);
+uint16_t	_ShortSwap (uint16_t l) __attribute__((const));
+uint16_t	_ShortNoSwap (uint16_t l) __attribute__((const));
+uint32_t _LongSwap (uint32_t l) __attribute__((const));
+uint32_t _LongNoSwap (uint32_t l) __attribute__((const));
+float	_FloatSwap (float f) __attribute__((const));
+float	_FloatNoSwap (float f) __attribute__((const));
 
 
 #ifdef __GNUC__
@@ -118,6 +118,6 @@ byte ReadByte (struct QFile_s *file);
 unsigned short ReadShort (struct QFile_s *file);
 unsigned int ReadLong (struct QFile_s *file);
 
-//@}
+///@}
 
-#endif // __qendian_h
+#endif//__QF_qendian_h

@@ -34,19 +34,6 @@
 #include "QF/dstring.h"
 #include "QF/script.h"
 
-static void __attribute__ ((format (printf, 2, 3), noreturn))
-script_error (script_t *script, const char *fmt, ...)
-{
-	va_list     args;
-
-	va_start (args, fmt);
-	fprintf (stderr, "%s:%d: ", script->file, script->line);
-	vfprintf (stderr, fmt, args);
-	fprintf (stderr, "\n");
-	va_end (args);
-	exit (1);
-}
-
 VISIBLE script_t *
 Script_New (void)
 {
@@ -69,11 +56,16 @@ Script_Start (script_t *script, const char *file, const char *data)
 	script->file = file;
 	script->p = data;
 	script->unget = false;
+	script->error = 0;
 }
 
 VISIBLE qboolean
 Script_TokenAvailable (script_t *script, qboolean crossline)
 {
+	if (script->error) {
+		return false;
+	}
+
 	if (script->unget)
 		return true;
   skipspace:
@@ -111,6 +103,10 @@ Script_GetToken (script_t *script, qboolean crossline)
 {
 	const char *token_p;
 
+	if (script->error) {
+		return false;
+	}
+
 	if (script->unget) {				// is a token allready waiting?
 		script->unget = false;
 		return true;
@@ -118,10 +114,7 @@ Script_GetToken (script_t *script, qboolean crossline)
 
 	if (!Script_TokenAvailable (script, crossline)) {
 		if (!crossline) {
-			if (script->error)
-				script->error (script, "line is incomplete");
-			else
-				script_error (script, "line is incomplete");
+			script->error = "line is incomplete";
 		}
 		return false;
 	}
@@ -134,18 +127,13 @@ Script_GetToken (script_t *script, qboolean crossline)
 		while (*script->p != '"') {
 			if (!*script->p) {
 				script->line = start_line;
-				if (script->error)
-					script->error (script, "EOF inside quoted token");
-				else
-					script_error (script, "EOF inside quoted token");
+				script->error = "EOF inside quoted token";
 				return false;
 			}
 			if (*script->p == '\n') {
 				if (script->no_quote_lines) {
-					if (script->error)
-						script->error (script, "EOL inside quoted token");
-					else
-						script_error (script, "EOL inside quoted token");
+					script->error = "EOL inside quoted token";
+					return false;
 				}
 				script->line++;
 			}
@@ -175,11 +163,16 @@ Script_GetToken (script_t *script, qboolean crossline)
 VISIBLE void
 Script_UngetToken (script_t *script)
 {
-	script->unget = true;
+	if (!script->error) {
+		script->unget = true;
+	}
 }
 
 VISIBLE const char *
 Script_Token (script_t *script)
 {
+	if (script->error) {
+		return 0;
+	}
 	return script->token->str;
 }

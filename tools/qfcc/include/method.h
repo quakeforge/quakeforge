@@ -58,6 +58,10 @@ typedef struct methodlist_s {
 	int         instance;		///< used only for emitting
 } methodlist_t;
 
+typedef struct methodset_s {
+	struct hashtab_s *tab;
+} methodset_t;
+
 typedef struct keywordarg_s {
 	// the first two fields match the first two fields of param_t in
 	// functionl.h
@@ -80,7 +84,12 @@ struct symbol_s *method_symbol (struct class_type_s *class_type,
 void method_set_param_names (method_t *dst, method_t *src);
 
 methodlist_t *new_methodlist (void);
-void copy_methods (methodlist_t *dst, methodlist_t *src);
+methodset_t *new_methodset (void);
+void methodset_add_methods (methodset_t *methodset, methodlist_t *methods);
+int methodset_contains_method (methodset_t *methodset, method_t *method);
+//NOTE frees the source list and any methods not copied
+void merge_method_lists (methodlist_t *dst, methodlist_t *src);
+void copy_methods (methodlist_t *dst, methodlist_t *src, methodset_t *except);
 int method_compare (method_t *m1, method_t *m2);
 
 keywordarg_t *new_keywordarg (const char *selector, struct expr_s *expr);
@@ -89,6 +98,9 @@ keywordarg_t *copy_keywordargs (const keywordarg_t *kwargs);
 struct expr_s *send_message (int super);
 
 method_t *find_method (const char *sel_name);
+method_t *methodlist_find_method (methodlist_t *methodlist,
+								  selector_t *selector, int instance)
+								  __attribute__((pure));
 
 void selector_name (struct dstring_s *sel_id, keywordarg_t *selector);
 void method_types (struct dstring_s *sel_types, method_t *method);

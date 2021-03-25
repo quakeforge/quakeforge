@@ -23,12 +23,12 @@
 
 #include "QF/sys.h"
 
-#include "brush.h"
-#include "bsp5.h"
-#include "csg4.h"
-#include "draw.h"
-#include "merge.h"
-#include "surfaces.h"
+#include "tools/qfbsp/include/brush.h"
+#include "tools/qfbsp/include/bsp5.h"
+#include "tools/qfbsp/include/csg4.h"
+#include "tools/qfbsp/include/draw.h"
+#include "tools/qfbsp/include/merge.h"
+#include "tools/qfbsp/include/surfaces.h"
 
 /**	\addtogroup qfbsp_merge
 */
@@ -74,7 +74,6 @@ TryMerge (const face_t *f1, const face_t *f2)
 		return NULL;
 
 	p1 = p2 = NULL;
-	j = 0;
 
 	// find a common edge
 	for (i = 0; i < f1p->numpoints; i++) {

@@ -1,5 +1,5 @@
 /*
-	vid_render_gl.c
+	vid_render_sw.c
 
 	SW version of the renderer
 
@@ -33,12 +33,16 @@
 
 #include "mod_internal.h"
 #include "r_internal.h"
+#include "vid_internal.h"
+#include "vid_sw.h"
+
+sw_ctx_t *sw_ctx;
 
 static vid_model_funcs_t model_funcs = {
-	sw_Mod_LoadExternalTextures,
+	0,
 	sw_Mod_LoadLighting,
-	sw_Mod_SubdivideSurface,
-	sw_Mod_ProcessTexture,
+	0,//Mod_SubdivideSurface,
+	0,//Mod_ProcessTexture,
 
 	Mod_LoadIQM,
 	Mod_LoadAliasModel,
@@ -46,8 +50,8 @@ static vid_model_funcs_t model_funcs = {
 
 	sw_Mod_MakeAliasModelDisplayLists,
 	sw_Mod_LoadSkin,
-	sw_Mod_FinalizeAliasModel,
-	sw_Mod_LoadExternalSkins,
+	0,
+	0,
 	sw_Mod_IQMFinish,
 	1,
 	sw_Mod_SpriteLoadTexture,
@@ -61,7 +65,6 @@ static vid_model_funcs_t model_funcs = {
 };
 
 vid_render_funcs_t sw_vid_render_funcs = {
-	Draw_Init,
 	Draw_Character,
 	Draw_String,
 	Draw_nString,
@@ -84,7 +87,6 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	Draw_SubPic,
 
 	SCR_SetFOV,
-	SCR_UpdateScreen,
 	SCR_DrawRam,
 	SCR_DrawTurtle,
 	SCR_DrawPause,
@@ -96,6 +98,7 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	0,
 
 	sw_R_Init,
+	R_RenderFrame,
 	R_ClearState,
 	R_LoadSkys,
 	R_NewMap,
@@ -105,6 +108,7 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	R_LineGraph,
 	R_AllocDlight,
 	R_AllocEntity,
+	R_MaxDlightsCheck,
 	R_RenderView,
 	R_DecayLights,
 	R_ViewChanged,
@@ -118,8 +122,26 @@ vid_render_funcs_t sw_vid_render_funcs = {
 };
 
 static void
+sw_vid_render_choose_visual (void)
+{
+    sw_ctx->choose_visual (sw_ctx);
+}
+
+static void
+sw_vid_render_create_context (void)
+{
+    sw_ctx->create_context (sw_ctx);
+}
+
+static void
 sw_vid_render_init (void)
 {
+	sw_ctx = vr_data.vid->vid_internal->sw_context ();
+
+	vr_data.vid->vid_internal->set_palette = sw_ctx->set_palette;
+	vr_data.vid->vid_internal->choose_visual = sw_vid_render_choose_visual;
+	vr_data.vid->vid_internal->create_context = sw_vid_render_create_context;
+
 	vr_funcs = &sw_vid_render_funcs;
 	m_funcs = &model_funcs;
 }
@@ -157,7 +179,7 @@ static plugin_data_t plugin_info_data = {
 };
 
 static plugin_t plugin_info = {
-	qfp_snd_render,
+	qfp_vid_render,
 	0,
 	QFPLUGIN_VERSION,
 	"0.1",

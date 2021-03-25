@@ -118,6 +118,8 @@ Cmd_Command (cbuf_args_t *args)
 	if (cmd) {
 		if (cmd->function) {
 			cmd->function ();
+		} else if (cmd->datafunc) {
+			cmd->datafunc (cmd->data);
 		}
 		return 0;
 	}
@@ -133,10 +135,9 @@ Cmd_Command (cbuf_args_t *args)
 	return 0;
 }
 
-/* Registers a command and handler function */
-VISIBLE int
-Cmd_AddCommand (const char *cmd_name, xcommand_t function,
-				const char *description)
+static int
+add_command (const char *cmd_name, xcommand_t func, xdatacmd_t datafunc,
+			 void *data, const char *description)
 {
 	cmd_function_t *cmd;
 	cmd_function_t **c;
@@ -152,7 +153,9 @@ Cmd_AddCommand (const char *cmd_name, xcommand_t function,
 	cmd = calloc (1, sizeof (cmd_function_t));
 	SYS_CHECKMEM (cmd);
 	cmd->name = cmd_name;
-	cmd->function = function;
+	cmd->function = func;
+	cmd->datafunc = datafunc;
+	cmd->data = data;
 	cmd->description = description;
 	Hash_Add (cmd_hash, cmd);
 	for (c = &cmd_functions; *c; c = &(*c)->next)
@@ -161,6 +164,22 @@ Cmd_AddCommand (const char *cmd_name, xcommand_t function,
 	cmd->next = *c;
 	*c = cmd;
 	return 1;
+}
+
+/* Registers a command and handler function */
+VISIBLE int
+Cmd_AddCommand (const char *cmd_name, xcommand_t function,
+				const char *description)
+{
+	return add_command (cmd_name, function, 0, 0, description);
+}
+
+/* Registers a command and handler function with data */
+VISIBLE int
+Cmd_AddDataCommand (const char *cmd_name, xdatacmd_t function,
+					void *data, const char *description)
+{
+	return add_command (cmd_name, 0, function, data, description);
 }
 
 /* Unregisters a command */
@@ -490,7 +509,7 @@ Cmd_Exec_f (void)
 	}
 
 	mark = Hunk_LowMark ();
-	f = (char *) QFS_LoadHunkFile (Cmd_Argv (1));
+	f = (char *) QFS_LoadHunkFile (QFS_FOpenFile (Cmd_Argv (1)));
 	if (!f) {
 		Sys_Printf ("couldn't exec %s\n", Cmd_Argv (1));
 		return;
@@ -583,9 +602,11 @@ Cmd_StuffCmds_f (void)
 VISIBLE void
 Cmd_Init_Hash (void)
 {
-	cmd_hash = Hash_NewTable (1021, cmd_get_key, 0, 0);
-	cmd_alias_hash = Hash_NewTable (1021, cmd_alias_get_key, cmd_alias_free, 0);
-	cmd_provider_hash = Hash_NewTable(1021, cmd_provider_get_key, cmd_provider_free, 0);
+	cmd_hash = Hash_NewTable (1021, cmd_get_key, 0, 0, 0);
+	cmd_alias_hash = Hash_NewTable (1021, cmd_alias_get_key,
+									cmd_alias_free, 0, 0);
+	cmd_provider_hash = Hash_NewTable(1021, cmd_provider_get_key,
+									  cmd_provider_free, 0, 0);
 }
 
 VISIBLE void
@@ -638,7 +659,7 @@ Cmd_Exec_File (cbuf_t *cbuf, const char *path, int qfs)
 	if (!path || !*path)
 		return;
 	if (qfs) {
-		QFS_FOpenFile (path, &file);
+		file = QFS_FOpenFile (path);
 	} else {
 		char *newpath = Sys_ExpandSquiggle (path);
 		file = Qopen (newpath, "r");

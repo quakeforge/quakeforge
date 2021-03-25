@@ -106,7 +106,7 @@ bi_QFS_LoadFile (progs_t *pr)
 	int         size;
 	void       *buffer;
 
-	QFS_FOpenFile (filename, &file);
+	file = QFS_FOpenFile (filename);
 	if (!file) {
 		RETURN_POINTER (pr, 0);
 		return;
@@ -129,7 +129,7 @@ bi_QFS_OpenFile (progs_t *pr)
 	QFile      *file;
 	const char *filename = P_GSTRING (pr, 0);
 
-	QFS_FOpenFile (filename, &file);
+	file = QFS_FOpenFile (filename);
 	if (!file) {
 		R_INT (pr) = 0;
 		return;
@@ -146,7 +146,8 @@ bi_QFS_WriteFile (progs_t *pr)
 	int         count = P_INT (pr, 2);
 
 	check_buffer (pr, buf, count, "QFS_WriteFile");
-	QFS_WriteFile (va ("%s/%s", qfs_gamedir->dir.def, filename), buf, count);
+	QFS_WriteFile (va (0, "%s/%s", qfs_gamedir->dir.def, filename), buf,
+					   count);
 }
 
 static void
@@ -181,6 +182,12 @@ bi_QFS_FilelistFree (progs_t *pr)
 	PR_Zone_Free (pr, list);
 }
 
+static void
+bi_QFS_GetDirectory (progs_t *pr)
+{
+	RETURN_STRING (pr, qfs_gamedir->dir.def);
+}
+
 static builtin_t builtins[] = {
 	{"QFS_Open",			bi_QFS_Open,			-1},
 	{"QFS_WOpen",			bi_QFS_WOpen,			-1},
@@ -190,6 +197,7 @@ static builtin_t builtins[] = {
 	{"QFS_WriteFile",		bi_QFS_WriteFile,		-1},
 	{"QFS_Filelist",		bi_QFS_Filelist,		-1},
 	{"QFS_FilelistFree",	bi_QFS_FilelistFree,	-1},
+	{"QFS_GetDirectory",	bi_QFS_GetDirectory,	-1},
 	{0}
 };
 

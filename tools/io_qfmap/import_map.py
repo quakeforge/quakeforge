@@ -61,9 +61,8 @@ def load_material(tx):
     if tx.name in bpy.data.materials:
         return bpy.data.materials[tx.name]
     mat = bpy.data.materials.new(tx.name)
-    mat.diffuse_color = (1, 1, 1)
+    mat.diffuse_color = (1, 1, 1, 1)
     mat.specular_intensity = 0
-    mat.use_raytrace = False
     if tx.image:
         tex = bpy.data.textures.new(tx.name, 'IMAGE')
         tex.extension = 'REPEAT'
@@ -77,19 +76,23 @@ def load_material(tx):
     return mat
 
 def load_textures(texdefs, wads):
+    class MT:
+        def __init__(self, x, y):
+            self.width = x
+            self.height = y
     for tx in texdefs:
         if hasattr(tx, "miptex"):
             continue
-        try:
-            tx.miptex = wads[0].getData(tx.name)
-            tx.image = load_image(tx)
-        except KeyError:
-            class MT:
-                def __init__(self, x, y):
-                    self.width = x
-                    self.height = y
+        if not wads or not wads[0]:
             tx.miptex = MT(64,64)
             tx.image = None
+        else:
+            try:
+                tx.miptex = wads[0].getData(tx.name)
+                tx.image = load_image(tx)
+            except KeyError:
+                tx.miptex = MT(64,64)
+                tx.image = None
         tx.material = load_material(tx)
 
 def build_uvs(verts, faces, texdefs):
@@ -110,7 +113,7 @@ def process_entity(ent, wads):
     classname = ent.d["classname"]
     name = classname
     if "classname" in ent.d and ent.d["classname"][:5] == "light":
-        light = bpy.data.lamps.new("light", 'POINT')
+        light = bpy.data.lights.new("light", 'POINT')
         if "light" in ent.d:
             light.distance = float(ent.d["light"])
         elif "_light" in ent.d:
@@ -150,7 +153,7 @@ def process_entity(ent, wads):
             tx.matindex = len(mesh.materials)
             mesh.materials.append(tx.material)
         mesh.from_pydata(verts, [], faces)
-        uvlay = mesh.uv_textures.new(name)
+        """uvlay = mesh.uv_textures.new(name)
         uvloop = mesh.uv_layers[0]
         for i, texpoly in enumerate(uvlay.data):
             poly = mesh.polygons[i]
@@ -159,7 +162,7 @@ def process_entity(ent, wads):
             texpoly.image = tx.image
             poly.material_index = tx.matindex
             for j, k in enumerate(poly.loop_indices):
-                uvloop.data[k].uv = uv[j]
+                uvloop.data[k].uv = uv[j]"""#FIXME
         mesh.update()
         obj = bpy.data.objects.new(name, mesh)
     else:
@@ -189,50 +192,52 @@ def process_entity(ent, wads):
             del ent.d["angles"]
     obj.rotation_mode = 'XZY'
     obj.rotation_euler = angles * pi / 180
-    bpy.context.scene.objects.link(obj)
-    bpy.context.scene.objects.active=obj
-    obj.select = True
+    bpy.context.layer_collection.collection.objects.link(obj)
+    bpy.context.view_layer.objects.active = obj
+    obj.select_set(True)
     set_entity_props(obj, ent)
 
 def import_map(operator, context, filepath):
-    bpy.context.user_preferences.edit.use_global_undo = False
-
-    for obj in bpy.context.scene.objects:
-        obj.select = False
+    undo = bpy.context.preferences.edit.use_global_undo
+    bpy.context.preferences.edit.use_global_undo = False
 
     try:
+        for obj in bpy.context.scene.objects:
+            obj.select_set(False)
         entities = parse_map (filepath)
     except MapError as err:
         operator.report({'ERROR'}, repr(err))
         return {'CANCELLED'}
-    wads=[]
-    if entities:
-        if "_wad" in entities[0].d:
-            wads = entities[0].d["_wad"].split(";")
-        elif "wad" in entities[0].d:
-            wads = entities[0].d["wad"].split(";")
-        wadpath = bpy.context.scene.qfmap.wadpath
-        for i in range(len(wads)):
-            try:
-                wads[i] = WadFile.load(os.path.join(wadpath, wads[i]))
-            except IOError:
+    else:
+        wads=[]
+        if entities:
+            if "_wad" in entities[0].d:
+                wads = entities[0].d["_wad"].split(";")
+            elif "wad" in entities[0].d:
+                wads = entities[0].d["wad"].split(";")
+            wadpath = bpy.context.scene.qfmap.wadpath
+            for i in range(len(wads)):
                 try:
-                    wads[i] = WadFile.load(os.path.join(wadpath,
-                                           os.path.basename(wads[i])))
+                    wads[i] = WadFile.load(os.path.join(wadpath, wads[i]))
                 except IOError:
-                    #give up
-                    operator.report({'INFO'}, "Cant't find %s" % wads[i])
-                    wads[i] = None
-    for ent in entities:
-        process_entity(ent, wads)
-    bpy.context.user_preferences.edit.use_global_undo = True
+                    try:
+                        wads[i] = WadFile.load(os.path.join(wadpath,
+                                               os.path.basename(wads[i])))
+                    except IOError:
+                        #give up
+                        operator.report({'INFO'}, "Cant't find %s" % wads[i])
+                        wads[i] = None
+        for ent in entities:
+            process_entity(ent, wads)
+    finally:
+        bpy.context.preferences.edit.use_global_undo = undo
     return {'FINISHED'}
 
 def import_pts(operator, context, filepath):
     bpy.context.user_preferences.edit.use_global_undo = False
 
     for obj in bpy.context.scene.objects:
-        obj.select = False
+        obj.select_set(False)
 
     lines = open(filepath, "rt").readlines()
     verts = [None] * len(lines)
@@ -248,6 +253,6 @@ def import_pts(operator, context, filepath):
     obj = bpy.data.objects.new("leak points", mesh)
     bpy.context.scene.objects.link(obj)
     bpy.context.scene.objects.active=obj
-    obj.select = True
+    obj.select_set(True)
     bpy.context.user_preferences.edit.use_global_undo = True
     return {'FINISHED'}

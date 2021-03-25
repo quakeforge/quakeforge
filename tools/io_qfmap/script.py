@@ -25,10 +25,15 @@ class ScriptError(Exception):
         self.line = line
 
 class Script:
-    def __init__(self, filename, text, single="{}()':"):
+    def __init__(self, filename, text, single="{}()':", quotes=True):
         self.filename = filename
+        if text[0:3] == "\xef\xbb\xbf":
+            text = text[3:]
+        elif text[0] == u"\ufeff":
+            text = text[1:]
         self.text = text
         self.single = single
+        self.quotes = quotes
         self.pos = 0
         self.line = 1
         self.unget = False
@@ -61,6 +66,24 @@ class Script:
                 continue
             return True
         return False
+    def getLine(self):
+        start = self.pos
+        end = start
+        while self.pos < len(self.text):
+            if self.text[self.pos] == "\n":
+                self.line += 1
+                self.pos += 1
+                break
+            if self.text[self.pos:self.pos + 2] == "//":
+                break
+            self.pos += 1
+            end = self.pos
+        if self.unget:
+            self.unget = False
+            self.token = self.token + self.text[start:end]
+        else:
+            self.token = self.text[start:end]
+        return self.pos < len(self.text)
     def getToken(self, crossline=False):
         if self.unget:
             self.unget = False
@@ -69,7 +92,7 @@ class Script:
             if not crossline:
                 self.error("line is incomplete")
             return None
-        if self.text[self.pos] == "\"":
+        if self.quotes and self.text[self.pos] == "\"":
             self.pos += 1
             start = self.pos
             if self.text[self.pos] == len(self.text):

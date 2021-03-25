@@ -387,7 +387,7 @@ PartialIPAddress (const char *in, netadr_t *hostaddr)
 {
 	char       *buff;
 	char       *b;
-	int         addr, mask, num, port, run;
+	unsigned    addr, mask, num, port, run;
 
 	buff = nva (".%s", in);
 	b = buff;
@@ -407,7 +407,7 @@ PartialIPAddress (const char *in, netadr_t *hostaddr)
 		}
 		if ((*b < '0' || *b > '9') && *b != '.' && *b != ':' && *b != 0)
 			goto error;
-		if (num < 0 || num > 255)
+		if (num > 255)
 			goto error;
 		mask <<= 8;
 		addr = (addr << 8) + num;
@@ -433,7 +433,7 @@ error:
 	return -1;
 }
 
-int
+__attribute__((const)) int
 UDP_Connect (int socket, netadr_t *addr)
 {
 	return 0;
@@ -651,7 +651,7 @@ UDP_GetAddrFromName (const char *name, netadr_t *addr)
 	return 0;
 }
 
-int
+__attribute__((pure)) int
 UDP_AddrCompare (netadr_t *addr1, netadr_t *addr2)
 {
 	if (addr1->family != addr2->family)
@@ -666,7 +666,7 @@ UDP_AddrCompare (netadr_t *addr1, netadr_t *addr2)
 	return 0;
 }
 
-int
+__attribute__((pure)) int
 UDP_GetSocketPort (netadr_t *addr)
 {
 	return ntohs (addr->port);

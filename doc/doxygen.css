@@ -276,17 +276,17 @@ img.footer {
 /* @group Code Colorization */
 
 span.keyword {
-	color: #262833;
+	color: white;
 	font-weight: bold;
 }
 
 span.keywordtype {
-	color: #262833;
+	color: #bec3d9;
 	font-weight: bold;
 }
 
 span.keywordflow {
-	color: #000000;
+	color: #bec3d9;
 	font-weight: bold;
 }
 

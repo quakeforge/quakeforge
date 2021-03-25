@@ -26,21 +26,21 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef __quakeio_h
-#define __quakeio_h
+#ifndef __QF_quakeio_h
+#define __QF_quakeio_h
 
 #include <stdio.h>
 
 /** \defgroup quakeio File IO
 	\ingroup utils
 */
-//@{
+///@{
 
 typedef struct QFile_s QFile;
 
 int Qrename(const char *old_path, const char *new_path);
 int Qremove(const char *path);
-int Qfilesize (QFile *file);
+int Qfilesize (QFile *file) __attribute__((pure));
 QFile *Qopen(const char *path, const char *mode);
 QFile *Qdopen(int fd, const char *mode);
 QFile *Qfopen (FILE *file, const char *mode);
@@ -60,6 +60,6 @@ int Qflush(QFile *file);
 int Qeof(QFile *file);
 const char *Qgetline(QFile *file);
 
-//@}
+///@}
 
-#endif /*__quakeio_h*/
+#endif//__QF_quakeio_h

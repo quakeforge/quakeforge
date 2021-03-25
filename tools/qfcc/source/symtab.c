@@ -37,27 +37,29 @@
 #include "QF/alloc.h"
 #include "QF/hash.h"
 
-#include "class.h"
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "function.h"
-#include "qfcc.h"
-#include "reloc.h"
-#include "strpool.h"
-#include "symtab.h"
-#include "type.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
 
 static symtab_t *symtabs_freelist;
 static symbol_t *symbols_freelist;
 
 static const char *sy_type_names[] = {
+	"sy_name",
 	"sy_var",
 	"sy_const",
 	"sy_type",
 	"sy_expr",
 	"sy_func",
 	"sy_class",
+	"sy_convert",
 };
 
 const char *
@@ -104,7 +106,7 @@ new_symtab (symtab_t *parent, stab_type_e type)
 	symtab->type = type;
 	if (symtab->type == stab_global)
 		tabsize = 1023;
-	symtab->tab = Hash_NewTable (tabsize, sym_getkey, 0, 0);
+	symtab->tab = Hash_NewTable (tabsize, sym_getkey, 0, 0, 0);
 	symtab->symtail = &symtab->symbols;
 	return symtab;
 }
@@ -151,7 +153,7 @@ symtab_removesymbol (symtab_t *symtab, symbol_t *symbol)
 	for (s = &symtab->symbols; *s && *s != symbol; s = & (*s)->next)
 		;
 	if (!*s)
-		internal_error (0, "symtab_removesymbol");
+		internal_error (0, "attempt to remove symbol not in symtab");
 	*s = (*s)->next;
 	if (symtab->symtail == &symbol->next)
 		symtab->symtail = s;
@@ -164,6 +166,7 @@ symbol_t *
 copy_symbol (symbol_t *symbol)
 {
 	symbol_t   *sym = new_symbol (symbol->name);
+	sym->visibility = symbol->visibility;
 	sym->type = symbol->type;
 	sym->params = copy_params (symbol->params);
 	sym->sy_type = symbol->sy_type;
@@ -181,7 +184,8 @@ symtab_flat_copy (symtab_t *symtab, symtab_t *parent)
 	newtab = new_symtab (parent, stab_local);
 	do {
 		for (symbol = symtab->symbols; symbol; symbol = symbol->next) {
-			if (Hash_Find (newtab->tab, symbol->name))
+			if (symbol->visibility == vis_anonymous
+				|| Hash_Find (newtab->tab, symbol->name))
 				continue;
 			newsym = copy_symbol (symbol);
 			symtab_addsymbol (newtab, newsym);
@@ -234,5 +238,6 @@ make_symbol (const char *name, type_t *type, defspace_t *space,
 		sym->s.def = new_def (name, type, space, storage);
 		reloc_attach_relocs (relocs, &sym->s.def->relocs);
 	}
+	sym->sy_type = sy_var;
 	return sym;
 }

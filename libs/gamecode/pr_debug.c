@@ -46,12 +46,12 @@
 #include "QF/hash.h"
 #include "QF/mathlib.h"
 #include "QF/pr_debug.h"
+#include "QF/pr_type.h"
 #include "QF/progs.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
 #include "QF/script.h"
 #include "QF/sys.h"
-#include "QF/va.h"
 #include "QF/zone.h"
 
 #include "compat.h"
@@ -64,17 +64,107 @@ typedef struct {
 typedef struct {
 	char *name;
 	char *text;
+	off_t size;
 	line_t *lines;
 	pr_uint_t   num_lines;
 	progs_t *pr;
 } file_t;
 
+typedef struct compunit_s {
+	const char *file;
+	pr_compunit_t *unit;
+} compunit_t;
+
+typedef struct prdeb_resources_s {
+	progs_t    *pr;
+	dstring_t  *string;
+	dstring_t  *dva;
+	dstring_t  *line;
+	dstring_t  *dstr;
+	const char *debugfile;
+	pr_debug_header_t *debug;
+	pr_auxfunction_t *auxfunctions;
+	pr_auxfunction_t **auxfunction_map;
+	pr_lineno_t *linenos;
+	pr_def_t   *local_defs;
+	pr_def_t   *type_encodings_def;
+	qfot_type_t void_type;
+	qfot_type_t *type_encodings[ev_type_count];
+	pr_def_t   *debug_defs;
+	pr_type_t  *debug_data;
+	hashtab_t  *debug_syms;
+	hashtab_t  *compunits;	// by source file
+	PR_RESMAP (compunit_t) compmap;	// handy allocation/freeing
+	hashtab_t  *file_hash;
+} prdeb_resources_t;
+
+typedef struct {
+	progs_t    *pr;
+	dstring_t  *dstr;
+} pr_debug_data_t;
+
 cvar_t         *pr_debug;
 cvar_t         *pr_source_path;
-static hashtab_t   *file_hash;
-static char        *source_path_string;
-static char       **source_paths;
+static char    *source_path_string;
+static char   **source_paths;
 
+static void pr_debug_void_view (qfot_type_t *type, pr_type_t *value,
+								void *_data);
+static void pr_debug_string_view (qfot_type_t *type, pr_type_t *value,
+								void *_data);
+static void pr_debug_float_view (qfot_type_t *type, pr_type_t *value,
+								void *_data);
+static void pr_debug_vector_view (qfot_type_t *type, pr_type_t *value,
+								void *_data);
+static void pr_debug_entity_view (qfot_type_t *type, pr_type_t *value,
+								void *_data);
+static void pr_debug_field_view (qfot_type_t *type, pr_type_t *value,
+								void *_data);
+static void pr_debug_func_view (qfot_type_t *type, pr_type_t *value,
+								void *_data);
+static void pr_debug_pointer_view (qfot_type_t *type, pr_type_t *value,
+								void *_data);
+static void pr_debug_quat_view (qfot_type_t *type, pr_type_t *value,
+								void *_data);
+static void pr_debug_integer_view (qfot_type_t *type, pr_type_t *value,
+								void *_data);
+static void pr_debug_uinteger_view (qfot_type_t *type, pr_type_t *value,
+								void *_data);
+static void pr_debug_short_view (qfot_type_t *type, pr_type_t *value,
+								void *_data);
+static void pr_debug_double_view (qfot_type_t *type, pr_type_t *value,
+								void *_data);
+static void pr_debug_struct_view (qfot_type_t *type, pr_type_t *value,
+								void *_data);
+static void pr_debug_union_view (qfot_type_t *type, pr_type_t *value,
+								void *_data);
+static void pr_debug_enum_view (qfot_type_t *type, pr_type_t *value,
+								void *_data);
+static void pr_debug_array_view (qfot_type_t *type, pr_type_t *value,
+								void *_data);
+static void pr_debug_class_view (qfot_type_t *type, pr_type_t *value,
+								void *_data);
+
+static type_view_t raw_type_view = {
+	pr_debug_void_view,
+	pr_debug_string_view,
+	pr_debug_float_view,
+	pr_debug_vector_view,
+	pr_debug_entity_view,
+	pr_debug_field_view,
+	pr_debug_func_view,
+	pr_debug_pointer_view,
+	pr_debug_quat_view,
+	pr_debug_integer_view,
+	pr_debug_uinteger_view,
+	pr_debug_short_view,
+	pr_debug_double_view,
+	pr_debug_struct_view,
+	pr_debug_union_view,
+	pr_debug_enum_view,
+	pr_debug_array_view,
+	pr_debug_class_view,
+};
 
 static const char *
 file_get_key (const void *_f, void *unused)
@@ -94,56 +184,124 @@ file_free (void *_f, void *unused)
 	free (f);
 }
 
+static const char *
+def_get_key (const void *d, void *p)
+{
+	__auto_type def = (pr_def_t *) d;
+	__auto_type pr = (progs_t *) p;
+	return PR_GetString (pr, def->name);
+}
+
+static const char *
+compunit_get_key (const void *cu, void *p)
+{
+	__auto_type compunit = (compunit_t *) cu;
+	return compunit->file;
+}
+
 static void
 source_path_f (cvar_t *var)
 {
 	int         i;
 	char       *s;
 
-	if (source_path_string)
+	if (source_path_string) {
 		free (source_path_string);
+	}
 	source_path_string = strdup (var->string);
-	if (source_paths)
+	if (source_paths) {
 		free (source_paths);
-	for (i = 2, s = source_path_string; *s; s++)
-		if (*s == ';')
-			i++;
-	source_paths = malloc (i * sizeof (char **));
-	source_paths[0] = source_path_string;
-	for (i = 1, s = source_path_string; *s; s++)
+	}
+	// i starts at 2 because an empty path is equivalent to "." and the
+	// list is null terminated
+	for (i = 2, s = source_path_string; *s; s++) {
 		if (*s == ';') {
-			*s++ = 0;
-			source_paths[i++] = s;
+			i++;
 		}
+	}
+	source_paths = malloc (i * sizeof (char *));
+	source_paths[0] = source_path_string;
+	// i starts at one because the first path is in 0 and any additional
+	// paths come after, then the null terminator
+	for (i = 1, s = source_path_string; *s; s++) {
+		if (*s == ';') {
+			*s = 0;
+			source_paths[i++] = s + 1;
+		}
+	}
 	source_paths[i] = 0;
 }
 
-static void
-pr_debug_expression_error (script_t *script, const char *msg)
+#define RUP(x,a) (((x) + ((a) - 1)) & ~((a) - 1))
+static pr_short_t __attribute__((pure))
+pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
 {
-	Sys_Printf ("%s\n", msg);
+	pr_short_t  size;
+	qfot_type_t *aux_type;
+	switch (type->meta) {
+		case ty_basic:
+			return pr_type_size[type->type];
+		case ty_struct:
+		case ty_union:
+			size = 0;
+			for (pr_int_t i = 0; i < type->strct.num_fields; i++) {
+				const qfot_var_t *field = &type->strct.fields[i];
+				aux_type = &G_STRUCT (pr, qfot_type_t, field->type);
+				size = max (size,
+							field->offset + pr_debug_type_size (pr, aux_type));
+			}
+			return size;
+		case ty_enum:
+			return pr_type_size[ev_integer];
+		case ty_array:
+			aux_type = &G_STRUCT (pr, qfot_type_t, type->array.type);
+			size = pr_debug_type_size (pr, aux_type);
+			return type->array.size * size;
+		case ty_class:
+			return 1;	//FIXME or should it return sizeof class struct?
+		case ty_alias:
+			aux_type = &G_STRUCT (pr, qfot_type_t, type->alias.aux_type);
+			return pr_debug_type_size (pr, aux_type);
+	}
+	return 0;
 }
 
-static ddef_t
+static qfot_type_t *
+get_def_type (progs_t *pr, pr_def_t *def, qfot_type_t *type)
+{
+	if (!def->type_encoding) {
+		// no type encoding, so use basic type data to fill in and return
+		// the dummy encoding
+		memset (type, 0, sizeof (*type));
+		type->type = def->type;
+	} else {
+		type = &G_STRUCT (pr, qfot_type_t, def->type_encoding);
+		if (!def->size) {
+			def->size = pr_debug_type_size (pr, type);
+		}
+	}
+	return type;
+}
+
+static pr_def_t
 parse_expression (progs_t *pr, const char *expr, int conditional)
 {
 	script_t   *es;
 	char       *e;
 	pr_type_t  *expr_ptr;
-	ddef_t      d;
+	pr_def_t    d;
 
 	d.ofs = 0;
 	d.type = ev_invalid;
-	d.s_name = 0;
+	d.name = 0;
 	es = Script_New ();
-	es->error = pr_debug_expression_error;
 	Script_Start (es, "<console>", expr);
 	expr_ptr = 0;
 	es->single = "{}()':[].";
 	if (Script_GetToken (es, 1)) {
 		if (strequal (es->token->str, "[")) {
 			edict_t    *ent;
-			ddef_t     *field;
+			pr_def_t   *field;
 
 			if (!Script_GetToken (es, 1))
 				goto error;
@@ -167,7 +325,7 @@ parse_expression (progs_t *pr, const char *expr, int conditional)
 			d.type = ev_void;
 			d.ofs = PR_SetPointer (pr, expr_ptr);
 		} else {
-			ddef_t     *global = PR_FindGlobal (pr, es->token->str);
+			pr_def_t   *global = PR_FindGlobal (pr, es->token->str);
 			if (!global)
 				goto error;
 			d = *global;
@@ -193,31 +351,53 @@ parse_expression (progs_t *pr, const char *expr, int conditional)
 			Sys_Printf ("ignoring tail\n");
 	}
 error:
+	if (es->error) {
+		Sys_Printf (es->error);
+	}
 	Script_Delete (es);
 	return d;
 }
 
-void
-PR_Debug_Init (void)
+static void
+pr_debug_clear (progs_t *pr, void *data)
 {
-	file_hash = Hash_NewTable (1024, file_get_key, file_free, 0);
-}
+	__auto_type res = (prdeb_resources_t *) data;
 
-void
-PR_Debug_Init_Cvars (void)
-{
-	pr_debug = Cvar_Get ("pr_debug", "0", CVAR_NONE, NULL,
-						 "enable progs debugging");
-	pr_source_path = Cvar_Get ("pr_source_path", ".", CVAR_NONE, source_path_f,
-							   "where to look (within gamedir) for source "
-							   "files");
+	dstring_clearstr (res->string);
+	dstring_clearstr (res->dva);
+	dstring_clearstr (res->line);
+	dstring_clearstr (res->dstr);
+
+	if (res->debug)
+		pr->free_progs_mem (pr, res->debug);
+	Hash_FlushTable (res->file_hash);
+	Hash_FlushTable (res->debug_syms);
+	Hash_FlushTable (res->compunits);
+	PR_RESRESET (res->compmap);
+	res->debug = 0;
+	res->auxfunctions = 0;
+	if (res->auxfunction_map)
+		pr->free_progs_mem (pr, res->auxfunction_map);
+	res->auxfunction_map = 0;
+	res->linenos = 0;
+	res->local_defs = 0;
+
+	pr->pr_debug_resources = res;
+	pr->watch = 0;
+	pr->wp_conditional = 0;
+	pr->wp_val.integer_var = 0;
+
+	for (int i = 0; i < ev_type_count; i++ ) {
+		res->type_encodings[i] = &res->void_type;
+	}
 }
 
 static file_t *
 PR_Load_Source_File (progs_t *pr, const char *fname)
 {
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	char       *l, *p, **dir;
-	file_t     *f = Hash_Find (file_hash, fname);
+	file_t     *f = Hash_Find (res->file_hash, fname);
 
 	if (f)
 		return f;
@@ -225,8 +405,9 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 	if (!f)
 		return 0;
 	for (dir = source_paths; *dir && !f->text; dir++) {
-		f->text = pr->load_file (pr, va ("%s%s%s", *dir, **dir ? "/" : "",
-										 fname));
+		f->text = pr->load_file (pr, dsprintf (res->dva, "%s%s%s", *dir,
+											   **dir ? "/" : "", fname),
+								 &f->size);
 	}
 	if (!f->text) {
 		pr->file_error (pr, fname);
@@ -263,29 +444,57 @@ PR_Load_Source_File (progs_t *pr, const char *fname)
 		f->num_lines++;
 	}
 	f->pr = pr;
-	Hash_Add (file_hash, f);
+	Hash_Add (res->file_hash, f);
 	return f;
+}
+
+static void
+byteswap_def (pr_def_t *def)
+{
+	def->type = LittleShort (def->type);
+	def->size = LittleShort (def->size);
+	def->ofs = LittleLong (def->ofs);
+	def->name = LittleLong (def->name);
+	def->type_encoding = LittleLong (def->type_encoding);
+}
+
+static compunit_t *
+new_compunit (prdeb_resources_t *res)
+{
+	return PR_RESNEW (res->compmap);
+}
+
+static void
+process_compunit (prdeb_resources_t *res, pr_def_t *def)
+{
+	progs_t    *pr = res->pr;
+	__auto_type compunit = (pr_compunit_t *) (res->debug_data + def->ofs);
+
+	for (unsigned i = 0; i < compunit->num_files; i++) {
+		compunit_t *cu = new_compunit (res);
+		cu->unit = compunit;
+		cu->file = PR_GetString (pr, compunit->files[i]);
+		Hash_Add (res->compunits, cu);
+	}
 }
 
 VISIBLE int
 PR_LoadDebug (progs_t *pr)
 {
+	prdeb_resources_t *res = PR_Resources_Find (pr, "PR_Debug");
 	char       *sym_path;
 	const char *path_end, *sym_file;
+	off_t       debug_size;
 	pr_uint_t   i;
-	ddef_t	   *def;
+	pr_def_t   *def;
 	pr_type_t  *str = 0;
+	qfot_type_encodings_t *encodings = 0;
+	pointer_t   type_encodings = 0;
+	pointer_t   type_ptr;
+	qfot_type_t *type;
+	string_t    compunit_str;
 
-	if (pr->debug)
-		pr->free_progs_mem (pr, pr->debug);
-	pr->debug = 0;
-	pr->auxfunctions = 0;
-	if (pr->auxfunction_map)
-		pr->free_progs_mem (pr, pr->auxfunction_map);
-	pr->auxfunction_map = 0;
-	pr->linenos = 0;
-	pr->local_defs = 0;
-
+	pr->pr_debug_resources = res;
 	if (!pr_debug->int_val)
 		return 1;
 
@@ -293,110 +502,221 @@ PR_LoadDebug (progs_t *pr)
 	if (def)
 		str = &pr->pr_globals[def->ofs];
 
-	Hash_FlushTable (file_hash);
 	if (!str)
 		return 1;
-	pr->debugfile = PR_GetString (pr, str->string_var);
-	sym_file = QFS_SkipPath (pr->debugfile);
+	res->debugfile = PR_GetString (pr, str->string_var);
+	sym_file = QFS_SkipPath (res->debugfile);
 	path_end = QFS_SkipPath (pr->progs_name);
 	sym_path = malloc (strlen (sym_file) + (path_end - pr->progs_name) + 1);
 	strncpy (sym_path, pr->progs_name, path_end - pr->progs_name);
 	strcpy (sym_path + (path_end - pr->progs_name), sym_file);
-	pr->debug = pr->load_file (pr, sym_path);
-	if (!pr->debug) {
+	res->debug = pr->load_file (pr, sym_path, &debug_size);
+	if (!res->debug) {
 		Sys_Printf ("can't load %s for debug info\n", sym_path);
 		free (sym_path);
 		return 1;
 	}
-	pr->debug->version = LittleLong (pr->debug->version);
-	if (pr->debug->version != PROG_DEBUG_VERSION) {
+	res->debug->version = LittleLong (res->debug->version);
+	if (res->debug->version != PROG_DEBUG_VERSION) {
 		Sys_Printf ("ignoring %s with unsupported version %x.%03x.%03x\n",
 					sym_path,
-					(pr->debug->version >> 24) & 0xff,
-					(pr->debug->version >> 12) & 0xfff,
-					pr->debug->version & 0xfff);
-		pr->debug = 0;
+					(res->debug->version >> 24) & 0xff,
+					(res->debug->version >> 12) & 0xfff,
+					res->debug->version & 0xfff);
+		res->debug = 0;
 		free (sym_path);
 		return 1;
 	}
-	pr->debug->crc = LittleShort (pr->debug->crc);
-	if (pr->debug->crc != pr->crc) {
+	res->debug->crc = LittleShort (res->debug->crc);
+	if (res->debug->crc != pr->crc) {
 		Sys_Printf ("ignoring %s that doesn't match %s. (CRCs: "
 					"sym:%d dat:%d)\n",
 					sym_path,
 					pr->progs_name,
-					pr->debug->crc,
+					res->debug->crc,
 					pr->crc);
-		pr->debug = 0;
+		res->debug = 0;
 		free (sym_path);
 		return 1;
 	}
 	free (sym_path);
-	pr->debug->you_tell_me_and_we_will_both_know = LittleShort
-		(pr->debug->you_tell_me_and_we_will_both_know);
-	pr->debug->auxfunctions = LittleLong (pr->debug->auxfunctions);
-	pr->debug->num_auxfunctions = LittleLong (pr->debug->num_auxfunctions);
-	pr->debug->linenos = LittleLong (pr->debug->linenos);
-	pr->debug->num_linenos = LittleLong (pr->debug->num_linenos);
-	pr->debug->locals = LittleLong (pr->debug->locals);
-	pr->debug->num_locals = LittleLong (pr->debug->num_locals);
+	res->debug->you_tell_me_and_we_will_both_know = LittleShort
+		(res->debug->you_tell_me_and_we_will_both_know);
+	res->debug->auxfunctions = LittleLong (res->debug->auxfunctions);
+	res->debug->num_auxfunctions = LittleLong (res->debug->num_auxfunctions);
+	res->debug->linenos = LittleLong (res->debug->linenos);
+	res->debug->num_linenos = LittleLong (res->debug->num_linenos);
+	res->debug->locals = LittleLong (res->debug->locals);
+	res->debug->num_locals = LittleLong (res->debug->num_locals);
+	res->debug->debug_defs = LittleLong (res->debug->debug_defs);
+	res->debug->num_debug_defs = LittleLong (res->debug->num_debug_defs);
+	res->debug->debug_data = LittleLong (res->debug->debug_data);
+	res->debug->debug_data_size = LittleLong (res->debug->debug_data_size);
 
-	pr->auxfunctions = (pr_auxfunction_t*)((char*)pr->debug +
-										   pr->debug->auxfunctions);
-	pr->linenos = (pr_lineno_t*)((char*)pr->debug + pr->debug->linenos);
-	pr->local_defs = (ddef_t*)((char*)pr->debug + pr->debug->locals);
+	res->auxfunctions = (pr_auxfunction_t*)((char*)res->debug +
+										   res->debug->auxfunctions);
+	res->linenos = (pr_lineno_t*)((char*)res->debug + res->debug->linenos);
+	res->local_defs = (pr_def_t*)((char*)res->debug + res->debug->locals);
+	res->debug_defs = (pr_def_t*)((char*)res->debug + res->debug->debug_defs);
+	res->debug_data = (pr_type_t*)((char*)res->debug + res->debug->debug_data);
 
 	i = pr->progs->numfunctions * sizeof (pr_auxfunction_t *);
-	pr->auxfunction_map = pr->allocate_progs_mem (pr, i);
-	for (i = 0; (int) i < pr->progs->numfunctions; i++) //FIXME (cast)
-		pr->auxfunction_map[i] = 0;
+	res->auxfunction_map = pr->allocate_progs_mem (pr, i);
+	for (i = 0; i < pr->progs->numfunctions; i++)
+		res->auxfunction_map[i] = 0;
 
-	for (i = 0; i < pr->debug->num_auxfunctions; i++) {
-		pr->auxfunctions[i].function = LittleLong
-			(pr->auxfunctions[i].function);
-		pr->auxfunctions[i].source_line = LittleLong
-			(pr->auxfunctions[i].source_line);
-		pr->auxfunctions[i].line_info = LittleLong
-			(pr->auxfunctions[i].line_info);
-		pr->auxfunctions[i].local_defs = LittleLong
-			(pr->auxfunctions[i].local_defs);
-		pr->auxfunctions[i].num_locals = LittleLong
-			(pr->auxfunctions[i].num_locals);
+	res->type_encodings_def = PR_FindGlobal (pr, ".type_encodings");
+	if (res->type_encodings_def) {
+		encodings = &G_STRUCT (pr, qfot_type_encodings_t,
+							   res->type_encodings_def->ofs);
+		type_encodings = encodings->types;
+	}
+	for (i = 0; i < res->debug->num_auxfunctions; i++) {
+		res->auxfunctions[i].function = LittleLong
+			(res->auxfunctions[i].function);
+		res->auxfunctions[i].source_line = LittleLong
+			(res->auxfunctions[i].source_line);
+		res->auxfunctions[i].line_info = LittleLong
+			(res->auxfunctions[i].line_info);
+		res->auxfunctions[i].local_defs = LittleLong
+			(res->auxfunctions[i].local_defs);
+		res->auxfunctions[i].num_locals = LittleLong
+			(res->auxfunctions[i].num_locals);
 
-		pr->auxfunction_map[pr->auxfunctions[i].function] =
-			&pr->auxfunctions[i];
+		if (type_encodings) {
+			res->auxfunctions[i].return_type += type_encodings;
+		}
+		res->auxfunction_map[res->auxfunctions[i].function] =
+			&res->auxfunctions[i];
 	}
-	for (i = 0; i < pr->debug->num_linenos; i++) {
-		pr->linenos[i].fa.func = LittleLong (pr->linenos[i].fa.func);
-		pr->linenos[i].line = LittleLong (pr->linenos[i].line);
+	for (i = 0; i < res->debug->num_linenos; i++) {
+		res->linenos[i].fa.func = LittleLong (res->linenos[i].fa.func);
+		res->linenos[i].line = LittleLong (res->linenos[i].line);
 	}
-	for (i = 0; i < pr->debug->num_locals; i++) {
-		pr->local_defs[i].type = LittleShort (pr->local_defs[i].type);
-		pr->local_defs[i].ofs = LittleShort (pr->local_defs[i].ofs);
-		pr->local_defs[i].s_name = LittleLong (pr->local_defs[i].s_name);
+	for (i = 0; i < res->debug->num_locals; i++) {
+		byteswap_def (&res->local_defs[i]);
+		if (type_encodings) {
+			res->local_defs[i].type_encoding += type_encodings;
+		}
+	}
+	compunit_str = PR_FindString (pr, ".compile_unit");
+	for (i = 0; i < res->debug->num_debug_defs; i++) {
+		pr_def_t   *def = &res->debug_defs[i];
+		byteswap_def (def);
+		if (type_encodings) {
+			def->type_encoding += type_encodings;
+		}
+		Hash_Add (res->debug_syms, def);
+		if (def->name == compunit_str) {
+			process_compunit (res, def);
+		}
+	}
+	if (encodings) {
+		for (type_ptr = 4; type_ptr < encodings->size;
+			 type_ptr += type->size) {
+			type = &G_STRUCT (pr, qfot_type_t, type_encodings + type_ptr);
+			if (type->meta == ty_basic
+				&& type->type >= 0 && type->type < ev_type_count) {
+				res->type_encodings[type->type] = type;
+			}
+		}
 	}
 	return 1;
+}
+
+VISIBLE const char *
+PR_Debug_GetBaseDirectory (progs_t *pr, const char *file)
+{
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	__auto_type cu = (compunit_t *) Hash_Find (res->compunits, file);
+
+	if (cu) {
+		return PR_GetString (pr, cu->unit->basedir);
+	}
+	return 0;
+}
+
+VISIBLE pr_auxfunction_t *
+PR_Debug_AuxFunction (progs_t *pr, pr_uint_t func)
+{
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	if (!res->debug || func >= res->debug->num_auxfunctions) {
+		return 0;
+	}
+	return &res->auxfunctions[func];
+}
+
+VISIBLE pr_auxfunction_t *
+PR_Debug_MappedAuxFunction (progs_t *pr, pr_uint_t func)
+{
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	if (!res->debug || func >= pr->progs->numfunctions) {
+		return 0;
+	}
+	return res->auxfunction_map[func];
+}
+
+VISIBLE pr_def_t *
+PR_Debug_LocalDefs (progs_t *pr, pr_auxfunction_t *aux_function)
+{
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	if (!res->debug || !aux_function) {
+		return 0;
+	}
+	if (aux_function->local_defs > res->debug->num_locals) {
+		return 0;
+	}
+	return res->local_defs + aux_function->local_defs;
+}
+
+VISIBLE pr_lineno_t *
+PR_Debug_Linenos (progs_t *pr, pr_auxfunction_t *aux_function,
+				  pr_uint_t *num_linenos)
+{
+	pr_uint_t   i, count;
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	if (!res->debug) {
+		return 0;
+	}
+	if (!aux_function) {
+		*num_linenos = res->debug->num_linenos;
+		return res->linenos;
+	}
+	if (aux_function->line_info > res->debug->num_linenos) {
+		return 0;
+	}
+	//FIXME put lineno count in sym file
+	for (count = 1, i = aux_function->line_info + 1;
+		 i < res->debug->num_linenos; i++, count++) {
+		if (!res->linenos[i].line) {
+			break;
+		}
+	}
+	*num_linenos = count;
+	return res->linenos + aux_function->line_info;
 }
 
 pr_auxfunction_t *
 PR_Get_Lineno_Func (progs_t *pr, pr_lineno_t *lineno)
 {
-	while (lineno > pr->linenos && lineno->line)
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	while (lineno > res->linenos && lineno->line)
 		lineno--;
 	if (lineno->line)
 		return 0;
-	return &pr->auxfunctions[lineno->fa.func];
+	return &res->auxfunctions[lineno->fa.func];
 }
 
 pr_uint_t
 PR_Get_Lineno_Addr (progs_t *pr, pr_lineno_t *lineno)
 {
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	pr_auxfunction_t *f;
 
 	if (lineno->line)
 		return lineno->fa.addr;
-	if (lineno->fa.func < pr->debug->num_auxfunctions) {
-		f = &pr->auxfunctions[lineno->fa.func];
+	if (lineno->fa.func < res->debug->num_auxfunctions) {
+		f = &res->auxfunctions[lineno->fa.func];
 		return pr->pr_functions[f->function].first_statement;
 	}
 	// take a wild guess that only the line number is bogus and return
@@ -415,16 +735,17 @@ PR_Get_Lineno_Line (progs_t *pr, pr_lineno_t *lineno)
 pr_lineno_t *
 PR_Find_Lineno (progs_t *pr, pr_uint_t addr)
 {
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	pr_uint_t   i;
 	pr_lineno_t *lineno = 0;
 
-	if (!pr->debug)
+	if (!res->debug)
 		return 0;
-	if (!pr->debug->num_linenos)
+	if (!res->debug->num_linenos)
 		return 0;
-	for (i = pr->debug->num_linenos; i > 0; i--) {
-		if (PR_Get_Lineno_Addr (pr, &pr->linenos[i - 1]) <= addr) {
-			lineno = &pr->linenos[i - 1];
+	for (i = res->debug->num_linenos; i > 0; i--) {
+		if (PR_Get_Lineno_Addr (pr, &res->linenos[i - 1]) <= addr) {
+			lineno = &res->linenos[i - 1];
 			break;
 		}
 	}
@@ -445,6 +766,7 @@ PR_Get_Source_File (progs_t *pr, pr_lineno_t *lineno)
 const char *
 PR_Get_Source_Line (progs_t *pr, pr_uint_t addr)
 {
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	const char *fname;
 	pr_uint_t   line;
 	file_t     *file;
@@ -464,22 +786,24 @@ PR_Get_Source_Line (progs_t *pr, pr_uint_t addr)
 	file = PR_Load_Source_File (pr, fname);
 
 	if (!file || !file->lines || !line || line > file->num_lines)
-		return va ("%s:%u", fname, line);
+		return dsprintf (res->dva, "%s:%u", fname, line);
 
-	return va ("%s:%u:%.*s", fname, line, (int)file->lines[line - 1].len,
-			   file->lines[line - 1].text);
+	return dsprintf (res->dva, "%s:%u:%.*s", fname, line,
+					 (int)file->lines[line - 1].len,
+					 file->lines[line - 1].text);
 }
 
-ddef_t *
+pr_def_t *
 PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm)
 {
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	pr_uint_t    i;
 	pr_auxfunction_t *aux_func;
-	ddef_t      *ddef = 0;
+	pr_def_t    *ddef = 0;
 	int          num_params;
 	int          param_offs = 0;
 
-	if (!pr->debug)
+	if (!res->debug)
 		return 0;
 	if (!func)
 		return 0;
@@ -492,12 +816,12 @@ PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm)
 	if (parm >= (unsigned) num_params)
 		return 0;
 
-	aux_func = pr->auxfunction_map[func - pr->pr_functions];
+	aux_func = res->auxfunction_map[func - pr->pr_functions];
 	if (!aux_func)
 		return 0;
 
 	for (i = 0; i < aux_func->num_locals; i++) {
-		ddef = &pr->local_defs[aux_func->local_defs + param_offs + i];
+		ddef = &res->local_defs[aux_func->local_defs + param_offs + i];
 		if (!parm--)
 			break;
 	}
@@ -507,42 +831,58 @@ PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm)
 static pr_auxfunction_t *
 get_aux_function (progs_t *pr)
 {
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	dfunction_t *func;
-	if (!pr->pr_xfunction || !pr->auxfunction_map)
+	if (!pr->pr_xfunction || !res->auxfunction_map)
 		return 0;
 	func = pr->pr_xfunction->descriptor;
-	return pr->auxfunction_map[func - pr->pr_functions];
+	return res->auxfunction_map[func - pr->pr_functions];
 }
 
-ddef_t *
-PR_Get_Local_Def (progs_t *pr, pr_int_t offs)
+static qfot_type_t *
+get_type (prdeb_resources_t *res, int typeptr)
 {
-	pr_uint_t   i;
+	progs_t    *pr = res->pr;
+
+	if (!typeptr) {
+		return &res->void_type;
+	}
+	return &G_STRUCT (pr, qfot_type_t, typeptr);
+}
+
+pr_def_t *
+PR_Get_Local_Def (progs_t *pr, pointer_t *offset)
+{
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	dfunction_t *func;
 	pr_auxfunction_t *aux_func;
+	pointer_t   offs = *offset;
+	pr_def_t   *def;
 
 	if (!pr->pr_xfunction)
 		return 0;
 	func = pr->pr_xfunction->descriptor;
 	if (!func)
 		return 0;
-	aux_func = pr->auxfunction_map[func - pr->pr_functions];
+	aux_func = res->auxfunction_map[func - pr->pr_functions];
 	if (!aux_func)
 		return 0;
 	offs -= func->parm_start;
-	if (offs < 0 || offs >= func->locals)
+	if (offs >= func->locals)
 		return 0;
-	for (i = 0; i < aux_func->num_locals; i++)
-		if (pr->local_defs[aux_func->local_defs + i].ofs == offs)
-			return &pr->local_defs[aux_func->local_defs + i];
-	return 0;
+	if ((def =  PR_SearchDefs (res->local_defs + aux_func->local_defs,
+							   aux_func->num_locals, offs))) {
+		*offset = offs - def->ofs;
+	}
+	return def;
 }
 
 VISIBLE void
 PR_DumpState (progs_t *pr)
 {
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	if (pr->pr_xfunction) {
-		if (pr_debug->int_val && pr->debug) {
+		if (pr_debug->int_val && res->debug) {
 			pr_lineno_t *lineno;
 			pr_auxfunction_t *func = 0;
 			dfunction_t *descriptor = pr->pr_xfunction->descriptor;
@@ -567,182 +907,415 @@ PR_DumpState (progs_t *pr)
 #define ISDENORM(x) ((x) && !((x) & 0x7f800000))
 
 static const char *
-value_string (progs_t *pr, etype_t type, pr_type_t *val)
+value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 {
-	static dstring_t *line;
-	ddef_t     *def;
-	pr_int_t    ofs;
-	edict_t    *edict;
-	dfunction_t	*f;
-	const char *str;
-
-	if (!line)
-		line = dstring_new ();
-
-	type &= ~DEF_SAVEGLOBAL;
-
-	switch (type) {
-		case ev_string:
-			if (!PR_StringValid (pr, val->string_var))
-				return "*** invalid ***";
-			str = PR_GetString (pr, val->string_var);
-			dstring_copystr (line, "\"");
-			while (*str) {
-				const char *s;
-
-				for (s = str; *s && !strchr ("\"\n\t", *s); s++)
-					;
-				if (s != str)
-					dstring_appendsubstr (line, str, s - str);
-				if (*s) {
-					switch (*s) {
-						case '\"':
-							dstring_appendstr (line, "\\\"");
-							break;
-						case '\n':
-							dstring_appendstr (line, "\\n");
-							break;
-						case '\t':
-							dstring_appendstr (line, "\\t");
-							break;
-						default:
-							dasprintf (line, "\\x%02x", *s & 0xff);
-					}
-					s++;
-				}
-				str = s;
-			}
-			dstring_appendstr (line, "\"");
-			break;
-		case ev_entity:
-			edict = PROG_TO_EDICT (pr, val->entity_var);
-			dsprintf (line, "entity %d", NUM_FOR_BAD_EDICT (pr, edict));
-			break;
-		case ev_func:
-			if (val->func_var < 0 || val->func_var >= pr->progs->numfunctions)
-				dsprintf (line, "INVALID:%d", val->func_var);
-			else if (!val->func_var)
-				return "NULL";
-			else {
-				f = pr->pr_functions + val->func_var;
-				dsprintf (line, "%s()", PR_GetString (pr, f->s_name));
+	switch (type->meta) {
+		case ty_basic:
+			switch (type->type) {
+				case ev_void:
+					raw_type_view.void_view (type, value, data);
+					break;
+				case ev_string:
+					raw_type_view.string_view (type, value, data);
+					break;
+				case ev_float:
+					raw_type_view.float_view (type, value, data);
+					break;
+				case ev_vector:
+					raw_type_view.vector_view (type, value, data);
+					break;
+				case ev_entity:
+					raw_type_view.entity_view (type, value, data);
+					break;
+				case ev_field:
+					raw_type_view.field_view (type, value, data);
+					break;
+				case ev_func:
+					raw_type_view.func_view (type, value, data);
+					break;
+				case ev_pointer:
+					raw_type_view.pointer_view (type, value, data);
+					break;
+				case ev_quat:
+					raw_type_view.quat_view (type, value, data);
+					break;
+				case ev_integer:
+					raw_type_view.integer_view (type, value, data);
+					break;
+				case ev_uinteger:
+					raw_type_view.uinteger_view (type, value, data);
+					break;
+				case ev_short:
+					raw_type_view.short_view (type, value, data);
+					break;
+				case ev_double:
+					raw_type_view.double_view (type, value, data);
+					break;
+				case ev_invalid:
+				case ev_type_count:
+					dstring_appendstr (data->dstr, "<?""?>");
 			}
 			break;
-		case ev_field:
-			def = PR_FieldAtOfs (pr, val->integer_var);
-			if (def)
-				dsprintf (line, ".%s", PR_GetString (pr, def->s_name));
-			else
-				dsprintf (line, ".<$%04x>", val->integer_var);
+		case ty_struct:
+			raw_type_view.struct_view (type, value, data);
 			break;
-		case ev_void:
-			return "void";
-		case ev_float:
-			if (ISDENORM (val->integer_var) && val->uinteger_var != 0x80000000)
-				dsprintf (line, "<%08x>", val->integer_var);
-			else
-				dsprintf (line, "%g", val->float_var);
+		case ty_union:
+			raw_type_view.union_view (type, value, data);
 			break;
-		case ev_vector:
-			dsprintf (line, "'%g %g %g'",
-					  val->vector_var[0], val->vector_var[1],
-					  val->vector_var[2]);
+		case ty_enum:
+			raw_type_view.enum_view (type, value, data);
 			break;
-		case ev_pointer:
-			def = 0;
-			ofs = val->integer_var;
-			if (pr_debug->int_val && pr->debug)
-				def = PR_Get_Local_Def (pr, ofs);
-			if (!def)
-				def = PR_GlobalAtOfs (pr, ofs);
-			if (def && def->s_name)
-				dsprintf (line, "&%s", PR_GetString (pr, def->s_name));
-			else
-				dsprintf (line, "[$%x]", ofs);
+		case ty_array:
+			raw_type_view.array_view (type, value, data);
 			break;
-		case ev_quat:
-			dsprintf (line, "'%g %g %g %g'",
-					  val->vector_var[0], val->vector_var[1],
-					  val->vector_var[2], val->vector_var[3]);
+		case ty_class:
+			raw_type_view.class_view (type, value, data);
 			break;
-		case ev_integer:
-			dsprintf (line, "%d", val->integer_var);
-			break;
-		case ev_uinteger:
-			dsprintf (line, "$%08x", val->uinteger_var);
-			break;
-		default:
-			//dsprintf (line, "bad type %i", type);
-			dsprintf (line, "<%x %x %x %x>",
-					  val[0].integer_var, val[1].integer_var,
-					  val[2].integer_var, val[3].integer_var);
-			break;
+		case ty_alias://XXX
+			type = &G_STRUCT (data->pr, qfot_type_t, type->alias.aux_type);
+			return value_string (data, type, value);
 	}
-
-	return line->str;
+	return data->dstr->str;
 }
 
-static ddef_t *
-def_string (progs_t *pr, pr_int_t ofs, dstring_t *dstr)
+static pr_def_t *
+pr_debug_find_def (progs_t *pr, pointer_t *ofs)
 {
-	ddef_t     *def = 0;
-	const char *name;
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	pr_def_t   *def = 0;
 
-	if (pr_debug->int_val && pr->debug)
+	if (*ofs >= pr->progs->numglobals) {
+		return 0;
+	}
+	if (pr_debug->int_val && res->debug) {
 		def = PR_Get_Local_Def (pr, ofs);
-	if (!def)
-		def = PR_GlobalAtOfs (pr, ofs);
-	if (!def || !*(name = PR_GetString (pr, def->s_name)))
-		dsprintf (dstr, "[$%x]", ofs);
-	else
-		dsprintf (dstr, "%s", name);
+	}
+	if (!def) {
+		def = PR_GlobalAtOfs (pr, *ofs);
+		if (def) {
+			*ofs -= def->ofs;
+		}
+	}
 	return def;
 }
 
 static const char *
-global_string (progs_t *pr, pointer_t ofs, etype_t type, int contents)
+global_string (pr_debug_data_t *data, pointer_t offset, qfot_type_t *type,
+			   int contents)
 {
-	static dstring_t *line = NULL;
-	ddef_t     *def = NULL;
-	const char *s;
+	progs_t    *pr = data->pr;
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	dstring_t  *dstr = data->dstr;
+	pr_def_t   *def = NULL;
+	qfot_type_t dummy_type = { };
+	const char *name = 0;
+	pointer_t   offs = offset;
 
-	if (!line)
-		line = dstring_newstr();
+	dstring_clearstr (dstr);
 
-	if (type == ev_short) {
-		dsprintf (line, "%04x", (short) ofs);
-		return line->str;
+	if (type && type->meta == ty_basic && type->type == ev_short) {
+		dsprintf (dstr, "%04x", (short) offset);
+		return dstr->str;
 	}
 
-	def = def_string (pr, ofs, line);
+	if (offset > pr->globals_size) {
+		dsprintf (dstr, "%08x out of bounds", offset);
+		return dstr->str;
+	}
 
-	if (contents && (def || type != ev_void)) {
-		const char *oi = "";
-		if (def) {
-			if (type == ev_void)
-				type = def->type;
-			if (type != (etype_t) (def->type & ~DEF_SAVEGLOBAL))
-				oi = "?";
-		}
-
-		if (ofs > pr->globals_size)
-			s = "Out of bounds";
-		else
-			s = value_string (pr, type, &pr->pr_globals[ofs]);
-
-		if (strequal(line->str, "IMMEDIATE") || strequal(line->str, ".imm")) {
-			dsprintf (line, "%s", s);
+	def = pr_debug_find_def (pr, &offs);
+	if (!def || !PR_StringValid (pr, def->name)
+		|| !*(name = PR_GetString (pr, def->name))) {
+		dsprintf (dstr, "[$%x]", offset);
+	}
+	if (name) {
+		if (strequal (name, "IMMEDIATE") || strequal (name, ".imm")) {
+			contents = 1;
 		} else {
-			dasprintf (line, "%s(%s)", oi, s);
+			if (offs) {
+				dsprintf (dstr, "{%s + %u}", name, offs);
+			} else {
+				dsprintf (dstr, "%s", name);
+			}
 		}
 	}
-	return line->str;
+	if (contents) {
+		if (name) {
+			dstring_appendstr (dstr, "(");
+		}
+		if (!type) {
+			if (def) {
+				if (!def->type_encoding) {
+					dummy_type.type = def->type;
+					type = &dummy_type;
+				} else {
+					type = &G_STRUCT (pr, qfot_type_t, def->type_encoding);
+				}
+			} else {
+				type = &res->void_type;
+			}
+		}
+		value_string (data, type, pr->pr_globals + offset);
+		if (name) {
+			dstring_appendstr (dstr, ")");
+		}
+	}
+	return dstr->str;
+}
+
+static void
+pr_debug_void_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	__auto_type data = (pr_debug_data_t *) _data;
+	dasprintf (data->dstr, "<void>");
+}
+
+static void
+pr_debug_string_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	__auto_type data = (pr_debug_data_t *) _data;
+	dstring_t  *dstr = data->dstr;
+	string_t    string = value->string_var;
+	if (PR_StringValid (data->pr, string)) {
+		const char *str = PR_GetString (data->pr, string);
+
+		dstring_appendstr (dstr, "\"");
+		while (*str) {
+			const char *s;
+
+			for (s = str; *s && !strchr ("\"\n\t", *s); s++) {
+			}
+			if (s != str) {
+				dstring_appendsubstr (dstr, str, s - str);
+			}
+			if (*s) {
+				switch (*s) {
+					case '\"':
+						dstring_appendstr (dstr, "\\\"");
+						break;
+					case '\n':
+						dstring_appendstr (dstr, "\\n");
+						break;
+					case '\t':
+						dstring_appendstr (dstr, "\\t");
+						break;
+					default:
+						dasprintf (dstr, "\\x%02x", *s & 0xff);
+				}
+				s++;
+			}
+			str = s;
+		}
+		dstring_appendstr (dstr, "\"");
+	} else {
+		dstring_appendstr (dstr, "*** invalid string offset ***");
+	}
+}
+
+static void
+pr_debug_float_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	__auto_type data = (pr_debug_data_t *) _data;
+	dstring_t  *dstr = data->dstr;
+
+	if (data->pr->progs->version == PROG_ID_VERSION
+		&& ISDENORM (value->integer_var)
+		&& value->uinteger_var != 0x80000000) {
+		dasprintf (dstr, "<%08x>", value->integer_var);
+	} else {
+		dasprintf (dstr, "%.9g", value->float_var);
+	}
+}
+
+static void
+pr_debug_vector_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	__auto_type data = (pr_debug_data_t *) _data;
+	dstring_t  *dstr = data->dstr;
+
+	dasprintf (dstr, "'%.9g %.9g %.9g'", VectorExpand (&value->vector_var));
+}
+
+static void
+pr_debug_entity_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	__auto_type data = (pr_debug_data_t *) _data;
+	progs_t    *pr = data->pr;
+	dstring_t  *dstr = data->dstr;
+
+	if (pr->pr_edicts) {
+		edict_t    *edict = PROG_TO_EDICT (pr, value->entity_var);
+		dasprintf (dstr, "entity %d", NUM_FOR_BAD_EDICT (pr, edict));
+	} else {
+		dasprintf (dstr, "entity [%x]",value->entity_var);
+	}
+}
+
+static void
+pr_debug_field_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	__auto_type data = (pr_debug_data_t *) _data;
+	progs_t    *pr = data->pr;
+	dstring_t  *dstr = data->dstr;
+	pr_def_t   *def = PR_FieldAtOfs (pr, value->integer_var);
+
+	if (def) {
+		dasprintf (dstr, ".%s", PR_GetString (pr, def->name));
+	} else {
+		dasprintf (dstr, ".<$%04x>", value->integer_var);
+	}
+}
+
+static void
+pr_debug_func_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	__auto_type data = (pr_debug_data_t *) _data;
+	progs_t    *pr = data->pr;
+	dstring_t  *dstr = data->dstr;
+
+	if (value->func_var >= pr->progs->numfunctions) {
+		dasprintf (dstr, "INVALID:%d", value->func_var);
+	} else if (!value->func_var) {
+		dstring_appendstr (dstr, "NULL");
+	} else {
+		dfunction_t *f = pr->pr_functions + value->func_var;
+		dasprintf (dstr, "%s()", PR_GetString (pr, f->s_name));
+	}
+}
+
+static void
+pr_debug_pointer_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	__auto_type data = (pr_debug_data_t *) _data;
+	progs_t    *pr = data->pr;
+	dstring_t  *dstr = data->dstr;
+	pointer_t   offset = value->integer_var;
+	pointer_t   offs = offset;
+	pr_def_t   *def = 0;
+
+	def = pr_debug_find_def (pr, &offs);
+	if (def && def->name) {
+		if (offs) {
+			dasprintf (dstr, "&%s + %u", PR_GetString (pr, def->name), offs);
+		} else {
+			dasprintf (dstr, "&%s", PR_GetString (pr, def->name));
+		}
+	} else {
+		dasprintf (dstr, "[$%x]", offset);
+	}
+}
+
+static void
+pr_debug_quat_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	__auto_type data = (pr_debug_data_t *) _data;
+	dstring_t  *dstr = data->dstr;
+
+	dasprintf (dstr, "'%.9g %.9g %.9g %.9g'", QuatExpand (&value->quat_var));
+}
+
+static void
+pr_debug_integer_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	__auto_type data = (pr_debug_data_t *) _data;
+	dstring_t  *dstr = data->dstr;
+
+	dasprintf (dstr, "%d", value->integer_var);
+}
+
+static void
+pr_debug_uinteger_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	__auto_type data = (pr_debug_data_t *) _data;
+	dstring_t  *dstr = data->dstr;
+
+	dasprintf (dstr, "$%08x", value->uinteger_var);
+}
+
+static void
+pr_debug_short_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	__auto_type data = (pr_debug_data_t *) _data;
+	dstring_t  *dstr = data->dstr;
+
+	dasprintf (dstr, "%04x", (short)value->integer_var);
+}
+
+static void
+pr_debug_double_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	__auto_type data = (pr_debug_data_t *) _data;
+	dstring_t  *dstr = data->dstr;
+
+	dasprintf (dstr, "%.17g", *(double *)value);
+}
+
+static void
+pr_dump_struct (qfot_type_t *type, pr_type_t *value, void *_data,
+				const char *struct_type)
+{
+	__auto_type data = (pr_debug_data_t *) _data;
+	progs_t    *pr = data->pr;
+	dstring_t  *dstr = data->dstr;
+	qfot_struct_t *strct = &type->strct;
+
+	dstring_appendstr (dstr, "{");
+	for (int i = 0; i < strct->num_fields; i++) {
+		qfot_var_t *field = strct->fields + i;
+		qfot_type_t *val_type = &G_STRUCT (pr, qfot_type_t, field->type);
+		pr_type_t  *val = value + field->offset;
+		dasprintf (dstr, "%s=", PR_GetString (pr, field->name));
+		value_string (data, val_type, val);
+		if (i < strct->num_fields - 1) {
+			dstring_appendstr (dstr, ", ");
+		}
+	}
+	dstring_appendstr (dstr, "}");
+	//dasprintf (dstr, "<%s>", struct_type);
+}
+static void
+pr_debug_struct_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	pr_dump_struct (type, value, _data, "struct");
+}
+
+static void
+pr_debug_union_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	pr_dump_struct (type, value, _data, "union");
+}
+
+static void
+pr_debug_enum_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	__auto_type data = (pr_debug_data_t *) _data;
+	dstring_t  *dstr = data->dstr;
+
+	dstring_appendstr (dstr, "<enum>");
+}
+
+static void
+pr_debug_array_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	__auto_type data = (pr_debug_data_t *) _data;
+	dstring_t  *dstr = data->dstr;
+
+	dstring_appendstr (dstr, "<array>");
+}
+
+static void
+pr_debug_class_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	__auto_type data = (pr_debug_data_t *) _data;
+	dstring_t  *dstr = data->dstr;
+
+	dstring_appendstr (dstr, "<class>");
 }
 
 VISIBLE void
 PR_Debug_Watch (progs_t *pr, const char *expr)
 {
-	ddef_t      watch;
+	pr_def_t    watch;
 	if (!expr) {
 		Sys_Printf ("watch <watchpoint expr>\n");
 		if (pr->watch) {
@@ -751,8 +1324,7 @@ PR_Debug_Watch (progs_t *pr, const char *expr)
 			if (pr->wp_conditional)
 				Sys_Printf ("        if new val == %d\n",
 							pr->wp_val.integer_var);
-		} else {
-			Sys_Printf ("    none active\n");
+		} else { Sys_Printf ("    none active\n");
 		}
 		return;
 	}
@@ -773,7 +1345,9 @@ PR_Debug_Watch (progs_t *pr, const char *expr)
 VISIBLE void
 PR_Debug_Print (progs_t *pr, const char *expr)
 {
-	ddef_t      print;
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	pr_def_t    print;
+	pr_debug_data_t data = {pr, res->dstr};
 
 	if (!expr) {
 		Sys_Printf ("print <print expr>\n");
@@ -781,8 +1355,9 @@ PR_Debug_Print (progs_t *pr, const char *expr)
 	}
 
 	print = parse_expression (pr, expr, 0);
-	if (print.type != ev_invalid) {
-		const char *s = global_string (pr, print.ofs, print.type, 1);
+	if (print.type_encoding) {
+		qfot_type_t *type = get_type (res, print.type_encoding);
+		const char *s = global_string (&data, print.ofs, type, 1);
 		Sys_Printf ("[%d] = %s\n", print.ofs, s);
 	}
 }
@@ -790,28 +1365,29 @@ PR_Debug_Print (progs_t *pr, const char *expr)
 VISIBLE void
 PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 {
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	int         addr = s - pr->pr_statements;
 	int         dump_code = contents & 2;
 	const char *fmt;
 	opcode_t   *op;
-	static dstring_t *line;
 	dfunction_t *call_func = 0;
-	ddef_t     *parm_def = 0;
+	pr_def_t   *parm_def = 0;
 	pr_auxfunction_t *aux_func = 0;
+	pr_debug_data_t data;
 
-	if (!line)
-		line = dstring_new ();
+	dstring_clearstr (res->line);
 
-	dstring_clearstr (line);
+	data.pr = pr;
+	data.dstr = res->dstr;
 
 	if (pr_debug->int_val > 1)
 		dump_code = 1;
 
-	if (pr_debug->int_val && pr->debug) {
+	if (pr_debug->int_val && res->debug) {
 		const char *source_line = PR_Get_Source_Line (pr, addr);
 
 		if (source_line) {
-			dasprintf (line, "%s%s", source_line, dump_code ? "\n" : "");
+			dasprintf (res->line, "%s%s", source_line, dump_code ? "\n" : "");
 			if (!dump_code)
 				goto do_print;
 		}
@@ -821,34 +1397,35 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 
 	op = PR_Opcode (s->op);
 	if (!op) {
-		Sys_Printf ("%sUnknown instruction %d\n", line->str, s->op);
+		Sys_Printf ("%sUnknown instruction %d\n", res->line->str, s->op);
 		return;
 	}
 
 	if (!(fmt = op->fmt))
 		fmt = "%Ga, %Gb, %gc";
 
-	dasprintf (line, "%04x ", addr);
+	dasprintf (res->line, "%04x ", addr);
 	if (pr_debug->int_val > 2)
-		dasprintf (line, "%02x %04x(%8s) %04x(%8s) %04x(%8s)\t",
+		dasprintf (res->line, "%02x %04x(%8s) %04x(%8s) %04x(%8s)\t",
 					s->op,
 					s->a, pr_type_name[op->type_a],
 					s->b, pr_type_name[op->type_b],
 					s->c, pr_type_name[op->type_c]);
 
-	dasprintf (line, "%s ", op->opname);
+	dasprintf (res->line, "%s ", op->opname);
 
 	while (*fmt) {
 		if (*fmt == '%') {
 			if (fmt[1] == '%') {
-				dstring_appendsubstr (line, fmt + 1, 1);
+				dstring_appendsubstr (res->line, fmt + 1, 1);
 				fmt += 2;
 			} else {
 				const char *str;
 				char        mode = fmt[1], opchar = fmt[2];
 				unsigned    parm_ind = 0;
 				pr_int_t    opval;
-				etype_t     optype = ev_void;
+				qfot_type_t *optype = &res->void_type;
+				func_t      func;
 
 				if (mode == 'P') {
 					opchar = fmt[3];
@@ -861,15 +1438,15 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 				switch (opchar) {
 					case 'a':
 						opval = s->a;
-						optype = op->type_a;
+						optype = res->type_encodings[op->type_a];
 						break;
 					case 'b':
 						opval = s->b;
-						optype = op->type_b;
+						optype = res->type_encodings[op->type_b];
 						break;
 					case 'c':
 						opval = s->c;
-						optype = op->type_c;
+						optype = res->type_encodings[op->type_c];
 						break;
 					case 'x':
 						if (mode == 'P') {
@@ -882,40 +1459,48 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 				}
 				switch (mode) {
 					case 'R':
-						optype = ev_void;
+						optype = &res->void_type;
 						aux_func = get_aux_function (pr);
-						if (aux_func)
-							optype = aux_func->return_type;
-						str = global_string (pr, opval, optype, contents & 1);
+						if (aux_func) {
+							optype = get_type (res, aux_func->return_type);
+						}
+						str = global_string (&data, opval, optype,
+											 contents & 1);
 						break;
 					case 'F':
-						str = global_string (pr, opval, optype, contents & 1);
-						if (G_FUNCTION (pr, opval) >= 0
-							&& G_FUNCTION (pr, opval)
-								< pr->progs->numfunctions)
-						call_func = pr->pr_functions + G_FUNCTION (pr, opval);
+						str = global_string (&data, opval, optype,
+											 contents & 1);
+						func = G_FUNCTION (pr, opval);
+						if (func < pr->progs->numfunctions) {
+							call_func = pr->pr_functions + func;
+						}
 						break;
 					case 'P':
 						parm_def = PR_Get_Param_Def (pr, call_func, parm_ind);
-						optype = ev_void;
-						if (parm_def)
-							optype = parm_def->type;
-						str = global_string (pr, opval, optype, contents & 1);
+						optype = &res->void_type;
+						if (parm_def) {
+							optype = get_type (res, parm_def->type_encoding);
+						}
+						str = global_string (&data, opval, optype,
+											 contents & 1);
 						break;
 					case 'V':
-						str = global_string (pr, opval, ev_void, contents & 1);
+						str = global_string (&data, opval, ev_void,
+											 contents & 1);
 						break;
 					case 'G':
-						str = global_string (pr, opval, optype, contents & 1);
+						str = global_string (&data, opval, optype,
+											 contents & 1);
 						break;
 					case 'g':
-						str = global_string (pr, opval, optype, 0);
+						str = global_string (&data, opval, optype, 0);
 						break;
 					case 's':
-						str = va ("%d", (short) opval);
+						str = dsprintf (res->dva, "%d", (short) opval);
 						break;
 					case 'O':
-						str = va ("%04x", addr + (short) opval);
+						str = dsprintf (res->dva, "%04x",
+										addr + (short) opval);
 						break;
 					case 'E':
 						{
@@ -932,61 +1517,63 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 								str = "bad entity.field";
 								break;
 							}
-							str = global_string (pr, opval, optype,
+							str = global_string (&data, opval, optype,
 												 contents & 1);
-							str = va ("$%x $%x %s", s->a, s->b, str);
+							str = dsprintf (res->dva, "$%x $%x %s",
+											s->a, s->b, str);
 						}
 						break;
 					default:
 						goto err;
 				}
-				dstring_appendstr (line, str);
+				dstring_appendstr (res->line, str);
 				fmt += 3;
 				continue;
 			err:
-				dstring_appendstr (line, fmt);
+				dstring_appendstr (res->line, fmt);
 				break;
 			}
 		} else {
-			dstring_appendsubstr (line, fmt++, 1);
+			dstring_appendsubstr (res->line, fmt++, 1);
 		}
 	}
 do_print:
-	Sys_Printf ("%s\n", line->str);
+	Sys_Printf ("%s\n", res->line->str);
 }
 
 static void
 dump_frame (progs_t *pr, prstack_t *frame)
 {
-	dfunction_t	   *f = frame->f ? frame->f->descriptor : 0;
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	dfunction_t	   *f = frame->func ? frame->func->descriptor : 0;
 
 	if (!f) {
 		Sys_Printf ("<NO FUNCTION>\n");
 		return;
 	}
-	if (pr_debug->int_val && pr->debug) {
-		pr_lineno_t *lineno = PR_Find_Lineno (pr, frame->s);
+	if (pr_debug->int_val && res->debug) {
+		pr_lineno_t *lineno = PR_Find_Lineno (pr, frame->staddr);
 		pr_auxfunction_t *func = PR_Get_Lineno_Func (pr, lineno);
 		pr_uint_t   line = PR_Get_Lineno_Line (pr, lineno);
 		pr_int_t    addr = PR_Get_Lineno_Addr (pr, lineno);
 
 		line += func->source_line;
-		if (addr == frame->s) {
+		if (addr == frame->staddr) {
 			Sys_Printf ("%12s:%u : %s: %x\n",
 						PR_GetString (pr, f->s_file),
 						line,
 						PR_GetString (pr, f->s_name),
-						frame->s);
+						frame->staddr);
 		} else {
 			Sys_Printf ("%12s:%u+%d : %s: %x\n",
 						PR_GetString (pr, f->s_file),
-						line, frame->s - addr,
+						line, frame->staddr - addr,
 						PR_GetString (pr, f->s_name),
-						frame->s);
+						frame->staddr);
 		}
 	} else {
 		Sys_Printf ("%12s : %s: %x\n", PR_GetString (pr, f->s_file),
-					PR_GetString (pr, f->s_name), frame->s);
+					PR_GetString (pr, f->s_name), frame->staddr);
 	}
 }
 
@@ -1001,8 +1588,8 @@ PR_StackTrace (progs_t *pr)
 		return;
 	}
 
-	top.s = pr->pr_xstatement;
-	top.f = pr->pr_xfunction;
+	top.staddr = pr->pr_xstatement;
+	top.func = pr->pr_xfunction;
 	dump_frame (pr, &top);
 	for (i = pr->pr_depth - 1; i >= 0; i--)
 		dump_frame (pr, pr->pr_stack + i);
@@ -1011,7 +1598,7 @@ PR_StackTrace (progs_t *pr)
 VISIBLE void
 PR_Profile (progs_t * pr)
 {
-	pr_int_t    max, num, i;
+	pr_uint_t   max, num, i;
 	dfunction_t *best, *f;
 
 	num = 0;
@@ -1043,11 +1630,15 @@ PR_Profile (progs_t * pr)
 VISIBLE void
 ED_Print (progs_t *pr, edict_t *ed)
 {
-	int         type, l;
-	pr_uint_t   i;
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	int         l;
+	pr_uint_t   i, j;
 	const char *name;
-	ddef_t     *d;
+	pr_def_t   *d;
 	pr_type_t  *v;
+	qfot_type_t dummy_type = { };
+	qfot_type_t *type;
+	pr_debug_data_t data = {pr, res->dstr};
 
 	if (ed->free) {
 		Sys_Printf ("FREE\n");
@@ -1057,50 +1648,68 @@ ED_Print (progs_t *pr, edict_t *ed)
 	Sys_Printf ("\nEDICT %d:\n", NUM_FOR_BAD_EDICT (pr, ed));
 	for (i = 0; i < pr->progs->numfielddefs; i++) {
 		d = &pr->pr_fielddefs[i];
-		if (!d->s_name)					// null field def (probably 1st)
+		if (!d->name)					// null field def (probably 1st)
 			continue;
-		name = PR_GetString (pr, d->s_name);
+		type = get_def_type (pr, d, &dummy_type);
+		name = PR_GetString (pr, d->name);
 		if (name[strlen (name) - 2] == '_'
 			&& strchr ("xyz", name[strlen (name) -1]))
 			continue;					// skip _x, _y, _z vars
 
-		v = &E_fld(ed, d->ofs);
-
-		// if the value is still all 0, skip the field
-		type = d->type & ~DEF_SAVEGLOBAL;
-
-		switch (type) {
-			case ev_entity:
-			case ev_integer:
-			case ev_uinteger:
-			case ev_pointer:
-			case ev_func:
-			case ev_field:
-				if (!v->integer_var)
-					continue;
+		for (j = 0; j < d->size; j++) {
+			if (E_INT (ed, d->ofs + j)) {
 				break;
-			case ev_string:
-				if (PR_StringValid (pr, v->string_var))
-					if (!PR_GetString (pr, v->string_var)[0])
-						continue;
-				break;
-			case ev_float:
-				if (!v->float_var)
-					continue;
-				break;
-			case ev_vector:
-				if (!v[0].float_var && !v[1].float_var && !v[2].float_var)
-					continue;
-				break;
-			case ev_void:
-				break;
-			default:
-				PR_Error (pr, "ED_Print: Unhandled type %d", type);
+			}
 		}
+		if (j == d->size) {
+			continue;
+		}
+
+		v = &E_fld (ed, d->ofs);
 
 		l = 15 - strlen (name);
 		if (l < 1)
 			l = 1;
-		Sys_Printf ("%s%*s%s\n", name, l, "", value_string (pr, d->type, v));
+
+		dstring_clearstr (res->dstr);
+		value_string (&data, type, v);
+		Sys_Printf ("%s%*s%s\n", name, l, "", res->dstr->str);
 	}
+}
+
+void
+PR_Debug_Init (progs_t *pr)
+{
+	prdeb_resources_t *res = calloc (1, sizeof (*res));
+	res->pr = pr;
+	res->string = dstring_newstr ();
+	res->dva = dstring_newstr ();
+	res->line = dstring_newstr ();
+	res->dstr = dstring_newstr ();
+
+	res->void_type.meta = ty_basic;
+	res->void_type.size = 4;
+	res->void_type.encoding = 0;
+	res->void_type.type = ev_void;
+	for (int i = 0; i < ev_type_count; i++ ) {
+		res->type_encodings[i] = &res->void_type;
+	}
+	res->file_hash = Hash_NewTable (509, file_get_key, file_free, 0,
+									pr->hashlink_freelist);
+	res->debug_syms = Hash_NewTable (509, def_get_key, 0, pr,
+									 pr->hashlink_freelist);
+	res->compunits = Hash_NewTable (509, compunit_get_key, 0, pr,
+									pr->hashlink_freelist);
+
+	PR_Resources_Register (pr, "PR_Debug", res, pr_debug_clear);
+}
+
+void
+PR_Debug_Init_Cvars (void)
+{
+	pr_debug = Cvar_Get ("pr_debug", "0", CVAR_NONE, NULL,
+						 "enable progs debugging");
+	pr_source_path = Cvar_Get ("pr_source_path", ".", CVAR_NONE, source_path_f,
+							   "where to look (within gamedir) for source "
+							   "files");
 }

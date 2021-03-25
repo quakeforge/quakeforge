@@ -37,10 +37,11 @@
 
 #include "QF/plugin/console.h"
 
-#include "client.h"
-#include "server.h"
 #include "sv_console.h"
-#include "qtv.h"
+
+#include "qtv/include/client.h"
+#include "qtv/include/server.h"
+#include "qtv/include/qtv.h"
 
 static void
 draw_clients (view_t *view)
@@ -51,7 +52,7 @@ draw_clients (view_t *view)
 	const char *s;
 	char       *d;
 
-	str = va ("[CL: %3d]", client_count);
+	str = va (0, "[CL: %3d]", client_count);
 	for (s = str, d = sb->text + view->xrel; *s; s++)
 		*d++ = *s;
 }
@@ -65,7 +66,7 @@ draw_servers (view_t *view)
 	const char *s;
 	char       *d;
 
-	str = va ("[SV: %2d]", server_count);
+	str = va (0, "[SV: %2d]", server_count);
 	for (s = str, d = sb->text + view->xrel; *s; s++)
 		*d++ = *s;
 }

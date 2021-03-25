@@ -48,11 +48,11 @@
 #include "QF/va.h"
 #include "QF/wad.h"
 
-#include "brush.h"
-#include "bsp5.h"
-#include "options.h"
-#include "portals.h"
-#include "readbsp.h"
+#include "tools/qfbsp/include/brush.h"
+#include "tools/qfbsp/include/bsp5.h"
+#include "tools/qfbsp/include/options.h"
+#include "tools/qfbsp/include/portals.h"
+#include "tools/qfbsp/include/readbsp.h"
 
 /**	\addtogroup qfbsp_readbsp
 */
@@ -359,13 +359,13 @@ unique_name (wad_t *wad, const char *name)
 	do {
 		strncpy (uname, name, MIPTEXNAME);
 		uname[(MIPTEXNAME - 1)] = 0;
-		tag = va ("~%x", i++);
+		tag = va (0, "~%x", i++);
 		if (strlen (uname) + strlen (tag) <= (MIPTEXNAME - 1))
 			strcat (uname, tag);
 		else
 			strcpy (uname + (MIPTEXNAME - 1) - strlen (tag), tag);
 	} while (wad_find_lump (wad, uname));
-	return va ("%s", uname);	// just to make a safe returnable that doesn't
+	return va (0, "%s", uname);	// just to make a safe returnable that doesn't
 								// need to be freed
 }
 

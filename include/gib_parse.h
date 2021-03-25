@@ -30,7 +30,7 @@
 
 #include "gib_tree.h"
 
-inline qboolean GIB_Escaped (const char *str, int i);
+qboolean GIB_Escaped (const char *str, int i);
 
 char GIB_Parse_Match_Brace (const char *str, unsigned int *i);
 char GIB_Parse_Match_Backtick (const char *str, unsigned int *i);
@@ -43,5 +43,5 @@ gib_tree_t *GIB_Parse_Embedded (gib_tree_t *token);
 
 extern qboolean gib_parse_error;
 void GIB_Parse_Error (const char *msg, unsigned int pos);
-const char *GIB_Parse_ErrorMsg (void);
-unsigned int GIB_Parse_ErrorPos (void);
+const char *GIB_Parse_ErrorMsg (void) __attribute__((pure));
+unsigned int GIB_Parse_ErrorPos (void) __attribute__((pure));

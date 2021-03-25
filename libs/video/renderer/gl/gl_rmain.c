@@ -44,7 +44,7 @@
 
 #include "QF/cvar.h"
 #include "QF/draw.h"
-#include "QF/locs.h"
+#include "QF/entity.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
 #include "QF/render.h"
@@ -74,7 +74,7 @@ qboolean    gl_mirror;
 plane_t    *gl_mirror_plane;
 
 float       gl_r_world_matrix[16];
-static float r_base_world_matrix[16];
+//FIXME static float r_base_world_matrix[16];
 
 //vec3_t		gl_shadecolor;					// Ender (Extend) Colormod
 float		gl_modelalpha;					// Ender (Extend) Alpha
@@ -178,7 +178,9 @@ glrmain_init (void)
 void
 gl_R_RotateForEntity (entity_t *e)
 {
-	qfglMultMatrixf (e->transform);
+	mat4f_t     mat;
+	Transform_GetWorldMatrix (e->transform, mat);
+	qfglMultMatrixf (&mat[0][0]);
 }
 
 /*
@@ -217,7 +219,7 @@ R_DrawEntitiesOnList (void)
 	}
 
 	for (ent = r_ent_queue; ent; ent = ent->next) {
-		if (ent->model->type != mod_alias)
+		if (ent->renderer.model->type != mod_alias)
 			continue;
 		currententity = ent;
 
@@ -249,7 +251,7 @@ R_DrawEntitiesOnList (void)
 	}
 
 	for (ent = r_ent_queue; ent; ent = ent->next) {
-		if (ent->model->type != mod_iqm)
+		if (ent->renderer.model->type != mod_iqm)
 			continue;
 		currententity = ent;
 
@@ -262,7 +264,7 @@ R_DrawEntitiesOnList (void)
 	if (gl_va_capable)
 		qfglInterleavedArrays (GL_T2F_C4UB_V3F, 0, gl_spriteVertexArray);
 	for (ent = r_ent_queue; ent; ent = ent->next) {
-		if (ent->model->type != mod_sprite)
+		if (ent->renderer.model->type != mod_sprite)
 			continue;
 		currententity = ent;
 
@@ -279,7 +281,7 @@ R_DrawViewModel (void)
 		|| !r_drawviewmodel->int_val
 		|| gl_envmap
 		|| !r_drawentities->int_val
-		|| !currententity->model)
+		|| !currententity->renderer.model)
 		return;
 
 	// hack the depth range to prevent view model from poking into walls
@@ -342,14 +344,17 @@ gl_R_SetupFrame (void)
 	gl_Fog_SetupFrame ();
 
 	// build the transformation matrix for the given view angles
-	VectorCopy (r_refdef.vieworg, r_origin);
+	VectorCopy (r_refdef.viewposition, r_origin);
 
-	AngleVectors (r_refdef.viewangles, vpn, vright, vup);
+	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 1, 0, 0, 0 }), vpn);
+	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 0, -1, 0, 0 }), vright);
+	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 0, 0, 1, 0 }), vup);
+
 
 	R_SetFrustum ();
 
 	// current viewleaf
-	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.model);
+	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.renderer.model);
 
 	r_cache_thrash = false;
 
@@ -417,13 +422,19 @@ R_SetupGL (void)
 	qfglMatrixMode (GL_MODELVIEW);
 	qfglLoadIdentity ();
 
-	qfglRotatef (-90, 1, 0, 0);			// put Z going up
-	qfglRotatef (90, 0, 0, 1);			// put Z going up
-	qfglRotatef (-r_refdef.viewangles[ROLL],  1, 0, 0);
-	qfglRotatef (-r_refdef.viewangles[PITCH], 0, 1, 0);
-	qfglRotatef (-r_refdef.viewangles[YAW],   0, 0, 1);
-	qfglTranslatef (-r_refdef.vieworg[0], -r_refdef.vieworg[1],
-				  -r_refdef.vieworg[2]);
+	static mat4f_t z_up = {
+		{ 0, 0, -1, 0},
+		{-1, 0,  0, 0},
+		{ 0, 1,  0, 0},
+		{ 0, 0,  0, 1},
+	};
+	mat4f_t view;
+	mat4fquat (view, qconjf (r_refdef.viewrotation));
+	mmulf (view, z_up, view);
+	vec4f_t offset = -r_refdef.viewposition;
+	offset[3] = 1;
+	view[3] = mvmulf (view, offset);
+	qfglLoadMatrixf (&view[0][0]);
 
 	qfglGetFloatv (GL_MODELVIEW_MATRIX, gl_r_world_matrix);
 
@@ -478,12 +489,12 @@ R_RenderScene (void)
 static void
 R_Mirror (void)
 {
-	float		d;
+	//float		d;
 //	msurface_t *s;
 
 //	if (!gl_mirror) // FIXME: Broken
 		return;
-
+/*
 	memcpy (r_base_world_matrix, gl_r_world_matrix,
 			sizeof (r_base_world_matrix));
 
@@ -549,6 +560,7 @@ R_Mirror (void)
 	r_worldentity.model->textures[gl_mirrortexturenum]->texturechain = NULL;
 #endif
 	qfglColor3ubv (color_white);
+*/
 }
 
 /*
@@ -559,10 +571,12 @@ R_Mirror (void)
 static void
 R_RenderView_ (void)
 {
-	if (r_norefresh->int_val)
+	if (r_norefresh->int_val) {
 		return;
-	if (!r_worldentity.model)
+	}
+	if (!r_worldentity.renderer.model) {
 		Sys_Error ("R_RenderView: NULL worldmodel");
+	}
 
 	gl_mirror = false;
 
@@ -580,6 +594,18 @@ R_RenderView_ (void)
 		R_ZGraph ();
 }
 
+//FIXME static void R_RenderViewFishEye (void);
+
+void
+gl_R_RenderView (void)
+{
+	R_RenderView_ ();
+	/*if(!scr_fisheye->int_val)
+		R_RenderView_ ();
+	else
+		R_RenderViewFishEye ();*/
+}
+/*FIXME
 // Algorithm:
 // Draw up to six views, one in each direction.
 // Save the picture to cube map texture, use GL_ARB_texture_cube_map.
@@ -588,17 +614,6 @@ R_RenderView_ (void)
 // translation function to map texture coordinates to fixed/regular
 // grid vertices coordinates.
 // Render view. Fisheye is done.
-
-static void R_RenderViewFishEye (void);
-
-void
-gl_R_RenderView (void)
-{
-	if(!scr_fisheye->int_val)
-		R_RenderView_ ();
-	else
-		R_RenderViewFishEye ();
-}
 
 #define BOX_FRONT  0
 #define BOX_RIGHT  1
@@ -887,12 +902,12 @@ R_RenderViewFishEye (void)
 	R_SetupGL_Viewport_and_Perspective ();
 	qfglMatrixMode (GL_MODELVIEW);
 	qfglCallList (fisheye_grid);
-}
+}*/
 
 void
 gl_R_ClearState (void)
 {
-	r_worldentity.model = 0;
+	r_worldentity.renderer.model = 0;
 	R_ClearEfrags ();
 	R_ClearDlights ();
 	gl_R_ClearParticles ();

@@ -21,7 +21,7 @@
 # include "config.h"
 #endif
 
-#include "draw.h"
+#include "tools/qfbsp/include/draw.h"
 
 /**	\addtogroup qfbsp_draw
 */

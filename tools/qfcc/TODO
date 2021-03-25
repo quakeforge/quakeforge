@@ -6,16 +6,18 @@ I = in progress
 W = waiting on other work
 
 X	fix object files
+X	fix enums in switch statements (use tables (treat as int), check missing)
 M	arrays in structures
 M	unnamed function parameters for prototypes/typdefs etc.
 I	optimizations (esp CSE)
 I	fix used/uninitialized warnings
 o	id id;
-o	vec = [x, y, z]; expressions (nice feature in fteqcc)
-o	fix enums in switch statements (use tables (treat as int), check missing)
+M	vec = [x, y, z]; expressions (nice feature in fteqcc)
+M	finish -Fifstring
+o	isset() intrinsic for more consistent string handling.
 o	arrays in entities
 o	optional arguments for functions (alternative to overloading)
 	vector(vector fwd, optional vector up) vectoangles = #51;
+o	rewrite type system to be const-correct (hard!)
 ?	try to reduce memory consumption
 ??	embedded nul characters in strings (why?)
-??	"":"" string concatenation (parser issues) (why?)

@@ -36,8 +36,8 @@
 
 #include "QF/plugin/vid_render.h"
 
-#include "host.h"
-#include "server.h"
+#include "nq/include/host.h"
+#include "nq/include/server.h"
 
 client_state_t cl;
 client_static_t cls;
@@ -69,6 +69,11 @@ CL_UpdateScreen (double realtime)
 }
 
 void
+CL_ClearMemory (void)
+{
+}
+
+void
 CL_Cmd_ForwardToServer (void)
 {
 }
@@ -94,11 +99,6 @@ CL_EstablishConnection (const char *host)
 }
 
 void
-CL_Shutdown ()
-{
-}
-
-void
 CL_Init (struct cbuf_s *cbuf)
 {
 }
@@ -113,7 +113,7 @@ CL_NextDemo (void)
 {
 }
 
-int
+__attribute__((const)) int
 CL_ReadFromServer (void)
 {
 	return 0;
@@ -156,7 +156,7 @@ S_UnblockSound (void)
 }
 
 plugin_t *console_client_PluginInfo (void);
-plugin_t *
+__attribute__((const)) plugin_t *
 console_client_PluginInfo (void)
 {
 	return 0;

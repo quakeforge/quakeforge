@@ -1,0 +1,20 @@
+include tools/bsp2img/Makemodule.am
+include tools/carne/Makemodule.am
+include tools/pak/Makemodule.am
+include tools/qfbsp/Makemodule.am
+include tools/qfcc/Makemodule.am
+include tools/qflight/Makemodule.am
+include tools/qflmp/Makemodule.am
+include tools/qfmodelgen/Makemodule.am
+include tools/qfspritegen/Makemodule.am
+include tools/qfvis/Makemodule.am
+include tools/wad/Makemodule.am
+include tools/wav/Makemodule.am
+
+EXTRA_DIST += \
+	tools/io_mesh_qfmdl/export_mdl.py \
+	tools/io_mesh_qfmdl/import_mdl.py \
+	tools/io_mesh_qfmdl/__init__.py \
+	tools/io_mesh_qfmdl/mdl.py \
+	tools/io_mesh_qfmdl/qfplist.py \
+	tools/io_mesh_qfmdl/quakepal.py

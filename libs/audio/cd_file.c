@@ -53,8 +53,8 @@
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
+#include "QF/plist.h"
 #include "QF/qargs.h"
-#include "QF/qfplist.h"
 #include "QF/quakefs.h"
 #include "QF/quakeio.h"
 #include "QF/sound.h"
@@ -143,7 +143,7 @@ Load_Tracklist (void)
 {
 	QFile	*oggfile = NULL;
 	char	*buffile = NULL;
-	int		 size = -1;
+	int		 size;
 
 	/* kill off the old tracklist, and make sure we're not playing anything */
 	I_OGGMus_Shutdown ();
@@ -155,8 +155,8 @@ Load_Tracklist (void)
 		return -1;		// bail if we don't have a valid filename
 	}
 
-	size = QFS_FOpenFile (mus_ogglist->string, &oggfile);
-	if (size < 0) {
+	oggfile = QFS_FOpenFile (mus_ogglist->string);
+	if (!oggfile) {
 		Sys_Printf ("Mus_OggInit: open of file \"%s\" failed\n",
 			mus_ogglist->string);
 		return -1;
@@ -172,7 +172,8 @@ Load_Tracklist (void)
 	buffile = calloc (size+10, sizeof (char));
 	Qread (oggfile, buffile, size);
 
-	tracklist = PL_GetPropertyList (buffile);
+	PL_Free (tracklist);
+	tracklist = PL_GetPropertyList (buffile, 0);
 	if (!tracklist || PL_Type (tracklist) != QFDictionary) {
 		Sys_Printf ("Malformed or empty tracklist file. check mus_ogglist\n");
 		return -1;
@@ -189,7 +190,7 @@ Load_Tracklist (void)
 static void
 I_OGGMus_SetPlayList (int track)
 {
-	const char *trackstring = va ("%i", track);
+	const char *trackstring = va (0, "%i", track);
 	int         i;
 
 	play_list = PL_ObjectForKey (tracklist, trackstring);
@@ -327,7 +328,7 @@ I_OGGMus_Info (void)
 
 	/* loop, and count up the Highest key number. */
 	for (iter = 1, count = 0; count < keycount && iter <= 99 ; iter++) {
-		trackstring = va ("%i", iter);
+		trackstring = va (0, "%i", iter);
 		if (!(currenttrack = PL_ObjectForKey (tracklist, trackstring))) {
 			continue;
 		}
@@ -454,7 +455,7 @@ Mus_VolChange (cvar_t *bgmvolume)
 static void
 Mus_gamedir (int phase)
 {
-	if (phase);
+	if (phase)
 		Mus_OggChange (mus_ogglist);
 }
 

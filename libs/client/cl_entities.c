@@ -31,6 +31,10 @@
 # include "config.h"
 #endif
 
+#include "QF/entity.h"
+#include "QF/render.h" //FIXME for entity_t
+#include "QF/simd/vec4f.h"
+
 #include "client/entities.h"
 
 /*  QW has a max of 512 entities and wants 64 frames of data per entity, plus
@@ -340,3 +344,26 @@ vec3_t ent_colormod[256] = {
 	{1, 1, 0.666667},
 	{1, 1, 1}
 };
+
+void
+CL_TransformEntity (entity_t *ent, float scale, const vec3_t angles,
+					vec4f_t position)
+{
+	vec4f_t     rotation;
+	vec4f_t     scalevec = { scale, scale, scale, 1};
+
+	if (VectorIsZero (angles)) {
+		rotation = (vec4f_t) { 0, 0, 0, 1 };
+	} else {
+		vec3_t      ang;
+		VectorCopy (angles, ang);
+		if (ent->renderer.model && ent->renderer.model->type == mod_alias) {
+			// stupid quake bug
+			// why, oh, why, do alias models pitch in the opposite direction
+			// to everything else?
+			ang[PITCH] = -ang[PITCH];
+		}
+		AngleQuat (ang, &rotation[0]);//FIXME
+	}
+	Transform_SetLocalTransform (ent->transform, scalevec, rotation, position);
+}

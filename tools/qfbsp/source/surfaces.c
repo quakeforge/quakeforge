@@ -28,11 +28,11 @@
 
 #include "QF/sys.h"
 
-#include "bsp5.h"
-#include "csg4.h"
-#include "options.h"
-#include "region.h"
-#include "surfaces.h"
+#include "tools/qfbsp/include/bsp5.h"
+#include "tools/qfbsp/include/csg4.h"
+#include "tools/qfbsp/include/options.h"
+#include "tools/qfbsp/include/region.h"
+#include "tools/qfbsp/include/surfaces.h"
 
 /**	\addtogroup qfbsp_surface
 */

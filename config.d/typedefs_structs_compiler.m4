@@ -45,7 +45,7 @@ AC_TRY_COMPILE(
 	AC_MSG_RESULT(no)
 )
 AH_VERBATIM([HAVE___ATTRIBUTE__VISIBILITY],
-[/* Define this if the GCC __attribute__ keyword is available */
+[/* Define this if the GCC visibility __attribute__ is available */
 #undef HAVE___ATTRIBUTE__VISIBILITY
 #ifdef HAVE___ATTRIBUTE__VISIBILITY
 # define VISIBLE __attribute__((visibility ("default")))
@@ -53,10 +53,30 @@ AH_VERBATIM([HAVE___ATTRIBUTE__VISIBILITY],
 # define VISIBLE
 #endif])
 
+if test "x$SYSTYPE" = "xWIN32"; then
+	AC_MSG_CHECKING(for __attribute__ ((gcc_struct)))
+	AC_TRY_COMPILE(
+		[typedef struct { int foo; }
+		__attribute__ ((gcc_struct)) gcc_struct_test;],
+		[],
+		AC_DEFINE(HAVE___ATTRIBUTE__GCC_STRUCT)
+		AC_MSG_RESULT(yes),
+		AC_MSG_RESULT(no)
+	)
+fi
+AH_VERBATIM([HAVE___ATTRIBUTE__GCC_STRUCT],
+[/* Define this if the GCC gcc_struct __attribute__ is available */
+#undef HAVE___ATTRIBUTE__GCC_STRUCT
+#ifdef HAVE___ATTRIBUTE__GCC_STRUCT
+# define GCC_STRUCT __attribute__((gcc_struct))
+#else
+# define GCC_STRUCT
+#endif])
+
 AC_MSG_CHECKING(for __builtin_expect)
-AC_TRY_COMPILE(
-	[long (*foo) (long, long) = __builtin_expect;],
-	[],
+AC_TRY_LINK(
+	[int x;],
+	[if (__builtin_expect(!x, 1)) {}],
 	AC_DEFINE(HAVE___BUILTIN_EXPECT)
 	AC_MSG_RESULT(yes),
 	AC_MSG_RESULT(no)
@@ -67,8 +87,6 @@ AH_VERBATIM([HAVE___BUILTIN_EXPECT],
 #ifndef HAVE___BUILTIN_EXPECT
 # define __builtin_expect(x,c) x
 #endif])
-
-AC_TYPE_VA_LIST
 
 AC_MSG_CHECKING(for type of fpos_t)
 AC_TRY_COMPILE(

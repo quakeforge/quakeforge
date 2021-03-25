@@ -52,7 +52,7 @@
 #include "QF/idparse.h"
 #include "QF/msg.h"
 #include "QF/progs.h"
-#include "QF/qfplist.h"
+#include "QF/plist.h"
 #include "QF/quakeio.h"
 #include "QF/screen.h"
 #include "QF/skin.h"
@@ -61,24 +61,28 @@
 #include "QF/teamplay.h"
 #include "QF/va.h"
 
-#include "qw/bothdefs.h"
-#include "cl_cam.h"
-#include "cl_chat.h"
-#include "cl_ents.h"
-#include "cl_http.h"
-#include "cl_input.h"
-#include "cl_main.h"
-#include "cl_parse.h"
-#include "cl_skin.h"
-#include "cl_tent.h"
-#include "client.h"
 #include "compat.h"
-#include "host.h"
-#include "map_cfg.h"
+#include "sbar.h"
+
+#include "client/effects.h"
+#include "client/temp_entities.h"
+#include "client/view.h"
+
+#include "qw/bothdefs.h"
 #include "qw/pmove.h"
 #include "qw/protocol.h"
-#include "sbar.h"
-#include "clview.h"
+
+#include "qw/include/cl_cam.h"
+#include "qw/include/cl_chat.h"
+#include "qw/include/cl_ents.h"
+#include "qw/include/cl_http.h"
+#include "qw/include/cl_input.h"
+#include "qw/include/cl_main.h"
+#include "qw/include/cl_parse.h"
+#include "qw/include/cl_skin.h"
+#include "qw/include/client.h"
+#include "qw/include/host.h"
+#include "qw/include/map_cfg.h"
 
 const char *svc_strings[] = {
 	"svc_bad",
@@ -159,30 +163,43 @@ int         oldparsecountmod;
 int         parsecountmod;
 double      parsecounttime;
 
-int         cl_spikeindex, cl_playerindex, cl_flagindex;
+int         cl_playerindex, cl_flagindex;
 int         cl_h_playerindex, cl_gib1index, cl_gib2index, cl_gib3index;
 
 int         packet_latency[NET_TIMINGS];
 
 extern cvar_t *hud_scoreboard_uid;
 
-entity_t *cl_static_entities;
-static entity_t **cl_static_tail;
+entitystateset_t cl_static_entities = DARRAY_STATIC_INIT (32);
 
 static void
 CL_LoadSky (void)
 {
 	plitem_t   *item;
 	const char *name = 0;
+	static const char *sky_keys[] = {
+		"sky",      // Q2/DarkPlaces
+		"skyname",  // old QF
+		"qlsky",    // QuakeLives
+		0
+	};
 
-	if (!cl.worldspawn) {
-		r_funcs->R_LoadSkys (0);
-		return;
+	// R_LoadSkys does the right thing with null pointers.
+	if (cl.serverinfo) {
+		name = Info_ValueForKey (cl.serverinfo, "sky");
 	}
-	if ((item = PL_ObjectForKey (cl.worldspawn, "sky")) // Q2/DarkPlaces
-		|| (item = PL_ObjectForKey (cl.worldspawn, "skyname")) // old QF
-		|| (item = PL_ObjectForKey (cl.worldspawn, "qlsky"))) /* QuakeLives */ {
-		name = PL_String (item);
+
+	if (!name) {
+		if (!cl.worldspawn) {
+			r_funcs->R_LoadSkys (0);
+			return;
+		}
+		for (const char **key = sky_keys; *key; key++) {
+			if ((item = PL_ObjectForKey (cl.worldspawn, *key))) {
+				name = PL_String (item);
+				break;
+			}
+		}
 	}
 	r_funcs->R_LoadSkys (name);
 }
@@ -237,7 +254,7 @@ CL_CheckOrDownloadFile (const char *filename)
 		return true;
 	}
 */
-	QFS_FOpenFile (filename, &f);
+	f = QFS_FOpenFile (filename);
 	if (f) {							// it exists, no need to download
 		Qclose (f);
 		return true;
@@ -263,7 +280,7 @@ CL_CheckOrDownloadFile (const char *filename)
 
 	MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 	MSG_WriteString (&cls.netchan.message,
-					 va ("download \"%s\"", cls.downloadname->str));
+					 va (0, "download \"%s\"", cls.downloadname->str));
 
 	cls.downloadnumber++;
 
@@ -277,14 +294,16 @@ map_ent (const char *mapname)
 	char       *name = malloc (strlen (mapname) + 4 + 1);
 	char       *buf;
 	plitem_t   *edicts = 0;
+	QFile      *ent_file;
 
 	QFS_StripExtension (mapname, name);
 	strcat (name, ".ent");
-	if ((buf = (char *) QFS_LoadFile (name, 0))) {
+	ent_file = QFS_VOpenFile (name, 0, cl.model_precache[1]->vpath);
+	if ((buf = (char *) QFS_LoadFile (ent_file, 0))) {
 		edicts = ED_Parse (&edpr, buf);
 		free (buf);
 	} else {
-		edicts = ED_Parse (&edpr, cl.model_precache[1]->entities);
+		edicts = ED_Parse (&edpr, cl.model_precache[1]->brush.entities);
 	}
 	free (name);
 	return edicts;
@@ -293,15 +312,14 @@ map_ent (const char *mapname)
 static void
 CL_NewMap (const char *mapname)
 {
-	cl_static_entities = 0;
-	cl_static_tail = &cl_static_entities;
+	cl_static_entities.size = 0;
 	r_funcs->R_NewMap (cl.worldmodel, cl.model_precache, cl.nummodels);
 	Team_NewMap ();
 	Con_NewMap ();
 	Hunk_Check ();								// make sure nothing is hurt
 	Sbar_CenterPrint (0);
 
-	if (cl.model_precache[1] && cl.model_precache[1]->entities) {
+	if (cl.model_precache[1] && cl.model_precache[1]->brush.entities) {
 		cl.edicts = map_ent (mapname);
 		if (cl.edicts) {
 			cl.worldspawn = PL_ObjectAtIndex (cl.edicts, 0);
@@ -369,12 +387,13 @@ Model_NextDownload (void)
 			aliashdr_t *ahdr = cl.model_precache[i]->aliashdr;
 			if (!ahdr)
 				ahdr = Cache_Get (&cl.model_precache[i]->cache);
-			Info_SetValueForKey (cls.userinfo, info_key, va ("%d", ahdr->crc),
+			Info_SetValueForKey (cls.userinfo, info_key, va (0, "%d",
+															 ahdr->crc),
 								 0);
 			if (!cls.demoplayback) {
 				MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-				SZ_Print (&cls.netchan.message, va ("setinfo %s %d", info_key,
-													ahdr->crc));
+				SZ_Print (&cls.netchan.message, va (0, "setinfo %s %d",
+													info_key, ahdr->crc));
 			}
 			if (!cl.model_precache[i]->aliashdr)
 				Cache_Release (&cl.model_precache[i]->cache);
@@ -398,8 +417,8 @@ Model_NextDownload (void)
 	if (!cls.demoplayback) {
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
-						 va (prespawn_name, cl.servercount,
-							 cl.worldmodel->checksum2));
+						 va (0, prespawn_name, cl.servercount,
+							 cl.worldmodel->brush.checksum2));
 	}
 }
 
@@ -419,7 +438,7 @@ Sound_NextDownload (void)
 	for (; cl.sound_name[cls.downloadnumber][0];
 		 cls.downloadnumber++) {
 		s = cl.sound_name[cls.downloadnumber];
-		if (!CL_CheckOrDownloadFile (va ("sound/%s", s)))
+		if (!CL_CheckOrDownloadFile (va (0, "sound/%s", s)))
 			return;						// started a download
 	}
 
@@ -432,14 +451,13 @@ Sound_NextDownload (void)
 	// done with sounds, request models now
 	memset (cl.model_precache, 0, sizeof (cl.model_precache));
 	cl_playerindex = -1;
-	cl_spikeindex = -1;
 	cl_flagindex = -1;
 	cl_h_playerindex = -1;
 	cl_gib1index = cl_gib2index = cl_gib3index = -1;
 	if (!cls.demoplayback) {
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
-						 va (modellist_name, cl.servercount, 0));
+						 va (0, modellist_name, cl.servercount, 0));
 	}
 }
 
@@ -468,7 +486,7 @@ void
 CL_FinishDownload (void)
 {
 	Qclose (cls.download);
-	VID_SetCaption (va ("Connecting to %s", cls.servername->str));
+	VID_SetCaption (va (0, "Connecting to %s", cls.servername->str));
 
 	// rename the temp file to it's final name
 	if (strcmp (cls.downloadtempname->str, cls.downloadname->str)) {
@@ -658,8 +676,8 @@ CL_ParseDownload (void)
 	if (percent != 100) {
 		// request next block
 		if (percent != cls.downloadpercent)
-			VID_SetCaption (va ("Downloading %s %d%%", cls.downloadname->str,
-								percent));
+			VID_SetCaption (va (0, "Downloading %s %d%%",
+								cls.downloadname->str, percent));
 		cls.downloadpercent = percent;
 
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
@@ -838,7 +856,7 @@ CL_ParseServerData (void)
 	if (!cls.demoplayback) {
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
-						 va (soundlist_name, cl.servercount, 0));
+						 va (0, soundlist_name, cl.servercount, 0));
 	}
 
 	// now waiting for downloads, etc
@@ -874,7 +892,7 @@ CL_ParseSoundlist (void)
 	if (n && !cls.demoplayback) {
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 		MSG_WriteString (&cls.netchan.message,
-						 va (soundlist_name, cl.servercount, n));
+						 va (0, soundlist_name, cl.servercount, n));
 		return;
 	}
 
@@ -901,9 +919,7 @@ CL_ParseModellist (void)
 			Host_Error ("Server sent too many model_precache");
 		strcpy (cl.model_name[cl.nummodels], str);
 
-		if (!strcmp (cl.model_name[cl.nummodels], "progs/spike.mdl"))
-			cl_spikeindex = cl.nummodels;
-		else if (!strcmp (cl.model_name[cl.nummodels], "progs/player.mdl"))
+		if (!strcmp (cl.model_name[cl.nummodels], "progs/player.mdl"))
 			cl_playerindex = cl.nummodels;
 		else if (!strcmp (cl.model_name[cl.nummodels], "progs/flag.mdl"))
 			cl_flagindex = cl.nummodels;
@@ -925,7 +941,7 @@ CL_ParseModellist (void)
 		if (!cls.demoplayback) {
 			MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
 			MSG_WriteString (&cls.netchan.message,
-							 va (modellist_name, cl.servercount, n));
+							 va (0, modellist_name, cl.servercount, n));
 		}
 		return;
 	}
@@ -943,7 +959,8 @@ CL_ParseBaseline (entity_state_t *es)
 	es->colormap = MSG_ReadByte (net_message);
 	es->skinnum = MSG_ReadByte (net_message);
 
-	MSG_ReadCoordAngleV (net_message, es->origin, es->angles);
+	MSG_ReadCoordAngleV (net_message, &es->origin[0], es->angles);//FIXME
+	es->origin[3] = 1;
 
 	// LordHavoc: set up baseline to for new effects (alpha, colormod, etc)
 	es->colormod = 255;
@@ -970,18 +987,16 @@ CL_ParseStatic (void)
 	ent = r_funcs->R_AllocEntity ();
 	CL_Init_Entity (ent);
 
-	*cl_static_tail = ent;
-	cl_static_tail = &ent->unext;
+	DARRAY_APPEND (&cl_static_entities, es);
 
 	// copy it to the current state
-	ent->model = cl.model_precache[es.modelindex];
-	ent->frame = es.frame;
-	ent->skinnum = es.skinnum;
+	ent->renderer.model = cl.model_precache[es.modelindex];
+	ent->animation.frame = es.frame;
+	ent->renderer.skinnum = es.skinnum;
 
-	VectorCopy (es.origin, ent->origin);
-	CL_TransformEntity (ent, es.angles, true);
+	CL_TransformEntity (ent, es.scale / 16.0, es.angles, es.origin);
 
-	r_funcs->R_AddEfrags (ent);
+	r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
 }
 
 static void
@@ -1091,7 +1106,8 @@ CL_ProcessUserInfo (int slot, player_info_t *player)
 	while (!(player->name = Info_Key (player->userinfo, "name"))) {
 		if (player->userid)
 			Info_SetValueForKey (player->userinfo, "name",
-								 va ("user-%i [exploit]", player->userid), 1);
+								 va (0, "user-%i [exploit]",
+									 player->userid), 1);
 		else
 			Info_SetValueForKey (player->userinfo, "name", "", 1);
 	}
@@ -1244,7 +1260,8 @@ CL_SetStat (int stat, int value)
 			break;
 		case STAT_HEALTH:
 			if (cl_player_health_e->func)
-				GIB_Event_Callback (cl_player_health_e, 1, va ("%i", value));
+				GIB_Event_Callback (cl_player_health_e, 1,
+									va (0, "%i", value));
 			if (value <= 0)
 				Team_Dead ();
 			break;
@@ -1253,12 +1270,14 @@ CL_SetStat (int stat, int value)
 }
 
 static void
-CL_MuzzleFlash (void)
+CL_ParseMuzzleFlash (void)
 {
-	dlight_t   *dl;
+	//FIXME this should just enable the effect on the relevant entity and
+	//then automatic entity updates take care of the rest
 	int			i;
 	player_state_t *pl;
-	vec3_t		fv, rv, uv;
+	vec3_t		f, r, u;
+	vec4f_t     position = { 0, 0, 0, 1}, fv = {};
 
 	i = MSG_ReadShort (net_message);
 
@@ -1267,23 +1286,14 @@ CL_MuzzleFlash (void)
 
 	pl = &cl.frames[parsecountmod].playerstate[i - 1];
 
-	dl = r_funcs->R_AllocDlight (i);
-	if (!dl)
-		return;
-
 	if (i - 1 == cl.playernum)
-		AngleVectors (cl.viewangles, fv, rv, uv);
+		AngleVectors (cl.viewstate.angles, f, r, u);
 	else
-		AngleVectors (pl->viewangles, fv, rv, uv);
+		AngleVectors (pl->viewangles, f, r, u);
 
-	VectorMultAdd (pl->pls.origin, 18, fv, dl->origin);
-	dl->radius = 200 + (rand () & 31);
-	dl->die = cl.time + 0.1;
-	dl->minlight = 32;
-	dl->color[0] = 0.2;
-	dl->color[1] = 0.1;
-	dl->color[2] = 0.05;
-	dl->color[3] = 0.7;
+	VectorCopy (f, fv);
+	VectorCopy (pl->pls.es.origin, position);
+	CL_MuzzleFlash (position, fv, 0, i, cl.time);
 }
 
 #define SHOWNET(x) \
@@ -1298,6 +1308,9 @@ CL_ParseServerMessage (void)
 	int         cmd = 0, i, j;
 	const char *str;
 	static dstring_t *stuffbuf;
+	TEntContext_t tentCtx = {
+		cl.viewstate.origin, cl.worldmodel, cl.viewentity
+	};
 
 	received_framecount = host_framecount;
 	cl.last_servermessage = realtime;
@@ -1327,7 +1340,7 @@ CL_ParseServerMessage (void)
 			break;						// end of message
 		}
 
-		SHOWNET (va ("%s(%d)", svc_strings[cmd], cmd));
+		SHOWNET (va (0, "%s(%d)", svc_strings[cmd], cmd));
 
 		// other commands
 		switch (cmd) {
@@ -1416,7 +1429,7 @@ CL_ParseServerMessage (void)
 
 			case svc_setangle:
 			{
-				vec_t      *dest = cl.viewangles;
+				vec_t      *dest = cl.viewstate.angles;
 				vec3_t      dummy;
 
 				if (cls.demoplayback2) {
@@ -1500,7 +1513,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_temp_entity:
-				CL_ParseTEnt ();
+				CL_ParseTEnt_qw (net_message, cl.time, &tentCtx);
 				break;
 
 			case svc_setpause:
@@ -1542,16 +1555,17 @@ CL_ParseServerMessage (void)
 				cl.completed_time = realtime;
 				r_data->vid->recalc_refdef = true;		// go to full screen
 				Sys_MaskPrintf (SYS_DEV, "intermission simorg: ");
-				MSG_ReadCoordV (net_message, cl.simorg);
-				for (i = 0; i < 3; i++)
-					Sys_MaskPrintf (SYS_DEV, "%f ", cl.simorg[i]);
+				MSG_ReadCoordV (net_message, &cl.viewstate.origin[0]);//FIXME
+				cl.viewstate.origin[3] = 1;
+				Sys_MaskPrintf (SYS_DEV, VEC4F_FMT,
+								VEC4_EXP (cl.viewstate.origin));
 				Sys_MaskPrintf (SYS_DEV, "\nintermission simangles: ");
-				MSG_ReadAngleV (net_message, cl.simangles);
-				cl.simangles[ROLL] = 0;						// FIXME @@@
-				for (i = 0; i < 3; i++)
-					Sys_MaskPrintf (SYS_DEV, "%f ", cl.simangles[i]);
+				MSG_ReadAngleV (net_message, cl.viewstate.angles);
+				cl.viewstate.angles[ROLL] = 0;			// FIXME @@@
+				Sys_MaskPrintf (SYS_DEV, "%f %f %f",
+								VectorExpand (cl.viewstate.angles));
 				Sys_MaskPrintf (SYS_DEV, "\n");
-				VectorZero (cl.simvel);
+				cl.viewstate.velocity = (vec4f_t) { };
 
 				// automatic fraglogging (by elmex)
 				// XXX: Should this _really_ called here?
@@ -1584,11 +1598,17 @@ CL_ParseServerMessage (void)
 			//   svc_cutscene (same value as svc_smallkick)
 
 			case svc_smallkick:
-				cl.punchangle[PITCH] = -2;
+				cl.viewstate.punchangle = (vec4f_t) {
+					// -2 degrees pitch
+					0, -0.0174524064, 0, 0.999847695
+				};
 				break;
 
 			case svc_bigkick:
-				cl.punchangle[PITCH] = -4;
+				cl.viewstate.punchangle = (vec4f_t) {
+					// -4 degrees pitch
+					0, -0.0348994967, 0, 0.999390827
+				};
 				break;
 
 			case svc_updateping:
@@ -1616,7 +1636,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_muzzleflash:
-				CL_MuzzleFlash ();
+				CL_ParseMuzzleFlash ();
 				break;
 
 			case svc_updateuserinfo:
@@ -1632,7 +1652,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_nails:
-				CL_ParseProjectiles (false);
+				CL_ParseProjectiles (net_message, false, &tentCtx);
 				break;
 
 			case svc_chokecount:		// some preceding packets were choked
@@ -1683,7 +1703,7 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_nails2:			// FIXME from qwex
-				CL_ParseProjectiles (true);
+				CL_ParseProjectiles (net_message, true, &tentCtx);
 				break;
 		}
 	}

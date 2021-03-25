@@ -72,17 +72,18 @@ typedef struct {
 	float       color[4];
 } drawvert_t;
 
-static const char quakeicon_vert[] =
-#include "quakeico.vc"
-;
+static const char *twod_vert_effects[] =
+{
+	"QuakeForge.Vertex.2d",
+	0
+};
 
-static const char quaketext_vert[] =
-#include "quaketxt.vc"
-;
-
-static const char quake2d_frag[] =
-#include "quake2d.fc"
-;
+static const char *twod_frag_effects[] =
+{
+	"QuakeForge.Fragment.palette",
+	"QuakeForge.Fragment.2d",
+	0
+};
 
 static float proj_matrix[16];
 
@@ -282,7 +283,7 @@ glsl_Draw_CachePic (const char *path, qboolean alpha)
 	if ((cpic = Hash_Find (pic_cache, path)))
 		return cpic->pic;
 	if (strlen (path) < 4 || strcmp (path + strlen (path) - 4, ".lmp")
-		|| !(p = (qpic_t *) QFS_LoadFile (path, 0))) {
+		|| !(p = (qpic_t *) QFS_LoadFile (QFS_FOpenFile (path), 0))) {
 		//FIXME load a null texture
 		Sys_Error ("Draw_CachePic: failed to load %s", path);
 	}
@@ -368,12 +369,13 @@ Draw_ClearCache (int phase)
 void
 glsl_Draw_Init (void)
 {
+	shader_t   *vert_shader, *frag_shader;
 	int         i;
 	int         frag, vert;
 	qpic_t     *pic;
 	//FIXME glpic_t    *gl;
 
-	pic_cache = Hash_NewTable (127, cachepic_getkey, cachepic_free, 0);
+	pic_cache = Hash_NewTable (127, cachepic_getkey, cachepic_free, 0, 0);
 	QFS_GamedirCallback (Draw_ClearCache);
 	//FIXME temporary work around for the timing of cvar creation and palette
 	//loading
@@ -381,9 +383,11 @@ glsl_Draw_Init (void)
 
 	draw_queue = dstring_new ();
 
-	vert = GLSL_CompileShader ("quakeico.vert", quakeicon_vert,
+	vert_shader = GLSL_BuildShader (twod_vert_effects);
+	frag_shader = GLSL_BuildShader (twod_frag_effects);
+	vert = GLSL_CompileShader ("quakeico.vert", vert_shader,
 							   GL_VERTEX_SHADER);
-	frag = GLSL_CompileShader ("quake2d.frag", quake2d_frag,
+	frag = GLSL_CompileShader ("quake2d.frag", frag_shader,
 							   GL_FRAGMENT_SHADER);
 	quake_2d.program = GLSL_LinkProgram ("quake2d", vert, frag);
 	GLSL_ResolveShaderParam (quake_2d.program, &quake_2d.texture);
@@ -391,6 +395,8 @@ glsl_Draw_Init (void)
 	GLSL_ResolveShaderParam (quake_2d.program, &quake_2d.matrix);
 	GLSL_ResolveShaderParam (quake_2d.program, &quake_2d.vertex);
 	GLSL_ResolveShaderParam (quake_2d.program, &quake_2d.color);
+	GLSL_FreeShader (vert_shader);
+	GLSL_FreeShader (frag_shader);
 
 	draw_scrap = GLSL_CreateScrap (2048, GL_LUMINANCE, 0);
 
@@ -401,7 +407,7 @@ glsl_Draw_Init (void)
 
 	conchars = pic_data ("conchars", 128, 128, draw_chars);
 
-	pic = (qpic_t *) QFS_LoadFile ("gfx/conback.lmp", 0);
+	pic = (qpic_t *) QFS_LoadFile (QFS_FOpenFile ("gfx/conback.lmp"), 0);
 	if (pic) {
 		SwapPic (pic);
 		conback_texture = GLSL_LoadQuakeTexture ("conback",

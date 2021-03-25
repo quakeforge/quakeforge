@@ -37,6 +37,7 @@
 
 #include <math.h>
 
+#include "QF/entity.h"
 #include "QF/render.h"
 #include "QF/sys.h"
 
@@ -246,7 +247,7 @@ R_GetSpriteframe (msprite_t *psprite)
 	int         i, numframes, frame;
 	float      *pintervals, fullinterval, targettime, time;
 
-	frame = currententity->frame;
+	frame = currententity->animation.frame;
 
 	if ((frame >= psprite->numframes) || (frame < 0)) {
 		Sys_Printf ("R_DrawSprite: no such frame %d\n", frame);
@@ -261,7 +262,7 @@ R_GetSpriteframe (msprite_t *psprite)
 		numframes = pspritegroup->numframes;
 		fullinterval = pintervals[numframes - 1];
 
-		time = vr_data.realtime + currententity->syncbase;
+		time = vr_data.realtime + currententity->animation.syncbase;
 
 		// when loading in Mod_LoadSpriteGroup, we guaranteed all interval
 		// values are positive, so we don't have to worry about division by 0
@@ -285,9 +286,9 @@ R_DrawSprite (void)
 	int         i;
 	msprite_t  *psprite;
 	vec3_t      tvec;
-	float       dot, angle, sr, cr;
+	float       dot, sr, cr;
 
-	psprite = currententity->model->cache.data;
+	psprite = currententity->renderer.model->cache.data;
 
 	r_spritedesc.pspriteframe = R_GetSpriteframe (psprite);
 
@@ -361,16 +362,19 @@ R_DrawSprite (void)
 	} else if (psprite->type == SPR_ORIENTED) {
 		// generate the sprite's axes, according to the sprite's world
 		// orientation
-		VectorCopy (currententity->transform + 0, r_spritedesc.vpn);
-		VectorNegate (currententity->transform + 4, r_spritedesc.vright);
-		VectorCopy (currententity->transform + 8, r_spritedesc.vup);
+		mat4f_t     mat;
+		Transform_GetWorldMatrix (currententity->transform, mat);
+		VectorCopy (mat[0], r_spritedesc.vpn);
+		VectorNegate (mat[1], r_spritedesc.vright);
+		VectorCopy (mat[2], r_spritedesc.vup);
 	} else if (psprite->type == SPR_VP_PARALLEL_ORIENTED) {
 		// generate the sprite's axes, parallel to the viewplane, but rotated
 		// in that plane around the center according to the sprite entity's
 		// roll angle. So vpn stays the same, but vright and vup rotate
-		angle = currententity->angles[ROLL] * (M_PI * 2 / 360);
-		sr = sin (angle);
-		cr = cos (angle);
+		vec4f_t     rot = Transform_GetLocalRotation (currententity->transform);
+		//FIXME assumes the entity is only rolled
+		sr = 2 * rot[0] * rot[3];
+		cr = rot[3] * rot[3] - rot[0] * rot[0];
 
 		for (i = 0; i < 3; i++) {
 			r_spritedesc.vpn[i] = vpn[i];

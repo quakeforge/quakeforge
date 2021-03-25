@@ -54,9 +54,10 @@
 #include "QF/va.h"
 
 #include "compat.h"
+
 #include "netchan.h"
 #include "qw/protocol.h"
-#include "server.h"
+#include "qw/include/server.h"
 
 cvar_t     *net_packetlog;
 cvar_t     *net_loglevel;
@@ -177,7 +178,7 @@ Net_LogStart (const char *fname)
 }
 
 void
-Net_LogStop (void)
+Net_LogStop (void *data)
 {
 	if (Net_PacketLog)
 		Qclose (Net_PacketLog);
@@ -635,7 +636,7 @@ Parse_Server_Packet (int has_sequence)
 					break;
 				case svc_playerinfo:
 					Net_LogPrintf ("\n\tPlayer: %d", MSG_ReadByte (&packet));
-					mask2 = mask1 = MSG_ReadShort (&packet);
+					mask1 = MSG_ReadShort (&packet);
 					Net_LogPrintf (" Mask1: %d", mask1);
 #if 1
 					Net_LogPrintf (" Origin:");
@@ -954,7 +955,7 @@ Net_PacketLog_f (cvar_t *var)
 	if (var->int_val) {
 		Net_LogStart ("qfpacket.log");
 	} else {
-		Net_LogStop ();
+		Net_LogStop (0);
 	}
 }
 

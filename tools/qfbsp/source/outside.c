@@ -22,12 +22,12 @@
 
 #include "QF/sys.h"
 
-#include "brush.h"
-#include "bsp5.h"
-#include "draw.h"
-#include "options.h"
-#include "portals.h"
-#include "outside.h"
+#include "tools/qfbsp/include/brush.h"
+#include "tools/qfbsp/include/bsp5.h"
+#include "tools/qfbsp/include/draw.h"
+#include "tools/qfbsp/include/options.h"
+#include "tools/qfbsp/include/portals.h"
+#include "tools/qfbsp/include/outside.h"
 
 /**	\addtogroup qfbsp_outside
 */
@@ -41,7 +41,7 @@ int         outleafs;
 	\param point	The point's location.
 	\return			The leaf node in which the point is.
 */
-static node_t *
+static __attribute__((pure)) node_t *
 PointInLeaf (node_t *node, const vec3_t point)
 {
 	vec_t       d;
@@ -179,6 +179,8 @@ MarkLeakTrail2 (void)
 	const portal_t *p, *p2;
 	vec3_t      wc, pwc;
 	const vec_t *v;
+
+	VectorZero (wc);
 
 	leakfile = fopen (options.pointfile, "w");
 	if (!leakfile)

@@ -24,8 +24,8 @@
 		Boston, MA  02111-1307, USA
 */
 
-#ifndef __pcx_h
-#define __pcx_h
+#ifndef __QF_pcx_h
+#define __QF_pcx_h
 
 #include "QF/qtypes.h"
 #include "QF/quakeio.h"
@@ -71,10 +71,11 @@ pcx_t *EncodePCX (byte *data, int width, int height, int rowbytes,
 	\param f The file to read the texture from
 	\param convert If true, the texture is converted to RGB on load
 	\param pal The palette to apply during conversion
+	\param load If false, only the format and size info is loaded
 
 	\return A pointer to the texture.
 	\warning Uses Hunk_TempAlloc() to allocate the texture.
 */
-struct tex_s *LoadPCX (QFile *f, qboolean convert, byte *pal);
+struct tex_s *LoadPCX (QFile *f, qboolean convert, byte *pal, int load);
 
-#endif // __pcx_h
+#endif//__QF_pcx_h

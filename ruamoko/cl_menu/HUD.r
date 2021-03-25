@@ -166,7 +166,7 @@ int HUDHandleClass;
 			if (looping)
 				currentFrame = 0;
 			else {
-				nextFrameTime = 0.0;
+				nextFrameTime = 0.0f;
 				currentFrame = 0;
 				return;
 			}
@@ -201,7 +201,7 @@ int HUDHandleClass;
 
 - (void) stop
 {
-	nextFrameTime = 0.0;
+	nextFrameTime = 0.0f;
 	currentFrame = 0;
 }
 

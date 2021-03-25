@@ -445,7 +445,6 @@ qfgl_InterleavedArrays (GLenum format, GLsizei stride, const GLvoid *pointer)
 		case GL_C4UB_V2F:
 			qfgl_VertexPointer (2, GL_FLOAT, stride - 2 * sizeof (GLfloat),
 								ptr);
-			ptr += 2 * sizeof (GLfloat);
 			break;
 		case GL_V3F:
 		case GL_C4UB_V3F:
@@ -459,13 +458,11 @@ qfgl_InterleavedArrays (GLenum format, GLsizei stride, const GLvoid *pointer)
 		case GL_T2F_C4F_N3F_V3F:
 			qfgl_VertexPointer (3, GL_FLOAT, stride - 3 * sizeof (GLfloat),
 								ptr);
-			ptr += 3 * sizeof (GLfloat);
 			break;
 		case GL_T4F_V4F:
 		case GL_T4F_C4F_N3F_V4F:
 			qfgl_VertexPointer (4, GL_FLOAT, stride - 4 * sizeof (GLfloat),
 								ptr);
-			ptr += 4 * sizeof (GLfloat);
 			break;
 		default:
 			break;

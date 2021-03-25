@@ -37,6 +37,7 @@
 # include <strings.h>
 #endif
 
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -263,25 +264,27 @@ Cvar_Set (cvar_t *var, const char *value)
 	}
 
 	changed = !strequal (var->string, value);
-	free ((char*)var->string);					// free the old value string
+	if (changed) {
+		free ((char*)var->string);				// free the old value string
 
-	var->string = strdup (value);
-	var->value = atof (var->string);
-	var->int_val = atoi (var->string);
-	VectorZero (var->vec);
-	vals = sscanf (var->string, "%f %f %f",
-				   &var->vec[0], &var->vec[1], &var->vec[2]);
-	if (vals == 1)
-		var->vec[2] = var->vec[1] = var->vec[0];
+		var->string = strdup (value);
+		var->value = atof (var->string);
+		var->int_val = atoi (var->string);
+		VectorZero (var->vec);
+		vals = sscanf (var->string, "%f %f %f",
+					   &var->vec[0], &var->vec[1], &var->vec[2]);
+		if (vals == 1)
+			var->vec[2] = var->vec[1] = var->vec[0];
 
-	if (changed && var->callback)
-		var->callback (var);
+		if (var->callback)
+			var->callback (var);
+	}
 }
 
 VISIBLE void
 Cvar_SetValue (cvar_t *var, float value)
 {
-	Cvar_Set (var, va ("%g", value));
+	Cvar_Set (var, va (0, "%g", value));
 }
 
 /*
@@ -327,6 +330,82 @@ Cvar_WriteVariables (QFile *f)
 			Qprintf (f, "seta %s \"%s\"\n", var->name, var->string);
 }
 
+// XXX make sure in sync with SYS_* in sys.h
+static const char *developer_flags[] = {
+	"dev",
+	"warn",
+	"vid",
+	"fs_nf",
+	"fs_f",
+	"fs",
+	"net",
+	"rua_obj",
+	"rua_msg",
+	"snd",
+	"glt",
+	"glsl",
+	"skin",
+	"model",
+	"vulkan",
+	0
+};
+
+static int
+parse_developer_flag (const char *flag)
+{
+	const char **devflag;
+	char       *end;
+	int         val;
+
+	val = strtol (flag, &end, 0);
+	if (!*end) {
+		return val;
+	}
+	for (devflag = developer_flags; *devflag; devflag++) {
+		if (!strcmp (*devflag, flag)) {
+			return 1 << (devflag - developer_flags);
+		}
+	}
+	return 0;
+}
+
+static void
+developer_f (cvar_t *var)
+{
+	char       *buf = alloca (strlen (var->string) + 1);
+	const char *s;
+	char       *b;
+	char        c;
+	int         parse = 0;
+
+	for (s = var->string; *s; s++) {
+		if (isalpha (*s) || *s == '|') {
+			parse = 1;
+			break;
+		}
+	}
+	if (!parse) {
+		return;
+	}
+	var->int_val = 0;
+	for (s = var->string, b = buf; (c = *s++); ) {
+		if (isspace (c)) {
+			continue;
+		}
+		if (c == '|') {
+			*b = 0;
+			var->int_val |= parse_developer_flag (buf);
+			b = buf;
+			continue;
+		}
+		*b++ = c;
+	}
+	if (b != buf) {
+		*b = 0;
+		var->int_val |= parse_developer_flag (buf);
+	}
+}
+
 static void
 set_cvar (const char *cmd, int orflags)
 {
@@ -356,8 +435,8 @@ set_cvar (const char *cmd, int orflags)
 			Cvar_SetFlags (var, var->flags | orflags);
 		}
 	} else {
-		var = Cvar_Get (var_name, value, CVAR_USER_CREATED | orflags, NULL,
-						USER_CVAR);
+		Cvar_Get (var_name, value, CVAR_USER_CREATED | orflags, NULL,
+				  USER_CVAR);
 	}
 }
 
@@ -529,7 +608,7 @@ Cvar_CvarList_f (void)
 			showhelp++;
 	}
 	for (var = cvar_vars, i = 0; var; var = var->next, i++) {
-		flags = va ("%c%c%c%c",
+		flags = va (0, "%c%c%c%c",
 					var->flags & CVAR_ROM ? 'r' : ' ',
 					var->flags & CVAR_ARCHIVE ? '*' : ' ',
 					var->flags & CVAR_USERINFO ? 'u' : ' ',
@@ -580,14 +659,14 @@ calias_get_key (const void *c, void *unused)
 VISIBLE void
 Cvar_Init_Hash (void)
 {
-	cvar_hash = Hash_NewTable (1021, cvar_get_key, cvar_free, 0);
-	calias_hash = Hash_NewTable (1021, calias_get_key, calias_free, 0);
+	cvar_hash = Hash_NewTable (1021, cvar_get_key, cvar_free, 0, 0);
+	calias_hash = Hash_NewTable (1021, calias_get_key, calias_free, 0, 0);
 }
 
 VISIBLE void
 Cvar_Init (void)
 {
-	developer = Cvar_Get ("developer", "0", CVAR_NONE, NULL,
+	developer = Cvar_Get ("developer", "0", CVAR_NONE, developer_f,
 			"set to enable extra debugging information");
 
 	Cmd_AddCommand ("set", Cvar_Set_f, "Set the selected variable, useful on "

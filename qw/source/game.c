@@ -43,8 +43,8 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 
-#include "game.h"
-#include "server.h"
+#include "qw/include/game.h"
+#include "qw/include/server.h"
 
 cvar_t     *registered;
 int         static_registered = 1;		// only for startup check, then set
@@ -62,7 +62,7 @@ Game_CheckRegistered (void)
 {
 	QFile      *h;
 
-	QFS_FOpenFile ("gfx/pop.lmp", &h);
+	h = QFS_FOpenFile ("gfx/pop.lmp");
 	static_registered = 0;
 
 	if (h) {

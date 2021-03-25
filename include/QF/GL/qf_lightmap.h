@@ -50,6 +50,6 @@ void gl_lightmap_init (void);
 void GL_BuildLightmaps (struct model_s **models, int num_models);
 void R_BlendLightmaps (void);
 void R_CalcLightmaps (void);
-extern void (*R_BuildLightMap) (msurface_t *surf);
+extern void (*R_BuildLightMap) (mod_brush_t *brush, msurface_t *surf);
 
 #endif // __QF_GL_lightmap_h

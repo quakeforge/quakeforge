@@ -1,7 +1,7 @@
 #ifndef __ruamoko_Protocol_h
 #define __ruamoko_Protocol_h
 
-#include "Object.h"
+#include <Object.h>
 
 struct obj_method_description {
 	string name;

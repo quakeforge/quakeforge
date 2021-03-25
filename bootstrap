@@ -18,7 +18,7 @@ if test "$1" = "clean"; then
 	find . -name '*.orig' -type f -print0 | xargs $ARGS rm -f
 	rm -f aclocal.m4 build-stamp changelog-stamp config.cache config.log \
 		  config.status configure configure-stamp install-sh libtool missing \
-		  mkinstalldirs quakeforge-config quakeforge.lsm
+		  mkinstalldirs quakeforge-config quakeforge.lsm test-driver
 	rm -f compile config.guess config.sub depcomp ltmain.sh ylwrap
 	rm -rf autom4te.cache
 	rm -f m4/libtool.m4 m4/ltoptions.m4 m4/ltsugar.m4 m4/ltversion.m4 \
@@ -100,7 +100,7 @@ else
 fi
 
 if test -n "$errors" ; then
-	echo -e $errors
+	echo  "$errors"
 	exit 1
 fi
 

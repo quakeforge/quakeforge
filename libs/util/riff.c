@@ -138,7 +138,6 @@ read_adtl (dstring_t *list_buf, QFile *f, int len)
 	//FIXME list = (riff_list_t *) list_buf->str;
 	while (len) {
 		if (!Rread (f, &ck, sizeof (ck))) {
-			len = 0;
 			break;
 		}
 		len -= sizeof (ck);
@@ -161,7 +160,7 @@ read_adtl (dstring_t *list_buf, QFile *f, int len)
 				chunk = &label->ck;
 				break;
 			default:
-				data = malloc (sizeof (data));
+				data = malloc (sizeof (riff_data_t));
 				data->ck = ck;
 				data->data = read_data (f, ck.len);
 				chunk = &data->ck;
@@ -229,6 +228,7 @@ read_list (riff_d_chunk_t *ck, QFile *f, int len)
 					riff_data_t     *data = malloc (sizeof (riff_data_t));
 					if (!Rread (f, &data->ck, sizeof (data->ck))) {
 						free (data);
+						len = 0;
 					} else {
 						data->ck.len = LittleLong (data->ck.len);
 						data->data = read_data (f, data->ck.len);
@@ -236,7 +236,6 @@ read_list (riff_d_chunk_t *ck, QFile *f, int len)
 						chunk = &data->ck;
 					}
 				}
-				len = 0;
 				break;
 		}
 		if (chunk) {
@@ -392,7 +391,6 @@ riff_read (QFile *f)
 				break;
 		}
 		dstring_append (riff_buf, (char *)&chunk, sizeof (chunk));
-		riff = (riff_list_t *) riff_buf->str;
 		chunk = 0;
 	}
 bail:

@@ -1,0 +1,25 @@
+ruamoko_gui_gui_libs=ruamoko/gui/libgui.a
+
+ruamoko_lib_LIBRARIES += $(ruamoko_gui_gui_libs)
+EXTRA_LIBRARIES += $(ruamoko_gui_gui_libs)
+
+ruamoko_gui_libgui_a_SOURCES= \
+	ruamoko/gui/Group.r \
+	ruamoko/gui/InputLine.r \
+	ruamoko/gui/Pic.r \
+	ruamoko/gui/Point.r \
+	ruamoko/gui/Rect.r \
+	ruamoko/gui/Size.r \
+	ruamoko/gui/Slider.r \
+	ruamoko/gui/Text.r \
+	ruamoko/gui/View.r
+ruamoko_gui_libgui_a_dep=$(call qcautodep,$(ruamoko_gui_libgui_a_SOURCES))
+ruamoko_gui_libgui_a_AR=	$(PAK) -cf
+EXTRA_ruamoko_gui_libgui_a_DEPENDENCIES=pak
+include $(ruamoko_gui_libgui_a_dep) # am--include-marker
+r_depfiles_remade += $(ruamoko_gui_libgui_a_dep)
+
+CLEANFILES += \
+	ruamoko/gui/*.dat \
+	ruamoko/gui/*.sym
+DISTCLEANFILES += $(ruamoko_gui_libgui_a_dep)

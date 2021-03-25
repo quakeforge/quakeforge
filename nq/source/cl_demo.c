@@ -46,9 +46,10 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "client.h"
 #include "compat.h"
-#include "host.h"
+
+#include "nq/include/client.h"
+#include "nq/include/host.h"
 
 typedef struct {
 	int         frames;
@@ -56,15 +57,15 @@ typedef struct {
 	double      fps;
 } td_stats_t;
 
-int         demo_timeframes_isactive;
-int         demo_timeframes_index;
-char        demoname[1024];
-double     *demo_timeframes_array;
+static int         demo_timeframes_isactive;
+static int         demo_timeframes_index;
+static dstring_t  *demoname;
+static double     *demo_timeframes_array;
 #define CL_TIMEFRAMES_ARRAYBLOCK 4096
 
-int         timedemo_count;
-int         timedemo_runs;
-td_stats_t *timedemo_data;
+static int         timedemo_count;
+static int         timedemo_runs;
+static td_stats_t *timedemo_data;
 
 static void CL_FinishTimeDemo (void);
 static void CL_TimeFrames_DumpLog (void);
@@ -104,7 +105,7 @@ CL_WriteDemoMessage (sizebuf_t *msg)
 	len = LittleLong (msg->cursize);
 	Qwrite (cls.demofile, &len, 4);
 	for (i = 0; i < 3; i++) {
-		f = LittleFloat (cl.viewangles[i]);
+		f = LittleFloat (cl.viewstate.angles[i]);
 		Qwrite (cls.demofile, &f, 4);
 	}
 	Qwrite (cls.demofile, msg->data, msg->cursize);
@@ -181,10 +182,14 @@ read_demopacket (void)
 	if (net_message->message->cursize > MAX_DEMMSG)
 		Host_Error ("Demo message > MAX_DEMMSG: %d/%d",
 					net_message->message->cursize, MAX_DEMMSG);
-	VectorCopy (cl.mviewangles[0], cl.mviewangles[1]);
+	VectorCopy (cl.frameViewAngles[0], cl.frameViewAngles[1]);
 	for (i = 0; i < 3; i++) {
 		r = Qread (cls.demofile, &f, 4);
-		cl.mviewangles[0][i] = LittleFloat (f);
+		if (r != 4) {
+			CL_StopPlayback ();
+			return 0;
+		}
+		cl.frameViewAngles[0][i] = LittleFloat (f);
 	}
 	r = Qread (cls.demofile, net_message->message->data,
 			   net_message->message->cursize);
@@ -307,7 +312,7 @@ CL_Record_f (void)
 
 // start up the map
 	if (c > 2)
-		Cmd_ExecuteString (va ("map %s", Cmd_Argv (2)), src_command);
+		Cmd_ExecuteString (va (0, "map %s", Cmd_Argv (2)), src_command);
 
 	CL_Record (Cmd_Argv (1), track);
 }
@@ -333,7 +338,7 @@ demo_default_name (const char *argv1)
 	strftime (timestring, 19, "%Y-%m-%d-%H-%M", localtime (&tim));
 
 	// the leading path-name is to be removed from cl.worldmodel->name
-	mapname = QFS_SkipPath (cl.worldmodel->name);
+	mapname = QFS_SkipPath (cl.worldmodel->path);
 
 	// the map name is cut off after any "." because this would prevent
 	// an extension being appended
@@ -450,11 +455,11 @@ CL_StartDemo (void)
 	CL_Disconnect ();
 
 	// open the demo file
-	name = dstring_strdup (demoname);
+	name = dstring_strdup (demoname->str);
 	QFS_DefaultExtension (name, ".dem");
 
 	Sys_Printf ("Playing demo from %s.\n", name->str);
-	QFS_FOpenFile (name->str, &cls.demofile);
+	cls.demofile = QFS_FOpenFile (name->str);
 	if (!cls.demofile) {
 		Sys_Printf ("ERROR: couldn't open.\n");
 		cls.demonum = -1;				// stop demo loop
@@ -499,7 +504,7 @@ CL_PlayDemo_f (void)
 
 	switch (Cmd_Argc ()) {
 		case 1:
-			if (!demoname[0])
+			if (!demoname->str[0])
 				goto playdemo_error;
 			// fall through
 		case 2:
@@ -519,7 +524,7 @@ playdemo_error:
 	timedemo_runs = timedemo_count = 1;	// make sure looped timedemos stop
 
 	if (Cmd_Argc () > 1)
-		strncpy (demoname, Cmd_Argv (1), sizeof (demoname));
+		dstring_copystr (demoname, Cmd_Argv (1));
 	CL_StartDemo ();
 }
 
@@ -627,7 +632,7 @@ CL_TimeDemo_f (void)
 		timedemo_data = 0;
 	}
 	timedemo_data = calloc (timedemo_runs, sizeof (td_stats_t));
-	strncpy (demoname, Cmd_Argv (1), sizeof (demoname));
+	dstring_copystr (demoname, Cmd_Argv (1));
 	CL_StartTimeDemo ();
 	timedemo_runs = timedemo_count = max (count, 1);
 	timedemo_data = calloc (timedemo_runs, sizeof (td_stats_t));
@@ -636,6 +641,7 @@ CL_TimeDemo_f (void)
 void
 CL_Demo_Init (void)
 {
+	demoname = dstring_newstr ();
 	demo_timeframes_isactive = 0;
 	demo_timeframes_index = 0;
 	demo_timeframes_array = NULL;

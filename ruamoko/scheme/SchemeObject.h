@@ -14,6 +14,7 @@
     int line;
     string source;
 }
++ (void) finishCollecting;
 + (void) collectCheckPoint;
 - (void) mark;
 - (void) markReachable;

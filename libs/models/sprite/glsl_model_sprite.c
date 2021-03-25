@@ -47,7 +47,7 @@
 #include "mod_internal.h"
 
 static void
-glsl_sprite_clear (model_t *m)
+glsl_sprite_clear (model_t *m, void *data)
 {
 	int         i, j;
 	msprite_t  *sprite = (msprite_t *) m->cache.data;
@@ -71,12 +71,13 @@ glsl_sprite_clear (model_t *m)
 }
 
 void
-glsl_Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)
+glsl_Mod_SpriteLoadTexture (model_t *mod, mspriteframe_t *pspriteframe,
+							int framenum)
 {
 	const char *name;
 
-	loadmodel->clear = glsl_sprite_clear;
-	name = va ("%s_%i", loadmodel->name, framenum);
+	mod->clear = glsl_sprite_clear;
+	name = va (0, "%s_%i", mod->path, framenum);
 	pspriteframe->gl_texturenum =
 		GLSL_LoadQuakeTexture (name, pspriteframe->width, pspriteframe->height,
 							   pspriteframe->pixels);

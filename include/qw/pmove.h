@@ -106,9 +106,9 @@ void PlayerMove (void);
 void Pmove_Init (void);
 void Pmove_Init_Cvars (void);
 
-int PM_HullPointContents (hull_t *hull, int num, const vec3_t p);
+int PM_HullPointContents (hull_t *hull, int num, const vec3_t p) __attribute__((pure));
 
-int PM_PointContents (const vec3_t point);
+int PM_PointContents (const vec3_t point) __attribute__((pure));
 qboolean PM_TestPlayerPosition (const vec3_t point);
 trace_t PM_PlayerMove (const vec3_t start, const vec3_t stop);
 

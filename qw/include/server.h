@@ -73,7 +73,7 @@ typedef struct {
 	unsigned int	model_player_checksum;
 	unsigned int	eyes_player_checksum;
 
-	char		name[64];			// map name
+	char		*name;			// map name
 	char		modelname[MAX_QPATH];		// maps/<name>.bsp, for model_precache[0]
 	struct model_s 	*worldmodel;
 	const char	*model_precache[MAX_MODELS];	// NULL terminated
@@ -488,15 +488,15 @@ client_t *SV_AllocClient (int spectator, int server);
 void SV_SavePenaltyFilter (client_t *cl, filtertype_t type, double pentime);
 double SV_RestorePenaltyFilter (client_t *cl, filtertype_t type);
 
-void SV_Shutdown (void);
+void SV_Shutdown (void *data);
 void SV_Frame (float time);
 void SV_FinalMessage (const char *message);
 void SV_DropClient (client_t *drop);
-int SV_CalcPing (client_t *cl);
+int SV_CalcPing (client_t *cl) __attribute__((pure));
 void SV_FullClientUpdate (client_t *client, sizebuf_t *buf);
 void SV_FullClientUpdateToClient (client_t *client, backbuf_t *backbuf);
 
-int SV_ModelIndex (const char *name);
+int SV_ModelIndex (const char *name) __attribute__((pure));
 
 qboolean SV_CheckBottom (struct edict_s *ent);
 qboolean SV_movestep (struct edict_s *ent, const vec3_t move,
@@ -549,12 +549,12 @@ struct trace_s;
 int SV_FlyMove (struct edict_s *ent, float time, struct trace_s *steptrace);
 struct trace_s SV_PushEntity (struct edict_s *ent, vec3_t push,
 							  unsigned traceflags);
-int SV_EntCanSupportJump (struct edict_s *ent);
+int SV_EntCanSupportJump (struct edict_s *ent) __attribute__((pure));
 
 //
 // sv_send.c
 //
-void SV_Print (const char *fmt, va_list args);
+void SV_Print (const char *fmt, va_list args) __attribute__((format(printf, 1, 0)));
 void SV_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
 void SV_SendClientMessages (void);
 void SV_GetStats (struct edict_s *ent, int spectator, int stats[]);
@@ -611,7 +611,7 @@ extern struct dstring_s outputbuf;
 // sv_ccmds.c
 //
 void SV_Status_f (void);
-const char *SV_Current_Map (void);
+const char *SV_Current_Map (void) __attribute__((pure));
 void SV_SetLocalinfo (const char *key, const char *value);
 
 

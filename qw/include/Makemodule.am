@@ -1,0 +1,27 @@
+EXTRA_DIST += \
+	qw/include/chase.h \
+	qw/include/cl_cam.h \
+	qw/include/cl_chat.h \
+	qw/include/cl_demo.h \
+	qw/include/cl_ents.h \
+	qw/include/cl_http.h \
+	qw/include/cl_input.h \
+	qw/include/cl_main.h \
+	qw/include/cl_parse.h \
+	qw/include/cl_pred.h \
+	qw/include/cl_skin.h \
+	qw/include/cl_slist.h \
+	qw/include/client.h \
+	qw/include/crudefile.h \
+	qw/include/game.h \
+	qw/include/host.h \
+	qw/include/map_cfg.h \
+	qw/include/server.h \
+	qw/include/sv_gib.h \
+	qw/include/sv_demo.h \
+	qw/include/sv_pr_cmds.h \
+	qw/include/sv_pr_cpqw.h \
+	qw/include/sv_pr_qwe.h \
+	qw/include/sv_progs.h \
+	qw/include/sv_qtv.h \
+	qw/include/sv_recorder.h

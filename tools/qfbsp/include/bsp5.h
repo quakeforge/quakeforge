@@ -32,7 +32,7 @@
 /**	\defgroup qfbsp_general General functions
 	\ingroup qfbsp
 */
-//@{
+///@{
 
 #define MAX_THREADS 4
 
@@ -129,6 +129,6 @@ node_t *AllocNode (void);
 
 extern bsp_t *bsp;
 
-//@}
+///@}
 
 #endif//qfbsp_bsp5_h

@@ -18,8 +18,8 @@
 */
 
 // this file is shared by QuakeForge and qfcc
-#ifndef __pr_comp_h
-#define __pr_comp_h
+#ifndef __QF_pr_comp_h
+#define __QF_pr_comp_h
 
 #include "QF/qtypes.h"
 
@@ -27,7 +27,7 @@ typedef int16_t pr_short_t;
 typedef uint16_t pr_ushort_t;
 typedef int32_t pr_int_t;
 typedef uint32_t pr_uint_t;
-typedef pr_int_t func_t;
+typedef pr_uint_t func_t;
 typedef pr_int_t string_t;
 typedef pr_uint_t pointer_t;
 
@@ -44,13 +44,14 @@ typedef enum {
 	ev_integer,
 	ev_uinteger,
 	ev_short,			// value is embedded in the opcode
+	ev_double,
 
 	ev_invalid,			// invalid type. used for instruction checking
 	ev_type_count		// not a type, gives number of types
 } etype_t;
 
-extern int pr_type_size[ev_type_count];
-extern const char *pr_type_name[ev_type_count];
+extern const pr_ushort_t pr_type_size[ev_type_count];
+extern const char * const pr_type_name[ev_type_count];
 
 #define	OFS_NULL		0
 #define	OFS_RETURN		1
@@ -140,7 +141,7 @@ typedef enum {
 	OP_OR,
 
 	OP_BITAND,
-	OP_BITOR,
+	OP_BITOR,	// end of v6 opcodes
 
 	OP_ADD_S,
 	OP_LE_S,
@@ -180,8 +181,8 @@ typedef enum {
 	OP_SHL_I,
 	OP_SHR_I,
 
-	OP_MOD_F,
-	OP_MOD_I,
+	OP_REM_F,
+	OP_REM_I,
 
 	OP_LOADB_F,
 	OP_LOADB_V,
@@ -295,7 +296,111 @@ typedef enum {
 	OP_RCALL8,
 
 	OP_RETURN_V,
+
+	OP_PUSH_S,
+	OP_PUSH_F,
+	OP_PUSH_V,
+	OP_PUSH_ENT,
+	OP_PUSH_FLD,
+	OP_PUSH_FN,
+	OP_PUSH_P,
+	OP_PUSH_Q,
+	OP_PUSH_I,
+	OP_PUSH_D,
+
+	OP_PUSHB_S,
+	OP_PUSHB_F,
+	OP_PUSHB_V,
+	OP_PUSHB_ENT,
+	OP_PUSHB_FLD,
+	OP_PUSHB_FN,
+	OP_PUSHB_P,
+	OP_PUSHB_Q,
+	OP_PUSHB_I,
+	OP_PUSHB_D,
+
+	OP_PUSHBI_S,
+	OP_PUSHBI_F,
+	OP_PUSHBI_V,
+	OP_PUSHBI_ENT,
+	OP_PUSHBI_FLD,
+	OP_PUSHBI_FN,
+	OP_PUSHBI_P,
+	OP_PUSHBI_Q,
+	OP_PUSHBI_I,
+	OP_PUSHBI_D,
+
+	OP_POP_S,
+	OP_POP_F,
+	OP_POP_V,
+	OP_POP_ENT,
+	OP_POP_FLD,
+	OP_POP_FN,
+	OP_POP_P,
+	OP_POP_Q,
+	OP_POP_I,
+	OP_POP_D,
+
+	OP_POPB_S,
+	OP_POPB_F,
+	OP_POPB_V,
+	OP_POPB_ENT,
+	OP_POPB_FLD,
+	OP_POPB_FN,
+	OP_POPB_P,
+	OP_POPB_Q,
+	OP_POPB_I,
+	OP_POPB_D,
+
+	OP_POPBI_S,
+	OP_POPBI_F,
+	OP_POPBI_V,
+	OP_POPBI_ENT,
+	OP_POPBI_FLD,
+	OP_POPBI_FN,
+	OP_POPBI_P,
+	OP_POPBI_Q,
+	OP_POPBI_I,
+	OP_POPBI_D,
+
+	OP_ADD_D,
+	OP_SUB_D,
+	OP_MUL_D,
+	OP_MUL_QD,
+	OP_MUL_DQ,
+	OP_MUL_VD,
+	OP_MUL_DV,
+	OP_DIV_D,
+	OP_REM_D,
+	OP_GE_D,
+	OP_LE_D,
+	OP_GT_D,
+	OP_LT_D,
+	OP_NOT_D,
+	OP_EQ_D,
+	OP_NE_D,
+	OP_CONV_FD,
+	OP_CONV_DF,
+	OP_CONV_ID,
+	OP_CONV_DI,
+	OP_STORE_D,
+	OP_STOREB_D,
+	OP_STOREBI_D,
+	OP_STOREP_D,
+	OP_LOAD_D,
+	OP_LOADB_D,
+	OP_LOADBI_D,
+	OP_ADDRESS_D,
+
+	OP_MOD_I,
+	OP_MOD_F,
+	OP_MOD_D,
+
+	OP_MEMSETI,
+	OP_MEMSETP,
+	OP_MEMSETPI,
 } pr_opcode_e;
+#define OP_BREAK 0x8000
 
 typedef struct opcode_s {
 	const char	*name;
@@ -307,21 +412,44 @@ typedef struct opcode_s {
 	const char	*fmt;
 } opcode_t;
 
-extern opcode_t pr_opcodes[];
+extern const opcode_t pr_opcodes[];
 opcode_t *PR_Opcode (pr_short_t opcode);
-void PR_Opcode_Init (void);
+void PR_Opcode_Init (void);	// idempotent
 
 typedef struct dstatement_s {
 	pr_opcode_e op:16;
 	pr_ushort_t a,b,c;
-} __attribute__((gcc_struct)) dstatement_t;
+} GCC_STRUCT dstatement_t;
 
 typedef struct ddef_s {
-	pr_ushort_t type;			// if DEF_SAVEGLOBGAL bit is set
+	pr_ushort_t type;			// if DEF_SAVEGLOBAL bit is set
 								// the variable needs to be saved in savegames
 	pr_ushort_t ofs;
-	pr_int_t    s_name;
+	string_t    s_name;
 } ddef_t;
+
+typedef struct xdef_s {
+	pointer_t   type;			///< pointer to type definition
+	pointer_t   ofs;			///< 32-bit version of ddef_t.ofs
+} xdef_t;
+
+typedef struct pr_xdefs_s {
+	pointer_t   xdefs;
+	pr_int_t    num_xdefs;
+} pr_xdefs_t;
+
+typedef struct pr_def_s {
+	pr_ushort_t type;
+	pr_ushort_t size;			///< may not be correct
+	pointer_t   ofs;
+	string_t    name;
+	pointer_t   type_encoding;
+} pr_def_t;
+
+typedef struct dparmsize_s {
+	uint8_t     size:5;
+	uint8_t     alignment:3;
+} dparmsize_t;
 
 #define	DEF_SAVEGLOBAL	(1<<15)
 
@@ -329,16 +457,16 @@ typedef struct ddef_s {
 
 typedef struct dfunction_s {
 	pr_int_t    first_statement;	// negative numbers are builtins
-	pr_int_t    parm_start;
-	pr_int_t    locals;				// total ints of parms + locals
+	pr_uint_t   parm_start;
+	pr_uint_t   locals;				// total ints of parms + locals
 
-	pr_int_t    profile;			// runtime
+	pr_uint_t   profile;			// runtime
 
-	pr_int_t    s_name;
-	pr_int_t    s_file;				// source file defined in
+	string_t    s_name;
+	string_t    s_file;				// source file defined in
 
 	pr_int_t    numparms;
-	uint8_t     parm_size[MAX_PARMS];
+	dparmsize_t parm_size[MAX_PARMS];
 } dfunction_t;
 
 typedef union pr_type_u {
@@ -346,8 +474,8 @@ typedef union pr_type_u {
 	string_t    string_var;
 	func_t      func_var;
 	pr_int_t    entity_var;
-	float       vector_var[1];	// really 3, but this structure must be 32 bits
-	float       quat_var[1];	// really 4, but this structure must be 32 bits
+	float       vector_var;	// really [3], but this structure must be 32 bits
+	float       quat_var;	// really [4], but this structure must be 32 bits
 	pr_int_t    integer_var;
 	pointer_t   pointer_var;
 	pr_uint_t   uinteger_var;
@@ -363,7 +491,7 @@ typedef struct pr_va_list_s {
 	 |(((0x##b) & 0xfff) << 12)		\
 	 |(((0x##c) & 0xfff) <<  0) )
 #define	PROG_ID_VERSION	6
-#define	PROG_VERSION	PROG_VERSION_ENCODE(0,fff,009)
+#define	PROG_VERSION	PROG_VERSION_ENCODE(0,fff,00a)
 
 typedef struct dprograms_s {
 	pr_uint_t   version;
@@ -379,10 +507,10 @@ typedef struct dprograms_s {
 	pr_uint_t   numfielddefs;
 
 	pr_uint_t   ofs_functions;
-	pr_int_t    numfunctions;	// function 0 is an empty
+	pr_uint_t   numfunctions;	// function 0 is an empty
 
 	pr_uint_t   ofs_strings;
-	pr_int_t    numstrings;		// first string is a null string
+	pr_uint_t   numstrings;		// first string is a null string
 
 	pr_uint_t   ofs_globals;
 	pr_uint_t   numglobals;
@@ -390,4 +518,4 @@ typedef struct dprograms_s {
 	pr_uint_t   entityfields;
 } dprograms_t;
 
-#endif // __pr_comp_h
+#endif//__QF_pr_comp_h

@@ -44,7 +44,7 @@
 #include "QF/idparse.h"
 #include "QF/quakefs.h"
 
-#include "map_cfg.h"
+#include "qw/include/map_cfg.h"
 
 void
 map_cfg (const char *mapname, int all)
@@ -55,7 +55,7 @@ map_cfg (const char *mapname, int all)
 
 	QFS_StripExtension (mapname, name);
 	strcat (name, ".cfg");
-	QFS_FOpenFile (name, &f);
+	f = QFS_FOpenFile (name);
 	if (f) {
 		Qclose (f);
 		Cmd_Exec_File (cbuf, name, 1);

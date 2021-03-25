@@ -228,7 +228,7 @@ Info_ParseString (const char *s, int maxsize, int flags)
 	char       *key, *value, *end;
 
 	info = malloc (sizeof (info_t));
-	info->tab = Hash_NewTable (61, info_get_key, free_key, 0);
+	info->tab = Hash_NewTable (61, info_get_key, free_key, 0, 0);
 	info->maxsize = maxsize;
 	info->cursize = 0;
 

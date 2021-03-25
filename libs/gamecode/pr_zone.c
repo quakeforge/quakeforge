@@ -49,6 +49,7 @@ static void
 pr_zone_error (void *_pr, const char *msg)
 {
 	progs_t    *pr = (progs_t *) _pr;
+	Z_Print (pr->zone);
 	PR_RunError (pr, "%s", msg);
 }
 
@@ -72,6 +73,14 @@ PR_Zone_Malloc (progs_t *pr, pr_int_t size)
 	if (size <= 0)
 		PR_RunError (pr, "attempt to allocate less than 1 byte");
 	return Z_Malloc (pr->zone, size);
+}
+
+VISIBLE void *
+PR_Zone_TagMalloc (progs_t *pr, int size, int tag)
+{
+	if (size <= 0)
+		PR_RunError (pr, "attempt to allocate less than 1 byte");
+	return Z_TagMalloc (pr->zone, size, tag);
 }
 
 VISIBLE void *

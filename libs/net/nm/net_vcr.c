@@ -166,14 +166,14 @@ VCR_SearchForHosts (qboolean xmit)
 }
 
 
-qsocket_t  *
+__attribute__((const)) qsocket_t *
 VCR_Connect (const char *host)
 {
 	return NULL;
 }
 
 
-qsocket_t  *
+qsocket_t *
 VCR_CheckNewConnections (void)
 {
 	qsocket_t  *sock;

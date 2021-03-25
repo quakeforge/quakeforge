@@ -26,8 +26,8 @@
 */
 // sound.h -- client sound i/o functions
 
-#ifndef _SOUND_H
-#define _SOUND_H
+#ifndef __QF_sound_h
+#define __QF_sound_h
 
 /** \defgroup sound QuakeForge sound engine
 */
@@ -37,7 +37,7 @@
 /**
 	\ingroup sound
 */
-//@{
+///@{
 typedef struct sfx_s sfx_t;
 struct sfx_s
 {
@@ -62,14 +62,14 @@ struct sfx_s
 	sfx_t      *(*open) (sfx_t *sfx);
 	void        (*close) (sfx_t *sfx);
 };
-//@}
+///@}
 
 struct model_s;
 
 /** \defgroup sound_init Initialization functions
 	\ingroup sound
 */
-//@{
+///@{
 
 /** Initialize the sound engine.
 	\param viewentity pointer to view entity index
@@ -85,12 +85,12 @@ void S_Init_Cvars (void);
 	gracefully.
 */
 void S_Shutdown (void);
-//@}
+///@}
 
 /** \defgroup sound_stuff Unclassified
 	\ingroup sound
 */
-//@{
+///@{
 
 /** Start a sound playing.
 	\param entnum	index of entity the sound is associated with.
@@ -193,6 +193,6 @@ void S_AmbientOn (void);
 struct progs_s;
 void S_Progs_Init (struct progs_s *pr);
 
-//@}
+///@}
 
-#endif // _SOUND_H
+#endif//__QF_sound_h

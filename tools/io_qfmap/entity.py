@@ -19,7 +19,8 @@
 
 # <pep8 compliant>
 
-import bpy, bgl
+import bpy, bgl, gpu
+from gpu_extras.batch import batch_for_shader
 from bpy.props import BoolProperty, FloatProperty, StringProperty, EnumProperty
 from bpy.props import BoolVectorProperty, CollectionProperty, PointerProperty
 from bpy.props import FloatVectorProperty, IntProperty
@@ -27,7 +28,8 @@ from mathutils import Vector
 
 from .entityclass import EntityClass
 
-def draw_callback(self, context):
+
+def build_batch(qfmap):
     def obj_location(obj):
         ec = None
         if obj.qfentity.classname in entity_classes:
@@ -38,13 +40,13 @@ def draw_callback(self, context):
         for i in range(8):
             loc += Vector(obj.bound_box[i])
         return obj.location + loc/8.0
-    qfmap = context.scene.qfmap
     entity_classes = qfmap.entity_classes
     entity_targets = qfmap.entity_targets
     target_entities = qfmap.target_entities
-    bgl.glLineWidth(3)
     ents = 0
     targs = 0
+    verts = []
+    colors = []
     for obj in target_entities:
         #obj = bpy.data.objects[objname]
         qfentity = obj.qfentity
@@ -54,30 +56,40 @@ def draw_callback(self, context):
         ec = entity_classes[qfentity.classname]
         target = None
         killtarget = None
-        for field in qfentity.fields:
-            if field.name == "target" and field.value:
-                target = field.value
-            if field.name == "killtarget" and field.value:
-                killtarget = field.value
+        if "target" in qfentity.fields:
+            target = qfentity.fields["target"].value
+        if "killtarget" in qfentity.fields:
+            killtarget = qfentity.fields["killtarget"].value
         targetlist = [target, killtarget]
         if target == killtarget:
             del targetlist[1]
         for tname in targetlist:
             if tname and tname in entity_targets:
                 targets = entity_targets[tname]
-                bgl.glColor4f(ec.color[0], ec.color[1], ec.color[2], 1)
+                color = (ec.color[0], ec.color[1], ec.color[2], 1)
                 for ton in targets:
                     targs += 1
                     to = bpy.data.objects[ton]
-                    bgl.glBegin(bgl.GL_LINE_STRIP)
-                    loc = obj_location(obj)
-                    bgl.glVertex3f(loc.x, loc.y, loc.z)
-                    loc = obj_location(to)
-                    bgl.glVertex3f(loc.x, loc.y, loc.z)
-                    bgl.glEnd()
+                    start = obj_location(obj)
+                    end = obj_location(to)
+
+                    verts.append(start)
+                    colors.append(color)
+                    verts.append(end)
+                    colors.append(color)
+    return {"pos": verts, "color": colors}
+
+def draw_callback(self, context):
+    #FIXME horribly inefficient
+    qfmap = context.scene.qfmap
+    content = build_batch(qfmap)
+    shader = gpu.shader.from_builtin('3D_SMOOTH_COLOR')
+    batch = batch_for_shader(shader, 'LINES', content)
+    bgl.glLineWidth(3)
+    batch.draw(shader)
     bgl.glLineWidth(1)
 
-class QFEntityRelations(bpy.types.Panel):
+class VIEW3D_PT_QFEntityRelations(bpy.types.Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
     bl_label = "Register callback"
@@ -100,30 +112,30 @@ class QFEntityRelations(bpy.types.Panel):
     def draw(self, context):
         pass
 
-class EntityField_list(bpy.types.UIList):
+class OBJECT_UL_EntityField_list(bpy.types.UIList):
     def draw_item(self, context, layout, data, item, icon, active_data,
                   active_propname, index):
-        layout.label(item.name)
-        layout.label(item.value)
+        layout.label(text=item.name)
+        layout.label(text=item.value)
 
 def qfentity_items(self, context):
     qfmap = context.scene.qfmap
     entclasses = qfmap.entity_classes
     eclist = list(entclasses.keys())
     eclist.sort()
-    enum = (('', "--", ""),)
+    enum = (('.', "--", ""),)
     enum += tuple(map(lambda ec: (ec, ec, ""), eclist))
     return enum
 
 class QFEntityProp(bpy.types.PropertyGroup):
-    value = StringProperty(name="")
-    template_list_controls = StringProperty(default="value", options={'HIDDEN'})
+    value: StringProperty(name="")
+    template_list_controls: StringProperty(default="value", options={'HIDDEN'})
 
 class QFEntity(bpy.types.PropertyGroup):
-    classname = EnumProperty(items = qfentity_items, name = "Entity Class")
-    flags = BoolVectorProperty(size=12)
-    fields = CollectionProperty(type=QFEntityProp, name="Fields")
-    field_idx = IntProperty()
+    classname: EnumProperty(items = qfentity_items, name = "Entity Class")
+    flags: BoolVectorProperty(size=12)
+    fields: CollectionProperty(type=QFEntityProp, name="Fields")
+    field_idx: IntProperty()
 
 class QFEntpropAdd(bpy.types.Operator):
     '''Add an entity field/value pair'''
@@ -163,7 +175,7 @@ def reflow_text(text, max_width):
             lines.append(flowed_line)
     return lines
 
-class EntityPanel(bpy.types.Panel):
+class OBJECT_PT_EntityPanel(bpy.types.Panel):
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = 'object'
@@ -188,7 +200,7 @@ class EntityPanel(bpy.types.Panel):
         box=layout.box()
         lines = reflow_text(ec.comment, 40)
         for l in lines:
-            box.label(l)
+            box.label(text=l)
         row = layout.row()
         for c in range(3):
             col = row.column()
@@ -198,11 +210,11 @@ class EntityPanel(bpy.types.Panel):
                 sub.prop(qfentity, "flags", text=flags[idx], index=idx)
         row = layout.row()
         col = row.column()
-        col.template_list("EntityField_list", "", qfentity, "fields",
+        col.template_list("OBJECT_UL_EntityField_list", "", qfentity, "fields",
                           qfentity, "field_idx", rows=3)
         col = row.column(align=True)
-        col.operator("object.entprop_add", icon='ZOOMIN', text="")
-        col.operator("object.entprop_remove", icon='ZOOMOUT', text="")
+        col.operator("object.entprop_add", icon='ADD', text="")
+        col.operator("object.entprop_remove", icon='REMOVE', text="")
         if len(qfentity.fields) > qfentity.field_idx >= 0:
             row = layout.row()
             field = qfentity.fields[qfentity.field_idx]
@@ -246,8 +258,7 @@ def entity_box(entityclass):
     mesh = bpy.data.meshes.new(name)
     mesh.from_pydata(verts, [], faces)
     mat = bpy.data.materials.new(name)
-    mat.diffuse_color = color
-    mat.use_raytrace = False
+    mat.diffuse_color = color + (1,)
     mesh.materials.append(mat)
     return mesh
 
@@ -258,7 +269,7 @@ def set_entity_props(obj, ent):
             qfe.classname = ent.d["classname"]
         except TypeError:
             #FIXME hmm, maybe an enum wasn't the most brilliant idea?
-            qfe.classname
+            qfe.classname = ''
     if "spawnflags" in ent.d:
         flags = int(float(ent.d["spawnflags"]))
         for i in range(12):
@@ -296,5 +307,17 @@ def add_entity(self, context, entclass):
     context.user_preferences.edit.use_global_undo = True
     return {'FINISHED'}
 
-def register():
-    bpy.types.Object.qfentity = PointerProperty(type=QFEntity)
+classes_to_register = (
+    VIEW3D_PT_QFEntityRelations,
+    OBJECT_UL_EntityField_list,
+    QFEntityProp,
+    QFEntity,
+    QFEntpropAdd,
+    QFEntpropRemove,
+    OBJECT_PT_EntityPanel,
+)
+menus_to_register = (
+)
+custom_properties_to_register = (
+    (bpy.types.Object, "qfentity", QFEntity),
+)

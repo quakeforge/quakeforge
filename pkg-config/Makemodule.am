@@ -1,0 +1,5 @@
+pkgconfigdir = @libdir@/pkgconfig
+
+pkgconfig_DATA = pkg-config/quakeforge.pc pkg-config/qfcc.pc
+
+EXTRA_DIST += pkg-config/quakeforge.pc.in pkg-config/qfcc.pc.in

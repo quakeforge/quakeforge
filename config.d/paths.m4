@@ -98,6 +98,19 @@ eval expanded_plugindir="$expanded_plugindir"
 AC_DEFINE_UNQUOTED(FS_PLUGINPATH, "$expanded_plugindir", [Define this to the path from which to load plugins])
 AC_SUBST(plugindir)
 
+SHADERDIR="\${libdir}/quakeforge/shaders"
+if test "x$shaderdir" = "xauto" -o "x$shaderdir" = "xyes" -o "x$shaderdir" = "x"; then
+	shaderdir="$SHADERDIR"
+elif test "x$shaderdir" = xno; then
+	shaderdir="."
+else
+	SHADERDIR="$shaderdir"
+fi
+eval expanded_shaderdir="$shaderdir"
+eval expanded_shaderdir="$expanded_shaderdir"
+AC_DEFINE_UNQUOTED(FS_SHADERPATH, "$expanded_shaderdir", [Define this to the path from which to load shaders])
+AC_SUBST(plugindir)
+
 AC_ARG_WITH(gl-driver,
 	[  --with-gl-driver=NAME   Name of OpenGL driver DLL/DSO],
 	gl_driver=$withval,

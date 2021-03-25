@@ -25,8 +25,8 @@
 
 */
 
-#ifndef _LINK_H
-#define _LINK_H
+#ifndef __QF_link_h
+#define __QF_link_h
 
 // (type *)STRUCT_FROM_LINK(link_t *link, type, member)
 // ent = STRUCT_FROM_LINK(link,entity_t,order)
@@ -43,4 +43,4 @@ void RemoveLink (link_t *l);
 void InsertLinkBefore (link_t *l, link_t *before);
 void InsertLinkAfter (link_t *l, link_t *after);
 
-#endif	// _LINK_H
+#endif//__QF_link_h

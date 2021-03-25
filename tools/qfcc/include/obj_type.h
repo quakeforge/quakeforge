@@ -31,82 +31,12 @@
 #ifndef __obj_type_h
 #define __obj_type_h
 
-/** \defgroup qfcc_qfo_type Object file type encoding
-	\ingroup qfcc_qfo
-
-	All \c pointer_t \c type fields are pointers within the type qfo_space.
-*/
-//@{
-
-#include "QF/pr_comp.h"
+#include "QF/pr_type.h"
 
 #include "type.h"
 
-typedef struct qfot_fldptr_s {
-	pr_int_t    type;				///< ev_field or ev_pointer
-	pointer_t   aux_type;			///< referenced type
-} qfot_fldptr_t;
-
-typedef struct qfot_func_s {
-	pr_int_t    type;				///< always ev_func
-	pointer_t   return_type;		///< return type of the function
-	pr_int_t    num_params;			///< ones compliment count of the
-									///< parameters. -ve values indicate the
-									///< number of real parameters before the
-									///< ellipsis
-	pointer_t   param_types[1];		///< variable length list of parameter
-									///< types
-} qfot_func_t;
-
-typedef struct qfot_var_s {
-	pointer_t   type;				///< type of field or self reference for
-									///< enum
-	string_t    name;				///< name of field/enumerator
-	pr_int_t    offset;				///< value for enum, 0 for union
-} qfot_var_t;
-
-typedef struct qfot_struct_s {
-	string_t    tag;				///< struct/union/enum tag
-	pr_int_t    num_fields;			///< number of fields/enumerators
-	qfot_var_t  fields[1];			///< variable length list of
-									///< fields/enumerators
-} qfot_struct_t;
-
-typedef struct qfot_array_s {
-	pointer_t   type;				///< element type
-	pr_int_t    base;				///< start index of array
-	pr_int_t    size;				///< number of elements in array
-} qfot_array_t;
-
-/**	QFO type encoding.
-
-	\note As this holds a union of all type representations, and those
-	representations may contain variable arrays, sizeof() will return only
-	one, rather useless, value. It is also not suitable for direct use in
-	arrays.
-*/
-typedef struct qfot_type_s {
-	pr_int_t    ty;					///< meta type: ty_meta_e
-	pr_int_t    size;				///< total word size of this encoding
-	string_t    encoding;			///< Objective-QC encoding
-	union {
-		pr_int_t    type;			///< basic type: etype_t
-		qfot_fldptr_t fldptr;		///< ty_none, ev_pointer/ev_field
-		qfot_func_t func;			///< ty_none, ev_func
-		qfot_struct_t strct;		///< ty_struct/ty_union/ty_enum
-		qfot_array_t array;			///< ty_array
-		pointer_t   class;			///< ty_class
-	}           t;
-} qfot_type_t;
-
-typedef struct qfot_type_encodings_s {
-	pointer_t   types;
-	pr_int_t    size;
-} qfot_type_encodings_t;
-
+struct defspace_s;
 struct type_s;
-struct def_s *qfo_encode_type (struct type_s *type);
-
-//@}
+struct def_s *qfo_encode_type (struct type_s *type, struct defspace_s *space);
 
 #endif//__obj_type_h

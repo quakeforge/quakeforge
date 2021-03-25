@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __tga_h
-#define __tga_h
+#ifndef __QF_tga_h
+#define __QF_tga_h
 
 #include "QF/qtypes.h"
 #include "QF/quakeio.h"
@@ -67,7 +67,7 @@ typedef struct _TargaHeader {
 # endif
 #endif
 
-struct tex_s *LoadTGA (QFile *fin);
+struct tex_s *LoadTGA (QFile *fin, int load);
 void WriteTGAfile (const char *tganame, byte *data, int width, int height);
 
-#endif // __tga_h
+#endif//__QF_tga_h

@@ -11,7 +11,7 @@
 {
     state_t state;
     SchemeObject *value;
-    hashtab_t globals;
+    hashtab_t *globals;
     SchemeObject *all_globals;
 }
 - (void) loadCode: (CompiledCode *) code;

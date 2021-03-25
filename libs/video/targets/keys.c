@@ -312,6 +312,39 @@ keyname_t   keynames[] = {
 	{ "K_F13",			QFK_F13 },
 	{ "K_F14",			QFK_F14 },
 	{ "K_F15",			QFK_F15 },
+	{ "K_F16",			QFK_F16 },
+	{ "K_F17",			QFK_F17 },
+	{ "K_F18",			QFK_F18 },
+	{ "K_F19",			QFK_F19 },
+	{ "K_F20",			QFK_F20 },
+	{ "K_F21",			QFK_F21 },
+	{ "K_F22",			QFK_F22 },
+	{ "K_F23",			QFK_F23 },
+	{ "K_F24",			QFK_F24 },
+	{ "K_F25",			QFK_F25 },
+	{ "K_F26",			QFK_F26 },
+	{ "K_F27",			QFK_F27 },
+	{ "K_F28",			QFK_F28 },
+	{ "K_F29",			QFK_F29 },
+	{ "K_F30",			QFK_F30 },
+	{ "K_F31",			QFK_F31 },
+	{ "K_F32",			QFK_F32 },
+	{ "K_F33",			QFK_F33 },
+	{ "K_F34",			QFK_F34 },
+	{ "K_F35",			QFK_F35 },
+	{ "K_F36",			QFK_F36 },
+	{ "K_F37",			QFK_F37 },
+	{ "K_F38",			QFK_F38 },
+	{ "K_F39",			QFK_F39 },
+	{ "K_F40",			QFK_F40 },
+	{ "K_F41",			QFK_F41 },
+	{ "K_F42",			QFK_F42 },
+	{ "K_F43",			QFK_F43 },
+	{ "K_F44",			QFK_F44 },
+	{ "K_F45",			QFK_F45 },
+	{ "K_F46",			QFK_F46 },
+	{ "K_F47",			QFK_F47 },
+	{ "K_F48",			QFK_F48 },
 	{ "K_NUMLOCK",		QFK_NUMLOCK },
 	{ "K_CAPSLOCK",		QFK_CAPSLOCK },
 	{ "K_SCROLLOCK",	QFK_SCROLLOCK },
@@ -442,6 +475,38 @@ keyname_t   keynames[] = {
 	{ "J_BUTTON30",		QFJ_BUTTON30 },
 	{ "J_BUTTON31",		QFJ_BUTTON31 },
 	{ "J_BUTTON32",		QFJ_BUTTON32 },
+	{ "J_BUTTON33",		QFJ_BUTTON33 },
+	{ "J_BUTTON34",		QFJ_BUTTON34 },
+	{ "J_BUTTON35",		QFJ_BUTTON35 },
+	{ "J_BUTTON36",		QFJ_BUTTON36 },
+	{ "J_BUTTON37",		QFJ_BUTTON37 },
+	{ "J_BUTTON38",		QFJ_BUTTON38 },
+	{ "J_BUTTON39",		QFJ_BUTTON39 },
+	{ "J_BUTTON40",		QFJ_BUTTON40 },
+	{ "J_BUTTON41",		QFJ_BUTTON41 },
+	{ "J_BUTTON42",		QFJ_BUTTON42 },
+	{ "J_BUTTON43",		QFJ_BUTTON43 },
+	{ "J_BUTTON44",		QFJ_BUTTON44 },
+	{ "J_BUTTON45",		QFJ_BUTTON45 },
+	{ "J_BUTTON46",		QFJ_BUTTON46 },
+	{ "J_BUTTON47",		QFJ_BUTTON47 },
+	{ "J_BUTTON48",		QFJ_BUTTON48 },
+	{ "J_BUTTON49",		QFJ_BUTTON49 },
+	{ "J_BUTTON50",		QFJ_BUTTON50 },
+	{ "J_BUTTON51",		QFJ_BUTTON51 },
+	{ "J_BUTTON52",		QFJ_BUTTON52 },
+	{ "J_BUTTON53",		QFJ_BUTTON53 },
+	{ "J_BUTTON54",		QFJ_BUTTON54 },
+	{ "J_BUTTON55",		QFJ_BUTTON55 },
+	{ "J_BUTTON56",		QFJ_BUTTON56 },
+	{ "J_BUTTON57",		QFJ_BUTTON57 },
+	{ "J_BUTTON58",		QFJ_BUTTON58 },
+	{ "J_BUTTON59",		QFJ_BUTTON59 },
+	{ "J_BUTTON60",		QFJ_BUTTON60 },
+	{ "J_BUTTON61",		QFJ_BUTTON61 },
+	{ "J_BUTTON62",		QFJ_BUTTON62 },
+	{ "J_BUTTON63",		QFJ_BUTTON63 },
+	{ "J_BUTTON64",		QFJ_BUTTON64 },
 
 	{ "J_AXIS1",		QFJ_AXIS1 },
 	{ "J_AXIS2",		QFJ_AXIS2 },
@@ -479,7 +544,7 @@ keyname_t   keynames[] = {
 	{NULL, 0}
 };
 
-static imt_t *
+static __attribute__((pure)) imt_t *
 key_target_find_imt (keytarget_t *kt, const char *imt_name)
 {
 	imt_t      *imt;
@@ -602,10 +667,6 @@ Key_Game (knum_t key, short unicode)
 		imt = imt->chain;
 	}
 	return false;
-/*
-	Sys_DPrintf("kb %p, key_target %d, key_dest %d, key %d\n", kb,
-				key_target, key_dest, key);
-*/
 }
 
 /*
@@ -623,15 +684,6 @@ Key_Console (knum_t key, short unicode)
 	Con_KeyEvent (key, unicode, keydown[key]);
 }
 
-//============================================================================
-
-/*
-  Key_StringToKeynum
-
-  Returns a key number to be used to index keybindings[] by looking at
-  the given string.  Single ascii characters return themselves, while
-  the QFK_* names are matched up.
-*/
 VISIBLE int
 Key_StringToKeynum (const char *str)
 {
@@ -647,12 +699,6 @@ Key_StringToKeynum (const char *str)
 	return -1;
 }
 
-/*
-  Key_KeynumToString
-
-  Returns a string (a QFK_* name) for the given keynum.
-  FIXME: handle quote special (general escape sequence?)
-*/
 VISIBLE const char *
 Key_KeynumToString (knum_t keynum)
 {
@@ -676,13 +722,13 @@ Key_In_Unbind (const char *imt_name, const char *key_name)
 
 	imt = Key_FindIMT (imt_name);
 	if (!imt) {
-		Sys_Printf ("\"%s\" isn't a valid imt\n", imt_name);
+		Sys_Printf ("\"%s\" is not a valid imt\n", imt_name);
 		return;
 	}
 
 	key = Key_StringToKeynum (key_name);
 	if (key == -1) {
-		Sys_Printf ("\"%s\" isn't a valid key\n", key_name);
+		Sys_Printf ("\"%s\" is not a valid key\n", key_name);
 		return;
 	}
 
@@ -744,7 +790,7 @@ Key_In_Clear (void)
 	}
 	for (i = 1; i < Cmd_Argc (); i++) {
 		if (!Key_FindIMT (Cmd_Argv (i))) {
-			Sys_Printf ("\"%s\" isn't a valid imt\n", Cmd_Argv (i));
+			Sys_Printf ("\"%s\" is not a valid imt\n", Cmd_Argv (i));
 			err = 1;
 		}
 	}
@@ -796,6 +842,11 @@ Key_IMT_Drop_All_f (void)
 		while (key_targets[kd].imts) {
 			imt = key_targets[kd].imts;
 			key_targets[kd].imts = imt->next;
+			for (int i = 0; i < QFK_LAST; i++) {
+				if (imt->bindings[i].str) {
+					free (imt->bindings[i].str);
+				}
+			}
 			free ((char *) imt->name);
 			free (imt);
 		}
@@ -811,13 +862,13 @@ Key_In_Bind (const char *imt_name, const char *key_name, const char *cmd)
 
 	imt = Key_FindIMT (imt_name);
 	if (!imt) {
-		Sys_Printf ("\"%s\" isn't a valid imt\n", imt_name);
+		Sys_Printf ("\"%s\" is not a valid imt\n", imt_name);
 		return;
 	}
 
 	key = Key_StringToKeynum (key_name);
 	if (key == -1) {
-		Sys_Printf ("\"%s\" isn't a valid key\n", key_name);
+		Sys_Printf ("\"%s\" is not a valid key\n", key_name);
 		return;
 	}
 
@@ -837,7 +888,7 @@ Key_In_Bind_f (void)
 {
 	int         c, i;
 	const char *imt, *key, *cmd = 0;
-	char        cmd_buf[1024];
+	dstring_t  *cmd_buf = 0;
 
 	c = Cmd_Argc ();
 
@@ -852,17 +903,17 @@ Key_In_Bind_f (void)
 	key = Cmd_Argv (2);
 
 	if (c >= 4) {
-		cmd = cmd_buf;
-		cmd_buf[0] = 0;
+		cmd_buf = dstring_newstr ();
 		for (i = 3; i < c; i++) {
-			strncat (cmd_buf, Cmd_Argv (i), sizeof (cmd_buf) -
-					 strlen (cmd_buf));
-			if (i != (c - 1))
-				strncat (cmd_buf, " ", sizeof (cmd_buf) - strlen (cmd_buf));
+			dasprintf (cmd_buf, "%s%s", i > 3 ? " " : "", Cmd_Argv (i));
 		}
+		cmd = cmd_buf->str;
 	}
 
 	Key_In_Bind (imt, key, cmd);
+	if (cmd_buf) {
+		dstring_delete (cmd_buf);
+	}
 }
 
 static void
@@ -883,7 +934,7 @@ Key_Bind_f (void)
 {
 	int         c, i;
 	const char *key, *cmd = 0;
-	char        cmd_buf[1024];
+	dstring_t  *cmd_buf = 0;
 
 	c = Cmd_Argc ();
 
@@ -895,23 +946,24 @@ Key_Bind_f (void)
 	key = OK_TranslateKeyName (Cmd_Argv (1));
 
 	if (c >= 3) {
-		cmd = cmd_buf;
-		cmd_buf[0] = 0;
+		cmd_buf = dstring_newstr ();
 		for (i = 2; i < c; i++) {
-			strncat (cmd_buf, Cmd_Argv (i), sizeof (cmd_buf) -
-					 strlen (cmd_buf));
-			if (i != (c - 1))
-				strncat (cmd_buf, " ", sizeof (cmd_buf) - strlen (cmd_buf));
+			dasprintf (cmd_buf, "%s%s", i > 2 ? " " : "", Cmd_Argv (i));
 		}
+		cmd = cmd_buf->str;
 	}
 
 	Key_In_Bind ("imt_mod", key, cmd);
+	if (cmd_buf) {
+		dstring_delete (cmd_buf);
+	}
 }
 
 static void
 Key_GIB_Bind_Get_f (void)
 {
 	const char *key, *cmd;
+	imt_t      *imt;
 	int k;
 
 	if (GIB_Argc () != 2) {
@@ -926,7 +978,8 @@ Key_GIB_Bind_Get_f (void)
 		return;
 	}
 
-	if (!(cmd = Key_GetBinding ("IMT_MOD", k)))
+	imt = Key_FindIMT ("imt_mod");
+	if (!imt || !(cmd = Key_GetBinding (imt, k)))
 		GIB_Return ("");
 	else
 		GIB_Return (cmd);
@@ -982,7 +1035,7 @@ Key_InputMappingTable_f (void)
 
 	imt = Key_FindIMT (Cmd_Argv (1));
 	if (!imt) {
-		Sys_Printf ("\"%s\" isn't a valid imt\n", Cmd_Argv (1));
+		Sys_Printf ("\"%s\" is not a valid imt\n", Cmd_Argv (1));
 		return;
 	}
 
@@ -1026,7 +1079,7 @@ Key_IMT_Keydest_f (void)
 
 	imt = key_target_find_imt (&key_targets[kd], imt_name);
 	if (!imt) {
-		Sys_Printf ("\"%s\" isn't an imt on %s\n", imt_name, keydest);
+		Sys_Printf ("\"%s\" is not an imt on %s\n", imt_name, keydest);
 		return;
 	}
 
@@ -1287,11 +1340,8 @@ Key_Init_Cvars (void)
 }
 
 const char *
-Key_GetBinding (const char *imt_name, knum_t key)
+Key_GetBinding (imt_t *imt, knum_t key)
 {
-	imt_t      *imt;
-
-	imt = Key_FindIMT (imt_name);
 	if (imt) {
 		return imt->bindings[key].str;
 	}

@@ -31,6 +31,7 @@
 #include "mod_internal.h"
 
 void
-sw_Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)
+sw_Mod_SpriteLoadTexture (model_t *mod, mspriteframe_t *pspriteframe,
+						  int framenum)
 {
 }

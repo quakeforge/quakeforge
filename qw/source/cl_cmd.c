@@ -37,12 +37,33 @@
 
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
+#include "QF/dstring.h"
 #include "QF/msg.h"
 #include "QF/sys.h"
 #include "QF/teamplay.h"
 
-#include "client.h"
+#include "qw/include/client.h"
 
+static void
+send_say (const char *str)
+{
+	static dstring_t *teambuf;
+	const char *s;
+
+	if (!teambuf) {
+		teambuf = dstring_newstr ();
+	}
+
+	s = Team_ParseSay (teambuf, Cmd_Args (1));
+	if (*s && *s < 32 && *s != 10) {
+		// otherwise the server would eat leading characters
+		// less than 32 or greater than 127
+		SZ_Print (&cls.netchan.message, "\"");
+		SZ_Print (&cls.netchan.message, s);
+		SZ_Print (&cls.netchan.message, "\"");
+	} else
+		SZ_Print (&cls.netchan.message, s);
+}
 
 /*
 	CL_Cmd_ForwardToServer
@@ -70,21 +91,10 @@ CL_Cmd_ForwardToServer (void)
 
 		if (!strcasecmp (Cmd_Argv (0), "say") ||
 			!strcasecmp (Cmd_Argv (0), "say_team")) {
-			const char *s;
-
-			s = Team_ParseSay (Cmd_Args (1));
-			if (*s && *s < 32 && *s != 10) {
-				// otherwise the server would eat leading characters
-				// less than 32 or greater than 127
-				SZ_Print (&cls.netchan.message, "\"");
-				SZ_Print (&cls.netchan.message, s);
-				SZ_Print (&cls.netchan.message, "\"");
-			} else
-				SZ_Print (&cls.netchan.message, s);
-			return;
+			send_say(Cmd_Args (1));
+		} else {
+			SZ_Print (&cls.netchan.message, Cmd_Args (1));
 		}
-
-		SZ_Print (&cls.netchan.message, Cmd_Args (1));
 	}
 }
 

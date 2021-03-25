@@ -44,18 +44,19 @@
 #include "QF/keys.h"
 #include "QF/model.h"
 #include "QF/msg.h"
-#include "QF/qfplist.h"
+#include "QF/plist.h"
 #include "QF/screen.h"
 #include "QF/script.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "client.h"
 #include "compat.h"
-#include "host.h"
-#include "server.h"
-#include "sv_progs.h"
 #include "world.h"
+
+#include "nq/include/client.h"
+#include "nq/include/host.h"
+#include "nq/include/server.h"
+#include "nq/include/sv_progs.h"
 
 int         current_skill;
 
@@ -78,7 +79,7 @@ Host_Status_f (void)
 	int         minutes;
 	int         hours = 0;
 	int         j;
-	void        (*print) (const char *fmt, ...);
+	__attribute__((format(printf, 1, 2))) void (*print) (const char *fmt, ...);
 
 	if (cmd_source == src_command) {
 		if (!sv.active) {
@@ -90,7 +91,7 @@ Host_Status_f (void)
 		print = SV_ClientPrintf;
 
 	print ("host:    %s\n", Cvar_VariableString ("hostname"));
-	print ("version: %4.2f\n", PACKAGE_VERSION);
+	print ("version: %4.2s\n", PACKAGE_VERSION);
 	if (tcpipAvailable)
 		print ("tcp/ip:  %s\n", my_tcpip_address);
 	print ("map:     %s\n", sv.name);
@@ -238,13 +239,13 @@ nice_time (float time)
 	int         t = time + 0.5;
 
 	if (t < 60) {
-		return va ("%ds", t);
+		return va (0, "%ds", t);
 	} else if (t < 3600) {
-		return va ("%dm%02ds", t / 60, t % 60);
+		return va (0, "%dm%02ds", t / 60, t % 60);
 	} else if (t < 86400) {
-		return va ("%dh%02dm%02ds", t / 3600, (t / 60) % 60, t % 60);
+		return va (0, "%dh%02dm%02ds", t / 3600, (t / 60) % 60, t % 60);
 	} else {
-		return va ("%dd%02dh%02dm%02ds",
+		return va (0, "%dd%02dh%02dm%02ds",
 				   t / 86400, (t / 3600) % 24, (t / 60) % 60, t % 60);
 	}
 }
@@ -278,8 +279,8 @@ Host_Map_f (void)
 	}
 
 	// check to make sure the level exists
-	expanded = va ("maps/%s.bsp", Cmd_Argv (1));
-	QFS_FOpenFile (expanded, &f);
+	expanded = va (0, "maps/%s.bsp", Cmd_Argv (1));
+	f = QFS_FOpenFile (expanded);
 	if (!f) {
 		Sys_Printf ("Can't find %s\n", expanded);
 		return;
@@ -394,7 +395,7 @@ spawn_parms_array (void)
 	const char *parm;
 
 	for (i = 0; i < NUM_SPAWN_PARMS; i++) {
-		parm = va ("%.9g", svs.clients->spawn_parms[i]);
+		parm = va (0, "%.9g", svs.clients->spawn_parms[i]);
 		PL_A_AddObject (parms, PL_NewString (parm));
 	}
 	return parms;
@@ -433,18 +434,18 @@ entities_array (void)
 static plitem_t *
 game_dict (void)
 {
-	plitem_t   *game = PL_NewDictionary ();
+	plitem_t   *game = PL_NewDictionary (0);
 
 	PL_D_AddObject (game, "comment",
-					PL_NewString (va ("%-21s kills:%3i/%3i", cl.levelname,
+					PL_NewString (va (0, "%-21s kills:%3i/%3i", cl.levelname,
 									  cl.stats[STAT_MONSTERS],
 									  cl.stats[STAT_TOTALMONSTERS])));
 	PL_D_AddObject (game, "spawn_parms", spawn_parms_array ());
 	PL_D_AddObject (game, "current_skill",
-					PL_NewString (va ("%d", current_skill)));
+					PL_NewString (va (0, "%d", current_skill)));
 	PL_D_AddObject (game, "name", PL_NewString (sv.name));
 	// sv.time is a double, so it gets 17 digits
-	PL_D_AddObject (game, "time", PL_NewString (va ("%.17g", sv.time)));
+	PL_D_AddObject (game, "time", PL_NewString (va (0, "%.17g", sv.time)));
 	PL_D_AddObject (game, "lightstyles", lightstyles_array ());
 	PL_D_AddObject (game, "globals", ED_GlobalsDict (&sv_pr_state));
 	PL_D_AddObject (game, "entities", entities_array ());
@@ -454,7 +455,7 @@ game_dict (void)
 static plitem_t *
 convert_to_game_dict (script_t *script)
 {
-	plitem_t   *game = PL_NewDictionary ();
+	plitem_t   *game = PL_NewDictionary (0);
 	plitem_t   *item;
 	plitem_t   *list;
 	int         skill;
@@ -477,7 +478,7 @@ convert_to_game_dict (script_t *script)
 	// values
 	Script_GetToken (script, 1);
 	skill = (int) (atof (script->token->str) + 0.1);
-	PL_D_AddObject (game, "current_skill", PL_NewString (va ("%d", skill)));
+	PL_D_AddObject (game, "current_skill", PL_NewString (va (0, "%d", skill)));
 
 	Script_GetToken (script, 1);
 	PL_D_AddObject (game, "name", PL_NewString (script->token->str));
@@ -499,7 +500,7 @@ convert_to_game_dict (script_t *script)
 	PL_D_AddObject (game, "lightstyles", item);
 
 	// load the edicts out of the savegame file
-	list = ED_ConvertToPlist (script, 0);
+	list = ED_ConvertToPlist (script, 0, 0);
 	item = PL_RemoveObjectAtIndex (list, 0);
 	PL_D_AddObject (game, "globals", item);
 	PL_D_AddObject (game, "entities", list);
@@ -646,7 +647,7 @@ Host_Loadgame_f (void)
 			Sys_Printf ("Unexpected EOF reading %s\n", name->str);
 			goto end;
 		}
-		game = PL_GetPropertyList (script->p);
+		game = PL_GetPropertyList (script->p, 0);
 	} else {
 		sscanf (script->token->str, "%i", &version);
 		if (version != SAVEGAME_VERSION) {
@@ -657,6 +658,7 @@ Host_Loadgame_f (void)
 		game = convert_to_game_dict (script);
 	}
 
+	memset (spawn_parms, 0, sizeof (spawn_parms));
 	item = PL_ObjectForKey (game, "spawn_parms");
 	for (i = 0; i < NUM_SPAWN_PARMS; i++) {
 		if (i >= PL_A_NumObjects (item))
@@ -692,7 +694,6 @@ Host_Loadgame_f (void)
 	ED_InitGlobals (&sv_pr_state, PL_ObjectForKey (game, "globals"));
 
 	list = PL_ObjectForKey (game, "entities");
-	entnum = 0;
 	count = PL_A_NumObjects (list);
 	if (count > sv.max_edicts)
 		Host_Error ("too many entities in saved game. adjust max_edicts\n");
@@ -751,7 +752,7 @@ Host_Name_f (void)
 	if (cmd_source == src_command) {
 		if (strcmp (cl_name->string, newName) == 0)
 			return;
-		Cvar_Set (cl_name, va ("%.15s", newName));
+		Cvar_Set (cl_name, va (0, "%.15s", newName));
 		if (cls.state >= ca_connected)
 			CL_Cmd_ForwardToServer ();
 		return;

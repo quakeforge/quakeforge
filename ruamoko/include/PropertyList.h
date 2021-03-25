@@ -1,10 +1,32 @@
 #ifndef __ruamoko_PropertyList_h
 #define __ruamoko_PropertyList_h
 
-#include "plist.h"
-#include "Object.h"
+#include <plist.h>
+#include <Object.h>
 
-@interface PLItem: Object
+@class PLItem;
+
+@protocol PLDictionary
+- (int) count;
+- (int) numKeys;
+- (PLItem *) getObjectForKey:(string) key;
+- (PLItem *) allKeys;
+- addKey:(string) key value:(PLItem *) value;
+@end
+
+@protocol PLArray
+- (int) count;
+- (int) numObjects;
+- (PLItem *) getObjectAtIndex:(int) index;
+- addObject:(PLItem *) object;
+- insertObject:(PLItem *) object atIndex:(int) index;
+@end
+
+@protocol PLString
+- (string) string;
+@end
+
+@interface PLItem: Object <PLDictionary, PLArray, PLString>
 {
 	plitem_t    item;
 	int     own;
@@ -20,36 +42,23 @@
 - initWithOwnItem:(plitem_t) item;
 - (string) write;
 - (pltype_t) type;
+- (int) line;
 @end
 
-@interface PLDictionary: PLItem
+@interface PLDictionary: PLItem <PLDictionary>
 + (PLDictionary *) new;
-
-- (int) count;
-- (int) numKeys;
-- (PLItem *) getObjectForKey:(string) key;
-- (PLItem *) allKeys;
-- addKey:(string) key value:(PLItem *) value;
 @end
 
-@interface PLArray: PLItem
+@interface PLArray: PLItem <PLArray>
 + (PLArray *) new;
-
-- (int) count;
-- (int) numObjects;
-- (PLItem *) getObjectAtIndex:(int) index;
-- addObject:(PLItem *) object;
-- insertObject:(PLItem *) object atIndex:(int) index;
 @end
 
 @interface PLData: PLItem
 + (PLData *) new:(void*) data size:(int) len;
 @end
 
-@interface PLString: PLItem
+@interface PLString: PLItem <PLString>
 + (PLString *) new:(string) str;
-
-- (string) string;
 @end
 
 #endif//__ruamoko_PropertyList_h

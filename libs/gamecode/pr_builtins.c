@@ -40,6 +40,7 @@
 #include "QF/cmd.h"
 #include "QF/crc.h"
 #include "QF/cvar.h"
+#include "QF/darray.h"
 #include "QF/hash.h"
 #include "QF/progs.h"
 #include "QF/qdefs.h"
@@ -47,9 +48,10 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/zone.h"
-#include "QF/va.h"
 
 #include "compat.h"
+
+typedef struct biblock_s DARRAY_TYPE (builtin_t *) biblock_t;
 
 static const char *
 builtin_get_key (const void *_bi, void *unused)
@@ -93,8 +95,12 @@ PR_RegisterBuiltins (progs_t *pr, builtin_t *builtins)
 	int         count;
 
 	if (!pr->builtin_hash) {
-		pr->builtin_hash = Hash_NewTable (1021, builtin_get_key, 0, pr);
-		pr->builtin_num_hash = Hash_NewTable (1021, 0, 0, pr);
+		pr->builtin_blocks = malloc (sizeof (biblock_t));
+		DARRAY_INIT (pr->builtin_blocks, 16);
+		pr->builtin_hash = Hash_NewTable (1021, builtin_get_key, 0, pr,
+										  pr->hashlink_freelist);
+		pr->builtin_num_hash = Hash_NewTable (1021, 0, 0, pr,
+											  pr->hashlink_freelist);
 		Hash_SetHashCompare (pr->builtin_num_hash, builtin_get_hash,
 							 builtin_compare);
 	}
@@ -103,6 +109,7 @@ PR_RegisterBuiltins (progs_t *pr, builtin_t *builtins)
 	for (bi = builtins, count = 1; bi->name; bi++)
 		count++;
 	bi = malloc (count * sizeof (builtin_t));
+	DARRAY_APPEND (pr->builtin_blocks, bi);
 	memcpy (bi, builtins, count * sizeof (builtin_t));
 	builtins = bi;
 
@@ -158,7 +165,8 @@ bi_no_function (progs_t *pr)
 VISIBLE int
 PR_RelocateBuiltins (progs_t *pr)
 {
-	pr_int_t    i, ind;
+	pr_uint_t   i;
+	pr_int_t    ind;
 	int         bad = 0;
 	dfunction_t *desc;
 	bfunction_t *func;

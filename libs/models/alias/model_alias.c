@@ -49,23 +49,11 @@
 #include "mod_internal.h"
 #include "r_local.h"
 
-aliashdr_t *pheader;
-
-stvert_t    *stverts;
-mtriangle_t *triangles;
-int stverts_size = 0;
-int triangles_size = 0;
-
-// a pose is a single set of vertexes.  a frame may be an animating
-// sequence of poses
-trivertx_t *poseverts[MAXALIASFRAMES];
-int         posenum = 0;
-int			aliasbboxmins[3], aliasbboxmaxs[3];
-
-
 static void *
-Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
+Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx, int numskins,
+				  daliasskintype_t *pskintype, int *pskinindex)
 {
+	aliashdr_t *header = alias_ctx->header;
 	byte       *skin;
 	float      *poutskinintervals;
 	int         groupskins, skinsize, gnum, snum, t;
@@ -77,34 +65,34 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 	if (numskins < 1 || numskins > MAX_SKINS)
 		Sys_Error ("Mod_LoadAliasModel: Invalid # of skins: %d", numskins);
 
-	skinsize = pheader->mdl.skinwidth * pheader->mdl.skinheight;
+	skinsize = header->mdl.skinwidth * header->mdl.skinheight;
 	pskindesc = Hunk_AllocName (numskins * sizeof (maliasskindesc_t),
-								loadname);
+								alias_ctx->mod->name);
 
-	*pskinindex = (byte *) pskindesc - (byte *) pheader;
+	*pskinindex = (byte *) pskindesc - (byte *) header;
 
 	for (snum = 0; snum < numskins; snum++) {
 		pskindesc[snum].type = pskintype->type;
 		if (pskintype->type == ALIAS_SKIN_SINGLE) {
 			skin = (byte *) (pskintype + 1);
-			skin = m_funcs->Mod_LoadSkin (skin, skinsize, snum, 0, false,
-										  &pskindesc[snum]);
+			skin = m_funcs->Mod_LoadSkin (alias_ctx, skin, skinsize, snum, 0,
+										  false, &pskindesc[snum]);
 		} else {
 			pskintype++;
 			pinskingroup = (daliasskingroup_t *) pskintype;
 			groupskins = LittleLong (pinskingroup->numskins);
 
 			t = field_offset (maliasskingroup_t, skindescs[groupskins]);
-			paliasskingroup = Hunk_AllocName (t, loadname);
+			paliasskingroup = Hunk_AllocName (t, alias_ctx->mod->name);
 			paliasskingroup->numskins = groupskins;
 
-			pskindesc[snum].skin = (byte *) paliasskingroup - (byte *) pheader;
+			pskindesc[snum].skin = (byte *) paliasskingroup - (byte *) header;
 
 			pinskinintervals = (daliasskininterval_t *) (pinskingroup + 1);
 			poutskinintervals = Hunk_AllocName (groupskins * sizeof (float),
-												loadname);
+												alias_ctx->mod->name);
 			paliasskingroup->intervals =
-				(byte *) poutskinintervals - (byte *) pheader;
+				(byte *) poutskinintervals - (byte *) header;
 			for (gnum = 0; gnum < groupskins; gnum++) {
 				*poutskinintervals = LittleFloat (pinskinintervals->interval);
 				if (*poutskinintervals <= 0)
@@ -119,8 +107,9 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 
 			for (gnum = 0; gnum < groupskins; gnum++) {
 				paliasskingroup->skindescs[gnum].type = ALIAS_SKIN_SINGLE;
-				skin = mod_funcs->Mod_LoadSkin (skin, skinsize, snum, gnum,
-									true, &paliasskingroup->skindescs[gnum]);
+				skin = mod_funcs->Mod_LoadSkin (alias_ctx, skin, skinsize,
+												snum, gnum, true,
+											&paliasskingroup->skindescs[gnum]);
 			}
 		}
 		pskintype = (daliasskintype_t *) skin;
@@ -129,16 +118,17 @@ Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype, int *pskinindex)
 	return pskintype;
 }
 
-void *
-Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame,
-					int extra)
+static void *
+Mod_LoadAliasFrame (mod_alias_ctx_t *alias_ctx, void *pin, int *posenum,
+					maliasframedesc_t *frame, int extra)
 {
+	aliashdr_t *header = alias_ctx->header;
 	daliasframe_t  *pdaliasframe;
 	trivertx_t	   *pinframe;
 
 	pdaliasframe = (daliasframe_t *) pin;
 
-	strncpy (frame->name, pdaliasframe->name, sizeof (frame->name));
+	memcpy (frame->name, pdaliasframe->name, sizeof (frame->name));
 	frame->name[sizeof (frame->name) - 1] = 0;
 	frame->firstpose = (*posenum);
 	frame->numposes = 1;
@@ -146,25 +136,29 @@ Mod_LoadAliasFrame (void *pin, int *posenum, maliasframedesc_t *frame,
 	// byte values, don't worry about endianness
 	VectorCopy (pdaliasframe->bboxmin.v, frame->bboxmin.v);
 	VectorCopy (pdaliasframe->bboxmax.v, frame->bboxmax.v);
-	VectorCompMin (frame->bboxmin.v, aliasbboxmins, aliasbboxmins);
-	VectorCompMax (frame->bboxmax.v, aliasbboxmaxs, aliasbboxmaxs);
+	VectorCompMin (frame->bboxmin.v, alias_ctx->aliasbboxmins,
+				   alias_ctx->aliasbboxmins);
+	VectorCompMax (frame->bboxmax.v, alias_ctx->aliasbboxmaxs,
+				   alias_ctx->aliasbboxmaxs);
 
 	pinframe = (trivertx_t *) (pdaliasframe + 1);
 
-	poseverts[(*posenum)] = pinframe;
+	DARRAY_APPEND (&alias_ctx->poseverts, pinframe);
 	(*posenum)++;
 
-	pinframe += pheader->mdl.numverts;
+	pinframe += header->mdl.numverts;
 	if (extra)
-		pinframe += pheader->mdl.numverts;
+		pinframe += header->mdl.numverts;
 
 	return pinframe;
 }
 
-void *
-Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
-					int extra)
+static void *
+Mod_LoadAliasGroup (mod_alias_ctx_t *alias_ctx, void *pin, int *posenum,
+					maliasframedesc_t *frame, int extra)
 {
+	aliashdr_t *header = alias_ctx->header;
+	model_t    *mod = alias_ctx->mod;
 	daliasgroup_t	 *pingroup;
 	daliasinterval_t *pin_intervals;
 	float			 *poutintervals;
@@ -180,19 +174,21 @@ Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
 	frame->numposes = numframes;
 
 	paliasgroup = Hunk_AllocName (field_offset (maliasgroup_t,
-												frames[numframes]), loadname);
+												frames[numframes]), mod->name);
 	paliasgroup->numframes = numframes;
-	frame->frame = (byte *) paliasgroup - (byte *) pheader;
+	frame->frame = (byte *) paliasgroup - (byte *) header;
 
 	// these are byte values, so we don't have to worry about endianness
 	VectorCopy (pingroup->bboxmin.v, frame->bboxmin.v);
 	VectorCopy (pingroup->bboxmax.v, frame->bboxmax.v);
-	VectorCompMin (frame->bboxmin.v, aliasbboxmins, aliasbboxmins);
-	VectorCompMax (frame->bboxmax.v, aliasbboxmaxs, aliasbboxmaxs);
+	VectorCompMin (frame->bboxmin.v, alias_ctx->aliasbboxmins,
+				   alias_ctx->aliasbboxmins);
+	VectorCompMax (frame->bboxmax.v, alias_ctx->aliasbboxmaxs,
+				   alias_ctx->aliasbboxmaxs);
 
 	pin_intervals = (daliasinterval_t *) (pingroup + 1);
-	poutintervals = Hunk_AllocName (numframes * sizeof (float), loadname);
-	paliasgroup->intervals = (byte *) poutintervals - (byte *) pheader;
+	poutintervals = Hunk_AllocName (numframes * sizeof (float), mod->name);
+	paliasgroup->intervals = (byte *) poutintervals - (byte *) header;
 	frame->interval = LittleFloat (pin_intervals->interval);
 	for (i = 0; i < numframes; i++) {
 		*poutintervals = LittleFloat (pin_intervals->interval);
@@ -205,7 +201,8 @@ Mod_LoadAliasGroup (void *pin, int *posenum, maliasframedesc_t *frame,
 	ptemp = (void *) pin_intervals;
 	for (i = 0; i < numframes; i++) {
 		maliasframedesc_t temp_frame;
-		ptemp = Mod_LoadAliasFrame (ptemp, posenum, &temp_frame, extra);
+		ptemp = Mod_LoadAliasFrame (alias_ctx, ptemp, posenum, &temp_frame,
+									extra);
 		memcpy (&paliasgroup->frames[i], &temp_frame,
 				sizeof (paliasgroup->frames[i]));
 	}
@@ -225,6 +222,14 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	mdl_t      *pinmodel, *pmodel;
 	unsigned short crc;
 	stvert_t   *pinstverts;
+	mod_alias_ctx_t alias_ctx = {};
+	aliashdr_t *header;
+
+	alias_ctx.mod = mod;
+	//FIXME should be per batch rather than per model
+	DARRAY_INIT (&alias_ctx.poseverts, 256);
+	DARRAY_INIT (&alias_ctx.stverts, 256);
+	DARRAY_INIT (&alias_ctx.triangles, 256);
 
 	if (LittleLong (* (unsigned int *) buffer) == HEADER_MDL16)
 		extra = 1;		// extra precision bytes
@@ -244,12 +249,13 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	// allocate space for a working header, plus all the data except the
 	// frames, skin and group info
 	size = field_offset (aliashdr_t, frames[LittleLong (pinmodel->numframes)]);
-	pheader = Hunk_AllocName (size, loadname);
-	memset (pheader, 0, size);
-	pmodel = &pheader->mdl;
-	pheader->model = (byte *) pmodel - (byte *) pheader;
+	header = Hunk_AllocName (size, mod->name);
+	memset (header, 0, size);
+	alias_ctx.header = header;
+	pmodel = &header->mdl;
+	header->model = (byte *) pmodel - (byte *) header;
 
-	pheader->crc = crc;
+	header->crc = crc;
 
 	mod->flags = LittleLong (pinmodel->flags);
 
@@ -264,30 +270,20 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 		Sys_Error ("model %s has a skin taller than %d", mod->name,
 				   MAX_LBM_HEIGHT);
 
+	DARRAY_RESIZE (&alias_ctx.poseverts, 0);
 	pmodel->numverts = LittleLong (pinmodel->numverts);
 
 	if (pmodel->numverts <= 0)
 		Sys_Error ("model %s has no vertices", mod->name);
 
-	if (pmodel->numverts > stverts_size) {
-		stverts = realloc (stverts, pmodel->numverts * sizeof (stvert_t));
-		if (!stverts)
-			Sys_Error ("model_alias: out of memory");
-		stverts_size = pmodel->numverts;
-	}
+	DARRAY_RESIZE (&alias_ctx.stverts, pmodel->numverts);
 
 	pmodel->numtris = LittleLong (pinmodel->numtris);
 
 	if (pmodel->numtris <= 0)
 		Sys_Error ("model %s has no triangles", mod->name);
 
-	if (pmodel->numtris > triangles_size) {
-		triangles = realloc (triangles,
-							 pmodel->numtris * sizeof (mtriangle_t));
-		if (!triangles)
-			Sys_Error ("model_alias: out of memory");
-		triangles_size = pmodel->numtris;
-	}
+	DARRAY_RESIZE (&alias_ctx.triangles, pmodel->numtris);
 
 	pmodel->numframes = LittleLong (pinmodel->numframes);
 	numframes = pmodel->numframes;
@@ -306,86 +302,92 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 
 	// load the skins
 	pskintype = (daliasskintype_t *) &pinmodel[1];
-	pskintype = Mod_LoadAllSkins (pheader->mdl.numskins, pskintype,
-								  &pheader->skindesc);
+	pskintype = Mod_LoadAllSkins (&alias_ctx, header->mdl.numskins, pskintype,
+								  &header->skindesc);
 
 	// load base s and t vertices
 	pinstverts = (stvert_t *) pskintype;
 
-	for (i = 0; i < pheader->mdl.numverts; i++) {
-		stverts[i].onseam = LittleLong (pinstverts[i].onseam);
-		stverts[i].s = LittleLong (pinstverts[i].s);
-		stverts[i].t = LittleLong (pinstverts[i].t);
+	for (i = 0; i < header->mdl.numverts; i++) {
+		alias_ctx.stverts.a[i].onseam = LittleLong (pinstverts[i].onseam);
+		alias_ctx.stverts.a[i].s = LittleLong (pinstverts[i].s);
+		alias_ctx.stverts.a[i].t = LittleLong (pinstverts[i].t);
 	}
 
 	// load triangle lists
-	pintriangles = (dtriangle_t *) &pinstverts[pheader->mdl.numverts];
+	pintriangles = (dtriangle_t *) &pinstverts[header->mdl.numverts];
 
-	for (i = 0; i < pheader->mdl.numtris; i++) {
-		triangles[i].facesfront = LittleLong (pintriangles[i].facesfront);
+	for (i = 0; i < header->mdl.numtris; i++) {
+		alias_ctx.triangles.a[i].facesfront =
+			LittleLong (pintriangles[i].facesfront);
 
 		for (j = 0; j < 3; j++) {
-			triangles[i].vertindex[j] =
+			alias_ctx.triangles.a[i].vertindex[j] =
 				LittleLong (pintriangles[i].vertindex[j]);
 		}
 	}
 
 	// load the frames
-	posenum = 0;
-	pframetype = (daliasframetype_t *) &pintriangles[pheader->mdl.numtris];
-	aliasbboxmins[0] = aliasbboxmins[1] = aliasbboxmins[2] =  99999;
-	aliasbboxmaxs[0] = aliasbboxmaxs[1] = aliasbboxmaxs[2] = -99999;
+	int posenum = 0;
+	pframetype = (daliasframetype_t *) &pintriangles[header->mdl.numtris];
+	VectorSet (99999, 99999, 99999, alias_ctx.aliasbboxmins);
+	VectorSet (-99999, -99999, -99999, alias_ctx.aliasbboxmaxs);
 
 	for (i = 0; i < numframes; i++) {
 		aliasframetype_t frametype;
 
 		frametype = LittleLong (pframetype->type);
-		pheader->frames[i].type = frametype;
+		header->frames[i].type = frametype;
 
 		if (frametype == ALIAS_SINGLE) {
 			pframetype = (daliasframetype_t *)
-				Mod_LoadAliasFrame (pframetype + 1, &posenum,
-									&pheader->frames[i], extra);
+				Mod_LoadAliasFrame (&alias_ctx, pframetype + 1, &posenum,
+									&header->frames[i], extra);
 		} else {
 			pframetype = (daliasframetype_t *)
-				Mod_LoadAliasGroup (pframetype + 1, &posenum,
-									&pheader->frames[i], extra);
+				Mod_LoadAliasGroup (&alias_ctx, pframetype + 1, &posenum,
+									&header->frames[i], extra);
 		}
 	}
 
-	pheader->numposes = posenum;
+	header->numposes = posenum;
 
 	mod->type = mod_alias;
 
-	for (i = 0; i < 3; i++) {
-		mod->mins[i] = aliasbboxmins[i] * pheader->mdl.scale[i] +
-			pheader->mdl.scale_origin[i];
-		mod->maxs[i] = aliasbboxmaxs[i] * pheader->mdl.scale[i] +
-			pheader->mdl.scale_origin[i];
-	}
+	VectorCompMultAdd (header->mdl.scale_origin, header->mdl.scale,
+					   alias_ctx.aliasbboxmins, mod->mins);
+	VectorCompMultAdd (header->mdl.scale_origin, header->mdl.scale,
+					   alias_ctx.aliasbboxmaxs, mod->maxs);
 
 	mod->radius = RadiusFromBounds (mod->mins, mod->maxs);
 
 	// build the draw lists
-	m_funcs->Mod_MakeAliasModelDisplayLists (mod, pheader, buffer,
+	m_funcs->Mod_MakeAliasModelDisplayLists (&alias_ctx, buffer,
 											 qfs_filesize, extra);
 
-	m_funcs->Mod_FinalizeAliasModel (mod, pheader);
+	if (m_funcs->Mod_FinalizeAliasModel) {
+		m_funcs->Mod_FinalizeAliasModel (&alias_ctx);
+	}
 
-	m_funcs->Mod_LoadExternalSkins (mod);
+	if (m_funcs->Mod_LoadExternalSkins) {
+		m_funcs->Mod_LoadExternalSkins (&alias_ctx);
+	}
 
 	// move the complete, relocatable alias model to the cache
 	if (m_funcs->alias_cache) {
 		end = Hunk_LowMark ();
 		total = end - start;
 
-		mem = allocator (&mod->cache, total, loadname);
+		mem = allocator (&mod->cache, total, mod->name);
 		if (mem)
-			memcpy (mem, pheader, total);
+			memcpy (mem, header, total);
 
 		Hunk_FreeToLowMark (start);
 		mod->aliashdr = 0;
 	} else {
-		mod->aliashdr = pheader;
+		mod->aliashdr = header;
 	}
+	DARRAY_CLEAR (&alias_ctx.poseverts);
+	DARRAY_CLEAR (&alias_ctx.stverts);
+	DARRAY_CLEAR (&alias_ctx.triangles);
 }

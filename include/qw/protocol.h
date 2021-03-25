@@ -320,26 +320,9 @@ typedef struct usercmd_s {
 } usercmd_t;
 
 typedef struct plent_state_s {
-	int         number;
-
-	unsigned int flags;
-	vec3_t      origin;
+	entity_state_t es;
 	usercmd_t   cmd;
-	vec3_t      velocity;
-	int         modelindex;
-	int         frame;
-	int         skinnum;
-	int         effects;
-	int         weaponframe;
-
 	byte        msec;
-
-	// QSG 2
-	byte	    alpha;
-	byte	    scale;
-	byte	    glow_size;
-	byte	    glow_color;
-	byte	    colormod;
 } plent_state_t;
 
 typedef struct {

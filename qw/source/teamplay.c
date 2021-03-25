@@ -43,20 +43,22 @@
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/gib.h"
-#include "QF/locs.h"
 #include "QF/model.h"
 #include "QF/va.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
 #include "QF/teamplay.h"
 
-#include "qw/bothdefs.h"
-#include "cl_input.h"
-#include "client.h"
 #include "compat.h"
 
+#include "client/locs.h"
+
+#include "qw/bothdefs.h"
+#include "qw/include/cl_input.h"
+#include "qw/include/client.h"
+
 static qboolean died = false, recorded_location = false;
-static vec3_t   death_location, last_recorded_location;
+static vec4f_t  death_location, last_recorded_location;
 
 cvar_t         *cl_deadbodyfilter;
 cvar_t         *cl_gibfilter;
@@ -117,13 +119,12 @@ Team_BestWeaponImpulse (void)
 		in_impulse = best;
 }
 
-
-const char       *
-Team_ParseSay (const char *s)
+//FIXME slow use of dstring
+const char *
+Team_ParseSay (dstring_t *buf, const char *s)
 {
-	char        chr, t2[128], t3[128];
+	char        chr, t2[128], t3[2];
 	const char *t1;
-	static char buf[1024];
 	size_t      i, bracket;
 	static location_t *location = NULL;
 
@@ -157,7 +158,6 @@ Team_ParseSay (const char *s)
 			case 'S':
 				bracket = 0;
 				t1 = skin->string;
-				t1 = "FIXME";
 				break;
 			case 'd':
 				bracket = 0;
@@ -165,7 +165,7 @@ Team_ParseSay (const char *s)
 					location = locs_find (death_location);
 					if (location) {
 						recorded_location = true;
-						VectorCopy (death_location, last_recorded_location);
+						last_recorded_location = death_location;
 						t1 = location->name;
 						break;
 					}
@@ -184,10 +184,10 @@ Team_ParseSay (const char *s)
 			case 'l':
 			location:
 				bracket = 0;
-				location = locs_find (cl.simorg);
+				location = locs_find (cl.viewstate.origin);
 				if (location) {
 					recorded_location = true;
-					VectorCopy (cl.simorg, last_recorded_location);
+					last_recorded_location = cl.viewstate.origin;
 					t1 = location->name;
 				} else
 					snprintf (t2, sizeof (t2), "Unknown!");
@@ -213,8 +213,9 @@ Team_ParseSay (const char *s)
 
 					snprintf (t2, sizeof (t2), "%sa:%i", t3,
 							  cl.stats[STAT_ARMOR]);
-				} else
+				} else {
 					snprintf (t2, sizeof (t2), "%i", cl.stats[STAT_ARMOR]);
+				}
 				break;
 			case 'A':
 				bracket = 0;
@@ -254,36 +255,31 @@ Team_ParseSay (const char *s)
 				t1 = t2;
 			}
 
-			if (bracket)
-				buf[i++] = 0x90;		// '['
-
-			if (t1) {
-				int         len;
-
-				len = strlen (t1);
-				if (i + len >= sizeof (buf))
-					continue;			// No more space in buffer, icky.
-				strncpy (buf + i, t1, len);
-				i += len;
+			if (bracket) {
+				dstring_appendstr (buf, "\x90");	// '['
 			}
 
-			if (bracket)
-				buf[i++] = 0x91;		// ']'
+			if (t1) {
+				dstring_appendstr (buf, t1);
+			}
+
+			if (bracket) {
+				dstring_appendstr (buf, "\x91");	// ']'
+			}
 
 			continue;
 		}
-		buf[i++] = *s++;
+		dstring_appendsubstr (buf, s++, 1);
 	}
-	buf[i] = 0;
 
-	return buf;
+	return buf->str;
 }
 
 void
 Team_Dead (void)
 {
 	died = true;
-	VectorCopy (cl.simorg, death_location);
+	death_location = cl.viewstate.origin;
 }
 
 void
@@ -293,8 +289,8 @@ Team_NewMap (void)
 
 	died = false;
 	recorded_location = false;
-	mapname = strdup (cl.worldmodel->name);
-	t2 = malloc (sizeof (cl.worldmodel->name));
+	mapname = strdup (cl.worldmodel->path);
+	t2 = malloc (sizeof (cl.worldmodel->path));
 	if (!mapname || !t2)
 		Sys_Error ("Can't duplicate mapname!");
 	map_to_loc (mapname,t2);
@@ -350,10 +346,10 @@ locs_loc (void)
 	}
 	if (Cmd_Argc () >= 3)
 		desc = Cmd_Args (2);
-	mapname = malloc (sizeof (cl.worldmodel->name));
+	mapname = malloc (sizeof (cl.worldmodel->path));
 	if (!mapname)
 		Sys_Error ("Can't duplicate mapname!");
-	map_to_loc (cl.worldmodel->name, mapname);
+	map_to_loc (cl.worldmodel->path, mapname);
 	snprintf (locfile, sizeof (locfile), "%s/%s",
 			  qfs_gamedir->dir.def, mapname);
 	free (mapname);
@@ -374,7 +370,7 @@ locs_loc (void)
 
 	if (strcasecmp (Cmd_Argv (1), "add") == 0) {
 		if (Cmd_Argc () >= 3)
-			locs_mark (cl.simorg, desc);
+			locs_mark (cl.viewstate.origin, desc);
 		else
 			Sys_Printf ("loc add <description> :marks the current location "
 						"with the description and records the information "
@@ -383,7 +379,7 @@ locs_loc (void)
 
 	if (strcasecmp (Cmd_Argv (1), "rename") == 0) {
 		if (Cmd_Argc () >= 3)
-			locs_edit (cl.simorg, desc);
+			locs_edit (cl.viewstate.origin, desc);
 		else
 			Sys_Printf ("loc rename <description> :changes the description of "
 					    "the nearest location marker\n");
@@ -391,14 +387,14 @@ locs_loc (void)
 
 	if (strcasecmp (Cmd_Argv (1),"delete") == 0) {
 		if (Cmd_Argc () == 2)
-			locs_del (cl.simorg);
+			locs_del (cl.viewstate.origin);
 		else
 			Sys_Printf ("loc delete :removes nearest location marker\n");
 	}
 
 	if (strcasecmp (Cmd_Argv (1),"move") == 0) {
 		if (Cmd_Argc () == 2)
-			locs_edit (cl.simorg, NULL);
+			locs_edit (cl.viewstate.origin, NULL);
 		else
 			Sys_Printf ("loc move :moves the nearest location marker to your "
 						"current location\n");
@@ -413,7 +409,7 @@ Locs_Loc_Get (void)
 	if (GIB_Argc () != 1)
 		GIB_USAGE ("");
 	else {
-		location = locs_find (cl.simorg);
+		location = locs_find (cl.viewstate.origin);
 		GIB_Return (location ? location->name : "unknown");
 	}
 }
@@ -429,7 +425,7 @@ Locs_Init (void)
 static const char *
 Team_F_Version (char *args)
 {
-	return va ("say %s", PACKAGE_STRING);
+	return va (0, "say %s", PACKAGE_STRING);
 }
 
 static const char *
@@ -451,7 +447,7 @@ Team_F_Skins (char *args)
 	if (l == 0) {
 		//XXXtotalfb = Skin_FbPercent (0);
 		totalfb = 0;
-		return va ("say Player models have %f%% brightness\n"
+		return va (0, "say Player models have %f%% brightness\n"
 			   "say Average percent fullbright for all loaded skins is "
 			   "%d.%d%%", allfb * 100, totalfb / 10, totalfb % 10);
 	}
@@ -460,8 +456,8 @@ Team_F_Skins (char *args)
 	totalfb = 0;
 
 	if (totalfb >= 0)
-		return va ("say \"Skin %s is %d.%d%% fullbright\"", args, totalfb / 10,
-				   totalfb % 10);
+		return va (0, "say \"Skin %s is %d.%d%% fullbright\"",
+				   args, totalfb / 10, totalfb % 10);
 	else
 		return ("say \"Skin not currently loaded.\"");
 }
@@ -480,7 +476,6 @@ Team_ParseChat (const char *string)
 	if (!cl_freply->value)
 		return;
 
-	s = strchr (string, ':');
 	if (!(s = strchr (string, ':')))
 		return;
 	s++;

@@ -90,21 +90,19 @@ gl_draw_iqm_frame (iqm_t *iqm, gliqm_t *gl, iqmframe_t *frame, iqmmesh *mesh)
 void
 gl_R_DrawIQMModel (entity_t *ent)
 {
-	model_t    *model = ent->model;
+	model_t    *model = ent->renderer.model;
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
 	gliqm_t    *gl = (gliqm_t *) iqm->extra_data;
 	float       blend;
 	iqmframe_t *frame;
 	int         i;
 
-	model = ent->model;
 	blend = R_IQMGetLerpedFrames (ent, iqm);
-	frame = R_IQMBlendPalette (iqm, ent->pose1, ent->pose2, blend, 0,
-							   gl->blend_palette, gl->palette_size);
+	frame = R_IQMBlendPalette (iqm, ent->animation.pose1, ent->animation.pose2,
+							   blend, 0, gl->blend_palette, gl->palette_size);
 
 	qfglPushMatrix ();
 	gl_R_RotateForEntity (ent);
-	qfglScalef (ent->scale, ent->scale, ent->scale);
 
 	for (i = 0; i < iqm->num_meshes; i++) {
 		qfglBindTexture (GL_TEXTURE_2D, gl->textures[i]);

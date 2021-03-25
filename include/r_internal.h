@@ -9,6 +9,34 @@
 #include "r_screen.h"
 #include "r_shared.h"
 
+typedef struct gltex_s {
+	texture_t  *texture;
+	int			gl_texturenum;
+	int			gl_fb_texturenum;
+	instsurf_t *tex_chain;	// for gl_texsort drawing
+	instsurf_t **tex_chain_tail;
+} gltex_t;
+
+typedef struct glsltex_s {
+	texture_t  *texture;
+	int			gl_texturenum;
+	int         sky_tex[2];
+	instsurf_t *tex_chain;	// for gl_texsort drawing
+	instsurf_t **tex_chain_tail;
+	struct elechain_s *elechain;
+	struct elechain_s **elechain_tail;
+} glsltex_t;
+
+typedef struct vulktex_s {
+	texture_t  *texture;
+	instsurf_t *tex_chain;	// for gl_texsort drawing
+	instsurf_t **tex_chain_tail;
+	struct elechain_s *elechain;
+	struct elechain_s **elechain_tail;
+	struct qfv_tex_s *tex;
+	struct qfv_tex_s *glow;
+} vulktex_t;
+
 extern viddef_t 		vid;				// global video state
 
 extern vid_render_data_t vid_render_data;
@@ -16,6 +44,7 @@ extern vid_render_funcs_t gl_vid_render_funcs;
 extern vid_render_funcs_t glsl_vid_render_funcs;
 extern vid_render_funcs_t sw_vid_render_funcs;
 extern vid_render_funcs_t sw32_vid_render_funcs;
+extern vid_render_funcs_t vulkan_vid_render_funcs;
 extern vid_render_funcs_t *vid_render_funcs;
 
 #define vr_data vid_render_data
@@ -31,8 +60,8 @@ void Fog_Update (float density, float red, float green, float blue,
 struct plitem_s;
 void Fog_ParseWorldspawn (struct plitem_s *worldspawn);
 
-float *Fog_GetColor (void);
-float Fog_GetDensity (void);
+void Fog_GetColor (quat_t fogcolor);
+float Fog_GetDensity (void) __attribute__((pure));
 void Fog_SetupFrame (void);
 void Fog_EnableGFog (void);
 void Fog_DisableGFog (void);
@@ -44,7 +73,7 @@ void gl_R_Init (void);
 void glsl_R_Init (void);
 void sw_R_Init (void);
 void sw32_R_Init (void);
-
+void R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs);
 void R_Init_Cvars (void);
 void R_InitEfrags (void);
 void R_ClearState (void);
@@ -54,7 +83,7 @@ void R_RenderView (void);			// must set r_refdef first
 void R_ViewChanged (float aspect);	// must set r_refdef first
 								// called whenever r_refdef or vid change
 
-void R_AddEfrags (entity_t *ent);
+void R_AddEfrags (mod_brush_t *, entity_t *ent);
 void R_RemoveEfrags (entity_t *ent);
 
 void R_NewMap (model_t *worldmodel, model_t **models, int num_models);
@@ -63,7 +92,7 @@ void R_NewMap (model_t *worldmodel, model_t **models, int num_models);
 void R_PushDlights (const vec3_t entorigin);
 void R_DrawWaterSurfaces (void);
 
-void *D_SurfaceCacheAddress (void);
+void *D_SurfaceCacheAddress (void) __attribute__((pure));
 int D_SurfaceCacheForRes (int width, int height);
 void D_FlushCaches (void);
 void D_DeleteSurfaceCache (void);

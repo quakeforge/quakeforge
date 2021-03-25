@@ -36,7 +36,7 @@
 /**	\defgroup qtv_connection Connection Management
 	\ingroup qtv
 */
-//@{
+///@{
 
 typedef struct connection_s {
 	netadr_t    address;		///< Address of the remote end.
@@ -77,6 +77,6 @@ void Connection_Del (connection_t *con);
 */
 connection_t *Connection_Find (netadr_t *address);
 
-//@}
+///@}
 
 #endif//__connection_h

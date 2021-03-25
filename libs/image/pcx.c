@@ -47,7 +47,7 @@
 
 
 VISIBLE tex_t *
-LoadPCX (QFile *f, qboolean convert, byte *pal)
+LoadPCX (QFile *f, qboolean convert, byte *pal, int load)
 {
 	pcx_t      *pcx;
 	int         pcx_mark;
@@ -58,8 +58,11 @@ LoadPCX (QFile *f, qboolean convert, byte *pal)
 	int         runLength = 1;
 	int         count;
 	tex_t      *tex;
-	int			fsize = Qfilesize(f);
+	int			fsize = sizeof (pcx_t);
 
+	if (load) {
+		fsize = Qfilesize(f);
+	}
 	// parse the PCX file
 	pcx_mark = Hunk_LowMark ();
 	pcx = Hunk_AllocName (fsize, "PCX");
@@ -79,20 +82,24 @@ LoadPCX (QFile *f, qboolean convert, byte *pal)
 		|| pcx->encoding != 1
 		|| pcx->bits_per_pixel != 8) {
 		Sys_Printf ("Bad pcx file: %x %d %d %d\n",
-					pcx->manufacturer, pcx->version, pcx->encoding, pcx->bits_per_pixel);
+					pcx->manufacturer, pcx->version, pcx->encoding,
+					pcx->bits_per_pixel);
+		Hunk_FreeToLowMark (pcx_mark);
 		return 0;
 	}
 
 	end = palette = ((byte *) pcx) + fsize - 768;
 	dataByte = (byte *) &pcx[1];
 
-	count = (pcx->xmax + 1) * (pcx->ymax + 1);
+	count = load ? (pcx->xmax + 1) * (pcx->ymax + 1) : 0;
 	if (convert) {
-		tex = Hunk_TempAlloc (field_offset (tex_t, data[count * 3]));
+		tex = Hunk_TempAlloc (sizeof (tex_t) + count * 3);
+		tex->data = (byte *) (tex + 1);
 		tex->format = tex_rgb;
 		tex->palette = 0;
 	} else {
-		tex = Hunk_TempAlloc (field_offset (tex_t, data[count]));
+		tex = Hunk_TempAlloc (sizeof (tex_t) + count);
+		tex->data = (byte *) (tex + 1);
 		tex->format = tex_palette;
 		if (pal)
 			tex->palette = pal;
@@ -101,6 +108,11 @@ LoadPCX (QFile *f, qboolean convert, byte *pal)
 	}
 	tex->width = pcx->xmax + 1;
 	tex->height = pcx->ymax + 1;
+	tex->loaded = load;
+	if (!load) {
+		Hunk_FreeToLowMark (pcx_mark);
+		return tex;
+	}
 	pix = tex->data;
 
 	while (count) {

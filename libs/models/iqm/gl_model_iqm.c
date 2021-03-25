@@ -56,7 +56,7 @@ static byte null_texture[] = {
 };
 
 static void
-gl_iqm_clear (model_t *mod)
+gl_iqm_clear (model_t *mod, void *data)
 {
 	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
 	gliqm_t    *gl = (gliqm_t *) iqm->extra_data;
@@ -80,7 +80,7 @@ gl_iqm_load_textures (iqm_t *iqm)
 	for (i = 0; i < iqm->num_meshes; i++) {
 		dstring_copystr (str, iqm->text + iqm->meshes[i].material);
 		QFS_StripExtension (str->str, str->str);
-		if ((tex = LoadImage (va ("textures/%s", str->str))))
+		if ((tex = LoadImage (va (0, "textures/%s", str->str), 1)))
 			gl->textures[i] = GL_LoadTexture (str->str, tex->width,
 											  tex->height, tex->data, true,
 											  false,

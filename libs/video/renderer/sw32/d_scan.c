@@ -515,14 +515,10 @@ sw32_D_DrawSpans (espan_t *pspan)
 					}
 					if (count & 1)
 						pdest[0] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
-					s += sstep;
-					t += tstep;
 				}
 				else
 				{
 					pdest[0] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
-					s += sstep;
-					t += tstep;
 				}
 			}
 		} while ((pspan = pspan->pnext) != NULL);
@@ -657,14 +653,10 @@ sw32_D_DrawSpans (espan_t *pspan)
 					}
 					if (count & 1)
 						pdest[0] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
-					s += sstep;
-					t += tstep;
 				}
 				else
 				{
 					pdest[0] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
-					s += sstep;
-					t += tstep;
 				}
 			}
 		} while ((pspan = pspan->pnext) != NULL);
@@ -800,14 +792,10 @@ sw32_D_DrawSpans (espan_t *pspan)
 					}
 					if (count & 1)
 						pdest[0] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
-					s += sstep;
-					t += tstep;
 				}
 				else
 				{
 					pdest[0] = pbase[(t >> 16) * sw32_cachewidth + (s >> 16)];
-					s += sstep;
-					t += tstep;
 				}
 			}
 		} while ((pspan = pspan->pnext) != NULL);

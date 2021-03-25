@@ -32,11 +32,11 @@
 
 #include "compat.h"
 
-#include "brush.h"
-#include "bsp5.h"
-#include "draw.h"
-#include "options.h"
-#include "surfaces.h"
+#include "tools/qfbsp/include/brush.h"
+#include "tools/qfbsp/include/bsp5.h"
+#include "tools/qfbsp/include/draw.h"
+#include "tools/qfbsp/include/options.h"
+#include "tools/qfbsp/include/surfaces.h"
 
 /**	\addtogroup qfbsp_brush
 */
@@ -347,7 +347,7 @@ CreateBrushFaces (void)
 			GetVectorForKey (FoundEntity, "origin", offset);
 
 		SetKeyValue (CurrentEntity, "origin",
-					 va ("%g %g %g", VectorExpand (offset)));
+					 va (0, "%g %g %g", VectorExpand (offset)));
 	}
 
 	for (i = 0; i < numbrushfaces; i++) {
@@ -736,7 +736,7 @@ LoadBrush (const mbrush_t *mb, int hullnum)
 		CreateBrushFaces ();
 	} else if (mb->detail) {
 		face_t     *f;
-		for (f = brush_faces; f; f = f->next);
+		for (f = brush_faces; f; f = f->next)
 			f->detail = 1;
 	}
 

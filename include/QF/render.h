@@ -25,13 +25,14 @@
 
 */
 
-#ifndef __render_h
-#define __render_h
+#ifndef __QF_render_h
+#define __QF_render_h
 
 #include "QF/mathlib.h"
 #include "QF/model.h"
 #include "QF/qdefs.h" // FIXME
 #include "QF/vid.h"
+#include "QF/simd/types.h"
 
 typedef enum {
 	pt_static,
@@ -54,6 +55,15 @@ typedef enum {
 
 extern struct vid_render_funcs_s *r_funcs;
 extern struct vid_render_data_s *r_data;
+
+typedef struct subpic_s {
+	const struct subpic_s *const next;
+	const struct scrap_s *const scrap;	///< renderer specific type
+	const struct vrect_s *const rect;
+	const int width;					///< requested width
+	const int height;					///< requested height
+	const float size;					///< size factor for tex coords (mult)
+} subpic_t;
 
 // dynamic lights ===========================================================
 
@@ -81,47 +91,52 @@ typedef struct
 
 //===============
 
+typedef struct animation_s {
+	int         frame;
+	float       syncbase;	// randomize time base for local animations
+	float       frame_start_time;
+	float       frame_interval;
+	int         pose1;
+	int         pose2;
+	float       blend;
+	int         nolerp;		// don't lerp this frame (pose data invalid)
+} animation_t;
+
+typedef struct visibility_s {
+	struct entity_s *entity;	// owning entity
+	struct efrag_s *efrag;		// linked list of efrags
+	struct mnode_s *topnode;	// bmodels, first world node that
+								// splits bmodel, or NULL if not split
+								// applies to other models, too
+	int         visframe;		// last frame this entity was
+								// found in an active leaf
+	int         trivial_accept;	// view clipping (frustum and depth)
+} visibility_t;
+
+typedef struct renderer_s {
+	struct model_s *model;			// NULL = no model
+	struct skin_s *skin;
+	float       colormod[4];	// color tint and alpha for model
+	int         skinnum;		// for Alias models
+	int         fullbright;
+	float       min_light;
+	mat4_t      full_transform;
+} renderer_t;
+
 typedef struct entity_s {
 	struct entity_s *next;
-	struct entity_s *unext;	//FIXME this shouldn't be here. for qw demos
 
-	vec3_t					origin;
-	vec3_t					old_origin;
-	vec3_t					angles;
-	vec_t					transform[4 * 4];
-	vec_t					full_transform[4 * 4];
-	struct model_s			*model;			// NULL = no model
-	int						frame;
-	int						skinnum;		// for Alias models
-	struct skin_s			*skin;
-
-	float					syncbase;		// for client-side animations
-
-	struct efrag_s			*efrag;			// linked list of efrags
-	int						visframe;		// last frame this entity was
-											// found in an active leaf
-	float					colormod[4];	// color tint and alpha for model
-	float					scale;			// size scaler of the model
-
-	int						fullbright;
-	float					min_light;
-
-	// FIXME: could turn these into a union
-	int						trivial_accept;
-	struct mnode_s			*topnode; // for bmodels, first world node that
-									  // splits bmodel, or NULL if not split
-
-	// Animation interpolation
-	float                   frame_start_time;
-	float                   frame_interval;
-	int						pose1;
-	int						pose2;
-	struct model_s			*pose_model;	// no lerp if not the same as model
+	struct transform_s *transform;
+	animation_t animation;
+	visibility_t visibility;
+	renderer_t  renderer;
+	int         active;
+	//XXX FIXME XXX should not be here
+	vec4f_t     old_origin;
 } entity_t;
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
-typedef struct
-{
+typedef struct {
 	vrect_t		vrect;				// subwindow in video for refresh
 									// FIXME: not need vrect next field here?
 	vrect_t		aliasvrect;			// scaled Alias version
@@ -142,8 +157,9 @@ typedef struct
 	float		xOrigin;			// should probably always be 0.5
 	float		yOrigin;			// between be around 0.3 to 0.5
 
-	vec3_t		vieworg;
-	vec3_t		viewangles;
+	//FIXME was vec3_t, need to deal with asm (maybe? is it worth it?)
+	vec4f_t     viewposition;
+	vec4f_t     viewrotation;
 
 	float		fov_x, fov_y;
 
@@ -172,9 +188,9 @@ extern	struct texture_s	*r_notexture_mip;
 extern entity_t r_worldentity;
 
 void R_Init (void);
-void R_LoadModule (void (*load_gl)(void),
-				   void (*set_palette) (const byte *palette));
+struct vid_internal_s;
+void R_LoadModule (struct vid_internal_s *vid_internal);
 struct progs_s;
 void R_Progs_Init (struct progs_s *pr);
 
-#endif // __render_h
+#endif//__QF_render_h

@@ -37,6 +37,7 @@
 #include "compat.h"
 #include "r_internal.h"
 #include "vid_internal.h"
+#include "vid_sw.h"
 
 
 static void
@@ -52,6 +53,7 @@ R_CheckVariables (void)
 void
 R_TimeRefresh_f (void)
 {
+/* FIXME update for simd
 	int         i;
 	float       start, stop, time;
 	int         startangle;
@@ -74,13 +76,14 @@ R_TimeRefresh_f (void)
 		vr.width = r_refdef.vrect.width;
 		vr.height = r_refdef.vrect.height;
 		vr.next = NULL;
-		VID_Update (&vr);
+		sw_ctx->update (&vr);
 	}
 	stop = Sys_DoubleTime ();
 	time = stop - start;
 	Sys_Printf ("%g seconds (%g fps)\n", time, 128 / time);
 
 	r_refdef.viewangles[1] = startangle;
+*/
 }
 
 void
@@ -236,14 +239,16 @@ R_SetupFrame (void)
 #endif
 
 	// build the transformation matrix for the given view angles
-	VectorCopy (r_refdef.vieworg, modelorg);
-	VectorCopy (r_refdef.vieworg, r_origin);
+	VectorCopy (r_refdef.viewposition, modelorg);
+	VectorCopy (r_refdef.viewposition, r_origin);
 
-	AngleVectors (r_refdef.viewangles, vpn, vright, vup);
+	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 1, 0, 0, 0 }), vpn);
+	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 0, -1, 0, 0 }), vright);
+	VectorCopy (qvmulf (r_refdef.viewrotation, (vec4f_t) { 0, 0, 1, 0 }), vup);
 	R_SetFrustum ();
 
 	// current viewleaf
-	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.model);
+	r_viewleaf = Mod_PointInLeaf (r_origin, r_worldentity.renderer.model);
 
 	r_dowarpold = r_dowarp;
 	r_dowarp = r_waterwarp->int_val && (r_viewleaf->contents <=

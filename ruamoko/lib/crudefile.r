@@ -1,4 +1,4 @@
-#include "crudefile.h"
+#include <crudefile.h>
 
 float (string path, string mode) cfopen = #0x000f0000 + 103;
 void (float desc) cfclose = #0x000f0000 + 104;

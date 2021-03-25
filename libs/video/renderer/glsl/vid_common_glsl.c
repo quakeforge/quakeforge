@@ -56,6 +56,10 @@
 #include "d_iface.h"
 #include "r_internal.h"
 
+static const char quakeforge_effect[] =
+#include "libs/video/renderer/glsl/quakeforge.slc"
+;
+
 int					glsl_palette;
 int					glsl_colormap;
 
@@ -181,36 +185,36 @@ GLSL_Init_Common (void)
 
 	qfeglEnable (GL_BLEND);
 	qfeglBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+	GLSL_RegisterEffect ("QuakeForge", quakeforge_effect);
 }
 
 int
-GLSL_CompileShader (const char *name, const char *shader_src, int type)
+GLSL_CompileShader (const char *name, const shader_t *shader, int type)
 {
-	const char *src[1];
-	int         shader;
+	int         sid;
 	int         compiled;
 
-	src[0] = shader_src;
-	shader = qfeglCreateShader (type);
-	qfeglShaderSource (shader, 1, src, 0);
-	qfeglCompileShader (shader);
-	qfeglGetShaderiv (shader, GL_COMPILE_STATUS, &compiled);
+	sid = qfeglCreateShader (type);
+	qfeglShaderSource (sid, shader->num_strings, shader->strings, 0);
+	qfeglCompileShader (sid);
+	qfeglGetShaderiv (sid, GL_COMPILE_STATUS, &compiled);
 	if (!compiled || (developer->int_val & SYS_GLSL)) {
 		dstring_t  *log = dstring_new ();
 		int         size;
-		qfeglGetShaderiv (shader, GL_INFO_LOG_LENGTH, &size);
+		qfeglGetShaderiv (sid, GL_INFO_LOG_LENGTH, &size);
 		log->size = size + 1;	// for terminating null
 		dstring_adjust (log);
-		qfeglGetShaderInfoLog (shader, log->size, 0, log->str);
+		qfeglGetShaderInfoLog (sid, log->size, 0, log->str);
 		if (!compiled)
-			qfeglDeleteShader (shader);
+			qfeglDeleteShader (sid);
 		Sys_Printf ("Shader (%s) compile log:\n----8<----\n%s----8<----\n",
 					name, log->str);
 		dstring_delete (log);
 		if (!compiled)
 			return 0;
 	}
-	return shader;
+	return sid;
 }
 
 static const char *
@@ -264,7 +268,7 @@ type_name (GLenum type)
 		case GL_FIXED:
 			return "fixed";
 	}
-	return va("%x", type);
+	return va (0, "%x", type);
 }
 
 static void

@@ -151,7 +151,7 @@ sw32_Draw_CachePic (const char *path, qboolean alpha)
 		return dat;
 
 	// load the pic from disk
-	QFS_LoadCacheFile (path, &pic->cache);
+	QFS_LoadCacheFile (QFS_FOpenFile (path), &pic->cache);
 
 	dat = (qpic_t *) pic->cache.data;
 	if (!dat) {
@@ -1299,7 +1299,7 @@ sw32_Draw_BlendScreen (quat_t color)
 			newpal[2] = vid.gammatable[b];
 			newpal += 3;
 		}
-		vid.set_palette (pal);
+		vid.vid_internal->set_palette (pal);
 	}
 	break;
 	case 2:
@@ -1362,6 +1362,7 @@ sw32_Draw_BlendScreen (quat_t color)
 	}
 	break;
 	default:
-		Sys_Error("V_UpdatePalette: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("sw32_Draw_BlendScreen: unsupported r_pixbytes %i",
+				  sw32_r_pixbytes);
 	}
 }

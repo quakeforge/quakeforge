@@ -28,8 +28,8 @@
 
 */
 
-#ifndef __gib_h
-#define __gib_h
+#ifndef __QF_gib_h
+#define __QF_gib_h
 
 // Dependencies
 
@@ -182,7 +182,7 @@ extern char * const gib_null_string;
 #define GIB_CanReturn() (GIB_DATA(cbuf_active)->waitret)
 
 dstring_t *GIB_Return (const char *str);
-void GIB_Error (const char *type, const char *fmt, ...);
+void GIB_Error (const char *type, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 void GIB_Builtin_Add (const char *name, void (*func) (void));
 void GIB_Builtin_Remove (const char *name);
 qboolean GIB_Builtin_Exists (const char *name);
@@ -199,12 +199,12 @@ void GIB_Event_Callback (gib_event_t *event, unsigned int argc, ...);
 
 // Interpreter interface (for creating GIB cbufs)
 
-cbuf_interpreter_t *GIB_Interpreter (void);
+cbuf_interpreter_t *GIB_Interpreter (void) __attribute__((const));
 
 // Thread interface
 
 void GIB_Thread_Execute (void);
-unsigned int GIB_Thread_Count (void);
+unsigned int GIB_Thread_Count (void) __attribute__((pure));
 
 // Init interface
 
@@ -214,6 +214,6 @@ void GIB_Init (qboolean sandbox);
 
 unsigned long int GIB_Handle_New (gib_object_t *data);
 void GIB_Handle_Free (unsigned long int num);
-gib_object_t *GIB_Handle_Get (unsigned long int num);
+gib_object_t *GIB_Handle_Get (unsigned long int num) __attribute__((pure));
 
-#endif
+#endif//__QF_gib_h

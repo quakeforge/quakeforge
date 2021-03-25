@@ -26,8 +26,8 @@
 */
 // screen.h
 
-#ifndef __screen_h
-#define __screen_h
+#ifndef __QF_screen_h
+#define __QF_screen_h
 
 #include "QF/qtypes.h"
 
@@ -35,6 +35,9 @@ void SCR_Init_Cvars (void);
 void SCR_Init (void);
 
 typedef void (*SCR_Func)(void);
+// scr_funcs is a null terminated array
+void SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc,
+					   SCR_Func *scr_funcs);
 
 void SCR_SizeUp (void);
 void SCR_SizeDown (void);
@@ -67,4 +70,4 @@ extern struct qpic_s *scr_turtle;
 
 extern struct cvar_s *hud_fps, *hud_time;
 
-#endif // __screen_h
+#endif//__QF_screen_h

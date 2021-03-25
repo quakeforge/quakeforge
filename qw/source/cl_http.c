@@ -38,9 +38,9 @@
 #include "QF/dstring.h"
 #include "QF/sys.h"
 
-#include "cl_http.h"
-#include "cl_parse.h"
-#include "client.h"
+#include "qw/include/cl_http.h"
+#include "qw/include/cl_parse.h"
+#include "qw/include/client.h"
 
 static int curl_borked;
 static CURL *easy_handle;
@@ -114,7 +114,7 @@ CL_HTTP_Update (void)
 				Sys_Printf ("download failed: %ld\n", response_code);
 				CL_FailDownload ();
 			}
-			curl_multi_remove_handle (multi_handle, easy_handle);
+			CL_HTTP_Reset ();
 		}
 	}
 }
@@ -129,7 +129,7 @@ CL_HTTP_Reset (void)
 
 #else
 
-#include "cl_http.h"
+#include "qw/include/cl_http.h"
 
 void CL_HTTP_Init (void) {}
 void CL_HTTP_Shutdown (void) {}

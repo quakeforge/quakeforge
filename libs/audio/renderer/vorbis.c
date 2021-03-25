@@ -196,7 +196,7 @@ vorbis_callback_load (void *object, cache_allocator_t allocator)
 
 	sfxblock_t *block = (sfxblock_t *) object;
 
-	QFS_FOpenFile (block->file, &file);
+	file = QFS_FOpenFile (block->file);
 	if (!file)
 		return; //FIXME Sys_Error?
 
@@ -249,6 +249,7 @@ vorbis_stream_close (sfx_t *sfx)
 	if (vf->data)
 		free (vf->data);
 	ov_clear (vf->vf);
+	free (vf->vf);
 	free (vf);
 	SND_SFX_StreamClose (sfx);
 }
@@ -260,7 +261,7 @@ vorbis_stream_open (sfx_t *sfx)
 	QFile      *file;
 	vorbis_file_t *f;
 
-	QFS_FOpenFile (stream->file, &file);
+	file = QFS_FOpenFile (stream->file);
 	if (!file)
 		return 0;
 

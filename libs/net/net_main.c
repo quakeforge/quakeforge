@@ -718,12 +718,41 @@ NET_SendToAll (sizebuf_t *data, double blocktime)
 
 //=============================================================================
 
+static void
+NET_shutdown (void *data)
+{
+	qsocket_t  *sock;
+
+	SetNetTime ();
+
+	for (sock = net_activeSockets; sock; sock = sock->next)
+		NET_Close (sock);
+
+//
+// shutdown the drivers
+//
+	for (net_driverlevel = 0; net_driverlevel < net_numdrivers;
+		 net_driverlevel++) {
+		if (net_drivers[net_driverlevel].initialized == true) {
+			net_drivers[net_driverlevel].Shutdown ();
+			net_drivers[net_driverlevel].initialized = false;
+		}
+	}
+
+	if (vcrFile) {
+		Sys_Printf ("Closing vcrfile.\n");
+		Qclose (vcrFile);
+	}
+}
+
 void
 NET_Init (void)
 {
 	int         i;
 	int         controlSocket;
 	qsocket_t  *s;
+
+	Sys_RegisterShutdown (NET_shutdown, 0);
 
 	if (COM_CheckParm ("-playback")) {
 		net_numdrivers = 1;
@@ -788,33 +817,6 @@ NET_Init (void)
 
 	if (*my_tcpip_address)
 		Sys_MaskPrintf (SYS_NET, "TCP/IP address %s\n", my_tcpip_address);
-}
-
-void
-NET_Shutdown (void)
-{
-	qsocket_t  *sock;
-
-	SetNetTime ();
-
-	for (sock = net_activeSockets; sock; sock = sock->next)
-		NET_Close (sock);
-
-//
-// shutdown the drivers
-//
-	for (net_driverlevel = 0; net_driverlevel < net_numdrivers;
-		 net_driverlevel++) {
-		if (net_drivers[net_driverlevel].initialized == true) {
-			net_drivers[net_driverlevel].Shutdown ();
-			net_drivers[net_driverlevel].initialized = false;
-		}
-	}
-
-	if (vcrFile) {
-		Sys_Printf ("Closing vcrfile.\n");
-		Qclose (vcrFile);
-	}
 }
 
 

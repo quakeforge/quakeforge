@@ -42,6 +42,7 @@
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/entity.h"
 #include "QF/image.h"
 #include "QF/mersenne.h"
 #include "QF/qargs.h"
@@ -78,21 +79,33 @@ static partvert_t  *particleVertexArray;
 
 static GLuint   part_tex;
 
-static const char quakepoint_vert[] =
-#include "quakepnt.vc"
-;
+static const char *particle_point_vert_effects[] =
+{
+	"QuakeForge.Vertex.particle.point",
+	0
+};
 
-static const char quakepoint_frag[] =
-#include "quakepnt.fc"
-;
+static const char *particle_point_frag_effects[] =
+{
+	"QuakeForge.Fragment.fog",
+	"QuakeForge.Fragment.palette",
+	"QuakeForge.Fragment.particle.point",
+	0
+};
 
-static const char quakepart_vert[] =
-#include "quakepar.vc"
-;
+static const char *particle_textured_vert_effects[] =
+{
+	"QuakeForge.Vertex.particle.textured",
+	0
+};
 
-static const char quakepart_frag[] =
-#include "quakepar.fc"
-;
+static const char *particle_textured_frag_effects[] =
+{
+	"QuakeForge.Fragment.fog",
+	"QuakeForge.Fragment.palette",
+	"QuakeForge.Fragment.particle.textured",
+	0
+};
 
 static struct {
 	int         program;
@@ -210,6 +223,7 @@ glsl_R_ClearParticles (void)
 void
 glsl_R_InitParticles (void)
 {
+	shader_t   *vert_shader, *frag_shader;
 	unsigned    i;
 	int         vert;
 	int         frag;
@@ -223,9 +237,11 @@ glsl_R_InitParticles (void)
 	qfeglGetFloatv (GL_ALIASED_POINT_SIZE_RANGE, v);
 	Sys_MaskPrintf (SYS_GLSL, "point size: %g - %g\n", v[0], v[1]);
 
-	vert = GLSL_CompileShader ("quakepnt.vert", quakepoint_vert,
+	vert_shader = GLSL_BuildShader (particle_point_vert_effects);
+	frag_shader = GLSL_BuildShader (particle_point_frag_effects);
+	vert = GLSL_CompileShader ("quakepnt.vert", vert_shader,
 							   GL_VERTEX_SHADER);
-	frag = GLSL_CompileShader ("quakepnt.frag", quakepoint_frag,
+	frag = GLSL_CompileShader ("quakepnt.frag", frag_shader,
 							   GL_FRAGMENT_SHADER);
 	quake_point.program = GLSL_LinkProgram ("quakepoint", vert, frag);
 	GLSL_ResolveShaderParam (quake_point.program, &quake_point.mvp_matrix);
@@ -233,10 +249,14 @@ glsl_R_InitParticles (void)
 	GLSL_ResolveShaderParam (quake_point.program, &quake_point.palette);
 	GLSL_ResolveShaderParam (quake_point.program, &quake_point.color);
 	GLSL_ResolveShaderParam (quake_point.program, &quake_point.fog);
+	GLSL_FreeShader (vert_shader);
+	GLSL_FreeShader (frag_shader);
 
-	vert = GLSL_CompileShader ("quakepar.vert", quakepart_vert,
+	vert_shader = GLSL_BuildShader (particle_textured_vert_effects);
+	frag_shader = GLSL_BuildShader (particle_textured_frag_effects);
+	vert = GLSL_CompileShader ("quakepar.vert", vert_shader,
 							   GL_VERTEX_SHADER);
-	frag = GLSL_CompileShader ("quakepar.frag", quakepart_frag,
+	frag = GLSL_CompileShader ("quakepar.frag", frag_shader,
 							   GL_FRAGMENT_SHADER);
 	quake_part.program = GLSL_LinkProgram ("quakepart", vert, frag);
 	GLSL_ResolveShaderParam (quake_part.program, &quake_part.mvp_matrix);
@@ -245,6 +265,8 @@ glsl_R_InitParticles (void)
 	GLSL_ResolveShaderParam (quake_part.program, &quake_part.color);
 	GLSL_ResolveShaderParam (quake_part.program, &quake_part.texture);
 	GLSL_ResolveShaderParam (quake_part.program, &quake_part.fog);
+	GLSL_FreeShader (vert_shader);
+	GLSL_FreeShader (frag_shader);
 
 	memset (data, 0, sizeof (data));
 	qfeglGenTextures (1, &part_tex);
@@ -292,15 +314,15 @@ glsl_R_ReadPointFile_f (void)
 	vec3_t      org;
 	QFile      *f;
 
-	mapname = strdup (r_worldentity.model->name);
+	mapname = strdup (r_worldentity.renderer.model->path);
 	if (!mapname)
 		Sys_Error ("Can't duplicate mapname!");
 	QFS_StripExtension (mapname, mapname);
 
-	name = va ("%s.pts", mapname);
+	name = va (0, "%s.pts", mapname);
 	free (mapname);
 
-	QFS_FOpenFile (name, &f);
+	f = QFS_FOpenFile (name);
 	if (!f) {
 		Sys_Printf ("couldn't open %s\n", name);
 		return;
@@ -608,12 +630,14 @@ R_RocketTrail_QF (const entity_t *ent)
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
 	float		len = 0.0;
 	vec3_t		old_origin, vec;
+	vec3_t		org;
 
 	if (numparticles >= r_maxparticles)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	maxlen = VectorNormalize (vec);
 	origlen = vr_data.frametime / maxlen;
 	pscale = 1.5 + qfrandom (1.5);
@@ -642,12 +666,14 @@ R_GrenadeTrail_QF (const entity_t *ent)
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
 	float		len = 0.0;
 	vec3_t		old_origin, vec;
+	vec3_t		org;
 
 	if (numparticles >= r_maxparticles)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	maxlen = VectorNormalize (vec);
 	origlen = vr_data.frametime / maxlen;
 	pscale = 6.0 + qfrandom (7.0);
@@ -677,12 +703,14 @@ R_BloodTrail_QF (const entity_t *ent)
 	float		len = 0.0;
 	int			j;
 	vec3_t		old_origin, porg, pvel, vec;
+	vec3_t		org;
 
 	if (numparticles >= r_maxparticles)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	maxlen = VectorNormalize (vec);
 	origlen = vr_data.frametime / maxlen;
 	pscale = 5.0 + qfrandom (10.0);
@@ -717,12 +745,14 @@ R_SlightBloodTrail_QF (const entity_t *ent)
 	float		len = 0.0;
 	int			j;
 	vec3_t      old_origin, porg, pvel, vec;
+	vec3_t      org;
 
 	if (numparticles >= r_maxparticles)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	maxlen = VectorNormalize (vec);
 	origlen = vr_data.frametime / maxlen;
 	pscale = 1.5 + qfrandom (7.5);
@@ -757,12 +787,14 @@ R_WizTrail_QF (const entity_t *ent)
 	float		dist = 3.0, len = 0.0;
 	static int	tracercount;
 	vec3_t		old_origin, pvel, subtract, vec;
+	vec3_t		org;
 
 	if (numparticles >= r_maxparticles)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	maxlen = VectorNormalize (vec);
 	origlen = vr_data.frametime / maxlen;
 	VectorScale (vec, maxlen - dist, subtract);
@@ -798,12 +830,14 @@ R_FlameTrail_QF (const entity_t *ent)
 	float		dist = 3.0, len = 0.0;
 	static int	tracercount;
 	vec3_t		old_origin, pvel, subtract, vec;
+	vec3_t		org;
 
 	if (numparticles >= r_maxparticles)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	maxlen = VectorNormalize (vec);
 	origlen = vr_data.frametime / maxlen;
 	VectorScale (vec, maxlen - dist, subtract);
@@ -839,12 +873,14 @@ R_VoorTrail_QF (const entity_t *ent)
 	float		dist = 3.0, len = 0.0;
 	int			j;
 	vec3_t		subtract, old_origin, porg, vec;
+	vec3_t		org;
 
 	if (numparticles >= r_maxparticles)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	maxlen = VectorNormalize (vec);
 	origlen = vr_data.frametime / maxlen;
 	VectorScale (vec, maxlen - dist, subtract);
@@ -877,7 +913,8 @@ R_GlowTrail_QF (const entity_t *ent, int glow_color)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	maxlen = VectorNormalize (vec);
 	origlen = vr_data.frametime / maxlen;
 	VectorScale (vec, (maxlen - dist), subtract);
@@ -956,12 +993,14 @@ R_RocketTrail_EE (const entity_t *ent)
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
 	float		len = 0.0;
 	vec3_t		old_origin, subtract, vec;
+	vec3_t		org;
 
 	if (numparticles >= r_maxparticles)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	maxlen = VectorNormalize (vec);
 	origlen = vr_data.frametime / maxlen;
 	pscale = 1.5 + qfrandom (1.5);
@@ -991,12 +1030,14 @@ R_GrenadeTrail_EE (const entity_t *ent)
 	float		dist, maxlen, origlen, percent, pscale, pscalenext;
 	float		len = 0.0;
 	vec3_t		old_origin, subtract, vec;
+	vec3_t		org;
 
 	if (numparticles >= r_maxparticles)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, ent->old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, ent->old_origin, vec);
 	maxlen = VectorNormalize (vec);
 	origlen = vr_data.frametime / maxlen;
 	pscale = 6.0 + qfrandom (7.0);
@@ -1230,7 +1271,7 @@ R_DarkFieldParticles_ID (const entity_t *ent)
 //		l = r_maxparticles - numparticles;
 //	}
 
-	VectorCopy (ent->origin, org);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
 
 	for (i = -16; i < 16; i += 8) {
 		dir [1] = i * 8;
@@ -1264,6 +1305,7 @@ R_EntityParticles_ID (const entity_t *ent)
 	float       angle, sp, sy, cp, cy; // cr, sr
 	float       beamlength = 16.0, dist = 64.0;
 	vec3_t      forward, porg;
+	vec3_t      org;
 
 	if (numparticles + j >= r_maxparticles) {
 		return;
@@ -1271,9 +1313,13 @@ R_EntityParticles_ID (const entity_t *ent)
 		j = r_maxparticles - numparticles;
 	}
 
-	if (!avelocities[0][0]) {
-		for (i = 0; i < NUMVERTEXNORMALS * 3; i++)
-			avelocities[0][i] = (mtwist_rand (&mt) & 255) * 0.01;
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+
+	for (i = 0; i < NUMVERTEXNORMALS; i++) {
+		int         k;
+		for (k = 0; k < 3; k++) {
+			avelocities[i][k] = (mtwist_rand (&mt) & 255) * 0.01;
+		}
 	}
 
 	for (i = 0; i < j; i++) {
@@ -1292,11 +1338,11 @@ R_EntityParticles_ID (const entity_t *ent)
 		forward[1] = cp * sy;
 		forward[2] = -sp;
 
-		porg[0] = ent->origin[0] + vertex_normals[i][0] * dist +
+		porg[0] = org[0] + vertex_normals[i][0] * dist +
 			forward[0] * beamlength;
-		porg[1] = ent->origin[1] + vertex_normals[i][1] * dist +
+		porg[1] = org[1] + vertex_normals[i][1] * dist +
 			forward[1] * beamlength;
-		porg[2] = ent->origin[2] + vertex_normals[i][2] * dist +
+		porg[2] = org[2] + vertex_normals[i][2] * dist +
 			forward[2] * beamlength;
 		particle_new (pt_explode, part_tex_dot, porg, 1.0, vec3_origin,
 					  vr_data.realtime + 0.01, 0x6f, 1.0, 0);
@@ -1315,7 +1361,8 @@ R_RocketTrail_ID (const entity_t *ent)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, ent->old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, ent->old_origin, vec);
 	maxlen = VectorNormalize (vec);
 	VectorScale (vec, (maxlen - dist), subtract);
 
@@ -1347,7 +1394,8 @@ R_GrenadeTrail_ID (const entity_t *ent)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, ent->old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, ent->old_origin, vec);
 	maxlen = VectorNormalize (vec);
 	VectorScale (vec, maxlen - dist, subtract);
 
@@ -1374,12 +1422,14 @@ R_BloodTrail_ID (const entity_t *ent)
 	float			dist = 3.0, len = 0.0;
 	unsigned int	rnd;
 	vec3_t			old_origin, subtract, vec, porg;
+	vec3_t			org;
 
 	if (numparticles >= r_maxparticles)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	maxlen = VectorNormalize (vec);
 	VectorScale (vec, maxlen - dist, subtract);
 
@@ -1405,12 +1455,14 @@ R_SlightBloodTrail_ID (const entity_t *ent)
 	float			dist = 6.0, len = 0.0;
 	unsigned int	rnd;
 	vec3_t			old_origin, porg, subtract, vec;
+	vec3_t			org;
 
 	if (numparticles >= r_maxparticles)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	maxlen = VectorNormalize (vec);
 	VectorScale (vec, maxlen - dist, subtract);
 
@@ -1436,12 +1488,14 @@ R_WizTrail_ID (const entity_t *ent)
 	float		dist = 3.0, len = 0.0;
 	static int	tracercount;
 	vec3_t		old_origin, pvel, subtract, vec;
+	vec3_t		org;
 
 	if (numparticles >= r_maxparticles)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	maxlen = VectorNormalize (vec);
 	VectorScale (vec, maxlen - dist, subtract);
 
@@ -1473,12 +1527,14 @@ R_FlameTrail_ID (const entity_t *ent)
 	float		dist = 3.0, len = 0.0;
 	static int	tracercount;
 	vec3_t		old_origin, pvel, subtract, vec;
+	vec3_t		org;
 
 	if (numparticles >= r_maxparticles)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	maxlen = VectorNormalize (vec);
 	VectorScale (vec, maxlen - dist, subtract);
 
@@ -1510,12 +1566,14 @@ R_VoorTrail_ID (const entity_t *ent)
 	float			dist = 3.0, len = 0.0;
 	unsigned int	rnd;
 	vec3_t			old_origin, porg, subtract, vec;
+	vec3_t			org;
 
 	if (numparticles >= r_maxparticles)
 		return;
 
 	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (ent->origin, old_origin, vec);
+	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
+	VectorSubtract (org, old_origin, vec);
 	maxlen = VectorNormalize (vec);
 	VectorScale (vec, maxlen - dist, subtract);
 
@@ -1545,10 +1603,10 @@ draw_qf_particles (void)
 	particle_t *part;
 	vec3_t      up_scale, right_scale, up_right_scale, down_right_scale;
 	partvert_t *VA;
-	mat4_t      vp_mat;
+	mat4f_t     vp_mat;
 	quat_t      fog;
 
-	Mat4Mult (glsl_projection, glsl_view, vp_mat);
+	mmulf (vp_mat, glsl_projection, glsl_view);
 
 	qfeglDepthMask (GL_FALSE);
 	qfeglUseProgram (quake_part.program);
@@ -1556,11 +1614,12 @@ draw_qf_particles (void)
 	qfeglEnableVertexAttribArray (quake_part.color.location);
 	qfeglEnableVertexAttribArray (quake_part.st.location);
 
-	VectorCopy (glsl_Fog_GetColor (), fog);
+	glsl_Fog_GetColor (fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (quake_part.fog.location, 1, fog);
 
-	qfeglUniformMatrix4fv (quake_part.mvp_matrix.location, 1, false, vp_mat);
+	qfeglUniformMatrix4fv (quake_part.mvp_matrix.location, 1, false,
+						   &vp_mat[0][0]);
 
 	qfeglUniform1i (quake_part.texture.location, 0);
 	qfeglActiveTexture (GL_TEXTURE0 + 0);
@@ -1570,7 +1629,7 @@ draw_qf_particles (void)
 	// LordHavoc: particles should not affect zbuffer
 	qfeglDepthMask (GL_FALSE);
 
-	minparticledist = DotProduct (r_refdef.vieworg, vpn) +
+	minparticledist = DotProduct (r_refdef.viewposition, vpn) +
 		r_particles_nearclip->value;
 
 	activeparticles = 0;
@@ -1689,10 +1748,10 @@ draw_id_particles (void)
 	float       minparticledist;
 	particle_t *part;
 	partvert_t *VA;
-	mat4_t      vp_mat;
+	mat4f_t     vp_mat;
 	quat_t      fog;
 
-	Mat4Mult (glsl_projection, glsl_view, vp_mat);
+	mmulf (vp_mat, glsl_projection, glsl_view);
 
 	// LordHavoc: particles should not affect zbuffer
 	qfeglDepthMask (GL_FALSE);
@@ -1700,9 +1759,10 @@ draw_id_particles (void)
 	qfeglEnableVertexAttribArray (quake_point.vertex.location);
 	qfeglEnableVertexAttribArray (quake_point.color.location);
 
-	qfeglUniformMatrix4fv (quake_point.mvp_matrix.location, 1, false, vp_mat);
+	qfeglUniformMatrix4fv (quake_point.mvp_matrix.location, 1, false,
+						   &vp_mat[0][0]);
 
-	VectorCopy (glsl_Fog_GetColor (), fog);
+	glsl_Fog_GetColor (fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (quake_point.fog.location, 1, fog);
 
@@ -1711,7 +1771,7 @@ draw_id_particles (void)
 	qfeglEnable (GL_TEXTURE_2D);
 	qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
 
-	minparticledist = DotProduct (r_refdef.vieworg, vpn) +
+	minparticledist = DotProduct (r_refdef.viewposition, vpn) +
 		r_particles_nearclip->value;
 
 	activeparticles = 0;
@@ -1775,6 +1835,27 @@ glsl_R_DrawParticles (void)
 	} else {
 		draw_id_particles ();
 	}
+}
+
+static void
+glsl_R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
+					 const vec3_t vel, float die, int color, float alpha,
+					 float ramp)
+{
+	if (numparticles >= r_maxparticles)
+		return;
+	particle_new (type, texnum, org, scale, vel, die, color, alpha, ramp);
+}
+
+static void
+glsl_R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org,
+						   int org_fuzz, float scale, int vel_fuzz, float die,
+						   int color, float alpha, float ramp)
+{
+	if (numparticles >= r_maxparticles)
+		return;
+	particle_new_random (type, texnum, org, org_fuzz, scale, vel_fuzz, die,
+						 color, alpha, ramp);
 }
 
 static vid_particle_funcs_t particles_QF = {
@@ -1960,25 +2041,4 @@ glsl_R_Particles_Init_Cvars (void)
 								  r_particles_style_f, "Sets particle style. "
 								  "0 for Id, 1 for QF.");
 	R_ParticleFunctionInit ();
-}
-
-void
-glsl_R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
-					 const vec3_t vel, float die, int color, float alpha,
-					 float ramp)
-{
-	if (numparticles >= r_maxparticles)
-		return;
-	particle_new (type, texnum, org, scale, vel, die, color, alpha, ramp);
-}
-
-void
-glsl_R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org,
-						   int org_fuzz, float scale, int vel_fuzz, float die,
-						   int color, float alpha, float ramp)
-{
-	if (numparticles >= r_maxparticles)
-		return;
-	particle_new_random (type, texnum, org, org_fuzz, scale, vel_fuzz, die,
-						 color, alpha, ramp);
 }

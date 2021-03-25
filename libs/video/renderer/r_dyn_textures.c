@@ -50,7 +50,8 @@ R_DotParticleTexture (void)
 	int         x, y, dx2, dy, d;
 	tex_t      *tex;
 
-	tex = malloc (field_offset (tex_t, data[sizeof (*data)]));
+	tex = malloc (sizeof (tex_t) + sizeof (*data));
+	tex->data = (byte *) (tex + 1);
 	tex->width = 32;
 	tex->height = 32;
 	tex->format = tex_la;
@@ -79,7 +80,8 @@ R_SparkParticleTexture (void)
 	int         x, y, dx2, dy, d;
 	tex_t      *tex;
 
-	tex = malloc (field_offset (tex_t, data[sizeof (*data)]));
+	tex = malloc (sizeof (tex_t) + sizeof (*data));
+	tex->data = (byte*) (tex + 1);
 	tex->width = 32;
 	tex->height = 32;
 	tex->format = tex_la;
@@ -113,7 +115,8 @@ R_SmokeParticleTexture (void)
 	int         x, y, c;
 	tex_t      *tex;
 
-	tex = malloc (field_offset (tex_t, data[sizeof (*data)]));
+	tex = malloc (sizeof (tex_t) + sizeof (*data));
+	tex->data = (byte *) (tex + 1);
 	tex->width = 32;
 	tex->height = 32;
 	tex->format = tex_la;

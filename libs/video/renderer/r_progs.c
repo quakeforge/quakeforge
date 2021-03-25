@@ -68,7 +68,7 @@ typedef struct {
 static qpic_res_t *
 qpic_new (draw_resources_t *res)
 {
-	PR_RESNEW (qpic_res_t, res->qpic_map);
+	return PR_RESNEW (res->qpic_map);
 }
 
 static void
@@ -86,25 +86,25 @@ static void
 qpic_free (draw_resources_t *res, qpic_res_t *qp)
 {
 	bi_draw_free_qpic (qp);
-	PR_RESFREE (qpic_res_t, res->qpic_map, qp);
+	PR_RESFREE (res->qpic_map, qp);
 }
 
 static void
 qpic_reset (draw_resources_t *res)
 {
-	PR_RESRESET (qpic_res_t, res->qpic_map);
+	PR_RESRESET (res->qpic_map);
 }
 
 static inline qpic_res_t *
 qpic_get (draw_resources_t *res, int index)
 {
-	PR_RESGET (res->qpic_map, index);
+	return PR_RESGET (res->qpic_map, index);
 }
 
-static inline int
+static inline int __attribute__((pure))
 qpic_index (draw_resources_t *res, qpic_res_t *qp)
 {
-	PR_RESINDEX (res->qpic_map, qp);
+	return PR_RESINDEX (res->qpic_map, qp);
 }
 
 static qpic_res_t *
@@ -345,7 +345,8 @@ void
 R_Progs_Init (progs_t *pr)
 {
 	draw_resources_t *res = calloc (1, sizeof (draw_resources_t));
-	res->pic_hash = Hash_NewTable (61, bi_draw_get_key, 0, 0);
+	res->pic_hash = Hash_NewTable (61, bi_draw_get_key, 0, 0,
+								   pr->hashlink_freelist);
 
 	PR_Resources_Register (pr, "Draw", res, bi_draw_clear);
 	PR_RegisterBuiltins (pr, builtins);

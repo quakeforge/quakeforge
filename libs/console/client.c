@@ -251,7 +251,7 @@ Condump_f (void)
 		Sys_Printf ("invalid character in filename\n");
 		return;
 	}
-	name = va ("%s/%s.txt", qfs_gamedir->dir.def, Cmd_Argv (1));
+	name = va (0, "%s/%s.txt", qfs_gamedir->dir.def, Cmd_Argv (1));//FIXME
 
 	if (!(file = QFS_WOpen (name, 0))) {
 		Sys_Printf ("could not open %s for writing: %s\n", name,
@@ -360,7 +360,7 @@ Linefeed (void)
 	All console printing must go through this in order to be logged to disk
 	If no console is visible, the notify window will pop up.
 */
-static void
+static __attribute__((format(printf, 1, 0))) void
 C_Print (const char *fmt, va_list args)
 {
 	char       *s;
@@ -375,7 +375,7 @@ C_Print (const char *fmt, va_list args)
 
 	// log all messages to file
 	if (con_debuglog)
-		Sys_DebugLog (va ("%s/%s/qconsole.log", qfs_userpath,
+		Sys_DebugLog (va (0, "%s/%s/qconsole.log", qfs_userpath,//FIXME
 					  qfs_gamedir->dir.def), "%s", buffer->str);
 
 	if (!con_initialized)
@@ -931,13 +931,13 @@ C_Init (void)
 }
 
 static void
-C_Shutdown (void)
+C_shutdown (void)
 {
 }
 
 static general_funcs_t plugin_info_general_funcs = {
 	C_Init,
-	C_Shutdown,
+	C_shutdown,
 };
 
 static console_funcs_t plugin_info_console_funcs = {

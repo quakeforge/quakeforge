@@ -33,7 +33,7 @@
 /** \defgroup nq-udp NetQuake UDP lan driver.
 	\ingroup nq-ld
 */
-//@{
+///@{
 
 /** Initialize the UDP network interface.
 
@@ -193,6 +193,6 @@ int UDP_GetSocketPort (netadr_t *addr);
 */
 int UDP_SetSocketPort (netadr_t *addr, int port);
 
-//@}
+///@}
 
 #endif // __net_udp_h

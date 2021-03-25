@@ -42,16 +42,16 @@
 
 #include "compat.h"
 
-#include "class.h"
-#include "def.h"
-#include "defspace.h"
-#include "diagnostic.h"
-#include "emit.h"
-#include "obj_type.h"
-#include "qfcc.h"
-#include "reloc.h"
-#include "symtab.h"
-#include "value.h"
+#include "tools/qfcc/include/class.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/obj_type.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/value.h"
 
 #define ENC_DEF(dest,def) EMIT_DEF (pr.type_data, dest, def)
 #define ENC_STR(dest,str)									\
@@ -63,7 +63,7 @@
 		reloc_def_string (&loc);							\
 	} while (0)
 
-typedef def_t *(*encode_f) (type_t *type);
+typedef def_t *(*encode_f) (type_t *type, defspace_t *space);
 
 static string_t
 encoding_string (const char *string)
@@ -75,26 +75,26 @@ encoding_string (const char *string)
 }
 
 static def_t *
-qfo_new_encoding (type_t *type, int size)
+qfo_new_encoding (type_t *type, int size, defspace_t *space)
 {
 	qfot_type_t *enc;
 	def_t      *def;
 
-	size += sizeof (qfot_type_t) - sizeof (enc->t);
+	size += field_offset (qfot_type_t, type);
 	size /= sizeof (pr_type_t);
 
-	def = new_def (type->encoding, 0, pr.type_data, sc_static);
+	def = new_def (type->encoding, 0, space, sc_static);
 	def->offset = defspace_alloc_loc (pr.type_data, size);
 
 	enc = D_POINTER (qfot_type_t, def);
-	enc->ty = type->meta;
+	enc->meta = type->meta;
 	enc->size = size;
 	ENC_STR (enc->encoding, type->encoding);
 	return def;
 }
 
 static def_t *
-qfo_encode_func (type_t *type)
+qfo_encode_func (type_t *type, defspace_t *space)
 {
 	int         param_count;
 	int         size;
@@ -109,14 +109,15 @@ qfo_encode_func (type_t *type)
 	if (param_count < 0)
 		param_count = ~param_count;
 	param_type_defs = alloca (param_count * sizeof (def_t *));
-	return_type_def = qfo_encode_type (type->t.func.type);
+	return_type_def = qfo_encode_type (type->t.func.type, space);
 	for (i = 0; i < param_count; i++)
-		param_type_defs[i] = qfo_encode_type (type->t.func.param_types[i]);
+		param_type_defs[i] = qfo_encode_type (type->t.func.param_types[i],
+											  space);
 	size = field_offset (qfot_func_t, param_types[param_count]);
 
-	def = qfo_new_encoding (type, size);
+	def = qfo_new_encoding (type, size, space);
 	enc = D_POINTER (qfot_type_t, def);
-	func = &enc->t.func;
+	func = &enc->func;
 	func->type = ev_func;
 	ENC_DEF (func->return_type, return_type_def);
 	func->num_params = type->t.func.num_params;
@@ -126,39 +127,39 @@ qfo_encode_func (type_t *type)
 }
 
 static def_t *
-qfo_encode_fldptr (type_t *type)
+qfo_encode_fldptr (type_t *type, defspace_t *space)
 {
 	qfot_type_t *enc;
 	def_t      *def;
 	def_t      *type_def;
 
-	type_def = qfo_encode_type (type->t.fldptr.type);
-	def = qfo_new_encoding (type, sizeof (enc->t.fldptr));
+	type_def = qfo_encode_type (type->t.fldptr.type, space);
+	def = qfo_new_encoding (type, sizeof (enc->fldptr), space);
 	enc = D_POINTER (qfot_type_t, def);
-	enc->t.fldptr.type = type->type;
-	ENC_DEF (enc->t.fldptr.aux_type, type_def);
+	enc->fldptr.type = type->type;
+	ENC_DEF (enc->fldptr.aux_type, type_def);
 	return def;
 }
 
 static def_t *
-qfo_encode_none (type_t *type)
+qfo_encode_basic (type_t *type, defspace_t *space)
 {
 	qfot_type_t *enc;
 	def_t      *def;
 
 	if (type->type == ev_func)
-		return qfo_encode_func (type);
+		return qfo_encode_func (type, space);
 	else if (type->type == ev_pointer || type->type == ev_field)
-		return qfo_encode_fldptr (type);
+		return qfo_encode_fldptr (type, space);
 
-	def = qfo_new_encoding (type, sizeof (enc->t.type));
+	def = qfo_new_encoding (type, sizeof (enc->type), space);
 	enc = D_POINTER (qfot_type_t, def);
-	enc->t.type = type->type;
+	enc->type = type->type;
 	return def;
 }
 
 static def_t *
-qfo_encode_struct (type_t *type)
+qfo_encode_struct (type_t *type, defspace_t *space)
 {
 	sy_type_e   sy;
 	int         num_fields;
@@ -185,9 +186,9 @@ qfo_encode_struct (type_t *type)
 	}
 
 	size = field_offset (qfot_struct_t, fields[num_fields]);
-	def = qfo_new_encoding (type, size);
+	def = qfo_new_encoding (type, size, space);
 	enc = D_POINTER (qfot_type_t, def);
-	strct = &enc->t.strct;
+	strct = &enc->strct;
 	ENC_STR (strct->tag, type->name);
 	strct->num_fields = num_fields;
 
@@ -200,7 +201,7 @@ qfo_encode_struct (type_t *type)
 		if (i == num_fields)
 			internal_error (0, "whoa, what happened?");
 		if (type->meta != ty_enum) {
-			field_types[i] = qfo_encode_type (sym->type);
+			field_types[i] = qfo_encode_type (sym->type, space);
 		} else {
 			field_types[i] = type_default->type_def;
 		}
@@ -225,46 +226,69 @@ qfo_encode_struct (type_t *type)
 }
 
 static def_t *
-qfo_encode_array (type_t *type)
+qfo_encode_array (type_t *type, defspace_t *space)
 {
 	qfot_type_t *enc;
 	def_t      *def;
 	def_t      *array_type_def;
 
-	array_type_def = qfo_encode_type (type->t.array.type);
+	array_type_def = qfo_encode_type (type->t.array.type, space);
 
-	def = qfo_new_encoding (type, sizeof (enc->t.array));
+	def = qfo_new_encoding (type, sizeof (enc->array), space);
 	enc = D_POINTER (qfot_type_t, def);
-	ENC_DEF (enc->t.array.type, array_type_def);
-	enc->t.array.base = type->t.array.base;
-	enc->t.array.size = type->t.array.size;
+	ENC_DEF (enc->array.type, array_type_def);
+	enc->array.base = type->t.array.base;
+	enc->array.size = type->t.array.size;
 	return def;
 }
 
 static def_t *
-qfo_encode_class (type_t *type)
+qfo_encode_class (type_t *type, defspace_t *space)
 {
 	qfot_type_t *enc;
 	def_t      *def;
 
-	def = qfo_new_encoding (type, sizeof (enc->t.class));
+	def = qfo_new_encoding (type, sizeof (enc->class), space);
 	enc = D_POINTER (qfot_type_t, def);
-	ENC_STR (enc->t.class, type->t.class->name);
+	ENC_STR (enc->class, type->t.class->name);
+	return def;
+}
+
+static def_t *
+qfo_encode_alias (type_t *type, defspace_t *space)
+{
+	qfot_type_t *enc;
+	def_t      *def;
+	def_t      *type_def;
+	def_t      *full_def;
+
+	type_def = qfo_encode_type (type->t.alias.aux_type, space);
+	full_def = qfo_encode_type (type->t.alias.full_type, space);
+
+	def = qfo_new_encoding (type, sizeof (enc->alias), space);
+	enc = D_POINTER (qfot_type_t, def);
+	enc->alias.type = type->type;
+	ENC_DEF (enc->alias.aux_type, type_def);
+	ENC_DEF (enc->alias.full_type, full_def);
+	if (type->name) {
+		ENC_STR (enc->alias.name, type->name);
+	}
 	return def;
 }
 
 def_t *
-qfo_encode_type (type_t *type)
+qfo_encode_type (type_t *type, defspace_t *space)
 {
 	reloc_t    *relocs = 0;
 
 	static encode_f funcs[] = {
-		qfo_encode_none,	// ty_none
+		qfo_encode_basic,	// ty_basic
 		qfo_encode_struct,	// ty_struct
 		qfo_encode_struct,	// ty_union
 		qfo_encode_struct,	// ty_enum
 		qfo_encode_array,	// ty_array
 		qfo_encode_class,	// ty_class
+		qfo_encode_alias,	// ty_alias
 	};
 
 	if (type->type_def && type->type_def->external) {
@@ -274,11 +298,11 @@ qfo_encode_type (type_t *type)
 	}
 	if (type->type_def)
 		return type->type_def;
-	if (type->meta > ty_class)
+	if (type->meta >= sizeof (funcs) / (sizeof (funcs[0])))
 		internal_error (0, "bad type meta type");
 	if (!type->encoding)
 		type->encoding = type_get_encoding (type);
-	type->type_def = funcs[type->meta] (type);
+	type->type_def = funcs[type->meta] (type, space);
 	reloc_attach_relocs (relocs, &type->type_def->relocs);
 	return type->type_def;
 }

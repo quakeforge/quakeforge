@@ -239,8 +239,8 @@ get_mode (int width, int height, int depth)
 	return i;
 }
 
-void
-VID_Shutdown (void)
+static void
+VID_shutdown (void)
 {
 	Sys_MaskPrintf (SYS_VID, "VID_Shutdown\n");
 
@@ -357,6 +357,8 @@ VID_Init (byte *palette, byte *colormap)
 
 	if (svgalib_inited)
 		return;
+
+	Sys_RegisterShutdown (VID_shutdown);
 
 	err = vga_init ();
 	if (err)

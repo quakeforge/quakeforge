@@ -93,7 +93,7 @@ ColorCache_New (void)
 	colcache_t *cache;
 
 	ALLOC (16, colcache_t, colcache, cache);
-	cache->tab = Hash_NewTable (1023, 0, colcache_free_color, 0);
+	cache->tab = Hash_NewTable (1023, 0, colcache_free_color, 0, 0);
 	Hash_SetHashCompare (cache->tab, colcache_get_hash, colcache_compare);
 	return cache;
 }
@@ -147,18 +147,20 @@ ConvertImage (const tex_t *tex, const byte *pal)
 	colcache_t *cache;
 
 	pixels = tex->width * tex->height;
-	new = malloc (field_offset (tex_t, data[pixels]));
+	new = malloc (sizeof (tex_t) + pixels);
+	new->data = (byte *) (new + 1);
 	new->width = tex->width;
 	new->height = tex->height;
 	new->format = tex_palette;
 	new->palette = pal;
 	switch (tex->format) {
 		case tex_palette:
-		case tex_l:			// will not work as expected
-		case tex_a:			// will not work as expected
+		case tex_l:			// will not work as expected FIXME
+		case tex_a:			// will not work as expected FIXME
+		case tex_frgba:		// will not work as expected FIXME
 			memcpy (new->data, tex->data, pixels);
 			break;
-		case tex_la:		// will not work as expected
+		case tex_la:		// will not work as expected FIXME
 			for (i = 0; i < pixels; i++)
 				new->data[i] = tex->data[i * 2];
 			break;
