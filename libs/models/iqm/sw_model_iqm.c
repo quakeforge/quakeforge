@@ -53,12 +53,11 @@
 #include "mod_internal.h"
 #include "r_internal.h"
 
-static tex_t null_texture = {
-	2, 2, tex_palette, 0, {15, 15, 15, 15}
-};
+static byte null_data[] = {15, 15, 15, 15};
+static tex_t null_texture = { 2, 2, tex_palette, 1, 0, null_data };
 
 static void
-sw_iqm_clear (model_t *mod)
+sw_iqm_clear (model_t *mod, void *data)
 {
 	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
 	swiqm_t    *sw = (swiqm_t *) iqm->extra_data;
@@ -81,59 +80,6 @@ sw_iqm_clear (model_t *mod)
 	Mod_FreeIQM (iqm);
 }
 
-static byte
-convert_color (byte *rgb)
-{
-	//FIXME slow!
-	int         dist[3];
-	int         d, bestd = 256 * 256 * 3, bestc = -1;
-	int         i;
-
-	for (i = 0; i < 256; i++) {
-		VectorSubtract (vid.basepal + i * 3, rgb, dist);
-		d = DotProduct (dist, dist);
-		if (d < bestd) {
-			bestd = d;
-			bestc = i;
-		}
-	}
-	return bestc;
-}
-
-static tex_t *
-convert_tex (tex_t *tex)
-{
-	tex_t      *new;
-	int         pixels;
-	int         bpp = 3;
-	int         i;
-
-	pixels = tex->width * tex->height;
-	new = malloc (field_offset (tex_t, data[pixels]));
-	new->width = tex->width;
-	new->height = tex->height;
-	new->format = tex_palette;
-	new->palette = 0;
-	switch (tex->format) {
-		case tex_palette:
-		case tex_l:			// will not work as expected
-		case tex_a:			// will not work as expected
-			memcpy (new->data, tex->data, pixels);
-			break;
-		case tex_la:		// will not work as expected
-			for (i = 0; i < pixels; i++)
-				new->data[i] = tex->data[i * 2];
-			break;
-		case tex_rgba:
-			bpp = 4;
-		case tex_rgb:
-			for (i = 0; i < pixels; i++)
-				new->data[i] = convert_color (tex->data + i * bpp);
-			break;
-	}
-	return new;
-}
-
 static inline void
 convert_coord (byte *tc, int size)
 {
@@ -153,7 +99,7 @@ sw_iqm_load_textures (iqm_t *iqm)
 	bytes = (iqm->num_verts + 7) / 8;
 	done_verts = alloca (bytes);
 	memset (done_verts, 0, bytes);
-	sw->skins = malloc (iqm->num_meshes * sizeof (tex_t));
+	sw->skins = malloc (iqm->num_meshes * sizeof (tex_t *));
 	for (i = 0; i < iqm->num_meshes; i++) {
 		for (j = 0; j < i; j++) {
 			if (iqm->meshes[j].material == iqm->meshes[i].material) {
@@ -165,8 +111,8 @@ sw_iqm_load_textures (iqm_t *iqm)
 			continue;
 		dstring_copystr (str, iqm->text + iqm->meshes[i].material);
 		QFS_StripExtension (str->str, str->str);
-		if ((tex = LoadImage (va ("textures/%s", str->str))))
-			tex = sw->skins[i] = convert_tex (tex);
+		if ((tex = LoadImage (va (0, "textures/%s", str->str), 1)))
+			tex = sw->skins[i] = ConvertImage (tex, vid.basepal);
 		else
 			tex = sw->skins[i] = &null_texture;
 		for (j = 0; j < (int) iqm->meshes[i].num_triangles * 3; j++) {

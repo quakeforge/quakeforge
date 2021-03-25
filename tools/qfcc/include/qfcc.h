@@ -34,12 +34,13 @@
 */
 
 #include <stdio.h>
+#include "QF/darray.h"
 #include "QF/pr_comp.h"
 
 /** \defgroup qfcc_general General functions
 	\ingroup qfcc
 */
-//@{
+///@{
 
 typedef struct srcline_s srcline_t;
 struct srcline_s {
@@ -68,6 +69,11 @@ typedef struct pr_info_s {
 	struct defspace_s *entity_data;		///< entity field address space. no
 										///< data is stored in the progs file
 	struct defspace_s *type_data;		///< encoded type information.
+	struct defspace_s *debug_data;		///< additional debug data.
+	struct strpool_s *comp_file_set;
+	struct DARRAY_TYPE (const char *) comp_files;
+	const char *comp_dir;
+	const char *unit_name;
 
 	struct symtab_s *symtab;
 	struct symtab_s *entity_fields;
@@ -92,10 +98,11 @@ extern	pr_info_t	pr;
 
 #define GETSTR(s)			(pr.strings->strings + (s))
 #define D_var(t, d)			((d)->space->data[(d)->offset].t##_var)
+#define	D_DOUBLE(d)			(*(double *) ((d)->space->data + (d)->offset))
 #define	D_FLOAT(d)			D_var (float, d)
 #define	D_INT(d)			D_var (integer, d)
-#define	D_VECTOR(d)			D_var (vector, d)
-#define	D_QUAT(d)			D_var (quat, d)
+#define	D_VECTOR(d)			(&D_var (vector, d))
+#define	D_QUAT(d)			(&D_var (quat, d))
 #define	D_STRING(d)			D_var (string, d)
 #define	D_GETSTR(d)			GETSTR (D_STRING (d))
 #define	D_FUNCTION(d)		D_var (func, d)
@@ -107,7 +114,7 @@ extern	pr_info_t	pr;
 
 #define POINTER_OFS(s,p)	((pr_type_t *) (p) - (s)->data)
 
-const char *strip_path (const char *filename);
+const char *file_basename (const char *filename, int keepdot) __attribute__((pure));
 
 extern FILE *qc_yyin;
 extern FILE *qp_yyin;
@@ -132,6 +139,6 @@ char *fix_backslash (char *path);
 */
 #define RUP(x,a) (((x) + ((a) - 1)) & ~((a) - 1))
 
-//@}
+///@}
 
 #endif//__qfcc_h

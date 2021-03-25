@@ -72,7 +72,8 @@ do_fb_skin (glskin_t *s)
 {
 	int         size = s->tex->width * s->tex->height;
 
-	s->fb_tex = realloc (s->fb_tex, field_offset(tex_t, data[size]));
+	s->fb_tex = realloc (s->fb_tex, sizeof (tex_t) + size);
+	s->fb_tex->data = (byte *) (s->fb_tex + 1);
 	s->fb_tex->width = s->tex->width;
 	s->fb_tex->height = s->tex->height;
 	s->fb_tex->format = tex_palette;
@@ -87,7 +88,8 @@ gl_Skin_SetPlayerSkin (int width, int height, const byte *data)
 	glskin_t   *s;
 
 	s = &player_skin;
-	s->tex = realloc (s->tex, field_offset(tex_t, data[size]));
+	s->tex = realloc (s->tex, sizeof (tex_t) + size);
+	s->tex->data = (byte *) (s->tex + 1);
 	s->tex->width = width;
 	s->tex->height = height;
 	s->tex->format = tex_palette;

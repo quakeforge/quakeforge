@@ -48,9 +48,10 @@
 #include "QF/va.h"
 
 #include "compat.h"
-#include "server.h"
-#include "sv_qtv.h"
-#include "sv_recorder.h"
+
+#include "qw/include/server.h"
+#include "qw/include/sv_qtv.h"
+#include "qw/include/sv_recorder.h"
 
 typedef struct {
 	netchan_t   netchan;
@@ -193,9 +194,9 @@ qtv_prespawn_f (sv_qtv_t *proxy)
 		buf = 0;
 
 	if (buf == sv.num_signon_buffers - 1)
-		command = va ("cmd spawn %i 0\n", svs.spawncount);
+		command = va (0, "cmd spawn %i 0\n", svs.spawncount);
 	else
-		command = va ("cmd prespawn %i %i\n", svs.spawncount, buf + 1);
+		command = va (0, "cmd prespawn %i %i\n", svs.spawncount, buf + 1);
 	size = (3 + sv.signon_buffer_size[buf]) + (1 + strlen (command) + 1);
 
 	msg = MSG_ReliableCheckBlock (&proxy->backbuf, size);
@@ -533,7 +534,7 @@ SV_qtvChanging (void)
 	int         i, len;
 	const char *msg;
 
-	msg = va ("%cchanging", qtv_stringcmd);
+	msg = va (0, "%cchanging", qtv_stringcmd);
 	len = strlen (msg) + 1;
 	for (i = 0; i < MAX_PROXIES; i++) {
 		proxy = proxies + i;
@@ -554,7 +555,7 @@ SV_qtvReconnect (void)
 	int         i, len;
 	const char *msg;
 
-	msg = va ("%creconnect", qtv_stringcmd);
+	msg = va (0, "%creconnect", qtv_stringcmd);
 	len = strlen (msg) + 1;
 	for (i = 0; i < MAX_PROXIES; i++) {
 		proxy = proxies + i;

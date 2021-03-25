@@ -43,12 +43,18 @@
 #include "QF/alloc.h"
 #include "QF/pr_comp.h"
 
-#include "debug.h"
-#include "diagnostic.h"
-#include "expr.h"
-#include "qfcc.h"
-#include "strpool.h"
-#include "value.h"
+#include "tools/qfcc/include/debug.h"
+#include "tools/qfcc/include/def.h"
+#include "tools/qfcc/include/defspace.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/emit.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/struct.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
 int         lineno_base;
 
@@ -77,6 +83,17 @@ pop_source_file (void)
 	tmp = pr.srcline_stack;
 	pr.srcline_stack = tmp->next;
 	FREE (srclines, tmp);
+}
+
+#define Sys_Error(fmt...) internal_error(0, fmt)
+void
+add_source_file (const char *file)
+{
+	pr.source_file = ReuseString (file);
+	if (!strpool_findstr (pr.comp_file_set, file)) {
+		strpool_addstr (pr.comp_file_set, file);
+		DARRAY_APPEND (&pr.comp_files, save_string (file));
+	}
 }
 
 void
@@ -111,7 +128,7 @@ line_info (char *text)
 	while (*p && *p != '\n')	// ignore rest
 		p++;
 	pr.source_line = line - 1;
-	pr.source_file = ReuseString (strip_path (str));
+	add_source_file (str);
 }
 
 pr_lineno_t *
@@ -124,4 +141,68 @@ new_lineno (void)
 	}
 	memset (&pr.linenos[pr.num_linenos], 0, sizeof (pr_lineno_t));
 	return &pr.linenos[pr.num_linenos++];
+}
+
+static void
+emit_unit_name (def_t *def, void *data, int index)
+{
+	if (!is_string (def->type)) {
+		internal_error (0, "%s: expected string def", __FUNCTION__);
+	}
+	EMIT_STRING (def->space, D_STRING (def), pr.unit_name);
+}
+
+static void
+emit_basedir (def_t *def, void *data, int index)
+{
+	if (!is_string (def->type)) {
+		internal_error (0, "%s: expected string def", __FUNCTION__);
+	}
+	EMIT_STRING (def->space, D_STRING (def), pr.comp_dir);
+}
+
+static void
+emit_num_files (def_t *def, void *data, int index)
+{
+	if (!is_integer (def->type)) {
+		internal_error (0, "%s: expected int def", __FUNCTION__);
+	}
+	D_INT (def) = pr.comp_files.size;
+}
+
+static void
+emit_files_item (def_t *def, void *data, int index)
+{
+	if (!is_array (def->type) || !is_string (def->type->t.array.type)) {
+		internal_error (0, "%s: expected array of string def", __FUNCTION__);
+	}
+	if ((unsigned) index >= pr.comp_files.size) {
+		internal_error (0, "%s: out of bounds index: %d %zd",
+						__FUNCTION__, index, pr.comp_files.size);
+	}
+	EMIT_STRING (def->space, D_STRING (def), pr.comp_files.a[index]);
+}
+
+static def_t *
+emit_compunit (const char *modname)
+{
+	static struct_def_t compunit_struct[] = {
+		{"unit_name",	&type_string,	emit_unit_name},
+		{"basedir",		&type_string,	emit_basedir},
+		{"num_files",	&type_integer,	emit_num_files},
+		{"files",		0,				emit_files_item},
+		{0, 0}
+	};
+	int         count = pr.comp_files.size;
+
+	pr.unit_name = modname;
+	compunit_struct[3].type = array_type (&type_string, count);
+	return emit_structure (".compile_unit", 's', compunit_struct, 0, &pr,
+						   pr.debug_data, sc_static);
+}
+
+void
+debug_finish_module (const char *modname)
+{
+	emit_compunit (modname);
 }

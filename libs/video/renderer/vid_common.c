@@ -34,6 +34,8 @@
 #include "mod_internal.h"
 #include "r_internal.h"
 
+viddef_t    vid;					// global video state
+
 vid_render_data_t vid_render_data = {
 	&vid, &r_refdef, &scr_vrect,
 	0, 0, 0,

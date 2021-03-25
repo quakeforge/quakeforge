@@ -39,6 +39,7 @@
 #endif
 
 #include "QF/cvar.h"
+#include "QF/darray.h"
 #include "QF/iqm.h"
 #include "QF/model.h"
 #include "QF/qendian.h"
@@ -48,16 +49,13 @@
 #include "QF/plugin/vid_render.h"
 
 #include "compat.h"
+#include "mod_internal.h"
 
 vid_model_funcs_t *mod_funcs;
 
-model_t    *loadmodel;
-char       *loadname;					// for hunk tags
-
 #define	MOD_BLOCK	16					// allocate 16 models at a time
-model_t   **mod_known;
-int         mod_numknown;
-int         mod_maxknown;
+static struct DARRAY_TYPE (model_t *) mod_known = {0, 0, MOD_BLOCK};
+static size_t mod_numknown;
 
 VISIBLE texture_t  *r_notexture_mip;
 
@@ -75,7 +73,6 @@ Mod_Init (void)
 	int		m, x, y;
 	int		mip0size = 16*16, mip1size = 8*8, mip2size = 4*4, mip3size = 2*2;
 
-	memset (mod_novis, 0xff, sizeof (mod_novis));
 	r_notexture_mip = Hunk_AllocName (sizeof (texture_t) + mip0size + mip1size
 									  + mip2size + mip3size, "notexture");
 
@@ -118,45 +115,46 @@ Mod_Init_Cvars (void)
 VISIBLE void
 Mod_ClearAll (void)
 {
-	int         i;
+	size_t      i;
 	model_t   **mod;
 
-	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++) {
+	for (i = 0, mod = mod_known.a; i < mod_numknown; i++, mod++) {
+		//FIXME this seems to be correct but need to double check the behavior
+		//with alias models
 		if (!(*mod)->needload && (*mod)->clear) {
-			(*mod)->clear (*mod);
-		} else {
-			if ((*mod)->type != mod_alias)
-				(*mod)->needload = true;
-			if ((*mod)->type == mod_sprite)
-				(*mod)->cache.data = 0;
+			(*mod)->clear (*mod, (*mod)->data);
 		}
+		if ((*mod)->type != mod_alias)
+			(*mod)->needload = true;
+		if ((*mod)->type == mod_sprite)
+			(*mod)->cache.data = 0;
 	}
 }
 
 model_t *
 Mod_FindName (const char *name)
 {
-	int         i;
+	size_t      i;
 	model_t   **mod;
 
 	if (!name[0])
 		Sys_Error ("Mod_FindName: empty name");
 
 	// search the currently loaded models
-	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++)
-		if (!strcmp ((*mod)->name, name))
+	for (i = 0, mod = mod_known.a; i < mod_numknown; i++, mod++)
+		if (!strcmp ((*mod)->path, name))
 			break;
 
 	if (i == mod_numknown) {
-		if (mod_numknown == mod_maxknown) {
-			mod_maxknown += MOD_BLOCK;
-			mod_known = realloc (mod_known, mod_maxknown * sizeof (model_t *));
-			mod = mod_known + mod_numknown;
-			*mod = calloc (MOD_BLOCK, sizeof (model_t));
-			for (i = 1; i < MOD_BLOCK; i++)
-				mod[i] = mod[0] + i;
+		if (mod_numknown == mod_known.size) {
+			model_t    *block = calloc (MOD_BLOCK, sizeof (model_t));
+			for (i = 0; i < MOD_BLOCK; i++) {
+				DARRAY_APPEND (&mod_known, &block[i]);
+			}
+			mod = &mod_known.a[mod_numknown];
 		}
-		strcpy ((*mod)->name, name);
+		memset ((*mod), 0, sizeof (model_t));
+		strncpy ((*mod)->path, name, sizeof (*mod)->path - 1);
 		(*mod)->needload = true;
 		mod_numknown++;
 		Cache_Add (&(*mod)->cache, *mod, Mod_CallbackLoad);
@@ -171,17 +169,17 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 	uint32_t   *buf;
 
 	// load the file
-	buf = (uint32_t *) QFS_LoadFile (QFS_FOpenFile (mod->name), 0);
+	buf = (uint32_t *) QFS_LoadFile (QFS_FOpenFile (mod->path), 0);
 	if (!buf) {
 		if (crash)
-			Sys_Error ("Mod_LoadModel: %s not found", mod->name);
+			Sys_Error ("Mod_LoadModel: %s not found", mod->path);
 		return NULL;
 	}
 
-	if (loadname)
-		free (loadname);
-	loadname = QFS_FileBase (mod->name);
-	loadmodel = mod;
+	char *name = QFS_FileBase (mod->path);
+	strncpy (mod->name, name, sizeof (mod->name - 1));
+	mod->name[sizeof (mod->name) - 1] = 0;
+	free (name);
 
 	// fill it in
 	mod->vpath = qfs_foundfile.vpath;
@@ -202,17 +200,17 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 			break;
 		case IDHEADER_MDL:			// Type 6: Quake 1 .mdl
 		case HEADER_MDL16:			// QF Type 6 extended for 16bit precision
-			if (strequal (mod->name, "progs/grenade.mdl")) {
+			if (strequal (mod->path, "progs/grenade.mdl")) {
 				mod->fullbright = 0;
 				mod->shadow_alpha = 255;
-			} else if (strnequal (mod->name, "progs/flame", 11)
-					   || strnequal (mod->name, "progs/bolt", 10)) {
+			} else if (strnequal (mod->path, "progs/flame", 11)
+					   || strnequal (mod->path, "progs/bolt", 10)) {
 				mod->fullbright = 1;
 				mod->shadow_alpha = 0;
 			}
-			if (strnequal (mod->name, "progs/v_", 8)) {
+			if (strnequal (mod->path, "progs/v_", 8)) {
 				mod->min_light = 0.12;
-			} else if (strequal (mod->name, "progs/player.mdl")) {
+			} else if (strequal (mod->path, "progs/player.mdl")) {
 				mod->min_light = 0.04;
 			}
 			if (mod_funcs)
@@ -231,10 +229,6 @@ Mod_RealLoadModel (model_t *mod, qboolean crash, cache_allocator_t allocator)
 		default:					// Version 29: Quake 1 .bsp
 									// Version 38: Quake 2 .bsp
 			Mod_LoadBrushModel (mod, buf);
-
-			if (gl_textures_external && gl_textures_external->int_val
-				&& mod_funcs && mod_funcs->Mod_LoadExternalTextures)
-				mod_funcs->Mod_LoadExternalTextures (mod);
 			break;
 	}
 	free (buf);
@@ -306,12 +300,12 @@ Mod_TouchModel (const char *name)
 VISIBLE void
 Mod_Print (void)
 {
-	int			i;
+	size_t      i;
 	model_t	  **mod;
 
 	Sys_Printf ("Cached models:\n");
-	for (i = 0, mod = mod_known; i < mod_numknown; i++, mod++) {
-		Sys_Printf ("%8p : %s\n", (*mod)->cache.data, (*mod)->name);
+	for (i = 0, mod = mod_known.a; i < mod_numknown; i++, mod++) {
+		Sys_Printf ("%8p : %s\n", (*mod)->cache.data, (*mod)->path);
 	}
 }
 

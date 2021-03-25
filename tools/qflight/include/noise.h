@@ -31,12 +31,12 @@
 /** \defgroup qflight_noise Light noise functions.
 	\ingroup qflight
 */
-//@{
+///@{
 
-float noise3d (vec3_t v, int num);
-float noiseXYZ (float x, float y, float z, int num);
-float noise_scaled (vec3_t v, float s, int num);
-float noise_perlin (vec3_t v, float p, int num);
+float noise3d (vec3_t v, int num) __attribute__((pure));
+float noiseXYZ (float x, float y, float z, int num) __attribute__((const));
+float noise_scaled (vec3_t v, float s, int num) __attribute__((pure));
+float noise_perlin (vec3_t v, float p, int num) __attribute__((pure));
 void snap_vector (vec3_t v_old, vec3_t v_new, float scale);
 
-//@}
+///@}

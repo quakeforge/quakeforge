@@ -3,7 +3,7 @@ AC_PREREQ(2.61)
 
 dnl This is the only place where the package name and version appear
 AC_INIT([QuakeForge], m4_esyscmd([config.d/git-version-gen --prefix '' .tarball-version]))
-AM_INIT_AUTOMAKE([foreign])
+AM_INIT_AUTOMAKE([foreign subdir-objects])
 
 dnl LT_INIT messes with CFLAGS (evil bastard)
 if test "x${CFLAGS-unset}" = xunset; then
@@ -63,6 +63,7 @@ m4_include(config.d/compression.m4)
 m4_include(config.d/mgl.m4)
 m4_include(config.d/fbdev.m4)
 m4_include(config.d/svga.m4)
+m4_include(config.d/vulkan.m4)
 m4_include(config.d/x11.m4)
 m4_include(config.d/sdl.m4)
 

@@ -36,8 +36,8 @@
 void glsl_lightmap_init (void);
 void glsl_R_BuildLightmaps (struct model_s **models, int num_models);
 void glsl_R_CalcLightmaps (void);
-extern void (*glsl_R_BuildLightMap) (msurface_t *surf);
-int  glsl_R_LightmapTexture (void);
+extern void (*glsl_R_BuildLightMap) (mod_brush_t *brush, msurface_t *surf);
+int  glsl_R_LightmapTexture (void) __attribute__((pure));
 void glsl_R_FlushLightmaps (void);
 
 #endif//__QF_GLSL_lightmap_h

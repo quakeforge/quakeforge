@@ -64,31 +64,31 @@ typedef struct {
 static bi_hashtab_t *
 table_new (hash_resources_t *res)
 {
-	PR_RESNEW (bi_hashtab_t, res->table_map);
+	return PR_RESNEW (res->table_map);
 }
 
 static void
 table_free (hash_resources_t *res, bi_hashtab_t *table)
 {
-	PR_RESFREE (bi_hashtab_t, res->table_map, table);
+	PR_RESFREE (res->table_map, table);
 }
 
 static void
 table_reset (hash_resources_t *res)
 {
-	PR_RESRESET (bi_hashtab_t, res->table_map);
+	PR_RESRESET (res->table_map);
 }
 
 static inline bi_hashtab_t *
 table_get (hash_resources_t *res, int index)
 {
-	PR_RESGET(res->table_map, index);
+	return PR_RESGET(res->table_map, index);
 }
 
-static inline int
+static inline int __attribute__((pure))
 table_index (hash_resources_t *res, bi_hashtab_t *table)
 {
-	PR_RESINDEX(res->table_map, table);
+	return PR_RESINDEX(res->table_map, table);
 }
 
 static const char *
@@ -98,6 +98,7 @@ bi_get_key (const void *key, void *_ht)
 	PR_RESET_PARAMS (ht->pr);
 	P_INT (ht->pr, 0) = (intptr_t) (key);
 	P_INT (ht->pr, 1) = ht->ud;
+	ht->pr->pr_argc = 2;
 	PR_ExecuteProgram (ht->pr, ht->gk);
 	return PR_GetString (ht->pr, R_STRING (ht->pr));
 }
@@ -109,6 +110,7 @@ bi_get_hash (const void *key, void *_ht)
 	PR_RESET_PARAMS (ht->pr);
 	P_INT (ht->pr, 0) = (intptr_t) (key);
 	P_INT (ht->pr, 1) = ht->ud;
+	ht->pr->pr_argc = 2;
 	PR_ExecuteProgram (ht->pr, ht->gh);
 	return R_INT (ht->pr);
 }
@@ -121,6 +123,7 @@ bi_compare (const void *key1, const void *key2, void *_ht)
 	P_INT (ht->pr, 0) = (intptr_t) (key1);
 	P_INT (ht->pr, 1) = (intptr_t) (key2);
 	P_INT (ht->pr, 2) = ht->ud;
+	ht->pr->pr_argc = 3;
 	PR_ExecuteProgram (ht->pr, ht->cmp);
 	return R_INT (ht->pr);
 }
@@ -132,6 +135,7 @@ bi_free (void *key, void *_ht)
 	PR_RESET_PARAMS (ht->pr);
 	P_INT (ht->pr, 0) = (intptr_t) (key);
 	P_INT (ht->pr, 1) = ht->ud;
+	ht->pr->pr_argc = 2;
 	PR_ExecuteProgram (ht->pr, ht->f);
 }
 
@@ -158,7 +162,7 @@ bi_Hash_NewTable (progs_t *pr)
 
 	gk = ht->gk ? bi_get_key : 0;
 	f = ht->f ? bi_free : 0;
-	ht->tab = Hash_NewTable (tsize, gk, f, ht);
+	ht->tab = Hash_NewTable (tsize, gk, f, ht, pr->hashlink_freelist);
 	R_INT (pr) = table_index (res, ht);
 }
 

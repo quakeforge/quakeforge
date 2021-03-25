@@ -46,11 +46,12 @@
 #include "QF/sound.h" // FIXME: DEFAULT_SOUND_PACKET_*
 #include "QF/sys.h"
 
-#include "qw/bothdefs.h"
 #include "compat.h"
-#include "server.h"
-#include "sv_progs.h"
-#include "sv_recorder.h"
+
+#include "qw/bothdefs.h"
+#include "qw/include/server.h"
+#include "qw/include/sv_progs.h"
+#include "qw/include/sv_recorder.h"
 
 #define CHAN_AUTO   0
 #define CHAN_WEAPON 1
@@ -148,6 +149,20 @@ SV_EndRedirect (void)
 }
 
 #define	MAXPRINTMSG	4096
+static int
+find_userid (const char *name)
+{
+	int         i;
+
+	for (i = 0; i < MAX_CLIENTS; i++) {
+		if (!svs.clients[i].state)
+			continue;
+		if (!strcmp (svs.clients[i].name, name)) {
+			return svs.clients[i].userid;
+		}
+	}
+	return 0;
+}
 
 /*
 	SV_Printf
@@ -158,10 +173,11 @@ SV_EndRedirect (void)
 void
 SV_Print (const char *fmt, va_list args)
 {
+	static dstring_t *premsg;
+	static dstring_t *msg;
+	static dstring_t *msg2;
 	static int  pending = 0;			// partial line being printed
-	char		premsg[MAXPRINTMSG];
-	unsigned char msg[MAXPRINTMSG];
-	char        msg2[MAXPRINTMSG];
+
 	char        msg3[MAXPRINTMSG];
 
 	time_t      mytime = 0;
@@ -169,50 +185,42 @@ SV_Print (const char *fmt, va_list args)
 	qboolean    timestamps = false;
 
 	char        *in;
-	unsigned char *out;
 
-	vsnprintf (premsg, sizeof (premsg), fmt, args);
-	in = premsg;
-	out = msg;
+	if (!premsg) {
+		premsg = dstring_newstr ();
+		msg = dstring_new ();
+		msg2 = dstring_new ();
+	}
+	dstring_clearstr (msg);
 
-	if (!*premsg)
+	dvsprintf (premsg, fmt, args);
+	in = premsg->str;
+
+	if (!*premsg->str)
 		return;
 	// expand FFnickFF to nick <userid>
 	do {
-		switch ((byte) *in) {
-			case 0xFF: {
-				char *end = strchr (in + 1, 0xFF);
-				int userid = 0;
-				int len;
-				int i;
-
-				if (!end)
-					end = in + strlen (in);
-				*end = '\0';
-				for (i = 0; i < MAX_CLIENTS; i++) {
-					if (!svs.clients[i].state)
-						continue;
-					if (!strcmp (svs.clients[i].name, in + 1)) {
-						userid = svs.clients[i].userid;
-						break;
-					}
-				}
-				len = snprintf ((char *) out, sizeof (msg) - (out - msg),
-								"%s <%d>", in + 1, userid);
-				out += len;
-				in = end + 1;
-				break;
+		char *beg = strchr (in, 0xFF);
+		if (beg) {
+			char *name = beg + 1;
+			char *end = strchr (name, 0xFF);
+			if (!end) {
+				end = beg + strlen (name);
 			}
-			default:
-				*out++ = *in++;
+			*end = 0;
+			dstring_appendsubstr (msg, in, beg - in);
+			dasprintf (msg, "%s <%d>", name, find_userid (name));
+			in = end + 1;
+		} else {
+			dstring_appendstr (msg, in);
+			break;
 		}
-	} while (sizeof (msg) - (out - msg) > 0 && *in);
-	*out = '\0';
+	} while (*in);
 
 	if (sv_redirected) {				// Add to redirected message
-		dstring_appendstr (&outputbuf, (char *) msg);
+		dstring_appendstr (&outputbuf, msg->str);
 	}
-	if (*msg && !con_printf_no_log) {
+	if (*msg->str && !con_printf_no_log) {
 		// We want to output to console and maybe logfile
 		if (sv_timestamps && sv_timefmt && sv_timefmt->string
 			&& sv_timestamps->int_val && !pending)
@@ -223,17 +231,17 @@ SV_Print (const char *fmt, va_list args)
 			local = localtime (&mytime);
 			strftime (msg3, sizeof (msg3), sv_timefmt->string, local);
 
-			snprintf (msg2, sizeof (msg2), "%s%s", msg3, msg);
+			dsprintf (msg2, "%s%s", msg3, msg->str);
 		} else {
-			snprintf (msg2, sizeof (msg2), "%s", msg);
+			dsprintf (msg2, "%s", msg->str);
 		}
-		if (msg2[strlen (msg2) - 1] != '\n') {
+		if (msg2->str[strlen (msg2->str) - 1] != '\n') {
 			pending = 1;
 		} else {
 			pending = 0;
 		}
 
-		Con_Printf ("%s", msg2);		// also echo to debugging console
+		Con_Printf ("%s", msg2->str);		// also echo to debugging console
 	}
 }
 
@@ -289,12 +297,13 @@ SV_Multicast (const vec3_t origin, int to)
 	int         leafnum, j;
 	mleaf_t    *leaf;
 	qboolean    reliable;
+	mod_brush_t *brush = &sv.worldmodel->brush;
 
 	leaf = Mod_PointInLeaf (origin, sv.worldmodel);
 	if (!leaf)
 		leafnum = 0;
 	else
-		leafnum = leaf - sv.worldmodel->leafs;
+		leafnum = leaf - sv.worldmodel->brush.leafs;
 
 	reliable = false;
 
@@ -308,13 +317,13 @@ SV_Multicast (const vec3_t origin, int to)
 	case MULTICAST_PHS_R:
 		reliable = true;			// intentional fallthrough
 	case MULTICAST_PHS:
-		mask = sv.phs + leafnum * 4 * ((sv.worldmodel->numleafs + 31) >> 5);
+		mask = sv.phs + leafnum * 4 * ((brush->numleafs + 31) >> 5);
 		break;
 
 	case MULTICAST_PVS_R:
 		reliable = true;			// intentional fallthrough
 	case MULTICAST_PVS:
-		mask = sv.pvs + leafnum * 4 * ((sv.worldmodel->numleafs + 31) >> 5);
+		mask = sv.pvs + leafnum * 4 * ((brush->numleafs + 31) >> 5);
 		break;
 
 	default:
@@ -339,7 +348,7 @@ SV_Multicast (const vec3_t origin, int to)
 								sv.worldmodel);
 		if (leaf) {
 			// -1 is because pvs rows are 1 based, not 0 based like leafs
-			leafnum = leaf - sv.worldmodel->leafs - 1;
+			leafnum = leaf - brush->leafs - 1;
 			if (!(mask[leafnum >> 3] & (1 << (leafnum & 7)))) {
 //				SV_Printf ("supressed multicast\n");
 				continue;

@@ -39,22 +39,30 @@ enum storage_class_e;
 /**	\defgroup qfcc_symtab Symbol Table Management
 	\ingroup qfcc
 */
-//@{
+///@{
 
 typedef enum vis_e {
 	vis_public,
 	vis_protected,
 	vis_private,
+	vis_anonymous,
 } vis_t;
 
 typedef enum {
+	sy_name,					///< just a name (referent tbd)
 	sy_var,						///< symbol refers to a variable
 	sy_const,					///< symbol refers to a constant
 	sy_type,					///< symbol refers to a type
 	sy_expr,					///< symbol refers to an expression
 	sy_func,					///< symbol refers to a function
 	sy_class,					///< symbol refers to a class
+	sy_convert,					///< symbol refers to a conversion function
 } sy_type_e;
+
+typedef struct symconv_s {
+	struct expr_s *(*conv) (struct symbol_s *symbol, void *data);
+	void       *data;
+} symconv_t;
 
 typedef struct symbol_s {
 	struct symbol_s *next;		///< chain of symbols in symbol table
@@ -70,6 +78,7 @@ typedef struct symbol_s {
 		struct ex_value_s *value;	///< sy_const
 		struct expr_s *expr;		///< sy_expr
 		struct function_s *func;	///< sy_func
+		symconv_t   convert;		///< sy_convert
 	} s;
 } symbol_t;
 
@@ -90,9 +99,10 @@ typedef struct symtab_s {
 	symbol_t   *symbols;		///< chain of symbols in this table
 	symbol_t  **symtail;		///< keep chain in declaration order
 	struct defspace_s *space;	///< storage for vars in scope symtabs
+	struct class_s *class;		///< owning class if ivar scope
 } symtab_t;
 
-const char *symtype_str (sy_type_e type);
+const char *symtype_str (sy_type_e type) __attribute__((const));
 
 /**	Create a new, empty named symbol.
 
@@ -234,6 +244,6 @@ symtab_t *symtab_flat_copy (symtab_t *symtab, symtab_t *parent);
 symbol_t *make_symbol (const char *name, struct type_s *type,
 					   struct defspace_s *space, enum storage_class_e storage);
 
-//@}
+///@}
 
 #endif//__symtab_h

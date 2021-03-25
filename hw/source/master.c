@@ -121,7 +121,7 @@ FL_Add (filter_t * filter)
 	filter_list = filter;
 }
 
-static filter_t *
+static __attribute__((pure)) filter_t *
 FL_Find (netadr_t adr)
 {
 	filter_t   *filter;
@@ -209,7 +209,7 @@ SVL_Add (server_t *sv)
 	sv_list = sv;
 }
 
-static server_t *
+static __attribute__((pure)) server_t *
 SVL_Find (netadr_t adr)
 {
 	server_t   *sv;
@@ -469,13 +469,10 @@ SV_WriteFilterList (void)
 }
 
 static void
-SV_Shutdown (void)
+SV_Shutdown (void *data)
 {
-	NET_Shutdown ();
-
 	// write filter list
 	SV_WriteFilterList ();
-	Con_Shutdown ();
 }
 
 static void
@@ -525,7 +522,7 @@ main (int argc, const char **argv)
 
 	mst_cbuf = Cbuf_New (&id_interp);
 
-	Sys_RegisterShutdown (SV_Shutdown);
+	Sys_RegisterShutdown (SV_Shutdown, 0);
 
 	Sys_Init ();
 

@@ -26,8 +26,8 @@
 */
 
 
-#ifndef _KEYS_H
-#define _KEYS_H
+#ifndef __QF_keys_h
+#define __QF_keys_h
 
 #ifndef __QFCC__
 # include "QF/qtypes.h"
@@ -39,7 +39,7 @@
 /** \defgroup input_keybinding Key Binding Sub-system
 	\ingroup input
 */
-//@{
+///@{
 
 /// these are the key numbers that should be passed to Key_Event
 typedef enum {
@@ -227,77 +227,110 @@ typedef enum {
 
 	/* Numeric keypad */
 	QFK_KP0			= 256,
-	QFK_KP1			= 257,
-	QFK_KP2			= 258,
-	QFK_KP3			= 259,
-	QFK_KP4			= 260,
-	QFK_KP5			= 261,
-	QFK_KP6			= 262,
-	QFK_KP7			= 263,
-	QFK_KP8			= 264,
-	QFK_KP9			= 265,
-	QFK_KP_PERIOD		= 266,
-	QFK_KP_DIVIDE		= 267,
-	QFK_KP_MULTIPLY	= 268,
-	QFK_KP_MINUS		= 269,
-	QFK_KP_PLUS		= 270,
-	QFK_KP_ENTER		= 271,
-	QFK_KP_EQUALS		= 272,
+	QFK_KP1,
+	QFK_KP2,
+	QFK_KP3,
+	QFK_KP4,
+	QFK_KP5,
+	QFK_KP6,
+	QFK_KP7,
+	QFK_KP8,
+	QFK_KP9,
+	QFK_KP_PERIOD,
+	QFK_KP_DIVIDE,
+	QFK_KP_MULTIPLY,
+	QFK_KP_MINUS,
+	QFK_KP_PLUS,
+	QFK_KP_ENTER,
+	QFK_KP_EQUALS,
 
 	/* Arrows + Home/End pad */
-	QFK_UP			= 273,
-	QFK_DOWN			= 274,
-	QFK_RIGHT			= 275,
-	QFK_LEFT			= 276,
-	QFK_INSERT		= 277,
-	QFK_HOME			= 278,
-	QFK_END			= 279,
-	QFK_PAGEUP		= 280,
-	QFK_PAGEDOWN		= 281,
+	QFK_UP,
+	QFK_DOWN,
+	QFK_RIGHT,
+	QFK_LEFT,
+	QFK_INSERT,
+	QFK_HOME,
+	QFK_END,
+	QFK_PAGEUP,
+	QFK_PAGEDOWN,
 
 	/* Function keys */
-	QFK_F1			= 282,
-	QFK_F2			= 283,
-	QFK_F3			= 284,
-	QFK_F4			= 285,
-	QFK_F5			= 286,
-	QFK_F6			= 287,
-	QFK_F7			= 288,
-	QFK_F8			= 289,
-	QFK_F9			= 290,
-	QFK_F10			= 291,
-	QFK_F11			= 292,
-	QFK_F12			= 293,
-	QFK_F13			= 294,
-	QFK_F14			= 295,
-	QFK_F15			= 296,
+	QFK_F1,
+	QFK_F2,
+	QFK_F3,
+	QFK_F4,
+	QFK_F5,
+	QFK_F6,
+	QFK_F7,
+	QFK_F8,
+	QFK_F9,
+	QFK_F10,
+	QFK_F11,
+	QFK_F12,
+	QFK_F13,
+	QFK_F14,
+	QFK_F15,
+	QFK_F16,
+	QFK_F17,
+	QFK_F18,
+	QFK_F19,
+	QFK_F20,
+	QFK_F21,
+	QFK_F22,
+	QFK_F23,
+	QFK_F24,
+	QFK_F25,
+	QFK_F26,
+	QFK_F27,
+	QFK_F28,
+	QFK_F29,
+	QFK_F30,
+	QFK_F31,
+	QFK_F32,
+	QFK_F33,
+	QFK_F34,
+	QFK_F35,
+	QFK_F36,
+	QFK_F37,
+	QFK_F38,
+	QFK_F39,
+	QFK_F40,
+	QFK_F41,
+	QFK_F42,
+	QFK_F43,
+	QFK_F44,
+	QFK_F45,
+	QFK_F46,
+	QFK_F47,
+	QFK_F48,
 
 	/* Key state modifier keys */
-	QFK_NUMLOCK		= 300,
-	QFK_CAPSLOCK		= 301,
-	QFK_SCROLLOCK		= 302,
-	QFK_RSHIFT		= 303,
-	QFK_LSHIFT		= 304,
-	QFK_RCTRL			= 305,
-	QFK_LCTRL			= 306,
-	QFK_RALT			= 307,
-	QFK_LALT			= 308,
-	QFK_RMETA			= 309,
-	QFK_LMETA			= 310,
-	QFK_LSUPER		= 311,		/* Left "Windows" key */
-	QFK_RSUPER		= 312,		/* Right "Windows" key */
-	QFK_MODE			= 313,		/* "Alt Gr" key */
-	QFK_COMPOSE		= 314,		/* Multi-key compose key */
+	QFK_NUMLOCK,
+	QFK_CAPSLOCK,
+	QFK_SCROLLOCK,
+	QFK_RSHIFT,
+	QFK_LSHIFT,
+	QFK_RCTRL,
+	QFK_LCTRL,
+	QFK_RALT,
+	QFK_LALT,
+	QFK_RMETA,
+	QFK_LMETA,
+	QFK_LSUPER,		/* Left "Windows" key */
+	QFK_RSUPER,		/* Right "Windows" key */
+	QFK_MODE,		/* "Alt Gr" key */
+	QFK_COMPOSE,		/* Multi-key compose key */
 
 	/* Miscellaneous function keys */
-	QFK_HELP			= 315,
-	QFK_PRINT			= 316,
-	QFK_SYSREQ		= 317,
-	QFK_BREAK			= 318,
-	QFK_MENU			= 319,
-	QFK_POWER			= 320,		/* Power Macintosh power key */
-	QFK_EURO			= 321,		/* Some european keyboards */
-	QFK_UNDO			= 322,
+	QFK_HELP,
+	QFK_PRINT,
+	QFK_SYSREQ,
+	QFK_BREAK,
+	QFK_MENU,
+	QFK_POWER,		/* Power Macintosh power key */
+	QFK_EURO,		/* Some european keyboards */
+	QFK_UNDO,
 
 	/* Japanese keys */
 	QFK_KANJI,						/* Kanji, Kanji convert */
@@ -544,7 +577,7 @@ void Key_Init_Cvars (void);
 	\param imt_name	The name of the imt to find. Case insensitive.
 	\return			The named imt, or null if not found.
 */
-imt_t *Key_FindIMT (const char *imt_name);
+imt_t *Key_FindIMT (const char *imt_name) __attribute__((pure));
 
 /**	Create a new imt and attach it to the specified keydest target.
 
@@ -599,7 +632,7 @@ void Key_ClearStates (void);
 	\param key		The key for which to get the binding.
 	\return			The command string bound to the key, or null if unbound.
 */
-const char *Key_GetBinding (imt_t *imt, knum_t key);
+const char *Key_GetBinding (imt_t *imt, knum_t key) __attribute__((pure));
 
 /** Bind a command string to a key in the specified input mapping table.
 
@@ -639,7 +672,7 @@ void Key_KeydestCallback (keydest_callback_t *callback);
 	\param keynum	The key for which to get the string.
 	\return			The string representation of the key.
 */
-const char *Key_KeynumToString (knum_t keynum);
+const char *Key_KeynumToString (knum_t keynum) __attribute__((pure));
 
 /**	Get the keynum for the named key.
 
@@ -650,7 +683,7 @@ const char *Key_KeynumToString (knum_t keynum);
 	\param str		The name of the key.
 	\return			The named key if valid, otherwise -1
 */
-int Key_StringToKeynum (const char *str);
+int Key_StringToKeynum (const char *str) __attribute__((pure));
 
 struct progs_s;
 
@@ -659,6 +692,6 @@ struct progs_s;
 void Key_Progs_Init (struct progs_s *pr);
 #endif
 
-//@}
+///@}
 
-#endif // _KEYS_H
+#endif//__QF_keys_h

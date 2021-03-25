@@ -45,11 +45,11 @@
 #include "QF/pr_comp.h"
 #include "QF/va.h"
 
-#include "cpp.h"
-#include "linker.h"
-#include "options.h"
-#include "qfcc.h"
-#include "strpool.h"
+#include "tools/qfcc/include/cpp.h"
+#include "tools/qfcc/include/linker.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/strpool.h"
 
 const char *this_program;
 const char **source_files;
@@ -69,11 +69,13 @@ enum {
 	OPT_PROGDEFS,
 	OPT_QCCX_ESCAPES,
 	OPT_TRADITIONAL,
+	OPT_BUG,
 };
 
 static struct option const long_options[] = {
 	{"advanced", no_argument, 0, OPT_ADVANCED},
 	{"block-dot", optional_argument, 0, OPT_BLOCK_DOT},
+	{"bug", required_argument, 0, OPT_BUG},
 	{"code", required_argument, 0, 'C'},
 	{"cpp", required_argument, 0, OPT_CPP},
 	{"define", required_argument, 0, 'D'},
@@ -92,7 +94,6 @@ static struct option const long_options[] = {
 	{"relocatable", no_argument, 0, 'r'},
 	{"save-temps", no_argument, 0, 'S'},
 	{"source", required_argument, 0, 's'},
-	{"strip-path", required_argument, 0, 'p'},
 	{"traditional", no_argument, 0, OPT_TRADITIONAL},
 	{"undefine", required_argument, 0, 'U'},
 	{"verbose", no_argument, 0, 'v'},
@@ -118,7 +119,6 @@ static const char *short_options =
 	"o:"	// output file
 	"O"		// optimize
 	"P:"	// progs.src name
-	"p:"	// strip path
 	"q"		// quiet
 	"r"		// partial linking
 	"S"		// save temps
@@ -139,6 +139,7 @@ usage (int status)
 "Options:\n"
 "        --advanced            Advanced Ruamoko mode\n"
 "                              default for separate compilation mode\n"
+"        --bug OPTION,...      Set bug options\n"
 "    -C, --code OPTION,...     Set code generation options\n"
 "    -c                        Only compile, don't link\n"
 "        --cpp CPPSPEC         cpp execution command line\n"
@@ -163,8 +164,6 @@ usage (int status)
 "    -o, --output-file FILE    Specify output file name\n"
 "        --progdefs            Genderate progdefs.h\n"
 "    -P, --progs-src FILE      File to use instead of progs.src\n"
-"    -p, --strip-path NUM      Strip NUM leading path elements from file\n"
-"                              names\n"
 "        --qccx-escapes        Use QCCX escape sequences instead of standard\n"
 "                              C/QuakeForge sequences.\n"
 "    -q, --quiet               Inhibit usual output\n"
@@ -191,14 +190,16 @@ code_usage (void)
 	printf ("%s - QuakeForge Code Compiler\n", this_program);
 	printf ("Code generation options\n");
 	printf (
+"    [no-]const-initializers Treat initialized globals as constants.\n"
 "    [no-]cow                Allow assignment to initialized globals.\n"
 "    [no-]cpp                Preprocess all input files with cpp.\n"
 "    [no-]crc                Write progdefs.h crc to progs.dat.\n"
 "    [no-]debug              Generate debug information.\n"
 "    [no-]fast-float         Use float values directly in \"if\" statements.\n"
-"    help                    Display his text.\n"
+"    help                    Display this text.\n"
 "    [no-]local-merging      Merge the local variable blocks into one.\n"
 "    [no-]optimize           Perform various optimizations on the code.\n"
+"    [no-]promote-float      Promote float when passed through ...\n"
 "    [no-]short-circuit      Generate short circuit code for logical\n"
 "                            operators.\n"
 "    [no-]single-cpp         Convert progs.src to cpp input file.\n"
@@ -265,6 +266,21 @@ notice_usage (void)
 }
 
 static void
+bug_usage (void)
+{
+	printf ("%s - QuakeForge Code Compiler\n", this_program);
+	printf ("Bug options\n");
+	printf (
+"    help                    Display his text.\n"
+"    none                    Turn off all bugs (don't we wish: messages).\n"
+"    die                     Change bugs to internal errors.\n"
+"\n"
+"This is a developer feature and thus not in the manual page\n"
+	);
+	exit (0);
+}
+
+static void
 add_file (const char *file)
 {
 	if (num_files >= files_size - 1) {
@@ -281,6 +297,8 @@ DecodeArgs (int argc, char **argv)
 	int         c;
 	int         saw_E = 0, saw_MD = 0;
 
+	add_cpp_undef ("-undef");
+	add_cpp_undef ("-nostdinc");
 	add_cpp_def ("-D__QFCC__=1");
 	add_cpp_def ("-D__QUAKEC__=1");
 
@@ -289,6 +307,7 @@ DecodeArgs (int argc, char **argv)
 	options.code.vector_components = -1;
 	options.code.crc = -1;
 	options.code.fast_float = true;
+	options.code.promote_float = true;
 	options.warnings.uninited_variable = true;
 	options.warnings.unused = true;
 	options.warnings.executable = true;
@@ -302,7 +321,6 @@ DecodeArgs (int argc, char **argv)
 	options.single_cpp = true;
 	options.save_temps = false;
 	options.verbosity = 0;
-	options.strip_path = 0;
 
 	sourcedir = "";
 	progs_src = "progs.src";
@@ -323,7 +341,7 @@ DecodeArgs (int argc, char **argv)
 				}
 				break;
 			case 'l':					// lib file
-				add_file (va ("-l%s", NORMALIZE (optarg)));
+				add_file (va (0, "-l%s", NORMALIZE (optarg)));
 				break;
 			case 'L':
 				linker_add_path (NORMALIZE (optarg));
@@ -340,9 +358,6 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case 'P':					// progs-src
 				progs_src = save_string (NORMALIZE (optarg));
-				break;
-			case 'p':
-				options.strip_path = atoi (optarg);
 				break;
 			case 'F':
 				options.files_dat = true;
@@ -372,16 +387,19 @@ DecodeArgs (int argc, char **argv)
 				options.traditional = 1;
 				options.advanced = false;
 				options.code.progsversion = PROG_ID_VERSION;
+				options.code.const_initializers = true;
 				break;
 			case OPT_TRADITIONAL:
 				options.traditional = 2;
 				options.advanced = false;
 				options.code.progsversion = PROG_ID_VERSION;
+				options.code.const_initializers = true;
 				break;
 			case OPT_ADVANCED:
 				options.traditional = 0;
 				options.advanced = true;
 				options.code.progsversion = PROG_VERSION;
+				options.code.const_initializers = false;
 				break;
 			case OPT_BLOCK_DOT:
 				if (optarg) {
@@ -411,6 +429,8 @@ DecodeArgs (int argc, char **argv)
 							options.block_dot.flow = flag;
 						} else if (!(strcasecmp (temp, "reaching"))) {
 							options.block_dot.reaching = flag;
+						} else if (!(strcasecmp (temp, "statements"))) {
+							options.block_dot.statements = flag;
 						} else if (!(strcasecmp (temp, "live"))) {
 							options.block_dot.live = flag;
 						} else if (!(strcasecmp (temp, "post"))) {
@@ -428,6 +448,7 @@ DecodeArgs (int argc, char **argv)
 					options.block_dot.expr = true;
 					options.block_dot.flow = true;
 					options.block_dot.reaching = true;
+					options.block_dot.statements = true;
 					options.block_dot.live = true;
 					options.block_dot.post = true;
 				}
@@ -462,6 +483,8 @@ DecodeArgs (int argc, char **argv)
 							options.code.debug = flag;
 						} else if (!(strcasecmp (temp, "fast-float"))) {
 							options.code.fast_float = flag;
+						} else if (!(strcasecmp (temp, "promote-float"))) {
+							options.code.promote_float = flag;
 						} else if (!strcasecmp (temp, "help")) {
 							code_usage ();
 						} else if (!(strcasecmp (temp, "local-merging"))) {
@@ -483,6 +506,8 @@ DecodeArgs (int argc, char **argv)
 								options.code.progsversion = PROG_ID_VERSION;
 							else
 								options.code.progsversion = PROG_VERSION;
+						} else if (!(strcasecmp (temp, "const-initializers"))) {
+							options.code.const_initializers = flag;
 						}
 						temp = strtok (NULL, ",");
 					}
@@ -587,6 +612,23 @@ DecodeArgs (int argc, char **argv)
 					free (opts);
 				}
 				break;
+			case OPT_BUG:{
+					char       *opts = strdup (optarg);
+					char       *temp = strtok (opts, ",");
+
+					while (temp) {
+						if (!strcasecmp (temp, "help")) {
+							bug_usage ();
+						} else if (!(strcasecmp (temp, "none"))) {
+							options.bug.silent = true;
+						} else if (!(strcasecmp (temp, "die"))) {
+							options.bug.promote = true;
+						}
+						temp = strtok (NULL, ",");
+					}
+					free (opts);
+				}
+				break;
 			case OPT_CPP:				// --cpp=
 				cpp_name = save_string (optarg);
 				break;
@@ -670,8 +712,11 @@ DecodeArgs (int argc, char **argv)
 			options.code.local_merging = true;
 		if (options.code.vector_components == (qboolean) -1)
 			options.code.vector_components = false;
+	} else {
+		options.code.promote_float = 0;
 	}
 	if (options.code.progsversion == PROG_ID_VERSION) {
+		options.code.promote_float = 0;
 		add_cpp_def ("-D__VERSION6__=1");
 		if (options.code.crc == (qboolean) -1)
 			options.code.crc = true;
@@ -682,7 +727,8 @@ DecodeArgs (int argc, char **argv)
 
 	// add the default paths
 	if (!options.no_default_paths) {
-		add_cpp_def (nva ("-I%s", QFCC_INCLUDE_PATH));
+		add_cpp_sysinc ("-isystem");
+		add_cpp_sysinc (QFCC_INCLUDE_PATH);
 		linker_add_path (QFCC_LIB_PATH);
 	}
 

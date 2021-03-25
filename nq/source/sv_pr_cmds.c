@@ -46,10 +46,11 @@
 #include "QF/va.h"
 
 #include "compat.h"
-#include "host.h"
-#include "server.h"
-#include "sv_progs.h"
 #include "world.h"
+
+#include "nq/include/host.h"
+#include "nq/include/server.h"
+#include "nq/include/sv_progs.h"
 
 /* BUILT-IN FUNCTIONS */
 
@@ -538,7 +539,7 @@ PF_checkpos (progs_t *pr)
 {
 }
 
-byte        checkpvs[MAX_MAP_LEAFS / 8];
+byte        checkpvs[MAP_PVS_BYTES];
 
 static int
 PF_newcheckclient (progs_t *pr, int check)
@@ -584,7 +585,7 @@ PF_newcheckclient (progs_t *pr, int check)
 	VectorAdd (SVvector (ent, origin), SVvector (ent, view_ofs), org);
 	leaf = Mod_PointInLeaf (org, sv.worldmodel);
 	pvs = Mod_LeafPVS (leaf, sv.worldmodel);
-	memcpy (checkpvs, pvs, (sv.worldmodel->numleafs + 7) >> 3);
+	memcpy (checkpvs, pvs, (sv.worldmodel->brush.numleafs + 7) >> 3);
 
 	return i;
 }
@@ -629,7 +630,7 @@ PF_checkclient (progs_t *pr)
 	self = PROG_TO_EDICT (pr, *sv_globals.self);
 	VectorAdd (SVvector (self, origin), SVvector (self, view_ofs), view);
 	leaf = Mod_PointInLeaf (view, sv.worldmodel);
-	l = (leaf - sv.worldmodel->leafs) - 1;
+	l = (leaf - sv.worldmodel->brush.leafs) - 1;
 	if ((l < 0) || !(checkpvs[l >> 3] & (1 << (l & 7)))) {
 		c_notvis++;
 		RETURN_EDICT (pr, sv.edicts);
@@ -1069,7 +1070,7 @@ PF_changeyaw (progs_t *pr)
 #define	MSG_ALL			2				// reliable to all
 #define	MSG_INIT		3				// write to the init string
 
-static sizebuf_t *
+static __attribute__((pure)) sizebuf_t *
 WriteDest (progs_t *pr)
 {
 	int         entnum;
@@ -1279,7 +1280,7 @@ PF_changelevel (progs_t *pr)
 	svs.changelevel_issued = true;
 
 	s = P_GSTRING (pr, 0);
-	Cbuf_AddText (host_cbuf, va ("changelevel %s\n", s));
+	Cbuf_AddText (host_cbuf, va (0, "changelevel %s\n", s));
 }
 
 // entity (entity ent) testentitypos

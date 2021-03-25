@@ -203,8 +203,8 @@ mark_surfaces (msurface_t *surf, const vec3_t lightorigin, dlight_t *light,
 // LordHavoc: heavily modified, to eliminate unnecessary texture uploads,
 //            and support bmodel lighting better
 void
-R_RecursiveMarkLights (const vec3_t lightorigin, dlight_t *light, int lightnum,
-					   mnode_t *node)
+R_RecursiveMarkLights (mod_brush_t *brush, const vec3_t lightorigin,
+					   dlight_t *light, int lightnum, mnode_t *node)
 {
 	unsigned    i;
 	float       ndist, maxdist;
@@ -240,14 +240,14 @@ loc0:
 	}
 
 	// mark the polygons
-	surf = r_worldentity.model->surfaces + node->firstsurface;
+	surf = brush->surfaces + node->firstsurface;
 	for (i = 0; i < node->numsurfaces; i++, surf++) {
 		mark_surfaces (surf, lightorigin, light, lightnum);
 	}
 
 	if (node->children[0]->contents >= 0) {
 		if (node->children[1]->contents >= 0)
-			R_RecursiveMarkLights (lightorigin, light, lightnum,
+			R_RecursiveMarkLights (brush, lightorigin, light, lightnum,
 								   node->children[1]);
 		node = node->children[0];
 		goto loc0;
@@ -262,11 +262,12 @@ void
 R_MarkLights (const vec3_t lightorigin, dlight_t *light, int lightnum,
 			  model_t *model)
 {
+	mod_brush_t *brush = &model->brush;
 	mleaf_t    *pvsleaf = Mod_PointInLeaf (lightorigin, model);
 
 	if (!pvsleaf->compressed_vis) {
-		mnode_t *node = model->nodes + model->hulls[0].firstclipnode;
-		R_RecursiveMarkLights (lightorigin, light, lightnum, node);
+		mnode_t *node = brush->nodes + brush->hulls[0].firstclipnode;
+		R_RecursiveMarkLights (brush, lightorigin, light, lightnum, node);
 	} else {
 		float       radius = light->radius;
 		vec3_t      mins, maxs;
@@ -280,16 +281,16 @@ R_MarkLights (const vec3_t lightorigin, dlight_t *light, int lightnum,
 		maxs[0] = lightorigin[0] + radius;
 		maxs[1] = lightorigin[1] + radius;
 		maxs[2] = lightorigin[2] + radius;
-		while (leafnum < model->numleafs) {
+		while (leafnum < brush->numleafs) {
 			int         b;
 			if (!(vis_bits = *in++)) {
 				leafnum += (*in++) * 8;
 				continue;
 			}
-			for (b = 1; b < 256 && leafnum < model->numleafs;
+			for (b = 1; b < 256 && leafnum < brush->numleafs;
 				 b <<= 1, leafnum++) {
 				int      m;
-				mleaf_t *leaf  = &model->leafs[leafnum + 1];
+				mleaf_t *leaf  = &brush->leafs[leafnum + 1];
 				if (!(vis_bits & b))
 					continue;
 				if (leaf->visframe != r_visframecount)
@@ -327,7 +328,7 @@ R_PushDlights (const vec3_t entorigin)
 		if (l->die < vr_data.realtime || !l->radius)
 			continue;
 		VectorSubtract (l->origin, entorigin, lightorigin);
-		R_MarkLights (lightorigin, l, i, r_worldentity.model);
+		R_MarkLights (lightorigin, l, i, r_worldentity.renderer.model);
 	}
 }
 
@@ -400,7 +401,8 @@ calc_lighting_3 (msurface_t  *surf, int ds, int dt)
 }
 
 static int
-RecursiveLightPoint (mnode_t *node, const vec3_t start, const vec3_t end)
+RecursiveLightPoint (mod_brush_t *brush, mnode_t *node, const vec3_t start,
+					 const vec3_t end)
 {
 	unsigned    i;
 	int         r, s, t, ds, dt, side;
@@ -430,7 +432,7 @@ loop:
 	mid[2] = start[2] + (end[2] - start[2]) * frac;
 
 	// go down front side
-	r = RecursiveLightPoint (node->children[side], start, mid);
+	r = RecursiveLightPoint (brush, node->children[side], start, mid);
 	if (r >= 0)
 		return r;						// hit something
 
@@ -441,7 +443,7 @@ loop:
 	VectorCopy (mid, lightspot);
 	lightplane = plane;
 
-	surf = r_worldentity.model->surfaces + node->firstsurface;
+	surf = brush->surfaces + node->firstsurface;
 	for (i = 0; i < node->numsurfaces; i++, surf++) {
 		if (surf->flags & SURF_DRAWTILED)
 			continue;					// no lightmaps
@@ -472,16 +474,16 @@ loop:
 	}
 
 	// go down back side
-	return RecursiveLightPoint (node->children[!side], mid, end);
+	return RecursiveLightPoint (brush, node->children[!side], mid, end);
 }
 
 int
-R_LightPoint (const vec3_t p)
+R_LightPoint (mod_brush_t *brush, const vec3_t p)
 {
 	vec3_t      end;
 	int         r;
 
-	if (!r_worldentity.model->lightdata) {
+	if (!brush->lightdata) {
 		// allow dlights to have some effect, so don't go /quite/ fullbright
 		ambientcolor[2] = ambientcolor[1] = ambientcolor[0] = 200;
 		return 200;
@@ -491,7 +493,7 @@ R_LightPoint (const vec3_t p)
 	end[1] = p[1];
 	end[2] = p[2] - 2048;
 
-	r = RecursiveLightPoint (r_worldentity.model->nodes, p, end);
+	r = RecursiveLightPoint (brush, brush->nodes, p, end);
 
 	if (r == -1)
 		r = 0;

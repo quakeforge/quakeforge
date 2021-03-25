@@ -1339,6 +1339,8 @@ win_create_context (const byte *palette)
 void
 VID_Init (byte *palette, byte *colormap)
 {
+	Sys_RegisterShutdown (VID_shutdown);
+
 	choose_visual = win_choose_visual;
 	create_context = win_create_context;
 
@@ -1373,8 +1375,8 @@ Cmd_AddCommand ("vid_minimize", VID_Minimize_f, "");
 #endif
 
 
-void
-VID_Shutdown (void)
+static void
+VID_shutdown (void)
 {
 	if (vid_initialized) {
 		if (modestate == MS_FULLDIB)

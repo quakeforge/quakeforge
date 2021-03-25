@@ -255,7 +255,7 @@ PF_Find (progs_t *pr)
 	int			i;			// ev_vector
 	int			e, f;
 	etype_t		type;
-	ddef_t	   *field_def;
+	pr_def_t   *field_def;
 	edict_t	   *ed;
 
 	e = P_EDICTNUM (pr, 0);
@@ -306,7 +306,7 @@ PF_Find (progs_t *pr)
 		}
 	}
 
-	RETURN_EDICT (pr, *pr->edicts);
+	RETURN_EDICT (pr, EDICT_NUM (pr, 0));
 }
 
 /*
@@ -401,7 +401,7 @@ PF_nextent (progs_t *pr)
 	while (1) {
 		i++;
 		if (i == *pr->num_edicts) {
-			RETURN_EDICT (pr, *pr->edicts);
+			RETURN_EDICT (pr, EDICT_NUM (pr, 0));
 			return;
 		}
 		ent = EDICT_NUM (pr, i);
@@ -522,18 +522,6 @@ PF_vtos (progs_t *pr)
 }
 
 /*
-	float (string s) strlen
-*/
-static void
-PF_strlen (progs_t *pr)
-{
-	const char	*s;
-
-	s = P_GSTRING (pr, 0);
-	R_FLOAT (pr) = strlen(s);
-}
-
-/*
 	float (string char, string s) charcount
 */
 static void
@@ -565,24 +553,6 @@ PF_charcount (progs_t *pr)
 # define INT_WIDTH 20
 #endif
 
-#define MAX_ARG 7
-/*
-	string (...) sprintf
-*/
-static void
-PF_sprintf (progs_t *pr)
-{
-	const char *fmt = P_GSTRING (pr, 0);
-	int         count = pr->pr_argc - 1;
-	pr_type_t **args = pr->pr_params + 1;
-	dstring_t  *dstr;
-
-	dstr = dstring_newstr ();
-	PR_Sprintf (pr, dstr, "PF_sprintf", fmt, count, args);
-	RETURN_STRING (pr, dstr->str);
-	dstring_delete (dstr);
-}
-
 /*
 	string () gametype
 */
@@ -596,12 +566,12 @@ static void
 PF_PR_SetField (progs_t *pr)
 {
 	edict_t    *ent = P_EDICT (pr, 0);
-	ddef_t     *field = PR_FindField (pr, P_GSTRING (pr, 1));
+	pr_def_t   *field = PR_FindField (pr, P_GSTRING (pr, 1));
 	const char *value = P_GSTRING (pr, 2);
 
 	R_INT (pr) = 0;
 	if (field)
-		R_INT (pr) = ED_ParseEpair (pr, ent->v, field, value);
+		R_INT (pr) = ED_ParseEpair (pr, &E_fld (ent, 0), field, value);
 }
 
 static void
@@ -640,9 +610,7 @@ static builtin_t builtins[] = {
 	{"stof",			PF_stof,			81},
 
 
-	{"strlen",			PF_strlen,			QF 100},
 	{"charcount",		PF_charcount,		QF 101},
-	{"sprintf",			PF_sprintf,			QF 109},
 	{"ftoi",			PF_ftoi,			QF 110},
 	{"itof",			PF_itof,			QF 111},
 	{"itos",			PF_itos,			QF 112},

@@ -306,7 +306,9 @@ snd_jack_error (const char *desc)
 static int
 snd_jack_xrun (void *arg)
 {
-	fprintf (stderr, "snd_jack: xrun\n");
+	if (developer->int_val & SYS_SND) {
+		fprintf (stderr, "snd_jack: xrun\n");
+	}
 	return 0;
 }
 
@@ -327,7 +329,7 @@ s_jack_connect (void)
 	jack_set_process_callback (jack_handle, snd_jack_process, 0);
 	jack_on_shutdown (jack_handle, snd_jack_shutdown, 0);
 	for (i = 0; i < 2; i++)
-		jack_out[i] = jack_port_register (jack_handle, va ("out_%d", i + 1),
+		jack_out[i] = jack_port_register (jack_handle, va (0, "out_%d", i + 1),
 										  JACK_DEFAULT_AUDIO_TYPE,
 										  JackPortIsOutput, 0);
 	snd_shm->speed = jack_get_sample_rate (jack_handle);

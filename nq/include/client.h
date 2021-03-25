@@ -38,6 +38,8 @@
 #include "QF/render.h"
 
 #include "client/entities.h"
+#include "client/state.h"
+#include "client/view.h"
 
 #include "game.h"
 #include "netmain.h"
@@ -52,16 +54,6 @@ typedef struct usercmd_s {
 	float	sidemove;
 	float	upmove;
 } usercmd_t;
-
-typedef struct {
-	struct info_s *info;
-	struct info_key_s *name;
-	float	entertime;
-	int		frags;
-	int		topcolor;
-	int		bottomcolor;
-} scoreboard_t;
-
 
 // client_state_t should hold all pieces of the client state
 
@@ -142,7 +134,7 @@ extern client_static_t	cls;
 /*
   the client_state_t structure is wiped completely at every server signon
 */
-typedef struct {
+typedef struct client_state_s {
 	qboolean    loading;
 
 	int         movemessages;	// Since connecting to this server throw out
@@ -153,7 +145,7 @@ typedef struct {
 // information for local display
 	int         stats[MAX_CL_STATS];	// Health, etc
 	float       item_gettime[32];	// cl.time of aquiring item, for blinking
-	float       faceanimtime;	// Use anim frame if cl.time < this
+	float       faceanimtime;			// Use anim frame if cl.time < this
 
 	cshift_t    cshifts[NUM_CSHIFTS];	// Color shifts for damage, powerups
 	cshift_t    prev_cshifts[NUM_CSHIFTS];	// and content types
@@ -162,14 +154,12 @@ typedef struct {
 // server each frame.  The server sets punchangle when the view is temporarily
 // offset, and an angle reset commands at the start of each level and after
 // teleporting.
-	int         mindex;
-	vec3_t      mviewangles[2];	// During demo playback viewangles is lerped
+	int         frameIndex;
+	vec3_t      frameViewAngles[2];	// During demo playback viewangles is lerped
 								// between these
-	vec3_t      viewangles;
-	vec3_t      mvelocity[2];	// Update by server, used for lean+bob
+	vec4f_t     frameVelocity[2];	// Update by server, used for lean+bob
 								// (0 is newest)
-	vec3_t      velocity;		// Lerped between mvelocity[0] and [1]
-	vec3_t      punchangle;		// Temporary offset
+	viewstate_t viewstate;
 
 // pitch drifting vars
 	float       idealpitch;
@@ -179,13 +169,12 @@ typedef struct {
 	double      laststop;
 
 	qboolean    paused;			// Sent over by server
-	int         onground;
 	float       viewheight;
 	float       crouch;			// Local amount for smoothing stepups
 	qboolean    inwater;
 
 	int         intermission;	// Don't change view angle, full screen, etc
-	int         completed_time;	// Latched at intermission start
+	int         completed_time;	// Latched from time at intermission start
 
 	double      mtime[2];		// The timestamp of last two messages
 	double      time;			// Clients view of time, should be between
@@ -194,7 +183,8 @@ typedef struct {
 	double      oldtime;		// Previous cl.time, time-oldtime is used
 								// to decay light values and smooth step ups
 
-	float       last_received_message;	// (realtime) for net trouble icon
+	double      last_ping_request;	// while showing scoreboard
+	double      last_servermessage;	// (realtime) for net trouble icon
 
 /* information that is static for the entire time connected to a server */
 
@@ -208,14 +198,20 @@ typedef struct {
 
 	char        levelname[40];	// for display on solo scoreboard
 	int         spectator;
+	int         playernum;
 	int         viewentity;		// cl_entitites[cl.viewentity] = player
 	unsigned    protocol;
+	float       stdver;
 	int         gametype;
 	int         maxclients;
+	// serverinfo mirrors
 	int         chase;
 	int         sv_cshifts;
+	int         no_pogo_stick;
+	int         teamplay;
 	int         watervis;
 	int         fpd;
+	int         fbskins;
 
 // refresh related state
 	struct model_s *worldmodel;	// cl_entitites[0].model
@@ -224,8 +220,8 @@ typedef struct {
 
 	int         cdtrack;		// cd audio
 
-// frag scoreboard
-	scoreboard_t *scores;		// [cl.maxclients]
+// all player information
+	player_info_t *players;
 
 	lightstyle_t lightstyle[MAX_LIGHTSTYLES];
 } client_state_t;
@@ -286,7 +282,7 @@ extern void (*write_angles) (sizebuf_t *sb, const vec3_t angles);
 struct cbuf_s;
 void CL_Init (struct cbuf_s *cbuf);
 void CL_InitCvars (void);
-void CL_Shutdown (void);
+void CL_ClearMemory (void);
 
 void CL_EstablishConnection (const char *host);
 void CL_Signon1 (void);
@@ -303,10 +299,6 @@ void CL_NextDemo (void);
 void CL_Input_Init (void);
 void CL_SendCmd (void);
 void CL_SendMove (usercmd_t *cmd);
-
-void CL_ParseParticleEffect (void);
-void CL_ParseTEnt (void);
-void CL_UpdateTEnts (void);
 
 void CL_ClearState (void);
 
@@ -344,13 +336,7 @@ void V_SetContentsColor (int contents);
 void V_PrepBlend (void);
 
 // cl_tent
-void CL_TEnts_Init (void);
-void CL_ClearTEnts (void);
-void CL_Init_Entity (struct entity_s *ent);
-void CL_ParseTEnt (void);
 void CL_SignonReply (void);
-void CL_TransformEntity (struct entity_s *ent, const vec3_t
-						 angles, qboolean force);
 void CL_RelinkEntities (void);
 void CL_ClearEnts (void);
 

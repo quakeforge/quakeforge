@@ -193,8 +193,13 @@ extern progs_t sv_pr_state;
 #define SVstring(e,f)	SVFIELD (e, f, string)
 #define SVfunc(e,f)		SVFIELD (e, f, func)
 #define SVentity(e,f)	SVFIELD (e, f, entity)
-#define SVvector(e,f)	SVFIELD (e, f, vector)
+#define SVvector(e,f)	(&SVFIELD (e, f, vector))
 #define SVinteger(e,f)	SVFIELD (e, f, integer)
+#if TYPECHECK_PROGS
+#define SVdouble(e,f) E_DOUBLE (e, PR_AccessField (&sv_pr_state, #f, ev_##t, __FILE__, __LINE__))
+#else
+#define SVdouble(e,f) E_DOUBLE (e, sv_fields.f)
+#endif
 
 typedef struct edict_leaf_s {
 	struct edict_leaf_s *next;

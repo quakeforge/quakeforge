@@ -35,6 +35,25 @@ if test "x$ac_cv_func_dlopen" != "xyes"; then
 fi
 AC_SUBST(DL_LIBS)
 
+if test "x$DL_LIBS" != "x"; then
+AC_MSG_CHECKING([for RTLD_NOW])
+AC_TRY_COMPILE(
+	[#include <dlfcn.h>],
+	[int foo = RTLD_NOW],
+	AC_DEFINE(HAVE_RTLD_NOW, 1, [Define if you have RTLD_NOW.])
+	AC_MSG_RESULT(yes),
+	AC_MSG_RESULT(no)
+)
+AC_MSG_CHECKING([for RTLD_DEEPBIND])
+AC_TRY_COMPILE(
+	[#include <dlfcn.h>],
+	[int foo = RTLD_DEEPBIND],
+	AC_DEFINE(HAVE_RTLD_DEEPBIND, 1, [Define if you have RTLD_DEEPBIND.])
+	AC_MSG_RESULT(yes),
+	AC_MSG_RESULT(no)
+)
+fi
+
 dnl Checks for stricmp/strcasecmp
 #AC_CHECK_FUNC(strcasecmp,
 #	,

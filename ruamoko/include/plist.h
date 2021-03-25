@@ -1,7 +1,7 @@
 #ifndef __ruamoko_plist_h
 #define __ruamoko_plist_h
 
-#include "qfile.h"
+#include <qfile.h>
 
 typedef struct plitem_s *plitem_t;
 typedef enum {QFDictionary, QFArray, QFBinary, QFString} pltype_t;	// possible types
@@ -10,6 +10,7 @@ typedef enum {QFDictionary, QFArray, QFBinary, QFString} pltype_t;	// possible t
 @extern plitem_t PL_GetPropertyList (string str);
 @extern string PL_WritePropertyList (plitem_t pl);
 @extern pltype_t PL_Type (plitem_t str);
+@extern int PL_Line (plitem_t str);
 @extern string PL_String (plitem_t str);
 @extern plitem_t PL_ObjectForKey (plitem_t item, string key);
 @extern plitem_t PL_RemoveObjectForKey (plitem_t item, string key);

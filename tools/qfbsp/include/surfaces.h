@@ -27,7 +27,7 @@
 /**	\defgroup qfbsp_surface Surface Functions
 	\ingroup qfbsp
 */
-//@{
+///@{
 
 struct visfacet_s;
 struct node_s;
@@ -104,6 +104,6 @@ struct surface_s *GatherNodeFaces (struct node_s *headnode);
 */
 void MakeFaceEdges (struct node_s *headnode);
 
-//@}
+///@}
 
 #endif//surfaces_h

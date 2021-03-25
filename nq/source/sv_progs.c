@@ -41,16 +41,18 @@
 #include "QF/sys.h"
 
 #include "compat.h"
-#include "host.h"
-#include "server.h"
-#include "sv_progs.h"
 #include "world.h"
+
+#include "nq/include/host.h"
+#include "nq/include/server.h"
+#include "nq/include/sv_progs.h"
 
 progs_t     sv_pr_state;
 sv_globals_t sv_globals;
 sv_funcs_t sv_funcs;
 sv_fields_t sv_fields;
 
+edict_t sv_edicts[MAX_EDICTS];
 sv_data_t sv_data[MAX_EDICTS];
 
 cvar_t     *sv_progs;
@@ -255,7 +257,6 @@ static sv_def_t nq_fields[] = {
 	{ev_vector,	36,	"maxs",				&sv_fields.maxs},
 	{ev_vector,	39,	"size",				&sv_fields.size},
 	{ev_func,	42,	"touch",			&sv_fields.touch},
-	{ev_func,	43,	"use",				&sv_fields.use},
 	{ev_func,	44,	"think",			&sv_fields.think},
 	{ev_func,	45,	"blocked",			&sv_fields.blocked},
 	{ev_float,	46,	"nextthink",		&sv_fields.nextthink},
@@ -273,7 +274,6 @@ static sv_def_t nq_fields[] = {
 	{ev_float,	58,	"items",			&sv_fields.items},
 	{ev_float,	59,	"takedamage",		&sv_fields.takedamage},
 	{ev_entity,	60,	"chain",			&sv_fields.chain},
-	{ev_float,	61,	"deadflag",			&sv_fields.deadflag},
 	{ev_vector,	62,	"view_ofs",			&sv_fields.view_ofs},
 	{ev_float,	65,	"button0",			&sv_fields.button0},
 	{ev_float,	66,	"button1",			&sv_fields.button1},
@@ -287,19 +287,14 @@ static sv_def_t nq_fields[] = {
 	{ev_float,	76,	"flags",			&sv_fields.flags},
 	{ev_float,	77,	"colormap",			&sv_fields.colormap},
 	{ev_float,	78,	"team",				&sv_fields.team},
-	{ev_float,	79,	"max_health",		&sv_fields.max_health},
 	{ev_float,	80,	"teleport_time",	&sv_fields.teleport_time},
-	{ev_float,	81,	"armortype",		&sv_fields.armortype},
 	{ev_float,	82,	"armorvalue",		&sv_fields.armorvalue},
 	{ev_float,	83,	"waterlevel",		&sv_fields.waterlevel},
 	{ev_float,	84,	"watertype",		&sv_fields.watertype},
 	{ev_float,	85,	"ideal_yaw",		&sv_fields.ideal_yaw},
 	{ev_float,	86,	"yaw_speed",		&sv_fields.yaw_speed},
-	{ev_entity,	87,	"aiment",			&sv_fields.aiment},
 	{ev_entity,	88,	"goalentity",		&sv_fields.goalentity},
 	{ev_float,	89,	"spawnflags",		&sv_fields.spawnflags},
-	{ev_string,	90,	"target",			&sv_fields.target},
-	{ev_string,	91,	"targetname",		&sv_fields.targetname},
 	{ev_float,	92,	"dmg_take",			&sv_fields.dmg_take},
 	{ev_float,	93,	"dmg_save",			&sv_fields.dmg_save},
 	{ev_entity,	94,	"dmg_inflictor",	&sv_fields.dmg_inflictor},
@@ -307,10 +302,6 @@ static sv_def_t nq_fields[] = {
 	{ev_vector,	96,	"movedir",			&sv_fields.movedir},
 	{ev_string,	99,	"message",			&sv_fields.message},
 	{ev_float,	100,	"sounds",		&sv_fields.sounds},
-	{ev_string,	101,	"noise",		&sv_fields.noise},
-	{ev_string,	102,	"noise1",		&sv_fields.noise1},
-	{ev_string,	103,	"noise2",		&sv_fields.noise2},
-	{ev_string,	104,	"noise3",		&sv_fields.noise3},
 	{ev_void,	0,	0},
 };
 
@@ -328,19 +319,7 @@ static sv_def_t nq_opt_fields[] = {
 	{ev_integer,	0,	"rotated_bbox",		&sv_fields.rotated_bbox},
 	{ev_float,		0,	"alpha",			&sv_fields.alpha},
 	{ev_float,		0,	"gravity",			&sv_fields.gravity},
-	// Quake 2 fields?
-	{ev_float,		0,	"dmg",				&sv_fields.dmg},
-	{ev_float,		0,	"dmgtime",			&sv_fields.dmgtime},
-	{ev_float,		0,	"air_finished",		&sv_fields.air_finished},
-	{ev_float,		0,	"pain_finished",	&sv_fields.pain_finished},
-	{ev_float,		0,	"radsuit_finished",	&sv_fields.radsuit_finished},
-	{ev_float,		0,	"speed",			&sv_fields.speed},
-	{ev_float,		0,	"basevelocity",		&sv_fields.basevelocity},
-	{ev_float,		0,	"drawPercent",		&sv_fields.drawPercent},
-	{ev_float,		0,	"mass",				&sv_fields.mass},
-	{ev_float,		0,	"light_level",		&sv_fields.light_level},
 	{ev_float,		0,	"items2",			&sv_fields.items2},
-	{ev_float,		0,	"pitch_speed",		&sv_fields.pitch_speed},
 	{ev_float,		0,	"lastruntime",		&sv_fields.lastruntime},
 	{ev_void,		0,	0},
 };
@@ -361,6 +340,9 @@ set_address (sv_def_t *def, void *address)
 		case ev_quat:
 			*(float **)def->field = (float *) address;
 			break;
+		case ev_double:
+			*(double **)def->field = (double *) address;
+			break;
 		case ev_string:
 		case ev_entity:
 		case ev_field:
@@ -376,7 +358,7 @@ set_address (sv_def_t *def, void *address)
 static int
 resolve_globals (progs_t *pr, sv_def_t *def, int mode)
 {
-	ddef_t     *ddef;
+	pr_def_t   *ddef;
 	int         ret = 1;
 
 	if (mode == 2) {
@@ -422,7 +404,7 @@ resolve_functions (progs_t *pr, sv_def_t *def, int mode)
 static int
 resolve_fields (progs_t *pr, sv_def_t *def, int mode)
 {
-	ddef_t     *ddef;
+	pr_def_t   *ddef;
 	int         ret = 1;
 
 	if (mode == 2) {
@@ -471,12 +453,32 @@ resolve (progs_t *pr)
 	return ret;
 }
 
+static int
+sv_init_edicts (progs_t *pr)
+{
+	int         i;
+
+	memset (sv_edicts, 0, sizeof (sv_edicts));
+	memset (sv_data, 0, sizeof (sv_data));
+
+	// init the data field of the edicts
+	for (i = 0; i < sv.max_edicts; i++) {
+		edict_t    *ent = EDICT_NUM (&sv_pr_state, i);
+		ent->pr = &sv_pr_state;
+		ent->entnum = i;
+		ent->edict = EDICT_TO_PROG (&sv_pr_state, ent);
+		ent->edata = &sv_data[i];
+		SVdata (ent)->edict = ent;
+	}
+
+	return 1;
+}
+
 void
 SV_LoadProgs (void)
 {
 	const char *progs_name = "progs.dat";
 	const char *range;
-	int         i;
 
 	if (strequal (sv_progs_ext->string, "qf")) {
 		sv_range = PR_RANGE_QF;
@@ -498,27 +500,22 @@ SV_LoadProgs (void)
 	if (*sv_progs->string)
 		progs_name = sv_progs->string;
 
-	PR_LoadProgs (&sv_pr_state, progs_name, sv.max_edicts,
-				  sv_progs_zone->int_val * 1024);
+	sv_pr_state.max_edicts = sv.max_edicts;
+	sv_pr_state.zone_size = sv_progs_zone->int_val * 1024;
+	sv.edicts = sv_edicts;
+
+	PR_LoadProgs (&sv_pr_state, progs_name);
 	if (!sv_pr_state.progs)
 		Host_Error ("SV_LoadProgs: couldn't load %s", progs_name);
-
-	memset (sv_data, 0, sizeof (sv_data));
-
-	// init the data field of the edicts
-	for (i = 0; i < sv.max_edicts; i++) {
-		edict_t    *ent = EDICT_NUM (&sv_pr_state, i);
-		ent->entnum = i;
-		ent->edata = &sv_data[i];
-		SVdata (ent)->edict = ent;
-	}
 }
 
 void
 SV_Progs_Init (void)
 {
+	SV_Progs_Init_Cvars ();
+
 	pr_gametype = "netquake";
-	sv_pr_state.edicts = &sv.edicts;
+	sv_pr_state.pr_edicts = &sv.edicts;
 	sv_pr_state.num_edicts = &sv.num_edicts;
 	sv_pr_state.reserved_edicts = &svs.maxclients;
 	sv_pr_state.unlink = SV_UnlinkEdict;
@@ -526,6 +523,9 @@ SV_Progs_Init (void)
 	sv_pr_state.prune_edict = prune_edict;
 	sv_pr_state.bi_map = bi_map;
 	sv_pr_state.resolve = resolve;
+
+	PR_AddLoadFunc (&sv_pr_state, sv_init_edicts);
+	PR_Init (&sv_pr_state);
 
 	SV_PR_Cmds_Init ();
 
@@ -544,6 +544,7 @@ SV_Progs_Init (void)
 void
 SV_Progs_Init_Cvars (void)
 {
+	PR_Init_Cvars ();
 	sv_progs = Cvar_Get ("sv_progs", "", CVAR_NONE, NULL,
 						 "Override the default game progs.");
 	sv_progs_zone = Cvar_Get ("sv_progs_zone", "256", CVAR_NONE, NULL,

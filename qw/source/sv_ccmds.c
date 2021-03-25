@@ -49,13 +49,14 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "qw/bothdefs.h"
 #include "compat.h"
-#include "server.h"
-#include "sv_demo.h"
-#include "sv_progs.h"
-#include "sv_qtv.h"
-#include "sv_recorder.h"
+
+#include "qw/bothdefs.h"
+#include "qw/include/server.h"
+#include "qw/include/sv_demo.h"
+#include "qw/include/sv_progs.h"
+#include "qw/include/sv_qtv.h"
+#include "qw/include/sv_recorder.h"
 
 qboolean    sv_allow_cheats;
 
@@ -223,7 +224,7 @@ SV_Restart_f (void)
 							  net_message->message->data);
 	}
 	Sys_Printf ("Shutting down: server restart, shell must relaunch server\n");
-	SV_Shutdown ();
+	SV_Shutdown (0);
 	// Error code 2 on exit, indication shell must restart the server
 	exit (2);
 }
@@ -249,7 +250,7 @@ SV_Fraglogfile_f (void)
 	}
 	name = dstring_new ();
 	if (!QFS_NextFilename (name,
-						   va ("%s/frag_", qfs_gamedir->dir.def), ".log")) {
+						   va (0, "%s/frag_", qfs_gamedir->dir.def), ".log")) {
 		SV_Printf ("Can't open any logfiles.\n");
 		sv_fraglogfile = NULL;
 	} else {
@@ -395,29 +396,29 @@ nice_time (float time)
 
 #if 0 //FIXME ditch or cvar?
 	if (t < 60) {
-		return va ("%ds", t);
+		return va (0, "%ds", t);
 	} else if (t < 600) {
-		return va ("%dm%02ds", t / 60, t % 60);
+		return va (0, "%dm%02ds", t / 60, t % 60);
 	} else if (t < 3600) {
-		return va ("%dm", t / 60);
+		return va (0, "%dm", t / 60);
 	} else if (t < 36000) {
 		t /= 60;
-		return va ("%dh%02dm", t / 60, t % 60);
+		return va (0, "%dh%02dm", t / 60, t % 60);
 	} else if (t < 86400) {
-		return va ("%dh", t / 3600);
+		return va (0, "%dh", t / 3600);
 	} else {
 		t /= 3600;
-		return va ("%dd%02dh", t / 24, t % 24);
+		return va (0, "%dd%02dh", t / 24, t % 24);
 	}
 #endif
 	if (t < 60) {
-		return va ("%ds", t);
+		return va (0, "%ds", t);
 	} else if (t < 3600) {
-		return va ("%dm%02ds", t / 60, t % 60);
+		return va (0, "%dm%02ds", t / 60, t % 60);
 	} else if (t < 86400) {
-		return va ("%dh%02dm%02ds", t / 3600, (t / 60) % 60, t % 60);
+		return va (0, "%dh%02dm%02ds", t / 3600, (t / 60) % 60, t % 60);
 	} else {
-		return va ("%dd%02dh%02dm%02ds",
+		return va (0, "%dd%02dh%02dm%02ds",
 				   t / 86400, (t / 3600) % 24, (t / 60) % 60, t % 60);
 	}
 }
@@ -741,15 +742,15 @@ SV_Ban_f (void)
 	if (argc > argr) {
 		reason = Cmd_Args (argr);
 		SV_BroadcastPrintf (PRINT_HIGH, "Admin Banned user %s %s: %s\n",
-							cl->name, mins ? va ("for %.1f minutes", mins)
+							cl->name, mins ? va (0, "for %.1f minutes", mins)
 										   : "permanently", reason);
 	} else {
 		SV_BroadcastPrintf (PRINT_HIGH, "Admin Banned user %s %s\n",
-							cl->name, mins ? va ("for %.1f minutes", mins)
+							cl->name, mins ? va (0, "for %.1f minutes", mins)
 										   : "permanently");
 	}
 	SV_DropClient (cl);
-	Cmd_ExecuteString (va ("addip %s %f",
+	Cmd_ExecuteString (va (0, "addip %s %f",
 						   NET_BaseAdrToString (cl->netchan.remote_address),
 						   mins), src_command);
 }
@@ -811,7 +812,7 @@ SV_ConSay (const char *prefix, client_t *client)
 			dbuf = SVR_WriteBegin (dem_all, 0, strlen (text->str) + 7);
 			MSG_WriteByte (dbuf, svc_print);
 			MSG_WriteByte (dbuf, PRINT_HIGH);
-			MSG_WriteString (dbuf, va ("%s\n", text->str));
+			MSG_WriteString (dbuf, va (0, "%s\n", text->str));
 			MSG_WriteByte (dbuf, svc_print);
 			MSG_WriteByte (dbuf, PRINT_CHAT);
 			MSG_WriteString (dbuf, "");
@@ -950,6 +951,7 @@ SV_SetLocalinfo (const char *key, const char *value)
 		P_STRING (&sv_pr_state, 0) = PR_SetTempString (&sv_pr_state, key);
 		P_STRING (&sv_pr_state, 1) = PR_SetTempString (&sv_pr_state, oldvalue);
 		P_STRING (&sv_pr_state, 2) = PR_SetTempString (&sv_pr_state, value);
+		sv_pr_state.pr_argc = 3;
 		PR_ExecuteProgram (&sv_pr_state, sv_funcs.LocalinfoChanged);
 		PR_PopFrame (&sv_pr_state);
 	}
@@ -1134,7 +1136,7 @@ SV_Snap (int uid)
 		cl->uploadfn = dstring_new ();
 
 	if (!QFS_NextFilename (cl->uploadfn,
-						   va ("%s/snap/%d-", qfs_gamedir->dir.def, uid),
+						   va (0, "%s/snap/%d-", qfs_gamedir->dir.def, uid),
 						   ".pcx")) {
 		SV_Printf ("Snap: Couldn't create a file, clean some out.\n");
 		dstring_delete (cl->uploadfn);

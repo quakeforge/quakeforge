@@ -27,13 +27,13 @@
 
 */
 
-#ifndef __quakefs_h
-#define __quakefs_h
+#ifndef __QF_quakefs_h
+#define __QF_quakefs_h
 
 /** \defgroup quakefs Quake Filesystem
 	\ingroup utils
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 #include "QF/quakeio.h"
@@ -356,7 +356,7 @@ char *QFS_CompressPath (const char *pth);
 	\return			Pointer to the beginning of the filename. This points
 					inside \a pathname.
 */
-const char *QFS_SkipPath (const char *pathname);
+const char *QFS_SkipPath (const char *pathname) __attribute__((pure));
 
 /**	Return a pointer to the start of the extention part of the path.
 
@@ -366,7 +366,7 @@ const char *QFS_SkipPath (const char *pathname);
 					the returned pointer will point to the terminating nul
 					of the path.
 */
-const char *QFS_FileExtension (const char *in);
+const char *QFS_FileExtension (const char *in) __attribute__((pure));
 
 /**	Register a callback function for when the gamedir changes.
 
@@ -418,6 +418,6 @@ void QFS_FilelistFill (filelist_t *list, const char *path, const char *ext,
 */
 void QFS_FilelistFree (filelist_t *list);
 
-//@}
+///@}
 
-#endif // __quakefs_h
+#endif//__QF_quakefs_h

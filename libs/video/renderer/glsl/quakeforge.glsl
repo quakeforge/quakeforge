@@ -464,8 +464,8 @@ main (void)
 	m += bonemats[int (vbones.z)] * vweights.z;
 	m += bonemats[int (vbones.w)] * vweights.w;
 #if 0
-	q0 = m[0].yzwx; //swizzle for conversion betwen QF and GL
-	qe = m[1].yzwx; //swizzle for conversion betwen QF and GL
+	q0 = m[0];
+	qe = m[1];
 	sh = m[2].xyz;
 	sc = m[3].xyz;
 

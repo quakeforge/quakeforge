@@ -1,0 +1,7 @@
+EXTRA_DIST += \
+	tools/qflight/include/entities.h \
+	tools/qflight/include/light.h \
+	tools/qflight/include/noise.h \
+	tools/qflight/include/options.h \
+	tools/qflight/include/properties.h \
+	tools/qflight/include/threads.h

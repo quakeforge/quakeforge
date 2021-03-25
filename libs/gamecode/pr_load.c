@@ -34,22 +34,17 @@
 #ifdef HAVE_STRINGS_H
 # include <strings.h>
 #endif
-#include <stdarg.h>
-#include <stdio.h>
 
-#include "QF/cmd.h"
 #include "QF/crc.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/mathlib.h"
 #include "QF/progs.h"
-#include "QF/qdefs.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/zone.h"
-#include "QF/va.h"
 
 #include "compat.h"
 
@@ -70,8 +65,8 @@ static const char *
 var_get_key (const void *d, void *_pr)
 {
 	progs_t *pr = (progs_t*)_pr;
-	ddef_t *def = (ddef_t*)d;
-	return PR_GetString (pr, def->s_name);
+	pr_def_t *def = (pr_def_t*)d;
+	return PR_GetString (pr, def->name);
 }
 
 static void
@@ -81,9 +76,11 @@ file_error (progs_t *pr, const char *path)
 }
 
 static void *
-load_file (progs_t *pr, const char *path)
+load_file (progs_t *pr, const char *path, off_t *size)
 {
-	return QFS_LoadHunkFile (QFS_FOpenFile (path));
+	void *data = QFS_LoadHunkFile (QFS_FOpenFile (path));
+	*size = qfs_filesize;
+	return data;
 }
 
 static void *
@@ -97,14 +94,28 @@ free_progs_mem (progs_t *pr, void *mem)
 {
 }
 
+static int
+align_size (int size)
+{
+	// round off to next highest whole word address (esp for Alpha)
+	// this ensures that pointers in the engine data area are always
+	// properly aligned
+	size += sizeof (void*) - 1;
+	size &= ~(sizeof (void*) - 1);
+	return size;
+}
+
 VISIBLE void
-PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int max_edicts, int zone)
+PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 {
 	size_t      i;
 	int         mem_size;
 	int         offset_tweak;
 	dprograms_t progs;
 	byte       *base;
+	pr_def_t   *xdefs_def = 0;
+	ddef_t     *global_ddefs;
+	ddef_t     *field_ddefs;
 
 	if (!pr->file_error)
 		pr->file_error = file_error;
@@ -116,7 +127,6 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int max_edicts, int zone)
 		pr->free_progs_mem = free_progs_mem;
 
 	PR_Resources_Clear (pr);
-	PR_ClearReturnStrings (pr);
 	if (pr->progs)
 		pr->free_progs_mem (pr, pr->progs);
 	pr->progs = 0;
@@ -160,36 +170,29 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int max_edicts, int zone)
 	// size of progs themselves
 	pr->progs_size = size + offset_tweak;
 	Sys_MaskPrintf (SYS_DEV, "Programs occupy %iK.\n", size / 1024);
-	// round off to next highest whole word address (esp for Alpha)
-	// this ensures that pointers in the engine data area are always
-	// properly aligned
-	pr->progs_size += sizeof (void*) - 1;
-	pr->progs_size &= ~(sizeof (void*) - 1);
 
-	// size of heap asked for by vm-subsystem
-	pr->zone_size = zone;
-	// round off to next highest whole word address (esp for Alpha)
-	// this ensures that pointers in the engine data area are always
-	// properly aligned
-	pr->zone_size += sizeof (void*) - 1;
-	pr->zone_size &= ~(sizeof (void*) - 1);
+	pr->progs_size = align_size (pr->progs_size);
+	pr->zone_size = align_size (pr->zone_size);
+	pr->stack_size = align_size (pr->stack_size);
 
-	// size of edict asked for by progs
-	pr->pr_edict_size = max (1, progs.entityfields) * 4;
-	// size of engine data
-	pr->pr_edict_size += sizeof (edict_t) - sizeof (pr_type_t);
-	// round off to next highest whole word address (esp for Alpha)
-	// this ensures that pointers in the engine data area are always
-	// properly aligned
-	pr->pr_edict_size += sizeof (void*) - 1;
-	pr->pr_edict_size &= ~(sizeof (void*) - 1);
-	pr->pr_edictareasize = max_edicts * pr->pr_edict_size;
-	pr->max_edicts = max_edicts;
+	// size of edict asked for by progs, but at least 1
+	pr->pr_edict_size = max (1, progs.entityfields);
+	// round off to next highest multiple of 4 words
+	// this ensures that progs that try to align vectors and quaternions
+	// get what they want
+	pr->pr_edict_size += (4 - 1);
+	pr->pr_edict_size &= ~(4 - 1);
+	pr->pr_edict_area_size = pr->max_edicts * pr->pr_edict_size;
 
-	mem_size = pr->progs_size + pr->zone_size + pr->pr_edictareasize;
+	mem_size = pr->pr_edict_area_size * sizeof (pr_type_t);
+	mem_size += pr->progs_size + pr->zone_size + pr->stack_size;
+
+	// +1 for a nul terminator
 	pr->progs = pr->allocate_progs_mem (pr, mem_size + 1);
 	if (!pr->progs)
 		return;
+	// Place a nul at the end of progs memory to ensure any unterminated
+	// strings within progs memory don't run off the end.
 	((byte *) pr->progs)[mem_size] = 0;
 
 	memcpy (pr->progs, &progs, sizeof (progs));
@@ -198,40 +201,49 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int max_edicts, int zone)
 	CRC_ProcessBlock (base, &pr->crc, size - sizeof (progs));
 	base -= sizeof (progs);	// offsets are from file start
 
-	if (pr->edicts)
-		*pr->edicts = (edict_t *)((byte *) pr->progs + pr->progs_size);
-	pr->zone = (memzone_t *)((byte *) pr->progs + pr->progs_size
-						   + pr->pr_edictareasize);
+	pr->pr_edict_area = (pr_type_t *)((byte *) pr->progs + pr->progs_size);
 
-	pr->pr_functions =
-		(dfunction_t *) (base + pr->progs->ofs_functions);
+	pr->zone = 0;
+	if (pr->zone_size) {
+		//FIXME zone_size needs to be at least as big as memzone_t, but
+		//memzone_t is opaque so its size is unknown
+		pr->zone = (memzone_t *)(&pr->pr_edict_area[pr->pr_edict_area_size]);
+	}
+
+	pr->pr_functions = (dfunction_t *) (base + pr->progs->ofs_functions);
 	pr->pr_strings = (char *) base + pr->progs->ofs_strings;
 	pr->pr_stringsize = (char *) pr->zone + pr->zone_size - (char *) base;
-	pr->pr_globaldefs = (ddef_t *) (base + pr->progs->ofs_globaldefs);
-	pr->pr_fielddefs = (ddef_t *) (base + pr->progs->ofs_fielddefs);
+	global_ddefs = (ddef_t *) (base + pr->progs->ofs_globaldefs);
+	field_ddefs = (ddef_t *) (base + pr->progs->ofs_fielddefs);
 	pr->pr_statements = (dstatement_t *) (base + pr->progs->ofs_statements);
 
 	pr->pr_globals = (pr_type_t *) (base + pr->progs->ofs_globals);
-
-	pr->globals_size = (pr_type_t*)((byte *) pr->zone + pr->zone_size)
+	pr->stack = (pr_type_t *) ((byte *) pr->zone + pr->zone_size);
+	pr->stack_bottom = pr->stack - pr->pr_globals;
+	pr->globals_size = (pr_type_t *) ((byte *) pr->stack + pr->stack_size)
 						- pr->pr_globals;
-	if (pr->zone_size)
+
+	if (pr->zone) {
 		PR_Zone_Init (pr);
+	}
 
 	if (pr->function_hash) {
 		Hash_FlushTable (pr->function_hash);
 	} else {
-		pr->function_hash = Hash_NewTable (1021, function_get_key, 0, pr);
+		pr->function_hash = Hash_NewTable (1021, function_get_key, 0, pr,
+										   pr->hashlink_freelist);
 	}
 	if (pr->global_hash) {
 		Hash_FlushTable (pr->global_hash);
 	} else {
-		pr->global_hash = Hash_NewTable (1021, var_get_key, 0, pr);
+		pr->global_hash = Hash_NewTable (1021, var_get_key, 0, pr,
+										 pr->hashlink_freelist);
 	}
 	if (pr->field_hash) {
 		Hash_FlushTable (pr->field_hash);
 	} else {
-		pr->field_hash = Hash_NewTable (1021, var_get_key, 0, pr);
+		pr->field_hash = Hash_NewTable (1021, var_get_key, 0, pr,
+										pr->hashlink_freelist);
 	}
 
 // byte swap the lumps
@@ -256,24 +268,67 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size, int max_edicts, int zone)
 			Hash_Add (pr->function_hash, &pr->pr_functions[i]);
 	}
 
+	if (pr->pr_globaldefs) {
+		free (pr->pr_globaldefs);
+	}
+	pr->pr_globaldefs = calloc (pr->progs->numglobaldefs, sizeof (pr_def_t));
+
 	for (i = 0; i < pr->progs->numglobaldefs; i++) {
-		pr->pr_globaldefs[i].type = LittleShort (pr->pr_globaldefs[i].type);
-		pr->pr_globaldefs[i].ofs = LittleShort (pr->pr_globaldefs[i].ofs);
-		pr->pr_globaldefs[i].s_name = LittleLong (pr->pr_globaldefs[i].s_name);
+		pr_ushort_t safe_type = global_ddefs[i].type & ~DEF_SAVEGLOBAL;
+		global_ddefs[i].type = LittleShort (global_ddefs[i].type);
+		global_ddefs[i].ofs = LittleShort (global_ddefs[i].ofs);
+		global_ddefs[i].s_name = LittleLong (global_ddefs[i].s_name);
+
+		pr->pr_globaldefs[i].type = global_ddefs[i].type;
+		pr->pr_globaldefs[i].size = pr_type_size[safe_type];
+		pr->pr_globaldefs[i].ofs = global_ddefs[i].ofs;
+		pr->pr_globaldefs[i].name = global_ddefs[i].s_name;
 		Hash_Add (pr->global_hash, &pr->pr_globaldefs[i]);
 	}
 
+	if (pr->pr_fielddefs) {
+		free (pr->pr_fielddefs);
+	}
+	pr->pr_fielddefs = calloc (pr->progs->numfielddefs, sizeof (pr_def_t));
 	for (i = 0; i < pr->progs->numfielddefs; i++) {
-		pr->pr_fielddefs[i].type = LittleShort (pr->pr_fielddefs[i].type);
-		if (pr->pr_fielddefs[i].type & DEF_SAVEGLOBAL)
-			PR_Error (pr, "PR_LoadProgs: pr_fielddefs[i].type & DEF_SAVEGLOBAL");
-		pr->pr_fielddefs[i].ofs = LittleShort (pr->pr_fielddefs[i].ofs);
-		pr->pr_fielddefs[i].s_name = LittleLong (pr->pr_fielddefs[i].s_name);
+		field_ddefs[i].type = LittleShort (field_ddefs[i].type);
+		if (field_ddefs[i].type & DEF_SAVEGLOBAL)
+			PR_Error (pr, "PR_LoadProgs: DEF_SAVEGLOBAL on field def %zd", i);
+		field_ddefs[i].ofs = LittleShort (field_ddefs[i].ofs);
+		field_ddefs[i].s_name = LittleLong (field_ddefs[i].s_name);
+
+		pr->pr_fielddefs[i].type = field_ddefs[i].type;
+		pr->pr_fielddefs[i].ofs = field_ddefs[i].ofs;
+		pr->pr_fielddefs[i].name = field_ddefs[i].s_name;
 		Hash_Add (pr->field_hash, &pr->pr_fielddefs[i]);
 	}
 
 	for (i = 0; i < pr->progs->numglobals; i++)
 		((int *) pr->pr_globals)[i] = LittleLong (((int *) pr->pr_globals)[i]);
+
+	xdefs_def = PR_FindGlobal (pr, ".xdefs");
+	if (xdefs_def) {
+		pr_xdefs_t *xdefs = &G_STRUCT (pr, pr_xdefs_t, xdefs_def->ofs);
+		xdef_t     *xdef = &G_STRUCT (pr, xdef_t, xdefs->xdefs);
+		pr_def_t   *def;
+		for (def = pr->pr_globaldefs, i = 0; i < pr->progs->numglobaldefs;
+			 i++, xdef++, def++) {
+			def->ofs = xdef->ofs;
+			def->type_encoding = xdef->type;
+		}
+		for (def = pr->pr_fielddefs, i = 0; i < pr->progs->numfielddefs;
+			 i++, xdef++, def++) {
+			def->ofs = xdef->ofs;
+			def->type_encoding = xdef->type;
+		}
+	}
+	pr->pr_trace = 0;
+	pr->pr_trace_depth = 0;
+	pr->pr_xfunction = 0;
+	pr->pr_xstatement = 0;
+	pr->pr_depth = 0;
+	pr->localstack_used = 0;
+	pr->pr_argc = 0;
 }
 
 VISIBLE void
@@ -307,7 +362,7 @@ PR_AddLoadFinishFunc (progs_t *pr, int (*func)(progs_t *))
 static int
 pr_run_ctors (progs_t *pr)
 {
-	pr_int_t    fnum;
+	pr_uint_t   fnum;
 	dfunction_t *func;
 
 	for (fnum = 0; fnum < pr->progs->numfunctions; fnum++) {
@@ -365,6 +420,12 @@ PR_RunLoadFuncs (progs_t *pr)
 		if (!pr->load_funcs[i] (pr))
 			return 0;
 
+	return 1;
+}
+
+VISIBLE int
+PR_RunPostLoadFuncs (progs_t *pr)
+{
 	if (!pr_run_ctors (pr))
 		return 0;
 
@@ -379,21 +440,25 @@ PR_RunLoadFuncs (progs_t *pr)
 	PR_LoadProgs
 */
 VISIBLE void
-PR_LoadProgs (progs_t *pr, const char *progsname, int max_edicts, int zone)
+PR_LoadProgs (progs_t *pr, const char *progsname)
 {
 	QFile      *file;
 	file = QFS_FOpenFile (progsname);
 
 	pr->progs_name = progsname;
 	if (file) {
-		PR_LoadProgsFile (pr, file, qfs_filesize, max_edicts, zone);
+		PR_LoadProgsFile (pr, file, qfs_filesize);
 		Qclose (file);
 	}
 	if (!pr->progs)
 		return;
 
-	if (!PR_RunLoadFuncs (pr))
+	if (!PR_RunLoadFuncs (pr)) {
 		PR_Error (pr, "unable to load %s", progsname);
+	}
+	if (!pr->debug_handler && !PR_RunPostLoadFuncs (pr)) {
+		PR_Error (pr, "unable to load %s", progsname);
+	}
 }
 
 VISIBLE void
@@ -413,21 +478,27 @@ PR_Init_Cvars (void)
 }
 
 VISIBLE void
-PR_Init (void)
+PR_Init (progs_t *pr)
 {
-	PR_Opcode_Init ();
-	PR_Debug_Init ();
+	PR_Opcode_Init ();	// idempotent
+	PR_Resources_Init (pr);
+	PR_Strings_Init (pr);
+	PR_Debug_Init (pr);
 }
 
 VISIBLE void
 PR_Error (progs_t *pr, const char *error, ...)
 {
 	va_list     argptr;
-	dstring_t  *string = dstring_new ();
+	dstring_t  *string = dstring_new ();//FIXME leaks when debugging
 
 	va_start (argptr, error);
 	dvsprintf (string, error, argptr);
 	va_end (argptr);
 
+	if (pr->debug_handler) {
+		pr->debug_handler (prd_error, string->str, pr->debug_data);
+		// not expected to return, but if so, behave as if there was no handler
+	}
 	Sys_Error ("%s: %s", pr->progs_name, string->str);
 }

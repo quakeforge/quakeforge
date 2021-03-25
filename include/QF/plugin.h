@@ -25,22 +25,22 @@
 
 */
 
-#ifndef __QF_plugin_h_
-#define __QF_plugin_h_
+#ifndef __QF_plugin_h
+#define __QF_plugin_h
 
 /** \defgroup plugin Plugins
 	\ingroup utils
 */
-//@{
+///@{
 
 #define QFPLUGIN_VERSION	"1.0"
 
 #include <QF/qtypes.h>
 
 #ifdef STATIC_PLUGINS
-#define PLUGIN_INFO(type,name) plugin_t *type##_##name##_PluginInfo (void); plugin_t * type##_##name##_PluginInfo (void)
+#define PLUGIN_INFO(type,name) plugin_t *type##_##name##_PluginInfo (void); __attribute__((const)) plugin_t * type##_##name##_PluginInfo (void)
 #else
-#define PLUGIN_INFO(type,name) plugin_t *PluginInfo (void); __attribute__((visibility ("default"))) plugin_t *PluginInfo (void)
+#define PLUGIN_INFO(type,name) plugin_t *PluginInfo (void); __attribute__((visibility ("default"),const)) plugin_t *PluginInfo (void)
 #endif
 
 typedef enum {
@@ -111,6 +111,6 @@ void PI_Shutdown (void);
 
 // FIXME: we need a generic function to initialize unused fields
 
-//@}
+///@}
 
-#endif	// __QF_plugin_h_
+#endif//__QF_plugin_h

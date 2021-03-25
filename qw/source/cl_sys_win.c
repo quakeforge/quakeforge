@@ -34,8 +34,8 @@
 #include "QF/screen.h"
 #include "QF/sys.h"
 
-#include "client.h"
-#include "host.h"
+#include "qw/include/client.h"
+#include "qw/include/host.h"
 
 #define MAXIMUM_WIN_MEMORY	0x1000000
 #define MINIMUM_WIN_MEMORY	0x0c00000
@@ -93,7 +93,7 @@ startup (void)
 }
 
 static void
-shutdown_f (void)
+shutdown_f (void *data)
 {
 	if (tevent)
 		CloseHandle (tevent);
@@ -181,9 +181,9 @@ WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine,
 	if (!tevent)
 		Sys_Error ("Couldn't create event");
 
-	Sys_RegisterShutdown (Host_Shutdown);
-	Sys_RegisterShutdown (Net_LogStop);
-	Sys_RegisterShutdown (shutdown_f);
+	Sys_RegisterShutdown (Host_Shutdown, 0);
+	Sys_RegisterShutdown (Net_LogStop, 0);
+	Sys_RegisterShutdown (shutdown_f, 0);
 
 	Host_Init ();
 

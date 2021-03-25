@@ -9,7 +9,7 @@ AC_ARG_WITH(cpp,
 if test "x$cpp_name" != xauto; then
 	CPP_NAME="$cpp_name"
 else
-	CPP_NAME="cpp %d -o %o %i"
+	CPP_NAME="cpp %u %d %s -o %o %i"
 	case "$host_os" in
 		*freebsd*)
 			CPP_NAME="cpp %d %i %o"

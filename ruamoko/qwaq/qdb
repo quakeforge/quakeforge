@@ -1,0 +1,3 @@
+#! /bin/bash -x
+
+./qwaq-curses qwaq-app.dat $1

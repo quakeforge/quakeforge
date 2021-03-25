@@ -105,22 +105,17 @@ typedef struct
 	pr_int_t    velocity;			//vec3_t
 	pr_int_t    angles;				//vec3_t
 	pr_int_t    avelocity;			//vec3_t
-	pr_int_t    basevelocity;		//vec3_t
 	pr_int_t    punchangle;			//vec3_t
 	pr_int_t    classname;			//string_t
 	pr_int_t    model;				//string_t
 	pr_int_t    frame;				//float
 	pr_int_t    skin;				//float
 	pr_int_t    effects;			//float
-	pr_int_t    drawPercent;		//float
 	pr_int_t    gravity;			//float
-	pr_int_t    mass;				//float
-	pr_int_t    light_level;		//float
 	pr_int_t    mins;				//vec3_t
 	pr_int_t    maxs;				//vec3_t
 	pr_int_t    size;				//vec3_t
 	pr_int_t    touch;				//func_t
-	pr_int_t    use;				//func_t
 	pr_int_t    think;				//func_t
 	pr_int_t    blocked;			//func_t
 	pr_int_t    nextthink;			//float
@@ -139,7 +134,6 @@ typedef struct
 	pr_int_t    items2;				//float
 	pr_int_t    takedamage;			//float
 	pr_int_t    chain;				//int
-	pr_int_t    deadflag;			//float
 	pr_int_t    view_ofs;			//vec3_t
 	pr_int_t    button0;			//float
 	pr_int_t    button1;			//float
@@ -148,25 +142,19 @@ typedef struct
 	pr_int_t    fixangle;			//float
 	pr_int_t    v_angle;			//vec3_t
 	pr_int_t    idealpitch;			//float
-	pr_int_t    pitch_speed;		//float
 	pr_int_t    netname;			//string_t
 	pr_int_t    enemy;				//int
 	pr_int_t    flags;				//float
 	pr_int_t    colormap;			//float
 	pr_int_t    team;				//float
-	pr_int_t    max_health;			//float
 	pr_int_t    teleport_time;		//float
-	pr_int_t    armortype;			//float
 	pr_int_t    armorvalue;			//float
 	pr_int_t    waterlevel;			//float
 	pr_int_t    watertype;			//float
 	pr_int_t    ideal_yaw;			//float
 	pr_int_t    yaw_speed;			//float
-	pr_int_t    aiment;				//int
 	pr_int_t    goalentity;			//int
 	pr_int_t    spawnflags;			//float
-	pr_int_t    target;				//string_t
-	pr_int_t    targetname;			//string_t
 	pr_int_t    dmg_take;			//float
 	pr_int_t    dmg_save;			//float
 	pr_int_t    dmg_inflictor;		//int
@@ -174,16 +162,6 @@ typedef struct
 	pr_int_t    movedir;			//vec3_t
 	pr_int_t    message;			//string_t
 	pr_int_t    sounds;				//float
-	pr_int_t    noise;				//string_t
-	pr_int_t    noise1;				//string_t
-	pr_int_t    noise2;				//string_t
-	pr_int_t    noise3;				//string_t
-	pr_int_t    dmg;				//float
-	pr_int_t    dmgtime;			//float
-	pr_int_t    air_finished;		//float
-	pr_int_t    pain_finished;		//float
-	pr_int_t    radsuit_finished;	//float
-	pr_int_t    speed;				//float
 
 	pr_int_t    rotated_bbox;		//int
 	pr_int_t    alpha;				//float
@@ -208,8 +186,13 @@ extern progs_t sv_pr_state;
 #define SVstring(e,f)	SVFIELD (e, f, string)
 #define SVfunc(e,f)		SVFIELD (e, f, func)
 #define SVentity(e,f)	SVFIELD (e, f, entity)
-#define SVvector(e,f)	SVFIELD (e, f, vector)
+#define SVvector(e,f)	(&SVFIELD (e, f, vector))
 #define SVinteger(e,f)	SVFIELD (e, f, integer)
+#if TYPECHECK_PROGS
+#define SVdouble(e,f) E_DOUBLE (e, PR_AccessField (&sv_pr_state, #f, ev_##t, __FILE__, __LINE__))
+#else
+#define SVdouble(e,f) E_DOUBLE (e, sv_fields.f)
+#endif
 
 typedef struct edict_leaf_s {
 	struct edict_leaf_s *next;

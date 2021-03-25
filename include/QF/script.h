@@ -25,7 +25,7 @@
 	Line oriented script parsing. Multiple scripts being parsed at the same
 	time is supported.
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 
@@ -41,8 +41,9 @@ typedef struct script_s {
 	/// line number of the file being processed. used only for error reporting
 	/// but updated internally.
 	int         line;
-	/// if set, will be called instead of the internal error handler
-	void      (*error)(struct script_s *script, const char *msg);
+	/// contains last error message or null if no error
+	/// if set, no tokens will be parsed.
+	const char *error;
 	/// if set, multi line quoted tokens will be treated as errors
 	int         no_quote_lines;
 	/// if set, characters in this string will always be lexed as single
@@ -65,6 +66,7 @@ void Script_Delete (script_t *script);
 /** Prepare a script_t object for parsing.
 	The caller is responsible for freeing the memory associated with file and
 	data when parsing is complete.
+	Resets \a script->error
 	\param script The script_t object being parsed
 	\param file Name of the file being parsed. used only for error reporting
 	\param data The script to be parsed
@@ -95,8 +97,8 @@ void Script_UngetToken (script_t *script);
 /** Return a pointer to the current token.
 	\param script The script_t object being parsed
 */
-const char *Script_Token (script_t *script);
+const char *Script_Token (script_t *script) __attribute__((pure));
 
-//@}
+///@}
 
 #endif//__QF_script_h

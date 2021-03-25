@@ -40,7 +40,7 @@
 
 #include "QF/quakefs.h"
 
-#include "options.h"
+#include "tools/qfbsp/include/options.h"
 
 /**	\addtogroup qfbsp_options
 */

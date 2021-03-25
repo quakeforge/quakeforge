@@ -175,7 +175,7 @@ gl_Draw_PicFromWad (const char *name)
 	tex_t	   *targa;
 
 	pic = W_GetLumpName (name);
-	targa = LoadImage (name);
+	targa = LoadImage (name, 1);
 	if (targa) {
 		p = malloc (sizeof (qpic_t) + sizeof (glpic_t));
 		p->width = pic->width;
@@ -236,7 +236,7 @@ gl_Draw_CachePic (const char *path, qboolean alpha)
 		// Adjust for endian..
 		SwapPic (dat);
 		// Check for a .tga first
-		targa = LoadImage (path);
+		targa = LoadImage (path, 1);
 		if (targa) {
 			if (targa->format < 4) {
 				gl->texnum = GL_LoadTexture ("", targa->width, targa->height,
@@ -256,7 +256,8 @@ gl_Draw_CachePic (const char *path, qboolean alpha)
 	} else
 		Sys_Error ("Draw_CachePic: failed to load %s", path);
 
-	strncpy (pic->name, path, sizeof (pic->name));
+	memset (pic->name, 0, sizeof (pic->name));
+	strncpy (pic->name, path, sizeof (pic->name) - 1);
 
 	// Now lets mark this cache entry as used..
 	pic->dirty = false;
@@ -352,7 +353,7 @@ gl_Draw_Init (void)
 	// write the version string into the background before turning it into a
 	// texture
 
-	image = LoadImage ("gfx/conchars");
+	image = LoadImage ("gfx/conchars", 1);
 	if (image) {
 		if (image->format < 4) {
 			char_texture = GL_LoadTexture ("charset", image->width,

@@ -40,7 +40,7 @@
 /**	\defgroup qtv_general General Functions
 	\ingroup qtv
 */
-//@{
+///@{
 
 #define PORT_QTV 27501	///< Default port to listen for connecting clients.
 
@@ -91,6 +91,6 @@ void qtv_end_redirect (void);
 
 void qtv_sbar_init (void);
 
-//@}
+///@}
 
 #endif//__qtv_h

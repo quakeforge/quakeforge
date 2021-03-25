@@ -44,9 +44,9 @@
 
 #include "compat.h"
 
-#include "entities.h"
-#include "options.h"
-#include "properties.h"
+#include "tools/qflight/include/entities.h"
+#include "tools/qflight/include/options.h"
+#include "tools/qflight/include/properties.h"
 
 const char *this_program;
 

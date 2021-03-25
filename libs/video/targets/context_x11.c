@@ -125,6 +125,8 @@ static int	accel_threshold;
 static Atom x_net_state;
 static Atom x_net_fullscreen;
 
+static cvar_t *x11_vidmode;
+
 static void
 set_fullscreen (int full)
 {
@@ -309,9 +311,9 @@ void
 X11_CreateNullCursor (void)
 {
 	Pixmap		cursormask;
-	XGCValues	xgc;
+	XGCValues	xgc = { };
 	GC			gc;
-	XColor		dummycolour;
+	XColor		dummycolour = { };
 
 	if (nullcursor != None)
 		return;
@@ -353,7 +355,14 @@ X11_SetMouse (void)
 	XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0, 0, 0);
 	XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0,
 				  viddef.width / 2, viddef.height / 2);
-	XPeekIfEvent (x_disp, &ev, check_mouse_event, 0);
+	//FIXME this should be done in a state machine that handles events without
+	//blocking
+	double start = Sys_DoubleTime ();
+	while (!XCheckIfEvent (x_disp, &ev, check_mouse_event, 0)) {
+		if (Sys_DoubleTime () - start > 2) {
+			break;
+		}
+	}
 	x_mouse_time = ev.xmotion.time;
 }
 
@@ -388,6 +397,10 @@ X11_SetVidMode (int width, int height)
 	if (vidmode_active)
 		return;
 
+	if (!x11_vidmode->int_val) {
+		return;
+	}
+
 	if (str && (tolower (*str) == 'f')) {
 		Cvar_Set (vid_fullscreen, "1");
 	}
@@ -407,7 +420,7 @@ X11_SetVidMode (int width, int height)
 			vid_gamma_avail = true;
 
 			temp = X11_GetGamma ();
-			if (temp && temp[0] > 0) {
+			if (temp && (*temp)[0] > 0) {
 				x_gamma[0] = (*temp)[0];
 				x_gamma[1] = (*temp)[1];
 				x_gamma[2] = (*temp)[2];
@@ -427,19 +440,23 @@ X11_SetVidMode (int width, int height)
 										&vidmodes);
 			XF86VidModeGetModeLine (x_disp, x_screen, &dotclock, &orig_data);
 
-			if (developer->int_val & SYS_VID) {
-				Sys_Printf ("VID: %d modes\n", nummodes);
-				for (i = 0; i < nummodes; i++) {
-					Sys_Printf ("VID: %xx%d\n", vidmodes[i]->hdisplay,
-								vidmodes[i]->vdisplay);
-				}
-			}
-
+			Sys_MaskPrintf (SYS_VID, "VID: %d modes\n", nummodes);
+			original_mode = -1;
 			for (i = 0; i < nummodes; i++) {
-				if ((vidmodes[i]->hdisplay == orig_data.hdisplay) &&
-						(vidmodes[i]->vdisplay == orig_data.vdisplay)) {
+				if (original_mode == -1
+					&& (vidmodes[i]->hdisplay == orig_data.hdisplay) &&
+					   (vidmodes[i]->vdisplay == orig_data.vdisplay)) {
 					original_mode = i;
-					break;
+				}
+				if (developer->int_val & SYS_VID) {
+					Sys_Printf ("VID:%c%dx%d\n",
+								original_mode == i ? '*' : ' ',
+								vidmodes[i]->hdisplay, vidmodes[i]->vdisplay);
+					Sys_Printf ("\t%d %d %d %d:%d %d %d:%d\n",
+								vidmodes[i]->hsyncstart, vidmodes[i]->hsyncend,
+								vidmodes[i]->htotal, vidmodes[i]->hskew,
+								vidmodes[i]->vsyncstart, vidmodes[i]->vsyncend,
+								vidmodes[i]->vtotal, vidmodes[i]->flags);
 				}
 			}
 
@@ -456,8 +473,10 @@ X11_SetVidMode (int width, int height)
 				Sys_MaskPrintf (SYS_VID, "VID: Chose video mode: %dx%d\n",
 								viddef.width, viddef.height);
 
+				if (0) {
 				XF86VidModeSwitchToMode (x_disp, x_screen,
 										 vidmodes[best_mode]);
+				}
 				vidmode_active = true;
 				X11_SetScreenSaver ();
 			} else {
@@ -507,6 +526,9 @@ X11_Init_Cvars (void)
 							   "Toggles fullscreen game mode");
 	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
 								 "Use system gamma control if available");
+	x11_vidmode = Cvar_Get ("x11_vidmode", "0", CVAR_ROM, 0,
+							"Use x11 vidmode extension to set video mode "
+							"(not recommended for modern systems)");
 }
 
 void
@@ -545,7 +567,7 @@ X11_CreateWindow (int width, int height)
 		XFree (SizeHints);
 	}
 	// Set window title
-	X11_SetCaption (va ("%s", PACKAGE_STRING));
+	X11_SetCaption (va (0, "%s", PACKAGE_STRING));
 
 	// Set icon name
 	XSetIconName (x_disp, x_win, PACKAGE_NAME);
@@ -566,10 +588,11 @@ X11_CreateWindow (int width, int height)
 	X11_WaitForEvent (ConfigureNotify);
 
 	vid_context_created = true;
+	XRaiseWindow (x_disp, x_win);
+	X11_WaitForEvent (VisibilityNotify);
 	if (vid_fullscreen->int_val) {
 		X11_UpdateFullscreen (vid_fullscreen);
 	}
-	XRaiseWindow (x_disp, x_win);
 }
 
 void
@@ -578,7 +601,7 @@ X11_RestoreVidMode (void)
 #ifdef HAVE_VIDMODE
 	if (vidmode_active) {
 		X11_RestoreScreenSaver ();
-		XF86VidModeSwitchToMode (x_disp, x_screen, vidmodes[original_mode]);
+		//XF86VidModeSwitchToMode (x_disp, x_screen, vidmodes[original_mode]);
 		XFree (vidmodes);
 		vidmode_active = false;
 	}

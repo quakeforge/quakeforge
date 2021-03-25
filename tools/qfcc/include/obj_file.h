@@ -34,7 +34,7 @@
 /** \defgroup qfcc_qfo Object file functions
 	\ingroup qfcc
 */
-//@{
+///@{
 
 #include "QF/pr_comp.h"
 #include "QF/pr_debug.h"
@@ -60,13 +60,13 @@
 */
 typedef struct qfo_header_s {
 	int8_t      qfo[4];			///< identifier string (includes nul) (#QFO)
-	pr_int_t    version;		///< QFO format version (#QFO_VERSION)
-	pr_int_t    num_spaces;
-	pr_int_t    num_relocs;		///< number of relocation records
-	pr_int_t    num_defs;		///< number of def records
-	pr_int_t    num_funcs;		///< number of function records
-	pr_int_t    num_lines;		///< number of line records
-	pr_int_t    num_loose_relocs;	///< number of loose relocation records
+	pr_uint_t   version;		///< QFO format version (#QFO_VERSION)
+	pr_uint_t   num_spaces;
+	pr_uint_t   num_relocs;		///< number of relocation records
+	pr_uint_t   num_defs;		///< number of def records
+	pr_uint_t   num_funcs;		///< number of function records
+	pr_uint_t   num_lines;		///< number of line records
+	pr_uint_t   num_loose_relocs;	///< number of loose relocation records
 								///< (included in num_relocs)
 } qfo_header_t;
 
@@ -77,17 +77,18 @@ typedef enum qfos_type_e {
 	qfos_string,				///< strings. char data
 	qfos_entity,				///< entity field defs. no data
 	qfos_type,					///< type encodings
+	qfos_debug,					///< debug data
 } qfos_type_t;
 
 /**	Representation of a space in the object file.
 */
 typedef struct qfo_space_s {
 	pr_int_t    type;			///< code, string, data, entity...
-	pr_int_t    defs;			///< index of first def
-	pr_int_t    num_defs;		///< zero for code or string spaces
-	pr_int_t    data;			///< byte offset in qfo
+	pr_uint_t   defs;			///< index of first def
+	pr_uint_t   num_defs;		///< zero for code or string spaces
+	pr_uint_t   data;			///< byte offset in qfo
 	pr_uint_t   data_size;		///< in elements. zero for entity spaces
-	pr_int_t    id;
+	pr_uint_t   id;
 	pr_int_t    reserved[2];
 } qfo_space_t;
 
@@ -98,20 +99,20 @@ typedef struct qfo_def_s {
 	string_t    name;			///< def name
 	pointer_t   offset;			///< def offset (address)
 
-	pr_int_t    relocs;			///< index of first reloc record
-	pr_int_t    num_relocs;		///< number of reloc records
+	pr_uint_t   relocs;			///< index of first reloc record
+	pr_uint_t   num_relocs;		///< number of reloc records
 
 	pr_uint_t   flags;			///< \ref qfcc_qfo_QFOD "QFOD flags"
 
 	string_t    file;			///< source file name
-	pr_int_t    line;			///< source line number
+	pr_uint_t   line;			///< source line number
 } qfo_def_t;
-//@}
+///@}
 
 /** \defgroup qfcc_qfo_QFOD QFOD flags
 	\ingroup qfcc_qfo
 */
-//@{
+///@{
 
 /** The def has been initialized.
 
@@ -168,11 +169,11 @@ typedef struct qfo_def_s {
 	\hideinitializer
 */
 #define QFOD_PARAM			(1u<<8)
-//@}
+///@}
 
 /** \addtogroup qfcc_qfo
 */
-//@{
+///@{
 
 /** Representation of a function in the object file.
 */
@@ -180,7 +181,7 @@ typedef struct qfo_func_s {
 	string_t    name;			///< function name
 	pointer_t   type;			///< function type (in type data space)
 	string_t    file;			///< source file name
-	pr_int_t    line;			///< source line number
+	pr_uint_t   line;			///< source line number
 
 	/** \name Function code location.
 		If #code is negative, then the function is a VM builtin function.
@@ -191,22 +192,22 @@ typedef struct qfo_func_s {
 	*/
 	pr_int_t    code;
 
-	pr_int_t    def;			///< def that references this function. Index
+	pr_uint_t   def;			///< def that references this function. Index
 								///< to ::qfo_def_t. The data word pointed to
 								///< by the def stores the index of this
 								///< function.
 
-	pr_int_t    locals_space;	///< space holding the function's local data
+	pr_uint_t   locals_space;	///< space holding the function's local data
 
-	pr_int_t    line_info;		///< Index to first ::pr_lineno_t line record.
+	pr_uint_t   line_info;		///< Index to first ::pr_lineno_t line record.
 								///< Zero if there are no records.
 
 	/** \name Function relocation records.
 		XXX not sure how these work
 	*/
 	//@{
-	pr_int_t    relocs;			///< Index to first ::qfo_reloc_t reloc record.
-	pr_int_t    num_relocs;		///< Number of reloc records.
+	pr_uint_t   relocs;			///< Index to first ::qfo_reloc_t reloc record.
+	pr_uint_t   num_relocs;		///< Number of reloc records.
 	//@}
 	pr_int_t    reserved[2];
 } qfo_func_t;
@@ -237,8 +238,8 @@ typedef struct qfo_func_s {
 	the referenced field def.
 */
 typedef struct qfo_reloc_s {
-	pr_int_t    space;			///< index of space holding data to be adjusted
-	pr_int_t    offset;			///< offset of the relocation
+	pr_uint_t   space;			///< index of space holding data to be adjusted
+	pr_uint_t   offset;			///< offset of the relocation
 	pr_int_t    type;			///< type of the relocation (::reloc_type)
 	pr_uint_t   target;			///< def/func/etc this relocation is for
 } qfo_reloc_t;
@@ -248,14 +249,14 @@ typedef struct qfo_reloc_s {
 typedef struct qfo_mspace_s {
 	qfos_type_t type;
 	qfo_def_t  *defs;
-	int         num_defs;
+	unsigned    num_defs;
 	union {
 		dstatement_t *code;
 		pr_type_t  *data;
 		char       *strings;
 	}           d;
 	unsigned    data_size;
-	int         id;
+	unsigned    id;
 } qfo_mspace_t;
 
 /** In-memory representation of a QFO object file.
@@ -263,16 +264,16 @@ typedef struct qfo_mspace_s {
 typedef struct qfo_s {
 	void       *data;			///< data buffer holding qfo file when read
 	qfo_mspace_t *spaces;
-	int         num_spaces;
+	unsigned    num_spaces;
 	qfo_reloc_t *relocs;
-	int         num_relocs;			// includes num_loose_relocs
+	unsigned    num_relocs;			// includes num_loose_relocs
 	qfo_def_t  *defs;
-	int         num_defs;
+	unsigned    num_defs;
 	qfo_func_t *funcs;
-	int         num_funcs;
+	unsigned    num_funcs;
 	pr_lineno_t *lines;
-	int         num_lines;
-	int         num_loose_relocs;	// included in num_relocs
+	unsigned    num_lines;
+	unsigned    num_loose_relocs;	// included in num_relocs
 } qfo_t;
 
 enum {
@@ -283,16 +284,17 @@ enum {
 	qfo_far_data_space,
 	qfo_entity_space,
 	qfo_type_space,
+	qfo_debug_space,
 
 	qfo_num_spaces
 };
-//@}
+///@}
 
 /** \defgroup qfcc_qfo_data_access QFO Data Acess
 	\ingroup qfcc_qfo
 	Macros for accessing data in the QFO address space
 */
-//@{
+///@{
 
 /** \internal
 	\param q pointer to ::qfo_t struct
@@ -304,6 +306,19 @@ enum {
 	\hideinitializer
 */
 #define QFO_var(q, s, t, o)	((q)->spaces[s].d.data[o].t##_var)
+
+/** Access a double variable in the object file. Can be assigned to.
+
+	\par QC type:
+		\c double
+	\param q pointer to ::qfo_t struct
+	\param s space index
+	\param o offset into object file data space
+	\return double lvalue
+
+	\hideinitializer
+*/
+#define	QFO_DOUBLE(q, s, o)		(*(double *) ((q)->spaces[s].d.data + o))
 
 /** Access a float variable in the object file. Can be assigned to.
 
@@ -361,7 +376,6 @@ enum {
 
 	\param q pointer to ::qfo_t struct
 	\param s space index
-	\param s offset into object file string space
 	\return (char *)
 
 	\hideinitializer
@@ -439,11 +453,11 @@ enum {
 */
 #define QFO_STRUCT(q, s, t, o)	(*QFO_POINTER (q, s, t, o))
 
-//@}
+///@}
 
 /** \addtogroup qfcc_qfo
 */
-//@{
+///@{
 
 struct pr_info_s;
 
@@ -485,6 +499,8 @@ qfo_t *qfo_new (void);
 */
 void qfo_delete (qfo_t *qfo);
 
-//@}
+__attribute__((const)) int qfo_log2 (unsigned x);
+
+///@}
 
 #endif//__obj_file_h

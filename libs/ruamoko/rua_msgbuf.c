@@ -58,32 +58,32 @@ typedef struct {
 static msgbuf_t *
 msgbuf_new (msgbuf_resources_t *res)
 {
-	PR_RESNEW (msgbuf_t, res->msgbuf_map);
+	return PR_RESNEW (res->msgbuf_map);
 }
 
 static void
 msgbuf_free (progs_t *pr, msgbuf_resources_t *res, msgbuf_t *msgbuf)
 {
 	PR_Zone_Free (pr, msgbuf->sizebuf.data);
-	PR_RESFREE (msgbuf_t, res->msgbuf_map, msgbuf);
+	PR_RESFREE (res->msgbuf_map, msgbuf);
 }
 
 static void
 msgbuf_reset (msgbuf_resources_t *res)
 {
-	PR_RESRESET (msgbuf_t, res->msgbuf_map);
+	PR_RESRESET (res->msgbuf_map);
 }
 
 static inline msgbuf_t *
 msgbuf_get (msgbuf_resources_t *res, int index)
 {
-	PR_RESGET(res->msgbuf_map, index);
+	return PR_RESGET(res->msgbuf_map, index);
 }
 
-static inline int
+static inline int __attribute__((pure))
 msgbuf_index (msgbuf_resources_t *res, msgbuf_t *msgbuf)
 {
-	PR_RESINDEX(res->msgbuf_map, msgbuf);
+	return PR_RESINDEX(res->msgbuf_map, msgbuf);
 }
 
 static void
@@ -358,8 +358,7 @@ static void
 bi_MsgBuf_ReadCoordAngleV (progs_t *pr)
 {
 	msgbuf_t   *mb = get_msgbuf (pr, __FUNCTION__, P_INT (pr, 0));
-	MSG_ReadCoordAngleV (&mb->msg, P_GPOINTER (pr, 1)->vector_var,
-						 P_GPOINTER (pr, 2)->vector_var);
+	MSG_ReadCoordAngleV (&mb->msg, P_VECTOR (pr, 1), P_VECTOR (pr, 2));
 }
 
 static void

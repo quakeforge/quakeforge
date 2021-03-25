@@ -44,12 +44,13 @@
 #include "QF/va.h"
 
 #include "compat.h"
-#include "crudefile.h"
-#include "map_cfg.h"
+
+#include "qw/include/crudefile.h"
+#include "qw/include/map_cfg.h"
 #include "qw/pmove.h"
-#include "server.h"
-#include "sv_progs.h"
-#include "sv_gib.h"
+#include "qw/include/server.h"
+#include "qw/include/sv_progs.h"
+#include "qw/include/sv_gib.h"
 #include "world.h"
 
 info_t     *localinfo;	// local game info
@@ -166,8 +167,8 @@ SV_CreateBaseline (void)
 		MSG_WriteByte (&sv.signon, SVdata (svent)->state.colormap);
 		MSG_WriteByte (&sv.signon, SVdata (svent)->state.skinnum);
 
-		MSG_WriteCoordAngleV (&sv.signon, SVdata (svent)->state.origin,
-							  SVdata (svent)->state.angles);
+		MSG_WriteCoordAngleV (&sv.signon, &SVdata (svent)->state.origin[0],
+							  SVdata (svent)->state.angles);//FIXME
 	}
 }
 
@@ -228,7 +229,7 @@ SV_CalcPHS (void)
 
 	SV_Printf ("Building PHS...\n");
 
-	num = sv.worldmodel->numleafs;
+	num = sv.worldmodel->brush.numleafs;
 	rowwords = (num + 31) >> 5;
 	rowbytes = rowwords * 4;
 
@@ -236,7 +237,8 @@ SV_CalcPHS (void)
 	scan = sv.pvs;
 	vcount = 0;
 	for (i = 0; i < num; i++, scan += rowbytes) {
-		memcpy (scan, Mod_LeafPVS (sv.worldmodel->leafs + i, sv.worldmodel),
+		memcpy (scan, Mod_LeafPVS (sv.worldmodel->brush.leafs + i,
+								   sv.worldmodel),
 				rowbytes);
 		if (i == 0)
 			continue;
@@ -341,6 +343,9 @@ SV_SpawnServer (const char *server)
 	so_buffers = sv.signon_buffers;
 	so_sizes = sv.signon_buffer_size;
 
+	if (sv.name) {
+		free (sv.name);
+	}
 	memset (&sv, 0, sizeof (sv));
 
 	sv.recorders = recorders;
@@ -363,14 +368,14 @@ SV_SpawnServer (const char *server)
 
 	SV_NextSignon ();
 
-	strcpy (sv.name, server);
+	sv.name = strdup(server);
 
 	// load progs to get entity field count which determines how big each
 	// edict is
 	SV_LoadProgs ();
 	SV_FreeAllEdictLeafs ();
 	SV_SetupUserCommands ();
-	Info_SetValueForStarKey (svs.info, "*progs", va ("%i", sv_pr_state.crc),
+	Info_SetValueForStarKey (svs.info, "*progs", va (0, "%i", sv_pr_state.crc),
 							 !sv_highchars->int_val);
 
 	// leave slots at start for only clients
@@ -384,7 +389,6 @@ SV_SpawnServer (const char *server)
 
 	sv.time = 1.0;
 
-	strncpy (sv.name, server, sizeof (sv.name));
 	snprintf (sv.modelname, sizeof (sv.modelname), "maps/%s.bsp", server);
 	map_cfg (sv.modelname, 0);
 	sv.worldmodel = Mod_ForName (sv.modelname, true);
@@ -399,7 +403,7 @@ SV_SpawnServer (const char *server)
 	sv.model_precache[0] = sv_pr_state.pr_strings;
 	sv.model_precache[1] = sv.modelname;
 	sv.models[1] = sv.worldmodel;
-	for (i = 1; i < sv.worldmodel->numsubmodels; i++) {
+	for (i = 1; i < sv.worldmodel->brush.numsubmodels; i++) {
 		sv.model_precache[1 + i] = localmodels[i];
 		sv.models[i + 1] = Mod_ForName (localmodels[i], false);
 	}
@@ -417,7 +421,7 @@ SV_SpawnServer (const char *server)
 
 	ent = EDICT_NUM (&sv_pr_state, 0);
 	ent->free = false;
-	SVstring (ent, model) = PR_SetString (&sv_pr_state, sv.worldmodel->name);
+	SVstring (ent, model) = PR_SetString (&sv_pr_state, sv.worldmodel->path);
 	SVfloat (ent, modelindex) = 1;				// world model
 	SVfloat (ent, solid) = SOLID_BSP;
 	SVfloat (ent, movetype) = MOVETYPE_PUSH;
@@ -434,13 +438,13 @@ SV_SpawnServer (const char *server)
 
 	// load and spawn all other entities
 	*sv_globals.time = sv.time;
-	ent_file = QFS_VOpenFile (va ("maps/%s.ent", server), 0,
+	ent_file = QFS_VOpenFile (va (0, "maps/%s.ent", server), 0,
 							  sv.worldmodel->vpath);
 	if ((buf = QFS_LoadFile (ent_file, 0))) {
 		ED_LoadFromFile (&sv_pr_state, (char *) buf);
 		free (buf);
 	} else {
-		ED_LoadFromFile (&sv_pr_state, sv.worldmodel->entities);
+		ED_LoadFromFile (&sv_pr_state, sv.worldmodel->brush.entities);
 	}
 
 	// look up some model indexes for specialized message compression

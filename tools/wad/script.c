@@ -92,7 +92,7 @@ load_image (const char *name)
 
 	if (!(file = Qopen (name, "rb")))
 		Sys_Error ("couldn't open %s. %s", name, strerror(errno));
-	if (!(tex = LoadPNG (file)))
+	if (!(tex = LoadPNG (file, 1)))
 		Sys_Error ("couldn't read %s as PNG", name);
 
 	pixels = tex->width * tex->height;
@@ -159,7 +159,7 @@ write_file (void)
 	QFile      *file;
 	const char *name;
 
-	name = va ("%s/%s.lmp", destfile.str, lumpname->str);
+	name = va (0, "%s/%s.lmp", destfile.str, lumpname->str);
 	if (!(file = Qopen (name, "wb")))
 		Sys_Error ("couldn't open %s. %s", name, strerror(errno));
 	Qwrite (file, lumpbuffer, lump_p - lumpbuffer);

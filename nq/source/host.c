@@ -56,11 +56,12 @@
 #include "QF/plugin/vid_render.h"
 
 #include "buildnum.h"
-#include "chase.h"
 #include "compat.h"
-#include "host.h"
-#include "server.h"
-#include "sv_progs.h"
+
+#include "nq/include/chase.h"
+#include "nq/include/host.h"
+#include "nq/include/server.h"
+#include "nq/include/sv_progs.h"
 
 
 /*
@@ -495,8 +496,7 @@ void
 Host_ClearMemory (void)
 {
 	Sys_MaskPrintf (SYS_DEV, "Clearing memory\n");
-	if (viddef.flush_caches)
-		viddef.flush_caches ();
+	CL_ClearMemory ();
 	Mod_ClearAll ();
 	if (host_hunklevel)
 		Hunk_FreeToLowMark (host_hunklevel);
@@ -504,8 +504,6 @@ Host_ClearMemory (void)
 	cls.signon = 0;
 	memset (&sv, 0, sizeof (sv));
 	memset (&cl, 0, sizeof (cl));
-	if (r_data)
-		r_data->force_fullscreen = 0;
 }
 
 /*
@@ -531,7 +529,7 @@ Host_FilterTime (float time)
 	//FIXME not having the framerate cap is nice, but it breaks net play
 	timedifference = (timescale / 72.0) - (realtime - oldrealtime);
 
-	if (!cls.timedemo && (timedifference > 0))
+	if (!cls.demoplayback && (timedifference > 0))
 		return timedifference;                   // framerate is too high
 
 	host_frametime = realtime - oldrealtime;
@@ -543,7 +541,7 @@ Host_FilterTime (float time)
 	if (host_framerate->value > 0)
 		host_frametime = host_framerate->value;
 	else	// don't allow really long or short frames
-		host_frametime = bound (0.001, host_frametime, 0.1);
+		host_frametime = bound (0.000, host_frametime, 0.1);
 
 	return 0;
 }
@@ -698,7 +696,7 @@ _Host_Frame (float time)
 
 	if (cls.demo_capture) {
 		tex_t      *tex = r_funcs->SCR_CaptureBGR ();
-		WritePNGqfs (va ("%s/qfmv%06d.png", qfs_gamedir->dir.shots,
+		WritePNGqfs (va (0, "%s/qfmv%06d.png", qfs_gamedir->dir.shots,
 						 cls.demo_capture++),
 					 tex->data, tex->width, tex->height);
 		free (tex);
@@ -861,7 +859,7 @@ Host_Init_Memory (void)
 		Sys_Error ("Only %4.1f megs of memory reported, can't execute game",
 				   mem_size / (float) 0x100000);
 
-	mem_base = malloc (mem_size);
+	mem_base = Sys_Alloc (mem_size);
 
 	if (!mem_base)
 		Sys_Error ("Can't allocate %d", mem_size);
@@ -896,13 +894,8 @@ Host_Init (void)
 
 	Game_Init ();
 
-	PR_Init_Cvars ();
-	SV_Progs_Init_Cvars ();
-
 	if (!isDedicated)
 		CL_InitCvars ();
-
-	PR_Init ();
 
 	if (isDedicated) {
 		PI_RegisterPlugins (server_plugin_list);
@@ -962,7 +955,7 @@ Host_Init (void)
 	better to run quit through here before final handoff to the sys code.
 */
 void
-Host_Shutdown (void)
+Host_Shutdown (void *data)
 {
 	static qboolean isdown = false;
 
@@ -971,11 +964,4 @@ Host_Shutdown (void)
 		return;
 	}
 	isdown = true;
-
-
-	NET_Shutdown ();
-	if (cls.state != ca_dedicated) {
-		CL_Shutdown ();
-	}
-	Con_Shutdown ();
 }

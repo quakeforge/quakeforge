@@ -1,0 +1,81 @@
+man_MANS += doc/man/quakeforge.1
+
+DOX= \
+	doc/bind.dox \
+	doc/config.dox \
+	doc/connect.dox \
+	doc/cshifts.dox \
+	doc/dirconf.dox \
+	doc/faq.dox \
+	doc/filesystem.dox \
+	doc/mapformat.dox \
+	doc/property-list.dox \
+	doc/qtv.dox \
+	doc/quakeforge.dox \
+	doc/qw-cap-spec.dox \
+	doc/qw-download-spec.dox \
+	doc/sound.dox \
+	doc/specifications.dox \
+	doc/surround-sound.dox \
+	doc/timestamps.dox
+
+GIB= \
+	doc/gib/GIB.lyx \
+	doc/gib/break.gib \
+	doc/gib/continue.gib \
+	doc/gib/curly.gib \
+	doc/gib/examples.sh \
+	doc/gib/for.gib \
+	doc/gib/gib_head.eps \
+	doc/gib/if-chain.gib \
+	doc/gib/if-else.gib \
+	doc/gib/if-simple.gib \
+	doc/gib/while.gib
+
+PROGS= \
+	doc/progs/vm-exec.c \
+	doc/progs/vm-mem.fig
+
+EXTRA_DIST += \
+	${DOX} ${GIB} ${PROGS} \
+	doc/qf.ico \
+	doc/skybox.fig \
+	doc/template.c \
+	doc/template.h \
+	doc/quakeforge.dox.conf.in \
+	doc/config/glspeed-v1.cfg \
+	doc/config/glspeed-v3.cfg \
+	doc/config/swspeed.cfg \
+	doc/config/gib/adjustvolume.gib \
+	doc/config/gib/infobot.gib \
+	doc/config/gib/ln.gib \
+	doc/config/gib/qfadmin.gib \
+	doc/config/gib/sshot.gib \
+	doc/config/gib/zoom.gib \
+	doc/man/quakeforge.1 \
+	doc/qtv/qwtv.fig
+
+SUFFIXES += .eps .fig .png
+.fig.png:
+	@mkdir -p `dirname $@`
+	fig2dev -L png $< $@
+
+.fig.eps:
+	@mkdir -p `dirname $@`
+	fig2dev -L ps $< $@
+
+.fig.svg:
+	@mkdir -p `dirname $@`
+	fig2dev -L svg $< $@
+
+clean-local:
+	-rm -fr doxygen
+
+doc/progs/vm-mem.svg: doc/progs/vm-mem.fig
+doc/progs/vm-mem.eps: doc/progs/vm-mem.fig
+doc/qtv/qwtv.svg: doc/qtv/qwtv.fig
+doc/qtv/qwtv.eps: doc/qtv/qwtv.fig
+
+.PHONY: doc
+doc: doc/quakeforge.dox.conf doc/progs/vm-mem.svg doc/progs/vm-mem.eps doc/qtv/qwtv.svg doc/qtv/qwtv.eps ${DOX}
+	doxygen doc/quakeforge.dox.conf

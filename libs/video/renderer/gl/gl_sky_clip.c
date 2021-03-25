@@ -220,14 +220,14 @@ find_cube_vertex (int face1, int face2, int face3, vec3_t v)
 	set_vertex
 
 	add the vertex to the polygon describing the face of the cube. Offsets
-	the vertex relative to r_refdef.vieworg so the cube is always centered
+	the vertex relative to r_refdef.viewposition so the cube is always centered
 	on the player and also calculates the texture coordinates of the vertex
 	(wish I could find a cleaner way of calculating s and t).
 */
 static void
 set_vertex (struct box_def *box, int face, int ind, const vec3_t v)
 {
-	VectorAdd (v, r_refdef.vieworg, box->face[face].poly.verts[ind]);
+	VectorAdd (v, r_refdef.viewposition, box->face[face].poly.verts[ind]);
 	switch (face) {
 		case 0:
 			box->face[face].poly.verts[ind][3] = (1024 - v[1] + 4) / BOX_WIDTH;
@@ -370,7 +370,6 @@ process_corners (struct box_def *box)
 	for (i = 0; i < 6; i++) {
 		if (max_visit < box->face_visits[i]) {
 			max_visit = box->face_visits[i];
-			center = i;
 		}
 	}
 
@@ -602,14 +601,14 @@ R_DrawSkyBoxPoly (const glpoly_t *poly)
 		Sys_Error ("too many verts!");
 	}
 
-	VectorSubtract (poly->verts[poly->numverts - 1], r_refdef.vieworg, last_v);
+	VectorSubtract (poly->verts[poly->numverts - 1], r_refdef.viewposition, last_v);
 	prev_face = determine_face (last_v);
 
 	box.visited_faces[0].face = prev_face;
 	box.face_count = 1;
 
 	for (i = 0; i < poly->numverts; i++) {
-		VectorSubtract (poly->verts[i], r_refdef.vieworg, v);
+		VectorSubtract (poly->verts[i], r_refdef.viewposition, v);
 		face = determine_face (v);
 		if (face != prev_face) {
 			if ((face_axis[face]) == (face_axis[prev_face])) {
@@ -865,11 +864,11 @@ gl_R_DrawSkyChain (const instsurf_t *sky_chain)
 					vec3_t      x, c = { 0, 0, 0 };
 
 					for (i = 0; i < p->numverts; i++) {
-						VectorSubtract (p->verts[i], r_refdef.vieworg, x);
+						VectorSubtract (p->verts[i], r_refdef.viewposition, x);
 						VectorAdd (x, c, c);
 					}
 					VectorScale (c, 1.0 / p->numverts, c);
-					VectorAdd (c, r_refdef.vieworg, c);
+					VectorAdd (c, r_refdef.viewposition, c);
 					qfglVertex3fv (c);
 					p = p->next;
 				}
@@ -890,7 +889,7 @@ gl_R_DrawSkyChain (const instsurf_t *sky_chain)
 					qfglBegin (GL_LINE_LOOP);
 					for (j = 0; j < 4; j++) {
 						VectorScale (&gl_skyvec[i][j][2], 1.0 / 128.0, v);
-						VectorAdd (v, r_refdef.vieworg, v);
+						VectorAdd (v, r_refdef.viewposition, v);
 						qfglVertex3fv (v);
 					}
 					qfglEnd ();

@@ -1,0 +1,2 @@
+include tools/qfmodelgen/include/Makemodule.am
+include tools/qfmodelgen/source/Makemodule.am

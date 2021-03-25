@@ -59,6 +59,7 @@ struct symbol_s *make_structure (const char *name, int su, struct_def_t *defs,
 								 struct type_s *type);
 struct def_s * emit_structure (const char *name, int su, struct_def_t *defs,
 							   struct type_s *type, void *data,
+							   struct defspace_s *space,
 							   enum storage_class_e storage);
 
 #endif//__struct_h

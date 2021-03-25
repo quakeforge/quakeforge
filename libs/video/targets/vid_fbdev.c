@@ -209,8 +209,8 @@ static unsigned long fb_map_length = 0;
 
 static struct fb_var_screeninfo orig_var;
 
-void
-VID_Shutdown (void)
+static void
+VID_shutdown (void)
 {
 	Sys_MaskPrintf (SYS_VID, "VID_Shutdown\n");
 
@@ -405,6 +405,8 @@ VID_Init (byte *palette, byte *colormap)
 
 	if (fbdev_inited)
 		return;
+
+	Sys_RegisterShutdown (VID_shutdown);
 
 	R_LoadModule (0, VID_SetPalette);
 

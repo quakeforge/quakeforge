@@ -53,11 +53,12 @@
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
 
-#include "client.h"
 #include "compat.h"
-#include "game.h"
 #include "sbar.h"
-#include "server.h"
+
+#include "nq/include/client.h"
+#include "nq/include/game.h"
+#include "nq/include/server.h"
 
 int         sb_updates;				// if >= vid.numpages, no update needed
 
@@ -352,7 +353,7 @@ draw_num (view_t *view, int x, int y, int num, int digits, int color)
 static inline void
 draw_smallnum (view_t *view, int x, int y, int n, int packed, int colored)
 {
-	char        num[4];
+	char        num[12];
 
 	packed = packed != 0;				// ensure 0 or 1
 
@@ -519,7 +520,7 @@ Sbar_SortFrags (void)
 	// sort by frags
 	scoreboardlines = 0;
 	for (i = 0; i < cl.maxclients; i++) {
-		if (cl.scores[i].name->value[0]) {
+		if (cl.players[i].name->value[0]) {
 			fragsort[scoreboardlines] = i;
 			scoreboardlines++;
 		}
@@ -527,7 +528,8 @@ Sbar_SortFrags (void)
 
 	for (i = 0; i < scoreboardlines; i++) {
 		for (j = 0; j < (scoreboardlines - 1 - i); j++) {
-			if (cl.scores[fragsort[j]].frags < cl.scores[fragsort[j + 1]].frags) {
+			if (cl.players[fragsort[j]].frags
+				< cl.players[fragsort[j + 1]].frags) {
 				k = fragsort[j];
 				fragsort[j] = fragsort[j + 1];
 				fragsort[j + 1] = k;
@@ -574,7 +576,7 @@ draw_frags (view_t *view)
 	int         i, k, l, p = -1;
 	int         top, bottom;
 	int         x;
-	scoreboard_t *s;
+	player_info_t *s;
 
 	if (cl.maxclients == 1)
 		return;
@@ -588,7 +590,7 @@ draw_frags (view_t *view)
 
 	for (i = 0; i < l; i++) {
 		k = fragsort[i];
-		s = &cl.scores[k];
+		s = &cl.players[k];
 		if (!s->name->value[0])
 			continue;
 
@@ -800,11 +802,11 @@ static void
 draw_rogue_face (view_t *view)
 {
 	int         top, bottom;
-	scoreboard_t *s;
+	player_info_t *s;
 
 	// PGM 01/19/97 - team color drawing
 
-	s = &cl.scores[cl.viewentity - 1];
+	s = &cl.players[cl.viewentity - 1];
 
 	top = Sbar_ColorForMap (s->topcolor);
 	bottom = Sbar_ColorForMap (s->bottomcolor);
@@ -1032,7 +1034,7 @@ Sbar_DeathmatchOverlay (view_t *view)
 	int         i, k, l;
 	int         top, bottom;
 	int         x, y;
-	scoreboard_t *s;
+	player_info_t *s;
 
 	r_data->scr_copyeverything = 1;
 	r_data->scr_fullupdate = 0;
@@ -1049,7 +1051,7 @@ Sbar_DeathmatchOverlay (view_t *view)
 	y = 40;
 	for (i = 0; i < l; i++) {
 		k = fragsort[i];
-		s = &cl.scores[k];
+		s = &cl.players[k];
 		if (!s->name->value[0])
 			continue;
 
@@ -1647,8 +1649,8 @@ Sbar_Init (void)
 	Key_KeydestCallback (sbar_keydest_callback);
 
 	for (i = 0; i < 10; i++) {
-		sb_nums[0][i] = r_funcs->Draw_PicFromWad (va ("num_%i", i));
-		sb_nums[1][i] = r_funcs->Draw_PicFromWad (va ("anum_%i", i));
+		sb_nums[0][i] = r_funcs->Draw_PicFromWad (va (0, "num_%i", i));
+		sb_nums[1][i] = r_funcs->Draw_PicFromWad (va (0, "anum_%i", i));
 	}
 
 	sb_nums[0][10] = r_funcs->Draw_PicFromWad ("num_minus");
@@ -1675,19 +1677,19 @@ Sbar_Init (void)
 
 	for (i = 0; i < 5; i++) {
 		sb_weapons[2 + i][0] =
-			r_funcs->Draw_PicFromWad (va ("inva%i_shotgun", i + 1));
+			r_funcs->Draw_PicFromWad (va (0, "inva%i_shotgun", i + 1));
 		sb_weapons[2 + i][1] =
-			r_funcs->Draw_PicFromWad (va ("inva%i_sshotgun", i + 1));
+			r_funcs->Draw_PicFromWad (va (0, "inva%i_sshotgun", i + 1));
 		sb_weapons[2 + i][2] =
-			r_funcs->Draw_PicFromWad (va ("inva%i_nailgun", i + 1));
+			r_funcs->Draw_PicFromWad (va (0, "inva%i_nailgun", i + 1));
 		sb_weapons[2 + i][3] =
-			r_funcs->Draw_PicFromWad (va ("inva%i_snailgun", i + 1));
+			r_funcs->Draw_PicFromWad (va (0, "inva%i_snailgun", i + 1));
 		sb_weapons[2 + i][4] =
-			r_funcs->Draw_PicFromWad (va ("inva%i_rlaunch", i + 1));
+			r_funcs->Draw_PicFromWad (va (0, "inva%i_rlaunch", i + 1));
 		sb_weapons[2 + i][5] =
-			r_funcs->Draw_PicFromWad (va ("inva%i_srlaunch", i + 1));
+			r_funcs->Draw_PicFromWad (va (0, "inva%i_srlaunch", i + 1));
 		sb_weapons[2 + i][6] =
-			r_funcs->Draw_PicFromWad (va ("inva%i_lightng", i + 1));
+			r_funcs->Draw_PicFromWad (va (0, "inva%i_lightng", i + 1));
 	}
 
 	sb_ammo[0] = r_funcs->Draw_PicFromWad ("sb_shells");
@@ -1752,15 +1754,15 @@ Sbar_Init (void)
 
 		for (i = 0; i < 5; i++) {
 			hsb_weapons[2 + i][0] =
-				r_funcs->Draw_PicFromWad (va ("inva%i_laser", i + 1));
+				r_funcs->Draw_PicFromWad (va (0, "inva%i_laser", i + 1));
 			hsb_weapons[2 + i][1] =
-				r_funcs->Draw_PicFromWad (va ("inva%i_mjolnir", i + 1));
+				r_funcs->Draw_PicFromWad (va (0, "inva%i_mjolnir", i + 1));
 			hsb_weapons[2 + i][2] =
-				r_funcs->Draw_PicFromWad (va ("inva%i_gren_prox", i + 1));
+				r_funcs->Draw_PicFromWad (va (0, "inva%i_gren_prox", i + 1));
 			hsb_weapons[2 + i][3] =
-				r_funcs->Draw_PicFromWad (va ("inva%i_prox_gren", i + 1));
+				r_funcs->Draw_PicFromWad (va (0, "inva%i_prox_gren", i + 1));
 			hsb_weapons[2 + i][4] =
-				r_funcs->Draw_PicFromWad (va ("inva%i_prox", i + 1));
+				r_funcs->Draw_PicFromWad (va (0, "inva%i_prox", i + 1));
 		}
 
 		hsb_items[0] = r_funcs->Draw_PicFromWad ("sb_wsuit");

@@ -27,8 +27,8 @@
 
 */
 
-#ifndef __qtypes_h
-#define __qtypes_h
+#ifndef __QF_qtypes_h
+#define __QF_qtypes_h
 
 #include <stdio.h>
 #include <stdint.h>
@@ -76,8 +76,8 @@ typedef vec_t	quat_t[4];	///< A quaternion.
 typedef vec_t	vec5_t[5];
 typedef union {
 	struct {
-		vec_t       s;
 		vec3_t      v;
+		vec_t       s;
 	} sv;
 	quat_t      q;
 } Quat_t;
@@ -115,4 +115,4 @@ typedef struct sphere_s {
 	vec_t       radius;
 } sphere_t;
 
-#endif // __qtypes_h
+#endif//__QF_qtypes_h

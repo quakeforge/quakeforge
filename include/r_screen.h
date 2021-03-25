@@ -52,7 +52,6 @@ extern float       scr_con_current;
 extern float       scr_conlines;				// lines of console to display
 
 extern int         oldscreensize;
-extern float       oldfov;
 extern int         oldsbar;
 
 extern qboolean    scr_initialized;			// ready to draw
@@ -64,14 +63,12 @@ extern struct qpic_s *scr_turtle;
 extern int         clearconsole;
 extern int         clearnotify;
 
-extern viddef_t    vid;						// global video state
-
 extern vrect_t    *pconupdate;
 extern vrect_t     scr_vrect;
 
 extern qboolean    scr_skipupdate;
 
-float CalcFov (float fov_x, float width, float height);
+void SCR_SetFOV (float fov);
 void SCR_SetUpToDrawConsole (void);
 void SCR_ScreenShot_f (void);
 

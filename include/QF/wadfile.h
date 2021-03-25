@@ -29,7 +29,7 @@
 	\ingroup utils
 	Wadfile processing
 */
-//@{
+///@{
 
 #ifndef __QF_wadfile_h
 #define __QF_wadfile_h
@@ -102,6 +102,6 @@ int wad_add_data (wad_t *wad, const char *lumpname, byte type,
 				  const void *data, int bytes);
 lumpinfo_t *wad_find_lump (wad_t *wad, const char *filename);
 
-//@}
+///@}
 
 #endif//__QF_wadfile_h

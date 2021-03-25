@@ -30,7 +30,7 @@
 #include "QF/quakeio.h"
 #include "QF/sys.h"
 
-#include "lbmlib.h"
+#include "tools/qfmodelgen/include/lbmlib.h"
 
 static int
 LoadFile (const char *fname, byte **buf)

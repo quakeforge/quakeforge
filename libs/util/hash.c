@@ -45,11 +45,11 @@
 
 #include "compat.h"
 
-typedef struct hashlink_s {
+struct hashlink_s {
 	struct hashlink_s *next;
 	struct hashlink_s **prev;
 	void *data;
-} hashlink_t;
+};
 
 struct hashtab_s {
 	size_t tab_size;
@@ -60,37 +60,38 @@ struct hashtab_s {
 	uintptr_t (*get_hash)(const void*,void*);
 	const char *(*get_key)(const void*,void*);
 	void (*free_ele)(void*,void*);
+	hashlink_t **hashlink_freelist;
 	hashlink_t *tab[1];             // variable size
 };
 
-static hashlink_t *free_hashlinks;
-
 static hashlink_t *
-new_hashlink (void)
+new_hashlink (hashlink_t **free_hashlinks)
 {
 	hashlink_t *link;
 
-	if (!free_hashlinks) {
+	if (!*free_hashlinks) {
 		int		i;
 
-		if (!(free_hashlinks = calloc (1024, sizeof (hashlink_t))))
+		if (!(*free_hashlinks = calloc (1024, sizeof (hashlink_t))))
 			return 0;
-		for (i = 0, link = free_hashlinks; i < 1023; i++, link++)
+		for (i = 0, link = *free_hashlinks; i < 1023; i++, link++)
 			link->next = link + 1;
 		link->next = 0;
 	}
-	link = free_hashlinks;
-	free_hashlinks = link->next;
+	link = *free_hashlinks;
+	*free_hashlinks = link->next;
 	link->next = 0;
 	return link;
 }
 
 static void
-free_hashlink (hashlink_t *link)
+free_hashlink (hashlink_t *link, hashlink_t **free_hashlinks)
 {
-	link->next = free_hashlinks;
-	free_hashlinks = link;
+	link->next = *free_hashlinks;
+	*free_hashlinks = link;
 }
+
+static hashlink_t *default_hashlink_freelist;
 
 VISIBLE unsigned long
 Hash_String (const char *str)
@@ -183,7 +184,8 @@ get_index (uintptr_t hash, size_t size, size_t bits)
 
 VISIBLE hashtab_t *
 Hash_NewTable (int tsize, const char *(*gk)(const void*,void*),
-			   void (*f)(void*,void*), void *ud)
+			   void (*f)(void*,void*), void *ud,
+			   hashlink_t **hashlink_freelist)
 {
 	hashtab_t *tab = calloc (1, field_offset (hashtab_t, tab[tsize]));
 	if (!tab)
@@ -192,6 +194,10 @@ Hash_NewTable (int tsize, const char *(*gk)(const void*,void*),
 	tab->user_data = ud;
 	tab->get_key = gk;
 	tab->free_ele = f;
+	if (!hashlink_freelist) {
+		hashlink_freelist = &default_hashlink_freelist;
+	}
+	tab->hashlink_freelist = hashlink_freelist;
 
 	while (tsize) {
 		tab->size_bits++;
@@ -228,7 +234,7 @@ Hash_FlushTable (hashtab_t *tab)
 			hashlink_t *t = tab->tab[i]->next;
 			void *data = tab->tab[i]->data;
 
-			free_hashlink (tab->tab[i]);
+			free_hashlink (tab->tab[i], tab->hashlink_freelist);
 			tab->tab[i] = t;
 			if (tab->free_ele)
 				tab->free_ele (data, tab->user_data);
@@ -242,7 +248,7 @@ Hash_Add (hashtab_t *tab, void *ele)
 {
 	unsigned long h = Hash_String (tab->get_key(ele, tab->user_data));
 	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
-	hashlink_t *lnk = new_hashlink ();
+	hashlink_t *lnk = new_hashlink (tab->hashlink_freelist);
 
 	if (!lnk)
 		return -1;
@@ -261,7 +267,7 @@ Hash_AddElement (hashtab_t *tab, void *ele)
 {
 	unsigned long h = tab->get_hash (ele, tab->user_data);
 	size_t ind = get_index (h, tab->tab_size, tab->size_bits);
-	hashlink_t *lnk = new_hashlink ();
+	hashlink_t *lnk = new_hashlink (tab->hashlink_freelist);
 
 	if (!lnk)
 		return -1;
@@ -375,7 +381,7 @@ Hash_Del (hashtab_t *tab, const char *key)
 			if (lnk->next)
 				lnk->next->prev = lnk->prev;
 			*lnk->prev = lnk->next;
-			free_hashlink (lnk);
+			free_hashlink (lnk, tab->hashlink_freelist);
 			tab->num_ele--;
 			return data;
 		}
@@ -398,7 +404,7 @@ Hash_DelElement (hashtab_t *tab, void *ele)
 			if (lnk->next)
 				lnk->next->prev = lnk->prev;
 			*lnk->prev = lnk->next;
-			free_hashlink (lnk);
+			free_hashlink (lnk, tab->hashlink_freelist);
 			tab->num_ele--;
 			return data;
 		}

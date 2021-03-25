@@ -39,11 +39,12 @@
 #include "QF/msg.h"
 #include "QF/sys.h"
 
+#include "compat.h"
+
 #include "qw/msg_ucmd.h"
 
-#include "compat.h"
-#include "server.h"
-#include "sv_progs.h"
+#include "qw/include/server.h"
+#include "qw/include/sv_progs.h"
 
 
 /*
@@ -53,7 +54,7 @@
 	when the bob crosses a waterline.
 */
 
-byte		fatpvs[MAX_MAP_LEAFS / 8];
+byte		fatpvs[MAP_PVS_BYTES];
 int			fatbytes;
 
 
@@ -98,9 +99,9 @@ SV_AddToFatPVS (vec3_t org, mnode_t *node)
 static byte *
 SV_FatPVS (vec3_t org)
 {
-	fatbytes = (sv.worldmodel->numleafs + 31) >> 3;
+	fatbytes = (sv.worldmodel->brush.numleafs + 31) >> 3;
 	memset (fatpvs, 0, fatbytes);
-	SV_AddToFatPVS (org, sv.worldmodel->nodes);
+	SV_AddToFatPVS (org, sv.worldmodel->brush.nodes);
 	return fatpvs;
 }
 
@@ -399,7 +400,7 @@ write_demoplayer (delta_t *delta, plent_state_t *from, plent_state_t *to,
 	int         flags;
 	int         j;
 
-	flags = to->flags >> 1;		// convert PF_(GIB|DEAD) to DF_(GIB|DEAD)
+	flags = to->es.flags >> 1;	// convert PF_(GIB|DEAD) to DF_(GIB|DEAD)
 	flags &= DF_GIB | DF_DEAD;	// PF_MSEC and PF_COMMAND aren't wanted
 	if (full) {
 		flags |= DF_ORIGIN | (DF_ORIGIN << 1) | (DF_ORIGIN << 2)
@@ -407,55 +408,55 @@ write_demoplayer (delta_t *delta, plent_state_t *from, plent_state_t *to,
 				| DF_EFFECTS | DF_SKINNUM | DF_WEAPONFRAME | DF_MODEL;
 	} else {
 		for (j = 0; j < 3; j++)
-			if (from->origin[j] != to->origin[j])
+			if (from->es.origin[j] != to->es.origin[j])
 				flags |= DF_ORIGIN << j;
 
 		for (j = 0; j < 3; j++)
 			if (from->cmd.angles[j] != to->cmd.angles[j])
 				flags |= DF_ANGLES << j;
 
-		if (from->modelindex != to->modelindex)
+		if (from->es.modelindex != to->es.modelindex)
 			flags |= DF_MODEL;
-		if ((from->effects & 0xff) != (to->effects & 0xff))
+		if ((from->es.effects & 0xff) != (to->es.effects & 0xff))
 			flags |= DF_EFFECTS;
-		if (from->skinnum != to->skinnum)
+		if (from->es.skinnum != to->es.skinnum)
 			flags |= DF_SKINNUM;
-		if (from->weaponframe != to->weaponframe)
+		if (from->es.weaponframe != to->es.weaponframe)
 			flags |= DF_WEAPONFRAME;
 	}
 
 	MSG_WriteByte (msg, svc_playerinfo);
-	MSG_WriteByte (msg, to->number);
+	MSG_WriteByte (msg, to->es.number);
 	MSG_WriteShort (msg, flags);
 
-	MSG_WriteByte (msg, to->frame);
+	MSG_WriteByte (msg, to->es.frame);
 
 	for (j = 0; j < 3; j++)
 		if (flags & (DF_ORIGIN << j))
-			MSG_WriteCoord (msg, to->origin[j]);
+			MSG_WriteCoord (msg, to->es.origin[j]);
 
 	for (j = 0; j < 3; j++)
 		if (flags & (DF_ANGLES << j))
 			MSG_WriteAngle16 (msg, to->cmd.angles[j]);
 
 	if (flags & DF_MODEL)
-		MSG_WriteByte (msg, to->modelindex);
+		MSG_WriteByte (msg, to->es.modelindex);
 
 	if (flags & DF_SKINNUM)
-		MSG_WriteByte (msg, to->skinnum);
+		MSG_WriteByte (msg, to->es.skinnum);
 
 	if (flags & DF_EFFECTS)
-		MSG_WriteByte (msg, to->effects);
+		MSG_WriteByte (msg, to->es.effects);
 
 	if (flags & DF_WEAPONFRAME)
-		MSG_WriteByte (msg, to->weaponframe);
+		MSG_WriteByte (msg, to->es.weaponframe);
 }
 
 static void
 write_player (delta_t *delta, plent_state_t *from, plent_state_t *to,
 			  sizebuf_t *msg, int mask, int full)
 {
-	int         flags = to->flags;
+	int         flags = to->es.flags;
 	int         qf_bits = 0;
 	int         i;
 	int         ds = delta->delta_sequence & 0x7f;
@@ -471,30 +472,30 @@ write_player (delta_t *delta, plent_state_t *from, plent_state_t *to,
 		ds = -1;
 	} else {
 		for (i = 0; i < 3; i++)
-			if (from->velocity[i] != to->velocity[i])
+			if (from->es.velocity[i] != to->es.velocity[i])
 				flags |= PF_VELOCITY1 << i;
-		if (from->modelindex != to->modelindex)
+		if (from->es.modelindex != to->es.modelindex)
 			flags |= PF_MODEL;
-		if (from->skinnum != to->skinnum)
+		if (from->es.skinnum != to->es.skinnum)
 			flags |= PF_SKINNUM;
-		if ((from->effects & 0xff) != (to->effects &0xff))
+		if ((from->es.effects & 0xff) != (to->es.effects &0xff))
 			flags |= PF_EFFECTS;
-		if (from->weaponframe != to->weaponframe)
+		if (from->es.weaponframe != to->es.weaponframe)
 			flags |= PF_WEAPONFRAME;
 
-		if (from->alpha != to->alpha)
+		if (from->es.alpha != to->es.alpha)
 			qf_bits |= PF_ALPHA;
-		if (from->scale != to->scale)
+		if (from->es.scale != to->es.scale)
 			qf_bits |= PF_SCALE;
-		if ((from->effects & 0xff00) != (to->effects & 0xff00))
+		if ((from->es.effects & 0xff00) != (to->es.effects & 0xff00))
 			qf_bits |= PF_EFFECTS2;
-		if (from->glow_size != to->glow_size)
+		if (from->es.glow_size != to->es.glow_size)
 			qf_bits |= PF_GLOWSIZE;
-		if (from->glow_color != to->glow_color)
+		if (from->es.glow_color != to->es.glow_color)
 			qf_bits |= PF_GLOWCOLOR;
-		if (from->colormod != to->colormod)
+		if (from->es.colormod != to->es.colormod)
 			qf_bits |= PF_COLORMOD;
-		if ((from->frame & 0xff00) != (to->frame & 0xff00))
+		if ((from->es.frame & 0xff00) != (to->es.frame & 0xff00))
 			qf_bits |= PF_FRAME2;
 		if (qf_bits)
 			flags |= PF_QF;
@@ -505,12 +506,12 @@ write_player (delta_t *delta, plent_state_t *from, plent_state_t *to,
 	MSG_WriteByte (msg, svc_playerinfo);
 	if (delta->type == dt_tp_qtv)
 		MSG_WriteByte (msg, ds);
-	MSG_WriteByte (msg, to->number);
+	MSG_WriteByte (msg, to->es.number);
 	MSG_WriteShort (msg, flags);
 
-	MSG_WriteCoordV (msg, to->origin);
+	MSG_WriteCoordV (msg, &to->es.origin[0]);//FIXME
 
-	MSG_WriteByte (msg, to->frame);
+	MSG_WriteByte (msg, to->es.frame);
 
 	if (flags & PF_MSEC)
 		MSG_WriteByte (msg, to->msec);
@@ -518,32 +519,32 @@ write_player (delta_t *delta, plent_state_t *from, plent_state_t *to,
 		MSG_WriteDeltaUsercmd (msg, &from->cmd, &to->cmd);
 	for (i = 0; i < 3; i++)
 		if (flags & (PF_VELOCITY1 << i))
-			MSG_WriteShort (msg, to->velocity[i]);
+			MSG_WriteShort (msg, to->es.velocity[i]);
 	if (flags & PF_MODEL)
-		MSG_WriteByte (msg, to->modelindex);
+		MSG_WriteByte (msg, to->es.modelindex);
 	if (flags & PF_SKINNUM)
-		MSG_WriteByte (msg, to->skinnum);
+		MSG_WriteByte (msg, to->es.skinnum);
 	if (flags & PF_EFFECTS)
-		MSG_WriteByte (msg, to->effects);
+		MSG_WriteByte (msg, to->es.effects);
 	if (flags & PF_WEAPONFRAME)
-		MSG_WriteByte (msg, to->weaponframe);
+		MSG_WriteByte (msg, to->es.weaponframe);
 
 	if (flags & PF_QF) {
 		MSG_WriteByte (msg, qf_bits);
 		if (qf_bits & PF_ALPHA)
-			MSG_WriteByte (msg, to->alpha);
+			MSG_WriteByte (msg, to->es.alpha);
 		if (qf_bits & PF_SCALE)
-			MSG_WriteByte (msg, to->scale);
+			MSG_WriteByte (msg, to->es.scale);
 		if (qf_bits & PF_EFFECTS2)
-			MSG_WriteByte (msg, to->effects >> 8);
+			MSG_WriteByte (msg, to->es.effects >> 8);
 		if (qf_bits & PF_GLOWSIZE)
-			MSG_WriteByte (msg, to->glow_size);
+			MSG_WriteByte (msg, to->es.glow_size);
 		if (qf_bits & PF_GLOWCOLOR)
-			MSG_WriteByte (msg, to->glow_color);
+			MSG_WriteByte (msg, to->es.glow_color);
 		if (qf_bits & PF_COLORMOD)
-			MSG_WriteByte (msg, to->colormod);
+			MSG_WriteByte (msg, to->es.colormod);
 		if (qf_bits & PF_FRAME2)
-			MSG_WriteByte (msg, to->frame);
+			MSG_WriteByte (msg, to->es.frame);
 	}
 }
 
@@ -565,20 +566,19 @@ SV_WritePlayersToClient (delta_t *delta, byte *pvs, sizebuf_t *msg)
 	void (*write) (delta_t *, plent_state_t *, plent_state_t *, sizebuf_t *,
 				   int, int);
 
-	if (!null_player_state.alpha) {
-		null_player_state.alpha = 255;
-		null_player_state.scale = 16;
-		null_player_state.glow_size = 0;
-		null_player_state.glow_color = 254;
-		null_player_state.colormod = 255;
+	if (!null_player_state.es.alpha) {
+		null_player_state.es.alpha = 255;
+		null_player_state.es.scale = 16;
+		null_player_state.es.glow_size = 0;
+		null_player_state.es.glow_color = 254;
+		null_player_state.es.colormod = 255;
 	}
-	null_player_state.modelindex = 0;
+	null_player_state.es.modelindex = 0;
 
 	if (delta->client) {
 		clent = delta->client->edict;
 		spec_track = delta->client->spec_track;
-		stdver = delta->client->stdver;
-		null_player_state.modelindex = sv_playermodel;
+		null_player_state.es.modelindex = sv_playermodel;
 		full = 0;		// normal qw clients don't get real deltas on players
 	}
 
@@ -625,9 +625,9 @@ SV_WritePlayersToClient (delta_t *delta, byte *pvs, sizebuf_t *msg)
 			state = &pack->players[pack->num_players];
 		pack->num_players++;
 
-		state->number = j;
-		state->flags = 0;
-		VectorCopy (SVvector (ent, origin), state->origin);
+		state->es.number = j;
+		state->es.flags = 0;
+		VectorCopy (SVvector (ent, origin), state->es.origin);
 
 		state->msec = min (255, 1000 * (sv.time - cl->localtime));
 
@@ -639,44 +639,44 @@ SV_WritePlayersToClient (delta_t *delta, byte *pvs, sizebuf_t *msg)
 			state->cmd.angles[0] = 0;
 		}
 
-		VectorCopy (SVvector (ent, velocity), state->velocity);
-		state->modelindex = SVfloat (ent, modelindex);
-		state->frame = SVfloat (ent, frame);
-		state->skinnum = SVfloat (ent, skin);
-		state->effects = SVfloat (ent, effects);
-		state->weaponframe = SVfloat (ent, weaponframe);
+		VectorCopy (SVvector (ent, velocity), state->es.velocity);
+		state->es.modelindex = SVfloat (ent, modelindex);
+		state->es.frame = SVfloat (ent, frame);
+		state->es.skinnum = SVfloat (ent, skin);
+		state->es.effects = SVfloat (ent, effects);
+		state->es.weaponframe = SVfloat (ent, weaponframe);
 
 		if (SVfloat (ent, health) <= 0)
-			state->flags |= PF_DEAD;
+			state->es.flags |= PF_DEAD;
 		if (SVvector (ent, mins)[2] != -24)
-			state->flags |= PF_GIB;
-		state->flags |= PF_MSEC | PF_COMMAND;
+			state->es.flags |= PF_GIB;
+		state->es.flags |= PF_MSEC | PF_COMMAND;
 
-		state->alpha = 255;
-		state->scale = 16;
-		state->glow_size = 0;
-		state->glow_color = 254;
-		state->colormod = 255;
+		state->es.alpha = 255;
+		state->es.scale = 16;
+		state->es.glow_size = 0;
+		state->es.glow_color = 254;
+		state->es.colormod = 255;
 		if (sv_fields.alpha != -1 && SVfloat (ent, alpha)) {
 			float       alpha = SVfloat (ent, alpha);
-			state->alpha = bound (0, alpha, 1) * 255.0;
+			state->es.alpha = bound (0, alpha, 1) * 255.0;
 		}
 		if (sv_fields.scale != -1 && SVfloat (ent, scale)) {
 			float       scale = SVfloat (ent, scale);
-			state->scale = bound (0, scale, 15.9375) * 16;
+			state->es.scale = bound (0, scale, 15.9375) * 16;
 		}
 		if (sv_fields.glow_size != -1 && SVfloat (ent, glow_size)) {
 			int         glow_size = SVfloat (ent, glow_size);
-			state->glow_size = bound (-1024, glow_size, 1016) >> 3;
+			state->es.glow_size = bound (-1024, glow_size, 1016) >> 3;
 		}
 		if (sv_fields.glow_color != -1 && SVfloat (ent, glow_color))
-			state->glow_color = SVfloat (ent, glow_color);
+			state->es.glow_color = SVfloat (ent, glow_color);
 		if (sv_fields.colormod != -1
 			&& !VectorIsZero (SVvector (ent, colormod))) {
 			float      *colormod= SVvector (ent, colormod);
-			state->colormod = ((int) (bound (0, colormod[0], 1) * 7) << 5) |
-							  ((int) (bound (0, colormod[1], 1) * 7) << 2) |
-							   (int) (bound (0, colormod[2], 1) * 3);
+			state->es.colormod = ((int) (bound (0, colormod[0], 1) * 7) << 5) |
+								 ((int) (bound (0, colormod[1], 1) * 7) << 2) |
+								  (int) (bound (0, colormod[2], 1) * 3);
 		}
 
 		if (cl->spectator) {
@@ -693,10 +693,10 @@ SV_WritePlayersToClient (delta_t *delta, byte *pvs, sizebuf_t *msg)
 
 		if (from_pack && from_pack->players) {
 			while (k < from_pack->num_players
-				   && from_pack->players[k].number < state->number)
+				   && from_pack->players[k].es.number < state->es.number)
 				k++;
 			if (k < from_pack->num_players
-				&& from_pack->players[k].number == state->number) {
+				&& from_pack->players[k].es.number == state->es.number) {
 				write (delta, &from_pack->players[k], state, msg, mask, full);
 				continue;
 			}
@@ -738,7 +738,7 @@ calc_pvs (delta_t *delta)
 			if (pvs == NULL) {
 				pvs = SV_FatPVS (org);
 			} else {
-				SV_AddToFatPVS (org, sv.worldmodel->nodes);
+				SV_AddToFatPVS (org, sv.worldmodel->brush.nodes);
 			}
 		}
 	}

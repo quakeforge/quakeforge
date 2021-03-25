@@ -344,13 +344,8 @@ SNDDMA_Submit (void)
 	}
 }
 
-/*
-	SNDDMA_Shutdown
-
-	Reset the sound device for exiting
-*/
 static void
-SNDDMA_Shutdown (void)
+SNDDMA_shutdown (void)
 {
 	FreeSound ();
 }
@@ -379,7 +374,7 @@ PLUGIN_INFO(snd_output, win)
 	plugin_info_general_funcs.p_Init = SNDDMA_Init_Cvars;
 	plugin_info_general_funcs.p_Shutdown = NULL;
 	plugin_info_snd_output_funcs.pS_O_Init = SNDDMA_Init;
-	plugin_info_snd_output_funcs.pS_O_Shutdown = SNDDMA_Shutdown;
+	plugin_info_snd_output_funcs.pS_O_Shutdown = SNDDMA_shutdown;
 	plugin_info_snd_output_funcs.pS_O_GetDMAPos = SNDDMA_GetDMAPos;
 	plugin_info_snd_output_funcs.pS_O_Submit = SNDDMA_Submit;
 	plugin_info_snd_output_funcs.pS_O_BlockSound = SNDDMA_BlockSound;

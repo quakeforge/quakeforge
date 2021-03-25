@@ -1,7 +1,7 @@
-#include "draw.h"
+#include <draw.h>
 
-#include "gui/Slider.h"
-#include "gui/Rect.h"
+#include <gui/Slider.h>
+#include <gui/Rect.h>
 
 @implementation Slider
 

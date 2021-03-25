@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __vid_h_
-#define __vid_h_
+#ifndef __QF_vid_h
+#define __QF_vid_h
 
 #include "QF/qtypes.h"
 #include "QF/vrect.h"
@@ -43,6 +43,7 @@ typedef struct {
 	byte			*gammatable;	// 256
 	const byte      *basepal;		// 256 * 3
 	byte            *palette;		// 256 * 3
+	byte            *palette32;		// 256 * 4 includes alpha
 	byte			*colormap8;		// 256 * VID_GRADES size
 	unsigned short	*colormap16;	// 256 * VID_GRADES size
 	unsigned int	*colormap32;	// 256 * VID_GRADES size
@@ -61,17 +62,7 @@ typedef struct {
 	int				 conheight;
 	byte			*direct;		// direct drawing to framebuffer, if not
 									//  NULL
-	int			   (*surf_cache_size)(int width, int height);
-	void		   (*flush_caches)(void);
-	void		   (*init_caches)(void *cache, int size);
-	void		   (*do_screen_buffer)(void);
-	void           (*set_palette)(const byte *palette);
-
-	// gl stuff
-	void           (*load_gl)(void);
-	void           (*init_gl)(void);
-	void          *(*get_proc_address)(const char *name, qboolean crit);
-	void           (*end_rendering)(void);
+	struct vid_internal_s *vid_internal;
 } viddef_t;
 
 #define viddef (*r_data->vid)
@@ -86,7 +77,7 @@ void VID_Init_Cvars (void);
 // the palette data will go away after the call, so it must be copied off if
 // the video driver will need it again
 void VID_Init (byte *palette, byte *colormap);
-void VID_Shutdown (void);
 void VID_SetCaption (const char *text);
+void VID_ClearMemory (void);
 
-#endif	// __vid_h_
+#endif//__QF_vid_h

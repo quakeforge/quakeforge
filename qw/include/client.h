@@ -28,6 +28,7 @@
 #ifndef _CLIENT_H
 #define _CLIENT_H
 
+#include "QF/entity.h"
 #include "QF/info.h"
 #include "QF/quakefs.h"
 #include "QF/vid.h"
@@ -36,6 +37,8 @@
 #include "QF/plugin/vid_render.h"
 
 #include "client/entities.h"
+#include "client/state.h"
+#include "client/view.h"
 
 #include "netchan.h"
 #include "qw/bothdefs.h"
@@ -61,31 +64,6 @@ typedef struct player_state_s {
 	int         oldonground;
 
 } player_state_t;
-
-typedef struct player_info_s {
-	int         userid;
-	struct info_s *userinfo;
-
-	// scoreboard information
-	struct info_key_s *name;
-	struct info_key_s *team;
-	struct info_key_s *chat;
-	float       entertime;
-	int         frags;
-	int         ping;
-	byte        pl;
-
-	// skin information
-	int         topcolor;
-	int         bottomcolor;
-	struct info_key_s *skinname;
-	struct skin_s *skin;
-
-	int         spectator;
-	int         stats[MAX_CL_STATS];	// health, etc
-	int         prevcount;
-} player_info_t;
-
 
 typedef struct {
 	// generated on client side
@@ -195,7 +173,7 @@ extern client_static_t	cls;
 /*
   the client_state_t structure is wiped completely at every server signon
 */
-typedef struct {
+typedef struct client_state_s {
 	qboolean    loading;
 
 	int         movemessages;	// Since connecting to this server throw out
@@ -207,26 +185,19 @@ typedef struct {
 	int         prev_sequence;
 
 // information for local display
-	int         stats[MAX_CL_STATS];	// health, etc
+	int         stats[MAX_CL_STATS];	// Health, etc
 	float       item_gettime[32];	// cl.time of aquiring item, for blinking
 	float       faceanimtime;			// Use anim frame if cl.time < this
 
 	cshift_t    cshifts[NUM_CSHIFTS];	// Color shifts for damage, powerups
 	cshift_t    prev_cshifts[NUM_CSHIFTS];	// and content types
 
-// the client maintains its own idea of view angles, which are sent to the
-// server each frame.  And reset only at level change and teleport times
-	vec3_t      viewangles;
-
 // the client simulates or interpolates movement to get these values
 	double      time;			// this is the time value that the client
 								// is rendering at.  always <= realtime
-	vec3_t      simorg;
-	vec3_t      simvel;
-	vec3_t      simangles;
-
-	vec3_t      punchangle;		// temporary view kick from weapon firing
-
+// the client maintains its own idea of view angles, which are sent to the
+// server each frame.  And reset only at level change and teleport times
+	viewstate_t viewstate;
 // pitch drifting vars
 	float       idealpitch;
 	float       pitchvel;
@@ -235,12 +206,12 @@ typedef struct {
 	double      laststop;
 
 	qboolean    paused;			// Sent over by server
-	int         onground;		// -1 when in air
 	float       viewheight;
-	float       crouch;			// local amount for smoothing stepups
+	float       crouch;			// Local amount for smoothing stepups
+	qboolean    inwater;
 
-	int         intermission;	// don't change view angle, full screen, etc
-	int         completed_time;	// latched from time at intermission start
+	int         intermission;	// Don't change view angle, full screen, etc
+	int         completed_time;	// Latched from time at intermission start
 
 	int         servercount;	// server identification for prespawns
 	struct info_s *serverinfo;
@@ -250,7 +221,7 @@ typedef struct {
 								// can't render a frame yet
 
 	double      last_ping_request;	// while showing scoreboard
-	double      last_servermessage;
+	double      last_servermessage;	// (realtime) for net trouble icon
 
 /* information that is static for the entire time connected to a server */
 
@@ -268,8 +239,10 @@ typedef struct {
 	char        levelname[40];	// for display on solo scoreboard
 	int         spectator;
 	int         playernum;
-	int         viewentity;
+	int         viewentity;		// cl_entitites[cl.viewentity] = player
+	unsigned    protocol;
 	float       stdver;
+	int         gametype;
 	int         maxclients;
 	// serverinfo mirrors
 	int         chase;
@@ -282,13 +255,13 @@ typedef struct {
 
 // refresh related state
 	struct model_s *worldmodel;	// cl_entitites[0].model
-	int         num_entities;	// stored bottom up in cl_entities array
+	int         num_entities;	// held in cl_entities array
 	entity_t    viewent;		// the weapon model
 
 	int         cdtrack;		// cd audio
 
 // all player information
-	player_info_t players[MAX_CLIENTS];
+	player_info_t *players;
 
 	lightstyle_t lightstyle[MAX_LIGHTSTYLES];
 } client_state_t;
@@ -341,7 +314,9 @@ extern	struct cvar_s	*cl_fb_players;
 
 extern	client_state_t	cl;
 
-extern	entity_t		*cl_static_entities;
+typedef struct entitystateset_s DARRAY_TYPE (struct entity_state_s)
+		entitystateset_t;
+extern	entitystateset_t cl_static_entities;
 extern	entity_t		cl_entities[512];
 extern	byte			cl_entity_valid[2][512];
 

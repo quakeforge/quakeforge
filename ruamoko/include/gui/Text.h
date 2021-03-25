@@ -1,10 +1,10 @@
 #ifndef __ruamoko_gui_Text_h
 #define __ruamoko_gui_Text_h
 
-#include "View.h"
+#include <gui/View.h>
 
 /**	\addtogroup gui */
-//@{
+///@{
 
 @interface Text: View
 {
@@ -18,6 +18,6 @@
 - (void) draw;
 @end
 
-//@}
+///@}
 
 #endif //__ruamoko_gui_Text_h

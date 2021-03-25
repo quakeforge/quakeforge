@@ -43,7 +43,7 @@ typedef struct backbuf_s {
 	const char *name;
 } backbuf_t;
 
-int MSG_ReliableCheckSize (backbuf_t *rel, int maxsize, int minsize);
+int MSG_ReliableCheckSize (backbuf_t *rel, int maxsize, int minsize) __attribute__((pure));
 sizebuf_t *MSG_ReliableCheckBlock(backbuf_t *rel, int maxsize);
 void MSG_Reliable_FinishWrite(backbuf_t *rel);
 sizebuf_t *MSG_ReliableWrite_Begin(backbuf_t *rel, int c, int maxsize);

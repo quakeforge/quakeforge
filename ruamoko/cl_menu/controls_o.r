@@ -30,6 +30,7 @@
 #include "draw.h"
 #include "system.h"
 #include "debug.h"
+#include "legacy_string.h"
 #include "string.h"
 #include "key.h"
 #include "options_util.h"

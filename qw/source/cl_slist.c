@@ -68,9 +68,9 @@
 #include "QF/va.h"
 
 #include "qw/bothdefs.h"
-#include "cl_main.h"
-#include "cl_slist.h"
-#include "client.h"
+#include "qw/include/cl_main.h"
+#include "qw/include/cl_slist.h"
+#include "qw/include/client.h"
 
 typedef struct server_entry_s {
 	char *server;
@@ -119,7 +119,6 @@ SL_Add (server_entry_t *start, const char *ip, const char *desc)
 {
 	server_entry_t *p;
 
-	p = start;
 	if (!start) {						// Nothing at beginning of list,
 										// create it
 		start = calloc (1, sizeof (server_entry_t));
@@ -315,7 +314,7 @@ SL_Shutdown (void)
 		SL_Del_All (all_slist);
 }
 
-static char *
+static __attribute__((pure)) char *
 gettokstart (char *str, int req, char delim)
 {
 	char       *start = str;
@@ -341,14 +340,14 @@ gettokstart (char *str, int req, char delim)
 	return start;
 }
 
-static int
+static __attribute__((pure)) int
 gettoklen (char *str, int req, char delim)
 {
 	char       *start = 0;
 	int         len = 0;
 
 	start = gettokstart (str, req, delim);
-	if (start == '\0') {
+	if (*start == '\0') {
 		return 0;
 	}
 	while (*start != delim && *start != '\0') {
@@ -576,7 +575,7 @@ MSL_ParseServerList (const char *msl_data)
 	unsigned int msl_ptr;
 
 	for (msl_ptr = 0; msl_ptr < strlen (msl_data); msl_ptr = msl_ptr + 6) {
-		slist = SL_Add (slist, va ("%i.%i.%i.%i:%i",
+		slist = SL_Add (slist, va (0, "%i.%i.%i.%i:%i",
 								   (byte) msl_data[msl_ptr],
 								   (byte) msl_data[msl_ptr+1],
 								   (byte) msl_data[msl_ptr+2],

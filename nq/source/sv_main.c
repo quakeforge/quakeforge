@@ -36,16 +36,17 @@
 #include "QF/va.h"
 
 #include "compat.h"
-#include "host.h"
-#include "server.h"
-#include "sv_progs.h"
 #include "world.h"
+
+#include "nq/include/host.h"
+#include "nq/include/server.h"
+#include "nq/include/sv_progs.h"
 
 server_t    sv;
 server_static_t svs;
 double      sv_frametime;
 
-char        localmodels[MAX_MODELS][5];	// inline model names for precache
+char        localmodels[MAX_MODELS][6];	// inline model names for precache
 
 int sv_protocol = PROTOCOL_FITZQUAKE;
 
@@ -388,7 +389,7 @@ SV_ClearDatagram (void)
 */
 
 int         fatbytes;
-byte        fatpvs[MAX_MAP_LEAFS / 8];
+byte        fatpvs[MAP_PVS_BYTES];
 
 static void
 SV_AddToFatPVS (vec3_t org, mnode_t *node)
@@ -431,9 +432,9 @@ SV_AddToFatPVS (vec3_t org, mnode_t *node)
 static byte       *
 SV_FatPVS (vec3_t org)
 {
-	fatbytes = (sv.worldmodel->numleafs + 31) >> 3;
+	fatbytes = (sv.worldmodel->brush.numleafs + 31) >> 3;
 	memset (fatpvs, 0, fatbytes);
-	SV_AddToFatPVS (org, sv.worldmodel->nodes);
+	SV_AddToFatPVS (org, sv.worldmodel->brush.nodes);
 	return fatpvs;
 }
 
@@ -1036,7 +1037,8 @@ SV_CreateBaseline (void)
 		MSG_WriteByte (&sv.signon, baseline->colormap);
 		MSG_WriteByte (&sv.signon, baseline->skinnum);
 
-		MSG_WriteCoordAngleV (&sv.signon, baseline->origin, baseline->angles);
+		MSG_WriteCoordAngleV (&sv.signon, &baseline->origin[0],//FIXME
+							  baseline->angles);
 
 		if (bits & B_ALPHA)
 			MSG_WriteByte (&sv.signon, baseline->alpha);
@@ -1188,16 +1190,16 @@ SV_SpawnServer (const char *server)
 
 	sv.model_precache[0] = sv_pr_state.pr_strings;
 	sv.model_precache[1] = sv.modelname;
-	for (i = 1; i < sv.worldmodel->numsubmodels; i++) {
+	for (i = 1; i < sv.worldmodel->brush.numsubmodels; i++) {
 		sv.model_precache[1 + i] = localmodels[i];
 		sv.models[i + 1] = Mod_ForName (localmodels[i], false);
 	}
 
 	// load the rest of the entities
 	ent = EDICT_NUM (&sv_pr_state, 0);
-	memset (&ent->v, 0, sv_pr_state.progs->entityfields * 4);
+	memset (&E_fld (ent, 0), 0, sv_pr_state.progs->entityfields * 4);
 	ent->free = false;
-	SVstring (ent, model) = PR_SetString (&sv_pr_state, sv.worldmodel->name);
+	SVstring (ent, model) = PR_SetString (&sv_pr_state, sv.worldmodel->path);
 	SVfloat (ent, modelindex) = 1;			// world model
 	SVfloat (ent, solid) = SOLID_BSP;
 	SVfloat (ent, movetype) = MOVETYPE_PUSH;
@@ -1213,13 +1215,13 @@ SV_SpawnServer (const char *server)
 	*sv_globals.serverflags = svs.serverflags;
 
 	*sv_globals.time = sv.time;
-	ent_file = QFS_VOpenFile (va ("maps/%s.ent", server), 0,
+	ent_file = QFS_VOpenFile (va (0, "maps/%s.ent", server), 0,
 							  sv.worldmodel->vpath);
 	if ((buf = QFS_LoadFile (ent_file, 0))) {
 		ED_LoadFromFile (&sv_pr_state, (char *) buf);
 		free (buf);
 	} else {
-		ED_LoadFromFile (&sv_pr_state, sv.worldmodel->entities);
+		ED_LoadFromFile (&sv_pr_state, sv.worldmodel->brush.entities);
 	}
 
 	sv.active = true;

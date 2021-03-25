@@ -213,7 +213,7 @@ importFile (const char *inpath)
 	if (options.verbosity > 1)
 		Sys_Printf ("PCX file size: %d\n", fsize);
 
-	lmp = LoadPCX (infile, false, NULL);
+	lmp = LoadPCX (infile, false, NULL, 1);
 
 	if (!lmp) {
 		Sys_Printf ("%s: Failed to load %s as texture.\n",
@@ -334,7 +334,7 @@ main (int argc, char **argv)
 	this_program = argv[0];
 
 	Sys_Init ();
-	Memory_Init (malloc (MEMSIZE), MEMSIZE);
+	Memory_Init (Sys_Alloc (MEMSIZE), MEMSIZE);
 
 	decode_args (argc, argv);
 

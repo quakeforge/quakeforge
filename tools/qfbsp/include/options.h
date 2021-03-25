@@ -33,7 +33,7 @@
 /**	\defgroup qfbsp_options Command-line Options Parsing
 	\ingroup qfbsp
 */
-//@{
+///@{
 
 typedef struct {
 	int         verbosity;		// 0=silent
@@ -65,6 +65,6 @@ extern options_t options;
 int DecodeArgs (int argc, char **argv);
 extern const char *this_program;
 
-//@}
+///@}
 
 #endif//qfbsp_options_h

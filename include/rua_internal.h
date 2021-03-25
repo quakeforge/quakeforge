@@ -39,8 +39,6 @@ void RUA_Cmd_Init (struct progs_s *pr, int secure);
 
 void RUA_Cvar_Init (struct progs_s *pr, int secure);
 
-void RUA_File_Init (struct progs_s *pr, int secure);
-
 void RUA_Hash_Init (struct progs_s *pr, int secure);
 
 void RUA_Math_Init (struct progs_s *pr, int secure);
@@ -50,6 +48,8 @@ void RUA_MsgBuf_Init (struct progs_s *pr, int secure);
 void RUA_Obj_Init (struct progs_s *pr, int secure);
 
 void RUA_Plist_Init (struct progs_s *pr, int secure);
+
+void RUA_Runtime_Init (struct progs_s *pr, int secure);
 
 void RUA_Script_Init (progs_t *pr, int secure);
 

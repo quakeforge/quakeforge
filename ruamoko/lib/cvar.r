@@ -1,4 +1,4 @@
-#include "cvar.h"
+#include <cvar.h>
 
 float (string s) cvar = #45;
 void (string var, string val) cvar_set = #72;

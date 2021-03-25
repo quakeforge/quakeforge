@@ -13,7 +13,7 @@ state0 (void)
 [$frame1, state1]
 {
 	if (self.frame != $frame1 || self.think != state1
-		|| self.nextthink != 0.1) {
+		|| self.nextthink != 0.1f) {
 		printf ("state0: %g %x %g\n", self.frame, self.think, self.nextthink);
 		exit (1);
 	}
@@ -21,10 +21,10 @@ state0 (void)
 
 void
 state1 (void)
-[$frame2, state2, 0.2]
+[$frame2, state2, 0.2f]
 {
 	if (self.frame != $frame2 || self.think != state2
-		|| self.nextthink != 0.2) {
+		|| self.nextthink != 0.2f) {
 		printf ("state0: %g %x %g\n", self.frame, self.think, self.nextthink);
 		exit (1);
 	}
@@ -32,10 +32,10 @@ state1 (void)
 
 void
 state2 (void)
-[$frame0, state0, 0.5]
+[$frame0, state0, 0.5f]
 {
 	if (self.frame != $frame0 || self.think != state0
-		|| self.nextthink != 0.5) {
+		|| self.nextthink != 0.5f) {
 		printf ("state0: %g %x %g\n", self.frame, self.think, self.nextthink);
 		exit (1);
 	}

@@ -35,17 +35,17 @@
 
 #include "QF/hash.h"
 
-#include "debug.h"
-#include "diagnostic.h"
-#include "expr.h"
-#include "grab.h"
-#include "qfcc.h"
-#include "shared.h"
-#include "strpool.h"
-#include "symtab.h"
-#include "type.h"
+#include "tools/qfcc/include/debug.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/grab.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/shared.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
 
-#include "qp-parse.h"
+#include "tools/qfcc/source/qp-parse.h"
 
 #ifndef YY_PROTO
 # define YY_PROTO(x) x
@@ -57,9 +57,16 @@
 #define YY_DECL int yylex YY_PROTO(( void ))
 YY_DECL;
 
+int yyget_lineno (void) __attribute__((pure));
+int yyget_leng (void) __attribute__((pure));
+int yywrap (void) __attribute__((const));
+char *yyget_text (void) __attribute__((pure));
+int yyget_debug (void) __attribute__((pure));
+FILE *yyget_in (void) __attribute__((pure));
+FILE *yyget_out (void) __attribute__((pure));
 
 static int keyword_or_id (const char *token);
-static int convert_relop (const char *relop);
+static int convert_relop (const char *relop) __attribute__((pure));
 
 %}
 
@@ -241,7 +248,7 @@ keyword_or_id (const char *token)
 
 	if (!keyword_tab) {
 		size_t      i;
-		keyword_tab = Hash_NewTable (1021, keyword_get_key, 0, 0);
+		keyword_tab = Hash_NewTable (1021, keyword_get_key, 0, 0, 0);
 		for (i = 0; i < sizeof (keywords) / sizeof (keywords[0]); i++)
 			Hash_Add (keyword_tab, &keywords[i]);
 	}
@@ -296,7 +303,9 @@ convert_relop (const char *relop)
 #ifdef YY_FLEX_REALLOC_HACK
 static __attribute__ ((used)) void *(*const yy_flex_realloc_hack)(void *,yy_size_t) = yy_flex_realloc;
 #else
+#ifdef yyunput
 static __attribute__ ((used)) void (*yyunput_hack)(int, char*) = yyunput;
+#endif
 static __attribute__ ((used)) int (*input_hack)(void) = input;
 #endif
 

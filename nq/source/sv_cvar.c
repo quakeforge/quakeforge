@@ -32,7 +32,7 @@
 
 #include "QF/cvar.h"
 
-#include "server.h"
+#include "nq/include/server.h"
 
 void
 Cvar_Info (cvar_t *var)

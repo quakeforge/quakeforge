@@ -46,15 +46,16 @@
 
 #include "QF/plugin/vid_render.h"
 
-#include "client.h"
 #include "sbar.h"
+
+#include "nq/include/client.h"
 
 static qpic_t  *scr_net;
 
 static void
 SCR_DrawNet (void)
 {
-	if (realtime - cl.last_received_message < 0.3)
+	if (realtime - cl.last_servermessage < 0.3)
 		return;
 	if (cls.demoplayback)
 		return;
@@ -85,7 +86,9 @@ SCR_CShift (void)
 	int         contents = CONTENTS_EMPTY;
 
 	if (cls.state == ca_active && cl.worldmodel) {
-		leaf = Mod_PointInLeaf (r_data->refdef->vieworg, cl.worldmodel);
+		//FIXME
+		leaf = Mod_PointInLeaf (&r_data->refdef->viewposition[0],
+								cl.worldmodel);
 		contents = leaf->contents;
 	}
 	V_SetContentsColor (contents);
@@ -145,5 +148,5 @@ CL_UpdateScreen (double realtime)
 	scr_funcs_normal[3] = r_funcs->SCR_DrawPause;
 
 	V_PrepBlend ();
-	r_funcs->SCR_UpdateScreen (realtime, V_RenderView, scr_funcs[index]);
+	SCR_UpdateScreen (realtime, V_RenderView, scr_funcs[index]);
 }

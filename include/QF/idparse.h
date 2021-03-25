@@ -33,7 +33,7 @@
 
 /** \addtogroup cbuf
 */
-//@{
+///@{
 
 extern const char *com_token;
 
@@ -44,6 +44,6 @@ void COM_TokenizeString (const char *str, struct cbuf_args_s *args);
 
 extern struct cbuf_interpreter_s id_interp;
 
-//@}
+///@}
 
 #endif//__QF_idparse_h

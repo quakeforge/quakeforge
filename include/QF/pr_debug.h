@@ -28,10 +28,18 @@
 
 */
 
-#ifndef __pr_debug_h
-#define __pr_debug_h
+#ifndef __QF_pr_debug_h
+#define __QF_pr_debug_h
 
+#ifndef __QFCC__
 #include "QF/pr_comp.h"
+
+typedef struct pr_compunit_s {
+	pr_uint_t   unit_name;
+	pr_uint_t   basedir;
+	pr_uint_t   num_files;
+	pr_uint_t   files[1];
+} pr_compunit_t;
 
 typedef struct pr_auxfunction_s {
 	pr_uint_t   function;		// function def this aux info is for
@@ -39,8 +47,7 @@ typedef struct pr_auxfunction_s {
 	pr_uint_t   line_info;		// index to first lineno entry
 	pr_uint_t   local_defs;		// index to the first local def
 	pr_uint_t   num_locals;		// number of local defs
-	pr_short_t  return_type;	// return type of this function
-	pr_short_t  reserved;
+	pr_uint_t   return_type;	// return type of this function
 } pr_auxfunction_t;
 
 typedef struct pr_lineno_s {
@@ -51,7 +58,7 @@ typedef struct pr_lineno_s {
 	pr_uint_t   line;
 } pr_lineno_t;
 
-#define PROG_DEBUG_VERSION 0x00001002	// MMmmmRRR 0.001.002 (hex)
+#define PROG_DEBUG_VERSION 0x00001004	// MMmmmRRR 0.001.004 (hex)
 
 typedef struct pr_debug_header_s {
 	pr_int_t    version;
@@ -63,6 +70,24 @@ typedef struct pr_debug_header_s {
 	pr_uint_t   num_linenos;
 	pr_uint_t   locals;
 	pr_uint_t   num_locals;
+	pr_uint_t   debug_defs;
+	pr_uint_t   num_debug_defs;
+	pr_uint_t   debug_data;
+	pr_uint_t   debug_data_size;
 } pr_debug_header_t;
+#endif
 
-#endif//__pr_debug_h
+typedef enum prdebug_e {
+	prd_none,
+	prd_trace,
+	prd_breakpoint,
+	prd_watchpoint,
+	prd_subenter,
+	prd_subexit,		// current invocation of PR_ExecuteProgram finished
+	prd_begin,			// not sent by VM
+	prd_terminate,		// not sent by VM
+	prd_runerror,
+	prd_error,			// lower level error thann prd_runerror
+} prdebug_t;
+
+#endif//__QF_pr_debug_h

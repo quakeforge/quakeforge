@@ -134,7 +134,7 @@ print_rects (vrect_t *rect)
 	printf ("\n");
 }
 
-static int
+static __attribute__((pure)) int
 compare_rects (vrect_t *r1, vrect_t *r2)
 {
 	if (!r1 && !r2)

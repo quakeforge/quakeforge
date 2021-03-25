@@ -54,10 +54,10 @@
 
 #include "qw/protocol.h"
 
-#include "client.h"
-#include "connection.h"
-#include "qtv.h"
-#include "server.h"
+#include "qtv/include/client.h"
+#include "qtv/include/connection.h"
+#include "qtv/include/qtv.h"
+#include "qtv/include/server.h"
 
 int server_count;
 static hashtab_t *server_hash;
@@ -452,7 +452,8 @@ sv_new_f (void)
 	sv->qport = qport->int_val;
 	sv->info = Info_ParseString ("", MAX_INFO_STRING, 0);
 	Info_SetValueForStarKey (sv->info, "*ver",
-							 va ("%s QTV %s", QW_VERSION, PACKAGE_VERSION), 0);
+							 va (0, "%s QTV %s", QW_VERSION, PACKAGE_VERSION),
+							 0);
 	Info_SetValueForStarKey (sv->info, "*qsg_version", QW_QSG_VERSION, 0);
 	Info_SetValueForKey (sv->info, "name", "QTV Proxy", 0);
 	Hash_Add (server_hash, sv);
@@ -493,7 +494,7 @@ sv_list_f (void)
 		qtv_printf ("no servers\n");
 		return;
 	}
-	list = malloc (count * sizeof (server_t **));
+	list = malloc (count * sizeof (server_t *));
 	for (l = &servers, count = 0; *l; l = &(*l)->next, count++)
 		list[count] = *l;
 	qsort (list, count, sizeof (*list), server_compare);
@@ -508,7 +509,7 @@ sv_list_f (void)
 }
 
 static void
-server_shutdown (void)
+server_shutdown (void *data)
 {
 	Hash_FlushTable (server_hash);
 	Hash_DelTable (server_hash);
@@ -540,8 +541,8 @@ server_run (server_t *sv)
 void
 Server_Init (void)
 {
-	Sys_RegisterShutdown (server_shutdown);
-	server_hash = Hash_NewTable (61, server_get_key, server_free, 0);
+	Sys_RegisterShutdown (server_shutdown, 0);
+	server_hash = Hash_NewTable (61, server_get_key, server_free, 0, 0);
 	Cmd_AddCommand ("sv_new", sv_new_f, "Add a new server");
 	Cmd_AddCommand ("sv_del", sv_del_f, "Remove an existing server");
 	Cmd_AddCommand ("sv_list", sv_list_f, "List available servers");
@@ -628,7 +629,7 @@ Server_Broadcast (server_t *sv, int reliable, int all, const byte *msg,
 void
 Server_BroadcastCommand (server_t *sv, const char *cmd)
 {
-	const char *msg = va ("%c%s", svc_stufftext, cmd);
+	const char *msg = va (0, "%c%s", svc_stufftext, cmd);
 	int         len = strlen (msg) + 1;
 	Server_Broadcast (sv, 1, 1, (const byte *) msg, len);
 }

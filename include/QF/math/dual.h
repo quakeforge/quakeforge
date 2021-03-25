@@ -34,7 +34,7 @@
 /** \defgroup mathlib_dual Dual and dual quaternion functions
 	\ingroup utils
 */
-//@{
+///@{
 
 #include "QF/qtypes.h"
 
@@ -189,6 +189,6 @@
 	} while (0)
 #define DualQuatExpand(dq) QuatExpand ((dq).q0.q), QuatExpand ((dq).qe.q)
 
-//@}
+///@}
 
 #endif // __QF_math_dual_h

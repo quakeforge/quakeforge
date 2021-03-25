@@ -1,0 +1,56 @@
+ruamoko_include = \
+	ruamoko/include/crudefile.h \
+	ruamoko/include/debug.h \
+	ruamoko/include/entities.h \
+	ruamoko/include/infokey.h \
+	ruamoko/include/math.h \
+	ruamoko/include/message.h \
+	ruamoko/include/nq_message.h \
+	ruamoko/include/physics.h \
+	ruamoko/include/msgbuf.h \
+	ruamoko/include/qfile.h \
+	ruamoko/include/qfs.h \
+	ruamoko/include/qw_message.h \
+	ruamoko/include/qw_physics.h \
+	ruamoko/include/qw_sys.h \
+	ruamoko/include/server.h \
+	ruamoko/include/sound.h \
+	ruamoko/include/script.h \
+	ruamoko/include/string.h \
+	ruamoko/include/sv_sound.h \
+	ruamoko/include/system.h \
+	ruamoko/include/types.h \
+	ruamoko/include/legacy_string.h \
+	ruamoko/include/draw.h \
+	ruamoko/include/key.h \
+	ruamoko/include/cbuf.h \
+	ruamoko/include/cmd.h \
+	ruamoko/include/cvar.h \
+	ruamoko/include/gib.h \
+	ruamoko/include/hash.h \
+	ruamoko/include/plist.h \
+	ruamoko/include/runtime.h \
+	ruamoko/include/Object.h \
+	ruamoko/include/Protocol.h \
+	ruamoko/include/AutoreleasePool.h \
+	ruamoko/include/Array.h \
+	ruamoko/include/Entity.h \
+	ruamoko/include/PropertyList.h \
+	ruamoko/include/Set.h
+
+ruamoko_gui_include = \
+	ruamoko/include/gui/Group.h \
+	ruamoko/include/gui/InputLine.h \
+	ruamoko/include/gui/Pic.h \
+	ruamoko/include/gui/Point.h \
+	ruamoko/include/gui/Rect.h \
+	ruamoko/include/gui/Size.h \
+	ruamoko/include/gui/Slider.h \
+	ruamoko/include/gui/Text.h \
+	ruamoko/include/gui/View.h
+
+ruamoko_includedir = $(datarootdir)/qfcc/include
+ruamoko_gui_includedir = $(datarootdir)/qfcc/include/gui
+
+ruamoko_include_HEADERS = $(ruamoko_include)
+ruamoko_gui_include_HEADERS = $(ruamoko_gui_include)

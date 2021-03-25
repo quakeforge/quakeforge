@@ -1,4 +1,9 @@
-@class Array,Object;
+@interface Array
+-count;
+-lastObject;
+@end
+@interface Object
+@end
 @static entity waypoint_thinker;
 @static Array *waypoint_queue;
 void foo (void)
@@ -18,4 +23,6 @@ void __obj_exec_class (struct obj_module *msg) = #0;
 @implementation Object
 @end
 @implementation Array
+-count { return self; }
+-lastObject { return nil; }
 @end

@@ -22,23 +22,23 @@ string readfile (string filename)
     str_copy(res, acc);
     return res;
 }
-    
 
-int main (int argc, string []argv)
+int main (int argc, string *argv)
 {
-    local Parser parser; 
-    local CompiledCode code;
-    local Compiler comp;
-    local Machine vm;
-    local Lambda lm;
-    local SchemeObject stuff, res;
+    local Parser *parser;
+    local CompiledCode *code;
+    local Compiler *comp;
+    local Machine *vm;
+    local Lambda *lm;
+    local SchemeObject *stuff, *res;
+	local Error *err;
 
     if (argc < 1) {
             return -1;
     }
 
         //traceon();
-    
+
     parser = [Parser newFromSource: readfile(argv[1]) file: argv[1]];
     vm = [Machine new];
     [vm makeRootCell];
@@ -46,26 +46,29 @@ int main (int argc, string []argv)
     builtin_addtomachine (vm);
     while ((stuff = [parser read])) {
             if ([stuff isError]) {
-                    printf(">> %s: %i\n", [stuff source], [stuff line]);
-                    printf(">> Error (%s): %s\n", [stuff type], [stuff message]);
+					err = (Error *) stuff;
+                    printf(">> %s: %i\n", [err source], [err line]);
+                    printf(">> Error (%s): %s\n", [err type], [err message]);
                     return -1;
             }
             comp = [Compiler newWithLambda: cons ([Symbol forString: "lambda"],
                                                   cons ([Nil nil],
                                                         cons(stuff, [Nil nil])))
                              scope: nil];
-            code = (CompiledCode) [comp compile];
+            code = (CompiledCode *) [comp compile];
             if ([code isError]) {
-                    printf(">> %s: %i\n", [code source], [code line]);
-                    printf(">> Error (%s): %s\n", [code type], [code message]);
+					err = (Error *) code;
+                    printf(">> %s: %i\n", [err source], [err line]);
+                    printf(">> Error (%s): %s\n", [err type], [err message]);
                     return -1;
             }
             lm = [Lambda newWithCode: code environment: nil];
             [lm invokeOnMachine: vm];
             res = [vm run];
             if ([res isError]) {
-                    printf(">> %s: %i\n", [res source], [res line]);
-                    printf(">> Error (%s): %s\n", [res type], [res message]);
+					err = (Error *) res;
+                    printf(">> %s: %i\n", [err source], [err line]);
+                    printf(">> Error (%s): %s\n", [err type], [err message]);
                     return -1;
             }
             [vm reset];

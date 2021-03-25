@@ -44,10 +44,11 @@
 
 #include "QF/plugin/vid_render.h"
 
-#include "chase.h"
-#include "client.h"
 #include "compat.h"
-#include "host.h"
+
+#include "nq/include/chase.h"
+#include "nq/include/client.h"
+#include "nq/include/host.h"
 
 /*
 	KEY BUTTONS
@@ -76,8 +77,9 @@ int         in_impulse;
 void (*write_angles) (sizebuf_t *sb, const vec3_t angles);
 
 static void
-KeyPress (kbutton_t *b)
+KeyPress (void *_b)
 {
+	kbutton_t  *b = _b;
 	const char *c;
 	int         k;
 
@@ -106,8 +108,9 @@ KeyPress (kbutton_t *b)
 }
 
 static void
-KeyRelease (kbutton_t *b)
+KeyRelease (void *_b)
 {
+	kbutton_t  *b = _b;
 	const char *c;
 	int         k;
 
@@ -140,25 +143,7 @@ KeyRelease (kbutton_t *b)
 }
 
 static void
-IN_KLookPress (void)
-{
-	KeyPress (&in_klook);
-}
-
-static void
-IN_KLookRelease (void)
-{
-	KeyRelease (&in_klook);
-}
-
-static void
-IN_MLookPress (void)
-{
-	KeyPress (&in_mlook);
-}
-
-static void
-IN_MLookRelease (void)
+IN_MLookRelease (void *data)
 {
 	KeyRelease (&in_mlook);
 	if (!freelook && lookspring->int_val)
@@ -166,187 +151,7 @@ IN_MLookRelease (void)
 }
 
 static void
-IN_UpPress (void)
-{
-	KeyPress (&in_up);
-}
-
-static void
-IN_UpRelease (void)
-{
-	KeyRelease (&in_up);
-}
-
-static void
-IN_DownPress (void)
-{
-	KeyPress (&in_down);
-}
-
-static void
-IN_DownRelease (void)
-{
-	KeyRelease (&in_down);
-}
-
-static void
-IN_LeftPress (void)
-{
-	KeyPress (&in_left);
-}
-
-static void
-IN_LeftRelease (void)
-{
-	KeyRelease (&in_left);
-}
-
-static void
-IN_RightPress (void)
-{
-	KeyPress (&in_right);
-}
-
-static void
-IN_RightRelease (void)
-{
-	KeyRelease (&in_right);
-}
-
-static void
-IN_ForwardPress (void)
-{
-	KeyPress (&in_forward);
-}
-
-static void
-IN_ForwardRelease (void)
-{
-	KeyRelease (&in_forward);
-}
-
-static void
-IN_BackPress (void)
-{
-	KeyPress (&in_back);
-}
-
-static void
-IN_BackRelease (void)
-{
-	KeyRelease (&in_back);
-}
-
-static void
-IN_LookupPress (void)
-{
-	KeyPress (&in_lookup);
-}
-
-static void
-IN_LookupRelease (void)
-{
-	KeyRelease (&in_lookup);
-}
-
-static void
-IN_LookdownPress (void)
-{
-	KeyPress (&in_lookdown);
-}
-
-static void
-IN_LookdownRelease (void)
-{
-	KeyRelease (&in_lookdown);
-}
-
-static void
-IN_MoveleftPress (void)
-{
-	KeyPress (&in_moveleft);
-}
-
-static void
-IN_MoveleftRelease (void)
-{
-	KeyRelease (&in_moveleft);
-}
-
-static void
-IN_MoverightPress (void)
-{
-	KeyPress (&in_moveright);
-}
-
-static void
-IN_MoverightRelease (void)
-{
-	KeyRelease (&in_moveright);
-}
-
-static void
-IN_SpeedPress (void)
-{
-	KeyPress (&in_speed);
-}
-
-static void
-IN_SpeedRelease (void)
-{
-	KeyRelease (&in_speed);
-}
-
-static void
-IN_StrafePress (void)
-{
-	KeyPress (&in_strafe);
-}
-
-static void
-IN_StrafeRelease (void)
-{
-	KeyRelease (&in_strafe);
-}
-
-static void
-IN_AttackPress (void)
-{
-	KeyPress (&in_attack);
-}
-
-static void
-IN_AttackRelease (void)
-{
-	KeyRelease (&in_attack);
-}
-
-static void
-IN_UsePress (void)
-{
-	KeyPress (&in_use);
-}
-
-static void
-IN_UseRelease (void)
-{
-	KeyRelease (&in_use);
-}
-
-static void
-IN_JumpPress (void)
-{
-	KeyPress (&in_jump);
-}
-
-static void
-IN_JumpRelease (void)
-{
-	KeyRelease (&in_jump);
-}
-
-static void
-IN_Impulse (void)
+IN_Impulse (void *data)
 {
 	in_impulse = atoi (Cmd_Argv (1));
 }
@@ -437,35 +242,35 @@ CL_AdjustAngles (void)
 	yawspeed *= host_frametime;
 
 	if (!(in_strafe.state & 1)) {
-		cl.viewangles[YAW] -= yawspeed * CL_KeyState (&in_right);
-		cl.viewangles[YAW] += yawspeed * CL_KeyState (&in_left);
-		cl.viewangles[YAW] = anglemod (cl.viewangles[YAW]);
+		cl.viewstate.angles[YAW] -= yawspeed * CL_KeyState (&in_right);
+		cl.viewstate.angles[YAW] += yawspeed * CL_KeyState (&in_left);
+		cl.viewstate.angles[YAW] = anglemod (cl.viewstate.angles[YAW]);
 	}
 	if (in_klook.state & 1) {
 		V_StopPitchDrift ();
-		cl.viewangles[PITCH] -= pitchspeed * CL_KeyState (&in_forward);
-		cl.viewangles[PITCH] += pitchspeed * CL_KeyState (&in_back);
+		cl.viewstate.angles[PITCH] -= pitchspeed * CL_KeyState (&in_forward);
+		cl.viewstate.angles[PITCH] += pitchspeed * CL_KeyState (&in_back);
 	}
 
 	up = CL_KeyState (&in_lookup);
 	down = CL_KeyState (&in_lookdown);
 
-	cl.viewangles[PITCH] -= pitchspeed * up;
-	cl.viewangles[PITCH] += pitchspeed * down;
+	cl.viewstate.angles[PITCH] -= pitchspeed * up;
+	cl.viewstate.angles[PITCH] += pitchspeed * down;
 
 	if (up || down)
 		V_StopPitchDrift ();
 
 	// FIXME: Need to clean up view angle limits
-	if (cl.viewangles[PITCH] > 80)
-		cl.viewangles[PITCH] = 80;
-	if (cl.viewangles[PITCH] < -70)
-		cl.viewangles[PITCH] = -70;
+	if (cl.viewstate.angles[PITCH] > 80)
+		cl.viewstate.angles[PITCH] = 80;
+	if (cl.viewstate.angles[PITCH] < -70)
+		cl.viewstate.angles[PITCH] = -70;
 
-	if (cl.viewangles[ROLL] > 50)
-		cl.viewangles[ROLL] = 50;
-	if (cl.viewangles[ROLL] < -50)
-		cl.viewangles[ROLL] = -50;
+	if (cl.viewstate.angles[ROLL] > 50)
+		cl.viewstate.angles[ROLL] = 50;
+	if (cl.viewstate.angles[ROLL] < -50)
+		cl.viewstate.angles[ROLL] = -50;
 }
 
 /*
@@ -476,8 +281,9 @@ CL_AdjustAngles (void)
 void
 CL_BaseMove (usercmd_t *cmd)
 {
-	if (cls.state != ca_active)
+	if (cls.state != ca_active) {
 		return;
+	}
 
 	CL_AdjustAngles ();
 
@@ -515,12 +321,13 @@ CL_BaseMove (usercmd_t *cmd)
 	IN_Move ();
 
 	// adjust for chase camera angles
+	/*FIXME:chase figure out just what this does and get it working
 	if (cl.chase
 		&& (chase_active->int_val == 2 || chase_active->int_val == 3)) {
 		vec3_t      forward, right, up, f, r;
 		vec3_t      dir = {0, 0, 0};
 
-		dir[1] = r_data->refdef->viewangles[1] - cl.viewangles[1];
+		dir[1] = r_data->refdef->viewangles[1] - cl.viewstate.angles[1];
 		AngleVectors (dir, forward, right, up);
 		VectorScale (forward, cmd->forwardmove, f);
 		VectorScale (right, cmd->sidemove, r);
@@ -531,16 +338,18 @@ CL_BaseMove (usercmd_t *cmd)
 		viewdelta.position[2] = f[0] + r[0];
 		viewdelta.position[0] = (f[1] + r[1]) * -1;
 	}
+	*/
 
 	cmd->forwardmove += viewdelta.position[2] * m_forward->value;
 	cmd->sidemove += viewdelta.position[0] * m_side->value;
 	cmd->upmove += viewdelta.position[1];
-	cl.viewangles[PITCH] += viewdelta.angles[PITCH] * m_pitch->value;
-	cl.viewangles[YAW] += viewdelta.angles[YAW] * m_yaw->value;
-	cl.viewangles[ROLL] += viewdelta.angles[ROLL];
+	cl.viewstate.angles[PITCH] += viewdelta.angles[PITCH] * m_pitch->value;
+	cl.viewstate.angles[YAW] += viewdelta.angles[YAW] * m_yaw->value;
+	cl.viewstate.angles[ROLL] += viewdelta.angles[ROLL];
 
 	if (freelook && !(in_strafe.state & 1)) {
-		cl.viewangles[PITCH] = bound (-70, cl.viewangles[PITCH], 80);
+		cl.viewstate.angles[PITCH]
+			= bound (-70, cl.viewstate.angles[PITCH], 80);
 	}
 }
 
@@ -563,7 +372,7 @@ CL_SendMove (usercmd_t *cmd)
 
 	MSG_WriteFloat (&buf, cl.mtime[0]);		// so server can get ping times
 
-	write_angles (&buf, cl.viewangles);
+	write_angles (&buf, cl.viewstate.angles);
 
 	MSG_WriteShort (&buf, cmd->forwardmove);
 	MSG_WriteShort (&buf, cmd->sidemove);
@@ -603,76 +412,86 @@ CL_SendMove (usercmd_t *cmd)
 void
 CL_Input_Init (void)
 {
-	Cmd_AddCommand ("+moveup", IN_UpPress, "When active the player is "
-					"swimming up in a liquid");
-	Cmd_AddCommand ("-moveup", IN_UpRelease, "When active the player is not "
-					"swimming up in a liquid");
-	Cmd_AddCommand ("+movedown", IN_DownPress, "When active the player is "
-					"swimming down in a liquid");
-	Cmd_AddCommand ("-movedown", IN_DownRelease, "When active the player is "
-					"not swimming down in a liquid");
-	Cmd_AddCommand ("+left", IN_LeftPress, "When active the player is turning "
-					"left");
-	Cmd_AddCommand ("-left", IN_LeftRelease, "When active the player is not "
-					"turning left");
-	Cmd_AddCommand ("+right", IN_RightPress, "When active the player is "
-					"turning right");
-	Cmd_AddCommand ("-right", IN_RightRelease, "When active the player is not "
-					"turning right");
-	Cmd_AddCommand ("+forward", IN_ForwardPress, "When active the player is "
-					"moving forward");
-	Cmd_AddCommand ("-forward", IN_ForwardRelease, "When active the player is "
-					"not moving forward");
-	Cmd_AddCommand ("+back", IN_BackPress, "When active the player is moving "
-					"backwards");
-	Cmd_AddCommand ("-back", IN_BackRelease, "When active the player is not "
-					"moving backwards");
-	Cmd_AddCommand ("+lookup", IN_LookupPress, "When active the player's view "
-					"is looking up");
-	Cmd_AddCommand ("-lookup", IN_LookupRelease, "When active the player's "
-					"view is not looking up");
-	Cmd_AddCommand ("+lookdown", IN_LookdownPress, "When active the player's "
-					"view is looking down");
-	Cmd_AddCommand ("-lookdown", IN_LookdownRelease, "When active the "
-					"player's view is not looking up");
-	Cmd_AddCommand ("+strafe", IN_StrafePress, "When active, +left and +right "
-					"function like +moveleft and +moveright");
-	Cmd_AddCommand ("-strafe", IN_StrafeRelease, "When active, +left and "
-					"+right stop functioning like +moveleft and +moveright");
-	Cmd_AddCommand ("+moveleft", IN_MoveleftPress, "When active the player is "
-					"strafing left");
-	Cmd_AddCommand ("-moveleft", IN_MoveleftRelease, "When active the player "
-					"is not strafing left");
-	Cmd_AddCommand ("+moveright", IN_MoverightPress, "When active the player "
-					"is strafing right");
-	Cmd_AddCommand ("-moveright", IN_MoverightRelease, "When active the "
-					"player is not strafing right");
-	Cmd_AddCommand ("+speed", IN_SpeedPress, "When active the player is "
-					"running");
-	Cmd_AddCommand ("-speed", IN_SpeedRelease, "When active the player is not "
-					"running");
-	Cmd_AddCommand ("+attack", IN_AttackPress, "When active player is "
-					"firing/using current weapon");
-	Cmd_AddCommand ("-attack", IN_AttackRelease, "When active player is not "
-					"firing/using current weapon");
-	Cmd_AddCommand ("+use", IN_UsePress, "Non-functional. Left over command "
-					"for opening doors and triggering switches");
-	Cmd_AddCommand ("-use", IN_UseRelease, "Non-functional. Left over command "
-					"for opening doors and triggering switches");
-	Cmd_AddCommand ("+jump", IN_JumpPress, "When active the player is "
-					"jumping");
-	Cmd_AddCommand ("-jump", IN_JumpRelease, "When active the player is not "
-					"jumping");
-	Cmd_AddCommand ("impulse", IN_Impulse, "Call a game function or QuakeC "
-					"function.");
-	Cmd_AddCommand ("+klook", IN_KLookPress, "When active, +forward and +back "
-					"perform +lookup and +lookdown");
-	Cmd_AddCommand ("-klook", IN_KLookRelease, "When active, +forward and "
-					"+back don't perform +lookup and +lookdown");
-	Cmd_AddCommand ("+mlook", IN_MLookPress, "When active moving the mouse or "
-					"joystick forwards and backwards performs +lookup and "
-					"+lookdown");
-	Cmd_AddCommand ("-mlook", IN_MLookRelease, "When active moving the mouse "
-					"or joystick forwards and backwards doesn't perform "
-					"+lookup and +lookdown");
+	Cmd_AddDataCommand ("+moveup", KeyPress, &in_up,
+						"When active the player is swimming up in a liquid");
+	Cmd_AddDataCommand ("-moveup", KeyRelease, &in_up,
+						"When active the player is not swimming up in a "
+						"liquid");
+	Cmd_AddDataCommand ("+movedown", KeyPress, &in_down,
+						"When active the player is swimming down in a liquid");
+	Cmd_AddDataCommand ("-movedown", KeyRelease, &in_down,
+						"When active the player is not swimming down in a "
+						"liquid");
+	Cmd_AddDataCommand ("+left", KeyPress, &in_left,
+						"When active the player is turning left");
+	Cmd_AddDataCommand ("-left", KeyRelease, &in_left,
+						"When active the player is not turning left");
+	Cmd_AddDataCommand ("+right", KeyPress, &in_right,
+						"When active the player is turning right");
+	Cmd_AddDataCommand ("-right", KeyRelease, &in_right,
+						"When active the player is not turning right");
+	Cmd_AddDataCommand ("+forward", KeyPress, &in_forward,
+						"When active the player is moving forward");
+	Cmd_AddDataCommand ("-forward", KeyRelease, &in_forward,
+						"When active the player is not moving forward");
+	Cmd_AddDataCommand ("+back", KeyPress, &in_back,
+						"When active the player is moving backwards");
+	Cmd_AddDataCommand ("-back", KeyRelease, &in_back,
+						"When active the player is not moving backwards");
+	Cmd_AddDataCommand ("+lookup", KeyPress, &in_lookup,
+						"When active the player's view is looking up");
+	Cmd_AddDataCommand ("-lookup", KeyRelease, &in_lookup,
+						"When active the player's view is not looking up");
+	Cmd_AddDataCommand ("+lookdown", KeyPress, &in_lookdown,
+						"When active the player's view is looking down");
+	Cmd_AddDataCommand ("-lookdown", KeyRelease, &in_lookdown,
+						"When active the player's view is not looking up");
+	Cmd_AddDataCommand ("+strafe", KeyPress, &in_strafe,
+						"When active, +left and +right function like "
+						"+moveleft and +moveright");
+	Cmd_AddDataCommand ("-strafe", KeyRelease, &in_strafe,
+						"When active, +left and +right stop functioning like "
+						"+moveleft and +moveright");
+	Cmd_AddDataCommand ("+moveleft", KeyPress, &in_moveleft,
+						"When active the player is strafing left");
+	Cmd_AddDataCommand ("-moveleft", KeyRelease, &in_moveleft,
+						"When active the player is not strafing left");
+	Cmd_AddDataCommand ("+moveright", KeyPress, &in_moveright,
+						"When active the player is strafing right");
+	Cmd_AddDataCommand ("-moveright", KeyRelease, &in_moveright,
+						"When active the player is not strafing right");
+	Cmd_AddDataCommand ("+speed", KeyPress, &in_speed,
+						"When active the player is running");
+	Cmd_AddDataCommand ("-speed", KeyRelease, &in_speed,
+						"When active the player is not running");
+	Cmd_AddDataCommand ("+attack", KeyPress, &in_attack,
+						"When active player is firing/using current weapon");
+	Cmd_AddDataCommand ("-attack", KeyRelease, &in_attack,
+						"When active player is not firing/using current "
+						"weapon");
+	Cmd_AddDataCommand ("+use", KeyPress, &in_use,
+						"Non-functional. Left over command for opening doors "
+						"and triggering switches");
+	Cmd_AddDataCommand ("-use", KeyRelease, &in_use,
+						"Non-functional. Left over command for opening doors "
+						"and triggering switches");
+	Cmd_AddDataCommand ("+jump", KeyPress, &in_jump,
+						"When active the player is jumping");
+	Cmd_AddDataCommand ("-jump", KeyRelease, &in_jump,
+						"When active the player is not jumping");
+	Cmd_AddDataCommand ("impulse", IN_Impulse, 0,
+						"Call a game function or QuakeC function.");
+	Cmd_AddDataCommand ("+klook", KeyPress, &in_klook,
+						"When active, +forward and +back perform +lookup and "
+						"+lookdown");
+	Cmd_AddDataCommand ("-klook", KeyRelease, &in_klook,
+						"When active, +forward and +back don't perform "
+						"+lookup and +lookdown");
+	Cmd_AddDataCommand ("+mlook", KeyPress, &in_mlook,
+						"When active moving the mouse or joystick forwards "
+						"and backwards performs +lookup and "
+						"+lookdown");
+	Cmd_AddDataCommand ("-mlook", IN_MLookRelease, &in_mlook,
+						"When active moving the mouse or joystick forwards "
+						"and backwards doesn't perform +lookup and +lookdown");
 }

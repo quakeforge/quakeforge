@@ -22,8 +22,8 @@ for i in range(m[6]):
 	else:
 		n = unpack ("i", model[:4])[0]
 		model = model [4:]
-		print n
-		k = (n, unpack (`n`+"f", model[:n*4]), [])
+		print (n)
+		k = (n, unpack (("%df" % n), model[:n*4]), [])
 		model = model [n*4:]
 		for j in range (n):
 			k[2].append (model[:s])
@@ -67,7 +67,7 @@ for i in range (m[11]):
 		g = (t, unpack ("i 3B B 3B B", model[:12]))
 		model = model[12:]
 		n = g[1][0]
-		g = g + (unpack (`n`+"f", model[:n*4]), [])
+		g = g + (unpack (("%df" % n), model[:n*4]), [])
 		model = model[n*4:]
 		for k in range (g[1][0]):
 			f = (unpack ("3B B 3B B 16s", model[:24]), [])

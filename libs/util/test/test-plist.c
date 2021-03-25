@@ -2,7 +2,7 @@
 # include "config.h"
 #endif
 #include <string.h>
-#include "QF/qfplist.h"
+#include "QF/plist.h"
 
 static const char *test_strings[] = {
 	"Guarding the entrance to the Grendal\n"
@@ -11,7 +11,7 @@ static const char *test_strings[] = {
 	"of the Shadow cult.\n\n"
 	"For years the Shadow Gate existed in\n"
 	"obscurity but after the cult discovered\n"
-	"the \3023\354\341\343\353\240\307\341\364\345 in the caves below\n"
+	"the \302\354\341\343\353\240\307\341\364\345 in the caves below\n"
 	"the empire took notice.\n"
 	"A batallion of Imperial Knights were\n"
 	"sent to the gate to destroy the cult\n"
@@ -29,7 +29,7 @@ test_string_io (const char *str)
 	item = PL_NewString (str);
 	saved = PL_WritePropertyList (item);
 	PL_Free (item);
-	item = PL_GetPropertyList (saved);
+	item = PL_GetPropertyList (saved, 0);
 	res = PL_String (item);
 	if (!strcmp (str, res))
 		return 1;

@@ -53,11 +53,11 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
-#include "light.h"
-#include "threads.h"
-#include "entities.h"
-#include "options.h"
-#include "properties.h"
+#include "tools/qflight/include/light.h"
+#include "tools/qflight/include/threads.h"
+#include "tools/qflight/include/entities.h"
+#include "tools/qflight/include/options.h"
+#include "tools/qflight/include/properties.h"
 
 options_t	options;
 bsp_t *bsp;
@@ -77,9 +77,6 @@ int bspfileent;			// next entity to dispatch
 vec3_t bsp_origin;
 
 qboolean extrasamples;
-
-float minlights[MAX_MAP_FACES];
-
 
 int
 GetFileSpace (int size)
@@ -150,7 +147,7 @@ FindFaceOffsets (void)
 	surfaceorgs = (vec3_t *) calloc (bsp->numfaces, sizeof (vec3_t));
 
 	for (i = 1; i < bsp->nummodels; i++) {
-		ent = FindEntityWithKeyPair ("model", name = va ("*%d", i));
+		ent = FindEntityWithKeyPair ("model", name = va (0, "*%d", i));
 		VectorZero (org);
 		if (!ent)
 			Sys_Error ("FindFaceOffsets: Couldn't find entity for model %s.\n",

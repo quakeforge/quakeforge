@@ -31,49 +31,68 @@
 .ds qfcc \fBqfcc\fP
 .ds cpp \fBcpp\fP
 .ds progs.src \fIprogs.src\fP
+
 .TH QFCC 1 "28 April, 2004" QuakeForge "QuakeForge Developer's Manual"
 .\" Please update the above date whenever this man page is modified.
+
+
 .SH NAME
 qfcc \- The QuakeForge Code Compiler
+
+
 .SH SYNOPSIS
 .B qfcc
 .RI [ options ]
 .RI [ files ]
+
+
 .SH DESCRIPTION
 \*[qfcc] compiles Ruamoko source into a form that the QuakeForge engine can
 understand.
+
+
 .SH OPTIONS
 \*[qfcc] takes the following arguments:
+
 .TP
 .B \-\-advanced
 Use advanced Ruamoko features.
 This is the default when using separate compilation.
+
 .TP
 .B \-C, \-\-code OPTION,...
 Set code generation options.
 See \fBCODE GENERATION OPTIONS\fP for details.
+
 .TP
 .B \-c
 Only compile, do not link.
 Can be used in either \fBprogs.src\fP or separate compilation modes.
+
 .TP
 .B \-\-cpp CPPSPEC
 \*[cpp] execution command line.
 See \fBCPP NAME\fP for details.
+
 .TP
 .B \-D, \-\-define SYMBOL[=VAL]
 Define a symbol for the preprocessor, if it is in use.
+
 .TP
 .B \-E
 Only preprocess.
 No compilation or linking is done.
+
 .TP
 .B \-\-extended
-Allow extended keywords in traditional mode.
+Allow extended keywords in traditional mode. Otherwise, it has \fIall\fP
+the implications of \fB\-\-traditional\fP.
+
 .TP
 .B \-F, \-\-files
 Generate \fIfiles.dat\fP.
 This list is created by checking the parameters to the precache_* functions.
+
 .TP
 .B \-\-frames
 Generate \fI<source>.frame\fP files.
@@ -81,134 +100,163 @@ For each source file (listed either on the command line, or in
 \fBprogs.src\fP, write a file whose name is the base name of the source
 file with an extension of \fB.frame\fP, and contains a list of frame macro
 names with their associated frame numbers. Eg, \fBplayer.qc\fP will produce
-\fBplayer.frame\fPa. Note that files that do not create frame macros will
+\fBplayer.frame\fP. Note that files that do not create frame macros will
 not generate a frame file. At this time, the file is always written to the
 current directory.
+
 .TP
 .B \-g
 Generate debugging info.
 Synonym for \fB\-\-code debug\fP.
+
 .TP
 .B \-h, \-\-help
 Show summary of options.
+
 .TP
 .B \-I DIR
 Add DIR to the list of directories for the preprocessor to search when looking
 for include files.
+
 .TP
 .B \-\-include FILE
 Process FILE as if \fB#include "FILE"\fP appeared as the first line of the
 primary source file.
 See the \*[cpp] man page (\fB\-include\fP) for details.
+
 .TP
 .B \-L DIR
 Add DIR to the search path used for finding libraries specified with \fB-l\fP.
+
 .TP
 .B \-l LIB
 Add libLIB.a to the list of libraries to be used for resolving undefined
 symbols.
 \*[qfcc] expects libraries to be \fBpak\fP files of \*[qfcc]
 object files built using the \fBpak\fP utility.
+
 .TP
 .B \-M, \-MD, \-MMD
 Generate dependency info.
 Dependent on \*[cpp] version, so check \*[cpp]'s documentation.
+
 .TP
 .B \-\-no\-default\-paths
 Do not use default paths for include files or libraries.
+
 .TP
 .B \-N, \-\-notice OPTION,...
 Set notice options.
 See \fBNOTICE OPTIONS\fP for details.
+
 .TP
 .B \-o, \-\-output\-file FILE
 Specify output file name.
 In \fBprogs.src\fP mode, this overrides the output file in \*[progs.src].
+
 .TP
 .B \-\-progdefs
 Generate \fIprogdefs.h\fP. Forces \fB\-\-code crc\fP.
+
 .TP
 .B \-P, \-\-progs\-src FILE
 File to use instead of \*[progs.src].
 No effect in separate compilation mode.
+
 .TP
 .B \-\-qccx\-escapes
 Use QCCX escape sequences instead of standard C/QuakeForge sequences in
 strings. See \fBESCAPE SEQUENCES\fP for details.
-.TP
-.B \-p, \-\-strip\-path NUM
-Strip NUM leading path elements from file names.
-eg. -p 3 will strip the
-.I ../../../
-from
-.I ../../../src/foo.r
-when embedding the source file name in the output code.
+
 .TP
 .B \-q, \-\-quiet
 Inhibit some of \*[qfcc]'s normal output.
 Specifying this option multiple times further inhibits \*[qfcc]'s output.
 Counteracts the effects of \fB-v\fP.
+
 .TP
 .B \-r, \-\-relocatable
 Incremental linking.
 Generate a larger object file from other object files and libraries.
+
 .TP
 .B \-S, \-\-save\-temps
 Do not delete temporary files.
+
 .TP
 .B \-s, \-\-source DIR
 Look for \*[progs.src] in \fBDIR\fP instead of the current directory.
+
 .TP
 .B \-\-traditional
 Use traditional QuakeC syntax, semantics and \*(lqbugs\*(rq.
-Also implies the \fBv6only\fP, \fBno-short-circuit\fP and
-\fBno-local-merging\fP code generation options (see
-\fBCODE GENERATION OPTIONS\fP).
+Also implies the \fBv6only\fP, \fBno-short-circuit\fP,
+\fBconst-initializers\fP and \fBno-local-merging\fP code generation options
+(see \fBCODE GENERATION OPTIONS\fP).
 This is the default when using \fBprogs.src\fP mode.
+
 .TP
 .B \-U, \-\-undefine SYMBOL
 Undefine a preprocessor symbol, if the preprocessor is in use.
+
 .TP
 .B \-V, \-\-version
 Show the version of \*[qfcc].
+
 .TP
 .B \-v, \-\-verbose
 Display more output than usual.
 Specifying this option multiple times further increases \*[qfcc]'s output.
 Counteracts the effects of \fB-q\fP.
+
 .TP
 .B \-W, \-\-warn OPTION,...
 Set warning options.
 See \fBWARNING OPTIONS\fP for details.
+
 .TP
 .B \-z
 Compress object files when writing them.
 This is especially useful when creating libraries, especially if using the
 object oriented features, but can be quite slow.
 This has no effect when creating \fBprogs.dat\fP.
+
+
 .SH "CODE GENERATION OPTIONS"
 Code generation options are processed in the order of their appearance on the
 command line.
 Unsupported options are ignored.
 The following options are supported by \*[qfcc]'s \fB\-\-code\fP argument:
+
+.TP
+.B const-initializers
+Treat initialized globals as constants.
+This option is implied by \fB\-\-traditional\fP and \fB\-\-extended\fP, and is
+turned off by \fB\-\-advanced\fP.
+
 .TP
 .B cow
 Allow assignment to initialized globals.
-In Quake-C and Ruamoko, a global that has been initialized to a value is not
-a variable, but a named constant.
+When initialized globals are treated as constants (traditional Quake-C, or
+when const-initializers is activated), a global that has been initialized to a
+value is not a variable, but a named constant.
 However, \fBqcc\fP never really enforced this.
 The \fBcow\fP option allows \*[qfcc] to gracefully cope with QuakeC source
 that assigns values to initialized globals in this manner.
-(also known as \*(lqcopy on write\*(rq\(emnever mind the bovine connotations)
+(also known as \*(lqcopy on write\*(rq\(emlo and behold the bovine
+connotations)
+
 .TP
 .B cpp
 Preprocess all input files with \*[cpp].
 This includes the \*[progs.src] file when used.
+
 .TP
 .B crc
 Write the CRC of \fBprogdefs.h\fP to \*(lqprogs.dat\*(rq. Default for v6 progs,
 otherwise defaults to off. However, \fB\-\-progdefs\fP has the effect of
 forcing this option.
+
 .TP
 .B debug
 Generate debug code for QuakeForge engines.
@@ -218,12 +266,14 @@ This option tells \*[qfcc] to generate this information.
 It is written to a secondary file with the extension \*(lqsym\*(rq\(emif your
 output file is \*(lqprogs.dat\*(rq, the symbol file will be
 \*(lqprogs.sym\*(rq.
+
 .TP
 .B fast\-float
 Use float values directly in \*(lqif\*(rq statements.
 Defaults to on.
 This option is always enabled when using version 6 progs (\fBv6only\fP is in
 effect).
+
 .TP
 .B local-merging
 Clump the local variables from all functions into one block of data the size
@@ -235,6 +285,13 @@ data.
 This can be a problem because instructions can access addresses up to 32767 in
 older servers or 65535 in most modern servers.
 Defaults to off for traditional mode, and on for advanced mode.
+
+.TP
+.B promote\-float
+Promote float when passed to a function that takes a variable number of
+arguements. Defaults to enabled for advanced code, is forced off for
+traditional or v6only code (mostly because such code does not have doubles).
+
 .TP
 .B short\-circuit
 Generate short circuit code for logical operators (\fB&&\fP and \fB||\fP).
@@ -243,6 +300,7 @@ the code for \fBB\fP will not be executed.
 Similar for \fBA || B\fP, but if \fBA\fP is true, the expression is known to
 be true and the code for \fBB\fP will not be executed.
 Defaults to off for traditional mode, and on for advanced mode.
+
 .TP
 .B single-cpp
 In \fBprogs.src\fP mode, when \*[cpp] is used, produce an intermediate file
@@ -255,6 +313,7 @@ Without this option, each source file is independent with respect to the
 preprocessor.
 Has no effect in separate compilation mode.
 Defaults to on.
+
 .TP
 .B vector\-calls
 When a function is passed a constant vector, this causes the vector to be
@@ -263,12 +322,14 @@ instruction.
 This can save a good number of pr_globals where those vectors contain many
 duplicate coordinates but do not match entirely.
 However, this will generate slower code for such calls.
+
 .TP
 .B vector\-components
 Create extra symbols for accessing the components of a vector variable or 
 field. For example, \fBvector vel\fP will also create \fBvel_x\fP,
 \fBvel_y\fP, and \fBvel_z\fP. Defaults to on for traditional code and off
 for advanced.
+
 .TP
 .B v6only
 Restrict the compiler to only version 6 progs (original Quake/QuakeWorld)
@@ -280,64 +341,80 @@ support) that require extensions.
 Defaults to on for traditional mode and off for advanced mode.
 .PP
 Any of the above can be prefixed with \fBno\-\fP to negate its meaning.
+
+
 .SH "WARNING OPTIONS"
 Warning options are processed in the order of their appearance on the command
 line.
 Unsupported options are ignored.
 The following options are supported by \*[qfcc]'s \fB\-\-warn\fP argument:
+
 .TP
 .B cow
 Emit a warning when the source assigns a value to a named constant.
 See the description of the \fBcow\fP code generation option above for a
 description of what this means.
+
 .TP
 .B error
 Promote warnings to errors.
+
 .TP
 .B executable
 Emit a warning when non-executable statements (eg, \fB==\fP used for
 assignment) are encountered.
+
 .TP
 .B initializer
 Emit a warning when too many structure/array initializer elements are given.
+
 .TP
 .B integer-divide
 Emit a warning when both constants in a division operation are integers.
+
 .TP
 .B interface\-check
 Emit a warning when a method is declared in an implementation but not in the
 interface for a class.
+
 .TP
 .B precedence
 Emit a warning when potentially ambiguous logic is used without parentheses.
+
 .TP
 .B redeclared
 Emit a warning when a local variable is redeclared.
+
 .TP
 .B switch
 Emit a warning when an enum value is not handled in a switch statement that
 tests an enum.
 Using a default label will cause all otherwise unhandled enum values to be
 handled (for good or evil).
-.TP
+
 .TP
 .B traditional
 Emit a warning when code that should be an error is allowed by traditional
 \fBqcc\fP.
 Has effect only in traditional mode.
+
 .TP
 .B undef\-function
 Emit a warning when a function is called, but has not yet been defined.
+
 .TP
 .B unimplemented
 Emit a warning when a class method has not been implemented.
+
 .TP
 .B unused
 Emit a warning for unused local variables.
+
 .TP
 .B uninited\-var
 Emit a warning when a variable is read from that has not been initialized to a
 value.
+
 .TP
 .B vararg\-integer
 Emit a warning when a function that takes a variable number of arguments is
@@ -345,26 +422,34 @@ passed a constant of an integer type.
 .PP
 Any of the above can be prefixed with \fBno\-\fP to negate its meaning.
 There are also two special options:
+
 .TP
 .B all
 Turns on all warning options except \fBerror\fP.
+
 .TP
 .B none
 Turns off all warning options except \fBerror\fP.
+
+
 .SH "NOTICE OPTIONS"
 Notices are used to flag code constructs that may have changed semantics but
 shouldn't be treated as warnings.
 They are also used for internal debugging purposes, so if you see any cryptic
 notices, please report them as a bug (normal notices should be fairly
 self-explanatory).
+
 .TP
 .B none
 Silences all notice messages.
+
 .TP
 .B warn
 Promote notices to warnings.
 If warnings are being treated as errors, so will notices.
 Disabling warnings has no effect on this option.
+
+
 .SH "CPP NAME"
 When preprocessing source files, \*[qfcc] calls \*[cpp] (the C
 preprocessor) with a configurable command line.
@@ -379,19 +464,24 @@ This spec is similar in concept to a \fBprintf\fP string.
 The name of the program may be either absolute (eg \fB/lib/cpp\fP) or relative
 as the \fBPATH\fP will be searched.
 Available substitutions:
+
 .TP
 .B %d
 Mainly for defines (\-D, \-U and \-I) but \fB%d\fP will be replaced by all
 \*[cpp] options that \*[qfcc] passes to \*[cpp]
+
 .TP
 .B %o
 This will be replaced by the output file path.
 Could be either absolute or relative, depending on whether \*[qfcc] is
 deleting temporary files or not.
+
 .TP
 .B %i
 This will be replaced by the input file path.
 Generally as given to \*[qfcc].
+
+
 .SH "COMPILATION MODES"
 \*[qfcc] has two, mutually exclusive, modes of operation: \fBprogs.src\fP
 mode and \*(lqseparate compilation\*(rq mode.
@@ -466,99 +556,153 @@ overridden using \fB--traditional\fP.
 When using \*[cpp], each source file is passed through the preprocessor
 individually.
 Each file is truly independent of any other file on the command line.
+
+
 .SH "ESCAPE SEQUENCES"
 \*[qfcc] supports a variety of string escape sequences. This includes those of
 \fBqcc\fP (which are a subset of those in standard C), standard C and
 \fBqccx\fP. There are some conflicts between the escape sequences, but
 \fB\-\-qccx\-escapes\fP selects which set to use.
-.TP
-.B \(rs\(rs
-Backslash.
-.TP
-.B \(rsn
-Line feed.
-.TP
-.B \(rs"
-Double quote.
-.TP
-.B \(rs\'
-Single quote.
-.TP
-.B \(rs0-7
-Octal character code, up to three digits. This conflicts with \fBqccx\fP. In
-\fBqccx\fP, this produces gold digits. Use \fB\-\-qccx\-escapes\fP to select
-\fBqccx\fP behaviour.
-.TP
-.B \(rs8-9
-Produce gold digits.
-.TP
-.B \(rsx0-9A-Fa-f
-Hexadecimal character code, any number of digits, but only the least
-significant byte will be used.
+.SS Standard escape sequences:
+These are the supported escape sequences from standard C, with the addition of
+\(rse (escape), which would be nice if it was in standard C.
+
 .TP
 .B \(rsa
 Bell character (not in quake engines). Equivalent to \(rsx07.
+
 .TP
 .B \(rsb
 Backspace character (not in quake engines). Equivalent to \(rsx08. This
 conflicts with \fBqccx\fP. In \fBqccx\fP, this toggles bronze characters. Use
 \fB\-\-qccx\-escapes\fP to select \fBqccx\fP behaviour.
+
 .TP
 .B \(rse
-Escape character (not in quake engines). Equivalent to \(rsx1b (dull 9).
+Escape character (not in quake engines). Equivalent to \(rsx1b. Not actually
+standard, but it should be.
+
 .TP
 .B \(rsf
 Formfeed character (not in quake engines). Equivalent to \(rsx0c.
+
+.TP
+.B \(rsn
+Line feed.
+
 .TP
 .B \(rsr
 Carriage return. Equivalent to \(rsx0d.
+
 .TP
-.B \(rss
-Toggle "bold" characters (add 0x80).
 .B \(rst
 Tab character. Equivalent to \(rsx09.
+
 .TP
 .B \(rsv
 Vertical tab. Equivalent to \(rsx0b.
+
 .TP
-.B \(rs^
-Make the next character "bold" (add 0x80).
+.B \(rs\(rs
+Backslash.
+
+.TP
+.B \(rs\'
+Single quote.
+
+.TP
+.B \(rs"
+Double quote.
+
+.TP
+.B \(rs?
+Question mark. Avoids trigraphs in standard C, but supported for compatibility.
+
+.TP
+.B \(rs0-7
+Octal character code, up to three digits. This conflicts with \fBqccx\fP. In
+\fBqccx\fP, this produces gold digits. Use \fB\-\-qccx\-escapes\fP to select
+\fBqccx\fP behaviour.
+
+.TP
+.B \(rs8-9
+Produce gold digits.
+
+.TP
+.B \(rsx0-9A-Fa-f
+Hexadecimal character code, any number of digits, but only the least
+significant byte will be used.
+
+
+.SS Quake character set extension escape sequences:
+
+.TP
+.B \(rsb
+Toggle bronze characters. Requires \fB\-\-qccx\-escapes\fP.
+
+.TP
+.B \(rss
+Toggle "bold" characters (add 0x80).
+
 .TP
 .B \(rs[
 Gold [ character. Equivalent to \(rsx90.
+
 .TP
 .B \(rs]
 Gold ] character. Equivalent to \(rsx91.
+
 .TP
 .B \(rs.
 Center dot. Equivalent to \(rsx1c.
+
 .TP
 .B \(rs<
 Turn on "bold" characters (add 0x80). This conflicts with \fBqccx\fP. In
-\fBqccx\fP, this produces the brown left end. Equivalent to \(rsx1d. Use
+\fBqccx\fP, this produces the separator left end. Equivalent to \(rsx1d. Use
 \fB\-\-qccx\-escapes\fP to select \fBqccx\fP behaviour.
+
 .TP
 .B \(rs\-
-Brown center bit. Equivalent to \(rsx1e.
+Separator center. Equivalent to \(rsx1e.
+
 .TP
 .B \(rs>
 Turn off "bold" characters (add 0x80). This conflicts with \fBqccx\fP. In
-\fBqccx\fP, this produces the brown right end. Equivalent to \(rsx1f. Use
+\fBqccx\fP, this produces the separator right end. Equivalent to \(rsx1f. Use
 \fB\-\-qccx\-escapes\fP to select \fBqccx\fP behaviour.
+
+.TP
+.B \(rs^
+Make the next character "bold" (add 0x80).
+
+.TP
+.B \(rs0-9
+Produce gold digits. Requires \fB\-\-qccx\-escapes\fP (except \(rs8 and \(rs9:
+they are always available).
+
 .TP
 .B \(rs(
-Left slider end. Equivalent to \(rsx80.
+Slider left end. Equivalent to \(rsx80.
+
 .TP
 .B \(rs=
 Slider center. Equivalent to \(rsx81.
+
 .TP
 .B \(rs)
-Right slider end. Equivalent to \(rsx82.
+Slider right end. Equivalent to \(rsx82.
+
 .TP
 .B \(rs{0-255}
-Decimal character code.
+Decimal character code. Quake specific as qccx added this to allow specifying
+the character code directly as \(rs0-\(rs9 were already used for specifying
+gold digits.
+
 .P
 \fB\-\-qccx\-escapes\fP has no effect on sequences that do not conflict.
+
+
 .SH TRADITIONAL VS ADVANCED
 Compared to \fBqcc\fP, \*[qfcc] has many advanced features and is much stricter
 about type checking.
@@ -586,13 +730,17 @@ a lot of data space).
 Advanced mode is simply \*[qfcc] in its natural state.
 Using \fB--advanced\fP, \*[qfcc] can be put in to advanced mode while using the
 \fBprogs.src\fP compilation mode.
+
+
 .SH "FAQ"
+
 .TP
 .B Where did the name Ruamoko come from?
 In Maori mythology, Ruamoko is the youngest child of Ranginui, the
 Sky-father, and Papatuanuku, the Earth-mother.
 Ruamoko is the god of volcanoes and earthquakes.
 For more information, see the Web site at <\fBhttp://maori.com/kmst1.htm\fP>.
+
 .TP
 .B qfcc hangs
 This is almost always caused by qfcc incorrectly invoking \*[cpp].
@@ -600,11 +748,13 @@ Using the \fB--cpp\fP option (refer to the \fBCPP NAME\fP section above), the
 correct method for invoking \*[cpp] can be specified.
 Once you have found this, please send the correct \*[cpp] command line,
 preferably along with the output of \fBconfig.guess\fP, to the team.
+
 .TP
 .B qfcc is singing a bad 80s rap song to me. What's going on?
 \*(lqice ice baby\*(rq is QuakeForge-speak for \*(lqInternal Compiler
 Error\*(rq.
 It usually means there's a bug in \*[qfcc], so please report it to the team.
+
 .TP
 .B qfcc is mooing at me. What's wrong with you people?
 The compiler doesn't like being treated like a slab of beef.
@@ -615,11 +765,17 @@ while, but you told it not to do that by passing the \fBcow\fP option to
 \fB\-\-code\fP, so it has its revenge by mooing out a warning.
 Or something like that.
 To disable the warning, pass \fBno-cow\fP to \fB\-\-warn\fP.
+
+
 .SH "FILES"
 .I progs.src
+
+
 .SH "SEE ALSO"
 .BR quakeforge (1),
 .BR pak (1)
+
+
 .SH AUTHORS
 The original \fBqcc\fP program, for compiling the QuakeC language, was written
 by Id Software, Inc.

@@ -1,7 +1,7 @@
-#include "math.h"
+#include <math.h>
 
-#include "Array.h"
-#include "runtime.h"
+#include <Array.h>
+#include <runtime.h>
 
 #define STANDARD_CAPACITY 16
 #define ARRAY_MAX_GRANULARITY 100
@@ -162,7 +162,7 @@
 - (id) objectAtIndex: (unsigned)index
 {
 	if (index >= count) // FIXME: need exceptions
-		[self error: "-replaceObjectAtIndex:withObject: index out of range"];
+		[self error: "-objectAtIndex:withObject: index out of range"];
 
 	return _objs[index];
 }
@@ -261,7 +261,7 @@
 {
 	local unsigned	i;
 
-	if (index >= count) // FIXME: need exceptions
+	if (index > count) // FIXME: need exceptions
 		[self error: "-insertObject:atIndex: index out of range"];
 
 	if (count == capacity) {	// at capacity, expand
@@ -401,12 +401,25 @@
 }
 
 - (void) makeObjectsPerformSelector: (SEL)selector
-                         withObject: (id)anObject
+                         withObject: (void *)anObject
 {
 	local int	i;
 
 	for (i = 0; i < [self count]; i++) {
 		[[self objectAtIndex: i] performSelector: selector withObject: anObject];
+	}
+}
+
+- (void) makeObjectsPerformSelector: (SEL)selector
+                         withObject: (void *)anObject
+                         withObject: (void *)anotherObject
+{
+	local int	i;
+
+	for (i = 0; i < [self count]; i++) {
+		[[self objectAtIndex: i] performSelector: selector
+									  withObject: anObject
+									  withObject: anotherObject];
 	}
 }
 

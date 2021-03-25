@@ -42,28 +42,46 @@
 #include "qfalloca.h"
 
 #include "QF/alloc.h"
+#include "QF/mathlib.h"
 #include "QF/va.h"
 
-#include "dags.h"
-#include "diagnostic.h"
-#include "dot.h"
-#include "expr.h"
-#include "function.h"
-#include "options.h"
-#include "qfcc.h"
-#include "reloc.h"
-#include "statements.h"
-#include "strpool.h"
-#include "symtab.h"
-#include "type.h"
-#include "value.h"
-#include "qc-parse.h"
+#include "tools/qfcc/include/dags.h"
+#include "tools/qfcc/include/diagnostic.h"
+#include "tools/qfcc/include/dot.h"
+#include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/options.h"
+#include "tools/qfcc/include/qfcc.h"
+#include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/statements.h"
+#include "tools/qfcc/include/strpool.h"
+#include "tools/qfcc/include/symtab.h"
+#include "tools/qfcc/include/type.h"
+#include "tools/qfcc/include/value.h"
 
-static const char *op_type_names[] = {
+#include "tools/qfcc/source/qc-parse.h"
+
+const char *op_type_names[] = {
 	"op_def",
 	"op_value",
 	"op_label",
 	"op_temp",
+	"op_alias",
+	"op_nil",
+};
+
+const char *st_type_names[] = {
+	"st_none",
+	"st_expr",
+	"st_assign",
+	"st_ptrassign",
+	"st_move",
+	"st_ptrmove",
+	"st_memset",
+	"st_ptrmemset",
+	"st_state",
+	"st_func",
+	"st_flow",
 };
 
 const char *
@@ -72,6 +90,22 @@ optype_str (op_type_e type)
 	if (type > op_temp)
 		return "<invalid op_type>";
 	return op_type_names[type];
+}
+
+static const char *
+tempop_string (operand_t *tmpop)
+{
+	tempop_t   *tempop = &tmpop->o.tempop;
+	if (tempop->alias) {
+		return va (0, "<tmp %s %p:%d:%p:%d:%d>",
+				   pr_type_name[tempop->type->type],
+				   tmpop, tempop->users,
+				   tempop->alias,
+				   tempop->offset,
+				   tempop->alias->o.tempop.users);
+	}
+	return va (0, "<tmp %s %p:%d>", pr_type_name[tempop->type->type],
+			   tmpop, tempop->users);
 }
 
 const char *
@@ -83,37 +117,49 @@ operand_string (operand_t *op)
 		case op_def:
 			return op->o.def->name;
 		case op_value:
-			switch (op->o.value->type) {
+			switch (op->o.value->lltype) {
 				case ev_string:
-					return va ("\"%s\"",
+					return va (0, "\"%s\"",
 							   quote_string (op->o.value->v.string_val));
+				case ev_double:
+					return va (0, "%g", op->o.value->v.double_val);
 				case ev_float:
-					return va ("%g", op->o.value->v.float_val);
+					return va (0, "%g", op->o.value->v.float_val);
 				case ev_vector:
-					return va ("'%g %g %g'",
+					return va (0, "'%g %g %g'",
 							   op->o.value->v.vector_val[0],
 							   op->o.value->v.vector_val[1],
 							   op->o.value->v.vector_val[2]);
 				case ev_quat:
-					return va ("'%g %g %g %g'",
+					return va (0, "'%g %g %g %g'",
 							   op->o.value->v.quaternion_val[0],
 							   op->o.value->v.quaternion_val[1],
 							   op->o.value->v.quaternion_val[2],
 							   op->o.value->v.quaternion_val[3]);
 				case ev_pointer:
-					return va ("ptr %d", op->o.value->v.pointer.val);
+					if (op->o.value->v.pointer.def) {
+						return va (0, "ptr %s+%d",
+								   op->o.value->v.pointer.def->name,
+								   op->o.value->v.pointer.val);
+					} else if(op->o.value->v.pointer.tempop) {
+						operand_t  *tempop = op->o.value->v.pointer.tempop;
+						return va (0, "ptr %s+%d", tempop_string (tempop),
+								   op->o.value->v.pointer.val);
+					} else {
+						return va (0, "ptr %d", op->o.value->v.pointer.val);
+					}
 				case ev_field:
-					return va ("field %d", op->o.value->v.pointer.val);
+					return va (0, "field %d", op->o.value->v.pointer.val);
 				case ev_entity:
-					return va ("ent %d", op->o.value->v.integer_val);
+					return va (0, "ent %d", op->o.value->v.integer_val);
 				case ev_func:
-					return va ("func %d", op->o.value->v.integer_val);
+					return va (0, "func %d", op->o.value->v.integer_val);
 				case ev_integer:
-					return va ("int %d", op->o.value->v.integer_val);
+					return va (0, "int %d", op->o.value->v.integer_val);
 				case ev_uinteger:
-					return va ("uint %u", op->o.value->v.uinteger_val);
+					return va (0, "uint %u", op->o.value->v.uinteger_val);
 				case ev_short:
-					return va ("short %d", op->o.value->v.short_val);
+					return va (0, "short %d", op->o.value->v.short_val);
 				case ev_void:
 					return "(void)";
 				case ev_invalid:
@@ -125,38 +171,37 @@ operand_string (operand_t *op)
 		case op_label:
 			return op->o.label->name;
 		case op_temp:
-			if (op->o.tempop.alias)
-				return va ("<tmp %s %p:%d:%p:%d>",
-						   pr_type_name[op->type],
-						   op, op->o.tempop.users,
-						   op->o.tempop.alias,
-						   op->o.tempop.alias->o.tempop.users);
-			return va ("<tmp %s %p:%d>", pr_type_name[op->o.tempop.type->type],
-					   op, op->o.tempop.users);
+			return tempop_string (op);
 		case op_alias:
 			{
 				const char *alias = operand_string (op->o.alias);
 				char       *buf = alloca (strlen (alias) + 1);
 				strcpy (buf, alias);
-				return va ("alias(%s,%s)", pr_type_name[op->type], buf);
+				return va (0, "alias(%s,%s)", pr_type_name[op->type->type],
+						   buf);
 			}
+		case op_nil:
+			return va (0, "nil");
 	}
 	return ("??");
 }
 
 static void
-print_operand (operand_t *op)
+_print_operand (operand_t *op)
 {
 	switch (op->op_type) {
 		case op_def:
-			printf ("(%s) ", pr_type_name[op->type]);
+			printf ("(%s) ", pr_type_name[op->type->type]);
 			printf ("%s", op->o.def->name);
 			break;
 		case op_value:
-			printf ("(%s) ", pr_type_name[op->type]);
-			switch (op->o.value->type) {
+			printf ("(%s) ", pr_type_name[op->type->type]);
+			switch (op->o.value->lltype) {
 				case ev_string:
 					printf ("\"%s\"", op->o.value->v.string_val);
+					break;
+				case ev_double:
+					printf ("%g", op->o.value->v.double_val);
 					break;
 				case ev_float:
 					printf ("%g", op->o.value->v.float_val);
@@ -194,22 +239,33 @@ print_operand (operand_t *op)
 				case ev_void:
 				case ev_invalid:
 				case ev_type_count:
-					internal_error (0, "weird value type");
+					internal_error (op->expr, "weird value type");
 			}
 			break;
 		case op_label:
 			printf ("block %p", op->o.label->dest);
 			break;
 		case op_temp:
-			printf ("tmp (%s) %p", pr_type_name[op->type], op);
+			printf ("tmp (%s) %p", pr_type_name[op->type->type], op);
 			if (op->o.tempop.def)
 				printf (" %s", op->o.tempop.def->name);
 			break;
 		case op_alias:
-			printf ("alias(%s,", pr_type_name[op->type]);
-			print_operand (op->o.alias);
+			printf ("alias(%s,", pr_type_name[op->type->type]);
+			_print_operand (op->o.alias);
 			printf (")");
+			break;
+		case op_nil:
+			printf ("nil");
+			break;
 	}
+}
+
+void
+print_operand (operand_t *op)
+{
+	_print_operand (op);
+	puts ("");
 }
 
 void
@@ -217,13 +273,13 @@ print_statement (statement_t *s)
 {
 	printf ("(%s, ", s->opcode);
 	if (s->opa)
-		print_operand (s->opa);
+		_print_operand (s->opa);
 	printf (", ");
 	if (s->opb)
-		print_operand (s->opb);
+		_print_operand (s->opb);
 	printf (", ");
 	if (s->opc)
-		print_operand (s->opc);
+		_print_operand (s->opc);
 	printf (")\n");
 }
 
@@ -257,15 +313,18 @@ new_statement (st_type_t type, const char *opcode, expr_t *expr)
 	statement->type = type;
 	statement->opcode = save_string (opcode);
 	statement->expr = expr;
+	statement->number = -1;	// indicates flow analysis not done yet
 	return statement;
 }
 
 static operand_t *
-new_operand (op_type_e op)
+new_operand (op_type_e op, expr_t *expr, void *return_addr)
 {
 	operand_t *operand;
 	ALLOC (256, operand_t, operands, operand);
 	operand->op_type = op;
+	operand->expr = expr;
+	operand->return_addr = return_addr;
 	return operand;
 }
 
@@ -299,65 +358,157 @@ free_sblock (sblock_t *sblock)
 }
 
 operand_t *
-def_operand (def_t *def, type_t *type)
+nil_operand (type_t *type, expr_t *expr)
+{
+	operand_t  *op;
+	op = new_operand (op_nil, expr, __builtin_return_address (0));
+	op->type = type;
+	op->size = type_size (type);
+	return op;
+}
+
+operand_t *
+def_operand (def_t *def, type_t *type, expr_t *expr)
 {
 	operand_t  *op;
 
 	if (!type)
 		type = def->type;
-	op = new_operand (op_def);
-	op->type = low_level_type (type);
+	op = new_operand (op_def, expr, __builtin_return_address (0));
+	op->type = type;
+	op->size = type_size (type);
 	op->o.def = def;
 	return op;
 }
 
 operand_t *
-value_operand (ex_value_t *value)
+return_operand (type_t *type, expr_t *expr)
+{
+	symbol_t   *return_symbol;
+	return_symbol = make_symbol (".return", &type_param, pr.symtab->space,
+								 sc_extern);
+	return def_operand (return_symbol->s.def, type, expr);
+}
+
+operand_t *
+value_operand (ex_value_t *value, expr_t *expr)
 {
 	operand_t  *op;
-	op = new_operand (op_value);
+	op = new_operand (op_value, expr, __builtin_return_address (0));
 	op->type = value->type;
 	op->o.value = value;
 	return op;
 }
 
 operand_t *
-temp_operand (type_t *type)
+temp_operand (type_t *type, expr_t *expr)
 {
-	operand_t  *op = new_operand (op_temp);
+	operand_t  *op = new_operand (op_temp, expr, __builtin_return_address (0));
 
 	op->o.tempop.type = type;
-	op->type = low_level_type (type);
+	op->type = type;
 	op->size = type_size (type);
 	return op;
 }
 
+int
+tempop_overlap (tempop_t *t1, tempop_t *t2)
+{
+	int         offs1 = t1->offset;
+	int         offs2 = t2->offset;
+	int         size1 = type_size (t1->type);
+	int         size2 = type_size (t2->type);
+
+	if (t1->alias) {
+		offs1 += t1->alias->o.tempop.offset;
+	}
+	if (t2->alias) {
+		offs2 += t2->alias->o.tempop.offset;
+	}
+	if (offs1 <= offs2 && offs1 + size1 >= offs2 + size2)
+		return 2;	// t1 fully overlaps t2
+	if (offs1 < offs2 + size2 && offs2 < offs1 + size1)
+		return 1;	// t1 and t2 at least partially overlap
+	return 0;
+}
+
+int
+tempop_visit_all (tempop_t *tempop, int overlap,
+			   int (*visit) (tempop_t *, void *), void *data)
+{
+	tempop_t   *start_tempop = tempop;
+	operand_t  *top;
+	int         ret;
+
+	if ((ret = visit (tempop, data)))
+		return ret;
+	if (tempop->alias) {
+		top = tempop->alias;
+		if (top->op_type != op_temp) {
+			internal_error (top->expr, "temp alias of non-temp operand");
+		}
+		tempop = &top->o.tempop;
+		if ((ret = visit (tempop, data)))
+			return ret;
+	} else {
+		overlap = 0;
+	}
+	for (top = tempop->alias_ops; top; top = top->next) {
+		if (top->op_type != op_temp) {
+			internal_error (top->expr, "temp alias of non-temp operand");
+		}
+		tempop = &top->o.tempop;
+		if (tempop == start_tempop)
+			continue;
+		if (overlap && tempop_overlap (tempop, start_tempop) < overlap)
+			continue;
+		if ((ret = visit (tempop, data)))
+			return ret;
+	}
+	return 0;
+}
+
 operand_t *
-alias_operand (etype_t type, operand_t *op)
+alias_operand (type_t *type, operand_t *op, expr_t *expr)
 {
 	operand_t  *aop;
 
-	if (pr_type_size[type] != pr_type_size[op->type])
-		internal_error (0, "aliasing operand with type of diffent size");
-	aop = new_operand (op_alias);
+	if (type_size (type) != type_size (op->type)) {
+		internal_error (op->expr,
+						"aliasing operand with type of different size: %d, %d",
+						type_size (type), type_size (op->type));
+	}
+	aop = new_operand (op_alias, expr, __builtin_return_address (0));
 	aop->o.alias = op;
 	aop->type = type;
-	aop->size = pr_type_size[type];
+	aop->size = type_size (type);
 	return aop;
 }
 
+operand_t *
+label_operand (expr_t *label)
+{
+	operand_t  *lop;
+
+	if (label->type != ex_label) {
+		internal_error (label, "not a label expression");
+	}
+	lop = new_operand (op_label, label, __builtin_return_address (0));
+	lop->o.label = &label->e.label;
+	return lop;
+}
+
 static operand_t *
-short_operand (short short_val)
+short_operand (short short_val, expr_t *expr)
 {
 	ex_value_t *val = new_short_val (short_val);
-	return value_operand (val);
+	return value_operand (val, expr);
 }
 
 static const char *
 convert_op (int op)
 {
 	switch (op) {
-		case PAS:	return ".=";
 		case OR:	return "||";
 		case AND:	return "&&";
 		case EQ:	return "==";
@@ -372,6 +523,7 @@ convert_op (int op)
 		case '*':	return "*";
 		case '/':	return "/";
 		case '%':	return "%";
+		case MOD:	return "%%";
 		case '&':	return "&";
 		case '|':	return "|";
 		case '^':	return "^";
@@ -453,7 +605,7 @@ statement_get_targetlist (statement_t *s)
 	sblock_t  **target_list;
 	int         count = 0, i;
 	def_t      *table = 0;
-	expr_t     *e;
+	element_t  *e;
 
 	if (statement_is_cond (s)) {
 		count = 1;
@@ -471,10 +623,10 @@ statement_get_targetlist (statement_t *s)
 		target_list[0] = statement_get_target (s);
 	} else if (statement_is_jumpb (s)) {
 		if (table->alias)
-			internal_error (0, "aliased jump table");
-		e = table->initializer->e.block.head;	//FIXME check!!!
+			internal_error (s->opa->expr, "aliased jump table");
+		e = table->initializer->e.compound.head;	//FIXME check!!!
 		for (i = 0; i < count; e = e->next, i++)
-			target_list[i] = e->e.labelref.label->dest;
+			target_list[i] = e->expr->e.labelref.label->dest;
 	}
 	return target_list;
 }
@@ -511,8 +663,7 @@ statement_branch (sblock_t *sblock, expr_t *e)
 
 	if (e->type == ex_uexpr && e->e.expr.op == 'g') {
 		s = new_statement (st_flow, "<GOTO>", e);
-		s->opa = new_operand (op_label);
-		s->opa->o.label = &e->e.expr.e1->e.label;
+		s->opa = label_operand (e->e.expr.e1);
 	} else {
 		if (e->e.expr.op == 'g') {
 			s = new_statement (st_flow, "<JUMPB>", e);
@@ -522,8 +673,7 @@ statement_branch (sblock_t *sblock, expr_t *e)
 			opcode = convert_op (e->e.expr.op);
 			s = new_statement (st_flow, opcode, e);
 			sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
-			s->opb = new_operand (op_label);
-			s->opb->o.label = &e->e.expr.e2->e.label;
+			s->opb = label_operand (e->e.expr.e2);
 		}
 	}
 
@@ -533,48 +683,245 @@ statement_branch (sblock_t *sblock, expr_t *e)
 }
 
 static sblock_t *
+expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	statement_t *s;
+	s = new_statement (st_expr, "&", e);
+	sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
+	s->opc = temp_operand (e->e.expr.type, e);
+	sblock_add_statement (sblock, s);
+	*(op) = s->opc;
+	return sblock;
+}
+
+static operand_t *
+operand_address (operand_t *reference, expr_t *e)
+{
+	def_t      *def;
+	type_t     *type;
+	int         offset = 0;
+
+	type = reference->type;
+	switch (reference->op_type) {
+		case op_def:
+			// assumes aliasing is only one level deep which should be the
+			// case
+			def = reference->o.def;
+			if (def->alias) {
+				offset = def->offset;
+				def = def->alias;
+			}
+			return value_operand (new_pointer_val (offset, type, def, 0), e);
+		case op_temp:
+			// assumes aliasing is only one level deep which should be the
+			// case
+			if (reference->o.tempop.alias) {
+				offset = reference->o.tempop.offset;
+				reference = reference->o.tempop.alias;
+			}
+			return value_operand (new_pointer_val (offset, type, 0,
+												   reference), e);
+		case op_alias:
+			//op_alias comes only from alias_operand and that is called
+			// by dags, so not expected
+		case op_value:
+		case op_label:
+		case op_nil:
+			break;
+	}
+	internal_error (e, "invalid operand type for operand address: %s",
+					op_type_names[reference->op_type]);
+}
+
+static __attribute__((pure)) int
+is_const_ptr (expr_t *e)
+{
+	if ((e->type != ex_value || e->e.value->lltype != ev_pointer)
+		|| !(POINTER_VAL (e->e.value->v.pointer) >= 0
+			 && POINTER_VAL (e->e.value->v.pointer) < 65536)) {
+		return 0;
+	}
+	return 1;
+}
+
+static __attribute__((pure)) int
+is_indirect (expr_t *e)
+{
+	if ((e->type == ex_expr || e->type == ex_uexpr)
+		&& e->e.expr.op == '.') {
+		return 1;
+	}
+	return 0;
+}
+
+static sblock_t *
+expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
+{
+	statement_t *s;
+	expr_t     *dst_expr = e->e.expr.e1;
+	expr_t     *src_expr = e->e.expr.e2;
+	type_t     *dst_type = get_type (dst_expr);
+	type_t     *src_type = get_type (src_expr);
+	unsigned    count;
+	expr_t     *count_expr;
+	operand_t  *dst = 0;
+	operand_t  *size = 0;
+	static const char *opcode_sets[][2] = {
+		{"<MOVE>", "<MOVEP>"},
+		{"<MEMSET>", "<MEMSETP>"},
+	};
+	const unsigned max_count = 1 << 16;
+	const char **opcode_set = opcode_sets[0];
+	const char *opcode;
+	int         need_ptr = 0;
+	st_type_t   type = st_move;
+
+	if ((src && src->op_type == op_nil) || src_expr->type == ex_nil) {
+		// switch to memset because nil is type agnostic 0 and structures
+		// can be any size
+		src_expr = new_integer_expr (0);
+		sblock = statement_subexpr (sblock, src_expr, &src);
+		opcode_set = opcode_sets[1];
+		if (op) {
+			*op = nil_operand (dst_type, src_expr);
+		}
+		type = st_memset;
+		if (is_indirect (dst_expr)) {
+			goto dereference_dst;
+		}
+	} else {
+		if (!src) {
+			// This is the very right-hand node of a non-nil assignment chain
+			// (there may be more chains somwhere within src_expr, but they
+			// are not part of this chain as they are separated by another
+			// expression).
+			sblock = statement_subexpr (sblock, src_expr, &src);
+		}
+		// send the source operand back up through the assignment chain
+		// before modifying src if its address is needed
+		if (op) {
+			*op = src;
+		}
+		if (is_indirect (dst_expr) || is_indirect (src_expr)) {
+			src = operand_address (src, src_expr);
+			goto dereference_dst;
+		}
+	}
+	if (0) {
+dereference_dst:
+		// dst_expr is a dereferenced pointer, so need to un-dereference it
+		// to get the pointer and switch to storep instructions.
+		dst_expr = expr_file_line (address_expr (dst_expr, 0, 0), e);
+		need_ptr = 1;
+	}
+	sblock = statement_subexpr (sblock, dst_expr, &dst);
+
+	if (type_size (dst_type) != type_size (src_type)) {
+		bug (e, "dst and src sizes differ in expr_assign_copy: %d %d",
+			 type_size (dst_type), type_size (src_type));
+	}
+	count = min (type_size (dst_type), type_size (src_type));
+	if (count < (1 << 16)) {
+		count_expr = expr_file_line (new_short_expr (count), e);
+	} else {
+		count_expr = expr_file_line (new_integer_expr (count), e);
+	}
+	sblock = statement_subexpr (sblock, count_expr, &size);
+
+	if (count < max_count && !need_ptr) {
+		opcode = opcode_set[0];
+	} else {
+		opcode = opcode_set[1];
+		type++;	// from st_move/st_memset to st_ptrmove/st_ptrmemset
+	}
+
+	s = new_statement (type, opcode, e);
+	s->opa = src;
+	s->opb = size;
+	s->opc = dst;
+	sblock_add_statement (sblock, s);
+	return sblock;
+}
+
+static sblock_t *
 expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	statement_t *s;
 	expr_t     *src_expr = e->e.expr.e2;
 	expr_t     *dst_expr = e->e.expr.e1;
+	type_t     *dst_type = get_type (dst_expr);
 	operand_t  *src = 0;
 	operand_t  *dst = 0;
 	operand_t  *ofs = 0;
 	const char *opcode = convert_op (e->e.expr.op);
 	st_type_t   type;
 
-	if (e->e.expr.op == '=') {
-		sblock = statement_subexpr (sblock, dst_expr, &dst);
-		src = dst;
+	if (src_expr->type == ex_expr && src_expr->e.expr.op == '=') {
 		sblock = statement_subexpr (sblock, src_expr, &src);
-		ofs = 0;
-		if (op)
-			*op = dst;
-		if (src == dst)
-			return sblock;
-		type = st_assign;
+		if (is_structural (dst_type)) {
+			return expr_assign_copy (sblock, e, op, src);
+		}
+		if (is_indirect (dst_expr)) {
+			goto dereference_dst;
+		} else {
+			sblock = statement_subexpr (sblock, dst_expr, &dst);
+		}
 	} else {
-		//FIXME this sucks. find a better way to handle both pointer
-		//dereferences and pointer assignements
-		sblock = statement_subexpr (sblock, src_expr, &src);
-		if (dst_expr->type == ex_expr
-			&& extract_type (dst_expr->e.expr.e1) == ev_pointer
-			&& !is_constant (dst_expr->e.expr.e1)) {
+		if (is_structural (dst_type)) {
+			return expr_assign_copy (sblock, e, op, src);
+		}
+
+		if (is_indirect (dst_expr)) {
+			// If both dst_expr and src_expr are indirect, then a staging temp
+			// is needed, but emitting src_expr first generates that temp
+			// because src is null. If src_expr is not indirect and is a simple
+			// variable reference, then just the ref will be generated and thus
+			// will be assigned to the dereferenced destination. If src_expr
+			// is not simple, then a temp will be generated, so all good.
+			sblock = statement_subexpr (sblock, src_expr, &src);
+			goto dereference_dst;
+		} else {
+			// dst_expr is direct and known to be an l-value, so emitting
+			// its expression will simply generate a reference to that l-value
+			// which will be used as the default location to store src_expr's
+			// result
+			sblock = statement_subexpr (sblock, dst_expr, &dst);
+			src = dst;
+			sblock = statement_subexpr (sblock, src_expr, &src);
+		}
+	}
+	type = st_assign;
+
+	if (0) {
+dereference_dst:
+		// dst_expr is a dereferenced pointer, so need to un-dereference it
+		// to get the pointer and switch to storep instructions.
+		dst_expr = expr_file_line (address_expr (dst_expr, 0, 0), e);
+		opcode = ".=";	// FIXME find a nicer representation (lose strings?)
+		if (dst_expr->type == ex_expr && !is_const_ptr (dst_expr->e.expr.e1)) {
 			sblock = statement_subexpr (sblock, dst_expr->e.expr.e1, &dst);
 			sblock = statement_subexpr (sblock, dst_expr->e.expr.e2, &ofs);
 		} else {
-			if (dst_expr->type == ex_uexpr
-				&& dst_expr->e.expr.op == '&') {
-				opcode = "=";
-				dst_expr = unary_expr ('.', dst_expr);
-			}
 			sblock = statement_subexpr (sblock, dst_expr, &dst);
 			ofs = 0;
 		}
-		if (op)
-			*op = src;
 		type = st_ptrassign;
+	}
+	if (op) {
+		*op = src;
+	}
+	if (src == dst) {
+		return sblock;
+	}
+
+	if (is_entity (dst->type) && ofs && is_field (ofs->type)) {
+		s = new_statement (st_expr, "&", dst_expr);
+		s->opa = dst;
+		s->opb = ofs;
+		s->opc = temp_operand (&type_pointer, dst_expr);
+		sblock_add_statement (sblock, s);
+		dst = s->opc;
+		ofs = 0;
 	}
 	s = new_statement (type, opcode, e);
 	s->opa = src;
@@ -603,7 +950,8 @@ expr_move (sblock_t *sblock, expr_t *e, operand_t **op)
 	dst = *op;
 	sblock = statement_subexpr (sblock, src_expr, &src);
 	sblock = statement_subexpr (sblock, size_expr, &size);
-	s = new_statement (st_move, convert_op (e->e.expr.op), e);
+	s = new_statement (e->e.expr.op == 'm' ? st_move : st_ptrmove,
+					   convert_op (e->e.expr.op), e);
 	s->opa = src;
 	s->opb = size;
 	s->opc = dst;
@@ -659,21 +1007,20 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 			pref = "R";
 			sblock = statement_subexpr (sblock, param, &arguments[ind]);
 			if (options.code.vector_calls && a->type == ex_value
-				&& a->e.value->type == ev_vector)
+				&& a->e.value->lltype == ev_vector)
 				sblock = vector_call (sblock, a, param, ind, &arguments[ind]);
 			else
 				sblock = statement_subexpr (sblock, a, &arguments[ind]);
 			continue;
 		}
 		if (is_struct (get_type (param))) {
-			//FIXME this should be done in the expression tree
 			expr_t     *mov = assign_expr (param, a);
 			mov->line = a->line;
 			mov->file = a->file;
 			sblock = statement_slist (sblock, mov);
 		} else {
 			if (options.code.vector_calls && a->type == ex_value
-				&& a->e.value->type == ev_vector) {
+				&& a->e.value->lltype == ev_vector) {
 				sblock = vector_call (sblock, a, param, ind, 0);
 			} else {
 				operand_t  *p = 0;
@@ -690,7 +1037,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 			}
 		}
 	}
-	opcode = va ("<%sCALL%d>", pref, count);
+	opcode = va (0, "<%sCALL%d>", pref, count);
 	s = new_statement (st_func, opcode, call);
 	sblock = statement_subexpr (sblock, func, &s->opa);
 	s->opb = arguments[0];
@@ -700,32 +1047,13 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 	return sblock->next;
 }
 
-static sblock_t *
-expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
-{
-	if (e->type == ex_uexpr) {
-		sblock = statement_subexpr (sblock, e->e.expr.e1, op);
-		(*op)->type = ev_pointer;
-	}
-	return sblock;
-}
-
 static statement_t *
 lea_statement (operand_t *pointer, operand_t *offset, expr_t *e)
 {
 	statement_t *s = new_statement (st_expr, "&", e);
 	s->opa = pointer;
 	s->opb = offset;
-	s->opc = temp_operand (&type_pointer);
-	return s;
-}
-
-static statement_t *
-address_statement (operand_t *value, expr_t *e)
-{
-	statement_t *s = new_statement (st_expr, "&", e);
-	s->opa = value;
-	s->opc = temp_operand (&type_pointer);
+	s->opc = temp_operand (&type_pointer, e);
 	return s;
 }
 
@@ -740,7 +1068,7 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 		&& e->e.expr.e1->type == ex_symbol) {
 		if (e->e.expr.e1->e.symbol->sy_type != sy_var)
 			internal_error (e, "address of non-var");
-		*op = def_operand (e->e.expr.e1->e.symbol->s.def, type);
+		*op = def_operand (e->e.expr.e1->e.symbol->s.def, type, e);
 	} else if (e->type == ex_expr && e->e.expr.op == '&') {
 		statement_t *s;
 		operand_t  *ptr = 0;
@@ -748,7 +1076,7 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 		sblock = statement_subexpr (sblock, e->e.expr.e1, &ptr);
 		sblock = statement_subexpr (sblock, e->e.expr.e2, &offs);
 		if (!*op)
-			*op = temp_operand (type);
+			*op = temp_operand (type, e);
 		if (low_level_type (type) == ev_void) {
 			operand_t  *src_addr;
 			operand_t  *dst_addr;
@@ -757,14 +1085,12 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 			src_addr = s->opc;
 			sblock_add_statement (sblock, s);
 
-			//FIXME an address immediate would be nice.
-			s = address_statement (*op, e);
-			dst_addr = s->opc;
-			sblock_add_statement (sblock, s);
+			dst_addr = operand_address (*op, e);
 
-			s = new_statement (st_move, "<MOVEP>", deref);
+			s = new_statement (st_ptrmove, "<MOVEP>", deref);
 			s->opa = src_addr;
-			s->opb = short_operand (type_size (type));
+			//FIXME large types
+			s->opb = short_operand (type_size (type), e);
 			s->opc = dst_addr;
 			sblock_add_statement (sblock, s);
 		} else {
@@ -774,20 +1100,20 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 			s->opc = *op;
 			sblock_add_statement (sblock, s);
 		}
-	} else if (e->type == ex_value && e->e.value->type == ev_pointer) {
+	} else if (e->type == ex_value && e->e.value->lltype == ev_pointer) {
 		ex_pointer_t *ptr = &e->e.value->v.pointer;
 		*op = def_operand (alias_def (ptr->def, ptr->type, ptr->val),
-						   ptr->type);
+						   ptr->type, e);
 	} else {
 		statement_t *s;
 		operand_t  *ptr = 0;
 
 		sblock = statement_subexpr (sblock, e, &ptr);
 		if (!*op)
-			*op = temp_operand (type);
+			*op = temp_operand (type, e);
 		s = new_statement (st_expr, ".", deref);
 		s->opa = ptr;
-		s->opb = short_operand (0);
+		s->opb = short_operand (0, e);
 		s->opc = *op;
 		sblock_add_statement (sblock, s);
 	}
@@ -805,6 +1131,64 @@ expr_block (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
+expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	operand_t *aop = 0;
+	operand_t *top;
+	type_t    *type;
+	def_t     *def;
+	int        offset = 0;
+
+	if (e->type == ex_expr) {
+		offset = expr_integer (e->e.expr.e2);
+	}
+	type = e->e.expr.type;
+	sblock = statement_subexpr (sblock, e->e.expr.e1, &aop);
+	if (type_compatible (aop->type, type)) {
+		//FIXME type_compatible??? shouldn't that be type_size ==?
+		if (offset) {
+			internal_error (e, "offset alias of same size type");
+		}
+		*op = aop;
+		return sblock;
+	}
+	if (aop->op_type == op_temp) {
+		while (aop->o.tempop.alias) {
+			aop = aop->o.tempop.alias;
+			if (aop->op_type != op_temp)
+				internal_error (e, "temp alias of non-temp var");
+			if (aop->o.tempop.alias)
+				bug (e, "aliased temp alias");
+		}
+		for (top = aop->o.tempop.alias_ops; top; top = top->next) {
+			if (top->type == type && top->o.tempop.offset == offset) {
+				break;
+			}
+		}
+		if (!top) {
+			top = temp_operand (type, e);
+			top->o.tempop.alias = aop;
+			top->o.tempop.offset = offset;
+			top->next = aop->o.tempop.alias_ops;
+			aop->o.tempop.alias_ops = top;
+		}
+		*op = top;
+	} else if (aop->op_type == op_def) {
+		def = aop->o.def;
+		while (def->alias)
+			def = def->alias;
+		*op = def_operand (alias_def (def, type, offset), 0, e);
+	} else if (aop->op_type == op_value) {
+		*op = value_operand (aop->o.value, e);
+		(*op)->type = type;
+	} else {
+		internal_error (e, "invalid alias target: %s: %s",
+						optype_str (aop->op_type), operand_string (aop));
+	}
+	return sblock;
+}
+
+static sblock_t *
 expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	const char *opcode;
@@ -815,12 +1199,14 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 			sblock = expr_call (sblock, e, op);
 			break;
 		case '=':
-		case PAS:
 			sblock = expr_assign (sblock, e, op);
 			break;
 		case 'm':
 		case 'M':
 			sblock = expr_move (sblock, e, op);
+			break;
+		case 'A':
+			sblock = expr_alias (sblock, e, op);
 			break;
 		default:
 			opcode = convert_op (e->e.expr.op);
@@ -830,53 +1216,10 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 			sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
 			sblock = statement_subexpr (sblock, e->e.expr.e2, &s->opb);
 			if (!*op)
-				*op = temp_operand (e->e.expr.type);
+				*op = temp_operand (e->e.expr.type, e);
 			s->opc = *op;
 			sblock_add_statement (sblock, s);
 			break;
-	}
-	return sblock;
-}
-
-static sblock_t *
-expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
-{
-	operand_t *aop = 0;
-	operand_t *top;
-	etype_t    type;
-	def_t     *def;
-
-	type = low_level_type (e->e.expr.type);
-	sblock = statement_subexpr (sblock, e->e.expr.e1, &aop);
-	if (aop->type == type) {
-		*op = aop;
-		return sblock;
-	}
-	if (aop->op_type == op_temp) {
-		while (aop->o.tempop.alias) {
-			aop = aop->o.tempop.alias;
-			if (aop->op_type != op_temp)
-				internal_error (e, "temp alias of non-temp var");
-		}
-		for (top = aop->o.tempop.alias_ops; top; top = top->next)
-			if (top->type == type)
-				break;
-		if (!top) {
-			top = new_operand (op_temp);
-			top->type = type;
-			top->o.tempop.alias = aop;
-			top->next = aop->o.tempop.alias_ops;
-			aop->o.tempop.alias_ops = top;
-		}
-		*op = top;
-	} else if (aop->op_type == op_def) {
-		def = aop->o.def;
-		while (def->alias)
-			def = def->alias;
-		*op = def_operand (alias_def (def, ev_types[type], 0), 0);
-	} else {
-		internal_error (e, "invalid alias target: %s: %s",
-						optype_str (aop->op_type), operand_string (aop));
 	}
 	return sblock;
 }
@@ -889,11 +1232,10 @@ expr_cast (sblock_t *sblock, expr_t *e, operand_t **op)
 	statement_t *s;
 
 	src_type = get_type (e->e.expr.e1);
-	if ((src_type->type == ev_integer && type->type == ev_float)
-		|| (src_type->type == ev_float && type->type == ev_integer)) {
+	if (is_scalar (src_type) && is_scalar (type)) {
 		operand_t  *src = 0;
 		sblock = statement_subexpr (sblock, e->e.expr.e1, &src);
-		*op = temp_operand (e->e.expr.type);
+		*op = temp_operand (e->e.expr.type, e);
 		s = new_statement (st_expr, "<CONV>", e);
 		s->opa = src;
 		s->opc = *op;
@@ -950,10 +1292,17 @@ expr_uexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 			s = new_statement (st_expr, opcode, e);
 			sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
 			if (!*op)
-				*op = temp_operand (e->e.expr.type);
+				*op = temp_operand (e->e.expr.type, e);
 			s->opc = *op;
 			sblock_add_statement (sblock, s);
 	}
+	return sblock;
+}
+
+static sblock_t *
+expr_def (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	*op = def_operand (e->e.def, e->e.def->type, e);
 	return sblock;
 }
 
@@ -963,14 +1312,17 @@ expr_symbol (sblock_t *sblock, expr_t *e, operand_t **op)
 	symbol_t   *sym = e->e.symbol;
 
 	if (sym->sy_type == sy_var) {
-		*op = def_operand (sym->s.def, sym->type);
+		*op = def_operand (sym->s.def, sym->type, e);
 	} else if (sym->sy_type == sy_const) {
-		*op = value_operand (sym->s.value);
+		*op = value_operand (sym->s.value, e);
 	} else if (sym->sy_type == sy_func) {
-		*op = def_operand (sym->s.func->def, 0);
+		if (!sym->s.func) {
+			make_function (sym, 0, pr.symtab->space, sc_extern);
+		}
+		*op = def_operand (sym->s.func->def, 0, e);
 	} else {
-		internal_error (e, "unexpected symbol type: %s",
-						symtype_str(sym->sy_type));
+		internal_error (e, "unexpected symbol type: %s for %s",
+						symtype_str (sym->sy_type), sym->name);
 	}
 	return sblock;
 }
@@ -979,15 +1331,118 @@ static sblock_t *
 expr_temp (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	if (!e->e.temp.op)
-		e->e.temp.op = temp_operand (e->e.temp.type);
+		e->e.temp.op = temp_operand (e->e.temp.type, e);
 	*op = e->e.temp.op;
+	return sblock;
+}
+
+static sblock_t *
+expr_vector_e (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	expr_t     *x, *y, *z, *w;
+	expr_t     *s, *v;
+	expr_t     *ax, *ay, *az, *aw;
+	expr_t     *as, *av;
+	expr_t     *tmp;
+	type_t     *vec_type = get_type (e);
+	int         file = pr.source_file;
+	int         line = pr.source_line;
+
+	pr.source_file = e->file;
+	pr.source_line = e->line;
+
+	tmp = new_temp_def_expr (vec_type);
+	if (is_vector(vec_type)) {
+		// guaranteed to have three elements
+		x = e->e.vector.list;
+		y = x->next;
+		z = y->next;
+		ax = new_name_expr ("x");
+		ay = new_name_expr ("y");
+		az = new_name_expr ("z");
+		ax = assign_expr (field_expr (tmp, ax), x);
+		ay = assign_expr (field_expr (tmp, ay), y);
+		az = assign_expr (field_expr (tmp, az), z);
+		sblock = statement_slist (sblock, ax);
+		sblock = statement_slist (sblock, ay);
+		sblock = statement_slist (sblock, az);
+	} else {
+		// guaranteed to have two or four elements
+		if (e->e.vector.list->next->next) {
+			// four vals: x, y, z, w
+			x = e->e.vector.list;
+			y = x->next;
+			z = y->next;
+			w = z->next;
+			ax = new_name_expr ("x");
+			ay = new_name_expr ("y");
+			az = new_name_expr ("z");
+			aw = new_name_expr ("w");
+			ax = assign_expr (field_expr (tmp, ax), x);
+			ay = assign_expr (field_expr (tmp, ay), y);
+			az = assign_expr (field_expr (tmp, az), z);
+			aw = assign_expr (field_expr (tmp, aw), w);
+			sblock = statement_slist (sblock, ax);
+			sblock = statement_slist (sblock, ay);
+			sblock = statement_slist (sblock, az);
+			sblock = statement_slist (sblock, aw);
+		} else {
+			// v, s
+			v = e->e.vector.list;
+			s = v->next;
+			av = new_name_expr ("v");
+			as = new_name_expr ("s");
+			av = assign_expr (field_expr (tmp, av), v);
+			as = assign_expr (field_expr (tmp, as), s);
+			sblock = statement_slist (sblock, av);
+			sblock = statement_slist (sblock, as);
+		}
+	}
+	pr.source_file = file;
+	pr.source_line = line;
+	sblock = statement_subexpr (sblock, tmp, op);
+	return sblock;
+}
+
+static sblock_t *
+expr_nil (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	type_t     *nil = e->e.nil;
+	expr_t     *size_expr;
+	size_t      nil_size;
+	operand_t  *zero;
+	operand_t  *size;
+	statement_t *s;
+
+	if (!is_struct (nil) && !is_array (nil)) {
+		*op = value_operand (new_nil_val (nil), e);
+		return sblock;
+	}
+	if (!*op) {
+		*op = temp_operand (nil, e);
+	}
+	nil_size = type_size (nil);
+	if (nil_size < 0x10000) {
+		size_expr = new_short_expr (nil_size);
+	} else {
+		size_expr = new_integer_expr (nil_size);
+	}
+	sblock = statement_subexpr (sblock, new_integer_expr(0), &zero);
+	sblock = statement_subexpr (sblock, size_expr, &size);
+
+	s = new_statement (st_memset, "<MEMSET>", e);
+	s->opa = zero;
+	s->opb = size;
+	s->opc = *op;
+	sblock_add_statement (sblock, s);
+
 	return sblock;
 }
 
 static sblock_t *
 expr_value (sblock_t *sblock, expr_t *e, operand_t **op)
 {
-	*op = value_operand (e->e.value);
+	*op = value_operand (e->e.value, e);
 	return sblock;
 }
 
@@ -1003,21 +1458,25 @@ statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 		expr_block,			// ex_block
 		expr_expr,
 		expr_uexpr,
+		expr_def,
 		expr_symbol,
 		expr_temp,
-		0,					// ex_vector
-		0,					// ex_nil
+		expr_vector_e,		// ex_vector
+		expr_nil,
 		expr_value,
+		0,					// ex_compound
+		0,					// ex_memset
 	};
 	if (!e) {
 		*op = 0;
 		return sblock;
 	}
 
-	if (e->type > ex_value)
-		internal_error (e, "bad expression type");
+	if (e->type > ex_memset)
+		internal_error (e, "bad sub-expression type");
 	if (!sfuncs[e->type])
-		internal_error (e, "unexpected expression type");
+		internal_error (e, "unexpected sub-expression type: %s",
+						expr_names[e->type]);
 
 	sblock = sfuncs[e->type] (sblock, e, op);
 	return sblock;
@@ -1178,7 +1637,11 @@ statement_label (sblock_t *sblock, expr_t *e)
 		e->e.label.next = sblock->labels;
 		sblock->labels = &e->e.label;
 	} else {
-		debug (e, "dropping unused label %s", e->e.label.name);
+		if (e->e.label.symbol) {
+			warning (e, "unused label %s", e->e.label.symbol->name);
+		} else {
+			debug (e, "dropping unused label %s", e->e.label.name);
+		}
 	}
 	return sblock;
 }
@@ -1211,7 +1674,6 @@ statement_expr (sblock_t *sblock, expr_t *e)
 			sblock = statement_branch (sblock, e);
 			break;
 		case '=':
-		case PAS:
 			sblock = expr_assign (sblock, e, 0);
 			break;
 		case 'm':
@@ -1248,8 +1710,10 @@ statement_uexpr (sblock_t *sblock, expr_t *e)
 				}
 			}
 			s = new_statement (st_func, opcode, e);
-			if (e->e.expr.e1)
+			if (e->e.expr.e1) {
+				s->opa = return_operand (get_type (e->e.expr.e1), e);
 				sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
+			}
 			sblock_add_statement (sblock, s);
 			sblock->next = new_sblock ();
 			sblock = sblock->next;
@@ -1267,9 +1731,35 @@ statement_uexpr (sblock_t *sblock, expr_t *e)
 }
 
 static sblock_t *
+statement_memset (sblock_t *sblock, expr_t *e)
+{
+	expr_t     *dst = e->e.memset.dst;
+	expr_t     *val = e->e.memset.val;
+	expr_t     *count = e->e.memset.count;
+	const char *opcode = "<MEMSET>";
+	statement_t *s;
+
+	if (is_constant (count)) {
+		if (is_integer (get_type (count))
+			&& (unsigned) expr_integer (count) < 0x10000) {
+			count = new_short_expr (expr_integer (count));
+		}
+		if (is_uinteger (get_type (count)) && expr_integer (count) < 0x10000) {
+			count = new_short_expr (expr_uinteger (count));
+		}
+	}
+	s = new_statement (st_move, opcode, e);
+	sblock = statement_subexpr (sblock, dst, &s->opc);
+	sblock = statement_subexpr (sblock, count, &s->opb);
+	sblock = statement_subexpr (sblock, val, &s->opa);
+	sblock_add_statement (sblock, s);
+	return sblock;
+}
+
+static sblock_t *
 statement_nonexec (sblock_t *sblock, expr_t *e)
 {
-	if (options.warnings.executable)
+	if (!e->rvalue && options.warnings.executable)
 		warning (e, "Non-executable statement; executing programmer instead.");
 	return sblock;
 }
@@ -1286,15 +1776,18 @@ statement_slist (sblock_t *sblock, expr_t *e)
 		statement_block,
 		statement_expr,
 		statement_uexpr,
+		statement_nonexec,	// ex_def
 		statement_nonexec,	// ex_symbol
 		statement_nonexec,	// ex_temp
 		statement_nonexec,	// ex_vector
 		statement_nonexec,	// ex_nil
 		statement_nonexec,	// ex_value
+		0,					// ex_compound
+		statement_memset,
 	};
 
 	for (/**/; e; e = e->next) {
-		if (e->type > ex_value)
+		if (e->type > ex_memset)
 			internal_error (e, "bad expression type");
 		sblock = sfuncs[e->type] (sblock, e);
 	}
@@ -1383,7 +1876,7 @@ remove_label_from_dest (ex_label_t *label)
 	sblock_t   *sblock;
 	ex_label_t **l;
 
-	if (!label)
+	if (!label || !label->dest)
 		return;
 
 	debug (0, "dropping deceased label %s", label->name);
@@ -1420,14 +1913,21 @@ thread_jumps (sblock_t *blocks)
 		if (!sblock->statements)
 			continue;
 		s = (statement_t *) sblock->tail;
-		if (statement_is_goto (s))
+		if (statement_is_goto (s)) {
 			label = &s->opa->o.label;
-		else if (statement_is_cond (s))
+			if (!(*label)->dest && (*label)->symbol) {
+				error (s->opa->expr, "undefined label `%s'",
+					   (*label)->symbol->name);
+				(*label)->symbol = 0;
+			}
+		} else if (statement_is_cond (s)) {
 			label = &s->opb->o.label;
-		else
+		} else {
 			continue;
+		}
 		for (l = *label;
-			 l->dest->statements && statement_is_goto (l->dest->statements);
+			 l->dest && l->dest->statements
+			 && statement_is_goto (l->dest->statements);
 			 l = l->dest->statements->opa->o.label) {
 		}
 		if (l != *label) {
@@ -1528,10 +2028,6 @@ static void
 check_final_block (sblock_t *sblock)
 {
 	statement_t *s = 0;
-	symbol_t   *return_symbol = 0;
-	def_t      *return_def = 0;
-	operand_t  *return_operand = 0;
-	const char *return_opcode = "<RETURN_V>";
 
 	if (!sblock)
 		return;
@@ -1544,7 +2040,7 @@ check_final_block (sblock_t *sblock)
 		if (statement_is_return (s))
 			return;
 	}
-	if (current_func->sym->type->t.func.type != &type_void)
+	if (!is_void(current_func->sym->type->t.func.type))
 		warning (0, "control reaches end of non-void function");
 	if (s && s->type >= st_func) {
 		// func and flow end blocks, so we need to add a new block to take the
@@ -1552,16 +2048,11 @@ check_final_block (sblock_t *sblock)
 		sblock->next = new_sblock ();
 		sblock = sblock->next;
 	}
+	s = new_statement (st_func, "<RETURN_V>", 0);
 	if (options.traditional || options.code.progsversion == PROG_ID_VERSION) {
-		return_symbol = make_symbol (".return", &type_param, pr.symtab->space,
-									 sc_extern);
-		return_def = return_symbol->s.def;
-		return_opcode = "<RETURN>";
+		s->opcode = save_string ("<RETURN>");
+		s->opa = return_operand (&type_void, 0);
 	}
-	if (return_symbol)
-		return_operand = def_operand (return_def, &type_void);
-	s = new_statement (st_func, return_opcode, 0);
-	s->opa = return_operand;
 	sblock_add_statement (sblock, s);
 }
 
@@ -1586,11 +2077,11 @@ make_statements (expr_t *e)
 	do {
 		did_something = thread_jumps (sblock);
 		if (options.block_dot.thread)
-			dump_dot (va ("thread-%d", pass), sblock, dump_dot_sblock);
+			dump_dot (va (0, "thread-%d", pass), sblock, dump_dot_sblock);
 		did_something |= remove_dead_blocks (sblock);
 		sblock = merge_blocks (sblock);
 		if (options.block_dot.dead)
-			dump_dot (va ("dead-%d", pass), sblock, dump_dot_sblock);
+			dump_dot (va (0, "dead-%d", pass), sblock, dump_dot_sblock);
 		pass++;
 	} while (did_something);
 	check_final_block (sblock);

@@ -24,7 +24,7 @@
 bl_info = {
     "name": "Quake map format",
     "author": "Bill Currie",
-    "blender": (2, 6, 3),
+    "blender": (2, 80, 0),
     "api": 35622,
     "location": "File > Import-Export",
     "description": "Import-Export Quake maps",
@@ -34,286 +34,83 @@ bl_info = {
 #    "support": 'OFFICIAL',
     "category": "Import-Export"}
 
-# To support reload properly, try to access a package var, if it's there,
-# reload everything
-if "bpy" in locals():
-    import imp
-    if "import_map" in locals():
-        imp.reload(import_map)
-    if "export_map" in locals():
-        imp.reload(export_map)
-
-from pprint import pprint
+submodule_names = (
+    "entity",
+    "entityclass",
+    "export_map",
+    "import_map",
+    "init",
+    "map",
+    "qfplist",
+    "quakechr",
+    "quakepal",
+    "wad",
+)
 
 import bpy
-from bpy.props import BoolProperty, FloatProperty, StringProperty, EnumProperty
-from bpy.props import FloatVectorProperty, PointerProperty
-from bpy_extras.io_utils import ExportHelper, ImportHelper, path_reference_mode, axis_conversion
-from bpy.app.handlers import persistent
+from bpy.props import PointerProperty
+from bpy.utils import register_class, unregister_class
 
-from .entityclass import EntityClassDict, EntityClassError
-from . import entity
-from . import import_map
-from . import export_map
+import importlib
+import sys
 
-def ecm_draw(self, context):
-    layout = self.layout
-    for item in self.menu_items:
-        if type(item[1]) is str:
-            ec = context.scene.qfmap.entity_classes[item[1]]
-            if ec.size:
-                icon = 'OBJECT_DATA'
-            else:
-                icon = 'MESH_DATA'
-            op = layout.operator("object.add_entity", text=item[0], icon=icon)
-            op.entclass=item[1]
-            if ec.comment:
-                pass
-        else:
-            layout.menu(item[1].bl_idname)
+registered_submodules = []
 
-class EntityClassMenu:
-    @classmethod
-    def clear(cls):
-        while cls.menu_items:
-            if type(cls.menu_item[0][1]) is not str:
-                bpy.utils.unregister_class(cls.menu_items[0][1])
-                cls.menu_items[0][1].clear()
-            del cls.menu_items[0]
-    @classmethod
-    def build(cls, menudict, name="INFO_MT_entity_add", label="entity"):
-        items = list(menudict.items())
-        items.sort()
-        menu_items = []
-        for i in items:
-            i = list(i)
-            if type(i[1]) is dict:
-                if i[0]:
-                    nm = "_".join((name, i[0]))
-                else:
-                    nm = name
-                i[1] = cls.build(i[1], nm, i[0])
-            menu_items.append(i)
-        attrs = {}
-        attrs["menu_items"] = menu_items
-        attrs["draw"] = ecm_draw
-        attrs["bl_idname"] = name
-        attrs["bl_label"] = label
-        attrs["clear"] = cls.clear
-        menu = type(name, (bpy.types.Menu,), attrs)
-        bpy.utils.register_class(menu)
-        return menu
+# When the addon is reloaded, this module gets reloaded, however none
+# of the other modules from this addon get reloaded. As a result, they
+# don't call register_submodules (only run when the module is loaded) and
+# thus they don't end up registering everything.
+#
+# This is set before any loading starts (in register), to a set of all the
+# names of the modules loaded as of when loading starts. While doing the
+# module loading, check if a module is present in this list. If so, reload
+# it and remove it from the set (to prevent it from getting reloaded twice).
+preloaded_modules = None
 
-@persistent
-def scene_load_handler(dummy):
-    for scene in bpy.data.scenes:
-        if hasattr(scene, "qfmap"):
-            scene.qfmap.script_update(bpy.context)
-
-class MapeditMessage(bpy.types.Operator):
-    bl_idname = "qfmapedit.message"
-    bl_label = "Message"
-    type = StringProperty()
-    message = StringProperty()
-
-    def execute(self, context):
-        self.report({'INFO'}, message)
-        return {'FINISHED'}
-    def invoke(self, context, event):
-        wm = context.window_manager
-        return wm.invoke_popup(self, width=400, height=200)
-    def draw(self, context):
-        self.layout.label(self.type, icon='ERROR')
-        self.layout.label(self.message)
-
-def scan_entity_classes(context):
-    qfmap = context.scene.qfmap
-    if not qfmap.dirpath:
-        return
-    qfmap.entity_classes.from_source_tree(qfmap.dirpath)
-    name = context.scene.name + '-EntityClasses'
-    if name in bpy.data.texts:
-        txt = bpy.data.texts[name]
-    else:
-        txt = bpy.data.texts.new(name)
-    txt.from_string(qfmap.entity_classes.to_plist())
-    qfmap.script = name
-
-def parse_entity_classes(context):
-    context.scene.qfmap.script_update(context)
-
-def ec_dir_update(self, context):
-    try:
-        scan_entity_classes(context)
-    except EntityClassError as err:
-        self.dirpath = ""
-        bpy.ops.qfmapedit.message('INVOKE_DEFAULT', type="Error",
-                                  message="Entity Class Error: %s" % err)
-
-def ec_script_update(self, context):
-    self.script_update(context)
-
-class AddEntity(bpy.types.Operator):
-    '''Add an entity'''
-    bl_idname = "object.add_entity"
-    bl_label = "Entity"
-    entclass = StringProperty(name = "entclass")
-
-    def execute(self, context):
-        keywords = self.as_keywords()
-        return entity.add_entity(self, context, **keywords)
-
-class QFEntityClassScan(bpy.types.Operator):
-    '''Rescan the specified QuakeC source tree'''
-    bl_idname = "scene.scan_entity_classes"
-    bl_label = "RELOAD"
-
-    def execute(self, context):
-        scan_entity_classes(context)
-        return {'FINISHED'}
-
-class QFEntityClassParse(bpy.types.Operator):
-    '''Reparse the specified entity class script'''
-    bl_idname = "scene.parse_entity_classes"
-    bl_label = "RELOAD"
-
-    def execute(self, context):
-        parse_entity_classes(context)
-        return {'FINISHED'}
-
-class QFEntityClasses(bpy.types.PropertyGroup):
-    wadpath = StringProperty(
-        name="wadpath",
-        description="Path to search for wad files",
-        subtype='DIR_PATH')
-    dirpath = StringProperty(
-        name="dirpath",
-        description="Path to qc source tree",
-        subtype='DIR_PATH',
-        update=ec_dir_update)
-    script = StringProperty(
-        name="script",
-        description="entity class storage",
-        update=ec_script_update)
-    entity_classes = EntityClassDict()
-    ecm = EntityClassMenu.build({})
-    entity_targets = {}
-    target_entities = []
-
-    def script_update(self, context):
-        if self.script in bpy.data.texts:
-            script = bpy.data.texts[self.script].as_string()
-            self.entity_classes.from_plist(script)
-            menudict = {}
-            entclasses = self.entity_classes.keys()
-            for ec in entclasses:
-                ecsub = ec.split("_")
-                d = menudict
-                for sub in ecsub[:-1]:
-                    if sub not in d:
-                        d[sub] = {}
-                    elif type(d[sub]) is str:
-                        d[sub] = {"":d[sub]}
-                    d = d[sub]
-                sub = ecsub[-1]
-                if sub in d:
-                    d[sub][""] = ec
-                else:
-                    d[sub] = ec
-            self.__class__.ecm = EntityClassMenu.build(menudict)
-
-class QFECPanel(bpy.types.Panel):
-    bl_space_type = 'PROPERTIES'
-    bl_region_type = 'WINDOW'
-    bl_context = 'scene'
-    bl_label = 'QF Entity Classes'
-
-    @classmethod
-    def poll(cls, context):
-        return True
-
-    def draw(self, context):
-        layout = self.layout
-        scene = context.scene
-        row = layout.row()
-        layout.prop(scene.qfmap, "wadpath")
-        row = layout.row()
-        row.prop(scene.qfmap, "dirpath")
-        row.operator("scene.scan_entity_classes", text="", icon="FILE_REFRESH")
-        row = layout.row()
-        row.prop(scene.qfmap, "script")
-        row.operator("scene.parse_entity_classes", text="", icon="FILE_REFRESH")
-
-class ImportPoints(bpy.types.Operator, ImportHelper):
-    '''Load a Quake points File'''
-    bl_idname = "import_mesh.quake_points"
-    bl_label = "Import points"
-
-    filename_ext = ".pts"
-    filter_glob = StringProperty(default="*.pts", options={'HIDDEN'})
-
-    def execute(self, context):
-        keywords = self.as_keywords (ignore=("filter_glob",))
-        return import_map.import_pts(self, context, **keywords)
-
-class ImportMap(bpy.types.Operator, ImportHelper):
-    '''Load a Quake map File'''
-    bl_idname = "import_mesh.quake_map"
-    bl_label = "Import map"
-
-    filename_ext = ".map"
-    filter_glob = StringProperty(default="*.map", options={'HIDDEN'})
-
-    def execute(self, context):
-        keywords = self.as_keywords (ignore=("filter_glob",))
-        return import_map.import_map(self, context, **keywords)
-
-class ExportMap(bpy.types.Operator, ExportHelper):
-    '''Save a Quake map File'''
-
-    bl_idname = "export_mesh.quake_map"
-    bl_label = "Export map"
-
-    filename_ext = ".map"
-    filter_glob = StringProperty(default="*.map", options={'HIDDEN'})
-
-    @classmethod
-    def poll(cls, context):
-        return True
-
-    def execute(self, context):
-        keywords = self.as_keywords (ignore=("check_existing", "filter_glob"))
-        return export_map.export_map(self, context, **keywords)
-
-def menu_func_import(self, context):
-    self.layout.operator(ImportMap.bl_idname, text="Quake map (.map)")
-    self.layout.operator(ImportPoints.bl_idname, text="Quake points (.pts)")
-
-def menu_func_export(self, context):
-    self.layout.operator(ExportMap.bl_idname, text="Quake map (.map)")
-
-def menu_func_add(self, context):
-    self.layout.menu(context.scene.qfmap.ecm.bl_idname, icon='PLUGIN')
+def register_submodules(name, submodule_names):
+    global preloaded_modules
+    module = __import__(name=name, fromlist=submodule_names)
+    submodules = [getattr(module, name) for name in submodule_names]
+    for mod in submodules:
+        # Look through the modules present when register was called. If this
+        # module was already loaded, then reload it.
+        if mod.__name__ in preloaded_modules:
+            mod = importlib.reload(mod)
+            # Prevent the module from getting reloaded more than once
+            preloaded_modules.remove(mod.__name__)
+        m = [(),(),()]
+        if hasattr(mod, "classes_to_register"):
+            m[0] = mod.classes_to_register
+            for cls in mod.classes_to_register:
+                register_class(cls)
+            if hasattr(mod, "menus_to_register"):
+                m[1] = mod.menus_to_register
+                for menu in mod.menus_to_register:
+                    menu[0].append(menu[1])
+            if hasattr(mod, "custom_properties_to_register"):
+                for prop in mod.custom_properties_to_register:
+                    setattr(prop[0], prop[1], PointerProperty(type=prop[2]))
+            if hasattr(mod, "handlers_to_register"):
+                m[2] = mod.handlers_to_register
+                for handler in mod.handlers_to_register:
+                    getattr(bpy.app.handlers, handler[0]).append(handler[1])
+            if m[0] or m[1] or m[2]:
+                registered_submodules.append(m)
 
 def register():
-    bpy.utils.register_module(__name__)
-
-    bpy.types.Scene.qfmap = PointerProperty(type=QFEntityClasses)
-
-    bpy.types.INFO_MT_file_import.append(menu_func_import)
-    bpy.types.INFO_MT_file_export.append(menu_func_export)
-    bpy.types.INFO_MT_add.append(menu_func_add)
-
-    bpy.app.handlers.load_post.append(scene_load_handler)
-    entity.register()
-
+    global preloaded_modules
+    preloaded_modules = set(sys.modules.keys())
+    register_submodules(__name__, submodule_names)
+    preloaded_modules = None
 
 def unregister():
-    bpy.utils.unregister_module(__name__)
-
-    bpy.types.INFO_MT_file_import.remove(menu_func_import)
-    bpy.types.INFO_MT_file_export.remove(menu_func_export)
-    bpy.types.INFO_MT_add.remove(menu_func_add)
+    for mod in reversed(registered_submodules):
+        for handler in reversed(mod[2]):
+            getattr(bpy.app.handlers, handler[0]).remove(handler[1])
+        for menu in reversed(mod[1]):
+            menu[0].remove(menu[1])
+        for cls in reversed(mod[0]):
+            unregister_class(cls)
 
 if __name__ == "__main__":
     register()
