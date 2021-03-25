@@ -177,15 +177,29 @@ CL_LoadSky (void)
 {
 	plitem_t   *item;
 	const char *name = 0;
+	static const char *sky_keys[] = {
+		"sky",      // Q2/DarkPlaces
+		"skyname",  // old QF
+		"qlsky",    // QuakeLives
+		0
+	};
 
-	if (!cl.worldspawn) {
-		r_funcs->R_LoadSkys (0);
-		return;
+	// R_LoadSkys does the right thing with null pointers.
+	if (cl.serverinfo) {
+		name = Info_ValueForKey (cl.serverinfo, "sky");
 	}
-	if ((item = PL_ObjectForKey (cl.worldspawn, "sky")) // Q2/DarkPlaces
-		|| (item = PL_ObjectForKey (cl.worldspawn, "skyname")) // old QF
-		|| (item = PL_ObjectForKey (cl.worldspawn, "qlsky"))) /* QuakeLives */ {
-		name = PL_String (item);
+
+	if (!name) {
+		if (!cl.worldspawn) {
+			r_funcs->R_LoadSkys (0);
+			return;
+		}
+		for (const char **key = sky_keys; *key; key++) {
+			if ((item = PL_ObjectForKey (cl.worldspawn, *key))) {
+				name = PL_String (item);
+				break;
+			}
+		}
 	}
 	r_funcs->R_LoadSkys (name);
 }
