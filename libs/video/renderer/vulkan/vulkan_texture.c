@@ -96,45 +96,76 @@ Vulkan_ExpandPalette (byte *dst, const byte *src, const byte *palette,
 	}
 }
 
+static int
+tex_format (const tex_t *tex, VkFormat *format, int *bpp)
+{
+	switch (tex->format) {
+		case tex_l:
+		case tex_a:
+			*format = VK_FORMAT_R8_UNORM;
+			*bpp = 1;
+			return 1;
+		case tex_la:
+			*format = VK_FORMAT_R8G8_UNORM;
+			*bpp = 2;
+			return 1;
+		case tex_palette:
+			if (!tex->palette) {
+				return 0;
+			}
+			*format = VK_FORMAT_R8G8B8A8_UNORM;
+			*bpp = 4;
+			return 1;
+		case tex_rgb:
+			*format = VK_FORMAT_R8G8B8A8_UNORM;
+			*bpp = 4;
+			return 1;
+		case tex_rgba:
+			*format = VK_FORMAT_R8G8B8A8_UNORM;
+			*bpp = 4;
+			return 1;
+		case tex_frgba:
+			*format = VK_FORMAT_R32G32B32A32_SFLOAT;
+			*bpp = 16;
+			return 1;
+	}
+	return 0;
+}
+
+static size_t
+stage_tex_data (qfv_packet_t *packet, tex_t *tex, int bpp)
+{
+	size_t      texels = tex->width * tex->height;
+	byte       *tex_data = QFV_PacketExtend (packet, bpp * texels);
+
+	if (tex->format == tex_palette) {
+		Vulkan_ExpandPalette (tex_data, tex->data, tex->palette, 1, texels);
+	} else {
+		if (tex->format == 3) {
+			byte       *in = tex->data;
+			byte       *out = tex_data;
+			while (texels-- > 0) {
+				*out++ = *in++;
+				*out++ = *in++;
+				*out++ = *in++;
+				*out++ = 255;
+			}
+		} else {
+			memcpy (tex_data, tex->data, bpp * texels);
+		}
+	}
+	return tex_data - (byte *) packet->stage->data;
+}
+
 qfv_tex_t *
 Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip, const char *name)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
-	int         bpp = 0;
-	VkFormat    format = VK_FORMAT_UNDEFINED;
+	int         bpp;
+	VkFormat    format;
 
-	switch (tex->format) {
-		case tex_l:
-		case tex_a:
-			format = VK_FORMAT_R8_UNORM;
-			bpp = 1;
-			break;
-		case tex_la:
-			format = VK_FORMAT_R8G8_UNORM;
-			bpp = 2;
-			break;
-		case tex_palette:
-			if (!tex->palette) {
-				return 0;
-			}
-			format = VK_FORMAT_R8G8B8A8_UNORM;
-			bpp = 4;
-			break;
-		case tex_rgb:
-			format = VK_FORMAT_R8G8B8_UNORM;
-			bpp = 3;
-			break;
-		case tex_rgba:
-			format = VK_FORMAT_R8G8B8A8_UNORM;
-			bpp = 4;
-			break;
-		case tex_frgba:
-			format = VK_FORMAT_R32G32B32A32_SFLOAT;
-			bpp = 16;
-			break;
-	}
-	if (format == VK_FORMAT_UNDEFINED) {
+	if (!tex_format (tex, &format, &bpp)) {
 		return 0;
 	}
 
@@ -169,16 +200,8 @@ Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip, const char *name)
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, qtex->view,
 						 va (ctx->va_ctx, "iview:%s", name));
 
-	size_t      bytes = bpp * tex->width * tex->height;
 	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
-	byte       *tex_data = QFV_PacketExtend (packet, bytes);
-
-	if (tex->format == tex_palette) {
-		Vulkan_ExpandPalette (tex_data, tex->data, tex->palette,
-							  1, tex->width * tex->height);
-	} else {
-		memcpy (tex_data, tex->data, bytes);
-	}
+	stage_tex_data (packet, tex, bpp);
 
 	VkImageMemoryBarrier barrier;
 	qfv_pipelinestagepair_t stages;
@@ -210,6 +233,176 @@ Vulkan_LoadTex (vulkan_ctx_t *ctx, tex_t *tex, int mip, const char *name)
 		QFV_GenerateMipMaps (device, packet->cmd, qtex->image,
 							 mip, tex->width, tex->height, 1);
 	}
+	QFV_PacketSubmit (packet);
+	return qtex;
+}
+
+static qfv_tex_t *
+create_cubetex (vulkan_ctx_t *ctx, int size, VkFormat format,
+				const char *name)
+{
+	qfv_device_t *device = ctx->device;
+
+	qfv_tex_t  *qtex = malloc (sizeof (qfv_tex_t));
+
+	VkExtent3D  extent = { size, size, 1 };
+	qtex->image = QFV_CreateImage (device, 1, VK_IMAGE_TYPE_2D, format, extent,
+								   1, 1, VK_SAMPLE_COUNT_1_BIT,
+								   VK_IMAGE_USAGE_SAMPLED_BIT
+								   | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE, qtex->image,
+						 va (ctx->va_ctx, "image:envmap:%s", name));
+	qtex->memory = QFV_AllocImageMemory (device, qtex->image,
+										 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+										 0, 0);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY, qtex->memory,
+						 va (ctx->va_ctx, "memory:%s", name));
+	QFV_BindImageMemory (device, qtex->image, qtex->memory, 0);
+	qtex->view = QFV_CreateImageView (device, qtex->image,
+									  VK_IMAGE_VIEW_TYPE_CUBE, format,
+									  VK_IMAGE_ASPECT_COLOR_BIT);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, qtex->view,
+						 va (ctx->va_ctx, "iview:envmap:%s", name));
+
+	return qtex;
+}
+
+qfv_tex_t *
+Vulkan_LoadEnvMap (vulkan_ctx_t *ctx, tex_t *tex, const char *name)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	int         bpp;
+	VkFormat    format;
+
+	static int env_coords[][2] = {
+		{2, 0},	// right
+		{0, 0}, // left
+		{1, 1}, // top
+		{0, 1}, // bottom
+		{2, 1}, // front
+		{1, 0}, // back
+	};
+
+	if (!tex_format (tex, &format, &bpp)) {
+		return 0;
+	}
+	if (tex->height * 3 != tex->width * 2) {
+		return 0;
+	}
+
+	int size = tex->height / 2;
+	qfv_tex_t  *qtex = create_cubetex (ctx, size, format, name);
+
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
+	stage_tex_data (packet, tex, bpp);
+
+	VkImageMemoryBarrier barrier;
+	qfv_pipelinestagepair_t stages;
+
+	stages = imageLayoutTransitionStages[qfv_LT_Undefined_to_TransferDst];
+	barrier = imageLayoutTransitionBarriers[qfv_LT_Undefined_to_TransferDst];
+	barrier.image = qtex->image;
+	barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+								 0, 0, 0, 0, 0,
+								 1, &barrier);
+
+	VkBufferImageCopy copy[6] = {
+		{
+			0, tex->width, 0,
+			{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+			{0, 0, 0}, {size, size, 1},
+		},
+	};
+	for (int i = 0; i < 6; i++) {
+		int     x = env_coords[i][0] * size;
+		int     y = env_coords[i][1] * size;
+		int offset = x + y * tex->width;
+		copy[i] = copy[0];
+		copy[i].bufferOffset = packet->offset + bpp * offset;
+		copy[i].imageSubresource.baseArrayLayer = i;
+	}
+	dfunc->vkCmdCopyBufferToImage (packet->cmd, packet->stage->buffer,
+								   qtex->image,
+								   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+								   6, copy);
+	stages = imageLayoutTransitionStages[qfv_LT_TransferDst_to_ShaderReadOnly];
+	barrier=imageLayoutTransitionBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+	barrier.image = qtex->image;
+	barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+								 0, 0, 0, 0, 0,
+								 1, &barrier);
+	QFV_PacketSubmit (packet);
+	return qtex;
+}
+
+qfv_tex_t *
+Vulkan_LoadEnvSides (vulkan_ctx_t *ctx, tex_t **tex, const char *name)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	int         bpp;
+	VkFormat    format;
+
+	if (!tex_format (tex[0], &format, &bpp)) {
+		return 0;
+	}
+	if (tex[0]->height != tex[0]->width) {
+		return 0;
+	}
+	for (int i = 1; i < 6; i++) {
+		if (tex[i]->format != tex[0]->format
+			|| tex[i]->width != tex[0]->width
+			|| tex[i]->height != tex[0]->height) {
+			return 0;
+		}
+	}
+
+	int size = tex[0]->height;
+	qfv_tex_t  *qtex = create_cubetex (ctx, size, format, name);
+
+	qfv_packet_t *packet = QFV_PacketAcquire (ctx->staging);
+
+	VkImageMemoryBarrier barrier;
+	qfv_pipelinestagepair_t stages;
+
+	stages = imageLayoutTransitionStages[qfv_LT_Undefined_to_TransferDst];
+	barrier = imageLayoutTransitionBarriers[qfv_LT_Undefined_to_TransferDst];
+	barrier.image = qtex->image;
+	barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+								 0, 0, 0, 0, 0,
+								 1, &barrier);
+
+	VkBufferImageCopy copy[6] = {
+		{
+			0, 0, 0,
+			{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+			{0, 0, 0}, {size, size, 1},
+		},
+	};
+	for (int i = 0; i < 6; i++) {
+		copy[i] = copy[0];
+		copy[i].bufferOffset = stage_tex_data (packet, tex[i], bpp);
+		copy[i].imageSubresource.baseArrayLayer = i;
+	}
+	dfunc->vkCmdCopyBufferToImage (packet->cmd, packet->stage->buffer,
+								   qtex->image,
+								   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+								   6, copy);
+	stages = imageLayoutTransitionStages[qfv_LT_TransferDst_to_ShaderReadOnly];
+	barrier=imageLayoutTransitionBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+	barrier.image = qtex->image;
+	barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+								 0, 0, 0, 0, 0,
+								 1, &barrier);
 	QFV_PacketSubmit (packet);
 	return qtex;
 }

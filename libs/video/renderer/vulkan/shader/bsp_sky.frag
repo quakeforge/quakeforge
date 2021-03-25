@@ -14,7 +14,7 @@ layout (location = 1) in vec3 direction;
 
 layout (location = 0) out vec4 frag_color;
 
-layout (constant_id = 0) const bool doSkyCube = false;
+layout (constant_id = 0) const bool doSkyBox = false;
 layout (constant_id = 1) const bool doSkySheet = false;
 
 const float SCALE = 8.0;
@@ -55,12 +55,14 @@ sky_sheet (vec3 dir, float time)
 }
 
 vec4
-sky_cube (vec3 dir, float time)
+sky_box (vec3 dir, float time)
 {
 	// NOTE: quake's world is right-handed with Z up and X forward, but
 	// Vulkan's cube maps are left-handed with Y up and Z forward. The
 	// rotation to X foward is done by the Sky matrix so all that's left
 	// to do here is swizzle the Y and Z coordinates
+	dir = normalize(dir);
+	//return vec4(dir.xyz, 1) * 0.5 + vec4(0.5);
 	return texture (SkyCube, dir.xzy);
 }
 
@@ -68,15 +70,14 @@ vec4
 sky_color (vec3 dir, float time)
 {
 	if (!doSkySheet) {
-		return vec4 (1, 0, 1, 1);
-		//return sky_cube (dir, time);
-	} if (!doSkyCube) {
+		return sky_box (dir, time);
+	} if (!doSkyBox) {
 		return sky_sheet (dir, time);
 	} else {
 		// can see through the sheet (may look funny when looking down)
 		// maybe have 4 sheet layers instead of 2?
 		vec4        c1 = sky_sheet (dir, time);
-		vec4        c2 = sky_cube (dir, time);
+		vec4        c2 = sky_box (dir, time);
 		return vec4 (mix (c2.rgb, c1.rgb, c1.a), max (c1.a, c2.a));
 		return vec4 (1, 0, 1, 1);
 	}
@@ -87,7 +88,7 @@ main (void)
 {
 	vec4        c;
 
-	if (doSkyCube || doSkySheet) {
+	if (doSkyBox || doSkySheet) {
 		c = sky_color (direction, time);
 	} else {
 		c = vec4 (0, 0, 0, 1);

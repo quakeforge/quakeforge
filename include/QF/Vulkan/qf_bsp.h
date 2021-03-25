@@ -146,7 +146,8 @@ typedef struct bspctx_s {
 	VkDeviceMemory texture_memory;
 	VkPipeline   depth;
 	VkPipeline   gbuf;
-	VkPipeline   sky;
+	VkPipeline   skysheet;
+	VkPipeline   skybox;
 	VkPipeline   turb;
 	VkPipelineLayout layout;
 	size_t       vertex_buffer_size;
@@ -162,6 +163,7 @@ struct vulkan_ctx_s;
 void Vulkan_ClearElements (struct vulkan_ctx_s *ctx);
 void Vulkan_DrawWorld (struct vulkan_ctx_s *ctx);
 void Vulkan_DrawSky (struct vulkan_ctx_s *ctx);
+void Vulkan_LoadSkys (const char *sky, struct vulkan_ctx_s *ctx);
 void Vulkan_RegisterTextures (model_t **models, int num_models,
 							  struct vulkan_ctx_s *ctx);
 void Vulkan_BuildDisplayLists (model_t **models, int num_models,

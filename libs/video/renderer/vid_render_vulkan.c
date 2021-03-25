@@ -223,6 +223,7 @@ vulkan_R_ClearState (void)
 static void
 vulkan_R_LoadSkys (const char *skyname)
 {
+	Vulkan_LoadSkys (skyname, vulkan_ctx);
 }
 
 static void

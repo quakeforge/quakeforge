@@ -1054,7 +1054,11 @@ sky_begin (vulkan_ctx_t *ctx)
 	bframe->imageInfo[4].imageView = get_view (bctx->skybox_tex,
 											   bctx->default_skybox);
 
-	bsp_begin_subpass (QFV_bspSky, bctx->sky, ctx);
+	if (bctx->skybox_tex) {
+		bsp_begin_subpass (QFV_bspSky, bctx->skybox, ctx);
+	} else {
+		bsp_begin_subpass (QFV_bspSky, bctx->skysheet, ctx);
+	}
 }
 
 static void
@@ -1370,7 +1374,7 @@ create_default_skys (vulkan_ctx_t *ctx)
 								   VK_FORMAT_B8G8R8A8_UNORM,
 								   VK_IMAGE_ASPECT_COLOR_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, boxview,
-						 "bsp:iview:default_skysheet");
+						 "bsp:iview:default_skybox");
 
 	sheetview = QFV_CreateImageView (device, skysheet,
 									 VK_IMAGE_VIEW_TYPE_2D_ARRAY,
@@ -1481,7 +1485,8 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 
 	bctx->depth = Vulkan_CreatePipeline (ctx, "bsp_depth");
 	bctx->gbuf = Vulkan_CreatePipeline (ctx, "bsp_gbuf");
-	bctx->sky = Vulkan_CreatePipeline (ctx, "bsp_skysheet");
+	bctx->skybox = Vulkan_CreatePipeline (ctx, "bsp_skybox");
+	bctx->skysheet = Vulkan_CreatePipeline (ctx, "bsp_skysheet");
 	bctx->turb = Vulkan_CreatePipeline (ctx, "bsp_turb");
 	bctx->layout = Vulkan_CreatePipelineLayout (ctx, "quakebsp_layout");
 	bctx->sampler = Vulkan_CreateSampler (ctx, "quakebsp_sampler");
@@ -1533,7 +1538,8 @@ Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 
 	dfunc->vkDestroyPipeline (device->dev, bctx->depth, 0);
 	dfunc->vkDestroyPipeline (device->dev, bctx->gbuf, 0);
-	dfunc->vkDestroyPipeline (device->dev, bctx->sky, 0);
+	dfunc->vkDestroyPipeline (device->dev, bctx->skybox, 0);
+	dfunc->vkDestroyPipeline (device->dev, bctx->skysheet, 0);
 	dfunc->vkDestroyPipeline (device->dev, bctx->turb, 0);
 	DARRAY_CLEAR (&bctx->texture_chains);
 	DARRAY_CLEAR (&bctx->frames);
@@ -1546,6 +1552,10 @@ Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx)
 	if (bctx->index_buffer) {
 		dfunc->vkDestroyBuffer (device->dev, bctx->index_buffer, 0);
 		dfunc->vkFreeMemory (device->dev, bctx->index_memory, 0);
+	}
+
+	if (bctx->skybox_tex) {
+		Vulkan_UnloadTex (ctx, bctx->skybox_tex);
 	}
 
 	dfunc->vkDestroyImageView (device->dev, bctx->default_skysheet->view, 0);
@@ -1590,103 +1600,61 @@ copy_sub_tex (tex_t *src, int x, int y, tex_t *dst)
 				dstbytes);
 }*/
 
-/*XXX	void
-Vulkan_R_LoadSkys (const char *sky, vulkan_ctx_t *ctx)
+void
+Vulkan_LoadSkys (const char *sky, vulkan_ctx_t *ctx)
 {
-const char *name;
+	bspctx_t   *bctx = ctx->bsp_context;
+
+	const char *name;
 	int         i;
 	tex_t      *tex;
-	// NOTE: quake's world and GL's world are rotated relative to each other
-	// quake has x right, y in, z up. gl has x right, y up, z out
-	// quake order:                      +x    -x    +z    -z    +y    -y
-	// gl order:                         +x    -x    +y    -y    +z    -z
-	// fizquake orger:                   -y    +y    +z    -z    +x    -x
-	// to get from quake order to fitzquake order, all that's needed is
-	// a -90 degree rotation on the (quake) z-axis. This is taken care of in
-	// the sky_matrix setup code.
-	// However, from the player's perspective, skymaps have lf and rt
-	// swapped, but everythink makes sense if looking at the cube from outside
-	// along the positive y axis, with the front of the cube being the nearest
-	// face. This matches nicely with Blender's default cube in front (num-1)
-	// view.
 	static const char *sky_suffix[] = { "ft", "bk", "up", "dn", "rt", "lf"};
-	static int  sky_coords[][2] = {
-		{2, 0},	// front
-		{0, 0}, // back
-		{1, 1}, // up
-		{0, 1}, // down
-		{2, 1}, // left
-		{1, 0}, // right
-	};
 
-	if (!sky || !*sky)
+	if (bctx->skybox_tex) {
+		Vulkan_UnloadTex (ctx, bctx->skybox_tex);
+	}
+	bctx->skybox_tex = 0;
+
+	if (!sky || !*sky) {
 		sky = r_skyname->string;
+	}
 
 	if (!*sky || !strcasecmp (sky, "none")) {
-		skybox_loaded = false;
+		Sys_MaskPrintf (SYS_VULKAN, "Skybox unloaded\n");
 		return;
 	}
 
-	if (!skybox_tex)
-		qfeglGenTextures (1, &skybox_tex);
-
-	qfeglBindTexture (GL_TEXTURE_CUBE_MAP, skybox_tex);
-
-	//blender envmap
-	// bk rt ft
-	// dn up lt
-	tex = LoadImage (name = va ("env/%s_map", sky));
-	if (tex && tex->format >= 3 && tex->height * 3 == tex->width * 2
-		&& is_pow2 (tex->height)) {
-		tex_t      *sub;
-		int         size = tex->height / 2;
-
-		skybox_loaded = true;
-		sub = malloc (field_offset (tex_t, data[size * size * tex->format]));
-		sub->width = size;
-		sub->height = size;
-		sub->format = tex->format;
-		sub->palette = tex->palette;
-		for (i = 0; i < 6; i++) {
-			int         x, y;
-			x = sky_coords[i][0] * size;
-			y = sky_coords[i][1] * size;
-			copy_sub_tex (tex, x, y, sub);
-			qfeglTexImage2D (GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0,
-							sub->format == 3 ? GL_RGB : GL_RGBA,
-							sub->width, sub->height, 0,
-							sub->format == 3 ? GL_RGB : GL_RGBA,
-							GL_UNSIGNED_BYTE, sub->data);
-		}
-		free (sub);
+	name = va (ctx->va_ctx, "env/%s_map", sky);
+	tex = LoadImage (name, 1);
+	if (tex) {
+		bctx->skybox_tex = Vulkan_LoadEnvMap (ctx, tex, sky);
+		Sys_MaskPrintf (SYS_VULKAN, "Loaded %s\n", name);
 	} else {
-		skybox_loaded = true;
+		int         failed = 0;
+		tex_t      *sides[6] = { };
+
 		for (i = 0; i < 6; i++) {
-			tex = LoadImage (name = va ("env/%s%s", sky, sky_suffix[i]));
-			if (!tex || tex->format < 3) {	// FIXME pcx support
-				Sys_MaskPrintf (SYS_GLSL, "Couldn't load %s\n", name);
+			name = va (ctx->va_ctx, "env/%s%s", sky, sky_suffix[i]);
+			tex = LoadImage (name, 1);
+			if (!tex) {
+				Sys_MaskPrintf (SYS_VULKAN, "Couldn't load %s\n", name);
 				// also look in gfx/env, where Darkplaces looks for skies
-				tex = LoadImage (name = va ("gfx/env/%s%s", sky,
-											sky_suffix[i]));
-				if (!tex || tex->format < 3) {  // FIXME pcx support
-					Sys_MaskPrintf (SYS_GLSL, "Couldn't load %s\n", name);
-					skybox_loaded = false;
+				name = va (ctx->va_ctx, "gfx/env/%s%s", sky, sky_suffix[i]);
+				tex = LoadImage (name, 1);
+				if (!tex) {
+					Sys_MaskPrintf (SYS_VULKAN, "Couldn't load %s\n", name);
+					failed = 1;
 					continue;
 				}
 			}
-			Sys_MaskPrintf (SYS_GLSL, "Loaded %s\n", name);
-			qfeglTexImage2D (GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0,
-							tex->format == 3 ? GL_RGB : GL_RGBA,
-							tex->width, tex->height, 0,
-							tex->format == 3 ? GL_RGB : GL_RGBA,
-							GL_UNSIGNED_BYTE, tex->data);
+			sides[i] = tex;
+			Sys_MaskPrintf (SYS_VULKAN, "Loaded %s\n", name);
+		}
+		if (!failed) {
+			bctx->skybox_tex = Vulkan_LoadEnvSides (ctx, sides, sky);
 		}
 	}
-	qfeglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S,
-					   GL_CLAMP_TO_EDGE);
-	qfeglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T,
-					   GL_CLAMP_TO_EDGE);
-	qfeglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	qfeglTexParameteri (GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	qfeglGenerateMipmap (GL_TEXTURE_CUBE_MAP);
-}*/
+	if (bctx->skybox_tex) {
+		Sys_MaskPrintf (SYS_VULKAN, "Skybox %s loaded\n", sky);
+	}
+}
