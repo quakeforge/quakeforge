@@ -600,8 +600,8 @@ NET_Init (int port)
 	Sys_Printf ("UDP (IPv6) Initialized\n");
 }
 
-void
-NET_Shutdown (void)
+static void
+NET_shutdown (void)
 {
 #ifdef _WIN32
 	closesocket (net_socket);

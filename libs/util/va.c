@@ -40,28 +40,51 @@
 #include "QF/dstring.h"
 #include "QF/va.h"
 
+struct va_ctx_s {
+	dstring_t **strings;
+	int         num_strings;
+	int         str_index;
+};
 
-/*
-	va
-
-	does a varargs printf into a temp buffer, so I don't need to have
-	varargs versions of all text functions.
-*/
-VISIBLE char *
-va (const char *fmt, ...)
+VISIBLE va_ctx_t *
+va_create_context (int buffers)
 {
+	va_ctx_t   *ctx;
+
+	ctx = malloc (sizeof (va_ctx_t) + buffers * sizeof (dstring_t *));
+	ctx->strings = (dstring_t **) (ctx + 1);
+	ctx->num_strings = buffers;
+	ctx->str_index = 0;
+
+	for (int i = 0; i < buffers; i++) {
+		ctx->strings[i] = dstring_new ();
+	}
+	return ctx;
+}
+
+VISIBLE void
+va_destroy_context (va_ctx_t *ctx)
+{
+	for (int i = 0; i < ctx->num_strings; i++) {
+		dstring_delete (ctx->strings[i]);
+	}
+	free (ctx);
+}
+
+VISIBLE char *
+va (va_ctx_t *ctx, const char *fmt, ...)
+{
+	static va_ctx_t *_ctx;
 	va_list     args;
-	static dstring_t *string[4];
-#define NUM_STRINGS (sizeof (string) / sizeof (string[0]))
-	static int  str_index;
 	dstring_t  *dstr;
 
-	if (!string[0]) {
-		for (size_t i = 0; i < NUM_STRINGS; i++) {
-			string[i] = dstring_new ();
+	if (!ctx) {
+		if (!_ctx) {
+			_ctx = va_create_context (4);
 		}
+		ctx = _ctx;
 	}
-	dstr = string[str_index++ % NUM_STRINGS];
+	dstr = ctx->strings[ctx->str_index++ % ctx->num_strings];
 
 	va_start (args, fmt);
 	dvsprintf (dstr, fmt, args);

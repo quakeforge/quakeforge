@@ -90,9 +90,9 @@ VID_GetWindowSize (int def_w, int def_h)
 {
 	int pnum, conheight;
 
-	vid_width = Cvar_Get ("vid_width", va ("%d", def_w), CVAR_NONE, NULL,
+	vid_width = Cvar_Get ("vid_width", va (0, "%d", def_w), CVAR_NONE, NULL,
 			"screen width");
-	vid_height = Cvar_Get ("vid_height", va ("%d", def_h), CVAR_NONE, NULL,
+	vid_height = Cvar_Get ("vid_height", va (0, "%d", def_h), CVAR_NONE, NULL,
 			"screen height");
 	vid_aspect = Cvar_Get ("vid_aspect", "4:3", CVAR_ROM, vid_aspect_f,
 			"Physical screen aspect ratio in \"width:height\" format. "
@@ -140,7 +140,7 @@ VID_GetWindowSize (int def_w, int def_h)
 	viddef.aspect = ((vid_aspect->vec[0] * viddef.height)
 				  / (vid_aspect->vec[1] * viddef.width));
 
-	con_width = Cvar_Get ("con_width", va ("%d", viddef.width), CVAR_NONE,
+	con_width = Cvar_Get ("con_width", va (0, "%d", viddef.width), CVAR_NONE,
 						  NULL, "console effective width (GL only)");
 	if ((pnum = COM_CheckParm ("-conwidth"))) {
 		if (pnum >= com_argc - 1)
@@ -148,20 +148,20 @@ VID_GetWindowSize (int def_w, int def_h)
 		Cvar_Set (con_width, com_argv[pnum + 1]);
 	}
 	// make con_width a multiple of 8 and >= 320
-	Cvar_Set (con_width, va ("%d", max (con_width->int_val & ~7, 320)));
+	Cvar_Set (con_width, va (0, "%d", max (con_width->int_val & ~7, 320)));
 	Cvar_SetFlags (con_width, con_width->flags | CVAR_ROM);
 	viddef.conwidth = con_width->int_val;
 
 	conheight = (viddef.conwidth * vid_aspect->vec[1]) / vid_aspect->vec[0];
-	con_height = Cvar_Get ("con_height", va ("%d", conheight), CVAR_NONE, NULL,
-						   "console effective height (GL only)");
+	con_height = Cvar_Get ("con_height", va (0, "%d", conheight), CVAR_NONE,
+						   NULL, "console effective height (GL only)");
 	if ((pnum = COM_CheckParm ("-conheight"))) {
 		if (pnum >= com_argc - 1)
 			Sys_Error ("VID: -conheight <width>");
 		Cvar_Set (con_height, com_argv[pnum + 1]);
 	}
 	// make con_height >= 200
-	Cvar_Set (con_height, va ("%d", max (con_height->int_val, 200)));
+	Cvar_Set (con_height, va (0, "%d", max (con_height->int_val, 200)));
 	Cvar_SetFlags (con_height, con_height->flags | CVAR_ROM);
 	viddef.conheight = con_height->int_val;
 
@@ -200,6 +200,10 @@ void
 VID_UpdateGamma (cvar_t *vid_gamma)
 {
 	double gamma = bound (0.1, vid_gamma->value, 9.9);
+	byte       *p24;
+	byte       *p32;
+	byte       *col;
+	int         i;
 
 	viddef.recalc_refdef = 1;				// force a surface cache flush
 
@@ -207,14 +211,30 @@ VID_UpdateGamma (cvar_t *vid_gamma)
 		Sys_MaskPrintf (SYS_VID, "Setting hardware gamma to %g\n", gamma);
 		VID_BuildGammaTable (1.0);	// hardware gamma wants a linear palette
 		VID_SetGamma (gamma);
-		memcpy (viddef.palette, viddef.basepal, 256 * 3);
+		p24 = viddef.palette;
+		p32 = viddef.palette32;
+		col = viddef.basepal;
+		for (i = 0; i < 256; i++) {
+			*p32++ = *p24++ = *col++;
+			*p32++ = *p24++ = *col++;
+			*p32++ = *p24++ = *col++;
+			*p32++ = 255;
+		}
+		p32[-1] = 0;	// color 255 is transparent
 	} else {	// We have to hack the palette
-		int i;
 		Sys_MaskPrintf (SYS_VID, "Setting software gamma to %g\n", gamma);
 		VID_BuildGammaTable (gamma);
-		for (i = 0; i < 256 * 3; i++)
-			viddef.palette[i] = viddef.gammatable[viddef.basepal[i]];
-		viddef.set_palette (viddef.palette); // update with the new palette
+		p24 = viddef.palette;
+		p32 = viddef.palette32;
+		col = viddef.basepal;
+		for (i = 0; i < 256; i++) {
+			*p32++ = *p24++ = viddef.gammatable[*col++];
+			*p32++ = *p24++ = viddef.gammatable[*col++];
+			*p32++ = *p24++ = viddef.gammatable[*col++];
+			*p32++ = 255;
+		}
+		p32[-1] = 0;	// color 255 is transparent
+		viddef.vid_internal->set_palette (viddef.palette); // update with the new palette
 	}
 }
 
@@ -232,12 +252,13 @@ VID_InitGamma (unsigned char *pal)
 	viddef.gammatable = malloc (256);
 	viddef.basepal = pal;
 	viddef.palette = malloc (256 * 3);
+	viddef.palette32 = malloc (256 * 4);
 	if ((i = COM_CheckParm ("-gamma"))) {
 		gamma = atof (com_argv[i + 1]);
 	}
 	gamma = bound (0.1, gamma, 9.9);
 
-	vid_gamma = Cvar_Get ("vid_gamma", va ("%f", gamma), CVAR_ARCHIVE,
+	vid_gamma = Cvar_Get ("vid_gamma", va (0, "%f", gamma), CVAR_ARCHIVE,
 						  VID_UpdateGamma, "Gamma correction");
 
 	VID_BuildGammaTable (vid_gamma->value);
@@ -256,8 +277,9 @@ VID_InitBuffers (void)
 	// Calculate the sizes we want first
 	buffersize = viddef.rowbytes * viddef.height;
 	zbuffersize = viddef.width * viddef.height * sizeof (*viddef.zbuffer);
-	if (viddef.surf_cache_size)
-		cachesize = viddef.surf_cache_size (viddef.width, viddef.height);
+	if (viddef.vid_internal->surf_cache_size)
+		cachesize = viddef.vid_internal->surf_cache_size (viddef.width,
+														  viddef.height);
 
 	// Free the old z-buffer
 	if (viddef.zbuffer) {
@@ -266,13 +288,13 @@ VID_InitBuffers (void)
 	}
 	// Free the old surface cache
 	if (viddef.surfcache) {
-		if (viddef.flush_caches)
-			viddef.flush_caches ();
+		if (viddef.vid_internal->flush_caches)
+			viddef.vid_internal->flush_caches ();
 		free (viddef.surfcache);
 		viddef.surfcache = NULL;
 	}
-	if (viddef.do_screen_buffer) {
-		viddef.do_screen_buffer ();
+	if (viddef.vid_internal->do_screen_buffer) {
+		viddef.vid_internal->do_screen_buffer ();
 	} else {
 		// Free the old screen buffer
 		if (viddef.buffer) {
@@ -302,6 +324,13 @@ VID_InitBuffers (void)
 		Sys_Error ("Not enough memory for video mode");
 	}
 
-	if (viddef.init_caches)
-		viddef.init_caches (viddef.surfcache, cachesize);
+	if (viddef.vid_internal->init_caches)
+		viddef.vid_internal->init_caches (viddef.surfcache, cachesize);
+}
+
+void
+VID_ClearMemory (void)
+{
+	if (viddef.vid_internal->flush_caches)
+		viddef.vid_internal->flush_caches ();
 }

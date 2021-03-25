@@ -78,9 +78,6 @@ vec3_t bsp_origin;
 
 qboolean extrasamples;
 
-float minlights[MAX_MAP_FACES];
-
-
 int
 GetFileSpace (int size)
 {
@@ -150,7 +147,7 @@ FindFaceOffsets (void)
 	surfaceorgs = (vec3_t *) calloc (bsp->numfaces, sizeof (vec3_t));
 
 	for (i = 1; i < bsp->nummodels; i++) {
-		ent = FindEntityWithKeyPair ("model", name = va ("*%d", i));
+		ent = FindEntityWithKeyPair ("model", name = va (0, "*%d", i));
 		VectorZero (org);
 		if (!ent)
 			Sys_Error ("FindFaceOffsets: Couldn't find entity for model %s.\n",

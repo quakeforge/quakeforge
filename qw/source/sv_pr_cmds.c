@@ -460,7 +460,7 @@ PF_checkpos (progs_t *pr)
 {
 }
 
-byte        checkpvs[MAX_MAP_LEAFS / 8];
+byte        checkpvs[MAP_PVS_BYTES];
 
 static int
 PF_newcheckclient (progs_t *pr, int check)
@@ -506,7 +506,7 @@ PF_newcheckclient (progs_t *pr, int check)
 	VectorAdd (SVvector (ent, origin), SVvector (ent, view_ofs), org);
 	leaf = Mod_PointInLeaf (org, sv.worldmodel);
 	pvs = Mod_LeafPVS (leaf, sv.worldmodel);
-	memcpy (checkpvs, pvs, (sv.worldmodel->numleafs + 7) >> 3);
+	memcpy (checkpvs, pvs, (sv.worldmodel->brush.numleafs + 7) >> 3);
 
 	return i;
 }
@@ -551,7 +551,7 @@ PF_checkclient (progs_t *pr)
 	self = PROG_TO_EDICT (pr, *sv_globals.self);
 	VectorAdd (SVvector (self, origin), SVvector (self, view_ofs), view);
 	leaf = Mod_PointInLeaf (view, sv.worldmodel);
-	l = (leaf - sv.worldmodel->leafs) - 1;
+	l = (leaf - sv.worldmodel->brush.leafs) - 1;
 	if ((l < 0) || !(checkpvs[l >> 3] & (1 << (l & 7)))) {
 		c_notvis++;
 		RETURN_EDICT (pr, sv.edicts);
@@ -1411,7 +1411,7 @@ PF_changelevel (progs_t *pr)
 	last_spawncount = svs.spawncount;
 
 	s = P_GSTRING (pr, 0);
-	Cbuf_AddText (sv_cbuf, va ("map %s\n", s));
+	Cbuf_AddText (sv_cbuf, va (0, "map %s\n", s));
 }
 
 /*
@@ -1460,13 +1460,13 @@ PF_logfrag (progs_t *pr)
 
 		snprintf(buf, sizeof(buf), "%d", u2);
 
-		GIB_Event_Callback (sv_frag_e, 4, type1, va ("%d", u1), type2, buf);
+		GIB_Event_Callback (sv_frag_e, 4, type1, va (0, "%d", u1), type2, buf);
 	}
 
 	if (e1 < 1 || e1 > MAX_CLIENTS || e2 < 1 || e2 > MAX_CLIENTS)
 		return;
 
-	s = va ("\\%s\\%s\\\n", svs.clients[e1 - 1].name,
+	s = va (0, "\\%s\\%s\\\n", svs.clients[e1 - 1].name,
 			svs.clients[e2 - 1].name);
 
 	SZ_Print (&svs.log[svs.logsequence & 1], s);
@@ -1511,7 +1511,7 @@ PF_infokey (progs_t *pr)
 		else if (!strcmp (key, "ping")) {
 			int         ping = SV_CalcPing (&svs.clients[e1 - 1]);
 
-			value = va ("%d", ping);
+			value = va (0, "%d", ping);
 		} else
 			value = Info_ValueForKey (svs.clients[e1 - 1].userinfo, key);
 	} else
@@ -1862,7 +1862,7 @@ PF_SV_FreeClient (progs_t *pr)
 	cl->state = cs_free;
 
 	//if (sv_client_disconnect_e->func)
-	//	GIB_Event_Callback (sv_client_disconnect_e, 2, va ("%u", cl->userid),
+	//	GIB_Event_Callback (sv_client_disconnect_e, 2, va (0, "%u", cl->userid),
 	//						"server");
 }
 

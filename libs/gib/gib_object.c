@@ -205,7 +205,7 @@ GIB_Object_Create (const char *classname, qboolean classobj)
 	obj->data = malloc (sizeof (void *) * (class->depth+1));
 	obj->methods = classobj ? class->class_methods : class->methods;
 	obj->handle = classobj ? 0 : GIB_Handle_New (obj);
-	obj->handstr = strdup (va ("%lu", obj->handle));
+	obj->handstr = strdup (va (0, "%lu", obj->handle));
 	obj->refs = 1;
 	obj->signals = Hash_NewTable (128, GIB_Signal_Get_Key,
 								  GIB_Signal_Free, NULL, 0);

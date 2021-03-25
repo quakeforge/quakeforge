@@ -137,17 +137,52 @@ ConvertColor (const byte *rgb, const byte *pal, colcache_t *cache)
 	return bestc;
 }
 
+byte
+ConvertFloatColor (const float *frgb, const byte *pal, colcache_t *cache)
+{
+	//FIXME slow!
+	int         dist[3];
+	int         d, bestd = 256 * 256 * 3, bestc = -1;
+	int         i;
+	byte        rgb[3];
+	colcache_color_t *col;
+
+	VectorScale (frgb, 255, rgb);
+	if (cache) {
+		colcache_color_t search;
+		VectorCopy (rgb, search.rgb);
+		col = Hash_FindElement (cache->tab, &search);
+		if (col)
+			return col->col;
+	}
+
+	for (i = 0; i < 256; i++) {
+		VectorSubtract (pal + i * 3, rgb, dist);
+		d = DotProduct (dist, dist);
+		if (d < bestd) {
+			bestd = d;
+			bestc = i;
+		}
+	}
+	if (cache) {
+		col = colcache_new_color (rgb, bestc);
+		Hash_AddElement (cache->tab, col);
+	}
+	return bestc;
+}
+
 tex_t *
 ConvertImage (const tex_t *tex, const byte *pal)
 {
-	tex_t      *new;
+	tex_t      *new = 0;
 	int         pixels;
 	int         bpp = 3;
 	int         i;
 	colcache_t *cache;
 
 	pixels = tex->width * tex->height;
-	new = malloc (field_offset (tex_t, data[pixels]));
+	new = malloc (sizeof (tex_t) + pixels);
+	new->data = (byte *) (new + 1);
 	new->width = tex->width;
 	new->height = tex->height;
 	new->format = tex_palette;
@@ -168,6 +203,14 @@ ConvertImage (const tex_t *tex, const byte *pal)
 			cache = ColorCache_New ();
 			for (i = 0; i < pixels; i++)
 				new->data[i] = ConvertColor (tex->data + i * bpp, pal, cache);
+			ColorCache_Delete (cache);
+			break;
+		case tex_frgba:
+			cache = ColorCache_New ();
+			for (i = 0; i < pixels; i++) {
+				float      *pix = (float *) (tex->data + i * bpp);
+				new->data[i] = ConvertFloatColor (pix, pal, cache);
+			}
 			ColorCache_Delete (cache);
 			break;
 	}

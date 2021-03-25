@@ -16,7 +16,6 @@ extern quat_t crosshair_color;
 extern struct cvar_s     *d_mipcap;
 extern struct cvar_s     *d_mipscale;
 
-extern struct cvar_s     *gl_driver;
 extern struct cvar_s     *gl_affinemodels;
 extern struct cvar_s	 *gl_anisotropy;
 extern struct cvar_s     *gl_clear;

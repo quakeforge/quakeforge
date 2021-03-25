@@ -249,6 +249,7 @@ vorbis_stream_close (sfx_t *sfx)
 	if (vf->data)
 		free (vf->data);
 	ov_clear (vf->vf);
+	free (vf->vf);
 	free (vf);
 	SND_SFX_StreamClose (sfx);
 }

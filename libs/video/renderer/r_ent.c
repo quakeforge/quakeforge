@@ -38,6 +38,7 @@
 #include <math.h>
 #include <stdlib.h>
 
+#include "QF/entity.h"
 #include "QF/model.h"
 #include "QF/msg.h"
 #include "QF/render.h"
@@ -70,6 +71,7 @@ R_AllocEntity (void)
 	if ((ent = free_entities)) {
 		free_entities = ent->next;
 		ent->next = 0;
+		ent->transform = 0;
 		return ent;
 	}
 
@@ -78,9 +80,12 @@ R_AllocEntity (void)
 	*entpool_tail = pool;
 	entpool_tail = &pool->next;
 
-	for (ent = pool->entities, i = 0; i < ENT_POOL_SIZE - 1; i++, ent++)
+	for (ent = pool->entities, i = 0; i < ENT_POOL_SIZE - 1; i++, ent++) {
 		ent->next = ent + 1;
+		ent->transform = 0;
+	}
 	ent->next = 0;
+	ent->transform = 0;
 	free_entities = pool->entities;
 
 	return R_AllocEntity ();
@@ -94,9 +99,18 @@ R_FreeAllEntities (void)
 	int         i;
 
 	for (pool = entity_pools; pool; pool = pool->next) {
-		for (ent = pool->entities, i = 0; i < ENT_POOL_SIZE - 1; i++, ent++)
+		for (ent = pool->entities, i = 0; i < ENT_POOL_SIZE - 1; i++, ent++) {
 			ent->next = ent + 1;
+			if (ent->transform) {
+				Transform_Delete (ent->transform);
+				ent->transform = 0;
+			}
+		}
 		ent->next = pool->next ? pool->next->entities : 0;
+		if (ent->transform) {
+			Transform_Delete (ent->transform);
+			ent->transform = 0;
+		}
 	}
 	free_entities = entity_pools ? entity_pools->entities : 0;
 }
@@ -121,27 +135,27 @@ R_EntityBlend (entity_t *ent, int pose, float interval)
 {
 	float       blend;
 
-	if (ent->pose_model != ent->model) {
-		ent->pose_model = ent->model;
-		ent->pose1 = pose;
-		ent->pose2 = pose;
+	if (ent->animation.nolerp) {
+		ent->animation.nolerp = 0;
+		ent->animation.pose1 = pose;
+		ent->animation.pose2 = pose;
 		return 0.0;
 	}
-	ent->frame_interval = interval;
-	if (ent->pose2 != pose) {
-		ent->frame_start_time = vr_data.realtime;
-		if (ent->pose2 == -1) {
-			ent->pose1 = pose;
+	ent->animation.frame_interval = interval;
+	if (ent->animation.pose2 != pose) {
+		ent->animation.frame_start_time = vr_data.realtime;
+		if (ent->animation.pose2 == -1) {
+			ent->animation.pose1 = pose;
 		} else {
-			ent->pose1 = ent->pose2;
+			ent->animation.pose1 = ent->animation.pose2;
 		}
-		ent->pose2 = pose;
+		ent->animation.pose2 = pose;
 		blend = 0.0;
 	} else if (vr_data.paused) {
 		blend = 1.0;
 	} else {
-		blend = (vr_data.realtime - ent->frame_start_time)
-				/ ent->frame_interval;
+		blend = (vr_data.realtime - ent->animation.frame_start_time)
+				/ ent->animation.frame_interval;
 		blend = min (blend, 1.0);
 	}
 	return blend;

@@ -43,8 +43,13 @@ libs_util_libQFutil_la_SOURCES= \
 	libs/util/bspfile.c \
 	libs/util/buildnum.c \
 	libs/util/cbuf.c \
+	libs/util/cexpr-lex.l \
+	libs/util/cexpr-parse.y \
+	libs/util/cexpr-type.c \
+	libs/util/cexpr-vars.c \
 	libs/util/checksum.c \
 	libs/util/cmd.c \
+	libs/util/cmem.c \
 	libs/util/crc.c \
 	libs/util/cvar.c \
 	libs/util/dstring.c \
@@ -59,16 +64,17 @@ libs_util_libQFutil_la_SOURCES= \
 	libs/util/mersenne.c \
 	libs/util/msg.c \
 	libs/util/pakfile.c \
+	libs/util/plist.c \
 	libs/util/plugin.c \
 	libs/util/qargs.c \
 	libs/util/qendian.c \
-	libs/util/qfplist.c \
 	libs/util/quakefs.c \
 	libs/util/quakeio.c \
 	libs/util/riff.c \
 	libs/util/script.c \
 	libs/util/segtext.c \
 	libs/util/set.c \
+	libs/util/simd.c \
 	libs/util/sizebuf.c \
 	libs/util/string.c \
 	libs/util/sys.c \
@@ -80,5 +86,14 @@ libs_util_libQFutil_la_SOURCES= \
 	libs/util/wadfile.c \
 	libs/util/zone.c \
 	$(dirent) $(fnmatch) $(getopt)
+
+BUILT_SOURCES += \
+    libs/util/cexpr-lex.c \
+    libs/util/cexpr-parse.c
+
+libs/util/cexpr-parse.c: libs/util/cexpr-parse.y
+	$(AM_V_YACC)$(YACCCOMPILE) $< -o $@
+libs/util/cexpr-lex.c: libs/util/cexpr-lex.l libs/util/cexpr-parse.h
+	$(AM_V_LEX)$(LEXCOMPILE) -o$@ $<
 
 EXTRA_DIST += $(fnmatch_src) $(getopt_src)

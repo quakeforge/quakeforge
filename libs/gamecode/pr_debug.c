@@ -373,7 +373,7 @@ pr_debug_clear (progs_t *pr, void *data)
 	Hash_FlushTable (res->file_hash);
 	Hash_FlushTable (res->debug_syms);
 	Hash_FlushTable (res->compunits);
-	PR_RESRESET (compunit_t, res->compmap);
+	PR_RESRESET (res->compmap);
 	res->debug = 0;
 	res->auxfunctions = 0;
 	if (res->auxfunction_map)
@@ -461,7 +461,7 @@ byteswap_def (pr_def_t *def)
 static compunit_t *
 new_compunit (prdeb_resources_t *res)
 {
-	PR_RESNEW (compunit_t, res->compmap);
+	return PR_RESNEW (res->compmap);
 }
 
 static void

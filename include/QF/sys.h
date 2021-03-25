@@ -83,21 +83,24 @@ double Sys_DoubleTime (void);
 void Sys_TimeOfDay(date_t *date);
 
 void Sys_MaskPrintf (int mask, const char *fmt, ...) __attribute__((format(printf,2,3)));
-#define SYS_DEV     (1|0)
-#define SYS_WARN    (1|2)	// bit 0 so developer 1 will pick it up
-#define SYS_VID     (1|4)
-#define SYS_FS_NF   (1|8)
-#define SYS_FS_F    (1|16)
-#define SYS_FS      (1|32)
-#define SYS_NET     (1|64)
-#define SYS_RUA_OBJ (1|128)
-#define SYS_RUA_MSG (1|256)
-#define SYS_SND     (1|512)
-#define SYS_GLT     (1|1024)
-#define SYS_GLSL    (1|2048)
-#define SYS_SKIN    (1|4096)
-#define SYS_MODEL   (1|8192)
-#define SYS_CSQC    (1|16384)
+// remember to update developer_flags in cvar.c
+#define SYS_DEV             (1|0)
+#define SYS_WARN            (1|2)	// bit 0 so developer 1 will pick it up
+#define SYS_VID             (1|4)
+#define SYS_FS_NF           (1|8)
+#define SYS_FS_F            (1|16)
+#define SYS_FS              (1|32)
+#define SYS_NET             (1|64)
+#define SYS_RUA_OBJ         (1|128)
+#define SYS_RUA_MSG         (1|256)
+#define SYS_SND             (1|512)
+#define SYS_GLT             (1|1024)
+#define SYS_GLSL            (1|2048)
+#define SYS_SKIN            (1|4096)
+#define SYS_MODEL           (1|8192)
+#define SYS_VULKAN          (1|16384)
+#define SYS_VULKAN_PARSE    (1|32768)
+#define SYS_CSQC            (1|65536)
 
 int Sys_CheckInput (int idle, int net_socket);
 const char *Sys_ConsoleInput (void);
@@ -121,7 +124,8 @@ void Sys_Init_Cvars (void);
 // memory protection
 //
 void Sys_MakeCodeWriteable (uintptr_t startaddr, size_t length);
-void Sys_PageIn (void *ptr, int size);
+void Sys_PageIn (void *ptr, size_t size);
+void *Sys_Alloc (size_t size);
 
 //
 // system IO

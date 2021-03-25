@@ -54,6 +54,7 @@
 #include "compat.h"
 #include "r_internal.h"
 #include "vid_internal.h"
+#include "vid_sw.h"
 
 /* SCREEN SHOTS */
 
@@ -66,7 +67,8 @@ sw32_SCR_CaptureBGR (void)
 	byte       *dst;
 
 	count = vid.width * vid.height;
-	tex = malloc (field_offset (tex_t, data[count * 3]));
+	tex = malloc (sizeof (tex_t) + count * 3);
+	tex->data = (byte *) (tex + 1);
 	SYS_CHECKMEM (tex);
 	tex->width = vid.width;
 	tex->height = vid.height;
@@ -101,8 +103,8 @@ sw32_SCR_ScreenShot_f (void)
 	int         pcx_len;
 
 	// find a file name to save it to
-	if (!QFS_NextFilename (pcxname,
-						   va ("%s/qf", qfs_gamedir->dir.shots), ".pcx")) {
+	if (!QFS_NextFilename (pcxname, va (0, "%s/qf",
+										qfs_gamedir->dir.shots), ".pcx")) {
 		Sys_Printf ("SCR_ScreenShot_f: Couldn't create a PCX");
 	} else {
 		// enable direct drawing of console to back buffer
@@ -135,33 +137,13 @@ sw32_SCR_ScreenShot_f (void)
 	dstring_delete (pcxname);
 }
 
-/*
-	SCR_UpdateScreen
-
-	This is called every frame, and can also be called explicitly to flush
-	text to the screen.
-
-	WARNING: be very careful calling this from elsewhere, because the refresh
-	needs almost the entire 256k of stack space!
-*/
 void
-sw32_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
+sw32_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 {
 	vrect_t     vrect;
 
 	if (scr_skipupdate)
 		return;
-
-	vr_data.realtime = realtime;
-
-	scr_copytop = 0;
-	vr_data.scr_copyeverything = 0;
-
-	if (!scr_initialized)
-		return;							// not initialized yet
-
-	if (vid.recalc_refdef)
-		SCR_CalcRefdef ();
 
 	// do 3D refresh drawing, and then update the screen
 	sw32_D_EnableBackBufferAccess ();		// of all overlay stuff if drawing
@@ -216,5 +198,5 @@ sw32_SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs
 		vrect.height = scr_vrect.height;
 		vrect.next = 0;
 	}
-	VID_Update (&vrect);
+	sw32_ctx->update (&vrect);
 }

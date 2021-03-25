@@ -127,7 +127,7 @@ bi_refresh (progs_t *pr)
 	IN_ProcessEvents ();
 	//GIB_Thread_Execute ();
 	Cbuf_Execute_Stack (qwaq_cbuf);
-	r_funcs->SCR_UpdateScreen (con_realtime, bi_3d, bi_2dfuncs);
+	SCR_UpdateScreen (con_realtime, bi_3d, bi_2dfuncs);
 	R_FLOAT (pr) = con_frametime;
 }
 
@@ -161,9 +161,6 @@ static builtin_t builtins[] = {
 static void
 bi_shutdown (void *data)
 {
-	S_Shutdown ();
-	IN_Shutdown ();
-	VID_Shutdown ();
 }
 
 void

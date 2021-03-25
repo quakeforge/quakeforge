@@ -41,6 +41,7 @@
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 
+#include "QF/entity.h"
 #include "QF/model.h"
 #include "QF/render.h"
 #include "QF/sys.h"
@@ -66,8 +67,8 @@ R_GetSpriteFrame (entity_t *currententity)
 	mspriteframe_t *pspriteframe;
 	mspritegroup_t *pspritegroup;
 
-	psprite = currententity->model->cache.data;
-	frame = currententity->frame;
+	psprite = currententity->renderer.model->cache.data;
+	frame = currententity->animation.frame;
 
 	if ((frame >= psprite->numframes) || (frame < 0)) {
 		Sys_MaskPrintf (SYS_DEV, "R_DrawSprite: no such frame %d\n", frame);
@@ -82,7 +83,7 @@ R_GetSpriteFrame (entity_t *currententity)
 		numframes = pspritegroup->numframes;
 		fullinterval = pintervals[numframes - 1];
 
-		time = vr_data.realtime + currententity->syncbase;
+		time = vr_data.realtime + currententity->animation.syncbase;
 
 		// when loading in Mod_LoadSpriteGroup, we guaranteed all interval
 		// values are positive, so we don't have to worry about division by 0
@@ -103,35 +104,28 @@ static void
 R_DrawSpriteModel_f (entity_t *e)
 {
 	float			 modelalpha, color[4];
-	float			*up, *right;
+	vec4f_t          up = {}, right = {};
+	vec4f_t          origin, point;
 	msprite_t		*psprite;
 	mspriteframe_t	*frame;
-	vec3_t			 point, point1, point2, v_up;
 
 	// don't bother culling, it's just a single polygon without a surface cache
 	frame = R_GetSpriteFrame (e);
-	psprite = e->model->cache.data;
+	psprite = e->renderer.model->cache.data;
 
 	if (psprite->type == SPR_ORIENTED) {	// bullet marks on walls
-		up = e->transform + 2 * 4;
-		right = e->transform + 1 * 4;
+		up = Transform_Up (e->transform);
+		right = Transform_Right (e->transform);
 	} else if (psprite->type == SPR_VP_PARALLEL_UPRIGHT) {
-		v_up[0] = 0;
-		v_up[1] = 0;
-		v_up[2] = 1;
-		up = v_up;
-		right = vright;
+		up = (vec4f_t) { 0, 0, 1, 0 };
+		VectorCopy (vright, right);
 	} else {								// normal sprite
-		up = vup;
-		right = vright;
-	}
-	if (e->scale != 1.0) {
-		VectorScale (up, e->scale, up);
-		VectorScale (right, e->scale, right);
+		VectorCopy (vup, up);
+		VectorCopy (vright, right);
 	}
 
-	VectorCopy (e->colormod, color);
-	modelalpha = color[3] = e->colormod[3];
+	VectorCopy (e->renderer.colormod, color);
+	modelalpha = color[3] = e->renderer.colormod[3];
 	if (modelalpha < 1.0)
 		qfglDepthMask (GL_FALSE);
 
@@ -141,23 +135,24 @@ R_DrawSpriteModel_f (entity_t *e)
 
 	qfglColor4fv (color);
 
-	qfglTexCoord2f (0, 1);
-	VectorMultAdd (e->origin, frame->down, up, point1);
-	VectorMultAdd (point1, frame->left, right, point);
-	qfglVertex3fv (point);
+	origin = Transform_GetWorldPosition (e->transform);
+	point = origin + frame->down * up + frame->left * right;
 
+	qfglTexCoord2f (0, 1);
+	qfglVertex3fv (&point[0]);
+
+	point = origin + frame->up * up + frame->left * right;
 	qfglTexCoord2f (0, 0);
-	VectorMultAdd (e->origin, frame->up, up, point2);
-	VectorMultAdd (point2, frame->left, right, point);
-	qfglVertex3fv (point);
+	qfglVertex3fv (&point[0]);
+
+	point = origin + frame->up * up + frame->right * right;
 
 	qfglTexCoord2f (1, 0);
-	VectorMultAdd (point2, frame->right, right, point);
-	qfglVertex3fv (point);
+	qfglVertex3fv (&point[0]);
 
+	point = origin + frame->down * up + frame->right * right;
 	qfglTexCoord2f (1, 1);
-	VectorMultAdd (point1, frame->right, right, point);
-	qfglVertex3fv (point);
+	qfglVertex3fv (&point[0]);
 
 	qfglEnd ();
 
@@ -169,60 +164,58 @@ static void
 R_DrawSpriteModel_VA_f (entity_t *e)
 {
 	unsigned char	 modelalpha, color[4];
-	float			*up, *right;
+	vec4f_t          up = {}, right = {};
+	vec4f_t          origin, point;
 	int				 i;
 //	unsigned int	 vacount;
 	msprite_t		*psprite;
 	mspriteframe_t	*frame;
-	vec3_t			 point1, point2, v_up;
 	varray_t2f_c4ub_v3f_t		*VA;
 
 	VA = gl_spriteVertexArray; // FIXME: Despair
 
 	// don't bother culling, it's just a single polygon without a surface cache
 	frame = R_GetSpriteFrame (e);
-	psprite = e->model->cache.data;
+	psprite = e->renderer.model->cache.data;
 
 	qfglBindTexture (GL_TEXTURE_2D, frame->gl_texturenum); // FIXME: DESPAIR
 
 	if (psprite->type == SPR_ORIENTED) {	// bullet marks on walls
-		up = e->transform + 2 * 4;
-		right = e->transform + 1 * 4;
+		up = Transform_Up (e->transform);
+		right = Transform_Right (e->transform);
 	} else if (psprite->type == SPR_VP_PARALLEL_UPRIGHT) {
-		v_up[0] = 0;
-		v_up[1] = 0;
-		v_up[2] = 1;
-		up = v_up;
-		right = vright;
+		up = (vec4f_t) { 0, 0, 1, 0 };
+		VectorCopy (vright, right);
 	} else {								// normal sprite
-		up = vup;
-		right = vright;
-	}
-	if (e->scale != 1.0) {
-		VectorScale (up, e->scale, up);
-		VectorScale (right, e->scale, right);
+		VectorCopy (vup, up);
+		VectorCopy (vright, right);
 	}
 
-	for (i = 0; i < 4; i++)
-		color[i] = e->colormod[i] * 255;
+	for (i = 0; i < 4; i++) {
+		color[i] = e->renderer.colormod[i] * 255;
+	}
 	memcpy (VA[0].color, color, 4);
+	memcpy (VA[1].color, color, 4);
+	memcpy (VA[2].color, color, 4);
+	memcpy (VA[3].color, color, 4);
 
 	modelalpha = color[3];
 	if (modelalpha < 255)
 		qfglDepthMask (GL_FALSE);
 
-	VectorMultAdd (e->origin, frame->down, up, point1);
-	VectorMultAdd (point1, frame->left, right, VA[0].vertex);
+	origin = Transform_GetWorldPosition (e->transform);
 
-	memcpy (VA[1].color, color, 4);
-	VectorMultAdd (e->origin, frame->up, up, point2);
-	VectorMultAdd (point2, frame->left, right, VA[1].vertex);
+	point = origin + frame->down * up + frame->left * right;
+	VectorCopy (point, VA[0].vertex);
 
-	memcpy (VA[2].color, color, 4);
-	VectorMultAdd (point2, frame->right, right, VA[2].vertex);
+	point = origin + frame->up * up + frame->left * right;
+	VectorCopy (point, VA[1].vertex);
 
-	memcpy (VA[3].color, color, 4);
-	VectorMultAdd (point1, frame->right, right, VA[3].vertex);
+	point = origin + frame->up * up + frame->right * right;
+	VectorCopy (point, VA[2].vertex);
+
+	point = origin + frame->down * up + frame->right * right;
+	VectorCopy (point, VA[3].vertex);
 
 //	VA += 4;
 //	vacount += 4;
@@ -243,7 +236,7 @@ gl_R_InitSprites (void)
 	int		i;
 
 	if (r_init) {
-		if (gl_va_capable) {			// 0 == gl_va_capable
+		if (gl_va_capable) {
 			gl_R_DrawSpriteModel = R_DrawSpriteModel_VA_f;
 
 #if 0

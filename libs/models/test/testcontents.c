@@ -145,9 +145,9 @@ run_test (test_t *test)
 		res = 1;
 
 	if (test->desc)
-		desc = va ("(%d) %s", (int)(long)(test - tests), test->desc);
+		desc = va (0, "(%d) %s", (int)(long)(test - tests), test->desc);
 	else
-		desc = va ("test #%d", (int)(long)(test - tests));
+		desc = va (0, "test #%d", (int)(long)(test - tests));
 	if (verbose >= 0 || !res) {
 		if (output)
 			puts("");

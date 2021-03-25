@@ -29,6 +29,45 @@ static vec3_t test_angles[] = {
 };
 #define num_angle_tests (sizeof (test_angles) / sizeof (test_angles[0]))
 
+static struct {
+	vec3_t      a;
+	vec3_t      b;
+	quat_t      expect;
+} quat_vector_rotation_tests[] = {
+	{{1, 0, 0}, {1, 0, 0}, {0, 0, 0, 1}},
+	{{0, 1, 0}, {0, 1, 0}, {0, 0, 0, 1}},
+	{{0, 0, 1}, {0, 0, 1}, {0, 0, 0, 1}},
+	{{1, 0, 0}, {8, 0, 0}, {0, 0, 0, 1}},
+	{{0, 8, 0}, {0, 1, 0}, {0, 0, 0, 1}},
+	{{0, 0, 8}, {0, 0, 8}, {0, 0, 0, 1}},
+	{{1, 0, 0}, {-1, 0, 0}, {0, 0, 0, 0}}, // x, y, z = NaN
+	{{0, -1, 0}, {0, 1, 0}, {0, 0, 0, 0}}, // x, y, z = NaN
+	{{0, 0, 1}, {0, 0, -1}, {0, 0, 0, 0}}, // x, y, z = NaN
+	{{-1, 0, 0}, {8, 0, 0}, {0, 0, 0, 0}}, // x, y, z = NaN
+	{{0, 8, 0}, {0, -1, 0}, {0, 0, 0, 0}}, // x, y, z = NaN
+	{{0, 0, -8}, {0, 0, 8}, {0, 0, 0, 0}}, // x, y, z = NaN
+	// excessive for float, but if vec_t becomes double...
+	// 1/50 second orbiting JNSQ Kerbin at 120km altitude. While this has
+	// nothing to do with quakeforge (yet?), it came up when testing camera
+	// rotation in KSP and Unity failed miserably. I don't remember the exact
+	// details, but I could see significant snapping in the rotation (I thought
+	// it was a few times per second, but these numbers indicate it must have
+	// been every few seconds).
+	// The quaternion is unit to 9 sigfigs (a little larger)
+	{{1720000, 0, 0}, {1719999.9983028059, 76.409082595828366, 0}, {0, 0, 2.22119434e-5, 1}},
+	// 1/20 second, same situation
+	{{1720000, 0, 0}, {1719999.9893925365, 191.02270615971355, 0}, {0, 0, 5.55298575e-5, 1}},
+	// 1/5 second, same situation
+	{{1720000, 0, 0}, {1719999.8302805868, 764.09080107761736, 0}, {0, 0, 2.2211943e-4, 1}},
+	// 1/4 second, same situation
+	{{1720000, 0, 0}, {1719999.7348134194, 955.11348367609469, 0}, {0, 0, 2.77649262e-4, 1}},
+	// 1/3 second, same situation. This is (float) 1 ulp in w: about 0.0424
+	// degrees.
+	// The quaternion is unit to 9 sigfigs (a little larger)
+	{{1720000, 0, 0}, {1719999.5285571995, 1273.4845939975546, 0}, {0, 0, 3.70199094e-4, 0.99999994}},
+};
+#define num_quat_vector_rotation_tests (sizeof (quat_vector_rotation_tests) / sizeof (quat_vector_rotation_tests[0]))
+
 // return true if a and b are close enough (yay, floats)
 static int
 compare (vec_t a, vec_t b)
@@ -200,6 +239,154 @@ fail:
 	return 0;
 }
 
+// XXX FIXME see usage in test_rotation4. need to investigate whether
+// -ffast-math is any real benefit
+#define ISNAN(x) (((x) & 0x7f800000) == 0x7f800000 && ((x) & 0x7fffff))
+
+static int
+test_rotation4 (const vec3_t a, const vec3_t b, const quat_t expect)
+{
+	int         i;
+	union { int x[4]; vec_t q[4]; } q;
+	vec_t      *quat = q.q;
+	vec3_t      t;
+	vec_t       d = 0;
+
+	VectorZero (t);
+
+	// find the rotation vector between a and b
+	QuatRotation (a, b, quat);
+
+	if (quat[3] == 0) {
+		if (expect[3] != 0) {
+			goto fail;
+		}
+		// expect NaN for the vector components because the vectors are
+		// anti-parallel and thus the rotation axis is undefined
+		//XXX FIXME(?) still using -ffast-math which implies
+		// -ffinite-math-only which in turn disables nan/inf checks, so have
+		// to do it by hand
+		// if (!(isnan(quat[0]) && isnan(quat[1]) && isnan(quat[2]))) {
+		if (!(ISNAN(q.x[0]) && ISNAN(q.x[1]) && ISNAN(q.x[2]))) {
+			goto fail;
+		}
+	} else {
+		// the vectors are not anti-parallel and thus the rotation axis is
+		// defined, so NaN is invalid
+		// XXX FIXME see above
+		//if (isnan(quat[0]) || isnan(quat[1]) || isnan(quat[2])) {
+		if (ISNAN(q.x[0]) || ISNAN(q.x[1]) || ISNAN(q.x[2])) {
+			goto fail;
+		}
+		for (i = 0; i < 4; i++) {
+			// yes, float precision will make it difficult to set up expect
+			// but it is at least consistent (ie, the "errors" are not at all
+			// random and thus will be the same from run to run)
+			if (quat[i] != expect[i]) {
+				goto fail;
+			}
+		}
+		QuatMultVec(quat, a, t);
+
+		d = DotProduct (t, b) / (VectorLength (t) * VectorLength (b)) - 1;
+		if (d * d > 1e-8) {
+			goto fail;
+		}
+	}
+	return 1;
+fail:
+	printf ("\ntest_rotation4\n");
+	printf ("a: %11.9g %11.9g %11.9g\n", VectorExpand(a));
+	printf ("b: %11.9g %11.9g %11.9g\n", VectorExpand(b));
+	printf ("q: %11.9g %11.9g %11.9g %11.9g\n", QuatExpand(quat));
+	printf ("e: %11.9g %11.9g %11.9g %11.9g\n", QuatExpand(expect));
+	printf ("t: %11.9g %11.9g %11.9g\n", VectorExpand(t));
+	printf ("d: %11.9g\n", d);
+	return 0;
+}
+
+#define s05 0.70710678118654757
+
+static struct {
+	quat_t      q;
+	vec_t       expect[9];
+} quat_mat_tests[] = {
+	{{0, 0, 0, 1},
+		{1, 0, 0,
+		 0, 1, 0,
+		 0, 0, 1}},
+	{{1, 0, 0, 0},
+		{1,  0,  0,
+		 0, -1,  0,
+		 0,  0, -1}},
+	{{0, 1, 0, 0},
+		{-1, 0,  0,
+		  0, 1,  0,
+		  0, 0, -1}},
+	{{0, 0, 1, 0},
+		{-1,  0, 0,
+		  0, -1, 0,
+		  0,  0, 1}},
+	{{0.5, 0.5, 0.5, 0.5},
+		{0, 0, 1,
+		 1, 0, 0,
+		 0, 1, 0}},
+	{{s05, 0.0, 0.0, s05},
+		{1,             0,             0,
+		 0, 5.96046448e-8,   -0.99999994,
+		 0,    0.99999994, 5.96046448e-8}},
+};
+#define num_quat_mat_tests (sizeof (quat_mat_tests) / sizeof (quat_mat_tests[0]))
+
+static int
+test_quat_mat(const quat_t q, const quat_t expect)
+{
+	int         i;
+	vec_t       m[9];
+
+	QuatToMatrix (q, m, 0, 0);
+
+	for (i = 0; i < 9; i++)
+		if (m[i] != expect[i])	// exact tests here
+			goto fail;
+	return 1;
+fail:
+	printf ("\ntest_quat_mat\n");
+	printf ("%11.9g %11.9g %11.9g %11.9g\n", QuatExpand (q));
+	printf ("%11.9g %11.9g %11.9g   %11.9g %11.9g %11.9g\n",
+			VectorExpand (m + 0), VectorExpand (expect + 0));
+	printf ("%11.9g %11.9g %11.9g   %11.9g %11.9g %11.9g\n",
+			VectorExpand (m + 3), VectorExpand (expect + 3));
+	printf ("%11.9g %11.9g %11.9g   %11.9g %11.9g %11.9g\n",
+			VectorExpand (m + 6), VectorExpand (expect + 6));
+	return 0;
+}
+
+static int
+test_quat_mat2(const quat_t q, const quat_t expect)
+{
+	int         i;
+	vec_t       m[9];
+
+	QuatToMatrix (q, m, 0, 1);
+	Mat3Transpose (m, m);
+
+	for (i = 0; i < 9; i++)
+		if (m[i] != expect[i])	// exact tests here
+			goto fail;
+	return 1;
+fail:
+	printf ("\ntest_quat_mat\n");
+	printf ("%11.9g %11.9g %11.9g %11.9g\n", QuatExpand (q));
+	printf ("%11.9g %11.9g %11.9g   %11.9g %11.9g %11.9g\n",
+			VectorExpand (m + 0), VectorExpand (expect + 0));
+	printf ("%11.9g %11.9g %11.9g   %11.9g %11.9g %11.9g\n",
+			VectorExpand (m + 3), VectorExpand (expect + 3));
+	printf ("%11.9g %11.9g %11.9g   %11.9g %11.9g %11.9g\n",
+			VectorExpand (m + 6), VectorExpand (expect + 6));
+	return 0;
+}
+
 int
 main (int argc, const char **argv)
 {
@@ -228,5 +415,29 @@ main (int argc, const char **argv)
 		if (!test_rotation3 (test_angles[i]))
 			res = 1;
 	}
+
+	for (i = 0; i < num_quat_vector_rotation_tests; i++) {
+		vec_t      *a = quat_vector_rotation_tests[i].a;
+		vec_t      *b = quat_vector_rotation_tests[i].b;
+		vec_t      *expect = quat_vector_rotation_tests[i].expect;
+		if (!test_rotation4 (a, b, expect)) {
+			res = 1;
+		}
+	}
+
+	for (i = 0; i < num_quat_mat_tests; i ++) {
+		vec_t      *q = quat_mat_tests[i].q;
+		vec_t      *expect = quat_mat_tests[i].expect;
+		if (!test_quat_mat (q, expect))
+			res = 1;
+	}
+
+	for (i = 0; i < num_quat_mat_tests; i ++) {
+		vec_t      *q = quat_mat_tests[i].q;
+		vec_t      *expect = quat_mat_tests[i].expect;
+		if (!test_quat_mat2 (q, expect))
+			res = 1;
+	}
+
 	return res;
 }

@@ -47,8 +47,8 @@
 #include "QF/bspfile.h"
 #include "QF/dstring.h"
 #include "QF/mathlib.h"
+#include "QF/plist.h"
 #include "QF/progs.h"
-#include "QF/qfplist.h"
 #include "QF/qtypes.h"
 #include "QF/quakefs.h"
 #include "QF/script.h"
@@ -125,7 +125,8 @@ MatchTargets (void)
 		// set the style on the source ent for switchable lights
 		if (entities[j].style) {
 			entities[i].style = entities[j].style;
-			SetKeyValue (&entities[i], "style", va ("%i", entities[i].style));
+			SetKeyValue (&entities[i], "style", va (0, "%i",
+													entities[i].style));
 		}
 
 		if (entities[i].spotcone >= 0) {
@@ -178,12 +179,12 @@ LoadEntities (void)
 
 	script = Script_New ();
 	Script_Start (script, "ent data", bsp->entdata);
-	entity_list = ED_ConvertToPlist (script, 1);
+	entity_list = ED_ConvertToPlist (script, 1, 0);
 	Script_Delete (script);
 
 	// start parsing
 	num_entities = PL_A_NumObjects (entity_list);
-	entities = malloc (num_entities * sizeof (entity_t));;
+	entities = malloc (num_entities * sizeof (entity_t));
 
 	// go through all the entities
 	for (i = 0; i < num_entities; i++) {
@@ -207,7 +208,7 @@ LoadEntities (void)
 		}
 		entity->dict = PL_ObjectAtIndex (entity_list, i);
 
-		dict = PL_NewDictionary ();
+		dict = PL_NewDictionary (0);
 
 		// go through all the keys in this entity
 		keys = PL_D_AllKeys (entity->dict);

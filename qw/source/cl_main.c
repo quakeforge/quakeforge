@@ -92,10 +92,12 @@
 #include "QF/plugin/console.h"
 
 #include "buildnum.h"
-#include "clview.h"
 #include "compat.h"
 #include "csqc.h"
 #include "sbar.h"
+
+#include "client/temp_entities.h"
+#include "client/view.h"
 
 #include "qw/bothdefs.h"
 #include "qw/pmove.h"
@@ -111,7 +113,6 @@
 #include "qw/include/cl_pred.h"
 #include "qw/include/cl_skin.h"
 #include "qw/include/cl_slist.h"
-#include "qw/include/cl_tent.h"
 #include "qw/include/client.h"
 #include "qw/include/game.h"
 #include "qw/include/host.h"
@@ -322,7 +323,7 @@ CL_CheckForResend (void)
 
 	connect_time = realtime + t2 - t1;	// for retransmit requests
 
-	VID_SetCaption (va ("Connecting to %s", cls.servername->str));
+	VID_SetCaption (va (0, "Connecting to %s", cls.servername->str));
 	Sys_Printf ("Connecting to %s...\n", cls.servername->str);
 	Netchan_SendPacket (strlen (getchallenge), (void *) getchallenge,
 						cls.server_addr);
@@ -418,8 +419,7 @@ CL_ClearState (void)
 	CL_Init_Entity (&cl.viewent);
 
 	Sys_MaskPrintf (SYS_DEV, "Clearing memory\n");
-	if (viddef.flush_caches)
-		viddef.flush_caches ();
+	VID_ClearMemory ();
 	Mod_ClearAll ();
 	if (host_hunklevel)					// FIXME: check this...
 		Hunk_FreeToLowMark (host_hunklevel);
@@ -790,7 +790,7 @@ CL_NextDemo (void)
 		}
 	}
 
-	Cbuf_InsertText (cl_cbuf, va ("playdemo %s\n", cls.demos[cls.demonum]));
+	Cbuf_InsertText (cl_cbuf, va (0, "playdemo %s\n", cls.demos[cls.demonum]));
 	cls.demonum++;
 }
 
@@ -1094,7 +1094,7 @@ CL_Download_f (void)
 		cls.downloadtype = dl_single;
 
 		MSG_WriteByte (&cls.netchan.message, clc_stringcmd);
-		SZ_Print (&cls.netchan.message, va ("download %s\n", Cmd_Argv (1)));
+		SZ_Print (&cls.netchan.message, va (0, "download %s\n", Cmd_Argv (1)));
 	} else {
 		Sys_Printf ("error downloading %s: %s\n", Cmd_Argv (1),
 					strerror (errno));
@@ -1104,7 +1104,7 @@ CL_Download_f (void)
 static void
 Force_CenterView_f (void)
 {
-	cl.viewangles[PITCH] = 0;
+	cl.viewstate.angles[PITCH] = 0;
 }
 
 static void
@@ -1113,12 +1113,12 @@ CL_PRotate_f (void)
 	if ((cl.fpd & FPD_LIMIT_PITCH) || Cmd_Argc() < 2)
 		return;
 
-	cl.viewangles[PITCH] += atoi (Cmd_Argv (1));
+	cl.viewstate.angles[PITCH] += atoi (Cmd_Argv (1));
 
-	if (cl.viewangles[PITCH] < -70)
-		cl.viewangles[PITCH] = -70;
-	else if (cl.viewangles[PITCH] > 80)
-		cl.viewangles[PITCH] = 80;
+	if (cl.viewstate.angles[PITCH] < -70)
+		cl.viewstate.angles[PITCH] = -70;
+	else if (cl.viewstate.angles[PITCH] > 80)
+		cl.viewstate.angles[PITCH] = 80;
 }
 
 static void
@@ -1127,8 +1127,8 @@ CL_Rotate_f (void)
 	if ((cl.fpd & FPD_LIMIT_YAW) || Cmd_Argc() < 2)
 		return;
 
-	cl.viewangles[YAW] += atoi (Cmd_Argv (1));
-	cl.viewangles[YAW] = anglemod (cl.viewangles[YAW]);
+	cl.viewstate.angles[YAW] += atoi (Cmd_Argv (1));
+	cl.viewstate.angles[YAW] = anglemod (cl.viewstate.angles[YAW]);
 }
 
 void
@@ -1523,7 +1523,7 @@ Host_WriteConfiguration (void)
 	QFile      *f;
 
 	if (host_initialized && cl_writecfg->int_val) {
-		char       *path = va ("%s/config.cfg", qfs_gamedir->dir.def);
+		char       *path = va (0, "%s/config.cfg", qfs_gamedir->dir.def);
 
 		f = QFS_WOpen (path, 0);
 		if (!f) {
@@ -1612,6 +1612,8 @@ Host_Frame (float time)
 	oldrealtime = realtime;
 	host_frametime = min (host_frametime, 0.2);
 
+	cl.viewstate.frametime = host_frametime;
+
 	con_frametime = con_realtime - oldcon_realtime;
 	oldcon_realtime = con_realtime;
 
@@ -1638,8 +1640,8 @@ Host_Frame (float time)
 		oldself = &cl.frames[(cls.netchan.outgoing_sequence - 1)
 							 & UPDATE_MASK].playerstate[cl.playernum];
 		self->messagenum = cl.parsecount;
-		VectorCopy (oldself->pls.origin, self->pls.origin);
-		VectorCopy (oldself->pls.velocity, self->pls.velocity);
+		VectorCopy (oldself->pls.es.origin, self->pls.es.origin);
+		VectorCopy (oldself->pls.es.velocity, self->pls.es.velocity);
 		VectorCopy (oldself->viewangles, self->viewangles);
 
 		CL_ParseClientdata ();
@@ -1708,7 +1710,7 @@ Host_Frame (float time)
 
 	if (cls.demo_capture) {
 		tex_t      *tex = r_funcs->SCR_CaptureBGR ();
-		WritePNGqfs (va ("%s/qfmv%06d.png", qfs_gamedir->dir.shots,
+		WritePNGqfs (va (0, "%s/qfmv%06d.png", qfs_gamedir->dir.shots,
 						 cls.demo_capture++),
 					 tex->data, tex->width, tex->height);
 		free (tex);
@@ -1764,7 +1766,7 @@ CL_Init_Memory (void)
 		Sys_Error ("Only %4.1f megs of memory reported, can't execute game",
 				   mem_size / (float) 0x100000);
 
-	mem_base = malloc (mem_size);
+	mem_base = Sys_Alloc (mem_size);
 
 	if (!mem_base)
 		Sys_Error ("Can't allocate %d", mem_size);
@@ -1790,7 +1792,7 @@ CL_Autoexec (int phase)
 		Cbuf_AddText (cl_cbuf, "exec autoexec.cfg\n");
 	}
 
-	Cbuf_AddText (cl_cbuf, va ("cmd_warncmd %d\n", cmd_warncmd_val));
+	Cbuf_AddText (cl_cbuf, va (0, "cmd_warncmd %d\n", cmd_warncmd_val));
 }
 
 void
@@ -1890,10 +1892,5 @@ Host_Shutdown (void *data)
 
 	Host_WriteConfiguration ();
 
-	CDAudio_Shutdown ();
 	CL_HTTP_Shutdown ();
-	NET_Shutdown ();
-	S_Shutdown ();
-	IN_Shutdown ();
-	VID_Shutdown ();
 }

@@ -823,7 +823,7 @@ GIB_File_Write_f (void)
 	}
 
 	path = GIB_Argv (1);
-	QFS_WriteFile (va ("%s/%s", qfs_gamedir->dir.def, path),
+	QFS_WriteFile (va (0, "%s/%s", qfs_gamedir->dir.def, path),
 				   GIB_Argv(2), GIB_Argd(2)->size-1);
 }
 

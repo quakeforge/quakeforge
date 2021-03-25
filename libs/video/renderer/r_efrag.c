@@ -30,13 +30,12 @@
 
 #include <stdlib.h>
 
+#include "QF/entity.h"
 #include "QF/render.h"
 #include "QF/sys.h"
 
+#include "qfalloca.h"
 #include "r_internal.h"
-
-static mnode_t    *r_pefragtopnode;
-static vec3_t      r_emins, r_emaxs;
 
 typedef struct s_efrag_list {
 	struct s_efrag_list *next;
@@ -47,10 +46,6 @@ static efrag_t    *r_free_efrags;
 static t_efrag_list *efrag_list;
 
 /* ENTITY FRAGMENT FUNCTIONS */
-
-static efrag_t   **lastlink;
-static entity_t   *r_addent;
-
 
 static inline void
 init_efrag_list (t_efrag_list *efl)
@@ -89,7 +84,7 @@ R_ClearEfrags (void)
 	if (!efrag_list)
 		efrag_list = calloc (1, sizeof (t_efrag_list));
 
-	r_free_efrags = efrag_list->efrags;;
+	r_free_efrags = efrag_list->efrags;
 	for (efl = efrag_list; efl; efl = efl->next) {
 		init_efrag_list (efl);
 		if (efl->next)
@@ -107,7 +102,7 @@ R_RemoveEfrags (entity_t *ent)
 {
 	efrag_t    *ef, *old, *walk, **prev;
 
-	ef = ent->efrag;
+	ef = ent->visibility.efrag;
 
 	while (ef) {
 		prev = &ef->leaf->efrags;
@@ -130,35 +125,42 @@ R_RemoveEfrags (entity_t *ent)
 		r_free_efrags = old;
 	}
 
-	ent->efrag = 0;
+	ent->visibility.efrag = 0;
 }
 
-#define NODE_STACK_SIZE 1024
-static mnode_t *node_stack[NODE_STACK_SIZE];
-static mnode_t **node_ptr = node_stack + NODE_STACK_SIZE;
-
 static void
-R_SplitEntityOnNode (mnode_t *node)
+R_SplitEntityOnNode (mod_brush_t *brush, entity_t *ent,
+					 vec3_t emins, vec3_t emaxs)
 {
 	efrag_t    *ef;
 	plane_t    *splitplane;
 	mleaf_t    *leaf;
 	int         sides;
+	efrag_t   **lastlink;
+	mnode_t   **node_stack;
+	mnode_t   **node_ptr;
+	mnode_t    *node = brush->nodes;
 
-	*--node_ptr = 0;
+	node_stack = alloca ((brush->depth + 2) * sizeof (mnode_t *));
+	node_ptr = node_stack;
+
+	lastlink = &ent->visibility.efrag;
+
+	*node_ptr++ = 0;
 
 	while (node) {
 		// add an efrag if the node is a leaf
 		if (__builtin_expect (node->contents < 0, 0)) {
-			if (!r_pefragtopnode)
-				r_pefragtopnode = node;
+			if (!ent->visibility.topnode) {
+				ent->visibility.topnode = node;
+			}
 
 			leaf = (mleaf_t *) node;
 
 			ef = new_efrag ();	// ensures ef->entnext is 0
 
 			// add the link to the chain of links on the entity
-			ef->entity = r_addent;
+			ef->entity = ent;
 			*lastlink = ef;
 			lastlink = &ef->entnext;
 
@@ -167,80 +169,77 @@ R_SplitEntityOnNode (mnode_t *node)
 			ef->leafnext = leaf->efrags;
 			leaf->efrags = ef;
 
-			node = *node_ptr++;
+			node = *--node_ptr;
 		} else {
 			// NODE_MIXED
 			splitplane = node->plane;
-			sides = BOX_ON_PLANE_SIDE (r_emins, r_emaxs, splitplane);
+			sides = BOX_ON_PLANE_SIDE (emins, emaxs, splitplane);
 
 			if (sides == 3) {
 				// split on this plane
 				// if this is the first splitter of this bmodel, remember it
-				if (!r_pefragtopnode)
-					r_pefragtopnode = node;
+				if (!ent->visibility.topnode) {
+					ent->visibility.topnode = node;
+				}
 			}
 			// recurse down the contacted sides
 			if (sides & 1 && node->children[0]->contents != CONTENTS_SOLID) {
 				if (sides & 2 && node->children[1]->contents != CONTENTS_SOLID)
-					*--node_ptr = node->children[1];
+					*node_ptr++ = node->children[1];
 				node = node->children[0];
 			} else {
 				if (sides & 2 && node->children[1]->contents != CONTENTS_SOLID)
 					node = node->children[1];
 				else
-					node = *node_ptr++;
+					node = *--node_ptr;
 			}
 		}
 	}
 }
 
 void
-R_AddEfrags (entity_t *ent)
+R_AddEfrags (mod_brush_t *brush, entity_t *ent)
 {
 	model_t    *entmodel;
+	vec3_t      emins, emaxs;
 
-	if (!ent->model)
+	if (!ent->renderer.model || !r_worldentity.renderer.model)
 		return;
 
 	if (ent == &r_worldentity)
 		return;							// never add the world
 
-	r_addent = ent;
+	entmodel = ent->renderer.model;
 
-	lastlink = &ent->efrag;
-	r_pefragtopnode = 0;
+	vec4f_t     org = Transform_GetWorldPosition (ent->transform);
+	VectorAdd (org, entmodel->mins, emins);
+	VectorAdd (org, entmodel->maxs, emaxs);
 
-	entmodel = ent->model;
-
-	VectorAdd (ent->origin, entmodel->mins, r_emins);
-	VectorAdd (ent->origin, entmodel->maxs, r_emaxs);
-
-	R_SplitEntityOnNode (r_worldentity.model->nodes);
-
-	ent->topnode = r_pefragtopnode;
+	ent->visibility.topnode = 0;
+	R_SplitEntityOnNode (brush, ent, emins, emaxs);
 }
 
 void
-R_StoreEfrags (const efrag_t *pefrag)
+R_StoreEfrags (const efrag_t *efrag)
 {
-	entity_t   *pent;
+	entity_t   *ent;
 	model_t    *model;
 
-	while (pefrag) {
-		pent = pefrag->entity;
-		model = pent->model;
+	while (efrag) {
+		ent = efrag->entity;
+		model = ent->renderer.model;
 
 		switch (model->type) {
 			case mod_alias:
 			case mod_brush:
 			case mod_sprite:
 			case mod_iqm:
-				if (pent->visframe != r_framecount) {
-					R_EnqueueEntity (pent);
+				if (ent->visibility.visframe != r_framecount) {
+					R_EnqueueEntity (ent);
 					// mark that we've recorded this entity for this frame
-					pent->visframe = r_framecount;
+					ent->visibility.visframe = r_framecount;
 				}
-				pefrag = pefrag->leafnext;
+				efrag = efrag->leafnext;
 				break;
 
 			default:

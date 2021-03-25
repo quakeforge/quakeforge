@@ -620,15 +620,18 @@ static decoder_t decoder_functions[] = {
 					  / sizeof (decoder_functions[0]))
 
 struct tex_s *
-LoadTGA (QFile *fin)
+LoadTGA (QFile *fin, int load)
 {
 	byte       *dataByte;
 	decoder_t   decode;
-	int         fsize = Qfilesize (fin);
+	int         fsize = sizeof (TargaHeader);
 	int			numPixels, targa_mark;
 	TargaHeader *targa;
 	tex_t      *tex;
 
+	if (load) {
+		fsize = Qfilesize (fin);
+	}
 	targa_mark = Hunk_LowMark ();
 	targa = Hunk_AllocName (fsize, "TGA");
 	Qread (fin, targa, fsize);
@@ -641,20 +644,31 @@ LoadTGA (QFile *fin)
 	targa->height = LittleShort (targa->height);
 
 	if (targa->image_type >= NUM_DECODERS
-		|| !(decode = decoder_functions[targa->image_type]))
-		Sys_Error ("LoadTGA: Unsupported targa type");
+		|| !(decode = decoder_functions[targa->image_type])) {
+		Sys_Printf ("LoadTGA: Unsupported targa type");
+		Hunk_FreeToLowMark (targa_mark);
+		return 0;
+	}
 
-	numPixels = targa->width * targa->height;
-	tex = Hunk_TempAlloc (field_offset (tex_t, data[numPixels * 4]));
+	if (load) {
+		numPixels = targa->width * targa->height;
+	} else {
+		numPixels = 0;
+	}
+	tex = Hunk_TempAlloc (sizeof (tex_t) + numPixels * 4);
+	tex->data = (byte *) (tex + 1);
 	tex->width = targa->width;
 	tex->height = targa->height;
 	tex->palette = 0;
+	tex->loaded = load;
 
-	// skip TARGA image comment
-	dataByte = (byte *) (targa + 1);
-	dataByte += targa->id_length;
+	if (load) {
+		// skip TARGA image comment
+		dataByte = (byte *) (targa + 1);
+		dataByte += targa->id_length;
 
-	decode (targa, tex, dataByte);
+		decode (targa, tex, dataByte);
+	}
 
 	Hunk_FreeToLowMark (targa_mark);
 	return tex;

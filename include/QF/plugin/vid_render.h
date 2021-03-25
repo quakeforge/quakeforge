@@ -37,6 +37,8 @@ struct plitem_s;
 struct cvar_s;
 struct skin_s;
 
+struct mod_alias_ctx_s;
+
 /*
 	All video plugins must export these functions
 */
@@ -80,23 +82,25 @@ typedef struct vid_particle_funcs_s {
 } vid_particle_funcs_t;
 
 typedef struct vid_model_funcs_s {
-	void (*Mod_LoadExternalTextures) (model_t *mod);
-	void (*Mod_LoadLighting) (bsp_t *bsp);
-	void (*Mod_SubdivideSurface) (msurface_t *fa);
-	void (*Mod_ProcessTexture) (texture_t *tx);
+	size_t      texture_render_size;// size of renderer specific texture data
+	void (*Mod_LoadLighting) (model_t *mod, bsp_t *bsp);
+	void (*Mod_SubdivideSurface) (model_t *mod, msurface_t *fa);
+	void (*Mod_ProcessTexture) (model_t *mod, texture_t *tx);
 	void (*Mod_LoadIQM) (model_t *mod, void *buffer);
 	void (*Mod_LoadAliasModel) (model_t *mod, void *buffer,
 								cache_allocator_t allocator);
 	void (*Mod_LoadSpriteModel) (model_t *mod, void *buffer);
-	void (*Mod_MakeAliasModelDisplayLists) (model_t *m, aliashdr_t *hdr,
+	void (*Mod_MakeAliasModelDisplayLists) (struct mod_alias_ctx_s *alias_ctx,
 											void *_m, int _s, int extra);
-	void *(*Mod_LoadSkin) (byte *skin, int skinsize, int snum, int gnum,
+	void *(*Mod_LoadSkin) (struct mod_alias_ctx_s *alias_ctx, byte *skin,
+						   int skinsize, int snum, int gnum,
 						   qboolean group, maliasskindesc_t *skindesc);
-	void (*Mod_FinalizeAliasModel) (model_t *m, aliashdr_t *hdr);
-	void (*Mod_LoadExternalSkins) (model_t *mod);
+	void (*Mod_FinalizeAliasModel) (struct mod_alias_ctx_s *alias_ctx);
+	void (*Mod_LoadExternalSkins) (struct mod_alias_ctx_s *alias_ctx);
 	void (*Mod_IQMFinish) (model_t *mod);
 	int alias_cache;
-	void (*Mod_SpriteLoadTexture) (mspriteframe_t *pspriteframe, int framenum);
+	void (*Mod_SpriteLoadTexture) (model_t *mod, mspriteframe_t *pspriteframe,
+								   int framenum);
 
 	struct skin_s *(*Skin_SetColormap) (struct skin_s *skin, int cmap);
 	struct skin_s *(*Skin_SetSkin) (struct skin_s *skin, int cmap,
@@ -108,7 +112,6 @@ typedef struct vid_model_funcs_s {
 } vid_model_funcs_t;
 
 typedef struct vid_render_funcs_s {
-	void (*Draw_Init) (void);
 	void (*Draw_Character) (int x, int y, unsigned ch);
 	void (*Draw_String) (int x, int y, const char *str);
 	void (*Draw_nString) (int x, int y, const char *str, int count);
@@ -132,9 +135,6 @@ typedef struct vid_render_funcs_s {
 	void (*Draw_SubPic) (int x, int y, qpic_t *pic, int srcx, int srcy, int width, int height);
 
 	void (*SCR_SetFOV) (float fov);
-	// scr_funcs is a null terminated array
-	void (*SCR_UpdateScreen) (double realtime, SCR_Func scr_3dfunc,
-							  SCR_Func *scr_funcs);
 	void (*SCR_DrawRam) (void);
 	void (*SCR_DrawTurtle) (void);
 	void (*SCR_DrawPause) (void);
@@ -148,15 +148,17 @@ typedef struct vid_render_funcs_s {
 	void (*Fog_ParseWorldspawn) (struct plitem_s *worldspawn);
 
 	void (*R_Init) (void);
+	void (*R_RenderFrame) (SCR_Func scr_3dfunc, SCR_Func *scr_funcs);
 	void (*R_ClearState) (void);
 	void (*R_LoadSkys) (const char *);
 	void (*R_NewMap) (model_t *worldmodel, model_t **models, int num_models);
-	void (*R_AddEfrags) (entity_t *ent);
+	void (*R_AddEfrags) (mod_brush_t *brush, entity_t *ent);
 	void (*R_RemoveEfrags) (entity_t *ent);
 	void (*R_EnqueueEntity) (struct entity_s *ent);	//FIXME should not be here
 	void (*R_LineGraph) (int x, int y, int *h_vals, int count);
 	dlight_t *(*R_AllocDlight) (int key);
 	entity_t *(*R_AllocEntity) (void);
+	void (*R_MaxDlightsCheck) (struct cvar_s *var);
 	void (*R_RenderView) (void);
 	void (*R_DecayLights) (double frametime);
 

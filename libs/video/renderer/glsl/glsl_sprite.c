@@ -42,6 +42,7 @@
 #endif
 
 #include "QF/cvar.h"
+#include "QF/entity.h"
 #include "QF/draw.h"
 #include "QF/dstring.h"
 #include "QF/quakefs.h"
@@ -131,7 +132,7 @@ static void
 R_GetSpriteFrames (entity_t *ent, msprite_t *sprite, mspriteframe_t **frame1,
 				   mspriteframe_t **frame2, float *blend)
 {
-	int         framenum = currententity->frame;
+	int         framenum = currententity->animation.frame;
 	int         pose;
 	int         i, numframes;
 	float      *intervals;
@@ -153,7 +154,7 @@ R_GetSpriteFrames (entity_t *ent, msprite_t *sprite, mspriteframe_t **frame1,
 		numframes = group->numframes;
 		fullinterval = intervals[numframes - 1];
 
-		time = vr_data.realtime + currententity->syncbase;
+		time = vr_data.realtime + currententity->animation.syncbase;
 		targettime = time - ((int) (time / fullinterval)) * fullinterval;
 
 		for (i = 0; i < numframes - 1; i++) {
@@ -170,50 +171,51 @@ R_GetSpriteFrames (entity_t *ent, msprite_t *sprite, mspriteframe_t **frame1,
 	//group frames.
 	*blend = R_EntityBlend (ent, pose, frame_interval);
 	if (group) {
-		*frame1 = group->frames[ent->pose1];
-		*frame2 = group->frames[ent->pose2];
+		*frame1 = group->frames[ent->animation.pose1];
+		*frame2 = group->frames[ent->animation.pose2];
 	} else {
-		*frame1 = sprite->frames[ent->pose1].frameptr;
-		*frame2 = sprite->frames[ent->pose2].frameptr;
+		*frame1 = sprite->frames[ent->animation.pose1].frameptr;
+		*frame2 = sprite->frames[ent->animation.pose2].frameptr;
 	}
 }
 
 static void
-make_quad (mspriteframe_t *frame, const vec3_t vpn, const vec3_t vright,
-		   const vec3_t vup, float verts[6][3])
+make_quad (mspriteframe_t *frame, vec4f_t vpn, vec4f_t vright,
+		   vec4f_t vup, float verts[6][3])
 {
-	vec3_t      left, up, right, down;
-	vec3_t      ul, ur, ll, lr;
+	vec4f_t     left, up, right, down;
+	vec4f_t     ul, ur, ll, lr;
+	vec4f_t     origin = Transform_GetWorldPosition (currententity->transform);
 
 	// build the sprite poster in worldspace
 	// first, rotate the sprite axes into world space
-	VectorScale (vright, frame->right, right);
-	VectorScale (vup, frame->up, up);
-	VectorScale (vright, frame->left, left);
-	VectorScale (vup, frame->down, down);
+	right = frame->right * vright;
+	up = frame->up * vup;
+	left = frame->left * vright;
+	down = frame->down * vup;
 	// next, build the sprite corners from the axes
-	VectorAdd (up, left, ul);
-	VectorAdd (up, right, ur);
-	VectorAdd (down, left, ll);
-	VectorAdd (down, right, lr);
+	ul = up + left;
+	ur = up + right;
+	ll = down + left;
+	lr = down + right;
 	// finally, translate the sprite corners, creating two triangles
-	VectorAdd (currententity->origin, ul, verts[0]);	// first triangle
-	VectorAdd (currententity->origin, ur, verts[1]);
-	VectorAdd (currententity->origin, lr, verts[2]);
-	VectorAdd (currententity->origin, ul, verts[3]);	// second triangle
-	VectorAdd (currententity->origin, lr, verts[4]);
-	VectorAdd (currententity->origin, ll, verts[5]);
+	VectorAdd (origin, ul, verts[0]);	// first triangle
+	VectorAdd (origin, ur, verts[1]);
+	VectorAdd (origin, lr, verts[2]);
+	VectorAdd (origin, ul, verts[3]);	// second triangle
+	VectorAdd (origin, lr, verts[4]);
+	VectorAdd (origin, ll, verts[5]);
 }
 
 void
 R_DrawSprite (void)
 {
 	entity_t   *ent = currententity;
-	msprite_t  *sprite = (msprite_t *) ent->model->cache.data;
+	msprite_t  *sprite = (msprite_t *) ent->renderer.model->cache.data;
 	mspriteframe_t *frame1, *frame2;
-	float       blend, sr, cr, dot, angle;
+	float       blend, sr, cr, dot;
 	vec3_t      tvec;
-	vec3_t      svpn, svright, svup;
+	vec4f_t     svpn = {}, svright = {}, svup = {}, rot;
 	static quat_t color = { 1, 1, 1, 1};
 	float       vertsa[6][3], vertsb[6][3];
 	static float uvab[6][4] = {
@@ -242,7 +244,7 @@ R_DrawSprite (void)
 			VectorSet (0, 0, 1, svup);
 			// CrossProduct (svup, -r_origin, svright)
 			VectorSet (tvec[1], -tvec[0], 0, svright);
-			VectorNormalize (svright);
+			svright = normalf (svright);
 			// CrossProduct (svright, svup, svpn);
 			VectorSet (-svright[1], svright[0], 0, svpn);
 			break;
@@ -267,25 +269,26 @@ R_DrawSprite (void)
 			VectorSet (0, 0, 1, svup);
 			// CrossProduct (svup, -r_origin, svright)
 			VectorSet (vpn[1], -vpn[0], 0, svright);
-			VectorNormalize (svright);
+			svright = normalf (svright);
 			// CrossProduct (svright, svup, svpn);
 			VectorSet (-svright[1], svright[0], 0, svpn);
 			break;
 		case SPR_ORIENTED:
 			// generate the prite's axes according to the sprite's world
 			// orientation
-			VectorCopy (currententity->transform + 0, svpn);
-			VectorNegate (currententity->transform + 4, svright);
-			VectorCopy (currententity->transform + 8, svup);
+			svup = Transform_Up (currententity->transform);
+			svright = Transform_Right (currententity->transform);
+			svpn = Transform_Forward (currententity->transform);
 			break;
 		case SPR_VP_PARALLEL_ORIENTED:
 			// generate the sprite's axes parallel to the viewplane, but
 			// rotated in that plane round the center according to the sprite
 			// entity's roll angle. Thus svpn stays the same, but svright and
 			// svup rotate
-			angle = currententity->angles[ROLL] * (M_PI / 180);
-			sr = sin (angle);
-			cr = cos (angle);
+			rot = Transform_GetLocalRotation (currententity->transform);
+			//FIXME assumes the entity is only rolled
+			sr = 2 * rot[0] * rot[3];
+			cr = rot[3] * rot[3] - rot[0] * rot[0];
 			VectorCopy (vpn, svpn);
 			VectorScale (vright, cr, svright);
 			VectorMultAdd (svright, sr, vup, svright);
@@ -324,7 +327,7 @@ R_DrawSprite (void)
 void
 R_SpriteBegin (void)
 {
-	mat4_t      mat;
+	mat4f_t     mat;
 	quat_t      fog;
 
 	qfeglUseProgram (quake_sprite.program);
@@ -335,7 +338,7 @@ R_SpriteBegin (void)
 	qfeglDisableVertexAttribArray (quake_sprite.colorb.location);
 	qfeglDisableVertexAttribArray (quake_sprite.blend.location);
 
-	VectorCopy (glsl_Fog_GetColor (), fog);
+	glsl_Fog_GetColor (fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (quake_sprite.fog.location, 1, fog);
 
@@ -352,8 +355,8 @@ R_SpriteBegin (void)
 	qfeglEnable (GL_TEXTURE_2D);
 	qfeglBindTexture (GL_TEXTURE_2D, glsl_palette);
 
-	Mat4Mult (glsl_projection, glsl_view, mat);
-	qfeglUniformMatrix4fv (quake_sprite.matrix.location, 1, false, mat);
+	mmulf (mat, glsl_projection, glsl_view);
+	qfeglUniformMatrix4fv (quake_sprite.matrix.location, 1, false, &mat[0][0]);
 }
 
 void

@@ -500,7 +500,7 @@ static int
 dag_def_kill_aliases_visit (def_t *def, void *_l)
 {
 	daglabel_t *l = (daglabel_t *) _l;
-	dagnode_t  *node = l->dagnode;;
+	dagnode_t  *node = l->dagnode;
 	daglabel_t *label;
 
 	if (def == l->op->o.def)

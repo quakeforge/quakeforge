@@ -199,7 +199,7 @@ SND_PrecacheSound (const char *name)
 	if (!name)
 		Sys_Error ("SND_PrecacheSound: NULL");
 
-	sfx = SND_LoadSound (va ("sound/%s", name));
+	sfx = SND_LoadSound (va (0, "sound/%s", name));
 	if (sfx && precache->int_val) {
 		if (sfx->retain (sfx))
 			sfx->release (sfx);

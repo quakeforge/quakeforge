@@ -70,13 +70,13 @@ find_tag (ty_meta_e meta, symbol_t *tag, type_t *type)
 	symbol_t   *sym;
 
 	if (tag) {
-		tag_name = va ("tag %s", tag->name);
+		tag_name = va (0, "tag %s", tag->name);
 	} else {
 		const char *path = GETSTR (pr.source_file);
 		const char *file = strrchr (path, '/');
 		if (!file++)
 			file = path;
-		tag_name = va ("tag .%s.%d", file, pr.source_line);
+		tag_name = va (0, "tag .%s.%d", file, pr.source_line);
 	}
 	sym = symtab_lookup (current_symtab, tag_name);
 	if (sym) {
@@ -355,7 +355,7 @@ emit_structure (const char *name, int su, struct_def_t *defs, type_t *type,
 	for (i = 0, field_sym = type->t.symtab->symbols; field_sym;
 		 i++, field_sym = field_sym->next) {
 		field_def.type = field_sym->type;
-		field_def.name = save_string (va ("%s.%s", name, field_sym->name));
+		field_def.name = save_string (va (0, "%s.%s", name, field_sym->name));
 		field_def.space = struct_def->space;
 		field_def.offset = struct_def->offset + field_sym->s.offset;
 		if (!defs[i].emit) {

@@ -29,6 +29,7 @@
 #endif
 
 #include "QF/cvar.h"
+#include "QF/entity.h"
 #include "QF/render.h"
 
 #include "d_local.h"
@@ -207,7 +208,8 @@ D_DrawSurfaces (void)
 					// TODO: store once at start of frame
 					currententity = s->entity;	// FIXME: make this passed in
 												// to R_RotateBmodel ()
-					VectorSubtract (r_origin, currententity->origin,
+					VectorSubtract (r_origin,
+						Transform_GetWorldPosition (currententity->transform),
 									local_modelorg);
 					TransformVector (local_modelorg, transformed_modelorg);
 
@@ -240,7 +242,8 @@ D_DrawSurfaces (void)
 					// TODO: store once at start of frame
 					currententity = s->entity;	// FIXME: make this passed in
 												// to R_RotateBmodel ()
-					VectorSubtract (r_origin, currententity->origin,
+					VectorSubtract (r_origin,
+						Transform_GetWorldPosition (currententity->transform),
 									local_modelorg);
 					TransformVector (local_modelorg, transformed_modelorg);
 

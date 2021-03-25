@@ -46,6 +46,7 @@
 
 #include "QF/cvar.h"
 #include "QF/dstring.h"
+#include "QF/entity.h"
 #include "QF/image.h"
 #include "QF/render.h"
 #include "QF/sys.h"
@@ -73,7 +74,7 @@ static instsurf_t **waterchain_tail = &waterchain;
 static instsurf_t  *sky_chain;
 static instsurf_t **sky_chain_tail = &sky_chain;
 
-static texture_t  **r_texture_chains;
+static glsltex_t  **r_texture_chains;
 static int          r_num_texture_chains;
 static int          max_texture_chains;
 
@@ -94,7 +95,7 @@ static instsurf_t **instsurfs_tail = &instsurfs;
 static instsurf_t  *free_instsurfs;
 
 static GLuint   bsp_vbo;
-static mat4_t   bsp_vp;
+static mat4f_t  bsp_vp;
 
 static GLuint   skybox_tex;
 static qboolean skybox_loaded;
@@ -293,16 +294,17 @@ GET_RELEASE (instsurf_t, static_instsurf)
 GET_RELEASE (instsurf_t, instsurf)
 
 void
-glsl_R_AddTexture (texture_t *tex)
+glsl_R_AddTexture (texture_t *tx)
 {
 	int         i;
 	if (r_num_texture_chains == max_texture_chains) {
 		max_texture_chains += 64;
 		r_texture_chains = realloc (r_texture_chains,
-								  max_texture_chains * sizeof (texture_t *));
+								  max_texture_chains * sizeof (glsltex_t *));
 		for (i = r_num_texture_chains; i < max_texture_chains; i++)
 			r_texture_chains[i] = 0;
 	}
+	glsltex_t  *tex = tx->render;
 	r_texture_chains[r_num_texture_chains++] = tex;
 	tex->tex_chain = 0;
 	tex->tex_chain_tail = &tex->tex_chain;
@@ -310,22 +312,22 @@ glsl_R_AddTexture (texture_t *tex)
 	tex->elechain_tail = &tex->elechain;
 }
 
-void
-glsl_R_InitSurfaceChains (model_t *model)
+static void
+glsl_R_InitSurfaceChains (mod_brush_t *brush)
 {
 	int         i;
 
 	release_static_instsurfs ();
 	release_instsurfs ();
 
-	for (i = 0; i < model->nummodelsurfaces; i++) {
-		model->surfaces[i].instsurf = get_static_instsurf ();
-		model->surfaces[i].instsurf->surface = &model->surfaces[i];
+	for (i = 0; i < brush->nummodelsurfaces; i++) {
+		brush->surfaces[i].instsurf = get_static_instsurf ();
+		brush->surfaces[i].instsurf->surface = &brush->surfaces[i];
 	}
 }
 
 static inline void
-clear_tex_chain (texture_t *tex)
+clear_tex_chain (glsltex_t *tex)
 {
 	tex->tex_chain = 0;
 	tex->tex_chain_tail = &tex->tex_chain;
@@ -343,7 +345,7 @@ clear_texture_chains (void)
 			continue;
 		clear_tex_chain (r_texture_chains[i]);
 	}
-	clear_tex_chain (r_notexture_mip);
+	clear_tex_chain (r_notexture_mip->render);
 	release_elechains ();
 	release_elementss ();
 	release_instsurfs ();
@@ -357,7 +359,7 @@ glsl_R_ClearElements (void)
 }
 
 static void
-update_lightmap (msurface_t *surf)
+update_lightmap (mod_brush_t *brush, msurface_t *surf)
 {
 	int         maps;
 
@@ -368,12 +370,13 @@ update_lightmap (msurface_t *surf)
 	if ((surf->dlightframe == r_framecount) || surf->cached_dlight) {
 dynamic:
 		if (r_dynamic->int_val)
-			glsl_R_BuildLightMap (surf);
+			glsl_R_BuildLightMap (brush, surf);
 	}
 }
 
 static inline void
-chain_surface (msurface_t *surf, vec_t *transform, float *color)
+chain_surface (mod_brush_t *brush, msurface_t *surf, vec_t *transform,
+			   float *color)
 {
 	instsurf_t *is;
 
@@ -382,15 +385,17 @@ chain_surface (msurface_t *surf, vec_t *transform, float *color)
 	} else if ((surf->flags & SURF_DRAWTURB) || (color && color[3] < 1.0)) {
 		CHAIN_SURF_B2F (surf, waterchain);
 	} else {
-		texture_t  *tex;
+		texture_t  *tx;
+		glsltex_t  *tex;
 
 		if (!surf->texinfo->texture->anim_total)
-			tex = surf->texinfo->texture;
+			tx = surf->texinfo->texture;
 		else
-			tex = R_TextureAnimation (surf);
+			tx = R_TextureAnimation (surf);
+		tex = tx->render;
 		CHAIN_SURF_F2B (surf, tex->tex_chain);
 
-		update_lightmap (surf);
+		update_lightmap (brush, surf);
 	}
 	if (!(is = surf->instsurf))
 		is = surf->tinst;
@@ -399,13 +404,13 @@ chain_surface (msurface_t *surf, vec_t *transform, float *color)
 }
 
 static void
-register_textures (model_t *model)
+register_textures (mod_brush_t *brush)
 {
 	int         i;
 	texture_t  *tex;
 
-	for (i = 0; i < model->numtextures; i++) {
-		tex = model->textures[i];
+	for (i = 0; i < brush->numtextures; i++) {
+		tex = brush->textures[i];
 		if (!tex)
 			continue;
 		glsl_R_AddTexture (tex);
@@ -423,28 +428,30 @@ glsl_R_RegisterTextures (model_t **models, int num_models)
 {
 	int         i;
 	model_t    *m;
+	mod_brush_t *brush;
 
 	glsl_R_ClearTextures ();
-	glsl_R_InitSurfaceChains (r_worldentity.model);
+	glsl_R_InitSurfaceChains (&r_worldentity.renderer.model->brush);
 	glsl_R_AddTexture (r_notexture_mip);
-	register_textures (r_worldentity.model);
+	register_textures (&r_worldentity.renderer.model->brush);
 	for (i = 0; i < num_models; i++) {
 		m = models[i];
 		if (!m)
 			continue;
 		// sub-models are done as part of the main model
-		if (*m->name == '*')
+		if (*m->path == '*')
 			continue;
 		// world has already been done, not interested in non-brush models
-		if (m == r_worldentity.model || m->type != mod_brush)
+		if (m == r_worldentity.renderer.model || m->type != mod_brush)
 			continue;
-		m->numsubmodels = 1; // no support for submodels in non-world model
-		register_textures (m);
+		brush = &m->brush;
+		brush->numsubmodels = 1; // no support for submodels in non-world model
+		register_textures (brush);
 	}
 }
 
 static elechain_t *
-add_elechain (texture_t *tex, int ec_index)
+add_elechain (glsltex_t *tex, int ec_index)
 {
 	elechain_t *ec;
 
@@ -475,16 +482,17 @@ build_surf_displist (model_t **models, msurface_t *fa, int base,
 	glslpoly_t *poly;
 	GLushort   *ind;
 	float       s, t;
+	mod_brush_t *brush;
 
 	if (fa->ec_index < 0) {
-		vertices = models[-fa->ec_index - 1]->vertexes;
-		edges = models[-fa->ec_index - 1]->edges;
-		surfedges = models[-fa->ec_index - 1]->surfedges;
+		brush = &models[-fa->ec_index - 1]->brush;
 	} else {
-		vertices = r_worldentity.model->vertexes;
-		edges = r_worldentity.model->edges;
-		surfedges = r_worldentity.model->surfedges;
+		brush = &r_worldentity.renderer.model->brush;
 	}
+	vertices = brush->vertexes;
+	edges = brush->edges;
+	surfedges = brush->surfedges;
+
 	numverts = fa->numedges;
 	numtris = numverts - 2;
 	numindices = numtris * 3;
@@ -542,6 +550,7 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 	dmodel_t   *dm;
 	msurface_t *surf;
 	dstring_t  *vertices;
+	mod_brush_t *brush;
 
 	QuatSet (0, 0, sqrt(0.5), sqrt(0.5), sky_fix);	// proper skies
 	QuatSet (0, 0, 0, 1, sky_rotation[0]);
@@ -558,27 +567,28 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 		if (!m)
 			continue;
 		// sub-models are done as part of the main model
-		if (*m->name == '*')
+		if (*m->path == '*' || m->type != mod_brush)
 			continue;
+		brush = &m->brush;
 		// non-bsp models don't have surfaces.
-		dm = m->submodels;
-		for (j = 0; j < m->numsurfaces; j++) {
-			texture_t  *tex;
+		dm = brush->submodels;
+		for (j = 0; j < brush->numsurfaces; j++) {
+			glsltex_t  *tex;
 			if (j == dm->firstface + dm->numfaces) {
 				dm++;
-				if (dm - m->submodels == m->numsubmodels) {
+				if (dm - brush->submodels == brush->numsubmodels) {
 					// limit the surfaces
 					// probably never hit
 					Sys_Printf ("R_BuildDisplayLists: too many surfaces\n");
-					m->numsurfaces = j;
+					brush->numsurfaces = j;
 					break;
 				}
 			}
-			surf = m->surfaces + j;
-			surf->ec_index = dm - m->submodels;
-			if (!surf->ec_index && m != r_worldentity.model)
+			surf = brush->surfaces + j;
+			surf->ec_index = dm - brush->submodels;
+			if (!surf->ec_index && m != r_worldentity.renderer.model)
 				surf->ec_index = -1 - i;	// instanced model
-			tex = surf->texinfo->texture;
+			tex = surf->texinfo->texture->render;
 			CHAIN_SURF_F2B (surf, tex->tex_chain);
 		}
 	}
@@ -590,7 +600,7 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 	// For animated textures, if a surface is on one texture of the group, it
 	// will be on all.
 	for (i = 0; i < r_num_texture_chains; i++) {
-		texture_t  *tex;
+		glsltex_t  *tex;
 		instsurf_t *is;
 		elechain_t *ec = 0;
 		elements_t *el = 0;
@@ -650,34 +660,40 @@ R_DrawBrushModel (entity_t *e)
 	plane_t    *plane;
 	msurface_t *surf;
 	qboolean    rotated;
-	vec3_t      mins, maxs, org;
+	vec3_t      mins, maxs;
+	vec4f_t     org;
+	mod_brush_t *brush;
 
-	model = e->model;
-	if (e->transform[0] != 1 || e->transform[5] != 1 || e->transform[10] != 1) {
+	model = e->renderer.model;
+	brush = &model->brush;
+	mat4f_t mat;
+	Transform_GetWorldMatrix (e->transform, mat);
+	memcpy (e->renderer.full_transform, mat, sizeof (mat));//FIXME
+	if (mat[0][0] != 1 || mat[1][1] != 1 || mat[2][2] != 1) {
 		rotated = true;
 		radius = model->radius;
-		if (R_CullSphere (e->origin, radius))
+		if (R_CullSphere (&mat[3][0], radius)) { // FIXME
 			return;
+		}
 	} else {
 		rotated = false;
-		VectorAdd (e->origin, model->mins, mins);
-		VectorAdd (e->origin, model->maxs, maxs);
+		VectorAdd (mat[3], model->mins, mins);
+		VectorAdd (mat[3], model->maxs, maxs);
 		if (R_CullBox (mins, maxs))
 			return;
 	}
 
-	VectorSubtract (r_refdef.vieworg, e->origin, org);
+	org = r_refdef.viewposition - mat[3];
 	if (rotated) {
-		vec3_t      temp;
+		vec4f_t     temp = org;
 
-		VectorCopy (org, temp);
-		org[0] = DotProduct (temp, e->transform + 0);
-		org[1] = DotProduct (temp, e->transform + 4);
-		org[2] = DotProduct (temp, e->transform + 8);
+		org[0] = dotf (temp, mat[0])[0];
+		org[1] = dotf (temp, mat[1])[0];
+		org[2] = dotf (temp, mat[2])[0];
 	}
 
 	// calculate dynamic lighting for bmodel if it's not an instanced model
-	if (model->firstmodelsurface != 0 && r_dlight_lightmap->int_val) {
+	if (brush->firstmodelsurface != 0 && r_dlight_lightmap->int_val) {
 		vec3_t      lightorigin;
 
 		for (k = 0; k < r_maxdlights; k++) {
@@ -685,15 +701,15 @@ R_DrawBrushModel (entity_t *e)
 				|| (!r_dlights[k].radius))
 				continue;
 
-			VectorSubtract (r_dlights[k].origin, e->origin, lightorigin);
-			R_RecursiveMarkLights (lightorigin, &r_dlights[k], k,
-							model->nodes + model->hulls[0].firstclipnode);
+			VectorSubtract (r_dlights[k].origin, mat[3], lightorigin);
+			R_RecursiveMarkLights (brush, lightorigin, &r_dlights[k], k,
+							brush->nodes + brush->hulls[0].firstclipnode);
 		}
 	}
 
-	surf = &model->surfaces[model->firstmodelsurface];
+	surf = &brush->surfaces[brush->firstmodelsurface];
 
-	for (i = 0; i < model->nummodelsurfaces; i++, surf++) {
+	for (i = 0; i < brush->nummodelsurfaces; i++, surf++) {
 		// find the node side on which we are
 		plane = surf->plane;
 
@@ -702,7 +718,8 @@ R_DrawBrushModel (entity_t *e)
 		// enqueue the polygon
 		if (((surf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON))
 			|| (!(surf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
-			chain_surface (surf, e->transform, e->colormod);
+			chain_surface (brush, surf, e->renderer.full_transform,
+						   e->renderer.colormod);
 		}
 	}
 }
@@ -727,7 +744,7 @@ get_side (mnode_t *node)
 }
 
 static inline void
-visit_node (mnode_t *node, int side)
+visit_node (mod_brush_t *brush, mnode_t *node, int side)
 {
 	int         c;
 	msurface_t *surf;
@@ -736,7 +753,7 @@ visit_node (mnode_t *node, int side)
 	side = (~side + 1) & SURF_PLANEBACK;
 	// draw stuff
 	if ((c = node->numsurfaces)) {
-		surf = r_worldentity.model->surfaces + node->firstsurface;
+		surf = brush->surfaces + node->firstsurface;
 		for (; c; c--, surf++) {
 			if (surf->visframe != r_visframecount)
 				continue;
@@ -745,7 +762,7 @@ visit_node (mnode_t *node, int side)
 			if (side ^ (surf->flags & SURF_PLANEBACK))
 				continue;               // wrong side
 
-			chain_surface (surf, 0, 0);
+			chain_surface (brush, surf, 0, 0);
 		}
 	}
 }
@@ -763,7 +780,7 @@ test_node (mnode_t *node)
 }
 
 static void
-R_VisitWorldNodes (model_t *model)
+R_VisitWorldNodes (mod_brush_t *brush)
 {
 	typedef struct {
 		mnode_t    *node;
@@ -775,9 +792,9 @@ R_VisitWorldNodes (model_t *model)
 	mnode_t    *front;
 	int         side;
 
-	node = model->nodes;
+	node = brush->nodes;
 	// +2 for paranoia
-	node_stack = alloca ((model->depth + 2) * sizeof (rstack_t));
+	node_stack = alloca ((brush->depth + 2) * sizeof (rstack_t));
 	node_ptr = node_stack;
 
 	while (1) {
@@ -793,7 +810,7 @@ R_VisitWorldNodes (model_t *model)
 			}
 			if (front->contents < 0 && front->contents != CONTENTS_SOLID)
 				visit_leaf ((mleaf_t *) front);
-			visit_node (node, side);
+			visit_node (brush, node, side);
 			node = node->children[!side];
 		}
 		if (node->contents < 0 && node->contents != CONTENTS_SOLID)
@@ -802,7 +819,7 @@ R_VisitWorldNodes (model_t *model)
 			node_ptr--;
 			node = node_ptr->node;
 			side = node_ptr->side;
-			visit_node (node, side);
+			visit_node (brush, node, side);
 			node = node->children[!side];
 			continue;
 		}
@@ -831,10 +848,10 @@ draw_elechain (elechain_t *ec, int matloc, int vertloc, int tlstloc,
 		}
 	}
 	if (ec->transform) {
-		Mat4Mult (bsp_vp, ec->transform, mat);
+		Mat4Mult (&bsp_vp[0][0], ec->transform, mat);//FIXME
 		qfeglUniformMatrix4fv (matloc, 1, false, mat);
 	} else {
-		qfeglUniformMatrix4fv (matloc, 1, false, bsp_vp);
+		qfeglUniformMatrix4fv (matloc, 1, false, &bsp_vp[0][0]);
 	}
 	for (el = ec->elements; el; el = el->next) {
 		if (!el->list->size)
@@ -862,7 +879,7 @@ bsp_begin (void)
 	QuatCopy (default_color, last_color);
 	qfeglVertexAttrib4fv (quake_bsp.color.location, default_color);
 
-	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
+	mmulf (bsp_vp, glsl_projection, glsl_view);
 
 	qfeglUseProgram (quake_bsp.program);
 	qfeglEnableVertexAttribArray (quake_bsp.vertex.location);
@@ -871,7 +888,7 @@ bsp_begin (void)
 
 	qfeglVertexAttrib4fv (quake_bsp.color.location, default_color);
 
-	VectorCopy (glsl_Fog_GetColor (), fog);
+	glsl_Fog_GetColor (fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (quake_bsp.fog.location, 1, fog);
 
@@ -917,7 +934,7 @@ turb_begin (void)
 	QuatCopy (default_color, last_color);
 	qfeglVertexAttrib4fv (quake_bsp.color.location, default_color);
 
-	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
+	mmulf (bsp_vp, glsl_projection, glsl_view);
 
 	qfeglUseProgram (quake_turb.program);
 	qfeglEnableVertexAttribArray (quake_turb.vertex.location);
@@ -926,7 +943,7 @@ turb_begin (void)
 
 	qfeglVertexAttrib4fv (quake_turb.color.location, default_color);
 
-	VectorCopy (glsl_Fog_GetColor (), fog);
+	glsl_Fog_GetColor (fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (quake_turb.fog.location, 1, fog);
 
@@ -990,7 +1007,7 @@ sky_begin (void)
 	QuatCopy (default_color, last_color);
 	qfeglVertexAttrib4fv (quake_bsp.color.location, default_color);
 
-	Mat4Mult (glsl_projection, glsl_view, bsp_vp);
+	mmulf (bsp_vp, glsl_projection, glsl_view);
 
 	if (skybox_loaded) {
 		sky_params.mvp_matrix = &quake_skybox.mvp_matrix;
@@ -1030,7 +1047,7 @@ sky_begin (void)
 		qfeglEnable (GL_TEXTURE_2D);
 	}
 
-	VectorCopy (glsl_Fog_GetColor (), fog);
+	glsl_Fog_GetColor (fog);
 	fog[3] = glsl_Fog_GetDensity () / 64.0;
 	qfeglUniform4fv (sky_params.fog->location, 1, fog);
 
@@ -1057,7 +1074,7 @@ sky_end (void)
 }
 
 static inline void
-add_surf_elements (texture_t *tex, instsurf_t *is,
+add_surf_elements (glsltex_t *tex, instsurf_t *is,
 				   elechain_t **ec, elements_t **el)
 {
 	msurface_t *surf = is->surface;
@@ -1096,7 +1113,7 @@ add_surf_elements (texture_t *tex, instsurf_t *is,
 }
 
 static void
-build_tex_elechain (texture_t *tex)
+build_tex_elechain (glsltex_t *tex)
 {
 	instsurf_t *is;
 	elechain_t *ec = 0;
@@ -1116,15 +1133,15 @@ glsl_R_DrawWorld (void)
 	clear_texture_chains ();	// do this first for water and skys
 
 	memset (&worldent, 0, sizeof (worldent));
-	worldent.model = r_worldentity.model;
+	worldent.renderer.model = r_worldentity.renderer.model;
 
 	currententity = &worldent;
 
-	R_VisitWorldNodes (worldent.model);
+	R_VisitWorldNodes (&worldent.renderer.model->brush);
 	if (r_drawentities->int_val) {
 		entity_t   *ent;
 		for (ent = r_ent_queue; ent; ent = ent->next) {
-			if (ent->model->type != mod_brush)
+			if (ent->renderer.model->type != mod_brush)
 				continue;
 			currententity = ent;
 
@@ -1136,7 +1153,7 @@ glsl_R_DrawWorld (void)
 	bsp_begin ();
 	qfeglActiveTexture (GL_TEXTURE0 + 0);
 	for (i = 0; i < r_num_texture_chains; i++) {
-		texture_t  *tex;
+		glsltex_t  *tex;
 		elechain_t *ec = 0;
 
 		tex = r_texture_chains[i];
@@ -1163,7 +1180,7 @@ glsl_R_DrawWaterSurfaces ()
 {
 	instsurf_t *is;
 	msurface_t *surf;
-	texture_t  *tex = 0;
+	glsltex_t  *tex = 0;
 	elechain_t *ec = 0;
 	elements_t *el = 0;
 
@@ -1173,7 +1190,7 @@ glsl_R_DrawWaterSurfaces ()
 	turb_begin ();
 	for (is = waterchain; is; is = is->tex_chain) {
 		surf = is->surface;
-		if (tex != surf->texinfo->texture) {
+		if (tex != surf->texinfo->texture->render) {
 			if (tex) {
 				qfeglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
 				for (ec = tex->elechain; ec; ec = ec->next)
@@ -1184,7 +1201,7 @@ glsl_R_DrawWaterSurfaces ()
 				tex->elechain = 0;
 				tex->elechain_tail = &tex->elechain;
 			}
-			tex = surf->texinfo->texture;
+			tex = surf->texinfo->texture->render;
 		}
 		add_surf_elements (tex, is, &ec, &el);
 	}
@@ -1209,7 +1226,7 @@ glsl_R_DrawSky (void)
 {
 	instsurf_t *is;
 	msurface_t *surf;
-	texture_t  *tex = 0;
+	glsltex_t  *tex = 0;
 	elechain_t *ec = 0;
 	elements_t *el = 0;
 
@@ -1219,7 +1236,7 @@ glsl_R_DrawSky (void)
 	sky_begin ();
 	for (is = sky_chain; is; is = is->tex_chain) {
 		surf = is->surface;
-		if (tex != surf->texinfo->texture) {
+		if (tex != surf->texinfo->texture->render) {
 			if (tex) {
 				if (!skybox_loaded) {
 					qfeglActiveTexture (GL_TEXTURE0 + 0);
@@ -1233,7 +1250,7 @@ glsl_R_DrawSky (void)
 				tex->elechain = 0;
 				tex->elechain_tail = &tex->elechain;
 			}
-			tex = surf->texinfo->texture;
+			tex = surf->texinfo->texture->render;
 		}
 		add_surf_elements (tex, is, &ec, &el);
 	}
@@ -1399,14 +1416,15 @@ glsl_R_LoadSkys (const char *sky)
 	//blender envmap
 	// bk rt ft
 	// dn up lt
-	tex = LoadImage (name = va ("env/%s_map", sky));
+	tex = LoadImage (name = va (0, "env/%s_map", sky), 1);
 	if (tex && tex->format >= 3 && tex->height * 3 == tex->width * 2
 		&& is_pow2 (tex->height)) {
 		tex_t      *sub;
 		int         size = tex->height / 2;
 
 		skybox_loaded = true;
-		sub = malloc (field_offset (tex_t, data[size * size * tex->format]));
+		sub = malloc (sizeof (tex_t) + size * size * tex->format);
+		sub->data = (byte *) (sub + 1);
 		sub->width = size;
 		sub->height = size;
 		sub->format = tex->format;
@@ -1426,12 +1444,12 @@ glsl_R_LoadSkys (const char *sky)
 	} else {
 		skybox_loaded = true;
 		for (i = 0; i < 6; i++) {
-			tex = LoadImage (name = va ("env/%s%s", sky, sky_suffix[i]));
+			tex = LoadImage (name = va (0, "env/%s%s", sky, sky_suffix[i]), 1);
 			if (!tex || tex->format < 3) {	// FIXME pcx support
 				Sys_MaskPrintf (SYS_GLSL, "Couldn't load %s\n", name);
 				// also look in gfx/env, where Darkplaces looks for skies
-				tex = LoadImage (name = va ("gfx/env/%s%s", sky,
-											sky_suffix[i]));
+				tex = LoadImage (name = va (0, "gfx/env/%s%s", sky,
+											sky_suffix[i]), 1);
 				if (!tex || tex->format < 3) {  // FIXME pcx support
 					Sys_MaskPrintf (SYS_GLSL, "Couldn't load %s\n", name);
 					skybox_loaded = false;

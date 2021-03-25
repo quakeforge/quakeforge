@@ -49,22 +49,7 @@ Mod_LoadSpriteModel (model_t *mod, void *buf)
 }
 
 void
-Mod_ProcessTexture (texture_t *tx)
-{
-}
-
-void
 Mod_LoadExternalSkins (model_t *mod)
-{
-}
-
-void
-Mod_LoadExternalTextures (model_t *mod)
-{
-}
-
-void
-Mod_SubdivideSurface (msurface_t *fa)
 {
 }
 

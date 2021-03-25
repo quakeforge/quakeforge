@@ -33,6 +33,7 @@
 
 #include "qfalloca.h"
 
+#include "QF/entity.h"
 #include "QF/render.h"
 #include "QF/sys.h"
 
@@ -77,9 +78,11 @@ R_EntityRotate (vec3_t vec)
 void
 R_RotateBmodel (void)
 {
-	VectorCopy (currententity->transform + 0, entity_rotation[0]);
-	VectorCopy (currententity->transform + 4, entity_rotation[1]);
-	VectorCopy (currententity->transform + 8, entity_rotation[2]);
+	mat4f_t     mat;
+	Transform_GetWorldMatrix (currententity->transform, mat);
+	VectorCopy (mat[0], entity_rotation[0]);
+	VectorCopy (mat[1], entity_rotation[1]);
+	VectorCopy (mat[2], entity_rotation[2]);
 
 	// rotate modelorg and the transformation matrix
 	R_EntityRotate (modelorg);
@@ -237,7 +240,7 @@ R_RecursiveClipBPoly (bedge_t *pedges, mnode_t *pnode, msurface_t *psurf)
 
 
 void
-R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
+R_DrawSolidClippedSubmodelPolygons (model_t *model)
 {
 	int         i, j, lindex;
 	vec_t       dot;
@@ -247,12 +250,13 @@ R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
 	mvertex_t   bverts[MAX_BMODEL_VERTS];
 	bedge_t     bedges[MAX_BMODEL_EDGES], *pbedge;
 	medge_t    *pedge, *pedges;
+	mod_brush_t *brush = &model->brush;
 
 	// FIXME: use bounding-box-based frustum clipping info?
 
-	psurf = &pmodel->surfaces[pmodel->firstmodelsurface];
-	numsurfaces = pmodel->nummodelsurfaces;
-	pedges = pmodel->edges;
+	psurf = &brush->surfaces[brush->firstmodelsurface];
+	numsurfaces = brush->nummodelsurfaces;
+	pedges = brush->edges;
 
 	for (i = 0; i < numsurfaces; i++, psurf++) {
 		// find which side of the node we are on
@@ -278,7 +282,7 @@ R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
 				numbedges += psurf->numedges;
 
 				for (j = 0; j < psurf->numedges; j++) {
-					lindex = pmodel->surfedges[psurf->firstedge + j];
+					lindex = brush->surfedges[psurf->firstedge + j];
 
 					if (lindex > 0) {
 						pedge = &pedges[lindex];
@@ -296,7 +300,8 @@ R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
 
 				pbedge[j - 1].pnext = NULL;	// mark end of edges
 
-				R_RecursiveClipBPoly (pbedge, currententity->topnode, psurf);
+				R_RecursiveClipBPoly (pbedge,
+									  currententity->visibility.topnode, psurf);
 			} else {
 				Sys_Error ("no edges in bmodel");
 			}
@@ -306,18 +311,19 @@ R_DrawSolidClippedSubmodelPolygons (model_t *pmodel)
 
 
 void
-R_DrawSubmodelPolygons (model_t *pmodel, int clipflags)
+R_DrawSubmodelPolygons (model_t *model, int clipflags)
 {
 	int         i;
 	vec_t       dot;
 	msurface_t *psurf;
 	int         numsurfaces;
 	plane_t    *pplane;
+	mod_brush_t *brush = &model->brush;
 
 	// FIXME: use bounding-box-based frustum clipping info?
 
-	psurf = &pmodel->surfaces[pmodel->firstmodelsurface];
-	numsurfaces = pmodel->nummodelsurfaces;
+	psurf = &brush->surfaces[brush->firstmodelsurface];
+	numsurfaces = brush->nummodelsurfaces;
 
 	for (i = 0; i < numsurfaces; i++, psurf++) {
 		// find which side of the node we are on
@@ -328,7 +334,7 @@ R_DrawSubmodelPolygons (model_t *pmodel, int clipflags)
 		// draw the polygon
 		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
 			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
-			r_currentkey = ((mleaf_t *) currententity->topnode)->key;
+			r_currentkey = ((mleaf_t *) currententity->visibility.topnode)->key;
 
 			// FIXME: use bounding-box-based frustum clipping info?
 			R_RenderFace (psurf, clipflags);
@@ -358,7 +364,7 @@ get_side (mnode_t *node)
 }
 
 static void
-visit_node (mnode_t *node, int side, int clipflags)
+visit_node (mod_brush_t *brush, mnode_t *node, int side, int clipflags)
 {
 	int         c;
 	msurface_t *surf;
@@ -367,7 +373,7 @@ visit_node (mnode_t *node, int side, int clipflags)
 	side = (~side + 1) & SURF_PLANEBACK;
 	// draw stuff
 	if ((c = node->numsurfaces)) {
-		surf = r_worldentity.model->surfaces + node->firstsurface;
+		surf = brush->surfaces + node->firstsurface;
 		for (; c; c--, surf++) {
 			if (surf->visframe != r_visframecount)
 				continue;
@@ -444,7 +450,7 @@ test_node (mnode_t *node, int *clipflags)
 }
 
 static void
-R_VisitWorldNodes (model_t *model, int clipflags)
+R_VisitWorldNodes (mod_brush_t *brush, int clipflags)
 {
 	typedef struct {
 		mnode_t    *node;
@@ -456,9 +462,9 @@ R_VisitWorldNodes (model_t *model, int clipflags)
 	mnode_t    *front;
 	int         side, cf;
 
-	node = model->nodes;
+	node = brush->nodes;
 	// +2 for paranoia
-	node_stack = alloca ((model->depth + 2) * sizeof (rstack_t));
+	node_stack = alloca ((brush->depth + 2) * sizeof (rstack_t));
 	node_ptr = node_stack;
 
 	cf = clipflags;
@@ -478,7 +484,7 @@ R_VisitWorldNodes (model_t *model, int clipflags)
 			}
 			if (front->contents < 0 && front->contents != CONTENTS_SOLID)
 				visit_leaf ((mleaf_t *) front);
-			visit_node (node, side, clipflags);
+			visit_node (brush, node, side, clipflags);
 			node = node->children[!side];
 		}
 		if (node->contents < 0 && node->contents != CONTENTS_SOLID)
@@ -488,7 +494,7 @@ R_VisitWorldNodes (model_t *model, int clipflags)
 			node = node_ptr->node;
 			side = node_ptr->side;
 			clipflags = node_ptr->clipflags;
-			visit_node (node, side, clipflags);
+			visit_node (brush, node, side, clipflags);
 			node = node->children[!side];
 			continue;
 		}
@@ -502,17 +508,17 @@ void
 R_RenderWorld (void)
 {
 	int         i;
-	model_t    *clmodel;
 	btofpoly_t  btofpolys[MAX_BTOFPOLYS];
+	mod_brush_t *brush;
 
 	pbtofpolys = btofpolys;
 
 	currententity = &r_worldentity;
 	VectorCopy (r_origin, modelorg);
-	clmodel = currententity->model;
-	r_pcurrentvertbase = clmodel->vertexes;
+	brush = &currententity->renderer.model->brush;
+	r_pcurrentvertbase = brush->vertexes;
 
-	R_VisitWorldNodes (clmodel, 15);
+	R_VisitWorldNodes (brush, 15);
 
 	// if the driver wants the polygons back to front, play the visible ones
 	// back in that order

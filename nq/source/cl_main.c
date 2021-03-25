@@ -34,11 +34,12 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
+#include "QF/entity.h"
 #include "QF/input.h"
 #include "QF/joystick.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
-#include "QF/qfplist.h"
+#include "QF/plist.h"
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/skin.h"
@@ -49,8 +50,9 @@
 #include "QF/plugin/vid_render.h"
 
 #include "compat.h"
-#include "clview.h"
 #include "sbar.h"
+
+#include "client/temp_entities.h"
 
 #include "nq/include/chase.h"
 #include "nq/include/cl_skin.h"
@@ -106,7 +108,7 @@ CL_WriteConfiguration (void)
 	// dedicated servers initialize the host but don't parse and set the
 	// config.cfg cvars
 	if (host_initialized && !isDedicated && cl_writecfg->int_val) {
-		char       *path = va ("%s/config.cfg", qfs_gamedir->dir.def);
+		char       *path = va (0, "%s/config.cfg", qfs_gamedir->dir.def);
 		f = QFS_WOpen (path, 0);
 		if (!f) {
 			Sys_Printf ("Couldn't write config.cfg.\n");
@@ -121,14 +123,18 @@ CL_WriteConfiguration (void)
 	}
 }
 
-void
-CL_Shutdown (void)
+static void
+CL_Shutdown (void *data)
 {
 	CL_WriteConfiguration ();
-	CDAudio_Shutdown ();
-	S_Shutdown ();
-	IN_Shutdown ();
-	VID_Shutdown ();
+}
+
+void
+CL_ClearMemory (void)
+{
+	VID_ClearMemory ();
+	if (r_data)
+		r_data->force_fullscreen = 0;
 }
 
 void
@@ -340,10 +346,11 @@ CL_SignonReply (void)
 
 	case so_spawn:
 		MSG_WriteByte (&cls.message, clc_stringcmd);
-		MSG_WriteString (&cls.message, va ("name \"%s\"\n", cl_name->string));
+		MSG_WriteString (&cls.message, va (0, "name \"%s\"\n",
+										   cl_name->string));
 		MSG_WriteByte (&cls.message, clc_stringcmd);
 		MSG_WriteString (&cls.message,
-						 va ("color %i %i\n", (cl_color->int_val) >> 4,
+						 va (0, "color %i %i\n", (cl_color->int_val) >> 4,
 							 (cl_color->int_val) & 15));
 		MSG_WriteByte (&cls.message, clc_stringcmd);
 		MSG_WriteString (&cls.message, "spawn");
@@ -385,7 +392,8 @@ CL_NextDemo (void)
 		}
 	}
 
-	Cbuf_InsertText (host_cbuf, va ("playdemo %s\n", cls.demos[cls.demonum]));
+	Cbuf_InsertText (host_cbuf, va (0, "playdemo %s\n",
+									cls.demos[cls.demonum]));
 	cls.demonum++;
 }
 
@@ -397,13 +405,15 @@ CL_PrintEntities_f (void)
 
 	for (i = 0, ent = cl_entities; i < cl.num_entities; i++, ent++) {
 		Sys_Printf ("%3i:", i);
-		if (!ent->model) {
+		if (!ent->renderer.model) {
 			Sys_Printf ("EMPTY\n");
 			continue;
 		}
-		Sys_Printf ("%s:%2i  (%5.1f,%5.1f,%5.1f) [%5.1f %5.1f %5.1f]\n",
-					ent->model->name, ent->frame, VectorExpand (ent->origin),
-					VectorExpand (ent->angles));
+		vec4f_t     org = Transform_GetWorldPosition (ent->transform);
+		vec4f_t     rot = Transform_GetWorldRotation (ent->transform);
+		Sys_Printf ("%s:%2i  "VEC4F_FMT" "VEC4F_FMT"\n",
+					ent->renderer.model->path, ent->animation.frame,
+					VEC4_EXP (org), VEC4_EXP (rot));
 	}
 }
 
@@ -416,9 +426,14 @@ int
 CL_ReadFromServer (void)
 {
 	int         ret;
+	TEntContext_t tentCtx = {
+		Transform_GetWorldPosition (cl_entities[cl.viewentity].transform),
+		cl.worldmodel, cl.viewentity
+	};
 
 	cl.oldtime = cl.time;
 	cl.time += host_frametime;
+	cl.viewstate.frametime = host_frametime;
 
 	do {
 		ret = CL_GetMessage ();
@@ -434,7 +449,7 @@ CL_ReadFromServer (void)
 		Sys_Printf ("\n");
 
 	CL_RelinkEntities ();
-	CL_UpdateTEnts ();
+	CL_UpdateTEnts (cl.time, &tentCtx);
 
 	// bring the links up to date
 	return 0;
@@ -521,13 +536,15 @@ CL_SetState (cactive_t state)
 static void
 Force_CenterView_f (void)
 {
-	cl.viewangles[PITCH] = 0;
+	cl.viewstate.angles[PITCH] = 0;
 }
 
 void
 CL_Init (cbuf_t *cbuf)
 {
 	byte       *basepal, *colormap;
+
+	Sys_RegisterShutdown (CL_Shutdown, 0);
 
 	basepal = (byte *) QFS_LoadHunkFile (QFS_FOpenFile ("gfx/palette.lmp"));
 	if (!basepal)

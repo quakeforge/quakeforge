@@ -741,7 +741,8 @@ struct_def
 			} else if (is_anonymous_struct ($1)) {
 				// anonymous struct/union
 				// type->name always begins with "tag "
-				$1.sym = new_symbol (va (".anonymous.%s", $1.type->name + 4));
+				$1.sym = new_symbol (va (0, ".anonymous.%s",
+										 $1.type->name + 4));
 				$1.sym->type = $1.type;
 				$1.sym->sy_type = sy_var;
 				$1.sym->visibility = vis_anonymous;
@@ -1924,7 +1925,8 @@ ivar_decl
 			if (is_anonymous_struct ($1)) {
 				// anonymous struct/union
 				// type->name always begins with "tag "
-				$1.sym = new_symbol (va (".anonymous.%s", $1.type->name + 4));
+				$1.sym = new_symbol (va (0, ".anonymous.%s",
+										 $1.type->name + 4));
 				$1.sym->type = $1.type;
 				$1.sym->sy_type = sy_var;
 				$1.sym->visibility = vis_anonymous;

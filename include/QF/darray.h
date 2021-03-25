@@ -28,8 +28,10 @@
 
 */
 
-#ifndef __darray_h
-#define __darray_h
+#ifndef __QF_darray_h
+#define __QF_darray_h
+
+#include "QF/sys.h"
 
 /** \defgroup darray Dynamic Arrays
 	\ingroup utils
@@ -67,6 +69,8 @@
 		ele_type   *a;			\
 	}
 
+#define DARRAY_STATIC_INIT(g) { .grow = g }
+
 /**	Allocate a fixed-size array using the given allocator
 
 	The allocated array is initilized to be ungrowable, and with both size
@@ -81,6 +85,30 @@
 	({																	\
 		__auto_type s = (array_size);									\
 		typeof (array_type) *ar = alloc (sizeof(*ar)					\
+										 + s * sizeof (*ar->a));		\
+		ar->size = ar->maxSize = s;										\
+		ar->grow = 0;													\
+		ar->a = (typeof (ar->a)) (ar + 1);								\
+		ar;																\
+	})
+
+/**	Allocate a fixed-size array using the given allocator
+
+	The allocated array is initilized to be ungrowable, and with both size
+	and maxSize set to the given size.
+
+	\param array_type	Expression acceptable by typeof for determining the
+						type of the array.
+	\param array_size   The size of the array.
+	\param alloc		Allocator taking (obj, size) where obj is allocator
+						specific data (eg, a memory pool).
+	\param obj			Additional data for the allocator.
+*/
+#define DARRAY_ALLOCFIXED_OBJ(array_type, array_size, alloc, obj)		\
+	({																	\
+		__auto_type s = (array_size);									\
+		typeof (array_type) *ar = alloc ((obj),							\
+										 sizeof(*ar)					\
 										 + s * sizeof (*ar->a));		\
 		ar->size = ar->maxSize = s;										\
 		ar->grow = 0;													\
@@ -121,9 +149,9 @@
 #define DARRAY_CLEAR(array)												\
 	do {																\
 		__auto_type ar = (array);										\
-		free (ar->a);													\
 		ar->size = 0;													\
 		if (ar->grow) {													\
+			free (ar->a);												\
 			ar->maxSize = 0;											\
 			ar->a = 0;													\
 		}																\
@@ -227,7 +255,7 @@
 		}																\
 		DARRAY_RESIZE (ar, ar->size + sp);								\
 		memmove (&ar->a[po + sp], &ar->a[po],							\
-				 (ar->size - po) * sizeof (*ar->a));					\
+				 (ar->size - po - sp) * sizeof (*ar->a));				\
 		&ar->a[po];														\
 	})
 
@@ -339,4 +367,4 @@
 
 ///@}
 
-#endif//__darray_h
+#endif//__QF_darray_h

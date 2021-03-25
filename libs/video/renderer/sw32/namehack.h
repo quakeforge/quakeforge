@@ -111,7 +111,7 @@
 #define SCR_CaptureBGR sw32_SCR_CaptureBGR
 #define SCR_ScreenShot sw32_SCR_ScreenShot
 #define SCR_ScreenShot_f sw32_SCR_ScreenShot_f
-#define SCR_UpdateScreen sw32_SCR_UpdateScreen
+#define R_RenderFrame sw32_R_RenderFrame
 #define TransformVector sw32_TransformVector
 #define Turbulent sw32_Turbulent
 #define acolormap sw32_acolormap
@@ -352,7 +352,7 @@ extern struct surf_s *sw32_surfaces;
 #undef SCR_CaptureBGR
 #undef SCR_ScreenShot
 #undef SCR_ScreenShot_f
-#undef SCR_UpdateScreen
+#undef R_RenderFrame
 #undef TransformVector
 #undef Turbulent
 #undef VID_InitBuffers

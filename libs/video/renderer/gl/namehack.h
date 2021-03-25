@@ -70,7 +70,7 @@
 #define SCR_CaptureBGR gl_SCR_CaptureBGR
 #define SCR_ScreenShot gl_SCR_ScreenShot
 #define SCR_ScreenShot_f gl_SCR_ScreenShot_f
-#define SCR_UpdateScreen gl_SCR_UpdateScreen
+#define R_RenderFrame gl_R_RenderFrame
 #define c_alias_polys gl_c_alias_polys
 #define c_brush_polys gl_c_brush_polys
 #define r_easter_eggs_f gl_r_easter_eggs_f
@@ -126,7 +126,7 @@
 #undef SCR_CaptureBGR
 #undef SCR_ScreenShot
 #undef SCR_ScreenShot_f
-#undef SCR_UpdateScreen
+#undef R_RenderFrame
 #undef c_alias_polys
 #undef c_brush_polys
 #undef r_easter_eggs_f

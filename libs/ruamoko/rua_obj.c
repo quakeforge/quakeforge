@@ -93,25 +93,25 @@ typedef struct probj_resources_s {
 static dtable_t *
 dtable_new (probj_t *probj)
 {
-	PR_RESNEW (dtable_t, probj->dtables);
+	return PR_RESNEW (probj->dtables);
 }
 
 static void
 dtable_reset (probj_t *probj)
 {
-	PR_RESRESET (dtable_t, probj->dtables);
+	PR_RESRESET (probj->dtables);
 }
 
 static inline dtable_t *
 dtable_get (probj_t *probj, int index)
 {
-	PR_RESGET (probj->dtables, index);
+	return PR_RESGET (probj->dtables, index);
 }
 
 static inline int __attribute__((pure))
 dtable_index (probj_t *probj, dtable_t *dtable)
 {
-	PR_RESINDEX (probj->dtables, dtable);
+	return PR_RESINDEX (probj->dtables, dtable);
 }
 
 static always_inline dtable_t * __attribute__((pure))
@@ -1700,12 +1700,14 @@ class_create_instance (progs_t *pr, pr_class_t *class)
 {
 	int         size = (class->instance_size + 1) * sizeof (pr_type_t);
 	pr_type_t  *mem;
-	pr_id_t    *id;
+	pr_id_t    *id = 0;
 
 	mem = PR_Zone_TagMalloc (pr, size, class->name);
-	memset (mem, 0, size);
-	id = (pr_id_t *) (mem + 1);
-	id->class_pointer = PR_SetPointer (pr, class);
+	if (mem) {
+		memset (mem, 0, size);
+		id = (pr_id_t *) (mem + 1);
+		id->class_pointer = PR_SetPointer (pr, class);
+	}
 	return id;
 }
 
@@ -1832,9 +1834,11 @@ rua_object_copy (progs_t *pr)
 	pr_id_t    *id;
 
 	id = class_create_instance (pr, class);
-	memcpy (id, object, sizeof (pr_type_t) * class->instance_size);
-	// copy the retain count
-	((pr_type_t *) id)[-1] = ((pr_type_t *) object)[-1];
+	if (id) {
+		memcpy (id, object, sizeof (pr_type_t) * class->instance_size);
+		// copy the retain count
+		((pr_type_t *) id)[-1] = ((pr_type_t *) object)[-1];
+	}
 	RETURN_POINTER (pr, id);
 }
 

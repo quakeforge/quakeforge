@@ -42,6 +42,8 @@
 #define MAX_MAP_FACES			65535	// format limit (u16)
 #define MAX_MAP_MARKSURFACES	65535	// format limit (u16)
 
+#define MAP_PVS_BYTES (MAX_MAP_LEAFS / 8)
+
 //=============================================================================
 
 #define BSPVERSION		29

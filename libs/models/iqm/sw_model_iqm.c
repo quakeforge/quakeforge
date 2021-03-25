@@ -53,12 +53,11 @@
 #include "mod_internal.h"
 #include "r_internal.h"
 
-static tex_t null_texture = {
-	2, 2, tex_palette, 0, {15, 15, 15, 15}
-};
+static byte null_data[] = {15, 15, 15, 15};
+static tex_t null_texture = { 2, 2, tex_palette, 1, 0, null_data };
 
 static void
-sw_iqm_clear (model_t *mod)
+sw_iqm_clear (model_t *mod, void *data)
 {
 	iqm_t      *iqm = (iqm_t *) mod->aliashdr;
 	swiqm_t    *sw = (swiqm_t *) iqm->extra_data;
@@ -112,7 +111,7 @@ sw_iqm_load_textures (iqm_t *iqm)
 			continue;
 		dstring_copystr (str, iqm->text + iqm->meshes[i].material);
 		QFS_StripExtension (str->str, str->str);
-		if ((tex = LoadImage (va ("textures/%s", str->str))))
+		if ((tex = LoadImage (va (0, "textures/%s", str->str), 1)))
 			tex = sw->skins[i] = ConvertImage (tex, vid.basepal);
 		else
 			tex = sw->skins[i] = &null_texture;

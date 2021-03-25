@@ -177,14 +177,14 @@ Skin_SetSkin (skin_t *skin, int cmap, const char *skinname)
 			break;
 		}
 
-		file = QFS_FOpenFile (va ("skins/%s.pcx", name));
+		file = QFS_FOpenFile (va (0, "skins/%s.pcx", name));
 		if (!file) {
 			Sys_Printf ("Couldn't load skin %s\n", name);
 			free (name);
 			name = 0;
 			break;
 		}
-		tex = LoadPCX (file, 0, r_data->vid->palette);
+		tex = LoadPCX (file, 0, r_data->vid->palette, 1);
 		Qclose (file);
 		if (!tex || tex->width > 320 || tex->height > 200) {
 			Sys_Printf ("Bad skin %s\n", name);
@@ -193,7 +193,8 @@ Skin_SetSkin (skin_t *skin, int cmap, const char *skinname)
 			tex = 0;
 			break;
 		}
-		out = malloc (field_offset (tex_t, data[PLAYER_WIDTH*PLAYER_HEIGHT]));
+		out = malloc (sizeof (tex_t) + PLAYER_WIDTH*PLAYER_HEIGHT);
+		out->data = (byte *) (out + 1);
 		out->width = PLAYER_WIDTH;
 		out->height = PLAYER_HEIGHT;
 		out->format = tex_palette;
@@ -244,4 +245,64 @@ Skin_Init (void)
 {
 	skin_cache = Hash_NewTable (127, skin_getkey, skin_free, 0, 0);
 	m_funcs->Skin_InitTranslations ();
+}
+
+VISIBLE int
+Skin_CalcTopColors (const byte *in, byte *out, int pixels)
+{
+	byte        tc = 0;
+
+	while (pixels-- > 0) {
+		byte        pix = *in++;
+		if (pix >= TOP_RANGE && pix < TOP_RANGE + 16) {
+			tc = 1;
+			*out++ = pix - TOP_RANGE;
+		} else {
+			*out++ = 0;
+		}
+	}
+	return tc;
+}
+
+VISIBLE int
+Skin_CalcBottomColors (const byte *in, byte *out, int pixels)
+{
+	byte        bc = 0;
+
+	while (pixels-- > 0) {
+		byte        pix = *in++;
+		if (pix >= BOTTOM_RANGE && pix < BOTTOM_RANGE + 16) {
+			bc = 1;
+			*out++ = pix - BOTTOM_RANGE;
+		} else {
+			*out++ = 0;
+		}
+	}
+	return bc;
+}
+
+VISIBLE void
+Skin_ClearTopColors (const byte *in, byte *out, int pixels)
+{
+	while (pixels-- > 0) {
+		byte        pix = *in++;
+		if (pix >= TOP_RANGE && pix < TOP_RANGE + 16) {
+			*out++ = 0;
+		} else {
+			*out++ = pix;
+		}
+	}
+}
+
+VISIBLE void
+Skin_ClearBottomColors (const byte *in, byte *out, int pixels)
+{
+	while (pixels-- > 0) {
+		byte        pix = *in++;
+		if (pix >= BOTTOM_RANGE && pix < BOTTOM_RANGE + 16) {
+			*out++ = 0;
+		} else {
+			*out++ = pix;
+		}
+	}
 }

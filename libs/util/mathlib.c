@@ -268,8 +268,26 @@ QuatMultVec (const quat_t q, const vec3_t v, vec3_t out)
 	dqq = DotProduct (q, q);
 	VectorScale (tv, s, tv);
 	VectorMultAdd (tv, dqv, q, tv);
-	VectorAdd (tv, tv, tv);
+	VectorScale (tv, 2, tv);
 	VectorMultAdd (tv, s * s - dqq, v, out);
+}
+
+VISIBLE void
+QuatRotation(const vec3_t a, const vec3_t b, quat_t out)
+{
+	vec_t       ma, mb;
+	vec_t       den, mba_mab;
+	vec3_t      t;
+
+	ma = VectorLength(a);
+	mb = VectorLength(b);
+	den = 2 * ma * mb;
+	VectorScale (a, mb, t);
+	VectorMultAdd(t, ma, b, t);
+	mba_mab = VectorLength(t);
+	CrossProduct (a, b, t);
+	VectorScale(t, 1 / mba_mab, out);
+	out[3] = mba_mab / den;
 }
 
 VISIBLE void
@@ -303,7 +321,7 @@ QuatExp (const quat_t a, quat_t b)
 VISIBLE void
 QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical)
 {
-	vec_t       xx, xy, xz, xw, yy, yz, yw, zz, zw, ww;
+	vec_t       xx, xy, xz, xw, yy, yz, yw, zz, zw;
 	vec_t       *_m[4] = {
 		m + (homogenous ? 0 : 0),
 		m + (homogenous ? 4 : 3),
@@ -311,28 +329,26 @@ QuatToMatrix (const quat_t q, vec_t *m, int homogenous, int vertical)
 		m + (homogenous ? 12 : 9),
 	};
 
-	xx = q[0] * q[0];
-	xy = q[0] * q[1];
-	xz = q[0] * q[2];
-	xw = q[0] * q[3];
+	xx = 2 * q[0] * q[0];
+	xy = 2 * q[0] * q[1];
+	xz = 2 * q[0] * q[2];
+	xw = 2 * q[0] * q[3];
 
-	yy = q[1] * q[1];
-	yz = q[1] * q[2];
-	yw = q[1] * q[3];
+	yy = 2 * q[1] * q[1];
+	yz = 2 * q[1] * q[2];
+	yw = 2 * q[1] * q[3];
 
-	zz = q[2] * q[2];
-	zw = q[2] * q[3];
-
-	ww = q[3] * q[3];
+	zz = 2 * q[2] * q[2];
+	zw = 2 * q[2] * q[3];
 
 	if (vertical) {
-		VectorSet (ww + xx - yy - zz, 2 * (xy + zw), 2 * (xz - yw), _m[0]);
-		VectorSet (2 * (xy - zw), ww - xx + yy - zz, 2 * (yz + xw), _m[1]);
-		VectorSet (2 * (xz + yw), 2 * (yz - xw), ww - xx - yy + zz, _m[2]);
+		VectorSet (1.0f - yy - zz, xy + zw, xz - yw, _m[0]);
+		VectorSet (xy - zw, 1.0f - xx - zz, yz + xw, _m[1]);
+		VectorSet (xz + yw, yz - xw, 1.0f - xx - yy, _m[2]);
 	} else {
-		VectorSet (ww + xx - yy - zz, 2 * (xy - zw), 2 * (xz + yw), _m[0]);
-		VectorSet (2 * (xy + zw), ww - xx + yy - zz, 2 * (yz - xw), _m[1]);
-		VectorSet (2 * (xz - yw), 2 * (yz + xw), ww - xx - yy + zz, _m[2]);
+		VectorSet (1.0f - yy - zz, xy - zw, xz + yw, _m[0]);
+		VectorSet (xy + zw, 1.0f - xx - zz, yz - xw, _m[1]);
+		VectorSet (xz - yw, yz + xw, 1.0f - xx - yy, _m[2]);
 	}
 	if (homogenous) {
 		_m[0][3] = 0;
@@ -485,6 +501,8 @@ BoxOnPlaneSide (const vec3_t emins, const vec3_t emaxs, plane_t *p)
 #endif
 
 /*
+	FIXME these comments are a confused mess (the code is fine)
+
 	angles is a left(?) handed system: 'pitch yaw roll' with x (pitch) axis to
 	the right, y (yaw) axis up and z (roll) axis forward.
 

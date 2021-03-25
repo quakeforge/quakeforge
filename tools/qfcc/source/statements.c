@@ -97,14 +97,14 @@ tempop_string (operand_t *tmpop)
 {
 	tempop_t   *tempop = &tmpop->o.tempop;
 	if (tempop->alias) {
-		return va ("<tmp %s %p:%d:%p:%d:%d>",
+		return va (0, "<tmp %s %p:%d:%p:%d:%d>",
 				   pr_type_name[tempop->type->type],
 				   tmpop, tempop->users,
 				   tempop->alias,
 				   tempop->offset,
 				   tempop->alias->o.tempop.users);
 	}
-	return va ("<tmp %s %p:%d>", pr_type_name[tempop->type->type],
+	return va (0, "<tmp %s %p:%d>", pr_type_name[tempop->type->type],
 			   tmpop, tempop->users);
 }
 
@@ -119,47 +119,47 @@ operand_string (operand_t *op)
 		case op_value:
 			switch (op->o.value->lltype) {
 				case ev_string:
-					return va ("\"%s\"",
+					return va (0, "\"%s\"",
 							   quote_string (op->o.value->v.string_val));
 				case ev_double:
-					return va ("%g", op->o.value->v.double_val);
+					return va (0, "%g", op->o.value->v.double_val);
 				case ev_float:
-					return va ("%g", op->o.value->v.float_val);
+					return va (0, "%g", op->o.value->v.float_val);
 				case ev_vector:
-					return va ("'%g %g %g'",
+					return va (0, "'%g %g %g'",
 							   op->o.value->v.vector_val[0],
 							   op->o.value->v.vector_val[1],
 							   op->o.value->v.vector_val[2]);
 				case ev_quat:
-					return va ("'%g %g %g %g'",
+					return va (0, "'%g %g %g %g'",
 							   op->o.value->v.quaternion_val[0],
 							   op->o.value->v.quaternion_val[1],
 							   op->o.value->v.quaternion_val[2],
 							   op->o.value->v.quaternion_val[3]);
 				case ev_pointer:
 					if (op->o.value->v.pointer.def) {
-						return va ("ptr %s+%d",
+						return va (0, "ptr %s+%d",
 								   op->o.value->v.pointer.def->name,
 								   op->o.value->v.pointer.val);
 					} else if(op->o.value->v.pointer.tempop) {
 						operand_t  *tempop = op->o.value->v.pointer.tempop;
-						return va ("ptr %s+%d", tempop_string (tempop),
+						return va (0, "ptr %s+%d", tempop_string (tempop),
 								   op->o.value->v.pointer.val);
 					} else {
-						return va ("ptr %d", op->o.value->v.pointer.val);
+						return va (0, "ptr %d", op->o.value->v.pointer.val);
 					}
 				case ev_field:
-					return va ("field %d", op->o.value->v.pointer.val);
+					return va (0, "field %d", op->o.value->v.pointer.val);
 				case ev_entity:
-					return va ("ent %d", op->o.value->v.integer_val);
+					return va (0, "ent %d", op->o.value->v.integer_val);
 				case ev_func:
-					return va ("func %d", op->o.value->v.integer_val);
+					return va (0, "func %d", op->o.value->v.integer_val);
 				case ev_integer:
-					return va ("int %d", op->o.value->v.integer_val);
+					return va (0, "int %d", op->o.value->v.integer_val);
 				case ev_uinteger:
-					return va ("uint %u", op->o.value->v.uinteger_val);
+					return va (0, "uint %u", op->o.value->v.uinteger_val);
 				case ev_short:
-					return va ("short %d", op->o.value->v.short_val);
+					return va (0, "short %d", op->o.value->v.short_val);
 				case ev_void:
 					return "(void)";
 				case ev_invalid:
@@ -177,10 +177,11 @@ operand_string (operand_t *op)
 				const char *alias = operand_string (op->o.alias);
 				char       *buf = alloca (strlen (alias) + 1);
 				strcpy (buf, alias);
-				return va ("alias(%s,%s)", pr_type_name[op->type->type], buf);
+				return va (0, "alias(%s,%s)", pr_type_name[op->type->type],
+						   buf);
 			}
 		case op_nil:
-			return va ("nil");
+			return va (0, "nil");
 	}
 	return ("??");
 }
@@ -1036,7 +1037,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 			}
 		}
 	}
-	opcode = va ("<%sCALL%d>", pref, count);
+	opcode = va (0, "<%sCALL%d>", pref, count);
 	s = new_statement (st_func, opcode, call);
 	sblock = statement_subexpr (sblock, func, &s->opa);
 	s->opb = arguments[0];
@@ -2076,11 +2077,11 @@ make_statements (expr_t *e)
 	do {
 		did_something = thread_jumps (sblock);
 		if (options.block_dot.thread)
-			dump_dot (va ("thread-%d", pass), sblock, dump_dot_sblock);
+			dump_dot (va (0, "thread-%d", pass), sblock, dump_dot_sblock);
 		did_something |= remove_dead_blocks (sblock);
 		sblock = merge_blocks (sblock);
 		if (options.block_dot.dead)
-			dump_dot (va ("dead-%d", pass), sblock, dump_dot_sblock);
+			dump_dot (va (0, "dead-%d", pass), sblock, dump_dot_sblock);
 		pass++;
 	} while (did_something);
 	check_final_block (sblock);

@@ -44,12 +44,13 @@
 #include "mod_internal.h"
 
 void
-gl_Mod_SpriteLoadTexture (mspriteframe_t *pspriteframe, int framenum)
+gl_Mod_SpriteLoadTexture (model_t *mod, mspriteframe_t *pspriteframe,
+						  int framenum)
 {
 	tex_t      *targa;
 	const char *name;
 
-	targa = LoadImage (name = va ("%s_%i", loadmodel->name, framenum));
+	targa = LoadImage (name = va (0, "%s_%i", mod->path, framenum), 1);
 	if (targa) {
 		if (targa->format < 4)
 			pspriteframe->gl_texturenum = GL_LoadTexture (name,

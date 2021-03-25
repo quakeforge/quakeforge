@@ -249,7 +249,7 @@ get_function (const char *name, const type_t *type, int overload, int create)
 
 	name = save_string (name);
 
-	full_name = save_string (va ("%s|%s", name, encode_params (type)));
+	full_name = save_string (va (0, "%s|%s", name, encode_params (type)));
 
 	func = Hash_Find (overloaded_functions, full_name);
 	if (func) {
@@ -382,7 +382,7 @@ find_function (expr_t *fexpr, expr_t *params)
 	dummy.type = find_type (&type);
 
 	qsort (funcs, func_count, sizeof (void *), func_compare);
-	dummy.full_name = save_string (va ("%s|%s", fexpr->e.symbol->name,
+	dummy.full_name = save_string (va (0, "%s|%s", fexpr->e.symbol->name,
 									   encode_params (&type)));
 	dummy_p = bsearch (&dummy_p, funcs, func_count, sizeof (void *),
 					   func_compare);
@@ -526,7 +526,7 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 
 	if (args) {
 		while (i < MAX_PARMS) {
-			param = new_symbol_type (va (".par%d", i), &type_param);
+			param = new_symbol_type (va (0, ".par%d", i), &type_param);
 			initialize_def (param, 0, symtab->space, sc_param);
 			i++;
 		}

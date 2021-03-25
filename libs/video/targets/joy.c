@@ -183,7 +183,7 @@ JOY_Init (void)
 static void
 joyamp_f (cvar_t *var)
 {
-	Cvar_Set (var, va ("%g", max (0.0001, var->value)));
+	Cvar_Set (var, va (0, "%g", max (0.0001, var->value)));
 }
 
 typedef struct {

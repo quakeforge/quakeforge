@@ -55,7 +55,7 @@ draw_cpu (view_t *view)
 	cpu = (svs.stats.latched_active + svs.stats.latched_idle);
 	cpu = 100 * svs.stats.latched_active / cpu;
 
-	cpu_str = va ("[CPU: %3d%%]", (int) cpu);
+	cpu_str = va (0, "[CPU: %3d%%]", (int) cpu);
 	for (s = cpu_str, d = sb->text + view->xrel; *s; s++)
 		*d++ = *s;
 	if (cpu > 70.0) {
@@ -74,7 +74,7 @@ draw_rec (view_t *view)
 	const char *s;
 	char       *d;
 
-	str = va ("[REC: %d]", SVR_NumRecorders ());
+	str = va (0, "[REC: %d]", SVR_NumRecorders ());
 	for (s = str, d = sb->text + view->xrel; *s; s++)
 		*d++ = *s;
 }

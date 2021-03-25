@@ -479,7 +479,7 @@ new_label_name (void)
 	const char *fname = current_func->sym->name;
 	const char *lname;
 
-	lname = save_string (va ("$%s_%d", fname, lnum));
+	lname = save_string (va (0, "$%s_%d", fname, lnum));
 	return lname;
 }
 
@@ -543,7 +543,8 @@ named_label_expr (symbol_t *label)
 		return sym->s.expr;
 	}
 	l = new_label_expr ();
-	l->e.label.name = save_string (va ("%s_%s", l->e.label.name, label->name));
+	l->e.label.name = save_string (va (0, "%s_%s", l->e.label.name,
+									   label->name));
 	l->e.label.symbol = label;
 	label->sy_type = sy_expr;
 	label->s.expr = l;
@@ -1268,7 +1269,7 @@ new_ret_expr (type_t *type)
 expr_t *
 new_param_expr (type_t *type, int num)
 {
-	return param_expr (va (".param_%d", num), type);
+	return param_expr (va (0, ".param_%d", num), type);
 }
 
 expr_t *
@@ -2075,7 +2076,7 @@ return_expr (function_t *f, expr_t *e)
 
 	t = get_type (e);
 
-	if (e->type == ex_error) {
+	if (!t) {
 		return e;
 	}
 	if (is_void(ret_type)) {

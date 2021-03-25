@@ -1108,7 +1108,7 @@ Sbar_LogFrags (void)
 	if (t)
 		Qwrite (file, t, strlen (t));
 
-	Qprintf (file, "%s\n%s %s\n", cls.servername->str, cl.worldmodel->name,
+	Qprintf (file, "%s\n%s %s\n", cls.servername->str, cl.worldmodel->path,
 			 cl.levelname);
 
 	// scores
@@ -1605,7 +1605,7 @@ draw_net (view_t *view)
 		int ping = cl.players[cl.playernum].ping;
 
 		ping = bound (0, ping, 999);
-		draw_string (view, 0, 0, va ("%3d ms ", ping));
+		draw_string (view, 0, 0, va (0, "%3d ms ", ping));
 	}
 
 	if (hud_ping->int_val && hud_pl->int_val)
@@ -1615,7 +1615,7 @@ draw_net (view_t *view)
 		int lost = CL_CalcNet ();
 
 		lost = bound (0, lost, 999);
-		draw_string (view, 56, 0, va ("%3d pl", lost));
+		draw_string (view, 56, 0, va (0, "%3d pl", lost));
 	}
 }
 
@@ -1950,8 +1950,8 @@ Sbar_Init (void)
 	Key_KeydestCallback (sbar_keydest_callback);
 
 	for (i = 0; i < 10; i++) {
-		sb_nums[0][i] = r_funcs->Draw_PicFromWad (va ("num_%i", i));
-		sb_nums[1][i] = r_funcs->Draw_PicFromWad (va ("anum_%i", i));
+		sb_nums[0][i] = r_funcs->Draw_PicFromWad (va (0, "num_%i", i));
+		sb_nums[1][i] = r_funcs->Draw_PicFromWad (va (0, "anum_%i", i));
 	}
 
 	sb_nums[0][10] = r_funcs->Draw_PicFromWad ("num_minus");
@@ -1977,19 +1977,26 @@ Sbar_Init (void)
 	sb_weapons[1][6] = r_funcs->Draw_PicFromWad ("inv2_lightng");
 
 	for (i = 0; i < 5; i++) {
-		sb_weapons[2 + i][0] = r_funcs->Draw_PicFromWad (va ("inva%i_shotgun",
+		sb_weapons[2 + i][0] = r_funcs->Draw_PicFromWad (va (0,
+															 "inva%i_shotgun",
 															 i + 1));
-		sb_weapons[2 + i][1] = r_funcs->Draw_PicFromWad (va ("inva%i_sshotgun",
+		sb_weapons[2 + i][1] = r_funcs->Draw_PicFromWad (va (0,
+															 "inva%i_sshotgun",
 															 i + 1));
-		sb_weapons[2 + i][2] = r_funcs->Draw_PicFromWad (va ("inva%i_nailgun",
+		sb_weapons[2 + i][2] = r_funcs->Draw_PicFromWad (va (0,
+															 "inva%i_nailgun",
 															 i + 1));
-		sb_weapons[2 + i][3] = r_funcs->Draw_PicFromWad (va ("inva%i_snailgun",
+		sb_weapons[2 + i][3] = r_funcs->Draw_PicFromWad (va (0,
+															 "inva%i_snailgun",
 															 i + 1));
-		sb_weapons[2 + i][4] = r_funcs->Draw_PicFromWad (va ("inva%i_rlaunch",
+		sb_weapons[2 + i][4] = r_funcs->Draw_PicFromWad (va (0,
+															 "inva%i_rlaunch",
 															 i + 1));
-		sb_weapons[2 + i][5] = r_funcs->Draw_PicFromWad (va ("inva%i_srlaunch",
+		sb_weapons[2 + i][5] = r_funcs->Draw_PicFromWad (va (0,
+															 "inva%i_srlaunch",
 															 i + 1));
-		sb_weapons[2 + i][6] = r_funcs->Draw_PicFromWad (va ("inva%i_lightng",
+		sb_weapons[2 + i][6] = r_funcs->Draw_PicFromWad (va (0,
+															 "inva%i_lightng",
 															 i + 1));
 	}
 

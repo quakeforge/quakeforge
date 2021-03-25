@@ -25,7 +25,6 @@ include_qf = \
 	include/QF/keys.h \
 	include/QF/link.h \
 	include/QF/llist.h \
-	include/QF/locs.h \
 	include/QF/mathlib.h \
 	include/QF/mdfour.h \
 	include/QF/mersenne.h \
@@ -37,6 +36,7 @@ include_qf = \
 	include/QF/pakfile.h \
 	include/QF/pcx.h \
 	include/QF/png.h \
+	include/QF/plist.h \
 	include/QF/plugin.h \
 	include/QF/pr_comp.h \
 	include/QF/pr_debug.h \
@@ -46,7 +46,6 @@ include_qf = \
 	include/QF/qargs.h \
 	include/QF/qdefs.h \
 	include/QF/qendian.h \
-	include/QF/qfplist.h \
 	include/QF/qtypes.h \
 	include/QF/quakefs.h \
 	include/QF/quakeio.h \
@@ -125,6 +124,22 @@ include_qf_plugin = \
 	include/QF/plugin/snd_render.h \
 	include/QF/plugin/vid_render.h
 
+include_qf_vulkan = \
+	include/QF/Vulkan/buffer.h \
+	include/QF/Vulkan/command.h \
+	include/QF/Vulkan/cvars.h \
+	include/QF/Vulkan/descriptor.h \
+	include/QF/Vulkan/device.h \
+	include/QF/Vulkan/funclist.h \
+	include/QF/Vulkan/image.h \
+	include/QF/Vulkan/instance.h \
+	include/QF/Vulkan/memory.h \
+	include/QF/Vulkan/pipeline.h \
+	include/QF/Vulkan/qf_draw.h \
+	include/QF/Vulkan/qf_vid.h \
+	include/QF/Vulkan/renderpass.h \
+	include/QF/Vulkan/swapchain.h
+
 # headers shared with ruamoko
 qfcc_include_qf = include/QF/keys.h
 
@@ -133,11 +148,13 @@ qf_gl_includedir = $(includedir)/QF/GL
 qf_glsl_includedir = $(includedir)/QF/GLSL
 qf_math_includedir = $(includedir)/QF/math
 qf_plugin_includedir = $(includedir)/QF/plugin
+qf_vulkan_includedir = $(includedir)/QF/vulkan
 qf_include_HEADERS = @qfac_include_qf@
 qf_gl_include_HEADERS = @qfac_include_qf_gl@
 qf_glsl_include_HEADERS = @qfac_include_qf_glsl@
 qf_math_include_HEADERS = @qfac_include_qf_math@
 qf_plugin_include_HEADERS = @qfac_include_qf_plugin@
+qf_vulkan_include_HEADERS = @qfac_include_qf_vulkan@
 
 ruamoko_qf_includedir = $(ruamoko_includedir)/QF
 ruamoko_qf_include_HEADERS = @qfac_qfcc_include_qf@
@@ -148,4 +165,5 @@ EXTRA_HEADERS += \
 	$(include_qf_glsl) \
 	$(include_qf_math) \
 	$(include_qf_plugin) \
+	$(include_qf_vulkan) \
 	$(qfcc_include_qf)

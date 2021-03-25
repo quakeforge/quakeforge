@@ -245,7 +245,7 @@ CL_ChatInfo (int val)
 		val = 0;
 	if (cls.chat != val) {
 		cls.chat = val;
-		Cbuf_AddText(cl_cbuf, va ("setinfo chat \"%d\"\n", val));
+		Cbuf_AddText(cl_cbuf, va (0, "setinfo chat \"%d\"\n", val));
 	}
 }
 

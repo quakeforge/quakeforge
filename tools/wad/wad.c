@@ -396,7 +396,7 @@ main (int argc, char **argv)
 	lumpinfo_t *pf;
 
 	Sys_Init ();
-	Memory_Init (malloc (MEMSIZE), MEMSIZE);
+	Memory_Init (Sys_Alloc (MEMSIZE), MEMSIZE);
 
 	this_program = argv[0];
 

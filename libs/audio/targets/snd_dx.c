@@ -417,13 +417,8 @@ SNDDMA_Submit (void)
 	DSOUND_LockBuffer (false);
 }
 
-/*
-	SNDDMA_Shutdown
-
-	Reset the sound device for exiting
-*/
 static void
-SNDDMA_Shutdown (void)
+SNDDMA_shutdown (void)
 {
 	FreeSound ();
 }
@@ -450,7 +445,7 @@ DSOUND_LockBuffer (qboolean lockit)
 			if (hresult != DSERR_BUFFERLOST) {
 				Sys_Printf
 					("S_TransferStereo16: DS::Lock Sound Buffer Failed\n");
-				SNDDMA_Shutdown ();
+				SNDDMA_shutdown ();
 				SNDDMA_Init ();
 				return NULL;
 			}
@@ -458,7 +453,7 @@ DSOUND_LockBuffer (qboolean lockit)
 			if (++reps > 10000) {
 				Sys_Printf
 					("S_TransferStereo16: DS: couldn't restore buffer\n");
-				SNDDMA_Shutdown ();
+				SNDDMA_shutdown ();
 				SNDDMA_Init ();
 				return NULL;
 			}
@@ -529,7 +524,7 @@ PLUGIN_INFO(snd_output, dx)
 	plugin_info_general_funcs.p_Init = SNDDMA_Init_Cvars;
 	plugin_info_general_funcs.p_Shutdown = NULL;
 	plugin_info_snd_output_funcs.pS_O_Init = SNDDMA_Init;
-	plugin_info_snd_output_funcs.pS_O_Shutdown = SNDDMA_Shutdown;
+	plugin_info_snd_output_funcs.pS_O_Shutdown = SNDDMA_shutdown;
 	plugin_info_snd_output_funcs.pS_O_GetDMAPos = SNDDMA_GetDMAPos;
 	plugin_info_snd_output_funcs.pS_O_Submit = SNDDMA_Submit;
 	plugin_info_snd_output_funcs.pS_O_BlockSound = SNDDMA_BlockSound;

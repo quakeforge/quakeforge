@@ -183,7 +183,7 @@ load_file (progs_t *pr, const char *name, off_t *_size)
 
 	file = open_file (name, &size);
 	if (!file) {
-		file = open_file (va ("%s.gz", name), &size);
+		file = open_file (va (0, "%s.gz", name), &size);
 		if (!file)
 			return 0;
 	}
@@ -233,7 +233,7 @@ init_qf (void)
 {
 	Sys_Init ();
 
-	Cvar_Get ("pr_debug", va ("%d", 1+verbosity), 0, 0, "");
+	Cvar_Get ("pr_debug", va (0, "%d", 1+verbosity), 0, 0, "");
 	Cvar_Get ("pr_source_path", source_path, 0, 0, "");
 	PR_Init_Cvars ();
 

@@ -53,7 +53,6 @@
 #define R_InitParticles glsl_R_InitParticles
 #define R_InitSky glsl_R_InitSky
 #define R_InitSprites glsl_R_InitSprites
-#define R_InitSurfaceChains glsl_R_InitSurfaceChains
 #define R_LineGraph glsl_R_LineGraph
 #define R_LoadSky_f glsl_R_LoadSky_f
 #define R_LoadSkys glsl_R_LoadSkys
@@ -73,7 +72,7 @@
 #define SCR_CaptureBGR glsl_SCR_CaptureBGR
 #define SCR_ScreenShot glsl_SCR_ScreenShot
 #define SCR_ScreenShot_f glsl_SCR_ScreenShot_f
-#define SCR_UpdateScreen glsl_SCR_UpdateScreen
+#define R_RenderFrame glsl_R_RenderFrame
 #define c_alias_polys glsl_c_alias_polys
 #define c_brush_polys glsl_c_brush_polys
 #define r_easter_eggs_f glsl_r_easter_eggs_f
@@ -129,7 +128,7 @@
 #undef SCR_CaptureBGR
 #undef SCR_ScreenShot
 #undef SCR_ScreenShot_f
-#undef SCR_UpdateScreen
+#undef R_RenderFrame
 #undef c_alias_polys
 #undef c_brush_polys
 #undef r_easter_eggs_f

@@ -104,7 +104,8 @@ SND_AllocChannel (void)
 		for (free = &free_channels; *free; free = &(*free)->next) {
 			num_free++;
 		}
-		Sys_Printf ("SND_AllocChannel: out of channels. %d\n", num_free);
+		Sys_MaskPrintf (SYS_WARN, "SND_AllocChannel: out of channels. %d\n",
+						num_free);
 		return 0;
 	}
 	chan = *free;

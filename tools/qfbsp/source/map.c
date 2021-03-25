@@ -620,7 +620,7 @@ WriteEntitiesToString (void)
 		dstring_appendstr (buf, "{\n");
 
 		for (ep = entities[i].epairs; ep; ep = ep->next) {
-			dstring_appendstr (buf, va ("\"%s\" \"%s\"\n",
+			dstring_appendstr (buf, va (0, "\"%s\" \"%s\"\n",
 										ep->key, ep->value));
 		}
 		dstring_appendstr (buf, "}\n");

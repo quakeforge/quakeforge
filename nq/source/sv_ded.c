@@ -69,6 +69,11 @@ CL_UpdateScreen (double realtime)
 }
 
 void
+CL_ClearMemory (void)
+{
+}
+
+void
 CL_Cmd_ForwardToServer (void)
 {
 }
@@ -90,11 +95,6 @@ CL_Disconnect_f (void)
 
 void
 CL_EstablishConnection (const char *host)
-{
-}
-
-void
-CL_Shutdown ()
 {
 }
 
