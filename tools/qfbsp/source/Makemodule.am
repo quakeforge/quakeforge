@@ -2,7 +2,8 @@ QFBSP_LIBS=@QFBSP_LIBS@
 QFBSP_DEPS=@QFBSP_DEPS@
 QFBSP_INCS=@QFBSP_INCS@
 
-bin_PROGRAMS += qfbsp
+EXTRA_PROGRAMS +=		qfbsp
+bin_PROGRAMS += @QFBSP_TARGETS@
 
 qfbsp_SOURCES= \
 	tools/qfbsp/source/brush.c \

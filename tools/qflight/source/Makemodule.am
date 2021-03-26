@@ -2,7 +2,8 @@ QFLIGHT_LIBS=@QFLIGHT_LIBS@
 QFLIGHT_DEPS=@QFLIGHT_DEPS@
 QFLIGHT_INCS=@QFLIGHT_INCS@
 
-bin_PROGRAMS += qflight
+EXTRA_PROGRAMS +=		qflight
+bin_PROGRAMS += @QFLIGHT_TARGETS@
 
 qflight_SOURCES=\
 	tools/qflight/source/entities.c \

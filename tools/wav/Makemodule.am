@@ -2,7 +2,8 @@ WAV_LIBS=@WAV_LIBS@
 WAV_DEPS=@WAV_DEPS@
 WAV_INCS=@WAV_INCS@
 
-bin_PROGRAMS += qfwavinfo
+EXTRA_PROGRAMS +=		qfwavinfo
+bin_PROGRAMS += @WAV_TARGETS@
 
 #man_MANS +=	tools/wav/qfwavinfo.1
 

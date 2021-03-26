@@ -2,7 +2,8 @@ PAK_LIBS=@PAK_LIBS@
 PAK_DEPS=@PAK_DEPS@
 PAK_INCS=@PAK_INCS@
 
-bin_PROGRAMS +=		pak
+EXTRA_PROGRAMS +=		pak
+bin_PROGRAMS +=		@PAK_TARGETS@
 bin_SCRIPTS +=		tools/pak/zpak
 
 man_MANS +=			tools/pak/pak.1 tools/pak/zpak.1
