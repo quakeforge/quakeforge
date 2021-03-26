@@ -27,8 +27,18 @@ QWAQ_TARGETS=""
 QW_DESKTOP_DATA=""
 NQ_DESKTOP_DATA=""
 
-PAK_TARGETS
-QFCC_TARGETS
+BSP2IMG_TARGETS=""
+CARNE_TARGETS=""
+PAK_TARGETS=""
+QFBSP_TARGETS=""
+QFCC_TARGETS=""
+QFLIGHT_TARGETS=""
+QFLMP_TARGETS=""
+QFMODELGEN_TARGETS=""
+QFSPRITEGEN_TARGETS=""
+QFVIS_TARGETS=""
+WAD_TARGETS=""
+WAV_TARGETS=""
 
 CD_TARGETS=""
 SND_TARGETS=""
@@ -277,7 +287,7 @@ if test "x$ENABLE_tools_wad" = xyes; then
 	QF_NEED(libs,[image util])
 fi
 if test "x$ENABLE_tools_wav" = xyes; then
-	WAV_TARGETS=wav
+	WAV_TARGETS=qfwavinfo
 	QF_NEED(tools,[wav])
 	QF_NEED(libs,[util])
 fi
