@@ -65,8 +65,11 @@ extern pthread_rwlock_t *portal_locks;
 #define UNLOCK_PORTAL(p) UNLOCK (&portal_locks[p - portals])
 
 #else
-#define	LOCK
-#define	UNLOCK
+#define	LOCK(l)
+#define	UNLOCK(l)
+#define WRLOCK_PORTAL(p)
+#define RDLOCK_PORTAL(p)
+#define UNLOCK_PORTAL(p)
 #endif
 
 #include "QF/set.h"
