@@ -4,7 +4,7 @@ AC_MSG_RESULT([
 	Build type         :$BUILD_TYPE
 	Server support     :${SV_TARGETS:- no}
 	Client support     :${CL_TARGETS:- no}
-	Tools support      :${tools_dirs:- no}
+	Tools support      :${tools_list:- no}
 	Sound support      :${SOUND_TYPES:- no} ${snd_output_default}
 	CD Audio system    :${CDTYPE:- no} ${cd_default}
 	IPv6 networking    : $NETTYPE_IPV6

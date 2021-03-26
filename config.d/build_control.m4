@@ -269,12 +269,12 @@ fi
 
 QF_NEED(top, [libs hw nq qtv qw])
 
-QF_PROCESS_NEED_DIRS(tools,[bsp2img carne pak qfbsp qfcc qflight qflmp qfmodelgen qfspritegen qfvis wad wav])
+QF_PROCESS_NEED_LIST(tools,[bsp2img carne pak qfbsp qfcc qflight qflmp qfmodelgen qfspritegen qfvis wad wav])
 QF_PROCESS_NEED_FUNC(tools,[bsp2img carne pak qfbsp qfcc qflight qflmp qfmodelgen qfspritegen qfvis wad wav], QF_NEED(top,tools))
 
-QF_PROCESS_NEED_DIRS(libs,[util gamecode ruamoko gib audio image models video console net qw client])
+QF_PROCESS_NEED_LIST(libs,[util gamecode ruamoko gib audio image models video console net qw client])
 
-QF_PROCESS_NEED_DIRS(ruamoko,[qwaq])
+QF_PROCESS_NEED_LIST(ruamoko,[qwaq])
 
 if test "$ENABLE_tools_qfcc" = "yes" -a "$ENABLE_tools_pak" = "yes"; then
 	QF_NEED(top, [ruamoko])
@@ -303,11 +303,11 @@ if test "$HAVE_ZLIB" = "yes"; then
 fi
 QF_SUBST(progs_gz)
 
-QF_PROCESS_NEED_DIRS(top, [libs hw nq qtv qw tools ruamoko])
+QF_PROCESS_NEED_LIST(top, [libs hw nq qtv qw tools ruamoko])
 
 QF_PROCESS_NEED_LIBS(swrend, [asm])
 QF_PROCESS_NEED_LIBS(render, [gl glsl sw sw32 vulkan], [libs/video/renderer])
-QF_PROCESS_NEED_DIRS(vid_render, [gl glsl sw sw32 vulkan])
+QF_PROCESS_NEED_LIST(vid_render, [gl glsl sw sw32 vulkan])
 QF_PROCESS_NEED_LIBS(models, [gl glsl sw vulkan], [libs/models])
 QF_PROCESS_NEED_LIBS(alias, [gl glsl sw vulkan], [libs/models/alias])
 QF_PROCESS_NEED_LIBS(brush, [gl glsl sw vulkan], [libs/models/brush])

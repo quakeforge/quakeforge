@@ -109,9 +109,9 @@ AC_DEFUN([QF_PROCESS_NEED_LIBS],
 QF_PROCESS_NEED_subroutine([lib$1_],[$1],[.]qfn_ext,[$1_libs],[$2],[$3])
 QF_SUBST([$1_libs])])
 
-AC_DEFUN([QF_PROCESS_NEED_DIRS],
-[QF_PROCESS_NEED_subroutine([],[$1],[],[$1_dirs],[$2])
-QF_SUBST([$1_dirs])])
+AC_DEFUN([QF_PROCESS_NEED_LIST],
+[QF_PROCESS_NEED_subroutine([],[$1],[],[$1_list],[$2])
+QF_SUBST([$1_list])])
 
 AC_DEFUN([QF_DEFAULT_PLUGIN],
 [m4_define([qfn_default], m4_default($3,$1)[_default])
