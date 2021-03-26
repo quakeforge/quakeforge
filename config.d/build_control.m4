@@ -27,6 +27,9 @@ QWAQ_TARGETS=""
 QW_DESKTOP_DATA=""
 NQ_DESKTOP_DATA=""
 
+PAK_TARGETS
+QFCC_TARGETS
+
 CD_TARGETS=""
 SND_TARGETS=""
 VID_MODEL_TARGETS=""
@@ -209,42 +212,52 @@ if test "x$ENABLE_servers_qw" = xyes; then
 fi
 
 if test "x$ENABLE_tools_bsp2img" = xyes; then
+	BSP2IMG_TARGETS=bsp2img
 	QF_NEED(tools,[bsp2img])
 	QF_NEED(libs,[image util])
 fi
 if test "x$ENABLE_tools_carne" = xyes; then
+	CARNE_TARGETS=carne
 	QF_NEED(tools,[carne])
 	QF_NEED(libs,[gib ruamoko gamecode util])
 fi
 if test "x$ENABLE_tools_pak" = xyes; then
+	PAK_TARGETS=pak
 	QF_NEED(tools,[pak])
 	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qfbsp" = xyes; then
+	QFBSP_TARGETS=qfbsp
 	QF_NEED(tools,[qfbsp])
 	QF_NEED(libs,[models image util])
 fi
 if test "x$ENABLE_tools_qfcc" = xyes; then
+	QFCC_TARGETS=qfcc qfprogs
 	QF_NEED(tools,[qfcc])
 	QF_NEED(libs,[gamecode util])
 fi
 if test "x$ENABLE_tools_qflight" = xyes; then
+	QFLIGHT_TARGETS=qflight
 	QF_NEED(tools,[qflight])
 	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qflmp" = xyes; then
+	QFLMP_TARGETS=qflmp
 	QF_NEED(tools,[qflmp])
 	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qfmodelgen" = xyes; then
+	QFMODELGEN_TARGETS=qfmodelgen
 	QF_NEED(tools,[qfmodelgen])
 	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qfspritegen" = xyes; then
+	QFSPRITEGEN_TARGETS=qfspritegen
 	QF_NEED(tools,[qfspritegen])
 	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qfvis" = xyes; then
+	QFVIS_TARGETS=qfvis
 	QF_NEED(tools,[qfvis])
 	QF_NEED(libs,[util])
 fi
@@ -257,10 +270,12 @@ if test "x$ENABLE_tools_qwaq" = xyes; then
 	QF_NEED(libs,[ruamoko gamecode util])
 fi
 if test "x$ENABLE_tools_wad" = xyes; then
+	WAD_TARGETS=wad
 	QF_NEED(tools,[wad])
 	QF_NEED(libs,[image util])
 fi
 if test "x$ENABLE_tools_wav" = xyes; then
+	WAV_TARGETS=wav
 	QF_NEED(tools,[wav])
 	QF_NEED(libs,[util])
 fi
@@ -396,6 +411,19 @@ QF_SUBST(VID_MODEL_TARGETS)
 QF_SUBST(VID_REND_TARGETS)
 QF_SUBST(VID_REND_NOINST_TARGETS)
 QF_SUBST(VID_TARGETS)
+
+QF_SUBST(BSP2IMG_TARGETS)
+QF_SUBST(CARNE_TARGETS)
+QF_SUBST(PAK_TARGETS)
+QF_SUBST(QFBSP_TARGETS)
+QF_SUBST(QFCC_TARGETS)
+QF_SUBST(QFLIGHT_TARGETS)
+QF_SUBST(QFLMP_TARGETS)
+QF_SUBST(QFMODELGEN_TARGETS)
+QF_SUBST(QFSPRITEGEN_TARGETS)
+QF_SUBST(QFVIS_TARGETS)
+QF_SUBST(WAD_TARGETS)
+QF_SUBST(WAV_TARGETS)
 
 QF_DEPS(BSP2IMG,
 	[],

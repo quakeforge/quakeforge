@@ -2,7 +2,8 @@ QFMODELGEN_LIBS=@QFMODELGEN_LIBS@
 QFMODELGEN_DEPS=@QFMODELGEN_DEPS@
 QFMODELGEN_INCS=@QFMODELGEN_INCS@
 
-bin_PROGRAMS += qfmodelgen
+EXTRA_PROGRAMS +=		qfmodelgen
+bin_PROGRAMS += @QFMODELGEN_TARGETS@
 
 qfmodelgen_SOURCES = \
 	tools/qfmodelgen/source/lbmlib.c \
