@@ -1055,11 +1055,10 @@ _QFS_VOpenFile (const char *filename, int zip,
 	ind = 0;
 #ifdef HAVE_VORBIS
 	if (strequal (".wav", QFS_FileExtension (path))) {
-		char       *oggfilename;
-		oggfilename = alloca (strlen (path) + 1);
+		size_t      len = strlen (path);
+		char       *oggfilename = alloca (len + 1);
 		QFS_StripExtension (path, oggfilename);
-		strncat (oggfilename, ".ogg",
-				 sizeof (oggfilename) - strlen (oggfilename) - 1);
+		strcat (oggfilename, ".ogg");
 		fnames[ind] = oggfilename;
 		zip_flags[ind] = 0;
 		ind++;
