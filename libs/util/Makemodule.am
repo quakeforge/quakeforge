@@ -68,6 +68,7 @@ libs_util_libQFutil_la_SOURCES= \
 	libs/util/plugin.c \
 	libs/util/qargs.c \
 	libs/util/qendian.c \
+	libs/util/qsort_r.c \
 	libs/util/quakefs.c \
 	libs/util/quakeio.c \
 	libs/util/riff.c \

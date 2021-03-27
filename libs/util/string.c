@@ -35,6 +35,7 @@
 # include <strings.h>
 #endif
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "qstring.h"
 
@@ -70,6 +71,16 @@ Q_strnlen (const char *s, size_t maxlen)
 	size_t i;
 	for (i = 0; i < maxlen && s[i]; i++);
 	return i;
+}
+
+char *
+Q_strndup (const char *s, size_t n)
+{
+	size_t l = strnlen (s, n);
+	char *str = malloc (l + 1);
+	strncpy (str, s, l);
+	str[l] = 0;
+	return str;
 }
 
 #if defined(HAVE__VSNPRINTF) && !defined(HAVE_VSNPRINTF)

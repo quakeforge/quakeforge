@@ -1,9 +1,9 @@
 /*
-	string.h
+	quicksort.h
 
-	A string helper function
+	Reentrant qsort for systems that don't have it
 
-	Copyright (C) 2001  Adam Olsen
+	Copyright (C) 2021 Bill Currie <bill@taniwha.org>
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -25,16 +25,14 @@
 
 */
 
-#ifndef string_h
-#define string_h
+#ifndef quicksort_h
+#define quicksort_h
 
 #include <sys/types.h>
-#include <stdarg.h>
 
-const char * Q_strcasestr (const char *haystack, const char *needle) __attribute__((pure));
-size_t Q_strnlen (const char *s, size_t maxlen) __attribute__((pure));
-char *Q_strndup (const char *s, size_t maxlen);
-size_t Q_snprintfz (char *dest, size_t size, const char *fmt, ...) __attribute__((format(PRINTF,3,4)));
-size_t Q_vsnprintfz (char *dest, size_t size, const char *fmt, va_list argptr);
+typedef int (*__compar_d_fn_t)(const void *, const void *, void *);
 
-#endif // string_h
+void _quicksort(void *base, size_t nmemb, size_t size, __compar_d_fn_t cmp,
+				void *arg);
+
+#endif// quicksort_h
