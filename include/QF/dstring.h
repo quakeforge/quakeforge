@@ -45,8 +45,8 @@ typedef struct dstring_mem_s {
 
 typedef struct dstring_s {
 	dstring_mem_t *mem;
-	unsigned long int size, truesize;
-	char *str;
+	size_t      size, truesize;
+	char       *str;
 } dstring_t;
 
 extern dstring_mem_t dstring_default_mem;
@@ -72,21 +72,21 @@ void dstring_adjust (dstring_t *dstr);
 	\param len		the size of the hole to open.
 	\return			pointer to the beginning of the opened hole.
 */
-char *dstring_reserve (dstring_t *dstr, unsigned len);
+char *dstring_reserve (dstring_t *dstr, size_t len);
 /** Copy len bytes from data into the dstring, replacing any existing data.
 */
-void dstring_copy (dstring_t *dstr, const char *data, unsigned int len);
+void dstring_copy (dstring_t *dstr, const char *data, size_t len);
 /** Append len bytes from data onto the end of the dstring.
 */
-void dstring_append (dstring_t *dstr, const char *data, unsigned int len);
+void dstring_append (dstring_t *dstr, const char *data, size_t len);
 /** Insert len bytes from data int the dstring at pos. If pos is past the
 	end of the dstring, equivalent to dstring_append.
 */
-void dstring_insert (dstring_t *dstr, unsigned int pos, const char *data,
-					 unsigned int len);
+void dstring_insert (dstring_t *dstr, size_t pos, const char *data,
+					 size_t len);
 /** Remove len bytes from the dstring starting at pos.
 */
-void dstring_snip (dstring_t *dstr, unsigned int pos, unsigned int len);
+void dstring_snip (dstring_t *dstr, size_t pos, size_t len);
 /** Set the size of the dstring to 0 bytes. Does not free the string buffer
 	anticipating reuse.
 */
@@ -94,8 +94,8 @@ void dstring_clear (dstring_t *dstr);
 /** Replace rlen bytes in dstring at pos with len bytes from data. Moves
 	trailing bytes as needed.
 */
-void dstring_replace (dstring_t *dstr, unsigned int pos, unsigned int rlen,
-						const char *data, unsigned int len);
+void dstring_replace (dstring_t *dstr, size_t pos, size_t rlen,
+						const char *data, size_t len);
 /** Delete the dstring object retaining the string buffer. The string buffer
 	will be just big enough to hold the data. Does NOT ensure the string is
 	null terminated.
@@ -123,7 +123,7 @@ dstring_t *dstring_strdup (const char *str);
 	\return			pointer to the current null terminator or beginning of the
 					opened hole if there was no terminator.
 */
-char *dstring_reservestr (dstring_t *dstr, unsigned len);
+char *dstring_reservestr (dstring_t *dstr, size_t len);
 /** Copy the null terminated string into the dstring. Replaces any existing
 	data.
 	The dstring does not have to be null terminated but will become so.
@@ -133,7 +133,7 @@ void dstring_copystr (dstring_t *dstr, const char *str);
 	existing data.
 	The dstring does not have to be null terminated but will become so.
 */
-void dstring_copysubstr (dstring_t *dstr, const char *str, unsigned int len);
+void dstring_copysubstr (dstring_t *dstr, const char *str, size_t len);
 /** Append the null terminated string to the end of the dstring.
 	The dstring does not have to be null terminated but will become so.
 	However, any embedded nulls will be treated as the end of the dstring.
@@ -143,16 +143,16 @@ void dstring_appendstr (dstring_t *dstr, const char *str);
 	The dstring does not have to be null terminated but will become so.
 	However, any embedded nulls will be treated as the end of the dstring.
 */
-void dstring_appendsubstr (dstring_t *dstr, const char *str, unsigned int len);
+void dstring_appendsubstr (dstring_t *dstr, const char *str, size_t len);
 /** Insert the null terminated string into the dstring at pos. The dstring
 	is NOT forced to be null terminated.
 */
-void dstring_insertstr (dstring_t *dstr, unsigned int pos, const char *str);
+void dstring_insertstr (dstring_t *dstr, size_t pos, const char *str);
 /** Insert up to len bytes from the string into the dstring at pos. The
 	dstring is NOT forced to be null terminated.
 */
-void dstring_insertsubstr (dstring_t *dstr, unsigned int pos, const char *str,
-						   unsigned int len);
+void dstring_insertsubstr (dstring_t *dstr, size_t pos, const char *str,
+						   size_t len);
 /** Clear the dstring to be equivalent to "". Does not resize the string buffer
 	but size is set to 1.
 	dstr = dstring_new (); dstring_clearstr (dstr); is exactly equivalent to
