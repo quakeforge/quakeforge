@@ -325,4 +325,12 @@ magnitude3f (vec4f_t v)
 	return vsqrtf (dotf (v, v));
 }
 
+vec4f_t __attribute__((pure))
+BarycentricCoords_vf (const vec4f_t **points, int num_points, vec4f_t p);
+
+vspheref_t __attribute__((pure))
+CircumSphere_vf (const vec4f_t *points, int num_points);
+
+vspheref_t SmallestEnclosingBall_vf (const vec4f_t *points, int num_points);
+
 #endif//__QF_simd_vec4f_h

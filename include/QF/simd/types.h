@@ -88,4 +88,10 @@ VEC_TYPE (int, vec4i_t);
 
 typedef vec4f_t mat4f_t[4];
 typedef vec4i_t mat4i_t[4];
+
+typedef struct vspheref_s {
+	vec4f_t     center; // w set to 1
+	float       radius;
+} vspheref_t;
+
 #endif//__QF_simd_types_h
