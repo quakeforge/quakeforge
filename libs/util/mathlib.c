@@ -1352,7 +1352,7 @@ test_support_points(const vec_t **points, int *num_points, const vec3_t center)
 			nn = DotProduct (n, n);
 			dd = DotProduct (d, d);
 			vv = DotProduct (v, v);
-			in_affine = nn < 1e-8 * vv * dd;
+			in_affine = nn < 1e-6 * vv * dd;
 			break;
 		case 3:
 			VectorSubtract (points[1], points[0], a);
@@ -1362,7 +1362,7 @@ test_support_points(const vec_t **points, int *num_points, const vec3_t center)
 			dn = DotProduct (d, n);
 			dd = DotProduct (d, d);
 			nn = DotProduct (n, n);
-			in_affine = dn * dn < 1e-8 * dd * nn;
+			in_affine = dn * dn < 1e-6 * dd * nn;
 			break;
 		case 4:
 			in_affine = 1;
@@ -1455,7 +1455,7 @@ SmallestEnclosingBall (const vec3_t points[], int num_points)
 			point_proj = DotProduct (center_to_affine, center_to_point);
 			if (affine_dist - point_proj <= 0
 				|| ((affine_dist - point_proj) * (affine_dist - point_proj)
-					< 1e-8 * sphere.radius * affine_dist))
+					< 1e-6 * sphere.radius * affine_dist))
 				continue;
 			point_dist = DotProduct (center_to_point, center_to_point);
 			bound = sphere.radius - point_dist;
