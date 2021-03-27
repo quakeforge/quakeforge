@@ -218,7 +218,7 @@ flush_draw_scrap (vulkan_ctx_t *ctx)
 static void
 pic_free (drawctx_t *dctx, qpic_t *pic)
 {
-	subpic_t   *subpic = *(subpic_t **) pic->data;
+	subpic_t   *subpic = *(subpic_t **) &pic->data[0];
 	QFV_SubpicDelete (subpic);
 	cmemfree (dctx->pic_memsuper, pic);
 }
