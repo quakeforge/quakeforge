@@ -224,52 +224,52 @@ if test "x$ENABLE_servers_qw" = xyes; then
 fi
 
 if test "x$ENABLE_tools_bsp2img" = xyes; then
-	BSP2IMG_TARGETS=bsp2img
+	BSP2IMG_TARGETS="bsp2img\$(EXEEXT)"
 	QF_NEED(tools,[bsp2img])
 	QF_NEED(libs,[image util])
 fi
 if test "x$ENABLE_tools_carne" = xyes; then
-	CARNE_TARGETS=carne
+	CARNE_TARGETS="carne\$(EXEEXT)"
 	QF_NEED(tools,[carne])
 	QF_NEED(libs,[gib ruamoko gamecode util])
 fi
 if test "x$ENABLE_tools_pak" = xyes; then
-	PAK_TARGETS=pak
+	PAK_TARGETS="pak\$(EXEEXT)"
 	QF_NEED(tools,[pak])
 	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qfbsp" = xyes; then
-	QFBSP_TARGETS=qfbsp
+	QFBSP_TARGETS="qfbsp\$(EXEEXT)"
 	QF_NEED(tools,[qfbsp])
 	QF_NEED(libs,[models image util])
 fi
 if test "x$ENABLE_tools_qfcc" = xyes; then
-	QFCC_TARGETS=qfcc qfprogs
+	QFCC_TARGETS="qfcc qfprogs\$(EXEEXT)"
 	QF_NEED(tools,[qfcc])
 	QF_NEED(libs,[gamecode util])
 fi
 if test "x$ENABLE_tools_qflight" = xyes; then
-	QFLIGHT_TARGETS=qflight
+	QFLIGHT_TARGETS="qflight\$(EXEEXT)"
 	QF_NEED(tools,[qflight])
 	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qflmp" = xyes; then
-	QFLMP_TARGETS=qflmp
+	QFLMP_TARGETS="qflmp\$(EXEEXT)"
 	QF_NEED(tools,[qflmp])
 	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qfmodelgen" = xyes; then
-	QFMODELGEN_TARGETS=qfmodelgen
+	QFMODELGEN_TARGETS="qfmodelgen\$(EXEEXT)"
 	QF_NEED(tools,[qfmodelgen])
 	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qfspritegen" = xyes; then
-	QFSPRITEGEN_TARGETS=qfspritegen
+	QFSPRITEGEN_TARGETS="qfspritegen\$(EXEEXT)"
 	QF_NEED(tools,[qfspritegen])
 	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qfvis" = xyes; then
-	QFVIS_TARGETS=qfvis
+	QFVIS_TARGETS="qfvis\$(EXEEXT)"
 	QF_NEED(tools,[qfvis])
 	QF_NEED(libs,[util])
 fi
@@ -282,12 +282,12 @@ if test "x$ENABLE_tools_qwaq" = xyes; then
 	QF_NEED(libs,[ruamoko gamecode util])
 fi
 if test "x$ENABLE_tools_wad" = xyes; then
-	WAD_TARGETS=wad
+	WAD_TARGETS="wad\$(EXEEXT)"
 	QF_NEED(tools,[wad])
 	QF_NEED(libs,[image util])
 fi
 if test "x$ENABLE_tools_wav" = xyes; then
-	WAV_TARGETS=qfwavinfo
+	WAV_TARGETS="qfwavinfo\$(EXEEXT)"
 	QF_NEED(tools,[wav])
 	QF_NEED(libs,[util])
 fi

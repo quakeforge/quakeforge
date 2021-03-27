@@ -395,7 +395,7 @@ V_VKGEN_0 = @echo "  VKGEN   " $@;
 V_VKGEN_1 =
 
 $(vkparse_cinc): $(vkgen) $(qwaq_curses) $(vkparse_plist)
-	$(V_VKGEN)$(qwaq_curses) $(vkgen) -- $(vkparse_plist) $(vkparse_cinc).t $(vkparse_hinc).t &&\
+	$(V_VKGEN)$(QWAQ_CURSES) $(vkgen) -- $(vkparse_plist) $(vkparse_cinc).t $(vkparse_hinc).t &&\
 	$(am__mv) $(vkparse_cinc).t $(vkparse_cinc) &&\
 	$(am__mv) $(vkparse_hinc).t $(vkparse_hinc)
 

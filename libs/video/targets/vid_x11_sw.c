@@ -188,7 +188,7 @@ xlib_rgb24 (int r, int g, int b)
 }
 
 static void
-VID_SetPalette (const byte *palette)
+x11_set_palette (const byte *palette)
 {
 	int         i;
 	XColor      colors[256];
@@ -529,7 +529,7 @@ sw_ctx_t *
 X11_SW_Context (void)
 {
 	sw_ctx_t *ctx = calloc (1, sizeof (sw_ctx_t));
-	ctx->set_palette = VID_SetPalette;
+	ctx->set_palette = x11_set_palette;
 	ctx->choose_visual = x11_choose_visual;
 	ctx->create_context = x11_create_context;
 	ctx->update = x11_sw_update;

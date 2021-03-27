@@ -31,15 +31,18 @@
 # include "config.h"
 #endif
 
-#include <sys/ioctl.h>
 #include <ctype.h>
 #include <errno.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
-#include <termios.h>
 #include <unistd.h>
+
+#ifdef HAVE_SIGACTION	// no sigaction, no window resize
+#include <sys/ioctl.h>
+#include <termios.h>
+#endif
 
 #include "QF/dstring.h"
 #include "QF/hash.h"
@@ -164,6 +167,7 @@ static qwaq_key_t default_keys[] = {
 	{ "\033[1;6D",	QFK_LEFT,		5 },
 };
 
+#ifdef HAVE_SIGACTION
 static struct sigaction save_winch;
 static sigset_t winch_mask;
 static volatile sig_atomic_t winch_arrived;
@@ -173,6 +177,7 @@ handle_winch (int sig)
 {
 	winch_arrived = 1;
 }
+#endif
 
 int
 qwaq_add_event (qwaq_resources_t *res, qwaq_event_t *event)
@@ -196,7 +201,7 @@ qwaq_add_event (qwaq_resources_t *res, qwaq_event_t *event)
 	}
 
 	pthread_mutex_lock (&res->event_cond.mut);
-	qwaq_init_timeout (&timeout, 5000 * 1000000L);
+	qwaq_init_timeout (&timeout, 5000 * (int64_t) 1000000);
 	while (RB_SPACE_AVAILABLE (res->event_queue) < 1 && ret == 0) {
 		ret = pthread_cond_timedwait (&res->event_cond.wcond,
 									  &res->event_cond.mut, &timeout);
@@ -207,6 +212,7 @@ qwaq_add_event (qwaq_resources_t *res, qwaq_event_t *event)
 	return ret;
 }
 
+#ifdef HAVE_SIGACTION
 static void
 resize_event (qwaq_resources_t *res)
 {
@@ -220,6 +226,7 @@ resize_event (qwaq_resources_t *res)
 	event.resize.height = size.ws_row;
 	qwaq_add_event (res, &event);
 }
+#endif
 
 static void
 key_event (qwaq_resources_t *res, int key, unsigned shift)
@@ -428,11 +435,13 @@ void qwaq_input_init (qwaq_resources_t *res)
 		Hash_Add (res->key_sequences, &default_keys[i]);
 	}
 
+#ifdef HAVE_SIGACTION
 	sigemptyset (&winch_mask);
 	sigaddset (&winch_mask, SIGWINCH);
 	struct sigaction action = {};
 	action.sa_handler = handle_winch;
 	sigaction (SIGWINCH, &action, &save_winch);
+#endif
 
 	// ncurses takes care of input mode for us, so need only tell xterm
 	// what we need
@@ -447,13 +456,16 @@ void qwaq_input_shutdown (qwaq_resources_t *res)
 	write(1, SGR_OFF, sizeof (SGR_OFF) - 1);
 	write(1, MOUSE_MOVES_OFF, sizeof (MOUSE_MOVES_OFF) - 1);
 
+#ifdef HAVE_SIGACTION
 	sigaction (SIGWINCH, &save_winch, 0);
+#endif
 }
 
 void qwaq_process_input (qwaq_resources_t *res)
 {
 	char        buf[256];
 	int         len;
+#ifdef HAVE_SIGACTION
 	sigset_t    save_set;
 	int         saw_winch;
 
@@ -464,6 +476,7 @@ void qwaq_process_input (qwaq_resources_t *res)
 	if (saw_winch) {
 		resize_event (res);
 	}
+#endif
 	while (Sys_CheckInput (1, -1)) {
 		len = read(0, buf, sizeof (buf));
 		for (int i = 0; i < len; i++) {

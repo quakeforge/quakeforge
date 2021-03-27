@@ -437,10 +437,11 @@ PartialIPAddress (const char *in, netadr_t *hostaddr)
 	return 0;
 }
 //=============================================================================
-
+static int WINS_Connect_called;
 int
 WINS_Connect (int socket, netadr_t *addr)
 {
+	WINS_Connect_called++;
 	return 0;
 }
 
@@ -542,6 +543,10 @@ const char *
 WINS_AddrToString (netadr_t *addr)
 {
 	static dstring_t *buffer;
+
+	if (!buffer) {
+		buffer = dstring_new ();
+	}
 
 	dsprintf (buffer, "%d.%d.%d.%d:%d", addr->ip[0],
 			  addr->ip[1], addr->ip[2], addr->ip[3],

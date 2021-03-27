@@ -27,8 +27,7 @@ AC_TRY_LINK(
 	AC_MSG_RESULT(yes)
 )
 AH_VERBATIM([HAVE_C99INLINE],
-[/* Define this if the GCC __attribute__ keyword is available */
-#undef HAVE_C99INLINE
+[#undef HAVE_C99INLINE
 #ifdef HAVE_C99INLINE
 # define GNU89INLINE
 #else

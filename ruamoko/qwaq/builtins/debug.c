@@ -31,14 +31,12 @@
 # include "config.h"
 #endif
 
-#include <sys/ioctl.h>
 #include <ctype.h>
 #include <errno.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
-#include <termios.h>
 #include <unistd.h>
 
 #include "QF/dstring.h"

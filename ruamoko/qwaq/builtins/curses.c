@@ -659,7 +659,7 @@ dump_command (qwaq_resources_t *res, int len)
 }
 
 void
-qwaq_init_timeout (struct timespec *timeout, long time)
+qwaq_init_timeout (struct timespec *timeout, int64_t time)
 {
 	#define SEC 1000000000L
 	struct timeval now;

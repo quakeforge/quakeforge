@@ -30,12 +30,12 @@
 
 #define CINTERFACE
 
-#include "winquake.h"
 #include "QF/cvar.h"
 #include "QF/qargs.h"
 #include "QF/sys.h"
 
 #include "snd_internal.h"
+#include "context_win.h"
 
 #define iDirectSoundCreate(a,b,c)	pDirectSoundCreate(a,b,c)
 
@@ -131,7 +131,7 @@ FreeSound (void)
 	}
 
 	if (pDS) {
-		IDirectSound_SetCooperativeLevel (pDS, mainwindow, DSSCL_NORMAL);
+		IDirectSound_SetCooperativeLevel (pDS, win_mainwindow, DSSCL_NORMAL);
 		IDirectSound_Release (pDS);
 	}
 	pDS = NULL;
@@ -219,7 +219,8 @@ SNDDMA_InitDirect (void)
 	}
 
 	if (DS_OK !=
-		IDirectSound_SetCooperativeLevel (pDS, mainwindow, DSSCL_EXCLUSIVE)) {
+		IDirectSound_SetCooperativeLevel (pDS, win_mainwindow,
+										  DSSCL_EXCLUSIVE)) {
 		Sys_Printf ("Set coop level failed\n");
 		FreeSound ();
 		return SIS_FAILURE;
@@ -276,7 +277,7 @@ SNDDMA_InitDirect (void)
 		}
 	} else {
 		if (DS_OK !=
-			IDirectSound_SetCooperativeLevel (pDS, mainwindow,
+			IDirectSound_SetCooperativeLevel (pDS, win_mainwindow,
 											  DSSCL_WRITEPRIMARY)) {
 			Sys_Printf ("Set coop level failed\n");
 			FreeSound ();

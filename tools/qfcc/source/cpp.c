@@ -269,7 +269,7 @@ preprocess_file (const char *filename, const char *ext)
 				puts("");
 			}
 
-#ifdef _WIN64
+#if defined(_WIN64) || defined(_WIN32)
 			status = spawnvp (_P_WAIT, cpp_argv[0], (char **) cpp_argv);
 #else
 			status = spawnvp (_P_WAIT, cpp_argv[0], cpp_argv);

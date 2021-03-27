@@ -118,6 +118,11 @@ SDL_main (int argc, char *argv[])
 #ifndef _WIN32
 	if (!COM_CheckParm ("-noconinput"))
 		fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
+#else
+	// hack to prevent gcc suggesting noreturn
+	if (!sys_nostdout) {
+		return 1;
+	}
 #endif
 	Sys_RegisterShutdown (Host_Shutdown, 0);
 	Sys_RegisterShutdown (Net_LogStop, 0);

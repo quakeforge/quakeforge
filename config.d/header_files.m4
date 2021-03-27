@@ -50,6 +50,15 @@ AC_TRY_COMPILE(
 	AC_MSG_RESULT(no)
 )
 
+AC_MSG_CHECKING(for strndup in string.h)
+AC_TRY_COMPILE(
+	[#include "string.h"],
+	[int (*foo)() = strndup;],
+	AC_DEFINE(HAVE_STRNDUP_PROTO, 1, [Define this if strndup is prototyped in string.h])
+	AC_MSG_RESULT(yes),
+	AC_MSG_RESULT(no)
+)
+
 AC_MSG_CHECKING(for strcasestr in string.h)
 AC_TRY_COMPILE(
 	[#include "string.h"],

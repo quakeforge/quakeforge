@@ -103,19 +103,6 @@ int         sys_checksum;
 static sys_printf_t sys_std_printf_function = Sys_StdPrintf;
 static sys_printf_t sys_err_printf_function = Sys_ErrPrintf;
 
-#ifndef _WIN32
-static struct sigaction save_hup;
-static struct sigaction save_quit;
-static struct sigaction save_trap;
-static struct sigaction save_iot;
-static struct sigaction save_bus;
-#endif
-static struct sigaction save_int;
-static struct sigaction save_ill;
-static struct sigaction save_segv;
-static struct sigaction save_term;
-static struct sigaction save_fpe;
-
 typedef struct shutdown_list_s {
 	struct shutdown_list_s *next;
 	void      (*func) (void *);
@@ -635,11 +622,18 @@ Sys_PageIn (void *ptr, size_t size)
 VISIBLE void *
 Sys_Alloc (size_t size)
 {
+#ifdef _WIN32
+	size_t      page_size = 4096;
+	size_t      page_mask = page_size - 1;
+	size = (size + page_mask) & ~page_mask;
+	return VirtualAlloc (0, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+#else
 	size_t      page_size = sysconf (_SC_PAGESIZE);
 	size_t      page_mask = page_size - 1;
 	size = (size + page_mask) & ~page_mask;
 	return mmap (0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS,
 				 -1, 0);
+#endif
 }
 
 VISIBLE void
@@ -831,8 +825,68 @@ static void __attribute__((noreturn))
 aiee (int sig)
 {
 	printf ("AIEE, signal %d in shutdown code, giving up\n", sig);
+#ifdef _WIN32
+	longjmp (aiee_abort, 1);
+#else
 	siglongjmp (aiee_abort, 1);
+#endif
 }
+
+#ifdef _WIN32
+static void
+signal_handler (int sig)
+{
+	int volatile recover = 0;	// volatile for longjump
+	static volatile int in_signal_handler = 0;
+
+	if (in_signal_handler) {
+		aiee (sig);
+	}
+	printf ("Received signal %d, exiting...\n", sig);
+
+	switch (sig) {
+		case SIGINT:
+		case SIGTERM:
+			signal (SIGINT,  SIG_DFL);
+			signal (SIGTERM, SIG_DFL);
+			Sys_Quit ();
+		default:
+			if (!setjmp (aiee_abort)) {
+				if (signal_hook)
+					recover = signal_hook (sig, signal_hook_data);
+				Sys_Shutdown ();
+			}
+
+			if (!recover) {
+				signal (SIGILL,  SIG_DFL);
+				signal (SIGSEGV, SIG_DFL);
+				signal (SIGFPE,  SIG_DFL);
+			}
+	}
+}
+
+static void
+hook_signlas (void)
+{
+	// catch signals
+	signal (SIGINT,  signal_handler);
+	signal (SIGILL,  signal_handler);
+	signal (SIGSEGV, signal_handler);
+	signal (SIGTERM, signal_handler);
+	signal (SIGFPE,  signal_handler);
+}
+#else
+
+static struct sigaction save_hup;
+static struct sigaction save_quit;
+static struct sigaction save_trap;
+static struct sigaction save_iot;
+static struct sigaction save_bus;
+static struct sigaction save_int;
+static struct sigaction save_ill;
+static struct sigaction save_segv;
+static struct sigaction save_term;
+static struct sigaction save_fpe;
 
 static void
 signal_handler (int sig, siginfo_t *info, void *ucontext)
@@ -848,10 +902,8 @@ signal_handler (int sig, siginfo_t *info, void *ucontext)
 	switch (sig) {
 		case SIGINT:
 		case SIGTERM:
-#ifndef _WIN32
 		case SIGHUP:
 			sigaction (SIGHUP,  &save_hup,  0);
-#endif
 			sigaction (SIGINT,  &save_int,  0);
 			sigaction (SIGTERM, &save_term, 0);
 			Sys_Quit ();
@@ -863,12 +915,10 @@ signal_handler (int sig, siginfo_t *info, void *ucontext)
 			}
 
 			if (!recover) {
-#ifndef _WIN32
 				sigaction (SIGQUIT, &save_quit, 0);
 				sigaction (SIGTRAP, &save_trap, 0);
 				sigaction (SIGIOT,  &save_iot,  0);
 				sigaction (SIGBUS,  &save_bus,  0);
-#endif
 				sigaction (SIGILL,  &save_ill,  0);
 				sigaction (SIGSEGV, &save_segv, 0);
 				sigaction (SIGFPE,  &save_fpe,  0);
@@ -876,8 +926,8 @@ signal_handler (int sig, siginfo_t *info, void *ucontext)
 	}
 }
 
-VISIBLE void
-Sys_Init (void)
+static void
+hook_signlas (void)
 {
 	// catch signals
 	struct sigaction action = {};
@@ -895,6 +945,13 @@ Sys_Init (void)
 	sigaction (SIGSEGV, &action, &save_segv);
 	sigaction (SIGTERM, &action, &save_term);
 	sigaction (SIGFPE,  &action, &save_fpe);
+}
+#endif
+
+VISIBLE void
+Sys_Init (void)
+{
+	hook_signlas ();
 
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();

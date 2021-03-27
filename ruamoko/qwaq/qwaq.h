@@ -1,6 +1,8 @@
 #ifndef __qwaq_h
 #define __qwaq_h
 
+#include <pthread.h>
+
 #include "QF/darray.h"
 #include "QF/progs.h"
 #include "QF/sys.h"

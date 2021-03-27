@@ -28,6 +28,6 @@ libs_console_console_client_la_DEPENDENCIES=	$(client_deps)
 libs_console_console_client_la_SOURCES=		$(client_sources)
 
 libs_console_console_server_la_LDFLAGS=		$(plugin_ldflags)
-libs_console_console_server_la_LIBADD=		$(server_deps) $(CURSES_LIBS) $(plugin_libadd)
+libs_console_console_server_la_LIBADD=		$(server_deps) $(NCURSES_LIBS) $(plugin_libadd)
 libs_console_console_server_la_DEPENDENCIES=	$(server_deps)
 libs_console_console_server_la_SOURCES=		$(server_sources)

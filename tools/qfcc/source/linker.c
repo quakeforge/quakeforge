@@ -1191,7 +1191,7 @@ undefined_def (qfo_def_t *def)
 			pr_uint_t    best_dist;
 			pr_lineno_t *line;
 
-			while (func - work->funcs < work->num_funcs) {
+			while (func - work->funcs < (ptrdiff_t) work->num_funcs) {
 				if (func->code >= 0
 					&& (pr_uint_t) func->code <= reloc->offset) {
 					if (!best || reloc->offset - func->code < best_dist) {
@@ -1206,7 +1206,7 @@ undefined_def (qfo_def_t *def)
 			line_def.line = best->line;
 			if (!line->line
 				&& line->fa.func == (pr_uint_t) (best - work->funcs)) {
-				while (line - work->lines < work->num_lines - 1
+				while (line - work->lines < (ptrdiff_t) work->num_lines - 1
 					   && line[1].line
 					   && line[1].fa.addr <= (pr_uint_t) reloc->offset)
 					line++;

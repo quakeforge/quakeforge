@@ -46,6 +46,8 @@
 #include "QF/quakeio.h"
 #include "QF/va.h"
 
+#include "compat.h"
+
 #include "tools/qfcc/include/codespace.h"
 #include "tools/qfcc/include/debug.h"
 #include "tools/qfcc/include/def.h"

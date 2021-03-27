@@ -26,7 +26,7 @@ NOCONV_DIST= \
 
 BUILT_SOURCES = $(top_srcdir)/.version
 #AM_CFLAGS= @PREFER_NON_PIC@
-AM_CPPFLAGS= -I$(top_srcdir)/include $(PTHREAD_CFLAGS)
+AM_CPPFLAGS= -I$(top_srcdir)/include $(PTHREAD_CFLAGS) $(FNM_FLAGS) $(NCURSES_CFLAGS)
 
 common_ldflags= -export-dynamic @PTHREAD_LDFLAGS@
 
@@ -69,6 +69,8 @@ XMMS_LIBS= @XMMS_LIBS@
 PAK=$(top_builddir)/pak$(EXEEXT)
 QFCC_DEP=qfcc$(EXEEXT)
 QFCC=$(top_builddir)/$(QFCC_DEP)
+QWAQ_CURSES=$(top_builddir)/ruamoko/qwaq/qwaq-curses$(EXEEXT)
+
 GZ=@progs_gz@
 
 V_QFCC = $(V_QFCC_@AM_V@)

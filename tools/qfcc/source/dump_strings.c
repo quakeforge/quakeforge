@@ -40,18 +40,18 @@
 #include "tools/qfcc/include/qfprogs.h"
 
 static void
-dump_string_block (const char *strblock, unsigned size)
+dump_string_block (const char *strblock, size_t size)
 {
 	const char *s = strblock;
 
 	printf ("%x \"", 0);
-	while (s - strblock < size) {
+	while ((size_t) (s - strblock) < size) {
 		char        c = *s++;
 		switch (c) {
 			case 0:
 				fputs ("\"\n", stdout);
-				if (s - strblock < size)
-					printf ("%lx \"", s - strblock);
+				if ((size_t) (s - strblock) < size)
+					printf ("%zx \"", s - strblock);
 				break;
 			case 9:
 				fputs ("\\t", stdout);

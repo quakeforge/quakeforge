@@ -30,6 +30,8 @@
 
 #ifdef _WIN32
 
+#include <memoryapi.h>
+
 #ifndef __GNUC__
 # pragma warning( disable : 4229 )  /* mgraph gets this */
 #endif
@@ -76,20 +78,14 @@ extern LPDIRECTDRAWSURFACE	lpBackBuffer;
 extern LPDIRECTDRAWPALETTE	lpDDPal;
 #endif
 
-void	VID_LockBuffer (void);
-void	VID_UnlockBuffer (void);
-void	VID_UpdateWindowStatus (int window_x, int window_y);
-
 typedef enum {MS_WINDOWED, MS_FULLSCREEN, MS_FULLDIB, MS_UNINIT} modestate_t;
 
 extern modestate_t	modestate;
 
-extern HWND			mainwindow;
 extern qboolean		ActiveApp, Minimized;
 
 extern qboolean	WinNT;
 
-void VID_ForceLockState (int lk);
 extern qboolean	winsock_lib_initialized;
 
 extern int		window_center_x, window_center_y;

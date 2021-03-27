@@ -10,9 +10,10 @@ AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(
 	access _access connect dlopen execvp fcntl ftime _ftime getaddrinfo \
 	gethostbyname gethostname getnameinfo getpagesize gettimeofday getuid \
-	getwd ioctl mkdir _mkdir mprotect putenv select snprintf _snprintf \
-	socket stat strcasestr strerror strnlen strsep strstr vsnprintf \
-	_vsnprintf wait
+	getwd ioctl mkdir _mkdir mprotect putenv qsort_r select sigaction \
+	snprintf _snprintf socket stat strcasestr strerror strerror_r strndup \
+	strnlen \
+	strsep strstr vsnprintf _vsnprintf wait
 )
 
 AC_FUNC_VA_COPY

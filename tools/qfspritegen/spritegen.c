@@ -22,6 +22,10 @@
 // Result is stored in /raid/quake/id1/sprites/<scriptname>.spr.
 //
 
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include <errno.h>
 #include <math.h>
 #include <stdlib.h>

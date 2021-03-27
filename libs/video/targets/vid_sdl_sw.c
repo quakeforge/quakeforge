@@ -52,7 +52,6 @@
 #ifdef _WIN32	// FIXME: evil hack to get full DirectSound support with SDL
 #include <windows.h>
 #include <SDL_syswm.h>
-HWND 		mainwindow;
 #endif
 
 // The original defaults
@@ -95,7 +94,7 @@ sdl_update_palette (const byte *palette)
 }
 
 static void
-VID_SetPalette (const byte *palette)
+sdl_set_palette (const byte *palette)
 {
 	if (memcmp (cached_palette, palette, sizeof (cached_palette))) {
 		memcpy (cached_palette, palette, sizeof (cached_palette));
@@ -171,7 +170,7 @@ sw_ctx_t *
 SDL_SW_Context (void)
 {
 	sw_ctx_t *ctx = calloc (1, sizeof (sw_ctx_t));
-    ctx->set_palette = VID_SetPalette;
+    ctx->set_palette = sdl_set_palette;
     ctx->create_context = sdl_set_vid_mode;
     ctx->update = sdl_sw_update;
     return ctx;

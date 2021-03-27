@@ -25,9 +25,19 @@
 
 */
 #include <unistd.h>
+#include <malloc.h>
 
 #include "QF/alloc.h"
 #include "QF/cmem.h"
+
+#ifdef _WIN32
+#define aligned_alloc(align, size) _aligned_malloc(size, align)
+#define _SC_PAGESIZE 1
+static size_t sysconf (int key)
+{
+	return 1024;
+}
+#endif
 
 static size_t __attribute__((const))
 ilog2 (size_t x)

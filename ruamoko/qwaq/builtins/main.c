@@ -52,6 +52,8 @@
 #include "QF/va.h"
 #include "QF/zone.h"
 
+#include "compat.h"
+
 #include "ruamoko/qwaq/qwaq.h"
 #include "ruamoko/qwaq/debugger/debug.h"
 

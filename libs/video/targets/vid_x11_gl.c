@@ -65,19 +65,17 @@
 
 typedef XID GLXDrawable;
 
+// GLXContext is a pointer to opaque data
+typedef struct __GLXcontextRec *GLXContext;
+
+
 // Define GLAPIENTRY to a useful value
 #ifndef GLAPIENTRY
-# ifdef _WIN32
-#  include <windows.h>
-#  define GLAPIENTRY WINAPI
-#  undef LoadImage
-# else
 #  ifdef APIENTRY
 #   define GLAPIENTRY APIENTRY
 #  else
 #   define GLAPIENTRY
 #  endif
-# endif
 #endif
 static void    *libgl_handle;
 static void (*qfglXSwapBuffers) (Display *dpy, GLXDrawable drawable);
@@ -155,8 +153,9 @@ static void
 glx_create_context (gl_ctx_t *ctx)
 {
 	XSync (x_disp, 0);
-	ctx->context = qfglXCreateContext (x_disp, x_visinfo, NULL, True);
-	qfglXMakeCurrent (x_disp, x_win, ctx->context);
+	ctx->context = (GL_context) qfglXCreateContext (x_disp, x_visinfo, NULL,
+													True);
+	qfglXMakeCurrent (x_disp, x_win, (GLXContext) ctx->context);
 	ctx->init_gl ();
 }
 

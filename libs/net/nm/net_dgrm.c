@@ -120,7 +120,7 @@ NET_Ban_f (void)
 
 	switch (Cmd_Argc ()) {
 		case 1:
-		if (((struct in_addr *) &banAddr)->s_addr) {
+		if (banAddr) {
 			struct in_addr t;
 			t.s_addr = banAddr;
 			strcpy (addrStr, inet_ntoa (t));

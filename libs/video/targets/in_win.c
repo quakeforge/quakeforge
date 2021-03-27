@@ -46,6 +46,7 @@
 #include "QF/sys.h"
 
 #include "compat.h"
+#include "context_win.h"
 #include "in_win.h"
 
 #define DINPUT_BUFFERSIZE           16
@@ -54,9 +55,6 @@
 HRESULT (WINAPI * pDirectInputCreate) (HINSTANCE hinst, DWORD dwVersion,
 									   LPDIRECTINPUT * lplpDirectInput,
 									   LPUNKNOWN punkOuter);
-
-extern qboolean win_canalttab;
-extern DEVMODE win_gdevmode;
 
 // mouse local variables
 static unsigned uiWheelMessage;
@@ -119,8 +117,6 @@ static DIDATAFORMAT df = {
 	rgodf,								// and here they are
 };
 
-// forward-referenced functions, joy
-
 void
 IN_UpdateClipCursor (void)
 {
@@ -168,7 +164,7 @@ IN_ActivateMouse (void)
 					SystemParametersInfo (SPI_SETMOUSE, 0, newmouseparms, 0);
 
 			SetCursorPos (window_center_x, window_center_y);
-			SetCapture (mainwindow);
+			SetCapture (win_mainwindow);
 			ClipCursor (&window_rect);
 		}
 
@@ -255,7 +251,7 @@ IN_InitDInput (void)
 		return false;
 	}
 	// set the cooperativity level.
-	hr = IDirectInputDevice_SetCooperativeLevel (g_pMouse, mainwindow,
+	hr = IDirectInputDevice_SetCooperativeLevel (g_pMouse, win_mainwindow,
 												 DISCL_EXCLUSIVE |
 												 DISCL_FOREGROUND);
 
@@ -741,10 +737,10 @@ AppActivate (BOOL fActive, BOOL minimize)
 							   "(try upgrading your video drivers)\n (%lx)",
 							   GetLastError());
 				}
-				ShowWindow (mainwindow, SW_SHOWNORMAL);
+				ShowWindow (win_mainwindow, SW_SHOWNORMAL);
 
 				// Fix for alt-tab bug in NVidia drivers
-				MoveWindow(mainwindow, 0, 0, win_gdevmode.dmPelsWidth,
+				MoveWindow(win_mainwindow, 0, 0, win_gdevmode.dmPelsWidth,
 						   win_gdevmode.dmPelsHeight, false);
 			}
 		}
@@ -782,13 +778,13 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	switch (uMsg) {
 		case WM_KILLFOCUS:
 			if (modestate == MS_FULLDIB)
-				ShowWindow (mainwindow, SW_SHOWMINNOACTIVE);
+				ShowWindow (win_mainwindow, SW_SHOWMINNOACTIVE);
 			break;
 		case WM_CREATE:
 			break;
 
 		case WM_MOVE:
-			VID_UpdateWindowStatus ((int) LOWORD (lParam),
+			Win_UpdateWindowStatus ((int) LOWORD (lParam),
 									(int) HIWORD (lParam));
 			break;
 
@@ -848,7 +844,8 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 		case WM_CLOSE:
 			if (MessageBox
-				(mainwindow, "Are you sure you want to quit?", "Confirm Exit",
+				(win_mainwindow,
+				 "Are you sure you want to quit?", "Confirm Exit",
 				 MB_YESNO | MB_SETFOREGROUND | MB_ICONQUESTION) == IDYES) {
 				Sys_Quit ();
 			}
@@ -864,8 +861,8 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 			break;
 
 		case WM_DESTROY:
-			if (mainwindow)
-				DestroyWindow (mainwindow);
+			if (win_mainwindow)
+				DestroyWindow (win_mainwindow);
 			PostQuitMessage (0);
 			break;
 

@@ -57,7 +57,7 @@ ruamoko_qwaq_qwaq_curses_SOURCES= \
 	$e
 
 ruamoko_qwaq_qwaq_curses_LDADD= $(qwaq_curses_libs) $(QWAQ_LIBS) \
-				$(PANEL_LIBS) $(CURSES_LIBS) $(PTHREAD_LDFLAGS) $(DL_LIBS)
+				$(PANEL_LIBS) $(NCURSES_LIBS) $(PTHREAD_LDFLAGS) $(DL_LIBS)
 ruamoko_qwaq_qwaq_curses_LDFLAGS=
 ruamoko_qwaq_qwaq_curses_DEPENDENCIES= $(qwaq_curses_libs) $(QWAQ_DEPS)
 

@@ -1,11 +1,8 @@
 #ifndef __vid_sw_h
 #define __vid_sw_h
 
-// GLXContext is a pointer to opaque data
-typedef struct __GLXcontextRec *GLXContext;
 struct vrect_s;
 typedef struct sw_ctx_s {
-	GLXContext  context;
 	void        (*choose_visual) (struct sw_ctx_s *ctx);
 	void        (*create_context) (struct sw_ctx_s *ctx);
 	void        (*set_palette) (const byte *palette);

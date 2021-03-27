@@ -30,7 +30,7 @@
 bin_PROGRAMS += @QW_TARGETS@
 
 EXTRA_PROGRAMS += \
-	qw-client-fbdev qw-client-sdl qw-client-svga qw-client-wgl qw-client-x11 \
+	qw-client-fbdev qw-client-sdl qw-client-svga qw-client-win qw-client-x11 \
 	qw-server qw-master
 
 noinst_LIBRARIES += @qw_libs@
@@ -164,13 +164,14 @@ qw_client_x11_LDFLAGS=	$(common_ldflags)
 qw_client_x11_DEPENDENCIES= $(qw_client_x11_libs)
 
 # ... SGI/Microsoft WGL (Windows OpenGL)
-qw_client_wgl_libs= \
+qw_client_win_libs= \
 			$(qw_client_libs) \
 			$(qw_cl_plugin_LIBS) \
-			$(opengl_LIBS) \
-			libs/video/targets/libQFwgl.la \
+			libs/video/renderer/libQFrenderer.la \
+			libs/models/libQFmodels.la \
+			libs/video/targets/libQFwin.la \
 			$(qw_client_LIBS)
-qw_client_wgl_SOURCES=	qw/source/cl_sys_win.c
-qw_client_wgl_LDADD= $(qw_client_wgl_libs) -lgdi32 -lwinmm $(NET_LIBS) $(LIBCURL_LIBS)
-qw_client_wgl_LDFLAGS=  $(common_ldflags)
-qw_client_wgl_DEPENDENCIES= $(qw_client_wgl_libs)
+qw_client_win_SOURCES=	qw/source/cl_sys_win.c
+qw_client_win_LDADD= $(qw_client_win_libs) -lgdi32 -lwinmm $(NET_LIBS) $(LIBCURL_LIBS)
+qw_client_win_LDFLAGS=  $(common_ldflags)
+qw_client_win_DEPENDENCIES= $(qw_client_win_libs)

@@ -28,8 +28,6 @@
 # include "config.h"
 #endif
 
-#include "winquake.h"
-
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
@@ -41,6 +39,7 @@
 #include "QF/plugin/cd.h"
 
 #include "compat.h"
+#include "context_win.h"
 
 static plugin_t			plugin_info;
 static plugin_data_t	plugin_info_data;
@@ -181,7 +180,7 @@ I_CDAudio_Pause (void)
 	if (!playing)
 		return;
 
-	mciGenericParms.dwCallback = (DWORD_PTR) mainwindow;
+	mciGenericParms.dwCallback = (DWORD_PTR) win_mainwindow;
 	dwReturn =
 		mciSendCommand (wDeviceID, MCI_PAUSE, 0,
 						(DWORD_PTR) (LPVOID) & mciGenericParms);
@@ -254,7 +253,7 @@ I_CDAudio_Play (int track, qboolean looping)
 
 	mciPlayParms.dwFrom = MCI_MAKE_TMSF (track, 0, 0, 0);
 	mciPlayParms.dwTo = (mciStatusParms.dwReturn << 8) | track;
-	mciPlayParms.dwCallback = (DWORD_PTR) mainwindow;
+	mciPlayParms.dwCallback = (DWORD_PTR) win_mainwindow;
 	dwReturn =
 		mciSendCommand (wDeviceID, MCI_PLAY, MCI_NOTIFY | MCI_FROM | MCI_TO,
 						(DWORD_PTR) (LPVOID) & mciPlayParms);
@@ -286,7 +285,7 @@ I_CDAudio_Resume (void)
 
 	mciPlayParms.dwFrom = MCI_MAKE_TMSF (playTrack, 0, 0, 0);
 	mciPlayParms.dwTo = MCI_MAKE_TMSF (playTrack + 1, 0, 0, 0);
-	mciPlayParms.dwCallback = (DWORD_PTR) mainwindow;
+	mciPlayParms.dwCallback = (DWORD_PTR) win_mainwindow;
 	dwReturn =
 		mciSendCommand (wDeviceID, MCI_PLAY, MCI_TO | MCI_NOTIFY,
 						(DWORD_PTR) (LPVOID) & mciPlayParms);
