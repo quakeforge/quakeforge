@@ -28,6 +28,8 @@
 #ifndef __QF_simd_types_h
 #define __QF_simd_types_h
 
+#include <stdint.h>
+
 #define VEC_TYPE(t,n) typedef t n __attribute__ ((vector_size (4*sizeof (t))))
 
 /** Three element vector type for interfacing with compact data.
@@ -51,7 +53,7 @@ VEC_TYPE (double, vec4d_t);
 
 /** Used mostly for __builtin_shuffle.
  */
-VEC_TYPE (long, vec4l_t);
+VEC_TYPE (int64_t, vec4l_t);
 #endif
 
 /** Three element vector type for interfacing with compact data.

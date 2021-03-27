@@ -258,7 +258,8 @@ VISIBLE
 vec4d_t
 qconjd (vec4d_t q)
 {
-	const vec4l_t neg = { 1lu << 63, 1lu << 63, 1lu << 63, 0 };
+	const uint64_t sign = UINT64_C(1) << 63;
+	const vec4l_t neg = { sign, sign, sign, 0 };
 	return _mm256_xor_pd (q, (__m256d) neg);
 }
 

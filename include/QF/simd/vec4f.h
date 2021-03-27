@@ -91,8 +91,8 @@ GNU89INLINE inline vec4f_t qrotf (vec4f_t a, vec4f_t b) __attribute__((const));
  * That is, [-x, -y, -z, w].
  */
 GNU89INLINE inline vec4f_t qconjf (vec4f_t q) __attribute__((const));
-GNU89INLINE inline vec4f_t loadvec3f (const float v3[3]) __attribute__((pure, access(read_only, 1)));
-GNU89INLINE inline void storevec3f (float v3[3], vec4f_t v4) __attribute__((access (write_only, 1)));
+GNU89INLINE inline vec4f_t loadvec3f (const float *v3) __attribute__((pure));
+GNU89INLINE inline void storevec3f (float *v3, vec4f_t v4);
 GNU89INLINE inline vec4f_t normalf (vec4f_t v) __attribute__((pure));
 GNU89INLINE inline vec4f_t magnitudef (vec4f_t v) __attribute__((pure));
 GNU89INLINE inline vec4f_t magnitude3f (vec4f_t v) __attribute__((pure));
