@@ -72,6 +72,7 @@ extern pthread_rwlock_t *portal_locks;
 #define UNLOCK_PORTAL(p)
 #endif
 
+#include "QF/cmem.h"
 #include "QF/set.h"
 
 #define	MAX_PORTALS				32768
@@ -151,6 +152,15 @@ typedef struct {
 	int         mighttest;		///< amount mightsee is used for masked tests
 	int         vistest;		///< amount visbits is used for masked tests
 	int         mightseeupdate;	///< amount of updates to waiting portals
+	unsigned    sep_alloc;		///< how many separators were allocated
+	unsigned    sep_free;		///< how many separators were freed
+	unsigned    sep_highwater;	///< most separators in flight
+	unsigned    sep_maxbulk;	///< most separators freed at once
+	unsigned    winding_alloc;	///< how many windings were allocated
+	unsigned    winding_free;	///< how many windings were freed
+	unsigned    winding_highwater;	///< most windings in flight
+	unsigned    stack_alloc;	///< how many stack blocks were allocated
+	unsigned    stack_free;		///< how many stack blocks were freed
 } visstat_t;
 
 typedef struct threaddata_s {
@@ -160,13 +170,15 @@ typedef struct threaddata_s {
 	pstack_t    pstack_head;
 	sep_t      *sep_freelist;	///< per-thread list of free separators
 	winding_t  *winding_freelist;	///< per-thread list of free windings
+	memsuper_t *memsuper;		///< per-thread memory pool
 	set_pool_t  set_pool;
-	struct memsuper_s *memsuper;
+	int         id;
 } threaddata_t;
 
 typedef struct {
 	set_t      *portalsee;
 	int         clustersee;
+	int         id;
 } basethread_t;
 
 extern unsigned numportals;

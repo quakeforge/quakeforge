@@ -82,6 +82,7 @@ new_stack (threaddata_t *td)
 	stack = malloc (sizeof (pstack_t));
 	stack->next = 0;
 	stack->mightsee = set_new_size_r (&td->set_pool, portalclusters);
+	td->stats.stack_alloc++;
 	return stack;
 }
 
@@ -91,22 +92,33 @@ new_separator (threaddata_t *thread)
 	sep_t      *sep;
 
 	sep = CMEMALLOC (32, sep_t, thread->sep, thread->memsuper);
+	thread->stats.sep_alloc++;
 	return sep;
 }
 
 static void
 delete_separator (threaddata_t *thread, sep_t *sep)
 {
+	thread->stats.sep_free++;
 	CMEMFREE (thread->sep, sep);
 }
 
 static void
 free_separators (threaddata_t *thread, sep_t *sep_list)
 {
+	unsigned count = thread->stats.sep_alloc - thread->stats.sep_free;
+	if (count > thread->stats.sep_highwater) {
+		thread->stats.sep_highwater = count;
+	}
+	count = 0;
 	while (sep_list) {
 		sep_t      *sep = sep_list;
 		sep_list = sep->next;
 		delete_separator (thread, sep);
+		count++;
+	}
+	if (count > thread->stats.sep_maxbulk) {
+		thread->stats.sep_maxbulk = count;
 	}
 }
 

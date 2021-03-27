@@ -157,6 +157,7 @@ NewWinding (threaddata_t *thread, int points)
 	size = field_offset (winding_t, points[points]);
 	winding = CMEMALLOC (13, winding_t, thread->winding, thread->memsuper);
 	memset (winding, 0, size);
+	thread->stats.winding_alloc++;
 
 	return winding;
 }
@@ -165,6 +166,11 @@ void
 FreeWinding (threaddata_t *thread, winding_t *w)
 {
 	if (!w->original) {
+		unsigned count = thread->stats.winding_alloc - thread->stats.winding_free;
+		if (count > thread->stats.winding_highwater) {
+			thread->stats.winding_highwater = count;
+		}
+		thread->stats.winding_free++;
 		CMEMFREE (thread->winding, w);
 	}
 }
@@ -179,6 +185,7 @@ CopyWinding (threaddata_t *thread, const winding_t *w)
 	copy = CMEMALLOC (13, winding_t, thread->winding, thread->memsuper);
 	memcpy (copy, w, size);
 	copy->original = false;
+	thread->stats.winding_alloc++;
 	return copy;
 }
 
@@ -356,6 +363,12 @@ PortalCompleted (threaddata_t *thread, portal_t *completed)
 	stats.mighttest += thread->stats.mighttest;
 	stats.vistest += thread->stats.vistest;
 	stats.mightseeupdate += thread->stats.mightseeupdate;
+	stats.sep_alloc += thread->stats.sep_alloc;
+	stats.sep_free += thread->stats.sep_free;
+	stats.winding_alloc += thread->stats.winding_alloc;
+	stats.winding_free += thread->stats.winding_free;
+	stats.stack_alloc += thread->stats.stack_alloc;
+	stats.stack_free += thread->stats.stack_free;
 	UNLOCK (stats_lock);
 	memset (&thread->stats, 0, sizeof (thread->stats));
 
@@ -383,29 +396,86 @@ PortalCompleted (threaddata_t *thread, portal_t *completed)
 	set_delete_r (&thread->set_pool, changed);
 }
 
+static void
+dump_super_stats (int id, memsuper_t *super)
+{
+	size_t      total_pre_size = 0;
+	size_t      total_pre_allocated = 0;
+	size_t      total_post_size = 0;
+	size_t      total_post_allocated = 0;
+	size_t      num_blocks = 0;
+	size_t      free_counts[MAX_CACHE_LINES];
+
+	for (memblock_t *block = super->memblocks; block; block = block->next) {
+		num_blocks++;
+		total_pre_size += block->pre_size;
+		total_pre_allocated += block->pre_allocated;
+		total_post_size += block->post_size;
+		// post_free is a flag
+		total_post_allocated += !block->post_free * block->post_size;
+	}
+	for (int i = 0; i < MAX_CACHE_LINES; i++) {
+		free_counts[i] = 0;
+		for (memline_t *line = super->free_lines[i]; line;
+			 line = line->free_next) {
+			free_counts[i]++;
+		}
+	}
+
+	WRLOCK (global_lock);
+	printf ("cmem stats for thread %d\n", id);
+	printf ("    blocks: %zd\n", num_blocks);
+	printf ("       pre: s:%-8zd a:%-8zd f:%-8zd\n", total_pre_size,
+			total_pre_allocated, total_pre_size - total_pre_allocated);
+	printf ("      post: s:%-8zd a:%-8zd f:%-8zd\n", total_post_size,
+			total_post_allocated, total_post_size - total_post_allocated);
+	printf ("   ");
+	for (int i = 0; i < MAX_CACHE_LINES; i++) {
+		printf (" %5d", 64 << i);
+	}
+	printf ("\n");
+	printf ("   ");
+	for (int i = 0; i < MAX_CACHE_LINES; i++) {
+		printf (" %5zd", free_counts[i]);
+	}
+	printf ("\n");
+	UNLOCK (global_lock);
+}
+
 static void *
 LeafThread (void *_thread)
 {
 	portal_t   *portal;
 	int         thread = (int) (intptr_t) _thread;
 	threaddata_t data;
+	int         count = 0;
 
 	memset (&data, 0, sizeof (data));
 	set_pool_init (&data.set_pool);
+	data.id = thread;
 	data.memsuper = new_memsuper ();
 	do {
 		portal = GetNextPortal (1);
 		if (!portal)
 			break;
 
+		if (options.verbosity >= 3 && (!count++ % 16)) {
+			dump_super_stats (thread, data.memsuper);
+		}
 		if (working)
 			working[thread] = (int) (portal - portals);
 
 		PortalFlow (&data, portal);
 
+		int whw = data.stats.winding_highwater;
+		int shw = data.stats.sep_highwater;
+		int smb = data.stats.sep_maxbulk;
 		PortalCompleted (&data, portal);
+		data.stats.sep_highwater = shw;
+		data.stats.sep_maxbulk = smb;
+		data.stats.winding_highwater = whw;
 
-		if (options.verbosity > 1)
+		if (options.verbosity >= 4)
 			printf ("portal:%5i  mightsee:%5i  cansee:%5i %5u/%u\n",
 						(int) (portal - portals),
 						portal->nummightsee,
@@ -413,7 +483,16 @@ LeafThread (void *_thread)
 						portal_count, numportals * 2);
 	} while (1);
 
-	if (options.verbosity > 0)
+	if (options.verbosity >= 2) {
+		printf ("thread %d winding highwater: %d\n", thread,
+				data.stats.winding_highwater);
+		printf ("thread %d separator highwater: %d\n", thread,
+				data.stats.sep_highwater);
+		printf ("thread %d separator maxbulk: %d\n", thread,
+				data.stats.sep_maxbulk);
+	}
+
+	if (options.verbosity >= 4)
 		printf ("thread %d done\n", thread);
 	if (working)
 		working[thread] = -1;
@@ -431,6 +510,7 @@ BaseVisThread (void *_thread)
 	int         num_mightsee = 0;
 
 	memset (&data, 0, sizeof (data));
+	data.id = thread;
 	set_pool_init (&set_pool);
 	data.portalsee = set_new_size_r (&set_pool, numportals * 2);
 	do {
@@ -453,7 +533,7 @@ BaseVisThread (void *_thread)
 	base_mightsee += num_mightsee;
 	UNLOCK (stats_lock);
 
-	if (options.verbosity > 0)
+	if (options.verbosity >= 4)
 		printf ("thread %d done\n", thread);
 	if (working)
 		working[thread] = -1;
@@ -514,9 +594,9 @@ WatchThread (void *_thread)
 
 			for (i = 0; i < thread; i ++)
 				local_work[i] = working[i];
-			if (options.verbosity > 0)
+			if (options.verbosity >= 4)
 				print_thread_stats (local_work, thread, spinner_ind);
-			else if (options.verbosity == 0)
+			else if (options.verbosity >= 0)
 				prev_prog = print_progress (prev_prog, spinner_ind);
 			if (prev_port != portal_count || stalled++ == 10) {
 				prev_port = portal_count;
@@ -525,9 +605,9 @@ WatchThread (void *_thread)
 			}
 		}
 	}
-	if (options.verbosity > 0)
+	if (options.verbosity >= 4)
 		printf ("watch thread done\n");
-	else if (options.verbosity == 0)
+	else if (options.verbosity >= 0)
 		printf ("\n");
 	free (local_work);
 
@@ -656,7 +736,7 @@ ClusterFlow (int clusternum)
 	set_delete (visclusters);
 
 	// compress the bit string
-	if (options.verbosity > 1)
+	if (options.verbosity >= 4)
 		printf ("cluster %4i : %4i visible\n", clusternum, numvis);
 	totalvis += numvis;
 
@@ -680,14 +760,14 @@ BasePortalVis (void)
 
 	if (options.verbosity >= 0)
 		printf ("Base vis: ");
-	if (options.verbosity >= 1)
+	if (options.verbosity >= 4)
 		printf ("\n");
 
 	start = Sys_DoubleTime ();
 	RunThreads (BaseVisThread);
 	end = Sys_DoubleTime ();
 
-	if (options.verbosity > 0)
+	if (options.verbosity >= 1)
 		printf ("base_mightsee: %d %gs\n", base_mightsee, end - start);
 }
 
@@ -708,19 +788,19 @@ CalcPortalVis (void)
 	start = Sys_DoubleTime ();
 	qsort (portal_queue, numportals * 2, sizeof (portal_t *), portalcmp);
 	end = Sys_DoubleTime ();
-	if (options.verbosity > 0)
+	if (options.verbosity >= 1)
 		printf ("qsort: %gs\n", end - start);
 
 	if (options.verbosity >= 0)
 		printf ("Full vis: ");
-	if (options.verbosity >= 1)
+	if (options.verbosity >= 4)
 		printf ("\n");
 
 	portal_count = 0;
 
 	RunThreads (LeafThread);
 
-	if (options.verbosity > 0) {
+	if (options.verbosity >= 1) {
 		printf ("portalcheck: %i  portaltest: %i  portalpass: %i\n",
 				stats.portalcheck, stats.portaltest, stats.portalpass);
 		printf ("target trimmed: %d clipped: %d tested: %d\n",
@@ -729,6 +809,17 @@ CalcPortalVis (void)
 				stats.sourcetrimmed, stats.sourceclipped, stats.sourcetested);
 		printf ("vistest: %i  mighttest: %i mightseeupdate: %i\n",
 				stats.vistest, stats.mighttest, stats.mightseeupdate);
+		if (options.verbosity >= 2) {
+			printf ("separators allocated: %u freed: %u %u\n",
+					stats.sep_alloc, stats.sep_free,
+					stats.sep_alloc - stats.sep_free);
+			printf ("windings allocated: %u freed: %u %u\n",
+					stats.winding_alloc, stats.winding_free,
+					stats.winding_alloc - stats.winding_free);
+			printf ("stack blocks allocated: %u freed: %u %u\n",
+					stats.stack_alloc, stats.stack_free,
+					stats.stack_alloc - stats.stack_free);
+		}
 	}
 }
 
@@ -1158,7 +1249,7 @@ main (int argc, char **argv)
 
 	CalcVis ();
 
-	if (options.verbosity > 0)
+	if (options.verbosity >= 1)
 		printf ("chains: %i%s\n", stats.chains,
 				options.threads > 1 ? " (not reliable)" :"");
 
