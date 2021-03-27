@@ -64,8 +64,8 @@ void PR_Init (progs_t *pr);
 */
 void PR_Init_Cvars (void);
 
-void PR_Error (progs_t *pr, const char *error, ...) __attribute__((format(printf,2,3), noreturn));
-void PR_RunError (progs_t *pr, const char *error, ...) __attribute__((format(printf,2,3), noreturn));
+void PR_Error (progs_t *pr, const char *error, ...) __attribute__((format(PRINTF,2,3), noreturn));
+void PR_RunError (progs_t *pr, const char *error, ...) __attribute__((format(PRINTF,2,3), noreturn));
 
 ///@}
 

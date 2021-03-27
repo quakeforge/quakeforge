@@ -46,31 +46,31 @@ extern diagnostic_hook notice_hook;
 
 struct expr_s *_error (struct expr_s *e, const char *file, int line,
 					   const char *fmt, ...)
-	__attribute__ ((format (printf, 4, 5)));
+	__attribute__ ((format (PRINTF, 4, 5)));
 #define error(e, fmt...) _error(e, __FILE__, __LINE__, fmt)
 
 void _internal_error (struct expr_s *e, const char *file, int line,
 					  const char *fmt, ...)
-	__attribute__ ((format (printf, 4, 5), noreturn));
+	__attribute__ ((format (PRINTF, 4, 5), noreturn));
 #define internal_error(e, fmt...) _internal_error(e, __FILE__, __LINE__, fmt)
 
 struct expr_s *_warning (struct expr_s *e, const char *file, int line,
 						 const char *fmt, ...)
-	__attribute__ ((format (printf, 4, 5)));
+	__attribute__ ((format (PRINTF, 4, 5)));
 #define warning(e, fmt...) _warning(e, __FILE__, __LINE__, fmt)
 
 struct expr_s *_notice (struct expr_s *e, const char *file, int line,
 						const char *fmt, ...)
-	__attribute__ ((format (printf, 4, 5)));
+	__attribute__ ((format (PRINTF, 4, 5)));
 #define notice(e, fmt...) _notice(e, __FILE__, __LINE__, fmt)
 
 void _debug (struct expr_s *e, const char *file, int line,
 			 const char *fmt, ...)
-	__attribute__ ((format (printf, 4, 5)));
+	__attribute__ ((format (PRINTF, 4, 5)));
 #define debug(e, fmt...) _debug(e, __FILE__, __LINE__, fmt)
 
 void _bug (struct expr_s *e, const char *file, int line, const char *fmt, ...)
-	__attribute__ ((format (printf, 4, 5)));
+	__attribute__ ((format (PRINTF, 4, 5)));
 #define bug(e, fmt...) _bug(e, __FILE__, __LINE__, fmt)
 
 ///@}

@@ -90,8 +90,8 @@
 
 #include "compat.h"
 
-static void Sys_StdPrintf (const char *fmt, va_list args) __attribute__((format(printf, 1, 0)));
-static void Sys_ErrPrintf (const char *fmt, va_list args) __attribute__((format(printf, 1, 0)));
+static void Sys_StdPrintf (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
+static void Sys_ErrPrintf (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
 
 VISIBLE cvar_t *sys_nostdout;
 VISIBLE cvar_t *sys_extrasleep;

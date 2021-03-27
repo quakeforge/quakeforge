@@ -75,15 +75,15 @@
 #include "tools/qfcc/include/type.h"
 
 static void linker_internal_error (const char *fmt, ...)
-	__attribute__ ((format (printf, 1, 2), noreturn));
+	__attribute__ ((format (PRINTF, 1, 2), noreturn));
 static void linker_error (const char *fmt, ...)
-	__attribute__ ((format (printf, 1, 2)));
+	__attribute__ ((format (PRINTF, 1, 2)));
 static void linker_warning (const char *fmt, ...)
-	__attribute__ ((format (printf, 1, 2)));
+	__attribute__ ((format (PRINTF, 1, 2)));
 static void def_error (qfo_def_t *def, const char *fmt, ...)
-	__attribute__ ((format (printf, 2, 3)));
+	__attribute__ ((format (PRINTF, 2, 3)));
 static void def_warning (qfo_def_t *def, const char *fmt, ...)
-	__attribute__ ((used, format (printf, 2, 3)));
+	__attribute__ ((used, format (PRINTF, 2, 3)));
 
 /**	Safe handling of defs in hash tables and other containers.
 

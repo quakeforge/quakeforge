@@ -1086,7 +1086,7 @@ Key_IMT_Keydest_f (void)
 	key_targets[kd].active = imt;
 }
 
-static void __attribute__((format(printf,2,3)))
+static void __attribute__((format(PRINTF,2,3)))
 key_printf (QFile *f, const char *fmt, ...)
 {
 	va_list     args;

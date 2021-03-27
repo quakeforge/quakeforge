@@ -109,7 +109,7 @@ cvar_t     *sv_timecheck_decay;
 
 cvar_t     *sv_http_url_base;
 
-static void OutofBandPrintf (netadr_t where, const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
+static void OutofBandPrintf (netadr_t where, const char *fmt, ...) __attribute__ ((format (PRINTF, 2, 3)));
 
 //	USER STRINGCMD EXECUTION host_client and sv_player will be valid.
 

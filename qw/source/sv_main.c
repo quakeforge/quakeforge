@@ -255,7 +255,7 @@ SV_Shutdown (void *data)
 	Sends a datagram to all the clients informing them of the server crash,
 	then exits
 */
-static __attribute__((format(printf, 1, 0))) void
+static __attribute__((format(PRINTF, 1, 0))) void
 SV_Error (const char *error, va_list argptr)
 {
 	static qboolean inerror = false;

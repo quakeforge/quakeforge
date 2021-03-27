@@ -474,8 +474,8 @@ void SV_Progs_Init_Cvars (void);
 void SV_PR_Cmds_Init (void);
 void SV_LoadProgs (void);
 
-void Con_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
-void Con_DPrintf (const char *fmt, ...) __attribute__((format(printf,1,2)));
+void Con_Printf (const char *fmt, ...) __attribute__((format(PRINTF,1,2)));
+void Con_DPrintf (const char *fmt, ...) __attribute__((format(PRINTF,1,2)));
 
 extern struct clip_hull_s *pf_hull_list[];
 
@@ -554,17 +554,17 @@ int SV_EntCanSupportJump (struct edict_s *ent) __attribute__((pure));
 //
 // sv_send.c
 //
-void SV_Print (const char *fmt, va_list args) __attribute__((format(printf, 1, 0)));
-void SV_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
+void SV_Print (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
+void SV_Printf (const char *fmt, ...) __attribute__((format(PRINTF,1,2)));
 void SV_SendClientMessages (void);
 void SV_GetStats (struct edict_s *ent, int spectator, int stats[]);
 
 void SV_Multicast (const vec3_t origin, int to);
 void SV_StartSound (struct edict_s *entity, int channel, const char *sample,
 					int volume, float attenuation);
-void SV_ClientPrintf (int recorder, client_t *cl, int level, const char *fmt, ...) __attribute__((format(printf,4,5)));
-void SV_BroadcastPrintf (int level, const char *fmt, ...) __attribute__((format(printf,2,3)));
-void SV_BroadcastCommand (const char *fmt, ...) __attribute__((format(printf,1,2)));
+void SV_ClientPrintf (int recorder, client_t *cl, int level, const char *fmt, ...) __attribute__((format(PRINTF,4,5)));
+void SV_BroadcastPrintf (int level, const char *fmt, ...) __attribute__((format(PRINTF,2,3)));
+void SV_BroadcastCommand (const char *fmt, ...) __attribute__((format(PRINTF,1,2)));
 void SV_SendMessagesToAll (void);
 void SV_FindModelNumbers (void);
 

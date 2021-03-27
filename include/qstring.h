@@ -33,7 +33,7 @@
 
 const char * Q_strcasestr (const char *haystack, const char *needle) __attribute__((pure));
 size_t Q_strnlen (const char *s, size_t maxlen) __attribute__((pure));
-size_t Q_snprintfz (char *dest, size_t size, const char *fmt, ...) __attribute__((format(printf,3,4)));
+size_t Q_snprintfz (char *dest, size_t size, const char *fmt, ...) __attribute__((format(PRINTF,3,4)));
 size_t Q_vsnprintfz (char *dest, size_t size, const char *fmt, va_list argptr);
 
 #endif // string_h

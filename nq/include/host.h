@@ -62,11 +62,11 @@ void Host_ServerFrame (void);
 void Host_InitCommands (void);
 void Host_Init (void);
 void Host_Shutdown(void *data);
-void Host_Error (const char *error, ...) __attribute__((format(printf,1,2), noreturn));
-void Host_EndGame (const char *message, ...) __attribute__((format(printf,1,2), noreturn));
+void Host_Error (const char *error, ...) __attribute__((format(PRINTF,1,2), noreturn));
+void Host_EndGame (const char *message, ...) __attribute__((format(PRINTF,1,2), noreturn));
 void Host_Frame (float time);
 void Host_Quit_f (void) __attribute__((noreturn));
-void Host_ClientCommands (const char *fmt, ...) __attribute__((format(printf,1,2)));
+void Host_ClientCommands (const char *fmt, ...) __attribute__((format(PRINTF,1,2)));
 void Host_ShutdownServer (qboolean crash);
 
 #endif // __host_h

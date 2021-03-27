@@ -500,7 +500,7 @@ int PL_ParseLabeledArray (const plfield_t *field, const plitem_t *dict,
 */
 int PL_ParseSymtab (const plfield_t *field, const plitem_t *dict,
 					void *data, plitem_t *messages, void *context);
-void __attribute__((format(printf,3,4)))
+void __attribute__((format(PRINTF,3,4)))
 PL_Message (plitem_t *messages, const plitem_t *item, const char *fmt, ...);
 
 ///@}

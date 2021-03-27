@@ -76,7 +76,7 @@
 # endif
 #endif
 
-static void __attribute__ ((format (printf, 1, 2)))
+static void __attribute__ ((format (PRINTF, 1, 2)))
 ma_log (const char *fmt, ...);
 
 #ifdef HAVE_IN_PKTINFO
@@ -514,7 +514,7 @@ main (int argc, char **argv)
 	return 0;
 }
 
-static void __attribute__ ((format (printf, 1, 2)))
+static void __attribute__ ((format (PRINTF, 1, 2)))
 ma_log (const char *fmt, ...)
 {
 	va_list     args;

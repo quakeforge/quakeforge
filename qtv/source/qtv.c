@@ -88,7 +88,7 @@ redirect_t  qtv_redirected;
 client_t   *qtv_redirect_client;
 dstring_t   outputbuf = {&dstring_default_mem};
 
-static __attribute__((format(printf, 1, 0))) void
+static __attribute__((format(PRINTF, 1, 0))) void
 qtv_print (const char *fmt, va_list args)
 {
 	static int pending;

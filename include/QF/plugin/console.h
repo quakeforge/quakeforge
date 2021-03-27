@@ -34,7 +34,7 @@
 #include <QF/plugin.h>
 #include <QF/qtypes.h>
 
-typedef void (*P_C_Print) (const char *fmt, va_list args) __attribute__((format(printf, 1, 0)));
+typedef void (*P_C_Print) (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
 typedef void (*P_C_ProcessInput) (void);
 typedef void (*P_C_KeyEvent) (knum_t key, short unicode, qboolean down);
 typedef void (*P_C_DrawConsole) (void);

@@ -711,7 +711,7 @@ C_shutdown (void)
 #endif
 }
 
-static __attribute__((format(printf, 1, 0))) void
+static __attribute__((format(PRINTF, 1, 0))) void
 C_Print (const char *fmt, va_list args)
 {
 	static dstring_t *buffer;

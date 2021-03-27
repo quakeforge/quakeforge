@@ -104,7 +104,7 @@ NET_Ban_f (void)
 {
 	char        addrStr[32];		//FIXME: overflow
 	char        maskStr[32];		//FIXME: overflow
-	__attribute__((format(printf, 1, 2))) void (*print) (const char *fmt, ...);
+	__attribute__((format(PRINTF, 1, 2))) void (*print) (const char *fmt, ...);
 
 	if (cmd_source == src_command) {
 		if (!sv.active) {

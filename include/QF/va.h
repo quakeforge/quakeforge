@@ -73,7 +73,7 @@ void va_destroy_context (va_ctx_t *ctx);
  *					to va sent to a 4th) with a reduced risk of strings being
  *					trampled.
  */
-char	*va(va_ctx_t *ctx, const char *format, ...) __attribute__((format(printf,2,3)));
+char	*va(va_ctx_t *ctx, const char *format, ...) __attribute__((format(PRINTF,2,3)));
 
 /** Does a varargs printf into a malloced buffer.
  *
@@ -88,7 +88,7 @@ char	*va(va_ctx_t *ctx, const char *format, ...) __attribute__((format(printf,2,
  *					trampled. In addition, it does not use va(), so combining
  *					nva() with va() is safe.
  */
-char	*nva(const char *format, ...) __attribute__((format(printf,1,2)));
+char	*nva(const char *format, ...) __attribute__((format(PRINTF,1,2)));
 
 ///@}
 

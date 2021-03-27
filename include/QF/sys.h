@@ -62,7 +62,7 @@ int	Sys_FileExists (const char *path);
 int Sys_isdir (const char *path);
 int Sys_mkdir (const char *path);
 
-typedef void (*sys_printf_t) (const char *fmt, va_list args) __attribute__((format(printf, 1, 0)));
+typedef void (*sys_printf_t) (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
 typedef void (*sys_error_t) (void *data);
 
 sys_printf_t Sys_SetStdPrintf (sys_printf_t func);
@@ -71,10 +71,10 @@ sys_printf_t Sys_SetErrPrintf (sys_printf_t func);
 void Sys_PushErrorHandler (sys_error_t func, void *data);
 void Sys_PopErrorHandler (void);
 
-void Sys_Print (FILE *stream, const char *fmt, va_list args) __attribute__((format(printf, 2, 0)));
-void Sys_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
-void Sys_Error (const char *error, ...) __attribute__((format(printf,1,2), noreturn));
-void Sys_FatalError (const char *error, ...) __attribute__((format(printf,1,2), noreturn));
+void Sys_Print (FILE *stream, const char *fmt, va_list args) __attribute__((format(PRINTF, 2, 0)));
+void Sys_Printf (const char *fmt, ...) __attribute__((format(PRINTF,1,2)));
+void Sys_Error (const char *error, ...) __attribute__((format(PRINTF,1,2), noreturn));
+void Sys_FatalError (const char *error, ...) __attribute__((format(PRINTF,1,2), noreturn));
 void Sys_Quit (void) __attribute__((noreturn));
 void Sys_Shutdown (void);
 void Sys_RegisterShutdown (void (*func) (void *), void *data);
@@ -82,7 +82,7 @@ int64_t Sys_LongTime (void);
 double Sys_DoubleTime (void);
 void Sys_TimeOfDay(date_t *date);
 
-void Sys_MaskPrintf (int mask, const char *fmt, ...) __attribute__((format(printf,2,3)));
+void Sys_MaskPrintf (int mask, const char *fmt, ...) __attribute__((format(PRINTF,2,3)));
 // remember to update developer_flags in cvar.c
 #define SYS_DEV             (1|0)
 #define SYS_WARN            (1|2)	// bit 0 so developer 1 will pick it up
@@ -129,7 +129,7 @@ void *Sys_Alloc (size_t size);
 //
 // system IO
 //
-void Sys_DebugLog(const char *file, const char *fmt, ...) __attribute__((format(printf,2,3)));
+void Sys_DebugLog(const char *file, const char *fmt, ...) __attribute__((format(PRINTF,2,3)));
 
 #define SYS_CHECKMEM(x) 												\
 	do {																\

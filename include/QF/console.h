@@ -92,8 +92,8 @@ extern struct console_data_s con_data;
 void Con_CheckResize (void);
 void Con_DrawConsole (void);
 
-void Con_Printf (const char *fmt, ...) __attribute__((format(printf, 1, 2)));
-void Con_Print (const char *fmt, va_list args) __attribute__((format(printf, 1, 0)));
+void Con_Printf (const char *fmt, ...) __attribute__((format(PRINTF, 1, 2)));
+void Con_Print (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
 void Con_ToggleConsole_f (void);
 
 // wrapper function to attempt to either complete the command line
@@ -105,7 +105,7 @@ void Con_BasicCompleteCommandLine (inputline_t *il);
 // Generic libs/util/console.c function to display a list
 // formatted in columns on the console
 void Con_DisplayList(const char **list, int con_linewidth);
-extern void (*con_list_print)(const char *fmt, ...) __attribute__((format(printf, 1, 2)));
+extern void (*con_list_print)(const char *fmt, ...) __attribute__((format(PRINTF, 1, 2)));
 
 inputline_t *Con_CreateInputLine (int lines, int lsize, char prompt);
 void Con_DestroyInputLine (inputline_t *inputline);

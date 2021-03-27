@@ -182,7 +182,7 @@ extern char * const gib_null_string;
 #define GIB_CanReturn() (GIB_DATA(cbuf_active)->waitret)
 
 dstring_t *GIB_Return (const char *str);
-void GIB_Error (const char *type, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
+void GIB_Error (const char *type, const char *fmt, ...) __attribute__((format(PRINTF, 2, 3)));
 void GIB_Builtin_Add (const char *name, void (*func) (void));
 void GIB_Builtin_Remove (const char *name);
 qboolean GIB_Builtin_Exists (const char *name);

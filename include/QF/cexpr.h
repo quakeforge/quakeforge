@@ -109,7 +109,7 @@ binop_t *cexpr_find_cast (exprtype_t *dst_type, exprtype_t *src_type) __attribut
 exprval_t *cexpr_value (exprtype_t *type, exprctx_t *ctx);
 exprval_t *cexpr_value_reference (exprtype_t *type, void *data, exprctx_t *ctx);
 int cexpr_eval_string (const char *str, exprctx_t *context);
-void cexpr_error(exprctx_t *ctx, const char *fmt, ...) __attribute__((format(printf,2,3)));
+void cexpr_error(exprctx_t *ctx, const char *fmt, ...) __attribute__((format(PRINTF,2,3)));
 
 void cexpr_struct_getfield (const exprval_t *a, const exprval_t *b,
 							exprval_t *c, exprctx_t *ctx);

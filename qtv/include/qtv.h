@@ -65,7 +65,7 @@ struct client_s;
 	Calling qtv_begin_redirect() before, and qtv_end_redirect() after a series
 	of calls will redirect output.
 */
-void qtv_printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
+void qtv_printf (const char *fmt, ...) __attribute__((format(PRINTF,1,2)));
 
 /**	Begin redirection of console printing.
 

@@ -64,7 +64,7 @@ int         numdetailbrushes;
 
 script_t   *map_script;
 
-static void __attribute__ ((format (printf, 1, 2), noreturn))
+static void __attribute__ ((format (PRINTF, 1, 2), noreturn))
 map_error (const char *fmt, ...)
 {
 	va_list     args;

@@ -65,7 +65,7 @@ extern	struct msg_s *net_message;
 extern	struct cvar_s	*qport;
 
 int Net_Log_Init (const char **sound_precache);
-void Net_LogPrintf (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+void Net_LogPrintf (const char *fmt, ...) __attribute__ ((format (PRINTF, 1, 2)));
 void Log_Incoming_Packet (const byte *p, int len, int has_sequence,
 						  int is_server);
 void Log_Outgoing_Packet (const byte *p, int len, int has_sequence,
@@ -332,7 +332,7 @@ void Netchan_OutOfBand (netadr_t adr, int length, byte *data);
 	\param format	The printf style format string.
 */
 void Netchan_OutOfBandPrint (netadr_t adr, const char *format, ...)
-	__attribute__ ((format (printf,2,3)));
+	__attribute__ ((format (PRINTF,2,3)));
 
 /** Process a packet for the specifiied connection.
 

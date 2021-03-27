@@ -2004,7 +2004,7 @@ static builtin_t builtins[] = {
 
 static FILE *logfile;
 
-static __attribute__((format(printf, 1, 0))) void
+static __attribute__((format(PRINTF, 1, 0))) void
 qwaq_print (const char *fmt, va_list args)
 {
 	vfprintf (logfile, fmt, args);

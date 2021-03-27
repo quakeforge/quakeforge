@@ -1,3 +1,7 @@
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
@@ -162,7 +166,7 @@ qfv_device_t device = {
 	funcs:&dfuncs,
 };
 
-static void __attribute__ ((format (printf, 2, 3), noreturn))
+static void __attribute__ ((format (PRINTF, 2, 3), noreturn))
 _error (int line, const char *fmt, ...)
 {
 	va_list     args;
