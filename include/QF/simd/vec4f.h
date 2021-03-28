@@ -32,6 +32,7 @@
 
 #include "QF/simd/types.h"
 
+GNU89INLINE inline vec4f_t vabsf (vec4f_t v) __attribute__((const));
 GNU89INLINE inline vec4f_t vsqrtf (vec4f_t v) __attribute__((const));
 GNU89INLINE inline vec4f_t vceilf (vec4f_t v) __attribute__((const));
 GNU89INLINE inline vec4f_t vfloorf (vec4f_t v) __attribute__((const));
@@ -96,6 +97,19 @@ GNU89INLINE inline void storevec3f (float *v3, vec4f_t v4);
 GNU89INLINE inline vec4f_t normalf (vec4f_t v) __attribute__((pure));
 GNU89INLINE inline vec4f_t magnitudef (vec4f_t v) __attribute__((pure));
 GNU89INLINE inline vec4f_t magnitude3f (vec4f_t v) __attribute__((pure));
+
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+vec4f_t
+vabsf (vec4f_t v)
+{
+	const uint32_t  nan = ~0u >> 1;
+	const vec4i_t   abs = { nan, nan, nan, nan };
+	return _mm_and_ps (v, (__m128) abs);
+}
 
 #ifndef IMPLEMENT_VEC4F_Funcs
 GNU89INLINE inline

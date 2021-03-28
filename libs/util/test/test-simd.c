@@ -27,6 +27,9 @@
 #define none     { -1, -1, -1, -1 }
 #define nqident  {  0,  0,  0, -1 }
 
+#define pi       {  M_PI, M_PI,  M_PI, M_PI } // lots of bits
+#define pmpi     { -M_PI, M_PI, -M_PI, M_PI } // lots of bits
+
 #define identity \
 	{	{ 1, 0, 0, 0 }, \
 		{ 0, 1, 0, 0 }, \
@@ -122,6 +125,26 @@ static vec4f_t tvfloorf (vec4f_t v, vec4f_t ignore)
 static vec4f_t tqconjf (vec4f_t v, vec4f_t ignore)
 {
 	return qconjf (v);
+}
+
+static vec4f_t tvabsf (vec4f_t v, vec4f_t ignore)
+{
+	return vabsf (v);
+}
+
+static vec4f_t tvsqrtf (vec4f_t v, vec4f_t ignore)
+{
+	return vsqrtf (v);
+}
+
+static vec4f_t tmagnitudef (vec4f_t v, vec4f_t ignore)
+{
+	return magnitudef (v);
+}
+
+static vec4f_t tmagnitude3f (vec4f_t v, vec4f_t ignore)
+{
+	return magnitude3f (v);
 }
 
 static vec4d_test_t vec4d_tests[] = {
@@ -348,10 +371,29 @@ static vec4f_test_t vec4f_tests[] = {
 	{ qrotf, up,      forward,  { -s05,    0,    0,  s05 } },
 	{ qrotf, up,      up,       qident },
 
+	{ tvabsf,    pmpi, {}, pi },
+	{ tvsqrtf,  { 1, 4, 9, 16}, {}, {1, 2, 3, 4} },
 	{ tvtruncf, { 1.1, 2.9, -1.1, -2.9 }, {}, { 1, 2, -1, -2 } },
 	{ tvceilf,  { 1.1, 2.9, -1.1, -2.9 }, {}, { 2, 3, -1, -2 } },
 	{ tvfloorf, { 1.1, 2.9, -1.1, -2.9 }, {}, { 1, 2, -2, -3 } },
 	{ tqconjf,  one, {}, { -1, -1, -1, 1 } },
+	{ tmagnitudef,  {  3,  4,  12,  84}, {}, {85, 85, 85, 85} },
+	{ tmagnitudef,  {  3,  4,  12, -84}, {}, {85, 85, 85, 85} },
+	{ tmagnitudef,  {  3,  4, -12,  84}, {}, {85, 85, 85, 85} },
+	{ tmagnitudef,  {  3,  4, -12, -84}, {}, {85, 85, 85, 85} },
+	{ tmagnitudef,  {  3, -4,  12,  84}, {}, {85, 85, 85, 85} },
+	{ tmagnitudef,  {  3, -4,  12, -84}, {}, {85, 85, 85, 85} },
+	{ tmagnitudef,  {  3, -4, -12,  84}, {}, {85, 85, 85, 85} },
+	{ tmagnitudef,  {  3, -4, -12, -84}, {}, {85, 85, 85, 85} },
+	{ tmagnitudef,  { -3,  4,  12,  84}, {}, {85, 85, 85, 85} },
+	{ tmagnitudef,  { -3,  4,  12, -84}, {}, {85, 85, 85, 85} },
+	{ tmagnitudef,  { -3,  4, -12,  84}, {}, {85, 85, 85, 85} },
+	{ tmagnitudef,  { -3,  4, -12, -84}, {}, {85, 85, 85, 85} },
+	{ tmagnitudef,  { -3, -4,  12,  84}, {}, {85, 85, 85, 85} },
+	{ tmagnitudef,  { -3, -4,  12, -84}, {}, {85, 85, 85, 85} },
+	{ tmagnitudef,  { -3, -4, -12,  84}, {}, {85, 85, 85, 85} },
+	{ tmagnitudef,  { -3, -4, -12, -84}, {}, {85, 85, 85, 85} },
+	{ tmagnitude3f, { -3, -4, -12, -84}, {}, {13, 13, 13, 13} },
 };
 #define num_vec4f_tests (sizeof (vec4f_tests) / (sizeof (vec4f_tests[0])))
 
