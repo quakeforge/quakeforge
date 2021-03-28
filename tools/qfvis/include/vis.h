@@ -74,6 +74,7 @@ extern pthread_rwlock_t *portal_locks;
 
 #include "QF/cmem.h"
 #include "QF/set.h"
+#include "QF/simd/vec4f.h"
 
 #define	MAX_PORTALS				32768
 #define	PORTALFILE				"PRT1"
@@ -87,7 +88,9 @@ typedef struct winding_s {
 	struct winding_s *next;
 	qboolean    original;	// don't free, it's part of the portal
 	unsigned    numpoints;
-	vec3_t      points[MAX_PORTALS_ON_CLUSTER];	// variable sized
+	int         id;
+	int         thread;
+	vec4f_t     points[MAX_PORTALS_ON_CLUSTER];	// variable sized
 } winding_t;
 
 typedef enum {
@@ -98,9 +101,9 @@ typedef enum {
 } vstatus_t;
 
 typedef struct {
-	plane_t     plane;		// normal pointing into neighbor
+	vec4f_t     plane;		// normal pointing into neighbor
+	vspheref_t  sphere;		// bounding sphere
 	int         cluster;	// neighbor
-	sphere_t    sphere;		// bounding sphere
 	winding_t  *winding;
 	vstatus_t   status;
 	set_t      *visbits;
@@ -110,8 +113,8 @@ typedef struct {
 } portal_t;
 
 typedef struct seperating_plane_s {
+	vec4f_t     plane;		// from portal is on positive side
 	struct seperating_plane_s *next;
-	plane_t     plane;		// from portal is on positive side
 } sep_t;
 
 typedef struct passage_s {
@@ -122,9 +125,9 @@ typedef struct passage_s {
 
 typedef struct cluster_s {
 	int         numportals;
+	int         visofs;
 	passage_t  *passages;
 	portal_t   *portals[MAX_PORTALS_ON_CLUSTER];
-	int         visofs;
 } cluster_t;
 
 typedef struct pstack_s {
@@ -132,8 +135,8 @@ typedef struct pstack_s {
 	cluster_t  *cluster;		///< the cluster being sub-vised
 	winding_t  *source_winding;	///< clipped source portal winding
 	portal_t   *pass_portal;	///< the portal exiting from the cluster
+	vec4f_t     pass_plane;		///< plane of the pass portal
 	winding_t  *pass_winding;	///< clipped pass portal winding
-	plane_t     pass_plane;		///< plane of the pass portal
 	set_t      *mightsee;
 	sep_t      *separators[2];
 } pstack_t;
@@ -173,6 +176,7 @@ typedef struct threaddata_s {
 	memsuper_t *memsuper;		///< per-thread memory pool
 	set_pool_t  set_pool;
 	int         id;
+	int         winding_id;
 } threaddata_t;
 
 typedef struct {
@@ -198,7 +202,8 @@ extern byte *uncompressed;
 
 void FreeWinding (threaddata_t *thread, winding_t *w);
 winding_t *NewWinding (threaddata_t *thread, int points);
-winding_t *ClipWinding (threaddata_t *thread, winding_t *in, const plane_t *split, qboolean keepon);
+winding_t *ClipWinding (threaddata_t *thread, winding_t *in, vec4f_t split,
+						qboolean keepon);
 winding_t *CopyWinding (threaddata_t *thread, const winding_t *w);
 
 void ClusterFlow (int clusternum);

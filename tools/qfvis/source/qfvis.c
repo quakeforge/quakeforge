@@ -134,17 +134,19 @@ EndThreads (void)
 #endif
 }
 
-static void
-PlaneFromWinding (winding_t *winding, plane_t *plane)
+static vec4f_t
+PlaneFromWinding (winding_t *winding)
 {
-	vec3_t      v1, v2;
+	vec4f_t     plane;
+	vec4f_t     v1, v2;
 
 	// calc plane using CW winding
-	VectorSubtract (winding->points[2], winding->points[1], v1);
-	VectorSubtract (winding->points[0], winding->points[1], v2);
-	CrossProduct (v2, v1, plane->normal);
-	_VectorNormalize (plane->normal);
-	plane->dist = DotProduct (winding->points[0], plane->normal);
+	v1 = winding->points[2] - winding->points[1];
+	v2 = winding->points[0] - winding->points[1];
+	plane = normalf (crossf (v2, v1));
+	// negative so dot(point, plane) includes -dist (point[3] = 1)
+	plane[3] = -dotf (winding->points[0], plane)[0];
+	return plane;
 }
 
 winding_t *
@@ -160,6 +162,8 @@ NewWinding (threaddata_t *thread, int points)
 	winding = CMEMALLOC (13, winding_t, thread->winding, thread->memsuper);
 	memset (winding, 0, size);
 	thread->stats.winding_alloc++;
+	winding->id = thread->winding_id++;
+	winding->thread = thread->id;
 
 	return winding;
 }
@@ -188,6 +192,8 @@ CopyWinding (threaddata_t *thread, const winding_t *w)
 	memcpy (copy, w, size);
 	copy->original = false;
 	thread->stats.winding_alloc++;
+	copy->id = thread->winding_id++;
+	copy->thread = thread->id;
 	return copy;
 }
 
@@ -198,11 +204,110 @@ NewFlippedWinding (threaddata_t *thread, const winding_t *w)
 	unsigned    i;
 
 	flipped = NewWinding (thread, w->numpoints);
-	for (i = 0; i < w->numpoints; i++)
-		VectorCopy (w->points[i], flipped->points[w->numpoints - 1 - i]);
+	for (i = 0; i < w->numpoints; i++) {
+		flipped->points[w->numpoints - 1 - i] = w->points[i];
+	}
 	flipped->numpoints = w->numpoints;
 	return flipped;
 }
+
+static vec4i_t
+signeps (vec4f_t dist)
+{
+	const vec4f_t zero = {};
+	const vec4f_t eps = { ON_EPSILON, ON_EPSILON, ON_EPSILON, ON_EPSILON };
+	vec4f_t     d = _mm_addsub_ps (zero, dist);
+	vec4i_t     c = (d - eps) > 0;
+	c = (vec4i_t) _mm_hsub_epi32 ((__m128i) c, (__m128i) c);
+	return c;
+}
+
+static vec4f_t
+split_edge (const vec4f_t *points, const vec4f_t *dists,
+			int ind1, int ind2, vec4f_t split)
+{
+	vec4f_t     p1 = points[ind1];
+	vec4f_t     p2 = points[ind2];
+	vec4f_t     d1 = dists[ind1];
+	vec4f_t     d2 = dists[ind2];
+	// avoid nan/inf in w: d1's w is never 0 (would not be here if it was)
+	// so the multiply ensures d1.w - d2.w cannot be 0 and thus d1.w/diff
+	// will not result in division by 0
+	static const vec4f_t one = { 1, 1, 1, 0 };
+	vec4f_t     d = d1 / (d1 - d2 * one);
+	vec4f_t     mid = p1 + d * (p2 - p1);
+
+	// avoid roundoff error when possible by forcing the appropriate
+	// component to the split-plane's distance when the split-plane's
+	// normal is signed-canonical.
+	// "nan" because 0x7fffffff is nan when viewed as a float
+	static const vec4f_t onenan = { 1, 1, 1, ~0u >> 1 };
+	static const vec4i_t nan = { ~0u >> 1, ~0u >> 1, ~0u >> 1, ~0u >> 1};
+	vec4i_t     x = _mm_and_ps (split, (__m128) nan) == onenan;
+	// plane vector has -dist in w
+	vec4f_t     y = _mm_and_ps (split, (__m128) x) * -split[3];
+	mid = _mm_blendv_ps (mid, y, (__m128) x);
+	if (isnan (mid[0])) *(int *) 0 = 0;
+	return mid;
+}
+
+static inline int __attribute__((const))
+is_not_on (int x)
+{
+	return x & 1;
+}
+
+static inline int __attribute__((const))
+is_back (int x)
+{
+	return x & 2;
+}
+
+static inline int __attribute__((const))
+is_not_back (unsigned x)
+{
+	return ~x & 2;
+}
+
+static inline int __attribute__((const))
+is_front (unsigned x)
+{
+	return is_not_on (x) & (is_not_back (x) >> 1);
+}
+
+static inline int __attribute__((const))
+is_back_front (unsigned x, unsigned y)
+{
+	return (is_back (x) >> 1) & is_front (y);
+}
+
+static inline int __attribute__((const))
+is_front_back (unsigned x, unsigned y)
+{
+	return is_front (x) & (is_back (y) >> 1);
+}
+
+static inline int __attribute__((const))
+is_transition (unsigned x, unsigned y)
+{
+	return is_back_front (x, y) | is_front_back (x, y);
+}
+
+static inline void
+test_point (vec4f_t split, const vec4f_t *points, int index, vec4f_t *dists,
+			int *sides, unsigned *counts)
+{
+	dists[index] = dotf (points[index], split);
+	sides[index] = signeps (dists[index])[0];
+	counts[sides[index]]++;
+}
+
+#undef SIDE_FRONT
+#undef SIDE_BACK
+#undef SIDE_ON
+#define SIDE_FRONT 1
+#define SIDE_BACK -1
+#define SIDE_ON 0
 
 /*
 	ClipWinding
@@ -216,86 +321,68 @@ NewFlippedWinding (threaddata_t *thread, const winding_t *w)
 	it will be clipped away.
 */
 winding_t *
-ClipWinding (threaddata_t *thread, winding_t *in, const plane_t *split, qboolean keepon)
+ClipWinding (threaddata_t *thread, winding_t *in, vec4f_t split,
+			 qboolean keepon)
 {
-	unsigned    maxpts, i, j;
-	int         counts[3], sides[MAX_POINTS_ON_WINDING];
-	vec_t       dot;
-	vec_t       dists[MAX_POINTS_ON_WINDING];
-	vec_t      *p1, *p2;
-	vec3_t      mid;
+	unsigned    maxpts = 0;
+	unsigned    i;
+	unsigned    _counts[3];
+	unsigned   *const counts = _counts + 1;
+	int        *const sides = alloca ((in->numpoints + 1) * sizeof (int));
+	vec4f_t    *const dists = alloca ((in->numpoints + 1) * sizeof (vec4f_t));
 	winding_t  *neww;
 
-	counts[0] = counts[1] = counts[2] = 0;
+	counts[SIDE_FRONT] = counts[SIDE_ON] = counts[SIDE_BACK] = 0;
 
 	// determine sides for each point
-	for (i = 0; i < in->numpoints; i++) {
-		dot = DotProduct (in->points[i], split->normal);
-		dot -= split->dist;
-		dists[i] = dot;
-		if (dot > ON_EPSILON)
-			sides[i] = SIDE_FRONT;
-		else if (dot < -ON_EPSILON)
-			sides[i] = SIDE_BACK;
-		else {
-			sides[i] = SIDE_ON;
-		}
-		counts[sides[i]]++;
+	test_point (split, in->points, 0, dists, sides, counts);
+	for (i = 1; i < in->numpoints; i++) {
+		test_point (split, in->points, i, dists, sides, counts);
+		maxpts += is_transition (sides[i - 1], sides[i]);
 	}
 	sides[i] = sides[0];
 	dists[i] = dists[0];
+	maxpts += is_transition (sides[i - 1], sides[i]);
 
-	if (keepon && !counts[0] && !counts[1])
+	if (keepon && counts[SIDE_ON] == in->numpoints) {
 		return in;
-
-	if (!counts[0]) {
+	}
+	if (!counts[SIDE_FRONT]) {
 		FreeWinding (thread, in);
 		return NULL;
 	}
-	if (!counts[1])
+	if (!counts[SIDE_BACK]) {
 		return in;
+	}
 
-	maxpts = in->numpoints + 4;	// can't use counts[0] + 2 because
-								// of fp grouping errors
+	maxpts += in->numpoints - counts[SIDE_BACK];
 	neww = NewWinding (thread, maxpts);
 
 	for (i = 0; i < in->numpoints; i++) {
-		p1 = in->points[i];
-
 		if (sides[i] == SIDE_ON) {
-			VectorCopy (p1, neww->points[neww->numpoints]);
-			neww->numpoints++;
+			neww->points[neww->numpoints++] = in->points[i];
 			continue;
 		}
-
 		if (sides[i] == SIDE_FRONT) {
-			VectorCopy (p1, neww->points[neww->numpoints]);
-			neww->numpoints++;
+			neww->points[neww->numpoints++] = in->points[i];
 		}
-
-		if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i])
+		if (sides[i + 1] == SIDE_ON || sides[i + 1] == sides[i]) {
 			continue;
-
-		// generate a split point
-		p2 = in->points[(i + 1) % in->numpoints];
-
-		dot = dists[i] / (dists[i] - dists[i + 1]);
-		for (j = 0; j < 3; j++) {
-			// avoid round off error when possible
-			if (split->normal[j] == 1)
-				mid[j] = split->dist;
-			else if (split->normal[j] == -1)
-				mid[j] = -split->dist;
-			else
-			mid[j] = p1[j] + dot * (p2[j] - p1[j]);
 		}
-
-		VectorCopy (mid, neww->points[neww->numpoints]);
-		neww->numpoints++;
+		vec4f_t     mid = split_edge (in->points, dists, i,
+									  (i + 1) % in->numpoints, split);
+		neww->points[neww->numpoints++] = mid;
 	}
 
-	if (neww->numpoints > maxpts)
-		Sys_Error ("ClipWinding: points exceeded estimate");
+	if (neww->numpoints < maxpts) {
+		Sys_Error ("ClipWinding: not all points copied: n:%u m:%u i:%u %u %u %u",
+				   neww->numpoints, maxpts, in->numpoints,
+				   counts[SIDE_BACK], counts[SIDE_ON], counts[SIDE_FRONT]);
+	}
+	if (neww->numpoints > maxpts) {
+		Sys_Error ("ClipWinding: points exceeded estimate: n:%u m:%u",
+				   neww->numpoints, maxpts);
+	}
 	// free the original winding
 	FreeWinding (thread, in);
 
@@ -1033,10 +1120,10 @@ LoadPortals (char *name)
 	int         read_leafs = 0;
 	int         clusternums[2];
 	cluster_t  *cluster;
-	plane_t     plane;
+	vec4f_t     plane;
 	portal_t   *portal;
 	winding_t  *winding;
-	sphere_t    sphere;
+	vspheref_t  sphere;
 	QFile	   *f;
 
 	if (!strcmp (name, "-"))
@@ -1158,6 +1245,7 @@ LoadPortals (char *name)
 					Sys_Error ("LoadPortals: reading portal %u", i);
 				line = err;
 			}
+			winding->points[j][3] = 1;
 
 			while (isspace ((byte) *line))
 				line++;
@@ -1165,10 +1253,11 @@ LoadPortals (char *name)
 				Sys_Error ("LoadPortals: reading portal %u", i);
 		}
 
+		sphere = SmallestEnclosingBall_vf(winding->points, winding->numpoints);
+		//printf (VEC4F_FMT" %.9g\n", VEC4_EXP (sphere.center), sphere.radius);
+
 		// calc plane
-		PlaneFromWinding (winding, &plane);
-		sphere = SmallestEnclosingBall((const vec_t(*)[3])winding->points,
-									   winding->numpoints);
+		plane = PlaneFromWinding (winding);
 
 		// create forward portal
 		cluster = &clusters[clusternums[0]];
@@ -1178,8 +1267,7 @@ LoadPortals (char *name)
 		cluster->numportals++;
 
 		portal->winding = winding;
-		VectorNegate (plane.normal, portal->plane.normal);
-		portal->plane.dist = -plane.dist;	// plane is for CW, portal is CCW
+		portal->plane = -plane;	// plane is for CW, portal is CCW
 		portal->cluster = clusternums[1];
 		portal->sphere = sphere;
 		portal++;

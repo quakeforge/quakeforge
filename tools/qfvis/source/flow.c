@@ -133,48 +133,47 @@ test_zero (float d)
 }
 
 static int
-calc_plane (const vec3_t v1, const vec3_t v2, int flip, const vec3_t p,
-			plane_t *plane)
+calc_plane (vec4f_t v1, vec4f_t v2, int flip, vec4f_t p, vec4f_t *plane)
 {
-	vec_t       length;
+	vec4f_t     length;
 
 	if (flip < 0) {
 		//CrossProduct (v2, v1, plane.normal);
-		plane->normal[0] = v2[1] * v1[2] - v2[2] * v1[1];
-		plane->normal[1] = v2[2] * v1[0] - v2[0] * v1[2];
-		plane->normal[2] = v2[0] * v1[1] - v2[1] * v1[0];
+		(*plane)[0] = v2[1] * v1[2] - v2[2] * v1[1];
+		(*plane)[1] = v2[2] * v1[0] - v2[0] * v1[2];
+		(*plane)[2] = v2[0] * v1[1] - v2[1] * v1[0];
 	} else {
 		//CrossProduct (v1, v2, plane.normal);
-		plane->normal[0] = v1[1] * v2[2] - v1[2] * v2[1];
-		plane->normal[1] = v1[2] * v2[0] - v1[0] * v2[2];
-		plane->normal[2] = v1[0] * v2[1] - v1[1] * v2[0];
+		(*plane)[0] = v1[1] * v2[2] - v1[2] * v2[1];
+		(*plane)[1] = v1[2] * v2[0] - v1[0] * v2[2];
+		(*plane)[2] = v1[0] * v2[1] - v1[1] * v2[0];
 	}
+	(*plane)[3] = 0;
 
-	length = DotProduct (plane->normal, plane->normal);
+	length = dotf (*plane, *plane);
 
 	// if points don't make a valid plane, skip it
-	if (length < ON_EPSILON)
+	if (length[0] < ON_EPSILON)
 		return 0;
 
-	length = 1 / sqrt (length);
-	VectorScale (plane->normal, length, plane->normal);
-	plane->dist = DotProduct (p, plane->normal);
+	*plane /= vsqrtf (length);
+	(*plane)[3] = -dotf (p, *plane)[0];
 	return 1;
 }
 
 static inline int
-test_plane (const plane_t *plane, const winding_t *pass, int index)
+test_plane (vec4f_t plane, const winding_t *pass, int index)
 {
 	int         s1, s2;
 	int         k;
-	vec_t       d;
+	vec4f_t     d;
 
 	k = (index + 1) % pass->numpoints;
-	d = DotProduct (pass->points[k], plane->normal) - plane->dist;
-	s1 = test_zero (d);
+	d = dotf (pass->points[k], plane);
+	s1 = test_zero (d[0]);
 	k = (index + pass->numpoints - 1) % pass->numpoints;
-	d = DotProduct (pass->points[k], plane->normal) - plane->dist;
-	s2 = test_zero (d);
+	d = dotf (pass->points[k], plane);
+	s2 = test_zero (d[0]);
 	if (s1 == 0 && s2 == 0)
 		return 0;
 	if (s1 < 0 || s2 < 0)
@@ -183,32 +182,30 @@ test_plane (const plane_t *plane, const winding_t *pass, int index)
 }
 
 static inline sep_t *
-create_separator (threaddata_t *thread, const plane_t *src_pl,
-				  const vec3_t p1, const vec3_t v1,
+create_separator (threaddata_t *thread, vec4f_t src_pl, vec4f_t p1, vec4f_t v1,
 				  const winding_t *pass, int index, int flip)
 {
 	int         fliptest;
-	vec_t       d;
-	vec3_t      v2;
-	plane_t     plane;
+	vec4f_t     d;
+	vec4f_t     v2;
+	vec4f_t     plane;
 	sep_t      *sep;
 
-	d = DotProduct (pass->points[index], src_pl->normal) - src_pl->dist;
-	if ((fliptest = test_zero (d)) == 0)
+	d = dotf (pass->points[index], src_pl);
+	if ((fliptest = test_zero (d[0])) == 0)
 		return 0;	// The point lies in the source plane
 
-	VectorSubtract (pass->points[index], p1, v2);
+	v2 = pass->points[index] - p1;
 	if (!calc_plane (v1, v2, fliptest, pass->points[index], &plane))
 		return 0;	// point does not form a valid plane
 
-	if (!test_plane (&plane, pass, index))
+	if (!test_plane (plane, pass, index))
 		return 0;	// not the right point
 
 	sep = new_separator (thread);
 	// flip the normal if we want the back side
 	if (flip) {
-		VectorNegate (plane.normal, sep->plane.normal);
-		sep->plane.dist = -plane.dist;
+		sep->plane = -plane;
 	} else {
 		sep->plane = plane;
 	}
@@ -233,20 +230,20 @@ create_separator (threaddata_t *thread, const plane_t *src_pl,
 */
 static sep_t *
 FindSeparators (threaddata_t *thread,
-				const winding_t *source, const plane_t src_pl,
+				const winding_t *source, vec4f_t src_pl,
 				const winding_t *pass, int flip)
 {
 	unsigned    i, j, l;
-	vec3_t      v1;
+	vec4f_t     v1;
 
 	sep_t      *separators = 0, *sep;
 
 	for (i = 0; i < source->numpoints; i++) {
 		l = (i + 1) % source->numpoints;
-		VectorSubtract (source->points[l], source->points[i], v1);
+		v1 = source->points[l] - source->points[i];
 
 		for (j = 0; j < pass->numpoints; j++) {
-			sep = create_separator (thread, &src_pl, source->points[i], v1,
+			sep = create_separator (thread, src_pl, source->points[i], v1,
 									pass, j, flip);
 			if (sep) {
 				sep->next = separators;
@@ -259,12 +256,13 @@ FindSeparators (threaddata_t *thread,
 }
 
 static winding_t *
-ClipToSeparators (threaddata_t *thread, const sep_t *separators, winding_t *target)
+ClipToSeparators (threaddata_t *thread, const sep_t *separators,
+				  winding_t *target)
 {
 	const sep_t *sep;
 
 	for (sep = separators; target && sep; sep = sep->next) {
-		target = ClipWinding (thread, target, &sep->plane, false);
+		target = ClipWinding (thread, target, sep->plane, false);
 	}
 	return target;
 }
@@ -304,7 +302,6 @@ mightsee_more (set_t *might, const set_t *prev_might, const set_t *test,
 	RecursiveClusterFlow
 
 	Flood fill through the clusters
-	If src_portal is NULL, this is the originating cluster
 */
 static void
 RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
@@ -315,8 +312,8 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 	cluster_t  *cluster;
 	pstack_t   *stack;
 	portal_t   *target_portal;
-	plane_t     backplane;
-	const plane_t *source_plane, *pass_plane;
+	vec4f_t     backplane;
+	vec4f_t     source_plane, pass_plane;
 	const winding_t *pass_winding;
 	winding_t  *source_winding, *target_winding;
 
@@ -344,9 +341,9 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 	might = stack->mightsee;
 	vis = thread->clustervis;
 
-	source_plane = &thread->pstack_head.pass_plane;
+	source_plane = thread->pstack_head.pass_plane;
 	pass_winding = prevstack->pass_winding;
-	pass_plane = &prevstack->pass_plane;
+	pass_plane = prevstack->pass_plane;
 
 	// check all portals for flowing into other clusters
 	for (i = 0; i < cluster->numportals; i++) {
@@ -363,11 +360,13 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		}
 
 		// get plane of target_portal, point normal into the neighbor cluster
-		VectorNegate (target_portal->plane.normal, backplane.normal);
-		backplane.dist = -target_portal->plane.dist;
+		backplane = -target_portal->plane;
 
-		if (_VectorCompare (pass_plane->normal, backplane.normal))
+		vec4f_t     diff = vabsf (pass_plane - backplane);
+		vec4i_t     cmp = diff > (vec4f_t) {0.001, 0.001, 0.001, 0.001};
+		if (!(cmp[0] || cmp[1] || cmp[2])) { // dist isn't interesting
 			continue;		// can't go out a coplanar face
+		}
 
 		thread->stats.portalcheck++;
 
@@ -398,7 +397,7 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		// if it gets clipped away, earlier stack levels will get corrupted
 		source_winding = CopyWinding (thread, prevstack->source_winding);
 
-		source_winding = ClipWinding (thread, source_winding, &backplane, false);
+		source_winding = ClipWinding (thread, source_winding, backplane, false);
 		if (!source_winding) {
 			FreeWinding (thread, target_winding);
 			continue;
@@ -412,7 +411,7 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 			if (!stack->separators[0])
 				stack->separators[0] = FindSeparators (thread,
 													   source_winding,
-													   *source_plane,
+													   source_plane,
 													   pass_winding, 0);
 			target_winding = ClipToSeparators (thread,
 											   stack->separators[0],
@@ -431,7 +430,7 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 			if (!stack->separators[1])
 				stack->separators[1] = FindSeparators (thread,
 													   pass_winding,
-													   *pass_plane,
+													   pass_plane,
 													   source_winding, 1);
 			target_winding = ClipToSeparators (thread,
 											   stack->separators[1],
@@ -466,7 +465,7 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		if (options.level > 3) {
 			winding_t  *old = source_winding;
 			sep_t      *sep;
-			sep = FindSeparators (thread, pass_winding, *pass_plane,
+			sep = FindSeparators (thread, pass_winding, pass_plane,
 								  target_winding, 1);
 			source_winding = ClipToSeparators (thread, sep, source_winding);
 			free_separators (thread, sep);

@@ -84,24 +84,25 @@ SimpleFlood (basethread_t *thread, portal_t *srcportal, int clusternum)
 }
 
 static inline int
-test_sphere (sphere_t *sphere, plane_t *plane)
+test_sphere (const vspheref_t *sphere, vec4f_t plane)
 {
-	float       d;
-	int         front, back;
+	const vec4f_t zero = {};
+	float       r = sphere->radius;
+	vec4f_t     eps = { r, r, r, r };
+	vec4f_t     d = _mm_addsub_ps (zero, dotf (sphere->center, plane));
+	vec4i_t     c = (d - eps) >= 0;
 
-	d = DotProduct (sphere->center, plane->normal) - plane->dist;
-	front = (d >= sphere->radius);
-	back = (d <= -sphere->radius);
-	return front - back;
+	c = (vec4i_t) _mm_hsub_epi32 ((__m128i) c, (__m128i) c);
+	return c[0];
 }
 
 void
 PortalBase (basethread_t *thread, portal_t *portal)
 {
-    unsigned    i, j, k;
-	float		d;
-    portal_t   *tp;
-    winding_t  *winding;
+	unsigned    i, j, k;
+	vec4f_t     d;
+	portal_t   *tp;
+	winding_t  *winding;
 	int         tp_side, portal_side;
 
 	i = portal - portals;
@@ -118,14 +119,14 @@ PortalBase (basethread_t *thread, portal_t *portal)
 		// visibility.
 
 		// First check using the bounding spheres of the two portals.
-		tp_side = test_sphere (&tp->sphere, &portal->plane);
+		tp_side = test_sphere (&tp->sphere, portal->plane);
 		if (tp_side < 0) {
 			// The test portal definitely is entirely behind the portal's
 			// plane.
 			thread->spherecull++;
 			continue;	// entirely behind
 		}
-		portal_side = test_sphere (&portal->sphere, &tp->plane);
+		portal_side = test_sphere (&portal->sphere, tp->plane);
 		if (portal_side > 0) {
 			// The portal definitely is entirely in front of the test
 			// portal's plane.
@@ -138,9 +139,8 @@ PortalBase (basethread_t *thread, portal_t *portal)
 			// do a more refined check.
 			winding = tp->winding;
 			for (k = 0; k < winding->numpoints; k++) {
-				d = DotProduct (winding->points[k],
-								portal->plane.normal) - portal->plane.dist;
-				if (d > ON_EPSILON)
+				d = dotf (winding->points[k], portal->plane);
+				if (d[0] > ON_EPSILON)
 					break;
 			}
 			if (k == winding->numpoints) {
@@ -154,9 +154,8 @@ PortalBase (basethread_t *thread, portal_t *portal)
 			// do a more refined check.
 			winding = portal->winding;
 			for (k = 0; k < winding->numpoints; k++) {
-				d = DotProduct (winding->points[k],
-								tp->plane.normal) - tp->plane.dist;
-				if (d < -ON_EPSILON)
+				d = dotf (winding->points[k], tp->plane);
+				if (d[0] < -ON_EPSILON)
 					break;
 			}
 			if (k == winding->numpoints) {
