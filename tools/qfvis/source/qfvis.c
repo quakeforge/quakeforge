@@ -935,6 +935,9 @@ CalcVis (void)
 
 	printf ("Thread count: %d\n", options.threads);
 	BasePortalVis ();
+	for (i = 0; i < 2 * numportals; i++) {
+		portals[i].status = stat_none;
+	}
 	CalcPortalVis ();
 
 	// assemble the leaf vis lists by oring and compressing the portal lists
