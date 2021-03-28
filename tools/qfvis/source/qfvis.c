@@ -474,6 +474,16 @@ PortalCompleted (threaddata_t *thread, portal_t *completed)
 			continue;
 		set_assign (changed, portal->mightsee);
 		set_difference (changed, portal->visbits);
+#if 0
+		dstring_copystr (thread->str, "mightsee: ");
+		set_as_string_r (thread->str, portal->mightsee);
+		dstring_appendstr (thread->str, "\nvisbits: ");
+		set_as_string_r (thread->str, portal->visbits);
+		dstring_appendstr (thread->str, "\nchanged: ");
+		set_as_string_r (thread->str, changed);
+		dstring_appendstr (thread->str, "\n");
+		write (0, thread->str->str, thread->str->size - 1);
+#endif
 		for (j = 0; j < cluster->numportals; j++) {
 			if (j == i)
 				continue;
@@ -550,6 +560,7 @@ LeafThread (void *_thread)
 	set_pool_init (&data.set_pool);
 	data.id = thread;
 	data.memsuper = new_memsuper ();
+	data.str = dstring_new ();
 	do {
 		portal = GetNextPortal (1);
 		if (!portal)
@@ -593,6 +604,7 @@ LeafThread (void *_thread)
 	if (working)
 		working[thread] = -1;
 	delete_memsuper (data.memsuper);
+	dstring_delete (data.str);
 	return NULL;
 }
 

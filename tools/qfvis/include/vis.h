@@ -73,6 +73,7 @@ extern pthread_rwlock_t *portal_locks;
 #endif
 
 #include "QF/cmem.h"
+#include "QF/dstring.h"
 #include "QF/set.h"
 #include "QF/simd/vec4f.h"
 
@@ -174,6 +175,7 @@ typedef struct threaddata_s {
 	sep_t      *sep_freelist;	///< per-thread list of free separators
 	winding_t  *winding_freelist;	///< per-thread list of free windings
 	memsuper_t *memsuper;		///< per-thread memory pool
+	dstring_t  *str;
 	set_pool_t  set_pool;
 	int         id;
 	int         winding_id;
