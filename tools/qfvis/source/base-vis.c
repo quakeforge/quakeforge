@@ -122,12 +122,14 @@ PortalBase (basethread_t *thread, portal_t *portal)
 		if (tp_side < 0) {
 			// The test portal definitely is entirely behind the portal's
 			// plane.
+			thread->spherecull++;
 			continue;	// entirely behind
 		}
 		portal_side = test_sphere (&portal->sphere, &tp->plane);
 		if (portal_side > 0) {
 			// The portal definitely is entirely in front of the test
 			// portal's plane.
+			thread->spherecull++;
 			continue;	// entirely in front
 		}
 
@@ -141,8 +143,10 @@ PortalBase (basethread_t *thread, portal_t *portal)
 				if (d > ON_EPSILON)
 					break;
 			}
-			if (k == winding->numpoints)
+			if (k == winding->numpoints) {
+				thread->windingcull++;
 				continue;	// no points on front
+			}
 		}
 
 		if (portal_side == 0) {
@@ -155,8 +159,10 @@ PortalBase (basethread_t *thread, portal_t *portal)
 				if (d < -ON_EPSILON)
 					break;
 			}
-			if (k == winding->numpoints)
+			if (k == winding->numpoints) {
+				thread->windingcull++;
 				continue;	// no points on front
+			}
 		}
 
 		set_add (thread->portalsee, j);

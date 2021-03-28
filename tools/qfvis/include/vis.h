@@ -177,6 +177,8 @@ typedef struct threaddata_s {
 
 typedef struct {
 	set_t      *portalsee;
+	unsigned    spherecull;		///< number of portals culled by sphere tests
+	unsigned    windingcull;	///< number of portals culled by winding tests
 	int         clustersee;
 	int         id;
 } basethread_t;

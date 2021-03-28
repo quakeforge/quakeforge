@@ -75,6 +75,8 @@ options_t   options;
 static threaddata_t main_thread;
 static visstat_t stats;
 int         base_mightsee;
+unsigned    base_spherecull;
+unsigned    base_windingcull;
 
 static unsigned portal_count;
 unsigned    numportals;
@@ -530,6 +532,8 @@ BaseVisThread (void *_thread)
 	} while (1);
 
 	WRLOCK (stats_lock);
+	base_spherecull += data.spherecull;
+	base_windingcull += data.windingcull;
 	base_mightsee += num_mightsee;
 	UNLOCK (stats_lock);
 
@@ -767,8 +771,11 @@ BasePortalVis (void)
 	RunThreads (BaseVisThread);
 	end = Sys_DoubleTime ();
 
-	if (options.verbosity >= 1)
+	if (options.verbosity >= 1) {
 		printf ("base_mightsee: %d %gs\n", base_mightsee, end - start);
+		printf ("sphere cull: %u winding cull %u\n",
+				base_spherecull, base_windingcull);
+	}
 }
 
 static void
