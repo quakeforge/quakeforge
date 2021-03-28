@@ -608,22 +608,19 @@ set_next (set_iter_t *set_iter)
 }
 
 const char *
-set_as_string (const set_t *set)
+set_as_string_r (dstring_t *str, const set_t *set)
 {
-	static dstring_t *str;
 	unsigned    i;
 
-	if (!str)
-		str = dstring_new ();
 	if (set_is_empty (set)) {
-		dstring_copystr (str, "{}");
+		dstring_appendstr (str, "{}");
 		return str->str;
 	}
 	if (set_is_everything (set)) {
-		dstring_copystr (str, "{...}");
+		dstring_appendstr (str, "{...}");
 		return str->str;
 	}
-	dstring_copystr (str, "{");
+	dstring_appendstr (str, "{");
 	for (i = 0; i < set->size; i++) {
 		if (set_is_member (set, i)) {
 			if (str->str[1])
@@ -632,8 +629,21 @@ set_as_string (const set_t *set)
 				dasprintf (str, "%d", i);
 		}
 	}
-	if (set->inverted)
+	if (set->inverted) {
 		dasprintf (str, "%s%d ...", str->str[1] ? " " : "", i);
+	}
 	dstring_appendstr (str, "}");
 	return str->str;
+}
+
+const char *
+set_as_string (const set_t *set)
+{
+	static dstring_t *str;
+
+	if (!str) {
+		str = dstring_new ();
+	}
+	dstring_clearstr (str);
+	return set_as_string_r (str, set);
 }

@@ -356,6 +356,7 @@ set_iter_t *set_first_r (set_pool_t *set_pool, const set_t *set);
 set_iter_t *set_next (set_iter_t *set_iter);
 set_iter_t *set_next_r (set_pool_t *set_pool, set_iter_t *set_iter);
 
+struct dstring_s;
 /** Return a human-readable string representing the set.
 
 	Empty sets will be represented by the string "{}". Sets of everything
@@ -369,6 +370,21 @@ set_iter_t *set_next_r (set_pool_t *set_pool, set_iter_t *set_iter);
 				will overwrite the results of preceeding calls.
 */
 const char *set_as_string (const set_t *set);
+/** Return a human-readable string representing the set.
+
+	Empty sets will be represented by the string "{}". Sets of everything
+	will be represented by the string "{...}". Inverted sets will have
+	the first implicit member followed by "..." (eg, "256 ...").
+
+	\param str		dstring to which the representation will be written
+	\param set		The set to be converted to a string.
+	\return			The string held in str
+
+	\warning	The string is NOT cleared, but rather the set representation
+				is appeneded to the string. This makes it more useful when
+				constructing strings in a threaded environment.
+*/
+const char *set_as_string_r (struct dstring_s *str, const set_t *set);
 
 ///@}
 #endif//__QF_set_h
