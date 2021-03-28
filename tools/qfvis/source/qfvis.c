@@ -73,7 +73,7 @@ bsp_t *bsp;
 options_t   options;
 
 static threaddata_t main_thread;
-static visstat_t stats;
+static visstat_t global_stats;
 int         base_mightsee;
 unsigned    base_spherecull;
 unsigned    base_windingcull;
@@ -408,7 +408,7 @@ GetNextPortal (int limit)
 }
 
 static void
-UpdateMightsee (cluster_t *source, cluster_t *dest)
+UpdateMightsee (threaddata_t *thread, cluster_t *source, cluster_t *dest)
 {
 	int         i, clusternum;
 	portal_t   *portal;
@@ -421,11 +421,38 @@ UpdateMightsee (cluster_t *source, cluster_t *dest)
 			if (set_is_member (portal->mightsee, clusternum)) {
 				set_remove (portal->mightsee, clusternum);
 				portal->nummightsee--;
-				stats.mightseeupdate++;
+				thread->stats.mightseeupdate++;
 			}
 		}
 		UNLOCK_PORTAL (portal);
 	}
+}
+
+static void
+UpdateStates (threaddata_t *thread)
+{
+	WRLOCK (stats_lock);
+	global_stats.portaltest += thread->stats.portaltest;
+	global_stats.portalpass += thread->stats.portalpass;
+	global_stats.portalcheck += thread->stats.portalcheck;
+	global_stats.targettested += thread->stats.targettested;
+	global_stats.targettrimmed += thread->stats.targettrimmed;
+	global_stats.targetclipped += thread->stats.targetclipped;
+	global_stats.sourcetested += thread->stats.sourcetested;
+	global_stats.sourcetrimmed += thread->stats.sourcetrimmed;
+	global_stats.sourceclipped += thread->stats.sourceclipped;
+	global_stats.chains += thread->stats.chains;
+	global_stats.mighttest += thread->stats.mighttest;
+	global_stats.vistest += thread->stats.vistest;
+	global_stats.mightseeupdate += thread->stats.mightseeupdate;
+	global_stats.sep_alloc += thread->stats.sep_alloc;
+	global_stats.sep_free += thread->stats.sep_free;
+	global_stats.winding_alloc += thread->stats.winding_alloc;
+	global_stats.winding_free += thread->stats.winding_free;
+	global_stats.stack_alloc += thread->stats.stack_alloc;
+	global_stats.stack_free += thread->stats.stack_free;
+	UNLOCK (stats_lock);
+	memset (&thread->stats, 0, sizeof (thread->stats));
 }
 
 static void
@@ -438,28 +465,6 @@ PortalCompleted (threaddata_t *thread, portal_t *completed)
 	int         i, j;
 
 	completed->status = stat_done;
-	WRLOCK (stats_lock);
-	stats.portaltest += thread->stats.portaltest;
-	stats.portalpass += thread->stats.portalpass;
-	stats.portalcheck += thread->stats.portalcheck;
-	stats.targettested += thread->stats.targettested;
-	stats.targettrimmed += thread->stats.targettrimmed;
-	stats.targetclipped += thread->stats.targetclipped;
-	stats.sourcetested += thread->stats.sourcetested;
-	stats.sourcetrimmed += thread->stats.sourcetrimmed;
-	stats.sourceclipped += thread->stats.sourceclipped;
-	stats.chains += thread->stats.chains;
-	stats.mighttest += thread->stats.mighttest;
-	stats.vistest += thread->stats.vistest;
-	stats.mightseeupdate += thread->stats.mightseeupdate;
-	stats.sep_alloc += thread->stats.sep_alloc;
-	stats.sep_free += thread->stats.sep_free;
-	stats.winding_alloc += thread->stats.winding_alloc;
-	stats.winding_free += thread->stats.winding_free;
-	stats.stack_alloc += thread->stats.stack_alloc;
-	stats.stack_free += thread->stats.stack_free;
-	UNLOCK (stats_lock);
-	memset (&thread->stats, 0, sizeof (thread->stats));
 
 	changed = set_new_size_r (&thread->set_pool, portalclusters);
 	cluster = &clusters[completed->cluster];
@@ -479,10 +484,12 @@ PortalCompleted (threaddata_t *thread, portal_t *completed)
 		}
 		for (ci = set_first_r (&thread->set_pool, changed); ci;
 			 ci = set_next_r (&thread->set_pool, ci)) {
-			UpdateMightsee (&clusters[ci->element], cluster);
+			UpdateMightsee (thread, &clusters[ci->element], cluster);
 		}
 	}
 	set_delete_r (&thread->set_pool, changed);
+
+	UpdateStates (thread);
 }
 
 static void
@@ -896,23 +903,27 @@ CalcPortalVis (void)
 
 	if (options.verbosity >= 1) {
 		printf ("portalcheck: %i  portaltest: %i  portalpass: %i\n",
-				stats.portalcheck, stats.portaltest, stats.portalpass);
+				global_stats.portalcheck, global_stats.portaltest,
+				global_stats.portalpass);
 		printf ("target trimmed: %d clipped: %d tested: %d\n",
-				stats.targettrimmed, stats.targetclipped, stats.targettested);
+				global_stats.targettrimmed, global_stats.targetclipped,
+				global_stats.targettested);
 		printf ("source trimmed: %d clipped: %d tested: %d\n",
-				stats.sourcetrimmed, stats.sourceclipped, stats.sourcetested);
+				global_stats.sourcetrimmed, global_stats.sourceclipped,
+				global_stats.sourcetested);
 		printf ("vistest: %i  mighttest: %i mightseeupdate: %i\n",
-				stats.vistest, stats.mighttest, stats.mightseeupdate);
+				global_stats.vistest, global_stats.mighttest,
+				global_stats.mightseeupdate);
 		if (options.verbosity >= 2) {
 			printf ("separators allocated: %u freed: %u %u\n",
-					stats.sep_alloc, stats.sep_free,
-					stats.sep_alloc - stats.sep_free);
+					global_stats.sep_alloc, global_stats.sep_free,
+					global_stats.sep_alloc - global_stats.sep_free);
 			printf ("windings allocated: %u freed: %u %u\n",
-					stats.winding_alloc, stats.winding_free,
-					stats.winding_alloc - stats.winding_free);
+					global_stats.winding_alloc, global_stats.winding_free,
+					global_stats.winding_alloc - global_stats.winding_free);
 			printf ("stack blocks allocated: %u freed: %u %u\n",
-					stats.stack_alloc, stats.stack_free,
-					stats.stack_alloc - stats.stack_free);
+					global_stats.stack_alloc, global_stats.stack_free,
+					global_stats.stack_alloc - global_stats.stack_free);
 		}
 	}
 }
@@ -1345,7 +1356,7 @@ main (int argc, char **argv)
 	CalcVis ();
 
 	if (options.verbosity >= 1)
-		printf ("chains: %i%s\n", stats.chains,
+		printf ("chains: %i%s\n", global_stats.chains,
 				options.threads > 1 ? " (not reliable)" :"");
 
 	BSP_AddVisibility (bsp, (byte *) visdata->str, visdata->size);
