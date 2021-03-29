@@ -150,7 +150,7 @@ s_jack_activate (void)
 	snd_shutdown = 0;
 	ports = jack_get_ports (jack_handle, 0, 0,
 							JackPortIsPhysical | JackPortIsInput);
-	if (developer->int_val & SYS_SND) {
+	if (developer->int_val & SYS_snd) {
 		for (i = 0; ports[i]; i++)
 			Sys_Printf ("%s\n", ports[i]);
 	}
@@ -306,7 +306,7 @@ snd_jack_error (const char *desc)
 static int
 snd_jack_xrun (void *arg)
 {
-	if (developer->int_val & SYS_SND) {
+	if (developer->int_val & SYS_snd) {
 		fprintf (stderr, "snd_jack: xrun\n");
 	}
 	return 0;

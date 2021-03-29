@@ -257,7 +257,7 @@ try_open (int rw)
 		len = (len + sz - 1) & ~(sz - 1);
 		sn.buffer = (byte *) mmap (NULL, len, mmmode, mmflags, audio_fd, 0);
 		if (sn.buffer == MAP_FAILED) {
-			Sys_MaskPrintf (SYS_SND, "Could not mmap %s: %s\n", snd_dev,
+			Sys_MaskPrintf (SYS_snd, "Could not mmap %s: %s\n", snd_dev,
 							strerror (errno));
 			close (audio_fd);
 			return 0;

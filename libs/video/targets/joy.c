@@ -156,7 +156,7 @@ JOY_Init (void)
 	int         i;
 
 	if (JOY_Open () == -1) {
-		Sys_MaskPrintf (SYS_VID, "JOY: Joystick not found.\n");
+		Sys_MaskPrintf (SYS_vid, "JOY: Joystick not found.\n");
 		joy_found = false;
 		joy_active = false;
 		return;
@@ -165,12 +165,12 @@ JOY_Init (void)
 	joy_found = true;
 
 	if (!joy_enable->int_val) {
-		Sys_MaskPrintf (SYS_VID, "JOY: Joystick found, but not enabled.\n");
+		Sys_MaskPrintf (SYS_vid, "JOY: Joystick found, but not enabled.\n");
 		joy_active = false;
 		JOY_Close ();
 	}
 
-	Sys_MaskPrintf (SYS_VID, "JOY: Joystick found and activated.\n");
+	Sys_MaskPrintf (SYS_vid, "JOY: Joystick found and activated.\n");
 
 	// Initialize joystick if found and enabled
 	for (i = 0; i < JOY_MAX_BUTTONS; i++) {

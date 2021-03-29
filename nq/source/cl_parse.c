@@ -339,7 +339,7 @@ CL_ParseServerInfo (void)
 	const char *str;
 	int         i;
 
-	Sys_MaskPrintf (SYS_DEV, "Serverinfo packet received.\n");
+	Sys_MaskPrintf (SYS_dev, "Serverinfo packet received.\n");
 
 	S_BlockSound ();
 	S_StopAllSounds ();
@@ -934,16 +934,16 @@ CL_ParseServerMessage (void)
 				str = MSG_ReadString (net_message);
 				if (str[strlen (str) - 1] == '\n') {
 					if (stuffbuf && stuffbuf->str[0]) {
-						Sys_MaskPrintf (SYS_DEV, "stufftext: %s%s\n",
+						Sys_MaskPrintf (SYS_dev, "stufftext: %s%s\n",
 										stuffbuf->str, str);
 						Cbuf_AddText (host_cbuf, stuffbuf->str);
 						dstring_clearstr (stuffbuf);
 					} else {
-						Sys_MaskPrintf (SYS_DEV, "stufftext: %s\n", str);
+						Sys_MaskPrintf (SYS_dev, "stufftext: %s\n", str);
 					}
 					Cbuf_AddText (host_cbuf, str);
 				} else {
-					Sys_MaskPrintf (SYS_DEV, "partial stufftext: %s\n", str);
+					Sys_MaskPrintf (SYS_dev, "partial stufftext: %s\n", str);
 					if (!stuffbuf)
 						stuffbuf = dstring_newstr ();
 					dstring_appendstr (stuffbuf, str);

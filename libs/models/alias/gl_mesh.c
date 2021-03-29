@@ -321,7 +321,7 @@ BuildTris (mod_alias_ctx_t *alias_ctx)
 
 	add_command (0);					// end of list marker
 
-	Sys_MaskPrintf (SYS_DEV, "%3i tri %3i vert %3i cmd\n",
+	Sys_MaskPrintf (SYS_dev, "%3i tri %3i vert %3i cmd\n",
 					header->mdl.numtris, numorder, numcommands);
 
 	allverts += numorder;
@@ -432,7 +432,7 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		}
 		if (remesh) {
 			// build it from scratch
-			Sys_MaskPrintf (SYS_DEV, "meshing %s...\n", alias_ctx->mod->path);
+			Sys_MaskPrintf (SYS_dev, "meshing %s...\n", alias_ctx->mod->path);
 
 			BuildTris (alias_ctx);					// trifans or lists
 

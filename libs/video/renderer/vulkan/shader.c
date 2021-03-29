@@ -161,7 +161,7 @@ QFV_CreateShaderModule (qfv_device_t *device, const char *shader_path)
 	}
 
 	if (data) {
-		Sys_MaskPrintf (SYS_VULKAN,
+		Sys_MaskPrintf (SYS_vulkan,
 						"QFV_CreateShaderModule: creating shader module %s\n",
 						shader_path);
 		VkShaderModuleCreateInfo createInfo = {
@@ -171,7 +171,7 @@ QFV_CreateShaderModule (qfv_device_t *device, const char *shader_path)
 
 		dfunc->vkCreateShaderModule (dev, &createInfo, 0, &shader);
 	} else {
-		Sys_MaskPrintf (SYS_VULKAN,
+		Sys_MaskPrintf (SYS_vulkan,
 						"QFV_CreateShaderModule: could not find shader %s\n",
 						shader_path);
 	}

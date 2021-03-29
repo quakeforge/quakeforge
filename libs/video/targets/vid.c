@@ -211,7 +211,7 @@ VID_UpdateGamma (cvar_t *vid_gamma)
 	viddef.recalc_refdef = 1;				// force a surface cache flush
 
 	if (vid_gamma_avail && vid_system_gamma->int_val) {	// Have system, use it
-		Sys_MaskPrintf (SYS_VID, "Setting hardware gamma to %g\n", gamma);
+		Sys_MaskPrintf (SYS_vid, "Setting hardware gamma to %g\n", gamma);
 		VID_BuildGammaTable (1.0);	// hardware gamma wants a linear palette
 		VID_SetGamma (gamma);
 		p24 = viddef.palette;
@@ -225,7 +225,7 @@ VID_UpdateGamma (cvar_t *vid_gamma)
 		}
 		p32[-1] = 0;	// color 255 is transparent
 	} else {	// We have to hack the palette
-		Sys_MaskPrintf (SYS_VID, "Setting software gamma to %g\n", gamma);
+		Sys_MaskPrintf (SYS_vid, "Setting software gamma to %g\n", gamma);
 		VID_BuildGammaTable (gamma);
 		p24 = viddef.palette;
 		p32 = viddef.palette32;

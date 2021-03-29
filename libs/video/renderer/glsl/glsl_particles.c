@@ -235,7 +235,7 @@ glsl_R_InitParticles (void)
 
 	qfeglEnable (GL_VERTEX_PROGRAM_POINT_SIZE);
 	qfeglGetFloatv (GL_ALIASED_POINT_SIZE_RANGE, v);
-	Sys_MaskPrintf (SYS_GLSL, "point size: %g - %g\n", v[0], v[1]);
+	Sys_MaskPrintf (SYS_glsl, "point size: %g - %g\n", v[0], v[1]);
 
 	vert_shader = GLSL_BuildShader (particle_point_vert_effects);
 	frag_shader = GLSL_BuildShader (particle_point_frag_effects);
@@ -328,7 +328,7 @@ glsl_R_ReadPointFile_f (void)
 		return;
 	}
 
-	Sys_MaskPrintf (SYS_DEV, "Reading %s...\n", name);
+	Sys_MaskPrintf (SYS_dev, "Reading %s...\n", name);
 	c = 0;
 	for (;;) {
 		char        buf[64];
@@ -340,7 +340,7 @@ glsl_R_ReadPointFile_f (void)
 		c++;
 
 		if (numparticles >= r_maxparticles) {
-			Sys_MaskPrintf (SYS_DEV, "Not enough free particles\n");
+			Sys_MaskPrintf (SYS_dev, "Not enough free particles\n");
 			break;
 		} else {
 			particle_new (pt_static, part_tex_dot, org, 1.5, vec3_origin,
@@ -348,7 +348,7 @@ glsl_R_ReadPointFile_f (void)
 		}
 	}
 	Qclose (f);
-	Sys_MaskPrintf (SYS_DEV, "%i points read\n", c);
+	Sys_MaskPrintf (SYS_dev, "%i points read\n", c);
 }
 
 static void

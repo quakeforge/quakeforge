@@ -197,7 +197,7 @@ SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname)
 
 	WildMidi_Close (handle);
 
-	Sys_MaskPrintf (SYS_DEV, "stream %s\n", realname);
+	Sys_MaskPrintf (SYS_dev, "stream %s\n", realname);
 
 	// we init stream here cause we will only ever stream
 	SND_SFX_Stream (sfx, realname, info, midi_stream_open);

@@ -490,7 +490,7 @@ SV_LoadProgs (void)
 		sv_range = PR_RANGE_NONE;
 		range = "None";
 	}
-	Sys_MaskPrintf (SYS_DEV, "Using %s builtin extention mapping\n", range);
+	Sys_MaskPrintf (SYS_dev, "Using %s builtin extention mapping\n", range);
 
 	memset (&sv_globals, 0, sizeof (sv_funcs));
 	memset (&sv_funcs, 0, sizeof (sv_funcs));

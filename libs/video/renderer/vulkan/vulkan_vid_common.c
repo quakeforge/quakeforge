@@ -167,7 +167,7 @@ static const char *device_extensions[] = {
 void
 Vulkan_Init_Common (vulkan_ctx_t *ctx)
 {
-	Sys_MaskPrintf (SYS_VULKAN, "Vulkan_Init_Common\n");
+	Sys_MaskPrintf (SYS_vulkan, "Vulkan_Init_Common\n");
 
 	QFV_InitParse (ctx);
 	Vulkan_Init_Cvars ();
@@ -267,7 +267,7 @@ qfv_load_pipeline (vulkan_ctx_t *ctx, const char *name)
 	if (!item || !(item = PL_ObjectForKey (item, name))) {
 		Sys_Printf ("error loading %s\n", name);
 	} else {
-		Sys_MaskPrintf (SYS_VULKAN_PARSE, "Found %s def\n", name);
+		Sys_MaskPrintf (SYS_vulkan_parse, "Found %s def\n", name);
 	}
 	return item;
 }
@@ -284,7 +284,7 @@ qfv_load_renderpass (vulkan_ctx_t *ctx, const char *name)
 	if (!item || !(item = PL_ObjectForKey (item, name))) {
 		Sys_Printf ("error loading %s\n", name);
 	} else {
-		Sys_MaskPrintf (SYS_VULKAN_PARSE, "Found %s def\n", name);
+		Sys_MaskPrintf (SYS_vulkan_parse, "Found %s def\n", name);
 	}
 	return item;
 }
@@ -396,7 +396,7 @@ Vulkan_CreatePipeline (vulkan_ctx_t *ctx, const char *name)
 		Sys_Printf ("error loading pipeline %s\n", name);
 		return 0;
 	} else {
-		Sys_MaskPrintf (SYS_VULKAN_PARSE, "Found pipeline def %s\n", name);
+		Sys_MaskPrintf (SYS_vulkan_parse, "Found pipeline def %s\n", name);
 	}
 	VkPipeline pipeline = QFV_ParsePipeline (ctx, item, ctx->pipelineDef);
 	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_PIPELINE, pipeline,
@@ -420,7 +420,7 @@ Vulkan_CreateDescriptorPool (vulkan_ctx_t *ctx, const char *name)
 		Sys_Printf ("error loading descriptor pool %s\n", name);
 		return 0;
 	} else {
-		Sys_MaskPrintf (SYS_VULKAN_PARSE, "Found descriptor pool def %s\n",
+		Sys_MaskPrintf (SYS_vulkan_parse, "Found descriptor pool def %s\n",
 						name);
 	}
 	pool = QFV_ParseDescriptorPool (ctx, item, ctx->pipelineDef);
@@ -446,7 +446,7 @@ Vulkan_CreatePipelineLayout (vulkan_ctx_t *ctx, const char *name)
 		Sys_Printf ("error loading pipeline layout %s\n", name);
 		return 0;
 	} else {
-		Sys_MaskPrintf (SYS_VULKAN_PARSE, "Found pipeline layout def %s\n",
+		Sys_MaskPrintf (SYS_vulkan_parse, "Found pipeline layout def %s\n",
 						name);
 	}
 	layout = QFV_ParsePipelineLayout (ctx, item, ctx->pipelineDef);
@@ -472,7 +472,7 @@ Vulkan_CreateSampler (vulkan_ctx_t *ctx, const char *name)
 		Sys_Printf ("error loading sampler %s\n", name);
 		return 0;
 	} else {
-		Sys_MaskPrintf (SYS_VULKAN_PARSE, "Found sampler def %s\n", name);
+		Sys_MaskPrintf (SYS_vulkan_parse, "Found sampler def %s\n", name);
 	}
 	sampler = QFV_ParseSampler (ctx, item, ctx->pipelineDef);
 	QFV_AddHandle (tab, path, (uint64_t) sampler);
@@ -497,7 +497,7 @@ Vulkan_CreateDescriptorSetLayout(vulkan_ctx_t *ctx, const char *name)
 		Sys_Printf ("error loading descriptor set %s\n", name);
 		return 0;
 	} else {
-		Sys_MaskPrintf (SYS_VULKAN_PARSE, "Found descriptor set def %s\n",
+		Sys_MaskPrintf (SYS_vulkan_parse, "Found descriptor set def %s\n",
 						name);
 	}
 	set = QFV_ParseDescriptorSetLayout (ctx, item, ctx->pipelineDef);

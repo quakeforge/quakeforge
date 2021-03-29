@@ -162,7 +162,7 @@ configure_notify (XEvent *event)
 	if (vidmode_active)
 		X11_ForceViewPort ();
 #endif
-	Sys_MaskPrintf (SYS_VID,
+	Sys_MaskPrintf (SYS_vid,
 					"ConfigureNotify: %ld %d %ld %ld %d,%d (%d,%d) "
 					"%d %ld %d\n",
 					c->serial, c->send_event, c->event, c->window, c->x, c->y,
@@ -174,7 +174,7 @@ qboolean
 X11_AddEvent (int event, void (*event_handler) (XEvent *))
 {
 	if (event >= LASTEvent) {
-		Sys_MaskPrintf (SYS_VID, "event: %d, LASTEvent: %d\n", event,
+		Sys_MaskPrintf (SYS_vid, "event: %d, LASTEvent: %d\n", event,
 						LASTEvent);
 		return false;
 	}
@@ -440,7 +440,7 @@ X11_SetVidMode (int width, int height)
 										&vidmodes);
 			XF86VidModeGetModeLine (x_disp, x_screen, &dotclock, &orig_data);
 
-			Sys_MaskPrintf (SYS_VID, "VID: %d modes\n", nummodes);
+			Sys_MaskPrintf (SYS_vid, "VID: %d modes\n", nummodes);
 			original_mode = -1;
 			for (i = 0; i < nummodes; i++) {
 				if (original_mode == -1
@@ -448,7 +448,7 @@ X11_SetVidMode (int width, int height)
 					   (vidmodes[i]->vdisplay == orig_data.vdisplay)) {
 					original_mode = i;
 				}
-				if (developer->int_val & SYS_VID) {
+				if (developer->int_val & SYS_vid) {
 					Sys_Printf ("VID:%c%dx%d\n",
 								original_mode == i ? '*' : ' ',
 								vidmodes[i]->hdisplay, vidmodes[i]->vdisplay);
@@ -470,7 +470,7 @@ X11_SetVidMode (int width, int height)
 			}
 
 			if (found_mode) {
-				Sys_MaskPrintf (SYS_VID, "VID: Chose video mode: %dx%d\n",
+				Sys_MaskPrintf (SYS_vid, "VID: Chose video mode: %dx%d\n",
 								viddef.width, viddef.height);
 
 				if (0) {

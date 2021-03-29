@@ -1018,9 +1018,9 @@ CL_StartDemo (void)
 	net_blocksend = 1;
 	if (type == 2) {
 		cls.demoplayback2 = true;
-		Sys_MaskPrintf (SYS_DEV, "mvd\n");
+		Sys_MaskPrintf (SYS_dev, "mvd\n");
 	} else {
-		Sys_MaskPrintf (SYS_DEV, "qwd\n");
+		Sys_MaskPrintf (SYS_dev, "qwd\n");
 	}
 	CL_SetState (ca_demostart);
 	Netchan_Setup (&cls.netchan, net_from, 0, NC_QPORT_SEND);

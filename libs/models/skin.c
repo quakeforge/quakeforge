@@ -84,7 +84,7 @@ Skin_SetTranslation (int cmap, int top, int bottom)
 	bottom = bound (0, bottom, 13) * 16;
 
 	if (cmap < 0 || cmap > MAX_TRANSLATIONS) {
-		Sys_MaskPrintf (SYS_SKIN, "invalid skin slot: %d\n", cmap);
+		Sys_MaskPrintf (SYS_skin, "invalid skin slot: %d\n", cmap);
 		cmap = 1;
 	}
 
@@ -129,7 +129,7 @@ Skin_SetColormap (skin_t *skin, int cmap)
 		skin = new_skin ();
 	skin->colormap = 0;
 	if (cmap < 0 || cmap > MAX_TRANSLATIONS) {
-		Sys_MaskPrintf (SYS_SKIN, "invalid skin slot: %d\n", cmap);
+		Sys_MaskPrintf (SYS_skin, "invalid skin slot: %d\n", cmap);
 		cmap = 0;
 	}
 	if (cmap)

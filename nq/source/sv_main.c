@@ -310,7 +310,7 @@ SV_ConnectClient (int clientnum)
 
 	client = svs.clients + clientnum;
 
-	Sys_MaskPrintf (SYS_DEV, "Client %s connected\n",
+	Sys_MaskPrintf (SYS_dev, "Client %s connected\n",
 					client->netconnection->address);
 
 	edictnum = clientnum + 1;
@@ -1114,7 +1114,7 @@ SV_SpawnServer (const char *server)
 	if (hostname->string[0] == 0)
 		Cvar_Set (hostname, "UNNAMED");
 
-	Sys_MaskPrintf (SYS_DEV, "SpawnServer: %s\n", server);
+	Sys_MaskPrintf (SYS_dev, "SpawnServer: %s\n", server);
 	svs.changelevel_issued = false;		// now safe to issue another
 	svs.phys_client = SV_Physics_Client;
 
@@ -1249,6 +1249,6 @@ SV_SpawnServer (const char *server)
 		if (host_client->active)
 			SV_SendServerinfo (host_client);
 
-	Sys_MaskPrintf (SYS_DEV, "Server spawned.\n");
+	Sys_MaskPrintf (SYS_dev, "Server spawned.\n");
 	S_UnblockSound ();
 }

@@ -43,7 +43,7 @@ R_AliasGetSkindesc (int skinnum, aliashdr_t *ahdr)
 	maliasskingroup_t *paliasskingroup;
 
 	if ((skinnum >= ahdr->mdl.numskins) || (skinnum < 0)) {
-		Sys_MaskPrintf (SYS_DEV, "R_AliasSetupSkin: no such skin # %d\n",
+		Sys_MaskPrintf (SYS_dev, "R_AliasSetupSkin: no such skin # %d\n",
 						skinnum);
 		skinnum = 0;
 	}
@@ -91,7 +91,7 @@ alias_get_frame (int framenum, aliashdr_t *hdr, float *frame_interval)
 	int         i;
 
 	if ((framenum >= hdr->mdl.numframes) || (framenum < 0)) {
-		Sys_MaskPrintf (SYS_DEV, "R_AliasSetupFrame: no such frame %d\n",
+		Sys_MaskPrintf (SYS_dev, "R_AliasSetupFrame: no such frame %d\n",
 						framenum);
 		framenum = 0;
 	}

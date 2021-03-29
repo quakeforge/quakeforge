@@ -92,7 +92,7 @@ get_instance_layers_and_extensions  (vulkan_ctx_t *ctx)
 		strset_add (instanceExtensions, extensions[i].extensionName);
 	}
 
-	if (developer->int_val & SYS_VULKAN) {
+	if (developer->int_val & SYS_vulkan) {
 		for (i = 0; i < numLayers; i++) {
 			Sys_Printf ("%s %x %u %s\n",
 						layers[i].layerName,
@@ -306,6 +306,6 @@ QFV_GetMaxSampleCount (qfv_physdev_t *physdev)
 	while (maxSamples && maxSamples > counts) {
 		maxSamples >>= 1;
 	}
-	Sys_MaskPrintf (SYS_VULKAN, "Max samples: %x (%d)\n", maxSamples, counts);
+	Sys_MaskPrintf (SYS_vulkan, "Max samples: %x (%d)\n", maxSamples, counts);
 	return maxSamples;
 }

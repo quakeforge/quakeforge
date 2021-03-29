@@ -523,7 +523,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		}
 	}
 	clear_texture_chains (bctx);
-	Sys_MaskPrintf (SYS_VULKAN,
+	Sys_MaskPrintf (SYS_vulkan,
 					"R_BuildDisplayLists: verts:%u, inds:%u, polys:%u (%d) %zd\n",
 					vertex_count, index_count, poly_count, count,
 					((size_t) poly - (size_t) bctx->polys)/sizeof(uint32_t));
@@ -1620,7 +1620,7 @@ Vulkan_LoadSkys (const char *sky, vulkan_ctx_t *ctx)
 	}
 
 	if (!*sky || !strcasecmp (sky, "none")) {
-		Sys_MaskPrintf (SYS_VULKAN, "Skybox unloaded\n");
+		Sys_MaskPrintf (SYS_vulkan, "Skybox unloaded\n");
 		return;
 	}
 
@@ -1628,7 +1628,7 @@ Vulkan_LoadSkys (const char *sky, vulkan_ctx_t *ctx)
 	tex = LoadImage (name, 1);
 	if (tex) {
 		bctx->skybox_tex = Vulkan_LoadEnvMap (ctx, tex, sky);
-		Sys_MaskPrintf (SYS_VULKAN, "Loaded %s\n", name);
+		Sys_MaskPrintf (SYS_vulkan, "Loaded %s\n", name);
 	} else {
 		int         failed = 0;
 		tex_t      *sides[6] = { };
@@ -1637,24 +1637,24 @@ Vulkan_LoadSkys (const char *sky, vulkan_ctx_t *ctx)
 			name = va (ctx->va_ctx, "env/%s%s", sky, sky_suffix[i]);
 			tex = LoadImage (name, 1);
 			if (!tex) {
-				Sys_MaskPrintf (SYS_VULKAN, "Couldn't load %s\n", name);
+				Sys_MaskPrintf (SYS_vulkan, "Couldn't load %s\n", name);
 				// also look in gfx/env, where Darkplaces looks for skies
 				name = va (ctx->va_ctx, "gfx/env/%s%s", sky, sky_suffix[i]);
 				tex = LoadImage (name, 1);
 				if (!tex) {
-					Sys_MaskPrintf (SYS_VULKAN, "Couldn't load %s\n", name);
+					Sys_MaskPrintf (SYS_vulkan, "Couldn't load %s\n", name);
 					failed = 1;
 					continue;
 				}
 			}
 			sides[i] = tex;
-			Sys_MaskPrintf (SYS_VULKAN, "Loaded %s\n", name);
+			Sys_MaskPrintf (SYS_vulkan, "Loaded %s\n", name);
 		}
 		if (!failed) {
 			bctx->skybox_tex = Vulkan_LoadEnvSides (ctx, sides, sky);
 		}
 	}
 	if (bctx->skybox_tex) {
-		Sys_MaskPrintf (SYS_VULKAN, "Skybox %s loaded\n", sky);
+		Sys_MaskPrintf (SYS_vulkan, "Skybox %s loaded\n", sky);
 	}
 }

@@ -258,7 +258,7 @@ Cvar_Set (cvar_t *var, const char *value)
 		return;
 
 	if (var->flags & CVAR_ROM) {
-		Sys_MaskPrintf (SYS_DEV, "Cvar \"%s\" is read-only, cannot modify\n",
+		Sys_MaskPrintf (SYS_dev, "Cvar \"%s\" is read-only, cannot modify\n",
 						var->name);
 		return;
 	}
@@ -330,23 +330,10 @@ Cvar_WriteVariables (QFile *f)
 			Qprintf (f, "seta %s \"%s\"\n", var->name, var->string);
 }
 
-// XXX make sure in sync with SYS_* in sys.h
+#define SYS_DEVELOPER(developer) #developer,
 static const char *developer_flags[] = {
 	"dev",
-	"warn",
-	"vid",
-	"fs_nf",
-	"fs_f",
-	"fs",
-	"net",
-	"rua_obj",
-	"rua_msg",
-	"snd",
-	"glt",
-	"glsl",
-	"skin",
-	"model",
-	"vulkan",
+#include "QF/sys_developer.h"
 	0
 };
 
@@ -427,7 +414,7 @@ set_cvar (const char *cmd, int orflags)
 
 	if (var) {
 		if (var->flags & CVAR_ROM) {
-			Sys_MaskPrintf (SYS_DEV,
+			Sys_MaskPrintf (SYS_dev,
 							"Cvar \"%s\" is read-only, cannot modify\n",
 							var_name);
 		} else {

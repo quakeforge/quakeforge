@@ -123,7 +123,7 @@ D_EndDirectRect (int x, int y, int width, int height)
 static void
 VID_shutdown (void *data)
 {
-	Sys_MaskPrintf (SYS_VID, "VID_shutdown\n");
+	Sys_MaskPrintf (SYS_vid, "VID_shutdown\n");
 	Win_CloseDisplay ();
 }
 
@@ -153,7 +153,7 @@ VID_Init (byte *palette, byte *colormap)
 	VID_InitGamma (palette);
 	viddef.vid_internal->set_palette (palette);
 
-	Sys_MaskPrintf (SYS_VID, "Video mode %dx%d initialized.\n",
+	Sys_MaskPrintf (SYS_vid, "Video mode %dx%d initialized.\n",
 					viddef.width, viddef.height);
 
 	viddef.initialized = true;

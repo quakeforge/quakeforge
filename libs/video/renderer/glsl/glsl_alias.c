@@ -188,7 +188,7 @@ set_arrays (const shaderparam_t *vert, const shaderparam_t *norm,
 {
 	byte       *pose_offs = (byte *) pose;
 
-	if (developer->int_val & SYS_GLSL) {
+	if (developer->int_val & SYS_glsl) {
 		GLint size;
 
 		qfeglGetBufferParameteriv (GL_ARRAY_BUFFER, GL_BUFFER_SIZE, &size);

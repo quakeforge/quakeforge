@@ -481,7 +481,7 @@ Vulkan_LoadLights (model_t *model, const char *entity_data, vulkan_ctx_t *ctx)
 				mleaf_t    *leaf = Mod_PointInLeaf (&light.position[0],
 													model);
 				DARRAY_APPEND (&lctx->lightleafs, leaf - model->brush.leafs);
-				Sys_MaskPrintf (SYS_VULKAN,
+				Sys_MaskPrintf (SYS_vulkan,
 								"[%g, %g, %g] %d, "
 								"[%g %g %g] %g, [%g %g %g] %g, %zd\n",
 								VectorExpand (light.color), light.data,
@@ -502,5 +502,5 @@ Vulkan_LoadLights (model_t *model, const char *entity_data, vulkan_ctx_t *ctx)
 		PL_Free (targets);
 		PL_Free (entities);
 	}
-	Sys_MaskPrintf (SYS_VULKAN, "loaded %zd lights\n", lctx->lights.size);
+	Sys_MaskPrintf (SYS_vulkan, "loaded %zd lights\n", lctx->lights.size);
 }

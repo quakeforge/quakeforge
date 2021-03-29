@@ -95,7 +95,7 @@ dga_on (void)
 		int ret;
 		ret = XF86DGADirectVideo (x_disp, DefaultScreen (x_disp),
 							XF86DGADirectMouse);
-		Sys_MaskPrintf (SYS_VID, "XF86DGADirectVideo returned %d\n", ret);
+		Sys_MaskPrintf (SYS_vid, "XF86DGADirectVideo returned %d\n", ret);
 		if (ret)
 			dga_active = true;
 	}
@@ -109,7 +109,7 @@ dga_off (void)
 	if (dga_avail && dga_active) {
 		int ret;
 		ret = XF86DGADirectVideo (x_disp, DefaultScreen (x_disp), 0);
-		Sys_MaskPrintf (SYS_VID, "XF86DGADirectVideo returned %d\n", ret);
+		Sys_MaskPrintf (SYS_vid, "XF86DGADirectVideo returned %d\n", ret);
 		if (ret)
 			dga_active = false;
 	}
@@ -120,10 +120,10 @@ static void
 in_dga_f (cvar_t *var)
 {
 	if (var->int_val && input_grabbed) {
-		Sys_MaskPrintf (SYS_VID, "VID: in_dga_f on\n");
+		Sys_MaskPrintf (SYS_vid, "VID: in_dga_f on\n");
 		dga_on ();
 	} else {
-		Sys_MaskPrintf (SYS_VID, "VID: in_dga_f off\n");
+		Sys_MaskPrintf (SYS_vid, "VID: in_dga_f off\n");
 		dga_off ();
 	}
 }
@@ -789,7 +789,7 @@ IN_LL_ProcessEvents (void)
 void
 IN_LL_Shutdown (void)
 {
-	Sys_MaskPrintf (SYS_VID, "IN_LL_Shutdown\n");
+	Sys_MaskPrintf (SYS_vid, "IN_LL_Shutdown\n");
 	in_mouse_avail = 0;
 	if (x_disp) {
 //		XAutoRepeatOn (x_disp);
@@ -833,7 +833,7 @@ IN_LL_Init (void)
 
 	if (!COM_CheckParm ("-nomouse")) {
 		dga_avail = VID_CheckDGA (x_disp, NULL, NULL, NULL);
-		Sys_MaskPrintf (SYS_VID, "VID_CheckDGA returned %d\n", dga_avail);
+		Sys_MaskPrintf (SYS_vid, "VID_CheckDGA returned %d\n", dga_avail);
 
 		X11_AddEvent (ButtonPress, &event_button);
 		X11_AddEvent (ButtonRelease, &event_button);

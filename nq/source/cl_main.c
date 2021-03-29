@@ -275,7 +275,7 @@ CL_Disconnect (void)
 		if (cls.demorecording)
 			CL_StopRecording ();
 
-		Sys_MaskPrintf (SYS_DEV, "Sending clc_disconnect\n");
+		Sys_MaskPrintf (SYS_dev, "Sending clc_disconnect\n");
 		SZ_Clear (&cls.message);
 		MSG_WriteByte (&cls.message, clc_disconnect);
 		NET_SendUnreliableMessage (cls.netcon, &cls.message);
@@ -318,7 +318,7 @@ CL_EstablishConnection (const char *host)
 	cls.netcon = NET_Connect (host);
 	if (!cls.netcon)
 		Host_Error ("CL_Connect: connect failed\n");
-	Sys_MaskPrintf (SYS_DEV, "CL_EstablishConnection: connected to %s\n",
+	Sys_MaskPrintf (SYS_dev, "CL_EstablishConnection: connected to %s\n",
 					host);
 
 	cls.demonum = -1;					// not in the demo loop now
@@ -334,7 +334,7 @@ CL_EstablishConnection (const char *host)
 void
 CL_SignonReply (void)
 {
-	Sys_MaskPrintf (SYS_DEV, "CL_SignonReply: %i\n", cls.signon);
+	Sys_MaskPrintf (SYS_dev, "CL_SignonReply: %i\n", cls.signon);
 
 	switch (cls.signon) {
 	case so_none:
@@ -480,7 +480,7 @@ CL_SendCmd (void)
 		return;							// no message at all
 
 	if (!NET_CanSendMessage (cls.netcon)) {
-		Sys_MaskPrintf (SYS_DEV, "CL_WriteToServer: can't send\n");
+		Sys_MaskPrintf (SYS_dev, "CL_WriteToServer: can't send\n");
 		return;
 	}
 
@@ -495,7 +495,7 @@ CL_SetState (cactive_t state)
 {
 	cactive_t   old_state = cls.state;
 	cls.state = state;
-	Sys_MaskPrintf (SYS_NET, "CL_SetState: %d -> %d\n", old_state, state);
+	Sys_MaskPrintf (SYS_net, "CL_SetState: %d -> %d\n", old_state, state);
 	if (old_state != state) {
 		if (old_state == ca_active) {
 			// leaving active state

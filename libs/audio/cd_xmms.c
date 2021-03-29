@@ -148,7 +148,7 @@ I_XMMS_Running (void)
 				break;
 			case -1:					// ICH!
 				// inform user
-				Sys_MaskPrintf (SYS_SND, "XMMSAudio: error, can't fork!?\n");
+				Sys_MaskPrintf (SYS_snd, "XMMSAudio: error, can't fork!?\n");
 				break;
 			default:					// Parent
 				// don't need now :/

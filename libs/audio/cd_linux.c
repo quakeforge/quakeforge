@@ -88,7 +88,7 @@ I_CDAudio_CloseDoor (void)
 		return;							// no cd init'd
 
 	if (ioctl (cdfile, CDROMCLOSETRAY) == -1)
-		Sys_MaskPrintf (SYS_SND, "CDAudio: ioctl cdromclosetray failed\n");
+		Sys_MaskPrintf (SYS_snd, "CDAudio: ioctl cdromclosetray failed\n");
 }
 
 static void
@@ -98,7 +98,7 @@ I_CDAudio_Eject (void)
 		return;							// no cd init'd
 
 	if (ioctl (cdfile, CDROMEJECT) == -1)
-		Sys_MaskPrintf (SYS_SND, "CDAudio: ioctl cdromeject failed\n");
+		Sys_MaskPrintf (SYS_snd, "CDAudio: ioctl cdromeject failed\n");
 }
 
 static int
@@ -109,12 +109,12 @@ I_CDAudio_GetAudioDiskInfo (void)
 	cdValid = false;
 
 	if (ioctl (cdfile, CDROMREADTOCHDR, &tochdr) == -1) {
-		Sys_MaskPrintf (SYS_SND, "CDAudio: ioctl cdromreadtochdr failed\n");
+		Sys_MaskPrintf (SYS_snd, "CDAudio: ioctl cdromreadtochdr failed\n");
 		return -1;
 	}
 
 	if (tochdr.cdth_trk0 < 1) {
-		Sys_MaskPrintf (SYS_SND, "CDAudio: no music tracks\n");
+		Sys_MaskPrintf (SYS_snd, "CDAudio: no music tracks\n");
 		return -1;
 	}
 
@@ -134,7 +134,7 @@ I_CDAudio_Pause (void)
 		return;
 
 	if (ioctl (cdfile, CDROMPAUSE) == -1)
-		Sys_MaskPrintf (SYS_SND, "CDAudio: ioctl cdrompause failed\n");
+		Sys_MaskPrintf (SYS_snd, "CDAudio: ioctl cdrompause failed\n");
 
 	wasPlaying = playing;
 	playing = false;
@@ -150,7 +150,7 @@ I_CDAudio_Stop (void)
 		return;
 
 	if (ioctl (cdfile, CDROMSTOP) == -1)
-		Sys_MaskPrintf (SYS_SND, "CDAudio: ioctl cdromstop failed (%d)\n",
+		Sys_MaskPrintf (SYS_snd, "CDAudio: ioctl cdromstop failed (%d)\n",
 						errno);
 
 	wasPlaying = false;
@@ -188,7 +188,7 @@ I_CDAudio_Play (int track, qboolean looping)
 	entry0.cdte_track = track;
 	entry0.cdte_format = CDROM_MSF;
 	if (ioctl (cdfile, CDROMREADTOCENTRY, &entry0) == -1) {
-		Sys_MaskPrintf (SYS_SND, "CDAudio: ioctl cdromreadtocentry failed\n");
+		Sys_MaskPrintf (SYS_snd, "CDAudio: ioctl cdromreadtocentry failed\n");
 		return;
 	}
 	entry1.cdte_track = track + 1;
@@ -197,7 +197,7 @@ I_CDAudio_Play (int track, qboolean looping)
 		entry1.cdte_track = CDROM_LEADOUT;
 	}
 	if (ioctl (cdfile, CDROMREADTOCENTRY, &entry1) == -1) {
-		Sys_MaskPrintf (SYS_SND, "CDAudio: ioctl cdromreadtocentry failed\n");
+		Sys_MaskPrintf (SYS_snd, "CDAudio: ioctl cdromreadtocentry failed\n");
 		return;
 	}
 	if (entry0.cdte_ctrl == CDROM_DATA_TRACK) {
@@ -219,14 +219,14 @@ I_CDAudio_Play (int track, qboolean looping)
 	msf.cdmsf_sec1 = entry1.cdte_addr.msf.second;
 	msf.cdmsf_frame1 = entry1.cdte_addr.msf.frame;
 
-	Sys_MaskPrintf (SYS_SND, "%2d:%02d:%02d %2d:%02d:%02d\n",
+	Sys_MaskPrintf (SYS_snd, "%2d:%02d:%02d %2d:%02d:%02d\n",
 					msf.cdmsf_min0,
 					msf.cdmsf_sec0,
 					msf.cdmsf_frame0,
 					msf.cdmsf_min1, msf.cdmsf_sec1, msf.cdmsf_frame1);
 
 	if (ioctl (cdfile, CDROMPLAYMSF, &msf) == -1) {
-		Sys_MaskPrintf (SYS_SND,
+		Sys_MaskPrintf (SYS_snd,
 						"CDAudio: ioctl cdromplaytrkind failed (%s)\n",
 						strerror (errno));
 		return;
@@ -253,7 +253,7 @@ I_CDAudio_Resume (void)
 		return;
 
 	if (ioctl (cdfile, CDROMRESUME) == -1)
-		Sys_MaskPrintf (SYS_SND, "CDAudio: ioctl cdromresume failed\n");
+		Sys_MaskPrintf (SYS_snd, "CDAudio: ioctl cdromresume failed\n");
 	playing = true;
 }
 
@@ -398,7 +398,7 @@ I_CDAudio_Update (void)
 		lastchk = time (NULL) + 2;		// two seconds between chks
 		subchnl.cdsc_format = CDROM_MSF;
 		if (ioctl (cdfile, CDROMSUBCHNL, &subchnl) == -1) {
-			Sys_MaskPrintf (SYS_SND, "CDAudio: ioctl cdromsubchnl failed\n");
+			Sys_MaskPrintf (SYS_snd, "CDAudio: ioctl cdromsubchnl failed\n");
 			playing = false;
 			return;
 		}
@@ -423,7 +423,7 @@ Mus_CDChange (cvar_t *mus_cdaudio)
 
 	cdfile = open (mus_cdaudio->string, O_RDONLY | O_NONBLOCK);
 	if (cdfile == -1) {
-		Sys_MaskPrintf (SYS_SND,
+		Sys_MaskPrintf (SYS_snd,
 						"Mus_CDInit: open device \"%s\" failed (error %i)\n",
 						mus_cdaudio->string, errno);
 		return;

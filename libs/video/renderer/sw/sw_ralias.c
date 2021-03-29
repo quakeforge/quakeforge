@@ -107,7 +107,7 @@ R_AliasCheckBBox (void)
 	frame = currententity->animation.frame;
 // TODO: don't repeat this check when drawing?
 	if ((frame >= pmdl->numframes) || (frame < 0)) {
-		Sys_MaskPrintf (SYS_DEV, "No such frame %d %s\n", frame, pmodel->path);
+		Sys_MaskPrintf (SYS_dev, "No such frame %d %s\n", frame, pmodel->path);
 		frame = 0;
 	}
 
@@ -547,7 +547,7 @@ R_AliasSetupSkin (void)
 
 	skinnum = currententity->renderer.skinnum;
 	if ((skinnum >= pmdl->numskins) || (skinnum < 0)) {
-		Sys_MaskPrintf (SYS_DEV, "R_AliasSetupSkin: no such skin # %d\n",
+		Sys_MaskPrintf (SYS_dev, "R_AliasSetupSkin: no such skin # %d\n",
 						skinnum);
 		skinnum = 0;
 	}

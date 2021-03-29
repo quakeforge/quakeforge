@@ -280,7 +280,7 @@ Mod_ForName (const char *name, qboolean crash)
 
 	mod = Mod_FindName (name);
 
-	Sys_MaskPrintf (SYS_DEV, "Mod_ForName: %s, %p\n", name, mod);
+	Sys_MaskPrintf (SYS_dev, "Mod_ForName: %s, %p\n", name, mod);
 	return Mod_LoadModel (mod, crash);
 }
 

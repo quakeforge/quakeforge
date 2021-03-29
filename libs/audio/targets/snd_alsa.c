@@ -241,12 +241,12 @@ retry_open:
 	err = qfsnd_pcm_hw_params_set_access (pcm, hw,
 										  SND_PCM_ACCESS_MMAP_INTERLEAVED);
 	if (0 > err) {
-		Sys_MaskPrintf (SYS_SND, "ALSA: Failure to set interleaved PCM "
+		Sys_MaskPrintf (SYS_snd, "ALSA: Failure to set interleaved PCM "
 						"access. %s\n", qfsnd_strerror (err));
 		err = qfsnd_pcm_hw_params_set_access (pcm, hw,
 										  SND_PCM_ACCESS_MMAP_NONINTERLEAVED);
 		if (0 > err) {
-			Sys_MaskPrintf (SYS_SND, "ALSA: Failure to set noninterleaved PCM "
+			Sys_MaskPrintf (SYS_snd, "ALSA: Failure to set noninterleaved PCM "
 							"access. %s\n", qfsnd_strerror (err));
 			// "default" did not work, so retry with "plughw". However do not
 			// second guess the user, even if the user specified "default".
@@ -335,7 +335,7 @@ retry_open:
 
 				for (i = 0; rates[i]; i++) {
 					rate = rates[i];
-					Sys_MaskPrintf (SYS_SND, "ALSA: trying %dHz\n", rate);
+					Sys_MaskPrintf (SYS_snd, "ALSA: trying %dHz\n", rate);
 					err = qfsnd_pcm_hw_params_set_rate_near (pcm, hw,
 															 &rate, 0);
 					if (0 <= err) {

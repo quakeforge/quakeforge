@@ -370,7 +370,7 @@ process_input (void)
 		interrupted = 0;
 #ifdef SIGWINCH
 		get_size (&screen_x, &screen_y);
-		Sys_MaskPrintf (SYS_DEV, "resizing to %d x %d\n", screen_x, screen_y);
+		Sys_MaskPrintf (SYS_dev, "resizing to %d x %d\n", screen_x, screen_y);
 		resizeterm (screen_y, screen_x);
 		con_linewidth = screen_x;
 		view_resize (sv_con_data.view, screen_x, screen_y);

@@ -639,7 +639,7 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 		}
 	}
 	clear_texture_chains ();
-	Sys_MaskPrintf (SYS_GLSL, "R_BuildDisplayLists: %ld verts total\n",
+	Sys_MaskPrintf (SYS_glsl, "R_BuildDisplayLists: %ld verts total\n",
 					(long) (vertices->size / sizeof (bspvert_t)));
 	if (!bsp_vbo)
 		qfeglGenBuffers (1, &bsp_vbo);
@@ -1446,17 +1446,17 @@ glsl_R_LoadSkys (const char *sky)
 		for (i = 0; i < 6; i++) {
 			tex = LoadImage (name = va (0, "env/%s%s", sky, sky_suffix[i]), 1);
 			if (!tex || tex->format < 3) {	// FIXME pcx support
-				Sys_MaskPrintf (SYS_GLSL, "Couldn't load %s\n", name);
+				Sys_MaskPrintf (SYS_glsl, "Couldn't load %s\n", name);
 				// also look in gfx/env, where Darkplaces looks for skies
 				tex = LoadImage (name = va (0, "gfx/env/%s%s", sky,
 											sky_suffix[i]), 1);
 				if (!tex || tex->format < 3) {  // FIXME pcx support
-					Sys_MaskPrintf (SYS_GLSL, "Couldn't load %s\n", name);
+					Sys_MaskPrintf (SYS_glsl, "Couldn't load %s\n", name);
 					skybox_loaded = false;
 					continue;
 				}
 			}
-			Sys_MaskPrintf (SYS_GLSL, "Loaded %s\n", name);
+			Sys_MaskPrintf (SYS_glsl, "Loaded %s\n", name);
 			qfeglTexImage2D (GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0,
 							tex->format == 3 ? GL_RGB : GL_RGBA,
 							tex->width, tex->height, 0,

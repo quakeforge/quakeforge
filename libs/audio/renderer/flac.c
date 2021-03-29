@@ -411,7 +411,7 @@ flac_get_info (flacfile_t *ff)
 		vc = &ff->vorbis_info->data.vorbis_comment;
 
 		for (i = 0, ve = vc->comments; i < vc->num_comments; ve++, i++) {
-			Sys_MaskPrintf (SYS_DEV, "%.*s\n", ve->length, ve->entry);
+			Sys_MaskPrintf (SYS_dev, "%.*s\n", ve->length, ve->entry);
 			if (strncmp ("CUEPOINT=", (char *) ve->entry, 9) == 0) {
 				char       *str = alloca (ve->length + 1);
 				strncpy (str, (char *) ve->entry, ve->length);
@@ -432,12 +432,12 @@ flac_get_info (flacfile_t *ff)
 	info.dataofs = 0;
 	info.datalen = samples * info.channels * sizeof (float);
 
-	Sys_MaskPrintf (SYS_DEV, "\nBitstream is %d channel, %dHz\n",
+	Sys_MaskPrintf (SYS_dev, "\nBitstream is %d channel, %dHz\n",
 					info.channels, info.rate);
-	Sys_MaskPrintf (SYS_DEV, "\nDecoded length: %d samples (%d bytes)\n",
+	Sys_MaskPrintf (SYS_dev, "\nDecoded length: %d samples (%d bytes)\n",
 					info.frames, info.width);
 	if (vc) {
-		Sys_MaskPrintf (SYS_DEV, "Encoded by: %.*s\n\n",
+		Sys_MaskPrintf (SYS_dev, "Encoded by: %.*s\n\n",
 						vc->vendor_string.length, vc->vendor_string.entry);
 	}
 
@@ -460,10 +460,10 @@ SND_LoadFLAC (QFile *file, sfx_t *sfx, char *realname)
 		return -1;
 	}
 	if (info.frames / info.rate < 3) {
-		Sys_MaskPrintf (SYS_DEV, "cache %s\n", realname);
+		Sys_MaskPrintf (SYS_dev, "cache %s\n", realname);
 		flac_cache (sfx, realname, ff, info);
 	} else {
-		Sys_MaskPrintf (SYS_DEV, "stream %s\n", realname);
+		Sys_MaskPrintf (SYS_dev, "stream %s\n", realname);
 		flac_stream (sfx, realname, ff, info);
 	}
 	return 0;

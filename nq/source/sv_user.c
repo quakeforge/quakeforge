@@ -564,7 +564,7 @@ SV_ReadClientMessage (void)
 				else if (ret == 1)
 					Cmd_ExecuteString (s, src_client);
 				else
-					Sys_MaskPrintf (SYS_DEV, "%s tried to %s\n",
+					Sys_MaskPrintf (SYS_dev, "%s tried to %s\n",
 									host_client->name, s);
 				break;
 

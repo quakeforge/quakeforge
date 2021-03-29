@@ -104,7 +104,7 @@ SND_AllocChannel (void)
 		for (free = &free_channels; *free; free = &(*free)->next) {
 			num_free++;
 		}
-		Sys_MaskPrintf (SYS_WARN, "SND_AllocChannel: out of channels. %d\n",
+		Sys_MaskPrintf (SYS_warn, "SND_AllocChannel: out of channels. %d\n",
 						num_free);
 		return 0;
 	}
@@ -147,7 +147,7 @@ SND_ScanChannels (int wait)
 		return;
 
 	if (wait) {
-		Sys_MaskPrintf (SYS_DEV, "scanning channels...\n");
+		Sys_MaskPrintf (SYS_dev, "scanning channels...\n");
 		do {
 			count = 0;
 			for (i = 0; i < MAX_CHANNELS; i++) {
@@ -157,12 +157,12 @@ SND_ScanChannels (int wait)
 				ch->stop = 1;
 				count++;
 			}
-			Sys_MaskPrintf (SYS_DEV, "count = %d\n", count);
+			Sys_MaskPrintf (SYS_dev, "count = %d\n", count);
 #ifdef HAVE_USLEEP
 			usleep (1000);
 #endif
 		} while (count);
-		Sys_MaskPrintf (SYS_DEV, "scanning done.\n");
+		Sys_MaskPrintf (SYS_dev, "scanning done.\n");
 	} else {
 		for (i = 0; i < MAX_CHANNELS; i++) {
 			ch = &snd_channels[i];

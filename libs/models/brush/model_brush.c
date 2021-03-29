@@ -439,7 +439,7 @@ Mod_LoadSubmodels (model_t *mod, bsp_t *bsp)
 	}
 
 	if (out->visleafs > 8192)
-		Sys_MaskPrintf (SYS_WARN,
+		Sys_MaskPrintf (SYS_warn,
 						"%i visleafs exceeds standard limit of 8192.\n",
 						out->visleafs);
 }
@@ -579,7 +579,7 @@ Mod_LoadFaces (model_t *mod, bsp_t *bsp)
 	out = Hunk_AllocName (count * sizeof (*out), mod->name);
 
 	if (count > 32767) {
-		Sys_MaskPrintf (SYS_WARN,
+		Sys_MaskPrintf (SYS_warn,
 						"%i faces exceeds standard limit of 32767.\n", count);
 	}
 
@@ -666,7 +666,7 @@ Mod_LoadNodes (model_t *mod, bsp_t *bsp)
 	out = Hunk_AllocName (count * sizeof (*out), mod->name);
 
 	if (count > 32767) {
-		Sys_MaskPrintf (SYS_WARN,
+		Sys_MaskPrintf (SYS_warn,
 						"%i nodes exceeds standard limit of 32767.\n", count);
 	}
 
@@ -778,7 +778,7 @@ Mod_LoadClipnodes (model_t *mod, bsp_t *bsp)
 	out = Hunk_AllocName (count * sizeof (*out), mod->name);
 
 	if (count > 32767) {
-		Sys_MaskPrintf (SYS_WARN,
+		Sys_MaskPrintf (SYS_warn,
 						"%i clilpnodes exceeds standard limit of 32767.\n",
 						count);
 	}
@@ -884,7 +884,7 @@ Mod_LoadMarksurfaces (model_t *mod, bsp_t *bsp)
 	out = Hunk_AllocName (count * sizeof (*out), mod->name);
 
 	if (count > 32767) {
-		Sys_MaskPrintf (SYS_WARN,
+		Sys_MaskPrintf (SYS_warn,
 						"%i marksurfaces exceeds standard limit of 32767.\n",
 						count);
 	}

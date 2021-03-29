@@ -71,7 +71,7 @@ R_GetSpriteFrame (entity_t *currententity)
 	frame = currententity->animation.frame;
 
 	if ((frame >= psprite->numframes) || (frame < 0)) {
-		Sys_MaskPrintf (SYS_DEV, "R_DrawSprite: no such frame %d\n", frame);
+		Sys_MaskPrintf (SYS_dev, "R_DrawSprite: no such frame %d\n", frame);
 		frame = 0;
 	}
 
@@ -247,7 +247,7 @@ gl_R_InitSprites (void)
 #else
 			sVAsize = 4;
 #endif
-			Sys_MaskPrintf (SYS_DEV, "Sprites: %i maximum vertex elements.\n",
+			Sys_MaskPrintf (SYS_dev, "Sprites: %i maximum vertex elements.\n",
 							sVAsize);
 
 			if (gl_spriteVertexArray)

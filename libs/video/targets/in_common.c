@@ -133,7 +133,7 @@ IN_shutdown (void *data)
 {
 	JOY_Shutdown ();
 
-	Sys_MaskPrintf (SYS_VID, "IN_Shutdown\n");
+	Sys_MaskPrintf (SYS_vid, "IN_Shutdown\n");
 	IN_LL_Shutdown ();
 
 	IE_Shutdown ();

@@ -486,7 +486,7 @@ Draw_Pic (int x, int y, qpic_t *pic)
 
 	if (x < 0 || (x + pic->width) > vid.conwidth
 		|| y < 0 || (y + pic->height) > vid.conheight) {
-		Sys_MaskPrintf (SYS_VID, "Draw_Pic: bad coordinates");
+		Sys_MaskPrintf (SYS_vid, "Draw_Pic: bad coordinates");
 		Draw_SubPic (x, y, pic, 0, 0, pic->width, pic->height);
 		return;
 	}
@@ -545,7 +545,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 
 	if ((x < 0) || (x + width > vid.conwidth)
 		|| (y < 0) || (y + height > vid.conheight)) {
-		Sys_MaskPrintf (SYS_VID, "Draw_SubPic: bad coordinates");
+		Sys_MaskPrintf (SYS_vid, "Draw_SubPic: bad coordinates");
 	}
 	// first, clip to screen
 	if (x < 0) {
@@ -761,7 +761,7 @@ Draw_Fill (int x, int y, int w, int h, int c)
 
 	if (x < 0 || x + w > vid.conwidth
 		|| y < 0 || y + h > vid.conheight) {
-		Sys_MaskPrintf (SYS_VID, "Bad Draw_Fill(%d, %d, %d, %d, %c)\n",
+		Sys_MaskPrintf (SYS_vid, "Bad Draw_Fill(%d, %d, %d, %d, %c)\n",
 						x, y, w, h, c);
 	}
 	CLIP (x, y, w, h, (int) vid.width, (int) vid.height);

@@ -688,7 +688,7 @@ MapKey (unsigned int keycode, int press, int *k, int *u)
 			break;
 	}
 
-	Sys_MaskPrintf (SYS_VID, "%08x %d %02x %02lx %04x %c\n",
+	Sys_MaskPrintf (SYS_vid, "%08x %d %02x %02lx %04x %c\n",
 					keycode, press, scan, shifts,
 					key, uc > 32 && uc < 127 ? uc : '#');
 	*k = key;

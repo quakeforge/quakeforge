@@ -625,16 +625,16 @@ qfs_build_gamedir (const char **list)
 		gamedir->dir.shots = strdup ("QF");
 
 	qfs_gamedir = gamedir;
-	Sys_MaskPrintf (SYS_FS, "%s\n", qfs_gamedir->name);
-	Sys_MaskPrintf (SYS_FS, "    gamedir : %s\n", qfs_gamedir->gamedir);
-	Sys_MaskPrintf (SYS_FS, "    path    : %s\n", qfs_gamedir->path);
-	Sys_MaskPrintf (SYS_FS, "    gamecode: %s\n", qfs_gamedir->gamecode);
-	Sys_MaskPrintf (SYS_FS, "    hudtype : %s\n", qfs_gamedir->hudtype);
-	Sys_MaskPrintf (SYS_FS, "    def     : %s\n", qfs_gamedir->dir.def);
-	Sys_MaskPrintf (SYS_FS, "    skins   : %s\n", qfs_gamedir->dir.skins);
-	Sys_MaskPrintf (SYS_FS, "    models  : %s\n", qfs_gamedir->dir.models);
-	Sys_MaskPrintf (SYS_FS, "    sound   : %s\n", qfs_gamedir->dir.sound);
-	Sys_MaskPrintf (SYS_FS, "    maps    : %s\n", qfs_gamedir->dir.maps);
+	Sys_MaskPrintf (SYS_fs, "%s\n", qfs_gamedir->name);
+	Sys_MaskPrintf (SYS_fs, "    gamedir : %s\n", qfs_gamedir->gamedir);
+	Sys_MaskPrintf (SYS_fs, "    path    : %s\n", qfs_gamedir->path);
+	Sys_MaskPrintf (SYS_fs, "    gamecode: %s\n", qfs_gamedir->gamecode);
+	Sys_MaskPrintf (SYS_fs, "    hudtype : %s\n", qfs_gamedir->hudtype);
+	Sys_MaskPrintf (SYS_fs, "    def     : %s\n", qfs_gamedir->dir.def);
+	Sys_MaskPrintf (SYS_fs, "    skins   : %s\n", qfs_gamedir->dir.skins);
+	Sys_MaskPrintf (SYS_fs, "    models  : %s\n", qfs_gamedir->dir.models);
+	Sys_MaskPrintf (SYS_fs, "    sound   : %s\n", qfs_gamedir->dir.sound);
+	Sys_MaskPrintf (SYS_fs, "    maps    : %s\n", qfs_gamedir->dir.maps);
 	qfs_process_path (qfs_gamedir->path, dir);
 	free (path);
 	Hash_DelTable (dirs);
@@ -652,7 +652,7 @@ qfs_load_config (void)
 	if (*fs_dirconf->string) {
 		dirconf = Sys_ExpandSquiggle (fs_dirconf->string);
 		if (!(f = Qopen (dirconf, "rt")))
-			Sys_MaskPrintf (SYS_FS,
+			Sys_MaskPrintf (SYS_fs,
 							"Could not load `%s', using builtin defaults\n",
 							dirconf);
 		free (dirconf);
@@ -831,7 +831,7 @@ qfs_findfile_search (const vpath_t *vpath, const searchpath_t *sp,
 			}
 		}
 		if (packfile) {
-			Sys_MaskPrintf (SYS_FS_F, "PackFile: %s : %s\n",
+			Sys_MaskPrintf (SYS_fs_f, "PackFile: %s : %s\n",
 							sp->pack->filename, packfile->name);
 			found.ff.vpath = vpath;
 			found.ff.in_pak = true;
@@ -852,7 +852,7 @@ qfs_findfile_search (const vpath_t *vpath, const searchpath_t *sp,
 					continue;
 				}
 
-				Sys_MaskPrintf (SYS_FS_F, "FindFile: %s\n", path->str);
+				Sys_MaskPrintf (SYS_fs_f, "FindFile: %s\n", path->str);
 
 				found.ff.vpath = vpath;
 				found.ff.in_pak = false;
@@ -1046,7 +1046,7 @@ _QFS_VOpenFile (const char *filename, int zip,
 	// make sure they're not trying to do weird stuff with our private files
 	path = QFS_CompressPath (filename);
 	if (qfs_contains_updir(path, 1)) {
-		Sys_MaskPrintf (SYS_FS,
+		Sys_MaskPrintf (SYS_fs,
 						"FindFile: %s: attempt to escape directory tree!\n",
 						path);
 		goto error;
@@ -1089,7 +1089,7 @@ _QFS_VOpenFile (const char *filename, int zip,
 		return gzfile;
 	}
 
-	Sys_MaskPrintf (SYS_FS_NF, "FindFile: can't find %s\n", filename);
+	Sys_MaskPrintf (SYS_fs_nf, "FindFile: can't find %s\n", filename);
 error:
 	qfs_filesize = -1;
 	free (path);
@@ -1191,7 +1191,7 @@ qfs_load_pakfile (char *packfile)
 	pack_t     *pack = pack_open (packfile);
 
 	if (pack)
-		Sys_MaskPrintf (SYS_FS, "Added packfile %s (%i files)\n",
+		Sys_MaskPrintf (SYS_fs, "Added packfile %s (%i files)\n",
 					packfile, pack->numfiles);
 	return pack;
 }
@@ -1241,7 +1241,7 @@ qfs_load_gamedir (searchpath_t **searchpath, const char *dir)
 	char      **pakfiles = NULL;
 	int         i = 0, bufsize = 0, count = 0;
 
-	Sys_MaskPrintf (SYS_FS, "qfs_load_gamedir (\"%s\")\n", dir);
+	Sys_MaskPrintf (SYS_fs, "qfs_load_gamedir (\"%s\")\n", dir);
 
 	pakfiles = calloc (1, FBLOCK_SIZE * sizeof (char *));
 
@@ -1347,7 +1347,7 @@ qfs_add_gamedir (vpath_t *vpath, const char *dir)
 					Sys_Printf ("dropping bad directory %s\n", dir);
 					break;
 				}
-				Sys_MaskPrintf (SYS_FS, "qfs_add_gamedir (\"%s\")\n",
+				Sys_MaskPrintf (SYS_fs, "qfs_add_gamedir (\"%s\")\n",
 								f_dir->str);
 
 				qfs_add_dir (&vpath->share, f_dir->str);
@@ -1357,7 +1357,7 @@ qfs_add_gamedir (vpath_t *vpath, const char *dir)
 	}
 
 	qfs_expand_userpath (f_dir, dir);
-	Sys_MaskPrintf (SYS_FS, "qfs_add_gamedir (\"%s\")\n", f_dir->str);
+	Sys_MaskPrintf (SYS_fs, "qfs_add_gamedir (\"%s\")\n", f_dir->str);
 	qfs_add_dir (&vpath->user, f_dir->str);
 
 	dstring_delete (f_dir);
@@ -1589,7 +1589,7 @@ QFS_Open (const char *path, const char *mode)
 	int         write = 0;
 
 	if (qfs_expand_userpath (full_path, path) == 0) {
-		Sys_MaskPrintf (SYS_FS, "QFS_Open: %s %s\n", full_path->str, mode);
+		Sys_MaskPrintf (SYS_fs, "QFS_Open: %s %s\n", full_path->str, mode);
 		for (m = mode; *m; m++)
 			if (*m == 'w' || *m == '+' || *m == 'a')
 				write = 1;
@@ -1625,7 +1625,7 @@ QFS_Rename (const char *old_path, const char *new_path)
 	if ((ret = qfs_expand_userpath (full_old, old_path)) != -1)
 		if ((ret = qfs_expand_userpath (full_new, new_path)) != -1)
 			if ((ret = Sys_CreatePath (full_new->str)) != -1) {
-				Sys_MaskPrintf (SYS_FS, "QFS_Rename %s %s\n", full_old->str,
+				Sys_MaskPrintf (SYS_fs, "QFS_Rename %s %s\n", full_old->str,
 								full_new->str);
 				ret = Qrename (full_old->str, full_new->str);
 			}

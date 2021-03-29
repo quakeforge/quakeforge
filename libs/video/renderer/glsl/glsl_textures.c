@@ -273,7 +273,7 @@ void
 GLSL_TextureInit (void)
 {
 	qfeglGetIntegerv (GL_MAX_TEXTURE_SIZE, &max_tex_size);
-	Sys_MaskPrintf (SYS_GLSL, "max texture size: %d\n", max_tex_size);
+	Sys_MaskPrintf (SYS_glsl, "max texture size: %d\n", max_tex_size);
 
 	Cmd_AddCommand ("glsl_scraps", glsl_scraps_f, "Dump GLSL scrap stats");
 }

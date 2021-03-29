@@ -116,14 +116,14 @@ Draw_InitText (void)
 	if (vaelements < 0) {
 		textUseVA = 0;
 		tVAsize = 2048;
-		Sys_MaskPrintf (SYS_DEV, "Text: Vertex Array use disabled.\n");
+		Sys_MaskPrintf (SYS_dev, "Text: Vertex Array use disabled.\n");
 	} else {
 		textUseVA = 1;
 		if (vaelements > 3)
 			tVAsize = vaelements - (vaelements % 4);
 		else
 			tVAsize = 2048;
-		Sys_MaskPrintf (SYS_DEV, "Text: %i maximum vertex elements.\n",
+		Sys_MaskPrintf (SYS_dev, "Text: %i maximum vertex elements.\n",
 						tVAsize);
 	}
 

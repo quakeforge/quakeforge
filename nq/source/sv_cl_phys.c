@@ -63,7 +63,7 @@ SV_CheckStuck (edict_t *ent)
 	VectorCopy (SVvector (ent, origin), org);
 	VectorCopy (SVvector (ent, oldorigin), SVvector (ent, origin));
 	if (!SV_TestEntityPosition (ent)) {
-		Sys_MaskPrintf (SYS_DEV, "Unstuck.\n");
+		Sys_MaskPrintf (SYS_dev, "Unstuck.\n");
 		SV_LinkEdict (ent, true);
 		return;
 	}
@@ -75,14 +75,14 @@ SV_CheckStuck (edict_t *ent)
 				SVvector (ent, origin)[1] = org[1] + j;
 				SVvector (ent, origin)[2] = org[2] + z;
 				if (!SV_TestEntityPosition (ent)) {
-					Sys_MaskPrintf (SYS_DEV, "Unstuck.\n");
+					Sys_MaskPrintf (SYS_dev, "Unstuck.\n");
 					SV_LinkEdict (ent, true);
 					return;
 				}
 			}
 
 	VectorCopy (org, SVvector (ent, origin));
-	Sys_MaskPrintf (SYS_DEV, "player is stuck.\n");
+	Sys_MaskPrintf (SYS_dev, "player is stuck.\n");
 }
 
 static qboolean
@@ -205,7 +205,7 @@ SV_TryUnstick (edict_t *ent, vec3_t oldvel)
 
 		if (fabs (oldorg[1] - SVvector (ent, origin)[1]) > 4
 			|| fabs (oldorg[0] - SVvector (ent, origin)[0]) > 4) {
-//			Sys_MaskPrintf (SYS_DEV, "unstuck!\n");
+//			Sys_MaskPrintf (SYS_dev, "unstuck!\n");
 			return clip;
 		}
 		// go back to the original pos and try again

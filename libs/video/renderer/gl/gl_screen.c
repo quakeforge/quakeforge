@@ -235,7 +235,7 @@ gl_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	if (r_speeds->int_val) {
 //		qfglFinish ();
 		time2 = Sys_DoubleTime ();
-		Sys_MaskPrintf (SYS_DEV, "%3i ms  %4i wpoly %4i epoly %4i parts\n",
+		Sys_MaskPrintf (SYS_dev, "%3i ms  %4i wpoly %4i epoly %4i parts\n",
 						(int) ((time2 - time1) * 1000), gl_c_brush_polys,
 						gl_c_alias_polys, numparticles);
 	}

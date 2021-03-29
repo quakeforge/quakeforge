@@ -56,7 +56,7 @@ R_IQMGetLerpedFrames (entity_t *ent, iqm_t *iqm)
 	if (!iqm->num_anims)
 		return R_EntityBlend (ent, 0, 1.0 / 25.0);
 	if (frame >= iqm->num_anims || frame < 0) {
-		Sys_MaskPrintf (SYS_DEV, "R_IQMGetLerpedFrames: no such frame %d\n",
+		Sys_MaskPrintf (SYS_dev, "R_IQMGetLerpedFrames: no such frame %d\n",
 						frame);
 		frame = 0;
 	}

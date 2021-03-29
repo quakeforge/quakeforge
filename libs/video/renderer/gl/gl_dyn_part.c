@@ -160,7 +160,7 @@ gl_R_InitParticles (void)
 		if (vaelements) {
 			partUseVA = 0;
 			pVAsize = r_maxparticles * 4;
-			Sys_MaskPrintf (SYS_DEV,
+			Sys_MaskPrintf (SYS_dev,
 							"Particles: Vertex Array use disabled.\n");
 		} else {
 			if (vaelements > 3)
@@ -168,7 +168,7 @@ gl_R_InitParticles (void)
 							   r_maxparticles * 4);
 			else if (vaelements >= 0)
 				pVAsize = r_maxparticles * 4;
-			Sys_MaskPrintf (SYS_DEV,
+			Sys_MaskPrintf (SYS_dev,
 							"Particles: %i maximum vertex elements.\n",
 							pVAsize);
 		}
@@ -220,7 +220,7 @@ gl_R_ReadPointFile_f (void)
 		return;
 	}
 
-	Sys_MaskPrintf (SYS_DEV, "Reading %s...\n", name);
+	Sys_MaskPrintf (SYS_dev, "Reading %s...\n", name);
 	c = 0;
 	for (;;) {
 		char        buf[64];
@@ -232,7 +232,7 @@ gl_R_ReadPointFile_f (void)
 		c++;
 
 		if (numparticles >= r_maxparticles) {
-			Sys_MaskPrintf (SYS_DEV, "Not enough free particles\n");
+			Sys_MaskPrintf (SYS_dev, "Not enough free particles\n");
 			break;
 		} else {
 			particle_new (pt_static, part_tex_dot, org, 1.5, vec3_origin,
@@ -240,7 +240,7 @@ gl_R_ReadPointFile_f (void)
 		}
 	}
 	Qclose (f);
-	Sys_MaskPrintf (SYS_DEV, "%i points read\n", c);
+	Sys_MaskPrintf (SYS_dev, "%i points read\n", c);
 }
 
 static void

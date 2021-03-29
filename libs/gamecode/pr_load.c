@@ -170,7 +170,7 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 
 	// size of progs themselves
 	pr->progs_size = size + offset_tweak;
-	Sys_MaskPrintf (SYS_DEV, "Programs occupy %iK.\n", size / 1024);
+	Sys_MaskPrintf (SYS_dev, "Programs occupy %iK.\n", size / 1024);
 
 	pr->progs_size = align_size (pr->progs_size);
 	pr->zone_size = align_size (pr->zone_size);

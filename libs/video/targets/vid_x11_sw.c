@@ -349,11 +349,11 @@ x11_choose_visual (sw_ctx_t *ctx)
 	x_vis = x_visinfo->visual;
 
 	if (num_visuals > 1) {
-		Sys_MaskPrintf (SYS_VID,
+		Sys_MaskPrintf (SYS_vid,
 						"Found more than one visual id at depth %d:\n",
 						template.depth);
 		for (i = 0; i < num_visuals; i++)
-			Sys_MaskPrintf (SYS_VID, "    -visualid %d\n",
+			Sys_MaskPrintf (SYS_vid, "    -visualid %d\n",
 							(int) x_visinfo[i].visualid);
 	} else {
 		if (num_visuals == 0) {
@@ -365,20 +365,20 @@ x11_choose_visual (sw_ctx_t *ctx)
 		}
 	}
 
-	Sys_MaskPrintf (SYS_VID, "Using visualid %d:\n",
+	Sys_MaskPrintf (SYS_vid, "Using visualid %d:\n",
 					(int) x_visinfo->visualid);
-	Sys_MaskPrintf (SYS_VID, "    class %d\n", x_visinfo->class);
-	Sys_MaskPrintf (SYS_VID, "    screen %d\n", x_visinfo->screen);
-	Sys_MaskPrintf (SYS_VID, "    depth %d\n", x_visinfo->depth);
-	Sys_MaskPrintf (SYS_VID, "    red_mask 0x%x\n",
+	Sys_MaskPrintf (SYS_vid, "    class %d\n", x_visinfo->class);
+	Sys_MaskPrintf (SYS_vid, "    screen %d\n", x_visinfo->screen);
+	Sys_MaskPrintf (SYS_vid, "    depth %d\n", x_visinfo->depth);
+	Sys_MaskPrintf (SYS_vid, "    red_mask 0x%x\n",
 					(int) x_visinfo->red_mask);
-	Sys_MaskPrintf (SYS_VID, "    green_mask 0x%x\n",
+	Sys_MaskPrintf (SYS_vid, "    green_mask 0x%x\n",
 					(int) x_visinfo->green_mask);
-	Sys_MaskPrintf (SYS_VID, "    blue_mask 0x%x\n",
+	Sys_MaskPrintf (SYS_vid, "    blue_mask 0x%x\n",
 					(int) x_visinfo->blue_mask);
-	Sys_MaskPrintf (SYS_VID, "    colormap_size %d\n",
+	Sys_MaskPrintf (SYS_vid, "    colormap_size %d\n",
 					x_visinfo->colormap_size);
-	Sys_MaskPrintf (SYS_VID, "    bits_per_rgb %d\n",
+	Sys_MaskPrintf (SYS_vid, "    bits_per_rgb %d\n",
 					x_visinfo->bits_per_rgb);
 }
 
@@ -446,7 +446,7 @@ ResetSharedFrameBuffers (void)
 		// attach to the shared memory segment
 		x_shminfo[frm].shmaddr = (void *) shmat (x_shminfo[frm].shmid, 0, 0);
 
-		Sys_MaskPrintf (SYS_VID, "VID: shared memory id=%d, addr=0x%lx\n",
+		Sys_MaskPrintf (SYS_vid, "VID: shared memory id=%d, addr=0x%lx\n",
 						x_shminfo[frm].shmid, (long) x_shminfo[frm].shmaddr);
 
 		x_framebuffer[frm]->data = x_shminfo[frm].shmaddr;

@@ -317,7 +317,7 @@ SND_Load (sfx_t *sfx)
 	Qseek (file, 0, SEEK_SET);
 #ifdef HAVE_VORBIS
 	if (strnequal ("OggS", buf, 4)) {
-		Sys_MaskPrintf (SYS_DEV, "SND_Load: ogg file\n");
+		Sys_MaskPrintf (SYS_dev, "SND_Load: ogg file\n");
 		if (SND_LoadOgg (file, sfx, realname) == -1)
 			goto bail;
 		return 0;
@@ -325,7 +325,7 @@ SND_Load (sfx_t *sfx)
 #endif
 #ifdef HAVE_FLAC
 	if (strnequal ("fLaC", buf, 4)) {
-		Sys_MaskPrintf (SYS_DEV, "SND_Load: flac file\n");
+		Sys_MaskPrintf (SYS_dev, "SND_Load: flac file\n");
 		if (SND_LoadFLAC (file, sfx, realname) == -1)
 			goto bail;
 		return 0;
@@ -333,14 +333,14 @@ SND_Load (sfx_t *sfx)
 #endif
 #ifdef HAVE_WILDMIDI
 	if (strnequal ("MThd", buf, 4)) {
-		Sys_MaskPrintf (SYS_DEV, "SND_Load: midi file\n");
+		Sys_MaskPrintf (SYS_dev, "SND_Load: midi file\n");
 		if (SND_LoadMidi (file, sfx, realname) == -1)
 			goto bail;
 		return 0;
 	}
 #endif
 	if (strnequal ("RIFF", buf, 4)) {
-		Sys_MaskPrintf (SYS_DEV, "SND_Load: wav file\n");
+		Sys_MaskPrintf (SYS_dev, "SND_Load: wav file\n");
 		if (SND_LoadWav (file, sfx, realname) == -1)
 			goto bail;
 		return 0;

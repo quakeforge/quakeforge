@@ -162,7 +162,7 @@ load_iqm_vertex_arrays (model_t *mod, const iqmheader *hdr, byte *buffer)
 
 	for (i = 0; i < hdr->num_vertexarrays; i++) {
 		va = vas + i;
-		Sys_MaskPrintf (SYS_MODEL, "%u %u %u %u %u %u\n", i, va->type, va->flags, va->format, va->size, va->offset);
+		Sys_MaskPrintf (SYS_model, "%u %u %u %u %u %u\n", i, va->type, va->flags, va->format, va->size, va->offset);
 		switch (va->type) {
 			case IQM_POSITION:
 				if (position)
@@ -588,7 +588,7 @@ Mod_IQMBuildBlendPalette (iqm_t *iqm, int *size)
 	if (!bindices || !bweights) {
 		// Not necessarily an error: might be a static model with no bones
 		// Either way, no need to make a blend palette
-		Sys_MaskPrintf (SYS_MODEL, "bone index or weight array missing\n");
+		Sys_MaskPrintf (SYS_model, "bone index or weight array missing\n");
 		*size = 0;
 		return 0;
 	}

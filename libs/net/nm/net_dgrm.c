@@ -342,14 +342,14 @@ Datagram_GetMessage (qsocket_t *sock)
 
 		if (flags & NETFLAG_UNRELIABLE) {
 			if (sequence < sock->unreliableReceiveSequence) {
-				Sys_MaskPrintf (SYS_NET, "Got a stale datagram\n");
+				Sys_MaskPrintf (SYS_net, "Got a stale datagram\n");
 				ret = 0;
 				break;
 			}
 			if (sequence != sock->unreliableReceiveSequence) {
 				count = sequence - sock->unreliableReceiveSequence;
 				droppedDatagrams += count;
-				Sys_MaskPrintf (SYS_NET, "Dropped %u datagram(s)\n", count);
+				Sys_MaskPrintf (SYS_net, "Dropped %u datagram(s)\n", count);
 			}
 			sock->unreliableReceiveSequence = sequence + 1;
 
@@ -365,15 +365,15 @@ Datagram_GetMessage (qsocket_t *sock)
 
 		if (flags & NETFLAG_ACK) {
 			if (sequence != (sock->sendSequence - 1)) {
-				Sys_MaskPrintf (SYS_NET, "Stale ACK received\n");
+				Sys_MaskPrintf (SYS_net, "Stale ACK received\n");
 				continue;
 			}
 			if (sequence == sock->ackSequence) {
 				sock->ackSequence++;
 				if (sock->ackSequence != sock->sendSequence)
-					Sys_MaskPrintf (SYS_NET, "ack sequencing error\n");
+					Sys_MaskPrintf (SYS_net, "ack sequencing error\n");
 			} else {
-				Sys_MaskPrintf (SYS_NET, "Duplicate ACK received\n");
+				Sys_MaskPrintf (SYS_net, "Duplicate ACK received\n");
 				continue;
 			}
 			sock->sendMessageLength -= MAX_DATAGRAM;
@@ -1021,7 +1021,7 @@ _Datagram_CheckNewConnections (void)
 			}
 			// it's somebody coming back in from a crash/disconnect
 			// so close the old qsocket and let their retry get them back in
-			Sys_MaskPrintf (SYS_NET, "closing stale socket %d %g\n", ret,
+			Sys_MaskPrintf (SYS_net, "closing stale socket %d %g\n", ret,
 							net_time - s->connecttime);
 			NET_Close (s);
 			return NULL;
@@ -1048,13 +1048,13 @@ _Datagram_CheckNewConnections (void)
 	// allocate a network socket
 	newsock = dfunc.OpenSocket (0);
 	if (newsock == -1) {
-		Sys_MaskPrintf (SYS_NET, "failed to open socket");
+		Sys_MaskPrintf (SYS_net, "failed to open socket");
 		NET_FreeQSocket (sock);
 		return NULL;
 	}
 	// connect to the client
 	if (dfunc.Connect (newsock, &clientaddr) == -1) {
-		Sys_MaskPrintf (SYS_NET, "failed to connect client");
+		Sys_MaskPrintf (SYS_net, "failed to connect client");
 		dfunc.CloseSocket (newsock);
 		NET_FreeQSocket (sock);
 		return NULL;
@@ -1269,11 +1269,11 @@ _Datagram_Connect (const char *host)
 			if (ret > 0) {
 				// is it from the right place?
 				if (sfunc.AddrCompare (&readaddr, &sendaddr) != 0) {
-					Sys_MaskPrintf (SYS_NET, "%2d ",
+					Sys_MaskPrintf (SYS_net, "%2d ",
 									sfunc.AddrCompare (&readaddr, &sendaddr));
-					Sys_MaskPrintf (SYS_NET, "%d %s ", readaddr.family,
+					Sys_MaskPrintf (SYS_net, "%d %s ", readaddr.family,
 									sfunc.AddrToString (&readaddr));
-					Sys_MaskPrintf (SYS_NET, "%d %s\n", sendaddr.family,
+					Sys_MaskPrintf (SYS_net, "%d %s\n", sendaddr.family,
 									sfunc.AddrToString (&sendaddr));
 					ret = 0;
 					continue;
@@ -1363,7 +1363,7 @@ _Datagram_Connect (const char *host)
 
   ErrorReturn:
 	// FIXME: MENUCODE - do something with reason
-	Sys_MaskPrintf (SYS_NET, "FIXME: MENUCODE - do something with reason\n");
+	Sys_MaskPrintf (SYS_net, "FIXME: MENUCODE - do something with reason\n");
 	NET_FreeQSocket (sock);
   ErrorReturn2:
 	dfunc.CloseSocket (newsock);

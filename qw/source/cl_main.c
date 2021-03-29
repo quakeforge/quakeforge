@@ -411,7 +411,7 @@ CL_ClearState (void)
 
 	CL_Init_Entity (&cl.viewent);
 
-	Sys_MaskPrintf (SYS_DEV, "Clearing memory\n");
+	Sys_MaskPrintf (SYS_dev, "Clearing memory\n");
 	VID_ClearMemory ();
 	Mod_ClearAll ();
 	if (host_hunklevel)					// FIXME: check this...
@@ -595,10 +595,10 @@ CL_FullServerinfo_f (void)
 		return;
 	}
 
-	Sys_MaskPrintf (SYS_DEV, "Cmd_Argv (1): '%s'\n", Cmd_Argv (1));
+	Sys_MaskPrintf (SYS_dev, "Cmd_Argv (1): '%s'\n", Cmd_Argv (1));
 	Info_Destroy (cl.serverinfo);
 	cl.serverinfo = Info_ParseString (Cmd_Argv (1), MAX_SERVERINFO_STRING, 0);
-	Sys_MaskPrintf (SYS_DEV, "cl.serverinfo: '%s'\n",
+	Sys_MaskPrintf (SYS_dev, "cl.serverinfo: '%s'\n",
 					Info_MakeString (cl.serverinfo, 0));
 
 	if ((p = Info_ValueForKey (cl.serverinfo, "*qf_version")) && *p) {
@@ -1038,7 +1038,7 @@ CL_ReadPackets (void)
 		// packet from server
 		if (!cls.demoplayback &&
 			!NET_CompareAdr (net_from, cls.netchan.remote_address)) {
-			Sys_MaskPrintf (SYS_DEV,
+			Sys_MaskPrintf (SYS_dev,
 							"%s:sequenced packet without connection\n",
 							NET_AdrToString (net_from));
 			continue;
@@ -1136,7 +1136,7 @@ CL_SetState (cactive_t state)
 	};
 	cactive_t   old_state = cls.state;
 
-	Sys_MaskPrintf (SYS_DEV, "CL_SetState (%s)\n", state_names[state]);
+	Sys_MaskPrintf (SYS_dev, "CL_SetState (%s)\n", state_names[state]);
 	cls.state = state;
 	if (old_state != state) {
 		if (old_state == ca_active) {

@@ -85,7 +85,7 @@ gl_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skin, int skinsize,
 		}
 		fb_texnum = Mod_Fullbright (pskin, header->mdl.skinwidth,
 									header->mdl.skinheight, name->str);
-		Sys_MaskPrintf (SYS_GLT, "%s %d\n", name->str, fb_texnum);
+		Sys_MaskPrintf (SYS_glt, "%s %d\n", name->str, fb_texnum);
 	}
 	if (group) {
 		dsprintf (name, "%s_%i_%i", modname, snum, gnum);
@@ -94,7 +94,7 @@ gl_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skin, int skinsize,
 	}
 	texnum = GL_LoadTexture (name->str, header->mdl.skinwidth,
 							 header->mdl.skinheight, pskin, true, false, 1);
-	Sys_MaskPrintf (SYS_GLT, "%s %d\n", name->str, texnum);
+	Sys_MaskPrintf (SYS_glt, "%s %d\n", name->str, texnum);
 	skindesc->texnum = texnum;
 	skindesc->fb_texnum = fb_texnum;
 	alias_ctx->mod->hasfullbrights = fb_texnum;

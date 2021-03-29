@@ -323,7 +323,7 @@ SV_SpawnServer (const char *server)
 	struct recorder_s *recorders;
 	QFile      *ent_file;
 
-	Sys_MaskPrintf (SYS_DEV, "SpawnServer: %s\n", server);
+	Sys_MaskPrintf (SYS_dev, "SpawnServer: %s\n", server);
 
 	SV_SaveSpawnparms ();
 
@@ -468,7 +468,7 @@ SV_SpawnServer (const char *server)
 	sv.signon_buffer_size[sv.num_signon_buffers - 1] = sv.signon.cursize;
 
 	Info_SetValueForKey (svs.info, "map", sv.name, !sv_highchars->int_val);
-	Sys_MaskPrintf (SYS_DEV, "Server spawned.\n");
+	Sys_MaskPrintf (SYS_dev, "Server spawned.\n");
 	if (sv_map_e->func)
 		GIB_Event_Callback (sv_map_e, 1, server);
 }

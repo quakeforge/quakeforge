@@ -619,7 +619,7 @@ vulkan_vid_render_choose_visual (void)
 								cmdset);
 	vulkan_ctx->cmdbuffer = cmdset->a[0];
 	vulkan_ctx->fence = QFV_CreateFence (vulkan_ctx->device, 1);
-	Sys_MaskPrintf (SYS_VULKAN, "vk choose visual %p %p %d %p\n",
+	Sys_MaskPrintf (SYS_vulkan, "vk choose visual %p %p %d %p\n",
 					vulkan_ctx->device->dev, vulkan_ctx->device->queue.queue,
 					vulkan_ctx->device->queue.queueFamily,
 					vulkan_ctx->cmdpool);
@@ -630,7 +630,7 @@ vulkan_vid_render_create_context (void)
 {
 	vulkan_ctx->create_window (vulkan_ctx);
 	vulkan_ctx->surface = vulkan_ctx->create_surface (vulkan_ctx);
-	Sys_MaskPrintf (SYS_VULKAN, "vk create context %p\n", vulkan_ctx->surface);
+	Sys_MaskPrintf (SYS_vulkan, "vk create context %p\n", vulkan_ctx->surface);
 }
 
 static void

@@ -417,14 +417,14 @@ Vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp, vulkan_ctx_t *ctx)
 				&& data[3] == 'T') {
 				ver = LittleLong (((int32_t *) data)[1]);
 				if (ver == 1) {
-					Sys_MaskPrintf (SYS_DEV, "%s loaded", litfilename->str);
+					Sys_MaskPrintf (SYS_dev, "%s loaded", litfilename->str);
 					brush->lightdata = data + 8;
 				} else {
-					Sys_MaskPrintf (SYS_DEV,
+					Sys_MaskPrintf (SYS_dev,
 									"Unknown .lit file version (%d)\n", ver);
 				}
 			} else {
-				Sys_MaskPrintf (SYS_DEV, "Corrupt .lit file (old version?)\n");
+				Sys_MaskPrintf (SYS_dev, "Corrupt .lit file (old version?)\n");
 			}
 		}
 		dstring_delete (litfilename);

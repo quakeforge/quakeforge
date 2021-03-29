@@ -118,7 +118,7 @@ W_GetLumpinfo (const char *name)
 			return lump_p;
 	}
 
-	Sys_MaskPrintf (SYS_WARN, "W_GetLumpinfo: %s not found", name);
+	Sys_MaskPrintf (SYS_warn, "W_GetLumpinfo: %s not found", name);
 	return NULL;
 }
 
