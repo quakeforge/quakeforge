@@ -52,11 +52,12 @@
 # endif
 #endif
 
+#include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/plugin.h"
 #include "QF/sys.h"
-#include "QF/cmd.h"
+#include "QF/va.h"
 
 #include "QF/plugin/general.h"
 
@@ -150,29 +151,28 @@ pi_open_lib (const char *name, int global_syms)
 	return dlhand;
 }
 
-static void
-pi_realname (char *realname, int size, const char *type, const char *name)
+static const char *
+pi_realname (const char *type, const char *name)
 {
 #if defined(HAVE_DLOPEN)
-	const char *format = "%s/%s_%s.so";
+	return va (0, "%s/%s_%s.so", fs_pluginpath->string, type, name);
 #elif defined(_WIN32)
-	const char *format = "%s/%s_%s.dll";
+	return va (0, "%s/%s_%s.dll", fs_pluginpath->string, type, name);
 #else
-	const char *format = "No shared library support. FIXME";
+	return "No shared library support. FIXME";
 #endif
-
-	snprintf (realname, size, format, fs_pluginpath->string, type, name);
 }
 
-static void
-pi_info_name (char *info_name, int size, const char *type, const char *name)
+static const char *
+pi_info_name (const char *type, const char *name)
 {
-	if (type && name)
-		snprintf (info_name, size, "%s_%s_PluginInfo", type, name);
-	else if (type)
-		snprintf (info_name, size, "%s_PluginInfo", type);
-	else
-		snprintf (info_name, size, "PluginInfo");
+	if (type && name) {
+		return va (0, "%s_%s_PluginInfo", type, name);
+	} else if (type) {
+		return va (0, "%s_PluginInfo", type);
+	} else {
+		return "PluginInfo";
+	}
 }
 
 static void
@@ -208,7 +208,7 @@ PI_Plugin_Load_f (void)
 static void
 PI_Plugin_Unload_f (void)
 {
-	char plugin_name[1024];
+	const char *plugin_name;
 	loaded_plugin_t *lp;
 	plugin_t *pi;
 
@@ -218,8 +218,8 @@ PI_Plugin_Unload_f (void)
 	}
 
 	// try to locate the plugin
-	snprintf (plugin_name, sizeof (plugin_name), "%s_%s", Cmd_Argv(1),
-			  Cmd_Argv(2));
+	plugin_name = va (0, "%s_%s", Cmd_Argv(1), Cmd_Argv(2));
+
 	lp = Hash_Find (loaded_plugins, plugin_name);
 	if (lp) {
 		pi = lp->plugin;
@@ -268,23 +268,27 @@ PI_Shutdown (void)
 VISIBLE plugin_t *
 PI_LoadPlugin (const char *type, const char *name)
 {
-	char			realname[4096];
-	char            plugin_name[1024];
-	char            plugin_info_name[1024];
-	char			*tmpname;
-	void			*dlhand = NULL;
-	plugin_t		*plugin = NULL;
-	P_PluginInfo	plugin_info = NULL;
-	plugin_list_t	*pl;
+	const char *realname = 0;
+	const char *plugin_name = 0;
+	const char *plugin_info_name = 0;
+	const char *tmpname;
+	void       *dlhand = 0;
+	plugin_t   *plugin = 0;
+	P_PluginInfo plugin_info = 0;
+	plugin_list_t *pl;
 	loaded_plugin_t *lp;
 
 	if (!name)
 		return NULL;
 
-	tmpname = strrchr (name, '/');	// Get the base name, don't allow paths
+	// Get the base name, don't allow paths
+	tmpname = strrchr (name, '/');
+	if (tmpname) {
+		name = tmpname + 1;	// skip over '/'
+	}
 
 	// Build the plugin name
-	snprintf (plugin_name, sizeof (plugin_name), "%s_%s", type, name);
+	plugin_name = va (0, "%s_%s", type, name);
 
 	// make sure we're not already loaded
 	lp = Hash_Find (loaded_plugins, plugin_name);
@@ -299,8 +303,7 @@ PI_LoadPlugin (const char *type, const char *name)
 	}
 	if (!plugin_info) {
 		// Build the path to the file to load
-		pi_realname (realname, sizeof (realname), type,
-					(tmpname ? tmpname + 1 : name));
+		realname = pi_realname (type, name);
 
 		if (!(dlhand = pi_open_lib (realname, 0))) {
 			// lib not found
@@ -310,15 +313,13 @@ PI_LoadPlugin (const char *type, const char *name)
 		}
 
 		// Build the plugin info name as $type_$name_PluginInfo
-		pi_info_name (plugin_info_name, sizeof (plugin_info_name), type, name);
+		plugin_info_name = pi_info_name (type, name);
 		if (!(plugin_info = pi_get_symbol (dlhand, plugin_info_name))) {
 			// Build the plugin info name as $type_PluginInfo
-			pi_info_name (plugin_info_name, sizeof (plugin_info_name),
-						  type, 0);
+			plugin_info_name = pi_info_name (type, 0);
 			if (!(plugin_info = pi_get_symbol (dlhand, plugin_info_name))) {
 				// Build the plugin info name as PluginInfo
-				pi_info_name (plugin_info_name, sizeof (plugin_info_name),
-							  0, 0);
+				plugin_info_name = pi_info_name (0, 0);
 				if (!(plugin_info = pi_get_symbol (dlhand, plugin_info_name))) {
 					// info function not found
 					pi_close_lib (dlhand);

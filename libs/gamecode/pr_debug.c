@@ -352,7 +352,7 @@ parse_expression (progs_t *pr, const char *expr, int conditional)
 	}
 error:
 	if (es->error) {
-		Sys_Printf (es->error);
+		Sys_Printf ("%s\n", es->error);
 	}
 	Script_Delete (es);
 	return d;

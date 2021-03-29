@@ -712,22 +712,24 @@ PR_FreeTempStrings (progs_t *pr)
 	pr->pr_xtstr = 0;
 }
 
+#define hasprintf ((char *(*)(dstring_t *, const char *, ...))dasprintf)
+
 #define PRINT(t)													\
 	switch ((doWidth << 1) | doPrecision) {							\
 		case 3:														\
-			dasprintf (result, tmp->str, current->minFieldWidth,	\
+			hasprintf (result, tmp->str, current->minFieldWidth,	\
 					   current->precision, current->data.t##_var);	\
 			break;													\
 		case 2:														\
-			dasprintf (result, tmp->str, current->minFieldWidth,	\
+			hasprintf (result, tmp->str, current->minFieldWidth,	\
 					   current->data.t##_var);						\
 			break;													\
 		case 1:														\
-			dasprintf (result, tmp->str, current->precision,		\
+			hasprintf (result, tmp->str, current->precision,		\
 					   current->data.t##_var);						\
 			break;													\
 		case 0:														\
-			dasprintf (result, tmp->str, current->data.t##_var);	\
+			hasprintf (result, tmp->str, current->data.t##_var);	\
 			break;													\
 	}
 

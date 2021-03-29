@@ -352,8 +352,9 @@ bi_printf (progs_t *pr)
 	dstring_t  *dstr = dstring_new ();
 
 	PR_Sprintf (pr, dstr, "bi_printf", fmt, count, args);
-	if (dstr->str)
-		Sys_Printf (dstr->str, stdout);
+	if (dstr->str) {
+		Sys_Printf ("%s", dstr->str);
+	}
 	dstring_delete (dstr);
 }
 

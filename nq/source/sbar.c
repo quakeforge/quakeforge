@@ -1093,23 +1093,22 @@ draw_overlay (view_t *view)
 static void
 draw_time (view_t *view)
 {
-	struct tm  *local = NULL;
+	struct tm  *local = 0;
 	time_t      utc = 0;
-	const char *timefmt = NULL;
 	char        st[80];		//FIXME: overflow
 
 	// Get local time
-	utc = time (NULL);
+	utc = time (0);
 	local = localtime (&utc);
 
 	if (hud_time->int_val == 1) {  // Use international format
-		timefmt = "%k:%M";
+		strftime (st, sizeof (st), "%k:%M", local);
+		draw_string (view, 8, 0, st);
 	} else if (hud_time->int_val >= 2) {   // US AM/PM display
-		timefmt = "%l:%M %P";
+		strftime (st, sizeof (st), "%l:%M %P", local);
+		draw_string (view, 8, 0, st);
 	}
 
-	strftime (st, sizeof (st), timefmt, local);
-	draw_string (view, 8, 0, st);
 }
 
 static void

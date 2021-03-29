@@ -240,14 +240,13 @@ parse_reference (const plitem_t *item, const char *type, plitem_t *messages,
 				 parsectx_t *pctx)
 {
 	exprctx_t   ectx = *pctx->ectx;
-	vulkan_ctx_t *ctx = pctx->vctx;
 	plitem_t   *refItem = 0;
 	exprval_t   result = { &cexpr_plitem, &refItem };
 	ectx.symtab = 0;
 	ectx.result = &result;
 	const char *name = PL_String (item);
 	if (cexpr_eval_string (name, &ectx)) {
-		PL_Message (messages, item, va (ctx->va_ctx, "not a %s reference", type));
+		PL_Message (messages, item, "not a %s reference", type);
 		return 0;
 	}
 	return refItem;

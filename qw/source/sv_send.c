@@ -164,6 +164,9 @@ find_userid (const char *name)
 	return 0;
 }
 
+#define hstrftime ((size_t (*)(char *s, size_t, const char *, \
+					const struct tm*))strftime)
+
 /*
 	SV_Printf
 
@@ -229,7 +232,7 @@ SV_Print (const char *fmt, va_list args)
 		if (timestamps) {
 			mytime = time (NULL);
 			local = localtime (&mytime);
-			strftime (msg3, sizeof (msg3), sv_timefmt->string, local);
+			hstrftime (msg3, sizeof (msg3), sv_timefmt->string, local);
 
 			dsprintf (msg2, "%s%s", msg3, msg->str);
 		} else {

@@ -44,7 +44,12 @@ qboolean CL_DemoBehind(void);
 
 void CL_BeginServerConnect(void);
 
-extern char emodel_name[], pmodel_name[], prespawn_name[], modellist_name[], soundlist_name[];
+#define emodel_name "emodel"
+#define pmodel_name "pmodel"
+#define prespawn_name "prespawn %i 0 %i"
+#define modellist_name "modellist %i %i"
+#define soundlist_name "soundlist %i %i"
+
 
 extern struct cvar_s *cl_timeframes;
 extern struct cvar_s *cl_predict_players;

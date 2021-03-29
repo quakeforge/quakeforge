@@ -820,7 +820,7 @@ SV_Say (qboolean team)
 {
 	char       *i, *p;
 	dstring_t  *text;
-	const char *t1 = 0, *t2, *type, *fmt;
+	const char *t1 = 0, *t2, *type;
 	client_t   *client;
 	int			tmp, j, cls = 0;
 	sizebuf_t  *dbuf;
@@ -903,16 +903,15 @@ SV_Say (qboolean team)
 
 	text = dstring_new ();
 	if (host_client->spectator && (!sv_spectalk->int_val || team)) {
-		fmt = "[SPEC] %s: ";
 		type = "2";
+		dsprintf (text, "[SPEC] %s: ", host_client->name);
 	} else if (team) {
-		fmt = "(%s): ";
 		type = "1";
+		dsprintf (text, "(%s): ", host_client->name);
 	} else {
-		fmt = "%s: ";
 		type = "0";
+		dsprintf (text, "%s: ", host_client->name);
 	}
-	dsprintf (text, fmt, host_client->name);
 
 	if (sv_chat_e->func)
 		GIB_Event_Callback (sv_chat_e, 2, va (0, "%i", host_client->userid), p,

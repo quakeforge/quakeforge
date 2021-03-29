@@ -221,6 +221,7 @@ QF_CC_OPTION(-Wsuggest-attribute=pure)
 QF_CC_OPTION(-Wsuggest-attribute=const)
 QF_CC_OPTION(-Wsuggest-attribute=noreturn)
 QF_CC_OPTION(-Wsuggest-attribute=format)
+QF_CC_OPTION(-Wformat-nonliteral)
 
 AC_ARG_ENABLE(coverage,
 [  --enable-coverage       Enable generation of data for gcov])

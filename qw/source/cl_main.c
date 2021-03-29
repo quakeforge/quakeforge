@@ -224,12 +224,6 @@ jmp_buf     host_abort;
 
 char       *server_version = NULL;		// version of server we connected to
 
-char        emodel_name[] = "emodel";
-char        pmodel_name[] = "pmodel";
-char        prespawn_name[] = "prespawn %i 0 %i";
-char        modellist_name[] = "modellist %i %i";
-char        soundlist_name[] = "soundlist %i %i";
-
 extern cvar_t *hud_scoreboard_uid;
 static netadr_t cl_cmd_packet_address;
 
