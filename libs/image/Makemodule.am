@@ -10,5 +10,4 @@ libs_image_libQFimage_la_SOURCES= \
 	libs/image/image.c \
 	libs/image/pcx.c \
 	libs/image/png.c \
-	libs/image/tga.c \
-	$e
+	libs/image/tga.c

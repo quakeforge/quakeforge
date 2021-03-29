@@ -39,8 +39,7 @@ qwaq_app_dat_src= \
 	ruamoko/qwaq/ui/textcontext.r	\
 	ruamoko/qwaq/ui/titlebar.r	\
 	ruamoko/qwaq/ui/view.r	\
-	ruamoko/qwaq/ui/window.r	\
-	$e
+	ruamoko/qwaq/ui/window.r
 
 #FIXME this coupling is horrible
 qwaq_curses_libs= \
@@ -53,8 +52,7 @@ ruamoko_qwaq_qwaq_curses_SOURCES= \
 	ruamoko/qwaq/builtins/curses.c \
 	ruamoko/qwaq/builtins/debug.c \
 	ruamoko/qwaq/builtins/editbuffer.c \
-	ruamoko/qwaq/builtins/input.c \
-	$e
+	ruamoko/qwaq/builtins/input.c
 
 ruamoko_qwaq_qwaq_curses_LDADD= $(qwaq_curses_libs) $(QWAQ_LIBS) \
 				$(PANEL_LIBS) $(NCURSES_LIBS) $(PTHREAD_LDFLAGS) $(DL_LIBS)

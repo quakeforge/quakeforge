@@ -313,6 +313,7 @@ if test x"${top_need_libs}" = xyes; then
 	qfac_include_qf_glsl="\$(include_qf_glsl)"
 	qfac_include_qf_math="\$(include_qf_math)"
 	qfac_include_qf_plugin="\$(include_qf_plugin)"
+	qfac_include_qf_simd="\$(include_qf_simd)"
 	qfac_include_qf_vulkan="\$(include_qf_vulkan)"
 fi
 QF_SUBST(qfac_include_qf)
@@ -320,6 +321,7 @@ QF_SUBST(qfac_include_qf_gl)
 QF_SUBST(qfac_include_qf_glsl)
 QF_SUBST(qfac_include_qf_math)
 QF_SUBST(qfac_include_qf_plugin)
+QF_SUBST(qfac_include_qf_simd)
 QF_SUBST(qfac_include_qf_vulkan)
 
 progs_gz=

@@ -1,6 +1,5 @@
 libs_entity_tests = \
-	libs/entity/test/test-hierarchy \
-	$e
+	libs/entity/test/test-hierarchy
 
 TESTS += $(libs_entity_tests)
 
@@ -11,8 +10,7 @@ libs_entity_test_libs= \
 	libs/util/libQFutil.la
 
 libs_entity_test_test_hierarchy_SOURCES= 		\
-	libs/entity/test/test-hierarchy.c	\
-	$e
+	libs/entity/test/test-hierarchy.c
 libs_entity_test_test_hierarchy_LDADD=			\
 	$(libs_entity_test_libs)
 libs_entity_test_test_hierarchy_DEPENDENCIES=	\

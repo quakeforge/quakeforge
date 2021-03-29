@@ -3,9 +3,11 @@ include_qf = \
 	include/QF/bspfile.h \
 	include/QF/cbuf.h \
 	include/QF/cdaudio.h \
+	include/QF/cexpr.h \
 	include/QF/checksum.h \
 	include/QF/clip_hull.h \
 	include/QF/cmd.h \
+	include/QF/cmem.h \
 	include/QF/console.h \
 	include/QF/crc.h \
 	include/QF/csqc.h \
@@ -13,6 +15,7 @@ include_qf = \
 	include/QF/darray.h \
 	include/QF/dstring.h \
 	include/QF/draw.h \
+	include/QF/entity.h \
 	include/QF/gib.h \
 	include/QF/hash.h \
 	include/QF/idparse.h \
@@ -124,20 +127,42 @@ include_qf_plugin = \
 	include/QF/plugin/snd_render.h \
 	include/QF/plugin/vid_render.h
 
+include_qf_simd = \
+	include/QF/simd/mat4f.h \
+	include/QF/simd/types.h \
+	include/QF/simd/vec4d.h \
+	include/QF/simd/vec4f.h
+
 include_qf_vulkan = \
+	include/QF/Vulkan/barrier.h \
 	include/QF/Vulkan/buffer.h \
+	include/QF/Vulkan/capture.h \
 	include/QF/Vulkan/command.h \
 	include/QF/Vulkan/cvars.h \
+	include/QF/Vulkan/debug.h \
 	include/QF/Vulkan/descriptor.h \
 	include/QF/Vulkan/device.h \
+	include/QF/Vulkan/draw.h \
 	include/QF/Vulkan/funclist.h \
 	include/QF/Vulkan/image.h \
 	include/QF/Vulkan/instance.h \
 	include/QF/Vulkan/memory.h \
 	include/QF/Vulkan/pipeline.h \
+	include/QF/Vulkan/qf_alias.h \
+	include/QF/Vulkan/qf_bsp.h \
+	include/QF/Vulkan/qf_compose.h \
 	include/QF/Vulkan/qf_draw.h \
+	include/QF/Vulkan/qf_lighting.h \
+	include/QF/Vulkan/qf_lightmap.h \
+	include/QF/Vulkan/qf_main.h \
+	include/QF/Vulkan/qf_model.h \
+	include/QF/Vulkan/qf_particles.h \
+	include/QF/Vulkan/qf_texture.h \
 	include/QF/Vulkan/qf_vid.h \
 	include/QF/Vulkan/renderpass.h \
+	include/QF/Vulkan/scrap.h \
+	include/QF/Vulkan/shader.h \
+	include/QF/Vulkan/staging.h \
 	include/QF/Vulkan/swapchain.h
 
 # headers shared with ruamoko
@@ -148,12 +173,14 @@ qf_gl_includedir = $(includedir)/QF/GL
 qf_glsl_includedir = $(includedir)/QF/GLSL
 qf_math_includedir = $(includedir)/QF/math
 qf_plugin_includedir = $(includedir)/QF/plugin
-qf_vulkan_includedir = $(includedir)/QF/vulkan
+qf_simd_includedir = $(includedir)/QF/simd
+qf_vulkan_includedir = $(includedir)/QF/Vulkan
 qf_include_HEADERS = @qfac_include_qf@
 qf_gl_include_HEADERS = @qfac_include_qf_gl@
 qf_glsl_include_HEADERS = @qfac_include_qf_glsl@
 qf_math_include_HEADERS = @qfac_include_qf_math@
 qf_plugin_include_HEADERS = @qfac_include_qf_plugin@
+qf_simd_include_HEADERS = @qfac_include_qf_simd@
 qf_vulkan_include_HEADERS = @qfac_include_qf_vulkan@
 
 ruamoko_qf_includedir = $(ruamoko_includedir)/QF
@@ -165,5 +192,6 @@ EXTRA_HEADERS += \
 	$(include_qf_glsl) \
 	$(include_qf_math) \
 	$(include_qf_plugin) \
+	$(include_qf_simd) \
 	$(include_qf_vulkan) \
 	$(qfcc_include_qf)

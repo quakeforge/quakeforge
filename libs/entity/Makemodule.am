@@ -9,5 +9,4 @@ libs_entity_libQFentity_la_LIBADD=		$(entity_deps)
 libs_entity_libQFentity_la_DEPENDENCIES=	$(entity_deps)
 libs_entity_libQFentity_la_SOURCES= \
 	libs/entity/hierarchy.c \
-	libs/entity/transform.c \
-	$e
+	libs/entity/transform.c

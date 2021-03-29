@@ -6,5 +6,4 @@ libs_client_libQFclient_la_SOURCES= \
 		libs/client/cl_effects.c \
 		libs/client/cl_entities.c \
 		libs/client/cl_temp_entities.c \
-		libs/client/locs.c \
-		$e
+		libs/client/locs.c

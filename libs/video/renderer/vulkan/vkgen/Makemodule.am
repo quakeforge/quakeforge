@@ -44,10 +44,17 @@ EXTRA_DIST += \
 	libs/video/renderer/vulkan/vkgen/stdint.h \
 	libs/video/renderer/vulkan/vkgen/vkalias.h \
 	libs/video/renderer/vulkan/vkgen/vkenum.h \
+	libs/video/renderer/vulkan/vkgen/vkfieldarray.h \
+	libs/video/renderer/vulkan/vkgen/vkfieldauto.h \
+	libs/video/renderer/vulkan/vkgen/vkfieldcustom.h \
+	libs/video/renderer/vulkan/vkgen/vkfielddata.h \
+	libs/video/renderer/vulkan/vkgen/vkfielddef.h \
+	libs/video/renderer/vulkan/vkgen/vkfieldsingle.h \
+	libs/video/renderer/vulkan/vkgen/vkfieldstring.h \
+	libs/video/renderer/vulkan/vkgen/vkfieldtype.h \
 	libs/video/renderer/vulkan/vkgen/vkgen.h \
 	libs/video/renderer/vulkan/vkgen/vkstruct.h \
-	libs/video/renderer/vulkan/vkgen/vktype.h \
-	$e
+	libs/video/renderer/vulkan/vkgen/vktype.h
 
 CLEANFILES += \
 	libs/video/renderer/vkgen/*.sym

@@ -256,7 +256,6 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/image.c \
 	libs/video/renderer/vulkan/instance.c \
 	libs/video/renderer/vulkan/memory.c \
-	libs/video/renderer/vulkan/namehack.h \
 	libs/video/renderer/vulkan/pipeline.c \
 	libs/video/renderer/vulkan/renderpass.c \
 	libs/video/renderer/vulkan/scrap.c \
@@ -284,9 +283,9 @@ libs/video/renderer/vulkan/shader.lo: libs/video/renderer/vulkan/shader.c $(vksh
 libs/video/renderer/vulkan/vulkan_vid_common.lo: libs/video/renderer/vulkan/vulkan_vid_common.c $(vkparse_src) $(pipeline_gen) ${renderpass_gen}
 
 
-qwaq_curses = ruamoko/qwaq/qwaq-curses$(EXEEXT)
-vkparse_cinc = libs/video/renderer/vulkan/vkparse.cinc
-vkparse_hinc = libs/video/renderer/vulkan/vkparse.hinc
+qwaq_curses = $(top_builddir)/ruamoko/qwaq/qwaq-curses$(EXEEXT)
+vkparse_cinc = $(top_builddir)/libs/video/renderer/vulkan/vkparse.cinc
+vkparse_hinc = $(top_builddir)/libs/video/renderer/vulkan/vkparse.hinc
 vkparse_src = \
 	$(vkparse_cinc) \
 	$(vkparse_hinc)
@@ -403,12 +402,13 @@ $(vkparse_hinc): $(vkparse_cinc)
 # do nothing: hinc generated at the same time as cinc
 
 CLEANFILES += \
+	$(top_builddir)/qwaq-curses.log \
 	libs/video/renderer/glsl/*.vc \
 	libs/video/renderer/glsl/*.fc \
 	libs/video/renderer/glsl/*.slc \
 	libs/video/renderer/vulkan/*.plc \
-	libs/video/renderer/vulkan/*.spv \
-	libs/video/renderer/vulkan/*.spvc \
+	libs/video/renderer/vulkan/shader/*.spv \
+	libs/video/renderer/vulkan/shader/*.spvc \
 	libs/video/renderer/vulkan/vkgen.sym \
 	$(vkparse_src)
 
@@ -418,4 +418,26 @@ BUILT_SOURCES += $(shader_gen)
 #	libs/video/renderer/vulkan/passthrough.vert.spv \
 #	libs/video/renderer/vulkan/pushcolor.frag.spv
 
-EXTRA_DIST += $(shader_DATA:.spv=)
+EXTRA_DIST += \
+	libs/video/renderer/vulkan/deferred.plist \
+	libs/video/renderer/vulkan/qfpipeline.plist \
+	libs/video/renderer/vulkan/vkparse.plist \
+	libs/video/renderer/vulkan/vkparse.h \
+	libs/video/renderer/vulkan/shader/alias.frag \
+	libs/video/renderer/vulkan/shader/alias.vert \
+	libs/video/renderer/vulkan/shader/alias_depth.vert \
+	libs/video/renderer/vulkan/shader/alias_gbuf.frag \
+	libs/video/renderer/vulkan/shader/bsp_depth.vert \
+	libs/video/renderer/vulkan/shader/bsp_gbuf.frag \
+	libs/video/renderer/vulkan/shader/bsp_gbuf.geom \
+	libs/video/renderer/vulkan/shader/bsp_gbuf.vert \
+	libs/video/renderer/vulkan/shader/bsp_sky.frag \
+	libs/video/renderer/vulkan/shader/bsp_turb.frag \
+	libs/video/renderer/vulkan/shader/compose.frag \
+	libs/video/renderer/vulkan/shader/lighting.frag \
+	libs/video/renderer/vulkan/shader/passthrough.vert \
+	libs/video/renderer/vulkan/shader/pushcolor.frag \
+	libs/video/renderer/vulkan/shader/quakebsp.frag \
+	libs/video/renderer/vulkan/shader/quakebsp.vert \
+	libs/video/renderer/vulkan/shader/twod.frag \
+	libs/video/renderer/vulkan/shader/twod.vert
