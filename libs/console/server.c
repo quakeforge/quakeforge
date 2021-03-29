@@ -31,7 +31,7 @@
 # include "config.h"
 #endif
 
-#ifdef HAVE_CURSES
+#ifdef HAVE_NCURSES
 # include <curses.h>
 #endif
 #ifdef HAVE_STRING_H
@@ -84,7 +84,7 @@ static cvar_t *sv_conmode;
 
 static void C_KeyEvent (knum_t key, short unicode, qboolean down);
 
-#ifdef HAVE_CURSES
+#ifdef HAVE_NCURSES
 
 enum {
 	sv_resize_x = 1,
@@ -682,7 +682,7 @@ sv_conmode_f (cvar_t *var)
 static void
 C_Init (void)
 {
-#ifdef HAVE_CURSES
+#ifdef HAVE_NCURSES
 	cvar_t	  *curses = Cvar_Get ("sv_use_curses", "0", CVAR_ROM, NULL,
 								  "Set to 1 to enable curses server console.");
 	use_curses = curses->int_val;
@@ -705,7 +705,7 @@ C_shutdown (void)
 		Qclose (log_file);
 		log_file = 0;
 	}
-#ifdef HAVE_CURSES
+#ifdef HAVE_NCURSES
 	if (use_curses)
 		endwin ();
 #endif
@@ -725,7 +725,7 @@ C_Print (const char *fmt, va_list args)
 		Qputs (log_file, buffer->str);
 		Qflush (log_file);
 	}
-#ifdef HAVE_CURSES
+#ifdef HAVE_NCURSES
 	if (use_curses) {
 		print (buffer->str);
 	} else
@@ -741,7 +741,7 @@ C_Print (const char *fmt, va_list args)
 static void
 C_ProcessInput (void)
 {
-#ifdef HAVE_CURSES
+#ifdef HAVE_NCURSES
 	if (use_curses) {
 		process_input ();
 	} else
@@ -757,7 +757,7 @@ C_ProcessInput (void)
 static void
 C_KeyEvent (knum_t key, short unicode, qboolean down)
 {
-#ifdef HAVE_CURSES
+#ifdef HAVE_NCURSES
 	key_event (key, unicode, down);
 #endif
 }

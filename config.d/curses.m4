@@ -19,19 +19,19 @@ if test "x$enable_curses" != "xno"; then
 		)
 	)
 	if test "x$NCURSES_LIBS" != "x"; then
-		AC_DEFINE(HAVE_CURSES, 1, [Define if you have the ncurses library])
-		HAVE_CURSES=yes
+		HAVE_NCURSES=yes
 	else
-		HAVE_CURSES=no
+		HAVE_NCURSES=no
 	fi
   fi
 else
-	HAVE_CURSES=no
+	HAVE_NCURSES=no
 	NCURSES_LIBS=
 fi
 AC_SUBST(NCURSES_LIBS)
 
 if test "x$HAVE_NCURSES" == "xyes"; then
+	AC_DEFINE(HAVE_NCURSES, 1, [Define if you have the ncurses library])
 	if test "x$PKG_CONFIG" != "x"; then
 		PKG_CHECK_MODULES([PANEL], [panel], HAVE_PANEL=yes, HAVE_PANEL=no)
 	else
