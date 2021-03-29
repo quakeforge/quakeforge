@@ -653,6 +653,12 @@ void Key_SetBinding (imt_t *imt, knum_t keynum, const char *binding);
 */
 void Key_SetKeyDest(keydest_t kd);
 
+/**	Get the current keydest target.
+
+	\return			The current keydest target.
+*/
+keydest_t Key_GetKeyDest(void) __attribute__((pure));
+
 /** keydest callback signature.
 
 	\param kd		The new current keydest target.

@@ -81,6 +81,7 @@ static cvar_t  *confirm_quit;
 
 static progs_t  menu_pr_state;
 static menu_item_t *menu;
+static keydest_t menu_keydest;
 static hashtab_t *menu_hash;
 static func_t   menu_init;
 static func_t   menu_quit;
@@ -375,11 +376,7 @@ bi_Menu_SelectMenu (progs_t *pr)
 	} else {
 		if (name && *name)
 			Sys_Printf ("no menu \"%s\"\n", name);
-		if (con_data.force_commandline) {
-			Key_SetKeyDest (key_console);
-		} else {
-			Key_SetKeyDest (key_game);
-		}
+		Key_SetKeyDest (menu_keydest);
 	}
 }
 
@@ -464,11 +461,7 @@ bi_Menu_Leave (progs_t *pr)
 		}
 		menu = menu->parent;
 		if (!menu) {
-			if (con_data.force_commandline) {
-				Key_SetKeyDest (key_console);
-			} else {
-				Key_SetKeyDest (key_game);
-			}
+			Key_SetKeyDest (menu_keydest);
 		}
 	}
 }
@@ -792,12 +785,15 @@ Menu_Enter ()
 		Key_SetKeyDest (key_console);
 		return;
 	}
-	Key_SetKeyDest (key_menu);
 	menu = Hash_Find (menu_hash, top_menu);
-	if (menu && menu->enter_hook) {
-		run_menu_pre ();
-		PR_ExecuteProgram (&menu_pr_state, menu->enter_hook);
-		run_menu_post ();
+	if (menu) {
+		menu_keydest = Key_GetKeyDest ();
+		Key_SetKeyDest (key_menu);
+		if (menu->enter_hook) {
+			run_menu_pre ();
+			PR_ExecuteProgram (&menu_pr_state, menu->enter_hook);
+			run_menu_post ();
+		}
 	}
 }
 
@@ -812,11 +808,7 @@ Menu_Leave ()
 		}
 		menu = menu->parent;
 		if (!menu) {
-			if (con_data.force_commandline) {
-				Key_SetKeyDest (key_console);
-			} else {
-				Key_SetKeyDest (key_game);
-			}
+			Key_SetKeyDest (menu_keydest);
 		}
 	}
 	r_data->vid->recalc_refdef = true;

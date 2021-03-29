@@ -1352,10 +1352,17 @@ VISIBLE void
 Key_SetKeyDest(keydest_t kd)
 {
 	if ((int) kd < key_unfocused || kd >= key_last) {
-		Sys_Error ("Bad key_dest");
+		Sys_Error ("Bad key_dest: %d", kd);
 	}
+	Sys_MaskPrintf (SYS_input, "Key_SetKeyDest: %s\n", keydest_names[kd]);
 	key_dest = kd;
 	Key_CallDestCallbacks (key_dest);
+}
+
+VISIBLE keydest_t
+Key_GetKeyDest (void)
+{
+	return key_dest;
 }
 
 VISIBLE void
