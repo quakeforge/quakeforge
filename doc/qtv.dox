@@ -10,7 +10,7 @@ The server is "reserved" for playing clients. Any spectators would be
 referees and/or admins (however, this is up to the server admin).
 
 A qtv proxy connects to the server. The proxy may have spectating clients
-and other even other proxies connecting to it. The proxies can chain to any
+and even other proxies connecting to it. The proxies can chain to any
 depth as an upstream proxy will pass on its information to any downstream
 proxies. With just a few levels of proxies, it should be possible to have
 very large spectator groups.
