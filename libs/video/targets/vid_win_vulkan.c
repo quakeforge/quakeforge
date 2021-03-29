@@ -29,6 +29,9 @@
 #endif
 
 #include "winquake.h"
+#define VK_NO_PROTOTYPES
+#define VK_USE_PLATFORM_WIN32_KHR
+#include <vulkan/vulkan.h>
 
 #include "QF/cvar.h"
 #include "QF/set.h"
@@ -47,10 +50,13 @@ typedef struct vulkan_presentation_s {
 #define PRESENTATION_VULKAN_FUNCTION_FROM_EXTENSION(name,ext) PFN_##name name;
 #include "QF/Vulkan/funclist.h"
 
-	set_t      *usable_visuals;
+	HINSTANCE   instance;
+	HWND        window;
+
 } vulkan_presentation_t;
 
 static const char *required_extensions[] = {
+	VK_KHR_WIN32_SURFACE_EXTENSION_NAME,
 	0
 };
 
@@ -91,6 +97,21 @@ unload_vulkan_library (vulkan_ctx_t *ctx)
 static void
 win_vulkan_init_presentation (vulkan_ctx_t *ctx)
 {
+	ctx->presentation = calloc (1, sizeof (vulkan_presentation_t));
+	vulkan_presentation_t *pres = ctx->presentation;
+	qfv_instance_t *instance = ctx->instance;
+	VkInstance  inst = instance->instance;
+
+#define PRESENTATION_VULKAN_FUNCTION_FROM_EXTENSION(name, ext) \
+	if (instance->extension_enabled (instance, ext)) { \
+		pres->name = (PFN_##name) ctx->vkGetInstanceProcAddr (inst, #name); \
+		if (!pres->name) { \
+			Sys_Error ("Couldn't find instance-level function %s", #name); \
+		} \
+	}
+#include "QF/Vulkan/funclist.h"
+
+	pres->instance = GetModuleHandle (0);
 }
 
 static int
@@ -102,7 +123,11 @@ win_vulkan_get_presentation_support (vulkan_ctx_t *ctx,
 		win_vulkan_init_presentation (ctx);
 	}
 	vulkan_presentation_t *pres = ctx->presentation;
-	return !set_is_empty (pres->usable_visuals);
+	if (pres->vkGetPhysicalDeviceWin32PresentationSupportKHR (
+			physicalDevice, queueFamilyIndex)) {
+		return 1;
+	}
+	return 0;
 }
 
 static void
@@ -113,12 +138,27 @@ win_vulkan_choose_visual (vulkan_ctx_t *ctx)
 static void
 win_vulkan_create_window (vulkan_ctx_t *ctx)
 {
+	vulkan_presentation_t *pres = ctx->presentation;
+	pres->window = win_mainwindow;
 }
 
 static VkSurfaceKHR
 win_vulkan_create_surface (vulkan_ctx_t *ctx)
 {
-	return 0;
+	vulkan_presentation_t *pres = ctx->presentation;
+	VkInstance inst = ctx->instance->instance;
+	VkSurfaceKHR surface;
+	VkWin32SurfaceCreateInfoKHR createInfo = {
+		.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR,
+		.flags = 0,
+		.hinstance = pres->instance,
+		.hwnd = pres->window,
+	};
+	if (pres->vkCreateWin32SurfaceKHR (inst, &createInfo, 0, &surface)
+		!= VK_SUCCESS) {
+		return 0;
+	}
+	return surface;
 }
 
 vulkan_ctx_t *
