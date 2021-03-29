@@ -86,7 +86,7 @@
 		if (dfunc->vkSetDebugUtilsObjectNameEXT) { \
 			VkDebugUtilsObjectNameInfoEXT nameInfo = { \
 				VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT, 0, \
-				type, (VkObjectType) handle, name \
+				type, (uint64_t) handle, name \
 			}; \
 			dfunc->vkSetDebugUtilsObjectNameEXT (device->dev, &nameInfo); \
 		} \
