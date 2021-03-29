@@ -54,7 +54,7 @@
 static gltex_t gl_notexture = { };
 
 static tex_t *
-Mod_LoadAnExternalTexture (char *tname, char *mname)
+Mod_LoadAnExternalTexture (const char *tname, const char *mname)
 {
 	char		rname[32];
 	tex_t	   *image;

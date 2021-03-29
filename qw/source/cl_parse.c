@@ -357,7 +357,7 @@ Model_NextDownload (void)
 		map_cfg (cl.model_name[1], 0);
 
 	for (i = 1; i < cl.nummodels; i++) {
-		char *info_key = 0;
+		const char *info_key = 0;
 
 		if (!cl.model_name[i][0])
 			break;

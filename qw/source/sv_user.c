@@ -309,9 +309,9 @@ SV_Modellist_f (void *unused)
 static void
 SV_PreSpawn_f (void *unused)
 {
-	char *command;
-	int buf, size;
-	unsigned int check;
+	const char *command;
+	int         buf, size;
+	unsigned    check;
 	sizebuf_t  *msg;
 
 	if (host_client->state != cs_connected) {

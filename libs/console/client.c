@@ -240,7 +240,7 @@ Condump_f (void)
 	int         line = con->current - con->numlines;
 	const char *start, *end;
 	QFile      *file;
-	char       *name;
+	const char *name;
 
 	if (Cmd_Argc () != 2) {
 		Sys_Printf ("usage: condump <filename>\n");

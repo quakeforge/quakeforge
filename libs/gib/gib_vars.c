@@ -162,7 +162,8 @@ GIB_Var_Get_Very_Complex (hashtab_t ** first, hashtab_t ** second, dstring_t *ke
 	unsigned int i, index = 0, index2 = 0, n, protect, varstartskip;
 	gib_var_t  *var = 0;
 	cvar_t *cvar;
-	char c, *str;
+	char c;
+	const char *str;
 	qboolean done = false;
 
 	for (i = start, protect = 0; !done; i++) {

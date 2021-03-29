@@ -71,7 +71,7 @@ va_destroy_context (va_ctx_t *ctx)
 	free (ctx);
 }
 
-VISIBLE char *
+VISIBLE const char *
 va (va_ctx_t *ctx, const char *fmt, ...)
 {
 	static va_ctx_t *_ctx;

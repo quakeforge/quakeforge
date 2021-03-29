@@ -1520,7 +1520,7 @@ Host_WriteConfiguration (void)
 	QFile      *f;
 
 	if (host_initialized && cl_writecfg->int_val) {
-		char       *path = va (0, "%s/config.cfg", qfs_gamedir->dir.def);
+		const char *path = va (0, "%s/config.cfg", qfs_gamedir->dir.def);
 
 		f = QFS_WOpen (path, 0);
 		if (!f) {
