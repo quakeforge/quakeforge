@@ -776,9 +776,13 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		uMsg = WM_MOUSEWHEEL;
 
 	switch (uMsg) {
+		case WM_SETFOCUS:
+			Key_FocusEvent (1);
+			break;
 		case WM_KILLFOCUS:
 			if (modestate == MS_FULLDIB)
 				ShowWindow (win_mainwindow, SW_SHOWMINNOACTIVE);
+			Key_FocusEvent (0);
 			break;
 		case WM_CREATE:
 			break;
