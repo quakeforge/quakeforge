@@ -1563,11 +1563,20 @@ draw_time (view_t *view)
 	utc = time (0);
 	local = localtime (&utc);
 
+#if defined(_WIN32) || defined(_WIN64)
+#  define HOUR12 "%I"
+#  define HOUR24 "%H"
+#  define PM "%p"
+#else
+#  define HOUR12 "%l"
+#  define HOUR24 "%k"
+#  define PM "%P"
+#endif
 	if (hud_time->int_val == 1) {  // Use international format
-		strftime (st, sizeof (st), "%k:%M", local);
+		strftime (st, sizeof (st), HOUR24":%M", local);
 		draw_string (view, 8, 0, st);
 	} else if (hud_time->int_val >= 2) {   // US AM/PM display
-		strftime (st, sizeof (st), "%l:%M %P", local);
+		strftime (st, sizeof (st), HOUR12":%M "PM, local);
 		draw_string (view, 8, 0, st);
 	}
 }
