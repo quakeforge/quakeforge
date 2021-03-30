@@ -143,6 +143,9 @@ glsl_vid_render_create_context (void)
 static void
 glsl_vid_render_init (void)
 {
+	if (!vr_data.vid->vid_internal->sw_context) {
+		Sys_Error ("Sorry, OpenGL (GLSL) not supported by this program.");
+	}
 	glsl_ctx = vr_data.vid->vid_internal->gl_context ();
 	glsl_ctx->init_gl = GLSL_Init_Common;
 	glsl_ctx->load_gl ();

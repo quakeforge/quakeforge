@@ -136,6 +136,9 @@ sw_vid_render_create_context (void)
 static void
 sw_vid_render_init (void)
 {
+	if (!vr_data.vid->vid_internal->sw_context) {
+		Sys_Error ("Sorry, software rendering not supported by this program.");
+	}
 	sw_ctx = vr_data.vid->vid_internal->sw_context ();
 
 	vr_data.vid->vid_internal->set_palette = sw_ctx->set_palette;

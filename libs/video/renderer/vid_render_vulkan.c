@@ -636,6 +636,9 @@ vulkan_vid_render_create_context (void)
 static void
 vulkan_vid_render_init (void)
 {
+	if (!vr_data.vid->vid_internal->vulkan_context) {
+		Sys_Error ("Sorry, Vulkan not supported by this program.");
+	}
 	vulkan_ctx = vr_data.vid->vid_internal->vulkan_context ();
 	vulkan_ctx->load_vulkan (vulkan_ctx);
 
