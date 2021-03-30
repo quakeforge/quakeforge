@@ -166,6 +166,10 @@ setup_debug_callback (qfv_instance_t *instance)
 		.pfnUserCallback = debug_callback,
 		.pUserData = instance,
 	};
+	if (!instance->funcs->vkCreateDebugUtilsMessengerEXT) {
+		Sys_Printf ("Cound not set up Vulkan validation debug callback\n");
+		return;
+	}
 	instance->funcs->vkCreateDebugUtilsMessengerEXT(instance->instance,
 													&createInfo, 0,
 													&debug_handle);

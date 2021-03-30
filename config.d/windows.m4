@@ -12,6 +12,7 @@ case "$host_os" in
 					CPPFLAGS="$CPPFLAGS $CFLAGS"
 					;;
 			esac
+			SYSTYPE=WIN32
 		fi
 		AC_DEFINE(NEED_GNUPRINTF)
 		endian="little"

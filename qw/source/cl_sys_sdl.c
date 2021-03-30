@@ -120,7 +120,7 @@ SDL_main (int argc, char *argv[])
 		fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
 #else
 	// hack to prevent gcc suggesting noreturn
-	if (!sys_nostdout) {
+	if (sys_nostdout) {
 		return 1;
 	}
 #endif

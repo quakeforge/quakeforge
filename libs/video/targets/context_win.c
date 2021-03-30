@@ -142,7 +142,9 @@ int         aPage;						// Current active display page
 int         vPage;						// Current visible display page
 int         waitVRT = true;				// True to wait for retrace on flip
 
-static vmode_t badmode;
+static vmode_t badmode = {
+	.modedesc = "Bad mode",
+};
 
 /*
 =============================================================================
@@ -256,10 +258,6 @@ VID_CreateDDrawDriver (int width, int height, const byte *palette,
 
 	// direct draw is working now
 	win_using_ddraw = true;
-
-	// create a palette
-	VID_InitGamma (palette);
-	viddef.vid_internal->set_palette (palette);
 
 	// create initial rects
 	DD_UpdateRects (dd_window_width, dd_window_height);
@@ -738,7 +736,6 @@ Win_SetVidMode (int width, int height, const byte *palette)
 	VID_SetMode (vid_default, palette);
 	force_mode_set = false;
 	vid_realmode = vid_modenum;
-	strcpy (badmode.modedesc, "Bad mode");
 }
 
 static void
@@ -1034,14 +1031,13 @@ VID_SetMode (int modenum, const byte *palette)
 		SetForegroundWindow (win_mainwindow);
 
 	hdc = GetDC (NULL);
-
-	if (GetDeviceCaps (hdc, RASTERCAPS) & RC_PALETTE)
+	if (GetDeviceCaps (hdc, RASTERCAPS) & RC_PALETTE) {
 		vid_palettized = true;
-	else
+	} else {
 		vid_palettized = false;
-
-	viddef.vid_internal->set_palette (palette);
+	}
 	ReleaseDC (NULL, hdc);
+
 	vid_modenum = modenum;
 	Cvar_SetValue (vid_mode, (float) vid_modenum);
 
@@ -1063,8 +1059,6 @@ VID_SetMode (int modenum, const byte *palette)
 	ClearAllStates ();
 
 	Sys_Printf ("%s\n", VID_GetModeDescription (vid_modenum));
-
-	viddef.vid_internal->set_palette (palette);
 
 	in_mode_set = false;
 
@@ -1151,10 +1145,9 @@ VID_GetModeDescriptionMemCheck (int mode)
 
 
 // Tacks on "windowed" or "fullscreen"
-static char * __attribute__((used))
+static const char * __attribute__((used))
 VID_GetModeDescription2 (int mode)
 {
-	static char pinfo[40];
 	vmode_t    *pv;
 
 	if ((mode < 0) || (mode >= nummodes))
@@ -1164,14 +1157,12 @@ VID_GetModeDescription2 (int mode)
 	pv = VID_GetModePtr (mode);
 
 	if (modelist[mode].type == MS_FULLSCREEN) {
-		sprintf (pinfo, "%s fullscreen", pv->modedesc);
+		return va (0, "%s fullscreen", pv->modedesc);
 	} else if (modelist[mode].type == MS_FULLDIB) {
-		sprintf (pinfo, "%s fullscreen", pv->modedesc);
+		return va (0, "%s fullscreen", pv->modedesc);
 	} else {
-		sprintf (pinfo, "%s windowed", pv->modedesc);
+		return va (0, "%s windowed", pv->modedesc);
 	}
-
-	return pinfo;
 }
 
 
