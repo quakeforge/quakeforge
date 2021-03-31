@@ -748,15 +748,13 @@ Key_In_Unbind_f (void)
 static void
 Key_Unbindall_f (void)
 {
-	keydest_t   kd;
 	imt_t      *imt;
 	int         i;
 
-	for (kd = key_unfocused; kd < key_last; kd++) {
-		for (imt = key_targets[kd].imts; imt; imt = imt->next) {
-			for (i = 0; i < QFK_LAST; i++) {
-				Key_SetBinding (imt, i, 0);
-			}
+	imt = Key_FindIMT ("imt_mod");
+	if (imt) {
+		for (i = 0; i < QFK_LAST; i++) {
+			Key_SetBinding (imt, i, 0);
 		}
 	}
 }
