@@ -80,9 +80,6 @@ extern qboolean	WinNT;
 
 extern qboolean	winsock_lib_initialized;
 
-extern int		window_center_x, window_center_y;
-extern RECT		window_rect;
-
 #ifdef SPLASH_SCREEN
 extern HWND		hwnd_dialog;
 #endif

@@ -46,16 +46,8 @@
 
 HWND        win_mainwindow;
 HDC         win_maindc;
-HDC         win_dib_section;
-int         win_using_ddraw;
 int         win_palettized;
 int         win_minimized;
-LPDIRECTDRAWSURFACE win_dd_frontbuffer;
-LPDIRECTDRAWSURFACE win_dd_backbuffer;
-RECT        win_src_rect;
-RECT        win_dst_rect;
-RECT        win_window_rect;
-HDC         win_gdi;
 int         win_canalttab = 0;
 sw_ctx_t   *win_sw_context;
 
@@ -64,7 +56,7 @@ sw_ctx_t   *win_sw_context;
 #define NO_MODE					(MODE_WINDOWED - 1)
 #define MODE_FULLSCREEN_DEFAULT	(MODE_WINDOWED + 3)
 
-static cvar_t *vid_ddraw;
+cvar_t *vid_ddraw;
 
 // Note that 0 is MODE_WINDOWED
 static cvar_t *vid_mode;
@@ -96,8 +88,8 @@ static int   DIBWidth, DIBHeight;
 static RECT  WindowRect;
 static DWORD WindowStyle, ExWindowStyle;
 
-int  window_center_x, window_center_y, window_width, window_height;
-RECT window_rect;
+int  win_center_x, win_center_y;
+RECT win_rect;
 
 DEVMODE     win_gdevmode;
 static qboolean startwindowed = 0, windowed_mode_set;
@@ -130,7 +122,32 @@ typedef struct {
 	char        modedesc[13];
 } vmode_t;
 
-static vmode_t modelist[MAX_MODE_LIST];
+static vmode_t modelist[MAX_MODE_LIST] = {
+	{
+		.type = MS_WINDOWED,
+		.width = 320,
+		.height = 240,
+		.modedesc = "320x240",
+		.modenum = MODE_WINDOWED,
+		.fullscreen = 0,
+	},
+	{
+		.type = MS_WINDOWED,
+		.width = 640,
+		.height = 480,
+		.modedesc = "640x480",
+		.modenum = MODE_WINDOWED + 1,
+		.fullscreen = 0,
+	},
+	{
+		.type = MS_WINDOWED,
+		.width = 800,
+		.height = 600,
+		.modedesc = "800x600",
+		.modenum = MODE_WINDOWED + 2,
+		.fullscreen = 0,
+	}
+};
 static int  nummodes;
 
 int         aPage;						// Current active display page
@@ -140,287 +157,6 @@ int         waitVRT = true;				// True to wait for retrace on flip
 static vmode_t badmode = {
 	.modedesc = "Bad mode",
 };
-
-/*
-=============================================================================
-
-				DIRECTDRAW VIDEO DRIVER
-
-=============================================================================
-*/
-
-LPDIRECTDRAW dd_Object = NULL;
-HINSTANCE   hInstDDraw = NULL;
-
-LPDIRECTDRAWCLIPPER dd_Clipper = NULL;
-
-typedef     HRESULT (WINAPI *ddCreateProc_t) (GUID FAR *,
-													 LPDIRECTDRAW FAR *,
-													 IUnknown FAR *);
-ddCreateProc_t ddCreate = NULL;
-
-unsigned    ddpal[256];
-
-byte       *vidbuf = NULL;
-
-
-int         dd_window_width = 640;
-int         dd_window_height = 480;
-
-static void
-DD_UpdateRects (int width, int height)
-{
-	POINT       p = { .x = 0, .y = 0 };
-	// first we need to figure out where on the primary surface our window
-	// lives
-	ClientToScreen (win_mainwindow, &p);
-	GetClientRect (win_mainwindow, &win_dst_rect);
-	OffsetRect (&win_dst_rect, p.x, p.y);
-	SetRect (&win_src_rect, 0, 0, width, height);
-}
-
-
-static void
-VID_CreateDDrawDriver (int width, int height, const byte *palette,
-					   void **buffer, int *rowbytes)
-{
-	DDSURFACEDESC ddsd;
-
-	win_using_ddraw = false;
-	dd_window_width = width;
-	dd_window_height = height;
-
-	vidbuf = (byte *) malloc (width * height);
-	buffer[0] = vidbuf;
-	rowbytes[0] = width;
-
-	if (!(hInstDDraw = LoadLibrary ("ddraw.dll"))) {
-		return;
-	}
-	if (!(ddCreate = (ddCreateProc_t) GetProcAddress (hInstDDraw,
-													  "DirectDrawCreate"))) {
-		return;
-	}
-
-	if (FAILED (ddCreate (NULL, &dd_Object, NULL))) {
-		return;
-	}
-	if (FAILED (dd_Object->lpVtbl->SetCooperativeLevel (dd_Object,
-														win_mainwindow,
-														DDSCL_NORMAL))) {
-		return;
-	}
-
-	// the primary surface in windowed mode is the full screen
-	memset (&ddsd, 0, sizeof (ddsd));
-	ddsd.dwSize = sizeof (ddsd);
-	ddsd.dwFlags = DDSD_CAPS;
-	ddsd.ddsCaps.dwCaps = DDSCAPS_PRIMARYSURFACE | DDSCAPS_VIDEOMEMORY;
-
-	// ...and create it
-	if (FAILED (dd_Object->lpVtbl->CreateSurface (dd_Object, &ddsd,
-												  &win_dd_frontbuffer, NULL))) {
-		return;
-	}
-
-	// not using a clipper will slow things down and switch aero off
-	if (FAILED (IDirectDraw_CreateClipper (dd_Object, 0, &dd_Clipper, NULL))) {
-		return;
-	}
-	if (FAILED (IDirectDrawClipper_SetHWnd (dd_Clipper, 0, win_mainwindow))) {
-		return;
-	}
-	if (FAILED (IDirectDrawSurface_SetClipper (win_dd_frontbuffer,
-											   dd_Clipper))) {
-		return;
-	}
-
-	// the secondary surface is an offscreen surface that is the currect
-	// dimensions
-	// this will be blitted to the correct location on the primary surface
-	// (which is the full screen) during our draw op
-	memset (&ddsd, 0, sizeof (ddsd));
-	ddsd.dwSize = sizeof (ddsd);
-	ddsd.dwFlags = DDSD_CAPS | DDSD_HEIGHT | DDSD_WIDTH;
-	ddsd.ddsCaps.dwCaps = DDSCAPS_OFFSCREENPLAIN | DDSCAPS_VIDEOMEMORY;
-	ddsd.dwWidth = width;
-	ddsd.dwHeight = height;
-
-	if (FAILED (IDirectDraw_CreateSurface (dd_Object, &ddsd,
-										   &win_dd_backbuffer, NULL))) {
-		return;
-	}
-
-	// direct draw is working now
-	win_using_ddraw = true;
-
-	// create initial rects
-	DD_UpdateRects (dd_window_width, dd_window_height);
-}
-
-
-/*
-=====================================================================
-
-				GDI VIDEO DRIVER
-
-=====================================================================
-*/
-
-// common bitmap definition
-typedef struct dibinfo {
-	BITMAPINFOHEADER header;
-	RGBQUAD     acolors[256];
-} dibinfo_t;
-
-
-static HGDIOBJ previously_selected_GDI_obj = NULL;
-HBITMAP     hDIBSection;
-byte       *pDIBBase = NULL;
-HDC         hdcDIBSection = NULL;
-HDC         hdcGDI = NULL;
-
-
-static void
-VID_CreateGDIDriver (int width, int height, const byte *palette, void **buffer,
-					 int *rowbytes)
-{
-	dibinfo_t   dibheader;
-	BITMAPINFO *pbmiDIB = (BITMAPINFO *) & dibheader;
-	int         i;
-
-	hdcGDI = GetDC (win_mainwindow);
-	memset (&dibheader, 0, sizeof (dibheader));
-
-	// fill in the bitmap info
-	pbmiDIB->bmiHeader.biSize = sizeof (BITMAPINFOHEADER);
-	pbmiDIB->bmiHeader.biWidth = width;
-	pbmiDIB->bmiHeader.biHeight = height;
-	pbmiDIB->bmiHeader.biPlanes = 1;
-	pbmiDIB->bmiHeader.biCompression = BI_RGB;
-	pbmiDIB->bmiHeader.biSizeImage = 0;
-	pbmiDIB->bmiHeader.biXPelsPerMeter = 0;
-	pbmiDIB->bmiHeader.biYPelsPerMeter = 0;
-	pbmiDIB->bmiHeader.biClrUsed = 256;
-	pbmiDIB->bmiHeader.biClrImportant = 256;
-	pbmiDIB->bmiHeader.biBitCount = 8;
-
-	// fill in the palette
-	for (i = 0; i < 256; i++) {
-		// d_8to24table isn't filled in yet so this is just for testing
-		dibheader.acolors[i].rgbRed = palette[i * 3];
-		dibheader.acolors[i].rgbGreen = palette[i * 3 + 1];
-		dibheader.acolors[i].rgbBlue = palette[i * 3 + 2];
-	}
-
-	// create the DIB section
-	hDIBSection = CreateDIBSection (hdcGDI,
-									pbmiDIB,
-									DIB_RGB_COLORS,
-									(void **) &pDIBBase, NULL, 0);
-
-	// set video buffers
-	if (pbmiDIB->bmiHeader.biHeight > 0) {
-		// bottom up
-		buffer[0] = pDIBBase + (height - 1) * width;
-		rowbytes[0] = -width;
-	} else {
-		// top down
-		buffer[0] = pDIBBase;
-		rowbytes[0] = width;
-	}
-
-	// clear the buffer
-	memset (pDIBBase, 0xff, width * height);
-
-	if ((hdcDIBSection = CreateCompatibleDC (hdcGDI)) == NULL)
-		Sys_Error ("DIB_Init() - CreateCompatibleDC failed\n");
-
-	if ((previously_selected_GDI_obj =
-		 SelectObject (hdcDIBSection, hDIBSection)) == NULL)
-		Sys_Error ("DIB_Init() - SelectObject failed\n");
-
-	// create a palette
-	VID_InitGamma (palette);
-	viddef.vid_internal->set_palette (palette);
-}
-
-void
-Win_CreateDriver (void)
-{
-	if (vid_ddraw->int_val) {
-		VID_CreateDDrawDriver (DIBWidth, DIBHeight, viddef.palette,
-							   &viddef.buffer, &viddef.rowbytes);
-	}
-	if (!win_using_ddraw) {
-		// directdraw failed or was not requested
-		//
-		// if directdraw failed, it may be partially initialized, so make sure
-		// the slate is clean
-		Win_UnloadAllDrivers ();
-
-		VID_CreateGDIDriver (DIBWidth, DIBHeight, viddef.palette,
-							 &viddef.buffer, &viddef.rowbytes);
-	}
-}
-
-void
-Win_UnloadAllDrivers (void)
-{
-	// shut down ddraw
-	if (vidbuf) {
-		free (vidbuf);
-		vidbuf = NULL;
-	}
-
-	if (dd_Clipper) {
-		IDirectDrawClipper_Release (dd_Clipper);
-		dd_Clipper = NULL;
-	}
-
-	if (win_dd_frontbuffer) {
-		IDirectDrawSurface_Release (win_dd_frontbuffer);
-		win_dd_frontbuffer = NULL;
-	}
-
-	if (win_dd_backbuffer) {
-		IDirectDrawSurface_Release (win_dd_backbuffer);
-		win_dd_backbuffer = NULL;
-	}
-
-	if (dd_Object) {
-		IDirectDraw_Release (dd_Object);
-		dd_Object = NULL;
-	}
-
-	if (hInstDDraw) {
-		FreeLibrary (hInstDDraw);
-		hInstDDraw = NULL;
-	}
-
-	ddCreate = NULL;
-
-	// shut down gdi
-	if (hdcDIBSection) {
-		SelectObject (hdcDIBSection, previously_selected_GDI_obj);
-		DeleteDC (hdcDIBSection);
-		hdcDIBSection = NULL;
-	}
-
-	if (hDIBSection) {
-		DeleteObject (hDIBSection);
-		hDIBSection = NULL;
-		pDIBBase = NULL;
-	}
-
-	if (hdcGDI) {
-		// if hdcGDI exists then win_mainwindow must also be valid
-		ReleaseDC (win_mainwindow, hdcGDI);
-		hdcGDI = NULL;
-	}
-	// not using ddraw now
-	win_using_ddraw = false;
-}
 
 static int  VID_SetMode (int modenum, const byte *palette);
 
@@ -455,12 +191,12 @@ VID_CheckWindowXY (void)
 void
 Win_UpdateWindowStatus (int window_x, int window_y)
 {
-	window_rect.left = window_x;
-	window_rect.top = window_y;
-	window_rect.right = window_x + window_width;
-	window_rect.bottom = window_y + window_height;
-	window_center_x = (window_rect.left + window_rect.right) / 2;
-	window_center_y = (window_rect.top + window_rect.bottom) / 2;
+	win_rect.left = window_x;
+	win_rect.top = window_y;
+	win_rect.right = window_x + viddef.width;
+	win_rect.bottom = window_y + viddef.height;
+	win_center_x = (win_rect.left + win_rect.right) / 2;
+	win_center_y = (win_rect.top + win_rect.bottom) / 2;
 	IN_UpdateClipCursor ();
 }
 
@@ -510,27 +246,6 @@ VID_InitModes (HINSTANCE hInstance)
 
 	if (!RegisterClass (&wc))
 		Sys_Error ("Couldn't register window class");
-
-	modelist[0].type = MS_WINDOWED;
-	modelist[0].width = 320;
-	modelist[0].height = 240;
-	strcpy (modelist[0].modedesc, "320x240");
-	modelist[0].modenum = MODE_WINDOWED;
-	modelist[0].fullscreen = 0;
-
-	modelist[1].type = MS_WINDOWED;
-	modelist[1].width = 640;
-	modelist[1].height = 480;
-	strcpy (modelist[1].modedesc, "640x480");
-	modelist[1].modenum = MODE_WINDOWED + 1;
-	modelist[1].fullscreen = 0;
-
-	modelist[2].type = MS_WINDOWED;
-	modelist[2].width = 800;
-	modelist[2].height = 600;
-	strcpy (modelist[2].modedesc, "800x600");
-	modelist[2].modenum = MODE_WINDOWED + 2;
-	modelist[2].fullscreen = 0;
 
 	// automatically stretch the default mode up if > 640x480 desktop
 	// resolution
@@ -960,10 +675,6 @@ VID_SetMode (int modenum, const byte *palette)
 		IN_ActivateMouse ();
 		IN_HideMouse ();
 	}
-
-	window_width = viddef.width;
-	window_height = viddef.height;
-
 
 	Win_UpdateWindowStatus (0, 0);		// FIXME right numbers?
 //FIXME CDAudio_Resume ();

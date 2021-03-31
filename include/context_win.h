@@ -35,25 +35,19 @@
 
 extern HWND     win_mainwindow;
 extern HDC      win_maindc;
-extern HDC      win_dib_section;
-extern int      win_using_ddraw;
 extern int      win_palettized;
 extern int      win_canalttab;
 extern DEVMODE  win_gdevmode;
-extern LPDIRECTDRAWSURFACE win_dd_frontbuffer;
-extern LPDIRECTDRAWSURFACE win_dd_backbuffer;
-extern RECT     win_src_rect;
-extern RECT     win_dst_rect;
-extern RECT     win_window_rect;
-extern HDC      win_gdi;
 extern struct sw_ctx_s *win_sw_context;
 extern int      win_minimized;
+extern struct cvar_s *vid_ddraw;
+extern int      win_center_x, win_center_y;
+extern RECT     win_rect;
 
 LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 void Win_Activate (BOOL fActive, BOOL minimize);
 
 void Win_UnloadAllDrivers (void);
-void Win_CreateDriver (void);
 void Win_OpenDisplay (void);
 void Win_CloseDisplay (void);
 void Win_SetVidMode (int width, int height, const byte *palette);

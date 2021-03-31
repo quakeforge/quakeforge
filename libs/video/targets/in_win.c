@@ -122,7 +122,7 @@ void
 IN_UpdateClipCursor (void)
 {
 	if (mouseinitialized && in_mouse_avail && !dinput) {
-		ClipCursor (&window_rect);
+		ClipCursor (&win_rect);
 	}
 }
 
@@ -164,9 +164,9 @@ IN_ActivateMouse (void)
 				restore_spi =
 					SystemParametersInfo (SPI_SETMOUSE, 0, newmouseparms, 0);
 
-			SetCursorPos (window_center_x, window_center_y);
+			SetCursorPos (win_center_x, win_center_y);
 			SetCapture (win_mainwindow);
-			ClipCursor (&window_rect);
+			ClipCursor (&win_rect);
 		}
 
 		in_mouse_avail = true;
@@ -522,8 +522,8 @@ IN_LL_ProcessEvents (void)
 		mouse_oldbuttonstate = mstate_di;
 	} else {
 		GetCursorPos (&current_pos);
-		mx = current_pos.x - window_center_x + mx_accum;
-		my = current_pos.y - window_center_y + my_accum;
+		mx = current_pos.x - win_center_x + mx_accum;
+		my = current_pos.y - win_center_y + my_accum;
 		mx_accum = 0;
 		my_accum = 0;
 	}
@@ -533,7 +533,7 @@ IN_LL_ProcessEvents (void)
 
 	// if the mouse has moved, force it to the center, so there's room to move
 	if (mx || my) {
-		SetCursorPos (window_center_x, window_center_y);
+		SetCursorPos (win_center_x, win_center_y);
 	}
 }
 
