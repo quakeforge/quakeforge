@@ -1268,6 +1268,24 @@ static struct {
 	{key_last,		0,				0},
 };
 
+static struct {
+	const char *imt;
+	const char *key;
+	const char *command;
+} default_bindings[] = {
+	{"imt_mod",     "K_F10",        "quit"},
+	{"imt_mod",     "K_BACKQUOTE",  "toggleconsole"},
+	{"imt_0",       "K_F10",        "quit"},
+	{"imt_0",       "K_BACKQUOTE",  "toggleconsole"},
+	{"imt_demo",    "K_F10",        "quit"},
+	{"imt_demo",    "K_BACKQUOTE",  "toggleconsole"},
+	{"imt_console", "K_F10",        "quit"},
+	{"imt_console", "K_BACKQUOTE",  "toggleconsole"},
+	{"imt_menu",    "K_F10",        "quit"},
+	{"imt_console", "K_BACKQUOTE",  "toggleconsole"},
+	{ }
+};
+
 static void
 Key_CreateDefaultIMTs (void)
 {
@@ -1276,6 +1294,10 @@ Key_CreateDefaultIMTs (void)
 	for (i = 0; default_imts[i].kd != key_last; i++) {
 		Key_CreateIMT (default_imts[i].kd, default_imts[i].imt_name,
 					   default_imts[i].chain_imt_name);
+	}
+	for (i = 0; default_bindings[i].imt; i++) {
+		Key_In_Bind (default_bindings[i].imt, default_bindings[i].key,
+					 default_bindings[i].command);
 	}
 }
 
