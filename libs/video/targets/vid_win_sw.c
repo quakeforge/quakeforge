@@ -76,7 +76,7 @@ win_set_palette (const byte *palette)
 		st2d_8to32table[i].bgra[2] = viddef.gammatable[pal[0]];
 		st2d_8to32table[i].bgra[3] = 255;
 	}
-	if (!Minimized && !win_using_ddraw && win_dib_section) {
+	if (!win_minimized && !win_using_ddraw && win_dib_section) {
 		RGBQUAD     colors[256];
 		memcpy (colors, st2d_8to32table, sizeof (colors));
 		for (int i = 0; i < 256; i++) {

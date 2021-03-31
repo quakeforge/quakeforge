@@ -43,6 +43,7 @@
 #include "QF/keys.h"
 #include "QF/qargs.h"
 #include "QF/screen.h"
+#include "QF/sound.h"
 #include "QF/sys.h"
 
 #include "compat.h"
@@ -700,30 +701,27 @@ MapKey (unsigned int keycode, int press, int *k, int *u)
 */
 
 /*
-  AppActivate
-
   fActive - True if app is activating
   If the application is activating, then swap the system into SYSPAL_NOSTATIC
   mode so that our palettes will display correctly.
 */
 void
-AppActivate (BOOL fActive, BOOL minimize)
+Win_Activate (BOOL active, BOOL minimize)
 {
 	static BOOL sound_active;
 
-	ActiveApp = fActive;
-	Minimized = minimize;
+	win_minimized = minimize;
 
 	// enable/disable sound on focus gain/loss
-	if (!ActiveApp && sound_active) {
+	if (!active && sound_active) {
 		S_BlockSound ();
 		sound_active = false;
-	} else if (ActiveApp && !sound_active) {
+	} else if (active && !sound_active) {
 		S_UnblockSound ();
 		sound_active = true;
 	}
 
-	if (fActive) {
+	if (active) {
 		if (modestate == MS_FULLDIB) {
 			IN_ActivateMouse ();
 			IN_HideMouse ();
@@ -858,7 +856,7 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		case WM_ACTIVATE:
 			fActive = LOWORD (wParam);
 			fMinimized = (BOOL) HIWORD (wParam);
-			AppActivate (!(fActive == WA_INACTIVE), fMinimized);
+			Win_Activate (!(fActive == WA_INACTIVE), fMinimized);
 			// fix leftover Alt from any Alt-Tab or the like that switched us
 			// away
 			IN_ClearStates ();

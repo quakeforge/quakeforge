@@ -47,6 +47,10 @@ extern RECT     win_dst_rect;
 extern RECT     win_window_rect;
 extern HDC      win_gdi;
 extern struct sw_ctx_s *win_sw_context;
+extern int      win_minimized;
+
+LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
+void Win_Activate (BOOL fActive, BOOL minimize);
 
 void Win_UnloadAllDrivers (void);
 void Win_CreateDriver (void);

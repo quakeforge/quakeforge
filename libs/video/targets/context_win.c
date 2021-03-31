@@ -49,6 +49,7 @@ HDC         win_maindc;
 HDC         win_dib_section;
 int         win_using_ddraw;
 int         win_palettized;
+int         win_minimized;
 LPDIRECTDRAWSURFACE win_dd_frontbuffer;
 LPDIRECTDRAWSURFACE win_dd_backbuffer;
 RECT        win_src_rect;
@@ -56,7 +57,6 @@ RECT        win_dst_rect;
 RECT        win_window_rect;
 HDC         win_gdi;
 int         win_canalttab = 0;
-int         win_palettized;
 sw_ctx_t   *win_sw_context;
 
 #define MODE_WINDOWED			0
@@ -92,20 +92,15 @@ static cvar_t *vid_window_y;
 #define MAX_MODE_LIST	36
 #define VID_ROW_SIZE	3
 
-extern qboolean Minimized;
+static int   DIBWidth, DIBHeight;
+static RECT  WindowRect;
+static DWORD WindowStyle, ExWindowStyle;
 
-HWND WINAPI InitializeWindow (HINSTANCE hInstance, int nCmdShow);
-
-int         DIBWidth, DIBHeight;
-RECT        WindowRect;
-DWORD       WindowStyle, ExWindowStyle;
-
-int         window_center_x, window_center_y, window_width, window_height;
-RECT        window_rect;
+int  window_center_x, window_center_y, window_width, window_height;
+RECT window_rect;
 
 DEVMODE     win_gdevmode;
 static qboolean startwindowed = 0, windowed_mode_set;
-static qboolean vid_palettized;
 static int  vid_fulldib_on_focus_mode;
 static qboolean force_minimized, in_mode_set, force_mode_set;
 static qboolean vid_mode_set;
@@ -427,25 +422,8 @@ Win_UnloadAllDrivers (void)
 	win_using_ddraw = false;
 }
 
-
-
-// compatibility
-qboolean    DDActive;
-
-void        VID_MenuDraw (void);
-void        VID_MenuKey (int key);
-
-LONG WINAPI MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
-void        AppActivate (BOOL fActive, BOOL minimize);
-
 static int  VID_SetMode (int modenum, const byte *palette);
 
-
-/*
-================
-VID_RememberWindowPos
-================
-*/
 static void __attribute__ ((used))
 VID_RememberWindowPos (void)
 {
@@ -462,11 +440,6 @@ VID_RememberWindowPos (void)
 }
 
 
-/*
-================
-VID_CheckWindowXY
-================
-*/
 static void
 VID_CheckWindowXY (void)
 {
@@ -479,11 +452,6 @@ VID_CheckWindowXY (void)
 }
 
 
-/*
-================
-VID_UpdateWindowStatus
-================
-*/
 void
 Win_UpdateWindowStatus (int window_x, int window_y)
 {
@@ -497,11 +465,6 @@ Win_UpdateWindowStatus (int window_x, int window_y)
 }
 
 
-/*
-================
-ClearAllStates
-================
-*/
 static void
 ClearAllStates (void)
 {
@@ -517,11 +480,6 @@ ClearAllStates (void)
 }
 
 
-/*
-================
-VID_CheckAdequateMem
-================
-*/
 static qboolean
 VID_CheckAdequateMem (int width, int height)
 {
@@ -598,11 +556,6 @@ VID_InitModes (HINSTANCE hInstance)
 }
 
 
-/*
-=================
-VID_GetDisplayModes
-=================
-*/
 static void
 VID_GetDisplayModes (void)
 {
@@ -716,7 +669,7 @@ Win_CloseDisplay (void)
 		PostMessage (HWND_BROADCAST, WM_PALETTECHANGED, (WPARAM) win_mainwindow,
 					 (LPARAM) 0);
 		PostMessage (HWND_BROADCAST, WM_SYSCOLORCHANGE, (WPARAM) 0, (LPARAM) 0);
-		AppActivate (false, false);
+		Win_Activate (false, false);
 
 //FIXME?        if (hwnd_dialog) DestroyWindow (hwnd_dialog);
 		if (win_mainwindow)
@@ -1032,9 +985,9 @@ VID_SetMode (int modenum, const byte *palette)
 
 	hdc = GetDC (NULL);
 	if (GetDeviceCaps (hdc, RASTERCAPS) & RC_PALETTE) {
-		vid_palettized = true;
+		win_palettized = true;
 	} else {
-		vid_palettized = false;
+		win_palettized = false;
 	}
 	ReleaseDC (NULL, hdc);
 
@@ -1322,26 +1275,6 @@ Win_SetGamma (double gamma)
 	ReleaseDC (NULL, hdc);
 	return i;
 }
-
-#if 0
-static void
-VID_SaveGamma (void)
-{
-	HDC         hdc = GetDC (NULL);
-
-	GetDeviceGammaRamp (hdc, &systemgammaramps[0][0]);
-	ReleaseDC (NULL, hdc);
-}
-
-static void
-VID_RestoreGamma (void)
-{
-	HDC         hdc = GetDC (NULL);
-
-	SetDeviceGammaRamp (hdc, &systemgammaramps[0][0]);
-	ReleaseDC (NULL, hdc);
-}
-#endif
 
 #define CVAR_ORIGINAL CVAR_NONE			// FIXME
 void

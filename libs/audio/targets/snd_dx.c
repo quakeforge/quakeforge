@@ -96,6 +96,7 @@ static general_funcs_t		plugin_info_general_funcs;
 static snd_output_data_t	plugin_info_snd_output_data;
 static snd_output_funcs_t	plugin_info_snd_output_funcs;
 
+static DWORD *DSOUND_LockBuffer (qboolean lockit);
 
 static void
 SNDDMA_Init_Cvars (void)
@@ -424,7 +425,7 @@ SNDDMA_shutdown (void)
 	FreeSound ();
 }
 
-DWORD      *
+static DWORD *
 DSOUND_LockBuffer (qboolean lockit)
 {
 	int		reps;
@@ -469,7 +470,7 @@ DSOUND_LockBuffer (qboolean lockit)
 	return (pbuf1);
 }
 
-void
+static void __attribute__((used)) //FIXME make it true
 DSOUND_ClearBuffer (int clear)
 {
 	DWORD      *pData;
@@ -480,7 +481,7 @@ DSOUND_ClearBuffer (int clear)
 	DSOUND_LockBuffer (false);
 }
 
-void
+static void __attribute__((used)) //FIXME make it true
 DSOUND_Restore (void)
 {
 // if the buffer was lost or stopped, restore it and/or restart it
