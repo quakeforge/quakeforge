@@ -58,9 +58,6 @@
 #define BASEWIDTH 320
 #define BASEHEIGHT 200
 
-byte       *VGA_pagebase;
-int         VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes = 0;
-
 // Define GLAPIENTRY to a useful value
 #ifndef GLAPIENTRY
 # ifdef _WIN32
@@ -105,10 +102,15 @@ sdl_set_palette (const byte *palette)
 static void
 sdl_init_buffers (void)
 {
+	viddef.buffer = sdl_screen->pixels;
+	viddef.rowbytes = sdl_screen->pitch;
+	viddef.conbuffer = viddef.buffer;
+	viddef.conrowbytes = viddef.rowbytes;
+	viddef.direct = 0;
 }
 
 static void
-sdl_set_vid_mode (sw_ctx_t *ctx)
+sdl_create_context (sw_ctx_t *ctx)
 {
 	// Initialize display
 	if (!(sdl_screen = SDL_SetVideoMode (viddef.width, viddef.height, 8,
@@ -116,16 +118,7 @@ sdl_set_vid_mode (sw_ctx_t *ctx)
 		Sys_Error ("VID: Couldn't set video mode: %s", SDL_GetError ());
 
 	// now know everything we need to know about the buffer
-	VGA_width = viddef.width;
-	VGA_height = viddef.height;
 	viddef.vid_internal->init_buffers = sdl_init_buffers;
-	VGA_pagebase = viddef.buffer = sdl_screen->pixels;
-	VGA_rowbytes = viddef.rowbytes = sdl_screen->pitch;
-	viddef.conbuffer = viddef.buffer;
-	viddef.conrowbytes = viddef.rowbytes;
-	viddef.direct = 0;
-
-	VID_InitBuffers ();		// allocate z buffer and surface cache
 }
 
 static void
@@ -171,7 +164,7 @@ SDL_SW_Context (void)
 {
 	sw_ctx_t *ctx = calloc (1, sizeof (sw_ctx_t));
     ctx->set_palette = sdl_set_palette;
-    ctx->create_context = sdl_set_vid_mode;
+    ctx->create_context = sdl_create_context;
     ctx->update = sdl_sw_update;
     return ctx;
 }
