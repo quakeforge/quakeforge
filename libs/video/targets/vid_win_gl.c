@@ -95,11 +95,35 @@ wgl_choose_visual (gl_ctx_t *ctx)
 }
 
 static void
+wgl_set_pixel_format (void)
+{
+	int         pixelformat;
+	PIXELFORMATDESCRIPTOR pfd = {
+		.nSize = sizeof(PIXELFORMATDESCRIPTOR),
+		.nVersion = 1,
+		.dwFlags = PFD_DOUBLEBUFFER | PFD_SUPPORT_OPENGL | PFD_DRAW_TO_WINDOW,
+		.iPixelType = PFD_TYPE_RGBA,
+		.cColorBits = win_gdevmode.dmBitsPerPel,
+		.cDepthBits = 32,
+		.iLayerType = PFD_MAIN_PLANE,
+	};
+
+	if (!(pixelformat = ChoosePixelFormat (win_maindc, &pfd))) {
+		Sys_Error ("ChoosePixelFormat failed");
+	}
+	if (!SetPixelFormat (win_maindc, pixelformat, &pfd)) {
+		Sys_Error ("SetPixelFormat failed");
+	}
+}
+
+static void
 wgl_create_context (gl_ctx_t *ctx)
 {
 	DWORD       lasterror;
 
-	Sys_Printf ("maindc: %p\n", win_maindc);
+	win_maindc = GetDC (win_mainwindow);
+
+	wgl_set_pixel_format ();
 	baseRC = qfwglCreateContext (win_maindc);
 	if (!baseRC) {
 		lasterror=GetLastError();
