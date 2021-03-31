@@ -519,8 +519,6 @@ x11_create_context (sw_ctx_t *ctx)
 	}
 
 	viddef.vid_internal->init_buffers = x11_init_buffers;
-	VID_InitBuffers ();
-
 //  XSynchronize (x_disp, False);
 //	X11_AddEvent (x_shmeventtype, event_shm);
 }
