@@ -147,7 +147,8 @@ VID_Init (byte *palette, byte *colormap)
 	VID_GetWindowSize (640, 480);
 	Win_OpenDisplay ();
 	vid_internal.choose_visual ();
-	Win_SetVidMode (viddef.width, viddef.height, palette);
+	Win_SetVidMode (viddef.width, viddef.height);
+	Win_CreateWindow (viddef.width, viddef.height);
 	vid_internal.create_context ();
 
 	VID_InitGamma (palette);

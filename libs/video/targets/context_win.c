@@ -84,19 +84,20 @@ static cvar_t *vid_window_y;
 #define MAX_MODE_LIST	36
 #define VID_ROW_SIZE	3
 
-static int   DIBWidth, DIBHeight;
-static RECT  WindowRect;
 static DWORD WindowStyle, ExWindowStyle;
 
 int  win_center_x, win_center_y;
 RECT win_rect;
 
 DEVMODE     win_gdevmode;
-static qboolean startwindowed = 0, windowed_mode_set;
-static int  vid_fulldib_on_focus_mode;
-static qboolean force_minimized, in_mode_set, force_mode_set;
+static qboolean startwindowed = 0;
+//static qboolean windowed_mode_set;
+//static int  vid_fulldib_on_focus_mode;
+static qboolean force_minimized;
+static qboolean in_mode_set;
+static qboolean force_mode_set;
 static qboolean vid_mode_set;
-static HICON hIcon;
+//static HICON hIcon;
 
 
 int         vid_modenum = NO_MODE;
@@ -175,7 +176,7 @@ VID_RememberWindowPos (void)
 	}
 }
 
-
+#if 0
 static void
 VID_CheckWindowXY (void)
 {
@@ -186,7 +187,7 @@ VID_CheckWindowXY (void)
 		Cvar_SetValue (vid_window_y, 0.0);
 	}
 }
-
+#endif
 
 void
 Win_UpdateWindowStatus (int window_x, int window_y)
@@ -348,29 +349,10 @@ Win_OpenDisplay (void)
 		vid_default = windowed_default;
 	}
 
-//FIXME?    if (hwnd_dialog)
-//FIXME?        DestroyWindow (hwnd_dialog);
-
-	// sound initialization has to go here, preceded by a windowed mode set,
-	// so there's a window for DirectSound to work with but we're not yet
-	// fullscreen so the "hardware already in use" dialog is visible if it
-	// gets displayed
-	// keep the window minimized until we're ready for the first real mode set
-	win_mainwindow = CreateWindowEx (ExWindowStyle,
-								   "WinQuake",
-								   "WinQuake",
-								   WindowStyle,
-								   0, 0,
-								   WindowRect.right - WindowRect.left,
-								   WindowRect.bottom - WindowRect.top,
-								   NULL, NULL, global_hInstance, NULL);
-
-	if (!win_mainwindow)
-		Sys_Error ("Couldn't create DIB window");
-
-	// done
-	vid_mode_set = true;
-//FIXME if (firsttime) S_Init ();
+#ifdef SPLASH_SCREEN
+    if (hwnd_dialog)
+        DestroyWindow (hwnd_dialog);
+#endif
 }
 
 void
@@ -396,16 +378,16 @@ Win_CloseDisplay (void)
 }
 
 void
-Win_SetVidMode (int width, int height, const byte *palette)
+Win_SetVidMode (int width, int height)
 {
 //FIXME SCR_StretchInit();
 
 	force_mode_set = true;
-	VID_SetMode (vid_default, palette);
+	//VID_SetMode (vid_default, palette);
 	force_mode_set = false;
 	vid_realmode = vid_modenum;
 }
-
+#if 0
 static void
 VID_DestroyWindow (void)
 {
@@ -414,7 +396,7 @@ VID_DestroyWindow (void)
 
 	Win_UnloadAllDrivers ();
 }
-
+#endif
 static void
 VID_CheckModedescFixup (int mode)
 {
@@ -423,6 +405,7 @@ VID_CheckModedescFixup (int mode)
 static qboolean
 VID_SetWindowedMode (int modenum)
 {
+#if 0
 	if (!windowed_mode_set) {
 		if (COM_CheckParm ("-resetwinpos")) {
 			Cvar_SetValue (vid_window_x, 0.0);
@@ -435,9 +418,6 @@ VID_SetWindowedMode (int modenum)
 	VID_CheckModedescFixup (modenum);
 	VID_DestroyWindow ();
 
-	WindowRect.top = WindowRect.left = 0;
-	WindowRect.right = modelist[modenum].width;
-	WindowRect.bottom = modelist[modenum].height;
 	DIBWidth = modelist[modenum].width;
 	DIBHeight = modelist[modenum].height;
 
@@ -447,7 +427,6 @@ VID_SetWindowedMode (int modenum)
 
 	// WindowStyle = WS_OVERLAPPEDWINDOW|WS_VISIBLE;
 	ExWindowStyle = 0;
-	AdjustWindowRectEx (&WindowRect, WindowStyle, FALSE, 0);
 
 	// the first time we're called to set the mode, create the window we'll use
 	// for the rest of the session
@@ -494,7 +473,7 @@ VID_SetWindowedMode (int modenum)
 //FIXME?    }
 	SendMessage (win_mainwindow, WM_SETICON, (WPARAM) TRUE, (LPARAM) hIcon);
 	SendMessage (win_mainwindow, WM_SETICON, (WPARAM) FALSE, (LPARAM) hIcon);
-
+#endif
 	return true;
 }
 
@@ -502,6 +481,7 @@ VID_SetWindowedMode (int modenum)
 static qboolean
 VID_SetFullDIBMode (int modenum)
 {
+#if 0
 	VID_DestroyWindow ();
 
 	win_gdevmode.dmFields = DM_PELSWIDTH | DM_PELSHEIGHT;
@@ -515,8 +495,8 @@ VID_SetFullDIBMode (int modenum)
 
 	modestate = MS_FULLDIB;
 	vid_fulldib_on_focus_mode = modenum;
-	WindowRect.top = WindowRect.left = 0;
 
+	WindowRect.top = WindowRect.left = 0;
 	WindowRect.right = modelist[modenum].width;
 	WindowRect.bottom = modelist[modenum].height;
 
@@ -560,7 +540,7 @@ VID_SetFullDIBMode (int modenum)
 	viddef.height = viddef.conheight = DIBHeight;
 	viddef.width = viddef.conwidth = DIBWidth;
 #endif
-
+#endif
 	return true;
 }
 
@@ -734,6 +714,74 @@ VID_SetMode (int modenum, const byte *palette)
 	return true;
 }
 
+
+void
+Win_CreateWindow (int width, int height)
+{
+	RECT rect = {
+		.top = 0,
+		.left = 0,
+		.right = width,
+		.bottom = height,
+	};
+	AdjustWindowRectEx (&rect, WindowStyle, FALSE, 0);
+	// sound initialization has to go here, preceded by a windowed mode set,
+	// so there's a window for DirectSound to work with but we're not yet
+	// fullscreen so the "hardware already in use" dialog is visible if it
+	// gets displayed
+	// keep the window minimized until we're ready for the first real mode set
+	win_mainwindow = CreateWindowEx (ExWindowStyle,
+								   "WinQuake",
+								   "WinQuake",
+								   WindowStyle,
+								   0, 0,
+								   rect.right - rect.left,
+								   rect.bottom - rect.top,
+								   NULL, NULL, global_hInstance, NULL);
+
+	if (!win_mainwindow)
+		Sys_Error ("Couldn't create DIB window");
+
+	// done
+	vid_mode_set = true;
+//FIXME if (firsttime) S_Init ();
+	Win_UpdateWindowStatus (0, 0);		// FIXME right numbers?
+
+	HDC         hdc = GetDC (NULL);
+	if (GetDeviceCaps (hdc, RASTERCAPS) & RC_PALETTE) {
+		win_palettized = true;
+	} else {
+		win_palettized = false;
+	}
+	ReleaseDC (NULL, hdc);
+
+	//vid_modenum = modenum;
+	//Cvar_SetValue (vid_mode, (float) vid_modenum);
+
+	MSG         msg;
+	while (PeekMessage (&msg, NULL, 0, 0, PM_REMOVE)) {
+		TranslateMessage (&msg);
+		DispatchMessage (&msg);
+	}
+
+	Sleep (100);
+
+	if (!force_minimized) {
+		SetWindowPos (win_mainwindow, HWND_TOP, 0, 0, 0, 0,
+					  SWP_DRAWFRAME | SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW |
+					  SWP_NOCOPYBITS);
+
+		SetForegroundWindow (win_mainwindow);
+	}
+	// fix the leftover Alt from any Alt-Tab or the like that switched us away
+	ClearAllStates ();
+
+	Sys_Printf ("%s\n", VID_GetModeDescription (vid_modenum));
+
+	in_mode_set = false;
+
+	viddef.recalc_refdef = 1;
+}
 
 
 
@@ -987,44 +1035,38 @@ Win_SetGamma (double gamma)
 	return i;
 }
 
-#define CVAR_ORIGINAL CVAR_NONE			// FIXME
 void
 Win_Init_Cvars (void)
 {
-	vid_ddraw = Cvar_Get ("vid_ddraw", "1", CVAR_ORIGINAL, 0, "");
-	vid_mode = Cvar_Get ("vid_mode", "0", CVAR_ORIGINAL, 0, "");
-	vid_wait = Cvar_Get ("vid_wait", "0", CVAR_ORIGINAL, 0, "");
+	vid_ddraw = Cvar_Get ("vid_ddraw", "1", CVAR_NONE, 0, "");
+	vid_mode = Cvar_Get ("vid_mode", "0", CVAR_NONE, 0, "");
+	vid_wait = Cvar_Get ("vid_wait", "0", CVAR_NONE, 0, "");
 	vid_nopageflip =
-		Cvar_Get ("vid_nopageflip", "0", CVAR_ARCHIVE | CVAR_ORIGINAL, 0, "");
+		Cvar_Get ("vid_nopageflip", "0", CVAR_ARCHIVE, 0, "");
 	_vid_wait_override =
-		Cvar_Get ("_vid_wait_override", "0", CVAR_ARCHIVE | CVAR_ORIGINAL, 0,
-				  "");
+		Cvar_Get ("_vid_wait_override", "0", CVAR_ARCHIVE, 0, "");
 	_vid_default_mode =
-		Cvar_Get ("_vid_default_mode", "0", CVAR_ARCHIVE | CVAR_ORIGINAL, 0,
-				  "");
+		Cvar_Get ("_vid_default_mode", "0", CVAR_ARCHIVE, 0, "");
 	_vid_default_mode_win =
-		Cvar_Get ("_vid_default_mode_win", "3", CVAR_ARCHIVE | CVAR_ORIGINAL, 0,
-				  "");
+		Cvar_Get ("_vid_default_mode_win", "3", CVAR_ARCHIVE, 0, "");
 	vid_config_x =
-		Cvar_Get ("vid_config_x", "800", CVAR_ARCHIVE | CVAR_ORIGINAL, 0, "");
+		Cvar_Get ("vid_config_x", "800", CVAR_ARCHIVE, 0, "");
 	vid_config_y =
-		Cvar_Get ("vid_config_y", "600", CVAR_ARCHIVE | CVAR_ORIGINAL, 0, "");
+		Cvar_Get ("vid_config_y", "600", CVAR_ARCHIVE, 0, "");
 	vid_stretch_by_2 =
-		Cvar_Get ("vid_stretch_by_2", "1", CVAR_ARCHIVE | CVAR_ORIGINAL, 0, "");
+		Cvar_Get ("vid_stretch_by_2", "1", CVAR_ARCHIVE, 0, "");
 	_windowed_mouse =
-		Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE | CVAR_ORIGINAL, 0, "");
+		Cvar_Get ("_windowed_mouse", "0", CVAR_ARCHIVE, 0, "");
 	vid_fullscreen_mode =
-		Cvar_Get ("vid_fullscreen_mode", "3", CVAR_ARCHIVE | CVAR_ORIGINAL, 0,
-				  "");
+		Cvar_Get ("vid_fullscreen_mode", "3", CVAR_ARCHIVE, 0, "");
 	vid_windowed_mode =
-		Cvar_Get ("vid_windowed_mode", "0", CVAR_ARCHIVE | CVAR_ORIGINAL, 0,
-				  "");
+		Cvar_Get ("vid_windowed_mode", "0", CVAR_ARCHIVE, 0, "");
 	block_switch =
-		Cvar_Get ("block_switch", "0", CVAR_ARCHIVE | CVAR_ORIGINAL, 0, "");
+		Cvar_Get ("block_switch", "0", CVAR_ARCHIVE, 0, "");
 	vid_window_x =
-		Cvar_Get ("vid_window_x", "0", CVAR_ARCHIVE | CVAR_ORIGINAL, 0, "");
+		Cvar_Get ("vid_window_x", "0", CVAR_ARCHIVE, 0, "");
 	vid_window_y =
-		Cvar_Get ("vid_window_y", "0", CVAR_ARCHIVE | CVAR_ORIGINAL, 0, "");
+		Cvar_Get ("vid_window_y", "0", CVAR_ARCHIVE, 0, "");
 
 	Cmd_AddCommand ("vid_testmode", VID_TestMode_f, "");
 	Cmd_AddCommand ("vid_nummodes", VID_NumModes_f, "");
