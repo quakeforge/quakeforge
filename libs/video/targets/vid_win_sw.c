@@ -213,7 +213,7 @@ win_create_context (sw_ctx_t *ctx)
 
 	Win_CreateDriver ();
 
-	viddef.vid_internal->do_screen_buffer = win_init_bufers;
+	viddef.vid_internal->init_buffers = win_init_bufers;
 	VID_InitBuffers ();
 }
 

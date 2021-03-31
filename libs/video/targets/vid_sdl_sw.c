@@ -103,7 +103,7 @@ sdl_set_palette (const byte *palette)
 }
 
 static void
-do_screen_buffer (void)
+sdl_init_buffers (void)
 {
 }
 
@@ -118,7 +118,7 @@ sdl_set_vid_mode (sw_ctx_t *ctx)
 	// now know everything we need to know about the buffer
 	VGA_width = viddef.width;
 	VGA_height = viddef.height;
-	viddef.vid_internal->do_screen_buffer = do_screen_buffer;
+	viddef.vid_internal->init_buffers = sdl_init_buffers;
 	VGA_pagebase = viddef.buffer = sdl_screen->pixels;
 	VGA_rowbytes = viddef.rowbytes = sdl_screen->pitch;
 	viddef.conbuffer = viddef.buffer;

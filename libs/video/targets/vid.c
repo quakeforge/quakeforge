@@ -296,8 +296,8 @@ VID_InitBuffers (void)
 		free (viddef.surfcache);
 		viddef.surfcache = NULL;
 	}
-	if (viddef.vid_internal->do_screen_buffer) {
-		viddef.vid_internal->do_screen_buffer ();
+	if (viddef.vid_internal->init_buffers) {
+		viddef.vid_internal->init_buffers ();
 	} else {
 		// Free the old screen buffer
 		if (viddef.buffer) {

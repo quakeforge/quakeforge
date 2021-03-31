@@ -8,7 +8,7 @@ typedef struct vid_internal_s {
 	int         (*surf_cache_size) (int width, int height);
 	void        (*flush_caches) (void);
 	void        (*init_caches) (void *cache, int size);
-	void        (*do_screen_buffer) (void);
+	void        (*init_buffers) (void);
 	void        (*set_palette) (const byte *palette);
 
 	void        (*choose_visual) (void);
