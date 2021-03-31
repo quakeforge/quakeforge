@@ -99,6 +99,8 @@ typedef struct vulkan_ctx_s {
 	struct qfv_tex_s *default_white;
 	struct qfv_tex_s *default_magenta;
 
+	VkViewport  viewport;
+	VkRect2D    scissor;
 	// projection and view matrices (model is push constant)
 	vulkan_matrices_t matrices;
 

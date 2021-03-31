@@ -208,7 +208,7 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 		VK_STRUCTURE_TYPE_APPLICATION_INFO, 0,
 		appName, appVersion,
 		PACKAGE_STRING, 0x000702ff, //FIXME version
-		VK_API_VERSION_1_0,
+		VK_API_VERSION_1_1,
 	};
 	VkInstanceCreateInfo createInfo = {
 		VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, 0, 0,

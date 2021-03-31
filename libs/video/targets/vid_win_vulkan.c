@@ -154,6 +154,12 @@ win_vulkan_create_surface (vulkan_ctx_t *ctx)
 		.hinstance = pres->instance,
 		.hwnd = pres->window,
 	};
+
+	int         width = viddef.width;
+	int         height = viddef.height;
+	ctx->viewport = (VkViewport) { 0, 0, width, height, 0, 1 };
+	ctx->scissor = (VkRect2D) { {0, 0}, {width, height} };
+
 	if (pres->vkCreateWin32SurfaceKHR (inst, &createInfo, 0, &surface)
 		!= VK_SUCCESS) {
 		return 0;
