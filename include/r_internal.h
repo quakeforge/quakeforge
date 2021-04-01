@@ -35,6 +35,7 @@ typedef struct vulktex_s {
 	struct elechain_s **elechain_tail;
 	struct qfv_tex_s *tex;
 	struct qfv_tex_s *glow;
+	byte       *glow_pixels;
 } vulktex_t;
 
 extern viddef_t 		vid;				// global video state

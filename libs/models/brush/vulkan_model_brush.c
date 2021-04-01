@@ -236,7 +236,7 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 							 va (ctx->va_ctx, "iview:%s:%s:tex",
 								 mod->name, tx->name));
 		transfer_mips (buffer + tex->tex->offset, tx + 1, tx, palette);
-		if (tex->glow) {
+		if (tex->glow_pixels) {
 			dfunc->vkBindImageMemory (device->dev, tex->glow->image, mem,
 									  tex->glow->offset);
 			// skys are unlit so never have a glow texture thus glow
@@ -249,7 +249,7 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 								 tex->glow->view,
 								 va (ctx->va_ctx, "iview:%s:%s:glow",
 									 mod->name, tx->name));
-			transfer_mips (buffer + tex->glow->offset, tex->glow->memory, tx,
+			transfer_mips (buffer + tex->glow->offset, tex->glow_pixels, tx,
 						   palette);
 		}
 	}
@@ -380,10 +380,7 @@ Vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx, vulkan_ctx_t *ctx)
 						 tex->glow->image,
 						 va (ctx->va_ctx, "image:%s:%s:glow", mod->name,
 							 tx->name));
-	// store the pointer to the fullbright data: memory will never be set to
-	// actual device memory because all of the textures will be loaded in one
-	// big buffer
-	tex->glow->memory = (VkDeviceMemory) pixels;
+	tex->glow_pixels = pixels;
 }
 
 void
