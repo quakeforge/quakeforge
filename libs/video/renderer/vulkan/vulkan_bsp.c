@@ -69,7 +69,7 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
-static const char *bsp_pass_names[] = {
+static const char * __attribute__((used)) bsp_pass_names[] = {
 	"depth",
 	"g-buffer",
 	"sky",

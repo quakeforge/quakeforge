@@ -1345,8 +1345,8 @@ QFV_ParseFramebuffer (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 
 	VkFramebuffer framebuffer;
 	dfunc->vkCreateFramebuffer (device->dev, &cInfo, 0, &framebuffer);
-	Sys_MaskPrintf (SYS_vulkan_parse, "framebuffer, renderPass: %p, %p\n",
-					framebuffer, cInfo.renderPass);
+	Sys_MaskPrintf (SYS_vulkan_parse, "framebuffer, renderPass: %#zx, %#zx\n",
+					(size_t) framebuffer, (size_t) cInfo.renderPass);
 
 	delete_memsuper (memsuper);
 	return framebuffer;

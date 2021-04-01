@@ -64,7 +64,7 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
-static const char *alias_pass_names[] = {
+static const char * __attribute__((used)) alias_pass_names[] = {
 	"depth",
 	"g-buffer",
 	"translucent",
