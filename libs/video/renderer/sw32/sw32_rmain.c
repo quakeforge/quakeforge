@@ -245,7 +245,7 @@ sw32_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	Guaranteed to be called before the first refresh
 */
 void
-sw32_R_ViewChanged (float aspect)
+sw32_R_ViewChanged (void)
 {
 	int         i;
 	float       res_scale;
@@ -278,7 +278,7 @@ sw32_R_ViewChanged (float aspect)
 	r_refdef.aliasvrectbottom = r_refdef.aliasvrect.y +
 		r_refdef.aliasvrect.height;
 
-	sw32_pixelAspect = aspect;
+	sw32_pixelAspect = 1;//FIXME vid.aspect;
 	xOrigin = r_refdef.xOrigin;
 	yOrigin = r_refdef.yOrigin;
 

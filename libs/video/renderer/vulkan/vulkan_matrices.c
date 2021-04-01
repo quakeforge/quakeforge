@@ -65,8 +65,8 @@ ortho_mat (float *proj, float xmin, float xmax, float ymin, float ymax,
 
 	proj[2] = 0;
 	proj[6] = 0;
-	proj[10] = -2 / (zfar - znear);
-	proj[14] = -(zfar + znear) / (zfar - znear);
+	proj[10] = 1 / (znear - zfar);
+	proj[14] = znear / (znear - zfar);
 
 	proj[3] = 0;
 	proj[7] = 0;
@@ -75,35 +75,28 @@ ortho_mat (float *proj, float xmin, float xmax, float ymin, float ymax,
 }
 
 static void
-persp_mat (float *proj, float xmin, float xmax, float ymin, float ymax,
-		   float aspect)
+persp_mat (float *proj, float fov, float aspect)
 {
-	float       fovx, fovy, neard, fard;
+	float       f = 1 / tan (fov * M_PI / 360);
+	float       neard, fard;
 
-	fovx = r_refdef.fov_x;
-	fovy = r_refdef.fov_y;
 	neard = r_nearclip->value;
 	fard = r_farclip->value;
 
-	ymax = neard * tan (fovy * M_PI / 360);		// fov_2 / 2
-	ymin = -ymax;
-	xmax = neard * tan (fovx * M_PI / 360);		// fov_2 / 2
-	xmin = -xmax;
-
-	proj[0] = (2 * neard) / (xmax - xmin);
+	proj[0] = f / aspect;
 	proj[4] = 0;
-	proj[8] = (xmax + xmin) / (xmax - xmin);
+	proj[8] = 0;
 	proj[12] = 0;
 
 	proj[1] = 0;
-	proj[5] = -(2 * neard) / (ymax - ymin);
-	proj[9] = (ymax + ymin) / (ymax - ymin);
+	proj[5] = -f;
+	proj[9] = 0;
 	proj[13] = 0;
 
 	proj[2] = 0;
 	proj[6] = 0;
-	proj[10] = (fard) / (neard - fard);
-	proj[14] = (fard * neard) / (neard - fard);
+	proj[10] = fard / (neard - fard);
+	proj[14] = (neard * fard) / (neard - fard);
 
 	proj[3] = 0;
 	proj[7] = 0;
@@ -163,7 +156,7 @@ Vulkan_CreateMatrices (vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_CalcProjectionMatrices (vulkan_ctx_t *ctx, float aspect)
+Vulkan_CalcProjectionMatrices (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -172,9 +165,10 @@ Vulkan_CalcProjectionMatrices (vulkan_ctx_t *ctx, float aspect)
 
 	int width = vid.conwidth;
 	int height = vid.conheight;
-
 	ortho_mat (mat->projection_2d, 0, width, 0, height, -99999, 99999);
-	persp_mat (mat->projection_3d, 0, width, 0, height, aspect);
+
+	float       aspect = (float) r_refdef.vrect.width / r_refdef.vrect.height;
+	persp_mat (mat->projection_3d, r_refdef.fov_y, aspect);
 #if 0
 	Sys_MaskPrintf (SYS_vulkan, "ortho:\n");
 	Sys_MaskPrintf (SYS_vulkan, "   [[%g, %g, %g, %g],\n",

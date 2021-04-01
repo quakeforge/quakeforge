@@ -364,9 +364,9 @@ vulkan_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width, in
 }
 
 static void
-vulkan_R_ViewChanged (float aspect)
+vulkan_R_ViewChanged (void)
 {
-	Vulkan_CalcProjectionMatrices (vulkan_ctx, aspect);
+	Vulkan_CalcProjectionMatrices (vulkan_ctx);
 }
 
 static void

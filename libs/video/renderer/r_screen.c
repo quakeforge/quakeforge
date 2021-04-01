@@ -167,7 +167,7 @@ SCR_CalcRefdef (void)
 	refdef->vrect = scr_vrect;
 
 	// notify the refresh of the change
-	r_funcs->R_ViewChanged (r_data->vid->aspect);
+	r_funcs->R_ViewChanged ();
 }
 
 /*

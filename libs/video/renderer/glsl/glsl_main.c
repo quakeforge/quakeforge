@@ -64,46 +64,21 @@ mat4f_t glsl_projection;
 mat4f_t glsl_view;
 
 void
-glsl_R_ViewChanged (float aspect)
+glsl_R_ViewChanged (void)
 {
-	double      xmin, xmax, ymin, ymax;
-	float       fovx, fovy, neard, fard;
+	float       aspect = (float) r_refdef.vrect.width / r_refdef.vrect.height;
+	float       f = 1 / tan (r_refdef.fov_y * M_PI / 360);
+	float       neard, fard;
 	vec4f_t    *proj = glsl_projection;
 
-	fovx = r_refdef.fov_x;
-	fovy = r_refdef.fov_y;
 	neard = r_nearclip->value;
 	fard = r_farclip->value;
 
-	ymax = neard * tan (fovy * M_PI / 360);		// fov_2 / 2
-	ymin = -ymax;
-	xmax = neard * tan (fovx * M_PI / 360);		// fov_2 / 2
-	xmin = -xmax;
-
-	proj[0] = (vec4f_t) {
-		(2 * neard) / (xmax - xmin),
-		0,
-		0,
-		0
-	};
-	proj[1] = (vec4f_t) {
-		0,
-		(2 * neard) / (ymax - ymin),
-		0,
-		0
-	};
-	proj[2] = (vec4f_t) {
-		(xmax + xmin) / (xmax - xmin),
-		(ymax + ymin) / (ymax - ymin),
-		(fard + neard) / (neard - fard),
-		-1
-	};
-	proj[3] = (vec4f_t) {
-		0,
-		0,
-		(2 * fard * neard) / (neard - fard),
-		0
-	};
+	// NOTE columns!
+	proj[0] = (vec4f_t) { f / aspect, 0, 0, 0 };
+	proj[1] = (vec4f_t) { 0, f, 0, 0 };
+	proj[2] = (vec4f_t) { 0, 0, (fard + neard) / (neard - fard), -1 };
+	proj[3] = (vec4f_t) { 0, 0, (2 * fard * neard) / (neard - fard), 0 };
 }
 
 void

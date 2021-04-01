@@ -260,7 +260,7 @@ sw32_R_SetupFrame (void)
 				vrect.height = vid.height;
 
 				R_SetVrect (&vrect, &r_refdef.vrect, vr_data.lineadj);
-				sw32_R_ViewChanged (vid.aspect);
+				sw32_R_ViewChanged ();
 			} else {
 				w = vid.width;
 				h = vid.height;
@@ -283,8 +283,7 @@ sw32_R_SetupFrame (void)
 				R_SetVrect (&vrect, &r_refdef.vrect,
 							(int) ((float) vr_data.lineadj *
 								   (h / (float) vid.height)));
-				sw32_R_ViewChanged (vid.aspect * (h / w) * ((float) vid.width /
-													   (float) vid.height));
+				sw32_R_ViewChanged ();
 			}
 		} else {
 			vrect.x = 0;
@@ -293,7 +292,7 @@ sw32_R_SetupFrame (void)
 			vrect.height = vid.height;
 
 			r_refdef.vrect = scr_vrect;
-			sw32_R_ViewChanged (vid.aspect);
+			sw32_R_ViewChanged ();
 		}
 
 		sw32_r_viewchanged = false;

@@ -238,7 +238,7 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 }
 
 void
-gl_R_ViewChanged (float aspect)
+gl_R_ViewChanged (void)
 {
 }
 

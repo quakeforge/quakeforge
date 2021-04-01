@@ -44,19 +44,11 @@ static byte backingbuf[48 * 24];
 void
 D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height)
 {
-	int         i, j, reps, repshift;
+	int         i, j, reps = 1, repshift = 0;
 	vrect_t     rect;
 
 	if (!viddef.initialized || !win_sw_context)
 		return;
-
-	if (viddef.aspect > 1.5) {
-		reps = 2;
-		repshift = 1;
-	} else {
-		reps = 1;
-		repshift = 0;
-	}
 
 	if (!viddef.direct)
 		return;
@@ -86,19 +78,11 @@ D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height)
 void
 D_EndDirectRect (int x, int y, int width, int height)
 {
-	int         i, j, reps, repshift;
+	int         i, j, reps = 1, repshift = 0;
 	vrect_t     rect;
 
 	if (!viddef.initialized || !win_sw_context)
 		return;
-
-	if (viddef.aspect > 1.5) {
-		reps = 2;
-		repshift = 1;
-	} else {
-		reps = 1;
-		repshift = 0;
-	}
 
 	if (!viddef.direct)
 		return;

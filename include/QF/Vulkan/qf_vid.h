@@ -67,7 +67,7 @@ void Vulkan_CreateRenderPass (struct vulkan_ctx_s *ctx);
 void Vulkan_DestroyRenderPass (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateMatrices (struct vulkan_ctx_s *ctx);
 void Vulkan_DestroyMatrices (struct vulkan_ctx_s *ctx);
-void Vulkan_CalcProjectionMatrices (struct vulkan_ctx_s *ctx, float aspect);
+void Vulkan_CalcProjectionMatrices (struct vulkan_ctx_s *ctx);
 void Vulkan_CalcViewMatrix (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateSwapchain (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateDevice (struct vulkan_ctx_s *ctx);
