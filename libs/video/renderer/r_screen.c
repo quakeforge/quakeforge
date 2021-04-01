@@ -110,8 +110,6 @@ vrect_t     scr_vrect;
 
 qboolean    scr_skipupdate;
 
-static float oldfov = -1;
-
 void
 R_SetVrect (const vrect_t *vrectin, vrect_t *vrect, int lineadj)
 {
@@ -144,11 +142,31 @@ R_SetVrect (const vrect_t *vrectin, vrect_t *vrect, int lineadj)
 	vrect->y = (h - vrect->height) / 2;
 }
 
+static float __attribute__((pure))
+CalcFov (float fov_x, float width, float height)
+{
+	float       a, x;
+
+	if (fov_x < 1 || fov_x > 179)
+		Sys_Error ("Bad fov: %f", fov_x);
+
+	x = width / tan (fov_x * (M_PI / 360));
+
+	a = (x == 0) ? 90 : atan (height / x);	// 0 shouldn't happen
+
+	a = a * (360 / M_PI);
+
+	return a;
+}
+
 void
 SCR_CalcRefdef (void)
 {
 	vrect_t     vrect;
 	refdef_t   *refdef = r_data->refdef;
+
+	refdef->fov_y = CalcFov (refdef->fov_x, refdef->vrect.width,
+							 refdef->vrect.height);
 
 	// force a background redraw
 	r_data->scr_fullupdate = 0;
@@ -189,11 +207,6 @@ SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	r_data->realtime = realtime;
 	scr_copytop = r_data->scr_copyeverything = 0;
 
-	if (oldfov != scr_fov->value) {
-		oldfov = scr_fov->value;
-		r_data->vid->recalc_refdef = true;
-	}
-
 	if (r_data->vid->recalc_refdef) {
 		SCR_CalcRefdef ();
 	}
@@ -201,29 +214,11 @@ SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	r_funcs->R_RenderFrame (scr_3dfunc, scr_funcs);
 }
 
-static float __attribute__((pure))
-CalcFov (float fov_x, float width, float height)
-{
-	float       a, x;
-
-	if (fov_x < 1 || fov_x > 179)
-		Sys_Error ("Bad fov: %f", fov_x);
-
-	x = width / tan (fov_x * (M_PI / 360));
-
-	a = (x == 0) ? 90 : atan (height / x);	// 0 shouldn't happen
-
-	a = a * (360 / M_PI);
-
-	return a;
-}
-
 void
 SCR_SetFOV (float fov)
 {
 	refdef_t   *refdef = r_data->refdef;
 	refdef->fov_x = fov;
-	refdef->fov_y = CalcFov (fov, refdef->vrect.width, refdef->vrect.height);
 	r_data->vid->recalc_refdef = 1;
 }
 
