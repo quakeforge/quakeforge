@@ -24,20 +24,20 @@
 		Boston, MA  02111-1307, USA
 
 */
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
 #include <unistd.h>
 #include <malloc.h>
 
 #include "QF/alloc.h"
 #include "QF/cmem.h"
+#include "QF/sys.h"
 
 #ifdef _WIN32
 #define cmem_alloc(align, size) _aligned_malloc(size, align)
 #define cmem_free(mem) _aligned_free(mem)
-#define _SC_PAGESIZE 1
-static size_t sysconf (int key)
-{
-	return 4096;
-}
 #else
 #define cmem_alloc(align, size) aligned_alloc(align, size)
 #define cmem_free(mem) free(mem)
@@ -58,7 +58,7 @@ new_memsuper (void)
 {
 	memsuper_t *super = cmem_alloc (MEM_LINE_SIZE, sizeof (*super));
 	memset (super, 0, sizeof (*super));
-	super->page_size = sysconf (_SC_PAGESIZE);
+	super->page_size = Sys_PageSize ();
 	super->page_mask = (super->page_size - 1);
 	return super;
 }

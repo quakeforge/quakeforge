@@ -442,20 +442,10 @@ Sys_MakeCodeWriteable (uintptr_t startaddr, size_t length)
 #else
 # ifdef HAVE_MPROTECT
 	int         r;
+	long        psize = Sys_PageSize ();
 	unsigned long endaddr = startaddr + length;
-#  ifdef HAVE__SC_PAGESIZE
-	long		psize = sysconf (_SC_PAGESIZE);
-
-	startaddr &= ~(psize - 1);
-	endaddr = (endaddr + psize - 1) & ~(psize -1);
-#  else
-#   ifdef HAVE_GETPAGESIZE
-	int         psize = getpagesize ();
-
 	startaddr &= ~(psize - 1);
 	endaddr = (endaddr + psize - 1) & ~(psize - 1);
-#   endif
-#  endif
 	// systems with mprotect but not getpagesize (or similar) probably don't
 	// need to page align the arguments to mprotect (eg, QNX)
 	r = mprotect ((char *) startaddr, endaddr - startaddr,
@@ -619,18 +609,33 @@ Sys_PageIn (void *ptr, size_t size)
 //#endif
 }
 
+VISIBLE long
+Sys_PageSize (void)
+{
+#ifdef _WIN32
+	SYSTEM_INFO si;
+	GetSystemInfo (&si);
+	return si.dwPageSize;
+#else
+# ifdef HAVE__SC_PAGESIZE
+	return sysconf (_SC_PAGESIZE);
+# else
+#  ifdef HAVE_GETPAGESIZE
+	return getpagesize ();
+#  endif
+# endif
+#endif
+}
+
 VISIBLE void *
 Sys_Alloc (size_t size)
 {
-#ifdef _WIN32
-	size_t      page_size = 4096;
+	size_t      page_size = Sys_PageSize ();
 	size_t      page_mask = page_size - 1;
 	size = (size + page_mask) & ~page_mask;
+#ifdef _WIN32
 	return VirtualAlloc (0, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
 #else
-	size_t      page_size = sysconf (_SC_PAGESIZE);
-	size_t      page_mask = page_size - 1;
-	size = (size + page_mask) & ~page_mask;
 	return mmap (0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS,
 				 -1, 0);
 #endif
