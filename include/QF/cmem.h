@@ -54,7 +54,7 @@ typedef struct memsline_s {
 	struct memsline_s *next;
 	size_t      size:2;
 	size_t      list:4;
-	size_t      prev:58;	// memsline_t **
+	size_t      prev:8 * sizeof (void *) - 6;	// memsline_t **
 } memsline_t;
 
 typedef struct memblock_s {
