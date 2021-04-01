@@ -31,12 +31,16 @@
 #include "QF/cmem.h"
 
 #ifdef _WIN32
-#define aligned_alloc(align, size) _aligned_malloc(size, align)
+#define cmem_alloc(align, size) _aligned_malloc(size, align)
+#define cmem_free(mem) _aligned_free(mem)
 #define _SC_PAGESIZE 1
 static size_t sysconf (int key)
 {
-	return 1024;
+	return 4096;
 }
+#else
+#define cmem_alloc(align, size) aligned_alloc(align, size)
+#define cmem_free(mem) free(mem)
 #endif
 
 static size_t __attribute__((const))
@@ -52,7 +56,7 @@ ilog2 (size_t x)
 memsuper_t *
 new_memsuper (void)
 {
-	memsuper_t *super = aligned_alloc (MEM_LINE_SIZE, sizeof (*super));
+	memsuper_t *super = cmem_alloc (MEM_LINE_SIZE, sizeof (*super));
 	memset (super, 0, sizeof (*super));
 	super->page_size = sysconf (_SC_PAGESIZE);
 	super->page_mask = (super->page_size - 1);
@@ -65,9 +69,9 @@ delete_memsuper (memsuper_t *super)
 	while (super->memblocks) {
 		memblock_t *t = super->memblocks;
 		super->memblocks = super->memblocks->next;
-		free (t->mem);
+		cmem_free (t->mem);
 	}
-	free (super);
+	cmem_free (super);
 }
 
 static void
@@ -164,7 +168,7 @@ block_alloc (memsuper_t *super, size_t size)
 
 	size_t      page_size = super->page_size;
 	size_t      alloc_size = sizeof (memblock_t) + page_size + size;
-	void       *mem = aligned_alloc (MEM_LINE_SIZE, alloc_size);
+	void       *mem = cmem_alloc (MEM_LINE_SIZE, alloc_size);
 	block = init_block (super, mem, alloc_size);
 	return block;
 }
@@ -324,7 +328,7 @@ cmemalloc (memsuper_t *super, size_t size)
 				 * allocated line is ever page-aligned as that would make the
 				 * line indistinguishable from a large block.
 				 */
-				mem = aligned_alloc (super->page_size, super->page_size);
+				mem = cmem_alloc (super->page_size, super->page_size);
 				// sets super->free_lines, the block is guarnateed to be big
 				// enough to hold the requested allocation as otherwise a full
 				// block allocation would have been used
@@ -418,6 +422,6 @@ cmemfree (memsuper_t *super, void *mem)
 	}
 	if (!block->pre_allocated && (!block->post_size || block->post_free)) {
 		unlink_block (block);
-		free (block->mem);
+		cmem_free (block->mem);
 	}
 }
