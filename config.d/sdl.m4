@@ -1,9 +1,9 @@
 dnl SDL/SDL-GL checks
 AC_ARG_ENABLE(sdl,
-[  --disable-sdl           disable checking for SDL],
+[  --enable-sdl            enable checking for SDL],
 )
 
-if test "x$enable_sdl" != xno; then
+if test "x$enable_sdl" = xyes; then
 	if test "x$PKG_CONFIG" != "x"; then
 		PKG_CHECK_MODULES([SDL], [sdl >= 1.2.0], HAVE_SDL=yes, HAVE_SDL=no)
 	else

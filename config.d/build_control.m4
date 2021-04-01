@@ -119,14 +119,6 @@ if test "x$HAVE_SDL" = xyes; then
 		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA desktop/quakeforge-nq-sdl.desktop"
 		CL_TARGETS="$CL_TARGETS SDL"
 		VID_TARGETS="$VID_TARGETS libs/video/targets/libQFsdl.la"
-		if test "$HAVE_VULKAN" = "yes"; then
-			QF_NEED(vid_render, [vulkan])
-			QF_NEED(render, [vulkan])
-			QF_NEED(alias, [vulkan])
-			QF_NEED(brush, [vulkan])
-			QF_NEED(iqm, [vulkan])
-			QF_NEED(sprite, [vulkan])
-		fi
 		QF_NEED(vid_render, [sw sw32 gl glsl])
 		QF_NEED(render, [sw sw32 gl glsl])
 		QF_NEED(models, [sw gl glsl])
@@ -173,6 +165,15 @@ if test "x$mingw" = xyes; then
 		NQ_TARGETS="$NQ_TARGETS nq-win\$(EXEEXT)"
 		CL_TARGETS="$CL_TARGETS WIN"
 		VID_TARGETS="$VID_TARGETS libs/video/targets/libQFwin.la"
+		if test "$HAVE_VULKAN" = "yes"; then
+			QF_NEED(vid_render, [vulkan])
+			QF_NEED(render, [vulkan])
+			QF_NEED(models, [vulkan])
+			QF_NEED(alias, [vulkan])
+			QF_NEED(brush, [vulkan])
+			QF_NEED(iqm, [vulkan])
+			QF_NEED(sprite, [vulkan])
+		fi
 		QF_NEED(vid_render, [sw sw32 gl glsl])
 		QF_NEED(models, [sw gl glsl])
 		QF_NEED(alias, [sw gl glsl])
