@@ -98,8 +98,7 @@ extern float	cl_wateralpha;
 #define	DIST_NOT_SET	98765
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
-typedef struct clipplane_s
-{
+typedef struct clipplane_s {
 	vec3_t		normal;
 	float		dist;
 	struct		clipplane_s	*next;

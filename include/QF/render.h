@@ -161,9 +161,9 @@ typedef struct {
 	vec4f_t     viewposition;
 	vec4f_t     viewrotation;
 
-	float		fov_x, fov_y;
-
 	int			ambientlight;
+
+	float		fov_x, fov_y;
 } refdef_t;
 
 // color shifts =============================================================

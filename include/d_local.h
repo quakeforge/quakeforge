@@ -59,8 +59,7 @@ typedef struct surfcache_s
 } surfcache_t;
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
-typedef struct sspan_s
-{
+typedef struct sspan_s {
 	int				u, v, count;
 } sspan_t;
 

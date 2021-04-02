@@ -42,14 +42,14 @@
 #define espan_t_v	    4
 #define espan_t_count   8
 #define espan_t_pnext	12
-#define espan_t_size    16
+#define espan_t_size    16	// sizeof(espan_t)
 
 // sspan_t structure
 // !!! if this is changed, it must be changed in d_local.h too !!!
 #define sspan_t_u    	0
 #define sspan_t_v	    4
 #define sspan_t_count   8
-#define sspan_t_size    12
+#define sspan_t_size    12	// sizeof(sspan_t)
 
 // spanpackage_t structure
 // !!! if this is changed, it must be changed in d_polyset.c too !!!
@@ -61,7 +61,7 @@
 #define spanpackage_t_tfrac				20
 #define spanpackage_t_light				24
 #define spanpackage_t_zi				28
-#define spanpackage_t_size				32
+#define spanpackage_t_size				32	// sizeof(spanpackage_t)
 
 // edge_t structure
 // !!! if this is changed, it must be changed in r_shared.h too !!!
@@ -73,7 +73,7 @@
 #define et_nextremove	20
 #define et_nearzi		24
 #define et_owner		28
-#define et_size			32
+#define et_size			32	// sizeof(edge_t)
 
 // surf_t structure
 // !!! if this is changed, it must be changed in r_shared.h too !!!
@@ -93,7 +93,7 @@
 #define st_d_zistepu	48
 #define st_d_zistepv	52
 #define st_pad			56
-#define st_size			64
+#define st_size			64	// sizeof (surf_t)
 
 // clipplane_t structure
 // !!! if this is changed, it must be changed in r_local.h too !!!
@@ -103,18 +103,18 @@
 #define cp_leftedge		20
 #define cp_rightedge	21
 #define cp_reserved		22
-#define cp_size			24
+#define cp_size			24	// sizeof (clipplane_t)
 
 // medge_t structure
 // !!! if this is changed, it must be changed in model.h too !!!
 #define me_v				0
 #define me_cachededgeoffset	8
-#define me_size				12
+#define me_size				12	// sizeof (medge_t)
 
 // mvertex_t structure
 // !!! if this is changed, it must be changed in model.h too !!!
 #define mv_position		0
-#define mv_size			12
+#define mv_size			12	// sizeof (mvertex_t)
 
 // refdef_t structure
 // !!! if this is changed, it must be changed in render.h too !!!
@@ -138,10 +138,12 @@
 #define rd_horizontalFieldOfView	100
 #define rd_xOrigin					104
 #define rd_yOrigin					108
-#define rd_vieworg					112
-#define rd_viewangles				124
-#define rd_ambientlight				136
-#define rd_size						140
+#define rd_viewposition				112
+#define rd_viewrotation				128
+#define rd_ambientlight				144
+#defin	rd_fov_x					148
+#defin	rd_fov_y					152
+#define rd_size						156	// sizeof (refdef_t)
 
 // mtriangle_t structure
 // !!! if this is changed, it must be changed in model.h too !!!

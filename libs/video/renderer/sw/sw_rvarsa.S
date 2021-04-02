@@ -76,6 +76,7 @@ C(r_single_cw):	.long	0
 .globl	C(r_bmodelactive)
 C(r_bmodelactive):		.long	0
 
+	.text
 .global C(R_InitVars)
 C(R_InitVars):
 	movl	C(ceil_cw), %eax
