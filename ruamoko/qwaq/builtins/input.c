@@ -445,16 +445,16 @@ void qwaq_input_init (qwaq_resources_t *res)
 
 	// ncurses takes care of input mode for us, so need only tell xterm
 	// what we need
-	write(1, MOUSE_MOVES_ON, sizeof (MOUSE_MOVES_ON) - 1);
-	write(1, SGR_ON, sizeof (SGR_ON) - 1);
+	(void) write(1, MOUSE_MOVES_ON, sizeof (MOUSE_MOVES_ON) - 1);
+	(void) write(1, SGR_ON, sizeof (SGR_ON) - 1);
 }
 
 void qwaq_input_shutdown (qwaq_resources_t *res)
 {
 	// ncurses takes care of input mode for us, so need only tell xterm
 	// what we need
-	write(1, SGR_OFF, sizeof (SGR_OFF) - 1);
-	write(1, MOUSE_MOVES_OFF, sizeof (MOUSE_MOVES_OFF) - 1);
+	(void) write(1, SGR_OFF, sizeof (SGR_OFF) - 1);
+	(void) write(1, MOUSE_MOVES_OFF, sizeof (MOUSE_MOVES_OFF) - 1);
 
 #ifdef HAVE_SIGACTION
 	sigaction (SIGWINCH, &save_winch, 0);
