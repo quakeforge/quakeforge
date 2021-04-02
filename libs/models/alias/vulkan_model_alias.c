@@ -83,6 +83,8 @@ vulkan_alias_clear (model_t *m, void *data)
 	aliashdr_t *hdr;
 	qfv_alias_mesh_t *mesh;
 
+	QFV_DeviceWaitIdle (device);
+
 	m->needload = true;	//FIXME is this right?
 	if (!(hdr = m->aliashdr)) {
 		hdr = Cache_Get (&m->cache);

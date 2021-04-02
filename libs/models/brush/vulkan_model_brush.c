@@ -71,6 +71,8 @@ static void vulkan_brush_clear (model_t *mod, void *data)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	mod_brush_t *brush = &mod->brush;
 
+	QFV_DeviceWaitIdle (device);
+
 	for (int i = 0; i < brush->numtextures; i++) {
 		texture_t  *tx = brush->textures[i];
 		if (!tx) {
