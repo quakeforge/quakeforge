@@ -65,6 +65,20 @@ skip_value(string name)
 			|| str_str (name, "_RANGE_SIZE") >= 0);
 }
 
+-(int) isEmpty
+{
+	int         num_values = 0;
+
+	for (int i = 0, index = 0; i < type.strct.num_fields; i++) {
+		qfot_var_t *var = &type.strct.fields[i];
+		if (skip_value (var.name)) {
+			continue;
+		}
+		num_values++;
+	}
+	return !num_values;
+}
+
 -(void) writeTable
 {
 	int         strip_bit = 0;
@@ -84,17 +98,19 @@ skip_value(string name)
 	}
 	fprintf (output_file, "};\n");
 
-	fprintf (output_file, "static %s %s_values[] = {\n", [self name], [self name]);
-	for (int i = 0, index = 0; i < type.strct.num_fields; i++) {
-		qfot_var_t *var = &type.strct.fields[i];
-		if (skip_value (var.name)) {
-			continue;
+	if (![self isEmpty]) {
+		fprintf (output_file, "static %s %s_values[] = {\n", [self name], [self name]);
+		for (int i = 0, index = 0; i < type.strct.num_fields; i++) {
+			qfot_var_t *var = &type.strct.fields[i];
+			if (skip_value (var.name)) {
+				continue;
+			}
+			fprintf (output_file, "\t%s,    // %d 0x%x\n",
+					 var.name, var.offset, var.offset);
+			index++;
 		}
-		fprintf (output_file, "\t%s,    // %d 0x%x\n",
-				 var.name, var.offset, var.offset);
-		index++;
+		fprintf (output_file, "};\n");
 	}
-	fprintf (output_file, "};\n");
 	fprintf (output_file, "static exprsym_t %s_symbols[] = {\n", [self name]);
 	for (int i = 0, index = 0; i < type.strct.num_fields; i++) {
 		qfot_var_t *var = &type.strct.fields[i];
