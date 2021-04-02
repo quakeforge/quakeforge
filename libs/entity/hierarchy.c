@@ -37,6 +37,17 @@
 
 #include "QF/entity.h"
 
+#if defined(_WIN32) && !defined(_WIN64)
+// FIXME (maybe) this is a hack to make DARRAY arrrays 16-byte aligned on
+// 32-bit systems (in particular for this case, windows) as the vectors and
+// matrices require 16-byte alignment but system malloc (etc) provide only
+// 8-byte alignment.
+// Really, a custom allocator (maybe using cmem) would be better.
+#define free(mem) _aligned_free(mem)
+#define malloc(size) _aligned_malloc(size, 16)
+#define realloc(mem, size) _aligned_realloc(mem, size, 16)
+#endif
+
 static void
 hierarchy_UpdateTransformIndices (hierarchy_t *hierarchy, uint32_t start,
 								  int offset)
