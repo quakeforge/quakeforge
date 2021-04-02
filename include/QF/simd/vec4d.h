@@ -93,8 +93,8 @@ GNU89INLINE inline vec4d_t qrotd (vec4d_t a, vec4d_t b) __attribute__((const));
  * That is, [-x, -y, -z, w].
  */
 GNU89INLINE inline vec4d_t qconjd (vec4d_t q) __attribute__((const));
-GNU89INLINE inline vec4d_t loadvec3d (const double v3[]) __attribute__((pure, access(read_only, 1)));
-GNU89INLINE inline void storevec3d (double v3[3], vec4d_t v4) __attribute__((access (write_only, 1)));
+GNU89INLINE inline vec4d_t loadvec3d (const double v3[]) __attribute__((pure));
+GNU89INLINE inline void storevec3d (double v3[3], vec4d_t v4);
 
 #ifndef IMPLEMENT_VEC4D_Funcs
 GNU89INLINE inline
