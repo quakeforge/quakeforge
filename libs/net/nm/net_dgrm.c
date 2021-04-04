@@ -880,8 +880,6 @@ static void
 _Datagram_SearchForHosts (qboolean xmit)
 {
 	int         ret;
-	int         n;
-	int         i;
 	netadr_t    readaddr;
 	netadr_t    myaddr;
 	int         control;
@@ -914,11 +912,6 @@ _Datagram_SearchForHosts (qboolean xmit)
 			continue;
 		}
 
-		// is the cache full?
-		if (hostCacheCount == HOSTCACHESIZE) {
-			continue;
-		}
-
 		MSG_BeginReading (net_message);
 		control = MSG_ReadLongBE (net_message);
 		if (control == -1) {
@@ -935,53 +928,25 @@ _Datagram_SearchForHosts (qboolean xmit)
 			continue;
 		}
 
-		dfunc.GetAddrFromName (MSG_ReadString (net_message), &readaddr);
-		// search the cache for this server
-		for (n = 0; n < hostCacheCount; n++) {
-			if (dfunc.AddrCompare (&readaddr, &hostcache[n].addr) == 0) {
-				break;
-			}
+		const char *addrstr = MSG_ReadString (net_message);
+		dfunc.GetAddrFromName (addrstr, &readaddr);
+
+		const char *name = MSG_ReadString (net_message);
+		const char *map = MSG_ReadString (net_message);
+		int         users = MSG_ReadByte (net_message);
+		int         maxusers = MSG_ReadByte (net_message);
+		int         protocol = MSG_ReadByte (net_message);
+		const char *cname = dfunc.AddrToString (&readaddr);
+
+		if (protocol != NET_PROTOCOL_VERSION) {
+			char       *new_name = alloca (strlen (name) + 2);
+			new_name[0] = '*';
+			strcpy (new_name + 1, name);
+			name = new_name;
 		}
 
-		// is it already there?
-		if (n < hostCacheCount) {
-			continue;
-		}
-
-		// add it
-		hostCacheCount++;
-		strcpy (hostcache[n].name, MSG_ReadString (net_message));
-		strcpy (hostcache[n].map, MSG_ReadString (net_message));
-		hostcache[n].users = MSG_ReadByte (net_message);
-		hostcache[n].maxusers = MSG_ReadByte (net_message);
-		if (MSG_ReadByte (net_message) != NET_PROTOCOL_VERSION) {
-			strcpy (hostcache[n].cname, hostcache[n].name);
-			hostcache[n].cname[14] = 0;
-			strcpy (hostcache[n].name, "*");
-			strcat (hostcache[n].name, hostcache[n].cname);
-		}
-		memcpy (&hostcache[n].addr, &readaddr, sizeof (netadr_t));
-
-		hostcache[n].driver = net_driverlevel;
-		hostcache[n].ldriver = net_landriverlevel;
-		strcpy (hostcache[n].cname, dfunc.AddrToString (&readaddr));
-
-		// check for a name conflict
-		for (i = 0; i < hostCacheCount; i++) {
-			if (i == n) {
-				continue;
-			}
-			if (strcasecmp (hostcache[n].name, hostcache[i].name) == 0) {
-				i = strlen (hostcache[n].name);
-				if (i < 15 && hostcache[n].name[i - 1] > '8') {
-					hostcache[n].name[i] = '0';
-					hostcache[n].name[i + 1] = 0;
-				} else {
-					hostcache[n].name[i - 1]++;
-				}
-				i = -1;
-			}
-		}
+		NET_AddCachedHost (name, map, cname, users, maxusers, net_driverlevel,
+						   net_landriverlevel, &readaddr);
 	}
 }
 
@@ -990,9 +955,6 @@ Datagram_SearchForHosts (qboolean xmit)
 {
 	for (net_landriverlevel = 0; net_landriverlevel < net_numlandrivers;
 		 net_landriverlevel++) {
-		if (hostCacheCount == HOSTCACHESIZE) {
-			break;
-		}
 		if (net_landrivers[net_landriverlevel].initialized) {
 			_Datagram_SearchForHosts (xmit);
 		}
