@@ -244,6 +244,62 @@ MSG_WriteUTF8 (sizebuf_t *sb, unsigned utf8)
 	}
 }
 
+VISIBLE void
+MSG_PokeShort (sizebuf_t *sb, unsigned offset, int c)
+{
+	if (__builtin_expect (offset + 2 > sb->cursize, 0)) {
+		Sys_Error ("MSG_PokeShort: invalid offset %d / %d",
+				   offset, sb->cursize);
+	}
+	byte	   *buf = sb->data + offset;
+
+	*buf++ = ((unsigned int) c) & 0xff;
+	*buf = ((unsigned int) c) >> 8;
+}
+
+VISIBLE void
+MSG_PokeShortBE (sizebuf_t *sb, unsigned offset, int c)
+{
+	if (__builtin_expect (offset + 2 > sb->cursize, 0)) {
+		Sys_Error ("MSG_PokeShortBE: invalid offset %d / %d",
+				   offset, sb->cursize);
+	}
+	byte	   *buf = sb->data + offset;
+
+	*buf++ = ((unsigned int) c) >> 8;
+	*buf = ((unsigned int) c) & 0xff;
+}
+
+VISIBLE void
+MSG_PokeLong (sizebuf_t *sb, unsigned offset, int c)
+{
+	if (__builtin_expect (offset + 2 > sb->cursize, 0)) {
+		Sys_Error ("MSG_PokeLong: invalid offset %d / %d",
+				   offset, sb->cursize);
+	}
+	byte	   *buf = sb->data + offset;
+
+	*buf++ = ((unsigned int) c) & 0xff;
+	*buf++ = (((unsigned int) c) >> 8) & 0xff;
+	*buf++ = (((unsigned int) c) >> 16) & 0xff;
+	*buf = ((unsigned int) c) >> 24;
+}
+
+VISIBLE void
+MSG_PokeLongBE (sizebuf_t *sb, unsigned offset, int c)
+{
+	if (__builtin_expect (offset + 2 > sb->cursize, 0)) {
+		Sys_Error ("MSG_PokeLongBE: invalid offset %d / %d",
+				   offset, sb->cursize);
+	}
+	byte	   *buf = sb->data + offset;
+
+	*buf++ = ((unsigned int) c) >> 24;
+	*buf++ = (((unsigned int) c) >> 16) & 0xff;
+	*buf++ = (((unsigned int) c) >> 8) & 0xff;
+	*buf = ((unsigned int) c) & 0xff;
+}
+
 // reading functions ==========================================================
 
 VISIBLE void

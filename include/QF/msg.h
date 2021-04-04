@@ -52,6 +52,11 @@ void MSG_WriteAngle16 (sizebuf_t *sb, float angle);
 void MSG_WriteAngle16V (sizebuf_t *sb, const vec3_t angle);
 void MSG_WriteUTF8 (sizebuf_t *sb, unsigned utf8);
 
+void MSG_PokeShort (sizebuf_t *sb, unsigned offset, int c);
+void MSG_PokeShortBE (sizebuf_t *sb, unsigned offset, int c);
+void MSG_PokeLong (sizebuf_t *sb, unsigned offset, int c);
+void MSG_PokeLongBE (sizebuf_t *sb, unsigned offset, int c);
+
 typedef struct msg_s {
 	unsigned    readcount;
 	qboolean    badread;		// set if a read goes beyond end of message
