@@ -36,6 +36,7 @@
 
 void MSG_WriteByte (sizebuf_t *sb, int c);
 void MSG_WriteShort (sizebuf_t *sb, int c);
+void MSG_WriteShortBE (sizebuf_t *sb, int c);
 void MSG_WriteLong (sizebuf_t *sb, int c);
 void MSG_WriteLongBE (sizebuf_t *sb, int c);
 void MSG_WriteFloat (sizebuf_t *sb, float f);
@@ -95,6 +96,16 @@ int MSG_ReadByte (qmsg_t *msg);
 					the end of the message.
 */
 int MSG_ReadShort (qmsg_t *msg);
+
+/** Read a single big-endian unsigned short from the message.
+
+	Advances the read index.
+
+	\param msg		The message from which the short will be read.
+	\return			The short value (0 - 65535), or -1 if already at
+					the end of the message.
+*/
+int MSG_ReadShortBE (qmsg_t *msg);
 
 /** Read a single little-endian long from the message.
 

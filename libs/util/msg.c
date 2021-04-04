@@ -69,6 +69,16 @@ MSG_WriteShort (sizebuf_t *sb, int c)
 }
 
 VISIBLE void
+MSG_WriteShortBE (sizebuf_t *sb, int c)
+{
+	byte	   *buf;
+
+	buf = SZ_GetSpace (sb, 2);
+	*buf++ = ((unsigned int) c) >> 8;
+	*buf = ((unsigned int) c) & 0xff;
+}
+
+VISIBLE void
 MSG_WriteLong (sizebuf_t *sb, int c)
 {
 	byte	   *buf;
@@ -265,8 +275,26 @@ MSG_ReadShort (qmsg_t *msg)
 	int         c;
 
 	if (msg->readcount + 2 <= msg->message->cursize) {
-		c = (msg->message->data[msg->readcount]
-			 + (msg->message->data[msg->readcount + 1] << 8));
+		byte       *buf = msg->message->data + msg->readcount;
+		c = *buf++;
+		c |= (*buf) << 8;
+		msg->readcount += 2;
+		return c;
+	}
+	msg->readcount = msg->message->cursize;
+	msg->badread = true;
+	return -1;
+}
+
+VISIBLE int
+MSG_ReadShortBE (qmsg_t *msg)
+{
+	int         c;
+
+	if (msg->readcount + 2 <= msg->message->cursize) {
+		byte       *buf = msg->message->data + msg->readcount;
+		c = (*buf++) << 8;
+		c |= *buf;
 		msg->readcount += 2;
 		return c;
 	}
