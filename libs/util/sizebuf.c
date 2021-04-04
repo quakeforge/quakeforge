@@ -41,7 +41,7 @@
 
 
 VISIBLE void
-SZ_Alloc (sizebuf_t *buf, int maxsize)
+SZ_Alloc (sizebuf_t *buf, unsigned maxsize)
 {
 	if (maxsize < 256)
 		maxsize = 256;
@@ -58,7 +58,7 @@ SZ_Clear (sizebuf_t *buf)
 }
 
 VISIBLE void *
-SZ_GetSpace (sizebuf_t *buf, int length)
+SZ_GetSpace (sizebuf_t *buf, unsigned length)
 {
 	void       *data;
 
@@ -83,7 +83,7 @@ getspace:
 }
 
 VISIBLE void
-SZ_Write (sizebuf_t *buf, const void *data, int length)
+SZ_Write (sizebuf_t *buf, const void *data, unsigned length)
 {
 	memcpy (SZ_GetSpace (buf, length), data, length);
 }
@@ -91,7 +91,7 @@ SZ_Write (sizebuf_t *buf, const void *data, int length)
 VISIBLE void
 SZ_Print (sizebuf_t *buf, const char *data)
 {
-	int         len;
+	unsigned    len;
 
 	len = strlen (data) + 1;
 	if (buf->cursize && !buf->data[buf->cursize - 1])
@@ -103,7 +103,7 @@ SZ_Print (sizebuf_t *buf, const char *data)
 VISIBLE void
 SZ_Dump (sizebuf_t *buf)
 {
-	int         i;
+	unsigned    i;
 	char        chars[17], c;
 
 	chars[16] = 0;

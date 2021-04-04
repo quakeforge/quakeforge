@@ -271,7 +271,7 @@ check_next_demopacket (void)
 static int
 read_demopacket (void)
 {
-	int         r;
+	unsigned    r;
 
 	Qread (cls.demofile, &net_message->message->cursize, 4);
 	net_message->message->cursize =

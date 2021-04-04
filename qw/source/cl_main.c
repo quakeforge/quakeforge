@@ -1013,8 +1013,10 @@ CL_ReadPackets (void)
 {
 	while (CL_GetMessage ()) {
 
-		if (net_message->message->cursize == -1)
+		// non-packet set up by the demo reader
+		if ((int) net_message->message->cursize == -1) {
 			continue;
+		}
 
 		if (cls.demoplayback && net_packetlog->int_val)
 			Log_Incoming_Packet (net_message->message->data,

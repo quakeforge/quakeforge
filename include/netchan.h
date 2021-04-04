@@ -317,7 +317,7 @@ void Netchan_Init_Cvars (void);
 	\param length	The size of the unreliable packet.
 	\param data		The data of the unreliable packet.
 */
-void Netchan_Transmit (netchan_t *chan, int length, byte *data);
+void Netchan_Transmit (netchan_t *chan, unsigned length, byte *data);
 
 /** Send an out-of-band packet.
 
@@ -325,7 +325,7 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data);
 	\param length	The length of the data to be sent.
 	\param data		The data to be sent.
 */
-void Netchan_OutOfBand (netadr_t adr, int length, byte *data);
+void Netchan_OutOfBand (netadr_t adr, unsigned length, byte *data);
 /** Send a formatted string as an out-of-band packet.
 
 	\param adr		The address to which the data will be sent.

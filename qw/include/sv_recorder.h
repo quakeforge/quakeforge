@@ -41,7 +41,7 @@ recorder_t *SVR_AddUser (void (*writer)(void *, struct sizebuf_s *, int),
 						 void (*finish)(void *, struct sizebuf_s *),
 						 int demo, void *user);
 void SVR_RemoveUser (recorder_t *r);
-struct sizebuf_s *SVR_WriteBegin (byte type, int to, int size);
+struct sizebuf_s *SVR_WriteBegin (byte type, int to, unsigned size);
 struct sizebuf_s *SVR_Datagram (void) __attribute__((const));
 void SVR_ForceFrame (void);
 void SVR_Pause (recorder_t *r);

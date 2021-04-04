@@ -41,7 +41,7 @@ void MSG_WriteLong (sizebuf_t *sb, int c);
 void MSG_WriteLongBE (sizebuf_t *sb, int c);
 void MSG_WriteFloat (sizebuf_t *sb, float f);
 void MSG_WriteString (sizebuf_t *sb, const char *s);
-void MSG_WriteBytes (sizebuf_t *sb, const void *buf, int len);
+void MSG_WriteBytes (sizebuf_t *sb, const void *buf, unsigned len);
 void MSG_WriteCoord (sizebuf_t *sb, float coord);
 void MSG_WriteCoordV (sizebuf_t *sb, const vec3_t coord);
 void MSG_WriteCoordAngleV (sizebuf_t *sb, const vec3_t coord,
@@ -53,11 +53,11 @@ void MSG_WriteAngle16V (sizebuf_t *sb, const vec3_t angle);
 void MSG_WriteUTF8 (sizebuf_t *sb, unsigned utf8);
 
 typedef struct msg_s {
-	int readcount;
-	qboolean badread;		// set if a read goes beyond end of message
-	sizebuf_t *message;
-	size_t badread_string_size;
-	char *badread_string;
+	unsigned    readcount;
+	qboolean    badread;		// set if a read goes beyond end of message
+	sizebuf_t  *message;
+	size_t      badread_string_size;
+	char       *badread_string;
 } qmsg_t;
 
 /** Reset the message read status.
@@ -75,7 +75,7 @@ void MSG_BeginReading (qmsg_t *msg);
 	\param msg		The message to check.
 	\return			The number of bytes that have been read.
 */
-int MSG_GetReadCount(qmsg_t *msg) __attribute__((pure));
+unsigned MSG_GetReadCount(qmsg_t *msg) __attribute__((pure));
 
 /** Read a single byte from the message.
 
@@ -175,7 +175,7 @@ const char *MSG_ReadString (qmsg_t *msg);
 	\param len		The number of bytes to read.
 	\return			The number of bytes read from the message.
 */
-int MSG_ReadBytes (qmsg_t *msg, void *buf, int len);
+int MSG_ReadBytes (qmsg_t *msg, void *buf, unsigned len);
 
 /** Read a little-endian 16-bit fixed point (13.3) coordinate value from the
 	message.

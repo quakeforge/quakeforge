@@ -126,7 +126,7 @@ MSG_WriteString (sizebuf_t *sb, const char *s)
 }
 
 VISIBLE void
-MSG_WriteBytes (sizebuf_t *sb, const void *buf, int len)
+MSG_WriteBytes (sizebuf_t *sb, const void *buf, unsigned len)
 {
 	SZ_Write (sb, buf, len);
 }
@@ -253,7 +253,7 @@ MSG_BeginReading (qmsg_t *msg)
 	msg->badread = false;
 }
 
-VISIBLE int
+VISIBLE unsigned
 MSG_GetReadCount (qmsg_t *msg)
 {
 	return msg->readcount;
@@ -403,7 +403,7 @@ MSG_ReadString (qmsg_t *msg)
 }
 
 VISIBLE int
-MSG_ReadBytes (qmsg_t *msg, void *buf, int len)
+MSG_ReadBytes (qmsg_t *msg, void *buf, unsigned len)
 {
 	if (msg->badread || len > msg->message->cursize - msg->readcount) {
 		msg->badread = true;
@@ -474,7 +474,8 @@ VISIBLE int
 MSG_ReadUTF8 (qmsg_t *msg)
 {
 	byte       *buf, *start, c;
-	int         val = 0, count;
+	int         val = 0;
+	unsigned    count;
 
 	if (msg->badread || msg->message->cursize == msg->readcount) {
 		msg->badread = true;

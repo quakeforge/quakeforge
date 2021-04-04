@@ -43,10 +43,10 @@ typedef struct backbuf_s {
 	const char *name;
 } backbuf_t;
 
-int MSG_ReliableCheckSize (backbuf_t *rel, int maxsize, int minsize) __attribute__((pure));
-sizebuf_t *MSG_ReliableCheckBlock(backbuf_t *rel, int maxsize);
+int MSG_ReliableCheckSize (backbuf_t *rel, unsigned maxsize, unsigned minsize) __attribute__((pure));
+sizebuf_t *MSG_ReliableCheckBlock(backbuf_t *rel, unsigned maxsize);
 void MSG_Reliable_FinishWrite(backbuf_t *rel);
-sizebuf_t *MSG_ReliableWrite_Begin(backbuf_t *rel, int c, int maxsize);
+sizebuf_t *MSG_ReliableWrite_Begin(backbuf_t *rel, int c, unsigned maxsize);
 void MSG_ReliableWrite_Angle(backbuf_t *rel, float f);
 void MSG_ReliableWrite_Angle16(backbuf_t *rel, float f);
 void MSG_ReliableWrite_Byte(backbuf_t *rel, int c);
@@ -56,7 +56,7 @@ void MSG_ReliableWrite_Coord(backbuf_t *rel, float f);
 void MSG_ReliableWrite_Long(backbuf_t *rel, int c);
 void MSG_ReliableWrite_Short(backbuf_t *rel, int c);
 void MSG_ReliableWrite_String(backbuf_t *rel, const char *s);
-void MSG_ReliableWrite_SZ(backbuf_t *rel, const void *data, int len);
+void MSG_ReliableWrite_SZ(backbuf_t *rel, const void *data, unsigned len);
 void MSG_ReliableWrite_AngleV(backbuf_t *rel, const vec3_t v);
 void MSG_ReliableWrite_CoordV(backbuf_t *rel, const vec3_t v);
 void MSG_Reliable_Send (backbuf_t *rel);
