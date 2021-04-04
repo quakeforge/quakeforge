@@ -37,6 +37,7 @@
 void MSG_WriteByte (sizebuf_t *sb, int c);
 void MSG_WriteShort (sizebuf_t *sb, int c);
 void MSG_WriteLong (sizebuf_t *sb, int c);
+void MSG_WriteLongBE (sizebuf_t *sb, int c);
 void MSG_WriteFloat (sizebuf_t *sb, float f);
 void MSG_WriteString (sizebuf_t *sb, const char *s);
 void MSG_WriteBytes (sizebuf_t *sb, const void *buf, int len);
@@ -107,6 +108,19 @@ int MSG_ReadShort (qmsg_t *msg);
 	\todo	Fix?
 */
 int MSG_ReadLong (qmsg_t *msg);
+
+/** Read a single big-endian long from the message.
+
+	Advances the read index.
+
+	\param msg		The message from which the long will be read.
+	\return			The signed long value or -1 if already at the end of
+					the message.
+	\note	-1 may be either an error or a value. Check qmsg_t::badread to
+			differentiate the two cases (false for a value).
+	\todo	Fix?
+*/
+int MSG_ReadLongBE (qmsg_t *msg);
 
 /** Read a single little-endian float from the message.
 

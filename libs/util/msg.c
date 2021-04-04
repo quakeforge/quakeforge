@@ -81,6 +81,18 @@ MSG_WriteLong (sizebuf_t *sb, int c)
 }
 
 VISIBLE void
+MSG_WriteLongBE (sizebuf_t *sb, int c)
+{
+	byte	   *buf;
+
+	buf = SZ_GetSpace (sb, 4);
+	*buf++ = ((unsigned int) c) >> 24;
+	*buf++ = (((unsigned int) c) >> 16) & 0xff;
+	*buf++ = (((unsigned int) c) >> 8) & 0xff;
+	*buf = ((unsigned int) c) & 0xff;
+}
+
+VISIBLE void
 MSG_WriteFloat (sizebuf_t *sb, float f)
 {
 	union {
@@ -269,10 +281,30 @@ MSG_ReadLong (qmsg_t *msg)
 	int         c;
 
 	if (msg->readcount + 4 <= msg->message->cursize) {
-		c = msg->message->data[msg->readcount]
-			+ (msg->message->data[msg->readcount + 1] << 8)
-			+ (msg->message->data[msg->readcount + 2] << 16)
-			+ (msg->message->data[msg->readcount + 3] << 24);
+		byte       *buf = msg->message->data + msg->readcount;
+		c = *buf++;
+		c |= (*buf++) << 8;
+		c |= (*buf++) << 16;
+		c |= (*buf) << 24;
+		msg->readcount += 4;
+		return c;
+	}
+	msg->readcount = msg->message->cursize;
+	msg->badread = true;
+	return -1;
+}
+
+VISIBLE int
+MSG_ReadLongBE (qmsg_t *msg)
+{
+	int         c;
+
+	if (msg->readcount + 4 <= msg->message->cursize) {
+		byte       *buf = msg->message->data + msg->readcount;
+		c = (*buf++) << 24;
+		c |= (*buf++) << 16;
+		c |= (*buf++) << 8;
+		c |= *buf;
 		msg->readcount += 4;
 		return c;
 	}
