@@ -41,12 +41,12 @@
 
 
 VISIBLE void
-SZ_Alloc (sizebuf_t *buf, int startsize)
+SZ_Alloc (sizebuf_t *buf, int maxsize)
 {
-	if (startsize < 256)
-		startsize = 256;
-	buf->data = Hunk_AllocName (startsize, "sizebuf");
-	buf->maxsize = startsize;
+	if (maxsize < 256)
+		maxsize = 256;
+	buf->data = Hunk_AllocName (maxsize, "sizebuf");
+	buf->maxsize = maxsize;
 	buf->cursize = 0;
 }
 

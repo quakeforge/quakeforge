@@ -44,7 +44,7 @@ typedef struct sizebuf_s
 	int		cursize;
 } sizebuf_t;
 
-void SZ_Alloc (sizebuf_t *buf, int startsize);
+void SZ_Alloc (sizebuf_t *buf, int maxsize);
 void SZ_Free (sizebuf_t *buf);
 void SZ_Clear (sizebuf_t *buf);
 void *SZ_GetSpace (sizebuf_t *buf, int length);
