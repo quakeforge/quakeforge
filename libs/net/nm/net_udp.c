@@ -77,6 +77,7 @@
 # include <libc.h>
 #endif
 
+#include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -471,6 +472,29 @@ UDP_CheckNewConnections (void)
 #endif
 }
 
+static void
+hex_dump_buf (byte *buf, int len)
+{
+	int         pos = 0, llen, i;
+
+	while (pos < len) {
+		llen = (len - pos < 16 ? len - pos : 16);
+		printf ("%08x: ", pos);
+		for (i = 0; i < llen; i++)
+			printf ("%02x ", buf[pos + i]);
+		for (i = 0; i < 16 - llen; i++)
+			printf ("   ");
+		printf (" | ");
+
+		for (i = 0; i < llen; i++)
+			printf ("%c", isprint (buf[pos + i]) ? buf[pos + i] : '.');
+		for (i = 0; i < 16 - llen; i++)
+			printf (" ");
+		printf ("\n");
+		pos += llen;
+	}
+}
+
 int
 UDP_Read (int socket, byte *buf, int len, netadr_t *from)
 {
@@ -528,6 +552,9 @@ UDP_Read (int socket, byte *buf, int len, netadr_t *from)
 					UDP_AddrToString (from));
 	last_iface = default_iface;
 #endif
+	if (developer->int_val & SYS_net) {
+		hex_dump_buf (buf, ret);
+	}
 	return ret;
 }
 
@@ -576,6 +603,9 @@ UDP_Write (int socket, byte *buf, int len, netadr_t *to)
 		return 0;
 	Sys_MaskPrintf (SYS_net, "sent %d bytes to %s\n", ret,
 					UDP_AddrToString (to));
+	if (developer->int_val & SYS_net) {
+		hex_dump_buf (buf, len);
+	}
 	return ret;
 }
 
