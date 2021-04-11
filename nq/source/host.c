@@ -931,7 +931,7 @@ Host_Init (void)
 	Cmd_Exec_File (host_cbuf, fs_usercfg->string, 0);
 	// reparse the command line for + commands other than set
 	// (sets still done, but it doesn't matter)
-	if (isDedicated || (cl_quakerc->int_val && check_quakerc ()))
+	if (isDedicated || !cl_quakerc->int_val || check_quakerc ())
 		Cmd_StuffCmds (host_cbuf);
 
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
