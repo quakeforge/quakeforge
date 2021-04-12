@@ -497,6 +497,7 @@ Cmd_Help_f (void)
 
 	Sys_Printf ("variable/command not found\n");
 }
+
 static void
 Cmd_Exec_f (void)
 {
@@ -649,7 +650,7 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 	return 0;
 }
 
-VISIBLE void
+VISIBLE int
 Cmd_Exec_File (cbuf_t *cbuf, const char *path, int qfs)
 {
 	char       *f;
@@ -657,7 +658,7 @@ Cmd_Exec_File (cbuf_t *cbuf, const char *path, int qfs)
 	QFile      *file;
 
 	if (!path || !*path)
-		return;
+		return 0;
 	if (qfs) {
 		file = QFS_FOpenFile (path);
 	} else {
@@ -675,7 +676,9 @@ Cmd_Exec_File (cbuf_t *cbuf, const char *path, int qfs)
 			free (f);
 		}
 		Qclose (file);
+		return 1;
 	}
+	return 0;
 }
 
 VISIBLE void

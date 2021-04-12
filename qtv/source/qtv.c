@@ -255,7 +255,7 @@ qtv_init (void)
 	Sys_RegisterShutdown (qtv_shutdown, 0);
 
 	Sys_Init ();
-	COM_ParseConfig ();
+	COM_ParseConfig (qtv_cbuf);
 	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
 
 	qtv_memory_init ();

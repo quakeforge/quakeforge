@@ -110,7 +110,7 @@ init_qf (void)
 
 	Sys_Init ();
 	GIB_Init (true);
-	COM_ParseConfig ();
+	COM_ParseConfig (qwaq_cbuf);
 
 	//Cvar_Set (developer, "1");
 

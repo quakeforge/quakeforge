@@ -2488,7 +2488,7 @@ SV_Init (void)
 
 	Sys_Init ();
 	GIB_Init (true);
-	COM_ParseConfig ();
+	COM_ParseConfig (sv_cbuf);
 
 	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
 

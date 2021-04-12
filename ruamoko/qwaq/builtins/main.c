@@ -134,7 +134,7 @@ init_qf (void)
 	qwaq_cbuf = Cbuf_New (&id_interp);
 
 	Sys_Init ();
-	COM_ParseConfig ();
+	COM_ParseConfig (qwaq_cbuf);
 
 	//Cvar_Set (developer, "1");
 

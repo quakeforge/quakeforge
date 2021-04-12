@@ -48,7 +48,9 @@ void COM_AddParm (const char *parm);
 void COM_Init (void);
 void COM_Init_Cvars (void);
 void COM_InitArgv (int argc, const char **argv);
-void COM_ParseConfig (void);
+struct cbuf_s;
+void COM_ParseConfig (struct cbuf_s *cbuf);
+void COM_ExecConfig (struct cbuf_s *cbuf, int skip_quakerc);
 
 ///@}
 

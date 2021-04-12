@@ -72,6 +72,7 @@
 #include "QF/draw.h"
 #include "QF/image.h"
 #include "QF/input.h"
+#include "QF/joystick.h"
 #include "QF/keys.h"
 #include "QF/model.h"
 #include "QF/msg.h"
@@ -1505,26 +1506,20 @@ Host_Error (const char *error, ...)
 	}
 }
 
-/*
-	Host_WriteConfiguration
-
-	Writes key bindings and archived cvars to config.cfg
-*/
 void
 Host_WriteConfiguration (void)
 {
-	QFile      *f;
-
 	if (host_initialized && cl_writecfg->int_val) {
-		const char *path = va (0, "%s/config.cfg", qfs_gamedir->dir.def);
+		const char *path = va (0, "%s/quakeforge.cfg", qfs_gamedir->dir.def);
+		QFile      *f = QFS_WOpen (path, 0);
 
-		f = QFS_WOpen (path, 0);
 		if (!f) {
-			Sys_Printf ("Couldn't write config.cfg.\n");
+			Sys_Printf ("Couldn't write quakeforge.cfg.\n");
 			return;
 		}
 
 		Key_WriteBindings (f);
+		Joy_WriteBindings (f);
 		Cvar_WriteVariables (f);
 
 		Qclose (f);
@@ -1713,28 +1708,6 @@ Host_Frame (float time)
 	fps_count++;
 }
 
-static int
-check_quakerc (void)
-{
-	const char *l, *p;
-	int ret = 1;
-	QFile *f;
-
-	f = QFS_FOpenFile ("quake.rc");
-	if (!f)
-		return 1;
-	while ((l = Qgetline (f))) {
-		if ((p = strstr (l, "stuffcmds"))) {
-			if (p == l) {				// only known case so far
-				ret = 0;
-				break;
-			}
-		}
-	}
-	Qclose (f);
-	return ret;
-}
-
 static void
 CL_Init_Memory (void)
 {
@@ -1773,19 +1746,21 @@ CL_Init_Memory (void)
 static void
 CL_Autoexec (int phase)
 {
-	int         cmd_warncmd_val = cmd_warncmd->int_val;
-
 	if (!phase)
 		return;
-	Cbuf_AddText (cl_cbuf, "cmd_warncmd 0\n");
-	Cbuf_AddText (cl_cbuf, "exec config.cfg\n");
-	Cbuf_AddText (cl_cbuf, "exec frontend.cfg\n");
+	if (!Cmd_Exec_File (cl_cbuf, "quakeforge.cfg", 1)) {
+		int         cmd_warncmd_val = cmd_warncmd->int_val;
+
+		Cbuf_AddText (cl_cbuf, "cmd_warncmd 0\n");
+		Cbuf_AddText (cl_cbuf, "exec config.cfg\n");
+		Cbuf_AddText (cl_cbuf, "exec frontend.cfg\n");
+
+		Cbuf_AddText (cl_cbuf, va (0, "cmd_warncmd %d\n", cmd_warncmd_val));
+	}
 
 	if (cl_autoexec->int_val) {
 		Cbuf_AddText (cl_cbuf, "exec autoexec.cfg\n");
 	}
-
-	Cbuf_AddText (cl_cbuf, va (0, "cmd_warncmd %d\n", cmd_warncmd_val));
 }
 
 void
@@ -1796,7 +1771,7 @@ Host_Init (void)
 
 	Sys_Init ();
 	GIB_Init (true);
-	COM_ParseConfig ();
+	COM_ParseConfig (cl_cbuf);
 
 	CL_Init_Memory ();
 
@@ -1837,13 +1812,10 @@ Host_Init (void)
 	CL_UpdateScreen (realtime);
 	CL_UpdateScreen (realtime);
 
-	if (cl_quakerc->int_val)
-		Cbuf_InsertText (cl_cbuf, "exec quake.rc\n");
-	Cmd_Exec_File (cl_cbuf, fs_usercfg->string, 0);
-	// Reparse the command line for + commands.
-	// (Note, no non-base commands exist yet)
-	if (!cl_quakerc->int_val || check_quakerc ())
-		Cmd_StuffCmds (cl_cbuf);
+	COM_ExecConfig (cl_cbuf, !cl_quakerc->int_val);
+
+	// make sure all + commands have been executed
+	Cbuf_Execute_Stack (cl_cbuf);
 
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();
@@ -1852,9 +1824,6 @@ Host_Init (void)
 				build_number ());
 	Sys_Printf ("\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n",
 				PACKAGE_NAME);
-
-	// make sure all + commands have been executed
-	Cbuf_Execute_Stack (cl_cbuf);
 
 	host_initialized = true;
 

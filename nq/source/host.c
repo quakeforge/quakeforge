@@ -808,28 +808,6 @@ Host_InitVCR (quakeparms_t *parms)
 
 }
 
-static int
-check_quakerc (void)
-{
-	const char *l, *p;
-	int ret = 1;
-	QFile *f;
-
-	f = QFS_FOpenFile ("quake.rc");
-	if (!f)
-		return 1;
-	while ((l = Qgetline (f))) {
-		if ((p = strstr (l, "stuffcmds"))) {
-			if (p == l) {				// only known case so far
-				ret = 0;
-				break;
-			}
-		}
-	}
-	Qclose (f);
-	return ret;
-}
-
 static void
 Host_Init_Memory (void)
 {
@@ -886,7 +864,7 @@ Host_Init (void)
 
 	Sys_Init ();
 	GIB_Init (true);
-	COM_ParseConfig ();
+	COM_ParseConfig (host_cbuf);
 
 	Host_Init_Memory ();
 
@@ -926,13 +904,7 @@ Host_Init (void)
 	CL_UpdateScreen (cl.time);
 	CL_UpdateScreen (cl.time);
 
-	if (!isDedicated && cl_quakerc->int_val)
-		Cbuf_InsertText (host_cbuf, "exec quake.rc\n");
-	Cmd_Exec_File (host_cbuf, fs_usercfg->string, 0);
-	// reparse the command line for + commands other than set
-	// (sets still done, but it doesn't matter)
-	if (isDedicated || !cl_quakerc->int_val || check_quakerc ())
-		Cmd_StuffCmds (host_cbuf);
+	COM_ExecConfig (host_cbuf, isDedicated || !cl_quakerc->int_val);
 
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();

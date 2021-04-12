@@ -103,21 +103,20 @@ client_state_t cl;
 static void
 CL_WriteConfiguration (void)
 {
-	QFile      *f;
-
 	// dedicated servers initialize the host but don't parse and set the
 	// config.cfg cvars
 	if (host_initialized && !isDedicated && cl_writecfg->int_val) {
-		const char *path = va (0, "%s/config.cfg", qfs_gamedir->dir.def);
-		f = QFS_WOpen (path, 0);
+		const char *path = va (0, "%s/quakeforge.cfg", qfs_gamedir->dir.def);
+		QFile      *f = QFS_WOpen (path, 0);
+
 		if (!f) {
-			Sys_Printf ("Couldn't write config.cfg.\n");
+			Sys_Printf ("Couldn't write quakeforge.cfg.\n");
 			return;
 		}
 
 		Key_WriteBindings (f);
-		Cvar_WriteVariables (f);
 		Joy_WriteBindings (f);
+		Cvar_WriteVariables (f);
 
 		Qclose (f);
 	}
