@@ -891,7 +891,8 @@ bsp_begin_subpass (QFV_BspSubpass subpass, VkPipeline pipeline,
 	};
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 
-	QFV_duCmdBeginLabel (device, cmd, bsp_pass_names[subpass],
+	QFV_duCmdBeginLabel (device, cmd, va (ctx->va_ctx, "bsp:%s",
+										  bsp_pass_names[subpass]),
 						 {0, 0.5, 0.6, 1});
 
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,

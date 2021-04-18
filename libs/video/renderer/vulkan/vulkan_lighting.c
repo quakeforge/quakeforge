@@ -143,8 +143,8 @@ update_lights (vulkan_ctx_t *ctx)
 		VectorZero (light_data->lights[i].direction);
 		light_data->lights[i].cone = 1;
 	}
-	for (size_t i = 0;
-		 i < lframe->lightvis.size && light_data->lightCount < NUM_LIGHTS; i++) {
+	for (size_t i = 0; (i < lframe->lightvis.size
+						&& light_data->lightCount < NUM_LIGHTS); i++) {
 		if (lframe->lightvis.a[i]) {
 			light_data->lights[light_data->lightCount++] = lctx->lights.a[i];
 		}
@@ -207,6 +207,8 @@ Vulkan_Lighting_Draw (vulkan_ctx_t *ctx)
 	};
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 
+	QFV_duCmdBeginLabel (device, cmd, "lighting", { 0.6, 0.5, 0.6, 1});
+
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 							  lctx->pipeline);
 
@@ -237,6 +239,7 @@ Vulkan_Lighting_Draw (vulkan_ctx_t *ctx)
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &ctx->quad_buffer, &offset);
 	dfunc->vkCmdDraw (cmd, 4, 1, 0, 0);
 
+	QFV_duCmdEndLabel (device, cmd);
 	dfunc->vkEndCommandBuffer (cmd);
 }
 

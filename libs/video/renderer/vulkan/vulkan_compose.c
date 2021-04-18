@@ -79,6 +79,8 @@ Vulkan_Compose_Draw (vulkan_ctx_t *ctx)
 	};
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 
+	QFV_duCmdBeginLabel (device, cmd, "compose", { 0, 0.2, 0.6, 1});
+
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 							  cctx->pipeline);
 
@@ -101,6 +103,7 @@ Vulkan_Compose_Draw (vulkan_ctx_t *ctx)
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &ctx->quad_buffer, &offset);
 	dfunc->vkCmdDraw (cmd, 4, 1, 0, 0);
 
+	QFV_duCmdEndLabel (device, cmd);
 	dfunc->vkEndCommandBuffer (cmd);
 }
 

@@ -191,6 +191,10 @@ alias_begin_subpass (QFV_AliasSubpass subpass, VkPipeline pipeline,
 	};
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 
+	QFV_duCmdBeginLabel (device, cmd, va (ctx->va_ctx, "alias:%s",
+										  alias_pass_names[subpass]),
+						 { 0.6, 0.5, 0, 1});
+
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 	//VkDescriptorSet sets[] = {
 	//	aframe->descriptors[0].dstSet,
@@ -216,6 +220,7 @@ alias_end_subpass (VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
+	QFV_duCmdEndLabel (device, cmd);
 	dfunc->vkEndCommandBuffer (cmd);
 }
 

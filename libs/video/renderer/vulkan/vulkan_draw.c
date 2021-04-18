@@ -46,6 +46,7 @@
 #include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 #include "QF/vid.h"
 
 #include "compat.h"
@@ -54,6 +55,7 @@
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/command.h"
+#include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
@@ -440,6 +442,9 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 		};
 		dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
 		dframe->cmd = cmdBuffers->a[i];
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
+							 dframe->cmd,
+							 va (ctx->va_ctx, "cmd:draw:%zd", i));
 	}
 	free (sets);
 }
@@ -730,6 +735,8 @@ Vulkan_FlushText (vulkan_ctx_t *ctx)
 	};
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 
+	QFV_duCmdBeginLabel (device, cmd, "twod", { 0.6, 0.2, 0, 1});
+
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 							  dctx->pipeline);
 	dfunc->vkCmdSetViewport (cmd, 0, 1, &ctx->viewport);
@@ -745,6 +752,7 @@ Vulkan_FlushText (vulkan_ctx_t *ctx)
 	dfunc->vkCmdDrawIndexed (cmd, dframe->num_quads * INDS_PER_QUAD,
 							 1, 0, 0, 0);
 
+	QFV_duCmdEndLabel (device, cmd);
 	dfunc->vkEndCommandBuffer (cmd);
 
 	dframe->num_quads = 0;
