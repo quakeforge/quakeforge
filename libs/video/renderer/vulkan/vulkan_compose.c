@@ -88,7 +88,8 @@ Vulkan_Compose_Draw (vulkan_ctx_t *ctx)
 		= ctx->attachment_views->a[QFV_attachOpaque];
 	cframe->imageInfo[1].imageView
 		= ctx->attachment_views->a[QFV_attachTranslucent];
-	dfunc->vkUpdateDescriptorSets (device->dev, 2, cframe->descriptors, 0, 0);
+	dfunc->vkUpdateDescriptorSets (device->dev, COMPOSE_IMAGE_INFOS,
+								   cframe->descriptors, 0, 0);
 
 	VkDescriptorSet sets[] = {
 		cframe->descriptors[0].dstSet,

@@ -986,8 +986,7 @@ parse_object (vulkan_ctx_t *ctx, memsuper_t *memsuper, plitem_t *plist,
 
 	if (!parser (0, plist, object, messages, &parsectx)) {
 		for (int i = 0; i < PL_A_NumObjects (messages); i++) {
-			Sys_MaskPrintf (SYS_vulkan_parse, "%s\n",
-							PL_String (PL_ObjectAtIndex (messages, i)));
+			Sys_Printf ("%s\n", PL_String (PL_ObjectAtIndex (messages, i)));
 		}
 		return 0;
 	}
