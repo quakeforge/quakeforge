@@ -426,19 +426,19 @@
 			{
 				srcSubpass = 0;	// depth
 				dstSubpass = 1; // translucent
-				srcStageMask = color_attachment_output;
-				dstStageMask = fragment_shader;
-				srcAccessMask = color_attachment_write;
-				dstAccessMask = shader_read;
+				srcStageMask = late_fragment_tests;
+				dstStageMask = fragment_shader|early_fragment_tests;
+				srcAccessMask = depth_stencil_attachment_write;
+				dstAccessMask = input_attachment_read|depth_stencil_attachment_read;
 				dependencyFlags = by_region;
 			},
 			{
 				srcSubpass = 0;	// depth
 				dstSubpass = 2; // g-buffer
-				srcStageMask = color_attachment_output;
-				dstStageMask = fragment_shader;
-				srcAccessMask = color_attachment_write;
-				dstAccessMask = shader_read;
+				srcStageMask = late_fragment_tests;
+				dstStageMask = early_fragment_tests;
+				srcAccessMask = depth_stencil_attachment_write;
+				dstAccessMask = depth_stencil_attachment_read;
 				dependencyFlags = by_region;
 			},
 			{
@@ -447,7 +447,7 @@
 				srcStageMask = color_attachment_output;
 				dstStageMask = fragment_shader;
 				srcAccessMask = color_attachment_write;
-				dstAccessMask = shader_read;
+				dstAccessMask = input_attachment_read;
 				dependencyFlags = by_region;
 			},
 			{
@@ -456,7 +456,7 @@
 				srcStageMask = color_attachment_output;
 				dstStageMask = fragment_shader;
 				srcAccessMask = color_attachment_write;
-				dstAccessMask = shader_read;
+				dstAccessMask = input_attachment_read;
 				dependencyFlags = by_region;
 			},
 			{
@@ -465,7 +465,7 @@
 				srcStageMask = color_attachment_output;
 				dstStageMask = fragment_shader;
 				srcAccessMask = color_attachment_write;
-				dstAccessMask = shader_read;
+				dstAccessMask = input_attachment_read;
 				dependencyFlags = by_region;
 			},
 		);
