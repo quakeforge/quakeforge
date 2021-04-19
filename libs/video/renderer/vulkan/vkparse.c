@@ -1092,6 +1092,9 @@ QFV_ParseDescriptorSetLayout (vulkan_ctx_t *ctx, plitem_t *plist,
 
 	VkDescriptorSetLayout setLayout;
 	dfunc->vkCreateDescriptorSetLayout (device->dev, &cInfo, 0, &setLayout);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
+						 setLayout, va (ctx->va_ctx, "descriptorSetLayout:%d",
+										PL_Line (plist)));
 
 	delete_memsuper (memsuper);
 	return setLayout;

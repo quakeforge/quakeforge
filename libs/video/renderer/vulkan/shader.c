@@ -45,6 +45,7 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/Vulkan/qf_vid.h"
+#include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
@@ -170,6 +171,8 @@ QFV_CreateShaderModule (qfv_device_t *device, const char *shader_path)
 		};
 
 		dfunc->vkCreateShaderModule (dev, &createInfo, 0, &shader);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_SHADER_MODULE, shader,
+							 shader_path);
 	} else {
 		Sys_MaskPrintf (SYS_vulkan,
 						"QFV_CreateShaderModule: could not find shader %s\n",
