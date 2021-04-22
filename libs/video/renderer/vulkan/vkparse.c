@@ -419,6 +419,19 @@ QFV_AddHandle (hashtab_t *tab, const char *name, uint64_t handle)
 	Hash_Add (tab, hr);
 }
 
+static const char *
+resource_path (vulkan_ctx_t *ctx, const char *prefix, const char *name)
+{
+	if (name[0] != '$') {
+		if (prefix) {
+			name = va (ctx->va_ctx, "$"QFV_PROPERTIES".%s.%s", prefix, name);
+		} else {
+			name = va (ctx->va_ctx, "$"QFV_PROPERTIES".%s", name);
+		}
+	}
+	return name;
+}
+
 static int
 parse_VkRenderPass (const plitem_t *item, void **data,
 					plitem_t *messages, parsectx_t *context)
@@ -430,12 +443,10 @@ parse_VkRenderPass (const plitem_t *item, void **data,
 	vulkan_ctx_t *ctx = pctx->vctx;
 
 	const char *name = PL_String (item);
-	Sys_MaskPrintf (SYS_vulkan_parse, "parse_VkRenderPass: %s\n", name);
-	if (name[0] != '$') {
-		name = va (ctx->va_ctx, "$"QFV_PROPERTIES".%s", name);
-	}
+	const char *path = resource_path (ctx, 0, name);
+	Sys_MaskPrintf (SYS_vulkan_parse, "parse_VkRenderPass: %s\n", path);
 
-	*handle = (VkRenderPass) QFV_GetHandle (ctx->renderpasses, name);
+	*handle = (VkRenderPass) QFV_GetHandle (ctx->renderpasses, path);
 	if (*handle) {
 		return 1;
 	}
@@ -444,13 +455,15 @@ parse_VkRenderPass (const plitem_t *item, void **data,
 	exprval_t   result = { &cexpr_plitem, &setItem };
 	ectx.symtab = 0;
 	ectx.result = &result;
-	ret = !cexpr_eval_string (name, &ectx);
+	ret = !cexpr_eval_string (path, &ectx);
 	if (ret) {
 		VkRenderPass setLayout;
 		setLayout = QFV_ParseRenderPass (ctx, setItem, pctx->properties);
 		*handle = (VkRenderPass) setLayout;
 
-		QFV_AddHandle (ctx->setLayouts, name, (uint64_t) setLayout);
+		// path not guaranteed to survive cexpr_eval_string due to va
+		path = resource_path (ctx, 0, name);
+		QFV_AddHandle (ctx->setLayouts, path, (uint64_t) setLayout);
 	}
 	return ret;
 }
@@ -487,13 +500,11 @@ parse_VkDescriptorSetLayout (const plfield_t *field, const plitem_t *item,
 	vulkan_ctx_t *ctx = pctx->vctx;
 
 	const char *name = PL_String (item);
+	const char *path = resource_path (ctx, "setLayouts", name);
 	Sys_MaskPrintf (SYS_vulkan_parse, "parse_VkDescriptorSetLayout: %s\n",
-					name);
-	if (name[0] != '$') {
-		name = va (ctx->va_ctx, "$"QFV_PROPERTIES".setLayouts.%s", name);
-	}
+					path);
 
-	*handle = (VkDescriptorSetLayout) QFV_GetHandle (ctx->setLayouts, name);
+	*handle = (VkDescriptorSetLayout) QFV_GetHandle (ctx->setLayouts, path);
 	if (*handle) {
 		return 1;
 	}
@@ -502,14 +513,16 @@ parse_VkDescriptorSetLayout (const plfield_t *field, const plitem_t *item,
 	exprval_t   result = { &cexpr_plitem, &setItem };
 	ectx.symtab = 0;
 	ectx.result = &result;
-	ret = !cexpr_eval_string (name, &ectx);
+	ret = !cexpr_eval_string (path, &ectx);
 	if (ret) {
 		VkDescriptorSetLayout setLayout;
 		setLayout = QFV_ParseDescriptorSetLayout (ctx, setItem,
 												  pctx->properties);
 		*handle = (VkDescriptorSetLayout) setLayout;
 
-		QFV_AddHandle (ctx->setLayouts, name, (uint64_t) setLayout);
+		// path not guaranteed to survive cexpr_eval_string due to va
+		path = resource_path (ctx, "setLayouts", name);
+		QFV_AddHandle (ctx->setLayouts, path, (uint64_t) setLayout);
 	}
 	return ret;
 }
@@ -524,12 +537,10 @@ parse_VkPipelineLayout (const plitem_t *item, void **data,
 	vulkan_ctx_t *ctx = context->vctx;
 
 	const char *name = PL_String (item);
-	Sys_MaskPrintf (SYS_vulkan_parse, "parse_VkPipelineLayout: %s\n", name);
-	if (name[0] != '$') {
-		name = va (ctx->va_ctx, "$"QFV_PROPERTIES".pipelineLayouts.%s", name);
-	}
+	const char *path = resource_path (ctx, "pipelineLayouts", name);
+	Sys_MaskPrintf (SYS_vulkan_parse, "parse_VkPipelineLayout: %s\n", path);
 
-	*handle = (VkPipelineLayout) QFV_GetHandle (ctx->pipelineLayouts, name);
+	*handle = (VkPipelineLayout) QFV_GetHandle (ctx->pipelineLayouts, path);
 	if (*handle) {
 		return 1;
 	}
@@ -538,13 +549,15 @@ parse_VkPipelineLayout (const plitem_t *item, void **data,
 	exprval_t   result = { &cexpr_plitem, &setItem };
 	ectx.symtab = 0;
 	ectx.result = &result;
-	ret = !cexpr_eval_string (name, &ectx);
+	ret = !cexpr_eval_string (path, &ectx);
 	if (ret) {
 		VkPipelineLayout layout;
 		layout = QFV_ParsePipelineLayout (ctx, setItem, context->properties);
 		*handle = (VkPipelineLayout) layout;
 
-		QFV_AddHandle (ctx->pipelineLayouts, name, (uint64_t) layout);
+		// path not guaranteed to survive cexpr_eval_string due to va
+		path = resource_path (ctx, "pipelineLayouts", name);
+		QFV_AddHandle (ctx->pipelineLayouts, path, (uint64_t) layout);
 	}
 	return ret;
 }
@@ -559,12 +572,10 @@ parse_VkImage (const plitem_t *item, void **data, plitem_t *messages,
 	vulkan_ctx_t *ctx = context->vctx;
 
 	const char *name = PL_String (item);
-	Sys_MaskPrintf (SYS_vulkan_parse, "parse_VkImage: %s\n", name);
-	if (name[0] != '$') {
-		name = va (ctx->va_ctx, "$"QFV_PROPERTIES".images.%s", name);
-	}
+	const char *path = resource_path (ctx, "images", name);
+	Sys_MaskPrintf (SYS_vulkan_parse, "parse_VkImage: %s\n", path);
 
-	*handle = (VkImage) QFV_GetHandle (ctx->images, name);
+	*handle = (VkImage) QFV_GetHandle (ctx->images, path);
 	if (*handle) {
 		return 1;
 	}
@@ -573,13 +584,15 @@ parse_VkImage (const plitem_t *item, void **data, plitem_t *messages,
 	exprval_t   result = { &cexpr_plitem, &imageItem };
 	ectx.symtab = 0;
 	ectx.result = &result;
-	ret = !cexpr_eval_string (name, &ectx);
+	ret = !cexpr_eval_string (path, &ectx);
 	if (ret) {
 		VkImage image;
 		image = QFV_ParseImage (ctx, imageItem, context->properties);
 		*handle = (VkImage) image;
 
-		QFV_AddHandle (ctx->images, name, (uint64_t) image);
+		// path not guaranteed to survive cexpr_eval_string due to va
+		path = resource_path (ctx, "images", name);
+		QFV_AddHandle (ctx->images, path, (uint64_t) image);
 	}
 	return ret;
 }
@@ -601,12 +614,10 @@ parse_VkImageView (const plfield_t *field, const plitem_t *item, void *data,
 	vulkan_ctx_t *ctx = context->vctx;
 
 	const char *name = PL_String (item);
-	Sys_MaskPrintf (SYS_vulkan_parse, "parse_VkImageView: %s\n", name);
-	if (name[0] != '$') {
-		name = va (ctx->va_ctx, "$"QFV_PROPERTIES".imageViews.%s", name);
-	}
+	const char *path = resource_path (ctx, "imageViews", name);
+	Sys_MaskPrintf (SYS_vulkan_parse, "parse_VkImageView: %s\n", path);
 
-	*handle = (VkImageView) QFV_GetHandle (ctx->imageViews, name);
+	*handle = (VkImageView) QFV_GetHandle (ctx->imageViews, path);
 	if (*handle) {
 		return 1;
 	}
@@ -615,7 +626,7 @@ parse_VkImageView (const plfield_t *field, const plitem_t *item, void *data,
 	exprval_t   result = { &cexpr_exprval, &value };
 	ectx.symtab = 0;
 	ectx.result = &result;
-	ret = !cexpr_eval_string (name, &ectx);
+	ret = !cexpr_eval_string (path, &ectx);
 
 	plitem_t   *imageViewItem = 0;
 	if (ret) {
@@ -625,7 +636,9 @@ parse_VkImageView (const plfield_t *field, const plitem_t *item, void *data,
 		} else if (value->type == &cexpr_plitem) {
 			imageView = QFV_ParseImageView (ctx, imageViewItem,
 											context->properties);
-			QFV_AddHandle (ctx->imageViews, name, (uint64_t) imageView);
+			// path not guaranteed to survive cexpr_eval_string due to va
+			path = resource_path (ctx, "imageViews", name);
+			QFV_AddHandle (ctx->imageViews, path, (uint64_t) imageView);
 		} else {
 			PL_Message (messages, item, "not a VkImageView");
 			return 0;
@@ -1118,6 +1131,9 @@ QFV_ParsePipelineLayout (vulkan_ctx_t *ctx, plitem_t *plist,
 
 	VkPipelineLayout layout;
 	dfunc->vkCreatePipelineLayout (device->dev, &cInfo, 0, &layout);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_PIPELINE_LAYOUT,
+						 layout, va (ctx->va_ctx, "pipelineLayout:%d",
+										PL_Line (plist)));
 
 	delete_memsuper (memsuper);
 	return layout;
@@ -1285,7 +1301,7 @@ QFV_ParseImageSet (vulkan_ctx_t *ctx, plitem_t *item, plitem_t *properties)
 		const char *name = PL_KeyAtIndex (item, i);
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE, set->a[i],
 							 va (ctx->va_ctx, "image:%s", name));
-		name = va (ctx->va_ctx, "$"QFV_PROPERTIES".images.%s", name);
+		name = resource_path (ctx, "images", name);
 		QFV_AddHandle (ctx->images, name, (uint64_t) set->a[i]);
 	}
 
@@ -1322,7 +1338,7 @@ QFV_ParseImageViewSet (vulkan_ctx_t *ctx, plitem_t *item,
 		dfunc->vkCreateImageView (device->dev, &create.info[i], 0, &set->a[i]);
 
 		const char *name = PL_KeyAtIndex (item, i);
-		name = va (ctx->va_ctx, "$"QFV_PROPERTIES".imageViews.%s", name);
+		name = resource_path (ctx, "imageViews", name);
 		QFV_AddHandle (ctx->imageViews, name, (uint64_t) set->a[i]);
 	}
 
