@@ -53,6 +53,8 @@ typedef struct tex_s {
 
 tex_t *LoadImage (const char *imageFile, int load);
 
+size_t ImageSize (const tex_t *tex, int incl_struct) __attribute__((pure));
+
 typedef struct colcache_s colcache_t;
 
 colcache_t *ColorCache_New (void);

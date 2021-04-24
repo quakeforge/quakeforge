@@ -106,3 +106,31 @@ LoadImage (const char *imageFile, int load)
 	dstring_delete (tmpFile);
 	return (tex);
 }
+
+size_t
+ImageSize (const tex_t *tex, int incl_struct)
+{
+	size_t      w =tex->width;
+	size_t      h =tex->height;
+	size_t      bpp = 1;
+	switch (tex->format) {
+		case tex_palette:
+		case tex_rgb:
+			bpp = 3;
+			break;
+		case tex_l:
+		case tex_a:
+			bpp = 1;
+			break;
+		case tex_la:
+			bpp = 2;
+			break;
+		case tex_rgba:
+			bpp = 4;
+			break;
+		case tex_frgba:
+			bpp = 16;
+			break;
+	}
+	return bpp * w * h + (incl_struct ? sizeof (tex_t) : 0);
+}
