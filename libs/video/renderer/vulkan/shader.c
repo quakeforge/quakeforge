@@ -71,6 +71,8 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/bsp_gbuf.frag.spvc"
 static
+#include "libs/video/renderer/vulkan/shader/bsp_shadow.vert.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/bsp_sky.frag.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/bsp_turb.frag.spvc"
@@ -87,9 +89,13 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/alias_gbuf.frag.spvc"
 static
+#include "libs/video/renderer/vulkan/shader/alias_shadow.vert.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/passthrough.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/pushcolor.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/shadow.geom.spvc"
 
 typedef struct shaderdata_s {
 	const char *name;
@@ -106,6 +112,7 @@ static shaderdata_t builtin_shaders[] = {
 	{ "bsp_gbuf.vert", bsp_gbuf_vert, sizeof (bsp_gbuf_vert) },
 	{ "bsp_gbuf.geom", bsp_gbuf_geom, sizeof (bsp_gbuf_geom) },
 	{ "bsp_gbuf.frag", bsp_gbuf_frag, sizeof (bsp_gbuf_frag) },
+	{ "bsp_shadow.vert", bsp_shadow_vert, sizeof (bsp_shadow_vert) },
 	{ "bsp_sky.frag", bsp_sky_frag, sizeof (bsp_sky_frag) },
 	{ "bsp_turb.frag", bsp_turb_frag, sizeof (bsp_turb_frag) },
 	{ "lighting.frag", lighting_frag, sizeof (lighting_frag) },
@@ -114,8 +121,10 @@ static shaderdata_t builtin_shaders[] = {
 	{ "alias_depth.vert", alias_depth_vert, sizeof (alias_depth_vert) },
 	{ "alias.frag", alias_frag, sizeof (alias_frag) },
 	{ "alias_gbuf.frag", alias_gbuf_frag, sizeof (alias_gbuf_frag) },
+	{ "alias_shadow.vert", alias_shadow_vert, sizeof (alias_shadow_vert) },
 	{ "passthrough.vert", passthrough_vert, sizeof (passthrough_vert) },
 	{ "pushcolor.frag", pushcolor_frag, sizeof (pushcolor_frag) },
+	{ "shadow.geom", shadow_geom, sizeof (shadow_geom) },
 	{}
 };
 

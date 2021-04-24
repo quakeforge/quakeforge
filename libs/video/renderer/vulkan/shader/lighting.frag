@@ -15,12 +15,18 @@ struct LightData {
 	float       cone;
 };
 
-layout (constant_id = 0) const int MaxLights = 128;
+#define MaxLights 256
+
+layout (set = 2, binding = 0) uniform sampler2DArrayShadow shadowCascade[MaxLights];
+layout (set = 2, binding = 0) uniform sampler2DShadow shadowPlane[MaxLights];
+layout (set = 2, binding = 0) uniform samplerCubeShadow shadowCube[MaxLights];
+
 layout (set = 1, binding = 0) uniform Lights {
-	vec4        intensity[16]; // 64 floats
-	vec3        intensity2;
-	int         lightCount;
+	vec4        intensity[17]; // 68 floats
+	ivec4       lightCounts;
 	LightData   lights[MaxLights];
+	mat4        shadowMat[MaxLights];
+	vec4        shadowCascale[MaxLights];
 };
 
 layout (location = 0) out vec4 frag_color;
@@ -48,6 +54,24 @@ calc_light (LightData light, vec3 position, vec3 normal)
 	return light.color * i * (r - d);
 }
 
+vec3
+shadow_cascade (sampler2DArrayShadow map)
+{
+	return vec3(1);
+}
+
+vec3
+shadow_plane (sampler2DShadow map)
+{
+	return vec3(1);
+}
+
+vec3
+shadow_cube (samplerCubeShadow map)
+{
+	return vec3(1);
+}
+
 void
 main (void)
 {
@@ -59,8 +83,22 @@ main (void)
 	vec3        light = vec3 (0);
 
 	if (MaxLights > 0) {
-		for (int i = 0; i < lightCount; i++) {
+		int         i = 0;
+		while (i < lightCounts.x) {
+			shadow_cascade (shadowCascade[i]);
+			i++;
+		}
+		while (i < lightCounts.y) {
+			shadow_plane (shadowPlane[i]);
+			i++;
+		}
+		while (i < lightCounts.z) {
+			shadow_cube (shadowCube[i]);
+			i++;
+		}
+		while (i < lightCounts.w) {
 			light += calc_light (lights[i], p, n);
+			i++;
 		}
 	}
 	frag_color = vec4 (c * light + e, 1);

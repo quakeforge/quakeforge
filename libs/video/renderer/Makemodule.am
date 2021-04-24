@@ -311,6 +311,8 @@ bsp_gbufg_src = $(vkshaderpath)/bsp_gbuf.geom
 bsp_gbufg_c = $(vkshaderpath)/bsp_gbuf.geom.spvc
 bsp_gbuff_src = $(vkshaderpath)/bsp_gbuf.frag
 bsp_gbuff_c = $(vkshaderpath)/bsp_gbuf.frag.spvc
+bsp_shadow_src = $(vkshaderpath)/bsp_shadow.vert
+bsp_shadow_c = $(vkshaderpath)/bsp_shadow.vert.spvc
 bsp_skyf_src = $(vkshaderpath)/bsp_sky.frag
 bsp_skyf_c = $(vkshaderpath)/bsp_sky.frag.spvc
 bsp_turbf_src = $(vkshaderpath)/bsp_turb.frag
@@ -327,10 +329,14 @@ alias_depth_src = $(vkshaderpath)/alias_depth.vert
 alias_depth_c = $(vkshaderpath)/alias_depth.vert.spvc
 alias_gbuf_src = $(vkshaderpath)/alias_gbuf.frag
 alias_gbuf_c = $(vkshaderpath)/alias_gbuf.frag.spvc
+alias_shadow_src = $(vkshaderpath)/alias_shadow.vert
+alias_shadow_c = $(vkshaderpath)/alias_shadow.vert.spvc
 passthrough_src = $(vkshaderpath)/passthrough.vert
 passthrough_c = $(vkshaderpath)/passthrough.vert.spvc
 pushcolor_src = $(vkshaderpath)/pushcolor.frag
 pushcolor_c = $(vkshaderpath)/pushcolor.frag.spvc
+shadow_src = $(vkshaderpath)/shadow.geom
+shadow_c = $(vkshaderpath)/shadow.geom.spvc
 
 $(twodv_c): $(twodv_src)
 
@@ -348,6 +354,8 @@ $(bsp_gbufg_c): $(bsp_gbufg_src)
 
 $(bsp_gbuff_c): $(bsp_gbuff_src)
 
+$(bsp_shadow_c): $(bsp_shadow_src)
+
 $(bsp_skyf_c): $(bsp_skyf_src)
 
 $(bsp_turbf_c): $(bsp_turbf_src)
@@ -364,9 +372,13 @@ $(aliasf_c): $(aliasf_src)
 
 $(alias_gbuf_c): $(alias_gbuf_src)
 
+$(alias_shadow_c): $(alias_shadow_src)
+
 $(passthrough_c): $(passthrough_src)
 
 $(pushcolor_c): $(pushcolor_src)
+
+$(shadow_c): $(shadow_src)
 
 vkshader_c = \
 	$(twodv_c) \
@@ -377,6 +389,7 @@ vkshader_c = \
 	$(bsp_gbufv_c) \
 	$(bsp_gbufg_c) \
 	$(bsp_gbuff_c) \
+	$(bsp_shadow_c) \
 	$(bsp_skyf_c) \
 	$(bsp_turbf_c) \
 	$(lightingf_c) \
@@ -385,8 +398,10 @@ vkshader_c = \
 	$(alias_depth_c) \
 	$(aliasf_c) \
 	$(alias_gbuf_c) \
+	$(alias_shadow_c) \
 	$(passthrough_c) \
-	$(pushcolor_c)
+	$(pushcolor_c) \
+	$(shadow_c)
 
 V_VKGEN = $(V_VKGEN_@AM_V@)
 V_VKGEN_ = $(V_VKGEN_@AM_DEFAULT_V@)
@@ -427,10 +442,12 @@ EXTRA_DIST += \
 	libs/video/renderer/vulkan/shader/alias.vert \
 	libs/video/renderer/vulkan/shader/alias_depth.vert \
 	libs/video/renderer/vulkan/shader/alias_gbuf.frag \
+	libs/video/renderer/vulkan/shader/alias_shadow.frag \
 	libs/video/renderer/vulkan/shader/bsp_depth.vert \
 	libs/video/renderer/vulkan/shader/bsp_gbuf.frag \
 	libs/video/renderer/vulkan/shader/bsp_gbuf.geom \
 	libs/video/renderer/vulkan/shader/bsp_gbuf.vert \
+	libs/video/renderer/vulkan/shader/bsp_shadow.vert \
 	libs/video/renderer/vulkan/shader/bsp_sky.frag \
 	libs/video/renderer/vulkan/shader/bsp_turb.frag \
 	libs/video/renderer/vulkan/shader/compose.frag \
@@ -439,5 +456,6 @@ EXTRA_DIST += \
 	libs/video/renderer/vulkan/shader/pushcolor.frag \
 	libs/video/renderer/vulkan/shader/quakebsp.frag \
 	libs/video/renderer/vulkan/shader/quakebsp.vert \
+	libs/video/renderer/vulkan/shader/shadow.geom \
 	libs/video/renderer/vulkan/shader/twod.frag \
 	libs/video/renderer/vulkan/shader/twod.vert

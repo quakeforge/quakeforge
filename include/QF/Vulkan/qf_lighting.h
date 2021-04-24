@@ -35,6 +35,7 @@
 #include "QF/modelgen.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/command.h"
+#include "QF/simd/types.h"
 
 typedef struct qfv_light_s {
 	vec3_t      color;
@@ -53,21 +54,35 @@ typedef struct qfv_lightvisset_s DARRAY_TYPE (byte) qfv_lightvisset_t;
 #define NUM_STYLES 64
 
 typedef struct qfv_light_buffer_s {
-	float       intensity[NUM_STYLES + 3];
+	float       intensity[NUM_STYLES + 4];
+	int         cascadeCount;
+	int         planeCount;
+	int         cubeCount;
 	int         lightCount;
 	qfv_light_t lights[NUM_LIGHTS] __attribute__((aligned(16)));
+	mat4f_t     shadowMat[NUM_LIGHTS];
+	vec4f_t     shadowCascade[NUM_LIGHTS];
 } qfv_light_buffer_t;
 
 #define LIGHTING_BUFFER_INFOS 1
-#define LIGHTING_IMAGE_INFOS 5
+#define LIGHTING_ATTACH_INFOS 5
+#define LIGHTING_SHADOW_INFOS NUM_LIGHTS
+#define LIGHTING_DESCRIPTORS (LIGHTING_BUFFER_INFOS + LIGHTING_ATTACH_INFOS + 1)
 
 typedef struct lightingframe_s {
 	VkCommandBuffer cmd;
 	VkBuffer    light_buffer;
 	VkDescriptorBufferInfo bufferInfo[LIGHTING_BUFFER_INFOS];
-	VkDescriptorImageInfo imageInfo[LIGHTING_IMAGE_INFOS];
-	VkWriteDescriptorSet descriptors[LIGHTING_BUFFER_INFOS
-									 + LIGHTING_IMAGE_INFOS];
+	VkDescriptorImageInfo attachInfo[LIGHTING_ATTACH_INFOS];
+	VkDescriptorImageInfo shadowInfo[LIGHTING_SHADOW_INFOS];
+	union {
+		VkWriteDescriptorSet descriptors[LIGHTING_DESCRIPTORS];
+		struct {
+			VkWriteDescriptorSet bufferWrite[LIGHTING_BUFFER_INFOS];
+			VkWriteDescriptorSet attachWrite[LIGHTING_ATTACH_INFOS];
+			VkWriteDescriptorSet shadowWrite;
+		};
+	};
 	// A fat PVS of leafs visible from visible leafs so hidden lights can
 	// illuminate the leafs visible to the player
 	byte        pvs[MAP_PVS_BYTES];
@@ -82,6 +97,7 @@ typedef struct lightingctx_s {
 	lightingframeset_t frames;
 	VkPipeline   pipeline;
 	VkPipelineLayout layout;
+	VkSampler    sampler;
 	VkDeviceMemory light_memory;
 	qfv_lightset_t lights;
 	qfv_lightleafset_t lightleafs;

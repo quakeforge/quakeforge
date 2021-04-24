@@ -1,0 +1,71 @@
+{
+	images = {
+		shadow = {
+			flags = cube_compatible;
+			imageType = VK_IMAGE_TYPE_2D;	//FIXME short form is 2d...
+			format = x8_d24_unorm_pack32;
+			samples = 1;
+			extent = {
+				width = 256;	// FIXME config
+				height = 256;	// FIXME config
+				depth = 1;
+			};
+			mipLevels = 1;
+			arrayLayers = 2048;	// FIXME config
+			tiling = optimal;
+			usage = depth_stencil_attachment|sampled;
+			initialLayout = undefined;
+		};
+	};
+	imageViews = {
+		shadow = {
+			image = depth;
+			viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+			format = $properties.images.shadow.format;
+			components = {
+				r = identity;
+				g = identity;
+				b = identity;
+				a = identity;
+			};
+			subresourceRange = {
+				aspectMask = depth;
+				levelCount = 1;
+				layerCount = $properties.images.shadow.arrayLayers;
+			};
+		};
+	};
+	framebuffer = {
+		renderPass = $properties.renderpass;
+		attachments = (shadown);
+		width = $properties.images.shadow.extent.width;
+		height = $properties.images.shadow.extent.height;
+		layers = $properties.images.shadow.arrayLayers;
+	};
+	clearValues = (
+		{ depthStencil = { depth = 1; stencil = 0; }; },
+	);
+	renderpass = {
+		attachments = (
+			{
+				format = $properties.images.depth.format;
+				samples = 1;
+				loadOp = dont_care;
+				storeOp = store;
+				stencilLoadOp = dont_care;
+				stencilStoreOp = dont_care;
+				initialLayout = undefined;
+				finalLayout = shader_read_only_optimal;
+			},
+		);
+		subpasses = (
+			{	// 0 depth
+				pipelineBindPoint = graphics;
+				depthStencilAttachment = {
+					attachment = 0;
+					layout = depth_stencil_attachment_optimal;
+				};
+			}
+		);
+	};
+}

@@ -169,8 +169,7 @@ Mod_LeafPVS_set (const mleaf_t *leaf, const model_t *model, byte defvis,
 		memset (out, defvis, sizeof (mod_novis));
 		return;
 	}
-	return Mod_DecompressVis_set (leaf->compressed_vis, &model->brush, defvis,
-								  out);
+	Mod_DecompressVis_set (leaf->compressed_vis, &model->brush, defvis, out);
 }
 
 VISIBLE void
@@ -183,8 +182,7 @@ Mod_LeafPVS_mix (const mleaf_t *leaf, const model_t *model, byte defvis,
 		}
 		return;
 	}
-	return Mod_DecompressVis_mix (leaf->compressed_vis, &model->brush, defvis,
-								  out);
+	Mod_DecompressVis_mix (leaf->compressed_vis, &model->brush, defvis, out);
 }
 
 // BRUSHMODEL LOADING =========================================================
