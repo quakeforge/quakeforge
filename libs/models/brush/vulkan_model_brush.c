@@ -257,10 +257,9 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 	}
 
 	// base barrier
-	VkImageMemoryBarrier barrier;
-	barrier = imageLayoutTransitionBarriers[qfv_LT_Undefined_to_TransferDst];
-	barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
+	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
 
 	__auto_type barriers = QFV_AllocImageBarrierSet (image_count, malloc);
 	barriers->size = 0;
@@ -271,18 +270,15 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 		}
 		vulktex_t  *tex = tx->render;
 		__auto_type b = &barriers->a[barriers->size++];
-		*b = barrier;
+		*b = ib.barrier;
 		b->image = tex->tex->image;
 		if (tex->glow) {
 			b = &barriers->a[barriers->size++];
-			*b = barrier;
+			*b = ib.barrier;
 			b->image = tex->glow->image;
 		}
 	}
-	qfv_pipelinestagepair_t stages;
-
-	stages = imageLayoutTransitionStages[qfv_LT_Undefined_to_TransferDst];
-	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
 								 0, 0, 0, 0, 0,
 								 barriers->size, barriers->a);
 	for (int i = 0, j = 0; i < brush->numtextures; i++) {
@@ -307,8 +303,8 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 		}
 	}
 
-	stages=imageLayoutTransitionStages[qfv_LT_TransferDst_to_ShaderReadOnly];
-	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+	ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
 								 0, 0, 0, 0, 0,
 								 barriers->size, barriers->a);
 	QFV_PacketSubmit (packet);

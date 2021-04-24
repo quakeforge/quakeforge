@@ -184,17 +184,13 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 
 	Vulkan_ExpandPalette (base_data, tskin, vid.palette, 1, skinsize);
 
-	VkImageMemoryBarrier barrier;
-	qfv_pipelinestagepair_t stages;
-
-	stages = imageLayoutTransitionStages[qfv_LT_Undefined_to_TransferDst];
-	barrier = imageLayoutTransitionBarriers[qfv_LT_Undefined_to_TransferDst];
-	barrier.image = skin->image;
-	barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
+	ib.barrier.image = skin->image;
+	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
 								 0, 0, 0, 0, 0,
-								 1, &barrier);
+								 1, &ib.barrier);
 
 	VkBufferImageCopy copy = {
 		packet->offset, 0, 0,
@@ -207,14 +203,13 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 								   1, &copy);
 
 	if (mipLevels == 1) {
-		stages = imageLayoutTransitionStages[qfv_LT_TransferDst_to_ShaderReadOnly];
-		barrier=imageLayoutTransitionBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
-		barrier.image = skin->image;
-		barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-		barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-		dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+		ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+		ib.barrier.image = skin->image;
+		ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+		ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+		dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
 									 0, 0, 0, 0, 0,
-									 1, &barrier);
+									 1, &ib.barrier);
 	} else {
 		QFV_GenerateMipMaps (device, packet->cmd, skin->image,
 							 mipLevels, w, h, 4);

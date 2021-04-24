@@ -1390,19 +1390,14 @@ create_default_skys (vulkan_ctx_t *ctx)
 
 	// temporarily commandeer the light map's staging buffer
 	qfv_packet_t *packet = QFV_PacketAcquire (bctx->light_stage);
-	VkImageMemoryBarrier barrier;
-	VkImageMemoryBarrier barriers[2];
-	qfv_pipelinestagepair_t stages;
 
-	stages = imageLayoutTransitionStages[qfv_LT_Undefined_to_TransferDst];
-	barrier = imageLayoutTransitionBarriers[qfv_LT_Undefined_to_TransferDst];
-	barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	barriers[0] = barrier;
-	barriers[1] = barrier;
+	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
+	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	VkImageMemoryBarrier barriers[2] = { ib.barrier, ib.barrier };
 	barriers[0].image = skybox;
 	barriers[1].image = skysheet;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
 								 0, 0, 0, 0, 0,
 								 2, barriers);
 
@@ -1419,15 +1414,14 @@ create_default_skys (vulkan_ctx_t *ctx)
 								 VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 								 &color, 1, &range);
 
-	stages = imageLayoutTransitionStages[qfv_LT_TransferDst_to_ShaderReadOnly];
-	barrier=imageLayoutTransitionBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
-	barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	barriers[0] = barrier;
-	barriers[1] = barrier;
+	ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	barriers[0] = ib.barrier;
+	barriers[1] = ib.barrier;
 	barriers[0].image = skybox;
 	barriers[1].image = skysheet;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
 								 0, 0, 0, 0, 0,
 								 2, barriers);
 	QFV_PacketSubmit (packet);
