@@ -1630,11 +1630,17 @@ Vulkan_LoadSkys (const char *sky, vulkan_ctx_t *ctx)
 					continue;
 				}
 			}
-			sides[i] = tex;
+			//FIXME find a better way (also, assumes data and struct together)
+			sides[i] = malloc (ImageSize (tex, 1));
+			memcpy (sides[i], tex, ImageSize (tex, 1));
+			sides[i]->data = (byte *)(sides[i] + 1);
 			Sys_MaskPrintf (SYS_vulkan, "Loaded %s\n", name);
 		}
 		if (!failed) {
 			bctx->skybox_tex = Vulkan_LoadEnvSides (ctx, sides, sky);
+		}
+		for (i = 0; i < 6; i++) {
+			free (sides[i]);
 		}
 	}
 	if (bctx->skybox_tex) {
