@@ -348,31 +348,21 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 	float      *verts = QFV_PacketExtend (packet, sizeof (quad_vertices));
 	memcpy (verts, quad_vertices, sizeof (quad_vertices));
 
-	VkBufferMemoryBarrier wr_barriers[] = {
-		{   VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
-			0, VK_ACCESS_TRANSFER_WRITE_BIT,
-			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
-			ctx->quad_buffer, 0, sizeof (quad_vertices) },
-	};
-	dfunc->vkCmdPipelineBarrier (packet->cmd,
-								 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-								 VK_PIPELINE_STAGE_TRANSFER_BIT,
-								 0, 0, 0, 1, wr_barriers, 0, 0);
+	qfv_bufferbarrier_t bb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	bb.barrier.buffer = ctx->quad_buffer;
+	bb.barrier.size = sizeof (quad_vertices);
+	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
+								 0, 0, 0, 1, &bb.barrier, 0, 0);
 	VkBufferCopy copy_region[] = {
 		{ packet->offset, 0, sizeof (quad_vertices) },
 	};
 	dfunc->vkCmdCopyBuffer (packet->cmd, ctx->staging->buffer,
 							ctx->quad_buffer, 1, &copy_region[0]);
-	VkBufferMemoryBarrier rd_barriers[] = {
-		{   VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
-			VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
-			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
-			ctx->quad_buffer, 0, sizeof (quad_vertices) },
-	};
-	dfunc->vkCmdPipelineBarrier (packet->cmd,
-								 VK_PIPELINE_STAGE_TRANSFER_BIT,
-								 VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
-								 0, 0, 0, 1, rd_barriers, 0, 0);
+	bb = bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
+	bb.barrier.buffer = ctx->quad_buffer;
+	bb.barrier.size = sizeof (quad_vertices);
+	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
+								 0, 0, 0, 1, &bb.barrier, 0, 0);
 	QFV_PacketSubmit (packet);
 }
 

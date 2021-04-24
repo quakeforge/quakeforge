@@ -133,3 +133,47 @@ const qfv_imagebarrier_t imageBarriers[] = {
 		},
 	},
 };
+
+const qfv_bufferbarrier_t bufferBarriers[] = {
+	// unknown to transfer write
+	{
+		.srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+		.dstStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
+		.barrier = {
+			VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
+			0, VK_ACCESS_TRANSFER_WRITE_BIT,
+			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
+		},
+	},
+	// transfer write to vertex attribute read
+	{
+		.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
+		.dstStages = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
+		.barrier = {
+			VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
+			VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
+			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
+		},
+	},
+	// transfer write to index read
+	{
+		.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
+		.dstStages = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
+		.barrier = {
+			VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
+			VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_INDEX_READ_BIT,
+			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
+		},
+	},
+	// transfer write to uniform read
+	// note: not necessarily optimal as it uses vertex shader for dst
+	{
+		.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
+		.dstStages = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
+		.barrier = {
+			VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
+			VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_UNIFORM_READ_BIT,
+			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
+		},
+	},
+};

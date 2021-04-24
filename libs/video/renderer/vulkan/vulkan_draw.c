@@ -173,27 +173,19 @@ create_quad_buffers (vulkan_ctx_t *ctx)
 		*ind++ = -1;
 	}
 
-	VkBufferMemoryBarrier wr_barrier = {
-		VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
-		0, VK_ACCESS_TRANSFER_WRITE_BIT,
-		VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, ibuf, 0, ind_size
-	};
-	dfunc->vkCmdPipelineBarrier (packet->cmd,
-								 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-								 VK_PIPELINE_STAGE_TRANSFER_BIT,
-								 0, 0, 0, 1, &wr_barrier, 0, 0);
+	qfv_bufferbarrier_t bb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	bb.barrier.buffer = ibuf;
+	bb.barrier.size = ind_size;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
+								 0, 0, 0, 1, &bb.barrier, 0, 0);
 	VkBufferCopy copy_region = { packet->offset, 0, ind_size };
 	dfunc->vkCmdCopyBuffer (packet->cmd, ctx->staging->buffer, ibuf,
 							1, &copy_region);
-	VkBufferMemoryBarrier rd_barrier = {
-		VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
-		VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_INDEX_READ_BIT,
-		VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, ibuf, 0, ind_size
-	};
-	dfunc->vkCmdPipelineBarrier (packet->cmd,
-								 VK_PIPELINE_STAGE_TRANSFER_BIT,
-								 VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
-								 0, 0, 0, 1, &rd_barrier, 0, 0);
+	bb = bufferBarriers[qfv_BB_TransferWrite_to_IndexRead];
+	bb.barrier.buffer = ibuf;
+	bb.barrier.size = ind_size;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
+								 0, 0, 0, 1, &bb.barrier, 0, 0);
 	QFV_PacketSubmit (packet);
 }
 

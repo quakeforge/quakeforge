@@ -7,6 +7,12 @@ typedef struct {
 	VkImageMemoryBarrier barrier;
 } qfv_imagebarrier_t;
 
+typedef struct {
+	VkPipelineStageFlags srcStages;
+	VkPipelineStageFlags dstStages;
+	VkBufferMemoryBarrier barrier;
+} qfv_bufferbarrier_t;
+
 //XXX Note: imageBarriers and the enum must be kept in sync
 enum {
 	qfv_LT_Undefined_to_TransferDst,
@@ -18,6 +24,15 @@ enum {
 	qfv_LT_Undefined_to_Color,
 };
 
+//XXX Note: bufferBarriers and the enum must be kept in sync
+enum {
+	qfv_BB_Unknown_to_TransferWrite,
+	qfv_BB_TransferWrite_to_VertexAttrRead,
+	qfv_BB_TransferWrite_to_IndexRead,
+	qfv_BB_TransferWrite_to_UniformRead,
+};
+
 extern const qfv_imagebarrier_t imageBarriers[];
+extern const qfv_bufferbarrier_t bufferBarriers[];
 
 #endif//__QF_Vulkan_barrier_h

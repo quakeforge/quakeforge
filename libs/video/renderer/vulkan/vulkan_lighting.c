@@ -50,6 +50,7 @@
 
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_texture.h"
+#include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
@@ -125,7 +126,7 @@ update_lights (vulkan_ctx_t *ctx)
 	for (int i = 0; i < NUM_STYLES; i++) {
 		light_data->intensity[i] = d_lightstylevalue[i] / 65536.0;
 	}
-	// dynamic lights seem a tad fiant, so 16x map lights
+	// dynamic lights seem a tad faint, so 16x map lights
 	light_data->intensity[64] = 1 / 16.0;
 	light_data->intensity[65] = 1 / 16.0;
 	light_data->intensity[66] = 1 / 16.0;
@@ -155,31 +156,21 @@ update_lights (vulkan_ctx_t *ctx)
 		}
 	}
 
-	VkBufferMemoryBarrier wr_barriers[] = {
-		{   VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
-			0, VK_ACCESS_TRANSFER_WRITE_BIT,
-			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
-			lframe->light_buffer, 0, sizeof (qfv_light_buffer_t) },
-	};
-	dfunc->vkCmdPipelineBarrier (packet->cmd,
-								 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-								 VK_PIPELINE_STAGE_TRANSFER_BIT,
-								 0, 0, 0, 1, wr_barriers, 0, 0);
+	qfv_bufferbarrier_t bb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	bb.barrier.buffer = lframe->light_buffer;
+	bb.barrier.size = sizeof (qfv_light_buffer_t);
+	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
+								 0, 0, 0, 1, &bb.barrier, 0, 0);
 	VkBufferCopy copy_region[] = {
 		{ packet->offset, 0, sizeof (qfv_light_buffer_t) },
 	};
 	dfunc->vkCmdCopyBuffer (packet->cmd, ctx->staging->buffer,
 							lframe->light_buffer, 1, &copy_region[0]);
-	VkBufferMemoryBarrier rd_barriers[] = {
-		{   VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
-			VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
-			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
-			lframe->light_buffer, 0, sizeof (qfv_light_buffer_t) },
-	};
-	dfunc->vkCmdPipelineBarrier (packet->cmd,
-								 VK_PIPELINE_STAGE_TRANSFER_BIT,
-								 VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
-								 0, 0, 0, 1, rd_barriers, 0, 0);
+	bb = bufferBarriers[qfv_BB_TransferWrite_to_UniformRead];
+	bb.barrier.buffer = lframe->light_buffer;
+	bb.barrier.size = sizeof (qfv_light_buffer_t);
+	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
+								 0, 0, 0, 1, &bb.barrier, 0, 0);
 	QFV_PacketSubmit (packet);
 }
 
