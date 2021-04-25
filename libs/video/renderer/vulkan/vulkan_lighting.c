@@ -98,7 +98,8 @@ find_visible_lights (vulkan_ctx_t *ctx)
 		memset (lframe->lightvis.a, 0, lframe->lightvis.size * sizeof (byte));
 		for (size_t i = 0; i < lctx->lightleafs.size; i++) {
 			int         l = lctx->lightleafs.a[i];
-			if (lframe->pvs[l / 8] & (1 << (l % 8))) {
+			//FIXME -1 needs check for sky
+			if (l == -1 || lframe->pvs[l / 8] & (1 << (l % 8))) {
 				lframe->lightvis.a[i] = 1;
 				visible++;
 			}
@@ -132,9 +133,9 @@ update_lights (vulkan_ctx_t *ctx)
 	light_data->intensity[66] = 1 / 16.0;
 	light_data->intensity[67] = 1 / 16.0;
 
-	light_data->cascadeCount = 0;
-	light_data->planeCount = 0;
-	light_data->cubeCount = 0;
+	light_data->distFactor1 = 1 / 128.0;
+	light_data->distFactor2 = 1 / 16384.0;
+
 	light_data->lightCount = 0;
 	R_FindNearLights (r_origin, NUM_LIGHTS - 1, lights);
 	for (int i = 0; i < NUM_LIGHTS - 1; i++) {
@@ -144,7 +145,7 @@ update_lights (vulkan_ctx_t *ctx)
 		light_data->lightCount++;
 		VectorCopy (lights[i]->color, light_data->lights[i].color);
 		VectorCopy (lights[i]->origin, light_data->lights[i].position);
-		light_data->lights[i].radius = lights[i]->radius;
+		light_data->lights[i].light = lights[i]->radius;
 		light_data->lights[i].data = 64;	// default dynamic light
 		VectorZero (light_data->lights[i].direction);
 		light_data->lights[i].cone = 1;
@@ -407,10 +408,120 @@ Vulkan_Lighting_Shutdown (vulkan_ctx_t *ctx)
 }
 
 static void
+dump_light (qfv_light_t *light, int leaf)
+{
+	Sys_MaskPrintf (SYS_vulkan,
+					"[%g, %g, %g] %d %d %d, "
+					"[%g %g %g] %g, [%g %g %g] %g, %d\n",
+					VectorExpand (light->color),
+					(light->data & 0x07f),
+					(light->data & 0x380) >> 7,
+					(light->data & 0xc00) >> 10,
+					VectorExpand (light->position), light->light,
+					VectorExpand (light->direction), light->cone,
+					leaf);
+}
+
+static float
+parse_float (const char *str, float defval)
+{
+	float       val = defval;
+	if (str) {
+		char       *end;
+		val = strtof (str, &end);
+		if (end == str) {
+			val = defval;
+		}
+	}
+	return val;
+}
+
+static void
+parse_vector (const char *str, vec_t *val)
+{
+	if (str) {
+		int         num = sscanf (str, "%f %f %f", VectorExpandAddr (val));
+		while (num < 3) {
+			val[num++] = 0;
+		}
+	}
+}
+
+static float
+ecos (float ang)
+{
+	if (ang == 90 || ang == -90) {
+		return 0;
+	}
+	if (ang == 180 || ang == -180) {
+		return -1;
+	}
+	if (ang == 0 || ang == 360) {
+		return 1;
+	}
+	return cos (ang * M_PI / 180);
+}
+
+static float
+esin (float ang)
+{
+	if (ang == 90) {
+		return 1;
+	}
+	if (ang == -90) {
+		return -1;
+	}
+	if (ang == 180 || ang == -180) {
+		return 0;
+	}
+	if (ang == 0 || ang == 360) {
+		return 0;
+	}
+	return sin (ang * M_PI / 180);
+}
+
+static void
+sun_vector (const vec_t *ang, vec_t *vec)
+{
+	// ang is yaw, pitch (maybe roll, but ignored
+	vec[0] = ecos (ang[1]) * ecos (ang[0]);
+	vec[1] = ecos (ang[1]) * esin (ang[0]);
+	vec[2] = esin (ang[1]);
+}
+
+static void
+parse_sun (lightingctx_t *lctx, plitem_t *entity)
+{
+	qfv_light_t light = {};
+	float       sunlight;
+	//float       sunlight2;
+	vec3_t      sunangle = { 0, -90, 0 };
+
+	sunlight = parse_float (PL_String (PL_ObjectForKey (entity,
+													    "_sunlight")), 0);
+	//sunlight2 = parse_float (PL_String (PL_ObjectForKey (entity,
+	//													 "_sunlight2")), 0);
+	parse_vector (PL_String (PL_ObjectForKey (entity, "_sun_mangle")),
+				  sunangle);
+	if (sunlight <= 0) {
+		return;
+	}
+	VectorSet (1, 1, 1, light.color);
+	light.data = 3 << 7;	//FIXME magic number (LM_INFINITE)
+	light.light = sunlight;
+	sun_vector (sunangle, light.direction);
+	light.cone = 1;
+	DARRAY_APPEND (&lctx->lights, light);
+	DARRAY_APPEND (&lctx->lightleafs, -1);
+	dump_light (&light, -1);
+}
+
+static void
 parse_light (qfv_light_t *light, const plitem_t *entity,
 			 const plitem_t *targets)
 {
 	const char *str;
+	int         model = 0;
 
 	/*Sys_Printf ("{\n");
 	for (int i = PL_D_NumKeys (entity); i-- > 0; ) {
@@ -422,7 +533,7 @@ parse_light (qfv_light_t *light, const plitem_t *entity,
 
 	light->cone = 1;
 	light->data = 0;
-	light->radius = 300;
+	light->light = 300;
 	VectorSet (1, 1, 1, light->color);
 
 	if ((str = PL_String (PL_ObjectForKey (entity, "origin")))) {
@@ -449,16 +560,34 @@ parse_light (qfv_light_t *light, const plitem_t *entity,
 
 	if ((str = PL_String (PL_ObjectForKey (entity, "light_lev")))
 		|| (str = PL_String (PL_ObjectForKey (entity, "_light")))) {
-		light->radius = atof (str);
+		light->light = atof (str);
 	}
 
 	if ((str = PL_String (PL_ObjectForKey (entity, "style")))) {
 		light->data = atoi (str) & 0x3f;
 	}
 
+	if ((str = PL_String (PL_ObjectForKey (entity, "delay")))) {
+		model = atoi (str) & 0x7;
+		if (model == 2) model = 5;	//FIXME for marcher (need a map)
+		light->data |= model << 7;
+	}
+
 	if ((str = PL_String (PL_ObjectForKey (entity, "color")))
 		|| (str = PL_String (PL_ObjectForKey (entity, "_color")))) {
 		sscanf (str, "%f %f %f", VectorExpandAddr (light->color));
+		VectorScale (light->color, 1/255.0, light->color);
+	}
+
+	//FIXME magic numbers
+	if (model == 3) {	// infinite
+		light->data |= 1 << 10;	// cascade
+	} else if (model != 4) {// ambient
+		if (light->cone > -0.5) {
+			light->data |= 3 << 10;	// cube
+		} else {
+			light->data |= 2 << 10;	// plane
+		}
 	}
 }
 
@@ -500,11 +629,17 @@ Vulkan_LoadLights (model_t *model, const char *entity_data, vulkan_ctx_t *ctx)
 			}
 		}
 
-		for (int i = 1; i < PL_A_NumObjects (entities); i++) {
+		for (int i = 0; i < PL_A_NumObjects (entities); i++) {
 			plitem_t   *entity = PL_ObjectAtIndex (entities, i);
 			const char *classname = PL_String (PL_ObjectForKey (entity,
 																"classname"));
-			if (classname && strnequal (classname, "light", 5)) {
+			if (!classname) {
+				continue;
+			}
+			if (strequal (classname, "worldspawn")) {
+				// parse_sun can add many lights
+				parse_sun (lctx, entity);
+			} else if (strnequal (classname, "light", 5)) {
 				qfv_light_t light = {};
 
 				parse_light (&light, entity, targets);
@@ -512,13 +647,7 @@ Vulkan_LoadLights (model_t *model, const char *entity_data, vulkan_ctx_t *ctx)
 				mleaf_t    *leaf = Mod_PointInLeaf (&light.position[0],
 													model);
 				DARRAY_APPEND (&lctx->lightleafs, leaf - model->brush.leafs);
-				Sys_MaskPrintf (SYS_vulkan,
-								"[%g, %g, %g] %d, "
-								"[%g %g %g] %g, [%g %g %g] %g, %zd\n",
-								VectorExpand (light.color), light.data,
-								VectorExpand (light.position), light.radius,
-								VectorExpand (light.direction), light.cone,
-								leaf - model->brush.leafs);
+				dump_light (&light, leaf - model->brush.leafs);
 			}
 		}
 		for (size_t i = 0; i < ctx->frames.size; i++) {

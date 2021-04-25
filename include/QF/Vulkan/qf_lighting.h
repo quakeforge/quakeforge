@@ -41,7 +41,7 @@ typedef struct qfv_light_s {
 	vec3_t      color;
 	int         data;
 	vec3_t      position;
-	float       radius;
+	float       light;
 	vec3_t      direction;
 	float       cone;
 } qfv_light_t;
@@ -55,9 +55,8 @@ typedef struct qfv_lightvisset_s DARRAY_TYPE (byte) qfv_lightvisset_t;
 
 typedef struct qfv_light_buffer_s {
 	float       intensity[NUM_STYLES + 4];
-	int         cascadeCount;
-	int         planeCount;
-	int         cubeCount;
+	float       distFactor1;
+	float       distFactor2;
 	int         lightCount;
 	qfv_light_t lights[NUM_LIGHTS] __attribute__((aligned(16)));
 	mat4f_t     shadowMat[NUM_LIGHTS];
