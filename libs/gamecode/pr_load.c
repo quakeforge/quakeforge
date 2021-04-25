@@ -324,6 +324,16 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 			def->ofs = xdef->ofs;
 			def->type_encoding = xdef->type;
 		}
+	} else {
+		pr_def_t   *def;
+		for (def = pr->pr_globaldefs, i = 0; i < pr->progs->numglobaldefs;
+			 i++, def++) {
+			def->size = pr_type_size[def->type];
+		}
+		for (def = pr->pr_fielddefs, i = 0; i < pr->progs->numfielddefs;
+			 i++, def++) {
+			def->size = pr_type_size[def->type];
+		}
 	}
 	pr->pr_trace = 0;
 	pr->pr_trace_depth = 0;
