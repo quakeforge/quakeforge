@@ -81,12 +81,19 @@ find_visible_lights (vulkan_ctx_t *ctx)
 	if (leaf != lframe->leaf) {
 		//double start = Sys_DoubleTime ();
 		byte        pvs[MAP_PVS_BYTES];
+		int         flags = 0;
 
 		Mod_LeafPVS_set (leaf, model, 0, pvs);
 		memcpy (lframe->pvs, pvs, sizeof (pvs));
 		for (int i = 0; i < model->brush.numleafs; i++) {
 			if (pvs[i / 8] & (1 << (i % 8))) {
-				Mod_LeafPVS_mix (model->brush.leafs + i, model, 0, lframe->pvs);
+				Mod_LeafPVS_mix (model->brush.leafs + i + 1, model, 0,
+								 lframe->pvs);
+			}
+		}
+		for (int i = 0; i < model->brush.numleafs; i++) {
+			if (lframe->pvs[i / 8] & (1 << (i % 8))) {
+				flags |= model->brush.leaf_flags[i + 1];
 			}
 		}
 		lframe->leaf = leaf;
@@ -98,8 +105,8 @@ find_visible_lights (vulkan_ctx_t *ctx)
 		memset (lframe->lightvis.a, 0, lframe->lightvis.size * sizeof (byte));
 		for (size_t i = 0; i < lctx->lightleafs.size; i++) {
 			int         l = lctx->lightleafs.a[i];
-			//FIXME -1 needs check for sky
-			if (l == -1 || lframe->pvs[l / 8] & (1 << (l % 8))) {
+			if ((l == -1 && (flags & SURF_DRAWSKY))
+				|| lframe->pvs[l / 8] & (1 << (l % 8))) {
 				lframe->lightvis.a[i] = 1;
 				visible++;
 			}
@@ -646,8 +653,10 @@ Vulkan_LoadLights (model_t *model, const char *entity_data, vulkan_ctx_t *ctx)
 				DARRAY_APPEND (&lctx->lights, light);
 				mleaf_t    *leaf = Mod_PointInLeaf (&light.position[0],
 													model);
-				DARRAY_APPEND (&lctx->lightleafs, leaf - model->brush.leafs);
-				dump_light (&light, leaf - model->brush.leafs);
+				DARRAY_APPEND (&lctx->lightleafs,
+							   leaf - model->brush.leafs - 1);
+				dump_light (&light,
+							lctx->lightleafs.a[lctx->lightleafs.size - 1]);
 			}
 		}
 		for (size_t i = 0; i < ctx->frames.size; i++) {

@@ -652,6 +652,20 @@ Mod_SetParent (mod_brush_t *brush, mnode_t *node, mnode_t *parent)
 }
 
 static void
+Mod_SetLeafFlags (mod_brush_t *brush)
+{
+	for (int i = 0; i < brush->numleafs; i++) {
+		int         flags = 0;
+		mleaf_t    *leaf = &brush->leafs[i];
+		for (int j = 0; j < leaf->nummarksurfaces; j++) {
+			msurface_t *surf = leaf->firstmarksurface[j];
+			flags |= surf->flags;
+		}
+		brush->leaf_flags[i] = flags;
+	}
+}
+
+static void
 Mod_LoadNodes (model_t *mod, bsp_t *bsp)
 {
 	dnode_t    *in;
@@ -704,9 +718,12 @@ Mod_LoadNodes (model_t *mod, bsp_t *bsp)
 	}
 
 	size_t      size = (brush->numleafs + brush->numnodes) * sizeof (mnode_t *);
+	size += brush->numleafs * sizeof (int);
 	brush->node_parents = Hunk_AllocName (size, mod->name);
 	brush->leaf_parents = brush->node_parents + brush->numnodes;
+	brush->leaf_flags = (int *) (brush->leaf_parents + brush->numleafs);
 	Mod_SetParent (brush, brush->nodes, NULL);	// sets nodes and leafs
+	Mod_SetLeafFlags (brush);
 }
 
 static void
