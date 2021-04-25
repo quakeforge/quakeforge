@@ -29,6 +29,7 @@
 #define __QF_simd_vec4f_h
 
 #include <immintrin.h>
+#include <math.h>
 
 #include "QF/simd/types.h"
 
@@ -92,6 +93,7 @@ GNU89INLINE inline vec4f_t qrotf (vec4f_t a, vec4f_t b) __attribute__((const));
  * That is, [-x, -y, -z, w].
  */
 GNU89INLINE inline vec4f_t qconjf (vec4f_t q) __attribute__((const));
+GNU89INLINE inline vec4f_t qexpf (vec4f_t q) __attribute__((const));
 GNU89INLINE inline vec4f_t loadvec3f (const float *v3) __attribute__((pure));
 GNU89INLINE inline void storevec3f (float *v3, vec4f_t v4);
 GNU89INLINE inline vec4f_t normalf (vec4f_t v) __attribute__((pure));
@@ -265,6 +267,26 @@ qconjf (vec4f_t q)
 {
 	const vec4i_t neg = { 1u << 31, 1u << 31, 1u << 31, 0 };
 	return _mm_xor_ps (q, (__m128) neg);
+}
+
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+vec4f_t
+qexpf (vec4f_t q)
+{
+	vec4f_t     th = magnitude3f (q);
+	float       r = expf (q[3]);
+	if (!th[0]) {
+		return (vec4f_t) { 0, 0, 0, r };
+	}
+	float       c = cosf (th[0]);
+	float       s = sinf (th[0]);
+	vec4f_t     n = (r * s) * (q / th);
+	n[3] = r * c;
+	return n;
 }
 
 #ifndef IMPLEMENT_VEC4F_Funcs
