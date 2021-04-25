@@ -37,6 +37,8 @@
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/command.h"
 
+#include "QF/simd/types.h"
+
 typedef struct bspvert_s {
 	quat_t      vertex;
 	quat_t      tlst;
@@ -129,9 +131,9 @@ typedef struct bspctx_s {
 
 	struct qfv_tex_s *default_skybox;
 	struct qfv_tex_s *skybox_tex;
-	quat_t       sky_rotation[2];
-	quat_t       sky_velocity;
-	quat_t       sky_fix;
+	vec4f_t      sky_rotation[2];
+	vec4f_t      sky_velocity;
+	vec4f_t      sky_fix;
 	double       sky_time;
 
 	quat_t       default_color;

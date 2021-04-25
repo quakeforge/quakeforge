@@ -35,6 +35,7 @@
 #include "QF/modelgen.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/command.h"
+#include "QF/Vulkan/image.h"
 #include "QF/simd/types.h"
 
 typedef struct qfv_light_s {
@@ -49,6 +50,7 @@ typedef struct qfv_light_s {
 typedef struct qfv_lightset_s DARRAY_TYPE (qfv_light_t) qfv_lightset_t;
 typedef struct qfv_lightleafset_s DARRAY_TYPE (int) qfv_lightleafset_t;
 typedef struct qfv_lightvisset_s DARRAY_TYPE (byte) qfv_lightvisset_t;
+typedef struct qfv_lightmatset_s DARRAY_TYPE (mat4f_t) qfv_lightmatset_t;
 
 #define NUM_LIGHTS 256
 #define NUM_STYLES 64
@@ -100,6 +102,8 @@ typedef struct lightingctx_s {
 	VkDeviceMemory light_memory;
 	qfv_lightset_t lights;
 	qfv_lightleafset_t lightleafs;
+	qfv_lightmatset_t lightmats;
+	//qfv_imageviewset_t lightviews;
 } lightingctx_t;
 
 struct vulkan_ctx_s;

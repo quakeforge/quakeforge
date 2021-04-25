@@ -7,6 +7,7 @@
 #include <vulkan/vulkan.h>
 
 #include "QF/darray.h"
+#include "QF/simd/types.h"
 
 typedef struct vulkan_frame_s {
 	VkFramebuffer framebuffer;
@@ -23,10 +24,10 @@ typedef struct vulkan_matrices_s {
 	VkBuffer    buffer_2d;
 	VkBuffer    buffer_3d;
 	VkDeviceMemory memory;
-	float      *projection_2d;
-	float      *projection_3d;
-	float      *view_3d;
-	float      *sky_3d;
+	vec4f_t    *projection_2d;
+	vec4f_t    *projection_3d;
+	vec4f_t    *view_3d;
+	vec4f_t    *sky_3d;
 } vulkan_matrices_t;
 
 typedef struct vulkan_frameset_s

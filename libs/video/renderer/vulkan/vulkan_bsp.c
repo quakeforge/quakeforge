@@ -422,11 +422,11 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	bsppoly_t  *poly;
 	mod_brush_t *brush;
 
-	QuatSet (0, 0, sqrt(0.5), sqrt(0.5), bctx->sky_fix);	// proper skies
-	QuatSet (0, 0, 0, 1, bctx->sky_rotation[0]);
-	QuatCopy (bctx->sky_rotation[0], bctx->sky_rotation[1]);
-	QuatSet (0, 0, 0, 0, bctx->sky_velocity);
-	QuatExp (bctx->sky_velocity, bctx->sky_velocity);
+	bctx->sky_fix = (vec4f_t) { 0, 0, 1, 1 } * sqrtf (0.5);
+	bctx->sky_rotation[0] = (vec4f_t) { 0, 0, 0, 1};
+	bctx->sky_rotation[1] = bctx->sky_rotation[0];
+	bctx->sky_velocity = (vec4f_t) { };
+	bctx->sky_velocity = qexpf (bctx->sky_velocity);
 	bctx->sky_time = vr_data.realtime;
 
 	// now run through all surfaces, chaining them to their textures, thus
@@ -995,26 +995,26 @@ turb_end (vulkan_ctx_t *ctx)
 }
 
 static void
-spin (mat4_t mat, bspctx_t *bctx)
+spin (mat4f_t mat, bspctx_t *bctx)
 {
-	quat_t      q;
-	mat4_t      m;
+	vec4f_t     q;
+	mat4f_t     m;
 	float       blend;
 
 	while (vr_data.realtime - bctx->sky_time > 1) {
-		QuatCopy (bctx->sky_rotation[1], bctx->sky_rotation[0]);
-		QuatMult (bctx->sky_velocity, bctx->sky_rotation[0],
-				  bctx->sky_rotation[1]);
+		bctx->sky_rotation[0] = bctx->sky_rotation[1];
+		bctx->sky_rotation[1] = qmulf (bctx->sky_velocity,
+									   bctx->sky_rotation[0]);
 		bctx->sky_time += 1;
 	}
 	blend = bound (0, (vr_data.realtime - bctx->sky_time), 1);
 
-	QuatBlend (bctx->sky_rotation[0], bctx->sky_rotation[1], blend, q);
-	QuatMult (bctx->sky_fix, q, q);
-	Mat4Identity (mat);
-	VectorNegate (r_origin, mat + 12);
-	QuatToMatrix (q, m, 1, 1);
-	Mat4Mult (m, mat, mat);
+	q = Blend (bctx->sky_rotation[0], bctx->sky_rotation[1], blend);
+	q = normalf (qmulf (bctx->sky_fix, q));
+	mat4fidentity (mat);
+	VectorNegate (r_origin, mat[3]);
+	mat4fquat (m, q);
+	mmulf (mat, m, mat);
 }
 
 static void

@@ -284,6 +284,7 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 
 	DARRAY_INIT (&lctx->lights, 16);
 	DARRAY_INIT (&lctx->lightleafs, 16);
+	DARRAY_INIT (&lctx->lightmats, 16);
 
 	size_t      frames = ctx->frames.size;
 	DARRAY_INIT (&lctx->frames, frames);
@@ -410,6 +411,7 @@ Vulkan_Lighting_Shutdown (vulkan_ctx_t *ctx)
 	dfunc->vkDestroyPipeline (device->dev, lctx->pipeline, 0);
 	DARRAY_CLEAR (&lctx->lights);
 	DARRAY_CLEAR (&lctx->lightleafs);
+	DARRAY_CLEAR (&lctx->lightmats);
 	free (lctx->frames.a);
 	free (lctx);
 }
@@ -606,6 +608,7 @@ Vulkan_LoadLights (model_t *model, const char *entity_data, vulkan_ctx_t *ctx)
 
 	lctx->lights.size = 0;
 	lctx->lightleafs.size = 0;
+	lctx->lightmats.size = 0;
 
 	script_t   *script = Script_New ();
 	Script_Start (script, "ent data", entity_data);

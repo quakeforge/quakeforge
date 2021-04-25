@@ -148,6 +148,7 @@ include_qf_vulkan = \
 	include/QF/Vulkan/instance.h \
 	include/QF/Vulkan/memory.h \
 	include/QF/Vulkan/pipeline.h \
+	include/QF/Vulkan/projection.h \
 	include/QF/Vulkan/qf_alias.h \
 	include/QF/Vulkan/qf_bsp.h \
 	include/QF/Vulkan/qf_compose.h \
