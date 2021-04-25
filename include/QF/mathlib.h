@@ -57,6 +57,8 @@ extern int		nanmask;
 
 #define IS_NAN(x) (((*(int *) (char *) &x) & nanmask) == nanmask)
 
+#define Blend(a,b,blend) ((1 - (blend)) * (a) + (blend) * (b))
+
 #include "QF/math/vector.h"
 #include "QF/math/quaternion.h"
 #include "QF/math/dual.h"
