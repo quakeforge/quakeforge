@@ -14,7 +14,7 @@ struct LightData {
 	vec3        direction;
 	float       cone;
 };
-
+//XXX can't include :( be sure to keep up to date with qf_lighting.h
 #define MaxLights   256
 
 #define StyleMask   0x07f
@@ -29,8 +29,8 @@ struct LightData {
 #define LM_INVERSE3 (5 << 7)	// distFactor2 * light / (dist + distFactor2)**2
 
 #define ST_NONE     (0 << 10)	// no shadows
-#define ST_CASCADE  (1 << 10)	// cascaded shadow maps
-#define ST_PLANE    (2 << 10)	// single plane shadow map (small spotlight)
+#define ST_PLANE    (1 << 10)	// single plane shadow map (small spotlight)
+#define ST_CASCADE  (2 << 10)	// cascaded shadow maps
 #define ST_CUBE     (3 << 10)	// cubemap (omni, large spotlight)
 
 layout (set = 2, binding = 0) uniform sampler2DArrayShadow shadowCascade[MaxLights];
