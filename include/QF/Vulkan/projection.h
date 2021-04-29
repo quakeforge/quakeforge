@@ -5,6 +5,8 @@
 
 void QFV_Orthographic (mat4f_t proj, float xmin, float xmax,
 					   float ymin, float ymax, float znear, float zfar);
+void QFV_PerspectiveTan (mat4f_t proj, float fov, float aspect);
+void QFV_PerspectiveCos (mat4f_t proj, float fov, float aspect);
 void QFV_Perspective (mat4f_t proj, float fov, float aspect);
 
 #endif//__QF_Vulkan_projection_h
