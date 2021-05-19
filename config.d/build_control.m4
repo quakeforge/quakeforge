@@ -39,6 +39,7 @@ QFSPRITEGEN_TARGETS=""
 QFVIS_TARGETS=""
 WAD_TARGETS=""
 WAV_TARGETS=""
+VKGEN_TARGETS=""
 
 CD_TARGETS=""
 SND_TARGETS=""
@@ -292,6 +293,10 @@ if test "x$ENABLE_tools_wav" = xyes; then
 	QF_NEED(tools,[wav])
 	QF_NEED(libs,[util])
 fi
+if test "x$render_need_vulkan" = xyes; then
+	VKGEN_TARGETS="vkgen.dat\$(EXEEXT)"
+	QF_NEED(tools,[qfcc pak qwaq])
+fi
 
 QF_NEED(top, [libs hw nq qtv qw])
 
@@ -440,6 +445,8 @@ QF_SUBST(QFVIS_TARGETS)
 QF_SUBST(WAD_TARGETS)
 QF_SUBST(WAV_TARGETS)
 
+QF_SUBST(VKGEN_TARGETS)
+
 QF_DEPS(BSP2IMG,
 	[],
 	[$(top_builddir)/libs/image/libQFimage.la
@@ -524,4 +531,9 @@ QF_DEPS(WAV,
 	[],
 	[$(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
+)
+QF_DEPS(VKGEN,
+	[],
+	[],
+	[],
 )
