@@ -28,6 +28,7 @@
 #ifndef __QF_simd_vec4d_h
 #define __QF_simd_vec4d_h
 
+#ifdef __AVX__
 #include <immintrin.h>
 
 #include "QF/simd/types.h"
@@ -291,5 +292,7 @@ storevec3d (double v3[3], vec4d_t v4)
 	v3[1] = v4[1];
 	v3[2] = v4[2];
 }
+
+#endif
 
 #endif//__QF_simd_vec4d_h

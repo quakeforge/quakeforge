@@ -214,12 +214,20 @@ NewFlippedWinding (threaddata_t *thread, const winding_t *w)
 static vec4i_t
 signeps (vec4f_t dist)
 {
+#ifdef __SSE3__
 	const vec4f_t zero = {};
 	const vec4f_t eps = { ON_EPSILON, ON_EPSILON, ON_EPSILON, ON_EPSILON };
 	vec4f_t     d = _mm_addsub_ps (zero, dist);
 	vec4i_t     c = (d - eps) > 0;
 	c = (vec4i_t) _mm_hsub_epi32 ((__m128i) c, (__m128i) c);
 	return c;
+#else
+	float       d = dist[0];
+	int         front = (d >= ON_EPSILON);
+	int         back = (d <= -ON_EPSILON);
+	int         i = front - back;
+	return (vec4i_t) { i, i, i, i };
+#endif
 }
 
 static vec4f_t
@@ -246,7 +254,12 @@ split_edge (const vec4f_t *points, const vec4f_t *dists,
 	vec4i_t     x = _mm_and_ps (split, (__m128) nan) == onenan;
 	// plane vector has -dist in w
 	vec4f_t     y = _mm_and_ps (split, (__m128) x) * -split[3];
+#ifdef __SSE3__
 	mid = _mm_blendv_ps (mid, y, (__m128) x);
+#else
+	mid = (vec4f_t) ((vec4i_t) _mm_and_ps (y, (__m128) x) |
+					 (vec4i_t) _mm_and_ps (mid, (__m128) ~x));
+#endif
 	if (isnan (mid[0])) *(int *) 0 = 0;
 	return mid;
 }

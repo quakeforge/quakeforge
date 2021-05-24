@@ -86,6 +86,7 @@ SimpleFlood (basethread_t *thread, portal_t *srcportal, int clusternum)
 static inline int
 test_sphere (const vspheref_t *sphere, vec4f_t plane)
 {
+#ifdef __SSE3__
 	const vec4f_t zero = {};
 	float       r = sphere->radius;
 	vec4f_t     eps = { r, r, r, r };
@@ -94,6 +95,12 @@ test_sphere (const vspheref_t *sphere, vec4f_t plane)
 
 	c = (vec4i_t) _mm_hsub_epi32 ((__m128i) c, (__m128i) c);
 	return c[0];
+#else
+	float       d = DotProduct (sphere->center, plane) + plane[3];
+	int         front = (d >= sphere->radius);
+	int         back = (d <= -sphere->radius);
+	return front - back;
+#endif
 }
 
 void
