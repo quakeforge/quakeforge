@@ -1,5 +1,7 @@
-vkgen = libs/video/renderer/vulkan/vkgen.dat$(EXEEXT)
-noinst_PROGRAMS += $(vkgen)
+vkgen = vkgen.dat$(EXEEXT)
+noinst_PROGRAMS += @VKGEN_TARGETS@
+
+EXTRA_PROGRAMS += vkgen.dat$(EXEEXT)
 
 vkgen_dat_src= \
 	libs/video/renderer/vulkan/vkgen/vkalias.r \
@@ -19,13 +21,13 @@ vkgen_dat_src= \
 
 VKGENFLAGS = -I$(top_srcdir)/libs/video/renderer/vulkan/vkgen
 
-libs_video_renderer_vulkan_vkgen_dat_SOURCES=$(vkgen_dat_src)
-libs_video_renderer_vkgen_obj=$(libs_video_renderer_vulkan_vkgen_dat_SOURCES:.r=.o)
-libs_video_renderer_vkgen_dep=$(call qcautodep,$(libs_video_renderer_vulkan_vkgen_dat_SOURCES:.o=.Qo))
-libs/video/renderer/vulkan/vkgen.dat$(EXEEXT): $(libs_video_renderer_vkgen_obj) $(QFCC_DEP) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
-	$(V_QFCCLD)$(QLINK) -o $@ $(libs_video_renderer_vkgen_obj) -lcsqc -lr
-include $(libs_video_renderer_vkgen_dep) # am--include-marker
-r_depfiles_remade += $(libs_video_renderer_vkgen_dep)
+vkgen_dat_SOURCES=$(vkgen_dat_src)
+vkgen_obj=$(vkgen_dat_SOURCES:.r=.o)
+vkgen_dep=$(call qcautodep,$(vkgen_dat_SOURCES:.o=.Qo))
+libs/video/renderer/vulkan/vkgen.dat$(EXEEXT): $(vkgen_obj) $(QFCC_DEP) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
+	$(V_QFCCLD)$(QLINK) -o $@ $(vkgen_obj) -lcsqc -lr
+include $(vkgen_dep) # am--include-marker
+r_depfiles_remade += $(vkgen_dep)
 
 libs/video/renderer/vulkan/vkgen/vkgen.o: $(top_srcdir)/libs/video/renderer/vulkan/vkgen/vkgen.r
 	$(V_QFCC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
