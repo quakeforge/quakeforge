@@ -114,7 +114,7 @@ init_block (memsuper_t *super, void *mem, size_t alloc_size)
 	size_t      ptr = (size_t) mem;
 	memblock_t *block;
 
-	block = (memblock_t *) (((ptr + size) & ~mask) - sizeof (memblock_t));
+	block = (memblock_t *) (((ptr + size) & ~mask)) - 1;
 	memset (block, 0, sizeof (memblock_t));
 
 	if (super->memblocks) {

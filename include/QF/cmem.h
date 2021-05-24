@@ -48,7 +48,7 @@ typedef struct memline_s {
 	 */
 	struct memblock_s *block;
 	size_t      pad[2];
-} memline_t;
+} __attribute__((aligned (64))) memline_t;
 
 typedef struct memsline_s {
 	struct memsline_s *next;
@@ -82,9 +82,11 @@ typedef struct memblock_s {
 	/* True if the post-header block is free to be reused.
 	 */
 	int         post_free;
+#if __WORDSIZE == 64
 	int         pad;
+#endif
 	size_t      pre_allocated;
-} memblock_t;
+} __attribute__((aligned (64))) memblock_t;
 
 typedef struct memsuper_s {
 	size_t      page_size;

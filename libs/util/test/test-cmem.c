@@ -57,9 +57,11 @@ check_block (memblock_t *block, int line_count, int allocated)
 
 	for (memline_t **l = &block->free_lines; *l; l = &(*l)->block_next) {
 		memline_t  *line = *l;
-		ptrdiff_t   ind = (memline_t *) block - line;
+		ptrdiff_t   ind = (byte *) block - (byte *) line;
+		ind /= MEM_LINE_SIZE;
 		if (ind < 1 || (size_t ) ind > block->pre_size / MEM_LINE_SIZE) {
-			fprintf (stderr, "line outside of block\n");
+			fprintf (stderr, "line outside of block: %p %p %p\n",
+					 line, block->mem, block);
 			return 0;
 		}
 		if (set_is_member (visited, ind)) {
@@ -187,15 +189,18 @@ test_line (memsuper_t *super)
 		return 0;
 	}
 	if (line1 < (memline_t *) block->mem || line1 >= (memline_t *) block) {
-		fprintf (stderr, "line1 outside block line pool\n");
+		fprintf (stderr, "line1 outside block line pool: %p %p %p\n",
+				 line1, block->mem, block);
 		return 0;
 	}
 	if (line2 < (memline_t *) block->mem || line2 >= (memline_t *) block) {
-		fprintf (stderr, "line2 outside block line pool\n");
+		fprintf (stderr, "line2 outside block line pool: %p %p %p\n",
+				 line2, block->mem, block);
 		return 0;
 	}
 	if (line3 < (memline_t *) block->mem || line3 >= (memline_t *) block) {
-		fprintf (stderr, "line3 outside block line pool\n");
+		fprintf (stderr, "line3 outside block line pool: %p %p %p\n",
+				 line3, block->mem, block);
 		return 0;
 	}
 	if (!((size_t) line1 & super->page_mask)) {
@@ -531,12 +536,19 @@ main (void)
 {
 	memsuper_t *super = new_memsuper ();
 	int         i;
-
+#if __WORDSIZE == 32
+	if (sizeof (memsuper_t) != 1 * MEM_LINE_SIZE) {
+		fprintf (stderr, "memsuper_t not 2 * cache size: %zd\n",
+				 sizeof (memsuper_t));
+		return 1;
+	}
+#else
 	if (sizeof (memsuper_t) != 2 * MEM_LINE_SIZE) {
 		fprintf (stderr, "memsuper_t not 2 * cache size: %zd\n",
 				 sizeof (memsuper_t));
 		return 1;
 	}
+#endif
 	if (sizeof (memline_t) != MEM_LINE_SIZE) {
 		fprintf (stderr, "memline_t not cache size: %zd\n",
 				 sizeof (memline_t));
@@ -558,7 +570,7 @@ main (void)
 	}
 	if (super->page_size != (size_t) sysconf (_SC_PAGESIZE)) {
 		fprintf (stderr, "page size not equal to system page size: %zd, %zd\n",
-				 super->page_size, sysconf (_SC_PAGESIZE));
+				 super->page_size, (size_t) sysconf (_SC_PAGESIZE));
 		return 1;
 	}
 	if (!super->page_size || (super->page_size & (super->page_size - 1))) {
