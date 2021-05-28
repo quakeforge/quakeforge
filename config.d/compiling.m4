@@ -81,8 +81,8 @@ AC_ARG_ENABLE(optimize,
 	optimize=yes
 )
 
-dnl QF_CC_OPTION(-Wno-psabi)
-QF_CC_OPTION(-msse2)
+QF_CC_OPTION(-Wno-psabi)
+dnl QF_CC_OPTION(-msse2)
 dnl QF_CC_OPTION(-Wno-psabi)
 dnl QF_CC_OPTION(-mavx2)
 dnl fma is not used as it is the equivalent of turning on

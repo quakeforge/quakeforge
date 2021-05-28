@@ -322,7 +322,13 @@ static vec4f_test_t vec4f_tests[] = {
 	T(crossf, one,     right,   { 0,  1, -1} ),
 	T(crossf, one,     forward, {-1,  0,  1} ),
 	T(crossf, one,     up,      { 1, -1,  0} ),
+#if !defined(__SSE__) && !defined(__OPTIMIZE__)
+	// when not optimizing and SSE is not available (but ok when
+	// optimizing)
+	T(crossf, qtest,   qtest,   {0, 0, -1.47819534e-09, 0} ),
+#else
 	T(crossf, qtest,   qtest,   {0, 0, 0, 0} ),
+#endif
 
 	T(qmulf, qident,  qident,   qident  ),
 	T(qmulf, qident,  right,    right   ),
@@ -343,7 +349,11 @@ static vec4f_test_t vec4f_tests[] = {
 	T(qmulf, one,     one,     { 2, 2, 2, -2 } ),
 	T(qmulf, one,     { 2, 2, 2, -2 }, { 0, 0, 0, -8 } ),
 	T(qmulf, qtest,   qtest,   {0.768, 0.576, 0, -0.28},
-#ifndef __SSE__
+#if !defined(__SSE__) && !defined(__OPTIMIZE__)
+	// when not optimizing and SSE is not available (but ok when
+	// optimizing)
+	                           {0, 6e-8, -1.47819534e-09, 3e-8}
+#elif !defined( __SSE__)
 	                           {0, 6e-8, 0, 6e-8}
 #else
 	                           {0, 6e-8, 0, 3e-8}
@@ -369,14 +379,18 @@ static vec4f_test_t vec4f_tests[] = {
 	T(qvmulf, qtest,  right,     {0.5392, 0.6144, -0.576, 0},
 	                             {0, -5.9e-8, -6e-8, 0} ),
 	T(qvmulf, qtest,  forward,   {0.6144, 0.1808, 0.768, 0},
-#ifndef __SSE__
+#if !defined(__SSE__) && !defined(__OPTIMIZE__)
+	                             {-5.9e-8, 0, 0, 0}
+#elif  !defined(__SSE__)
 	                             {-5.9e-8, 3e-8, 0, 0}
 #else
 	                             {-5.9e-8, 1.5e-8, 0, 0}
 #endif
 	),
 	T(qvmulf, qtest,  up,        {0.576, -0.768, -0.28, 0},
-#ifndef __SSE__
+#if !defined(__SSE__) && !defined(__OPTIMIZE__)
+	                             {6e-8, 0, 3e-8, 0}
+#elif  !defined(__SSE__)
 	                             {6e-8, 0, 6e-8, 0}
 #else
 	                             {6e-8, 0, 3e-8, 0}
@@ -385,14 +399,18 @@ static vec4f_test_t vec4f_tests[] = {
 	T(vqmulf, right,     qtest,  {0.5392, 0.6144, 0.576, 0},
 	                             {0, -5.9e-8, 5.9e-8, 0} ),
 	T(vqmulf, forward,   qtest,  {0.6144, 0.1808, -0.768, 0},
-#ifndef __SSE__
+#if !defined(__SSE__) && !defined(__OPTIMIZE__)
+	                             {-5.9e-8, 0, 0, 0}
+#elif  !defined(__SSE__)
 	                             {-5.9e-8, 3e-8, 0, 0}
 #else
 	                             {-5.9e-8, 1.5e-8, 0, 0}
 #endif
 	),
 	T(vqmulf, up,        qtest,  {-0.576, 0.768, -0.28, 0},
-#ifndef __SSE__
+#if !defined(__SSE__) && !defined(__OPTIMIZE__)
+	                             {-5.9e-8, 0, 3e-8, 0}
+#elif  !defined(__SSE__)
 	                             {-5.9e-8, 0, 6e-8, 0}
 #else
 	                             {-5.9e-8, 0, 3e-8, 0}
