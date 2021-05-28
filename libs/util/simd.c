@@ -66,10 +66,10 @@ BarycentricCoords_vf (const vec4f_t **points, int num_points, const vec4f_t p)
 			b = *points[2] - *points[0];
 			ab = crossf (a, b);
 			d = dotf (ab, ab);
-			l[1] = (dotf (crossf (x, b), ab) / d)[0];
-			l[2] = (dotf (crossf (a, x), ab) / d)[0];
-			l[0] = 1 - l[1] - l[2];
-			return l;
+			l[1] = dotf (crossf (x, b), ab)[0];
+			l[2] = dotf (crossf (a, x), ab)[0];
+			l[0] = d[0] - l[1] - l[2];
+			return l / d;
 		case 4:
 			x = p - *points[0];
 			a = *points[1] - *points[0];

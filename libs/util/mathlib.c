@@ -1199,10 +1199,11 @@ BarycentricCoords (const vec_t **points, int num_points, const vec3_t p,
 			CrossProduct (a, b, ab);
 			div = DotProduct (ab, ab);
 			CrossProduct (x, b, n);
-			lambda[1] = DotProduct (n, ab) / div;
+			lambda[1] = DotProduct (n, ab);
 			CrossProduct (a, x, n);
-			lambda[2] = DotProduct (n, ab) / div;
-			lambda[0] = 1 - lambda[1] - lambda[2];
+			lambda[2] = DotProduct (n, ab);
+			lambda[0] = div - lambda[1] - lambda[2];
+			VectorScale (lambda, 1 / div, lambda);
 			return;
 		case 4:
 			VectorSubtract (p, points[0], x);

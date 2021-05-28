@@ -243,6 +243,27 @@ fail:
 // -ffast-math is any real benefit
 #define ISNAN(x) (((x) & 0x7f800000) == 0x7f800000 && ((x) & 0x7fffff))
 
+// FIXME differences in precision between archs
+static int
+cmp (float a, float b)
+{
+	typedef union {
+		float       f;
+		int         i;
+	} fi;
+	fi          ax;
+	fi          bx;
+	int         x;
+
+	ax.f = a;
+	bx.f = b;
+	x = ax.i - bx.i;
+	if (x < 0) {
+		x = -x;
+	}
+	return (x & 0x7ffffffc) == 0;
+}
+
 static int
 test_rotation4 (const vec3_t a, const vec3_t b, const quat_t expect)
 {
@@ -282,7 +303,7 @@ test_rotation4 (const vec3_t a, const vec3_t b, const quat_t expect)
 			// yes, float precision will make it difficult to set up expect
 			// but it is at least consistent (ie, the "errors" are not at all
 			// random and thus will be the same from run to run)
-			if (quat[i] != expect[i]) {
+			if (!cmp (quat[i], expect[i])) {
 				goto fail;
 			}
 		}
@@ -331,10 +352,19 @@ static struct {
 		{0, 0, 1,
 		 1, 0, 0,
 		 0, 1, 0}},
+#if defined(__i686__) && defined(__OPTIMIZE__)
+	// the fp unit carries more precision than a 32-bit float, so
+	// the close-to-zero errors are different
+	{{s05, 0.0, 0.0, s05},
+		{1,             0,             0,
+		 0, 3.42285418e-08,   -0.99999994,
+		 0,    0.99999994, 3.42285418e-08}},
+#else
 	{{s05, 0.0, 0.0, s05},
 		{1,             0,             0,
 		 0, 5.96046448e-8,   -0.99999994,
 		 0,    0.99999994, 5.96046448e-8}},
+#endif
 };
 #define num_quat_mat_tests (sizeof (quat_mat_tests) / sizeof (quat_mat_tests[0]))
 

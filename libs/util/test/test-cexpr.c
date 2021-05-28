@@ -37,11 +37,11 @@
 int a = 5;
 int b = 6;
 int c;
-float point[4] = { 2, 3, 4, 1 };		// a point, so w = 1
-float normal[4] = { 1, 2, 3, 0 };		// a vector, so w = 0
-float direction[4] = { 4, 5, 6, 0 };	// a vector, so w = 0
-float plane[4];
-float intercept[4];
+vec4f_t point = { 2, 3, 4, 1 };		// a point, so w = 1
+vec4f_t normal = { 1, 2, 3, 0 };	// a vector, so w = 0
+vec4f_t direction = { 4, 5, 6, 0 };	// a vector, so w = 0
+vec4f_t plane;
+vec4f_t intercept;
 
 exprtype_t *vector_params[] = {
 	&cexpr_vector,
@@ -134,7 +134,7 @@ exprsym_t symbols[] = {
 exprval_t test_result = { &cexpr_int, &c };
 exprval_t plane_result = { &cexpr_vector, &plane };
 // a bit hacky, but no l-values
-exprval_t dist_result = { &cexpr_float, &plane[3] };
+exprval_t dist_result = { &cexpr_float, (float *)&plane + 3 };
 exprval_t intercept_result = { &cexpr_vector, &intercept };
 
 exprtab_t symtab = {

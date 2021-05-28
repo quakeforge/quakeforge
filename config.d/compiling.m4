@@ -81,8 +81,8 @@ AC_ARG_ENABLE(optimize,
 	optimize=yes
 )
 
-QF_CC_OPTION(-Wno-psabi)
-dnl QF_CC_OPTION(-msse2)
+dnl QF_CC_OPTION(-Wno-psabi)
+QF_CC_OPTION(-msse2)
 dnl QF_CC_OPTION(-Wno-psabi)
 dnl QF_CC_OPTION(-mavx2)
 dnl fma is not used as it is the equivalent of turning on
@@ -97,10 +97,11 @@ if test "x$optimize" = xyes -a "x$leave_cflags_alone" != "xyes"; then
 		saved_cflags="$CFLAGS"
 		CFLAGS=""
 		QF_CC_OPTION(-frename-registers)
-		if test "$CC_MAJ" -ge 4; then
-			QF_CC_OPTION(-finline-limit=32000 -Winline)
-		fi
-		heavy="-O2 $CFLAGS -ffast-math -fno-unsafe-math-optimizations -funroll-loops -fomit-frame-pointer -fexpensive-optimizations"
+		dnl if test "$CC_MAJ" -ge 4; then
+		dnl 	QF_CC_OPTION(-finline-limit=32000 -Winline)
+		dnl fi
+		dnl heavy="-O2 $CFLAGS -ffast-math -fno-unsafe-math-optimizations -funroll-loops -fomit-frame-pointer -fexpensive-optimizations"
+		heavy="-O2 $CFLAGS -fno-fast-math -funroll-loops -fomit-frame-pointer -fexpensive-optimizations"
 		CFLAGS="$saved_cflags"
 		light="-O2"
 		AC_ARG_ENABLE(strict-aliasing,
