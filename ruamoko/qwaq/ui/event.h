@@ -68,6 +68,7 @@ typedef union qwaq_message_s {
 
 typedef struct qwaq_event_s {
 	int         what;
+	int         __pad;
 	double      when;		// NOTE: 1<<32 based
 	union {
 		qwaq_kevent_t key;
