@@ -1436,7 +1436,7 @@ static void
 bi_get_event (progs_t *pr)
 {
 	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
-	qwaq_event_t *event = &G_STRUCT (pr, qwaq_event_t, P_INT (pr, 0));
+	qwaq_event_t *event = &P_STRUCT (pr, qwaq_event_t, 0);
 
 	R_INT (pr) = get_event (res, event);
 }

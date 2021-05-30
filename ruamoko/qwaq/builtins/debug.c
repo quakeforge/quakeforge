@@ -363,7 +363,7 @@ qdb_get_event (progs_t *pr)
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
 	pointer_t   handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
-	__auto_type event = &G_STRUCT (pr, qdb_event_t, P_INT (pr, 1));
+	__auto_type event = &P_STRUCT (pr, qdb_event_t, 1);
 
 	memset (event, 0, sizeof (*event));
 	event->what = target->event;
