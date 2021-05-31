@@ -10,6 +10,7 @@ EXTRA_DIST += \
 	include/asm_i386.h \
 	include/block16.h \
 	include/block8.h \
+	include/bsearch.h \
 	include/buildnum.h \
 	include/compat.h \
 	include/context_sdl.h \

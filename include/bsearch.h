@@ -1,7 +1,7 @@
 /*
-	quicksort.h
+	bsearch.h
 
-	Reentrant qsort for systems that don't have it
+	Reentrant bsearch for systems that don't have it
 
 	Copyright (C) 2021 Bill Currie <bill@taniwha.org>
 
@@ -25,8 +25,8 @@
 
 */
 
-#ifndef quicksort_h
-#define quicksort_h
+#ifndef bsearch_h
+#define bsearch_h
 
 #include <sys/types.h>
 
@@ -35,7 +35,7 @@
 typedef int (*__compar_d_fn_t)(const void *, const void *, void *);
 #endif
 
-void _quicksort(void *base, size_t nmemb, size_t size, __compar_d_fn_t cmp,
-				void *arg);
+void *_bsearch(const void *key, const void *base, size_t nmemb, size_t size,
+			   __compar_d_fn_t cmp, void *arg);
 
 #endif// quicksort_h

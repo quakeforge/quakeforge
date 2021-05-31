@@ -107,6 +107,11 @@ size_t strndup (const char *str, size_t len);
 # include "qstring.h"
 #endif
 
+#ifndef HAVE_BSEARCH_R
+# include "bsearch.h"
+# define bsearch_r _bsearch
+#endif
+
 #ifndef HAVE_QSORT_R
 # include "quicksort.h"
 # define qsort_r _quicksort

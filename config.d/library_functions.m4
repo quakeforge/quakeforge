@@ -8,7 +8,8 @@ AC_FUNC_MMAP
 AC_TYPE_SIGNAL
 AC_FUNC_VPRINTF
 AC_CHECK_FUNCS(
-	access _access connect dlopen execvp fcntl ftime _ftime getaddrinfo \
+	access _access bsearch_r connect dlopen execvp fcntl ftime _ftime \
+	getaddrinfo \
 	gethostbyname gethostname getnameinfo getpagesize gettimeofday getuid \
 	getwd ioctl mkdir _mkdir mprotect putenv qsort_r select sigaction \
 	snprintf _snprintf socket stat strcasestr strerror strerror_r strndup \

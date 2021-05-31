@@ -16,6 +16,7 @@ include_qf = \
 	include/QF/dstring.h \
 	include/QF/draw.h \
 	include/QF/entity.h \
+	include/QF/fbsearch.h \
 	include/QF/gib.h \
 	include/QF/hash.h \
 	include/QF/idparse.h \

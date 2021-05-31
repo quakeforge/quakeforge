@@ -1,7 +1,7 @@
 /*
-	quicksort.h
+	fbsearch.h
 
-	Reentrant qsort for systems that don't have it
+	Fuzzy bsearch
 
 	Copyright (C) 2021 Bill Currie <bill@taniwha.org>
 
@@ -25,17 +25,25 @@
 
 */
 
-#ifndef quicksort_h
-#define quicksort_h
+#ifndef __QF_bsearch_h
+#define __QF_bsearch_h
 
-#include <sys/types.h>
+#include <stddef.h>
+
+#ifndef __compar_fn_t_defined
+#define __compar_fn_t_defined
+typedef int (*__compar_fn_t)(const void *, const void *);
+#endif
 
 #ifndef __compar_d_fn_t_defined
 #define __compar_d_fn_t_defined
 typedef int (*__compar_d_fn_t)(const void *, const void *, void *);
 #endif
 
-void _quicksort(void *base, size_t nmemb, size_t size, __compar_d_fn_t cmp,
-				void *arg);
+void *fbsearch (const void *key, const void *base, size_t nmemb, size_t size,
+				__compar_fn_t cmp);
 
-#endif// quicksort_h
+void *fbsearch_r (const void *key, const void *base, size_t nmemb, size_t size,
+				  __compar_d_fn_t cmp, void *arg);
+
+#endif//__QF_bsearch_h
