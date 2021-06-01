@@ -197,13 +197,13 @@ main (int argc, const char **argv)
 	//printf ("set_bits_t: %d, SET_DEFMAP_SIZE: %d, SIZE: %d\n",
 	//		sizeof (set_bits_t), SET_DEFMAP_SIZE, SIZE);
 
-	tests[5].str_expect = nva ("{%d}", SIZE);
-	tests[7].str_expect = nva ("{%d ...}", SIZE);
-	tests[8].str_expect = nva ("{%d ...}", SIZE);
+	tests[5].str_expect = nva ("{%zd}", SIZE);
+	tests[7].str_expect = nva ("{%zd ...}", SIZE);
+	tests[8].str_expect = nva ("{%zd ...}", SIZE);
 
 	str = dstring_new ();
 	for (i = 0; i < SIZE; i++) {
-		dasprintf (str, "%c%d", i ? ' ' : '{', i);
+		dasprintf (str, "%c%zd", i ? ' ' : '{', i);
 	}
 	dstring_appendstr (str, "}");
 	tests[6].str_expect = dstring_freeze (str);
