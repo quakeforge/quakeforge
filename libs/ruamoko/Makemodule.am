@@ -23,4 +23,5 @@ libs_ruamoko_libQFruamoko_la_SOURCES= \
 	libs/ruamoko/rua_runtime.c \
 	libs/ruamoko/rua_script.c \
 	libs/ruamoko/rua_set.c \
+	libs/ruamoko/rua_stdlib.c \
 	libs/ruamoko/rua_string.c

@@ -17,6 +17,7 @@ ruamoko_lib_libr_a_SOURCES=\
 	ruamoko/lib/qfs.r \
 	ruamoko/lib/script.r \
 	ruamoko/lib/sound.r \
+	ruamoko/lib/stdlib.r \
 	ruamoko/lib/string.r \
 	ruamoko/lib/math.r \
 	ruamoko/lib/types.r \

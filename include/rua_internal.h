@@ -55,6 +55,8 @@ void RUA_Script_Init (progs_t *pr, int secure);
 
 void RUA_Set_Init (progs_t *pr, int secure);
 
+void RUA_Stdlib_Init (struct progs_s *pr, int secure);
+
 void RUA_String_Init (struct progs_s *pr, int secure);
 
 void RUA_QFile_Init (struct progs_s *pr, int secure);

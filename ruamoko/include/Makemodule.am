@@ -16,6 +16,7 @@ ruamoko_include = \
 	ruamoko/include/server.h \
 	ruamoko/include/sound.h \
 	ruamoko/include/script.h \
+	ruamoko/include/stdlib.h \
 	ruamoko/include/string.h \
 	ruamoko/include/sv_sound.h \
 	ruamoko/include/system.h \
