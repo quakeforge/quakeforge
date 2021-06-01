@@ -3,18 +3,18 @@
 
 @implementation FuncView
 
--initWithType:(qfot_type_t *)type at:(unsigned)offset in:(void *)data
+-initWithDef:(qdb_def_t)def in:(void *)data type:(qfot_type_t *)type
 {
-	if (!(self = [super initWithType:type])) {
+	if (!(self = [super initWithDef:def])) {
 		return nil;
 	}
-	self.data = (unsigned *)(data + offset);
+	self.data = (unsigned *)(data + def.offset);
 	return self;
 }
 
-+(FuncView *)withType:(qfot_type_t *)type at:(unsigned)offset in:(void *)data
++(FuncView *)withDef:(qdb_def_t)def in:(void *)data type:(qfot_type_t *)type
 {
-	return [[[self alloc] initWithType:type at:offset in:data] autorelease];
+	return [[[self alloc] initWithDef:def in:data type:type] autorelease];
 }
 
 -draw

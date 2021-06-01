@@ -5,7 +5,7 @@
 
 -initWithName:(string)name
 {
-	if (!(self = [super initWithType:type])) {
+	if (!(self = [super initWithDef:def])) {
 		return nil;
 	}
 	self.name = name;

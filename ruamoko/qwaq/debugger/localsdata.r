@@ -1,9 +1,9 @@
+#include <stdlib.h>
 #include <string.h>
 #include <types.h>
 #include "ruamoko/qwaq/debugger/views/defview.h"
 #include "ruamoko/qwaq/debugger/views/nameview.h"
 #include "ruamoko/qwaq/debugger/localsdata.h"
-#include "ruamoko/qwaq/debugger/typeencodings.h"
 
 @implementation LocalsData
 
@@ -26,11 +26,24 @@
 	return [[[self alloc] initWithTarget:target] autorelease];
 }
 
+static void
+free_defs (LocalsData *self)
+{
+	obj_free (self.defs);
+	self.defs = nil;
+	for (int i = 0; i < self.aux_func.num_locals; i++) {
+		[self.def_views[i] release];
+	}
+	obj_free (self.def_views);
+	self.def_views = nil;
+	obj_free (self.def_rows);
+	self.def_rows = nil;
+}
+
 -(void)dealloc
 {
 	if (defs) {
-		obj_free (defs);
-		defs = nil;
+		free_defs (self);
 	}
 	if (data) {
 		obj_free (data);
@@ -46,20 +59,28 @@
 	current_fnum =fnum;
 
 	if (defs) {
-		obj_free (defs);
-		defs = nil;
+		free_defs (self);
 	}
 	if (data) {
 		obj_free (data);
 		data = nil;
 	}
 	func = qdb_get_function (target, fnum);
+	if (func && func.local_size) {
+		data = obj_malloc (func.local_size);
+	}
 	aux_func = qdb_get_auxfunction (target, fnum);
 	if (aux_func) {
 		defs = qdb_get_local_defs (target, fnum);
-	}
-	if (func && func.local_size) {
-		data = obj_malloc (func.local_size);
+		def_views = obj_malloc (aux_func.num_locals);
+		def_rows = obj_malloc (aux_func.num_locals + 1);
+		def_rows[0] = 0;
+		for (int i = 0; i < aux_func.num_locals; i++) {
+			def_views[i] = [[DefView withDef:defs[i] in:data target:target]
+							retain];
+			def_rows[i + 1] = [def_views[i] rows];
+		}
+		prefixsum (def_rows, aux_func.num_locals + 1);
 	}
 	return self;
 }
@@ -75,7 +96,10 @@
 -(int)numberOfRows:(TableView *)tableview
 {
 	if (aux_func) {
-		return aux_func.num_locals;
+		if (!aux_func.num_locals) {
+			return 0;
+		}
+		return def_rows[aux_func.num_locals];
 	} else if (func) {
 		return (func.local_size + 3) / 4;
 	}
@@ -86,15 +110,15 @@
 		 forColumn:(TableViewColumn *)column
 			   row:(int)row
 {
-	View      *view;
+	View      *view = nil;
+	int       *index = bsearch (&row, def_rows, aux_func.num_locals, 1, nil);
 
-	if ([column name] == "name") {
-		view = [NameView withName:qdb_get_string (target, defs[row].name)];
-	} else {
-		qfot_type_t *type = [TypeEncodings getType:defs[row].type_encoding
-										fromTarget:target];
-		unsigned    offset = defs[row].offset;
-		view = [DefView withType:type at:offset in:data target:target];
+	if (index) {
+		if ([column name] == "name") {
+			view = [def_views[*index] nameViewAtRow: row - *index];
+		} else {
+			view = [def_views[*index] dataViewAtRow: row - *index];
+		}
 	}
 	[view resizeTo:{[column width], 1}];
 	return view;

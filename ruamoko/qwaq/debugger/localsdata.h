@@ -5,6 +5,8 @@
 #include "ruamoko/qwaq/ui/tableview.h"
 #include "ruamoko/qwaq/debugger/debug.h"
 
+@class DefView;
+
 @interface LocalsData : Object <TableViewDataSource>
 {
 	qdb_target_t target;
@@ -13,6 +15,8 @@
 	qdb_function_t *func;
 	qdb_auxfunction_t *aux_func;
 	qdb_def_t  *defs;
+	DefView   **def_views;
+	int        *def_rows;
 	void       *data;
 }
 +(LocalsData *)withTarget:(qdb_target_t)target;
