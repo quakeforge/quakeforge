@@ -241,6 +241,13 @@
 	return self;
 }
 
+-updateAbsPos: (Point) absPos
+{
+	[super updateAbsPos: absPos];
+	[objects updateAbsPos: absRect.offset];
+	return self;
+}
+
 -draw
 {
 	static box_sides_t box_sides = {

@@ -50,6 +50,7 @@ enum {
 -setGrowMode: (int) mode;
 
 -(Rect)rect;
+-(Rect)absRect;
 -(Point)origin;
 -(Extent)size;
 
@@ -70,6 +71,7 @@ enum {
 -hide;
 -redraw;
 -move: (Point) delta;
+-updateAbsPos: (Point) absPos;
 -resize: (Extent) delta;
 -move:(Point)dpos andResize:(Extent)dsize;
 -moveTo:(Point)pos;	// does not redraw
@@ -82,6 +84,10 @@ enum {
 -(ListenerGroup *) onReceiveFocus;
 -(ListenerGroup *) onReleaseFocus;
 -raise;
+-hideCursor;
+-showCursor;
+-setCursorVisible:(int) visible;
+-moveCursor:(Point) pos;
 
 - (void) onMouseEnter: (Point) pos;
 - (void) onMouseLeave: (Point) pos;
@@ -115,7 +121,7 @@ enum {
 	int         options;
 	int         growMode;
 	int         cursorState;
-	Point       cursor;
+	Point       cursorPos;
 	ListenerGroup *onReceiveFocus;
 	ListenerGroup *onReleaseFocus;
 	ListenerGroup *onEvent;

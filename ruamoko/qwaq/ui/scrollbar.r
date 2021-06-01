@@ -86,6 +86,13 @@
 	return onScrollBarModified;
 }
 
+-updateAbsPos: (Point) absPos
+{
+	[super updateAbsPos: absPos];
+	[objects updateAbsPos: absRect.offset];
+	return self;
+}
+
 -draw
 {
 	[super draw];

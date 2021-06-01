@@ -26,10 +26,12 @@
 -insertSelected: (View *) view;
 -remove: (View *) view;
 -(Rect) rect;
+-(Rect) absRect;
 -(Point) origin;
 -(Extent) size;
 -draw;
 -redraw;
+-updateAbsPos: (Point) absPos;
 -resize: (Extent) delta;
 -handleEvent: (qwaq_event_t *) event;
 -takeFocus;

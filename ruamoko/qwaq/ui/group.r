@@ -190,6 +190,14 @@ trySetFocus (Group *self, int viewIndex)
 	return {[self origin], [self size]};
 }
 
+-(Rect) absRect
+{
+	if (owner) {
+		return [owner absRect];
+	}
+	return {[self origin], [self size]};
+}
+
 -(Point) origin
 {
 	if (owner) {
@@ -232,6 +240,14 @@ not_dont_draw (id aView, void *aGroup)
 		if (__obj_responds_to (context, @selector(refresh))) {
 			[(id)context refresh];
 		}
+	}
+	return self;
+}
+
+-updateAbsPos: (Point) absPos
+{
+	for (int i = [views count]; i-- > 0; ) {
+		[[views objectAtIndex: i] updateAbsPos: absPos];
 	}
 	return self;
 }

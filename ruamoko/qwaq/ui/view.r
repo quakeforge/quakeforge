@@ -138,15 +138,44 @@ updateScreenCursor (View *view)
 		}
 		view = owner;
 	}
+	*/
 	if (view.state & sfInFocus) {
-		if (view.cursor.x >= 0 && view.cursor.x < view.xlen
-			&& view.cursor.y >= 0 && view.cursor.y < view.ylen) {
+		if (view.cursorPos.x >= 0 && view.cursorPos.x < view.xlen
+			&& view.cursorPos.y >= 0 && view.cursorPos.y < view.ylen) {
 			curs_set (view.cursorState);
-			move(view.cursor.x, view.cursor.y);
+			move(view.cursorPos.x, view.cursorPos.y);
 		} else {
 			curs_set (0);
 		}
-	}*/
+	}
+}
+
+-hideCursor
+{
+	return [self setCursorVisible: 0];
+}
+
+-showCursor
+{
+	return [self setCursorVisible: 1];
+}
+
+-setCursorVisible: (int) visible
+{
+	cursorState = visible;
+	if ((state & (sfInFocus | sfDrawn)) == (sfInFocus | sfDrawn)) {
+		updateScreenCursor (self);
+	}
+	return self;
+}
+
+-moveCursor: (Point) pos
+{
+	cursorPos = pos;
+	if ((state & (sfInFocus | sfDrawn)) == (sfInFocus | sfDrawn)) {
+		updateScreenCursor (self);
+	}
+	return self;
 }
 
 -draw
@@ -187,6 +216,11 @@ updateScreenCursor (View *view)
 }
 
 - (Rect) rect
+{
+	return rect;
+}
+
+- (Rect) absRect
 {
 	return rect;
 }
@@ -280,14 +314,25 @@ updateScreenCursor (View *view)
 		ypos = 0;
 	}
 	if (owner) {
+		Rect        r = [owner absRect];
 		Extent      s = [owner size];
-		if (xpos > s.width - 1) {
-			xpos = s.width - 1;
+		if (xpos > r.extent.width - 1) {
+			xpos = r.extent.width - 1;
 		}
-		if (ypos > s.height - 1) {
-			ypos = s.height - 1;
+		if (ypos > r.extent.height - 1) {
+			ypos = r.extent.height - 1;
 		}
+		[self updateAbsPos: r.offset];
+	} else {
+		[self updateAbsPos: nil];
 	}
+	return self;
+}
+
+-updateAbsPos: (Point) absPos
+{
+	absRect.offset.x = absPos.x + xpos;
+	absRect.offset.y = absPos.y + ypos;
 	return self;
 }
 
