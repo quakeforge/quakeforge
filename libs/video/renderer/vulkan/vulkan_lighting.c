@@ -646,6 +646,7 @@ create_light_matrices (lightingctx_t *lctx)
 		mat4f_t     proj;
 
 		switch (light->data & ShadowMask) {
+			default:
 			case ST_NONE:
 			case ST_CUBE:
 				mat4fidentity (view);
