@@ -92,5 +92,6 @@ typedef struct qfot_type_encodings_s {
 
 @extern string ty_meta_name[7];
 @extern string pr_type_name[ev_type_count];
+@extern int pr_type_size[ev_type_count];
 
 #endif
