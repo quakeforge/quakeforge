@@ -231,8 +231,9 @@ spawn_progs (qwaq_thread_t *thread)
 	}
 	pr_argv = PR_Zone_Malloc (pr, (pr_argc + 1) * 4);
 	pr_argv[0] = PR_SetTempString (pr, name);
-	for (i = 1; i < pr_argc; i++)
+	for (i = 1; i < pr_argc; i++) {
 		pr_argv[i] = PR_SetTempString (pr, thread->args.a[i]);
+	}
 	pr_argv[i] = 0;
 
 	PR_RESET_PARAMS (pr);

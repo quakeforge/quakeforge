@@ -2,6 +2,7 @@
 #include "ruamoko/qwaq/debugger/typeencodings.h"
 #include "ruamoko/qwaq/debugger/views/defview.h"
 #include "ruamoko/qwaq/debugger/views/nameview.h"
+#include "ruamoko/qwaq/ui/tableview.h"
 
 static string meta_views[] = {
 	"BasicView",
@@ -23,12 +24,13 @@ static string meta_views[] = {
 	return self;
 }
 
--initWithDef:(qdb_def_t)def
+-initWithDef:(qdb_def_t)def type:(qfot_type_t *)type
 {
 	if (!(self = [super init])) {
 		return nil;
 	}
 	self.def = def;
+	self.type = type;
 	return self;
 }
 
@@ -44,11 +46,10 @@ static string meta_views[] = {
 }
 
 +(DefView *)withDef:(qdb_def_t)def
+			   type:(qfot_type_t *)type
 				 in:(void *)data
 			 target:(qdb_target_t)target
 {
-	qfot_type_t *type = [TypeEncodings getType:def.type_encoding
-									fromTarget:target];
 	string metaname = nil;
 	if (type.meta == ty_alias) {
 		type = type.alias.aux_type;
@@ -64,18 +65,34 @@ static string meta_views[] = {
 	return [NameView withName:"Invalid Meta"];
 }
 
++(DefView *)withDef:(qdb_def_t)def
+				 in:(void *)data
+			 target:(qdb_target_t)target
+{
+	qfot_type_t *type = [TypeEncodings getType:def.type_encoding
+									fromTarget:target];
+	return [[DefView withDef:def
+						type:type
+						  in:data
+					  target:target] retain];
+}
+
+-fetchData
+{
+	// most def views do not need to update themselves
+	return self;
+}
+
 -(int) rows
 {
 	return 1;
 }
 
--(View *) nameViewAtRow:(int) row
+-(View *) viewAtRow:(int) row forColumn:(TableViewColumn *)column
 {
-	return [NameView withName:qdb_get_string (target, def.name)];
-}
-
--(View *) dataViewAtRow:(int) row
-{
+	if ([column name] == "name") {
+		return [NameView withName:qdb_get_string (target, def.name)];
+	}
 	return self;
 }
 

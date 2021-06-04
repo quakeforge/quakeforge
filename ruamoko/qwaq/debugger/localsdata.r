@@ -90,6 +90,14 @@ free_defs (LocalsData *self)
 	if (data && func.local_size && func.local_data) {
 		qdb_get_data (target, func.local_data, func.local_size, data);
 	}
+	if (aux_func) {
+		def_rows[0] = 0;
+		for (int i = 0; i < aux_func.num_locals; i++) {
+			[def_views[i] fetchData];
+			def_rows[i + 1] = [def_views[i] rows];
+		}
+		prefixsum (def_rows, aux_func.num_locals + 1);
+	}
 	return self;
 }
 
@@ -111,14 +119,12 @@ free_defs (LocalsData *self)
 			   row:(int)row
 {
 	View      *view = nil;
-	int       *index = bsearch (&row, def_rows, aux_func.num_locals, 1, nil);
+	int       *index = fbsearch (&row, def_rows, aux_func.num_locals, 1, nil);
 
 	if (index) {
-		if ([column name] == "name") {
-			view = [def_views[*index] nameViewAtRow: row - *index];
-		} else {
-			view = [def_views[*index] dataViewAtRow: row - *index];
-		}
+		DefView    *dv = def_views[index - def_rows];
+		int         r = row - *index;
+		view = [dv viewAtRow: r forColumn:column];
 	}
 	[view resizeTo:{[column width], 1}];
 	return view;

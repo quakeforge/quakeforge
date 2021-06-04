@@ -5,7 +5,7 @@
 
 -initWithDef:(qdb_def_t)def in:(void *)data type:(qfot_type_t *)type
 {
-	if (!(self = [super initWithDef:def])) {
+	if (!(self = [super initWithDef:def type:type])) {
 		return nil;
 	}
 	self.data = (vector *)(data + def.offset);
