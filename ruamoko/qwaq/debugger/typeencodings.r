@@ -191,4 +191,48 @@ error:
 	return nil;
 }
 
++(int)typeSize:(qfot_type_t *)type
+{
+	qfot_type_t *aux_type;
+	int         size = 0;
+
+	switch (type.meta) {
+		case ty_basic:
+			size = pr_type_size[type.type];
+			break;
+		case ty_array:
+			aux_type = type.array.type;
+			size = type.array.size * [TypeEncodings typeSize:aux_type];
+			break;
+		case ty_struct:
+			for (int i = 0; i < type.strct.num_fields; i++) {
+				aux_type = type.strct.fields[i].type;
+				size += [TypeEncodings typeSize:aux_type];
+			}
+			break;
+		case ty_union:
+			for (int i = 0; i < type.strct.num_fields; i++) {
+				aux_type = type.strct.fields[i].type;
+				int     s = [TypeEncodings typeSize:aux_type];
+				if (s > size) {
+					size = s;
+				}
+			}
+			break;
+		case ty_enum:
+			// enums are ints
+			size = pr_type_size[ev_integer];
+			break;
+		case ty_class:
+			//FIXME
+			size = 1;
+			break;
+		case ty_alias:
+			aux_type = type.alias.aux_type;
+			size = [TypeEncodings typeSize:aux_type];
+			break;
+	}
+	return size;
+}
+
 @end
