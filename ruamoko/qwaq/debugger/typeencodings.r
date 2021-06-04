@@ -10,7 +10,7 @@
 // these are encodings that we already have so don't need to copy them from
 // the target
 static hashtab_t *static_encodings;
-// these are condings that had to be copied from the target
+// these are codings that had to be copied from the target
 static hashtab_t *dynamic_encodings;
 
 static qfot_type_t *
@@ -79,6 +79,7 @@ static void type_free (void *t, void *unused)
 	qfot_type_t  buffer = {};
 	string       encoding;
 	qfot_type_t *type;
+	qfot_type_t *t;
 
 	if (qdb_get_data (target, typeAddr, TYPESIZE, &buffer) < 0) {
 		return nil;
@@ -105,7 +106,37 @@ static void type_free (void *t, void *unused)
 	}
 	switch (type.meta) {
 		case ty_basic:
+			if (type.type == ev_pointer || type.type == ev_field) {
+				t = [TypeEncodings getType:(unsigned)type.fldptr.aux_type
+								fromTarget:target];
+				if (!t) {
+					goto error;
+				}
+				type.fldptr.aux_type = t;
+			} else if (type.type == ev_func) {
+				t = [TypeEncodings getType:(unsigned)type.func.return_type
+								fromTarget:target];
+				if (!t) {
+					goto error;
+				}
+				type.func.return_type = t;
+				for (int i = 0; i < type.func.num_params; i++) {
+					t = type.func.param_types[i];
+					t = [TypeEncodings getType:(unsigned)t fromTarget:target];
+					if (!t) {
+						goto error;
+					}
+					type.func.param_types[i] = t;
+				}
+			}
+			goto hash_type;
 		case ty_array:
+			t = [TypeEncodings getType:(unsigned)type.array.type
+							fromTarget:target];
+			if (!t) {
+				goto error;
+			}
+			type.array.type = t;
 			goto hash_type;
 		case ty_struct:
 		case ty_union:
@@ -118,6 +149,12 @@ static void type_free (void *t, void *unused)
 				if (!(var.name = qdb_get_string (target, var.name))) {
 					goto error;
 				}
+				t = [TypeEncodings getType:(unsigned)var.type
+								fromTarget:target];
+				if (!t) {
+					goto error;
+				}
+				var.type = t;
 			}
 			goto hash_type;
 		case ty_class:
@@ -129,6 +166,18 @@ static void type_free (void *t, void *unused)
 			if (!(type.alias.name = qdb_get_string (target, type.alias.name))) {
 				goto error;
 			}
+			t = [TypeEncodings getType:(unsigned)type.alias.aux_type
+							fromTarget:target];
+			if (!t) {
+				goto error;
+			}
+			type.alias.aux_type = t;
+			t = [TypeEncodings getType:(unsigned)type.alias.full_type
+							fromTarget:target];
+			if (!t) {
+				goto error;
+			}
+			type.alias.full_type = t;
 			goto hash_type;
 	}
 	goto error;
