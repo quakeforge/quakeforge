@@ -190,6 +190,15 @@ SCR_TileClear (void)
 	}
 }
 
+static void
+R_Clear (void)
+{
+	if (gl_clear->int_val)
+		qfglClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	else
+		qfglClear (GL_DEPTH_BUFFER_BIT);
+}
+
 void
 gl_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 {
@@ -206,6 +215,8 @@ gl_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	//FIXME forces the status bar to redraw. needed because it does not fully
 	//update in sw modes but must in gl mode
 	vr_data.scr_copyeverything = 1;
+
+	R_Clear ();
 
 	begun = 1;
 

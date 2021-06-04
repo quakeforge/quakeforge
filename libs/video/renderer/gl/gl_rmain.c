@@ -450,15 +450,6 @@ R_SetupGL (void)
 }
 
 static void
-R_Clear (void)
-{
-	if (gl_clear->int_val)
-		qfglClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	else
-		qfglClear (GL_DEPTH_BUFFER_BIT);
-}
-
-static void
 R_RenderScene (void)
 {
 	if (r_timegraph->int_val || r_speeds->int_val || r_dspeeds->int_val)
@@ -579,8 +570,6 @@ R_RenderView_ (void)
 	}
 
 	gl_mirror = false;
-
-	R_Clear ();
 
 	// render normal view
 	R_RenderScene ();
