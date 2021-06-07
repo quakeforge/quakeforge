@@ -70,7 +70,7 @@ arp_end (void)
 -draw
 {
 	[objects draw];
-	[TextContext refresh];
+	[screen refresh];
 	return self;
 }
 
