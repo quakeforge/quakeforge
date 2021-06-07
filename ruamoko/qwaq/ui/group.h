@@ -25,6 +25,7 @@
 -insertDrawn: (View *) view;
 -insertSelected: (View *) view;
 -remove: (View *) view;
+-(View *) owner;
 -(Rect) rect;
 -(Rect) absRect;
 -(Point) origin;

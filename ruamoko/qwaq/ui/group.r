@@ -182,6 +182,11 @@ trySetFocus (Group *self, int viewIndex)
 	return self;
 }
 
+-(View *) owner
+{
+	return owner;
+}
+
 -(Rect) rect
 {
 	if (owner) {
