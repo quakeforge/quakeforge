@@ -71,6 +71,14 @@
 	return self;
 }
 
+-updateScreenCursor
+{
+	window_t    window = [(id)textContext window];
+	curs_set (cursorState);
+	wmove (window, cursorPos.x, cursorPos.y);
+	return self;
+}
+
 -setTitle:(string) title
 {
 	[titleBar setTitle:title];
