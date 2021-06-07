@@ -76,6 +76,7 @@
 	window_t    window = [(id)textContext window];
 	curs_set (cursorState);
 	wmove (window, cursorPos.x, cursorPos.y);
+	[[TextContext screen] refresh];
 	return self;
 }
 

@@ -28,6 +28,10 @@
 -scrollDown:(unsigned) count;
 -scrollLeft:(unsigned) count;
 -scrollRight:(unsigned) count;
+-cursorUp:(unsigned) count;
+-cursorDown:(unsigned) count;
+-cursorLeft:(unsigned) count;
+-cursorRight:(unsigned) count;
 
 -recenter:(int) force;
 -gotoLine:(unsigned) line;

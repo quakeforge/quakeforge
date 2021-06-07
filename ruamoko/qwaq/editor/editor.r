@@ -94,6 +94,18 @@ handleEvent (Editor *self, qwaq_event_t *event)
 			case QFK_PAGEDOWN:
 				[self scrollDown: self.ylen];
 				return 1;
+			case QFK_UP:
+				[self cursorUp: 1];
+				return 1;
+			case QFK_DOWN:
+				[self cursorDown: 1];
+				return 1;
+			case QFK_LEFT:
+				[self cursorLeft: 1];
+				return 1;
+			case QFK_RIGHT:
+				[self cursorRight: 1];
+				return 1;
 		}
 	}
 	return 0;
@@ -139,6 +151,7 @@ handleEvent (Editor *self, qwaq_event_t *event)
 		base.x = 0;
 	}
 	[self redraw];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
 	return self;
 }
 
@@ -150,6 +163,7 @@ handleEvent (Editor *self, qwaq_event_t *event)
 		base.x = 1024;
 	}
 	[self redraw];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
 	return self;
 }
 
@@ -161,6 +175,60 @@ handleEvent (Editor *self, qwaq_event_t *event)
 		base_index = [buffer prevLine:base_index :base.y - target];
 	}
 	base.y = target;
+	[vScrollBar setIndex:base.y];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+	return self;
+}
+
+-cursorUp:(unsigned)count
+{
+	if (count > cursor.y) {
+		count = cursor.y;
+	}
+	cursor.y -= count;
+	if (base.y > cursor.y) {
+		[vScrollBar setIndex:cursor.y];
+	}
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+	return self;
+}
+
+-cursorDown:(unsigned)count
+{
+	if (count > line_count - cursor.y) {
+		count = line_count - cursor.y;
+	}
+	cursor.y += count;
+	if (base.y + ylen - 1 < cursor.y) {
+		[vScrollBar setIndex:cursor.y + 1 - ylen];
+	}
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+	return self;
+}
+
+-cursorLeft:(unsigned)count
+{
+	if (count > cursor.x) {
+		count = cursor.x;
+	}
+	cursor.x -= count;
+	if (base.x > cursor.x) {
+		[hScrollBar setIndex:cursor.x];
+	}
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+	return self;
+}
+
+-cursorRight:(unsigned)count
+{
+	// FIXME handle horizontal scrolling and how to deal with max scroll
+	cursor.x += count;
+	if (base.x + xlen - 1 < cursor.x) {
+		[hScrollBar setIndex:cursor.x + 1 - xlen];
+	}
+	if (base.x + xlen - 1 < cursor.x) {
+		cursor.x = base.x + xlen - 1;
+	}
 	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
 	return self;
 }
@@ -168,7 +236,9 @@ handleEvent (Editor *self, qwaq_event_t *event)
 -(void)onScroll:(id)sender
 {
 	base.x = scroll.x;
-	[self scrollTo:scroll.y];
+	if (base.y != scroll.y) {
+		[self scrollTo:scroll.y];
+	}
 }
 
 -setVerticalScrollBar:(ScrollBar *)scrollbar
