@@ -19,6 +19,7 @@
 	growMode = gfGrowHi;
 	options = ofCanFocus | ofRelativeEvents;
 	[onViewScrolled addListener:self :@selector(onScroll:)];
+	[self setCursorVisible:1];
 	return self;
 }
 
@@ -63,7 +64,8 @@
 	return self;
 }
 
-static int handleEvent (Editor *self, qwaq_event_t *event)
+static int
+handleEvent (Editor *self, qwaq_event_t *event)
 {
 	if (event.what & qe_mouse) {
 		if (event.what == qe_mouseclick) {
@@ -159,6 +161,7 @@ static int handleEvent (Editor *self, qwaq_event_t *event)
 		base_index = [buffer prevLine:base_index :base.y - target];
 	}
 	base.y = target;
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
 	return self;
 }
 
@@ -178,19 +181,27 @@ static int handleEvent (Editor *self, qwaq_event_t *event)
 
 -recenter:(int) force
 {
-	if (!force) {
-		if (cursor.y >= base.y && cursor.y - base.y < ylen) {
-			return self;
+	if (force || cursor.y < base.y || cursor.y - base.y >= ylen) {
+		unsigned target;
+		if (cursor.y < ylen / 2) {
+			target = 0;
+		} else {
+			target = cursor.y - ylen / 2;
+		}
+		[self scrollTo:target];
+	}
+	return self;
+}
+
+static void
+trackCursor (Editor *self)
+{
+	unsigned    cx = [self.buffer charPos:self.line_index at:self.char_index];
+	if (self.cursor.x != cx) {
+		if (self.char_index < [self.buffer getEOT]) {
+			int c = [self.buffer getChar:self.char_index];
 		}
 	}
-	unsigned target;
-	if (cursor.y < ylen / 2) {
-		target = 0;
-	} else {
-		target = cursor.y - ylen / 2;
-	}
-	[self scrollTo:target];
-	return self;
 }
 
 -gotoLine:(unsigned) line
@@ -201,7 +212,9 @@ static int handleEvent (Editor *self, qwaq_event_t *event)
 		line_index = [buffer prevLine:line_index :cursor.y - line];
 	}
 	cursor.y = line;
+	char_index = [buffer charPtr:line_index at:cursor.x];
 	[self recenter: 0];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
 	return self;
 }
 
