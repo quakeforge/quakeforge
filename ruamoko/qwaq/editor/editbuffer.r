@@ -36,7 +36,11 @@
 - (unsigned) getEOL: (unsigned) linePtr = #0;
 - (unsigned) getBOT = #0;
 - (unsigned) getEOT = #0;
+
 - (string) readString: (eb_sel_t) selection = #0;
+- (int) getChar: (unsigned) charPtr = #0;
+- (void) putChar: (int) char at:(unsigned) charPtr = #0;
+- (void) insertChar: (int) char at:(unsigned) charPtr = #0;
 
 - (unsigned) countLines: (eb_sel_t) selection = #0;
 - (eb_sel_t) search: (eb_sel_t) selection

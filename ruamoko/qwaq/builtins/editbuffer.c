@@ -811,6 +811,50 @@ bi_i_EditBuffer__readString_ (progs_t *pr)
 }
 
 static void
+bi_i_EditBuffer__getChar_ (progs_t *pr)
+{
+	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
+	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
+	unsigned    ptr = P_UINT (pr, 2);
+
+	if (ptr >= buffer->txtbuffer->textSize) {
+		PR_RunError (pr, "EditBuffer: character index out of bounds\n");
+	}
+	R_INT (pr) = (byte) getChar (buffer->txtbuffer, ptr);
+}
+
+static void
+bi_i_EditBuffer__putChar_at_ (progs_t *pr)
+{
+	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
+	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
+	int         chr = P_UINT (pr, 2);
+	unsigned    ptr = P_UINT (pr, 3);
+
+	if (ptr >= buffer->txtbuffer->textSize) {
+		PR_RunError (pr, "EditBuffer: character index out of bounds\n");
+	}
+	buffer->txtbuffer->text[spanGap (buffer->txtbuffer, ptr)] = chr;
+}
+
+static void
+bi_i_EditBuffer__insertChar_at_ (progs_t *pr)
+{
+	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
+	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
+	char        chr = P_UINT (pr, 2);
+	unsigned    ptr = P_UINT (pr, 3);
+
+	if (ptr > buffer->txtbuffer->textSize) {
+		PR_RunError (pr, "EditBuffer: character index out of bounds\n");
+	}
+	TextBuffer_InsertAt (buffer->txtbuffer, ptr, &chr, 1);
+}
+
+static void
 bi_i_EditBuffer__countLines_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
@@ -939,13 +983,16 @@ static builtin_t builtins[] = {
 	{"_i_EditBuffer__getBOT",			bi_i_EditBuffer__getBOT,		-1},
 	{"_i_EditBuffer__getEOT",			bi_i_EditBuffer__getEOT,		-1},
 	{"_i_EditBuffer__readString_",		bi_i_EditBuffer__readString_,	-1},
+	{"_i_EditBuffer__getChar_",			bi_i_EditBuffer__getChar_,		-1},
+	{"_i_EditBuffer__putChar_at_",		bi_i_EditBuffer__putChar_at_,	-1},
+	{"_i_EditBuffer__insertChar_at_",	bi_i_EditBuffer__insertChar_at_,-1},
 	{"_i_EditBuffer__countLines_",		bi_i_EditBuffer__countLines_,	-1},
 	{"_i_EditBuffer__search_for_direction_",
 								bi_i_EditBuffer__search_for_direction_,	-1},
 	{"_i_EditBuffer__isearch_for_direction_",
 								bi_i_EditBuffer__isearch_for_direction_,-1},
 	{"_i_EditBuffer__formatLine_from_into_width_highlight_colors_",
-	bi_i_EditBuffer__formatLine_from_into_width_highlight_colors_,	-1},
+		bi_i_EditBuffer__formatLine_from_into_width_highlight_colors_,	-1},
 	{"_i_EditBuffer__modified",			bi_i_EditBuffer__modified,		-1},
 	{"_i_EditBuffer__textSize",			bi_i_EditBuffer__textSize,		-1},
 	{"_i_EditBuffer__saveFile_",		bi_i_EditBuffer__saveFile_,		-1},
