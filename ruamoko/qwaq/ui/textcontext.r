@@ -198,6 +198,7 @@ int init_pair (int pair, int f, int b) = #0;
 void wbkgd (window_t win, int ch) = #0;
 void werase (window_t win) = #0;
 void scrollok (window_t win, int flag) = #0;
+int wmove (window_t win, int x, int y) = #0;
 int acs_char (int acs) = #0;
 
 panel_t create_panel (window_t window) = #0;

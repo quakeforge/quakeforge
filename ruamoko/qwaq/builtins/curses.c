@@ -79,6 +79,7 @@ typedef enum qwaq_commands_e {
 	qwaq_cmd_wbkgd,
 	qwaq_cmd_werase,
 	qwaq_cmd_scrollok,
+	qwaq_cmd_wmove,
 	qwaq_cmd_move,
 	qwaq_cmd_curs_set,
 	qwaq_cmd_wborder,
@@ -114,6 +115,7 @@ static const char *qwaq_command_names[]= {
 	"wbkgd",
 	"werase",
 	"scrollok",
+	"wmove",
 	"move",
 	"curs_set",
 	"wborder",
@@ -539,6 +541,17 @@ cmd_scrollok (qwaq_resources_t *res)
 }
 
 static void
+cmd_wmove (qwaq_resources_t *res)
+{
+	int         window_id = *RB_PEEK_DATA (res->command_queue, 2);
+	int         x = *RB_PEEK_DATA (res->command_queue, 3);
+	int         y = *RB_PEEK_DATA (res->command_queue, 4);
+
+	window_t   *window = get_window (res, __FUNCTION__, window_id);
+	wmove (window->win, y, x);
+}
+
+static void
 cmd_move (qwaq_resources_t *res)
 {
 	int         x = *RB_PEEK_DATA (res->command_queue, 2);
@@ -768,6 +781,9 @@ process_commands (qwaq_resources_t *res)
 				break;
 			case qwaq_cmd_scrollok:
 				cmd_scrollok (res);
+				break;
+			case qwaq_cmd_wmove:
+				cmd_wmove (res);
 				break;
 			case qwaq_cmd_move:
 				cmd_move (res);
@@ -1532,6 +1548,27 @@ bi_scrollok (progs_t *pr)
 	qwaq_scrollok (pr, window_id, flag);
 }
 
+static void
+qwaq_wmove (progs_t *pr, int window_id, int x, int y)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+
+	if (get_window (res, __FUNCTION__, window_id)) {
+		int         command[] = { qwaq_cmd_wmove, 0, window_id, x, y, };
+		command[1] = CMD_SIZE(command);
+		qwaq_submit_command (res, command);
+	}
+}
+static void
+bi_wmove (progs_t *pr)
+{
+	int         window_id = P_INT (pr, 0);
+	int         x = P_INT (pr, 1);
+	int         y = P_INT (pr, 2);
+
+	qwaq_wmove (pr, window_id, x, y);
+}
+
 static const char qwaq_acs_char_map[] = "lmkjtuvwqxnos`afg~,+.-hi0pryz{|}";
 static void
 qwaq_acs_char (progs_t *pr, unsigned acs)
@@ -1963,6 +2000,7 @@ static builtin_t builtins[] = {
 	{"wbkgd",			bi_wbkgd,			-1},
 	{"werase",			bi_werase,			-1},
 	{"scrollok",		bi_scrollok,		-1},
+	{"wmove",			bi_wmove,			-1},
 	{"acs_char",		bi_acs_char,		-1},
 	{"move",			bi_move,			-1},
 	{"curs_set",		bi_curs_set,		-1},

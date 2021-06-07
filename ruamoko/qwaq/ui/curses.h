@@ -120,6 +120,7 @@ int init_pair (int pair, int f, int b);
 void wbkgd (window_t win, int ch);
 void werase (window_t win);
 void scrollok (window_t win, int flag);
+int wmove (window_t win, int x, int y);
 
 int acs_char (int acs);
 int curs_set (int visibility);
