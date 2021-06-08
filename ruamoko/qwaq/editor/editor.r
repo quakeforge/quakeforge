@@ -182,10 +182,13 @@ handleEvent (Editor *self, qwaq_event_t *event)
 
 -cursorUp:(unsigned)count
 {
+	[self recenter:0];
 	if (count > cursor.y) {
 		count = cursor.y;
 	}
 	cursor.y -= count;
+	line_index = [buffer prevLine:line_index :count];
+	char_index = [buffer charPtr:line_index at:cursor.x];
 	if (base.y > cursor.y) {
 		[vScrollBar setIndex:cursor.y];
 	}
@@ -195,10 +198,13 @@ handleEvent (Editor *self, qwaq_event_t *event)
 
 -cursorDown:(unsigned)count
 {
+	[self recenter:0];
 	if (count > line_count - cursor.y) {
 		count = line_count - cursor.y;
 	}
 	cursor.y += count;
+	line_index = [buffer nextLine:line_index :count];
+	char_index = [buffer charPtr:line_index at:cursor.x];
 	if (base.y + ylen - 1 < cursor.y) {
 		[vScrollBar setIndex:cursor.y + 1 - ylen];
 	}
@@ -208,10 +214,12 @@ handleEvent (Editor *self, qwaq_event_t *event)
 
 -cursorLeft:(unsigned)count
 {
+	[self recenter:0];
 	if (count > cursor.x) {
 		count = cursor.x;
 	}
 	cursor.x -= count;
+	char_index = [buffer charPtr:line_index at:cursor.x];
 	if (base.x > cursor.x) {
 		[hScrollBar setIndex:cursor.x];
 	}
@@ -221,8 +229,10 @@ handleEvent (Editor *self, qwaq_event_t *event)
 
 -cursorRight:(unsigned)count
 {
+	[self recenter:0];
 	// FIXME handle horizontal scrolling and how to deal with max scroll
 	cursor.x += count;
+	char_index = [buffer charPtr:line_index at:cursor.x];
 	if (base.x + xlen - 1 < cursor.x) {
 		[hScrollBar setIndex:cursor.x + 1 - xlen];
 	}
@@ -283,7 +293,7 @@ trackCursor (Editor *self)
 	}
 	cursor.y = line;
 	char_index = [buffer charPtr:line_index at:cursor.x];
-	[self recenter: 0];
+	[self recenter:0];
 	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
 	return self;
 }
