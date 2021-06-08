@@ -113,9 +113,9 @@ position_tab (ScrollBar *self)
 	Point       o = [self.thumbTab origin];
 	if (self.range > 0) {
 		if (self.vertical) {
-			p.y = 1 + self.index * (self.ylen - 2) / (self.range - 1);
+			p.y = 1 + self.index * (self.ylen - 3) / (self.range - 1);
 		} else {
-			p.x = 1 + self.index * (self.xlen - 2) / (self.range - 1);
+			p.x = 1 + self.index * (self.xlen - 3) / (self.range - 1);
 		}
 	}
 	[self.thumbTab move:{p.x - o.x, p.y - o.y}];
