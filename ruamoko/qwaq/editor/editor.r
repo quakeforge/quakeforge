@@ -7,13 +7,18 @@
 
 @implementation Editor
 
--initWithRect:(Rect) rect file:(string) filename
+-initWithRect:(Rect) rect file:(string) filename path:(string) filepath
 {
 	if (!(self = [super initWithRect: rect])) {
 		return nil;
 	}
 	self.filename = str_hold (filename);
-	buffer = [[EditBuffer withFile:filename] retain];
+	if (filepath != filename) {
+		self.filepath = str_hold (filepath);
+	} else {
+		self.filepath = filename;
+	}
+	buffer = [[EditBuffer withFile:filepath] retain];
 	line_count = [buffer countLines: {0, [buffer textSize]}];
 	linebuffer = [[DrawBuffer buffer: { xlen, 1 }] retain];
 	growMode = gfGrowHi;
@@ -25,11 +30,23 @@
 
 +(Editor *)withRect:(Rect)rect file:(string)filename
 {
-	return [[[self alloc] initWithRect:rect file:filename] autorelease];
+	return [[[self alloc] initWithRect:rect
+								  file:filename
+								  path:filename] autorelease];
+}
+
++(Editor *)withRect:(Rect)rect file:(string)filename path:(string)filepath
+{
+	return [[[self alloc] initWithRect:rect
+								  file:filename
+								  path:filepath] autorelease];
 }
 
 -(void)dealloc
 {
+	if (filepath != filename) {
+		str_free (filepath);
+	}
 	str_free (filename);
 	[vScrollBar release];
 	[buffer release];
@@ -40,6 +57,16 @@
 -(string)filename
 {
 	return filename;
+}
+
+-(string)filepath
+{
+	return filepath;
+}
+
+-(Point)cursor
+{
+	return cursor;
 }
 
 -draw

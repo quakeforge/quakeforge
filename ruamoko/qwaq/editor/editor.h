@@ -21,9 +21,13 @@
 	Point       cursor;
 	unsigned    line_count;
 	string      filename;
+	string      filepath;
 }
 +(Editor *)withRect:(Rect)rect file:(string)filename;
++(Editor *)withRect:(Rect)rect file:(string)filename path:(string)filepath;
 -(string)filename;
+-(string)filepath;
+-(Point)cursor;
 -scrollUp:(unsigned) count;
 -scrollDown:(unsigned) count;
 -scrollLeft:(unsigned) count;
