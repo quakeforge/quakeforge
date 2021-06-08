@@ -28,6 +28,7 @@
 		int         onExit;
 	}           sub_cond;
 	SEL         traceHandler;
+	SEL         breakHandler;
 	int         running;
 
 	Window     *source_window;

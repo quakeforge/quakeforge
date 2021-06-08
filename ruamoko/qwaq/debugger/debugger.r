@@ -53,17 +53,17 @@
 -(Editor *) find_file:(string) filename
 {
 	Editor     *file;
-	filename = qdb_get_file_path (target, filename);
+	string      filepath = qdb_get_file_path (target, filename);
 	for (int i = [files count]; i-- > 0; ) {
 		file = [files objectAtIndex: i];
-		if ([file filename] == filename) {
+		if ([file filepath] == filepath) {
 			return file;
 		}
 	}
 	Rect rect = {{1, 1}, [source_window size]};
 	rect.extent.width -= 2;
 	rect.extent.height -= 2;
-	file = [Editor withRect:rect file:filename];
+	file = [Editor withRect:rect file:filename path:filepath];
 	[files addObject: file];
 	return file;
 }
@@ -154,6 +154,27 @@ proxy_event_stopped (Debugger *self, id proxy, qwaq_event_t *event)
 				self.running = 1;
 				qdb_continue (self.target);
 				return 1;
+			case QFK_F4:
+				string      file = [self.current_file filename];
+				unsigned    line = [self.current_file cursor].y + 1;
+				unsigned    addr = qdb_get_source_line_addr (self.target,
+															 file, line);
+				int         set = -1;
+				if (addr) {
+					set = qdb_set_breakpoint (self.target, addr);
+				}
+				if (set >= 0) {
+					qdb_set_trace (self.target, 0);
+					if (set) {
+						self.breakHandler = @selector(breakKeep);
+					} else {
+						self.breakHandler = @selector(breakClear);
+					}
+					self.running = 1;
+					qdb_continue (self.target);
+				} else {
+				}
+				return 1;
 		}
 	}
 	return 0;
@@ -236,6 +257,18 @@ is_new_line (qdb_state_t last_state, qdb_state_t state)
 	return self;
 }
 
+-breakKeep
+{
+	return self;
+}
+
+-breakClear
+{
+	qdb_state_t state = qdb_get_state (target);
+	qdb_clear_breakpoint (target, state.staddr);
+	return self;
+}
+
 -handleDebugEvent
 {
 	if (qdb_get_event (target, &event)) {
@@ -247,6 +280,7 @@ is_new_line (qdb_state_t last_state, qdb_state_t state)
 				break;
 			case prd_breakpoint:
 			case prd_watchpoint:
+				[self performSelector:breakHandler];
 				[self stop:event.what];
 				break;
 			case prd_subenter:

@@ -225,8 +225,9 @@ qdb_set_breakpoint (progs_t *pr)
 		R_INT (pr) = -1;
 		return;
 	}
+	int         set = (tpr->pr_statements[staddr].op & OP_BREAK) != 0;
 	tpr->pr_statements[staddr].op |= OP_BREAK;
-	R_INT (pr) = 0;
+	R_INT (pr) = set;
 }
 
 static void
@@ -619,6 +620,19 @@ qdb_get_local_defs (progs_t *pr)
 	}
 }
 
+static void
+qdb_get_source_line_addr (progs_t *pr)
+{
+	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
+	pointer_t   handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+	progs_t    *tpr = target->pr;
+	const char *file = P_GSTRING (pr, 1);
+	pr_uint_t   line = P_UINT (pr, 2);
+
+	R_UINT (pr) = PR_FindSourceLineAddr (tpr, file, line);
+}
+
 static builtin_t builtins[] = {
 	{"qdb_set_trace",			qdb_set_trace,			-1},
 	{"qdb_set_breakpoint",		qdb_set_breakpoint,		-1},
@@ -641,6 +655,7 @@ static builtin_t builtins[] = {
 	{"qdb_find_auxfunction",	qdb_find_auxfunction,	-1},
 	{"qdb_get_auxfunction",		qdb_get_auxfunction,	-1},
 	{"qdb_get_local_defs",		qdb_get_local_defs,		-1},
+	{"qdb_get_source_line_addr", qdb_get_source_line_addr, -1},
 	{}
 };
 

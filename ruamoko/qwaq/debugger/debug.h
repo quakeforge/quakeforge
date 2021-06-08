@@ -95,7 +95,8 @@ qdb_function_t *qdb_get_function (qdb_target_t target, unsigned fnum);
 qdb_auxfunction_t *qdb_find_auxfunction (qdb_target_t target, string name);
 qdb_auxfunction_t *qdb_get_auxfunction (qdb_target_t target, unsigned fnum);
 qdb_def_t *qdb_get_local_defs (qdb_target_t target, unsigned fnum);
-
+unsigned qdb_get_source_line_addr(qdb_target_t target, string file,
+								  unsigned line);
 void traceon();
 void traceoff();
 

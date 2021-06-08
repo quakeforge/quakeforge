@@ -27,3 +27,5 @@ qdb_auxfunction_t *qdb_find_auxfunction (qdb_target_t target,
 qdb_auxfunction_t *qdb_get_auxfunction (qdb_target_t target,
 										unsigned fnum) = #0;
 qdb_def_t *qdb_get_local_defs (qdb_target_t target, unsigned fnum) = #0;
+unsigned qdb_get_source_line_addr(qdb_target_t target, string file,
+								  unsigned line) = #0;

@@ -31,6 +31,8 @@
 # include "config.h"
 #endif
 
+#define _GNU_SOURCE	// for qsort_r
+
 #ifdef HAVE_STRING_H
 # include <string.h>
 #endif
@@ -41,6 +43,7 @@
 #include <sys/types.h>
 #include <stdlib.h>
 
+#include "QF/fbsearch.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
@@ -75,6 +78,11 @@ typedef struct compunit_s {
 	pr_compunit_t *unit;
 } compunit_t;
 
+typedef struct {
+	const char *file;
+	pr_uint_t   line;
+} func_key_t;
+
 typedef struct prdeb_resources_s {
 	progs_t    *pr;
 	dstring_t  *string;
@@ -85,6 +93,7 @@ typedef struct prdeb_resources_s {
 	pr_debug_header_t *debug;
 	pr_auxfunction_t *auxfunctions;
 	pr_auxfunction_t **auxfunction_map;
+	func_t     *sorted_functions;
 	pr_lineno_t *linenos;
 	pr_def_t   *local_defs;
 	pr_def_t   *type_encodings_def;
@@ -379,6 +388,9 @@ pr_debug_clear (progs_t *pr, void *data)
 	if (res->auxfunction_map)
 		pr->free_progs_mem (pr, res->auxfunction_map);
 	res->auxfunction_map = 0;
+	if (res->sorted_functions)
+		pr->free_progs_mem (pr, res->sorted_functions);
+	res->sorted_functions = 0;
 	res->linenos = 0;
 	res->local_defs = 0;
 
@@ -478,6 +490,43 @@ process_compunit (prdeb_resources_t *res, pr_def_t *def)
 	}
 }
 
+static int
+func_compare_sort (const void *_fa, const void *_fb, void *_res)
+{
+	prdeb_resources_t *res = _res;
+	progs_t    *pr = res->pr;
+	func_t      fa = *(const func_t *)_fa;
+	func_t      fb = *(const func_t *)_fb;
+	const char *fa_file = PR_GetString (pr, pr->pr_functions[fa].s_file);
+	const char *fb_file = PR_GetString (pr, pr->pr_functions[fb].s_file);
+	int         cmp = strcmp (fa_file, fb_file);
+	if (cmp) {
+		return cmp;
+	}
+	pr_auxfunction_t *fa_aux = res->auxfunction_map[fa];
+	pr_auxfunction_t *fb_aux = res->auxfunction_map[fb];
+	pr_uint_t   fa_line = fa_aux ? fa_aux->source_line : 0;
+	pr_uint_t   fb_line = fb_aux ? fb_aux->source_line : 0;
+	return fa_line - fb_line;
+}
+
+static int
+func_compare_search (const void *_key, const void *_f, void *_res)
+{
+	prdeb_resources_t *res = _res;
+	progs_t    *pr = res->pr;
+	const func_key_t *key = _key;
+	func_t      f = *(const func_t *)_f;
+	const char *f_file = PR_GetString (pr, pr->pr_functions[f].s_file);
+	int         cmp = strcmp (key->file, f_file);
+	if (cmp) {
+		return cmp;
+	}
+	pr_auxfunction_t *f_aux = res->auxfunction_map[f];
+	pr_uint_t   f_line = f_aux ? f_aux->source_line : 0;
+	return key->line - f_line;
+}
+
 VISIBLE int
 PR_LoadDebug (progs_t *pr)
 {
@@ -562,8 +611,12 @@ PR_LoadDebug (progs_t *pr)
 
 	i = pr->progs->numfunctions * sizeof (pr_auxfunction_t *);
 	res->auxfunction_map = pr->allocate_progs_mem (pr, i);
-	for (i = 0; i < pr->progs->numfunctions; i++)
+	i = pr->progs->numfunctions * sizeof (func_t);
+	res->sorted_functions = pr->allocate_progs_mem (pr, i);
+	for (i = 0; i < pr->progs->numfunctions; i++) {
 		res->auxfunction_map[i] = 0;
+		res->sorted_functions[i] = i;
+	}
 
 	res->type_encodings_def = PR_FindGlobal (pr, ".type_encodings");
 	if (res->type_encodings_def) {
@@ -593,6 +646,8 @@ PR_LoadDebug (progs_t *pr)
 		res->linenos[i].fa.func = LittleLong (res->linenos[i].fa.func);
 		res->linenos[i].line = LittleLong (res->linenos[i].line);
 	}
+	qsort_r (res->sorted_functions, pr->progs->numfunctions, sizeof (func_t),
+			 func_compare_sort, res);
 	for (i = 0; i < res->debug->num_locals; i++) {
 		byteswap_def (&res->local_defs[i]);
 		if (type_encodings) {
@@ -750,6 +805,43 @@ PR_Find_Lineno (progs_t *pr, pr_uint_t addr)
 		}
 	}
 	return lineno;
+}
+
+pr_uint_t
+PR_FindSourceLineAddr (progs_t *pr, const char *file, pr_uint_t line)
+{
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	func_key_t  key = { file, line };
+	func_t     *f = fbsearch_r (&key, res->sorted_functions,
+								pr->progs->numfunctions, sizeof (func_t),
+								func_compare_search, res);
+	if (!f) {
+		return 0;
+	}
+	dfunction_t *func = &pr->pr_functions[*f];
+	if (func->first_statement <= 0
+		|| strcmp (file, PR_GetString (pr, func->s_file)) != 0) {
+		return 0;
+	}
+	pr_auxfunction_t *aux = res->auxfunction_map[*f];
+	if (!aux) {
+		return 0;
+	}
+	pr_uint_t   addr = func->first_statement;
+	line -= aux->source_line;
+
+	//FIXME put lineno count in sym file
+	for (pr_uint_t i = aux->line_info + 1; i < res->debug->num_linenos; i++) {
+		if (!res->linenos[i].line) {
+			break;
+		}
+		if (res->linenos[i].line <= line) {
+			addr = res->linenos[i].fa.addr;
+		} else {
+			break;
+		}
+	}
+	return addr;
 }
 
 const char *
