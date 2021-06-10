@@ -173,6 +173,12 @@ handleEvent (Editor *self, qwaq_event_t *event)
 			case QFK_RIGHT:
 				[self charRight];
 				return 1;
+			case QFK_HOME:
+				[self moveBOL];
+				return 1;
+			case QFK_END:
+				[self moveEOL];
+				return 1;
 		}
 	}
 	return 0;
@@ -366,6 +372,25 @@ handleEvent (Editor *self, qwaq_event_t *event)
 	if (base.x + xlen - 1 < cursor.x) {
 		cursor.x = base.x + xlen - 1;
 	}
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+	return self;
+}
+
+-moveBOL
+{
+	char_index = line_index;
+	cursor.x = 0;
+	base.x = 0;
+	[self recenter:0];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+	return self;
+}
+
+-moveEOL
+{
+	char_index = [buffer getEOL:line_index];
+	cursor.x = [buffer charPos:line_index at:char_index];
+	[self recenter:0];
 	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
 	return self;
 }

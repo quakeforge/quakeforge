@@ -47,6 +47,8 @@
 -charDown;
 -charLeft;
 -charRight;
+-moveBOL;
+-moveEOL;
 
 -recenter:(int) force;
 -gotoLine:(unsigned) line;
