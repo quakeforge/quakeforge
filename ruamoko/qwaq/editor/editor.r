@@ -25,6 +25,7 @@
 	options = ofCanFocus | ofRelativeEvents;
 	[onViewScrolled addListener:self :@selector(onScroll:)];
 	[self setCursorVisible:1];
+
 	return self;
 }
 
@@ -67,6 +68,45 @@
 -(Point)cursor
 {
 	return cursor;
+}
+
+-setStatusView:(EditStatus *)status
+{
+	self.status = status;
+	[status setModified:modified];
+	[status setCursorMode:cursorMode];
+	[status redraw];
+	return self;
+}
+
+-trackCursor:(int)fwd
+{
+	unsigned    tx = [buffer charPos:line_index at:char_index];
+
+	cursorMode &= ~cmVInsert;
+	if (tx != cursor.x) {
+		if (char_index < [buffer getEOT]) {
+			int         c = [buffer getChar:char_index];
+
+			if (virtualInsert) {
+				if (c != '\t' || cursorThroughTabs) {
+					cursorMode |= cmVInsert;
+					goto done;
+				}
+			}
+			if (c == '\t' && fwd) {
+				tx = [buffer charPos:line_index at:++char_index];
+			}
+		} else if (virtualInsert) {
+			cursorMode |= cmVInsert;
+			goto done;
+		}
+		cursor.x = tx;
+	}
+done:
+	[status setCursorMode:cursorMode];
+	[status redraw];
+	return self;
 }
 
 -draw
@@ -116,22 +156,22 @@ handleEvent (Editor *self, qwaq_event_t *event)
 	} else if (event.what == qe_keydown) {
 		switch (event.key.code) {
 			case QFK_PAGEUP:
-				[self scrollUp: self.ylen];
+				[self pageUp];
 				return 1;
 			case QFK_PAGEDOWN:
-				[self scrollDown: self.ylen];
+				[self pageDown];
 				return 1;
 			case QFK_UP:
-				[self cursorUp: 1];
+				[self charUp];
 				return 1;
 			case QFK_DOWN:
-				[self cursorDown: 1];
+				[self charDown];
 				return 1;
 			case QFK_LEFT:
-				[self cursorLeft: 1];
+				[self charLeft];
 				return 1;
 			case QFK_RIGHT:
-				[self cursorRight: 1];
+				[self charRight];
 				return 1;
 		}
 	}
@@ -150,23 +190,35 @@ handleEvent (Editor *self, qwaq_event_t *event)
 
 -scrollUp:(unsigned) count
 {
+	unsigned    index;
+	unsigned    lines;
 	if (count == 1) {
-		base_index = [buffer prevLine: base_index];
+		index = [buffer prevLine: base_index];
 	} else {
-		base_index = [buffer prevLine: base_index :count];
+		index = [buffer prevLine: base_index :count];
 	}
+	lines = [buffer countLines: {index, base_index - index}];
+	base.y -= lines;
+	base_index = index;
 	[self redraw];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
 	return self;
 }
 
 -scrollDown:(unsigned) count
 {
+	unsigned    index;
+	unsigned    lines;
 	if (count == 1) {
-		base_index = [buffer nextLine: base_index];
+		index = [buffer nextLine: base_index];
 	} else {
-		base_index = [buffer nextLine: base_index :count];
+		index = [buffer nextLine: base_index :count];
 	}
+	lines = [buffer countLines: {base_index, index - base_index}];
+	base.y += lines;
+	base_index = index;
 	[self redraw];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
 	return self;
 }
 
@@ -207,15 +259,57 @@ handleEvent (Editor *self, qwaq_event_t *event)
 	return self;
 }
 
--cursorUp:(unsigned)count
+-pageUp
 {
 	[self recenter:0];
-	if (count > cursor.y) {
-		count = cursor.y;
+	unsigned count = cursor.y;
+
+	if (count > ylen) {
+		count = ylen;
 	}
-	cursor.y -= count;
-	line_index = [buffer prevLine:line_index :count];
+	if (count) {
+		cursor.y -= count;
+		[vScrollBar setIndex:[vScrollBar index] - count];
+		line_index = [buffer prevLine:line_index :count];
+		char_index = [buffer charPtr:line_index at:cursor.x];
+		[self trackCursor:1];
+
+		[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+	}
+	return self;
+}
+
+-pageDown
+{
+	[self recenter:0];
+	unsigned count = line_count - cursor.y;
+
+	if (count > ylen) {
+		count = ylen;
+	}
+	if (count) {
+		cursor.y += count;
+		[vScrollBar setIndex:[vScrollBar index] + count];
+		line_index = [buffer nextLine:line_index :count];
+		char_index = [buffer charPtr:line_index at:cursor.x];
+		[self trackCursor:1];
+
+		[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+	}
+	return self;
+}
+
+-charUp
+{
+	[self recenter:0];
+	if (cursor.y < 1) {
+		return self;
+	}
+	cursor.y--;
+	line_index = [buffer prevLine:line_index :1];
 	char_index = [buffer charPtr:line_index at:cursor.x];
+	[self trackCursor:1];
+
 	if (base.y > cursor.y) {
 		[vScrollBar setIndex:cursor.y];
 	}
@@ -223,15 +317,17 @@ handleEvent (Editor *self, qwaq_event_t *event)
 	return self;
 }
 
--cursorDown:(unsigned)count
+-charDown
 {
 	[self recenter:0];
-	if (count > line_count - cursor.y) {
-		count = line_count - cursor.y;
+	if (cursor.y >= line_count) {
+		return self;
 	}
-	cursor.y += count;
-	line_index = [buffer nextLine:line_index :count];
+	cursor.y++;
+	line_index = [buffer nextLine:line_index :1];
 	char_index = [buffer charPtr:line_index at:cursor.x];
+	[self trackCursor:1];
+
 	if (base.y + ylen - 1 < cursor.y) {
 		[vScrollBar setIndex:cursor.y + 1 - ylen];
 	}
@@ -239,14 +335,16 @@ handleEvent (Editor *self, qwaq_event_t *event)
 	return self;
 }
 
--cursorLeft:(unsigned)count
+-charLeft
 {
 	[self recenter:0];
-	if (count > cursor.x) {
-		count = cursor.x;
+	if (cursor.x < 1) {
+		return self;
 	}
-	cursor.x -= count;
+	cursor.x--;
 	char_index = [buffer charPtr:line_index at:cursor.x];
+	[self trackCursor:0];
+
 	if (base.x > cursor.x) {
 		[hScrollBar setIndex:cursor.x];
 	}
@@ -254,12 +352,14 @@ handleEvent (Editor *self, qwaq_event_t *event)
 	return self;
 }
 
--cursorRight:(unsigned)count
+-charRight
 {
 	[self recenter:0];
 	// FIXME handle horizontal scrolling and how to deal with max scroll
-	cursor.x += count;
+	cursor.x++;
 	char_index = [buffer charPtr:line_index at:cursor.x];
+	[self trackCursor:1];
+
 	if (base.x + xlen - 1 < cursor.x) {
 		[hScrollBar setIndex:cursor.x + 1 - xlen];
 	}

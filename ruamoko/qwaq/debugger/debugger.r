@@ -40,6 +40,9 @@
 	source_scrollbar = [ScrollBar vertical:s.height - 2 at:{s.width - 1, 1}];
 	[source_window insert:source_scrollbar];
 
+	source_status = [EditStatus withRect:{{1, 0}, {2, 1}}];
+	[source_window insert:source_status];
+
 	return self;
 }
 
@@ -77,6 +80,7 @@
 	[[current_file gotoLine:state.line - 1] highlightLine];
 	[[current_file onEvent] addListener: self :@selector(proxy_event::)];
 	[current_file setVerticalScrollBar:source_scrollbar];
+	[current_file setStatusView:source_status];
 	//FIXME id<View>?
 	[source_window insertSelected: (View *) file_proxy];
 	[source_window setTitle:[current_file filename]];
@@ -111,6 +115,7 @@
 		[file_proxy setView:file];
 		[[file onEvent] addListener:self :@selector(proxy_event::)];
 		[file setVerticalScrollBar:source_scrollbar];
+		[file setStatusView:source_status];
 		[source_window setTitle:[file filename]];
 		current_file = file;
 	}

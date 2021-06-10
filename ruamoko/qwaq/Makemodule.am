@@ -27,6 +27,7 @@ qwaq_app_dat_src= \
 	ruamoko/qwaq/debugger/typeencodings.r	\
 	ruamoko/qwaq/editor/editbuffer.r	\
 	ruamoko/qwaq/editor/editor.r	\
+	ruamoko/qwaq/editor/status.r	\
 	ruamoko/qwaq/ui/button.r	\
 	ruamoko/qwaq/ui/draw.r	\
 	ruamoko/qwaq/ui/garray.r	\
@@ -124,6 +125,7 @@ EXTRA_DIST += \
 	ruamoko/qwaq/debugger/views/voidview.h \
 	ruamoko/qwaq/editor/editbuffer.h \
 	ruamoko/qwaq/editor/editor.h \
+	ruamoko/qwaq/editor/status.h \
 	ruamoko/qwaq/qwaq-app.h \
 	ruamoko/qwaq/qwaq.h \
 	ruamoko/qwaq/ui/button.h \
