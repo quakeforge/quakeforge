@@ -35,6 +35,7 @@
 -setSingleStep:(unsigned)singleStep;
 -setIndex:(unsigned)index;
 -(unsigned)index;
+-page:(unsigned)step dir:(unsigned) dir;
 @end
 
 #endif//__qwaq_ui_scrollbar_h

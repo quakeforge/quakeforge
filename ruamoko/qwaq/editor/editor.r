@@ -154,11 +154,11 @@ handleEvent (Editor *self, qwaq_event_t *event)
 	if (event.what & qe_mouse) {
 		if (event.what == qe_mouseclick) {
 			if (event.mouse.buttons & (1 << 3)) {
-				[self scrollUp: 1];
+				[self.vScrollBar page:1 dir:0];
 				return 1;
 			}
 			if (event.mouse.buttons & (1 << 4)) {
-				[self scrollDown: 1];
+				[self.vScrollBar page:1 dir:1];
 				return 1;
 			}
 			if (event.mouse.buttons & (1 << 5)) {
@@ -240,40 +240,6 @@ handleEvent (Editor *self, qwaq_event_t *event)
 	if (handleEvent (self, event)) {
 		event.what = qe_none;
 	}
-	return self;
-}
-
--scrollUp:(unsigned) count
-{
-	unsigned    index;
-	unsigned    lines;
-	if (count == 1) {
-		index = [buffer prevLine: base_index];
-	} else {
-		index = [buffer prevLine: base_index :count];
-	}
-	lines = [buffer countLines: {index, base_index - index}];
-	base.y -= lines;
-	base_index = index;
-	[self redraw];
-	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
-	return self;
-}
-
--scrollDown:(unsigned) count
-{
-	unsigned    index;
-	unsigned    lines;
-	if (count == 1) {
-		index = [buffer nextLine: base_index];
-	} else {
-		index = [buffer nextLine: base_index :count];
-	}
-	lines = [buffer countLines: {base_index, index - base_index}];
-	base.y += lines;
-	base_index = index;
-	[self redraw];
-	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
 	return self;
 }
 

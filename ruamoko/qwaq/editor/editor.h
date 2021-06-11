@@ -37,8 +37,6 @@
 -(string)filepath;
 -(Point)cursor;
 -setStatusView:(EditStatus *)status;
--scrollUp:(unsigned) count;
--scrollDown:(unsigned) count;
 -scrollLeft:(unsigned) count;
 -scrollRight:(unsigned) count;
 -pageUp;

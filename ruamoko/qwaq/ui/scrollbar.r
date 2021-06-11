@@ -45,6 +45,8 @@
 	thumbTab = [Button withPos:thumbPos
 				  releasedIcon:icons[2] pressedIcon:icons[2]];
 
+	[forwardButton setGrowMode:gfGrowAll];
+
 	[[backButton onClick] addListener:self :@selector(scrollBack:)];
 	[[forwardButton onClick] addListener:self :@selector(scrollForward:)];
 	[[thumbTab onPress] addListener:self :thumbSel];
@@ -110,15 +112,20 @@ static void
 position_tab (ScrollBar *self)
 {
 	Point       p = {0, 0};
-	Point       o = [self.thumbTab origin];
 	if (self.range > 0) {
 		if (self.vertical) {
-			p.y = 1 + self.index * (self.ylen - 3) / (self.range - 1);
+			p.y = 1 + self.index * (self.ylen - 3) / self.range;
 		} else {
-			p.x = 1 + self.index * (self.xlen - 3) / (self.range - 1);
+			p.x = 1 + self.index * (self.xlen - 3) / self.range;
+		}
+	} else {
+		if (self.vertical) {
+			p.y = 1;
+		} else {
+			p.x = 1;
 		}
 	}
-	[self.thumbTab move:{p.x - o.x, p.y - o.y}];
+	[self.thumbTab moveTo:p];
 	[self redraw];
 }
 
@@ -138,8 +145,8 @@ position_tab (ScrollBar *self)
 	unsigned    oind = index;
 
 	if (dir) {
-		if (range - 1 - index < step) {
-			step = range - 1 - index;
+		if (range - index < step) {
+			step = range - index;
 		}
 		index += step;
 	} else {
