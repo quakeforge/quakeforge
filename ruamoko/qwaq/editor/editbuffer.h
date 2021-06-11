@@ -34,6 +34,7 @@ typedef struct eb_color_s {
 - (unsigned) prevChar: (unsigned) charPtr;
 - (unsigned) nextNonSpace: (unsigned) charPtr;
 - (unsigned) prevNonSpace: (unsigned) charPtr;
+- (int) isWord: (unsigned) charPtr;
 - (unsigned) nextWord: (unsigned) wordPtr;
 - (unsigned) prevWord: (unsigned) wordPtr;
 - (unsigned) nextLine: (unsigned) linePtr;

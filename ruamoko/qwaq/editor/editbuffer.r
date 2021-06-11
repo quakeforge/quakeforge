@@ -18,6 +18,7 @@
 - (unsigned) prevChar: (unsigned) charPtr = #0;
 - (unsigned) nextNonSpace: (unsigned) charPtr = #0;
 - (unsigned) prevNonSpace: (unsigned) charPtr = #0;
+- (int) isWord: (unsigned) charPtr = #0;
 - (unsigned) nextWord: (unsigned) wordPtr = #0;
 - (unsigned) prevWord: (unsigned) wordPtr = #0;
 - (unsigned) nextLine: (unsigned) linePtr = #0;

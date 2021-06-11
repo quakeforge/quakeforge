@@ -162,7 +162,10 @@ prevWord (txtbuffer_t *buffer, unsigned ptr)
 	if (ptr > 0) {
 		while (ptr > 0) {
 			char        c = getChar (buffer, ptr - 1);
-			if (!isword (c)) {
+			if (c == '\n') {
+				return ptr;
+			}
+			if (isword (c)) {
 				break;
 			}
 			ptr--;
@@ -172,7 +175,7 @@ prevWord (txtbuffer_t *buffer, unsigned ptr)
 			if (c == '\n') {
 				return ptr;
 			}
-			if (isword (c)) {
+			if (!isword (c)) {
 				break;
 			}
 			ptr--;
@@ -620,6 +623,17 @@ bi_i_EditBuffer__prevNonSpace_ (progs_t *pr)
 }
 
 static void
+bi_i_EditBuffer__isWord_ (progs_t *pr)
+{
+	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
+	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
+	unsigned    ptr = P_UINT (pr, 2);
+
+	R_INT (pr) = isword (getChar (buffer->txtbuffer, ptr));
+}
+
+static void
 bi_i_EditBuffer__nextWord_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
@@ -968,6 +982,7 @@ static builtin_t builtins[] = {
 	{"_i_EditBuffer__prevChar_",		bi_i_EditBuffer__prevChar_,		-1},
 	{"_i_EditBuffer__nextNonSpace_",	bi_i_EditBuffer__nextNonSpace_,	-1},
 	{"_i_EditBuffer__prevNonSpace_",	bi_i_EditBuffer__prevNonSpace_,	-1},
+	{"_i_EditBuffer__isWord_",			bi_i_EditBuffer__isWord_,		-1},
 	{"_i_EditBuffer__nextWord_",		bi_i_EditBuffer__nextWord_,		-1},
 	{"_i_EditBuffer__prevWord_",		bi_i_EditBuffer__prevWord_,		-1},
 	{"_i_EditBuffer__nextLine_",		bi_i_EditBuffer__nextLine_,		-1},

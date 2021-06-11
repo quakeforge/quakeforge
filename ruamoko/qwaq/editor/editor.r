@@ -7,6 +7,23 @@
 
 @implementation Editor
 
+static int
+center (unsigned v, int len)
+{
+	return v > len / 2 ? v / 2 : 0;
+}
+
+static void
+trackCursor (Editor *self)
+{
+	unsigned    cx = [self.buffer charPos:self.line_index at:self.char_index];
+	if (self.cursor.x != cx) {
+		if (self.char_index < [self.buffer getEOT]) {
+			int c = [self.buffer getChar:self.char_index];
+		}
+	}
+}
+
 -initWithRect:(Rect) rect file:(string) filename path:(string) filepath
 {
 	if (!(self = [super initWithRect: rect])) {
@@ -168,10 +185,18 @@ handleEvent (Editor *self, qwaq_event_t *event)
 				[self charDown];
 				return 1;
 			case QFK_LEFT:
-				[self charLeft];
+				if (event.key.shift & qe_control) {
+					[self wordLeft];
+				} else {
+					[self charLeft];
+				}
 				return 1;
 			case QFK_RIGHT:
-				[self charRight];
+				if (event.key.shift & qe_control) {
+					[self wordRight];
+				} else {
+					[self charRight];
+				}
 				return 1;
 			case QFK_HOME:
 				[self moveBOL];
@@ -376,6 +401,78 @@ handleEvent (Editor *self, qwaq_event_t *event)
 	return self;
 }
 
+-wordLeft
+{
+	[self recenter:0];
+	//unsigned oc = char_index;
+	Point    b = base;
+
+	do {
+		if (char_index && char_index == line_index) {
+			line_index = [buffer prevLine: line_index];
+			char_index = [buffer getEOL: line_index];
+			if (--cursor.y < b.y) {
+				b.y = cursor.y;
+			}
+		}
+		char_index = [buffer prevWord:char_index];
+	} while (char_index && char_index < [buffer getEOT]
+			 && ![buffer isWord:char_index]);
+
+	cursor.x = [buffer charPos:line_index at:char_index];
+	if (cursor.x < b.x) {
+		b.x = cursor.x;
+	} else if (cursor.x >= b.x) {
+		b.x = center (b.x, xlen);
+	}
+	base.x = b.x;
+	[vScrollBar setIndex:b.y];
+	trackCursor (self);
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+
+	return self;
+}
+
+-wordRight
+{
+	[self recenter:0];
+	//unsigned oc = char_index;
+	Point    b = base;
+
+	if (char_index >= [buffer getEOT]) {
+		return self;
+	}
+	if ([buffer getChar:char_index] == '\n') {
+		while ([buffer getChar:char_index] == '\n') {
+			char_index = line_index = [buffer nextLine:line_index];
+			if (++cursor.y >= b.y + ylen) {
+				b.y = cursor.y + 1 - ylen;
+			}
+			if (char_index >= [buffer getEOT]) {
+				break;
+			}
+			if (![buffer isWord:char_index]) {
+				char_index = [buffer nextWord: char_index];
+			}
+		}
+	} else {
+		char_index = [buffer nextWord: char_index];
+	}
+
+	cursor.x = [buffer charPos:line_index at:char_index];
+	if (cursor.x < b.x) {
+		b.x = cursor.x;
+	} else if (cursor.x >= b.x) {
+		b.x = center (b.x, xlen);
+	}
+	base.x = b.x;
+	[vScrollBar setIndex:b.y];
+	trackCursor (self);
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+
+	return self;
+}
+
 -moveBOL
 {
 	char_index = line_index;
@@ -414,26 +511,9 @@ handleEvent (Editor *self, qwaq_event_t *event)
 -recenter:(int) force
 {
 	if (force || cursor.y < base.y || cursor.y - base.y >= ylen) {
-		unsigned target;
-		if (cursor.y < ylen / 2) {
-			target = 0;
-		} else {
-			target = cursor.y - ylen / 2;
-		}
-		[self scrollTo:target];
+		[self scrollTo: center (cursor.y, ylen)];
 	}
 	return self;
-}
-
-static void
-trackCursor (Editor *self)
-{
-	unsigned    cx = [self.buffer charPos:self.line_index at:self.char_index];
-	if (self.cursor.x != cx) {
-		if (self.char_index < [self.buffer getEOT]) {
-			int c = [self.buffer getChar:self.char_index];
-		}
-	}
 }
 
 -gotoLine:(unsigned) line

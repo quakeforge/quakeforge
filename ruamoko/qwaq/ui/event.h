@@ -14,6 +14,11 @@ typedef enum {
 } qwaq_key_event;
 
 typedef enum {
+	qe_shift     = 1,
+	qe_control   = 4,
+} qwaq_key_shift;
+
+typedef enum {
 	qe_command   = 0x0200,		// application level command
 	qe_broadcast = 0x0400,
 	qe_resize    = 0x0800,		// screen resized

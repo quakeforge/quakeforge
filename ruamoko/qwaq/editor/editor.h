@@ -47,6 +47,8 @@
 -charDown;
 -charLeft;
 -charRight;
+-wordLeft;
+-wordRight;
 -moveBOL;
 -moveEOL;
 
