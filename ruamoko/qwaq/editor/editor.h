@@ -43,12 +43,18 @@
 -scrollRight:(unsigned) count;
 -pageUp;
 -pageDown;
+-linesUp;
+-linesDown;
 -charUp;
 -charDown;
 -charLeft;
 -charRight;
 -wordLeft;
 -wordRight;
+-moveBOT;
+-moveEOT;
+-moveBOS;
+-moveEOS;
 -moveBOL;
 -moveEOL;
 

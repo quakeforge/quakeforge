@@ -173,16 +173,32 @@ handleEvent (Editor *self, qwaq_event_t *event)
 	} else if (event.what == qe_keydown) {
 		switch (event.key.code) {
 			case QFK_PAGEUP:
-				[self pageUp];
+				if (event.key.shift & qe_control) {
+					[self moveBOT];
+				} else {
+					[self pageUp];
+				}
 				return 1;
 			case QFK_PAGEDOWN:
-				[self pageDown];
+				if (event.key.shift & qe_control) {
+					[self moveEOT];
+				} else {
+					[self pageDown];
+				}
 				return 1;
 			case QFK_UP:
-				[self charUp];
+				if (event.key.shift & qe_control) {
+					[self linesUp];
+				} else {
+					[self charUp];
+				}
 				return 1;
 			case QFK_DOWN:
-				[self charDown];
+				if (event.key.shift & qe_control) {
+					[self linesDown];
+				} else {
+					[self charDown];
+				}
 				return 1;
 			case QFK_LEFT:
 				if (event.key.shift & qe_control) {
@@ -199,10 +215,18 @@ handleEvent (Editor *self, qwaq_event_t *event)
 				}
 				return 1;
 			case QFK_HOME:
-				[self moveBOL];
+				if (event.key.shift & qe_control) {
+					[self moveBOS];
+				} else {
+					[self moveBOL];
+				}
 				return 1;
 			case QFK_END:
-				[self moveEOL];
+				if (event.key.shift & qe_control) {
+					[self moveEOS];
+				} else {
+					[self moveEOL];
+				}
 				return 1;
 		}
 	}
@@ -327,6 +351,54 @@ handleEvent (Editor *self, qwaq_event_t *event)
 
 		[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
 	}
+	return self;
+}
+
+-linesUp
+{
+	while (line_index > 0) {
+		line_index = [buffer prevLine: line_index];
+		cursor.y--;
+		unsigned p = [buffer nextNonSpace: line_index];
+		if ([buffer getChar:p] == '\n') {
+			continue;
+		}
+		int x = [buffer charPos:line_index at:p];
+		if (x <= cursor.x) {
+			break;
+		}
+	}
+	char_index = [buffer charPtr:line_index at:cursor.x];
+
+	[self recenter:0];
+	[self trackCursor:1];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+
+	return self;
+}
+
+-linesDown
+{
+	unsigned end = [buffer getEOT];
+	unsigned last = [buffer getBOL:end];
+	while (line_index < last) {
+		line_index = [buffer nextLine: line_index];
+		cursor.y++;
+		unsigned p = [buffer nextNonSpace: line_index];
+		if (p >= end || [buffer getChar:p] == '\n') {
+			continue;
+		}
+		int x = [buffer charPos:line_index at:p];
+		if (x <= cursor.x) {
+			break;
+		}
+	}
+	char_index = [buffer charPtr:line_index at:cursor.x];
+
+	[self recenter:0];
+	[self trackCursor:1];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+
 	return self;
 }
 
@@ -470,6 +542,53 @@ handleEvent (Editor *self, qwaq_event_t *event)
 	trackCursor (self);
 	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
 
+	return self;
+}
+
+-moveBOT
+{
+	line_index = base_index = char_index = 0;;
+	cursor = nil;
+	base.x = 0;
+	[vScrollBar setIndex:0];
+	[self trackCursor:1];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+	return self;
+}
+
+-moveEOT
+{
+	char_index = [buffer getEOT];
+	line_index = [buffer getBOL:char_index];
+	cursor.x = [buffer charPos:line_index at:char_index];
+	cursor.y = line_count;
+	[self recenter:0];
+	[self trackCursor:1];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+	return self;
+}
+
+-moveBOS
+{
+	line_index = base_index;
+	cursor.y = base.y;
+	char_index = [buffer charPtr:line_index at:cursor.x];
+	[self trackCursor:1];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+	return self;
+}
+
+-moveEOS
+{
+	unsigned count = line_count - base.y;
+	if (count > ylen - 1) {
+		count = ylen - 1;
+	}
+	line_index = [buffer nextLine:base_index :count];
+	cursor.y = base.y + count;
+	char_index = [buffer charPtr:line_index at:cursor.x];
+	[self trackCursor:1];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
 	return self;
 }
 
