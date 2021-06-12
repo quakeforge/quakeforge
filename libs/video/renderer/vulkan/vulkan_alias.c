@@ -51,7 +51,6 @@
 #include "QF/skin.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/vrect.h"
 
 #include "QF/Vulkan/qf_alias.h"
 #include "QF/Vulkan/qf_texture.h"

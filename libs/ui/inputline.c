@@ -39,12 +39,10 @@
 # include <strings.h>
 #endif
 
-#include "QF/cmd.h"
-#include "QF/console.h"
 #include "QF/keys.h"
 #include "QF/mathlib.h"
 
-#include "compat.h"
+#include "QF/ui/inputline.h"
 
 VISIBLE struct inputline_s *
 Con_CreateInputLine (int lines, int lsize, char prompt)

@@ -80,10 +80,8 @@ libs_util_libQFutil_la_SOURCES= \
 	libs/util/sizebuf.c \
 	libs/util/string.c \
 	libs/util/sys.c \
-	libs/util/txtbuffer.c \
 	libs/util/va.c \
 	libs/util/ver_check.c \
-	libs/util/vrect.c \
 	libs/util/wad.c \
 	libs/util/wadfile.c \
 	libs/util/zone.c \

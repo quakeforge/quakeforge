@@ -46,7 +46,8 @@
 #include "QF/ruamoko.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
-#include "QF/view.h"
+
+#include "QF/ui/view.h"
 
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"

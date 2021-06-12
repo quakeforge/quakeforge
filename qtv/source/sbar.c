@@ -32,10 +32,11 @@
 #endif
 
 #include "QF/console.h"
-#include "QF/view.h"
 #include "QF/va.h"
 
 #include "QF/plugin/console.h"
+
+#include "QF/ui/view.h"
 
 #include "sv_console.h"
 

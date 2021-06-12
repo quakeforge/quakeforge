@@ -46,27 +46,6 @@ typedef struct
 	int		numlines;		// number of non-blank text lines, used for backscroling
 } old_console_t;
 
-typedef struct inputline_s
-{
-	char	**lines;		// array of lines for input history
-	int		num_lines;		// number of lines in arry. 1 == no history
-	size_t	line_size;		// space available in each line. includes \0
-	char	prompt_char;	// char placed at the beginning of the line
-	int		edit_line;		// current line being edited
-	int		history_line;	// current history line
-	size_t	linepos;		// cursor position within the current edit line
-	size_t	scroll;			// beginning of displayed line
-	size_t	width;			// viewable width for horizontal scrolling
-	const char *line;
-	void   *user_data;		// eg: window pointer
-	void	(*complete)(struct inputline_s *); // tab key pressed
-	void	(*enter)(struct inputline_s *); // enter key pressed
-	void	(*draw)(struct inputline_s *); // draw input line to screen
-
-	int		x, y;			// coordinates depend on display
-	int		cursor;			// is the cursor active (drawn?)
-} inputline_t;
-
 typedef struct {
 	byte	*text;
 	size_t	len;
@@ -96,21 +75,17 @@ void Con_Printf (const char *fmt, ...) __attribute__((format(PRINTF, 1, 2)));
 void Con_Print (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
 void Con_ToggleConsole_f (void);
 
+struct inputline_s;
 // wrapper function to attempt to either complete the command line
 // or to list possible matches grouped by type
 // (i.e. will display possible variables, aliases, commands
 // that match what they've typed so far)
-void Con_BasicCompleteCommandLine (inputline_t *il);
+void Con_BasicCompleteCommandLine (struct inputline_s *il);
 
 // Generic libs/util/console.c function to display a list
 // formatted in columns on the console
 void Con_DisplayList(const char **list, int con_linewidth);
 extern void (*con_list_print)(const char *fmt, ...) __attribute__((format(PRINTF, 1, 2)));
-
-inputline_t *Con_CreateInputLine (int lines, int lsize, char prompt);
-void Con_DestroyInputLine (inputline_t *inputline);
-void Con_ClearTyping (inputline_t *il, int save);
-void Con_ProcessInputLine (inputline_t *il, int ch);
 
 con_buffer_t *Con_CreateBuffer (size_t buffer_size, int max_lines);
 void Con_DestroyBuffer (con_buffer_t *buffer);
@@ -134,7 +109,7 @@ void Con_Demolist_DEM_f (void);
 
 //FIXME need a better way to communicate this (bah, need a better menu system
 // in general :P)
-void C_DrawInputLine (inputline_t *il);
+void C_DrawInputLine (struct inputline_s *il);
 
 struct view_s;
 void Menu_Init (void);

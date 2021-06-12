@@ -67,6 +67,7 @@ qw_server_LIBS= \
 		libs/ruamoko/libQFruamoko.la \
 		libs/gamecode/libQFgamecode.la \
 		libs/console/libQFconsole.la \
+		libs/ui/libQFui.la \
 		libs/util/libQFutil.la
 
 qw_server_deps=qw/source/libqw_server.a qw/source/libqw_common.a $(qw_server_LIBS)
@@ -95,6 +96,7 @@ qw_client_LIBS= \
 		libs/image/libQFimage.la \
 		libs/gib/libQFgib.la \
 		libs/ruamoko/libQFruamoko.la \
+		libs/ui/libQFui.la \
 		libs/util/libQFutil.la
 qw_client_libs= qw/source/libqw_client.a qw/source/libqw_common.a \
 			libs/client/libQFclient.la

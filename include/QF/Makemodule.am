@@ -68,12 +68,9 @@ include_qf = \
 	include/QF/sys.h \
 	include/QF/teamplay.h \
 	include/QF/tga.h \
-	include/QF/txtbuffer.h \
 	include/QF/va.h \
 	include/QF/ver_check.h \
 	include/QF/vid.h \
-	include/QF/vrect.h \
-	include/QF/view.h \
 	include/QF/wad.h \
 	include/QF/wadfile.h \
 	include/QF/winding.h \
@@ -133,6 +130,12 @@ include_qf_simd = \
 	include/QF/simd/types.h \
 	include/QF/simd/vec4d.h \
 	include/QF/simd/vec4f.h
+
+include_qf_ui = \
+	include/QF/ui/inputline.h \
+	include/QF/ui/txtbuffer.h \
+	include/QF/ui/view.h \
+	include/QF/ui/vrect.h
 
 include_qf_vulkan = \
 	include/QF/Vulkan/barrier.h \

@@ -46,11 +46,12 @@
 #include "QF/model.h"
 #include "QF/render.h"
 #include "QF/sys.h"
-#include "QF/vrect.h"
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
 #include "QF/GLSL/qf_textures.h"
+
+#include "QF/ui/vrect.h"
 
 #include "r_scrap.h"
 

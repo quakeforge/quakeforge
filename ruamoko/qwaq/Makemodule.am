@@ -46,6 +46,7 @@ qwaq_app_dat_src= \
 qwaq_curses_libs= \
 	libs/video/targets/libvid_common.la \
 	libs/console/libQFconsole.la \
+	libs/ui/libQFui.la \
 	libs/gib/libQFgib.la
 
 ruamoko_qwaq_qwaq_curses_SOURCES= \
@@ -66,6 +67,7 @@ qwaq_cl_plugin_libs= \
 qwaq_client_libs= \
 	$(top_builddir)/libs/entity/libQFentity.la \
 	$(top_builddir)/libs/console/libQFconsole.la \
+	$(top_builddir)/libs/ui/libQFui.la \
 	$(top_builddir)/libs/video/targets/libQFjs.la \
 	$(top_builddir)/libs/audio/libQFcd.la \
 	$(top_builddir)/libs/audio/libQFsound.la \

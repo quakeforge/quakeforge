@@ -29,7 +29,6 @@
 #define __QF_vid_h
 
 #include "QF/qtypes.h"
-#include "QF/vrect.h"
 
 #define VID_CBITS	6
 #define VID_GRADES	(1 << VID_CBITS)

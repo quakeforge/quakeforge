@@ -51,7 +51,6 @@
 #include "QF/render.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/vrect.h"
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"

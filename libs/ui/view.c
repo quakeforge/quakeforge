@@ -39,7 +39,7 @@
 #endif
 #include <stdlib.h>
 
-#include "QF/view.h"
+#include "QF/ui/view.h"
 
 static void
 setgeometry (view_t *view)

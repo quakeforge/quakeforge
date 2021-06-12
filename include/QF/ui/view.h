@@ -28,8 +28,8 @@
 
 */
 
-#ifndef __QF_view_h
-#define __QF_view_h
+#ifndef __QF_ui_view_h
+#define __QF_ui_view_h
 
 /** \defgroup console_view Console View Objects
 	\ingroup console
@@ -40,8 +40,8 @@
 	the standard compass rose (north, east, south, west in clockwise order)
 	with north at the top.
 
-	The origin of the view is taken to be the point corresponding point on the
-	edge of the view (eg, southeast is bottom right), or the view's center for
+	The origin of the view is taken to be the corresponding point on the edge
+	of the view (eg, southeast is bottom right), or the view's center for
 	center gravity. When the relative coordinates of the view are (0,0), the
 	view's origin is placed on the parent view's gravity point using the view's
 	gravity (\em not the parent view's gravity). That is, the parent view's
@@ -217,4 +217,4 @@ void view_move (view_t *view, int xp, int yp);
 
 ///@}
 
-#endif//__QF_view_h
+#endif//__QF_ui_view_h

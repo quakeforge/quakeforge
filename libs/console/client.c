@@ -58,11 +58,14 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
-#include "QF/view.h"
 
 #include "QF/plugin/general.h"
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
+
+#include "QF/ui/view.h"
+
+#include "QF/ui/inputline.h"
 
 #include "compat.h"
 

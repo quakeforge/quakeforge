@@ -9,7 +9,8 @@
 #include "QF/progs.h"
 #include "QF/ruamoko.h"
 #include "QF/quakeio.h"
-#include "QF/txtbuffer.h"
+
+#include "QF/ui/txtbuffer.h"
 
 #include "ruamoko/qwaq/qwaq.h"
 #include "ruamoko/qwaq/editor/editbuffer.h"

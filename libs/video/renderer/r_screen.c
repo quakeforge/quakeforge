@@ -43,7 +43,6 @@
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
-#include "QF/view.h"
 
 #include "compat.h"
 #include "r_internal.h"

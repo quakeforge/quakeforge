@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __QF_txtbuffer_h
-#define __QF_txtbuffer_h
+#ifndef __QF_ui_txtbuffer_h
+#define __QF_ui_txtbuffer_h
 
 #include <stdint.h>
 #include <stdlib.h>
@@ -109,4 +109,4 @@ int TextBuffer_DeleteAt (txtbuffer_t *buffer, size_t offset, size_t len);
 
 ///@}
 
-#endif//__QF_txtbuffer_h
+#endif//__QF_ui_txtbuffer_h

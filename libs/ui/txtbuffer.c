@@ -38,7 +38,8 @@
 #include "QF/alloc.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
-#include "QF/txtbuffer.h"
+
+#include "QF/ui/txtbuffer.h"
 
 #include "compat.h"
 

@@ -34,7 +34,8 @@
 #include <stdlib.h>
 
 #include "QF/mathlib.h"
-#include "QF/vrect.h"
+
+#include "QF/ui/vrect.h"
 
 //#define TEST_MEMORY
 

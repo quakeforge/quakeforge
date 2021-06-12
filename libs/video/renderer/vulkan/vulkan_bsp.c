@@ -50,7 +50,6 @@
 #include "QF/render.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/vrect.h"
 
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_lightmap.h"

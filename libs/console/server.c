@@ -68,10 +68,13 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/view.h"
 
 #include "QF/plugin/general.h"
 #include "QF/plugin/console.h"
+
+#include "QF/ui/view.h"
+
+#include "QF/ui/inputline.h"
 
 #include "compat.h"
 #include "sv_console.h"

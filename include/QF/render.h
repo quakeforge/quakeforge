@@ -33,6 +33,7 @@
 #include "QF/qdefs.h" // FIXME
 #include "QF/vid.h"
 #include "QF/simd/types.h"
+#include "QF/ui/vrect.h"
 
 typedef enum {
 	pt_static,

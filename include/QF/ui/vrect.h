@@ -28,8 +28,8 @@
 
 */
 
-#ifndef __QF_vrect_h
-#define __QF_vrect_h
+#ifndef __QF_ui_vrect_h
+#define __QF_ui_vrect_h
 
 typedef struct vrect_s {
 	int         x;
@@ -165,4 +165,4 @@ vrect_t *VRect_Union (const vrect_t *r1, const vrect_t *r2);
 */
 vrect_t *VRect_Merge (const vrect_t *r1, const vrect_t *r2);
 
-#endif//__QF_vrect_h
+#endif//__QF_ui_vrect_h
