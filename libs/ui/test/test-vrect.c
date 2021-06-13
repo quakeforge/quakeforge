@@ -3,7 +3,7 @@
 #endif
 #include <stdio.h>
 
-#include "QF/vrect.h"
+#include "QF/ui/vrect.h"
 
 #define VR(x,y,w,h) {x,y,w,h,0}
 #define VRn(x,y,w,h,n) {x,y,w,h,n}

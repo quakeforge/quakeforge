@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "QF/txtbuffer.h"
+#include "QF/ui/txtbuffer.h"
 
 static size_t
 check_text_ptr (txtbuffer_t *buffer, size_t offset, const char *txt,

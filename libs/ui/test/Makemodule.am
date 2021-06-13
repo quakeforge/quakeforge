@@ -1,0 +1,15 @@
+libs_ui_tests = \
+	libs/ui/test/test-txtbuffer \
+	libs/ui/test/test-vrect
+
+TESTS += $(libs_ui_tests)
+
+check_PROGRAMS += $(libs_ui_tests)
+
+libs_ui_test_test_txtbuffer_SOURCES=libs/ui/test/test-txtbuffer.c
+libs_ui_test_test_txtbuffer_LDADD=libs/ui/libQFui.la
+libs_ui_test_test_txtbuffer_DEPENDENCIES=libs/ui/libQFui.la
+
+libs_ui_test_test_vrect_SOURCES=libs/ui/test/test-vrect.c
+libs_ui_test_test_vrect_LDADD=libs/ui/libQFui.la
+libs_ui_test_test_vrect_DEPENDENCIES=libs/ui/libQFui.la

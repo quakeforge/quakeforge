@@ -1,4 +1,4 @@
-#include libs/ui/test/Makemodule.am
+include libs/ui/test/Makemodule.am
 
 lib_LTLIBRARIES += libs/ui/libQFui.la
 
