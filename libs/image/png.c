@@ -318,7 +318,7 @@ WritePNGqfs (const char *fileName, const byte *data, int width, int height)
 #include "QF/png.h"
 
 VISIBLE tex_t *
-LoadPNG (QFile *infile)
+LoadPNG (QFile *infile, int load)
 {
 	return 0;
 }
