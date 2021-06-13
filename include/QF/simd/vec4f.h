@@ -352,7 +352,7 @@ GNU89INLINE inline
 VISIBLE
 #endif
 vec4f_t
-loadvec3f (const float v3[3])
+loadvec3f (const float *v3)
 {
 	vec4f_t v4;
 
@@ -381,7 +381,7 @@ GNU89INLINE inline
 VISIBLE
 #endif
 void
-storevec3f (float v3[3], vec4f_t v4)
+storevec3f (float *v3, vec4f_t v4)
 {
 	v3[0] = v4[0];
 	v3[1] = v4[1];

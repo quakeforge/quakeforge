@@ -112,7 +112,7 @@ void NET_SendPacket (int length, const void *data, netadr_t to);
 	\param b		The second address to compare.
 	\return			True of the addresses match, otherwise false.
 */
-qboolean NET_CompareAdr (netadr_t a, netadr_t b) __attribute__((pure));
+qboolean NET_CompareAdr (netadr_t a, netadr_t b) __attribute__((const));
 
 /** Compare two network addresses.
 
@@ -122,7 +122,7 @@ qboolean NET_CompareAdr (netadr_t a, netadr_t b) __attribute__((pure));
 	\param b		The second address to compare.
 	\return			True of the addresses match, otherwise false.
 */
-qboolean NET_CompareBaseAdr (netadr_t a, netadr_t b) __attribute__((pure));
+qboolean NET_CompareBaseAdr (netadr_t a, netadr_t b) __attribute__((const));
 
 /** Convert an address to a string.
 

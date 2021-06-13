@@ -124,7 +124,7 @@ WriteNodePlanes (node_t *nodes)
 static int
 WriteClipNodes_r (node_t *node)
 {
-	dclipnode_t cn;
+	dclipnode_t cn = { };
 	int         num, c, i;
 
 	// FIXME: free more stuff?
