@@ -257,7 +257,7 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 		pr->pr_statements[i].c = LittleShort (pr->pr_statements[i].c);
 	}
 
-	for (i = 0; i < (size_t) pr->progs->numfunctions; i++) {
+	for (i = 0; i < pr->progs->numfunctions; i++) {
 		pr->pr_functions[i].first_statement =
 			LittleLong (pr->pr_functions[i].first_statement);
 		pr->pr_functions[i].parm_start =
@@ -328,11 +328,11 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 		pr_def_t   *def;
 		for (def = pr->pr_globaldefs, i = 0; i < pr->progs->numglobaldefs;
 			 i++, def++) {
-			def->size = pr_type_size[def->type];
+			def->size = pr_type_size[def->type & ~DEF_SAVEGLOBAL];
 		}
 		for (def = pr->pr_fielddefs, i = 0; i < pr->progs->numfielddefs;
 			 i++, def++) {
-			def->size = pr_type_size[def->type];
+			def->size = pr_type_size[def->type & ~DEF_SAVEGLOBAL];
 		}
 	}
 	pr->pr_trace = 0;
