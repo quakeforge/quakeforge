@@ -153,3 +153,7 @@ F_BEGIN(R_SetFPCW)
 	ret
 F_END(R_SetFPCW)
 #endif /* USE_INTEL_ASM */
+
+#if defined(__linux__) && defined(__ELF__)
+.section .note.GNU-stack,"",%progbits
+#endif
