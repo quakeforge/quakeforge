@@ -127,7 +127,8 @@ test_transform2 (const vec3_t angles, const vec3_t scale)
 	vec3_t      x, y;
 	quat_t      rotation;
 	mat3_t      mat;
-	vec3_t      rot, sc, sh;
+	quat_t      rot;
+	vec3_t      sc, sh;
 
 	VectorCopy (v, x);
 	AngleQuat (angles, rotation);
