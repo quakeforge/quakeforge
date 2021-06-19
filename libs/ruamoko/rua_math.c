@@ -84,6 +84,12 @@ bi_atan2f (progs_t *pr)
 }
 
 static void
+bi_expf (progs_t *pr)
+{
+	R_FLOAT (pr) = expf (P_FLOAT (pr, 0));
+}
+
+static void
 bi_logf (progs_t *pr)
 {
 	R_FLOAT (pr) = logf (P_FLOAT (pr, 0));
@@ -229,6 +235,12 @@ bi_atan2 (progs_t *pr)
 }
 
 static void
+bi_exp (progs_t *pr)
+{
+	R_DOUBLE (pr) = exp (P_DOUBLE (pr, 0));
+}
+
+static void
 bi_log (progs_t *pr)
 {
 	R_DOUBLE (pr) = log (P_DOUBLE (pr, 0));
@@ -317,6 +329,7 @@ static builtin_t builtins[] = {
 	{"acos|f",	bi_acosf,	-1},
 	{"atan|f",	bi_atanf,	-1},
 	{"atan2|ff",bi_atan2f, 	-1},
+	{"exp|f",	bi_expf,	-1},
 	{"log|f",	bi_logf,	-1},
 	{"log2|f",	bi_log2f,	-1},
 	{"log10|f",	bi_log10f,	-1},
@@ -340,6 +353,7 @@ static builtin_t builtins[] = {
 	{"acos|d",	bi_acos,	-1},
 	{"atan|d",	bi_atan,	-1},
 	{"atan2|dd",bi_atan2, 	-1},
+	{"exp|d",	bi_exp,		-1},
 	{"log|d",	bi_log,		-1},
 	{"log2|d",	bi_log2,	-1},
 	{"log10|d",	bi_log10,	-1},
