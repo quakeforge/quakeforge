@@ -2,7 +2,7 @@ QWAQ_LIBS=@QWAQ_LIBS@
 QWAQ_DEPS=@QWAQ_DEPS@
 QWAQ_INCS=@QWAQ_INCS@
 
-noinst_PROGRAMS += @QWAQ_TARGETS@ ruamoko/qwaq/qwaq-app.dat$(EXEEXT) ruamoko/qwaq/gcd.dat$(EXEEXT)
+noinst_PROGRAMS += @QWAQ_TARGETS@ ruamoko/qwaq/qwaq-app.dat$(EXEEXT) ruamoko/qwaq/gcd.dat$(EXEEXT) ruamoko/qwaq/z-transform.dat$(EXEEXT)
 
 qwaq_app_dat_src= \
 	ruamoko/qwaq/qwaq-app.r	\
@@ -102,6 +102,14 @@ ruamoko/qwaq/gcd.dat$(EXEEXT): $(ruamoko_qwaq_gcd_obj) $(QFCC_DEP) ruamoko/lib/l
 	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_gcd_obj) -lcsqc -lr
 include $(ruamoko_qwaq_gcd_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_gcd_dep)
+
+ruamoko_qwaq_z_transform_dat_SOURCES=ruamoko/qwaq/z-transform.r
+ruamoko_qwaq_z_transform_obj=$(ruamoko_qwaq_z_transform_dat_SOURCES:.r=.o)
+ruamoko_qwaq_z_transform_dep=$(call qcautodep,$(ruamoko_qwaq_z_transform_dat_SOURCES:.o=.Qo))
+ruamoko/qwaq/z-transform.dat$(EXEEXT): $(ruamoko_qwaq_z_transform_obj) $(QFCC_DEP) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
+	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_z_transform_obj) -lcsqc -lr
+include $(ruamoko_qwaq_z_transform_dep) # am--include-marker
+r_depfiles_remade += $(ruamoko_qwaq_z_transform_dep)
 
 EXTRA_PROGRAMS += ruamoko/qwaq/qwaq-curses ruamoko/qwaq/qwaq-x11
 EXTRA_DIST += \

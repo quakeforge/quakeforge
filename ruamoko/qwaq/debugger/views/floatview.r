@@ -20,7 +20,7 @@
 -draw
 {
 	[super draw];
-	string val = sprintf ("%.9", data[0]);
+	string val = sprintf ("%.9g", data[0]);
 	[self mvprintf:{0, 0}, "%*.*s", xlen, xlen, val];
 	return self;
 }
