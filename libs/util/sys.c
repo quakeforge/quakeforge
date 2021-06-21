@@ -483,10 +483,13 @@ Sys_Shutdown (void)
 	shutdown_list_t *t;
 
 	while (shutdown_list) {
-		shutdown_list->func (shutdown_list->data);
+		void      (*func) (void *) = shutdown_list->func;
+		void       *data = shutdown_list->data;
 		t = shutdown_list;
 		shutdown_list = shutdown_list->next;
 		free (t);
+
+		func (data);
 	}
 }
 
