@@ -354,7 +354,7 @@ QF_PROCESS_NEED_LIBS(nq, [client common sdl win server], [nq/source], a)
 if test -n "$CL_TARGETS"; then
 	CD_TARGETS="libs/audio/libQFcd.la"
 	SND_TARGETS="libs/audio/libQFsound.la"
-	AUDIO_TARGETS="testsound\$(EXEEXT)"
+	AUDIO_TARGETS="libs/audio/test/testsound\$(EXEEXT)"
 	JOY_TARGETS="libs/video/targets/libQFjs.la"
 else
 	unset CDTYPE

@@ -65,7 +65,7 @@ init (void)
 	testsound_args = Cbuf_ArgsNew ();
 
 	Sys_Init ();
-	COM_ParseConfig ();
+	COM_ParseConfig (testsound_cbuf);
 	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
 
 	Memory_Init (Sys_Alloc (MEMSIZE), MEMSIZE);

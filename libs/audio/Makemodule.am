@@ -1,5 +1,6 @@
 include libs/audio/targets/Makemodule.am
 include libs/audio/renderer/Makemodule.am
+include libs/audio/test/Makemodule.am
 
 plugin_LTLIBRARIES +=	@cd_plugins@
 noinst_LTLIBRARIES +=	@cd_static_plugins@
