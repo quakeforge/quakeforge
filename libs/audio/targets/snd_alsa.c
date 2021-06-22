@@ -201,7 +201,7 @@ SNDDMA_Init (void)
 	snd_pcm_hw_params_t	**_hw = &hw;
 	snd_pcm_sw_params_t	*sw;
 	snd_pcm_sw_params_t	**_sw = &sw;
-	snd_pcm_uframes_t	 frag_size;
+	snd_pcm_uframes_t	 period_size;
 
 	if (!load_libasound ())
 		return false;
@@ -339,7 +339,6 @@ retry_open:
 					err = qfsnd_pcm_hw_params_set_rate_near (pcm, hw,
 															 &rate, 0);
 					if (0 <= err) {
-						frag_size = 8 * bps * (rate / 11025);
 						break;
 					}
 				}
@@ -360,16 +359,20 @@ retry_open:
 							qfsnd_strerror (err));
 				goto error;
 			}
-			frag_size = 8 * bps * (rate / 11025);
 			break;
 	}
 
-	err = qfsnd_pcm_hw_params_set_period_size_near (pcm, hw, &frag_size, 0);
+	// works out to about 5.5ms (5.3 for 48k, 5.8 for 44k1) but consistent for
+	// different sample rates
+	period_size = 64 * (rate / 11025);
+	err = qfsnd_pcm_hw_params_set_period_size_near (pcm, hw, &period_size, 0);
 	if (0 > err) {
 		Sys_Printf ("ALSA: unable to set period size near %i. %s\n",
-					(int) frag_size, qfsnd_strerror (err));
+					(int) period_size, qfsnd_strerror (err));
 		goto error;
 	}
+	int dir;
+	qfsnd_pcm_hw_params_get_period_size (hw, &period_size, &dir);
 	err = qfsnd_pcm_hw_params (pcm, hw);
 	if (0 > err) {
 		Sys_Printf ("ALSA: unable to install hw params: %s\n",
@@ -432,11 +435,14 @@ retry_open:
 	sn.frames = buffer_size;
 	sn.speed = rate;
 	SNDDMA_GetDMAPos ();		//XXX sets sn.buffer
-	Sys_Printf ("%5d channels\n", sn.channels);
-	Sys_Printf ("%5d samples\n", sn.frames);
+	Sys_Printf ("%5d channels %sinterleaved\n", sn.channels,
+				sn.xfer ? "non-" : "");
+	Sys_Printf ("%5d samples (%.1fms)\n", sn.frames,
+				1000.0 * sn.frames / sn.speed);
 	Sys_Printf ("%5d samplepos\n", sn.framepos);
 	Sys_Printf ("%5d samplebits\n", sn.samplebits);
-	Sys_Printf ("%5d submission_chunk\n", sn.submission_chunk);
+	Sys_Printf ("%5d submission_chunk (%.1fms)\n", sn.submission_chunk,
+				1000.0 * sn.submission_chunk / sn.speed);
 	Sys_Printf ("%5d speed\n", sn.speed);
 	Sys_Printf ("0x%lx dma buffer\n", (long) sn.buffer);
 
