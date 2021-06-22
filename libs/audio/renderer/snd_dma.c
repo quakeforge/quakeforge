@@ -362,21 +362,21 @@ static general_funcs_t plugin_info_general_funcs = {
 };
 
 static snd_render_funcs_t plugin_info_render_funcs = {
-	SND_AmbientOff,
-	SND_AmbientOn,
-	SND_StaticSound,
-	SND_StartSound,
-	SND_StopSound,
-	SND_PrecacheSound,
-	s_update,
-	s_stop_all_sounds,
-	s_extra_update,
-	SND_LocalSound,
-	s_block_sound,
-	s_unblock_sound,
-	SND_LoadSound,
-	SND_AllocChannel,
-	SND_ChannelStop,
+	.ambient_off = SND_AmbientOff,
+	.ambient_on = SND_AmbientOn,
+	.static_sound = SND_StaticSound,
+	.start_sound = SND_StartSound,
+	.stop_sound = SND_StopSound,
+	.precache_sound = SND_PrecacheSound,
+	.update = s_update,
+	.stop_all_sounds = s_stop_all_sounds,
+	.extra_update = s_extra_update,
+	.local_sound = SND_LocalSound,
+	.block_sound = s_block_sound,
+	.unblock_sound = s_unblock_sound,
+	.load_sound = SND_LoadSound,
+	.alloc_channel = SND_AllocChannel,
+	.channel_stop = SND_ChannelStop,
 };
 
 static plugin_funcs_t plugin_info_funcs = {

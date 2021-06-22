@@ -124,11 +124,6 @@ s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
 }
 
 static void
-s_extra_update (void)
-{
-}
-
-static void
 s_local_sound (const char *sound)
 {
 	if (!sound_started)
@@ -378,21 +373,20 @@ static general_funcs_t plugin_info_general_funcs = {
 };
 
 static snd_render_funcs_t plugin_info_render_funcs = {
-	s_ambient_off,
-	s_ambient_on,
-	s_static_sound,
-	s_start_sound,
-	s_stop_sound,
-	s_precache_sound,
-	s_update,
-	s_stop_all_sounds,
-	s_extra_update,
-	s_local_sound,
-	s_block_sound,
-	s_unblock_sound,
-	s_load_sound,
-	s_alloc_channel,
-	s_channel_stop,
+	.ambient_off = s_ambient_off,
+	.ambient_on = s_ambient_on,
+	.static_sound = s_static_sound,
+	.start_sound = s_start_sound,
+	.stop_sound = s_stop_sound,
+	.precache_sound = s_precache_sound,
+	.update = s_update,
+	.stop_all_sounds = s_stop_all_sounds,
+	.local_sound = s_local_sound,
+	.block_sound = s_block_sound,
+	.unblock_sound = s_unblock_sound,
+	.load_sound = s_load_sound,
+	.alloc_channel = s_alloc_channel,
+	.channel_stop = s_channel_stop,
 };
 
 static general_data_t plugin_info_general_data;
