@@ -24,8 +24,8 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef __QF_plugin_snd_render_h_
-#define __QF_plugin_snd_render_h_
+#ifndef __QF_plugin_snd_render_h
+#define __QF_plugin_snd_render_h
 
 #include <QF/plugin.h>
 #include <QF/qtypes.h>
@@ -64,4 +64,4 @@ typedef struct snd_render_data_s {
 	struct plugin_s *output;
 } snd_render_data_t;
 
-#endif // __QF_plugin_snd_render_h_
+#endif // __QF_plugin_snd_render_h

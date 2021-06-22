@@ -552,8 +552,8 @@ PLUGIN_INFO(snd_output, alsa)
 	plugin_info_funcs.input = NULL;
 	plugin_info_funcs.snd_output = &plugin_info_snd_output_funcs;
 
-	plugin_info_general_funcs.p_Init = SNDDMA_Init_Cvars;
-	plugin_info_general_funcs.p_Shutdown = NULL;
+	plugin_info_general_funcs.init = SNDDMA_Init_Cvars;
+	plugin_info_general_funcs.shutdown = NULL;
 	plugin_info_snd_output_funcs.pS_O_Init = SNDDMA_Init;
 	plugin_info_snd_output_funcs.pS_O_Shutdown = SNDDMA_shutdown;
 	plugin_info_snd_output_funcs.pS_O_GetDMAPos = SNDDMA_GetDMAPos;

@@ -24,8 +24,8 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef __QF_plugin_vid_render_h_
-#define __QF_plugin_vid_render_h_
+#ifndef __QF_plugin_vid_render_h
+#define __QF_plugin_vid_render_h
 
 #include <QF/draw.h>
 #include <QF/plugin.h>
@@ -199,4 +199,4 @@ typedef struct vid_render_data_s {
 	vec_t      *vup;
 } vid_render_data_t;
 
-#endif // __QF_plugin_vid_render_h_
+#endif // __QF_plugin_vid_render_h

@@ -201,8 +201,8 @@ PI_Plugin_Load_f (void)
 		Sys_Printf ("Error loading plugin %s %s\n", type, name);
 
 	else if (pi->functions && pi->functions->general &&
-			 pi->functions->general->p_Init)
-		pi->functions->general->p_Init ();
+			 pi->functions->general->init)
+		pi->functions->general->init ();
 }
 
 static void
@@ -274,7 +274,7 @@ PI_LoadPlugin (const char *type, const char *name)
 	const char *tmpname;
 	void       *dlhand = 0;
 	plugin_t   *plugin = 0;
-	P_PluginInfo plugin_info = 0;
+	plugin_info_t plugin_info = 0;
 	plugin_list_t *pl;
 	loaded_plugin_t *lp;
 
@@ -388,8 +388,8 @@ PI_UnloadPlugin (plugin_t *plugin)
 	if (plugin
 			&& plugin->functions
 			&& plugin->functions->general
-			&& plugin->functions->general->p_Shutdown) {
-		plugin->functions->general->p_Shutdown ();
+			&& plugin->functions->general->shutdown) {
+		plugin->functions->general->shutdown ();
 	} else {
 		Sys_MaskPrintf (SYS_dev,
 						"Warning: No shutdown function for type %d plugin!\n",

@@ -24,8 +24,8 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef __QF_plugin_snd_output_h_
-#define __QF_plugin_snd_output_h_
+#ifndef __QF_plugin_snd_output_h
+#define __QF_plugin_snd_output_h
 
 #include <QF/plugin.h>
 #include <QF/qtypes.h>
@@ -54,4 +54,4 @@ typedef struct snd_output_data_s {
 	unsigned   *paintedtime;
 } snd_output_data_t;
 
-#endif // __QF_plugin_snd_output_h_
+#endif // __QF_plugin_snd_output_h

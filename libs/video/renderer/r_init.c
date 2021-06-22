@@ -68,8 +68,8 @@ static U void (*const r_scrapdelete)(rscrap_t *) = R_ScrapDelete;
 static void
 R_shutdown (void *data)
 {
-	if (vidrendmodule->functions->general->p_Shutdown) {
-		vidrendmodule->functions->general->p_Shutdown ();
+	if (vidrendmodule->functions->general->shutdown) {
+		vidrendmodule->functions->general->shutdown ();
 	}
 }
 
@@ -89,7 +89,7 @@ R_LoadModule (vid_internal_t *vid_internal)
 	r_data = vidrendmodule->data->vid_render;
 	r_data->vid->vid_internal = vid_internal;
 
-	vidrendmodule->functions->general->p_Init ();
+	vidrendmodule->functions->general->init ();
 	Sys_RegisterShutdown (R_shutdown, 0);
 }
 

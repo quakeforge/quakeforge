@@ -90,7 +90,7 @@ static void
 Con_shutdown (void *data)
 {
 	if (con_module) {
-		con_module->functions->general->p_Shutdown ();
+		con_module->functions->general->shutdown ();
 		PI_UnloadPlugin (con_module);
 	}
 }
@@ -102,8 +102,8 @@ Con_Init (const char *plugin_name)
 
 	con_module = PI_LoadPlugin ("console", plugin_name);
 	if (con_module) {
-		con_module->functions->general->p_Init ();
-		Sys_SetStdPrintf (con_module->functions->console->pC_Print);
+		con_module->functions->general->init ();
+		Sys_SetStdPrintf (con_module->functions->console->print);
 	} else {
 		setvbuf (stdout, 0, _IOLBF, BUFSIZ);
 	}
@@ -143,7 +143,7 @@ Con_Printf (const char *fmt, ...)
 
 	va_start (args, fmt);
 	if (con_module)
-		con_module->functions->console->pC_Print (fmt, args);
+		con_module->functions->console->print (fmt, args);
 	else
 		vfprintf (stdout, fmt, args);
 	va_end (args);
@@ -153,7 +153,7 @@ VISIBLE void
 Con_Print (const char *fmt, va_list args)
 {
 	if (con_module)
-		con_module->functions->console->pC_Print (fmt, args);
+		con_module->functions->console->print (fmt, args);
 	else
 		vfprintf (stdout, fmt, args);
 }
@@ -162,7 +162,7 @@ VISIBLE void
 Con_ProcessInput (void)
 {
 	if (con_module) {
-		con_module->functions->console->pC_ProcessInput ();
+		con_module->functions->console->process_input ();
 	} else {
 		static int  been_there_done_that = 0;
 
@@ -177,7 +177,7 @@ VISIBLE void
 Con_KeyEvent (knum_t key, short unicode, qboolean down)
 {
 	if (con_module)
-		con_module->functions->console->pC_KeyEvent (key, unicode, down);
+		con_module->functions->console->key_event (key, unicode, down);
 }
 
 VISIBLE void
@@ -191,19 +191,19 @@ VISIBLE void
 Con_DrawConsole (void)
 {
 	if (con_module)
-		con_module->functions->console->pC_DrawConsole ();
+		con_module->functions->console->draw_console ();
 }
 
 VISIBLE void
 Con_CheckResize (void)
 {
 	if (con_module)
-		con_module->functions->console->pC_CheckResize ();
+		con_module->functions->console->check_resize ();
 }
 
 VISIBLE void
 Con_NewMap (void)
 {
 	if (con_module)
-		con_module->functions->console->pC_NewMap ();
+		con_module->functions->console->new_map ();
 }
