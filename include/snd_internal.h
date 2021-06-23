@@ -491,7 +491,7 @@ int SND_LoadWav (QFile *file, sfx_t *sfx, char *realname);
 	\param realname	path of sound file should it need to be re-opened
 	\return			0 if ok, -1 on error
 */
-int SND_LoadMidi (snd_t *snd, QFile *file, sfx_t *sfx, char *realname);
+int SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname);
 ///@}
 
 /** \defgroup sound_render_cache_stream Cache/Stream Functions.

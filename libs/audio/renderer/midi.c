@@ -61,21 +61,21 @@ static cvar_t  *wildmidi_volume;
 static cvar_t  *wildmidi_config;
 
 static int
-midi_init ( void ) {
+midi_init (snd_t *snd) {
 	wildmidi_volume = Cvar_Get ("wildmidi_volume", "100", CVAR_ARCHIVE, NULL,
 								"Set the Master Volume");
 	wildmidi_config = Cvar_Get ("wildmidi_config", "/etc/timidity.cfg",
 								CVAR_ROM, NULL,
 								"path/filename of timidity.cfg");
 
-	if (WildMidi_Init (wildmidi_config->string, snd_shm->speed, 0) == -1)
+	if (WildMidi_Init (wildmidi_config->string, snd->speed, 0) == -1)
 		return 1;
 	midi_intiialized = 1;
 	return 0;
 }
 
 static wavinfo_t
-midi_get_info (void * handle) {
+midi_get_info (snd_t *snd, void *handle) {
 	wavinfo_t   info;
 	struct _WM_Info *wm_info;
 
@@ -86,7 +86,7 @@ midi_get_info (void * handle) {
 		return info;
 	}
 
-	info.rate = snd_shm->speed;
+	info.rate = snd->speed;
 	info.width = 2;
 	info.channels = 2;
 	info.loopstart = -1;
@@ -171,13 +171,14 @@ midi_stream_open (sfx_t *sfx)
 int
 SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname)
 {
+	snd_t      *snd = sfx->snd;
 	wavinfo_t   info;
 	midi *handle;
 	unsigned char *local_buffer;
 	unsigned long int local_buffer_size = Qfilesize (file);
 
 	if (!midi_intiialized) {
-		if (midi_init ()) {
+		if (midi_init (snd)) {
 			return -1;
 		}
 	}
@@ -193,7 +194,7 @@ SND_LoadMidi (QFile *file, sfx_t *sfx, char *realname)
 	if (handle == NULL)
 		return -1;
 
-	info = midi_get_info (handle);
+	info = midi_get_info (snd, handle);
 
 	WildMidi_Close (handle);
 
