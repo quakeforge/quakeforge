@@ -30,23 +30,15 @@
 #include <QF/plugin.h>
 #include <QF/qtypes.h>
 
-/*
-	All sound plugins must export these functions
-*/
-typedef volatile struct dma_s *(*P_S_O_Init) (void);
-typedef void (*P_S_O_Shutdown) (void);
-typedef int (*P_S_O_GetDMAPos) (void);
-typedef void (*P_S_O_Submit) (void);
-typedef void (*P_S_O_BlockSound) (void);
-typedef void (*P_S_O_UnblockSound) (void);
+struct snd_s;
 
 typedef struct snd_output_funcs_s {
-	P_S_O_Init			pS_O_Init;
-	P_S_O_Shutdown		pS_O_Shutdown;
-	P_S_O_GetDMAPos		pS_O_GetDMAPos;
-	P_S_O_Submit		pS_O_Submit;
-	P_S_O_BlockSound	pS_O_BlockSound;
-	P_S_O_UnblockSound	pS_O_UnblockSound;
+	int       (*init) (struct snd_s *snd);
+	void      (*shutdown) (struct snd_s *snd);
+	int       (*get_dma_pos) (struct snd_s *snd);
+	void      (*submit) (struct snd_s *snd);
+	void      (*block_sound) (struct snd_s *snd);
+	void      (*unblock_sound) (struct snd_s *snd);
 } snd_output_funcs_t;
 
 typedef struct snd_output_data_s {

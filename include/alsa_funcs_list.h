@@ -67,6 +67,11 @@ QF_ALSA_NEED (int, snd_pcm_sw_params_set_stop_threshold, (snd_pcm_t *pcm, snd_pc
 QF_ALSA_NEED (size_t, snd_pcm_sw_params_sizeof, (void))
 QF_ALSA_NEED (const char *, snd_strerror, (int errnum))
 
+QF_ALSA_NEED (int, snd_async_add_pcm_handler, (snd_async_handler_t **handler, snd_pcm_t *pcm, snd_async_callback_t callback, void *private_data))
+QF_ALSA_NEED (snd_pcm_t *, snd_async_handler_get_pcm, (snd_async_handler_t *handler))
+QF_ALSA_NEED (void *, snd_async_handler_get_callback_private, (snd_async_handler_t *handler))
+QF_ALSA_NEED (int, snd_async_del_handler, (snd_async_handler_t *handler))
+
 #ifdef UNDEF_QF_ALSA_NEED
 #undef QF_ALSA_NEED
 #undef UNDEF_QF_ALSA_NEED

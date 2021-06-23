@@ -54,7 +54,7 @@ static int snd_alive = 0;
 static double snd_alive_time = 0;
 static jack_client_t *jack_handle;
 static jack_port_t *jack_out[2];
-static dma_t    _snd_shm;
+static snd_t    snd;
 static float   *output[2];
 static cvar_t  *snd_jack_server;
 
@@ -65,8 +65,8 @@ s_stop_all_sounds (void)
 {
 	if (!sound_started)
 		return;
-	SND_StopAllSounds ();
-	SND_ScanChannels (1);
+	SND_StopAllSounds (&snd);
+	SND_ScanChannels (&snd, 1);
 }
 
 static void
@@ -76,7 +76,8 @@ s_start_sound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
 	if (!sound_started)
 		return;
 	if (!snd_shutdown)
-		SND_StartSound (entnum, entchannel, sfx, origin, fvol, attenuation);
+		SND_StartSound (&snd, entnum, entchannel, sfx, origin, fvol,
+						attenuation);
 }
 
 static void
@@ -120,7 +121,7 @@ s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
 		if (snd_shutdown)
 			return;
 	}
-	SND_SetListener (origin, forward, right, up, ambient_sound_level);
+	SND_SetListener (&snd, origin, forward, right, up, ambient_sound_level);
 }
 
 static void
@@ -129,7 +130,7 @@ s_local_sound (const char *sound)
 	if (!sound_started)
 		return;
 	if (!snd_shutdown)
-		SND_LocalSound (sound);
+		SND_LocalSound (&snd, sound);
 }
 
 static void
@@ -184,7 +185,7 @@ s_alloc_channel (void)
 	if (!sound_started)
 		return 0;
 	if (!snd_shutdown)
-		return SND_AllocChannel ();
+		return SND_AllocChannel (&snd);
 	return 0;
 }
 
@@ -202,7 +203,7 @@ s_ambient_off (void)
 {
 	if (!sound_started)
 		return;
-	SND_AmbientOff ();
+	SND_AmbientOff (&snd);
 }
 
 static void
@@ -210,7 +211,7 @@ s_ambient_on (void)
 {
 	if (!sound_started)
 		return;
-	SND_AmbientOn ();
+	SND_AmbientOn (&snd);
 }
 
 static void
@@ -219,7 +220,7 @@ s_static_sound (sfx_t *sfx, const vec3_t origin, float vol,
 {
 	if (!sound_started)
 		return;
-	SND_StaticSound (sfx, origin, vol, attenuation);
+	SND_StaticSound (&snd, sfx, origin, vol, attenuation);
 }
 
 static void
@@ -227,7 +228,7 @@ s_stop_sound (int entnum, int entchannel)
 {
 	if (!sound_started)
 		return;
-	SND_StopSound (entnum, entchannel);
+	SND_StopSound (&snd, entnum, entchannel);
 }
 
 static sfx_t *
@@ -235,7 +236,7 @@ s_precache_sound (const char *name)
 {
 	if (!sound_started)
 		return 0;
-	return SND_PrecacheSound (name);
+	return SND_PrecacheSound (&snd, name);
 }
 
 static sfx_t *
@@ -243,7 +244,7 @@ s_load_sound (const char *name)
 {
 	if (!sound_started)
 		return 0;
-	return SND_LoadSound (name);
+	return SND_LoadSound (&snd, name);
 }
 
 static void
@@ -251,11 +252,12 @@ s_channel_stop (channel_t *chan)
 {
 	if (!sound_started)
 		return;
-	SND_ChannelStop (chan);
+	SND_ChannelStop (&snd, chan);
 }
 
 static void
-snd_jack_xfer (portable_samplepair_t *paintbuffer, int count, float volume)
+snd_jack_xfer (snd_t *snd, portable_samplepair_t *paintbuffer, int count,
+			   float volume)
 {
 	int         i;
 
@@ -281,7 +283,7 @@ snd_jack_process (jack_nframes_t nframes, void *arg)
 	snd_alive = 1;
 	for (i = 0; i < 2; i++)
 		output[i] = (float *) jack_port_get_buffer (jack_out[i], nframes);
-	SND_PaintChannels (snd_paintedtime + nframes);
+	SND_PaintChannels (&snd, snd_paintedtime + nframes);
 	return 0;
 }
 
@@ -327,17 +329,16 @@ s_jack_connect (void)
 		jack_out[i] = jack_port_register (jack_handle, va (0, "out_%d", i + 1),
 										  JACK_DEFAULT_AUDIO_TYPE,
 										  JackPortIsOutput, 0);
-	snd_shm->speed = jack_get_sample_rate (jack_handle);
+	snd.speed = jack_get_sample_rate (jack_handle);
 	s_jack_activate ();
 	sound_started = 1;
-	Sys_Printf ("Connected to JACK: %d Sps\n", snd_shm->speed);
+	Sys_Printf ("Connected to JACK: %d Sps\n", snd.speed);
 }
 
 static void
 s_init (void)
 {
-	snd_shm = &_snd_shm;
-	snd_shm->xfer = snd_jack_xfer;
+	snd.xfer = snd_jack_xfer;
 
 	Cmd_AddCommand ("snd_force_unblock", s_snd_force_unblock,
 					"fix permanently blocked sound");
@@ -347,8 +348,8 @@ s_init (void)
 	snd_jack_server = Cvar_Get ("snd_jack_server", "default", CVAR_ROM, NULL,
 								"The name of the JACK server to connect to");
 
-	SND_SFX_Init ();
-	SND_Channels_Init ();
+	SND_SFX_Init (&snd);
+	SND_Channels_Init (&snd);
 
 	s_jack_connect ();
 }

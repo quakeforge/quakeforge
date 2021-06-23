@@ -39,14 +39,20 @@
 
 #include "snd_internal.h"
 
+typedef struct {
+	const snd_pcm_channel_area_t *areas;
+	snd_pcm_uframes_t offset;
+	snd_pcm_uframes_t nframes;
+} alsa_pkt_t;
+
 static int			snd_inited;
 static int			snd_blocked = 0;
-static volatile dma_t sn;
 static snd_pcm_uframes_t buffer_size;
 
 static void		   *alsa_handle;
 static const char  *pcmname = NULL;
 static snd_pcm_t   *pcm;
+static snd_async_handler_t *async_haandler;
 
 static plugin_t			  plugin_info;
 static plugin_data_t	  plugin_info_data;
@@ -101,7 +107,7 @@ SNDDMA_Init_Cvars (void)
 						 "sound sample depth. 0 is system default");
 }
 
-static int SNDDMA_GetDMAPos (void);
+static int SNDDMA_GetDMAPos (snd_t *snd);
 
 static __attribute__((const)) snd_pcm_uframes_t
 round_buffer_size (snd_pcm_uframes_t sz)
@@ -136,25 +142,26 @@ clamp_8 (int val)
 }
 
 static void
-SNDDMA_ni_xfer (portable_samplepair_t *paintbuffer, int count, float volume)
+alsa_ni_xfer (snd_t *snd, portable_samplepair_t *paintbuffer, int count,
+			  float volume)
 {
 	const snd_pcm_channel_area_t *areas;
 	int         out_idx, out_max;
 	float      *p;
 
-	areas = sn.xfer_data;
+	areas = snd->xfer_data;
 
 	p = (float *) paintbuffer;
-	out_max = sn.frames - 1;
+	out_max = snd->frames - 1;
 	out_idx = *plugin_info_snd_output_data.paintedtime;
 	while (out_idx > out_max)
 		out_idx -= out_max + 1;
 
-	if (sn.samplebits == 16) {
+	if (snd->samplebits == 16) {
 		short      *out_0 = (short *) areas[0].addr;
 		short      *out_1 = (short *) areas[1].addr;
 
-		if (sn.channels == 2) {
+		if (snd->channels == 2) {
 			while (count--) {
 				out_0[out_idx] = clamp_16 ((*p++ * volume) * 0x8000);
 				out_1[out_idx] = clamp_16 ((*p++ * volume) * 0x8000);
@@ -169,11 +176,11 @@ SNDDMA_ni_xfer (portable_samplepair_t *paintbuffer, int count, float volume)
 					out_idx = 0;
 			}
 		}
-	} else if (sn.samplebits == 8) {
+	} else if (snd->samplebits == 8) {
 		byte       *out_0 = (byte *) areas[0].addr;
 		byte       *out_1 = (byte *) areas[1].addr;
 
-		if (sn.channels == 2) {
+		if (snd->channels == 2) {
 			while (count--) {
 				out_0[out_idx] = clamp_8 ((*p++ * volume) * 0x80);
 				out_1[out_idx] = clamp_8 ((*p++ * volume) * 0x80);
@@ -191,8 +198,71 @@ SNDDMA_ni_xfer (portable_samplepair_t *paintbuffer, int count, float volume)
 	}
 }
 
-static volatile dma_t *
-SNDDMA_Init (void)
+static void
+alsa_xfer (snd_t *snd, portable_samplepair_t *paintbuffer, int count,
+		   float volume)
+{
+	int			out_idx, out_max, step, val;
+	float	   *p;
+
+	p = (float *) paintbuffer;
+	count *= snd->channels;
+	out_max = (snd->frames * snd->channels) - 1;
+	out_idx = snd_paintedtime * snd->channels;
+	while (out_idx > out_max)
+		out_idx -= out_max + 1;
+	step = 3 - snd->channels;
+
+	if (snd->samplebits == 16) {
+		short      *out = (short *) snd->buffer;
+
+		while (count--) {
+			val = (*p * volume) * 0x8000;
+			p += step;
+			if (val > 0x7fff)
+				val = 0x7fff;
+			else if (val < -0x8000)
+				val = -0x8000;
+			out[out_idx++] = val;
+			if (out_idx > out_max)
+				out_idx = 0;
+		}
+	} else if (snd->samplebits == 8) {
+		unsigned char *out = (unsigned char *) snd->buffer;
+
+		while (count--) {
+			val = (*p * volume) * 128;
+			p += step;
+			if (val > 0x7f)
+				val = 0x7f;
+			else if (val < -0x80)
+				val = -0x80;
+			out[out_idx++] = val + 0x80;
+			if (out_idx > out_max)
+				out_idx = 0;
+		}
+	}
+}
+
+static void
+alsa_callback (snd_async_handler_t *handler)
+{
+	snd_pcm_t  *pcm = qfsnd_async_handler_get_pcm (handler);
+	snd_t      *snd = qfsnd_async_handler_get_callback_private (handler);
+	alsa_pkt_t  packet;
+
+	qfsnd_pcm_avail_update (pcm);
+	qfsnd_pcm_mmap_begin (pcm, &packet.areas, &packet.offset, &packet.nframes);
+
+	snd->xfer_data = &packet;
+
+	SND_PaintChannels (snd, snd_paintedtime + packet.nframes);
+
+	qfsnd_pcm_mmap_commit (pcm, packet.offset, packet.nframes);
+}
+
+static int
+SNDDMA_Init (snd_t *snd)
 {
 	int					 err;
 	int					 bps = -1, stereo = -1;
@@ -238,6 +308,7 @@ retry_open:
 		goto error;
 	}
 
+	snd->xfer = alsa_xfer;
 	err = qfsnd_pcm_hw_params_set_access (pcm, hw,
 										  SND_PCM_ACCESS_MMAP_INTERLEAVED);
 	if (0 > err) {
@@ -257,7 +328,7 @@ retry_open:
 			Sys_Printf ("ALSA: could not set mmap access\n");
 			goto error;
 		}
-		sn.xfer = SNDDMA_ni_xfer;
+		snd->xfer = alsa_ni_xfer;
 	}
 	Sys_Printf ("Using PCM %s.\n", pcmname);
 
@@ -371,8 +442,6 @@ retry_open:
 					(int) period_size, qfsnd_strerror (err));
 		goto error;
 	}
-	int dir;
-	qfsnd_pcm_hw_params_get_period_size (hw, &period_size, &dir);
 	err = qfsnd_pcm_hw_params (pcm, hw);
 	if (0 > err) {
 		Sys_Printf ("ALSA: unable to install hw params: %s\n",
@@ -404,21 +473,19 @@ retry_open:
 		goto error;
 	}
 
-	memset ((dma_t *) &sn, 0, sizeof (sn));
-	sn.channels = stereo + 1;
+	snd->channels = stereo + 1;
 
 	// don't mix less than this in frames:
-	err = qfsnd_pcm_hw_params_get_period_size (hw, (snd_pcm_uframes_t *)
-											   (char *)
-											   &sn.submission_chunk, 0);
+	err = qfsnd_pcm_hw_params_get_period_size (hw, &period_size, 0);
 	if (0 > err) {
 		Sys_Printf ("ALSA: unable to get period size. %s\n",
 					qfsnd_strerror (err));
 		goto error;
 	}
+	snd->submission_chunk = period_size;
 
-	sn.framepos = 0;
-	sn.samplebits = bps;
+	snd->framepos = 0;
+	snd->samplebits = bps;
 
 	err = qfsnd_pcm_hw_params_get_buffer_size (hw, &buffer_size);
 	if (0 > err) {
@@ -432,46 +499,58 @@ retry_open:
 		Sys_Printf ("to have a power of 2 buffer size\n");
 	}
 
-	sn.frames = buffer_size;
-	sn.speed = rate;
-	SNDDMA_GetDMAPos ();		//XXX sets sn.buffer
-	Sys_Printf ("%5d channels %sinterleaved\n", sn.channels,
-				sn.xfer ? "non-" : "");
-	Sys_Printf ("%5d samples (%.1fms)\n", sn.frames,
-				1000.0 * sn.frames / sn.speed);
-	Sys_Printf ("%5d samplepos\n", sn.framepos);
-	Sys_Printf ("%5d samplebits\n", sn.samplebits);
-	Sys_Printf ("%5d submission_chunk (%.1fms)\n", sn.submission_chunk,
-				1000.0 * sn.submission_chunk / sn.speed);
-	Sys_Printf ("%5d speed\n", sn.speed);
-	Sys_Printf ("0x%lx dma buffer\n", (long) sn.buffer);
+	qfsnd_async_add_pcm_handler (&async_haandler, pcm, alsa_callback, snd);
+
+	snd->frames = buffer_size;
+	snd->speed = rate;
+	SNDDMA_GetDMAPos (snd);		//XXX sets snd->buffer
+	Sys_Printf ("%5d channels %sinterleaved\n", snd->channels,
+				snd->xfer ? "non-" : "");
+	Sys_Printf ("%5d samples (%.1fms)\n", snd->frames,
+				1000.0 * snd->frames / snd->speed);
+	Sys_Printf ("%5d samplepos\n", snd->framepos);
+	Sys_Printf ("%5d samplebits\n", snd->samplebits);
+	Sys_Printf ("%5d submission_chunk (%.1fms)\n", snd->submission_chunk,
+				1000.0 * snd->submission_chunk / snd->speed);
+	Sys_Printf ("%5d speed\n", snd->speed);
+	Sys_Printf ("0x%lx dma buffer\n", (long) snd->buffer);
 
 	snd_inited = 1;
-	return &sn;
+
+	alsa_pkt_t  packet;
+	qfsnd_pcm_mmap_begin (pcm, &packet.areas, &packet.offset, &packet.nframes);
+	snd->xfer_data = &packet;
+	SND_PaintChannels (snd, snd_paintedtime + packet.nframes);
+	qfsnd_pcm_mmap_commit (pcm, packet.offset, packet.nframes);
+	qfsnd_pcm_start (pcm);
+
+	return 1;
 error:
 	qfsnd_pcm_close (pcm);
 	return 0;
 }
 
 static int
-SNDDMA_GetDMAPos (void)
+SNDDMA_GetDMAPos (snd_t *snd)
 {
 	const snd_pcm_channel_area_t *areas;
 	snd_pcm_uframes_t offset;
-	snd_pcm_uframes_t nframes = sn.frames;
+	snd_pcm_uframes_t nframes = snd->frames;
 
 	qfsnd_pcm_avail_update (pcm);
 	qfsnd_pcm_mmap_begin (pcm, &areas, &offset, &nframes);
-	sn.framepos = offset;
-	sn.buffer = areas->addr;
-	sn.xfer_data = (void *) areas;
-	return sn.framepos;
+	snd->framepos = offset;
+	snd->buffer = areas->addr;
+	snd->xfer_data = (void *) areas;
+	return snd->framepos;
 }
 
 static void
-SNDDMA_shutdown (void)
+SNDDMA_shutdown (snd_t *snd)
 {
 	if (snd_inited) {
+		qfsnd_async_del_handler (async_haandler);
+		async_haandler = 0;
 		qfsnd_pcm_close (pcm);
 		snd_inited = 0;
 	}
@@ -483,7 +562,7 @@ SNDDMA_shutdown (void)
 	Send sound to device if buffer isn't really the dma buffer
 */
 static void
-SNDDMA_Submit (void)
+SNDDMA_Submit (snd_t *snd)
 {
 	int			state;
 	int			count = (*plugin_info_snd_output_data.paintedtime -
@@ -516,14 +595,14 @@ SNDDMA_Submit (void)
 }
 
 static void
-SNDDMA_BlockSound (void)
+SNDDMA_BlockSound (snd_t *snd)
 {
 	if (snd_inited && ++snd_blocked == 1)
 		qfsnd_pcm_pause (pcm, 1);
 }
 
 static void
-SNDDMA_UnblockSound (void)
+SNDDMA_UnblockSound (snd_t *snd)
 {
 	if (!snd_inited || !snd_blocked)
 		return;
@@ -554,12 +633,12 @@ PLUGIN_INFO(snd_output, alsa)
 
 	plugin_info_general_funcs.init = SNDDMA_Init_Cvars;
 	plugin_info_general_funcs.shutdown = NULL;
-	plugin_info_snd_output_funcs.pS_O_Init = SNDDMA_Init;
-	plugin_info_snd_output_funcs.pS_O_Shutdown = SNDDMA_shutdown;
-	plugin_info_snd_output_funcs.pS_O_GetDMAPos = SNDDMA_GetDMAPos;
-	plugin_info_snd_output_funcs.pS_O_Submit = SNDDMA_Submit;
-	plugin_info_snd_output_funcs.pS_O_BlockSound = SNDDMA_BlockSound;
-	plugin_info_snd_output_funcs.pS_O_UnblockSound = SNDDMA_UnblockSound;
+	plugin_info_snd_output_funcs.init = SNDDMA_Init;
+	plugin_info_snd_output_funcs.shutdown = SNDDMA_shutdown;
+	plugin_info_snd_output_funcs.get_dma_pos = SNDDMA_GetDMAPos;
+	plugin_info_snd_output_funcs.submit = SNDDMA_Submit;
+	plugin_info_snd_output_funcs.block_sound = SNDDMA_BlockSound;
+	plugin_info_snd_output_funcs.unblock_sound = SNDDMA_UnblockSound;
 
 	return &plugin_info;
 }

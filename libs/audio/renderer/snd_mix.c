@@ -104,7 +104,7 @@ snd_paint_channel (channel_t *ch, sfxbuffer_t *sc, int count)
 }
 
 void
-SND_PaintChannels (unsigned endtime)
+SND_PaintChannels (snd_t *snd, unsigned endtime)
 {
 	unsigned    end, ltime;
 	int         i, count;
@@ -171,8 +171,8 @@ SND_PaintChannels (unsigned endtime)
 		}
 
 		// transfer out according to DMA format
-		snd_shm->xfer (snd_paintbuffer, end - snd_paintedtime,
-					   snd_volume->value);
+		snd->xfer (snd, snd_paintbuffer, end - snd_paintedtime,
+				   snd_volume->value);
 
 		memmove (snd_paintbuffer, snd_paintbuffer + end - snd_paintedtime,
 				 max_overpaint * sizeof (snd_paintbuffer[0]));

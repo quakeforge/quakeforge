@@ -41,6 +41,7 @@
 typedef struct sfx_s sfx_t;
 struct sfx_s
 {
+	struct snd_s *snd;			//!< ownding snd_t instance
 	const char *name;
 	sfx_t      *owner;
 

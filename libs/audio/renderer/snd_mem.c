@@ -51,7 +51,6 @@
 
 #define SAMPLE_GAP	4
 
-volatile dma_t  *snd_shm;
 snd_render_data_t snd_render_data = {
 	0,
 	0,
@@ -212,7 +211,7 @@ SND_StreamSetPos (sfxbuffer_t *buffer, unsigned int pos)
 	sfxstream_t *stream = sfx->data.stream;
 	wavinfo_t  *info = &stream->wavinfo;
 
-	stepscale = (float) info->rate / snd_shm->speed;
+	stepscale = (float) info->rate / sfx->snd->speed;
 
 	buffer->head = buffer->tail = 0;
 	buffer->pos = pos;
@@ -235,7 +234,7 @@ SND_StreamAdvance (sfxbuffer_t *buffer, unsigned int count)
 	if (!count)
 		return 1;
 
-	stepscale = (float) info->rate / snd_shm->speed;
+	stepscale = (float) info->rate / sfx->snd->speed;
 
 	// find out how many samples the buffer currently holds
 	samples = buffer->head - buffer->tail;
@@ -360,8 +359,9 @@ SND_GetCache (long frames, int rate, int channels,
 	float		stepscale;
 	sfxbuffer_t *sc;
 	sfx_t      *sfx = block->sfx;
+	snd_t      *snd = sfx->snd;
 
-	stepscale = (float) rate / snd_shm->speed;
+	stepscale = (float) rate / snd->speed;
 	len = size = frames / stepscale;
 	size *= sizeof (float) * channels;
 	sc = allocator (&block->cache, sizeof (sfxbuffer_t) + size, sfx->name);
