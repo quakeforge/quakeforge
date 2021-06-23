@@ -39,7 +39,7 @@
  */
 typedef double vec3d_t[3];
 
-#ifdef __AVX__
+#ifdef __AVX2__
 /** Four element vector type for horizontal (AOS) vector data.
  *
  * This is used for both vectors (3D and 4D) and quaternions. 3D vectors
