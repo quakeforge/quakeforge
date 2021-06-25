@@ -61,7 +61,8 @@ static cvar_t  *wildmidi_volume;
 static cvar_t  *wildmidi_config;
 
 static int
-midi_init (snd_t *snd) {
+midi_init (snd_t *snd)
+{
 	wildmidi_volume = Cvar_Get ("wildmidi_volume", "100", CVAR_ARCHIVE, NULL,
 								"Set the Master Volume");
 	wildmidi_config = Cvar_Get ("wildmidi_config", "/etc/timidity.cfg",
@@ -75,7 +76,8 @@ midi_init (snd_t *snd) {
 }
 
 static wavinfo_t
-midi_get_info (snd_t *snd, void *handle) {
+midi_get_info (snd_t *snd, void *handle)
+{
 	wavinfo_t   info;
 	struct _WM_Info *wm_info;
 

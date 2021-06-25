@@ -395,12 +395,12 @@ s_static_sound (sfx_t *sfx, const vec3_t origin, float vol,
 
 static void
 s_start_sound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
-			   float fvol, float attenuation)
+			   float vol, float attenuation)
 {
 	if (!sound_started)
 		return;
 	if (!snd_shutdown)
-		SND_StartSound (&snd, entnum, entchannel, sfx, origin, fvol,
+		SND_StartSound (&snd, entnum, entchannel, sfx, origin, vol,
 						attenuation);
 }
 
@@ -482,21 +482,13 @@ static snd_render_funcs_t plugin_info_render_funcs = {
 };
 
 static plugin_funcs_t plugin_info_funcs = {
-	&plugin_info_general_funcs,
-	0,
-	0,
-	0,
-	0,
-	&plugin_info_render_funcs,
+	.general = &plugin_info_general_funcs,
+	.snd_render = &plugin_info_render_funcs,
 };
 
 static plugin_data_t plugin_info_data = {
-	&plugin_info_general_data,
-	0,
-	0,
-	0,
-	0,
-	&snd_render_data,
+	.general = &plugin_info_general_data,
+	.snd_render = &snd_render_data,
 };
 
 static plugin_t plugin_info = {

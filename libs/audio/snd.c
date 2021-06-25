@@ -144,10 +144,10 @@ S_StaticSound (sfx_t *sfx, const vec3_t origin, float vol, float attenuation)
 
 VISIBLE void
 S_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
-			  float fvol, float attenuation)
+			  float vol, float attenuation)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->start_sound (entnum, entchannel, sfx, origin, fvol,
+		snd_render_funcs->start_sound (entnum, entchannel, sfx, origin, vol,
 										 attenuation);
 }
 
