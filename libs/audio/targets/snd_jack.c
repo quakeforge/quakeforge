@@ -1,9 +1,9 @@
 /*
 	snd_jack.c
 
-	JACK version of the renderer
+	JACK output driver
 
-	Copyright (C) 2007 Bill Currie <bill@taniwha.org>
+	Copyright (C) 2007-2021 Bill Currie <bill@taniwha.org>
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
@@ -54,31 +54,10 @@ static int snd_alive = 0;
 static double snd_alive_time = 0;
 static jack_client_t *jack_handle;
 static jack_port_t *jack_out[2];
-static snd_t    snd;
 static float   *output[2];
 static cvar_t  *snd_jack_server;
 
-static void s_jack_connect (void);
-
-static void
-s_stop_all_sounds (void)
-{
-	if (!sound_started)
-		return;
-	SND_StopAllSounds (&snd);
-	SND_ScanChannels (&snd, 1);
-}
-
-static void
-s_start_sound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
-			   float fvol, float attenuation)
-{
-	if (!sound_started)
-		return;
-	if (!snd_shutdown)
-		SND_StartSound (&snd, entnum, entchannel, sfx, origin, fvol,
-						attenuation);
-}
+static int s_jack_connect (snd_t *snd);
 
 static void
 s_finish_channels (void)
@@ -93,8 +72,7 @@ s_finish_channels (void)
 }
 
 static void
-s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
-		  const vec3_t up, const byte *ambient_sound_level)
+s_update (snd_t *snd)
 {
 	double      now = Sys_DoubleTime ();
 
@@ -116,21 +94,11 @@ s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
 		if (snd_shutdown == 1) {
 			snd_shutdown++;
 			Sys_Printf ("Lost connection to jackd\n");
-			s_jack_connect ();
+			s_jack_connect (snd);
 		}
 		if (snd_shutdown)
 			return;
 	}
-	SND_SetListener (&snd, origin, forward, right, up, ambient_sound_level);
-}
-
-static void
-s_local_sound (const char *sound)
-{
-	if (!sound_started)
-		return;
-	if (!snd_shutdown)
-		SND_LocalSound (&snd, sound);
 }
 
 static void
@@ -156,7 +124,7 @@ s_jack_activate (void)
 }
 
 static void
-s_block_sound (void)
+s_block_sound (snd_t *t)
 {
 	if (!sound_started)
 		return;
@@ -166,7 +134,7 @@ s_block_sound (void)
 }
 
 static void
-s_unblock_sound (void)
+s_unblock_sound (snd_t *t)
 {
 	if (!sound_started)
 		return;
@@ -177,82 +145,6 @@ s_unblock_sound (void)
 		//s_jack_activate ();
 		//Sys_Printf ("jack_activate\n");
 	}
-}
-
-static channel_t *
-s_alloc_channel (void)
-{
-	if (!sound_started)
-		return 0;
-	if (!snd_shutdown)
-		return SND_AllocChannel (&snd);
-	return 0;
-}
-
-static void
-s_snd_force_unblock (void)
-{
-	if (!sound_started)
-		return;
-	snd_blocked = 1;
-	s_unblock_sound ();
-}
-
-static void
-s_ambient_off (void)
-{
-	if (!sound_started)
-		return;
-	SND_AmbientOff (&snd);
-}
-
-static void
-s_ambient_on (void)
-{
-	if (!sound_started)
-		return;
-	SND_AmbientOn (&snd);
-}
-
-static void
-s_static_sound (sfx_t *sfx, const vec3_t origin, float vol,
-				float attenuation)
-{
-	if (!sound_started)
-		return;
-	SND_StaticSound (&snd, sfx, origin, vol, attenuation);
-}
-
-static void
-s_stop_sound (int entnum, int entchannel)
-{
-	if (!sound_started)
-		return;
-	SND_StopSound (&snd, entnum, entchannel);
-}
-
-static sfx_t *
-s_precache_sound (const char *name)
-{
-	if (!sound_started)
-		return 0;
-	return SND_PrecacheSound (&snd, name);
-}
-
-static sfx_t *
-s_load_sound (const char *name)
-{
-	if (!sound_started)
-		return 0;
-	return SND_LoadSound (&snd, name);
-}
-
-static void
-s_channel_stop (channel_t *chan)
-{
-	if (!sound_started)
-		return;
-	SND_ChannelStop (&snd, chan);
 }
 
 static void
@@ -278,12 +170,13 @@ snd_jack_xfer (snd_t *snd, portable_samplepair_t *paintbuffer, int count,
 static int
 snd_jack_process (jack_nframes_t nframes, void *arg)
 {
+	snd_t      *snd = arg;
 	int         i;
 
 	snd_alive = 1;
 	for (i = 0; i < 2; i++)
 		output[i] = (float *) jack_port_get_buffer (jack_out[i], nframes);
-	SND_PaintChannels (&snd, snd_paintedtime + nframes);
+	SND_PaintChannels (snd, snd_paintedtime + nframes);
 	return 0;
 }
 
@@ -309,8 +202,8 @@ snd_jack_xrun (void *arg)
 	return 0;
 }
 
-static void
-s_jack_connect (void)
+static int
+s_jack_connect (snd_t *snd)
 {
 	int         i;
 
@@ -319,43 +212,32 @@ s_jack_connect (void)
 										 JackServerName | JackNoStartServer, 0,
 										 snd_jack_server->string)) == 0) {
 		Sys_Printf ("Could not connect to JACK\n");
-		return;
+		return 0;
 	}
 	if (jack_set_xrun_callback (jack_handle, snd_jack_xrun, 0))
 		Sys_Printf ("Could not set xrun callback\n");
-	jack_set_process_callback (jack_handle, snd_jack_process, 0);
+	jack_set_process_callback (jack_handle, snd_jack_process, snd);
 	jack_on_shutdown (jack_handle, snd_jack_shutdown, 0);
 	for (i = 0; i < 2; i++)
 		jack_out[i] = jack_port_register (jack_handle, va (0, "out_%d", i + 1),
 										  JACK_DEFAULT_AUDIO_TYPE,
 										  JackPortIsOutput, 0);
-	snd.speed = jack_get_sample_rate (jack_handle);
+	snd->speed = jack_get_sample_rate (jack_handle);
 	s_jack_activate ();
 	sound_started = 1;
-	Sys_Printf ("Connected to JACK: %d Sps\n", snd.speed);
+	Sys_Printf ("Connected to JACK: %d Sps\n", snd->speed);
+	return 1;
 }
 
-static void
-s_init (void)
+static int
+s_init (snd_t *snd)
 {
-	snd.xfer = snd_jack_xfer;
-
-	Cmd_AddCommand ("snd_force_unblock", s_snd_force_unblock,
-					"fix permanently blocked sound");
-
-	snd_volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
-						   "Set the volume for sound playback");
-	snd_jack_server = Cvar_Get ("snd_jack_server", "default", CVAR_ROM, NULL,
-								"The name of the JACK server to connect to");
-
-	SND_SFX_Init (&snd);
-	SND_Channels_Init (&snd);
-
-	s_jack_connect ();
+	snd->xfer = snd_jack_xfer;
+	return s_jack_connect (snd);
 }
 
 static void
-s_shutdown (void)
+s_shutdown (snd_t *snd)
 {
 	int         i;
 	if (jack_handle) {
@@ -368,62 +250,55 @@ s_shutdown (void)
 	}
 }
 
+static void
+s_init_cvars (void)
+{
+	snd_jack_server = Cvar_Get ("snd_jack_server", "default", CVAR_ROM, NULL,
+								"The name of the JACK server to connect to");
+}
+
 static general_funcs_t plugin_info_general_funcs = {
-	s_init,
-	s_shutdown,
+	.init = s_init_cvars,
 };
 
-static snd_render_funcs_t plugin_info_render_funcs = {
-	.ambient_off = s_ambient_off,
-	.ambient_on = s_ambient_on,
-	.static_sound = s_static_sound,
-	.start_sound = s_start_sound,
-	.stop_sound = s_stop_sound,
-	.precache_sound = s_precache_sound,
-	.update = s_update,
-	.stop_all_sounds = s_stop_all_sounds,
-	.local_sound = s_local_sound,
+static snd_output_funcs_t plugin_info_output_funcs = {
+	.init = s_init,
+	.shutdown = s_shutdown,
+	.on_update = s_update,
 	.block_sound = s_block_sound,
 	.unblock_sound = s_unblock_sound,
-	.load_sound = s_load_sound,
-	.alloc_channel = s_alloc_channel,
-	.channel_stop = s_channel_stop,
+};
+
+static snd_output_data_t plugin_info_output_data = {
+	.model = som_pull,
 };
 
 static general_data_t plugin_info_general_data;
 
 static plugin_funcs_t plugin_info_funcs = {
-	&plugin_info_general_funcs,
-	0,
-	0,
-	0,
-	0,
-	&plugin_info_render_funcs,
+	.general = &plugin_info_general_funcs,
+	.snd_output = &plugin_info_output_funcs,
 };
 
 static plugin_data_t plugin_info_data = {
-	&plugin_info_general_data,
-	0,
-	0,
-	0,
-	0,
-	&snd_render_data,
+	.general = &plugin_info_general_data,
+	.snd_output = &plugin_info_output_data,
 };
 
 static plugin_t plugin_info = {
-	qfp_snd_render,
+	qfp_snd_output,
 	0,
 	QFPLUGIN_VERSION,
 	"0.1",
 	"Sound Renderer",
-	"Copyright (C) 2007  contributors of the QuakeForge "
+	"Copyright (C) 2007-2021 contributors of the QuakeForge "
 	"project\n"
 	"Please see the file \"AUTHORS\" for a list of contributors",
 	&plugin_info_funcs,
 	&plugin_info_data,
 };
 
-PLUGIN_INFO(snd_render, jack)
+PLUGIN_INFO(snd_output, jack)
 {
 	return &plugin_info;
 }

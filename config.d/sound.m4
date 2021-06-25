@@ -106,7 +106,8 @@ QF_maGiC_VALUE
 			if test "x$HAVE_JACK" = "xyes"; then
 				AC_DEFINE(HAVE_JACK, 1, [Define if you have libjack])
 				SOUND_TYPES="$SOUND_TYPES JACK"
-				QF_NEED(snd_render, [jack])
+				QF_NEED(snd_output, [jack])
+				QF_NEED(snd_render, [default])
 			fi
 		else
 			AC_CHECK_LIB(jack, jack_client_open, HAVE_JACK=yes, HAVE_JACK=no,
@@ -117,7 +118,8 @@ QF_maGiC_VALUE
 					JACK_LIBS="-ljack"
 					AC_DEFINE(HAVE_JACK, 1, [Define if you have libjack])
 					SOUND_TYPES="$SOUND_TYPES JACK"
-					QF_NEED(snd_render, [jack])
+					QF_NEED(snd_output, [jack])
+					QF_NEED(snd_render, [default])
 				fi
 			fi
 		fi
