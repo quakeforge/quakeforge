@@ -50,9 +50,8 @@ static int			snd_blocked = 0;
 static snd_pcm_uframes_t buffer_size;
 
 static void		   *alsa_handle;
-static const char  *pcmname = NULL;
 static snd_pcm_t   *pcm;
-static snd_async_handler_t *async_haandler;
+static snd_async_handler_t *async_handler;
 
 static plugin_t			  plugin_info;
 static plugin_data_t	  plugin_info_data;
@@ -244,265 +243,393 @@ alsa_xfer (snd_t *snd, portable_samplepair_t *paintbuffer, int count,
 	}
 }
 
+static int
+alsa_recover (snd_pcm_t *pcm, int err)
+{
+	if (err == -EPIPE) {
+		Sys_Printf ("snd_alsa: xrun\n");
+		// xrun
+		if ((err = qfsnd_pcm_prepare (pcm)) < 0) {
+			Sys_MaskPrintf (SYS_snd, "snd_alsa: recover from xrun failed: %s\n",
+							qfsnd_strerror (err));
+			return err;
+		}
+		return 0;
+	} else if (err == -ESTRPIPE) {
+		Sys_Printf ("snd_alsa: suspend\n");
+		// suspend
+		while ((err = qfsnd_pcm_resume(pcm)) == -EAGAIN) {
+			usleep (20 * 1000);
+		}
+		if (err < 0 && (err = qfsnd_pcm_prepare (pcm)) < 0) {
+			Sys_MaskPrintf (SYS_snd,
+							"snd_alsa: recover from suspend failed: %s\n",
+							qfsnd_strerror (err));
+			return err;
+		}
+		return 0;
+	}
+	return err;
+}
+
+static int
+alsa_process (snd_pcm_t *pcm, snd_t *snd)
+{
+	alsa_pkt_t  packet;
+	int         res;
+	int         ret = 1;
+	snd_pcm_uframes_t size = snd->submission_chunk;
+
+	snd->xfer_data = &packet;
+	while (size > 0) {
+		packet.nframes = size;
+		if ((res = qfsnd_pcm_mmap_begin (pcm, &packet.areas, &packet.offset,
+										 &packet.nframes)) < 0) {
+			if ((res = alsa_recover (pcm, -EPIPE)) < 0) {
+				Sys_Printf ("snd_alsa: XRUN recovery failed: %s\n",
+							qfsnd_strerror (res));
+				return res;
+			}
+			ret = 0;
+		}
+		SND_PaintChannels (snd, snd_paintedtime + packet.nframes);
+		if ((res = qfsnd_pcm_mmap_commit (pcm, packet.offset,
+										  packet.nframes)) < 0
+			|| (snd_pcm_uframes_t) res != packet.nframes) {
+			if ((res = alsa_recover (pcm, res >= 0 ? -EPIPE : res)) < 0) {
+				Sys_Printf ("snd_alsa: XRUN recovery failed: %s\n",
+							qfsnd_strerror (res));
+				return res;
+			}
+			ret = 0;
+		}
+		size -= packet.nframes;
+	}
+
+	return ret;
+}
+
 static void
 alsa_callback (snd_async_handler_t *handler)
 {
 	snd_pcm_t  *pcm = qfsnd_async_handler_get_pcm (handler);
 	snd_t      *snd = qfsnd_async_handler_get_callback_private (handler);
-	alsa_pkt_t  packet;
+	int         res;
+	int         avail;
+	int         first = 0;
 
-	qfsnd_pcm_avail_update (pcm);
-	qfsnd_pcm_mmap_begin (pcm, &packet.areas, &packet.offset, &packet.nframes);
+	while (1) {
+		snd_pcm_state_t state = qfsnd_pcm_state (pcm);
+		if (state == SND_PCM_STATE_XRUN) {
+			if ((res = alsa_recover (pcm, -EPIPE)) < 0) {
+				Sys_Printf ("snd_alsa: XRUN recovery failed: %s\n",
+							qfsnd_strerror (res));
+				//FIXME disable/restart sound
+				return;
+			}
+		} else if (state == SND_PCM_STATE_SUSPENDED) {
+			if ((res = alsa_recover (pcm, -EPIPE)) < 0) {
+				Sys_Printf ("snd_alsa: suspend recovery failed: %s\n",
+							qfsnd_strerror (res));
+				//FIXME disable/restart sound
+				return;
+			}
+		}
+		if ((avail = qfsnd_pcm_avail_update (pcm)) < 0) {
+			if ((res = alsa_recover (pcm, -EPIPE)) < 0) {
+				Sys_Printf ("snd_alsa: avail update failed: %s\n",
+							qfsnd_strerror (res));
+				//FIXME disable/restart sound
+				return;
+			}
+			first = 1;
+			continue;
+		}
+		if (avail < snd->submission_chunk) {
+			if (first) {
+				first = 0;
+				if ((res = qfsnd_pcm_start (pcm)) < 0) {
+					Sys_Printf ("snd_alsa: start failed: %s\n",
+								qfsnd_strerror (res));
+					return;
+				}
+				continue;
+			}
+			break;
+		}
 
-	snd->xfer_data = &packet;
+		if ((res = alsa_process (pcm, snd))) {
+			if (res < 0) {
+				//FIXME disable/restart sound
+				return;
+			}
+			break;
+		}
+		first = 1;
+	}
+}
 
-	SND_PaintChannels (snd, snd_paintedtime + packet.nframes);
+static int
+alsa_open_playback (snd_t *snd, const char *device)
+{
+	if (!*device) {
+		device = "default";
+	}
+	Sys_Printf ("Using PCM %s.\n", device);
 
-	qfsnd_pcm_mmap_commit (pcm, packet.offset, packet.nframes);
+	int         res = qfsnd_pcm_open (&pcm, device, SND_PCM_STREAM_PLAYBACK,
+									  SND_PCM_NONBLOCK);
+	if (res < 0) {
+		Sys_Printf ("snd_alsa: audio open error: %s\n", qfsnd_strerror (res));
+		return 0;
+	}
+
+	return 1;
+}
+
+static int
+alsa_playback_set_mmap (snd_t *snd, snd_pcm_hw_params_t	*hw)
+{
+	int         res;
+
+	res = qfsnd_pcm_hw_params_set_access (pcm, hw,
+										  SND_PCM_ACCESS_MMAP_INTERLEAVED);
+	if (res == 0) {
+		snd->xfer = alsa_xfer;
+		return 1;
+	}
+	Sys_MaskPrintf (SYS_snd, "snd_alsa: Failure to set interleaved PCM "
+					"access. (%d) %s\n", res, qfsnd_strerror (res));
+	res = qfsnd_pcm_hw_params_set_access (pcm, hw,
+										  SND_PCM_ACCESS_MMAP_NONINTERLEAVED);
+	if (res == 0) {
+		snd->xfer = alsa_ni_xfer;
+		return 1;
+	}
+	Sys_MaskPrintf (SYS_snd, "snd_alsa: Failure to set noninterleaved PCM "
+					"access. (%d) %s\n", res, qfsnd_strerror (res));
+	Sys_Printf ("snd_alsa: could not set mmap access\n");
+
+	return 0;
+}
+
+static int
+alsa_playback_set_bps (snd_t *snd, snd_pcm_hw_params_t *hw)
+{
+	int         res;
+	int         bps = 0;
+
+	if (snd_bits->int_val == 16) {
+		bps = SND_PCM_FORMAT_S16_LE;
+		snd->samplebits = 16;
+	} else if (snd_bits->int_val == 8) {
+		bps = SND_PCM_FORMAT_U8;
+		snd->samplebits = 8;
+	} else if (snd_bits->int_val) {
+		Sys_Printf ("snd_alsa: invalid sample bits: %d\n", bps);
+		return 0;
+	}
+
+	if (bps) {
+		if ((res = qfsnd_pcm_hw_params_set_format (pcm, hw, bps)) == 0) {
+			return 1;
+		}
+	} else {
+		bps = SND_PCM_FORMAT_S16_LE;
+		if ((res = qfsnd_pcm_hw_params_set_format (pcm, hw, bps)) == 0) {
+			snd->samplebits = 16;
+			return 1;
+		}
+		bps = SND_PCM_FORMAT_U8;
+		if ((res = qfsnd_pcm_hw_params_set_format (pcm, hw, bps)) == 0) {
+			snd->samplebits = 8;
+			return 1;
+		}
+		Sys_Printf ("snd_alsa: no usable formats. %s\n", qfsnd_strerror (res));
+	}
+	snd->samplebits = -1;
+	Sys_Printf ("snd_alsa: desired format not supported\n");
+	return 0;
+}
+
+static int
+alsa_playback_set_channels (snd_t *snd, snd_pcm_hw_params_t *hw)
+{
+	int         res;
+	int         channels = 1;
+
+	if (snd_stereo->int_val) {
+		channels = 2;
+	}
+	if ((res = qfsnd_pcm_hw_params_set_channels (pcm, hw, channels)) == 0) {
+		snd->channels = channels;
+		return 1;
+	}
+
+	Sys_Printf ("snd_alsa: desired channels not supported\n");
+	return 0;
+}
+
+static int
+alsa_playback_set_rate (snd_t *snd, snd_pcm_hw_params_t *hw)
+{
+	int         res;
+	unsigned    rate = 0;
+	static int  default_rates[] = { 48000, 44100, 22050, 11025, 0 };
+
+	if (snd_rate->int_val) {
+		rate = snd_rate->int_val;
+	}
+
+	if (rate) {
+		if ((res = qfsnd_pcm_hw_params_set_rate (pcm, hw, rate, 0)) == 0) {
+			snd->speed = rate;
+			return 1;
+		}
+		Sys_Printf ("snd_alsa: desired rate %i not supported. %s\n", rate,
+					qfsnd_strerror (res));
+	} else {
+		// use default rate
+		int         dir = 0;
+		for (int *def_rate = default_rates; *def_rate; def_rate++) {
+			rate = *def_rate;
+			res = qfsnd_pcm_hw_params_set_rate_near (pcm, hw, &rate, &dir);
+			if (res == 0) {
+				snd->speed = rate;
+				return 1;
+			}
+		}
+		Sys_Printf ("snd_alsa: no usable rate\n");
+	}
+
+	return 0;
+}
+
+static int
+alsa_playback_set_period_size (snd_t *snd, snd_pcm_hw_params_t *hw)
+{
+	int         res;
+	snd_pcm_uframes_t period_size;
+
+	// works out to about 5.5ms (5.3 for 48k, 5.8 for 44k1) but consistent for
+	// different sample rates give or take rounding
+	period_size = 64 * (snd->speed / 11025);
+	res = qfsnd_pcm_hw_params_set_period_size_near (pcm, hw, &period_size, 0);
+	if (res == 0) {
+		// don't mix less than this in frames:
+		res = qfsnd_pcm_hw_params_get_period_size (hw, &period_size, 0);
+		if (res == 0) {
+			snd->submission_chunk = period_size;
+			return 1;
+		}
+		Sys_Printf ("snd_alsa: unable to get period size. %s\n",
+					qfsnd_strerror (res));
+	} else {
+		Sys_Printf ("snd_alsa: unable to set period size near %i. %s\n",
+					(int) period_size, qfsnd_strerror (res));
+	}
+	return 0;
 }
 
 static int
 SNDDMA_Init (snd_t *snd)
 {
-	int					 err;
-	int					 bps = -1, stereo = -1;
-	unsigned int		 rate = 0;
-	snd_pcm_hw_params_t	*hw;
-	snd_pcm_hw_params_t	**_hw = &hw;
-	snd_pcm_sw_params_t	*sw;
-	snd_pcm_sw_params_t	**_sw = &sw;
-	snd_pcm_uframes_t	 period_size;
+	int         res;
+	const char *device = snd_device->string;
+
+	snd_pcm_hw_params_t *hw;
+	snd_pcm_sw_params_t *sw;
 
 	if (!load_libasound ())
 		return false;
 
-	snd_pcm_hw_params_alloca (_hw);
-	snd_pcm_sw_params_alloca (_sw);
+	snd_pcm_hw_params_alloca (&hw);
+	snd_pcm_sw_params_alloca (&sw);
 
-	if (snd_device->string[0])
-		pcmname = snd_device->string;
-	if (snd_bits->int_val) {
-		bps = snd_bits->int_val;
-		if (bps != 16 && bps != 8) {
-			Sys_Printf ("Error: invalid sample bits: %d\n", bps);
+
+	while (1) {
+		if (!alsa_open_playback (snd, device)) {
 			return 0;
 		}
-	}
-	if (snd_rate->int_val)
-		rate = snd_rate->int_val;
-	stereo = snd_stereo->int_val;
-	if (!pcmname)
-		pcmname = "default";
-retry_open:
-	err = qfsnd_pcm_open (&pcm, pcmname, SND_PCM_STREAM_PLAYBACK,
-						  SND_PCM_NONBLOCK);
-	if (0 > err) {
-		Sys_Printf ("Error: audio open error: %s\n", qfsnd_strerror (err));
-		return 0;
-	}
-
-	err = qfsnd_pcm_hw_params_any (pcm, hw);
-	if (0 > err) {
-		Sys_Printf ("ALSA: error setting hw_params_any. %s\n",
-					qfsnd_strerror (err));
-		goto error;
-	}
-
-	snd->xfer = alsa_xfer;
-	err = qfsnd_pcm_hw_params_set_access (pcm, hw,
-										  SND_PCM_ACCESS_MMAP_INTERLEAVED);
-	if (0 > err) {
-		Sys_MaskPrintf (SYS_snd, "ALSA: Failure to set interleaved PCM "
-						"access. %s\n", qfsnd_strerror (err));
-		err = qfsnd_pcm_hw_params_set_access (pcm, hw,
-										  SND_PCM_ACCESS_MMAP_NONINTERLEAVED);
-		if (0 > err) {
-			Sys_MaskPrintf (SYS_snd, "ALSA: Failure to set noninterleaved PCM "
-							"access. %s\n", qfsnd_strerror (err));
-			// "default" did not work, so retry with "plughw". However do not
-			// second guess the user, even if the user specified "default".
-			if (!snd_device->string[0] && !strcmp (pcmname, "default")) {
-				pcmname = "plughw";
-				goto retry_open;
-			}
-			Sys_Printf ("ALSA: could not set mmap access\n");
+		if ((res = qfsnd_pcm_hw_params_any (pcm, hw)) < 0) {
+			Sys_Printf ("snd_alsa: error setting hw_params_any. %s\n",
+						qfsnd_strerror (res));
 			goto error;
 		}
-		snd->xfer = alsa_ni_xfer;
-	}
-	Sys_Printf ("Using PCM %s.\n", pcmname);
-
-
-	switch (bps) {
-		case -1:
-			err = qfsnd_pcm_hw_params_set_format (pcm, hw,
-												  SND_PCM_FORMAT_S16_LE);
-			if (0 <= err) {
-				bps = 16;
-			} else if (0 <= (err = qfsnd_pcm_hw_params_set_format (pcm, hw,
-														 SND_PCM_FORMAT_U8))) {
-				bps = 8;
-			} else {
-				Sys_Printf ("ALSA: no useable formats. %s\n",
-							qfsnd_strerror (err));
-				goto error;
-			}
+		if (alsa_playback_set_mmap (snd, hw)) {
 			break;
-		case 8:
-		case 16:
-			err = qfsnd_pcm_hw_params_set_format (pcm, hw, bps == 8 ?
-												  SND_PCM_FORMAT_U8 :
-												  SND_PCM_FORMAT_S16);
-			if (0 > err) {
-				Sys_Printf ("ALSA: no usable formats. %s\n",
-							qfsnd_strerror (err));
-				goto error;
-			}
-			break;
-		default:
-			Sys_Printf ("ALSA: desired format not supported\n");
+		}
+		if (*device) {
 			goto error;
+		}
+		qfsnd_pcm_close (pcm);
+		device = "plughw";
 	}
 
-	switch (stereo) {
-		case -1:
-			err = qfsnd_pcm_hw_params_set_channels (pcm, hw, 2);
-			if (0 <= err) {
-				stereo = 1;
-			} else if (0 <= (err = qfsnd_pcm_hw_params_set_channels (pcm, hw,
-																	 1))) {
-				stereo = 0;
-			} else {
-				Sys_Printf ("ALSA: no usable channels. %s\n",
-							qfsnd_strerror (err));
-				goto error;
-			}
-			break;
-		case 0:
-		case 1:
-			err = qfsnd_pcm_hw_params_set_channels (pcm, hw, stereo ? 2 : 1);
-			if (0 > err) {
-				Sys_Printf ("ALSA: no usable channels. %s\n",
-							qfsnd_strerror (err));
-				goto error;
-			}
-			break;
-		default:
-			Sys_Printf ("ALSA: desired channels not supported\n");
-			goto error;
-	}
-
-	switch (rate) {
-		case 0:
-			{
-				int         rates[] = {
-								48000,
-								44100,
-								22050,
-								11025,
-								0
-							};
-				int         i;
-
-				for (i = 0; rates[i]; i++) {
-					rate = rates[i];
-					Sys_MaskPrintf (SYS_snd, "ALSA: trying %dHz\n", rate);
-					err = qfsnd_pcm_hw_params_set_rate_near (pcm, hw,
-															 &rate, 0);
-					if (0 <= err) {
-						break;
-					}
-				}
-				if (!rates[i]) {
-					Sys_Printf ("ALSA: no usable rates. %s\n",
-								qfsnd_strerror (err));
-					goto error;
-				}
-			} break;
-		case 11025:
-		case 22050:
-		case 44100:
-		case 48000:
-		default:
-			err = qfsnd_pcm_hw_params_set_rate_near (pcm, hw, &rate, 0);
-			if (0 > err) {
-				Sys_Printf ("ALSA: desired rate %i not supported. %s\n", rate,
-							qfsnd_strerror (err));
-				goto error;
-			}
-			break;
-	}
-
-	// works out to about 5.5ms (5.3 for 48k, 5.8 for 44k1) but consistent for
-	// different sample rates
-	period_size = 64 * (rate / 11025);
-	err = qfsnd_pcm_hw_params_set_period_size_near (pcm, hw, &period_size, 0);
-	if (0 > err) {
-		Sys_Printf ("ALSA: unable to set period size near %i. %s\n",
-					(int) period_size, qfsnd_strerror (err));
-		goto error;
-	}
-	err = qfsnd_pcm_hw_params (pcm, hw);
-	if (0 > err) {
-		Sys_Printf ("ALSA: unable to install hw params: %s\n",
-					qfsnd_strerror (err));
-		goto error;
-	}
-	err = qfsnd_pcm_sw_params_current (pcm, sw);
-	if (0 > err) {
-		Sys_Printf ("ALSA: unable to determine current sw params. %s\n",
-					qfsnd_strerror (err));
-		goto error;
-	}
-	err = qfsnd_pcm_sw_params_set_start_threshold (pcm, sw, ~0U);
-	if (0 > err) {
-		Sys_Printf ("ALSA: unable to set playback threshold. %s\n",
-					qfsnd_strerror (err));
-		goto error;
-	}
-	err = qfsnd_pcm_sw_params_set_stop_threshold (pcm, sw, ~0U);
-	if (0 > err) {
-		Sys_Printf ("ALSA: unable to set playback stop threshold. %s\n",
-					qfsnd_strerror (err));
-		goto error;
-	}
-	err = qfsnd_pcm_sw_params (pcm, sw);
-	if (0 > err) {
-		Sys_Printf ("ALSA: unable to install sw params. %s\n",
-					qfsnd_strerror (err));
+	if (!alsa_playback_set_bps (snd, hw)) {
 		goto error;
 	}
 
-	snd->channels = stereo + 1;
-
-	// don't mix less than this in frames:
-	err = qfsnd_pcm_hw_params_get_period_size (hw, &period_size, 0);
-	if (0 > err) {
-		Sys_Printf ("ALSA: unable to get period size. %s\n",
-					qfsnd_strerror (err));
+	if (!alsa_playback_set_channels (snd, hw)) {
 		goto error;
 	}
-	snd->submission_chunk = period_size;
+
+	if (!alsa_playback_set_rate (snd, hw)) {
+		goto error;
+	}
+
+	if (!alsa_playback_set_period_size (snd, hw)) {
+		goto error;
+	}
+
+	if ((res = qfsnd_pcm_hw_params (pcm, hw)) < 0) {
+		Sys_Printf ("snd_alsa: unable to install hw params: %s\n",
+					qfsnd_strerror (res));
+		goto error;
+	}
+
+	if ((res = qfsnd_pcm_sw_params_current (pcm, sw)) < 0) {
+		Sys_Printf ("snd_alsa: unable to determine current sw params. %s\n",
+					qfsnd_strerror (res));
+		goto error;
+	}
+	if ((res = qfsnd_pcm_sw_params_set_start_threshold (pcm, sw, ~0U)) < 0) {
+		Sys_Printf ("snd_alsa: unable to set playback threshold. %s\n",
+					qfsnd_strerror (res));
+		goto error;
+	}
+	if ((res = qfsnd_pcm_sw_params_set_stop_threshold (pcm, sw, ~0U)) < 0) {
+		Sys_Printf ("snd_alsa: unable to set playback stop threshold. %s\n",
+					qfsnd_strerror (res));
+		goto error;
+	}
+	if ((res = qfsnd_pcm_sw_params (pcm, sw)) < 0) {
+		Sys_Printf ("snd_alsa: unable to install sw params. %s\n",
+					qfsnd_strerror (res));
+		goto error;
+	}
 
 	snd->framepos = 0;
-	snd->samplebits = bps;
 
-	err = qfsnd_pcm_hw_params_get_buffer_size (hw, &buffer_size);
-	if (0 > err) {
-		Sys_Printf ("ALSA: unable to get buffer size. %s\n",
-					qfsnd_strerror (err));
+	if ((res = qfsnd_pcm_hw_params_get_buffer_size (hw, &buffer_size)) < 0) {
+		Sys_Printf ("snd_alsa: unable to get buffer size. %s\n",
+					qfsnd_strerror (res));
 		goto error;
 	}
 	if (buffer_size != round_buffer_size (buffer_size)) {
-		Sys_Printf ("ALSA: WARNING: non-power of 2 buffer size. sound may be unsatisfactory\n");
+		Sys_Printf ("snd_alsa: WARNING: non-power of 2 buffer size. sound may be unsatisfactory\n");
 		Sys_Printf ("recommend using either the plughw, or hw devices or adjusting dmix\n");
 		Sys_Printf ("to have a power of 2 buffer size\n");
 	}
 
-	qfsnd_async_add_pcm_handler (&async_haandler, pcm, alsa_callback, snd);
+	if ((res = qfsnd_async_add_pcm_handler (&async_handler, pcm,
+										    alsa_callback, snd)) < 0) {
+		Sys_Printf ("snd_alsa: unable to register async handler: %s",
+					qfsnd_strerror (res));
+		goto error;
+	}
 
 	snd->frames = buffer_size;
-	snd->speed = rate;
 	SNDDMA_GetDMAPos (snd);		//XXX sets snd->buffer
 	Sys_Printf ("%5d channels %sinterleaved\n", snd->channels,
 				snd->xfer ? "non-" : "");
@@ -517,16 +644,21 @@ retry_open:
 
 	snd_inited = 1;
 
-	alsa_pkt_t  packet;
-	qfsnd_pcm_mmap_begin (pcm, &packet.areas, &packet.offset, &packet.nframes);
-	snd->xfer_data = &packet;
-	SND_PaintChannels (snd, snd_paintedtime + packet.nframes);
-	qfsnd_pcm_mmap_commit (pcm, packet.offset, packet.nframes);
+	// send the first period to fill the buffer
+	if (alsa_process (pcm, snd) < 0) {
+		goto error;
+	}
+
 	qfsnd_pcm_start (pcm);
 
 	return 1;
 error:
 	qfsnd_pcm_close (pcm);
+	snd->channels = 0;
+	snd->frames = 0;
+	snd->samplebits = 0;
+	snd->submission_chunk = 0;
+	snd->speed = 0;
 	return 0;
 }
 
@@ -549,8 +681,8 @@ static void
 SNDDMA_shutdown (snd_t *snd)
 {
 	if (snd_inited) {
-		qfsnd_async_del_handler (async_haandler);
-		async_haandler = 0;
+		qfsnd_async_del_handler (async_handler);
+		async_handler = 0;
 		qfsnd_pcm_close (pcm);
 		snd_inited = 0;
 	}
