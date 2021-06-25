@@ -68,6 +68,7 @@ static cvar_t  *snd_show;
 static general_data_t plugin_info_general_data;
 
 static snd_output_funcs_t *snd_output_funcs;
+static snd_output_data_t *snd_output_data;
 
 static snd_t    snd;
 static int      snd_shutdown = 0;
@@ -147,17 +148,17 @@ s_stop_all_sounds (void)
 
 //=============================================================================
 
-/*static void
+static void
 s_get_soundtime (void)
 {
 	int			frames, framepos;
 	static int	buffers, oldframepos;
 
-	frames = snd_shm->frames;
+	frames = snd.frames;
 
 	// it is possible to miscount buffers if it has wrapped twice between
 	// calls to s_update.  Oh well.
-	if ((framepos = snd_output_funcs->pS_O_GetDMAPos ()) == -1)
+	if ((framepos = snd_output_funcs->get_dma_pos (&snd)) == -1)
 		return;
 
 	if (framepos < oldframepos) {
@@ -192,14 +193,14 @@ s_update_ (void)
 		snd_paintedtime = soundtime;
 	}
 	// mix ahead of current position
-	endtime = soundtime + snd_mixahead->value * snd_shm->speed;
-	samps = snd_shm->frames;
+	endtime = soundtime + snd_mixahead->value * snd.speed;
+	samps = snd.frames;
 	if (endtime - soundtime > samps)
 		endtime = soundtime + samps;
 
-	SND_PaintChannels (endtime);
-	snd_output_funcs->pS_O_Submit ();
-}*/
+	SND_PaintChannels (&snd, endtime);
+	snd_output_funcs->submit (&snd);
+}
 
 /*
 	s_update
@@ -215,18 +216,20 @@ s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
 
 	SND_SetListener (&snd, origin, forward, right, up, ambient_sound_level);
 
-	// mix some sound
-	//s_update_ ();
-	//SND_ScanChannels (0);
+	if (snd_output_data->model == som_push) {
+		// mix some sound
+		s_update_ ();
+		SND_ScanChannels (&snd, 0);
+	}
 }
 
-//static void
-//s_extra_update (void)
-//{
-//	if (!sound_started || snd_noextraupdate->int_val)
-//		return;							// don't pollute timings
-//	s_update_ ();
-//}
+static void
+s_extra_update (void)
+{
+	if (!sound_started || snd_noextraupdate->int_val)
+		return;							// don't pollute timings
+	s_update_ ();
+}
 
 static void
 s_block_sound (void)
@@ -305,6 +308,7 @@ static void
 s_init (void)
 {
 	snd_output_funcs = snd_render_data.output->functions->snd_output;
+	snd_output_data = snd_render_data.output->data->snd_output;
 	snd_render_data.soundtime = &soundtime;
 	Sys_Printf ("\nSound Initialization\n");
 
@@ -466,7 +470,7 @@ static snd_render_funcs_t plugin_info_render_funcs = {
 
 	.update          = s_update,
 	.stop_all_sounds = s_stop_all_sounds,
-	//.extra_update    = s_extra_update,
+	.extra_update    = s_extra_update,
 	.block_sound     = s_block_sound,
 	.unblock_sound   = s_unblock_sound,
 };

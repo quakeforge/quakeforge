@@ -41,9 +41,15 @@ typedef struct snd_output_funcs_s {
 	void      (*unblock_sound) (struct snd_s *snd);
 } snd_output_funcs_t;
 
+typedef enum {
+	som_push,	// synchronous io (mixer pushes data to driver)
+	som_pull,	// asynchronous io (driver pulls data from mixer)
+} snd_output_model_t;
+
 typedef struct snd_output_data_s {
 	unsigned   *soundtime;
 	unsigned   *paintedtime;
+	snd_output_model_t model;
 } snd_output_data_t;
 
 #endif // __QF_plugin_snd_output_h

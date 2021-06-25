@@ -53,18 +53,14 @@ static void		   *alsa_handle;
 static snd_pcm_t   *pcm;
 static snd_async_handler_t *async_handler;
 
-static plugin_t			  plugin_info;
-static plugin_data_t	  plugin_info_data;
-static plugin_funcs_t	  plugin_info_funcs;
-static general_data_t	  plugin_info_general_data;
-static general_funcs_t	  plugin_info_general_funcs;
-static snd_output_data_t  plugin_info_snd_output_data;
-static snd_output_funcs_t plugin_info_snd_output_funcs;
-
 static cvar_t      *snd_bits;
 static cvar_t      *snd_device;
 static cvar_t      *snd_rate;
 static cvar_t      *snd_stereo;
+
+//FIXME xfer probably should not be touching this (such data should probably
+//come through snd_t)
+static snd_output_data_t plugin_info_snd_output_data;
 
 #define QF_ALSA_NEED(ret, func, params) \
 static ret (*qf##func) params;
@@ -105,8 +101,6 @@ SNDDMA_Init_Cvars (void)
 	snd_bits = Cvar_Get ("snd_bits", "0", CVAR_ROM, NULL,
 						 "sound sample depth. 0 is system default");
 }
-
-static int SNDDMA_GetDMAPos (snd_t *snd);
 
 static __attribute__((const)) snd_pcm_uframes_t
 round_buffer_size (snd_pcm_uframes_t sz)
@@ -203,6 +197,7 @@ alsa_xfer (snd_t *snd, portable_samplepair_t *paintbuffer, int count,
 {
 	int			out_idx, out_max, step, val;
 	float	   *p;
+	alsa_pkt_t *packet = snd->xfer_data;;
 
 	p = (float *) paintbuffer;
 	count *= snd->channels;
@@ -213,7 +208,7 @@ alsa_xfer (snd_t *snd, portable_samplepair_t *paintbuffer, int count,
 	step = 3 - snd->channels;
 
 	if (snd->samplebits == 16) {
-		short      *out = (short *) snd->buffer;
+		short      *out = (short *) packet->areas[0].addr;
 
 		while (count--) {
 			val = (*p * volume) * 0x8000;
@@ -227,7 +222,7 @@ alsa_xfer (snd_t *snd, portable_samplepair_t *paintbuffer, int count,
 				out_idx = 0;
 		}
 	} else if (snd->samplebits == 8) {
-		unsigned char *out = (unsigned char *) snd->buffer;
+		unsigned char *out = (unsigned char *) packet->areas[0].addr;
 
 		while (count--) {
 			val = (*p * volume) * 128;
@@ -292,6 +287,7 @@ alsa_process (snd_pcm_t *pcm, snd_t *snd)
 			}
 			ret = 0;
 		}
+		snd->buffer = packet.areas[0].addr;
 		SND_PaintChannels (snd, snd_paintedtime + packet.nframes);
 		if ((res = qfsnd_pcm_mmap_commit (pcm, packet.offset,
 										  packet.nframes)) < 0
@@ -630,7 +626,15 @@ SNDDMA_Init (snd_t *snd)
 	}
 
 	snd->frames = buffer_size;
-	SNDDMA_GetDMAPos (snd);		//XXX sets snd->buffer
+
+	// send the first period to fill the buffer
+	// also sets snd->buffer
+	if (alsa_process (pcm, snd) < 0) {
+		goto error;
+	}
+
+	qfsnd_pcm_start (pcm);
+
 	Sys_Printf ("%5d channels %sinterleaved\n", snd->channels,
 				snd->xfer ? "non-" : "");
 	Sys_Printf ("%5d samples (%.1fms)\n", snd->frames,
@@ -644,13 +648,6 @@ SNDDMA_Init (snd_t *snd)
 
 	snd_inited = 1;
 
-	// send the first period to fill the buffer
-	if (alsa_process (pcm, snd) < 0) {
-		goto error;
-	}
-
-	qfsnd_pcm_start (pcm);
-
 	return 1;
 error:
 	qfsnd_pcm_close (pcm);
@@ -662,21 +659,6 @@ error:
 	return 0;
 }
 
-static int
-SNDDMA_GetDMAPos (snd_t *snd)
-{
-	const snd_pcm_channel_area_t *areas;
-	snd_pcm_uframes_t offset;
-	snd_pcm_uframes_t nframes = snd->frames;
-
-	qfsnd_pcm_avail_update (pcm);
-	qfsnd_pcm_mmap_begin (pcm, &areas, &offset, &nframes);
-	snd->framepos = offset;
-	snd->buffer = areas->addr;
-	snd->xfer_data = (void *) areas;
-	return snd->framepos;
-}
-
 static void
 SNDDMA_shutdown (snd_t *snd)
 {
@@ -685,44 +667,6 @@ SNDDMA_shutdown (snd_t *snd)
 		async_handler = 0;
 		qfsnd_pcm_close (pcm);
 		snd_inited = 0;
-	}
-}
-
-/*
-	SNDDMA_Submit
-
-	Send sound to device if buffer isn't really the dma buffer
-*/
-static void
-SNDDMA_Submit (snd_t *snd)
-{
-	int			state;
-	int			count = (*plugin_info_snd_output_data.paintedtime -
-						 *plugin_info_snd_output_data.soundtime);
-	const snd_pcm_channel_area_t *areas;
-	snd_pcm_uframes_t nframes;
-	snd_pcm_uframes_t offset;
-
-	if (snd_blocked)
-		return;
-
-	nframes = count;
-
-	qfsnd_pcm_avail_update (pcm);
-	qfsnd_pcm_mmap_begin (pcm, &areas, &offset, &nframes);
-
-	state = qfsnd_pcm_state (pcm);
-
-	switch (state) {
-		case SND_PCM_STATE_PREPARED:
-			qfsnd_pcm_mmap_commit (pcm, offset, nframes);
-			qfsnd_pcm_start (pcm);
-			break;
-		case SND_PCM_STATE_RUNNING:
-			qfsnd_pcm_mmap_commit (pcm, offset, nframes);
-			break;
-		default:
-			break;
 	}
 }
 
@@ -742,35 +686,49 @@ SNDDMA_UnblockSound (snd_t *snd)
 		qfsnd_pcm_pause (pcm, 0);
 }
 
-PLUGIN_INFO(snd_output, alsa)
-{
-	plugin_info.type = qfp_snd_output;
-	plugin_info.api_version = QFPLUGIN_VERSION;
-	plugin_info.plugin_version = "0.1";
-	plugin_info.description = "ALSA digital output";
-	plugin_info.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
+static general_data_t plugin_info_general_data = {
+};
+
+static general_funcs_t plugin_info_general_funcs = {
+	.init = SNDDMA_Init_Cvars,
+	.shutdown = NULL,
+};
+
+static snd_output_data_t plugin_info_snd_output_data = {
+	.model = som_pull,
+};
+
+static snd_output_funcs_t plugin_info_snd_output_funcs = {
+	.init = SNDDMA_Init,
+	.shutdown = SNDDMA_shutdown,
+	.block_sound = SNDDMA_BlockSound,
+	.unblock_sound = SNDDMA_UnblockSound,
+};
+
+static plugin_data_t plugin_info_data = {
+	.general = &plugin_info_general_data,
+	.snd_output = &plugin_info_snd_output_data,
+};
+
+static plugin_funcs_t plugin_info_funcs = {
+	.general = &plugin_info_general_funcs,
+	.snd_output = &plugin_info_snd_output_funcs,
+};
+
+static plugin_t plugin_info = {
+	.type = qfp_snd_output,
+	.api_version = QFPLUGIN_VERSION,
+	.plugin_version = "0.1",
+	.description = "ALSA digital output",
+	.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
 		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge "
 		"project\n"
-		"Please see the file \"AUTHORS\" for a list of contributors";
-	plugin_info.functions = &plugin_info_funcs;
-	plugin_info.data = &plugin_info_data;
+		"Please see the file \"AUTHORS\" for a list of contributors",
+	.functions = &plugin_info_funcs,
+	.data = &plugin_info_data,
+};
 
-	plugin_info_data.general = &plugin_info_general_data;
-	plugin_info_data.input = NULL;
-	plugin_info_data.snd_output = &plugin_info_snd_output_data;
-
-	plugin_info_funcs.general = &plugin_info_general_funcs;
-	plugin_info_funcs.input = NULL;
-	plugin_info_funcs.snd_output = &plugin_info_snd_output_funcs;
-
-	plugin_info_general_funcs.init = SNDDMA_Init_Cvars;
-	plugin_info_general_funcs.shutdown = NULL;
-	plugin_info_snd_output_funcs.init = SNDDMA_Init;
-	plugin_info_snd_output_funcs.shutdown = SNDDMA_shutdown;
-	plugin_info_snd_output_funcs.get_dma_pos = SNDDMA_GetDMAPos;
-	plugin_info_snd_output_funcs.submit = SNDDMA_Submit;
-	plugin_info_snd_output_funcs.block_sound = SNDDMA_BlockSound;
-	plugin_info_snd_output_funcs.unblock_sound = SNDDMA_UnblockSound;
-
+PLUGIN_INFO(snd_output, alsa)
+{
 	return &plugin_info;
 }
