@@ -37,6 +37,7 @@ typedef struct snd_output_funcs_s {
 	void      (*shutdown) (struct snd_s *snd);
 	int       (*get_dma_pos) (struct snd_s *snd);
 	void      (*submit) (struct snd_s *snd);
+	void      (*on_update) (struct snd_s *snd);
 	void      (*block_sound) (struct snd_s *snd);
 	void      (*unblock_sound) (struct snd_s *snd);
 } snd_output_funcs_t;

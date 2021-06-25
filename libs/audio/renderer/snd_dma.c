@@ -214,6 +214,10 @@ s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
 	if (!sound_started || (snd_blocked > 0))
 		return;
 
+	if (snd_output_funcs->on_update) {
+		snd_output_funcs->on_update (&snd);
+	}
+
 	SND_SetListener (&snd, origin, forward, right, up, ambient_sound_level);
 
 	if (snd_output_data->model == som_push) {
