@@ -230,9 +230,11 @@ s_update (const vec3_t origin, const vec3_t forward, const vec3_t right,
 static void
 s_extra_update (void)
 {
-	if (!sound_started || snd_noextraupdate->int_val)
-		return;							// don't pollute timings
-	s_update_ ();
+	if (snd_output_data->model == som_push) {
+		if (!sound_started || snd_noextraupdate->int_val)
+			return;							// don't pollute timings
+		s_update_ ();
+	}
 }
 
 static void
