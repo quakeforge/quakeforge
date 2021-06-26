@@ -89,7 +89,7 @@ R_LoadModule (vid_internal_t *vid_internal)
 	r_data = vidrendmodule->data->vid_render;
 	r_data->vid->vid_internal = vid_internal;
 
-	vidrendmodule->functions->general->init ();
+	r_funcs->init ();
 	Sys_RegisterShutdown (R_shutdown, 0);
 }
 

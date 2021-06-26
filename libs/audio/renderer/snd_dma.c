@@ -311,6 +311,23 @@ s_snd_force_unblock (void)
 }
 
 static void
+s_init_cvars (void)
+{
+	nosound = Cvar_Get ("nosound", "0", CVAR_NONE, NULL,
+						"Set to turn sound off");
+	snd_volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
+						   "Set the volume for sound playback");
+	snd_mixahead = Cvar_Get ("snd_mixahead", "0.1", CVAR_ARCHIVE, NULL,
+							  "Delay time for sounds");
+	snd_noextraupdate = Cvar_Get ("snd_noextraupdate", "0", CVAR_NONE, NULL,
+								  "Toggles the correct value display in "
+								  "host_speeds. Usually messes up sound "
+								  "playback when in effect");
+	snd_show = Cvar_Get ("snd_show", "0", CVAR_NONE, NULL,
+						 "Toggles display of sounds currently being played");
+}
+
+static void
 s_init (void)
 {
 	snd_output_funcs = snd_render_data.output->functions->snd_output;
@@ -325,18 +342,6 @@ s_init (void)
 	Cmd_AddCommand ("snd_force_unblock", s_snd_force_unblock,
 					"fix permanently blocked sound");
 
-	nosound = Cvar_Get ("nosound", "0", CVAR_NONE, NULL,
-						"Set to turn sound off");
-	snd_volume = Cvar_Get ("volume", "0.7", CVAR_ARCHIVE, NULL,
-						   "Set the volume for sound playback");
-	snd_mixahead = Cvar_Get ("snd_mixahead", "0.1", CVAR_ARCHIVE, NULL,
-							  "Delay time for sounds");
-	snd_noextraupdate = Cvar_Get ("snd_noextraupdate", "0", CVAR_NONE, NULL,
-								  "Toggles the correct value display in "
-								  "host_speeds. Usually messes up sound "
-								  "playback when in effect");
-	snd_show = Cvar_Get ("snd_show", "0", CVAR_NONE, NULL,
-						 "Toggles display of sounds currently being played");
 // FIXME
 //	if (host_parms.memsize < 0x800000) {
 //		Cvar_Set (snd_loadas8bit, "1");
@@ -456,11 +461,12 @@ s_alloc_channel (void)
 }
 
 static general_funcs_t plugin_info_general_funcs = {
-	s_init,
-	s_shutdown,
+	.init = s_init_cvars,
+	.shutdown = s_shutdown,
 };
 
 static snd_render_funcs_t plugin_info_render_funcs = {
+	.init = s_init,
 	.ambient_off     = s_ambient_off,
 	.ambient_on      = s_ambient_on,
 	.static_sound    = s_static_sound,

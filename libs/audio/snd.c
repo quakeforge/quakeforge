@@ -99,8 +99,7 @@ S_Init (int *viewentity, double *host_frametime)
 				host_frametime;
 			snd_render_module->data->snd_render->output = snd_output_module;
 
-			snd_output_module->functions->general->init ();
-			snd_render_module->functions->general->init ();
+			snd_render_module->functions->snd_render->init ();
 
 			snd_output_module->data->snd_output->soundtime
 				= snd_render_module->data->snd_render->soundtime;

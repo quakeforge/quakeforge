@@ -489,6 +489,7 @@ static general_funcs_t plugin_info_general_funcs = {
 };
 
 static cd_funcs_t plugin_info_cd_funcs = {
+	0,
 	I_XMMS_f,
 	I_XMMS_Pause,
 	I_XMMS_Play,

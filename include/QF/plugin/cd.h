@@ -31,6 +31,7 @@
 #include <QF/qtypes.h>
 
 typedef struct cd_funcs_s {
+	void      (*init) (void);
 	void      (*cd_f) (void); //
 	void      (*pause) (void);
 	void      (*play) (int, qboolean);

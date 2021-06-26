@@ -197,12 +197,9 @@ PI_Plugin_Load_f (void)
 	name = Cmd_Argv(2);
 
 	pi = PI_LoadPlugin (type, name);
-	if (!pi)
+	if (!pi) {
 		Sys_Printf ("Error loading plugin %s %s\n", type, name);
-
-	else if (pi->functions && pi->functions->general &&
-			 pi->functions->general->init)
-		pi->functions->general->init ();
+	}
 }
 
 static void
@@ -379,16 +376,19 @@ PI_LoadPlugin (const char *type, const char *name)
 
 	plugin->full_name = lp->name;
 	plugin->handle = dlhand;
+
+	if (plugin->functions && plugin->functions->general
+		&& plugin->functions->general->init) {
+		plugin->functions->general->init ();
+	}
 	return plugin;
 }
 
 VISIBLE qboolean
 PI_UnloadPlugin (plugin_t *plugin)
 {
-	if (plugin
-			&& plugin->functions
-			&& plugin->functions->general
-			&& plugin->functions->general->shutdown) {
+	if (plugin && plugin->functions && plugin->functions->general
+		&& plugin->functions->general->shutdown) {
 		plugin->functions->general->shutdown ();
 	} else {
 		Sys_MaskPrintf (SYS_dev,

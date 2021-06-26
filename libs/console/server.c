@@ -785,32 +785,28 @@ C_NewMap (void)
 }
 
 static general_funcs_t plugin_info_general_funcs = {
-	C_Init,
-	C_shutdown,
+	.init = C_Init,
+	.shutdown = C_shutdown,
 };
 static general_data_t plugin_info_general_data;
 
 static console_funcs_t plugin_info_console_funcs = {
-	C_Print,
-	C_ProcessInput,
-	C_KeyEvent,
-	C_DrawConsole,
-	C_CheckResize,
-	C_NewMap,
+	.print = C_Print,
+	.process_input = C_ProcessInput,
+	.key_event = C_KeyEvent,
+	.draw_console = C_DrawConsole,
+	.check_resize = C_CheckResize,
+	.new_map = C_NewMap,
 };
 
 static plugin_funcs_t plugin_info_funcs = {
-	&plugin_info_general_funcs,
-	0,
-	0,
-	&plugin_info_console_funcs,
+	.general = &plugin_info_general_funcs,
+	.console = &plugin_info_console_funcs,
 };
 
 static plugin_data_t plugin_info_data = {
-	&plugin_info_general_data,
-	0,
-	0,
-	&sv_con_data,
+	.general = &plugin_info_general_data,
+	.console = &sv_con_data,
 };
 
 static plugin_t plugin_info = {

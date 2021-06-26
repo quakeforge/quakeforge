@@ -288,6 +288,7 @@ static general_funcs_t plugin_info_general_funcs = {
 };
 
 static cd_funcs_t plugin_info_cd_funcs = {
+	0,
 	I_CD_f,
 	I_CDAudio_Pause,
 	I_CDAudio_Play,

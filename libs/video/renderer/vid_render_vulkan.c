@@ -515,6 +515,42 @@ vulkan_Skin_InitTranslations (void)
 {
 }
 
+static void
+set_palette (const byte *palette)
+{
+	//FIXME really don't want this here: need an application domain
+	//so Quake can be separated from QuakeForge (ie, Quake itself becomes
+	//an app using the QuakeForge engine)
+}
+
+static void
+vulkan_vid_render_choose_visual (void)
+{
+	Vulkan_CreateDevice (vulkan_ctx);
+	vulkan_ctx->choose_visual (vulkan_ctx);
+	vulkan_ctx->cmdpool = QFV_CreateCommandPool (vulkan_ctx->device,
+									 vulkan_ctx->device->queue.queueFamily,
+									 0, 1);
+	__auto_type cmdset = QFV_AllocCommandBufferSet (1, alloca);
+	QFV_AllocateCommandBuffers (vulkan_ctx->device, vulkan_ctx->cmdpool, 0,
+								cmdset);
+	vulkan_ctx->cmdbuffer = cmdset->a[0];
+	vulkan_ctx->fence = QFV_CreateFence (vulkan_ctx->device, 1);
+	Sys_MaskPrintf (SYS_vulkan, "vk choose visual %p %p %d %#zx\n",
+					vulkan_ctx->device->dev, vulkan_ctx->device->queue.queue,
+					vulkan_ctx->device->queue.queueFamily,
+					(size_t) vulkan_ctx->cmdpool);
+}
+
+static void
+vulkan_vid_render_create_context (void)
+{
+	vulkan_ctx->create_window (vulkan_ctx);
+	vulkan_ctx->surface = vulkan_ctx->create_surface (vulkan_ctx);
+	Sys_MaskPrintf (SYS_vulkan, "vk create context %#zx\n",
+					(size_t) vulkan_ctx->surface);
+}
+
 static vid_model_funcs_t model_funcs = {
 	sizeof (vulktex_t) + 2 * sizeof (qfv_tex_t),
 	vulkan_Mod_LoadLighting,
@@ -541,7 +577,48 @@ static vid_model_funcs_t model_funcs = {
 	vulkan_Skin_InitTranslations,
 };
 
+static void
+vulkan_vid_render_init (void)
+{
+	if (!vr_data.vid->vid_internal->vulkan_context) {
+		Sys_Error ("Sorry, Vulkan not supported by this program.");
+	}
+	vulkan_ctx = vr_data.vid->vid_internal->vulkan_context ();
+	vulkan_ctx->load_vulkan (vulkan_ctx);
+
+	Vulkan_Init_Common (vulkan_ctx);
+
+	vr_data.vid->vid_internal->set_palette = set_palette;
+	vr_data.vid->vid_internal->choose_visual = vulkan_vid_render_choose_visual;
+	vr_data.vid->vid_internal->create_context = vulkan_vid_render_create_context;
+
+	vr_funcs = &vulkan_vid_render_funcs;
+	m_funcs = &model_funcs;
+}
+
+static void
+vulkan_vid_render_shutdown (void)
+{
+	qfv_device_t *device = vulkan_ctx->device;
+	qfv_devfuncs_t *df = device->funcs;
+	VkDevice    dev = device->dev;
+	QFV_DeviceWaitIdle (device);
+	df->vkDestroyFence (dev, vulkan_ctx->fence, 0);
+	df->vkDestroyCommandPool (dev, vulkan_ctx->cmdpool, 0);
+	Vulkan_Compose_Shutdown (vulkan_ctx);
+	Vulkan_Lighting_Shutdown (vulkan_ctx);
+	Vulkan_Draw_Shutdown (vulkan_ctx);
+	Vulkan_Bsp_Shutdown (vulkan_ctx);
+	Vulkan_Alias_Shutdown (vulkan_ctx);
+	Mod_ClearAll ();
+	Vulkan_Texture_Shutdown (vulkan_ctx);
+	Vulkan_DestroyFramebuffers (vulkan_ctx);
+	Vulkan_DestroyRenderPass (vulkan_ctx);
+	Vulkan_Shutdown_Common (vulkan_ctx);
+}
+
 vid_render_funcs_t vulkan_vid_render_funcs = {
+	vulkan_vid_render_init,
 	vulkan_Draw_Character,
 	vulkan_Draw_String,
 	vulkan_Draw_nString,
@@ -598,107 +675,20 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	&model_funcs
 };
 
-static void
-set_palette (const byte *palette)
-{
-	//FIXME really don't want this here: need an application domain
-	//so Quake can be separated from QuakeForge (ie, Quake itself becomes
-	//an app using the QuakeForge engine)
-}
-
-static void
-vulkan_vid_render_choose_visual (void)
-{
-	Vulkan_CreateDevice (vulkan_ctx);
-	vulkan_ctx->choose_visual (vulkan_ctx);
-	vulkan_ctx->cmdpool = QFV_CreateCommandPool (vulkan_ctx->device,
-									 vulkan_ctx->device->queue.queueFamily,
-									 0, 1);
-	__auto_type cmdset = QFV_AllocCommandBufferSet (1, alloca);
-	QFV_AllocateCommandBuffers (vulkan_ctx->device, vulkan_ctx->cmdpool, 0,
-								cmdset);
-	vulkan_ctx->cmdbuffer = cmdset->a[0];
-	vulkan_ctx->fence = QFV_CreateFence (vulkan_ctx->device, 1);
-	Sys_MaskPrintf (SYS_vulkan, "vk choose visual %p %p %d %#zx\n",
-					vulkan_ctx->device->dev, vulkan_ctx->device->queue.queue,
-					vulkan_ctx->device->queue.queueFamily,
-					(size_t) vulkan_ctx->cmdpool);
-}
-
-static void
-vulkan_vid_render_create_context (void)
-{
-	vulkan_ctx->create_window (vulkan_ctx);
-	vulkan_ctx->surface = vulkan_ctx->create_surface (vulkan_ctx);
-	Sys_MaskPrintf (SYS_vulkan, "vk create context %#zx\n",
-					(size_t) vulkan_ctx->surface);
-}
-
-static void
-vulkan_vid_render_init (void)
-{
-	if (!vr_data.vid->vid_internal->vulkan_context) {
-		Sys_Error ("Sorry, Vulkan not supported by this program.");
-	}
-	vulkan_ctx = vr_data.vid->vid_internal->vulkan_context ();
-	vulkan_ctx->load_vulkan (vulkan_ctx);
-
-	Vulkan_Init_Common (vulkan_ctx);
-
-	vr_data.vid->vid_internal->set_palette = set_palette;
-	vr_data.vid->vid_internal->choose_visual = vulkan_vid_render_choose_visual;
-	vr_data.vid->vid_internal->create_context = vulkan_vid_render_create_context;
-
-	vr_funcs = &vulkan_vid_render_funcs;
-	m_funcs = &model_funcs;
-}
-
-static void
-vulkan_vid_render_shutdown (void)
-{
-	qfv_device_t *device = vulkan_ctx->device;
-	qfv_devfuncs_t *df = device->funcs;
-	VkDevice    dev = device->dev;
-	QFV_DeviceWaitIdle (device);
-	df->vkDestroyFence (dev, vulkan_ctx->fence, 0);
-	df->vkDestroyCommandPool (dev, vulkan_ctx->cmdpool, 0);
-	Vulkan_Compose_Shutdown (vulkan_ctx);
-	Vulkan_Lighting_Shutdown (vulkan_ctx);
-	Vulkan_Draw_Shutdown (vulkan_ctx);
-	Vulkan_Bsp_Shutdown (vulkan_ctx);
-	Vulkan_Alias_Shutdown (vulkan_ctx);
-	Mod_ClearAll ();
-	Vulkan_Texture_Shutdown (vulkan_ctx);
-	Vulkan_DestroyFramebuffers (vulkan_ctx);
-	Vulkan_DestroyRenderPass (vulkan_ctx);
-	Vulkan_Shutdown_Common (vulkan_ctx);
-}
-
 static general_funcs_t plugin_info_general_funcs = {
-	vulkan_vid_render_init,
-	vulkan_vid_render_shutdown,
+	.shutdown = vulkan_vid_render_shutdown,
 };
 
 static general_data_t plugin_info_general_data;
 
 static plugin_funcs_t plugin_info_funcs = {
-	&plugin_info_general_funcs,
-	0,
-	0,
-	0,
-	0,
-	0,
-	&vulkan_vid_render_funcs,
+	.general = &plugin_info_general_funcs,
+	.vid_render = &vulkan_vid_render_funcs,
 };
 
 static plugin_data_t plugin_info_data = {
-	&plugin_info_general_data,
-	0,
-	0,
-	0,
-	0,
-	0,
-	&vid_render_data,
+	.general = &plugin_info_general_data,
+	.vid_render = &vid_render_data,
 };
 
 static plugin_t plugin_info = {

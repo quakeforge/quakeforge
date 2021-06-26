@@ -364,6 +364,7 @@ static general_funcs_t plugin_info_general_funcs = {
 };
 
 static cd_funcs_t plugin_info_cd_funcs = {
+	0,
 	I_SGI_f,
 	I_SGI_Pause,
 	I_SGI_Play,

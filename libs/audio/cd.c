@@ -111,7 +111,6 @@ CDAudio_Init (void)
 		Sys_Printf ("Loading of cd module: %s failed!\n", cd_plugin->string);
 		return -1;
 	}
-	cdmodule->functions->general->init ();
 	Cmd_AddCommand (
 		"cd", CD_f, "Control the CD player.\n"
 		"Commands:\n"

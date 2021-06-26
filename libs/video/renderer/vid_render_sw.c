@@ -38,6 +38,18 @@
 
 sw_ctx_t *sw_ctx;
 
+static void
+sw_vid_render_choose_visual (void)
+{
+    sw_ctx->choose_visual (sw_ctx);
+}
+
+static void
+sw_vid_render_create_context (void)
+{
+    sw_ctx->create_context (sw_ctx);
+}
+
 static vid_model_funcs_t model_funcs = {
 	0,
 	sw_Mod_LoadLighting,
@@ -64,7 +76,29 @@ static vid_model_funcs_t model_funcs = {
 	sw_Skin_InitTranslations,
 };
 
+static void
+sw_vid_render_init (void)
+{
+	if (!vr_data.vid->vid_internal->sw_context) {
+		Sys_Error ("Sorry, software rendering not supported by this program.");
+	}
+	sw_ctx = vr_data.vid->vid_internal->sw_context ();
+
+	vr_data.vid->vid_internal->set_palette = sw_ctx->set_palette;
+	vr_data.vid->vid_internal->choose_visual = sw_vid_render_choose_visual;
+	vr_data.vid->vid_internal->create_context = sw_vid_render_create_context;
+
+	vr_funcs = &sw_vid_render_funcs;
+	m_funcs = &model_funcs;
+}
+
+static void
+sw_vid_render_shutdown (void)
+{
+}
+
 vid_render_funcs_t sw_vid_render_funcs = {
+	sw_vid_render_init,
 	Draw_Character,
 	Draw_String,
 	Draw_nString,
@@ -121,64 +155,20 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	&model_funcs
 };
 
-static void
-sw_vid_render_choose_visual (void)
-{
-    sw_ctx->choose_visual (sw_ctx);
-}
-
-static void
-sw_vid_render_create_context (void)
-{
-    sw_ctx->create_context (sw_ctx);
-}
-
-static void
-sw_vid_render_init (void)
-{
-	if (!vr_data.vid->vid_internal->sw_context) {
-		Sys_Error ("Sorry, software rendering not supported by this program.");
-	}
-	sw_ctx = vr_data.vid->vid_internal->sw_context ();
-
-	vr_data.vid->vid_internal->set_palette = sw_ctx->set_palette;
-	vr_data.vid->vid_internal->choose_visual = sw_vid_render_choose_visual;
-	vr_data.vid->vid_internal->create_context = sw_vid_render_create_context;
-
-	vr_funcs = &sw_vid_render_funcs;
-	m_funcs = &model_funcs;
-}
-
-static void
-sw_vid_render_shutdown (void)
-{
-}
-
 static general_funcs_t plugin_info_general_funcs = {
-	sw_vid_render_init,
-	sw_vid_render_shutdown,
+	.shutdown = sw_vid_render_shutdown,
 };
 
 static general_data_t plugin_info_general_data;
 
 static plugin_funcs_t plugin_info_funcs = {
-	&plugin_info_general_funcs,
-	0,
-	0,
-	0,
-	0,
-	0,
-	&sw_vid_render_funcs,
+	.general = &plugin_info_general_funcs,
+	.vid_render = &sw_vid_render_funcs,
 };
 
 static plugin_data_t plugin_info_data = {
-	&plugin_info_general_data,
-	0,
-	0,
-	0,
-	0,
-	0,
-	&vid_render_data,
+	.general = &plugin_info_general_data,
+	.vid_render = &vid_render_data,
 };
 
 static plugin_t plugin_info = {

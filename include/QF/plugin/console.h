@@ -35,6 +35,7 @@
 #include <QF/qtypes.h>
 
 typedef struct console_funcs_s {
+	void (*init) (void);
 	void (*print) (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
 	void (*process_input) (void);
 	void (*key_event) (knum_t key, short unicode, qboolean down);
