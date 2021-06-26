@@ -51,14 +51,6 @@
 
 #define SAMPLE_GAP	4
 
-snd_render_data_t snd_render_data = {
-	0,
-	0,
-	0,
-	&snd_paintedtime,
-	0,
-};
-
 static sfxbuffer_t *
 snd_fail (sfx_t *sfx)
 {

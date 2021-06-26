@@ -21,14 +21,15 @@ libs_audio_targets_snd_output_sdl_la_SOURCES=		libs/audio/targets/snd_sdl.c
 
 libs_audio_targets_snd_output_alsa_la_LDFLAGS=		$(plugin_ldflags)
 libs_audio_targets_snd_output_alsa_la_LIBADD=		$(snd_deps)
-libs_audio_targets_snd_output_alsa_la_DEPENDENCIES=$(snd_deps)
+libs_audio_targets_snd_output_alsa_la_DEPENDENCIES=	$(snd_deps)
 libs_audio_targets_snd_output_alsa_la_CFLAGS=		$(ALSA_CFLAGS)
 libs_audio_targets_snd_output_alsa_la_SOURCES=		libs/audio/targets/snd_alsa.c
 
-libs_audio_targets_snd_output_jack_la_LDFLAGS=			$(plugin_ldflags)
-libs_audio_targets_snd_output_jack_la_SOURCES=			libs/audio/targets/snd_jack.c $(snd_common) $(format_src)
-libs_audio_targets_snd_output_jack_la_LIBADD=			$(snd_libs) $(format_libs) $(JACK_LIBS)
+libs_audio_targets_snd_output_jack_la_LDFLAGS=		$(plugin_ldflags)
+libs_audio_targets_snd_output_jack_la_LIBADD=		$(snd_deps) $(JACK_LIBS)
 libs_audio_targets_snd_output_jack_la_DEPENDENCIES=	$(snd_libs)
+libs_audio_targets_snd_output_jack_la_CFLAGS=		$(JACK_CFLAGS)
+libs_audio_targets_snd_output_jack_la_SOURCES=		libs/audio/targets/snd_jack.c
 
 libs_audio_targets_snd_output_oss_la_LDFLAGS=		$(plugin_ldflags)
 libs_audio_targets_snd_output_oss_la_LIBADD=		$(snd_deps) $(OSS_LIBS)

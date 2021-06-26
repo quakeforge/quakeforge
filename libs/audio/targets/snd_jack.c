@@ -60,18 +60,6 @@ static cvar_t  *snd_jack_server;
 static int s_jack_connect (snd_t *snd);
 
 static void
-s_finish_channels (void)
-{
-	int         i;
-	channel_t  *ch;
-
-	for (i = 0; i < MAX_CHANNELS; i++) {
-		ch = &snd_channels[i];
-		ch->done = ch->stop = 1;
-	}
-}
-
-static void
 s_update (snd_t *snd)
 {
 	double      now = Sys_DoubleTime ();
@@ -85,7 +73,7 @@ s_update (snd_t *snd)
 		if (!snd_shutdown) {
 			if (now - snd_alive_time > 1.0) {
 				Sys_Printf ("jackd client thread seems to have died\n");
-				s_finish_channels ();
+				snd->finish_channels ();
 				snd_shutdown = 1;
 			}
 		}
@@ -162,8 +150,8 @@ snd_jack_xfer (snd_t *snd, portable_samplepair_t *paintbuffer, int count,
 	}
 	for (i = 0; i < count; i++) {
 		/* max is +/- 1.0. need to implement clamping. */
-		*output[0]++ = volume * snd_paintbuffer[i].left;
-		*output[1]++ = volume * snd_paintbuffer[i].right;
+		*output[0]++ = volume * paintbuffer[i].left;
+		*output[1]++ = volume * paintbuffer[i].right;
 	}
 }
 
@@ -176,15 +164,17 @@ snd_jack_process (jack_nframes_t nframes, void *arg)
 	snd_alive = 1;
 	for (i = 0; i < 2; i++)
 		output[i] = (float *) jack_port_get_buffer (jack_out[i], nframes);
-	SND_PaintChannels (snd, snd_paintedtime + nframes);
+	snd->paint_channels (snd, snd->paintedtime + nframes);
 	return 0;
 }
 
 static void
 snd_jack_shutdown (void *arg)
 {
+	snd_t      *snd = arg;
+
 	snd_shutdown = 1;
-	s_finish_channels ();
+	snd->finish_channels ();
 }
 
 static void
@@ -217,12 +207,13 @@ s_jack_connect (snd_t *snd)
 	if (jack_set_xrun_callback (jack_handle, snd_jack_xrun, 0))
 		Sys_Printf ("Could not set xrun callback\n");
 	jack_set_process_callback (jack_handle, snd_jack_process, snd);
-	jack_on_shutdown (jack_handle, snd_jack_shutdown, 0);
+	jack_on_shutdown (jack_handle, snd_jack_shutdown, snd);
 	for (i = 0; i < 2; i++)
 		jack_out[i] = jack_port_register (jack_handle, va (0, "out_%d", i + 1),
 										  JACK_DEFAULT_AUDIO_TYPE,
 										  JackPortIsOutput, 0);
 	snd->speed = jack_get_sample_rate (jack_handle);
+	snd->channels = 2;
 	s_jack_activate ();
 	sound_started = 1;
 	Sys_Printf ("Connected to JACK: %d Sps\n", snd->speed);

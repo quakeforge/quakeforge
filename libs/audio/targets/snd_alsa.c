@@ -202,7 +202,7 @@ alsa_xfer (snd_t *snd, portable_samplepair_t *paintbuffer, int count,
 	p = (float *) paintbuffer;
 	count *= snd->channels;
 	out_max = (snd->frames * snd->channels) - 1;
-	out_idx = snd_paintedtime * snd->channels;
+	out_idx = snd->paintedtime * snd->channels;
 	while (out_idx > out_max)
 		out_idx -= out_max + 1;
 	step = 3 - snd->channels;
@@ -288,7 +288,7 @@ alsa_process (snd_pcm_t *pcm, snd_t *snd)
 			ret = 0;
 		}
 		snd->buffer = packet.areas[0].addr;
-		SND_PaintChannels (snd, snd_paintedtime + packet.nframes);
+		snd->paint_channels (snd, snd->paintedtime + packet.nframes);
 		if ((res = qfsnd_pcm_mmap_commit (pcm, packet.offset,
 										  packet.nframes)) < 0
 			|| (snd_pcm_uframes_t) res != packet.nframes) {

@@ -77,6 +77,7 @@ struct snd_s {
 	int				frames;					//!< frames in buffer
 											//!< 1 frame = channels samples
 	int				submission_chunk;		//!< don't mix less than this #
+	unsigned        paintedtime;			//!< sound clock in samples
 	int				framepos;				//!< position of dma cursor
 	unsigned char	*buffer;				//!< destination for mixed sound
 	/** Transfer mixed samples to the output.
@@ -90,6 +91,9 @@ struct snd_s {
 	/** Optional data for the xfer function.
 	*/
 	void            *xfer_data;
+
+	void      (*finish_channels) (void);
+	void      (*paint_channels) (struct snd_s *snd, unsigned endtime);
 };
 
 /** Describes the sound data.
@@ -318,6 +322,12 @@ struct channel_s *SND_AllocChannel (snd_t *snd);
 */
 void SND_ChannelStop (snd_t *snd, channel_t *chan);
 
+/** Mark all channels as no longer in use.
+
+	For use by asynchronous output drivers.
+*/
+void SND_FinishChannels (void);
+
 /** Scan channels looking for stopped channels.
 	\param wait	if true, wait for the channels to be done. if false, force the
 				channels to be done. true is for threaded, false for
@@ -397,9 +407,6 @@ void SND_LocalSound (snd_t *snd, const char *s);
 	\ingroup sound_render
 */
 ///@{
-/** sound clock in samples
-*/
-extern unsigned snd_paintedtime;
 
 /** Mix all active channels into the output buffer.
 	\param endtime	sample time until when to mix

@@ -184,6 +184,18 @@ SND_ScanChannels (snd_t *snd, int wait)
 }
 
 void
+SND_FinishChannels (void)
+{
+	int         i;
+	channel_t  *ch;
+
+	for (i = 0; i < MAX_CHANNELS; i++) {
+		ch = &snd_channels[i];
+		ch->done = ch->stop = 1;
+	}
+}
+
+void
 SND_StopAllSounds (snd_t *snd)
 {
 	int         i;

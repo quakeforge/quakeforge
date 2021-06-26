@@ -70,7 +70,10 @@ static general_data_t plugin_info_general_data;
 static snd_output_funcs_t *snd_output_funcs;
 static snd_output_data_t *snd_output_data;
 
-static snd_t    snd;
+static snd_t    snd = {
+	.finish_channels = SND_FinishChannels,
+	.paint_channels  = SND_PaintChannels,
+};
 static int      snd_shutdown = 0;
 
 static void
@@ -83,7 +86,7 @@ s_xfer_paint_buffer (snd_t *snd, portable_samplepair_t *paintbuffer, int count,
 	p = (float *) paintbuffer;
 	count *= snd->channels;
 	out_max = (snd->frames * snd->channels) - 1;
-	out_idx = snd_paintedtime * snd->channels;
+	out_idx = snd->paintedtime * snd->channels;
 	while (out_idx > out_max)
 		out_idx -= out_max + 1;
 	step = 3 - snd->channels;
@@ -164,10 +167,10 @@ s_get_soundtime (void)
 	if (framepos < oldframepos) {
 		buffers++;						// buffer wrapped
 
-		if (snd_paintedtime > 0x40000000) {	// time to chop things off to avoid
+		if (snd.paintedtime > 0x40000000) {	// time to chop things off to avoid
 			// 32 bit limits
 			buffers = 0;
-			snd_paintedtime = frames;
+			snd.paintedtime = frames;
 			s_stop_all_sounds ();
 		}
 	}
@@ -188,9 +191,9 @@ s_update_ (void)
 	s_get_soundtime ();
 
 	// check to make sure that we haven't overshot
-	if (snd_paintedtime < soundtime) {
+	if (snd.paintedtime < soundtime) {
 //		Sys_Printf ("S_Update_ : overflow\n");
-		snd_paintedtime = soundtime;
+		snd.paintedtime = soundtime;
 	}
 	// mix ahead of current position
 	endtime = soundtime + snd_mixahead->value * snd.speed;
@@ -490,6 +493,10 @@ static snd_render_funcs_t plugin_info_render_funcs = {
 static plugin_funcs_t plugin_info_funcs = {
 	.general = &plugin_info_general_funcs,
 	.snd_render = &plugin_info_render_funcs,
+};
+
+snd_render_data_t snd_render_data = {
+	.paintedtime = &snd.paintedtime,
 };
 
 static plugin_data_t plugin_info_data = {
