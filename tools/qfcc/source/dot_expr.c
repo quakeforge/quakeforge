@@ -545,23 +545,23 @@ print_memset (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 static void
 _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
-	static print_f print_funcs[] = {
-		print_error,
-		print_state,
-		print_bool,
-		print_label,
-		print_labelref,
-		print_block,
-		print_subexpr,
-		print_uexpr,
-		print_def,
-		print_symbol,
-		print_temp,
-		print_vector,
-		print_nil,
-		print_value,
-		print_compound,
-		print_memset,
+	static print_f print_funcs[ex_count] = {
+		[ex_error] = print_error,
+		[ex_state] = print_state,
+		[ex_bool] = print_bool,
+		[ex_label] = print_label,
+		[ex_labelref] = print_labelref,
+		[ex_block] = print_block,
+		[ex_expr] = print_subexpr,
+		[ex_uexpr] = print_uexpr,
+		[ex_def] = print_def,
+		[ex_symbol] = print_symbol,
+		[ex_temp] = print_temp,
+		[ex_vector] = print_vector,
+		[ex_nil] = print_nil,
+		[ex_value] = print_value,
+		[ex_compound] = print_compound,
+		[ex_memset] = print_memset,
 	};
 	int         indent = level * 2 + 2;
 
@@ -573,12 +573,12 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		return;
 	e->printid = id;
 
-	if ((int) e->type < 0 || e->type > ex_memset) {
+	if ((int) e->type < 0 || e->type > ex_memset || !print_funcs[e->type]) {
 		dasprintf (dstr, "%*se_%p [label=\"(bad expr type)\\n%d\"];\n",
 				   indent, "", e, e->line);
 		return;
 	}
-	print_funcs [e->type] (dstr, e, level, id, next);
+	print_funcs[e->type] (dstr, e, level, id, next);
 
 }
 

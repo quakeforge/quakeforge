@@ -256,6 +256,8 @@ get_type (expr_t *e)
 			break;
 		case ex_vector:
 			return e->e.vector.type;
+		case ex_count:
+			internal_error (e, "invalid expression");
 	}
 	return (type_t *) unalias_type (type);//FIXME cast
 }
@@ -435,6 +437,7 @@ copy_expr (expr_t *e)
 			return n;
 		case ex_vector:
 			n = new_expr ();
+			*n = *e;
 			n->e.vector.type = e->e.vector.type;
 			n->e.vector.list = copy_expr (e->e.vector.list);
 			t = e->e.vector.list;
@@ -459,6 +462,8 @@ copy_expr (expr_t *e)
 			n->e.memset.val = copy_expr (e->e.memset.val);
 			n->e.memset.count = copy_expr (e->e.memset.count);
 			return n;
+		case ex_count:
+			break;
 	}
 	internal_error (e, "invalid expression");
 }
@@ -1683,6 +1688,8 @@ unary_expr (int op, expr_t *e)
 					}
 				case ex_nil:
 					return error (e, "invalid type for unary -");
+				case ex_count:
+					internal_error (e, "invalid expression");
 			}
 			break;
 		case '!':
@@ -1749,6 +1756,8 @@ unary_expr (int op, expr_t *e)
 					}
 				case ex_nil:
 					return error (e, "invalid type for unary !");
+				case ex_count:
+					internal_error (e, "invalid expression");
 			}
 			break;
 		case '~':
@@ -1824,6 +1833,8 @@ bitnot_expr:
 					}
 				case ex_nil:
 					return error (e, "invalid type for unary ~");
+				case ex_count:
+					internal_error (e, "invalid expression");
 			}
 			break;
 		case '.':

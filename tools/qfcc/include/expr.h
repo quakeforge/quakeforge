@@ -58,6 +58,8 @@ typedef enum {
 	ex_value,		///< constant value (::ex_value_t)
 	ex_compound,	///< compound initializer
 	ex_memset,		///< memset needs three params...
+
+	ex_count,		///< number of valid expression types
 } expr_type;
 
 /**	Binary and unary expressions.
@@ -570,7 +572,7 @@ short expr_short (expr_t *e) __attribute__((pure));
 
 int expr_integral (expr_t *e) __attribute__((pure));
 
-/**	Check of the expression refers to a constant value.
+/**	Check if the expression refers to a constant value.
 
 	\param e		The expression to check.
 	\return			True if the expression is constant.

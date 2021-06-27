@@ -1449,30 +1449,23 @@ expr_value (sblock_t *sblock, expr_t *e, operand_t **op)
 static sblock_t *
 statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 {
-	static expr_f sfuncs[] = {
-		0,					// ex_error
-		0,					// ex_state
-		0,					// ex_bool
-		0,					// ex_label
-		0,					// ex_labelref
-		expr_block,			// ex_block
-		expr_expr,
-		expr_uexpr,
-		expr_def,
-		expr_symbol,
-		expr_temp,
-		expr_vector_e,		// ex_vector
-		expr_nil,
-		expr_value,
-		0,					// ex_compound
-		0,					// ex_memset
+	static expr_f sfuncs[ex_count] = {
+		[ex_block] = expr_block,
+		[ex_expr] = expr_expr,
+		[ex_uexpr] = expr_uexpr,
+		[ex_def] = expr_def,
+		[ex_symbol] = expr_symbol,
+		[ex_temp] = expr_temp,
+		[ex_vector] = expr_vector_e,
+		[ex_nil] = expr_nil,
+		[ex_value] = expr_value,
 	};
 	if (!e) {
 		*op = 0;
 		return sblock;
 	}
 
-	if (e->type > ex_memset)
+	if (e->type >= ex_count)
 		internal_error (e, "bad sub-expression type");
 	if (!sfuncs[e->type])
 		internal_error (e, "unexpected sub-expression type: %s",
@@ -1767,27 +1760,25 @@ statement_nonexec (sblock_t *sblock, expr_t *e)
 static sblock_t *
 statement_slist (sblock_t *sblock, expr_t *e)
 {
-	static statement_f sfuncs[] = {
-		statement_ignore,	// ex_error
-		statement_state,
-		statement_bool,
-		statement_label,
-		0,					// ex_labelref
-		statement_block,
-		statement_expr,
-		statement_uexpr,
-		statement_nonexec,	// ex_def
-		statement_nonexec,	// ex_symbol
-		statement_nonexec,	// ex_temp
-		statement_nonexec,	// ex_vector
-		statement_nonexec,	// ex_nil
-		statement_nonexec,	// ex_value
-		0,					// ex_compound
-		statement_memset,
+	static statement_f sfuncs[ex_count] = {
+		[ex_error] = statement_ignore,
+		[ex_state] = statement_state,
+		[ex_bool] = statement_bool,
+		[ex_label] = statement_label,
+		[ex_block] = statement_block,
+		[ex_expr] = statement_expr,
+		[ex_uexpr] = statement_uexpr,
+		[ex_def] = statement_nonexec,
+		[ex_symbol] = statement_nonexec,
+		[ex_temp] = statement_nonexec,
+		[ex_vector] = statement_nonexec,
+		[ex_nil] = statement_nonexec,
+		[ex_value] = statement_nonexec,
+		[ex_memset] = statement_memset,
 	};
 
 	for (/**/; e; e = e->next) {
-		if (e->type > ex_memset)
+		if (e->type >= ex_count || !sfuncs[e->type])
 			internal_error (e, "bad expression type");
 		sblock = sfuncs[e->type] (sblock, e);
 	}
