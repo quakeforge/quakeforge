@@ -49,7 +49,7 @@ struct expr_s *_error (struct expr_s *e, const char *file, int line,
 	__attribute__ ((format (PRINTF, 4, 5)));
 #define error(e, fmt...) _error(e, __FILE__, __LINE__, fmt)
 
-void _internal_error (struct expr_s *e, const char *file, int line,
+void _internal_error (const struct expr_s *e, const char *file, int line,
 					  const char *fmt, ...)
 	__attribute__ ((format (PRINTF, 4, 5), noreturn));
 #define internal_error(e, fmt...) _internal_error(e, __FILE__, __LINE__, fmt)

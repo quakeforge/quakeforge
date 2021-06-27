@@ -47,7 +47,7 @@ diagnostic_hook warning_hook;
 diagnostic_hook notice_hook;
 
 static void
-report_function (expr_t *e)
+report_function (const expr_t *e)
 {
 	static function_t *last_func = (function_t *)-1L;
 	static string_t last_file;
@@ -78,7 +78,7 @@ report_function (expr_t *e)
 }
 
 static __attribute__((format(PRINTF, 4, 0))) void
-format_message (dstring_t *message, const char *msg_type, expr_t *e,
+format_message (dstring_t *message, const char *msg_type, const expr_t *e,
 				const char *fmt, va_list args)
 {
 	string_t    file = pr.source_file;
@@ -147,7 +147,7 @@ _debug (expr_t *e, const char *file, int line, const char *fmt, ...)
 }
 
 static __attribute__((noreturn, format(PRINTF, 4, 0))) void
-__internal_error (expr_t *e, const char *file, int line,
+__internal_error (const expr_t *e, const char *file, int line,
 				  const char *fmt, va_list args)
 {
 	dstring_t  *message = dstring_new ();
@@ -234,7 +234,8 @@ _warning (expr_t *e, const char *file, int line, const char *fmt, ...)
 }
 
 void
-_internal_error (expr_t *e, const char *file, int line, const char *fmt, ...)
+_internal_error (const expr_t *e, const char *file, int line,
+				 const char *fmt, ...)
 {
 	va_list     args;
 
