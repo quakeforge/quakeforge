@@ -1600,7 +1600,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 							opval = pr->pr_globals[s->a].entity_var;
 							parm_ind = pr->pr_globals[s->b].uinteger_var;
 							if (parm_ind < pr->progs->entityfields
-								&& opval >= 0
+								&& opval > 0
 								&& opval < pr->pr_edict_area_size) {
 								ed = PROG_TO_EDICT (pr, opval);
 								opval = &E_fld(ed, parm_ind) - pr->pr_globals;
