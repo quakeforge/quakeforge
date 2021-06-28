@@ -87,3 +87,6 @@ C(R_InitVars):
 
 #endif	// USE_INTEL_ASM
 
+#if defined(__linux__) && defined(__ELF__)
+.section .note.GNU-stack,"",%progbits
+#endif
