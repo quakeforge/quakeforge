@@ -467,6 +467,8 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n)
 static int
 op_is_identifier (operand_t *op)
 {
+	if (!op)
+		return 0;
 	if (op->op_type == op_label)
 		return 0;
 	if (op->op_type == op_value)
@@ -479,6 +481,28 @@ op_is_identifier (operand_t *op)
 }
 
 static int
+op_is_constant (operand_t *op)
+{
+	if (!op)
+		return 0;
+	if (op->op_type == op_label)
+		return 1;
+	if (op->op_type == op_value)
+		return 1;
+	if (op->op_type == op_label)
+		return op->o.def->constant;
+	return 0;
+}
+
+static int
+op_is_temp (operand_t *op)
+{
+	if (!op)
+		return 0;
+	return op->op_type == op_temp;
+}
+
+static int
 dag_tempop_kill_aliases_visit (tempop_t *tempop, void *_l)
 {
 	daglabel_t *l = (daglabel_t *) _l;
@@ -488,7 +512,7 @@ dag_tempop_kill_aliases_visit (tempop_t *tempop, void *_l)
 	if (tempop == &l->op->o.tempop)
 		return 0;
 	label = tempop->daglabel;
-	if (label && label->dagnode) {
+	if (label && label->dagnode && !label->dagnode->killed) {
 		set_add (node->edges, label->dagnode->number);
 		set_remove (node->edges, node->number);
 		label->dagnode->killed = node;
@@ -506,7 +530,7 @@ dag_def_kill_aliases_visit (def_t *def, void *_l)
 	if (def == l->op->o.def)
 		return 0;
 	label = def->daglabel;
-	if (label && label->dagnode) {
+	if (label && label->dagnode && !label->dagnode->killed) {
 		set_add (node->edges, label->dagnode->number);
 		set_remove (node->edges, node->number);
 		label->dagnode->killed = node;
@@ -703,17 +727,26 @@ dag_kill_nodes (dag_t *dag, dagnode_t *n)
 
 	for (i = 0; i < dag->num_nodes; i++) {
 		node = dag->nodes[i];
+		if (node->killed) {
+			//the node is already killed
+			continue;
+		}
 		if (node == n->children[1])	{
 			// assume the pointer does not point to itself. This should be
 			// reasonable because without casting, only a void pointer can
 			// point to itself (the required type is recursive).
 			continue;
 		}
-		if (node->label->op && !op_is_identifier (node->label->op)) {
+		if (op_is_constant (node->label->op)) {
 			// While constants in the Quake VM can be changed via a pointer,
 			// doing so would cause much more fun than a simple
 			// mis-optimization would, so consider them safe from pointer
 			// operations.
+			continue;
+		}
+		if (op_is_temp (node->label->op)) {
+			// Assume that the pointer cannot point to a temporary variable.
+			//  This is reasonable as there is no programmer access to temps.
 			continue;
 		}
 		node->killed = n;
