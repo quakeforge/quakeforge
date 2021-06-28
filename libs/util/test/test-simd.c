@@ -48,7 +48,7 @@
 
 #define s05 0.70710678118654757
 
-#ifdef __AVX__
+#ifdef __AVX2__
 typedef  struct {
 	int         line;
 	vec4d_t   (*op) (vec4d_t a, vec4d_t b);
@@ -94,7 +94,7 @@ typedef  struct {
 	mat4f_t     ulp_errors;
 } mq4f_test_t;
 
-#ifdef __AVX__
+#ifdef __AVX2__
 static vec4d_t tvtruncd (vec4d_t v, vec4d_t ignore)
 {
 	return vtruncd (v);
@@ -158,7 +158,7 @@ static vec4f_t tmagnitude3f (vec4f_t v, vec4f_t ignore)
 
 #define T(t...) { __LINE__, t }
 
-#ifdef __AVX__
+#ifdef __AVX2__
 static vec4d_test_t vec4d_tests[] = {
 	// 3D dot products
 	T(dotd, right,   right,   one  ),
@@ -487,7 +487,7 @@ static mq4f_test_t mq4f_tests[] = {
 };
 #define num_mq4f_tests (sizeof (mq4f_tests) / (sizeof (mq4f_tests[0])))
 
-#ifdef __AVX__
+#ifdef __AVX2__
 static int
 run_vec4d_tests (void)
 {
@@ -684,7 +684,7 @@ int
 main (void)
 {
 	int         ret = 0;
-#ifdef __AVX__
+#ifdef __AVX2__
 	ret |= run_vec4d_tests ();
 #endif
 	ret |= run_vec4f_tests ();
