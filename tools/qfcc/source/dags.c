@@ -640,11 +640,6 @@ dagnode_attach_label (dagnode_t *n, daglabel_t *l)
 						"attempt to attach non-identifer label to dagnode "
 						"identifiers");
 	if (l->dagnode) {
-		// if the node is a leaf, then kill its value so no attempt is made
-		// to reuse it.
-		if (l->dagnode->type == st_none) {
-			l->dagnode->killed = n;
-		}
 		dagnode_t  *node = l->dagnode;
 		set_union (n->edges, node->parents);
 		set_remove (n->edges, n->number);
