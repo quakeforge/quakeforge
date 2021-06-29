@@ -12,6 +12,7 @@ AC_MSG_RESULT([
 	HTTP support       : ${CURL:-no}
 	Compiler version   : $CCVER
 	Compiler flags     : $CFLAGS
+	SIMD Support       : $simd
 	qfcc cpp invocation: $CPP_NAME
 
 	Shared game data directory  : $sharepath

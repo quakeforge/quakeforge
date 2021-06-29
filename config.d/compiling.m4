@@ -81,13 +81,30 @@ AC_ARG_ENABLE(optimize,
 	optimize=yes
 )
 
-dnl QF_CC_OPTION(-Wno-psabi)
-dnl QF_CC_OPTION(-msse2)
-dnl QF_CC_OPTION(-Wno-psabi)
-QF_CC_OPTION(-mavx2)
-dnl fma is not used as it is the equivalent of turning on
-dnl -funsafe-math-optimizations
-dnl QF_CC_OPTION(-mfma)
+AC_ARG_ENABLE(simd,
+	[  --enable-simd[=arg]     Enable SIMD support (default auto)],
+	[],
+	[enable_simd=yes]
+)
+
+case "$enable_simd" in
+	no)
+		QF_CC_OPTION(-Wno-psabi)
+		simd=no
+		;;
+	sse|sse2|avx|avx2)
+		QF_CC_OPTION(-m$enable_simd)
+		simd=$enable_simd
+		;;
+	yes)
+		for simd in avx2 avx sse2 sse; do
+			if lscpu | grep -q -w $simd; then
+				QF_CC_OPTION(-m$simd)
+				break
+			fi
+		done
+		;;
+esac
 
 AC_MSG_CHECKING(for optimization)
 if test "x$optimize" = xyes -a "x$leave_cflags_alone" != "xyes"; then

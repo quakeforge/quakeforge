@@ -74,7 +74,7 @@ dnl Checks for system type
 dnl ==================================================================
 
 dnl Checks for which system driver to use
-echo ${host}
+
 AC_MSG_CHECKING(for system driver)
 case "${host}" in
 	i?86-*-mingw32*|x86_64-w64-mingw32*)
