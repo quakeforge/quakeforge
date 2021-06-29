@@ -116,6 +116,7 @@ new_node (dag_t *dag)
 	node->parents = set_new ();
 	node->edges = set_new ();
 	node->identifiers = set_new ();
+	node->reachable = set_new ();
 	node->number = dag->num_nodes;
 	set_add (dag->roots, node->number);	// nodes start out as root nodes
 	dag->nodes[dag->num_nodes++] = node;
@@ -256,6 +257,20 @@ dag_make_leafs (dag_t *dag, statement_t *s, operand_t *operands[FLOW_OPERANDS])
 }
 
 static void
+dagnode_set_reachable (dag_t *dag, dagnode_t *node)
+{
+	for (set_iter_t *edge_iter = set_first (node->edges); edge_iter;
+		 edge_iter = set_next (edge_iter)) {
+		dagnode_t  *r = dag->nodes[edge_iter->element];
+		// The other node is directly reachable
+		set_add (node->reachable, r->number);
+		// All nodes reachable by the other node are indirectly reachable
+		// from this node.
+		set_union (node->reachable, r->reachable);
+	}
+}
+
+static void
 dag_make_children (dag_t *dag, statement_t *s,
 				   operand_t *operands[FLOW_OPERANDS],
 				   dagnode_t *children[3])
@@ -282,6 +297,10 @@ dag_make_children (dag_t *dag, statement_t *s,
 			// When an operand refers to a killed node, it must be
 			// evaluated AFTER the killing node has been evaluated.
 			set_add (node->edges, killer->number);
+			// If killer is set, then node is guaranteed to be a new node
+			// and thus does not have any parents, so no need to worry about
+			// updating the reachable sets of any parent nodes.
+			dagnode_set_reachable (dag, node);
 		}
 		children[i] = node;
 	}
@@ -828,6 +847,7 @@ dag_create (flownode_t *flownode)
 				n->label = op;
 				dagnode_add_children (dag, n, operands, children);
 				dagnode_set_edges (dag, n);
+				dagnode_set_reachable (dag, n);
 			}
 		}
 		lx = operand_label (dag, operands[0]);
@@ -835,8 +855,9 @@ dag_create (flownode_t *flownode)
 			lx->expr = s->expr;
 			dagnode_attach_label (n, lx);
 		}
-		if (n->type == st_ptrassign)
+		if (n->type == st_ptrassign) {
 			dag_kill_nodes (dag, n);
+		}
 	}
 
 	nodes = malloc (dag->num_nodes * sizeof (dagnode_t *));

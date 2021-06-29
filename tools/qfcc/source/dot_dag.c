@@ -124,6 +124,14 @@ print_node (dstring_t *dstr, dag_t *dag, dagnode_t *node)
 				   node, dag->nodes[edge_iter->element]);
 	}
 	set_delete (edges);
+	if (0) {
+		for (edge_iter = set_first (node->reachable); edge_iter;
+			 edge_iter = set_next (edge_iter)) {
+			dasprintf (dstr,
+					   "  \"dagnode_%p\" -> \"dagnode_%p\" [style=dotted];\n",
+					   node, dag->nodes[edge_iter->element]);
+		}
+	}
 	if (0 && !set_is_empty (node->identifiers)) {
 		set_iter_t *id_iter;
 		daglabel_t *id;
