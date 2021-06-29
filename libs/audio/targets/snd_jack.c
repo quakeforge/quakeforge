@@ -56,6 +56,7 @@ static jack_client_t *jack_handle;
 static jack_port_t *jack_out[2];
 static float   *output[2];
 static cvar_t  *snd_jack_server;
+static cvar_t  *snd_jack_ports;
 
 static int s_jack_connect (snd_t *snd);
 
@@ -89,25 +90,60 @@ s_update (snd_t *snd)
 	}
 }
 
+static const char **
+s_jack_parse_ports (const char *ports_str)
+{
+	int         num_ports = 1;
+	int         ind = 0;
+	char      **ports;
+
+	for (const char *s = ports_str; *s; s++) {
+		num_ports += *s == ';';
+	}
+
+	size_t      len = strlen (ports_str) + 1;
+	ports = malloc ((num_ports + 1) * sizeof (*ports) + len + 1);
+	ports[num_ports] = 0;
+	ports[0] = (char *) &ports[num_ports + 1];
+	ports[0][len] = 0;
+	strcpy (ports[0], ports_str);
+
+	for (char *s = ports[0]; *s; s++) {
+		if (s > ports[0]) {
+			s[-1] = 0;
+		}
+		for (ports[ind++] = s; *s && *s != ';'; s++) {
+		}
+	}
+
+	return (const char **) ports;
+}
+
 static void
 s_jack_activate (void)
 {
 	const char **ports;
 	int         i;
 
+	snd_shutdown = 0;
+	if (!*snd_jack_ports->string) {
+		ports = jack_get_ports (jack_handle, 0, 0,
+								JackPortIsPhysical | JackPortIsInput);
+	} else {
+		ports = s_jack_parse_ports (snd_jack_ports->string);
+	}
+	if (developer->int_val & SYS_snd) {
+		for (i = 0; ports[i]; i++) {
+			Sys_Printf ("%s\n", ports[i]);
+		}
+	}
 	if (jack_activate (jack_handle)) {
 		Sys_Printf ("Could not activate JACK\n");
 		return;
 	}
-	snd_shutdown = 0;
-	ports = jack_get_ports (jack_handle, 0, 0,
-							JackPortIsPhysical | JackPortIsInput);
-	if (developer->int_val & SYS_snd) {
-		for (i = 0; ports[i]; i++)
-			Sys_Printf ("%s\n", ports[i]);
-	}
-	for (i = 0; i < 2; i++)
+	for (i = 0; i < 2; i++) {
 		jack_connect (jack_handle, jack_port_name (jack_out[i]), ports[i]);
+	}
 	free (ports);
 }
 
@@ -246,6 +282,11 @@ s_init_cvars (void)
 {
 	snd_jack_server = Cvar_Get ("snd_jack_server", "default", CVAR_ROM, NULL,
 								"The name of the JACK server to connect to");
+	snd_jack_ports = Cvar_Get ("snd_jack_ports", "", CVAR_ROM, NULL,
+							   "; separated list of port names to which QF "
+							   "will connect. Defaults to the first two "
+							   "physical ports. Currently only two ports "
+							   "are supported.");
 }
 
 static general_funcs_t plugin_info_general_funcs = {
