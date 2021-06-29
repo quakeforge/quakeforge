@@ -266,14 +266,21 @@ dag_make_children (dag_t *dag, statement_t *s,
 	for (i = 0; i < 3; i++) {
 		dagnode_t  *node = dag_node (operands[i + 1]);
 		dagnode_t  *killer = 0;
+
 		if (node && node->killed) {
+			// If the node has been killed, then a new node is needed
 			killer = node->killed;
 			node = 0;
 		}
+
 		if (!node) {
+			// No valid node found (either first reference to the value,
+			// or the value's node was killed).
 			node = leaf_node (dag, operands[i + 1], s->expr);
 		}
 		if (killer) {
+			// When an operand refers to a killed node, it must be
+			// evaluated AFTER the killing node has been evaluated.
 			set_add (node->edges, killer->number);
 		}
 		children[i] = node;
