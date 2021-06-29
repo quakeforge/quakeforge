@@ -629,8 +629,8 @@ dag_make_var_live (set_t *live_vars, operand_t *op)
 		set_add (live_vars, var->number);
 }
 
-static void
-dagnode_attach_label (dagnode_t *n, daglabel_t *l)
+static int
+dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l)
 {
 	if (!l->op)
 		internal_error (0, "attempt to attach operator label to dagnode "
@@ -641,9 +641,12 @@ dagnode_attach_label (dagnode_t *n, daglabel_t *l)
 						"identifiers");
 	if (l->dagnode) {
 		dagnode_t  *node = l->dagnode;
-		set_union (n->edges, node->parents);
-		set_remove (n->edges, n->number);
 		set_remove (node->identifiers, l->number);
+		if (set_is_member (node->reachable, n->number)) {
+			return 0;
+		}
+		set_add (n->edges, node->number);
+		dagnode_set_reachable (dag, n);
 	}
 	l->live = 0;	// remove live forcing on assignment
 	l->dagnode = n;
@@ -652,6 +655,7 @@ dagnode_attach_label (dagnode_t *n, daglabel_t *l)
 	if (n->label->op) {
 		dag_live_aliases (n->label->op);
 	}
+	return 1;
 }
 
 static int
@@ -848,7 +852,18 @@ dag_create (flownode_t *flownode)
 		lx = operand_label (dag, operands[0]);
 		if (lx && lx->dagnode != n) {
 			lx->expr = s->expr;
-			dagnode_attach_label (n, lx);
+			if (!dagnode_attach_label (dag, n, lx)) {
+				// attempting to attach the label to the node would create
+				// a dependency cycle in the dag, so a new node needs to be
+				// created for the source operand
+				if (s->type == st_assign) {
+					n = leaf_node (dag, operands[1], s->expr);
+					dagnode_attach_label (dag, n, lx);
+				} else {
+					internal_error (s->expr, "unexpected failure to attach"
+									" label to node");
+				}
+			}
 		}
 		if (n->type == st_ptrassign) {
 			dag_kill_nodes (dag, n);
