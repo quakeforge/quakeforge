@@ -33,6 +33,7 @@ test_progs_dat=\
 	tools/qfcc/test/overload.dat \
 	tools/qfcc/test/paramret.dat \
 	tools/qfcc/test/postop.dat \
+	tools/qfcc/test/ptraliasenc.dat \
 	tools/qfcc/test/quaternion.dat \
 	tools/qfcc/test/return-ivar.dat \
 	tools/qfcc/test/sendv.dat \
@@ -382,6 +383,16 @@ tools/qfcc/test/postop.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(postop_dep) # am--include-marker
 r_depfiles_remade += $(postop_dep)
+
+tools_qfcc_test_ptraliasenc_dat_SOURCES=tools/qfcc/test/ptraliasenc.r
+ptraliasenc_obj=$(tools_qfcc_test_ptraliasenc_dat_SOURCES:.r=.o)
+ptraliasenc_dep=$(call qcautodep,$(tools_qfcc_test_ptraliasenc_dat_SOURCES))
+tools/qfcc/test/ptraliasenc.dat$(EXEEXT): $(ptraliasenc_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(ptraliasenc_obj)
+tools/qfcc/test/ptraliasenc.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(ptraliasenc_dep) # am--include-marker
+r_depfiles_remade += $(ptraliasenc_dep)
 
 tools_qfcc_test_quaternion_dat_SOURCES=tools/qfcc/test/quaternion.r
 quaternion_obj=$(tools_qfcc_test_quaternion_dat_SOURCES:.r=.o)

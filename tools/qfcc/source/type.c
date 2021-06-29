@@ -729,8 +729,8 @@ encode_type (dstring_t *encoding, const type_t *type)
 	if (!type)
 		return;
 	switch (type->meta) {
-		case ty_alias: // XXX do I want this, or just the unaliased type?
-			dasprintf (encoding, "{%s>", type->name);
+		case ty_alias:
+			dasprintf (encoding, "{%s>", type->name ? type->name : "");
 			encode_type (encoding, type->t.alias.aux_type);
 			dasprintf (encoding, "}");
 			return;
