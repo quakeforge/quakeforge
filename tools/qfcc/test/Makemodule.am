@@ -34,6 +34,7 @@ test_progs_dat=\
 	tools/qfcc/test/paramret.dat \
 	tools/qfcc/test/postop.dat \
 	tools/qfcc/test/ptraliasenc.dat \
+	tools/qfcc/test/ptrstructcast.dat \
 	tools/qfcc/test/quaternion.dat \
 	tools/qfcc/test/return-ivar.dat \
 	tools/qfcc/test/sendv.dat \
@@ -393,6 +394,16 @@ tools/qfcc/test/ptraliasenc.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(ptraliasenc_dep) # am--include-marker
 r_depfiles_remade += $(ptraliasenc_dep)
+
+tools_qfcc_test_ptrstructcast_dat_SOURCES=tools/qfcc/test/ptrstructcast.r
+ptrstructcast_obj=$(tools_qfcc_test_ptrstructcast_dat_SOURCES:.r=.o)
+ptrstructcast_dep=$(call qcautodep,$(tools_qfcc_test_ptrstructcast_dat_SOURCES))
+tools/qfcc/test/ptrstructcast.dat$(EXEEXT): $(ptrstructcast_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(ptrstructcast_obj)
+tools/qfcc/test/ptrstructcast.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(ptrstructcast_dep) # am--include-marker
+r_depfiles_remade += $(ptrstructcast_dep)
 
 tools_qfcc_test_quaternion_dat_SOURCES=tools/qfcc/test/quaternion.r
 quaternion_obj=$(tools_qfcc_test_quaternion_dat_SOURCES:.r=.o)

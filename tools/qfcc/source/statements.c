@@ -787,9 +787,13 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 		}
 		type = st_memset;
 		if (is_indirect (dst_expr)) {
-			goto dereference_dst;
+			need_ptr = 1;
 		}
 	} else {
+		if (is_indirect (src_expr)) {
+			src_expr = expr_file_line (address_expr (src_expr, 0, 0), e);
+			need_ptr = 1;
+		}
 		if (!src) {
 			// This is the very right-hand node of a non-nil assignment chain
 			// (there may be more chains somwhere within src_expr, but they
@@ -802,15 +806,15 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 		if (op) {
 			*op = src;
 		}
-		if (is_indirect (dst_expr) || is_indirect (src_expr)) {
+		if (is_indirect (dst_expr)) {
 			src = operand_address (src, src_expr);
-			goto dereference_dst;
+			need_ptr = 1;
 		}
 	}
-	if (0) {
-dereference_dst:
-		// dst_expr is a dereferenced pointer, so need to un-dereference it
-		// to get the pointer and switch to storep instructions.
+	if (need_ptr) {
+		// dst_expr and/or src_expr are dereferenced pointers, so need to
+		// un-dereference dst_expr to get the pointer and switch to movep
+		// or memsetp instructions.
 		dst_expr = expr_file_line (address_expr (dst_expr, 0, 0), e);
 		need_ptr = 1;
 	}
