@@ -864,6 +864,7 @@ Host_Init (void)
 
 	Sys_Init ();
 	GIB_Init (true);
+	GIB_Key_Init ();
 	COM_ParseConfig (host_cbuf);
 
 	Host_Init_Memory ();

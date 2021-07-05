@@ -793,7 +793,6 @@ static general_data_t plugin_info_general_data;
 static console_funcs_t plugin_info_console_funcs = {
 	.print = C_Print,
 	.process_input = C_ProcessInput,
-	.key_event = C_KeyEvent,
 	.draw_console = C_DrawConsole,
 	.check_resize = C_CheckResize,
 	.new_map = C_NewMap,

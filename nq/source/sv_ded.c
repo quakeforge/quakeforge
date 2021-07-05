@@ -54,6 +54,11 @@ vid_render_data_t *r_data;
 vid_render_funcs_t *r_funcs;
 
 void
+GIB_Key_Init (void)
+{
+}
+
+void
 Key_KeydestCallback (keydest_callback_t *callback)
 {
 }

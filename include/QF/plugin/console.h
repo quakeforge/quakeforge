@@ -30,7 +30,6 @@
 
 #include <stdarg.h>
 
-#include <QF/keys.h>
 #include <QF/plugin.h>
 #include <QF/qtypes.h>
 
@@ -38,7 +37,6 @@ typedef struct console_funcs_s {
 	void (*init) (void);
 	void (*print) (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
 	void (*process_input) (void);
-	void (*key_event) (knum_t key, short unicode, qboolean down);
 	void (*draw_console) (void);
 	void (*check_resize) (void);
 	void (*new_map) (void);

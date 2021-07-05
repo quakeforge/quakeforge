@@ -564,6 +564,31 @@ typedef struct keytarget_s {
 
 extern int		keydown[QFK_LAST];
 
+/** Callback for handling key events based on keydest.
+
+	\param key		The key that was pressed or released for this event.
+	\param unicode	The unicode value of the key.
+	\param down		True if a press event, false if a release event.
+	\param data		Callback specific data pointer as passed to Key_SetKeyDest
+*/
+typedef void (*key_event_t) (knum_t key, short unicode, qboolean down,
+							 void *data);
+
+/** Set the fallback key event handler callback for the specified keydest.
+
+	The fallback is for handling keys that have not been bound, thus allowing
+	the callback to handle large numbers of keys without having to create many
+	explicit bindings (eg, console input).
+
+	If no callback has been set for a specific keydest, then the key event
+	is simply ignored.
+
+	\param keydest	The keydest for which the callback will be set.
+	\param callback	The function to be called when an event occurs.
+	\param data		Opaque data pointerer passed to the callback.
+*/
+void Key_SetKeyEvent (keydest_t keydest, key_event_t callback, void *data);
+
 struct cbuf_s;
 
 void Key_Init (struct cbuf_s *cb);
@@ -693,10 +718,14 @@ int Key_StringToKeynum (const char *str) __attribute__((pure));
 
 struct progs_s;
 
+//FIXME location
 /**	Add the Key builtins to the specified progs instance.
 */
-void Key_Progs_Init (struct progs_s *pr);
+void RUA_Key_Init (struct progs_s *pr);
 #endif
+
+//FIXME location
+void GIB_Key_Init (void);
 
 ///@}
 

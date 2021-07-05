@@ -587,7 +587,7 @@ Menu_Init (void)
 	RUA_Init (&menu_pr_state, 1);
 
 	InputLine_Progs_Init (&menu_pr_state);
-	Key_Progs_Init (&menu_pr_state);
+	RUA_Key_Init (&menu_pr_state);
 	GIB_Progs_Init (&menu_pr_state);
 	PR_Cmds_Init (&menu_pr_state);
 	R_Progs_Init (&menu_pr_state);

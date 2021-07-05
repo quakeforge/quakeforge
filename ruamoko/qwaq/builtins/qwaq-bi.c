@@ -195,7 +195,7 @@ BI_Init (progs_t *pr)
 	Mod_Init ();
 	R_Init ();
 	R_Progs_Init (pr);
-	Key_Progs_Init (pr);
+	RUA_Key_Init (pr);
 	S_Progs_Init (pr);
 
 	Con_Init ("client");

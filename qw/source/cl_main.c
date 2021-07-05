@@ -1771,6 +1771,7 @@ Host_Init (void)
 
 	Sys_Init ();
 	GIB_Init (true);
+	GIB_Key_Init ();
 	COM_ParseConfig (cl_cbuf);
 
 	CL_Init_Memory ();

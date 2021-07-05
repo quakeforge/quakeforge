@@ -97,7 +97,6 @@ void Con_Init (const char *plugin_name);
 void Con_ExecLine (const char *line);
 
 void Con_ProcessInput (void);
-void Con_KeyEvent (knum_t key, short unicode, qboolean down);
 void Con_SetOrMask (int mask);
 void Con_NewMap (void);
 

@@ -58,9 +58,6 @@ EXTRA_libs_video_targets_libQFjs_la_SOURCES= $(joy_linux_src) $(joy_win_src) $(j
 libs_video_targets_libvid_common_la_SOURCES = \
 	libs/video/targets/in_common.c \
 	libs/video/targets/in_event.c \
-	libs/video/targets/keys.c \
-	libs/video/targets/old_keys.c \
-	libs/video/targets/pr_keys.c \
 	libs/video/targets/vid.c
 libs_video_targets_libvid_common_la_CFLAGS=	@PREFER_NON_PIC@
 libs_video_targets_libvid_common_la_LDFLAGS=	@STATIC@

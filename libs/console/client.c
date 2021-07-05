@@ -445,7 +445,7 @@ C_Print (const char *fmt, va_list args)
 }
 
 static void
-C_KeyEvent (knum_t key, short unicode, qboolean down)
+C_KeyEvent (knum_t key, short unicode, qboolean down, void *data)
 {
 	inputline_t *il;
 
@@ -821,6 +821,9 @@ C_Init (void)
 #endif
 
 	Key_KeydestCallback (con_keydest_callback);
+	Key_SetKeyEvent (key_message, C_KeyEvent, 0);
+	Key_SetKeyEvent (key_menu, C_KeyEvent, 0);
+	Key_SetKeyEvent (key_console, C_KeyEvent, 0);
 	Menu_Init ();
 
 	con_notifytime = Cvar_Get ("con_notifytime", "3", CVAR_NONE, NULL,
@@ -946,7 +949,6 @@ static general_funcs_t plugin_info_general_funcs = {
 static console_funcs_t plugin_info_console_funcs = {
 	.print = C_Print,
 	.process_input = C_ProcessInput,
-	.key_event = C_KeyEvent,
 	.draw_console = C_DrawConsole,
 	.check_resize = C_CheckResize,
 	.new_map = C_NewMap,

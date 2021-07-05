@@ -173,13 +173,6 @@ Con_ProcessInput (void)
 }
 
 VISIBLE void
-Con_KeyEvent (knum_t key, short unicode, qboolean down)
-{
-	if (con_module)
-		con_module->functions->console->key_event (key, unicode, down);
-}
-
-VISIBLE void
 Con_SetOrMask (int mask)
 {
 	if (con_module)

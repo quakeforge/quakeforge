@@ -1,7 +1,7 @@
 /*
-	bi_keys.c
+	rua_keys.c
 
-	CSQC key-api builtins
+	Ruamoko key-api builtins
 
 	Copyright (C) 1996-1997  Id Software, Inc.
 
@@ -168,7 +168,7 @@ static builtin_t builtins[] = {
 };
 
 void
-Key_Progs_Init (progs_t *pr)
+RUA_Key_Init (progs_t *pr)
 {
 	PR_RegisterBuiltins (pr, builtins);
 }

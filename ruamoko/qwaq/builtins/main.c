@@ -386,7 +386,6 @@ common_builtins_init (progs_t *pr)
 }
 
 static progsinit_f main_app[] = {
-	Key_Progs_Init,
 	BI_Init,
 	common_builtins_init,
 	QWAQ_EditBuffer_Init,

@@ -41,21 +41,13 @@
 
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
-#include "QF/console.h"
-#include "QF/csqc.h"
 #include "QF/cvar.h"
+#include "QF/dstring.h"
 #include "QF/keys.h"
-#include "QF/screen.h"
 #include "QF/sys.h"
-#include "QF/zone.h"
-#include "QF/gib.h"
 
 #include "compat.h"
 #include "old_keys.h"
-
-#define U __attribute__ ((used))
-static U void (*const key_progs_init)(struct progs_s *) = Key_Progs_Init;
-#undef U
 
 /*  key up events are sent even if in console mode */
 
@@ -669,21 +661,6 @@ Key_Game (knum_t key, short unicode)
 	return false;
 }
 
-/*
-  Key_Console
-
-  Interactive line editing and console scrollback
-*/
-static void
-Key_Console (knum_t key, short unicode)
-{
-	// escape is un-bindable
-	if (keydown[key] == 1 && key && Key_Game (key, unicode))
-		return;
-
-	Con_KeyEvent (key, unicode, keydown[key]);
-}
-
 VISIBLE int
 Key_StringToKeynum (const char *str)
 {
@@ -958,32 +935,6 @@ Key_Bind_f (void)
 }
 
 static void
-Key_GIB_Bind_Get_f (void)
-{
-	const char *key, *cmd;
-	imt_t      *imt;
-	int k;
-
-	if (GIB_Argc () != 2) {
-		GIB_USAGE ("key");
-		return;
-	}
-
-	key = OK_TranslateKeyName (GIB_Argv (1));
-
-	if ((k = Key_StringToKeynum (key)) == -1) {
-		GIB_Error ("bind", "bind::get: invalid key %s", key);
-		return;
-	}
-
-	imt = Key_FindIMT ("imt_mod");
-	if (!imt || !(cmd = Key_GetBinding (imt, k)))
-		GIB_Return ("");
-	else
-		GIB_Return (cmd);
-}
-
-static void
 in_key_togglemenu_f (cvar_t *var)
 {
 	int         k;
@@ -1165,6 +1116,19 @@ keyhelp_f (void)
 	keyhelp = 1;
 }
 
+static key_event_t key_event_handlers[key_last] = { };
+static void    *key_event_data[key_last] = { };
+
+VISIBLE void
+Key_SetKeyEvent (keydest_t keydest, key_event_t callback, void *data)
+{
+	if (keydest < 0 || keydest >= key_last) {
+		Sys_Error ("Key_SetKeyEvent: invalid keydest: %d", keydest);
+	}
+	key_event_handlers[keydest] = callback;
+	key_event_data[keydest] = data;
+}
+
 /*
   Key_Event
 
@@ -1188,32 +1152,29 @@ Key_Event (knum_t key, short unicode, qboolean down)
 		keydown[key] = 0;
 	}
 
-	// handle escape specially, so the user can never unbind it
-	if (key == key_togglemenu || key == key_toggleconsole) {
-		Key_Console (key, unicode);
+	// handle menu and console toggle keys specially so the user can never
+	// override or unbind them
+	//FIXME maybe still a tad over-coupled. Use callbacks for menu and console
+	//toggles? Should keys know anything about menu and console?
+	if (key_dest != key_menu && key == key_togglemenu && keydown[key] == 1) {
+		Cbuf_AddText (cbuf, "togglemenu");
+		return;
+	} else if (key_dest != key_console && key == key_toggleconsole
+			   && keydown[key] == 1) {
+		Cbuf_AddText (cbuf, "toggleconsole");
 		return;
 	}
 
-	if (!down && Key_Game (key, unicode))
-		return;
-
-	// if not a consolekey, send to the interpreter no matter what mode is
-	switch (key_dest) {
-		case key_game:
-		case key_demo:
-			Key_Game (key, unicode);
-			return;
-		case key_message:
-		case key_menu:
-		case key_console:
-			Key_Console (key, unicode);
-			return;
-		case key_unfocused:
-			return;
-		case key_last:
-			break;	// should not happen, so hit the error
+	if (key_dest < 0 || key_dest >= key_last) {
+		Sys_Error ("Bad key_dest");
 	}
-	Sys_Error ("Bad key_dest");
+
+	if (!Key_Game (key, unicode)) {
+		if (key_event_handlers[key_dest]) {
+			key_event_handlers[key_dest] (key, unicode, down,
+										  key_event_data[key_dest]);
+		}
+	}
 }
 
 VISIBLE void
@@ -1344,9 +1305,6 @@ Key_Init (cbuf_t *cb)
 	Cmd_AddCommand ("keyhelp", keyhelp_f, "display the keyname for the next "
 					"RECOGNIZED key-press. If the key pressed produces no "
 					"output, " PACKAGE_NAME " does not recognise that key.");
-
-	GIB_Builtin_Add ("bind::get", Key_GIB_Bind_Get_f);
-
 }
 
 void
@@ -1371,7 +1329,7 @@ Key_GetBinding (imt_t *imt, knum_t key)
 VISIBLE void
 Key_SetKeyDest(keydest_t kd)
 {
-	if ((int) kd < key_unfocused || kd >= key_last) {
+	if (kd < 0 || kd >= key_last) {
 		Sys_Error ("Bad key_dest: %d", kd);
 	}
 	Sys_MaskPrintf (SYS_input, "Key_SetKeyDest: %s\n", keydest_names[kd]);

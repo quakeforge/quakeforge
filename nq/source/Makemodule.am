@@ -45,6 +45,8 @@ nq_cl_plugin_LIBS= \
 		@client_static_plugin_libs@
 
 nq_client_LIBFILES= \
+		libs/gib/libQFgib_client.la \
+		libs/ruamoko/libQFruamoko_client.la \
 		libs/entity/libQFentity.la \
 		libs/video/targets/libQFjs.la \
 		libs/audio/libQFcd.la \
@@ -62,6 +64,7 @@ nq_common_LIBFILES= \
 		libs/ruamoko/libQFruamoko.la \
 		libs/gamecode/libQFgamecode.la \
 		libs/ui/libQFui.la \
+		libs/input/libQFinput.la \
 		libs/util/libQFutil.la
 
 nq_client_LIBS=	$(nq_client_LIBFILES) $(nq_common_LIBFILES)

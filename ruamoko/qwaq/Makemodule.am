@@ -42,12 +42,9 @@ qwaq_app_dat_src= \
 	ruamoko/qwaq/ui/view.r	\
 	ruamoko/qwaq/ui/window.r
 
-#FIXME this coupling is horrible
 qwaq_curses_libs= \
-	libs/video/targets/libvid_common.la \
-	libs/console/libQFconsole.la \
 	libs/ui/libQFui.la \
-	libs/gib/libQFgib.la
+	libs/input/libQFinput.la
 
 ruamoko_qwaq_qwaq_curses_SOURCES= \
 	ruamoko/qwaq/builtins/main.c \
@@ -68,6 +65,7 @@ qwaq_client_libs= \
 	$(top_builddir)/libs/entity/libQFentity.la \
 	$(top_builddir)/libs/console/libQFconsole.la \
 	$(top_builddir)/libs/ui/libQFui.la \
+	$(top_builddir)/libs/input/libQFinput.la \
 	$(top_builddir)/libs/video/targets/libQFjs.la \
 	$(top_builddir)/libs/audio/libQFcd.la \
 	$(top_builddir)/libs/audio/libQFsound.la \
@@ -75,11 +73,11 @@ qwaq_client_libs= \
 
 qwaq_x11_libs= \
 	$(qwaq_cl_plugin_libs) \
+	${top_builddir}/libs/ruamoko/libQFruamoko_client.la \
 	$(top_builddir)/libs/video/renderer/libQFrenderer.la \
 	$(top_builddir)/libs/models/libQFmodels.la \
 	$(top_builddir)/libs/video/targets/libQFx11.la \
-	$(qwaq_client_libs) \
-	$(top_builddir)/libs/gib/libQFgib.la
+	$(qwaq_client_libs)
 ruamoko_qwaq_qwaq_x11_SOURCES=ruamoko/qwaq/builtins/qwaq.c ruamoko/qwaq/builtins/qwaq-bi.c
 ruamoko_qwaq_qwaq_x11_LDADD= $(qwaq_x11_libs) $(QWAQ_LIBS) \
 				$(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
