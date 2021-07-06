@@ -69,7 +69,7 @@ XMMS_LIBS= @XMMS_LIBS@
 PAK=$(top_builddir)/pak$(EXEEXT)
 QFCC_DEP=qfcc$(EXEEXT)
 QFCC=$(top_builddir)/$(QFCC_DEP)
-QWAQ_CURSES=$(top_builddir)/ruamoko/qwaq/qwaq-curses$(EXEEXT)
+QWAQ=$(top_builddir)/ruamoko/qwaq/qwaq-cmd$(EXEEXT)
 
 GZ=@progs_gz@
 

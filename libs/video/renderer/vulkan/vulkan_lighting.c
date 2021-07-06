@@ -768,6 +768,7 @@ create_view (VkImage image, int baseLayer, int data, int id, vulkan_ctx_t *ctx)
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW, view,
 						 va (ctx->va_ctx, "iview:shadowmap:%s:%d",
 							 viewtype, id));
+	(void) viewtype;//silence unused warning when vulkan debug disabled
 	return view;
 }
 

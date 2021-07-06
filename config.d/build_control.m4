@@ -276,8 +276,13 @@ if test "x$ENABLE_tools_qfvis" = xyes; then
 	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qwaq" = xyes; then
-	if test "x$HAVE_PANEL" = xyes -a "x$HAVE_PTHREAD" = xyes; then
+	if test "x$HAVE_NCURSES" == "xyes" -a "x$HAVE_PANEL" = xyes -a "x$HAVE_PTHREAD" = xyes; then
 		QWAQ_TARGETS="$QWAQ_TARGETS ruamoko/qwaq/qwaq-curses\$(EXEEXT)"
+		dnl FIXME move key code (maybe to ui?)
+		QF_NEED(vid, [common])
+	fi
+	if test "x$HAVE_PTHREAD" = xyes; then
+		QWAQ_TARGETS="$QWAQ_TARGETS ruamoko/qwaq/qwaq-cmd\$(EXEEXT)"
 	fi
 	QF_NEED(tools,[qfcc])
 	QF_NEED(ruamoko,[qwaq])

@@ -21,9 +21,13 @@ typedef struct qwaq_thread_s {
 	void       *data;
 } qwaq_thread_t;
 
+typedef struct qwaq_thread_set_s DARRAY_TYPE(qwaq_thread_t *) qwaq_thread_set_t;
+
 void BI_Init (progs_t *pr);
 void QWAQ_EditBuffer_Init (progs_t *pr);
 extern struct cbuf_s *qwaq_cbuf;
 qwaq_thread_t *create_thread (void *(*thread_func) (qwaq_thread_t *), void *);
+
+int qwaq_init_threads (qwaq_thread_set_t *thread_data);
 
 #endif//__qwaq_h

@@ -284,7 +284,7 @@ libs/video/renderer/vulkan/shader.lo: libs/video/renderer/vulkan/shader.c $(vksh
 libs/video/renderer/vulkan/vulkan_vid_common.lo: libs/video/renderer/vulkan/vulkan_vid_common.c $(vkparse_src) $(pipeline_gen) ${renderpass_gen}
 
 
-qwaq_curses = $(top_builddir)/ruamoko/qwaq/qwaq-curses$(EXEEXT)
+qwaq_cmd = $(top_builddir)/ruamoko/qwaq/qwaq-cmd$(EXEEXT)
 vkparse_cinc = $(top_builddir)/libs/video/renderer/vulkan/vkparse.cinc
 vkparse_hinc = $(top_builddir)/libs/video/renderer/vulkan/vkparse.hinc
 vkparse_src = \
@@ -409,8 +409,8 @@ V_VKGEN_ = $(V_VKGEN_@AM_DEFAULT_V@)
 V_VKGEN_0 = @echo "  VKGEN   " $@;
 V_VKGEN_1 =
 
-$(vkparse_cinc): $(vkgen) $(qwaq_curses) $(vkparse_plist)
-	$(V_VKGEN)$(QWAQ_CURSES) $(vkgen) -- $(vkparse_plist) $(vkparse_cinc).t $(vkparse_hinc).t &&\
+$(vkparse_cinc): $(vkgen) $(qwaq_cmd) $(vkparse_plist)
+	$(V_VKGEN)$(QWAQ) $(vkgen) -- $(vkparse_plist) $(vkparse_cinc).t $(vkparse_hinc).t &&\
 	$(am__mv) $(vkparse_cinc).t $(vkparse_cinc) &&\
 	$(am__mv) $(vkparse_hinc).t $(vkparse_hinc)
 
@@ -418,7 +418,6 @@ $(vkparse_hinc): $(vkparse_cinc)
 # do nothing: hinc generated at the same time as cinc
 
 CLEANFILES += \
-	$(top_builddir)/qwaq-curses.log \
 	libs/video/renderer/glsl/*.vc \
 	libs/video/renderer/glsl/*.fc \
 	libs/video/renderer/glsl/*.slc \

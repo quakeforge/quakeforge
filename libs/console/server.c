@@ -85,9 +85,9 @@ static QFile  *log_file;
 static cvar_t *sv_logfile;
 static cvar_t *sv_conmode;
 
-static void C_KeyEvent (knum_t key, short unicode, qboolean down);
-
 #ifdef HAVE_NCURSES
+
+static void key_event (knum_t key, short unicode, qboolean down);
 
 enum {
 	sv_resize_x = 1,
@@ -465,7 +465,7 @@ process_input (void)
 				if (ch < 0 || ch >= 256)
 					ch = 0;
 		}
-		C_KeyEvent (ch, 0, 1);
+		key_event (ch, 0, 1);
 	}
 }
 
@@ -755,14 +755,6 @@ C_ProcessInput (void)
 				break;
 			Con_ExecLine (cmd);
 		}
-}
-
-static void
-C_KeyEvent (knum_t key, short unicode, qboolean down)
-{
-#ifdef HAVE_NCURSES
-	key_event (key, unicode, down);
-#endif
 }
 
 static void

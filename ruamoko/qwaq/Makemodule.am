@@ -51,12 +51,24 @@ ruamoko_qwaq_qwaq_curses_SOURCES= \
 	ruamoko/qwaq/builtins/curses.c \
 	ruamoko/qwaq/builtins/debug.c \
 	ruamoko/qwaq/builtins/editbuffer.c \
-	ruamoko/qwaq/builtins/input.c
+	ruamoko/qwaq/builtins/input.c \
+	ruamoko/qwaq/builtins/qwaq-curses.c
 
 ruamoko_qwaq_qwaq_curses_LDADD= $(qwaq_curses_libs) $(QWAQ_LIBS) \
 				$(PANEL_LIBS) $(NCURSES_LIBS) $(PTHREAD_LDFLAGS) $(DL_LIBS)
 ruamoko_qwaq_qwaq_curses_LDFLAGS=
 ruamoko_qwaq_qwaq_curses_DEPENDENCIES= $(qwaq_curses_libs) $(QWAQ_DEPS)
+
+qwaq_cmd_libs=
+
+ruamoko_qwaq_qwaq_cmd_SOURCES= \
+	ruamoko/qwaq/builtins/main.c \
+	ruamoko/qwaq/builtins/qwaq-cmd.c
+
+ruamoko_qwaq_qwaq_cmd_LDADD= $(qwaq_cmd_libs) $(QWAQ_LIBS) \
+				$(PTHREAD_LDFLAGS) $(DL_LIBS)
+ruamoko_qwaq_qwaq_cmd_LDFLAGS=
+ruamoko_qwaq_qwaq_cmd_DEPENDENCIES= $(qwaq_cmd_libs) $(QWAQ_DEPS)
 
 qwaq_cl_plugin_libs= \
 	@client_static_plugin_libs@
@@ -109,7 +121,11 @@ ruamoko/qwaq/z-transform.dat$(EXEEXT): $(ruamoko_qwaq_z_transform_obj) $(QFCC_DE
 include $(ruamoko_qwaq_z_transform_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_z_transform_dep)
 
-EXTRA_PROGRAMS += ruamoko/qwaq/qwaq-curses ruamoko/qwaq/qwaq-x11
+EXTRA_PROGRAMS += \
+	ruamoko/qwaq/qwaq-cmd \
+	ruamoko/qwaq/qwaq-curses \
+	ruamoko/qwaq/qwaq-x11
+
 EXTRA_DIST += \
 	$(qwaq_dat_src) \
 	ruamoko/qwaq/debugger/debug.h \
