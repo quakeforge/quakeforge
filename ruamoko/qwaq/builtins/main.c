@@ -290,7 +290,7 @@ run_progs (void *data)
 	__auto_type thread = (qwaq_thread_t *) data;
 
 	spawn_progs (thread);
-	Sys_Printf ("starting thread for %s\n", thread->args.a[0]);
+	//Sys_Printf ("starting thread for %s\n", thread->args.a[0]);
 
 	PR_ExecuteProgram (thread->pr, thread->main_func);
 	PR_PopFrame (thread->pr);

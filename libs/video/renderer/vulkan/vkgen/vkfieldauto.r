@@ -17,7 +17,7 @@
 
 -writeParseData
 {
-	printf("FieldDef: '%s' '%s'\n", struct_name, field_name);
+	//printf("FieldDef: '%s' '%s'\n", struct_name, field_name);
 	return self;
 }
 

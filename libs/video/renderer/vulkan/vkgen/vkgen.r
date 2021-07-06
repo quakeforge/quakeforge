@@ -60,38 +60,38 @@ type_is_null (qfot_type_t *type)
 
 void print_type (qfot_type_t *type)
 {
-	printf ("type: %p %d %d %s", type, type.meta, type.size, type.encoding);
+	//printf ("type: %p %d %d %s", type, type.meta, type.size, type.encoding);
 	switch (type.meta) {
 		case ty_basic:
-			printf (" %d", type.type);
+			//printf (" %d", type.type);
 			switch (type.type) {
 				case ev_pointer:
 				case ev_field:
-					printf (" ");
+					//printf (" ");
 					print_type (type.fldptr.aux_type);
 					break;
 				case ev_func:
-					printf (" %p %d\n", type.func.return_type,
-							type.func.num_params);
+					//printf (" %p %d\n", type.func.return_type,
+					//		type.func.num_params);
 				default:
-					printf ("\n");
+					//printf ("\n");
 					break;
 			}
 			break;
 		case ty_struct:
 		case ty_union:
 		case ty_enum:
-			printf (" %s %d\n", type.strct.tag, type.strct.num_fields);
+			//printf (" %s %d\n", type.strct.tag, type.strct.num_fields);
 			break;
 		case ty_array:
-			printf (" %p %d %d\n", type.array.type, type.array.base,
-					type.array.size);
+			//printf (" %p %d %d\n", type.array.type, type.array.base,
+			//		type.array.size);
 			break;
 		case ty_class:
-			printf (" %s\n", type.class);
+			//printf (" %s\n", type.class);
 			break;
 		case ty_alias:
-			printf (" %d %s ", type.alias.type, type.alias.name);
+			//printf (" %d %s ", type.alias.type, type.alias.name);
 			print_type (type.alias.aux_type);
 			break;
 	}
@@ -116,7 +116,7 @@ scan_types (void)
 			Type *avail_type = [Type fromType: type];
 			if (avail_type) {
 				if (!Hash_Find (available_types, [avail_type name])) {
-					printf ("scan: %s %s\n", tag, [avail_type name]);
+					//printf ("scan: %s %s\n", tag, [avail_type name]);
 					Hash_Add (available_types, avail_type);
 				}
 			}
@@ -194,7 +194,7 @@ main(int argc, string *argv)
 		string search_name = [str string];
 		id obj = (id) Hash_Find (available_types, search_name);
 		obj = [obj resolveType];
-		printf("obj: %d %s\n", obj, class_get_class_name([obj class]));
+		//printf("obj: %d %s\n", obj, class_get_class_name([obj class]));
 		if (obj && [obj class] == [Struct class]) {
 			[obj addToQueue];
 		}
@@ -213,7 +213,7 @@ main(int argc, string *argv)
 	}
 
 	for (int i = 0; i < argc; i++) {
-		printf ("vkgen %d %s\n", i, argv[i]);
+		//printf ("vkgen %d %s\n", i, argv[i]);
 	}
 
 	arp_end ();
