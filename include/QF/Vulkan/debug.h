@@ -1,7 +1,7 @@
 #ifndef __QF_Vulkan_debug_h
 #define __QF_Vulkan_debug_h
 
-#if defined(_WIN32) && !defined(_WIN64)
+#if (defined(_WIN32) && !defined(_WIN64)) || (__WORDSIZE < 64)
 #define QFV_duCmdBeginLabel(device, cmd, name...)
 #define QFV_duCmdEndLabel(device, cmd)
 #define QFV_duCmdInsertLabel(device, cmd, name...)

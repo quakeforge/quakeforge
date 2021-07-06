@@ -77,7 +77,7 @@ vkWaitForFences (VkDevice device, uint32_t fenceCount, const VkFence *fences,
 				 VkBool32 waitAll, uint64_t timeout)
 {
 	for (uint32_t i = 0; i < fenceCount; i++) {
-		int        *f = (int *)fences[i];
+		int        *f = (int *) (intptr_t) fences[i];
 		if (*f) {
 			wait_count++;
 		}
@@ -90,7 +90,7 @@ static VkResult
 vkResetFences (VkDevice device, uint32_t fenceCount, const VkFence *fences)
 {
 	for (uint32_t i = 0; i < fenceCount; i++) {
-		int        *f = (int *)fences[i];
+		int        *f = (int *) (intptr_t) fences[i];
 		*f = 0;
 	}
 	return VK_SUCCESS;
@@ -99,7 +99,7 @@ vkResetFences (VkDevice device, uint32_t fenceCount, const VkFence *fences)
 static VkResult
 vkGetFenceStatus (VkDevice device, VkFence fence)
 {
-	int        *f = (int *)fence;
+	int        *f = (int *) (intptr_t) fence;
 	return *f ? VK_SUCCESS : VK_NOT_READY;
 }
 
@@ -133,7 +133,7 @@ static VkResult
 vkQueueSubmit (VkQueue queue, uint32_t count, const VkSubmitInfo *submits,
 			   VkFence fence)
 {
-	int        *f = (int *)fence;
+	int        *f = (int *) (intptr_t) fence;
 	*f = 1;
 	return VK_SUCCESS;
 }
