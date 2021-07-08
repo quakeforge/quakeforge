@@ -777,21 +777,22 @@ void
 Draw_FadeScreen (void)
 {
 	int         x, y;
-	byte       *pbuf;
+	int         height = vid.conheight;
+	int         width = vid.conwidth / 4;
+	uint32_t   *pbuf;
 
 	VID_UnlockBuffer ();
 	S_ExtraUpdate ();
 	VID_LockBuffer ();
 
-	for (y = 0; y < vid.conheight; y++) {
-		unsigned int t;
+	for (y = 0; y < height; y++) {
+		uint32_t    mask;
 
-		pbuf = ((byte *)vid.buffer) + vid.rowbytes * y;
-		t = (y & 1) << 1;
+		pbuf = (uint32_t *) ((byte *)vid.buffer + vid.rowbytes * y);
+		mask = 0xff << ((y & 1) << 4);
 
-		for (x = 0; x < vid.conwidth; x++) {
-			if ((x & 3) != t)
-				pbuf[x] = 0;
+		for (x = 0; x < width; x++) {
+			*pbuf++ &= mask;
 		}
 	}
 	vr_data.scr_copyeverything = 1;
