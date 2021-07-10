@@ -182,7 +182,7 @@ SCR_CalcRefdef (void)
 
 	R_SetVrect (&vrect, &refdef->vrect, r_data->lineadj);
 
-	view_setgeometry (vr_data.scr_view, refdef->vrect.x, refdef->vrect.y,
+	view_setgeometry (r_data->scr_view, refdef->vrect.x, refdef->vrect.y,
 					  refdef->vrect.width, refdef->vrect.height);
 
 	// notify the refresh of the change
@@ -265,7 +265,7 @@ SCR_DrawRam (void)
 		return;
 
 	//FIXME view
-	r_funcs->Draw_Pic (vr_data.scr_view->xpos + 32, vr_data.scr_view->ypos,
+	r_funcs->Draw_Pic (r_data->scr_view->xpos + 32, r_data->scr_view->ypos,
 					   scr_ram);
 }
 
@@ -287,7 +287,7 @@ SCR_DrawTurtle (void)
 		return;
 
 	//FIXME view
-	r_funcs->Draw_Pic (vr_data.scr_view->xpos, vr_data.scr_view->ypos,
+	r_funcs->Draw_Pic (r_data->scr_view->xpos, r_data->scr_view->ypos,
 					   scr_turtle);
 }
 
