@@ -56,6 +56,7 @@
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/renderpass.h"
 #include "QF/Vulkan/swapchain.h"
+#include "QF/ui/view.h"
 
 #include "mod_internal.h"
 #include "r_internal.h"
@@ -131,6 +132,8 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	frame->framebuffer = vulkan_ctx->framebuffers->a[imageIndex];
 
 	scr_3dfunc ();
+
+	view_draw (vr_data.scr_view);
 	while (*scr_funcs) {
 		(*scr_funcs) ();
 		scr_funcs++;

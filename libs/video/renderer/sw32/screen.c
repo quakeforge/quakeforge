@@ -50,6 +50,7 @@
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/ui/view.h"
 
 #include "compat.h"
 #include "r_internal.h"
@@ -164,6 +165,7 @@ sw32_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	sw32_D_EnableBackBufferAccess ();		// of all overlay stuff if drawing
 										// directly
 
+	view_draw (vr_data.scr_view);
 	while (*scr_funcs) {
 		(*scr_funcs)();
 		scr_funcs++;
@@ -189,10 +191,10 @@ sw32_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 		vrect.height = vid.height - vr_data.lineadj;
 		vrect.next = 0;
 	} else {
-		vrect.x = scr_vrect.x;
-		vrect.y = scr_vrect.y;
-		vrect.width = scr_vrect.width;
-		vrect.height = scr_vrect.height;
+		vrect.x = vr_data.scr_view->xpos;
+		vrect.y = vr_data.scr_view->ypos;
+		vrect.width = vr_data.scr_view->xlen;
+		vrect.height = vr_data.scr_view->ylen;
 		vrect.next = 0;
 	}
 	sw32_ctx->update (&vrect);

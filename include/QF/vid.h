@@ -56,8 +56,7 @@ typedef struct {
 	quat_t           cshift_color;
 	void			*conbuffer;
 	int				 conrowbytes;
-	int				 conwidth;
-	int				 conheight;
+	struct view_s   *conview;
 	byte			*direct;		// direct drawing to framebuffer, if not
 									//  NULL
 	struct vid_internal_s *vid_internal;

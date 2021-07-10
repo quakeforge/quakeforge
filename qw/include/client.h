@@ -331,7 +331,8 @@ extern struct cbuf_s *cl_stbuf;
 
 void Cvar_Info (struct cvar_s *var);
 
-void CL_NetGraph (void);
+struct view_s;
+void CL_NetGraph (struct view_s *view);
 void CL_UpdateScreen (double realtime);
 
 void CL_SetState (cactive_t state);

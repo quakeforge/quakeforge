@@ -58,6 +58,7 @@
 #include "QF/GLSL/qf_draw.h"
 #include "QF/GLSL/qf_textures.h"
 #include "QF/GLSL/qf_vid.h"
+#include "QF/ui/view.h"
 
 #include "r_internal.h"
 #include "vid_gl.h"
@@ -184,6 +185,8 @@ glsl_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	GLSL_DrawReset ();
 	SCR_TileClear ();
 	GLSL_Set2DScaled ();
+
+	view_draw (vr_data.scr_view);
 	while (*scr_funcs) {
 		(*scr_funcs)();
 		scr_funcs++;

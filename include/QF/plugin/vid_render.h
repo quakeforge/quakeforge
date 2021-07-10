@@ -176,7 +176,7 @@ typedef struct vid_render_funcs_s {
 typedef struct vid_render_data_s {
 	viddef_t   *vid;
 	refdef_t   *refdef;
-	vrect_t    *scr_vrect;
+	struct view_s *scr_view;
 	int         scr_copytop;
 	int         scr_copyeverything;
 	int         scr_fullupdate;	// set to 0 to force full redraw

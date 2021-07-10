@@ -38,6 +38,7 @@
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/projection.h"
+#include "QF/ui/view.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
@@ -105,8 +106,8 @@ Vulkan_CalcProjectionMatrices (vulkan_ctx_t *ctx)
 
 	__auto_type mat = &ctx->matrices;
 
-	int width = vid.conwidth;
-	int height = vid.conheight;
+	int width = vid.conview->xlen;
+	int height = vid.conview->ylen;
 	QFV_Orthographic (mat->projection_2d, 0, width, 0, height, -99999, 99999);
 
 	float       aspect = (float) r_refdef.vrect.width / r_refdef.vrect.height;

@@ -45,6 +45,7 @@
 #include "QF/quakefs.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
+#include "QF/ui/view.h"
 
 #include "d_iface.h"
 #include "r_internal.h"
@@ -265,7 +266,7 @@ sw32_Draw_Character (int x, int y, unsigned int chr)
 	if (y <= -8)
 		return;							// totally off screen
 
-	if (y > vid.conheight - 8 || x < 0 || x > vid.conwidth - 8)
+	if (y > vid.conview->ylen - 8 || x < 0 || x > vid.conview->xlen - 8)
 		return;
 	if (chr > 255)
 		return;
@@ -538,8 +539,8 @@ sw32_Draw_Crosshair (void)
 	if ((unsigned) ch >= sizeof (crosshair_func) / sizeof (crosshair_func[0]))
 		return;
 
-	x = vid.conwidth / 2 + cl_crossx->int_val;
-	y = vid.conheight / 2 + cl_crossy->int_val;
+	x = vid.conview->xlen / 2 + cl_crossx->int_val;
+	y = vid.conview->ylen / 2 + cl_crossy->int_val;
 
 	crosshair_func[ch] (x, y);
 }
@@ -560,8 +561,8 @@ sw32_Draw_Pic (int x, int y, qpic_t *pic)
 	byte       *source, tbyte;
 	int         v, u;
 
-	if (x < 0 || (x + pic->width) > vid.conwidth
-		|| y < 0 || (y + pic->height) > vid.conheight) {
+	if (x < 0 || (x + pic->width) > vid.conview->xlen
+		|| y < 0 || (y + pic->height) > vid.conview->ylen) {
 		Sys_MaskPrintf (SYS_vid, "Draw_Pic: bad coordinates");
 		sw32_Draw_SubPic (x, y, pic, 0, 0, pic->width, pic->height);
 		return;
@@ -659,8 +660,8 @@ sw32_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	byte       *source, tbyte;
 	int   v, u;
 
-	if ((x < 0) || (x + width > vid.conwidth)
-		|| (y < 0) || (y + height > vid.conheight)) {
+	if ((x < 0) || (x + width > vid.conview->xlen)
+		|| (y < 0) || (y + height > vid.conview->ylen)) {
 		Sys_MaskPrintf (SYS_vid, "Draw_SubPic: bad coordinates");
 	}
 	// first, clip to screen
@@ -746,14 +747,14 @@ sw32_Draw_ConsoleBackground (int lines, byte alpha)
 		byte       *dest = vid.conbuffer;
 
 		for (y = 0; y < lines; y++, dest += vid.conrowbytes) {
-			v = (vid.conheight - lines + y) * 200 / vid.conheight;
+			v = (vid.conview->ylen - lines + y) * 200 / vid.conview->ylen;
 			src = conback->data + v * 320;
-			if (vid.conwidth == 320)
-				memcpy (dest, src, vid.conwidth);
+			if (vid.conview->xlen == 320)
+				memcpy (dest, src, vid.conview->xlen);
 			else {
 				f = 0;
-				fstep = 320 * 0x10000 / vid.conwidth;
-				for (x = 0; x < vid.conwidth; x += 4) {
+				fstep = 320 * 0x10000 / vid.conview->xlen;
+				for (x = 0; x < vid.conview->xlen; x += 4) {
 					dest[x] = src[f >> 16];
 					f += fstep;
 					dest[x + 1] = src[f >> 16];
@@ -774,11 +775,11 @@ sw32_Draw_ConsoleBackground (int lines, byte alpha)
 		for (y = 0; y < lines; y++, dest += (vid.conrowbytes >> 1)) {
 			// FIXME: pre-expand to native format?
 			// FIXME: does the endian switching go away in production?
-			v = (vid.conheight - lines + y) * 200 / vid.conheight;
+			v = (vid.conview->ylen - lines + y) * 200 / vid.conview->ylen;
 			src = conback->data + v * 320;
 			f = 0;
-			fstep = 320 * 0x10000 / vid.conwidth;
-			for (x = 0; x < vid.conwidth; x += 4) {
+			fstep = 320 * 0x10000 / vid.conview->xlen;
+			for (x = 0; x < vid.conview->xlen; x += 4) {
 				dest[x] = sw32_8to16table[src[f >> 16]];
 				f += fstep;
 				dest[x + 1] = sw32_8to16table[src[f >> 16]];
@@ -795,11 +796,11 @@ sw32_Draw_ConsoleBackground (int lines, byte alpha)
 	{
 		unsigned int *dest = (unsigned int *) vid.conbuffer;
 		for (y = 0; y < lines; y++, dest += (vid.conrowbytes >> 2)) {
-			v = (vid.conheight - lines + y) * 200 / vid.conheight;
+			v = (vid.conview->ylen - lines + y) * 200 / vid.conview->ylen;
 			src = conback->data + v * 320;
 			f = 0;
-			fstep = 320 * 0x10000 / vid.conwidth;
-			for (x = 0; x < vid.conwidth; x += 4) {
+			fstep = 320 * 0x10000 / vid.conview->xlen;
+			for (x = 0; x < vid.conview->xlen; x += 4) {
 				dest[x    ] = d_8to24table[src[f >> 16]];f += fstep;
 				dest[x + 1] = d_8to24table[src[f >> 16]];f += fstep;
 				dest[x + 2] = d_8to24table[src[f >> 16]];f += fstep;
@@ -815,7 +816,8 @@ sw32_Draw_ConsoleBackground (int lines, byte alpha)
 	}
 
 //	if (!cls.download)
-	sw32_Draw_AltString (vid.conwidth - strlen (cl_verstring->string) * 8 - 11,
+	int         len = strlen (cl_verstring->string);
+	sw32_Draw_AltString (vid.conview->xlen - len * 8 - 11,
 						 lines - 14, cl_verstring->string);
 }
 
@@ -1174,8 +1176,8 @@ sw32_Draw_Fill (int x, int y, int w, int h, int c)
 {
 	int         u, v;
 
-	if (x < 0 || x + w > vid.conwidth
-		|| y < 0 || y + h > vid.conheight) {
+	if (x < 0 || x + w > vid.conview->xlen
+		|| y < 0 || y + h > vid.conview->ylen) {
 		Sys_MaskPrintf (SYS_vid, "Bad Draw_Fill(%d, %d, %d, %d, %c)\n",
 						x, y, w, h, c);
 	}
@@ -1228,12 +1230,12 @@ sw32_Draw_FadeScreen (void)
 	switch(sw32_r_pixbytes) {
 	case 1:
 	{
-		for (y = 0; y < vid.conheight; y++) {
+		for (y = 0; y < vid.conview->ylen; y++) {
 			unsigned int t;
 			byte     *pbuf = (byte *) ((byte *) vid.buffer + vid.rowbytes * y);
 			t = (y & 1) << 1;
 
-			for (x = 0; x < vid.conwidth; x++) {
+			for (x = 0; x < vid.conview->xlen; x++) {
 				if ((x & 3) != t)
 					pbuf[x] = 0;
 			}
@@ -1242,21 +1244,21 @@ sw32_Draw_FadeScreen (void)
 	break;
 	case 2:
 	{
-		for (y = 0; y < vid.conheight; y++) {
+		for (y = 0; y < vid.conview->ylen; y++) {
 			unsigned short *pbuf = (unsigned short *)
 				((byte *) vid.buffer + vid.rowbytes * y);
 			pbuf = (unsigned short *) vid.buffer + (vid.rowbytes >> 1) * y;
-			for (x = 0; x < vid.conwidth; x++)
+			for (x = 0; x < vid.conview->xlen; x++)
 				pbuf[x] = (pbuf[x] >> 1) & 0x7BEF;
 		}
 	}
 	break;
 	case 4:
 	{
-		for (y = 0; y < vid.conheight; y++) {
+		for (y = 0; y < vid.conview->ylen; y++) {
 			unsigned int *pbuf = (unsigned int *)
 				((byte *) vid.buffer + vid.rowbytes * y);
-			for (x = 0; x < vid.conwidth; x++)
+			for (x = 0; x < vid.conview->xlen; x++)
 				pbuf[x] = (pbuf[x] >> 1) & 0x7F7F7F7F;
 		}
 	}

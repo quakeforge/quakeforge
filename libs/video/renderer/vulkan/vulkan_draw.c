@@ -61,6 +61,7 @@
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/scrap.h"
 #include "QF/Vulkan/staging.h"
+#include "QF/ui/view.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
@@ -508,10 +509,10 @@ Vulkan_Draw_Character (int x, int y, unsigned int chr, vulkan_ctx_t *ctx)
 	if (chr == ' ') {
 		return;
 	}
-	if (y <= -8 || y >= vid.conheight) {
+	if (y <= -8 || y >= vid.conview->ylen) {
 		return;
 	}
-	if (x <= -8 || x >= vid.conwidth) {
+	if (x <= -8 || x >= vid.conview->xlen) {
 		return;
 	}
 	queue_character (x, y, chr, ctx);
@@ -525,11 +526,11 @@ Vulkan_Draw_String (int x, int y, const char *str, vulkan_ctx_t *ctx)
 	if (!str || !str[0]) {
 		return;
 	}
-	if (y <= -8 || y >= vid.conheight) {
+	if (y <= -8 || y >= vid.conview->ylen) {
 		return;
 	}
 	while (*str) {
-		if ((chr = *str++) != ' ' && x >= -8 && x < vid.conwidth) {
+		if ((chr = *str++) != ' ' && x >= -8 && x < vid.conview->xlen) {
 			queue_character (x, y, chr, ctx);
 		}
 		x += 8;
@@ -545,11 +546,11 @@ Vulkan_Draw_nString (int x, int y, const char *str, int count,
 	if (!str || !str[0]) {
 		return;
 	}
-	if (y <= -8 || y >= vid.conheight) {
+	if (y <= -8 || y >= vid.conview->ylen) {
 		return;
 	}
 	while (count-- > 0 && *str) {
-		if ((chr = *str++) != ' ' && x >= -8 && x < vid.conwidth) {
+		if ((chr = *str++) != ' ' && x >= -8 && x < vid.conview->xlen) {
 			queue_character (x, y, chr, ctx);
 		}
 		x += 8;
@@ -564,12 +565,12 @@ Vulkan_Draw_AltString (int x, int y, const char *str, vulkan_ctx_t *ctx)
 	if (!str || !str[0]) {
 		return;
 	}
-	if (y <= -8 || y >= vid.conheight) {
+	if (y <= -8 || y >= vid.conview->ylen) {
 		return;
 	}
 	while (*str) {
 		if ((chr = *str++ | 0x80) != (' ' | 0x80)
-			&& x >= -8 && x < vid.conwidth) {
+			&& x >= -8 && x < vid.conview->xlen) {
 			queue_character (x, y, chr, ctx);
 		}
 		x += 8;
@@ -632,7 +633,7 @@ Vulkan_Draw_ConsoleBackground (int lines, byte alpha, vulkan_ctx_t *ctx)
 	cpic = Vulkan_Draw_CachePic ("gfx/conback.lmp", false, ctx);
 	int         ofs = max (0, cpic->height - lines);
 	lines = min (lines, cpic->height);
-	draw_pic (0, 0, vid.conwidth, lines, cpic,
+	draw_pic (0, 0, vid.conview->xlen, lines, cpic,
 			  0, ofs, cpic->width, lines, color, frame);
 }
 
@@ -660,8 +661,8 @@ draw_blendscreen (quat_t color, vulkan_ctx_t *ctx)
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
-	draw_pic (0, 0, vid.conwidth, vid.conheight, dctx->white_pic, 0, 0, 1, 1,
-			  color, frame);
+	draw_pic (0, 0, vid.conview->xlen, vid.conview->ylen, dctx->white_pic,
+			  0, 0, 1, 1, color, frame);
 }
 
 void

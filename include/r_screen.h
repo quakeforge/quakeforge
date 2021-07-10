@@ -64,7 +64,6 @@ extern int         clearconsole;
 extern int         clearnotify;
 
 extern vrect_t    *pconupdate;
-extern vrect_t     scr_vrect;
 
 extern qboolean    scr_skipupdate;
 

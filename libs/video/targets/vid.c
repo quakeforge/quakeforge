@@ -42,6 +42,7 @@
 #include "QF/qargs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/ui/view.h"
 
 #include "compat.h"
 #include "d_iface.h"
@@ -62,6 +63,8 @@ cvar_t	   *vid_width;
 cvar_t	   *vid_height;
 
 cvar_t     *vid_fullscreen;
+
+static view_t conview;
 
 void
 VID_GetWindowSize (int def_w, int def_h)
@@ -112,6 +115,7 @@ VID_GetWindowSize (int def_w, int def_h)
 
 	viddef.width = vid_width->int_val;
 	viddef.height = vid_height->int_val;
+	viddef.conview = &conview;
 
 	con_width = Cvar_Get ("con_width", va (0, "%d", viddef.width), CVAR_NONE,
 						  NULL, "console effective width (GL only)");
@@ -123,9 +127,9 @@ VID_GetWindowSize (int def_w, int def_h)
 	// make con_width a multiple of 8 and >= 320
 	Cvar_Set (con_width, va (0, "%d", max (con_width->int_val & ~7, 320)));
 	Cvar_SetFlags (con_width, con_width->flags | CVAR_ROM);
-	viddef.conwidth = con_width->int_val;
+	viddef.conview->xlen = con_width->int_val;
 
-	conheight = (viddef.conwidth * viddef.height) / viddef.width;
+	conheight = (viddef.conview->xlen * viddef.height) / viddef.width;
 	con_height = Cvar_Get ("con_height", va (0, "%d", conheight), CVAR_NONE,
 						   NULL, "console effective height (GL only)");
 	if ((pnum = COM_CheckParm ("-conheight"))) {
@@ -136,7 +140,7 @@ VID_GetWindowSize (int def_w, int def_h)
 	// make con_height >= 200
 	Cvar_Set (con_height, va (0, "%d", max (con_height->int_val, 200)));
 	Cvar_SetFlags (con_height, con_height->flags | CVAR_ROM);
-	viddef.conheight = con_height->int_val;
+	viddef.conview->ylen = con_height->int_val;
 
 	Con_CheckResize ();     // Now that we have a window size, fix console
 }
@@ -243,8 +247,8 @@ VID_InitBuffers (void)
 	int         buffersize, zbuffersize, cachesize = 1;
 
 	// No console scaling in the sw renderer
-	viddef.conwidth = viddef.width;
-	viddef.conheight = viddef.height;
+	viddef.conview->xlen = viddef.width;
+	viddef.conview->ylen = viddef.height;
 	Con_CheckResize ();
 
 	// Calculate the sizes we want first

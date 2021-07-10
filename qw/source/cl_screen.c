@@ -44,40 +44,30 @@
 #include "QF/pcx.h"
 #include "QF/screen.h"
 
+#include "QF/ui/view.h"
+
 #include "sbar.h"
 
 #include "client/view.h"
 
 #include "qw/include/client.h"
+#include "qw/include/cl_parse.h"
 
-static qpic_t  *scr_net;
+static view_t  *net_view;
+static view_t  *loading_view;
+static view_t  *graph_view;
 
 static void
-SCR_DrawNet (void)
+draw_pic (view_t *view)
 {
-	if (cls.netchan.outgoing_sequence - cls.netchan.incoming_acknowledged <
-		UPDATE_BACKUP - 1)
-		return;
-	if (cls.demoplayback)
-		return;
-
-	if (!scr_net)
-		scr_net = r_funcs->Draw_PicFromWad ("net");
-
-	r_funcs->Draw_Pic (r_data->scr_vrect->x + 64, r_data->scr_vrect->y,
-					   scr_net);
+	r_funcs->Draw_Pic (view->xabs, view->yabs, view->data);
 }
 
 static void
-SCR_DrawLoading (void)
+draw_cachepic (view_t *view)
 {
-	qpic_t     *pic;
-
-	if (!cl.loading)
-		return;
-	pic = r_funcs->Draw_CachePic ("gfx/loading.lmp", 1);
-	r_funcs->Draw_Pic ((r_data->vid->conwidth - pic->width) / 2,
-					   (r_data->vid->conheight - 48 - pic->height) / 2, pic);
+	qpic_t     *pic = r_funcs->Draw_CachePic (view->data, 1);
+	r_funcs->Draw_Pic (view->xabs, view->yabs, pic);
 }
 
 static void
@@ -96,30 +86,49 @@ SCR_CShift (void)
 	r_funcs->Draw_BlendScreen (r_data->vid->cshift_color);
 }
 
+static void
+scr_draw_views (void)
+{
+	net_view->visible = (!cls.demoplayback
+						 && (cls.netchan.outgoing_sequence
+							 - cls.netchan.incoming_acknowledged)
+						    >= UPDATE_BACKUP - 1);
+	loading_view->visible = cl.loading;
+	graph_view->visible = r_netgraph->int_val != 0;
+
+	//FIXME don't do every frame
+	view_move (graph_view, graph_view->xpos, sb_lines);
+	view_setgravity (graph_view,
+					 hud_swap->int_val ? grav_southeast : grav_southwest);
+
+	view_draw (r_data->vid->conview);
+}
+
 static SCR_Func scr_funcs_normal[] = {
 	0, //Draw_Crosshair,
 	0, //SCR_DrawRam,
 	0, //SCR_DrawTurtle,
 	0, //SCR_DrawPause,
-	SCR_DrawNet,
-	CL_NetGraph,
+	//CL_NetGraph,FIXME
 	Sbar_Draw,
 	SCR_CShift,
 	Sbar_DrawCenterPrint,
 	Con_DrawConsole,
-	SCR_DrawLoading,
+	scr_draw_views,
 	0
 };
 
 static SCR_Func scr_funcs_intermission[] = {
 	Sbar_IntermissionOverlay,
 	Con_DrawConsole,
+	scr_draw_views,
 	0
 };
 
 static SCR_Func scr_funcs_finale[] = {
 	Sbar_FinaleOverlay,
 	Con_DrawConsole,
+	scr_draw_views,
 	0,
 };
 
@@ -136,6 +145,35 @@ CL_UpdateScreen (double realtime)
 
 	if (index >= sizeof (scr_funcs) / sizeof (scr_funcs[0]))
 		index = 0;
+
+	if (!net_view) {
+		qpic_t     *pic = r_funcs->Draw_PicFromWad ("net");
+		net_view = view_new (64, 0, pic->width, pic->height, grav_northwest);
+		net_view->draw = draw_pic;
+		net_view->data = pic;
+		net_view->visible = 0;
+		view_add (r_data->scr_view, net_view);
+	}
+
+	if (!loading_view) {
+		const char *name = "gfx/loading.lmp";
+		qpic_t     *pic = r_funcs->Draw_CachePic (name, 1);
+		loading_view = view_new (0, -24, pic->width, pic->height, grav_center);
+		loading_view->draw = draw_cachepic;
+		loading_view->data = (void *) name;
+		loading_view->visible = 0;
+		view_add (r_data->vid->conview, loading_view);
+	}
+
+	if (!graph_view) {
+		graph_view = view_new (0, -24,
+							   NET_TIMINGS + 16,
+							   r_data->graphheight->int_val + 25,
+							   grav_southwest);
+		graph_view->draw = CL_NetGraph;
+		graph_view->visible = 0;
+		view_add (r_data->vid->conview, graph_view);
+	}
 
 	//FIXME not every time
 	if (cls.state == ca_active) {

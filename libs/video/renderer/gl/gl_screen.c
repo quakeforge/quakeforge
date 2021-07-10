@@ -55,6 +55,7 @@
 #include "QF/GL/qf_draw.h"
 #include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_vid.h"
+#include "QF/ui/view.h"
 
 #include "compat.h"
 #include "r_internal.h"
@@ -238,6 +239,7 @@ gl_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 
 	GL_Set2DScaled ();
 
+	view_draw (vr_data.scr_view);
 	while (*scr_funcs) {
 		(*scr_funcs)();
 		scr_funcs++;

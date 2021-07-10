@@ -180,7 +180,7 @@ Resize (old_console_t *con)
 	char		tbuf[CON_TEXTSIZE];
 	int			width, oldwidth, oldtotallines, numlines, numchars, i, j;
 
-	width = (r_data->vid->conwidth >> 3) - 2;
+	width = (r_data->vid->conview->xlen >> 3) - 2;
 
 	if (width < 1) {					// video hasn't been initialized yet
 		width = 38;
@@ -234,7 +234,8 @@ C_CheckResize (void)
 	Resize (&con_main);
 	Resize (&con_chat);
 
-	view_resize (con_data.view, r_data->vid->conwidth, r_data->vid->conheight);
+	view_resize (con_data.view, r_data->vid->conview->xlen,
+				 r_data->vid->conview->ylen);
 }
 
 static void
@@ -671,7 +672,7 @@ draw_console (view_t *view)
 	if (con_data.force_commandline) {
 		alpha = 255;
 	} else {
-		float       y = r_data->vid->conheight * con_size->value;
+		float       y = r_data->vid->conview->ylen * con_size->value;
 		alpha = 255 * con_alpha->value * view->ylen / y;
 		alpha = min (alpha, 255);
 	}
@@ -732,9 +733,9 @@ setup_console (void)
 	float       lines;
 
 	if (con_data.force_commandline) {
-		lines = con_data.lines = r_data->vid->conheight;
+		lines = con_data.lines = r_data->vid->conview->ylen;
 	} else if (con_keydest == key_console) {
-		lines = r_data->vid->conheight * bound (0.2, con_size->value, 1);
+		lines = r_data->vid->conview->ylen * bound (0.2, con_size->value, 1);
 	} else {
 		lines = 0;
 	}
@@ -750,7 +751,7 @@ setup_console (void)
 	} else {
 		con_data.lines = lines;
 	}
-	if (con_data.lines >= r_data->vid->conheight - r_data->lineadj)
+	if (con_data.lines >= r_data->vid->conview->ylen - r_data->lineadj)
 		r_data->scr_copyeverything = 1;
 }
 

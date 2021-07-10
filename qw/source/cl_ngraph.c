@@ -39,6 +39,8 @@
 #include "QF/draw.h"
 #include "QF/render.h"
 #include "QF/screen.h"
+#include "QF/va.h"
+#include "QF/ui/view.h"
 
 #include "compat.h"
 
@@ -51,17 +53,12 @@ cvar_t     *r_netgraph_alpha;
 cvar_t     *r_netgraph_box;
 
 void
-CL_NetGraph (void)
+CL_NetGraph (view_t *view)
 {
-	char        st[80];
 	int         lost, a, l, x, y, i;
 
-	if (!r_netgraph->int_val)
-		return;
-
-	x = hudswap ? r_data->vid->conwidth - (NET_TIMINGS + 16): 0;
-	y = r_data->vid->conheight - sb_lines - 24
-		- r_data->graphheight->int_val - 1;
+	x = view->xabs;
+	y = view->yabs;
 
 	if (r_netgraph_box->int_val)
 		r_funcs->Draw_TextBox (x, y, NET_TIMINGS / 8,
@@ -69,8 +66,8 @@ CL_NetGraph (void)
 							   r_netgraph_alpha->value * 255);
 
 	lost = CL_CalcNet ();
-	x = hudswap ? r_data->vid->conwidth - (NET_TIMINGS + 8) : 8;
-	y = r_data->vid->conheight - sb_lines - 9;
+	x = view->xabs + 8;
+	y = view->yabs + view->ylen - 9;
 
 	l = NET_TIMINGS;
 	if (l > r_data->refdef->vrect.width - 8)
@@ -85,13 +82,7 @@ CL_NetGraph (void)
 	}
 	r_funcs->R_LineGraph (x, y, &packet_latency[a], l);
 
-	y = r_data->vid->conheight - sb_lines - 24
-		- r_data->graphheight->int_val + 7;
-	snprintf (st, sizeof (st), "%3i%% packet loss", lost);
-	if (hudswap) {
-		r_funcs->Draw_String (r_data->vid->conwidth - ((strlen (st) * 8) + 8),
-							  y, st);
-	} else {
-		r_funcs->Draw_String (8, y, st);
-	}
+	x = view->xabs + 8;
+	y = view->yabs + 8;
+	r_funcs->Draw_String (x, y, va (0, "%3i%% packet loss", lost));
 }

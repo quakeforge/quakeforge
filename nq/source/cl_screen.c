@@ -46,37 +46,26 @@
 
 #include "QF/plugin/vid_render.h"
 
+#include "QF/ui/view.h"
+
 #include "sbar.h"
 
 #include "nq/include/client.h"
 
-static qpic_t  *scr_net;
+static view_t  *net_view;
+static view_t  *loading_view;
 
 static void
-SCR_DrawNet (void)
+draw_pic (view_t *view)
 {
-	if (realtime - cl.last_servermessage < 0.3)
-		return;
-	if (cls.demoplayback)
-		return;
-
-	if (!scr_net)
-		scr_net = r_funcs->Draw_PicFromWad ("net");
-
-	r_funcs->Draw_Pic (r_data->scr_vrect->x + 64, r_data->scr_vrect->y,
-					   scr_net);
+	r_funcs->Draw_Pic (view->xabs, view->yabs, view->data);
 }
 
 static void
-SCR_DrawLoading (void)
+draw_cachepic (view_t *view)
 {
-	qpic_t     *pic;
-
-	if (!cl.loading)
-		return;
-	pic = r_funcs->Draw_CachePic ("gfx/loading.lmp", 1);
-	r_funcs->Draw_Pic ((r_data->vid->conwidth - pic->width) / 2,
-					   (r_data->vid->conheight - 48 - pic->height) / 2, pic);
+	qpic_t     *pic = r_funcs->Draw_CachePic (view->data, 1);
+	r_funcs->Draw_Pic (view->xabs, view->yabs, pic);
 }
 
 static void
@@ -100,12 +89,10 @@ static SCR_Func scr_funcs_normal[] = {
 	0, //SCR_DrawRam,
 	0, //SCR_DrawTurtle,
 	0, //SCR_DrawPause,
-	SCR_DrawNet,
 	Sbar_Draw,
 	SCR_CShift,
 	Sbar_DrawCenterPrint,
 	Con_DrawConsole,
-	SCR_DrawLoading,
 	0
 };
 
@@ -134,6 +121,29 @@ CL_UpdateScreen (double realtime)
 
 	if (index >= sizeof (scr_funcs) / sizeof (scr_funcs[0]))
 		index = 0;
+
+	if (!net_view) {
+		qpic_t     *pic = r_funcs->Draw_PicFromWad ("net");
+		net_view = view_new (64, 0, pic->width, pic->height, grav_northwest);
+		net_view->draw = draw_pic;
+		net_view->data = pic;
+		net_view->visible = 0;
+		view_add (r_data->scr_view, net_view);
+	}
+
+	if (!loading_view) {
+		const char *name = "gfx/loading.lmp";
+		qpic_t     *pic = r_funcs->Draw_CachePic (name, 1);
+		loading_view = view_new (0, -24, pic->width, pic->height, grav_center);
+		loading_view->draw = draw_cachepic;
+		loading_view->data = (void *) name;
+		loading_view->visible = 0;
+		view_add (r_data->vid->conview, loading_view);
+	}
+
+	net_view->visible = (!cls.demoplayback
+						 && realtime - cl.last_servermessage >= 0.3);
+	loading_view->visible = cl.loading;
 
 	//FIXME not every time
 	if (cls.state == ca_active) {

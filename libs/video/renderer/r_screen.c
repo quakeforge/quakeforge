@@ -44,6 +44,8 @@
 #include "QF/screen.h"
 #include "QF/sys.h"
 
+#include "QF/ui/view.h"
+
 #include "compat.h"
 #include "r_internal.h"
 #include "sbar.h"
@@ -105,7 +107,6 @@ qpic_t     *scr_turtle;
 int         clearconsole;
 
 vrect_t    *pconupdate;
-vrect_t     scr_vrect;
 
 qboolean    scr_skipupdate;
 
@@ -179,9 +180,10 @@ SCR_CalcRefdef (void)
 	vrect.width = r_data->vid->width;
 	vrect.height = r_data->vid->height;
 
-	R_SetVrect (&vrect, &scr_vrect, r_data->lineadj);
+	R_SetVrect (&vrect, &refdef->vrect, r_data->lineadj);
 
-	refdef->vrect = scr_vrect;
+	view_setgeometry (vr_data.scr_view, refdef->vrect.x, refdef->vrect.y,
+					  refdef->vrect.width, refdef->vrect.height);
 
 	// notify the refresh of the change
 	r_funcs->R_ViewChanged ();
@@ -262,7 +264,9 @@ SCR_DrawRam (void)
 	if (!r_cache_thrash)
 		return;
 
-	r_funcs->Draw_Pic (scr_vrect.x + 32, scr_vrect.y, scr_ram);
+	//FIXME view
+	r_funcs->Draw_Pic (vr_data.scr_view->xpos + 32, vr_data.scr_view->ypos,
+					   scr_ram);
 }
 
 void
@@ -282,7 +286,9 @@ SCR_DrawTurtle (void)
 	if (count < 3)
 		return;
 
-	r_funcs->Draw_Pic (scr_vrect.x, scr_vrect.y, scr_turtle);
+	//FIXME view
+	r_funcs->Draw_Pic (vr_data.scr_view->xpos, vr_data.scr_view->ypos,
+					   scr_turtle);
 }
 
 void
@@ -296,9 +302,11 @@ SCR_DrawPause (void)
 	if (!r_data->paused)
 		return;
 
+	//FIXME view conwidth
 	pic = r_funcs->Draw_CachePic ("gfx/pause.lmp", true);
-	r_funcs->Draw_Pic ((r_data->vid->conwidth - pic->width) / 2,
-					   (r_data->vid->conheight - 48 - pic->height) / 2, pic);
+	r_funcs->Draw_Pic ((r_data->vid->conview->xlen - pic->width) / 2,
+					   (r_data->vid->conview->ylen - 48 - pic->height) / 2,
+					   pic);
 }
 
 void
