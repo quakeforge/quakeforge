@@ -72,7 +72,7 @@ sw32_R_LineGraph (int x, int y, int *h_vals, int count)
 			case 1:
 				{
 					byte *dest = (byte *) vid.buffer + vid.rowbytes * y + x;
-					for (i = 0; i < h; i++, dest -= vid.rowbytes * 2)
+					for (i = 0; i < h; i++, dest -= vid.rowbytes)
 						*dest = color;
 				}
 				break;
@@ -81,7 +81,7 @@ sw32_R_LineGraph (int x, int y, int *h_vals, int count)
 					short *dest = (short *) vid.buffer +
 								  (vid.rowbytes >> 1) * y + x;
 					color = sw32_8to16table[color];
-					for (i = 0; i < h; i++, dest -= vid.rowbytes)
+					for (i = 0; i < h; i++, dest -= (vid.rowbytes >> 1))
 						*dest = color;
 				}
 				break;
@@ -90,7 +90,7 @@ sw32_R_LineGraph (int x, int y, int *h_vals, int count)
 					int *dest = (int *) vid.buffer +
 								(vid.rowbytes >> 2) * y + x;
 					color = d_8to24table[color];
-					for (i = 0; i < h; i++, dest -= (vid.rowbytes >> 1))
+					for (i = 0; i < h; i++, dest -= (vid.rowbytes >> 2))
 						*dest = color;
 				}
 			break;
