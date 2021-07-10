@@ -39,6 +39,7 @@
 #include "d_local.h"
 #include "r_internal.h"
 #include "vid_internal.h"
+#include "vid_sw.h"
 
 static int  miplevel;
 
@@ -81,7 +82,7 @@ D_DrawSolidSurface (surf_t *surf, int color)
 {
 	espan_t *span;
 
-	switch(sw32_r_pixbytes) {
+	switch(sw32_ctx->pixbytes) {
 	case 1:
 	{
 		byte *pdest, pix;
@@ -132,7 +133,7 @@ D_DrawSolidSurface (surf_t *surf, int color)
 	break;
 	default:
 		Sys_Error("D_DrawSolidSurface: unsupported r_pixbytes %i",
-				  sw32_r_pixbytes);
+				  sw32_ctx->pixbytes);
 	}
 }
 

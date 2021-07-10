@@ -50,6 +50,7 @@
 #include "d_iface.h"
 #include "r_internal.h"
 #include "vid_internal.h"
+#include "vid_sw.h"
 
 typedef struct {
 	vrect_t     rect;
@@ -283,7 +284,7 @@ sw32_Draw_Character (int x, int y, unsigned int chr)
 		drawline = 8;
 
 
-	switch(sw32_r_pixbytes) {
+	switch(sw32_ctx->pixbytes) {
 	case 1:
 	{
 		byte       *dest = (byte *) vid.conbuffer + y * vid.conrowbytes + x;
@@ -367,7 +368,7 @@ sw32_Draw_Character (int x, int y, unsigned int chr)
 	}
 	break;
 	default:
-		Sys_Error("Draw_Character: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("Draw_Character: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 	}
 }
 
@@ -403,7 +404,7 @@ sw32_Draw_AltString (int x, int y, const char *str)
 static void
 Draw_Pixel (int x, int y, byte color)
 {
-	switch(sw32_r_pixbytes)
+	switch(sw32_ctx->pixbytes)
 	{
 	case 1:
 		((byte *) vid.conbuffer)[y * vid.conrowbytes + x] = color;
@@ -417,7 +418,7 @@ Draw_Pixel (int x, int y, byte color)
 			d_8to24table[color];
 		break;
 	default:
-		Sys_Error("Draw_Pixel: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("Draw_Pixel: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 	}
 }
 
@@ -570,7 +571,7 @@ sw32_Draw_Pic (int x, int y, qpic_t *pic)
 
 	source = pic->data;
 
-	switch(sw32_r_pixbytes) {
+	switch(sw32_ctx->pixbytes) {
 	case 1:
 	{
 		byte       *dest = (byte *) vid.buffer + y * vid.rowbytes + x;
@@ -643,7 +644,7 @@ sw32_Draw_Pic (int x, int y, qpic_t *pic)
 	}
 	break;
 	default:
-		Sys_Error("Draw_Pic: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("Draw_Pic: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 	}
 }
 
@@ -688,7 +689,7 @@ sw32_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 
 	source = pic->data + srcy * pic->width + srcx;
 
-	switch (sw32_r_pixbytes) {
+	switch (sw32_ctx->pixbytes) {
 	case 1:
 	{
 		byte       *dest = (byte *) vid.buffer + y * vid.rowbytes + x;
@@ -725,7 +726,7 @@ sw32_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	}
 	break;
 	default:
-		Sys_Error("Draw_SubPic: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("Draw_SubPic: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 	}
 }
 
@@ -741,7 +742,7 @@ sw32_Draw_ConsoleBackground (int lines, byte alpha)
 	conback = sw32_Draw_CachePic ("gfx/conback.lmp", true);
 
 	// draw the pic
-	switch(sw32_r_pixbytes) {
+	switch(sw32_ctx->pixbytes) {
 	case 1:
 	{
 		byte       *dest = vid.conbuffer;
@@ -812,7 +813,7 @@ sw32_Draw_ConsoleBackground (int lines, byte alpha)
 
 	default:
 		Sys_Error("Draw_ConsoleBackground: unsupported r_pixbytes %i",
-				  sw32_r_pixbytes);
+				  sw32_ctx->pixbytes);
 	}
 
 //	if (!cls.download)
@@ -824,7 +825,7 @@ sw32_Draw_ConsoleBackground (int lines, byte alpha)
 static void
 R_DrawRect (vrect_t *prect, int rowbytes, byte * psrc, int transparent)
 {
-	switch(sw32_r_pixbytes) {
+	switch(sw32_ctx->pixbytes) {
 	case 1:
 	{
 		byte        t;
@@ -1097,7 +1098,7 @@ R_DrawRect (vrect_t *prect, int rowbytes, byte * psrc, int transparent)
 	}
 	break;
 	default:
-		Sys_Error("R_DrawRect: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("R_DrawRect: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 	}
 }
 
@@ -1183,7 +1184,7 @@ sw32_Draw_Fill (int x, int y, int w, int h, int c)
 	}
 	CLIP (x, y, w, h, (int) vid.width, (int) vid.height);
 
-	switch (sw32_r_pixbytes) {
+	switch (sw32_ctx->pixbytes) {
 	case 1:
 	{
 		byte       *dest = (byte *) vid.buffer + y * vid.rowbytes + x;
@@ -1213,7 +1214,7 @@ sw32_Draw_Fill (int x, int y, int w, int h, int c)
 	}
 	break;
 	default:
-		Sys_Error("Draw_Fill: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("Draw_Fill: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 	}
 }
 
@@ -1227,7 +1228,7 @@ sw32_Draw_FadeScreen (void)
 	S_ExtraUpdate ();
 	VID_LockBuffer ();
 
-	switch(sw32_r_pixbytes) {
+	switch(sw32_ctx->pixbytes) {
 	case 1:
 	{
 		for (y = 0; y < vid.conview->ylen; y++) {
@@ -1264,7 +1265,7 @@ sw32_Draw_FadeScreen (void)
 	}
 	break;
 	default:
-		Sys_Error("Draw_FadeScreen: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("Draw_FadeScreen: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 	}
 	vr_data.scr_copyeverything = 1;
 
@@ -1281,7 +1282,7 @@ sw32_Draw_BlendScreen (quat_t color)
 	byte       *newpal;
 	byte        pal[768];
 
-	switch(sw32_r_pixbytes) {
+	switch(sw32_ctx->pixbytes) {
 	case 1:
 	{
 		basepal = vid.basepal;
@@ -1302,7 +1303,7 @@ sw32_Draw_BlendScreen (quat_t color)
 			newpal[2] = vid.gammatable[b];
 			newpal += 3;
 		}
-		vid.vid_internal->set_palette (pal);
+		vid.vid_internal->set_palette (vid.vid_internal->data, pal);
 	}
 	break;
 	case 2:
@@ -1367,6 +1368,6 @@ sw32_Draw_BlendScreen (quat_t color)
 	break;
 	default:
 		Sys_Error("sw32_Draw_BlendScreen: unsupported r_pixbytes %i",
-				  sw32_r_pixbytes);
+				  sw32_ctx->pixbytes);
 	}
 }

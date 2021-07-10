@@ -40,6 +40,7 @@
 #include "d_local.h"
 #include "r_internal.h"
 #include "vid_internal.h"
+#include "vid_sw.h"
 
 static byte       *r_turb_pbase;
 static void       *r_turb_pdest;
@@ -56,7 +57,7 @@ static int         r_turb_spancount;
 void
 sw32_D_WarpScreen (void)
 {
-	switch(sw32_r_pixbytes) {
+	switch(sw32_ctx->pixbytes) {
 	case 1:
 	{
 		int         w, h;
@@ -205,7 +206,7 @@ sw32_D_WarpScreen (void)
 	}
 	break;
 	default:
-		Sys_Error("D_WarpScreen: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("D_WarpScreen: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 	}
 }
 
@@ -214,7 +215,7 @@ D_DrawTurbulentSpan (void)
 {
 	int         sturb, tturb;
 
-	switch (sw32_r_pixbytes) {
+	switch (sw32_ctx->pixbytes) {
 	case 1:
 	{
 		byte *pdest = (byte *) r_turb_pdest;
@@ -262,7 +263,7 @@ D_DrawTurbulentSpan (void)
 		break;
 	default:
 		Sys_Error("D_DrawTurbulentSpan: unsupported r_pixbytes %i",
-				  sw32_r_pixbytes);
+				  sw32_ctx->pixbytes);
 	}
 }
 
@@ -287,7 +288,7 @@ sw32_Turbulent (espan_t *pspan)
 
 	do {
 		r_turb_pdest = (byte *) sw32_d_viewbuffer + ((sw32_screenwidth * pspan->v) +
-												pspan->u) * sw32_r_pixbytes;
+												pspan->u) * sw32_ctx->pixbytes;
 
 		count = pspan->count;
 
@@ -394,7 +395,7 @@ sw32_Turbulent (espan_t *pspan)
 void
 sw32_D_DrawSpans (espan_t *pspan)
 {
-	switch(sw32_r_pixbytes) {
+	switch(sw32_ctx->pixbytes) {
 	case 1:
 	{
 		byte       *pbase = (byte *) sw32_cacheblock, *pdest;
@@ -812,7 +813,7 @@ sw32_D_DrawSpans (espan_t *pspan)
 	}
 	break;
 	default:
-		Sys_Error("D_DrawSpans: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("D_DrawSpans: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 	}
 }
 

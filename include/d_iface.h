@@ -158,7 +158,6 @@ extern qboolean	r_recursiveaffinetriangles;	// true if a driver wants to use
 											//  a certain distance (normally
 											//  used only by the software
 											//  driver)
-extern int		r_pixbytes;
 extern qboolean	r_dowarp;
 
 extern affinetridesc_t	r_affinetridesc;

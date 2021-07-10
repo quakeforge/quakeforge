@@ -28,6 +28,8 @@
 # include "config.h"
 #endif
 
+#include <stdlib.h>
+
 #define NH_DEFINE
 #include "namehack.h"
 
@@ -39,8 +41,7 @@
 
 #include "d_ifacea.h"
 #include "r_internal.h"
-
-#include "stdlib.h"
+#include "vid_sw.h"
 
 #define LIGHT_MIN	5					// lowest light value we'll allow, to
 										// avoid the need for inner-loop light
@@ -650,15 +651,15 @@ sw32_R_AliasDrawModel (alight_t *plighting)
 
 	if (!sw32_acolormap)
 		sw32_acolormap = vid.colormap8;
-	if (sw32_acolormap == &vid.colormap8 && sw32_r_pixbytes != 1)
+	if (sw32_acolormap == &vid.colormap8 && sw32_ctx->pixbytes != 1)
 	{
-		if (sw32_r_pixbytes == 2)
+		if (sw32_ctx->pixbytes == 2)
 			sw32_acolormap = vid.colormap16;
-		else if (sw32_r_pixbytes == 4)
+		else if (sw32_ctx->pixbytes == 4)
 			sw32_acolormap = vid.colormap32;
 		else
 			Sys_Error("R_AliasDrawmodel: unsupported r_pixbytes %i",
-					  sw32_r_pixbytes);
+					  sw32_ctx->pixbytes);
 	}
 
 	if (currententity != vr_data.view_model)

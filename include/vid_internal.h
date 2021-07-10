@@ -5,17 +5,20 @@
 #include "QF/plugin/vid_render.h"
 
 typedef struct vid_internal_s {
-	int         (*surf_cache_size) (int width, int height);
-	void        (*flush_caches) (void);
-	void        (*init_caches) (void *cache, int size);
-	void        (*init_buffers) (void);
-	void        (*set_palette) (const byte *palette);
+	int       (*surf_cache_size) (void *data, int width, int height);
+	void      (*flush_caches) (void *data);
+	void      (*init_caches) (void *data, void *cache, int size);
+	void      (*init_buffers) (void *data);
+	void      (*set_palette) (void *data, const byte *palette);
 
-	void        (*choose_visual) (void);
-	void        (*create_context) (void);
+	void      (*choose_visual) (void *data);
+	void      (*create_context) (void *data);
+
+	void       *data;
 
 	struct gl_ctx_s *(*gl_context) (void);
 	struct sw_ctx_s *(*sw_context) (void);
+	struct sw_ctx_s *(*sw32_context) (void);
 	struct vulkan_ctx_s *(*vulkan_context) (void);
 } vid_internal_t;
 

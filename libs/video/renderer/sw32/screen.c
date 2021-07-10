@@ -112,7 +112,7 @@ sw32_SCR_ScreenShot_f (void)
 		sw32_D_EnableBackBufferAccess ();
 
 		// save the pcx file
-		switch(sw32_r_pixbytes) {
+		switch(sw32_ctx->pixbytes) {
 		case 1:
 			pcx = EncodePCX (vid.buffer, vid.width, vid.height, vid.rowbytes,
 							 vid.basepal, false, &pcx_len);
@@ -124,7 +124,7 @@ sw32_SCR_ScreenShot_f (void)
 			Sys_Printf("SCR_ScreenShot_f: FIXME - add 32bit support\n");
 			break;
 		default:
-			Sys_Error("SCR_ScreenShot_f: unsupported r_pixbytes %i", sw32_r_pixbytes);
+			Sys_Error("SCR_ScreenShot_f: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 		}
 
 		// for adapters that can't stay mapped in for linear writes all the time
@@ -197,5 +197,5 @@ sw32_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 		vrect.height = vr_data.scr_view->ylen;
 		vrect.next = 0;
 	}
-	sw32_ctx->update (&vrect);
+	sw32_ctx->update (sw32_ctx, &vrect);
 }

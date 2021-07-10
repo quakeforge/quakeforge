@@ -39,15 +39,21 @@
 sw_ctx_t *sw_ctx;
 
 static void
-sw_vid_render_choose_visual (void)
+sw_vid_render_choose_visual (void *data)
 {
     sw_ctx->choose_visual (sw_ctx);
 }
 
 static void
-sw_vid_render_create_context (void)
+sw_vid_render_create_context (void *data)
 {
     sw_ctx->create_context (sw_ctx);
+}
+
+static void
+sw_vid_render_set_palette (void *data, const byte *palette)
+{
+    sw_ctx->set_palette (sw_ctx, palette);
 }
 
 static vid_model_funcs_t model_funcs = {
@@ -84,7 +90,8 @@ sw_vid_render_init (void)
 	}
 	sw_ctx = vr_data.vid->vid_internal->sw_context ();
 
-	vr_data.vid->vid_internal->set_palette = sw_ctx->set_palette;
+	vr_data.vid->vid_internal->data = sw_ctx;
+	vr_data.vid->vid_internal->set_palette = sw_vid_render_set_palette;
 	vr_data.vid->vid_internal->choose_visual = sw_vid_render_choose_visual;
 	vr_data.vid->vid_internal->create_context = sw_vid_render_create_context;
 

@@ -44,15 +44,21 @@
 sw_ctx_t *sw32_ctx;
 
 static void
-sw32_vid_render_choose_visual (void)
+sw32_vid_render_choose_visual (void *data)
 {
     sw32_ctx->choose_visual (sw32_ctx);
 }
 
 static void
-sw32_vid_render_create_context (void)
+sw32_vid_render_create_context (void *data)
 {
     sw32_ctx->create_context (sw32_ctx);
+}
+
+static void
+sw32_vid_render_set_palette (void *data, const byte *palette)
+{
+    sw32_ctx->set_palette (sw32_ctx, palette);
 }
 
 static vid_model_funcs_t model_funcs = {
@@ -87,9 +93,10 @@ sw32_vid_render_init (void)
 	if (!vr_data.vid->vid_internal->sw_context) {
 		Sys_Error ("Sorry, software rendering not supported by this program.");
 	}
-	sw32_ctx = vr_data.vid->vid_internal->sw_context ();
+	sw32_ctx = vr_data.vid->vid_internal->sw32_context ();
 
-	vr_data.vid->vid_internal->set_palette = sw32_ctx->set_palette;
+	vr_data.vid->vid_internal->data = sw32_ctx;
+	vr_data.vid->vid_internal->set_palette = sw32_vid_render_set_palette;
 	vr_data.vid->vid_internal->choose_visual = sw32_vid_render_choose_visual;
 	vr_data.vid->vid_internal->create_context = sw32_vid_render_create_context;
 

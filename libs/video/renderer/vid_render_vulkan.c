@@ -519,7 +519,7 @@ vulkan_Skin_InitTranslations (void)
 }
 
 static void
-set_palette (const byte *palette)
+set_palette (void *data, const byte *palette)
 {
 	//FIXME really don't want this here: need an application domain
 	//so Quake can be separated from QuakeForge (ie, Quake itself becomes
@@ -527,7 +527,7 @@ set_palette (const byte *palette)
 }
 
 static void
-vulkan_vid_render_choose_visual (void)
+vulkan_vid_render_choose_visual (void *data)
 {
 	Vulkan_CreateDevice (vulkan_ctx);
 	vulkan_ctx->choose_visual (vulkan_ctx);
@@ -546,7 +546,7 @@ vulkan_vid_render_choose_visual (void)
 }
 
 static void
-vulkan_vid_render_create_context (void)
+vulkan_vid_render_create_context (void *data)
 {
 	vulkan_ctx->create_window (vulkan_ctx);
 	vulkan_ctx->surface = vulkan_ctx->create_surface (vulkan_ctx);
@@ -591,6 +591,7 @@ vulkan_vid_render_init (void)
 
 	Vulkan_Init_Common (vulkan_ctx);
 
+	vr_data.vid->vid_internal->data = vulkan_ctx;
 	vr_data.vid->vid_internal->set_palette = set_palette;
 	vr_data.vid->vid_internal->choose_visual = vulkan_vid_render_choose_visual;
 	vr_data.vid->vid_internal->create_context = vulkan_vid_render_create_context;

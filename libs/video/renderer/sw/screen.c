@@ -240,5 +240,5 @@ R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 		vrect.height = vr_data.scr_view->ylen;
 		vrect.next = 0;
 	}
-	sw_ctx->update (&vrect);
+	sw_ctx->update (sw_ctx, &vrect);
 }

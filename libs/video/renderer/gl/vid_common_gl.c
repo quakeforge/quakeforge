@@ -701,7 +701,7 @@ VID_Init8bitPalette (void)
 }
 
 void
-GL_SetPalette (const byte *palette)
+GL_SetPalette (void *data, const byte *palette)
 {
 	const byte *pal;
 	char        s[255];

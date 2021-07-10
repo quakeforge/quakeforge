@@ -38,6 +38,7 @@
 
 #include "r_internal.h"
 #include "vid_internal.h"
+#include "vid_sw.h"
 
 /*
 	R_LineGraph
@@ -67,7 +68,7 @@ sw32_R_LineGraph (int x, int y, int *h_vals, int count)
 		if (h > s)
 			h = s;
 
-		switch(sw32_r_pixbytes) {
+		switch(sw32_ctx->pixbytes) {
 			case 1:
 				{
 					byte *dest = (byte *) vid.buffer + vid.rowbytes * y + x;
@@ -95,7 +96,7 @@ sw32_R_LineGraph (int x, int y, int *h_vals, int count)
 			break;
 			default:
 				Sys_Error("R_LineGraph: unsupported r_pixbytes %i",
-						  sw32_r_pixbytes);
+						  sw32_ctx->pixbytes);
 		}
 	}
 }

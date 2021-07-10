@@ -38,6 +38,7 @@
 #include "d_local.h"
 #include "r_internal.h"
 #include "vid_internal.h"
+#include "vid_sw.h"
 
 #define NUM_MIPS	4
 
@@ -105,7 +106,7 @@ sw32_D_SetupFrame (void)
 	if (sw32_r_dowarp)
 		sw32_screenwidth = WARP_WIDTH;
 	else
-		sw32_screenwidth = vid.rowbytes / sw32_r_pixbytes;
+		sw32_screenwidth = vid.rowbytes / sw32_ctx->pixbytes;
 
 	sw32_d_roverwrapped = false;
 	sw32_d_initial_rover = sw32_sc_rover;

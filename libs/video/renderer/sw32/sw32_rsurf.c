@@ -37,6 +37,7 @@
 
 #include "compat.h"
 #include "r_internal.h"
+#include "vid_sw.h"
 
 drawsurf_t  sw32_r_drawsurf;
 
@@ -203,7 +204,7 @@ R_BuildLightMap (void)
 	 * JohnnyonFlame:
 	 * 32 and 16bpp modes uses the positive lighting, unlike 8bpp
 	 */
-	switch (sw32_r_pixbytes) {
+	switch (sw32_ctx->pixbytes) {
 	case 1:
 		// bound, invert, and shift
 		for (i = 0; i < size; i++) {
@@ -272,7 +273,7 @@ sw32_R_DrawSurface (void)
 	soffset = sw32_r_drawsurf.surf->texturemins[0];
 	basetoffset = sw32_r_drawsurf.surf->texturemins[1];
 
-	switch (sw32_r_pixbytes) {
+	switch (sw32_ctx->pixbytes) {
 	case 1:
 		pblockdrawer = surfmiptable8[sw32_r_drawsurf.surfmip];
 		break;
@@ -283,11 +284,11 @@ sw32_R_DrawSurface (void)
 		pblockdrawer = surfmiptable32[sw32_r_drawsurf.surfmip];
 		break;
 	default:
-		Sys_Error("R_DrawSurface: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("R_DrawSurface: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 		pblockdrawer = NULL;
 	}
 
-	horzblockstep = blocksize * sw32_r_pixbytes;
+	horzblockstep = blocksize * sw32_ctx->pixbytes;
 
 	r_sourcemax = r_source + (tmax * smax);
 

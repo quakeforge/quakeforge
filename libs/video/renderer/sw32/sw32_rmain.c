@@ -62,7 +62,6 @@ int         sw32_r_numallocatededges;
 qboolean    sw32_r_drawpolys;
 qboolean    sw32_r_drawculledpolys;
 qboolean    sw32_r_worldpolysbacktofront;
-int         sw32_r_pixbytes = 1;
 float       sw32_r_aliasuvscale = 1.0;
 int         sw32_r_outofsurfaces;
 int         sw32_r_outofedges;

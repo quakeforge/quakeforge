@@ -102,6 +102,7 @@ VID_Init (byte *palette, byte *colormap)
 
 	vid_internal.gl_context = X11_GL_Context;
 	vid_internal.sw_context = X11_SW_Context;
+	vid_internal.sw32_context = X11_SW32_Context;
 #ifdef HAVE_VULKAN
 	vid_internal.vulkan_context = X11_Vulkan_Context;
 #endif
@@ -116,14 +117,14 @@ VID_Init (byte *palette, byte *colormap)
 
 	VID_GetWindowSize (640, 480);
 	X11_OpenDisplay ();
-	vid_internal.choose_visual ();
+	vid_internal.choose_visual (vid_internal.data);
 	X11_SetVidMode (viddef.width, viddef.height);
 	X11_CreateWindow (viddef.width, viddef.height);
 	X11_CreateNullCursor ();	// hide mouse pointer
-	vid_internal.create_context ();
+	vid_internal.create_context (vid_internal.data);
 
 	VID_InitGamma (palette);
-	viddef.vid_internal->set_palette (viddef.palette);
+	vid_internal.set_palette (vid_internal.data, viddef.palette);
 
 	Sys_MaskPrintf (SYS_vid, "Video mode %dx%d initialized.\n",
 					viddef.width, viddef.height);
@@ -140,6 +141,7 @@ VID_Init_Cvars ()
 	X11_Vulkan_Init_Cvars ();
 #endif
 	X11_GL_Init_Cvars ();
+	X11_SW_Init_Cvars ();
 }
 
 #if 0

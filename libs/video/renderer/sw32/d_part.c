@@ -36,6 +36,7 @@
 #include "d_local.h"
 #include "r_internal.h"
 #include "vid_internal.h"
+#include "vid_sw.h"
 
 
 void
@@ -78,7 +79,7 @@ sw32_D_DrawParticle (particle_t *pparticle)
 	else if (pix > sw32_d_pix_max)
 		pix = sw32_d_pix_max;
 
-	switch(sw32_r_pixbytes)
+	switch(sw32_ctx->pixbytes)
 	{
 	case 1:
 		{
@@ -368,6 +369,6 @@ sw32_D_DrawParticle (particle_t *pparticle)
 		break;
 	default:
 		Sys_Error("D_DrawParticles: unsupported r_pixbytes %i",
-				  sw32_r_pixbytes);
+				  sw32_ctx->pixbytes);
 	}
 }

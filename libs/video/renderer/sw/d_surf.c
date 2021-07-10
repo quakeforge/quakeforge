@@ -54,7 +54,7 @@ D_SurfaceCacheAddress (void)
 }
 
 int
-D_SurfaceCacheForRes (int width, int height)
+D_SurfaceCacheForRes (void *data, int width, int height)
 {
 	int         size, pix;
 
@@ -96,7 +96,7 @@ D_ClearCacheGuard (void)
 }
 
 void
-D_InitCaches (void *buffer, int size)
+D_InitCaches (void *data, void *buffer, int size)
 {
 	Sys_MaskPrintf (SYS_dev, "D_InitCaches: %ik surface cache\n", size/1024);
 
@@ -114,7 +114,7 @@ D_InitCaches (void *buffer, int size)
 }
 
 void
-D_FlushCaches (void)
+D_FlushCaches (void *data)
 {
 	surfcache_t *c;
 

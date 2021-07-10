@@ -21,8 +21,6 @@
 #include "context_sdl.h"
 #include "vid_internal.h"
 
-cvar_t     *vid_bitdepth;
-
 void
 VID_SDL_GammaCheck (void)
 {
@@ -73,7 +71,4 @@ SDL_Init_Cvars (void)
 							   "Toggles fullscreen mode");
 	vid_system_gamma = Cvar_Get ("vid_system_gamma", "1", CVAR_ARCHIVE, NULL,
 								 "Use system gamma control if available");
-// FIXME: vid_colorbpp in common GL setup, make consistent with sdl32 scheme
-	vid_bitdepth = Cvar_Get ("vid_bitdepth", "8", CVAR_ROM, NULL, "Sets "
-							 "display bitdepth (supported modes: 8 16 32)");
 }

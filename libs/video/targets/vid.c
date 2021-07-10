@@ -50,6 +50,7 @@
 
 /* Software and hardware gamma support */
 #define viddef (*r_data->vid)
+#define vi (viddef.vid_internal)
 cvar_t	   *vid_gamma;
 cvar_t	   *vid_system_gamma;
 cvar_t     *con_width; // FIXME: Try to move with rest of con code
@@ -211,7 +212,8 @@ VID_UpdateGamma (cvar_t *vid_gamma)
 			*p32++ = 255;
 		}
 		p32[-1] = 0;	// color 255 is transparent
-		viddef.vid_internal->set_palette (viddef.palette); // update with the new palette
+		// update with the new palette
+		vi->set_palette (vi->data, viddef.palette);
 	}
 }
 
@@ -254,9 +256,10 @@ VID_InitBuffers (void)
 	// Calculate the sizes we want first
 	buffersize = viddef.rowbytes * viddef.height;
 	zbuffersize = viddef.width * viddef.height * sizeof (*viddef.zbuffer);
-	if (viddef.vid_internal->surf_cache_size)
-		cachesize = viddef.vid_internal->surf_cache_size (viddef.width,
-														  viddef.height);
+	if (vi->surf_cache_size) {
+		cachesize = vi->surf_cache_size (vi->data,
+										 viddef.width, viddef.height);
+	}
 
 	// Free the old z-buffer
 	if (viddef.zbuffer) {
@@ -265,13 +268,14 @@ VID_InitBuffers (void)
 	}
 	// Free the old surface cache
 	if (viddef.surfcache) {
-		if (viddef.vid_internal->flush_caches)
-			viddef.vid_internal->flush_caches ();
+		if (vi->flush_caches) {
+			vi->flush_caches (vi->data);
+		}
 		free (viddef.surfcache);
 		viddef.surfcache = NULL;
 	}
-	if (viddef.vid_internal->init_buffers) {
-		viddef.vid_internal->init_buffers ();
+	if (vi->init_buffers) {
+		vi->init_buffers (vi->data);
 	} else {
 		// Free the old screen buffer
 		if (viddef.buffer) {
@@ -301,13 +305,15 @@ VID_InitBuffers (void)
 		Sys_Error ("Not enough memory for video mode");
 	}
 
-	if (viddef.vid_internal->init_caches)
-		viddef.vid_internal->init_caches (viddef.surfcache, cachesize);
+	if (vi->init_caches) {
+		vi->init_caches (vi->data, viddef.surfcache, cachesize);
+	}
 }
 
 void
 VID_ClearMemory (void)
 {
-	if (viddef.vid_internal->flush_caches)
-		viddef.vid_internal->flush_caches ();
+	if (vi->flush_caches) {
+		vi->flush_caches (vi->data);
+	}
 }

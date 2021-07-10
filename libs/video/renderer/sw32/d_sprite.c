@@ -38,6 +38,7 @@
 #include "d_local.h"
 #include "r_internal.h"
 #include "vid_internal.h"
+#include "vid_sw.h"
 
 static int  sprite_height;
 static int  minindex, maxindex;
@@ -48,7 +49,7 @@ static sspan_t *sprite_spans;
 void
 sw32_D_SpriteDrawSpans (sspan_t *pspan)
 {
-	switch(sw32_r_pixbytes) {
+	switch(sw32_ctx->pixbytes) {
 	case 1:
 	{
 		int         count, spancount, izistep;
@@ -504,7 +505,7 @@ NextSpan4:
 
 	default:
 		Sys_Error("D_SpriteDrawSpans: unsupported r_pixbytes %i",
-				  sw32_r_pixbytes);
+				  sw32_ctx->pixbytes);
 	}
 }
 

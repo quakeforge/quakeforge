@@ -46,13 +46,13 @@
 gl_ctx_t *gl_ctx;
 
 static void
-gl_vid_render_choose_visual (void)
+gl_vid_render_choose_visual (void *data)
 {
 	gl_ctx->choose_visual (gl_ctx);
 }
 
 static void
-gl_vid_render_create_context (void)
+gl_vid_render_create_context (void *data)
 {
 	gl_ctx->create_context (gl_ctx);
 }
@@ -93,6 +93,7 @@ gl_vid_render_init (void)
 	gl_ctx->init_gl = GL_Init_Common;
 	gl_ctx->load_gl ();
 
+	vr_data.vid->vid_internal->data = gl_ctx;
 	vr_data.vid->vid_internal->set_palette = GL_SetPalette;
 	vr_data.vid->vid_internal->choose_visual = gl_vid_render_choose_visual;
 	vr_data.vid->vid_internal->create_context = gl_vid_render_create_context;

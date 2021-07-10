@@ -69,7 +69,7 @@ GLSL_Common_Init_Cvars (void)
 }
 
 void
-GLSL_SetPalette (const byte *palette)
+GLSL_SetPalette (void *data, const byte *palette)
 {
 	const byte *col, *ip;
 	byte       *pal, *op;
