@@ -390,7 +390,7 @@ SV_Current_Map (void)
 }
 
 static const char *
-nice_time (float time)
+nice_time (double time)
 {
 	int         t = time + 0.5;
 
@@ -529,7 +529,8 @@ SV_Status_f (void)
 	pak = (float) svs.stats.latched_packets / STATFRAMES;
 
 	SV_Printf ("net address      : %s\n", NET_AdrToString (net_local_adr));
-	SV_Printf ("uptime           : %s\n", nice_time (Sys_DoubleTime ()));
+	SV_Printf ("uptime           : %s\n",
+			   nice_time (Sys_DoubleTime () - Sys_DoubleTimeBase ()));
 	SV_Printf ("cpu utilization  : %3i%% (%3i%%)\n", (int) cpu, (int)demo);
 	SV_Printf ("avg response time: %i ms\n", (int) avg);
 	SV_Printf ("packets/frame    : %5.2f\n", pak);
@@ -602,7 +603,7 @@ SV_Status_f (void)
 				SV_Printf ("SERVER %d\n", cl->ping);
 				continue;
 			}
-			SV_Printf ("%4i %4i %3.1f %4i",
+			SV_Printf ("%4i %4i %4.1f%% %5i",
 						(int) (1000 * cl->netchan.frame_rate),
 						(int) SV_CalcPing (cl),
 						100.0 * cl->netchan.drop_count /

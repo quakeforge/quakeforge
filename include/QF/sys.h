@@ -80,6 +80,7 @@ void Sys_Shutdown (void);
 void Sys_RegisterShutdown (void (*func) (void *), void *data);
 int64_t Sys_LongTime (void);
 double Sys_DoubleTime (void);
+double Sys_DoubleTimeBase (void);
 void Sys_TimeOfDay(date_t *date);
 
 void Sys_MaskPrintf (int mask, const char *fmt, ...) __attribute__((format(PRINTF,2,3)));

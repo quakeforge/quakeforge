@@ -412,6 +412,12 @@ Sys_DoubleTime (void)
 	return (__INT64_C (4294967296000000) + Sys_LongTime ()) / 1e6;
 }
 
+VISIBLE double
+Sys_DoubleTimeBase (void)
+{
+	return __INT64_C (4294967296000000) / 1e6;
+}
+
 VISIBLE void
 Sys_TimeOfDay (date_t *date)
 {
