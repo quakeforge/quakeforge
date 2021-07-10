@@ -85,6 +85,7 @@ qwaq_client_libs= \
 
 qwaq_x11_libs= \
 	$(qwaq_cl_plugin_libs) \
+	${top_builddir}/libs/gib/libQFgib.la \
 	${top_builddir}/libs/ruamoko/libQFruamoko_client.la \
 	$(top_builddir)/libs/video/renderer/libQFrenderer.la \
 	$(top_builddir)/libs/models/libQFmodels.la \
