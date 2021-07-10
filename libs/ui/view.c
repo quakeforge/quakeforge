@@ -221,3 +221,19 @@ view_move (view_t *view, int xp, int yp)
 	view->ypos = yp;
 	setgeometry (view);
 }
+
+VISIBLE void
+view_setgeometry (view_t *view, int xp, int yp, int xl, int yl)
+{
+	view->xpos = xp;
+	view->ypos = yp;
+	_resize (view, xl, yl);
+	setgeometry (view);
+}
+
+VISIBLE void
+view_setgravity (view_t *view, grav_t grav)
+{
+	view->gravity = grav;
+	setgeometry (view);
+}

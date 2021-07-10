@@ -215,6 +215,28 @@ void view_resize (view_t *view, int xl, int yl);
 */
 void view_move (view_t *view, int xp, int yp);
 
+/** Chage the location and size of a view in a single operation.
+
+	The absolute X and Y coorinates of the view are updated as necessary to
+	keep the coordinates of the view's origin correct relative to the view's
+	geometry.
+
+	\param view		The view to move.
+	\param xp		The new X coordinate of the view relative to its gravity.
+	\param yp		The new Y coordinate of the view relative to its gravity.
+	\param xl		The new width of the view.
+	\param yl		The new height of the view.
+*/
+void view_setgeometry (view_t *view, int xp, int yp, int xl, int yl);
+
+/** Change the gravity of a view, adjusting its position appropriately
+
+	\param view		The view which will have its gravity set..
+	\param grav		The gravity of the view. determines the view's origin and
+					its positioning within the view's parent.
+*/
+void view_setgravity (view_t *view, grav_t grav);
+
 ///@}
 
 #endif//__QF_ui_view_h
