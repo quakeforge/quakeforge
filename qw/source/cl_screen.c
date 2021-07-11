@@ -111,9 +111,9 @@ static SCR_Func scr_funcs_normal[] = {
 	//CL_NetGraph,FIXME
 	Sbar_Draw,
 	SCR_CShift,
+	scr_draw_views,
 	Sbar_DrawCenterPrint,
 	Con_DrawConsole,
-	scr_draw_views,
 	0
 };
 

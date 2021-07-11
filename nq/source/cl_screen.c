@@ -84,6 +84,16 @@ SCR_CShift (void)
 	r_funcs->Draw_BlendScreen (r_data->vid->cshift_color);
 }
 
+static void
+scr_draw_views (void)
+{
+	net_view->visible = (!cls.demoplayback
+						 && realtime - cl.last_servermessage >= 0.3);
+	loading_view->visible = cl.loading;
+
+	view_draw (r_data->vid->conview);
+}
+
 static SCR_Func scr_funcs_normal[] = {
 	0, //Draw_Crosshair,
 	0, //SCR_DrawRam,
@@ -92,6 +102,7 @@ static SCR_Func scr_funcs_normal[] = {
 	Sbar_Draw,
 	SCR_CShift,
 	Sbar_DrawCenterPrint,
+	scr_draw_views,
 	Con_DrawConsole,
 	0
 };
@@ -140,10 +151,6 @@ CL_UpdateScreen (double realtime)
 		loading_view->visible = 0;
 		view_add (r_data->vid->conview, loading_view);
 	}
-
-	net_view->visible = (!cls.demoplayback
-						 && realtime - cl.last_servermessage >= 0.3);
-	loading_view->visible = cl.loading;
 
 	//FIXME not every time
 	if (cls.state == ca_active) {
