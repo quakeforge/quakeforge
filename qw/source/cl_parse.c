@@ -213,15 +213,18 @@ CL_CalcNet (void)
 	for (i = cls.netchan.outgoing_sequence - UPDATE_BACKUP + 1;
 		 i <= cls.netchan.outgoing_sequence; i++) {
 		frame = &cl.frames[i & UPDATE_MASK];
-		if (frame->receivedtime == -1)
+		if (frame->receivedtime == -1) {
 			packet_latency[i & NET_TIMINGSMASK] = 9999;		// dropped
-		else if (frame->receivedtime == -2)
+		} else if (frame->receivedtime == -2) {
 			packet_latency[i & NET_TIMINGSMASK] = 10000;	// choked
-		else if (frame->invalid)
+		} else if (frame->invalid) {
 			packet_latency[i & NET_TIMINGSMASK] = 9998;		// invalid delta
-		else
-			packet_latency[i & NET_TIMINGSMASK] =
-				(frame->receivedtime - frame->senttime) * 20;
+		} else {
+			double      d = frame->receivedtime - frame->senttime;
+			d = log (d * 1000 + 1) / log (1000);
+			d *= d * cl_netgraph_height->int_val;
+			packet_latency[i & NET_TIMINGSMASK] = d;
+		}
 	}
 
 	lost = 0;
