@@ -46,12 +46,12 @@
 	Called by only R_DisplayTime
 */
 void
-sw32_R_LineGraph (int x, int y, int *h_vals, int count)
+sw32_R_LineGraph (int x, int y, int *h_vals, int count, int height)
 {
 	int         h, i, s, color;
 
 	// FIXME: disable on no-buffer adapters, or put in the driver
-	s = r_graphheight->int_val;
+	s = height;
 
 	while (count--) {
 		h = *h_vals++;

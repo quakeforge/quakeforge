@@ -54,7 +54,7 @@ extern vid_render_funcs_t *vid_render_funcs;
 extern	refdef_t	r_refdef;
 extern int r_viewsize;
 
-void R_LineGraph (int x, int y, int *h_vals, int count);
+void R_LineGraph (int x, int y, int *h_vals, int count, int height);
 
 void Fog_Update (float density, float red, float green, float blue,
 				 float time);

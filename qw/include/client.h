@@ -270,9 +270,11 @@ typedef struct client_state_s {
 /*
   cvars
 */
-extern	struct cvar_s	*r_netgraph;
-extern	struct cvar_s	*r_netgraph_alpha;
-extern	struct cvar_s	*r_netgraph_box;
+extern	struct cvar_s	*cl_netgraph;
+extern	struct cvar_s	*cl_netgraph_height;
+extern	struct cvar_s	*cl_netgraph_alpha;
+extern	struct cvar_s	*cl_netgraph_box;
+
 extern	struct cvar_s	*cl_upspeed;
 extern	struct cvar_s	*cl_forwardspeed;
 extern	struct cvar_s	*cl_backspeed;
@@ -331,8 +333,10 @@ extern struct cbuf_s *cl_stbuf;
 
 void Cvar_Info (struct cvar_s *var);
 
-struct view_s;
+extern struct view_s *cl_netgraph_view;
 void CL_NetGraph (struct view_s *view);
+void CL_NetGraph_Init_Cvars (void);
+
 void CL_UpdateScreen (double realtime);
 
 void CL_SetState (cactive_t state);

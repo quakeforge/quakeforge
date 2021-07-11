@@ -55,7 +55,6 @@
 
 static view_t  *net_view;
 static view_t  *loading_view;
-static view_t  *graph_view;
 
 static void
 draw_pic (view_t *view)
@@ -94,11 +93,11 @@ scr_draw_views (void)
 							 - cls.netchan.incoming_acknowledged)
 						    >= UPDATE_BACKUP - 1);
 	loading_view->visible = cl.loading;
-	graph_view->visible = r_netgraph->int_val != 0;
+	cl_netgraph_view->visible = cl_netgraph->int_val != 0;
 
 	//FIXME don't do every frame
-	view_move (graph_view, graph_view->xpos, sb_lines);
-	view_setgravity (graph_view,
+	view_move (cl_netgraph_view, cl_netgraph_view->xpos, sb_lines);
+	view_setgravity (cl_netgraph_view,
 					 hud_swap->int_val ? grav_southeast : grav_southwest);
 
 	view_draw (r_data->vid->conview);
@@ -165,14 +164,14 @@ CL_UpdateScreen (double realtime)
 		view_add (r_data->vid->conview, loading_view);
 	}
 
-	if (!graph_view) {
-		graph_view = view_new (0, -24,
-							   NET_TIMINGS + 16,
-							   r_data->graphheight->int_val + 25,
-							   grav_southwest);
-		graph_view->draw = CL_NetGraph;
-		graph_view->visible = 0;
-		view_add (r_data->vid->conview, graph_view);
+	if (!cl_netgraph_view) {
+		cl_netgraph_view = view_new (0, sb_lines,
+									 NET_TIMINGS + 16,
+									 cl_netgraph_height->int_val + 25,
+									 grav_southwest);
+		cl_netgraph_view->draw = CL_NetGraph;
+		cl_netgraph_view->visible = 0;
+		view_add (r_data->vid->conview, cl_netgraph_view);
 	}
 
 	//FIXME not every time

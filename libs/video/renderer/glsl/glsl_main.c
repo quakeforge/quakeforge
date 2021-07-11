@@ -265,7 +265,7 @@ glsl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 }
 
 void
-glsl_R_LineGraph (int x, int y, int *h_vals, int count)
+glsl_R_LineGraph (int x, int y, int *h_vals, int count, int height)
 {
 }
 

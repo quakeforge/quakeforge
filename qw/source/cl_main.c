@@ -1311,18 +1311,11 @@ CL_Init_Cvars (void)
 	CL_Cam_Init_Cvars ();
 	CL_Input_Init_Cvars ();
 	CL_Prediction_Init_Cvars ();
+	CL_NetGraph_Init_Cvars ();
 	Game_Init_Cvars ();
 	Pmove_Init_Cvars ();
 	Team_Init_Cvars ();
 	V_Init_Cvars ();
-
-	r_netgraph = Cvar_Get ("r_netgraph", "0", CVAR_NONE, NULL,
-						   "Toggle the display of a graph showing network "
-						   "performance");
-	r_netgraph_alpha = Cvar_Get ("r_netgraph_alpha", "0.5", CVAR_ARCHIVE, NULL,
-								 "Net graph translucency");
-	r_netgraph_box = Cvar_Get ("r_netgraph_box", "1", CVAR_ARCHIVE, NULL,
-							   "Draw box around net graph");
 
 	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
 

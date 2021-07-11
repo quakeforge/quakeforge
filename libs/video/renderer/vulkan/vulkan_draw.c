@@ -330,12 +330,6 @@ Vulkan_Draw_UncachePic (const char *path, vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_Draw_TextBox (int x, int y, int width, int lines, byte alpha,
-					 vulkan_ctx_t *ctx)
-{
-}
-
-void
 Vulkan_Draw_Shutdown (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
@@ -585,6 +579,67 @@ Vulkan_Draw_CrosshairAt (int ch, int x, int y, vulkan_ctx_t *ctx)
 void
 Vulkan_Draw_Crosshair (vulkan_ctx_t *ctx)
 {
+}
+
+void
+Vulkan_Draw_TextBox (int x, int y, int width, int lines, byte alpha,
+					 vulkan_ctx_t *ctx)
+{
+	drawctx_t  *dctx = ctx->draw_context;
+	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
+
+	quat_t      color = {1, 1, 1, 1};
+	qpic_t     *p;
+	int         cx, cy, n;
+#define draw(px, py, pp) \
+	draw_pic (px, py, pp->width, pp->height, pp, \
+			  0, 0, pp->width, pp->height, color, frame);
+
+	color[3] = alpha;
+	// draw left side
+	cx = x;
+	cy = y;
+	p = Vulkan_Draw_CachePic ("gfx/box_tl.lmp", true, ctx);
+	draw (cx, cy, p);
+	p = Vulkan_Draw_CachePic ("gfx/box_ml.lmp", true, ctx);
+	for (n = 0; n < lines; n++) {
+		cy += 8;
+		draw (cx, cy, p);
+	}
+	p = Vulkan_Draw_CachePic ("gfx/box_bl.lmp", true, ctx);
+	draw (cx, cy + 8, p);
+
+	// draw middle
+	cx += 8;
+	while (width > 0) {
+		cy = y;
+		p = Vulkan_Draw_CachePic ("gfx/box_tm.lmp", true, ctx);
+		draw (cx, cy, p);
+		p = Vulkan_Draw_CachePic ("gfx/box_mm.lmp", true, ctx);
+		for (n = 0; n < lines; n++) {
+			cy += 8;
+			if (n == 1)
+				p = Vulkan_Draw_CachePic ("gfx/box_mm2.lmp", true, ctx);
+			draw (cx, cy, p);
+		}
+		p = Vulkan_Draw_CachePic ("gfx/box_bm.lmp", true, ctx);
+		draw (cx, cy + 8, p);
+		width -= 2;
+		cx += 16;
+	}
+
+	// draw right side
+	cy = y;
+	p = Vulkan_Draw_CachePic ("gfx/box_tr.lmp", true, ctx);
+	draw (cx, cy, p);
+	p = Vulkan_Draw_CachePic ("gfx/box_mr.lmp", true, ctx);
+	for (n = 0; n < lines; n++) {
+		cy += 8;
+		draw (cx, cy, p);
+	}
+	p = Vulkan_Draw_CachePic ("gfx/box_br.lmp", true, ctx);
+	draw (cx, cy + 8, p);
+#undef draw
 }
 
 void

@@ -236,7 +236,7 @@ vulkan_R_NewMap (model_t *worldmodel, model_t **models, int num_models)
 }
 
 static void
-vulkan_R_LineGraph (int x, int y, int *h_vals, int count)
+vulkan_R_LineGraph (int x, int y, int *h_vals, int count, int height)
 {
 }
 

@@ -40,13 +40,13 @@
 	Called by only R_DisplayTime
 */
 void
-R_LineGraph (int x, int y, int *h_vals, int count)
+R_LineGraph (int x, int y, int *h_vals, int count, int height)
 {
 	int         h, i, s, color;
 	byte       *dest;
 
 	// FIXME: disable on no-buffer adapters, or put in the driver
-	s = r_graphheight->int_val;
+	s = height;
 
 	while (count--) {
 		dest = ((byte*)vid.buffer) + vid.rowbytes * y + x++;
