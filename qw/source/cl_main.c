@@ -1028,8 +1028,9 @@ CL_ReadPackets (void)
 			CL_ConnectionlessPacket ();
 			continue;
 		}
-		if (*(char *) net_message->message->data == A2A_ACK)
-		{
+		if (net_message->message->cursize == 1
+			&& *(char *) net_message->message->data == A2A_ACK) {
+			Sys_Printf ("ping ack\n");
 			SL_CheckPing (NET_AdrToString (net_from));
 			continue;
 		}
