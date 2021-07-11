@@ -71,7 +71,7 @@ D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height)
 	rect.height = height << repshift;
 	rect.next = NULL;
 
-	win_sw_context->update (&rect);
+	win_sw_context->update (win_sw_context, &rect);
 }
 
 
@@ -101,7 +101,7 @@ D_EndDirectRect (int x, int y, int width, int height)
 	rect.height = height << repshift;
 	rect.next = NULL;
 
-	win_sw_context->update (&rect);
+	win_sw_context->update (win_sw_context, &rect);
 }
 
 static void
@@ -130,13 +130,13 @@ VID_Init (byte *palette, byte *colormap)
 
 	VID_GetWindowSize (640, 480);
 	Win_OpenDisplay ();
-	vid_internal.choose_visual ();
+	vid_internal.choose_visual (win_sw_context);
 	Win_SetVidMode (viddef.width, viddef.height);
 	Win_CreateWindow (viddef.width, viddef.height);
-	vid_internal.create_context ();
+	vid_internal.create_context (win_sw_context);
 
 	VID_InitGamma (palette);
-	viddef.vid_internal->set_palette (palette);
+	viddef.vid_internal->set_palette (win_sw_context, palette);
 
 	Sys_MaskPrintf (SYS_vid, "Video mode %dx%d initialized.\n",
 					viddef.width, viddef.height);

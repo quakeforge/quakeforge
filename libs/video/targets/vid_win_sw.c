@@ -228,7 +228,7 @@ VID_CreateGDIDriver (int width, int height, const byte *palette, void **buffer,
 
 	// create a palette
 	VID_InitGamma (palette);
-	viddef.vid_internal->set_palette (palette);
+	viddef.vid_internal->set_palette (viddef.vid_internal->data, palette);
 }
 
 void
@@ -308,7 +308,7 @@ Win_CreateDriver (void)
 }
 
 static void
-win_init_bufers (void)
+win_init_bufers (void *data)
 {
 	Win_UnloadAllDrivers ();
 	Win_CreateDriver ();
@@ -323,7 +323,7 @@ win_init_bufers (void)
 }
 
 static void
-win_set_palette (const byte *palette)
+win_set_palette (sw_ctx_t *ctx, const byte *palette)
 {
 	palette_changed = 1;
 	if (palette != current_palette) {
@@ -410,7 +410,7 @@ dd_blit_rect (vrect_t *rect)
 }
 
 static void
-win_sw_update (vrect_t *rects)
+win_sw_update (sw_ctx_t *ctx, vrect_t *rects)
 {
 	vrect_t     full_rect;
 	if (!win_palettized && palette_changed) {

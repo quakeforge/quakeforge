@@ -56,7 +56,6 @@ static qboolean snd_firsttime = true;
 static qboolean primary_format_set;
 
 static int  sample16;
-static volatile dma_t sn;
 
 /*
   Global variables. Must be visible to window-procedure function
@@ -82,21 +81,13 @@ static LPDIRECTSOUNDBUFFER pDSBuf, pDSPBuf;
 
 static HINSTANCE   hInstDS;
 
-static sndinitstat SNDDMA_InitDirect (void);
+static sndinitstat SNDDMA_InitDirect (snd_t *snd);
 
 static cvar_t	   *snd_stereo;
 static cvar_t	   *snd_rate;
 static cvar_t	   *snd_bits;
 
-static plugin_t				plugin_info;
-static plugin_data_t		plugin_info_data;
-static plugin_funcs_t		plugin_info_funcs;
-static general_data_t		plugin_info_general_data;
-static general_funcs_t		plugin_info_general_funcs;
-static snd_output_data_t	plugin_info_snd_output_data;
-static snd_output_funcs_t	plugin_info_snd_output_funcs;
-
-static DWORD *DSOUND_LockBuffer (qboolean lockit);
+static DWORD *DSOUND_LockBuffer (snd_t *snd, qboolean lockit);
 
 static void
 SNDDMA_Init_Cvars (void)
@@ -110,12 +101,12 @@ SNDDMA_Init_Cvars (void)
 }
 
 static void
-SNDDMA_BlockSound (void)
+SNDDMA_BlockSound (snd_t *snd)
 {
 }
 
 static void
-SNDDMA_UnblockSound (void)
+SNDDMA_UnblockSound (snd_t *snd)
 {
 }
 
@@ -151,7 +142,7 @@ FreeSound (void)
 	Direct-Sound support
 */
 static sndinitstat
-SNDDMA_InitDirect (void)
+SNDDMA_InitDirect (snd_t *snd)
 {
 	int				reps;
 	DSBUFFERDESC	dsbuf;
@@ -161,22 +152,20 @@ SNDDMA_InitDirect (void)
 	HRESULT			hresult;
 	WAVEFORMATEX	format, pformat;
 
-	memset ((void *) &sn, 0, sizeof (sn));
-
 	if (!snd_stereo->int_val) {
-		sn.channels = 1;
+		snd->channels = 1;
 	} else {
-		sn.channels = 2;
+		snd->channels = 2;
 	}
 
-	sn.samplebits = snd_bits->int_val;
-	sn.speed = snd_rate->int_val;
+	snd->samplebits = snd_bits->int_val;
+	snd->speed = snd_rate->int_val;
 
 	memset (&format, 0, sizeof (format));
 	format.wFormatTag = WAVE_FORMAT_PCM;
-	format.nChannels = sn.channels;
-	format.wBitsPerSample = sn.samplebits;
-	format.nSamplesPerSec = sn.speed;
+	format.nChannels = snd->channels;
+	format.wBitsPerSample = snd->samplebits;
+	format.nSamplesPerSec = snd->speed;
 	format.nBlockAlign = format.nChannels * format.wBitsPerSample / 8;
 	format.cbSize = 0;
 	format.nAvgBytesPerSec = format.nSamplesPerSec * format.nBlockAlign;
@@ -267,9 +256,9 @@ SNDDMA_InitDirect (void)
 			return SIS_FAILURE;
 		}
 
-		sn.channels = format.nChannels;
-		sn.samplebits = format.wBitsPerSample;
-		sn.speed = format.nSamplesPerSec;
+		snd->channels = format.nChannels;
+		snd->samplebits = format.wBitsPerSample;
+		snd->speed = format.nSamplesPerSec;
 
 		if (DS_OK != IDirectSound_GetCaps (pDSBuf, &dsbcaps)) {
 			Sys_Printf ("DS:GetCaps failed\n");
@@ -331,11 +320,11 @@ SNDDMA_InitDirect (void)
 										   &dwWrite);
 	IDirectSoundBuffer_Play (pDSBuf, 0, 0, DSBPLAY_LOOPING);
 
-	sn.frames = gSndBufSize / (sn.samplebits / 8) / sn.channels;
-	sn.framepos = 0;
-	sn.submission_chunk = 1;
-	sn.buffer = (byte *) lpData;
-	sample16 = (sn.samplebits / 8) - 1;
+	snd->frames = gSndBufSize / (snd->samplebits / 8) / snd->channels;
+	snd->framepos = 0;
+	snd->submission_chunk = 1;
+	snd->buffer = (byte *) lpData;
+	sample16 = (snd->samplebits / 8) - 1;
 
 	dsound_init = true;
 
@@ -349,10 +338,11 @@ SNDDMA_InitDirect (void)
 	Try to find a sound device to mix for.
 	Returns false if nothing is found.
 */
-static volatile dma_t *
-SNDDMA_Init (void)
+static int
+SNDDMA_Init (snd_t *snd)
 {
 	sndinitstat stat;
+	int         ret = 0;
 
 	stat = SIS_FAILURE;					// assume DirectSound won't
 	// initialize
@@ -360,17 +350,16 @@ SNDDMA_Init (void)
 	/* Init DirectSound */
 	if (snd_firsttime) {
 		snd_firsttime = false;
-		stat = SNDDMA_InitDirect ();
+		stat = SNDDMA_InitDirect (snd);
 
-		if (stat == SIS_SUCCESS) {
+		if ((ret = (stat == SIS_SUCCESS))) {
 			Sys_Printf ("DirectSound initialized\n");
 		} else {
 			Sys_Printf ("DirectSound failed to init\n");
-			return 0;
 		}
 	}
 
-	return &sn;
+	return ret;
 }
 
 /*
@@ -381,31 +370,31 @@ SNDDMA_Init (void)
 	how many sample are required to fill it up.
 */
 static int
-SNDDMA_GetDMAPos (void)
+SNDDMA_GetDMAPos (snd_t *snd)
 {
 	int		s = 0;
 	DWORD		dwWrite;
 	MMTIME	mmtime;
 	unsigned long *pbuf;
 
-	pbuf = DSOUND_LockBuffer (true);
+	pbuf = DSOUND_LockBuffer (snd, true);
 	if (!pbuf) {
 		Sys_Printf ("DSOUND_LockBuffer fails!\n");
 		return -1;
 	}
-	sn.buffer = (unsigned char *) pbuf;
+	snd->buffer = (unsigned char *) pbuf;
 	mmtime.wType = TIME_SAMPLES;
 	IDirectSoundBuffer_GetCurrentPosition (pDSBuf, &mmtime.u.sample,
 											   &dwWrite);
 	s = mmtime.u.sample - mmstarttime.u.sample;
 
 	s >>= sample16;
-	s /= sn.channels;
+	s /= snd->channels;
 
-	s %= sn.frames;
-	sn.framepos = s;
+	s %= snd->frames;
+	snd->framepos = s;
 
-	return sn.framepos;
+	return snd->framepos;
 }
 
 /*
@@ -414,19 +403,19 @@ SNDDMA_GetDMAPos (void)
 	Send sound to device if buffer isn't really the dma buffer
 */
 static void
-SNDDMA_Submit (void)
+SNDDMA_Submit (snd_t *snd)
 {
-	DSOUND_LockBuffer (false);
+	DSOUND_LockBuffer (snd, false);
 }
 
 static void
-SNDDMA_shutdown (void)
+SNDDMA_shutdown (snd_t *snd)
 {
 	FreeSound ();
 }
 
 static DWORD *
-DSOUND_LockBuffer (qboolean lockit)
+DSOUND_LockBuffer (snd_t *snd, qboolean lockit)
 {
 	int		reps;
 
@@ -447,16 +436,16 @@ DSOUND_LockBuffer (qboolean lockit)
 			if (hresult != DSERR_BUFFERLOST) {
 				Sys_Printf
 					("S_TransferStereo16: DS::Lock Sound Buffer Failed\n");
-				SNDDMA_shutdown ();
-				SNDDMA_Init ();
+				SNDDMA_shutdown (snd);
+				SNDDMA_Init (snd);
 				return NULL;
 			}
 
 			if (++reps > 10000) {
 				Sys_Printf
 					("S_TransferStereo16: DS: couldn't restore buffer\n");
-				SNDDMA_shutdown ();
-				SNDDMA_Init ();
+				SNDDMA_shutdown (snd);
+				SNDDMA_Init (snd);
 				return NULL;
 			}
 		}
@@ -471,14 +460,14 @@ DSOUND_LockBuffer (qboolean lockit)
 }
 
 static void __attribute__((used)) //FIXME make it true
-DSOUND_ClearBuffer (int clear)
+DSOUND_ClearBuffer (snd_t *snd, int clear)
 {
 	DWORD      *pData;
 
 // FIXME: this should be called with 2nd pbuf2 = NULL, dwsize =0
-	pData = DSOUND_LockBuffer (true);
-	memset (pData, clear, sn.frames * sn.channels * sn.samplebits / 8);
-	DSOUND_LockBuffer (false);
+	pData = DSOUND_LockBuffer (snd, true);
+	memset (pData, clear, snd->frames * snd->channels * snd->samplebits / 8);
+	DSOUND_LockBuffer (snd, false);
 }
 
 static void __attribute__((used)) //FIXME make it true
@@ -502,35 +491,49 @@ DSOUND_Restore (void)
 	return;
 }
 
+static snd_output_data_t plugin_info_snd_output_data = {
+};
+
+static snd_output_funcs_t plugin_info_snd_output_funcs = {
+	.init          = SNDDMA_Init,
+	.shutdown      = SNDDMA_shutdown,
+	.get_dma_pos   = SNDDMA_GetDMAPos,
+	.submit        = SNDDMA_Submit,
+	.block_sound   = SNDDMA_BlockSound,
+	.unblock_sound = SNDDMA_UnblockSound,
+};
+
+static general_data_t plugin_info_general_data = {
+};
+
+static general_funcs_t plugin_info_general_funcs = {
+	.init = SNDDMA_Init_Cvars,
+};
+
+static plugin_data_t plugin_info_data = {
+	.general    = &plugin_info_general_data,
+	.snd_output = &plugin_info_snd_output_data,
+};
+
+static plugin_funcs_t plugin_info_funcs = {
+	.general    = &plugin_info_general_funcs,
+	.snd_output = &plugin_info_snd_output_funcs,
+};
+
+static plugin_t plugin_info = {
+	.type           = qfp_snd_output,
+	.api_version    = QFPLUGIN_VERSION,
+	.plugin_version = "0.1",
+	.description    = "Windows DirectX output",
+	.copyright      = "Copyright (C) 1996-1997 id Software, Inc.\n"
+		"Copyright (C) 1999,2000,2001,2002,2003  contributors of the "
+		"QuakeForge project\n"
+		"Please see the file \"AUTHORS\" for a list of contributors",
+	.functions      = &plugin_info_funcs,
+	.data           = &plugin_info_data,
+};
+
 PLUGIN_INFO(snd_output, dx)
 {
-	plugin_info.type = qfp_snd_output;
-	plugin_info.api_version = QFPLUGIN_VERSION;
-	plugin_info.plugin_version = "0.1";
-	plugin_info.description = "Windows DirectX output";
-	plugin_info.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
-		"Copyright (C) 1999,2000,2001,2002,2003  contributors of the QuakeForge "
-		"project\n"
-		"Please see the file \"AUTHORS\" for a list of contributors";
-	plugin_info.functions = &plugin_info_funcs;
-	plugin_info.data = &plugin_info_data;
-
-	plugin_info_data.general = &plugin_info_general_data;
-	plugin_info_data.input = NULL;
-	plugin_info_data.snd_output = &plugin_info_snd_output_data;
-
-	plugin_info_funcs.general = &plugin_info_general_funcs;
-	plugin_info_funcs.input = NULL;
-	plugin_info_funcs.snd_output = &plugin_info_snd_output_funcs;
-
-	plugin_info_general_funcs.p_Init = SNDDMA_Init_Cvars;
-	plugin_info_general_funcs.p_Shutdown = NULL;
-	plugin_info_snd_output_funcs.pS_O_Init = SNDDMA_Init;
-	plugin_info_snd_output_funcs.pS_O_Shutdown = SNDDMA_shutdown;
-	plugin_info_snd_output_funcs.pS_O_GetDMAPos = SNDDMA_GetDMAPos;
-	plugin_info_snd_output_funcs.pS_O_Submit = SNDDMA_Submit;
-	plugin_info_snd_output_funcs.pS_O_BlockSound = SNDDMA_BlockSound;
-	plugin_info_snd_output_funcs.pS_O_UnblockSound = SNDDMA_UnblockSound;
-
 	return &plugin_info;
 }

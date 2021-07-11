@@ -49,7 +49,7 @@
 
 #ifdef _WIN32
 # include "winquake.h"
-HWND mainwindow;
+HWND win_mainwindow;
 #endif
 
 #define MEMSIZE (32 * 1024 * 1024)

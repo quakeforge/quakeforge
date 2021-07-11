@@ -50,7 +50,6 @@ static qboolean snd_firsttime = true;
 static int  sample16;
 static int  snd_sent, snd_completed;
 static int snd_blocked = 0;
-static volatile dma_t sn;
 
 /*
   Global variables. Must be visible to window-procedure function
@@ -69,19 +68,11 @@ static HWAVEOUT    hWaveOut;
 
 static DWORD       gSndBufSize;
 
-static qboolean    SNDDMA_InitWav (void);
+static qboolean    SNDDMA_InitWav (snd_t *snd);
 
 static cvar_t	   *snd_stereo;
 static cvar_t	   *snd_rate;
 static cvar_t	   *snd_bits;
-
-static plugin_t				plugin_info;
-static plugin_data_t		plugin_info_data;
-static plugin_funcs_t		plugin_info_funcs;
-static general_data_t		plugin_info_general_data;
-static general_funcs_t		plugin_info_general_funcs;
-static snd_output_data_t	plugin_info_snd_output_data;
-static snd_output_funcs_t	plugin_info_snd_output_funcs;
 
 
 static void
@@ -96,14 +87,14 @@ SNDDMA_Init_Cvars (void)
 }
 
 static void
-SNDDMA_BlockSound (void)
+SNDDMA_BlockSound (snd_t *snd)
 {
 	if (++snd_blocked == 1)
 		waveOutReset (hWaveOut);
 }
 
 static void
-SNDDMA_UnblockSound (void)
+SNDDMA_UnblockSound (snd_t *snd)
 {
 	if (snd_blocked)
 		--snd_blocked;
@@ -150,7 +141,7 @@ FreeSound (void)
 	Crappy windows multimedia base
 */
 static qboolean
-SNDDMA_InitWav (void)
+SNDDMA_InitWav (snd_t *snd)
 {
 	int			i;
 	HRESULT		hr;
@@ -160,19 +151,19 @@ SNDDMA_InitWav (void)
 	snd_completed = 0;
 
 	if (!snd_stereo->int_val) {
-		sn.channels = 1;
+		snd->channels = 1;
 	} else {
-		sn.channels = 2;
+		snd->channels = 2;
 	}
 
-	sn.samplebits = snd_bits->int_val;
-	sn.speed = snd_rate->int_val;
+	snd->samplebits = snd_bits->int_val;
+	snd->speed = snd_rate->int_val;
 
 	memset (&format, 0, sizeof (format));
 	format.wFormatTag = WAVE_FORMAT_PCM;
-	format.nChannels = sn.channels;
-	format.wBitsPerSample = sn.samplebits;
-	format.nSamplesPerSec = sn.speed;
+	format.nChannels = snd->channels;
+	format.wBitsPerSample = snd->samplebits;
+	format.nSamplesPerSec = snd->speed;
 	format.nBlockAlign = format.nChannels * format.wBitsPerSample / 8;
 	format.cbSize = 0;
 	format.nAvgBytesPerSec = format.nSamplesPerSec * format.nBlockAlign;
@@ -246,11 +237,11 @@ SNDDMA_InitWav (void)
 		}
 	}
 
-	sn.frames = gSndBufSize / (sn.samplebits / 8) / sn.channels;
-	sn.framepos = 0;
-	sn.submission_chunk = 1;
-	sn.buffer = (unsigned char *) lpData;
-	sample16 = (sn.samplebits / 8) - 1;
+	snd->frames = gSndBufSize / (snd->samplebits / 8) / snd->channels;
+	snd->framepos = 0;
+	snd->submission_chunk = 1;
+	snd->buffer = (unsigned char *) lpData;
+	sample16 = (snd->samplebits / 8) - 1;
 
 	return true;
 }
@@ -261,11 +252,12 @@ SNDDMA_InitWav (void)
 	Try to find a sound device to mix for.
 	Returns false if nothing is found.
 */
-static volatile dma_t *
-SNDDMA_Init (void)
+static int
+SNDDMA_Init (snd_t *snd)
 {
+	int         ret = 0;
 	if (snd_firsttime) {
-		if (SNDDMA_InitWav ()) {
+		if ((ret = SNDDMA_InitWav (snd))) {
 			Sys_Printf ("Wave sound initialized\n");
 		} else {
 			Sys_Printf ("Wave sound failed to init\n");
@@ -273,7 +265,7 @@ SNDDMA_Init (void)
 	}
 
 	snd_firsttime = false;
-	return &sn;
+	return ret;
 }
 
 /*
@@ -284,19 +276,19 @@ SNDDMA_Init (void)
 	how many sample are required to fill it up.
 */
 static int
-SNDDMA_GetDMAPos (void)
+SNDDMA_GetDMAPos (snd_t *snd)
 {
 	int		s = 0;
 
 	s = snd_sent * WAV_BUFFER_SIZE;
 
 	s >>= sample16;
-	s /= sn.channels;
+	s /= snd->channels;
 
-	s %= sn.frames;
-	sn.framepos = s;
+	s %= snd->frames;
+	snd->framepos = s;
 
-	return sn.framepos;
+	return snd->framepos;
 }
 
 /*
@@ -305,7 +297,7 @@ SNDDMA_GetDMAPos (void)
 	Send sound to device if buffer isn't really the dma buffer
 */
 static void
-SNDDMA_Submit (void)
+SNDDMA_Submit (snd_t *snd)
 {
 	int			wResult;
 	LPWAVEHDR	h;
@@ -345,40 +337,54 @@ SNDDMA_Submit (void)
 }
 
 static void
-SNDDMA_shutdown (void)
+SNDDMA_shutdown (snd_t *snd)
 {
 	FreeSound ();
 }
 
-PLUGIN_INFO(snd_output, win)
-{
-	plugin_info.type = qfp_snd_output;
-	plugin_info.api_version = QFPLUGIN_VERSION;
-	plugin_info.plugin_version = "0.1";
-	plugin_info.description = "Windows digital output";
-	plugin_info.copyright = "Copyright (C) 1996-1997 id Software, Inc.\n"
+static snd_output_data_t plugin_info_snd_output_data = {
+};
+
+static snd_output_funcs_t plugin_info_snd_output_funcs = {
+	.init          = SNDDMA_Init,
+	.shutdown      = SNDDMA_shutdown,
+	.get_dma_pos   = SNDDMA_GetDMAPos,
+	.submit        = SNDDMA_Submit,
+	.block_sound   = SNDDMA_BlockSound,
+	.unblock_sound = SNDDMA_UnblockSound,
+};
+
+static general_data_t plugin_info_general_data = {
+};
+
+static general_funcs_t plugin_info_general_funcs = {
+	.init = SNDDMA_Init_Cvars,
+};
+
+static plugin_data_t plugin_info_data = {
+	.general    = &plugin_info_general_data,
+	.snd_output = &plugin_info_snd_output_data,
+};
+
+static plugin_funcs_t plugin_info_funcs = {
+	.general    = &plugin_info_general_funcs,
+	.snd_output = &plugin_info_snd_output_funcs,
+};
+
+static plugin_t plugin_info = {
+	.type           = qfp_snd_output,
+	.api_version    = QFPLUGIN_VERSION,
+	.plugin_version = "0.1",
+	.description    = "Windows digital output",
+	.copyright      = "Copyright (C) 1996-1997 id Software, Inc.\n"
 		"Copyright (C) 1999,2000,2001  contributors of the QuakeForge "
 		"project\n"
-		"Please see the file \"AUTHORS\" for a list of contributors";
-	plugin_info.functions = &plugin_info_funcs;
-	plugin_info.data = &plugin_info_data;
+		"Please see the file \"AUTHORS\" for a list of contributors",
+	.functions      = &plugin_info_funcs,
+	.data           = &plugin_info_data,
+};
 
-	plugin_info_data.general = &plugin_info_general_data;
-	plugin_info_data.input = NULL;
-	plugin_info_data.snd_output = &plugin_info_snd_output_data;
-
-	plugin_info_funcs.general = &plugin_info_general_funcs;
-	plugin_info_funcs.input = NULL;
-	plugin_info_funcs.snd_output = &plugin_info_snd_output_funcs;
-
-	plugin_info_general_funcs.p_Init = SNDDMA_Init_Cvars;
-	plugin_info_general_funcs.p_Shutdown = NULL;
-	plugin_info_snd_output_funcs.pS_O_Init = SNDDMA_Init;
-	plugin_info_snd_output_funcs.pS_O_Shutdown = SNDDMA_shutdown;
-	plugin_info_snd_output_funcs.pS_O_GetDMAPos = SNDDMA_GetDMAPos;
-	plugin_info_snd_output_funcs.pS_O_Submit = SNDDMA_Submit;
-	plugin_info_snd_output_funcs.pS_O_BlockSound = SNDDMA_BlockSound;
-	plugin_info_snd_output_funcs.pS_O_UnblockSound = SNDDMA_UnblockSound;
-
+PLUGIN_INFO(snd_output, win)
+{
 	return &plugin_info;
 }
