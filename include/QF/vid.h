@@ -54,11 +54,7 @@ typedef struct {
 	qboolean		 recalc_refdef;	// if true, recalc vid-based stuff
 	qboolean		 cshift_changed;
 	quat_t           cshift_color;
-	void			*conbuffer;
-	int				 conrowbytes;
 	struct view_s   *conview;
-	byte			*direct;		// direct drawing to framebuffer, if not
-									//  NULL
 	struct vid_internal_s *vid_internal;
 } viddef_t;
 

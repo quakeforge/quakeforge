@@ -287,7 +287,7 @@ sw32_Draw_Character (int x, int y, unsigned int chr)
 	switch(sw32_ctx->pixbytes) {
 	case 1:
 	{
-		byte       *dest = (byte *) vid.conbuffer + y * vid.conrowbytes + x;
+		byte       *dest = (byte *) vid.buffer + y * vid.rowbytes + x;
 
 		while (drawline--) {
 			if (source[0])
@@ -307,14 +307,14 @@ sw32_Draw_Character (int x, int y, unsigned int chr)
 			if (source[7])
 				dest[7] = source[7];
 			source += 128;
-			dest += vid.conrowbytes;
+			dest += vid.rowbytes;
 		}
 	}
 	break;
 	case 2:
 	{
-		unsigned short *dest = (unsigned short *) vid.conbuffer + y *
-			(vid.conrowbytes >> 1) + x;
+		unsigned short *dest = (unsigned short *) vid.buffer + y *
+			(vid.rowbytes >> 1) + x;
 
 		while (drawline--) {
 			if (source[0])
@@ -335,14 +335,14 @@ sw32_Draw_Character (int x, int y, unsigned int chr)
 				dest[7] = sw32_8to16table[source[7]];
 
 			source += 128;
-			dest += (vid.conrowbytes >> 1);
+			dest += (vid.rowbytes >> 1);
 		}
 	}
 	break;
 	case 4:
 	{
-		unsigned int *dest = (unsigned int *) vid.conbuffer + y *
-			(vid.conrowbytes >> 2) + x;
+		unsigned int *dest = (unsigned int *) vid.buffer + y *
+			(vid.rowbytes >> 2) + x;
 
 		while (drawline--) {
 			if (source[0])
@@ -363,7 +363,7 @@ sw32_Draw_Character (int x, int y, unsigned int chr)
 				dest[7] = d_8to24table[source[7]];
 
 			source += 128;
-			dest += (vid.conrowbytes >> 2);
+			dest += (vid.rowbytes >> 2);
 		}
 	}
 	break;
@@ -407,14 +407,14 @@ Draw_Pixel (int x, int y, byte color)
 	switch(sw32_ctx->pixbytes)
 	{
 	case 1:
-		((byte *) vid.conbuffer)[y * vid.conrowbytes + x] = color;
+		((byte *) vid.buffer)[y * vid.rowbytes + x] = color;
 		break;
 	case 2:
-		((unsigned short *) vid.conbuffer)[y * (vid.conrowbytes >> 1) + x] =
+		((unsigned short *) vid.buffer)[y * (vid.rowbytes >> 1) + x] =
 			sw32_8to16table[color];
 		break;
 	case 4:
-		((unsigned int *) vid.conbuffer)[y * (vid.conrowbytes >> 2) + x] =
+		((unsigned int *) vid.buffer)[y * (vid.rowbytes >> 2) + x] =
 			d_8to24table[color];
 		break;
 	default:
@@ -745,9 +745,9 @@ sw32_Draw_ConsoleBackground (int lines, byte alpha)
 	switch(sw32_ctx->pixbytes) {
 	case 1:
 	{
-		byte       *dest = vid.conbuffer;
+		byte       *dest = vid.buffer;
 
-		for (y = 0; y < lines; y++, dest += vid.conrowbytes) {
+		for (y = 0; y < lines; y++, dest += vid.rowbytes) {
 			v = (vid.conview->ylen - lines + y) * 200 / vid.conview->ylen;
 			src = conback->data + v * 320;
 			if (vid.conview->xlen == 320)
@@ -771,9 +771,9 @@ sw32_Draw_ConsoleBackground (int lines, byte alpha)
 	break;
 	case 2:
 	{
-		unsigned short *dest = (unsigned short *) vid.conbuffer;
+		unsigned short *dest = (unsigned short *) vid.buffer;
 
-		for (y = 0; y < lines; y++, dest += (vid.conrowbytes >> 1)) {
+		for (y = 0; y < lines; y++, dest += (vid.rowbytes >> 1)) {
 			// FIXME: pre-expand to native format?
 			// FIXME: does the endian switching go away in production?
 			v = (vid.conview->ylen - lines + y) * 200 / vid.conview->ylen;
@@ -795,8 +795,8 @@ sw32_Draw_ConsoleBackground (int lines, byte alpha)
 	break;
 	case 4:
 	{
-		unsigned int *dest = (unsigned int *) vid.conbuffer;
-		for (y = 0; y < lines; y++, dest += (vid.conrowbytes >> 2)) {
+		unsigned int *dest = (unsigned int *) vid.buffer;
+		for (y = 0; y < lines; y++, dest += (vid.rowbytes >> 2)) {
 			v = (vid.conview->ylen - lines + y) * 200 / vid.conview->ylen;
 			src = conback->data + v * 320;
 			f = 0;

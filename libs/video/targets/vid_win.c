@@ -50,16 +50,16 @@ D_BeginDirectRect (int x, int y, byte *pbitmap, int width, int height)
 	if (!viddef.initialized || !win_sw_context)
 		return;
 
-	if (!viddef.direct)
+	if (!viddef.buffer)
 		return;
 
 	for (i = 0; i < (height << repshift); i += reps) {
 		for (j = 0; j < reps; j++) {
 			memcpy (&backingbuf[(i + j) * 24],
-					viddef.direct + x + ((y << repshift) + i +
+					viddef.buffer + x + ((y << repshift) + i +
 										 j) * viddef.rowbytes, width);
 
-			memcpy (viddef.direct + x +
+			memcpy (viddef.buffer + x +
 					((y << repshift) + i + j) * viddef.rowbytes,
 					&pbitmap[(i >> repshift) * width], width);
 		}
@@ -84,12 +84,12 @@ D_EndDirectRect (int x, int y, int width, int height)
 	if (!viddef.initialized || !win_sw_context)
 		return;
 
-	if (!viddef.direct)
+	if (!viddef.buffer)
 		return;
 
 	for (i = 0; i < (height << repshift); i += reps) {
 		for (j = 0; j < reps; j++) {
-			memcpy (viddef.direct + x +
+			memcpy (viddef.buffer + x +
 					((y << repshift) + i + j) * viddef.rowbytes,
 					&backingbuf[(i + j) * 24], width);
 		}

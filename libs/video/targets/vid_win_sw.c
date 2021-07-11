@@ -312,14 +312,6 @@ win_init_bufers (void *data)
 {
 	Win_UnloadAllDrivers ();
 	Win_CreateDriver ();
-	// set the rest of the buffers we need (why not just use one single buffer
-	// instead of all this crap? oh well, it's Quake...)
-	viddef.direct = viddef.buffer;
-	viddef.conbuffer = viddef.buffer;
-
-	// more crap for the console
-	viddef.conrowbytes = viddef.rowbytes;
-
 }
 
 static void

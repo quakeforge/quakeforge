@@ -280,7 +280,7 @@ Draw_Character (int x, int y, unsigned int chr)
 	} else
 		drawline = 8;
 
-	dest = ((byte*)vid.conbuffer) + y * vid.conrowbytes + x;
+	dest = ((byte*)vid.buffer) + y * vid.rowbytes + x;
 
 	while (drawline--) {
 		if (source[0])
@@ -300,7 +300,7 @@ Draw_Character (int x, int y, unsigned int chr)
 		if (source[7])
 			dest[7] = source[7];
 		source += 128;
-		dest += vid.conrowbytes;
+		dest += vid.rowbytes;
 	}
 }
 
@@ -340,7 +340,7 @@ Draw_Pixel (int x, int y, byte color)
 {
 	byte       *dest;
 
-	dest = ((byte*)vid.conbuffer) + y * vid.conrowbytes + x;
+	dest = ((byte*)vid.buffer) + y * vid.rowbytes + x;
 	*dest = color;
 }
 
@@ -621,9 +621,9 @@ Draw_ConsoleBackground (int lines, byte alpha)
 	conback = Draw_CachePic ("gfx/conback.lmp", false);
 
 	// draw the pic
-	dest = vid.conbuffer;
+	dest = vid.buffer;
 
-	for (y = 0; y < lines; y++, dest += vid.conrowbytes) {
+	for (y = 0; y < lines; y++, dest += vid.rowbytes) {
 		v = (vid.conview->ylen - lines + y) * 200 / vid.conview->ylen;
 		src = conback->data + v * 320;
 		if (vid.conview->xlen == 320)

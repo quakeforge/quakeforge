@@ -643,7 +643,6 @@ x11_init_buffers (void *data)
 
 	current_framebuffer = 0;
 
-	viddef.direct = 0;
 	viddef.rowbytes = ctx->pixbytes * viddef.width;
 	if (x_visinfo->depth != 8) {
 		if (viddef.buffer)
@@ -654,9 +653,6 @@ x11_init_buffers (void *data)
 	} else {
 		viddef.buffer = x_framebuffer[current_framebuffer]->data;
 	}
-	viddef.conbuffer = viddef.buffer;
-
-	viddef.conrowbytes = viddef.rowbytes;
 }
 
 static void
