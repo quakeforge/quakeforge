@@ -228,20 +228,18 @@ CL_LinkPacketEntities (void)
 				CL_TransformEntity (ent, new->scale / 16, new->angles,
 									new->origin);
 				animation->pose1 = animation->pose2 = -1;
-			} else {
+			} else if (!(renderer->model->flags & EF_ROTATE)) {
 				vec3_t      angles, d;
 				vec4f_t     origin = old->origin + f * delta;
 				// interpolate the origin and angles
-				if (!(renderer->model->flags & EF_ROTATE)) {
-					VectorSubtract (new->angles, old->angles, d);
-					for (j = 0; j < 3; j++) {
-						if (d[j] > 180)
-							d[j] -= 360;
-						else if (d[j] < -180)
-							d[j] += 360;
-					}
-					VectorMultAdd (old->angles, f, d, angles);
+				VectorSubtract (new->angles, old->angles, d);
+				for (j = 0; j < 3; j++) {
+					if (d[j] > 180)
+						d[j] -= 360;
+					else if (d[j] < -180)
+						d[j] += 360;
 				}
+				VectorMultAdd (old->angles, f, d, angles);
 				CL_TransformEntity (ent, new->scale / 16.0, angles, origin);
 			}
 			if (i != cl.viewentity || chase_active->int_val) {
