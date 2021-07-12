@@ -121,7 +121,7 @@ void Sys_Init_Cvars (void);
 //
 void Sys_MakeCodeWriteable (uintptr_t startaddr, size_t length);
 void Sys_PageIn (void *ptr, size_t size);
-long Sys_PageSize (void);
+size_t Sys_PageSize (void);
 void *Sys_Alloc (size_t size);
 void Sys_Free (void *mem, size_t size);
 

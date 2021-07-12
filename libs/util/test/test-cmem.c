@@ -1,3 +1,6 @@
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
 #include <stdio.h>
 #include <stddef.h>
 #include <string.h>
@@ -5,6 +8,7 @@
 
 #include "QF/cmem.h"
 #include "QF/set.h"
+#include "QF/sys.h"
 
 #define SUPER_LINES (sizeof (memsuper_t) / MEM_LINE_SIZE)
 
@@ -564,9 +568,9 @@ main (void)
 		fprintf (stderr, "super block not cache aligned: %p\n", super);
 		return 1;
 	}
-	if (super->page_size != (size_t) sysconf (_SC_PAGESIZE)) {
+	if (super->page_size != Sys_PageSize ()) {
 		fprintf (stderr, "page size not equal to system page size: %zd, %zd\n",
-				 super->page_size, (size_t) sysconf (_SC_PAGESIZE));
+				 super->page_size, Sys_PageSize ());
 		return 1;
 	}
 	if (!super->page_size || (super->page_size & (super->page_size - 1))) {

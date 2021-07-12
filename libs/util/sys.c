@@ -618,7 +618,7 @@ Sys_PageIn (void *ptr, size_t size)
 //#endif
 }
 
-VISIBLE long
+VISIBLE size_t
 Sys_PageSize (void)
 {
 #ifdef _WIN32
@@ -657,7 +657,7 @@ Sys_Free (void *mem, size_t size)
 	size_t      page_mask = page_size - 1;
 	size = (size + page_mask) & ~page_mask;
 #ifdef _WIN32
-# error implement Sys_Free for windows
+	VirtualFree (mem, 0, MEM_RELEASE | MEM_DECOMMIT);
 #else
 	munmap (mem, size);
 #endif
