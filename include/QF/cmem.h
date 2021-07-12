@@ -60,20 +60,11 @@ typedef struct memsline_s {
 typedef struct memblock_s {
 	struct memblock_s *next;
 	struct memblock_s **prev;
-	/* The pointer to pass to free()
-	 */
-	void       *mem;
 	memline_t  *free_lines;
-	/* Size of memory region before block "header".
-	 *
-	 * Since large blocks are allocated with page-size alignment, odds are
-	 * high that the there will be many cache lines "wasted" in the space
-	 * between the address returned from aligned_alloc (to cache-line
-	 * alignment) and the block itself. Setting them up as a pool makes the
-	 * lines available for smaller allocations, thus reducing waste.
+	/* Size of memory available within the page-sized block.
 	 */
-	size_t      pre_size;
-	/* Size of memory region after block "header".
+	size_t      size;
+	/* Size of memory region after the page-sized block.
 	 *
 	 * Will be 0 for blocks that were allocated exclusively for small
 	 * allocations, otherwise indicates the size of the allocated block.
@@ -85,7 +76,7 @@ typedef struct memblock_s {
 #if __WORDSIZE == 64
 	int         pad;
 #endif
-	size_t      pre_allocated;
+	size_t      allocated;
 } __attribute__((aligned (64))) memblock_t;
 
 typedef struct memsuper_s {

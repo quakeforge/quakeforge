@@ -6,6 +6,8 @@
 #include "QF/cmem.h"
 #include "QF/set.h"
 
+#define SUPER_LINES (sizeof (memsuper_t) / MEM_LINE_SIZE)
+
 static int
 test_block (memsuper_t *super)
 {
@@ -24,7 +26,7 @@ test_block (memsuper_t *super)
 		return 0;
 	}
 	block = super->memblocks;
-	if (mem != block + 1) {
+	if ((size_t) mem != (size_t) block + super->page_size) {
 		fprintf (stderr, "super does not point to mem\n");
 		return 0;
 	}
@@ -40,7 +42,7 @@ test_block (memsuper_t *super)
 	}
 	memset (mem, 0, size);	// valgrind check
 	cmemfree (super, mem);
-	if (super->memblocks) {
+	if ((size_t) super->memblocks + super->page_size == (size_t) mem) {
 		fprintf (stderr, "super still points to mem\n");
 		return 0;
 	}
@@ -57,11 +59,11 @@ check_block (memblock_t *block, int line_count, int allocated)
 
 	for (memline_t **l = &block->free_lines; *l; l = &(*l)->block_next) {
 		memline_t  *line = *l;
-		ptrdiff_t   ind = (byte *) block - (byte *) line;
+		ptrdiff_t   ind = (byte *) line - (byte *) block;
 		ind /= MEM_LINE_SIZE;
-		if (ind < 1 || (size_t ) ind > block->pre_size / MEM_LINE_SIZE) {
-			fprintf (stderr, "line outside of block: %p %p %p\n",
-					 line, block->mem, block);
+		if (ind < 1 || (size_t ) (ind - 1) > block->size / MEM_LINE_SIZE) {
+			fprintf (stderr, "line outside of block: %p %p\n",
+					 line, block);
 			return 0;
 		}
 		if (set_is_member (visited, ind)) {
@@ -86,9 +88,9 @@ check_block (memblock_t *block, int line_count, int allocated)
 			fprintf (stderr, "line block_prev link incorrect\n");
 			ret = 0;
 		}
-		if (line->size > block->pre_size) {
+		if (line->size > block->size) {
 			fprintf (stderr, "line size too large: %zd / %zd\n",
-					 line->size, block->pre_size);
+					 line->size, block->size);
 			ret = 0;
 		}
 		if (line->size % MEM_LINE_SIZE) {
@@ -101,9 +103,9 @@ check_block (memblock_t *block, int line_count, int allocated)
 		}
 	}
 	if (ret) {
-		if (free_bytes + block->pre_allocated != block->pre_size) {
+		if (free_bytes + block->allocated != block->size) {
 			fprintf (stderr, "block space mismatch: s: %zd a: %zd f: %zd\n",
-					 block->pre_size, block->pre_allocated, free_bytes);
+					 block->size, block->allocated, free_bytes);
 			ret = 0;
 		}
 		if (line_count >= 0 && line_count != count) {
@@ -111,9 +113,9 @@ check_block (memblock_t *block, int line_count, int allocated)
 					 line_count, count);
 			ret = 0;
 		}
-		if (allocated >= 0 && (size_t) allocated != block->pre_allocated) {
-			fprintf (stderr, "pre_allocated wrong size: %zd != %d\n",
-					 block->pre_allocated, allocated);
+		if (allocated >= 0 && (size_t) allocated != block->allocated) {
+			fprintf (stderr, "allocated wrong size: %zd != %d\n",
+					 block->allocated, allocated);
 		}
 	}
 	set_delete (visited);
@@ -188,19 +190,22 @@ test_line (memsuper_t *super)
 		fprintf (stderr, "too many memblocks\n");
 		return 0;
 	}
-	if (line1 < (memline_t *) block->mem || line1 >= (memline_t *) block) {
-		fprintf (stderr, "line1 outside block line pool: %p %p %p\n",
-				 line1, block->mem, block);
+	if (line1 < (memline_t *) (block + 1)
+		|| line1 >= (memline_t *) ((byte *) block + super->page_size)) {
+		fprintf (stderr, "line1 outside block line pool: %p %p\n",
+				 line1, block);
 		return 0;
 	}
-	if (line2 < (memline_t *) block->mem || line2 >= (memline_t *) block) {
-		fprintf (stderr, "line2 outside block line pool: %p %p %p\n",
-				 line2, block->mem, block);
+	if (line2 < (memline_t *) (block + 1)
+		|| line2 >= (memline_t *) ((byte *) block + super->page_size)) {
+		fprintf (stderr, "line2 outside block line pool: %p %p\n",
+				 line2, block);
 		return 0;
 	}
-	if (line3 < (memline_t *) block->mem || line3 >= (memline_t *) block) {
-		fprintf (stderr, "line3 outside block line pool: %p %p %p\n",
-				 line3, block->mem, block);
+	if (line3 < (memline_t *) (block + 1)
+		|| line3 >= (memline_t *) ((byte *) block + super->page_size)) {
+		fprintf (stderr, "line3 outside block line pool: %p %p\n",
+				 line3, block);
 		return 0;
 	}
 	if (!((size_t) line1 & super->page_mask)) {
@@ -224,7 +229,7 @@ test_line (memsuper_t *super)
 		return 0;
 	}
 
-	if (!check_block (block, 1, 3 * MEM_LINE_SIZE)) {
+	if (!check_block (block, 1, (3 + SUPER_LINES) * MEM_LINE_SIZE)) {
 		fprintf (stderr, "line block check 1 failed\n");
 		return 0;
 	}
@@ -235,7 +240,7 @@ test_line (memsuper_t *super)
 
 	cmemfree (super, line2);
 
-	if (!check_block (block, 2, 2 * MEM_LINE_SIZE)) {
+	if (!check_block (block, 2, (2 + SUPER_LINES) * MEM_LINE_SIZE)) {
 		fprintf (stderr, "line block check 2 failed\n");
 		return 0;
 	}
@@ -254,7 +259,7 @@ test_line (memsuper_t *super)
 	}
 
 	cmemfree (super, line3);
-	if (!check_block (block, 1, 1 * MEM_LINE_SIZE)) {
+	if (!check_block (block, 1, (1 + SUPER_LINES) * MEM_LINE_SIZE)) {
 		fprintf (stderr, "line block check 3 failed\n");
 		return 0;
 	}
@@ -269,12 +274,17 @@ test_line (memsuper_t *super)
 	}
 
 	cmemfree (super, line1);
-	if (super->memblocks) {
-		fprintf (stderr, "line pool not freed\n");
+	if (!check_block (block, 1, (0 + SUPER_LINES) * MEM_LINE_SIZE)) {
+		fprintf (stderr, "line block check 4 failed\n");
 		return 0;
 	}
-	if (!check_bins (super, 0x00)) {
-		fprintf (stderr, "bins not cleared\n");
+	if (!check_bins (super, 0x20)) {
+		fprintf (stderr, "bin check 4 failed\n");
+		return 0;
+	}
+
+	if (super->free_lines[5] != line1) {
+		fprintf (stderr, "super free_lines[5] not pointing to line1\n");
 		return 0;
 	}
 
@@ -283,7 +293,7 @@ test_line (memsuper_t *super)
 	line3 = cmemalloc (super, MEM_LINE_SIZE);
 	block = super->memblocks;
 
-	if (!check_block (block, 1, 3 * MEM_LINE_SIZE)) {
+	if (!check_block (block, 1, (3 + SUPER_LINES) * MEM_LINE_SIZE)) {
 		fprintf (stderr, "line block check 4 failed\n");
 		return 0;
 	}
@@ -294,7 +304,7 @@ test_line (memsuper_t *super)
 
 	cmemfree (super, line1);
 
-	if (!check_block (block, 2, 2 * MEM_LINE_SIZE)) {
+	if (!check_block (block, 2, (2 + SUPER_LINES) * MEM_LINE_SIZE)) {
 		fprintf (stderr, "line block check 5 failed\n");
 		return 0;
 	}
@@ -305,7 +315,7 @@ test_line (memsuper_t *super)
 
 	cmemfree (super, line2);
 
-	if (!check_block (block, 2, 1 * MEM_LINE_SIZE)) {
+	if (!check_block (block, 2, (1 + SUPER_LINES) * MEM_LINE_SIZE)) {
 		fprintf (stderr, "line block check 6 failed\n");
 		return 0;
 	}
@@ -315,21 +325,13 @@ test_line (memsuper_t *super)
 	}
 
 	cmemfree (super, line3);
-	if (super->memblocks) {
-		fprintf (stderr, "line pool not freed 2\n");
-		return 0;
-	}
-	if (!check_bins (super, 0x00)) {
-		fprintf (stderr, "bins not cleared 2\n");
-		return 0;
-	}
 
 	line1 = cmemalloc (super, MEM_LINE_SIZE);
 	line2 = cmemalloc (super, MEM_LINE_SIZE);
 	line3 = cmemalloc (super, MEM_LINE_SIZE);
 	block = super->memblocks;
 
-	if (!check_block (block, 1, 3 * MEM_LINE_SIZE)) {
+	if (!check_block (block, 1, (3 + SUPER_LINES) * MEM_LINE_SIZE)) {
 		fprintf (stderr, "line block check 7 failed\n");
 		return 0;
 	}
@@ -340,7 +342,7 @@ test_line (memsuper_t *super)
 
 	cmemfree (super, line3);
 
-	if (!check_block (block, 1, 2 * MEM_LINE_SIZE)) {
+	if (!check_block (block, 1, (2 + SUPER_LINES) * MEM_LINE_SIZE)) {
 		fprintf (stderr, "line block check 8 failed\n");
 		return 0;
 	}
@@ -351,7 +353,7 @@ test_line (memsuper_t *super)
 
 	cmemfree (super, line2);
 
-	if (!check_block (block, 1, 1 * MEM_LINE_SIZE)) {
+	if (!check_block (block, 1, (1 + SUPER_LINES) * MEM_LINE_SIZE)) {
 		fprintf (stderr, "line block check 9 failed\n");
 		return 0;
 	}
@@ -361,14 +363,6 @@ test_line (memsuper_t *super)
 	}
 
 	cmemfree (super, line1);
-	if (super->memblocks) {
-		fprintf (stderr, "line pool not freed 3\n");
-		return 0;
-	}
-	if (!check_bins (super, 0x00)) {
-		fprintf (stderr, "bins not cleared 3\n");
-		return 0;
-	}
 
 	return 1;
 }
@@ -481,16 +475,16 @@ test_block_line (memsuper_t *super)
 	void       *line;
 	memblock_t *block = super->memblocks;
 
-	if (block + 1 != (memblock_t *) mem) {
+	if ((size_t) block + super->page_size != (size_t) mem) {
 		fprintf (stderr, "super memblocks do not point to mem\n");
 		return 0;
 	}
-	if (block->pre_size < MEM_LINE_SIZE) {
+	if (block->size < MEM_LINE_SIZE) {
 		// need to figure out a way to guarantee a shared block
 		fprintf (stderr, "can't allocate line from block\n");
 		return 0;
 	}
-	if (block->next) {
+	if (block->next != (memblock_t *) ((size_t) super & ~super->page_mask)) {
 		fprintf (stderr, "excess blocks in super\n");
 		return 0;
 	}
@@ -499,7 +493,7 @@ test_block_line (memsuper_t *super)
 		fprintf (stderr, "line is page aligned\n");
 		return 0;
 	}
-	if (super->memblocks->next) {
+	if (0 && super->memblocks->next) {
 		// need to figure out a way to guarantee a shared block
 		fprintf (stderr, "mem and line not in same block\n");
 		return 0;
@@ -513,7 +507,9 @@ test_block_line (memsuper_t *super)
 		fprintf (stderr, "block not reused for mem\n");
 		return 0;
 	}
-	if (super->memblocks != block || super->memblocks->next) {
+	//if (super->memblocks != block || super->memblocks->next) {
+	if (super->memblocks != block || !super->memblocks->next
+		|| super->memblocks->next->next) {
 		// need to figure out a way to guarantee a shared block
 		fprintf (stderr, "blocks corrupt\n");
 		return 0;
@@ -524,7 +520,7 @@ test_block_line (memsuper_t *super)
 		return 0;
 	}
 	cmemfree (super, mem);
-	if (super->memblocks) {
+	if (0 && super->memblocks) {
 		fprintf (stderr, "shared block not freed\n");
 		return 0;
 	}
@@ -588,8 +584,9 @@ main (void)
 				 super->page_mask);
 		return 1;
 	}
-	if (super->memblocks) {
-		fprintf (stderr, "super block list not null\n");
+	if (super->memblocks
+		!= (memblock_t *) ((size_t) super & ~super->page_mask)) {
+		fprintf (stderr, "superblock not in block a: %p %p\n", super->memblocks, super);
 		return 1;
 	}
 	for (i = 4; i-- > 0; ) {
@@ -601,6 +598,7 @@ main (void)
 		fprintf (stderr, "super last_freed not all null\n");
 		return 1;
 	}
+#if 0 // no longer valid
 	for (i = MAX_CACHE_LINES; i-- > 0; ) {
 		if (super->free_lines[i]) {
 			break;
@@ -610,12 +608,14 @@ main (void)
 		fprintf (stderr, "super free_lines not all null\n");
 		return 1;
 	}
+#endif
 	if (!test_block (super)) {
 		fprintf (stderr, "block tests failed\n");
 		return 1;
 	}
-	if (super->memblocks) {
-		fprintf (stderr, "super block list not null 2\n");
+	if (super->memblocks
+		!= (memblock_t *) ((size_t) super & ~super->page_mask)) {
+		fprintf (stderr, "superblock not in block b: %p %p\n", super->memblocks, super);
 		return 1;
 	}
 	for (i = 4; i-- > 0; ) {
@@ -627,6 +627,7 @@ main (void)
 		fprintf (stderr, "super last_freed not all null 2\n");
 		return 1;
 	}
+#if 0 // no longer valid
 	for (i = MAX_CACHE_LINES; i-- > 0; ) {
 		if (super->free_lines[i]) {
 			break;
@@ -636,12 +637,14 @@ main (void)
 		fprintf (stderr, "super free_lines not all null 2\n");
 		return 1;
 	}
+#endif
 	if (!test_line (super)) {
 		fprintf (stderr, "line tests failed\n");
 		return 1;
 	}
-	if (super->memblocks) {
-		fprintf (stderr, "super block list not null 2\n");
+	if (super->memblocks
+		!= (memblock_t *) ((size_t) super & ~super->page_mask)) {
+		fprintf (stderr, "superblock not in block c: %p %p\n", super->memblocks, super);
 		return 1;
 	}
 	if (!test_block_line (super)) {

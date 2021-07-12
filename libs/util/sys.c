@@ -651,6 +651,19 @@ Sys_Alloc (size_t size)
 }
 
 VISIBLE void
+Sys_Free (void *mem, size_t size)
+{
+	size_t      page_size = Sys_PageSize ();
+	size_t      page_mask = page_size - 1;
+	size = (size + page_mask) & ~page_mask;
+#ifdef _WIN32
+# error implement Sys_Free for windows
+#else
+	munmap (mem, size);
+#endif
+}
+
+VISIBLE void
 Sys_DebugLog (const char *file, const char *fmt, ...)
 {
 	va_list     args;

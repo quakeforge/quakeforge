@@ -28,20 +28,9 @@
 # include "config.h"
 #endif
 
-#include <unistd.h>
-#include <malloc.h>
-
 #include "QF/alloc.h"
 #include "QF/cmem.h"
 #include "QF/sys.h"
-
-#ifdef _WIN32
-#define cmem_alloc(align, size) _aligned_malloc(size, align)
-#define cmem_free(mem) _aligned_free(mem)
-#else
-#define cmem_alloc(align, size) aligned_alloc(align, size)
-#define cmem_free(mem) free(mem)
-#endif
 
 static size_t __attribute__((const))
 ilog2 (size_t x)
@@ -51,27 +40,6 @@ ilog2 (size_t x)
 		l++;
 	}
 	return l;
-}
-
-memsuper_t *
-new_memsuper (void)
-{
-	memsuper_t *super = cmem_alloc (MEM_LINE_SIZE, sizeof (*super));
-	memset (super, 0, sizeof (*super));
-	super->page_size = Sys_PageSize ();
-	super->page_mask = (super->page_size - 1);
-	return super;
-}
-
-void
-delete_memsuper (memsuper_t *super)
-{
-	while (super->memblocks) {
-		memblock_t *t = super->memblocks;
-		super->memblocks = super->memblocks->next;
-		cmem_free (t->mem);
-	}
-	cmem_free (super);
 }
 
 static void
@@ -109,12 +77,8 @@ unlink_line (memline_t *line)
 static memblock_t *
 init_block (memsuper_t *super, void *mem, size_t alloc_size)
 {
-	size_t      size = super->page_size;
-	size_t      mask = super->page_mask;
-	size_t      ptr = (size_t) mem;
-	memblock_t *block;
+	memblock_t *block = mem;
 
-	block = (memblock_t *) (((ptr + size) & ~mask)) - 1;
 	memset (block, 0, sizeof (memblock_t));
 
 	if (super->memblocks) {
@@ -124,26 +88,20 @@ init_block (memsuper_t *super, void *mem, size_t alloc_size)
 	block->prev = &super->memblocks;
 	super->memblocks = block;
 
-	block->mem = mem;
-	block->pre_size = (size_t) block - (size_t) mem;
-	block->post_size = alloc_size - block->pre_size - sizeof (memblock_t);
-	if (!((size_t) mem & mask) && block->pre_size) {
-		// can't use the first cache line of the page as it would be
-		// indistinguishable from a large block
-		block->pre_size -= MEM_LINE_SIZE;
-	}
-	if (block->pre_size) {
-		memline_t  *line = (memline_t *) ((size_t) block - block->pre_size);
+	block->size = super->page_size - sizeof (*block);
+	block->post_size = alloc_size - super->page_size;
 
-		line->block = block;
-		line->size = block->pre_size;
+	memline_t  *line = (memline_t *) (block + 1);
 
-		line->block_next = 0;
-		line->block_prev = &block->free_lines;
-		block->free_lines = line;
+	line->block = block;
+	line->size = block->size;
 
-		link_free_line (super, line);
-	}
+	line->block_next = 0;
+	line->block_prev = &block->free_lines;
+	block->free_lines = line;
+
+	link_free_line (super, line);
+
 	return block;
 }
 
@@ -167,8 +125,8 @@ block_alloc (memsuper_t *super, size_t size)
 	}
 
 	size_t      page_size = super->page_size;
-	size_t      alloc_size = sizeof (memblock_t) + page_size + size;
-	void       *mem = cmem_alloc (MEM_LINE_SIZE, alloc_size);
+	size_t      alloc_size = page_size + size;
+	void       *mem = Sys_Alloc (alloc_size);
 	block = init_block (super, mem, alloc_size);
 	return block;
 }
@@ -199,7 +157,7 @@ alloc_line (memline_t *line, size_t size)
 		line->free_next = split;
 		split->free_prev = &line->free_next;
 	}
-	line->block->pre_allocated += line->size;
+	line->block->allocated += line->size;
 	unlink_line (line);
 	return mem;
 }
@@ -213,7 +171,7 @@ line_free (memsuper_t *super, memblock_t *block, void *mem)
 	memline_t **l;
 	memline_t  *line = 0;
 
-	block->pre_allocated -= size;
+	block->allocated -= size;
 
 	for (l = &block->free_lines; *l; l = &(*l)->block_next) {
 		line = *l;
@@ -303,7 +261,7 @@ cmemalloc (memsuper_t *super, size_t size)
 		if (!block) {
 			return 0;
 		}
-		return block + 1;
+		return (void *) ((size_t) block + super->page_size);
 	} else {
 		size = 4 << ind;
 		if (size >= MEM_LINE_SIZE) {
@@ -328,7 +286,7 @@ cmemalloc (memsuper_t *super, size_t size)
 				 * allocated line is ever page-aligned as that would make the
 				 * line indistinguishable from a large block.
 				 */
-				mem = cmem_alloc (super->page_size, super->page_size);
+				mem = Sys_Alloc (super->page_size);
 				// sets super->free_lines, the block is guarnateed to be big
 				// enough to hold the requested allocation as otherwise a full
 				// block allocation would have been used
@@ -368,12 +326,11 @@ cmemalloc (memsuper_t *super, size_t size)
 static void
 unlink_block (memblock_t *block)
 {
-	if (block->pre_size) {
-		if (!block->free_lines || block->free_lines->block_next) {
-			*(int *) 0 = 0;
-		}
-		unlink_line (block->free_lines);
+	if (!block->free_lines || block->free_lines->block_next) {
+		*(int *) 0 = 0;
 	}
+	unlink_line (block->free_lines);
+
 	if (block->next) {
 		block->next->prev = block->prev;
 	}
@@ -411,17 +368,57 @@ cmemfree (memsuper_t *super, void *mem)
 		return;
 	} else if ((size_t) mem & super->page_mask) {
 		// cache line
-		size_t      page_size = super->page_size;
-		size_t      page_mask = super->page_mask;
-		block = (memblock_t *) (((size_t) mem + page_size) & ~page_mask) - 1;
+		block = (memblock_t *) ((size_t) mem & ~super->page_mask);
 		line_free (super, block, mem);
 	} else {
 		// large block
-		block = (memblock_t *) mem - 1;
+		block = (memblock_t *) ((size_t) mem - super->page_size);
 		block->post_free = 1;
 	}
-	if (!block->pre_allocated && (!block->post_size || block->post_free)) {
+	if (!block->allocated && (!block->post_size || block->post_free)) {
 		unlink_block (block);
-		cmem_free (block->mem);
+		Sys_Free (block, super->page_size + block->post_size);
 	}
+}
+
+memsuper_t *
+new_memsuper (void)
+{
+	// Temporary superblock used to bootstrap a pool
+	memsuper_t  bootstrap = { };
+	bootstrap.page_size = Sys_PageSize ();
+	bootstrap.page_mask = (bootstrap.page_size - 1);
+
+	// Allocate the real superblock from the pool. As a superblock is only
+	// two cache lines large (for 64-byte cache lines), it will always be
+	// allocated using a block's cache lines, and thus will be inside the first
+	// block.
+	memsuper_t *super = cmemalloc (&bootstrap, sizeof (*super));
+	*super = bootstrap;
+	// The block used to allocate the real superblock points to the bootstrap
+	// superblock, but needs to point to the real superblock.
+	super->memblocks->prev = &super->memblocks;
+
+	// Any free cache line block chains will also point to the bootstrap
+	// block instead of the resl superblock, so fix them up too (there should
+	// be only one, but no harm in being paranoid)
+	for (int i = 0; i < MAX_CACHE_LINES; i++) {
+		if (super->free_lines[i]) {
+			super->free_lines[i]->free_prev = &super->free_lines[i];
+		}
+	}
+	return super;
+}
+
+void
+delete_memsuper (memsuper_t *super)
+{
+	// The block holding the superblock is always the last block in the list
+	while (super->memblocks && super->memblocks->next) {
+		memblock_t *t = super->memblocks;
+		super->memblocks = super->memblocks->next;
+		Sys_Free (t, super->page_size + t->post_size);
+	}
+	memblock_t *block = super->memblocks;
+	Sys_Free (block, super->page_size + block->post_size);
 }

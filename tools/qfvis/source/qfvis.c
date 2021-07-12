@@ -518,8 +518,8 @@ PortalCompleted (threaddata_t *thread, portal_t *completed)
 static void
 dump_super_stats (int id, memsuper_t *super)
 {
-	size_t      total_pre_size = 0;
-	size_t      total_pre_allocated = 0;
+	size_t      total_size = 0;
+	size_t      total_allocated = 0;
 	size_t      total_post_size = 0;
 	size_t      total_post_allocated = 0;
 	size_t      num_blocks = 0;
@@ -527,8 +527,8 @@ dump_super_stats (int id, memsuper_t *super)
 
 	for (memblock_t *block = super->memblocks; block; block = block->next) {
 		num_blocks++;
-		total_pre_size += block->pre_size;
-		total_pre_allocated += block->pre_allocated;
+		total_size += block->size;
+		total_allocated += block->allocated;
 		total_post_size += block->post_size;
 		// post_free is a flag
 		total_post_allocated += !block->post_free * block->post_size;
@@ -544,8 +544,8 @@ dump_super_stats (int id, memsuper_t *super)
 	WRLOCK (global_lock);
 	printf ("cmem stats for thread %d\n", id);
 	printf ("    blocks: %zd\n", num_blocks);
-	printf ("       pre: s:%-8zd a:%-8zd f:%-8zd\n", total_pre_size,
-			total_pre_allocated, total_pre_size - total_pre_allocated);
+	printf ("          : s:%-8zd a:%-8zd f:%-8zd\n", total_size,
+			total_allocated, total_size - total_allocated);
 	printf ("      post: s:%-8zd a:%-8zd f:%-8zd\n", total_post_size,
 			total_post_allocated, total_post_size - total_post_allocated);
 	printf ("   ");
