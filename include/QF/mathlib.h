@@ -189,9 +189,11 @@ R_CullBox (const vec3_t mins, const vec3_t maxs)
 {
 	int		i;
 
-	for (i=0 ; i < 4 ; i++)
-		if (BoxOnPlaneSide (mins, maxs, &frustum[i]) == 2)
+	for (i=0 ; i < 4 ; i++) {
+		if (BOX_ON_PLANE_SIDE (mins, maxs, &frustum[i]) == 2) {
 			return true;
+		}
+	}
 	return false;
 }
 

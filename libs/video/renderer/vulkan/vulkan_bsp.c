@@ -305,13 +305,13 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 }
 
 static elechain_t *
-add_elechain (vulktex_t *tex, int ec_index, bspctx_t *bctx)
+add_elechain (vulktex_t *tex, int model_index, bspctx_t *bctx)
 {
 	elechain_t *ec;
 
 	ec = get_elechain (bctx);
 	ec->elements = get_elements (bctx);
-	ec->index = ec_index;
+	ec->model_index = model_index;
 	ec->transform = 0;
 	ec->color = 0;
 	*tex->elechain_tail = ec;
@@ -345,9 +345,9 @@ build_surf_displist (model_t **models, msurface_t *fa, int base,
 	float       s, t;
 	mod_brush_t *brush;
 
-	if (fa->ec_index < 0) {
+	if (fa->model_index < 0) {
 		// instance model
-		brush = &models[~fa->ec_index]->brush;
+		brush = &models[~fa->model_index]->brush;
 	} else {
 		// main or sub model
 		brush = &r_worldentity.renderer.model->brush;
@@ -428,7 +428,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	bctx->sky_velocity = qexpf (bctx->sky_velocity);
 	bctx->sky_time = vr_data.realtime;
 
-	// now run through all surfaces, chaining them to their textures, thus
+	// run through all surfaces, chaining them to their textures, thus
 	// effectively sorting the surfaces by texture (without worrying about
 	// surface order on the same texture chain).
 	for (i = 0; i < num_models; i++) {
@@ -436,14 +436,15 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		if (!m)
 			continue;
 		// sub-models are done as part of the main model
+		// and non-bsp models don't have surfaces.
 		if (*m->path == '*' || m->type != mod_brush)
 			continue;
 		brush = &m->brush;
-		// non-bsp models don't have surfaces.
 		dm = brush->submodels;
 		for (j = 0; j < brush->numsurfaces; j++) {
 			vulktex_t  *tex;
 			if (j == dm->firstface + dm->numfaces) {
+				// move on to the next sub-model
 				dm++;
 				if (dm - brush->submodels == brush->numsubmodels) {
 					// limit the surfaces
@@ -454,9 +455,10 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 				}
 			}
 			surf = brush->surfaces + j;
-			surf->ec_index = dm - brush->submodels;
-			if (!surf->ec_index && m != r_worldentity.renderer.model)
-				surf->ec_index = -1 - i;	// instanced model
+			surf->model_index = dm - brush->submodels;
+			if (!surf->model_index && m != r_worldentity.renderer.model) {
+				surf->model_index = -1 - i;	// instanced model
+			}
 			tex = surf->texinfo->texture->render;
 			// append surf to the texture chain
 			CHAIN_SURF_F2B (surf, tex->tex_chain);
@@ -489,7 +491,8 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	qfv_packet_t *packet = QFV_PacketAcquire (stage);
 	vertices = QFV_PacketExtend (packet, vertex_buffer_size);
 	vertex_index_base = 0;
-	// holds all the polygon definitions (count + indices)
+	// holds all the polygon definitions: vertex indices + poly_count "end of
+	// primitive" markers.
 	bctx->polys = malloc ((index_count + poly_count) * sizeof (uint32_t));
 
 	// All usable surfaces have been chained to the (base) texture they use.
@@ -508,10 +511,10 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		for (is = tex->tex_chain; is; is = is->tex_chain) {
 			msurface_t *surf = is->surface;
 			if (!tex->elechain) {
-				ec = add_elechain (tex, surf->ec_index, bctx);
+				ec = add_elechain (tex, surf->model_index, bctx);
 			}
-			if (surf->ec_index != ec->index) {	// next sub-model
-				ec = add_elechain (tex, surf->ec_index, bctx);
+			if (surf->model_index != ec->model_index) {	// next sub-model
+				ec = add_elechain (tex, surf->model_index, bctx);
 			}
 
 			surf->polys = (glpoly_t *) poly;
@@ -523,9 +526,10 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	}
 	clear_texture_chains (bctx);
 	Sys_MaskPrintf (SYS_vulkan,
-					"R_BuildDisplayLists: verts:%u, inds:%u, polys:%u (%d) %zd\n",
+					"R_BuildDisplayLists: verts:%u, inds:%u, "
+					"polys:%u (%d) %zd\n",
 					vertex_count, index_count, poly_count, count,
-					((size_t) poly - (size_t) bctx->polys)/sizeof(uint32_t));
+					((size_t) poly - (size_t) bctx->polys) / sizeof(uint32_t));
 	if (index_buffer_size > bctx->index_buffer_size) {
 		if (bctx->index_buffer) {
 			dfunc->vkUnmapMemory (device->dev, bctx->index_memory);
@@ -602,7 +606,6 @@ R_DrawBrushModel (entity_t *e, vulkan_ctx_t *ctx)
 {
 	float       dot, radius;
 	int         i;
-	unsigned    k;
 	model_t    *model;
 	plane_t    *plane;
 	msurface_t *surf;
@@ -637,21 +640,6 @@ R_DrawBrushModel (entity_t *e, vulkan_ctx_t *ctx)
 		org[0] = DotProduct (temp, mat[0]);
 		org[1] = DotProduct (temp, mat[1]);
 		org[2] = DotProduct (temp, mat[2]);
-	}
-
-	// calculate dynamic lighting for bmodel if it's not an instanced model
-	if (brush->firstmodelsurface != 0 && r_dlight_lightmap->int_val) {
-		vec3_t      lightorigin;
-
-		for (k = 0; k < r_maxdlights; k++) {
-			if ((r_dlights[k].die < vr_data.realtime)
-				|| (!r_dlights[k].radius))
-				continue;
-
-			VectorSubtract (r_dlights[k].origin, mat[3], lightorigin);
-			R_RecursiveMarkLights (brush, lightorigin, &r_dlights[k], k,
-							brush->nodes + brush->hulls[0].firstclipnode);
-		}
 	}
 
 	surf = &brush->surfaces[brush->firstmodelsurface];
@@ -1067,14 +1055,14 @@ add_surf_elements (vulktex_t *tex, instsurf_t *is,
 	bsppoly_t  *poly = (bsppoly_t *) surf->polys;
 
 	if (!tex->elechain) {
-		(*ec) = add_elechain (tex, surf->ec_index, bctx);
+		(*ec) = add_elechain (tex, surf->model_index, bctx);
 		(*ec)->transform = is->transform;
 		(*ec)->color = is->color;
 		(*el) = (*ec)->elements;
 		(*el)->first_index = bframe->index_count;
 	}
 	if (is->transform != (*ec)->transform || is->color != (*ec)->color) {
-		(*ec) = add_elechain (tex, surf->ec_index, bctx);
+		(*ec) = add_elechain (tex, surf->model_index, bctx);
 		(*ec)->transform = is->transform;
 		(*ec)->color = is->color;
 		(*el) = (*ec)->elements;

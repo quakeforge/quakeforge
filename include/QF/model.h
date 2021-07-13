@@ -156,7 +156,7 @@ typedef struct msurface_s {
 	instsurf_t *instsurf;	///< null if not part of world model/sub-model
 
 	mtexinfo_t *texinfo;
-	int         ec_index;
+	int         model_index;	///< < 0: instance, 0 main, > 0: sub
 	byte       *base;
 
 // lighting info

@@ -450,13 +450,13 @@ glsl_R_RegisterTextures (model_t **models, int num_models)
 }
 
 static elechain_t *
-add_elechain (glsltex_t *tex, int ec_index)
+add_elechain (glsltex_t *tex, int model_index)
 {
 	elechain_t *ec;
 
 	ec = get_elechain ();
 	ec->elements = get_elements ();
-	ec->index = ec_index;
+	ec->model_index = model_index;
 	ec->transform = 0;
 	ec->color = 0;
 	*tex->elechain_tail = ec;
@@ -483,8 +483,8 @@ build_surf_displist (model_t **models, msurface_t *fa, int base,
 	float       s, t;
 	mod_brush_t *brush;
 
-	if (fa->ec_index < 0) {
-		brush = &models[-fa->ec_index - 1]->brush;
+	if (fa->model_index < 0) {
+		brush = &models[-fa->model_index - 1]->brush;
 	} else {
 		brush = &r_worldentity.renderer.model->brush;
 	}
@@ -584,9 +584,9 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 				}
 			}
 			surf = brush->surfaces + j;
-			surf->ec_index = dm - brush->submodels;
-			if (!surf->ec_index && m != r_worldentity.renderer.model)
-				surf->ec_index = -1 - i;	// instanced model
+			surf->model_index = dm - brush->submodels;
+			if (!surf->model_index && m != r_worldentity.renderer.model)
+				surf->model_index = -1 - i;	// instanced model
 			tex = surf->texinfo->texture->render;
 			CHAIN_SURF_F2B (surf, tex->tex_chain);
 		}
@@ -609,13 +609,13 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 		for (is = tex->tex_chain; is; is = is->tex_chain) {
 			msurface_t *surf = is->surface;
 			if (!tex->elechain) {
-				ec = add_elechain (tex, surf->ec_index);
+				ec = add_elechain (tex, surf->model_index);
 				el = ec->elements;
 				el->base = (byte *) (intptr_t) vertices->size;
 				vertex_index_base = 0;
 			}
-			if (surf->ec_index != ec->index) {	// next sub-model
-				ec = add_elechain (tex, surf->ec_index);
+			if (surf->model_index != ec->model_index) {	// next sub-model
+				ec = add_elechain (tex, surf->model_index);
 				el = ec->elements;
 				el->base = (byte *) (intptr_t) vertices->size;
 				vertex_index_base = 0;
@@ -1080,7 +1080,7 @@ add_surf_elements (glsltex_t *tex, instsurf_t *is,
 	glslpoly_t *poly = (glslpoly_t *) surf->polys;
 
 	if (!tex->elechain) {
-		(*ec) = add_elechain (tex, surf->ec_index);
+		(*ec) = add_elechain (tex, surf->model_index);
 		(*ec)->transform = is->transform;
 		(*ec)->color = is->color;
 		(*el) = (*ec)->elements;
@@ -1090,7 +1090,7 @@ add_surf_elements (glsltex_t *tex, instsurf_t *is,
 		dstring_clear ((*el)->list);
 	}
 	if (is->transform != (*ec)->transform || is->color != (*ec)->color) {
-		(*ec) = add_elechain (tex, surf->ec_index);
+		(*ec) = add_elechain (tex, surf->model_index);
 		(*ec)->transform = is->transform;
 		(*ec)->color = is->color;
 		(*el) = (*ec)->elements;
