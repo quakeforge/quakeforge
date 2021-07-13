@@ -66,25 +66,27 @@ static instsurf_t  *sky_chain;
 static instsurf_t **sky_chain_tail;
 
 #define CHAIN_SURF_F2B(surf,chain)							\
-	do { 													\
+	({ 														\
 		instsurf_t *inst = (surf)->instsurf;				\
 		if (__builtin_expect(!inst, 1))						\
-			(surf)->tinst = inst = get_instsurf ();			\
+			inst = get_instsurf ();							\
 		inst->surface = (surf);								\
 		*(chain##_tail) = inst;								\
 		(chain##_tail) = &inst->tex_chain;					\
 		*(chain##_tail) = 0;								\
-	} while (0)
+		inst;												\
+	})
 
 #define CHAIN_SURF_B2F(surf,chain) 							\
-	do { 													\
+	({	 													\
 		instsurf_t *inst = (surf)->instsurf;				\
 		if (__builtin_expect(!inst, 1))						\
-			(surf)->tinst = inst = get_instsurf ();			\
+			inst = get_instsurf ();							\
 		inst->surface = (surf);								\
 		inst->tex_chain = (chain);							\
 		(chain) = inst;										\
-	} while (0)
+		inst;												\
+	})
 
 static gltex_t   **r_texture_chains;
 static int  r_num_texture_chains;
@@ -268,16 +270,12 @@ R_RenderBrushPoly_1 (msurface_t *fa)
 }
 
 static inline void
-R_AddToLightmapChain (mod_brush_t *brush, msurface_t *fa)
+R_AddToLightmapChain (mod_brush_t *brush, msurface_t *fa, instsurf_t *sc)
 {
 	int		maps, smax, tmax;
 	glRect_t 	*theRect;
-	instsurf_t *sc;
 
 	// add the poly to the proper lightmap chain
-	if (!(sc = fa->instsurf))
-		sc = fa->tinst;
-
 	sc->lm_chain = gl_lightmap_polys[fa->lightmaptexturenum];
 	gl_lightmap_polys[fa->lightmaptexturenum] = sc;
 
@@ -497,9 +495,9 @@ chain_surface (mod_brush_t *brush, msurface_t *surf, vec_t *transform,
 	instsurf_t *sc;
 
 	if (surf->flags & SURF_DRAWTURB) {
-		CHAIN_SURF_B2F (surf, waterchain);
+		sc = CHAIN_SURF_B2F (surf, waterchain);
 	} else if (surf->flags & SURF_DRAWSKY) {
-		CHAIN_SURF_F2B (surf, sky_chain);
+		sc = CHAIN_SURF_F2B (surf, sky_chain);
 	} else {
 		texture_t  *tx;
 		gltex_t    *tex;
@@ -509,12 +507,10 @@ chain_surface (mod_brush_t *brush, msurface_t *surf, vec_t *transform,
 		else
 			tx = R_TextureAnimation (surf);
 		tex = tx->render;
-		CHAIN_SURF_F2B (surf, tex->tex_chain);
+		sc = CHAIN_SURF_F2B (surf, tex->tex_chain);
 
-		R_AddToLightmapChain (brush, surf);
+		R_AddToLightmapChain (brush, surf, sc);
 	}
-	if (!(sc = surf->instsurf))
-		sc = surf->tinst;
 	sc->transform = transform;
 	sc->color = color;
 }

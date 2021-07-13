@@ -97,25 +97,27 @@ typedef struct bsppoly_s {
 } bsppoly_t;
 
 #define CHAIN_SURF_F2B(surf,chain)							\
-	do { 													\
+	({ 														\
 		instsurf_t *inst = (surf)->instsurf;				\
 		if (__builtin_expect(!inst, 1))						\
-			(surf)->tinst = inst = get_instsurf (bctx);		\
+			inst = get_instsurf (bctx);						\
 		inst->surface = (surf);								\
 		*(chain##_tail) = inst;								\
 		(chain##_tail) = &inst->tex_chain;					\
 		*(chain##_tail) = 0;								\
-	} while (0)
+		inst;												\
+	})
 
 #define CHAIN_SURF_B2F(surf,chain) 							\
-	do { 													\
+	({	 													\
 		instsurf_t *inst = (surf)->instsurf;				\
 		if (__builtin_expect(!inst, 1))						\
-			(surf)->tinst = inst = get_instsurf (bctx);		\
+			inst = get_instsurf (bctx);						\
 		inst->surface = (surf);								\
 		inst->tex_chain = (chain);							\
 		(chain) = inst;										\
-	} while (0)
+		inst;												\
+	})
 
 #define GET_RELEASE(type,name) \
 static inline type *												\
@@ -234,9 +236,9 @@ chain_surface (mod_brush_t *brush, msurface_t *surf, vec_t *transform,
 	instsurf_t *is;
 
 	if (surf->flags & SURF_DRAWSKY) {
-		CHAIN_SURF_F2B (surf, bctx->sky_chain);
+		is = CHAIN_SURF_F2B (surf, bctx->sky_chain);
 	} else if ((surf->flags & SURF_DRAWTURB) || (color && color[3] < 1.0)) {
-		CHAIN_SURF_B2F (surf, bctx->waterchain);
+		is = CHAIN_SURF_B2F (surf, bctx->waterchain);
 	} else {
 		texture_t  *tx;
 		vulktex_t  *tex;
@@ -246,12 +248,10 @@ chain_surface (mod_brush_t *brush, msurface_t *surf, vec_t *transform,
 		else
 			tx = R_TextureAnimation (surf);
 		tex = tx->render;
-		CHAIN_SURF_F2B (surf, tex->tex_chain);
+		is = CHAIN_SURF_F2B (surf, tex->tex_chain);
 
 		//update_lightmap (brush, surf, ctx);
 	}
-	if (!(is = surf->instsurf))
-		is = surf->tinst;
 	is->transform = transform;
 	is->color = color;
 }
@@ -1559,28 +1559,6 @@ is_pow2 (unsigned x)
 			count++;
 	return count == 1;
 }
-
-// NOTE: this expects the destination tex_t to be set up: memory allocated
-// and dimentions/format etc already set. the size of the rect to be copied
-// is taken from dst. Also, dst->format and src->format must be the same, and
-// either 3 or 4, or bad things will happen. Also, no clipping is done, so if
-// x < 0 or y < 0 or x + dst->width > src->width
-// or y + dst->height > src->height, bad things will happen.
-/*XXX static void
-copy_sub_tex (tex_t *src, int x, int y, tex_t *dst)
-{
-	int         dstbytes;
-	int         srcbytes;
-	int         i;
-
-	srcbytes = src->width * src->format;
-	dstbytes = dst->width * dst->format;
-
-	x *= src->format;
-	for (i = 0; i < dst->height; i++)
-		memcpy (dst->data + i * dstbytes, src->data + (i + y) * srcbytes + x,
-				dstbytes);
-}*/
 
 void
 Vulkan_LoadSkys (const char *sky, vulkan_ctx_t *ctx)

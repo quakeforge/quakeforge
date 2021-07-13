@@ -154,7 +154,6 @@ typedef struct msurface_s {
 
 	glpoly_t   *polys;				// multiple if warped
 	instsurf_t *instsurf;	///< null if not part of world model/sub-model
-	instsurf_t *tinst;		///< for instance models
 
 	mtexinfo_t *texinfo;
 	int         ec_index;

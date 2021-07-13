@@ -238,25 +238,27 @@ static struct {
 } sky_params;
 
 #define CHAIN_SURF_F2B(surf,chain)							\
-	do { 													\
+	({	 													\
 		instsurf_t *inst = (surf)->instsurf;				\
 		if (__builtin_expect(!inst, 1))						\
-			(surf)->tinst = inst = get_instsurf ();			\
+			inst = get_instsurf ();							\
 		inst->surface = (surf);								\
 		*(chain##_tail) = inst;								\
 		(chain##_tail) = &inst->tex_chain;					\
 		*(chain##_tail) = 0;								\
-	} while (0)
+		inst;												\
+	})
 
 #define CHAIN_SURF_B2F(surf,chain) 							\
-	do { 													\
+	({	 													\
 		instsurf_t *inst = (surf)->instsurf;				\
 		if (__builtin_expect(!inst, 1))						\
-			(surf)->tinst = inst = get_instsurf ();			\
+			inst = get_instsurf ();							\
 		inst->surface = (surf);								\
 		inst->tex_chain = (chain);							\
 		(chain) = inst;										\
-	} while (0)
+		inst;												\
+	})
 
 #define GET_RELEASE(type,name) \
 static inline type *												\
@@ -380,9 +382,9 @@ chain_surface (mod_brush_t *brush, msurface_t *surf, vec_t *transform,
 	instsurf_t *is;
 
 	if (surf->flags & SURF_DRAWSKY) {
-		CHAIN_SURF_F2B (surf, sky_chain);
+		is = CHAIN_SURF_F2B (surf, sky_chain);
 	} else if ((surf->flags & SURF_DRAWTURB) || (color && color[3] < 1.0)) {
-		CHAIN_SURF_B2F (surf, waterchain);
+		is = CHAIN_SURF_B2F (surf, waterchain);
 	} else {
 		texture_t  *tx;
 		glsltex_t  *tex;
@@ -392,12 +394,10 @@ chain_surface (mod_brush_t *brush, msurface_t *surf, vec_t *transform,
 		else
 			tx = R_TextureAnimation (surf);
 		tex = tx->render;
-		CHAIN_SURF_F2B (surf, tex->tex_chain);
+		is = CHAIN_SURF_F2B (surf, tex->tex_chain);
 
 		update_lightmap (brush, surf);
 	}
-	if (!(is = surf->instsurf))
-		is = surf->tinst;
 	is->transform = transform;
 	is->color = color;
 }
