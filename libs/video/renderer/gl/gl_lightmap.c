@@ -545,7 +545,7 @@ gl_overbright_f (cvar_t *var)
 {
 	int			 num, i, j;
 	model_t		*m;
-	msurface_t  *fa;
+	msurface_t  *surf;
 	entity_t    *ent;
 	mod_brush_t *brush;
 
@@ -602,35 +602,36 @@ gl_overbright_f (cvar_t *var)
 			continue;
 
 		brush = &m->brush;
-		for (j = 0, fa = brush->surfaces; j < brush->numsurfaces; j++, fa++) {
-			if (fa->flags & (SURF_DRAWTURB | SURF_DRAWSKY))
+		for (j = 0, surf = brush->surfaces; j < brush->numsurfaces;
+			 j++, surf++) {
+			if (surf->flags & (SURF_DRAWTURB | SURF_DRAWSKY))
 				continue;
 
-			num = fa->lightmaptexturenum;
+			num = surf->lightmaptexturenum;
 			gl_lightmap_modified[num] = true;
 			gl_lightmap_rectchange[num].l = 0;
 			gl_lightmap_rectchange[num].t = 0;
 			gl_lightmap_rectchange[num].w = BLOCK_WIDTH;
 			gl_lightmap_rectchange[num].h = BLOCK_HEIGHT;
 
-			gl_R_BuildLightMap (brush, fa);
+			gl_R_BuildLightMap (brush, surf);
 		}
 	}
 
 	brush = &r_worldentity.renderer.model->brush;
 
-	for (i = 0, fa = brush->surfaces; i < brush->numsurfaces; i++, fa++) {
-		if (fa->flags & (SURF_DRAWTURB | SURF_DRAWSKY))
+	for (i = 0, surf = brush->surfaces; i < brush->numsurfaces; i++, surf++) {
+		if (surf->flags & (SURF_DRAWTURB | SURF_DRAWSKY))
 			continue;
 
-		num = fa->lightmaptexturenum;
+		num = surf->lightmaptexturenum;
 		gl_lightmap_modified[num] = true;
 		gl_lightmap_rectchange[num].l = 0;
 		gl_lightmap_rectchange[num].t = 0;
 		gl_lightmap_rectchange[num].w = BLOCK_WIDTH;
 		gl_lightmap_rectchange[num].h = BLOCK_HEIGHT;
 
-		gl_R_BuildLightMap (brush, fa);
+		gl_R_BuildLightMap (brush, surf);
 	}
 }
 

@@ -465,7 +465,7 @@ add_elechain (glsltex_t *tex, int model_index)
 }
 
 static void
-build_surf_displist (model_t **models, msurface_t *fa, int base,
+build_surf_displist (model_t **models, msurface_t *surf, int base,
 					 dstring_t *vert_list)
 {
 	int         numverts;
@@ -483,8 +483,8 @@ build_surf_displist (model_t **models, msurface_t *fa, int base,
 	float       s, t;
 	mod_brush_t *brush;
 
-	if (fa->model_index < 0) {
-		brush = &models[-fa->model_index - 1]->brush;
+	if (surf->model_index < 0) {
+		brush = &models[-surf->model_index - 1]->brush;
 	} else {
 		brush = &r_worldentity.renderer.model->brush;
 	}
@@ -492,7 +492,7 @@ build_surf_displist (model_t **models, msurface_t *fa, int base,
 	edges = brush->edges;
 	surfedges = brush->surfedges;
 
-	numverts = fa->numedges;
+	numverts = surf->numedges;
 	numtris = numverts - 2;
 	numindices = numtris * 3;
 	verts = alloca (numverts * sizeof (bspvert_t));
@@ -503,39 +503,40 @@ build_surf_displist (model_t **models, msurface_t *fa, int base,
 		*ind++ = base + i + 1;
 		*ind++ = base + i + 2;
 	}
-	fa->polys = (glpoly_t *) poly;
+	surf->polys = (glpoly_t *) poly;
 
+	mtexinfo_t *texinfo = surf->texinfo;
 	for (i = 0; i < numverts; i++) {
-		index = surfedges[fa->firstedge + i];
+		index = surfedges[surf->firstedge + i];
 		if (index > 0)
 			vec = vertices[edges[index].v[0]].position;
 		else
 			vec = vertices[edges[-index].v[1]].position;
 
-		s = DotProduct (vec, fa->texinfo->vecs[0]) + fa->texinfo->vecs[0][3];
-		t = DotProduct (vec, fa->texinfo->vecs[1]) + fa->texinfo->vecs[1][3];
+		s = DotProduct (vec, texinfo->vecs[0]) + texinfo->vecs[0][3];
+		t = DotProduct (vec, texinfo->vecs[1]) + texinfo->vecs[1][3];
 		VectorCopy (vec, verts[i].vertex);
 		verts[i].vertex[3] = 1;
-		verts[i].tlst[0] = s / fa->texinfo->texture->width;
-		verts[i].tlst[1] = t / fa->texinfo->texture->height;
+		verts[i].tlst[0] = s / texinfo->texture->width;
+		verts[i].tlst[1] = t / texinfo->texture->height;
 
 		//lightmap texture coordinates
-		if (!fa->lightpic) {
+		if (!surf->lightpic) {
 			// sky and water textures don't have lightmaps
 			verts[i].tlst[2] = 0;
 			verts[i].tlst[3] = 0;
 			continue;
 		}
-		s = DotProduct (vec, fa->texinfo->vecs[0]) + fa->texinfo->vecs[0][3];
-		t = DotProduct (vec, fa->texinfo->vecs[1]) + fa->texinfo->vecs[1][3];
-		s -= fa->texturemins[0];
-		t -= fa->texturemins[1];
-		s += fa->lightpic->rect->x * 16 + 8;
-		t += fa->lightpic->rect->y * 16 + 8;
+		s = DotProduct (vec, texinfo->vecs[0]) + texinfo->vecs[0][3];
+		t = DotProduct (vec, texinfo->vecs[1]) + texinfo->vecs[1][3];
+		s -= surf->texturemins[0];
+		t -= surf->texturemins[1];
+		s += surf->lightpic->rect->x * 16 + 8;
+		t += surf->lightpic->rect->y * 16 + 8;
 		s /= 16;
 		t /= 16;
-		verts[i].tlst[2] = s * fa->lightpic->size;
-		verts[i].tlst[3] = t * fa->lightpic->size;
+		verts[i].tlst[2] = s * surf->lightpic->size;
+		verts[i].tlst[3] = t * surf->lightpic->size;
 	}
 	dstring_append (vert_list, (char *) verts, numverts * sizeof (bspvert_t));
 }

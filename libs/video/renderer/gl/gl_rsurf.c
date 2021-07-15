@@ -210,7 +210,7 @@ R_RenderFullbrights (void)
 }
 
 static inline void
-R_RenderBrushPoly_3 (msurface_t *fa)
+R_RenderBrushPoly_3 (msurface_t *surf)
 {
 	float      *v;
 	int			i;
@@ -218,9 +218,9 @@ R_RenderBrushPoly_3 (msurface_t *fa)
 	gl_c_brush_polys++;
 
 	qfglBegin (GL_POLYGON);
-	v = fa->polys->verts[0];
+	v = surf->polys->verts[0];
 
-	for (i = 0; i < fa->polys->numverts; i++, v += VERTEXSIZE) {
+	for (i = 0; i < surf->polys->numverts; i++, v += VERTEXSIZE) {
 		qglMultiTexCoord2fv (gl_mtex_enum + 0, &v[3]);
 		qglMultiTexCoord2fv (gl_mtex_enum + 1, &v[5]);
 		qglMultiTexCoord2fv (gl_mtex_enum + 2, &v[3]);
@@ -231,7 +231,7 @@ R_RenderBrushPoly_3 (msurface_t *fa)
 }
 
 static inline void
-R_RenderBrushPoly_2 (msurface_t *fa)
+R_RenderBrushPoly_2 (msurface_t *surf)
 {
 	float      *v;
 	int			i;
@@ -239,9 +239,9 @@ R_RenderBrushPoly_2 (msurface_t *fa)
 	gl_c_brush_polys++;
 
 	qfglBegin (GL_POLYGON);
-	v = fa->polys->verts[0];
+	v = surf->polys->verts[0];
 
-	for (i = 0; i < fa->polys->numverts; i++, v += VERTEXSIZE) {
+	for (i = 0; i < surf->polys->numverts; i++, v += VERTEXSIZE) {
 		qglMultiTexCoord2fv (gl_mtex_enum + 0, &v[3]);
 		qglMultiTexCoord2fv (gl_mtex_enum + 1, &v[5]);
 		qfglVertex3fv (v);
@@ -251,7 +251,7 @@ R_RenderBrushPoly_2 (msurface_t *fa)
 }
 
 static inline void
-R_RenderBrushPoly_1 (msurface_t *fa)
+R_RenderBrushPoly_1 (msurface_t *surf)
 {
 	float      *v;
 	int			i;
@@ -259,9 +259,9 @@ R_RenderBrushPoly_1 (msurface_t *fa)
 	gl_c_brush_polys++;
 
 	qfglBegin (GL_POLYGON);
-	v = fa->polys->verts[0];
+	v = surf->polys->verts[0];
 
-	for (i = 0; i < fa->polys->numverts; i++, v += VERTEXSIZE) {
+	for (i = 0; i < surf->polys->numverts; i++, v += VERTEXSIZE) {
 		qfglTexCoord2fv (&v[3]);
 		qfglVertex3fv (v);
 	}
@@ -270,42 +270,42 @@ R_RenderBrushPoly_1 (msurface_t *fa)
 }
 
 static inline void
-R_AddToLightmapChain (mod_brush_t *brush, msurface_t *fa, instsurf_t *sc)
+R_AddToLightmapChain (mod_brush_t *brush, msurface_t *surf, instsurf_t *sc)
 {
 	int		maps, smax, tmax;
 	glRect_t 	*theRect;
 
 	// add the poly to the proper lightmap chain
-	sc->lm_chain = gl_lightmap_polys[fa->lightmaptexturenum];
-	gl_lightmap_polys[fa->lightmaptexturenum] = sc;
+	sc->lm_chain = gl_lightmap_polys[surf->lightmaptexturenum];
+	gl_lightmap_polys[surf->lightmaptexturenum] = sc;
 
 	// check for lightmap modification
-	for (maps = 0; maps < MAXLIGHTMAPS && fa->styles[maps] != 255; maps++)
-		if (d_lightstylevalue[fa->styles[maps]] != fa->cached_light[maps])
+	for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255; maps++)
+		if (d_lightstylevalue[surf->styles[maps]] != surf->cached_light[maps])
 			goto dynamic;
 
-	if ((fa->dlightframe == r_framecount) || fa->cached_dlight) {
+	if ((surf->dlightframe == r_framecount) || surf->cached_dlight) {
 	  dynamic:
 		if (r_dynamic->int_val) {
-			gl_lightmap_modified[fa->lightmaptexturenum] = true;
-			theRect = &gl_lightmap_rectchange[fa->lightmaptexturenum];
-			if (fa->light_t < theRect->t) {
+			gl_lightmap_modified[surf->lightmaptexturenum] = true;
+			theRect = &gl_lightmap_rectchange[surf->lightmaptexturenum];
+			if (surf->light_t < theRect->t) {
 				if (theRect->h)
-					theRect->h += theRect->t - fa->light_t;
-				theRect->t = fa->light_t;
+					theRect->h += theRect->t - surf->light_t;
+				theRect->t = surf->light_t;
 			}
-			if (fa->light_s < theRect->l) {
+			if (surf->light_s < theRect->l) {
 				if (theRect->w)
-					theRect->w += theRect->l - fa->light_s;
-				theRect->l = fa->light_s;
+					theRect->w += theRect->l - surf->light_s;
+				theRect->l = surf->light_s;
 			}
-			smax = (fa->extents[0] >> 4) + 1;
-			tmax = (fa->extents[1] >> 4) + 1;
-			if ((theRect->w + theRect->l) < (fa->light_s + smax))
-				theRect->w = (fa->light_s - theRect->l) + smax;
-			if ((theRect->h + theRect->t) < (fa->light_t + tmax))
-				theRect->h = (fa->light_t - theRect->t) + tmax;
-			gl_R_BuildLightMap (brush, fa);
+			smax = (surf->extents[0] >> 4) + 1;
+			tmax = (surf->extents[1] >> 4) + 1;
+			if ((theRect->w + theRect->l) < (surf->light_s + smax))
+				theRect->w = (surf->light_s - theRect->l) + smax;
+			if ((theRect->h + theRect->t) < (surf->light_t + tmax))
+				theRect->h = (surf->light_t - theRect->t) + tmax;
+			gl_R_BuildLightMap (brush, surf);
 		}
 	}
 }
@@ -315,7 +315,7 @@ gl_R_DrawWaterSurfaces (void)
 {
 	int         i;
 	instsurf_t *s;
-	msurface_t *fa;
+	msurface_t *surf;
 	float       wateralpha = max (vr_data.min_wateralpha, r_wateralpha->value);
 
 	if (!waterchain)
@@ -333,17 +333,17 @@ gl_R_DrawWaterSurfaces (void)
 	i = -1;
 	for (s = waterchain; s; s = s->tex_chain) {
 		gltex_t    *tex;
-		fa = s->surface;
+		surf = s->surface;
 		if (s->transform)
 			qfglLoadMatrixf (s->transform);
 		else
 			qfglLoadMatrixf (gl_r_world_matrix);
-		tex = fa->texinfo->texture->render;
+		tex = surf->texinfo->texture->render;
 		if (i != tex->gl_texturenum) {
 			i = tex->gl_texturenum;
 			qfglBindTexture (GL_TEXTURE_2D, i);
 		}
-		GL_EmitWaterPolys (fa);
+		GL_EmitWaterPolys (surf);
 	}
 	qfglLoadMatrixf (gl_r_world_matrix);
 
@@ -361,7 +361,7 @@ DrawTextureChains (int disable_blend, int do_bind)
 {
 	int			i;
 	instsurf_t *s;
-	msurface_t *fa;
+	msurface_t *surf;
 	gltex_t    *tex;
 
 	if (gl_mtex_active_tmus >= 2) {
@@ -386,7 +386,7 @@ DrawTextureChains (int disable_blend, int do_bind)
 
 				qglActiveTexture (gl_mtex_enum + 1);
 				for (s = tex->tex_chain; s; s = s->tex_chain) {
-					fa = s->surface;
+					surf = s->surface;
 					if (s->transform) {
 						qfglPushMatrix ();
 						qfglLoadMatrixf (s->transform);
@@ -394,9 +394,9 @@ DrawTextureChains (int disable_blend, int do_bind)
 					if (s->color && do_bind)
 						qfglColor4fv (s->color);
 					qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures +
-									 fa->lightmaptexturenum);
+									 surf->lightmaptexturenum);
 
-					R_RenderBrushPoly_3 (fa);
+					R_RenderBrushPoly_3 (surf);
 
 					if (s->transform)
 						qfglPopMatrix ();
@@ -411,9 +411,9 @@ DrawTextureChains (int disable_blend, int do_bind)
 			} else {
 				qglActiveTexture (gl_mtex_enum + 1);
 				for (s = tex->tex_chain; s; s = s->tex_chain) {
-					fa = s->surface;
+					surf = s->surface;
 					qfglBindTexture (GL_TEXTURE_2D, gl_lightmap_textures +
-									 fa->lightmaptexturenum);
+									 surf->lightmaptexturenum);
 
 					if (s->transform) {
 						qfglPushMatrix ();
@@ -421,7 +421,7 @@ DrawTextureChains (int disable_blend, int do_bind)
 					}
 					if (s->color && do_bind)
 						qfglColor4fv (s->color);
-					R_RenderBrushPoly_2 (fa);
+					R_RenderBrushPoly_2 (surf);
 
 					if (s->transform)
 						qfglPopMatrix ();
@@ -522,8 +522,7 @@ gl_R_DrawBrushModel (entity_t *e)
 	int         i;
 	unsigned int k;
 	model_t    *model;
-	plane_t    *pplane;
-	msurface_t *psurf;
+	msurface_t *surf;
 	qboolean    rotated;
 	vec3_t      mins, maxs;
 	mod_brush_t *brush;
@@ -587,19 +586,19 @@ gl_R_DrawBrushModel (entity_t *e)
 	qfglGetFloatv (GL_MODELVIEW_MATRIX, e->renderer.full_transform);
 	qfglPopMatrix ();
 
-	psurf = &brush->surfaces[brush->firstmodelsurface];
+	surf = &brush->surfaces[brush->firstmodelsurface];
 
 	// draw texture
-	for (i = 0; i < brush->nummodelsurfaces; i++, psurf++) {
+	for (i = 0; i < brush->nummodelsurfaces; i++, surf++) {
 		// find which side of the node we are on
-		pplane = psurf->plane;
+		plane_t    *plane = surf->plane;
 
-		dot = DotProduct (modelorg, pplane->normal) - pplane->dist;
+		dot = DotProduct (modelorg, plane->normal) - plane->dist;
 
 		// draw the polygon
-		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
-			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
-			chain_surface (brush, psurf, e->renderer.full_transform,
+		if (((surf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
+			(!(surf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
+			chain_surface (brush, surf, e->renderer.full_transform,
 						   e->renderer.colormod);
 		}
 	}
@@ -817,7 +816,7 @@ gl_R_DrawWorld (void)
 model_t    *gl_currentmodel;
 
 void
-GL_BuildSurfaceDisplayList (msurface_t *fa)
+GL_BuildSurfaceDisplayList (msurface_t *surf)
 {
 	float       s, t;
 	float      *vec;
@@ -827,18 +826,19 @@ GL_BuildSurfaceDisplayList (msurface_t *fa)
 
 	// reconstruct the polygon
 	pedges = gl_currentmodel->brush.edges;
-	lnumverts = fa->numedges;
+	lnumverts = surf->numedges;
 
 	// draw texture
 	poly = Hunk_Alloc (sizeof (glpoly_t) + (lnumverts - 4) *
 					   VERTEXSIZE * sizeof (float));
-	poly->next = fa->polys;
-	poly->flags = fa->flags;
-	fa->polys = poly;
+	poly->next = surf->polys;
+	poly->flags = surf->flags;
+	surf->polys = poly;
 	poly->numverts = lnumverts;
 
+	mtexinfo_t *texinfo = surf->texinfo;
 	for (i = 0; i < lnumverts; i++) {
-		lindex = gl_currentmodel->brush.surfedges[fa->firstedge + i];
+		lindex = gl_currentmodel->brush.surfedges[surf->firstedge + i];
 
 		if (lindex > 0) {
 			r_pedge = &pedges[lindex];
@@ -847,35 +847,35 @@ GL_BuildSurfaceDisplayList (msurface_t *fa)
 			r_pedge = &pedges[-lindex];
 			vec = r_pcurrentvertbase[r_pedge->v[1]].position;
 		}
-		s = DotProduct (vec, fa->texinfo->vecs[0]) + fa->texinfo->vecs[0][3];
-		s /= fa->texinfo->texture->width;
+		s = DotProduct (vec, texinfo->vecs[0]) + texinfo->vecs[0][3];
+		s /= texinfo->texture->width;
 
-		t = DotProduct (vec, fa->texinfo->vecs[1]) + fa->texinfo->vecs[1][3];
-		t /= fa->texinfo->texture->height;
+		t = DotProduct (vec, texinfo->vecs[1]) + texinfo->vecs[1][3];
+		t /= texinfo->texture->height;
 
 		VectorCopy (vec, poly->verts[i]);
 		poly->verts[i][3] = s;
 		poly->verts[i][4] = t;
 
 		// lightmap texture coordinates
-		s = DotProduct (vec, fa->texinfo->vecs[0]) + fa->texinfo->vecs[0][3];
-		s -= fa->texturemins[0];
-		s += fa->light_s * 16;
+		s = DotProduct (vec, texinfo->vecs[0]) + texinfo->vecs[0][3];
+		s -= surf->texturemins[0];
+		s += surf->light_s * 16;
 		s += 8;
-		s /= BLOCK_WIDTH * 16;			// fa->texinfo->texture->width;
+		s /= BLOCK_WIDTH * 16;
 
-		t = DotProduct (vec, fa->texinfo->vecs[1]) + fa->texinfo->vecs[1][3];
-		t -= fa->texturemins[1];
-		t += fa->light_t * 16;
+		t = DotProduct (vec, texinfo->vecs[1]) + texinfo->vecs[1][3];
+		t -= surf->texturemins[1];
+		t += surf->light_t * 16;
 		t += 8;
-		t /= BLOCK_HEIGHT * 16;			// fa->texinfo->texture->height;
+		t /= BLOCK_HEIGHT * 16;
 
 		poly->verts[i][5] = s;
 		poly->verts[i][6] = t;
 	}
 
 	// remove co-linear points - Ed
-	if (!gl_keeptjunctions->int_val && !(fa->flags & SURF_UNDERWATER)) {
+	if (!gl_keeptjunctions->int_val && !(surf->flags & SURF_UNDERWATER)) {
 		for (i = 0; i < lnumverts; ++i) {
 			vec3_t      v1, v2;
 			float      *prev, *this, *next;

@@ -481,7 +481,7 @@ static void
 R_Mirror (void)
 {
 	//float		d;
-//	msurface_t *s;
+//	msurface_t *surf;
 
 //	if (!gl_mirror) // FIXME: Broken
 		return;
@@ -528,25 +528,25 @@ R_Mirror (void)
 	color_white[3] = r_mirroralpha->value * 255;
 	qfglColor4ubv (color_white);
 #if 0//FIXME
-	s = r_worldentity.model->textures[gl_mirrortexturenum]->texturechain;
-	for (; s; s = s->texturechain) {
+	surf = r_worldentity.model->textures[gl_mirrortexturenum]->texturechain;
+	for (; surf; surf = surf->texturechain) {
 		texture_t  *tex;
 
-		if (!s->texinfo->texture->anim_total)
-			tex = s->texinfo->texture;
+		if (!surf->texinfo->texture->anim_total)
+			tex = surf->texinfo->texture;
 		else
-			tex = R_TextureAnimation (s);
+			tex = R_TextureAnimation (surf);
 
 // FIXME: Needs to set the texture, the tmu, and include the header, and then
 //	clean up afterwards.
 //		if (tex->gl_fb_texturenum && gl_mtex_fullbright
 //			&& gl_fb_models->int_val) {
-//			s->polys->fb_chain = fullbright_polys[tex->gl_fb_texturenum];
-//			fullbright_polys[tex->gl_fb_texturenum] = s->polys;
+//			surf->polys->fb_chain = fullbright_polys[tex->gl_fb_texturenum];
+//			fullbright_polys[tex->gl_fb_texturenum] = surf->polys;
 //		}
 
 		qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
-//		R_RenderBrushPoly (s, tex); // FIXME: Need to move R_Mirror to gl_rsurf.c, and uncommment this line!
+//		R_RenderBrushPoly (surf, tex); // FIXME: Need to move R_Mirror to gl_rsurf.c, and uncommment this line!
 	}
 	r_worldentity.model->textures[gl_mirrortexturenum]->texturechain = NULL;
 #endif
