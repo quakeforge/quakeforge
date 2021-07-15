@@ -1488,31 +1488,25 @@ op_call:
 			case OP_STATE:
 				{
 					int         self = *pr->globals.self;
-					int         nextthink = pr->fields.nextthink;
-					int         frame = pr->fields.frame;
-					int         think = pr->fields.think;
-					fldofs = self + nextthink;
-					pr->pr_edict_area[fldofs].float_var = *pr->globals.time +
-															0.1;
-					fldofs = self + frame;
-					pr->pr_edict_area[fldofs].float_var = OPA.float_var;
-					fldofs = self + think;
-					pr->pr_edict_area[fldofs].func_var = OPB.func_var;
+					int         nextthink = pr->fields.nextthink + self;
+					int         frame = pr->fields.frame + self;
+					int         think = pr->fields.think + self;
+					float       time = *pr->globals.time + 0.1;
+					pr->pr_edict_area[nextthink].float_var = time;
+					pr->pr_edict_area[frame].float_var = OPA.float_var;
+					pr->pr_edict_area[think].func_var = OPB.func_var;
 				}
 				break;
 			case OP_STATE_F:
 				{
 					int         self = *pr->globals.self;
-					int         nextthink = pr->fields.nextthink;
-					int         frame = pr->fields.frame;
-					int         think = pr->fields.think;
-					fldofs = self + nextthink;
-					pr->pr_edict_area[fldofs].float_var = *pr->globals.time +
-															OPC.float_var;
-					fldofs = self + frame;
-					pr->pr_edict_area[fldofs].float_var = OPA.float_var;
-					fldofs = self + think;
-					pr->pr_edict_area[fldofs].func_var = OPB.func_var;
+					int         nextthink = pr->fields.nextthink + self;
+					int         frame = pr->fields.frame + self;
+					int         think = pr->fields.think + self;
+					float       time = *pr->globals.time + OPC.float_var;
+					pr->pr_edict_area[nextthink].float_var = time;
+					pr->pr_edict_area[frame].float_var = OPA.float_var;
+					pr->pr_edict_area[think].func_var = OPB.func_var;
 				}
 				break;
 			case OP_ADD_I:
