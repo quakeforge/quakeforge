@@ -366,7 +366,7 @@ static void
 MYgluPerspective (GLdouble fovy, GLdouble aspect, GLdouble zNear,
 				  GLdouble zFar)
 {
-	GLdouble		xmin, xmax, ymin, ymax;
+	GLdouble    xmin, xmax, ymin, ymax;
 
 	ymax = zNear * tan (fovy * M_PI / 360.0);
 	ymin = -ymax;
@@ -400,7 +400,7 @@ R_SetupGL_Viewport_and_Perspective (void)
 	}
 //	printf ("glViewport(%d, %d, %d, %d)\n", glx + x, gly + y2, w, h);
 	qfglViewport (x, y2, w, h);
-	screenaspect = r_refdef.vrect.width / r_refdef.vrect.height;
+	screenaspect = r_refdef.vrect.width / (float) r_refdef.vrect.height;
 	MYgluPerspective (r_refdef.fov_y, screenaspect, r_nearclip->value,
 					  r_farclip->value);
 }

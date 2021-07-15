@@ -165,15 +165,9 @@ SCR_CalcRefdef (void)
 	vrect_t     vrect;
 	refdef_t   *refdef = r_data->refdef;
 
-	refdef->fov_y = CalcFov (refdef->fov_x, refdef->vrect.width,
-							 refdef->vrect.height);
-
 	// force a background redraw
 	r_data->scr_fullupdate = 0;
 	r_data->vid->recalc_refdef = 0;
-
-	// bound field of view
-	Cvar_SetValue (scr_fov, bound (1, scr_fov->value, 170));
 
 	vrect.x = 0;
 	vrect.y = 0;
@@ -184,6 +178,12 @@ SCR_CalcRefdef (void)
 
 	view_setgeometry (r_data->scr_view, refdef->vrect.x, refdef->vrect.y,
 					  refdef->vrect.width, refdef->vrect.height);
+
+	// bound field of view
+	Cvar_SetValue (scr_fov, bound (1, scr_fov->value, 170));
+
+	refdef->fov_y = CalcFov (refdef->fov_x, refdef->vrect.width,
+							 refdef->vrect.height);
 
 	// notify the refresh of the change
 	r_funcs->R_ViewChanged ();
