@@ -124,6 +124,7 @@ typedef struct lightingctx_s {
 	qfv_imageset_t lightimages;
 	qfv_lightintset_t lightlayers;
 	qfv_imageviewset_t lightviews;
+	byte        sun_pvs[MAX_MAP_LEAFS];
 } lightingctx_t;
 
 struct vulkan_ctx_s;

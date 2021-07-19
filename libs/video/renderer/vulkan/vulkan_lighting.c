@@ -68,6 +68,18 @@
 static vec4f_t  ref_direction = { 0, 0, 1, 0 };
 
 static void
+expand_pvs (byte *pvs, model_t *model)
+{
+	byte        base_pvs[MAP_PVS_BYTES];
+	memcpy (base_pvs, pvs, sizeof (base_pvs));
+	for (int i = 0; i < model->brush.numleafs; i++) {
+		if (base_pvs[(unsigned) i / 8] & (1 << ((unsigned) i % 8))) {
+			Mod_LeafPVS_mix (model->brush.leafs + i + 1, model, 0, pvs);
+		}
+	}
+}
+
+static void
 find_visible_lights (vulkan_ctx_t *ctx)
 {
 	//qfv_device_t *device = ctx->device;
@@ -84,17 +96,10 @@ find_visible_lights (vulkan_ctx_t *ctx)
 
 	if (leaf != lframe->leaf) {
 		//double start = Sys_DoubleTime ();
-		byte        pvs[MAP_PVS_BYTES];
 		int         flags = 0;
 
-		Mod_LeafPVS_set (leaf, model, 0, pvs);
-		memcpy (lframe->pvs, pvs, sizeof (pvs));
-		for (int i = 0; i < model->brush.numleafs; i++) {
-			if (pvs[i / 8] & (1 << (i % 8))) {
-				Mod_LeafPVS_mix (model->brush.leafs + i + 1, model, 0,
-								 lframe->pvs);
-			}
-		}
+		Mod_LeafPVS_set (leaf, model, 0, lframe->pvs);
+		expand_pvs (lframe->pvs, model);
 		for (int i = 0; i < model->brush.numleafs; i++) {
 			if (lframe->pvs[i / 8] & (1 << (i % 8))) {
 				flags |= model->brush.leaf_flags[i + 1];
@@ -535,13 +540,14 @@ sun_vector (const vec_t *ang, vec_t *vec)
 }
 
 static void
-parse_sun (lightingctx_t *lctx, plitem_t *entity)
+parse_sun (lightingctx_t *lctx, plitem_t *entity, model_t *model)
 {
 	qfv_light_t light = {};
 	float       sunlight;
 	//float       sunlight2;
 	vec3_t      sunangle = { 0, -90, 0 };
 
+	memset (lctx->sun_pvs, 0, MAX_MAP_LEAFS);
 	sunlight = parse_float (PL_String (PL_ObjectForKey (entity,
 													    "_sunlight")), 0);
 	//sunlight2 = parse_float (PL_String (PL_ObjectForKey (entity,
@@ -558,6 +564,17 @@ parse_sun (lightingctx_t *lctx, plitem_t *entity)
 	light.cone = 1;
 	DARRAY_APPEND (&lctx->lights, light);
 	DARRAY_APPEND (&lctx->lightleafs, -1);
+
+	// Any leaf with sky surfaces can potentially see the sun, thus put
+	// the sun "in" every leaf with a sky surface
+	for (int l = 0; l < model->brush.numleafs; l++) {
+		if (model->brush.leaf_flags[l] & SURF_DRAWSKY) {
+			lctx->sun_pvs[l / 8] |= 1 << (l % 8);
+		}
+	}
+	// any leaf visible from a leaf with a sky surface (and thus the sun)
+	// can receive shadows from the sun
+	expand_pvs (lctx->sun_pvs, model);
 }
 
 static void
@@ -934,7 +951,7 @@ Vulkan_LoadLights (model_t *model, const char *entity_data, vulkan_ctx_t *ctx)
 			}
 			if (strequal (classname, "worldspawn")) {
 				// parse_sun can add many lights
-				parse_sun (lctx, entity);
+				parse_sun (lctx, entity, model);
 			} else if (strnequal (classname, "light", 5)) {
 				qfv_light_t light = {};
 
