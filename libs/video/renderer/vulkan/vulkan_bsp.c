@@ -305,13 +305,12 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 }
 
 static elechain_t *
-add_elechain (vulktex_t *tex, int model_index, bspctx_t *bctx)
+add_elechain (vulktex_t *tex, bspctx_t *bctx)
 {
 	elechain_t *ec;
 
 	ec = get_elechain (bctx);
 	ec->elements = get_elements (bctx);
-	ec->model_index = model_index;
 	ec->transform = 0;
 	ec->color = 0;
 	*tex->elechain_tail = ec;
@@ -505,18 +504,11 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	for (size_t i = 0; i < bctx->texture_chains.size; i++) {
 		vulktex_t  *tex;
 		instsurf_t *is;
-		elechain_t *ec = 0;
 
 		tex = bctx->texture_chains.a[i];
 
 		for (is = tex->tex_chain; is; is = is->tex_chain) {
 			msurface_t *surf = is->surface;
-			if (!tex->elechain) {
-				ec = add_elechain (tex, surf->model_index, bctx);
-			}
-			if (surf->model_index != ec->model_index) {	// next sub-model
-				ec = add_elechain (tex, surf->model_index, bctx);
-			}
 
 			surf->polys = (glpoly_t *) poly;
 			poly = build_surf_displist (models, surf, vertex_index_base,
@@ -1056,14 +1048,14 @@ add_surf_elements (vulktex_t *tex, instsurf_t *is,
 	bsppoly_t  *poly = (bsppoly_t *) surf->polys;
 
 	if (!tex->elechain) {
-		(*ec) = add_elechain (tex, surf->model_index, bctx);
+		(*ec) = add_elechain (tex, bctx);
 		(*ec)->transform = is->transform;
 		(*ec)->color = is->color;
 		(*el) = (*ec)->elements;
 		(*el)->first_index = bframe->index_count;
 	}
 	if (is->transform != (*ec)->transform || is->color != (*ec)->color) {
-		(*ec) = add_elechain (tex, surf->model_index, bctx);
+		(*ec) = add_elechain (tex, bctx);
 		(*ec)->transform = is->transform;
 		(*ec)->color = is->color;
 		(*el) = (*ec)->elements;
