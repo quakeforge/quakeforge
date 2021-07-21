@@ -32,6 +32,16 @@
 
 #include "QF/GLSL/types.h"
 
+typedef struct glsltex_s {
+	struct texture_s  *texture;
+	int			gl_texturenum;
+	int         sky_tex[2];
+	struct instsurf_s *tex_chain;
+	struct instsurf_s **tex_chain_tail;
+	struct elechain_s *elechain;
+	struct elechain_s **elechain_tail;
+} glsltex_t;
+
 typedef struct bspvert_s {
 	quat_t      vertex;
 	quat_t      tlst;
@@ -53,11 +63,13 @@ typedef struct elechain_s {
 	float      *color;
 } elechain_t;
 
+struct model_s;
+
 void glsl_R_ClearElements (void);
 void glsl_R_DrawWorld (void);
 void glsl_R_DrawSky (void);
-void glsl_R_RegisterTextures (model_t **models, int num_models);
-void glsl_R_BuildDisplayLists (model_t **models, int num_models);
+void glsl_R_RegisterTextures (struct model_s **models, int num_models);
+void glsl_R_BuildDisplayLists (struct model_s **models, int num_models);
 void glsl_R_InitBsp (void);
 
 #endif//__QF_GLSL_qf_bsp_h

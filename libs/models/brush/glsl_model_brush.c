@@ -53,6 +53,7 @@
 #include "QF/vid.h"
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
+#include "QF/GLSL/qf_bsp.h"
 #include "QF/GLSL/qf_textures.h"
 
 #include "compat.h"

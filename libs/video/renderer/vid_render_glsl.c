@@ -34,6 +34,7 @@
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
+#include "QF/GLSL/qf_bsp.h"
 #include "QF/GLSL/qf_vid.h"
 
 #include "mod_internal.h"

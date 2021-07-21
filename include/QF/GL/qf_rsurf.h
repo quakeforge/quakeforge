@@ -28,7 +28,19 @@
 #ifndef __QF_GL_rsurf_h
 #define __QF_GL_rsurf_h
 
+typedef struct gltex_s {
+	struct texture_s  *texture;
+	int			gl_texturenum;
+	int			gl_fb_texturenum;
+	struct instsurf_s *tex_chain;
+	struct instsurf_s **tex_chain_tail;
+} gltex_t;
+
 extern int gl_mirrortexturenum;	// quake texturenum, not gltexturenum
+
+struct model_s;
+struct entity_s;
+struct msurface_s;
 
 void gl_lightmap_init (void);
 void GL_BuildLightmaps (struct model_s **models, int num_models);
@@ -36,6 +48,6 @@ void GL_BuildLightmaps (struct model_s **models, int num_models);
 void R_DrawBrushModel (struct entity_s *e);
 void R_DrawWorld (void);
 
-void GL_EmitWaterPolys (msurface_t *fa);
+void GL_EmitWaterPolys (struct msurface_s *fa);
 
 #endif // __QF_GL_rsurf_h

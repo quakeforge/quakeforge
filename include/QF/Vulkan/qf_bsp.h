@@ -39,6 +39,17 @@
 
 #include "QF/simd/types.h"
 
+typedef struct vulktex_s {
+	struct texture_s  *texture;
+	struct instsurf_s *tex_chain;	// for gl_texsort drawing
+	struct instsurf_s **tex_chain_tail;
+	struct elechain_s *elechain;
+	struct elechain_s **elechain_tail;
+	struct qfv_tex_s *tex;
+	struct qfv_tex_s *glow;
+	byte       *glow_pixels;
+} vulktex_t;
+
 typedef struct bspvert_s {
 	quat_t      vertex;
 	quat_t      tlst;
@@ -99,7 +110,7 @@ typedef struct bspframeset_s
     DARRAY_TYPE (bspframe_t) bspframeset_t;
 
 typedef struct texchainset_s
-    DARRAY_TYPE (struct vulktex_s *) texchainset_t;
+    DARRAY_TYPE (vulktex_t *) texchainset_t;
 
 typedef struct bspctx_s {
 	instsurf_t  *waterchain;

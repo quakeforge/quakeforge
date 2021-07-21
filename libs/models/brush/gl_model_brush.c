@@ -45,6 +45,7 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/GL/qf_rsurf.h"
 #include "QF/GL/qf_textures.h"
 
 #include "compat.h"

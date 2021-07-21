@@ -32,6 +32,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <stddef.h>
 
 #ifdef HAVE_SYSTEM_MSG_T
 # define msg_t sys_msg_t
