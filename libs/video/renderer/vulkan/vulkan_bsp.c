@@ -211,23 +211,7 @@ Vulkan_ClearElements (vulkan_ctx_t *ctx)
 	release_elechains (bctx);
 	release_elementss (bctx);
 }
-/*
-static void
-update_lightmap (mod_brush_t *brush, msurface_t *surf, vulkan_ctx_t *ctx)
-{
-	int         maps;
 
-	for (maps = 0; maps < MAXLIGHTMAPS && surf->styles[maps] != 255; maps++)
-		if (d_lightstylevalue[surf->styles[maps]] != surf->cached_light[maps])
-			goto dynamic;
-
-	if ((surf->dlightframe == r_framecount) || surf->cached_dlight) {
-dynamic:
-		if (r_dynamic->int_val)
-			Vulkan_BuildLightMap (brush, surf, ctx);
-	}
-}
-*/
 static inline void
 chain_surface (mod_brush_t *brush, msurface_t *surf, vec_t *transform,
 			   float *color, vulkan_ctx_t *ctx)
@@ -249,8 +233,6 @@ chain_surface (mod_brush_t *brush, msurface_t *surf, vec_t *transform,
 			tx = R_TextureAnimation (surf);
 		tex = tx->render;
 		is = CHAIN_SURF_F2B (surf, tex->tex_chain);
-
-		//update_lightmap (brush, surf, ctx);
 	}
 	is->transform = transform;
 	is->color = color;
@@ -1096,9 +1078,6 @@ Vulkan_DrawWorld (vulkan_ctx_t *ctx)
 	worldent.renderer.model = r_worldentity.renderer.model;
 	brush = &r_worldentity.renderer.model->brush;
 
-	//vulktex_t  *tex = r_worldentity.renderer.model->skytexture->render;
-	//bctx->skysheet_tex = tex->tex;
-
 	currententity = &worldent;
 
 	R_VisitWorldNodes (brush, ctx);
@@ -1113,7 +1092,6 @@ Vulkan_DrawWorld (vulkan_ctx_t *ctx)
 		}
 	}
 
-	//Vulkan_FlushLightmaps (ctx);
 	bsp_begin (ctx);
 
 	push_transform (identity, bctx->layout, dfunc,
@@ -1123,7 +1101,6 @@ Vulkan_DrawWorld (vulkan_ctx_t *ctx)
 	fragconst_t frag_constants = { time: vr_data.realtime };
 	push_fragconst (&frag_constants, bctx->layout, dfunc,
 					bframe->cmdSet.a[QFV_bspGBuffer]);
-	//XXX qfeglActiveTexture (GL_TEXTURE0 + 0);
 	for (size_t i = 0; i < bctx->texture_chains.size; i++) {
 		vulktex_t  *tex;
 		elechain_t *ec = 0;
