@@ -98,8 +98,12 @@ find_visible_lights (vulkan_ctx_t *ctx)
 		//double start = Sys_DoubleTime ();
 		int         flags = 0;
 
-		Mod_LeafPVS_set (leaf, model, 0, lframe->pvs);
-		expand_pvs (lframe->pvs, model);
+		if (leaf == model->brush.leafs) {
+			memset (lframe->pvs, 0xff, sizeof (lframe->pvs));
+		} else {
+			Mod_LeafPVS_set (leaf, model, 0, lframe->pvs);
+			expand_pvs (lframe->pvs, model);
+		}
 		for (int i = 0; i < model->brush.numleafs; i++) {
 			if (lframe->pvs[i / 8] & (1 << (i % 8))) {
 				flags |= model->brush.leaf_flags[i + 1];
