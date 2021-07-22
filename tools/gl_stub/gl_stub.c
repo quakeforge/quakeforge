@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <string.h>
 
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
@@ -8,6 +9,7 @@
 #include "QF/GL/defines.h"
 #include "QF/GL/extensions.h"
 #include "QF/GL/types.h"
+#include "QF/GLSL/types.h"
 
 #include "QF/hash.h"
 
@@ -28,6 +30,7 @@ ret GLAPIENTRY norm_##name args;
 #define QFGL_NEED(ret, name, args) \
 ret GLAPIENTRY norm_##name args;
 #include "QF/GL/qf_funcs_list.h"
+#include "QF/GLSL/qf_funcs_list.h"
 #undef QFGL_NEED
 #undef QFGL_WANT
 
@@ -36,6 +39,7 @@ ret GLAPIENTRY trace_##name args;
 #define QFGL_NEED(ret, name, args) \
 ret GLAPIENTRY trace_##name args;
 #include "QF/GL/qf_funcs_list.h"
+#include "QF/GLSL/qf_funcs_list.h"
 #undef QFGL_NEED
 #undef QFGL_WANT
 
@@ -53,6 +57,7 @@ static gl_stub_t gl_stub_funcs[] = {
 #define QFGL_NEED(ret, name, args) \
 	{#name, norm_##name, trace_##name},
 #include "QF/GL/qf_funcs_list.h"
+#include "QF/GLSL/qf_funcs_list.h"
 #undef QFGL_NEED
 #undef QFGL_WANT
 };
