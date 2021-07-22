@@ -100,12 +100,12 @@ R_MarkLeaves (void)
   Returns the proper texture for a given time and base texture
 */
 texture_t  *
-R_TextureAnimation (msurface_t *surf)
+R_TextureAnimation (const entity_t *entity, msurface_t *surf)
 {
 	texture_t  *base = surf->texinfo->texture;
 	int         count, relative;
 
-	if (currententity->animation.frame) {
+	if (entity->animation.frame) {
 		if (base->alternate_anims)
 			base = base->alternate_anims;
 	}

@@ -213,15 +213,15 @@ Vulkan_ClearElements (vulkan_ctx_t *ctx)
 }
 
 static inline void
-chain_surface (mod_brush_t *brush, msurface_t *surf, vec_t *transform,
-			   float *color, vulkan_ctx_t *ctx)
+chain_surface (msurface_t *surf, vulkan_ctx_t *ctx)
 {
 	bspctx_t   *bctx = ctx->bsp_context;
 	instsurf_t *is;
 
 	if (surf->flags & SURF_DRAWSKY) {
 		is = CHAIN_SURF_F2B (surf, bctx->sky_chain);
-	} else if ((surf->flags & SURF_DRAWTURB) || (color && color[3] < 1.0)) {
+	} else if ((surf->flags & SURF_DRAWTURB)
+			   || (bctx->color && bctx->color[3] < 1.0)) {
 		is = CHAIN_SURF_B2F (surf, bctx->waterchain);
 	} else {
 		texture_t  *tx;
@@ -230,12 +230,12 @@ chain_surface (mod_brush_t *brush, msurface_t *surf, vec_t *transform,
 		if (!surf->texinfo->texture->anim_total)
 			tx = surf->texinfo->texture;
 		else
-			tx = R_TextureAnimation (surf);
+			tx = R_TextureAnimation (bctx->entity, surf);
 		tex = tx->render;
 		is = CHAIN_SURF_F2B (surf, tex->tex_chain);
 	}
-	is->transform = transform;
-	is->color = color;
+	is->transform = bctx->transform;
+	is->color = bctx->color;
 }
 
 static void
@@ -588,6 +588,11 @@ R_DrawBrushModel (entity_t *e, vulkan_ctx_t *ctx)
 	vec3_t      mins, maxs;
 	vec4f_t     org;
 	mod_brush_t *brush;
+	bspctx_t   *bctx = ctx->bsp_context;
+
+	bctx->entity = e;
+	bctx->transform = e->renderer.full_transform;
+	bctx->color = e->renderer.colormod;
 
 	model = e->renderer.model;
 	brush = &model->brush;
@@ -628,8 +633,7 @@ R_DrawBrushModel (entity_t *e, vulkan_ctx_t *ctx)
 		// enqueue the polygon
 		if (((surf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON))
 			|| (!(surf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
-			chain_surface (brush, surf, e->renderer.full_transform,
-						   e->renderer.colormod, ctx);
+			chain_surface (surf, ctx);
 		}
 	}
 }
@@ -672,7 +676,7 @@ visit_node (mod_brush_t *brush, mnode_t *node, int side, vulkan_ctx_t *ctx)
 			if (side ^ (surf->flags & SURF_PLANEBACK))
 				continue;               // wrong side
 
-			chain_surface (brush, surf, 0, 0, ctx);
+			chain_surface (surf, ctx);
 		}
 	}
 }
@@ -1078,7 +1082,9 @@ Vulkan_DrawWorld (vulkan_ctx_t *ctx)
 	worldent.renderer.model = r_worldentity.renderer.model;
 	brush = &r_worldentity.renderer.model->brush;
 
-	currententity = &worldent;
+	bctx->entity = &r_worldentity;
+	bctx->transform = 0;
+	bctx->color = 0;
 
 	R_VisitWorldNodes (brush, ctx);
 	if (r_drawentities->int_val) {
@@ -1086,8 +1092,6 @@ Vulkan_DrawWorld (vulkan_ctx_t *ctx)
 		for (ent = r_ent_queue; ent; ent = ent->next) {
 			if (ent->renderer.model->type != mod_brush)
 				continue;
-			currententity = ent;
-
 			R_DrawBrushModel (ent, ctx);
 		}
 	}

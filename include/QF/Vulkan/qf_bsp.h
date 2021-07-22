@@ -113,6 +113,10 @@ typedef struct texchainset_s
     DARRAY_TYPE (vulktex_t *) texchainset_t;
 
 typedef struct bspctx_s {
+	struct entity_s *entity;
+	vec_t       *transform;
+	float       *color;
+
 	instsurf_t  *waterchain;
 	instsurf_t **waterchain_tail;
 	instsurf_t  *sky_chain;

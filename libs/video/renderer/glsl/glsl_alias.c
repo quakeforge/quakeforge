@@ -210,7 +210,7 @@ set_arrays (const shaderparam_t *vert, const shaderparam_t *norm,
 }
 //#define TETRAHEDRON
 void
-glsl_R_DrawAlias (void)
+glsl_R_DrawAlias (entity_t *ent)
 {
 #ifdef TETRAHEDRON
 	static aliasvrt_t debug_verts[] = {
@@ -232,7 +232,7 @@ glsl_R_DrawAlias (void)
 	float       shadelight;
 	float       skin_size[2];
 	float       blend;
-	entity_t   *ent = currententity;
+	animation_t *animation = &ent->animation;
 	model_t    *model = ent->renderer.model;
 	aliashdr_t *hdr;
 	vec_t       norm_mat[9];
@@ -272,13 +272,13 @@ glsl_R_DrawAlias (void)
 		skin_tex = skin->texnum;
 	} else {
 		maliasskindesc_t *skindesc;
-		skindesc = R_AliasGetSkindesc (ent->renderer.skinnum, hdr);
+		skindesc = R_AliasGetSkindesc (animation, ent->renderer.skinnum, hdr);
 		skin_tex = skindesc->texnum;
 	}
-	blend = R_AliasGetLerpedFrames (ent, hdr);
+	blend = R_AliasGetLerpedFrames (animation, hdr);
 
-	pose1 += ent->animation.pose1 * hdr->poseverts;
-	pose2 += ent->animation.pose2 * hdr->poseverts;
+	pose1 += animation->pose1 * hdr->poseverts;
+	pose2 += animation->pose2 * hdr->poseverts;
 
 	skin_size[0] = hdr->mdl.skinwidth;
 	skin_size[1] = hdr->mdl.skinheight;

@@ -37,7 +37,7 @@ float r_avertexnormals[NUMVERTEXNORMALS][3] = {
 };
 
 maliasskindesc_t *
-R_AliasGetSkindesc (int skinnum, aliashdr_t *ahdr)
+R_AliasGetSkindesc (animation_t *animation, int skinnum, aliashdr_t *ahdr)
 {
 	maliasskindesc_t *pskindesc;
 	maliasskingroup_t *paliasskingroup;
@@ -63,7 +63,7 @@ R_AliasGetSkindesc (int skinnum, aliashdr_t *ahdr)
 		numskins = paliasskingroup->numskins;
 		fullskininterval = pskinintervals[numskins - 1];
 
-		skintime = vr_data.realtime + currententity->animation.syncbase;
+		skintime = vr_data.realtime + animation->syncbase;
 
 		// when loading in Mod_LoadAliasSkinGroup, we guaranteed all interval
 		// values are positive, so we don't have to worry about division by 0
@@ -81,8 +81,10 @@ R_AliasGetSkindesc (int skinnum, aliashdr_t *ahdr)
 }
 
 static maliasframedesc_t *
-alias_get_frame (int framenum, aliashdr_t *hdr, float *frame_interval)
+alias_get_frame (const animation_t *animation, aliashdr_t *hdr,
+				 float *frame_interval)
 {
+	int         framenum = animation->frame;
 	float      *intervals;
 	float       fullinterval, time, targettime;
 	maliasframedesc_t *frame;
@@ -118,7 +120,7 @@ alias_get_frame (int framenum, aliashdr_t *hdr, float *frame_interval)
 	numframes = group->numframes;
 	fullinterval = intervals[numframes - 1];
 
-	time = vr_data.realtime + currententity->animation.syncbase;
+	time = vr_data.realtime + animation->syncbase;
 
 	// when loading in Mod_LoadAliasGroup, we guaranteed all interval values
 	// are positive, so we don't have to worry about division by 0
@@ -137,17 +139,17 @@ alias_get_frame (int framenum, aliashdr_t *hdr, float *frame_interval)
 }
 
 maliasframedesc_t *
-R_AliasGetFramedesc (int framenum, aliashdr_t *hdr)
+R_AliasGetFramedesc (animation_t *animation, aliashdr_t *hdr)
 {
-	return alias_get_frame (framenum, hdr, 0);
+	return alias_get_frame (animation, hdr, 0);
 }
 
 float
-R_AliasGetLerpedFrames (entity_t *ent, aliashdr_t *hdr)
+R_AliasGetLerpedFrames (animation_t *animation, aliashdr_t *hdr)
 {
 	maliasframedesc_t *frame;
 	float       interval;
 
-	frame = alias_get_frame (ent->animation.frame, hdr, &interval);
-	return R_EntityBlend (ent, frame->firstpose, interval);
+	frame = alias_get_frame (animation, hdr, &interval);
+	return R_EntityBlend (animation, frame->firstpose, interval);
 }

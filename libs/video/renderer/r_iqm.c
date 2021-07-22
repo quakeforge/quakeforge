@@ -49,12 +49,13 @@
 float
 R_IQMGetLerpedFrames (entity_t *ent, iqm_t *iqm)
 {
+	animation_t *animation = &ent->animation;
 	int         frame = ent->animation.frame;
 	float       time, fullinterval;
 	iqmanim    *anim;
 
 	if (!iqm->num_anims)
-		return R_EntityBlend (ent, 0, 1.0 / 25.0);
+		return R_EntityBlend (animation, 0, 1.0 / 25.0);
 	if (frame >= iqm->num_anims || frame < 0) {
 		Sys_MaskPrintf (SYS_dev, "R_IQMGetLerpedFrames: no such frame %d\n",
 						frame);
@@ -62,10 +63,10 @@ R_IQMGetLerpedFrames (entity_t *ent, iqm_t *iqm)
 	}
 	anim = &iqm->anims[frame];
 	fullinterval = anim->num_frames / anim->framerate;
-	time = vr_data.realtime + currententity->animation.syncbase;
+	time = vr_data.realtime + ent->animation.syncbase;
 	time -= ((int) (time / fullinterval)) * fullinterval;
 	frame = (int) (time * anim->framerate) + anim->first_frame;
-	return R_EntityBlend (ent, frame, 1.0 / anim->framerate);
+	return R_EntityBlend (animation, frame, 1.0 / anim->framerate);
 }
 
 iqmframe_t *

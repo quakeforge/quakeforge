@@ -57,8 +57,6 @@ int         r_lineadj;
 qboolean    r_active;
 int			r_init;
 
-entity_t   *currententity;
-
 int         r_visframecount;			// bumped when going to a new PVS
 int         r_framecount = 1;			// so frame counts initialized to 0 don't match
 

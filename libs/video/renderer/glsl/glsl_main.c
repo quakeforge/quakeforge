@@ -54,6 +54,7 @@
 #include "QF/GLSL/qf_bsp.h"
 #include "QF/GLSL/qf_iqm.h"
 #include "QF/GLSL/qf_lightmap.h"
+#include "QF/GLSL/qf_sprite.h"
 #include "QF/GLSL/qf_textures.h"
 
 #include "mod_internal.h"
@@ -145,8 +146,7 @@ R_RenderEntities (void)
 				glsl_R_##Type##Begin (); \
 				begun = 1; \
 			} \
-			currententity = ent; \
-			glsl_R_Draw##Type (); \
+			glsl_R_Draw##Type (ent); \
 		} \
 		if (begun) \
 			glsl_R_##Type##End (); \
@@ -160,17 +160,17 @@ R_RenderEntities (void)
 static void
 R_DrawViewModel (void)
 {
-	currententity = vr_data.view_model;
+	entity_t   *ent = vr_data.view_model;
 	if (vr_data.inhibit_viewmodel
 		|| !r_drawviewmodel->int_val
 		|| !r_drawentities->int_val
-		|| !currententity->renderer.model)
+		|| !ent->renderer.model)
 		return;
 
 	// hack the depth range to prevent view model from poking into walls
 	qfeglDepthRangef (0, 0.3);
 	glsl_R_AliasBegin ();
-	glsl_R_DrawAlias ();
+	glsl_R_DrawAlias (ent);
 	glsl_R_AliasEnd ();
 	qfeglDepthRangef (0, 1);
 }

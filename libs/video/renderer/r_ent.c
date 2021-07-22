@@ -131,31 +131,31 @@ R_EnqueueEntity (entity_t *ent)
 }
 
 float
-R_EntityBlend (entity_t *ent, int pose, float interval)
+R_EntityBlend (animation_t *animation, int pose, float interval)
 {
 	float       blend;
 
-	if (ent->animation.nolerp) {
-		ent->animation.nolerp = 0;
-		ent->animation.pose1 = pose;
-		ent->animation.pose2 = pose;
+	if (animation->nolerp) {
+		animation->nolerp = 0;
+		animation->pose1 = pose;
+		animation->pose2 = pose;
 		return 0.0;
 	}
-	ent->animation.frame_interval = interval;
-	if (ent->animation.pose2 != pose) {
-		ent->animation.frame_start_time = vr_data.realtime;
-		if (ent->animation.pose2 == -1) {
-			ent->animation.pose1 = pose;
+	animation->frame_interval = interval;
+	if (animation->pose2 != pose) {
+		animation->frame_start_time = vr_data.realtime;
+		if (animation->pose2 == -1) {
+			animation->pose1 = pose;
 		} else {
-			ent->animation.pose1 = ent->animation.pose2;
+			animation->pose1 = animation->pose2;
 		}
-		ent->animation.pose2 = pose;
+		animation->pose2 = pose;
 		blend = 0.0;
 	} else if (vr_data.paused) {
 		blend = 1.0;
 	} else {
-		blend = (vr_data.realtime - ent->animation.frame_start_time)
-				/ ent->animation.frame_interval;
+		blend = (vr_data.realtime - animation->frame_start_time)
+				/ animation->frame_interval;
 		blend = min (blend, 1.0);
 	}
 	return blend;

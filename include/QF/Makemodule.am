@@ -104,6 +104,7 @@ include_qf_glsl = \
 	include/QF/GLSL/qf_iqm.h \
 	include/QF/GLSL/qf_lightmap.h \
 	include/QF/GLSL/qf_particles.h \
+	include/QF/GLSL/qf_sprite.h \
 	include/QF/GLSL/qf_textures.h \
 	include/QF/GLSL/qf_vid.h \
 	include/QF/GLSL/types.h

@@ -75,7 +75,8 @@ glRect_t	 gl_lightmap_rectchange[MAX_LIGHTMAPS];
 
 static int	 lmshift = 7;
 
-void (*gl_R_BuildLightMap) (mod_brush_t *brush, msurface_t *surf);
+void (*gl_R_BuildLightMap) (const transform_t *transform, mod_brush_t *brush,
+							msurface_t *surf);
 
 extern void gl_multitexture_f (cvar_t *var);
 
@@ -108,7 +109,7 @@ R_RecursiveLightUpdate (mnode_t *node)
 }
 */
 static inline void
-R_AddDynamicLights_1 (msurface_t *surf)
+R_AddDynamicLights_1 (const transform_t *transform, msurface_t *surf)
 {
 	float			dist;
 	unsigned int	maxdist, maxdist2, maxdist3;
@@ -124,9 +125,9 @@ R_AddDynamicLights_1 (msurface_t *surf)
 	smax_bytes = smax * gl_internalformat;
 	tmax = (surf->extents[1] >> 4) + 1;
 
-	if (currententity->transform) {
+	if (transform) {
 		//FIXME give world entity a transform
-		entorigin = Transform_GetWorldPosition (currententity->transform);
+		entorigin = Transform_GetWorldPosition (transform);
 	}
 
 	for (lnum = 0; lnum < r_maxdlights; lnum++) {
@@ -179,7 +180,7 @@ R_AddDynamicLights_1 (msurface_t *surf)
 }
 
 static inline void
-R_AddDynamicLights_3 (msurface_t *surf)
+R_AddDynamicLights_3 (const transform_t *transform, msurface_t *surf)
 {
 	float			dist;
 	unsigned int	maxdist, maxdist2, maxdist3;
@@ -195,8 +196,8 @@ R_AddDynamicLights_3 (msurface_t *surf)
 	smax_bytes = smax * gl_internalformat;
 	tmax = (surf->extents[1] >> 4) + 1;
 
-	if (currententity->transform) {
-		entorigin = Transform_GetWorldPosition (currententity->transform);
+	if (transform) {
+		entorigin = Transform_GetWorldPosition (transform);
 	}
 
 	for (lnum = 0; lnum < r_maxdlights; lnum++) {
@@ -252,7 +253,8 @@ R_AddDynamicLights_3 (msurface_t *surf)
 }
 
 static void
-R_BuildLightMap_1 (mod_brush_t *brush, msurface_t *surf)
+R_BuildLightMap_1 (const transform_t *transform, mod_brush_t *brush,
+				   msurface_t *surf)
 {
 	byte		   *dest;
 	int				maps, size, stride, smax, tmax, i, j;
@@ -291,7 +293,7 @@ R_BuildLightMap_1 (mod_brush_t *brush, msurface_t *surf)
 	}
 	// add all the dynamic lights
 	if (surf->dlightframe == r_framecount)
-		R_AddDynamicLights_1 (surf);
+		R_AddDynamicLights_1 (transform, surf);
 
   store:
 	// bound and shift
@@ -312,7 +314,8 @@ R_BuildLightMap_1 (mod_brush_t *brush, msurface_t *surf)
 }
 
 static void
-R_BuildLightMap_3 (mod_brush_t *brush, msurface_t *surf)
+R_BuildLightMap_3 (const transform_t *transform, mod_brush_t *brush,
+				   msurface_t *surf)
 {
 	byte		   *dest;
 	int				maps, size, stride, smax, tmax, i, j;
@@ -353,7 +356,7 @@ R_BuildLightMap_3 (mod_brush_t *brush, msurface_t *surf)
 	}
 	// add all the dynamic lights
 	if (surf->dlightframe == r_framecount)
-		R_AddDynamicLights_3 (surf);
+		R_AddDynamicLights_3 (transform, surf);
 
   store:
 	// bound and shift
@@ -377,7 +380,8 @@ R_BuildLightMap_3 (mod_brush_t *brush, msurface_t *surf)
 }
 
 static void
-R_BuildLightMap_4 (mod_brush_t *brush, msurface_t *surf)
+R_BuildLightMap_4 (const transform_t *transform, mod_brush_t *brush,
+				   msurface_t *surf)
 {
 	byte		   *dest;
 	int				maps, size, smax, tmax, i, j, stride;
@@ -418,7 +422,7 @@ R_BuildLightMap_4 (mod_brush_t *brush, msurface_t *surf)
 	}
 	// add all the dynamic lights
 	if (surf->dlightframe == r_framecount)
-		R_AddDynamicLights_3 (surf);
+		R_AddDynamicLights_3 (transform, surf);
 
   store:
 	// bound and shift
@@ -614,7 +618,7 @@ gl_overbright_f (cvar_t *var)
 			gl_lightmap_rectchange[num].w = BLOCK_WIDTH;
 			gl_lightmap_rectchange[num].h = BLOCK_HEIGHT;
 
-			gl_R_BuildLightMap (brush, surf);
+			gl_R_BuildLightMap (0, brush, surf);
 		}
 	}
 
@@ -631,7 +635,7 @@ gl_overbright_f (cvar_t *var)
 		gl_lightmap_rectchange[num].w = BLOCK_WIDTH;
 		gl_lightmap_rectchange[num].h = BLOCK_HEIGHT;
 
-		gl_R_BuildLightMap (brush, surf);
+		gl_R_BuildLightMap (0, brush, surf);
 	}
 }
 
@@ -692,7 +696,7 @@ GL_CreateSurfaceLightmap (mod_brush_t *brush, msurface_t *surf)
 
 	surf->lightmaptexturenum =
 		AllocBlock (smax, tmax, &surf->light_s, &surf->light_t);
-	gl_R_BuildLightMap (brush, surf);
+	gl_R_BuildLightMap (0, brush, surf);
 }
 
 /*

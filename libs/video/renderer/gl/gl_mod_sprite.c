@@ -58,7 +58,7 @@ void (*gl_R_DrawSpriteModel) (struct entity_s *ent);
 
 
 static mspriteframe_t *
-R_GetSpriteFrame (entity_t *currententity)
+R_GetSpriteFrame (entity_t *ent)
 {
 	float			fullinterval, targettime, time;
 	float		   *pintervals;
@@ -67,8 +67,8 @@ R_GetSpriteFrame (entity_t *currententity)
 	mspriteframe_t *pspriteframe;
 	mspritegroup_t *pspritegroup;
 
-	psprite = currententity->renderer.model->cache.data;
-	frame = currententity->animation.frame;
+	psprite = ent->renderer.model->cache.data;
+	frame = ent->animation.frame;
 
 	if ((frame >= psprite->numframes) || (frame < 0)) {
 		Sys_MaskPrintf (SYS_dev, "R_DrawSprite: no such frame %d\n", frame);
@@ -83,7 +83,7 @@ R_GetSpriteFrame (entity_t *currententity)
 		numframes = pspritegroup->numframes;
 		fullinterval = pintervals[numframes - 1];
 
-		time = vr_data.realtime + currententity->animation.syncbase;
+		time = vr_data.realtime + ent->animation.syncbase;
 
 		// when loading in Mod_LoadSpriteGroup, we guaranteed all interval
 		// values are positive, so we don't have to worry about division by 0

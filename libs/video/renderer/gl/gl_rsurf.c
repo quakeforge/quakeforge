@@ -65,6 +65,13 @@ static instsurf_t **waterchain_tail = &waterchain;
 static instsurf_t  *sky_chain;
 static instsurf_t **sky_chain_tail;
 
+typedef struct glbspctx_s {
+	mod_brush_t *brush;
+	entity_t   *entity;
+	vec_t      *transform;
+	float      *color;
+} glbspctx_t;
+
 #define CHAIN_SURF_F2B(surf,chain)							\
 	({ 														\
 		instsurf_t *inst = (surf)->instsurf;				\
@@ -270,7 +277,7 @@ R_RenderBrushPoly_1 (msurface_t *surf)
 }
 
 static inline void
-R_AddToLightmapChain (mod_brush_t *brush, msurface_t *surf, instsurf_t *sc)
+R_AddToLightmapChain (glbspctx_t *bctx, msurface_t *surf, instsurf_t *sc)
 {
 	int		maps, smax, tmax;
 	glRect_t 	*theRect;
@@ -305,7 +312,7 @@ R_AddToLightmapChain (mod_brush_t *brush, msurface_t *surf, instsurf_t *sc)
 				theRect->w = (surf->light_s - theRect->l) + smax;
 			if ((theRect->h + theRect->t) < (surf->light_t + tmax))
 				theRect->h = (surf->light_t - theRect->t) + tmax;
-			gl_R_BuildLightMap (brush, surf);
+			gl_R_BuildLightMap (bctx->entity->transform, bctx->brush, surf);
 		}
 	}
 }
@@ -489,8 +496,7 @@ clear_texture_chains (void)
 }
 
 static inline void
-chain_surface (mod_brush_t *brush, msurface_t *surf, vec_t *transform,
-			   float *color)
+chain_surface (glbspctx_t *bctx, msurface_t *surf)
 {
 	instsurf_t *sc;
 
@@ -505,14 +511,14 @@ chain_surface (mod_brush_t *brush, msurface_t *surf, vec_t *transform,
 		if (!surf->texinfo->texture->anim_total)
 			tx = surf->texinfo->texture;
 		else
-			tx = R_TextureAnimation (surf);
+			tx = R_TextureAnimation (bctx->entity, surf);
 		tex = tx->render;
 		sc = CHAIN_SURF_F2B (surf, tex->tex_chain);
 
-		R_AddToLightmapChain (brush, surf, sc);
+		R_AddToLightmapChain (bctx, surf, sc);
 	}
-	sc->transform = transform;
-	sc->color = color;
+	sc->transform = bctx->transform;
+	sc->color = bctx->color;
 }
 
 void
@@ -521,15 +527,18 @@ gl_R_DrawBrushModel (entity_t *e)
 	float       dot, radius;
 	int         i;
 	unsigned int k;
-	model_t    *model;
 	msurface_t *surf;
 	qboolean    rotated;
 	vec3_t      mins, maxs;
-	mod_brush_t *brush;
 	mat4f_t     worldMatrix;
-
-	model = e->renderer.model;
-	brush = &model->brush;
+	model_t    *model = e->renderer.model;
+	mod_brush_t *brush = &model->brush;
+	glbspctx_t  bspctx = {
+		brush,
+		e,
+		e->renderer.full_transform,
+		e->renderer.colormod,
+	};
 
 	Transform_GetWorldMatrix (e->transform, worldMatrix);
 	if (worldMatrix[0][0] != 1 || worldMatrix[1][1] != 1
@@ -598,8 +607,7 @@ gl_R_DrawBrushModel (entity_t *e)
 		// draw the polygon
 		if (((surf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
 			(!(surf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON))) {
-			chain_surface (brush, surf, e->renderer.full_transform,
-						   e->renderer.colormod);
+			chain_surface (&bspctx, surf);
 		}
 	}
 }
@@ -626,7 +634,7 @@ get_side (mnode_t *node)
 }
 
 static inline void
-visit_node (mod_brush_t *brush, mnode_t *node, int side)
+visit_node (glbspctx_t *bctx, mnode_t *node, int side)
 {
 	int         c;
 	msurface_t *surf;
@@ -635,7 +643,7 @@ visit_node (mod_brush_t *brush, mnode_t *node, int side)
 	side = (~side + 1) & SURF_PLANEBACK;
 	// draw stuff
 	if ((c = node->numsurfaces)) {
-		surf = brush->surfaces + node->firstsurface;
+		surf = bctx->brush->surfaces + node->firstsurface;
 		for (; c; c--, surf++) {
 			if (surf->visframe != r_visframecount)
 				continue;
@@ -644,7 +652,7 @@ visit_node (mod_brush_t *brush, mnode_t *node, int side)
 			if (side ^ (surf->flags & SURF_PLANEBACK))
 				continue;				// wrong side
 
-			chain_surface (brush, surf, 0, 0);
+			chain_surface (bctx, surf);
 		}
 	}
 }
@@ -662,12 +670,13 @@ test_node (mnode_t *node)
 }
 
 static void
-R_VisitWorldNodes (mod_brush_t *brush)
+R_VisitWorldNodes (glbspctx_t *bctx)
 {
 	typedef struct {
 		mnode_t    *node;
 		int         side;
 	} rstack_t;
+	mod_brush_t *brush = bctx->brush;
 	rstack_t   *node_ptr;
 	rstack_t   *node_stack;
 	mnode_t    *node;
@@ -692,7 +701,7 @@ R_VisitWorldNodes (mod_brush_t *brush)
 			}
 			if (front->contents < 0 && front->contents != CONTENTS_SOLID)
 				visit_leaf ((mleaf_t *) front);
-			visit_node (brush, node, side);
+			visit_node (bctx, node, side);
 			node = node->children[!side];
 		}
 		if (node->contents < 0 && node->contents != CONTENTS_SOLID)
@@ -701,7 +710,7 @@ R_VisitWorldNodes (mod_brush_t *brush)
 			node_ptr--;
 			node = node_ptr->node;
 			side = node_ptr->side;
-			visit_node (brush, node, side);
+			visit_node (bctx, node, side);
 			node = node->children[!side];
 			continue;
 		}
@@ -715,13 +724,12 @@ void
 gl_R_DrawWorld (void)
 {
 	entity_t    worldent;
+	glbspctx_t  bctx = { };
 
 	memset (&worldent, 0, sizeof (worldent));
 	worldent.renderer.model = r_worldentity.renderer.model;
 
 	VectorCopy (r_refdef.viewposition, modelorg);
-
-	currententity = &worldent;
 
 	sky_chain = 0;
 	sky_chain_tail = &sky_chain;
@@ -729,16 +737,17 @@ gl_R_DrawWorld (void)
 		gl_R_DrawSky ();
 	}
 
-	R_VisitWorldNodes (&r_worldentity.renderer.model->brush);
+	bctx.brush = &worldent.renderer.model->brush;
+	bctx.entity = &r_worldentity;
+
+	R_VisitWorldNodes (&bctx);
 	if (r_drawentities->int_val) {
 		entity_t   *ent;
 		for (ent = r_ent_queue; ent; ent = ent->next) {
 			if (ent->renderer.model->type != mod_brush) {
 				continue;
 			}
-			currententity = ent;
-
-			gl_R_DrawBrushModel (currententity);
+			gl_R_DrawBrushModel (ent);
 		}
 	}
 

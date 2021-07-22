@@ -51,6 +51,7 @@
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
+#include "QF/GLSL/qf_sprite.h"
 #include "QF/GLSL/qf_textures.h"
 #include "QF/GLSL/qf_vid.h"
 
@@ -132,7 +133,8 @@ static void
 R_GetSpriteFrames (entity_t *ent, msprite_t *sprite, mspriteframe_t **frame1,
 				   mspriteframe_t **frame2, float *blend)
 {
-	int         framenum = currententity->animation.frame;
+	animation_t *animation = &ent->animation;
+	int         framenum = animation->frame;
 	int         pose;
 	int         i, numframes;
 	float      *intervals;
@@ -154,7 +156,7 @@ R_GetSpriteFrames (entity_t *ent, msprite_t *sprite, mspriteframe_t **frame1,
 		numframes = group->numframes;
 		fullinterval = intervals[numframes - 1];
 
-		time = vr_data.realtime + currententity->animation.syncbase;
+		time = vr_data.realtime + animation->syncbase;
 		targettime = time - ((int) (time / fullinterval)) * fullinterval;
 
 		for (i = 0; i < numframes - 1; i++) {
@@ -169,23 +171,22 @@ R_GetSpriteFrames (entity_t *ent, msprite_t *sprite, mspriteframe_t **frame1,
 
 	//FIXME this will break if the sprite changes between single frames and
 	//group frames.
-	*blend = R_EntityBlend (ent, pose, frame_interval);
+	*blend = R_EntityBlend (animation, pose, frame_interval);
 	if (group) {
-		*frame1 = group->frames[ent->animation.pose1];
-		*frame2 = group->frames[ent->animation.pose2];
+		*frame1 = group->frames[animation->pose1];
+		*frame2 = group->frames[animation->pose2];
 	} else {
-		*frame1 = sprite->frames[ent->animation.pose1].frameptr;
-		*frame2 = sprite->frames[ent->animation.pose2].frameptr;
+		*frame1 = sprite->frames[animation->pose1].frameptr;
+		*frame2 = sprite->frames[animation->pose2].frameptr;
 	}
 }
 
 static void
-make_quad (mspriteframe_t *frame, vec4f_t vpn, vec4f_t vright,
+make_quad (mspriteframe_t *frame, vec4f_t origin, vec4f_t vpn, vec4f_t vright,
 		   vec4f_t vup, float verts[6][3])
 {
 	vec4f_t     left, up, right, down;
 	vec4f_t     ul, ur, ll, lr;
-	vec4f_t     origin = Transform_GetWorldPosition (currententity->transform);
 
 	// build the sprite poster in worldspace
 	// first, rotate the sprite axes into world space
@@ -208,9 +209,8 @@ make_quad (mspriteframe_t *frame, vec4f_t vpn, vec4f_t vright,
 }
 
 void
-R_DrawSprite (void)
+glsl_R_DrawSprite (entity_t *ent)
 {
-	entity_t   *ent = currententity;
 	msprite_t  *sprite = (msprite_t *) ent->renderer.model->cache.data;
 	mspriteframe_t *frame1, *frame2;
 	float       blend, sr, cr, dot;
@@ -276,16 +276,16 @@ R_DrawSprite (void)
 		case SPR_ORIENTED:
 			// generate the prite's axes according to the sprite's world
 			// orientation
-			svup = Transform_Up (currententity->transform);
-			svright = Transform_Right (currententity->transform);
-			svpn = Transform_Forward (currententity->transform);
+			svup = Transform_Up (ent->transform);
+			svright = Transform_Right (ent->transform);
+			svpn = Transform_Forward (ent->transform);
 			break;
 		case SPR_VP_PARALLEL_ORIENTED:
 			// generate the sprite's axes parallel to the viewplane, but
 			// rotated in that plane round the center according to the sprite
 			// entity's roll angle. Thus svpn stays the same, but svright and
 			// svup rotate
-			rot = Transform_GetLocalRotation (currententity->transform);
+			rot = Transform_GetLocalRotation (ent->transform);
 			//FIXME assumes the entity is only rolled
 			sr = 2 * rot[0] * rot[3];
 			cr = rot[3] * rot[3] - rot[0] * rot[0];
@@ -311,8 +311,9 @@ R_DrawSprite (void)
 	qfeglVertexAttrib4fv (quake_sprite.colorb.location, color);
 	qfeglVertexAttrib1f (quake_sprite.blend.location, blend);
 
-	make_quad (frame1, svpn, svright, svup, vertsa);
-	make_quad (frame2, svpn, svright, svup, vertsb);
+	vec4f_t     origin = Transform_GetWorldPosition (ent->transform);
+	make_quad (frame1, origin, svpn, svright, svup, vertsa);
+	make_quad (frame2, origin, svpn, svright, svup, vertsb);
 
 	qfeglVertexAttribPointer (quake_sprite.vertexa.location, 3, GL_FLOAT,
 							 0, 0, vertsa);

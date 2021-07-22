@@ -221,9 +221,7 @@ R_DrawEntitiesOnList (void)
 	for (ent = r_ent_queue; ent; ent = ent->next) {
 		if (ent->renderer.model->type != mod_alias)
 			continue;
-		currententity = ent;
-
-		gl_R_DrawAliasModel (currententity);
+		gl_R_DrawAliasModel (ent);
 	}
 	qfglColor3ubv (color_white);
 
@@ -253,9 +251,7 @@ R_DrawEntitiesOnList (void)
 	for (ent = r_ent_queue; ent; ent = ent->next) {
 		if (ent->renderer.model->type != mod_iqm)
 			continue;
-		currententity = ent;
-
-		gl_R_DrawIQMModel (currententity);
+		gl_R_DrawIQMModel (ent);
 	}
 	qfglColor3ubv (color_white);
 
@@ -266,9 +262,7 @@ R_DrawEntitiesOnList (void)
 	for (ent = r_ent_queue; ent; ent = ent->next) {
 		if (ent->renderer.model->type != mod_sprite)
 			continue;
-		currententity = ent;
-
-		R_DrawSpriteModel (currententity);
+		R_DrawSpriteModel (ent);
 	}
 	qfglDisable (GL_ALPHA_TEST);
 }
@@ -276,12 +270,12 @@ R_DrawEntitiesOnList (void)
 static void
 R_DrawViewModel (void)
 {
-	currententity = vr_data.view_model;
+	entity_t   *ent = vr_data.view_model;
 	if (vr_data.inhibit_viewmodel
 		|| !r_drawviewmodel->int_val
 		|| gl_envmap
 		|| !r_drawentities->int_val
-		|| !currententity->renderer.model)
+		|| !ent->renderer.model)
 		return;
 
 	// hack the depth range to prevent view model from poking into walls
@@ -305,7 +299,7 @@ R_DrawViewModel (void)
 		qglActiveTexture (gl_mtex_enum + 0);
 	}
 
-	gl_R_DrawAliasModel (currententity);
+	gl_R_DrawAliasModel (ent);
 
 	qfglColor3ubv (color_white);
 	if (gl_mtex_active_tmus >= 2) { // FIXME: Ugly, but faster than cleaning

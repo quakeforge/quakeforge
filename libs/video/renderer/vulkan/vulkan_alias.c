@@ -129,6 +129,7 @@ Vulkan_DrawAlias (entity_t *ent, vulkan_ctx_t *ctx)
 	model_t    *model = ent->renderer.model;
 	aliashdr_t *hdr;
 	qfv_alias_skin_t *skin;
+	animation_t *animation = &ent->animation;
 	struct {
 		mat4f_t     mat;
 		float       blend;
@@ -140,13 +141,13 @@ Vulkan_DrawAlias (entity_t *ent, vulkan_ctx_t *ctx)
 	}
 
 	Transform_GetWorldMatrix (ent->transform, vertex_constants.mat);
-	vertex_constants.blend = R_AliasGetLerpedFrames (ent, hdr);
+	vertex_constants.blend = R_AliasGetLerpedFrames (animation, hdr);
 
 	if (0/*XXX ent->skin && ent->skin->tex*/) {
 		//skin = ent->skin->tex;
 	} else {
 		maliasskindesc_t *skindesc;
-		skindesc = R_AliasGetSkindesc (ent->renderer.skinnum, hdr);
+		skindesc = R_AliasGetSkindesc (animation, ent->renderer.skinnum, hdr);
 		skin = (qfv_alias_skin_t *) ((byte *) hdr + skindesc->skin);
 	}
 	QuatScale (ent->renderer.colormod, 255, fragment_constants[0]);

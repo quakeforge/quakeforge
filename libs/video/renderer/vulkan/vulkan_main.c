@@ -132,11 +132,11 @@ R_RenderEntities (vulkan_ctx_t *ctx)
 static void
 R_DrawViewModel (void)
 {
-	currententity = vr_data.view_model;
+	entity_t   *ent = vr_data.view_model;
 	if (vr_data.inhibit_viewmodel
 		|| !r_drawviewmodel->int_val
 		|| !r_drawentities->int_val
-		|| !currententity->renderer.model)
+		|| !ent->renderer.model)
 		return;
 
 	// hack the depth range to prevent view model from poking into walls

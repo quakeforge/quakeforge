@@ -62,10 +62,11 @@ static scrap_t *light_scrap;
 static unsigned *blocklights;
 static int      bl_extents[2];
 
-void (*glsl_R_BuildLightMap) (mod_brush_t *brush, msurface_t *surf);
+void (*glsl_R_BuildLightMap) (const transform_t *transform, mod_brush_t *brush,
+							  msurface_t *surf);
 
 static void
-R_AddDynamicLights_1 (msurface_t *surf)
+R_AddDynamicLights_1 (const transform_t *transform, msurface_t *surf)
 {
 	unsigned    lnum;
 	int         sd, td;
@@ -80,9 +81,9 @@ R_AddDynamicLights_1 (msurface_t *surf)
 	tmax = (surf->extents[1] >> 4) + 1;
 	tex = surf->texinfo;
 
-	if (currententity->transform) {
+	if (transform) {
 		//FIXME give world entity a transform
-		entorigin = Transform_GetWorldPosition (currententity->transform);
+		entorigin = Transform_GetWorldPosition (transform);
 	}
 
 	for (lnum = 0; lnum < r_maxdlights; lnum++) {
@@ -127,7 +128,8 @@ R_AddDynamicLights_1 (msurface_t *surf)
 }
 
 static void
-R_BuildLightMap_1 (mod_brush_t *brush, msurface_t *surf)
+R_BuildLightMap_1 (const transform_t *transform, mod_brush_t *brush,
+				   msurface_t *surf)
 {
 	int         smax, tmax, size;
 	unsigned    scale;
@@ -168,7 +170,7 @@ R_BuildLightMap_1 (mod_brush_t *brush, msurface_t *surf)
 	}
 	// add all the dynamic lights
 	if (surf->dlightframe == r_framecount)
-		R_AddDynamicLights_1 (surf);
+		R_AddDynamicLights_1 (transform, surf);
 
 	// bound, invert, and shift
 	out = (byte *) blocklights;
@@ -248,7 +250,7 @@ glsl_R_BuildLightmaps (model_t **models, int num_models)
 		for (i = 0; i < brush->numsurfaces; i++) {
 			msurface_t *surf = brush->surfaces + i;
 			if (surf->lightpic)
-				glsl_R_BuildLightMap (brush, surf);
+				glsl_R_BuildLightMap (0, brush, surf);
 		}
 	}
 }

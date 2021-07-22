@@ -230,7 +230,7 @@ sw32_D_CacheSurface (msurface_t *surface, int miplevel)
 	surfcache_t *cache;
 
 	// if the surface is animating or flashing, flush the cache
-	sw32_r_drawsurf.texture = R_TextureAnimation (surface);
+	sw32_r_drawsurf.texture = R_TextureAnimation (currententity, surface);
 	sw32_r_drawsurf.lightadj[0] = d_lightstylevalue[surface->styles[0]];
 	sw32_r_drawsurf.lightadj[1] = d_lightstylevalue[surface->styles[1]];
 	sw32_r_drawsurf.lightadj[2] = d_lightstylevalue[surface->styles[2]];

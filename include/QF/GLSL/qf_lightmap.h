@@ -34,9 +34,11 @@
 #define BLOCK_HEIGHT	64
 
 void glsl_lightmap_init (void);
+struct transform_s;
 void glsl_R_BuildLightmaps (struct model_s **models, int num_models);
 void glsl_R_CalcLightmaps (void);
-extern void (*glsl_R_BuildLightMap) (mod_brush_t *brush, msurface_t *surf);
+extern void (*glsl_R_BuildLightMap) (const struct transform_s *transform,
+									 mod_brush_t *brush, msurface_t *surf);
 int  glsl_R_LightmapTexture (void) __attribute__((pure));
 void glsl_R_FlushLightmaps (void);
 
