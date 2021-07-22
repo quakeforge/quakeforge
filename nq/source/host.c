@@ -849,7 +849,7 @@ Host_Init_Memory (void)
 }
 
 static void
-host_keydest_callback (keydest_t kd)
+host_keydest_callback (keydest_t kd, void *data)
 {
 	host_in_game = kd == key_game;
 }
@@ -888,7 +888,7 @@ Host_Init (void)
 
 	Mod_Init ();
 
-	Key_KeydestCallback (host_keydest_callback);
+	Key_KeydestCallback (host_keydest_callback, 0);
 
 	SV_Init ();
 

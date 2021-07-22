@@ -597,7 +597,7 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 }
 
 static void
-x11_keydest_callback (keydest_t key_dest)
+x11_keydest_callback (keydest_t key_dest, void *data)
 {
 //	if (key_dest == key_game) {
 //		XAutoRepeatOff (x_disp);
@@ -842,7 +842,7 @@ IN_LL_Init (void)
 		in_mouse_avail = 1;
 	}
 
-	Key_KeydestCallback (x11_keydest_callback);
+	Key_KeydestCallback (x11_keydest_callback, 0);
 
 	Cmd_AddCommand ("in_paste_buffer", in_paste_buffer_f,
 					"Paste the contents of X's C&P buffer to the console");

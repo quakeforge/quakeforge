@@ -779,6 +779,12 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 	}
 }
 
+static void
+menu_leave (void *data)
+{
+	Menu_Leave ();
+}
+
 void
 Menu_Enter ()
 {
@@ -789,6 +795,7 @@ Menu_Enter ()
 	menu = Hash_Find (menu_hash, top_menu);
 	if (menu) {
 		menu_keydest = Key_GetKeyDest ();
+		Key_PushEscape (menu_leave, 0);
 		Key_SetKeyDest (key_menu);
 		if (menu->enter_hook) {
 			run_menu_pre ();
@@ -809,6 +816,7 @@ Menu_Leave ()
 		}
 		menu = menu->parent;
 		if (!menu) {
+			Key_PopEscape ();
 			Key_SetKeyDest (menu_keydest);
 		}
 	}

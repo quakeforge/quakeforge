@@ -42,6 +42,7 @@
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
 #include "QF/cvar.h"
+#include "QF/darray.h"
 #include "QF/dstring.h"
 #include "QF/keys.h"
 #include "QF/sys.h"
@@ -53,13 +54,25 @@
 
 static keydest_t    key_dest = key_console;
 static keytarget_t  key_targets[key_last];
-VISIBLE knum_t      key_togglemenu = QFK_ESCAPE;
 VISIBLE knum_t      key_toggleconsole = QFK_BACKQUOTE;
 
-#define KEYDEST_CALLBACK_CHUNK 16
-static keydest_callback_t **keydest_callbacks;
-static int num_keydest_callbacks;
-static int max_keydest_callbacks;
+typedef struct {
+	keydest_callback_t *func;
+	void       *data;
+} keydest_callback_item_t;
+
+typedef struct {
+	key_escape_t *func;
+	void       *data;
+} key_escape_item_t;
+
+#define CALLBACK_CHUNK 16
+static struct DARRAY_TYPE(keydest_callback_item_t) keydest_callbacks = {
+	.grow = CALLBACK_CHUNK
+};
+static struct DARRAY_TYPE(key_escape_item_t) key_escape_callbacks = {
+	.grow = CALLBACK_CHUNK
+};
 
 VISIBLE int			keydown[QFK_LAST];
 
@@ -614,10 +627,10 @@ Key_SetBinding (imt_t *imt, knum_t keynum, const char *binding)
 static void
 Key_CallDestCallbacks (keydest_t kd)
 {
-	int         i;
-
-	for (i = 0; i < num_keydest_callbacks; i++)
-		keydest_callbacks[i] (kd);
+	for (size_t i = 0; i < keydest_callbacks.size; i++) {
+		keydest_callback_item_t *cb = &keydest_callbacks.a[i];
+		cb->func (kd, cb->data);
+	}
 }
 
 static void
@@ -935,23 +948,6 @@ Key_Bind_f (void)
 }
 
 static void
-in_key_togglemenu_f (cvar_t *var)
-{
-	int         k;
-
-	if (!*var->string) {
-		key_togglemenu = QFK_ESCAPE;
-		return;
-	}
-	if ((k = Key_StringToKeynum (var->string)) == -1) {
-		k = QFK_ESCAPE;
-		Sys_Printf ("\"%s\" is not a valid key. setting to \"K_ESCAPE\"\n",
-					var->string);
-	}
-	key_togglemenu = k;
-}
-
-static void
 in_key_toggleconsole_f (cvar_t *var)
 {
 	int         k;
@@ -1116,11 +1112,11 @@ keyhelp_f (void)
 	keyhelp = 1;
 }
 
-static key_event_t key_event_handlers[key_last] = { };
+static key_event_t *key_event_handlers[key_last] = { };
 static void    *key_event_data[key_last] = { };
 
 VISIBLE void
-Key_SetKeyEvent (keydest_t keydest, key_event_t callback, void *data)
+Key_SetKeyEvent (keydest_t keydest, key_event_t *callback, void *data)
 {
 	if (keydest < 0 || keydest >= key_last) {
 		Sys_Error ("Key_SetKeyEvent: invalid keydest: %d", keydest);
@@ -1152,15 +1148,20 @@ Key_Event (knum_t key, short unicode, qboolean down)
 		keydown[key] = 0;
 	}
 
-	// handle menu and console toggle keys specially so the user can never
-	// override or unbind them
+	// handle the escape key specially so it can never be overridden or
+	// unbound
+	if (key == QFK_ESCAPE && keydown[key] == 1) {
+		if (key_escape_callbacks.size) {
+			int         ind = key_escape_callbacks.size - 1;
+			key_escape_item_t cb = key_escape_callbacks.a[ind];
+			cb.func (cb.data);
+		}
+		return;
+	}
 	//FIXME maybe still a tad over-coupled. Use callbacks for menu and console
 	//toggles? Should keys know anything about menu and console?
-	if (key_dest != key_menu && key == key_togglemenu && keydown[key] == 1) {
-		Cbuf_AddText (cbuf, "togglemenu");
-		return;
-	} else if (key_dest != key_console && key == key_toggleconsole
-			   && keydown[key] == 1) {
+	if (key_dest != key_console && key == key_toggleconsole
+	    && keydown[key] == 1) {
 		Cbuf_AddText (cbuf, "toggleconsole");
 		return;
 	}
@@ -1310,8 +1311,6 @@ Key_Init (cbuf_t *cb)
 void
 Key_Init_Cvars (void)
 {
-	Cvar_Get ("in_key_togglemenu", "", CVAR_NONE, in_key_togglemenu_f,
-			  "Key for toggling the menu.");
 	Cvar_Get ("in_key_toggleconsole", "K_BACKQUOTE", CVAR_NONE,
 			  in_key_toggleconsole_f,
 			  "Key for toggling the console.");
@@ -1333,8 +1332,10 @@ Key_SetKeyDest(keydest_t kd)
 		Sys_Error ("Bad key_dest: %d", kd);
 	}
 	Sys_MaskPrintf (SYS_input, "Key_SetKeyDest: %s\n", keydest_names[kd]);
-	key_dest = kd;
-	Key_CallDestCallbacks (key_dest);
+	if (key_dest != kd) {
+		key_dest = kd;
+		Key_CallDestCallbacks (key_dest);
+	}
 }
 
 VISIBLE keydest_t
@@ -1344,19 +1345,32 @@ Key_GetKeyDest (void)
 }
 
 VISIBLE void
-Key_KeydestCallback (keydest_callback_t *callback)
+Key_KeydestCallback (keydest_callback_t *callback, void *data)
 {
-	if (num_keydest_callbacks == max_keydest_callbacks) {
-		size_t size = (max_keydest_callbacks + KEYDEST_CALLBACK_CHUNK)
-					  * sizeof (keydest_callback_t *);
-		keydest_callbacks = realloc (keydest_callbacks, size);
-		if (!keydest_callbacks)
-			Sys_Error ("Too many keydest callbacks!");
-		max_keydest_callbacks += KEYDEST_CALLBACK_CHUNK;
+	if (!callback) {
+		Sys_Error ("null keydest callback");
 	}
 
-	if (!callback)
-		Sys_Error ("null keydest callback");
+	keydest_callback_item_t cb = { callback, data };
+	DARRAY_APPEND (&keydest_callbacks, cb);
+}
 
-	keydest_callbacks[num_keydest_callbacks++] = callback;
+VISIBLE void
+Key_PushEscape (key_escape_t *callback, void *data)
+{
+	if (!callback) {
+		Sys_Error ("null escape callback");
+	}
+
+	key_escape_item_t cb = { callback, data };
+	DARRAY_APPEND (&key_escape_callbacks, cb);
+}
+
+VISIBLE void
+Key_PopEscape (void)
+{
+	if (!key_escape_callbacks.size) {
+		Sys_Error ("no escape callback to pop");
+	}
+	DARRAY_REMOVE (&key_escape_callbacks);
 }

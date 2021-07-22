@@ -537,7 +537,6 @@ typedef struct {
 	int     state;          // low bit is down state
 } kbutton_t;
 
-extern knum_t       key_togglemenu;
 extern knum_t       key_toggleconsole;
 
 typedef struct keybind_s {
@@ -571,8 +570,8 @@ extern int		keydown[QFK_LAST];
 	\param down		True if a press event, false if a release event.
 	\param data		Callback specific data pointer as passed to Key_SetKeyDest
 */
-typedef void (*key_event_t) (knum_t key, short unicode, qboolean down,
-							 void *data);
+typedef void key_event_t (knum_t key, short unicode, qboolean down,
+						  void *data);
 
 /** Set the fallback key event handler callback for the specified keydest.
 
@@ -585,9 +584,25 @@ typedef void (*key_event_t) (knum_t key, short unicode, qboolean down,
 
 	\param keydest	The keydest for which the callback will be set.
 	\param callback	The function to be called when an event occurs.
-	\param data		Opaque data pointerer passed to the callback.
+	\param data		Opaque data pointer passed to the callback.
 */
-void Key_SetKeyEvent (keydest_t keydest, key_event_t callback, void *data);
+void Key_SetKeyEvent (keydest_t keydest, key_event_t *callback, void *data);
+
+/** Callback for handling the escape key.
+	\param data		Callback specific data pointer as passed to Key_PushEscape
+*/
+typedef void key_escape_t (void *data);
+
+/** Push an escape key event handler callback.
+
+	\param callback	The function to be called when the escape key is pressed.
+	\param data		Opaque data pointer passed to the callback.
+*/
+void Key_PushEscape (key_escape_t *callback, void *data);
+
+/** Push an escape key event handler callback.
+*/
+void Key_PopEscape (void);
 
 struct cbuf_s;
 
@@ -687,14 +702,17 @@ keydest_t Key_GetKeyDest(void) __attribute__((pure));
 /** keydest callback signature.
 
 	\param kd		The new current keydest target.
+	\param data		Callback specific data pointer as passed to
+					Key_KeydestCallback
 */
-typedef void keydest_callback_t (keydest_t kd);
+typedef void keydest_callback_t (keydest_t kd, void *data);
 
 /**	Add a callback for when the keydest target changes.
 
 	\param callback	The callback to be added.
+	\param data		Opaque data pointer passed to the callback.
 */
-void Key_KeydestCallback (keydest_callback_t *callback);
+void Key_KeydestCallback (keydest_callback_t *callback, void *data);
 
 /**	Get the string representation of a key.
 

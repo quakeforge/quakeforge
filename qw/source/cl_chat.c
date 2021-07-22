@@ -250,7 +250,7 @@ CL_ChatInfo (int val)
 }
 
 static void
-cl_chat_keydest (keydest_t keydest)
+cl_chat_keydest (keydest_t keydest, void *data)
 {
 	switch (keydest) {
 		case key_game:
@@ -277,5 +277,5 @@ CL_Chat_Init (void)
 
 	Cmd_AddCommand ("ignore", CL_Ignore_f, "Ignores chat and name-change messages from a user.");
 	Cmd_AddCommand ("unignore", CL_Unignore_f, "Removes a previously ignored user from the ignore list.");
-	Key_KeydestCallback (cl_chat_keydest);
+	Key_KeydestCallback (cl_chat_keydest, 0);
 }

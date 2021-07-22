@@ -59,7 +59,7 @@ GIB_Key_Init (void)
 }
 
 void
-Key_KeydestCallback (keydest_callback_t *callback)
+Key_KeydestCallback (keydest_callback_t *callback, void *data)
 {
 }
 
