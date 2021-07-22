@@ -24,21 +24,22 @@ client_deps= \
 	libs/audio/libQFsound.la \
 	libs/ruamoko/libQFruamoko.la \
 	libs/gib/libQFgib.la \
+	libs/ruamoko/libQFruamoko_client.la \
 	libs/ruamoko/libQFruamoko.la \
 	$(console_deps)
 server_deps= libs/console/libQFconsole.la $(console_deps)
 
 libs_console_libQFconsole_la_LDFLAGS=		$(lib_ldflags)
-libs_console_libQFconsole_la_LIBADD=			$(console_deps) $(plugin_libadd)
+libs_console_libQFconsole_la_LIBADD=		$(console_deps) $(plugin_libadd)
 libs_console_libQFconsole_la_DEPENDENCIES=	$(console_deps)
 libs_console_libQFconsole_la_SOURCES=		$(console_common_sources)
 
 libs_console_console_client_la_LDFLAGS=		$(plugin_ldflags)
 libs_console_console_client_la_LIBADD=		$(client_deps) $(plugin_libadd)
-libs_console_console_client_la_DEPENDENCIES=	$(client_deps)
+libs_console_console_client_la_DEPENDENCIES=$(client_deps)
 libs_console_console_client_la_SOURCES=		$(client_sources)
 
 libs_console_console_server_la_LDFLAGS=		$(plugin_ldflags)
 libs_console_console_server_la_LIBADD=		$(server_deps) $(NCURSES_LIBS) $(plugin_libadd)
-libs_console_console_server_la_DEPENDENCIES=	$(server_deps)
+libs_console_console_server_la_DEPENDENCIES=$(server_deps)
 libs_console_console_server_la_SOURCES=		$(server_sources)

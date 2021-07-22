@@ -88,7 +88,6 @@ qw_cl_plugin_LIBS= \
 qw_client_LIBS= \
 		libs/qw/libqw.a \
 		libs/gib/libQFgib_client.la \
-		libs/ruamoko/libQFruamoko_client.la \
 		libs/net/libnet_chan.la \
 		libs/entity/libQFentity.la \
 		libs/console/libQFconsole.la \

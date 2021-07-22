@@ -46,7 +46,6 @@ nq_cl_plugin_LIBS= \
 
 nq_client_LIBFILES= \
 		libs/gib/libQFgib_client.la \
-		libs/ruamoko/libQFruamoko_client.la \
 		libs/entity/libQFentity.la \
 		libs/video/targets/libQFjs.la \
 		libs/audio/libQFcd.la \
