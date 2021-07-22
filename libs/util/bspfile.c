@@ -233,11 +233,11 @@ swap_to_bsp29 (bsp29_t *bsp29, const bsp_t *bsp2)
 		dnode29_t  *node29 = &bsp29->nodes[i];
 		node29->planenum = LittleLong (node2->planenum);
 		for (j=0 ; j<3 ; j++) {
-			node29->mins[j] = LittleShort (node2->mins[j]);
-			node29->maxs[j] = LittleShort (node2->maxs[j]);
+			node29->mins[j] = LittleShort ((int16_t) node2->mins[j]);
+			node29->maxs[j] = LittleShort ((int16_t) node2->maxs[j]);
 		}
-		node29->children[0] = (uint16_t) LittleShort (node2->children[0]);
-		node29->children[1] = (uint16_t) LittleShort (node2->children[1]);
+		node29->children[0] = LittleShort (node2->children[0]);
+		node29->children[1] = LittleShort (node2->children[1]);
 		node29->firstface = LittleShort (node2->firstface);
 		node29->numfaces = LittleShort (node2->numfaces);
 	}
@@ -248,8 +248,8 @@ swap_to_bsp29 (bsp29_t *bsp29, const bsp_t *bsp2)
 		dleaf29_t  *leaf29 = &bsp29->leafs[i];
 		leaf29->contents = LittleLong (leaf2->contents);
 		for (j=0 ; j<3 ; j++) {
-			leaf29->mins[j] = LittleShort (leaf2->mins[j]);
-			leaf29->maxs[j] = LittleShort (leaf2->maxs[j]);
+			leaf29->mins[j] = LittleShort ((int16_t) leaf2->mins[j]);
+			leaf29->maxs[j] = LittleShort ((int16_t) leaf2->maxs[j]);
 		}
 
 		leaf29->firstmarksurface = LittleShort (leaf2->firstmarksurface);
@@ -264,8 +264,8 @@ swap_to_bsp29 (bsp29_t *bsp29, const bsp_t *bsp2)
 		const dclipnode_t *clipnode2 = &bsp2->clipnodes[i];
 		dclipnode29_t *clipnode29 = (dclipnode29_t *) &bsp29->clipnodes[i];
 		clipnode29->planenum = LittleLong (clipnode2->planenum);
-		clipnode29->children[0] = (uint16_t) LittleShort (clipnode2->children[0]);
-		clipnode29->children[1] = (uint16_t) LittleShort (clipnode2->children[1]);
+		clipnode29->children[0] = LittleShort (clipnode2->children[0]);
+		clipnode29->children[1] = LittleShort (clipnode2->children[1]);
 	}
 
 	// miptex
@@ -402,8 +402,8 @@ swap_from_bsp29 (bsp_t *bsp2, const bsp29_t *bsp29,
 		const dleaf29_t *leaf29 = &bsp29->leafs[i];
 		leaf2->contents = LittleLong (leaf29->contents);
 		for (j=0 ; j<3 ; j++) {
-			leaf2->mins[j] = LittleShort (leaf29->mins[j]);
-			leaf2->maxs[j] = LittleShort (leaf29->maxs[j]);
+			leaf2->mins[j] = (int16_t) LittleShort (leaf29->mins[j]);
+			leaf2->maxs[j] = (int16_t) LittleShort (leaf29->maxs[j]);
 		}
 
 		leaf2->firstmarksurface = LittleShort (leaf29->firstmarksurface);
@@ -418,8 +418,8 @@ swap_from_bsp29 (bsp_t *bsp2, const bsp29_t *bsp29,
 		dclipnode_t *clipnode2 = &bsp2->clipnodes[i];
 		const dclipnode29_t *clipnode29 = &bsp29->clipnodes[i];
 		clipnode2->planenum = LittleLong (clipnode29->planenum);
-		clipnode2->children[0] = (uint16_t) LittleShort (clipnode29->children[0]);
-		clipnode2->children[1] = (uint16_t) LittleShort (clipnode29->children[1]);
+		clipnode2->children[0] = LittleShort (clipnode29->children[0]);
+		clipnode2->children[1] = LittleShort (clipnode29->children[1]);
 	}
 
 	// miptex
