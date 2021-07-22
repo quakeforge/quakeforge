@@ -722,6 +722,10 @@ R_VisitWorldNodes (mod_brush_t *brush, vulkan_ctx_t *ctx)
 				node = front;
 				continue;
 			}
+			// front is either not a node (ie, is a leaf) or is not visible
+			// if node is visible, then at least one of its child nodes
+			// must also be visible, and a leaf child in front of the node
+			// will be visible, so no need for vis checks on a leaf
 			if (front->contents < 0 && front->contents != CONTENTS_SOLID)
 				visit_leaf ((mleaf_t *) front);
 			visit_node (brush, node, side, ctx);
@@ -1030,8 +1034,7 @@ add_surf_elements (vulktex_t *tex, instsurf_t *is,
 				   elechain_t **ec, elements_t **el,
 				   bspctx_t *bctx, bspframe_t *bframe)
 {
-	msurface_t *surf = is->surface;
-	bsppoly_t  *poly = (bsppoly_t *) surf->polys;
+	bsppoly_t  *poly = (bsppoly_t *) is->surface->polys;
 
 	if (!tex->elechain) {
 		(*ec) = add_elechain (tex, bctx);
@@ -1061,6 +1064,8 @@ build_tex_elechain (vulktex_t *tex, bspctx_t *bctx, bspframe_t *bframe)
 	elements_t *el = 0;
 
 	for (is = tex->tex_chain; is; is = is->tex_chain) {
+		// emit the polygon indices for the the surface to the texture's
+		// element chain
 		add_surf_elements (tex, is, &ec, &el, bctx, bframe);
 	}
 }
@@ -1157,7 +1162,6 @@ Vulkan_DrawWaterSurfaces (vulkan_ctx_t *ctx)
 	bspctx_t   *bctx = ctx->bsp_context;
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 	instsurf_t *is;
-	msurface_t *surf;
 	vulktex_t  *tex = 0;
 	elechain_t *ec = 0;
 	elements_t *el = 0;
@@ -1172,7 +1176,7 @@ Vulkan_DrawWaterSurfaces (vulkan_ctx_t *ctx)
 	push_fragconst (&frag_constants, bctx->layout, dfunc,
 					bframe->cmdSet.a[QFV_bspTurb]);
 	for (is = bctx->waterchain; is; is = is->tex_chain) {
-		surf = is->surface;
+		msurface_t *surf = is->surface;
 		if (tex != surf->texinfo->texture->render) {
 			if (tex) {
 				bind_view (qfv_bsp_texture,
@@ -1190,6 +1194,8 @@ Vulkan_DrawWaterSurfaces (vulkan_ctx_t *ctx)
 			}
 			tex = surf->texinfo->texture->render;
 		}
+		// emit the polygon indices for the the surface to the texture's
+		// element chain
 		add_surf_elements (tex, is, &ec, &el, bctx, bframe);
 	}
 	if (tex) {
@@ -1218,7 +1224,6 @@ Vulkan_DrawSky (vulkan_ctx_t *ctx)
 	bspctx_t   *bctx = ctx->bsp_context;
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 	instsurf_t *is;
-	msurface_t *surf;
 	vulktex_t  *tex = 0;
 	elechain_t *ec = 0;
 	elements_t *el = 0;
@@ -1233,7 +1238,7 @@ Vulkan_DrawSky (vulkan_ctx_t *ctx)
 	push_fragconst (&frag_constants, bctx->layout, dfunc,
 					bframe->cmdSet.a[QFV_bspSky]);
 	for (is = bctx->sky_chain; is; is = is->tex_chain) {
-		surf = is->surface;
+		msurface_t *surf = is->surface;
 		if (tex != surf->texinfo->texture->render) {
 			if (tex) {
 				bind_view (qfv_bsp_skysheet,
@@ -1251,6 +1256,8 @@ Vulkan_DrawSky (vulkan_ctx_t *ctx)
 			}
 			tex = surf->texinfo->texture->render;
 		}
+		// emit the polygon indices for the the surface to the texture's
+		// element chain
 		add_surf_elements (tex, is, &ec, &el, bctx, bframe);
 	}
 	if (tex) {
