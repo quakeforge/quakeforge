@@ -758,7 +758,7 @@ SV_BeginDownload_f (void *unused)
 	file = _QFS_FOpenFile (name, !zip);
 
 	host_client->download = file;
-	host_client->downloadsize = Qfilesize (file);
+	host_client->downloadsize = file ? Qfilesize (file) : 0;
 	host_client->downloadcount = 0;
 
 	if (!host_client->download
