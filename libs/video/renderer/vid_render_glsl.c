@@ -148,7 +148,6 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	glsl_R_NewMap,
 	R_AddEfrags,
 	R_RemoveEfrags,
-	R_EnqueueEntity,
 	glsl_R_LineGraph,
 	R_AllocDlight,
 	R_AllocEntity,

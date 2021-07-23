@@ -145,7 +145,6 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	R_NewMap,
 	R_AddEfrags,
 	R_RemoveEfrags,
-	R_EnqueueEntity,
 	R_LineGraph,
 	R_AllocDlight,
 	R_AllocEntity,

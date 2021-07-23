@@ -150,7 +150,6 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 	sw32_R_NewMap,
 	R_AddEfrags,
 	R_RemoveEfrags,
-	R_EnqueueEntity,
 	sw32_R_LineGraph,
 	R_AllocDlight,
 	R_AllocEntity,

@@ -662,7 +662,6 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_R_NewMap,
 	R_AddEfrags,
 	R_RemoveEfrags,
-	R_EnqueueEntity,
 	vulkan_R_LineGraph,
 	R_AllocDlight,
 	R_AllocEntity,

@@ -149,7 +149,6 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_R_NewMap,
 	R_AddEfrags,
 	R_RemoveEfrags,
-	R_EnqueueEntity,
 	gl_R_LineGraph,
 	R_AllocDlight,
 	R_AllocEntity,

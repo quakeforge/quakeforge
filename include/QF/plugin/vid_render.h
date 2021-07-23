@@ -154,7 +154,6 @@ typedef struct vid_render_funcs_s {
 	void (*R_NewMap) (model_t *worldmodel, model_t **models, int num_models);
 	void (*R_AddEfrags) (mod_brush_t *brush, entity_t *ent);
 	void (*R_RemoveEfrags) (entity_t *ent);
-	void (*R_EnqueueEntity) (struct entity_s *ent);	//FIXME should not be here
 	void (*R_LineGraph) (int x, int y, int *h_vals, int count, int height);
 	dlight_t *(*R_AllocDlight) (int key);
 	entity_t *(*R_AllocEntity) (void);
