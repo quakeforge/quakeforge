@@ -377,6 +377,7 @@ bi_Menu_SelectMenu (progs_t *pr)
 	} else {
 		if (name && *name)
 			Sys_Printf ("no menu \"%s\"\n", name);
+        Key_PopEscape ();
 		Key_SetKeyDest (menu_keydest);
 	}
 }
