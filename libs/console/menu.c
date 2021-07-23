@@ -360,6 +360,12 @@ bi_Menu_TopMenu (progs_t *pr)
 }
 
 static void
+menu_leave (void *data)
+{
+	Menu_Leave ();
+}
+
+static void
 bi_Menu_SelectMenu (progs_t *pr)
 {
 	const char *name = P_GSTRING (pr, 0);
@@ -368,7 +374,11 @@ bi_Menu_SelectMenu (progs_t *pr)
 	if (name && *name)
 		menu = Hash_Find (menu_hash, name);
 	if (menu) {
-		Key_SetKeyDest (key_menu);
+		if (Key_GetKeyDest () != key_menu) {
+			menu_keydest = Key_GetKeyDest ();
+			Key_PushEscape (menu_leave, 0);
+			Key_SetKeyDest (key_menu);
+		}
 		if (menu->enter_hook) {
 			run_menu_pre ();
 			PR_ExecuteProgram (&menu_pr_state, menu->enter_hook);
@@ -377,7 +387,7 @@ bi_Menu_SelectMenu (progs_t *pr)
 	} else {
 		if (name && *name)
 			Sys_Printf ("no menu \"%s\"\n", name);
-        Key_PopEscape ();
+		Key_PopEscape ();
 		Key_SetKeyDest (menu_keydest);
 	}
 }
@@ -463,6 +473,7 @@ bi_Menu_Leave (progs_t *pr)
 		}
 		menu = menu->parent;
 		if (!menu) {
+			Key_PopEscape ();
 			Key_SetKeyDest (menu_keydest);
 		}
 	}
@@ -778,12 +789,6 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 		default:
 			return 0;
 	}
-}
-
-static void
-menu_leave (void *data)
-{
-	Menu_Leave ();
 }
 
 void
