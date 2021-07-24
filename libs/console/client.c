@@ -456,8 +456,8 @@ C_KeyEvent (knum_t key, short unicode, qboolean down, void *data)
 		return;
 
 	if (con_curr_keydest == key_menu) {
-		if (Menu_KeyEvent (key, unicode, down))
-			return;
+		Menu_KeyEvent (key, unicode, down);
+		return;
 	}
 
 	if (down) {
