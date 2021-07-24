@@ -20,6 +20,7 @@ test_progs_dat=\
 	tools/qfcc/test/double.dat \
 	tools/qfcc/test/double-alias.dat \
 	tools/qfcc/test/enum.dat \
+	tools/qfcc/test/entity-struct.dat \
 	tools/qfcc/test/fordecl.dat \
 	tools/qfcc/test/func-expr.dat \
 	tools/qfcc/test/func-expr2.dat \
@@ -254,6 +255,16 @@ tools/qfcc/test/enum.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(enum_dep) # am--include-marker
 r_depfiles_remade += $(enum_dep)
+
+tools_qfcc_test_entity_struct_dat_SOURCES=tools/qfcc/test/entity-struct.r
+entity_struct_obj=$(tools_qfcc_test_entity_struct_dat_SOURCES:.r=.o)
+entity_struct_dep=$(call qcautodep,$(tools_qfcc_test_entity_struct_dat_SOURCES))
+tools/qfcc/test/entity-struct.dat$(EXEEXT): $(entity_struct_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(entity_struct_obj)
+tools/qfcc/test/entity-struct.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(entity_struct_dep) # am--include-marker
+r_depfiles_remade += $(entity_struct_dep)
 
 tools_qfcc_test_fordecl_dat_SOURCES=tools/qfcc/test/fordecl.r
 fordecl_obj=$(tools_qfcc_test_fordecl_dat_SOURCES:.r=.o)

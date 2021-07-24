@@ -488,7 +488,13 @@ print_value (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 							e->e.value->v.pointer.val);
 			break;
 		case ev_field:
-			label = va (0, "field %d", e->e.value->v.pointer.val);
+			if (e->e.value->v.pointer.def) {
+				int         offset = e->e.value->v.pointer.val;
+				offset += e->e.value->v.pointer.def->offset;
+				label = va (0, "field %d", offset);
+			} else {
+				label = va (0, "field %d", e->e.value->v.pointer.val);
+			}
 			break;
 		case ev_entity:
 			label = va (0, "ent %d", e->e.value->v.integer_val);

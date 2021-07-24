@@ -559,6 +559,18 @@ unalias_type (const type_t *type)
 	return type;
 }
 
+const type_t *
+dereference_type (const type_t *type)
+{
+	if (!is_pointer (type) && !is_field (type)) {
+		internal_error (0, "dereference non pointer/field type");
+	}
+	if (type->meta == ty_alias) {
+		type = type->t.alias.full_type;
+	}
+	return type->t.fldptr.type;
+}
+
 void
 print_type_str (dstring_t *str, const type_t *type)
 {
