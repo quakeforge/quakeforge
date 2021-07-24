@@ -580,14 +580,18 @@ V_CalcViewRoll (void)
 static void
 V_CalcIntermissionRefdef (void)
 {
+    entity_t   *ent = &cl_entities[cl.viewentity];
 	entity_t   *view;
 	float       old;
+    vec4f_t     origin = Transform_GetWorldPosition (ent->transform);
+    vec4f_t     rotation = Transform_GetWorldRotation (ent->transform);
 
 	// view is the weapon model (visible only from inside body)
 	view = &cl.viewent;
 
-	r_data->refdef->viewposition = cl.viewstate.origin;
-	AngleQuat (cl.viewstate.angles, &r_data->refdef->viewrotation[0]);//FIXME
+	r_data->refdef->viewposition = origin;
+	r_data->refdef->viewrotation = rotation;
+	view->renderer.model = NULL;
 	view->renderer.model = NULL;
 
 	// always idle in intermission
