@@ -17,7 +17,7 @@ layout (location = 0) out vec4 frag_color;
 layout (constant_id = 0) const bool doSkyBox = false;
 layout (constant_id = 1) const bool doSkySheet = false;
 
-const float SCALE = 8.0;
+const float SCALE = 189.0 / 64.0;
 
 vec4
 fogBlend (vec4 color)
