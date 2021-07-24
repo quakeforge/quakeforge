@@ -222,6 +222,7 @@ Transform_SetLocalRotation (transform_t *transform, vec4f_t rotation)
 	mat4f_t     mat;
 	mat4fquat (mat, rotation);
 
+    h->localRotation.a[transform->index] = rotation;
 	h->localMatrix.a[transform->index][0] = mat[0] * scale[0];
 	h->localMatrix.a[transform->index][1] = mat[1] * scale[1];
 	h->localMatrix.a[transform->index][2] = mat[2] * scale[2];
@@ -245,6 +246,7 @@ Transform_SetLocalScale (transform_t *transform, vec4f_t scale)
 	mat4f_t     mat;
 	mat4fquat (mat, rotation);
 
+    h->localScale.a[transform->index] = scale;
 	h->localMatrix.a[transform->index][0] = mat[0] * scale[0];
 	h->localMatrix.a[transform->index][1] = mat[1] * scale[1];
 	h->localMatrix.a[transform->index][2] = mat[2] * scale[2];
@@ -304,6 +306,8 @@ Transform_SetLocalTransform (transform_t *transform, vec4f_t scale,
 	mat4fquat (mat, rotation);
 
 	position[3] = 1;
+    h->localRotation.a[transform->index] = rotation;
+    h->localScale.a[transform->index] = scale;
 	h->localMatrix.a[transform->index][0] = mat[0] * scale[0];
 	h->localMatrix.a[transform->index][1] = mat[1] * scale[1];
 	h->localMatrix.a[transform->index][2] = mat[2] * scale[2];
