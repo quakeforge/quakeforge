@@ -42,12 +42,13 @@
 #endif
 
 #include "QF/cvar.h"
-#include "QF/entity.h"
 #include "QF/draw.h"
 #include "QF/dstring.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
+
+#include "QF/scene/entity.h"
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"

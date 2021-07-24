@@ -74,7 +74,7 @@ qwaq_cl_plugin_libs= \
 	@client_static_plugin_libs@
 
 qwaq_client_libs= \
-	$(top_builddir)/libs/entity/libQFentity.la \
+	$(top_builddir)/libs/scene/libQFscene.la \
 	$(top_builddir)/libs/console/libQFconsole.la \
 	$(top_builddir)/libs/ui/libQFui.la \
 	$(top_builddir)/libs/input/libQFinput.la \

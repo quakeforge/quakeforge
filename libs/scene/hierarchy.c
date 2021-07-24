@@ -35,7 +35,8 @@
 # include <strings.h>
 #endif
 
-#include "QF/entity.h"
+#include "QF/scene/hierarchy.h"
+#include "QF/scene/transform.h"
 
 #if defined(_WIN32) && !defined(_WIN64)
 // FIXME (maybe) this is a hack to make DARRAY arrrays 16-byte aligned on

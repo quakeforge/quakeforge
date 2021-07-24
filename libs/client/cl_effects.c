@@ -38,10 +38,10 @@
 # include <strings.h>
 #endif
 
-#include "QF/entity.h"
 #include "QF/render.h"
 
 #include "QF/plugin/vid_render.h"	//FIXME
+#include "QF/scene/entity.h"
 
 #include "client/entities.h"
 #include "client/effects.h"

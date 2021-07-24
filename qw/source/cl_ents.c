@@ -36,11 +36,12 @@
 #endif
 
 #include "QF/cvar.h"
-#include "QF/entity.h"
 #include "QF/msg.h"
 #include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
+
+#include "QF/scene/entity.h"
 
 #include "compat.h"
 #include "d_iface.h"

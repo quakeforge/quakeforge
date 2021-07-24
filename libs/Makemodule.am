@@ -9,7 +9,7 @@ include libs/models/Makemodule.am
 include libs/input/Makemodule.am
 include libs/video/Makemodule.am
 include libs/console/Makemodule.am
-include libs/entity/Makemodule.am
+include libs/scene/Makemodule.am
 
 include libs/net/Makemodule.am
 include libs/client/Makemodule.am

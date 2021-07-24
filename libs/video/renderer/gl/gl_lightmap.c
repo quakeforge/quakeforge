@@ -43,9 +43,11 @@
 #include <stdio.h>
 
 #include "QF/cvar.h"
-#include "QF/entity.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+
+#include "QF/scene/entity.h"
+
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_lightmap.h"

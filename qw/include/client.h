@@ -28,13 +28,13 @@
 #ifndef _CLIENT_H
 #define _CLIENT_H
 
-#include "QF/entity.h"
 #include "QF/info.h"
 #include "QF/quakefs.h"
 #include "QF/vid.h"
 #include "QF/zone.h"
 
 #include "QF/plugin/vid_render.h"
+#include "QF/scene/entity.h"
 
 #include "client/entities.h"
 #include "client/state.h"

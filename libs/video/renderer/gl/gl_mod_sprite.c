@@ -38,13 +38,14 @@
 # include <strings.h>
 #endif
 
-#include "QF/GL/defines.h"
-#include "QF/GL/funcs.h"
-
-#include "QF/entity.h"
 #include "QF/model.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+
+#include "QF/scene/entity.h"
+
+#include "QF/GL/defines.h"
+#include "QF/GL/funcs.h"
 
 #include "compat.h"
 #include "r_internal.h"

@@ -34,7 +34,6 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
-#include "QF/entity.h"
 #include "QF/input.h"
 #include "QF/joystick.h"
 #include "QF/keys.h"
@@ -48,6 +47,7 @@
 
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
+#include "QF/scene/entity.h"
 
 #include "compat.h"
 #include "sbar.h"

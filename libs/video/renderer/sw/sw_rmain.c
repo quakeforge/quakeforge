@@ -42,12 +42,13 @@
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
-#include "QF/entity.h"
 #include "QF/mathlib.h"
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
+
+#include "QF/scene/entity.h"
 
 #include "compat.h"
 #include "mod_internal.h"

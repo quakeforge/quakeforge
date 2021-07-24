@@ -40,13 +40,14 @@
 #endif
 
 #include "QF/cvar.h"
-#include "QF/entity.h"
 #include "QF/mersenne.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+
+#include "QF/scene/entity.h"
 
 #include "compat.h"
 #include "r_internal.h"

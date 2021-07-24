@@ -38,7 +38,6 @@
 # include <strings.h>
 #endif
 
-#include "QF/entity.h"
 #include "QF/msg.h"
 #include "QF/progs.h"	// for PR_RESMAP
 #include "QF/quakefs.h"
@@ -46,6 +45,7 @@
 #include "QF/sound.h"
 
 #include "QF/plugin/vid_render.h"	//FIXME
+#include "QF/scene/entity.h"
 
 #include "client/entities.h"
 #include "client/temp_entities.h"

@@ -35,8 +35,8 @@
 # include <strings.h>
 #endif
 
-#include "QF/entity.h"
-#include "QF/render.h"
+#include "QF/scene/hierarchy.h"
+#include "QF/scene/transform.h"
 
 transform_t *
 Transform_New (transform_t *parent)

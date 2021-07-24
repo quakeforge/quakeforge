@@ -15,7 +15,6 @@ include_qf = \
 	include/QF/darray.h \
 	include/QF/dstring.h \
 	include/QF/draw.h \
-	include/QF/entity.h \
 	include/QF/fbsearch.h \
 	include/QF/gib.h \
 	include/QF/hash.h \
@@ -126,6 +125,13 @@ include_qf_plugin = \
 	include/QF/plugin/snd_render.h \
 	include/QF/plugin/vid_render.h
 
+include_qf_scene = \
+	include/QF/scene/entity.h \
+	include/QF/scene/hierarchy.h \
+	include/QF/scene/transform.h \
+	include/QF/scene/scene.h \
+	include/QF/scene/types.h
+
 include_qf_simd = \
 	include/QF/simd/mat4f.h \
 	include/QF/simd/types.h \
@@ -179,6 +185,7 @@ qf_gl_includedir = $(includedir)/QF/GL
 qf_glsl_includedir = $(includedir)/QF/GLSL
 qf_math_includedir = $(includedir)/QF/math
 qf_plugin_includedir = $(includedir)/QF/plugin
+qf_scene_includedir = $(includedir)/QF/scene
 qf_simd_includedir = $(includedir)/QF/simd
 qf_vulkan_includedir = $(includedir)/QF/Vulkan
 qf_include_HEADERS = @qfac_include_qf@
@@ -186,6 +193,7 @@ qf_gl_include_HEADERS = @qfac_include_qf_gl@
 qf_glsl_include_HEADERS = @qfac_include_qf_glsl@
 qf_math_include_HEADERS = @qfac_include_qf_math@
 qf_plugin_include_HEADERS = @qfac_include_qf_plugin@
+qf_scene_include_HEADERS = @qfac_include_qf_scene@
 qf_simd_include_HEADERS = @qfac_include_qf_simd@
 qf_vulkan_include_HEADERS = @qfac_include_qf_vulkan@
 
@@ -198,6 +206,7 @@ EXTRA_HEADERS += \
 	$(include_qf_glsl) \
 	$(include_qf_math) \
 	$(include_qf_plugin) \
+	$(include_qf_scene) \
 	$(include_qf_simd) \
 	$(include_qf_vulkan) \
 	$(qfcc_include_qf)

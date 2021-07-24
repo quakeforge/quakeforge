@@ -45,12 +45,13 @@
 
 #include "QF/cvar.h"
 #include "QF/darray.h"
-#include "QF/entity.h"
 #include "QF/image.h"
 #include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+
+#include "QF/scene/entity.h"
 
 #include "QF/Vulkan/qf_alias.h"
 #include "QF/Vulkan/qf_texture.h"

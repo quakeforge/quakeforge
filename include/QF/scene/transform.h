@@ -1,7 +1,7 @@
 /*
-	entity.h
+	transform.h
 
-	Entity management
+	Transform management
 
 	Copyright (C) 2021 Bill Currie <bill@taniwha.org>
 
@@ -28,50 +28,21 @@
 
 */
 
-#ifndef __QF_entity_h
-#define __QF_entity_h
+#ifndef __QF_scene_transform_h
+#define __QF_scene_transform_h
 
 #include "QF/darray.h"
-#include "QF/mathlib.h"
+#include "QF/qtypes.h"
 #include "QF/simd/vec4f.h"
 #include "QF/simd/mat4f.h"
 
-/** \defgroup entity Entity management
+/** \defgroup transform Transform management
 	\ingroup utils
 */
 ///@{
 
-typedef struct mat4fset_s DARRAY_TYPE (mat4f_t) mat4fset_t;
-typedef struct vec4fset_s DARRAY_TYPE (vec4f_t) vec4fset_t;
-typedef struct uint32set_s DARRAY_TYPE (uint32_t) uint32set_t;
-typedef struct byteset_s DARRAY_TYPE (byte) byteset_t;
-typedef struct stringset_s DARRAY_TYPE (char *) stringset_t;
-typedef struct xformset_s DARRAY_TYPE (struct transform_s *) xformset_t;
-typedef struct entityset_s DARRAY_TYPE (struct entity_s *) entityset_t;
-
-#define null_transform (~0u)
-
-typedef struct hierarchy_s {
-	xformset_t  transform;
-	entityset_t entity;
-	uint32set_t childCount;
-	uint32set_t childIndex;
-	uint32set_t parentIndex;
-	stringset_t name;
-	uint32set_t tag;
-	byteset_t   modified;
-	mat4fset_t  localMatrix;
-	mat4fset_t  localInverse;
-	mat4fset_t  worldMatrix;
-	mat4fset_t  worldInverse;
-	vec4fset_t  localRotation;
-	vec4fset_t  localScale;
-	vec4fset_t  worldRotation;
-	vec4fset_t  worldScale;
-} hierarchy_t;
-
 typedef struct transform_s {
-	hierarchy_t *hierarchy;
+	struct hierarchy_s *hierarchy;
 	uint32_t    index;
 } transform_t;
 
@@ -111,14 +82,6 @@ vec4f_t Transform_Right (const transform_t *transform) __attribute__((pure));
 vec4f_t Transform_Up (const transform_t *transform) __attribute__((pure));
 // no SetWorldScale because after rotations, non uniform scale becomes shear
 
-hierarchy_t *Hierarchy_New (size_t grow, int createRoot);
-hierarchy_t *Hierarchy_Copy (hierarchy_t *src);
-void Hierarchy_Delete (hierarchy_t *hierarchy);
-
-void Hierarchy_UpdateMatrices (hierarchy_t *hierarchy);
-uint32_t Hierarchy_InsertHierarchy (hierarchy_t *dst, const hierarchy_t *src,
-									uint32_t dstParent, uint32_t srcRoot);
-void Hierarchy_RemoveHierarchy (hierarchy_t *hierarchy, uint32_t index);
 ///@}
 
-#endif//__QF_entity_h
+#endif//__QF_scene_transform_h

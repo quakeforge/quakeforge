@@ -1,0 +1,17 @@
+libs_scene_tests = \
+	libs/scene/test/test-hierarchy
+
+TESTS += $(libs_scene_tests)
+
+check_PROGRAMS += $(libs_scene_tests)
+
+libs_scene_test_libs= \
+	libs/scene/libQFscene.la \
+	libs/util/libQFutil.la
+
+libs_scene_test_test_hierarchy_SOURCES= 		\
+	libs/scene/test/test-hierarchy.c
+libs_scene_test_test_hierarchy_LDADD=			\
+	$(libs_scene_test_libs)
+libs_scene_test_test_hierarchy_DEPENDENCIES=	\
+	$(libs_scene_test_libs)

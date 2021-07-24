@@ -30,13 +30,13 @@
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
-#include "QF/entity.h"
 #include "QF/msg.h"
 #include "QF/screen.h"
 
 #include "QF/simd/vec4f.h"
 
 #include "QF/plugin/vid_render.h"
+#include "QF/scene/entity.h"
 
 #include "compat.h"
 

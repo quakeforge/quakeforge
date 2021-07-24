@@ -6,7 +6,8 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "QF/entity.h"
+#include "QF/scene/hierarchy.h"
+#include "QF/scene/transform.h"
 
 // NOTE: these are the columns of the matrix! (not that it matters for a
 // symmetrical matrix, but...)

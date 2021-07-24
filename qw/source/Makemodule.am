@@ -89,7 +89,7 @@ qw_client_LIBS= \
 		libs/qw/libqw.a \
 		libs/gib/libQFgib_client.la \
 		libs/net/libnet_chan.la \
-		libs/entity/libQFentity.la \
+		libs/scene/libQFscene.la \
 		libs/console/libQFconsole.la \
 		libs/video/targets/libQFjs.la \
 		libs/audio/libQFcd.la \

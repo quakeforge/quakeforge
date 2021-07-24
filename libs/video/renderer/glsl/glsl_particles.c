@@ -42,7 +42,6 @@
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
-#include "QF/entity.h"
 #include "QF/image.h"
 #include "QF/mersenne.h"
 #include "QF/qargs.h"
@@ -50,6 +49,9 @@
 #include "QF/render.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+
+#include "QF/scene/entity.h"
+
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
 //#include "QF/GL/qf_explosions.h"

@@ -33,9 +33,10 @@
 
 #include "qfalloca.h"
 
-#include "QF/entity.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+
+#include "QF/scene/entity.h"
 
 #include "r_internal.h"
 

@@ -41,7 +41,6 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
-#include "QF/entity.h"
 #include "QF/idparse.h"
 #include "QF/input.h"
 #include "QF/msg.h"
@@ -53,6 +52,7 @@
 #include "QF/va.h"
 
 #include "QF/plugin/vid_render.h"
+#include "QF/scene/entity.h"
 
 #include "client/temp_entities.h"
 
