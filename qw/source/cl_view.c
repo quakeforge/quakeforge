@@ -518,8 +518,8 @@ idle_quat (vec4f_t axis, cvar_t *cycle, cvar_t *level)
 	}
 	float       scale = sin (cl.time * cycle->value);
 	float       ang = scale * level->value * v_idlescale->value;
-	float       c = cos (ang);
-	float       s = sin (ang);
+	float       c = cos (ang * M_PI / 360);
+	float       s = sin (ang * M_PI / 360);
 	return axis * s + identity * c;
 }
 
