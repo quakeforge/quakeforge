@@ -103,7 +103,7 @@ setup_view (vulkan_ctx_t *ctx)
 }
 
 static void
-R_RenderEntities (vulkan_ctx_t *ctx)
+Vulkan_RenderEntities (vulkan_ctx_t *ctx)
 {
 	if (!r_drawentities->int_val)
 		return;
@@ -118,7 +118,16 @@ R_RenderEntities (vulkan_ctx_t *ctx)
 				Vulkan_##Type##Begin (ctx); \
 				begun = 1; \
 			} \
+			/* hack the depth range to prevent view model */\
+			/* from poking into walls */\
+			if (ent == vr_data.view_model) { \
+				Vulkan_AliasDepthRange (ctx, 0, 0.3); \
+			} \
 			Vulkan_Draw##Type (ent, ctx); \
+			/* unhack in case the view_model is not the last */\
+			if (ent == vr_data.view_model) { \
+				Vulkan_AliasDepthRange (ctx, 0, 1); \
+			} \
 		} \
 		if (begun) \
 			Vulkan_##Type##End (ctx); \
@@ -130,7 +139,7 @@ R_RenderEntities (vulkan_ctx_t *ctx)
 }
 
 static void
-R_DrawViewModel (void)
+Vulkan_DrawViewModel (vulkan_ctx_t *ctx)
 {
 	entity_t   *ent = vr_data.view_model;
 	if (vr_data.inhibit_viewmodel
@@ -139,18 +148,13 @@ R_DrawViewModel (void)
 		|| !ent->renderer.model)
 		return;
 
-	// hack the depth range to prevent view model from poking into walls
-	//qfeglDepthRangef (0, 0.3);
-	//glsl_R_AliasBegin ();
-	//glsl_R_DrawAlias ();
-	//glsl_R_AliasEnd ();
-	//qfeglDepthRangef (0, 1);
+	R_EnqueueEntity (ent);
 }
 
 void
 Vulkan_RenderView (vulkan_ctx_t *ctx)
 {
-	double      t[10] = {};
+	double      t[9] = {};
 	int         speeds = r_speeds->int_val;
 
 	if (speeds)
@@ -171,7 +175,8 @@ Vulkan_RenderView (vulkan_ctx_t *ctx)
 	Vulkan_DrawSky (ctx);
 	if (speeds)
 		t[5] = Sys_DoubleTime ();
-	R_RenderEntities (ctx);
+	Vulkan_DrawViewModel (ctx);
+	Vulkan_RenderEntities (ctx);
 	if (speeds)
 		t[6] = Sys_DoubleTime ();
 	Vulkan_DrawWaterSurfaces (ctx);
@@ -180,17 +185,14 @@ Vulkan_RenderView (vulkan_ctx_t *ctx)
 	Vulkan_DrawParticles (ctx);
 	if (speeds)
 		t[8] = Sys_DoubleTime ();
-	R_DrawViewModel ();
-	if (speeds)
-		t[9] = Sys_DoubleTime ();
 	if (speeds) {
 		Sys_Printf ("frame: %g, setup: %g, mark: %g, pushdl: %g, world: %g,"
-					" sky: %g, ents: %g, water: %g, part: %g, view: %g\n",
+					" sky: %g, ents: %g, water: %g, part: %g\n",
 					(t[9] - t[0]) * 1000, (t[1] - t[0]) * 1000,
 					(t[2] - t[1]) * 1000, (t[3] - t[2]) * 1000,
 					(t[4] - t[3]) * 1000, (t[5] - t[4]) * 1000,
 					(t[6] - t[5]) * 1000, (t[7] - t[6]) * 1000,
-					(t[8] - t[7]) * 1000, (t[9] - t[8]) * 1000);
+					(t[8] - t[7]) * 1000);
 	}
 }
 

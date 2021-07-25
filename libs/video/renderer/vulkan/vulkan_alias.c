@@ -255,6 +255,24 @@ Vulkan_AliasEnd (vulkan_ctx_t *ctx)
 	alias_end_subpass (aframe->cmdSet.a[QFV_aliasGBuffer], ctx);
 }
 
+void
+Vulkan_AliasDepthRange (vulkan_ctx_t *ctx, float minDepth, float maxDepth)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	aliasctx_t *actx = ctx->alias_context;
+	aliasframe_t *aframe = &actx->frames.a[ctx->curFrame];
+
+	VkViewport  viewport = ctx->viewport;
+	viewport.minDepth = minDepth;
+	viewport.maxDepth = maxDepth;
+
+	dfunc->vkCmdSetViewport (aframe->cmdSet.a[QFV_aliasDepth], 0, 1,
+							 &viewport);
+	dfunc->vkCmdSetViewport (aframe->cmdSet.a[QFV_aliasGBuffer], 0, 1,
+							 &viewport);
+}
+
 static VkDescriptorBufferInfo base_buffer_info = {
 	0, 0, VK_WHOLE_SIZE
 };

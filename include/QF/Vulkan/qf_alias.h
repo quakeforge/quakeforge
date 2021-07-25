@@ -113,4 +113,6 @@ void Vulkan_AliasEnd (struct vulkan_ctx_s *ctx);
 void Vulkan_Alias_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Alias_Shutdown (struct vulkan_ctx_s *ctx);
 
+void Vulkan_AliasDepthRange (struct vulkan_ctx_s *ctx, float n, float f);
+
 #endif//__QF_Vulkan_qf_alias_h
