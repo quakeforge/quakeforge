@@ -108,7 +108,7 @@ Vulkan_CalcProjectionMatrices (vulkan_ctx_t *ctx)
 
 	int width = vid.conview->xlen;
 	int height = vid.conview->ylen;
-	QFV_Orthographic (mat->projection_2d, 0, width, 0, height, -99999, 99999);
+	QFV_Orthographic (mat->projection_2d, 0, width, 0, height, 0, 99999);
 
 	float       aspect = (float) r_refdef.vrect.width / r_refdef.vrect.height;
 	QFV_Perspective (mat->projection_3d, r_refdef.fov_y, aspect);
