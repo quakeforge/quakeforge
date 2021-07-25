@@ -404,10 +404,10 @@ CreateHulls (void)
 static void
 ProcessFile (void)
 {
-	bsp = BSP_New ();
-
 	if (options.extract) {
 		LoadBSP ();
+		if (options.info)
+			bspinfo ();
 		if (options.portal)
 			bsp2prt ();
 		if (options.extract_textures)
@@ -420,6 +420,7 @@ ProcessFile (void)
 		return;
 	}
 
+	bsp = BSP_New ();
 	// load brushes and entities
 	LoadMapFile (options.mapfile);
 

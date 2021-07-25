@@ -8,6 +8,7 @@ bin_PROGRAMS += @QFBSP_TARGETS@
 qfbsp_SOURCES= \
 	tools/qfbsp/source/brush.c \
 	tools/qfbsp/source/csg4.c \
+	tools/qfbsp/source/info.c \
 	tools/qfbsp/source/map.c \
 	tools/qfbsp/source/merge.c \
 	tools/qfbsp/source/nodraw.c \

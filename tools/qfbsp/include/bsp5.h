@@ -129,6 +129,8 @@ node_t *AllocNode (void);
 
 extern bsp_t *bsp;
 
+void bspinfo (void);
+
 ///@}
 
 #endif//qfbsp_bsp5_h
