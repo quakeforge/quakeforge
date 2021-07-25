@@ -343,7 +343,7 @@ PF_traceoff (progs_t *pr)
 static void
 PF_eprint (progs_t *pr)
 {
-	ED_PrintNum (pr, P_EDICTNUM (pr, 0));
+	ED_PrintNum (pr, P_EDICTNUM (pr, 0), 0);
 }
 
 /*

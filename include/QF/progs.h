@@ -292,9 +292,9 @@ void ED_Count (progs_t *pr);
 qboolean PR_EdictValid (progs_t *pr, pr_int_t e) __attribute__((pure));
 
 // pr_debug.c
-void ED_Print (progs_t *pr, edict_t *ed);
+void ED_Print (progs_t *pr, edict_t *ed, const char *fieldname);
 void ED_PrintEdicts (progs_t *pr, const char *fieldval);
-void ED_PrintNum (progs_t *pr, pr_int_t ent);
+void ED_PrintNum (progs_t *pr, pr_int_t ent, const char *fieldname);
 
 // pr_parse.c
 struct script_s;

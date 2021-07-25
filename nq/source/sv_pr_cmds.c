@@ -74,7 +74,7 @@ PF_error (progs_t *pr)
 	Sys_Printf ("======SERVER ERROR in %s:\n%s\n",
 				PR_GetString (pr, pr->pr_xfunction->descriptor->s_name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
-	ED_Print (pr, ed);
+	ED_Print (pr, ed, 0);
 
 	Host_Error ("Program error");
 }
@@ -98,7 +98,7 @@ PF_objerror (progs_t *pr)
 	Sys_Printf ("======OBJECT ERROR in %s:\n%s\n",
 				PR_GetString (pr, pr->pr_xfunction->descriptor->s_name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
-	ED_Print (pr, ed);
+	ED_Print (pr, ed, 0);
 	ED_Free (pr, ed);
 
 	Host_Error ("Program error");

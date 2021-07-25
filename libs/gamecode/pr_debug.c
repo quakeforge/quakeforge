@@ -1716,23 +1716,42 @@ PR_Profile (progs_t * pr)
 	} while (best);
 }
 
+static void
+print_field (progs_t *pr, edict_t *ed, pr_def_t *d)
+{
+	prdeb_resources_t *res = pr->pr_debug_resources;
+	int         l;
+	pr_type_t  *v;
+	qfot_type_t dummy_type = { };
+	qfot_type_t *type;
+	pr_debug_data_t data = {pr, res->dstr};
+	const char *name;
+
+	name = PR_GetString (pr, d->name);
+	type = get_def_type (pr, d, &dummy_type);
+	v = &E_fld (ed, d->ofs);
+
+	l = 15 - strlen (name);
+	if (l < 1)
+		l = 1;
+
+	dstring_clearstr (res->dstr);
+	value_string (&data, type, v);
+	Sys_Printf ("%s%*s%s\n", name, l, "", res->dstr->str);
+}
+
 /*
 	ED_Print
 
 	For debugging
 */
 VISIBLE void
-ED_Print (progs_t *pr, edict_t *ed)
+ED_Print (progs_t *pr, edict_t *ed, const char *fieldname)
 {
-	prdeb_resources_t *res = pr->pr_debug_resources;
-	int         l;
 	pr_uint_t   i, j;
 	const char *name;
 	pr_def_t   *d;
-	pr_type_t  *v;
-	qfot_type_t dummy_type = { };
-	qfot_type_t *type;
-	pr_debug_data_t data = {pr, res->dstr};
+	int         l;
 
 	if (ed->free) {
 		Sys_Printf ("FREE\n");
@@ -1740,14 +1759,23 @@ ED_Print (progs_t *pr, edict_t *ed)
 	}
 
 	Sys_Printf ("\nEDICT %d:\n", NUM_FOR_BAD_EDICT (pr, ed));
+
+	if (fieldname) {
+		d = PR_FindField(pr, fieldname);
+		if (!d) {
+			Sys_Printf ("unknown field '%s'\n", fieldname);
+		} else {
+			print_field (pr, ed, d);
+		}
+		return;
+	}
 	for (i = 0; i < pr->progs->numfielddefs; i++) {
 		d = &pr->pr_fielddefs[i];
 		if (!d->name)					// null field def (probably 1st)
 			continue;
-		type = get_def_type (pr, d, &dummy_type);
 		name = PR_GetString (pr, d->name);
-		if (name[strlen (name) - 2] == '_'
-			&& strchr ("xyz", name[strlen (name) -1]))
+		l = strlen (name);
+		if (l >= 2 && name[l - 2] == '_' && strchr ("xyz", name[l - 1]))
 			continue;					// skip _x, _y, _z vars
 
 		for (j = 0; j < d->size; j++) {
@@ -1759,15 +1787,7 @@ ED_Print (progs_t *pr, edict_t *ed)
 			continue;
 		}
 
-		v = &E_fld (ed, d->ofs);
-
-		l = 15 - strlen (name);
-		if (l < 1)
-			l = 1;
-
-		dstring_clearstr (res->dstr);
-		value_string (&data, type, v);
-		Sys_Printf ("%s%*s%s\n", name, l, "", res->dstr->str);
+		print_field (pr, ed, d);
 	}
 }
 

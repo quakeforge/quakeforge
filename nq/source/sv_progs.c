@@ -126,10 +126,17 @@ static void
 ED_PrintEdict_f (void)
 {
 	int         i;
+	const char *fieldname = 0;
 
+	if (Cmd_Argc () < 2) {
+		Sys_Printf ("edict num [fieldname]\n");
+		return;
+	}
+	if (Cmd_Argc () >= 3) {
+		fieldname = Cmd_Argv (2);
+	}
 	i = atoi (Cmd_Argv (1));
-	Sys_Printf ("\n EDICT %i:\n", i);
-	ED_PrintNum (&sv_pr_state, i);
+	ED_PrintNum (&sv_pr_state, i, fieldname);
 }
 
 static void
