@@ -1595,7 +1595,7 @@ check_global (progs_t *pr, dstatement_t *st, opcode_t *op, etype_t type,
 				msg = "DENORMAL float detected. These progs are probably "
 					"using qccx arrays and integers. If just simple arrays "
 					"are being used, then they should work, but if "
-					"internal.qc is used, they most definitely will NOT. To"
+					"internal.qc is used, they most definitely will NOT. To "
 					"allow these progs to be used, set pr_boundscheck to 1.";
 				goto error;
 			}
