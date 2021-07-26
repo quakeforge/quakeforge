@@ -34,6 +34,8 @@ typedef struct {
 	int         verbosity;		// 0=silent
 	int         threads;
 	qboolean    minimal;
+	qboolean    no_auto_pvs;
+	qboolean    fat_pvs;
 	int         level;
 	size_t      portal_limit;
 	struct dstring_s *bspfile;

@@ -693,10 +693,16 @@ print_progress (int prev_prog, int spinner_ind)
 	return prog;
 }
 
+typedef struct {
+	int         thread;
+	int       (*progress)(int, int);
+} watch_data_t;
+
 static void *
-WatchThread (void *_thread)
+WatchThread (void *_wd)
 {
-	int         thread = (intptr_t) _thread;
+	watch_data_t *wd = _wd;
+	int         thread = wd->thread;
 	int        *local_work = malloc (thread * sizeof (int));
 	int         i;
 	int         spinner_ind = 0;
@@ -720,7 +726,7 @@ WatchThread (void *_thread)
 			if (options.verbosity >= 4)
 				print_thread_stats (local_work, thread, spinner_ind);
 			else if (options.verbosity >= 0)
-				prev_prog = print_progress (prev_prog, spinner_ind);
+				prev_prog = wd->progress (prev_prog, spinner_ind);
 			if (prev_port != portal_count || stalled++ == 10) {
 				prev_port = portal_count;
 				stalled = 0;
@@ -738,8 +744,8 @@ WatchThread (void *_thread)
 }
 #endif
 
-static void
-RunThreads (void *(*thread_func) (void *))
+void
+RunThreads (void *(*thread_func) (void *), int (*progress)(int, int))
 {
 #ifdef USE_PTHREADS
 	pthread_t  *work_threads;
@@ -754,8 +760,9 @@ RunThreads (void *(*thread_func) (void *))
 								thread_func, (void *) (intptr_t) i) == -1)
 				Sys_Error ("pthread_create failed");
 		}
+		watch_data_t wd = { i, progress };
 		if (pthread_create (&work_threads[i], &threads_attrib,
-							WatchThread, (void *) (intptr_t) i) == -1)
+							WatchThread, &wd) == -1)
 			Sys_Error ("pthread_create failed");
 
 		for (i = 0; i < options.threads; i++) {
@@ -770,7 +777,7 @@ RunThreads (void *(*thread_func) (void *))
 		thread_func (0);
 	}
 #else
-	LeafThread (0);
+	thread_func (0);
 #endif
 }
 
@@ -887,7 +894,7 @@ BasePortalVis (void)
 		printf ("\n");
 
 	start = Sys_DoubleTime ();
-	RunThreads (BaseVisThread);
+	RunThreads (BaseVisThread, print_progress);
 	end = Sys_DoubleTime ();
 
 	if (options.verbosity >= 1) {
@@ -924,7 +931,7 @@ CalcPortalVis (void)
 
 	portal_count = 0;
 
-	RunThreads (LeafThread);
+	RunThreads (LeafThread, print_progress);
 
 	if (options.verbosity >= 1) {
 		printf ("portalcheck: %i  portaltest: %i  portalpass: %i\n",
@@ -1343,35 +1350,12 @@ LoadPortals (char *name)
 	Qclose (f);
 }
 
-int
-main (int argc, char **argv)
+static void
+generate_pvs (void)
 {
-	double      start, stop;
-	dstring_t  *portalfile = dstring_new ();
 	QFile      *f;
 
-	main_thread.memsuper = new_memsuper ();
-
-	start = Sys_DoubleTime ();
-
-	this_program = argv[0];
-
-	DecodeArgs (argc, argv);
-
-	InitThreads ();
-
-	if (!options.bspfile) {
-		usage (1);
-		Sys_Error ("%s: no bsp file specified.", this_program);
-	}
-
-	QFS_SetExtension (options.bspfile, ".bsp");
-
-	f = Qopen (options.bspfile->str, "rb");
-	if (!f)
-		Sys_Error ("couldn't open %s for reading.", options.bspfile->str);
-	bsp = LoadBSPFile (f, Qfilesize (f));
-	Qclose (f);
+	dstring_t  *portalfile = dstring_new ();
 
 	visdata = dstring_new ();
 
@@ -1400,21 +1384,59 @@ main (int argc, char **argv)
 	WriteBSPFile (bsp, f);
 	Qclose (f);
 
-	stop = Sys_DoubleTime ();
-
-	if (options.verbosity >= -1)
-		printf ("%5.1f seconds elapsed\n", stop - start);
-
 	dstring_delete (portalfile);
 	dstring_delete (visdata);
 	dstring_delete (options.bspfile);
-	BSP_Free (bsp);
 	free (leafcluster);
 	free (uncompressed);
 	free (portals);
 	free (clusters);
+}
+
+int
+main (int argc, char **argv)
+{
+	double      start, stop;
+	QFile      *f;
+
+	main_thread.memsuper = new_memsuper ();
+
+	start = Sys_DoubleTime ();
+
+	this_program = argv[0];
+
+	DecodeArgs (argc, argv);
+
+	InitThreads ();
+
+	if (!options.bspfile) {
+		usage (1);
+		Sys_Error ("%s: no bsp file specified.", this_program);
+	}
+
+	QFS_SetExtension (options.bspfile, ".bsp");
+
+	f = Qopen (options.bspfile->str, "rb");
+	if (!f)
+		Sys_Error ("couldn't open %s for reading.", options.bspfile->str);
+	bsp = LoadBSPFile (f, Qfilesize (f));
+	Qclose (f);
+
+	if (!options.no_auto_pvs) {
+		generate_pvs ();
+	}
+	if (options.fat_pvs) {
+		CalcFatPVS ();
+	}
+
+	BSP_Free (bsp);
 
 	EndThreads ();
+
+	stop = Sys_DoubleTime ();
+
+	if (options.verbosity >= -1)
+		printf ("%5.1f seconds elapsed\n", stop - start);
 
 	return 0;
 }

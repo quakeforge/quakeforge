@@ -7,6 +7,7 @@ bin_PROGRAMS += @QFVIS_TARGETS@
 
 qfvis_SOURCES = \
 	tools/qfvis/source/base-vis.c \
+	tools/qfvis/source/fatpvs.c \
 	tools/qfvis/source/flow.c \
 	tools/qfvis/source/options.c \
 	tools/qfvis/source/qfvis.c \

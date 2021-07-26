@@ -213,4 +213,12 @@ void PortalBase (basethread_t *thread, portal_t *portal);
 void PortalFlow (threaddata_t *data, portal_t *portal);
 void CalcAmbientSounds (void);
 
+void CalcFatPVS (void);
+
+void RunThreads (void *(*thread_func) (void *), int (*progress)(int, int));
+
+extern const char spinner[];
+extern const char progress[];
+extern int *working;
+
 #endif// __vis_h

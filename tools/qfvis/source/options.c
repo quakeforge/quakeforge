@@ -49,9 +49,13 @@ const char *this_program;
 enum {
 	start_opts = 255,	// not used, starts the enum.
 	OPT_PORTAL_LIMIT,
+	OPT_FAT_PVS,
+	OPT_FULL_PVS,
 };
 
 static struct option const long_options[] = {
+	{"fat-pvs", no_argument, 0, OPT_FAT_PVS},
+	{"full-pvs", no_argument, 0, OPT_FULL_PVS},
 	{"quiet", no_argument, 0, 'q'},
 	{"verbose", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
@@ -139,6 +143,13 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case OPT_PORTAL_LIMIT:
 				options.portal_limit = atoi (optarg);
+				break;
+			case OPT_FAT_PVS:
+				options.fat_pvs = true;
+				options.no_auto_pvs = true;
+				break;
+			case OPT_FULL_PVS:
+				options.fat_pvs = true;
 				break;
 			case 'm':					// minimal vis
 				options.minimal = true;
