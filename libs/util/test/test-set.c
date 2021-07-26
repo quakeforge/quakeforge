@@ -109,6 +109,27 @@ make_not_55 (void)
 	return set_invert (make_55 ());
 }
 
+static set_t *
+expand_3xSIZEm1 (set_t *set, const set_t *x)
+{
+	set_expand (set, 3 * SIZE - 1);
+	return set;
+}
+
+static set_t *
+expand_3xSIZEp1 (set_t *set, const set_t *x)
+{
+	set_expand (set, 3 * SIZE + 1);
+	return set;
+}
+
+static set_t *
+expand_3xSIZE (set_t *set, const set_t *x)
+{
+	set_expand (set, 3 * SIZE);
+	return set;
+}
+
 struct {
 	setup_func  set1;
 	setup_func  set2;
@@ -135,6 +156,11 @@ struct {
 	{make_0_to_SIZEm1,        make_everything, set_reverse_difference,
 		check_size, SIZE, "{64 ...}"
 	},
+	{make_SIZE,              0, expand_3xSIZEm1, check_size, 3 * SIZE,
+		"{64}"},
+	{make_SIZE,              0, expand_3xSIZE, check_size, 3 * SIZE, "{64}"},
+	{make_SIZE,              0, expand_3xSIZEp1, check_size,
+		3 * SIZE + SET_BITS, "{64}"},
 	{make_everything, make_empty, 0, set_is_subset,      1, 0},
 	{make_everything, make_empty, 0, set_is_equivalent,   0, 0},
 	{make_everything, make_empty, 0, set_is_intersecting, 0, 0},

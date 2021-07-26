@@ -57,6 +57,10 @@ typedef uint32_t set_bits_t;
 #define SET_ONE ((set_bits_t) 1)
 #define SET_TEST_MEMBER(s, x) \
 	((s)->map[(x) / SET_BITS] & (SET_ONE << ((x) % SET_BITS)))
+#define SET_STATIC_INIT(x, alloc) { \
+	.size = SET_SIZE (x), \
+	.map = alloc (SET_SIZE (x) / 8), \
+}
 
 /** Represent a set using a bitmap.
 
@@ -129,9 +133,11 @@ set_t *set_new_r (set_pool_t *set_pool);
 
 	\param size		The number of elements for which space is to be allocated.
 	\return			The newly created, empty set.
+	\note \a size is the actual amount of elements, not the number of the
+	highest element (ie, for values 0..n, size is n + 1).
 */
-set_t *set_new_size (int size);
-set_t *set_new_size_r (set_pool_t *set_pool, int size);
+set_t *set_new_size (unsigned size);
+set_t *set_new_size_r (set_pool_t *set_pool, unsigned size);
 
 /** Delete a set that is no longer needed.
 
@@ -139,6 +145,18 @@ set_t *set_new_size_r (set_pool_t *set_pool, int size);
 */
 void set_delete (set_t *set);
 void set_delete_r (set_pool_t *set_pool, set_t *set);
+
+/** Pre-expand a set with space for the specified element
+
+	Has no effect if the set is already large enough to hold the specified
+	element.
+
+	\param set      The set to be expanded
+	\param size		The minimum number of elements representable by the set
+	\note \a size is the actual amount of elements, not the number of the
+	highest element (ie, for values 0..n, size is n + 1).
+*/
+void set_expand (set_t *set, unsigned size);
 
 /** Add an element to a set.
 

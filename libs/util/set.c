@@ -111,16 +111,15 @@ set_delete (set_t *set)
 	set_delete_r (&static_set_pool, set);
 }
 
-static void
-set_expand (set_t *set, unsigned x)
+void
+set_expand (set_t *set, unsigned size)
 {
 	set_bits_t *map = set->map;
-	size_t      size;
 
-	if (x <= set->size)
+	if (size <= set->size)
 		return;
 
-	size = SET_SIZE (x);
+	size = SET_SIZE (size - 1);
 	set->map = malloc (size / 8);
 	memcpy (set->map, map, set->size / 8);
 	memset (set->map + SET_WORDS (set), 0, (size - set->size) / 8);
@@ -130,7 +129,7 @@ set_expand (set_t *set, unsigned x)
 }
 
 inline set_t *
-set_new_size_r (set_pool_t *set_pool, int size)
+set_new_size_r (set_pool_t *set_pool, unsigned size)
 {
 	set_t      *set;
 
@@ -141,7 +140,7 @@ set_new_size_r (set_pool_t *set_pool, int size)
 }
 
 set_t *
-set_new_size (int size)
+set_new_size (unsigned size)
 {
 	return set_new_size_r (&static_set_pool, size);
 }
