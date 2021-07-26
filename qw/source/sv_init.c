@@ -214,6 +214,31 @@ SV_SaveSpawnparms (void)
 	}
 }
 
+static set_t *
+sv_alloc_vis_array (unsigned numleafs)
+{
+	unsigned    size = SET_SIZE (numleafs);
+
+	if (size > SET_DEFMAP_SIZE * SET_BITS) {
+		set_t      *sets = Hunk_Alloc (numleafs * (sizeof (set_t) + size / 8));
+		unsigned    words = size / SET_BITS;
+		set_bits_t *bits = (set_bits_t *) (&sets[numleafs] + 1);
+		for (unsigned i = 0; i < numleafs; i++) {
+			sets[i].size = size;
+			sets[i].map = bits;
+			bits += words;
+		}
+		return sets;
+	} else {
+		set_t      *sets = Hunk_Alloc (numleafs * (sizeof (set_t) + size / 8));
+		for (unsigned i = 0; i < numleafs; i++) {
+			sets[i].size = size;
+			sets[i].map = sets[i].defmap;
+		}
+		return sets;
+	}
+}
+
 /*
 	SV_CalcPHS
 
@@ -223,16 +248,15 @@ SV_SaveSpawnparms (void)
 static void
 SV_CalcPHS (void)
 {
-	int			count, num, vcount, i;
+	int64_t     count, vcount;
+	int         num, i;
 
 	SV_Printf ("Building PHS...\n");
-
 	num = sv.worldmodel->brush.numleafs;
 
-	sv.pvs = Hunk_Alloc (num * sizeof (set_t));
+	sv.pvs = sv_alloc_vis_array (num);
 	vcount = 0;
 	for (i = 0; i < num; i++) {
-		sv.pvs[i] = (set_t) SET_STATIC_INIT (num, Hunk_Alloc);
 		Mod_LeafPVS_set (sv.worldmodel->brush.leafs + i, sv.worldmodel, 0xff,
 						 &sv.pvs[i]);
 		if (i == 0)
@@ -243,10 +267,9 @@ SV_CalcPHS (void)
 		}
 	}
 
-	sv.phs = Hunk_Alloc (num * sizeof (set_t));
+	sv.phs = sv_alloc_vis_array (num);
 	count = 0;
 	for (i = 0; i < num; i++) {
-		sv.phs[i] = (set_t) SET_STATIC_INIT (num, Hunk_Alloc);
 		set_assign (&sv.phs[i], &sv.pvs[i]);
 
 		for (set_iter_t *iter = set_first (&sv.pvs[i]); iter;
@@ -265,7 +288,7 @@ SV_CalcPHS (void)
 	}
 
 	SV_Printf ("Average leafs visible / hearable / total: %i / %i / %i\n",
-				vcount / num, count / num, num);
+			   (int) (vcount / num), (int) (count / num), num);
 }
 
 static unsigned int
