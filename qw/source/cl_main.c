@@ -1706,7 +1706,7 @@ static void
 CL_Init_Memory (void)
 {
 	int         mem_parm = COM_CheckParm ("-mem");
-	int         mem_size;
+	size_t      mem_size;
 	void       *mem_base;
 
 	cl_mem_size = Cvar_Get ("cl_mem_size", "32", CVAR_NONE, NULL,
@@ -1720,7 +1720,7 @@ CL_Init_Memory (void)
 
 	Cvar_SetFlags (cl_mem_size, cl_mem_size->flags | CVAR_ROM);
 
-	mem_size = (int) (cl_mem_size->value * 1024 * 1024);
+	mem_size = ((size_t) cl_mem_size->value * 1024 * 1024);
 
 	if (mem_size < MINIMUM_MEMORY)
 		Sys_Error ("Only %4.1f megs of memory reported, can't execute game",
@@ -1729,7 +1729,7 @@ CL_Init_Memory (void)
 	mem_base = Sys_Alloc (mem_size);
 
 	if (!mem_base)
-		Sys_Error ("Can't allocate %d", mem_size);
+		Sys_Error ("Can't allocate %zd", mem_size);
 
 	Sys_PageIn (mem_base, mem_size);
 	Memory_Init (mem_base, mem_size);

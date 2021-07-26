@@ -96,7 +96,7 @@ double      oldcon_realtime;
 int			host_framecount;
 int			host_hunklevel;
 int         host_in_game;
-int			minimum_memory;
+size_t      minimum_memory;
 
 client_t   *host_client;				// current client
 
@@ -812,7 +812,7 @@ static void
 Host_Init_Memory (void)
 {
 	int         mem_parm = COM_CheckParm ("-mem");
-	int         mem_size;
+	size_t      mem_size;
 	void       *mem_base;
 
 	if (standard_quake)
@@ -831,7 +831,7 @@ Host_Init_Memory (void)
 
 	Cvar_SetFlags (host_mem_size, host_mem_size->flags | CVAR_ROM);
 
-	mem_size = (int) (host_mem_size->value * 1024 * 1024);
+	mem_size = ((size_t) host_mem_size->value * 1024 * 1024);
 
 	if (mem_size < minimum_memory)
 		Sys_Error ("Only %4.1f megs of memory reported, can't execute game",
@@ -840,7 +840,7 @@ Host_Init_Memory (void)
 	mem_base = Sys_Alloc (mem_size);
 
 	if (!mem_base)
-		Sys_Error ("Can't allocate %d", mem_size);
+		Sys_Error ("Can't allocate %zd", mem_size);
 
 	Sys_PageIn (mem_base, mem_size);
 	Memory_Init (mem_base, mem_size);

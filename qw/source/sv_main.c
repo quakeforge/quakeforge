@@ -2450,7 +2450,7 @@ static void
 SV_Init_Memory (void)
 {
 	int         mem_parm = COM_CheckParm ("-mem");
-	int         mem_size;
+	size_t      mem_size;
 	void       *mem_base;
 
 	sv_mem_size = Cvar_Get ("sv_mem_size", "8", CVAR_NONE, NULL,
@@ -2464,7 +2464,7 @@ SV_Init_Memory (void)
 
 	Cvar_SetFlags (sv_mem_size, sv_mem_size->flags | CVAR_ROM);
 
-	mem_size = (int) (sv_mem_size->value * 1024 * 1024);
+	mem_size = ((size_t) sv_mem_size->value * 1024 * 1024);
 
 	if (mem_size < MINIMUM_MEMORY)
 		Sys_Error ("Only %4.1f megs of memory reported, can't execute game",
@@ -2473,7 +2473,7 @@ SV_Init_Memory (void)
 	mem_base = Sys_Alloc (mem_size);
 
 	if (!mem_base)
-		Sys_Error ("Can't allocate %d", mem_size);
+		Sys_Error ("Can't allocate %zd", mem_size);
 
 	Memory_Init (mem_base, mem_size);
 }

@@ -70,22 +70,21 @@ static qboolean Cache_FreeLRU (void);
 	all big things are allocated on the hunk.
 */
 
-typedef struct memblock_s
-{
-	int         block_size;	// including the header and possibly tiny fragments
+typedef struct memblock_s {
+	size_t      block_size;	// including the header and possibly tiny fragments
+	struct memblock_s *next;
+	struct memblock_s *prev;
+	size_t      size;		// requested size
 	int         tag;		// a tag of 0 is a free block
-	struct memblock_s *next, *prev;
-	int         size;		// requested size
 	int         id;			// should be ZONEID
 	//int         id2;		// pad to 64 bit boundary
 } memblock_t;
 
-struct memzone_s
-{
-	int         size;		// total bytes malloced, including header
-	int         used;		// ammount used, including header
-	int         offset;
-	int         ele_size;
+struct memzone_s {
+	size_t      size;		// total bytes malloced, including header
+	size_t      used;		// ammount used, including header
+	size_t      offset;
+	size_t      ele_size;
 	void        (*error) (void *, const char *);
 	void       *data;
 	memblock_t  blocklist;	// start / end cap for linked list
@@ -108,7 +107,7 @@ z_offset (memzone_t *zone, memblock_t *block)
 }
 
 VISIBLE void
-Z_ClearZone (memzone_t *zone, int size, int zone_offset, int ele_size)
+Z_ClearZone (memzone_t *zone, size_t size, size_t zone_offset, size_t ele_size)
 {
 	memblock_t	*block;
 
@@ -201,7 +200,7 @@ Z_Free (memzone_t *zone, void *ptr)
 }
 
 VISIBLE void *
-Z_Malloc (memzone_t *zone, int size)
+Z_Malloc (memzone_t *zone, size_t size)
 {
 	void	*buf;
 
@@ -210,7 +209,7 @@ Z_Malloc (memzone_t *zone, int size)
 	buf = Z_TagMalloc (zone, size, 1);
 	if (!buf) {
 		const char *msg;
-		msg = nva ("Z_Malloc: failed on allocation of %i bytes",size);
+		msg = nva ("Z_Malloc: failed on allocation of %zd bytes", size);
 		if (zone->error)
 			zone->error (zone->data, msg);
 		Sys_Error ("%s", msg);
@@ -221,7 +220,7 @@ Z_Malloc (memzone_t *zone, int size)
 }
 
 void *
-Z_TagMalloc (memzone_t *zone, int size, int tag)
+Z_TagMalloc (memzone_t *zone, size_t size, int tag)
 {
 	int         extra;
 	int         requested_size = size;
@@ -284,9 +283,9 @@ Z_TagMalloc (memzone_t *zone, int size, int tag)
 }
 
 VISIBLE void *
-Z_Realloc (memzone_t *zone, void *ptr, int size)
+Z_Realloc (memzone_t *zone, void *ptr, size_t size)
 {
-	int         old_size;
+	size_t      old_size;
 	memblock_t *block;
 	void       *old_ptr;
 
@@ -315,7 +314,7 @@ Z_Realloc (memzone_t *zone, void *ptr, int size)
 	ptr = Z_TagMalloc (zone, size, 1);
 	if (!ptr) {
 		const char *msg;
-		msg = nva ("Z_Realloc: failed on allocation of %i bytes", size);
+		msg = nva ("Z_Realloc: failed on allocation of %zd bytes", size);
 		if (zone->error)
 			zone->error (zone->data, msg);
 		Sys_Error ("%s", msg);
@@ -334,7 +333,7 @@ Z_Print (memzone_t *zone)
 {
 	memblock_t	*block;
 
-	Sys_Printf ("zone size: %i  location: %p  used: %i\n",
+	Sys_Printf ("zone size: %zd  location: %p  used: %zd\n",
 				zone->size, zone, zone->used);
 
 	for (block = zone->blocklist.next ; ; block = block->next) {
@@ -386,7 +385,7 @@ Z_SetError (memzone_t *zone, void (*err) (void *, const char *), void *data)
 }
 
 void
-Z_CheckPointer (const memzone_t *zone, const void *ptr, int size)
+Z_CheckPointer (const memzone_t *zone, const void *ptr, size_t size)
 {
 	const memblock_t *block;
 	const char *block_mem;
@@ -411,17 +410,19 @@ Z_CheckPointer (const memzone_t *zone, const void *ptr, int size)
 //============================================================================
 
 typedef struct {
-	int         sentinal;
-	int         size;			// including sizeof(hunk_t), -1 = not allocated
+	int         sentinal1;
+	int         sentinal2;
+	size_t      size;			// including sizeof(hunk_t), -1 = not allocated
 	char        name[8];
-	char        fill[48];		// pad out to 64 bytes
+	// pad out to 64 bytes
+	char        fill[64 - 2 * sizeof (int) - sizeof (size_t) - 8];
 } hunk_t;
 
 byte       *hunk_base;
-int         hunk_size;
-int         hunk_low_used;
-int         hunk_high_used;
-int         hunk_tempmark;
+size_t      hunk_size;
+size_t      hunk_low_used;
+size_t      hunk_high_used;
+size_t      hunk_tempmark;
 
 qboolean    hunk_tempactive;
 
@@ -435,11 +436,11 @@ Hunk_Check (void)
 {
 	hunk_t     *h;
 
-	for (h = (hunk_t *) hunk_base; (byte *) h != hunk_base + hunk_low_used;) {
-		if (h->sentinal != HUNK_SENTINAL)
+	for (h = (hunk_t *) hunk_base; (byte *) h < hunk_base + hunk_low_used; ) {
+		if (h->sentinal1 != HUNK_SENTINAL || h->sentinal2 != HUNK_SENTINAL)
 			Sys_Error ("Hunk_Check: trashed sentinal");
-		if (h->size < (int) sizeof (hunk_t)
-			|| h->size + (byte *) h - hunk_base > hunk_size)
+		if (h->size < sizeof (hunk_t)
+			|| h->size + (byte *) h > hunk_base + hunk_size)
 			Sys_Error ("Hunk_Check: bad size");
 		h = (hunk_t *) ((byte *) h + h->size);
 	}
@@ -468,14 +469,14 @@ Hunk_Print (qboolean all)
 	starthigh = (hunk_t *) (hunk_base + hunk_size - hunk_high_used);
 	endhigh = (hunk_t *) (hunk_base + hunk_size);
 
-	Sys_Printf ("          :%8i total hunk size\n", hunk_size);
+	Sys_Printf ("          :%8zd total hunk size\n", hunk_size);
 	Sys_Printf ("-------------------------\n");
 
 	while (1) {
 		// skip to the high hunk if done with low hunk
 		if (h == endlow) {
 			Sys_Printf ("-------------------------\n");
-			Sys_Printf ("          :%8i REMAINING\n",
+			Sys_Printf ("          :%8zd REMAINING\n",
 						hunk_size - hunk_low_used - hunk_high_used);
 			Sys_Printf ("-------------------------\n");
 			h = starthigh;
@@ -485,10 +486,10 @@ Hunk_Print (qboolean all)
 			break;
 
 		// run consistancy checks
-		if (h->sentinal != HUNK_SENTINAL)
+		if (h->sentinal1 != HUNK_SENTINAL || h->sentinal2 != HUNK_SENTINAL)
 			Sys_Error ("Hunk_Check: trahsed sentinal");
 		if (h->size < (int) sizeof (hunk_t)
-			|| h->size + (byte *) h - hunk_base > hunk_size)
+			|| h->size + (byte *) h > hunk_base + hunk_size)
 			Sys_Error ("Hunk_Check: bad size");
 
 		next = (hunk_t *) ((byte *) h + h->size);
@@ -498,7 +499,7 @@ Hunk_Print (qboolean all)
 
 		// print the single block
 		if (all)
-			Sys_Printf ("%8p :%8i %8.8s\n", h, h->size, h->name);
+			Sys_Printf ("%8p :%8zd %8.8s\n", h, h->size, h->name);
 
 		// print the total
 		if (next == endlow || next == endhigh ||
@@ -517,14 +518,14 @@ Hunk_Print (qboolean all)
 }
 
 static void
-Hunk_FreeToHighMark (int mark)
+Hunk_FreeToHighMark (size_t mark)
 {
 	if (hunk_tempactive) {
 		hunk_tempactive = false;
 		Hunk_FreeToHighMark (hunk_tempmark);
 	}
-	if (mark < 0 || mark > hunk_high_used)
-		Sys_Error ("Hunk_FreeToHighMark: bad mark %i", mark);
+	if (mark > hunk_high_used)
+		Sys_Error ("Hunk_FreeToHighMark: bad mark %zd", mark);
 	memset (hunk_base + hunk_size - hunk_high_used, 0, hunk_high_used - mark);
 	hunk_high_used = mark;
 }
@@ -541,16 +542,13 @@ Hunk_HighMark (void)
 }
 
 VISIBLE void *
-Hunk_AllocName (int size, const char *name)
+Hunk_AllocName (size_t size, const char *name)
 {
 	hunk_t     *h;
 
 #ifdef PARANOID
 	Hunk_Check ();
 #endif
-
-	if (size < 0)
-		Sys_Error ("Hunk_Alloc: bad size: %i", size);
 
 	size = sizeof (hunk_t) + ((size + HUNK_ALIGN - 1) & ~(HUNK_ALIGN - 1));
 
@@ -565,7 +563,7 @@ Hunk_AllocName (int size, const char *name)
 		Cache_Profile ();
 		Sys_Error
 			("Not enough RAM allocated.  Try starting using \"-mem %d\" on "
-			 "the %s command line. (%d -  %d - %d < %d)", mem,
+			 "the %s command line. (%zd -  %zd - %zd < %zd)", mem,
 			 PACKAGE_NAME, hunk_size, hunk_low_used, hunk_high_used, size);
 	}
 
@@ -577,7 +575,8 @@ Hunk_AllocName (int size, const char *name)
 	memset (h, 0, size);
 
 	h->size = size;
-	h->sentinal = HUNK_SENTINAL;
+	h->sentinal1 = HUNK_SENTINAL;
+	h->sentinal2 = HUNK_SENTINAL;
 	memcpy (h->name, name, 8);
 	h->name[7] = 0;
 
@@ -585,33 +584,30 @@ Hunk_AllocName (int size, const char *name)
 }
 
 VISIBLE void *
-Hunk_Alloc (int size)
+Hunk_Alloc (size_t size)
 {
 	return Hunk_AllocName (size, "unknown");
 }
 
-VISIBLE int
+VISIBLE size_t
 Hunk_LowMark (void)
 {
 	return hunk_low_used;
 }
 
 VISIBLE void
-Hunk_FreeToLowMark (int mark)
+Hunk_FreeToLowMark (size_t mark)
 {
-	if (mark < 0 || mark > hunk_low_used)
-		Sys_Error ("Hunk_FreeToLowMark: bad mark %i", mark);
+	if (mark > hunk_low_used)
+		Sys_Error ("Hunk_FreeToLowMark: bad mark %zd", mark);
 	memset (hunk_base + mark, 0, hunk_low_used - mark);
 	hunk_low_used = mark;
 }
 
 static void *
-Hunk_HighAlloc (int size)
+Hunk_HighAlloc (size_t size)
 {
 	hunk_t     *h;
-
-	if (size < 0)
-		Sys_Error ("Hunk_HighAlloc: bad size: %i", size);
 
 	if (hunk_tempactive) {
 		Hunk_FreeToHighMark (hunk_tempmark);
@@ -624,14 +620,15 @@ Hunk_HighAlloc (int size)
 	size = sizeof (hunk_t) + ((size + HUNK_ALIGN - 1) & ~(HUNK_ALIGN - 1));
 
 	if (hunk_size - hunk_low_used - hunk_high_used < size) {
-		Sys_Printf ("Hunk_HighAlloc: failed on %i bytes\n", size);
+		Sys_Printf ("Hunk_HighAlloc: failed on %zd bytes\n", size);
 		return NULL;
 	}
 
 	hunk_high_used += size;
 
 	h = (void *) (hunk_base + hunk_size - hunk_high_used);
-	h->sentinal = HUNK_SENTINAL;
+	h->sentinal1 = HUNK_SENTINAL;
+	h->sentinal2 = HUNK_SENTINAL;
 	h->size = size;
 	h->name[0] = 0;
 	return h + 1;
@@ -643,7 +640,7 @@ Hunk_HighAlloc (int size)
 	Return space from the top of the hunk
 */
 VISIBLE void *
-Hunk_TempAlloc (int size)
+Hunk_TempAlloc (size_t size)
 {
 	void       *buf;
 
@@ -1006,7 +1003,7 @@ Cache_Free (cache_user_t *c)
 }
 
 VISIBLE void *
-Cache_Alloc (cache_user_t *c, int size, const char *name)
+Cache_Alloc (cache_user_t *c, size_t size, const char *name)
 {
 	cache_system_t *cs;
 
@@ -1014,7 +1011,7 @@ Cache_Alloc (cache_user_t *c, int size, const char *name)
 		Sys_Error ("Cache_Alloc: already allocated");
 
 	if (size <= 0)
-		Sys_Error ("Cache_Alloc: size %i", size);
+		Sys_Error ("Cache_Alloc: size %zd", size);
 
 	size = (size + sizeof (cache_system_t) + HUNK_ALIGN - 1) & ~(HUNK_ALIGN-1);
 
@@ -1120,7 +1117,7 @@ Cache_ReadLock (cache_user_t *c)
 //============================================================================
 
 VISIBLE void
-Memory_Init (void *buf, int size)
+Memory_Init (void *buf, size_t size)
 {
 	hunk_base = buf;
 	hunk_size = size;
