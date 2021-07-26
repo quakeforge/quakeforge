@@ -32,6 +32,7 @@
 #include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/mathlib.h"
+#include "QF/set.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
@@ -388,24 +389,20 @@ SV_ClearDatagram (void)
   crosses a waterline.
 */
 
-int         fatbytes;
-byte        fatpvs[MAP_PVS_BYTES];
+static set_t *fatpvs;
 
 static void
 SV_AddToFatPVS (vec3_t org, mnode_t *node)
 {
-	int         i;
 	float       d;
-	byte       *pvs;
 	plane_t    *plane;
 
 	while (1) {
 		// if this is a leaf, accumulate the pvs bits
 		if (node->contents < 0) {
 			if (node->contents != CONTENTS_SOLID) {
-				pvs = Mod_LeafPVS ((mleaf_t *) node, sv.worldmodel);
-				for (i = 0; i < fatbytes; i++)
-					fatpvs[i] |= pvs[i];
+				set_union (fatpvs, Mod_LeafPVS ((mleaf_t *) node,
+												sv.worldmodel));
 			}
 			return;
 		}
@@ -429,11 +426,14 @@ SV_AddToFatPVS (vec3_t org, mnode_t *node)
   Calculates a PVS that is the inclusive or of all leafs within 8 pixels of the
   given point.
 */
-static byte       *
+static set_t *
 SV_FatPVS (vec3_t org)
 {
-	fatbytes = (sv.worldmodel->brush.numleafs + 31) >> 3;
-	memset (fatpvs, 0, fatbytes);
+	if (!fatpvs) {
+		fatpvs = set_new_size (sv.worldmodel->brush.numleafs);
+	}
+	set_expand (fatpvs, sv.worldmodel->brush.numleafs);
+	set_empty (fatpvs);
 	SV_AddToFatPVS (org, sv.worldmodel->brush.nodes);
 	return fatpvs;
 }
@@ -444,7 +444,7 @@ static void
 SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 {
 	int         bits, e, i;
-	byte       *pvs;
+	set_t      *pvs;
 	float       miss;
 	vec3_t      org;
 	edict_t    *ent;
@@ -473,7 +473,7 @@ SV_WriteEntitiesToClient (edict_t *clent, sizebuf_t *msg)
 				continue;
 
 			for (el = SVdata (ent)->leafs; el; el = el->next) {
-				if (pvs[el->leafnum >> 3] & (1 << (el->leafnum & 7)))
+				if (set_is_member (pvs, el->leafnum))
 					break;
 			}
 

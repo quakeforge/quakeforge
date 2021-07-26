@@ -271,7 +271,7 @@ R_MarkLights (const vec3_t lightorigin, dlight_t *light, int lightnum,
 	} else {
 		float       radius = light->radius;
 		vec3_t      mins, maxs;
-		int         leafnum = 0;
+		unsigned    leafnum = 0;
 		byte       *in = pvsleaf->compressed_vis;
 		byte        vis_bits;
 

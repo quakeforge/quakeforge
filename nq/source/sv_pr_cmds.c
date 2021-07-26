@@ -42,6 +42,7 @@
 #include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/ruamoko.h"
+#include "QF/set.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
@@ -539,12 +540,11 @@ PF_checkpos (progs_t *pr)
 {
 }
 
-byte        checkpvs[MAP_PVS_BYTES];
+static set_t *checkpvs;
 
 static int
 PF_newcheckclient (progs_t *pr, int check)
 {
-	byte       *pvs;
 	edict_t    *ent;
 	int         i;
 	mleaf_t    *leaf;
@@ -584,8 +584,10 @@ PF_newcheckclient (progs_t *pr, int check)
 	// get the PVS for the entity
 	VectorAdd (SVvector (ent, origin), SVvector (ent, view_ofs), org);
 	leaf = Mod_PointInLeaf (org, sv.worldmodel);
-	pvs = Mod_LeafPVS (leaf, sv.worldmodel);
-	memcpy (checkpvs, pvs, (sv.worldmodel->brush.numleafs + 7) >> 3);
+	if (!checkpvs) {
+		checkpvs = set_new_size (sv.worldmodel->brush.numleafs);
+	}
+	set_assign (checkpvs, Mod_LeafPVS (leaf, sv.worldmodel));
 
 	return i;
 }
@@ -631,7 +633,7 @@ PF_checkclient (progs_t *pr)
 	VectorAdd (SVvector (self, origin), SVvector (self, view_ofs), view);
 	leaf = Mod_PointInLeaf (view, sv.worldmodel);
 	l = (leaf - sv.worldmodel->brush.leafs) - 1;
-	if ((l < 0) || !(checkpvs[l >> 3] & (1 << (l & 7)))) {
+	if (!set_is_member (checkpvs, l)) {
 		c_notvis++;
 		RETURN_EDICT (pr, sv.edicts);
 		return;

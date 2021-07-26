@@ -86,7 +86,7 @@ typedef struct {
 									// struct edict_s is variable sized, but can
 									// be used to reference the world ent
 
-	byte		*pvs, *phs;			// fully expanded and decompressed
+	struct set_s *pvs, *phs;			// fully expanded and decompressed
 
 	//antilag
 	float       lagentsfrac;

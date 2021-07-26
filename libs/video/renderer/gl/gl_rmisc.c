@@ -184,11 +184,10 @@ register_textures (mod_brush_t *brush)
 void
 gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
-	int         i;
 	texture_t  *tex;
 	mod_brush_t *brush;
 
-	for (i = 0; i < 256; i++)
+	for (int i = 0; i < 256; i++)
 		d_lightstylevalue[i] = 264;		// normal light value
 
 	memset (&r_worldentity, 0, sizeof (r_worldentity));
@@ -198,7 +197,7 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	R_FreeAllEntities ();
 
 	// clear out efrags in case the level hasn't been reloaded
-	for (i = 0; i < brush->numleafs; i++)
+	for (unsigned i = 0; i < brush->numleafs; i++)
 		brush->leafs[i].efrags = NULL;
 
 	// Force a vis update
@@ -212,7 +211,7 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	// identify sky texture
 	gl_mirrortexturenum = -1;
 	gl_R_ClearTextures ();
-	for (i = 0; i < brush->numtextures; i++) {
+	for (int i = 0; i < brush->numtextures; i++) {
 		tex = brush->textures[i];
 		if (!tex)
 			continue;
@@ -226,7 +225,7 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	gl_R_InitSurfaceChains (brush);
 	gl_R_AddTexture (r_notexture_mip);
 	register_textures (brush);
-	for (i = 0; i < num_models; i++) {
+	for (int i = 0; i < num_models; i++) {
 		if (!models[i])
 			continue;
 		if (*models[i]->path == '*')

@@ -47,6 +47,7 @@
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
+#include "QF/set.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
@@ -54,8 +55,6 @@
 
 #include "compat.h"
 #include "mod_internal.h"
-
-static byte mod_novis[MAP_PVS_BYTES];
 
 VISIBLE cvar_t		*gl_sky_divide; //FIXME visibility?
 VISIBLE int   mod_lightmap_bytes = 1;	//FIXME should this be visible?
@@ -87,8 +86,9 @@ Mod_PointInLeaf (const vec3_t p, model_t *model)
 
 static inline void
 Mod_DecompressVis_set (const byte *in, const mod_brush_t *brush, byte defvis,
-					   byte *out)
+					   set_t *pvs)
 {
+	byte       *out = (byte *) pvs->map;
 	byte       *start = out;
 	int			row, c;
 
@@ -119,8 +119,9 @@ Mod_DecompressVis_set (const byte *in, const mod_brush_t *brush, byte defvis,
 
 static inline void
 Mod_DecompressVis_mix (const byte *in, const mod_brush_t *brush, byte defvis,
-					   byte *out)
+					   set_t *pvs)
 {
+	byte       *out = (byte *) pvs->map;
 	byte       *start = out;
 	int			row, c;
 
@@ -146,16 +147,30 @@ Mod_DecompressVis_mix (const byte *in, const mod_brush_t *brush, byte defvis,
 	} while (out - start < row);
 }
 
-VISIBLE byte *
+VISIBLE set_t *
 Mod_LeafPVS (const mleaf_t *leaf, const model_t *model)
 {
-	static byte decompressed[MAP_PVS_BYTES];
+	static set_t *novis;
+	static set_t *decompressed;
+	unsigned    numvis = model->brush.numleafs;
+
 	if (leaf == model->brush.leafs) {
-		if (!mod_novis[0]) {
-			memset (mod_novis, 0xff, sizeof (mod_novis));
+		if (!novis) {
+			novis = set_new_size (numvis);
 		}
-		return mod_novis;
+		if (!novis->map[0] || SET_SIZE (numvis) > novis->size) {
+			unsigned    excess = SET_SIZE (numvis) - numvis;
+			set_expand (novis, numvis);
+			memset (novis->map, 0xff,
+					SET_WORDS (novis) * sizeof (*novis->map));
+			novis->map[SET_WORDS (novis) - 1] &= (~SET_ZERO) >> excess;
+		}
+		return novis;
 	}
+	if (!decompressed) {
+		decompressed = set_new ();
+	}
+	set_expand (decompressed, numvis);
 	Mod_DecompressVis_set (leaf->compressed_vis, &model->brush, 0xff,
 						   decompressed);
 	return decompressed;
@@ -163,10 +178,14 @@ Mod_LeafPVS (const mleaf_t *leaf, const model_t *model)
 
 VISIBLE void
 Mod_LeafPVS_set (const mleaf_t *leaf, const model_t *model, byte defvis,
-				 byte *out)
+				 set_t *out)
 {
+	unsigned    numvis = model->brush.numleafs;
+	set_expand (out, numvis);
 	if (leaf == model->brush.leafs) {
-		memset (out, defvis, sizeof (mod_novis));
+		unsigned    excess = SET_SIZE (numvis) - numvis;
+		memset (out->map, defvis, SET_WORDS (out) * sizeof (*out->map));
+		out->map[SET_WORDS (out) - 1] &= (~SET_ZERO) >> excess;
 		return;
 	}
 	Mod_DecompressVis_set (leaf->compressed_vis, &model->brush, defvis, out);
@@ -174,12 +193,17 @@ Mod_LeafPVS_set (const mleaf_t *leaf, const model_t *model, byte defvis,
 
 VISIBLE void
 Mod_LeafPVS_mix (const mleaf_t *leaf, const model_t *model, byte defvis,
-				 byte *out)
+				 set_t *out)
 {
+	unsigned    numvis = model->brush.numleafs;
+	set_expand (out, numvis);
 	if (leaf == model->brush.leafs) {
-		for (int i = MAP_PVS_BYTES; i-- > 0; ) {
-			*out++ |= defvis;
+		unsigned    excess = SET_SIZE (numvis) - numvis;
+		byte       *o = (byte *) out->map;
+		for (int i = SET_WORDS (out) * sizeof (*out->map); i-- > 0; ) {
+			*o++ |= defvis;
 		}
+		out->map[SET_WORDS (out) - 1] &= (~SET_ZERO) >> excess;
 		return;
 	}
 	Mod_DecompressVis_mix (leaf->compressed_vis, &model->brush, defvis, out);
@@ -431,11 +455,6 @@ Mod_LoadSubmodels (model_t *mod, bsp_t *bsp)
 
 	out = brush->submodels;
 
-	if (out->visleafs > MAX_MAP_LEAFS) {
-		Sys_Error ("Mod_LoadSubmodels: too many visleafs (%d, max = %d) in %s",
-				   out->visleafs, MAX_MAP_LEAFS, mod->path);
-	}
-
 	if (out->visleafs > 8192)
 		Sys_MaskPrintf (SYS_warn,
 						"%i visleafs exceeds standard limit of 8192.\n",
@@ -654,7 +673,7 @@ Mod_SetParent (mod_brush_t *brush, mnode_t *node, mnode_t *parent)
 static void
 Mod_SetLeafFlags (mod_brush_t *brush)
 {
-	for (int i = 0; i < brush->numleafs; i++) {
+	for (unsigned i = 0; i < brush->numleafs; i++) {
 		int         flags = 0;
 		mleaf_t    *leaf = &brush->leafs[i];
 		for (int j = 0; j < leaf->nummarksurfaces; j++) {
@@ -704,7 +723,7 @@ Mod_LoadNodes (model_t *mod, bsp_t *bsp)
 				out->children[j] = brush->nodes + p;
 			} else {
 				p = ~p;
-				if (p < brush->numleafs) {
+				if ((unsigned) p < brush->numleafs) {
 					out->children[j] = (mnode_t *) (brush->leafs + p);
 				} else {
 					Sys_Printf ("Mod_LoadNodes: invalid leaf index %i "

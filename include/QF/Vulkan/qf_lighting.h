@@ -103,7 +103,7 @@ typedef struct lightingframe_s {
 	};
 	// A fat PVS of leafs visible from visible leafs so hidden lights can
 	// illuminate the leafs visible to the player
-	byte        pvs[MAP_PVS_BYTES];
+	struct set_s *pvs;
 	struct mleaf_s *leaf;	// the last leaf used to generate the pvs
 	qfv_lightvisset_t lightvis;
 } lightingframe_t;
@@ -124,7 +124,7 @@ typedef struct lightingctx_s {
 	qfv_imageset_t lightimages;
 	qfv_lightintset_t lightlayers;
 	qfv_imageviewset_t lightviews;
-	byte        sun_pvs[MAX_MAP_LEAFS];
+	struct set_s *sun_pvs;
 } lightingctx_t;
 
 struct vulkan_ctx_s;

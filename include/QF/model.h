@@ -230,7 +230,7 @@ typedef struct mod_brush_s {
 	int			 numplanes;
 	plane_t		*planes;
 
-	int			 numleafs;		// number of visible leafs, not counting 0
+	unsigned    numleafs;		// number of visible leafs, not counting 0
 	mleaf_t		*leafs;
 
 	int			 numvertexes;
@@ -432,13 +432,12 @@ model_t *Mod_ForName (const char *name, qboolean crash);
 void Mod_TouchModel (const char *name);
 // brush specific
 mleaf_t *Mod_PointInLeaf (const vec3_t p, model_t *model) __attribute__((pure));
-byte *Mod_LeafPVS (const mleaf_t *leaf, const model_t *model);
+struct set_s *Mod_LeafPVS (const mleaf_t *leaf, const model_t *model);
 
-// NOTE: the buffer pointed to by out must be at least MAP_PVS_BYTES in size
 void Mod_LeafPVS_set (const mleaf_t *leaf, const model_t *model, byte defvis,
-					  byte *out);
+					  struct set_s *pvs);
 void Mod_LeafPVS_mix (const mleaf_t *leaf, const model_t *model, byte defvis,
-					  byte *out);
+					  struct set_s *pvs);
 
 void Mod_Print (void);
 

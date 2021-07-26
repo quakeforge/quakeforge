@@ -45,6 +45,7 @@
 #include "QF/plist.h"
 #include "QF/progs.h"
 #include "QF/script.h"
+#include "QF/set.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
@@ -68,12 +69,12 @@
 static vec4f_t  ref_direction = { 0, 0, 1, 0 };
 
 static void
-expand_pvs (byte *pvs, model_t *model)
+expand_pvs (set_t *pvs, model_t *model)
 {
-	byte        base_pvs[MAP_PVS_BYTES];
-	memcpy (base_pvs, pvs, sizeof (base_pvs));
-	for (int i = 0; i < model->brush.numleafs; i++) {
-		if (base_pvs[(unsigned) i / 8] & (1 << ((unsigned) i % 8))) {
+	set_t       base_pvs = SET_STATIC_INIT (model->brush.numleafs, alloca);
+	set_assign (&base_pvs, pvs);
+	for (unsigned i = 0; i < model->brush.numleafs; i++) {
+		if (set_is_member (&base_pvs, i)) {
 			Mod_LeafPVS_mix (model->brush.leafs + i + 1, model, 0, pvs);
 		}
 	}
@@ -99,13 +100,13 @@ find_visible_lights (vulkan_ctx_t *ctx)
 		int         flags = 0;
 
 		if (leaf == model->brush.leafs) {
-			memset (lframe->pvs, 0xff, sizeof (lframe->pvs));
+			set_everything (lframe->pvs);
 		} else {
 			Mod_LeafPVS_set (leaf, model, 0, lframe->pvs);
 			expand_pvs (lframe->pvs, model);
 		}
-		for (int i = 0; i < model->brush.numleafs; i++) {
-			if (lframe->pvs[i / 8] & (1 << (i % 8))) {
+		for (unsigned i = 0; i < model->brush.numleafs; i++) {
+			if (set_is_member (lframe->pvs, i)) {
 				flags |= model->brush.leaf_flags[i + 1];
 			}
 		}
@@ -119,7 +120,7 @@ find_visible_lights (vulkan_ctx_t *ctx)
 		for (size_t i = 0; i < lctx->lightleafs.size; i++) {
 			int         l = lctx->lightleafs.a[i];
 			if ((l == -1 && (flags & SURF_DRAWSKY))
-				|| lframe->pvs[l / 8] & (1 << (l % 8))) {
+				|| set_is_member (lframe->pvs, l)) {
 				lframe->lightvis.a[i] = 1;
 				visible++;
 			}
@@ -307,6 +308,8 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&lctx->frames, frames);
 	lctx->frames.grow = 0;
 
+	lctx->sun_pvs = set_new ();
+
 	lctx->pipeline = Vulkan_CreatePipeline (ctx, "lighting");
 	lctx->layout = Vulkan_CreatePipelineLayout (ctx, "lighting_layout");
 	lctx->sampler = Vulkan_CreateSampler (ctx, "shadow_sampler");
@@ -368,6 +371,8 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET,
 							 shadow_set->a[i],
 							 va (ctx->va_ctx, "lighting:shadow_set:%zd", i));
+
+		lframe->pvs = set_new ();
 
 		DARRAY_INIT (&lframe->lightvis, 16);
 		lframe->leaf = 0;
@@ -551,7 +556,8 @@ parse_sun (lightingctx_t *lctx, plitem_t *entity, model_t *model)
 	//float       sunlight2;
 	vec3_t      sunangle = { 0, -90, 0 };
 
-	memset (lctx->sun_pvs, 0, MAX_MAP_LEAFS);
+	set_expand (lctx->sun_pvs, model->brush.numleafs);
+	set_empty (lctx->sun_pvs);
 	sunlight = parse_float (PL_String (PL_ObjectForKey (entity,
 													    "_sunlight")), 0);
 	//sunlight2 = parse_float (PL_String (PL_ObjectForKey (entity,
@@ -571,9 +577,9 @@ parse_sun (lightingctx_t *lctx, plitem_t *entity, model_t *model)
 
 	// Any leaf with sky surfaces can potentially see the sun, thus put
 	// the sun "in" every leaf with a sky surface
-	for (int l = 0; l < model->brush.numleafs; l++) {
+	for (unsigned l = 0; l < model->brush.numleafs; l++) {
 		if (model->brush.leaf_flags[l] & SURF_DRAWSKY) {
-			lctx->sun_pvs[l / 8] |= 1 << (l % 8);
+			set_add (lctx->sun_pvs, l);
 		}
 	}
 	// any leaf visible from a leaf with a sky surface (and thus the sun)

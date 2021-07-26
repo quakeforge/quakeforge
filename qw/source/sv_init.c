@@ -40,6 +40,7 @@
 #include "QF/info.h"
 #include "QF/msg.h"
 #include "QF/quakefs.h"
+#include "QF/set.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
@@ -222,62 +223,45 @@ SV_SaveSpawnparms (void)
 static void
 SV_CalcPHS (void)
 {
-	byte       *scan;
-	int			bitbyte, count, index, num, rowbytes, rowwords, vcount, i, j,
-				k, l;
-	unsigned int *dest, *src;
+	int			count, num, vcount, i;
 
 	SV_Printf ("Building PHS...\n");
 
 	num = sv.worldmodel->brush.numleafs;
-	rowwords = (num + 31) >> 5;
-	rowbytes = rowwords * 4;
 
-	sv.pvs = Hunk_Alloc (rowbytes * num);
-	scan = sv.pvs;
+	sv.pvs = Hunk_Alloc (num * sizeof (set_t));
 	vcount = 0;
-	for (i = 0; i < num; i++, scan += rowbytes) {
-		memcpy (scan, Mod_LeafPVS (sv.worldmodel->brush.leafs + i,
-								   sv.worldmodel),
-				rowbytes);
+	for (i = 0; i < num; i++) {
+		sv.pvs[i] = (set_t) SET_STATIC_INIT (num, Hunk_Alloc);
+		Mod_LeafPVS_set (sv.worldmodel->brush.leafs + i, sv.worldmodel, 0xff,
+						 &sv.pvs[i]);
 		if (i == 0)
 			continue;
-		for (j = 0; j < num; j++) {
-			if (scan[j >> 3] & (1 << (j & 7))) {
-				vcount++;
-			}
+		for (set_iter_t *iter = set_first (&sv.pvs[i]); iter;
+			 iter = set_next (iter)) {
+			vcount++;
 		}
 	}
 
-	sv.phs = Hunk_Alloc (rowbytes * num);
+	sv.phs = Hunk_Alloc (num * sizeof (set_t));
 	count = 0;
-	scan = sv.pvs;
-	dest = (unsigned int *) sv.phs;
-	for (i = 0; i < num; i++, dest += rowwords, scan += rowbytes) {
-		memcpy (dest, scan, rowbytes);
-		for (j = 0; j < rowbytes; j++) {
-			bitbyte = scan[j];
-			if (!bitbyte)
-				continue;
-			for (k = 0; k < 8; k++) {
-				if (!(bitbyte & (1 << k)))
-					continue;
-				// or this pvs row into the phs
-				// +1 because pvs is 1 based
-				index = ((j << 3) + k + 1);
-				if (index >= num)
-					continue;
-				src = (unsigned int *) sv.pvs + index * rowwords;
-				for (l = 0; l < rowwords; l++)
-					dest[l] |= src[l];
-			}
+	for (i = 0; i < num; i++) {
+		sv.phs[i] = (set_t) SET_STATIC_INIT (num, Hunk_Alloc);
+		set_assign (&sv.phs[i], &sv.pvs[i]);
+
+		for (set_iter_t *iter = set_first (&sv.pvs[i]); iter;
+			 iter = set_next (iter)) {
+			// or this pvs row into the phs
+			// +1 because pvs is 1 based
+			set_union (&sv.phs[i], &sv.pvs[iter->element + 1]);
 		}
 
 		if (i == 0)
 			continue;
-		for (j = 0; j < num; j++)
-			if (((byte *) dest)[j >> 3] & (1 << (j & 7)))
-				count++;
+		for (set_iter_t *iter = set_first (&sv.phs[i]); iter;
+			 iter = set_next (iter)) {
+			count++;
+		}
 	}
 
 	SV_Printf ("Average leafs visible / hearable / total: %i / %i / %i\n",

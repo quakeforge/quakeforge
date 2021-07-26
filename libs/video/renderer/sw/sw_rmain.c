@@ -164,7 +164,6 @@ sw_R_Init (void)
 void
 R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
-	int         i;
 	mod_brush_t *brush = &worldmodel->brush;
 
 	memset (&r_worldentity, 0, sizeof (r_worldentity));
@@ -174,7 +173,7 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 
 	// clear out efrags in case the level hasn't been reloaded
 	// FIXME: is this one short?
-	for (i = 0; i < brush->numleafs; i++)
+	for (unsigned i = 0; i < brush->numleafs; i++)
 		brush->leafs[i].efrags = NULL;
 
 	if (brush->skytexture)
