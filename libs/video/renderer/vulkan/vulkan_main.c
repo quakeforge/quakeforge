@@ -188,7 +188,7 @@ Vulkan_RenderView (vulkan_ctx_t *ctx)
 	if (speeds) {
 		Sys_Printf ("frame: %g, setup: %g, mark: %g, pushdl: %g, world: %g,"
 					" sky: %g, ents: %g, water: %g, part: %g\n",
-					(t[9] - t[0]) * 1000, (t[1] - t[0]) * 1000,
+					(t[8] - t[0]) * 1000, (t[1] - t[0]) * 1000,
 					(t[2] - t[1]) * 1000, (t[3] - t[2]) * 1000,
 					(t[4] - t[3]) * 1000, (t[5] - t[4]) * 1000,
 					(t[6] - t[5]) * 1000, (t[7] - t[6]) * 1000,
