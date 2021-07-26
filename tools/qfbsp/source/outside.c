@@ -47,8 +47,8 @@ PointInLeaf (node_t *node, const vec3_t point)
 	vec_t       d;
 
 	while (!node->contents) {
-		d = DotProduct (planes[node->planenum].normal, point);
-		node = node->children[d <= planes[node->planenum].dist];
+		d = DotProduct (planes.a[node->planenum].normal, point);
+		node = node->children[d <= planes.a[node->planenum].dist];
 	}
 	return node;
 }

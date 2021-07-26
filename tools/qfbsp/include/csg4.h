@@ -23,6 +23,7 @@
 #define qfbsp_csg4_h
 
 #include "QF/bspfile.h"
+#include "QF/darray.h"
 
 /**	\defgroup qfbsp_csg4 CSG Functions
 	\ingroup qfbsp
@@ -34,7 +35,8 @@ struct visfacet_s;
 struct brushset_s;
 struct surface_s;
 
-extern struct visfacet_s *validfaces[MAX_MAP_PLANES];
+typedef struct DARRAY_TYPE (struct visfacet_s *) visfacetset_t;
+extern visfacetset_t validfaces;
 
 /**	Build the surface lists for the brushset.
 

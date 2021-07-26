@@ -42,8 +42,7 @@
 */
 //@{
 
-int         numbrushplanes;
-plane_t     planes[MAX_MAP_PLANES];
+planeset_t  planes = DARRAY_STATIC_INIT (1024);
 
 int         numbrushfaces;
 mface_t     faces[MAX_FACES];	// beveled clipping hull can generate many extra
@@ -78,7 +77,7 @@ CheckFace (const face_t *f)
 	if (f->points->numpoints < 3)
 		Sys_Error ("CheckFace: %i points", f->points->numpoints);
 
-	VectorCopy (planes[f->planenum].normal, facenormal);
+	VectorCopy (planes.a[f->planenum].normal, facenormal);
 	if (f->planeside)
 		VectorNegate (facenormal, facenormal);
 
@@ -92,14 +91,14 @@ CheckFace (const face_t *f)
 		j = i + 1 == f->points->numpoints ? 0 : i + 1;
 
 		// check the point is on the face plane
-		d = PlaneDiff (p1, &planes[f->planenum]);
+		d = PlaneDiff (p1, &planes.a[f->planenum]);
 
 		// point off plane autofix
 		if (d < -ON_EPSILON || d > ON_EPSILON)
 			if (options.verbosity > 1)
 				printf ("CheckFace: point off plane: %g @ (%g %g %g)\n", d,
 						p1[0], p1[1], p1[2]);
-		VectorMultSub (p1, d, planes[f->planenum].normal, p1);
+		VectorMultSub (p1, d, planes.a[f->planenum].normal, p1);
 
 		// check the edge isn't degenerate
 		p2 = f->points->points[j];
@@ -257,7 +256,6 @@ NormalizePlane (plane_t *dp)
 int
 FindPlane (const plane_t *dplane, int *side)
 {
-	int		 i;
 	plane_t	*dp, pl;
 	vec_t	 dot;
 
@@ -272,8 +270,8 @@ FindPlane (const plane_t *dplane, int *side)
 	else
 		*side = 1;
 
-	dp = planes;
-	for (i = 0; i < numbrushplanes; i++, dp++) {
+	dp = planes.a;
+	for (size_t i = 0; i < planes.size; i++, dp++) {
 		dot = DotProduct (dp->normal, pl.normal);
 		if (dot > 1.0 - ANGLEEPSILON
 			&& fabs(dp->dist - pl.dist) < DISTEPSILON) {	// regular match
@@ -281,14 +279,9 @@ FindPlane (const plane_t *dplane, int *side)
 		}
 	}
 
-	if (numbrushplanes == MAX_MAP_PLANES)
-		Sys_Error ("numbrushplanes == MAX_MAP_PLANES");
+	DARRAY_APPEND (&planes, pl);
 
-	planes[numbrushplanes] = pl;
-
-	numbrushplanes++;
-
-	return numbrushplanes - 1;
+	return planes.size - 1;
 }
 
 /*

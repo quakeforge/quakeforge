@@ -41,7 +41,7 @@ static lumpinfo_t lump_info[] = {
 void
 bspinfo ()
 {
-	printf ("version: %d\n", bsp->header->version);
+	printf ("version: %x\n", bsp->header->version);
 	for (int i = 0; i < HEADER_LUMPS; i++) {
 		lump_t     *lump = &bsp->header->lumps[i];
 		lumpinfo_t *info = &lump_info[i];

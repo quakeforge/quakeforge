@@ -46,7 +46,7 @@
 	tjunction
 */
 
-face_t     *validfaces[MAX_MAP_PLANES];
+visfacetset_t validfaces = DARRAY_STATIC_INIT (1024);
 face_t     *inside, *outside;
 int         brushfaces;
 int         csgfaces;
@@ -134,7 +134,7 @@ ClipInside (int splitplane, int frontside, qboolean precedence)
 	face_t     *frags[2];
 	plane_t    *split;
 
-	split = &planes[splitplane];
+	split = &planes.a[splitplane];
 
 	insidelist = NULL;
 	for (f = inside; f; f = next) {
@@ -195,12 +195,12 @@ SaveOutside (qboolean mirror)
 			newf->contents[0] = f->contents[1];
 			newf->contents[1] = f->contents[0];
 
-			validfaces[planenum] = MergeFaceToList (newf,
-													validfaces[planenum]);
+			validfaces.a[planenum] = MergeFaceToList (newf,
+													  validfaces.a[planenum]);
 		}
 
-		validfaces[planenum] = MergeFaceToList (f, validfaces[planenum]);
-		validfaces[planenum] = FreeMergeListScraps (validfaces[planenum]);
+		validfaces.a[planenum] = MergeFaceToList (f, validfaces.a[planenum]);
+		validfaces.a[planenum] = FreeMergeListScraps (validfaces.a[planenum]);
 	}
 }
 
@@ -234,13 +234,12 @@ BuildSurfaces (void)
 {
 	face_t     *count;
 	face_t    **f;
-	int         i;
 	surface_t  *surfhead, *s;
 
 	surfhead = NULL;
 
-	f = validfaces;
-	for (i = 0; i < numbrushplanes; i++, f++) {
+	f = validfaces.a;
+	for (size_t i = 0; i < planes.size; i++, f++) {
 		if (!*f)
 			continue;					// nothing left on this plane
 
@@ -304,7 +303,8 @@ CSGFaces (brushset_t *bs)
 
 	qprintf ("---- CSGFaces ----\n");
 
-	memset (validfaces, 0, sizeof (validfaces));
+	DARRAY_RESIZE (&validfaces, planes.size);
+	memset (validfaces.a, 0, validfaces.size * sizeof (validfaces.a[0]));
 
 	csgfaces = brushfaces = csgmergefaces = 0;
 

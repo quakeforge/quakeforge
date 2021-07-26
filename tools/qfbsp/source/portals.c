@@ -271,7 +271,7 @@ CutNodePortals_r (node_t *node)
 		return;
 	}
 
-	plane = &planes[node->planenum];
+	plane = &planes.a[node->planenum];
 
 	f = node->children[0];
 	b = node->children[1];
@@ -281,7 +281,7 @@ CutNodePortals_r (node_t *node)
 	/// portals on the node.
 	w = BaseWindingForPlane (plane);
 	for (p = node->portals; p; p = p->next[side]) {
-		clipplane = planes[p->planenum];	// copy the plane
+		clipplane = planes.a[p->planenum];	// copy the plane
 		if (p->nodes[0] == node)
 			side = 0;
 		else if (p->nodes[1] == node) {
@@ -511,7 +511,7 @@ WritePortalFile_r (const node_t *node)
 			// sometimes planes get turned around when they are very near the
 			// changeover point between different axis.  interpret the plane
 			// the same way vis will, and flip the side orders if needed
-			pl = &planes[p->planenum];
+			pl = &planes.a[p->planenum];
 			PlaneFromWinding (w, &plane2);
 			if (DotProduct (pl->normal, plane2.normal) < 0.99) { // backwards..
 				fprintf (pf, "%i %i %i ", w->numpoints,

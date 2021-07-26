@@ -31,6 +31,8 @@
 #ifndef __QF_darray_h
 #define __QF_darray_h
 
+#include <stdlib.h>
+
 #include "QF/sys.h"
 
 /** \defgroup darray Dynamic Arrays

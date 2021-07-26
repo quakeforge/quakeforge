@@ -160,13 +160,6 @@ RecursiveGrowRegion (dface_t *r, face_t *f)
 }
 */
 
-typedef struct {
-	int         numedges;
-	int         edges[2];
-} checkpoint_t;
-
-checkpoint_t checkpoints[MAX_MAP_VERTS];
-
 static void
 CountRealNumbers (void)
 {
@@ -207,8 +200,6 @@ GrowNodeRegion_r (node_t * node)
 //			continue;		// allready grown into an earlier region
 
 		// emit a region
-		if (bsp->numfaces == MAX_MAP_FACES)
-			Sys_Error ("MAX_MAP_FACES");
 		f->outputnumber = bsp->numfaces;
 
 		r.planenum = node->outputplanenum;

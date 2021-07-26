@@ -296,8 +296,6 @@ ReadClipHull (int hullnum)
 	firstclipnode = bsp->numclipnodes;
 
 	for (i = 0; i < n; i++) {
-		if (bsp->numclipnodes == MAX_MAP_CLIPNODES)
-			Sys_Error ("ReadClipHull: MAX_MAP_CLIPNODES");
 		if (fscanf (f, "%d : %f %f %f %f : %d %d\n", &junk, &f1, &f2, &f3, &f4,
 					&c1, &c2) != 7)
 			Sys_Error ("Error parsing %s", options.hullfile);

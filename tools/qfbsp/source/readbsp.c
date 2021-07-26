@@ -101,16 +101,17 @@ static void
 load_planes (void)
 {
 	const dplane_t *p;
+	plane_t     tp = { };
 	int         i;
 
-	memset (planes, 0, sizeof (planes));
+	planes.size = 0;
 	for (i = 0; i < bsp->numplanes; i++) {
 		p = bsp->planes + i;
-		VectorCopy (p->normal, planes[i].normal);
-		planes[i].dist = p->dist;
-		planes[i].type = p->type;
+		VectorCopy (p->normal, tp.normal);
+		tp.dist = p->dist;
+		tp.type = p->type;
+		DARRAY_APPEND (&planes, tp);
 	}
-	numbrushplanes = bsp->numplanes;
 }
 
 static void
