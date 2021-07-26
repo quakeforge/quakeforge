@@ -51,7 +51,8 @@ int
 main (int argc, const char **argv)
 {
 	int         res = 0;
-	size_t      i, j;
+	size_t      i;
+	int         j;
 	vspheref_t  sphere;
 	mtstate_t   mt;
 	double      start, end;
@@ -77,6 +78,7 @@ main (int argc, const char **argv)
 		vec4f_t     cloud[4];
 		vspheref_t  cc;
 		vec_t       r2;
+		vec_t       fr;
 
 		for (j = 0; j < 4; j++) {
 			VectorSet (rnd (&mt), rnd (&mt), rnd (&mt), cloud[j]);
@@ -84,15 +86,13 @@ main (int argc, const char **argv)
 		cc = CircumSphere_vf (cloud, 4);
 		r2 = cc.radius * cc.radius;
 		for (j = 0; j < 4; j++) {
-			if (fabs (VectorDistance_fast (cloud[j], cc.center) - r2)
-				< 1e-3 * r2)
+			vec4f_t     d = cloud[j] - cc.center;
+			fr = dotf (d, d)[0];
+			if (fabs (fr - r2) < 1e-3 * r2)
 				continue;
-			printf ("%d %.9g - %.9g = %.9g\n", (int)j,
-					VectorDistance_fast (cloud[j], cc.center), r2,
-					VectorDistance_fast (cloud[j], cc.center) - r2);
+			printf ("%d %.9g - %.9g = %.9g %.9g\n", j, fr, r2, fr - r2, fabs(fr - r2));
 			printf ("[%.9g %.9g %.9g] - [%.9g %.9g %.9g] = %.9g != %.9g\n",
-					VectorExpand (cloud[j]), VectorExpand (cc.center),
-					VectorDistance_fast (cloud[j], cc.center), r2);
+					VectorExpand (cloud[j]), VectorExpand (cc.center), fr, r2);
 			res = 1;
 		}
 	}
