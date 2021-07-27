@@ -36,6 +36,7 @@ typedef struct {
 	qboolean    minimal;
 	qboolean    no_auto_pvs;
 	qboolean    fat_pvs;
+	qboolean    utf8;
 	int         level;
 	size_t      portal_limit;
 	struct dstring_s *bspfile;

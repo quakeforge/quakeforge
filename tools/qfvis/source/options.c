@@ -51,11 +51,13 @@ enum {
 	OPT_PORTAL_LIMIT,
 	OPT_FAT_PVS,
 	OPT_FULL_PVS,
+	OPT_UTF8,
 };
 
 static struct option const long_options[] = {
 	{"fat-pvs", no_argument, 0, OPT_FAT_PVS},
 	{"full-pvs", no_argument, 0, OPT_FULL_PVS},
+	{"utf8", no_argument, 0, OPT_UTF8},
 	{"quiet", no_argument, 0, 'q'},
 	{"verbose", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
@@ -150,6 +152,9 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case OPT_FULL_PVS:
 				options.fat_pvs = true;
+				break;
+			case OPT_UTF8:
+				options.utf8 = true;
 				break;
 			case 'm':					// minimal vis
 				options.minimal = true;

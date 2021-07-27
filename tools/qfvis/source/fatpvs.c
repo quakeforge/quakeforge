@@ -221,7 +221,7 @@ compress_thread (void *d)
 {
 	fatstats_t  stats = { };
 	int         thread = (intptr_t) d;
-	byte        compressed[(visbytes * 3) / 2];
+	qboolean    rle = options.utf8;
 
 	while (1) {
 		unsigned    leaf_num = next_leaf ();
@@ -231,10 +231,10 @@ compress_thread (void *d)
 		if (leaf_num == ~0u) {
 			break;
 		}
+		sizebuf_t  *compressed = &cmp_pvs[leaf_num];
 		const byte *fat_bytes = (const byte *) fat_pvs[leaf_num].map;
-		int         cmp_bytes = CompressRow (compressed, fat_bytes, num_leafs);
-		SZ_Write (&cmp_pvs[leaf_num], compressed, cmp_bytes);
-		stats.fat_bytes += cmp_bytes;
+		int         bytes = CompressRow (compressed, fat_bytes, num_leafs, rle);
+		stats.fat_bytes += bytes;
 	}
 	update_stats (&stats);
 	return 0;
@@ -275,6 +275,9 @@ CalcFatPVS (void)
 	pvsfile->version = PVS_VERSION;
 	pvsfile->md4_offset = 0;	//FIXME add
 	pvsfile->flags = PVS_IS_FATPVS;
+	if (options.utf8) {
+		pvsfile->flags |= PVS_UTF8_RLE;
+	}
 	pvsfile->visleafs = num_leafs;
 	for (unsigned i = 0; i < num_leafs; i++) {
 		unsigned    size = cmp_pvs[i].cursize;

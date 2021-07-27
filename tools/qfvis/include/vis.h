@@ -214,7 +214,9 @@ void PortalBase (basethread_t *thread, portal_t *portal);
 void PortalFlow (threaddata_t *data, portal_t *portal);
 void CalcAmbientSounds (void);
 
-int CompressRow (byte *dest, const byte *vis, unsigned num_leafs);
+struct sizebuf_s;
+int CompressRow (struct sizebuf_s *dest, const byte *vis, unsigned num_leafs,
+				 int utf8);
 
 void CalcFatPVS (void);
 

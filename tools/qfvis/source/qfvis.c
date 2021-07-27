@@ -54,8 +54,9 @@
 #include "QF/cmem.h"
 #include "QF/dstring.h"
 #include "QF/mathlib.h"
-#include "QF/qtypes.h"
+#include "QF/msg.h"
 #include "QF/quakefs.h"
+#include "QF/sizebuf.h"
 #include "QF/sys.h"
 
 #include "tools/qfvis/include/vis.h"
@@ -784,12 +785,14 @@ RunThreads (void *(*thread_func) (void *), int (*progress)(int, int))
 }
 
 int
-CompressRow (byte *dest, const byte *vis, unsigned num_leafs)
+CompressRow (sizebuf_t *dest, const byte *vis, unsigned num_leafs, int utf8)
 {
 	int         rep, visrow, j;
 	byte       *dest_p;
+	// if we ever need 2GB (32Gb) of vis data for a single leaf...
+	int         maxrep = utf8 ? 0x7fffffff : 255;
 
-	dest_p = dest;
+	dest_p = dest->data;
 	visrow = (num_leafs + 7) >> 3;
 
 	for (j = 0; j < visrow; j++) {
@@ -799,15 +802,21 @@ CompressRow (byte *dest, const byte *vis, unsigned num_leafs)
 
 		rep = 1;
 		for (j++; j < visrow; j++)
-			if (vis[j] || rep == 255)
+			if (vis[j] || rep == maxrep)
 				break;
 			else
 				rep++;
-		*dest_p++ = rep;
+		if (utf8) {
+			dest->cursize = dest_p - dest->data;
+			MSG_WriteUTF8 (dest, rep);
+			dest_p = dest->data + dest->cursize;
+		} else {
+			*dest_p++ = rep;
+		}
 		j--;
 	}
-
-	return dest_p - dest;
+	dest->cursize = dest_p - dest->data;
+	return dest->cursize;
 }
 
 static void
@@ -835,7 +844,11 @@ void
 ClusterFlow (int clusternum)
 {
 	set_t      *visclusters;
-	byte        compressed[MAP_PVS_BYTES];
+	sizebuf_t   compressed = {
+		.maxsize = (bitbytes_l * 3) / 2,
+		.data = alloca ((bitbytes_l * 3) / 2)
+	};
+
 	byte       *outbuffer;
 	int         numvis, i;
 	cluster_t  *cluster;
@@ -846,7 +859,7 @@ ClusterFlow (int clusternum)
 
 	// flow through all portals, collecting visible bits
 
-	memset (compressed, 0, sizeof (compressed));
+	memset (compressed.data, 0, compressed.maxsize);
 	visclusters = set_new ();
 	for (i = 0; i < cluster->numportals; i++) {
 		portal = cluster->portals[i];
@@ -872,9 +885,9 @@ ClusterFlow (int clusternum)
 		printf ("cluster %4i : %4i visible\n", clusternum, numvis);
 	totalvis += numvis;
 
-	i = CompressRow (compressed, outbuffer, numrealleafs);
+	i = CompressRow (&compressed, outbuffer, numrealleafs, 0);
 	cluster->visofs = visdata->size;
-	dstring_append (visdata, (char *) compressed, i);
+	dstring_append (visdata, (char *) compressed.data, i);
 }
 
 static int
