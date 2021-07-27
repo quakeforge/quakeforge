@@ -71,9 +71,9 @@ static vec4f_t  ref_direction = { 0, 0, 1, 0 };
 static void
 expand_pvs (set_t *pvs, model_t *model)
 {
-	set_t       base_pvs = SET_STATIC_INIT (model->brush.numleafs, alloca);
+	set_t       base_pvs = SET_STATIC_INIT (model->brush.visleafs, alloca);
 	set_assign (&base_pvs, pvs);
-	for (unsigned i = 0; i < model->brush.numleafs; i++) {
+	for (unsigned i = 0; i < model->brush.visleafs; i++) {
 		if (set_is_member (&base_pvs, i)) {
 			Mod_LeafPVS_mix (model->brush.leafs + i + 1, model, 0, pvs);
 		}
@@ -105,7 +105,7 @@ find_visible_lights (vulkan_ctx_t *ctx)
 			Mod_LeafPVS_set (leaf, model, 0, lframe->pvs);
 			expand_pvs (lframe->pvs, model);
 		}
-		for (unsigned i = 0; i < model->brush.numleafs; i++) {
+		for (unsigned i = 0; i < model->brush.visleafs; i++) {
 			if (set_is_member (lframe->pvs, i)) {
 				flags |= model->brush.leaf_flags[i + 1];
 			}
@@ -556,7 +556,7 @@ parse_sun (lightingctx_t *lctx, plitem_t *entity, model_t *model)
 	//float       sunlight2;
 	vec3_t      sunangle = { 0, -90, 0 };
 
-	set_expand (lctx->sun_pvs, model->brush.numleafs);
+	set_expand (lctx->sun_pvs, model->brush.visleafs);
 	set_empty (lctx->sun_pvs);
 	sunlight = parse_float (PL_String (PL_ObjectForKey (entity,
 													    "_sunlight")), 0);
@@ -577,9 +577,10 @@ parse_sun (lightingctx_t *lctx, plitem_t *entity, model_t *model)
 
 	// Any leaf with sky surfaces can potentially see the sun, thus put
 	// the sun "in" every leaf with a sky surface
-	for (unsigned l = 0; l < model->brush.numleafs; l++) {
+	// however, skip leaf 0 as it is the exterior solid leaf
+	for (unsigned l = 1; l < model->brush.modleafs; l++) {
 		if (model->brush.leaf_flags[l] & SURF_DRAWSKY) {
-			set_add (lctx->sun_pvs, l);
+			set_add (lctx->sun_pvs, l - 1); //pvs is 1-based
 		}
 	}
 	// any leaf visible from a leaf with a sky surface (and thus the sun)

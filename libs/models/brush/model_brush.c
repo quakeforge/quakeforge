@@ -92,7 +92,7 @@ Mod_DecompressVis_set (const byte *in, const mod_brush_t *brush, byte defvis,
 	byte       *start = out;
 	int			row, c;
 
-	row = (brush->numleafs + 7) >> 3;
+	row = (brush->visleafs + 7) >> 3;
 
 	if (!in) {							// no vis info, so make all visible
 		while (row) {
@@ -125,7 +125,7 @@ Mod_DecompressVis_mix (const byte *in, const mod_brush_t *brush, byte defvis,
 	byte       *start = out;
 	int			row, c;
 
-	row = (brush->numleafs + 7) >> 3;
+	row = (brush->visleafs + 7) >> 3;
 
 	if (!in) {							// no vis info, so make all visible
 		while (row) {
@@ -152,7 +152,7 @@ Mod_LeafPVS (const mleaf_t *leaf, const model_t *model)
 {
 	static set_t *novis;
 	static set_t *decompressed;
-	unsigned    numvis = model->brush.numleafs;
+	unsigned    numvis = model->brush.visleafs;
 
 	if (leaf == model->brush.leafs) {
 		if (!novis) {
@@ -180,7 +180,7 @@ VISIBLE void
 Mod_LeafPVS_set (const mleaf_t *leaf, const model_t *model, byte defvis,
 				 set_t *out)
 {
-	unsigned    numvis = model->brush.numleafs;
+	unsigned    numvis = model->brush.visleafs;
 	set_expand (out, numvis);
 	if (leaf == model->brush.leafs) {
 		unsigned    excess = SET_SIZE (numvis) - numvis;
@@ -195,7 +195,7 @@ VISIBLE void
 Mod_LeafPVS_mix (const mleaf_t *leaf, const model_t *model, byte defvis,
 				 set_t *out)
 {
-	unsigned    numvis = model->brush.numleafs;
+	unsigned    numvis = model->brush.visleafs;
 	set_expand (out, numvis);
 	if (leaf == model->brush.leafs) {
 		unsigned    excess = SET_SIZE (numvis) - numvis;
@@ -673,7 +673,7 @@ Mod_SetParent (mod_brush_t *brush, mnode_t *node, mnode_t *parent)
 static void
 Mod_SetLeafFlags (mod_brush_t *brush)
 {
-	for (unsigned i = 0; i < brush->numleafs; i++) {
+	for (unsigned i = 0; i < brush->modleafs; i++) {
 		int         flags = 0;
 		mleaf_t    *leaf = &brush->leafs[i];
 		for (int j = 0; j < leaf->nummarksurfaces; j++) {
@@ -723,12 +723,12 @@ Mod_LoadNodes (model_t *mod, bsp_t *bsp)
 				out->children[j] = brush->nodes + p;
 			} else {
 				p = ~p;
-				if ((unsigned) p < brush->numleafs) {
+				if ((unsigned) p < brush->modleafs) {
 					out->children[j] = (mnode_t *) (brush->leafs + p);
 				} else {
 					Sys_Printf ("Mod_LoadNodes: invalid leaf index %i "
 								"(file has only %i leafs)\n", p,
-								brush->numleafs);
+								brush->modleafs);
 					//map it to the solid leaf
 					out->children[j] = (mnode_t *)(brush->leafs);
 				}
@@ -736,11 +736,11 @@ Mod_LoadNodes (model_t *mod, bsp_t *bsp)
 		}
 	}
 
-	size_t      size = (brush->numleafs + brush->numnodes) * sizeof (mnode_t *);
-	size += brush->numleafs * sizeof (int);
+	size_t      size = (brush->modleafs + brush->numnodes) * sizeof (mnode_t *);
+	size += brush->modleafs * sizeof (int);
 	brush->node_parents = Hunk_AllocName (size, mod->name);
 	brush->leaf_parents = brush->node_parents + brush->numnodes;
-	brush->leaf_flags = (int *) (brush->leaf_parents + brush->numleafs);
+	brush->leaf_flags = (int *) (brush->leaf_parents + brush->modleafs);
 	Mod_SetParent (brush, brush->nodes, NULL);	// sets nodes and leafs
 	Mod_SetLeafFlags (brush);
 }
@@ -759,7 +759,7 @@ Mod_LoadLeafs (model_t *mod, bsp_t *bsp)
 	out = Hunk_AllocName (count * sizeof (*out), mod->name);
 
 	brush->leafs = out;
-	brush->numleafs = count;
+	brush->modleafs = count;
 //	snprintf(s, sizeof (s), "maps/%s.bsp",
 //	Info_ValueForKey(cl.serverinfo,"map"));
 	if (!strncmp ("maps/", mod->path, 5))
@@ -1088,7 +1088,11 @@ Mod_LoadBrushModel (model_t *mod, void *buffer)
 
 		mod->radius = RadiusFromBounds (mod->mins, mod->maxs);
 
-		mod->brush.numleafs = bm->visleafs;
+		mod->brush.visleafs = bm->visleafs;
+		// The bsp file has leafs for all submodes and hulls, so update the
+		// leaf count for this model to be the correct number (which is one
+		// more than the number of visible leafs)
+		mod->brush.modleafs = bm->visleafs + 1;
 
 		if (i < mod->brush.numsubmodels - 1) {
 			// duplicate the basic information

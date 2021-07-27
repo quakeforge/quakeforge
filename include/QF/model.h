@@ -230,7 +230,8 @@ typedef struct mod_brush_s {
 	int			 numplanes;
 	plane_t		*planes;
 
-	unsigned    numleafs;		// number of visible leafs, not counting 0
+	unsigned    modleafs;		///< number of leafs in model, including 0
+	unsigned    visleafs;		///< number of visible leafs, not counting 0
 	mleaf_t		*leafs;
 
 	int			 numvertexes;

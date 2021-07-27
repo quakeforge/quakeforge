@@ -281,13 +281,13 @@ R_MarkLights (const vec3_t lightorigin, dlight_t *light, int lightnum,
 		maxs[0] = lightorigin[0] + radius;
 		maxs[1] = lightorigin[1] + radius;
 		maxs[2] = lightorigin[2] + radius;
-		while (leafnum < brush->numleafs) {
+		while (leafnum < brush->visleafs) {
 			int         b;
 			if (!(vis_bits = *in++)) {
 				leafnum += (*in++) * 8;
 				continue;
 			}
-			for (b = 1; b < 256 && leafnum < brush->numleafs;
+			for (b = 1; b < 256 && leafnum < brush->visleafs;
 				 b <<= 1, leafnum++) {
 				int      m;
 				mleaf_t *leaf  = &brush->leafs[leafnum + 1];

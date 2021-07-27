@@ -97,9 +97,9 @@ static set_t *
 SV_FatPVS (vec3_t org)
 {
 	if (!fatpvs) {
-		fatpvs = set_new_size (sv.worldmodel->brush.numleafs);
+		fatpvs = set_new_size (sv.worldmodel->brush.visleafs);
 	}
-	set_expand (fatpvs, sv.worldmodel->brush.numleafs);
+	set_expand (fatpvs, sv.worldmodel->brush.visleafs);
 	set_empty (fatpvs);
 	SV_AddToFatPVS (org, sv.worldmodel->brush.nodes);
 	return fatpvs;

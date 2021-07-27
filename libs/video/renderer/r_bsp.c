@@ -75,7 +75,7 @@ R_MarkLeaves (void)
 	} else
 		vis = Mod_LeafPVS (r_viewleaf, r_worldentity.renderer.model);
 
-	for (unsigned i = 0; i < brush->numleafs; i++) {
+	for (unsigned i = 0; i < brush->visleafs; i++) {
 		if (set_is_member (vis, i)) {
 			leaf = &brush->leafs[i + 1];
 			if ((c = leaf->nummarksurfaces)) {

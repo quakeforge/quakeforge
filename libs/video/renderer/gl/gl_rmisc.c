@@ -197,7 +197,7 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	R_FreeAllEntities ();
 
 	// clear out efrags in case the level hasn't been reloaded
-	for (unsigned i = 0; i < brush->numleafs; i++)
+	for (unsigned i = 0; i < brush->modleafs; i++)
 		brush->leafs[i].efrags = NULL;
 
 	// Force a vis update

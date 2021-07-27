@@ -585,7 +585,7 @@ PF_newcheckclient (progs_t *pr, int check)
 	VectorAdd (SVvector (ent, origin), SVvector (ent, view_ofs), org);
 	leaf = Mod_PointInLeaf (org, sv.worldmodel);
 	if (!checkpvs) {
-		checkpvs = set_new_size (sv.worldmodel->brush.numleafs);
+		checkpvs = set_new_size (sv.worldmodel->brush.visleafs);
 	}
 	set_assign (checkpvs, Mod_LeafPVS (leaf, sv.worldmodel));
 

@@ -254,13 +254,8 @@ SV_CalcPHS (void)
 	int         num, i;
 
 	SV_Printf ("Building PHS...\n");
-	//numleafs does NOT include the world-surrounding solid leaf at
-	//brush.leafs[0], so brush.leafs is actually [0]..[numleafs]
-	//however, pvs bits also do not include leaf 0 as it should not be
-	//able to see anything (but instead sees everything)
-	//FIXME make numleafs actual number of leafs?
-	num = sv.worldmodel->brush.numleafs + 1;
 
+	num = sv.worldmodel->brush.modleafs;
 	sv.pvs = sv_alloc_vis_array (num);
 	vcount = 0;
 	for (i = 0; i < num; i++) {
