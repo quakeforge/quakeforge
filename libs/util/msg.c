@@ -215,27 +215,27 @@ MSG_WriteUTF8 (sizebuf_t *sb, unsigned utf8)
 		return;					// invalid (FIXME die?)
 	} else if (utf8 & 0x7c000000) {
 		buf = SZ_GetSpace (sb, count = 6);
-		*buf = 0xfc | ((utf8 & 0x40000000) >> 30);	// 1 bit
+		*buf++ = 0xfc | ((utf8 & 0x40000000) >> 30);	// 1 bit
 		utf8 <<= 2;
 	} else if (utf8 & 0x03e00000) {
 		buf = SZ_GetSpace (sb, count = 5);
-		*buf = 0xf8 | ((utf8 & 0x30000000) >> 28);	// 2 bits
+		*buf++ = 0xf8 | ((utf8 & 0x30000000) >> 28);	// 2 bits
 		utf8 <<= 4;
 	} else if (utf8 & 0x001f0000) {
 		buf = SZ_GetSpace (sb, count = 4);
-		*buf = 0xf0 | ((utf8 & 0x001c0000) >> 18);	// 3 bits
+		*buf++ = 0xf0 | ((utf8 & 0x001c0000) >> 18);	// 3 bits
 		utf8 <<= 14;
 	} else if (utf8 & 0x0000f800) {
 		buf = SZ_GetSpace (sb, count = 3);
-		*buf = 0xe0 | ((utf8 & 0x0000f000) >> 12);	// 4 bits
+		*buf++ = 0xe0 | ((utf8 & 0x0000f000) >> 12);	// 4 bits
 		utf8 <<= 20;
 	} else if (utf8 & 0x00000780) {
 		buf = SZ_GetSpace (sb, count = 2);
-		*buf = 0xc0 | ((utf8 & 0x00000780) >> 7);	// 5 bits
-		utf8 <<= 25;
+		*buf++ = 0xc0 | ((utf8 & 0x000007c0) >> 6);	// 5 bits
+		utf8 <<= 26;
 	} else {
 		buf = SZ_GetSpace (sb, count = 1);
-		*buf = utf8;
+		*buf++ = utf8;
 		return;
 	}
 	while (--count) {
