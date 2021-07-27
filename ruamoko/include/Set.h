@@ -25,7 +25,7 @@ typedef struct set_iter_s *set_iter_t;
 @extern int set_is_equivalent (set_t *s1, set_t *s2);
 @extern int set_is_subset (set_t *set, set_t *sub);
 @extern int set_is_member (set_t *set, unsigned x);
-@extern unsigned set_size (set_t *set);
+@extern unsigned set_count (set_t *set);
 @extern set_iter_t *set_first (set_t *set);
 @extern set_iter_t *set_next (set_iter_t *set_iter);
 @extern string set_as_string (set_t *set);

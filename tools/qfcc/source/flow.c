@@ -1300,12 +1300,12 @@ flow_find_successors (flowgraph_t *graph)
 				set_add (node->successors, graph->num_nodes + 1);
 			}
 		}
-		graph->num_edges += set_size (node->successors);
+		graph->num_edges += set_count (node->successors);
 	}
 	// set the successor for the entry dummy node to the real entry node
 	node = graph->nodes[graph->num_nodes];
 	set_add (node->successors, 0);
-	graph->num_edges += set_size (node->successors);
+	graph->num_edges += set_count (node->successors);
 }
 
 static void

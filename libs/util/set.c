@@ -551,7 +551,7 @@ set_is_member (const set_t *set, unsigned x)
 }
 
 unsigned
-set_size (const set_t *set)
+set_count (const set_t *set)
 {
 	unsigned    count = 0;
 	unsigned    i;

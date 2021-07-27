@@ -364,11 +364,11 @@ bi_set_is_member (progs_t *pr)
 }
 
 static void
-bi_set_size (progs_t *pr)
+bi_set_count (progs_t *pr)
 {
 	bi_set_t   *set = get_set (pr, __FUNCTION__, P_INT (pr, 0));
 
-	R_INT (pr) = set_size (set->set);
+	R_INT (pr) = set_count (set->set);
 }
 
 static void
@@ -645,7 +645,7 @@ bi_i_Set__size (progs_t *pr)
 
 	PR_RESET_PARAMS (pr);
 	P_INT (pr, 0) = set_obj->set;
-	bi_set_size (pr);
+	bi_set_count (pr);
 }
 
 static void
@@ -696,7 +696,7 @@ static builtin_t builtins[] = {
 	{"set_is_equivalent",		bi_set_is_equivalent,		-1},
 	{"set_is_subset",			bi_set_is_subset,			-1},
 	{"set_is_member",			bi_set_is_member,			-1},
-	{"set_size",				bi_set_size,				-1},
+	{"set_count",				bi_set_count,				-1},
 	{"set_first",				bi_set_first,				-1},
 	{"set_next",				bi_set_next,				-1},
 	{"set_as_string",			bi_set_as_string,			-1},

@@ -340,7 +340,7 @@ int set_is_member (const set_t *set, unsigned x) __attribute__((pure));
 	\return			The number of (non-)members. Both empty sets and sets of
 					evertything will return 0.
 */
-unsigned set_size (const set_t *set) __attribute__((pure));
+unsigned set_count (const set_t *set) __attribute__((pure));
 
 /** Find the first "member" of the set.
 

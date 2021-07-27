@@ -858,7 +858,7 @@ ClusterFlow (int clusternum)
 
 	set_add (visclusters, clusternum);
 
-	numvis = set_size (visclusters);
+	numvis = set_count (visclusters);
 
 	// expand to cluster->leaf PVS
 	ClusterFlowExpand (visclusters, outbuffer);
