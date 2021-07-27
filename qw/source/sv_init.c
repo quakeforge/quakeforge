@@ -217,12 +217,14 @@ SV_SaveSpawnparms (void)
 static set_t *
 sv_alloc_vis_array (unsigned numleafs)
 {
-	unsigned    size = SET_SIZE (numleafs);
+	// the passed in numleafs is the true number of leafs in the map and thus
+	// does include leaf 0, but pvs bits do not include leaf 0
+	unsigned    size = SET_SIZE (numleafs - 1);
 
 	if (size > SET_DEFMAP_SIZE * SET_BITS) {
 		set_t      *sets = Hunk_Alloc (numleafs * (sizeof (set_t) + size / 8));
 		unsigned    words = size / SET_BITS;
-		set_bits_t *bits = (set_bits_t *) (&sets[numleafs] + 1);
+		set_bits_t *bits = (set_bits_t *) (&sets[numleafs]);
 		for (unsigned i = 0; i < numleafs; i++) {
 			sets[i].size = size;
 			sets[i].map = bits;
@@ -230,7 +232,7 @@ sv_alloc_vis_array (unsigned numleafs)
 		}
 		return sets;
 	} else {
-		set_t      *sets = Hunk_Alloc (numleafs * (sizeof (set_t) + size / 8));
+		set_t      *sets = Hunk_Alloc (numleafs * sizeof (set_t));
 		for (unsigned i = 0; i < numleafs; i++) {
 			sets[i].size = size;
 			sets[i].map = sets[i].defmap;
@@ -252,7 +254,12 @@ SV_CalcPHS (void)
 	int         num, i;
 
 	SV_Printf ("Building PHS...\n");
-	num = sv.worldmodel->brush.numleafs;
+	//numleafs does NOT include the world-surrounding solid leaf at
+	//brush.leafs[0], so brush.leafs is actually [0]..[numleafs]
+	//however, pvs bits also do not include leaf 0 as it should not be
+	//able to see anything (but instead sees everything)
+	//FIXME make numleafs actual number of leafs?
+	num = sv.worldmodel->brush.numleafs + 1;
 
 	sv.pvs = sv_alloc_vis_array (num);
 	vcount = 0;
