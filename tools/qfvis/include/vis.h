@@ -41,6 +41,7 @@
 #include <pthread.h>
 extern pthread_rwlock_t *global_lock;
 extern pthread_rwlock_t *portal_locks;
+extern pthread_rwlock_t *stats_lock;
 
 #define	WRLOCK(l) \
 	do { \
@@ -212,6 +213,8 @@ void ClusterFlow (int clusternum);
 void PortalBase (basethread_t *thread, portal_t *portal);
 void PortalFlow (threaddata_t *data, portal_t *portal);
 void CalcAmbientSounds (void);
+
+int CompressRow (byte *dest, const byte *vis, unsigned num_leafs);
 
 void CalcFatPVS (void);
 

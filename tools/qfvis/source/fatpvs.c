@@ -28,10 +28,14 @@
 # include "config.h"
 #endif
 
+#include <string.h>
 #include <stdlib.h>
 
 #include "QF/bspfile.h"
+#include "QF/pvsfile.h"
+#include "QF/quakefs.h"
 #include "QF/set.h"
+#include "QF/sizebuf.h"
 #include "QF/sys.h"
 
 #include "tools/qfvis/include/options.h"
@@ -40,9 +44,29 @@
 static set_pool_t *set_pool;
 static set_t *base_pvs;
 static set_t *fat_pvs;
+static sizebuf_t *cmp_pvs;
 
 static unsigned num_leafs;
+static unsigned visbytes;
 static unsigned work_leaf;
+
+typedef struct {
+	long        pvs_visible;
+	long        fat_visible;
+	long        fat_bytes;
+} fatstats_t;
+
+fatstats_t  fatstats;
+
+static void
+update_stats (fatstats_t *stats)
+{
+	WRLOCK (stats_lock);
+	fatstats.pvs_visible += stats->pvs_visible;
+	fatstats.fat_visible += stats->fat_visible;
+	fatstats.fat_bytes += stats->fat_bytes;
+	UNLOCK (stats_lock);
+}
 
 static int
 print_progress (int prev_prog, int spinner_ind)
@@ -103,8 +127,8 @@ decompress_vis (const byte *in, unsigned numleafs, set_t *pvs)
 static void *
 decompress_thread (void *d)
 {
+	fatstats_t  stats = { };
 	int         thread = (intptr_t) d;
-	int64_t     count = 0;
 
 	while (1) {
 		unsigned    leaf_num = next_leaf ();
@@ -112,7 +136,7 @@ decompress_thread (void *d)
 		if (working)
 			working[thread] = leaf_num;
 		if (leaf_num == ~0u) {
-			return 0;
+			break;
 		}
 		byte       *visdata = 0;
 		dleaf_t    *leaf = &bsp->leafs[leaf_num];
@@ -123,20 +147,17 @@ decompress_thread (void *d)
 		if (leaf_num == 0) {
 			continue;
 		}
-		for (set_iter_t *iter = set_first_r (&set_pool[thread],
-											 &base_pvs[leaf_num]);
-			 iter;
-			 iter = set_next_r (&set_pool[thread], iter)) {
-			count++;
-		}
+		stats.pvs_visible += set_count (&base_pvs[leaf_num]);
 	}
+	update_stats (&stats);
+	return 0;
 }
 
 static void *
 fatten_thread (void *d)
 {
+	fatstats_t  stats = { };
 	int         thread = (intptr_t) d;
-	int64_t     count = 0;
 
 	while (1) {
 		unsigned    leaf_num = next_leaf ();
@@ -144,7 +165,7 @@ fatten_thread (void *d)
 		if (working)
 			working[thread] = leaf_num;
 		if (leaf_num == ~0u) {
-			return 0;
+			break;
 		}
 
 		set_assign (&fat_pvs[leaf_num], &base_pvs[leaf_num]);
@@ -160,13 +181,11 @@ fatten_thread (void *d)
 		if (leaf_num == 0) {
 			continue;
 		}
-		for (set_iter_t *iter = set_first_r (&set_pool[thread],
-											 &base_pvs[leaf_num]);
-			 iter;
-			 iter = set_next_r (&set_pool[thread], iter)) {
-			count++;
-		}
+		stats.fat_visible += set_count (&fat_pvs[leaf_num]);
+		set_difference (&fat_pvs[leaf_num], &base_pvs[leaf_num]);
 	}
+	update_stats (&stats);
+	return 0;
 }
 #if 0
 static void *
@@ -196,19 +215,82 @@ fatten_thread2 (void *d)
 	}
 }
 #endif
+
+static void *
+compress_thread (void *d)
+{
+	fatstats_t  stats = { };
+	int         thread = (intptr_t) d;
+	byte        compressed[(visbytes * 3) / 2];
+
+	while (1) {
+		unsigned    leaf_num = next_leaf ();
+
+		if (working)
+			working[thread] = leaf_num;
+		if (leaf_num == ~0u) {
+			break;
+		}
+		const byte *fat_bytes = (const byte *) fat_pvs[leaf_num].map;
+		int         cmp_bytes = CompressRow (compressed, fat_bytes, num_leafs);
+		SZ_Write (&cmp_pvs[leaf_num], compressed, cmp_bytes);
+		stats.fat_bytes += cmp_bytes;
+	}
+	update_stats (&stats);
+	return 0;
+}
+
 void
 CalcFatPVS (void)
 {
 	set_pool = calloc (options.threads, sizeof (set_pool_t));
 	num_leafs = bsp->models[0].visleafs;
+	visbytes = (num_leafs + 7) / 8;
 	base_pvs = malloc (num_leafs * sizeof (set_t));
 	fat_pvs = malloc (num_leafs * sizeof (set_t));
+	cmp_pvs = malloc (num_leafs * sizeof (sizebuf_t));
 	for (unsigned i = 0; i < num_leafs; i++) {
 		base_pvs[i] = (set_t) SET_STATIC_INIT (num_leafs, malloc);
 		fat_pvs[i] = (set_t) SET_STATIC_INIT (num_leafs, malloc);
+		cmp_pvs[i] = (sizebuf_t) {
+			.data = malloc ((visbytes * 3) / 2),
+			.maxsize = (visbytes * 3) / 2,
+		};
 	}
 	work_leaf = 0;
 	RunThreads (decompress_thread, print_progress);
 	work_leaf = 0;
 	RunThreads (fatten_thread, print_progress);
+	work_leaf = 0;
+	RunThreads (compress_thread, print_progress);
+	printf ("Average leafs visible / fat visible / total: %d / %d / %d\n",
+			(int) (fatstats.pvs_visible / num_leafs),
+			(int) (fatstats.fat_visible / num_leafs), num_leafs);
+	printf ("Compressed fat vis size: %ld\n", fatstats.fat_bytes);
+
+	uint32_t    offset = sizeof (pvsfile_t) + num_leafs * sizeof (uint32_t);
+	pvsfile_t  *pvsfile = malloc (offset + fatstats.fat_bytes);
+
+	strncpy (pvsfile->magic, PVS_MAGIC, sizeof (pvsfile->magic));
+	pvsfile->version = PVS_VERSION;
+	pvsfile->md4_offset = 0;	//FIXME add
+	pvsfile->flags = PVS_IS_FATPVS;
+	pvsfile->visleafs = num_leafs;
+	for (unsigned i = 0; i < num_leafs; i++) {
+		unsigned    size = cmp_pvs[i].cursize;
+		pvsfile->visoffsets[i] = offset;
+		memcpy ((byte *) pvsfile + offset, cmp_pvs[i].data, size);
+		offset += size;
+	}
+
+	dstring_t  *pvsname = dstring_new ();
+	dstring_copystr (pvsname, options.bspfile->str);
+	QFS_SetExtension (pvsname, ".pvs");
+
+	QFile      *f = Qopen (pvsname->str, "wb");
+	if (!f) {
+		Sys_Error ("couldn't open %s for writing.", pvsname->str);
+	}
+	Qwrite (f, pvsfile, offset);
+	Qclose (f);
 }

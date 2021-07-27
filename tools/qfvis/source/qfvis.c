@@ -442,7 +442,7 @@ UpdateMightsee (threaddata_t *thread, cluster_t *source, cluster_t *dest)
 }
 
 static void
-UpdateStates (threaddata_t *thread)
+UpdateStats (threaddata_t *thread)
 {
 	WRLOCK (stats_lock);
 	global_stats.portaltest += thread->stats.portaltest;
@@ -512,7 +512,7 @@ PortalCompleted (threaddata_t *thread, portal_t *completed)
 	}
 	set_delete_r (&thread->set_pool, changed);
 
-	UpdateStates (thread);
+	UpdateStats (thread);
 }
 
 static void
@@ -734,10 +734,12 @@ WatchThread (void *_wd)
 			}
 		}
 	}
-	if (options.verbosity >= 4)
+	if (options.verbosity >= 4) {
 		printf ("watch thread done\n");
-	else if (options.verbosity >= 0)
+	} else if (options.verbosity >= 0) {
+		prev_prog = wd->progress (prev_prog, spinner_ind);
 		printf ("\n");
+	}
 	free (local_work);
 
 	return NULL;
@@ -781,14 +783,14 @@ RunThreads (void *(*thread_func) (void *), int (*progress)(int, int))
 #endif
 }
 
-static int
-CompressRow (byte *vis, byte *dest)
+int
+CompressRow (byte *dest, const byte *vis, unsigned num_leafs)
 {
 	int         rep, visrow, j;
 	byte       *dest_p;
 
 	dest_p = dest;
-	visrow = (numrealleafs + 7) >> 3;
+	visrow = (num_leafs + 7) >> 3;
 
 	for (j = 0; j < visrow; j++) {
 		*dest_p++ = vis[j];
@@ -870,7 +872,7 @@ ClusterFlow (int clusternum)
 		printf ("cluster %4i : %4i visible\n", clusternum, numvis);
 	totalvis += numvis;
 
-	i = CompressRow (outbuffer, compressed);
+	i = CompressRow (compressed, outbuffer, numrealleafs);
 	cluster->visofs = visdata->size;
 	dstring_append (visdata, (char *) compressed, i);
 }
