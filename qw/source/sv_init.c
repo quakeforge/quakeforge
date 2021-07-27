@@ -263,10 +263,7 @@ SV_CalcPHS (void)
 						 &sv.pvs[i]);
 		if (i == 0)
 			continue;
-		for (set_iter_t *iter = set_first (&sv.pvs[i]); iter;
-			 iter = set_next (iter)) {
-			vcount++;
-		}
+		vcount += set_count (&sv.pvs[i]);
 	}
 
 	sv.phs = sv_alloc_vis_array (num);
@@ -283,10 +280,7 @@ SV_CalcPHS (void)
 
 		if (i == 0)
 			continue;
-		for (set_iter_t *iter = set_first (&sv.phs[i]); iter;
-			 iter = set_next (iter)) {
-			count++;
-		}
+		count += set_count (&sv.phs[i]);
 	}
 
 	SV_Printf ("Average leafs visible / hearable / total: %i / %i / %i\n",
