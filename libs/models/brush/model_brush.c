@@ -92,6 +92,8 @@ Mod_DecompressVis_set (const byte *in, const mod_brush_t *brush, byte defvis,
 	byte       *start = out;
 	int			row, c;
 
+	// Ensure the set repesents visible leafs rather than invisible leafs.
+	pvs->inverted = 0;
 	row = (brush->visleafs + 7) >> 3;
 
 	if (!in) {							// no vis info, so make all visible
@@ -125,6 +127,8 @@ Mod_DecompressVis_mix (const byte *in, const mod_brush_t *brush, byte defvis,
 	byte       *start = out;
 	int			row, c;
 
+	//FIXME should pvs->inverted be checked and the vis bits used to remove
+	// set bits?
 	row = (brush->visleafs + 7) >> 3;
 
 	if (!in) {							// no vis info, so make all visible
