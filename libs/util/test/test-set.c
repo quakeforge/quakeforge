@@ -83,6 +83,12 @@ check_size (const set_t *set, const set_t *unused)
 	return set->size;
 }
 
+static int
+check_count (const set_t *set, const set_t *unused)
+{
+	return set_count (set);
+}
+
 static set_t *
 make_5 (void)
 {
@@ -198,6 +204,7 @@ struct {
 	{make_55, make_5,  set_union, set_is_equivalent,   0, "{5 55}"},
 	{make_55, make_5,  set_union, set_is_intersecting, 1, "{5 55}"},
 	{make_55, make_5,  set_union, set_is_disjoint,     0, "{5 55}"},
+	{make_55, make_5,  set_union, check_count,         2, "{5 55}"},
 	{make_not_SIZE, make_everything, 0, set_is_equivalent,   0, 0},
 	{make_not_SIZE, make_everything, 0, set_is_intersecting, 1, 0},
 	{make_not_SIZE, make_everything, 0, set_is_disjoint,     0, 0},
@@ -210,6 +217,11 @@ struct {
 	{make_5, make_everything, 0, set_is_equivalent,   0, 0},
 	{make_5, make_everything, 0, set_is_intersecting, 1, 0},
 	{make_5, make_everything, 0, set_is_disjoint,     0, 0},
+	{make_empty, 0, 0, check_count, 0, 0},
+	{make_everything, 0, 0, check_count, 0, 0},
+	{make_5, 0, 0, check_count, 1, 0},
+	{make_not_5, 0, 0, check_count, 1, 0},
+	{make_0_to_SIZEm1, 0, 0, check_size, SIZE, 0},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 
