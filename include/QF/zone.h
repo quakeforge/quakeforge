@@ -106,13 +106,16 @@ void Z_SetError (memzone_t *zone, void (*err) (void *data, const char *msg),
 				 void *data);
 void Z_CheckPointer (const memzone_t *zone, const void *ptr, size_t size);
 
-void Hunk_Print (qboolean all);
-void *Hunk_Alloc (size_t size);		// returns 0 filled memory
-void *Hunk_AllocName (size_t size, const char *name);
-size_t Hunk_LowMark (void) __attribute__((pure));
-void Hunk_FreeToLowMark (size_t mark);
-void *Hunk_TempAlloc (size_t size);
-void Hunk_Check (void);
+typedef struct memhunk_s memhunk_t;
+
+memhunk_t *Hunk_Init (void *buf, size_t size);
+void Hunk_Print (memhunk_t *hunk, qboolean all);
+void Hunk_Check (memhunk_t *hunk);
+void *Hunk_Alloc (memhunk_t *hunk, size_t size);	// returns 0 filled memory
+void *Hunk_AllocName (memhunk_t *hunk, size_t size, const char *name);
+size_t Hunk_LowMark (memhunk_t *hunk) __attribute__((pure));
+void Hunk_FreeToLowMark (memhunk_t *hunk, size_t mark);
+void *Hunk_TempAlloc (memhunk_t *hunk, size_t size);
 
 
 

@@ -76,7 +76,7 @@ R_IQMBlendFrames (const iqm_t *iqm, int frame1, int frame2, float blend,
 	iqmframe_t *frame;
 	int         i;
 
-	frame = Hunk_TempAlloc (iqm->num_joints * sizeof (iqmframe_t) + extra);
+	frame = Hunk_TempAlloc (0, iqm->num_joints * sizeof (iqmframe_t) + extra);
 	if (iqm->num_frames) {
 #if 0
 		for (i = 0; i < iqm->num_joints; i++) {

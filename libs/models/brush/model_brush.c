@@ -260,7 +260,8 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 	m = (dmiptexlump_t *) bsp->texdata;
 
 	brush->numtextures = m->nummiptex;
-	brush->textures = Hunk_AllocName (m->nummiptex * sizeof (*brush->textures),
+	brush->textures = Hunk_AllocName (0,
+									  m->nummiptex * sizeof (*brush->textures),
 									  mod->name);
 
 	for (i = 0; i < m->nummiptex; i++) {
@@ -275,7 +276,7 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 		if ((mt->width & 15) || (mt->height & 15))
 			Sys_Error ("Texture %s is not 16 aligned", mt->name);
 		pixels = mt->width * mt->height / 64 * 85;
-		tx = Hunk_AllocName (sizeof (texture_t) + pixels, mod->name);
+		tx = Hunk_AllocName (0, sizeof (texture_t) + pixels, mod->name);
 
 		brush->textures[i] = tx;
 
@@ -296,7 +297,7 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 		size_t      render_size = mod_funcs->texture_render_size;
 		byte       *render_data = 0;
 		if (render_size) {
-			render_data = Hunk_AllocName (m->nummiptex * render_size,
+			render_data = Hunk_AllocName (0, m->nummiptex * render_size,
 										  mod->name);
 		}
 		for (i = 0; i < m->nummiptex; i++) {
@@ -397,7 +398,7 @@ Mod_LoadVisibility (model_t *mod, bsp_t *bsp)
 		mod->brush.visdata = NULL;
 		return;
 	}
-	mod->brush.visdata = Hunk_AllocName (bsp->visdatasize, mod->name);
+	mod->brush.visdata = Hunk_AllocName (0, bsp->visdatasize, mod->name);
 	memcpy (mod->brush.visdata, bsp->visdata, bsp->visdatasize);
 }
 
@@ -408,7 +409,7 @@ Mod_LoadEntities (model_t *mod, bsp_t *bsp)
 		mod->brush.entities = NULL;
 		return;
 	}
-	mod->brush.entities = Hunk_AllocName (bsp->entdatasize, mod->name);
+	mod->brush.entities = Hunk_AllocName (0, bsp->entdatasize, mod->name);
 	memcpy (mod->brush.entities, bsp->entdata, bsp->entdatasize);
 }
 
@@ -421,7 +422,7 @@ Mod_LoadVertexes (model_t *mod, bsp_t *bsp)
 
 	in = bsp->vertexes;
 	count = bsp->numvertexes;
-	out = Hunk_AllocName (count * sizeof (*out), mod->name);
+	out = Hunk_AllocName (0, count * sizeof (*out), mod->name);
 
 	mod->brush.vertexes = out;
 	mod->brush.numvertexes = count;
@@ -439,7 +440,7 @@ Mod_LoadSubmodels (model_t *mod, bsp_t *bsp)
 
 	in = bsp->models;
 	count = bsp->nummodels;
-	out = Hunk_AllocName (count * sizeof (*out), mod->name);
+	out = Hunk_AllocName (0, count * sizeof (*out), mod->name);
 
 	brush->submodels = out;
 	brush->numsubmodels = count;
@@ -474,7 +475,7 @@ Mod_LoadEdges (model_t *mod, bsp_t *bsp)
 
 	in = bsp->edges;
 	count = bsp->numedges;
-	out = Hunk_AllocName ((count + 1) * sizeof (*out), mod->name);
+	out = Hunk_AllocName (0, (count + 1) * sizeof (*out), mod->name);
 
 	mod->brush.edges = out;
 	mod->brush.numedges = count;
@@ -495,7 +496,7 @@ Mod_LoadTexinfo (model_t *mod, bsp_t *bsp)
 
 	in = bsp->texinfo;
 	count = bsp->numtexinfo;
-	out = Hunk_AllocName (count * sizeof (*out), mod->name);
+	out = Hunk_AllocName (0, count * sizeof (*out), mod->name);
 
 	mod->brush.texinfo = out;
 	mod->brush.numtexinfo = count;
@@ -597,7 +598,7 @@ Mod_LoadFaces (model_t *mod, bsp_t *bsp)
 
 	in = bsp->faces;
 	count = bsp->numfaces;
-	out = Hunk_AllocName (count * sizeof (*out), mod->name);
+	out = Hunk_AllocName (0, count * sizeof (*out), mod->name);
 
 	if (count > 32767) {
 		Sys_MaskPrintf (SYS_warn,
@@ -698,7 +699,7 @@ Mod_LoadNodes (model_t *mod, bsp_t *bsp)
 
 	in = bsp->nodes;
 	count = bsp->numnodes;
-	out = Hunk_AllocName (count * sizeof (*out), mod->name);
+	out = Hunk_AllocName (0, count * sizeof (*out), mod->name);
 
 	if (count > 32767) {
 		Sys_MaskPrintf (SYS_warn,
@@ -742,7 +743,7 @@ Mod_LoadNodes (model_t *mod, bsp_t *bsp)
 
 	size_t      size = (brush->modleafs + brush->numnodes) * sizeof (mnode_t *);
 	size += brush->modleafs * sizeof (int);
-	brush->node_parents = Hunk_AllocName (size, mod->name);
+	brush->node_parents = Hunk_AllocName (0, size, mod->name);
 	brush->leaf_parents = brush->node_parents + brush->numnodes;
 	brush->leaf_flags = (int *) (brush->leaf_parents + brush->modleafs);
 	Mod_SetParent (brush, brush->nodes, NULL);	// sets nodes and leafs
@@ -760,7 +761,7 @@ Mod_LoadLeafs (model_t *mod, bsp_t *bsp)
 
 	in = bsp->leafs;
 	count = bsp->numleafs;
-	out = Hunk_AllocName (count * sizeof (*out), mod->name);
+	out = Hunk_AllocName (0, count * sizeof (*out), mod->name);
 
 	brush->leafs = out;
 	brush->modleafs = count;
@@ -813,7 +814,7 @@ Mod_LoadClipnodes (model_t *mod, bsp_t *bsp)
 
 	in = bsp->clipnodes;
 	count = bsp->numclipnodes;
-	out = Hunk_AllocName (count * sizeof (*out), mod->name);
+	out = Hunk_AllocName (0, count * sizeof (*out), mod->name);
 
 	if (count > 32767) {
 		Sys_MaskPrintf (SYS_warn,
@@ -890,7 +891,7 @@ Mod_MakeHull0 (model_t *mod)
 
 	in = brush->nodes;
 	count = brush->numnodes;
-	out = Hunk_AllocName (count * sizeof (*out), mod->name);
+	out = Hunk_AllocName (0, count * sizeof (*out), mod->name);
 
 	hull->clipnodes = out;
 	hull->firstclipnode = 0;
@@ -919,7 +920,7 @@ Mod_LoadMarksurfaces (model_t *mod, bsp_t *bsp)
 
 	in = bsp->marksurfaces;
 	count = bsp->nummarksurfaces;
-	out = Hunk_AllocName (count * sizeof (*out), mod->name);
+	out = Hunk_AllocName (0, count * sizeof (*out), mod->name);
 
 	if (count > 32767) {
 		Sys_MaskPrintf (SYS_warn,
@@ -948,7 +949,7 @@ Mod_LoadSurfedges (model_t *mod, bsp_t *bsp)
 
 	in = bsp->surfedges;
 	count = bsp->numsurfedges;
-	out = Hunk_AllocName (count * sizeof (*out), mod->name);
+	out = Hunk_AllocName (0, count * sizeof (*out), mod->name);
 
 	brush->surfedges = out;
 	brush->numsurfedges = count;
@@ -967,7 +968,7 @@ Mod_LoadPlanes (model_t *mod, bsp_t *bsp)
 
 	in = bsp->planes;
 	count = bsp->numplanes;
-	out = Hunk_AllocName (count * 2 * sizeof (*out), mod->name);
+	out = Hunk_AllocName (0, count * 2 * sizeof (*out), mod->name);
 
 	brush->planes = out;
 	brush->numplanes = count;

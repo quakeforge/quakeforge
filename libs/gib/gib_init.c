@@ -69,7 +69,7 @@ GIB_Exec_Override_f (void)
 		return;
 	}
 
-	mark = Hunk_LowMark ();
+	mark = Hunk_LowMark (0);
 	f = (char *) QFS_LoadHunkFile (QFS_FOpenFile (Cmd_Argv (1)));
 	if (!f) {
 		Sys_Printf ("couldn't exec %s\n", Cmd_Argv (1));
@@ -95,7 +95,7 @@ GIB_Exec_Override_f (void)
 					   Cmd_Argv (0), Cmd_Argv (1));
 	} else
 		Cbuf_InsertText (cbuf_active, f);
-	Hunk_FreeToLowMark (mark);
+	Hunk_FreeToLowMark (0, mark);
 }
 
 VISIBLE void

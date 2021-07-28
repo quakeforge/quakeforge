@@ -45,7 +45,7 @@ SZ_Alloc (sizebuf_t *buf, unsigned maxsize)
 {
 	if (maxsize < 256)
 		maxsize = 256;
-	buf->data = Hunk_AllocName (maxsize, "sizebuf");
+	buf->data = Hunk_AllocName (0, maxsize, "sizebuf");
 	buf->maxsize = maxsize;
 	buf->cursize = 0;
 }

@@ -48,6 +48,6 @@ sw_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
 		mod->brush.lightdata = NULL;
 		return;
 	}
-	mod->brush.lightdata = Hunk_AllocName (bsp->lightdatasize, mod->name);
+	mod->brush.lightdata = Hunk_AllocName (0, bsp->lightdatasize, mod->name);
 	memcpy (mod->brush.lightdata, bsp->lightdata, bsp->lightdatasize);
 }

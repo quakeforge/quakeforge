@@ -509,7 +509,7 @@ Cmd_Exec_f (void)
 		return;
 	}
 
-	mark = Hunk_LowMark ();
+	mark = Hunk_LowMark (0);
 	f = (char *) QFS_LoadHunkFile (QFS_FOpenFile (Cmd_Argv (1)));
 	if (!f) {
 		Sys_Printf ("couldn't exec %s\n", Cmd_Argv (1));
@@ -520,7 +520,7 @@ Cmd_Exec_f (void)
 			|| (developer && developer->int_val & SYS_dev)))
 		Sys_Printf ("execing %s\n", Cmd_Argv (1));
 	Cbuf_InsertText (cbuf_active, f);
-	Hunk_FreeToLowMark (mark);
+	Hunk_FreeToLowMark (0, mark);
 }
 
 /*

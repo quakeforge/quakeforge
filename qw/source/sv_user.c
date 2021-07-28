@@ -862,7 +862,7 @@ SV_Say (qboolean team)
 		host_client->whensaid[host_client->whensaidhead] = realtime;
 	}
 
-	p = Hunk_TempAlloc (strlen (Cmd_Args (1)) + 1);
+	p = Hunk_TempAlloc (0, strlen (Cmd_Args (1)) + 1);
 	strcpy (p, Cmd_Args (1));
 
 	if (*p == '"') {

@@ -637,7 +637,7 @@ sw32_R_AliasDrawModel (alight_t *plighting)
 	size = (CACHE_SIZE - 1)
 		   + sizeof (finalvert_t) * (pmdl->numverts + 1)
 		   + sizeof (auxvert_t) * pmdl->numverts;
-	finalverts = (finalvert_t *) Hunk_TempAlloc (size);
+	finalverts = (finalvert_t *) Hunk_TempAlloc (0, size);
 	if (!finalverts)
 		Sys_Error ("R_AliasDrawModel: out of memory");
 

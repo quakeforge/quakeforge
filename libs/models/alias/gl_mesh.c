@@ -475,7 +475,7 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		// save the data out
 		header->poseverts = numorder;
 
-		cmds = Hunk_Alloc (numcommands * sizeof (int));
+		cmds = Hunk_Alloc (0, numcommands * sizeof (int));
 		header->commands = (byte *) cmds - (byte *) header;
 		memcpy (cmds, commands, numcommands * sizeof (int));
 
@@ -490,7 +490,7 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		}
 		header->poseverts = numorder;
 
-		tex_coord = Hunk_Alloc (numorder * sizeof(tex_coord_t));
+		tex_coord = Hunk_Alloc (0, numorder * sizeof(tex_coord_t));
 		header->tex_coord = (byte *) tex_coord - (byte *) header;
 		for (i=0; i < numorder; i++) {
 			float s, t;
@@ -510,7 +510,7 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 
 	if (extra) {
 		trivertx16_t *verts;
-		verts = Hunk_Alloc (header->numposes * header->poseverts
+		verts = Hunk_Alloc (0, header->numposes * header->poseverts
 							* sizeof (trivertx16_t));
 		header->posedata = (byte *) verts - (byte *) header;
 		for (i = 0; i < header->numposes; i++) {
@@ -532,7 +532,7 @@ gl_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 		}
 	} else {
 		trivertx_t *verts;
-		verts = Hunk_Alloc (header->numposes * header->poseverts
+		verts = Hunk_Alloc (0, header->numposes * header->poseverts
 							* sizeof (trivertx_t));
 		header->posedata = (byte *) verts - (byte *) header;
 		for (i = 0; i < header->numposes; i++) {

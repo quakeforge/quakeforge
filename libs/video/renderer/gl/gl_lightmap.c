@@ -459,7 +459,7 @@ do_subimage_2 (int i)
 
 	width = rect->w * lightmap_bytes;
 	stride = BLOCK_WIDTH * lightmap_bytes;
-	b = block = Hunk_TempAlloc (rect->h * width);
+	b = block = Hunk_TempAlloc (0, rect->h * width);
 	lm = lightmaps[i] + (rect->t * BLOCK_WIDTH + rect->l) * lightmap_bytes;
 	for (i = rect->h; i > 0; i--) {
 		memcpy (b, lm, width);

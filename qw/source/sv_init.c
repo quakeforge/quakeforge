@@ -222,7 +222,8 @@ sv_alloc_vis_array (unsigned numleafs)
 	unsigned    size = SET_SIZE (numleafs - 1);
 
 	if (size > SET_DEFMAP_SIZE * SET_BITS) {
-		set_t      *sets = Hunk_Alloc (numleafs * (sizeof (set_t) + size / 8));
+		set_t      *sets = Hunk_Alloc (0,
+									   numleafs * (sizeof (set_t) + size / 8));
 		unsigned    words = size / SET_BITS;
 		set_bits_t *bits = (set_bits_t *) (&sets[numleafs]);
 		for (unsigned i = 0; i < numleafs; i++) {
@@ -232,7 +233,7 @@ sv_alloc_vis_array (unsigned numleafs)
 		}
 		return sets;
 	} else {
-		set_t      *sets = Hunk_Alloc (numleafs * sizeof (set_t));
+		set_t      *sets = Hunk_Alloc (0, numleafs * sizeof (set_t));
 		for (unsigned i = 0; i < numleafs; i++) {
 			sets[i].size = size;
 			sets[i].map = sets[i].defmap;
@@ -337,7 +338,7 @@ SV_SpawnServer (const char *server)
 	sv_pr_state.null_bad = 0;
 
 	Mod_ClearAll ();
-	Hunk_FreeToLowMark (host_hunklevel);
+	Hunk_FreeToLowMark (0, host_hunklevel);
 
 	// wipe the entire per-level structure, but don't lose sv.recorders
 	// or signon buffers (good thing we're not multi-threaded FIXME?)

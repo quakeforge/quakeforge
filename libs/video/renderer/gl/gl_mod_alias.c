@@ -292,7 +292,7 @@ GL_GetAliasFrameVerts16 (aliashdr_t *paliashdr, entity_t *e)
 	verts = (trivertx16_t *) ((byte *) paliashdr + paliashdr->posedata);
 
 	count = paliashdr->poseverts;
-	vo = Hunk_TempAlloc (sizeof (*vo) + count * sizeof (blended_vert_t));
+	vo = Hunk_TempAlloc (0, sizeof (*vo) + count * sizeof (blended_vert_t));
 	vo->order = (int *) ((byte *) paliashdr + paliashdr->commands);
 	vo->verts = (blended_vert_t *) &vo[1];
 	if (paliashdr->tex_coord) {
@@ -358,7 +358,7 @@ GL_GetAliasFrameVerts (aliashdr_t *paliashdr, entity_t *e)
 	verts = (trivertx_t *) ((byte *) paliashdr + paliashdr->posedata);
 
 	count = paliashdr->poseverts;
-	vo = Hunk_TempAlloc (sizeof (*vo) + count * sizeof (blended_vert_t));
+	vo = Hunk_TempAlloc (0, sizeof (*vo) + count * sizeof (blended_vert_t));
 	vo->order = (int *) ((byte *) paliashdr + paliashdr->commands);
 	vo->verts = (blended_vert_t *) &vo[1];
 	if (paliashdr->tex_coord) {

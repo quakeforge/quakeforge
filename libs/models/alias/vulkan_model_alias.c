@@ -121,7 +121,7 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 	byte       *tskin;
 	int         w, h;
 
-	skin = Hunk_Alloc (sizeof (qfv_alias_skin_t));
+	skin = Hunk_Alloc (0, sizeof (qfv_alias_skin_t));
 	QuatCopy (vid.palette32 + (TOP_RANGE + 15) * 4, skin->colora);
 	QuatCopy (vid.palette32 + (BOTTOM_RANGE + 15) * 4, skin->colorb);
 	skindesc->skin = (byte *) skin - (byte *) header;
@@ -449,7 +449,7 @@ Vulkan_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	QFV_PacketSubmit (packet);
 	QFV_DestroyStagingBuffer (stage);
 
-	qfv_alias_mesh_t *mesh = Hunk_Alloc (sizeof (qfv_alias_mesh_t));
+	qfv_alias_mesh_t *mesh = Hunk_Alloc (0, sizeof (qfv_alias_mesh_t));
 	mesh->vertex_buffer = vbuff;
 	mesh->uv_buffer = uvbuff;
 	mesh->index_buffer = ibuff;

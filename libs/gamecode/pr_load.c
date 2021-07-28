@@ -86,7 +86,7 @@ load_file (progs_t *pr, const char *path, off_t *size)
 static void *
 allocate_progs_mem (progs_t *pr, int size)
 {
-	return Hunk_AllocName (size, pr->progs_name);
+	return Hunk_AllocName (0, size, pr->progs_name);
 }
 
 static void

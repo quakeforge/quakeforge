@@ -242,7 +242,7 @@ Host_FindMaxClients (void)
 	if (svs.maxclientslimit < 4)
 		svs.maxclientslimit = 4;
 	svs.clients =
-		Hunk_AllocName (svs.maxclientslimit * sizeof (client_t), "clients");
+		Hunk_AllocName (0, svs.maxclientslimit * sizeof (client_t), "clients");
 
 	if (svs.maxclients > 1)
 		Cvar_SetValue (deathmatch, 1.0);
@@ -499,7 +499,7 @@ Host_ClearMemory (void)
 	CL_ClearMemory ();
 	Mod_ClearAll ();
 	if (host_hunklevel)
-		Hunk_FreeToLowMark (host_hunklevel);
+		Hunk_FreeToLowMark (0, host_hunklevel);
 
 	cls.signon = 0;
 	memset (&sv, 0, sizeof (sv));
@@ -907,8 +907,8 @@ Host_Init (void)
 
 	COM_ExecConfig (host_cbuf, isDedicated || !cl_quakerc->int_val);
 
-	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
-	host_hunklevel = Hunk_LowMark ();
+	Hunk_AllocName (0, 0, "-HOST_HUNKLEVEL-");
+	host_hunklevel = Hunk_LowMark (0);
 
 	Sys_Printf ("\nVersion %s (build %04d)\n\n", PACKAGE_VERSION,
 				build_number ());

@@ -1141,9 +1141,9 @@ QFS_LoadFile (QFile *file, int usehunk)
 	//base = QFS_FileBase (path);
 
 	if (usehunk == 1)
-		buf = Hunk_AllocName (len + 1, base);
+		buf = Hunk_AllocName (0, len + 1, base);
 	else if (usehunk == 2)
-		buf = Hunk_TempAlloc (len + 1);
+		buf = Hunk_TempAlloc (0, len + 1);
 	else if (usehunk == 0)
 		buf = calloc (1, len + 1);
 	else if (usehunk == 3)

@@ -2541,8 +2541,8 @@ SV_Init (void)
 	SVR_Init ();
 	Demo_Init ();
 
-	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
-	host_hunklevel = Hunk_LowMark ();
+	Hunk_AllocName (0, 0, "-HOST_HUNKLEVEL-");
+	host_hunklevel = Hunk_LowMark (0);
 
 	Cbuf_InsertText (sv_cbuf, "exec server.cfg\n");
 

@@ -840,7 +840,7 @@ GL_BuildSurfaceDisplayList (msurface_t *surf)
 	lnumverts = surf->numedges;
 
 	// draw texture
-	poly = Hunk_Alloc (sizeof (glpoly_t) + (lnumverts - 4) *
+	poly = Hunk_Alloc (0, sizeof (glpoly_t) + (lnumverts - 4) *
 					   VERTEXSIZE * sizeof (float));
 	poly->next = surf->polys;
 	poly->flags = surf->flags;

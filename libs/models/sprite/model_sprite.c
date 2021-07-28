@@ -55,7 +55,8 @@ Mod_LoadSpriteFrame (model_t *mod, void *pin, mspriteframe_t **ppframe,
 	height = LittleLong (pinframe->height);
 	size = width * height;
 
-	pspriteframe = Hunk_AllocName (sizeof (mspriteframe_t) + size, mod->name);
+	pspriteframe = Hunk_AllocName (0, sizeof (mspriteframe_t) + size,
+								   mod->name);
 
 	memset (pspriteframe, 0, sizeof (mspriteframe_t) + size);
 
@@ -93,8 +94,8 @@ Mod_LoadSpriteGroup (model_t *mod, void *pin, mspriteframe_t **ppframe,
 
 	numframes = LittleLong (pingroup->numframes);
 
-	pspritegroup = Hunk_AllocName (field_offset (mspritegroup_t,
-												 frames[numframes]),
+	pspritegroup = Hunk_AllocName (0, field_offset (mspritegroup_t,
+													frames[numframes]),
 								   mod->name);
 
 	pspritegroup->numframes = numframes;
@@ -103,7 +104,7 @@ Mod_LoadSpriteGroup (model_t *mod, void *pin, mspriteframe_t **ppframe,
 
 	pin_intervals = (dspriteinterval_t *) (pingroup + 1);
 
-	poutintervals = Hunk_AllocName (numframes * sizeof (float), mod->name);
+	poutintervals = Hunk_AllocName (0, numframes * sizeof (float), mod->name);
 
 	pspritegroup->intervals = poutintervals;
 
@@ -146,7 +147,7 @@ Mod_LoadSpriteModel (model_t *mod, void *buffer)
 
 	size = field_offset (msprite_t, frames[numframes]);
 
-	psprite = Hunk_AllocName (size, mod->name);
+	psprite = Hunk_AllocName (0, size, mod->name);
 
 	mod->cache.data = psprite;
 

@@ -183,7 +183,7 @@ CL_Color_f (void)
 static void
 skin_f (cvar_t *var)
 {
-	char       *s = Hunk_TempAlloc (strlen (var->string) + 1);
+	char       *s = Hunk_TempAlloc (0, strlen (var->string) + 1);
 	QFS_StripExtension (var->string, s);
 	Cvar_Set (var, s);
 	Cvar_Info (var);

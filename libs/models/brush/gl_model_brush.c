@@ -181,7 +181,8 @@ gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
 		dstring_delete (litfilename);
 		return;
 	}
-	brush->lightdata = Hunk_AllocName (bsp->lightdatasize * mod_lightmap_bytes,
+	brush->lightdata = Hunk_AllocName (0,
+									   bsp->lightdatasize * mod_lightmap_bytes,
 									   litfilename->str);
 	in = bsp->lightdata;
 	out = brush->lightdata;
@@ -283,7 +284,7 @@ SubdividePolygon (int numverts, float *verts)
 		return;
 	}
 
-	poly = Hunk_Alloc (sizeof (glpoly_t) + (numverts - 4) * VERTEXSIZE *
+	poly = Hunk_Alloc (0, sizeof (glpoly_t) + (numverts - 4) * VERTEXSIZE *
 					   sizeof (float));
 	poly->next = warpface->polys;
 	warpface->polys = poly;

@@ -315,7 +315,7 @@ CL_NewMap (const char *mapname)
 {
 	r_funcs->R_NewMap (cl.worldmodel, cl.model_precache, cl.nummodels);
 	Con_NewMap ();
-	Hunk_Check ();								// make sure nothing is hurt
+	Hunk_Check (0);								// make sure nothing is hurt
 	Sbar_CenterPrint (0);
 
 	if (cl.model_precache[1] && cl.model_precache[1]->brush.entities) {
@@ -365,7 +365,7 @@ CL_ParseServerInfo (void)
 		Sys_Printf ("Bad maxclients (%u) from server\n", cl.maxclients);
 		goto done;
 	}
-	cl.players = Hunk_AllocName (cl.maxclients * sizeof (*cl.players),
+	cl.players = Hunk_AllocName (0, cl.maxclients * sizeof (*cl.players),
 								 "players");
 	for (i = 0; i < cl.maxclients; i++) {
 		cl.players[i].userinfo = Info_ParseString ("name\\", 0, 0);
@@ -444,7 +444,7 @@ CL_ParseServerInfo (void)
 		dstring_clearstr (centerprint);
 	CL_NewMap (model_precache[1]);
 
-	Hunk_Check ();						// make sure nothing is hurt
+	Hunk_Check (0);						// make sure nothing is hurt
 
 	noclip_anglehack = false;			// noclip is turned off at start
 	r_data->gravity = 800.0;			// Set up gravity for renderer effects

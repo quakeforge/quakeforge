@@ -416,7 +416,7 @@ CL_ClearState (void)
 	VID_ClearMemory ();
 	Mod_ClearAll ();
 	if (host_hunklevel)					// FIXME: check this...
-		Hunk_FreeToLowMark (host_hunklevel);
+		Hunk_FreeToLowMark (0, host_hunklevel);
 
 	CL_ClearEnts ();
 	CL_ClearTEnts ();
@@ -1812,8 +1812,8 @@ Host_Init (void)
 	// make sure all + commands have been executed
 	Cbuf_Execute_Stack (cl_cbuf);
 
-	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
-	host_hunklevel = Hunk_LowMark ();
+	Hunk_AllocName (0, 0, "-HOST_HUNKLEVEL-");
+	host_hunklevel = Hunk_LowMark (0);
 
 	Sys_Printf ("\nClient version %s (build %04d)\n\n", PACKAGE_VERSION,
 				build_number ());

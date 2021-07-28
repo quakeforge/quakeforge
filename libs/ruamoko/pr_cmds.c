@@ -62,7 +62,7 @@ PF_VarString (progs_t *pr, int first)
 
 	for (len = 0, i = first; i < pr->pr_argc; i++)
 		len += strlen (P_GSTRING (pr, i));
-	dst = out = Hunk_TempAlloc (len + 1);
+	dst = out = Hunk_TempAlloc (0, len + 1);
 	for (i = first; i < pr->pr_argc; i++) {
 		src = P_GSTRING (pr, i);
 		while (*src)

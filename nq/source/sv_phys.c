@@ -448,9 +448,9 @@ SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 	VectorAdd (p_angles, amove, p_angles);
 	SV_LinkEdict (pusher, false);
 
-	mark = Hunk_LowMark ();
-	moved_edict = Hunk_Alloc (sv.num_edicts * sizeof (edict_t *));
-	moved_from = Hunk_Alloc (sv.num_edicts * sizeof (vec_t));
+	mark = Hunk_LowMark (0);
+	moved_edict = Hunk_Alloc (0, sv.num_edicts * sizeof (edict_t *));
+	moved_from = Hunk_Alloc (0, sv.num_edicts * sizeof (vec_t));
 
 	// see if any solid entities are inside the final position
 	num_moved = 0;
@@ -550,10 +550,10 @@ SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 			VectorSubtract (m_angles, amove, m_angles);
 			SV_LinkEdict (moved_edict[i], false);
 		}
-		Hunk_FreeToLowMark (mark);
+		Hunk_FreeToLowMark (0, mark);
 		return false;
 	}
-	Hunk_FreeToLowMark (mark);
+	Hunk_FreeToLowMark (0, mark);
 	return true;
 }
 

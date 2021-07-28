@@ -91,7 +91,7 @@ bi_read (progs_t *pr)
 	int res;
 	char *buffer;
 
-	buffer = Hunk_TempAlloc (count);
+	buffer = Hunk_TempAlloc (0, count);
 	if (!buffer)
 		PR_Error (pr, "%s: couldn't allocate %d bytes", "bi_read", count);
 	res = read (handle, buffer, count);

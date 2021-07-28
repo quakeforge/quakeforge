@@ -63,7 +63,7 @@ gl_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skin, int skinsize,
 	int		fb_texnum = 0, texnum = 0;
 	dstring_t  *name = dstring_new ();
 
-	pskin = Hunk_AllocName (skinsize, alias_ctx->mod->name);
+	pskin = Hunk_AllocName (0, skinsize, alias_ctx->mod->name);
 	skindesc->skin = (byte *) pskin - (byte *) header;
 
 	memcpy (pskin, skin, skinsize);

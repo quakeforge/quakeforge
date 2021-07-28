@@ -739,7 +739,7 @@ do_precache (progs_t *pr, const char **cache, int max, const char *name,
 
 	PR_CheckEmptyString (pr, name);
 
-	s = Hunk_TempAlloc (strlen (name) + 1);
+	s = Hunk_TempAlloc (0, strlen (name) + 1);
 	for (i = 0; *name; i++, name++) {
 		int         c = (byte) *name;
 		s[i] = tolower (c);
@@ -748,7 +748,7 @@ do_precache (progs_t *pr, const char **cache, int max, const char *name,
 
 	for (i = 0; i < max; i++) {
 		if (!cache[i]) {
-			char *c = Hunk_Alloc (strlen (s) + 1);
+			char *c = Hunk_Alloc (0, strlen (s) + 1);
 			strcpy (c, s);
 			cache[i] = c; // blah, const
 			Sys_MaskPrintf (SYS_dev, "%s: %3d %s\n", func, i, s);

@@ -319,7 +319,7 @@ CL_NewMap (const char *mapname)
 	r_funcs->R_NewMap (cl.worldmodel, cl.model_precache, cl.nummodels);
 	Team_NewMap ();
 	Con_NewMap ();
-	Hunk_Check ();								// make sure nothing is hurt
+	Hunk_Check (0);								// make sure nothing is hurt
 	Sbar_CenterPrint (0);
 
 	if (cl.model_precache[1] && cl.model_precache[1]->brush.entities) {

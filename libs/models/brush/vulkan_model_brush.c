@@ -318,7 +318,7 @@ Vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx, vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 
 	if (!tx) {
-		modelctx_t *mctx = Hunk_AllocName (sizeof (modelctx_t), mod->name);
+		modelctx_t *mctx = Hunk_AllocName (0, sizeof (modelctx_t), mod->name);
 		mctx->ctx = ctx;
 		mod->clear = vulkan_brush_clear;
 		mod->data = mctx;
@@ -360,11 +360,11 @@ Vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx, vulkan_ctx_t *ctx)
 
 	const char *name = va (ctx->va_ctx, "fb_%s", tx->name);
 	int         size = (tx->width * tx->height * 85) / 64;
-	int         fullbright_mark = Hunk_LowMark ();
-	byte       *pixels = Hunk_AllocName (size, name);
+	int         fullbright_mark = Hunk_LowMark (0);
+	byte       *pixels = Hunk_AllocName (0, size, name);
 
 	if (!Mod_CalcFullbright ((byte *) (tx + 1), pixels, size)) {
-		Hunk_FreeToLowMark (fullbright_mark);
+		Hunk_FreeToLowMark (0, fullbright_mark);
 		return;
 	}
 	tex->glow = tex->tex + 1;
@@ -428,7 +428,7 @@ Vulkan_Mod_LoadLighting (model_t *mod, bsp_t *bsp, vulkan_ctx_t *ctx)
 		return;
 	}
 	// LordHavoc: oh well, expand the white lighting data
-	brush->lightdata = Hunk_AllocName (bsp->lightdatasize * 3, mod->name);
+	brush->lightdata = Hunk_AllocName (0, bsp->lightdatasize * 3, mod->name);
 	in = bsp->lightdata;
 	out = brush->lightdata;
 

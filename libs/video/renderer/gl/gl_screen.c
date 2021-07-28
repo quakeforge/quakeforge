@@ -91,7 +91,7 @@ gl_SCR_ScreenShot (unsigned width, unsigned height)
 	int            count, dex, dey, dx, dy, nx, r, g, b, x, y, w, h;
 	tex_t         *tex;
 
-	snap = Hunk_TempAlloc (vid.width * vid.height * 3);
+	snap = Hunk_TempAlloc (0, vid.width * vid.height * 3);
 
 	qfglReadPixels (0, 0, vid.width, vid.height, GL_RGB, GL_UNSIGNED_BYTE,
 				    snap);

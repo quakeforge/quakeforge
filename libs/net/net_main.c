@@ -835,7 +835,7 @@ NET_Init (void)
 	SetNetTime ();
 
 	for (i = 0; i < net_numsockets; i++) {
-		s = (qsocket_t *) Hunk_AllocName (sizeof (qsocket_t), "qsocket");
+		s = (qsocket_t *) Hunk_AllocName (0, sizeof (qsocket_t), "qsocket");
 		s->next = net_freeSockets;
 		net_freeSockets = s;
 		s->disconnected = true;
