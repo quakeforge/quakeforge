@@ -349,7 +349,7 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 
 	// check all portals for flowing into other clusters
 	for (i = 0; i < cluster->numportals; i++) {
-		target_portal = cluster->portals[i];
+		target_portal = &cluster->portals[i];
 		if (!set_is_member (prevstack->mightsee, target_portal->cluster))
 			continue;		// can't possibly see it
 

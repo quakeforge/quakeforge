@@ -408,7 +408,7 @@ UpdateMightsee (threaddata_t *thread, cluster_t *source, cluster_t *dest)
 
 	clusternum = dest - clusters;
 	for (i = 0; i < source->numportals; i++) {
-		portal = source->portals[i];
+		portal = &source->portals[i];
 		WRLOCK_PORTAL (portal);
 		if (portal->status == stat_none) {
 			if (set_is_member (portal->mightsee, clusternum)) {
@@ -462,7 +462,7 @@ PortalCompleted (threaddata_t *thread, portal_t *completed)
 	changed = set_new_size_r (&thread->set_pool, portalclusters);
 	cluster = &clusters[completed->cluster];
 	for (i = 0; i < cluster->numportals; i++) {
-		portal = cluster->portals[i];
+		portal = &cluster->portals[i];
 		if (portal->status != stat_done)
 			continue;
 		set_assign (changed, portal->mightsee);
@@ -480,10 +480,10 @@ PortalCompleted (threaddata_t *thread, portal_t *completed)
 		for (j = 0; j < cluster->numportals; j++) {
 			if (j == i)
 				continue;
-			if (cluster->portals[j]->status == stat_done)
-				set_difference (changed, cluster->portals[j]->visbits);
+			if (cluster->portals[j].status == stat_done)
+				set_difference (changed, cluster->portals[j].visbits);
 			else
-				set_difference (changed, cluster->portals[j]->mightsee);
+				set_difference (changed, cluster->portals[j].mightsee);
 		}
 		for (ci = set_first_r (&thread->set_pool, changed); ci;
 			 ci = set_next_r (&thread->set_pool, ci)) {
@@ -845,7 +845,7 @@ ClusterFlow (int clusternum)
 	memset (compressed.data, 0, compressed.maxsize);
 	visclusters = set_new ();
 	for (i = 0; i < cluster->numportals; i++) {
-		portal = cluster->portals[i];
+		portal = &cluster->portals[i];
 		if (portal->status != stat_done)
 			Sys_Error ("portal not done");
 		set_union (visclusters, portal->visbits);
@@ -1153,20 +1153,58 @@ CalcPassages (void)
 	}
 }
 #endif
+
+static winding_t *
+parse_winding (const char *line, int numpoints)
+{
+	winding_t     *winding = NewWinding (&main_thread, numpoints);
+
+	winding->original = true;
+	winding->numpoints = numpoints;
+
+	for (int i = 0; i < numpoints; i++) {
+		// (%ld %ld %ld)
+		while (isspace ((byte) *line))
+			line++;
+		if (*line++ != '(') {
+			return 0;
+		}
+
+		for (int j = 0; j < 3; j++) {
+			char       *err;
+
+			winding->points[i][j] = strtod (line, &err);
+			if (err == line) {
+				return 0;
+			}
+			line = err;
+		}
+		winding->points[i][3] = 1;
+
+		while (isspace ((byte) *line))
+			line++;
+		if (*line++ != ')') {
+			return 0;
+		}
+	}
+	return winding;
+}
+
 static void
 LoadPortals (char *name)
 {
+	typedef struct {
+		unsigned    clusters[2];
+	} clusterpair_t;
+
 	const char *line;
 	char       *err;
-	unsigned    numpoints, i, j, k;
+	unsigned    numpoints;
 	int         read_leafs = 0;
-	int         clusternums[2];
-	cluster_t  *cluster;
 	vec4f_t     plane;
-	portal_t   *portal;
-	winding_t  *winding;
 	vspheref_t  sphere;
 	QFile	   *f;
+	clusterpair_t *clusternums;
 
 	if (!strcmp (name, "-"))
 		f = Qdopen (0, "rt"); // create a QFile of stdin
@@ -1233,22 +1271,24 @@ LoadPortals (char *name)
 	// direction
 	portals = calloc (2 * numportals, sizeof (portal_t));
 	portal_queue = malloc (2 * numportals * sizeof (portal_t *));
-	for (i = 0; i < 2 * numportals; i++) {
+	for (unsigned i = 0; i < 2 * numportals; i++) {
 		portal_queue[i] = &portals[i];
 	}
 #ifdef USE_PTHREADS
 	portal_locks = calloc (2 * numportals, sizeof (pthread_rwlock_t));
-	for (i = 0; i < 2 * numportals; i++) {
+	for (unsigned i = 0; i < 2 * numportals; i++) {
 		if (pthread_rwlock_init (&portal_locks[i], 0))
 			Sys_Error ("pthread_rwlock_init failed");
 	}
 #endif
 
-	clusters = calloc (portalclusters, sizeof (cluster_t));
 
+	clusters = calloc (portalclusters, sizeof (cluster_t));
 	originalvismapsize = numrealleafs * ((numrealleafs + 7) / 8);
 
-	for (i = 0, portal = portals; i < numportals; i++) {
+	clusternums = calloc (numportals, sizeof (clusterpair_t));
+	winding_t **windings = malloc (numportals * sizeof (winding_t *));
+	for (unsigned i = 0; i < numportals; i++) {
 		line = Qgetline (f);
 		if (!line)
 			Sys_Error ("LoadPortals: reading portal %u", i);
@@ -1257,41 +1297,36 @@ LoadPortals (char *name)
 		if (err == line)
 			Sys_Error ("LoadPortals: reading portal %u", i);
 		line = err;
-		for (j = 0; j < 2; j++) {
-			clusternums[j] = strtol (line, &err, 10);
+
+		for (int j = 0; j < 2; j++) {
+			clusternums[i].clusters[j] = strtoul (line, &err, 10);
 			if (err == line)
 				Sys_Error ("LoadPortals: reading portal %u", i);
 			line = err;
-		}
 
-		if ((unsigned) clusternums[0] > (unsigned) portalclusters
-			|| (unsigned) clusternums[1] > (unsigned) portalclusters)
+			if (clusternums[i].clusters[j] > portalclusters)
+				Sys_Error ("LoadPortals: reading portal %u", i);
+		}
+		clusters[clusternums[i].clusters[0]].numportals++;
+		clusters[clusternums[i].clusters[1]].numportals++;
+
+		if (!(windings[i] = parse_winding (line, numpoints))) {
 			Sys_Error ("LoadPortals: reading portal %u", i);
-
-		winding = portal->winding = NewWinding (&main_thread, numpoints);
-		winding->original = true;
-		winding->numpoints = numpoints;
-
-		for (j = 0; j < numpoints; j++) {
-			// (%ld %ld %ld)
-			while (isspace ((byte) *line))
-				line++;
-			if (*line++ != '(')
-				Sys_Error ("LoadPortals: reading portal %u", i);
-
-			for (k = 0; k < 3; k++) {
-				winding->points[j][k] = strtod (line, &err);
-				if (err == line)
-					Sys_Error ("LoadPortals: reading portal %u", i);
-				line = err;
-			}
-			winding->points[j][3] = 1;
-
-			while (isspace ((byte) *line))
-				line++;
-			if (*line++ != ')')
-				Sys_Error ("LoadPortals: reading portal %u", i);
 		}
+	}
+
+	clusters[0].portals = portals;
+	for (unsigned i = 1; i < portalclusters; i++) {
+		portal_t   *portal = clusters[i - 1].portals;
+		clusters[i].portals = portal + clusters[i - 1].numportals;
+		clusters[i - 1].numportals = 0;
+	}
+	clusters[portalclusters - 1].numportals = 0;
+
+	for (unsigned i = 0; i < numportals; i++) {
+		winding_t  *winding = windings[i];
+		cluster_t  *cluster;
+		portal_t   *portal;
 
 		sphere = SmallestEnclosingBall_vf(winding->points, winding->numpoints);
 		//printf (VEC4F_FMT" %.9g\n", VEC4_EXP (sphere.center), sphere.radius);
@@ -1300,45 +1335,39 @@ LoadPortals (char *name)
 		plane = PlaneFromWinding (winding);
 
 		// create forward portal
-		cluster = &clusters[clusternums[0]];
-		if (cluster->numportals == MAX_PORTALS_ON_CLUSTER)
-			Sys_Error ("Cluster with too many portals");
-		cluster->portals[cluster->numportals] = portal;
-		cluster->numportals++;
-
-		portal->winding = winding;
+		cluster = &clusters[clusternums[i].clusters[0]];
+		portal = &cluster->portals[cluster->numportals++];
 		portal->plane = -plane;	// plane is for CW, portal is CCW
-		portal->cluster = clusternums[1];
 		portal->sphere = sphere;
-		portal++;
-
-		// create backwards portal
-		cluster = &clusters[clusternums[1]];
-		if (cluster->numportals == MAX_PORTALS_ON_CLUSTER)
-			Sys_Error ("Cluster with too many portals");
-		cluster->portals[cluster->numportals] = portal;
-		cluster->numportals++;
+		portal->cluster = clusternums[i].clusters[1];
+		portal->winding = winding;
 
 		// Use a flipped winding for the reverse portal so the winding
 		// direction and plane normal match.
-		portal->winding = NewFlippedWinding (&main_thread, winding);
-		portal->winding->original = true;
+		winding = NewFlippedWinding (&main_thread, winding); // **
+		winding->original = true;
+
+		// create backwards portal
+		cluster = &clusters[clusternums[i].clusters[1]];
+		portal = &cluster->portals[cluster->numportals++];
 		portal->plane = plane;
-		portal->cluster = clusternums[0];
 		portal->sphere = sphere;
-		portal++;
+		portal->cluster = clusternums[i].clusters[0];
+		portal->winding = winding;
 	}
+	free (clusternums);
+	free (windings);
 
 	leafcluster = calloc (numrealleafs, sizeof (int));
 	if (read_leafs) {
-		for (i = 0; i < numrealleafs; i++) {
+		for (unsigned i = 0; i < numrealleafs; i++) {
 			line = Qgetline (f);
 			if (sscanf (line, "%i\n", &leafcluster[i]) != 1)
 				Sys_Error ("LoadPortals: parse error in leaf->cluster "
 						   "mappings");
 		}
 	} else {
-		for (i = 0; i < numrealleafs; i++)
+		for (unsigned i = 0; i < numrealleafs; i++)
 			leafcluster[i] = i;
 	}
 	Qclose (f);

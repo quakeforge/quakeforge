@@ -76,7 +76,7 @@ SimpleFlood (basethread_t *thread, portal_t *srcportal, int clusternum)
     cluster = &clusters[clusternum];
 
     for (i = 0; i < cluster->numportals; i++) {
-		portal = cluster->portals[i];
+		portal = &cluster->portals[i];
 		if (!set_is_member (thread->portalsee, portal - portals))
 			continue;
 		SimpleFlood (thread, srcportal, portal->cluster);

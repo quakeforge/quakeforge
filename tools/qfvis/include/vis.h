@@ -79,13 +79,10 @@ extern pthread_rwlock_t *stats_lock;
 #include "QF/zone.h"
 #include "QF/simd/vec4f.h"
 
-#define	MAX_PORTALS				32768
 #define	PORTALFILE				"PRT1"
 #define	PORTALFILE_AM			"PRT1-AM"
 #define	PORTALFILE2				"PRT2"
 #define	ON_EPSILON				0.1
-#define MAX_POINTS_ON_WINDING	64
-#define	MAX_PORTALS_ON_CLUSTER	128
 
 typedef struct winding_s {
 	struct winding_s *next;
@@ -130,7 +127,7 @@ typedef struct cluster_s {
 	int         numportals;
 	int         visofs;
 	passage_t  *passages;
-	portal_t   *portals[MAX_PORTALS_ON_CLUSTER];
+	portal_t   *portals;
 } cluster_t;
 
 typedef struct pstack_s {
