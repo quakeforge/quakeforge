@@ -50,7 +50,7 @@ VISIBLE tex_t *
 LoadPCX (QFile *f, qboolean convert, const byte *pal, int load)
 {
 	pcx_t      *pcx;
-	int         pcx_mark;
+	size_t      pcx_mark;
 	byte       *palette;
 	byte       *end;
 	byte       *pix;

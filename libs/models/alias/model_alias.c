@@ -214,7 +214,8 @@ Mod_LoadAliasGroup (mod_alias_ctx_t *alias_ctx, void *pin, int *posenum,
 void
 Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 {
-	int         size, version, numframes, start, end, total, i, j;
+	size_t      size, start, end, total;
+	int         version, numframes, i, j;
 	int			extra = 0;		// extra precision bytes
 	void       *mem;
 	dtriangle_t *pintriangles;

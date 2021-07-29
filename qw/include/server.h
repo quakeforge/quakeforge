@@ -452,7 +452,7 @@ extern	char		localmodels[MAX_MODELS][5];	// inline model names for precache
 
 extern	struct info_s	*localinfo;
 
-extern	int			host_hunklevel;
+extern	size_t		host_hunklevel;
 extern	QFile		*sv_logfile;
 extern	QFile		*sv_fraglogfile;
 

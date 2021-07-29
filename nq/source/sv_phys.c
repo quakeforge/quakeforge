@@ -423,7 +423,7 @@ SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 	vec3_t      forward = {1, 0, 0};
 	vec3_t      left    = {0, 1, 0};
 	vec3_t      up      = {0, 0, 1};
-	int         mark;
+	size_t      mark;
 	int         c_flags, c_movetype, c_groundentity, c_solid;
 	vec_t      *c_absmin, *c_absmax, *c_origin, *c_angles, *c_mins, *c_maxs;
 	vec_t      *p_origin, *p_angles;

@@ -211,7 +211,7 @@ double      con_frametime;
 double      con_realtime;
 double      oldcon_realtime;
 
-int         host_hunklevel;
+size_t      host_hunklevel;
 
 cvar_t     *host_speeds;
 cvar_t     *hud_fps;

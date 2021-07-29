@@ -360,7 +360,7 @@ Vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx, vulkan_ctx_t *ctx)
 
 	const char *name = va (ctx->va_ctx, "fb_%s", tx->name);
 	int         size = (tx->width * tx->height * 85) / 64;
-	int         fullbright_mark = Hunk_LowMark (0);
+	size_t      fullbright_mark = Hunk_LowMark (0);
 	byte       *pixels = Hunk_AllocName (0, size, name);
 
 	if (!Mod_CalcFullbright ((byte *) (tx + 1), pixels, size)) {

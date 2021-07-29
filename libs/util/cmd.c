@@ -502,7 +502,7 @@ static void
 Cmd_Exec_f (void)
 {
 	char       *f;
-	int         mark;
+	size_t      mark;
 
 	if (Cmd_Argc () != 2) {
 		Sys_Printf ("exec <filename> : execute a script file\n");

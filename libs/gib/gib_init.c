@@ -62,7 +62,7 @@ static void
 GIB_Exec_Override_f (void)
 {
 	char       *f;
-	int         mark;
+	size_t      mark;
 
 	if (Cmd_Argc () != 2) {
 		Sys_Printf ("exec <filename> : execute a script file\n");

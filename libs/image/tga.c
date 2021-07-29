@@ -625,7 +625,8 @@ LoadTGA (QFile *fin, int load)
 	byte       *dataByte;
 	decoder_t   decode;
 	int         fsize = sizeof (TargaHeader);
-	int			numPixels, targa_mark;
+	int			numPixels;
+	size_t      targa_mark;
 	TargaHeader *targa;
 	tex_t      *tex;
 

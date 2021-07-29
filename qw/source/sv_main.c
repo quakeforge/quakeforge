@@ -106,7 +106,7 @@ entity_state_t cl_entities[MAX_CLIENTS][UPDATE_BACKUP+1][MAX_PACKET_ENTITIES]; /
 double      sv_frametime;
 double      realtime;					// without any filtering or bounding
 
-int         host_hunklevel;
+size_t      host_hunklevel;
 
 netadr_t    master_adr[MAX_MASTERS];	// address of group servers
 

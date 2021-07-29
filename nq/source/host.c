@@ -94,7 +94,7 @@ double      con_realtime;
 double      oldcon_realtime;
 
 int			host_framecount;
-int			host_hunklevel;
+size_t      host_hunklevel;
 int         host_in_game;
 size_t      minimum_memory;
 
