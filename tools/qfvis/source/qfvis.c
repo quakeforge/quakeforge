@@ -247,43 +247,43 @@ split_edge (const vec4f_t *points, const vec4f_t *dists,
 	return mid;
 }
 
-static inline int __attribute__((const))
-is_not_on (int x)
+static inline unsigned __attribute__((const))
+is_not_on (unsigned x)
 {
 	return x & 1;
 }
 
-static inline int __attribute__((const))
-is_back (int x)
+static inline unsigned __attribute__((const))
+is_back (unsigned x)
 {
 	return x & 2;
 }
 
-static inline int __attribute__((const))
+static inline unsigned __attribute__((const))
 is_not_back (unsigned x)
 {
 	return ~x & 2;
 }
 
-static inline int __attribute__((const))
+static inline unsigned __attribute__((const))
 is_front (unsigned x)
 {
 	return is_not_on (x) & (is_not_back (x) >> 1);
 }
 
-static inline int __attribute__((const))
+static inline unsigned __attribute__((const))
 is_back_front (unsigned x, unsigned y)
 {
 	return (is_back (x) >> 1) & is_front (y);
 }
 
-static inline int __attribute__((const))
+static inline unsigned __attribute__((const))
 is_front_back (unsigned x, unsigned y)
 {
 	return is_front (x) & (is_back (y) >> 1);
 }
 
-static inline int __attribute__((const))
+static inline unsigned __attribute__((const))
 is_transition (unsigned x, unsigned y)
 {
 	return is_back_front (x, y) | is_front_back (x, y);
