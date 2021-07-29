@@ -237,7 +237,10 @@ main (int argc, const char **argv)
 
 	tests[5].str_expect = nva ("{%zd}", SIZE);
 	tests[7].str_expect = nva ("{%zd ...}", SIZE);
-	tests[8].str_expect = nva ("{%zd ...}", SIZE);
+	tests[8].str_expect = tests[7].str_expect;
+	tests[9].str_expect = tests[5].str_expect;
+	tests[10].str_expect = tests[5].str_expect;
+	tests[11].str_expect = tests[5].str_expect;
 
 	str = dstring_new ();
 	for (i = 0; i < SIZE; i++) {
