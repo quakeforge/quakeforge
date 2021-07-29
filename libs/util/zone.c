@@ -541,6 +541,8 @@ Hunk_FreeToHighMark (memhunk_t *hunk, size_t mark)
 		hunk->tempactive = false;
 		Hunk_FreeToHighMark (hunk, hunk->tempmark);
 	}
+	if (mark == hunk->high_used)
+		return;
 	if (mark > hunk->high_used)
 		Sys_Error ("Hunk_FreeToHighMark: bad mark %zd", mark);
 	memset (hunk->base + hunk->size - hunk->high_used, 0,
@@ -561,9 +563,8 @@ Hunk_HighMark (memhunk_t *hunk)
 }
 
 VISIBLE void *
-Hunk_AllocName (memhunk_t *hunk, size_t size, const char *name)
+Hunk_RawAllocName (memhunk_t *hunk, size_t size, const char *name)
 {
-	if (!hunk) { hunk = global_hunk; } //FIXME clean up callers
 	hunkblk_t  *h;
 
 #ifdef PARANOID
@@ -592,8 +593,6 @@ Hunk_AllocName (memhunk_t *hunk, size_t size, const char *name)
 
 	Cache_FreeLow (hunk, hunk->low_used);
 
-	memset (h, 0, size);
-
 	h->size = size;
 	h->sentinal1 = HUNK_SENTINAL;
 	h->sentinal2 = HUNK_SENTINAL;
@@ -601,6 +600,21 @@ Hunk_AllocName (memhunk_t *hunk, size_t size, const char *name)
 	h->name[7] = 0;
 
 	return (void *) (h + 1);
+}
+
+VISIBLE void *
+Hunk_AllocName (memhunk_t *hunk, size_t size, const char *name)
+{
+	if (!hunk) { hunk = global_hunk; } //FIXME clean up callers
+	void       *mem = Hunk_RawAllocName (hunk, size, name);
+	memset (mem, 0, size);
+	return mem;
+}
+
+VISIBLE void *
+Hunk_RawAlloc (memhunk_t *hunk, size_t size)
+{
+	return Hunk_RawAllocName (hunk, size, "unknown");
 }
 
 VISIBLE void *
@@ -618,9 +632,21 @@ Hunk_LowMark (memhunk_t *hunk)
 }
 
 VISIBLE void
+Hunk_RawFreeToLowMark (memhunk_t *hunk, size_t mark)
+{
+	if (mark == hunk->low_used)
+		return;
+	if (mark > hunk->low_used)
+		Sys_Error ("Hunk_FreeToLowMark: bad mark %zd", mark);
+	hunk->low_used = mark;
+}
+
+VISIBLE void
 Hunk_FreeToLowMark (memhunk_t *hunk, size_t mark)
 {
 	if (!hunk) { hunk = global_hunk; } //FIXME clean up callers
+	if (mark == hunk->low_used)
+		return;
 	if (mark > hunk->low_used)
 		Sys_Error ("Hunk_FreeToLowMark: bad mark %zd", mark);
 	memset (hunk->base + mark, 0, hunk->low_used - mark);

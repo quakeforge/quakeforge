@@ -111,9 +111,12 @@ typedef struct memhunk_s memhunk_t;
 memhunk_t *Hunk_Init (void *buf, size_t size);
 void Hunk_Print (memhunk_t *hunk, qboolean all);
 void Hunk_Check (memhunk_t *hunk);
+void *Hunk_RawAlloc (memhunk_t *hunk, size_t size) __attribute__((nonnull(1)));
+void *Hunk_RawAllocName (memhunk_t *hunk, size_t size, const char *name) __attribute__((nonnull(1)));
 void *Hunk_Alloc (memhunk_t *hunk, size_t size);	// returns 0 filled memory
 void *Hunk_AllocName (memhunk_t *hunk, size_t size, const char *name);
 size_t Hunk_LowMark (memhunk_t *hunk) __attribute__((pure));
+void Hunk_RawFreeToLowMark (memhunk_t *hunk, size_t mark) __attribute__((nonnull(1)));
 void Hunk_FreeToLowMark (memhunk_t *hunk, size_t mark);
 void *Hunk_TempAlloc (memhunk_t *hunk, size_t size);
 
