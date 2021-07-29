@@ -1443,11 +1443,17 @@ SmallestEnclosingBall (const vec3_t points[], int num_points)
 
 		if (iters++ > 10)
 			Sys_Error ("stuck SEB");
-		best = 0;
 
 		closest_affine_point (support, num_support, sphere.center, affine);
 		VectorSubtract (affine, sphere.center, center_to_affine);
 		affine_dist = DotProduct (center_to_affine, center_to_affine);
+		if (affine_dist < sphere.radius * 1e-5) {
+			// It's possible test_support_points failed due to precision
+			// issues
+			break;
+		}
+
+		best = 0;
 		for (i = 0; i < num_points; i++) {
 			if (points[i] == support[0] || points[i] == support[1]
 				|| points[i] == support[2])
