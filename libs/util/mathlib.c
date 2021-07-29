@@ -1353,7 +1353,7 @@ test_support_points(const vec_t **points, int *num_points, const vec3_t center)
 			nn = DotProduct (n, n);
 			dd = DotProduct (d, d);
 			vv = DotProduct (v, v);
-			in_affine = nn < 1e-6 * vv * dd;
+			in_affine = nn < 1e-5 * vv * dd;
 			break;
 		case 3:
 			VectorSubtract (points[1], points[0], a);
@@ -1363,7 +1363,7 @@ test_support_points(const vec_t **points, int *num_points, const vec3_t center)
 			dn = DotProduct (d, n);
 			dd = DotProduct (d, d);
 			nn = DotProduct (n, n);
-			in_affine = dn * dn < 1e-6 * dd * nn;
+			in_affine = dn * dn < 1e-5 * dd * nn;
 			break;
 		case 4:
 			in_affine = 1;

@@ -197,7 +197,7 @@ test_support_points(const vec4f_t **points, int *num_points, vec4f_t center)
 			nn = dotf (n, n)[0];
 			dd = dotf (d, d)[0];
 			vv = dotf (v, v)[0];
-			in_affine = nn < 1e-6 * vv * dd;
+			in_affine = nn < 1e-5 * vv * dd;
 			break;
 		case 3:
 			a = *points[1] - *points[0];
@@ -207,7 +207,7 @@ test_support_points(const vec4f_t **points, int *num_points, vec4f_t center)
 			dn = dotf (d, n)[0];
 			dd = dotf (d, d)[0];
 			nn = dotf (n, n)[0];
-			in_affine = dn * dn < 1e-6 * dd * nn;
+			in_affine = dn * dn < 1e-5 * dd * nn;
 			break;
 		case 4:
 			in_affine = 1;
