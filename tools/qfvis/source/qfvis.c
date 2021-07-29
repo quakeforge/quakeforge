@@ -156,30 +156,13 @@ NewWinding (threaddata_t *thread, int points)
 	winding_t  *winding;
 	unsigned    size;
 
-	if (points > MAX_POINTS_ON_WINDING)
-		Sys_Error ("NewWinding: %i points", points);
-
 	size = field_offset (winding_t, points[points]);
-	winding = CMEMALLOC (13, winding_t, thread->winding, thread->memsuper);
+	winding = Hunk_RawAlloc (thread->hunk, size);
 	memset (winding, 0, size);
-	thread->stats.winding_alloc++;
 	winding->id = thread->winding_id++;
 	winding->thread = thread->id;
 
 	return winding;
-}
-
-void
-FreeWinding (threaddata_t *thread, winding_t *w)
-{
-	if (!w->original) {
-		unsigned count = thread->stats.winding_alloc - thread->stats.winding_free;
-		if (count > thread->stats.winding_highwater) {
-			thread->stats.winding_highwater = count;
-		}
-		thread->stats.winding_free++;
-		CMEMFREE (thread->winding, w);
-	}
 }
 
 winding_t *
@@ -189,10 +172,9 @@ CopyWinding (threaddata_t *thread, const winding_t *w)
 	winding_t  *copy;
 
 	size = field_offset (winding_t, points[w->numpoints]);
-	copy = CMEMALLOC (13, winding_t, thread->winding, thread->memsuper);
+	copy = Hunk_RawAlloc (thread->hunk, size);
 	memcpy (copy, w, size);
 	copy->original = false;
-	thread->stats.winding_alloc++;
 	copy->id = thread->winding_id++;
 	copy->thread = thread->id;
 	return copy;
@@ -362,7 +344,6 @@ ClipWinding (threaddata_t *thread, winding_t *in, vec4f_t split,
 		return in;
 	}
 	if (!counts[SIDE_FRONT]) {
-		FreeWinding (thread, in);
 		return NULL;
 	}
 	if (!counts[SIDE_BACK]) {
@@ -397,8 +378,6 @@ ClipWinding (threaddata_t *thread, winding_t *in, vec4f_t split,
 		Sys_Error ("ClipWinding: points exceeded estimate: n:%u m:%u",
 				   neww->numpoints, maxpts);
 	}
-	// free the original winding
-	FreeWinding (thread, in);
 
 	return neww;
 }
@@ -461,8 +440,8 @@ UpdateStats (threaddata_t *thread)
 	global_stats.mightseeupdate += thread->stats.mightseeupdate;
 	global_stats.sep_alloc += thread->stats.sep_alloc;
 	global_stats.sep_free += thread->stats.sep_free;
-	global_stats.winding_alloc += thread->stats.winding_alloc;
-	global_stats.winding_free += thread->stats.winding_free;
+	global_stats.winding_mark = max (global_stats.winding_mark,
+									 thread->stats.winding_mark);
 	global_stats.stack_alloc += thread->stats.stack_alloc;
 	global_stats.stack_free += thread->stats.stack_free;
 	UNLOCK (stats_lock);
@@ -569,8 +548,10 @@ LeafThread (void *_thread)
 	int         thread = (int) (intptr_t) _thread;
 	threaddata_t data;
 	int         count = 0;
+	size_t      thread_memsize = 1024 * 1024;
 
 	memset (&data, 0, sizeof (data));
+	data.hunk = Hunk_Init (Sys_Alloc (thread_memsize), thread_memsize);
 	set_pool_init (&data.set_pool);
 	data.id = thread;
 	data.memsuper = new_memsuper ();
@@ -588,13 +569,13 @@ LeafThread (void *_thread)
 
 		PortalFlow (&data, portal);
 
-		int whw = data.stats.winding_highwater;
+		int whm = data.stats.winding_mark;
 		int shw = data.stats.sep_highwater;
 		int smb = data.stats.sep_maxbulk;
 		PortalCompleted (&data, portal);
 		data.stats.sep_highwater = shw;
 		data.stats.sep_maxbulk = smb;
-		data.stats.winding_highwater = whw;
+		data.stats.winding_mark = whm;
 
 		if (options.verbosity >= 4)
 			printf ("portal:%5i  mightsee:%5i  cansee:%5i %5u/%u\n",
@@ -605,8 +586,8 @@ LeafThread (void *_thread)
 	} while (1);
 
 	if (options.verbosity >= 2) {
-		printf ("thread %d winding highwater: %d\n", thread,
-				data.stats.winding_highwater);
+		printf ("thread %d winding mark: %zd\n", thread,
+				data.stats.winding_mark);
 		printf ("thread %d separator highwater: %d\n", thread,
 				data.stats.sep_highwater);
 		printf ("thread %d separator maxbulk: %d\n", thread,
@@ -619,6 +600,8 @@ LeafThread (void *_thread)
 		working[thread] = -1;
 	delete_memsuper (data.memsuper);
 	dstring_delete (data.str);
+
+	Sys_Free (data.hunk, thread_memsize);
 	return NULL;
 }
 
@@ -965,9 +948,7 @@ CalcPortalVis (void)
 			printf ("separators allocated: %u freed: %u %u\n",
 					global_stats.sep_alloc, global_stats.sep_free,
 					global_stats.sep_alloc - global_stats.sep_free);
-			printf ("windings allocated: %u freed: %u %u\n",
-					global_stats.winding_alloc, global_stats.winding_free,
-					global_stats.winding_alloc - global_stats.winding_free);
+			printf ("max windings mark: %zd\n", global_stats.winding_mark);
 			printf ("stack blocks allocated: %u freed: %u %u\n",
 					global_stats.stack_alloc, global_stats.stack_free,
 					global_stats.stack_alloc - global_stats.stack_free);
@@ -1283,8 +1264,6 @@ LoadPortals (char *name)
 			line = err;
 		}
 
-		if (numpoints > MAX_POINTS_ON_WINDING)
-			Sys_Error ("LoadPortals: portal %u has too many points", i);
 		if ((unsigned) clusternums[0] > (unsigned) portalclusters
 			|| (unsigned) clusternums[1] > (unsigned) portalclusters)
 			Sys_Error ("LoadPortals: reading portal %u", i);
@@ -1413,8 +1392,10 @@ main (int argc, char **argv)
 {
 	double      start, stop;
 	QFile      *f;
+	size_t      main_memsize = 1024 * 1024 * 1024;
 
 	main_thread.memsuper = new_memsuper ();
+	main_thread.hunk = Hunk_Init (Sys_Alloc (main_memsize), main_memsize);
 
 	start = Sys_DoubleTime ();
 

@@ -345,12 +345,17 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 	pass_winding = prevstack->pass_winding;
 	pass_plane = prevstack->pass_plane;
 
+	size_t      winding_mark = Hunk_LowMark (thread->hunk);
+
 	// check all portals for flowing into other clusters
 	for (i = 0; i < cluster->numportals; i++) {
 		target_portal = cluster->portals[i];
-
 		if (!set_is_member (prevstack->mightsee, target_portal->cluster))
 			continue;		// can't possibly see it
+
+		thread->stats.winding_mark = max (thread->stats.winding_mark,
+										  Hunk_LowMark (thread->hunk));
+		Hunk_RawFreeToLowMark (thread->hunk, winding_mark);
 
 		// if target_portal can't see anything we haven't already seen, skip it
 		test = select_test_set (target_portal, thread);
@@ -385,7 +390,6 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 			stack->pass_portal = target_portal;
 
 			RecursiveClusterFlow (target_portal->cluster, thread, stack);
-			FreeWinding (thread, target_winding);
 			continue;
 		}
 
@@ -399,7 +403,6 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 
 		source_winding = ClipWinding (thread, source_winding, backplane, false);
 		if (!source_winding) {
-			FreeWinding (thread, target_winding);
 			continue;
 		}
 
@@ -418,7 +421,6 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 											   target_winding);
 			if (!target_winding) {
 				thread->stats.targetclipped++;
-				FreeWinding (thread, source_winding);
 				continue;
 			}
 			if (target_winding != old)
@@ -437,7 +439,6 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 											   target_winding);
 			if (!target_winding) {
 				thread->stats.targetclipped++;
-				FreeWinding (thread, source_winding);
 				continue;
 			}
 			if (target_winding != old)
@@ -455,7 +456,6 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 			free_separators (thread, sep);
 			if (!source_winding) {
 				thread->stats.sourceclipped++;
-				FreeWinding (thread, target_winding);
 				continue;
 			}
 			if (source_winding != old)
@@ -471,7 +471,6 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 			free_separators (thread, sep);
 			if (!source_winding) {
 				thread->stats.sourceclipped++;
-				FreeWinding (thread, target_winding);
 				continue;
 			}
 			if (source_winding != old)
@@ -488,10 +487,8 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 
 		// flow through it for real
 		RecursiveClusterFlow (target_portal->cluster, thread, stack);
-
-		FreeWinding (thread, source_winding);
-		FreeWinding (thread, target_winding);
 	}
+	Hunk_RawFreeToLowMark (thread->hunk, winding_mark);
 	free_separators (thread, stack->separators[1]);
 	free_separators (thread, stack->separators[0]);
 }

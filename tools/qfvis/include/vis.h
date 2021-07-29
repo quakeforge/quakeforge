@@ -76,6 +76,7 @@ extern pthread_rwlock_t *stats_lock;
 #include "QF/cmem.h"
 #include "QF/dstring.h"
 #include "QF/set.h"
+#include "QF/zone.h"
 #include "QF/simd/vec4f.h"
 
 #define	MAX_PORTALS				32768
@@ -92,7 +93,7 @@ typedef struct winding_s {
 	unsigned    numpoints;
 	int         id;
 	int         thread;
-	vec4f_t     points[MAX_PORTALS_ON_CLUSTER];	// variable sized
+	vec4f_t     points[1];	// variable sized
 } winding_t;
 
 typedef enum {
@@ -161,9 +162,7 @@ typedef struct {
 	unsigned    sep_free;		///< how many separators were freed
 	unsigned    sep_highwater;	///< most separators in flight
 	unsigned    sep_maxbulk;	///< most separators freed at once
-	unsigned    winding_alloc;	///< how many windings were allocated
-	unsigned    winding_free;	///< how many windings were freed
-	unsigned    winding_highwater;	///< most windings in flight
+	size_t      winding_mark;	///< most memory allocated to windings
 	unsigned    stack_alloc;	///< how many stack blocks were allocated
 	unsigned    stack_free;		///< how many stack blocks were freed
 } visstat_t;
@@ -176,6 +175,7 @@ typedef struct threaddata_s {
 	sep_t      *sep_freelist;	///< per-thread list of free separators
 	winding_t  *winding_freelist;	///< per-thread list of free windings
 	memsuper_t *memsuper;		///< per-thread memory pool
+	memhunk_t  *hunk;
 	dstring_t  *str;
 	set_pool_t  set_pool;
 	int         id;
@@ -203,7 +203,6 @@ extern cluster_t *clusters;
 extern int *leafcluster;
 extern byte *uncompressed;
 
-void FreeWinding (threaddata_t *thread, winding_t *w);
 winding_t *NewWinding (threaddata_t *thread, int points);
 winding_t *ClipWinding (threaddata_t *thread, winding_t *in, vec4f_t split,
 						qboolean keepon);
