@@ -119,6 +119,7 @@ size_t Hunk_LowMark (memhunk_t *hunk) __attribute__((pure));
 void Hunk_RawFreeToLowMark (memhunk_t *hunk, size_t mark) __attribute__((nonnull(1)));
 void Hunk_FreeToLowMark (memhunk_t *hunk, size_t mark);
 void *Hunk_TempAlloc (memhunk_t *hunk, size_t size);
+int Hunk_PointerIsValid (memhunk_t *hunk, void *ptr) __attribute__((pure));
 
 
 

@@ -715,6 +715,30 @@ Hunk_TempAlloc (memhunk_t *hunk, size_t size)
 	return buf;
 }
 
+VISIBLE int
+Hunk_PointerIsValid (memhunk_t *hunk, void *ptr)
+{
+	if (!hunk) { hunk = global_hunk; } //FIXME clean up callers
+
+	size_t      offset = (byte *) ptr - hunk->base;
+	if (offset >= hunk->size) {
+		return 0;
+	}
+	if (offset < hunk->low_used) {
+		// the pointer is somewhere in the lower space of the hunk
+		// FIXME better checking?
+		return 1;
+	}
+	if (offset >= hunk->size - hunk->high_used + sizeof (hunkblk_t)) {
+		// the pointer is somewhere in the upper space of the hunk
+		// FIXME better checking?
+		return 1;
+	}
+	// the pointer is somewhere in between the two marks, so it has probably
+	// been freed
+	return 0;
+}
+
 /* CACHE MEMORY */
 
 
