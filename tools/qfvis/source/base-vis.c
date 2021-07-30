@@ -136,6 +136,7 @@ PortalBase (basethread_t *thread, portal_t *portal)
 		int         side = test_sphere (&cluster->sphere, portal->plane);
 
 		if (side < 0) {
+			thread->clustertest += cluster->numportals;
 			// The cluster is entirely behind the portal's plane, thus every
 			// portal in the cluster is also behind the portal's plane and
 			// cannot be seen at all.
@@ -145,14 +146,17 @@ PortalBase (basethread_t *thread, portal_t *portal)
 			// every portal in the cluster is also in front of the portal's
 			// plane and may be seen. However, as portals are one-way (ie,
 			// can see out the portal along its plane normal, but not into
-			// the portal against its plane normal), for a cluster's portal
-			// to be considered visible, the current portal must be behind
-			// the cluster's portal, or straddle its plane.
+			// the portal against its plane normal), the current portal
+			// must be behind the cluster's portal, or straddle its plane,
+			// for a cluster's portal to be considered visible.
+			thread->clustertest += cluster->numportals;
 			for (int i = 0; i < cluster->numportals; i++) {
 				tp = cluster->portals + i;
 				if (tp == portal) {
+					thread->selfcull++;
 					continue;
 				}
+				thread->spheretest++;
 				portal_side = test_sphere (&portal->sphere, tp->plane);
 				if (portal_side > 0) {
 					// The portal definitely is entirely in front of the test
@@ -163,14 +167,17 @@ PortalBase (basethread_t *thread, portal_t *portal)
 					// The portal's sphere is behind the test portal's plane,
 					// so the portal itself is entirely behind the plane
 					// thus the test portal is potentially visible.
+					thread->spherepass++;
 					set_add (thread->portalsee, tp - portals);
 				} else {
 					// The portal's sphere straddle's the test portal's
 					// plane, so need to do a more refined check.
+					thread->windingtest++;
 					if (test_winding_back (portal->winding, tp->plane)) {
 						// The portal is at least partially behind the test
 						// portal's plane, so the test portal is potentially
 						// visible.
+						thread->windingpass++;
 						set_add (thread->portalsee, tp - portals);
 					} else {
 						thread->windingcull++;
@@ -178,13 +185,16 @@ PortalBase (basethread_t *thread, portal_t *portal)
 				}
 			}
 		} else {
+			thread->clustertest += cluster->numportals;
 			// The cluster's sphere straddle's the portal's plane, thus each
 			// portal in the cluster must be tested individually.
 			for (int i = 0; i < cluster->numportals; i++) {
 				tp = cluster->portals + i;
 				if (tp == portal) {
+					thread->selfcull++;
 					continue;
 				}
+				thread->spheretest++;
 				// If the target portal is behind the portals's plane, then
 				// it can't possibly be seen by the portal.
 				//
@@ -208,7 +218,13 @@ PortalBase (basethread_t *thread, portal_t *portal)
 					thread->spherecull++;
 					continue;	// entirely in front
 				}
+				if (tp_side > 0 && portal_side < 0) {
+					thread->spherepass++;
+					set_add (thread->portalsee, tp - portals);
+					continue;
+				}
 
+				thread->windingtest++;
 				if (tp_side == 0) {
 					// The test portal's sphere touches the portal's plane,
 					// so do a more refined check.
@@ -226,6 +242,7 @@ PortalBase (basethread_t *thread, portal_t *portal)
 					}
 				}
 
+				thread->windingpass++;
 				set_add (thread->portalsee, tp - portals);
 			}
 		}

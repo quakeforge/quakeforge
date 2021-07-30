@@ -76,9 +76,15 @@ options_t   options;
 static threaddata_t main_thread;
 static visstat_t global_stats;
 unsigned long base_mightsee;
+unsigned long base_selfcull;
 unsigned long base_clustercull;
+unsigned long base_clustertest;
 unsigned long base_spherecull;
+unsigned long base_spheretest;
+unsigned long base_spherepass;
 unsigned long base_windingcull;
+unsigned long base_windingtest;
+unsigned long base_windingpass;
 
 static unsigned portal_count;
 unsigned    numportals;
@@ -636,9 +642,15 @@ BaseVisThread (void *_thread)
 	} while (1);
 
 	WRLOCK (stats_lock);
+	base_selfcull += data.selfcull;
 	base_clustercull += data.clustercull;
+	base_clustertest += data.clustertest;
 	base_spherecull += data.spherecull;
+	base_spheretest += data.spheretest;
+	base_spherepass += data.spherepass;
 	base_windingcull += data.windingcull;
+	base_windingtest += data.windingtest;
+	base_windingpass += data.windingpass;
 	base_mightsee += num_mightsee;
 	UNLOCK (stats_lock);
 
@@ -898,10 +910,19 @@ BasePortalVis (void)
 	end = Sys_DoubleTime ();
 
 	if (options.verbosity >= 1) {
+		unsigned long n = numportals;
 		printf ("base_mightsee: %lu %gs\n", base_mightsee, end - start);
+		printf ("\n");
+		printf (" total tests: %lu\n", n * n * 4);
+		printf ("cluster test: %lu\n", base_clustertest);
 		printf ("cluster cull: %lu\n", base_clustercull);
+		printf ("   self cull: %lu\n", base_selfcull);
+		printf (" sphere test: %lu\n", base_spheretest);
 		printf (" sphere cull: %lu\n", base_spherecull);
+		printf (" sphere pass: %lu\n", base_spherepass);
+		printf ("winding test: %lu\n", base_windingtest);
 		printf ("winding cull: %lu\n", base_windingcull);
+		printf ("winding pass: %lu\n", base_windingpass);
 	}
 }
 
@@ -935,16 +956,16 @@ CalcPortalVis (void)
 	RunThreads (LeafThread, print_progress);
 
 	if (options.verbosity >= 1) {
-		printf ("portalcheck: %i  portaltest: %i  portalpass: %i\n",
+		printf ("portalcheck: %ld  portaltest: %ld  portalpass: %ld\n",
 				global_stats.portalcheck, global_stats.portaltest,
 				global_stats.portalpass);
-		printf ("target trimmed: %d clipped: %d tested: %d\n",
+		printf ("target trimmed: %ld clipped: %ld tested: %ld\n",
 				global_stats.targettrimmed, global_stats.targetclipped,
 				global_stats.targettested);
-		printf ("source trimmed: %d clipped: %d tested: %d\n",
+		printf ("source trimmed: %ld clipped: %ld tested: %ld\n",
 				global_stats.sourcetrimmed, global_stats.sourceclipped,
 				global_stats.sourcetested);
-		printf ("vistest: %i  mighttest: %i mightseeupdate: %i\n",
+		printf ("vistest: %ld  mighttest: %ld mightseeupdate: %ld\n",
 				global_stats.vistest, global_stats.mighttest,
 				global_stats.mightseeupdate);
 		if (options.verbosity >= 2) {
@@ -1420,7 +1441,7 @@ generate_pvs (void)
 	CalcVis ();
 
 	if (options.verbosity >= 1)
-		printf ("chains: %i%s\n", global_stats.chains,
+		printf ("chains: %ld%s\n", global_stats.chains,
 				options.threads > 1 ? " (not reliable)" :"");
 
 	BSP_AddVisibility (bsp, (byte *) visdata->str, visdata->size);

@@ -143,19 +143,19 @@ typedef struct pstack_s {
 } pstack_t;
 
 typedef struct {
-	int         portaltest;		///< number of portals tested via separators
-	int         portalpass;		///< number of portals through which vis passes
-	int         portalcheck;	///< number of portal checks
-	int         targettested;	///< number of times target portal tested
-	int         targettrimmed;	///< number of times target portal trimmed
-	int         targetclipped;	///< number of times target portal clipped away
-	int         sourcetested;	///< number of times source portal tested
-	int         sourcetrimmed;	///< number of times source portal trimmed
-	int         sourceclipped;	///< number of times source portal clipped away
-	int         chains;			///< number of visits to clusters
-	int         mighttest;		///< amount mightsee is used for masked tests
-	int         vistest;		///< amount visbits is used for masked tests
-	int         mightseeupdate;	///< amount of updates to waiting portals
+	unsigned long portaltest;	///< number of portals tested via separators
+	unsigned long portalpass;	///< number of portals through which vis passes
+	unsigned long portalcheck;	///< number of portal checks
+	unsigned long targettested;	///< number of times target portal tested
+	unsigned long targettrimmed;///< number of times target portal trimmed
+	unsigned long targetclipped;///< number of times target portal clipped away
+	unsigned long sourcetested;	///< number of times source portal tested
+	unsigned long sourcetrimmed;///< number of times source portal trimmed
+	unsigned long sourceclipped;///< number of times source portal clipped away
+	unsigned long chains;		///< number of visits to clusters
+	unsigned long mighttest;	///< amount mightsee is used for masked tests
+	unsigned long vistest;		///< amount visbits is used for masked tests
+	unsigned long mightseeupdate;///< amount of updates to waiting portals
 	unsigned    sep_alloc;		///< how many separators were allocated
 	unsigned    sep_free;		///< how many separators were freed
 	unsigned    sep_highwater;	///< most separators in flight
@@ -182,10 +182,16 @@ typedef struct threaddata_s {
 
 typedef struct {
 	set_t      *portalsee;
-	unsigned    clustercull;	///< number of portals culled by cluster sphere
-	unsigned    spherecull;		///< number of portals culled by sphere tests
-	unsigned    windingcull;	///< number of portals culled by winding tests
-	int         clustersee;
+	unsigned long selfcull;		///< number of protals culled by self
+	unsigned long clustercull;	///< number of portals culled by cluster sphere
+	unsigned long clustertest;	///< number of portals tested by cluster
+	unsigned long spheretest;	///< number of portal sphere tests done
+	unsigned long spherecull;	///< number of portals culled by sphere tests
+	unsigned long spherepass;	///< number of portals passed by sphere tests
+	unsigned long windingtest;	///< number of portal pairs tested by winding
+	unsigned long windingcull;	///< number of portals culled by winding tests
+	unsigned long windingpass;	///< number of portals passed by winding tests
+	unsigned long clustersee;
 	int         id;
 } basethread_t;
 
