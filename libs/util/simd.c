@@ -28,6 +28,8 @@
 # include "config.h"
 #endif
 
+#include "qfalloca.h"
+
 #include <math.h>
 
 #define IMPLEMENT_VEC4F_Funcs
@@ -37,6 +39,7 @@
 #include "QF/simd/vec4d.h"
 #include "QF/simd/vec4f.h"
 #include "QF/simd/mat4f.h"
+#include "QF/set.h"
 #include "QF/sys.h"
 
 vec4f_t
@@ -192,12 +195,11 @@ test_support_points(const vec4f_t **points, int *num_points, vec4f_t center)
 			break;
 		case 2:
 			v = *points[1] - *points[0];
-			d = center - *points[0];
+			d = center - (*points[0] + *points[1]) / 2;
 			n = crossf (v, d);
 			nn = dotf (n, n)[0];
-			dd = dotf (d, d)[0];
 			vv = dotf (v, v)[0];
-			in_affine = nn < 1e-5 * vv * dd;
+			in_affine = nn <= 1e-5 * vv * vv;
 			break;
 		case 3:
 			a = *points[1] - *points[0];
@@ -247,6 +249,7 @@ test_support_points(const vec4f_t **points, int *num_points, vec4f_t center)
 vspheref_t
 SmallestEnclosingBall_vf (const vec4f_t *points, int num_points)
 {
+	set_t       was_support = SET_STATIC_INIT (num_points, alloca);
 	vspheref_t  sphere = {};
 	vec4f_t     center = {};
 	const vec4f_t *best;
@@ -262,6 +265,7 @@ SmallestEnclosingBall_vf (const vec4f_t *points, int num_points)
 	for (i = 0; i < 4; i++) {
 		support[i] = 0;
 	}
+	set_empty (&was_support);
 
 	vec4f_t     dist = {};
 	float       best_dist = 0;
@@ -278,50 +282,51 @@ SmallestEnclosingBall_vf (const vec4f_t *points, int num_points)
 	num_support = 1;
 	support[0] = best;
 	sphere.radius = best_dist;	// note: radius squared until the end
+	set_add (&was_support, best - points);
 
 	while (!test_support_points (support, &num_support, center)) {
-		vec4f_t     affine;
-		vec4f_t     center_to_affine, center_to_point;
-		float       affine_dist, point_proj, point_dist, bound;
-		float       scale = 1;
+		vec4f_t     affine, r, rr;
+		vec4f_t     v, p, pv, pp, x;
+		vec4f_t     best_x = { };
 		int         i;
 
-		if (iters++ > 10)
+		//Sys_Printf ("%d: "VEC4F_FMT", %.9g, %d\n", iters, VEC4_EXP (center), sqrt(sphere.radius), num_support);
+		if (iters++ > 2 * num_points) {
+			//for (i = 0; i < num_points; i++) {
+			//	Sys_Printf (VEC4F_FMT",\n", VEC4_EXP (points[i]));
+			//}
 			Sys_Error ("stuck SEB");
+		}
 
 		affine = closest_affine_point (support, num_support, center);
-		center_to_affine = affine - center;
-		affine_dist = dotf (center_to_affine, center_to_affine)[0];
-		if (affine_dist < sphere.radius * 1e-5) {
-			// It's possible test_support_points failed due to precision
-			// issues
-			break;
-		}
+		r = *support[0] - affine; //FIXME better choice
+		rr = dotf (r, r);
+		v = center - affine;
 
 		best = 0;
 		for (i = 0; i < num_points; i++) {
-			if (&points[i] == support[0] || &points[i] == support[1]
-				|| &points[i] == support[2])
+			if (SET_TEST_MEMBER (&was_support, i)) {
 				continue;
-			center_to_point = points[i] - center;
-			point_proj = dotf (center_to_affine, center_to_point)[0];
-			if (affine_dist - point_proj <= 0
-				|| ((affine_dist - point_proj) * (affine_dist - point_proj)
-					< 1e-6 * sphere.radius * affine_dist))
+			}
+			p = points[i] - affine;
+			pp = dotf (p, p);
+			pv = dotf (p, v);
+			if (pp[0] <= rr[0] || pv[0] <= 0
+				|| (pv[0] * pv[0]) < 1e-6 * rr[0]) {
 				continue;
-			point_dist = dotf (center_to_point, center_to_point)[0];
-			bound = sphere.radius - point_dist;
-			bound /= 2 * (affine_dist - point_proj);
-			if (bound < scale) {
+			}
+			x = (pp - rr) / (2 * pv);
+			if (x[0] > best_x[0]) {
 				best = &points[i];
-				scale = bound;
+				best_x = x;
 			}
 		}
-		center = center + scale * center_to_affine;
+		center = affine + best_x * v;
 		dist = center - *support[0];
 		sphere.radius = dotf (dist, dist)[0];
 		if (best) {
 			support[num_support++] = best;
+			set_add (&was_support, best - points);
 		}
 	}
 	best_dist = 0;
