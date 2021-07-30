@@ -75,9 +75,10 @@ options_t   options;
 
 static threaddata_t main_thread;
 static visstat_t global_stats;
-int         base_mightsee;
-unsigned    base_spherecull;
-unsigned    base_windingcull;
+unsigned long base_mightsee;
+unsigned long base_clustercull;
+unsigned long base_spherecull;
+unsigned long base_windingcull;
 
 static unsigned portal_count;
 unsigned    numportals;
@@ -635,6 +636,7 @@ BaseVisThread (void *_thread)
 	} while (1);
 
 	WRLOCK (stats_lock);
+	base_clustercull += data.clustercull;
 	base_spherecull += data.spherecull;
 	base_windingcull += data.windingcull;
 	base_mightsee += num_mightsee;
@@ -896,9 +898,10 @@ BasePortalVis (void)
 	end = Sys_DoubleTime ();
 
 	if (options.verbosity >= 1) {
-		printf ("base_mightsee: %d %gs\n", base_mightsee, end - start);
-		printf ("sphere cull: %u winding cull %u\n",
-				base_spherecull, base_windingcull);
+		printf ("base_mightsee: %lu %gs\n", base_mightsee, end - start);
+		printf ("cluster cull: %lu\n", base_clustercull);
+		printf (" sphere cull: %lu\n", base_spherecull);
+		printf ("winding cull: %lu\n", base_windingcull);
 	}
 }
 
@@ -978,6 +981,31 @@ CalcVis (void)
 	if (options.verbosity >= 0)
 		printf ("average clusters visible: %u\n", totalvis / portalclusters);
 }
+
+static void
+CalcClusterSphers (void)
+{
+	memhunk_t  *hunk = main_thread.hunk;
+
+	for (unsigned i = 0; i < portalclusters; i++) {
+		cluster_t  *cluster = &clusters[i];
+		int         vertcount = 0;
+		for (int j = 0; j < cluster->numportals; j++) {
+			vertcount += cluster->portals[j].winding->numpoints;
+		}
+		size_t      mark = Hunk_LowMark (hunk);
+		vec4f_t    *verts = Hunk_RawAlloc (hunk, vertcount * sizeof (vec4f_t));
+		vertcount = 0;
+		for (int j = 0; j < cluster->numportals; j++) {
+			memcpy (verts + vertcount, cluster->portals[j].winding->points,
+					cluster->portals[j].winding->numpoints * sizeof (vec4f_t));
+			vertcount += cluster->portals[j].winding->numpoints;
+		}
+		cluster->sphere = SmallestEnclosingBall_vf (verts, vertcount);
+		Hunk_RawFreeToLowMark (hunk, mark);
+	}
+}
+
 #if 0
 static qboolean
 PlaneCompare (plane_t *p1, plane_t *p2)
@@ -1388,6 +1416,7 @@ generate_pvs (void)
 
 	uncompressed = calloc (bitbytes_l, portalclusters);
 
+	CalcClusterSphers ();
 	CalcVis ();
 
 	if (options.verbosity >= 1)

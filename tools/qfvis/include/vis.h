@@ -126,6 +126,7 @@ typedef struct passage_s {
 typedef struct cluster_s {
 	int         numportals;
 	int         visofs;
+	vspheref_t  sphere;
 	passage_t  *passages;
 	portal_t   *portals;
 } cluster_t;
@@ -181,6 +182,7 @@ typedef struct threaddata_s {
 
 typedef struct {
 	set_t      *portalsee;
+	unsigned    clustercull;	///< number of portals culled by cluster sphere
 	unsigned    spherecull;		///< number of portals culled by sphere tests
 	unsigned    windingcull;	///< number of portals culled by winding tests
 	int         clustersee;
