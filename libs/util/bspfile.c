@@ -810,7 +810,8 @@ do { \
 	} \
 } while (0)
 
-	tbsp->header->version = BSPVERSION;
+	memcpy (&tbsp->header->version, BSP2VERSION,
+			sizeof (tbsp->header->version));
 
 	data = (byte *) &tbsp->header[1];
 	SET_LUMP (LUMP_PLANES, planes);
