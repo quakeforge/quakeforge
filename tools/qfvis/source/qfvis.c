@@ -679,11 +679,15 @@ print_thread_stats (const int *local_work, int thread, int spinner_ind)
 }
 
 static int
-print_progress (int prev_prog, int spinner_ind)
+portal_progress (void)
 {
-	int         prog;
+	return portal_count * 100 / (numportals * 2) + 1;
+}
 
-	prog = portal_count * 50 / (numportals * 2) + 1;
+static int
+print_progress (int prev_prog, int prog, int spinner_ind)
+{
+	prog /= 2;
 	if (prog > prev_prog)
 		printf ("%.*s", prog - prev_prog, progress + prev_prog);
 	printf (" %c\b\b", spinner[spinner_ind % 4]);
@@ -693,7 +697,7 @@ print_progress (int prev_prog, int spinner_ind)
 
 typedef struct {
 	int         thread;
-	int       (*progress)(int, int);
+	int       (*calc_progress)(void);
 } watch_data_t;
 
 static void *
@@ -716,16 +720,18 @@ WatchThread (void *_wd)
 				break;
 		if (i == thread)
 			break;
-		if (count++ == 100) {
+		if (count++ == 50) {
 			count = 0;
 
 			for (i = 0; i < thread; i ++)
 				local_work[i] = working[i];
 			if (options.verbosity >= 4)
 				print_thread_stats (local_work, thread, spinner_ind);
-			else if (options.verbosity >= 0)
-				prev_prog = wd->progress (prev_prog, spinner_ind);
-			if (prev_port != portal_count || stalled++ == 10) {
+			else if (options.verbosity >= 0) {
+				prev_prog = print_progress (prev_prog, wd->calc_progress (),
+											spinner_ind);
+			}
+			if (prev_port != portal_count || stalled++ == 20) {
 				prev_port = portal_count;
 				stalled = 0;
 				spinner_ind++;
@@ -735,7 +741,8 @@ WatchThread (void *_wd)
 	if (options.verbosity >= 4) {
 		printf ("watch thread done\n");
 	} else if (options.verbosity >= 0) {
-		prev_prog = wd->progress (prev_prog, spinner_ind);
+		prev_prog = print_progress (prev_prog, wd->calc_progress (),
+									spinner_ind);
 		printf ("\n");
 	}
 	free (local_work);
@@ -745,7 +752,7 @@ WatchThread (void *_wd)
 #endif
 
 void
-RunThreads (void *(*thread_func) (void *), int (*progress)(int, int))
+RunThreads (void *(*thread_func) (void *), int (*calc_progress)(void))
 {
 #ifdef USE_PTHREADS
 	pthread_t  *work_threads;
@@ -760,7 +767,7 @@ RunThreads (void *(*thread_func) (void *), int (*progress)(int, int))
 								thread_func, (void *) (intptr_t) i) == -1)
 				Sys_Error ("pthread_create failed");
 		}
-		watch_data_t wd = { i, progress };
+		watch_data_t wd = { i, calc_progress };
 		if (pthread_create (&work_threads[i], &threads_attrib,
 							WatchThread, &wd) == -1)
 			Sys_Error ("pthread_create failed");
@@ -832,6 +839,8 @@ ClusterFlowExpand (const set_t *src, byte *dest)
 	}
 }
 
+
+static sizebuf_t *compressed_vis;
 /*
 	ClusterFlow
 
@@ -840,11 +849,8 @@ ClusterFlowExpand (const set_t *src, byte *dest)
 void
 ClusterFlow (int clusternum)
 {
-	set_t      *visclusters;
-	sizebuf_t   compressed = {
-		.maxsize = (bitbytes_l * 3) / 2,
-		.data = alloca ((bitbytes_l * 3) / 2)
-	};
+	set_t       visclusters = SET_STATIC_INIT (portalclusters, alloca);
+	sizebuf_t  *compressed = &compressed_vis[clusternum];
 
 	byte       *outbuffer;
 	int         numvis, i;
@@ -854,37 +860,94 @@ ClusterFlow (int clusternum)
 	outbuffer = uncompressed + clusternum * bitbytes_l;
 	cluster = &clusters[clusternum];
 
-	// flow through all portals, collecting visible bits
+	set_empty (&visclusters);
 
-	memset (compressed.data, 0, compressed.maxsize);
-	visclusters = set_new ();
+	// flow through all portals, collecting visible bits
 	for (i = 0; i < cluster->numportals; i++) {
 		portal = &cluster->portals[i];
 		if (portal->status != stat_done)
 			Sys_Error ("portal not done");
-		set_union (visclusters, portal->visbits);
+		if (set_is_member (portal->visbits, clusternum)) {
+			//printf ("cluster %d saw into self via portal %d\n",
+			//		clusternum, (int) (portal - portals));
+		}
+		set_union (&visclusters, portal->visbits);
 	}
 
-	if (set_is_member (visclusters, clusternum))
-		Sys_Error ("Cluster portals saw into cluster");
+	set_add (&visclusters, clusternum);
 
-	set_add (visclusters, clusternum);
-
-	numvis = set_count (visclusters);
+	numvis = set_count (&visclusters);
 
 	// expand to cluster->leaf PVS
-	ClusterFlowExpand (visclusters, outbuffer);
-
-	set_delete (visclusters);
+	ClusterFlowExpand (&visclusters, outbuffer);
 
 	// compress the bit string
 	if (options.verbosity >= 4)
 		printf ("cluster %4i : %4i visible\n", clusternum, numvis);
 	totalvis += numvis;
 
-	i = CompressRow (&compressed, outbuffer, numrealleafs, 0);
-	cluster->visofs = visdata->size;
-	dstring_append (visdata, (char *) compressed.data, i);
+	CompressRow (compressed, outbuffer, numrealleafs, 0);
+}
+
+static unsigned work_cluster;
+
+static int
+flow_progress (void)
+{
+	return work_cluster * 100 / portalclusters;
+}
+
+static unsigned
+next_cluster (void)
+{
+	unsigned    cluster = ~0;
+	WRLOCK (global_lock);
+	if (work_cluster < portalclusters) {
+		cluster = work_cluster++;
+	}
+	UNLOCK (global_lock);
+	return cluster;
+}
+
+static void *
+FlowClusters (void *d)
+{
+	int         thread = (intptr_t) d;
+
+	while (1) {
+		unsigned    clusternum = next_cluster ();
+
+		if (working) {
+			working[thread] = clusternum;
+		}
+		if (clusternum == ~0u) {
+			break;
+		}
+		ClusterFlow (clusternum);
+	}
+	return 0;
+}
+
+static void
+CompactPortalVis (void)
+{
+	if (options.verbosity >= 0) {
+		printf ("Comp vis: ");
+	}
+	compressed_vis = malloc (portalclusters * sizeof (sizebuf_t));
+	for (unsigned i = 0; i < portalclusters; i++) {
+		compressed_vis[i] = (sizebuf_t) {
+			.maxsize = (bitbytes_l * 3) / 2,
+			.data = malloc ((bitbytes_l * 3) / 2)
+		};
+	}
+	RunThreads (FlowClusters, flow_progress);
+
+	for (unsigned i = 0; i < portalclusters; i++) {
+		unsigned    size = compressed_vis[i].cursize;
+		clusters[i].visofs = visdata->size;
+		dstring_append (visdata, (char *) compressed_vis[i].data, size);
+	}
 }
 
 static int
@@ -906,7 +969,7 @@ BasePortalVis (void)
 		printf ("\n");
 
 	start = Sys_DoubleTime ();
-	RunThreads (BaseVisThread, print_progress);
+	RunThreads (BaseVisThread, portal_progress);
 	end = Sys_DoubleTime ();
 
 	if (options.verbosity >= 1) {
@@ -953,7 +1016,7 @@ CalcPortalVis (void)
 
 	portal_count = 0;
 
-	RunThreads (LeafThread, print_progress);
+	RunThreads (LeafThread, portal_progress);
 
 	if (options.verbosity >= 1) {
 		printf ("portalcheck: %ld  portaltest: %ld  portalpass: %ld\n",
@@ -993,8 +1056,7 @@ CalcVis (void)
 	CalcPortalVis ();
 
 	// assemble the leaf vis lists by oring and compressing the portal lists
-	for (i = 0; i < portalclusters; i++)
-		ClusterFlow (i);
+	CompactPortalVis ();
 
 	for (i = 0; i < numrealleafs; i++) {
 		bsp->leafs[i + 1].visofs = clusters[leafcluster[i]].visofs;
@@ -1004,7 +1066,7 @@ CalcVis (void)
 }
 
 static void
-CalcClusterSphers (void)
+CalcClusterSpheres (void)
 {
 	memhunk_t  *hunk = main_thread.hunk;
 
@@ -1437,7 +1499,7 @@ generate_pvs (void)
 
 	uncompressed = calloc (bitbytes_l, portalclusters);
 
-	CalcClusterSphers ();
+	CalcClusterSpheres ();
 	CalcVis ();
 
 	if (options.verbosity >= 1)

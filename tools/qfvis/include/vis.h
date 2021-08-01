@@ -171,7 +171,6 @@ typedef struct threaddata_s {
 	portal_t   *base;			///< portal for which this thread is being run
 	pstack_t    pstack_head;
 	sep_t      *sep_freelist;	///< per-thread list of free separators
-	winding_t  *winding_freelist;	///< per-thread list of free windings
 	memsuper_t *memsuper;		///< per-thread memory pool
 	memhunk_t  *hunk;
 	dstring_t  *str;
@@ -224,7 +223,7 @@ int CompressRow (struct sizebuf_s *dest, const byte *vis, unsigned num_leafs,
 
 void CalcFatPVS (void);
 
-void RunThreads (void *(*thread_func) (void *), int (*progress)(int, int));
+void RunThreads (void *(*thread_func) (void *), int (*calc_progress)(void));
 
 extern const char spinner[];
 extern const char progress[];

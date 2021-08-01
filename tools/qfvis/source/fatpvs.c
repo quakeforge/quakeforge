@@ -69,15 +69,9 @@ update_stats (fatstats_t *stats)
 }
 
 static int
-print_progress (int prev_prog, int spinner_ind)
+leaf_progress (void)
 {
-	int         prog;
-	prog = work_leaf * 50 / num_leafs;
-	if (prog > prev_prog)
-		printf ("%.*s", prog - prev_prog, progress + prev_prog);
-	printf (" %c\b\b", spinner[spinner_ind % 4]);
-	fflush (stdout);
-	return prog;
+	return work_leaf * 100 / num_leafs;
 }
 
 static unsigned
@@ -258,11 +252,11 @@ CalcFatPVS (void)
 		};
 	}
 	work_leaf = 0;
-	RunThreads (decompress_thread, print_progress);
+	RunThreads (decompress_thread, leaf_progress);
 	work_leaf = 0;
-	RunThreads (fatten_thread, print_progress);
+	RunThreads (fatten_thread, leaf_progress);
 	work_leaf = 0;
-	RunThreads (compress_thread, print_progress);
+	RunThreads (compress_thread, leaf_progress);
 	printf ("Average leafs visible / fat visible / total: %d / %d / %d\n",
 			(int) (fatstats.pvs_visible / num_leafs),
 			(int) (fatstats.fat_visible / num_leafs), num_leafs);
