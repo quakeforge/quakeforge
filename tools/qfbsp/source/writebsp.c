@@ -53,10 +53,8 @@ int         firstface;
 int
 FindFinalPlane (const dplane_t *p)
 {
-	const dplane_t *dplane;
-	int         i;
-
-	for (i = 0, dplane = bsp->planes; i < bsp->numplanes; i++, dplane++) {
+	for (size_t i = 0; i < bsp->numplanes; i++) {
+		const dplane_t *dplane = bsp->planes + i;
 		if (p->type != dplane->type)
 			continue;
 		if (p->dist != dplane->dist)

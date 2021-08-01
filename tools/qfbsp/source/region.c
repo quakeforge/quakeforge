@@ -163,21 +163,19 @@ RecursiveGrowRegion (dface_t *r, face_t *f)
 static void
 CountRealNumbers (void)
 {
-	int         c, i;
+	qprintf ("%5zd regions\n", bsp->numfaces - firstmodelface);
 
-	qprintf ("%5i regions\n", bsp->numfaces - firstmodelface);
-
-	c = 0;
-	for (i = firstmodelface; i < bsp->numfaces; i++)
+	size_t      c = 0;
+	for (size_t i = firstmodelface; i < bsp->numfaces; i++)
 		c += bsp->faces[i].numedges;
-	qprintf ("%5i real marksurfaces\n", c);
+	qprintf ("%5zd real marksurfaces\n", c);
 
 	c = 0;
-	for (i = firstmodeledge; i < bsp->numedges; i++)
+	for (size_t i = firstmodeledge; i < bsp->numedges; i++)
 		if (edgefaces[i].f[0])
 			c++;						// not removed
 
-	qprintf ("%5i real edges\n", c);
+	qprintf ("%5zd real edges\n", c);
 }
 
 static void

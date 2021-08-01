@@ -73,7 +73,7 @@ static void vulkan_brush_clear (model_t *mod, void *data)
 
 	QFV_DeviceWaitIdle (device);
 
-	for (int i = 0; i < brush->numtextures; i++) {
+	for (unsigned i = 0; i < brush->numtextures; i++) {
 		texture_t  *tx = brush->textures[i];
 		if (!tx) {
 			continue;
@@ -173,7 +173,7 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 	size_t      image_count = 0;
 	size_t      copy_count = 0;
 	size_t      memsize = 0;
-	for (int i = 0; i < brush->numtextures; i++) {
+	for (unsigned i = 0; i < brush->numtextures; i++) {
 		texture_t  *tx = brush->textures[i];
 		if (!tx) {
 			continue;
@@ -210,7 +210,7 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 	qfv_packet_t *packet = QFV_PacketAcquire (stage);
 	buffer = QFV_PacketExtend (packet, memsize);
 
-	for (int i = 0; i < brush->numtextures; i++) {
+	for (unsigned i = 0; i < brush->numtextures; i++) {
 		texture_t  *tx = brush->textures[i];
 		byte       *palette = vid.palette32;
 		if (!tx) {
@@ -263,7 +263,7 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 
 	__auto_type barriers = QFV_AllocImageBarrierSet (image_count, malloc);
 	barriers->size = 0;
-	for (int i = 0; i < brush->numtextures; i++) {
+	for (unsigned i = 0; i < brush->numtextures; i++) {
 		texture_t  *tx = brush->textures[i];
 		if (!tx) {
 			continue;
@@ -281,7 +281,7 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
 								 0, 0, 0, 0, 0,
 								 barriers->size, barriers->a);
-	for (int i = 0, j = 0; i < brush->numtextures; i++) {
+	for (unsigned i = 0, j = 0; i < brush->numtextures; i++) {
 		texture_t  *tx = brush->textures[i];
 		if (!tx) {
 			continue;

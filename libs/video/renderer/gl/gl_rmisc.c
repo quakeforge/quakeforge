@@ -170,10 +170,9 @@ gl_R_Init (void)
 static void
 register_textures (mod_brush_t *brush)
 {
-	int         i;
 	texture_t  *tex;
 
-	for (i = 0; i < brush->numtextures; i++) {
+	for (unsigned i = 0; i < brush->numtextures; i++) {
 		tex = brush->textures[i];
 		if (!tex)
 			continue;
@@ -211,7 +210,7 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	// identify sky texture
 	gl_mirrortexturenum = -1;
 	gl_R_ClearTextures ();
-	for (int i = 0; i < brush->numtextures; i++) {
+	for (unsigned i = 0; i < brush->numtextures; i++) {
 		tex = brush->textures[i];
 		if (!tex)
 			continue;

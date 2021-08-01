@@ -247,7 +247,7 @@ static void
 Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 {
 	dmiptexlump_t  *m;
-	int				i, j, pixels, num, max, altmax;
+	int				pixels, num, max, altmax;
 	miptex_t	   *mt;
 	texture_t	   *tx, *tx2;
 	texture_t	   *anims[10], *altanims[10];
@@ -264,13 +264,13 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 									  m->nummiptex * sizeof (*brush->textures),
 									  mod->name);
 
-	for (i = 0; i < m->nummiptex; i++) {
-		if (m->dataofs[i] == -1)
+	for (uint32_t i = 0; i < m->nummiptex; i++) {
+		if (m->dataofs[i] == ~0u)
 			continue;
 		mt = (miptex_t *) ((byte *) m + m->dataofs[i]);
 		mt->width = LittleLong (mt->width);
 		mt->height = LittleLong (mt->height);
-		for (j = 0; j < MIPLEVELS; j++)
+		for (int j = 0; j < MIPLEVELS; j++)
 			mt->offsets[j] = LittleLong (mt->offsets[j]);
 
 		if ((mt->width & 15) || (mt->height & 15))
@@ -284,7 +284,7 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 		mod_unique_miptex_name (brush->textures, tx, i);
 		tx->width = mt->width;
 		tx->height = mt->height;
-		for (j = 0; j < MIPLEVELS; j++)
+		for (int j = 0; j < MIPLEVELS; j++)
 			tx->offsets[j] =
 				mt->offsets[j] + sizeof (texture_t) - sizeof (miptex_t);
 		// the pixels immediately follow the structures
@@ -300,7 +300,7 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 			render_data = Hunk_AllocName (0, m->nummiptex * render_size,
 										  mod->name);
 		}
-		for (i = 0; i < m->nummiptex; i++) {
+		for (uint32_t i = 0; i < m->nummiptex; i++) {
 			if (!(tx = brush->textures[i])) {
 				continue;
 			}
@@ -313,7 +313,7 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 	}
 
 	// sequence the animations
-	for (i = 0; i < m->nummiptex; i++) {
+	for (uint32_t i = 0; i < m->nummiptex; i++) {
 		tx = brush->textures[i];
 		if (!tx || tx->name[0] != '+')
 			continue;
@@ -340,7 +340,7 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 		} else
 			Sys_Error ("Bad animating texture %s", tx->name);
 
-		for (j = i + 1; j < m->nummiptex; j++) {
+		for (uint32_t j = i + 1; j < m->nummiptex; j++) {
 			tx2 = brush->textures[j];
 			if (!tx2 || tx2->name[0] != '+')
 				continue;
@@ -366,7 +366,7 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 
 #define	ANIM_CYCLE	2
 		// link them all together
-		for (j = 0; j < max; j++) {
+		for (int j = 0; j < max; j++) {
 			tx2 = anims[j];
 			if (!tx2)
 				Sys_Error ("Missing frame %i of %s", j, tx->name);
@@ -377,7 +377,7 @@ Mod_LoadTextures (model_t *mod, bsp_t *bsp)
 			if (altmax)
 				tx2->alternate_anims = altanims[0];
 		}
-		for (j = 0; j < altmax; j++) {
+		for (int j = 0; j < altmax; j++) {
 			tx2 = altanims[j];
 			if (!tx2)
 				Sys_Error ("Missing frame %i of %s", j, tx->name);
@@ -490,7 +490,7 @@ static void
 Mod_LoadTexinfo (model_t *mod, bsp_t *bsp)
 {
 	float       len1, len2;
-	int         count, miptex, i, j;
+	unsigned    count, miptex, i, j;
 	mtexinfo_t *out;
 	texinfo_t  *in;
 
@@ -809,7 +809,7 @@ Mod_LoadClipnodes (model_t *mod, bsp_t *bsp)
 	dclipnode_t *in;
 	mclipnode_t *out;
 	hull_t		*hull;
-	int			 count, i;
+	int         count, i;
 	mod_brush_t *brush = &mod->brush;
 
 	in = bsp->clipnodes;
@@ -853,7 +853,7 @@ Mod_LoadClipnodes (model_t *mod, bsp_t *bsp)
 
 	for (i = 0; i < count; i++, out++, in++) {
 		out->planenum = in->planenum;
-		if (out->planenum < 0 || out->planenum >= brush->numplanes)
+		if (out->planenum >= brush->numplanes)
 			Sys_Error ("Mod_LoadClipnodes: planenum out of bounds");
 		out->children[0] = in->children[0];
 		out->children[1] = in->children[1];
@@ -913,7 +913,7 @@ Mod_MakeHull0 (model_t *mod)
 static void
 Mod_LoadMarksurfaces (model_t *mod, bsp_t *bsp)
 {
-	int			 count, i, j;
+	unsigned    count, i, j;
 	msurface_t **out;
 	uint32_t    *in;
 	mod_brush_t *brush = &mod->brush;
@@ -1037,7 +1037,7 @@ void
 Mod_LoadBrushModel (model_t *mod, void *buffer)
 {
 	dmodel_t   *bm;
-	int			i, j;
+	unsigned    i, j;
 	bsp_t      *bsp;
 
 	mod->type = mod_brush;

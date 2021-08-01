@@ -171,12 +171,11 @@ static void
 init_surface_chains (mod_brush_t *brush, vulkan_ctx_t *ctx)
 {
 	bspctx_t   *bctx = ctx->bsp_context;
-	int         i;
 
 	release_static_instsurfs (bctx);
 	release_instsurfs (bctx);
 
-	for (i = 0; i < brush->nummodelsurfaces; i++) {
+	for (unsigned i = 0; i < brush->nummodelsurfaces; i++) {
 		brush->surfaces[i].instsurf = get_static_instsurf (bctx);
 		brush->surfaces[i].instsurf->surface = &brush->surfaces[i];
 	}
@@ -242,10 +241,9 @@ chain_surface (msurface_t *surf, vulkan_ctx_t *ctx)
 static void
 register_textures (mod_brush_t *brush, vulkan_ctx_t *ctx)
 {
-	int         i;
 	texture_t  *tex;
 
-	for (i = 0; i < brush->numtextures; i++) {
+	for (unsigned i = 0; i < brush->numtextures; i++) {
 		tex = brush->textures[i];
 		if (!tex)
 			continue;
@@ -394,7 +392,6 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
-	int         i, j;
 	int         vertex_index_base;
 	model_t    *m;
 	dmodel_t   *dm;
@@ -414,7 +411,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 	// run through all surfaces, chaining them to their textures, thus
 	// effectively sorting the surfaces by texture (without worrying about
 	// surface order on the same texture chain).
-	for (i = 0; i < num_models; i++) {
+	for (int i = 0; i < num_models; i++) {
 		m = models[i];
 		if (!m)
 			continue;
@@ -424,7 +421,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			continue;
 		brush = &m->brush;
 		dm = brush->submodels;
-		for (j = 0; j < brush->numsurfaces; j++) {
+		for (unsigned j = 0; j < brush->numsurfaces; j++) {
 			vulktex_t  *tex;
 			if (j == dm->firstface + dm->numfaces) {
 				// move on to the next sub-model
@@ -581,7 +578,6 @@ static void
 R_DrawBrushModel (entity_t *e, vulkan_ctx_t *ctx)
 {
 	float       dot, radius;
-	int         i;
 	model_t    *model;
 	plane_t    *plane;
 	msurface_t *surf;
@@ -625,7 +621,7 @@ R_DrawBrushModel (entity_t *e, vulkan_ctx_t *ctx)
 
 	surf = &brush->surfaces[brush->firstmodelsurface];
 
-	for (i = 0; i < brush->nummodelsurfaces; i++, surf++) {
+	for (unsigned i = 0; i < brush->nummodelsurfaces; i++, surf++) {
 		// find the node side on which we are
 		plane = surf->plane;
 

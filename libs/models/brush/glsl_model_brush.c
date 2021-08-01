@@ -65,11 +65,10 @@ static glsltex_t glsl_notexture = { };
 static void
 glsl_brush_clear (model_t *m, void *data)
 {
-	int         i;
 	mod_brush_t *brush = &m->brush;
 
 	m->needload = true;
-	for (i = 0; i < brush->numtextures; i++) {
+	for (unsigned i = 0; i < brush->numtextures; i++) {
 		// NOTE: some maps (eg e1m2) have empty texture slots
 		glsltex_t  *tex = 0;
 		if (brush->textures[i]) {
@@ -82,7 +81,7 @@ glsl_brush_clear (model_t *m, void *data)
 			tex->gl_texturenum = 0;
 		}
 	}
-	for (i = 0; i < brush->numsurfaces; i++) {
+	for (unsigned i = 0; i < brush->numsurfaces; i++) {
 		if (brush->surfaces[i].polys) {
 			free (brush->surfaces[i].polys);
 			brush->surfaces[i].polys = 0;

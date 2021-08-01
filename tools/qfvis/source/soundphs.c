@@ -70,21 +70,20 @@ static byte *surf_ambients;
 static void
 SurfaceBBox (dface_t *s, vec3_t mins, vec3_t maxs)
 {
-	int		vi, e, i, j;
-	float  *v;
-
 	mins[0] = mins[1] = mins[2] = 999999;
 	maxs[0] = maxs[1] = maxs[2] = -99999;
 
-	for (i = 0; i < s->numedges; i++) {
-		e = bsp->surfedges[s->firstedge + i];
+	for (uint32_t i = 0; i < s->numedges; i++) {
+		int         e = bsp->surfedges[s->firstedge + i];
+		int         vi;
+
 		if (e >= 0)
 			vi = bsp->edges[e].v[0];
 		else
 			vi = bsp->edges[-e].v[1];
-		v = bsp->vertexes[vi].point;
+		float      *v = bsp->vertexes[vi].point;
 
-		for (j = 0; j < 3; j++) {
+		for (int j = 0; j < 3; j++) {
 			if (v[j] < mins[j])
 				mins[j] = v[j];
 			if (v[j] > maxs[j])
@@ -104,7 +103,7 @@ init_surf_ambients (void)
 
 	dmiptexlump_t *miptex = (dmiptexlump_t *) bsp->texdata;
 
-	for (int i = 0; i < bsp->numfaces; i++) {
+	for (size_t i = 0; i < bsp->numfaces; i++) {
 		dface_t    *surf = &bsp->faces[i];
 		texinfo_t  *info = &bsp->texinfo[surf->texinfo];
 		int         ofs = miptex->dataofs[info->miptex];

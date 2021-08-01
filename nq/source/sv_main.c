@@ -1105,7 +1105,6 @@ SV_SpawnServer (const char *server)
 {
 	byte       *buf;
 	QFile      *ent_file;
-	int         i;
 	edict_t    *ent;
 
 
@@ -1162,7 +1161,7 @@ SV_SpawnServer (const char *server)
 
 	// leave slots at start for only clients
 	sv.num_edicts = svs.maxclients + 1;
-	for (i = 0; i < svs.maxclients; i++) {
+	for (int i = 0; i < svs.maxclients; i++) {
 		ent = EDICT_NUM (&sv_pr_state, i + 1);
 		svs.clients[i].edict = ent;
 	}
@@ -1190,7 +1189,7 @@ SV_SpawnServer (const char *server)
 
 	sv.model_precache[0] = sv_pr_state.pr_strings;
 	sv.model_precache[1] = sv.modelname;
-	for (i = 1; i < sv.worldmodel->brush.numsubmodels; i++) {
+	for (unsigned i = 1; i < sv.worldmodel->brush.numsubmodels; i++) {
 		sv.model_precache[1 + i] = localmodels[i];
 		sv.models[i + 1] = Mod_ForName (localmodels[i], false);
 	}
@@ -1244,10 +1243,12 @@ SV_SpawnServer (const char *server)
 					sv.signon.cursize);
 
 	// send serverinfo to all connected clients
-	for (i = 0, host_client = svs.clients; i < svs.maxclients; i++,
-			 host_client++)
-		if (host_client->active)
+	for (int i = 0; i < svs.maxclients; i++) {
+		host_client = svs.clients + i;
+		if (host_client->active) {
 			SV_SendServerinfo (host_client);
+		}
+	}
 
 	Sys_MaskPrintf (SYS_dev, "Server spawned.\n");
 	S_UnblockSound ();

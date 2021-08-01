@@ -203,7 +203,7 @@ create_surf_lightmap (msurface_t *surf)
 void
 glsl_R_BuildLightmaps (model_t **models, int num_models)
 {
-	int         i, j, size;
+	int         size;
 	model_t    *m;
 	mod_brush_t *brush;
 
@@ -216,7 +216,7 @@ glsl_R_BuildLightmaps (model_t **models, int num_models)
 	glsl_R_BuildLightMap = R_BuildLightMap_1;
 
 	bl_extents[1] = bl_extents[0] = 0;
-	for (j = 1; j < num_models; j++) {
+	for (int j = 1; j < num_models; j++) {
 		m = models[j];
 		if (!m)
 			break;
@@ -226,7 +226,7 @@ glsl_R_BuildLightmaps (model_t **models, int num_models)
 		}
 		brush = &m->brush;
 		// non-bsp models don't have surfaces.
-		for (i = 0; i < brush->numsurfaces; i++) {
+		for (unsigned i = 0; i < brush->numsurfaces; i++) {
 			msurface_t *surf = brush->surfaces + i;
 			surf->lightpic = 0;		// paranoia
 			if (surf->flags & SURF_DRAWTURB)
@@ -238,7 +238,7 @@ glsl_R_BuildLightmaps (model_t **models, int num_models)
 	}
 	size = bl_extents[0] * bl_extents[1] * 3;	// * 3 for rgb support
 	blocklights = realloc (blocklights, size * sizeof (blocklights[0]));
-	for (j = 1; j < num_models; j++) {
+	for (int j = 1; j < num_models; j++) {
 		m = models[j];
 		if (!m)
 			break;
@@ -248,7 +248,7 @@ glsl_R_BuildLightmaps (model_t **models, int num_models)
 		}
 		brush = &m->brush;
 		// non-bsp models don't have surfaces.
-		for (i = 0; i < brush->numsurfaces; i++) {
+		for (unsigned i = 0; i < brush->numsurfaces; i++) {
 			msurface_t *surf = brush->surfaces + i;
 			if (surf->lightpic)
 				glsl_R_BuildLightMap (0, brush, surf);

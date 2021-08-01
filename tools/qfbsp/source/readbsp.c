@@ -102,10 +102,9 @@ load_planes (void)
 {
 	const dplane_t *p;
 	plane_t     tp = { };
-	int         i;
 
 	planes.size = 0;
-	for (i = 0; i < bsp->numplanes; i++) {
+	for (size_t i = 0; i < bsp->numplanes; i++) {
 		p = bsp->planes + i;
 		VectorCopy (p->normal, tp.normal);
 		tp.dist = p->dist;
@@ -124,11 +123,10 @@ static void
 load_faces (void)
 {
 	const dface_t *f;
-	int         i, j;
 	winding_t  *points;
 
 	mfaces = calloc (bsp->numfaces, sizeof (face_t));
-	for (i = 0; i < bsp->numfaces; i++) {
+	for (size_t i = 0; i < bsp->numfaces; i++) {
 		f = bsp->faces + i;
 		mfaces[i].planenum = f->planenum;
 		mfaces[i].planeside = f->side;
@@ -138,7 +136,7 @@ load_faces (void)
 
 		points = mfaces[i].points;
 		points->numpoints = f->numedges;
-		for (j = 0; j < points->numpoints; j++) {
+		for (int j = 0; j < points->numpoints; j++) {
 			int         e = mfaces[i].edges[j];
 			int         v;
 
@@ -162,11 +160,9 @@ static void
 load_leafs (void)
 {
 	const dleaf_t *l;
-	int         i;
-	unsigned    j;
 
 	leafs = calloc (bsp->numleafs, sizeof (node_t));
-	for (i = 0; i < bsp->numleafs; i++) {
+	for (size_t i = 0; i < bsp->numleafs; i++) {
 		l = bsp->leafs + i;
 		leafs[i].planenum = -1;
 		leafs[i].contents = l->contents;
@@ -174,7 +170,7 @@ load_leafs (void)
 		VectorCopy (l->maxs, leafs[i].maxs);
 		leafs[i].markfaces = calloc (l->nummarksurfaces + 1,
 									 sizeof (face_t *));
-		for (j = 0; j < l->nummarksurfaces; j++) {
+		for (uint32_t j = 0; j < l->nummarksurfaces; j++) {
 			unsigned short ms = l->firstmarksurface + j;
 			leafs[i].markfaces[j] = mfaces + marksurfaces[ms];
 		}
@@ -185,19 +181,16 @@ static void
 load_nodes (void)
 {
 	const dnode_t *n;
-	face_t     *f;
-	int         i;
-	unsigned    j;
 
 	nodes = calloc (bsp->numnodes, sizeof (node_t));
-	for (i = 0; i < bsp->numnodes; i++) {
+	for (size_t i = 0; i < bsp->numnodes; i++) {
 		n = bsp->nodes + i;
 		VectorCopy (n->mins, nodes[i].mins);
 		VectorCopy (n->maxs, nodes[i].maxs);
 		nodes[i].planenum = n->planenum;
 		nodes[i].firstface = n->firstface;
 		nodes[i].numfaces = n->numfaces;
-		for (j = 0; j < 2; j++) {
+		for (int j = 0; j < 2; j++) {
 			if (n->children[j] < 0) {
 				nodes[i].children[j] = leafs - n->children[j] - 1;
 			} else {
@@ -206,7 +199,8 @@ load_nodes (void)
 		}
 		if (nodes[i].numfaces) {
 			nodes[i].faces = mfaces + nodes[i].firstface;
-			for (j = 0, f = nodes[i].faces; j < n->numfaces - 1; j++, f++) {
+			for (uint32_t j = 0; j < n->numfaces - 1; j++) {
+				face_t     *f = nodes[i].faces + j;
 				f->next = f + 1;
 			}
 		}
@@ -375,7 +369,7 @@ extract_textures (void)
 {
 	const dmiptexlump_t *miptexlump = (dmiptexlump_t *) bsp->texdata;
 	miptex_t   *miptex;
-	int         i, mtsize, pixels;
+	int         mtsize, pixels;
 	const char *wadfile;
 	wad_t      *wad;
 	const char *uname;
@@ -387,15 +381,15 @@ extract_textures (void)
 	wad_add_data (wad, "PALETTE", TYP_PALETTE, default_palette,
 				  sizeof (default_palette));
 
-	for (i = 0; i < miptexlump->nummiptex; i++) {
-		if (miptexlump->dataofs[i] == -1)
+	for (size_t i = 0; i < miptexlump->nummiptex; i++) {
+		if (miptexlump->dataofs[i] == ~0u)
 			continue;
 		miptex = (miptex_t *)(bsp->texdata + miptexlump->dataofs[i]);
 		pixels = miptex->width * miptex->height / 64 * 85;
 		mtsize = sizeof (miptex_t) + pixels;
 		uname = unique_name (wad, miptex->name);
 #if 1
-		printf ("%3d %6d ", i, miptexlump->dataofs[i]);
+		printf ("%3zd %6d ", i, miptexlump->dataofs[i]);
 		printf ("%16.16s %16.16s %3dx%-3d %d %d %d %d %d %d\n",
 				miptex->name, uname, miptex->width,
 				miptex->height, miptex->offsets[0], miptex->offsets[1],
@@ -432,7 +426,6 @@ extract_hull (void)
 {
 //	hullfile = output_file (".c");
 	const char *hullfile;
-	int         i, j;
 	QFile      *hf;
 
 	hullfile = output_file (".c");
@@ -441,14 +434,14 @@ extract_hull (void)
 	else
 		hf = Qopen (hullfile, "wt");
 
-	printf ("%d\n", bsp->nummodels);
-	for (i = 0; i < bsp->nummodels; i++) {
+	printf ("%zd\n", bsp->nummodels);
+	for (size_t i = 0; i < bsp->nummodels; i++) {
 		dmodel_t   *m = bsp->models + i;
 		printf ("mins: (%g, %g, %g)\n", m->mins[0], m->mins[1], m->mins[2]);
 		printf ("maxs: (%g, %g, %g)\n", m->maxs[0], m->maxs[1], m->maxs[2]);
 		printf ("origin: (%g, %g, %g)\n",
 				m->origin[0], m->origin[1], m->origin[2]);
-		for (j = 0; j < MAX_MAP_HULLS; j++)
+		for (int j = 0; j < MAX_MAP_HULLS; j++)
 			printf ("headnodes[%d]: %d\n", j, m->headnode[j]);
 		printf ("visleafs: %d\n", m->visleafs);
 		printf ("firstface: %d\n", m->firstface);
@@ -456,7 +449,7 @@ extract_hull (void)
 		printf ("\n");
 	}
 	Qprintf (hf, "dclipnode_t clipnodes[] = {\n");
-	for (i = 0; i < bsp->numnodes; i++) {
+	for (size_t i = 0; i < bsp->numnodes; i++) {
 		int         c0, c1;
 		c0 = bsp->nodes[i].children[0];
 		c1 = bsp->nodes[i].children[1];
@@ -464,13 +457,13 @@ extract_hull (void)
 			c0 = bsp->leafs[-1 - c0].contents;
 		if (c1 < 0)
 			c1 = bsp->leafs[-1 - c1].contents;
-		Qprintf (hf, "\t{%d, {%d, %d}},\t// %d\n", bsp->nodes[i].planenum,
+		Qprintf (hf, "\t{%d, {%d, %d}},\t// %zd\n", bsp->nodes[i].planenum,
 				 c0, c1, i);
 	}
 	Qprintf (hf, "};\n");
 	Qprintf (hf, "mplane_t planes[] = {\n");
-	for (i = 0; i < bsp->numplanes; i++) {
-		Qprintf (hf, "\t{{%g, %g, %g}, %g, %d, 0, {0, 0}},\t// %d\n",
+	for (size_t i = 0; i < bsp->numplanes; i++) {
+		Qprintf (hf, "\t{{%g, %g, %g}, %g, %d, 0, {0, 0}},\t// %zd\n",
 				 bsp->planes[i].normal[0], bsp->planes[i].normal[1],
 				 bsp->planes[i].normal[2],
 				 bsp->planes[i].dist, bsp->planes[i].type,

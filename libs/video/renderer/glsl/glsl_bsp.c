@@ -325,12 +325,10 @@ glsl_R_AddTexture (texture_t *tx)
 static void
 glsl_R_InitSurfaceChains (mod_brush_t *brush)
 {
-	int         i;
-
 	release_static_instsurfs ();
 	release_instsurfs ();
 
-	for (i = 0; i < brush->nummodelsurfaces; i++) {
+	for (unsigned i = 0; i < brush->nummodelsurfaces; i++) {
 		brush->surfaces[i].instsurf = get_static_instsurf ();
 		brush->surfaces[i].instsurf->surface = &brush->surfaces[i];
 	}
@@ -414,10 +412,9 @@ chain_surface (glslbspctx_t *bctx, msurface_t *surf)
 static void
 register_textures (mod_brush_t *brush)
 {
-	int         i;
 	texture_t  *tex;
 
-	for (i = 0; i < brush->numtextures; i++) {
+	for (unsigned i = 0; i < brush->numtextures; i++) {
 		tex = brush->textures[i];
 		if (!tex)
 			continue;
@@ -553,7 +550,6 @@ build_surf_displist (model_t **models, msurface_t *surf, int base,
 void
 glsl_R_BuildDisplayLists (model_t **models, int num_models)
 {
-	int         i, j;
 	int         vertex_index_base;
 	model_t    *m;
 	dmodel_t   *dm;
@@ -571,7 +567,7 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 	// now run through all surfaces, chaining them to their textures, thus
 	// effectively sorting the surfaces by texture (without worrying about
 	// surface order on the same texture chain).
-	for (i = 0; i < num_models; i++) {
+	for (int i = 0; i < num_models; i++) {
 		m = models[i];
 		if (!m)
 			continue;
@@ -581,7 +577,7 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 		brush = &m->brush;
 		// non-bsp models don't have surfaces.
 		dm = brush->submodels;
-		for (j = 0; j < brush->numsurfaces; j++) {
+		for (uint32_t j = 0; j < brush->numsurfaces; j++) {
 			glsltex_t  *tex;
 			if (j == dm->firstface + dm->numfaces) {
 				dm++;
@@ -608,7 +604,7 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 	// Run through the textures, using their chains to build display maps.
 	// For animated textures, if a surface is on one texture of the group, it
 	// will be on all.
-	for (i = 0; i < r_num_texture_chains; i++) {
+	for (int i = 0; i < r_num_texture_chains; i++) {
 		glsltex_t  *tex;
 		instsurf_t *is;
 		elechain_t *ec = 0;
@@ -663,7 +659,6 @@ static void
 R_DrawBrushModel (entity_t *e)
 {
 	float       dot, radius;
-	int         i;
 	unsigned    k;
 	model_t    *model = e->renderer.model;
 	mod_brush_t *brush = &model->brush;
@@ -722,7 +717,7 @@ R_DrawBrushModel (entity_t *e)
 
 	surf = &brush->surfaces[brush->firstmodelsurface];
 
-	for (i = 0; i < brush->nummodelsurfaces; i++, surf++) {
+	for (unsigned i = 0; i < brush->nummodelsurfaces; i++, surf++) {
 		// find the node side on which we are
 		plane = surf->plane;
 

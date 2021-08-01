@@ -549,9 +549,8 @@ gl_R_BlendLightmaps (void)
 void
 gl_overbright_f (cvar_t *var)
 {
-	int			 num, i, j;
+	int			 num;
 	model_t		*m;
-	msurface_t  *surf;
 	entity_t    *ent;
 	mod_brush_t *brush;
 
@@ -608,8 +607,8 @@ gl_overbright_f (cvar_t *var)
 			continue;
 
 		brush = &m->brush;
-		for (j = 0, surf = brush->surfaces; j < brush->numsurfaces;
-			 j++, surf++) {
+		for (unsigned j = 0; j < brush->numsurfaces; j++) {
+			msurface_t *surf = brush->surfaces + j;
 			if (surf->flags & (SURF_DRAWTURB | SURF_DRAWSKY))
 				continue;
 
@@ -626,7 +625,8 @@ gl_overbright_f (cvar_t *var)
 
 	brush = &r_worldentity.renderer.model->brush;
 
-	for (i = 0, surf = brush->surfaces; i < brush->numsurfaces; i++, surf++) {
+	for (unsigned i = 0; i < brush->numsurfaces; i++) {
+		msurface_t *surf = brush->surfaces + i;
 		if (surf->flags & (SURF_DRAWTURB | SURF_DRAWSKY))
 			continue;
 
@@ -709,7 +709,6 @@ GL_CreateSurfaceLightmap (mod_brush_t *brush, msurface_t *surf)
 void
 GL_BuildLightmaps (model_t **models, int num_models)
 {
-	int         i, j;
 	model_t    *m;
 	mod_brush_t *brush;
 
@@ -750,7 +749,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		break;
 	}
 
-	for (j = 1; j < num_models; j++) {
+	for (int j = 1; j < num_models; j++) {
 		m = models[j];
 		if (!m)
 			break;
@@ -762,7 +761,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 		r_pcurrentvertbase = brush->vertexes;
 		gl_currentmodel = m;
 		// non-bsp models don't have surfaces.
-		for (i = 0; i < brush->numsurfaces; i++) {
+		for (unsigned i = 0; i < brush->numsurfaces; i++) {
 			if (brush->surfaces[i].flags & SURF_DRAWTURB)
 				continue;
 			if (gl_sky_divide->int_val && (brush->surfaces[i].flags &
@@ -774,7 +773,7 @@ GL_BuildLightmaps (model_t **models, int num_models)
 	}
 
 	// upload all lightmaps that were filled
-	for (i = 0; i < MAX_LIGHTMAPS; i++) {
+	for (int i = 0; i < MAX_LIGHTMAPS; i++) {
 		if (!allocated[i][0])
 			break;						// no more used
 		gl_lightmap_modified[i] = false;

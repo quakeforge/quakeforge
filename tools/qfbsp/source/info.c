@@ -50,7 +50,7 @@ bspinfo ()
 				lump->fileofs, lump->filelen, lump->filelen / info->size);
 
 	}
-	for (int i = 0; i < bsp->nummodels; i++) {
+	for (unsigned i = 0; i < bsp->nummodels; i++) {
 		dmodel_t   *model = &bsp->models[i];
 		printf ("model: *%d\n", i);
 		printf ("    mins    : [%g, %g, %g]\n", VectorExpand (model->mins));

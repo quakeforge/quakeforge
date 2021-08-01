@@ -160,12 +160,10 @@ gl_R_AddTexture (texture_t *tx)
 void
 gl_R_InitSurfaceChains (mod_brush_t *brush)
 {
-	int         i;
-
 	if (static_chains)
 		free (static_chains);
 	static_chains = calloc (brush->nummodelsurfaces, sizeof (instsurf_t));
-	for (i = 0; i < brush->nummodelsurfaces; i++)
+	for (unsigned i = 0; i < brush->nummodelsurfaces; i++)
 		brush->surfaces[i].instsurf = static_chains + i;
 
 	release_instsurfs ();
@@ -527,8 +525,6 @@ void
 gl_R_DrawBrushModel (entity_t *e)
 {
 	float       dot, radius;
-	int         i;
-	unsigned int k;
 	msurface_t *surf;
 	qboolean    rotated;
 	vec3_t      mins, maxs;
@@ -581,7 +577,7 @@ gl_R_DrawBrushModel (entity_t *e)
 	if (brush->firstmodelsurface != 0 && r_dlight_lightmap->int_val) {
 		vec3_t      lightorigin;
 
-		for (k = 0; k < r_maxdlights; k++) {
+		for (unsigned k = 0; k < r_maxdlights; k++) {
 			if ((r_dlights[k].die < vr_data.realtime)
 				 || (!r_dlights[k].radius))
 				continue;
@@ -600,7 +596,7 @@ gl_R_DrawBrushModel (entity_t *e)
 	surf = &brush->surfaces[brush->firstmodelsurface];
 
 	// draw texture
-	for (i = 0; i < brush->nummodelsurfaces; i++, surf++) {
+	for (unsigned i = 0; i < brush->nummodelsurfaces; i++, surf++) {
 		// find which side of the node we are on
 		plane_t    *plane = surf->plane;
 

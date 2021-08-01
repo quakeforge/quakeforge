@@ -531,7 +531,7 @@ create_image (long width, long height)
 static image_t *
 render_map (bsp_t *bsp)
 {
-	long        i = 0, j = 0, k = 0, x = 0;
+	long        j = 0, k = 0, x = 0;
 
 	dvertex_t  *vertexlist, *vert1, *vert2;
 	dedge_t    *edgelist;
@@ -567,14 +567,14 @@ render_map (bsp_t *bsp)
 			exit (2);
 		}
 		/* initialize the array */
-		for (i = 0; i < bsp->numedges; i++) {
+		for (unsigned i = 0; i < bsp->numedges; i++) {
 			edge_extra[i].num_face_ref = 0;
-			for (j = 0; j < MAX_REF_FACES; j++) {
+			for (int j = 0; j < MAX_REF_FACES; j++) {
 				edge_extra[i].ref_faces[j] = -1;
 			}
 		}
 
-		for (i = 0; i < bsp->numfaces; i++) {
+		for (unsigned i = 0; i < bsp->numfaces; i++) {
 			/* calculate the normal (cross product) */
 			/* starting edge: edgelist[ledges[facelist[i].firstedge]] */
 			/* number of edges: facelist[i].numedges; */
@@ -647,7 +647,7 @@ render_map (bsp_t *bsp)
 
 	printf ("Collecting min/max\n");
 	/* Collect min and max */
-	for (i = 0; i < bsp->numvertexes; i++) {
+	for (unsigned i = 0; i < bsp->numvertexes; i++) {
 
 		/* Ugly hack - flip stuff around for different camera angles */
 		switch (options.camera_axis) {
@@ -788,7 +788,7 @@ render_map (bsp_t *bsp)
 	fprintf (stderr, "Plotting edges...");
 	k = 0;
 	drawcol = (options.edgeremove) ? 64 : 32;
-	for (i = 0; i < bsp->numedges; i++) {
+	for (unsigned i = 0; i < bsp->numedges; i++) {
 		/* Do a check on this line ... see if we keep this line or not */
 
 		/* run through all referenced faces */
@@ -840,7 +840,7 @@ render_map (bsp_t *bsp)
 		}
 
 	}
-	printf ("%d edges plotted", bsp->numedges);
+	printf ("%zd edges plotted", bsp->numedges);
 	if (options.edgeremove) {
 		printf (" (%ld edges removed)\n", k);
 	} else {
@@ -848,7 +848,7 @@ render_map (bsp_t *bsp)
 	}
 
 	/* Little gradient */
-	for (i = 0; i <= 255; i++) {
+	for (unsigned i = 0; i <= 255; i++) {
 		// across from top left
 		plotpoint (image, i, 0, 255 - i);
 		// down from top left
@@ -872,8 +872,8 @@ render_map (bsp_t *bsp)
 
 	/* Negate image if necessary */
 	if (options.negative_image) {
-		for (i = 0; i < image->height; i++) {
-			for (j = 0; j < image->width; j++) {
+		for (int i = 0; i < image->height; i++) {
+			for (int j = 0; j < image->width; j++) {
 				image->image[i * image->width + j] =
 					255 - image->image[i * image->width + j];
 			}

@@ -204,7 +204,7 @@ int         c_cornerverts;
 static PR_RESMAP (hashvert_t) hvertex;
 
 #define EDGEFACE_CHUNK 4096
-int         numedgefaces = 0;
+size_t      numedgefaces = 0;
 edgeface_t *edgefaces = 0;
 int         firstmodeledge = 1;
 int         firstmodelface;
@@ -336,12 +336,12 @@ int         c_tryedges;
 	\return			The edge number. For a re-used edge, the edge number will
 					be negative, indicating the ends of the edge are reversed.
 */
-static int
+static size_t
 GetEdge (const vec3_t p1, const vec3_t p2, face_t *f)
 {
 	dedge_t     edge;
 	unsigned    v1, v2;
-	int         i;
+	size_t      i;
 
 	if (!f->contents[0])
 		Sys_Error ("GetEdge: 0 contents");
