@@ -19,23 +19,23 @@ typedef struct lumpinfo_s {
 	int         size;
 } lumpinfo_t;
 
-#define S(f) sizeof (*((bsp_t *)0)->f)
+#define O(f) field_offset (bsp_t, f)
 static lumpinfo_t lump_info[] = {
-	{ "entities",     S(entdata) },
-	{ "planes",       S(planes) },
-	{ "textures",     S(texdata) },
-	{ "vertices",     S(vertexes) },
-	{ "visibility",   S(visdata) },
-	{ "nodes",        S(nodes) },
-	{ "texinfo",      S(texinfo) },
-	{ "faces",        S(faces) },
-	{ "lighting",     S(lightdata) },
-	{ "clipnodes",    S(clipnodes) },
-	{ "leafs",        S(leafs) },
-	{ "marksurfaces", S(marksurfaces) },
-	{ "edges",        S(edges) },
-	{ "surfedges",    S(surfedges) },
-	{ "models",       S(models) },
+	{ "entities",     O(entdatasize) },
+	{ "planes",       O(numplanes) },
+	{ "textures",     O(texdatasize) },
+	{ "vertices",     O(numvertexes) },
+	{ "visibility",   O(visdatasize) },
+	{ "nodes",        O(numnodes) },
+	{ "texinfo",      O(numtexinfo) },
+	{ "faces",        O(numfaces) },
+	{ "lighting",     O(lightdatasize) },
+	{ "clipnodes",    O(numclipnodes) },
+	{ "leafs",        O(numleafs) },
+	{ "marksurfaces", O(nummarksurfaces) },
+	{ "edges",        O(numedges) },
+	{ "surfedges",    O(numsurfedges) },
+	{ "models",       O(nummodels) },
 };
 
 void
@@ -45,9 +45,10 @@ bspinfo ()
 	for (int i = 0; i < HEADER_LUMPS; i++) {
 		lump_t     *lump = &bsp->header->lumps[i];
 		lumpinfo_t *info = &lump_info[i];
+		size_t     *size = (size_t *)((byte *) bsp + info->size);
 
-		printf ("    %-12s: %7d %7d %7d\n", info->name,
-				lump->fileofs, lump->filelen, lump->filelen / info->size);
+		printf ("    %-12s: %7d %7d %7zd\n", info->name,
+				lump->fileofs, lump->filelen, *size);
 
 	}
 	for (unsigned i = 0; i < bsp->nummodels; i++) {
