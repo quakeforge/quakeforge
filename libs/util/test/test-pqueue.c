@@ -215,7 +215,7 @@ static test_t tests[] = {
 	{ 0,         0,            dump_queue    },
 	{ sort2 + 4, 0,            test_adjust   },
 	{ 0,         0,            dump_queue    },
-	{ sort3 + 7, 4,            test_adjust   },
+	{ sort3 + 6, 4,            test_adjust   },
 	{ 0,         0,            dump_queue    },
 	{ sort3 + 0, SIZEOF(sort), test_remove   },
 };
