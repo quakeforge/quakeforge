@@ -236,8 +236,9 @@ Vulkan_CreateDevice (vulkan_ctx_t *ctx)
 void
 Vulkan_CreateStagingBuffers (vulkan_ctx_t *ctx)
 {
+	// FIXME configurable?
 	ctx->staging = QFV_CreateStagingBuffer (ctx->device, "vulkan_ctx",
-											16*1024*1024, ctx->cmdpool);
+											32*1024*1024, ctx->cmdpool);
 }
 
 void
