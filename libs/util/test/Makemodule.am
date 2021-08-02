@@ -13,6 +13,7 @@ libs_util_tests = \
 	libs/util/test/test-mat3 \
 	libs/util/test/test-mat4 \
 	libs/util/test/test-plist \
+	libs/util/test/test-pqueue \
 	libs/util/test/test-qfs \
 	libs/util/test/test-quat \
 	libs/util/test/test-seb \
@@ -81,6 +82,10 @@ libs_util_test_test_mat4_DEPENDENCIES=libs/util/libQFutil.la
 libs_util_test_test_plist_SOURCES=libs/util/test/test-plist.c
 libs_util_test_test_plist_LDADD=libs/util/libQFutil.la
 libs_util_test_test_plist_DEPENDENCIES=libs/util/libQFutil.la
+
+libs_util_test_test_pqueue_SOURCES=libs/util/test/test-pqueue.c
+libs_util_test_test_pqueue_LDADD=libs/util/libQFutil.la
+libs_util_test_test_pqueue_DEPENDENCIES=libs/util/libQFutil.la
 
 libs_util_test_test_qfs_SOURCES=libs/util/test/test-qfs.c
 libs_util_test_test_qfs_LDADD=libs/util/libQFutil.la

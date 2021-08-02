@@ -42,6 +42,7 @@ include_qf = \
 	include/QF/png.h \
 	include/QF/plist.h \
 	include/QF/plugin.h \
+	include/QF/pqueue.h \
 	include/QF/pr_comp.h \
 	include/QF/pr_debug.h \
 	include/QF/pr_obj.h \
