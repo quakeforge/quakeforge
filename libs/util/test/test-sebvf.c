@@ -182,7 +182,6 @@ struct {
 	int         num_points;
 	vspheref_t  expect;
 } tests[] = {
-#if 0
 	{0,      0, {{ 0,  0, 0, 1}, 0}},
 	{points, 1, {{-1, -1, 1, 1}, 0}},
 	{points, 2, {{ 0,  0, 1, 1}, 1.41421356}},
@@ -202,7 +201,6 @@ struct {
 		{{284.117493, 624.235535, 2959.76489}, 0.352925777}},
 	{tears_cluster2, SIZEOF (tears_cluster2),
 		{{-2192, -256.000031, -736}, 103.479492}},//FIXME numbers?
-#endif
 	{cloud_points, SIZEOF (cloud_points),
 		{{2.20056152, 2.23369908, 2.2332375}, 0.88327992}},
 };
