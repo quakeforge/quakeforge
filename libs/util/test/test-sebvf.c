@@ -233,8 +233,8 @@ main (int argc, const char **argv)
 	for (i = 0; i < num_tests; i ++) {
 		sphere = SmallestEnclosingBall_vf (tests[i].points,
 										   tests[i].num_points);
-		if (VectorDistance_fast (sphere.center, tests[i].expect.center) > 1e-4
-			|| fabs (sphere.radius - tests[i].expect.radius) > 1e-4) {
+		if (VectorDistance_fast (sphere.center, tests[i].expect.center) > 2e-4
+			|| fabs (sphere.radius - tests[i].expect.radius) > 2e-4) {
 			res = 1;
 			printf ("test %d failed\n", (int) i);
 			printf ("expect: {%.9g, %.9g, %.9g}, %.9g\n",
