@@ -348,7 +348,7 @@ in_paste_buffer_f (void)
 }
 
 static void
-win_keydest_callback (keydest_t key_dest)
+win_keydest_callback (keydest_t key_dest, void *data)
 {
 	win_in_game = key_dest == key_game;
 	if (win_in_game) {
@@ -367,7 +367,7 @@ IN_LL_Init (void)
 
 	IN_StartupMouse ();
 
-	Key_KeydestCallback (win_keydest_callback);
+	Key_KeydestCallback (win_keydest_callback, 0);
 	Cmd_AddCommand ("in_paste_buffer", in_paste_buffer_f,
 					"Paste the contents of the C&P buffer to the console");
 }

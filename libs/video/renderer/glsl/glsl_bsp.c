@@ -581,7 +581,7 @@ glsl_R_BuildDisplayLists (model_t **models, int num_models)
 			glsltex_t  *tex;
 			if (j == dm->firstface + dm->numfaces) {
 				dm++;
-				if (dm - brush->submodels == brush->numsubmodels) {
+				if (dm == brush->submodels + brush->numsubmodels) {
 					// limit the surfaces
 					// probably never hit
 					Sys_Printf ("R_BuildDisplayLists: too many surfaces\n");

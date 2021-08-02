@@ -426,7 +426,7 @@ Vulkan_BuildDisplayLists (model_t **models, int num_models, vulkan_ctx_t *ctx)
 			if (j == dm->firstface + dm->numfaces) {
 				// move on to the next sub-model
 				dm++;
-				if (dm - brush->submodels == brush->numsubmodels) {
+				if (dm == brush->submodels + brush->numsubmodels) {
 					// limit the surfaces
 					// probably never hit
 					Sys_Printf ("R_BuildDisplayLists: too many surfaces\n");

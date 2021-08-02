@@ -132,7 +132,7 @@ PortalBase (basethread_t *thread, portal_t *portal)
 	cluster_t  *cluster;
 	int         tp_side, portal_side;
 
-	for (cluster = clusters; cluster - clusters < portalclusters; cluster++) {
+	for (cluster = clusters; cluster < clusters + portalclusters; cluster++) {
 		int         side = test_sphere (&cluster->sphere, portal->plane);
 
 		if (side < 0) {

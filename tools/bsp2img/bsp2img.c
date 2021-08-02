@@ -73,8 +73,8 @@ Thanks fly to Id for a hackable game! :)
 
 /* MW */
 typedef struct edge_extra_t {
-	long        num_face_ref;
-	long        ref_faces[MAX_REF_FACES];	// which faces are referenced
+	uint32_t    num_face_ref;
+	uint32_t    ref_faces[MAX_REF_FACES];	// which faces are referenced
 	dvertex_t   ref_faces_normal[MAX_REF_FACES];	// normal of referenced
 													// faces
 	int         ref_faces_area[MAX_REF_FACES];	// area of the referenced faces
@@ -531,7 +531,7 @@ create_image (long width, long height)
 static image_t *
 render_map (bsp_t *bsp)
 {
-	long        j = 0, k = 0, x = 0;
+	uint32_t    j = 0, k = 0, x = 0;
 
 	dvertex_t  *vertexlist, *vert1, *vert2;
 	dedge_t    *edgelist;
@@ -563,7 +563,7 @@ render_map (bsp_t *bsp)
 		edge_extra = malloc (sizeof (struct edge_extra_t) * bsp->numedges);
 		if (edge_extra == NULL) {
 			fprintf (stderr, "Error allocating %ld bytes for extra edge info.",
-					 (long) sizeof (struct edge_extra_t) * bsp->numedges);
+					 (long) (sizeof (struct edge_extra_t) * bsp->numedges));
 			exit (2);
 		}
 		/* initialize the array */
@@ -842,7 +842,7 @@ render_map (bsp_t *bsp)
 	}
 	printf ("%zd edges plotted", bsp->numedges);
 	if (options.edgeremove) {
-		printf (" (%ld edges removed)\n", k);
+		printf (" (%u edges removed)\n", k);
 	} else {
 		printf ("\n");
 	}
