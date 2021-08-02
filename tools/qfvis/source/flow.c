@@ -298,6 +298,14 @@ mightsee_more (set_t *might, const set_t *prev_might, const set_t *test,
 	return more != 0;
 }
 
+static void
+free_winding_memory (threaddata_t *thread, size_t winding_mark)
+{
+	thread->stats.winding_mark = max (thread->stats.winding_mark,
+									  Hunk_LowMark (thread->hunk));
+	Hunk_RawFreeToLowMark (thread->hunk, winding_mark);
+}
+
 /*
 	RecursiveClusterFlow
 
@@ -353,9 +361,7 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		if (!set_is_member (prevstack->mightsee, target_portal->cluster))
 			continue;		// can't possibly see it
 
-		thread->stats.winding_mark = max (thread->stats.winding_mark,
-										  Hunk_LowMark (thread->hunk));
-		Hunk_RawFreeToLowMark (thread->hunk, winding_mark);
+		free_winding_memory (thread, winding_mark);
 
 		// if target_portal can't see anything we haven't already seen, skip it
 		test = select_test_set (target_portal, thread);
@@ -488,7 +494,7 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		// flow through it for real
 		RecursiveClusterFlow (target_portal->cluster, thread, stack);
 	}
-	Hunk_RawFreeToLowMark (thread->hunk, winding_mark);
+	free_winding_memory (thread, winding_mark);
 	free_separators (thread, stack->separators[1]);
 	free_separators (thread, stack->separators[0]);
 }
