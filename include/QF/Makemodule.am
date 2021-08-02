@@ -48,6 +48,7 @@ include_qf = \
 	include/QF/pr_obj.h \
 	include/QF/pr_type.h \
 	include/QF/progs.h \
+	include/QF/pvsfile.h \
 	include/QF/qargs.h \
 	include/QF/qdefs.h \
 	include/QF/qendian.h \
@@ -67,6 +68,7 @@ include_qf = \
 	include/QF/sound.h \
 	include/QF/spritegn.h \
 	include/QF/sys.h \
+	include/QF/sys_developer.h \
 	include/QF/teamplay.h \
 	include/QF/tga.h \
 	include/QF/va.h \
@@ -189,6 +191,7 @@ qf_math_includedir = $(includedir)/QF/math
 qf_plugin_includedir = $(includedir)/QF/plugin
 qf_scene_includedir = $(includedir)/QF/scene
 qf_simd_includedir = $(includedir)/QF/simd
+qf_ui_includedir = $(includedir)/QF/ui
 qf_vulkan_includedir = $(includedir)/QF/Vulkan
 qf_include_HEADERS = @qfac_include_qf@
 qf_gl_include_HEADERS = @qfac_include_qf_gl@
@@ -197,6 +200,7 @@ qf_math_include_HEADERS = @qfac_include_qf_math@
 qf_plugin_include_HEADERS = @qfac_include_qf_plugin@
 qf_scene_include_HEADERS = @qfac_include_qf_scene@
 qf_simd_include_HEADERS = @qfac_include_qf_simd@
+qf_ui_include_HEADERS = @qfac_include_qf_ui@
 qf_vulkan_include_HEADERS = @qfac_include_qf_vulkan@
 
 ruamoko_qf_includedir = $(ruamoko_includedir)/QF
@@ -210,5 +214,6 @@ EXTRA_HEADERS += \
 	$(include_qf_plugin) \
 	$(include_qf_scene) \
 	$(include_qf_simd) \
+	$(include_qf_ui) \
 	$(include_qf_vulkan) \
 	$(qfcc_include_qf)

@@ -424,7 +424,7 @@ CLEANFILES += \
 	libs/video/renderer/vulkan/*.plc \
 	libs/video/renderer/vulkan/shader/*.spv \
 	libs/video/renderer/vulkan/shader/*.spvc \
-	libs/video/renderer/vulkan/vkgen.sym \
+	vkgen.sym \
 	$(vkparse_src)
 
 BUILT_SOURCES += $(shader_gen)
@@ -442,7 +442,7 @@ EXTRA_DIST += \
 	libs/video/renderer/vulkan/shader/alias.vert \
 	libs/video/renderer/vulkan/shader/alias_depth.vert \
 	libs/video/renderer/vulkan/shader/alias_gbuf.frag \
-	libs/video/renderer/vulkan/shader/alias_shadow.frag \
+	libs/video/renderer/vulkan/shader/alias_shadow.vert \
 	libs/video/renderer/vulkan/shader/bsp_depth.vert \
 	libs/video/renderer/vulkan/shader/bsp_gbuf.frag \
 	libs/video/renderer/vulkan/shader/bsp_gbuf.geom \
