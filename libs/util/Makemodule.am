@@ -56,6 +56,7 @@ libs_util_libQFutil_la_SOURCES= \
 	libs/util/dstring.c \
 	libs/util/fendian.c \
 	libs/util/hash.c \
+	libs/util/heapsort.c \
 	libs/util/idparse.c \
 	libs/util/info.c \
 	libs/util/link.c \

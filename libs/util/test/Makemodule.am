@@ -9,6 +9,7 @@ libs_util_tests = \
 	libs/util/test/test-darray \
 	libs/util/test/test-dq \
 	libs/util/test/test-half \
+	libs/util/test/test-heapsort \
 	libs/util/test/test-mat3 \
 	libs/util/test/test-mat4 \
 	libs/util/test/test-plist \
@@ -64,6 +65,10 @@ libs_util_test_test_dq_DEPENDENCIES=libs/util/libQFutil.la
 libs_util_test_test_half_SOURCES=libs/util/test/test-half.c
 libs_util_test_test_half_LDADD=libs/util/libQFutil.la
 libs_util_test_test_half_DEPENDENCIES=libs/util/libQFutil.la
+
+libs_util_test_test_heapsort_SOURCES=libs/util/test/test-heapsort.c
+libs_util_test_test_heapsort_LDADD=libs/util/libQFutil.la
+libs_util_test_test_heapsort_DEPENDENCIES=libs/util/libQFutil.la
 
 libs_util_test_test_mat3_SOURCES=libs/util/test/test-mat3.c
 libs_util_test_test_mat3_LDADD=libs/util/libQFutil.la

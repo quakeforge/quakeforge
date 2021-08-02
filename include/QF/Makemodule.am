@@ -18,6 +18,7 @@ include_qf = \
 	include/QF/fbsearch.h \
 	include/QF/gib.h \
 	include/QF/hash.h \
+	include/QF/heapsort.h \
 	include/QF/idparse.h \
 	include/QF/image.h \
 	include/QF/in_event.h \

@@ -1,7 +1,7 @@
 /*
-	fbsearch.h
+	heapsort.h
 
-	Fuzzy bsearch
+	Priority heap related functions
 
 	Copyright (C) 2021 Bill Currie <bill@taniwha.org>
 
@@ -25,8 +25,8 @@
 
 */
 
-#ifndef __QF_fbsearch_h
-#define __QF_fbsearch_h
+#ifndef __QF_heapsort_h
+#define __QF_heapsort_h
 
 #include <stddef.h>
 
@@ -40,10 +40,22 @@ typedef int (*__compar_fn_t)(const void *, const void *);
 typedef int (*__compar_d_fn_t)(const void *, const void *, void *);
 #endif
 
-void *fbsearch (const void *key, const void *base, size_t nmemb, size_t size,
+void heap_sink (void *base, size_t ind, size_t nmemb, size_t size,
 				__compar_fn_t cmp);
-
-void *fbsearch_r (const void *key, const void *base, size_t nmemb, size_t size,
+void heap_sink_r (void *base, size_t ind, size_t nmemb, size_t size,
 				  __compar_d_fn_t cmp, void *arg);
 
-#endif//__QF_fbsearch_h
+void heap_swim (void *base, size_t ind, size_t nmemb, size_t size,
+				__compar_fn_t cmp);
+void heap_swim_r (void *base, size_t ind, size_t nmemb, size_t size,
+				  __compar_d_fn_t cmp, void *arg);
+
+void heap_build (void *base, size_t nmemb, size_t size, __compar_fn_t cmp);
+void heap_build_r (void *base, size_t nmemb, size_t size,
+				   __compar_d_fn_t cmp, void *arg);
+
+void heapsort (void *base, size_t nmemb, size_t size, __compar_fn_t cmp);
+void heapsort_r (void *base, size_t nmemb, size_t size,
+				 __compar_d_fn_t cmp, void *arg);
+
+#endif//__QF_heapsort_h
