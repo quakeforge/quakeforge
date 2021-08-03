@@ -138,7 +138,11 @@ decompress_thread (void *d)
 {
 	fatstats_t  stats = { };
 	int         thread = (intptr_t) d;
+	set_t       vis = { };
 
+	if (num_leafs != num_clusters) {
+		vis = (set_t) SET_STATIC_INIT (num_leafs - 1, alloca);
+	}
 	while (1) {
 		unsigned    cluster_num = next_cluster ();
 
@@ -152,9 +156,15 @@ decompress_thread (void *d)
 		if (leaf->visofs >= 0) {
 			visdata = bsp->visdata + leaf->visofs;
 		}
-		decompress_vis (visdata, num_leafs, &base_pvs[cluster_num]);
-		if (cluster_num == 0) {
-			continue;
+		if (num_leafs == num_clusters) {
+			decompress_vis (visdata, num_leafs, &base_pvs[cluster_num]);
+		} else {
+			decompress_vis (visdata, num_leafs, &vis);
+			set_empty (&base_pvs[cluster_num]);
+			for (set_iter_t *iter = set_first_r (&set_pool[thread], &vis);
+				 iter; iter = set_next_r (&set_pool[thread], iter)) {
+				set_add (&base_pvs[cluster_num], leafcluster[iter->element]);
+			}
 		}
 		stats.pvs_visible += set_count (&base_pvs[cluster_num]);
 	}
@@ -183,7 +193,7 @@ fatten_thread (void *d)
 			 iter;
 			 iter = set_next_r (&set_pool[thread], iter)) {
 
-			set_union (&fat_pvs[cluster_num], &base_pvs[leafcluster[iter->element]]);
+			set_union (&fat_pvs[cluster_num], &base_pvs[iter->element]);
 		}
 		stats.fat_visible += set_count (&fat_pvs[cluster_num]);
 		set_difference (&fat_pvs[cluster_num], &base_pvs[cluster_num]);
@@ -226,6 +236,11 @@ compress_thread (void *d)
 	fatstats_t  stats = { };
 	int         thread = (intptr_t) d;
 	qboolean    rle = options.utf8;
+	set_t       vis = { };
+
+	if (num_leafs != num_clusters) {
+		vis = (set_t) SET_STATIC_INIT (num_leafs - 1, alloca);
+	}
 
 	while (1) {
 		unsigned    cluster_num = next_cluster ();
@@ -235,10 +250,23 @@ compress_thread (void *d)
 		if (cluster_num == ~0u) {
 			break;
 		}
+
 		sizebuf_t  *compressed = &cmp_pvs[cluster_num];
 		const byte *fat_bytes = (const byte *) fat_pvs[cluster_num].map;
-		int         bytes = CompressRow (compressed, fat_bytes, num_leafs, rle);
-		stats.fat_bytes += bytes;
+		if (num_leafs != num_clusters) {
+			fat_bytes = (const byte *) vis.map;
+			set_empty (&vis);
+			for (set_iter_t *iter = set_first_r (&set_pool[thread],
+												 &fat_pvs[cluster_num]);
+				 iter; iter = set_next_r (&set_pool[thread], iter)) {
+				for (uint32_t j = 0;
+					 j < leafmap[iter->element].num_leafs; j++) {
+					uint32_t    l = leafmap[iter->element].first_leaf + j;
+					set_add (&vis, leafvis[l].leafnum);
+				}
+			}
+		}
+		stats.fat_bytes += CompressRow (compressed, fat_bytes, num_leafs, rle);
 	}
 	update_stats (&stats);
 	return 0;
@@ -285,6 +313,9 @@ reconstruct_clusters (void)
 		leafcluster[leafvis[i].leafnum] = lm - leafmap;
 		lm->num_leafs++;
 	}
+	//for (unsigned i = 0; i < num_leafs; i++) {
+	//	printf ("%d %d %d\n", i, leafvis[i].visoffs, leafvis[i].leafnum);
+	//}
 	//for (unsigned i = 0; i < num_clusters; i++) {
 	//	printf ("%d %d %d\n", i, leafmap[i].first_leaf, leafmap[i].num_leafs);
 	//}
@@ -307,8 +338,8 @@ allocate_data (void)
 	// if that byte is 0, an extra byte for the count is required.
 	visbytes = (visbytes * 3) / 2 + 1;
 	for (unsigned i = 0; i < num_clusters; i++) {
-		base_pvs[i] = (set_t) SET_STATIC_INIT (num_leafs - 1, malloc);
-		fat_pvs[i] = (set_t) SET_STATIC_INIT (num_leafs - 1, malloc);
+		base_pvs[i] = (set_t) SET_STATIC_INIT (num_clusters - 1, malloc);
+		fat_pvs[i] = (set_t) SET_STATIC_INIT (num_clusters - 1, malloc);
 		cmp_pvs[i] = (sizebuf_t) {
 			.data = malloc (visbytes),
 			.maxsize = visbytes,
@@ -369,9 +400,9 @@ CalcFatPVS (void)
 	work_cluster = 0;
 	RunThreads (compress_thread, cluster_progress);
 
-	printf ("Average leafs visible / fat visible / total: %d / %d / %d\n",
+	printf ("Average clusters visible / fat visible / total: %d / %d / %d\n",
 			(int) (fatstats.pvs_visible / num_clusters),
-			(int) (fatstats.fat_visible / num_clusters), num_leafs);
+			(int) (fatstats.fat_visible / num_clusters), num_clusters);
 	printf ("Compressed fat vis size: %ld\n", fatstats.fat_bytes);
 
 	write_pvs_file ();
