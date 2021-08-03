@@ -106,6 +106,7 @@ byte       *uncompressed;		// [bitbytes * portalleafs]
 uint32_t   *leafcluster;	// leaf to cluster mappings as read from .prt file
 
 int        *working;		// per thread current portal #
+int         progress_tick;
 
 static void
 InitThreads (void)
@@ -398,6 +399,7 @@ GetNextPortal (int limit)
 		  && options.portal_limit > 0
 		  && portal_count >= options.portal_limit)) {
 		WRLOCK (global_lock);
+		progress_tick++;
 		if (portal_count < 2 * numportals) {
 			p = portal_queue[portal_count++];
 			p->status = stat_selected;
@@ -710,7 +712,7 @@ WatchThread (void *_wd)
 	int         spinner_ind = 0;
 	int         count = 0;
 	int         prev_prog = 0;
-	unsigned    prev_port = 0;
+	int         prev_tick = 0;
 	int         stalled = 0;
 
 	while (1) {
@@ -731,8 +733,8 @@ WatchThread (void *_wd)
 				prev_prog = print_progress (prev_prog, wd->calc_progress (),
 											spinner_ind);
 			}
-			if (prev_port != portal_count || stalled++ == 20) {
-				prev_port = portal_count;
+			if (prev_tick != progress_tick || stalled++ == 20) {
+				prev_tick = progress_tick;
 				stalled = 0;
 				spinner_ind++;
 			}
@@ -743,7 +745,6 @@ WatchThread (void *_wd)
 	} else if (options.verbosity >= 0) {
 		prev_prog = print_progress (prev_prog, wd->calc_progress (),
 									spinner_ind);
-		printf ("\n");
 	}
 	free (local_work);
 
@@ -751,17 +752,48 @@ WatchThread (void *_wd)
 }
 #endif
 
+static double
+thread_start (const char *msg)
+{
+	if (options.verbosity >= 0) {
+		printf ("%-10.10s: ", msg);
+	}
+	if (options.verbosity >= 4) {
+		printf ("\n");
+	}
+	return Sys_DoubleTime ();
+}
+
+static void
+thread_end (double start)
+{
+	double      end = Sys_DoubleTime ();
+	double      duration = end - start;
+
+	if (options.verbosity >= 0) {
+		if (duration >= 1.2) {
+			printf (" %5.1fs", duration);
+		} else {
+			printf (" %5.1fms", duration * 1000);
+		}
+	}
+	printf ("\n");
+}
+
 void
-RunThreads (void *(*thread_func) (void *), int (*calc_progress)(void))
+RunThreads (const char *heading, void *(*thread_func) (void *),
+			int (*calc_progress)(void))
 {
 #ifdef USE_PTHREADS
 	pthread_t  *work_threads;
 	void       *status;
 	int         i;
+	double      start;
 
 	if (options.threads > 1) {
 		work_threads = alloca ((options.threads + 1) * sizeof (pthread_t *));
 		working = calloc (options.threads, sizeof (int));
+		start = thread_start (heading);
 		for (i = 0; i < options.threads; i++) {
 			if (pthread_create (&work_threads[i], &threads_attrib,
 								thread_func, (void *) (intptr_t) i) == -1)
@@ -778,10 +810,13 @@ RunThreads (void *(*thread_func) (void *), int (*calc_progress)(void))
 		}
 		if (pthread_join (work_threads[i], &status) == -1)
 			Sys_Error ("pthread_join failed");
+		thread_end (start);
 
 		free (working);
 	} else {
+		start = thread_start (heading);
 		thread_func (0);
+		thread_end (start);
 	}
 #else
 	thread_func (0);
@@ -902,6 +937,7 @@ next_cluster (void)
 {
 	unsigned    cluster = ~0;
 	WRLOCK (global_lock);
+	progress_tick++;
 	if (work_cluster < portalclusters) {
 		cluster = work_cluster++;
 	}
@@ -931,9 +967,6 @@ FlowClusters (void *d)
 static void
 CompactPortalVis (void)
 {
-	if (options.verbosity >= 0) {
-		printf ("Comp vis: ");
-	}
 	compressed_vis = malloc (portalclusters * sizeof (sizebuf_t));
 	for (unsigned i = 0; i < portalclusters; i++) {
 		compressed_vis[i] = (sizebuf_t) {
@@ -941,7 +974,7 @@ CompactPortalVis (void)
 			.data = malloc ((bitbytes_l * 3) / 2)
 		};
 	}
-	RunThreads (FlowClusters, flow_progress);
+	RunThreads ("Comp vis", FlowClusters, flow_progress);
 
 	for (unsigned i = 0; i < portalclusters; i++) {
 		unsigned    size = compressed_vis[i].cursize;
@@ -963,13 +996,8 @@ BasePortalVis (void)
 {
 	double      start, end;
 
-	if (options.verbosity >= 0)
-		printf ("Base vis: ");
-	if (options.verbosity >= 4)
-		printf ("\n");
-
 	start = Sys_DoubleTime ();
-	RunThreads (BaseVisThread, portal_progress);
+	RunThreads ("Base vis", BaseVisThread, portal_progress);
 	end = Sys_DoubleTime ();
 
 	if (options.verbosity >= 1) {
@@ -1009,14 +1037,9 @@ CalcPortalVis (void)
 	if (options.verbosity >= 1)
 		printf ("qsort: %gs\n", end - start);
 
-	if (options.verbosity >= 0)
-		printf ("Full vis: ");
-	if (options.verbosity >= 4)
-		printf ("\n");
-
 	portal_count = 0;
 
-	RunThreads (LeafThread, portal_progress);
+	RunThreads ("Full vis", LeafThread, portal_progress);
 
 	if (options.verbosity >= 1) {
 		printf ("portalcheck: %ld  portaltest: %ld  portalpass: %ld\n",

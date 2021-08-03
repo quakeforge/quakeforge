@@ -223,10 +223,12 @@ int CompressRow (struct sizebuf_s *dest, const byte *vis, unsigned num_leafs,
 
 void CalcFatPVS (void);
 
-void RunThreads (void *(*thread_func) (void *), int (*calc_progress)(void));
+void RunThreads (const char *heading, void *(*thread_func) (void *),
+				 int (*calc_progress)(void));
 
 extern const char spinner[];
 extern const char progress[];
 extern int *working;
+extern int progress_tick;
 
 #endif// __vis_h

@@ -92,6 +92,7 @@ next_cluster (void)
 {
 	unsigned    leaf = ~0;
 	WRLOCK (global_lock);
+	progress_tick++;
 	if (work_cluster < num_clusters) {
 		leaf = work_cluster++;
 	}
@@ -201,34 +202,6 @@ fatten_thread (void *d)
 	update_stats (&stats);
 	return 0;
 }
-#if 0
-static void *
-fatten_thread2 (void *d)
-{
-	for (unsigned visword = 0; visword < SET_WORDS (&sv.pvs[0]); visword++) {
-		Sys_Printf ("%d / %ld\n", visword, SET_WORDS (&sv.pvs[0]));
-		for (i = 0; i < num; i++) {
-			for (unsigned j = 0; j < SET_BITS; j++) {
-				unsigned    visbit = visword * SET_BITS + j;
-				if (visbit >= (unsigned) num) {
-					break;
-				}
-				if (SET_TEST_MEMBER (&sv.pvs[i], visbit)) {
-					// or this pvs row into the phs
-					// +1 because pvs is 1 based
-					set_union (&sv.phs[i], &sv.pvs[visbit + 1]);
-				}
-			}
-		}
-	}
-	for (i = 1; i < num; i++) {
-		for (set_iter_t *iter = set_first (&sv.phs[i]); iter;
-			 iter = set_next (iter)) {
-			count++;
-		}
-	}
-}
-#endif
 
 static void *
 compress_thread (void *d)
@@ -298,8 +271,6 @@ reconstruct_clusters (void)
 		num_clusters += leafvis[i].visoffs != leafvis[i - 1].visoffs;
 	}
 
-	printf ("num_clusters: %u\n", num_clusters);
-
 	leafcluster = malloc (num_leafs * sizeof (uint32_t));
 	leafmap = calloc (num_clusters, sizeof (leafmap_t));
 	leafmap_t  *lm = leafmap;
@@ -313,13 +284,9 @@ reconstruct_clusters (void)
 		leafcluster[leafvis[i].leafnum] = lm - leafmap;
 		lm->num_leafs++;
 	}
-	//for (unsigned i = 0; i < num_leafs; i++) {
-	//	printf ("%d %d %d\n", i, leafvis[i].visoffs, leafvis[i].leafnum);
-	//}
-	//for (unsigned i = 0; i < num_clusters; i++) {
-	//	printf ("%d %d %d\n", i, leafmap[i].first_leaf, leafmap[i].num_leafs);
-	//}
-	printf ("%d\n", num_leafs);
+
+	printf ("leafs   : %u\n", num_leafs);
+	printf ("clusters: %u\n", num_clusters);
 }
 
 static void
@@ -392,13 +359,13 @@ CalcFatPVS (void)
 	allocate_data ();
 
 	work_cluster = 0;
-	RunThreads (decompress_thread, cluster_progress);
+	RunThreads ("Decompress", decompress_thread, cluster_progress);
 
 	work_cluster = 0;
-	RunThreads (fatten_thread, cluster_progress);
+	RunThreads ("Fatten", fatten_thread, cluster_progress);
 
 	work_cluster = 0;
-	RunThreads (compress_thread, cluster_progress);
+	RunThreads ("Compress", compress_thread, cluster_progress);
 
 	printf ("Average clusters visible / fat visible / total: %d / %d / %d\n",
 			(int) (fatstats.pvs_visible / num_clusters),

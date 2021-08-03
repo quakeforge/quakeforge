@@ -204,6 +204,7 @@ next_leaf (void)
 {
 	unsigned    leaf = ~0;
 	WRLOCK (global_lock);
+	progress_tick++;
 	if (work_leaf < numrealleafs) {
 		leaf = work_leaf++;
 	}
@@ -239,8 +240,5 @@ void
 CalcAmbientSounds (void)
 {
 	init_surf_ambients ();
-	if (options.verbosity >= 0) {
-		printf ("Ambients: ");
-	}
-	RunThreads (AmbientThread, ambient_progress);
+	RunThreads ("Ambients", AmbientThread, ambient_progress);
 }
