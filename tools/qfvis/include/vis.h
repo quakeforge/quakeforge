@@ -204,7 +204,7 @@ extern struct bsp_s *bsp;
 
 extern portal_t *portals;
 extern cluster_t *clusters;
-extern int *leafcluster;
+extern uint32_t *leafcluster;
 extern byte *uncompressed;
 
 winding_t *NewWinding (threaddata_t *thread, int points);

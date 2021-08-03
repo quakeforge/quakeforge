@@ -103,7 +103,7 @@ portal_t   *portals;
 cluster_t  *clusters;
 dstring_t  *visdata;
 byte       *uncompressed;		// [bitbytes * portalleafs]
-int        *leafcluster;	// leaf to cluster mappings as read from .prt file
+uint32_t   *leafcluster;	// leaf to cluster mappings as read from .prt file
 
 int        *working;		// per thread current portal #
 
@@ -1469,7 +1469,7 @@ LoadPortals (char *name)
 	free (clusternums);
 	free (windings);
 
-	leafcluster = calloc (numrealleafs, sizeof (int));
+	leafcluster = calloc (numrealleafs, sizeof (uint32_t));
 	if (read_leafs) {
 		for (unsigned i = 0; i < numrealleafs; i++) {
 			line = Qgetline (f);
@@ -1490,6 +1490,7 @@ generate_pvs (void)
 	QFile      *f;
 
 	dstring_t  *portalfile = dstring_new ();
+	dstring_t  *backupfile = dstring_new ();
 
 	visdata = dstring_new ();
 
@@ -1513,12 +1514,17 @@ generate_pvs (void)
 
 	CalcAmbientSounds ();
 
+	dstring_copystr (backupfile, options.bspfile->str);
+	QFS_SetExtension (backupfile, ".bsp~");
+
+	Qrename (options.bspfile->str, backupfile->str);
 	f = Qopen (options.bspfile->str, "wb");
 	if (!f)
 		Sys_Error ("couldn't open %s for writing.", options.bspfile->str);
 	WriteBSPFile (bsp, f);
 	Qclose (f);
 
+	dstring_delete (backupfile);
 	dstring_delete (portalfile);
 	dstring_delete (visdata);
 	dstring_delete (options.bspfile);
