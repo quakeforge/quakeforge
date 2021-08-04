@@ -150,7 +150,7 @@ _set_add (set_t *set, unsigned x)
 {
 	if (x >= set->size)
 		set_expand (set, x + 1);
-	set->map[x / SET_BITS] |= SET_ONE << (x % SET_BITS);
+	SET_ADD(set, x);
 }
 
 static inline void
@@ -158,7 +158,7 @@ _set_remove (set_t *set, unsigned x)
 {
 	if (x >= set->size)
 		return;
-	set->map[x / SET_BITS] &= ~(SET_ONE << (x % SET_BITS));
+	SET_REMOVE(set, x);
 }
 
 set_t *
@@ -539,7 +539,7 @@ _set_is_member (const set_t *set, unsigned x)
 {
 	if (x >= set->size)
 		return 0;
-	return (set->map[x / SET_BITS] & (SET_ONE << (x % SET_BITS))) != 0;
+	return SET_TEST_MEMBER(set, x) != 0;
 }
 
 int

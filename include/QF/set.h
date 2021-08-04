@@ -56,7 +56,11 @@ typedef uint32_t set_bits_t;
 #define SET_ZERO ((set_bits_t) 0)
 #define SET_ONE ((set_bits_t) 1)
 #define SET_TEST_MEMBER(s, x) \
-	((s)->map[(x) / SET_BITS] & (SET_ONE << ((x) % SET_BITS)))
+	(((const byte *)(s)->map)[(x) / 8] & (SET_ONE << ((x) % 8)))
+#define SET_ADD(s, x) \
+	(((byte *)(s)->map)[(x) / 8] |= (SET_ONE << ((x) % 8)))
+#define SET_REMOVE(s, x) \
+	(((byte *)(s)->map)[(x) / 8] &= ~(SET_ONE << ((x) % 8)))
 #define SET_STATIC_INIT(x, alloc) { \
 	.size = SET_SIZE (x), \
 	.map = alloc (SET_SIZE (x) / 8), \
