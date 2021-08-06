@@ -260,15 +260,24 @@ static void
 reconstruct_clusters (void)
 {
 	leafvis = malloc (num_leafs * sizeof (leafvis_t));
+	int         sorted = 1;
+	num_clusters = 1;
 	for (unsigned i = 0; i < num_leafs; i++) {
 		leafvis[i].visoffs = bsp->leafs[i + 1].visofs;
 		leafvis[i].leafnum = i;
+		if (i > 0) {
+			num_clusters += leafvis[i].visoffs != leafvis[i - 1].visoffs;
+			if (leafvis[i].visoffs < leafvis[i - 1].visoffs) {
+				sorted = 0;
+			}
+		}
 	}
-	heapsort (leafvis, num_leafs, sizeof (leafvis_t), leaf_compare);
-
-	num_clusters = 1;
-	for (unsigned i = 1; i < num_leafs; i++) {
-		num_clusters += leafvis[i].visoffs != leafvis[i - 1].visoffs;
+	if (!sorted) {
+		heapsort (leafvis, num_leafs, sizeof (leafvis_t), leaf_compare);
+		num_clusters = 1;
+		for (unsigned i = 1; i < num_leafs; i++) {
+			num_clusters += leafvis[i].visoffs != leafvis[i - 1].visoffs;
+		}
 	}
 
 	leafcluster = malloc (num_leafs * sizeof (uint32_t));
