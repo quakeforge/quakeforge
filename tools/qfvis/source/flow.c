@@ -361,8 +361,6 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		if (!set_is_member (prevstack->mightsee, target_portal->cluster))
 			continue;		// can't possibly see it
 
-		free_winding_memory (thread, winding_mark);
-
 		// if target_portal can't see anything we haven't already seen, skip it
 		test = select_test_set (target_portal, thread);
 		if (!mightsee_more (might, prevstack->mightsee, test, vis)) {
@@ -378,6 +376,8 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		if (!(cmp[0] || cmp[1] || cmp[2])) { // dist isn't interesting
 			continue;		// can't go out a coplanar face
 		}
+
+		free_winding_memory (thread, winding_mark);
 
 		thread->stats.portalcheck++;
 
