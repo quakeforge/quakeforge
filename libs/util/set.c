@@ -249,9 +249,9 @@ set_union (set_t *dst, const set_t *src)
 		return _set_intersection (dst, src);
 	} else if (src->inverted) {
 		dst->inverted = 1;
-		return _set_difference (dst, src);
-	} else if (dst->inverted) {
 		return _set_reverse_difference (dst, src);
+	} else if (dst->inverted) {
+		return _set_difference (dst, src);
 	} else {
 		return _set_union (dst, src);
 	}

@@ -116,6 +116,25 @@ make_not_55 (void)
 }
 
 static set_t *
+make_0_1 (void)
+{
+	set_t      *set = set_new ();
+	set_add (set, 0);
+	set_add (set, 1);
+	return set;
+}
+
+static set_t *
+make_not_1_2 (void)
+{
+	set_t      *set = set_new ();
+	set_everything (set);
+	set_remove (set, 1);
+	set_remove (set, 2);
+	return set;
+}
+
+static set_t *
 expand_3xSIZEm1 (set_t *set, const set_t *x)
 {
 	set_expand (set, 3 * SIZE - 1);
@@ -222,6 +241,41 @@ struct {
 	{make_5, 0, 0, check_count, 1, 0},
 	{make_not_5, 0, 0, check_count, 1, 0},
 	{make_0_to_SIZEm1, 0, 0, check_size, SIZE, 0},
+	{make_0_1, 0, 0, 0, 0, "{0 1}"},
+	{make_not_1_2, 0, 0, check_count, 2,
+		"{0 3 4 5 6 7 8 9 10 11 12 13 14 15"
+		" 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31"
+		" 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47"
+		" 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 ...}"
+	},
+	{make_0_1, make_not_1_2, set_union, check_count, 1,
+		"{0 1 3 4 5 6 7 8 9 10 11 12 13 14 15"
+		" 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31"
+		" 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47"
+		" 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 ...}"
+	},
+	{make_0_1, make_not_1_2, set_intersection, check_count, 1, "{0}"},
+	{make_0_1, make_not_1_2, set_difference, check_count, 1, "{1}"},
+	{make_0_1, make_not_1_2, set_reverse_difference, check_count, 3,
+		"{3 4 5 6 7 8 9 10 11 12 13 14 15"
+		" 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31"
+		" 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47"
+		" 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 ...}"
+	},
+	{make_not_1_2, make_0_1, set_union, check_count, 1,
+		"{0 1 3 4 5 6 7 8 9 10 11 12 13 14 15"
+		" 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31"
+		" 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47"
+		" 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 ...}"
+	},
+	{make_not_1_2, make_0_1, set_intersection, check_count, 1, "{0}"},
+	{make_not_1_2, make_0_1, set_difference, check_count, 3,
+		"{3 4 5 6 7 8 9 10 11 12 13 14 15"
+		" 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31"
+		" 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47"
+		" 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 ...}"
+	},
+	{make_not_1_2, make_0_1, set_reverse_difference, check_count, 1, "{1}"},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 
@@ -248,6 +302,33 @@ main (int argc, const char **argv)
 	}
 	dstring_appendstr (str, "}");
 	tests[6].str_expect = dstring_freeze (str);
+
+	str = dstring_new ();
+	for (i = 0; i < SIZE; i++) {
+		if (i == 1 || i == 2)
+			continue;
+		dasprintf (str, "%c%zd", i > 0 ? ' ' : '{', i);
+	}
+	dasprintf (str, " %zd ...}", i);
+	tests[68].str_expect = dstring_freeze (str);
+
+	str = dstring_new ();
+	for (i = 0; i < SIZE; i++) {
+		if (i == 2)
+			continue;
+		dasprintf (str, "%c%zd", i > 0 ? ' ' : '{', i);
+	}
+	dasprintf (str, " %zd ...}", i);
+	tests[69].str_expect = dstring_freeze (str);
+	tests[73].str_expect = tests[69].str_expect;
+
+	str = dstring_new ();
+	for (i = 3; i < SIZE; i++) {
+		dasprintf (str, "%c%zd", i > 3 ? ' ' : '{', i);
+	}
+	dasprintf (str, " %zd ...}", i);
+	tests[72].str_expect = dstring_freeze (str);
+	tests[75].str_expect = tests[72].str_expect;
 
 	for (i = 0; i < num_tests; i++) {
 		set_t      *s1, *s2 = 0;
