@@ -14,7 +14,7 @@
 
 void *stage_memory;
 
-static VkResult
+static VkResult VKAPI_CALL
 vkMapMemory (VkDevice device, VkDeviceMemory memory,
 			 VkDeviceSize offset, VkDeviceSize size, VkMemoryMapFlags flags,
 			 void **data)
@@ -25,14 +25,14 @@ vkMapMemory (VkDevice device, VkDeviceMemory memory,
 	return VK_SUCCESS;
 }
 
-static VkResult
+static VkResult VKAPI_CALL
 vkBindBufferMemory (VkDevice device, VkBuffer buffer, VkDeviceMemory memory,
 					VkDeviceSize offset)
 {
 	return VK_SUCCESS;
 }
 
-static VkResult
+static VkResult VKAPI_CALL
 vkCreateBuffer (VkDevice device, const VkBufferCreateInfo *cinfo,
 				const VkAllocationCallbacks *allocator, VkBuffer *buffer)
 {
@@ -40,14 +40,14 @@ vkCreateBuffer (VkDevice device, const VkBufferCreateInfo *cinfo,
 	return VK_SUCCESS;
 }
 
-static void
+static void VKAPI_CALL
 vkGetBufferMemoryRequirements (VkDevice device, VkBuffer buffer,
 							   VkMemoryRequirements *requirements)
 {
 	memset (requirements, 0, sizeof (*requirements));
 }
 
-static VkResult
+static VkResult VKAPI_CALL
 vkAllocateCommandBuffers (VkDevice device,
 						  const VkCommandBufferAllocateInfo *info,
 						  VkCommandBuffer *buffers)
@@ -60,7 +60,7 @@ vkAllocateCommandBuffers (VkDevice device,
 	return VK_SUCCESS;
 }
 
-static VkResult
+static VkResult VKAPI_CALL
 vkCreateFence (VkDevice device, const VkFenceCreateInfo *info,
 			   const VkAllocationCallbacks *allocator, VkFence *fence)
 {
@@ -72,7 +72,7 @@ vkCreateFence (VkDevice device, const VkFenceCreateInfo *info,
 
 int wait_count = 0;
 
-static VkResult
+static VkResult VKAPI_CALL
 vkWaitForFences (VkDevice device, uint32_t fenceCount, const VkFence *fences,
 				 VkBool32 waitAll, uint64_t timeout)
 {
@@ -86,7 +86,7 @@ vkWaitForFences (VkDevice device, uint32_t fenceCount, const VkFence *fences,
 	return VK_SUCCESS;
 }
 
-static VkResult
+static VkResult VKAPI_CALL
 vkResetFences (VkDevice device, uint32_t fenceCount, const VkFence *fences)
 {
 	for (uint32_t i = 0; i < fenceCount; i++) {
@@ -96,40 +96,40 @@ vkResetFences (VkDevice device, uint32_t fenceCount, const VkFence *fences)
 	return VK_SUCCESS;
 }
 
-static VkResult
+static VkResult VKAPI_CALL
 vkGetFenceStatus (VkDevice device, VkFence fence)
 {
 	int        *f = (int *) (intptr_t) fence;
 	return *f ? VK_SUCCESS : VK_NOT_READY;
 }
 
-static VkResult
+static VkResult VKAPI_CALL
 vkResetCommandBuffer (VkCommandBuffer buffer, VkCommandBufferResetFlags flags)
 {
 	return VK_SUCCESS;
 }
 
-static VkResult
+static VkResult VKAPI_CALL
 vkBeginCommandBuffer (VkCommandBuffer buffer,
 					  const VkCommandBufferBeginInfo *info)
 {
 	return VK_SUCCESS;
 }
 
-static VkResult
+static VkResult VKAPI_CALL
 vkEndCommandBuffer (VkCommandBuffer buffer)
 {
 	return VK_SUCCESS;
 }
 
-static VkResult
+static VkResult VKAPI_CALL
 vkFlushMappedMemoryRanges (VkDevice device, uint32_t count,
 						   const VkMappedMemoryRange *ranges)
 {
 	return VK_SUCCESS;
 }
 
-static VkResult
+static VkResult VKAPI_CALL
 vkQueueSubmit (VkQueue queue, uint32_t count, const VkSubmitInfo *submits,
 			   VkFence fence)
 {
