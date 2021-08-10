@@ -250,7 +250,30 @@ struct {
 	{make_not_1_2, make_0_1, set_union, check_count, 1, "{0 1 3 ...}"},
 	{make_not_1_2, make_0_1, set_intersection, check_count, 1, "{0}"},
 	{make_not_1_2, make_0_1, set_difference, check_count, 3, "{3 ...}"},
-	{make_not_1_2, make_0_1, set_reverse_difference, check_count, 1, "{1}"},
+	{make_not_1_2, make_0_1, set_reverse_difference, check_count, 1, "{1}"},//76
+	{make_SIZE, make_not_1_2, set_union, check_size, SIZE + SET_BITS,
+		"{0 3 ...}"},
+	{make_SIZE, make_not_1_2, set_intersection, check_size, SIZE + SET_BITS,
+		"{64}"},
+	{make_SIZE, make_not_1_2, set_difference, check_size, SIZE + SET_BITS,
+		"{}"},
+	{make_SIZE, make_not_1_2, set_reverse_difference, check_size,
+		SIZE + SET_BITS,
+		"{0 3 4 5 6 7 8 9 10 11 12 13 14 15"
+		" 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31"
+		" 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47"
+		" 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 65 ...}"
+	},//80
+	{make_not_1_2, make_SIZE, set_union, check_size, SIZE, "{0 3 ...}"},
+	{make_not_1_2, make_SIZE, set_intersection, check_size, SIZE + SET_BITS,
+		"{64}"},
+	{make_not_1_2, make_SIZE, set_difference, check_size, SIZE + SET_BITS,
+		"{0 3 4 5 6 7 8 9 10 11 12 13 14 15"
+		" 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31"
+		" 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47"
+		" 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 65 ...}"
+	},
+	{make_not_1_2, make_SIZE, set_reverse_difference, check_size, SIZE, "{}"},
 };
 #define num_tests (sizeof (tests) / sizeof (tests[0]))
 
@@ -270,6 +293,8 @@ main (int argc, const char **argv)
 	tests[9].str_expect = tests[5].str_expect;
 	tests[10].str_expect = tests[5].str_expect;
 	tests[11].str_expect = tests[5].str_expect;
+	tests[78].str_expect = tests[5].str_expect;
+	tests[82].str_expect = tests[5].str_expect;
 
 	str = dstring_new ();
 	for (i = 0; i < SIZE; i++) {
@@ -277,6 +302,15 @@ main (int argc, const char **argv)
 	}
 	dstring_appendstr (str, "}");
 	tests[6].str_expect = dstring_freeze (str);
+
+	str = dstring_new ();
+	dasprintf (str, "{0");
+	for (i = 3; i < SIZE; i++) {
+		dasprintf (str, " %zd", i);
+	}
+	dasprintf (str, " %zd ...}", SIZE + 1);
+	tests[80].str_expect = dstring_freeze (str);
+	tests[83].str_expect = tests[80].str_expect;
 
 	for (i = 0; i < num_tests; i++) {
 		set_t      *s1, *s2 = 0;

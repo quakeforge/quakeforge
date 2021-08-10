@@ -128,6 +128,30 @@ set_expand (set_t *set, unsigned size)
 		free (map);
 }
 
+void
+set_trim (set_t *set)
+{
+	if (set->map == set->defmap) {
+		return;
+	}
+	unsigned    words = SET_WORDS (set);
+
+	while (words > SET_DEFMAP_SIZE && !set->map[words - 1]) {
+		words--;
+		set->size -= SET_BITS;
+	}
+	if (words > SET_DEFMAP_SIZE) {
+		set_bits_t *map = realloc (set->map, words * sizeof (set_bits_t));
+		if (map && map != set->map) {
+			set->map = map;
+		}
+	} else {
+		memcpy (set->defmap, set->map, sizeof (set->defmap));
+		free (set->map);
+		set->map = set->defmap;
+	}
+}
+
 inline set_t *
 set_new_size_r (set_pool_t *set_pool, unsigned size)
 {
@@ -204,13 +228,14 @@ _set_union (set_t *dst, const set_t *src)
 static set_t *
 _set_intersection (set_t *dst, const set_t *src)
 {
-	unsigned    size;
+	unsigned    words;
 	unsigned    i;
 
-	size = max (dst->size, src->size);
-	set_expand (dst, size);
-	for (i = 0; i < SET_WORDS (src); i++)
+	words = min (SET_WORDS (dst), SET_WORDS (src));
+	for (i = 0; i < words; i++)
 		dst->map[i] &= src->map[i];
+	// if dst is larger than src, then none of the excess elements in dst
+	// can be in the intersection
 	for ( ; i < SET_WORDS (dst); i++)
 		dst->map[i] = 0;
 	return dst;
@@ -219,26 +244,37 @@ _set_intersection (set_t *dst, const set_t *src)
 static set_t *
 _set_difference (set_t *dst, const set_t *src)
 {
-	unsigned    size;
+	unsigned    words;
 	unsigned    i;
 
-	size = max (dst->size, src->size);
-	set_expand (dst, size);
-	for (i = 0; i < SET_WORDS (src); i++)
+	words = min (SET_WORDS (dst), SET_WORDS (src));
+	for (i = 0; i < words; i++)
 		dst->map[i] &= ~src->map[i];
+	// if src is larger than dst, excess elements in src cannot be in dst thus
+	// there is nothing to remove
+	// if dst is larger than src, there is nothing to remove regardless of what
+	// is in src
 	return dst;
 }
 
 static set_t *
 _set_reverse_difference (set_t *dst, const set_t *src)
 {
-	unsigned    size;
+	unsigned    words;
 	unsigned    i;
 
-	size = max (dst->size, src->size);
-	set_expand (dst, size);
-	for (i = 0; i < SET_WORDS (src); i++)
+	words = min (SET_WORDS (dst), SET_WORDS (src));
+	set_expand (dst, src->size);
+	for (i = 0; i < words; i++)
 		dst->map[i] = ~dst->map[i] & src->map[i];
+	// if src is larger than dst, then dst cannot remove the excess elements
+	// from src and thus the src elements must be copied
+	for ( ; i < SET_WORDS (src); i++)
+		dst->map[i] = src->map[i];
+	// if dst is larger than src, then the excess elements in dst must be
+	// removed
+	for ( ; i < SET_WORDS (dst); i++)
+		dst->map[i] = 0;
 	return dst;
 }
 

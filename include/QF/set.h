@@ -162,6 +162,15 @@ void set_delete_r (set_pool_t *set_pool, set_t *set);
 */
 void set_expand (set_t *set, unsigned size);
 
+/** Shrink the set's backing memory to the minimum required to hold the set.
+
+	This does not affect (nor is affected by) whether the set is an infinite
+	set.
+
+	\param set      The set to trim
+*/
+void set_trim (set_t *set);
+
 /** Add an element to a set.
 
 	It is not an error to add an element that is already a member of the set.
