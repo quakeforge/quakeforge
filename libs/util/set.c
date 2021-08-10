@@ -626,9 +626,10 @@ set_next (set_iter_t *set_iter)
 }
 
 const char *
-set_as_string_r (dstring_t *str, const set_t *set)
+set_to_dstring_r (set_pool_t *set_pool, dstring_t *str, const set_t *set)
 {
-	unsigned    i;
+	set_iter_t *iter;
+	int         first = 1;
 
 	if (set_is_empty (set)) {
 		dstring_appendstr (str, "{}");
@@ -639,19 +640,34 @@ set_as_string_r (dstring_t *str, const set_t *set)
 		return str->str;
 	}
 	dstring_appendstr (str, "{");
-	for (i = 0; i < set->size; i++) {
-		if (set_is_member (set, i)) {
-			if (str->str[1])
-				dasprintf (str, " %d", i);
-			else
-				dasprintf (str, "%d", i);
-		}
-	}
 	if (set->inverted) {
-		dasprintf (str, "%s%d ...", str->str[1] ? " " : "", i);
+		unsigned    start = 0;
+
+		for (iter = set_first_r (set_pool, set); iter;
+			 iter = set_next_r (set_pool, iter)) {
+			unsigned    end = iter->element;
+			while (start < end) {
+				dasprintf (str, "%s%d", first ? "" : " ", start++);
+				first = 0;
+			}
+			start = end + 1;
+		}
+		dasprintf (str, "%s%d ...", first ? "" : " ", start);
+	} else {
+		for (iter = set_first_r (set_pool, set); iter;
+			 iter = set_next_r (set_pool, iter)) {
+			dasprintf (str, "%s%d", first ? "" : " ", iter->element);
+			first = 0;
+		}
 	}
 	dstring_appendstr (str, "}");
 	return str->str;
+}
+
+const char *
+set_to_dstring (dstring_t *str, const set_t *set)
+{
+	return set_to_dstring_r (&static_set_pool, str, set);
 }
 
 const char *
@@ -663,5 +679,5 @@ set_as_string (const set_t *set)
 		str = dstring_new ();
 	}
 	dstring_clearstr (str);
-	return set_as_string_r (str, set);
+	return set_to_dstring_r (&static_set_pool, str, set);
 }

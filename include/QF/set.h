@@ -392,6 +392,7 @@ struct dstring_s;
 				will overwrite the results of preceeding calls.
 */
 const char *set_as_string (const set_t *set);
+
 /** Return a human-readable string representing the set.
 
 	Empty sets will be represented by the string "{}". Sets of everything
@@ -406,7 +407,9 @@ const char *set_as_string (const set_t *set);
 				is appeneded to the string. This makes it more useful when
 				constructing strings in a threaded environment.
 */
-const char *set_as_string_r (struct dstring_s *str, const set_t *set);
+const char *set_to_dstring (struct dstring_s *str, const set_t *set);
+const char *set_to_dstring_r (set_pool_t *set_pool, struct dstring_s *str,
+							  const set_t *set);
 
 ///@}
 #endif//__QF_set_h
