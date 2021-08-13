@@ -79,7 +79,7 @@ new_stack (threaddata_t *td)
 {
 	pstack_t   *stack;
 
-	stack = malloc (sizeof (pstack_t));
+	stack = cmemalloc (td->memsuper, sizeof (pstack_t));
 	stack->next = 0;
 	stack->mightsee = set_new_size_r (&td->set_pool, portalclusters);
 	td->stats.stack_alloc++;
