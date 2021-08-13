@@ -40,6 +40,7 @@
 #include <unistd.h>
 
 #include "QF/dstring.h"
+#include "QF/sys.h"
 
 #include "tools/qfvis/include/options.h"
 #include "tools/qfvis/include/vis.h"
@@ -105,11 +106,7 @@ default_threads (void)
 {
 	int         threads = 1;
 #ifdef USE_PTHREADS
-# ifdef _SC_NPROCESSORS_ONLN
-		threads = sysconf(_SC_NPROCESSORS_ONLN);
-		if (threads < 1)
-			threads = 1;
-# endif
+	threads = Sys_ProcessorCount ();
 #endif
 	return threads;
 }

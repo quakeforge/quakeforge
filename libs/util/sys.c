@@ -663,6 +663,23 @@ Sys_Free (void *mem, size_t size)
 #endif
 }
 
+VISIBLE int
+Sys_ProcessorCount (void)
+{
+	int         cpus = 1;
+#if defined (_SC_NPROCESSORS_ONLN)
+	cpus = sysconf(_SC_NPROCESSORS_ONLN);
+#elif defined (_WIN32)
+	SYSTEM_INFO sysinfo;
+	GetSystemInfo(&sysinfo);
+	cpus = sysinfo.dwNumberOfProcessors;
+#endif
+	if (cpus < 1) {
+		cpus = 1;
+	}
+	return cpus;
+}
+
 VISIBLE void
 Sys_DebugLog (const char *file, const char *fmt, ...)
 {
