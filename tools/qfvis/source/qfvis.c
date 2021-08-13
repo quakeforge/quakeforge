@@ -1562,7 +1562,7 @@ main (int argc, char **argv)
 {
 	double      start, stop;
 	QFile      *f;
-	size_t      main_memsize = 1024 * 1024 * 1024;
+	size_t      main_memsize = 128 * 1024 * 1024;
 
 	main_thread.memsuper = new_memsuper ();
 	main_thread.hunk = Hunk_Init (Sys_Alloc (main_memsize), main_memsize);
