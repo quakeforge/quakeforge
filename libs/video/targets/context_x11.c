@@ -685,3 +685,6 @@ X11_RestoreMouseAcceleration (void)
 						  accel_denominator, accel_threshold);
 	accel_saved = false;
 }
+
+extern int x11_force_link;
+static __attribute__((used)) int *context_x11_force_link = &x11_force_link;

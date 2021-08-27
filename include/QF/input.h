@@ -35,12 +35,21 @@ typedef struct {
 	vec3_t position;
 } viewdelta_t;
 
+typedef struct {
+	void (*init) (void);
+	void (*shutdown) (void);
+	void (*process_events) (void);
+	void (*clear_states) (void);
+	void (*grab_input) (int grab);
+} in_driver_t;
+
 extern viewdelta_t viewdelta;
 
 #define freelook (in_mlook.state & 1 || in_freelook->int_val)
 
 struct cvar_s;
 
+void IN_RegisterDriver (in_driver_t *driver);
 void IN_Init (struct cbuf_s *cbuf);
 void IN_Init_Cvars (void);
 
@@ -64,12 +73,6 @@ extern struct cvar_s		*lookstrafe;
 extern qboolean 	in_mouse_avail;
 extern float		in_mouse_x, in_mouse_y;
 
-void IN_LL_Init_Cvars (void);
-void IN_LL_Init (void);
-void IN_LL_Shutdown (void);
-void IN_LL_ProcessEvents (void);
-void IN_LL_ClearStates (void);
-void IN_LL_Grab_Input (int grab);
 
 extern kbutton_t   in_strafe, in_klook, in_speed, in_mlook;
 

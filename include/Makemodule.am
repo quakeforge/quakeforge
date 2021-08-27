@@ -85,6 +85,8 @@ EXTRA_DIST += \
 	include/client/locs.h \
 	include/client/state.h \
 	include/client/view.h \
+	include/evdev/hotplug.h \
+	include/evdev/inputlib.h \
 	include/qw/bothdefs.h \
 	include/qw/msg_backbuf.h \
 	include/qw/msg_ucmd.h \

@@ -49,6 +49,7 @@
 
 #include "QF/cbuf.h"
 #include "QF/cvar.h"
+#include "QF/darray.h"
 #include "QF/in_event.h"
 #include "QF/input.h"
 #include "QF/joystick.h"
@@ -56,6 +57,8 @@
 #include "QF/mathlib.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
+
+static struct DARRAY_TYPE (in_driver_t) in_drivers = { .grow = 8, };
 
 VISIBLE viewdelta_t viewdelta;
 
@@ -77,25 +80,35 @@ float       in_mouse_x, in_mouse_y;
 static float in_old_mouse_x, in_old_mouse_y;
 
 void
+IN_RegisterDriver (in_driver_t *driver)
+{
+	DARRAY_APPEND (&in_drivers, *driver);
+}
+
+void
 IN_UpdateGrab (cvar_t *var)		// called from context_*.c
 {
 	if (var) {
-		IN_LL_Grab_Input (var->int_val);
+		for (size_t i = 0; i < in_drivers.size; i++) {
+			if (in_drivers.a[i].grab_input) {
+				in_drivers.a[i].grab_input (var->int_val);
+			}
+		}
 	}
 }
 
 void
 IN_ProcessEvents (void)
 {
-	/* Get events from environment. */
-	JOY_Command ();
-	IN_LL_ProcessEvents ();
+	for (size_t i = 0; i < in_drivers.size; i++) {
+		in_drivers.a[i].process_events ();
+	}
 }
 
 void
 IN_Move (void)
 {
-	JOY_Move ();
+	//JOY_Move ();
 
 	if (!in_mouse_avail)
 		return;
@@ -131,10 +144,14 @@ IN_Move (void)
 static void
 IN_shutdown (void *data)
 {
-	JOY_Shutdown ();
+	//JOY_Shutdown ();
 
 	Sys_MaskPrintf (SYS_vid, "IN_Shutdown\n");
-	IN_LL_Shutdown ();
+	for (size_t i = in_drivers.size; i-- > 0; ) {
+		if (in_drivers.a[i].shutdown) {
+			in_drivers.a[i].shutdown ();
+		}
+	}
 
 	IE_Shutdown ();
 }
@@ -145,9 +162,11 @@ IN_Init (cbuf_t *cbuf)
 	Sys_RegisterShutdown (IN_shutdown, 0);
 
 	IE_Init ();
-	IN_LL_Init ();
+	for (size_t i = 0; i < in_drivers.size; i++) {
+		in_drivers.a[i].init ();
+	}
 	Key_Init (cbuf);
-	JOY_Init ();
+	//JOY_Init ();
 
 	in_mouse_x = in_mouse_y = 0.0;
 }
@@ -157,7 +176,7 @@ IN_Init_Cvars (void)
 {
 	IE_Init_Cvars ();
 	Key_Init_Cvars ();
-	JOY_Init_Cvars ();
+	//JOY_Init_Cvars ();
 	in_grab = Cvar_Get ("in_grab", "0", CVAR_ARCHIVE, IN_UpdateGrab,
 						"With this set to 1, quake will grab the mouse, "
 						"preventing loss of input focus.");
@@ -175,12 +194,18 @@ IN_Init_Cvars (void)
 								 "mouse in_mouse_pre_amp multiplier");
 	lookstrafe = Cvar_Get ("lookstrafe", "0", CVAR_ARCHIVE, NULL,
 						   "when mlook/klook on player will strafe");
-	IN_LL_Init_Cvars ();
 }
 
 void
 IN_ClearStates (void)
 {
-	IN_LL_ClearStates ();
+	for (size_t i = 0; i < in_drivers.size; i++) {
+		if (in_drivers.a[i].clear_states) {
+			in_drivers.a[i].clear_states ();
+		}
+	}
 	Key_ClearStates ();
 }
+
+extern int in_evdev_force_link;
+static __attribute__((used)) int *evdev_force_link = &in_evdev_force_link;

@@ -597,7 +597,7 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 }
 
 static void
-x11_keydest_callback (keydest_t key_dest, void *data)
+in_x11_keydest_callback (keydest_t key_dest, void *data)
 {
 //	if (key_dest == key_game) {
 //		XAutoRepeatOff (x_disp);
@@ -742,8 +742,8 @@ grab_error (int code, const char *device)
 	Sys_Printf ("failed to grab %s: %s\n", device, reason);
 }
 
-void
-IN_LL_Grab_Input (int grab)
+static void
+in_x11_grab_input (int grab)
 {
 	if (!x_disp || !x_win)
 		return;
@@ -780,16 +780,16 @@ IN_LL_Grab_Input (int grab)
 	}
 }
 
-void
-IN_LL_ProcessEvents (void)
+static void
+in_x11_process_events (void)
 {
 	X11_ProcessEvents ();	// Get events from X server.
 }
 
-void
-IN_LL_Shutdown (void)
+static void
+in_x11_shutdown (void)
 {
-	Sys_MaskPrintf (SYS_vid, "IN_LL_Shutdown\n");
+	Sys_MaskPrintf (SYS_vid, "in_x11_shutdown\n");
 	in_mouse_avail = 0;
 	if (x_disp) {
 //		XAutoRepeatOn (x_disp);
@@ -800,14 +800,28 @@ IN_LL_Shutdown (void)
 	X11_CloseDisplay ();
 }
 
-void
-IN_LL_Init (void)
+static void
+in_x11_init_cvars (void)
+{
+	in_snd_block = Cvar_Get ("in_snd_block", "0", CVAR_ARCHIVE, NULL,
+							 "block sound output on window focus loss");
+	in_dga = Cvar_Get ("in_dga", "0", CVAR_ARCHIVE, in_dga_f, //FIXME 0 until X fixed
+					   "DGA Input support");
+	in_mouse_accel = Cvar_Get ("in_mouse_accel", "1", CVAR_ARCHIVE,
+							   in_mouse_accel_f,
+							   "set to 0 to remove mouse acceleration");
+}
+
+static void
+in_x11_init (void)
 {
 	// open the display
 	if (!x_disp)
 		Sys_Error ("IN: No display!!");
 	if (!x_win)
 		Sys_Error ("IN: No window!!");
+
+	in_x11_init_cvars ();
 
 	X11_OpenDisplay (); // call to increment the reference counter
 
@@ -842,25 +856,29 @@ IN_LL_Init (void)
 		in_mouse_avail = 1;
 	}
 
-	Key_KeydestCallback (x11_keydest_callback, 0);
+	Key_KeydestCallback (in_x11_keydest_callback, 0);
 
 	Cmd_AddCommand ("in_paste_buffer", in_paste_buffer_f,
 					"Paste the contents of X's C&P buffer to the console");
 }
 
-void
-IN_LL_Init_Cvars (void)
+static void
+in_x11_clear_states (void)
 {
-	in_snd_block = Cvar_Get ("in_snd_block", "0", CVAR_ARCHIVE, NULL,
-							 "block sound output on window focus loss");
-	in_dga = Cvar_Get ("in_dga", "0", CVAR_ARCHIVE, in_dga_f, //FIXME 0 until X fixed
-					   "DGA Input support");
-	in_mouse_accel = Cvar_Get ("in_mouse_accel", "1", CVAR_ARCHIVE,
-							   in_mouse_accel_f,
-							   "set to 0 to remove mouse acceleration");
 }
 
-void
-IN_LL_ClearStates (void)
+static in_driver_t in_x11_driver = {
+	.init = in_x11_init,
+	.shutdown = in_x11_shutdown,
+	.process_events = in_x11_process_events,
+	.clear_states = in_x11_clear_states,
+	.grab_input = in_x11_grab_input,
+};
+
+static void __attribute__((constructor))
+in_x11_register_driver (void)
 {
+	IN_RegisterDriver (&in_x11_driver);
 }
+
+int x11_force_link;

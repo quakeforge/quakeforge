@@ -43,6 +43,7 @@
 #include "QF/cvar.h"
 #include "QF/gib.h"
 #include "QF/idparse.h"
+#include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/progs.h"
 #include "QF/qargs.h"
@@ -73,6 +74,9 @@ int
 qwaq_init_threads (qwaq_thread_set_t *thread_data)
 {
 	int         main_ind = -1;
+
+	IN_Init_Cvars ();
+	IN_Init (qwaq_cbuf);
 
 	for (size_t i = 1, thread_ind = 0; i < thread_data->size; i++) {
 		qwaq_thread_t *thread = thread_data->a[i];
