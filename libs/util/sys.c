@@ -320,6 +320,14 @@ Sys_MaskPrintf (int mask, const char *fmt, ...)
 	va_end (args);
 }
 
+static int64_t sys_starttime = -1;
+
+VISIBLE int64_t
+Sys_StartTime (void)
+{
+	return sys_starttime;
+}
+
 VISIBLE int64_t
 Sys_LongTime (void)
 {
@@ -353,11 +361,10 @@ Sys_LongTime (void)
 	static int64_t qpcfudge = 0;
 	int64_t currtime = 0;
 	static int64_t lasttime = 0;
-	static int64_t starttime = 0;
 
 	if (first) {
 		timeBeginPeriod (1);
-		starttime = lasttime = timeGetTime ();
+		sys_starttime = lasttime = timeGetTime () * 1000;
 		QueryPerformanceFrequency ((LARGE_INTEGER *) &qpcfreq);
 		QueryPerformanceCounter ((LARGE_INTEGER *) &lastqpccount);
 		first = false;
@@ -365,7 +372,7 @@ Sys_LongTime (void)
 	}
 
 	// get the current time from both counters
-	currtime = timeGetTime ();
+	currtime = timeGetTime () * 1000;
     QueryPerformanceCounter ((LARGE_INTEGER *) &currqpccount);
 
 	if (currtime != lasttime)  {
@@ -376,7 +383,7 @@ Sys_LongTime (void)
 		// store back times and calc a fudge factor as timeGetTime can
 		// overshoot on a sub-millisecond scale
 		qpcfudge = (( (currqpccount - lastqpccount) * 1000000 / qpcfreq))
-				- ((currtime - lasttime) * 1000);
+				- (currtime - lasttime);
 		lastqpccount = currqpccount;
 		lasttime = currtime;
 	} else {
@@ -384,12 +391,11 @@ Sys_LongTime (void)
 	}
 
 	// the final time is the base from timeGetTime plus an addition from QPC
-	return (((currtime - starttime) * 1000)
+	return ((currtime - sys_starttime)
 			+ ((currqpccount - lastqpccount) * 1000000 / qpcfreq) + qpcfudge);
 # endif
 #else
 	int64_t now;
-	static int64_t start_time;
 #ifdef CLOCK_BOOTTIME
 	struct timespec tp;
 
@@ -407,23 +413,29 @@ Sys_LongTime (void)
 
 	if (first) {
 		first = false;
-		start_time = now;
+		sys_starttime = now;
 	}
 
-	return now - start_time;
+	return now - sys_starttime;
 #endif
+}
+
+VISIBLE int64_t
+Sys_TimeBase (void)
+{
+	return __INT64_C (4294967296000000);
 }
 
 VISIBLE double
 Sys_DoubleTime (void)
 {
-	return (__INT64_C (4294967296000000) + Sys_LongTime ()) / 1e6;
+	return (Sys_TimeBase () + Sys_LongTime ()) / 1e6;
 }
 
 VISIBLE double
 Sys_DoubleTimeBase (void)
 {
-	return __INT64_C (4294967296000000) / 1e6;
+	return Sys_TimeBase () / 1e6;
 }
 
 VISIBLE void
