@@ -388,14 +388,22 @@ Sys_LongTime (void)
 			+ ((currqpccount - lastqpccount) * 1000000 / qpcfreq) + qpcfudge);
 # endif
 #else
-	struct timeval tp;
-	struct timezone tzp;
 	int64_t now;
 	static int64_t start_time;
+#ifdef CLOCK_BOOTTIME
+	struct timespec tp;
+
+	clock_gettime (CLOCK_BOOTTIME, &tp);
+
+	now = tp.tv_sec * 1000000 + tp.tv_nsec / 1000;
+#else
+	struct timeval tp;
+	struct timezone tzp;
 
 	gettimeofday (&tp, &tzp);
 
 	now = tp.tv_sec * 1000000 + tp.tv_usec;
+#endif
 
 	if (first) {
 		first = false;
