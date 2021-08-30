@@ -1550,28 +1550,33 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 */
 #define PR_RESNEW_NC(map)													\
 	({																		\
-		if (!(map)._free) {													\
-			int         i, size;											\
-			(map)._size++;													\
-			size = (map)._size * sizeof ((map)._free);						\
-			(map)._map = realloc ((map)._map, size);						\
-			if (!(map)._map) {												\
-				return 0;													\
-			}																\
-			(map)._free = malloc (1024 * sizeof (*(map)._free));			\
+		__auto_type ret = (map)._free;										\
+		do {																\
 			if (!(map)._free) {												\
-				return 0;													\
+				int         i, size;										\
+				(map)._size++;												\
+				size = (map)._size * sizeof ((map)._free);					\
+				(map)._map = realloc ((map)._map, size);					\
+				if (!(map)._map) {											\
+					ret = 0;												\
+					break;													\
+				}															\
+				(map)._free = malloc (1024 * sizeof (*(map)._free));		\
+				if (!(map)._free) {											\
+					ret = 0;												\
+					break;													\
+				}															\
+				(map)._map[(map)._size - 1] = (map)._free;					\
+				for (i = 0; i < 1023; i++) {								\
+					*(typeof ((map)._free) *) &(map)._free[i]				\
+						= &(map)._free[i + 1];								\
+				}															\
+				*(typeof ((map)._free) *) &(map)._free[i] = 0;				\
 			}																\
-			(map)._map[(map)._size - 1] = (map)._free;						\
-			for (i = 0; i < 1023; i++) {									\
-				*(typeof ((map)._free) *) &(map)._free[i]					\
-					= &(map)._free[i + 1];									\
-			}																\
-			*(typeof ((map)._free) *) &(map)._free[i] = 0;					\
-		}																	\
-		__auto_type t = (map)._free;										\
-		(map)._free = *(typeof ((map)._free) *) t;							\
-		t;																	\
+			ret = (map)._free;												\
+			(map)._free = *(typeof ((map)._free) *) ret;					\
+		} while (0);														\
+		ret;																\
 	})
 
 #define PR_RESNEW(map)														\
@@ -1631,13 +1636,17 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 	\return			A pointer to the resource, or NULL if the handle is
 					invalid.
 */
-#define PR_RESGET(map,col)										\
+#define PR_RESGET(map,ind)										\
 	({															\
-		unsigned    row = ~col / 1024;							\
-		col = ~col % 1024;										\
-		if (row >= (map)._size)									\
-			return 0;											\
-		&(map)._map[row][col];									\
+		__auto_type ret = (map)._free;							\
+		unsigned    row = ~ind / 1024;							\
+		unsigned    col = ~ind % 1024;							\
+		if (row >= (map)._size) {								\
+			ret = 0;											\
+		} else {												\
+			ret = &(map)._map[row][col];						\
+		}														\
+		ret;													\
 	})
 
 /** Convert a resource pointer to a handle.
