@@ -46,6 +46,7 @@
 
 #include "QF/dstring.h"
 #include "QF/hash.h"
+#include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/sys.h"
 
@@ -355,7 +356,7 @@ static void process_char (qwaq_resources_t *res, char ch)
 					// will wind up accepting P;P... but meh
 					res->escstate = esc_key;
 					dstring_clear (&res->escbuff);
-					// start the buffer with what got us hear: eases key lookup
+					// start the buffer with what got us here: eases key lookup
 					dstring_append (&res->escbuff, "\033O", 2);
 				} else {
 					res->escstate = esc_ground;
@@ -371,7 +372,7 @@ static void process_char (qwaq_resources_t *res, char ch)
 				} else if (ch >= '0' && ch < 127) {
 					res->escstate = esc_key;
 					dstring_clear (&res->escbuff);
-					// start the buffer with what got us hear: eases key lookup
+					// start the buffer with what got us here: eases key lookup
 					dstring_append (&res->escbuff, "\033[", 2);
 					// the csi code might be short (eg, \e[H for home) so
 					// need to check for end of string right away
@@ -422,8 +423,60 @@ key_sequence_getkey (const void *_seq, void *unused)
 	return seq->sequence;
 }
 
-void qwaq_input_init (qwaq_resources_t *res)
+static void
+term_init (void *_res)
 {
+}
+
+static void
+term_shutdown (void *_res)
+{
+}
+
+static void
+term_process_events (void *_res)
+{
+	qwaq_resources_t *res = _res;
+	char        buf[256];
+	int         len;
+#ifdef HAVE_SIGACTION
+	sigset_t    save_set;
+	int         saw_winch;
+
+	pthread_sigmask (SIG_BLOCK, &winch_mask, &save_set);
+	saw_winch = winch_arrived;
+	winch_arrived = 0;
+	pthread_sigmask (SIG_SETMASK, &save_set, 0);
+	if (saw_winch) {
+		resize_event (res);
+	}
+#endif
+	while (Sys_CheckInput (1, -1)) {
+		len = read(0, buf, sizeof (buf));
+		for (int i = 0; i < len; i++) {
+			process_char (res, buf[i]);
+		}
+	}
+}
+
+static in_driver_t term_driver = {
+	.init = term_init,
+	.shutdown = term_shutdown,
+	.process_events = term_process_events,
+};
+static int term_driver_handle;
+
+static void __attribute__((constructor))
+term_register_driver (void)
+{
+	term_driver_handle = IN_RegisterDriver (&term_driver, 0);
+}
+
+void
+qwaq_input_init (qwaq_resources_t *res)
+{
+	IN_DriverData (term_driver_handle, res);
+
 	if (res->key_sequences) {
 		Hash_FlushTable (res->key_sequences);
 	} else {
@@ -449,8 +502,17 @@ void qwaq_input_init (qwaq_resources_t *res)
 	(void) !write(1, SGR_ON, sizeof (SGR_ON) - 1);
 }
 
-void qwaq_input_shutdown (qwaq_resources_t *res)
+void
+qwaq_process_input (qwaq_resources_t *res)
 {
+	IN_ProcessEvents ();
+}
+
+void
+qwaq_input_shutdown (qwaq_resources_t *res)
+{
+	IN_DriverData (term_driver_handle, 0);
+
 	// ncurses takes care of input mode for us, so need only tell xterm
 	// what we need
 	(void) !write(1, SGR_OFF, sizeof (SGR_OFF) - 1);
@@ -459,28 +521,4 @@ void qwaq_input_shutdown (qwaq_resources_t *res)
 #ifdef HAVE_SIGACTION
 	sigaction (SIGWINCH, &save_winch, 0);
 #endif
-}
-
-void qwaq_process_input (qwaq_resources_t *res)
-{
-	char        buf[256];
-	int         len;
-#ifdef HAVE_SIGACTION
-	sigset_t    save_set;
-	int         saw_winch;
-
-	pthread_sigmask (SIG_BLOCK, &winch_mask, &save_set);
-	saw_winch = winch_arrived;
-	winch_arrived = 0;
-	pthread_sigmask (SIG_SETMASK, &save_set, 0);
-	if (saw_winch) {
-		resize_event (res);
-	}
-#endif
-	while (Sys_CheckInput (1, -1)) {
-		len = read(0, buf, sizeof (buf));
-		for (int i = 0; i < len; i++) {
-			process_char (res, buf[i]);
-		}
-	}
 }

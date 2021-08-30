@@ -2040,15 +2040,6 @@ static builtin_t builtins[] = {
 	{0}
 };
 
-static FILE *logfile;
-
-static __attribute__((format(PRINTF, 1, 0))) void
-qwaq_print (const char *fmt, va_list args)
-{
-	vfprintf (logfile, fmt, args);
-	fflush (logfile);
-}
-
 void
 qwaq_init_cond (rwcond_t *cond)
 {
@@ -2079,6 +2070,4 @@ BI_Init (progs_t *pr)
 	PR_Resources_Register (pr, "qwaq", res, bi_qwaq_clear);
 	PR_RegisterBuiltins (pr, builtins);
 	Sys_RegisterShutdown (bi_shutdown, pr);
-	logfile = fopen ("qwaq-curses.log", "wt");
-	Sys_SetStdPrintf (qwaq_print);
 }

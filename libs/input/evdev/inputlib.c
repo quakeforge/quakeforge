@@ -17,6 +17,7 @@
 #include <string.h>
 
 #include "QF/dstring.h"
+#include "QF/sys.h"
 
 #include "evdev/hotplug.h"
 #include "evdev/inputlib.h"
@@ -39,7 +40,7 @@ setup_buttons (device_t *dev)
 	dev->buttons = 0;
 	len = ioctl (dev->fd, EVIOCGBIT (EV_KEY, sizeof (buf)), buf);
 	for (i = 0; i < len; i++) {
-		//printf("%c%02x", !(i % 16) ? '\n': !(i % 8) ? '-' : ' ', buf[i]);
+		//Sys_Printf("%c%02x", !(i % 16) ? '\n': !(i % 8) ? '-' : ' ', buf[i]);
 		for (j = 0; j < 8; j++) {
 			if (buf[i] & (1 << j)) {
 				dev->num_buttons++;
@@ -47,7 +48,7 @@ setup_buttons (device_t *dev)
 			}
 		}
 	}
-	//printf("\n");
+	//Sys_Printf("\n");
 	dev->button_map = malloc ((dev->max_button + 1) * sizeof (int));
 	dev->buttons = malloc (dev->num_buttons * sizeof (button_t));
 	for (i = 0, button = dev->buttons; i < len; i++) {
@@ -212,10 +213,10 @@ check_device (const char *path)
 
 	dev->event_count = 0;
 
-	printf ("%s:\n", path);
-	printf ("\tname: %s\n", dev->name);
-	printf ("\tbuttons: %d\n", dev->num_buttons);
-	printf ("\taxes: %d\n", dev->num_axes);
+	//Sys_Printf ("%s:\n", path);
+	//Sys_Printf ("\tname: %s\n", dev->name);
+	//Sys_Printf ("\tbuttons: %d\n", dev->num_buttons);
+	//Sys_Printf ("\taxes: %d\n", dev->num_axes);
 
 	if (device_add) {
 		device_add (dev);
@@ -261,7 +262,7 @@ read_device_input (device_t *dev)
 			return;
 		}
 		//const char *ev = event_codes[event.type];
-		//printf ("%6d(%s) %6d %6x\n", event.type, ev ? ev : "?", event.code, event.value);
+		//Sys_Printf ("%6d(%s) %6d %6x\n", event.type, ev ? ev : "?", event.code, event.value);
 		switch (event.type) {
 			case EV_SYN:
 				dev->event_count++;
@@ -278,7 +279,7 @@ read_device_input (device_t *dev)
 				break;
 			case EV_REL:
 				axis = &dev->axes[dev->rel_axis_map[event.code]];
-				//printf ("EV_REL %6d %6x %6d %p\n", event.code, event.value,
+				//Sys_Printf ("EV_REL %6d %6x %6d %p\n", event.code, event.value,
 				//		dev->rel_axis_map[event.code], axis);
 				axis->value = event.value;
 				break;
@@ -289,7 +290,7 @@ read_device_input (device_t *dev)
 			case EV_FF:
 			case EV_PWR:
 			case EV_FF_STATUS:
-				//printf ("%6d %6d %6x\n", event.type, event.code, event.value);
+				//Sys_Printf ("%6d %6d %6x\n", event.type, event.code, event.value);
 				break;
 		}
 	}
@@ -403,7 +404,7 @@ device_created (const char *name)
 		}
 	}
 	if (!olddev && check_device (devname) >= 0) {
-		//printf ("found device %s\n", devname);
+		//Sys_Printf ("found device %s\n", devname);
 	}
 	free (devname);
 }
@@ -416,7 +417,7 @@ device_deleted (const char *name)
 
 	for (dev = &devices; *dev; dev = &(*dev)->next) {
 		if (strcmp ((*dev)->path, devname) == 0) {
-			//printf ("lost device %s\n", (*dev)->path);
+			//Sys_Printf ("lost device %s\n", (*dev)->path);
 			close_device (*dev);
 			device_t *d = *dev;
 			*dev = (*dev)->next;
@@ -448,7 +449,7 @@ scan_devices (void)
 		if (check_input_device (devinput_path, dirent->d_name) < 0) {
 			continue;
 		}
-		//printf("%s\n", dirent->d_name);
+		//Sys_Printf("%s\n", dirent->d_name);
 	}
 	closedir (dir);
 	return 0;

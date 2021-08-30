@@ -70,10 +70,22 @@ static progsinit_f target_app[] = {
 	0
 };
 
+static FILE *logfile;
+
+static __attribute__((format(PRINTF, 1, 0))) void
+qwaq_print (const char *fmt, va_list args)
+{
+	vfprintf (logfile, fmt, args);
+	fflush (logfile);
+}
+
 int
 qwaq_init_threads (qwaq_thread_set_t *thread_data)
 {
 	int         main_ind = -1;
+
+	logfile = fopen ("qwaq-curses.log", "wt");
+	Sys_SetStdPrintf (qwaq_print);
 
 	IN_Init_Cvars ();
 	IN_Init (qwaq_cbuf);
