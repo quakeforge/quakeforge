@@ -270,10 +270,16 @@ read_device_input (device_t *dev)
 			case EV_KEY:
 				button = &dev->buttons[dev->button_map[event.code]];
 				button->state = event.value;
+				if (dev->button_event) {
+					dev->button_event (button, dev->data);
+				}
 				break;
 			case EV_ABS:
 				axis = &dev->axes[dev->abs_axis_map[event.code]];
 				axis->value = event.value;
+				if (dev->axis_event) {
+					dev->axis_event (axis, dev->data);
+				}
 				break;
 			case EV_MSC:
 				break;
@@ -282,6 +288,9 @@ read_device_input (device_t *dev)
 				//Sys_Printf ("EV_REL %6d %6x %6d %p\n", event.code, event.value,
 				//		dev->rel_axis_map[event.code], axis);
 				axis->value = event.value;
+				if (dev->axis_event) {
+					dev->axis_event (axis, dev->data);
+				}
 				break;
 			case EV_SW:
 			case EV_LED:

@@ -35,13 +35,20 @@ typedef struct {
 	vec3_t position;
 } viewdelta_t;
 
-typedef struct {
+typedef struct in_driver_s {
 	void (*init) (void *data);
 	void (*shutdown) (void *data);
 	void (*process_events) (void *data);
 	void (*clear_states) (void *data);
 	void (*grab_input) (void *data, int grab);
 } in_driver_t;
+
+typedef struct in_device_s {
+	int         driverid;
+	void       *device;
+	const char *name;
+	const char *path;
+} in_device_t;
 
 extern viewdelta_t viewdelta;
 
@@ -53,6 +60,9 @@ int IN_RegisterDriver (in_driver_t *driver, void *data);
 void IN_DriverData (int handlle, void *data);
 void IN_Init (struct cbuf_s *cbuf);
 void IN_Init_Cvars (void);
+
+int IN_AddDevice (in_device_t *device);
+void IN_RemoveDevice (int devid);
 
 void IN_ProcessEvents (void);
 

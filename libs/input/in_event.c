@@ -39,72 +39,56 @@
 #endif
 #include <stdlib.h>
 
+#include "QF/darray.h"
 #include "QF/in_event.h"
 
-static int (**event_handler_list)(const IE_event_t*);
-static int eh_list_size;
-static int focus;
+typedef struct {
+	ie_handler_t *handler;
+	void       *data;
+} ie_reghandler_t;
 
-void
-IE_Init (void)
-{
-	eh_list_size = 8;	// start with 8 slots. will grow dynamicly if needed
-	event_handler_list = calloc (eh_list_size, sizeof (event_handler_list[0]));
-}
-
-void
-IE_Init_Cvars (void)
-{
-}
-
-void
-IE_Shutdown (void)
-{
-}
+static struct DARRAY_TYPE (ie_reghandler_t) ie_handlers = { .grow = 8, };
+static unsigned focus;
 
 int
 IE_Send_Event (const IE_event_t *event)
 {
-	if (event_handler_list[focus])
-		return event_handler_list[focus](event);
+	if (focus < ie_handlers.size && ie_handlers.a[focus].handler) {
+		ie_reghandler_t *reg = &ie_handlers.a[focus];
+		return reg->handler (event, reg->data);
+	}
 	return 0;
 }
 
 int
-IE_Add_Handler (int (*event_handler)(const IE_event_t*))
+IE_Add_Handler (ie_handler_t *event_handler, void *data)
 {
-	int     i;
+	size_t      handle;
+	ie_reghandler_t reg = { event_handler, data };
 
-	while (1) {
-		int (**t)(const IE_event_t*);
-		for (i = 0; i < eh_list_size; i++) {
-			if (!event_handler_list[i]) {
-				event_handler_list[i] = event_handler;
-				return i;
-			}
+	for  (handle = 0; handle < ie_handlers.size; handle++) {
+		if (!ie_handlers.a[handle].handler) {
+			ie_handlers.a[handle] = reg;
+			return handle;
 		}
-		if (!(t = realloc (event_handler_list, eh_list_size + 8)))
-			return -1;
-		event_handler_list = t;
-		memset (event_handler_list + eh_list_size, 0,
-				8 * sizeof (event_handler_list[0]));
-		eh_list_size += 8;
 	}
+	DARRAY_APPEND (&ie_handlers, reg);
+	return handle;
 }
 
 void
 IE_Remove_Handler (int handle)
 {
-	if (handle >= 0 && handle < eh_list_size)
-		event_handler_list[handle] = 0;
+	if ((size_t) (ssize_t) handle < ie_handlers.size) {
+		ie_handlers.a[handle].handler = 0;
+	}
 }
 
 void
 IE_Set_Focus (int handle)
 {
-	if (handle >= 0 && handle < eh_list_size
-		&& event_handler_list[handle]
-		&& focus != handle) {
+	unsigned    h = handle;
+	if (h < ie_handlers.size && ie_handlers.a[handle].handler && focus != h) {
 		IE_event_t event;
 		event.type = ie_lose_focus;
 		IE_Send_Event (&event);

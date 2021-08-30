@@ -35,7 +35,7 @@
 #include "QF/joystick.h"	// needed for JOY_MAX_AXES
 
 typedef struct {
-	float			x, y;
+	int  			x, y;
 	unsigned int	buttons;
 } IE_mouse_event_t;
 
@@ -45,33 +45,49 @@ typedef struct {
 } IE_key_event_t;
 
 typedef struct {
-	float			axis[JOY_MAX_AXES];
-	unsigned int	buttons;
-} IE_joystick_event_t;
+	int         devid;
+	int         axis;
+	int         value;
+} IE_axis_event_t;
+
+typedef struct {
+	int         devid;
+	int         button;
+	int         state;
+} IE_button_event_t;
+
+typedef struct {
+	int         devid;
+} IE_device_event_t;
 
 typedef enum {
 	ie_none,
 	ie_gain_focus,
 	ie_lose_focus,
+	ie_add_device,
+	ie_remove_device,
 	ie_mouse,
 	ie_key,
-	ie_joystick,
+	ie_axis,
+	ie_button,
 } IE_event_type;
 
 typedef struct {
-	IE_event_type	type;
+	IE_event_type type;
+	uint64_t    when;
 	union {
-		IE_mouse_event_t	mouse;
-		IE_key_event_t		key;
-		IE_joystick_event_t	joystick;
-	} e;
+		IE_mouse_event_t mouse;
+		IE_key_event_t key;
+		IE_axis_event_t axis;
+		IE_button_event_t button;
+		IE_device_event_t device;
+	};
 } IE_event_t;
 
-void IE_Init (void);
-void IE_Init_Cvars (void);
-void IE_Shutdown (void);
+typedef int ie_handler_t (const IE_event_t *, void *data);
+
 int IE_Send_Event (const IE_event_t *event);
-int IE_Add_Handler (int (*event_handler)(const IE_event_t*));
+int IE_Add_Handler (ie_handler_t *event_handler, void *data);
 void IE_Remove_Handler (int handle);
 void IE_Set_Focus (int handle);
 

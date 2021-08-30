@@ -37,6 +37,10 @@ typedef struct device_s {
 	int         num_axes;
 	axis_t     *axes;
 	int         event_count;
+
+	void       *data;
+	void      (*axis_event) (axis_t *axis, void *data);
+	void      (*button_event) (button_t *button, void *data);
 } device_t;
 
 int inputlib_check_input (void);

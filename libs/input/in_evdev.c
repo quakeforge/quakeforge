@@ -37,11 +37,21 @@
 #endif
 
 #include "QF/cvar.h"
+#include "QF/in_event.h"
 #include "QF/input.h"
+#include "QF/progs.h"   // for PR_RESMAP
 #include "QF/sys.h"
 
 #include "compat.h"
 #include "evdev/inputlib.h"
+
+typedef struct {
+	in_device_t in_dev;
+	int         devid;
+} devmap_t;
+
+static int evdev_driver_handle = -1;
+static PR_RESMAP (devmap_t) devmap;
 
 static void
 in_evdev_keydest_callback (keydest_t key_dest, void *data)
@@ -62,18 +72,83 @@ in_evdev_shutdown (void *data)
 }
 
 static void
+in_evdev_axis_event (axis_t *axis, void *_dm)
+{
+	devmap_t   *dm = _dm;
+	//Sys_Printf ("in_evdev_axis_event: %d %d\n", axis->num, axis->value);
+
+	IE_event_t  event = {
+		.type = ie_axis,
+		.when = Sys_LongTime (),
+		.axis = {
+			.devid = dm->devid,
+			.axis = axis->num,
+			.value = axis->value,
+		},
+	};
+	IE_Send_Event (&event);
+}
+
+static void
+in_evdev_button_event (button_t *button, void *_dm)
+{
+	devmap_t   *dm = _dm;
+	//Sys_Printf ("in_evdev_button_event: %d %d\n", button->num, button->state);
+
+	IE_event_t  event = {
+		.type = ie_button,
+		.when = Sys_LongTime (),
+		.button = {
+			.devid = dm->devid,
+			.button = button->num,
+			.state = button->state,
+		},
+	};
+	IE_Send_Event (&event);
+}
+
+static void
 device_add (device_t *dev)
 {
+	devmap_t   *dm = PR_RESNEW (devmap);
+	dm->in_dev.driverid = evdev_driver_handle;
+	dm->in_dev.device = dev;
+	dm->in_dev.name = dev->name;
+	dm->in_dev.path = dev->phys;
+	dm->devid = IN_AddDevice (&dm->in_dev);
+
+	dev->data = dm;
+	dev->axis_event = in_evdev_axis_event;
+	dev->button_event = in_evdev_button_event;
+
+#if 0
 	Sys_Printf ("in_evdev: add %s\n", dev->path);
 	Sys_Printf ("    %s\n", dev->name);
 	Sys_Printf ("    %s\n", dev->phys);
-	Sys_Printf ("    %s\n", dev->uniq);
+	for (int i = 0; i < dev->num_axes; i++) {
+		axis_t     *axis = dev->axes + i;
+		Sys_Printf ("axis: %d %d\n", axis->num, axis->value);
+	}
+	for (int i = 0; i < dev->num_buttons; i++) {
+		button_t     *button = dev->buttons + i;
+		Sys_Printf ("button: %d %d\n", button->num, button->state);
+	}
+#endif
 }
 
 static void
 device_remove (device_t *dev)
 {
-	Sys_Printf ("in_evdev: remove %s\n", dev->path);
+	//Sys_Printf ("in_evdev: remove %s\n", dev->path);
+	for (unsigned i = 0; i < devmap._size; i++) {
+		devmap_t   *dm = PR_RESGET (devmap, ~i);
+		if (dm->in_dev.device == dev) {
+			IN_RemoveDevice (dm->devid);
+			memset (dm, 0, sizeof (*dm));
+			PR_RESFREE (devmap, dm);
+			break;
+		}
+	}
 }
 
 static void
@@ -99,7 +174,7 @@ static in_driver_t in_evdev_driver = {
 static void __attribute__((constructor))
 in_evdev_register_driver (void)
 {
-	IN_RegisterDriver (&in_evdev_driver, 0);
+	evdev_driver_handle = IN_RegisterDriver (&in_evdev_driver, 0);
 }
 
 int in_evdev_force_link;

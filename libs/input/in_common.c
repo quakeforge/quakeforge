@@ -63,7 +63,8 @@ typedef struct {
 	void       *data;
 } in_regdriver_t;
 
-static struct DARRAY_TYPE (in_regdriver_t) in_drivers = { .grow = 8, };
+static struct DARRAY_TYPE (in_regdriver_t) in_drivers = { .grow = 8 };
+static struct DARRAY_TYPE (in_device_t *) in_devices = { .grow = 8 };
 
 VISIBLE viewdelta_t viewdelta;
 
@@ -96,6 +97,58 @@ void
 IN_DriverData (int handle, void *data)
 {
 	in_drivers.a[handle].data = data;
+}
+
+static int
+in_add_device (in_device_t *device)
+{
+	size_t      devid;
+
+	for (devid = 0; devid < in_devices.size; devid++) {
+		if (!in_devices.a[devid]) {
+			in_devices.a[devid] = device;
+			return devid;
+		}
+	}
+	DARRAY_APPEND (&in_devices, device);
+	return devid;
+}
+
+int
+IN_AddDevice (in_device_t *device)
+{
+	int         devid = in_add_device (device);
+
+	IE_event_t  event = {
+		.type = ie_add_device,
+		.when = Sys_LongTime (),
+		.device = {
+			.devid = devid,
+		},
+	};
+	IE_Send_Event (&event);
+	return devid;
+}
+
+void
+IN_RemoveDevice (int devid)
+{
+	size_t      d = devid;
+
+	if (d >= in_devices.size) {
+		Sys_Error ("IN_RemoveDevice: invalid devid: %d", devid);
+	}
+
+	IE_event_t  event = {
+		.type = ie_remove_device,
+		.when = Sys_LongTime (),
+		.device = {
+			.devid = devid,
+		},
+	};
+	IE_Send_Event (&event);
+
+	in_devices.a[devid] = 0;
 }
 
 void
@@ -168,8 +221,6 @@ IN_shutdown (void *data)
 			rd->driver.shutdown (rd->data);
 		}
 	}
-
-	IE_Shutdown ();
 }
 
 void
@@ -177,7 +228,6 @@ IN_Init (cbuf_t *cbuf)
 {
 	Sys_RegisterShutdown (IN_shutdown, 0);
 
-	IE_Init ();
 	for (size_t i = 0; i < in_drivers.size; i++) {
 		in_regdriver_t *rd = &in_drivers.a[i];
 		rd->driver.init (rd->data);
@@ -191,7 +241,6 @@ IN_Init (cbuf_t *cbuf)
 void
 IN_Init_Cvars (void)
 {
-	IE_Init_Cvars ();
 	Key_Init_Cvars ();
 	//JOY_Init_Cvars ();
 	in_grab = Cvar_Get ("in_grab", "0", CVAR_ARCHIVE, IN_UpdateGrab,
