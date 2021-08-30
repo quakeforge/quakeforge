@@ -743,7 +743,7 @@ grab_error (int code, const char *device)
 }
 
 static void
-in_x11_grab_input (int grab)
+in_x11_grab_input (void *data, int grab)
 {
 	if (!x_disp || !x_win)
 		return;
@@ -781,13 +781,13 @@ in_x11_grab_input (int grab)
 }
 
 static void
-in_x11_process_events (void)
+in_x11_process_events (void *data)
 {
 	X11_ProcessEvents ();	// Get events from X server.
 }
 
 static void
-in_x11_shutdown (void)
+in_x11_shutdown (void *data)
 {
 	Sys_MaskPrintf (SYS_vid, "in_x11_shutdown\n");
 	in_mouse_avail = 0;
@@ -813,7 +813,7 @@ in_x11_init_cvars (void)
 }
 
 static void
-in_x11_init (void)
+in_x11_init (void *data)
 {
 	// open the display
 	if (!x_disp)
@@ -863,7 +863,7 @@ in_x11_init (void)
 }
 
 static void
-in_x11_clear_states (void)
+in_x11_clear_states (void *data)
 {
 }
 
@@ -878,7 +878,7 @@ static in_driver_t in_x11_driver = {
 static void __attribute__((constructor))
 in_x11_register_driver (void)
 {
-	IN_RegisterDriver (&in_x11_driver);
+	IN_RegisterDriver (&in_x11_driver, 0);
 }
 
 int x11_force_link;

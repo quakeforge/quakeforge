@@ -36,11 +36,11 @@ typedef struct {
 } viewdelta_t;
 
 typedef struct {
-	void (*init) (void);
-	void (*shutdown) (void);
-	void (*process_events) (void);
-	void (*clear_states) (void);
-	void (*grab_input) (int grab);
+	void (*init) (void *data);
+	void (*shutdown) (void *data);
+	void (*process_events) (void *data);
+	void (*clear_states) (void *data);
+	void (*grab_input) (void *data, int grab);
 } in_driver_t;
 
 extern viewdelta_t viewdelta;
@@ -49,7 +49,8 @@ extern viewdelta_t viewdelta;
 
 struct cvar_s;
 
-void IN_RegisterDriver (in_driver_t *driver);
+int IN_RegisterDriver (in_driver_t *driver, void *data);
+void IN_DriverData (int handlle, void *data);
 void IN_Init (struct cbuf_s *cbuf);
 void IN_Init_Cvars (void);
 

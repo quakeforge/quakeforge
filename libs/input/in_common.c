@@ -58,7 +58,12 @@
 #include "QF/sys.h"
 #include "QF/vid.h"
 
-static struct DARRAY_TYPE (in_driver_t) in_drivers = { .grow = 8, };
+typedef struct {
+	in_driver_t driver;
+	void       *data;
+} in_regdriver_t;
+
+static struct DARRAY_TYPE (in_regdriver_t) in_drivers = { .grow = 8, };
 
 VISIBLE viewdelta_t viewdelta;
 
@@ -79,10 +84,18 @@ qboolean    in_mouse_avail;
 float       in_mouse_x, in_mouse_y;
 static float in_old_mouse_x, in_old_mouse_y;
 
-void
-IN_RegisterDriver (in_driver_t *driver)
+int
+IN_RegisterDriver (in_driver_t *driver, void *data)
 {
-	DARRAY_APPEND (&in_drivers, *driver);
+	in_regdriver_t rdriver = { *driver, data };
+	DARRAY_APPEND (&in_drivers, rdriver);
+	return in_drivers.size - 1;
+}
+
+void
+IN_DriverData (int handle, void *data)
+{
+	in_drivers.a[handle].data = data;
 }
 
 void
@@ -90,8 +103,9 @@ IN_UpdateGrab (cvar_t *var)		// called from context_*.c
 {
 	if (var) {
 		for (size_t i = 0; i < in_drivers.size; i++) {
-			if (in_drivers.a[i].grab_input) {
-				in_drivers.a[i].grab_input (var->int_val);
+			in_regdriver_t *rd = &in_drivers.a[i];
+			if (rd->driver.grab_input) {
+				rd->driver.grab_input (rd->data, var->int_val);
 			}
 		}
 	}
@@ -101,7 +115,8 @@ void
 IN_ProcessEvents (void)
 {
 	for (size_t i = 0; i < in_drivers.size; i++) {
-		in_drivers.a[i].process_events ();
+		in_regdriver_t *rd = &in_drivers.a[i];
+		rd->driver.process_events (rd->data);
 	}
 }
 
@@ -148,8 +163,9 @@ IN_shutdown (void *data)
 
 	Sys_MaskPrintf (SYS_vid, "IN_Shutdown\n");
 	for (size_t i = in_drivers.size; i-- > 0; ) {
-		if (in_drivers.a[i].shutdown) {
-			in_drivers.a[i].shutdown ();
+		in_regdriver_t *rd = &in_drivers.a[i];
+		if (rd->driver.shutdown) {
+			rd->driver.shutdown (rd->data);
 		}
 	}
 
@@ -163,7 +179,8 @@ IN_Init (cbuf_t *cbuf)
 
 	IE_Init ();
 	for (size_t i = 0; i < in_drivers.size; i++) {
-		in_drivers.a[i].init ();
+		in_regdriver_t *rd = &in_drivers.a[i];
+		rd->driver.init (rd->data);
 	}
 	Key_Init (cbuf);
 	//JOY_Init ();
@@ -200,8 +217,9 @@ void
 IN_ClearStates (void)
 {
 	for (size_t i = 0; i < in_drivers.size; i++) {
-		if (in_drivers.a[i].clear_states) {
-			in_drivers.a[i].clear_states ();
+		in_regdriver_t *rd = &in_drivers.a[i];
+		if (rd->driver.clear_states) {
+			rd->driver.clear_states (rd->data);
 		}
 	}
 	Key_ClearStates ();

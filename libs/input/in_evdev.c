@@ -49,14 +49,14 @@ in_evdev_keydest_callback (keydest_t key_dest, void *data)
 }
 
 static void
-in_evdev_process_events (void)
+in_evdev_process_events (void *data)
 {
 	if (inputlib_check_input ()) {
 	}
 }
 
 static void
-in_evdev_shutdown (void)
+in_evdev_shutdown (void *data)
 {
 	inputlib_close ();
 }
@@ -64,15 +64,20 @@ in_evdev_shutdown (void)
 static void
 device_add (device_t *dev)
 {
+	Sys_Printf ("in_evdev: add %s\n", dev->path);
+	Sys_Printf ("    %s\n", dev->name);
+	Sys_Printf ("    %s\n", dev->phys);
+	Sys_Printf ("    %s\n", dev->uniq);
 }
 
 static void
 device_remove (device_t *dev)
 {
+	Sys_Printf ("in_evdev: remove %s\n", dev->path);
 }
 
 static void
-in_evdev_init (void)
+in_evdev_init (void *data)
 {
 	Key_KeydestCallback (in_evdev_keydest_callback, 0);
 
@@ -80,7 +85,7 @@ in_evdev_init (void)
 }
 
 static void
-in_evdev_clear_states (void)
+in_evdev_clear_states (void *data)
 {
 }
 
@@ -94,7 +99,7 @@ static in_driver_t in_evdev_driver = {
 static void __attribute__((constructor))
 in_evdev_register_driver (void)
 {
-	IN_RegisterDriver (&in_evdev_driver);
+	IN_RegisterDriver (&in_evdev_driver, 0);
 }
 
 int in_evdev_force_link;
