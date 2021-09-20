@@ -30,6 +30,21 @@
 
 #include "QF/keys.h"
 
+typedef struct in_axisinfo_s {
+	int         deviceid;
+	int         axis;
+	int         value;
+	int         min;
+	int         max;
+} in_axisinfo_t;
+
+typedef struct in_buttoninfo_s {
+	int         deviceid;
+	int         button;
+	int         state;
+} in_buttoninfo_t;
+
+#ifndef __QFCC__
 typedef struct {
 	vec3_t angles;
 	vec3_t position;
@@ -41,13 +56,18 @@ typedef struct in_driver_s {
 	void (*process_events) (void *data);
 	void (*clear_states) (void *data);
 	void (*grab_input) (void *data, int grab);
+
+	void (*axis_info) (void *data, void *device, in_axisinfo_t *axes,
+					   int *numaxes);
+	void (*button_info) (void *data, void *device, in_buttoninfo_t *buttons,
+						 int *numbuttons);
 } in_driver_t;
 
 typedef struct in_device_s {
 	int         driverid;
 	void       *device;
 	const char *name;
-	const char *path;
+	const char *id;
 } in_device_t;
 
 extern viewdelta_t viewdelta;
@@ -61,8 +81,14 @@ void IN_DriverData (int handlle, void *data);
 void IN_Init (struct cbuf_s *cbuf);
 void IN_Init_Cvars (void);
 
-int IN_AddDevice (in_device_t *device);
+int IN_AddDevice (int driver, void *device, const char *name, const char *id);
 void IN_RemoveDevice (int devid);
+
+void IN_SendConnectedDevices (void);
+const char *IN_GetDeviceName (int devid);
+const char *IN_GetDeviceId (int devid);
+int IN_AxisInfo (int devid, in_axisinfo_t *axes, int *numaxes);
+int IN_ButtonInfo (int devid, in_buttoninfo_t *button, int *numbuttons);
 
 void IN_ProcessEvents (void);
 
@@ -86,5 +112,6 @@ extern float		in_mouse_x, in_mouse_y;
 
 
 extern kbutton_t   in_strafe, in_klook, in_speed, in_mlook;
+#endif
 
 #endif//__QF_input_h

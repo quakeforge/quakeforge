@@ -46,7 +46,7 @@
 #include "evdev/inputlib.h"
 
 typedef struct {
-	in_device_t in_dev;
+	device_t   *device;
 	int         devid;
 } devmap_t;
 
@@ -110,12 +110,17 @@ in_evdev_button_event (button_t *button, void *_dm)
 static void
 device_add (device_t *dev)
 {
+	const char *name = dev->name;
+	// prefer device unique string if available, otherwise fall back to
+	// the physical path
+	const char *id = dev->uniq;
+	if (!id || !*id) {
+		id = dev->phys;
+	}
+
 	devmap_t   *dm = PR_RESNEW (devmap);
-	dm->in_dev.driverid = evdev_driver_handle;
-	dm->in_dev.device = dev;
-	dm->in_dev.name = dev->name;
-	dm->in_dev.path = dev->phys;
-	dm->devid = IN_AddDevice (&dm->in_dev);
+	dm->device = dev;
+	dm->devid = IN_AddDevice (evdev_driver_handle, dev, name, id);
 
 	dev->data = dm;
 	dev->axis_event = in_evdev_axis_event;
@@ -142,9 +147,8 @@ device_remove (device_t *dev)
 	//Sys_Printf ("in_evdev: remove %s\n", dev->path);
 	for (unsigned i = 0; i < devmap._size; i++) {
 		devmap_t   *dm = PR_RESGET (devmap, ~i);
-		if (dm->in_dev.device == dev) {
+		if (dm->device == dev) {
 			IN_RemoveDevice (dm->devid);
-			memset (dm, 0, sizeof (*dm));
 			PR_RESFREE (devmap, dm);
 			break;
 		}
@@ -164,11 +168,52 @@ in_evdev_clear_states (void *data)
 {
 }
 
+static void
+in_evdev_axis_info (void *data, void *device, in_axisinfo_t *axes,
+					int *numaxes)
+{
+	device_t   *dev = device;
+	if (!axes) {
+		*numaxes = dev->num_axes;
+		return;
+	}
+	if (*numaxes > dev->num_axes) {
+		*numaxes = dev->num_axes;
+	}
+	for (int i = 0; i < *numaxes; i++) {
+		axes[i].axis = dev->axes[i].num;
+		axes[i].value = dev->axes[i].value;
+		axes[i].min = dev->axes[i].min;
+		axes[i].max = dev->axes[i].max;
+	}
+}
+
+static void
+in_evdev_button_info (void *data, void *device, in_buttoninfo_t *buttons,
+					int *numbuttons)
+{
+	device_t   *dev = device;
+	if (!buttons) {
+		*numbuttons = dev->num_buttons;
+		return;
+	}
+	if (*numbuttons > dev->num_buttons) {
+		*numbuttons = dev->num_buttons;
+	}
+	for (int i = 0; i < *numbuttons; i++) {
+		buttons[i].button = dev->buttons[i].num;
+		buttons[i].state = dev->buttons[i].state;
+	}
+}
+
 static in_driver_t in_evdev_driver = {
 	.init = in_evdev_init,
 	.shutdown = in_evdev_shutdown,
 	.process_events = in_evdev_process_events,
 	.clear_states = in_evdev_clear_states,
+
+	.axis_info = in_evdev_axis_info,
+	.button_info = in_evdev_button_info,
 };
 
 static void __attribute__((constructor))

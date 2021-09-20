@@ -64,7 +64,7 @@ typedef struct {
 } in_regdriver_t;
 
 static struct DARRAY_TYPE (in_regdriver_t) in_drivers = { .grow = 8 };
-static struct DARRAY_TYPE (in_device_t *) in_devices = { .grow = 8 };
+static struct DARRAY_TYPE (in_device_t) in_devices = { .grow = 8 };
 
 VISIBLE viewdelta_t viewdelta;
 
@@ -100,24 +100,35 @@ IN_DriverData (int handle, void *data)
 }
 
 static int
-in_add_device (in_device_t *device)
+in_add_device (int driver, in_device_t *device, const char *name,
+			   const char *id)
 {
 	size_t      devid;
+	in_device_t indev = {
+		.driverid = driver,
+		.device = device,
+		.name = name,
+		.id = id,
+	};
 
 	for (devid = 0; devid < in_devices.size; devid++) {
-		if (!in_devices.a[devid]) {
-			in_devices.a[devid] = device;
+		if (in_devices.a[devid].driverid == -1) {
+			in_devices.a[devid] = indev;
 			return devid;
 		}
 	}
-	DARRAY_APPEND (&in_devices, device);
+	DARRAY_APPEND (&in_devices, indev);
 	return devid;
 }
 
 int
-IN_AddDevice (in_device_t *device)
+IN_AddDevice (int driver, void *device, const char *name, const char *id)
 {
-	int         devid = in_add_device (device);
+	if ((size_t) driver >= in_drivers.size) {
+		Sys_Error ("IN_AddDevice: invalid driver: %d", driver);
+	}
+
+	int         devid = in_add_device (driver, device, name, id);
 
 	IE_event_t  event = {
 		.type = ie_add_device,
@@ -133,9 +144,7 @@ IN_AddDevice (in_device_t *device)
 void
 IN_RemoveDevice (int devid)
 {
-	size_t      d = devid;
-
-	if (d >= in_devices.size) {
+	if ((size_t) devid >= in_devices.size) {
 		Sys_Error ("IN_RemoveDevice: invalid devid: %d", devid);
 	}
 
@@ -148,7 +157,96 @@ IN_RemoveDevice (int devid)
 	};
 	IE_Send_Event (&event);
 
-	in_devices.a[devid] = 0;
+	in_devices.a[devid].device = 0;
+}
+
+void
+IN_SendConnectedDevices (void)
+{
+	for (size_t devid = 0; devid < in_devices.size; devid++) {
+		if (in_devices.a[devid].driverid >= 0
+			&& in_devices.a[devid].device) {
+			IE_event_t  event = {
+				.type = ie_add_device,
+				.when = Sys_LongTime (),//FIXME actual time?
+				.device = {
+					.devid = devid,
+				},
+			};
+			IE_Send_Event (&event);
+		}
+	}
+}
+
+const char *
+IN_GetDeviceName (int devid)
+{
+	if ((size_t) devid >= in_devices.size) {
+		return 0;
+	}
+	if (!in_devices.a[devid].device || in_devices.a[devid].driverid == -1) {
+		return 0;
+	}
+	return in_devices.a[devid].name;
+}
+
+const char *
+IN_GetDeviceId (int devid)
+{
+	if ((size_t) devid >= in_devices.size) {
+		return 0;
+	}
+	if (!in_devices.a[devid].device || in_devices.a[devid].driverid == -1) {
+		return 0;
+	}
+	return in_devices.a[devid].id;
+}
+
+int
+IN_AxisInfo (int devid, in_axisinfo_t *axes, int *numaxes)
+{
+	if ((size_t) devid >= in_devices.size) {
+		return -1;
+	}
+	if (!in_devices.a[devid].device || in_devices.a[devid].driverid == -1) {
+		return -1;
+	}
+	int         driver = in_devices.a[devid].driverid;
+	in_regdriver_t *rd = &in_drivers.a[driver];
+	if (!rd->driver.axis_info) {
+		return -1;
+	}
+	rd->driver.axis_info (rd->data, in_devices.a[devid].device, axes, numaxes);
+	if (axes) {
+		for (int i = 0; i < *numaxes; i++) {
+			axes[i].deviceid = devid;
+		}
+	}
+	return 0;
+}
+
+int
+IN_ButtonInfo (int devid, in_buttoninfo_t *buttons, int *numbuttons)
+{
+	if ((size_t) devid >= in_devices.size) {
+		return -1;
+	}
+	if (!in_devices.a[devid].device || in_devices.a[devid].driverid == -1) {
+		return -1;
+	}
+	int         driver = in_devices.a[devid].driverid;
+	in_regdriver_t *rd = &in_drivers.a[driver];
+	if (!rd->driver.button_info) {
+		return -1;
+	}
+	rd->driver.button_info (rd->data, in_devices.a[devid].device,
+							buttons, numbuttons);
+	if (buttons) {
+		for (int i = 0; i < *numbuttons; i++) {
+			buttons[i].deviceid = devid;
+		}
+	}
+	return 0;
 }
 
 void
