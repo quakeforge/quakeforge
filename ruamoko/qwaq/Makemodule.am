@@ -4,6 +4,29 @@ QWAQ_INCS=@QWAQ_INCS@
 
 noinst_PROGRAMS += @QWAQ_TARGETS@ ruamoko/qwaq/qwaq-app.dat$(EXEEXT) ruamoko/qwaq/gcd.dat$(EXEEXT) ruamoko/qwaq/z-transform.dat$(EXEEXT)
 
+libui=ruamoko/qwaq/libui.a
+noinst_LIBRARIES += $(libui)
+
+ruamoko_qwaq_libui_a_SOURCES= \
+	ruamoko/qwaq/ui/button.r	\
+	ruamoko/qwaq/ui/draw.r	\
+	ruamoko/qwaq/ui/garray.r	\
+	ruamoko/qwaq/ui/group.r	\
+	ruamoko/qwaq/ui/listener.r	\
+	ruamoko/qwaq/ui/proxyview.r	\
+	ruamoko/qwaq/ui/rect.r	\
+	ruamoko/qwaq/ui/scrollbar.r	\
+	ruamoko/qwaq/ui/tableview.r	\
+	ruamoko/qwaq/ui/textcontext.r	\
+	ruamoko/qwaq/ui/titlebar.r	\
+	ruamoko/qwaq/ui/view.r	\
+	ruamoko/qwaq/ui/window.r
+ruamoko_qwaq_libui_a_dep=$(call qcautodep,$(ruamoko_qwaq_libui_a_SOURCES))
+ruamoko_qwaq_libui_a_AR=$(PAK) -cf
+EXTRA_ruamoko_qwaq_libui_a_DEPENDENCIES=pak
+include $(ruamoko_qwaq_libui_a_dep) # am--include-marker
+r_depfiles_remade += $(ruamoko_qwaq_libui_a_dep)
+
 qwaq_app_dat_src= \
 	ruamoko/qwaq/qwaq-app.r	\
 	ruamoko/qwaq/debugger/views/basicview.r	\
@@ -27,20 +50,7 @@ qwaq_app_dat_src= \
 	ruamoko/qwaq/debugger/typeencodings.r	\
 	ruamoko/qwaq/editor/editbuffer.r	\
 	ruamoko/qwaq/editor/editor.r	\
-	ruamoko/qwaq/editor/status.r	\
-	ruamoko/qwaq/ui/button.r	\
-	ruamoko/qwaq/ui/draw.r	\
-	ruamoko/qwaq/ui/garray.r	\
-	ruamoko/qwaq/ui/group.r	\
-	ruamoko/qwaq/ui/listener.r	\
-	ruamoko/qwaq/ui/proxyview.r	\
-	ruamoko/qwaq/ui/rect.r	\
-	ruamoko/qwaq/ui/scrollbar.r	\
-	ruamoko/qwaq/ui/tableview.r	\
-	ruamoko/qwaq/ui/textcontext.r	\
-	ruamoko/qwaq/ui/titlebar.r	\
-	ruamoko/qwaq/ui/view.r	\
-	ruamoko/qwaq/ui/window.r
+	ruamoko/qwaq/editor/status.r
 
 qwaq_curses_libs= \
 	libs/ui/libQFui.la \
@@ -101,8 +111,8 @@ ruamoko_qwaq_qwaq_x11_DEPENDENCIES= $(qwaq_x11_libs) $(QWAQ_DEPS)
 ruamoko_qwaq_qwaq_app_dat_SOURCES=$(qwaq_app_dat_src)
 ruamoko_qwaq_qwaq_app_obj=$(ruamoko_qwaq_qwaq_app_dat_SOURCES:.r=.o)
 ruamoko_qwaq_qwaq_app_dep=$(call qcautodep,$(ruamoko_qwaq_qwaq_app_dat_SOURCES:.o=.Qo))
-ruamoko/qwaq/qwaq-app.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_app_obj) $(QFCC_DEP) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
-	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_qwaq_app_obj) -lcsqc -lr
+ruamoko/qwaq/qwaq-app.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_app_obj) $(QFCC_DEP) $(libui) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
+	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_qwaq_app_obj) $(libui) -lcsqc -lr
 include $(ruamoko_qwaq_qwaq_app_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_qwaq_app_dep)
 

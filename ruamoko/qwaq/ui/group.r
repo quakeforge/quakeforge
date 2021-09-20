@@ -5,6 +5,8 @@
 #include "ruamoko/qwaq/ui/group.h"
 #include "ruamoko/qwaq/ui/view.h"
 
+@reference Array (Group);
+
 @implementation Group
 
 +(Group *)withContext:(id<TextContext>)context owner:(View *)owner
