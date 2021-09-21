@@ -22,6 +22,11 @@ typedef enum {
 	qe_command   = 0x0200,		// application level command
 	qe_broadcast = 0x0400,
 	qe_resize    = 0x0800,		// screen resized
+
+	qe_dev_add   = 0x1000,
+	qe_dev_rem   = 0x2000,
+	qe_axis      = 0x4000,
+	qe_button    = 0x8000,
 } qwaq_message_event;
 
 typedef enum {
@@ -61,6 +66,7 @@ typedef union qwaq_message_s {
 	int         int_val;
 	float       float_val;
 	float       vector_val[4];	// vector and quaternion
+	int         ivector_val[4];
 	double      double_val;
 #ifdef __QFCC__
 	void       *pointer_val;

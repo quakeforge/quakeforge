@@ -46,6 +46,7 @@
 
 #include "QF/dstring.h"
 #include "QF/hash.h"
+#include "QF/in_event.h"
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/sys.h"
@@ -188,28 +189,28 @@ qwaq_add_event (qwaq_resources_t *res, qwaq_event_t *event)
 	int         ret = 0;
 
 	// merge motion events
-	pthread_mutex_lock (&res->event_cond.mut);
-	unsigned    last = RB_DATA_AVAILABLE (res->event_queue);
+	pthread_mutex_lock (&res->events.cond.mut);
+	unsigned    last = RB_DATA_AVAILABLE (res->events.queue);
 	if (event->what == qe_mousemove && last > 1
-		&& RB_PEEK_DATA(res->event_queue, last - 1)->what == qe_mousemove) {
-		RB_POKE_DATA(res->event_queue, last - 1, *event);
+		&& RB_PEEK_DATA(res->events.queue, last - 1)->what == qe_mousemove) {
+		RB_POKE_DATA(res->events.queue, last - 1, *event);
 		merged = 1;
-		pthread_cond_broadcast (&res->event_cond.rcond);
+		pthread_cond_broadcast (&res->events.cond.rcond);
 	}
-	pthread_mutex_unlock (&res->event_cond.mut);
+	pthread_mutex_unlock (&res->events.cond.mut);
 	if (merged) {
 		return 0;
 	}
 
-	pthread_mutex_lock (&res->event_cond.mut);
+	pthread_mutex_lock (&res->events.cond.mut);
 	qwaq_init_timeout (&timeout, 5000 * (int64_t) 1000000);
-	while (RB_SPACE_AVAILABLE (res->event_queue) < 1 && ret == 0) {
-		ret = pthread_cond_timedwait (&res->event_cond.wcond,
-									  &res->event_cond.mut, &timeout);
+	while (RB_SPACE_AVAILABLE (res->events.queue) < 1 && ret == 0) {
+		ret = pthread_cond_timedwait (&res->events.cond.wcond,
+									  &res->events.cond.mut, &timeout);
 	}
-	RB_WRITE_DATA (res->event_queue, event, 1);
-	pthread_cond_broadcast (&res->event_cond.rcond);
-	pthread_mutex_unlock (&res->event_cond.mut);
+	RB_WRITE_DATA (res->events.queue, event, 1);
+	pthread_cond_broadcast (&res->events.cond.rcond);
+	pthread_mutex_unlock (&res->events.cond.mut);
 	return ret;
 }
 
@@ -472,9 +473,52 @@ term_register_driver (void)
 	term_driver_handle = IN_RegisterDriver (&term_driver, 0);
 }
 
+static int
+qwaq_input_event_handler (const IE_event_t *ie_event, void *_res)
+{
+	qwaq_resources_t *res = _res;
+	qwaq_event_t event = {};
+
+	event.when = ie_event->when * 1e-6 + Sys_DoubleTimeBase ();
+
+	switch (ie_event->type) {
+		case ie_none:
+		case ie_gain_focus:
+		case ie_lose_focus:
+			return 0;
+		case ie_add_device:
+			event.what = qe_dev_add;
+			event.message.int_val = ie_event->device.devid;
+			break;
+		case ie_remove_device:
+			event.what = qe_dev_rem;
+			event.message.int_val = ie_event->device.devid;
+			break;
+		case ie_mouse:
+		case ie_key:
+			// these are handled directly for now
+			break;
+		case ie_axis:
+			event.what = qe_axis;
+			event.message.ivector_val[0] = ie_event->axis.devid;
+			event.message.ivector_val[1] = ie_event->axis.axis;
+			event.message.ivector_val[2] = ie_event->axis.value;
+			break;
+		case ie_button:
+			event.what = qe_button;
+			event.message.ivector_val[0] = ie_event->button.devid;
+			event.message.ivector_val[1] = ie_event->button.button;
+			event.message.ivector_val[2] = ie_event->button.state;
+			break;
+	}
+	qwaq_add_event (res, &event);
+	return 1;
+}
+
 void
 qwaq_input_init (qwaq_resources_t *res)
 {
+	res->input_event_handler = IE_Add_Handler (qwaq_input_event_handler, res);
 	IN_DriverData (term_driver_handle, res);
 
 	if (res->key_sequences) {
@@ -511,6 +555,7 @@ qwaq_process_input (qwaq_resources_t *res)
 void
 qwaq_input_shutdown (qwaq_resources_t *res)
 {
+	IE_Remove_Handler (res->input_event_handler);
 	IN_DriverData (term_driver_handle, 0);
 
 	// ncurses takes care of input mode for us, so need only tell xterm

@@ -2,7 +2,7 @@ QWAQ_LIBS=@QWAQ_LIBS@
 QWAQ_DEPS=@QWAQ_DEPS@
 QWAQ_INCS=@QWAQ_INCS@
 
-noinst_PROGRAMS += @QWAQ_TARGETS@ ruamoko/qwaq/qwaq-app.dat$(EXEEXT) ruamoko/qwaq/gcd.dat$(EXEEXT) ruamoko/qwaq/z-transform.dat$(EXEEXT)
+noinst_PROGRAMS += @QWAQ_TARGETS@ ruamoko/qwaq/qwaq-app.dat$(EXEEXT) ruamoko/qwaq/gcd.dat$(EXEEXT) ruamoko/qwaq/input-app.dat$(EXEEXT) ruamoko/qwaq/z-transform.dat$(EXEEXT)
 
 libui=ruamoko/qwaq/libui.a
 noinst_LIBRARIES += $(libui)
@@ -52,6 +52,10 @@ qwaq_app_dat_src= \
 	ruamoko/qwaq/editor/editor.r	\
 	ruamoko/qwaq/editor/status.r
 
+qwaq_input_app_dat_src= \
+	ruamoko/qwaq/qwaq-input.r \
+	ruamoko/qwaq/input-app.r
+
 qwaq_curses_libs= \
 	libs/ui/libQFui.la \
 	libs/input/libQFinput.la
@@ -62,7 +66,8 @@ ruamoko_qwaq_qwaq_curses_SOURCES= \
 	ruamoko/qwaq/builtins/debug.c \
 	ruamoko/qwaq/builtins/editbuffer.c \
 	ruamoko/qwaq/builtins/input.c \
-	ruamoko/qwaq/builtins/qwaq-curses.c
+	ruamoko/qwaq/builtins/qwaq-curses.c \
+	ruamoko/qwaq/builtins/threading.c
 
 ruamoko_qwaq_qwaq_curses_LDADD= $(qwaq_curses_libs) $(QWAQ_LIBS) \
 				$(PANEL_LIBS) $(NCURSES_LIBS) $(PTHREAD_LDFLAGS) $(DL_LIBS)
@@ -115,6 +120,14 @@ ruamoko/qwaq/qwaq-app.dat$(EXEEXT): $(ruamoko_qwaq_qwaq_app_obj) $(QFCC_DEP) $(l
 	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_qwaq_app_obj) $(libui) -lcsqc -lr
 include $(ruamoko_qwaq_qwaq_app_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_qwaq_qwaq_app_dep)
+
+ruamoko_qwaq_input_app_dat_SOURCES=$(qwaq_input_app_dat_src)
+ruamoko_qwaq_input_app_obj=$(ruamoko_qwaq_input_app_dat_SOURCES:.r=.o)
+ruamoko_qwaq_input_app_dep=$(call qcautodep,$(ruamoko_qwaq_input_app_dat_SOURCES:.o=.Qo))
+ruamoko/qwaq/input-app.dat$(EXEEXT): $(ruamoko_qwaq_input_app_obj) $(QFCC_DEP) $(libui) ruamoko/lib/libcsqc.a ruamoko/lib/libr.a
+	$(V_QFCCLD)$(QLINK) -o $@ $(ruamoko_qwaq_input_app_obj) $(libui) -lcsqc -lr
+include $(ruamoko_qwaq_input_app_dep) # am--include-marker
+r_depfiles_remade += $(ruamoko_qwaq_input_app_dep)
 
 ruamoko_qwaq_gcd_dat_SOURCES=ruamoko/qwaq/gcd.r
 ruamoko_qwaq_gcd_obj=$(ruamoko_qwaq_gcd_dat_SOURCES:.r=.o)
