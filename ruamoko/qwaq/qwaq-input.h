@@ -44,6 +44,7 @@ typedef struct qwaq_devinfo_s {
 }
 @end
 
+void init_input (void);
 void send_connected_devices (void);
 qwaq_devinfo_t *get_device_info (int devid);
 

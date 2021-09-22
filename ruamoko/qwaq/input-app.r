@@ -43,6 +43,7 @@ arp_end (void)
 	}
 
 	initialize ();
+	init_input ();
 	for (int i = 1; i < 64; i++) {
 		init_pair (i, i & 0x7, i >> 3);
 		color_palette[i] = COLOR_PAIR (i);

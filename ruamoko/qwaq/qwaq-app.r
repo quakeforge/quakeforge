@@ -9,6 +9,9 @@ int fence;
 #include "ruamoko/qwaq/ui/view.h"
 #include "ruamoko/qwaq/debugger/debugger.h"
 #include "ruamoko/qwaq/qwaq-app.h"
+#include "ruamoko/qwaq/qwaq-input.h"
+
+void init_input (void) = #0;//FIXME
 
 int color_palette[64];
 
@@ -39,6 +42,7 @@ arp_end (void)
 	}
 
 	initialize ();
+	init_input ();
 	for (int i = 1; i < 64; i++) {
 		init_pair (i, i & 0x7, i >> 3);
 		color_palette[i] = COLOR_PAIR (i);

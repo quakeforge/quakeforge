@@ -1,6 +1,8 @@
 #ifndef __qwaq_ui_event_h
 #define __qwaq_ui_event_h
 
+#include "ruamoko/qwaq/threading.h"
+
 typedef enum {
 	qe_mousedown = 0x0001,
 	qe_mouseup   = 0x0002,
@@ -88,5 +90,44 @@ typedef struct qwaq_event_s {
 		qwaq_resize_t resize;
 	};
 } qwaq_event_t;
+
+#ifndef __QFCC__
+typedef struct qwaq_event_queue_s {
+	rwcond_t    cond;
+	RING_BUFFER (qwaq_event_t, QUEUE_SIZE) queue;
+} qwaq_event_queue_t;
+
+typedef enum {
+	esc_ground,
+	esc_escape,
+	esc_csi,
+	esc_mouse,
+	esc_sgr,
+	esc_key,
+} esc_state_t;
+
+typedef struct qwaq_input_resources_s {
+	progs_t    *pr;
+	int         initialized;
+
+	qwaq_event_queue_t events;
+
+	qwaq_pipe_t commands;
+	qwaq_pipe_t results;
+
+	dstring_t   escbuff;
+	esc_state_t escstate;
+	unsigned    button_state;
+	int         mouse_x;
+	int         mouse_y;
+	qwaq_event_t lastClick;
+	struct hashtab_s *key_sequences;
+
+	int         input_event_handler;
+} qwaq_input_resources_t;
+
+int qwaq_add_event (qwaq_input_resources_t *res, qwaq_event_t *event);
+
+#endif
 
 #endif//__qwaq_ui_event_h

@@ -52,8 +52,8 @@
 #include "QF/sys.h"
 
 #include "ruamoko/qwaq/qwaq.h"
+#include "ruamoko/qwaq/qwaq-input.h"
 #include "ruamoko/qwaq/ui/event.h"
-#include "ruamoko/qwaq/ui/curses.h"
 
 #define always_inline inline __attribute__((__always_inline__))
 
@@ -62,6 +62,16 @@
 #define SGR_ON "\033[?1006h"
 #define SGR_OFF "\033[?1006l"
 #define WHEEL_BUTTONS 0x78	// scroll up/down/left/right - always click
+
+typedef enum qwaq_input_commands_e {
+	qwaq_cmd_send_connected_devices,
+	qwaq_cmd_get_device_info,
+} qwaq_input_commands;
+
+static const char *qwaq_input_command_names[]= {
+	"send_connected_devices",
+	"get_device_info",
+};
 
 typedef struct qwaq_key_s {
 	const char *sequence;
@@ -169,6 +179,26 @@ static qwaq_key_t default_keys[] = {
 	{ "\033[1;6D",	QFK_LEFT,		5 },
 };
 
+#define CMD_SIZE(x) sizeof(x)/sizeof(x[0])
+
+static int
+qwaq_cmd_peek (qwaq_input_resources_t *res, int ahead)
+{
+	return *RB_PEEK_DATA (res->commands.pipe, ahead);
+}
+#if 0
+static dstring_t *
+qwaq_cmd_string (qwaq_input_resources_t *res, int string_id)
+{
+	return res->commands.strings + string_id;
+}
+#endif
+static dstring_t *
+qwaq_res_string (qwaq_input_resources_t *res, int string_id)
+{
+	return res->results.strings + string_id;
+}
+
 #ifdef HAVE_SIGACTION
 static struct sigaction save_winch;
 static sigset_t winch_mask;
@@ -182,7 +212,7 @@ handle_winch (int sig)
 #endif
 
 int
-qwaq_add_event (qwaq_resources_t *res, qwaq_event_t *event)
+qwaq_add_event (qwaq_input_resources_t *res, qwaq_event_t *event)
 {
 	struct timespec timeout;
 	int         merged = 0;
@@ -216,7 +246,7 @@ qwaq_add_event (qwaq_resources_t *res, qwaq_event_t *event)
 
 #ifdef HAVE_SIGACTION
 static void
-resize_event (qwaq_resources_t *res)
+resize_event (qwaq_input_resources_t *res)
 {
 	qwaq_event_t event = {};
 	struct winsize size;
@@ -231,7 +261,7 @@ resize_event (qwaq_resources_t *res)
 #endif
 
 static void
-key_event (qwaq_resources_t *res, int key, unsigned shift)
+key_event (qwaq_input_resources_t *res, int key, unsigned shift)
 {
 	qwaq_event_t event = {};
 	event.what = qe_keydown;
@@ -242,7 +272,7 @@ key_event (qwaq_resources_t *res, int key, unsigned shift)
 }
 
 static void
-mouse_event (qwaq_resources_t *res, int what, int x, int y)
+mouse_event (qwaq_input_resources_t *res, int what, int x, int y)
 {
 	qwaq_event_t event = {};
 
@@ -268,7 +298,7 @@ mouse_event (qwaq_resources_t *res, int what, int x, int y)
 }
 
 static void
-parse_mouse (qwaq_resources_t *res, unsigned ctrl, int x, int y, int cmd)
+parse_mouse (qwaq_input_resources_t *res, unsigned ctrl, int x, int y, int cmd)
 {
 	int         button = ctrl & 3;
 	int         ext = (ctrl >> 6);
@@ -308,7 +338,7 @@ parse_mouse (qwaq_resources_t *res, unsigned ctrl, int x, int y, int cmd)
 }
 
 static void
-parse_x10 (qwaq_resources_t *res)
+parse_x10 (qwaq_input_resources_t *res)
 {
 	int         x = (byte) res->escbuff.str[1] - '!';	// want 0-based
 	int         y = (byte) res->escbuff.str[2] - '!';	// want 0-based
@@ -318,7 +348,7 @@ parse_x10 (qwaq_resources_t *res)
 }
 
 static void
-parse_sgr (qwaq_resources_t *res, char cmd)
+parse_sgr (qwaq_input_resources_t *res, char cmd)
 {
 	unsigned    ctrl, x, y;
 
@@ -328,7 +358,7 @@ parse_sgr (qwaq_resources_t *res, char cmd)
 }
 
 static void
-parse_key (qwaq_resources_t *res)
+parse_key (qwaq_input_resources_t *res)
 {
 	qwaq_key_t *key = Hash_Find (res->key_sequences, res->escbuff.str);
 
@@ -340,7 +370,7 @@ parse_key (qwaq_resources_t *res)
 	}
 }
 
-static void process_char (qwaq_resources_t *res, char ch)
+static void process_char (qwaq_input_resources_t *res, char ch)
 {
 	if (ch == 0x1b) {
 		// always reset if escape is seen, may be a desync
@@ -437,7 +467,7 @@ term_shutdown (void *_res)
 static void
 term_process_events (void *_res)
 {
-	qwaq_resources_t *res = _res;
+	qwaq_input_resources_t *res = _res;
 	char        buf[256];
 	int         len;
 #ifdef HAVE_SIGACTION
@@ -476,7 +506,7 @@ term_register_driver (void)
 static int
 qwaq_input_event_handler (const IE_event_t *ie_event, void *_res)
 {
-	qwaq_resources_t *res = _res;
+	qwaq_input_resources_t *res = _res;
 	qwaq_event_t event = {};
 
 	event.when = ie_event->when * 1e-6 + Sys_DoubleTimeBase ();
@@ -515,8 +545,8 @@ qwaq_input_event_handler (const IE_event_t *ie_event, void *_res)
 	return 1;
 }
 
-void
-qwaq_input_init (qwaq_resources_t *res)
+static void
+qwaq_input_init (qwaq_input_resources_t *res)
 {
 	res->input_event_handler = IE_Add_Handler (qwaq_input_event_handler, res);
 	IN_DriverData (term_driver_handle, res);
@@ -546,14 +576,14 @@ qwaq_input_init (qwaq_resources_t *res)
 	(void) !write(1, SGR_ON, sizeof (SGR_ON) - 1);
 }
 
-void
-qwaq_process_input (qwaq_resources_t *res)
+static void
+qwaq_process_input (qwaq_input_resources_t *res)
 {
 	IN_ProcessEvents ();
 }
 
-void
-qwaq_input_shutdown (qwaq_resources_t *res)
+static void
+qwaq_input_shutdown (qwaq_input_resources_t *res)
 {
 	IE_Remove_Handler (res->input_event_handler);
 	IN_DriverData (term_driver_handle, 0);
@@ -566,4 +596,275 @@ qwaq_input_shutdown (qwaq_resources_t *res)
 #ifdef HAVE_SIGACTION
 	sigaction (SIGWINCH, &save_winch, 0);
 #endif
+}
+
+static void
+bi_send_connected_devices (progs_t *pr)
+{
+	qwaq_input_resources_t *res = PR_Resources_Find (pr, "input");
+
+	int         command[] = {
+					qwaq_cmd_send_connected_devices, 0,
+				};
+
+	command[1] = CMD_SIZE(command);
+	qwaq_pipe_submit (&res->commands, command, command[1]);
+}
+
+static void
+bi_get_device_info (progs_t *pr)
+{
+	qwaq_input_resources_t *res = PR_Resources_Find (pr, "input");
+	int         devid = P_INT (pr, 0);
+
+	Sys_Printf ("qwaq_get_device_info: %d\n", devid);
+	int         command[] = {
+					qwaq_cmd_get_device_info, 0,
+					devid,
+				};
+
+	command[1] = CMD_SIZE(command);
+	qwaq_pipe_submit (&res->commands, command, command[1]);
+
+	int         cmd_result[5];
+	qwaq_pipe_receive (&res->results, cmd_result, qwaq_cmd_get_device_info,
+					   CMD_SIZE (cmd_result));
+	int         name_id = cmd_result[1];
+	int         id_id = cmd_result[2];
+	int         axis_id = cmd_result[3];
+	int         button_id = cmd_result[4];
+
+	dstring_t  *name_string = qwaq_res_string (res, name_id);
+	dstring_t  *id_string = qwaq_res_string (res, id_id);
+	dstring_t  *axis_buffer = qwaq_res_string (res, axis_id);
+	dstring_t  *button_buffer = qwaq_res_string (res, button_id);
+
+	qwaq_devinfo_t *devinfo = PR_Zone_Malloc (pr, sizeof (qwaq_devinfo_t));
+	in_axisinfo_t *axes = PR_Zone_Malloc (pr, axis_buffer->size);
+	in_buttoninfo_t *buttons = PR_Zone_Malloc (pr, button_buffer->size);
+
+	memcpy (axes, axis_buffer->str, axis_buffer->size);
+	memcpy (buttons, button_buffer->str, button_buffer->size);
+
+	devinfo->name = PR_SetDynamicString (pr, name_string->str);
+	devinfo->id = PR_SetDynamicString (pr, id_string->str);
+	devinfo->numaxes = axis_buffer->size / sizeof (in_axisinfo_t);
+	devinfo->axes = PR_SetPointer (pr, axes);
+	devinfo->numbuttons = button_buffer->size / sizeof (in_buttoninfo_t);
+	devinfo->buttons = PR_SetPointer (pr, buttons);
+
+	qwaq_pipe_release_string (&res->results, name_id);
+	qwaq_pipe_release_string (&res->results, id_id);
+	qwaq_pipe_release_string (&res->results, axis_id);
+	qwaq_pipe_release_string (&res->results, button_id);
+
+	RETURN_POINTER (pr, devinfo);
+}
+
+static int
+get_event (qwaq_input_resources_t *res, qwaq_event_t *event)
+{
+	struct timespec timeout;
+	int         ret = 0;
+	int         was_event = 0;
+
+	pthread_mutex_lock (&res->events.cond.mut);
+	qwaq_init_timeout (&timeout, 20 * 1000000);
+	while (RB_DATA_AVAILABLE (res->events.queue) < 1 && ret == 0) {
+		ret = pthread_cond_timedwait (&res->events.cond.rcond,
+									  &res->events.cond.mut, &timeout);
+	}
+	if (event) {
+		if (ret == 0) {
+			RB_READ_DATA (res->events.queue, event, 1);
+			was_event = 1;
+		} else if (res->button_state) {
+			event->what = qe_mouseauto;
+			event->when = Sys_DoubleTime ();
+			event->mouse.buttons = res->button_state;
+			event->mouse.x = res->mouse_x;
+			event->mouse.y = res->mouse_y;
+		} else {
+			event->what = qe_none;
+		}
+	}
+	pthread_cond_broadcast (&res->events.cond.wcond);
+	pthread_mutex_unlock (&res->events.cond.mut);
+	return was_event;
+}
+
+static void
+bi_get_event (progs_t *pr)
+{
+	qwaq_input_resources_t *res = PR_Resources_Find (pr, "input");
+	qwaq_event_t *event = &P_STRUCT (pr, qwaq_event_t, 0);
+
+	R_INT (pr) = get_event (res, event);
+}
+
+static void
+cmd_send_connected_devices (qwaq_input_resources_t *res)
+{
+	IN_SendConnectedDevices ();
+}
+
+static void
+cmd_get_device_info (qwaq_input_resources_t *res)
+{
+	int         devid = qwaq_cmd_peek (res, 2);
+	int         name_id = qwaq_pipe_acquire_string (&res->results);
+	int         id_id = qwaq_pipe_acquire_string (&res->results);
+	int         axis_id = qwaq_pipe_acquire_string (&res->results);
+	int         button_id = qwaq_pipe_acquire_string (&res->results);
+
+	dstring_t  *name_string = qwaq_res_string (res, name_id);
+	dstring_t  *id_string = qwaq_res_string (res, id_id);
+	dstring_t  *axis_buffer = qwaq_res_string (res, axis_id);
+	dstring_t  *button_buffer = qwaq_res_string (res, button_id);
+
+	dstring_copystr (name_string, IN_GetDeviceName (devid));
+	dstring_copystr (id_string, IN_GetDeviceId (devid));
+
+	int         num;
+	IN_AxisInfo (devid, 0, &num);
+	axis_buffer->size = num * sizeof (in_axisinfo_t);
+	dstring_adjust (axis_buffer);
+	IN_AxisInfo (devid, (in_axisinfo_t *) axis_buffer->str, &num);
+
+	IN_ButtonInfo (devid, 0, &num);
+	button_buffer->size = num * sizeof (in_buttoninfo_t);
+	dstring_adjust (button_buffer);
+	IN_ButtonInfo (devid, (in_buttoninfo_t *) button_buffer->str, &num);
+
+	int         cmd_result[] = {
+		qwaq_cmd_get_device_info,
+		name_id, id_id, axis_id, button_id
+	};
+	qwaq_pipe_submit (&res->results, cmd_result, CMD_SIZE (cmd_result));
+}
+
+static void
+dump_command (qwaq_input_resources_t *res, int len)
+{
+	if (1) {
+		qwaq_input_commands cmd = qwaq_cmd_peek (res, 0);
+		Sys_Printf ("%s[%d]", qwaq_input_command_names[cmd], len);
+		for (int i = 2; i < len; i++) {
+			Sys_Printf (" %d", qwaq_cmd_peek (res, i));
+		}
+		Sys_Printf ("\n");
+	}
+}
+
+static void
+process_commands (qwaq_input_resources_t *res)
+{
+	struct timespec timeout;
+	int         avail;
+	int         len;
+	int         ret = 0;
+
+	pthread_mutex_lock (&res->commands.pipe_cond.mut);
+	qwaq_init_timeout (&timeout, 20 * 1000000);
+	while (RB_DATA_AVAILABLE (res->commands.pipe) < 2 && ret == 0) {
+		ret = pthread_cond_timedwait (&res->commands.pipe_cond.rcond,
+									  &res->commands.pipe_cond.mut, &timeout);
+	}
+	// The mutex is unlocked at the top of the loop and locked again
+	// (for broadcast) at the bottom, then finally unlocked after the loop.
+	// It should be only the data availability check that's not threadsafe
+	// as the mutex is not released until after the data has been written to
+	// the buffer.
+	while ((avail = RB_DATA_AVAILABLE (res->commands.pipe)) >= 2
+		   && avail >= (len = qwaq_cmd_peek (res, 1))) {
+		pthread_mutex_unlock (&res->commands.pipe_cond.mut);
+		dump_command (res, len);
+		qwaq_input_commands cmd = qwaq_cmd_peek (res, 0);
+		switch (cmd) {
+			case qwaq_cmd_send_connected_devices:
+				cmd_send_connected_devices (res);
+				break;
+			case qwaq_cmd_get_device_info:
+				cmd_get_device_info (res);
+				break;
+		}
+		pthread_mutex_lock (&res->commands.pipe_cond.mut);
+		RB_RELEASE (res->commands.pipe, len);
+		pthread_cond_broadcast (&res->commands.pipe_cond.wcond);
+		// unlocked at top of top if there's more data, otherwise just after
+		// the loop
+	}
+	pthread_mutex_unlock (&res->commands.pipe_cond.mut);
+}
+
+static void *
+qwaq_input_thread (qwaq_thread_t *thread)
+{
+	qwaq_input_resources_t *res = thread->data;
+
+	while (1) {
+		qwaq_process_input (res);
+		process_commands (res);
+	}
+	thread->return_code = 0;
+	return thread;
+}
+
+static void
+bi_init_input (progs_t *pr)
+{
+	qwaq_input_resources_t *res = PR_Resources_Find (pr, "input");
+	qwaq_input_init (res);
+	res->initialized = 1;
+	create_thread (qwaq_input_thread, res);
+}
+
+static builtin_t builtins[] = {
+	{"send_connected_devices",	bi_send_connected_devices,	-1},
+	{"get_device_info",			bi_get_device_info,			-1},
+	{"get_event",				bi_get_event,				-1},
+	{"init_input",				bi_init_input,				-1},
+
+	{0}
+};
+
+static void
+bi_input_clear (progs_t *pr, void *data)
+{
+	__auto_type res = (qwaq_input_resources_t *) data;
+
+	if (res->initialized) {
+		qwaq_input_shutdown (res);
+	}
+}
+
+static void
+bi_input_shutdown (void *_pr)
+{
+	__auto_type pr = (progs_t *) _pr;
+	qwaq_input_resources_t *res = PR_Resources_Find (pr, "input");
+
+	qwaq_input_shutdown (res);
+}
+
+void
+BI_Input_Init (progs_t *pr)
+{
+	qwaq_input_resources_t *res = calloc (sizeof (*res), 1);
+	res->pr = pr;
+
+	qwaq_init_pipe (&res->commands);
+	qwaq_init_pipe (&res->results);
+
+	res->escbuff.mem = &dstring_default_mem;
+	// ensure the backing buffer exists
+	dstring_clearstr (&res->escbuff);
+
+	res->input_event_handler = -1;
+
+	qwaq_init_cond (&res->events.cond);
+
+	PR_Resources_Register (pr, "input", res, bi_input_clear);
+	PR_RegisterBuiltins (pr, builtins);
+	Sys_RegisterShutdown (bi_input_shutdown, pr);
 }

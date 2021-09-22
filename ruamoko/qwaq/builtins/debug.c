@@ -62,7 +62,7 @@ typedef struct qwaq_target_s {
 
 typedef struct qwaq_debug_s {
 	progs_t    *pr;
-	qwaq_resources_t *qwaq;	// to communicate with the debugger thread
+	qwaq_input_resources_t *input;	// to communicate with the debugger thread
 	PR_RESMAP (qwaq_target_t) targets;
 } qwaq_debug_t;
 
@@ -122,7 +122,7 @@ qwaq_debug_handler (prdebug_t debug_event, void *param, void *data)
 	event.what = qe_debug_event;
 	event.message.pointer_val = target->handle;
 
-	while ((ret = qwaq_add_event (debug->qwaq, &event)) == ETIMEDOUT) {
+	while ((ret = qwaq_add_event (debug->input, &event)) == ETIMEDOUT) {
 		// spin
 	}
 	if (ret == EINVAL) {
@@ -665,7 +665,7 @@ QWAQ_Debug_Init (progs_t *pr)
 	qwaq_debug_t *debug = calloc (sizeof (*debug), 1);
 
 	debug->pr = pr;
-	debug->qwaq = PR_Resources_Find (pr, "qwaq");
+	debug->input = PR_Resources_Find (pr, "input");
 
 	PR_AddLoadFunc (pr, qwaq_debug_load);
 	PR_Resources_Register (pr, "qwaq-debug", debug, qwaq_debug_clear);

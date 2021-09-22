@@ -59,7 +59,8 @@
 #include "ruamoko/qwaq/debugger/debug.h"
 
 static progsinit_f main_app[] = {
-	BI_Init,
+	BI_Curses_Init,
+	BI_Input_Init,
 	QWAQ_EditBuffer_Init,
 	QWAQ_Debug_Init,
 	0
