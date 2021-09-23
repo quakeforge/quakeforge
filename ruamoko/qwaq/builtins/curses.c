@@ -1595,6 +1595,8 @@ bi_initialize (progs_t *pr)
 	mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
 	refresh();
 
+	qwaq_input_enable_mouse ();
+
 	res->stdscr.win = stdscr;
 
 	create_thread (qwaq_curses_thread, res);
@@ -1843,6 +1845,7 @@ bi_curses_clear (progs_t *pr, void *data)
 	__auto_type res = (qwaq_resources_t *) data;
 
 	if (res->initialized) {
+		qwaq_input_disable_mouse ();
 		endwin ();
 	}
 	need_endwin = 0;

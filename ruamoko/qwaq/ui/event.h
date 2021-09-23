@@ -127,6 +127,8 @@ typedef struct qwaq_input_resources_s {
 } qwaq_input_resources_t;
 
 int qwaq_add_event (qwaq_input_resources_t *res, qwaq_event_t *event);
+void qwaq_input_enable_mouse (void);
+void qwaq_input_disable_mouse (void);
 
 #endif
 

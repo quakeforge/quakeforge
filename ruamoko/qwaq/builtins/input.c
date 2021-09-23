@@ -569,11 +569,24 @@ qwaq_input_init (qwaq_input_resources_t *res)
 	action.sa_handler = handle_winch;
 	sigaction (SIGWINCH, &action, &save_winch);
 #endif
+}
 
+void
+qwaq_input_enable_mouse (void)
+{
 	// ncurses takes care of input mode for us, so need only tell xterm
 	// what we need
 	(void) !write(1, MOUSE_MOVES_ON, sizeof (MOUSE_MOVES_ON) - 1);
 	(void) !write(1, SGR_ON, sizeof (SGR_ON) - 1);
+}
+
+void
+qwaq_input_disable_mouse (void)
+{
+	// ncurses takes care of input mode for us, so need only tell xterm
+	// what we need
+	(void) !write(1, SGR_OFF, sizeof (SGR_OFF) - 1);
+	(void) !write(1, MOUSE_MOVES_OFF, sizeof (MOUSE_MOVES_OFF) - 1);
 }
 
 static void
@@ -587,11 +600,6 @@ qwaq_input_shutdown (qwaq_input_resources_t *res)
 {
 	IE_Remove_Handler (res->input_event_handler);
 	IN_DriverData (term_driver_handle, 0);
-
-	// ncurses takes care of input mode for us, so need only tell xterm
-	// what we need
-	(void) !write(1, SGR_OFF, sizeof (SGR_OFF) - 1);
-	(void) !write(1, MOUSE_MOVES_OFF, sizeof (MOUSE_MOVES_OFF) - 1);
 
 #ifdef HAVE_SIGACTION
 	sigaction (SIGWINCH, &save_winch, 0);
