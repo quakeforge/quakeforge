@@ -154,7 +154,8 @@ build_dotmain (symbol_t *program)
 
 	exitcode = new_symbol_expr (symtab_lookup (current_symtab, "ExitCode"));
 
-	current_func = begin_function (dotmain, 0, current_symtab, 0);
+	current_func = begin_function (dotmain, 0, current_symtab, 0,
+								   current_storage);
 	current_symtab = current_func->symtab;
 	code = new_block_expr ();
 	append_expr (code, function_expr (new_symbol_expr (program), 0));
@@ -177,7 +178,8 @@ program
 			symtab_removesymbol (current_symtab, $1);
 			symtab_addsymbol (current_symtab, $1);
 
-			current_func = begin_function ($1, 0, current_symtab, 0);
+			current_func = begin_function ($1, 0, current_symtab, 0,
+										   current_storage);
 			current_symtab = current_func->symtab;
 			build_code_function ($1, 0, $4);
 			current_symtab = st;
@@ -261,7 +263,8 @@ subprogram_declaration
 	: subprogram_head ';'
 		{
 			$<storage>$ = current_storage;
-			current_func = begin_function ($1, 0, current_symtab, 0);
+			current_func = begin_function ($1, 0, current_symtab, 0,
+										   current_storage);
 			current_symtab = current_func->symtab;
 			current_storage = sc_local;
 		}
@@ -274,7 +277,7 @@ subprogram_declaration
 		}
 	| subprogram_head ASSIGNOP '#' VALUE ';'
 		{
-			build_builtin_function ($1, $4, 0);
+			build_builtin_function ($1, $4, 0, current_storage);
 		}
 	;
 

@@ -1507,7 +1507,6 @@ class_finish_module (void)
 	symbol_t   *exec_class_sym;
 	symbol_t   *init_sym;
 	expr_t     *init_expr;
-	storage_class_t save_storage;
 
 	data.refs = emit_selectors ();
 	if (class_hash) {
@@ -1563,12 +1562,8 @@ class_finish_module (void)
 				 build_function_call (new_symbol_expr (exec_class_sym),
 									  exec_class_sym->type, module_expr));
 
-	save_storage = current_storage;
-	current_storage = sc_static;
-	current_func = begin_function (init_sym, 0, current_symtab, 1);
+	current_func = begin_function (init_sym, 0, current_symtab, 1, sc_static);
 	build_code_function (init_sym, 0, init_expr);
-	current_func = 0;
-	current_storage = save_storage;
 }
 
 protocol_t *

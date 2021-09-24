@@ -423,7 +423,8 @@ function_body
 	  save_storage
 		{
 			$<symtab>$ = current_symtab;
-			current_func = begin_function ($<symbol>2, 0, current_symtab, 0);
+			current_func = begin_function ($<symbol>2, 0, current_symtab, 0,
+										   $<spec>-1.storage);
 			current_symtab = current_func->symtab;
 			current_storage = sc_local;
 		}
@@ -442,7 +443,7 @@ function_body
 				$<spec>-1.type = type_default;
 			sym->type = find_type (append_type (sym->type, $<spec>-1.type));
 			sym = function_symbol (sym, $<spec>-1.is_overload, 1);
-			build_builtin_function (sym, $3, 0);
+			build_builtin_function (sym, $3, 0, $<spec>-1.storage);
 		}
 	;
 
@@ -1095,7 +1096,7 @@ non_code_func
 			if ($<spec>-1.storage == sc_extern) {
 				error (0, "initializing external variable");
 			}
-			build_builtin_function ($<symbol>0, $3, 0);
+			build_builtin_function ($<symbol>0, $3, 0, $<spec>-1.storage);
 		}
 	| '=' expr
 		{
@@ -1135,7 +1136,8 @@ code_func
 	  save_storage
 		{
 			$<symtab>$ = current_symtab;
-			current_func = begin_function ($<symbol>0, 0, current_symtab, 0);
+			current_func = begin_function ($<symbol>0, 0, current_symtab, 0,
+										   $<spec>-1.storage);
 			current_symtab = current_func->symtab;
 			current_storage = sc_local;
 		}
@@ -1965,7 +1967,8 @@ methoddef
 			$<symtab>$ = current_symtab;
 
 			ivar_scope = class_ivar_scope (current_class, current_symtab);
-			current_func = begin_function (sym, nicename, ivar_scope, 1);
+			current_func = begin_function (sym, nicename, ivar_scope, 1,
+										   sc_static);
 			class_finish_ivar_scope (current_class, ivar_scope,
 									 current_func->symtab);
 			method->func = sym->s.func;
@@ -1988,7 +1991,7 @@ methoddef
 			method->instance = $1;
 			method = class_find_method (current_class, method);
 			sym = method_symbol (current_class, method);
-			build_builtin_function (sym, $5, 1);
+			build_builtin_function (sym, $5, 1, sc_static);
 			method->func = sym->s.func;
 			method->def = sym->s.func->def;
 		}

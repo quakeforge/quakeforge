@@ -584,7 +584,7 @@ add_function (function_t *f)
 
 function_t *
 begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
-				int far)
+				int far, storage_class_t storage)
 {
 	defspace_t *space;
 
@@ -601,7 +601,7 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 	space = sym->table->space;
 	if (far)
 		space = pr.far_data;
-	make_function (sym, nicename, space, current_storage);
+	make_function (sym, nicename, space, storage);
 	if (!sym->s.func->def->external) {
 		sym->s.func->def->initialized = 1;
 		sym->s.func->def->constant = 1;
@@ -651,7 +651,8 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 }
 
 function_t *
-build_builtin_function (symbol_t *sym, expr_t *bi_val, int far)
+build_builtin_function (symbol_t *sym, expr_t *bi_val, int far,
+						storage_class_t storage)
 {
 	int         bi;
 	defspace_t *space;
@@ -671,7 +672,7 @@ build_builtin_function (symbol_t *sym, expr_t *bi_val, int far)
 	space = sym->table->space;
 	if (far)
 		space = pr.far_data;
-	make_function (sym, 0, space, current_storage);
+	make_function (sym, 0, space, storage);
 	if (sym->s.func->def->external)
 		return 0;
 

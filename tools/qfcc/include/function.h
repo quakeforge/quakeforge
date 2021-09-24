@@ -137,12 +137,14 @@ struct expr_s *find_function (struct expr_s *fexpr, struct expr_s *params);
 function_t *new_function (const char *name, const char *nice_name);
 void add_function (function_t *f);
 function_t *begin_function (struct symbol_s *sym, const char *nicename,
-							struct symtab_s *parent, int far);
+							struct symtab_s *parent, int far,
+							enum storage_class_e storage);
 function_t *build_code_function (struct symbol_s *fsym,
 								 struct expr_s *state_expr,
 								 struct expr_s *statements);
 function_t *build_builtin_function (struct symbol_s *sym,
-									struct expr_s *bi_val, int far);
+									struct expr_s *bi_val, int far,
+									enum storage_class_e storage);
 void finish_function (function_t *f);
 void emit_function (function_t *f, struct expr_s *e);
 int function_parms (function_t *f, byte *parm_size);
