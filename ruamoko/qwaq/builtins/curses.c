@@ -601,7 +601,7 @@ cmd_mvwvline (qwaq_resources_t *res)
 static void
 dump_command (qwaq_resources_t *res, int len)
 {
-	if (1) {
+	if (0) {
 		qwaq_commands cmd = qwaq_cmd_peek (res, 0);
 		Sys_Printf ("%s[%d]", qwaq_command_names[cmd], len);
 		if (cmd == qwaq_cmd_syncprint) {

@@ -30,9 +30,4 @@
 	return self;
 }
 
--(View *) viewAtRow:(int) row forColumn:(TableViewColumn *)column
-{
-	return self;
-}
-
 @end

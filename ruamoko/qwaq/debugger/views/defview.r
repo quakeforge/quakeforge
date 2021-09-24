@@ -7,7 +7,7 @@
 static string meta_views[] = {
 	"BasicView",
 	"StructView",
-	"UnionView",
+	"StructView",
 	"EnumView",
 	"ArrayView",
 	"ClassView",

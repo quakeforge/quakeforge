@@ -301,7 +301,11 @@ qdb_get_state (progs_t *pr)
 	string_t    file = 0;
 	unsigned    line = 0;
 	unsigned    staddr = tpr->pr_xstatement;
-	func_t      func = tpr->pr_xfunction - tpr->function_table;
+	func_t      func = 0;
+
+	if (tpr->pr_xfunction) {
+		func = tpr->pr_xfunction - tpr->function_table;
+	}
 
 	lineno = PR_Find_Lineno (tpr, staddr);
 	if (lineno) {
@@ -456,6 +460,18 @@ qdb_get_file_path (progs_t *pr)
 	} else {
 		R_STRING (pr) = P_STRING (pr, 1);
 	}
+}
+
+static void
+qdb_find_string (progs_t *pr)
+{
+	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
+	pointer_t   handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+	progs_t    *tpr = target->pr;
+	const char *str = P_GSTRING (pr, 1);
+
+	R_INT (pr) = PR_FindString (tpr, str);
 }
 
 static void
@@ -648,6 +664,7 @@ static builtin_t builtins[] = {
 	{"qdb_get_string|{tag qdb_target_s=}i",	qdb_get_string,	-1},
 	{"qdb_get_string|{tag qdb_target_s=}*",	qdb_get_string,	-1},
 	{"qdb_get_file_path",		qdb_get_file_path,		-1},
+	{"qdb_find_string",			qdb_find_string,		-1},
 	{"qdb_find_global",			qdb_find_global,		-1},
 	{"qdb_find_field",			qdb_find_field,			-1},
 	{"qdb_find_function",		qdb_find_function,		-1},

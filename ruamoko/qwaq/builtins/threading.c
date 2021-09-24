@@ -92,7 +92,7 @@ qwaq_pipe_submit (qwaq_pipe_t *pipe, const int *cmd, unsigned len)
 void
 qwaq_pipe_receive (qwaq_pipe_t *pipe, int *result, int cmd, unsigned len)
 {
-	Sys_Printf ("qwaq_wait_result: %d %d\n", cmd, len);
+	//Sys_Printf ("qwaq_wait_result: %d %d\n", cmd, len);
 	pthread_mutex_lock (&pipe->pipe_cond.mut);
 	while (RB_DATA_AVAILABLE (pipe->pipe) < len
 		   || *RB_PEEK_DATA (pipe->pipe, 0) != cmd) {
@@ -102,7 +102,7 @@ qwaq_pipe_receive (qwaq_pipe_t *pipe, int *result, int cmd, unsigned len)
 	RB_READ_DATA (pipe->pipe, result, len);
 	pthread_cond_broadcast (&pipe->pipe_cond.wcond);
 	pthread_mutex_unlock (&pipe->pipe_cond.mut);
-	Sys_Printf ("qwaq_wait_result exit: %d %d\n", cmd, len);
+	//Sys_Printf ("qwaq_wait_result exit: %d %d\n", cmd, len);
 }
 
 void

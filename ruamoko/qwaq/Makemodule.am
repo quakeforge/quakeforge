@@ -16,6 +16,7 @@ ruamoko_qwaq_libui_a_SOURCES= \
 	ruamoko/qwaq/ui/proxyview.r	\
 	ruamoko/qwaq/ui/rect.r	\
 	ruamoko/qwaq/ui/scrollbar.r	\
+	ruamoko/qwaq/ui/stringview.r	\
 	ruamoko/qwaq/ui/tableview.r	\
 	ruamoko/qwaq/ui/textcontext.r	\
 	ruamoko/qwaq/ui/titlebar.r	\
@@ -29,6 +30,7 @@ r_depfiles_remade += $(ruamoko_qwaq_libui_a_dep)
 
 qwaq_app_dat_src= \
 	ruamoko/qwaq/qwaq-app.r	\
+	ruamoko/qwaq/debugger/views/arrayview.r	\
 	ruamoko/qwaq/debugger/views/basicview.r	\
 	ruamoko/qwaq/debugger/views/defview.r	\
 	ruamoko/qwaq/debugger/views/doubleview.r	\
@@ -36,11 +38,13 @@ qwaq_app_dat_src= \
 	ruamoko/qwaq/debugger/views/fieldview.r	\
 	ruamoko/qwaq/debugger/views/floatview.r	\
 	ruamoko/qwaq/debugger/views/funcview.r	\
+	ruamoko/qwaq/debugger/views/indexview.r	\
 	ruamoko/qwaq/debugger/views/intview.r	\
 	ruamoko/qwaq/debugger/views/nameview.r	\
 	ruamoko/qwaq/debugger/views/pointerview.r\
 	ruamoko/qwaq/debugger/views/quatview.r	\
 	ruamoko/qwaq/debugger/views/stringview.r	\
+	ruamoko/qwaq/debugger/views/structview.r	\
 	ruamoko/qwaq/debugger/views/uintview.r	\
 	ruamoko/qwaq/debugger/views/vectorview.r	\
 	ruamoko/qwaq/debugger/views/voidview.r	\

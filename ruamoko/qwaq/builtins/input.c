@@ -754,7 +754,7 @@ cmd_get_device_info (qwaq_input_resources_t *res)
 static void
 dump_command (qwaq_input_resources_t *res, int len)
 {
-	if (1) {
+	if (0) {
 		qwaq_input_commands cmd = qwaq_cmd_peek (res, 0);
 		Sys_Printf ("%s[%d]", qwaq_input_command_names[cmd], len);
 		for (int i = 2; i < len; i++) {

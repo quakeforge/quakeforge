@@ -88,6 +88,7 @@ int qdb_get_data (qdb_target_t target, unsigned src, unsigned len, void *dst);
 // avoid cast shenanigans when getting type encoding strings
 @overload string qdb_get_string (qdb_target_t target, string str);
 string qdb_get_file_path (qdb_target_t target, string file);
+int qdb_find_string (qdb_target_t target, string str);
 qdb_def_t qdb_find_global (qdb_target_t target, string name);
 qdb_def_t qdb_find_field (qdb_target_t target, string name);
 qdb_function_t *qdb_find_function (qdb_target_t target, string name);
