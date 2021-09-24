@@ -559,7 +559,7 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 	}
 	if (!sym->s.def) {
 		if (is_array (sym->type) && !type_size (sym->type)
-			&& init->type == ex_compound) {
+			&& init && init->type == ex_compound) {
 			sym->type = array_type (sym->type->t.array.type,
 									num_elements (init));
 		}
