@@ -4,6 +4,7 @@
 #include "ruamoko/qwaq/debugger/views/defview.h"
 #include "ruamoko/qwaq/debugger/views/nameview.h"
 #include "ruamoko/qwaq/debugger/localsdata.h"
+#include "ruamoko/qwaq/ui/listener.h"
 
 @implementation LocalsData
 
@@ -18,6 +19,7 @@
 	qdb_get_data (target, encodings_def.offset, sizeof(target_encodings),
 				  &target_encodings);
 
+	self.onRowCountChanged = [[ListenerGroup listener] retain];
 	return self;
 }
 
@@ -42,6 +44,7 @@ free_defs (LocalsData *self)
 
 -(void)dealloc
 {
+	[onRowCountChanged release];
 	if (defs) {
 		free_defs (self);
 	}
@@ -56,7 +59,7 @@ free_defs (LocalsData *self)
 	if (current_fnum == fnum) {
 		return self;
 	}
-	current_fnum =fnum;
+	current_fnum = fnum;
 
 	if (defs) {
 		free_defs (self);
@@ -82,6 +85,7 @@ free_defs (LocalsData *self)
 		}
 		prefixsum (def_rows, aux_func.num_locals + 1);
 	}
+	[onRowCountChanged respond:self];
 	return self;
 }
 
@@ -90,6 +94,7 @@ free_defs (LocalsData *self)
 	if (data && func.local_size && func.local_data) {
 		qdb_get_data (target, func.local_data, func.local_size, data);
 	}
+	int         rowCount = def_rows[aux_func.num_locals];
 	if (aux_func) {
 		def_rows[0] = 0;
 		for (int i = 0; i < aux_func.num_locals; i++) {
@@ -98,7 +103,15 @@ free_defs (LocalsData *self)
 		}
 		prefixsum (def_rows, aux_func.num_locals + 1);
 	}
+	if (rowCount != def_rows[aux_func.num_locals]) {
+		[onRowCountChanged respond:self];
+	}
 	return self;
+}
+
+-(ListenerGroup *)onRowCountChanged
+{
+	return onRowCountChanged;
 }
 
 -(int)numberOfRows:(TableView *)tableview

@@ -228,6 +228,11 @@ page (ScrollBar *self, Point pos, Point thumb)
 -setRange:(unsigned)range
 {
 	self.range = range;
+	if (index > range) {
+		index = range;
+		[onScrollBarModified respond:self];
+		position_tab (self);
+	}
 	return self;
 }
 

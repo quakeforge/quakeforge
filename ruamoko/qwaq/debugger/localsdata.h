@@ -6,9 +6,11 @@
 #include "ruamoko/qwaq/debugger/debug.h"
 
 @class DefView;
+@class ListenerGroup;
 
 @interface LocalsData : Object <TableViewDataSource>
 {
+	ListenerGroup *onRowCountChanged;
 	qdb_target_t target;
 	qfot_type_encodings_t target_encodings;
 	unsigned    current_fnum;
