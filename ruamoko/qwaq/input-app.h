@@ -23,10 +23,13 @@ extern int color_palette[64];
 	TextContext *screen;
 	Extent      screenSize;
 	int         autocount;
+
+	Array      *devices;
 }
 -(Extent)size;
 -(TextContext *)screen;
 -addView:(View *)view;
+-removeView:(View *)view;
 -run;
 @end
 

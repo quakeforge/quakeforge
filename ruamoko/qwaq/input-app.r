@@ -8,6 +8,7 @@ int fence;
 #include "ruamoko/qwaq/ui/curses.h"
 #include "ruamoko/qwaq/ui/group.h"
 #include "ruamoko/qwaq/ui/view.h"
+#include "ruamoko/qwaq/device/device.h"
 #include "ruamoko/qwaq/qwaq-input.h"
 #include "ruamoko/qwaq/input-app.h"
 
@@ -58,6 +59,8 @@ arp_end (void)
 	[screen clear];
 	wrefresh (stdscr);//FIXME
 
+	devices = [[Array array] retain];
+
 	send_connected_devices ();
 
 	return self;
@@ -105,33 +108,41 @@ arp_end (void)
 			{
 				int         devid = event.message.int_val;
 				qwaq_devinfo_t *dev = get_device_info (devid);
-				[screen printf:"dev add: %d %s %s\n", devid, dev.id, dev.name];
-				[screen printf:"       : %d %d\n", dev.numaxes, dev.numbuttons];
-				for (int i = 0; i < dev.numaxes; i++) {
-					[screen printf:"       : %d %d %d\n", dev.axes[i].value,
-									dev.axes[i].min, dev.axes[i].max];
-				}
-				[screen refresh];
-				obj_free (dev.axes);
-				obj_free (dev.buttons);
-				str_free (dev.name);
-				str_free (dev.id);
-				obj_free (dev);
+				Device     *device = [Device withDevice:dev id:devid];
+				[devices addObject:device];
 			}
 			break;
 		case qe_dev_rem:
-			[screen printf:"dev rem: %d\n", event.message.int_val];
-			[screen refresh];
+			for (int i = [devices count]; i-- > 0; ) {
+				Device     *device = [devices objectAtIndex:i];
+				if ([device devid] == event.message.ivector_val[0]) {
+					[devices removeObjectAtIndex:i];
+					break;
+				}
+			}
 			break;
 		case qe_axis:
-			[screen printf:"axis: %d %d %d\n", event.message.ivector_val[0],
-					event.message.ivector_val[1], event.message.ivector_val[2]];
-			[screen refresh];
+			for (int i = [devices count]; i-- > 0; ) {
+				Device     *device = [devices objectAtIndex:i];
+				if ([device devid] == event.message.ivector_val[0]) {
+					[device updateAxis:event.message.ivector_val[1]
+								 value:event.message.ivector_val[2]];
+					[device redraw];
+					break;
+				}
+			}
 			break;
 		case qe_button:
-			[screen printf:"button: %d %d %d\n", event.message.ivector_val[0],
-					event.message.ivector_val[1], event.message.ivector_val[2]];
-			[screen refresh];
+			for (int i = [devices count]; i-- > 0; ) {
+				Device     *device = [devices objectAtIndex:i];
+				if ([device devid] == event.message.ivector_val[0]) {
+					[device updateButton:event.message.ivector_val[1]
+								   state:event.message.ivector_val[2]];
+					[device redraw];
+					break;
+				}
+			}
+			break;
 	}
 	if (event.what != qe_none) {
 		[objects handleEvent: event];
@@ -159,6 +170,13 @@ arp_end (void)
 -addView:(View *)view
 {
 	[objects insertSelected: view];
+	[screen refresh];
+	return self;
+}
+
+-removeView:(View *)view
+{
+	[objects remove: view];
 	[screen refresh];
 	return self;
 }

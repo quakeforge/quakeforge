@@ -57,6 +57,10 @@ qwaq_app_dat_src= \
 	ruamoko/qwaq/editor/status.r
 
 qwaq_input_app_dat_src= \
+	ruamoko/qwaq/device/axisdata.r \
+	ruamoko/qwaq/device/axisview.r \
+	ruamoko/qwaq/device/nameview.r \
+	ruamoko/qwaq/device/device.r \
 	ruamoko/qwaq/qwaq-input.r \
 	ruamoko/qwaq/input-app.r
 

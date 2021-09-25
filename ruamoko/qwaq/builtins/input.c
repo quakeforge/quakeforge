@@ -625,7 +625,6 @@ bi_get_device_info (progs_t *pr)
 	qwaq_input_resources_t *res = PR_Resources_Find (pr, "input");
 	int         devid = P_INT (pr, 0);
 
-	Sys_Printf ("qwaq_get_device_info: %d\n", devid);
 	int         command[] = {
 					qwaq_cmd_get_device_info, 0,
 					devid,

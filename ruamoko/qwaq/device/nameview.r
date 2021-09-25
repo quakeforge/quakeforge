@@ -1,11 +1,11 @@
 #include <string.h>
-#include "ruamoko/qwaq/debugger/views/nameview.h"
+#include "ruamoko/qwaq/device/nameview.h"
 
 @implementation NameView
 
 -initWithName:(string)name
 {
-	if (!(self = [super initWithDef:def type:nil])) {
+	if (!(self = [super init])) {
 		return nil;
 	}
 	self.name = name;

@@ -3,7 +3,7 @@
 
 #include "ruamoko/qwaq/debugger/views/defview.h"
 
-@interface NameView : DefView
+@interface NameView : View
 {
 	string     name;
 }
