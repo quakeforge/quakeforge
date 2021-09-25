@@ -18,6 +18,7 @@ typedef struct {
 
 typedef struct device_s {
 	struct device_s *next;
+	struct device_s **prev;
 	char       *path;
 	char       *name;
 	char       *phys;

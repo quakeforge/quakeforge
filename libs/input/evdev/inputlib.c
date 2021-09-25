@@ -199,6 +199,10 @@ check_device (const char *path)
 
 	dev = malloc (sizeof (device_t));
 	dev->next = devices;
+	dev->prev = &devices;
+	if (devices) {
+		devices->prev = &dev->next;
+	}
 	devices = dev;
 
 	dev->path = strdup (path);
@@ -355,6 +359,11 @@ inputlib_check_input (void)
 static void
 close_device (device_t *dev)
 {
+	if (dev->next) {
+		dev->next->prev = dev->prev;
+	}
+	*dev->prev = dev->next;
+
 	if (device_remove) {
 		device_remove (dev);
 	}
@@ -370,6 +379,7 @@ close_device (device_t *dev)
 	}
 	free (dev->name);
 	free (dev->path);
+	free (dev);
 }
 
 static char *
@@ -428,9 +438,6 @@ device_deleted (const char *name)
 		if (strcmp ((*dev)->path, devname) == 0) {
 			//Sys_Printf ("lost device %s\n", (*dev)->path);
 			close_device (*dev);
-			device_t *d = *dev;
-			*dev = (*dev)->next;
-			free (d);
 			break;
 		}
 	}
@@ -482,8 +489,5 @@ inputlib_close (void)
 	inputlib_hotplug_close ();
 	while (devices) {
 		close_device (devices);
-		device_t   *dev = devices;
-		devices = devices->next;
-		free (dev);
 	}
 }
