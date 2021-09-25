@@ -64,6 +64,8 @@ typedef struct obj_list_s {
 } obj_list;
 
 typedef struct dtable_s {
+	struct dtable_s *next;
+	struct dtable_s **prev;
 	size_t      size;
 	func_t     *imp;
 } dtable_t;
@@ -75,6 +77,7 @@ typedef struct probj_resources_s {
 	obj_list  **selector_sels;
 	string_t   *selector_names;
 	PR_RESMAP (dtable_t) dtables;
+	dtable_t   *dtable_list;
 	func_t      obj_forward;
 	pr_sel_t   *forward_selector;
 	dstring_t  *msg;
@@ -93,7 +96,14 @@ typedef struct probj_resources_s {
 static dtable_t *
 dtable_new (probj_t *probj)
 {
-	return PR_RESNEW (probj->dtables);
+	dtable_t   *dtable = PR_RESNEW (probj->dtables);
+	dtable->next = probj->dtable_list;
+	dtable->prev = &probj->dtable_list;
+	if (probj->dtable_list) {
+		probj->dtable_list->prev = &dtable->next;
+	}
+	probj->dtable_list = dtable;
+	return dtable;
 }
 
 static void
@@ -2195,14 +2205,8 @@ rua_obj_cleanup (progs_t *pr, void *data)
 		probj->selector_names[i] = 0;
 	}
 
-	for (i = 0; i < probj->dtables._size; i++) {
-		/* dtable_get expects a handle, but a handle is the ones-compliment
-		 * negative of the index.
-		 */
-		dtable_t   *dtable = dtable_get (probj, ~i);
-		if (!dtable->imp) {
-			break;
-		}
+	for (dtable_t *dtable = probj->dtable_list; dtable;
+		 dtable = dtable->next) {
 		free (dtable->imp);
 	}
 	dtable_reset (probj);

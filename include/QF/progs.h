@@ -1539,6 +1539,9 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 
 	\param type		The type of the resource. The size must be at least
 					as large as \c sizeof(type *).
+	\note			\a _size is <em>NOT</em> the number of objects in the
+					map. It is the number of rows in the map array (each row
+					has multiple objects).
 */
 #define PR_RESMAP(type) struct { type *_free; type **_map; unsigned _size; }
 

@@ -45,13 +45,16 @@
 #include "compat.h"
 #include "evdev/inputlib.h"
 
-typedef struct {
+typedef struct devmap_s {
+	struct devmap_s *next;
+	struct devmap_s **prev;
 	device_t   *device;
 	int         devid;
 } devmap_t;
 
 static int evdev_driver_handle = -1;
 static PR_RESMAP (devmap_t) devmap;
+static devmap_t *devmap_list;
 
 static void
 in_evdev_keydest_callback (keydest_t key_dest, void *data)
@@ -119,6 +122,13 @@ device_add (device_t *dev)
 	}
 
 	devmap_t   *dm = PR_RESNEW (devmap);
+	dm->next = devmap_list;
+	dm->prev = &devmap_list;
+	if (devmap_list) {
+		devmap_list->prev = &dm->next;
+	}
+	devmap_list = dm;
+
 	dm->device = dev;
 	dm->devid = IN_AddDevice (evdev_driver_handle, dev, name, id);
 
@@ -144,11 +154,15 @@ device_add (device_t *dev)
 static void
 device_remove (device_t *dev)
 {
-	//Sys_Printf ("in_evdev: remove %s\n", dev->path);
-	for (unsigned i = 0; i < devmap._size; i++) {
-		devmap_t   *dm = PR_RESGET (devmap, ~i);
+	for (devmap_t *dm = devmap_list; dm; dm = dm->next) {
 		if (dm->device == dev) {
 			IN_RemoveDevice (dm->devid);
+
+			if (dm->next) {
+				dm->next->prev = dm->prev;
+			}
+			*dm->prev = dm->next;
+
 			PR_RESFREE (devmap, dm);
 			break;
 		}

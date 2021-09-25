@@ -18,7 +18,8 @@
 #define always_inline inline __attribute__((__always_inline__))
 
 typedef struct editbuffer_s {
-	void       *freenext;	// for PR_RESMAP
+	struct editbuffer_s *next;
+	struct editbuffer_s **prev;
 	txtbuffer_t *txtbuffer;
 	int         modified;
 	int         tabSize;
@@ -27,17 +28,29 @@ typedef struct editbuffer_s {
 typedef struct qwaq_ebresources_s {
 	progs_t    *pr;
 	PR_RESMAP (editbuffer_t) buffers;
+	editbuffer_t *buffer_list;
 } qwaq_ebresources_t;
 
 static editbuffer_t *
 editbuffer_new (qwaq_ebresources_t *res)
 {
-	return PR_RESNEW (res->buffers);
+	editbuffer_t *buffer = PR_RESNEW (res->buffers);
+	buffer->next = res->buffer_list;
+	buffer->prev = &res->buffer_list;
+	if (res->buffer_list) {
+		res->buffer_list->prev = &buffer->next;
+	}
+	res->buffer_list = buffer;
+	return buffer;
 }
 
 static void
 editbuffer_free (qwaq_ebresources_t *res, editbuffer_t *buffer)
 {
+	if (buffer->next) {
+		buffer->next->prev = buffer->prev;
+	}
+	*buffer->prev = buffer->next;
 	PR_RESFREE (res->buffers, buffer);
 }
 
@@ -965,12 +978,10 @@ qwaq_ebresources_clear (progs_t *pr, void *data)
 {
 	__auto_type res = (qwaq_ebresources_t *) data;
 
-	for (size_t i = 0; i < res->buffers._size; i++) {
-		editbuffer_t *buffer = editbuffer_get (res, ~i);
-		if (buffer->txtbuffer) {
-			TextBuffer_Destroy (buffer->txtbuffer);
-			buffer->txtbuffer = 0;
-		}
+	for (editbuffer_t *buffer = res->buffer_list; buffer;
+		 buffer = buffer->next) {
+		TextBuffer_Destroy (buffer->txtbuffer);
+		buffer->txtbuffer = 0;
 	}
 	editbuffer_reset (res);
 }
