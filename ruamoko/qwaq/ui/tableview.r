@@ -100,6 +100,7 @@
 	self.dataSource = [dataSource retain];
 	[[dataSource onRowCountChanged] addListener:self
 											   :@selector(onRowCountChanged:)];
+	[vScrollBar setRange:[dataSource numberOfRows:self]];
 	return self;
 }
 
@@ -135,7 +136,10 @@
 			}
 			col = [columns objectAtIndex:i];
 			cell = [dataSource tableView:self forColumn:col row:row];
-			[[[cell setContext:buffer] moveTo:{x, y}] draw];
+			[[[[cell setContext:buffer]
+				moveTo:{x, y}]
+				resizeTo:{[col width], 1}]
+				draw];
 			x += [col width];
 		}
 	}

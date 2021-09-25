@@ -139,7 +139,6 @@ free_defs (LocalsData *self)
 		int         r = row - *index;
 		view = [dv viewAtRow: r forColumn:column];
 	}
-	[view resizeTo:{[column width], 1}];
 	return view;
 }
 
