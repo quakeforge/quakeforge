@@ -64,6 +64,7 @@
 	}
 	obj_free (field_views);
 	obj_free (field_rows);
+	[super dealloc];
 }
 
 -draw

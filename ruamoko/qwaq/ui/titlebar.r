@@ -29,6 +29,11 @@
 	return self;
 }
 
+-(string)title
+{
+	return title;
+}
+
 -setOwner: (Group *) owner
 {
 	[super setOwner: owner];

@@ -111,6 +111,7 @@ arp_end (void)
 				Device     *device = [Device withDevice:dev id:devid];
 				[devices addObject:device];
 			}
+			event.what = qe_none;
 			break;
 		case qe_dev_rem:
 			for (int i = [devices count]; i-- > 0; ) {
@@ -120,6 +121,7 @@ arp_end (void)
 					break;
 				}
 			}
+			event.what = qe_none;
 			break;
 		case qe_axis:
 			for (int i = [devices count]; i-- > 0; ) {
@@ -131,6 +133,7 @@ arp_end (void)
 					break;
 				}
 			}
+			event.what = qe_none;
 			break;
 		case qe_button:
 			for (int i = [devices count]; i-- > 0; ) {
@@ -142,6 +145,7 @@ arp_end (void)
 					break;
 				}
 			}
+			event.what = qe_none;
 			break;
 	}
 	if (event.what != qe_none) {

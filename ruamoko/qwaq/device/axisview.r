@@ -22,7 +22,7 @@
 -draw
 {
 	[super draw];
-	[self mvprintf:{0, 0}, "%*.*d", xlen, xlen, axis.value];
+	[self mvprintf:{0, 0}, "%*d", xlen, axis.value];
 	return self;
 }
 

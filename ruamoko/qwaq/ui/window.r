@@ -71,6 +71,14 @@
 	return self;
 }
 
+-(void)dealloc
+{
+	destroy_panel (panel);
+	[textContext release];
+	[objects release];
+	[super dealloc];
+}
+
 -updateScreenCursor
 {
 	window_t    window = [(id)textContext window];

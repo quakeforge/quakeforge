@@ -52,6 +52,7 @@ free_defs (LocalsData *self)
 		obj_free (data);
 		data = nil;
 	}
+	[super dealloc];
 }
 
 -setFunction:(unsigned) fnum

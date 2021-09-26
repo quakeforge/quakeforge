@@ -73,6 +73,13 @@ static TextContext *screen;
 	return self;
 }
 
+-(void)delloc
+{
+	if (window != stdscr) {
+		destroy_window (window);
+	}
+}
+
 -(window_t) window
 {
 	return window;

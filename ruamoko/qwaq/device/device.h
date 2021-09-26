@@ -20,6 +20,8 @@
 -updateAxis:(int)axis value:(int)value;
 -updateButton:(int)button state:(int)state;
 -(int)devid;
+-(string)name;
+-(string)id;
 -redraw;
 @end
 

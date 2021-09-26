@@ -71,7 +71,9 @@
 {
 	int         index = [views indexOfObject: view];
 	if (index != NotFound) {
+		[views removeObjectAtIndex: index];
 		if (focused == index) {
+			focused--;
 			[self selectPrev];
 			if (focused == index) {
 				focused = -1;
@@ -79,7 +81,6 @@
 		} else if (focused > index) {
 			focused--;
 		}
-		[views removeObjectAtIndex: index];
 		if (mouse_within == view) {
 			mouse_within = nil;
 		}

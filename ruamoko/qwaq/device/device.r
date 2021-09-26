@@ -43,13 +43,15 @@
 
 -(void)dealloc
 {
+	[application removeView:window];
+	[axis_data release];
+
 	obj_free (device.axes);
 	obj_free (device.buttons);
 	str_free (device.name);
 	str_free (device.id);
 	obj_free (device);
-
-	[application removeView:window];
+	[super dealloc];
 }
 
 -updateAxis:(int)axis value:(int)value
@@ -66,6 +68,16 @@
 -(int)devid
 {
 	return devid;
+}
+
+-(string)name
+{
+	return device.name;
+}
+
+-(string)id
+{
+	return device.id;
 }
 
 -redraw

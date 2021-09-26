@@ -57,6 +57,7 @@
 	}
 	obj_free (element_views);
 	obj_free (element_rows);
+	[super dealloc];
 }
 
 -draw

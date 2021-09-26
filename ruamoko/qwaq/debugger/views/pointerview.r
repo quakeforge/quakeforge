@@ -26,6 +26,7 @@
 		obj_free (ptr_data);
 	}
 	[ptr_view release];
+	[super dealloc];
 }
 
 -draw
