@@ -44,6 +44,8 @@ typedef struct device_s {
 	void      (*button_event) (button_t *button, void *data);
 } device_t;
 
+void inputlib_add_select (fd_set *fdset, int *maxfd);
+void inputlib_check_select (fd_set *fdset);
 int inputlib_check_input (void);
 void inputlib_close (void);
 int inputlib_init (void (*dev_add) (device_t *), void (*dev_rem) (device_t *));

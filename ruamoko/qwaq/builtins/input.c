@@ -464,8 +464,18 @@ term_shutdown (void *_res)
 {
 }
 
+#define FD 0
 static void
-term_process_events (void *_res)
+term_add_select (fd_set *fdset, int *maxfd, void *_res)
+{
+	FD_SET (FD, fdset);
+	if (*maxfd < FD) {
+		*maxfd = FD;
+	}
+}
+
+static void
+term_check_select (fd_set *fdset, void *_res)
 {
 	qwaq_input_resources_t *res = _res;
 	char        buf[256];
@@ -482,7 +492,7 @@ term_process_events (void *_res)
 		resize_event (res);
 	}
 #endif
-	while (Sys_CheckInput (1, -1)) {
+	if (FD_ISSET (FD, fdset)) {
 		len = read(0, buf, sizeof (buf));
 		for (int i = 0; i < len; i++) {
 			process_char (res, buf[i]);
@@ -493,7 +503,8 @@ term_process_events (void *_res)
 static in_driver_t term_driver = {
 	.init = term_init,
 	.shutdown = term_shutdown,
-	.process_events = term_process_events,
+	.add_select = term_add_select,
+	.check_select = term_check_select,
 };
 static int term_driver_handle;
 

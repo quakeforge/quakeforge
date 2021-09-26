@@ -45,6 +45,9 @@ typedef struct in_buttoninfo_s {
 } in_buttoninfo_t;
 
 #ifndef __QFCC__
+
+#include <sys/select.h>
+
 typedef struct {
 	vec3_t angles;
 	vec3_t position;
@@ -53,7 +56,14 @@ typedef struct {
 typedef struct in_driver_s {
 	void (*init) (void *data);
 	void (*shutdown) (void *data);
+
+	// The driver must provide either both or none of add_select and
+	// chec_select.
+	void (*add_select) (fd_set *fdset, int *maxfd, void *data);
+	void (*check_select) (fd_set *fdset, void *data);
+	// Generally musually exclusive with add_select/check_select
 	void (*process_events) (void *data);
+
 	void (*clear_states) (void *data);
 	void (*grab_input) (void *data, int grab);
 

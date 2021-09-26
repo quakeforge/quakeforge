@@ -62,10 +62,15 @@ in_evdev_keydest_callback (keydest_t key_dest, void *data)
 }
 
 static void
-in_evdev_process_events (void *data)
+in_evdev_add_select (fd_set *fdset, int *maxfd, void *data)
 {
-	if (inputlib_check_input ()) {
-	}
+	inputlib_add_select (fdset, maxfd);
+}
+
+static void
+in_evdev_check_select (fd_set *fdset, void *data)
+{
+	inputlib_check_select (fdset);
 }
 
 static void
@@ -223,7 +228,8 @@ in_evdev_button_info (void *data, void *device, in_buttoninfo_t *buttons,
 static in_driver_t in_evdev_driver = {
 	.init = in_evdev_init,
 	.shutdown = in_evdev_shutdown,
-	.process_events = in_evdev_process_events,
+	.add_select = in_evdev_add_select,
+	.check_select = in_evdev_check_select,
 	.clear_states = in_evdev_clear_states,
 
 	.axis_info = in_evdev_axis_info,

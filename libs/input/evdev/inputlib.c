@@ -309,6 +309,37 @@ read_device_input (device_t *dev)
 	}
 }
 
+void
+inputlib_add_select (fd_set *fdset, int *maxfd)
+{
+	inputlib_hotplug_add_select (fdset, maxfd);
+
+	for (device_t *dev = devices; dev; dev = dev->next) {
+		if (dev->fd < 0) {
+			continue;
+		}
+		FD_SET (dev->fd, fdset);
+		if (dev->fd > *maxfd) {
+			*maxfd = dev->fd;
+		}
+	}
+}
+
+void
+inputlib_check_select (fd_set *fdset)
+{
+	inputlib_hotplug_check_select (fdset);
+
+	for (device_t *dev = devices; dev; dev = dev->next) {
+		if (dev->fd < 0) {
+			continue;
+		}
+		if (FD_ISSET (dev->fd, fdset)) {
+			read_device_input (dev);
+		}
+	}
+}
+
 int
 inputlib_check_input (void)
 {
@@ -317,24 +348,13 @@ inputlib_check_input (void)
 	struct timeval *timeout = &_timeout;
 	int         res;
 	int         maxfd = -1;
-	device_t   *dev;
 
 	_timeout.tv_sec = 0;
 	_timeout.tv_usec = 0;
 
 	FD_ZERO (&fdset);
 
-	inputlib_hotplug_add_select (&fdset, &maxfd);
-
-	for (dev = devices; dev; dev = dev->next) {
-		if (dev->fd < 0) {
-			continue;
-		}
-		FD_SET (dev->fd, &fdset);
-		if (dev->fd > maxfd) {
-			maxfd = dev->fd;
-		}
-	}
+	inputlib_add_select (&fdset, &maxfd);
 	if (maxfd < 0) {
 		return 0;
 	}
@@ -343,16 +363,7 @@ inputlib_check_input (void)
 		return 0;
 	}
 
-	inputlib_hotplug_check_select (&fdset);
-
-	for (dev = devices; dev; dev = dev->next) {
-		if (dev->fd < 0) {
-			continue;
-		}
-		if (FD_ISSET (dev->fd, &fdset)) {
-			read_device_input (dev);
-		}
-	}
+	inputlib_check_select (&fdset);
 	return 1;
 }
 

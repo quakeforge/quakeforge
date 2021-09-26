@@ -77,6 +77,7 @@ cvar_t     *in_mouse_amp;
 cvar_t     *in_mouse_pre_amp;
 cvar_t     *lookstrafe;
 
+int64_t     in_timeout = 10000;//10ms default timeout
 kbutton_t   in_mlook, in_klook;
 kbutton_t   in_strafe;
 kbutton_t   in_speed;
@@ -265,9 +266,29 @@ IN_UpdateGrab (cvar_t *var)		// called from context_*.c
 void
 IN_ProcessEvents (void)
 {
+	fd_set      fdset;
+	int         maxfd = -1;
+	int64_t     timeout = in_timeout;
+
+	FD_ZERO (&fdset);
 	for (size_t i = 0; i < in_drivers.size; i++) {
 		in_regdriver_t *rd = &in_drivers.a[i];
-		rd->driver.process_events (rd->data);
+		if (rd->driver.add_select) {
+			rd->driver.add_select (&fdset, &maxfd, rd->data);
+		}
+		if (rd->driver.process_events) {
+			rd->driver.process_events (rd->data);
+			// if a driver can't use select, then we can't block in select
+			timeout = 0;
+		}
+	}
+	if (maxfd >= 0 && Sys_Select (maxfd, &fdset, timeout) > 0) {
+		for (size_t i = 0; i < in_drivers.size; i++) {
+			in_regdriver_t *rd = &in_drivers.a[i];
+			if (rd->driver.check_select) {
+				rd->driver.check_select (&fdset, rd->data);
+			}
+		}
 	}
 }
 
