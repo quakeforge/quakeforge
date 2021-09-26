@@ -650,8 +650,12 @@ bi_get_device_info (progs_t *pr)
 	in_axisinfo_t *axes = PR_Zone_Malloc (pr, axis_buffer->size);
 	in_buttoninfo_t *buttons = PR_Zone_Malloc (pr, button_buffer->size);
 
-	memcpy (axes, axis_buffer->str, axis_buffer->size);
-	memcpy (buttons, button_buffer->str, button_buffer->size);
+	if (axes) {
+		memcpy (axes, axis_buffer->str, axis_buffer->size);
+	}
+	if (buttons) {
+		memcpy (buttons, button_buffer->str, button_buffer->size);
+	}
 
 	devinfo->name = PR_SetDynamicString (pr, name_string->str);
 	devinfo->id = PR_SetDynamicString (pr, id_string->str);
