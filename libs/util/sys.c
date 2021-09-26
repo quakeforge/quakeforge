@@ -721,12 +721,31 @@ Sys_DebugLog (const char *file, const char *fmt, ...)
 }
 
 VISIBLE int
+Sys_Select (int maxfd, fd_set *fdset, int64_t usec)
+{
+	struct timeval _timeout;
+	struct timeval *timeout = 0;
+
+	if (usec >= 0) {
+		timeout = &_timeout;
+		if (usec < 1000000) {
+			_timeout.tv_sec = 0;
+			_timeout.tv_usec = usec;
+		} else {
+			_timeout.tv_sec = usec / 1000000;
+			_timeout.tv_usec = usec % 1000000;
+		}
+	}
+
+	return select (maxfd + 1, fdset, NULL, NULL, timeout);
+}
+
+VISIBLE int
 Sys_CheckInput (int idle, int net_socket)
 {
 	fd_set      fdset;
 	int         res;
-	struct timeval _timeout;
-	struct timeval *timeout = 0;
+	int64_t     usec;
 
 #ifdef _WIN32
 	int         sleep_msec;
@@ -739,11 +758,9 @@ Sys_CheckInput (int idle, int net_socket)
 		Sleep (sleep_msec);
 	}
 
-	_timeout.tv_sec = 0;
-	_timeout.tv_usec = net_socket < 0 ? 0 : 20;
+	usec = net_socket < 0 ? 0 : 20;
 #else
-	_timeout.tv_sec = 0;
-	_timeout.tv_usec = net_socket < 0 ? 0 : 2000;
+	usec = net_socket < 0 ? 0 : 2000;
 #endif
 	// select on the net socket and stdin
 	// the only reason we have a timeout at all is so that if the last
@@ -757,10 +774,10 @@ Sys_CheckInput (int idle, int net_socket)
 	if (net_socket >= 0)
 		FD_SET (((unsigned) net_socket), &fdset);	// cast needed for windows
 
-	if (!idle || !sys_dead_sleep->int_val)
-		timeout = &_timeout;
+	if (idle && sys_dead_sleep->int_val)
+		usec = -1;
 
-	res = select (max (net_socket, 0) + 1, &fdset, NULL, NULL, timeout);
+	res = Sys_Select (max (net_socket, 0), &fdset, usec);
 	if (res == 0 || res == -1)
 		return 0;
 #ifndef _WIN32
