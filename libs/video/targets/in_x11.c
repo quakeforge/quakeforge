@@ -87,6 +87,8 @@ static qboolean dga_active;
 static int  p_mouse_x, p_mouse_y;
 static int input_grabbed = 0;
 
+static int x11_fd;
+
 static void
 dga_on (void)
 {
@@ -781,9 +783,20 @@ in_x11_grab_input (void *data, int grab)
 }
 
 static void
-in_x11_process_events (void *data)
+in_x11_add_select (fd_set *fdset, int *maxfd, void *data)
 {
-	X11_ProcessEvents ();	// Get events from X server.
+	FD_SET (x11_fd, fdset);
+	if (*maxfd < x11_fd) {
+		*maxfd = x11_fd;
+	}
+}
+
+static void
+in_x11_check_select (fd_set *fdset, void *data)
+{
+	if (FD_ISSET (x11_fd, fdset)) {
+		X11_ProcessEvents ();	// Get events from X server.
+	}
 }
 
 static void
@@ -824,6 +837,8 @@ in_x11_init (void *data)
 	in_x11_init_cvars ();
 
 	X11_OpenDisplay (); // call to increment the reference counter
+
+	x11_fd = ConnectionNumber (x_disp);
 
 	{
 		int 	attribmask = CWEventMask;
@@ -870,7 +885,8 @@ in_x11_clear_states (void *data)
 static in_driver_t in_x11_driver = {
 	.init = in_x11_init,
 	.shutdown = in_x11_shutdown,
-	.process_events = in_x11_process_events,
+	.add_select = in_x11_add_select,
+	.check_select = in_x11_check_select,
 	.clear_states = in_x11_clear_states,
 	.grab_input = in_x11_grab_input,
 };
