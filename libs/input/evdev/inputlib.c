@@ -388,6 +388,8 @@ close_device (device_t *dev)
 	if (dev->axes) {
 		free (dev->axes);
 	}
+	free (dev->phys);
+	free (dev->uniq);
 	free (dev->name);
 	free (dev->path);
 	free (dev);
