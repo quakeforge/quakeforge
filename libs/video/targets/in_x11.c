@@ -196,7 +196,7 @@ enter_notify (XEvent *event)
 }
 
 static void
-XLateKey (XKeyEvent * ev, int *k, int *u)
+XLateKey (XKeyEvent *ev, int *k, int *u)
 {
 	char        buffer[4];
 	int         unicode;
@@ -205,8 +205,7 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 	XComposeStatus compose;
 
 	keysym = XLookupKeysym (ev, 0);
-	XLookupString (ev, buffer, sizeof(buffer), &shifted_keysym,
-						   &compose);
+	XLookupString (ev, buffer, sizeof(buffer), &shifted_keysym, &compose);
 	unicode = (byte) buffer[0];
 
 	switch (keysym) {
