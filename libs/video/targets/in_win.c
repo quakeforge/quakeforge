@@ -360,8 +360,8 @@ win_keydest_callback (keydest_t key_dest, void *data)
 	}
 }
 
-void
-IN_LL_Init (void)
+static void
+in_win_init (void *data)
 {
 	uiWheelMessage = RegisterWindowMessage ("MSWHEEL_ROLLMSG");
 
@@ -372,13 +372,8 @@ IN_LL_Init (void)
 					"Paste the contents of the C&P buffer to the console");
 }
 
-void
-IN_LL_Init_Cvars (void)
-{
-}
-
-void
-IN_LL_Shutdown (void)
+static void
+in_win_shutdown (void *data)
 {
 
 	IN_DeactivateMouse ();
@@ -416,13 +411,8 @@ IN_MouseEvent (unsigned mstate)
 	}
 }
 
-void
-IN_LL_Grab_Input (int grab)
-{
-}
-
-void
-IN_LL_ClearStates (void)
+static void
+in_win_clear_states (void *data)
 {
 	if (in_mouse_avail) {
 		mx_accum = 0;
@@ -431,8 +421,8 @@ IN_LL_ClearStates (void)
 	}
 }
 
-void
-IN_LL_ProcessEvents (void)
+static void
+in_win_process_events (void *data)
 {
 	MSG         msg;
 	int         mx, my;
@@ -881,3 +871,20 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	/* return 1 if handled message, 0 if not */
 	return lRet;
 }
+
+static in_driver_t in_win_driver = {
+	.init = in_win_init,
+	.shutdown = in_win_shutdown,
+	.process_events = in_win_process_events,
+	.clear_states = in_win_clear_states,
+	//.grab_input = in_win_grab_input,
+};
+
+static void __attribute__((constructor))
+in_win_register_driver (void)
+{
+	IN_RegisterDriver (&in_win_driver, 0);
+}
+
+
+int win_force_link;

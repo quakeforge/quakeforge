@@ -1078,3 +1078,6 @@ Win_Init_Cvars (void)
 	Cmd_AddCommand ("vid_fullscreen", VID_Fullscreen_f, "");
 	Cmd_AddCommand ("vid_minimize", VID_Minimize_f, "");
 }
+
+extern int win_force_link;
+static __attribute__((used)) int *context_win_force_link = &win_force_link;
