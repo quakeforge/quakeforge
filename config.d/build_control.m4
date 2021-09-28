@@ -356,6 +356,7 @@ QF_PROCESS_NEED_LIBS(brush, [gl glsl sw vulkan], [libs/models/brush])
 QF_PROCESS_NEED_LIBS(iqm, [gl glsl sw vulkan], [libs/models/iqm])
 QF_PROCESS_NEED_LIBS(sprite, [gl glsl sw vulkan], [libs/models/sprite])
 
+QF_PROCESS_NEED_LIBS(input, [evdev], [libs/input])
 QF_PROCESS_NEED_LIBS(vid, [common sdl svga win x11], [libs/video/targets])
 QF_PROCESS_NEED_LIBS(qw, [client common sdl win server], [qw/source], a)
 QF_PROCESS_NEED_LIBS(nq, [client common sdl win server], [nq/source], a)

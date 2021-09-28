@@ -111,6 +111,7 @@ AC_SUBST(WIN32_LIBS)
 
 m4_include(config.d/sound.m4)
 m4_include(config.d/joystick.m4)
+m4_include(config.d/evdev.m4)
 m4_include(config.d/cdrom.m4)
 
 m4_include(config.d/networking.m4)

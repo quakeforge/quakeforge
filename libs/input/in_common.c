@@ -395,5 +395,7 @@ IN_ClearStates (void)
 	Key_ClearStates ();
 }
 
+#ifdef HAVE_EVDEV
 extern int in_evdev_force_link;
 static __attribute__((used)) int *evdev_force_link = &in_evdev_force_link;
+#endif
