@@ -37,7 +37,6 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <stdarg.h>
-#include <sys/select.h>
 
 extern	struct cvar_s	*sys_nostdout;
 extern	struct cvar_s	*sys_extrasleep;
@@ -101,7 +100,8 @@ enum {
 #include "QF/sys_developer.h"
 };
 
-int Sys_Select (int maxfd, fd_set *fdset, int64_t usec);
+struct qf_fd_set;
+int Sys_Select (int maxfd, struct qf_fd_set *fdset, int64_t usec);
 int Sys_CheckInput (int idle, int net_socket);
 const char *Sys_ConsoleInput (void);
 

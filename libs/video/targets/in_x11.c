@@ -76,6 +76,7 @@
 #include "compat.h"
 #include "context_x11.h"
 #include "dga_check.h"
+#include "qfselect.h"
 #include "vid_internal.h"
 
 cvar_t	   *in_snd_block;
@@ -782,18 +783,18 @@ in_x11_grab_input (void *data, int grab)
 }
 
 static void
-in_x11_add_select (fd_set *fdset, int *maxfd, void *data)
+in_x11_add_select (qf_fd_set *fdset, int *maxfd, void *data)
 {
-	FD_SET (x11_fd, fdset);
+	QF_FD_SET (x11_fd, fdset);
 	if (*maxfd < x11_fd) {
 		*maxfd = x11_fd;
 	}
 }
 
 static void
-in_x11_check_select (fd_set *fdset, void *data)
+in_x11_check_select (qf_fd_set *fdset, void *data)
 {
-	if (FD_ISSET (x11_fd, fdset)) {
+	if (QF_FD_ISSET (x11_fd, fdset)) {
 		X11_ProcessEvents ();	// Get events from X server.
 	}
 }

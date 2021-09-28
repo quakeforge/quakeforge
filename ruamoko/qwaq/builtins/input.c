@@ -51,6 +51,8 @@
 #include "QF/keys.h"
 #include "QF/sys.h"
 
+#include "qfselect.h"
+
 #include "ruamoko/qwaq/qwaq.h"
 #include "ruamoko/qwaq/qwaq-input.h"
 #include "ruamoko/qwaq/ui/event.h"
@@ -466,16 +468,16 @@ term_shutdown (void *_res)
 
 #define FD 0
 static void
-term_add_select (fd_set *fdset, int *maxfd, void *_res)
+term_add_select (qf_fd_set *fdset, int *maxfd, void *_res)
 {
-	FD_SET (FD, fdset);
+	QF_FD_SET (FD, fdset);
 	if (*maxfd < FD) {
 		*maxfd = FD;
 	}
 }
 
 static void
-term_check_select (fd_set *fdset, void *_res)
+term_check_select (qf_fd_set *fdset, void *_res)
 {
 	qwaq_input_resources_t *res = _res;
 	char        buf[256];
@@ -492,7 +494,7 @@ term_check_select (fd_set *fdset, void *_res)
 		resize_event (res);
 	}
 #endif
-	if (FD_ISSET (FD, fdset)) {
+	if (QF_FD_ISSET (FD, fdset)) {
 		len = read(0, buf, sizeof (buf));
 		for (int i = 0; i < len; i++) {
 			process_char (res, buf[i]);

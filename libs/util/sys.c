@@ -89,6 +89,8 @@
 #include "QF/va.h"
 
 #include "compat.h"
+#define IMPLEMENT_QFSELECT_Funcs
+#include "qfselect.h"
 
 static void Sys_StdPrintf (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
 static void Sys_ErrPrintf (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
@@ -721,7 +723,7 @@ Sys_DebugLog (const char *file, const char *fmt, ...)
 }
 
 VISIBLE int
-Sys_Select (int maxfd, fd_set *fdset, int64_t usec)
+Sys_Select (int maxfd, qf_fd_set *fdset, int64_t usec)
 {
 	struct timeval _timeout;
 	struct timeval *timeout = 0;
@@ -737,13 +739,13 @@ Sys_Select (int maxfd, fd_set *fdset, int64_t usec)
 		}
 	}
 
-	return select (maxfd + 1, fdset, NULL, NULL, timeout);
+	return select (maxfd + 1, &fdset->fdset, NULL, NULL, timeout);
 }
 
 VISIBLE int
 Sys_CheckInput (int idle, int net_socket)
 {
-	fd_set      fdset;
+	qf_fd_set   fdset;
 	int         res;
 	int64_t     usec;
 
@@ -766,13 +768,13 @@ Sys_CheckInput (int idle, int net_socket)
 	// the only reason we have a timeout at all is so that if the last
 	// connected client times out, the message would not otherwise
 	// be printed until the next event.
-	FD_ZERO (&fdset);
+	QF_FD_ZERO (&fdset);
 #ifndef _WIN32
 	if (do_stdin)
-		FD_SET (0, &fdset);
+		QF_FD_SET (0, &fdset);
 #endif
 	if (net_socket >= 0)
-		FD_SET (((unsigned) net_socket), &fdset);	// cast needed for windows
+		QF_FD_SET (((unsigned) net_socket), &fdset);// cast needed for windows
 
 	if (idle && sys_dead_sleep->int_val)
 		usec = -1;
@@ -781,7 +783,7 @@ Sys_CheckInput (int idle, int net_socket)
 	if (res == 0 || res == -1)
 		return 0;
 #ifndef _WIN32
-	stdin_ready = FD_ISSET (0, &fdset);
+	stdin_ready = QF_FD_ISSET (0, &fdset);
 #endif
 	return 1;
 }

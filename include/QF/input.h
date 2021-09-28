@@ -46,12 +46,12 @@ typedef struct in_buttoninfo_s {
 
 #ifndef __QFCC__
 
-#include <sys/select.h>
-
 typedef struct {
 	vec3_t angles;
 	vec3_t position;
 } viewdelta_t;
+
+struct qf_fd_set;
 
 typedef struct in_driver_s {
 	void (*init) (void *data);
@@ -59,8 +59,8 @@ typedef struct in_driver_s {
 
 	// The driver must provide either both or none of add_select and
 	// chec_select.
-	void (*add_select) (fd_set *fdset, int *maxfd, void *data);
-	void (*check_select) (fd_set *fdset, void *data);
+	void (*add_select) (struct qf_fd_set *fdset, int *maxfd, void *data);
+	void (*check_select) (struct qf_fd_set *fdset, void *data);
 	// Generally musually exclusive with add_select/check_select
 	void (*process_events) (void *data);
 
@@ -95,8 +95,8 @@ int IN_AddDevice (int driver, void *device, const char *name, const char *id);
 void IN_RemoveDevice (int devid);
 
 void IN_SendConnectedDevices (void);
-const char *IN_GetDeviceName (int devid);
-const char *IN_GetDeviceId (int devid);
+const char *IN_GetDeviceName (int devid) __attribute__((pure));
+const char *IN_GetDeviceId (int devid) __attribute__((pure));
 int IN_AxisInfo (int devid, in_axisinfo_t *axes, int *numaxes);
 int IN_ButtonInfo (int devid, in_buttoninfo_t *button, int *numbuttons);
 

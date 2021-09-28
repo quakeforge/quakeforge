@@ -58,6 +58,8 @@
 #include "QF/sys.h"
 #include "QF/vid.h"
 
+#include "qfselect.h"
+
 typedef struct {
 	in_driver_t driver;
 	void       *data;
@@ -266,11 +268,11 @@ IN_UpdateGrab (cvar_t *var)		// called from context_*.c
 void
 IN_ProcessEvents (void)
 {
-	fd_set      fdset;
+	qf_fd_set   fdset;
 	int         maxfd = -1;
 	int64_t     timeout = in_timeout;
 
-	FD_ZERO (&fdset);
+	QF_FD_ZERO (&fdset);
 	for (size_t i = 0; i < in_drivers.size; i++) {
 		in_regdriver_t *rd = &in_drivers.a[i];
 		if (rd->driver.add_select) {
