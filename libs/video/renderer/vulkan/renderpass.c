@@ -42,7 +42,6 @@
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
-#include "QF/input.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"

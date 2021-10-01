@@ -41,7 +41,6 @@
 
 #include "QF/cvar.h"
 #include "QF/dstring.h"
-#include "QF/input.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
