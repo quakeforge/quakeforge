@@ -80,7 +80,41 @@ typedef struct in_device_s {
 	const char *id;
 } in_device_t;
 
-/*** Current state of the button.
+/*** Recipe for converting an axis to a floating point value.
+
+	Recipes apply only to absolute axes.
+
+	\a deadzone applies only to balanced axes, thus it doubles as a flag
+	for balanced (>= 0) or unbalanced (< 0).
+
+	\a curve is applied after the input has been converted
+*/
+typedef struct in_recipe_s {
+	int         minzone;	///< Size of deadzone near axis minimum
+	int         maxzone;	///< Size of deadzone near axis maximum
+	int         deadzone;	///< Size of deadzone near axis center (balanced)
+	float       curve;		///< Power factor for absolute axes
+} in_recipe_t;
+
+typedef enum {
+	ina_set,		///< write the axis value to the destination
+	ina_accumulate,	///< add the axis value to the destination
+} in_axis_mode;
+
+/*** Logical axis.
+
+	Logical axes are the inputs defined by the game on which axis inputs
+	(usually "physical" axes) can act. Depending on the mode, the physical
+	axis value is either written as-is, or added to the existing value. It is
+	the responsibility of the code using the axis to clear the value for
+	accumulated inputs.
+*/
+typedef struct in_axis_s {
+	float       value;		///< converted value of the axis
+	in_axis_mode mode;		///< method used for updating the destination
+} in_axis_t;
+
+/*** Current state of the logical button.
 
 	Captures the current state and any transitions during the last frame.
 	Not all combinations are valid (inb_edge_up|inb_down and inb_edge_down
@@ -94,6 +128,14 @@ typedef enum {
 	inb_edge_up   = 1<<2,	///< button released this frame
 } in_button_state;
 
+/*** Logical button.
+
+	Logical buttons are the inputs defined by the game on which button inputs
+	(usually "physical" buttons) can act. Up to two button inputs can be
+	bound to a logical button. The logical button acts as an or gate where
+	either input will put the logical button in the pressed state, and both
+	inputs must be inactive for the logical button to be released.
+*/
 typedef struct in_button_s {
 	int     down[2];        ///< button ids holding this button down
 	int     state;          ///< in_button_state
@@ -222,6 +264,8 @@ void IN_ClearStates (void);
 
 int IN_RegisterButton (in_button_t *button, const char *name,
 					   const char *description);
+int IN_RegisterAxis (in_axis_t *axis, const char *name,
+					 const char *description);
 
 void IN_Move (void); // FIXME: was cmduser_t?
 // add additional movement on top of the keyboard move cmd
