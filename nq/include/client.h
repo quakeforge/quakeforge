@@ -307,8 +307,6 @@ int  CL_ReadFromServer (void);
 void CL_WriteToServer (usercmd_t *cmd);
 void CL_BaseMove (usercmd_t *cmd);
 
-float CL_KeyState (kbutton_t *key);
-
 // cl_demo.c
 void CL_StopPlayback (void);
 void CL_StopRecording (void);
@@ -341,10 +339,10 @@ void CL_SignonReply (void);
 void CL_RelinkEntities (void);
 void CL_ClearEnts (void);
 
-extern kbutton_t   in_left, in_right, in_forward, in_back;
-extern kbutton_t   in_lookup, in_lookdown, in_moveleft, in_moveright;
-extern kbutton_t   in_use, in_jump, in_attack;
-extern kbutton_t   in_up, in_down;
+extern in_button_t  in_left, in_right, in_forward, in_back;
+extern in_button_t  in_lookup, in_lookdown, in_moveleft, in_moveright;
+extern in_button_t  in_use, in_jump, in_attack;
+extern in_button_t  in_up, in_down;
 
 extern	double			realtime;
 

@@ -532,11 +532,6 @@ typedef enum {
 } keydest_t;
 
 #ifndef __QFCC__
-typedef struct {
-	int     down[2];        // key nums holding it down
-	int     state;          // low bit is down state
-} kbutton_t;
-
 extern knum_t       key_toggleconsole;
 
 typedef struct keybind_s {

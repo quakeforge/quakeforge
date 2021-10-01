@@ -51,6 +51,7 @@
 #include "QF/cvar.h"
 #include "QF/darray.h"
 #include "QF/in_event.h"
+#define IMPLEMENT_INPUT_Funcs
 #include "QF/input.h"
 #include "QF/joystick.h"
 #include "QF/keys.h"
@@ -80,9 +81,6 @@ cvar_t     *in_mouse_pre_amp;
 cvar_t     *lookstrafe;
 
 int64_t     in_timeout = 10000;//10ms default timeout
-kbutton_t   in_mlook, in_klook;
-kbutton_t   in_strafe;
-kbutton_t   in_speed;
 
 qboolean    in_mouse_avail;
 float       in_mouse_x, in_mouse_y;
@@ -315,7 +313,7 @@ IN_Move (void)
 
 	in_mouse_x *= in_mouse_amp->value * in_amp->value;
 	in_mouse_y *= in_mouse_amp->value * in_amp->value;
-
+#if 0
 	if ((in_strafe.state & 1) || (lookstrafe->int_val && freelook))
 		viewdelta.position[0] += in_mouse_x;
 	else
@@ -326,6 +324,7 @@ IN_Move (void)
 	} else {
 		viewdelta.position[2] -= in_mouse_y;
 	}
+#endif
 	in_mouse_x = in_mouse_y = 0.0;
 }
 

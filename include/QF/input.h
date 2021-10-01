@@ -80,6 +80,120 @@ typedef struct in_device_s {
 	const char *id;
 } in_device_t;
 
+/*** Current state of the button.
+
+	Captures the current state and any transitions during the last frame.
+	Not all combinations are valid (inb_edge_up|inb_down and inb_edge_down
+	(no inb_down) are not valid states), but inb_edge_up|inb_edge_down )with
+	or without inb_down) is valid as it represents a double transition during
+	the frame.
+*/
+typedef enum {
+	inb_down      = 1<<0,	///< button is held
+	inb_edge_down = 1<<1,	///< button pressed this frame
+	inb_edge_up   = 1<<2,	///< button released this frame
+} in_button_state;
+
+typedef struct in_button_s {
+	int     down[2];        ///< button ids holding this button down
+	int     state;          ///< in_button_state
+} in_button_t;
+
+/*** Represent the button's activity in the last frame as a float.
+
+	The detected activity is:
+		steady off (up)
+		steady on (down)
+		off to on (up to down) transition
+		on to off )down to up) transition
+		pulse on (off-on-off or up-down-up)
+		pulse off (on-off-on or down-up-down)
+	Any additional transitions are treated as a pulse appropriate for the
+	final state of the button.
+
+	\param button	Pointer to the button being tested.
+	\return			Float value between 0 (off/up) and 1 (on/down)
+	\note			The edge transitions are cleared, so for each frame, this
+					is a one-shot function (ie, it is NOT idempotent).
+*/
+GNU89INLINE inline float IN_ButtonState (in_button_t *button);
+
+/*** Test whether a button has been pressed in the last frame.
+
+	Both steady-state on, and brief clicks are detected.
+
+	\return			True if the button is currently held or was pulsed on
+					in the last frame.
+	\note			The edge transitions are cleared, so for each frame, this
+					is a one-shot function (ie, it is NOT idempotent).
+*/
+GNU89INLINE inline int IN_ButtonPressed (in_button_t *button);
+
+/*** Test whether a button was released in the last frame.
+
+	Valid only if the button is still released. A pulsed off does not
+	count as being released as the button is still held.
+
+	\return			True if the button is currently released and the release
+					was in the last frame.
+	\note			The edge transitions are cleared, so for each frame, this
+					is a one-shot function (ie, it is NOT idempotent).
+*/
+GNU89INLINE inline int IN_ButtonReleased (in_button_t *button);
+
+#ifndef IMPLEMENT_INPUT_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+float
+IN_ButtonState (in_button_t *button)
+{
+	static const float state_values[8] = {
+		// held down for the entire frame
+		[inb_down] = 1,
+		// released this frame
+		[inb_edge_up] = 0,	// instant falloff
+		// pressed this frame
+		[inb_edge_down|inb_down] = 0.5,
+		// pressed and released this frame
+		[inb_edge_down|inb_edge_up] = 0.25,
+		// released and pressed this frame
+		[inb_edge_down|inb_edge_up|inb_down] = 0.75,
+	};
+	int         state = button->state;
+	button->state &= inb_down;	// clear edges, preserve pressed
+	return state_values[state & (inb_down|inb_edge_down|inb_edge_up)];
+}
+
+#ifndef IMPLEMENT_INPUT_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+int
+IN_ButtonPressed (in_button_t *button)
+{
+	int         state = button->state;
+	button->state &= inb_down;	// clear edges, preserve pressed
+	// catch even press and release that occurs between frames
+	return (state & (inb_down | inb_edge_down)) != 0;
+}
+
+#ifndef IMPLEMENT_INPUT_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+int
+IN_ButtonReleased (in_button_t *button)
+{
+	int         state = button->state;
+	button->state &= inb_down;	// clear edges, preserve pressed
+	// catch only full release (a pulsed on does count as a release)
+	return (state & (inb_down | inb_edge_up)) == inb_edge_up;
+}
+
 extern viewdelta_t viewdelta;
 
 #define freelook (in_mlook.state & 1 || in_freelook->int_val)
@@ -106,6 +220,9 @@ void IN_UpdateGrab (struct cvar_s *);
 
 void IN_ClearStates (void);
 
+int IN_RegisterButton (in_button_t *button, const char *name,
+					   const char *description);
+
 void IN_Move (void); // FIXME: was cmduser_t?
 // add additional movement on top of the keyboard move cmd
 
@@ -121,7 +238,7 @@ extern qboolean 	in_mouse_avail;
 extern float		in_mouse_x, in_mouse_y;
 
 
-extern kbutton_t   in_strafe, in_klook, in_speed, in_mlook;
+extern in_button_t   in_strafe, in_klook, in_speed, in_mlook;
 #endif
 
 #endif//__QF_input_h

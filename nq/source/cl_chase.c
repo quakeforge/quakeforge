@@ -192,16 +192,16 @@ Chase_Update (void)
 //		VectorCopy (cl.viewstate.angles, cmd.angles);
 
 		if (in_strafe.state & 1) {
-			cmd.sidemove += cl_sidespeed->value * CL_KeyState (&in_right);
-			cmd.sidemove -= cl_sidespeed->value * CL_KeyState (&in_left);
+			cmd.sidemove += cl_sidespeed->value * IN_ButtonState (&in_right);
+			cmd.sidemove -= cl_sidespeed->value * IN_ButtonState (&in_left);
 		}
-		cmd.sidemove += cl_sidespeed->value * CL_KeyState (&in_moveright);
-		cmd.sidemove -= cl_sidespeed->value * CL_KeyState (&in_moveleft);
+		cmd.sidemove += cl_sidespeed->value * IN_ButtonState (&in_moveright);
+		cmd.sidemove -= cl_sidespeed->value * IN_ButtonState (&in_moveleft);
 
 		if (!(in_klook.state & 1)) {
 			cmd.forwardmove += cl_forwardspeed->value
-				* CL_KeyState (&in_forward);
-			cmd.forwardmove -= cl_backspeed->value * CL_KeyState (&in_back);
+				* IN_ButtonState (&in_forward);
+			cmd.forwardmove -= cl_backspeed->value * IN_ButtonState (&in_back);
 		}
 		if (in_speed.state & 1) {
 			cmd.forwardmove *= cl_movespeedkey->value;

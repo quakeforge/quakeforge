@@ -32,16 +32,15 @@
 #define __QF_in_event_h
 
 #include "QF/qtypes.h"
-#include "QF/joystick.h"	// needed for JOY_MAX_AXES
 
 typedef struct {
-	int  			x, y;
-	unsigned int	buttons;
+	int         x, y;
+	unsigned    buttons;
 } IE_mouse_event_t;
 
 typedef struct {
-	int				key_code;
-	qboolean		pressed;
+	int         key_code;
+	qboolean    pressed;
 } IE_key_event_t;
 
 typedef struct {
