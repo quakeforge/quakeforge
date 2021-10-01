@@ -179,7 +179,7 @@ IN_RegisterButton (in_button_t *button, const char *name,
 }
 
 static void __attribute__((constructor))
-in_evdev_register_driver (void)
+in_button_init (void)
 {
 	button_tab = Hash_NewTable (127, button_get_key, button_free, 0, 0);
 }
