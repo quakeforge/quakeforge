@@ -754,6 +754,7 @@ static void
 bi_shutdown (void *_pr)
 {
 	if (need_endwin) {
+		qwaq_input_disable_mouse ();
 		endwin ();
 	}
 }
