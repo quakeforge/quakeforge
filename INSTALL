@@ -57,7 +57,7 @@ The following is the list of relevant package names in debian.
 \li libflac-dev
 \li libogg-dev
 \li libvorbis-dev
-\li libpng12-dev
+\li libpng-dev
 \li zlib1g-dev
 
 \li libcurl4-openssl-dev (or libcurl4-gnutls-dev)
@@ -68,6 +68,11 @@ The following is the list of relevant package names in debian.
 \li libxext-dev
 \li libxxf86dga-dev
 \li libxxf86vm-dev
+
+\li libvulkan-dev
+\li vulkan-tools
+\li vulkan-validationlayers
+\li glslang-tools
 
 \section building-and-installing Build and Install Procedure
 Basic process to build and install QuakeForge:
