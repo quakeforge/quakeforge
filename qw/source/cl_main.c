@@ -1513,7 +1513,6 @@ Host_WriteConfiguration (void)
 		}
 
 		Key_WriteBindings (f);
-		Joy_WriteBindings (f);
 		Cvar_WriteVariables (f);
 
 		Qclose (f);

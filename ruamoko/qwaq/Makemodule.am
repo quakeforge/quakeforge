@@ -101,7 +101,6 @@ qwaq_client_libs= \
 	$(top_builddir)/libs/console/libQFconsole.la \
 	$(top_builddir)/libs/ui/libQFui.la \
 	$(top_builddir)/libs/input/libQFinput.la \
-	$(top_builddir)/libs/video/targets/libQFjs.la \
 	$(top_builddir)/libs/audio/libQFcd.la \
 	$(top_builddir)/libs/audio/libQFsound.la \
 	$(top_builddir)/libs/image/libQFimage.la

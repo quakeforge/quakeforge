@@ -91,7 +91,6 @@ qw_client_LIBS= \
 		libs/net/libnet_chan.la \
 		libs/scene/libQFscene.la \
 		libs/console/libQFconsole.la \
-		libs/video/targets/libQFjs.la \
 		libs/audio/libQFcd.la \
 		libs/audio/libQFsound.la \
 		libs/image/libQFimage.la \

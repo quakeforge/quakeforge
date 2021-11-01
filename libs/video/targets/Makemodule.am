@@ -1,9 +1,8 @@
-lib_LTLIBRARIES += @JOY_TARGETS@
+#lib_LTLIBRARIES +=
 
 noinst_LTLIBRARIES += @VID_TARGETS@ @vid_libs@
 
 EXTRA_LTLIBRARIES += \
-	libs/video/targets/libQFjs.la \
 	libs/video/targets/libQFfbdev.la \
 	libs/video/targets/libQFsvga.la \
 	libs/video/targets/libQFx11.la \
@@ -14,19 +13,6 @@ EXTRA_LTLIBRARIES += \
 	libs/video/targets/libvid_svga.la \
 	libs/video/targets/libvid_win.la \
 	libs/video/targets/libvid_x11.la
-
-joy_linux_src= libs/video/targets/joy_linux.c
-joy_win_src= libs/video/targets/joy_win.c
-joy_null_src= libs/video/targets/joy_null.c
-if JOYTYPE_LINUX
-joy_src=      $(joy_linux_src)
-else
-if JOYTYPE_WIN32
-joy_src=      $(joy_win_src)
-else
-joy_src=      $(joy_null_src)
-endif
-endif
 
 win_gl_src = libs/video/targets/vid_win_gl.c
 win_sw_src = libs/video/targets/vid_win_sw.c
@@ -47,13 +33,6 @@ x11_src = $(x11_gl_src) $(x11_sw_src)
 endif
 
 js_libs = libs/util/libQFutil.la
-
-libs_video_targets_libQFjs_la_LDFLAGS=		$(lib_ldflags)
-libs_video_targets_libQFjs_la_LIBADD=		$(js_libs)
-libs_video_targets_libQFjs_la_DEPENDENCIES=$(js_libs)
-libs_video_targets_libQFjs_la_CFLAGS=		@PREFER_PIC@ $(JOY_CFLAGS)
-libs_video_targets_libQFjs_la_SOURCES=		libs/video/targets/joy.c $(joy_src)
-EXTRA_libs_video_targets_libQFjs_la_SOURCES= $(joy_linux_src) $(joy_win_src) $(joy_null_src)
 
 libs_video_targets_libvid_common_la_SOURCES = \
 	libs/video/targets/vid.c

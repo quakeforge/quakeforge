@@ -47,7 +47,6 @@ nq_cl_plugin_LIBS= \
 nq_client_LIBFILES= \
 		libs/gib/libQFgib_client.la \
 		libs/scene/libQFscene.la \
-		libs/video/targets/libQFjs.la \
 		libs/audio/libQFcd.la \
 		libs/audio/libQFsound.la
 
