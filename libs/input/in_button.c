@@ -45,8 +45,6 @@
 #include "QF/sys.h"
 
 typedef struct regbutton_s {
-	const char *name;
-	const char *description;
 	in_button_t *button;
 	char       *press_cmd;
 	char       *release_cmd;
@@ -58,7 +56,7 @@ static const char *
 button_get_key (const void *b, void *data)
 {
 	__auto_type regbutton = (const regbutton_t *) b;
-	return regbutton->name;
+	return regbutton->button->name;
 }
 
 static void
@@ -162,16 +160,14 @@ button_release_cmd (void *_b)
 }
 
 VISIBLE int
-IN_RegisterButton (in_button_t *button, const char *name,
-				   const char *description)
+IN_RegisterButton (in_button_t *button)
 {
+	const char *name = button->name;
 	if (Hash_Find (button_tab, name)) {
 		return 0;
 	}
 	size_t      size = strlen (name) + 2;
 	regbutton_t *regbutton = malloc (sizeof (regbutton_t) + 2 * size);
-	regbutton->name = name;
-	regbutton->description = description;
 	regbutton->button = button;
 
 	regbutton->press_cmd = (char *) (regbutton + 1);

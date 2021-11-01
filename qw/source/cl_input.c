@@ -63,88 +63,99 @@ cvar_t     *cl_nodelta;
 cvar_t     *cl_maxnetfps;
 cvar_t     *cl_spamimpulse;
 
-/*
-	KEY BUTTONS
+in_button_t in_left = {
+	.name = "left",
+	.description = "When active the player is turning left"
+};
+in_button_t in_right = {
+	.name = "right",
+	.description = "When active the player is turning right"
+};
+in_button_t in_forward = {
+	.name = "forward",
+	.description = "When active the player is moving forward"
+};
+in_button_t in_back = {
+	.name = "back",
+	.description = "When active the player is moving backwards"
+};
+in_button_t in_lookup = {
+	.name = "lookup",
+	.description = "When active the player's view is looking up"
+};
+in_button_t in_lookdown = {
+	.name = "lookdown",
+	.description = "When active the player's view is looking down"
+};
+in_button_t in_moveleft = {
+	.name = "moveleft",
+	.description = "When active the player is strafing left"
+};
+in_button_t in_moveright = {
+	.name = "moveright",
+	.description = "When active the player is strafing right"
+};
+in_button_t in_use = {
+	.name = "use",
+	.description = "Left over command for opening doors and triggering"
+				   " switches"
+};
+in_button_t in_jump = {
+	.name = "jump",
+	.description = "When active the player is jumping"
+};
+in_button_t in_attack = {
+	.name = "attack",
+	.description = "When active player is firing/using current weapon"
+};
+in_button_t in_up = {
+	.name = "moveup",
+	.description = "When active the player is swimming up in a liquid"
+};
+in_button_t in_down = {
+	.name = "movedown",
+	.description = "When active the player is swimming down in a liquid"
+};
+in_button_t in_strafe = {
+	.name = "strafe",
+	.description = "When active, +left and +right function like +moveleft and"
+				   " +moveright"
+};
+in_button_t in_klook = {
+	.name = "klook",
+	.description = "When active, +forward and +back perform +lookup and"
+				   " +lookdown"
+};
+in_button_t in_speed = {
+	.name = "speed",
+	.description = "When active the player is running"
+};
+in_button_t in_mlook = {
+	.name = "mlook",
+	.description = "When active moving the mouse or joystick forwards "
+				   "and backwards performs +lookup and "
+				   "+lookdown"
+};
 
-	Continuous button event tracking is complicated by the fact that two
-	different input sources (say, mouse button 1 and the control key) can
-	both press the same button, but the button should be released only when
-	both of the pressing key have been released.
-
-	When a key event issues a button command (+forward, +attack, etc), it
-	appends its key number as a parameter to the command so it can be
-	matched up with the release.
-
-	state bit 0 is the current state of the key
-	state bit 1 is edge triggered on the up to down transition
-	state bit 2 is edge triggered on the down to up transition
-*/
-
-in_button_t in_left, in_right, in_forward, in_back;
-in_button_t in_lookup, in_lookdown, in_moveleft, in_moveright;
-in_button_t in_use, in_jump, in_attack;
-in_button_t in_up, in_down;
-in_button_t in_strafe, in_klook, in_speed, in_mlook;
-
-static struct {
-	const char *name;
-	in_button_t *button;
-	const char *description;
-} cl_in_buttons[] = {
-	{ "left", &in_left,
-		"When active the player is turning left"
-	},
-	{ "right", &in_right,
-		"When active the player is turning right"
-	},
-	{ "forward", &in_forward,
-		"When active the player is moving forward"
-	},
-	{ "back", &in_back,
-		"When active the player is moving backwards"
-	},
-	{ "lookup", &in_lookup,
-		"When active the player's view is looking up"
-	},
-	{ "lookdown", &in_lookdown,
-		"When active the player's view is looking down"
-	},
-	{ "moveleft", &in_moveleft,
-		"When active the player is strafing left"
-	},
-	{ "moveright", &in_moveright,
-		"When active the player is strafing right"
-	},
-	{ "use", &in_use,
-		"Left over command for opening doors and triggering switches"
-	},
-	{ "jump", &in_jump,
-		"When active the player is jumping"
-	},
-	{ "attack", &in_attack,
-		"When active player is firing/using current weapon"
-	},
-	{ "moveup", &in_up,
-		"When active the player is swimming up in a liquid"
-	},
-	{ "movedown", &in_down,
-		"When active the player is swimming down in a liquid"
-	},
-	{ "strafe", &in_strafe,
-		"When active, +left and +right function like +moveleft and +moveright"
-	},
-	{ "speed", &in_speed,
-		"When active the player is running"
-	},
-	{ "klook", &in_klook,
-		"When active, +forward and +back perform +lookup and +lookdown"
-	},
-	{ "mlook", &in_mlook,
-		"When active moving the mouse or joystick forwards "
-		"and backwards performs +lookup and "
-		"+lookdown"
-	},
-	{ }
+static in_button_t *cl_in_buttons[] = {
+	&in_left,
+	&in_right,
+	&in_forward,
+	&in_back,
+	&in_lookup,
+	&in_lookdown,
+	&in_moveleft,
+	&in_moveright,
+	&in_use,
+	&in_jump,
+	&in_attack,
+	&in_up,
+	&in_down,
+	&in_strafe,
+	&in_klook,
+	&in_speed,
+	&in_mlook,
+	0
 };
 
 int         in_impulse;
@@ -508,9 +519,8 @@ CL_SendCmd (void)
 void
 CL_Input_Init (void)
 {
-	for (int i = 0; cl_in_buttons[i].name; i++) {
-		IN_RegisterButton (cl_in_buttons[i].button, cl_in_buttons[i].name,
-						   cl_in_buttons[i].description);
+	for (int i = 0; cl_in_buttons[i]; i++) {
+		IN_RegisterButton (cl_in_buttons[i]);
 	}
 	Cmd_AddDataCommand ("impulse", IN_Impulse, 0,
 						"Call a game function or QuakeC function.");

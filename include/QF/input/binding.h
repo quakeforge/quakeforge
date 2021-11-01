@@ -91,6 +91,7 @@ typedef struct in_button_s {
 	int         down[2];    ///< button ids holding this button down
 	int         state;      ///< in_button_state
 	const char *name;
+	const char *description;
 } in_button_t;
 
 typedef struct in_axisbinding_s {
@@ -211,8 +212,7 @@ IN_ButtonReleased (in_button_t *button)
 
 void IN_ButtonAction (in_button_t *buttin, int id, int pressed);
 
-int IN_RegisterButton (in_button_t *button, const char *name,
-					   const char *description);
+int IN_RegisterButton (in_button_t *button);
 int IN_RegisterAxis (in_axis_t *axis, const char *name,
 					 const char *description);
 in_button_t *IN_FindButton (const char *name);
