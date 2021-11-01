@@ -343,6 +343,7 @@ extern in_button_t  in_left, in_right, in_forward, in_back;
 extern in_button_t  in_lookup, in_lookdown, in_moveleft, in_moveright;
 extern in_button_t  in_use, in_jump, in_attack;
 extern in_button_t  in_up, in_down;
+extern in_button_t  in_strafe, in_klook, in_speed, in_mlook;
 
 extern	double			realtime;
 

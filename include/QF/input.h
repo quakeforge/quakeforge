@@ -282,7 +282,6 @@ extern qboolean 	in_mouse_avail;
 extern float		in_mouse_x, in_mouse_y;
 
 
-extern in_button_t   in_strafe, in_klook, in_speed, in_mlook;
 #endif
 
 #endif//__QF_input_h
