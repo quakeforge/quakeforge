@@ -50,7 +50,6 @@
 #include "QF/cbuf.h"
 #include "QF/cvar.h"
 #include "QF/darray.h"
-#include "QF/in_event.h"
 #define IMPLEMENT_INPUT_Funcs
 #include "QF/input.h"
 #include "QF/joystick.h"
@@ -58,6 +57,8 @@
 #include "QF/mathlib.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
+
+#include "QF/input/event.h"
 
 #include "qfselect.h"
 

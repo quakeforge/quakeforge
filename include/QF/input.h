@@ -44,6 +44,8 @@ typedef struct in_buttoninfo_s {
 	int         state;
 } in_buttoninfo_t;
 
+#include "QF/input/binding.h"
+
 #ifndef __QFCC__
 
 typedef struct {
@@ -80,161 +82,42 @@ typedef struct in_device_s {
 	const char *id;
 } in_device_t;
 
-/*** Recipe for converting an axis to a floating point value.
+/*** Connect a device and its axes and buttons to logical axes and buttons.
 
-	Recipes apply only to absolute axes.
+	\a name is used to specify the device when creating bindings, and
+	identifying the device for hints etc (eg, "press joy1 1 to ...").
 
-	\a deadzone applies only to balanced axes, thus it doubles as a flag
-	for balanced (>= 0) or unbalanced (< 0).
+	\a id is the device name (eg, "6d spacemouse") or (preferred) the device
+	id (eg "usb-0000:00:1d.1-2/input0"). The device name is useful for ease of
+	user identification and allowing the device to be plugged into any USB
+	socket. However, it doesn't allow multiple devices with the same name
+	(eg, using twin joysticks of the same model). Thus the device id is
+	preferred, but does require the device to be plugged into the same uSB
+	path (ie, same socket on the same hub connected to the same port on the PC)
 
-	\a curve is applied after the input has been converted
+	\a device is the actual device associated with the bindings. If null, the
+	device is not currently connected.
+
+	\a axis_info holds the device/axis specific range info and the current
+	raw value of the axis.
+
+	\a button_info holds the current raw state of the button
+
+	\a axis_imt_id is 0 if the device has no axis bindings, otherwise it is
+    the based index into the imt array for the imt group.
+
+	\a button_imt_i is 0 if the device has no button bindings, otherwise it
+    is the index into the imt array for the imt group.
 */
-typedef struct in_recipe_s {
-	int         minzone;	///< Size of deadzone near axis minimum
-	int         maxzone;	///< Size of deadzone near axis maximum
-	int         deadzone;	///< Size of deadzone near axis center (balanced)
-	float       curve;		///< Power factor for absolute axes
-} in_recipe_t;
-
-typedef enum {
-	ina_set,		///< write the axis value to the destination
-	ina_accumulate,	///< add the axis value to the destination
-} in_axis_mode;
-
-/*** Logical axis.
-
-	Logical axes are the inputs defined by the game on which axis inputs
-	(usually "physical" axes) can act. Depending on the mode, the physical
-	axis value is either written as-is, or added to the existing value. It is
-	the responsibility of the code using the axis to clear the value for
-	accumulated inputs.
-*/
-typedef struct in_axis_s {
-	float       value;		///< converted value of the axis
-	in_axis_mode mode;		///< method used for updating the destination
-} in_axis_t;
-
-/*** Current state of the logical button.
-
-	Captures the current state and any transitions during the last frame.
-	Not all combinations are valid (inb_edge_up|inb_down and inb_edge_down
-	(no inb_down) are not valid states), but inb_edge_up|inb_edge_down )with
-	or without inb_down) is valid as it represents a double transition during
-	the frame.
-*/
-typedef enum {
-	inb_down      = 1<<0,	///< button is held
-	inb_edge_down = 1<<1,	///< button pressed this frame
-	inb_edge_up   = 1<<2,	///< button released this frame
-} in_button_state;
-
-/*** Logical button.
-
-	Logical buttons are the inputs defined by the game on which button inputs
-	(usually "physical" buttons) can act. Up to two button inputs can be
-	bound to a logical button. The logical button acts as an or gate where
-	either input will put the logical button in the pressed state, and both
-	inputs must be inactive for the logical button to be released.
-*/
-typedef struct in_button_s {
-	int     down[2];        ///< button ids holding this button down
-	int     state;          ///< in_button_state
-} in_button_t;
-
-/*** Represent the button's activity in the last frame as a float.
-
-	The detected activity is:
-		steady off (up)
-		steady on (down)
-		off to on (up to down) transition
-		on to off )down to up) transition
-		pulse on (off-on-off or up-down-up)
-		pulse off (on-off-on or down-up-down)
-	Any additional transitions are treated as a pulse appropriate for the
-	final state of the button.
-
-	\param button	Pointer to the button being tested.
-	\return			Float value between 0 (off/up) and 1 (on/down)
-	\note			The edge transitions are cleared, so for each frame, this
-					is a one-shot function (ie, it is NOT idempotent).
-*/
-GNU89INLINE inline float IN_ButtonState (in_button_t *button);
-
-/*** Test whether a button has been pressed in the last frame.
-
-	Both steady-state on, and brief clicks are detected.
-
-	\return			True if the button is currently held or was pulsed on
-					in the last frame.
-	\note			The edge transitions are cleared, so for each frame, this
-					is a one-shot function (ie, it is NOT idempotent).
-*/
-GNU89INLINE inline int IN_ButtonPressed (in_button_t *button);
-
-/*** Test whether a button was released in the last frame.
-
-	Valid only if the button is still released. A pulsed off does not
-	count as being released as the button is still held.
-
-	\return			True if the button is currently released and the release
-					was in the last frame.
-	\note			The edge transitions are cleared, so for each frame, this
-					is a one-shot function (ie, it is NOT idempotent).
-*/
-GNU89INLINE inline int IN_ButtonReleased (in_button_t *button);
-
-#ifndef IMPLEMENT_INPUT_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-float
-IN_ButtonState (in_button_t *button)
-{
-	static const float state_values[8] = {
-		// held down for the entire frame
-		[inb_down] = 1,
-		// released this frame
-		[inb_edge_up] = 0,	// instant falloff
-		// pressed this frame
-		[inb_edge_down|inb_down] = 0.5,
-		// pressed and released this frame
-		[inb_edge_down|inb_edge_up] = 0.25,
-		// released and pressed this frame
-		[inb_edge_down|inb_edge_up|inb_down] = 0.75,
-	};
-	int         state = button->state;
-	button->state &= inb_down;	// clear edges, preserve pressed
-	return state_values[state & (inb_down|inb_edge_down|inb_edge_up)];
-}
-
-#ifndef IMPLEMENT_INPUT_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-int
-IN_ButtonPressed (in_button_t *button)
-{
-	int         state = button->state;
-	button->state &= inb_down;	// clear edges, preserve pressed
-	// catch even press and release that occurs between frames
-	return (state & (inb_down | inb_edge_down)) != 0;
-}
-
-#ifndef IMPLEMENT_INPUT_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-int
-IN_ButtonReleased (in_button_t *button)
-{
-	int         state = button->state;
-	button->state &= inb_down;	// clear edges, preserve pressed
-	// catch only full release (a pulsed on does count as a release)
-	return (state & (inb_down | inb_edge_up)) == inb_edge_up;
-}
+typedef struct in_devbindings_s {
+	const char *name;		///< name used when binding inputs
+	const char *id;			///< physical device name or id (preferred)
+	in_device_t *device;	///< device associated with these bindings
+	in_axisinfo_t *axis_info;		///< axis range info and raw state
+	in_buttoninfo_t *button_info;	///< button raw state
+    int         axis_imt_id;    ///< index into array of imt axis bindings
+    int         button_imt_id;  ///< index into array of imt button bindings
+} in_devbindings_t;
 
 extern viewdelta_t viewdelta;
 
@@ -261,11 +144,6 @@ void IN_ProcessEvents (void);
 void IN_UpdateGrab (struct cvar_s *);
 
 void IN_ClearStates (void);
-
-int IN_RegisterButton (in_button_t *button, const char *name,
-					   const char *description);
-int IN_RegisterAxis (in_axis_t *axis, const char *name,
-					 const char *description);
 
 void IN_Move (void); // FIXME: was cmduser_t?
 // add additional movement on top of the keyboard move cmd

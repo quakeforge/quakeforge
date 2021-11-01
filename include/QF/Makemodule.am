@@ -21,7 +21,6 @@ include_qf = \
 	include/QF/heapsort.h \
 	include/QF/idparse.h \
 	include/QF/image.h \
-	include/QF/in_event.h \
 	include/QF/info.h \
 	include/QF/input.h \
 	include/QF/iqm.h \
@@ -112,6 +111,9 @@ include_qf_glsl = \
 	include/QF/GLSL/qf_vid.h \
 	include/QF/GLSL/types.h
 
+include_qf_input = \
+	include/QF/binding.h \
+	include/QF/event.h
 include_qf_math = \
 	include/QF/math/dual.h \
 	include/QF/math/half.h \
@@ -210,6 +212,7 @@ EXTRA_HEADERS += \
 	$(include_qf) \
 	$(include_qf_gl) \
 	$(include_qf_glsl) \
+	$(include_qf_input) \
 	$(include_qf_math) \
 	$(include_qf_plugin) \
 	$(include_qf_scene) \

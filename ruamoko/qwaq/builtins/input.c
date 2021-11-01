@@ -46,10 +46,11 @@
 
 #include "QF/dstring.h"
 #include "QF/hash.h"
-#include "QF/in_event.h"
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/sys.h"
+
+#include "QF/input/event.h"
 
 #include "qfselect.h"
 

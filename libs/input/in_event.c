@@ -40,7 +40,8 @@
 #include <stdlib.h>
 
 #include "QF/darray.h"
-#include "QF/in_event.h"
+
+#include "QF/input/event.h"
 
 typedef struct {
 	ie_handler_t *handler;

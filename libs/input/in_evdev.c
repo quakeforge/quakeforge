@@ -37,10 +37,11 @@
 #endif
 
 #include "QF/cvar.h"
-#include "QF/in_event.h"
 #include "QF/input.h"
 #include "QF/progs.h"   // for PR_RESMAP
 #include "QF/sys.h"
+
+#include "QF/input/event.h"
 
 #include "compat.h"
 #include "qfselect.h"

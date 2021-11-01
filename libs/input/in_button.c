@@ -122,6 +122,17 @@ button_release (in_button_t *button, int id)
 	button->state |= inb_edge_up;
 }
 
+void
+IN_ButtonAction (in_button_t *button, int id, int pressed)
+{
+	if (pressed) {
+		button_press (button, id);
+	} else {
+		button_release (button, id);
+	}
+}
+
+
 static void
 button_press_cmd (void *_b)
 {
@@ -173,9 +184,16 @@ IN_RegisterButton (in_button_t *button, const char *name,
 	Cmd_AddDataCommand (regbutton->press_cmd, button_press_cmd, button,
 						"Set the button's state to on/pressed.");
 	Cmd_AddDataCommand (regbutton->release_cmd, button_release_cmd, button,
-						"Set the button's state to on/pressed.");
+						"Set the button's state to off/released.");
 
+	Hash_Add (button_tab, regbutton);
 	return 1;
+}
+
+in_button_t *
+IN_FindButton (const char *name)
+{
+	return Hash_Find (button_tab, name);
 }
 
 static void __attribute__((constructor))
