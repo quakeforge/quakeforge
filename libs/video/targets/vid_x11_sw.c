@@ -278,6 +278,30 @@ st3_fixup (XImage * framebuf, int x, int y, int width, int height)
 	}
 }
 
+static void
+x11_put_image (vrect_t *rects)
+{
+	if (doShm) {
+		if (!XShmPutImage (x_disp, x_win, x_gc,
+						   x_framebuffer[current_framebuffer],
+						   rects->x, rects->y, rects->x, rects->y,
+						   rects->width, rects->height, True)) {
+			Sys_Error ("VID_Update: XShmPutImage failed");
+		}
+		oktodraw = false;
+		while (!oktodraw)
+			X11_ProcessEvent ();
+
+		current_framebuffer = !current_framebuffer;
+	} else {
+		if (XPutImage (x_disp, x_win, x_gc, x_framebuffer[0],
+						rects->x, rects->y, rects->x, rects->y,
+						rects->width, rects->height)) {
+			Sys_Error ("VID_Update: XPutImage failed");
+		}
+	}
+}
+
 /*
 	Flush the given rectangles from the view buffer to the screen.
 */
@@ -295,27 +319,8 @@ x11_sw8_update (sw_ctx_t *ctx, vrect_t *rects)
 						   rects->x, rects->y, rects->width, rects->height);
 				break;
 		}
-		if (doShm) {
-			if (!XShmPutImage (x_disp, x_win, x_gc,
-							   x_framebuffer[current_framebuffer],
-							   rects->x, rects->y, rects->x, rects->y,
-							   rects->width, rects->height, True)) {
-				Sys_Error ("VID_Update: XShmPutImage failed");
-			}
-			oktodraw = false;
-			while (!oktodraw)
-				X11_ProcessEvent ();
-			rects = rects->next;
-
-			current_framebuffer = !current_framebuffer;
-		} else {
-			if (XPutImage (x_disp, x_win, x_gc, x_framebuffer[0],
-							rects->x, rects->y, rects->x, rects->y,
-							rects->width, rects->height)) {
-				Sys_Error ("VID_Update: XPutImage failed");
-			}
-			rects = rects->next;
-		}
+		x11_put_image (rects);
+		rects = rects->next;
 	}
 	XSync (x_disp, False);
 	r_data->scr_fullupdate = 0;
@@ -341,27 +346,8 @@ x11_sw16_16_update (sw_ctx_t *ctx, vrect_t *rects)
 				*dest++ = *src++;
 			}
 		}
-		if (doShm) {
-			if (!XShmPutImage (x_disp, x_win, x_gc,
-							   x_framebuffer[current_framebuffer],
-							   rects->x, rects->y, rects->x, rects->y,
-							   rects->width, rects->height, True)) {
-				Sys_Error ("VID_Update: XShmPutImage failed");
-			}
-			oktodraw = false;
-			while (!oktodraw)
-				X11_ProcessEvent ();
-			rects = rects->next;
-
-			current_framebuffer = !current_framebuffer;
-		} else {
-			if (XPutImage (x_disp, x_win, x_gc, x_framebuffer[0],
-							rects->x, rects->y, rects->x, rects->y,
-							rects->width, rects->height)) {
-				Sys_Error ("VID_Update: XPutImage failed");
-			}
-			rects = rects->next;
-		}
+		x11_put_image (rects);
+		rects = rects->next;
 	}
 	XSync (x_disp, False);
 	r_data->scr_fullupdate = 0;
@@ -391,27 +377,8 @@ x11_sw16_32_update (sw_ctx_t *ctx, vrect_t *rects)
 						  | ((c & 0x001f) << 3);
 			}
 		}
-		if (doShm) {
-			if (!XShmPutImage (x_disp, x_win, x_gc,
-							   x_framebuffer[current_framebuffer],
-							   rects->x, rects->y, rects->x, rects->y,
-							   rects->width, rects->height, True)) {
-				Sys_Error ("VID_Update: XShmPutImage failed");
-			}
-			oktodraw = false;
-			while (!oktodraw)
-				X11_ProcessEvent ();
-			rects = rects->next;
-
-			current_framebuffer = !current_framebuffer;
-		} else {
-			if (XPutImage (x_disp, x_win, x_gc, x_framebuffer[0],
-							rects->x, rects->y, rects->x, rects->y,
-							rects->width, rects->height)) {
-				Sys_Error ("VID_Update: XPutImage failed");
-			}
-			rects = rects->next;
-		}
+		x11_put_image (rects);
+		rects = rects->next;
 	}
 	XSync (x_disp, False);
 	r_data->scr_fullupdate = 0;
@@ -437,27 +404,8 @@ x11_sw32_update (sw_ctx_t *ctx, vrect_t *rects)
 				*dest++ = *src++;
 			}
 		}
-		if (doShm) {
-			if (!XShmPutImage (x_disp, x_win, x_gc,
-							   x_framebuffer[current_framebuffer],
-							   rects->x, rects->y, rects->x, rects->y,
-							   rects->width, rects->height, True)) {
-				Sys_Error ("VID_Update: XShmPutImage failed");
-			}
-			oktodraw = false;
-			while (!oktodraw)
-				X11_ProcessEvent ();
-			rects = rects->next;
-
-			current_framebuffer = !current_framebuffer;
-		} else {
-			if (XPutImage (x_disp, x_win, x_gc, x_framebuffer[0],
-							rects->x, rects->y, rects->x, rects->y,
-							rects->width, rects->height)) {
-				Sys_Error ("VID_Update: XPutImage failed");
-			}
-			rects = rects->next;
-		}
+		x11_put_image (rects);
+		rects = rects->next;
 	}
 	XSync (x_disp, False);
 	r_data->scr_fullupdate = 0;
