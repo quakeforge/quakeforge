@@ -36,7 +36,7 @@
 #endif
 
 #include "QF/csqc.h"
-#include "QF/keys.h"
+#include "QF/input.h"
 #include "QF/progs.h"
 #include "QF/zone.h"
 
@@ -89,7 +89,7 @@ bi_Key_LookupBinding (progs_t *pr)
 	imt = Key_FindIMT (imt_name);
 	if (imt) {
 		for (i = 0; i < QFK_LAST; i++) {
-			keybind = imt->bindings[i].str;
+//XXX			keybind = imt->button_bindings.a[i].str;
 			if (keybind == NULL) {
 			  continue;
 			}
@@ -123,7 +123,7 @@ bi_Key_CountBinding (progs_t *pr)
 	imt = Key_FindIMT (imt_name);
 	if (imt) {
 		for (i = 0; i < QFK_LAST; i++) {
-			keybind = imt->bindings[i].str;
+//XXX			keybind = imt->button_bindings.a[i].str;
 			if (keybind == NULL) {
 			  continue;
 			}

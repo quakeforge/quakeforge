@@ -217,6 +217,8 @@ int IN_RegisterAxis (in_axis_t *axis, const char *name,
 					 const char *description);
 in_button_t *IN_FindButton (const char *name);
 
+void IN_Binding_Init (void);
+
 #endif
 
 #endif//__QF_input_binding_h

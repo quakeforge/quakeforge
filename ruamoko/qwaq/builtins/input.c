@@ -563,6 +563,7 @@ static void
 qwaq_input_init (qwaq_input_resources_t *res)
 {
 	res->input_event_handler = IE_Add_Handler (qwaq_input_event_handler, res);
+	IE_Set_Focus (res->input_event_handler);
 	IN_DriverData (term_driver_handle, res);
 
 	if (res->key_sequences) {

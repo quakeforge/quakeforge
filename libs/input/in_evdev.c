@@ -59,11 +59,6 @@ static PR_RESMAP (devmap_t) devmap;
 static devmap_t *devmap_list;
 
 static void
-in_evdev_keydest_callback (keydest_t key_dest, void *data)
-{
-}
-
-static void
 in_evdev_add_select (qf_fd_set *fdset, int *maxfd, void *data)
 {
 	inputlib_add_select (&fdset->fdset, maxfd);
@@ -179,8 +174,6 @@ device_remove (device_t *dev)
 static void
 in_evdev_init (void *data)
 {
-	Key_KeydestCallback (in_evdev_keydest_callback, 0);
-
 	inputlib_init (device_add, device_remove);
 }
 

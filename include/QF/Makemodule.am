@@ -114,6 +114,8 @@ include_qf_glsl = \
 include_qf_input = \
 	include/QF/binding.h \
 	include/QF/event.h
+	include/QF/imt.h
+
 include_qf_math = \
 	include/QF/math/dual.h \
 	include/QF/math/half.h \

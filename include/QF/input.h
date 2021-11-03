@@ -45,6 +45,7 @@ typedef struct in_buttoninfo_s {
 } in_buttoninfo_t;
 
 #include "QF/input/binding.h"
+#include "QF/input/imt.h"
 
 #ifndef __QFCC__
 
@@ -104,15 +105,17 @@ typedef struct in_device_s {
 	\a button_info holds the current raw state of the button
 
 	\a axis_imt_id is 0 if the device has no axis bindings, otherwise it is
-    the based index into the imt array for the imt group.
+    the index into the imt array for the imt group.
 
-	\a button_imt_i is 0 if the device has no button bindings, otherwise it
+	\a button_imt_id is 0 if the device has no button bindings, otherwise it
     is the index into the imt array for the imt group.
 */
 typedef struct in_devbindings_s {
 	const char *name;		///< name used when binding inputs
 	const char *id;			///< physical device name or id (preferred)
-	in_device_t *device;	///< device associated with these bindings
+	int         devid;		///< id of device associated with these bindings
+	int         num_axes;
+	int         num_buttons;
 	in_axisinfo_t *axis_info;		///< axis range info and raw state
 	in_buttoninfo_t *button_info;	///< button raw state
     int         axis_imt_id;    ///< index into array of imt axis bindings

@@ -41,14 +41,43 @@
 
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
+#include "QF/cmem.h"
 #include "QF/cvar.h"
 #include "QF/darray.h"
 #include "QF/dstring.h"
 #include "QF/keys.h"
+#include "QF/input.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "compat.h"
 #include "old_keys.h"
+
+static memsuper_t *binding_mem;
+/*
+static in_axisbinding_t *
+alloc_axis_binding (void)
+{
+	return cmemalloc (binding_mem, sizeof (in_axisbinding_t));
+}
+*/
+static void
+free_axis_binding (in_axisbinding_t *binding)
+{
+	cmemfree (binding_mem, binding);
+}
+
+static in_buttonbinding_t *
+alloc_button_binding (void)
+{
+	return cmemalloc (binding_mem, sizeof (in_buttonbinding_t));
+}
+
+static void
+free_button_binding (in_buttonbinding_t *binding)
+{
+	cmemfree (binding_mem, binding);
+}
 
 /*  key up events are sent even if in console mode */
 
@@ -89,12 +118,6 @@ static const char *keydest_names[] = {
 
 	"key_last"
 };
-
-
-typedef struct {
-	const char *name;
-	imt_t	imtnum;
-} imtname_t;
 
 typedef struct {
 	const char *name;
@@ -615,12 +638,25 @@ Key_SetBinding (imt_t *imt, knum_t keynum, const char *binding)
 	if (keynum == (knum_t) -1)
 		return;
 
-	if (imt->bindings[keynum].str) {
-		free (imt->bindings[keynum].str);
-		imt->bindings[keynum].str = NULL;
+	if (imt->button_bindings.a[keynum]) {
+		if (imt->button_bindings.a[keynum]->type == inb_command) {
+			free (imt->button_bindings.a[keynum]->command);
+		}
+		free_button_binding (imt->button_bindings.a[keynum]);
+		imt->button_bindings.a[keynum] = 0;
 	}
 	if (binding) {
-		imt->bindings[keynum].str = strdup(binding);
+		in_buttonbinding_t *b = alloc_button_binding ();
+		imt->button_bindings.a[keynum] = b;
+		in_button_t *button;
+		if (binding[0] == '+' && (button = IN_FindButton (binding + 1))) {
+			b->type = inb_button;
+			b->bind_id = keynum;    //FIXME alloc?
+			b->button = button;
+		} else {
+			b->type = inb_command;
+			b->command = strdup(binding);
+		}
 	}
 }
 
@@ -659,14 +695,23 @@ process_binding (knum_t key, const char *kb)
 static qboolean
 Key_Game (knum_t key, short unicode)
 {
-	const char *kb;
 	imt_t      *imt = key_targets[key_dest].active;
 
 	while (imt) {
-		kb = imt->bindings[key].str;
-		if (kb) {
-			if (keydown[key] <= 1)
-				process_binding (key, kb);
+		in_buttonbinding_t *b = imt->button_bindings.a[key];
+		if (b) {
+			switch (b->type) {
+				case inb_button:
+					if (keydown[key] <= 1) {
+						IN_ButtonAction (b->button, key, keydown[key]);
+					}
+					break;
+				case inb_command:
+					if (keydown[key] <= 1) {
+						process_binding (key, b->command);
+					}
+					break;
+			}
 			return true;
 		}
 		imt = imt->chain;
@@ -830,9 +875,20 @@ Key_IMT_Drop_All_f (void)
 		while (key_targets[kd].imts) {
 			imt = key_targets[kd].imts;
 			key_targets[kd].imts = imt->next;
-			for (int i = 0; i < QFK_LAST; i++) {
-				if (imt->bindings[i].str) {
-					free (imt->bindings[i].str);
+			for (size_t i = 0; i < imt->axis_bindings.size; i++) {
+				free_axis_binding (imt->axis_bindings.a[i]);
+			}
+			for (size_t i = 0; i < imt->button_bindings.size; i++) {
+				in_buttonbinding_t *b = imt->button_bindings.a[i];
+				if (b) {
+					switch (b->type) {
+						case inb_button:
+							break;
+						case inb_command:
+							free (b->command);
+							break;
+					}
+					free_button_binding (b);
 				}
 			}
 			free ((char *) imt->name);
@@ -843,7 +899,7 @@ Key_IMT_Drop_All_f (void)
 }
 
 static void
-Key_In_Bind (const char *imt_name, const char *key_name, const char *cmd)
+Key_In_BindButton (const char *imt_name, const char *key_name, const char *cmd)
 {
 	imt_t      *imt;
 	int         key;
@@ -861,11 +917,21 @@ Key_In_Bind (const char *imt_name, const char *key_name, const char *cmd)
 	}
 
 	if (!cmd) {
-		if (imt->bindings[key].str)
-			Sys_Printf ("%s %s \"%s\"\n", imt_name, key_name,
-						imt->bindings[key].str);
-		else
+		in_buttonbinding_t *b = imt->button_bindings.a[key];
+		if (b) {
+			switch (b->type) {
+				case inb_button:
+					Sys_Printf ("%s %s \"+%s\"\n", imt_name, key_name,
+								b->button->name);
+					break;
+				case inb_command:
+					Sys_Printf ("%s %s \"%s\"\n", imt_name, key_name,
+								b->command);
+					break;
+			}
+		} else {
 			Sys_Printf ("%s %s is not bound\n", imt_name, key_name);
+		}
 		return;
 	}
 	Key_SetBinding (imt, key, cmd);
@@ -880,25 +946,25 @@ Key_In_Bind_f (void)
 
 	c = Cmd_Argc ();
 
-	if (c < 3) {
-		Sys_Printf ("in_bind <imt> <key> [command] : attach a command to a "
-					"key\n");
+	if (c < 4 || strcmp (Cmd_Argv (2), "button") != 0) {
+		Sys_Printf ("in_bind <imt> button <key> [command]\n"
+					"    attach a command to a key\n");
 		return;
 	}
 
 	imt = Cmd_Argv (1);
 
-	key = Cmd_Argv (2);
+	key = Cmd_Argv (3);
 
-	if (c >= 4) {
+	if (c >= 5) {
 		cmd_buf = dstring_newstr ();
-		for (i = 3; i < c; i++) {
+		for (i = 4; i < c; i++) {
 			dasprintf (cmd_buf, "%s%s", i > 3 ? " " : "", Cmd_Argv (i));
 		}
 		cmd = cmd_buf->str;
 	}
 
-	Key_In_Bind (imt, key, cmd);
+	Key_In_BindButton (imt, key, cmd);
 	if (cmd_buf) {
 		dstring_delete (cmd_buf);
 	}
@@ -941,7 +1007,7 @@ Key_Bind_f (void)
 		cmd = cmd_buf->str;
 	}
 
-	Key_In_Bind ("imt_mod", key, cmd);
+	Key_In_BindButton ("imt_mod", key, cmd);
 	if (cmd_buf) {
 		dstring_delete (cmd_buf);
 	}
@@ -1054,9 +1120,6 @@ key_printf (QFile *f, const char *fmt, ...)
 static void
 key_write_imt (QFile *f, keydest_t kd, imt_t *imt)
 {
-	int         i;
-	const char *bind;
-
 	if (!imt || imt->written) {
 		return;
 	}
@@ -1068,11 +1131,19 @@ key_write_imt (QFile *f, keydest_t kd, imt_t *imt)
 	} else {
 		key_printf (f, "imt_create %s %s\n", keydest_names[kd], imt->name);
 	}
-	for (i = 0; i < QFK_LAST; i++) {
-		bind = imt->bindings[i].str;
-		if (bind) {
-			key_printf (f, "in_bind %s %s \"%s\"\n", imt->name,
-						Key_KeynumToString (i), bind);
+	for (size_t i = 0; i < imt->button_bindings.size; i++) {
+		in_buttonbinding_t *b = imt->button_bindings.a[i];
+		if (b) {
+			switch (b->type) {
+				case inb_button:
+					key_printf (f, "in_bind %s button %s \"+%s\"\n", imt->name,
+								Key_KeynumToString (i), b->button->name);
+					break;
+				case inb_command:
+					key_printf (f, "in_bind %s button %s \"%s\"\n", imt->name,
+								Key_KeynumToString (i), b->command);
+					break;
+			}
 		}
 	}
 }
@@ -1161,7 +1232,7 @@ Key_Event (knum_t key, short unicode, qboolean down)
 	//FIXME maybe still a tad over-coupled. Use callbacks for menu and console
 	//toggles? Should keys know anything about menu and console?
 	if (key_dest != key_console && key == key_toggleconsole
-	    && keydown[key] == 1) {
+		&& keydown[key] == 1) {
 		Cbuf_AddText (cbuf, "toggleconsole");
 		return;
 	}
@@ -1258,8 +1329,8 @@ Key_CreateDefaultIMTs (void)
 					   default_imts[i].chain_imt_name);
 	}
 	for (i = 0; default_bindings[i].imt; i++) {
-		Key_In_Bind (default_bindings[i].imt, default_bindings[i].key,
-					 default_bindings[i].command);
+		Key_In_BindButton (default_bindings[i].imt, default_bindings[i].key,
+						   default_bindings[i].command);
 	}
 }
 
@@ -1320,7 +1391,15 @@ const char *
 Key_GetBinding (imt_t *imt, knum_t key)
 {
 	if (imt) {
-		return imt->bindings[key].str;
+		in_buttonbinding_t *b = imt->button_bindings.a[key];
+		if (b) {
+			switch (b->type) {
+				case inb_button:
+					return va (0, "+%s", b->button->name);
+				case inb_command:
+					return b->command;
+			}
+		}
 	}
 	return 0;
 }

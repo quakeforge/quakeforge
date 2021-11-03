@@ -37,7 +37,7 @@
 
 #include "QF/cbuf.h"
 #include "QF/cmd.h"
-#include "QF/keys.h"
+#include "QF/input.h"
 #include "QF/sys.h"
 #include "QF/gib.h"
 

@@ -102,7 +102,7 @@ IN_DriverData (int handle, void *data)
 }
 
 static int
-in_add_device (int driver, in_device_t *device, const char *name,
+in_add_device (int driver, void *device, const char *name,
 			   const char *id)
 {
 	size_t      devid;
@@ -353,7 +353,8 @@ IN_Init (cbuf_t *cbuf)
 		in_regdriver_t *rd = &in_drivers.a[i];
 		rd->driver.init (rd->data);
 	}
-	Key_Init (cbuf);
+	IN_Binding_Init ();
+	//Key_Init (cbuf);
 	//JOY_Init ();
 
 	in_mouse_x = in_mouse_y = 0.0;
@@ -362,7 +363,7 @@ IN_Init (cbuf_t *cbuf)
 void
 IN_Init_Cvars (void)
 {
-	Key_Init_Cvars ();
+	//Key_Init_Cvars ();
 	//JOY_Init_Cvars ();
 	in_grab = Cvar_Get ("in_grab", "0", CVAR_ARCHIVE, IN_UpdateGrab,
 						"With this set to 1, quake will grab the mouse, "
@@ -392,7 +393,7 @@ IN_ClearStates (void)
 			rd->driver.clear_states (rd->data);
 		}
 	}
-	Key_ClearStates ();
+	//Key_ClearStates ();
 }
 
 #ifdef HAVE_EVDEV

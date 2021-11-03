@@ -534,26 +534,12 @@ typedef enum {
 #ifndef __QFCC__
 extern knum_t       key_toggleconsole;
 
-typedef struct keybind_s {
-	char *str;
-} keybind_t;
-
-/**	Input Mapping Table
-*/
-typedef struct imt_s {
-	struct imt_s *next;				///< list of tables attached to key_dest
-	struct imt_s *chain;			///< fallback table if key not bound
-	const char *name;				///< for user interaction
-	keybind_t   bindings[QFK_LAST];
-	int         written;			///< avoid duplicate config file writes
-} imt_t;
-
 /**	Chain of input mapping tables ascociated with a keydest sub-system (game,
 	menu, etc).
 */
 typedef struct keytarget_s {
-	imt_t      *imts;				///< list of tables attached to this target
-	imt_t      *active;				///< currently active table in this target
+	struct imt_s *imts;				///< list of tables attached to this target
+	struct imt_s *active;			///< currently active table in this target
 } keytarget_t;
 
 extern int		keydown[QFK_LAST];
@@ -612,7 +598,7 @@ void Key_Init_Cvars (void);
 	\param imt_name	The name of the imt to find. Case insensitive.
 	\return			The named imt, or null if not found.
 */
-imt_t *Key_FindIMT (const char *imt_name) __attribute__((pure));
+struct imt_s *Key_FindIMT (const char *imt_name) __attribute__((pure));
 
 /**	Create a new imt and attach it to the specified keydest target.
 
@@ -667,7 +653,7 @@ void Key_ClearStates (void);
 	\param key		The key for which to get the binding.
 	\return			The command string bound to the key, or null if unbound.
 */
-const char *Key_GetBinding (imt_t *imt, knum_t key) __attribute__((pure));
+const char *Key_GetBinding (struct imt_s *imt, knum_t key) __attribute__((pure));
 
 /** Bind a command string to a key in the specified input mapping table.
 
@@ -678,7 +664,7 @@ const char *Key_GetBinding (imt_t *imt, knum_t key) __attribute__((pure));
 	\param keynum	The key to which the command string will be bound.
 	\param binding	The command string that will be bound.
 */
-void Key_SetBinding (imt_t *imt, knum_t keynum, const char *binding);
+void Key_SetBinding (struct imt_s *imt, knum_t keynum, const char *binding);
 
 /**	Set the current keydest target.
 
