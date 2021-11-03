@@ -71,6 +71,11 @@ typedef enum {
 	ie_button,
 } IE_event_type;
 
+#define IE_broadcast_events (0 \
+		| (1 << ie_add_device) \
+		| (1 << ie_remove_device) \
+	)
+
 typedef struct {
 	IE_event_type type;
 	uint64_t    when;

@@ -54,6 +54,16 @@ static unsigned focus;
 int
 IE_Send_Event (const IE_event_t *event)
 {
+	if ((1 << event->type) & IE_broadcast_events) {
+		for (size_t i = 0; i < ie_handlers.size; i++) {
+			ie_reghandler_t *reg = &ie_handlers.a[i];
+			if (reg->handler) {
+				reg->handler (event, reg->data);
+			}
+		}
+		return 1;
+	}
+
 	if (focus < ie_handlers.size && ie_handlers.a[focus].handler) {
 		ie_reghandler_t *reg = &ie_handlers.a[focus];
 		return reg->handler (event, reg->data);
