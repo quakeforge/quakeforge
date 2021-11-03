@@ -73,11 +73,43 @@
 #include "QF/sound.h"
 #include "QF/sys.h"
 
+#include "QF/input/event.h"
+
 #include "compat.h"
 #include "context_x11.h"
 #include "dga_check.h"
 #include "qfselect.h"
 #include "vid_internal.h"
+
+typedef struct x11_device_s {
+	const char *name;
+	int         num_axes;
+	int         num_buttons;
+	in_axisinfo_t *axes;
+	in_buttoninfo_t *buttons;
+	int         devid;
+} x11_device_t;
+
+// The X11 protocol supports only 256 keys
+static in_buttoninfo_t x11_key_buttons[256];
+// X11 mice have only two axes (FIXME always true?)
+static in_axisinfo_t x11_mouse_axes[2];
+// FIXME assume up to 32 mouse buttons
+static in_buttoninfo_t x11_mouse_buttons[32];
+
+#define infosize(x) (sizeof (x) / sizeof (x[0]))
+
+static x11_device_t x11_keyboard_device = {
+	"x11:keyboard",
+	0, infosize (x11_key_buttons),
+	0, x11_key_buttons,
+};
+
+static x11_device_t x11_mouse_device = {
+	"x11:mouse",
+	infosize (x11_mouse_axes), infosize (x11_mouse_buttons),
+	x11_mouse_axes, x11_mouse_buttons,
+};
 
 cvar_t	   *in_snd_block;
 cvar_t	   *in_dga;
@@ -89,6 +121,7 @@ static int  p_mouse_x, p_mouse_y;
 static int input_grabbed = 0;
 
 static int x11_fd;
+static int x11_driver_handle = -1;
 
 static void
 dga_on (void)
@@ -195,7 +228,7 @@ enter_notify (XEvent *event)
 	p_mouse_x = event->xmotion.x;
 	p_mouse_y = event->xmotion.y;
 }
-
+#if 0
 static void
 XLateKey (XKeyEvent *ev, int *k, int *u)
 {
@@ -597,6 +630,7 @@ XLateKey (XKeyEvent *ev, int *k, int *u)
 	*k = key;
 	*u = unicode;
 }
+#endif
 
 static void
 in_x11_keydest_callback (keydest_t key_dest, void *data)
@@ -606,43 +640,6 @@ in_x11_keydest_callback (keydest_t key_dest, void *data)
 //	} else {
 //		XAutoRepeatOn (x_disp);
 //	}
-}
-
-static void
-event_key (XEvent *event)
-{
-	int key, unicode;
-
-	x_time = event->xkey.time;
-	XLateKey (&event->xkey, &key, &unicode);
-	Key_Event (key, unicode, event->type == KeyPress);
-}
-
-static void
-event_button (XEvent *event)
-{
-	unsigned    but;
-
-	x_time = event->xbutton.time;
-
-	but = event->xbutton.button;
-	if (but > 32)
-		return;
-	if (but == 2)
-		but = 3;
-	else if (but == 3)
-		but = 2;
-	switch (but) {
-		default:
-			Key_Event (QFM_BUTTON1 + but - 1, 0, event->type == ButtonPress);
-			break;
-		case 4:
-			Key_Event (QFM_WHEEL_UP, 0, event->type == ButtonPress);
-			break;
-		case 5:
-			Key_Event (QFM_WHEEL_DOWN, 0, event->type == ButtonPress);
-			break;
-	}
 }
 
 static void
@@ -687,6 +684,36 @@ center_pointer (void)
 }
 
 static void
+in_x11_send_axis_event (int devid, in_axisinfo_t *axis)
+{
+	IE_event_t  event = {
+		.type = ie_axis,
+		.when = Sys_LongTime (),
+		.axis = {
+			.devid = devid,
+			.axis = axis->axis,
+			.value = axis->value,
+		},
+	};
+	IE_Send_Event (&event);
+}
+
+static void
+in_x11_send_button_event (int devid, in_buttoninfo_t *button)
+{
+	IE_event_t  event = {
+		.type = ie_button,
+		.when = Sys_LongTime (),
+		.button = {
+			.devid = devid,
+			.button = button->button,
+			.state = button->state,
+		},
+	};
+	IE_Send_Event (&event);
+}
+
+static void
 event_motion (XEvent *event)
 {
 	x_time = event->xmotion.time;
@@ -697,26 +724,67 @@ event_motion (XEvent *event)
 	}
 
 	if (dga_active) {
-		in_mouse_x += event->xmotion.x_root;
-		in_mouse_y += event->xmotion.y_root;
+		x11_mouse_axes[0].value = event->xmotion.x_root;
+		x11_mouse_axes[1].value = event->xmotion.y_root;
 	} else {
 		if (vid_fullscreen->int_val || input_grabbed) {
 			if (!event->xmotion.send_event) {
 				unsigned    dist_x = abs (viddef.width / 2 - event->xmotion.x);
 				unsigned    dist_y = abs (viddef.height / 2 - event->xmotion.y);
-				in_mouse_x += (event->xmotion.x - p_mouse_x);
-				in_mouse_y += (event->xmotion.y - p_mouse_y);
+
+				x11_mouse_axes[0].value = event->xmotion.x - p_mouse_x;
+				x11_mouse_axes[1].value = event->xmotion.y - p_mouse_y;
 				if (dist_x > viddef.width / 4 || dist_y > viddef.height / 4) {
 					center_pointer ();
 				}
 			}
 		} else {
-			in_mouse_x += (event->xmotion.x - p_mouse_x);
-			in_mouse_y += (event->xmotion.y - p_mouse_y);
+			x11_mouse_axes[0].value = event->xmotion.x - p_mouse_x;
+			x11_mouse_axes[1].value = event->xmotion.y - p_mouse_y;
 		}
 		p_mouse_x = event->xmotion.x;
 		p_mouse_y = event->xmotion.y;
 	}
+	in_x11_send_axis_event (x11_mouse_device.devid, &x11_mouse_axes[0]);
+	in_x11_send_axis_event (x11_mouse_device.devid, &x11_mouse_axes[1]);
+}
+
+static void
+event_button (XEvent *event)
+{
+	unsigned    but;
+
+	x_time = event->xbutton.time;
+
+	but = event->xbutton.button;
+	if (but > 32) {
+		return;
+	}
+
+	if (but == 2) {
+		but = 3;
+	} else if (but == 3) {
+		but = 2;
+	}
+
+	x11_mouse_buttons[but].state = event->type == ButtonPress;
+	in_x11_send_button_event (x11_mouse_device.devid, &x11_mouse_buttons[but]);
+}
+
+static void
+event_key (XEvent *event)
+{
+	int key/*, unicode*/;
+
+	x_time = event->xkey.time;
+	// X11 protocol supports only 256 keys. The key codes are the AT scan codes
+	// offset by 8 (so Esc is 9 instead of 1).
+	key = (event->xkey.keycode - 8) & 0xff;
+	x11_key_buttons[key].state = event->type == KeyPress;
+	in_x11_send_button_event (x11_keyboard_device.devid,
+							  &x11_key_buttons[key]);
+	//XLateKey (&event->xkey, &key, &unicode);
+	//Key_Event (key, unicode, event->type == KeyPress);
 }
 
 static void
@@ -800,6 +868,35 @@ in_x11_check_select (qf_fd_set *fdset, void *data)
 }
 
 static void
+in_x11_axis_info (void *data, void *device, in_axisinfo_t *axes, int *numaxes)
+{
+	x11_device_t *dev = device;
+	if (!axes) {
+		*numaxes = dev->num_axes;
+		return;
+	}
+	if (*numaxes > dev->num_axes) {
+		*numaxes = dev->num_axes;
+	}
+	memcpy (axes, dev->axes, *numaxes * sizeof (in_axisinfo_t));
+}
+
+static void
+in_x11_button_info (void *data, void *device, in_buttoninfo_t *buttons,
+					int *numbuttons)
+{
+	x11_device_t *dev = device;
+	if (!buttons) {
+		*numbuttons = dev->num_buttons;
+		return;
+	}
+	if (*numbuttons > dev->num_buttons) {
+		*numbuttons = dev->num_buttons;
+	}
+	memcpy (buttons, dev->buttons, *numbuttons * sizeof (in_buttoninfo_t));
+}
+
+static void
 in_x11_shutdown (void *data)
 {
 	Sys_MaskPrintf (SYS_vid, "in_x11_shutdown\n");
@@ -823,6 +920,18 @@ in_x11_init_cvars (void)
 	in_mouse_accel = Cvar_Get ("in_mouse_accel", "1", CVAR_ARCHIVE,
 							   in_mouse_accel_f,
 							   "set to 0 to remove mouse acceleration");
+}
+
+static void
+x11_add_device (x11_device_t *dev)
+{
+	for (int i = 0; i < dev->num_axes; i++) {
+		dev->axes[i].axis = i;
+	}
+	for (int i = 0; i < dev->num_buttons; i++) {
+		dev->buttons[i].button = i;
+	}
+	dev->devid = IN_AddDevice (x11_driver_handle, dev, dev->name, dev->name);
 }
 
 static void
@@ -860,6 +969,8 @@ in_x11_init (void *data)
 	X11_AddEvent (SelectionNotify, &selection_notify);
 	X11_AddEvent (EnterNotify, &enter_notify);
 
+	x11_add_device (&x11_keyboard_device);
+
 	if (!COM_CheckParm ("-nomouse")) {
 		dga_avail = VID_CheckDGA (x_disp, NULL, NULL, NULL);
 		Sys_MaskPrintf (SYS_vid, "VID_CheckDGA returned %d\n", dga_avail);
@@ -867,6 +978,8 @@ in_x11_init (void *data)
 		X11_AddEvent (ButtonPress, &event_button);
 		X11_AddEvent (ButtonRelease, &event_button);
 		X11_AddEvent (MotionNotify, &event_motion);
+
+		x11_add_device (&x11_mouse_device);
 
 		in_mouse_avail = 1;
 	}
@@ -889,12 +1002,15 @@ static in_driver_t in_x11_driver = {
 	.check_select = in_x11_check_select,
 	.clear_states = in_x11_clear_states,
 	.grab_input = in_x11_grab_input,
+
+	.axis_info = in_x11_axis_info,
+	.button_info = in_x11_button_info,
 };
 
 static void __attribute__((constructor))
 in_x11_register_driver (void)
 {
-	IN_RegisterDriver (&in_x11_driver, 0);
+	x11_driver_handle = IN_RegisterDriver (&in_x11_driver, 0);
 }
 
 int x11_force_link;

@@ -348,12 +348,12 @@ void
 IN_Init (cbuf_t *cbuf)
 {
 	Sys_RegisterShutdown (IN_shutdown, 0);
+	IN_Binding_Init ();
 
 	for (size_t i = 0; i < in_drivers.size; i++) {
 		in_regdriver_t *rd = &in_drivers.a[i];
 		rd->driver.init (rd->data);
 	}
-	IN_Binding_Init ();
 	//Key_Init (cbuf);
 	//JOY_Init ();
 
