@@ -883,7 +883,7 @@ in_x11_grab_input (void *data, int grab)
 		in_dga_f (in_dga);
 	}
 }
-
+#ifdef X11_USE_SELECT
 static void
 in_x11_add_select (qf_fd_set *fdset, int *maxfd, void *data)
 {
@@ -897,10 +897,17 @@ static void
 in_x11_check_select (qf_fd_set *fdset, void *data)
 {
 	if (QF_FD_ISSET (x11_fd, fdset)) {
+		Sys_Printf ("in_x11_check_select\n");
 		X11_ProcessEvents ();	// Get events from X server.
 	}
 }
-
+#else
+static void
+in_x11_process_events (void *data)
+{
+	X11_ProcessEvents ();	// Get events from X server.
+}
+#endif
 static void
 in_x11_axis_info (void *data, void *device, in_axisinfo_t *axes, int *numaxes)
 {
@@ -1032,8 +1039,12 @@ in_x11_clear_states (void *data)
 static in_driver_t in_x11_driver = {
 	.init = in_x11_init,
 	.shutdown = in_x11_shutdown,
+#ifdef X11_USE_SELECT
 	.add_select = in_x11_add_select,
 	.check_select = in_x11_check_select,
+#else
+	.process_events = in_x11_process_events,
+#endif
 	.clear_states = in_x11_clear_states,
 	.grab_input = in_x11_grab_input,
 
