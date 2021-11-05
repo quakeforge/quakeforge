@@ -100,13 +100,13 @@ static in_buttoninfo_t x11_mouse_buttons[32];
 #define infosize(x) (sizeof (x) / sizeof (x[0]))
 
 static x11_device_t x11_keyboard_device = {
-	"x11:keyboard",
+	"core:keyboard",
 	0, infosize (x11_key_buttons),
 	0, x11_key_buttons,
 };
 
 static x11_device_t x11_mouse_device = {
-	"x11:mouse",
+	"core:mouse",
 	infosize (x11_mouse_axes), infosize (x11_mouse_buttons),
 	x11_mouse_axes, x11_mouse_buttons,
 };
