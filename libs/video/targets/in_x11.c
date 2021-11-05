@@ -117,7 +117,8 @@ cvar_t	   *in_mouse_accel;
 
 static qboolean dga_avail;
 static qboolean dga_active;
-static int  p_mouse_x, p_mouse_y;
+static IE_mouse_event_t x11_mouse;
+static IE_key_event_t x11_key;
 static int input_grabbed = 0;
 
 static int x11_fd;
@@ -225,10 +226,10 @@ enter_notify (XEvent *event)
 {
 	x_time = event->xcrossing.time;
 
-	p_mouse_x = event->xmotion.x;
-	p_mouse_y = event->xmotion.y;
+	x11_mouse.x = event->xmotion.x;
+	x11_mouse.y = event->xmotion.y;
 }
-#if 0
+
 static void
 XLateKey (XKeyEvent *ev, int *k, int *u)
 {
@@ -630,7 +631,6 @@ XLateKey (XKeyEvent *ev, int *k, int *u)
 	*k = key;
 	*u = unicode;
 }
-#endif
 
 static void
 in_x11_keydest_callback (keydest_t key_dest, void *data)
@@ -699,6 +699,29 @@ in_x11_send_axis_event (int devid, in_axisinfo_t *axis)
 }
 
 static void
+in_x11_send_mouse_event (IE_mouse_type type)
+{
+	IE_event_t  event = {
+		.type = ie_mouse,
+		.when = Sys_LongTime (),
+		.mouse = x11_mouse,
+	};
+	event.mouse.type = type;
+	IE_Send_Event (&event);
+}
+
+static void
+in_x11_send_key_event (int press)
+{
+	IE_event_t  event = {
+		.type = ie_key,
+		.when = Sys_LongTime (),
+		.key = x11_key,
+	};
+	IE_Send_Event (&event);
+}
+
+static void
 in_x11_send_button_event (int devid, in_buttoninfo_t *button)
 {
 	IE_event_t  event = {
@@ -718,8 +741,8 @@ event_motion (XEvent *event)
 {
 	x_time = event->xmotion.time;
 	if (x_time <= x_mouse_time) {
-		p_mouse_x = event->xmotion.x;
-		p_mouse_y = event->xmotion.y;
+		x11_mouse.x = event->xmotion.x;
+		x11_mouse.y = event->xmotion.y;
 		return;
 	}
 
@@ -732,21 +755,24 @@ event_motion (XEvent *event)
 				unsigned    dist_x = abs (viddef.width / 2 - event->xmotion.x);
 				unsigned    dist_y = abs (viddef.height / 2 - event->xmotion.y);
 
-				x11_mouse_axes[0].value = event->xmotion.x - p_mouse_x;
-				x11_mouse_axes[1].value = event->xmotion.y - p_mouse_y;
+				x11_mouse_axes[0].value = event->xmotion.x - x11_mouse.x;
+				x11_mouse_axes[1].value = event->xmotion.y - x11_mouse.y;
 				if (dist_x > viddef.width / 4 || dist_y > viddef.height / 4) {
 					center_pointer ();
 				}
 			}
 		} else {
-			x11_mouse_axes[0].value = event->xmotion.x - p_mouse_x;
-			x11_mouse_axes[1].value = event->xmotion.y - p_mouse_y;
+			x11_mouse_axes[0].value = event->xmotion.x - x11_mouse.x;
+			x11_mouse_axes[1].value = event->xmotion.y - x11_mouse.y;
 		}
-		p_mouse_x = event->xmotion.x;
-		p_mouse_y = event->xmotion.y;
 	}
 	in_x11_send_axis_event (x11_mouse_device.devid, &x11_mouse_axes[0]);
 	in_x11_send_axis_event (x11_mouse_device.devid, &x11_mouse_axes[1]);
+
+	x11_mouse.shift = event->xmotion.state & 0xff;
+	x11_mouse.x = event->xmotion.x;
+	x11_mouse.y = event->xmotion.y;
+	in_x11_send_mouse_event (ie_mousemove);
 }
 
 static void
@@ -756,25 +782,31 @@ event_button (XEvent *event)
 
 	x_time = event->xbutton.time;
 
-	but = event->xbutton.button;
-	if (but > 32) {
+	but = event->xbutton.button - 1;
+	if (but >= 32) {
 		return;
 	}
 
-	if (but == 2) {
-		but = 3;
-	} else if (but == 3) {
-		but = 2;
-	}
+	int press = event->type == ButtonPress;
 
-	x11_mouse_buttons[but].state = event->type == ButtonPress;
+	x11_mouse_buttons[but].state = press;
 	in_x11_send_button_event (x11_mouse_device.devid, &x11_mouse_buttons[but]);
+
+	x11_mouse.shift = event->xmotion.state & 0xff;
+	x11_mouse.x = event->xmotion.x;
+	x11_mouse.y = event->xmotion.y;
+	if (press) {
+		x11_mouse.buttons |= 1 << but;
+	} else {
+		x11_mouse.buttons &= ~(1 << but);
+	}
+	in_x11_send_mouse_event (press ? ie_mousedown : ie_mouseup);
 }
 
 static void
 event_key (XEvent *event)
 {
-	int key/*, unicode*/;
+	int key;
 
 	x_time = event->xkey.time;
 	// X11 protocol supports only 256 keys. The key codes are the AT scan codes
@@ -783,8 +815,10 @@ event_key (XEvent *event)
 	x11_key_buttons[key].state = event->type == KeyPress;
 	in_x11_send_button_event (x11_keyboard_device.devid,
 							  &x11_key_buttons[key]);
-	//XLateKey (&event->xkey, &key, &unicode);
-	//Key_Event (key, unicode, event->type == KeyPress);
+
+	x11_key.shift = event->xmotion.state & 0xff;
+	XLateKey (&event->xkey, &x11_key.code, &x11_key.unicode);
+	in_x11_send_key_event (event->type == KeyPress);
 }
 
 static void

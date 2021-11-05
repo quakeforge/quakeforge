@@ -33,14 +33,33 @@
 
 #include "QF/qtypes.h"
 
+typedef enum {
+	ies_shift = 1,
+	ies_capslock = 2,
+	ies_control = 4,
+	ies_alt = 8,
+} IE_shift;
+
+typedef enum {
+	ie_mousedown,
+	ie_mouseup,
+	ie_mouseclick,
+	ie_mousemove,
+	ie_mouseauto,
+} IE_mouse_type;
+
 typedef struct {
+	IE_mouse_type type;
+	unsigned    shift;	///< ored bit pattern of IE_shift
 	int         x, y;
 	unsigned    buttons;
+	int         click;
 } IE_mouse_event_t;
 
 typedef struct {
-	int         key_code;
-	qboolean    pressed;
+	int         code;
+	int         unicode;
+	unsigned    shift;	///< ored bit pattern of IE_shift
 } IE_key_event_t;
 
 typedef struct {
