@@ -932,7 +932,7 @@ signal_handler (int sig)
 		case SIGTERM:
 			signal (SIGINT,  SIG_DFL);
 			signal (SIGTERM, SIG_DFL);
-			Sys_Quit ();
+			exit(1);
 		default:
 			if (!setjmp (aiee_abort)) {
 				if (signal_hook)
@@ -986,10 +986,12 @@ signal_handler (int sig, siginfo_t *info, void *ucontext)
 		case SIGINT:
 		case SIGTERM:
 		case SIGHUP:
+		case SIGQUIT:
 			sigaction (SIGHUP,  &save_hup,  0);
 			sigaction (SIGINT,  &save_int,  0);
 			sigaction (SIGTERM, &save_term, 0);
-			Sys_Quit ();
+			sigaction (SIGQUIT, &save_quit, 0);
+			exit(1);
 		default:
 			if (!sigsetjmp (aiee_abort, 1)) {
 				if (signal_hook)
@@ -998,7 +1000,6 @@ signal_handler (int sig, siginfo_t *info, void *ucontext)
 			}
 
 			if (!recover) {
-				sigaction (SIGQUIT, &save_quit, 0);
 				sigaction (SIGTRAP, &save_trap, 0);
 				sigaction (SIGIOT,  &save_iot,  0);
 				sigaction (SIGBUS,  &save_bus,  0);
