@@ -189,39 +189,6 @@ in_paste_buffer_f (void)
 }
 
 static void
-selection_notify (XEvent *event)
-{
-	unsigned char *data, *p;
-	unsigned long num_bytes;
-	unsigned long tmp, len;
-	int         format;
-	Atom        type, property;
-
-	x_time = event->xselection.time;
-
-	if ((property = event->xselection.property) == None)
-		return;
-
-	XGetWindowProperty (x_disp, x_win, property, 0, 0, False, AnyPropertyType,
-						&type, &format, &len, &num_bytes, &data);
-	if (num_bytes <= 0)
-		return;
-	if (XGetWindowProperty (x_disp, x_win, property, 0, num_bytes, True,
-							AnyPropertyType, &type, &format, &len, &tmp, &data)
-		!= Success) {
-		XFree (data);	// FIXME is this correct for this instance?
-		return;
-	}
-
-	// get bytes to keys.c
-	for (p = data; num_bytes && *p; p++, num_bytes--) {
-		Key_Event (QFK_UNKNOWN, *p, 1);
-		Key_Event (QFK_UNKNOWN, 0, 0);
-	}
-	XFree (data);
-}
-
-static void
 enter_notify (XEvent *event)
 {
 	x_time = event->xcrossing.time;
@@ -711,7 +678,7 @@ in_x11_send_mouse_event (IE_mouse_type type)
 }
 
 static void
-in_x11_send_key_event (int press)
+in_x11_send_key_event (void)
 {
 	IE_event_t  event = {
 		.type = ie_key,
@@ -734,6 +701,40 @@ in_x11_send_button_event (int devid, in_buttoninfo_t *button)
 		},
 	};
 	IE_Send_Event (&event);
+}
+
+static void
+selection_notify (XEvent *event)
+{
+	unsigned char *data, *p;
+	unsigned long num_bytes;
+	unsigned long tmp, len;
+	int         format;
+	Atom        type, property;
+
+	x_time = event->xselection.time;
+
+	if ((property = event->xselection.property) == None)
+		return;
+
+	XGetWindowProperty (x_disp, x_win, property, 0, 0, False, AnyPropertyType,
+						&type, &format, &len, &num_bytes, &data);
+	if (num_bytes <= 0)
+		return;
+	if (XGetWindowProperty (x_disp, x_win, property, 0, num_bytes, True,
+							AnyPropertyType, &type, &format, &len, &tmp, &data)
+		!= Success) {
+		XFree (data);	// FIXME is this correct for this instance?
+		return;
+	}
+
+	//FIXME send paste event instead of key presses?
+	x11_key.code = 0;
+	for (p = data; num_bytes && *p; p++, num_bytes--) {
+		x11_key.unicode = *p;
+		in_x11_send_key_event ();
+	}
+	XFree (data);
 }
 
 static void
@@ -818,7 +819,7 @@ event_key (XEvent *event)
 
 	x11_key.shift = event->xmotion.state & 0xff;
 	XLateKey (&event->xkey, &x11_key.code, &x11_key.unicode);
-	in_x11_send_key_event (event->type == KeyPress);
+	in_x11_send_key_event ();
 }
 
 static void
