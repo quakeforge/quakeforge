@@ -600,19 +600,8 @@ XLateKey (XKeyEvent *ev, int *k, int *u)
 }
 
 static void
-in_x11_keydest_callback (keydest_t key_dest, void *data)
-{
-//	if (key_dest == key_game) {
-//		XAutoRepeatOff (x_disp);
-//	} else {
-//		XAutoRepeatOn (x_disp);
-//	}
-}
-
-static void
 event_focusout (XEvent *event)
 {
-	Key_FocusEvent (0);
 	if (x_have_focus) {
 		x_have_focus = false;
 		if (in_snd_block->int_val) {
@@ -627,7 +616,6 @@ static void
 event_focusin (XEvent *event)
 {
 	x_have_focus = true;
-	Key_FocusEvent (1);
 	if (in_snd_block->int_val) {
 		S_UnblockSound ();
 		CDAudio_Resume ();
@@ -1025,8 +1013,6 @@ in_x11_init (void *data)
 
 		in_mouse_avail = 1;
 	}
-
-	Key_KeydestCallback (in_x11_keydest_callback, 0);
 
 	Cmd_AddCommand ("in_paste_buffer", in_paste_buffer_f,
 					"Paste the contents of X's C&P buffer to the console");
