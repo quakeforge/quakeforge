@@ -53,6 +53,8 @@ typedef struct DARRAY_TYPE (in_devbindings_t) in_devbindingset_t;
 
 static in_devbindingset_t devbindings = DARRAY_STATIC_INIT (8);
 static int in_binding_handler;
+static int in_keyhelp_handler;
+static int in_keyhelp_saved_handler;
 
 static void
 in_binding_add_device (const IE_event_t *ie_event)
@@ -148,9 +150,123 @@ in_binding_event_handler (const IE_event_t *ie_event, void *unused)
 	return 1;
 }
 
+static int
+in_keyhelp_event_handler (const IE_event_t *ie_event, void *unused)
+{
+	if (ie_event->type != ie_axis && ie_event->type != ie_button) {
+		return 0;
+	}
+
+	size_t      devid = ie_event->button.devid;
+	in_devbindings_t *db = &devbindings.a[devid];
+	const char *name = db->name;
+	const char *type = 0;
+	int         num = -1;
+
+	if (!name) {
+		name = db->id;
+	}
+
+	if (ie_event->type == ie_axis) {
+		int         axis = ie_event->axis.axis;
+		int         value = ie_event->axis.value;
+		in_axisinfo_t *ai = &db->axis_info[axis];
+		if (!ai->min && !ai->max) {
+			if (value > 2) {
+				num = axis;
+				type = "axis";
+			}
+		} else {
+			int         diff = abs (value - ai->value);
+			if (diff * 5 >= ai->max - ai->min) {
+				num = axis;
+				type = "axis";
+			}
+		}
+	} else if (ie_event->type == ie_button) {
+		if (ie_event->button.state) {
+			num = ie_event->button.button;
+			type = "button";
+		}
+	}
+	if (!type) {
+		return 0;
+	}
+	IE_Set_Focus (in_keyhelp_saved_handler);
+	Sys_Printf ("%s %s %d\n", name, type, num);
+	return 1;
+}
+
+static in_devbindings_t *
+in_binding_find_device (const char *name)
+{
+	for (size_t i = 0; i < devbindings.size; i++) {
+		in_devbindings_t *dev = &devbindings.a[i];
+		if (strcmp (name, dev->id) == 0
+			|| (dev->name && strcmp (name, dev->name) == 0)) {
+			return dev;
+		}
+	}
+	return 0;
+}
+
 static void
 in_bind_f (void)
 {
+	if (Cmd_Argc () < 5) {
+		Sys_Printf ("in_bind imt device type number binding...\n");
+		Sys_Printf ("    imt: the name of the input mapping table in which the"
+					" intput will be bound\n");
+		Sys_Printf ("    device: the nickname or id of the devise owning"
+					" the input to be bound\n");
+		Sys_Printf ("    type: the type of input to be bound (axis or"
+					" button)\n");
+		// FIXME support names
+		Sys_Printf ("    number: the numeric id of the input to be bound\n");
+		Sys_Printf ("    binging...: the destination to which the input will"
+					" be bound\n");
+		Sys_Printf ("        for axis inputs, this can be an analog input or"
+					" an axis-button\n");
+		Sys_Printf ("        for button inputs, this can be a button or a"
+					" command (spaces ok, but\n"
+					"        quotes recommended)\n");
+		return;
+	}
+
+	const char *imt_name = Cmd_Argv (1);
+	const char *dev_name = Cmd_Argv (2);
+	const char *type = Cmd_Argv (3);
+	const char *number = Cmd_Argv (4);
+	// the rest of the command line is the binding
+	//const char *binding = Cmd_Args (5);
+
+	imt_t      *imt = IMT_FindIMT (imt_name);
+	in_devbindings_t *dev = in_binding_find_device (dev_name);
+	char       *end;
+	int         num = strtol (number, &end, 0);
+	if (!imt) {
+		Sys_Printf ("unknown imt: %s\n", imt_name);
+		return;
+	}
+	if (!dev) {
+		Sys_Printf ("unknown device: %s\n", dev_name);
+		return;
+	}
+	if (strcmp (type, "axis") != 0 || strcmp (type, "button") != 0) {
+		Sys_Printf ("invalid input type: %s\n", type);
+		return;
+	}
+	if (*type == 'a') {
+		if (*end || num < 0 || num >= dev->num_axes) {
+			Sys_Printf ("invalid axis number: %s\n", number);
+			return;
+		}
+	} else {
+		if (*end || num < 0 || num >= dev->num_buttons) {
+			Sys_Printf ("invalid button number: %s\n", number);
+			return;
+		}
+	}
 }
 
 static void
@@ -166,11 +282,70 @@ in_clear_f (void)
 static void
 in_devices_f (void)
 {
+	for (size_t i = 0; i < devbindings.size; i++) {
+		in_devbindings_t *dev = &devbindings.a[i];
+		Sys_Printf ("%s %s %s\n", dev->name, dev->id,
+					dev->devid >= 0 ? "connected" : "disconnected");
+		Sys_Printf ("    axes: %d\n", dev->num_axes);
+		Sys_Printf ("    buttons: %d\n", dev->num_buttons);
+	}
+}
+
+static void
+in_devname_f (void)
+{
+	switch (Cmd_Argc ()) {
+		case 2: {
+			const char *name = Cmd_Argv (1);
+			in_devbindings_t *dev = in_binding_find_device (name);
+			if (dev) {
+				if (strcmp (name, dev->id) == 0) {
+					Sys_Printf ("nickname for %s is %s\n", dev->id, dev->name);
+				} else {
+					Sys_Printf ("device_id for %s is %s\n", dev->name, dev->id);
+				}
+			} else {
+				Sys_Printf ("No device identified by %s\n", name);
+			}
+			break;
+		}
+		case 3: {
+			const char *device_id = Cmd_Argv (1);
+			const char *nickname = Cmd_Argv (2);
+			in_devbindings_t *dev = in_binding_find_device (nickname);
+			if (dev) {
+				Sys_Printf ("%s already exists: %s %s\n",
+							nickname, dev->name, dev->id);
+				return;
+			}
+			dev = in_binding_find_device (device_id);
+			if (!dev) {
+				Sys_Printf ("%s does not exist\n", device_id);
+				return;
+			}
+			if (dev->name) {
+				free ((char *) dev->name);
+			}
+			dev->name = strdup (nickname);
+			break;
+		}
+		default:
+			Sys_Printf ("in_devname device_id nickname\n");
+			Sys_Printf ("   Name a deviced identified by device_id as nickname\n");
+			Sys_Printf ("in_devname device_id\n");
+			Sys_Printf ("   Show the nickname given to the device identified by device_id\n");
+			Sys_Printf ("in_devname nickname\n");
+			Sys_Printf ("   Show the device_id of the device named by nickname\n");
+			break;
+	}
 }
 
 static void
 keyhelp_f (void)
 {
+	in_keyhelp_saved_handler = IE_Get_Focus ();
+	IE_Set_Focus (in_keyhelp_handler);
+	Sys_Printf ("Press button or move axis to identify\n");
 }
 
 typedef struct {
@@ -193,6 +368,9 @@ static bindcmd_t in_binding_commands[] = {
 	},
 	{	"in_devices", in_devices_f,
 		"List the known devices and their status."
+	},
+	{	"in_devname", in_devname_f,
+		"Give a device a nickname."
 	},
 	{	"keyhelp", keyhelp_f,
 		"Identify the next active input axis or button.\n"
@@ -245,6 +423,7 @@ void
 IN_Binding_Init (void)
 {
 	in_binding_handler = IE_Add_Handler (in_binding_event_handler, 0);
+	in_keyhelp_handler = IE_Add_Handler (in_keyhelp_event_handler, 0);
 
 	for (bindcmd_t *cmd = in_binding_commands; cmd->name; cmd++) {
 		Cmd_AddCommand (cmd->name, cmd->func, cmd->desc);

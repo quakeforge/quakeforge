@@ -96,7 +96,7 @@ typedef struct in_device_s {
 	preferred, but does require the device to be plugged into the same uSB
 	path (ie, same socket on the same hub connected to the same port on the PC)
 
-	\a device is the actual device associated with the bindings. If null, the
+	\a devid is the actual device associated with the bindings. If -1, the
 	device is not currently connected.
 
 	\a axis_info holds the device/axis specific range info and the current

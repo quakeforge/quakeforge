@@ -68,6 +68,7 @@ typedef struct imt_s {
 } imt_t;
 
 typedef struct in_context_s {
+	const char *name;
 	imt_t      *imts;
 	imt_t     **imt_tail;
 	imt_t      *active_imt;
@@ -77,7 +78,7 @@ typedef struct in_context_s {
 
 int IMT_GetAxisBlock (const char *device, int num_axes);
 int IMT_GetButtonBlock (const char *device, int num_buttons);
-int IMT_CreateContext (void);
+int IMT_CreateContext (const char *name);
 int IMT_GetContext (void);
 void IMT_SetContext (int ctx);
 void IMT_SetContextCbuf (int ctx, struct cbuf_s *cbuf);
