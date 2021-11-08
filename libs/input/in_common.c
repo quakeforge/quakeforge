@@ -348,6 +348,7 @@ void
 IN_Init (cbuf_t *cbuf)
 {
 	Sys_RegisterShutdown (IN_shutdown, 0);
+	IMT_Init ();
 	IN_Binding_Init ();
 
 	for (size_t i = 0; i < in_drivers.size; i++) {

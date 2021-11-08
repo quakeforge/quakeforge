@@ -107,10 +107,7 @@ typedef enum {
 typedef struct in_buttonbinding_s {
 	in_button_type type;
 	union {
-		struct {
-			int         bind_id;	///< for button multi-press support
-			in_button_t *button;
-		};
+		in_button_t *button;
 		char       *command;
 	};
 } in_buttonbinding_t;

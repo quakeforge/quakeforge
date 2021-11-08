@@ -40,6 +40,7 @@
 #endif
 
 #include "QF/cmd.h"
+#include "QF/cmem.h"
 #include "QF/hash.h"
 #include "QF/sys.h"
 #include "QF/va.h"
@@ -58,6 +59,45 @@ static imt_blockset_t button_blocks = DARRAY_STATIC_INIT (8);
 
 static in_contextset_t in_contexts = DARRAY_STATIC_INIT (8);
 static size_t   imt_current_context;
+
+static memsuper_t *binding_mem;
+
+static in_axisbinding_t *
+alloc_axis_binding (void)
+{
+	return cmemalloc (binding_mem, sizeof (in_axisbinding_t));
+}
+
+static void
+free_axis_binding (in_axisbinding_t *binding)
+{
+	if (!binding) {
+		return;
+	}
+	cmemfree (binding_mem, binding);
+}
+
+static in_buttonbinding_t *
+alloc_button_binding (void)
+{
+	return cmemalloc (binding_mem, sizeof (in_buttonbinding_t));
+}
+
+static void
+free_button_binding (in_buttonbinding_t *binding)
+{
+	if (!binding) {
+		return;
+	}
+	switch (binding->type) {
+		case inb_button:
+			break;
+		case inb_command:
+			free (binding->command);
+			break;
+	}
+	cmemfree (binding_mem, binding);
+}
 
 static imt_block_t * __attribute__((pure))
 imt_find_block (imt_blockset_t *blockset, const char *device)
@@ -150,6 +190,17 @@ IMT_CreateContext (const char *name)
 	ctx->imt_tail = &ctx->imts;
 	ctx->name = name;
 	return ctx - in_contexts.a;
+}
+
+static in_context_t *
+imt_find_context (const char *name)
+{
+	for (size_t i = 0; i < in_contexts.size; i++) {
+		if (strcmp (name, in_contexts.a[i].name) == 0) {
+			return &in_contexts.a[i];
+		}
+	}
+	return 0;
 }
 
 int
@@ -254,6 +305,45 @@ IMT_CreateIMT (int context, const char *imt_name, const char *chain_imt_name)
 	return 1;
 }
 
+void
+IMT_BindAxis (imt_t *imt, int axis, const char *binding)
+{
+	if ((size_t) axis >= imt->axis_bindings.size)
+		return;
+
+	in_axisbinding_t **bind = &imt->axis_bindings.a[axis];
+	free_axis_binding ((*bind));
+	(*bind) = 0;
+	if (binding) {
+		in_axisbinding_t *a = alloc_axis_binding ();
+		(*bind) = a;
+		*a = (in_axisbinding_t) {};
+	}
+}
+
+void
+IMT_BindButton (imt_t *imt, int button, const char *binding)
+{
+	if ((size_t) button >= imt->button_bindings.size)
+		return;
+
+	in_buttonbinding_t **bind = &imt->button_bindings.a[button];
+	free_button_binding ((*bind));
+	(*bind) = 0;
+	if (binding) {
+		in_buttonbinding_t *b = alloc_button_binding ();
+		(*bind) = b;
+		in_button_t *button;
+		if (binding[0] == '+' && (button = IN_FindButton (binding + 1))) {
+			b->type = inb_button;
+			b->button = button;
+		} else {
+			b->type = inb_command;
+			b->command = strdup(binding);
+		}
+	}
+}
+
 qboolean
 IMT_ProcessAxis (int axis, int value)
 {
@@ -314,4 +404,139 @@ IMT_ProcessButton (int button, int state)
 		imt = imt->chain;
 	}
 	return false;
+}
+
+static void
+imt_f (void)
+{
+	int         c;
+	imt_t      *imt;
+	const char *imt_name = 0;
+	const char *context_name;
+
+	c = Cmd_Argc ();
+	switch (c) {
+		case 3:
+			imt_name = Cmd_Argv (2);
+		case 2:
+			context_name = Cmd_Argv (1);
+			break;
+		default:
+			return;
+	}
+	in_context_t *ctx = imt_find_context (context_name);
+	if (!ctx) {
+		Sys_Printf ("imt error: invalid context: %s\n", context_name);
+		return;
+	}
+
+	if (!imt_name) {
+		Sys_Printf ("Current imt is %s\n", ctx->active_imt->name);
+		Sys_Printf ("imt <imt> : set to a specific input mapping table\n");
+		return;
+	}
+
+	imt = imt_find_imt (ctx, imt_name);
+	if (!imt) {
+		Sys_Printf ("\"%s\" is not an imt in %s\n", imt_name, ctx->name);
+		return;
+	}
+
+	ctx->active_imt = imt;
+}
+
+static void
+imt_list_f (void)
+{
+    for (size_t i = 0; i < in_contexts.size; i++) {
+		in_context_t *ctx = &in_contexts.a[i];
+		Sys_Printf ("context: %s\n", ctx->name);
+		for (imt_t *imt = ctx->imts; imt; imt = imt->next) {
+			if (imt->chain) {
+				Sys_Printf ("    %s -> %s\n", imt->name, imt->chain->name);
+			} else {
+				Sys_Printf ("    %s\n", imt->name);
+			}
+		}
+	}
+}
+
+static void
+imt_create_f (void)
+{
+	const char *context_name;
+	const char *imt_name;
+	const char *chain_imt_name = 0;
+
+	if (Cmd_Argc () < 3 || Cmd_Argc () > 4) {
+		Sys_Printf ("see help imt_create\n");
+		return;
+	}
+	context_name = Cmd_Argv (1);
+	imt_name = Cmd_Argv (2);
+	if (Cmd_Argc () == 4) {
+		chain_imt_name = Cmd_Argv (3);
+	}
+	in_context_t *ctx = imt_find_context (context_name);
+	if (!ctx) {
+		Sys_Printf ("imt error: invalid context: %s\n", context_name);
+		return;
+	}
+	IMT_CreateIMT (ctx - in_contexts.a, imt_name, chain_imt_name);
+}
+
+static void
+imt_drop_all_f (void)
+{
+	for (size_t i = 0; i < in_contexts.size; i++) {
+		in_context_t *ctx = &in_contexts.a[i];
+		while (ctx->imts) {
+			imt_t      *imt = ctx->imts;
+			ctx->imts = imt->next;
+			for (size_t i = 0; i < imt->axis_bindings.size; i++) {
+				free_axis_binding (imt->axis_bindings.a[i]);
+			}
+			for (size_t i = 0; i < imt->button_bindings.size; i++) {
+				free_button_binding (imt->button_bindings.a[i]);
+			}
+			free ((char *) imt->name);
+			free (imt);
+		}
+		ctx->active_imt = 0;
+	}
+}
+
+typedef struct {
+	const char *name;
+	xcommand_t  func;
+	const char *desc;
+} imtcmd_t;
+
+static imtcmd_t imt_commands[] = {
+	{	"imt", imt_f,
+		"Set the active imt of the specified context"
+	},
+	{	"imt_list", imt_list_f,
+		"List the available input mapping tables"
+	},
+	{	"imt_create", imt_create_f,
+		"create a new imt table:\n"
+		"    imt_create <keydest> <imt_name> [chain_name]\n"
+		"\n"
+		"The new table will be attached to the specified keydest\n"
+		"imt_name must not already exist.\n"
+		"If given, chain_name must already exist and be on keydest.\n"
+	},
+	{	"imt_drop_all", imt_drop_all_f,
+		"delete all imt tables\n"
+	},
+};
+
+void
+IMT_Init (void)
+{
+	binding_mem = new_memsuper ();
+	for (imtcmd_t *cmd = imt_commands; cmd->name; cmd++) {
+		Cmd_AddCommand (cmd->name, cmd->func, cmd->desc);
+	}
 }

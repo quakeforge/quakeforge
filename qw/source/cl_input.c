@@ -59,6 +59,9 @@
 #include "qw/include/client.h"
 #include "qw/include/host.h"
 
+int         cl_game_context;
+int         cl_demo_context;
+
 cvar_t     *cl_nodelta;
 cvar_t     *cl_maxnetfps;
 cvar_t     *cl_spamimpulse;
@@ -522,6 +525,8 @@ CL_Input_Init (void)
 	for (int i = 0; cl_in_buttons[i]; i++) {
 		IN_RegisterButton (cl_in_buttons[i]);
 	}
+	cl_game_context = IMT_CreateContext ("key_game");
+	cl_demo_context = IMT_CreateContext ("key_demo");
 	Cmd_AddDataCommand ("impulse", IN_Impulse, 0,
 						"Call a game function or QuakeC function.");
 }

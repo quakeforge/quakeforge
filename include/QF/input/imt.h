@@ -85,8 +85,11 @@ void IMT_SetContextCbuf (int ctx, struct cbuf_s *cbuf);
 imt_t *IMT_FindIMT (const char *name);
 int IMT_CreateIMT (int context, const char *imt_name,
 				   const char *chain_imt_name);
+void IMT_BindAxis (imt_t *imt, int axis, const char *binding);
+void IMT_BindButton (imt_t *imt, int button, const char *binding);
 qboolean IMT_ProcessAxis (int axis, int value);
 qboolean IMT_ProcessButton (int button, int state);
+void IMT_Init (void);
 
 #endif
 
