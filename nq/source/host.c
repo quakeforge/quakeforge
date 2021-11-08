@@ -847,13 +847,13 @@ Host_Init_Memory (void)
 
 	Sys_Printf ("%4.1f megabyte heap\n", host_mem_size->value);
 }
-
+#if 0
 static void
 host_keydest_callback (keydest_t kd, void *data)
 {
 	host_in_game = kd == key_game;
 }
-
+#endif
 void
 Host_Init (void)
 {
@@ -888,7 +888,7 @@ Host_Init (void)
 
 	Mod_Init ();
 
-	Key_KeydestCallback (host_keydest_callback, 0);
+	//Key_KeydestCallback (host_keydest_callback, 0);
 
 	SV_Init ();
 

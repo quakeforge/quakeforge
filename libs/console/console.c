@@ -158,6 +158,14 @@ Con_Print (const char *fmt, va_list args)
 }
 
 VISIBLE void
+Con_SetState (con_state_t state)
+{
+	if (con_module) {
+		con_module->functions->console->set_state (state);
+	}
+}
+
+VISIBLE void
 Con_ProcessInput (void)
 {
 	if (con_module) {

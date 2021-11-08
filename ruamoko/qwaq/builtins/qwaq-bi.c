@@ -205,7 +205,7 @@ BI_Init (progs_t *pr)
 		con_module->data->console->quit = quit_f;
 		con_module->data->console->cbuf = qwaq_cbuf;
 	}
-	Key_SetKeyDest (key_game);
+	//Key_SetKeyDest (key_game);
 
 	S_Init (0, &con_frametime);
 	//CDAudio_Init ();

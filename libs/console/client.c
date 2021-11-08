@@ -59,6 +59,8 @@
 #include "QF/va.h"
 #include "QF/vid.h"
 
+#include "QF/input/event.h"
+
 #include "QF/plugin/general.h"
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
@@ -89,6 +91,9 @@ static float con_times[NUM_CON_TIMES];	// realtime time the line was generated
 										// for transparent notify lines
 
 static int  con_totallines;				// total lines in console scrollback
+static con_state_t con_state;
+static int  con_event_id;
+static int  con_saved_focos;
 
 static qboolean con_debuglog;
 static qboolean chat_team;
@@ -107,7 +112,7 @@ static view_t *hud_view;
 static qboolean con_initialized;
 
 static keydest_t con_curr_keydest;
-static keydest_t con_prev_keydest;
+//static keydest_t con_prev_keydest;
 
 static void
 ClearNotify (void)
@@ -118,19 +123,33 @@ ClearNotify (void)
 		con_times[i] = 0;
 }
 
+static void
+C_SetState (con_state_t state)
+{
+	con_state = state;
+	if (con_state == con_inactive) {
+		IE_Set_Focus (con_saved_focos);
+	} else {
+		con_saved_focos = IE_Get_Focus ();
+		IE_Set_Focus (con_event_id);
+	}
+}
 
 static void
 ToggleConsole_f (void)
 {
 	Con_ClearTyping (input_line, 0);
 
-	if (con_curr_keydest == key_console && !con_data.force_commandline) {
-		Key_SetKeyDest (con_prev_keydest);
-	} else {
-		con_prev_keydest = Key_GetKeyDest ();
-		Key_SetKeyDest (key_console);
+	switch (con_state) {
+		case con_inactive:
+			C_SetState (con_active);
+			break;
+		case con_active:
+			C_SetState (con_inactive);
+			break;
+		case con_fullscreen:
+			break;
 	}
-
 	ClearNotify ();
 }
 
@@ -140,9 +159,9 @@ ToggleChat_f (void)
 	Con_ClearTyping (input_line, 0);
 
 	if (con_curr_keydest == key_console && !con_data.force_commandline) {
-		Key_SetKeyDest (key_game);
+		//Key_SetKeyDest (key_game);
 	} else {
-		Key_SetKeyDest (key_console);
+		//Key_SetKeyDest (key_console);
 	}
 
 	ClearNotify ();
@@ -164,7 +183,7 @@ MessageMode_f (void)
 	if (con_data.force_commandline)
 		return;
 	chat_team = false;
-	Key_SetKeyDest (key_message);
+	//Key_SetKeyDest (key_message);
 }
 
 static void
@@ -173,7 +192,7 @@ MessageMode2_f (void)
 	if (con_data.force_commandline)
 		return;
 	chat_team = true;
-	Key_SetKeyDest (key_message);
+	//Key_SetKeyDest (key_message);
 }
 
 static void
@@ -330,7 +349,7 @@ C_Say (inputline_t *il)
 	Cbuf_AddText (con_data.cbuf, "say \"");
 	Cbuf_AddText (con_data.cbuf, line);
 	Cbuf_AddText (con_data.cbuf, "\"\n");
-	Key_SetKeyDest (key_game);
+	//Key_SetKeyDest (key_game);
 }
 
 static void
@@ -343,7 +362,7 @@ C_SayTeam (inputline_t *il)
 	Cbuf_AddText (con_data.cbuf, "say_team \"");
 	Cbuf_AddText (con_data.cbuf, line);
 	Cbuf_AddText (con_data.cbuf, "\"\n");
-	Key_SetKeyDest (key_game);
+	//Key_SetKeyDest (key_game);
 }
 
 static void
@@ -447,79 +466,6 @@ C_Print (const char *fmt, va_list args)
 		fputs (buffer->str + 1, stdout);
 }
 
-static void
-C_KeyEvent (knum_t key, short unicode, qboolean down, void *data)
-{
-	inputline_t *il;
-
-	if (!down)
-		return;
-
-	if (con_curr_keydest == key_menu) {
-		Menu_KeyEvent (key, unicode, down);
-		return;
-	}
-
-	if (down) {
-		if (key == key_toggleconsole) {
-			ToggleConsole_f ();
-			return;
-		}
-	}
-
-	if (con_curr_keydest == key_message) {
-		if (chat_team) {
-			il = say_team_line;
-		} else {
-			il = say_line;
-		}
-	} else {
-		switch (key) {
-			case QFK_PAGEUP:
-				if (keydown[QFK_RCTRL] || keydown[QFK_LCTRL])
-					con->display = 0;
-				else
-					con->display -= 10;
-				if (con->display < con->current - con->numlines)
-					con->display = con->current - con->numlines;
-				return;
-			case QFK_PAGEDOWN:
-				if (keydown[QFK_RCTRL] || keydown[QFK_LCTRL])
-					con->display = con->current;
-				else
-					con->display += 10;
-				if (con->display > con->current)
-					con->display = con->current;
-				return;
-			case QFM_WHEEL_UP:
-				con->display -= 3;
-				if (con->display < con->current - con->numlines)
-					con->display = con->current - con->numlines;
-				return;
-			case QFM_WHEEL_DOWN:
-				con->display += 3;
-				if (con->display > con->current)
-					con->display = con->current;
-				return;
-			default:
-				break;
-		}
-		il = input_line;
-	}
-	//FIXME should this translation be here?
-	if ((unicode==0x0A) && (key==QFK_RETURN)) {
-		Con_ProcessInputLine (il, key);
-	}
-	if ((unicode==0x7F) && (key==QFK_BACKSPACE)) {
-		Con_ProcessInputLine (il, key);
-	}
-	if (unicode!=0) {
-		Con_ProcessInputLine (il, key >= 256 ? (int) key : unicode);
-	} else {
-		Con_ProcessInputLine (il, key);
-	}
-}
-
 /* DRAWING */
 
 static void
@@ -551,8 +497,8 @@ C_DrawInputLine (inputline_t *il)
 static void
 draw_input (view_t *view)
 {
-	if (con_curr_keydest != key_console)// && !con_data.force_commandline)
-		return;				// don't draw anything (always draw if not active)
+	if (con_state == con_inactive)// && !con_data.force_commandline)
+		return;
 
 	DrawInputLine (view->xabs + 8, view->yabs, 1, input_line);
 }
@@ -641,7 +587,7 @@ draw_console (view_t *view)
 {
 	byte        alpha;
 
-	if (con_data.force_commandline) {
+	if (con_state == con_fullscreen) {
 		alpha = 255;
 	} else {
 		float       y = r_data->vid->conview->ylen * con_size->value;
@@ -704,12 +650,17 @@ setup_console (void)
 {
 	float       lines;
 
-	if (con_data.force_commandline) {
-		lines = con_data.lines = r_data->vid->conview->ylen;
-	} else if (con_curr_keydest == key_console) {
-		lines = r_data->vid->conview->ylen * bound (0.2, con_size->value, 1);
-	} else {
-		lines = 0;
+	switch (con_state) {
+		case con_inactive:
+			lines = 0;
+			break;
+		case con_active:
+			lines = r_data->vid->conview->ylen * bound (0.2, con_size->value,
+														1);
+			break;
+		case con_fullscreen:
+			lines = con_data.lines = r_data->vid->conview->ylen;
+			break;
 	}
 
 	if (con_speed->value) {
@@ -776,13 +727,13 @@ exec_line (inputline_t *il)
 {
 	Con_ExecLine (il->line);
 }
-
+#if 0
 static void
 con_end_message (void *line)
 {
-	Key_PopEscape ();
+	//Key_PopEscape ();
 	Con_ClearTyping (line, 1);
-	Key_SetKeyDest (key_game);
+	//Key_SetKeyDest (key_game);
 }
 
 static void
@@ -798,7 +749,7 @@ con_keydest_callback (keydest_t kd, void *data)
 		return;
 	}
 	if (kd != key_console && con_curr_keydest == key_console) {
-		Key_PopEscape ();
+		//Key_PopEscape ();
 	}
 	switch (kd) {
 		case key_last:
@@ -808,11 +759,11 @@ con_keydest_callback (keydest_t kd, void *data)
 		case key_menu:
 			break;
 		case key_message:
-			Key_PushEscape (con_end_message,
-							chat_team ? say_team_line : say_line);
+			//Key_PushEscape (con_end_message,
+			//				chat_team ? say_team_line : say_line);
 			break;
 		case key_console:
-			Key_PushEscape (con_leave_console, 0);
+			//Key_PushEscape (con_leave_console, 0);
 			break;
 	}
 	con_curr_keydest = kd;
@@ -822,6 +773,108 @@ static void
 con_enter_menu (void *data)
 {
 	Menu_Enter ();
+}
+#endif
+
+static void
+con_key_event (const IE_event_t *event)
+{
+	inputline_t *il;
+	__auto_type key = &event->key;
+
+#if 0
+	if (con_curr_keydest == key_menu) {
+		Menu_KeyEvent (key, unicode, down);
+		return;
+	}
+
+	if (down) {
+		if (key == key_toggleconsole) {
+			ToggleConsole_f ();
+			return;
+		}
+	}
+#endif
+#if 0
+	if (con_curr_keydest == key_message) {
+		if (chat_team) {
+			il = say_team_line;
+		} else {
+			il = say_line;
+		}
+	} else {
+#endif
+		switch (key->code) {
+			case QFK_PAGEUP:
+				if (key->shift & ies_control)
+					con->display = 0;
+				else
+					con->display -= 10;
+				if (con->display < con->current - con->numlines)
+					con->display = con->current - con->numlines;
+				return;
+			case QFK_PAGEDOWN:
+				if (key->shift & ies_control)
+					con->display = con->current;
+				else
+					con->display += 10;
+				if (con->display > con->current)
+					con->display = con->current;
+				return;
+#if 0
+			case QFM_WHEEL_UP:
+				con->display -= 3;
+				if (con->display < con->current - con->numlines)
+					con->display = con->current - con->numlines;
+				return;
+			case QFM_WHEEL_DOWN:
+				con->display += 3;
+				if (con->display > con->current)
+					con->display = con->current;
+				return;
+#endif
+			default:
+				break;
+		}
+		il = input_line;
+#if 0
+	}
+#endif
+#if 0
+	//FIXME should this translation be here?
+	if ((unicode==0x0A) && (key==QFK_RETURN)) {
+		Con_ProcessInputLine (il, key);
+	}
+	if ((unicode==0x7F) && (key==QFK_BACKSPACE)) {
+		Con_ProcessInputLine (il, key);
+	}
+#endif
+	if (key->unicode) {
+		Con_ProcessInputLine (il, key->code >= 256 ? (int) key->code
+												   : key->unicode);
+	} else {
+		Con_ProcessInputLine (il, key->code);
+	}
+}
+
+static void
+con_mouse_event (const IE_event_t *event)
+{
+}
+
+static int
+con_event_handler (const IE_event_t *ie_event, void *data)
+{
+	static void (*handlers[ie_event_count]) (const IE_event_t *ie_event) = {
+		[ie_key] = con_key_event,
+		[ie_mouse] = con_mouse_event,
+	};
+	if (ie_event->type < 0 || ie_event->type >= ie_event_count
+		|| !handlers[ie_event->type]) {
+		return 0;
+	}
+	handlers[ie_event->type] (ie_event);
+	return 1;
 }
 
 static void
@@ -833,11 +886,13 @@ C_Init (void)
 	setlocale (LC_ALL, "C-TRADITIONAL");
 #endif
 
-	Key_PushEscape (con_enter_menu, 0);
-	Key_KeydestCallback (con_keydest_callback, 0);
-	Key_SetKeyEvent (key_message, C_KeyEvent, 0);
-	Key_SetKeyEvent (key_menu, C_KeyEvent, 0);
-	Key_SetKeyEvent (key_console, C_KeyEvent, 0);
+	con_event_id = IE_Add_Handler (con_event_handler, 0);
+
+	//Key_PushEscape (con_enter_menu, 0);
+	//Key_KeydestCallback (con_keydest_callback, 0);
+	//Key_SetKeyEvent (key_message, C_KeyEvent, 0);
+	//Key_SetKeyEvent (key_menu, C_KeyEvent, 0);
+	//Key_SetKeyEvent (key_console, C_KeyEvent, 0);
 	Menu_Init ();
 
 	con_notifytime = Cvar_Get ("con_notifytime", "3", CVAR_NONE, NULL,
@@ -966,6 +1021,7 @@ static console_funcs_t plugin_info_console_funcs = {
 	.draw_console = C_DrawConsole,
 	.check_resize = C_CheckResize,
 	.new_map = C_NewMap,
+	.set_state = C_SetState,
 };
 
 static plugin_funcs_t plugin_info_funcs = {

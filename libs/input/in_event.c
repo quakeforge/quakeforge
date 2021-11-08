@@ -108,3 +108,9 @@ IE_Set_Focus (int handle)
 		IE_Send_Event (&event);
 	}
 }
+
+int
+IE_Get_Focus (void)
+{
+	return focus;
+}

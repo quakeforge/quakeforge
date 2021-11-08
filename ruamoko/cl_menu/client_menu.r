@@ -47,11 +47,11 @@ menu_key_sound =
 {
 	switch (key) {
 		case QFK_DOWN:
-		case QFM_WHEEL_DOWN:
+		//case QFM_WHEEL_DOWN:
 			S_LocalSound ("misc/menu1.wav");
 			break;
 		case QFK_UP:
-		case QFM_WHEEL_UP:
+		//case QFM_WHEEL_UP:
 			S_LocalSound ("misc/menu1.wav");
 			break;
 	}
@@ -231,19 +231,19 @@ int (int key, int unicode, int down) load_quickbup_keyevent =
 {
 	switch (key) {
 		case QFK_DOWN:
-		case QFM_WHEEL_DOWN:
+		//case QFM_WHEEL_DOWN:
 			S_LocalSound ("misc/menu1.wav");
 			load_cursor++;
 			load_cursor %= MAX_QUICK;
 			return 1;
 		case QFK_UP:
-		case QFM_WHEEL_UP:
+		//case QFM_WHEEL_UP:
 			S_LocalSound ("misc/menu1.wav");
 			load_cursor += MAX_QUICK - 1;
 			load_cursor %= MAX_QUICK;
 			return 1;
 		case QFK_RETURN:
-		case QFM_BUTTON1:
+		//case QFM_BUTTON1:
 			if (loadable[load_cursor]) {
 				S_LocalSound ("misc/menu2.wav");
 				Menu_SelectMenu (nil);
@@ -259,19 +259,19 @@ int (int key, int unicode, int down) load_keyevent =
 {
 	switch (key) {
 		case QFK_DOWN:
-		case QFM_WHEEL_DOWN:
+		//case QFM_WHEEL_DOWN:
 			S_LocalSound ("misc/menu1.wav");
 			load_cursor++;
 			load_cursor %= MAX_SAVEGAMES + 1;
 			return 1;
 		case QFK_UP:
-		case QFM_WHEEL_UP:
+		//case QFM_WHEEL_UP:
 			S_LocalSound ("misc/menu1.wav");
 			load_cursor += MAX_SAVEGAMES;
 			load_cursor %= MAX_SAVEGAMES + 1;
 			return 1;
 		case QFK_RETURN:
-		case QFM_BUTTON1:
+		//case QFM_BUTTON1:
 			if (load_cursor == MAX_SAVEGAMES) {
 				load_cursor = 0;
 				scan_saves (1);
@@ -290,19 +290,19 @@ int (int key, int unicode, int down) save_keyevent =
 {
 	switch (key) {
 		case QFK_DOWN:
-		case QFM_WHEEL_DOWN:
+		//case QFM_WHEEL_DOWN:
 			S_LocalSound ("misc/menu1.wav");
 			save_cursor++;
 			save_cursor %= MAX_SAVEGAMES;
 			return 1;
 		case QFK_UP:
-		case QFM_WHEEL_UP:
+		//case QFM_WHEEL_UP:
 			S_LocalSound ("misc/menu1.wav");
 			save_cursor += MAX_SAVEGAMES - 1;
 			save_cursor %= MAX_SAVEGAMES;
 			return 1;
 		case QFK_RETURN:
-		case QFM_BUTTON1:
+		//case QFM_BUTTON1:
 			Menu_SelectMenu (nil);
 			Cbuf_AddText (sprintf ("save s%i.sav\n", save_cursor));
 			return 1;
@@ -494,7 +494,7 @@ int (int key, int unicode, int down) lanconfig_keyevent =
 		[input_active processInput:(key >= 256 ? key : unicode)];
 	switch (key) {
 		case QFK_DOWN:
-		case QFM_WHEEL_DOWN:
+		//case QFM_WHEEL_DOWN:
 			if (!input_active) {
 				S_LocalSound ("misc/menu2.wav");
 				lanConfig_cursor ++;
@@ -502,7 +502,7 @@ int (int key, int unicode, int down) lanconfig_keyevent =
 			}
 			return 1;
 		case QFK_UP:
-		case QFM_WHEEL_UP:
+		//case QFM_WHEEL_UP:
 			if (!input_active) {
 				S_LocalSound ("misc/menu2.wav");
 				lanConfig_cursor += NUM_LANCONFIG_CMDS - 1;

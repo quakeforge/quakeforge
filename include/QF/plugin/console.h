@@ -30,8 +30,8 @@
 
 #include <stdarg.h>
 
+#include <QF/console.h>
 #include <QF/plugin.h>
-#include <QF/qtypes.h>
 
 typedef struct console_funcs_s {
 	void (*init) (void);
@@ -40,6 +40,7 @@ typedef struct console_funcs_s {
 	void (*draw_console) (void);
 	void (*check_resize) (void);
 	void (*new_map) (void);
+	void (*set_state) (con_state_t state);
 } console_funcs_t;
 
 typedef struct console_data_s {

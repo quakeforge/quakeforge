@@ -30,11 +30,11 @@
 	if (!ret) {
 		switch (key) {
 			case QFK_DOWN:
-			case QFM_WHEEL_DOWN:
+			//case QFM_WHEEL_DOWN:
 				[self next];
 				return 1;
 			case QFK_UP:
-			case QFM_WHEEL_UP:
+			//case QFM_WHEEL_UP:
 				[self prev];
 				return 1;
 		}

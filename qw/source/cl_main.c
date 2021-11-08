@@ -1146,7 +1146,7 @@ CL_SetState (cactive_t state)
 		if (old_state == ca_active) {
 			// leaving active state
 			IN_ClearStates ();
-			Key_SetKeyDest (key_console);
+			//Key_SetKeyDest (key_console);
 
 			// Auto demo recorder stops here
 			if (cl_autorecord->int_val && cls.demorecording)
@@ -1155,7 +1155,7 @@ CL_SetState (cactive_t state)
 			// entering active state
 			VID_SetCaption (cls.servername->str);
 			IN_ClearStates ();
-			Key_SetKeyDest (key_game);
+			//Key_SetKeyDest (key_game);
 
 			// Auto demo recorder starts here
 			if (cl_autorecord->int_val && !cls.demoplayback
@@ -1163,8 +1163,7 @@ CL_SetState (cactive_t state)
 				CL_Record (0, -1);
 		}
 	}
-	if (con_module)
-		con_module->data->console->force_commandline = (state != ca_active);
+	Con_SetState (state == ca_active ? con_inactive : con_fullscreen);
 }
 
 void
@@ -1512,7 +1511,7 @@ Host_WriteConfiguration (void)
 			return;
 		}
 
-		Key_WriteBindings (f);
+		//Key_WriteBindings (f);
 		Cvar_WriteVariables (f);
 
 		Qclose (f);

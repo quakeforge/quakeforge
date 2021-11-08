@@ -526,6 +526,7 @@ qwaq_input_event_handler (const IE_event_t *ie_event, void *_res)
 	event.when = ie_event->when * 1e-6 + Sys_DoubleTimeBase ();
 
 	switch (ie_event->type) {
+		case ie_event_count:
 		case ie_none:
 		case ie_gain_focus:
 		case ie_lose_focus:

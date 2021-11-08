@@ -52,6 +52,7 @@
 typedef struct DARRAY_TYPE (in_devbindings_t) in_devbindingset_t;
 
 static in_devbindingset_t devbindings = DARRAY_STATIC_INIT (8);
+static int in_binding_handler;
 
 static void
 in_binding_add_device (const IE_event_t *ie_event)
@@ -133,13 +134,13 @@ in_binding_button (const IE_event_t *ie_event)
 static int
 in_binding_event_handler (const IE_event_t *ie_event, void *unused)
 {
-	static void (*handlers[]) (const IE_event_t *ie_event) = {
+	static void (*handlers[ie_event_count]) (const IE_event_t *ie_event) = {
 		[ie_add_device] = in_binding_add_device,
 		[ie_remove_device] = in_binding_remove_device,
 		[ie_axis] = in_binding_axis,
 		[ie_button] = in_binding_button,
 	};
-	if (ie_event->type < 0 || ie_event->type > ie_button
+	if (ie_event->type < 0 || ie_event->type >= ie_event_count
 		|| !handlers[ie_event->type]) {
 		return 0;
 	}
@@ -147,8 +148,105 @@ in_binding_event_handler (const IE_event_t *ie_event, void *unused)
 	return 1;
 }
 
+static void
+in_bind_f (void)
+{
+}
+
+static void
+in_unbind_f (void)
+{
+}
+
+static void
+in_clear_f (void)
+{
+}
+
+static void
+in_devices_f (void)
+{
+}
+
+static void
+keyhelp_f (void)
+{
+}
+
+typedef struct {
+	const char *name;
+	xcommand_t  func;
+	const char *desc;
+} bindcmd_t;
+
+static bindcmd_t in_binding_commands[] = {
+	{	"in_bind", in_bind_f,
+		"Assign a command or a set of commands to a key.\n"
+		"Note: To bind multiple commands to a key, enclose the "
+		"commands in quotes and separate with semi-colons."
+	},
+	{	"in_unbind", in_unbind_f,
+		"Remove the bind from the the selected key"
+	},
+	{	"in_clear", in_clear_f,
+		"Remove all binds from the specified imts"
+	},
+	{	"in_devices", in_devices_f,
+		"List the known devices and their status."
+	},
+	{	"keyhelp", keyhelp_f,
+		"Identify the next active input axis or button.\n"
+		"The identification includes the device binding name, axis or button "
+		"number, and (if known) the name of the axis or button. Axes and "
+		"buttons can always be bound by number, so even those for which a "
+		"name is not known, but" PACKAGE_NAME " sees, can be bound."
+	},
+	{ }
+#if 0
+	{	"bindlist", Key_Bindlist_f,
+		"list all of the key bindings"
+	},
+	{	"unbindall", Key_Unbindall_f,
+		"Remove all binds (USE CAUTIOUSLY!!!"
+	},
+	{	"unbind", Key_Unbind_f,
+		"wrapper for in_unbind that uses in_bind_imt for the imt "
+		"parameter"
+	},
+	{	"bind", Key_Bind_f,
+		"wrapper for in_bind that uses "
+		"in_bind_imt for the imt parameter"
+	},
+	{	"imt", Key_InputMappingTable_f,
+		""
+	},
+	{	"imt_keydest", Key_IMT_Keydest_f,
+		""
+	},
+	{	"imt_create", Key_IMT_Create_f,
+		"create a new imt table:\n"
+		"    imt_create <keydest> <imt_name> [chain_name]\n"
+		"\n"
+		"The new table will be attached to the specified keydest\n"
+		"imt_name must not already exist.\n"
+		"If given, chain_name must already exist and be on "
+		"keydest.\n"
+	},
+	{	"imt_drop_all", Key_IMT_Drop_All_f,
+		"delete all imt tables\n"
+	},
+	{	"in_type", Key_In_Type_f,
+		"Send the given string as simulated key presses."
+	},
+#endif
+};
+
 void
 IN_Binding_Init (void)
 {
-	IE_Add_Handler (in_binding_event_handler, 0);
+	in_binding_handler = IE_Add_Handler (in_binding_event_handler, 0);
+
+	for (bindcmd_t *cmd = in_binding_commands; cmd->name; cmd++) {
+		Cmd_AddCommand (cmd->name, cmd->func, cmd->desc);
+	}
 }

@@ -82,7 +82,7 @@ static cvar_t  *confirm_quit;
 
 static progs_t  menu_pr_state;
 static menu_item_t *menu;
-static keydest_t menu_keydest;
+//static keydest_t menu_keydest;
 static hashtab_t *menu_hash;
 static func_t   menu_init;
 static func_t   menu_quit;
@@ -358,13 +358,13 @@ bi_Menu_TopMenu (progs_t *pr)
 		free ((char *) top_menu);
 	top_menu = strdup (name);
 }
-
+/*
 static void
 menu_leave (void *data)
 {
 	Menu_Leave ();
 }
-
+*/
 static void
 bi_Menu_SelectMenu (progs_t *pr)
 {
@@ -374,11 +374,11 @@ bi_Menu_SelectMenu (progs_t *pr)
 	if (name && *name)
 		menu = Hash_Find (menu_hash, name);
 	if (menu) {
-		if (Key_GetKeyDest () != key_menu) {
+		/*if (Key_GetKeyDest () != key_menu) {
 			menu_keydest = Key_GetKeyDest ();
 			Key_PushEscape (menu_leave, 0);
 			Key_SetKeyDest (key_menu);
-		}
+		}*/
 		if (menu->enter_hook) {
 			run_menu_pre ();
 			PR_ExecuteProgram (&menu_pr_state, menu->enter_hook);
@@ -387,8 +387,8 @@ bi_Menu_SelectMenu (progs_t *pr)
 	} else {
 		if (name && *name)
 			Sys_Printf ("no menu \"%s\"\n", name);
-		Key_PopEscape ();
-		Key_SetKeyDest (menu_keydest);
+		//Key_PopEscape ();
+		//Key_SetKeyDest (menu_keydest);
 	}
 }
 
@@ -473,8 +473,8 @@ bi_Menu_Leave (progs_t *pr)
 		}
 		menu = menu->parent;
 		if (!menu) {
-			Key_PopEscape ();
-			Key_SetKeyDest (menu_keydest);
+			//Key_PopEscape ();
+			//Key_SetKeyDest (menu_keydest);
 		}
 	}
 }
@@ -775,15 +775,15 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 		return 0;
 	switch (key) {
 		case QFK_DOWN:
-		case QFM_WHEEL_DOWN:
+//		case QFM_WHEEL_DOWN:
 			bi_Menu_Next (&menu_pr_state);
 			return 1;
 		case QFK_UP:
-		case QFM_WHEEL_UP:
+//		case QFM_WHEEL_UP:
 			bi_Menu_Prev (&menu_pr_state);
 			return 1;
 		case QFK_RETURN:
-		case QFM_BUTTON1:
+//		case QFM_BUTTON1:
 			bi_Menu_Enter (&menu_pr_state);
 			return 1;
 		default:
@@ -795,14 +795,14 @@ void
 Menu_Enter ()
 {
 	if (!top_menu) {
-		Key_SetKeyDest (key_console);
+		//Key_SetKeyDest (key_console);
 		return;
 	}
 	menu = Hash_Find (menu_hash, top_menu);
 	if (menu) {
-		menu_keydest = Key_GetKeyDest ();
-		Key_PushEscape (menu_leave, 0);
-		Key_SetKeyDest (key_menu);
+		//menu_keydest = Key_GetKeyDest ();
+		//Key_PushEscape (menu_leave, 0);
+		//Key_SetKeyDest (key_menu);
 		if (menu->enter_hook) {
 			run_menu_pre ();
 			PR_ExecuteProgram (&menu_pr_state, menu->enter_hook);
@@ -822,8 +822,8 @@ Menu_Leave ()
 		}
 		menu = menu->parent;
 		if (!menu) {
-			Key_PopEscape ();
-			Key_SetKeyDest (menu_keydest);
+			//Key_PopEscape ();
+			//Key_SetKeyDest (menu_keydest);
 		}
 	}
 	r_data->vid->recalc_refdef = true;

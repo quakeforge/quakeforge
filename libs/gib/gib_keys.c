@@ -47,6 +47,7 @@
 static void
 Key_GIB_Bind_Get_f (void)
 {
+#if 0
 	const char *key, *cmd;
 	imt_t      *imt;
 	int k;
@@ -68,6 +69,7 @@ Key_GIB_Bind_Get_f (void)
 		GIB_Return ("");
 	else
 		GIB_Return (cmd);
+#endif
 }
 
 void

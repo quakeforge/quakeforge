@@ -114,7 +114,7 @@ CL_WriteConfiguration (void)
 			return;
 		}
 
-		Key_WriteBindings (f);
+		//Key_WriteBindings (f);
 		Cvar_WriteVariables (f);
 
 		Qclose (f);
@@ -321,7 +321,7 @@ CL_EstablishConnection (const char *host)
 
 	cls.demonum = -1;					// not in the demo loop now
 	CL_SetState (ca_connected);
-	Key_SetKeyDest (cls.key_dest);
+	//Key_SetKeyDest (cls.key_dest);
 }
 
 /*
@@ -497,7 +497,7 @@ CL_SetState (cactive_t state)
 	if (old_state != state) {
 		if (old_state == ca_active) {
 			// leaving active state
-			Key_SetKeyDest (key_console);
+			//Key_SetKeyDest (key_console);
 			S_AmbientOff ();
 		}
 		switch (state) {
@@ -512,14 +512,14 @@ CL_SetState (cactive_t state)
 				cls.signon = so_none;		// need all the signon messages
 											// before playing
 				cl.loading = true;
-				Key_SetKeyDest (cls.key_dest);
+				//Key_SetKeyDest (cls.key_dest);
 				IN_ClearStates ();
 				VID_SetCaption ("Connected");
 				break;
 			case ca_active:
 				// entering active state
 				cl.loading = false;
-				Key_SetKeyDest (cls.key_dest);
+				//Key_SetKeyDest (cls.key_dest);
 				IN_ClearStates ();
 				VID_SetCaption ("");
 				S_AmbientOn ();

@@ -18,7 +18,6 @@ libs_input_libQFinput_la_LDFLAGS=		$(lib_ldflags)
 libs_input_libQFinput_la_LIBADD=		$(input_deps)
 libs_input_libQFinput_la_DEPENDENCIES=	$(input_deps)
 libs_input_libQFinput_la_SOURCES= \
-	libs/input/keys.c \
 	libs/input/old_keys.c \
 	libs/input/in_axis.c \
 	libs/input/in_binding.c \

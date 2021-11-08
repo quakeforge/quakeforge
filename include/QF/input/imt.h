@@ -32,6 +32,7 @@
 #ifndef __QFCC__
 
 #include "QF/darray.h"
+#include "QF/qtypes.h"
 
 #include "QF/input/binding.h"
 
@@ -71,16 +72,20 @@ typedef struct in_context_s {
 	imt_t     **imt_tail;
 	imt_t      *active_imt;
 	imt_t      *default_imt;
+	struct cbuf_s *cbuf;
 } in_context_t;
 
 int IMT_GetAxisBlock (const char *device, int num_axes);
 int IMT_GetButtonBlock (const char *device, int num_buttons);
 int IMT_CreateContext (void);
+int IMT_GetContext (void);
+void IMT_SetContext (int ctx);
+void IMT_SetContextCbuf (int ctx, struct cbuf_s *cbuf);
 imt_t *IMT_FindIMT (const char *name);
 int IMT_CreateIMT (int context, const char *imt_name,
 				   const char *chain_imt_name);
-void IMT_ProcessAxis (int axis, int value);
-void IMT_ProcessButton (int button, int state);
+qboolean IMT_ProcessAxis (int axis, int value);
+qboolean IMT_ProcessButton (int button, int state);
 
 #endif
 

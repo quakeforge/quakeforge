@@ -42,6 +42,7 @@
 #include "QF/cmd.h"
 #include "QF/hash.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "QF/input/imt.h"
 
@@ -56,6 +57,7 @@ static imt_blockset_t axis_blocks = DARRAY_STATIC_INIT (8);
 static imt_blockset_t button_blocks = DARRAY_STATIC_INIT (8);
 
 static in_contextset_t in_contexts = DARRAY_STATIC_INIT (8);
+static size_t   imt_current_context;
 
 static imt_block_t * __attribute__((pure))
 imt_find_block (imt_blockset_t *blockset, const char *device)
@@ -149,6 +151,30 @@ IMT_CreateContext (void)
 	return ctx - in_contexts.a;
 }
 
+int
+IMT_GetContext (void)
+{
+	return imt_current_context;
+}
+
+void
+IMT_SetContext (int ctx)
+{
+	if ((size_t) ctx >= in_contexts.size) {
+		Sys_Error ("IMT_SetContext: invalid context %d", ctx);
+	}
+	imt_current_context = ctx;
+}
+
+void
+IMT_SetContextCbuf (int ctx, cbuf_t *cbuf)
+{
+	if ((size_t) ctx >= in_contexts.size) {
+		Sys_Error ("IMT_SetContextCbuf: invalid context %d", ctx);
+	}
+	in_contexts.a[imt_current_context].cbuf = cbuf;
+}
+
 static imt_t * __attribute__ ((pure))
 imt_find_imt (in_context_t *ctx, const char *name)
 {
@@ -227,12 +253,64 @@ IMT_CreateIMT (int context, const char *imt_name, const char *chain_imt_name)
 	return 1;
 }
 
-void
+qboolean
 IMT_ProcessAxis (int axis, int value)
 {
+	imt_t      *imt = in_contexts.a[imt_current_context].active_imt;
+
+	while (imt) {
+		in_axisbinding_t *a = imt->axis_bindings.a[axis];
+		if (a) {
+			return true;
+		}
+		imt = imt->chain;
+	}
+	return false;
 }
 
-void
+static void
+process_binding (int button, int state, const char *cmd)
+{
+	cbuf_t     *cbuf = in_contexts.a[imt_current_context].cbuf;
+
+	if (!cbuf) {
+		return;
+	}
+
+	if (cmd[0] == '+') {
+		if (state) {
+			Cbuf_AddText (cbuf, va (0, "%s %d\n", cmd, button));
+		} else {
+			Cbuf_AddText (cbuf, va (0, "-%s %d\n", cmd + 1, button));
+		}
+	} else {
+		if (state) {
+			Cbuf_AddText (cbuf, va (0, "%s\n", cmd));
+		}
+	}
+}
+
+qboolean
 IMT_ProcessButton (int button, int state)
 {
+	imt_t      *imt = in_contexts.a[imt_current_context].active_imt;
+
+	Sys_Printf ("IMT_ProcessButton: %d %d\n", button, state);
+	while (imt) {
+		in_buttonbinding_t *b = imt->button_bindings.a[button];
+		if (b) {
+			switch (b->type) {
+				case inb_button:
+					IN_ButtonAction (b->button, button, state);
+					break;
+				case inb_command:
+					//FIXME avoid repeat
+					process_binding (button, state, b->command);
+					break;
+			}
+			return true;
+		}
+		imt = imt->chain;
+	}
+	return false;
 }

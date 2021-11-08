@@ -88,6 +88,8 @@ typedef enum {
 	ie_key,
 	ie_axis,
 	ie_button,
+
+	ie_event_count
 } IE_event_type;
 
 #define IE_broadcast_events (0 \
@@ -113,5 +115,6 @@ int IE_Send_Event (const IE_event_t *event);
 int IE_Add_Handler (ie_handler_t *event_handler, void *data);
 void IE_Remove_Handler (int handle);
 void IE_Set_Focus (int handle);
+int IE_Get_Focus (void);
 
 #endif//__QF_in_event_h

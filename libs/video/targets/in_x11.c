@@ -807,7 +807,9 @@ event_key (XEvent *event)
 
 	x11_key.shift = event->xmotion.state & 0xff;
 	XLateKey (&event->xkey, &x11_key.code, &x11_key.unicode);
-	in_x11_send_key_event ();
+	if (event->type == KeyPress) {
+		in_x11_send_key_event ();
+	}
 }
 
 static void

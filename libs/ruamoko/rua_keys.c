@@ -43,8 +43,10 @@
 static void
 bi_Key_keydown (progs_t *pr)
 {
+#if 0
 	int         keynum  = P_INT (pr, 0);
 	R_INT (pr) = keydown[keynum];
+#endif
 }
 
 /*
@@ -55,6 +57,7 @@ bi_Key_keydown (progs_t *pr)
 static void
 bi_Key_SetBinding (progs_t *pr)
 {
+#if 0
 	const char *imt_name  = P_GSTRING (pr, 0);
 	int         keynum  = P_INT (pr, 1);
 	const char *binding = P_GSTRING (pr, 2);
@@ -68,6 +71,7 @@ bi_Key_SetBinding (progs_t *pr)
 	if (imt) {
 		Key_SetBinding (imt, keynum, binding);
 	}
+#endif
 }
 
 /*
@@ -78,6 +82,7 @@ bi_Key_SetBinding (progs_t *pr)
 static void
 bi_Key_LookupBinding (progs_t *pr)
 {
+#if 0
 	const char *imt_name = P_GSTRING (pr, 0);
 	int	        bindnum = P_INT (pr, 1);
 	const char *binding = P_GSTRING (pr, 2);
@@ -89,7 +94,7 @@ bi_Key_LookupBinding (progs_t *pr)
 	imt = Key_FindIMT (imt_name);
 	if (imt) {
 		for (i = 0; i < QFK_LAST; i++) {
-//XXX			keybind = imt->button_bindings.a[i].str;
+			keybind = imt->button_bindings.a[i].str;
 			if (keybind == NULL) {
 			  continue;
 			}
@@ -104,7 +109,8 @@ bi_Key_LookupBinding (progs_t *pr)
 	}
 
 	R_INT (pr) = keynum;
-};
+#endif
+}
 
 /*
     bi_Key_CountBinding
@@ -114,6 +120,7 @@ bi_Key_LookupBinding (progs_t *pr)
 static void
 bi_Key_CountBinding (progs_t *pr)
 {
+#if 0
 	const char *imt_name = P_GSTRING (pr, 0);
 	const char *binding = P_GSTRING (pr, 1);
 	int         i, res = 0;
@@ -123,7 +130,7 @@ bi_Key_CountBinding (progs_t *pr)
 	imt = Key_FindIMT (imt_name);
 	if (imt) {
 		for (i = 0; i < QFK_LAST; i++) {
-//XXX			keybind = imt->button_bindings.a[i].str;
+			keybind = imt->button_bindings.a[i].str;
 			if (keybind == NULL) {
 			  continue;
 			}
@@ -134,7 +141,8 @@ bi_Key_CountBinding (progs_t *pr)
 	}
 
 	R_INT (pr) = res;
-};
+#endif
+}
 
 
 /*
@@ -145,16 +153,20 @@ bi_Key_CountBinding (progs_t *pr)
 static void
 bi_Key_KeynumToString (progs_t *pr)
 {
+#if 0
 	int	        keynum  = P_INT (pr, 0);
 
 	RETURN_STRING (pr, Key_KeynumToString (keynum));
-};
+#endif
+}
 
 static void
 bi_Key_StringToKeynum (progs_t *pr)
 {
+#if 0
 	const char *keyname = P_GSTRING (pr, 0);
 	R_INT (pr) = Key_StringToKeynum (keyname);
+#endif
 }
 
 static builtin_t builtins[] = {
