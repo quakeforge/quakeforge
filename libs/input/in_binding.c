@@ -213,7 +213,7 @@ in_binding_find_device (const char *name)
 static void
 in_bind_f (void)
 {
-	if (Cmd_Argc () < 5) {
+	if (Cmd_Argc () < 6) {
 		Sys_Printf ("in_bind imt device type number binding...\n");
 		Sys_Printf ("    imt: the name of the input mapping table in which the"
 					" intput will be bound\n");
@@ -238,7 +238,7 @@ in_bind_f (void)
 	const char *type = Cmd_Argv (3);
 	const char *number = Cmd_Argv (4);
 	// the rest of the command line is the binding
-	//const char *binding = Cmd_Args (5);
+	const char *binding = Cmd_Args (5);
 
 	imt_t      *imt = IMT_FindIMT (imt_name);
 	in_devbindings_t *dev = in_binding_find_device (dev_name);
@@ -252,7 +252,7 @@ in_bind_f (void)
 		Sys_Printf ("unknown device: %s\n", dev_name);
 		return;
 	}
-	if (strcmp (type, "axis") != 0 || strcmp (type, "button") != 0) {
+	if (strcmp (type, "axis") != 0 && strcmp (type, "button") != 0) {
 		Sys_Printf ("invalid input type: %s\n", type);
 		return;
 	}
@@ -261,22 +261,90 @@ in_bind_f (void)
 			Sys_Printf ("invalid axis number: %s\n", number);
 			return;
 		}
+		IMT_BindAxis (imt, dev->axis_imt_id + num, binding);
 	} else {
 		if (*end || num < 0 || num >= dev->num_buttons) {
 			Sys_Printf ("invalid button number: %s\n", number);
 			return;
 		}
+		IMT_BindButton (imt, dev->button_imt_id + num, binding);
 	}
 }
 
 static void
 in_unbind_f (void)
 {
+	if (Cmd_Argc () < 6) {
+		Sys_Printf ("in_unbind imt device type number\n");
+		Sys_Printf ("    imt: the name of the input mapping table in which the"
+					" intput will be unbound\n");
+		Sys_Printf ("    device: the nickname or id of the devise owning"
+					" the input to be unbound\n");
+		Sys_Printf ("    type: the type of input to be unbound (axis or"
+					" button)\n");
+		// FIXME support names
+		Sys_Printf ("    number: the numeric id of the input to be unbound\n");
+		return;
+	}
+
+	const char *imt_name = Cmd_Argv (1);
+	const char *dev_name = Cmd_Argv (2);
+	const char *type = Cmd_Argv (3);
+	const char *number = Cmd_Argv (4);
+
+	imt_t      *imt = IMT_FindIMT (imt_name);
+	in_devbindings_t *dev = in_binding_find_device (dev_name);
+	char       *end;
+	int         num = strtol (number, &end, 0);
+	if (!imt) {
+		Sys_Printf ("unknown imt: %s\n", imt_name);
+		return;
+	}
+	if (!dev) {
+		Sys_Printf ("unknown device: %s\n", dev_name);
+		return;
+	}
+	if (strcmp (type, "axis") != 0 && strcmp (type, "button") != 0) {
+		Sys_Printf ("invalid input type: %s\n", type);
+		return;
+	}
+	if (*type == 'a') {
+		if (*end || num < 0 || num >= dev->num_axes) {
+			Sys_Printf ("invalid axis number: %s\n", number);
+			return;
+		}
+		IMT_BindAxis (imt, dev->axis_imt_id + num, 0);
+	} else {
+		if (*end || num < 0 || num >= dev->num_buttons) {
+			Sys_Printf ("invalid button number: %s\n", number);
+			return;
+		}
+		IMT_BindButton (imt, dev->button_imt_id + num, 0);
+	}
 }
 
 static void
 in_clear_f (void)
 {
+	int         argc = Cmd_Argc ();
+	if (argc < 2) {
+		Sys_Printf ("in_clear imt [imt...]\n");
+		return;
+	}
+	for (int i = 1; i < argc; i++) {
+		const char *imt_name = Cmd_Argv (i);
+		imt_t      *imt = IMT_FindIMT (imt_name);
+		if (!imt) {
+			Sys_Printf ("unknown imt: %s\n", imt_name);
+			continue;
+		}
+		for (size_t ind = 0; ind < imt->axis_bindings.size; ind++) {
+			IMT_BindAxis (imt, ind, 0);
+		}
+		for (size_t ind = 0; ind < imt->button_bindings.size; ind++) {
+			IMT_BindButton (imt, ind, 0);
+		}
+	}
 }
 
 static void
