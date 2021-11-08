@@ -50,7 +50,7 @@ The following is the list of relevant package names in debian.
 \li git
 
 \li libasound2-dev
-\li libjack-dev
+\li libjack-jackd2-dev
 
 \li libsamplerate0-dev
 
