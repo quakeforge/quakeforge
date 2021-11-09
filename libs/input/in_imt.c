@@ -50,6 +50,18 @@
 #include "QF/input/binding.h"
 #include "QF/input/imt.h"
 
+/** Describe a region of imt bindings (axis or button)
+
+	Each device may have a block of axis bindings and a block of button
+	bindings (some devices will have only the one block).
+
+	Bindings are allocated to a device in contiguous blocks.
+*/
+typedef struct imt_block_s {
+	int         base;               ///< index of first binding
+	int         count;              ///< number of bindings
+} imt_block_t;
+
 typedef struct DARRAY_TYPE (in_context_t) in_contextset_t;
 typedef struct DARRAY_TYPE (imt_block_t) imt_blockset_t;
 /** Binding blocks are allocated across all imts
@@ -99,17 +111,6 @@ free_button_binding (in_buttonbinding_t *binding)
 	cmemfree (binding_mem, binding);
 }
 
-static imt_block_t * __attribute__((pure))
-imt_find_block (imt_blockset_t *blockset, const char *device)
-{
-    for (size_t i = 0; i < blockset->size; i++) {
-        if (strcmp (blockset->a[i].device, device) == 0) {
-            return &blockset->a[i];
-        }
-    }
-    return 0;
-}
-
 static imt_block_t *
 imt_get_block (imt_blockset_t *blockset)
 {
@@ -157,28 +158,20 @@ imt_get_button_block (int count)
 }
 
 int
-IMT_GetAxisBlock (const char *device, int num_axes)
+IMT_GetAxisBlock (int num_axes)
 {
-    imt_block_t *block;
-    if (!(block = imt_find_block (&axis_blocks, device))) {
-        block = imt_get_block (&axis_blocks);
-        block->device = device;
-        block->base = imt_get_axis_block (num_axes);
-        block->count = num_axes;
-    }
+    imt_block_t *block = imt_get_block (&axis_blocks);
+	block->base = imt_get_axis_block (num_axes);
+	block->count = num_axes;
     return block - axis_blocks.a;
 }
 
 int
-IMT_GetButtonBlock (const char *device, int num_buttons)
+IMT_GetButtonBlock (int num_buttons)
 {
-    imt_block_t *block;
-    if (!(block = imt_find_block (&button_blocks, device))) {
-        block = imt_get_block (&button_blocks);
-        block->device = device;
-        block->base = imt_get_button_block (num_buttons);
-        block->count = num_buttons;
-    }
+    imt_block_t *block = imt_get_block (&button_blocks);
+	block->base = imt_get_button_block (num_buttons);
+	block->count = num_buttons;
     return block - button_blocks.a;
 }
 

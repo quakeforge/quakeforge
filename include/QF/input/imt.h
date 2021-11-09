@@ -36,26 +36,6 @@
 
 #include "QF/input/binding.h"
 
-typedef enum {
-	imt_button,
-	imt_axis,
-} imt_type;
-
-/** Describe a region of imt bindings (axis or button)
-
-	Each device may have a block of axis bindings and a block of button
-	bindings (some devices will have only the one block). The device name is
-	used instead of a pointer to the device descriptor so configs can be
-	preserved even if the device is not present.
-
-	Bindings are allocated to a device in contiguous blocks.
-*/
-typedef struct imt_block_s {
-	const char *device;             ///< name of the owning device
-	int         base;               ///< index of first binding
-	int         count;              ///< number of bindings
-} imt_block_t;
-
 /**	Input Mapping Table
 */
 typedef struct imt_s {
@@ -76,8 +56,8 @@ typedef struct in_context_s {
 	struct cbuf_s *cbuf;
 } in_context_t;
 
-int IMT_GetAxisBlock (const char *device, int num_axes);
-int IMT_GetButtonBlock (const char *device, int num_buttons);
+int IMT_GetAxisBlock (int num_axes);
+int IMT_GetButtonBlock (int num_buttons);
 int IMT_CreateContext (const char *name);
 int IMT_GetContext (void);
 void IMT_SetContext (int ctx);
