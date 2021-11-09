@@ -104,11 +104,11 @@ typedef struct in_device_s {
 
 	\a button_info holds the current raw state of the button
 
-	\a axis_imt_id is 0 if the device has no axis bindings, otherwise it is
-    the index into the imt array for the imt group.
+	\a axis_imt_id is -1 if the device has no axis bindings, otherwise it is
+    the base index into the imt axis bindings array.
 
-	\a button_imt_id is 0 if the device has no button bindings, otherwise it
-    is the index into the imt array for the imt group.
+	\a button_imt_id is -1 if the device has no button bindings, otherwise it
+    is the base index into the imt button bindings array.
 */
 typedef struct in_devbindings_s {
 	const char *name;		///< name used when binding inputs
