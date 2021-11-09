@@ -391,6 +391,17 @@ in_win_shutdown (void *data)
 }
 
 static void
+in_win_set_device_event_data (void *device, void *event_data, void *data)
+{
+}
+
+static void *
+in_win_get_device_event_data (void *device, void *data)
+{
+	return 0;
+}
+
+static void
 IN_MouseEvent (unsigned mstate)
 {
 	unsigned    i;
@@ -875,6 +886,8 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 static in_driver_t in_win_driver = {
 	.init = in_win_init,
 	.shutdown = in_win_shutdown,
+	.set_device_event_data = in_win_set_device_event_data,
+	.get_device_event_data = in_win_get_device_event_data,
 	.process_events = in_win_process_events,
 	.clear_states = in_win_clear_states,
 	//.grab_input = in_win_grab_input,

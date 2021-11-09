@@ -63,12 +63,14 @@ typedef struct {
 } IE_key_event_t;
 
 typedef struct {
+	void       *data;
 	int         devid;
 	int         axis;
 	int         value;
 } IE_axis_event_t;
 
 typedef struct {
+	void       *data;
 	int         devid;
 	int         button;
 	int         state;

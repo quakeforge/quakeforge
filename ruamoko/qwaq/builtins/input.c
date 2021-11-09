@@ -467,6 +467,17 @@ term_shutdown (void *_res)
 {
 }
 
+static void
+term_set_device_event_data (void *device, void *event_data, void *data)
+{
+}
+
+static void *
+term_get_device_event_data (void *device, void *data)
+{
+	return 0;
+}
+
 #define FD 0
 static void
 term_add_select (qf_fd_set *fdset, int *maxfd, void *_res)
@@ -506,6 +517,8 @@ term_check_select (qf_fd_set *fdset, void *_res)
 static in_driver_t term_driver = {
 	.init = term_init,
 	.shutdown = term_shutdown,
+	.set_device_event_data = term_set_device_event_data,
+	.get_device_event_data = term_get_device_event_data,
 	.add_select = term_add_select,
 	.check_select = term_check_select,
 };

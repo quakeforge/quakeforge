@@ -60,6 +60,9 @@ typedef struct in_driver_s {
 	void (*init) (void *data);
 	void (*shutdown) (void *data);
 
+	void (*set_device_event_data) (void *device, void *event_data, void *data);
+	void *(*get_device_event_data) (void *device, void *data);
+
 	// The driver must provide either both or none of add_select and
 	// chec_select.
 	void (*add_select) (struct qf_fd_set *fdset, int *maxfd, void *data);
@@ -81,6 +84,7 @@ typedef struct in_device_s {
 	void       *device;
 	const char *name;
 	const char *id;
+	void       *event_data;
 } in_device_t;
 
 /*** Connect a device and its axes and buttons to logical axes and buttons.
@@ -139,6 +143,8 @@ void IN_RemoveDevice (int devid);
 void IN_SendConnectedDevices (void);
 const char *IN_GetDeviceName (int devid) __attribute__((pure));
 const char *IN_GetDeviceId (int devid) __attribute__((pure));
+void IN_SetDeviceEventData (int devid, void *data);
+void *IN_GetDeviceEventData (int devid);
 int IN_AxisInfo (int devid, in_axisinfo_t *axes, int *numaxes);
 int IN_ButtonInfo (int devid, in_buttoninfo_t *button, int *numbuttons);
 

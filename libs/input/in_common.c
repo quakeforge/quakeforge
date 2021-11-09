@@ -204,6 +204,34 @@ IN_GetDeviceId (int devid)
 	return in_devices.a[devid].id;
 }
 
+void
+IN_SetDeviceEventData (int devid, void *data)
+{
+	if ((size_t) devid >= in_devices.size) {
+		return;
+	}
+	if (!in_devices.a[devid].device || in_devices.a[devid].driverid == -1) {
+		return;
+	}
+	in_regdriver_t *rd = &in_drivers.a[in_devices.a[devid].driverid];
+	rd->driver.set_device_event_data (in_devices.a[devid].device, data,
+									  rd->data);
+}
+
+void *
+IN_GetDeviceEventData (int devid)
+{
+	if ((size_t) devid >= in_devices.size) {
+		return 0;
+	}
+	if (!in_devices.a[devid].device || in_devices.a[devid].driverid == -1) {
+		return 0;
+	}
+	in_regdriver_t *rd = &in_drivers.a[in_devices.a[devid].driverid];
+	return rd->driver.get_device_event_data (in_devices.a[devid].device,
+											 rd->data);
+}
+
 int
 IN_AxisInfo (int devid, in_axisinfo_t *axes, int *numaxes)
 {

@@ -51,6 +51,7 @@ typedef struct devmap_s {
 	struct devmap_s *next;
 	struct devmap_s **prev;
 	device_t   *device;
+	void       *event_data;
 	int         devid;
 } devmap_t;
 
@@ -77,6 +78,22 @@ in_evdev_shutdown (void *data)
 }
 
 static void
+in_evdev_set_device_event_data (void *device, void *event_data, void *data)
+{
+	device_t   *dev = device;
+	devmap_t   *dm = dev->data;
+	dm->event_data = event_data;
+}
+
+static void *
+in_evdev_get_device_event_data (void *device, void *data)
+{
+	device_t   *dev = device;
+	devmap_t   *dm = dev->data;
+	return dm->event_data;
+}
+
+static void
 in_evdev_axis_event (axis_t *axis, void *_dm)
 {
 	devmap_t   *dm = _dm;
@@ -86,6 +103,7 @@ in_evdev_axis_event (axis_t *axis, void *_dm)
 		.type = ie_axis,
 		.when = Sys_LongTime (),
 		.axis = {
+			.data = dm->event_data,
 			.devid = dm->devid,
 			.axis = axis->num,
 			.value = axis->value,
@@ -104,6 +122,7 @@ in_evdev_button_event (button_t *button, void *_dm)
 		.type = ie_button,
 		.when = Sys_LongTime (),
 		.button = {
+			.data = dm->event_data,
 			.devid = dm->devid,
 			.button = button->num,
 			.state = button->state,
@@ -223,6 +242,8 @@ in_evdev_button_info (void *data, void *device, in_buttoninfo_t *buttons,
 static in_driver_t in_evdev_driver = {
 	.init = in_evdev_init,
 	.shutdown = in_evdev_shutdown,
+	.set_device_event_data = in_evdev_set_device_event_data,
+	.get_device_event_data = in_evdev_get_device_event_data,
 	.add_select = in_evdev_add_select,
 	.check_select = in_evdev_check_select,
 	.clear_states = in_evdev_clear_states,

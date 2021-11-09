@@ -87,6 +87,7 @@ typedef struct x11_device_s {
 	int         num_buttons;
 	in_axisinfo_t *axes;
 	in_buttoninfo_t *buttons;
+	void       *event_data;
 	int         devid;
 } x11_device_t;
 
@@ -645,6 +646,7 @@ in_x11_send_axis_event (int devid, in_axisinfo_t *axis)
 		.type = ie_axis,
 		.when = Sys_LongTime (),
 		.axis = {
+			.data = x11_mouse_device.event_data,
 			.devid = devid,
 			.axis = axis->axis,
 			.value = axis->value,
@@ -677,12 +679,13 @@ in_x11_send_key_event (void)
 }
 
 static void
-in_x11_send_button_event (int devid, in_buttoninfo_t *button)
+in_x11_send_button_event (int devid, in_buttoninfo_t *button, void *event_data)
 {
 	IE_event_t  event = {
 		.type = ie_button,
 		.when = Sys_LongTime (),
 		.button = {
+			.data = event_data,
 			.devid = devid,
 			.button = button->button,
 			.state = button->state,
@@ -779,7 +782,8 @@ event_button (XEvent *event)
 	int press = event->type == ButtonPress;
 
 	x11_mouse_buttons[but].state = press;
-	in_x11_send_button_event (x11_mouse_device.devid, &x11_mouse_buttons[but]);
+	in_x11_send_button_event (x11_mouse_device.devid, &x11_mouse_buttons[but],
+							  x11_mouse_device.event_data);
 
 	x11_mouse.shift = event->xmotion.state & 0xff;
 	x11_mouse.x = event->xmotion.x;
@@ -803,7 +807,8 @@ event_key (XEvent *event)
 	key = (event->xkey.keycode - 8) & 0xff;
 	x11_key_buttons[key].state = event->type == KeyPress;
 	in_x11_send_button_event (x11_keyboard_device.devid,
-							  &x11_key_buttons[key]);
+							  &x11_key_buttons[key],
+							  x11_keyboard_device.event_data);
 
 	x11_key.shift = event->xmotion.state & 0xff;
 	XLateKey (&event->xkey, &x11_key.code, &x11_key.unicode);
@@ -943,6 +948,20 @@ in_x11_shutdown (void *data)
 }
 
 static void
+in_x11_set_device_event_data (void *device, void *event_data, void *data)
+{
+	x11_device_t *dev = device;
+	dev->event_data = event_data;
+}
+
+static void *
+in_x11_get_device_event_data (void *device, void *data)
+{
+	x11_device_t *dev = device;
+	return dev->event_data;
+}
+
+static void
 in_x11_init_cvars (void)
 {
 	in_snd_block = Cvar_Get ("in_snd_block", "0", CVAR_ARCHIVE, NULL,
@@ -1028,6 +1047,8 @@ in_x11_clear_states (void *data)
 static in_driver_t in_x11_driver = {
 	.init = in_x11_init,
 	.shutdown = in_x11_shutdown,
+	.set_device_event_data = in_x11_set_device_event_data,
+	.get_device_event_data = in_x11_get_device_event_data,
 #ifdef X11_USE_SELECT
 	.add_select = in_x11_add_select,
 	.check_select = in_x11_check_select,
