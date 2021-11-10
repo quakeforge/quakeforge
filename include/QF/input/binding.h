@@ -63,6 +63,8 @@ typedef enum {
 typedef struct in_axis_s {
 	float       value;		///< converted value of the axis
 	in_axis_mode mode;		///< method used for updating the destination
+	const char *name;
+	const char *description;
 } in_axis_t;
 
 /*** Current state of the logical button.
@@ -95,7 +97,10 @@ typedef struct in_button_s {
 } in_button_t;
 
 typedef struct in_axisbinding_s {
-	in_recipe_t *recipe;
+	union {
+		in_recipe_t *recipe;///< for absolute axes
+		float       scale;	///< for relative axes
+	};
 	in_axis_t   *axis;
 } in_axisbinding_t;
 
@@ -210,8 +215,7 @@ IN_ButtonReleased (in_button_t *button)
 void IN_ButtonAction (in_button_t *buttin, int id, int pressed);
 
 int IN_RegisterButton (in_button_t *button);
-int IN_RegisterAxis (in_axis_t *axis, const char *name,
-					 const char *description);
+int IN_RegisterAxis (in_axis_t *axis);
 in_button_t *IN_FindButton (const char *name);
 
 void IN_Binding_Init (void);

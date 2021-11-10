@@ -43,38 +43,29 @@
 #include "QF/input.h"
 #include "QF/sys.h"
 
-typedef struct regaxis_s {
-	const char *name;
-	const char *description;
-	in_axis_t  *axis;
-} regaxis_t;
-
 static hashtab_t *axis_tab;
 
 static const char *
-axis_get_key (const void *b, void *data)
+axis_get_key (const void *a, void *data)
 {
-	__auto_type regaxis = (const regaxis_t *) b;
-	return regaxis->name;
+	__auto_type axis = (const in_axis_t *) a;
+	return axis->name;
 }
 
 static void
-axis_free (void *b, void *data)
+axis_free (void *a, void *data)
 {
-	free (b);
 }
 
 VISIBLE int
-IN_RegisterAxis (in_axis_t *axis, const char *name, const char *description)
+IN_RegisterAxis (in_axis_t *axis)
 {
+	const char *name = axis->name;
 	if (Hash_Find (axis_tab, name)) {
 		return 0;
 	}
-	regaxis_t *regaxis = malloc (sizeof (regaxis_t));
-	regaxis->name = name;
-	regaxis->description = description;
-	regaxis->axis = axis;
 
+	Hash_Add (axis_tab, axis);
 	return 1;
 }
 
