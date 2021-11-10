@@ -66,6 +66,38 @@ cvar_t     *cl_nodelta;
 cvar_t     *cl_maxnetfps;
 cvar_t     *cl_spamimpulse;
 
+in_axis_t viewdelta_position_forward = {
+	.mode = ina_accumulate,
+	.name = "move.forward",
+	.description = "Move forward (positive) or backward (negative)",
+};
+in_axis_t viewdelta_position_left = {
+	.mode = ina_accumulate,
+	.name = "move.left",
+	.description = "Move left (positive) or right (negative)",
+};
+in_axis_t viewdelta_position_up = {
+	.mode = ina_accumulate,
+	.name = "move.up",
+	.description = "Move up (positive) or down (negative)",
+};
+
+in_axis_t viewdelta_angles_pitch = {
+	.mode = ina_accumulate,
+	.name = "move.pitch",
+	.description = "Pitch axis",
+};
+in_axis_t viewdelta_angles_yaw = {
+	.mode = ina_accumulate,
+	.name = "move.yaw",
+	.description = "Yaw axis",
+};
+in_axis_t viewdelta_angles_roll = {
+	.mode = ina_accumulate,
+	.name = "move.roll",
+	.description = "Roll axis",
+};
+
 in_button_t in_left = {
 	.name = "left",
 	.description = "When active the player is turning left"
@@ -138,6 +170,16 @@ in_button_t in_mlook = {
 	.description = "When active moving the mouse or joystick forwards "
 				   "and backwards performs +lookup and "
 				   "+lookdown"
+};
+
+static in_axis_t *cl_in_axes[] = {
+	&viewdelta_position_forward,
+	&viewdelta_position_left,
+	&viewdelta_position_up,
+	&viewdelta_angles_pitch,
+	&viewdelta_angles_yaw,
+	&viewdelta_angles_roll,
+	0,
 };
 
 static in_button_t *cl_in_buttons[] = {
@@ -288,11 +330,6 @@ CL_BaseMove (usercmd_t *cmd)
 	if (freelook)
 		V_StopPitchDrift ();
 
-	viewdelta.angles[0] = viewdelta.angles[1] = viewdelta.angles[2] = 0;
-	viewdelta.position[0] = viewdelta.position[1] = viewdelta.position[2] = 0;
-
-	IN_Move ();
-
 	// adjust for chase camera angles
 	/*FIXME:chase figure out just what this does and get it working
 	if (cl.chase
@@ -313,12 +350,19 @@ CL_BaseMove (usercmd_t *cmd)
 	}
 	*/
 
-	cmd->forwardmove += viewdelta.position[2] * m_forward->value;
-	cmd->sidemove += viewdelta.position[0] * m_side->value;
-	cmd->upmove += viewdelta.position[1];
-	cl.viewstate.angles[PITCH] += viewdelta.angles[PITCH] * m_pitch->value;
-	cl.viewstate.angles[YAW] += viewdelta.angles[YAW] * m_yaw->value;
-	cl.viewstate.angles[ROLL] += viewdelta.angles[ROLL];
+	cmd->forwardmove += viewdelta_position_forward.value * m_forward->value;
+	cmd->sidemove += viewdelta_position_left.value * m_side->value;
+	cmd->upmove += viewdelta_position_up.value;
+	cl.viewstate.angles[PITCH] += viewdelta_angles_pitch.value * m_pitch->value;
+	cl.viewstate.angles[YAW] += viewdelta_angles_yaw.value * m_yaw->value;
+	cl.viewstate.angles[ROLL] += viewdelta_angles_roll.value;
+
+	viewdelta_angles_pitch.value = 0;
+	viewdelta_angles_yaw.value = 0;
+	viewdelta_angles_roll.value = 0;
+	viewdelta_position_forward.value = 0;
+	viewdelta_position_left.value = 0;
+	viewdelta_position_up.value = 0;
 
 	if (freelook && !(in_strafe.state & inb_down)) {
 		cl.viewstate.angles[PITCH]
@@ -522,11 +566,16 @@ CL_SendCmd (void)
 void
 CL_Input_Init (void)
 {
+	for (int i = 0; cl_in_axes[i]; i++) {
+		IN_RegisterAxis (cl_in_axes[i]);
+	}
 	for (int i = 0; cl_in_buttons[i]; i++) {
 		IN_RegisterButton (cl_in_buttons[i]);
 	}
 	cl_game_context = IMT_CreateContext ("key_game");
+	IMT_SetContextCbuf (cl_game_context, cl_cbuf);
 	cl_demo_context = IMT_CreateContext ("key_demo");
+	IMT_SetContextCbuf (cl_demo_context, cl_cbuf);
 	Cmd_AddDataCommand ("impulse", IN_Impulse, 0,
 						"Call a game function or QuakeC function.");
 }
