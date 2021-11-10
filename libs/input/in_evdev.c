@@ -150,12 +150,12 @@ device_add (device_t *dev)
 	}
 	devmap_list = dm;
 
-	dm->device = dev;
-	dm->devid = IN_AddDevice (evdev_driver_handle, dev, name, id);
-
 	dev->data = dm;
 	dev->axis_event = in_evdev_axis_event;
 	dev->button_event = in_evdev_button_event;
+
+	dm->device = dev;
+	dm->devid = IN_AddDevice (evdev_driver_handle, dev, name, id);
 
 #if 0
 	Sys_Printf ("in_evdev: add %s\n", dev->path);

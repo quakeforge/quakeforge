@@ -92,13 +92,17 @@ typedef struct in_device_s {
 	\a name is used to specify the device when creating bindings, and
 	identifying the device for hints etc (eg, "press joy1 1 to ...").
 
-	\a id is the device name (eg, "6d spacemouse") or (preferred) the device
-	id (eg "usb-0000:00:1d.1-2/input0"). The device name is useful for ease of
-	user identification and allowing the device to be plugged into any USB
-	socket. However, it doesn't allow multiple devices with the same name
-	(eg, using twin joysticks of the same model). Thus the device id is
-	preferred, but does require the device to be plugged into the same uSB
-	path (ie, same socket on the same hub connected to the same port on the PC)
+	\a devname is the device name (eg, "6d spacemouse")
+
+	\a id is the device id (eg "usb-0000:00:1d.1-2/input0").
+
+	The device name is useful for ease of user identification and allowing
+	the device to be plugged into any USB socket. However, it doesn't allow
+	multiple devices with the same name (eg, using twin joysticks of the same
+	model). Thus if \a match_id is true, both the device name and the device
+	id used to auto-connect the device, but it does require the device to be
+	plugged into the same uSB path (ie, same socket on the same hub connected
+	to the same port on the PC)
 
 	\a devid is the actual device associated with the bindings. If -1, the
 	device is not currently connected.
@@ -115,8 +119,11 @@ typedef struct in_device_s {
     is the base index into the imt button bindings array.
 */
 typedef struct in_devbindings_s {
-	const char *name;		///< name used when binding inputs
-	const char *id;			///< physical device name or id (preferred)
+	struct in_devbindings_s *next;
+	char       *name;		///< name used when binding inputs
+	char       *devname;	///< physical device name
+	char       *id;			///< physical device id
+	int         match_id;	///< if true, both devname and id must match
 	int         devid;		///< id of device associated with these bindings
 	int         num_axes;
 	int         num_buttons;

@@ -40,7 +40,9 @@
 
 #include "QF/cmd.h"
 #include "QF/hash.h"
+#include "QF/heapsort.h"
 #include "QF/input.h"
+#include "QF/progs.h"   // for PR_RESMAP
 #include "QF/sys.h"
 
 #include "QF/input/imt.h"
@@ -49,67 +51,111 @@
 #include "QF/input/event.h"
 #include "QF/input/imt.h"
 
-typedef struct DARRAY_TYPE (in_devbindings_t) in_devbindingset_t;
+typedef struct DARRAY_TYPE (int) in_knowndevset_t;
 
-static in_devbindingset_t devbindings = DARRAY_STATIC_INIT (8);
+static in_knowndevset_t known_devices = DARRAY_STATIC_INIT (8);
 static int in_binding_handler;
 static int in_keyhelp_handler;
 static int in_keyhelp_saved_handler;
+
+static PR_RESMAP (in_devbindings_t) devbindings;
+static in_devbindings_t *devbindings_list;
+
+static int
+devid_cmp (const void *a, const void *b)
+{
+	return *(const int *)a - *(const int *)b;
+}
+
+static int *
+in_find_devid (int devid)
+{
+	return bsearch (&devid, known_devices.a, known_devices.size,
+					sizeof (int), devid_cmp);
+}
+
+static in_devbindings_t *
+in_binding_find_connection (const char *devname, const char *id)
+{
+	in_devbindings_t *db;
+
+	//FIXME slow
+	for (db = devbindings_list; db; db = db->next) {
+		if (strcmp (devname, db->devname) != 0) {
+			continue;
+		}
+		if (db->match_id && strcmp (id, db->id) != 0) {
+			continue;
+		}
+		return db;
+	}
+	return 0;
+}
 
 static void
 in_binding_add_device (const IE_event_t *ie_event)
 {
 	size_t      devid = ie_event->device.devid;
-	if (devid >= devbindings.size) {
-		DARRAY_RESIZE (&devbindings, devid + 1);
-		memset (&devbindings.a[devid], 0, sizeof (in_devbindings_t));
-	}
-	in_devbindings_t *db = &devbindings.a[devid];
-	if (db->id) {
-		if (db->id != IN_GetDeviceId (devid)) {
-			Sys_Error ("in_binding_add_device: devid conflict: %zd", devid);
-		}
-		Sys_Printf ("in_binding_add_device: readd %s\n", db->id);
+
+	if (in_find_devid (devid)) {
+		// the device is already known. this is likely the result of a
+		// broadcast of connected devices
 		return;
 	}
-	db->id = IN_GetDeviceId (devid);
-	db->devid = devid;
-	IN_AxisInfo (devid, 0, &db->num_axes);
-	IN_ButtonInfo (devid, 0, &db->num_buttons);
-	db->axis_info = malloc (db->num_axes * sizeof (in_axisinfo_t)
-							+ db->num_buttons * sizeof (in_buttoninfo_t));
-	db->button_info = (in_buttoninfo_t *) &db->axis_info[db->num_axes];
-	IN_AxisInfo (devid, db->axis_info, &db->num_axes);
-	IN_ButtonInfo (devid, db->button_info, &db->num_buttons);
-	Sys_Printf ("in_binding_add_device: %s %d %d\n", db->id, db->num_axes,
-				db->num_buttons);
+	DARRAY_APPEND (&known_devices, devid);
+	// keep the known devices sorted by id
+	heapsort (known_devices.a, known_devices.size, sizeof (int), devid_cmp);
+
+	const char *devname = IN_GetDeviceName (devid);
+	const char *id = IN_GetDeviceId (devid);
+	in_devbindings_t *db = in_binding_find_connection (devname, id);
+
+	if (db) {
+		if (db->match_id) {
+			Sys_Printf ("Reconnected %s to %s %s\n", db->name, devname, id);
+		} else {
+			Sys_Printf ("Reconnected %s to %s\n", db->name, devname);
+		}
+		db->devid = devid;
+		IN_SetDeviceEventData (devid, db);
+	} else {
+		Sys_Printf ("Added device %s %s\n", devname, id);
+	}
 }
 
 static void
 in_binding_remove_device (const IE_event_t *ie_event)
 {
 	size_t      devid = ie_event->device.devid;
-	in_devbindings_t *db = &devbindings.a[devid];
+	in_devbindings_t *db = IN_GetDeviceEventData (devid);
+	int        *kd;
 
-	if (devid >= devbindings.size) {
+	if (!(kd = in_find_devid (devid))) {
 		Sys_Error ("in_binding_remove_device: invalid devid: %zd", devid);
 	}
-	if (!db->id) {
-		return;
+	DARRAY_REMOVE_AT (&known_devices, kd - known_devices.a);
+
+	const char *devname = IN_GetDeviceName (devid);
+	const char *id = IN_GetDeviceId (devid);
+	if (db) {
+		db->devid = -1;
+		if (db->match_id) {
+			Sys_Printf ("Disconnected %s from %s %s\n", db->name, devname, id);
+		} else {
+			Sys_Printf ("Disconnected %s from %s\n", db->name, devname);
+		}
 	}
-	free (db->axis_info);	// axis and button info in same block
-	memset (db, 0, sizeof (*db));
+	Sys_Printf ("Removed device %s %s\n", devname, id);
 }
 
 static void
 in_binding_axis (const IE_event_t *ie_event)
 {
-	size_t      devid = ie_event->axis.devid;
 	int         axis = ie_event->axis.axis;
 	int         value = ie_event->axis.value;
-	in_devbindings_t *db = &devbindings.a[devid];
+	in_devbindings_t *db = ie_event->axis.data;;
 
-	if (devid < devbindings.size && axis < db->num_axes) {
+	if (db && axis < db->num_axes) {
 		db->axis_info[axis].value = value;
 		if (db->axis_imt_id) {
 			IMT_ProcessAxis (db->axis_imt_id + axis, value);
@@ -120,12 +166,11 @@ in_binding_axis (const IE_event_t *ie_event)
 static void
 in_binding_button (const IE_event_t *ie_event)
 {
-	size_t      devid = ie_event->button.devid;
 	int         button = ie_event->button.button;
 	int         state = ie_event->button.state;
-	in_devbindings_t *db = &devbindings.a[devid];
+	in_devbindings_t *db = ie_event->button.data;
 
-	if (devid < devbindings.size && button < db->num_buttons) {
+	if (db && button < db->num_buttons) {
 		db->button_info[button].state = state;
 		if (db->button_imt_id) {
 			IMT_ProcessButton (db->button_imt_id + button, state);
@@ -150,6 +195,8 @@ in_binding_event_handler (const IE_event_t *ie_event, void *unused)
 	return 1;
 }
 
+static int keyhelp_axis_threshold;
+
 static int
 in_keyhelp_event_handler (const IE_event_t *ie_event, void *unused)
 {
@@ -158,25 +205,35 @@ in_keyhelp_event_handler (const IE_event_t *ie_event, void *unused)
 	}
 
 	size_t      devid = ie_event->button.devid;
-	in_devbindings_t *db = &devbindings.a[devid];
-	const char *name = db->name;
+	in_devbindings_t *db = ie_event->button.data;
+	const char *name = db ? db->name : 0;
 	const char *type = 0;
 	int         num = -1;
-
-	if (!name) {
-		name = db->id;
-	}
+	const char *devname = IN_GetDeviceName (devid);
+	const char *id = IN_GetDeviceId (devid);
 
 	if (ie_event->type == ie_axis) {
 		int         axis = ie_event->axis.axis;
 		int         value = ie_event->axis.value;
-		in_axisinfo_t *ai = &db->axis_info[axis];
+		in_axisinfo_t *ai;
+		if (db) {
+			ai = &db->axis_info[axis];
+		} else {
+			//FIXME set single axis info entry
+			int         num_axes;
+			in_axisinfo_t *axis_info;
+			IN_AxisInfo (devid, 0, &num_axes);
+			axis_info = alloca (num_axes * sizeof (in_axisinfo_t));
+			IN_AxisInfo (devid, axis_info, &num_axes);
+			ai = &axis_info[axis];
+		}
 		if (!ai->min && !ai->max) {
-			if (value > 2) {
+			if (abs (value) > keyhelp_axis_threshold) {
 				num = axis;
 				type = "axis";
 			}
 		} else {
+			//FIXME does not work if device has not been connected (db is null)
 			int         diff = abs (value - ai->value);
 			if (diff * 5 >= ai->max - ai->min) {
 				num = axis;
@@ -193,18 +250,18 @@ in_keyhelp_event_handler (const IE_event_t *ie_event, void *unused)
 		return 0;
 	}
 	IE_Set_Focus (in_keyhelp_saved_handler);
-	Sys_Printf ("%s %s %d\n", name, type, num);
+	Sys_Printf ("%s (%s %s) %s %d\n", name, devname, id, type, num);
 	return 1;
 }
 
 static in_devbindings_t *
 in_binding_find_device (const char *name)
 {
-	for (size_t i = 0; i < devbindings.size; i++) {
-		in_devbindings_t *dev = &devbindings.a[i];
-		if (strcmp (name, dev->id) == 0
-			|| (dev->name && strcmp (name, dev->name) == 0)) {
-			return dev;
+	in_devbindings_t *db;
+
+	for (db = devbindings_list; db; db = db->next) {
+		if (strcmp (name, db->name) == 0) {
+			break;
 		}
 	}
 	return 0;
@@ -261,11 +318,17 @@ in_bind_f (void)
 			Sys_Printf ("invalid axis number: %s\n", number);
 			return;
 		}
+		if (dev->axis_imt_id == -1) {
+			dev->axis_imt_id = IMT_GetAxisBlock (dev->num_axes);
+		}
 		IMT_BindAxis (imt, dev->axis_imt_id + num, binding);
 	} else {
 		if (*end || num < 0 || num >= dev->num_buttons) {
 			Sys_Printf ("invalid button number: %s\n", number);
 			return;
+		}
+		if (dev->button_imt_id == -1) {
+			dev->button_imt_id = IMT_GetAxisBlock (dev->num_buttons);
 		}
 		IMT_BindButton (imt, dev->button_imt_id + num, binding);
 	}
@@ -350,67 +413,150 @@ in_clear_f (void)
 static void
 in_devices_f (void)
 {
-	for (size_t i = 0; i < devbindings.size; i++) {
-		in_devbindings_t *dev = &devbindings.a[i];
-		Sys_Printf ("%s %s %s\n", dev->name, dev->id,
-					dev->devid >= 0 ? "connected" : "disconnected");
-		Sys_Printf ("    axes: %d\n", dev->num_axes);
-		Sys_Printf ("    buttons: %d\n", dev->num_buttons);
+	for (size_t i = 0; i < known_devices.size; i++) {
+		int     devid = known_devices.a[i];
+		in_devbindings_t *db = IN_GetDeviceEventData (devid);
+		const char *name = IN_GetDeviceName (devid);
+		const char *id = IN_GetDeviceId (devid);
+		int         num_axes, num_buttons;
+		IN_AxisInfo (devid, 0, &num_axes);
+		IN_ButtonInfo (devid, 0, &num_buttons);
+
+		Sys_Printf ("devid %d:\n", devid);
+		if (db) {
+			Sys_Printf ("    bind name: %s\n", db->name);
+		} else {
+			Sys_Printf ("    no bind name\n");
+		}
+		Sys_Printf ("    name: %s\n", name);
+		Sys_Printf ("    id: %s\n", id);
+		Sys_Printf ("    axes: %d\n", num_axes);
+		Sys_Printf ("    buttons: %d\n", num_buttons);
 	}
 }
 
 static void
-in_devname_f (void)
+in_connect_f (void)
 {
-	switch (Cmd_Argc ()) {
-		case 2: {
-			const char *name = Cmd_Argv (1);
-			in_devbindings_t *dev = in_binding_find_device (name);
-			if (dev) {
-				if (strcmp (name, dev->id) == 0) {
-					Sys_Printf ("nickname for %s is %s\n", dev->id, dev->name);
-				} else {
-					Sys_Printf ("device_id for %s is %s\n", dev->name, dev->id);
+	int         argc = Cmd_Argc ();
+	const char *fullid = 0;
+
+	if (argc == 4) {
+		fullid = Cmd_Argv (3);
+	}
+	if (argc < 3 || argc > 4 || (fullid && strcmp (fullid, "fullid"))) {
+		goto in_connect_usage;
+	}
+	const char *bindname = Cmd_Argv (1);
+	const char *device_id = Cmd_Argv (2);
+	int         devid = -1;
+
+	for (in_devbindings_t *db = devbindings_list; db; db = db->next) {
+		if (strcmp (bindname, db->name) == 0) {
+			Sys_Printf ("%s already exists\n", bindname);
+			return;
+		}
+	}
+
+	if (device_id[0] == '#') {
+		char       *end;
+		devid = strtol (device_id + 1, &end, 0);
+		if (*end || !in_find_devid (devid)) {
+			Sys_Printf ("Not a valid device number: %s", device_id);
+			return;
+		}
+	} else {
+		int         len = strlen (device_id);
+
+		for (size_t i = 0; i < known_devices.size; i++) {
+			if (strcmp (device_id, IN_GetDeviceId (known_devices.a[i])) == 0) {
+				devid = known_devices.a[i];
+				break;
+			}
+			if (strncasecmp (device_id,
+							 IN_GetDeviceName (known_devices.a[i]),
+							 len) == 0) {
+				if (devid > -1) {
+					Sys_Printf ("'%s' is ambiguous\n", device_id);
+					return;
 				}
-			} else {
-				Sys_Printf ("No device identified by %s\n", name);
+				devid = known_devices.a[i];
 			}
-			break;
 		}
-		case 3: {
-			const char *device_id = Cmd_Argv (1);
-			const char *nickname = Cmd_Argv (2);
-			in_devbindings_t *dev = in_binding_find_device (nickname);
-			if (dev) {
-				Sys_Printf ("%s already exists: %s %s\n",
-							nickname, dev->name, dev->id);
-				return;
-			}
-			dev = in_binding_find_device (device_id);
-			if (!dev) {
-				Sys_Printf ("%s does not exist\n", device_id);
-				return;
-			}
-			if (dev->name) {
-				free ((char *) dev->name);
-			}
-			dev->name = strdup (nickname);
-			break;
+	}
+	if (devid == -1) {
+		Sys_Printf ("No such device: %s\n", device_id);
+		return;
+	}
+	if (IN_GetDeviceEventData (devid)) {
+		Sys_Printf ("%s already connected\n", device_id);
+		return;
+	}
+
+	in_devbindings_t *db = PR_RESNEW (devbindings);
+	db->next = devbindings_list;
+	devbindings_list = db;
+
+	db->name = strdup (bindname);
+	db->devname = strdup (IN_GetDeviceName (devid));
+	db->id = strdup (IN_GetDeviceId (devid));
+	db->match_id = !!fullid;
+	db->devid = devid;
+
+	IN_AxisInfo (devid, 0, &db->num_axes);
+	IN_ButtonInfo (devid, 0, &db->num_buttons);
+	db->axis_info = malloc (db->num_axes * sizeof (in_axisinfo_t)
+							+ db->num_buttons * sizeof (in_buttoninfo_t));
+	db->button_info = (in_buttoninfo_t *) &db->axis_info[db->num_axes];
+	IN_AxisInfo (devid, db->axis_info, &db->num_axes);
+	IN_ButtonInfo (devid, db->button_info, &db->num_buttons);
+
+	db->axis_imt_id = -1;
+	db->button_imt_id = -1;
+
+	IN_SetDeviceEventData (devid, db);
+
+	return;
+in_connect_usage:
+	Sys_Printf ("in_connect bindname device_id [fullid]\n");
+	Sys_Printf ("   Create a new device binding connection.\n");
+	Sys_Printf ("   bindname: Connection name used for binding inputs\n.");
+	Sys_Printf ("   device_id: Specify the device to be connected.\n");
+	Sys_Printf ("      May be the numeric device number (#N), the device\n");
+	Sys_Printf ("      name or device id as shown by in_devices.\n");
+	Sys_Printf ("   fullid: if present, both device name and device id\n");
+	Sys_Printf ("      will be used when automatically reconnecting the\n");
+	Sys_Printf ("      device.\n");
+}
+
+static void
+in_connections_f (void)
+{
+	for (in_devbindings_t *db = devbindings_list; db; db = db->next) {
+		if (db->match_id) {
+			Sys_Printf ("%s: %s %s\n", db->name, db->devname, db->id);
+		} else {
+			Sys_Printf ("%s: %s\n", db->name, db->devname);
 		}
-		default:
-			Sys_Printf ("in_devname device_id nickname\n");
-			Sys_Printf ("   Name a deviced identified by device_id as nickname\n");
-			Sys_Printf ("in_devname device_id\n");
-			Sys_Printf ("   Show the nickname given to the device identified by device_id\n");
-			Sys_Printf ("in_devname nickname\n");
-			Sys_Printf ("   Show the device_id of the device named by nickname\n");
-			break;
+		if (db->devid > -1) {
+			Sys_Printf ("    connected\n");
+		} else {
+			Sys_Printf ("    disconnected\n");
+		}
 	}
 }
 
 static void
 keyhelp_f (void)
 {
+	keyhelp_axis_threshold = 3;
+	if (Cmd_Argc () > 1) {
+		char       *end;
+		int         threshold = strtol (Cmd_Argv (1), &end, 0);
+		if (!*end && threshold > 0) {
+			keyhelp_axis_threshold = threshold;
+		}
+	}
 	in_keyhelp_saved_handler = IE_Get_Focus ();
 	IE_Set_Focus (in_keyhelp_handler);
 	Sys_Printf ("Press button or move axis to identify\n");
@@ -437,8 +583,13 @@ static bindcmd_t in_binding_commands[] = {
 	{	"in_devices", in_devices_f,
 		"List the known devices and their status."
 	},
-	{	"in_devname", in_devname_f,
-		"Give a device a nickname."
+	{	"in_connect", in_connect_f,
+		"Create a device binding connection. Supports hot-plug in that the "
+		"device will be automatically reconnected when plugged in or"
+		PACKAGE_NAME " is restarted."
+	},
+	{	"in_connections", in_connections_f,
+		"List device bindings and statuses."
 	},
 	{	"keyhelp", keyhelp_f,
 		"Identify the next active input axis or button.\n"
