@@ -581,6 +581,13 @@ CL_Input_Init (void)
 }
 
 void
+CL_Input_Activate (void)
+{
+	IMT_SetContext (cl_game_context);
+	IN_Binding_Activate ();
+}
+
+void
 CL_Input_Init_Cvars (void)
 {
 	cl_nodelta = Cvar_Get ("cl_nodelta", "0", CVAR_NONE, NULL,

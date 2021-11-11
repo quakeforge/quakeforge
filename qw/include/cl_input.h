@@ -32,6 +32,7 @@
 
 #include "qw/protocol.h"
 
+void CL_Input_Activate (void);
 void CL_Input_Init (void);
 void CL_Input_Init_Cvars (void);
 void CL_ClearStates (void);

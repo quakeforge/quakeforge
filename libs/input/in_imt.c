@@ -353,6 +353,7 @@ IMT_BindAxis (imt_t *imt, int axis_num, in_axis_t *axis,
 			*(a->recipe = alloc_recipe ()) = *recipe;
 			Hash_AddElement (recipe_tab, a->recipe);
 		}
+		a->axis = axis;
 	}
 }
 
@@ -392,9 +393,9 @@ IMT_ProcessAxis (int axis, int value)
 			int         deadzone = recipe->deadzone;
 			int         minval = recipe->min + recipe->minzone;
 			int         maxval = recipe->max - recipe->maxzone;
-			int         input  = bound (minval, value, maxval);
 			float       output;
 			if (relative) {
+				int         input = value;
 				if (deadzone > 0) {
 					if (input > deadzone) {
 						input -= deadzone;
@@ -409,6 +410,7 @@ IMT_ProcessAxis (int axis, int value)
 					output = powf (output, recipe->curve);
 				}
 			} else {
+				int         input = bound (minval, value, maxval);
 				int         range = maxval - minval;
 				int         zero = minval;
 				if (recipe->deadzone >= 0) {
@@ -623,6 +625,7 @@ static imtcmd_t imt_commands[] = {
 	{	"imt_drop_all", imt_drop_all_f,
 		"delete all imt tables\n"
 	},
+	{},
 };
 
 void

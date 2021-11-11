@@ -234,6 +234,7 @@ int IN_RegisterAxis (in_axis_t *axis);
 in_button_t *IN_FindButton (const char *name);
 in_axis_t *IN_FindAxis (const char *name);
 
+void IN_Binding_Activate (void);
 void IN_Binding_Init (void);
 
 #endif

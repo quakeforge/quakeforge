@@ -160,7 +160,7 @@ in_binding_axis (const IE_event_t *ie_event)
 
 	if (db && axis < db->num_axes) {
 		db->axis_info[axis].value = value;
-		if (db->axis_imt_id) {
+		if (db->axis_imt_id >= 0) {
 			IMT_ProcessAxis (db->axis_imt_id + axis, value);
 		}
 	}
@@ -175,7 +175,7 @@ in_binding_button (const IE_event_t *ie_event)
 
 	if (db && button < db->num_buttons) {
 		db->button_info[button].state = state;
-		if (db->button_imt_id) {
+		if (db->button_imt_id >= 0) {
 			IMT_ProcessButton (db->button_imt_id + button, state);
 		}
 	}
@@ -346,7 +346,7 @@ in_bind_f (void)
 		};
 		exprtab_t   vars_tab = { var_syms, 0 };
 		exprctx_t   exprctx = {
-			.external_variables = &vars_tab,
+			.symtab = &vars_tab,
 			.memsuper = new_memsuper (),
 			.messages = PL_NewArray (),
 		};
@@ -355,9 +355,12 @@ in_bind_f (void)
 		int     i;
 		for (i = 6; i < argc; i++) {
 			const char *arg = Cmd_Argv (i);
-			if (!cexpr_eval_string (arg, &exprctx)) {
-				PL_Message (exprctx.messages, 0, "error parsing recipe: %s",
-							arg);
+			if (cexpr_eval_string (arg, &exprctx)) {
+				plitem_t   *messages = exprctx.messages;
+				for (int j = 0; j < PL_A_NumObjects (messages); j++) {
+					Sys_Printf ("%s\n",
+								PL_String (PL_ObjectAtIndex (messages, j)));
+				}
 				break;
 			}
 		}
@@ -376,7 +379,7 @@ in_bind_f (void)
 			return;
 		}
 		if (dev->button_imt_id == -1) {
-			dev->button_imt_id = IMT_GetAxisBlock (dev->num_buttons);
+			dev->button_imt_id = IMT_GetButtonBlock (dev->num_buttons);
 		}
 		IMT_BindButton (imt, dev->button_imt_id + num, binding);
 	}
@@ -685,6 +688,12 @@ static bindcmd_t in_binding_commands[] = {
 	},
 #endif
 };
+
+void
+IN_Binding_Activate (void)
+{
+	IE_Set_Focus (in_binding_handler);
+}
 
 void
 IN_Binding_Init (void)

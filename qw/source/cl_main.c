@@ -1162,6 +1162,9 @@ CL_SetState (cactive_t state)
 		}
 	}
 	Con_SetState (state == ca_active ? con_inactive : con_fullscreen);
+	if (state != old_state && state == ca_active) {
+		CL_Input_Activate ();
+	}
 }
 
 void
