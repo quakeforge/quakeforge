@@ -51,8 +51,8 @@
 
 #include "QF/cexpr.h"
 
-static void assign_expr (exprval_t *dst, const exprval_t *src,
-						 exprctx_t *context);
+static exprval_t *assign_expr (exprval_t *dst, const exprval_t *src,
+							   exprctx_t *context);
 static exprval_t *binary_expr (int op, const exprval_t *a, const exprval_t *b,
 							   exprctx_t *context);
 static exprval_t *field_expr (const exprval_t *a, const exprval_t *b,
@@ -138,6 +138,7 @@ uexpr
 
 expr
 	: uexpr
+	| expr '=' expr		{ $$ = assign_expr ($1, $3, context); }
 	| expr SHL expr		{ $$ = binary_expr (SHL, $1, $3, context); }
 	| expr SHR expr		{ $$ = binary_expr (SHR, $1, $3, context); }
 	| expr '+' expr		{ $$ = binary_expr ('+', $1, $3, context); }
@@ -184,16 +185,16 @@ arg_expr
 
 %%
 
-static void
+static exprval_t *
 assign_expr (exprval_t *dst, const exprval_t *src, exprctx_t *context)
 {
 	binop_t    *binop;
-	if (!src) {
-		return;
+	if (!dst || !src) {
+		return 0;
 	}
 	if (dst->type == &cexpr_exprval) {
 		*(exprval_t **) dst->value = (exprval_t *) src;
-		return;
+		return dst;
 	}
 	binop = cexpr_find_cast (dst->type, src->type);
 	if (binop && binop->op) {
@@ -203,10 +204,11 @@ assign_expr (exprval_t *dst, const exprval_t *src, exprctx_t *context)
 			cexpr_error (context,
 						 "type mismatch in expression result: %s = %s",
 						 dst->type->name, src->type->name);
-			return;
+			return dst;
 		}
 		memcpy (dst->value, src->value, dst->type->size);
 	}
+	return dst;
 }
 
 static exprval_t *

@@ -166,15 +166,23 @@ STRING		\"(\\.|[^"\\])*\"
 					}
 
 [+\-*/&|^%]=		{
+						yylval->op = yytext[0];
+						return ASX;
 					}
 
 "%%="				{
+						yylval->op = MOD;
+						return ASX;
 					}
 
 "<<="				{
+						yylval->op = SHL;
+						return ASX;
 					}
 
 ">>="				{
+						yylval->op = SHR;
+						return ASX;
 					}
 
 [!(){}.*/&|^~+\-=\[\];,#%?:] {
@@ -182,6 +190,7 @@ STRING		\"(\\.|[^"\\])*\"
 					}
 
 "%%"				{
+						return MOD;
 					}
 
 "<<"				return SHL;
