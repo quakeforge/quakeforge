@@ -38,10 +38,13 @@
 # include <strings.h>
 #endif
 
+#include "QF/cexpr.h"
 #include "QF/cmd.h"
+#include "QF/cmem.h"
 #include "QF/hash.h"
 #include "QF/heapsort.h"
 #include "QF/input.h"
+#include "QF/plist.h"
 #include "QF/progs.h"   // for PR_RESMAP
 #include "QF/sys.h"
 
@@ -67,14 +70,14 @@ devid_cmp (const void *a, const void *b)
 	return *(const int *)a - *(const int *)b;
 }
 
-static int *
+static int * __attribute__ ((pure))
 in_find_devid (int devid)
 {
 	return bsearch (&devid, known_devices.a, known_devices.size,
 					sizeof (int), devid_cmp);
 }
 
-static in_devbindings_t *
+static in_devbindings_t * __attribute__ ((pure))
 in_binding_find_connection (const char *devname, const char *id)
 {
 	in_devbindings_t *db;
@@ -254,7 +257,7 @@ in_keyhelp_event_handler (const IE_event_t *ie_event, void *unused)
 	return 1;
 }
 
-static in_devbindings_t *
+static in_devbindings_t * __attribute__ ((pure))
 in_binding_find_device (const char *name)
 {
 	in_devbindings_t *db;
@@ -264,13 +267,14 @@ in_binding_find_device (const char *name)
 			break;
 		}
 	}
-	return 0;
+	return db;
 }
 
 static void
 in_bind_f (void)
 {
-	if (Cmd_Argc () < 6) {
+	int         argc = Cmd_Argc ();
+	if (argc < 6) {
 		Sys_Printf ("in_bind imt device type number binding...\n");
 		Sys_Printf ("    imt: the name of the input mapping table in which the"
 					" intput will be bound\n");
@@ -294,8 +298,6 @@ in_bind_f (void)
 	const char *dev_name = Cmd_Argv (2);
 	const char *type = Cmd_Argv (3);
 	const char *number = Cmd_Argv (4);
-	// the rest of the command line is the binding
-	const char *binding = Cmd_Args (5);
 
 	imt_t      *imt = IMT_FindIMT (imt_name);
 	in_devbindings_t *dev = in_binding_find_device (dev_name);
@@ -321,8 +323,54 @@ in_bind_f (void)
 		if (dev->axis_imt_id == -1) {
 			dev->axis_imt_id = IMT_GetAxisBlock (dev->num_axes);
 		}
-		IMT_BindAxis (imt, dev->axis_imt_id + num, binding);
+		const char *axis_name = Cmd_Argv (5);
+		in_axis_t  *axis = IN_FindAxis (axis_name);
+		if (!axis) {
+			Sys_Printf ("unknown axis: %s\n", axis_name);
+			return;
+		}
+		in_axisinfo_t *axisinfo = &dev->axis_info[num];
+		in_recipe_t recipe = {
+			.min = axisinfo->min,
+			.max = axisinfo->max,
+			.curve = 1,
+			.scale = 1,
+		};
+		exprsym_t   var_syms[] = {
+			{"minzone", &cexpr_int, &recipe.minzone},
+			{"maxzone", &cexpr_int, &recipe.maxzone},
+			{"deadzone", &cexpr_int, &recipe.deadzone},
+			{"curve", &cexpr_float, &recipe.curve},
+			{"scale", &cexpr_float, &recipe.scale},
+			{}
+		};
+		exprtab_t   vars_tab = { var_syms, 0 };
+		exprctx_t   exprctx = {
+			.external_variables = &vars_tab,
+			.memsuper = new_memsuper (),
+			.messages = PL_NewArray (),
+		};
+		cexpr_init_symtab (&vars_tab, &exprctx);
+
+		int     i;
+		for (i = 6; i < argc; i++) {
+			const char *arg = Cmd_Argv (i);
+			if (!cexpr_eval_string (arg, &exprctx)) {
+				PL_Message (exprctx.messages, 0, "error parsing recipe: %s",
+							arg);
+				break;
+			}
+		}
+		if (i == argc) {
+			IMT_BindAxis (imt, dev->axis_imt_id + num, axis, &recipe);
+		}
+		Hash_DelTable (vars_tab.tab);
+		PL_Free (exprctx.messages);
+		delete_memsuper (exprctx.memsuper);
 	} else {
+		// the rest of the command line is the binding
+		const char *binding = Cmd_Args (5);
+
 		if (*end || num < 0 || num >= dev->num_buttons) {
 			Sys_Printf ("invalid button number: %s\n", number);
 			return;
@@ -376,7 +424,7 @@ in_unbind_f (void)
 			Sys_Printf ("invalid axis number: %s\n", number);
 			return;
 		}
-		IMT_BindAxis (imt, dev->axis_imt_id + num, 0);
+		IMT_BindAxis (imt, dev->axis_imt_id + num, 0, 0);
 	} else {
 		if (*end || num < 0 || num >= dev->num_buttons) {
 			Sys_Printf ("invalid button number: %s\n", number);
@@ -402,7 +450,7 @@ in_clear_f (void)
 			continue;
 		}
 		for (size_t ind = 0; ind < imt->axis_bindings.size; ind++) {
-			IMT_BindAxis (imt, ind, 0);
+			IMT_BindAxis (imt, ind, 0, 0);
 		}
 		for (size_t ind = 0; ind < imt->button_bindings.size; ind++) {
 			IMT_BindButton (imt, ind, 0);

@@ -42,6 +42,8 @@
 #include "QF/cmd.h"
 #include "QF/cmem.h"
 #include "QF/hash.h"
+#include "QF/input.h"
+#include "QF/mathlib.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
@@ -73,6 +75,40 @@ static in_contextset_t in_contexts = DARRAY_STATIC_INIT (8);
 static size_t   imt_current_context;
 
 static memsuper_t *binding_mem;
+static hashtab_t *recipe_tab;
+
+static in_recipe_t *
+alloc_recipe (void)
+{
+	return cmemalloc (binding_mem, sizeof (in_recipe_t));
+}
+
+static void
+free_recipe (in_recipe_t *recipe)
+{
+	if (!recipe) {
+		return;
+	}
+	cmemfree (binding_mem, recipe);
+}
+
+static void
+recipe_free (void *recipe, void *data)
+{
+	free_recipe (recipe);
+}
+
+static uintptr_t
+recipe_get_hash (const void *recipe, void *data)
+{
+	return Hash_Buffer (recipe, sizeof (in_recipe_t));
+}
+
+static int
+recipe_compare (const void *a, const void *b, void *data)
+{
+	return !memcmp (a, b, sizeof (in_recipe_t));
+}
 
 static in_axisbinding_t *
 alloc_axis_binding (void)
@@ -160,8 +196,9 @@ imt_get_button_block (int count)
 int
 IMT_GetAxisBlock (int num_axes)
 {
+	int         base = imt_get_axis_block (num_axes);
     imt_block_t *block = imt_get_block (&axis_blocks);
-	block->base = imt_get_axis_block (num_axes);
+	block->base = base;
 	block->count = num_axes;
     return block - axis_blocks.a;
 }
@@ -169,8 +206,9 @@ IMT_GetAxisBlock (int num_axes)
 int
 IMT_GetButtonBlock (int num_buttons)
 {
+	int         base = imt_get_button_block (num_buttons);
     imt_block_t *block = imt_get_block (&button_blocks);
-	block->base = imt_get_button_block (num_buttons);
+	block->base = base;
 	block->count = num_buttons;
     return block - button_blocks.a;
 }
@@ -299,18 +337,22 @@ IMT_CreateIMT (int context, const char *imt_name, const char *chain_imt_name)
 }
 
 void
-IMT_BindAxis (imt_t *imt, int axis, const char *binding)
+IMT_BindAxis (imt_t *imt, int axis_num, in_axis_t *axis,
+			  const in_recipe_t *recipe)
 {
-	if ((size_t) axis >= imt->axis_bindings.size)
+	if ((size_t) axis_num >= imt->axis_bindings.size)
 		return;
 
-	in_axisbinding_t **bind = &imt->axis_bindings.a[axis];
+	in_axisbinding_t **bind = &imt->axis_bindings.a[axis_num];
 	free_axis_binding ((*bind));
 	(*bind) = 0;
-	if (binding) {
+	if (axis && recipe) {
 		in_axisbinding_t *a = alloc_axis_binding ();
 		(*bind) = a;
-		*a = (in_axisbinding_t) {};
+		if (!(a->recipe = Hash_FindElement (recipe_tab, recipe))) {
+			*(a->recipe = alloc_recipe ()) = *recipe;
+			Hash_AddElement (recipe_tab, a->recipe);
+		}
 	}
 }
 
@@ -345,6 +387,64 @@ IMT_ProcessAxis (int axis, int value)
 	while (imt) {
 		in_axisbinding_t *a = imt->axis_bindings.a[axis];
 		if (a) {
+			in_recipe_t *recipe = a->recipe;
+			int         relative = recipe->min == recipe->max;
+			int         deadzone = recipe->deadzone;
+			int         minval = recipe->min + recipe->minzone;
+			int         maxval = recipe->max - recipe->maxzone;
+			int         input  = bound (minval, value, maxval);
+			float       output;
+			if (relative) {
+				if (deadzone > 0) {
+					if (input > deadzone) {
+						input -= deadzone;
+					} else if (input < -deadzone) {
+						input += deadzone;
+					} else {
+						input = 0;
+					}
+				}
+				output = input * recipe->scale;
+				if (recipe->curve != 1) {
+					output = powf (output, recipe->curve);
+				}
+			} else {
+				int         range = maxval - minval;
+				int         zero = minval;
+				if (recipe->deadzone >= 0) {
+					// balanced axis: -1..1
+					int         center = (recipe->min + recipe->max + 1) / 2;
+					minval += deadzone - center;
+					maxval -= deadzone + center;
+					input -= center;
+					if (input < -deadzone) {
+						input += deadzone;
+					} else if (input > deadzone) {
+						input -= deadzone;
+					} else {
+						input = 0;
+					}
+					if (center - minval > maxval - center) {
+						range = center - minval;
+					} else {
+						range = maxval - center;
+					}
+					zero = 0;
+				}
+				output = (float)(input - zero) / (range);
+				if (recipe->curve != 1) {
+					output = powf (output, recipe->curve);
+				}
+				output *= recipe->scale;
+			}
+			switch (a->axis->mode) {
+				case ina_set:
+					a->axis->value = output;
+					break;
+				case ina_accumulate:
+					a->axis->value += output;
+					break;
+			}
 			return true;
 		}
 		imt = imt->chain;
@@ -529,6 +629,8 @@ void
 IMT_Init (void)
 {
 	binding_mem = new_memsuper ();
+	recipe_tab = Hash_NewTable (61, 0, recipe_free, 0, 0);
+	Hash_SetHashCompare (recipe_tab, recipe_get_hash, recipe_compare);
 	for (imtcmd_t *cmd = imt_commands; cmd->name; cmd++) {
 		Cmd_AddCommand (cmd->name, cmd->func, cmd->desc);
 	}

@@ -69,6 +69,12 @@ IN_RegisterAxis (in_axis_t *axis)
 	return 1;
 }
 
+VISIBLE in_axis_t *
+IN_FindAxis (const char *name)
+{
+	return Hash_Find (axis_tab, name);
+}
+
 static void __attribute__((constructor))
 in_axis_init (void)
 {

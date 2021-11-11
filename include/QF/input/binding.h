@@ -33,18 +33,36 @@
 
 /*** Recipe for converting an axis to a floating point value.
 
-	Recipes apply only to absolute axes.
+	Absolute axes are converted to the 0..1 range for unbalanced axes, and
+	the -1..1 range for balanced axes, and then scaled.
+
+	Relative axes are simply converted to floating point and scaled as they
+	have no fixed limits.
+
+	Relative axes should have \a minzone and \a maxzone set to 0, or weird
+	things will happen.
+
+	\a min and \a max normally come from the system. \a min and \a max being
+	equal indicates the axis is relative.
 
 	\a deadzone applies only to balanced axes, thus it doubles as a flag
-	for balanced (>= 0) or unbalanced (< 0).
+	for balanced (>= 0) or unbalanced (< 0). However, relative axes are always
+	balanced and so \a deadzone < 0 is the same as 0 for relative axes.
 
-	\a curve is applied after the input has been converted
+	\a curve is applied after the input has been converted to a float, and the
+	0..1 or -1..1 ranges for absolute axes.
+
+	\a scale is applied after \a curve for absolute axes, but before \a curve
+	for relative axes.
 */
 typedef struct in_recipe_s {
+	int         min;		///< Axis minimum value (from system)
+	int         max;		///< Axis maximum value (from system)
 	int         minzone;	///< Size of deadzone near axis minimum
 	int         maxzone;	///< Size of deadzone near axis maximum
 	int         deadzone;	///< Size of deadzone near axis center (balanced)
 	float       curve;		///< Power factor for absolute axes
+	float       scale;		///< Final scale factor
 } in_recipe_t;
 
 typedef enum {
@@ -97,10 +115,7 @@ typedef struct in_button_s {
 } in_button_t;
 
 typedef struct in_axisbinding_s {
-	union {
-		in_recipe_t *recipe;///< for absolute axes
-		float       scale;	///< for relative axes
-	};
+	in_recipe_t *recipe;
 	in_axis_t   *axis;
 } in_axisbinding_t;
 
@@ -217,6 +232,7 @@ void IN_ButtonAction (in_button_t *buttin, int id, int pressed);
 int IN_RegisterButton (in_button_t *button);
 int IN_RegisterAxis (in_axis_t *axis);
 in_button_t *IN_FindButton (const char *name);
+in_axis_t *IN_FindAxis (const char *name);
 
 void IN_Binding_Init (void);
 
