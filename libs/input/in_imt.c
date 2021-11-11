@@ -185,7 +185,7 @@ IMT_CreateContext (const char *name)
 	return ctx - in_contexts.a;
 }
 
-static in_context_t *
+static in_context_t * __attribute__ ((pure))
 imt_find_context (const char *name)
 {
 	for (size_t i = 0; i < in_contexts.size; i++) {

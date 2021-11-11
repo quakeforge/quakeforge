@@ -648,7 +648,7 @@ draw_notify (view_t *view)
 static void
 setup_console (void)
 {
-	float       lines;
+	float       lines = 0;
 
 	switch (con_state) {
 		case con_inactive:

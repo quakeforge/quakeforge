@@ -59,7 +59,7 @@ typedef struct in_context_s {
 int IMT_GetAxisBlock (int num_axes);
 int IMT_GetButtonBlock (int num_buttons);
 int IMT_CreateContext (const char *name);
-int IMT_GetContext (void);
+int IMT_GetContext (void) __attribute__ ((pure));
 void IMT_SetContext (int ctx);
 void IMT_SetContextCbuf (int ctx, struct cbuf_s *cbuf);
 imt_t *IMT_FindIMT (const char *name);
