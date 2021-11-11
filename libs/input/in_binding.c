@@ -336,12 +336,14 @@ in_bind_f (void)
 			.curve = 1,
 			.scale = 1,
 		};
+		double curve = recipe.curve;
+		double scale = recipe.scale;
 		exprsym_t   var_syms[] = {
 			{"minzone", &cexpr_int, &recipe.minzone},
 			{"maxzone", &cexpr_int, &recipe.maxzone},
 			{"deadzone", &cexpr_int, &recipe.deadzone},
-			{"curve", &cexpr_float, &recipe.curve},
-			{"scale", &cexpr_float, &recipe.scale},
+			{"curve", &cexpr_double, &curve},
+			{"scale", &cexpr_double, &scale},
 			{}
 		};
 		exprtab_t   vars_tab = { var_syms, 0 };
@@ -365,6 +367,8 @@ in_bind_f (void)
 			}
 		}
 		if (i == argc) {
+			recipe.curve = curve;
+			recipe.scale = scale;
 			IMT_BindAxis (imt, dev->axis_imt_id + num, axis, &recipe);
 		}
 		Hash_DelTable (vars_tab.tab);
