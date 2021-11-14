@@ -236,6 +236,9 @@ in_axis_t *IN_FindAxis (const char *name);
 
 void IN_Binding_Activate (void);
 void IN_Binding_Init (void);
+struct plitem_s;
+void IN_Binding_SaveConfig (struct plitem_s *config);
+void IN_Binding_LoadConfig (struct plitem_s *config);
 
 #endif
 

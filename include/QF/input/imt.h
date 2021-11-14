@@ -71,6 +71,12 @@ void IMT_BindButton (imt_t *imt, int button, const char *binding);
 qboolean IMT_ProcessAxis (int axis, int value);
 qboolean IMT_ProcessButton (int button, int state);
 void IMT_Init (void);
+struct plitem_s;
+void IMT_SaveConfig (struct plitem_s *config);
+void IMT_SaveAxisConfig (struct plitem_s *axes, int axis_ind, int dev_axis);
+void IMT_SaveButtonConfig (struct plitem_s *buttons, int button_ind,
+						   int dev_button);
+void IMT_LoadConfig (struct plitem_s *config);
 
 #endif
 

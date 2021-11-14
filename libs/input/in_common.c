@@ -55,6 +55,7 @@
 #include "QF/joystick.h"
 #include "QF/keys.h"
 #include "QF/mathlib.h"
+#include "QF/plist.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
 
@@ -318,6 +319,27 @@ IN_ProcessEvents (void)
 				rd->driver.check_select (&fdset, rd->data);
 			}
 		}
+	}
+}
+
+void
+IN_SaveConfig (plitem_t *config)
+{
+	plitem_t   *input_config = PL_NewDictionary (0); //FIXME hashlinks
+	PL_D_AddObject (config, "input", input_config);
+
+	IMT_SaveConfig (input_config);
+	IN_Binding_SaveConfig (input_config);
+}
+
+void
+IN_LoadConfig (plitem_t *config)
+{
+	plitem_t   *input_config = PL_ObjectForKey (config, "input");
+
+	if (input_config) {
+		IMT_LoadConfig (input_config);
+		IN_Binding_LoadConfig (input_config);
 	}
 }
 

@@ -143,6 +143,9 @@ int IN_RegisterDriver (in_driver_t *driver, void *data);
 void IN_DriverData (int handlle, void *data);
 void IN_Init (struct cbuf_s *cbuf);
 void IN_Init_Cvars (void);
+struct plitem_s;
+void IN_SaveConfig (struct plitem_s *config);
+void IN_LoadConfig (struct plitem_s *config);
 
 int IN_AddDevice (int driver, void *device, const char *name, const char *id);
 void IN_RemoveDevice (int devid);

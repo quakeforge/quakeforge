@@ -47,6 +47,7 @@
 #include "QF/plist.h"
 #include "QF/progs.h"   // for PR_RESMAP
 #include "QF/sys.h"
+#include "QF/va.h"
 
 #include "QF/input/imt.h"
 
@@ -96,22 +97,33 @@ in_binding_find_connection (const char *devname, const char *id)
 }
 
 static void
+alloc_input_info (in_devbindings_t *db)
+{
+	db->axis_info = malloc (db->num_axes * sizeof (in_axisinfo_t)
+							+ db->num_buttons * sizeof (in_buttoninfo_t));
+	db->button_info = (in_buttoninfo_t *) &db->axis_info[db->num_axes];
+}
+
+static void
 in_binding_add_device (const IE_event_t *ie_event)
 {
 	size_t      devid = ie_event->device.devid;
-
-	if (in_find_devid (devid)) {
-		// the device is already known. this is likely the result of a
-		// broadcast of connected devices
-		return;
-	}
-	DARRAY_APPEND (&known_devices, devid);
-	// keep the known devices sorted by id
-	heapsort (known_devices.a, known_devices.size, sizeof (int), devid_cmp);
-
 	const char *devname = IN_GetDeviceName (devid);
 	const char *id = IN_GetDeviceId (devid);
-	in_devbindings_t *db = in_binding_find_connection (devname, id);
+
+	if (!in_find_devid (devid)) {
+		DARRAY_APPEND (&known_devices, devid);
+		// keep the known devices sorted by id
+		heapsort (known_devices.a, known_devices.size, sizeof (int), devid_cmp);
+		Sys_Printf ("Added device %s %s\n", devname, id);
+	}
+
+	in_devbindings_t *db = IN_GetDeviceEventData (devid);
+	if (db) {
+		return;
+	}
+
+	db = in_binding_find_connection (devname, id);
 
 	if (db) {
 		if (db->match_id) {
@@ -121,8 +133,11 @@ in_binding_add_device (const IE_event_t *ie_event)
 		}
 		db->devid = devid;
 		IN_SetDeviceEventData (devid, db);
-	} else {
-		Sys_Printf ("Added device %s %s\n", devname, id);
+		if (!db->axis_info) {
+			alloc_input_info (db);
+		}
+		IN_AxisInfo (devid, db->axis_info, &db->num_axes);
+		IN_ButtonInfo (devid, db->button_info, &db->num_buttons);
 	}
 }
 
@@ -268,6 +283,18 @@ in_binding_find_device (const char *name)
 		}
 	}
 	return db;
+}
+
+static void
+clear_connection (in_devbindings_t *db)
+{
+	if (db->devid >= 0) {
+		IN_SetDeviceEventData (db->devid, 0);
+	}
+	free (db->name);
+	free (db->devname);
+	free (db->id);
+	free (db->axis_info);
 }
 
 static void
@@ -506,11 +533,9 @@ in_connect_f (void)
 	const char *device_id = Cmd_Argv (2);
 	int         devid = -1;
 
-	for (in_devbindings_t *db = devbindings_list; db; db = db->next) {
-		if (strcmp (bindname, db->name) == 0) {
-			Sys_Printf ("%s already exists\n", bindname);
-			return;
-		}
+	if (in_binding_find_device (bindname)) {
+		Sys_Printf ("%s already exists\n", bindname);
+		return;
 	}
 
 	if (device_id[0] == '#') {
@@ -560,9 +585,7 @@ in_connect_f (void)
 
 	IN_AxisInfo (devid, 0, &db->num_axes);
 	IN_ButtonInfo (devid, 0, &db->num_buttons);
-	db->axis_info = malloc (db->num_axes * sizeof (in_axisinfo_t)
-							+ db->num_buttons * sizeof (in_buttoninfo_t));
-	db->button_info = (in_buttoninfo_t *) &db->axis_info[db->num_axes];
+	alloc_input_info (db);
 	IN_AxisInfo (devid, db->axis_info, &db->num_axes);
 	IN_ButtonInfo (devid, db->button_info, &db->num_buttons);
 
@@ -708,4 +731,193 @@ IN_Binding_Init (void)
 	for (bindcmd_t *cmd = in_binding_commands; cmd->name; cmd++) {
 		Cmd_AddCommand (cmd->name, cmd->func, cmd->desc);
 	}
+}
+
+void
+IN_Binding_SaveConfig (plitem_t *config)
+{
+	plitem_t   *devices = PL_NewArray ();
+	PL_D_AddObject (config, "devices", devices);
+	for (in_devbindings_t *db = devbindings_list; db; db = db->next) {
+		plitem_t   *db_cfg = PL_NewDictionary (0); //FIXME hashlinks
+		PL_A_AddObject (devices, db_cfg);
+		PL_D_AddObject (db_cfg, "name", PL_NewString (db->name));
+		PL_D_AddObject (db_cfg, "devname", PL_NewString (db->devname));
+		if (db->match_id) {
+			PL_D_AddObject (db_cfg, "id", PL_NewString (db->id));
+		}
+		PL_D_AddObject (db_cfg, "num_axes",
+						PL_NewString (va (0, "%d", db->num_axes)));
+		PL_D_AddObject (db_cfg, "num_buttons",
+						PL_NewString (va (0, "%d", db->num_buttons)));
+		if (db->axis_imt_id >= 0) {
+			plitem_t   *axes = PL_NewArray ();
+			PL_D_AddObject (db_cfg, "axes", axes);
+			for (int i = 0; i < db->num_axes; i++) {
+				IMT_SaveAxisConfig (axes, db->axis_imt_id + i, i);
+			}
+		}
+		if (db->button_imt_id >= 0) {
+			plitem_t   *buttons = PL_NewArray ();
+			PL_D_AddObject (db_cfg, "buttons", buttons);
+			for (int i = 0; i < db->num_buttons; i++) {
+				IMT_SaveButtonConfig (buttons, db->button_imt_id + i, i);
+			}
+		}
+	}
+}
+
+static int
+parse_num (plitem_t *item)
+{
+	char       *end;
+	const char *str = PL_String (item);
+	if (!str) {
+		return -1;
+	}
+	int         num = strtol (str, &end, 0);
+	if (*end || num < 0) {
+		return -1;
+	}
+	return num;
+}
+
+static int
+parse_int (plitem_t *item, int dflt)
+{
+	char       *end;
+	const char *str = PL_String (item);
+	if (!str) {
+		return dflt;
+	}
+	int         num = strtol (str, &end, 0);
+	if (*end) {
+		return dflt;
+	}
+	return num;
+}
+
+static float
+parse_float (plitem_t *item, float dflt)
+{
+	char       *end;
+	const char *str = PL_String (item);
+	if (!str) {
+		return dflt;
+	}
+	float       num = strtof (str, &end);
+	if (*end) {
+		return dflt;
+	}
+	return num;
+}
+
+void
+IN_Binding_LoadConfig (plitem_t *config)
+{
+	for (in_devbindings_t *db = devbindings_list; db; db = db->next) {
+		clear_connection (db);
+	}
+	PR_RESRESET (devbindings);
+	devbindings_list = 0;
+
+	plitem_t   *devices = PL_ObjectForKey (config, "devices");
+	if (PL_Type (devices) != QFArray) {
+		Sys_Printf ("IN_Binding_LoadConfig: devices not an array\n");
+		return;
+	}
+	for (int i = 0, count = PL_A_NumObjects (devices); i < count; i++) {
+		plitem_t   *db_cfg = PL_ObjectAtIndex (devices, i);
+		const char *bindname = PL_String (PL_ObjectForKey (db_cfg, "name"));
+		const char *devname = PL_String (PL_ObjectForKey (db_cfg, "devname"));
+		const char *id = PL_String (PL_ObjectForKey (db_cfg, "id"));
+		int         num_axes = parse_num (PL_ObjectForKey (db_cfg,
+														   "num_axes"));
+		int         num_buttons = parse_num (PL_ObjectForKey (db_cfg,
+															  "num_buttons"));
+		if (in_binding_find_device (bindname)) {
+			Sys_Printf ("%s already exists\n", bindname);
+			continue;
+		}
+		if (num_axes < 0) {
+			continue;
+		}
+		if (num_buttons < 0) {
+			continue;
+		}
+
+		in_devbindings_t *db = PR_RESNEW (devbindings);
+		db->next = devbindings_list;
+		devbindings_list = db;
+
+		db->name = strdup (bindname);
+		db->devname = strdup (devname);
+		if (id) {
+			db->id = strdup (id);
+			db->match_id = 1;
+		} else {
+			db->id = 0;
+			db->match_id = 0;
+		}
+		db->devid = -1;		// not connected yet
+
+		db->num_axes = num_axes;
+		db->num_buttons = num_buttons;
+
+		db->axis_imt_id = -1;
+		db->button_imt_id = -1;
+
+		plitem_t   *axes = PL_ObjectForKey (db_cfg, "axes");
+		if (PL_A_NumObjects (axes)) {
+			db->axis_imt_id = IMT_GetAxisBlock (db->num_axes);
+		}
+		for (int i = 0, count = PL_A_NumObjects (axes); i < count; i++) {
+			plitem_t   *a = PL_ObjectAtIndex (axes, i);
+			const char *imt_name = PL_String (PL_ObjectForKey (a, "imt"));
+			int         num = parse_num (PL_ObjectForKey (a, "num"));
+			const char *axis_name = PL_String (PL_ObjectForKey (a, "axis"));
+			in_recipe_t recipe = {
+				.min = parse_int (PL_ObjectForKey (a, "min"), 0),
+				.max = parse_int (PL_ObjectForKey (a, "max"), 0),
+				.minzone = parse_int (PL_ObjectForKey (a, "minzone"), 0),
+				.maxzone = parse_int (PL_ObjectForKey (a, "maxzone"), 0),
+				.deadzone = parse_int (PL_ObjectForKey (a, "deadzone"), 0),
+				.curve = parse_float (PL_ObjectForKey (a, "curve"), 1),
+				.scale = parse_float (PL_ObjectForKey (a, "scale"), 1),
+			};
+			if (!imt_name || num < 0 || num >= db->num_axes) {
+				continue;
+			}
+			imt_t      *imt = IMT_FindIMT (imt_name);
+			if (!imt) {
+				continue;
+			}
+			in_axis_t  *axis = IN_FindAxis (axis_name);
+			if (!axis) {
+				continue;
+			}
+			IMT_BindAxis (imt, db->axis_imt_id + num, axis, &recipe);
+		}
+		plitem_t   *buttons = PL_ObjectForKey (db_cfg, "buttons");
+		if (PL_A_NumObjects (buttons)) {
+			db->button_imt_id = IMT_GetButtonBlock (db->num_buttons);
+		}
+		for (int i = 0, count = PL_A_NumObjects (buttons); i < count; i++) {
+			plitem_t   *b = PL_ObjectAtIndex (buttons, i);
+			const char *imt_name = PL_String (PL_ObjectForKey (b, "imt"));
+			int         num = parse_num (PL_ObjectForKey (b, "num"));
+			const char *binding = PL_String (PL_ObjectForKey (b, "binding"));
+			if (!imt_name || num < 0 || num >= db->num_buttons) {
+				continue;
+			}
+			imt_t      *imt = IMT_FindIMT (imt_name);
+			if (!imt) {
+				continue;
+			}
+			IMT_BindButton (imt, db->button_imt_id + num, binding);
+		}
+	}
+	// force device connection events so any connected devices get hoocked up
+	// with their bindings
+	IN_SendConnectedDevices ();
 }

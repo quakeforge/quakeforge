@@ -44,6 +44,7 @@
 #include "QF/hash.h"
 #include "QF/input.h"
 #include "QF/mathlib.h"
+#include "QF/plist.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
@@ -226,9 +227,11 @@ IMT_CreateContext (const char *name)
 static in_context_t * __attribute__ ((pure))
 imt_find_context (const char *name)
 {
-	for (size_t i = 0; i < in_contexts.size; i++) {
-		if (strcmp (name, in_contexts.a[i].name) == 0) {
-			return &in_contexts.a[i];
+	if (name) {
+		for (size_t i = 0; i < in_contexts.size; i++) {
+			if (strcmp (name, in_contexts.a[i].name) == 0) {
+				return &in_contexts.a[i];
+			}
 		}
 	}
 	return 0;
@@ -312,6 +315,10 @@ IMT_CreateIMT (int context, const char *imt_name, const char *chain_imt_name)
 		}
 	}
 	imt = malloc (sizeof (imt_t));
+	if (!ctx->imts) {
+		ctx->default_imt = imt;
+		ctx->active_imt = imt;
+	}
 	*ctx->imt_tail = imt;
 	ctx->imt_tail = &imt->next;
 
@@ -330,7 +337,7 @@ IMT_CreateIMT (int context, const char *imt_name, const char *chain_imt_name)
 				num_axes * sizeof (in_axisbinding_t *));
 	}
 	if (num_buttons) {
-		memset (imt->axis_bindings.a, 0,
+		memset (imt->button_bindings.a, 0,
 				num_buttons * sizeof (in_buttonbinding_t *));
 	}
 	return 1;
@@ -481,7 +488,6 @@ IMT_ProcessButton (int button, int state)
 {
 	imt_t      *imt = in_contexts.a[imt_current_context].active_imt;
 
-	Sys_Printf ("IMT_ProcessButton: %d %d\n", button, state);
 	while (imt) {
 		in_buttonbinding_t *b = imt->button_bindings.a[button];
 		if (b) {
@@ -598,6 +604,8 @@ imt_drop_all_f (void)
 			free (imt);
 		}
 		ctx->active_imt = 0;
+		ctx->default_imt = 0;
+		ctx->imt_tail = &ctx->imts;
 	}
 }
 
@@ -636,5 +644,145 @@ IMT_Init (void)
 	Hash_SetHashCompare (recipe_tab, recipe_get_hash, recipe_compare);
 	for (imtcmd_t *cmd = imt_commands; cmd->name; cmd++) {
 		Cmd_AddCommand (cmd->name, cmd->func, cmd->desc);
+	}
+}
+
+void
+IMT_SaveConfig (plitem_t *config)
+{
+	plitem_t   *ctx_list = PL_NewArray ();
+	PL_D_AddObject (config, "contexts", ctx_list);
+	for (size_t i = 0; i < in_contexts.size; i++) {
+		in_context_t *context = &in_contexts.a[i];
+		plitem_t   *ctx = PL_NewDictionary (0); //FIXME hashlinks
+		PL_A_AddObject (ctx_list, ctx);
+		PL_D_AddObject (ctx, "name", PL_NewString (context->name));
+		if (context->imts) {
+			plitem_t   *imt_list = PL_NewArray ();
+			PL_D_AddObject (ctx, "imts", imt_list);
+			for (imt_t *imt = context->imts; imt; imt = imt->next) {
+				plitem_t   *imt_cfg = PL_NewDictionary (0); //FIXME hashlinks
+				PL_D_AddObject (imt_cfg, "name", PL_NewString (imt->name));
+				if (imt->chain) {
+					PL_D_AddObject (imt_cfg, "chain",
+									PL_NewString (imt->chain->name));
+				}
+				PL_A_AddObject (imt_list, imt_cfg);
+				// the bindings are not written here because they are managed
+				// by IN_Binding_SaveConfig: IMT does not really know the
+				// device-input structure (it cound via the blocks, but it
+				// doesn't know the device names (by design))
+			}
+		}
+		if (context->default_imt) {
+			PL_D_AddObject (ctx, "default_imt",
+							PL_NewString (context->default_imt->name));
+		}
+	}
+}
+
+void
+IMT_SaveAxisConfig (plitem_t *axes, int axis_ind, int dev_axis)
+{
+	for (size_t i = 0; i < in_contexts.size; i++) {
+		in_context_t *context = &in_contexts.a[i];
+		for (imt_t *imt = context->imts; imt; imt = imt->next) {
+			in_axisbinding_t *a = imt->axis_bindings.a[axis_ind];
+			if (a) {
+				in_recipe_t *recipe = a->recipe;
+				plitem_t   *axis = PL_NewDictionary (0); //FIXME hashlinks
+				PL_A_AddObject (axes, axis);
+
+				PL_D_AddObject (axis, "imt", PL_NewString (imt->name));
+				PL_D_AddObject (axis, "num",
+								PL_NewString (va (0, "%d", dev_axis)));
+				PL_D_AddObject (axis, "axis", PL_NewString (a->axis->name));
+				PL_D_AddObject (axis, "min",
+								PL_NewString (va (0, "%d", recipe->min)));
+				PL_D_AddObject (axis, "max",
+								PL_NewString (va (0, "%d", recipe->max)));
+				PL_D_AddObject (axis, "minzone",
+								PL_NewString (va (0, "%d", recipe->minzone)));
+				PL_D_AddObject (axis, "maxzone",
+								PL_NewString (va (0, "%d", recipe->maxzone)));
+				PL_D_AddObject (axis, "deadzone",
+								PL_NewString (va (0, "%d", recipe->deadzone)));
+				PL_D_AddObject (axis, "curve",
+								PL_NewString (va (0, "%.9g", recipe->curve)));
+				PL_D_AddObject (axis, "scale",
+								PL_NewString (va (0, "%.9g", recipe->scale)));
+			}
+		}
+	}
+}
+
+void
+IMT_SaveButtonConfig (plitem_t *buttons, int button_ind, int dev_button)
+{
+	for (size_t i = 0; i < in_contexts.size; i++) {
+		in_context_t *context = &in_contexts.a[i];
+		for (imt_t *imt = context->imts; imt; imt = imt->next) {
+			in_buttonbinding_t *b = imt->button_bindings.a[button_ind];
+			if (b) {
+				plitem_t   *button = PL_NewDictionary (0); //FIXME hashlinks
+				PL_A_AddObject (buttons, button);
+
+				PL_D_AddObject (button, "imt", PL_NewString (imt->name));
+				PL_D_AddObject (button, "num",
+								PL_NewString (va (0, "%d", dev_button)));
+				switch (b->type) {
+					case inb_button:
+						PL_D_AddObject (button, "binding",
+										PL_NewString (va (0, "+%s",
+														  b->button->name)));
+						break;
+					case inb_command:
+						PL_D_AddObject (button, "binding",
+										PL_NewString (b->command));
+						break;
+				}
+			}
+		}
+	}
+}
+
+void
+IMT_LoadConfig (plitem_t *config)
+{
+	imt_drop_all_f ();
+
+	plitem_t   *ctx_list = PL_ObjectForKey (config, "contexts");
+	if (PL_Type (ctx_list) != QFArray) {
+		Sys_Printf ("IMT_LoadConfig: contexts not an array\n");
+		return;
+	}
+	for (int i = 0, count = PL_A_NumObjects (ctx_list); i < count; i++) {
+		plitem_t   *ctx = PL_ObjectAtIndex (ctx_list, i);
+		const char *name = PL_String (PL_ObjectForKey (ctx, "name"));
+		in_context_t *context = imt_find_context (name);
+		if (!context) {
+			continue;
+		}
+		plitem_t   *imts = PL_ObjectForKey (ctx, "imts");
+		if (!imts || PL_Type (imts) != QFArray) {
+			continue;
+		}
+		for (int j = 0, num_imts = PL_A_NumObjects (imts); j < num_imts; j++) {
+			plitem_t   *imt = PL_ObjectAtIndex (imts, j);
+			const char *imt_name = PL_String (PL_ObjectForKey (imt, "name"));
+			const char *imt_chain = PL_String (PL_ObjectForKey (imt, "chain"));
+			if (imt_name) {
+				IMT_CreateIMT (context - in_contexts.a, imt_name, imt_chain);
+			}
+		}
+		const char *default_imt = PL_String (PL_ObjectForKey (ctx,
+															  "default_imt"));
+		if (default_imt) {
+			context->default_imt = IMT_FindIMT (default_imt);
+		}
+		if (!context->default_imt) {
+			context->default_imt = context->imts;
+		}
+		context->active_imt = context->default_imt;
 	}
 }
