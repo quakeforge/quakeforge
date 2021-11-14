@@ -1614,7 +1614,7 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 	do {																	\
 		unsigned    i, j;													\
 		if (!(map)._size) {													\
-			return;															\
+			break;															\
 		}																	\
 		for (i = 0; i < (map)._size; i++) {									\
 			(map)._free = (map)._map[i];									\
