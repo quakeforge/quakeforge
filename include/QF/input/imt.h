@@ -62,7 +62,7 @@ int IMT_CreateContext (const char *name);
 int IMT_GetContext (void) __attribute__ ((pure));
 void IMT_SetContext (int ctx);
 void IMT_SetContextCbuf (int ctx, struct cbuf_s *cbuf);
-imt_t *IMT_FindIMT (const char *name);
+imt_t *IMT_FindIMT (const char *name) __attribute__ ((pure));
 int IMT_CreateIMT (int context, const char *imt_name,
 				   const char *chain_imt_name);
 void IMT_BindAxis (imt_t *imt, int axis_num, in_axis_t *axis,

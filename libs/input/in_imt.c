@@ -269,7 +269,7 @@ imt_find_imt (in_context_t *ctx, const char *name)
 	return 0;
 }
 
-imt_t * __attribute__ ((pure))
+imt_t *
 IMT_FindIMT (const char *name)
 {
     for (size_t i = 0; i < in_contexts.size; i++) {
