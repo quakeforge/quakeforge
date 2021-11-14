@@ -51,6 +51,7 @@ void COM_InitArgv (int argc, const char **argv);
 struct cbuf_s;
 void COM_ParseConfig (struct cbuf_s *cbuf);
 void COM_ExecConfig (struct cbuf_s *cbuf, int skip_quakerc);
+int COM_Check_quakerc (const char *cmd, struct cbuf_s *cbuf);
 
 ///@}
 

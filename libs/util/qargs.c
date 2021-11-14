@@ -180,8 +180,8 @@ COM_ParseConfig (cbuf_t *cbuf)
 	Cbuf_Execute_Sets (cbuf);
 }
 
-static int
-check_quakerc (const char *cmd, cbuf_t *cbuf)
+int
+COM_Check_quakerc (const char *cmd, cbuf_t *cbuf)
 {
 	const char *l, *p;
 	int ret = 0;
@@ -214,7 +214,7 @@ COM_ExecConfig (cbuf_t *cbuf, int skip_quakerc)
 	if (Cmd_Exec_File (cbuf, "quakeforge.cfg", 1)) {
 		Cmd_Exec_File (cbuf, fs_usercfg->string, 0);
 		Cmd_StuffCmds (cbuf);
-		check_quakerc ("startdemos", cbuf);
+		COM_Check_quakerc ("startdemos", cbuf);
 	} else {
 		if (!skip_quakerc) {
 			Cbuf_InsertText (cbuf, "exec quake.rc\n");
@@ -223,7 +223,7 @@ COM_ExecConfig (cbuf_t *cbuf, int skip_quakerc)
 		// Reparse the command line for + commands.
 		// (sets still done, but it doesn't matter)
 		// (Note, no non-base commands exist yet)
-		if (skip_quakerc || !check_quakerc ("stuffcmds", 0)) {
+		if (skip_quakerc || !COM_Check_quakerc ("stuffcmds", 0)) {
 			Cmd_StuffCmds (cbuf);
 		}
 	}
