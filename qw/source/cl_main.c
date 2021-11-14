@@ -81,7 +81,9 @@
 #include "QF/qargs.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
+#include "QF/quakeio.h"
 #include "QF/ruamoko.h"
+#include "QF/plist.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
@@ -1504,18 +1506,72 @@ void
 Host_WriteConfiguration (void)
 {
 	if (host_initialized && cl_writecfg->int_val) {
+		plitem_t   *config = PL_NewDictionary (0); //FIXME hashlinks
+		IN_SaveConfig (config);
+		//Cvar_WriteVariables (f);
+
 		const char *path = va (0, "%s/quakeforge.cfg", qfs_gamedir->dir.def);
 		QFile      *f = QFS_WOpen (path, 0);
 
 		if (!f) {
 			Sys_Printf ("Couldn't write quakeforge.cfg.\n");
-			return;
+		} else {
+			char       *cfg = PL_WritePropertyList (config);
+			Qputs (f, cfg);
+			free (cfg);
+			Qclose (f);
 		}
+		PL_Free (config);
+	}
+}
 
-		//Key_WriteBindings (f);
-		Cvar_WriteVariables (f);
+int
+Host_ReadConfiguration (const char *cfg_name)
+{
+	QFile      *cfg_file = QFS_FOpenFile (cfg_name);
+	if (!cfg_file) {
+		return 0;
+	}
+	size_t      len = Qfilesize (cfg_file);
+	char       *cfg = malloc (len + 1);
+	Qread (cfg_file, cfg, len);
+	cfg[len] = 0;
+	Qclose (cfg_file);
 
-		Qclose (f);
+	plitem_t   *config = PL_GetPropertyList (cfg, 0);	// FIXME hashlinks
+	if (!config) {
+		return 0;
+	}
+
+	IN_LoadConfig (config);
+
+	PL_Free (config);
+	return 1;
+}
+
+static void
+Host_ExecConfig (cbuf_t *cbuf, int skip_quakerc)
+{
+	// quakeforge.cfg overrides quake.rc as it contains quakeforge-specific
+	// commands. If it doesn't exist, then this is the first time quakeforge
+	// has been used in this installation, thus any existing legacy config
+	// should be used to set up defaults on the assumption that the user has
+	// things set up to work with another (hopefully compatible) client
+	if (Host_ReadConfiguration ("quakeforge.cfg")) {
+		Cmd_Exec_File (cbuf, fs_usercfg->string, 0);
+		Cmd_StuffCmds (cbuf);
+		COM_Check_quakerc ("startdemos", cbuf);
+	} else {
+		if (!skip_quakerc) {
+			Cbuf_InsertText (cbuf, "exec quake.rc\n");
+		}
+		Cmd_Exec_File (cbuf, fs_usercfg->string, 0);
+		// Reparse the command line for + commands.
+		// (sets still done, but it doesn't matter)
+		// (Note, no non-base commands exist yet)
+		if (skip_quakerc || !COM_Check_quakerc ("stuffcmds", 0)) {
+			Cmd_StuffCmds (cbuf);
+		}
 	}
 }
 
@@ -1741,7 +1797,7 @@ CL_Autoexec (int phase)
 {
 	if (!phase)
 		return;
-	if (!Cmd_Exec_File (cl_cbuf, "quakeforge.cfg", 1)) {
+	if (!Host_ReadConfiguration ("quakeforge.cfg")) {
 		int         cmd_warncmd_val = cmd_warncmd->int_val;
 
 		Cbuf_AddText (cl_cbuf, "cmd_warncmd 0\n");
@@ -1806,7 +1862,7 @@ Host_Init (void)
 	CL_UpdateScreen (realtime);
 	CL_UpdateScreen (realtime);
 
-	COM_ExecConfig (cl_cbuf, !cl_quakerc->int_val);
+	Host_ExecConfig (cl_cbuf, !cl_quakerc->int_val);
 
 	// make sure all + commands have been executed
 	Cbuf_Execute_Stack (cl_cbuf);

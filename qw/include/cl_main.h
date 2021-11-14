@@ -34,6 +34,7 @@
 
 void CL_Init (void);
 void Host_WriteConfiguration (void);
+int Host_ReadConfiguration (const char *cfg_name);
 
 void CL_EstablishConnection (const char *host);
 
