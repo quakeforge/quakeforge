@@ -120,6 +120,10 @@ qboolean Cvar_Command (void);
 // with the archive flag set to true.
 void 	Cvar_WriteVariables (QFile *f);
 
+struct plitem_s;
+void Cvar_SaveConfig (struct plitem_s *config);
+void Cvar_LoadConfig (struct plitem_s *config);
+
 // attempts to match a partial variable name for command line completion
 // returns NULL if nothing fits
 const char 	*Cvar_CompleteVariable (const char *partial) __attribute__((pure));

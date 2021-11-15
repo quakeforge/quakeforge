@@ -45,6 +45,7 @@
 #include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/mathlib.h"
+#include "QF/plist.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
@@ -328,6 +329,38 @@ Cvar_WriteVariables (QFile *f)
 	for (var = cvar_vars; var; var = var->next)
 		if (var->flags & CVAR_ARCHIVE)
 			Qprintf (f, "seta %s \"%s\"\n", var->name, var->string);
+}
+
+VISIBLE void
+Cvar_SaveConfig (plitem_t *config)
+{
+	plitem_t   *cvars = PL_NewDictionary (0);	//FIXME hashlinks
+	PL_D_AddObject (config, "cvars", cvars);
+	for (cvar_t *var = cvar_vars; var; var = var->next) {
+		if (var->flags & CVAR_ARCHIVE) {
+			PL_D_AddObject (cvars, var->name, PL_NewString (var->string));
+		}
+	}
+}
+
+VISIBLE void
+Cvar_LoadConfig (plitem_t *config)
+{
+	plitem_t   *cvars = PL_ObjectForKey (config, "cvars");
+
+	if (!cvars) {
+		return;
+	}
+	for (int i = 0, count = PL_D_NumKeys (cvars); i < count; i++) {
+		const char *cvar_name = PL_KeyAtIndex (cvars, i);
+		const char *value = PL_String (PL_ObjectForKey (cvars, cvar_name));
+		if (value) {
+			cvar_t      *var = Cvar_FindVar (cvar_name);
+			if (var) {
+				Cvar_Set (var, value);
+			}
+		}
+	}
 }
 
 #define SYS_DEVELOPER(developer) #developer,
