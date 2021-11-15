@@ -1507,8 +1507,8 @@ Host_WriteConfiguration (void)
 {
 	if (host_initialized && cl_writecfg->int_val) {
 		plitem_t   *config = PL_NewDictionary (0); //FIXME hashlinks
-		IN_SaveConfig (config);
 		Cvar_SaveConfig (config);
+		IN_SaveConfig (config);
 
 		const char *path = va (0, "%s/quakeforge.cfg", qfs_gamedir->dir.def);
 		QFile      *f = QFS_WOpen (path, 0);
@@ -1543,8 +1543,8 @@ Host_ReadConfiguration (const char *cfg_name)
 		return 0;
 	}
 
-	IN_LoadConfig (config);
 	Cvar_LoadConfig (config);
+	IN_LoadConfig (config);
 
 	PL_Free (config);
 	return 1;
