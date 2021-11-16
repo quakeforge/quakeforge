@@ -37,6 +37,7 @@
 
 #include "QF/checksum.h"
 #include "QF/cmd.h"
+#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/keys.h"
@@ -44,6 +45,8 @@
 #include "QF/sys.h"
 #include "QF/teamplay.h"
 #include "QF/va.h"
+
+#include "QF/input/event.h"
 
 #include "compat.h"
 
@@ -61,6 +64,7 @@
 
 int         cl_game_context;
 int         cl_demo_context;
+static int  cl_event_id;
 
 cvar_t     *cl_nodelta;
 cvar_t     *cl_maxnetfps;
@@ -563,9 +567,24 @@ CL_SendCmd (void)
 		Netchan_Transmit (&cls.netchan, buf.cursize, buf.data);
 }
 
+static int
+cl_event_handler (const IE_event_t *ie_event, void *unused)
+{
+	if (ie_event->type == ie_key) {
+		if (ie_event->key.code == QFK_ESCAPE) {
+			// FIXME this should bring up the menu
+			Con_SetState (con_active);
+			return 1;
+		}
+	}
+	return IN_Binding_HandleEvent (ie_event);
+}
+
 void
 CL_Input_Init (void)
 {
+	cl_event_id = IE_Add_Handler (cl_event_handler, 0);
+
 	for (int i = 0; cl_in_axes[i]; i++) {
 		IN_RegisterAxis (cl_in_axes[i]);
 	}
@@ -584,7 +603,7 @@ void
 CL_Input_Activate (void)
 {
 	IMT_SetContext (cl_game_context);
-	IN_Binding_Activate ();
+	IE_Set_Focus (cl_event_id);
 }
 
 void

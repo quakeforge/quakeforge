@@ -99,7 +99,7 @@ typedef enum {
 		| (1 << ie_remove_device) \
 	)
 
-typedef struct {
+typedef struct IE_event_s {
 	IE_event_type type;
 	uint64_t    when;
 	union {

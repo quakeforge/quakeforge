@@ -234,6 +234,8 @@ int IN_RegisterAxis (in_axis_t *axis);
 in_button_t *IN_FindButton (const char *name);
 in_axis_t *IN_FindAxis (const char *name);
 
+struct IE_event_s;
+int IN_Binding_HandleEvent (const struct IE_event_s *ie_event);
 void IN_Binding_Activate (void);
 void IN_Binding_Init (void);
 struct plitem_s;
