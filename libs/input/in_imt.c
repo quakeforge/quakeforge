@@ -194,24 +194,37 @@ imt_get_button_block (int count)
     return base;
 }
 
+static void
+imt_reset_blocks (void)
+{
+	DARRAY_RESIZE (&axis_blocks, 0);
+	DARRAY_RESIZE (&button_blocks, 0);
+    for (size_t i = 0; i < in_contexts.size; i++) {
+        for (imt_t *imt = in_contexts.a[i].imts; imt; imt = imt->next) {
+			DARRAY_RESIZE (&imt->axis_bindings, 0);
+			DARRAY_RESIZE (&imt->button_bindings, 0);
+        }
+    }
+}
+
 int
 IMT_GetAxisBlock (int num_axes)
 {
 	int         base = imt_get_axis_block (num_axes);
-    imt_block_t *block = imt_get_block (&axis_blocks);
+	imt_block_t *block = imt_get_block (&axis_blocks);
 	block->base = base;
 	block->count = num_axes;
-    return block - axis_blocks.a;
+	return base;
 }
 
 int
 IMT_GetButtonBlock (int num_buttons)
 {
 	int         base = imt_get_button_block (num_buttons);
-    imt_block_t *block = imt_get_block (&button_blocks);
+	imt_block_t *block = imt_get_block (&button_blocks);
 	block->base = base;
 	block->count = num_buttons;
-    return block - button_blocks.a;
+	return base;
 }
 
 int
@@ -749,6 +762,7 @@ IMT_SaveButtonConfig (plitem_t *buttons, int button_ind, int dev_button)
 void
 IMT_LoadConfig (plitem_t *config)
 {
+	imt_reset_blocks ();
 	imt_drop_all_f ();
 
 	plitem_t   *ctx_list = PL_ObjectForKey (config, "contexts");
