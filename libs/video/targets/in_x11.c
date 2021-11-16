@@ -655,7 +655,7 @@ in_x11_send_axis_event (int devid, in_axisinfo_t *axis)
 	IE_Send_Event (&event);
 }
 
-static void
+static int
 in_x11_send_mouse_event (IE_mouse_type type)
 {
 	IE_event_t  event = {
@@ -664,10 +664,10 @@ in_x11_send_mouse_event (IE_mouse_type type)
 		.mouse = x11_mouse,
 	};
 	event.mouse.type = type;
-	IE_Send_Event (&event);
+	return IE_Send_Event (&event);
 }
 
-static void
+static int
 in_x11_send_key_event (void)
 {
 	IE_event_t  event = {
@@ -675,7 +675,7 @@ in_x11_send_key_event (void)
 		.when = Sys_LongTime (),
 		.key = x11_key,
 	};
-	IE_Send_Event (&event);
+	return IE_Send_Event (&event);
 }
 
 static void
@@ -758,13 +758,14 @@ event_motion (XEvent *event)
 			x11_mouse_axes[1].value = event->xmotion.y - x11_mouse.y;
 		}
 	}
-	in_x11_send_axis_event (x11_mouse_device.devid, &x11_mouse_axes[0]);
-	in_x11_send_axis_event (x11_mouse_device.devid, &x11_mouse_axes[1]);
 
 	x11_mouse.shift = event->xmotion.state & 0xff;
 	x11_mouse.x = event->xmotion.x;
 	x11_mouse.y = event->xmotion.y;
-	in_x11_send_mouse_event (ie_mousemove);
+	if (!in_x11_send_mouse_event (ie_mousemove)) {
+		in_x11_send_axis_event (x11_mouse_device.devid, &x11_mouse_axes[0]);
+		in_x11_send_axis_event (x11_mouse_device.devid, &x11_mouse_axes[1]);
+	}
 }
 
 static void
@@ -782,8 +783,6 @@ event_button (XEvent *event)
 	int press = event->type == ButtonPress;
 
 	x11_mouse_buttons[but].state = press;
-	in_x11_send_button_event (x11_mouse_device.devid, &x11_mouse_buttons[but],
-							  x11_mouse_device.event_data);
 
 	x11_mouse.shift = event->xmotion.state & 0xff;
 	x11_mouse.x = event->xmotion.x;
@@ -793,7 +792,11 @@ event_button (XEvent *event)
 	} else {
 		x11_mouse.buttons &= ~(1 << but);
 	}
-	in_x11_send_mouse_event (press ? ie_mousedown : ie_mouseup);
+	if (!in_x11_send_mouse_event (press ? ie_mousedown : ie_mouseup)) {
+		in_x11_send_button_event (x11_mouse_device.devid,
+								  &x11_mouse_buttons[but],
+								  x11_mouse_device.event_data);
+	}
 }
 
 static void
@@ -806,14 +809,13 @@ event_key (XEvent *event)
 	// offset by 8 (so Esc is 9 instead of 1).
 	key = (event->xkey.keycode - 8) & 0xff;
 	x11_key_buttons[key].state = event->type == KeyPress;
-	in_x11_send_button_event (x11_keyboard_device.devid,
-							  &x11_key_buttons[key],
-							  x11_keyboard_device.event_data);
 
 	x11_key.shift = event->xmotion.state & 0xff;
 	XLateKey (&event->xkey, &x11_key.code, &x11_key.unicode);
-	if (event->type == KeyPress) {
-		in_x11_send_key_event ();
+	if (event->type != KeyPress || !in_x11_send_key_event ()) {
+		in_x11_send_button_event (x11_keyboard_device.devid,
+								  &x11_key_buttons[key],
+								  x11_keyboard_device.event_data);
 	}
 }
 
