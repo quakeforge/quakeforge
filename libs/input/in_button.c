@@ -189,7 +189,11 @@ IN_RegisterButton (in_button_t *button)
 in_button_t *
 IN_FindButton (const char *name)
 {
-	return Hash_Find (button_tab, name);
+	regbutton_t *regbutton = Hash_Find (button_tab, name);
+	if (regbutton) {
+		return regbutton->button;
+	}
+	return 0;
 }
 
 static void __attribute__((constructor))
