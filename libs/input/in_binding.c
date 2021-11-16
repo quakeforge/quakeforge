@@ -432,7 +432,7 @@ in_bind_f (void)
 static void
 in_unbind_f (void)
 {
-	if (Cmd_Argc () < 6) {
+	if (Cmd_Argc () < 5) {
 		Sys_Printf ("in_unbind imt device type number\n");
 		Sys_Printf ("    imt: the name of the input mapping table in which the"
 					" intput will be unbound\n");
