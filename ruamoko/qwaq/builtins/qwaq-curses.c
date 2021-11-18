@@ -89,7 +89,7 @@ qwaq_init_threads (qwaq_thread_set_t *thread_data)
 	Sys_SetStdPrintf (qwaq_print);
 
 	IN_Init_Cvars ();
-	IN_Init (qwaq_cbuf);
+	IN_Init ();
 
 	for (size_t i = 1, thread_ind = 0; i < thread_data->size; i++) {
 		qwaq_thread_t *thread = thread_data->a[i];

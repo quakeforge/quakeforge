@@ -1183,7 +1183,7 @@ CL_Init (void)
 
 	W_LoadWadFile ("gfx.wad");
 	VID_Init (basepal, colormap);
-	IN_Init (cl_cbuf);
+	IN_Init ();
 	Mod_Init ();
 	R_Init ();
 	r_data->lightstyle = cl.lightstyle;

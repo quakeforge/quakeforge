@@ -1035,7 +1035,6 @@ static void
 in_x11_shutdown (void *data)
 {
 	Sys_MaskPrintf (SYS_vid, "in_x11_shutdown\n");
-	in_mouse_avail = 0;
 	if (x_disp) {
 //		XAutoRepeatOn (x_disp);
 		dga_off ();
@@ -1129,8 +1128,6 @@ in_x11_init (void *data)
 		X11_AddEvent (MotionNotify, &event_motion);
 
 		x11_add_device (&x11_mouse_device);
-
-		in_mouse_avail = 1;
 	}
 
 	Cmd_AddCommand ("in_paste_buffer", in_paste_buffer_f,

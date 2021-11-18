@@ -191,7 +191,7 @@ BI_Init (progs_t *pr)
 
 	W_LoadWadFile ("gfx.wad");
 	VID_Init (basepal, colormap);
-	IN_Init (qwaq_cbuf);
+	IN_Init ();
 	Mod_Init ();
 	R_Init ();
 	R_Progs_Init (pr);

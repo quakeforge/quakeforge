@@ -47,7 +47,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "QF/cbuf.h"
 #include "QF/cvar.h"
 #include "QF/darray.h"
 #define IMPLEMENT_INPUT_Funcs
@@ -71,8 +70,6 @@ typedef struct {
 static struct DARRAY_TYPE (in_regdriver_t) in_drivers = { .grow = 8 };
 static struct DARRAY_TYPE (in_device_t) in_devices = { .grow = 8 };
 
-VISIBLE viewdelta_t viewdelta;
-
 cvar_t     *in_grab;
 VISIBLE cvar_t     *in_amp;
 VISIBLE cvar_t     *in_pre_amp;
@@ -83,10 +80,6 @@ cvar_t     *in_mouse_pre_amp;
 cvar_t     *lookstrafe;
 
 int64_t     in_timeout = 10000;//10ms default timeout
-
-qboolean    in_mouse_avail;
-float       in_mouse_x, in_mouse_y;
-static float in_old_mouse_x, in_old_mouse_y;
 
 int
 IN_RegisterDriver (in_driver_t *driver, void *data)
@@ -415,42 +408,6 @@ IN_LoadConfig (plitem_t *config)
 	}
 }
 
-void
-IN_Move (void)
-{
-	//JOY_Move ();
-
-	if (!in_mouse_avail)
-		return;
-
-	in_mouse_x *= in_mouse_pre_amp->value * in_pre_amp->value;
-	in_mouse_y *= in_mouse_pre_amp->value * in_pre_amp->value;
-
-	if (in_mouse_filter->int_val) {
-		in_mouse_x = (in_mouse_x + in_old_mouse_x) * 0.5;
-		in_mouse_y = (in_mouse_y + in_old_mouse_y) * 0.5;
-
-		in_old_mouse_x = in_mouse_x;
-		in_old_mouse_y = in_mouse_y;
-	}
-
-	in_mouse_x *= in_mouse_amp->value * in_amp->value;
-	in_mouse_y *= in_mouse_amp->value * in_amp->value;
-#if 0
-	if ((in_strafe.state & 1) || (lookstrafe->int_val && freelook))
-		viewdelta.position[0] += in_mouse_x;
-	else
-		viewdelta.angles[YAW] -= in_mouse_x;
-
-	if (freelook && !(in_strafe.state & 1)) {
-		viewdelta.angles[PITCH] += in_mouse_y;
-	} else {
-		viewdelta.position[2] -= in_mouse_y;
-	}
-#endif
-	in_mouse_x = in_mouse_y = 0.0;
-}
-
 /* Called at shutdown */
 static void
 IN_shutdown (void *data)
@@ -467,7 +424,7 @@ IN_shutdown (void *data)
 }
 
 void
-IN_Init (cbuf_t *cbuf)
+IN_Init (void)
 {
 	Sys_RegisterShutdown (IN_shutdown, 0);
 	IMT_Init ();
@@ -477,17 +434,11 @@ IN_Init (cbuf_t *cbuf)
 		in_regdriver_t *rd = &in_drivers.a[i];
 		rd->driver.init (rd->data);
 	}
-	//Key_Init (cbuf);
-	//JOY_Init ();
-
-	in_mouse_x = in_mouse_y = 0.0;
 }
 
 void
 IN_Init_Cvars (void)
 {
-	//Key_Init_Cvars ();
-	//JOY_Init_Cvars ();
 	in_grab = Cvar_Get ("in_grab", "0", CVAR_ARCHIVE, IN_UpdateGrab,
 						"With this set to 1, quake will grab the mouse, "
 						"preventing loss of input focus.");
@@ -516,7 +467,6 @@ IN_ClearStates (void)
 			rd->driver.clear_states (rd->data);
 		}
 	}
-	//Key_ClearStates ();
 }
 
 #ifdef HAVE_EVDEV

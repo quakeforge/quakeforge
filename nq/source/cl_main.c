@@ -585,7 +585,7 @@ CL_Init (cbuf_t *cbuf)
 
 	W_LoadWadFile ("gfx.wad");
 	VID_Init (basepal, colormap);
-	IN_Init (cbuf);
+	IN_Init ();
 	R_Init ();
 	r_data->lightstyle = cl.lightstyle;
 

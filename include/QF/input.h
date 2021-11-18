@@ -49,11 +49,6 @@ typedef struct in_buttoninfo_s {
 
 #ifndef __QFCC__
 
-typedef struct {
-	vec3_t angles;
-	vec3_t position;
-} viewdelta_t;
-
 struct qf_fd_set;
 
 typedef struct in_driver_s {
@@ -93,15 +88,13 @@ typedef struct in_device_s {
 	void       *event_data;
 } in_device_t;
 
-extern viewdelta_t viewdelta;
-
 #define freelook (in_mlook.state & 1 || in_freelook->int_val)
 
 struct cvar_s;
 
 int IN_RegisterDriver (in_driver_t *driver, void *data);
 void IN_DriverData (int handlle, void *data);
-void IN_Init (struct cbuf_s *cbuf);
+void IN_Init (void);
 void IN_Init_Cvars (void);
 struct plitem_s;
 void IN_SaveConfig (struct plitem_s *config);
@@ -128,9 +121,6 @@ void IN_UpdateGrab (struct cvar_s *);
 
 void IN_ClearStates (void);
 
-void IN_Move (void); // FIXME: was cmduser_t?
-// add additional movement on top of the keyboard move cmd
-
 extern struct cvar_s		*in_grab;
 extern struct cvar_s		*in_amp;
 extern struct cvar_s		*in_pre_amp;
@@ -138,10 +128,6 @@ extern struct cvar_s		*m_filter;
 extern struct cvar_s		*in_mouse_accel;
 extern struct cvar_s		*in_freelook;
 extern struct cvar_s		*lookstrafe;
-
-extern qboolean 	in_mouse_avail;
-extern float		in_mouse_x, in_mouse_y;
-
 
 #endif
 
