@@ -37,6 +37,9 @@
 
 #include "libs/util/cexpr-parse.h"
 
+#undef uint
+#define uint unsigned
+
 #define BINOP(pre, opname, type, op)										\
 static void																	\
 pre##_##opname (const exprval_t *a, const exprval_t *b, exprval_t *c,		\
