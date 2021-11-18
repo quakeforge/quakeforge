@@ -49,6 +49,7 @@
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <X11/XF86keysym.h>
+#include <X11/XKBlib.h>
 #include <X11/Sunkeysym.h>
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
@@ -97,18 +98,29 @@ static in_buttoninfo_t x11_key_buttons[256];
 static in_axisinfo_t x11_mouse_axes[2];
 // FIXME assume up to 32 mouse buttons
 static in_buttoninfo_t x11_mouse_buttons[32];
+static const char *x11_mouse_axis_names[] = {"M_X", "M_Y"};
+static const char *x11_mouse_button_names[] = {
+	"M_BUTTON1",    "M_BUTTON2",  "M_BUTTON3",  "M_WHEEL_UP",
+	"M_WHEEL_DOWN", "M_BUTTON6",  "M_BUTTON7",  "M_BUTTON8",
+	"M_BUTTON9",    "M_BUTTON10", "M_BUTTON11", "M_BUTTON12",
+	"M_BUTTON13",   "M_BUTTON14", "M_BUTTON15", "M_BUTTON16",
+	"M_BUTTON17",   "M_BUTTON18", "M_BUTTON19", "M_BUTTON20",
+	"M_BUTTON21",   "M_BUTTON22", "M_BUTTON23", "M_BUTTON24",
+	"M_BUTTON25",   "M_BUTTON26", "M_BUTTON27", "M_BUTTON28",
+	"M_BUTTON29",   "M_BUTTON30", "M_BUTTON31", "M_BUTTON32",
+};
 
-#define infosize(x) (sizeof (x) / sizeof (x[0]))
+#define SIZE(x) (sizeof (x) / sizeof (x[0]))
 
 static x11_device_t x11_keyboard_device = {
 	"core:keyboard",
-	0, infosize (x11_key_buttons),
+	0, SIZE (x11_key_buttons),
 	0, x11_key_buttons,
 };
 
 static x11_device_t x11_mouse_device = {
 	"core:mouse",
-	infosize (x11_mouse_axes), infosize (x11_mouse_buttons),
+	SIZE (x11_mouse_axes), SIZE (x11_mouse_buttons),
 	x11_mouse_axes, x11_mouse_buttons,
 };
 
@@ -935,6 +947,90 @@ in_x11_button_info (void *data, void *device, in_buttoninfo_t *buttons,
 	memcpy (buttons, dev->buttons, *numbuttons * sizeof (in_buttoninfo_t));
 }
 
+static const char *
+in_x11_get_axis_name (void *data, void *device, int axis_num)
+{
+	x11_device_t *dev = device;
+	const char *name = 0;
+
+	if (dev == &x11_keyboard_device) {
+		// keyboards don't have axes...
+	} else if (dev == &x11_mouse_device) {
+		if ((unsigned) axis_num < SIZE (x11_mouse_axis_names)) {
+			name = x11_mouse_axis_names[axis_num];
+		}
+	}
+	return name;
+}
+
+static const char *
+in_x11_get_button_name (void *data, void *device, int button_num)
+{
+	x11_device_t *dev = device;
+	const char *name = 0;
+
+	if (dev == &x11_keyboard_device) {
+		// X11 protocol supports only 256 keys. The key codes are the AT scan
+		// codes offset by 8 (so Esc is 9 instead of 1).
+		KeyCode     keycode = (button_num + 8) & 0xff;
+		KeySym      keysym = XkbKeycodeToKeysym (x_disp, keycode, 0, 0);
+		if (keysym != NoSymbol) {
+			name = XKeysymToString (keysym);
+		}
+	} else if (dev == &x11_mouse_device) {
+		if ((unsigned) button_num < SIZE (x11_mouse_button_names)) {
+			name = x11_mouse_button_names[button_num];
+		}
+	}
+	return name;
+}
+
+static int
+in_x11_get_axis_num (void *data, void *device, const char *axis_name)
+{
+	x11_device_t *dev = device;
+	int         num = -1;
+
+	if (dev == &x11_keyboard_device) {
+		// keyboards don't have axes...
+	} else if (dev == &x11_mouse_device) {
+		for (size_t i = 0; i < SIZE (x11_mouse_axis_names); i++) {
+			if (strcasecmp (axis_name, x11_mouse_axis_names[i]) == 0) {
+				num = i;
+				break;
+			}
+		}
+	}
+	return num;
+}
+
+static int
+in_x11_get_button_num (void *data, void *device, const char *button_name)
+{
+	x11_device_t *dev = device;
+	int         num = -1;
+
+	if (dev == &x11_keyboard_device) {
+		KeySym      keysym = XStringToKeysym (button_name);
+		if (keysym != NoSymbol) {
+			KeyCode     keycode = XKeysymToKeycode (x_disp, keysym);
+			if (keycode != 0) {
+				// X11 protocol supports only 256 keys. The key codes are the
+				// AT scan codes offset by 8 (so Esc is 9 instead of 1).
+				num = (keycode - 8) & 0xff;
+			}
+		}
+	} else if (dev == &x11_mouse_device) {
+		for (size_t i = 0; i < SIZE (x11_mouse_button_names); i++) {
+			if (strcasecmp (button_name, x11_mouse_button_names[i]) == 0) {
+				num = i;
+				break;
+			}
+		}
+	}
+	return num;
+}
+
 static void
 in_x11_shutdown (void *data)
 {
@@ -1062,6 +1158,11 @@ static in_driver_t in_x11_driver = {
 
 	.axis_info = in_x11_axis_info,
 	.button_info = in_x11_button_info,
+
+	.get_axis_name = in_x11_get_axis_name,
+	.get_button_name = in_x11_get_button_name,
+	.get_axis_num = in_x11_get_axis_num,
+	.get_button_num = in_x11_get_button_num,
 };
 
 static void __attribute__((constructor))
