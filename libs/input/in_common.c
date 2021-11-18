@@ -280,6 +280,78 @@ IN_ButtonInfo (int devid, in_buttoninfo_t *buttons, int *numbuttons)
 	return 0;
 }
 
+const char *
+IN_GetAxisName (int devid, int axis_num)
+{
+	if ((size_t) devid >= in_devices.size) {
+		return 0;
+	}
+	if (!in_devices.a[devid].device || in_devices.a[devid].driverid == -1) {
+		return 0;
+	}
+	int         driver = in_devices.a[devid].driverid;
+	in_regdriver_t *rd = &in_drivers.a[driver];
+	if (!rd->driver.get_axis_name) {
+		return 0;
+	}
+	return rd->driver.get_axis_name (rd->data, in_devices.a[devid].device,
+									 axis_num);
+}
+
+const char *
+IN_GetButtonName (int devid, int button_num)
+{
+	if ((size_t) devid >= in_devices.size) {
+		return 0;
+	}
+	if (!in_devices.a[devid].device || in_devices.a[devid].driverid == -1) {
+		return 0;
+	}
+	int         driver = in_devices.a[devid].driverid;
+	in_regdriver_t *rd = &in_drivers.a[driver];
+	if (!rd->driver.get_button_name) {
+		return 0;
+	}
+	return rd->driver.get_button_name (rd->data, in_devices.a[devid].device,
+									   button_num);
+}
+
+int
+IN_GetAxisNumber (int devid, const char *axis_name)
+{
+	if ((size_t) devid >= in_devices.size) {
+		return -1;
+	}
+	if (!in_devices.a[devid].device || in_devices.a[devid].driverid == -1) {
+		return -1;
+	}
+	int         driver = in_devices.a[devid].driverid;
+	in_regdriver_t *rd = &in_drivers.a[driver];
+	if (!rd->driver.get_axis_num) {
+		return -1;
+	}
+	return rd->driver.get_axis_num (rd->data, in_devices.a[devid].device,
+									axis_name);
+}
+
+int
+IN_GetButtonNumber (int devid, const char *button_name)
+{
+	if ((size_t) devid >= in_devices.size) {
+		return -1;
+	}
+	if (!in_devices.a[devid].device || in_devices.a[devid].driverid == -1) {
+		return -1;
+	}
+	int         driver = in_devices.a[devid].driverid;
+	in_regdriver_t *rd = &in_drivers.a[driver];
+	if (!rd->driver.get_button_num) {
+		return -1;
+	}
+	return rd->driver.get_button_num (rd->data, in_devices.a[devid].device,
+									  button_name);
+}
+
 void
 IN_UpdateGrab (cvar_t *var)		// called from context_*.c
 {

@@ -283,11 +283,12 @@ in_keyhelp_event_handler (const IE_event_t *ie_event, void *unused)
 
 	size_t      devid = ie_event->button.devid;
 	in_devbindings_t *db = ie_event->button.data;
-	const char *name = db ? db->name : 0;
+	const char *bind_name = db ? db->name : 0;
 	const char *type = 0;
 	int         num = -1;
 	const char *devname = IN_GetDeviceName (devid);
 	const char *id = IN_GetDeviceId (devid);
+	const char *name = 0;
 
 	if (ie_event->type == ie_axis) {
 		int         axis = ie_event->axis.axis;
@@ -317,17 +318,20 @@ in_keyhelp_event_handler (const IE_event_t *ie_event, void *unused)
 				type = "axis";
 			}
 		}
+		name = IN_GetAxisName (devid, num);
 	} else if (ie_event->type == ie_button) {
 		if (ie_event->button.state) {
 			num = ie_event->button.button;
 			type = "button";
 		}
+		name = IN_GetButtonName (devid, num);
 	}
 	if (!type) {
 		return 0;
 	}
 	IE_Set_Focus (in_keyhelp_saved_handler);
-	Sys_Printf ("%s (%s %s) %s %d\n", name, devname, id, type, num);
+	Sys_Printf ("%s (%s %s) %s %d (%s)\n", bind_name, devname, id, type, num,
+				name ? name : "");
 	return 1;
 }
 
@@ -402,7 +406,10 @@ in_bind_f (void)
 		return;
 	}
 	if (*type == 'a') {
-		if (*end || num < 0 || num >= dev->num_axes) {
+		if (*end) {
+			num = IN_GetAxisNumber (dev->devid, number);
+		}
+		if (num < 0 || num >= dev->num_axes) {
 			Sys_Printf ("invalid axis number: %s\n", number);
 			return;
 		}
@@ -464,7 +471,10 @@ in_bind_f (void)
 		// the rest of the command line is the binding
 		const char *binding = Cmd_Args (5);
 
-		if (*end || num < 0 || num >= dev->num_buttons) {
+		if (*end) {
+			num = IN_GetButtonNumber (dev->devid, number);
+		}
+		if (num < 0 || num >= dev->num_buttons) {
 			Sys_Printf ("invalid button number: %s\n", number);
 			return;
 		}
