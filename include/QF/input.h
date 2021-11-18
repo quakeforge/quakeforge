@@ -87,52 +87,6 @@ typedef struct in_device_s {
 	void       *event_data;
 } in_device_t;
 
-/*** Connect a device and its axes and buttons to logical axes and buttons.
-
-	\a name is used to specify the device when creating bindings, and
-	identifying the device for hints etc (eg, "press joy1 1 to ...").
-
-	\a devname is the device name (eg, "6d spacemouse")
-
-	\a id is the device id (eg "usb-0000:00:1d.1-2/input0").
-
-	The device name is useful for ease of user identification and allowing
-	the device to be plugged into any USB socket. However, it doesn't allow
-	multiple devices with the same name (eg, using twin joysticks of the same
-	model). Thus if \a match_id is true, both the device name and the device
-	id used to auto-connect the device, but it does require the device to be
-	plugged into the same uSB path (ie, same socket on the same hub connected
-	to the same port on the PC)
-
-	\a devid is the actual device associated with the bindings. If -1, the
-	device is not currently connected.
-
-	\a axis_info holds the device/axis specific range info and the current
-	raw value of the axis.
-
-	\a button_info holds the current raw state of the button
-
-	\a axis_imt_id is -1 if the device has no axis bindings, otherwise it is
-    the base index into the imt axis bindings array.
-
-	\a button_imt_id is -1 if the device has no button bindings, otherwise it
-    is the base index into the imt button bindings array.
-*/
-typedef struct in_devbindings_s {
-	struct in_devbindings_s *next;
-	char       *name;		///< name used when binding inputs
-	char       *devname;	///< physical device name
-	char       *id;			///< physical device id
-	int         match_id;	///< if true, both devname and id must match
-	int         devid;		///< id of device associated with these bindings
-	int         num_axes;
-	int         num_buttons;
-	in_axisinfo_t *axis_info;		///< axis range info and raw state
-	in_buttoninfo_t *button_info;	///< button raw state
-    int         axis_imt_id;    ///< index into array of imt axis bindings
-    int         button_imt_id;  ///< index into array of imt button bindings
-} in_devbindings_t;
-
 extern viewdelta_t viewdelta;
 
 #define freelook (in_mlook.state & 1 || in_freelook->int_val)
