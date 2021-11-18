@@ -106,19 +106,48 @@ CL_WriteConfiguration (void)
 	// dedicated servers initialize the host but don't parse and set the
 	// config.cfg cvars
 	if (host_initialized && !isDedicated && cl_writecfg->int_val) {
+		plitem_t   *config = PL_NewDictionary (0); //FIXME hashlinks
+		Cvar_SaveConfig (config);
+		IN_SaveConfig (config);
+
 		const char *path = va (0, "%s/quakeforge.cfg", qfs_gamedir->dir.def);
 		QFile      *f = QFS_WOpen (path, 0);
 
 		if (!f) {
 			Sys_Printf ("Couldn't write quakeforge.cfg.\n");
-			return;
+		} else {
+			char       *cfg = PL_WritePropertyList (config);
+			Qputs (f, cfg);
+			free (cfg);
+			Qclose (f);
 		}
-
-		//Key_WriteBindings (f);
-		Cvar_WriteVariables (f);
-
-		Qclose (f);
+		PL_Free (config);
 	}
+}
+
+int
+CL_ReadConfiguration (const char *cfg_name)
+{
+	QFile      *cfg_file = QFS_FOpenFile (cfg_name);
+	if (!cfg_file) {
+		return 0;
+	}
+	size_t      len = Qfilesize (cfg_file);
+	char       *cfg = malloc (len + 1);
+	Qread (cfg_file, cfg, len);
+	cfg[len] = 0;
+	Qclose (cfg_file);
+
+	plitem_t   *config = PL_GetPropertyList (cfg, 0);	// FIXME hashlinks
+	if (!config) {
+		return 0;
+	}
+
+	Cvar_LoadConfig (config);
+	IN_LoadConfig (config);
+
+	PL_Free (config);
+	return 1;
 }
 
 static void
@@ -527,8 +556,11 @@ CL_SetState (cactive_t state)
 		}
 		CL_UpdateScreen (cl.time);
 	}
-	if (con_module)
-		con_module->data->console->force_commandline = (state < ca_connected);
+	host_in_game = 0;
+	Con_SetState (state == ca_active ? con_inactive : con_fullscreen);
+	if (state != old_state && state == ca_active) {
+		CL_Input_Activate ();
+	}
 }
 
 static void
@@ -566,7 +598,7 @@ CL_Init (cbuf_t *cbuf)
 
 	Sbar_Init ();
 
-	CL_Input_Init ();
+	CL_Input_Init (cbuf);
 	CL_TEnts_Init ();
 	CL_ClearState ();
 

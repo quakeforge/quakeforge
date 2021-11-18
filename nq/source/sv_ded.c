@@ -119,6 +119,12 @@ CL_NextDemo (void)
 }
 
 __attribute__((const)) int
+CL_ReadConfiguration (const char *cfg_name)
+{
+	return 0;
+}
+
+__attribute__((const)) int
 CL_ReadFromServer (void)
 {
 	return 0;

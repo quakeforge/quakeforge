@@ -36,12 +36,14 @@
 #endif
 
 #include "QF/cmd.h"
+#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/keys.h"
 #include "QF/msg.h"
 #include "QF/sys.h"
 
+#include "QF/input/event.h"
 #include "QF/plugin/vid_render.h"
 
 #include "compat.h"
@@ -49,6 +51,42 @@
 #include "nq/include/chase.h"
 #include "nq/include/client.h"
 #include "nq/include/host.h"
+
+int         cl_game_context;
+int         cl_demo_context;
+static int  cl_event_id;
+
+in_axis_t viewdelta_position_forward = {
+	.mode = ina_accumulate,
+	.name = "move.forward",
+	.description = "Move forward (negative) or backward (positive)",
+};
+in_axis_t viewdelta_position_side = {
+	.mode = ina_accumulate,
+	.name = "move.side",
+	.description = "Move right (positive) or left (negative)",
+};
+in_axis_t viewdelta_position_up = {
+	.mode = ina_accumulate,
+	.name = "move.up",
+	.description = "Move up (positive) or down (negative)",
+};
+
+in_axis_t viewdelta_angles_pitch = {
+	.mode = ina_accumulate,
+	.name = "move.pitch",
+	.description = "Pitch axis",
+};
+in_axis_t viewdelta_angles_yaw = {
+	.mode = ina_accumulate,
+	.name = "move.yaw",
+	.description = "Yaw axis",
+};
+in_axis_t viewdelta_angles_roll = {
+	.mode = ina_accumulate,
+	.name = "move.roll",
+	.description = "Roll axis",
+};
 
 in_button_t in_left = {
 	.name = "left",
@@ -122,6 +160,16 @@ in_button_t in_mlook = {
 	.description = "When active moving the mouse or joystick forwards "
 				   "and backwards performs +lookup and "
 				   "+lookdown"
+};
+
+static in_axis_t *cl_in_axes[] = {
+	&viewdelta_position_forward,
+	&viewdelta_position_side,
+	&viewdelta_position_up,
+	&viewdelta_angles_pitch,
+	&viewdelta_angles_yaw,
+	&viewdelta_angles_roll,
+	0,
 };
 
 static in_button_t *cl_in_buttons[] = {
@@ -269,11 +317,6 @@ CL_BaseMove (usercmd_t *cmd)
 	if (freelook)
 		V_StopPitchDrift ();
 
-	viewdelta.angles[0] = viewdelta.angles[1] = viewdelta.angles[2] = 0;
-	viewdelta.position[0] = viewdelta.position[1] = viewdelta.position[2] = 0;
-
-	IN_Move ();
-
 	// adjust for chase camera angles
 	/*FIXME:chase figure out just what this does and get it working
 	if (cl.chase
@@ -294,12 +337,19 @@ CL_BaseMove (usercmd_t *cmd)
 	}
 	*/
 
-	cmd->forwardmove += viewdelta.position[2] * m_forward->value;
-	cmd->sidemove += viewdelta.position[0] * m_side->value;
-	cmd->upmove += viewdelta.position[1];
-	cl.viewstate.angles[PITCH] += viewdelta.angles[PITCH] * m_pitch->value;
-	cl.viewstate.angles[YAW] += viewdelta.angles[YAW] * m_yaw->value;
-	cl.viewstate.angles[ROLL] += viewdelta.angles[ROLL];
+	cmd->forwardmove -= viewdelta_position_forward.value * m_forward->value;
+	cmd->sidemove += viewdelta_position_side.value * m_side->value;
+	cmd->upmove -= viewdelta_position_up.value;
+	cl.viewstate.angles[PITCH] -= viewdelta_angles_pitch.value * m_pitch->value;
+	cl.viewstate.angles[YAW] -= viewdelta_angles_yaw.value * m_yaw->value;
+	cl.viewstate.angles[ROLL] -= viewdelta_angles_roll.value * m_pitch->value;
+
+	viewdelta_angles_pitch.value = 0;
+	viewdelta_angles_yaw.value = 0;
+	viewdelta_angles_roll.value = 0;
+	viewdelta_position_forward.value = 0;
+	viewdelta_position_side.value = 0;
+	viewdelta_position_up.value = 0;
 
 	if (freelook && !(in_strafe.state & inb_down)) {
 		cl.viewstate.angles[PITCH]
@@ -359,12 +409,42 @@ CL_SendMove (usercmd_t *cmd)
 	}
 }
 
-void
-CL_Input_Init (void)
+static int
+cl_event_handler (const IE_event_t *ie_event, void *unused)
 {
+	if (ie_event->type == ie_key) {
+		if (ie_event->key.code == QFK_ESCAPE) {
+			// FIXME this should bring up the menu
+			Con_SetState (con_active);
+			return 1;
+		}
+	}
+	return IN_Binding_HandleEvent (ie_event);
+}
+
+void
+CL_Input_Init (cbuf_t *cbuf)
+{
+	cl_event_id = IE_Add_Handler (cl_event_handler, 0);
+
+	for (int i = 0; cl_in_axes[i]; i++) {
+		IN_RegisterAxis (cl_in_axes[i]);
+	}
 	for (int i = 0; cl_in_buttons[i]; i++) {
 		IN_RegisterButton (cl_in_buttons[i]);
 	}
+	cl_game_context = IMT_CreateContext ("key_game");
+	IMT_SetContextCbuf (cl_game_context, cbuf);
+	cl_demo_context = IMT_CreateContext ("key_demo");
+	IMT_SetContextCbuf (cl_demo_context, cbuf);
 	Cmd_AddDataCommand ("impulse", IN_Impulse, 0,
 						"Call a game function or QuakeC function.");
+}
+
+void
+CL_Input_Activate (void)
+{
+	host_in_game = 1;
+	IMT_SetContext (cl_game_context);
+	IE_Set_Focus (cl_event_id);
 }

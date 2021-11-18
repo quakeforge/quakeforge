@@ -847,13 +847,33 @@ Host_Init_Memory (void)
 
 	Sys_Printf ("%4.1f megabyte heap\n", host_mem_size->value);
 }
-#if 0
+
 static void
-host_keydest_callback (keydest_t kd, void *data)
+Host_ExecConfig (cbuf_t *cbuf, int skip_quakerc)
 {
-	host_in_game = kd == key_game;
+	// quakeforge.cfg overrides quake.rc as it contains quakeforge-specific
+	// commands. If it doesn't exist, then this is the first time quakeforge
+	// has been used in this installation, thus any existing legacy config
+	// should be used to set up defaults on the assumption that the user has
+	// things set up to work with another (hopefully compatible) client
+	if (CL_ReadConfiguration ("quakeforge.cfg")) {
+		Cmd_Exec_File (cbuf, fs_usercfg->string, 0);
+		Cmd_StuffCmds (cbuf);
+		COM_Check_quakerc ("startdemos", cbuf);
+	} else {
+		if (!skip_quakerc) {
+			Cbuf_InsertText (cbuf, "exec quake.rc\n");
+		}
+		Cmd_Exec_File (cbuf, fs_usercfg->string, 0);
+		// Reparse the command line for + commands.
+		// (sets still done, but it doesn't matter)
+		// (Note, no non-base commands exist yet)
+		if (skip_quakerc || !COM_Check_quakerc ("stuffcmds", 0)) {
+			Cmd_StuffCmds (cbuf);
+		}
+	}
 }
-#endif
+
 void
 Host_Init (void)
 {
@@ -888,8 +908,6 @@ Host_Init (void)
 
 	Mod_Init ();
 
-	//Key_KeydestCallback (host_keydest_callback, 0);
-
 	SV_Init ();
 
 	if (cls.state != ca_dedicated)
@@ -905,7 +923,7 @@ Host_Init (void)
 	CL_UpdateScreen (cl.time);
 	CL_UpdateScreen (cl.time);
 
-	COM_ExecConfig (host_cbuf, isDedicated || !cl_quakerc->int_val);
+	Host_ExecConfig (host_cbuf, isDedicated || !cl_quakerc->int_val);
 
 	Hunk_AllocName (0, 0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark (0);

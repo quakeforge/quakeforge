@@ -284,6 +284,7 @@ struct cbuf_s;
 void CL_Init (struct cbuf_s *cbuf);
 void CL_InitCvars (void);
 void CL_ClearMemory (void);
+int CL_ReadConfiguration (const char *cfg_name);
 
 void CL_EstablishConnection (const char *host);
 void CL_Signon1 (void);
@@ -297,7 +298,8 @@ void CL_NextDemo (void);
 
 
 // cl_input
-void CL_Input_Init (void);
+void CL_Input_Init (struct cbuf_s *cbuf);
+void CL_Input_Activate (void);
 void CL_SendCmd (void);
 void CL_SendMove (usercmd_t *cmd);
 
