@@ -202,21 +202,6 @@ Win_UpdateWindowStatus (int window_x, int window_y)
 }
 
 
-static void
-ClearAllStates (void)
-{
-	int         i;
-
-	// send an up event for each key, to make sure the server clears them all
-	for (i = 0; i < 256; i++) {
-		Key_Event (i, 0, false);
-	}
-
-	Key_ClearStates ();
-	IN_ClearStates ();
-}
-
-
 static qboolean
 VID_CheckAdequateMem (int width, int height)
 {
@@ -700,7 +685,7 @@ VID_SetMode (int modenum, const byte *palette)
 		SetForegroundWindow (win_mainwindow);
 	}
 	// fix the leftover Alt from any Alt-Tab or the like that switched us away
-	ClearAllStates ();
+	IN_ClearStates ();
 
 	Sys_Printf ("%s\n", VID_GetModeDescription (vid_modenum));
 
@@ -774,7 +759,7 @@ Win_CreateWindow (int width, int height)
 		SetForegroundWindow (win_mainwindow);
 	}
 	// fix the leftover Alt from any Alt-Tab or the like that switched us away
-	ClearAllStates ();
+	IN_ClearStates ();
 
 	Sys_Printf ("%s\n", VID_GetModeDescription (vid_modenum));
 

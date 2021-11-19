@@ -46,6 +46,8 @@
 #include "QF/sound.h"
 #include "QF/sys.h"
 
+#include "QF/input/event.h"
+
 #include "compat.h"
 #include "context_win.h"
 #include "in_win.h"
@@ -60,9 +62,7 @@ HRESULT (WINAPI * pDirectInputCreate) (HINSTANCE hinst, DWORD dwVersion,
 // mouse local variables
 static unsigned uiWheelMessage;
 static unsigned  mouse_buttons;
-static unsigned  mouse_oldbuttonstate;
 static POINT current_pos;
-static float mx_accum, my_accum;
 static qboolean mouseinitialized;
 static qboolean restore_spi;
 static int  originalmouseparms[3], newmouseparms[3] = { 0, 0, 1 };
@@ -81,6 +81,313 @@ static qboolean dinput;
 
 static qboolean vid_wassuspended = false;
 static qboolean win_in_game = false;
+
+typedef struct win_device_s {
+	const char *name;
+	int         num_axes;
+	int         num_buttons;
+	in_axisinfo_t *axes;
+	in_buttoninfo_t *buttons;
+	void       *event_data;
+	int         devid;
+} win_device_t;
+
+static int in_mouse_avail;
+
+#define WIN_MOUSE_BUTTONS 32
+
+static int win_driver_handle = -1;
+static in_buttoninfo_t win_key_buttons[256];
+static in_axisinfo_t win_mouse_axes[2];
+static in_buttoninfo_t win_mouse_buttons[WIN_MOUSE_BUTTONS];
+static const char *win_mouse_axis_names[] = {"M_X", "M_Y"};
+static const char *win_mouse_button_names[] = {
+	"M_BUTTON1",    "M_BUTTON2",  "M_BUTTON3",  "M_WHEEL_UP",
+	"M_WHEEL_DOWN", "M_BUTTON6",  "M_BUTTON7",  "M_BUTTON8",
+	"M_BUTTON9",    "M_BUTTON10", "M_BUTTON11", "M_BUTTON12",
+	"M_BUTTON13",   "M_BUTTON14", "M_BUTTON15", "M_BUTTON16",
+	"M_BUTTON17",   "M_BUTTON18", "M_BUTTON19", "M_BUTTON20",
+	"M_BUTTON21",   "M_BUTTON22", "M_BUTTON23", "M_BUTTON24",
+	"M_BUTTON25",   "M_BUTTON26", "M_BUTTON27", "M_BUTTON28",
+	"M_BUTTON29",   "M_BUTTON30", "M_BUTTON31", "M_BUTTON32",
+};
+
+#define SIZE(x) (sizeof (x) / sizeof (x[0]))
+
+static unsigned short scantokey[128] = {
+//  0               1               2               3
+//  4               5               6               7
+//  8               9               A               B
+//  C               D               E               F
+	0,              QFK_ESCAPE,     '1',            '2',
+	'3',            '4',            '5',            '6',
+	'7',            '8',            '9',            '0',
+	'-',            '=',            QFK_BACKSPACE,  QFK_TAB,	// 0
+	'q',            'w',            'e',            'r',
+	't',            'y',            'u',            'i',
+	'o',            'p',            '[',            ']',
+	QFK_RETURN,     QFK_LCTRL,      'a',            's',	// 1
+	'd',            'f',            'g',            'h',
+	'j',            'k',            'l',            ';',
+	'\'',           '`',            QFK_LSHIFT,     '\\',
+	'z',            'x',            'c',            'v',	// 2
+	'b',            'n',            'm',            ',',
+	'.',            '/',            QFK_RSHIFT,     QFK_KP_MULTIPLY,
+	QFK_LALT,       ' ',            QFK_CAPSLOCK,   QFK_F1,
+	QFK_F2,         QFK_F3,         QFK_F4,         QFK_F5,	// 3
+	QFK_F6,         QFK_F7,         QFK_F8,         QFK_F9,
+	QFK_F10,        QFK_PAUSE,      QFK_SCROLLOCK,  QFK_KP7,
+	QFK_KP8,        QFK_KP9,        QFK_KP_MINUS,   QFK_KP4,
+	QFK_KP5,        QFK_KP6,        QFK_KP_PLUS,    QFK_KP1,	// 4
+	QFK_KP2,        QFK_KP3,        QFK_KP0,        QFK_KP_PERIOD,
+	0,              0,              0,              QFK_F11,
+	QFK_F12,        0,              0,              0,
+	0,              0,              0,              0,			// 5
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+
+static unsigned short shift_scantokey[128] = {
+//  0               1               2               3
+//  4               5               6               7
+//  8               9               A               B
+//  C               D               E               F
+	0,              QFK_ESCAPE,     '!',            '@',		// 0
+	'#',            '$',            '%',            '^',		// 0
+	'&',            '*',            '(',            ')',		// 0
+	'_',            '+',            QFK_BACKSPACE,  QFK_TAB,	// 0
+	'Q',            'W',            'E',            'R',		// 1
+	'T',            'Y',            'U',            'I',		// 1
+	'O',            'P',            '{',            '}',		// 1
+	QFK_RETURN,     QFK_LCTRL,      'A',            'S',		// 1
+	'D',            'F',            'G',            'H',		// 2
+	'J',            'K',            'L',            ':',		// 2
+	'"',            '~',            QFK_LSHIFT,     '|',		// 2
+	'Z',            'X',            'C',            'V',		// 2
+	'B',            'N',            'M',            '<',		// 3
+	'>',            '?',            QFK_RSHIFT,     QFK_KP_MULTIPLY,// 3
+	QFK_LALT,       ' ',            QFK_CAPSLOCK,   QFK_F1,		// 3
+	QFK_F2,         QFK_F3,         QFK_F4,         QFK_F5,		// 3
+	QFK_F6,         QFK_F7,         QFK_F8,         QFK_F9,		// 4
+	QFK_F10,        QFK_PAUSE,      QFK_SCROLLOCK,  QFK_KP7,	// 4
+	QFK_KP8,        QFK_KP9,        QFK_KP_MINUS,   QFK_KP4,	// 4
+	QFK_KP5,        QFK_KP6,        QFK_KP_PLUS,    QFK_KP1,	// 4
+	QFK_KP2,        QFK_KP3,        QFK_KP0,        QFK_KP_PERIOD,//5
+	0,              0,              0,              QFK_F11,	// 5
+	QFK_F12,        0,              0,              0,			// 5
+	0,              0,              0,              0,			// 5
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,				// 6
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,				// 7
+};
+
+static unsigned short ext_scantokey[128] = {
+//  0               1               2               3
+//  4               5               6               7
+//  8               9               A               B
+//  C               D               E               F
+	0,              QFK_ESCAPE,     '1',            '2',
+	'3',            '4',            '5',            '6',// 0
+	'7',            '8',            '9',            '0',
+	'-',            '=',            QFK_BACKSPACE,  QFK_TAB,
+	'q',            'w',            'e',            'r',
+	't',            'y',            'u',            'i',					// 1
+	'o',            'p',            '[',            ']',
+	QFK_KP_ENTER,     QFK_RCTRL,      'a',            's',
+	'd',            'f',            'g',            'h',
+	'j',            'k',            'l',            ';',					// 2
+	'\'',            '`',            QFK_LSHIFT,    '\\',
+	'z',            'x',            'c',            'v',
+	'b',            'n',            'm',            ',',
+	'.',            QFK_KP_DIVIDE,  QFK_RSHIFT,     '*',	// 3
+	QFK_RALT,       ' ',            QFK_CAPSLOCK,   QFK_F1,
+	QFK_F2,         QFK_F3,         QFK_F4,         QFK_F5,
+	QFK_F6,         QFK_F7,         QFK_F8,         QFK_F9,
+	QFK_F10,        QFK_NUMLOCK,    0,              QFK_HOME,	// 4
+	QFK_UP,         QFK_PAGEUP,     '-',            QFK_LEFT,
+	'5',            QFK_RIGHT,      '+',            QFK_END,
+	QFK_DOWN,       QFK_PAGEDOWN,   QFK_INSERT,     QFK_DELETE,
+	0,              0,              0,              QFK_F11,	// 5
+	QFK_F12,        0,              0,              0,
+	0,              0,              0,              0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+
+static unsigned short shift_ext_scantokey[128] = {
+//  0               1               2               3
+//  4               5               6               7
+//  8               9               A               B
+//  C               D               E               F
+	0,              QFK_ESCAPE,     '!',            '@',
+	'#',            '$',            '%',            '^',
+	'&',            '*',            '(',            ')',
+	'_',            '+',            QFK_BACKSPACE,  QFK_ESCAPE,	// 0
+	'Q',            'W',            'E',            'R',
+	'T',            'Y',            'U',            'I',
+	'O',            'P',            '{',            '}',
+	QFK_KP_ENTER,   QFK_RCTRL,      'A',            'S',	// 1
+	'D',            'F',            'G',            'H',
+	'J',            'K',            'L',            ':',
+	'"',            '~',            QFK_LSHIFT,     '|',
+	'Z',            'X',            'C',            'V',	// 2
+	'B',            'N',            'M',            '<',
+	'>',            QFK_KP_DIVIDE,  QFK_RSHIFT,     '*',
+	QFK_RALT,       ' ',            QFK_CAPSLOCK,   QFK_F1,
+	QFK_F2,         QFK_F3,         QFK_F4,         QFK_F5,
+	QFK_F6,         QFK_F7,         QFK_F8,         QFK_F9,
+	QFK_F10,        QFK_NUMLOCK,    0,              QFK_HOME,	// 4
+	QFK_UP,         QFK_PAGEUP,     '-',            QFK_LEFT,
+	'5',            QFK_RIGHT,      '+',            QFK_END,
+	QFK_DOWN,       QFK_PAGEDOWN,   QFK_INSERT,     QFK_DELETE,
+	0,              0,              0,              QFK_F11,	// 5
+	QFK_F12,        0,              0,              0,
+	0,              0,              0,              0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+};
+
+#define ROTL(x,n) (((x)<<(n))|(x)>>(32-n))
+
+/*
+	MapKey
+
+	Map from windows to quake keynums
+*/
+static void
+MapKey (unsigned int keycode, int press, int *k, int *u)
+{
+	int         extended;
+	int         scan;
+	int         key;
+	int         uc;
+	unsigned long mask = ~1L;
+	static unsigned long shifts;
+
+	extended = (keycode >> 24) & 1;
+	scan = (keycode >> 16) & 255;
+
+	if (scan > 127) {
+		*u = *k = 0;
+		return;
+	}
+
+	if (extended)
+		key = ext_scantokey[scan];
+	else
+		key = scantokey[scan];
+
+	if (shifts & 0x03) {
+		if (extended)
+			uc = shift_ext_scantokey[scan];
+		else
+			uc = shift_scantokey[scan];
+	} else {
+		if (extended)
+			uc = ext_scantokey[scan];
+		else
+			uc = scantokey[scan];
+	}
+
+	if (uc > 255)
+		uc = 0;
+
+	switch (key) {
+		case QFK_RSHIFT:
+			shifts &= mask;
+			shifts |= press;
+			break;
+		case QFK_LSHIFT:
+			shifts &= ROTL(mask, 1);
+			shifts |= ROTL(press, 1);
+			break;
+		case QFK_RCTRL:
+			shifts &= ROTL(mask, 2);
+			shifts |= ROTL(press, 2);
+			break;
+		case QFK_LCTRL:
+			shifts &= ROTL(mask, 3);
+			shifts |= ROTL(press, 3);
+			break;
+		default:
+			break;
+	}
+
+	Sys_MaskPrintf (SYS_vid, "%08x %d %02x %02lx %04x %c\n",
+					keycode, press, scan, shifts,
+					key, uc > 32 && uc < 127 ? uc : '#');
+	*k = key;
+	*u = uc;
+}
+
+static win_device_t win_keyboard_device = {
+	"core:keyboard",
+	0, SIZE (win_key_buttons),
+	0, win_key_buttons,
+};
+
+static win_device_t win_mouse_device = {
+	"core:mouse",
+	SIZE (win_mouse_axes), SIZE (win_mouse_buttons),
+	win_mouse_axes, win_mouse_buttons,
+};
+
+static IE_mouse_event_t win_mouse;
+static IE_key_event_t win_key;
+
+static void
+in_win_send_axis_event (int devid, in_axisinfo_t *axis)
+{
+	IE_event_t  event = {
+		.type = ie_axis,
+		.when = Sys_LongTime (),
+		.axis = {
+			.data = win_mouse_device.event_data,
+			.devid = devid,
+			.axis = axis->axis,
+			.value = axis->value,
+		},
+	};
+	IE_Send_Event (&event);
+}
+
+static int
+in_win_send_mouse_event (IE_mouse_type type)
+{
+	IE_event_t  event = {
+		.type = ie_mouse,
+		.when = Sys_LongTime (),
+		.mouse = win_mouse,
+	};
+	event.mouse.type = type;
+	return IE_Send_Event (&event);
+}
+
+static int
+in_win_send_key_event (void)
+{
+	IE_event_t  event = {
+		.type = ie_key,
+		.when = Sys_LongTime (),
+		.key = win_key,
+	};
+	return IE_Send_Event (&event);
+}
+
+static void
+in_win_send_button_event (int devid, in_buttoninfo_t *button, void *event_data)
+{
+	IE_event_t  event = {
+		.type = ie_button,
+		.when = Sys_LongTime (),
+		.button = {
+			.data = event_data,
+			.devid = devid,
+			.button = button->button,
+			.state = button->state,
+		},
+	};
+	IE_Send_Event (&event);
+}
 
 typedef struct MYDATA {
 	LONG        lX;						// X axis goes here
@@ -274,13 +581,13 @@ IN_InitDInput (void)
 	return true;
 }
 
-static void
+static int
 IN_StartupMouse (void)
 {
 //  HDC         hdc;
 
 	if (COM_CheckParm ("-nomouse"))
-		return;
+		return 0;
 
 	mouseinitialized = true;
 
@@ -315,12 +622,13 @@ IN_StartupMouse (void)
 		}
 	}
 
-	mouse_buttons = 32;
+	mouse_buttons = WIN_MOUSE_BUTTONS;
 
 	// if a fullscreen video mode was set before the mouse was initialized,
 	// set the mouse state appropriately
 	if (mouseactivatetoggle)
 		IN_ActivateMouse ();
+	return 1;
 }
 
 static void
@@ -335,10 +643,11 @@ in_paste_buffer_f (void)
 		if (th) {
 			clipText = GlobalLock (th);
 			if (clipText) {
+				win_key.code = 0;
 				for (i = 0; clipText[i]
 							&& !strchr ("\n\r\b", clipText[i]); i++) {
-					Key_Event (QFK_UNKNOWN, clipText[i], 1);
-					Key_Event (QFK_UNKNOWN, 0, 0);
+					win_key.unicode = clipText[i];
+					in_win_send_key_event ();
 				}
 			}
 			GlobalUnlock (th);
@@ -346,7 +655,7 @@ in_paste_buffer_f (void)
 		CloseClipboard ();
 	}
 }
-
+#if 0
 static void
 win_keydest_callback (keydest_t key_dest, void *data)
 {
@@ -359,17 +668,104 @@ win_keydest_callback (keydest_t key_dest, void *data)
 		IN_ShowMouse ();
 	}
 }
+#endif
+
+static void
+win_add_device (win_device_t *dev)
+{
+	for (int i = 0; i < dev->num_axes; i++) {
+		dev->axes[i].axis = i;
+	}
+	for (int i = 0; i < dev->num_buttons; i++) {
+		dev->buttons[i].button = i;
+	}
+	dev->devid = IN_AddDevice (win_driver_handle, dev, dev->name, dev->name);
+}
 
 static void
 in_win_init (void *data)
 {
 	uiWheelMessage = RegisterWindowMessage ("MSWHEEL_ROLLMSG");
 
-	IN_StartupMouse ();
+	win_add_device (&win_keyboard_device);
 
-	Key_KeydestCallback (win_keydest_callback, 0);
+	if (IN_StartupMouse ()) {
+		win_add_device (&win_mouse_device);
+	}
+
+	//Key_KeydestCallback (win_keydest_callback, 0);
 	Cmd_AddCommand ("in_paste_buffer", in_paste_buffer_f,
 					"Paste the contents of the C&P buffer to the console");
+}
+
+static const char *
+in_win_get_axis_name (void *data, void *device, int axis_num)
+{
+	win_device_t *dev = device;
+	const char *name = 0;
+
+	if (dev == &win_keyboard_device) {
+		// keyboards don't have axes...
+	} else if (dev == &win_mouse_device) {
+		if ((unsigned) axis_num < SIZE (win_mouse_axis_names)) {
+			name = win_mouse_axis_names[axis_num];
+		}
+	}
+	return name;
+}
+
+static const char *
+in_win_get_button_name (void *data, void *device, int button_num)
+{
+	win_device_t *dev = device;
+	const char *name = 0;
+
+	if (dev == &win_keyboard_device) {
+		// FIXME
+	} else if (dev == &win_mouse_device) {
+		if ((unsigned) button_num < SIZE (win_mouse_button_names)) {
+			name = win_mouse_button_names[button_num];
+		}
+	}
+	return name;
+}
+
+static int
+in_win_get_axis_num (void *data, void *device, const char *axis_name)
+{
+	win_device_t *dev = device;
+	int         num = -1;
+
+	if (dev == &win_keyboard_device) {
+		// keyboards don't have axes...
+	} else if (dev == &win_mouse_device) {
+		for (size_t i = 0; i < SIZE (win_mouse_axis_names); i++) {
+			if (strcasecmp (axis_name, win_mouse_axis_names[i]) == 0) {
+				num = i;
+				break;
+			}
+		}
+	}
+	return num;
+}
+
+static int
+in_win_get_button_num (void *data, void *device, const char *button_name)
+{
+	win_device_t *dev = device;
+	int         num = -1;
+
+	if (dev == &win_keyboard_device) {
+		// FIXME
+	} else if (dev == &win_mouse_device) {
+		for (size_t i = 0; i < SIZE (win_mouse_button_names); i++) {
+			if (strcasecmp (button_name, win_mouse_button_names[i]) == 0) {
+				num = i;
+				break;
+			}
+		}
+	}
+	return num;
 }
 
 static void
@@ -393,43 +789,84 @@ in_win_shutdown (void *data)
 static void
 in_win_set_device_event_data (void *device, void *event_data, void *data)
 {
+	win_device_t *dev = device;
+	dev->event_data = event_data;
 }
 
 static void *
 in_win_get_device_event_data (void *device, void *data)
 {
-	return 0;
+	win_device_t *dev = device;
+	return dev->event_data;
 }
 
 static void
-IN_MouseEvent (unsigned mstate)
+event_motion (int dmx, int dmy, int mx, int my)
 {
-	unsigned    i;
+	win_mouse_axes[0].value = dmx;
+	win_mouse_axes[1].value = dmy;
 
-	if (in_mouse_avail && !dinput) {
-		// perform button actions
-		for (i = 0; i < mouse_buttons; i++) {
-			if ((mstate & (1 << i)) && !(mouse_oldbuttonstate & (1 << i))) {
-				Key_Event (QFM_BUTTON1 + i, -1, true);
-			}
+	win_mouse.shift = win_key.shift;
+	win_mouse.x = mx;
+	win_mouse.x = my;
+	if (!in_win_send_mouse_event (ie_mousemove)) {
+		in_win_send_axis_event (win_mouse_device.devid, &win_mouse_axes[0]);
+		in_win_send_axis_event (win_mouse_device.devid, &win_mouse_axes[1]);
+	}
+}
 
-			if (!(mstate & (1 << i)) && (mouse_oldbuttonstate & (1 << i))) {
-				Key_Event (QFM_BUTTON1 + i, -1, false);
+static void
+event_button (unsigned buttons)
+{
+	unsigned    mask = win_mouse.buttons ^ buttons;
+
+	if (!mask) {
+		// no change
+		return;
+	}
+
+	// FIXME this won't be right if multiple buttons change state
+	int press = buttons & mask;
+
+	for (int i = 0; i < WIN_MOUSE_BUTTONS; i++) {
+		win_mouse_buttons[i].state = buttons & (1 << i);
+	}
+
+	win_mouse.buttons = buttons;
+	if (!in_win_send_mouse_event (press ? ie_mousedown : ie_mouseup)) {
+		for (int i = 0; i < WIN_MOUSE_BUTTONS; i++) {
+			if (!(mask & (1 << i))) {
+				continue;
 			}
+			in_win_send_button_event (win_mouse_device.devid,
+									  &win_mouse_buttons[i],
+									  win_mouse_device.event_data);
 		}
+	}
+}
 
-		mouse_oldbuttonstate = mstate;
+static void
+event_key (LPARAM keydata, int pressed)
+{
+	int         extended = (keydata >> 24) & 1;
+	// This assumes windows key codes are really only 7 bits (should be, since
+	// they seem to be regular scan codes)
+	int         scan = (keydata >> 16) & 0x7f;
+	int         key = (extended << 7) | scan;
+	MapKey (keydata, pressed, &win_key.code, &win_key.unicode);
+	//FIXME windows key codes and x11 key code's don't match, so binding
+	//configs are not cross-platform (is this actually a problem?)
+	win_key_buttons[key].state = pressed;
+	if (!pressed || !in_win_send_key_event ()) {
+		in_win_send_button_event (win_keyboard_device.devid,
+								  &win_key_buttons[key],
+								  win_keyboard_device.event_data);
 	}
 }
 
 static void
 in_win_clear_states (void *data)
 {
-	if (in_mouse_avail) {
-		mx_accum = 0;
-		my_accum = 0;
-		mouse_oldbuttonstate = 0;
-	}
 }
 
 static void
@@ -438,7 +875,6 @@ in_win_process_events (void *data)
 	MSG         msg;
 	int         mx, my;
 //  HDC hdc;
-	unsigned    i;
 	DIDEVICEOBJECTDATA od;
 	DWORD       dwElements;
 	HRESULT     hr;
@@ -509,193 +945,51 @@ in_win_process_events (void *data)
 			}
 		}
 
-		// perform button actions
-		for (i = 0; i < mouse_buttons; i++) {
-			if ((mstate_di & (1 << i)) && !(mouse_oldbuttonstate & (1 << i))) {
-				Key_Event (QFM_BUTTON1 + i, -1, true);
-			}
-
-			if (!(mstate_di & (1 << i)) && (mouse_oldbuttonstate & (1 << i))) {
-				Key_Event (QFM_BUTTON1 + i, -1, false);
-			}
-		}
-
-		mouse_oldbuttonstate = mstate_di;
+		event_button (mstate_di);
 	} else {
 		GetCursorPos (&current_pos);
-		mx = current_pos.x - win_center_x + mx_accum;
-		my = current_pos.y - win_center_y + my_accum;
-		mx_accum = 0;
-		my_accum = 0;
+		mx = current_pos.x - win_center_x;
+		my = current_pos.y - win_center_y;
 	}
-
-	in_mouse_x = mx;
-	in_mouse_y = my;
 
 	// if the mouse has moved, force it to the center, so there's room to move
 	if (mx || my) {
+		//FIXME abs pos
+		event_motion (mx, my, 0, 0);
 		SetCursorPos (win_center_x, win_center_y);
 	}
 }
 
-//==========================================================================
-
-static unsigned short scantokey[128] = {
-//  0       1        2       3       4       5       6       7
-//  8       9        A       B       C       D       E       F
-	0, 27, '1', '2', '3', '4', '5', '6',
-	'7', '8', '9', '0', '-', '=', QFK_BACKSPACE, 9,	// 0
-	'q', 'w', 'e', 'r', 't', 'y', 'u', 'i',
-	'o', 'p', '[', ']', 13, QFK_LCTRL, 'a', 's',	// 1
-	'd', 'f', 'g', 'h', 'j', 'k', 'l', ';',
-	'\'', '`', QFK_LSHIFT, '\\', 'z', 'x', 'c', 'v',	// 2
-	'b', 'n', 'm', ',', '.', '/', QFK_RSHIFT, QFK_KP_MULTIPLY,
-	QFK_LALT, ' ', QFK_CAPSLOCK, QFK_F1, QFK_F2, QFK_F3, QFK_F4, QFK_F5,	// 3
-	QFK_F6, QFK_F7, QFK_F8, QFK_F9, QFK_F10, QFK_PAUSE, QFK_SCROLLOCK, QFK_KP7,
-	QFK_KP8, QFK_KP9, QFK_KP_MINUS, QFK_KP4, QFK_KP5, QFK_KP6, QFK_KP_PLUS, QFK_KP1,	// 4
-	QFK_KP2, QFK_KP3, QFK_KP0, QFK_KP_PERIOD, 0, 0, 0, QFK_F11,
-	QFK_F12, 0, 0, 0, 0, 0, 0, 0,			// 5
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0
-};
-
-static unsigned short shift_scantokey[128] = {
-//  0       1        2       3       4       5       6       7
-//  8       9        A       B       C       D       E       F
-	0, 27, '!', '@', '#', '$', '%', '^',
-	'&', '*', '(', ')', '_', '+', QFK_BACKSPACE, 9,	// 0
-	'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I',
-	'O', 'P', '{', '}', 13, QFK_LCTRL, 'A', 'S',	// 1
-	'D', 'F', 'G', 'H', 'J', 'K', 'L', ':',
-	'"', '~', QFK_LSHIFT, '|', 'Z', 'X', 'C', 'V',	// 2
-	'B', 'N', 'M', '<', '>', '?', QFK_RSHIFT, QFK_KP_MULTIPLY,
-	QFK_LALT, ' ', QFK_CAPSLOCK, QFK_F1, QFK_F2, QFK_F3, QFK_F4, QFK_F5,	// 3
-	QFK_F6, QFK_F7, QFK_F8, QFK_F9, QFK_F10, QFK_PAUSE, QFK_SCROLLOCK, QFK_KP7,
-	QFK_KP8, QFK_KP9, QFK_KP_MINUS, QFK_KP4, QFK_KP5, QFK_KP6, QFK_KP_PLUS, QFK_KP1,	// 4
-	QFK_KP2, QFK_KP3, QFK_KP0, QFK_KP_PERIOD, 0, 0, 0, QFK_F11,
-	QFK_F12, 0, 0, 0, 0, 0, 0, 0,			// 5
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0
-};
-
-static unsigned short ext_scantokey[128] = {
-//  0       1        2       3       4       5       6       7
-//  8       9        A       B       C       D       E       F
-	0, 27, '1', '2', '3', '4', '5', '6',					// 0
-	'7', '8', '9', '0', '-', '=', QFK_BACKSPACE, 9,
-	'q', 'w', 'e', 'r', 't', 'y', 'u', 'i',					// 1
-	'o', 'p', '[', ']', QFK_KP_ENTER, QFK_RCTRL, 'a', 's',
-	'd', 'f', 'g', 'h', 'j', 'k', 'l', ';',					// 2
-	'\'', '`', QFK_LSHIFT, '\\', 'z', 'x', 'c', 'v',
-	'b', 'n', 'm', ',', '.', QFK_KP_DIVIDE, QFK_RSHIFT, '*',	// 3
-	QFK_RALT, ' ', QFK_CAPSLOCK, QFK_F1, QFK_F2, QFK_F3, QFK_F4, QFK_F5,
-	QFK_F6, QFK_F7, QFK_F8, QFK_F9, QFK_F10, QFK_NUMLOCK, 0, QFK_HOME,	// 4
-	QFK_UP, QFK_PAGEUP, '-', QFK_LEFT, '5', QFK_RIGHT, '+', QFK_END,
-	QFK_DOWN, QFK_PAGEDOWN, QFK_INSERT, QFK_DELETE, 0, 0, 0, QFK_F11,	// 5
-	QFK_F12, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0
-};
-
-static unsigned short shift_ext_scantokey[128] = {
-//  0       1        2       3       4       5       6       7
-//  8       9        A       B       C       D       E       F
-	0, 27, '!', '@', '#', '$', '%', '^',
-	'&', '*', '(', ')', '_', '+', QFK_BACKSPACE, 9,	// 0
-	'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I',
-	'O', 'P', '{', '}', QFK_KP_ENTER, QFK_RCTRL, 'A', 'S',	// 1
-	'D', 'F', 'G', 'H', 'J', 'K', 'L', ':',
-	'"', '~', QFK_LSHIFT, '|', 'Z', 'X', 'C', 'V',	// 2
-	'B', 'N', 'M', '<', '>', QFK_KP_DIVIDE, QFK_RSHIFT, '*',
-	QFK_RALT, ' ', QFK_CAPSLOCK, QFK_F1, QFK_F2, QFK_F3, QFK_F4, QFK_F5,	// 3
-	QFK_F6, QFK_F7, QFK_F8, QFK_F9, QFK_F10, QFK_NUMLOCK, 0, QFK_HOME,
-	QFK_UP, QFK_PAGEUP, '-', QFK_LEFT, '5', QFK_RIGHT, '+', QFK_END,	// 4
-	QFK_DOWN, QFK_PAGEDOWN, QFK_INSERT, QFK_DELETE, 0, 0, 0, QFK_F11,
-	QFK_F12, 0, 0, 0, 0, 0, 0, 0,			// 5
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0,
-	0, 0, 0, 0, 0, 0, 0, 0
-};
-
-#define ROTL(x,n) (((x)<<(n))|(x)>>(32-n))
-
-/*
-	MapKey
-
-	Map from windows to quake keynums
-*/
 static void
-MapKey (unsigned int keycode, int press, int *k, int *u)
+in_win_axis_info (void *data, void *device, in_axisinfo_t *axes, int *numaxes)
 {
-	int         extended;
-	int         scan;
-	int         key;
-	int         uc;
-	unsigned long mask = ~1L;
-	static unsigned long shifts;
-
-	extended = (keycode >> 24) & 1;
-	scan = (keycode >> 16) & 255;
-
-	if (scan > 127) {
-		*u = *k = 0;
+	win_device_t *dev = device;
+	if (!axes) {
+		*numaxes = dev->num_axes;
 		return;
 	}
-
-	if (extended)
-		key = ext_scantokey[scan];
-	else
-		key = scantokey[scan];
-
-	if (shifts & 0x03) {
-		if (extended)
-			uc = shift_ext_scantokey[scan];
-		else
-			uc = shift_scantokey[scan];
-	} else {
-		if (extended)
-			uc = ext_scantokey[scan];
-		else
-			uc = scantokey[scan];
+	if (*numaxes > dev->num_axes) {
+		*numaxes = dev->num_axes;
 	}
-
-	if (uc > 255)
-		uc = 0;
-
-	switch (key) {
-		case QFK_RSHIFT:
-			shifts &= mask;
-			shifts |= press;
-			break;
-		case QFK_LSHIFT:
-			shifts &= ROTL(mask, 1);
-			shifts |= ROTL(press, 1);
-			break;
-		case QFK_RCTRL:
-			shifts &= ROTL(mask, 2);
-			shifts |= ROTL(press, 2);
-			break;
-		case QFK_LCTRL:
-			shifts &= ROTL(mask, 3);
-			shifts |= ROTL(press, 3);
-			break;
-		default:
-			break;
-	}
-
-	Sys_MaskPrintf (SYS_vid, "%08x %d %02x %02lx %04x %c\n",
-					keycode, press, scan, shifts,
-					key, uc > 32 && uc < 127 ? uc : '#');
-	*k = key;
-	*u = uc;
+	memcpy (axes, dev->axes, *numaxes * sizeof (in_axisinfo_t));
 }
+
+static void
+in_win_button_info (void *data, void *device, in_buttoninfo_t *buttons,
+					int *numbuttons)
+{
+	win_device_t *dev = device;
+	if (!buttons) {
+		*numbuttons = dev->num_buttons;
+		return;
+	}
+	if (*numbuttons > dev->num_buttons) {
+		*numbuttons = dev->num_buttons;
+	}
+	memcpy (buttons, dev->buttons, *numbuttons * sizeof (in_buttoninfo_t));
+}
+
+//==========================================================================
 
 /*
 	MAIN WINDOW
@@ -769,19 +1063,18 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	LONG        lRet = 1;
 	int         fActive, fMinimized, temp;
-	int         key, unicode;
 
 	if (uMsg == uiWheelMessage)
 		uMsg = WM_MOUSEWHEEL;
 
 	switch (uMsg) {
 		case WM_SETFOCUS:
-			Key_FocusEvent (1);
+			//Key_FocusEvent (1);
 			break;
 		case WM_KILLFOCUS:
 			if (modestate == MS_FULLDIB)
 				ShowWindow (win_mainwindow, SW_SHOWMINNOACTIVE);
-			Key_FocusEvent (0);
+			//Key_FocusEvent (0);
 			break;
 		case WM_CREATE:
 			break;
@@ -793,14 +1086,12 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 		case WM_KEYDOWN:
 		case WM_SYSKEYDOWN:
-			MapKey (lParam, 1, &key, &unicode);
-			Key_Event (key, unicode, true);
+			event_key (lParam, 1);
 			break;
 
 		case WM_KEYUP:
 		case WM_SYSKEYUP:
-			MapKey (lParam, 0, &key, &unicode);
-			Key_Event (key, unicode, false);
+			event_key (lParam, 0);
 			break;
 
 		case WM_SYSCHAR:
@@ -825,7 +1116,7 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 				temp |= 2;
 			if (wParam & MK_MBUTTON)
 				temp |= 4;
-			IN_MouseEvent (temp);
+			event_button (temp);
 
 			break;
 
@@ -833,13 +1124,13 @@ MainWndProc (HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		// It's delta is either positive or neg, and we generate the proper
 		// Event.
 		case WM_MOUSEWHEEL:
+			temp = win_mouse.buttons & ~((1 << 3) | (1 << 4));;
 			if ((short) HIWORD (wParam) > 0) {
-				Key_Event (QFM_WHEEL_UP, -1, true);
-				Key_Event (QFM_WHEEL_UP, -1, false);
+				event_button (temp | (1 << 3));
 			} else {
-				Key_Event (QFM_WHEEL_DOWN, -1, true);
-				Key_Event (QFM_WHEEL_DOWN, -1, false);
+				event_button (temp | (1 << 4));
 			}
+			event_button (temp);
 			break;
 
 		case WM_SIZE:
@@ -891,12 +1182,20 @@ static in_driver_t in_win_driver = {
 	.process_events = in_win_process_events,
 	.clear_states = in_win_clear_states,
 	//.grab_input = in_win_grab_input,
+
+	.axis_info = in_win_axis_info,
+	.button_info = in_win_button_info,
+
+	.get_axis_name = in_win_get_axis_name,
+	.get_button_name = in_win_get_button_name,
+	.get_axis_num = in_win_get_axis_num,
+	.get_button_num = in_win_get_button_num,
 };
 
 static void __attribute__((constructor))
 in_win_register_driver (void)
 {
-	IN_RegisterDriver (&in_win_driver, 0);
+	win_driver_handle = IN_RegisterDriver (&in_win_driver, 0);
 }
 
 
