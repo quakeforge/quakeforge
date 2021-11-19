@@ -19,7 +19,8 @@ vkgen_dat_src= \
 	libs/video/renderer/vulkan/vkgen/vktype.r \
 	libs/video/renderer/vulkan/vkgen/vulkan.r
 
-VKGENFLAGS = -I$(top_srcdir)/libs/video/renderer/vulkan/vkgen
+VKGENUSRINC = /usr/include
+VKGENFLAGS = -I$(top_srcdir)/libs/video/renderer/vulkan/vkgen -I$(VKGENUSRINC)
 
 vkgen_dat_SOURCES=$(vkgen_dat_src)
 vkgen_obj=$(vkgen_dat_SOURCES:.r=.o)
