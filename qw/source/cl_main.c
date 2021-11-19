@@ -49,9 +49,6 @@
 #ifdef HAVE_WINSOCK_H
 # include <winsock.h>
 #endif
-#ifdef HAVE_RPC_TYPES_H
-# include <rpc/types.h>
-#endif
 
 #if defined(_WIN32) && defined(HAVE_MALLOC_H)
 #include <malloc.h>

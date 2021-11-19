@@ -12,7 +12,7 @@ AC_CHECK_HEADERS(
 	dmedia/cdaudio.h dpmi.h dsound.h errno.h fcntl.h io.h \
 	ifaddrs.h libc.h limits.h linux/cdrom.h linux/joystick.h \
 	linux/soundcard.h machine/soundcard.h malloc.h math.h mgraph.h _mingw.h \
-	netdb.h net/if.h netinet/in.h process.h pthread.h pwd.h rpc/types.h \
+	netdb.h net/if.h netinet/in.h process.h pthread.h pwd.h \
 	setjmp.h signal.h stdarg.h stdio.h stdlib.h string.h strings.h \
 	sys/asoundlib.h sys/audioio.h sys/filio.h sys/ioctl.h sys/io.h sys/ipc.h \
 	sys/mman.h sys/param.h sys/poll.h sys/select.h sys/shm.h sys/signal.h \
