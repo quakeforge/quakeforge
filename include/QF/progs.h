@@ -1585,7 +1585,9 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 #define PR_RESNEW(map)														\
 	({																		\
 		__auto_type t = PR_RESNEW_NC (map);									\
-		memset (t, 0, sizeof (*(map)._free));								\
+		if (t) {															\
+			memset (t, 0, sizeof (*(map)._free));							\
+		}																	\
 		t;																	\
 	})
 
