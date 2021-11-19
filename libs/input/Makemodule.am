@@ -8,7 +8,6 @@ in_evdev_src=	\
 	libs/input/evdev/inputlib.c \
 	libs/input/in_evdev.c
 
-libs_input_libinput_evdev_la_LDFLAGS=      $(lib_ldflags)
 libs_input_libinput_evdev_la_LIBADD=
 libs_input_libinput_evdev_la_DEPENDENCIES=
 libs_input_libinput_evdev_la_CFLAGS=
