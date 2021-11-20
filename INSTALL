@@ -20,7 +20,7 @@ necessary packages installed.
 
 \section req-pack Required Packages
 The following packages are required to build QuakeForge:
-\li GNU autoconf 2.50 or later
+\li GNU autoconf 2.71 or later
 \li GNU automake 1.6 or later
 \li GNU libtool 1.4 or later
 \li GNU bison 2.6 or later

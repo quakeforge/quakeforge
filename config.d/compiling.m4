@@ -16,15 +16,16 @@ AC_MSG_RESULT([$leave_cflags_alone])
 
 AC_MSG_CHECKING(for C99 inline)
 c99_inline=no
-AC_TRY_LINK(
-	[inline int foo (int x) { return x * x; }
-	 int (*bar) (int) = foo;],
-	[],
-	c99_inline=no
-	AC_MSG_RESULT(no),
-	c99_inline=yes
-	AC_DEFINE(HAVE_C99INLINE, extern, [define this if using c99 inline])
-	AC_MSG_RESULT(yes)
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM(
+		[[inline int foo (int x) { return x * x; }
+		  int (*bar) (int) = foo;]],
+		[[]])],
+	[c99_inline=no
+		AC_MSG_RESULT(no)],
+	[c99_inline=yes
+		AC_DEFINE(HAVE_C99INLINE, extern, define this if using c99 inline)
+		AC_MSG_RESULT(yes)]
 )
 AH_VERBATIM([HAVE_C99INLINE],
 [#undef HAVE_C99INLINE
@@ -169,25 +170,17 @@ if test "x$optimize" = xyes -a "x$leave_cflags_alone" != "xyes"; then
 		else
 			save_CFLAGS="$CFLAGS"
 			CFLAGS="$CFLAGS $MORE_CFLAGS"
-			AC_TRY_COMPILE(
-				[],
-				[],
-				AC_MSG_RESULT(yes),
-				CFLAGS="$save_CFLAGS"
+			AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[AC_MSG_RESULT(yes)],[CFLAGS="$save_CFLAGS"
 				AC_MSG_RESULT(no)
-			)
+			])
 		fi
 		if test $CC_MAJ = 2 -a $CC_MIN = 96; then
 			AC_MSG_CHECKING(if align options work)
 			save_CFLAGS="$CFLAGS"
 			CFLAGS="$CFLAGS -malign-loops=2 -malign-jumps=2 -malign-functions=2"
-			AC_TRY_COMPILE(
-				[],
-				[],
-				light="$light -malign-loops=2 -malign-jumps=2 -malign-functions=2"
-				AC_MSG_RESULT(yes),
-				AC_MSG_RESULT(no)
-			)
+			AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[]])],[light="$light -malign-loops=2 -malign-jumps=2 -malign-functions=2"
+				AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
+			])
 			CFLAGS="$save_CFLAGS"
 			CFLAGS="$CFLAGS $light"
 		else

@@ -1,8 +1,8 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ(2.61)
+AC_PREREQ([2.71])
 
 dnl This is the only place where the package name and version appear
-AC_INIT([QuakeForge], m4_esyscmd([config.d/git-version-gen --prefix '' .tarball-version]))
+AC_INIT([QuakeForge],m4_esyscmd(config.d/git-version-gen --prefix '' .tarball-version))
 AM_INIT_AUTOMAKE([foreign subdir-objects])
 
 dnl LT_INIT messes with CFLAGS (evil bastard)
@@ -11,7 +11,7 @@ if test "x${CFLAGS-unset}" = xunset; then
 fi
 saved_CFLAGS="$CFLAGS"
 dnl LT_INIT([win32-dll])
-AM_PROG_LIBTOOL
+LT_INIT
 CFLAGS="$saved_CFLAGS"
 
 AC_REVISION([$Revision$]) dnl
@@ -23,7 +23,7 @@ AC_CANONICAL_HOST
 
 m4_include(config.d/versions.m4)
 
-AC_LANG_C
+AC_LANG([C])
 
 if test "$x{AR-unset}" = xunset; then
 	AR="ar"

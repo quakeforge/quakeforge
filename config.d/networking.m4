@@ -60,19 +60,16 @@ fi
 AC_MSG_CHECKING([for connect in -lwsock32])
 SAVELIBS="$LIBS"
 LIBS="$LIBS -lwsock32"
-AC_TRY_LINK([
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <winsock.h>
-],
-[
+]], [[
 connect(0, NULL, 42);
-],
-	NET_LIBS="$NET_LIBS -lwsock32 -lwinmm"
+]])],[NET_LIBS="$NET_LIBS -lwsock32 -lwinmm"
 	ac_cv_func_connect=yes
 	ac_cv_func_gethostbyname=yes
 	HAVE_WSOCK=yes
-	AC_MSG_RESULT(yes),
-	AC_MSG_RESULT(no)
-)
+	AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
+])
 LIBS="$SAVELIBS"
 
 AC_MSG_CHECKING(for UDP support)
@@ -87,16 +84,13 @@ if test "x$ac_cv_func_connect" != "xyes"; then
 	AC_MSG_CHECKING([for connect in -lwsock32])
 	SAVELIBS="$LIBS"
 	LIBS="$LIBS -lwsock32"
-	AC_TRY_LINK([
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[
 #include <winsock.h>
-		],
-		[
+		]], [[
 connect (0, NULL, 42);
-		],
-	    NET_LIBS="$NET_LIBS -lwsock32 -lwinmm"
-	    AC_MSG_RESULT(yes),
-	    AC_MSG_RESULT(no)
-	)
+		]])],[NET_LIBS="$NET_LIBS -lwsock32 -lwinmm"
+	    AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
+	])
 	LIBS="$SAVELIBS"
 fi
 AC_SUBST(NET_LIBS)
@@ -104,12 +98,9 @@ AC_SUBST(NET_LIBS)
 AC_MSG_CHECKING([for getifaddrs])
 SAVELIBS="$LIBS"
 LIBS="$LIBS $NET_LIBS"
-AC_TRY_LINK([],
-	[
+AC_LINK_IFELSE([AC_LANG_PROGRAM([[]], [[
 getifaddrs (0);
-	],
-	AC_DEFINE(HAVE_GETIFADDRS, 1, [Define this if you have getifaddrs()])
-	AC_MSG_RESULT(yes),
-	AC_MSG_RESULT(no)
-)
+	]])],[AC_DEFINE(HAVE_GETIFADDRS, 1, Define this if you have getifaddrs())
+	AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
+])
 LIBS="$SAVELIBS"

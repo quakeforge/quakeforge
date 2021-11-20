@@ -10,27 +10,15 @@ fi
 
 if test "x$HAVE_FBDEV" = xyes; then
 	AC_MSG_CHECKING(for FB_AUX_VGA_PLANES_VGA4)
-	AC_TRY_COMPILE(
-		[#include "linux/fb.h"],
-		[int foo = FB_AUX_VGA_PLANES_VGA4;],
-		AC_DEFINE(HAVE_FB_AUX_VGA_PLANES_VGA4, 1, [Define this if you have FB_AUX_VGA_PLANES_VGA4])
-		AC_MSG_RESULT(yes),
-		AC_MSG_RESULT(no)
-	)
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include "linux/fb.h"]], [[int foo = FB_AUX_VGA_PLANES_VGA4;]])],[AC_DEFINE(HAVE_FB_AUX_VGA_PLANES_VGA4, 1, Define this if you have FB_AUX_VGA_PLANES_VGA4)
+		AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
+	])
 	AC_MSG_CHECKING(for FB_AUX_VGA_PLANES_CFB4)
-	AC_TRY_COMPILE(
-		[#include "linux/fb.h"],
-		[int foo = FB_AUX_VGA_PLANES_CFB4;],
-		AC_DEFINE(HAVE_FB_AUX_VGA_PLANES_CFB4, 1, [Define this if you have FB_AUX_VGA_PLANES_CFB4])
-		AC_MSG_RESULT(yes),
-		AC_MSG_RESULT(no)
-	)
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include "linux/fb.h"]], [[int foo = FB_AUX_VGA_PLANES_CFB4;]])],[AC_DEFINE(HAVE_FB_AUX_VGA_PLANES_CFB4, 1, Define this if you have FB_AUX_VGA_PLANES_CFB4)
+		AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
+	])
 	AC_MSG_CHECKING(for FB_AUX_VGA_PLANES_CFB8)
-	AC_TRY_COMPILE(
-		[#include "linux/fb.h"],
-		[int foo = FB_AUX_VGA_PLANES_CFB8;],
-		AC_DEFINE(HAVE_FB_AUX_VGA_PLANES_CFB8, 1, [Define this if you have FB_AUX_VGA_PLANES_CFB4])
-		AC_MSG_RESULT(yes),
-		AC_MSG_RESULT(no)
-	)
+	AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include "linux/fb.h"]], [[int foo = FB_AUX_VGA_PLANES_CFB8;]])],[AC_DEFINE(HAVE_FB_AUX_VGA_PLANES_CFB8, 1, Define this if you have FB_AUX_VGA_PLANES_CFB4)
+		AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
+	])
 fi

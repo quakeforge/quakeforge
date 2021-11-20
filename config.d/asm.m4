@@ -17,10 +17,8 @@ esac
 AM_CONDITIONAL(ASM_ARCH, test "x$ASM_ARCH" = "xyes")
 
 AC_MSG_CHECKING(for underscore prefix in names)
-AC_TRY_LINK(
-	[asm(".long _bar");
-	int bar;],
-	[],
-	AC_DEFINE(HAVE_SYM_PREFIX_UNDERSCORE, 1, [Define this if C symbols are prefixed with an underscore]) AC_MSG_RESULT(yes),
-	AC_MSG_RESULT(no)
-)
+AC_LINK_IFELSE(
+	[AC_LANG_PROGRAM([[asm(".long _bar"); int bar;]], [[]])],
+	[AC_DEFINE(HAVE_SYM_PREFIX_UNDERSCORE, 1, Define this if C symbols are prefixed with an underscore) AC_MSG_RESULT(yes)],
+	[AC_MSG_RESULT(no)
+])

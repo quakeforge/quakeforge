@@ -32,6 +32,7 @@ AS_VERSION_COMPARE([$BISON_VER], [2.6],
 	AC_MSG_RESULT([yes])
 )
 
+AC_PROG_LEX(noyywrap)
 AM_PROG_LEX
 if echo $LEX | grep -v flex > /dev/null; then
 	AC_MSG_ERROR(GNU flex is required but was not found)
