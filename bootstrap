@@ -71,11 +71,11 @@ if test -n "$ac" ; then
 		AC_VER_MINOR=`echo $AC_VER | cut -f2 -d'.' | sed 's/[^0-9]*$//'`
 
 		if test "$AC_VER_MAJOR" -lt "2" ; then
-			errors="Autoconf 2.71 or greater needed to build configure.\n$errors"
+			errors="Autoconf 2.69 or greater needed to build configure.\n$errors"
 		fi
 
-		if test "$AC_VER_MAJOR" -eq "2" -a "$AC_VER_MINOR" -lt "71" ; then
-			errors="Autoconf 2.71 or greater needed to build configure.\n$errors"
+		if test "$AC_VER_MAJOR" -eq "2" -a "$AC_VER_MINOR" -lt "69" ; then
+			errors="Autoconf 2.69 or greater needed to build configure.\n$errors"
 		fi
 	fi
 else

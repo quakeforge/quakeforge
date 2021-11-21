@@ -1,5 +1,5 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_PREREQ([2.71])
+AC_PREREQ([2.69])
 
 dnl This is the only place where the package name and version appear
 AC_INIT([QuakeForge],m4_esyscmd(config.d/git-version-gen --prefix '' .tarball-version))
