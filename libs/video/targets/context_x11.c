@@ -335,37 +335,6 @@ X11_CreateNullCursor (void)
 	XDefineCursor (x_disp, x_win, nullcursor);
 }
 
-static Bool
-check_mouse_event (Display *disp, XEvent *ev, XPointer arg)
-{
-	XMotionEvent *me = &ev->xmotion;
-	if (ev->type != MotionNotify)
-		return False;
-	if ((unsigned) me->x != viddef.width / 2
-		|| (unsigned) me->y != viddef.height / 2)
-		return False;
-	return True;
-}
-
-static void
-X11_SetMouse (void)
-{
-	XEvent	ev;
-
-	XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0, 0, 0);
-	XWarpPointer (x_disp, None, x_win, 0, 0, 0, 0,
-				  viddef.width / 2, viddef.height / 2);
-	//FIXME this should be done in a state machine that handles events without
-	//blocking
-	double start = Sys_DoubleTime ();
-	while (!XCheckIfEvent (x_disp, &ev, check_mouse_event, 0)) {
-		if (Sys_DoubleTime () - start > 2) {
-			break;
-		}
-	}
-	x_mouse_time = ev.xmotion.time;
-}
-
 #ifdef HAVE_VIDMODE
 static vec3_t *
 X11_GetGamma (void)
@@ -499,12 +468,9 @@ X11_UpdateFullscreen (cvar_t *fullscreen)
 		X11_RestoreVidMode ();
 		set_fullscreen (0);
 		IN_UpdateGrab (in_grab);
-		X11_SetMouse ();
-		return;
 	} else {
 		set_fullscreen (1);
 		X11_SetVidMode (viddef.width, viddef.height);
-		X11_SetMouse ();
 		IN_UpdateGrab (in_grab);
 	}
 }
