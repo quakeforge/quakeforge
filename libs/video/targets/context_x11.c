@@ -55,11 +55,6 @@
 
 #ifdef HAVE_VIDMODE
 # include <X11/extensions/xf86vmode.h>
-# ifdef DGA_OLD_HEADERS
-#  include <X11/extensions/xf86vmstr.h>
-# else
-#  include <X11/extensions/xf86vmproto.h>
-# endif
 #endif
 
 #include "QF/cmd.h"

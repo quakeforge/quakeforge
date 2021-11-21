@@ -55,7 +55,6 @@
 #include <X11/Xatom.h>
 
 #ifdef HAVE_DGA
-# include <X11/extensions/XShm.h>
 # ifdef DGA_OLD_HEADERS
 #  include <X11/extensions/xf86dga.h>
 # else
