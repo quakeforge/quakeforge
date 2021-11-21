@@ -59,7 +59,10 @@
 #  include <X11/extensions/xf86dga.h>
 # else
 #  include <X11/extensions/Xxf86dga.h>
+# endif
 #endif
+#ifdef HAVE_XI2
+# include <X11/extensions/XInput2.h>
 #endif
 
 #include "QF/cdaudio.h"
@@ -135,6 +138,8 @@ static IE_mouse_event_t x11_mouse;
 static IE_key_event_t x11_key;
 static int input_grabbed = 0;
 
+static int xi_opcode;
+static int x11_have_xi;
 static int x11_fd;
 static int x11_driver_handle = -1;
 
@@ -834,6 +839,93 @@ event_key (XEvent *event)
 }
 
 static void
+xi_raw_motion (void *event)
+{
+	int         root_x, root_y;
+	Window      root_w, child_w;
+	XIRawEvent *re = event;
+
+	x11_mouse_axes[0].value = re->raw_values[0];
+	x11_mouse_axes[1].value = re->raw_values[1];
+	XQueryPointer (x_disp, x_win, &root_w, &child_w, &root_x, &root_y,
+				   &x11_mouse.x, &x11_mouse.y, &x11_mouse.shift);
+	// want only the modifier state
+	x11_mouse.shift &= 0xff;
+	if (!in_x11_send_mouse_event (ie_mousemove)) {
+		in_x11_send_axis_event (x11_mouse_device.devid,
+								&x11_mouse_axes[0]);
+		in_x11_send_axis_event (x11_mouse_device.devid,
+								&x11_mouse_axes[1]);
+	}
+}
+
+static void
+xi_raw_button (void *event, int press)
+{
+
+	int         root_x, root_y;
+	Window      root_w, child_w;
+	unsigned    button;
+	XIRawEvent *re = event;
+
+	// x11 buttons are 1-based
+	button = re->detail - 1;
+	if (button > X11_MOUSE_BUTTONS) {
+		return;
+	}
+	XQueryPointer (x_disp, x_win, &root_w, &child_w, &root_x, &root_y,
+				   &x11_mouse.x, &x11_mouse.y, &x11_mouse.shift);
+	// want only the modifier state
+	x11_mouse.shift &= 0xff;
+	if (press) {
+		x11_mouse.buttons |= 1 << button;
+	} else {
+		x11_mouse.buttons &= ~(1 << button);
+	}
+	if (!in_x11_send_mouse_event (press ? ie_mousedown : ie_mouseup)) {
+		in_x11_send_button_event (x11_mouse_device.devid,
+								  &x11_mouse_buttons[button],
+								  x11_mouse_device.event_data);
+	}
+}
+
+static void
+xi_raw_button_press (void *event)
+{
+	xi_raw_button (event, 1);
+}
+
+static void
+xi_raw_button_resease (void *event)
+{
+	xi_raw_button (event, 0);
+}
+
+static void
+event_generic (XEvent *event)
+{
+	// XI_LASTEVENT is the actual last event, not +1
+	static void (*xi_event_handlers[XI_LASTEVENT + 1]) (void *) = {
+		[XI_RawMotion] = xi_raw_motion,
+		[XI_RawButtonPress] = xi_raw_button_press,
+		[XI_RawButtonRelease] = xi_raw_button_resease,
+	};
+	XGenericEventCookie *cookie = &event->xcookie;
+
+	if (cookie->type != GenericEvent || cookie->extension != xi_opcode
+		|| !XGetEventData (x_disp, cookie)) {
+		return;
+	}
+
+	if ((unsigned) cookie->evtype <= XI_LASTEVENT
+		&& xi_event_handlers[cookie->evtype]) {
+		xi_event_handlers[cookie->evtype] (cookie->data);
+	}
+
+	XFreeEventData (x_disp, cookie);
+}
+
+static void
 grab_error (int code, const char *device)
 {
 	const char *reason;
@@ -861,6 +953,7 @@ grab_error (int code, const char *device)
 static void
 in_x11_grab_input (void *data, int grab)
 {
+	return;//FIXME
 	if (!x_disp || !x_win)
 		return;
 
@@ -1064,7 +1157,7 @@ in_x11_init_cvars (void *data)
 {
 	in_snd_block = Cvar_Get ("in_snd_block", "0", CVAR_ARCHIVE, NULL,
 							 "block sound output on window focus loss");
-	in_dga = Cvar_Get ("in_dga", "0", CVAR_ARCHIVE, in_dga_f, //FIXME 0 until X fixed
+	in_dga = Cvar_Get ("in_dga", "0", CVAR_ARCHIVE, in_dga_f,
 					   "DGA Input support");
 	in_mouse_accel = Cvar_Get ("in_mouse_accel", "1", CVAR_ARCHIVE,
 							   in_mouse_accel_f,
@@ -1083,6 +1176,72 @@ x11_add_device (x11_device_t *dev)
 	dev->devid = IN_AddDevice (x11_driver_handle, dev, dev->name, dev->name);
 }
 
+static int
+in_x11_check_xi2 (void)
+{
+	// Support XI 2.2
+	int         major = 2, minor = 2;
+	int         event, error;
+	int         ret;
+
+	if (!XQueryExtension (x_disp, "XInputExtension",
+						  &xi_opcode, &event, &error)) {
+		Sys_MaskPrintf (SYS_vid, "X Input extenions not available.\n");
+		return 0;
+	}
+	if ((ret = XIQueryVersion (x_disp, &major, &minor)) == BadRequest) {
+		Sys_MaskPrintf (SYS_vid,
+						"No XI2 support. Server supports only %d.%d\n",
+						major, minor);
+		return 0;
+	} else if (ret != Success) {
+		Sys_MaskPrintf (SYS_vid, "in_x11_check_xi2: Xlib return bad: %d\n",
+						ret);
+	}
+	Sys_MaskPrintf (SYS_vid, "XI2 supported: version %d.%d\n", major, minor);
+	return 1;
+}
+
+static void
+in_x11_xi_select_events (void)
+{
+	//Raw events do not have target windows, so must specify the root
+	//window
+	//XISelectEvents(x_disp, x_root, &evmask, 1);
+	//XFlush (x_disp);
+}
+
+static void
+in_x11_xi_setup_grabs (void)
+{
+	// FIXME normal apps aren't supposed to care about the client pointer,
+	// but grabbing all master devices grabs the keyboard, too, which blocks
+	// alt-tab and the like
+	int dev;
+	XIGetClientPointer (x_disp, x_win, &dev);
+
+	byte        mask[(XI_LASTEVENT + 7) / 8] = {};
+	XIEventMask evmask = {
+		.deviceid = dev,
+		.mask_len = sizeof (mask),
+		.mask = mask,
+	};
+	XISetMask (mask, XI_RawMotion);
+	XISetMask (mask, XI_RawButtonPress);
+	XISetMask (mask, XI_RawButtonRelease);
+
+	XIGrabModifiers modif = {
+		.modifiers = XIAnyModifier,
+	};
+
+	XIGrabEnter (x_disp, dev, x_win, None, XIGrabModeAsync, XIGrabModeAsync,
+				 0, &evmask, 1, &modif);
+	//FIXME doesn't seem to do anything. Is it actually necessary?
+	//here for reference
+	//XIGrabFocusIn (x_disp, dev, x_win, XIGrabModeAsync, XIGrabModeAsync,
+	//			   0, &evmask, 1, &modif);
+}
+
 long
 IN_X11_Preinit (void)
 {
@@ -1099,9 +1258,13 @@ IN_X11_Preinit (void)
 	X11_AddEvent (EnterNotify, &enter_notify);
 
 	if (!COM_CheckParm ("-nomouse")) {
-		X11_AddEvent (MotionNotify, &event_motion);
-		X11_AddEvent (ButtonPress, &event_button);
-		X11_AddEvent (ButtonRelease, &event_button);
+		if ((x11_have_xi = in_x11_check_xi2 ())) {
+			X11_AddEvent (GenericEvent, &event_generic);
+		} else {
+			X11_AddEvent (MotionNotify, &event_motion);
+			X11_AddEvent (ButtonPress, &event_button);
+			X11_AddEvent (ButtonRelease, &event_button);
+		}
 	}
 
 	Cmd_AddCommand ("in_paste_buffer", in_paste_buffer_f,
@@ -1118,12 +1281,14 @@ IN_X11_Postinit (void)
 		Sys_Error ("IN: No window!!");
 
 	if (!COM_CheckParm ("-nomouse")) {
-		dga_avail = VID_CheckDGA (x_disp, NULL, NULL, NULL);
-		Sys_MaskPrintf (SYS_vid, "VID_CheckDGA returned %d\n", dga_avail);
+		if (x11_have_xi) {
+			in_x11_xi_select_events ();
+			in_x11_xi_setup_grabs ();
+		} else {
 			dga_avail = VID_CheckDGA (x_disp, NULL, NULL, NULL);
 			Sys_MaskPrintf (SYS_vid, "VID_CheckDGA returned %d\n",
 							dga_avail);
-
+		}
 	}
 }
 
