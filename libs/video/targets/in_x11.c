@@ -92,12 +92,13 @@ typedef struct x11_device_s {
 	int         devid;
 } x11_device_t;
 
+#define X11_MOUSE_BUTTONS 32
 // The X11 protocol supports only 256 keys
 static in_buttoninfo_t x11_key_buttons[256];
 // X11 mice have only two axes (FIXME always true?)
 static in_axisinfo_t x11_mouse_axes[2];
-// FIXME assume up to 32 mouse buttons
-static in_buttoninfo_t x11_mouse_buttons[32];
+// FIXME assume up to 32 mouse buttons (see X11_MOUSE_BUTTONS)
+static in_buttoninfo_t x11_mouse_buttons[X11_MOUSE_BUTTONS];
 static const char *x11_mouse_axis_names[] = {"M_X", "M_Y"};
 static const char *x11_mouse_button_names[] = {
 	"M_BUTTON1",    "M_BUTTON2",  "M_BUTTON3",  "M_WHEEL_UP",
@@ -787,8 +788,9 @@ event_button (XEvent *event)
 
 	x_time = event->xbutton.time;
 
+	// x11 buttons are 1-based
 	but = event->xbutton.button - 1;
-	if (but >= 32) {
+	if (but > X11_MOUSE_BUTTONS) {
 		return;
 	}
 
