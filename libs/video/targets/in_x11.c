@@ -128,9 +128,9 @@ static x11_device_t x11_mouse_device = {
 	x11_mouse_axes, x11_mouse_buttons,
 };
 
-cvar_t	   *in_snd_block;
-cvar_t	   *in_dga;
-cvar_t	   *in_mouse_accel;
+cvar_t     *in_snd_block;
+cvar_t     *in_dga;
+cvar_t     *in_mouse_accel;
 
 static qboolean dga_avail;
 static qboolean dga_active;
@@ -150,7 +150,7 @@ dga_on (void)
 	if (dga_avail && !dga_active) {
 		int ret;
 		ret = XF86DGADirectVideo (x_disp, DefaultScreen (x_disp),
-							XF86DGADirectMouse);
+								  XF86DGADirectMouse);
 		Sys_MaskPrintf (SYS_vid, "XF86DGADirectVideo returned %d\n", ret);
 		if (ret)
 			dga_active = true;
