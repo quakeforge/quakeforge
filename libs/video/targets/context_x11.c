@@ -507,8 +507,9 @@ X11_CreateWindow (int width, int height)
 	attr.background_pixel = 0;
 	attr.border_pixel = 0;
 	attr.colormap = x_cmap;
-	if (!attr.colormap)
+	if (!attr.colormap) {
 		attr.colormap = XCreateColormap (x_disp, x_root, x_vis, AllocNone);
+	}
 	attr.event_mask = X11_MASK;
 	mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
 
