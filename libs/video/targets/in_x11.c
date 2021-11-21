@@ -128,6 +128,7 @@ static x11_device_t x11_mouse_device = {
 	x11_mouse_axes, x11_mouse_buttons,
 };
 
+cvar_t     *in_auto_focus;
 cvar_t     *in_snd_block;
 cvar_t     *in_dga;
 cvar_t     *in_mouse_accel;
@@ -214,6 +215,9 @@ enter_notify (XEvent *event)
 
 	x11_mouse.x = event->xmotion.x;
 	x11_mouse.y = event->xmotion.y;
+	if (!x_have_focus && (!in_auto_focus || in_auto_focus->int_val)) {
+		XSetInputFocus (x_disp, x_win, RevertToPointerRoot, CurrentTime);
+	}
 }
 
 static void
@@ -1155,6 +1159,11 @@ in_x11_get_device_event_data (void *device, void *data)
 static void
 in_x11_init_cvars (void *data)
 {
+	in_auto_focus = Cvar_Get ("in_auto_focus", "1", CVAR_ARCHIVE, 0,
+							  "grab input focus when the mouse enters the"
+							  " window when using xinput2 with certain"
+							  " window managers using focus-follows-mouse"
+							  " (eg, openbox)");
 	in_snd_block = Cvar_Get ("in_snd_block", "0", CVAR_ARCHIVE, NULL,
 							 "block sound output on window focus loss");
 	in_dga = Cvar_Get ("in_dga", "0", CVAR_ARCHIVE, in_dga_f,
