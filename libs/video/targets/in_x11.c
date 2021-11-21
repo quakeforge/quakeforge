@@ -1059,7 +1059,7 @@ in_x11_get_device_event_data (void *device, void *data)
 }
 
 static void
-in_x11_init_cvars (void)
+in_x11_init_cvars (void *data)
 {
 	in_snd_block = Cvar_Get ("in_snd_block", "0", CVAR_ARCHIVE, NULL,
 							 "block sound output on window focus loss");
@@ -1090,8 +1090,6 @@ in_x11_init (void *data)
 		Sys_Error ("IN: No display!!");
 	if (!x_win)
 		Sys_Error ("IN: No window!!");
-
-	in_x11_init_cvars ();
 
 	X11_OpenDisplay (); // call to increment the reference counter
 
@@ -1140,6 +1138,7 @@ in_x11_clear_states (void *data)
 }
 
 static in_driver_t in_x11_driver = {
+	.init_cvars = in_x11_init_cvars,
 	.init = in_x11_init,
 	.shutdown = in_x11_shutdown,
 	.set_device_event_data = in_x11_set_device_event_data,

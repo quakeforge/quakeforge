@@ -52,6 +52,7 @@ typedef struct in_buttoninfo_s {
 struct qf_fd_set;
 
 typedef struct in_driver_s {
+	void (*init_cvars) (void *data);
 	void (*init) (void *data);
 	void (*shutdown) (void *data);
 

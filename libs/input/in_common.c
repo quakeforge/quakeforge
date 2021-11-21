@@ -456,6 +456,12 @@ IN_Init_Cvars (void)
 								 "mouse in_mouse_pre_amp multiplier");
 	lookstrafe = Cvar_Get ("lookstrafe", "0", CVAR_ARCHIVE, NULL,
 						   "when mlook/klook on player will strafe");
+	for (size_t i = 0; i < in_drivers.size; i++) {
+		in_regdriver_t *rd = &in_drivers.a[i];
+		if (rd->driver.init_cvars) {
+			rd->driver.init_cvars (rd->data);
+		}
+	}
 }
 
 void
