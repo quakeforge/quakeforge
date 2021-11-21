@@ -68,6 +68,7 @@
 
 #include "context_x11.h"
 #include "dga_check.h"
+#include "in_x11.h"
 #include "vid_internal.h"
 
 static void (*event_handlers[LASTEvent]) (XEvent *);
@@ -510,11 +511,14 @@ X11_CreateWindow (int width, int height)
 	if (!attr.colormap) {
 		attr.colormap = XCreateColormap (x_disp, x_root, x_vis, AllocNone);
 	}
-	attr.event_mask = X11_MASK;
+	attr.event_mask = X11_MASK | IN_X11_Preinit ();
+
 	mask = CWBackPixel | CWBorderPixel | CWColormap | CWEventMask;
+
 
 	x_win = XCreateWindow (x_disp, x_root, 0, 0, width, height, 0,
 						   x_visinfo->depth, InputOutput, x_vis, mask, &attr);
+	IN_X11_Postinit ();
 
 	// Set window size hints
 	SizeHints = XAllocSizeHints ();

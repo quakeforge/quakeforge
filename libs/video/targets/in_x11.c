@@ -78,6 +78,7 @@
 #include "compat.h"
 #include "context_x11.h"
 #include "dga_check.h"
+#include "in_x11.h"
 #include "qfselect.h"
 #include "vid_internal.h"
 
@@ -1040,7 +1041,6 @@ in_x11_shutdown (void *data)
 	}
 	if (in_mouse_accel && !in_mouse_accel->int_val)
 		X11_RestoreMouseAcceleration ();
-	X11_CloseDisplay ();
 }
 
 static void
@@ -1081,31 +1081,13 @@ x11_add_device (x11_device_t *dev)
 	dev->devid = IN_AddDevice (x11_driver_handle, dev, dev->name, dev->name);
 }
 
-static void
-in_x11_init (void *data)
+long
+IN_X11_Preinit (void)
 {
-	// open the display
 	if (!x_disp)
 		Sys_Error ("IN: No display!!");
-	if (!x_win)
-		Sys_Error ("IN: No window!!");
 
-	X11_OpenDisplay (); // call to increment the reference counter
-
-	x11_fd = ConnectionNumber (x_disp);
-
-	{
-		int 	attribmask = CWEventMask;
-
-		XWindowAttributes attribs_1;
-		XSetWindowAttributes attribs_2;
-
-		XGetWindowAttributes (x_disp, x_win, &attribs_1);
-
-		attribs_2.event_mask = attribs_1.your_event_mask | X11_INPUT_MASK;
-
-		XChangeWindowAttributes (x_disp, x_win, attribmask, &attribs_2);
-	}
+	long        event_mask = X11_INPUT_MASK;
 
 	X11_AddEvent (KeyPress, &event_key);
 	X11_AddEvent (KeyRelease, &event_key);
@@ -1114,21 +1096,45 @@ in_x11_init (void *data)
 	X11_AddEvent (SelectionNotify, &selection_notify);
 	X11_AddEvent (EnterNotify, &enter_notify);
 
-	x11_add_device (&x11_keyboard_device);
-
 	if (!COM_CheckParm ("-nomouse")) {
-		dga_avail = VID_CheckDGA (x_disp, NULL, NULL, NULL);
-		Sys_MaskPrintf (SYS_vid, "VID_CheckDGA returned %d\n", dga_avail);
-
+		X11_AddEvent (MotionNotify, &event_motion);
 		X11_AddEvent (ButtonPress, &event_button);
 		X11_AddEvent (ButtonRelease, &event_button);
-		X11_AddEvent (MotionNotify, &event_motion);
-
-		x11_add_device (&x11_mouse_device);
 	}
 
 	Cmd_AddCommand ("in_paste_buffer", in_paste_buffer_f,
 					"Paste the contents of X's C&P buffer to the console");
+	return event_mask;
+}
+
+void
+IN_X11_Postinit (void)
+{
+	if (!x_disp)
+		Sys_Error ("IN: No display!!");
+	if (!x_win)
+		Sys_Error ("IN: No window!!");
+
+	if (!COM_CheckParm ("-nomouse")) {
+		dga_avail = VID_CheckDGA (x_disp, NULL, NULL, NULL);
+		Sys_MaskPrintf (SYS_vid, "VID_CheckDGA returned %d\n", dga_avail);
+			dga_avail = VID_CheckDGA (x_disp, NULL, NULL, NULL);
+			Sys_MaskPrintf (SYS_vid, "VID_CheckDGA returned %d\n",
+							dga_avail);
+
+	}
+}
+
+static void
+in_x11_init (void *data)
+{
+	x11_fd = ConnectionNumber (x_disp);
+
+	x11_add_device (&x11_keyboard_device);
+
+	if (!COM_CheckParm ("-nomouse")) {
+		x11_add_device (&x11_mouse_device);
+	}
 }
 
 static void
