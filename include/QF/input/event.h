@@ -89,6 +89,8 @@ typedef enum {
 	ie_none,
 	ie_gain_focus,
 	ie_lose_focus,
+	ie_app_gain_focus,
+	ie_app_lose_focus,
 	ie_app_window,
 	ie_add_device,
 	ie_remove_device,
@@ -103,6 +105,8 @@ typedef enum {
 #define IE_broadcast_events (0 \
 		| (1 << ie_add_device) \
 		| (1 << ie_remove_device) \
+		| (1 << ie_app_gain_focus) \
+		| (1 << ie_app_lose_focus) \
 		| (1 << ie_app_window) \
 	)
 
