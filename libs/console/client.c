@@ -805,6 +805,9 @@ con_key_event (const IE_event_t *event)
 	} else {
 #endif
 		switch (key->code) {
+			case QFK_ESCAPE:
+				ToggleConsole_f ();
+				break;
 			case QFK_PAGEUP:
 				if (key->shift & ies_control)
 					con->display = 0;
