@@ -640,10 +640,21 @@ XLateKey (XKeyEvent *ev, int *k, int *u)
 }
 
 static void
+in_x11_send_focus_event (int gain)
+{
+	IE_event_t  event = {
+		.type = gain ? ie_app_gain_focus : ie_app_lose_focus,
+		.when = Sys_LongTime (),
+	};
+	IE_Send_Event (&event);
+}
+
+static void
 event_focusout (XEvent *event)
 {
 	if (x_have_focus) {
 		x_have_focus = false;
+		in_x11_send_focus_event (0);
 		if (in_snd_block->int_val) {
 			S_BlockSound ();
 			CDAudio_Pause ();
@@ -655,6 +666,7 @@ event_focusout (XEvent *event)
 static void
 event_focusin (XEvent *event)
 {
+	in_x11_send_focus_event (1);
 	x_have_focus = true;
 	if (in_snd_block->int_val) {
 		S_UnblockSound ();
