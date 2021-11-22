@@ -41,7 +41,7 @@
 #define X11_KEY_MASK (KeyPressMask | KeyReleaseMask)
 #define X11_MOUSE_MASK (ButtonPressMask | ButtonReleaseMask \
 						| PointerMotionMask)
-#define X11_FOCUS_MASK (FocusChangeMask | EnterWindowMask)
+#define X11_FOCUS_MASK (FocusChangeMask | EnterWindowMask | LeaveWindowMask)
 #define X11_INPUT_MASK (X11_KEY_MASK | X11_MOUSE_MASK | X11_FOCUS_MASK)
 #define X11_MASK (X11_WINDOW_MASK | X11_FOCUS_MASK | PointerMotionMask)
 

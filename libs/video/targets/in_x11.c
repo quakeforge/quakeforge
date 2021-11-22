@@ -64,6 +64,9 @@
 #ifdef HAVE_XI2
 # include <X11/extensions/XInput2.h>
 #endif
+#ifdef HAVE_XFIXES
+# include <X11/extensions/Xfixes.h>
+#endif
 
 #include "QF/cdaudio.h"
 #include "QF/cmd.h"
@@ -140,9 +143,16 @@ static IE_key_event_t x11_key;
 static int input_grabbed = 0;
 
 static int xi_opcode;
+static int xf_opcode;
+static PointerBarrier x11_left_barrier;
+static PointerBarrier x11_right_barrier;
+static PointerBarrier x11_top_barrier;
+static PointerBarrier x11_bottom_barrier;
 static int x11_have_xi;
 static int x11_fd;
 static int x11_driver_handle = -1;
+static int x11_event_handler_id;
+static qboolean x11_have_pointer;
 
 static void
 dga_on (void)
@@ -211,6 +221,7 @@ in_paste_buffer_f (void)
 static void
 enter_notify (XEvent *event)
 {
+	x11_have_pointer = true;
 	x_time = event->xcrossing.time;
 
 	x11_mouse.x = event->xmotion.x;
@@ -218,6 +229,12 @@ enter_notify (XEvent *event)
 	if (!x_have_focus && (!in_auto_focus || in_auto_focus->int_val)) {
 		XSetInputFocus (x_disp, x_win, RevertToPointerRoot, CurrentTime);
 	}
+}
+
+static void
+leave_notify (XEvent *event)
+{
+	x11_have_pointer = false;
 }
 
 static void
@@ -906,6 +923,21 @@ xi_raw_button_resease (void *event)
 }
 
 static void
+xi_barrier_hit (void *event)
+{
+	__auto_type be = *(XIBarrierEvent *) event;
+
+	if (!x11_have_pointer || !input_grabbed) {
+		XIBarrierReleasePointer (x_disp, be.deviceid, be.barrier, be.eventid);
+	}
+}
+
+static void
+xi_barrier_leave (void *event)
+{
+}
+
+static void
 event_generic (XEvent *event)
 {
 	// XI_LASTEVENT is the actual last event, not +1
@@ -913,6 +945,8 @@ event_generic (XEvent *event)
 		[XI_RawMotion] = xi_raw_motion,
 		[XI_RawButtonPress] = xi_raw_button_press,
 		[XI_RawButtonRelease] = xi_raw_button_resease,
+		[XI_BarrierHit] = xi_barrier_hit,
+		[XI_BarrierLeave] = xi_barrier_leave,
 	};
 	XGenericEventCookie *cookie = &event->xcookie;
 
@@ -957,9 +991,13 @@ grab_error (int code, const char *device)
 static void
 in_x11_grab_input (void *data, int grab)
 {
-	return;//FIXME
 	if (!x_disp || !x_win)
 		return;
+
+	if (xf_opcode) {
+		input_grabbed = grab;
+		return;
+	}
 
 	if (vid_fullscreen)
 		grab = grab || vid_fullscreen->int_val;
@@ -1207,17 +1245,36 @@ in_x11_check_xi2 (void)
 		Sys_MaskPrintf (SYS_vid, "in_x11_check_xi2: Xlib return bad: %d\n",
 						ret);
 	}
-	Sys_MaskPrintf (SYS_vid, "XI2 supported: version %d.%d\n", major, minor);
+	Sys_MaskPrintf (SYS_vid, "XI2 supported: version %d.%d, op: %d\n",
+					major, minor, xi_opcode);
+
+	if (!XQueryExtension (x_disp, "XFIXES", &xf_opcode, &event, &error)) {
+		Sys_MaskPrintf (SYS_vid, "X fixes extenions not available.\n");
+		return 0;
+	}
+	major = 5, minor = 0;
+	if (!XFixesQueryVersion (x_disp, &major, &minor)
+		|| (major * 10 + minor) < 50) {
+		Sys_MaskPrintf (SYS_vid, "Need X fixes 5.0.\n");
+		return 0;
+	}
+	Sys_MaskPrintf (SYS_vid, "XFixes supported: version %d.%d, op: %d\n",
+					major, minor, xf_opcode);
 	return 1;
 }
 
 static void
 in_x11_xi_select_events (void)
 {
-	//Raw events do not have target windows, so must specify the root
-	//window
-	//XISelectEvents(x_disp, x_root, &evmask, 1);
-	//XFlush (x_disp);
+	byte        mask[(XI_LASTEVENT + 7) / 8] = {};
+	XIEventMask evmask = {
+		.deviceid = XIAllMasterDevices,
+		.mask_len = sizeof (mask),
+		.mask = mask,
+	};
+	XISetMask (mask, XI_BarrierHit);
+	XISetMask (mask, XI_BarrierLeave);
+	XISelectEvents (x_disp, x_win, &evmask, 1);
 }
 
 static void
@@ -1251,6 +1308,61 @@ in_x11_xi_setup_grabs (void)
 	//			   0, &evmask, 1, &modif);
 }
 
+static void
+in_x11_setup_barriers (int xpos, int ypos, int xlen, int ylen)
+{
+	if (x11_left_barrier > 0) {
+		XFixesDestroyPointerBarrier (x_disp, x11_left_barrier);
+	}
+	if (x11_right_barrier > 0) {
+		XFixesDestroyPointerBarrier (x_disp, x11_right_barrier);
+	}
+	if (x11_top_barrier > 0) {
+		XFixesDestroyPointerBarrier (x_disp, x11_top_barrier);
+	}
+	if (x11_bottom_barrier > 0) {
+		XFixesDestroyPointerBarrier (x_disp, x11_bottom_barrier);
+	}
+
+	int         lx = xpos;
+	int         ty = ypos;
+	int         rx = xpos + xlen - 1;
+	int         by = ypos + ylen - 1;
+	x11_left_barrier = XFixesCreatePointerBarrier (x_disp, x_win,
+												   lx, ty-1, lx, by+1,
+												   BarrierPositiveX, 0, 0);
+	x11_right_barrier = XFixesCreatePointerBarrier (x_disp, x_win,
+													rx, ty-1, rx, by+1,
+												    BarrierNegativeX, 0, 0);
+	x11_top_barrier = XFixesCreatePointerBarrier (x_disp, x_win,
+												  lx-1, ty, rx+1, ty,
+												  BarrierPositiveY, 0, 0);
+	x11_bottom_barrier = XFixesCreatePointerBarrier (x_disp, x_win,
+												     lx-1, by, rx+1, by,
+												     BarrierNegativeY, 0, 0);
+}
+
+static void
+x11_app_window (const IE_event_t *ie_event)
+{
+	__auto_type aw = ie_event->app_window;
+	in_x11_setup_barriers (aw.xpos, aw.ypos, aw.xlen, aw.ylen);
+}
+
+static int
+x11_event_handler (const IE_event_t *ie_event, void *unused)
+{
+	static void (*handlers[ie_event_count]) (const IE_event_t *ie_event) = {
+		[ie_app_window] = x11_app_window,
+	};
+	if (ie_event->type < 0 || ie_event->type >= ie_event_count
+		|| !handlers[ie_event->type]) {
+		return 0;
+	}
+	handlers[ie_event->type] (ie_event);
+	return 1;
+}
+
 long
 IN_X11_Preinit (void)
 {
@@ -1259,12 +1371,15 @@ IN_X11_Preinit (void)
 
 	long        event_mask = X11_INPUT_MASK;
 
+	x11_event_handler_id = IE_Add_Handler (x11_event_handler, 0);
+
 	X11_AddEvent (KeyPress, &event_key);
 	X11_AddEvent (KeyRelease, &event_key);
 	X11_AddEvent (FocusIn, &event_focusin);
 	X11_AddEvent (FocusOut, &event_focusout);
 	X11_AddEvent (SelectionNotify, &selection_notify);
 	X11_AddEvent (EnterNotify, &enter_notify);
+	X11_AddEvent (LeaveNotify, &leave_notify);
 
 	if (!COM_CheckParm ("-nomouse")) {
 		if ((x11_have_xi = in_x11_check_xi2 ())) {

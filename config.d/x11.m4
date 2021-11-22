@@ -53,6 +53,26 @@ if test "x$HAVE_XI2" != xno; then
 fi
 AC_SUBST(XI2_LIBS)
 
+dnl Check for XInput2 support
+AC_ARG_ENABLE(xfixes,
+[  --disable-xfixes        do not use Xorg Xfixes extension],
+HAVE_XFIXES=$enable_xfixes, HAVE_XFIXES=auto)
+if test "x$HAVE_XFIXES" != xno; then
+	save_CPPFLAGS="$CPPFLAGS"
+	CPPFLAGS="$X_CFLAGS $CPPFLAGS"
+	AC_CHECK_HEADER(X11/extensions/Xfixes.h,
+		dnl Make sure the library works
+		[AC_CHECK_LIB(Xi, XIQueryVersion,
+			AC_DEFINE(HAVE_XFIXES, 1, [Define if you have the Xorg Xfixes extension])
+			XFIXES_LIBS="-lXfixes",,
+			[$X_LIBS -lXext -lX11 $X_EXTRA_LIBS]
+		)],,
+		[#include <X11/Xlib.h>]
+	)
+	CPPFLAGS="$save_CPPFLAGS"
+fi
+AC_SUBST(XFIXES_LIBS)
+
 dnl Check for DGA support
 AC_ARG_ENABLE(dga,
 [  --disable-dga           do not use XFree86 DGA extension],
