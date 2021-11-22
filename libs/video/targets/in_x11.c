@@ -1296,7 +1296,7 @@ in_x11_xi_select_events (void)
 	};
 	XISetMask (mask, XI_BarrierHit);
 	XISetMask (mask, XI_BarrierLeave);
-	XISelectEvents (x_disp, x_win, &evmask, 1);
+	XISelectEvents (x_disp, x_root, &evmask, 1);
 }
 
 static void
@@ -1350,16 +1350,16 @@ in_x11_setup_barriers (int xpos, int ypos, int xlen, int ylen)
 	int         ty = ypos;
 	int         rx = xpos + xlen - 1;
 	int         by = ypos + ylen - 1;
-	x11_left_barrier = XFixesCreatePointerBarrier (x_disp, x_win,
+	x11_left_barrier = XFixesCreatePointerBarrier (x_disp, x_root,
 												   lx, ty-1, lx, by+1,
 												   BarrierPositiveX, 0, 0);
-	x11_right_barrier = XFixesCreatePointerBarrier (x_disp, x_win,
+	x11_right_barrier = XFixesCreatePointerBarrier (x_disp, x_root,
 													rx, ty-1, rx, by+1,
 												    BarrierNegativeX, 0, 0);
-	x11_top_barrier = XFixesCreatePointerBarrier (x_disp, x_win,
+	x11_top_barrier = XFixesCreatePointerBarrier (x_disp, x_root,
 												  lx-1, ty, rx+1, ty,
 												  BarrierPositiveY, 0, 0);
-	x11_bottom_barrier = XFixesCreatePointerBarrier (x_disp, x_win,
+	x11_bottom_barrier = XFixesCreatePointerBarrier (x_disp, x_root,
 												     lx-1, by, rx+1, by,
 												     BarrierNegativeY, 0, 0);
 }
