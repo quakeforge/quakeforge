@@ -56,6 +56,7 @@ typedef struct devmap_s {
 } devmap_t;
 
 static int evdev_driver_handle = -1;
+static int evdev_have_focus;
 static PR_RESMAP (devmap_t) devmap;
 static devmap_t *devmap_list;
 
@@ -96,6 +97,10 @@ in_evdev_get_device_event_data (void *device, void *data)
 static void
 in_evdev_axis_event (axis_t *axis, void *_dm)
 {
+	if (!evdev_have_focus) {
+		return;
+	}
+
 	devmap_t   *dm = _dm;
 	//Sys_Printf ("in_evdev_axis_event: %d %d\n", axis->num, axis->value);
 
@@ -115,6 +120,10 @@ in_evdev_axis_event (axis_t *axis, void *_dm)
 static void
 in_evdev_button_event (button_t *button, void *_dm)
 {
+	if (!evdev_have_focus) {
+		return;
+	}
+
 	devmap_t   *dm = _dm;
 	//Sys_Printf ("in_evdev_button_event: %d %d\n", button->num, button->state);
 
@@ -252,10 +261,25 @@ static in_driver_t in_evdev_driver = {
 	.button_info = in_evdev_button_info,
 };
 
+static int
+in_evdev_evend_handler (const IE_event_t *event, void *data)
+{
+	if (event->type == ie_app_gain_focus) {
+		evdev_have_focus = 1;
+		return 1;
+	} else if (event->type == ie_app_lose_focus) {
+		evdev_have_focus = 0;
+		return 1;
+	}
+	return 0;
+}
+
 static void __attribute__((constructor))
 in_evdev_register_driver (void)
 {
 	evdev_driver_handle = IN_RegisterDriver (&in_evdev_driver, 0);
+	//FIXME probably shouldn't be here
+	IE_Add_Handler (in_evdev_evend_handler, 0);
 }
 
 int in_evdev_force_link;
