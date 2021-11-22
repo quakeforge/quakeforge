@@ -1403,14 +1403,12 @@ IN_X11_Preinit (void)
 	X11_AddEvent (EnterNotify, &enter_notify);
 	X11_AddEvent (LeaveNotify, &leave_notify);
 
-	if (!COM_CheckParm ("-nomouse")) {
-		if ((x11_have_xi = in_x11_check_xi2 ())) {
-			X11_AddEvent (GenericEvent, &event_generic);
-		} else {
-			X11_AddEvent (MotionNotify, &event_motion);
-			X11_AddEvent (ButtonPress, &event_button);
-			X11_AddEvent (ButtonRelease, &event_button);
-		}
+	if (x11_have_xi) {
+		X11_AddEvent (GenericEvent, &event_generic);
+	} else {
+		X11_AddEvent (MotionNotify, &event_motion);
+		X11_AddEvent (ButtonPress, &event_button);
+		X11_AddEvent (ButtonRelease, &event_button);
 	}
 
 	Cmd_AddCommand ("in_paste_buffer", in_paste_buffer_f,
@@ -1426,15 +1424,13 @@ IN_X11_Postinit (void)
 	if (!x_win)
 		Sys_Error ("IN: No window!!");
 
-	if (!COM_CheckParm ("-nomouse")) {
-		if (x11_have_xi) {
-			in_x11_xi_select_events ();
-			in_x11_xi_setup_grabs ();
-		} else {
-			dga_avail = VID_CheckDGA (x_disp, NULL, NULL, NULL);
-			Sys_MaskPrintf (SYS_vid, "VID_CheckDGA returned %d\n",
-							dga_avail);
-		}
+	if (x11_have_xi) {
+		in_x11_xi_select_events ();
+		in_x11_xi_setup_grabs ();
+	} else {
+		dga_avail = VID_CheckDGA (x_disp, NULL, NULL, NULL);
+		Sys_MaskPrintf (SYS_vid, "VID_CheckDGA returned %d\n",
+						dga_avail);
 	}
 }
 
@@ -1444,10 +1440,7 @@ in_x11_init (void *data)
 	x11_fd = ConnectionNumber (x_disp);
 
 	x11_add_device (&x11_keyboard_device);
-
-	if (!COM_CheckParm ("-nomouse")) {
-		x11_add_device (&x11_mouse_device);
-	}
+	x11_add_device (&x11_mouse_device);
 }
 
 static void
