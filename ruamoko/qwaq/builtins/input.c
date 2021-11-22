@@ -543,6 +543,7 @@ qwaq_input_event_handler (const IE_event_t *ie_event, void *_res)
 		case ie_none:
 		case ie_gain_focus:
 		case ie_lose_focus:
+		case ie_app_window:
 			return 0;
 		case ie_add_device:
 			event.what = qe_dev_add;

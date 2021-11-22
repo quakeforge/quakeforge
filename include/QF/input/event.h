@@ -33,6 +33,11 @@
 
 #include "QF/qtypes.h"
 
+typedef struct {
+	int         xpos, ypos;
+	int         xlen, ylen;
+} IE_app_window_event_t;
+
 typedef enum {
 	ies_shift = 1,
 	ies_capslock = 2,
@@ -84,6 +89,7 @@ typedef enum {
 	ie_none,
 	ie_gain_focus,
 	ie_lose_focus,
+	ie_app_window,
 	ie_add_device,
 	ie_remove_device,
 	ie_mouse,
@@ -97,12 +103,14 @@ typedef enum {
 #define IE_broadcast_events (0 \
 		| (1 << ie_add_device) \
 		| (1 << ie_remove_device) \
+		| (1 << ie_app_window) \
 	)
 
 typedef struct IE_event_s {
 	IE_event_type type;
 	uint64_t    when;
 	union {
+		IE_app_window_event_t app_window;
 		IE_mouse_event_t mouse;
 		IE_key_event_t key;
 		IE_axis_event_t axis;
