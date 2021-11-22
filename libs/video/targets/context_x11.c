@@ -66,6 +66,8 @@
 #include "QF/va.h"
 #include "QF/vid.h"
 
+#include "QF/input/event.h"
+
 #include "context_x11.h"
 #include "dga_check.h"
 #include "in_x11.h"
@@ -164,6 +166,17 @@ configure_notify (XEvent *event)
 					c->serial, c->send_event, c->event, c->window, c->x, c->y,
 					c->width, c->height, c->border_width, c->above,
 					c->override_redirect);
+	IE_event_t  ie_event = {
+		.type = ie_app_window,
+		.when = Sys_LongTime (),
+		.app_window = {
+			.xpos = c->x,
+			.ypos = c->y,
+			.xlen = c->width,
+			.ylen = c->height,
+		},
+	};
+	IE_Send_Event (&ie_event);
 }
 
 qboolean
