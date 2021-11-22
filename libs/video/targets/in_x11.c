@@ -927,6 +927,15 @@ xi_barrier_hit (void *event)
 {
 	__auto_type be = *(XIBarrierEvent *) event;
 
+	if (be.barrier != x11_left_barrier
+		&& be.barrier != x11_right_barrier
+		&& be.barrier != x11_top_barrier
+		&& be.barrier != x11_bottom_barrier) {
+		Sys_MaskPrintf (SYS_vid, "xi_barrier_hit: bad barrier %ld\n",
+						be.barrier);
+		return;
+	}
+
 	if (!x11_have_pointer || !input_grabbed) {
 		XIBarrierReleasePointer (x_disp, be.deviceid, be.barrier, be.eventid);
 	}
@@ -1245,8 +1254,8 @@ in_x11_check_xi2 (void)
 		Sys_MaskPrintf (SYS_vid, "in_x11_check_xi2: Xlib return bad: %d\n",
 						ret);
 	}
-	Sys_MaskPrintf (SYS_vid, "XI2 supported: version %d.%d, op: %d\n",
-					major, minor, xi_opcode);
+	Sys_MaskPrintf (SYS_vid, "XI2 supported: version %d.%d, op: %d err: %d\n",
+					major, minor, xi_opcode, error);
 
 	if (!XQueryExtension (x_disp, "XFIXES", &xf_opcode, &event, &error)) {
 		Sys_MaskPrintf (SYS_vid, "X fixes extenions not available.\n");
@@ -1258,8 +1267,9 @@ in_x11_check_xi2 (void)
 		Sys_MaskPrintf (SYS_vid, "Need X fixes 5.0.\n");
 		return 0;
 	}
-	Sys_MaskPrintf (SYS_vid, "XFixes supported: version %d.%d, op: %d\n",
-					major, minor, xf_opcode);
+	Sys_MaskPrintf (SYS_vid,
+					"XFixes supported: version %d.%d, op: %d err: %d\n",
+					major, minor, xf_opcode, error);
 	return 1;
 }
 
