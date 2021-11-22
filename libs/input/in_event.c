@@ -43,6 +43,12 @@
 
 #include "QF/input/event.h"
 
+#define IE_EVENT(event) #event,
+const char *ie_event_names[] = {
+#include "QF/input/event_names.h"
+	0
+};
+
 typedef struct {
 	ie_handler_t *handler;
 	void       *data;

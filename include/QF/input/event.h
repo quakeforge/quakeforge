@@ -85,22 +85,13 @@ typedef struct {
 	int         devid;
 } IE_device_event_t;
 
+#define IE_EVENT(event) ie_##event,
 typedef enum {
-	ie_none,
-	ie_gain_focus,
-	ie_lose_focus,
-	ie_app_gain_focus,
-	ie_app_lose_focus,
-	ie_app_window,
-	ie_add_device,
-	ie_remove_device,
-	ie_mouse,
-	ie_key,
-	ie_axis,
-	ie_button,
-
+#include "QF/input/event_names.h"
 	ie_event_count
 } IE_event_type;
+
+extern const char *ie_event_names[];
 
 #define IE_broadcast_events (0 \
 		| (1 << ie_add_device) \
