@@ -1380,6 +1380,10 @@ in_x11_xi_setup_grabs (void)
 		.modifiers = XIAnyModifier,
 	};
 
+	// Grab mouse events on the app window so window manager actions (eg,
+	// alt-middle-click) don't interfere. However, the keyboard is not grabbed
+	// so the user always has a way to take control (assuming the window
+	// manager provides such, but most do).
 	XIGrabEnter (x_disp, dev, x_win, None, XIGrabModeAsync, XIGrabModeAsync,
 				 0, &evmask, 1, &modif);
 }
