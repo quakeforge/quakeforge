@@ -429,6 +429,7 @@ IMT_ProcessAxis (int axis, int value)
 				if (recipe->curve != 1) {
 					output = powf (output, recipe->curve);
 				}
+				a->axis->rel_input += output;
 			} else {
 				int         input = bound (minval, value, maxval);
 				int         range = maxval - minval;
@@ -458,14 +459,7 @@ IMT_ProcessAxis (int axis, int value)
 					output = powf (output, recipe->curve);
 				}
 				output *= recipe->scale;
-			}
-			switch (a->axis->mode) {
-				case ina_set:
-					a->axis->value = output;
-					break;
-				case ina_accumulate:
-					a->axis->value += output;
-					break;
+				a->axis->abs_input = output;
 			}
 			return true;
 		}

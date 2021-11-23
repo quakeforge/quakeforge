@@ -354,19 +354,12 @@ CL_BaseMove (usercmd_t *cmd)
 	}
 	*/
 
-	cmd->forwardmove -= viewdelta_position_forward.value * m_forward->value;
-	cmd->sidemove += viewdelta_position_side.value * m_side->value;
-	cmd->upmove -= viewdelta_position_up.value;
-	cl.viewstate.angles[PITCH] -= viewdelta_angles_pitch.value * m_pitch->value;
-	cl.viewstate.angles[YAW] -= viewdelta_angles_yaw.value * m_yaw->value;
-	cl.viewstate.angles[ROLL] -= viewdelta_angles_roll.value * m_pitch->value;
-
-	viewdelta_angles_pitch.value = 0;
-	viewdelta_angles_yaw.value = 0;
-	viewdelta_angles_roll.value = 0;
-	viewdelta_position_forward.value = 0;
-	viewdelta_position_side.value = 0;
-	viewdelta_position_up.value = 0;
+	cmd->forwardmove -= IN_UpdateAxis (&viewdelta_position_forward) * m_forward->value;
+	cmd->sidemove += IN_UpdateAxis (&viewdelta_position_side) * m_side->value;
+	cmd->upmove -= IN_UpdateAxis (&viewdelta_position_up);
+	cl.viewstate.angles[PITCH] -= IN_UpdateAxis (&viewdelta_angles_pitch) * m_pitch->value;
+	cl.viewstate.angles[YAW] -= IN_UpdateAxis (&viewdelta_angles_yaw) * m_yaw->value;
+	cl.viewstate.angles[ROLL] -= IN_UpdateAxis (&viewdelta_angles_roll) * m_pitch->value;
 
 	if (freelook && !(in_strafe.state & inb_down)) {
 		cl.viewstate.angles[PITCH]

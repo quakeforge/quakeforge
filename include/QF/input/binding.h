@@ -31,6 +31,8 @@
 
 #ifndef __QFCC__
 
+#include "QF/mathlib.h"
+
 /*** Recipe for converting an axis to a floating point value.
 
 	Absolute axes are converted to the 0..1 range for unbalanced axes, and
@@ -81,6 +83,8 @@ typedef enum {
 typedef struct in_axis_s {
 	float       value;		///< converted value of the axis
 	in_axis_mode mode;		///< method used for updating the destination
+	float       abs_input;	///< input from an absolute axis (eg, joystick)
+	float       rel_input;	///< input from a relative axis (eg, mouse)
 	const char *name;
 	const char *description;
 } in_axis_t;
@@ -155,6 +159,7 @@ GNU89INLINE inline float IN_ButtonState (in_button_t *button);
 
 	Both steady-state on, and brief clicks are detected.
 
+	\param button	Pointer to the button being tested.
 	\return			True if the button is currently held or was pulsed on
 					in the last frame.
 	\note			The edge transitions are cleared, so for each frame, this
@@ -167,12 +172,48 @@ GNU89INLINE inline int IN_ButtonPressed (in_button_t *button);
 	Valid only if the button is still released. A pulsed off does not
 	count as being released as the button is still held.
 
+	\param button	Pointer to the button being tested.
 	\return			True if the button is currently released and the release
 					was in the last frame.
 	\note			The edge transitions are cleared, so for each frame, this
 					is a one-shot function (ie, it is NOT idempotent).
 */
 GNU89INLINE inline int IN_ButtonReleased (in_button_t *button);
+
+/*** Update the axis value based on its mode and clear its relative input.
+
+	The absolute and relative inputs are separate because absolute inputs
+	usually get written when the input actually changes (and thus must not
+	be cleared each frame), while relative inputs indicate a per-frame delta
+	and thus must be cleared each frame.
+
+	\param axis  	Pointer to the axis being updated.
+	\return         The resulting output value of the axis.
+	\note           The relative input (\a rel_input) is zeroed.
+*/
+GNU89INLINE inline float IN_UpdateAxis (in_axis_t *axis);
+
+/*** Update and clamp the axis value (see IN_UpdateAxis())
+
+	Like IN_UpdateAxis(), but clamps the final output to the specified range.
+	This is most useful for \a ina_accumulate axes, but can be used to ensure
+	\a ina_set axes never exceed a given range.
+
+	The absolute and relative inputs are separate because absolute inputs
+	usually get written when the input actually changes (and thus must not
+	be cleared each frame), while relative inputs indicate a per-frame delta
+	and thus must be cleared each frame.
+
+	\param axis  	Pointer to the axis being updated.
+	\param minval	The minimum value to which the axis output will be clamped.
+	\param minval	The minimum value to which the axis output will be clamped.
+	\return         The resulting output value of the axis.
+	\note           The relative input (\a rel_input) is zeroed. The absolute
+					input is not affected by the clamping, only the output
+					\a value.
+*/
+GNU89INLINE inline float IN_ClampAxis (in_axis_t *axis,
+									   float minval, float maxval);
 
 #ifndef IMPLEMENT_INPUT_Funcs
 GNU89INLINE inline
@@ -225,6 +266,39 @@ IN_ButtonReleased (in_button_t *button)
 	button->state &= inb_down;	// clear edges, preserve pressed
 	// catch only full release (a pulsed on does count as a release)
 	return (state & (inb_down | inb_edge_up)) == inb_edge_up;
+}
+
+#ifndef IMPLEMENT_INPUT_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+float
+IN_UpdateAxis (in_axis_t *axis)
+{
+	switch (axis->mode) {
+		case ina_set:
+			axis->value = axis->abs_input + axis->rel_input;
+			break;
+		case ina_accumulate:
+			axis->value += axis->abs_input + axis->rel_input;
+			break;
+	}
+	axis->rel_input = 0;
+	return axis->value;
+}
+
+#ifndef IMPLEMENT_INPUT_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+float
+IN_ClampAxis (in_axis_t *axis, float minval, float maxval)
+{
+	IN_UpdateAxis (axis);
+	axis->value = bound (minval, axis->value, maxval);
+	return axis->value;
 }
 
 void IN_ButtonAction (in_button_t *buttin, int id, int pressed);
