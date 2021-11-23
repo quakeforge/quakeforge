@@ -851,24 +851,64 @@ event_button (XEvent *event)
 	}
 }
 
+static unsigned
+in_x11_process_key_button (unsigned keycode, int press)
+{
+	// X11 protocol supports only 256 keys. The key codes are the AT scan codes
+	// offset by 8 (so Esc is 9 instead of 1).
+	unsigned    key = (keycode - 8) & 0xff;
+	x11_key_buttons[key].state = press;
+	return key;
+}
+
 static void
 event_key (XEvent *event)
 {
-	int key;
+	unsigned    key = 0;
 
 	x_time = event->xkey.time;
-	// X11 protocol supports only 256 keys. The key codes are the AT scan codes
-	// offset by 8 (so Esc is 9 instead of 1).
-	key = (event->xkey.keycode - 8) & 0xff;
-	x11_key_buttons[key].state = event->type == KeyPress;
-
+	if (!x11_have_xi) {
+		key = in_x11_process_key_button (event->xkey.keycode,
+									     event->type == KeyPress);
+	}
 	x11_key.shift = event->xmotion.state & 0xff;
 	XLateKey (&event->xkey, &x11_key.code, &x11_key.unicode);
-	if (event->type != KeyPress || !in_x11_send_key_event ()) {
+	if (!(event->type == KeyPress && in_x11_send_key_event ())
+		&& !x11_have_xi) {
 		in_x11_send_button_event (x11_keyboard_device.devid,
 								  &x11_key_buttons[key],
 								  x11_keyboard_device.event_data);
 	}
+}
+
+static void
+xi_raw_key (void *event, int press)
+{
+	if (!x_have_focus) {
+		//avoid being a keylogger
+		return;
+	}
+	XIRawEvent *re = event;
+	unsigned    key = in_x11_process_key_button (re->detail, press);
+
+	// Send only the button press: event_key takes care of the UI key event,
+	// which includes character translation and repeat (XInput2 raw key events
+	// do not repeat)
+	in_x11_send_button_event (x11_keyboard_device.devid,
+							  &x11_key_buttons[key],
+							  x11_keyboard_device.event_data);
+}
+
+static void
+xi_raw_key_press (void *event)
+{
+	xi_raw_key (event, 1);
+}
+
+static void
+xi_raw_key_resease (void *event)
+{
+	xi_raw_key (event, 0);
 }
 
 static void
@@ -963,6 +1003,8 @@ event_generic (XEvent *event)
 {
 	// XI_LASTEVENT is the actual last event, not +1
 	static void (*xi_event_handlers[XI_LASTEVENT + 1]) (void *) = {
+		[XI_RawKeyPress] = xi_raw_key_press,
+		[XI_RawKeyRelease] = xi_raw_key_resease,
 		[XI_RawMotion] = xi_raw_motion,
 		[XI_RawButtonPress] = xi_raw_button_press,
 		[XI_RawButtonRelease] = xi_raw_button_resease,
@@ -1296,6 +1338,8 @@ in_x11_xi_select_events (void)
 	};
 	XISetMask (mask, XI_BarrierHit);
 	XISetMask (mask, XI_BarrierLeave);
+	XISetMask (mask, XI_RawKeyPress);
+	XISetMask (mask, XI_RawKeyRelease);
 	XISelectEvents (x_disp, x_root, &evmask, 1);
 }
 
@@ -1324,10 +1368,6 @@ in_x11_xi_setup_grabs (void)
 
 	XIGrabEnter (x_disp, dev, x_win, None, XIGrabModeAsync, XIGrabModeAsync,
 				 0, &evmask, 1, &modif);
-	//FIXME doesn't seem to do anything. Is it actually necessary?
-	//here for reference
-	//XIGrabFocusIn (x_disp, dev, x_win, XIGrabModeAsync, XIGrabModeAsync,
-	//			   0, &evmask, 1, &modif);
 }
 
 static void
@@ -1394,6 +1434,8 @@ IN_X11_Preinit (void)
 	long        event_mask = X11_INPUT_MASK;
 
 	x11_event_handler_id = IE_Add_Handler (x11_event_handler, 0);
+
+	x11_have_xi = in_x11_check_xi2 ();
 
 	X11_AddEvent (KeyPress, &event_key);
 	X11_AddEvent (KeyRelease, &event_key);
