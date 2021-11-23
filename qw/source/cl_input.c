@@ -71,33 +71,33 @@ cvar_t     *cl_maxnetfps;
 cvar_t     *cl_spamimpulse;
 
 in_axis_t viewdelta_position_forward = {
-	.mode = ina_accumulate,
+	.mode = ina_set,
 	.name = "move.forward",
 	.description = "Move forward (negative) or backward (positive)",
 };
 in_axis_t viewdelta_position_side = {
-	.mode = ina_accumulate,
+	.mode = ina_set,
 	.name = "move.side",
 	.description = "Move right (positive) or left (negative)",
 };
 in_axis_t viewdelta_position_up = {
-	.mode = ina_accumulate,
+	.mode = ina_set,
 	.name = "move.up",
 	.description = "Move up (positive) or down (negative)",
 };
 
 in_axis_t viewdelta_angles_pitch = {
-	.mode = ina_accumulate,
+	.mode = ina_set,
 	.name = "move.pitch",
 	.description = "Pitch axis",
 };
 in_axis_t viewdelta_angles_yaw = {
-	.mode = ina_accumulate,
+	.mode = ina_set,
 	.name = "move.yaw",
 	.description = "Yaw axis",
 };
 in_axis_t viewdelta_angles_roll = {
-	.mode = ina_accumulate,
+	.mode = ina_set,
 	.name = "move.roll",
 	.description = "Roll axis",
 };
