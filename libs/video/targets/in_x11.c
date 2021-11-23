@@ -99,10 +99,11 @@ typedef struct x11_device_s {
 } x11_device_t;
 
 #define X11_MOUSE_BUTTONS 32
+#define X11_MOUSE_AXES 2
 // The X11 protocol supports only 256 keys
 static in_buttoninfo_t x11_key_buttons[256];
-// X11 mice have only two axes (FIXME always true?)
-static in_axisinfo_t x11_mouse_axes[2];
+// X11 mice have only two axes (FIXME NOT always true (XInput says otherwise!)
+static in_axisinfo_t x11_mouse_axes[X11_MOUSE_AXES];
 // FIXME assume up to 32 mouse buttons (see X11_MOUSE_BUTTONS)
 static in_buttoninfo_t x11_mouse_buttons[X11_MOUSE_BUTTONS];
 static const char *x11_mouse_axis_names[] = {"M_X", "M_Y"};
@@ -918,8 +919,21 @@ xi_raw_motion (void *event)
 	Window      root_w, child_w;
 	XIRawEvent *re = event;
 
-	x11_mouse_axes[0].value = re->raw_values[0];
-	x11_mouse_axes[1].value = re->raw_values[1];
+	//FIXME it turns out mice can have multiple axes (my trackball has 4:
+	//usual x and y, +scroll up/down and left/right (clicky and icky, but
+	//still...)
+	unsigned    mask = re->valuators.mask[0] & 3;
+	if (!mask) {
+		return;
+	}
+
+	x11_mouse_axes[0].value = 0;
+	x11_mouse_axes[1].value = 0;
+	for (int axis = 0, ind = 0; mask; axis++, mask >>= 1) {
+		if (mask & 1) {
+			x11_mouse_axes[axis].value = re->raw_values[ind++];
+		}
+	}
 	XQueryPointer (x_disp, x_win, &root_w, &child_w, &root_x, &root_y,
 				   &x11_mouse.x, &x11_mouse.y, &x11_mouse.shift);
 	// want only the modifier state
@@ -935,7 +949,6 @@ xi_raw_motion (void *event)
 static void
 xi_raw_button (void *event, int press)
 {
-
 	int         root_x, root_y;
 	Window      root_w, child_w;
 	unsigned    button;
