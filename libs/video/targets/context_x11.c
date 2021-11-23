@@ -609,7 +609,6 @@ qboolean
 X11_SetGamma (double gamma)
 {
 #ifdef HAVE_VIDMODE
-# ifdef X_XF86VidModeSetGamma
 	XF86VidModeGamma	xgamma;
 
 	if (vid_gamma_avail && vid_system_gamma->int_val && x_have_focus) {
@@ -617,7 +616,8 @@ X11_SetGamma (double gamma)
 		if (XF86VidModeSetGamma (x_disp, x_screen, &xgamma))
 			return true;
 	}
-# endif
+#else
+	Sys_MaskPrintf (SYS_vid, "X11_SetGamma: cannot adjust gamma\n");
 #endif
 	return false;
 }
@@ -626,7 +626,6 @@ void
 X11_RestoreGamma (void)
 {
 #ifdef HAVE_VIDMODE
-# ifdef X_XF86VidModeSetGamma
 	XF86VidModeGamma	xgamma;
 
 	if (vid_gamma_avail && x_gamma[0] > 0) {
@@ -635,7 +634,8 @@ X11_RestoreGamma (void)
 		xgamma.blue = x_gamma[2];
 		XF86VidModeSetGamma (x_disp, x_screen, &xgamma);
 	}
-# endif
+#else
+	Sys_MaskPrintf (SYS_vid, "X11_RestoreGamma: cannot adjust gamma\n");
 #endif
 }
 
