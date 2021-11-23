@@ -143,12 +143,16 @@ static IE_mouse_event_t x11_mouse;
 static IE_key_event_t x11_key;
 static int input_grabbed = 0;
 
+#ifdef HAVE_XI2
 static int xi_opcode;
+#endif
+#ifdef HAVE_XFIXES
 static int xf_opcode;
 static PointerBarrier x11_left_barrier;
 static PointerBarrier x11_right_barrier;
 static PointerBarrier x11_top_barrier;
 static PointerBarrier x11_bottom_barrier;
+#endif
 static int x11_have_xi;
 static int x11_fd;
 static int x11_driver_handle = -1;
@@ -882,6 +886,7 @@ event_key (XEvent *event)
 	}
 }
 
+#ifdef HAVE_XI2
 static void
 xi_raw_key (void *event, int press)
 {
@@ -1039,6 +1044,7 @@ event_generic (XEvent *event)
 
 	XFreeEventData (x_disp, cookie);
 }
+#endif
 
 static void
 grab_error (int code, const char *device)
@@ -1071,10 +1077,12 @@ in_x11_grab_input (void *data, int grab)
 	if (!x_disp || !x_win)
 		return;
 
+#ifdef HAVE_XFIXES
 	if (xf_opcode) {
 		input_grabbed = grab;
 		return;
 	}
+#endif
 
 	if (vid_fullscreen)
 		grab = grab || vid_fullscreen->int_val;
@@ -1300,6 +1308,7 @@ x11_add_device (x11_device_t *dev)
 	dev->devid = IN_AddDevice (x11_driver_handle, dev, dev->name, dev->name);
 }
 
+#ifdef HAVE_XI2
 static int
 in_x11_check_xi2 (void)
 {
@@ -1387,7 +1396,9 @@ in_x11_xi_setup_grabs (void)
 	XIGrabEnter (x_disp, dev, x_win, None, XIGrabModeAsync, XIGrabModeAsync,
 				 0, &evmask, 1, &modif);
 }
+#endif
 
+#ifdef HAVE_XFIXES
 static void
 in_x11_setup_barriers (int xpos, int ypos, int xlen, int ylen)
 {
@@ -1421,12 +1432,16 @@ in_x11_setup_barriers (int xpos, int ypos, int xlen, int ylen)
 												     lx-1, by, rx+1, by,
 												     BarrierNegativeY, 0, 0);
 }
+#endif
 
 static void
 x11_app_window (const IE_event_t *ie_event)
 {
+#ifdef HAVE_XFIXES
+	//FIXME aw may be needed even without XFixes when resizing is supported
 	__auto_type aw = ie_event->app_window;
 	in_x11_setup_barriers (aw.xpos, aw.ypos, aw.xlen, aw.ylen);
+#endif
 }
 
 static int
@@ -1452,9 +1467,9 @@ IN_X11_Preinit (void)
 	long        event_mask = X11_INPUT_MASK;
 
 	x11_event_handler_id = IE_Add_Handler (x11_event_handler, 0);
-
+#ifdef HAVE_XI2
 	x11_have_xi = in_x11_check_xi2 ();
-
+#endif
 	X11_AddEvent (KeyPress, &event_key);
 	X11_AddEvent (KeyRelease, &event_key);
 	X11_AddEvent (FocusIn, &event_focusin);
@@ -1464,7 +1479,9 @@ IN_X11_Preinit (void)
 	X11_AddEvent (LeaveNotify, &leave_notify);
 
 	if (x11_have_xi) {
+#ifdef HAVE_XI2
 		X11_AddEvent (GenericEvent, &event_generic);
+#endif
 	} else {
 		X11_AddEvent (MotionNotify, &event_motion);
 		X11_AddEvent (ButtonPress, &event_button);
@@ -1485,8 +1502,10 @@ IN_X11_Postinit (void)
 		Sys_Error ("IN: No window!!");
 
 	if (x11_have_xi) {
+#ifdef HAVE_XI2
 		in_x11_xi_select_events ();
 		in_x11_xi_setup_grabs ();
+#endif
 	} else {
 		dga_avail = VID_CheckDGA (x_disp, NULL, NULL, NULL);
 		Sys_MaskPrintf (SYS_vid, "VID_CheckDGA returned %d\n",
