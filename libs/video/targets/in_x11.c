@@ -968,6 +968,7 @@ xi_raw_button (void *event, int press)
 	} else {
 		x11_mouse.buttons &= ~(1 << button);
 	}
+	x11_mouse_buttons[button].state = press;
 	if (!in_x11_send_mouse_event (press ? ie_mousedown : ie_mouseup)) {
 		in_x11_send_button_event (x11_mouse_device.devid,
 								  &x11_mouse_buttons[button],
