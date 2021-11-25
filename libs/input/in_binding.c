@@ -374,7 +374,7 @@ in_bind_f (void)
 					" button)\n");
 		// FIXME support names
 		Sys_Printf ("    number: the numeric id of the input to be bound\n");
-		Sys_Printf ("    binging...: the destination to which the input will"
+		Sys_Printf ("    binding...: the destination to which the input will"
 					" be bound\n");
 		Sys_Printf ("        for axis inputs, this can be an analog input or"
 					" an axis-button\n");
