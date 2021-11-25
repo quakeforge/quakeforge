@@ -250,6 +250,24 @@ Cvar_CompleteBuildList (const char *partial)
 }
 
 VISIBLE void
+Cvar_AddListener (cvar_t *cvar, cvar_listener_t listener, void *data)
+{
+	if (!cvar->listeners) {
+		cvar->listeners = malloc (sizeof (*cvar->listeners));
+		LISTENER_SET_INIT (cvar->listeners, 8);
+	}
+	LISTENER_ADD (cvar->listeners, listener, data);
+}
+
+VISIBLE void
+Cvar_RemoveListener (cvar_t *cvar, cvar_listener_t listener, void *data)
+{
+	if (cvar->listeners) {
+		LISTENER_REMOVE (cvar->listeners, listener, data);
+	}
+}
+
+VISIBLE void
 Cvar_Set (cvar_t *var, const char *value)
 {
 	int     changed;
@@ -279,6 +297,10 @@ Cvar_Set (cvar_t *var, const char *value)
 
 		if (var->callback)
 			var->callback (var);
+
+		if (var->listeners) {
+			LISTENER_INVOKE (var->listeners, var);
+		}
 	}
 }
 
@@ -710,7 +732,7 @@ VISIBLE cvar_t *
 Cvar_Get (const char *name, const char *string, int cvarflags,
 		  void (*callback)(cvar_t*), const char *description)
 {
-
+	int         changed = 0;
 	cvar_t     *var;
 
 	if (Cmd_Exists (name)) {
@@ -740,10 +762,13 @@ Cvar_Get (const char *name, const char *string, int cvarflags,
 				break;
 		var->next = *v;
 		*v = var;
+
+		changed = 1;
 	} else {
 		// Cvar does exist, so we update the flags and return.
 		var->flags &= ~CVAR_USER_CREATED;
 		var->flags |= cvarflags;
+		changed = !strequal (var->string, string) || var->callback != callback;
 		if (!var->callback)
 			var->callback = callback;
 		if (!var->description
@@ -753,8 +778,14 @@ Cvar_Get (const char *name, const char *string, int cvarflags,
 		if (!var->default_string)
 			var->default_string = strdup (string);
 	}
-	if (var->callback)
-		var->callback (var);
+	if (changed) {
+		if (var->callback)
+			var->callback (var);
+
+		if (var->listeners) {
+			LISTENER_INVOKE (var->listeners, var);
+		}
+	}
 
 	return var;
 }
