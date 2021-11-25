@@ -41,39 +41,9 @@
 
 #include "client/input.h"
 
-static const char *default_input_config = ""
-	"{"
-	"	input = {"
-	"		contexts = ("
-	"			{"
-	"				name = key_game;"
-	"				imts = ("
-	"					{"
-	"						name = imt_mod;"
-	"					}"
-	"				);"
-	"				default_imt = imt_mod;"
-	"			},"
-	"			{"
-	"				name = key_demo;"
-	"			}"
-	"		);"
-	"		devices = ("
-	"			{"
-	"				name = mouse;"
-	"				devname = core:mouse;"
-	"				num_axes = 2;"
-	"				num_buttons = 32;"
-	"			},"
-	"			{"
-	"				name = key;"
-	"				devname = core:keyboard;"
-	"				num_axes = 0;"
-	"				num_buttons = 256;"
-	"			},"
-	"		);"
-	"	};"
-	"};";
+static const char default_input_config[] = {
+#include "libs/client/default_input.plc"
+};
 
 static void
 cl_bind_f (void)
