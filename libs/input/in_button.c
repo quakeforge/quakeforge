@@ -87,6 +87,9 @@ button_press (in_button_t *button, int id)
 		return;
 	}
 	button->state |= inb_down | inb_edge_down;
+	if (button->listeners) {
+		LISTENER_INVOKE (button->listeners, button);
+	}
 }
 
 static void
@@ -118,6 +121,9 @@ button_release (in_button_t *button, int id)
 	}
 	button->state &= ~inb_down;			// now up
 	button->state |= inb_edge_up;
+	if (button->listeners) {
+		LISTENER_INVOKE (button->listeners, button);
+	}
 }
 
 void
@@ -194,6 +200,26 @@ IN_FindButton (const char *name)
 		return regbutton->button;
 	}
 	return 0;
+}
+
+void
+IN_ButtonAddListener (in_button_t *button, button_listener_t listener,
+					  void *data)
+{
+	if (!button->listeners) {
+		button->listeners = malloc (sizeof (*button->listeners));
+		LISTENER_SET_INIT (button->listeners, 8);
+	}
+	LISTENER_ADD (button->listeners, listener, data);
+}
+
+void
+IN_ButtonRemoveListener (in_button_t *button, button_listener_t listener,
+						 void *data)
+{
+	if (button->listeners) {
+		LISTENER_REMOVE (button->listeners, listener, data);
+	}
 }
 
 static void __attribute__((constructor))

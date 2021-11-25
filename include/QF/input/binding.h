@@ -31,6 +31,7 @@
 
 #ifndef __QFCC__
 
+#include "QF/listener.h"
 #include "QF/mathlib.h"
 
 /*** Recipe for converting an axis to a floating point value.
@@ -114,9 +115,17 @@ typedef enum {
 typedef struct in_button_s {
 	int         down[2];    ///< button ids holding this button down
 	int         state;      ///< in_button_state
+	struct button_listener_set_s *listeners;
 	const char *name;
 	const char *description;
 } in_button_t;
+
+typedef struct button_listener_set_s LISTENER_SET_TYPE (in_button_t)
+	button_listener_set_t;
+
+/*** Function type for button listeners.
+*/
+typedef void (*button_listener_t) (void *data, const in_button_t *button);
 
 typedef struct in_axisbinding_s {
 	in_recipe_t *recipe;
@@ -307,6 +316,10 @@ int IN_RegisterButton (in_button_t *button);
 int IN_RegisterAxis (in_axis_t *axis);
 in_button_t *IN_FindButton (const char *name);
 in_axis_t *IN_FindAxis (const char *name);
+void IN_ButtonAddListener (in_button_t *button, button_listener_t listener,
+						   void *data);
+void IN_ButtonRemoveListener (in_button_t *button, button_listener_t listener,
+							  void *data);
 
 struct IE_event_s;
 int IN_Binding_HandleEvent (const struct IE_event_s *ie_event);
