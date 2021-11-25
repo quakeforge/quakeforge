@@ -47,12 +47,36 @@ typedef struct imt_s {
 	struct DARRAY_TYPE (in_buttonbinding_t *) button_bindings;
 } imt_t;
 
+typedef enum {
+	imti_button,
+	imti_cvar,
+} imt_input_type;
+
+typedef struct imt_input_s {
+	imt_input_type type;
+	union {
+		struct in_button_s *button;
+		struct cvar_s *cvar;
+	};
+} imt_input_t;
+
+typedef struct imt_switcher_s {
+	struct imt_switcher_s *next;
+	const char *name;
+	int         num_inputs;
+	imt_input_t *inputs;	// one per input
+	imt_t     **imts;		// 2**(num_inputs)
+	struct in_context_s *context;
+} imt_switcher_t;
+
 typedef struct in_context_s {
 	const char *name;
 	imt_t      *imts;
 	imt_t     **imt_tail;
 	imt_t      *active_imt;
 	imt_t      *default_imt;
+	imt_switcher_t *switchers;
+	imt_switcher_t **switcher_tail;
 	struct cbuf_s *cbuf;
 } in_context_t;
 
@@ -63,8 +87,12 @@ int IMT_GetContext (void) __attribute__ ((pure));
 void IMT_SetContext (int ctx);
 void IMT_SetContextCbuf (int ctx, struct cbuf_s *cbuf);
 imt_t *IMT_FindIMT (const char *name) __attribute__ ((pure));
+imt_switcher_t *IMT_FindSwitcher (const char *name) __attribute__ ((pure));
 int IMT_CreateIMT (int context, const char *imt_name,
 				   const char *chain_imt_name);
+int IMT_CreateSwitcher (const char *switcher_name,
+						int context, imt_t *default_imt,
+						int num_inputs, const char **input_names);
 void IMT_BindAxis (imt_t *imt, int axis_num, in_axis_t *axis,
 				   const in_recipe_t *recipe);
 void IMT_BindButton (imt_t *imt, int button, const char *binding);

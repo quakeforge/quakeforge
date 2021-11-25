@@ -41,6 +41,7 @@
 
 #include "QF/cmd.h"
 #include "QF/cmem.h"
+#include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/input.h"
 #include "QF/mathlib.h"
@@ -52,6 +53,8 @@
 
 #include "QF/input/binding.h"
 #include "QF/input/imt.h"
+
+#include "qfalloca.h"
 
 /** Describe a region of imt bindings (axis or button)
 
@@ -233,6 +236,7 @@ IMT_CreateContext (const char *name)
 	in_context_t *ctx = DARRAY_OPEN_AT (&in_contexts, in_contexts.size, 1);
 	memset (ctx, 0, sizeof (*ctx));
 	ctx->imt_tail = &ctx->imts;
+	ctx->switcher_tail = &ctx->switchers;
 	ctx->name = name;
 	return ctx - in_contexts.a;
 }
@@ -250,6 +254,39 @@ imt_find_context (const char *name)
 	return 0;
 }
 
+static void
+imt_switcher_update (imt_switcher_t *switcher)
+{
+	int         state = 0;
+
+	for (int i = 0; i < switcher->num_inputs; i++) {
+		imt_input_t *input = &switcher->inputs[i];
+		int          val = 0;
+		switch (input->type) {
+			case imti_button:
+				val = !!(input->button->state & inb_down);
+				break;
+			case imti_cvar:
+				val = !!input->cvar->int_val;
+				break;
+		}
+		state |= val << i;
+	}
+	switcher->context->active_imt = switcher->imts[state];
+}
+
+static void
+imt_switcher_button_update (void *_switcher, const in_button_t *button)
+{
+	imt_switcher_update (_switcher);
+}
+
+static void
+imt_switcher_cvar_update (void *_switcher, const cvar_t *cvar)
+{
+	imt_switcher_update (_switcher);
+}
+
 int
 IMT_GetContext (void)
 {
@@ -263,6 +300,10 @@ IMT_SetContext (int ctx)
 		Sys_Error ("IMT_SetContext: invalid context %d", ctx);
 	}
 	imt_current_context = ctx;
+	for (imt_switcher_t *switcher = in_contexts.a[ctx].switchers; switcher;
+		 switcher = switcher->next) {
+		imt_switcher_update (switcher);
+	}
 }
 
 void
@@ -293,6 +334,31 @@ IMT_FindIMT (const char *name)
 		imt_t      *imt = imt_find_imt (ctx, name);
 		if (imt) {
 			return imt;
+		}
+	}
+	return 0;
+}
+
+static imt_switcher_t * __attribute__((pure))
+imt_find_switcher (in_context_t *ctx, const char *name)
+{
+	for (imt_switcher_t *switcher = ctx->switchers; switcher;
+		 switcher = switcher->next) {
+		if (strcasecmp (switcher->name, name) == 0) {
+			return switcher;
+		}
+	}
+	return 0;
+}
+
+imt_switcher_t *
+IMT_FindSwitcher (const char *name)
+{
+    for (size_t i = 0; i < in_contexts.size; i++) {
+		in_context_t *ctx = &in_contexts.a[i];
+		imt_switcher_t *switcher = imt_find_switcher (ctx, name);
+		if (switcher) {
+			return switcher;
 		}
 	}
 	return 0;
@@ -352,6 +418,87 @@ IMT_CreateIMT (int context, const char *imt_name, const char *chain_imt_name)
 	if (num_buttons) {
 		memset (imt->button_bindings.a, 0,
 				num_buttons * sizeof (in_buttonbinding_t *));
+	}
+	return 1;
+}
+
+int
+IMT_CreateSwitcher (const char *switcher_name, int context, imt_t *default_imt,
+					int num_inputs, const char **input_names)
+{
+	if (IMT_FindSwitcher (switcher_name)) {
+		Sys_Printf ("imt switcher %s already exists\n", switcher_name);
+		return 0;
+	}
+
+	if ((size_t) context >= in_contexts.size) {
+		Sys_Printf ("invalid imt context %d\n", context);
+		return 0;
+	}
+	in_context_t *ctx = &in_contexts.a[context];
+
+	if (!imt_find_imt (ctx, default_imt->name)) {
+		Sys_Printf ("default imt %s not in context %s\n",
+					default_imt->name, ctx->name);
+		return 0;
+	}
+
+	int         input_error = 0;
+	if (num_inputs > 16) {
+		Sys_Printf ("too many inputs %d\n", num_inputs);
+		return 0;
+	}
+	for (int i = 0; i < num_inputs; i++) {
+		const char *input_name = input_names[i];
+		if (!input_name) {
+			input_error = 1;
+			continue;
+		}
+		if (input_name[0] == '+') {
+			if (!IN_FindButton (input_name + 1)) {
+				Sys_Printf ("invalid button %s\n", input_name);
+				input_error = 1;
+			}
+		} else {
+			if (!Cvar_FindVar (input_name)) {
+				Sys_Printf ("invalid cvar %s\n", input_name);
+				input_error = 1;
+			}
+		}
+	}
+	if (input_error) {
+		return 0;
+	}
+	int         num_states = 1 << num_inputs;
+	size_t      size = sizeof (imt_switcher_t)
+						+ num_inputs * sizeof (imt_input_t)
+						+ num_states * sizeof (imt_t *);
+	imt_switcher_t *switcher = malloc (size);
+	*ctx->switcher_tail = switcher;
+	ctx->switcher_tail = &switcher->next;
+
+	switcher->next = 0;
+	switcher->name = strdup (switcher_name);
+	switcher->num_inputs = num_inputs;
+	switcher->inputs = (imt_input_t *) (switcher + 1);
+	switcher->imts = (imt_t **) (switcher->inputs + num_inputs);
+	switcher->context = ctx;
+	for (int i = 0; i < num_inputs; i++) {
+		imt_input_t *input = &switcher->inputs[i];
+		const char *input_name = input_names[i];
+		if (input_name[0] == '+') {
+			input->type = imti_button;
+			input->button = IN_FindButton (input_name + 1);
+			IN_ButtonAddListener (input->button, imt_switcher_button_update,
+								  switcher);
+		} else {
+			input->type = imti_cvar;
+			input->cvar = Cvar_FindVar (input_name);
+			Cvar_AddListener (input->cvar, imt_switcher_cvar_update, switcher);
+		}
+	}
+	for (int i = 0; i < num_states; i++) {
+		switcher->imts[i] = default_imt;
 	}
 	return 1;
 }
@@ -594,6 +741,79 @@ imt_create_f (void)
 }
 
 static void
+imt_switcher_create_f (void)
+{
+	int         argc = Cmd_Argc ();
+
+	if (argc < 5) {
+		Sys_Printf ("see help imt_switcher_create\n");
+		return;
+	}
+
+	const char *switcher_name = Cmd_Argv (1);
+	const char *context_name = Cmd_Argv (2);
+	const char *default_imt_name = Cmd_Argv (3);
+
+	in_context_t *ctx = imt_find_context (context_name);
+	if (!ctx) {
+		Sys_Printf ("imt error: invalid context: %s\n", context_name);
+		return;
+	}
+
+	imt_t      *default_imt = imt_find_imt (ctx, default_imt_name);
+	if (!default_imt) {
+		Sys_Printf ("default imt %s not in context %s\n",
+					default_imt_name, context_name);
+		return;
+	}
+
+	int         num_inputs = argc - 4;
+	const char **input_names = alloca (num_inputs * sizeof (const char*));
+	for (int i = 0; i < num_inputs; i++) {
+		input_names[i] = Cmd_Argv (i + 4);
+	}
+
+	IMT_CreateSwitcher (switcher_name, ctx - in_contexts.a, default_imt,
+						num_inputs, input_names);
+}
+
+static void
+imt_switcher_f (void)
+{
+	int         argc = Cmd_Argc ();
+
+	// state/imt pairs result in an even number of arguments
+	if (argc < 4 || (argc & 1)) {
+		Sys_Printf ("see help imt_switcher\n");
+		return;
+	}
+	const char *switcher_name = Cmd_Argv (1);
+	imt_switcher_t *switcher = IMT_FindSwitcher (switcher_name);
+	if (!switcher) {
+		Sys_Printf ("switcher %s does not exist\n", switcher_name);
+		return;
+	}
+	int         num_states = 1 << switcher->num_inputs;
+	for (int i = 2; i < argc; i += 2) {
+		const char *state_str = Cmd_Argv (i + 0);
+		const char *imt_name = Cmd_Argv (i + 1);
+		char       *end;
+		int         state = strtol (state_str, &end, 0);
+		imt_t      *imt = imt_find_imt (switcher->context, imt_name);
+		if (*end || state < 0 || state >= num_states) {
+			Sys_Printf ("invalid state: %s\n", state_str);
+			continue;
+		}
+		if (!imt) {
+			Sys_Printf ("imt %s not in context %s\n",
+						imt_name, switcher->context->name);
+			continue;
+		}
+		switcher->imts[state] = imt;
+	}
+}
+
+static void
 imt_drop_all_f (void)
 {
 	for (size_t i = 0; i < in_contexts.size; i++) {
@@ -610,9 +830,31 @@ imt_drop_all_f (void)
 			free ((char *) imt->name);
 			free (imt);
 		}
+		while (ctx->switchers) {
+			imt_switcher_t *switcher = ctx->switchers;
+			ctx->switchers = switcher->next;
+			for (int i = 0; i < switcher->num_inputs; i++) {
+				imt_input_t *input = &switcher->inputs[i];
+				switch (input->type) {
+					case imti_button:
+						IN_ButtonRemoveListener (input->button,
+												 imt_switcher_button_update,
+												 switcher);
+						break;
+					case imti_cvar:
+						Cvar_RemoveListener (input->cvar,
+											 imt_switcher_cvar_update,
+											 switcher);
+						break;
+				}
+			}
+			free ((char *) switcher->name);
+			free (switcher);
+		}
 		ctx->active_imt = 0;
 		ctx->default_imt = 0;
 		ctx->imt_tail = &ctx->imts;
+		ctx->switcher_tail = &ctx->switchers;
 	}
 }
 
@@ -631,11 +873,47 @@ static imtcmd_t imt_commands[] = {
 	},
 	{	"imt_create", imt_create_f,
 		"create a new imt table:\n"
-		"    imt_create <keydest> <imt_name> [chain_name]\n"
+		"    imt_create <context> <imt_name> [chain_name]\n"
 		"\n"
-		"The new table will be attached to the specified keydest\n"
+		"The new table will be attached to the specified context\n"
 		"imt_name must not already exist.\n"
-		"If given, chain_name must already exist and be on keydest.\n"
+		"If given, chain_name must already exist and be in the context.\n"
+	},
+	{	"imt_switcher_create", imt_switcher_create_f,
+		"create a new imt switcher:\n"
+		"    imt_switcher_create <name> <context> <default_imt> <input0>"
+			" [..<inputN>]\n"
+		"name is the name of the switcher and must be unique across all\n"
+		"contexts\n"
+		"The new switcher will be attached to the specified context\n"
+		"default_imt specifies the default imt to be used for all possible\n"
+		"states and must axis and be in the context.\n"
+		"input0..inputN specify the inputs (cvar or button) used to set the\n"
+		"switcher's state. As each input forms a bit in the state index,\n"
+		"there will be 2**(N+1) states (so 4 inputs will result in 16\n"
+		"states, and 16 inputs will result in 65536 states). Up to 16 inputs\n"
+		"are allowed\n"
+		"\n"
+		"Buttons are spefied as +buttonname (eg, +mlook, +strafe).\n"
+		"Cvars are just the cvar name (eg, freelook, lookstrafe).\n"
+		"\n"
+		"Use imt_switcher to set the imt for each state.\n"
+		"\n"
+		"There can be multiple switchers in a context, but they can wind up\n"
+		"fighting over the active imt for the context if they share inputs.\n"
+	},
+	{	"imt_switcher", imt_switcher_f,
+		"Set the imts for states in an imt switcher:\n"
+		"    imt_switcher <name> <state_index> <imt>"
+			" [..<state_indexM> <imtM>]\n"
+		"name is the name of the switcher to be modifed and must exist\n"
+		"state_index is the state index formed by the binary number\n"
+		"interpretation of the inputs with input0 being bit 0 and inputN\n"
+		"being bit N.\n"
+		"imt is the name of the imt to be assigned to the state and must\n"
+		"exist and be in the same context as the switcher.\n"
+		"\n"
+		"Any number of state_index imt pairs can be specified.\n"
 	},
 	{	"imt_drop_all", imt_drop_all_f,
 		"delete all imt tables\n"
@@ -684,6 +962,43 @@ IMT_SaveConfig (plitem_t *config)
 		if (context->default_imt) {
 			PL_D_AddObject (ctx, "default_imt",
 							PL_NewString (context->default_imt->name));
+		}
+		if (context->switchers) {
+			plitem_t   *switcher_list = PL_NewArray ();
+			PL_D_AddObject (ctx, "switchers", switcher_list);
+			for (imt_switcher_t *switcher = context->switchers; switcher;
+				 switcher = switcher->next) {
+				//FIXME hashlinks
+				plitem_t   *switcher_cfg = PL_NewDictionary (0);
+				PL_A_AddObject (switcher_list, switcher_cfg);
+
+				PL_D_AddObject (switcher_cfg, "name",
+								PL_NewString (switcher->name));
+
+				plitem_t   *input_list = PL_NewArray ();
+				PL_D_AddObject (switcher_cfg, "inputs", input_list);
+				for (int i = 0; i < switcher->num_inputs; i++) {
+					imt_input_t *input = &switcher->inputs[i];
+					const char *name = 0;
+					switch (input->type) {
+						case imti_button:
+							name = va (0, "+%s", input->button->name);
+							break;
+						case imti_cvar:
+							name = input->cvar->name;
+							break;
+					}
+					PL_A_AddObject (input_list, PL_NewString (name));
+				}
+
+				plitem_t   *state_list = PL_NewArray ();
+				PL_D_AddObject (switcher_cfg, "imts", state_list);
+				int         num_states = 1 << switcher->num_inputs;
+				for (int i = 0; i < num_states; i++) {
+					imt_t      *imt = switcher->imts[i];
+					PL_A_AddObject (state_list, PL_NewString (imt->name));
+				}
+			}
 		}
 	}
 }
@@ -792,5 +1107,46 @@ IMT_LoadConfig (plitem_t *config)
 			context->default_imt = context->imts;
 		}
 		context->active_imt = context->default_imt;
+
+		plitem_t   *switcher_list = PL_ObjectForKey (ctx, "switchers");
+		if (!switcher_list || PL_Type (switcher_list) != QFArray) {
+			continue;
+		}
+		for (int j = 0, num_switchers = PL_A_NumObjects (switcher_list);
+			 j < num_switchers; j++) {
+			plitem_t   *switcher = PL_ObjectAtIndex (switcher_list, j);
+			const char *name = PL_String (PL_ObjectForKey (switcher, "name"));
+			plitem_t   *input_list = PL_ObjectForKey (switcher, "inputs");
+			if (!name || !input_list || PL_Type (input_list) != QFArray) {
+				continue;
+			}
+			int         num_inputs = PL_A_NumObjects (input_list);
+			const char **input_names = alloca (num_inputs * sizeof (char *));
+			for (int k = 0; k < num_inputs; k++) {
+				input_names[k] = PL_String (PL_ObjectAtIndex (input_list, k));
+			}
+			if (!IMT_CreateSwitcher (name, context - in_contexts.a,
+									 context->default_imt,
+									 num_inputs, input_names)) {
+				continue;
+			}
+			imt_switcher_t *s = imt_find_switcher (context, name);
+
+			plitem_t   *imt_list = PL_ObjectForKey (switcher, "imts");
+			if (!imt_list || PL_Type (imt_list) != QFArray) {
+				continue;
+			}
+			for (int k = 0, count = PL_A_NumObjects (imt_list); k < count;
+				 k++) {
+				const char *imt_name = PL_String(PL_ObjectAtIndex(imt_list, k));
+				if (!imt_name) {
+					continue;
+				}
+				imt_t      *imt = imt_find_imt (context, imt_name);
+				if (imt) {
+					s->imts[k] = imt;
+				}
+			}
+		}
 	}
 }
