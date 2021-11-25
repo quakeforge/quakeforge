@@ -30,6 +30,7 @@ AM_CPPFLAGS= -I$(top_srcdir)/include $(PTHREAD_CFLAGS) $(FNM_FLAGS) $(NCURSES_CF
 
 common_ldflags= -export-dynamic @PTHREAD_LDFLAGS@
 
+SUFFICES =
 TESTS =
 XFAIL_TESTS =
 bin_PROGRAMS =
@@ -118,6 +119,16 @@ V_XXD = $(V_XXD_@AM_V@)
 V_XXD_ = $(V_XXD_@AM_DEFAULT_V@)
 V_XXD_0 = @echo "  XXD     " $@;
 V_XXD_1 =
+
+V_SED = $(V_SED_@AM_V@)
+V_SED_ = $(V_SED_@AM_DEFAULT_V@)
+V_SED_0 = @echo "  SED     " $@;
+V_SED_1 =
+
+SUFFICES += .plist .plc
+.plist.plc:
+	$(V_SED)sed -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' $< > $@.t &&\
+	$(am__mv) $@.t $@
 
 %.spv: %
 	@$(mkdir_p) $(builddir)/`dirname $@`

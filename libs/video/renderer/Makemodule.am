@@ -91,18 +91,9 @@ libs_video_renderer_librender_gl_la_SOURCES = \
 shader_src= libs/video/renderer/glsl/quakeforge.glsl
 shader_gen= libs/video/renderer/glsl/quakeforge.slc
 
-V_SED = $(V_SED_@AM_V@)
-V_SED_ = $(V_SED_@AM_DEFAULT_V@)
-V_SED_0 = @echo "  SED     " $@;
-V_SED_1 =
-
-SUFFICES=.frag .vert .spv .spvc .fc .vc .slc .glsl .plist .plc
+SUFFICES += .frag .vert .spv .spvc .fc .vc .slc .glsl
 .glsl.slc:
 	$(V_SED)sed -e 's/^/"/' -e 's/$$/\\n"/' $< > $@.t &&\
-	$(am__mv) $@.t $@
-
-.plist.plc:
-	$(V_SED)sed -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' $< > $@.t &&\
 	$(am__mv) $@.t $@
 
 video_renderer_glsl_libs= \
