@@ -41,6 +41,7 @@
 #include "QF/cexpr.h"
 #include "QF/cmd.h"
 #include "QF/cmem.h"
+#include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/heapsort.h"
 #include "QF/input.h"
@@ -469,7 +470,16 @@ in_bind_f (void)
 		delete_memsuper (exprctx.memsuper);
 	} else {
 		// the rest of the command line is the binding
-		const char *binding = Cmd_Args (5);
+		// However, have to put the args into a single string ourselves because
+		// Cmd_Args includes any quotes used to build compound commands
+		static dstring_t *binding;
+		if (!binding) {
+			binding = dstring_new ();
+		}
+		dsprintf (binding, "%s", Cmd_Argv (5));
+		for (int i = 6; i < argc; i++) {
+			dasprintf (binding, " %s", Cmd_Argv (i));
+		}
 
 		if (*end) {
 			num = IN_GetButtonNumber (dev->devid, number);
@@ -481,7 +491,7 @@ in_bind_f (void)
 		if (dev->button_imt_id == -1) {
 			dev->button_imt_id = IMT_GetButtonBlock (dev->num_buttons);
 		}
-		IMT_BindButton (imt, dev->button_imt_id + num, binding);
+		IMT_BindButton (imt, dev->button_imt_id + num, binding->str);
 	}
 }
 
