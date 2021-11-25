@@ -763,31 +763,11 @@ static bindcmd_t in_binding_commands[] = {
 	{	"unbindall", Key_Unbindall_f,
 		"Remove all binds (USE CAUTIOUSLY!!!"
 	},
-	{	"unbind", Key_Unbind_f,
-		"wrapper for in_unbind that uses in_bind_imt for the imt "
-		"parameter"
-	},
-	{	"bind", Key_Bind_f,
-		"wrapper for in_bind that uses "
-		"in_bind_imt for the imt parameter"
-	},
 	{	"imt", Key_InputMappingTable_f,
 		""
 	},
 	{	"imt_keydest", Key_IMT_Keydest_f,
 		""
-	},
-	{	"imt_create", Key_IMT_Create_f,
-		"create a new imt table:\n"
-		"    imt_create <keydest> <imt_name> [chain_name]\n"
-		"\n"
-		"The new table will be attached to the specified keydest\n"
-		"imt_name must not already exist.\n"
-		"If given, chain_name must already exist and be on "
-		"keydest.\n"
-	},
-	{	"imt_drop_all", Key_IMT_Drop_All_f,
-		"delete all imt tables\n"
 	},
 	{	"in_type", Key_In_Type_f,
 		"Send the given string as simulated key presses."
