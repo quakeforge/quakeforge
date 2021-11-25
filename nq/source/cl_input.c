@@ -440,7 +440,7 @@ CL_Input_Init (cbuf_t *cbuf)
 void
 CL_Input_Activate (void)
 {
-	host_in_game = 1;
-	IMT_SetContext (cl_game_context);
+	host_in_game = !cls.demoplayback;
+	IMT_SetContext (cls.demoplayback ? cl_demo_context : cl_game_context);
 	IE_Set_Focus (cl_event_id);
 }

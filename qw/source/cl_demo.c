@@ -1014,7 +1014,6 @@ CL_StartDemo (void)
 	Sys_Printf ("Playing demo from %s.\n", name->str);
 
 	cls.demoplayback = true;
-	//Key_SetKeyDest (key_demo);
 	net_blocksend = 1;
 	if (type == 2) {
 		cls.demoplayback2 = true;

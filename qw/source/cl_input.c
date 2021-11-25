@@ -597,7 +597,7 @@ CL_Input_Init (void)
 void
 CL_Input_Activate (void)
 {
-	IMT_SetContext (cl_game_context);
+	IMT_SetContext (cls.demoplayback ? cl_demo_context : cl_game_context);
 	IE_Set_Focus (cl_event_id);
 }
 

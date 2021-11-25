@@ -59,11 +59,6 @@ GIB_Key_Init (void)
 }
 
 void
-Key_KeydestCallback (keydest_callback_t *callback, void *data)
-{
-}
-
-void
 CL_SetState (cactive_t state)
 {
 }
@@ -142,11 +137,6 @@ CL_StopPlayback (void)
 
 void
 IN_ProcessEvents (void)
-{
-}
-
-void
-Key_WriteBindings (QFile *f)
 {
 }
 
