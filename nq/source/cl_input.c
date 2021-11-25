@@ -48,6 +48,8 @@
 
 #include "compat.h"
 
+#include "client/input.h"
+
 #include "nq/include/chase.h"
 #include "nq/include/client.h"
 #include "nq/include/host.h"
@@ -432,6 +434,7 @@ CL_Input_Init (cbuf_t *cbuf)
 	IMT_SetContextCbuf (cl_demo_context, cbuf);
 	Cmd_AddDataCommand ("impulse", IN_Impulse, 0,
 						"Call a game function or QuakeC function.");
+	CL_Legacy_Init ();
 }
 
 void

@@ -5,5 +5,7 @@ libs_client_libQFclient_la_LIBADD=	libs/gamecode/libQFgamecode.la libs/util/libQ
 libs_client_libQFclient_la_SOURCES= \
 		libs/client/cl_effects.c \
 		libs/client/cl_entities.c \
+		libs/client/cl_input.c \
 		libs/client/cl_temp_entities.c \
-		libs/client/locs.c
+		libs/client/locs.c \
+		libs/client/old_keys.c

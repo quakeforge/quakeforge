@@ -50,6 +50,7 @@
 
 #include "compat.h"
 
+#include "client/input.h"
 #include "client/view.h"
 
 #include "qw/msg_ucmd.h"
@@ -590,6 +591,7 @@ CL_Input_Init (void)
 	IMT_SetContextCbuf (cl_demo_context, cl_cbuf);
 	Cmd_AddDataCommand ("impulse", IN_Impulse, 0,
 						"Call a game function or QuakeC function.");
+	CL_Legacy_Init ();
 }
 
 void
