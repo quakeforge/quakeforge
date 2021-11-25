@@ -86,9 +86,17 @@ typedef struct in_axis_s {
 	in_axis_mode mode;		///< method used for updating the destination
 	float       abs_input;	///< input from an absolute axis (eg, joystick)
 	float       rel_input;	///< input from a relative axis (eg, mouse)
+	struct axis_listener_set_s *listeners;
 	const char *name;
 	const char *description;
 } in_axis_t;
+
+typedef struct axis_listener_set_s LISTENER_SET_TYPE (in_axis_t)
+	axis_listener_set_t;
+
+/*** Function type for axis listeners.
+*/
+typedef void (*axis_listener_t) (void *data, const in_axis_t *axis);
 
 /*** Current state of the logical button.
 
@@ -285,6 +293,7 @@ VISIBLE
 float
 IN_UpdateAxis (in_axis_t *axis)
 {
+	float       prev_value = axis->value;
 	switch (axis->mode) {
 		case ina_set:
 			axis->value = axis->abs_input + axis->rel_input;
@@ -294,6 +303,9 @@ IN_UpdateAxis (in_axis_t *axis)
 			break;
 	}
 	axis->rel_input = 0;
+	if (axis->value != prev_value && axis->listeners) {
+		LISTENER_INVOKE (axis->listeners, axis);
+	}
 	return axis->value;
 }
 
@@ -305,8 +317,20 @@ VISIBLE
 float
 IN_ClampAxis (in_axis_t *axis, float minval, float maxval)
 {
-	IN_UpdateAxis (axis);
+	float       prev_value = axis->value;
+	switch (axis->mode) {
+		case ina_set:
+			axis->value = axis->abs_input + axis->rel_input;
+			break;
+		case ina_accumulate:
+			axis->value += axis->abs_input + axis->rel_input;
+			break;
+	}
+	axis->rel_input = 0;
 	axis->value = bound (minval, axis->value, maxval);
+	if (axis->value != prev_value && axis->listeners) {
+		LISTENER_INVOKE (axis->listeners, axis);
+	}
 	return axis->value;
 }
 
@@ -320,6 +344,10 @@ void IN_ButtonAddListener (in_button_t *button, button_listener_t listener,
 						   void *data);
 void IN_ButtonRemoveListener (in_button_t *button, button_listener_t listener,
 							  void *data);
+void IN_AxisAddListener (in_axis_t *axis, axis_listener_t listener,
+						 void *data);
+void IN_AxisRemoveListener (in_axis_t *axis, axis_listener_t listener,
+							void *data);
 
 struct IE_event_s;
 int IN_Binding_HandleEvent (const struct IE_event_s *ie_event);

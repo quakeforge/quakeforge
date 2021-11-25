@@ -75,6 +75,25 @@ IN_FindAxis (const char *name)
 	return Hash_Find (axis_tab, name);
 }
 
+void
+IN_AxisAddListener (in_axis_t *axis, axis_listener_t listener, void *data)
+{
+	if (!axis->listeners) {
+		axis->listeners = malloc (sizeof (*axis->listeners));
+		LISTENER_SET_INIT (axis->listeners, 8);
+	}
+	LISTENER_ADD (axis->listeners, listener, data);
+}
+
+void
+IN_AxisRemoveListener (in_axis_t *axis, axis_listener_t listener, void *data)
+{
+	if (axis->listeners) {
+		LISTENER_REMOVE (axis->listeners, listener, data);
+	}
+}
+
+
 static void __attribute__((constructor))
 in_axis_init (void)
 {
