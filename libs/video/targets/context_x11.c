@@ -82,6 +82,8 @@ static Cursor   nullcursor = None;
 
 Display 	*x_disp = NULL;
 int 		x_screen;
+int			x_width;
+int			x_height;
 Window		x_root = None;
 XVisualInfo *x_visinfo;
 Visual		*x_vis;
@@ -283,6 +285,8 @@ X11_OpenDisplay (void)
 										False);
 
 		x_screen = DefaultScreen (x_disp);
+		x_width = DisplayWidth (x_disp, x_screen);
+		x_height = DisplayHeight (x_disp, x_screen);
 		x_root = RootWindow (x_disp, x_screen);
 
 		XSynchronize (x_disp, true);		// only for debugging

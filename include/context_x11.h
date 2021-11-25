@@ -52,6 +52,8 @@ extern Window	x_win;
 extern Colormap x_cmap;
 extern XVisualInfo *x_visinfo;
 extern int		x_screen;
+extern int		x_width;
+extern int		x_height;
 extern int		x_shmeventtype;
 extern Time		x_time;
 extern Time		x_mouse_time;

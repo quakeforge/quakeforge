@@ -1415,10 +1415,10 @@ in_x11_setup_barriers (int xpos, int ypos, int xlen, int ylen)
 		XFixesDestroyPointerBarrier (x_disp, x11_bottom_barrier);
 	}
 
-	int         lx = xpos;
-	int         ty = ypos;
-	int         rx = xpos + xlen - 1;
-	int         by = ypos + ylen - 1;
+	int         lx = bound (0, xpos, x_width - 1);
+	int         ty = bound (0, ypos, x_height - 1);
+	int         rx = bound (0, xpos + xlen - 1, x_width - 1);
+	int         by = bound (0, ypos + ylen - 1, x_height - 1);
 	x11_left_barrier = XFixesCreatePointerBarrier (x_disp, x_root,
 												   lx, ty-1, lx, by+1,
 												   BarrierPositiveX, 0, 0);
