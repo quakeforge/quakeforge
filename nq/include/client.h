@@ -91,7 +91,6 @@ typedef struct {
 // connection information
 	cactive_t   state;
 	signon_t    signon;
-	keydest_t   key_dest;
 
 // network stuff
 	struct qsocket_s *netcon;

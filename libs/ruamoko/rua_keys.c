@@ -153,20 +153,16 @@ bi_Key_CountBinding (progs_t *pr)
 static void
 bi_Key_KeynumToString (progs_t *pr)
 {
-#if 0
 	int	        keynum  = P_INT (pr, 0);
 
 	RETURN_STRING (pr, Key_KeynumToString (keynum));
-#endif
 }
 
 static void
 bi_Key_StringToKeynum (progs_t *pr)
 {
-#if 0
 	const char *keyname = P_GSTRING (pr, 0);
 	R_INT (pr) = Key_StringToKeynum (keyname);
-#endif
 }
 
 static builtin_t builtins[] = {

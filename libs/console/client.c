@@ -111,9 +111,6 @@ static view_t *hud_view;
 
 static qboolean con_initialized;
 
-static keydest_t con_curr_keydest;
-//static keydest_t con_prev_keydest;
-
 static void
 ClearNotify (void)
 {
@@ -158,11 +155,11 @@ ToggleChat_f (void)
 {
 	Con_ClearTyping (input_line, 0);
 
-	if (con_curr_keydest == key_console && !con_data.force_commandline) {
+	//if (con_curr_keydest == key_console && !con_data.force_commandline) {
 		//Key_SetKeyDest (key_game);
-	} else {
+	//} else {
 		//Key_SetKeyDest (key_console);
-	}
+	//}
 
 	ClearNotify ();
 }
@@ -686,9 +683,9 @@ C_DrawConsole (void)
 	if (console_view->ylen != con_data.lines)
 		view_resize (console_view, console_view->xlen, con_data.lines);
 
-	say_view->visible = con_curr_keydest == key_message;
+	say_view->visible = 0;//FIXME
 	console_view->visible = con_data.lines != 0;
-	menu_view->visible = con_curr_keydest == key_menu;
+	menu_view->visible = 0;//FIXME
 
 	con_data.view->draw (con_data.view);
 }
