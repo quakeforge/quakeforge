@@ -86,8 +86,34 @@ int IMT_CreateContext (const char *name);
 int IMT_GetContext (void) __attribute__ ((pure));
 void IMT_SetContext (int ctx);
 void IMT_SetContextCbuf (int ctx, struct cbuf_s *cbuf);
+
+/**	Find an Input Mapping Table by name.
+
+	Searches through all contexts for the named imt. The search is case
+	insensitive.
+
+	\param imt_name	The name of the imt to find. Case insensitive.
+	\return			The named imt, or null if not found.
+*/
 imt_t *IMT_FindIMT (const char *name) __attribute__ ((pure));
 imt_switcher_t *IMT_FindSwitcher (const char *name) __attribute__ ((pure));
+
+/**	Create a new imt and attach it to the specified context.
+
+	The name of the new imt must be unique (case insensitive) across all
+	contexts. This is to simplify the in_bind command.
+
+	If \a chain_imt_name is not null, then it species the fallback imt for when
+	the input is not bound in the new imt. It must be an already existing imt
+	in the specified context. This is to prevent loops and other weird
+	behavior.
+
+	\param context	The context to which the new imt will be attached.
+	\param imt_name	The name for the new imt. Must be unique (case
+					insensitive).
+	\param chain_imt_name	The name of the fallback imt if not null. Must
+					already exist on the specified context.
+*/
 int IMT_CreateIMT (int context, const char *imt_name,
 				   const char *chain_imt_name);
 int IMT_CreateSwitcher (const char *switcher_name,

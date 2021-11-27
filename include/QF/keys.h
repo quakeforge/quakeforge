@@ -448,33 +448,7 @@ struct cbuf_s;
 
 void Key_Init (struct cbuf_s *cb);
 void Key_Init_Cvars (void);
-
-/**	Find an Input Mapping Table by name.
-
-	Searches through all keydest targets for the named imt. The search is case
-	insensitive.
-
-	\param imt_name	The name of the imt to find. Case insensitive.
-	\return			The named imt, or null if not found.
-*/
 struct imt_s *Key_FindIMT (const char *imt_name) __attribute__((pure));
-
-/**	Create a new imt and attach it to the specified keydest target.
-
-	The name of the new imt must be unique (case insensitive) across all
-	keydest targets. This is to simplify the in_bind command.
-
-	If \a chain_imt_name is not null, then it species the fallback imt for when
-	the key is not bound in the new imt. It must be an already existing imt in
-	the specified keydest target. This is to prevent loops and other weird
-	behavior.
-
-	\param kd		The keydest target to which the new imt will be attached.
-	\param imt_name	The name for the new imt. Must be unique (case
-					insensitive).
-	\param chain_imt_name	The name of the fallback imt if not null. Must
-					already exist on the specified keydest target.
-*/
 void Key_CreateIMT (keydest_t kd, const char *imt_name,
 					const char *chain_imt_name);
 
