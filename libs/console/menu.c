@@ -47,6 +47,7 @@
 #include "QF/sound.h"
 #include "QF/sys.h"
 
+#include "QF/input/event.h"
 #include "QF/ui/view.h"
 
 #include "QF/plugin/console.h"
@@ -358,13 +359,7 @@ bi_Menu_TopMenu (progs_t *pr)
 		free ((char *) top_menu);
 	top_menu = strdup (name);
 }
-/*
-static void
-menu_leave (void *data)
-{
-	Menu_Leave ();
-}
-*/
+
 static void
 bi_Menu_SelectMenu (progs_t *pr)
 {
@@ -374,11 +369,7 @@ bi_Menu_SelectMenu (progs_t *pr)
 	if (name && *name)
 		menu = Hash_Find (menu_hash, name);
 	if (menu) {
-		/*if (Key_GetKeyDest () != key_menu) {
-			menu_keydest = Key_GetKeyDest ();
-			Key_PushEscape (menu_leave, 0);
-			Key_SetKeyDest (key_menu);
-		}*/
+		Con_SetState (con_menu);
 		if (menu->enter_hook) {
 			run_menu_pre ();
 			PR_ExecuteProgram (&menu_pr_state, menu->enter_hook);
@@ -387,8 +378,7 @@ bi_Menu_SelectMenu (progs_t *pr)
 	} else {
 		if (name && *name)
 			Sys_Printf ("no menu \"%s\"\n", name);
-		//Key_PopEscape ();
-		//Key_SetKeyDest (menu_keydest);
+		Con_SetState (con_inactive);
 	}
 }
 
@@ -473,8 +463,7 @@ bi_Menu_Leave (progs_t *pr)
 		}
 		menu = menu->parent;
 		if (!menu) {
-			//Key_PopEscape ();
-			//Key_SetKeyDest (menu_keydest);
+			Con_SetState (con_inactive);
 		}
 	}
 }
@@ -550,7 +539,19 @@ static builtin_t builtins[] = {
 	{0},
 };
 
-
+static int//FIXME reimplement users properly (or remove?)
+Menu_KeyEvent (int key, int unicode, int pressed)
+{
+	IE_event_t  event = {
+		.type = ie_key,
+		.when = Sys_LongTime (),
+		.key = {
+			.code = key,
+			.unicode = unicode,
+		}
+	};
+	return IE_Send_Event (&event);
+}
 
 void
 Menu_Enter_f (void)
@@ -734,20 +735,21 @@ Menu_Draw_Hud (view_t *view)
 	run_menu_post ();
 }
 
-int
-Menu_KeyEvent (knum_t key, short unicode, qboolean down)
+static int
+menu_key_event (const IE_event_t *ie_event)
 {
 	menu_item_t *item;
 	int         ret;
+	__auto_type key = ie_event->key;
 
 	if (!menu)
 		return 0;
 	if (menu->keyevent) {
 		run_menu_pre ();
 		PR_RESET_PARAMS (&menu_pr_state);
-		P_INT (&menu_pr_state, 0) = key;
-		P_INT (&menu_pr_state, 1) = unicode;
-		P_INT (&menu_pr_state, 2) = down;
+		P_INT (&menu_pr_state, 0) = key.code;
+		P_INT (&menu_pr_state, 1) = key.unicode;
+		P_INT (&menu_pr_state, 2) = 1;	//FIXME only presses now
 		menu_pr_state.pr_argc = 3;
 		PR_ExecuteProgram (&menu_pr_state, menu->keyevent);
 		ret = R_INT (&menu_pr_state);
@@ -762,7 +764,7 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 		PR_RESET_PARAMS (&menu_pr_state);
 		P_STRING (&menu_pr_state, 0) = PR_SetTempString (&menu_pr_state,
 														 item->text);
-		P_INT (&menu_pr_state, 1) = key;
+		P_INT (&menu_pr_state, 1) = key.code;
 		menu_pr_state.pr_argc = 2;
 		PR_ExecuteProgram (&menu_pr_state, item->func);
 		PR_PopFrame (&menu_pr_state);
@@ -771,38 +773,65 @@ Menu_KeyEvent (knum_t key, short unicode, qboolean down)
 		if (ret)
 			return 1;
 	}
+	if (key.code == QFK_ESCAPE) {
+		Menu_Leave ();
+		return 1;
+	}
 	if (!menu || !menu->items)
 		return 0;
-	switch (key) {
+	switch (key.code) {
+		case QFK_ESCAPE:
+			break;
 		case QFK_DOWN:
 //		case QFM_WHEEL_DOWN:
 			bi_Menu_Next (&menu_pr_state);
-			return 1;
+			break;
 		case QFK_UP:
 //		case QFM_WHEEL_UP:
 			bi_Menu_Prev (&menu_pr_state);
-			return 1;
+			break;
 		case QFK_RETURN:
 //		case QFM_BUTTON1:
 			bi_Menu_Enter (&menu_pr_state);
-			return 1;
+			break;
 		default:
-			return 0;
+			break;
 	}
+	return 1;
+}
+
+static int
+menu_mouse_event (const IE_event_t *ie_event)
+{
+	return 0;
+}
+
+int
+Menu_EventHandler (const IE_event_t *ie_event)
+{
+	static int (*handlers[ie_event_count]) (const IE_event_t *ie_event) = {
+		[ie_key] = menu_key_event,
+		[ie_mouse] = menu_mouse_event,
+	};
+	if (ie_event->type < 0 || ie_event->type >= ie_event_count
+		|| !handlers[ie_event->type]) {
+		return 0;
+	}
+	return handlers[ie_event->type] (ie_event);
 }
 
 void
 Menu_Enter ()
 {
 	if (!top_menu) {
-		//Key_SetKeyDest (key_console);
+		Con_SetState (con_active);
 		return;
 	}
-	menu = Hash_Find (menu_hash, top_menu);
+	if (!menu) {
+		menu = Hash_Find (menu_hash, top_menu);
+	}
 	if (menu) {
-		//menu_keydest = Key_GetKeyDest ();
-		//Key_PushEscape (menu_leave, 0);
-		//Key_SetKeyDest (key_menu);
+		Con_SetState (con_menu);
 		if (menu->enter_hook) {
 			run_menu_pre ();
 			PR_ExecuteProgram (&menu_pr_state, menu->enter_hook);
@@ -822,8 +851,7 @@ Menu_Leave ()
 		}
 		menu = menu->parent;
 		if (!menu) {
-			//Key_PopEscape ();
-			//Key_SetKeyDest (menu_keydest);
+			Con_SetState (con_inactive);
 		}
 	}
 	r_data->vid->recalc_refdef = true;

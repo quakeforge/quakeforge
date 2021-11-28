@@ -409,8 +409,7 @@ cl_event_handler (const IE_event_t *ie_event, void *unused)
 {
 	if (ie_event->type == ie_key) {
 		if (ie_event->key.code == QFK_ESCAPE) {
-			// FIXME this should bring up the menu
-			Con_SetState (con_active);
+			Con_SetState (con_menu);
 			return 1;
 		}
 	}

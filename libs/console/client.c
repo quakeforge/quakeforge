@@ -123,21 +123,26 @@ ClearNotify (void)
 static void
 C_SetState (con_state_t state)
 {
+	con_state_t old_state = con_state;
 	con_state = state;
 	if (con_state == con_inactive) {
 		IE_Set_Focus (con_saved_focos);
-	} else {
+	} else if (old_state == con_inactive) {
 		con_saved_focos = IE_Get_Focus ();
 		IE_Set_Focus (con_event_id);
+	}
+	if (con_state == con_menu && old_state != con_menu) {
+		Menu_Enter ();
 	}
 }
 
 static void
 ToggleConsole_f (void)
 {
-	Con_ClearTyping (input_line, 0);
-
 	switch (con_state) {
+		case con_menu:
+		case con_message:
+			return;
 		case con_inactive:
 			C_SetState (con_active);
 			break;
@@ -147,6 +152,8 @@ ToggleConsole_f (void)
 		case con_fullscreen:
 			break;
 	}
+	Con_ClearTyping (input_line, 0);
+
 	ClearNotify ();
 }
 
@@ -163,19 +170,19 @@ Clear_f (void)
 static void
 MessageMode_f (void)
 {
-	if (con_data.force_commandline)
+	if (con_state != con_inactive)
 		return;
 	chat_team = false;
-	//Key_SetKeyDest (key_message);
+	C_SetState (con_message);
 }
 
 static void
 MessageMode2_f (void)
 {
-	if (con_data.force_commandline)
+	if (con_state != con_inactive)
 		return;
 	chat_team = true;
-	//Key_SetKeyDest (key_message);
+	C_SetState (con_message);
 }
 
 static void
@@ -323,29 +330,35 @@ cl_conmode_f (cvar_t *var)
 }
 
 static void
+con_end_message (inputline_t *line)
+{
+	Con_ClearTyping (line, 1);
+	C_SetState (con_inactive);
+}
+
+static void
 C_Say (inputline_t *il)
 {
 	const char *line = il->line;
-	if (!*line)
-		return;
-
-	Cbuf_AddText (con_data.cbuf, "say \"");
-	Cbuf_AddText (con_data.cbuf, line);
-	Cbuf_AddText (con_data.cbuf, "\"\n");
-	//Key_SetKeyDest (key_game);
+	if (*line) {
+		Cbuf_AddText (con_data.cbuf, "say \"");
+		Cbuf_AddText (con_data.cbuf, line);
+		Cbuf_AddText (con_data.cbuf, "\"\n");
+	}
+	con_end_message (il);
 }
 
 static void
 C_SayTeam (inputline_t *il)
 {
 	const char *line = il->line;
-	if (!*line)
-		return;
 
-	Cbuf_AddText (con_data.cbuf, "say_team \"");
-	Cbuf_AddText (con_data.cbuf, line);
-	Cbuf_AddText (con_data.cbuf, "\"\n");
-	//Key_SetKeyDest (key_game);
+	if (*line) {
+		Cbuf_AddText (con_data.cbuf, "say_team \"");
+		Cbuf_AddText (con_data.cbuf, line);
+		Cbuf_AddText (con_data.cbuf, "\"\n");
+	}
+	con_end_message (il);
 }
 
 static void
@@ -480,7 +493,7 @@ C_DrawInputLine (inputline_t *il)
 static void
 draw_input (view_t *view)
 {
-	if (con_state == con_inactive)// && !con_data.force_commandline)
+	if (con_state == con_inactive)
 		return;
 
 	DrawInputLine (view->xabs + 8, view->yabs, 1, input_line);
@@ -634,6 +647,8 @@ setup_console (void)
 	float       lines = 0;
 
 	switch (con_state) {
+		case con_message:
+		case con_menu:
 		case con_inactive:
 			lines = 0;
 			break;
@@ -669,9 +684,9 @@ C_DrawConsole (void)
 	if (console_view->ylen != con_data.lines)
 		view_resize (console_view, console_view->xlen, con_data.lines);
 
-	say_view->visible = 0;//FIXME
+	say_view->visible = con_state == con_message;
 	console_view->visible = con_data.lines != 0;
-	menu_view->visible = 0;//FIXME
+	menu_view->visible = con_state == con_menu;
 
 	con_data.view->draw (con_data.view);
 }
@@ -710,54 +725,6 @@ exec_line (inputline_t *il)
 {
 	Con_ExecLine (il->line);
 }
-#if 0
-static void
-con_end_message (void *line)
-{
-	//Key_PopEscape ();
-	Con_ClearTyping (line, 1);
-	//Key_SetKeyDest (key_game);
-}
-
-static void
-con_leave_console (void *data)
-{
-	ToggleConsole_f ();
-}
-
-static void
-con_keydest_callback (keydest_t kd, void *data)
-{
-	if (kd == key_unfocused || kd == con_curr_keydest) {
-		return;
-	}
-	if (kd != key_console && con_curr_keydest == key_console) {
-		//Key_PopEscape ();
-	}
-	switch (kd) {
-		case key_last:
-		case key_game:
-		case key_demo:
-		case key_unfocused:
-		case key_menu:
-			break;
-		case key_message:
-			//Key_PushEscape (con_end_message,
-			//				chat_team ? say_team_line : say_line);
-			break;
-		case key_console:
-			//Key_PushEscape (con_leave_console, 0);
-			break;
-	}
-	con_curr_keydest = kd;
-}
-
-static void
-con_enter_menu (void *data)
-{
-	Menu_Enter ();
-}
-#endif
 
 static void
 con_key_event (const IE_event_t *event)
@@ -778,15 +745,17 @@ con_key_event (const IE_event_t *event)
 		}
 	}
 #endif
-#if 0
-	if (con_curr_keydest == key_message) {
+	if (con_state == con_message) {
 		if (chat_team) {
 			il = say_team_line;
 		} else {
 			il = say_line;
 		}
+		if (key->code == QFK_ESCAPE) {
+			con_end_message (il);
+			return;
+		}
 	} else {
-#endif
 		switch (key->code) {
 			case QFK_ESCAPE:
 				ToggleConsole_f ();
@@ -823,18 +792,8 @@ con_key_event (const IE_event_t *event)
 				break;
 		}
 		il = input_line;
-#if 0
 	}
-#endif
-#if 0
-	//FIXME should this translation be here?
-	if ((unicode==0x0A) && (key==QFK_RETURN)) {
-		Con_ProcessInputLine (il, key);
-	}
-	if ((unicode==0x7F) && (key==QFK_BACKSPACE)) {
-		Con_ProcessInputLine (il, key);
-	}
-#endif
+
 	if (key->unicode) {
 		Con_ProcessInputLine (il, key->code >= 256 ? (int) key->code
 												   : key->unicode);
@@ -851,6 +810,9 @@ con_mouse_event (const IE_event_t *event)
 static int
 con_event_handler (const IE_event_t *ie_event, void *data)
 {
+	if (con_state == con_menu) {
+		return Menu_EventHandler (ie_event);
+	}
 	static void (*handlers[ie_event_count]) (const IE_event_t *ie_event) = {
 		[ie_key] = con_key_event,
 		[ie_mouse] = con_mouse_event,
@@ -874,11 +836,6 @@ C_Init (void)
 
 	con_event_id = IE_Add_Handler (con_event_handler, 0);
 
-	//Key_PushEscape (con_enter_menu, 0);
-	//Key_KeydestCallback (con_keydest_callback, 0);
-	//Key_SetKeyEvent (key_message, C_KeyEvent, 0);
-	//Key_SetKeyEvent (key_menu, C_KeyEvent, 0);
-	//Key_SetKeyEvent (key_console, C_KeyEvent, 0);
 	Menu_Init ();
 
 	con_notifytime = Cvar_Get ("con_notifytime", "3", CVAR_NONE, NULL,

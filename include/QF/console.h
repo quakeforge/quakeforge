@@ -64,6 +64,8 @@ typedef enum {
 	con_inactive,
 	con_active,
 	con_fullscreen,
+	con_message,	//FIXME should not be here ?
+	con_menu,		//FIXME should not be here ?
 } con_state_t;
 
 extern	int			con_linewidth;
@@ -121,7 +123,8 @@ void Menu_Init (void);
 void Menu_Load (void);
 void Menu_Draw (struct view_s *view);
 void Menu_Draw_Hud (struct view_s *view);
-int Menu_KeyEvent (knum_t key, short unicode, qboolean down);
+struct IE_event_s;
+int Menu_EventHandler (const struct IE_event_s *ie_event);
 void Menu_Enter (void);
 void Menu_Leave (void);
 
