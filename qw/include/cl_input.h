@@ -32,6 +32,8 @@
 
 #include "qw/protocol.h"
 
+void CL_OnFocusChange (void (*func) (int game));
+
 void CL_Input_Activate (void);
 void CL_Input_Init (void);
 void CL_Input_Init_Cvars (void);

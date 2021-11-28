@@ -41,6 +41,7 @@
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/keys.h"
+#include "QF/listener.h"
 #include "QF/msg.h"
 #include "QF/sys.h"
 #include "QF/teamplay.h"
@@ -66,6 +67,8 @@
 int         cl_game_context;
 int         cl_demo_context;
 static int  cl_event_id;
+static struct LISTENER_SET_TYPE(int) cl_on_focus_change
+	= LISTENER_SET_STATIC_INIT(4);
 
 cvar_t     *cl_nodelta;
 cvar_t     *cl_maxnetfps;
@@ -562,15 +565,49 @@ CL_SendCmd (void)
 }
 
 static int
+cl_key_event (const IE_event_t *ie_event)
+{
+	if (ie_event->key.code == QFK_ESCAPE) {
+		Con_SetState (con_menu);
+		return 1;
+	}
+	return 0;
+}
+
+static void
+cl_on_focus_change_redirect (void *_func, const int *game)
+{
+	void (*func) (int game) = _func;
+	func (*game);
+}
+
+void
+CL_OnFocusChange (void (*func) (int game))
+{
+	LISTENER_ADD (&cl_on_focus_change, cl_on_focus_change_redirect, func);
+}
+
+static int
+cl_focus_event (const IE_event_t *ie_event)
+{
+	int         game = ie_event->type == ie_gain_focus;
+	LISTENER_INVOKE (&cl_on_focus_change, &game);
+	return 1;
+}
+
+static int
 cl_event_handler (const IE_event_t *ie_event, void *unused)
 {
-	if (ie_event->type == ie_key) {
-		if (ie_event->key.code == QFK_ESCAPE) {
-			Con_SetState (con_menu);
-			return 1;
-		}
+	static int (*handlers[ie_event_count]) (const IE_event_t *ie_event) = {
+		[ie_key] = cl_key_event,
+		[ie_gain_focus] = cl_focus_event,
+		[ie_lose_focus] = cl_focus_event,
+	};
+	if (ie_event->type < 0 || ie_event->type >= ie_event_count
+		|| !handlers[ie_event->type]) {
+		return IN_Binding_HandleEvent (ie_event);
 	}
-	return IN_Binding_HandleEvent (ie_event);
+	return handlers[ie_event->type] (ie_event);
 }
 
 void
