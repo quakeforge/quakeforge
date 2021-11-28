@@ -1642,21 +1642,13 @@ Sbar_GIB_Print_Center_f (void)
 	} else
 		Sbar_CenterPrint (GIB_Argv(1));
 }
-#if 0
-static void
-sbar_keydest_callback (keydest_t kd, void *data)
-{
-	overlay_view->visible = kd == key_game;
-}
-#endif
+
 void
 Sbar_Init (void)
 {
 	int         i;
 
 	init_views ();
-
-	//Key_KeydestCallback (sbar_keydest_callback, 0);
 
 	for (i = 0; i < 10; i++) {
 		sb_nums[0][i] = r_funcs->Draw_PicFromWad (va (0, "num_%i", i));
