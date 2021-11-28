@@ -151,20 +151,6 @@ ToggleConsole_f (void)
 }
 
 static void
-ToggleChat_f (void)
-{
-	Con_ClearTyping (input_line, 0);
-
-	//if (con_curr_keydest == key_console && !con_data.force_commandline) {
-		//Key_SetKeyDest (key_game);
-	//} else {
-		//Key_SetKeyDest (key_console);
-	//}
-
-	ClearNotify ();
-}
-
-static void
 Clear_f (void)
 {
 	con_main.numlines = 0;
@@ -988,7 +974,7 @@ C_Init (void)
 	// register our commands
 	Cmd_AddCommand ("toggleconsole", ToggleConsole_f,
 					"Toggle the console up and down");
-	Cmd_AddCommand ("togglechat", ToggleChat_f,
+	Cmd_AddCommand ("togglechat", ToggleConsole_f,
 					"Toggle the console up and down");
 	Cmd_AddCommand ("messagemode", MessageMode_f,
 					"Prompt to send a message to everyone");
