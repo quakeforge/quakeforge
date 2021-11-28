@@ -59,7 +59,7 @@ typedef struct {
 } old_keyname_t;
 
 old_keyname_t   old_keynames[] = {
-	{"ESCAPE",			"key button 0x01"},
+	//{"ESCAPE",		"key button 0x01"}, binding not allowed
 	{"1",				"key button 0x02"},
 	{"2",				"key button 0x03"},
 	{"3",				"key button 0x04"},

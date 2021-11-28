@@ -30,6 +30,14 @@
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+
 #include "QF/cmd.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
@@ -60,6 +68,10 @@ cl_bind_f (void)
 
 	if (c < 2) {
 		Sys_Printf ("bind <key> [command] : attach a command to a key\n");
+		return;
+	}
+
+	if (strcasecmp (Cmd_Argv (1), "ESCAPE") == 0) {
 		return;
 	}
 
