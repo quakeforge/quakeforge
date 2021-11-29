@@ -18,6 +18,8 @@ typedef enum VkBool32 {
 
 	if (str_mid([self name], -8) == "FlagBits") {
 		end = "_FLAG_BITS_MAX_ENUM";
+	} else if (str_mid([self name], -11) == "FlagBitsEXT") {
+		end = "_FLAG_BITS_MAX_ENUM_EXT";
 	}
 	len = -strlen (end);
 	for (int i = 0; i < type.strct.num_fields; i++) {
@@ -82,7 +84,8 @@ skip_value(string name)
 -(void) writeTable
 {
 	int         strip_bit = 0;
-	if (str_mid([self name], -8) == "FlagBits") {
+	if (str_mid([self name], -8) == "FlagBits"
+		|| str_mid([self name], -11) == "FlagBitsEXT") {
 		strip_bit = 1;
 	}
 
