@@ -1,6 +1,7 @@
 {
 	search = (
 		VkAttachmentDescription,
+		VkDebugUtilsMessageSeverityFlagBitsEXT,
 		VkSubpassDescription,
 		VkSubpassDependency,
 		VkSpecializationInfo,

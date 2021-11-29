@@ -119,6 +119,21 @@ vulkan_presentation_mode_f (cvar_t *var)
 }
 
 static void
+vulkan_use_validation_f (cvar_t *var)
+{
+	if (!strcmp (var->string, "none")) {
+		var->int_val = 0;
+	} else if (!strcmp (var->string, "all")) {
+		var->int_val = VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT;
+	} else {
+		parse_cvar_enum ("VkDebugUtilsMessageSeverityFlagBitsEXT",
+						 "Invalid validation flags, using all",
+					 VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT,
+						 var);
+	}
+}
+
+static void
 vulkan_frame_count_f (cvar_t *var)
 {
 	if (var->int_val < 1) {
@@ -137,8 +152,9 @@ msaaSamples_f (cvar_t *var)
 static void
 Vulkan_Init_Cvars (void)
 {
-	vulkan_use_validation = Cvar_Get ("vulkan_use_validation", "1", CVAR_NONE,
-									  0,
+	vulkan_use_validation = Cvar_Get ("vulkan_use_validation",
+									  "error|warning", CVAR_NONE,
+									  vulkan_use_validation_f,
 									  "enable KRONOS Validation Layer if "
 									  "available (requires instance "
 									  "restart).");

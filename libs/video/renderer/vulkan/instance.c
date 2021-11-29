@@ -116,6 +116,7 @@ instance_extension_enabled (qfv_instance_t *inst, const char *ext)
 }
 
 static int message_severities =
+	VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
 	VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
 	VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
 	VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
@@ -135,6 +136,9 @@ debug_callback (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 				const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
 				void *data)
 {
+	if (!(messageSeverity & vulkan_use_validation->int_val)) {
+		return 0;
+	}
 	const char *msgSev = "";
 	if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
 		msgSev = "verbose: ";
