@@ -195,7 +195,8 @@ main(int argc, string *argv)
 		id obj = (id) Hash_Find (available_types, search_name);
 		obj = [obj resolveType];
 		//printf("obj: %d %s\n", obj, class_get_class_name([obj class]));
-		if (obj && [obj class] == [Struct class]) {
+		if (obj && ([obj class] == [Struct class]
+					|| [obj class] == [Enum class])) {
 			[obj addToQueue];
 		}
 	}
