@@ -30,6 +30,7 @@
 
 #include <stdlib.h>
 
+#include "QF/cvar.h"
 #include "QF/darray.h"
 #include "QF/dstring.h"
 #include "QF/quakefs.h"
@@ -530,6 +531,11 @@ static void
 vulkan_vid_render_choose_visual (void *data)
 {
 	Vulkan_CreateDevice (vulkan_ctx);
+	if (!vulkan_ctx->device) {
+		Sys_Error ("Unable to create Vulkan device.%s",
+				   vulkan_use_validation->int_val ? ""
+					: "\nSet vulkan_use_validation for details");
+	}
 	vulkan_ctx->choose_visual (vulkan_ctx);
 	vulkan_ctx->cmdpool = QFV_CreateCommandPool (vulkan_ctx->device,
 									 vulkan_ctx->device->queue.queueFamily,
@@ -603,6 +609,9 @@ vulkan_vid_render_init (void)
 static void
 vulkan_vid_render_shutdown (void)
 {
+	if (!vulkan_ctx || !vulkan_ctx->device) {
+		return;
+	}
 	qfv_device_t *device = vulkan_ctx->device;
 	qfv_devfuncs_t *df = device->funcs;
 	VkDevice    dev = device->dev;
