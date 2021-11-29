@@ -87,6 +87,21 @@ cvar_t *vulkan_presentation_mode;
 cvar_t *msaaSamples;
 
 static void
+parse_cvar_enum (const char *enum_name, const char *err_str, int err_val,
+				 cvar_t *var)
+{
+	exprctx_t   context = {};
+	context.memsuper = new_memsuper();
+
+	if (cexpr_parse_enum (QFV_GetEnum (enum_name), var->string,
+						  &context, &var->int_val)) {
+		Sys_Printf ("%s\n", err_str);
+		var->int_val = err_val;
+	}
+	delete_memsuper (context.memsuper);
+}
+
+static void
 vulkan_presentation_mode_f (cvar_t *var)
 {
 	if (!strcmp (var->string, "immediate")) {
@@ -115,15 +130,8 @@ vulkan_frame_count_f (cvar_t *var)
 static void
 msaaSamples_f (cvar_t *var)
 {
-	exprctx_t   context = {};
-	context.memsuper = new_memsuper();
-
-	if (cexpr_parse_enum (QFV_GetEnum ("VkSampleCountFlagBits"), var->string,
-						  &context, &var->int_val)) {
-		Sys_Printf ("Invalid MSAA samples, using 1\n");
-		var->int_val = VK_SAMPLE_COUNT_1_BIT;
-	}
-	delete_memsuper (context.memsuper);
+	parse_cvar_enum ("VkSampleCountFlagBits", "Invalid MSAA samples, using 1",
+					 VK_SAMPLE_COUNT_1_BIT, var);
 }
 
 static void
