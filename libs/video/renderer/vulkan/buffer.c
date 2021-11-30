@@ -162,3 +162,12 @@ QFV_CreateBufferView (qfv_device_t *device, VkBuffer buffer, VkFormat format,
 	dfunc->vkCreateBufferView (dev, &createInfo, 0, &view);
 	return view;
 }
+
+VkDeviceSize
+QFV_NextOffset (VkDeviceSize current, VkDeviceSize count,
+				const VkMemoryRequirements *requirements)
+{
+	VkDeviceSize align = requirements->alignment - 1;
+	VkDeviceSize size = (requirements->size + align) & ~align;
+	return ((current + align) & ~align) + count * size;
+}
