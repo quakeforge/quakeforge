@@ -572,7 +572,7 @@ Vulkan_DestroyFrames (vulkan_ctx_t *ctx)
 		df->vkDestroyFence (dev, frame->fence, 0);
 		df->vkDestroySemaphore (dev, frame->imageAvailableSemaphore, 0);
 		df->vkDestroySemaphore (dev, frame->renderDoneSemaphore, 0);
-		df->vkDestroyFramebuffer (dev, frame->framebuffer, 0);
+		frame->framebuffer = 0;
 		for (int j = 0; j < frame->cmdSetCount; j++) {
 			DARRAY_CLEAR (&frame->cmdSets[j]);
 		}
@@ -580,6 +580,11 @@ Vulkan_DestroyFrames (vulkan_ctx_t *ctx)
 	}
 
 	DARRAY_CLEAR (&ctx->frames);
+
+	for (size_t i = 0; i < ctx->framebuffers->size; i++) {
+		df->vkDestroyFramebuffer (dev, ctx->framebuffers->a[i], 0);
+	}
+	free (ctx->framebuffers);
 }
 
 void
