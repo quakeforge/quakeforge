@@ -663,11 +663,14 @@ V_CalcRefdef (void)
 		origin += (vec4f_t) { 0, 0, 0.5, 0};
 	}
 
+	model_t    *model = cl.model_precache[cl.stats[STAT_WEAPON]];
 	if (cl.viewstate.flags & (VF_GIB | VF_DEAD)) {
-		view->renderer.model = NULL;
-	} else {
-		view->renderer.model = cl.model_precache[cl.stats[STAT_WEAPON]];
+		model = NULL;
 	}
+	if (view->renderer.model != model) {
+		view->animation.pose2 = -1;
+	}
+	view->renderer.model = model;
 	view->animation.frame = cl.viewstate.weaponframe;
 	view->renderer.skin = 0;
 

@@ -661,7 +661,11 @@ V_CalcRefdef (void)
 		origin += (vec4f_t) { 0, 0, 0.5, 0};
 	}
 
-	view->renderer.model = cl.model_precache[cl.stats[STAT_WEAPON]];
+	model_t    *model = cl.model_precache[cl.stats[STAT_WEAPON]];
+	if (view->renderer.model != model) {
+		view->animation.pose2 = -1;
+	}
+	view->renderer.model = model;
 	view->animation.frame = cl.stats[STAT_WEAPONFRAME];
 	view->renderer.skin = 0;
 
