@@ -110,4 +110,18 @@ typedef struct vulkan_ctx_s {
 #include "QF/Vulkan/funclist.h"
 } vulkan_ctx_t;
 
+#define qfvPushDebug(ctx, x)									\
+	do {														\
+		if (developer->int_val & SYS_vulkan) {					\
+			DARRAY_APPEND(&(ctx)->instance->debug_stack, (x));	\
+		}														\
+	} while (0)
+#define qfvPopDebug(ctx) 										\
+	do {														\
+		if (developer->int_val & SYS_vulkan) {					\
+			__auto_type ds = &(ctx)->instance->debug_stack;		\
+			DARRAY_REMOVE_AT(ds, ds->size - 1);					\
+		}														\
+	} while (0)
+
 #endif//__vid_vulkan_h

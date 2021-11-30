@@ -28,6 +28,7 @@
 
 #include <vulkan/vulkan.h>
 
+#include "QF/darray.h"
 #include "QF/qtypes.h"
 
 typedef struct qfv_instfuncs_s {
@@ -35,6 +36,8 @@ typedef struct qfv_instfuncs_s {
 #define INSTANCE_LEVEL_VULKAN_FUNCTION_FROM_EXTENSION(name,ext) PFN_##name name;
 #include "QF/Vulkan/funclist.h"
 } qfv_instfuncs_t;
+
+typedef struct DARRAY_TYPE(const char *) qfv_debugstack_t;
 
 typedef struct qfv_physdev_s {
 	struct qfv_instance_s *instance;
@@ -52,6 +55,7 @@ typedef struct qfv_instance_s {
 	VkDebugUtilsMessengerEXT debug_handle;
 	uint32_t    numDevices;
 	qfv_physdev_t *devices;
+	qfv_debugstack_t debug_stack;
 } qfv_instance_t;
 
 struct vulkan_ctx_s;

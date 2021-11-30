@@ -480,7 +480,10 @@ parse_VkShaderModule (const plitem_t *item, void **data,
 	if (*handle) {
 		return 1;
 	}
-	if (!(*handle = QFV_CreateShaderModule (device, name))) {
+	qfvPushDebug (ctx, va (ctx->va_ctx, "parse_VkShaderModule: %d", PL_Line (item)));
+	*handle = QFV_CreateShaderModule (device, name);
+	qfvPopDebug (ctx);
+	if (!*handle) {
 		PL_Message (messages, item, "could not find shader %s", name);
 		return 0;
 	}
@@ -1030,10 +1033,12 @@ QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 	}
 
 	VkRenderPass renderpass;
+	qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParseRenderPass: %d", PL_Line (plist)));
 	renderpass = QFV_CreateRenderPass (device,
 									   renderpass_data.attachments,
 									   renderpass_data.subpasses,
 									   renderpass_data.dependencies);
+	qfvPopDebug (ctx);
 
 	delete_memsuper (memsuper);
 	return renderpass;
@@ -1055,7 +1060,9 @@ QFV_ParsePipeline (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 	}
 
 	cInfo->a[0].renderPass = ctx->renderpass;
+	qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParsePipeline: %d", PL_Line (plist)));
 	__auto_type plSet = QFV_CreateGraphicsPipelines (device, 0, cInfo);
+	qfvPopDebug (ctx);
 	VkPipeline pipeline = plSet->a[0];
 	free (plSet);
 	delete_memsuper (memsuper);
@@ -1079,7 +1086,9 @@ QFV_ParseDescriptorPool (vulkan_ctx_t *ctx, plitem_t *plist,
 	}
 
 	VkDescriptorPool pool;
+	qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParseDescriptorPool: %d", PL_Line (plist)));
 	dfunc->vkCreateDescriptorPool (device->dev, &cInfo, 0, &pool);
+	qfvPopDebug (ctx);
 
 	delete_memsuper (memsuper);
 	return pool;
@@ -1103,10 +1112,12 @@ QFV_ParseDescriptorSetLayout (vulkan_ctx_t *ctx, plitem_t *plist,
 	}
 
 	VkDescriptorSetLayout setLayout;
+	qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParseDescriptorSetLayout: %d", PL_Line (plist)));
 	dfunc->vkCreateDescriptorSetLayout (device->dev, &cInfo, 0, &setLayout);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
 						 setLayout, va (ctx->va_ctx, "descriptorSetLayout:%d",
 										PL_Line (plist)));
+	qfvPopDebug (ctx);
 
 	delete_memsuper (memsuper);
 	return setLayout;
@@ -1129,10 +1140,12 @@ QFV_ParsePipelineLayout (vulkan_ctx_t *ctx, plitem_t *plist,
 	}
 
 	VkPipelineLayout layout;
+	qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParsePipelineLayout: %d", PL_Line (plist)));
 	dfunc->vkCreatePipelineLayout (device->dev, &cInfo, 0, &layout);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_PIPELINE_LAYOUT,
 						 layout, va (ctx->va_ctx, "pipelineLayout:%d",
 										PL_Line (plist)));
+	qfvPopDebug (ctx);
 
 	delete_memsuper (memsuper);
 	return layout;
@@ -1154,7 +1167,9 @@ QFV_ParseSampler (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 	}
 
 	VkSampler sampler;
+	qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParseSampler: %d", PL_Line (plist)));
 	dfunc->vkCreateSampler (device->dev, &cInfo, 0, &sampler);
+	qfvPopDebug (ctx);
 
 	delete_memsuper (memsuper);
 	return sampler;
@@ -1176,7 +1191,9 @@ QFV_ParseImage (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 	}
 
 	VkImage image;
+	qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParseImage: %d", PL_Line (plist)));
 	dfunc->vkCreateImage (device->dev, &cInfo, 0, &image);
+	qfvPopDebug (ctx);
 
 	delete_memsuper (memsuper);
 	return image;
@@ -1198,7 +1215,9 @@ QFV_ParseImageView (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 	}
 
 	VkImageView imageView;
+	qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParseImageView: %d", PL_Line (plist)));
 	dfunc->vkCreateImageView (device->dev, &cInfo, 0, &imageView);
+	qfvPopDebug (ctx);
 
 	delete_memsuper (memsuper);
 	return imageView;
@@ -1295,11 +1314,13 @@ QFV_ParseImageSet (vulkan_ctx_t *ctx, plitem_t *item, plitem_t *properties)
 
 	__auto_type set = QFV_AllocImages (create.count, malloc);
 	for (uint32_t i = 0; i < create.count; i++) {
+		qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParseImageSet: %d", PL_Line (item)));
 		dfunc->vkCreateImage (device->dev, &create.info[i], 0, &set->a[i]);
 
 		const char *name = PL_KeyAtIndex (item, i);
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE, set->a[i],
 							 va (ctx->va_ctx, "image:%s", name));
+		qfvPopDebug (ctx);
 		name = resource_path (ctx, "images", name);
 		QFV_AddHandle (ctx->images, name, (uint64_t) set->a[i]);
 	}
@@ -1334,7 +1355,9 @@ QFV_ParseImageViewSet (vulkan_ctx_t *ctx, plitem_t *item,
 
 	__auto_type set = QFV_AllocImageViews (create.count, malloc);
 	for (uint32_t i = 0; i < create.count; i++) {
+		qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParseImageViewSet: %d", PL_Line (item)));
 		dfunc->vkCreateImageView (device->dev, &create.info[i], 0, &set->a[i]);
+		qfvPopDebug (ctx);
 
 		const char *name = PL_KeyAtIndex (item, i);
 		name = resource_path (ctx, "imageViews", name);
@@ -1361,7 +1384,9 @@ QFV_ParseFramebuffer (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 	}
 
 	VkFramebuffer framebuffer;
+	qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParseFramebuffer: %d", PL_Line (plist)));
 	dfunc->vkCreateFramebuffer (device->dev, &cInfo, 0, &framebuffer);
+	qfvPopDebug (ctx);
 	Sys_MaskPrintf (SYS_vulkan_parse, "framebuffer, renderPass: %#zx, %#zx\n",
 					(size_t) framebuffer, (size_t) cInfo.renderPass);
 

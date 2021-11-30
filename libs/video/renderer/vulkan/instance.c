@@ -136,6 +136,7 @@ debug_callback (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 				const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
 				void *data)
 {
+	qfv_instance_t *instance = data;
 	if (!(messageSeverity & vulkan_use_validation->int_val)) {
 		return 0;
 	}
@@ -154,6 +155,9 @@ debug_callback (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 	}
 	fprintf (stderr, "validation layer: %s%s\n", msgSev,
 			 callbackData->pMessage);
+	for (size_t i = instance->debug_stack.size; i-- > 0; ) {
+		fprintf (stderr, "    %s\n", instance->debug_stack.a[i]);
+	}
 	debug_breakpoint (messageSeverity);
 	return VK_FALSE;
 }
@@ -264,6 +268,7 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 	inst->funcs = (qfv_instfuncs_t *)(inst + 1);
 	inst->enabled_extensions = new_strset (ext);
 	inst->extension_enabled = instance_extension_enabled;
+	DARRAY_INIT (&inst->debug_stack, 8);
 	ctx->instance = inst;
 	load_instance_funcs (ctx);
 
