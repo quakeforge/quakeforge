@@ -969,7 +969,10 @@ Vulkan_LoadLights (model_t *model, const char *entity_data, vulkan_ctx_t *ctx)
 				qfv_light_t light = {};
 
 				parse_light (&light, entity, targets);
-				DARRAY_APPEND (&lctx->lights, light);
+				// some lights have 0 output, so drop them
+				if (light.light) {
+					DARRAY_APPEND (&lctx->lights, light);
+				}
 			}
 		}
 		for (size_t i = 0; i < ctx->frames.size; i++) {
