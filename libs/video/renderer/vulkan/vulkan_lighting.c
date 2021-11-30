@@ -308,8 +308,6 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&lctx->frames, frames);
 	lctx->frames.grow = 0;
 
-	lctx->sun_pvs = set_new ();
-
 	lctx->pipeline = Vulkan_CreatePipeline (ctx, "lighting");
 	lctx->layout = Vulkan_CreatePipelineLayout (ctx, "lighting_layout");
 	lctx->sampler = Vulkan_CreateSampler (ctx, "shadow_sampler");
@@ -373,9 +371,8 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 							 shadow_set->a[i],
 							 va (ctx->va_ctx, "lighting:shadow_set:%zd", i));
 
-		lframe->pvs = set_new ();
-
 		DARRAY_INIT (&lframe->lightvis, 16);
+		lframe->pvs = 0;
 		lframe->leaf = 0;
 
 		QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, cmdSet);
@@ -923,6 +920,17 @@ Vulkan_LoadLights (model_t *model, const char *entity_data, vulkan_ctx_t *ctx)
 	lctx->lights.size = 0;
 	lctx->lightleafs.size = 0;
 	lctx->lightmats.size = 0;
+	if (lctx->sun_pvs) {
+		set_delete (lctx->sun_pvs);
+	}
+	lctx->sun_pvs = set_new_size (model->brush.visleafs);
+	for (size_t i = 0; i < ctx->frames.size; i++) {
+		__auto_type lframe = &lctx->frames.a[i];
+		if (lframe->pvs) {
+			set_delete (lframe->pvs);
+		}
+		lframe->pvs = set_new_size (model->brush.visleafs);
+	}
 
 	clear_shadows (ctx);
 
