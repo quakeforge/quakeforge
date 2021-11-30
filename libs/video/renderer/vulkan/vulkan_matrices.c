@@ -135,7 +135,7 @@ Vulkan_CalcProjectionMatrices (vulkan_ctx_t *ctx)
 	VkMappedMemoryRange ranges[] = {
 		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0, mat->memory, 0, MAT_SIZE },
 		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0, mat->memory,
-		  (mat->projection_3d - mat->projection_2d) * sizeof (float),
+		  (mat->projection_3d - mat->projection_2d) * sizeof (mat->projection_2d[0]),
 		  MAT_SIZE},
 	};
 	dfunc->vkFlushMappedMemoryRanges (device->dev, 2, ranges);
