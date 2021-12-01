@@ -80,9 +80,9 @@
 				values = pMapEntries;
 			};
 			data = {
-				type = data;
-				size = dataSize;
-				data = pData;
+				type = (custom,	(QFBinary, QFString),
+						parse_specialization_data);
+				fields = (dataSize, pData);
 			};
 		};
 		VkPipelineShaderStageCreateInfo = {

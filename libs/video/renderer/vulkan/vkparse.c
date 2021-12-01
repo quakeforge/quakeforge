@@ -324,32 +324,6 @@ parse_array (const plfield_t *field, const plitem_t *item,
 }
 
 static int
-parse_data (const plfield_t *field, const plitem_t *item,
-			void *data, plitem_t *messages, void *context)
-{
-	__auto_type datad = (parse_data_t *) field->data;
-	__auto_type value = (void **) ((byte *)data + datad->value_offset);
-	__auto_type size = (size_t *) ((byte *)data + datad->size_offset);
-
-	const void *bindata = PL_BinaryData (item);
-	size_t      binsize = PL_BinarySize (item);
-
-	Sys_MaskPrintf (SYS_vulkan_parse, "parse_data: %s %zd %d %p %p %p\n",
-					field->name, field->offset, field->type, field->parser,
-					field->data, data);
-	Sys_MaskPrintf (SYS_vulkan_parse, "    %zd %zd\n", datad->value_offset,
-					datad->size_offset);
-	Sys_MaskPrintf (SYS_vulkan_parse, "    %zd %p\n", binsize, bindata);
-
-	*value = vkparse_alloc (context, binsize);
-	memcpy (*value, bindata, binsize);
-	if ((void *) size > data) {
-		*size = binsize;
-	}
-	return 1;
-}
-
-static int
 parse_string (const plfield_t *field, const plitem_t *item,
 			  void *data, plitem_t *messages, void *context)
 {
@@ -795,6 +769,80 @@ parse_BasePipeline (const plitem_t *item, void **data,
 	return 0;
 }
 
+typedef struct data_array_s DARRAY_TYPE(byte) data_array_t;
+static void
+data_array (const exprval_t **params, exprval_t *result, exprctx_t *context)
+{
+	size_t      offset = 0;
+	for (const exprval_t **param = params; *param; param++) {
+		offset += (*param)->type->size;
+	}
+	__auto_type data = DARRAY_ALLOCFIXED_OBJ (data_array_t, offset,
+											  cmemalloc, context->memsuper);
+	for (const exprval_t **param = params; *param; param++) {
+		size_t      size = (*param)->type->size;
+		memcpy (data->a + offset, (*param)->value, size);
+		offset += size;
+	}
+	*(data_array_t **) result->value = data;
+}
+
+static exprtype_t data_array_type = {
+	"array",
+	sizeof (data_array_t *),
+	0,
+	0,
+};
+static exprfunc_t data_array_func[] = {
+	{ &data_array_type, -1, 0, data_array },
+	{}
+};
+static exprsym_t data_array_symbols[] = {
+	{ "array", &cexpr_function, data_array_func },
+	{}
+};
+static exprtab_t data_array_symtab = {
+	data_array_symbols,
+};
+
+static int
+parse_specialization_data (const plitem_t *item, void **data,
+						   plitem_t *messages, parsectx_t *context)
+{
+	size_t     *size_ptr = (size_t *) data[0];
+	void      **data_ptr = (void **) data[1];
+
+	if (PL_Type (item) == QFBinary) {
+		const void *bindata = PL_BinaryData (item);
+		size_t      binsize = PL_BinarySize (item);
+
+		*data_ptr = vkparse_alloc (context, binsize);
+		memcpy (*data_ptr, bindata, binsize);
+		*size_ptr = binsize;
+		return 1;
+	}
+
+	data_array_t *da= 0;
+	exprctx_t   ectx = *((parsectx_t *)context)->ectx;
+	exprval_t   result = { &data_array_type, &da };
+	ectx.symtab = &data_array_symtab;
+	ectx.result = &result;
+	const char *valstr = PL_String (item);
+	//Sys_MaskPrintf (SYS_vulkan_parse,
+	//				"parse_specialization_data: %s %zd %d %p %p %s\n",
+	//				field->name, field->offset, field->type, field->parser,
+	//				field->data, valstr);
+	int         ret = !cexpr_eval_string (valstr, &ectx);
+	if (!ret) {
+		PL_Message (messages, item, "error parsing specialization data: %s",
+					valstr);
+	} else {
+		*size_ptr = da->size;
+		*data_ptr = da->a;
+	}
+	return ret;
+}
+
 #include "libs/video/renderer/vulkan/vkparse.cinc"
 
 static void
@@ -955,6 +1003,7 @@ QFV_InitParse (vulkan_ctx_t *ctx)
 	cexpr_init_symtab (&qfv_swapchain_t_symtab, &context);
 	cexpr_init_symtab (&vulkan_frameset_t_symtab, &context);
 	cexpr_init_symtab (&imageviewset_symtab, &context);
+	cexpr_init_symtab (&data_array_symtab, &context);
 
 	if (!ctx->setLayouts) {
 		ctx->shaderModules = handlref_symtab (shaderModule_free, ctx);
