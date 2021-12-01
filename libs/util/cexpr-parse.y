@@ -363,7 +363,7 @@ static exprval_t *function_expr (exprsym_t *fsym, exprlist_t *list,
 								 exprctx_t *context)
 {
 	exprlist_t *l;
-	int         num_args = 0;
+	int         num_args = 1;// one extra for terminating null
 	exprfunc_t *func = 0;
 	exprval_t  *result;
 
@@ -371,6 +371,7 @@ static exprval_t *function_expr (exprsym_t *fsym, exprlist_t *list,
 		num_args++;
 	}
 	__auto_type args = (const exprval_t **) alloca (num_args * sizeof (exprval_t *));
+	args[num_args - 1] = 0;	// terminate array of args for varargs functions
 	__auto_type types = (exprtype_t **) alloca (num_args * sizeof (exprtype_t *));
 	for (num_args = 0; list; list = l, num_args++) {
 		args[num_args] = list->value;
@@ -385,8 +386,15 @@ static exprval_t *function_expr (exprsym_t *fsym, exprlist_t *list,
 		return result;
 	}
 	for (exprfunc_t *f = fsym->value; f->result; f++) {
-		if (f->num_params == num_args
-			&& memcmp (f->param_types, types,
+		int         num_params = f->num_params;
+		if (num_params >= 0 && num_args == num_params) {
+		} else if (num_params < 0 && num_args >= ~num_params) {
+			num_params = ~num_params;
+		} else {
+			continue;
+		}
+		if (!num_params
+			|| memcmp (f->param_types, types,
 					   num_args * sizeof (exprtype_t *)) == 0) {
 			func = f;
 			break;
