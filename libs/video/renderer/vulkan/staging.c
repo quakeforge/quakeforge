@@ -117,7 +117,7 @@ QFV_DestroyStagingBuffer (qfv_stagebuf_t *stage)
 		fences->a[i] = stage->packets.buffer[i].fence;
 	}
 	dfunc->vkWaitForFences (device->dev, fences->size, fences->a, VK_TRUE,
-							500000000ull);
+							5000000000ull);
 	for (int i = 0; i < count; i++) {
 		dfunc->vkDestroyFence (device->dev, fences->a[i], 0);
 	}
