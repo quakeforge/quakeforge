@@ -156,7 +156,7 @@ SCR_TileClear (void)
 }
 
 void
-glsl_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
+glsl_R_RenderFrame (SCR_Func *scr_funcs)
 {
 	static int  begun = 0;
 
@@ -178,7 +178,7 @@ glsl_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	//update in sw modes but must in glsl mode
 	vr_data.scr_copyeverything = 1;
 
-	scr_3dfunc ();
+	glsl_R_RenderView ();
 
 	SCR_SetUpToDrawConsole ();
 	GLSL_Set2D ();

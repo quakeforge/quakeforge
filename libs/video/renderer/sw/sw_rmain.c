@@ -744,6 +744,9 @@ R_RenderView_ (void)
 
 	if (r_norefresh->int_val)
 		return;
+	if (!r_worldentity.renderer.model) {
+		return;
+	}
 
 	r_warpbuffer = warpbuffer;
 
@@ -1160,6 +1163,7 @@ R_RenderViewFishEye (void)
 void
 R_ClearState (void)
 {
+	r_worldentity.renderer.model = 0;
 	R_ClearEfrags ();
 	R_ClearDlights ();
 	R_ClearParticles ();

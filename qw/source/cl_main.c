@@ -1145,6 +1145,7 @@ CL_SetState (cactive_t state)
 		if (old_state == ca_active) {
 			// leaving active state
 			IN_ClearStates ();
+			CL_ClearState ();
 
 			// Auto demo recorder stops here
 			if (cl_autorecord->int_val && cls.demorecording)

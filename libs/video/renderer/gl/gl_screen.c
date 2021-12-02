@@ -201,7 +201,7 @@ R_Clear (void)
 }
 
 void
-gl_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
+gl_R_RenderFrame (SCR_Func *scr_funcs)
 {
 	double      time1 = 0, time2;
 	static int  begun = 0;
@@ -228,7 +228,7 @@ gl_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	}
 
 	// do 3D refresh drawing, and then update the screen
-	scr_3dfunc ();
+	gl_R_RenderView ();
 
 	SCR_SetUpToDrawConsole ();
 	GL_Set2D ();

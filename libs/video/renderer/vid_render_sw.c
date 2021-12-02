@@ -149,7 +149,6 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	R_AllocDlight,
 	R_AllocEntity,
 	R_MaxDlightsCheck,
-	R_RenderView,
 	R_DecayLights,
 	R_ViewChanged,
 	R_ClearParticles,

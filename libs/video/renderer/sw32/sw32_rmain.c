@@ -750,6 +750,9 @@ R_RenderView_ (void)
 {
 	if (r_norefresh->int_val)
 		return;
+	if (!r_worldentity.renderer.model) {
+		return;
+	}
 
 	sw32_r_warpbuffer = warpbuffer;
 
@@ -868,6 +871,7 @@ sw32_R_InitTurb (void)
 void
 sw32_R_ClearState (void)
 {
+	r_worldentity.renderer.model = 0;
 	R_ClearEfrags ();
 	R_ClearDlights ();
 	sw32_R_ClearParticles ();

@@ -531,6 +531,7 @@ CL_SetState (cactive_t state)
 			case ca_dedicated:
 				break;
 			case ca_disconnected:
+				CL_ClearState ();
 				cls.signon = so_none;
 				cl.loading = false;
 				VID_SetCaption ("Disconnected");

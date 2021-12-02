@@ -157,6 +157,10 @@ Vulkan_RenderView (vulkan_ctx_t *ctx)
 	double      t[9] = {};
 	int         speeds = r_speeds->int_val;
 
+	if (!r_worldentity.renderer.model) {
+		return;
+	}
+
 	if (speeds)
 		t[0] = Sys_DoubleTime ();
 	setup_frame (ctx);

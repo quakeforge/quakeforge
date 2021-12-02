@@ -562,7 +562,7 @@ R_RenderView_ (void)
 		return;
 	}
 	if (!r_worldentity.renderer.model) {
-		Sys_Error ("R_RenderView: NULL worldmodel");
+		return;
 	}
 
 	gl_mirror = false;

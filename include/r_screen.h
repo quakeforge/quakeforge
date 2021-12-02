@@ -34,8 +34,6 @@
 #include "QF/screen.h"
 #include "QF/vid.h"
 
-void SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc,
-					   SCR_Func *scr_funcs);
 void SCR_DrawRam (void);
 void SCR_DrawFPS (void);
 void SCR_DrawTime (void);

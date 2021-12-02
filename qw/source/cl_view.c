@@ -760,8 +760,6 @@ V_RenderView (void)
 	} else {
 		V_CalcRefdef ();
 	}
-
-	r_funcs->R_RenderView ();
 }
 
 void

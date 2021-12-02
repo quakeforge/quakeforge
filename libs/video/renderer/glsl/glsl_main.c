@@ -181,6 +181,10 @@ glsl_R_RenderView (void)
 	double      t[10] = {};
 	int         speeds = r_speeds->int_val;
 
+	if (!r_worldentity.renderer.model) {
+		return;
+	}
+
 	if (speeds)
 		t[0] = Sys_DoubleTime ();
 	glsl_R_SetupFrame ();
@@ -272,6 +276,7 @@ glsl_R_LineGraph (int x, int y, int *h_vals, int count, int height)
 void
 glsl_R_ClearState (void)
 {
+	r_worldentity.renderer.model = 0;
 	R_ClearEfrags ();
 	R_ClearDlights ();
 	glsl_R_ClearParticles ();

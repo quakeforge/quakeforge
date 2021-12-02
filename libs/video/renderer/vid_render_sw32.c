@@ -154,7 +154,6 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 	R_AllocDlight,
 	R_AllocEntity,
 	R_MaxDlightsCheck,
-	sw32_R_RenderView,
 	R_DecayLights,
 	sw32_R_ViewChanged,
 	sw32_R_ClearParticles,

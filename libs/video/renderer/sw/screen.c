@@ -182,7 +182,7 @@ SCR_ScreenShot_f (void)
 }
 
 void
-R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
+R_RenderFrame (SCR_Func *scr_funcs)
 {
 	vrect_t     vrect;
 
@@ -202,7 +202,7 @@ R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	D_DisableBackBufferAccess ();		// for adapters that can't stay mapped
 										// in for linear writes all the time
 	VID_LockBuffer ();
-	scr_3dfunc ();
+	R_RenderView ();
 	VID_UnlockBuffer ();
 
 	D_EnableBackBufferAccess ();		// of all overlay stuff if drawing

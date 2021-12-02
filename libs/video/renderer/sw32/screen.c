@@ -139,7 +139,7 @@ sw32_SCR_ScreenShot_f (void)
 }
 
 void
-sw32_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
+sw32_R_RenderFrame (SCR_Func *scr_funcs)
 {
 	vrect_t     vrect;
 
@@ -159,7 +159,7 @@ sw32_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	sw32_D_DisableBackBufferAccess ();		// for adapters that can't stay mapped
 										// in for linear writes all the time
 	VID_LockBuffer ();
-	scr_3dfunc ();
+	sw32_R_RenderView ();
 	VID_UnlockBuffer ();
 
 	sw32_D_EnableBackBufferAccess ();		// of all overlay stuff if drawing

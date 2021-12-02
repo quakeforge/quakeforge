@@ -112,7 +112,7 @@ vulkan_R_Init (void)
 }
 
 static void
-vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
+vulkan_R_RenderFrame (SCR_Func *scr_funcs)
 {
 	const VkSubpassContents subpassContents
 		= VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
@@ -132,13 +132,12 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 
 	frame->framebuffer = vulkan_ctx->framebuffers->a[imageIndex];
 
-	scr_3dfunc ();
-
 	view_draw (vr_data.scr_view);
 	while (*scr_funcs) {
 		(*scr_funcs) ();
 		scr_funcs++;
 	}
+	Vulkan_RenderView (vulkan_ctx);
 
 	Vulkan_FlushText (vulkan_ctx);
 
@@ -222,6 +221,7 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 static void
 vulkan_R_ClearState (void)
 {
+	r_worldentity.renderer.model = 0;
 	R_ClearEfrags ();
 	R_ClearDlights ();
 	Vulkan_ClearParticles (vulkan_ctx);
@@ -242,12 +242,6 @@ vulkan_R_NewMap (model_t *worldmodel, model_t **models, int num_models)
 static void
 vulkan_R_LineGraph (int x, int y, int *h_vals, int count, int height)
 {
-}
-
-static void
-vulkan_R_RenderView (void)
-{
-	Vulkan_RenderView (vulkan_ctx);
 }
 
 static void
@@ -678,7 +672,6 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	R_AllocDlight,
 	R_AllocEntity,
 	R_MaxDlightsCheck,
-	vulkan_R_RenderView,
 	R_DecayLights,
 	vulkan_R_ViewChanged,
 	vulkan_R_ClearParticles,

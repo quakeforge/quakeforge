@@ -148,7 +148,7 @@ typedef struct vid_render_funcs_s {
 	void (*Fog_ParseWorldspawn) (struct plitem_s *worldspawn);
 
 	void (*R_Init) (void);
-	void (*R_RenderFrame) (SCR_Func scr_3dfunc, SCR_Func *scr_funcs);
+	void (*R_RenderFrame) (SCR_Func *scr_funcs);
 	void (*R_ClearState) (void);
 	void (*R_LoadSkys) (const char *);
 	void (*R_NewMap) (model_t *worldmodel, model_t **models, int num_models);
@@ -158,7 +158,6 @@ typedef struct vid_render_funcs_s {
 	dlight_t *(*R_AllocDlight) (int key);
 	entity_t *(*R_AllocEntity) (void);
 	void (*R_MaxDlightsCheck) (struct cvar_s *var);
-	void (*R_RenderView) (void);
 	void (*R_DecayLights) (double frametime);
 
 	void (*R_ViewChanged) (void);

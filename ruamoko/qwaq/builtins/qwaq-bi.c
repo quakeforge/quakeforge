@@ -96,14 +96,7 @@ bi_printf (progs_t *pr)
 }
 
 static progs_t *bi_rprogs;
-static func_t qc3d, qc2d;
-
-static void
-bi_3d (void)
-{
-	if (qc3d)
-		PR_ExecuteProgram (bi_rprogs, qc3d);
-}
+static func_t qc2d;
 
 static void
 bi_2d (void)
@@ -128,7 +121,7 @@ bi_refresh (progs_t *pr)
 	IN_ProcessEvents ();
 	//GIB_Thread_Execute ();
 	Cbuf_Execute_Stack (qwaq_cbuf);
-	SCR_UpdateScreen (con_realtime, bi_3d, bi_2dfuncs);
+	SCR_UpdateScreen (con_realtime, bi_2dfuncs);
 	R_FLOAT (pr) = con_frametime;
 }
 
@@ -136,12 +129,6 @@ static void
 bi_refresh_2d (progs_t *pr)
 {
 	qc2d = P_FUNCTION (pr, 0);
-}
-
-static void
-bi_refresh_3d (progs_t *pr)
-{
-	qc3d = P_FUNCTION (pr, 0);
 }
 
 static void
@@ -154,7 +141,6 @@ static builtin_t builtins[] = {
 	{"printf",		bi_printf,		-1},
 	{"refresh",		bi_refresh,		-1},
 	{"refresh_2d",	bi_refresh_2d,	-1},
-	{"refresh_3d",	bi_refresh_3d,	-1},
 	{"shutdown",	bi_shutdown_,	-1},
 	{0}
 };

@@ -199,7 +199,7 @@ SCR_CalcRefdef (void)
 	needs almost the entire 256k of stack space!
 */
 void
-SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
+SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
 {
 	if (scr_skipupdate || !scr_initialized) {
 		return;
@@ -212,7 +212,7 @@ SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 		SCR_CalcRefdef ();
 	}
 
-	r_funcs->R_RenderFrame (scr_3dfunc, scr_funcs);
+	r_funcs->R_RenderFrame (scr_funcs);
 }
 
 void

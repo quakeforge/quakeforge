@@ -36,8 +36,7 @@ void SCR_Init (void);
 
 typedef void (*SCR_Func)(void);
 // scr_funcs is a null terminated array
-void SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc,
-					   SCR_Func *scr_funcs);
+void SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs);
 
 void SCR_SizeUp (void);
 void SCR_SizeDown (void);
