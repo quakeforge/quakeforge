@@ -54,6 +54,7 @@
 #include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_particles.h"
 //#include "QF/Vulkan/qf_textures.h"
+#include "QF/Vulkan/renderpass.h"
 
 #include "mod_internal.h"
 #include "r_internal.h"
@@ -103,7 +104,7 @@ setup_view (vulkan_ctx_t *ctx)
 }
 
 static void
-Vulkan_RenderEntities (vulkan_ctx_t *ctx)
+Vulkan_RenderEntities (qfv_renderframe_t *rFrame)
 {
 	if (!r_drawentities->int_val)
 		return;
@@ -115,22 +116,22 @@ Vulkan_RenderEntities (vulkan_ctx_t *ctx)
 			if (ent->renderer.model->type != mod_##type_name) \
 				continue; \
 			if (!begun) { \
-				Vulkan_##Type##Begin (ctx); \
+				Vulkan_##Type##Begin (rFrame); \
 				begun = 1; \
 			} \
 			/* hack the depth range to prevent view model */\
 			/* from poking into walls */\
 			if (ent == vr_data.view_model) { \
-				Vulkan_AliasDepthRange (ctx, 0, 0.3); \
+				Vulkan_AliasDepthRange (rFrame, 0, 0.3); \
 			} \
-			Vulkan_Draw##Type (ent, ctx); \
+			Vulkan_Draw##Type (ent, rFrame); \
 			/* unhack in case the view_model is not the last */\
 			if (ent == vr_data.view_model) { \
-				Vulkan_AliasDepthRange (ctx, 0, 1); \
+				Vulkan_AliasDepthRange (rFrame, 0, 1); \
 			} \
 		} \
 		if (begun) \
-			Vulkan_##Type##End (ctx); \
+			Vulkan_##Type##End (rFrame); \
 	} while (0)
 
 	RE_LOOP (alias, Alias);
@@ -152,8 +153,9 @@ Vulkan_DrawViewModel (vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_RenderView (vulkan_ctx_t *ctx)
+Vulkan_RenderView (qfv_renderframe_t *rFrame)
 {
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	double      t[9] = {};
 	int         speeds = r_speeds->int_val;
 
@@ -173,17 +175,17 @@ Vulkan_RenderView (vulkan_ctx_t *ctx)
 	R_PushDlights (vec3_origin);
 	if (speeds)
 		t[3] = Sys_DoubleTime ();
-	Vulkan_DrawWorld (ctx);
+	Vulkan_DrawWorld (rFrame);
 	if (speeds)
 		t[4] = Sys_DoubleTime ();
-	Vulkan_DrawSky (ctx);
+	Vulkan_DrawSky (rFrame);
 	if (speeds)
 		t[5] = Sys_DoubleTime ();
 	Vulkan_DrawViewModel (ctx);
-	Vulkan_RenderEntities (ctx);
+	Vulkan_RenderEntities (rFrame);
 	if (speeds)
 		t[6] = Sys_DoubleTime ();
-	Vulkan_DrawWaterSurfaces (ctx);
+	Vulkan_DrawWaterSurfaces (rFrame);
 	if (speeds)
 		t[7] = Sys_DoubleTime ();
 	Vulkan_DrawParticles (ctx);

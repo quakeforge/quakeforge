@@ -595,7 +595,7 @@
 				dynamicState = ( viewport, scissor );
 			};
 			layout = quakebsp_layout;
-			//renderPass = renderpass;
+			renderPass = renderpass;
 		};
 		alias_depth = {
 			subpass = 0;
@@ -629,7 +629,7 @@
 				dynamicState = ( viewport, scissor );
 			};
 			layout = alias_layout;
-			//renderPass = renderpass;
+			renderPass = renderpass;
 		};
 		alias_gbuf = {
 			subpass = 2;
@@ -670,7 +670,7 @@
 				dynamicState = ( viewport, scissor, blend_constants );
 			};
 			layout = alias_layout;
-			//renderPass = renderpass;
+			renderPass = renderpass;
 		};
 		bsp_depth = {
 			subpass = 0;
@@ -699,7 +699,7 @@
 				dynamicState = ( viewport, scissor );
 			};
 			layout = quakebsp_layout;
-			//renderPass = renderpass;
+			renderPass = renderpass;
 		};
 		bsp_gbuf = {
 			subpass = 2;
@@ -748,7 +748,7 @@
 				dynamicState = ( viewport, scissor, blend_constants );
 			};
 			layout = quakebsp_layout;
-			//renderPass = renderpass;
+			renderPass = renderpass;
 		};
 		bsp_skybox = {
 			subpass = 1;
@@ -785,7 +785,7 @@
 				dynamicState = ( viewport, scissor );
 			};
 			layout = quakebsp_layout;
-			//renderPass = renderpass;
+			renderPass = renderpass;
 		};
 		bsp_skysheet = {
 			subpass = 1;
@@ -822,7 +822,7 @@
 				dynamicState = ( viewport, scissor );
 			};
 			layout = quakebsp_layout;
-			//renderPass = renderpass;
+			renderPass = renderpass;
 		};
 		bsp_turb = {
 			subpass = 1;
@@ -859,7 +859,7 @@
 				dynamicState = ( viewport, scissor );
 			};
 			layout = quakebsp_layout;
-			//renderPass = renderpass;
+			renderPass = renderpass;
 		};
 		twod = {
 			subpass = 1;
@@ -889,7 +889,7 @@
 				dynamicState = ( viewport, scissor );
 			};
 			layout = twod_layout;
-			//renderPass = renderpass;
+			renderPass = renderpass;
 		};
 		lighting = {
 			subpass = 3;
@@ -916,7 +916,7 @@
 				dynamicState = ( viewport, scissor );
 			};
 			layout = lighting_layout;
-			//renderPass = renderpass;
+			renderPass = renderpass;
 		};
 		compose = {
 			subpass = 4;
@@ -943,7 +943,7 @@
 				dynamicState = ( viewport, scissor );
 			};
 			layout = compose_layout;
-			//renderPass = renderpass;
+			renderPass = renderpass;
 		};
 	};
 }

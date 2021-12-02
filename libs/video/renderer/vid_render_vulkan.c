@@ -98,14 +98,15 @@ vulkan_R_Init (void)
 	Vulkan_CreateFrames (vulkan_ctx);
 	Vulkan_CreateCapture (vulkan_ctx);
 	Vulkan_CreateRenderPass (vulkan_ctx);
-	Vulkan_CreateFramebuffers (vulkan_ctx);
 	Vulkan_Texture_Init (vulkan_ctx);
+
 	Vulkan_Alias_Init (vulkan_ctx);
 	Vulkan_Bsp_Init (vulkan_ctx);
 	Vulkan_Draw_Init (vulkan_ctx);
 	Vulkan_Particles_Init (vulkan_ctx);
 	Vulkan_Lighting_Init (vulkan_ctx);
 	Vulkan_Compose_Init (vulkan_ctx);
+
 	Skin_Init ();
 
 	SCR_Init ();
@@ -114,8 +115,6 @@ vulkan_R_Init (void)
 static void
 vulkan_R_RenderFrame (SCR_Func *scr_funcs)
 {
-	const VkSubpassContents subpassContents
-		= VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS;
 	uint32_t imageIndex = 0;
 	qfv_device_t *device = vulkan_ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
@@ -130,52 +129,61 @@ vulkan_R_RenderFrame (SCR_Func *scr_funcs)
 						  0, &imageIndex);
 	vulkan_ctx->swapImageIndex = imageIndex;
 
-	frame->framebuffer = vulkan_ctx->framebuffers->a[imageIndex];
-
 	view_draw (vr_data.scr_view);
 	while (*scr_funcs) {
 		(*scr_funcs) ();
 		scr_funcs++;
 	}
-	Vulkan_RenderView (vulkan_ctx);
 
-	Vulkan_FlushText (vulkan_ctx);
-
-	Vulkan_Lighting_Draw (vulkan_ctx);
-	Vulkan_Compose_Draw (vulkan_ctx);
+	for (size_t i = 0; i < vulkan_ctx->renderPasses.size; i++) {
+		__auto_type rp = vulkan_ctx->renderPasses.a[i];
+		__auto_type rpFrame = &rp->frames.a[vulkan_ctx->curFrame];
+		rp->draw (rpFrame);
+	}
 
 	VkCommandBufferBeginInfo beginInfo
 		= { VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO };
+
 	VkRenderPassBeginInfo renderPassInfo = {
-		VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO, 0,
-		vulkan_ctx->renderpass, 0,
-		{ {0, 0}, vulkan_ctx->swapchain->extent },
-		vulkan_ctx->clearValues->size, vulkan_ctx->clearValues->a
+		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO,
+		.renderArea = { {0, 0}, vulkan_ctx->swapchain->extent },
 	};
 
 	dfunc->vkBeginCommandBuffer (frame->cmdBuffer, &beginInfo);
-	renderPassInfo.framebuffer = frame->framebuffer;
-	dfunc->vkCmdBeginRenderPass (frame->cmdBuffer, &renderPassInfo,
-								 subpassContents);
+	for (size_t i = 0; i < vulkan_ctx->renderPasses.size; i++) {
+		__auto_type rp = vulkan_ctx->renderPasses.a[i];
+		__auto_type rpFrame = &rp->frames.a[vulkan_ctx->curFrame];
 
-	for (int i = 0; i < frame->cmdSetCount; i++) {
-		if (frame->cmdSets[i].size) {
-			dfunc->vkCmdExecuteCommands (frame->cmdBuffer,
-										 frame->cmdSets[i].size,
-										 frame->cmdSets[i].a);
-		}
-		// reset for next time around
-		frame->cmdSets[i].size = 0;
 
-		//Regardless of whether any commands were submitted for this subpass,
-		//must step through each and every subpass, otherwise the attachments
-		//won't be transitioned correctly.
-		if (i < frame->cmdSetCount - 1) {
-			dfunc->vkCmdNextSubpass (frame->cmdBuffer, subpassContents);
+		frame->framebuffer = rp->framebuffers->a[imageIndex];
+		renderPassInfo.framebuffer = frame->framebuffer,
+		renderPassInfo.renderPass = rp->renderpass;
+		renderPassInfo.clearValueCount = rp->clearValues->size;
+		renderPassInfo.pClearValues = rp->clearValues->a;
+
+		dfunc->vkCmdBeginRenderPass (frame->cmdBuffer, &renderPassInfo,
+									 rpFrame->subpassContents);
+
+		for (int j = 0; j < rpFrame->subpassCount; j++) {
+			__auto_type cmdSet = &rpFrame->subpassCmdSets[j];
+			if (cmdSet->size) {
+				dfunc->vkCmdExecuteCommands (frame->cmdBuffer,
+											 cmdSet->size, cmdSet->a);
+			}
+			// reset for next time around
+			cmdSet->size = 0;
+
+			//Regardless of whether any commands were submitted for this
+			//subpass, must step through each and every subpass, otherwise
+			//the attachments won't be transitioned correctly.
+			if (j < rpFrame->subpassCount - 1) {
+				dfunc->vkCmdNextSubpass (frame->cmdBuffer,
+										 rpFrame->subpassContents);
+			}
 		}
+		dfunc->vkCmdEndRenderPass (frame->cmdBuffer);
 	}
 
-	dfunc->vkCmdEndRenderPass (frame->cmdBuffer);
 	if (vulkan_ctx->capture_callback) {
 		VkImage     srcImage = vulkan_ctx->swapchain->images->a[imageIndex];
 		VkCommandBuffer cmd = QFV_CaptureImage (vulkan_ctx->capture, srcImage,
@@ -615,15 +623,16 @@ vulkan_vid_render_shutdown (void)
 	QFV_DeviceWaitIdle (device);
 	df->vkDestroyFence (dev, vulkan_ctx->fence, 0);
 	df->vkDestroyCommandPool (dev, vulkan_ctx->cmdpool, 0);
+
 	Vulkan_Compose_Shutdown (vulkan_ctx);
 	Vulkan_Lighting_Shutdown (vulkan_ctx);
 	Vulkan_Draw_Shutdown (vulkan_ctx);
 	Vulkan_Bsp_Shutdown (vulkan_ctx);
 	Vulkan_Alias_Shutdown (vulkan_ctx);
+
 	Mod_ClearAll ();
 	Vulkan_Texture_Shutdown (vulkan_ctx);
-	Vulkan_DestroyFramebuffers (vulkan_ctx);
-	Vulkan_DestroyRenderPass (vulkan_ctx);
+	Vulkan_DestroyRenderPasses (vulkan_ctx);
 	Vulkan_Shutdown_Common (vulkan_ctx);
 }
 

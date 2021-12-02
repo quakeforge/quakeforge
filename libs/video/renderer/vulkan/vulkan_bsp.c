@@ -63,6 +63,7 @@
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/renderpass.h"
 #include "QF/Vulkan/scrap.h"
 #include "QF/Vulkan/staging.h"
 
@@ -825,8 +826,9 @@ get_view (qfv_tex_t *tex, qfv_tex_t *default_tex)
 
 static void
 bsp_begin_subpass (QFV_BspSubpass subpass, VkPipeline pipeline,
-				   vulkan_ctx_t *ctx)
+				   qfv_renderframe_t *rFrame)
 {
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
@@ -837,7 +839,7 @@ bsp_begin_subpass (QFV_BspSubpass subpass, VkPipeline pipeline,
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		ctx->renderpass, subpass_map[subpass],
+		rFrame->renderpass->renderpass, subpass_map[subpass],
 		cframe->framebuffer,
 		0, 0, 0,
 	};
@@ -886,20 +888,20 @@ bsp_end_subpass (VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 }
 
 static void
-bsp_begin (vulkan_ctx_t *ctx)
+bsp_begin (qfv_renderframe_t *rFrame)
 {
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	bspctx_t   *bctx = ctx->bsp_context;
 	//XXX quat_t      fog;
 
 	bctx->default_color[3] = 1;
 	QuatCopy (bctx->default_color, bctx->last_color);
 
-	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 
-	DARRAY_APPEND (&cframe->cmdSets[QFV_passDepth],
+	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passDepth],
 				   bframe->cmdSet.a[QFV_bspDepth]);
-	DARRAY_APPEND (&cframe->cmdSets[QFV_passGBuffer],
+	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passGBuffer],
 				   bframe->cmdSet.a[QFV_bspGBuffer]);
 
 	//FIXME need per frame matrices
@@ -912,8 +914,8 @@ bsp_begin (vulkan_ctx_t *ctx)
 	bframe->imageInfo[4].imageView = get_view (bctx->skybox_tex,
 											   bctx->default_skybox);
 
-	bsp_begin_subpass (QFV_bspDepth, bctx->depth, ctx);
-	bsp_begin_subpass (QFV_bspGBuffer, bctx->gbuf, ctx);
+	bsp_begin_subpass (QFV_bspDepth, bctx->depth, rFrame);
+	bsp_begin_subpass (QFV_bspGBuffer, bctx->gbuf, rFrame);
 }
 
 static void
@@ -927,18 +929,18 @@ bsp_end (vulkan_ctx_t *ctx)
 }
 
 static void
-turb_begin (vulkan_ctx_t *ctx)
+turb_begin (qfv_renderframe_t *rFrame)
 {
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	bspctx_t   *bctx = ctx->bsp_context;
 
 	bctx->default_color[3] = bound (0, r_wateralpha->value, 1);
 
 	QuatCopy (bctx->default_color, bctx->last_color);
 
-	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 
-	DARRAY_APPEND (&cframe->cmdSets[QFV_passTranslucent],
+	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passTranslucent],
 				   bframe->cmdSet.a[QFV_bspTurb]);
 
 	//FIXME need per frame matrices
@@ -949,7 +951,7 @@ turb_begin (vulkan_ctx_t *ctx)
 	bframe->imageInfo[3].imageView = bctx->default_skysheet->view;
 	bframe->imageInfo[4].imageView = bctx->default_skybox->view;
 
-	bsp_begin_subpass (QFV_bspTurb, bctx->turb, ctx);
+	bsp_begin_subpass (QFV_bspTurb, bctx->turb, rFrame);
 }
 
 static void
@@ -985,8 +987,9 @@ spin (mat4f_t mat, bspctx_t *bctx)
 }
 
 static void
-sky_begin (vulkan_ctx_t *ctx)
+sky_begin (qfv_renderframe_t *rFrame)
 {
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	bspctx_t   *bctx = ctx->bsp_context;
 
 	bctx->default_color[3] = 1;
@@ -994,10 +997,9 @@ sky_begin (vulkan_ctx_t *ctx)
 
 	spin (ctx->matrices.sky_3d, bctx);
 
-	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 
-	DARRAY_APPEND (&cframe->cmdSets[QFV_passTranslucent],
+	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passTranslucent],
 				   bframe->cmdSet.a[QFV_bspSky]);
 
 	//FIXME need per frame matrices
@@ -1011,9 +1013,9 @@ sky_begin (vulkan_ctx_t *ctx)
 											   bctx->default_skybox);
 
 	if (bctx->skybox_tex) {
-		bsp_begin_subpass (QFV_bspSky, bctx->skybox, ctx);
+		bsp_begin_subpass (QFV_bspSky, bctx->skybox, rFrame);
 	} else {
-		bsp_begin_subpass (QFV_bspSky, bctx->skysheet, ctx);
+		bsp_begin_subpass (QFV_bspSky, bctx->skysheet, rFrame);
 	}
 }
 
@@ -1068,8 +1070,9 @@ build_tex_elechain (vulktex_t *tex, bspctx_t *bctx, bspframe_t *bframe)
 }
 
 void
-Vulkan_DrawWorld (vulkan_ctx_t *ctx)
+Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 {
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
@@ -1098,7 +1101,7 @@ Vulkan_DrawWorld (vulkan_ctx_t *ctx)
 		}
 	}
 
-	bsp_begin (ctx);
+	bsp_begin (rFrame);
 
 	push_transform (identity, bctx->layout, dfunc,
 					bframe->cmdSet.a[QFV_bspDepth]);
@@ -1152,8 +1155,9 @@ Vulkan_DrawWorld (vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_DrawWaterSurfaces (vulkan_ctx_t *ctx)
+Vulkan_DrawWaterSurfaces (qfv_renderframe_t *rFrame)
 {
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
@@ -1166,7 +1170,7 @@ Vulkan_DrawWaterSurfaces (vulkan_ctx_t *ctx)
 	if (!bctx->waterchain)
 		return;
 
-	turb_begin (ctx);
+	turb_begin (rFrame);
 	push_transform (identity, bctx->layout, dfunc,
 					bframe->cmdSet.a[QFV_bspTurb]);
 	fragconst_t frag_constants = { time: vr_data.realtime };
@@ -1214,8 +1218,9 @@ Vulkan_DrawWaterSurfaces (vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_DrawSky (vulkan_ctx_t *ctx)
+Vulkan_DrawSky (qfv_renderframe_t *rFrame)
 {
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	bspctx_t   *bctx = ctx->bsp_context;
@@ -1228,7 +1233,7 @@ Vulkan_DrawSky (vulkan_ctx_t *ctx)
 	if (!bctx->sky_chain)
 		return;
 
-	sky_begin (ctx);
+	sky_begin (rFrame);
 	push_transform (identity, bctx->layout, dfunc,
 					bframe->cmdSet.a[QFV_bspSky]);
 	fragconst_t frag_constants = { time: vr_data.realtime };

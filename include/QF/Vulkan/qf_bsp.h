@@ -176,9 +176,11 @@ typedef struct bspctx_s {
 } bspctx_t;
 
 struct vulkan_ctx_s;
+struct qfv_renderframe_s;
 void Vulkan_ClearElements (struct vulkan_ctx_s *ctx);
-void Vulkan_DrawWorld (struct vulkan_ctx_s *ctx);
-void Vulkan_DrawSky (struct vulkan_ctx_s *ctx);
+void Vulkan_DrawWorld (struct qfv_renderframe_s *rFrame);
+void Vulkan_DrawSky (struct qfv_renderframe_s *rFrame);
+void Vulkan_DrawWaterSurfaces (struct qfv_renderframe_s *rFrame);
 void Vulkan_LoadSkys (const char *sky, struct vulkan_ctx_s *ctx);
 void Vulkan_RegisterTextures (model_t **models, int num_models,
 							  struct vulkan_ctx_s *ctx);
@@ -186,6 +188,5 @@ void Vulkan_BuildDisplayLists (model_t **models, int num_models,
 							   struct vulkan_ctx_s *ctx);
 void Vulkan_Bsp_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx);
-void Vulkan_DrawWaterSurfaces (struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_qf_bsp_h

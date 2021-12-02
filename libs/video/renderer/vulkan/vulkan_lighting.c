@@ -59,6 +59,7 @@
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/projection.h"
+#include "QF/Vulkan/renderpass.h"
 #include "QF/Vulkan/staging.h"
 
 #include "compat.h"
@@ -197,10 +198,12 @@ update_lights (vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_Lighting_Draw (vulkan_ctx_t *ctx)
+Vulkan_Lighting_Draw (qfv_renderframe_t *rFrame)
 {
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
+	qfv_renderpass_t *renderpass = rFrame->renderpass;
 
 	update_lights (ctx);
 
@@ -209,12 +212,12 @@ Vulkan_Lighting_Draw (vulkan_ctx_t *ctx)
 	lightingframe_t *lframe = &lctx->frames.a[ctx->curFrame];
 	VkCommandBuffer cmd = lframe->cmd;
 
-	DARRAY_APPEND (&cframe->cmdSets[QFV_passLighting], cmd);
+	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passLighting], cmd);
 
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		ctx->renderpass, QFV_passLighting,
+		renderpass->renderpass, QFV_passLighting,
 		cframe->framebuffer,
 		0, 0, 0,
 	};
@@ -231,14 +234,16 @@ Vulkan_Lighting_Draw (vulkan_ctx_t *ctx)
 							  lctx->pipeline);
 
 	lframe->bufferInfo[0].buffer = lframe->light_buffer;
-	lframe->attachInfo[0].imageView = ctx->attachment_views->a[QFV_attachDepth];
-	lframe->attachInfo[1].imageView = ctx->attachment_views->a[QFV_attachColor];
+	lframe->attachInfo[0].imageView
+		= renderpass->attachment_views->a[QFV_attachDepth];
+	lframe->attachInfo[1].imageView
+		= renderpass->attachment_views->a[QFV_attachColor];
 	lframe->attachInfo[2].imageView
-		= ctx->attachment_views->a[QFV_attachEmission];
+		= renderpass->attachment_views->a[QFV_attachEmission];
 	lframe->attachInfo[3].imageView
-		= ctx->attachment_views->a[QFV_attachNormal];
+		= renderpass->attachment_views->a[QFV_attachNormal];
 	lframe->attachInfo[4].imageView
-		= ctx->attachment_views->a[QFV_attachPosition];
+		= renderpass->attachment_views->a[QFV_attachPosition];
 	dfunc->vkUpdateDescriptorSets (device->dev,
 								   LIGHTING_DESCRIPTORS,
 								   lframe->descriptors, 0, 0);

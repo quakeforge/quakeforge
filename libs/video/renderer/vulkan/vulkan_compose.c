@@ -48,27 +48,30 @@
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
+#include "QF/Vulkan/renderpass.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
 void
-Vulkan_Compose_Draw (vulkan_ctx_t *ctx)
+Vulkan_Compose_Draw (qfv_renderframe_t *rFrame)
 {
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
+	qfv_renderpass_t *renderpass = rFrame->renderpass;
 
 	composectx_t *cctx = ctx->compose_context;
 	__auto_type frame = &ctx->frames.a[ctx->curFrame];
 	composeframe_t *cframe = &cctx->frames.a[ctx->curFrame];
 	VkCommandBuffer cmd = cframe->cmd;
 
-	DARRAY_APPEND (&frame->cmdSets[QFV_passCompose], cmd);
+	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passCompose], cmd);
 
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		ctx->renderpass, QFV_passCompose,
+		renderpass->renderpass, QFV_passCompose,
 		frame->framebuffer,
 		0, 0, 0,
 	};
@@ -85,9 +88,9 @@ Vulkan_Compose_Draw (vulkan_ctx_t *ctx)
 							  cctx->pipeline);
 
 	cframe->imageInfo[0].imageView
-		= ctx->attachment_views->a[QFV_attachOpaque];
+		= renderpass->attachment_views->a[QFV_attachOpaque];
 	cframe->imageInfo[1].imageView
-		= ctx->attachment_views->a[QFV_attachTranslucent];
+		= renderpass->attachment_views->a[QFV_attachTranslucent];
 	dfunc->vkUpdateDescriptorSets (device->dev, COMPOSE_IMAGE_INFOS,
 								   cframe->descriptors, 0, 0);
 

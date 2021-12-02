@@ -15,9 +15,6 @@ typedef struct vulkan_frame_s {
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderDoneSemaphore;
 	VkCommandBuffer cmdBuffer;
-
-	int         cmdSetCount;
-	struct qfv_cmdbufferset_s *cmdSets;
 } vulkan_frame_t;
 
 typedef struct vulkan_matrices_s {
@@ -33,8 +30,8 @@ typedef struct vulkan_matrices_s {
 typedef struct vulkan_frameset_s
 	DARRAY_TYPE (vulkan_frame_t) vulkan_frameset_t;
 
-typedef struct clearvalueset_s
-	DARRAY_TYPE (VkClearValue) clearvalueset_t;
+typedef struct qfv_renderpassset_s
+	DARRAY_TYPE (struct qfv_renderpass_s *) qfv_renderpassset_t;
 
 typedef struct vulkan_ctx_s {
 	void        (*load_vulkan) (struct vulkan_ctx_s *ctx);
@@ -58,15 +55,7 @@ typedef struct vulkan_ctx_s {
 	VkSurfaceKHR surface;	//FIXME surface = window, so "contains" swapchain
 	struct plitem_s  *pipelineDef;
 
-	struct plitem_s  *renderpassDef;
-	VkRenderPass renderpass;
-	clearvalueset_t *clearValues;
-	struct qfv_imageset_s *attachment_images;
-	struct qfv_imageviewset_s *attachment_views;
-	VkDeviceMemory attachmentMemory;
-
 	uint32_t    swapImageIndex;
-	struct qfv_framebufferset_s *framebuffers;
 
 	struct hashtab_s *shaderModules;
 	struct hashtab_s *setLayouts;
@@ -92,6 +81,7 @@ typedef struct vulkan_ctx_s {
 	struct qfv_stagebuf_s *staging;
 	size_t      curFrame;
 	vulkan_frameset_t frames;
+	qfv_renderpassset_t renderPasses;
 
 	struct qfv_capture_s *capture;
 	void      (*capture_callback) (const byte *data, int width, int height);

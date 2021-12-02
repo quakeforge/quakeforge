@@ -60,6 +60,7 @@
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/renderpass.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
@@ -81,8 +82,9 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 			   qfv_alias_skin_t *skin,
 			   void *vert_constants, int vert_size,
 			   void *frag_constants, int frag_size,
-			   aliashdr_t *hdr, vulkan_ctx_t *ctx)
+			   aliashdr_t *hdr, qfv_renderframe_t *rFrame)
 {
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	aliasctx_t *actx = ctx->alias_context;
@@ -123,8 +125,9 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 }
 
 void
-Vulkan_DrawAlias (entity_t *ent, vulkan_ctx_t *ctx)
+Vulkan_DrawAlias (entity_t *ent, qfv_renderframe_t *rFrame)
 {
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	aliasctx_t *actx = ctx->alias_context;
 	aliasframe_t *aframe = &actx->frames.a[ctx->curFrame];
 	model_t    *model = ent->renderer.model;
@@ -159,18 +162,19 @@ Vulkan_DrawAlias (entity_t *ent, vulkan_ctx_t *ctx)
 				   ent->animation.pose1, ent->animation.pose2,
 				   0, &vertex_constants, 17 * sizeof (float),
 				   fragment_constants, sizeof (fragment_constants),
-				   hdr, ctx);
+				   hdr, rFrame);
 	emit_commands (aframe->cmdSet.a[QFV_aliasGBuffer],
 				   ent->animation.pose1, ent->animation.pose2,
 				   skin, &vertex_constants, 17 * sizeof (float),
 				   fragment_constants, sizeof (fragment_constants),
-				   hdr, ctx);
+				   hdr, rFrame);
 }
 
 static void
 alias_begin_subpass (QFV_AliasSubpass subpass, VkPipeline pipeline,
-					 vulkan_ctx_t *ctx)
+					 qfv_renderframe_t *rFrame)
 {
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	aliasctx_t *actx = ctx->alias_context;
@@ -181,7 +185,7 @@ alias_begin_subpass (QFV_AliasSubpass subpass, VkPipeline pipeline,
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		ctx->renderpass, subpass_map[subpass],
+		rFrame->renderpass->renderpass, subpass_map[subpass],
 		cframe->framebuffer,
 		0, 0, 0,
 	};
@@ -226,28 +230,29 @@ alias_end_subpass (VkCommandBuffer cmd, vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_AliasBegin (vulkan_ctx_t *ctx)
+Vulkan_AliasBegin (qfv_renderframe_t *rFrame)
 {
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	aliasctx_t *actx = ctx->alias_context;
-	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
 	aliasframe_t *aframe = &actx->frames.a[ctx->curFrame];
 
 	//XXX quat_t      fog;
-	DARRAY_APPEND (&cframe->cmdSets[QFV_passDepth],
+	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passDepth],
 				   aframe->cmdSet.a[QFV_aliasDepth]);
-	DARRAY_APPEND (&cframe->cmdSets[QFV_passGBuffer],
+	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passGBuffer],
 				   aframe->cmdSet.a[QFV_aliasGBuffer]);
 
 	//FIXME need per frame matrices
 	aframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
 
-	alias_begin_subpass (QFV_aliasDepth, actx->depth, ctx);
-	alias_begin_subpass (QFV_aliasGBuffer, actx->gbuf, ctx);
+	alias_begin_subpass (QFV_aliasDepth, actx->depth, rFrame);
+	alias_begin_subpass (QFV_aliasGBuffer, actx->gbuf, rFrame);
 }
 
 void
-Vulkan_AliasEnd (vulkan_ctx_t *ctx)
+Vulkan_AliasEnd (qfv_renderframe_t *rFrame)
 {
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	aliasctx_t *actx = ctx->alias_context;
 	aliasframe_t *aframe = &actx->frames.a[ctx->curFrame];
 
@@ -256,8 +261,10 @@ Vulkan_AliasEnd (vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_AliasDepthRange (vulkan_ctx_t *ctx, float minDepth, float maxDepth)
+Vulkan_AliasDepthRange (qfv_renderframe_t *rFrame,
+						float minDepth, float maxDepth)
 {
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	aliasctx_t *actx = ctx->alias_context;

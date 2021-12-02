@@ -938,11 +938,11 @@ exprtype_t vulkan_frameset_t_type = {
 	&vulkan_frameset_t_symtab,
 };
 
-typedef struct qfv_renderpass_s {
+typedef struct {
 	qfv_attachmentdescription_t *attachments;
 	qfv_subpassparametersset_t *subpasses;
 	qfv_subpassdependency_t *dependencies;
-} qfv_renderpass_t;
+} vkparse_renderpass_t;
 
 static plelement_t parse_qfv_renderpass_attachments_data = {
 	QFDictionary,
@@ -969,11 +969,11 @@ static plelement_t parse_qfv_renderpass_dependencies_data = {
 };
 
 static plfield_t renderpass_fields[] = {
-	{ "attachments", field_offset (qfv_renderpass_t, attachments), QFArray,
+	{ "attachments", field_offset(vkparse_renderpass_t,attachments), QFArray,
 		PL_ParseArray, &parse_qfv_renderpass_attachments_data },
-	{ "subpasses", field_offset (qfv_renderpass_t, subpasses), QFArray,
+	{ "subpasses", field_offset(vkparse_renderpass_t,subpasses), QFArray,
 		PL_ParseArray, &parse_qfv_renderpass_subpasses_data },
-	{ "dependencies", field_offset (qfv_renderpass_t, dependencies), QFArray,
+	{ "dependencies", field_offset(vkparse_renderpass_t,dependencies), QFArray,
 		PL_ParseArray, &parse_qfv_renderpass_dependencies_data },
 	{}
 };
@@ -1073,7 +1073,7 @@ QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 	memsuper_t *memsuper = new_memsuper ();
 	qfv_device_t *device = ctx->device;
 
-	qfv_renderpass_t renderpass_data = {};
+	vkparse_renderpass_t renderpass_data = {};
 
 	if (!parse_object (ctx, memsuper, plist, parse_qfv_renderpass,
 					   &renderpass_data, properties)) {
@@ -1108,8 +1108,9 @@ QFV_ParsePipeline (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 		return 0;
 	}
 
-	cInfo->a[0].renderPass = ctx->renderpass;
-	qfvPushDebug (ctx, va (ctx->va_ctx, "QFV_ParsePipeline: %d", PL_Line (plist)));
+	qfvPushDebug (ctx, va (ctx->va_ctx,
+						   "QFV_ParsePipeline: %d", PL_Line (plist)));
+
 	__auto_type plSet = QFV_CreateGraphicsPipelines (device, 0, cInfo);
 	qfvPopDebug (ctx);
 	VkPipeline pipeline = plSet->a[0];
@@ -1462,22 +1463,18 @@ parse_clearvalueset (const plfield_t *field, const plitem_t *item, void *data,
 	return 1;
 }
 
-int
+clearvalueset_t *
 QFV_ParseClearValues (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 {
-	int         ret = 0;
+	clearvalueset_t *cv = 0;
 	memsuper_t *memsuper = new_memsuper ();
 	clearvalueset_t *clearValues = 0;
 
-	ctx->clearValues = 0;
 	if (parse_object (ctx, memsuper, plist, parse_clearvalueset, &clearValues,
 					  properties)) {
-		ret = 1;
-		ctx->clearValues = DARRAY_ALLOCFIXED (clearvalueset_t,
-											  clearValues->size, malloc);
-		memcpy (ctx->clearValues->a, clearValues->a,
-				clearValues->size * sizeof (clearValues->a[0]));
+		cv = DARRAY_ALLOCFIXED (clearvalueset_t, clearValues->size, malloc);
+		memcpy (cv->a, clearValues->a, cv->size * sizeof (cv->a[0]));
 	}
 	delete_memsuper (memsuper);
-	return ret;
+	return cv;
 }

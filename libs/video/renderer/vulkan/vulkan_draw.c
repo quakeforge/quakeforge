@@ -59,6 +59,7 @@
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
+#include "QF/Vulkan/renderpass.h"
 #include "QF/Vulkan/scrap.h"
 #include "QF/Vulkan/staging.h"
 #include "QF/ui/view.h"
@@ -748,8 +749,9 @@ Vulkan_DrawReset (vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_FlushText (vulkan_ctx_t *ctx)
+Vulkan_FlushText (qfv_renderframe_t *rFrame)
 {
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	flush_draw_scrap (ctx);
 
 	qfv_device_t *device = ctx->device;
@@ -760,7 +762,7 @@ Vulkan_FlushText (vulkan_ctx_t *ctx)
 
 	VkCommandBuffer cmd = dframe->cmd;
 	//FIXME which pass?
-	DARRAY_APPEND (&cframe->cmdSets[QFV_passTranslucent], cmd);
+	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passTranslucent], cmd);
 
 	VkMappedMemoryRange range = {
 		VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
@@ -772,7 +774,7 @@ Vulkan_FlushText (vulkan_ctx_t *ctx)
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		ctx->renderpass, QFV_passTranslucent,
+		rFrame->renderpass->renderpass, QFV_passTranslucent,
 		cframe->framebuffer,
 		0, 0, 0
 	};

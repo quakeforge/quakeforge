@@ -29,9 +29,10 @@
 #define __QF_Vulkan_qf_main_h
 
 struct vulkan_ctx_s;
+struct qfv_renderframe_s;
 
 void Vulkan_NewMap (model_t *worldmodel, struct model_s **models,
 					int num_models, struct vulkan_ctx_s *ctx);
-void Vulkan_RenderView (struct vulkan_ctx_s *ctx);
+void Vulkan_RenderView (struct qfv_renderframe_s *rFrame);
 
 #endif//__QF_Vulkan_qf_main_h

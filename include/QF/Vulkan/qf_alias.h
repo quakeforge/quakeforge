@@ -92,8 +92,10 @@ typedef struct aliasctx_s {
 } aliasctx_t;
 
 struct vulkan_ctx_s;
+struct qfv_renderframe_s;
 struct entity_s;
 struct mod_alias_ctx_s;
+
 void *Vulkan_Mod_LoadSkin (struct mod_alias_ctx_s *alias_ctx, byte *skin,
 						   int skinsize, int snum, int gnum, qboolean group,
 						   maliasskindesc_t *skindesc,
@@ -106,13 +108,13 @@ void Vulkan_Mod_MakeAliasModelDisplayLists (struct mod_alias_ctx_s *alias_ctx,
 											void *_m, int _s, int extra,
 											struct vulkan_ctx_s *ctx);
 
-void Vulkan_AliasBegin (struct vulkan_ctx_s *ctx);
-void Vulkan_DrawAlias (struct entity_s *ent, struct vulkan_ctx_s *ctx);
-void Vulkan_AliasEnd (struct vulkan_ctx_s *ctx);
+void Vulkan_AliasBegin (struct qfv_renderframe_s *rFrame);
+void Vulkan_DrawAlias (struct entity_s *ent, struct qfv_renderframe_s *rFrame);
+void Vulkan_AliasEnd (struct qfv_renderframe_s *rFrame);
 
 void Vulkan_Alias_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Alias_Shutdown (struct vulkan_ctx_s *ctx);
 
-void Vulkan_AliasDepthRange (struct vulkan_ctx_s *ctx, float n, float f);
+void Vulkan_AliasDepthRange (struct qfv_renderframe_s *rFrame, float n, float f);
 
 #endif//__QF_Vulkan_qf_alias_h

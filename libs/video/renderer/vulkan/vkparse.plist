@@ -282,6 +282,10 @@
 				type = (custom,	QFString, parse_VkPipelineLayout);
 				fields = (layout);
 			};
+			renderPass = {
+				type = (custom,	QFString, parse_VkRenderPass);
+				fields = (renderPass);
+			};
 			subpass = auto;
 			basePipelineHandle = {
 				type = (custom, QFString, parse_BasePipeline);
