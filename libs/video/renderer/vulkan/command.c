@@ -48,10 +48,10 @@
 #include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/Vulkan/qf_vid.h"
-#include "QF/Vulkan/buffer.h"//FIXME should QFV_CmdPipelineBarrier be here?
-#include "QF/Vulkan/image.h"//FIXME should QFV_CmdPipelineBarrier be here?
-#include "QF/Vulkan/renderpass.h"//FIXME should QFV_CmdPipelineBarrier be here?
-#include "QF/Vulkan/pipeline.h"//FIXME should QFV_CmdPipelineBarrier be here?
+#include "QF/Vulkan/buffer.h"
+#include "QF/Vulkan/image.h"
+#include "QF/Vulkan/renderpass.h"
+#include "QF/Vulkan/pipeline.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
