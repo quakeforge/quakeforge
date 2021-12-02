@@ -168,6 +168,9 @@ vulkan_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 		// reset for next time around
 		frame->cmdSets[i].size = 0;
 
+		//Regardless of whether any commands were submitted for this subpass,
+		//must step through each and every subpass, otherwise the attachments
+		//won't be transitioned correctly.
 		if (i < frame->cmdSetCount - 1) {
 			dfunc->vkCmdNextSubpass (frame->cmdBuffer, subpassContents);
 		}
