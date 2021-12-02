@@ -60,6 +60,7 @@
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/renderpass.h"
 
 #include "r_internal.h"
@@ -304,6 +305,8 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 
+	qfvPushDebug (ctx, "alias init");
+
 	aliasctx_t *actx = calloc (1, sizeof (aliasctx_t));
 	ctx->alias_context = actx;
 
@@ -365,6 +368,7 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 		}
 	}
 	//free (sets);
+	qfvPopDebug (ctx);
 }
 
 void

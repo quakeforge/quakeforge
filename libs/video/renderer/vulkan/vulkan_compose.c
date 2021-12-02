@@ -41,6 +41,7 @@
 
 #include "qfalloca.h"
 
+#include "QF/cvar.h"
 #include "QF/sys.h"
 
 #include "QF/Vulkan/qf_compose.h"
@@ -48,6 +49,7 @@
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
+#include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/renderpass.h"
 
 #include "r_internal.h"
@@ -126,6 +128,8 @@ Vulkan_Compose_Init (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 
+	qfvPushDebug (ctx, "compose init");
+
 	composectx_t *cctx = calloc (1, sizeof (composectx_t));
 	ctx->compose_context = cctx;
 
@@ -167,6 +171,7 @@ Vulkan_Compose_Init (vulkan_ctx_t *ctx)
 		}
 	}
 	free (attach_set);
+	qfvPopDebug (ctx);
 }
 
 void

@@ -41,6 +41,7 @@
 
 #include "qfalloca.h"
 
+#include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/plist.h"
 #include "QF/progs.h"
@@ -298,6 +299,8 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
+	qfvPushDebug (ctx, "lighting init");
+
 	lightingctx_t *lctx = calloc (1, sizeof (lightingctx_t));
 	ctx->lighting_context = lctx;
 
@@ -418,6 +421,7 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	}
 	free (attach_set);
 	free (lights_set);
+	qfvPopDebug (ctx);
 }
 
 static void

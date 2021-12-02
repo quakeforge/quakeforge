@@ -59,6 +59,7 @@
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
+#include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/renderpass.h"
 #include "QF/Vulkan/scrap.h"
 #include "QF/Vulkan/staging.h"
@@ -353,6 +354,8 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
+	qfvPushDebug (ctx, "draw init");
+
 	drawctx_t  *dctx = calloc (1, sizeof (drawctx_t));
 	ctx->draw_context = dctx;
 
@@ -435,6 +438,7 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 							 va (ctx->va_ctx, "cmd:draw:%zd", i));
 	}
 	free (sets);
+	qfvPopDebug (ctx);
 }
 
 static inline void

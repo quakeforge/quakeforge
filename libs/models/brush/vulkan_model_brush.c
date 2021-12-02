@@ -53,6 +53,7 @@
 #include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
+#include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/staging.h"
 
 #include "qfalloca.h"
@@ -163,6 +164,7 @@ copy_mips (qfv_packet_t *packet, texture_t *tx, qfv_tex_t *tex,
 static void
 load_textures (model_t *mod, vulkan_ctx_t *ctx)
 {
+	qfvPushDebug (ctx, va (ctx->va_ctx, "brush.load_textures: %s", mod->name));
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	modelctx_t *mctx = mod->data;
@@ -310,6 +312,7 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 	QFV_PacketSubmit (packet);
 	QFV_DestroyStagingBuffer (stage);
 	free (barriers);
+	qfvPopDebug (ctx);
 }
 
 void

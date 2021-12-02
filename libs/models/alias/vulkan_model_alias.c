@@ -40,6 +40,7 @@
 
 #include <stdlib.h>
 
+#include "QF/cvar.h"
 #include "QF/va.h"
 
 #include "QF/modelgen.h"
@@ -114,6 +115,7 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 					 int snum, int gnum, qboolean group,
 					 maliasskindesc_t *skindesc, vulkan_ctx_t *ctx)
 {
+	qfvPushDebug (ctx, va (ctx->va_ctx, "alias.load_skin: %s", alias_ctx->mod->name));
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	aliashdr_t *header = alias_ctx->header;
@@ -219,6 +221,7 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 
 	free (tskin);
 
+	qfvPopDebug (ctx);
 	return skinpix + skinsize;
 }
 

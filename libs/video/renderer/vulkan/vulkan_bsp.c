@@ -1411,6 +1411,8 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 
+	qfvPushDebug (ctx, "bsp init");
+
 	bspctx_t   *bctx = calloc (1, sizeof (bspctx_t));
 	ctx->bsp_context = bctx;
 
@@ -1475,6 +1477,7 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 			bframe->descriptors[k].pImageInfo = &bframe->imageInfo[j];
 		}
 	}
+	qfvPopDebug (ctx);
 }
 
 void
