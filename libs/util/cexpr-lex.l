@@ -108,7 +108,8 @@ m			[\-+]
 D			[0-9]
 B			[01]
 X			[0-9a-fA-F]
-ID			[a-zA-Z_][a-zA-Z_0-9]*
+id			[a-zA-Z_0-9]*
+ID			[a-zA-Z_]{id}
 FLOAT		({D}+|{D}*\.{D}+|{D}+\.{D}*)([eE]{m}?{D}+)?
 FLOATf		{FLOAT}[fF]
 FLOATd		{FLOAT}[dD]
@@ -150,6 +151,11 @@ STRING		\"(\\.|[^"\\])*\"
 
 {ID}				{
 						yylval->symbol = parse_name (yytext, context);
+						return NAME;
+					}
+
+`{id}				{
+						yylval->symbol = parse_name (yytext + 1, context);
 						return NAME;
 					}
 
