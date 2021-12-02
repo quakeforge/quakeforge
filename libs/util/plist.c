@@ -125,7 +125,7 @@ static void
 init_quotables (void)
 {
 	const char *unquotables = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-							  "abcdefghijklmnopqrstuvwxyz!#$%&*+-./:?@|~_^";
+							  "`abcdefghijklmnopqrstuvwxyz!#$%&*+-./:?@|~_^";
 	const byte *c;
 	memset (quotable_bitmap, ~0, sizeof (quotable_bitmap));
 	for (c = (byte *) unquotables; *c; c++)
