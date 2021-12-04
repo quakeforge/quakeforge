@@ -157,13 +157,15 @@ cexpr_cvar_struct (exprctx_t *ctx)
 	return cvars;
 }
 
-static const char *expr_getkey (const void *s, void *unused)
+static const char *
+expr_getkey (const void *s, void *unused)
 {
 	__auto_type sym = (exprsym_t *) s;
 	return sym->name;
 }
 
-void cexpr_init_symtab (exprtab_t *symtab, exprctx_t *ctx)
+void
+cexpr_init_symtab (exprtab_t *symtab, exprctx_t *ctx)
 {
 	exprsym_t  *sym;
 
