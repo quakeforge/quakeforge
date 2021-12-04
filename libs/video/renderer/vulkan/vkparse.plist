@@ -25,6 +25,7 @@
 		VkImageViewCreateInfo,
 		VkFramebufferCreateInfo,
 		VkClearValue,
+		VkPhysicalDeviceLimits,
 	);
 	parse = {
 		VkSubpassDescription = {
