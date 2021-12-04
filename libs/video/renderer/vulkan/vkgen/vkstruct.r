@@ -27,12 +27,13 @@
 	}
 }
 
--(void) forEachFieldCall: (varfunc) func
+-(void) queueFieldTypes
 {
 	qfot_struct_t *strct =&type.strct;
 
 	for (int i = 0; i < strct.num_fields; i++) {
-		func (&strct.fields[i]);
+		Type       *type = [Type findType:var.type];
+		[type addToQueue];
 	}
 }
 

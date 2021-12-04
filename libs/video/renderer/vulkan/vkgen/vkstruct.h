@@ -12,7 +12,7 @@
 {
 	string outname;
 }
--(void) forEachFieldCall: (varfunc) func;
+-(void) queueFieldTypes;
 -(qfot_var_t *)findField:(string) fieldName;
 -(void) writeTable;
 -(void) writeSymtabInit;

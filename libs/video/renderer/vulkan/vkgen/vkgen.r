@@ -97,12 +97,6 @@ void print_type (qfot_type_t *type)
 	}
 }
 
-void struct_func (qfot_var_t *var)
-{
-	Type       *type = [Type findType:var.type];
-	[type addToQueue];
-}
-
 void
 scan_types (void)
 {
@@ -208,7 +202,7 @@ main(int argc, string *argv)
 			if ([[parse getObjectForKey:[obj name]] string] == "skip") {
 				continue;
 			}
-			[obj forEachFieldCall:struct_func];
+			[obj queueFieldTypes];
 		}
 		[output_types addObject:obj];
 	}
