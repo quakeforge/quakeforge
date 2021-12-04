@@ -9,6 +9,7 @@
 
 #include "vkgen.h"
 #include "vkstruct.h"
+#include "vkfixedarray.h"
 #include "vkenum.h"
 
 static AutoreleasePool *autorelease_pool;
@@ -221,6 +222,19 @@ main(int argc, string *argv)
 			continue;
 		}
 		if ([obj class] != [Enum class]) {
+			continue;
+		}
+
+		arp_start ();
+		[obj writeTable];
+		arp_end ();
+	}
+	for (int i = [output_types count]; i-- > 0; ) {
+		id obj = [output_types objectAtIndex:i];
+		if ([obj name] == "VkStructureType") {
+			continue;
+		}
+		if ([obj class] != [FixedArray class]) {
 			continue;
 		}
 

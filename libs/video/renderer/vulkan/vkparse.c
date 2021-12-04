@@ -131,6 +131,13 @@ typedef struct parse_array_s {
 	size_t      size_offset;
 } parse_array_t;
 
+typedef struct parse_fixed_array_s {
+	pltype_t    type;
+	size_t      stride;
+	plparser_t  parser;
+	size_t      size;
+} parse_fixed_array_t;
+
 typedef struct parse_data_s {
 	size_t      value_offset;
 	size_t      size_offset;
@@ -320,6 +327,33 @@ parse_array (const plfield_t *field, const plitem_t *item,
 	if ((void *) size >= data) {
 		*size = arr->size;
 	}
+	return 1;
+}
+
+static int
+parse_fixed_array (const plfield_t *field, const plitem_t *item,
+				   void *data, plitem_t *messages, void *context)
+{
+	__auto_type array = (parse_fixed_array_t *) field->data;
+
+	plelement_t element = {
+		array->type,
+		array->stride,
+		vkparse_alloc,
+		array->parser,
+		0,
+	};
+	plfield_t   f = { 0, 0, 0, 0, &element };
+
+	typedef struct arr_s DARRAY_TYPE(byte) arr_t;
+	arr_t      *arr;
+
+	if (!PL_ParseArray (&f, item, &arr, messages, context)) {
+		return 0;
+	}
+	memset (data, 0, array->stride * array->size);
+	size_t      size = min (array->size, arr->size);
+	memcpy (data, arr->a, array->stride * size);
 	return 1;
 }
 

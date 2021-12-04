@@ -2,6 +2,7 @@
 
 #include "vkalias.h"
 #include "vkenum.h"
+#include "vkfixedarray.h"
 #include "vkgen.h"
 #include "vkstruct.h"
 #include "vktype.h"
@@ -50,9 +51,10 @@ static string get_type_key (void *type, void *unused)
 	}
 	switch (type.meta) {
 		case ty_basic:
-		case ty_array:
 		case ty_class:
 			return [[Type alloc] initWithType: type];
+		case ty_array:
+			return [[FixedArray alloc] initWithType: type];
 		case ty_enum:
 			return [[Enum alloc] initWithType: type];
 		case ty_struct:
@@ -62,7 +64,7 @@ static string get_type_key (void *type, void *unused)
 			if (type.alias.name) {
 				return [[Alias alloc] initWithType: type];
 			}
-			break;
+			return [Type fromType: type.alias.full_type];
 	}
 	return nil;
 }
@@ -107,7 +109,7 @@ static string get_type_key (void *type, void *unused)
 	if (type.meta == ty_basic) {
 		return "QFString";
 	}
-	return "no parse";
+	return "no parse " + [self name];
 }
 
 -(string) parseFunc
