@@ -38,6 +38,29 @@
 #include "libs/util/cexpr-parse.h"
 
 VISIBLE void
+cexpr_array_getelement (const exprval_t *a, const exprval_t *b, exprval_t *c,
+						exprctx_t *ctx)
+{
+	__auto_type array = (exprarray_t *) a->type->data;
+	unsigned    index = *(const unsigned *) b->value;
+	exprval_t *val = 0;
+	if (index < array->size) {
+		val = cmemalloc (ctx->memsuper, sizeof (exprval_t));
+		val->type = array->type;
+		val->value = a->value + array->type->size * index;
+	} else {
+		cexpr_error (ctx, "index %d out of bounds for %s", index,
+					 a->type->name);
+	}
+	*(exprval_t **) c->value = val;
+}
+
+VISIBLE binop_t cexpr_array_binops[] = {
+	{ '[', &cexpr_int, &cexpr_exprval, cexpr_array_getelement },
+	{}
+};
+
+VISIBLE void
 cexpr_struct_getfield (const exprval_t *a, const exprval_t *b, exprval_t *c,
 					   exprctx_t *ctx)
 {

@@ -32,16 +32,30 @@
 #include "QF/cmem.h"
 #include "QF/hash.h"
 #include "QF/mathlib.h"
+#include "QF/va.h"
 #include "QF/simd/vec4f.h"
 
 int a = 5;
 int b = 6;
 int c;
+int array[4] = { 9, 16, 25, 36 };
 vec4f_t point = { 2, 3, 4, 1 };		// a point, so w = 1
 vec4f_t normal = { 1, 2, 3, 0 };	// a vector, so w = 0
 vec4f_t direction = { 4, 5, 6, 0 };	// a vector, so w = 0
 vec4f_t plane;
 vec4f_t intercept;
+
+exprarray_t int_array_4_data = {
+	&cexpr_int,
+	sizeof (array) / sizeof (array[0]),
+};
+exprtype_t int_array_4 = {
+	"int[4]",
+	4 * sizeof (int),
+	cexpr_array_binops,
+	0,
+	&int_array_4_data,
+};
 
 exprtype_t *vector_params[] = {
 	&cexpr_vector,
@@ -117,6 +131,7 @@ exprfunc_t double_func[] = {
 exprsym_t symbols[] = {
 	{ "a", &cexpr_int, &a },
 	{ "b", &cexpr_int, &b },
+	{ "array", &int_array_4, &array },
 	{ "point", &cexpr_vector, &point },
 	{ "normal", &cexpr_vector, &normal },
 	{ "plane", &cexpr_vector, &plane },
@@ -147,9 +162,21 @@ exprctx_t context = { &test_result, &symtab };
 #define TEST_BINOP(op)													\
 	do {																\
 		c = -4096;														\
+		context.result = &test_result;									\
 		cexpr_eval_string ("a " #op " b", &context);					\
 		printf ("c = a %s b -> %d = %d %s %d\n", #op, c, a, #op, b);	\
 		if (c != (a op b)) {											\
+			ret |= 1;													\
+		}																\
+	} while (0)
+
+#define TEST_ARRAY(ind)													\
+	do {																\
+		c = -4096;														\
+		context.result = &test_result;									\
+		cexpr_eval_string (va (0, "array[%d]", ind), &context);			\
+		printf ("c = array[%d] -> %d = %d\n", ind, c, array[ind]);		\
+		if (c != array[ind]) {											\
 			ret |= 1;													\
 		}																\
 	} while (0)
@@ -172,6 +199,11 @@ main(int argc, const char **argv)
 	TEST_BINOP (|);
 	TEST_BINOP (^);
 	TEST_BINOP (%);
+
+	TEST_ARRAY (0);
+	TEST_ARRAY (1);
+	TEST_ARRAY (2);
+	TEST_ARRAY (3);
 
 	context.result = &plane_result;
 	cexpr_eval_string ("point.wzyx", &context);
