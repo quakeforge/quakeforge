@@ -306,8 +306,6 @@ parse_variable (const char *name, exprctx_t *context)
 		__auto_type sym = (exprsym_t *) Hash_Find (symtab->tab, name);
 		if (sym) {
 			val = cexpr_value_reference (sym->type, sym->value, context);
-		} else {
-			//val = cexpr_cvar (name, context);
 		}
 	}
 	if (!val) {
