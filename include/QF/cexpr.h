@@ -93,6 +93,7 @@ typedef struct exprarray_s {
 } exprarray_t;
 
 typedef struct exprctx_s {
+	struct exprctx_s *parent;		// for nested symol scopes
 	exprval_t  *result;
 	exprtab_t  *symtab;				// directly accessible symbols
 	exprtab_t  *external_variables;	// accessible via $id

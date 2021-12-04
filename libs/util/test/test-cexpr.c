@@ -153,11 +153,13 @@ exprval_t dist_result = { &cexpr_float, (float *)&plane + 3 };
 exprval_t intercept_result = { &cexpr_vector, &intercept };
 
 exprtab_t symtab = {
-	symbols,
-	0
+	.symbols = symbols,
 };
 
-exprctx_t context = { &test_result, &symtab };
+exprctx_t context = {
+	.result = &test_result,
+	.symtab = &symtab
+};
 
 #define TEST_BINOP(op)													\
 	do {																\
