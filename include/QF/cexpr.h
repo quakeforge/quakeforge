@@ -149,4 +149,6 @@ extern binop_t cexpr_array_binops[];
 extern binop_t cexpr_struct_binops[];
 extern binop_t cexpr_struct_pointer_binops[];
 
+extern exprsym_t cexpr_lib_symbols[];
+
 #endif//__QF_expr_h

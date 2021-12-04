@@ -45,6 +45,7 @@ libs_util_libQFutil_la_SOURCES= \
 	libs/util/buildnum.c \
 	libs/util/cbuf.c \
 	libs/util/cexpr-lex.l \
+	libs/util/cexpr-lib.c \
 	libs/util/cexpr-parse.y \
 	libs/util/cexpr-type.c \
 	libs/util/cexpr-vars.c \

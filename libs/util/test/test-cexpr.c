@@ -57,77 +57,6 @@ exprtype_t int_array_4 = {
 	&int_array_4_data,
 };
 
-exprtype_t *vector_params[] = {
-	&cexpr_vector,
-	&cexpr_vector,
-};
-
-exprtype_t *int_params[] = {
-	&cexpr_int,
-	&cexpr_int,
-};
-
-exprtype_t *float_params[] = {
-	&cexpr_float,
-	&cexpr_float,
-};
-
-exprtype_t *double_params[] = {
-	&cexpr_double,
-	&cexpr_double,
-};
-
-static void
-float_dot (const exprval_t **params, exprval_t *result, exprctx_t *context)
-{
-	// parameters are reversed!
-	vec4f_t    *a = params[1]->value;
-	vec4f_t    *b = params[0]->value;
-	vec4f_t    *d = result->value;
-	*d = dotf (*a, *b);
-}
-
-exprfunc_t dot_func[] = {
-	{ &cexpr_vector, 2, vector_params, float_dot},
-	{}
-};
-
-exprfunc_t sin_func[] = {
-	{ &cexpr_float, 1, float_params },
-	{ &cexpr_double, 1, double_params },
-	{}
-};
-
-exprfunc_t cos_func[] = {
-	{ &cexpr_float, 1, float_params },
-	{ &cexpr_double, 1, double_params },
-	{}
-};
-
-exprfunc_t atan2_func[] = {
-	{ &cexpr_float, 2, float_params },
-	{ &cexpr_double, 2, double_params },
-	{}
-};
-
-exprfunc_t int_func[] = {
-	{ &cexpr_int, 1, float_params },
-	{ &cexpr_int, 1, double_params },
-	{}
-};
-
-exprfunc_t float_func[] = {
-	{ &cexpr_float, 1, int_params },
-	{ &cexpr_float, 1, double_params },
-	{}
-};
-
-exprfunc_t double_func[] = {
-	{ &cexpr_double, 1, float_params },
-	{ &cexpr_double, 1, double_params },
-	{}
-};
-
 exprsym_t symbols[] = {
 	{ "a", &cexpr_int, &a },
 	{ "b", &cexpr_int, &b },
@@ -137,13 +66,6 @@ exprsym_t symbols[] = {
 	{ "plane", &cexpr_vector, &plane },
 	{ "direction", &cexpr_vector, &direction },
 	{ "intercept", &cexpr_vector, &intercept },
-	{ "dot", &cexpr_function, dot_func },
-	{ "sin", &cexpr_function, sin_func },
-	{ "cos", &cexpr_function, cos_func },
-	{ "atan2", &cexpr_function, atan2_func },
-	{ "float", &cexpr_function, float_func },
-	{ "double", &cexpr_function, double_func },
-	{ "int", &cexpr_function, int_func },
 	{}
 };
 exprval_t test_result = { &cexpr_int, &c };
@@ -152,11 +74,18 @@ exprval_t plane_result = { &cexpr_vector, &plane };
 exprval_t dist_result = { &cexpr_float, (float *)&plane + 3 };
 exprval_t intercept_result = { &cexpr_vector, &intercept };
 
+exprtab_t root_symtab = {
+	.symbols = cexpr_lib_symbols,
+};
 exprtab_t symtab = {
 	.symbols = symbols,
 };
 
+exprctx_t root_context = {
+	.symtab = &root_symtab
+};
 exprctx_t context = {
+	.parent = &root_context,
 	.result = &test_result,
 	.symtab = &symtab
 };
@@ -188,6 +117,7 @@ main(int argc, const char **argv)
 {
 	int         ret = 0;
 
+	cexpr_init_symtab (&root_symtab, &context);
 	cexpr_init_symtab (&symtab, &context);
 	context.memsuper = new_memsuper();
 
