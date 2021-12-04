@@ -162,7 +162,6 @@ parse_basic (const plfield_t *field, const plitem_t *item,
 	__auto_type etype = (exprtype_t *) field->data;
 	exprctx_t   ectx = *((parsectx_t *) context)->ectx;
 	exprval_t   result = { etype, data };
-	ectx.symtab = 0;
 	ectx.result = &result;
 	const char *valstr = PL_String (item);
 	//Sys_MaskPrintf (SYS_vulkan_parse, "parse_basic: %s %zd %d %p %p: %s\n",
@@ -193,7 +192,6 @@ parse_uint32_t (const plfield_t *field, const plitem_t *item,
 	size_t      val = 0;
 	exprval_t   result = { &cexpr_size_t, &val };
 	exprctx_t   ectx = *((parsectx_t *) context)->ectx;
-	ectx.symtab = 0;
 	ectx.result = &result;
 	const char *valstr = PL_String (item);
 	//Sys_MaskPrintf (SYS_vulkan_parse, "parse_uint32_t: %s %zd %d %p %p: %s\n",
@@ -227,6 +225,7 @@ parse_enum (const plfield_t *field, const plitem_t *item,
 	__auto_type enm = (exprenum_t *) field->data;
 	exprctx_t   ectx = *((parsectx_t *)context)->ectx;
 	exprval_t   result = { enm->type, data };
+	ectx.parent = ((parsectx_t *)context)->ectx;
 	ectx.symtab = enm->symtab;
 	ectx.result = &result;
 	const char *valstr = PL_String (item);
@@ -248,7 +247,6 @@ parse_reference (const plitem_t *item, const char *type, plitem_t *messages,
 	exprctx_t   ectx = *pctx->ectx;
 	plitem_t   *refItem = 0;
 	exprval_t   result = { &cexpr_plitem, &refItem };
-	ectx.symtab = 0;
 	ectx.result = &result;
 	const char *name = PL_String (item);
 	if (cexpr_eval_string (name, &ectx)) {
@@ -397,7 +395,6 @@ parse_RGBA (const plitem_t *item, void **data,
 	int         ret = 1;
 	exprctx_t   ectx = *context->ectx;
 	exprval_t   result = { &cexpr_vector, data[0] };
-	ectx.symtab = 0;
 	ectx.result = &result;
 	const char *valstr = PL_String (item);
 	Sys_MaskPrintf (SYS_vulkan_parse, "parse_RGBA: %s\n", valstr);
@@ -460,7 +457,6 @@ parse_VkRenderPass (const plitem_t *item, void **data,
 
 	plitem_t   *setItem = 0;
 	exprval_t   result = { &cexpr_plitem, &setItem };
-	ectx.symtab = 0;
 	ectx.result = &result;
 	ret = !cexpr_eval_string (path, &ectx);
 	if (ret) {
@@ -521,7 +517,6 @@ parse_VkDescriptorSetLayout (const plfield_t *field, const plitem_t *item,
 
 	plitem_t   *setItem = 0;
 	exprval_t   result = { &cexpr_plitem, &setItem };
-	ectx.symtab = 0;
 	ectx.result = &result;
 	ret = !cexpr_eval_string (path, &ectx);
 	if (ret) {
@@ -557,7 +552,6 @@ parse_VkPipelineLayout (const plitem_t *item, void **data,
 
 	plitem_t   *setItem = 0;
 	exprval_t   result = { &cexpr_plitem, &setItem };
-	ectx.symtab = 0;
 	ectx.result = &result;
 	ret = !cexpr_eval_string (path, &ectx);
 	if (ret) {
@@ -592,7 +586,6 @@ parse_VkImage (const plitem_t *item, void **data, plitem_t *messages,
 
 	plitem_t   *imageItem = 0;
 	exprval_t   result = { &cexpr_plitem, &imageItem };
-	ectx.symtab = 0;
 	ectx.result = &result;
 	ret = !cexpr_eval_string (path, &ectx);
 	if (ret) {
@@ -634,7 +627,6 @@ parse_VkImageView (const plfield_t *field, const plitem_t *item, void *data,
 
 	exprval_t  *value = 0;
 	exprval_t   result = { &cexpr_exprval, &value };
-	ectx.symtab = 0;
 	ectx.result = &result;
 	ret = !cexpr_eval_string (path, &ectx);
 
@@ -859,6 +851,7 @@ parse_specialization_data (const plitem_t *item, void **data,
 	data_array_t *da= 0;
 	exprctx_t   ectx = *((parsectx_t *)context)->ectx;
 	exprval_t   result = { &data_array_type, &da };
+	ectx.parent = ((parsectx_t *)context)->ectx;
 	ectx.symtab = &data_array_symtab;
 	ectx.result = &result;
 	const char *valstr = PL_String (item);
@@ -1026,6 +1019,18 @@ enum_symtab_getkey (const void *e, void *unused)
 	return enm->type->name;
 }
 
+static exprtab_t root_symtab = {
+	.symbols = cexpr_lib_symbols,
+};
+static void __attribute__((constructor))
+root_symtab_init (void)
+{
+	// using a null hashlinks here is safe because this function is run before
+	// main and thus before any possibility of threading.
+	exprctx_t root_context = { .symtab = &root_symtab };
+	cexpr_init_symtab (&root_symtab, &root_context);
+}
+
 void
 QFV_InitParse (vulkan_ctx_t *ctx)
 {
@@ -1062,7 +1067,7 @@ parse_object (vulkan_ctx_t *ctx, memsuper_t *memsuper, plitem_t *plist,
 			  plparser_t parser, void *object, plitem_t *properties)
 {
 	plitem_t   *messages = PL_NewArray ();
-	exprctx_t   exprctx = {};
+	exprctx_t   exprctx = { .symtab = &root_symtab };
 	parsectx_t  parsectx = { &exprctx, ctx, properties };
 	exprsym_t   var_syms[] = {
 		{"swapchain", &qfv_swapchain_t_type, ctx->swapchain},
