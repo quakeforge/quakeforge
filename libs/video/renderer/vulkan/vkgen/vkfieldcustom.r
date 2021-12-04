@@ -65,4 +65,9 @@
 	return self;
 }
 
+-(int) searchType
+{
+	return 0;
+}
+
 @end

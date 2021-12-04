@@ -95,4 +95,9 @@
 	return field_name;
 }
 
+-(int) searchType
+{
+	return 1;
+}
+
 @end
