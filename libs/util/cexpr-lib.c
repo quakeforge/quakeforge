@@ -118,6 +118,14 @@ CAST_TO (float)
 CAST_TO (double)
 #undef CAST_TO
 
+static void
+cast_plitem (const exprval_t **params, exprval_t *result, exprctx_t *context)
+{
+	// first argument is ignored because cexpr_cast_plitem is meant to used
+	// in an operator list
+	cexpr_cast_plitem (0, params[0], result, context);
+}
+
 FUNC2 (min, int, int, min)
 FUNC2 (min, uint, uint, min)
 FUNC2 (min, size_t, size_t, min)
@@ -169,6 +177,12 @@ static exprtype_t *double_params[] = {
 	&cexpr_double,
 	&cexpr_double,
 	&cexpr_double,
+};
+
+static exprtype_t *plitem_params[] = {
+	&cexpr_plitem,
+	&cexpr_plitem,
+	&cexpr_plitem,
 };
 
 #define FUNC(name, rtype, n, ptype) \
@@ -228,6 +242,7 @@ static exprfunc_t rtype##_func[] = {	\
 	FUNC (cast, rtype, 1, size_t),		\
 	FUNC (cast, rtype, 1, float),		\
 	FUNC (cast, rtype, 1, double),		\
+	{ &cexpr_##rtype, 1, plitem_params, cast_plitem }, \
 	{}									\
 };
 
