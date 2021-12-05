@@ -36,9 +36,17 @@
 
 #include "libs/util/cexpr-parse.h"
 
+#undef uint
+#define uint unsigned
+#undef cexpr_unsigned
+#define cexpr_unsigned cexpr_uint
+
+#define FNAME(name, rtype, ptype) name##_##rtype##_##ptype
+
 #define FUNC1(name, rtype, ptype, func)									\
 static void																\
-name (const exprval_t **params, exprval_t *result, exprctx_t *context)	\
+FNAME(name, rtype, ptype) (const exprval_t **params, exprval_t *result,	\
+						   exprctx_t *context)							\
 {																		\
 	ptype      *a = params[0]->value;									\
 	rtype      *r = result->value;										\
@@ -47,7 +55,8 @@ name (const exprval_t **params, exprval_t *result, exprctx_t *context)	\
 
 #define FUNC2(name, rtype, ptype, func)									\
 static void																\
-name (const exprval_t **params, exprval_t *result, exprctx_t *context)	\
+FNAME(name, rtype, ptype) (const exprval_t **params, exprval_t *result,	\
+						   exprctx_t *context)							\
 {																		\
 	/* parameters are reversed! */										\
 	ptype      *a = params[1]->value;									\
@@ -58,7 +67,8 @@ name (const exprval_t **params, exprval_t *result, exprctx_t *context)	\
 
 #define FUNC3(name, rtype, ptype, func)									\
 static void																\
-name (const exprval_t **params, exprval_t *result, exprctx_t *context)	\
+FNAME(name, rtype, ptype) (const exprval_t **params, exprval_t *result,	\
+						   exprctx_t *context)							\
 {																		\
 	/* parameters are reversed! */										\
 	ptype      *a = params[2]->value;									\
@@ -68,55 +78,56 @@ name (const exprval_t **params, exprval_t *result, exprctx_t *context)	\
 	*r = func (*a, *b, *c);												\
 }
 
-FUNC2 (vec4f_dot, vec4f_t, vec4f_t, dotf)
+#undef vector
+#define vector vec4f_t
 
-FUNC1 (float_sin, float, float, sinf)
-FUNC1 (double_sin, double, double, sin)
+FUNC2 (dot, vector, vector, dotf)
 
-FUNC1 (float_cos, float, float, cosf)
-FUNC1 (double_cos, double, double, cos)
+FUNC1 (sin, float, float, sinf)
+FUNC1 (sin, double, double, sin)
 
-FUNC1 (float_tan, float, float, tanf)
-FUNC1 (double_tan, double, double, tan)
+FUNC1 (cos, float, float, cosf)
+FUNC1 (cos, double, double, cos)
 
-FUNC1 (float_asin, float, float, asinf)
-FUNC1 (double_asin, double, double, asin)
+FUNC1 (tan, float, float, tanf)
+FUNC1 (tan, double, double, tan)
 
-FUNC1 (float_acos, float, float, acosf)
-FUNC1 (double_acos, double, double, acos)
+FUNC1 (asin, float, float, asinf)
+FUNC1 (asin, double, double, asin)
 
-FUNC1 (float_atan, float, float, atanf)
-FUNC1 (double_atan, double, double, atan)
+FUNC1 (acos, float, float, acosf)
+FUNC1 (acos, double, double, acos)
 
-FUNC2 (float_atan2, float, float, atan2f)
-FUNC2 (double_atan2, float, float, atan2)
+FUNC1 (atan, float, float, atanf)
+FUNC1 (atan, double, double, atan)
 
-FUNC1 (int_int_cast, int, int, (int))
-FUNC1 (int_float_cast, int, float, (int))
-FUNC1 (int_double_cast, int, double, (int))
+FUNC2 (atan2, float, float, atan2f)
+FUNC2 (atan2, double, double, atan2)
 
-FUNC1 (float_int_cast, float, int, (float))
-FUNC1 (float_float_cast, float, float, (float))
-FUNC1 (float_double_cast, float, double, (float))
+#define CAST_TO(rtype)					\
+FUNC1 (cast, rtype, int, (rtype))		\
+FUNC1 (cast, rtype, float, (rtype))		\
+FUNC1 (cast, rtype, double, (rtype))
 
-FUNC1 (double_int_cast, double, int, (double))
-FUNC1 (double_float_cast, double, float, (double))
-FUNC1 (double_double_cast, double, double, (double))
+CAST_TO (int)
+CAST_TO (float)
+CAST_TO (double)
+#undef CAST_TO
 
-FUNC2 (int_min, int, int, min)
-FUNC2 (uint_min, unsigned, unsigned, min)
-FUNC2 (float_min, float, float, min)
-FUNC2 (double_min, double, double, min)
+FUNC2 (min, int, int, min)
+FUNC2 (min, uint, uint, min)
+FUNC2 (min, float, float, min)
+FUNC2 (min, double, double, min)
 
-FUNC2 (int_max, int, int, max)
-FUNC2 (uint_max, unsigned, unsigned, max)
-FUNC2 (float_max, float, float, max)
-FUNC2 (double_max, double, double, max)
+FUNC2 (max, int, int, max)
+FUNC2 (max, uint, uint, max)
+FUNC2 (max, float, float, max)
+FUNC2 (max, double, double, max)
 
-FUNC3 (int_bound, int, int, bound)
-FUNC3 (uint_bound, unsigned, unsigned, bound)
-FUNC3 (float_bound, float, float, bound)
-FUNC3 (double_bound, double, double, bound)
+FUNC3 (bound, int, int, bound)
+FUNC3 (bound, uint, uint, bound)
+FUNC3 (bound, float, float, bound)
+FUNC3 (bound, double, double, bound)
 
 static exprtype_t *vector_params[] = {
 	&cexpr_vector,
@@ -147,95 +158,90 @@ static exprtype_t *double_params[] = {
 	&cexpr_double,
 };
 
+#define FUNC(name, rtype, n, ptype) \
+	{ &cexpr_##rtype, n, ptype##_params, FNAME(name, rtype, ptype) }
+
 static exprfunc_t dot_func[] = {
-	{ &cexpr_vector, 2, vector_params, vec4f_dot},
+	FUNC (dot, vector, 2, vector),
 	{}
 };
 
 static exprfunc_t sin_func[] = {
-	{ &cexpr_float,  1, float_params,  float_sin },
-	{ &cexpr_double, 1, double_params, double_sin },
+	FUNC (sin, float, 1, float),
+	FUNC (sin, double, 1, double),
 	{}
 };
 
 static exprfunc_t cos_func[] = {
-	{ &cexpr_float,  1, float_params,  float_cos },
-	{ &cexpr_double, 1, double_params, double_cos },
+	FUNC (cos, float, 1, float),
+	FUNC (cos, double, 1, double),
 	{}
 };
 
 static exprfunc_t tan_func[] = {
-	{ &cexpr_float,  1, float_params,  float_tan },
-	{ &cexpr_double, 1, double_params, double_tan },
+	FUNC (tan, float, 1, float),
+	FUNC (tan, double, 1, double),
 	{}
 };
 
 static exprfunc_t asin_func[] = {
-	{ &cexpr_float,  1, float_params,  float_asin },
-	{ &cexpr_double, 1, double_params, double_asin },
+	FUNC (asin, float, 1, float),
+	FUNC (asin, double, 1, double),
 	{}
 };
 
 static exprfunc_t acos_func[] = {
-	{ &cexpr_float,  1, float_params,  float_acos },
-	{ &cexpr_double, 1, double_params, double_acos },
+	FUNC (acos, float, 1, float),
+	FUNC (acos, double, 1, double),
 	{}
 };
 
 static exprfunc_t atan_func[] = {
-	{ &cexpr_float,  1, float_params,  float_atan },
-	{ &cexpr_double, 1, double_params, double_atan },
+	FUNC (atan, float, 1, float),
+	FUNC (atan, double, 1, double),
 	{}
 };
 
 static exprfunc_t atan2_func[] = {
-	{ &cexpr_float,  2, float_params,  float_atan2 },
-	{ &cexpr_double, 2, double_params, double_atan2 },
+	FUNC (atan2, float, 2, float),
+	FUNC (atan2, double, 2, double),
 	{}
 };
 
-static exprfunc_t int_func[] = {
-	{ &cexpr_int, 1, int_params,    int_int_cast },
-	{ &cexpr_int, 1, float_params,  int_float_cast },
-	{ &cexpr_int, 1, double_params, int_double_cast },
-	{}
+#define CAST_TO(rtype) \
+static exprfunc_t rtype##_func[] = {	\
+	FUNC (cast, rtype, 1, int),			\
+	FUNC (cast, rtype, 1, float),		\
+	FUNC (cast, rtype, 1, double),		\
+	{}									\
 };
 
-static exprfunc_t float_func[] = {
-	{ &cexpr_float, 1, int_params,    float_int_cast },
-	{ &cexpr_float, 1, float_params,  float_float_cast },
-	{ &cexpr_float, 1, double_params, float_double_cast },
-	{}
-};
-
-static exprfunc_t double_func[] = {
-	{ &cexpr_double, 1, int_params,    double_int_cast },
-	{ &cexpr_double, 1, float_params,  double_float_cast },
-	{ &cexpr_double, 1, double_params, double_double_cast },
-	{}
-};
+CAST_TO (int)
+CAST_TO (float)
+CAST_TO (double)
+#undef CAST_TO
 
 static exprfunc_t min_func[] = {
-	{ &cexpr_int,    2, int_params,    int_min },
-	{ &cexpr_uint,   2, uint_params,   uint_min },
-	{ &cexpr_float,  2, float_params,  float_min },
-	{ &cexpr_double, 2, double_params, double_min },
+	FUNC (min, int, 2, int),
+	FUNC (min, uint, 2, uint),
+	FUNC (min, float, 2, float),
+	FUNC (min, double, 2, double),
 	{}
 };
 
 static exprfunc_t max_func[] = {
-	{ &cexpr_int,    2, int_params,    int_max },
-	{ &cexpr_uint,   2, uint_params,   uint_max },
-	{ &cexpr_float,  2, float_params,  float_max },
-	{ &cexpr_double, 2, double_params, double_max },
+	FUNC (max, int, 2, int),
+	FUNC (max, uint, 2, uint),
+	FUNC (max, float, 2, float),
+	FUNC (max, double, 2, double),
 	{}
 };
 
 static exprfunc_t bound_func[] = {
-	{ &cexpr_int,    3, int_params,    int_bound },
-	{ &cexpr_uint,   3, uint_params,   uint_bound },
-	{ &cexpr_float,  3, float_params,  float_bound },
-	{ &cexpr_double, 3, double_params, double_bound },
+	FUNC (bound, int, 3, int),
+	FUNC (bound, uint, 3, uint),
+	FUNC (bound, float, 3, float),
+	FUNC (bound, double, 3, double),
 	{}
 };
 
