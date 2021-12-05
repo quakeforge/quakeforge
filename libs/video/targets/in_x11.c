@@ -153,6 +153,7 @@ static PointerBarrier x11_right_barrier;
 static PointerBarrier x11_top_barrier;
 static PointerBarrier x11_bottom_barrier;
 #endif
+static IE_app_window_event_t x11_aw;
 static int x11_have_xi;
 static int x11_fd;
 static int x11_driver_handle = -1;
@@ -1071,6 +1072,52 @@ grab_error (int code, const char *device)
 	Sys_Printf ("failed to grab %s: %s\n", device, reason);
 }
 
+#ifdef HAVE_XFIXES
+static void
+in_x11_remove_barriers (void)
+{
+	if (x11_left_barrier > 0) {
+		XFixesDestroyPointerBarrier (x_disp, x11_left_barrier);
+		x11_left_barrier = 0;
+	}
+	if (x11_right_barrier > 0) {
+		XFixesDestroyPointerBarrier (x_disp, x11_right_barrier);
+		x11_right_barrier = 0;
+	}
+	if (x11_top_barrier > 0) {
+		XFixesDestroyPointerBarrier (x_disp, x11_top_barrier);
+		x11_top_barrier = 0;
+	}
+	if (x11_bottom_barrier > 0) {
+		XFixesDestroyPointerBarrier (x_disp, x11_bottom_barrier);
+		x11_bottom_barrier = 0;
+	}
+}
+
+static void
+in_x11_setup_barriers (int xpos, int ypos, int xlen, int ylen)
+{
+	in_x11_remove_barriers ();
+
+	int         lx = bound (0, xpos, x_width - 1);
+	int         ty = bound (0, ypos, x_height - 1);
+	int         rx = bound (0, xpos + xlen - 1, x_width - 1);
+	int         by = bound (0, ypos + ylen - 1, x_height - 1);
+	x11_left_barrier = XFixesCreatePointerBarrier (x_disp, x_root,
+												   lx, ty-1, lx, by+1,
+												   BarrierPositiveX, 0, 0);
+	x11_right_barrier = XFixesCreatePointerBarrier (x_disp, x_root,
+													rx, ty-1, rx, by+1,
+												    BarrierNegativeX, 0, 0);
+	x11_top_barrier = XFixesCreatePointerBarrier (x_disp, x_root,
+												  lx-1, ty, rx+1, ty,
+												  BarrierPositiveY, 0, 0);
+	x11_bottom_barrier = XFixesCreatePointerBarrier (x_disp, x_root,
+												     lx-1, by, rx+1, by,
+												     BarrierNegativeY, 0, 0);
+}
+#endif
+
 static void
 in_x11_grab_input (void *data, int grab)
 {
@@ -1080,6 +1127,12 @@ in_x11_grab_input (void *data, int grab)
 #ifdef HAVE_XFIXES
 	if (xf_opcode) {
 		input_grabbed = grab;
+		if (input_grabbed) {
+			in_x11_setup_barriers (x11_aw.xpos, x11_aw.ypos,
+								   x11_aw.xlen, x11_aw.ylen);
+		} else {
+			in_x11_remove_barriers ();
+		}
 		return;
 	}
 #endif
@@ -1398,49 +1451,17 @@ in_x11_xi_setup_grabs (void)
 }
 #endif
 
-#ifdef HAVE_XFIXES
-static void
-in_x11_setup_barriers (int xpos, int ypos, int xlen, int ylen)
-{
-	if (x11_left_barrier > 0) {
-		XFixesDestroyPointerBarrier (x_disp, x11_left_barrier);
-	}
-	if (x11_right_barrier > 0) {
-		XFixesDestroyPointerBarrier (x_disp, x11_right_barrier);
-	}
-	if (x11_top_barrier > 0) {
-		XFixesDestroyPointerBarrier (x_disp, x11_top_barrier);
-	}
-	if (x11_bottom_barrier > 0) {
-		XFixesDestroyPointerBarrier (x_disp, x11_bottom_barrier);
-	}
-
-	int         lx = bound (0, xpos, x_width - 1);
-	int         ty = bound (0, ypos, x_height - 1);
-	int         rx = bound (0, xpos + xlen - 1, x_width - 1);
-	int         by = bound (0, ypos + ylen - 1, x_height - 1);
-	x11_left_barrier = XFixesCreatePointerBarrier (x_disp, x_root,
-												   lx, ty-1, lx, by+1,
-												   BarrierPositiveX, 0, 0);
-	x11_right_barrier = XFixesCreatePointerBarrier (x_disp, x_root,
-													rx, ty-1, rx, by+1,
-												    BarrierNegativeX, 0, 0);
-	x11_top_barrier = XFixesCreatePointerBarrier (x_disp, x_root,
-												  lx-1, ty, rx+1, ty,
-												  BarrierPositiveY, 0, 0);
-	x11_bottom_barrier = XFixesCreatePointerBarrier (x_disp, x_root,
-												     lx-1, by, rx+1, by,
-												     BarrierNegativeY, 0, 0);
-}
-#endif
-
 static void
 x11_app_window (const IE_event_t *ie_event)
 {
+	x11_aw = ie_event->app_window;
+	Sys_MaskPrintf (SYS_vid, "window: %d %d %d %d\n",
+					x11_aw.xpos, x11_aw.ypos, x11_aw.xlen, x11_aw.ylen);
 #ifdef HAVE_XFIXES
-	//FIXME aw may be needed even without XFixes when resizing is supported
-	__auto_type aw = ie_event->app_window;
-	in_x11_setup_barriers (aw.xpos, aw.ypos, aw.xlen, aw.ylen);
+	if (input_grabbed) {
+		in_x11_setup_barriers (x11_aw.xpos, x11_aw.ypos,
+							   x11_aw.xlen, x11_aw.ylen);
+	}
 #endif
 }
 
