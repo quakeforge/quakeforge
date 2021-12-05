@@ -106,26 +106,33 @@ FUNC2 (atan2, double, double, atan2)
 
 #define CAST_TO(rtype)					\
 FUNC1 (cast, rtype, int, (rtype))		\
+FUNC1 (cast, rtype, uint, (rtype))		\
+FUNC1 (cast, rtype, size_t, (rtype))	\
 FUNC1 (cast, rtype, float, (rtype))		\
 FUNC1 (cast, rtype, double, (rtype))
 
 CAST_TO (int)
+CAST_TO (uint)
+CAST_TO (size_t)
 CAST_TO (float)
 CAST_TO (double)
 #undef CAST_TO
 
 FUNC2 (min, int, int, min)
 FUNC2 (min, uint, uint, min)
+FUNC2 (min, size_t, size_t, min)
 FUNC2 (min, float, float, min)
 FUNC2 (min, double, double, min)
 
 FUNC2 (max, int, int, max)
 FUNC2 (max, uint, uint, max)
+FUNC2 (max, size_t, size_t, max)
 FUNC2 (max, float, float, max)
 FUNC2 (max, double, double, max)
 
 FUNC3 (bound, int, int, bound)
 FUNC3 (bound, uint, uint, bound)
+FUNC3 (bound, size_t, size_t, bound)
 FUNC3 (bound, float, float, bound)
 FUNC3 (bound, double, double, bound)
 
@@ -144,6 +151,12 @@ static exprtype_t *uint_params[] = {
 	&cexpr_uint,
 	&cexpr_uint,
 	&cexpr_uint,
+};
+
+static exprtype_t *size_t_params[] = {
+	&cexpr_size_t,
+	&cexpr_size_t,
+	&cexpr_size_t,
 };
 
 static exprtype_t *float_params[] = {
@@ -211,12 +224,16 @@ static exprfunc_t atan2_func[] = {
 #define CAST_TO(rtype) \
 static exprfunc_t rtype##_func[] = {	\
 	FUNC (cast, rtype, 1, int),			\
+	FUNC (cast, rtype, 1, uint),		\
+	FUNC (cast, rtype, 1, size_t),		\
 	FUNC (cast, rtype, 1, float),		\
 	FUNC (cast, rtype, 1, double),		\
 	{}									\
 };
 
 CAST_TO (int)
+CAST_TO (uint)
+CAST_TO (size_t)
 CAST_TO (float)
 CAST_TO (double)
 #undef CAST_TO
@@ -224,6 +241,7 @@ CAST_TO (double)
 static exprfunc_t min_func[] = {
 	FUNC (min, int, 2, int),
 	FUNC (min, uint, 2, uint),
+	FUNC (min, size_t, 2, size_t),
 	FUNC (min, float, 2, float),
 	FUNC (min, double, 2, double),
 	{}
@@ -232,6 +250,7 @@ static exprfunc_t min_func[] = {
 static exprfunc_t max_func[] = {
 	FUNC (max, int, 2, int),
 	FUNC (max, uint, 2, uint),
+	FUNC (max, size_t, 2, size_t),
 	FUNC (max, float, 2, float),
 	FUNC (max, double, 2, double),
 	{}
@@ -240,6 +259,7 @@ static exprfunc_t max_func[] = {
 static exprfunc_t bound_func[] = {
 	FUNC (bound, int, 3, int),
 	FUNC (bound, uint, 3, uint),
+	FUNC (bound, size_t, 3, size_t),
 	FUNC (bound, float, 3, float),
 	FUNC (bound, double, 3, double),
 	{}
@@ -255,6 +275,8 @@ VISIBLE exprsym_t cexpr_lib_symbols[] = {
 	{ "atan",   &cexpr_function, atan_func      },
 	{ "atan2",  &cexpr_function, atan2_func     },
 	{ "int",    &cexpr_function, int_func       },
+	{ "uint",   &cexpr_function, uint_func      },
+	{ "size_t", &cexpr_function, size_t_func    },
 	{ "float",  &cexpr_function, float_func     },
 	{ "double", &cexpr_function, double_func    },
 	{ "min",    &cexpr_function, min_func       },
