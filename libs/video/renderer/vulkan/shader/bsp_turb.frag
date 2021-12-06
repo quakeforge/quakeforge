@@ -1,11 +1,15 @@
 #version 450
 
-layout (set = 0, binding = 1) uniform sampler2D Texture;
+layout (constant_id = 0) const int MaxTextures = 256;
+
+layout (set = 0, binding = 1) uniform texture2D textures[MaxTextures];
+layout (set = 0, binding = 2) uniform sampler samp;
 
 layout (push_constant) uniform PushConstants {
 	layout (offset = 64)
 	vec4        fog;
 	float       time;
+	int         texind;
 };
 
 layout (location = 0) in vec4 tl_st;
@@ -47,6 +51,6 @@ main (void)
 	vec2        l_st = tl_st.zw;
 
 	t_st = warp_st (t_st, time);
-	c = texture (Texture, t_st);
+	c = texture (sampler2D (textures[texind], samp), t_st);
 	frag_color = c;//fogBlend (c);
 }

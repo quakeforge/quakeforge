@@ -190,7 +190,6 @@ static const char *instance_extensions[] = {
 
 static const char *device_extensions[] = {
 	VK_KHR_SWAPCHAIN_EXTENSION_NAME,
-	VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME,
 	0,
 };
 
