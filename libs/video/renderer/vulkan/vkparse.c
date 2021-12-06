@@ -800,6 +800,8 @@ static void
 data_array (const exprval_t **params, exprval_t *result, exprctx_t *context)
 {
 	size_t      offset = 0;
+	// params are in reverse order, but this works for calculating the size
+	// of the buffer
 	for (const exprval_t **param = params; *param; param++) {
 		offset += (*param)->type->size;
 	}
@@ -807,8 +809,9 @@ data_array (const exprval_t **params, exprval_t *result, exprctx_t *context)
 											  cmemalloc, context->memsuper);
 	for (const exprval_t **param = params; *param; param++) {
 		size_t      size = (*param)->type->size;
+		// pre-decrement offset because params are in reverse order
+		offset -= size;
 		memcpy (data->a + offset, (*param)->value, size);
-		offset += size;
 	}
 	*(data_array_t **) result->value = data;
 }
@@ -866,6 +869,10 @@ parse_specialization_data (const plitem_t *item, void **data,
 	} else {
 		*size_ptr = da->size;
 		*data_ptr = da->a;
+		//for (size_t i = 0; i < da->size; i++) {
+		//	Sys_Printf (" %02x", da->a[i]);
+		//}
+		//Sys_Printf ("\n");
 	}
 	return ret;
 }
