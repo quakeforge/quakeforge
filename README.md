@@ -1,4 +1,4 @@
-# QuakeFor
+# QuakeForge
 
 QuakeForge is descended from the original Quake engine as released by Id
 Software in December 1999, and can be used to play original Quake and
