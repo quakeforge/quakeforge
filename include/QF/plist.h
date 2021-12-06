@@ -196,7 +196,7 @@ plitem_t *PL_ObjectForKey (const plitem_t *dict, const char *key);
 	isn't a dictionary (includes if \a dict is null).
 	\note	You are responsible for freeing the returned object.
 */
-plitem_t *PL_RemoveObjectForKey (const plitem_t *dict, const char *key);
+plitem_t *PL_RemoveObjectForKey (plitem_t *dict, const char *key);
 
 /** Retrieve a key from a dictionary object.
 

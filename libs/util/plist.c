@@ -312,7 +312,7 @@ PL_KeyAtIndex (const plitem_t *item, int index)
 }
 
 VISIBLE plitem_t *
-PL_RemoveObjectForKey (const plitem_t *item, const char *key)
+PL_RemoveObjectForKey (plitem_t *item, const char *key)
 {
 	if (!item || item->type != QFDictionary) {
 		return NULL;
