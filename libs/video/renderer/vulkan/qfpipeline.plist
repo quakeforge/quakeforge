@@ -1,4 +1,10 @@
 {
+	limits = {
+		//FIXME this really needs to be an external variable as the C code
+		//needs to agree on the size, so it might as well set maxSamplers
+		//directly (and any other such variable)
+		maxSamplers = "min (256u, $physDevLimits.maxPerStageDescriptorSamplers)";
+	};
 	samplers = {
 		quakepic = {
 			magFilter = nearest;
@@ -120,7 +126,7 @@
 			bindings = (
 				{
 					type = combined_image_sampler;
-					descriptorCount = "$frames.size * 256z";
+					descriptorCount = "$frames.size * size_t($properties.limits.maxSamplers)";
 				},
 			);
 		};
@@ -308,7 +314,7 @@
 				{
 					binding = 0;
 					descriptorType = combined_image_sampler;
-					descriptorCount = 256;
+					descriptorCount = $properties.limits.maxSamplers;
 					stageFlags = fragment;
 				},
 			);
@@ -903,6 +909,12 @@
 					stage = fragment;
 					name = main;
 					module = $builtin/lighting.frag;
+					specializationInfo = {
+						mapEntries = (
+							{ size = 4; offset = 0; constantID = 0; },
+						);
+						data = "array($properties.limits.maxSamplers)";
+					};
 				},
 			);
 			vertexInput   = $properties.fsquad.vertexInput;

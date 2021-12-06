@@ -416,7 +416,9 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 		lframe->shadowWrite = base_image_write;
 		lframe->shadowWrite.dstSet = shadow_set->a[i];
 		lframe->shadowWrite.dstBinding = 0;
-		lframe->shadowWrite.descriptorCount = MaxLights;
+		lframe->shadowWrite.descriptorCount
+			= min (MaxLights,
+			device->physDev->properties.limits.maxPerStageDescriptorSamplers);
 		lframe->shadowWrite.pImageInfo = lframe->shadowInfo;
 	}
 	free (attach_set);
