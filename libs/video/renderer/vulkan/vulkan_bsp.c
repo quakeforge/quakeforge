@@ -1120,8 +1120,6 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 
 		bframe->imageInfo[0].imageView = get_view (tex->tex,
 												   ctx->default_white);
-		bframe->imageInfo[1].imageView = get_view (tex->glow,
-												   ctx->default_black);
 
 		push_descriptors (2, bframe->descriptors + 1, bctx->layout, dfunc,
 						  bframe->cmdSet.a[QFV_bspGBuffer]);

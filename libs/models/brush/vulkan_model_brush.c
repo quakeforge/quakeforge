@@ -64,7 +64,8 @@
 
 static vulktex_t vulkan_notexture = { };
 
-static void vulkan_brush_clear (model_t *mod, void *data)
+static void
+vulkan_brush_clear (model_t *mod, void *data)
 {
 	modelctx_t *mctx = data;
 	vulkan_ctx_t *ctx = mctx->ctx;
@@ -82,16 +83,22 @@ static void vulkan_brush_clear (model_t *mod, void *data)
 		vulktex_t  *tex = tx->render;
 		dfunc->vkDestroyImage (device->dev, tex->tex->image, 0);
 		dfunc->vkDestroyImageView (device->dev, tex->tex->view, 0);
-		if (tex->glow) {
-			dfunc->vkDestroyImage (device->dev, tex->glow->image, 0);
-			dfunc->vkDestroyImageView (device->dev, tex->glow->view, 0);
-		}
 	}
 	dfunc->vkFreeMemory (device->dev, mctx->texture_memory, 0);
 }
 
+typedef int (*vprocess_t) (byte *, const byte *, size_t);
+
+static size_t
+mipsize (size_t size)
+{
+	const int   n = MIPLEVELS;
+	return size * ((1 << (2 * n)) - 1) / (3 * (1 << (2 * n - 2)));
+}
+
 static void
-transfer_mips (byte *dst, const void *_src, const texture_t *tx, byte *palette)
+transfer_mips (byte *dst, const void *_src, const texture_t *tx, byte *palette,
+			   vprocess_t process)
 {
 	const byte *src = _src;
 	unsigned    width = tx->width;
@@ -103,7 +110,13 @@ transfer_mips (byte *dst, const void *_src, const texture_t *tx, byte *palette)
 		// end of the texture struct
 		offset = tx->offsets[i] - sizeof (texture_t);
 		count = width * height;
-		Vulkan_ExpandPalette (dst, src + offset, palette, 2, count);
+		// use the upper block of the destination as a temporary buffer for
+		// the processed pixels. Vulkan_ExpandPalette works in a linearly
+		// increasing manner thus the processed pixels will be overwritten
+		// only after they have been read
+		byte       *tmp = dst + count * 3;
+		process (tmp, src + offset, count);
+		Vulkan_ExpandPalette (dst, tmp, palette, 2, count);
 		dst += count * 4;
 		width >>= 1;
 		height >>= 1;
@@ -111,13 +124,13 @@ transfer_mips (byte *dst, const void *_src, const texture_t *tx, byte *palette)
 }
 
 static void
-copy_mips (qfv_packet_t *packet, texture_t *tx, qfv_tex_t *tex,
-			qfv_devfuncs_t *dfunc)
+copy_mips (qfv_packet_t *packet, texture_t *tx, size_t offset, VkImage image,
+		   int layer, qfv_devfuncs_t *dfunc)
 {
 	// base copy
 	VkBufferImageCopy copy = {
-		tex->offset, tx->width, tx->height,
-		{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, 1},
+		offset, tx->width, tx->height,
+		{VK_IMAGE_ASPECT_COLOR_BIT, 0, layer, 1},
 		{0, 0, 0}, {tx->width, tx->height, 1},
 	};
 	int         is_sky = 0;
@@ -128,6 +141,7 @@ copy_mips (qfv_packet_t *packet, texture_t *tx, qfv_tex_t *tex,
 	if (strncmp (tx->name, "sky", 3) == 0) {
 		if (tx->width == 2 * tx->height) {
 			copy.imageExtent.width /= 2;
+			// sky layers are interleaved on each row
 			sky_offset = tx->width * 4 / 2;
 		}
 		is_sky = 1;
@@ -156,9 +170,46 @@ copy_mips (qfv_packet_t *packet, texture_t *tx, qfv_tex_t *tex,
 		sky_offset >>= 1;
 	}
 	dfunc->vkCmdCopyBufferToImage (packet->cmd, packet->stage->buffer,
-								   tex->image,
+								   image,
 								   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 								   copies->size, copies->a);
+}
+
+static void
+transfer_texture (texture_t *tx, VkImage image, qfv_packet_t *packet,
+				  byte *palette, qfv_devfuncs_t *dfunc)
+{
+	byte       *base = packet->stage->data;
+
+	size_t      layer_size = mipsize (tx->width * tx->height * 4);
+	byte       *dst = QFV_PacketExtend (packet, layer_size);
+
+	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
+	ib.barrier.image = image;
+	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
+								 0, 0, 0, 0, 0,
+								 1, &ib.barrier);
+
+	if (strncmp (tx->name, "sky", 3) == 0) {
+		transfer_mips (dst, tx + 1, tx, palette, (vprocess_t) memcpy);
+		copy_mips (packet, tx, dst - base, image, 0, dfunc);
+	} else {
+		transfer_mips (dst, tx + 1, tx, palette, Mod_ClearFullbright);
+		copy_mips (packet, tx, dst - base, image, 0, dfunc);
+		byte       *glow = QFV_PacketExtend (packet, layer_size);
+		transfer_mips (glow, tx + 1, tx, palette, Mod_CalcFullbright);
+		copy_mips (packet, tx, glow - base, image, 1, dfunc);
+	}
+
+	ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+	ib.barrier.image = image;
+	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
+								 0, 0, 0, 0, 0,
+								 1, &ib.barrier);
 }
 
 static void
@@ -168,12 +219,17 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	modelctx_t *mctx = mod->data;
-	VkImage     image = 0;
-	byte       *buffer;
 	mod_brush_t *brush = &mod->brush;
+	VkImage     image = 0;
+	byte        sky_palette[256 * 4];
+
+	memcpy (sky_palette, vid.palette32, sizeof (sky_palette));
+	// sky's black is transparent
+	// this hits both layers, but so long as the screen is cleared
+	// to black, no one should notice :)
+	sky_palette[3] = 0;
 
 	size_t      image_count = 0;
-	size_t      copy_count = 0;
 	size_t      memsize = 0;
 	for (unsigned i = 0; i < brush->numtextures; i++) {
 		texture_t  *tx = brush->textures[i];
@@ -181,21 +237,10 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 			continue;
 		}
 		vulktex_t  *tex = tx->render;
-		tex->tex->offset = memsize;
 		memsize += QFV_GetImageSize (device, tex->tex->image);
 		image_count++;
-		copy_count += MIPLEVELS;
-		if (strncmp (tx->name, "sky", 3) == 0) {
-			copy_count += MIPLEVELS;
-		}
 		// just so we have one in the end
 		image = tex->tex->image;
-		if (tex->glow) {
-			copy_count += MIPLEVELS;
-			tex->glow->offset = memsize;
-			memsize += QFV_GetImageSize (device, tex->glow->image);
-			image_count++;
-		}
 	}
 	VkDeviceMemory mem;
 	mem = QFV_AllocImageMemory (device, image,
@@ -210,108 +255,35 @@ load_textures (model_t *mod, vulkan_ctx_t *ctx)
 														 "brush:%s", mod->name),
 													 memsize, ctx->cmdpool);
 	qfv_packet_t *packet = QFV_PacketAcquire (stage);
-	buffer = QFV_PacketExtend (packet, memsize);
-
+	size_t      offset = 0;
 	for (unsigned i = 0; i < brush->numtextures; i++) {
 		texture_t  *tx = brush->textures[i];
-		byte       *palette = vid.palette32;
+
 		if (!tx) {
 			continue;
 		}
-		vulktex_t  *tex = tx->render;
+		qfv_tex_t  *tex = ((vulktex_t *) tx->render)->tex;
 
-		dfunc->vkBindImageMemory (device->dev, tex->tex->image, mem,
-								  tex->tex->offset);
-		VkImageViewType type = VK_IMAGE_VIEW_TYPE_2D;
-		if (strncmp (tx->name, "sky", 3) == 0) {
-			palette = alloca (256 * 4);
-			memcpy (palette, vid.palette32, 256 * 4);
-			// sky's black is transparent
-			// this hits both layers, but so long as the screen is cleared
-			// to black, no one should notice :)
-			palette[3] = 0;
-			type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-		}
-		tex->tex->view = QFV_CreateImageView (device, tex->tex->image,
+		dfunc->vkBindImageMemory (device->dev, tex->image, mem, offset);
+		offset += QFV_GetImageSize (device, tex->image);
+
+		VkImageViewType type = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+		tex->view = QFV_CreateImageView (device, tex->image,
 											  type, VK_FORMAT_R8G8B8A8_UNORM,
 											  VK_IMAGE_ASPECT_COLOR_BIT);
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW,
-							 tex->tex->view,
+							 tex->view,
 							 va (ctx->va_ctx, "iview:%s:%s:tex",
 								 mod->name, tx->name));
-		transfer_mips (buffer + tex->tex->offset, tx + 1, tx, palette);
-		if (tex->glow_pixels) {
-			dfunc->vkBindImageMemory (device->dev, tex->glow->image, mem,
-									  tex->glow->offset);
-			// skys are unlit so never have a glow texture thus glow
-			// textures are always simple 2D
-			tex->glow->view = QFV_CreateImageView (device, tex->tex->image,
-												   VK_IMAGE_VIEW_TYPE_2D,
-												   VK_FORMAT_R8G8B8A8_UNORM,
-												   VK_IMAGE_ASPECT_COLOR_BIT);
-			QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE_VIEW,
-								 tex->glow->view,
-								 va (ctx->va_ctx, "iview:%s:%s:glow",
-									 mod->name, tx->name));
-			transfer_mips (buffer + tex->glow->offset, tex->glow_pixels, tx,
-						   palette);
-		}
-	}
 
-	// base barrier
-	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
-	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-
-	__auto_type barriers = QFV_AllocImageBarrierSet (image_count, malloc);
-	barriers->size = 0;
-	for (unsigned i = 0; i < brush->numtextures; i++) {
-		texture_t  *tx = brush->textures[i];
-		if (!tx) {
-			continue;
+		byte       *palette = vid.palette32;
+		if (strncmp (tx->name, "sky", 3) == 0) {
+			palette = sky_palette;
 		}
-		vulktex_t  *tex = tx->render;
-		__auto_type b = &barriers->a[barriers->size++];
-		*b = ib.barrier;
-		b->image = tex->tex->image;
-		if (tex->glow) {
-			b = &barriers->a[barriers->size++];
-			*b = ib.barrier;
-			b->image = tex->glow->image;
-		}
+		transfer_texture (tx, tex->image, packet, palette, dfunc);
 	}
-	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0,
-								 barriers->size, barriers->a);
-	for (unsigned i = 0, j = 0; i < brush->numtextures; i++) {
-		texture_t  *tx = brush->textures[i];
-		if (!tx) {
-			continue;
-		}
-		vulktex_t  *tex = tx->render;
-		__auto_type b = &barriers->a[j++];
-		b->oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-		b->newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		b->srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		b->dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-		copy_mips (packet, tx, tex->tex, dfunc);
-		if (tex->glow) {
-			b = &barriers->a[j++];
-			b->oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-			b->newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			b->srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-			b->dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-			copy_mips (packet, tx, tex->glow, dfunc);
-		}
-	}
-
-	ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
-	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
-								 0, 0, 0, 0, 0,
-								 barriers->size, barriers->a);
 	QFV_PacketSubmit (packet);
 	QFV_DestroyStagingBuffer (stage);
-	free (barriers);
 	qfvPopDebug (ctx);
 }
 
@@ -336,9 +308,10 @@ Vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx, vulkan_ctx_t *ctx)
 	tex->tex = (qfv_tex_t *) (tex + 1);
 	VkExtent3D extent = { tx->width, tx->height, 1 };
 
-	int layers = 1;
+	// Skies are two overlapping layers (one partly transparent), other
+	// textures are split into main color and glow color on separate layers
+	int layers = 2;
 	if (strncmp (tx->name, "sky", 3) == 0) {
-		layers = 2;
 		// the sky texture is normally 2 side-by-side squares, but
 		// some maps have just a single square
 		if (tx->width == 2 * tx->height) {
@@ -356,32 +329,6 @@ Vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx, vulkan_ctx_t *ctx)
 						 tex->tex->image,
 						 va (ctx->va_ctx, "image:%s:%s:tex", mod->name,
 							 tx->name));
-	if (layers > 1) {
-		// skys are unlit, so no fullbrights
-		return;
-	}
-
-	const char *name = va (ctx->va_ctx, "fb_%s", tx->name);
-	int         size = (tx->width * tx->height * 85) / 64;
-	size_t      fullbright_mark = Hunk_LowMark (0);
-	byte       *pixels = Hunk_AllocName (0, size, name);
-
-	if (!Mod_CalcFullbright (pixels, (byte *) (tx + 1), size)) {
-		Hunk_FreeToLowMark (0, fullbright_mark);
-		return;
-	}
-	tex->glow = tex->tex + 1;
-	tex->glow->image = QFV_CreateImage (device, 0, VK_IMAGE_TYPE_2D,
-										VK_FORMAT_R8G8B8A8_UNORM,
-										extent, 4, 1,
-										VK_SAMPLE_COUNT_1_BIT,
-										VK_IMAGE_USAGE_TRANSFER_DST_BIT
-										| VK_IMAGE_USAGE_SAMPLED_BIT);
-	QFV_duSetObjectName (device, VK_OBJECT_TYPE_IMAGE,
-						 tex->glow->image,
-						 va (ctx->va_ctx, "image:%s:%s:glow", mod->name,
-							 tx->name));
-	tex->glow_pixels = pixels;
 }
 
 void

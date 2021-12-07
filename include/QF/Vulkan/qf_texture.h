@@ -6,7 +6,6 @@
 
 typedef struct qfv_tex_s {
 	VkDeviceMemory memory;
-	size_t      offset;
 	VkImage     image;
 	VkImageView view;
 } qfv_tex_t;
