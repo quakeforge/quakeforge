@@ -78,7 +78,7 @@ do_fb_skin (glskin_t *s)
 	s->fb_tex->height = s->tex->height;
 	s->fb_tex->format = tex_palette;
 	s->fb_tex->palette = vid.palette;
-	s->fb = Mod_CalcFullbright (s->tex->data, s->fb_tex->data, size);
+	s->fb = Mod_CalcFullbright (s->fb_tex->data, s->tex->data, size);
 }
 
 void

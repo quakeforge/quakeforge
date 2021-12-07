@@ -22,8 +22,8 @@ typedef struct mod_alias_ctx_s {
 
 } mod_alias_ctx_t;
 
-int Mod_CalcFullbright (const byte *in, byte *out, int pixels);
-void Mod_ClearFullbright (const byte *in, byte *out, int pixels);
+int Mod_CalcFullbright (byte *out, const byte *in, size_t pixels);
+int Mod_ClearFullbright (byte *out, const byte *in, size_t pixels);
 void Mod_FloodFillSkin (byte *skin, int skinwidth, int skinheight);
 //FIXME gl specific. rewrite to use above
 int Mod_Fullbright (byte * skin, int width, int height, const char *name);
@@ -97,10 +97,10 @@ void Skin_Init (void);
 skin_t *Skin_SetColormap (skin_t *skin, int cmap);
 skin_t *Skin_SetSkin (skin_t *skin, int cmap, const char *skinname);
 void Skin_SetTranslation (int cmap, int top, int bottom);
-int Skin_CalcTopColors (const byte *in, byte *out, int pixels);
-int Skin_CalcBottomColors (const byte *in, byte *out, int pixels);
-void Skin_ClearTopColors (const byte *in, byte *out, int pixels);
-void Skin_ClearBottomColors (const byte *in, byte *out, int pixels);
+int Skin_CalcTopColors (byte *out, const byte *in, size_t pixels);
+int Skin_CalcBottomColors (byte *out, const byte *in, size_t pixels);
+int Skin_ClearTopColors (byte *out, const byte *in, size_t pixels);
+int Skin_ClearBottomColors (byte *out, const byte *in, size_t pixels);
 
 void sw_Skin_SetupSkin (skin_t *skin, int cmap);
 void sw_Skin_ProcessTranslation (int cmap, const byte *translation);

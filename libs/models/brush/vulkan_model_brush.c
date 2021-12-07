@@ -366,7 +366,7 @@ Vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx, vulkan_ctx_t *ctx)
 	size_t      fullbright_mark = Hunk_LowMark (0);
 	byte       *pixels = Hunk_AllocName (0, size, name);
 
-	if (!Mod_CalcFullbright ((byte *) (tx + 1), pixels, size)) {
+	if (!Mod_CalcFullbright (pixels, (byte *) (tx + 1), size)) {
 		Hunk_FreeToLowMark (0, fullbright_mark);
 		return;
 	}
