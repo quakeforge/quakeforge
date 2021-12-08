@@ -7,12 +7,11 @@ layout (set = 1, binding = 1) uniform texture2DArray skins[MaxTextures];
 
 layout (push_constant) uniform PushConstants {
 	layout (offset = 68)
-	uint        base_color;
+	uint        texind;
 	uint        colorA;
 	uint        colorB;
+	vec4        base_color;
 	vec4        fog;
-	vec4        color;
-	int         texind;
 };
 
 layout (location = 0) in vec2 st;
@@ -31,7 +30,7 @@ main (void)
 	vec4        e;
 	int         i;
 	vec3        light = vec3 (0);
-	c = texture (sampler2DArray(skins[texind], samp), vec3 (st, 0)) * unpackUnorm4x8(base_color);
+	c = texture (sampler2DArray(skins[texind], samp), vec3 (st, 0)) * base_color;
 	c += texture (sampler2DArray(skins[texind], samp), vec3 (st, 1)) * unpackUnorm4x8(colorA);
 	c += texture (sampler2DArray(skins[texind], samp), vec3 (st, 2)) * unpackUnorm4x8(colorB);
 	e = texture (sampler2DArray(skins[texind], samp), vec3 (st, 3));

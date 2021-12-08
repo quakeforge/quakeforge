@@ -54,6 +54,7 @@
 #include "QF/scene/entity.h"
 
 #include "QF/Vulkan/qf_alias.h"
+#include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/command.h"
@@ -89,7 +90,6 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	aliasctx_t *actx = ctx->alias_context;
-	aliasframe_t *aframe = &actx->frames.a[ctx->curFrame];
 
 	__auto_type mesh = (qfv_alias_mesh_t *) ((byte *) hdr + hdr->commands);
 
@@ -114,13 +114,6 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 		dfunc->vkCmdPushConstants (cmd, actx->layout,
 								   VK_SHADER_STAGE_FRAGMENT_BIT,
 								   68, frag_size, frag_constants);
-		aframe->imageInfo[0].imageView = skin->view;
-		dfunc->vkCmdPushDescriptorSetKHR (cmd,
-										  VK_PIPELINE_BIND_POINT_GRAPHICS,
-										  actx->layout,
-										  0, ALIAS_IMAGE_INFOS,
-										  aframe->descriptors
-										  + ALIAS_BUFFER_INFOS);
 	}
 	dfunc->vkCmdDrawIndexed (cmd, 3 * hdr->mdl.numtris, 1, 0, 0, 0);
 }
@@ -139,7 +132,13 @@ Vulkan_DrawAlias (entity_t *ent, qfv_renderframe_t *rFrame)
 		mat4f_t     mat;
 		float       blend;
 	}           vertex_constants;
-	byte        fragment_constants[3][4];
+	struct {
+		uint32_t    texind;
+		byte        colorA[4];
+		byte        colorB[4];
+		float       base_color[4];
+		float       fog[4];
+	}           fragment_constants;
 
 	if (!(hdr = model->aliashdr)) {
 		hdr = Cache_Get (&model->cache);
@@ -155,19 +154,21 @@ Vulkan_DrawAlias (entity_t *ent, qfv_renderframe_t *rFrame)
 		skindesc = R_AliasGetSkindesc (animation, ent->renderer.skinnum, hdr);
 		skin = (qfv_alias_skin_t *) ((byte *) hdr + skindesc->skin);
 	}
-	QuatScale (ent->renderer.colormod, 255, fragment_constants[0]);
-	QuatCopy (skin->colora, fragment_constants[1]);
-	QuatCopy (skin->colorb, fragment_constants[2]);
+	fragment_constants.texind = skin->texind;
+	QuatCopy (ent->renderer.colormod, fragment_constants.base_color);
+	QuatCopy (skin->colora, fragment_constants.colorA);
+	QuatCopy (skin->colorb, fragment_constants.colorB);
+	QuatZero (fragment_constants.fog);
 
 	emit_commands (aframe->cmdSet.a[QFV_aliasDepth],
 				   ent->animation.pose1, ent->animation.pose2,
 				   0, &vertex_constants, 17 * sizeof (float),
-				   fragment_constants, sizeof (fragment_constants),
+				   &fragment_constants, sizeof (fragment_constants),
 				   hdr, rFrame);
 	emit_commands (aframe->cmdSet.a[QFV_aliasGBuffer],
 				   ent->animation.pose1, ent->animation.pose2,
 				   skin, &vertex_constants, 17 * sizeof (float),
-				   fragment_constants, sizeof (fragment_constants),
+				   &fragment_constants, sizeof (fragment_constants),
 				   hdr, rFrame);
 }
 
@@ -202,19 +203,14 @@ alias_begin_subpass (QFV_AliasSubpass subpass, VkPipeline pipeline,
 						 { 0.6, 0.5, 0, 1});
 
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
-	//VkDescriptorSet sets[] = {
-	//	aframe->descriptors[0].dstSet,
-	//	aframe->descriptors[1].dstSet,
-	//};
-	//dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-	//								actx->layout, 0, 2, sets, 0, 0);
-	dfunc->vkCmdPushDescriptorSetKHR (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									  actx->layout,
-									  0, 1, aframe->descriptors + 0);
+	VkDescriptorSet sets[] = {
+		Vulkan_Matrix_Descrptors (ctx, ctx->curFrame),
+		actx->descriptors,
+	};
+	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									actx->layout, 0, 2, sets, 0, 0);
 	dfunc->vkCmdSetViewport (cmd, 0, 1, &ctx->viewport);
 	dfunc->vkCmdSetScissor (cmd, 0, 1, &ctx->scissor);
-
-	//dfunc->vkUpdateDescriptorSets (device->dev, 2, aframe->descriptors, 0, 0);
 
 	//XXX glsl_Fog_GetColor (fog);
 	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;
@@ -242,9 +238,6 @@ Vulkan_AliasBegin (qfv_renderframe_t *rFrame)
 				   aframe->cmdSet.a[QFV_aliasDepth]);
 	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passGBuffer],
 				   aframe->cmdSet.a[QFV_aliasGBuffer]);
-
-	//FIXME need per frame matrices
-	//XXX aframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
 
 	alias_begin_subpass (QFV_aliasDepth, actx->depth, rFrame);
 	alias_begin_subpass (QFV_aliasGBuffer, actx->gbuf, rFrame);
@@ -281,29 +274,74 @@ Vulkan_AliasDepthRange (qfv_renderframe_t *rFrame,
 							 &viewport);
 }
 
-static VkDescriptorBufferInfo base_buffer_info = {
-	0, 0, VK_WHOLE_SIZE
-};
+static VkDescriptorImageInfo base_sampler_info = { };
 static VkDescriptorImageInfo base_image_info = {
-	0, 0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+	.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
 };
-static VkWriteDescriptorSet base_buffer_write = {
-	VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
-	0, 0, 1,
-	VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-	0, 0, 0
+static VkWriteDescriptorSet base_sampler_write = {
+	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+	.dstBinding = 0,
+	.descriptorCount = 1,
+	.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
 };
 static VkWriteDescriptorSet base_image_write = {
-	VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
-	0, 0, 1,
-	VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-	0, 0, 0
+	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+	.dstBinding = 1,
+	.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
 };
+
+void
+Vulkan_AliasAddSkin (vulkan_ctx_t *ctx, qfv_alias_skin_t *skin)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	aliasctx_t *actx = ctx->alias_context;
+
+	if (!actx->texindices.size) {
+		Sys_Error ("ran out of skins (smart texture handling not implemented)");
+	}
+	skin->texind = DARRAY_REMOVE (&actx->texindices);
+
+	VkDescriptorImageInfo imageInfo[1];
+	imageInfo[0] = base_image_info;
+	imageInfo[0].imageView = skin->view;
+
+	VkWriteDescriptorSet write[2];
+	write[0] = base_image_write;
+	write[0].dstSet = actx->descriptors;
+	write[0].dstArrayElement = skin->texind;
+	write[0].descriptorCount = 1;
+	write[0].pImageInfo = imageInfo;
+	dfunc->vkUpdateDescriptorSets (device->dev, 1, write, 0, 0);
+}
+
+void
+Vulkan_AliasRemoveSkin (vulkan_ctx_t *ctx, qfv_alias_skin_t *skin)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	aliasctx_t *actx = ctx->alias_context;
+
+	DARRAY_APPEND (&actx->texindices, skin->texind);
+
+	VkDescriptorImageInfo imageInfo[1];
+	imageInfo[0] = base_image_info;
+	imageInfo[0].imageView = ctx->default_magenta_array->view;
+
+	VkWriteDescriptorSet write[2];
+	write[0] = base_image_write;
+	write[0].dstSet = actx->descriptors;
+	write[0].dstArrayElement = skin->texind;
+	write[0].descriptorCount = 1;
+	write[0].pImageInfo = imageInfo;
+	dfunc->vkUpdateDescriptorSets (device->dev, 1, write, 0, 0);
+}
 
 void
 Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
 
 	qfvPushDebug (ctx, "alias init");
 
@@ -320,22 +358,49 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 	actx->layout = Vulkan_CreatePipelineLayout (ctx, "alias_layout");
 	actx->sampler = Vulkan_CreateSampler (ctx, "alias_sampler");
 
-	/*__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (2 * frames, alloca);
-	for (size_t i = 0; i < layouts->size / 2; i++) {
-		__auto_type mats = QFV_GetDescriptorSetLayout (ctx, "alias.matrices");
-		__auto_type lights = QFV_GetDescriptorSetLayout (ctx, "alias.lights");
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
-							 mats, va (ctx->va_ctx, "set_layout:%s:%d",
-									   "alias.matrices", i));
-		QFV_duSetObjectName (device, VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT,
-							 lights, va (ctx->va_ctx, "set_layout:%s:%d",
-										 "alias.lights", i));
-		layouts->a[2 * i + 0] = mats;
-		layouts->a[2 * i + 1] = lights;
-	}*/
-	//__auto_type pool = QFV_GetDescriptorPool (ctx, "alias.pool");
+	//FIXME too many places
+	__auto_type limits = device->physDev->properties.limits;
+	actx->maxImages = min (256, limits.maxPerStageDescriptorSampledImages - 8);
+	actx->pool = Vulkan_CreateDescriptorPool (ctx, "alias_pool");
+	actx->setLayout = Vulkan_CreateDescriptorSetLayout (ctx, "alias_set");
+	//FIXME kinda dumb
+	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (1, alloca);
+	for (size_t i = 0; i < layouts->size; i++) {
+		layouts->a[i] = actx->setLayout;
+	}
+	__auto_type sets = QFV_AllocateDescriptorSet (device, actx->pool, layouts);
+	actx->descriptors = sets->a[0];
+	free (sets);
 
-	//__auto_type sets = QFV_AllocateDescriptorSet (device, pool, layouts);
+	DARRAY_INIT (&actx->texindices, actx->maxImages);
+	DARRAY_RESIZE (&actx->texindices, actx->maxImages);
+	actx->texindices.grow = 0;
+	actx->texindices.maxSize = actx->maxImages;
+	for (unsigned i = 0; i < actx->maxImages; i++) {
+		actx->texindices.a[i] = i;
+	}
+
+	VkDescriptorImageInfo samplerInfo[1];
+	samplerInfo[0] = base_sampler_info;
+	samplerInfo[0].sampler = actx->sampler;
+
+	VkDescriptorImageInfo imageInfo[actx->maxImages];
+	for (unsigned i = 0; i < actx->maxImages; i++) {
+		imageInfo[i] = base_image_info;
+		imageInfo[i].imageView = ctx->default_magenta_array->view;
+	}
+	VkWriteDescriptorSet write[2];
+	write[0] = base_sampler_write;
+	write[0].dstSet = actx->descriptors;
+	write[0].pImageInfo = samplerInfo;
+	write[1] = base_image_write;
+	write[1].dstSet = actx->descriptors;
+	write[1].descriptorCount = actx->maxImages;
+	write[1].pImageInfo = imageInfo;
+	dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
+
+
+
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type aframe = &actx->frames.a[i];
 
@@ -351,23 +416,7 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 								 va (ctx->va_ctx, "cmd:alias:%zd:%s", i,
 									 alias_pass_names[j]));
 		}
-		for (int j = 0; j < ALIAS_BUFFER_INFOS; j++) {
-			aframe->bufferInfo[j] = base_buffer_info;
-			aframe->descriptors[j] = base_buffer_write;
-			//aframe->descriptors[j].dstSet = sets->a[ALIAS_BUFFER_INFOS*i + j];
-			aframe->descriptors[j].dstBinding = j;
-			aframe->descriptors[j].pBufferInfo = &aframe->bufferInfo[j];
-		}
-		for (int j = 0; j < ALIAS_IMAGE_INFOS; j++) {
-			aframe->imageInfo[j] = base_image_info;
-			aframe->imageInfo[j].sampler = actx->sampler;
-			int k = j + ALIAS_BUFFER_INFOS;
-			aframe->descriptors[k] = base_image_write;
-			aframe->descriptors[k].dstBinding = k;
-			aframe->descriptors[k].pImageInfo = &aframe->imageInfo[j];
-		}
 	}
-	//free (sets);
 	qfvPopDebug (ctx);
 }
 

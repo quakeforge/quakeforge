@@ -70,6 +70,7 @@ skin_clear (int skin_offset, aliashdr_t *hdr, vulkan_ctx_t *ctx)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	qfv_alias_skin_t *skin = (qfv_alias_skin_t *) ((byte *) hdr + skin_offset);
 
+	Vulkan_AliasRemoveSkin (ctx, skin);
 	dfunc->vkDestroyImageView (device->dev, skin->view, 0);
 	dfunc->vkDestroyImage (device->dev, skin->image, 0);
 	dfunc->vkFreeMemory (device->dev, skin->memory, 0);
@@ -220,6 +221,8 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 	QFV_DestroyStagingBuffer (stage);
 
 	free (tskin);
+
+	Vulkan_AliasAddSkin (ctx, skin);
 
 	qfvPopDebug (ctx);
 	return skinpix + skinsize;

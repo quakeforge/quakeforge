@@ -890,12 +890,12 @@ bsp_begin_subpass (QFV_BspSubpass subpass, VkPipeline pipeline,
 	dfunc->vkCmdBindIndexBuffer (cmd, bctx->index_buffer, bframe->index_offset,
 								 VK_INDEX_TYPE_UINT32);
 
-	VkDescriptorSet set[2] = {
+	VkDescriptorSet sets[] = {
 		Vulkan_Matrix_Descrptors (ctx, ctx->curFrame),
 		bctx->descriptors,
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									layout, 0, 2, set, 0, 0);
+									layout, 0, 2, sets, 0, 0);
 
 	//XXX glsl_Fog_GetColor (fog);
 	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;

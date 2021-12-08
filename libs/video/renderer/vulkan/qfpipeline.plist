@@ -99,11 +99,15 @@
 		};
 		alias_pool = {
 			flags = 0;
-			maxSets = "2z * $frames.size";
+			maxSets = 1;
 			bindings = (
 				{
-					type = uniform_buffer;
-					descriptorCount = "2z * $frames.size";
+					type = sampler;
+					descriptorCount = 1;
+				},
+				{
+					type = sampled_image;
+					descriptorCount = $properties.limits.maxImages;
 				},
 			);
 		};

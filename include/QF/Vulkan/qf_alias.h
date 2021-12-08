@@ -60,10 +60,8 @@ typedef struct qfv_alias_skin_s {
 	VkImageView view;
 	byte        colora[4];
 	byte        colorb[4];
+	int         texind;
 } qfv_alias_skin_t;
-
-#define ALIAS_BUFFER_INFOS 1
-#define ALIAS_IMAGE_INFOS 1
 
 typedef enum {
 	QFV_aliasDepth,
@@ -75,20 +73,25 @@ typedef enum {
 
 typedef struct aliasframe_s {
 	qfv_cmdbufferset_t cmdSet;
-	VkDescriptorBufferInfo bufferInfo[ALIAS_BUFFER_INFOS];
-	VkDescriptorImageInfo imageInfo[ALIAS_IMAGE_INFOS];
-	VkWriteDescriptorSet descriptors[ALIAS_BUFFER_INFOS + ALIAS_IMAGE_INFOS];
 } aliasframe_t;
 
 typedef struct aliasframeset_s
     DARRAY_TYPE (aliasframe_t) aliasframeset_t;
 
+typedef struct aliasindset_s
+    DARRAY_TYPE (unsigned) aliasindset_t;
+
 typedef struct aliasctx_s {
 	aliasframeset_t frames;
 	VkPipeline   depth;
 	VkPipeline   gbuf;
+	VkDescriptorSet descriptors;
+	VkDescriptorPool pool;
+	VkDescriptorSetLayout setLayout;
 	VkPipelineLayout layout;
+	unsigned     maxImages;
 	VkSampler    sampler;
+	aliasindset_t texindices;
 } aliasctx_t;
 
 struct vulkan_ctx_s;
@@ -107,6 +110,9 @@ void Vulkan_Mod_LoadExternalSkins (struct mod_alias_ctx_s *alias_ctx,
 void Vulkan_Mod_MakeAliasModelDisplayLists (struct mod_alias_ctx_s *alias_ctx,
 											void *_m, int _s, int extra,
 											struct vulkan_ctx_s *ctx);
+
+void Vulkan_AliasAddSkin (struct vulkan_ctx_s *ctx, qfv_alias_skin_t *skin);
+void Vulkan_AliasRemoveSkin (struct vulkan_ctx_s *ctx, qfv_alias_skin_t *skin);
 
 void Vulkan_AliasBegin (struct qfv_renderframe_s *rFrame);
 void Vulkan_DrawAlias (struct entity_s *ent, struct qfv_renderframe_s *rFrame);
