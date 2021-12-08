@@ -2,8 +2,8 @@
 
 layout (constant_id = 0) const int MaxTextures = 256;
 
-layout (set = 0, binding = 1) uniform texture2D textures[MaxTextures];
-layout (set = 0, binding = 2) uniform sampler samp;
+layout (set = 1, binding = 0) uniform sampler samp;
+layout (set = 1, binding = 1) uniform texture2D textures[MaxTextures];
 
 layout (push_constant) uniform PushConstants {
 	layout (offset = 64)

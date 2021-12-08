@@ -4,9 +4,9 @@ layout (constant_id = 0) const int MaxTextures = 256;
 layout (constant_id = 1) const bool doSkyBox = false;
 layout (constant_id = 2) const bool doSkySheet = false;
 
-layout (set = 0, binding = 1) uniform texture2DArray sheet_tex[MaxTextures];
-layout (set = 0, binding = 1) uniform textureCube cube_tex[MaxTextures];
-layout (set = 0, binding = 2) uniform sampler samp;
+layout (set = 1, binding = 0) uniform sampler samp;
+layout (set = 1, binding = 1) uniform texture2DArray sheet_tex[MaxTextures];
+layout (set = 1, binding = 1) uniform textureCube cube_tex[MaxTextures];
 
 layout (push_constant) uniform PushConstants {
 	layout (offset = 64)

@@ -155,7 +155,7 @@
 					binding = 0;
 					descriptorType = uniform_buffer;
 					descriptorCount = 1;
-					stageFlags = vertex;
+					stageFlags = vertex|geometry;
 				},
 			);
 		};
@@ -173,38 +173,14 @@
 			bindings = (
 				{
 					binding = 0;
-					descriptorType = uniform_buffer;
+					descriptorType = sampler;
 					descriptorCount = 1;
-					stageFlags = vertex|geometry;
+					stageFlags = fragment;
 				},
 				{
 					binding = 1;
-					descriptorType = combined_image_sampler;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 2;
-					descriptorType = combined_image_sampler;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 3;
-					descriptorType = combined_image_sampler;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 4;
-					descriptorType = combined_image_sampler;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 5;
-					descriptorType = combined_image_sampler;
-					descriptorCount = 1;
+					descriptorType = sampled_image;
+					descriptorCount = $properties.limits.maxImages;
 					stageFlags = fragment;
 				},
 			);
@@ -213,68 +189,14 @@
 			bindings = (
 				{
 					binding = 0;
-					descriptorType = uniform_buffer;
+					descriptorType = sampler;
 					descriptorCount = 1;
-					stageFlags = vertex;
+					stageFlags = fragment;
 				},
 				{
 					binding = 1;
 					descriptorType = sampled_image;
 					descriptorCount = $properties.limits.maxImages;
-					stageFlags = fragment;
-				},
-				{
-					binding = 2;
-					descriptorType = sampler;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-			);
-		};
-		alias_matrices = {
-			bindings = (
-				{
-					binding = 0;
-					descriptorType = uniform_buffer;
-					descriptorCount = 1;
-					stageFlags = vertex;
-				},
-			);
-		};
-		alias_textures = {
-			bindings = (
-				{
-					binding = 0;
-					descriptorType = combined_image_sampler;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 1;
-					descriptorType = combined_image_sampler;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 2;
-					descriptorType = combined_image_sampler;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 3;
-					descriptorType = combined_image_sampler;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-			);
-		};
-		alias_lights = {
-			bindings = (
-				{
-					binding = 0;
-					descriptorType = uniform_buffer;
-					descriptorCount = 1;
 					stageFlags = fragment;
 				},
 			);
@@ -355,7 +277,7 @@
 			setLayouts = (matrix_set, twod_set);
 		};
 		quakebsp_layout = {
-			setLayouts = (quakebsp_set);
+			setLayouts = (matrix_set, quakebsp_set);
 			pushConstantRanges = (
 				{
 					stageFlags = vertex;
@@ -370,8 +292,7 @@
 			);
 		};
 		alias_layout = {
-			//setLayouts = (alias_matrices, alias_lights, alias_textures);
-			setLayouts = (alias_set);
+			setLayouts = (matrix_set, alias_set);
 			pushConstantRanges = (
 				{
 					stageFlags = vertex;
