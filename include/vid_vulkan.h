@@ -17,16 +17,6 @@ typedef struct vulkan_frame_s {
 	VkCommandBuffer cmdBuffer;
 } vulkan_frame_t;
 
-typedef struct vulkan_matrices_s {
-	VkBuffer    buffer_2d;
-	VkBuffer    buffer_3d;
-	VkDeviceMemory memory;
-	vec4f_t    *projection_2d;
-	vec4f_t    *projection_3d;
-	vec4f_t    *view_3d;
-	vec4f_t    *sky_3d;
-} vulkan_matrices_t;
-
 typedef struct vulkan_frameset_s
 	DARRAY_TYPE (vulkan_frame_t) vulkan_frameset_t;
 
@@ -66,6 +56,7 @@ typedef struct vulkan_ctx_s {
 	struct hashtab_s *imageViews;
 	struct hashtab_s *renderpasses;
 
+	struct matrixctx_s *matrix_context;
 	struct aliasctx_s *alias_context;
 	struct bspctx_s *bsp_context;
 	struct drawctx_s *draw_context;
@@ -92,8 +83,6 @@ typedef struct vulkan_ctx_s {
 
 	VkViewport  viewport;
 	VkRect2D    scissor;
-	// projection and view matrices (model is push constant)
-	vulkan_matrices_t matrices;
 
 #define EXPORTED_VULKAN_FUNCTION(fname) PFN_##fname fname;
 #define GLOBAL_LEVEL_VULKAN_FUNCTION(fname) PFN_##fname fname;

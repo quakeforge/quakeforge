@@ -78,32 +78,6 @@ setup_frame (vulkan_ctx_t *ctx)
 }
 
 static void
-setup_view (vulkan_ctx_t *ctx)
-{
-	mat4f_t     view;
-	static mat4f_t z_up = {
-		{ 0, 0, -1, 0},
-		{-1, 0,  0, 0},
-		{ 0, 1,  0, 0},
-		{ 0, 0,  0, 1},
-	};
-	vec4f_t     offset = { 0, 0, 0, 1 };
-
-	/*x = r_refdef.vrect.x;
-	y = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height));
-	w = r_refdef.vrect.width;
-	h = r_refdef.vrect.height;
-	qfeglViewport (x, y, w, h);*/
-
-	mat4fquat (view, qconjf (r_refdef.viewrotation));
-	mmulf (view, z_up, view);
-	offset = -r_refdef.viewposition;
-	offset[3] = 1;
-	view[3] = mvmulf (view, offset);
-	memcpy (ctx->matrices.view_3d, view, sizeof (view));
-}
-
-static void
 Vulkan_RenderEntities (qfv_renderframe_t *rFrame)
 {
 	if (!r_drawentities->int_val)
@@ -166,7 +140,6 @@ Vulkan_RenderView (qfv_renderframe_t *rFrame)
 	if (speeds)
 		t[0] = Sys_DoubleTime ();
 	setup_frame (ctx);
-	setup_view (ctx);
 	if (speeds)
 		t[1] = Sys_DoubleTime ();
 	R_MarkLeaves ();

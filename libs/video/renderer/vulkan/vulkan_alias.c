@@ -244,7 +244,7 @@ Vulkan_AliasBegin (qfv_renderframe_t *rFrame)
 				   aframe->cmdSet.a[QFV_aliasGBuffer]);
 
 	//FIXME need per frame matrices
-	aframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
+	//XXX aframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
 
 	alias_begin_subpass (QFV_aliasDepth, actx->depth, rFrame);
 	alias_begin_subpass (QFV_aliasGBuffer, actx->gbuf, rFrame);

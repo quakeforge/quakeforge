@@ -905,7 +905,7 @@ bsp_begin (qfv_renderframe_t *rFrame)
 				   bframe->cmdSet.a[QFV_bspGBuffer]);
 
 	//FIXME need per frame matrices
-	bframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
+	//XXX bframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
 	bframe->imageInfo[0].imageView = 0;	// set by tex chain loop
 	bframe->imageInfo[1].imageView = 0;	// set by tex chain loop
 	bframe->imageInfo[2].imageView = QFV_ScrapImageView (bctx->light_scrap);
@@ -944,7 +944,7 @@ turb_begin (qfv_renderframe_t *rFrame)
 				   bframe->cmdSet.a[QFV_bspTurb]);
 
 	//FIXME need per frame matrices
-	bframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
+	//XXX bframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
 	bframe->imageInfo[0].imageView = ctx->default_magenta->view;
 	bframe->imageInfo[1].imageView = ctx->default_magenta->view;
 	bframe->imageInfo[2].imageView = QFV_ScrapImageView (bctx->light_scrap);
@@ -962,7 +962,7 @@ turb_end (vulkan_ctx_t *ctx)
 
 	bsp_end_subpass (bframe->cmdSet.a[QFV_bspTurb], ctx);
 }
-
+/*XXX
 static void
 spin (mat4f_t mat, bspctx_t *bctx)
 {
@@ -985,7 +985,7 @@ spin (mat4f_t mat, bspctx_t *bctx)
 	mat4fquat (m, q);
 	mmulf (mat, m, mat);
 }
-
+*/
 static void
 sky_begin (qfv_renderframe_t *rFrame)
 {
@@ -995,7 +995,7 @@ sky_begin (qfv_renderframe_t *rFrame)
 	bctx->default_color[3] = 1;
 	QuatCopy (bctx->default_color, bctx->last_color);
 
-	spin (ctx->matrices.sky_3d, bctx);
+	//XXX spin (ctx->matrices.sky_3d, bctx);
 
 	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 
@@ -1003,7 +1003,7 @@ sky_begin (qfv_renderframe_t *rFrame)
 				   bframe->cmdSet.a[QFV_bspSky]);
 
 	//FIXME need per frame matrices
-	bframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
+	//XXX bframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
 	bframe->imageInfo[0].imageView = ctx->default_magenta->view;
 	bframe->imageInfo[1].imageView = ctx->default_magenta->view;
 	bframe->imageInfo[2].imageView = QFV_ScrapImageView (bctx->light_scrap);

@@ -47,6 +47,7 @@
 #include "QF/Vulkan/qf_lighting.h"
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_main.h"
+#include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_particles.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/qf_vid.h"
@@ -93,13 +94,13 @@ static void
 vulkan_R_Init (void)
 {
 	Vulkan_CreateStagingBuffers (vulkan_ctx);
-	Vulkan_CreateMatrices (vulkan_ctx);
 	Vulkan_CreateSwapchain (vulkan_ctx);
 	Vulkan_CreateFrames (vulkan_ctx);
 	Vulkan_CreateCapture (vulkan_ctx);
 	Vulkan_CreateRenderPass (vulkan_ctx);
 	Vulkan_Texture_Init (vulkan_ctx);
 
+	Vulkan_Matrix_Init (vulkan_ctx);
 	Vulkan_Alias_Init (vulkan_ctx);
 	Vulkan_Bsp_Init (vulkan_ctx);
 	Vulkan_Draw_Init (vulkan_ctx);
@@ -629,6 +630,7 @@ vulkan_vid_render_shutdown (void)
 	Vulkan_Draw_Shutdown (vulkan_ctx);
 	Vulkan_Bsp_Shutdown (vulkan_ctx);
 	Vulkan_Alias_Shutdown (vulkan_ctx);
+	Vulkan_Matrix_Shutdown (vulkan_ctx);
 
 	Mod_ClearAll ();
 	Vulkan_Texture_Shutdown (vulkan_ctx);

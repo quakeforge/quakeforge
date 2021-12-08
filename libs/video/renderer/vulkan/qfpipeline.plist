@@ -77,7 +77,7 @@
 		};
 	};
 	descriptorPools = {
-		twod_pool = {
+		matrix_pool = {
 			flags = 0;
 			maxSets = $frames.size;
 			bindings = (
@@ -85,6 +85,12 @@
 					type = uniform_buffer;
 					descriptorCount = $frames.size;
 				},
+			);
+		};
+		twod_pool = {
+			flags = 0;
+			maxSets = $frames.size;
+			bindings = (
 				{
 					type = combined_image_sampler;
 					descriptorCount = $frames.size;
@@ -143,7 +149,7 @@
 		};
 	};
 	setLayouts = {
-		twod_set = {
+		matrix_set = {
 			bindings = (
 				{
 					binding = 0;
@@ -151,8 +157,12 @@
 					descriptorCount = 1;
 					stageFlags = vertex;
 				},
+			);
+		};
+		twod_set = {
+			bindings = (
 				{
-					binding = 1;
+					binding = 0;
 					descriptorType = combined_image_sampler;
 					descriptorCount = 1;
 					stageFlags = fragment;
@@ -342,7 +352,7 @@
 	};
 	pipelineLayouts = {
 		twod_layout = {
-			setLayouts = (twod_set);
+			setLayouts = (matrix_set, twod_set);
 		};
 		quakebsp_layout = {
 			setLayouts = (quakebsp_set);

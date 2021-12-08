@@ -51,6 +51,7 @@
 
 #include "compat.h"
 #include "QF/Vulkan/qf_draw.h"
+#include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
@@ -405,9 +406,6 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	}
 	__auto_type pool = Vulkan_CreateDescriptorPool (ctx, "twod_pool");
 
-	VkDescriptorBufferInfo bufferInfo = {
-		ctx->matrices.buffer_2d, 0, VK_WHOLE_SIZE
-	};
 	VkDescriptorImageInfo imageInfo = {
 		dctx->sampler,
 		QFV_ScrapImageView (dctx->scrap),
@@ -424,14 +422,10 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 		VkWriteDescriptorSet write[] = {
 			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
 			  dframe->descriptors, 0, 0, 1,
-			  VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			  0, &bufferInfo, 0 },
-			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-			  dframe->descriptors, 1, 0, 1,
 			  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 			  &imageInfo, 0, 0 },
 		};
-		dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
+		dfunc->vkUpdateDescriptorSets (device->dev, 1, write, 0, 0);
 		dframe->cmd = cmdBuffers->a[i];
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
 							 dframe->cmd,
@@ -799,10 +793,13 @@ Vulkan_FlushText (qfv_renderframe_t *rFrame)
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &dctx->vert_buffer, offsets);
 	dfunc->vkCmdBindIndexBuffer (cmd, dctx->ind_buffer, 0,
 								 VK_INDEX_TYPE_UINT32);
-	VkDescriptorSet set = dframe->descriptors;
+	VkDescriptorSet set[2] = {
+		Vulkan_Matrix_Descrptors (ctx, ctx->curFrame),
+		dframe->descriptors,
+	};
 	VkPipelineLayout layout = dctx->layout;
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									layout, 0, 1, &set, 0, 0);
+									layout, 0, 2, set, 0, 0);
 	dfunc->vkCmdDrawIndexed (cmd, dframe->num_quads * INDS_PER_QUAD,
 							 1, 0, 0, 0);
 

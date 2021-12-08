@@ -50,6 +50,7 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
+#include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
@@ -228,7 +229,6 @@ Vulkan_Shutdown_Common (vulkan_ctx_t *ctx)
 		QFV_DestroySwapchain (ctx->swapchain);
 	}
 	QFV_DestroyStagingBuffer (ctx->staging);
-	Vulkan_DestroyMatrices (ctx);
 	ctx->instance->funcs->vkDestroySurfaceKHR (ctx->instance->instance,
 											   ctx->surface, 0);
 	clear_table (&ctx->pipelineLayouts);
@@ -336,6 +336,7 @@ get_image_size (VkImage image, qfv_device_t *device)
 static void
 renderpass_draw (qfv_renderframe_t *rFrame)
 {
+	Vulkan_Matrix_Draw (rFrame);
 	Vulkan_RenderView (rFrame);
 	Vulkan_FlushText (rFrame);
 	Vulkan_Lighting_Draw (rFrame);
