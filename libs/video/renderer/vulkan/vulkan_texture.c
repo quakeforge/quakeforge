@@ -404,9 +404,15 @@ Vulkan_UnloadTex (vulkan_ctx_t *ctx, qfv_tex_t *tex)
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	dfunc->vkDestroyImageView (device->dev, tex->view, 0);
-	dfunc->vkDestroyImage (device->dev, tex->image, 0);
-	dfunc->vkFreeMemory (device->dev, tex->memory, 0);
+	if (tex->view) {
+		dfunc->vkDestroyImageView (device->dev, tex->view, 0);
+	}
+	if (tex->image) {
+		dfunc->vkDestroyImage (device->dev, tex->image, 0);
+	}
+	if (tex->memory) {
+		dfunc->vkFreeMemory (device->dev, tex->memory, 0);
+	}
 	free (tex);
 }
 
@@ -426,6 +432,14 @@ Vulkan_Texture_Init (vulkan_ctx_t *ctx)
 										 "default_white");
 	ctx->default_magenta = Vulkan_LoadTex (ctx, &default_magenta_tex, 1,
 										   "default_magenta");
+	qfv_tex_t  *tex;
+	tex = ctx->default_magenta_array = malloc (sizeof (qfv_tex_t));
+	tex->memory = 0;
+	tex->image = 0;
+	tex->view = QFV_CreateImageView (ctx->device, ctx->default_magenta->image,
+									 VK_IMAGE_VIEW_TYPE_2D_ARRAY,
+									 VK_FORMAT_R8G8B8A8_UNORM,
+									 VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 void
@@ -434,4 +448,5 @@ Vulkan_Texture_Shutdown (vulkan_ctx_t *ctx)
 	Vulkan_UnloadTex (ctx, ctx->default_black);
 	Vulkan_UnloadTex (ctx, ctx->default_white);
 	Vulkan_UnloadTex (ctx, ctx->default_magenta);
+	Vulkan_UnloadTex (ctx, ctx->default_magenta_array);
 }

@@ -80,6 +80,7 @@ typedef struct vulkan_ctx_s {
 	struct qfv_tex_s *default_black;
 	struct qfv_tex_s *default_white;
 	struct qfv_tex_s *default_magenta;
+	struct qfv_tex_s *default_magenta_array;
 
 	VkViewport  viewport;
 	VkRect2D    scissor;
