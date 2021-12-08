@@ -38,10 +38,11 @@ main (void)
 	vec4        c = vec4 (0);
 	vec4        e;
 	vec3        t_st = vec3 (tl_st.xy, 0);
-	vec3        l_st = vec3 (tl_st.zw, 1);
+	vec3        e_st = vec3 (tl_st.xy, 1);
+	vec2        l_st = vec2 (tl_st.zw);
 
 	c = texture (sampler2DArray (textures[texind], samp), t_st);
-	e = texture (sampler2DArray (textures[texind], samp), t_st);
+	e = texture (sampler2DArray (textures[texind], samp), e_st);
 	frag_color = c;//fogBlend (c);
 	frag_emission = e;
 	frag_normal = vec4 (normal, 0);

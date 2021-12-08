@@ -46,6 +46,7 @@ typedef struct vulktex_s {
 	struct elechain_s *elechain;
 	struct elechain_s **elechain_tail;
 	struct qfv_tex_s *tex;
+	int         texind;
 } vulktex_t;
 
 typedef struct bspvert_s {
@@ -75,10 +76,6 @@ typedef enum {
 	qfv_bsp_skysheet,
 	qfv_bsp_skycube,
 } qfv_bsp_tex;
-// view matrix
-#define BSP_BUFFER_INFOS 1
-// Texture, GlowMap, LightMap, SkySheet, SkyCube
-#define BSP_IMAGE_INFOS 5
 
 typedef enum {
 	QFV_bspDepth,
@@ -94,14 +91,12 @@ typedef struct bspframe_s {
 	uint32_t     index_offset;	// offset of index_data within mega-buffer (c)
 	uint32_t     index_count;	// number if indices queued (d)
 	qfv_cmdbufferset_t cmdSet;
-	VkDescriptorBufferInfo bufferInfo[BSP_BUFFER_INFOS];
-	VkDescriptorImageInfo imageInfo[BSP_IMAGE_INFOS];
-	VkWriteDescriptorSet descriptors[BSP_BUFFER_INFOS + BSP_IMAGE_INFOS];
 } bspframe_t;
 
 typedef struct fragconst_s {
 	quat_t      fog;
 	float       time;
+	int         texind;
 } fragconst_t;
 
 typedef struct bspframeset_s
@@ -157,13 +152,18 @@ typedef struct bspctx_s {
 	struct bsppoly_s *polys;
 
 	VkSampler    sampler;
+	VkDescriptorSet descriptors;
+	VkDescriptorPool pool;
+	VkDescriptorSetLayout setLayout;
+	VkPipelineLayout layout;
+	unsigned     maxImages;
+
 	VkDeviceMemory texture_memory;
 	VkPipeline   depth;
 	VkPipeline   gbuf;
 	VkPipeline   skysheet;
 	VkPipeline   skybox;
 	VkPipeline   turb;
-	VkPipelineLayout layout;
 	size_t       vertex_buffer_size;
 	size_t       index_buffer_size;
 	VkBuffer     vertex_buffer;

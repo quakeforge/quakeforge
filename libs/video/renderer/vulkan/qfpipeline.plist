@@ -107,6 +107,20 @@
 				},
 			);
 		};
+		quakebsp_pool = {
+			flags = 0;
+			maxSets = 1;
+			bindings = (
+				{
+					type = sampler;
+					descriptorCount = 1;
+				},
+				{
+					type = sampled_image;
+					descriptorCount = $properties.limits.maxImages;
+				},
+			);
+		};
 		lighting_attach_pool = {
 			flags = 0;
 			maxSets = $frames.size;

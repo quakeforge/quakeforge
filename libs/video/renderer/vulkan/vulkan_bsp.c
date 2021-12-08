@@ -54,6 +54,7 @@
 
 #include "QF/Vulkan/qf_bsp.h"
 #include "QF/Vulkan/qf_lightmap.h"
+#include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/barrier.h"
@@ -161,6 +162,7 @@ add_texture (texture_t *tx, vulkan_ctx_t *ctx)
 	bspctx_t   *bctx = ctx->bsp_context;
 
 	vulktex_t  *tex = tx->render;
+	tex->texind = bctx->texture_chains.size;
 	DARRAY_APPEND (&bctx->texture_chains, tex);
 	tex->tex_chain = 0;
 	tex->tex_chain_tail = &tex->tex_chain;
@@ -259,9 +261,29 @@ clear_textures (vulkan_ctx_t *ctx)
 	bctx->texture_chains.size = 0;
 }
 
+static VkDescriptorImageInfo base_sampler_info = { };
+static VkDescriptorImageInfo base_image_info = {
+	.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
+};
+static VkWriteDescriptorSet base_sampler_write = {
+	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+	.dstBinding = 0,
+	.descriptorCount = 1,
+	.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER,
+};
+static VkWriteDescriptorSet base_image_write = {
+	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+	.dstBinding = 1,
+	.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,
+};
+
 void
 Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 {
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	bspctx_t   *bctx = ctx->bsp_context;
+
 	int         i;
 	model_t    *m;
 	mod_brush_t *brush = &r_worldentity.renderer.model->brush;
@@ -284,6 +306,33 @@ Vulkan_RegisterTextures (model_t **models, int num_models, vulkan_ctx_t *ctx)
 		brush->numsubmodels = 1; // no support for submodels in non-world model
 		register_textures (brush, ctx);
 	}
+	if (bctx->texture_chains.size > bctx->maxImages) {
+		Sys_Error ("smart texture handling not implemented, want %zd textures,"
+				   "can support %d.",
+				   bctx->texture_chains.size, bctx->maxImages);
+	}
+
+	VkDescriptorImageInfo samplerInfo[1];
+	samplerInfo[0] = base_sampler_info;
+	samplerInfo[0].sampler = bctx->sampler;
+
+	VkDescriptorImageInfo imageInfo[bctx->maxImages];
+	for (unsigned i = 0; i < bctx->maxImages; i++) {
+		imageInfo[i] = base_image_info;
+		imageInfo[i].imageView = ctx->default_magenta_array->view;
+		if (i && i < bctx->texture_chains.size) {
+			imageInfo[i].imageView = bctx->texture_chains.a[i]->tex->view;
+		}
+	}
+	VkWriteDescriptorSet write[2];
+	write[0] = base_sampler_write;
+	write[0].dstSet = bctx->descriptors;
+	write[0].pImageInfo = samplerInfo;
+	write[1] = base_image_write;
+	write[1].dstSet = bctx->descriptors;
+	write[1].descriptorCount = bctx->maxImages;
+	write[1].pImageInfo = imageInfo;
+	dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
 }
 
 static elechain_t *
@@ -746,17 +795,6 @@ R_VisitWorldNodes (mod_brush_t *brush, vulkan_ctx_t *ctx)
 }
 
 static void
-bind_view (qfv_bsp_tex tex, VkImageView view, bspframe_t *bframe,
-		   VkCommandBuffer cmd, VkPipelineLayout layout, qfv_devfuncs_t *dfunc)
-{
-	bframe->imageInfo[tex].imageView = view;
-	dfunc->vkCmdPushDescriptorSetKHR (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									  layout, 0, 1,
-									  bframe->descriptors + tex
-									  + BSP_BUFFER_INFOS);
-}
-
-static void
 push_transform (vec_t *transform, VkPipelineLayout layout,
 				qfv_devfuncs_t *dfunc, VkCommandBuffer cmd)
 {
@@ -765,20 +803,20 @@ push_transform (vec_t *transform, VkPipelineLayout layout,
 }
 
 static void
+push_texind (int32_t texind, VkPipelineLayout layout,
+			 qfv_devfuncs_t *dfunc, VkCommandBuffer cmd)
+{
+	dfunc->vkCmdPushConstants (cmd, layout, VK_SHADER_STAGE_FRAGMENT_BIT,
+				/*FIXME 64*/   64 + field_offset (fragconst_t, texind),
+							   sizeof (int32_t), &texind);
+}
+
+static void
 push_fragconst (fragconst_t *fragconst, VkPipelineLayout layout,
 				qfv_devfuncs_t *dfunc, VkCommandBuffer cmd)
 {
 	dfunc->vkCmdPushConstants (cmd, layout, VK_SHADER_STAGE_FRAGMENT_BIT,
 							   64, sizeof (fragconst_t), fragconst);//FIXME 64
-}
-
-static void
-push_descriptors (int count, VkWriteDescriptorSet *descriptors,
-				  VkPipelineLayout layout, qfv_devfuncs_t *dfunc,
-				  VkCommandBuffer cmd)
-{
-	dfunc->vkCmdPushDescriptorSetKHR (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									  layout, 0, count, descriptors);
 }
 
 static void
@@ -812,21 +850,9 @@ reset_elechain (elechain_t *ec)
 	}
 }
 
-static VkImageView
-get_view (qfv_tex_t *tex, qfv_tex_t *default_tex)
-{
-	if (tex) {
-		return tex->view;
-	}
-	if (default_tex) {
-		return default_tex->view;
-	}
-	return 0;
-}
-
 static void
 bsp_begin_subpass (QFV_BspSubpass subpass, VkPipeline pipeline,
-				   qfv_renderframe_t *rFrame)
+				   VkPipelineLayout layout, qfv_renderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
@@ -864,14 +890,12 @@ bsp_begin_subpass (QFV_BspSubpass subpass, VkPipeline pipeline,
 	dfunc->vkCmdBindIndexBuffer (cmd, bctx->index_buffer, bframe->index_offset,
 								 VK_INDEX_TYPE_UINT32);
 
-	// push VP matrices
-	dfunc->vkCmdPushDescriptorSetKHR (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									  bctx->layout,
-									  0, 1, bframe->descriptors + 0);
-	// push static images
-	dfunc->vkCmdPushDescriptorSetKHR (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									  bctx->layout,
-									  0, 3, bframe->descriptors + 3);
+	VkDescriptorSet set[2] = {
+		Vulkan_Matrix_Descrptors (ctx, ctx->curFrame),
+		bctx->descriptors,
+	};
+	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									layout, 0, 2, set, 0, 0);
 
 	//XXX glsl_Fog_GetColor (fog);
 	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;
@@ -904,18 +928,8 @@ bsp_begin (qfv_renderframe_t *rFrame)
 	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passGBuffer],
 				   bframe->cmdSet.a[QFV_bspGBuffer]);
 
-	//FIXME need per frame matrices
-	//XXX bframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
-	bframe->imageInfo[0].imageView = 0;	// set by tex chain loop
-	bframe->imageInfo[1].imageView = 0;	// set by tex chain loop
-	bframe->imageInfo[2].imageView = QFV_ScrapImageView (bctx->light_scrap);
-	bframe->imageInfo[3].imageView = get_view (bctx->skysheet_tex,
-											   bctx->default_skysheet);
-	bframe->imageInfo[4].imageView = get_view (bctx->skybox_tex,
-											   bctx->default_skybox);
-
-	bsp_begin_subpass (QFV_bspDepth, bctx->depth, rFrame);
-	bsp_begin_subpass (QFV_bspGBuffer, bctx->gbuf, rFrame);
+	bsp_begin_subpass (QFV_bspDepth, bctx->depth, bctx->layout, rFrame);
+	bsp_begin_subpass (QFV_bspGBuffer, bctx->gbuf, bctx->layout, rFrame);
 }
 
 static void
@@ -943,15 +957,7 @@ turb_begin (qfv_renderframe_t *rFrame)
 	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passTranslucent],
 				   bframe->cmdSet.a[QFV_bspTurb]);
 
-	//FIXME need per frame matrices
-	//XXX bframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
-	bframe->imageInfo[0].imageView = ctx->default_magenta->view;
-	bframe->imageInfo[1].imageView = ctx->default_magenta->view;
-	bframe->imageInfo[2].imageView = QFV_ScrapImageView (bctx->light_scrap);
-	bframe->imageInfo[3].imageView = bctx->default_skysheet->view;
-	bframe->imageInfo[4].imageView = bctx->default_skybox->view;
-
-	bsp_begin_subpass (QFV_bspTurb, bctx->turb, rFrame);
+	bsp_begin_subpass (QFV_bspTurb, bctx->turb, bctx->layout, rFrame);
 }
 
 static void
@@ -1002,20 +1008,10 @@ sky_begin (qfv_renderframe_t *rFrame)
 	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passTranslucent],
 				   bframe->cmdSet.a[QFV_bspSky]);
 
-	//FIXME need per frame matrices
-	//XXX bframe->bufferInfo[0].buffer = ctx->matrices.buffer_3d;
-	bframe->imageInfo[0].imageView = ctx->default_magenta->view;
-	bframe->imageInfo[1].imageView = ctx->default_magenta->view;
-	bframe->imageInfo[2].imageView = QFV_ScrapImageView (bctx->light_scrap);
-	bframe->imageInfo[3].imageView = get_view (bctx->skysheet_tex,
-											   bctx->default_skysheet);
-	bframe->imageInfo[4].imageView = get_view (bctx->skybox_tex,
-											   bctx->default_skybox);
-
 	if (bctx->skybox_tex) {
-		bsp_begin_subpass (QFV_bspSky, bctx->skybox, rFrame);
+		bsp_begin_subpass (QFV_bspSky, bctx->skybox, bctx->layout, rFrame);
 	} else {
-		bsp_begin_subpass (QFV_bspSky, bctx->skysheet, rFrame);
+		bsp_begin_subpass (QFV_bspSky, bctx->skysheet, bctx->layout, rFrame);
 	}
 }
 
@@ -1118,11 +1114,8 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 
 		build_tex_elechain (tex, bctx, bframe);
 
-		bframe->imageInfo[0].imageView = get_view (tex->tex,
-												   ctx->default_white);
-
-		push_descriptors (2, bframe->descriptors + 1, bctx->layout, dfunc,
-						  bframe->cmdSet.a[QFV_bspGBuffer]);
+		push_texind (tex->texind, bctx->layout, dfunc,
+					 bframe->cmdSet.a[QFV_bspGBuffer]);
 
 		for (ec = tex->elechain; ec; ec = ec->next) {
 			draw_elechain (ec, bctx->layout, dfunc,
@@ -1178,11 +1171,8 @@ Vulkan_DrawWaterSurfaces (qfv_renderframe_t *rFrame)
 		msurface_t *surf = is->surface;
 		if (tex != surf->texinfo->texture->render) {
 			if (tex) {
-				bind_view (qfv_bsp_texture,
-						   get_view (tex->tex, ctx->default_black),
-						   bframe,
-						   bframe->cmdSet.a[QFV_bspTurb],
-						   bctx->layout, dfunc);
+				push_texind (tex->texind, bctx->layout, dfunc,
+							 bframe->cmdSet.a[QFV_bspTurb]);
 				for (ec = tex->elechain; ec; ec = ec->next) {
 					draw_elechain (ec, bctx->layout, dfunc,
 								   bframe->cmdSet.a[QFV_bspTurb]);
@@ -1198,9 +1188,8 @@ Vulkan_DrawWaterSurfaces (qfv_renderframe_t *rFrame)
 		add_surf_elements (tex, is, &ec, &el, bctx, bframe);
 	}
 	if (tex) {
-		bind_view (qfv_bsp_texture, get_view (tex->tex, ctx->default_black),
-				   bframe, bframe->cmdSet.a[QFV_bspTurb],
-				   bctx->layout, dfunc);
+		push_texind (tex->texind, bctx->layout, dfunc,
+					 bframe->cmdSet.a[QFV_bspTurb]);
 		for (ec = tex->elechain; ec; ec = ec->next) {
 			draw_elechain (ec, bctx->layout, dfunc,
 						   bframe->cmdSet.a[QFV_bspTurb]);
@@ -1241,11 +1230,8 @@ Vulkan_DrawSky (qfv_renderframe_t *rFrame)
 		msurface_t *surf = is->surface;
 		if (tex != surf->texinfo->texture->render) {
 			if (tex) {
-				bind_view (qfv_bsp_skysheet,
-						   get_view (tex->tex, ctx->default_black),
-						   bframe,
-						   bframe->cmdSet.a[QFV_bspSky],
-						   bctx->layout, dfunc);
+				push_texind (tex->texind, bctx->layout, dfunc,
+							 bframe->cmdSet.a[QFV_bspSky]);
 				for (ec = tex->elechain; ec; ec = ec->next) {
 					draw_elechain (ec, bctx->layout, dfunc,
 								   bframe->cmdSet.a[QFV_bspSky]);
@@ -1261,9 +1247,8 @@ Vulkan_DrawSky (qfv_renderframe_t *rFrame)
 		add_surf_elements (tex, is, &ec, &el, bctx, bframe);
 	}
 	if (tex) {
-		bind_view (qfv_bsp_skysheet, get_view (tex->tex, ctx->default_black),
-				   bframe, bframe->cmdSet.a[QFV_bspSky],
-				   bctx->layout, dfunc);
+		push_texind (tex->texind, bctx->layout, dfunc,
+					 bframe->cmdSet.a[QFV_bspSky]);
 		for (ec = tex->elechain; ec; ec = ec->next) {
 			draw_elechain (ec, bctx->layout, dfunc,
 						   bframe->cmdSet.a[QFV_bspSky]);
@@ -1385,25 +1370,6 @@ create_default_skys (vulkan_ctx_t *ctx)
 	QFV_PacketSubmit (packet);
 }
 
-static VkDescriptorBufferInfo base_buffer_info = {
-	0, 0, VK_WHOLE_SIZE
-};
-static VkDescriptorImageInfo base_image_info = {
-	0, 0, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
-};
-static VkWriteDescriptorSet base_buffer_write = {
-	VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
-	0, 0, 1,
-	VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-	0, 0, 0
-};
-static VkWriteDescriptorSet base_image_write = {
-	VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0, 0,
-	0, 0, 1,
-	VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-	0, 0, 0
-};
-
 void
 Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 {
@@ -1444,6 +1410,20 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 	bctx->layout = Vulkan_CreatePipelineLayout (ctx, "quakebsp_layout");
 	bctx->sampler = Vulkan_CreateSampler (ctx, "quakebsp_sampler");
 
+	//FIXME too many places
+	__auto_type limits = device->physDev->properties.limits;
+	bctx->maxImages = min (256, limits.maxPerStageDescriptorSampledImages - 8);
+	bctx->pool = Vulkan_CreateDescriptorPool (ctx, "quakebsp_pool");
+	bctx->setLayout = Vulkan_CreateDescriptorSetLayout (ctx, "quakebsp_set");
+	//FIXME kinda dumb
+	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (1, alloca);
+	for (size_t i = 0; i < layouts->size; i++) {
+		layouts->a[i] = bctx->setLayout;
+	}
+	__auto_type sets = QFV_AllocateDescriptorSet (device, bctx->pool, layouts);
+	bctx->descriptors = sets->a[0];
+	free (sets);
+
 	for (size_t i = 0; i < frames; i++) {
 		__auto_type bframe = &bctx->frames.a[i];
 
@@ -1458,21 +1438,6 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 								 bframe->cmdSet.a[i],
 								 va (ctx->va_ctx, "cmd:bsp:%zd:%s", i,
 									 bsp_pass_names[j]));
-		}
-
-		for (int j = 0; j < BSP_BUFFER_INFOS; j++) {
-			bframe->bufferInfo[j] = base_buffer_info;
-			bframe->descriptors[j] = base_buffer_write;
-			bframe->descriptors[j].dstBinding = j;
-			bframe->descriptors[j].pBufferInfo = &bframe->bufferInfo[j];
-		}
-		for (int j = 0; j < BSP_IMAGE_INFOS; j++) {
-			bframe->imageInfo[j] = base_image_info;
-			bframe->imageInfo[j].sampler = bctx->sampler;
-			int k = j + BSP_BUFFER_INFOS;
-			bframe->descriptors[k] = base_image_write;
-			bframe->descriptors[k].dstBinding = k;
-			bframe->descriptors[k].pImageInfo = &bframe->imageInfo[j];
 		}
 	}
 	qfvPopDebug (ctx);
