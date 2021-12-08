@@ -40,7 +40,7 @@ layout (set = 2, binding = 0) uniform samplerCubeShadow shadowCube[MaxLights];
 layout (set = 1, binding = 0) uniform Lights {
 	vec4        intensity[17]; // 68 floats
 	float       distFactor1;	// for inverse
-	float       distFactor2;	// for inverse2 and inverse2
+	float       distFactor2;	// for inverse2 and inverse3
 	int         lightCount;
 	LightData   lights[MaxLights];
 	mat4        shadowMat[MaxLights];

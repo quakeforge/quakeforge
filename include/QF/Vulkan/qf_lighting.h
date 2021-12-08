@@ -128,11 +128,11 @@ typedef struct lightingctx_s {
 } lightingctx_t;
 
 struct vulkan_ctx_s;
-struct qfv_renderframe_s;;
+struct qfv_renderframe_s;
 
 void Vulkan_Lighting_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Lighting_Shutdown (struct vulkan_ctx_s *ctx);
-void Vulkan_Lighting_Draw (struct qfv_renderframe_s *fFrame);
+void Vulkan_Lighting_Draw (struct qfv_renderframe_s *rFrame);
 void Vulkan_LoadLights (model_t *model, const char *entity_data,
 						struct vulkan_ctx_s *ctx);
 
