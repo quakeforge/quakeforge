@@ -93,4 +93,7 @@ void R_MarkLeaves (void);
 void GL_SetPalette (void *data, const byte *palette);
 void GLSL_SetPalette (void *data, const byte *palette);
 
+int R_BillboardFrame (entity_t *ent, int orientation, const vec3_t cameravec,
+					  vec3_t bbup, vec3_t bbright, vec3_t bbpn);
+
 #endif//__r_internal_h

@@ -280,109 +280,22 @@ R_GetSpriteframe (msprite_t *psprite)
 void
 sw32_R_DrawSprite (void)
 {
-	int         i;
-	msprite_t  *psprite;
-	vec3_t      tvec;
-	float       dot, sr, cr;
+	msprite_t  *sprite = currententity->renderer.model->cache.data;
 
-	psprite = currententity->renderer.model->cache.data;
-
-	sw32_r_spritedesc.pspriteframe = R_GetSpriteframe (psprite);
+	sw32_r_spritedesc.pspriteframe = R_GetSpriteframe (sprite);
 
 	sprite_width = sw32_r_spritedesc.pspriteframe->width;
 	sprite_height = sw32_r_spritedesc.pspriteframe->height;
 
-	// TODO: make this caller-selectable
-	if (psprite->type == SPR_FACING_UPRIGHT) {
-		// generate the sprite's axes, with vup straight up in worldspace, and
-		// sw32_r_spritedesc.vright perpendicular to modelorg.
-		// This will not work if the view direction is very close to straight
-		// up or down, because the cross product will be between two nearly
-		// parallel vectors and starts to approach an undefined state, so we
-		// don't draw if the two vectors are less than 1 degree apart
-		tvec[0] = -modelorg[0];
-		tvec[1] = -modelorg[1];
-		tvec[2] = -modelorg[2];
-		VectorNormalize (tvec);
-		dot = tvec[2];					// same as DotProduct (tvec,
-										// sw32_r_spritedesc.vup) because
-		// sw32_r_spritedesc.vup is 0, 0, 1
-		if ((dot > 0.999848) || (dot < -0.999848))	// cos(1 degree) =
-													// 0.999848
-			return;
-		sw32_r_spritedesc.vup[0] = 0;
-		sw32_r_spritedesc.vup[1] = 0;
-		sw32_r_spritedesc.vup[2] = 1;
-		sw32_r_spritedesc.vright[0] = tvec[1];
-		//CrossProduct(sw32_r_spritedesc.vup, -modelorg, sw32_r_spritedesc.vright)
-		sw32_r_spritedesc.vright[1] = -tvec[0];
-		sw32_r_spritedesc.vright[2] = 0;
-		VectorNormalize (sw32_r_spritedesc.vright);
-		sw32_r_spritedesc.vpn[0] = -sw32_r_spritedesc.vright[1];
-		sw32_r_spritedesc.vpn[1] = sw32_r_spritedesc.vright[0];
-		sw32_r_spritedesc.vpn[2] = 0;
-		//CrossProduct (sw32_r_spritedesc.vright, sw32_r_spritedesc.vup, sw32_r_spritedesc.vpn)
-	} else if (psprite->type == SPR_VP_PARALLEL) {
-		// generate the sprite's axes, completely parallel to the viewplane.
-		// There are no problem situations, because the sprite is always in the
-		// same position relative to the viewer
-		for (i = 0; i < 3; i++) {
-			sw32_r_spritedesc.vup[i] = vup[i];
-			sw32_r_spritedesc.vright[i] = vright[i];
-			sw32_r_spritedesc.vpn[i] = vpn[i];
-		}
-	} else if (psprite->type == SPR_VP_PARALLEL_UPRIGHT) {
-		// generate the sprite's axes, with vup straight up in worldspace, and
-		// sw32_r_spritedesc.vright parallel to the viewplane.
-		// This will not work if the view direction is very close to straight
-		// up or down, because the cross product will be between two nearly
-		// parallel vectors and starts to approach an undefined state, so we
-		// don't draw if the two vectors are less than 1 degree apart
-		dot = vpn[2];					// same as DotProduct (vpn,
-										// sw32_r_spritedesc.vup) because
-		// sw32_r_spritedesc.vup is 0, 0, 1
-		if ((dot > 0.999848) || (dot < -0.999848))	// cos(1 degree) =
-													// 0.999848
-			return;
-		sw32_r_spritedesc.vup[0] = 0;
-		sw32_r_spritedesc.vup[1] = 0;
-		sw32_r_spritedesc.vup[2] = 1;
-		sw32_r_spritedesc.vright[0] = vpn[1];
-		//CrossProduct (sw32_r_spritedesc.vup, vpn,
-		sw32_r_spritedesc.vright[1] = -vpn[0];	// sw32_r_spritedesc.vright)
-		sw32_r_spritedesc.vright[2] = 0;
-		VectorNormalize (sw32_r_spritedesc.vright);
-		sw32_r_spritedesc.vpn[0] = -sw32_r_spritedesc.vright[1];
-		sw32_r_spritedesc.vpn[1] = sw32_r_spritedesc.vright[0];
-		sw32_r_spritedesc.vpn[2] = 0;
-		//CrossProduct (sw32_r_spritedesc.vright, sw32_r_spritedesc.vup, sw32_r_spritedesc.vpn)
-	} else if (psprite->type == SPR_ORIENTED) {
-		// generate the sprite's axes, according to the sprite's world
-		// orientation
-		mat4f_t     mat;
-		Transform_GetWorldMatrix (currententity->transform, mat);
-		VectorCopy (mat[0], r_spritedesc.vpn);
-		VectorNegate (mat[1], r_spritedesc.vright);
-		VectorCopy (mat[2], r_spritedesc.vup);
-	} else if (psprite->type == SPR_VP_PARALLEL_ORIENTED) {
-		// generate the sprite's axes, parallel to the viewplane, but rotated
-		// in that plane around the center according to the sprite entity's
-		// roll angle. So vpn stays the same, but vright and vup rotate
-		vec4f_t     rot = Transform_GetLocalRotation (currententity->transform);
-		//FIXME assumes the entity is only rolled
-		sr = 2 * rot[0] * rot[3];
-		cr = rot[3] * rot[3] - rot[0] * rot[0];
-
-		for (i = 0; i < 3; i++) {
-			sw32_r_spritedesc.vpn[i] = vpn[i];
-			sw32_r_spritedesc.vright[i] = vright[i] * cr + vup[i] * sr;
-			sw32_r_spritedesc.vup[i] = vright[i] * -sr + vup[i] * cr;
-		}
-	} else {
-		Sys_Error ("R_DrawSprite: Bad sprite type %d", psprite->type);
+	if (!R_BillboardFrame (currententity, sprite->type, modelorg,
+						   r_spritedesc.vup,
+						   r_spritedesc.vright,
+						   r_spritedesc.vpn)) {
+		// the orientation is undefined so can't draw the sprite
+		return;
 	}
 
-	R_RotateSprite (psprite->beamlength);
+	R_RotateSprite (sprite->beamlength);
 
 	R_SetupAndDrawSprite ();
 }

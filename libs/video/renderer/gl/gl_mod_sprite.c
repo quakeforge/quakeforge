@@ -105,24 +105,23 @@ static void
 R_DrawSpriteModel_f (entity_t *e)
 {
 	float			 modelalpha, color[4];
-	vec4f_t          up = {}, right = {};
+	vec4f_t          cameravec = {};
+	vec4f_t          up = {}, right = {}, pn = {};
 	vec4f_t          origin, point;
-	msprite_t		*psprite;
+	msprite_t		*sprite = e->renderer.model->cache.data;
 	mspriteframe_t	*frame;
+
+	origin = Transform_GetWorldPosition (e->transform);
+	VectorCopy (r_origin, cameravec);
+	cameravec -= origin;
 
 	// don't bother culling, it's just a single polygon without a surface cache
 	frame = R_GetSpriteFrame (e);
-	psprite = e->renderer.model->cache.data;
 
-	if (psprite->type == SPR_ORIENTED) {	// bullet marks on walls
-		up = Transform_Up (e->transform);
-		right = Transform_Right (e->transform);
-	} else if (psprite->type == SPR_VP_PARALLEL_UPRIGHT) {
-		up = (vec4f_t) { 0, 0, 1, 0 };
-		VectorCopy (vright, right);
-	} else {								// normal sprite
-		VectorCopy (vup, up);
-		VectorCopy (vright, right);
+	if (!R_BillboardFrame (e, sprite->type, &cameravec[0],
+						   &up[0], &right[0], &pn[0])) {
+		// the orientation is undefined so can't draw the sprite
+		return;
 	}
 
 	VectorCopy (e->renderer.colormod, color);
@@ -136,7 +135,6 @@ R_DrawSpriteModel_f (entity_t *e)
 
 	qfglColor4fv (color);
 
-	origin = Transform_GetWorldPosition (e->transform);
 	point = origin + frame->down * up + frame->left * right;
 
 	qfglTexCoord2f (0, 1);
