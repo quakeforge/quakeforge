@@ -54,17 +54,12 @@ R_BillboardFrame (entity_t *ent, int orientation, const vec3_t cameravec,
 
 	switch (orientation) {
 		case SPR_FACING_UPRIGHT:
-			// generate the sprite's axes, with vup straight up in worldspace,
-			// and bbright perpendicular to cameravec.  This will not work if
-			// the camera origin is directly above the entity origin
-			// (cameravec is straight up or down), because the cross product
-			// will be between two nearly parallel vectors and starts to
-			// approach an undefined state, so we don't draw if the two
-			// vectors are less than 1 degree apart
+			// the billboard has its up vector parallel with world up, and
+			// its right vector perpendicular to cameravec.
+			// Undefined if the camera is too close to the entity.
 			VectorNegate (cameravec, tvec);
 			VectorNormalize (tvec);
-			dot = tvec[2];		// same as DotProduct (tvec, bbup) because
-								// bbup is 0, 0, 1
+			dot = tvec[2];		// DotProduct (tvec, world up)
 			if ((dot > 0.999848) || (dot < -0.999848))	// cos(1 degree)
 				return 0;
 			VectorSet (0, 0, 1, bbup);
@@ -75,24 +70,17 @@ R_BillboardFrame (entity_t *ent, int orientation, const vec3_t cameravec,
 			VectorSet (-bbright[1], bbright[0], 0, bbpn);
 			break;
 		case SPR_VP_PARALLEL:
-			// generate the sprite's axes, completely parallel to the
-			// viewplane.  There are no problem situations, because the
-			// sprite is always in the same orientation relative to the viewer
+			// the billboard always has the same orientation as the camera
 			VectorCopy (vup, bbup);
 			VectorCopy (vright, bbright);
 			VectorCopy (vpn, bbpn);
 			break;
 		case SPR_VP_PARALLEL_UPRIGHT:
-			// generate the sprite's axes, with vup straight up in worldspace,
-			// and bbright parallel to the viewplane.
-			// This will not work if the view direction is very close to
-			// straight up or down, because the cross product will be between
-			// two nearly parallel vectors and starts to approach an undefined
-			// state, so we don't draw if the two vectors are less than 1
-			// degree apart
-			dot = vpn[2];	// same as DotProduct (vpn, bbup) because
-							// bbup is 0, 0, 1
-			if ((dot > 0.999848) || (dot < -0.999848))	// cos(1 degree) =
+			// the billboar has its up vector parallel with world up, and
+			// its right vector parallel with the view plane.
+			// Undefined if the camera is looking straight up or down.
+			dot = vpn[2];	// DotProduct (vpn, world up)
+			if ((dot > 0.999848) || (dot < -0.999848))	// cos(1 degree)
 				return 0;
 			VectorSet (0, 0, 1, bbup);
 			//CrossProduct(bbup, vpn, bbright)
@@ -103,8 +91,8 @@ R_BillboardFrame (entity_t *ent, int orientation, const vec3_t cameravec,
 			break;
 		case SPR_ORIENTED:
 			{
-				// generate the sprite's axes, according to the sprite's world
-				// orientation
+				// The billboard's orientation is fully specified by the
+				// entity's orientation.
 				mat4f_t     mat;
 				Transform_GetWorldMatrix (ent->transform, mat);
 				VectorCopy (mat[0], bbpn);
@@ -114,10 +102,8 @@ R_BillboardFrame (entity_t *ent, int orientation, const vec3_t cameravec,
 			break;
 		case SPR_VP_PARALLEL_ORIENTED:
 			{
-				// generate the sprite's axes, parallel to the viewplane, but
-				// rotated in that plane around the center according to the
-				// sprite entity's roll angle. So vpn stays the same, but
-				// vright and vup rotate
+				// The billboard is rotated relative to the camera using
+				// the entity's local rotation.
 				vec4f_t     rot = Transform_GetLocalRotation (ent->transform);
 				// FIXME needs proper testing (need to find, make, or fake a
 				// parallel oriented sprite)
