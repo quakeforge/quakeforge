@@ -152,7 +152,7 @@ R_GetSpriteFrames (entity_t *ent, msprite_t *sprite, mspriteframe_t **frame1,
 		frame_interval = 0.1;
 		pose = framenum;
 	} else {
-		group = (mspritegroup_t *) framedesc->frameptr;
+		group = framedesc->group;
 		intervals = group->intervals;
 		numframes = group->numframes;
 		fullinterval = intervals[numframes - 1];
@@ -177,8 +177,8 @@ R_GetSpriteFrames (entity_t *ent, msprite_t *sprite, mspriteframe_t **frame1,
 		*frame1 = group->frames[animation->pose1];
 		*frame2 = group->frames[animation->pose2];
 	} else {
-		*frame1 = sprite->frames[animation->pose1].frameptr;
-		*frame2 = sprite->frames[animation->pose2].frameptr;
+		*frame1 = sprite->frames[animation->pose1].frame;
+		*frame2 = sprite->frames[animation->pose2].frame;
 	}
 }
 

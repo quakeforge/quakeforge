@@ -77,9 +77,9 @@ R_GetSpriteFrame (entity_t *ent)
 	}
 
 	if (psprite->frames[frame].type == SPR_SINGLE) {
-		pspriteframe = psprite->frames[frame].frameptr;
+		pspriteframe = psprite->frames[frame].frame;
 	} else {
-		pspritegroup = (mspritegroup_t *) psprite->frames[frame].frameptr;
+		pspritegroup = psprite->frames[frame].group;
 		pintervals = pspritegroup->intervals;
 		numframes = pspritegroup->numframes;
 		fullinterval = pintervals[numframes - 1];

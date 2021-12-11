@@ -297,16 +297,18 @@ typedef struct {
 
 typedef struct {
 	spriteframetype_t	type;
-	mspriteframe_t		*frameptr;
+	union {
+		mspriteframe_t *frame;
+		mspritegroup_t *group;
+	};
 } mspriteframedesc_t;
 
 typedef struct {
 	int					type;
 	int					maxwidth;
 	int					maxheight;
+	float				beamlength;
 	int					numframes;
-	float				beamlength;		// remove?
-	void				*cachespot;		// remove?
 	mspriteframedesc_t	frames[1];
 } msprite_t;
 

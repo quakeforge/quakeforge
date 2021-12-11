@@ -58,10 +58,10 @@ glsl_sprite_clear (model_t *m, void *data)
 	m->cache.data = 0;
 	for (i = 0; i < sprite->numframes; i++) {
 		if (sprite->frames[i].type == SPR_SINGLE) {
-			frame = sprite->frames[i].frameptr;
+			frame = sprite->frames[i].frame;
 			GLSL_ReleaseTexture (frame->gl_texturenum);
 		} else {
-			group = (mspritegroup_t *) sprite->frames[i].frameptr;
+			group = sprite->frames[i].group;
 			for (j = 0; j < group->numframes; j++) {
 				frame = group->frames[j];
 				GLSL_ReleaseTexture (frame->gl_texturenum);
