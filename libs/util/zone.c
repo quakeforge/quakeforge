@@ -790,7 +790,7 @@ Cache_Move (cache_system_t *c)
 
 		memcpy (new + 1, c + 1, c->size - sizeof (cache_system_t));
 		new->user = c->user;
-		memcpy (new->name, c->name, sizeof (new->name));
+		strncpy (new->name, c->name, sizeof (new->name));
 		Cache_Free (c->user);
 		new->user->data = (void *) (new + 1);
 	} else {
@@ -886,12 +886,13 @@ Cache_TryAlloc (memhunk_t *hunk, size_t size, qboolean nobottom)
 		new = (cache_system_t *) Hunk_HighAlloc (hunk, size);
 		if (!new)
 			return 0;
-		memset (new, 0, size);
 		new->size = size;
 		new->hunk = hunk;
 		hunk->cache_head[0].prev = cs_ind (hunk, new);
 		hunk->cache_head[0].next = cs_ind (hunk, new);
 		new->prev = new->next = 0;
+		new->readlock = 0;
+		new->name[0] = 0;
 		Cache_MakeLRU (new);
 		//check_cache ();
 		return new;
@@ -910,7 +911,8 @@ Cache_TryAlloc (memhunk_t *hunk, size_t size, qboolean nobottom)
 			new = cs;
 			if (size - cs->size >= sizeof (cache_system_t)) {
 				new = (cache_system_t *) ((char *) cs + cs->size - size);
-				memset (new, 0, size);
+				new->readlock = 0;
+				new->name[0] = 0;
 				new->size = size;
 				new->hunk = hunk;
 				cs->size -= size;
@@ -928,7 +930,8 @@ Cache_TryAlloc (memhunk_t *hunk, size_t size, qboolean nobottom)
 	// didn't find a free block, so make a new one.
 	new = Hunk_HighAlloc (hunk, size);
 	if (new) {
-		memset (new, 0, size);
+		new->readlock = 0;
+		new->name[0] = 0;
 		new->size = size;
 		new->hunk = hunk;
 		link_cache_system (new, hunk->cache_head);
@@ -1131,6 +1134,7 @@ Cache_Alloc_r (memhunk_t *hunk, cache_user_t *c, size_t size, const char *name)
 		cs = Cache_TryAlloc (hunk, size, false);
 		if (cs) {
 			strncpy (cs->name, name, sizeof (cs->name) - 1);
+			cs->name[sizeof (cs->name) - 1] = 0;
 			c->data = (void *) (cs + 1);
 			cs->user = c;
 			break;
