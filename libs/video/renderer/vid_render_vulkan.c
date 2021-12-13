@@ -505,8 +505,7 @@ vulkan_Mod_IQMFinish (model_t *mod)
 }
 
 static void
-vulkan_Mod_SpriteLoadTexture (model_t *mod, mspriteframe_t *pspriteframe,
-							  int framenum)
+vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx)
 {
 }
 
@@ -582,7 +581,7 @@ static vid_model_funcs_t model_funcs = {
 	vulkan_Mod_LoadExternalSkins,
 	vulkan_Mod_IQMFinish,
 	0,
-	vulkan_Mod_SpriteLoadTexture,
+	vulkan_Mod_SpriteLoadFrames,
 
 	Skin_SetColormap,
 	Skin_SetSkin,

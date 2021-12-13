@@ -74,7 +74,7 @@ static vid_model_funcs_t model_funcs = {
 	gl_Mod_LoadExternalSkins,
 	gl_Mod_IQMFinish,
 	1,
-	gl_Mod_SpriteLoadTexture,
+	gl_Mod_SpriteLoadFrames,
 
 	Skin_SetColormap,
 	Skin_SetSkin,

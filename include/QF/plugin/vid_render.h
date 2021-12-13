@@ -38,6 +38,7 @@ struct cvar_s;
 struct skin_s;
 
 struct mod_alias_ctx_s;
+struct mod_sprite_ctx_s;
 
 /*
 	All video plugins must export these functions
@@ -99,8 +100,7 @@ typedef struct vid_model_funcs_s {
 	void (*Mod_LoadExternalSkins) (struct mod_alias_ctx_s *alias_ctx);
 	void (*Mod_IQMFinish) (model_t *mod);
 	int alias_cache;
-	void (*Mod_SpriteLoadTexture) (model_t *mod, mspriteframe_t *pspriteframe,
-								   int framenum);
+	void (*Mod_SpriteLoadFrames) (struct mod_sprite_ctx_s *sprite_ctx);
 
 	struct skin_s *(*Skin_SetColormap) (struct skin_s *skin, int cmap);
 	struct skin_s *(*Skin_SetSkin) (struct skin_s *skin, int cmap,

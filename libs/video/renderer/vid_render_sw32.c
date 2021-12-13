@@ -77,7 +77,7 @@ static vid_model_funcs_t model_funcs = {
 	0,
 	sw_Mod_IQMFinish,
 	1,
-	sw_Mod_SpriteLoadTexture,
+	sw_Mod_SpriteLoadFrames,
 
 	Skin_SetColormap,
 	Skin_SetSkin,

@@ -280,7 +280,6 @@ typedef struct mod_brush_s {
 
 // SPRITE MODELS ==============================================================
 
-// FIXME: shorten these?
 typedef struct mspriteframe_s {
 	int		width;
 	int		height;
@@ -304,11 +303,10 @@ typedef struct {
 } mspriteframedesc_t;
 
 typedef struct {
-	int					type;
-	int					maxwidth;
-	int					maxheight;
-	float				beamlength;
-	int					numframes;
+	int         type;
+	float       beamlength;
+	int         numframes;
+	int         data;
 	mspriteframedesc_t	frames[1];
 } msprite_t;
 

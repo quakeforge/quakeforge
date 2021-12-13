@@ -19,8 +19,17 @@ typedef struct mod_alias_ctx_s {
 	trivertxset_t poseverts;
 	int         aliasbboxmins[3];
 	int         aliasbboxmaxs[3];
-
 } mod_alias_ctx_t;
+
+typedef struct mod_sprite_ctx_s {
+	model_t    *mod;
+	dsprite_t  *dsprite;
+	msprite_t  *sprite;
+	int         numframes;
+	int        *frame_numbers;
+	dspriteframe_t **dframes;	///< array of pointers to dframes (in)
+	mspriteframe_t ***frames;	///< array of pointers to mframe pointers (out)
+} mod_sprite_ctx_t;
 
 int Mod_CalcFullbright (byte *out, const byte *in, size_t pixels);
 int Mod_ClearFullbright (byte *out, const byte *in, size_t pixels);
@@ -79,12 +88,10 @@ void Vulkan_Mod_SubdivideSurface (model_t *mod, msurface_t *fa,
 void Vulkan_Mod_ProcessTexture (model_t *mod, texture_t *tx,
 								struct vulkan_ctx_s *ctx);
 
-void gl_Mod_SpriteLoadTexture (model_t *mod, mspriteframe_t *pspriteframe,
-							   int framenum);
-void glsl_Mod_SpriteLoadTexture (model_t *mod, mspriteframe_t *pspriteframe,
-								 int framenum);
-void sw_Mod_SpriteLoadTexture (model_t *mod, mspriteframe_t *pspriteframe,
-							   int framenum);
+void Mod_LoadSpriteFrame (mspriteframe_t *frame, const dspriteframe_t *dframe);
+void gl_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx);
+void glsl_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx);
+void sw_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx);
 
 void Mod_LoadIQM (model_t *mod, void *buffer);
 void Mod_FreeIQM (iqm_t *iqm);
