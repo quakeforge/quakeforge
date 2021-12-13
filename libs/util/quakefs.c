@@ -1142,11 +1142,11 @@ QFS_LoadFile (QFile *file, int usehunk)
 	//base = QFS_FileBase (path);
 
 	if (usehunk == 1)
-		buf = Hunk_AllocName (0, len + 1, base);
+		buf = Hunk_RawAllocName (qfs_hunk, len + 1, base);
 	else if (usehunk == 2)
-		buf = Hunk_TempAlloc (0, len + 1);
+		buf = Hunk_TempAlloc (qfs_hunk, len + 1);
 	else if (usehunk == 0)
-		buf = calloc (1, len + 1);
+		buf = malloc (len + 1);
 	else if (usehunk == 3)
 		buf = Cache_Alloc (loadcache, len + 1, base);
 	else
@@ -1156,8 +1156,8 @@ QFS_LoadFile (QFile *file, int usehunk)
 		Sys_Error ("QFS_LoadFile: not enough space");
 		//Sys_Error ("QFS_LoadFile: not enough space for %s", path);
 
+	len = Qread (file, buf, len);
 	buf[len] = 0;
-	Qread (file, buf, len);
 	Qclose (file);
 
 	free (base);
