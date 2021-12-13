@@ -1238,9 +1238,10 @@ Hunk_Init (void *buf, size_t size)
 	return hunk;
 }
 
-VISIBLE void
+VISIBLE memhunk_t *
 Memory_Init (void *buf, size_t size)
 {
 	global_hunk = Hunk_Init (buf, size);
 	Cache_Init ();
+	return global_hunk;
 }

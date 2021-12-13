@@ -91,8 +91,9 @@
 ///@{
 
 typedef struct memzone_s memzone_t;
+typedef struct memhunk_s memhunk_t;
 
-void Memory_Init (void *buf, size_t size);
+memhunk_t *Memory_Init (void *buf, size_t size);
 
 void Z_ClearZone (memzone_t *zone, size_t size, size_t zone_offset,
 				  size_t ele_size);
@@ -105,8 +106,6 @@ void Z_CheckHeap (memzone_t *zone);
 void Z_SetError (memzone_t *zone, void (*err) (void *data, const char *msg),
 				 void *data);
 void Z_CheckPointer (const memzone_t *zone, const void *ptr, size_t size);
-
-typedef struct memhunk_s memhunk_t;
 
 memhunk_t *Hunk_Init (void *buf, size_t size);
 void Hunk_Print (memhunk_t *hunk, qboolean all);
