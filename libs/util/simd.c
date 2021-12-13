@@ -36,6 +36,7 @@
 #define IMPLEMENT_VEC4D_Funcs
 #define IMPLEMENT_MAT4F_Funcs
 
+#include "QF/mathlib.h"
 #include "QF/simd/vec4d.h"
 #include "QF/simd/vec4f.h"
 #include "QF/simd/mat4f.h"
@@ -91,8 +92,8 @@ BarycentricCoords_vf (const vec4f_t **points, int num_points, const vec4f_t p)
 	Sys_Error ("Not enough points to project or enclose the point");
 }
 
-static vec4f_t
-circum_circle (const vec4f_t points[], int num_points)
+static int
+circum_circle (const vec4f_t points[], int num_points, vec4f_t *center)
 {
 	vec4f_t     a, c, b;
 	vec4f_t     bc, ca, ab;
@@ -102,9 +103,11 @@ circum_circle (const vec4f_t points[], int num_points)
 
 	switch (num_points) {
 		case 1:
-			return points[0];
+			*center = points[0];
+			return 1;
 		case 2:
-			return (points[0] + points[1]) / 2;
+			*center = (points[0] + points[1]) / 2;
+			return 1;
 		case 3:
 			a = points[0] - points[1];
 			b = points[0] - points[2];
@@ -114,10 +117,15 @@ circum_circle (const vec4f_t points[], int num_points)
 			cc = dotf (c, c);
 			div = dotf (a, c);
 			div = 2 * (aa * cc - div * div);
+			if (fabs (div[0]) < EQUAL_EPSILON) {
+				// degenerate
+				return 0;
+			}
 			alpha = cc * dotf (a, b) / div;
 			beta = -bb * dotf (a, c) / div;
 			gamma = aa * dotf (b, c) / div;
-			return alpha * points[0] + beta * points[1] + gamma * points[2];
+			*center = alpha * points[0] + beta * points[1] + gamma * points[2];
+			return 1;
 		case 4:
 			a = points[1] - points[0];
 			b = points[2] - points[0];
@@ -126,13 +134,17 @@ circum_circle (const vec4f_t points[], int num_points)
 			ca = crossf (c, a);
 			ab = crossf (a, b);
 			div = 2 * dotf (a, bc);
+			if (fabs (div[0]) < EQUAL_EPSILON) {
+				// degenerate
+				return 0;
+			}
 			aa = dotf (a, a) / div;
 			bb = dotf (b, b) / div;
 			cc = dotf (c, c) / div;
-			return bc * aa + bb * ca + cc * ab + points[0];
+			*center = bc * aa + bb * ca + cc * ab + points[0];
+			return 1;
 	}
-	vec4f_t     zero = {};
-	return zero;
+	return 0;
 }
 
 vspheref_t
@@ -140,9 +152,13 @@ CircumSphere_vf (const vec4f_t *points, int num_points)
 {
 	vspheref_t  sphere = {};
 	if (num_points > 0 && num_points <= 4) {
-		sphere.center = circum_circle (points, num_points);
-		vec4f_t     d = sphere.center - points[0];
-		sphere.radius = sqrt(dotf (d, d)[0]);
+		if (circum_circle (points, num_points, &sphere.center)) {
+			vec4f_t     d = sphere.center - points[0];
+			sphere.radius = sqrt(dotf (d, d)[0]);
+		} else {
+			// degenerate
+			sphere.radius = -1;
+		}
 	}
 	return sphere;
 }

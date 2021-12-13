@@ -105,13 +105,18 @@ main (int argc, const char **argv)
 			VectorSet (rnd (&mt), rnd (&mt), rnd (&mt), cloud[j]);
 		}
 		cc = CircumSphere_vf (cloud, 4);
+		if (cc.radius < 0) {
+			// degenerate
+			continue;
+		}
 		r2 = cc.radius * cc.radius;
 		for (j = 0; j < 4; j++) {
 			vec4f_t     d = cloud[j] - cc.center;
 			fr = dotf (d, d)[0];
 			if (fabs (fr - r2) < 1e-3 * r2)
 				continue;
-			printf ("%d %.9g - %.9g = %.9g %.9g\n", j, fr, r2, fr - r2, fabs(fr - r2));
+			printf ("%zd %d %.9g - %.9g = %.9g %.9g\n",
+					i, j, fr, r2, fr - r2, fabs(fr - r2));
 			printf ("[%.9g %.9g %.9g] - [%.9g %.9g %.9g] = %.9g != %.9g\n",
 					VectorExpand (cloud[j]), VectorExpand (cc.center), fr, r2);
 			res = 1;
