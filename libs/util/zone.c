@@ -77,8 +77,7 @@ typedef struct memblock_s {
 	size_t      size;		// requested size
 	int         tag;		// a tag of 0 is a free block
 	int         id;			// should be ZONEID
-	//int         id2;		// pad to 64 bit boundary
-} memblock_t;
+} __attribute__((aligned (64))) memblock_t;
 
 struct memzone_s {
 	size_t      size;		// total bytes malloced, including header
@@ -87,10 +86,9 @@ struct memzone_s {
 	size_t      ele_size;
 	void        (*error) (void *, const char *);
 	void       *data;
-	memblock_t  blocklist;	// start / end cap for linked list
 	memblock_t *rover;
-};
-
+	memblock_t  blocklist;	// start / end cap for linked list
+} __attribute__((aligned (64)));
 
 static int
 z_block_size (memblock_t *block)
@@ -411,14 +409,16 @@ Z_CheckPointer (const memzone_t *zone, const void *ptr, size_t size)
 
 typedef struct cache_system_s cache_system_t;
 struct cache_system_s {
-	cache_system_t *prev, *next;
-	cache_system_t *lru_prev, *lru_next;	// for LRU flushing
+	uint32_t    prev;
+	uint32_t    next;
+	uint32_t    lru_prev;
+	uint32_t    lru_next;
 	struct memhunk_s *hunk;
-	char        name[16];
 	size_t      size;							// including this header
-	int			readlock;
 	cache_user_t *user;
-} __attribute__((aligned (64)));//FIXME base 64-bit size is 80, so 128...
+	char        name[16];
+	int			readlock;
+} __attribute__((aligned (64)));
 
 typedef struct {
 	int         sentinal1;
@@ -434,8 +434,20 @@ struct memhunk_s {
 	size_t      high_used;
 	size_t      tempmark;
 	qboolean    tempactive;
-	cache_system_t cache_head;
+	cache_system_t cache_head[1];
 } __attribute__((aligned (64)));
+
+static cache_system_t *
+cs_ptr (memhunk_t *hunk, uint32_t cs_ind)
+{
+	return &hunk->cache_head[cs_ind];
+}
+
+static uint32_t
+cs_ind (memhunk_t *hunk, cache_system_t *cs_ptr)
+{
+	return cs_ptr - hunk->cache_head;
+}
 
 static memhunk_t *global_hunk;
 
@@ -799,8 +811,8 @@ Cache_FreeLow (memhunk_t *hunk, int new_low_hunk)
 	cache_system_t *c;
 
 	while (1) {
-		c = hunk->cache_head.prev;
-		if (c == &hunk->cache_head)
+		c = cs_ptr (hunk, hunk->cache_head[0].prev);
+		if (c == hunk->cache_head)
 			return;						// nothing in cache at all
 		if ((byte *) c >= hunk->base + new_low_hunk)
 			return;						// there is space to grow the hunk
@@ -812,27 +824,22 @@ Cache_FreeLow (memhunk_t *hunk, int new_low_hunk)
 static inline void
 Cache_UnlinkLRU (cache_system_t * cs)
 {
-	if (!cs->lru_next || !cs->lru_prev)
-		Sys_Error ("Cache_UnlinkLRU: NULL link: %.16s %p %p",
-				   cs->name, cs->lru_next, cs->lru_prev);
+	memhunk_t  *hunk = cs->hunk;
+	cs_ptr (hunk, cs->lru_next)->lru_prev = cs->lru_prev;
+	cs_ptr (hunk, cs->lru_prev)->lru_next = cs->lru_next;
 
-	cs->lru_next->lru_prev = cs->lru_prev;
-	cs->lru_prev->lru_next = cs->lru_next;
-
-	cs->lru_prev = cs->lru_next = NULL;
+	cs->lru_prev = cs->lru_next = 0;
 }
 
 static void
 Cache_MakeLRU (cache_system_t * cs)
 {
-	if (cs->lru_next || cs->lru_prev)
-		Sys_Error ("Cache_MakeLRU: active link: %.16s %p %p",
-				   cs->name, cs->lru_next, cs->lru_prev);
-
-	cs->hunk->cache_head.lru_next->lru_prev = cs;
-	cs->lru_next = cs->hunk->cache_head.lru_next;
-	cs->lru_prev = &cs->hunk->cache_head;
-	cs->hunk->cache_head.lru_next = cs;
+	memhunk_t  *hunk = cs->hunk;
+	__auto_type nx = cs_ptr (hunk, hunk->cache_head[0].lru_next);
+	nx->lru_prev = cs_ind (hunk, cs);
+	cs->lru_next = cs_ind (hunk, nx);
+	cs->lru_prev = 0;
+	hunk->cache_head[0].lru_next = cs_ind (hunk, cs);
 }
 
 static qboolean
@@ -841,10 +848,11 @@ Cache_FreeLRU (memhunk_t *hunk)
 	cache_system_t *cs;
 
 	//check_cache ();
-	for (cs = hunk->cache_head.lru_prev;
-		 cs != &hunk->cache_head && cs->readlock; cs = cs->lru_prev)
-		;
-	if (cs == &hunk->cache_head)
+	for (cs = cs_ptr (hunk, hunk->cache_head[0].lru_prev);
+		 cs != hunk->cache_head && cs->readlock;
+		 cs = cs_ptr (hunk, cs->lru_prev)) {
+	}
+	if (cs == hunk->cache_head)
 		return 0;
 	Cache_Free (cs->user);
 	return 1;
@@ -853,10 +861,11 @@ Cache_FreeLRU (memhunk_t *hunk)
 static void
 link_cache_system (cache_system_t *new, cache_system_t *cs)
 {
-	new->next = cs;
+	memhunk_t  *hunk = cs->hunk;
+	new->next = cs_ind (hunk, cs);
 	new->prev = cs->prev;
-	cs->prev->next = new;
-	cs->prev = new;
+	cs_ptr (hunk, cs->prev)->next = cs_ind (hunk, new);
+	cs->prev = cs_ind (hunk, new);
 
 }
 
@@ -873,22 +882,25 @@ Cache_TryAlloc (memhunk_t *hunk, size_t size, qboolean nobottom)
 
 	//check_cache ();
 	// is the cache completely empty?
-	if (!nobottom && hunk->cache_head.prev == &hunk->cache_head) {
+	if (!nobottom && hunk->cache_head[0].prev == 0) {
 		new = (cache_system_t *) Hunk_HighAlloc (hunk, size);
 		if (!new)
 			return 0;
 		memset (new, 0, size);
 		new->size = size;
 		new->hunk = hunk;
-		hunk->cache_head.prev = hunk->cache_head.next = new;
-		new->prev = new->next = &hunk->cache_head;
+		hunk->cache_head[0].prev = cs_ind (hunk, new);
+		hunk->cache_head[0].next = cs_ind (hunk, new);
+		new->prev = new->next = 0;
 		Cache_MakeLRU (new);
 		//check_cache ();
 		return new;
 	}
 
 	// search for space in existing cache
-	for (cs = hunk->cache_head.next; cs != &hunk->cache_head; cs = cs->next) {
+	for (cs = cs_ptr (hunk, hunk->cache_head[0].next);
+		 cs != hunk->cache_head;
+		 cs = cs_ptr (hunk, cs->next)) {
 		if (cs->user)
 			continue;					// block isn't free
 		if (cs->size >= size) {
@@ -919,7 +931,7 @@ Cache_TryAlloc (memhunk_t *hunk, size_t size, qboolean nobottom)
 		memset (new, 0, size);
 		new->size = size;
 		new->hunk = hunk;
-		link_cache_system (new, &hunk->cache_head);
+		link_cache_system (new, hunk->cache_head);
 		Cache_MakeLRU (new);
 		//check_cache ();
 		return new;
@@ -931,20 +943,20 @@ Cache_TryAlloc (memhunk_t *hunk, size_t size, qboolean nobottom)
 static void
 Cache_Profile_r (memhunk_t *hunk)
 {
-	cache_system_t *cs;
 	unsigned int i;
 	unsigned int items[31] = {0}, sizes[31] = {0};
 	int count = 0, total = 0;
+	cache_system_t *cs;
 
-	cs = hunk->cache_head.next;
-	while (cs != &hunk->cache_head) {
-		for (i = 0; (cs->size >> (i + 1)) && i < 30; i++)
-			;
+	for (uint32_t ind = hunk->cache_head[0].next; ind; ind = cs->next) {
+		cs = cs_ptr (hunk, ind);
+		for (i = 0; (cs->size >> (i + 1)) && i < 30; i++) {
+		}
 		items[i]++;
 		sizes[i] += cs->size;
 		total += cs->size;
 		count++;
-		cs = cs->next;
+		ind = cs->next;
 	}
 	Sys_Printf ("Cache Profile:\n");
 	Sys_Printf ("%8s  %8s  %8s  %8s  %8s\n",
@@ -971,10 +983,10 @@ Cache_Profile (void)
 static void
 Cache_Print_r (memhunk_t *hunk)
 {
-	cache_system_t *cd;
-
-	for (cd = hunk->cache_head.next; cd != &hunk->cache_head; cd = cd->next) {
-		Sys_Printf ("%8d : %.16s\n", (int) cd->size, cd->name);
+	cache_system_t *cs;
+	for (uint32_t ind = hunk->cache_head[0].next; ind; ind = cs->next) {
+		cs = cs_ptr (hunk, ind);
+		Sys_Printf ("%8d : %.16s\n", (int) cs->size, cs->name);
 	}
 }
 
@@ -987,10 +999,12 @@ Cache_Print (void)
 static void
 init_cache (memhunk_t *hunk)
 {
-	hunk->cache_head.next = hunk->cache_head.prev = &hunk->cache_head;
-	hunk->cache_head.lru_next = hunk->cache_head.lru_prev = &hunk->cache_head;
-	hunk->cache_head.user = (cache_user_t *) 1;	// make it look allocated
-	hunk->cache_head.readlock = 1; // don't try to free or move it
+	hunk->cache_head[0].hunk = hunk;
+	hunk->cache_head[0].size = 0;
+	hunk->cache_head[0].next = hunk->cache_head[0].prev = 0;
+	hunk->cache_head[0].lru_next = hunk->cache_head[0].lru_prev = 0;
+	hunk->cache_head[0].user = (cache_user_t *) 1;	// make it look allocated
+	hunk->cache_head[0].readlock = 1; // don't try to free or move it
 }
 
 static void
@@ -1014,13 +1028,13 @@ Cache_Flush_r (memhunk_t *hunk)
 {
 	// cache_head.prev is guaranteed to not be free because it's the bottom
 	// one and Cache_Free actually properly releases it
-	while (hunk->cache_head.prev != &hunk->cache_head) {
-		if (!hunk->cache_head.prev->user->data)
+	while (hunk->cache_head[0].prev) {
+		__auto_type cs = cs_ptr (hunk, hunk->cache_head[0].prev);
+		if (!cs->user->data)
 			Sys_Error ("Cache_Flush: user/system out of sync for "
-					   "'%.16s' with %d size",
-					   hunk->cache_head.prev->name,
-					   (int) hunk->cache_head.prev->size);
-		Cache_Free (hunk->cache_head.prev->user);	// reclaim the space
+					   "'%.16s' with %zd size",
+					   cs->name, cs->size);
+		Cache_Free (cs->user);	// reclaim the space
 	}
 }
 
@@ -1062,7 +1076,6 @@ Cache_Free (cache_user_t *c)
 		Sys_Error ("Cache_Free: not allocated");
 
 	cs = ((cache_system_t *) c->data) - 1;
-	memhunk_t  *hunk = cs->hunk;
 
 	if (cs->readlock)
 		Sys_Error ("Cache_Free: attempt to free locked block");
@@ -1071,27 +1084,29 @@ Cache_Free (cache_user_t *c)
 
 	Cache_UnlinkLRU (cs);
 
+	memhunk_t  *h = cs->hunk;
 	//check_cache ();
 	cs->user = 0;
-	if (!cs->prev->user) {
-		cs->size += cs->prev->size;
-		cs->prev->prev->next = cs;
-		cs->prev = cs->prev->prev;
+	if (!cs_ptr (h, cs->prev)->user) {
+		cs->size += cs_ptr (h, cs->prev)->size;
+		cs_ptr (h, cs_ptr (h, cs->prev)->prev)->next = cs_ind (h, cs);
+		cs->prev = cs_ptr (h, cs->prev)->prev;
 	}
-	if (!cs->next->user) {
-		cs = cs->next;
-		cs->size += cs->prev->size;
-		cs->prev->prev->next = cs;
-		cs->prev = cs->prev->prev;
+	if (!cs_ptr (h, cs->next)->user) {
+		cs = cs_ptr (h, cs->next);
+		cs->size += cs_ptr (h, cs->prev)->size;
+		cs_ptr (h, cs_ptr (h, cs->prev)->prev)->next = cs_ind (h, cs);
+		cs->prev = cs_ptr (h, cs->prev)->prev;
 	}
-	if (cs->next == &hunk->cache_head) {
-		cs->next->prev = cs->prev;
-		cs->prev->next = cs->next;
-		if (cs->prev != &hunk->cache_head)
-			Hunk_FreeToHighMark (hunk,
-								 hunk->size - ((byte*)cs->prev - hunk->base));
-		else
-			Hunk_FreeToHighMark (hunk, 0);
+	if (!cs->next) {
+		cs_ptr (h, cs->next)->prev = cs->prev;
+		cs_ptr (h, cs->prev)->next = cs->next;
+		if (cs->prev) {
+			__auto_type ptr = (byte *) cs_ptr (h, cs->prev);
+			Hunk_FreeToHighMark (h, h->size - (ptr - h->base));
+		} else {
+			Hunk_FreeToHighMark (h, 0);
+		}
 	}
 	//check_cache ();
 
