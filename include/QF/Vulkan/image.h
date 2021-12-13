@@ -85,7 +85,7 @@ size_t QFV_GetImageSize (struct qfv_device_s *device, VkImage image);
  *	\param mips		The total number of mip levels of the processed image.
  *	\param width	The pixel width of the base image.
  *	\param height	The pixel height of the base image.
- *	\param layers	The number of array layers in the mbase image.
+ *	\param layers	The number of array layers in the base image.
  *
  *	\note	The processed image will be in "shader read only optimal" layout on
  *			completion.
