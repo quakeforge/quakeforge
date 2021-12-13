@@ -424,7 +424,7 @@ typedef struct {
 	int         sentinal1;
 	int         sentinal2;
 	size_t      size;		// including sizeof(hunkblk_t), -1 = not allocated
-	char        name[8];
+	char        name[16];
 } __attribute__((aligned (64))) hunkblk_t;
 
 struct memhunk_s {
@@ -526,14 +526,19 @@ Hunk_Print (memhunk_t *hunk, qboolean all)
 		sum += h->size;
 
 		// print the single block
-		if (all)
-			Sys_Printf ("%8p :%8zd %8.8s\n", h, h->size, h->name);
+		if (all) {
+			const int   sz = sizeof (h->name);
+			Sys_Printf ("%8p :%8zd %*.*s\n", h, h->size, sz, sz, h->name);
+		}
 
 		// print the total
 		if (next == endlow || next == endhigh ||
-			strncmp (h->name, next->name, 8)) {
-			if (!all)
-				Sys_Printf ("          :%8i %8.8s (TOTAL)\n", sum, h->name);
+			strncmp (h->name, next->name, sizeof (h->name))) {
+			if (!all) {
+				const int   sz = sizeof (h->name);
+				Sys_Printf ("          :%8i %*.*s (TOTAL)\n",
+							sum, sz, sz, h->name);
+			}
 			count = 0;
 			sum = 0;
 		}
@@ -608,8 +613,7 @@ Hunk_RawAllocName (memhunk_t *hunk, size_t size, const char *name)
 	h->size = size;
 	h->sentinal1 = HUNK_SENTINAL;
 	h->sentinal2 = HUNK_SENTINAL;
-	memcpy (h->name, name, 8);
-	h->name[7] = 0;
+	strncpy (h->name, name, sizeof (h->name));
 
 	return (void *) (h + 1);
 }
@@ -988,8 +992,9 @@ Cache_Print_r (memhunk_t *hunk)
 {
 	cache_system_t *cs;
 	for (uint32_t ind = hunk->cache_head[0].next; ind; ind = cs->next) {
+		const int   sz = sizeof (cs->name);
 		cs = cs_ptr (hunk, ind);
-		Sys_Printf ("%8d : %.16s\n", (int) cs->size, cs->name);
+		Sys_Printf ("%8zd : %.*s\n", cs->size, sz, cs->name);
 	}
 }
 
@@ -1033,10 +1038,12 @@ Cache_Flush_r (memhunk_t *hunk)
 	// one and Cache_Free actually properly releases it
 	while (hunk->cache_head[0].prev) {
 		__auto_type cs = cs_ptr (hunk, hunk->cache_head[0].prev);
-		if (!cs->user->data)
+		if (!cs->user->data) {
+			const int   sz = sizeof (cs->name);
 			Sys_Error ("Cache_Flush: user/system out of sync for "
-					   "'%.16s' with %zd size",
-					   cs->name, cs->size);
+					   "'%.*s' with %zd size",
+					   sz, cs->name, cs->size);
+		}
 		Cache_Free (cs->user);	// reclaim the space
 	}
 }
@@ -1083,7 +1090,9 @@ Cache_Free (cache_user_t *c)
 	if (cs->readlock)
 		Sys_Error ("Cache_Free: attempt to free locked block");
 
-	Sys_MaskPrintf (SYS_dev, "Cache_Free: freeing '%.16s' %p\n", cs->name, cs);
+	const int   sz = sizeof (cs->name);
+	Sys_MaskPrintf (SYS_dev, "Cache_Free: freeing '%.*s' %p\n",
+					sz, cs->name, cs);
 
 	Cache_UnlinkLRU (cs);
 
@@ -1133,8 +1142,7 @@ Cache_Alloc_r (memhunk_t *hunk, cache_user_t *c, size_t size, const char *name)
 	while (1) {
 		cs = Cache_TryAlloc (hunk, size, false);
 		if (cs) {
-			strncpy (cs->name, name, sizeof (cs->name) - 1);
-			cs->name[sizeof (cs->name) - 1] = 0;
+			strncpy (cs->name, name, sizeof (cs->name));
 			c->data = (void *) (cs + 1);
 			cs->user = c;
 			break;
