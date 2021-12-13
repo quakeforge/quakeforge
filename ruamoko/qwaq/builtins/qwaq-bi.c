@@ -151,13 +151,13 @@ bi_shutdown (void *data)
 }
 
 void
-BI_Init (progs_t *pr)
+BI_Init (memhunk_t *hunk, progs_t *pr)
 {
 	byte       *basepal, *colormap;
 
 	PR_RegisterBuiltins (pr, builtins);
 
-	QFS_Init ("nq");
+	QFS_Init (hunk, "nq");
 	PI_Init ();
 	PI_RegisterPlugins (client_plugin_list);
 

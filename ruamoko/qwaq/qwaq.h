@@ -23,7 +23,8 @@ typedef struct qwaq_thread_s {
 
 typedef struct qwaq_thread_set_s DARRAY_TYPE(qwaq_thread_t *) qwaq_thread_set_t;
 
-void BI_Init (progs_t *pr);
+struct memhunk_s;
+void BI_Init (struct memhunk_s *hunk, progs_t *pr);
 void BI_Curses_Init (progs_t *pr);
 void BI_Input_Init (progs_t *pr);
 void QWAQ_EditBuffer_Init (progs_t *pr);

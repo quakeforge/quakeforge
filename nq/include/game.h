@@ -158,6 +158,7 @@ extern qboolean		isDedicated;
 extern qboolean		standard_quake;
 extern struct cvar_s		*registered;
 
-void Game_Init (void);
+struct memhunk_s;
+void Game_Init (struct memhunk_s *hunk);
 
 #endif // __game_h

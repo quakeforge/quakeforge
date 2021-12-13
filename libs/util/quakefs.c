@@ -122,6 +122,7 @@ int fnmatch (const char *__pattern, const char *__string, int __flags);
 
 // QUAKE FILESYSTEM
 
+static memhunk_t *qfs_hunk;
 static cvar_t *fs_userpath;
 static cvar_t *fs_sharepath;
 static cvar_t *fs_dirconf;
@@ -1427,9 +1428,11 @@ qfs_shutdown (void *data)
 }
 
 VISIBLE void
-QFS_Init (const char *game)
+QFS_Init (memhunk_t *hunk, const char *game)
 {
 	int         i;
+
+	qfs_hunk = hunk;
 
 	fs_sharepath = Cvar_Get ("fs_sharepath", FS_SHAREPATH, CVAR_ROM,
 							 qfs_path_cvar,

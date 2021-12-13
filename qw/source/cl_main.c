@@ -1756,7 +1756,7 @@ Host_Frame (float time)
 	fps_count++;
 }
 
-static void
+static memhunk_t *
 CL_Init_Memory (void)
 {
 	int         mem_parm = COM_CheckParm ("-mem");
@@ -1786,9 +1786,10 @@ CL_Init_Memory (void)
 		Sys_Error ("Can't allocate %zd", mem_size);
 
 	Sys_PageIn (mem_base, mem_size);
-	Memory_Init (mem_base, mem_size);
+	memhunk_t  *hunk = Memory_Init (mem_base, mem_size);
 
 	Sys_Printf ("%4.1f megabyte heap.\n", cl_mem_size->value);
+	return hunk;
 }
 
 static void
@@ -1822,11 +1823,11 @@ Host_Init (void)
 	GIB_Key_Init ();
 	COM_ParseConfig (cl_cbuf);
 
-	CL_Init_Memory ();
+	memhunk_t  *hunk = CL_Init_Memory ();
 
 	pr_gametype = "quakeworld";
 
-	QFS_Init ("qw");
+	QFS_Init (hunk, "qw");
 	QFS_GamedirCallback (CL_Autoexec);
 	PI_Init ();
 

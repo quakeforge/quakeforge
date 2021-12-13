@@ -2446,7 +2446,7 @@ SV_InitNet (void)
 	sv_net_initialized = 1;
 }
 
-static void
+static memhunk_t *
 SV_Init_Memory (void)
 {
 	int         mem_parm = COM_CheckParm ("-mem");
@@ -2475,7 +2475,7 @@ SV_Init_Memory (void)
 	if (!mem_base)
 		Sys_Error ("Can't allocate %zd", mem_size);
 
-	Memory_Init (mem_base, mem_size);
+	return Memory_Init (mem_base, mem_size);
 }
 
 void
@@ -2495,7 +2495,7 @@ SV_Init (void)
 	// snax: Init experimental object system and run a test
 	//Object_Init();
 
-	SV_Init_Memory ();
+	memhunk_t  *hunk = SV_Init_Memory ();
 
 	QFS_GamedirCallback (gamedir_f);
 	svs.maxclients = MAX_CLIENTS;
@@ -2504,7 +2504,7 @@ SV_Init (void)
 	SV_InitOperatorCommands ();
 	SV_GIB_Init ();
 
-	QFS_Init ("qw");
+	QFS_Init (hunk, "qw");
 	PI_Init ();
 
 	sv_console_plugin = Cvar_Get ("sv_console_plugin", "server",

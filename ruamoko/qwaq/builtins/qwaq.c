@@ -114,7 +114,8 @@ init_qf (void)
 
 	//Cvar_Set (developer, "1");
 
-	Memory_Init (Sys_Alloc (8 * 1024 * 1024), 8 * 1024 * 1024);
+	size_t      memsize = 8 * 1024 * 1024;
+	memhunk_t  *hunk = Memory_Init (Sys_Alloc (memsize), memsize);
 
 	Cvar_Get ("pr_debug", "2", 0, 0, 0);
 	Cvar_Get ("pr_boundscheck", "0", 0, 0, 0);
@@ -131,7 +132,7 @@ init_qf (void)
 	PR_Init (&pr);
 	RUA_Init (&pr, 0);
 	PR_Cmds_Init (&pr);
-	BI_Init (&pr);
+	BI_Init (hunk, &pr);
 }
 
 static int

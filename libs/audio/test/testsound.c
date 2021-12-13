@@ -68,9 +68,9 @@ init (void)
 	COM_ParseConfig (testsound_cbuf);
 	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
 
-	Memory_Init (Sys_Alloc (MEMSIZE), MEMSIZE);
+	memhunk_t *hunk = Memory_Init (Sys_Alloc (MEMSIZE), MEMSIZE);
 
-	QFS_Init ("qw");
+	QFS_Init (hunk, "qw");
 	PI_Init ();
 
 	S_Init_Cvars ();
