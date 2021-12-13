@@ -33,13 +33,13 @@
 typedef struct scrap_s scrap_t;
 
 int GLSL_LoadQuakeTexture (const char *identifier, int width, int height,
-						   byte *data);
+						   const byte *data);
 struct texture_s;
 int GLSL_LoadQuakeMipTex (const struct texture_s *tex);
 int GLSL_LoadRGBTexture (const char *identifier, int width, int height,
-						 byte *data);
+						 const byte *data);
 int GLSL_LoadRGBATexture (const char *identifier, int width, int height,
-						  byte *data);
+						  const byte *data);
 void GLSL_ReleaseTexture (int tex);
 void GLSL_TextureInit (void);
 

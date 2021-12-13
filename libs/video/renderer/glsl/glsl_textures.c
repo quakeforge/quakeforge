@@ -72,7 +72,7 @@ static int max_tex_size;
 
 int
 GLSL_LoadQuakeTexture (const char *identifier, int width, int height,
-					   byte *data)
+					   const byte *data)
 {
 	GLuint      tnum;
 
@@ -204,7 +204,8 @@ GLSL_LoadQuakeMipTex (const texture_t *tex)
 }
 
 int
-GLSL_LoadRGBTexture (const char *identifier, int width, int height, byte *data)
+GLSL_LoadRGBTexture (const char *identifier, int width, int height,
+					 const byte *data)
 {
 	GLuint      tnum;
 
@@ -222,7 +223,8 @@ GLSL_LoadRGBTexture (const char *identifier, int width, int height, byte *data)
 }
 
 int
-GLSL_LoadRGBATexture (const char *identifier, int width, int height, byte *data)
+GLSL_LoadRGBATexture (const char *identifier, int width, int height,
+					  const byte *data)
 {
 	GLuint      tnum;
 
