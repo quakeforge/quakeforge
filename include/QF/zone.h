@@ -27,6 +27,8 @@
 #ifndef __QF_zone_h
 #define __QF_zone_h
 
+#include "QF/qtypes.h"
+
 /** \defgroup zone Memory Management
 	\ingroup utils
 
