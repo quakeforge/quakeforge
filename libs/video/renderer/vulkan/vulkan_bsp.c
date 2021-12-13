@@ -891,7 +891,7 @@ bsp_begin_subpass (QFV_BspSubpass subpass, VkPipeline pipeline,
 								 VK_INDEX_TYPE_UINT32);
 
 	VkDescriptorSet sets[] = {
-		Vulkan_Matrix_Descrptors (ctx, ctx->curFrame),
+		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
 		bctx->descriptors,
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,

@@ -794,7 +794,7 @@ Vulkan_FlushText (qfv_renderframe_t *rFrame)
 	dfunc->vkCmdBindIndexBuffer (cmd, dctx->ind_buffer, 0,
 								 VK_INDEX_TYPE_UINT32);
 	VkDescriptorSet set[2] = {
-		Vulkan_Matrix_Descrptors (ctx, ctx->curFrame),
+		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
 		dframe->descriptors,
 	};
 	VkPipelineLayout layout = dctx->layout;

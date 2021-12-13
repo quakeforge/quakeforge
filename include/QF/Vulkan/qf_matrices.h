@@ -82,6 +82,7 @@ void Vulkan_Matrix_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Matrix_Shutdown (struct vulkan_ctx_s *ctx);
 // "Draw" :)
 void Vulkan_Matrix_Draw (struct qfv_renderframe_s *rFrame);
-VkDescriptorSet Vulkan_Matrix_Descrptors (struct vulkan_ctx_s *ctx, int frame);
+VkDescriptorSet Vulkan_Matrix_Descriptors (struct vulkan_ctx_s *ctx, int frame)
+	__attribute__((pure));
 
 #endif//__QF_Vulkan_qf_matrices_h

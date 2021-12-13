@@ -204,7 +204,7 @@ alias_begin_subpass (QFV_AliasSubpass subpass, VkPipeline pipeline,
 
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
 	VkDescriptorSet sets[] = {
-		Vulkan_Matrix_Descrptors (ctx, ctx->curFrame),
+		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
 		actx->descriptors,
 	};
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,

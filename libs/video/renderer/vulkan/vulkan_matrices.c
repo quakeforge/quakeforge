@@ -274,7 +274,7 @@ Vulkan_Matrix_Shutdown (vulkan_ctx_t *ctx)
 }
 
 VkDescriptorSet
-Vulkan_Matrix_Descrptors (vulkan_ctx_t *ctx, int frame)
+Vulkan_Matrix_Descriptors (vulkan_ctx_t *ctx, int frame)
 {
 	__auto_type mctx = ctx->matrix_context;
 	return mctx->frames.a[frame].descriptors;
