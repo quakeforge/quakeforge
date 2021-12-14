@@ -380,6 +380,10 @@ Cvar_LoadConfig (plitem_t *config)
 			cvar_t      *var = Cvar_FindVar (cvar_name);
 			if (var) {
 				Cvar_Set (var, value);
+				Cvar_SetFlags (var, var->flags | CVAR_ARCHIVE);
+			} else {
+				Cvar_Get (cvar_name, value, CVAR_USER_CREATED | CVAR_ARCHIVE,
+						  0, USER_CVAR);
 			}
 		}
 	}
