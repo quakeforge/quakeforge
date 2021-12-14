@@ -287,6 +287,14 @@ vkparse_plist = \
 
 vkshaderpath = libs/video/renderer/vulkan/shader
 
+sprite_gbufv_src = $(vkshaderpath)/sprite_gbuf.vert
+sprite_gbufv_c = $(vkshaderpath)/sprite_gbuf.vert.spvc
+sprite_gbuff_src = $(vkshaderpath)/sprite_gbuf.frag
+sprite_gbuff_c = $(vkshaderpath)/sprite_gbuf.frag.spvc
+sprite_depthv_src = $(vkshaderpath)/sprite_depth.vert
+sprite_depthv_c = $(vkshaderpath)/sprite_depth.vert.spvc
+sprite_depthf_src = $(vkshaderpath)/sprite_depth.frag
+sprite_depthf_c = $(vkshaderpath)/sprite_depth.frag.spvc
 twodv_src = $(vkshaderpath)/twod.vert
 twodv_c = $(vkshaderpath)/twod.vert.spvc
 twodf_src = $(vkshaderpath)/twod.frag
@@ -331,6 +339,14 @@ pushcolor_c = $(vkshaderpath)/pushcolor.frag.spvc
 shadow_src = $(vkshaderpath)/shadow.geom
 shadow_c = $(vkshaderpath)/shadow.geom.spvc
 
+$(sprite_gbufv_c): $(sprite_gbufv_src)
+
+$(sprite_gbuff_c): $(sprite_gbuff_src)
+
+$(sprite_depthv_c): $(sprite_depthv_src)
+
+$(sprite_depthf_c): $(sprite_depthf_src)
+
 $(twodv_c): $(twodv_src)
 
 $(twodf_c): $(twodf_src)
@@ -374,6 +390,10 @@ $(pushcolor_c): $(pushcolor_src)
 $(shadow_c): $(shadow_src)
 
 vkshader_c = \
+	$(sprite_gbufv_c) \
+	$(sprite_gbuff_c) \
+	$(sprite_depthv_c) \
+	$(sprite_depthf_c) \
 	$(twodv_c) \
 	$(twodf_c) \
 	$(quakebspv_c) \
