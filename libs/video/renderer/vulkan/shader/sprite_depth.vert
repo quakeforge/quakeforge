@@ -7,8 +7,8 @@ layout (set = 0, binding = 0) uniform Matrices {
 	mat4 Projection2d;
 };
 
-layout (set = 1, binding = 0) buffer Vertices {
-	vec4 xyuv[];
+layout (set = 1, binding = 0) uniform Vertices {
+	vec4 xyuv[4];
 };
 
 layout (push_constant) uniform PushConstants {
@@ -23,7 +23,7 @@ main (void)
 {
 	vec4        v = xyuv[frame * 4 + gl_VertexIndex];
 
-	vec4        pos = vec4 (0, 0, 0, 1);
+	vec4        pos = Model[3];
 	pos += v.x * Model[1] + v.y * Model[2];
 
 	gl_Position = Projection3d * (View * pos);

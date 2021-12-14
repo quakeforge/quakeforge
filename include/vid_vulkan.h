@@ -59,6 +59,7 @@ typedef struct vulkan_ctx_s {
 	struct matrixctx_s *matrix_context;
 	struct aliasctx_s *alias_context;
 	struct bspctx_s *bsp_context;
+	struct spritectx_s *sprite_context;
 	struct drawctx_s *draw_context;
 	struct lightingctx_s *lighting_context;
 	struct composectx_s *compose_context;

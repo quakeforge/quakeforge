@@ -104,6 +104,7 @@ vulkan_R_Init (void)
 	Vulkan_Matrix_Init (vulkan_ctx);
 	Vulkan_Alias_Init (vulkan_ctx);
 	Vulkan_Bsp_Init (vulkan_ctx);
+	Vulkan_Sprite_Init (vulkan_ctx);
 	Vulkan_Draw_Init (vulkan_ctx);
 	Vulkan_Particles_Init (vulkan_ctx);
 	Vulkan_Lighting_Init (vulkan_ctx);
@@ -629,6 +630,7 @@ vulkan_vid_render_shutdown (void)
 	Vulkan_Compose_Shutdown (vulkan_ctx);
 	Vulkan_Lighting_Shutdown (vulkan_ctx);
 	Vulkan_Draw_Shutdown (vulkan_ctx);
+	Vulkan_Sprite_Shutdown (vulkan_ctx);
 	Vulkan_Bsp_Shutdown (vulkan_ctx);
 	Vulkan_Alias_Shutdown (vulkan_ctx);
 	Vulkan_Matrix_Shutdown (vulkan_ctx);

@@ -47,6 +47,7 @@ typedef struct qfv_sprite_s {
 	VkBuffer    verts;
 	VkImage     image;
 	VkImageView view;
+	VkDescriptorSet descriptors;
 } qfv_sprite_t;
 
 typedef enum {
@@ -64,20 +65,15 @@ typedef struct spriteframe_s {
 typedef struct spriteframeset_s
     DARRAY_TYPE (spriteframe_t) spriteframeset_t;
 
-typedef struct spriteindset_s
-    DARRAY_TYPE (unsigned) spriteindset_t;
-
 typedef struct spritectx_s {
 	spriteframeset_t frames;
 	VkPipeline   depth;
 	VkPipeline   gbuf;
-	VkDescriptorSet descriptors;
 	VkDescriptorPool pool;
 	VkDescriptorSetLayout setLayout;
 	VkPipelineLayout layout;
 	unsigned     maxImages;
 	VkSampler    sampler;
-	spriteindset_t texindices;
 } spritectx_t;
 
 struct vulkan_ctx_s;
@@ -85,6 +81,8 @@ struct qfv_renderframe_s;
 struct entity_s;
 struct mod_sprite_ctx_s;
 
+void Vulkan_Sprite_DescriptorSet (struct vulkan_ctx_s *ctx,
+								  qfv_sprite_t *sprite);
 void Vulkan_Mod_SpriteLoadFrames (struct mod_sprite_ctx_s *sprite_ctx,
 								  struct vulkan_ctx_s *ctx);
 

@@ -58,6 +58,7 @@
 			borderColor = float_transparent_black;
 			unnormalizedCoordinates = false;
 		};
+		sprite_sampler = $properties.samplers.alias_sampler;
 		shadow_sampler = {
 			magFilter = linear;
 			minFilter = linear;
@@ -108,6 +109,20 @@
 				{
 					type = sampled_image;
 					descriptorCount = $properties.limits.maxImages;
+				},
+			);
+		};
+		sprite_pool = {
+			flags = free_descriptor_set;
+			maxSets = 64;	//FIXME cvar?
+			bindings = (
+				{
+					type = uniform_buffer;
+					descriptorCount = $properties.descriptorPools.sprite_pool.maxSets;
+				},
+				{
+					type = combined_image_sampler;
+					descriptorCount = $properties.descriptorPools.sprite_pool.maxSets;
 				},
 			);
 		};
@@ -194,6 +209,22 @@
 		};
 		quakebsp_set = $properties.setLayouts.texture_set;
 		alias_set = $properties.setLayouts.texture_set;
+		sprite_set = {
+			bindings = (
+				{
+					binding = 0;
+					descriptorType = uniform_buffer;
+					descriptorCount = 1;
+					stageFlags = vertex;
+				},
+				{
+					binding = 1;
+					descriptorType = combined_image_sampler;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+			);
+		};
 		lighting_attach = {
 			bindings = (
 				{
@@ -300,21 +331,16 @@
 			);
 		};
 		sprite_layout = {
-			setLayouts = (matrix_set, spritevrt_set, texture_set);
+			setLayouts = (matrix_set, sprite_set);
 			pushConstantRanges = (
 				{
 					stageFlags = vertex;
 					offset = 0;
-					size = "16 * 4";
-				},
-				{
-					stageFlags = vertex|fragment;
-					offset = 64;
-					size = "4";
+					size = "16 * 4 + 4";
 				},
 				{
 					stageFlags = fragment;
-					offset = 68;
+					offset = 64;
 					size = "2 * 4 + 2 * 4 + 4 * 4";
 				},
 			);
@@ -371,6 +397,10 @@
 	};
 
 	vertexInput = {
+		index_only = {
+			bindings = ();
+			attributes = ();
+		};
 		alias = {
 			bindings = (
 				{ binding = 0; stride = "2 * 4 * 4"; inputRate = vertex; },
@@ -840,6 +870,7 @@
 					module = $builtin/sprite_gbuf.frag;
 				},
 			);
+			vertexInput   = $properties.vertexInput.index_only;
 			inputAssembly = $properties.inputAssembly.sprite;
 			viewport      = $properties.viewport;
 			rasterization = $properties.rasterization.cw_cull_back;
@@ -866,6 +897,7 @@
 					module = $builtin/sprite_depth.frag;
 				},
 			);
+			vertexInput   = $properties.vertexInput.index_only;
 			inputAssembly = $properties.inputAssembly.alias;
 			viewport      = $properties.viewport;
 			rasterization = $properties.rasterization.cw_cull_back;
@@ -875,7 +907,7 @@
 			dynamic = {
 				dynamicState = ( viewport, scissor );
 			};
-			layout = alias_layout;
+			layout = sprite_layout;
 			renderPass = renderpass;
 		};
 		twod = {

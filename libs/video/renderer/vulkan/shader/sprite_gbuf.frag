@@ -2,8 +2,7 @@
 
 layout (constant_id = 0) const int MaxTextures = 256;
 
-layout (set = 2, binding = 0) uniform sampler samp;
-layout (set = 2, binding = 1) uniform texture2DArray sprites[MaxTextures];
+layout (set = 1, binding = 1) uniform sampler2DArray Texture;
 
 layout (push_constant) uniform PushConstants {
 	layout (offset = 64)
@@ -27,7 +26,7 @@ main (void)
 {
 	vec4        pix;
 
-	pix = texture (sampler2DArray(sprites[spriteind], samp), vec3 (st, frame));
+	pix = texture (Texture, vec3 (st, frame));
 	if (pix.a < 0.5) {
 		discard;
 	}

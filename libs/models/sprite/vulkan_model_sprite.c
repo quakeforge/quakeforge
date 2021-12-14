@@ -102,7 +102,7 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 	int         numverts = 4 * sprite_ctx->numframes;
 	sprite->verts = QFV_CreateBuffer (device, numverts * sizeof (spritevrt_t),
 									  VK_BUFFER_USAGE_TRANSFER_DST_BIT
-									  | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+									  | VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER, sprite->verts,
 						 va (ctx->va_ctx, "buffer:sprite:vertex:%s",
 							 mod->name));
@@ -149,10 +149,11 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 		Mod_LoadSpriteFrame (&f, dframe);
 		verts[i * 4 + 0] = (spritevrt_t) { f.left, f.up, 0, 0 };
 		verts[i * 4 + 1] = (spritevrt_t) { f.right, f.up, 1, 0 };
-		verts[i * 4 + 2] = (spritevrt_t) { f.right, f.down, 1, 1 };
-		verts[i * 4 + 3] = (spritevrt_t) { f.left, f.down, 0, 1 };
+		verts[i * 4 + 2] = (spritevrt_t) { f.left, f.down, 0, 1 };
+		verts[i * 4 + 3] = (spritevrt_t) { f.right, f.down, 1, 1 };
 		Vulkan_ExpandPalette (pixels + i * texsize, (const byte *)(dframe + 1),
 							  vid.palette32, 2, texsize / 4);
+		*sprite_ctx->frames[i] = (mspriteframe_t *) (ptrdiff_t) i;
 	}
 
 	qfv_bufferbarrier_t bb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
@@ -194,6 +195,8 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 
 	QFV_PacketSubmit (packet);
 	QFV_DestroyStagingBuffer (stage);
+
+	Vulkan_Sprite_DescriptorSet (ctx, sprite);
 
 	sprite_ctx->sprite->data = (byte *) sprite - (byte *) sprite_ctx->sprite;
 

@@ -53,6 +53,7 @@
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_particles.h"
+#include "QF/Vulkan/qf_sprite.h"
 //#include "QF/Vulkan/qf_textures.h"
 #include "QF/Vulkan/renderpass.h"
 
@@ -110,7 +111,7 @@ Vulkan_RenderEntities (qfv_renderframe_t *rFrame)
 
 	RE_LOOP (alias, Alias);
 	//RE_LOOP (iqm, IQM);
-	//RE_LOOP (sprite, Sprite);
+	RE_LOOP (sprite, Sprite);
 }
 
 static void

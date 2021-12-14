@@ -1,0 +1,346 @@
+/*
+	vulkan_sprite.c
+
+	Vulkan sprite model pipeline
+
+	Copyright (C) 2012       Bill Currie <bill@taniwha.org>
+	Copyright (C) 2021       Bill Currie <bill@taniwha.org>
+
+	Author: Bill Currie <bill@taniwha.org>
+	Date: 2012/1/7
+	Date: 2021/12/14
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License
+	as published by the Free Software Foundation; either version 2
+	of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+*/
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+#include <stdlib.h>
+
+#include "qfalloca.h"
+
+#include "QF/cvar.h"
+#include "QF/darray.h"
+#include "QF/image.h"
+#include "QF/render.h"
+#include "QF/skin.h"
+#include "QF/sys.h"
+#include "QF/va.h"
+
+#include "QF/scene/entity.h"
+
+#include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/qf_sprite.h"
+#include "QF/Vulkan/qf_texture.h"
+#include "QF/Vulkan/buffer.h"
+#include "QF/Vulkan/command.h"
+#include "QF/Vulkan/debug.h"
+#include "QF/Vulkan/descriptor.h"
+#include "QF/Vulkan/device.h"
+#include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/renderpass.h"
+
+#include "r_internal.h"
+#include "vid_vulkan.h"
+
+typedef struct {
+	VkShaderStageFlags stageFlags;
+	uint32_t    offset;
+	uint32_t    size;
+	const void *data;
+} qfv_push_constants_t;
+
+static const char * __attribute__((used)) sprite_pass_names[] = {
+	"depth",
+	"g-buffer",
+	"translucent",
+};
+
+static QFV_Subpass subpass_map[] = {
+	QFV_passDepth,			// QFV_spriteDepth
+	QFV_passGBuffer,		// QFV_spriteGBuffer
+	QFV_passTranslucent,	// QFV_spriteTranslucent
+};
+
+static void
+emit_commands (VkCommandBuffer cmd, qfv_sprite_t *sprite,
+			   int numPC, qfv_push_constants_t *constants,
+			   qfv_renderframe_t *rFrame)
+{
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	spritectx_t *sctx = ctx->sprite_context;
+
+	for (int i = 0; i < numPC; i++) {
+		dfunc->vkCmdPushConstants (cmd, sctx->layout, constants[i].stageFlags,
+								   constants[i].offset, constants[i].size,
+								   constants[i].data);
+	}
+	VkDescriptorSet sets[] = {
+		sprite->descriptors,
+	};
+	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									sctx->layout, 1, 1, sets, 0, 0);
+	dfunc->vkCmdDraw (cmd, 4, 1, 0, 0);
+}
+
+void
+Vulkan_DrawSprite (entity_t *ent, qfv_renderframe_t *rFrame)
+{
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
+	spritectx_t *sctx = ctx->sprite_context;
+	spriteframe_t *aframe = &sctx->frames.a[ctx->curFrame];
+	model_t    *model = ent->renderer.model;
+	msprite_t  *sprite = model->cache.data;
+	animation_t *animation = &ent->animation;
+
+	mat4f_t     mat;
+	uint32_t    frame;
+	qfv_push_constants_t push_constants[] = {
+		{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (mat), mat },
+		{ VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+			64, sizeof (frame), &frame },
+	};
+
+	frame = (ptrdiff_t) R_GetSpriteFrame (sprite, animation);
+
+	mat[3] = Transform_GetWorldPosition (ent->transform);
+	vec4f_t     cameravec = {r_origin[0], r_origin[1], r_origin[2], 0 };
+	vec4f_t     svpn = {}, svright = {}, svup = {};
+	cameravec -= mat[3];
+	R_BillboardFrame (ent, sprite->type, &cameravec[0],
+					  &svup[0], &svright[0], &svpn[0]);
+	mat[2] = svup;
+	mat[1] = svright;
+	mat[0] = -svpn;
+
+	emit_commands (aframe->cmdSet.a[QFV_spriteDepth],
+				   (qfv_sprite_t *) ((byte *) sprite + sprite->data),
+				   2, push_constants, rFrame);
+	emit_commands (aframe->cmdSet.a[QFV_spriteGBuffer],
+				   (qfv_sprite_t *) ((byte *) sprite + sprite->data),
+				   2, push_constants, rFrame);
+}
+
+static void
+sprite_begin_subpass (QFV_SpriteSubpass subpass, VkPipeline pipeline,
+					 qfv_renderframe_t *rFrame)
+{
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	spritectx_t *sctx = ctx->sprite_context;
+	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
+	spriteframe_t *aframe = &sctx->frames.a[ctx->curFrame];
+	VkCommandBuffer cmd = aframe->cmdSet.a[subpass];
+
+	dfunc->vkResetCommandBuffer (cmd, 0);
+	VkCommandBufferInheritanceInfo inherit = {
+		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
+		rFrame->renderpass->renderpass, subpass_map[subpass],
+		cframe->framebuffer,
+		0, 0, 0,
+	};
+	VkCommandBufferBeginInfo beginInfo = {
+		VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO, 0,
+		VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT
+		| VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT, &inherit,
+	};
+	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
+
+	QFV_duCmdBeginLabel (device, cmd, va (ctx->va_ctx, "sprite:%s",
+										  sprite_pass_names[subpass]),
+						 { 0.6, 0.5, 0, 1});
+
+	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline);
+	VkDescriptorSet sets[] = {
+		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
+	};
+	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
+									sctx->layout, 0, 1, sets, 0, 0);
+	dfunc->vkCmdSetViewport (cmd, 0, 1, &ctx->viewport);
+	dfunc->vkCmdSetScissor (cmd, 0, 1, &ctx->scissor);
+
+	//XXX glsl_Fog_GetColor (fog);
+	//XXX fog[3] = glsl_Fog_GetDensity () / 64.0;
+}
+
+static void
+sprite_end_subpass (VkCommandBuffer cmd, vulkan_ctx_t *ctx)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	QFV_duCmdEndLabel (device, cmd);
+	dfunc->vkEndCommandBuffer (cmd);
+}
+
+void
+Vulkan_SpriteBegin (qfv_renderframe_t *rFrame)
+{
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
+	spritectx_t *sctx = ctx->sprite_context;
+	spriteframe_t *aframe = &sctx->frames.a[ctx->curFrame];
+
+	//XXX quat_t      fog;
+	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passDepth],
+				   aframe->cmdSet.a[QFV_spriteDepth]);
+	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passGBuffer],
+				   aframe->cmdSet.a[QFV_spriteGBuffer]);
+
+	sprite_begin_subpass (QFV_spriteDepth, sctx->depth, rFrame);
+	sprite_begin_subpass (QFV_spriteGBuffer, sctx->gbuf, rFrame);
+}
+
+void
+Vulkan_SpriteEnd (qfv_renderframe_t *rFrame)
+{
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
+	spritectx_t *sctx = ctx->sprite_context;
+	spriteframe_t *aframe = &sctx->frames.a[ctx->curFrame];
+
+	sprite_end_subpass (aframe->cmdSet.a[QFV_spriteDepth], ctx);
+	sprite_end_subpass (aframe->cmdSet.a[QFV_spriteGBuffer], ctx);
+}
+
+static VkDescriptorBufferInfo base_buffer_info = {
+	.range = VK_WHOLE_SIZE,
+};
+static VkDescriptorImageInfo base_image_info = {
+	.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+};
+static VkWriteDescriptorSet base_buffer_write = {
+	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+	.dstBinding = 0,
+	.descriptorCount = 1,
+	.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+};
+static VkWriteDescriptorSet base_image_write = {
+	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+	.dstBinding = 1,
+	.descriptorCount = 1,
+	.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+};
+
+void
+Vulkan_Sprite_DescriptorSet (vulkan_ctx_t *ctx, qfv_sprite_t *sprite)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	spritectx_t *sctx = ctx->sprite_context;
+
+	//FIXME kinda dumb
+	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (1, alloca);
+	for (size_t i = 0; i < layouts->size; i++) {
+		layouts->a[i] = sctx->setLayout;
+	}
+	__auto_type sets = QFV_AllocateDescriptorSet (device, sctx->pool, layouts);
+	sprite->descriptors = sets->a[0];
+	free (sets);
+
+	VkDescriptorBufferInfo bufferInfo[1];
+	bufferInfo[0] = base_buffer_info;
+	bufferInfo[0].buffer = sprite->verts;
+
+	VkDescriptorImageInfo imageInfo[1];
+	imageInfo[0] = base_image_info;
+	imageInfo[0].sampler = sctx->sampler;
+	imageInfo[0].imageView = sprite->view;
+
+	VkWriteDescriptorSet write[2];
+	write[0] = base_buffer_write;
+	write[0].dstSet = sprite->descriptors;
+	write[0].pBufferInfo = bufferInfo;
+	write[1] = base_image_write;
+	write[1].dstSet = sprite->descriptors;
+	write[1].pImageInfo = imageInfo;
+	dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
+}
+
+void
+Vulkan_Sprite_Init (vulkan_ctx_t *ctx)
+{
+	qfv_device_t *device = ctx->device;
+
+	qfvPushDebug (ctx, "sprite init");
+
+	spritectx_t *sctx = calloc (1, sizeof (spritectx_t));
+	ctx->sprite_context = sctx;
+
+	size_t      frames = ctx->frames.size;
+	DARRAY_INIT (&sctx->frames, frames);
+	DARRAY_RESIZE (&sctx->frames, frames);
+	sctx->frames.grow = 0;
+
+	sctx->depth = Vulkan_CreatePipeline (ctx, "sprite_depth");
+	sctx->gbuf = Vulkan_CreatePipeline (ctx, "sprite_gbuf");
+	sctx->layout = Vulkan_CreatePipelineLayout (ctx, "sprite_layout");
+	sctx->sampler = Vulkan_CreateSampler (ctx, "sprite_sampler");
+
+	//FIXME too many places
+	__auto_type limits = device->physDev->properties.limits;
+	sctx->maxImages = min (256, limits.maxPerStageDescriptorSampledImages - 8);
+	sctx->pool = Vulkan_CreateDescriptorPool (ctx, "sprite_pool");
+	sctx->setLayout = Vulkan_CreateDescriptorSetLayout (ctx, "sprite_set");
+
+	for (size_t i = 0; i < frames; i++) {
+		__auto_type aframe = &sctx->frames.a[i];
+
+		DARRAY_INIT (&aframe->cmdSet, QFV_spriteNumPasses);
+		DARRAY_RESIZE (&aframe->cmdSet, QFV_spriteNumPasses);
+		aframe->cmdSet.grow = 0;
+
+		QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, &aframe->cmdSet);
+
+		for (int j = 0; j < QFV_spriteNumPasses; j++) {
+			QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
+								 aframe->cmdSet.a[j],
+								 va (ctx->va_ctx, "cmd:sprite:%zd:%s", i,
+									 sprite_pass_names[j]));
+		}
+	}
+	qfvPopDebug (ctx);
+}
+
+void
+Vulkan_Sprite_Shutdown (vulkan_ctx_t *ctx)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	spritectx_t *sctx = ctx->sprite_context;
+
+	for (size_t i = 0; i < sctx->frames.size; i++) {
+		__auto_type aframe = &sctx->frames.a[i];
+		free (aframe->cmdSet.a);
+	}
+
+	dfunc->vkDestroyPipeline (device->dev, sctx->depth, 0);
+	dfunc->vkDestroyPipeline (device->dev, sctx->gbuf, 0);
+	free (sctx->frames.a);
+	free (sctx);
+}
