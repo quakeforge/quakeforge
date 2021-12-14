@@ -39,6 +39,7 @@ video_renderer_common_sources = \
 	libs/video/renderer/r_light.c \
 	libs/video/renderer/r_main.c \
 	libs/video/renderer/r_part.c \
+	libs/video/renderer/r_sprite.c \
 	libs/video/renderer/vid_common.c
 
 renderer_libs= \

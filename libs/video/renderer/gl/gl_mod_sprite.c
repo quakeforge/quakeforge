@@ -57,50 +57,6 @@ varray_t2f_c4ub_v3f_t	*gl_spriteVertexArray;
 
 void (*gl_R_DrawSpriteModel) (struct entity_s *ent);
 
-
-static mspriteframe_t *
-R_GetSpriteFrame (entity_t *ent)
-{
-	float			fullinterval, targettime, time;
-	float		   *pintervals;
-	int				frame, numframes, i;
-	msprite_t      *psprite;
-	mspriteframe_t *pspriteframe;
-	mspritegroup_t *pspritegroup;
-
-	psprite = ent->renderer.model->cache.data;
-	frame = ent->animation.frame;
-
-	if ((frame >= psprite->numframes) || (frame < 0)) {
-		Sys_MaskPrintf (SYS_dev, "R_DrawSprite: no such frame %d\n", frame);
-		frame = 0;
-	}
-
-	if (psprite->frames[frame].type == SPR_SINGLE) {
-		pspriteframe = psprite->frames[frame].frame;
-	} else {
-		pspritegroup = psprite->frames[frame].group;
-		pintervals = pspritegroup->intervals;
-		numframes = pspritegroup->numframes;
-		fullinterval = pintervals[numframes - 1];
-
-		time = vr_data.realtime + ent->animation.syncbase;
-
-		// when loading in Mod_LoadSpriteGroup, we guaranteed all interval
-		// values are positive, so we don't have to worry about division by 0
-		targettime = time - ((int) (time / fullinterval)) * fullinterval;
-
-		for (i = 0; i < (numframes - 1); i++) {
-			if (pintervals[i] > targettime)
-				break;
-		}
-
-		pspriteframe = pspritegroup->frames[i];
-	}
-
-	return pspriteframe;
-}
-
 static void
 R_DrawSpriteModel_f (entity_t *e)
 {
@@ -116,7 +72,7 @@ R_DrawSpriteModel_f (entity_t *e)
 	cameravec -= origin;
 
 	// don't bother culling, it's just a single polygon without a surface cache
-	frame = R_GetSpriteFrame (e);
+	frame = R_GetSpriteFrame (sprite, &e->animation);
 
 	if (!R_BillboardFrame (e, sprite->type, &cameravec[0],
 						   &up[0], &right[0], &pn[0])) {
@@ -167,15 +123,14 @@ R_DrawSpriteModel_VA_f (entity_t *e)
 	vec4f_t          origin, point;
 	int				 i;
 //	unsigned int	 vacount;
-	msprite_t		*psprite;
+	msprite_t		*psprite = e->renderer.model->cache.data;
 	mspriteframe_t	*frame;
 	varray_t2f_c4ub_v3f_t		*VA;
 
 	VA = gl_spriteVertexArray; // FIXME: Despair
 
 	// don't bother culling, it's just a single polygon without a surface cache
-	frame = R_GetSpriteFrame (e);
-	psprite = e->renderer.model->cache.data;
+	frame = R_GetSpriteFrame (psprite, &e->animation);
 
 	qfglBindTexture (GL_TEXTURE_2D, frame->gl_texturenum); // FIXME: DESPAIR
 
