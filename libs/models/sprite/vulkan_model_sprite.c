@@ -111,7 +111,7 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 	dfunc->vkGetImageMemoryRequirements (device->dev, sprite->image, &ireq);
 	VkMemoryRequirements vreq;
 	dfunc->vkGetBufferMemoryRequirements (device->dev, sprite->verts, &vreq);
-	size_t      size = QFV_NextOffset (QFV_NextOffset (0, 1, &vreq), 1, &ireq);
+	size_t      size = QFV_NextOffset (vreq.size, &ireq) + ireq.size;
 
 	sprite->memory = QFV_AllocBufferMemory (device, sprite->verts,
 										 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -122,7 +122,7 @@ Vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx, vulkan_ctx_t *ctx)
 
 	QFV_BindBufferMemory (device, sprite->verts, sprite->memory, 0);
 	QFV_BindImageMemory (device, sprite->image, sprite->memory,
-						 QFV_NextOffset (0, 1, &vreq));
+						 QFV_NextOffset (vreq.size, &ireq));
 	sprite->view = QFV_CreateImageView (device, sprite->image,
 										VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 										VK_FORMAT_R8G8B8A8_UNORM,
