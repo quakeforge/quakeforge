@@ -49,6 +49,7 @@
 #include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_particles.h"
+#include "QF/Vulkan/qf_sprite.h"
 #include "QF/Vulkan/qf_texture.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/capture.h"
@@ -507,6 +508,7 @@ vulkan_Mod_IQMFinish (model_t *mod)
 static void
 vulkan_Mod_SpriteLoadFrames (mod_sprite_ctx_t *sprite_ctx)
 {
+	Vulkan_Mod_SpriteLoadFrames (sprite_ctx, vulkan_ctx);
 }
 
 static void
