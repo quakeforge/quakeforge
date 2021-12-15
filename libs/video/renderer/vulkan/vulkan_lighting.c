@@ -332,9 +332,10 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	VkMemoryRequirements requirements;
 	dfunc->vkGetBufferMemoryRequirements (device->dev, lbuffers->a[0],
 										  &requirements);
+	size_t      light_size = QFV_NextOffset (requirements.size, &requirements);
 	lctx->light_memory = QFV_AllocBufferMemory (device, lbuffers->a[0],
 								VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-								frames * requirements.size, 0);
+								frames * light_size, 0);
 	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
 						 lctx->light_memory, "memory:lighting");
 
@@ -389,7 +390,7 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 		lframe->light_buffer = lbuffers->a[i];
 		QFV_BindBufferMemory (device, lbuffers->a[i], lctx->light_memory,
 							  light_offset);
-		light_offset += requirements.size;
+		light_offset += light_size;
 
 		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
 							 lframe->cmd, "cmd:lighting");
