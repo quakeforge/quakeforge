@@ -613,7 +613,7 @@ Hunk_RawAllocName (memhunk_t *hunk, size_t size, const char *name)
 	h->size = size;
 	h->sentinal1 = HUNK_SENTINAL;
 	h->sentinal2 = HUNK_SENTINAL;
-	strncpy (h->name, name, sizeof (h->name));
+	memccpy (h->name, name, 0, sizeof (h->name));
 
 	return (void *) (h + 1);
 }
@@ -794,7 +794,7 @@ Cache_Move (cache_system_t *c)
 
 		memcpy (new + 1, c + 1, c->size - sizeof (cache_system_t));
 		new->user = c->user;
-		strncpy (new->name, c->name, sizeof (new->name));
+		memccpy (new->name, c->name, 0, sizeof (new->name));
 		Cache_Free (c->user);
 		new->user->data = (void *) (new + 1);
 	} else {
@@ -1142,7 +1142,7 @@ Cache_Alloc_r (memhunk_t *hunk, cache_user_t *c, size_t size, const char *name)
 	while (1) {
 		cs = Cache_TryAlloc (hunk, size, false);
 		if (cs) {
-			strncpy (cs->name, name, sizeof (cs->name));
+			memccpy (cs->name, name, 0, sizeof (cs->name));
 			c->data = (void *) (cs + 1);
 			cs->user = c;
 			break;
