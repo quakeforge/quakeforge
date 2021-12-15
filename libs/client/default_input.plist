@@ -53,6 +53,11 @@
 			},
 			{
 				name = key_demo;
+				imts = (
+					{
+						name = imt_demo;
+					},
+				);
 			}
 		);
 		devices = (
@@ -129,6 +134,18 @@
 				devname = core:keyboard;
 				num_axes = 0;
 				num_buttons = 256;
+				buttons = (
+					{
+						imt = imt_demo;
+						num = 41;
+						binding = toggleconsole;
+					},
+					{
+						imt = imt_demo;
+						num = 68;
+						binding = quit;
+					},
+				);
 			}
 		);
 	};
