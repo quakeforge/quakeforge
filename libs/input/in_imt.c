@@ -304,6 +304,10 @@ IMT_SetContext (int ctx)
 		 switcher = switcher->next) {
 		imt_switcher_update (switcher);
 	}
+	imt_t      *imt = in_contexts.a[imt_current_context].active_imt;
+	Sys_MaskPrintf (SYS_input, "Switched to %s context, imt %s\n",
+					in_contexts.a[imt_current_context].name,
+					imt ? imt->name : 0);
 }
 
 void
@@ -312,7 +316,7 @@ IMT_SetContextCbuf (int ctx, cbuf_t *cbuf)
 	if ((size_t) ctx >= in_contexts.size) {
 		Sys_Error ("IMT_SetContextCbuf: invalid context %d", ctx);
 	}
-	in_contexts.a[imt_current_context].cbuf = cbuf;
+	in_contexts.a[ctx].cbuf = cbuf;
 }
 
 static imt_t * __attribute__ ((pure))
