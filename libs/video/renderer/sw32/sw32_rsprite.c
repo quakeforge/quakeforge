@@ -236,53 +236,13 @@ R_SetupAndDrawSprite (void)
 }
 
 
-static mspriteframe_t *
-R_GetSpriteframe (msprite_t *psprite)
-{
-	mspritegroup_t *pspritegroup;
-	mspriteframe_t *pspriteframe;
-	int         i, numframes, frame;
-	float      *pintervals, fullinterval, targettime, time;
-
-	frame = currententity->animation.frame;
-
-	if ((frame >= psprite->numframes) || (frame < 0)) {
-		Sys_Printf ("R_DrawSprite: no such frame %d\n", frame);
-		frame = 0;
-	}
-
-	if (psprite->frames[frame].type == SPR_SINGLE) {
-		pspriteframe = psprite->frames[frame].frame;
-	} else {
-		pspritegroup = psprite->frames[frame].group;
-		pintervals = pspritegroup->intervals;
-		numframes = pspritegroup->numframes;
-		fullinterval = pintervals[numframes - 1];
-
-		time = vr_data.realtime + currententity->animation.syncbase;
-
-		// when loading in Mod_LoadSpriteGroup, we guaranteed all interval
-		// values are positive, so we don't have to worry about division by 0
-		targettime = time - ((int) (time / fullinterval)) * fullinterval;
-
-		for (i = 0; i < (numframes - 1); i++) {
-			if (pintervals[i] > targettime)
-				break;
-		}
-
-		pspriteframe = pspritegroup->frames[i];
-	}
-
-	return pspriteframe;
-}
-
-
 void
 sw32_R_DrawSprite (void)
 {
 	msprite_t  *sprite = currententity->renderer.model->cache.data;
 
-	sw32_r_spritedesc.pspriteframe = R_GetSpriteframe (sprite);
+	sw32_r_spritedesc.pspriteframe = R_GetSpriteFrame (sprite,
+												   &currententity->animation);
 
 	sprite_width = sw32_r_spritedesc.pspriteframe->width;
 	sprite_height = sw32_r_spritedesc.pspriteframe->height;
