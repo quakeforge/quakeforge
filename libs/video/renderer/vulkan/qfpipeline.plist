@@ -112,6 +112,16 @@
 				},
 			);
 		};
+		particle_pool = {
+			flags = 0;
+			maxSets = $frames.size;
+			bindings = (
+				{
+					type = storage_buffer;
+					descriptorCount = 3;
+				},
+			);
+		};
 		sprite_pool = {
 			flags = free_descriptor_set;
 			maxSets = 64;	//FIXME cvar?
@@ -295,6 +305,28 @@
 				},
 			);
 		};
+		particle_set = {
+			bindings = (
+				{
+					binding = 0;
+					descriptorType = storage_buffer;
+					descriptorCount = 1;
+					stageFlags = compute;
+				},
+				{
+					binding = 1;
+					descriptorType = storage_buffer;
+					descriptorCount = 1;
+					stageFlags = compute;
+				},
+				{
+					binding = 2;
+					descriptorType = storage_buffer;
+					descriptorCount = 1;
+					stageFlags = compute;
+				},
+			);
+		};
 	};
 	pipelineLayouts = {
 		twod_layout = {
@@ -350,6 +382,29 @@
 		};
 		compose_layout = {
 			setLayouts = (compose_attach);
+		};
+		partphysics_layout = {
+			setLayouts = (particle_set);
+			pushConstantRanges = (
+				{
+					stageFlags = compute;
+					offset = 0;
+					size = "16 * 4 + 4";
+				},
+			);
+		};
+		partupdate_layout = {
+			setLayouts = (particle_set, particle_set, particle_set);
+		};
+		partdraw_layout = {
+			setLayouts = (matrix_set);
+			pushConstantRanges = (
+				{
+					stageFlags = vertex;
+					offset = 0;
+					size = "16 * 4";
+				},
+			);
 		};
 	};
 
@@ -422,6 +477,17 @@
 			attributes = (
 				{ location = 0; binding = 0; format = r32g32b32a32_sfloat; offset = 0;  },
 				{ location = 1; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
+			);
+		};
+		particle = {
+			bindings = (
+				{ binding = 0; stride = "4 * 4 * 4"; inputRate = vertex; },
+			);
+			attributes = (
+				{ location = 0; binding = 0; format = r32g32b32a32_sfloat; offset = 0;  },
+				{ location = 1; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
+				{ location = 2; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
+				{ location = 3; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
 			);
 		};
 		twod = {
@@ -856,6 +922,38 @@
 			layout = quakebsp_layout;
 			renderPass = renderpass;
 		};
+		partdraw = {
+			subpass = 1;
+			stages = (
+				{
+					stage = vertex;
+					name = main;
+					module = $builtin/particle.vert;
+				},
+				{
+					stage = geometry;
+					name = main;
+					module = $builtin/particle.geom;
+				},
+				{
+					stage = fragment;
+					name = main;
+					module = $builtin/particle.frag;
+				},
+			);
+			vertexInput   = $properties.vertexInput.particle;
+			inputAssembly = $properties.inputAssembly.sprite;
+			viewport      = $properties.viewport;
+			rasterization = $properties.rasterization.cw_cull_back;
+			multisample   = $properties.multisample;
+			depthStencil  = $properties.depthStencil.test_only;
+			colorBlend    = $properties.pipelines.bsp_turb.colorBlend;
+			dynamic = {
+				dynamicState = ( viewport, scissor, blend_constants );
+			};
+			layout = partdraw_layout;
+			renderPass = renderpass;
+		};
 		sprite_gbuf = {
 			subpass = 2;
 			stages = (
@@ -999,6 +1097,22 @@
 			};
 			layout = compose_layout;
 			renderPass = renderpass;
+		};
+		partphysics = {
+			stage = {
+				stage = compute;
+				name = main;
+				module = $builtin/partphysics.comp;
+			};
+			layout = partphysics_layout;
+		};
+		partupdate = {
+			stage = {
+				stage = compute;
+				name = main;
+				module = $builtin/partupdate.comp;
+			};
+			layout = partupdate_layout;
 		};
 	};
 }

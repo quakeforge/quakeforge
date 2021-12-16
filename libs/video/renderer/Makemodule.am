@@ -289,6 +289,16 @@ vkparse_plist = \
 
 vkshaderpath = libs/video/renderer/vulkan/shader
 
+partphysicsc_src = $(vkshaderpath)/partphysics.comp
+partphysicsc_c = $(vkshaderpath)/partphysics.comp.spvc
+partupdatec_src = $(vkshaderpath)/partupdate.comp
+partupdatec_c = $(vkshaderpath)/partupdate.comp.spvc
+particlev_src = $(vkshaderpath)/particle.vert
+particlev_c = $(vkshaderpath)/particle.vert.spvc
+particleg_src = $(vkshaderpath)/particle.geom
+particleg_c = $(vkshaderpath)/particle.geom.spvc
+particlef_src = $(vkshaderpath)/particle.frag
+particlef_c = $(vkshaderpath)/particle.frag.spvc
 sprite_gbufv_src = $(vkshaderpath)/sprite_gbuf.vert
 sprite_gbufv_c = $(vkshaderpath)/sprite_gbuf.vert.spvc
 sprite_gbuff_src = $(vkshaderpath)/sprite_gbuf.frag
@@ -341,6 +351,12 @@ pushcolor_c = $(vkshaderpath)/pushcolor.frag.spvc
 shadow_src = $(vkshaderpath)/shadow.geom
 shadow_c = $(vkshaderpath)/shadow.geom.spvc
 
+$(partphysicsc_c): $(partphysicsc_src)
+$(partupdatec_c): $(partupdatec_src)
+$(particlev_c): $(particlev_src)
+$(particleg_c): $(particleg_src)
+$(particlef_c): $(particlef_src)
+
 $(sprite_gbufv_c): $(sprite_gbufv_src)
 
 $(sprite_gbuff_c): $(sprite_gbuff_src)
@@ -392,6 +408,11 @@ $(pushcolor_c): $(pushcolor_src)
 $(shadow_c): $(shadow_src)
 
 vkshader_c = \
+	$(partphysicsc_c) \
+	$(partupdatec_c) \
+	$(particlev_c) \
+	$(particleg_c) \
+	$(particlef_c) \
 	$(sprite_gbufv_c) \
 	$(sprite_gbuff_c) \
 	$(sprite_depthv_c) \

@@ -40,20 +40,29 @@
 
 #include "QF/cvar.h"
 #include "QF/render.h"
+#include "QF/va.h"
+
 #include "QF/plugin/vid_render.h"
-#include "QF/Vulkan/qf_vid.h"
+
+#include "QF/Vulkan/debug.h"
+#include "QF/Vulkan/device.h"
+#include "QF/Vulkan/instance.h"
 #include "QF/Vulkan/qf_particles.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
+static const char * __attribute__((used)) particle_pass_names[] = {
+	"draw",
+};
+
 void
-Vulkan_ClearParticles (struct vulkan_ctx_s *ctx)
+Vulkan_ClearParticles (vulkan_ctx_t *ctx)
 {
 }
 
 void
-Vulkan_InitParticles (struct vulkan_ctx_s *ctx)
+Vulkan_InitParticles (vulkan_ctx_t *ctx)
 {
 }
 
@@ -217,7 +226,7 @@ static vid_particle_funcs_t vulkan_particles_QF = {
 };
 
 void
-Vulkan_r_easter_eggs_f (cvar_t *var, struct vulkan_ctx_s *ctx)
+Vulkan_r_easter_eggs_f (cvar_t *var, vulkan_ctx_t *ctx)
 {
 	if (!easter_eggs || !r_particles_style) {
 		return;
@@ -239,35 +248,79 @@ Vulkan_r_easter_eggs_f (cvar_t *var, struct vulkan_ctx_s *ctx)
 }
 
 void
-Vulkan_r_particles_style_f (cvar_t *var, struct vulkan_ctx_s *ctx)
+Vulkan_r_particles_style_f (cvar_t *var, vulkan_ctx_t *ctx)
 {
 	Vulkan_r_easter_eggs_f (var, ctx);
 }
 
 void
-Vulkan_DrawParticles (struct vulkan_ctx_s *ctx)
+Vulkan_DrawParticles (vulkan_ctx_t *ctx)
 {
 }
 
 void
-Vulkan_Particles_Init (struct vulkan_ctx_s *ctx)
+Vulkan_Particles_Init (vulkan_ctx_t *ctx)
 {
-	/*
-	easter_eggs = Cvar_Get ("easter_eggs", "0", CVAR_NONE, r_easter_eggs_f,
-							"Enables easter eggs.");
-	r_particles = Cvar_Get ("r_particles", "1", CVAR_ARCHIVE, r_particles_f,
-							"Toggles drawing of particles.");
-	r_particles_max = Cvar_Get ("r_particles_max", "2048", CVAR_ARCHIVE,
-								r_particles_max_f, "Maximum amount of "
-								"particles to display. No maximum, minimum "
-								"is 0.");
-	r_particles_nearclip = Cvar_Get ("r_particles_nearclip", "32",
-									 CVAR_ARCHIVE, r_particles_nearclip_f,
-									 "Distance of the particle near clipping "
-									 "plane from the player.");
-	r_particles_style = Cvar_Get ("r_particles_style", "1", CVAR_ARCHIVE,
-								  r_particles_style_f, "Sets particle style. "
-								  "0 for Id, 1 for QF.");
-	*/
 	vulkan_vid_render_funcs.particles = &vulkan_particles_QF;
+
+	qfv_device_t *device = ctx->device;
+
+	qfvPushDebug (ctx, "particles init");
+
+	particlectx_t *pctx = calloc (1, sizeof (particlectx_t));
+	ctx->particle_context = pctx;
+
+	size_t      frames = ctx->frames.size;
+	DARRAY_INIT (&pctx->frames, frames);
+	DARRAY_RESIZE (&pctx->frames, frames);
+	pctx->frames.grow = 0;
+
+	pctx->physics = Vulkan_CreateComputePipeline (ctx, "partphysics");
+	pctx->update = Vulkan_CreateComputePipeline (ctx, "partupdate");
+	pctx->draw = Vulkan_CreateGraphicsPipeline (ctx, "partdraw");
+	pctx->physics_layout = Vulkan_CreatePipelineLayout (ctx,
+														"partphysics_layout");
+	pctx->update_layout = Vulkan_CreatePipelineLayout (ctx,
+													   "partupdate_layout");
+	pctx->draw_layout = Vulkan_CreatePipelineLayout (ctx, "draw_layout");
+
+	pctx->pool = Vulkan_CreateDescriptorPool (ctx, "particle_pool");
+	pctx->setLayout = Vulkan_CreateDescriptorSetLayout (ctx, "particle_set");
+
+	for (size_t i = 0; i < frames; i++) {
+		__auto_type pframe = &pctx->frames.a[i];
+
+		DARRAY_INIT (&pframe->cmdSet, QFV_particleNumPasses);
+		DARRAY_RESIZE (&pframe->cmdSet, QFV_particleNumPasses);
+		pframe->cmdSet.grow = 0;
+
+		QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, &pframe->cmdSet);
+
+		for (int j = 0; j < QFV_particleNumPasses; j++) {
+			QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
+								 pframe->cmdSet.a[j],
+								 va (ctx->va_ctx, "cmd:particle:%zd:%s", i,
+									 particle_pass_names[j]));
+		}
+	}
+	qfvPopDebug (ctx);
+}
+
+void
+Vulkan_Particles_Shutdown (vulkan_ctx_t *ctx)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	particlectx_t *pctx = ctx->particle_context;
+
+	for (size_t i = 0; i < pctx->frames.size; i++) {
+		__auto_type pframe = &pctx->frames.a[i];
+		free (pframe->cmdSet.a);
+	}
+
+	dfunc->vkDestroyPipeline (device->dev, pctx->physics, 0);
+	dfunc->vkDestroyPipeline (device->dev, pctx->update, 0);
+	dfunc->vkDestroyPipeline (device->dev, pctx->draw, 0);
+	free (pctx->frames.a);
+	free (pctx);
 }

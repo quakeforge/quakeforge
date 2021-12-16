@@ -55,6 +55,16 @@
 #include "vid_vulkan.h"
 
 static
+#include "libs/video/renderer/vulkan/shader/particle.vert.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/particle.geom.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/particle.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/partphysics.comp.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/partupdate.comp.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/sprite_gbuf.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/sprite_gbuf.frag.spvc"
@@ -112,6 +122,11 @@ typedef struct shaderdata_s {
 } shaderdata_t;
 
 static shaderdata_t builtin_shaders[] = {
+	{ "particle.vert", particle_vert, sizeof (particle_vert) },
+	{ "particle.geom", particle_geom, sizeof (particle_geom) },
+	{ "particle.frag", particle_frag, sizeof (particle_frag) },
+	{ "partphysics.comp", partphysics_comp, sizeof (partphysics_comp) },
+	{ "partupdate.comp", partupdate_comp, sizeof (partupdate_comp) },
 	{ "sprite_gbuf.vert", sprite_gbuf_vert, sizeof (sprite_gbuf_vert) },
 	{ "sprite_gbuf.frag", sprite_gbuf_frag, sizeof (sprite_gbuf_frag) },
 	{ "sprite_depth.vert", sprite_depth_vert, sizeof (sprite_depth_vert) },
