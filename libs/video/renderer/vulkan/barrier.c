@@ -32,8 +32,7 @@
 #include "QF/Vulkan/barrier.h"
 
 const qfv_imagebarrier_t imageBarriers[] = {
-	// undefined -> transfer dst optimal
-	{
+	[qfv_LT_Undefined_to_TransferDst] = {
 		.srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
 		.dstStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
 		.barrier = {
@@ -46,8 +45,7 @@ const qfv_imagebarrier_t imageBarriers[] = {
 			{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
 		},
 	},
-	// transfer dst optimal -> transfer src optimal
-	{
+	[qfv_LT_TransferDst_to_TransferSrc] = {
 		.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
 		.dstStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
 		.barrier = {
@@ -60,8 +58,7 @@ const qfv_imagebarrier_t imageBarriers[] = {
 			{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
 		},
 	},
-	// transfer dst optimal -> shader read only optimal
-	{
+	[qfv_LT_TransferDst_to_ShaderReadOnly] = {
 		.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
 		.dstStages = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
 		.barrier = {
@@ -74,8 +71,7 @@ const qfv_imagebarrier_t imageBarriers[] = {
 			{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
 		},
 	},
-	// transfer src optimal -> shader read only optimal
-	{
+	[qfv_LT_TransferSrc_to_ShaderReadOnly] = {
 		.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
 		.dstStages = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
 		.barrier = {
@@ -88,8 +84,7 @@ const qfv_imagebarrier_t imageBarriers[] = {
 			{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
 		},
 	},
-	// shader read only optimal -> transfer dst optimal
-	{
+	[qfv_LT_ShaderReadOnly_to_TransferDst] = {
 		.srcStages = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
 		.dstStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
 		.barrier = {
@@ -102,8 +97,7 @@ const qfv_imagebarrier_t imageBarriers[] = {
 			{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 }
 		},
 	},
-	// undefined -> depth stencil attachment optimal
-	{
+	[qfv_LT_Undefined_to_DepthStencil] = {
 		.srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
 		.dstStages = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT,
 		.barrier = {
@@ -117,8 +111,7 @@ const qfv_imagebarrier_t imageBarriers[] = {
 			{ VK_IMAGE_ASPECT_DEPTH_BIT, 0, 1, 0, 1 }
 		},
 	},
-	// undefined -> color attachment optimal
-	{
+	[qfv_LT_Undefined_to_Color] = {
 		.srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
 		.dstStages = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
 		.barrier = {
@@ -135,8 +128,7 @@ const qfv_imagebarrier_t imageBarriers[] = {
 };
 
 const qfv_bufferbarrier_t bufferBarriers[] = {
-	// unknown to transfer write
-	{
+	[qfv_BB_Unknown_to_TransferWrite] = {
 		.srcStages = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
 		.dstStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
 		.barrier = {
@@ -145,8 +137,7 @@ const qfv_bufferbarrier_t bufferBarriers[] = {
 			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
 		},
 	},
-	// transfer write to vertex attribute read
-	{
+	[qfv_BB_TransferWrite_to_VertexAttrRead] = {
 		.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
 		.dstStages = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
 		.barrier = {
@@ -155,8 +146,7 @@ const qfv_bufferbarrier_t bufferBarriers[] = {
 			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
 		},
 	},
-	// transfer write to index read
-	{
+	[qfv_BB_TransferWrite_to_IndexRead] = {
 		.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
 		.dstStages = VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
 		.barrier = {
@@ -165,9 +155,8 @@ const qfv_bufferbarrier_t bufferBarriers[] = {
 			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
 		},
 	},
-	// transfer write to uniform read
-	// note: not necessarily optimal as it uses vertex shader for dst
-	{
+	[qfv_BB_TransferWrite_to_UniformRead] = {
+		// note: not necessarily optimal as it uses vertex shader for dst
 		.srcStages = VK_PIPELINE_STAGE_TRANSFER_BIT,
 		.dstStages = VK_PIPELINE_STAGE_VERTEX_SHADER_BIT,
 		.barrier = {

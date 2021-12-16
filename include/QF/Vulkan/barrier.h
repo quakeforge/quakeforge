@@ -13,7 +13,7 @@ typedef struct {
 	VkBufferMemoryBarrier barrier;
 } qfv_bufferbarrier_t;
 
-//XXX Note: imageBarriers and the enum must be kept in sync
+// image layout transitions
 enum {
 	qfv_LT_Undefined_to_TransferDst,
 	qfv_LT_TransferDst_to_TransferSrc,
@@ -24,7 +24,7 @@ enum {
 	qfv_LT_Undefined_to_Color,
 };
 
-//XXX Note: bufferBarriers and the enum must be kept in sync
+// buffer barriers
 enum {
 	qfv_BB_Unknown_to_TransferWrite,
 	qfv_BB_TransferWrite_to_VertexAttrRead,
