@@ -25,8 +25,12 @@ layout(std140, set = 0, binding = 1) buffer ParticleParameters {
 	Parameters parameters[];
 };
 
+//doubles as VkDrawIndirectCommand
 layout(std140, set = 0, binding = 2) buffer ParticleSystem {
-	uint        particleCount;
+	uint        vertexCount;
+	uint        particleCount;	//instanceCount
+	uint        firstVertex;
+	uint        firstInstance;
 };
 
 layout (push_constant) uniform PushConstants {

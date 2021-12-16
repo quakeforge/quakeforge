@@ -27,8 +27,12 @@ layout(std140, set = 0, binding = 1) buffer InParameters {
 	Parameters parameters[];
 } inParameters;
 
+//doubles as VkDrawIndirectCommand
 layout(std140, set = 0, binding = 2) buffer InSystem {
-	uint        particleCount;
+	uint        vertexCount;
+	uint        particleCount;	//instanceCount
+	uint        firstVertex;
+	uint        firstInstance;
 } inSystem;
 
 layout(std140, set = 1, binding = 0) buffer OutStates {
@@ -39,8 +43,12 @@ layout(std140, set = 1, binding = 1) buffer OutParameters {
 	Parameters parameters[];
 } outParameters;
 
+//doubles as VkDrawIndirectCommand
 layout(std140, set = 1, binding = 2) buffer OutSystem {
-	uint        particleCount;
+	uint        vertexCount;
+	uint        particleCount;	//instanceCount
+	uint        firstVertex;
+	uint        firstInstance;
 } outSystem;
 
 layout(std140, set = 2, binding = 0) buffer NewStates {
@@ -51,8 +59,12 @@ layout(std140, set = 2, binding = 1) buffer NewParameters {
 	Parameters parameters[];
 } newParameters;
 
+//doubles as VkDrawIndirectCommand
 layout(std140, set = 2, binding = 2) buffer NewSystem {
-	uint        particleCount;
+	uint        vertexCount;
+	uint        particleCount;	//instanceCount
+	uint        firstVertex;
+	uint        firstInstance;
 } newSystem;
 
 bool
