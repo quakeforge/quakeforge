@@ -114,7 +114,7 @@ Vulkan_DrawSprite (entity_t *ent, qfv_renderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	spritectx_t *sctx = ctx->sprite_context;
-	spriteframe_t *aframe = &sctx->frames.a[ctx->curFrame];
+	spriteframe_t *sframe = &sctx->frames.a[ctx->curFrame];
 	model_t    *model = ent->renderer.model;
 	msprite_t  *sprite = model->cache.data;
 	animation_t *animation = &ent->animation;
@@ -139,10 +139,10 @@ Vulkan_DrawSprite (entity_t *ent, qfv_renderframe_t *rFrame)
 	mat[1] = svright;
 	mat[0] = -svpn;
 
-	emit_commands (aframe->cmdSet.a[QFV_spriteDepth],
+	emit_commands (sframe->cmdSet.a[QFV_spriteDepth],
 				   (qfv_sprite_t *) ((byte *) sprite + sprite->data),
 				   2, push_constants, rFrame);
-	emit_commands (aframe->cmdSet.a[QFV_spriteGBuffer],
+	emit_commands (sframe->cmdSet.a[QFV_spriteGBuffer],
 				   (qfv_sprite_t *) ((byte *) sprite + sprite->data),
 				   2, push_constants, rFrame);
 }
@@ -156,8 +156,8 @@ sprite_begin_subpass (QFV_SpriteSubpass subpass, VkPipeline pipeline,
 	qfv_devfuncs_t *dfunc = device->funcs;
 	spritectx_t *sctx = ctx->sprite_context;
 	__auto_type cframe = &ctx->frames.a[ctx->curFrame];
-	spriteframe_t *aframe = &sctx->frames.a[ctx->curFrame];
-	VkCommandBuffer cmd = aframe->cmdSet.a[subpass];
+	spriteframe_t *sframe = &sctx->frames.a[ctx->curFrame];
+	VkCommandBuffer cmd = sframe->cmdSet.a[subpass];
 
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
@@ -205,13 +205,13 @@ Vulkan_SpriteBegin (qfv_renderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	spritectx_t *sctx = ctx->sprite_context;
-	spriteframe_t *aframe = &sctx->frames.a[ctx->curFrame];
+	spriteframe_t *sframe = &sctx->frames.a[ctx->curFrame];
 
 	//XXX quat_t      fog;
 	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passDepth],
-				   aframe->cmdSet.a[QFV_spriteDepth]);
+				   sframe->cmdSet.a[QFV_spriteDepth]);
 	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passGBuffer],
-				   aframe->cmdSet.a[QFV_spriteGBuffer]);
+				   sframe->cmdSet.a[QFV_spriteGBuffer]);
 
 	sprite_begin_subpass (QFV_spriteDepth, sctx->depth, rFrame);
 	sprite_begin_subpass (QFV_spriteGBuffer, sctx->gbuf, rFrame);
@@ -222,10 +222,10 @@ Vulkan_SpriteEnd (qfv_renderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	spritectx_t *sctx = ctx->sprite_context;
-	spriteframe_t *aframe = &sctx->frames.a[ctx->curFrame];
+	spriteframe_t *sframe = &sctx->frames.a[ctx->curFrame];
 
-	sprite_end_subpass (aframe->cmdSet.a[QFV_spriteDepth], ctx);
-	sprite_end_subpass (aframe->cmdSet.a[QFV_spriteGBuffer], ctx);
+	sprite_end_subpass (sframe->cmdSet.a[QFV_spriteDepth], ctx);
+	sprite_end_subpass (sframe->cmdSet.a[QFV_spriteGBuffer], ctx);
 }
 
 static VkDescriptorBufferInfo base_buffer_info = {
@@ -302,24 +302,21 @@ Vulkan_Sprite_Init (vulkan_ctx_t *ctx)
 	sctx->layout = Vulkan_CreatePipelineLayout (ctx, "sprite_layout");
 	sctx->sampler = Vulkan_CreateSampler (ctx, "sprite_sampler");
 
-	//FIXME too many places
-	__auto_type limits = device->physDev->properties.limits;
-	sctx->maxImages = min (256, limits.maxPerStageDescriptorSampledImages - 8);
 	sctx->pool = Vulkan_CreateDescriptorPool (ctx, "sprite_pool");
 	sctx->setLayout = Vulkan_CreateDescriptorSetLayout (ctx, "sprite_set");
 
 	for (size_t i = 0; i < frames; i++) {
-		__auto_type aframe = &sctx->frames.a[i];
+		__auto_type sframe = &sctx->frames.a[i];
 
-		DARRAY_INIT (&aframe->cmdSet, QFV_spriteNumPasses);
-		DARRAY_RESIZE (&aframe->cmdSet, QFV_spriteNumPasses);
-		aframe->cmdSet.grow = 0;
+		DARRAY_INIT (&sframe->cmdSet, QFV_spriteNumPasses);
+		DARRAY_RESIZE (&sframe->cmdSet, QFV_spriteNumPasses);
+		sframe->cmdSet.grow = 0;
 
-		QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, &aframe->cmdSet);
+		QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, &sframe->cmdSet);
 
 		for (int j = 0; j < QFV_spriteNumPasses; j++) {
 			QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
-								 aframe->cmdSet.a[j],
+								 sframe->cmdSet.a[j],
 								 va (ctx->va_ctx, "cmd:sprite:%zd:%s", i,
 									 sprite_pass_names[j]));
 		}
@@ -335,8 +332,8 @@ Vulkan_Sprite_Shutdown (vulkan_ctx_t *ctx)
 	spritectx_t *sctx = ctx->sprite_context;
 
 	for (size_t i = 0; i < sctx->frames.size; i++) {
-		__auto_type aframe = &sctx->frames.a[i];
-		free (aframe->cmdSet.a);
+		__auto_type sframe = &sctx->frames.a[i];
+		free (sframe->cmdSet.a);
 	}
 
 	dfunc->vkDestroyPipeline (device->dev, sctx->depth, 0);

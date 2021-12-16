@@ -67,13 +67,13 @@ typedef struct spriteframeset_s
 
 typedef struct spritectx_s {
 	spriteframeset_t frames;
-	VkPipeline   depth;
-	VkPipeline   gbuf;
+	VkPipeline  depth;
+	VkPipeline  gbuf;
 	VkDescriptorPool pool;
 	VkDescriptorSetLayout setLayout;
 	VkPipelineLayout layout;
-	unsigned     maxImages;
-	VkSampler    sampler;
+	unsigned    maxImages;
+	VkSampler   sampler;
 } spritectx_t;
 
 struct vulkan_ctx_s;
