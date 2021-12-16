@@ -19,6 +19,7 @@
 		VkPushConstantRange,
 		VkPipelineLayoutCreateInfo,
 		VkGraphicsPipelineCreateInfo,
+		VkComputePipelineCreateInfo,
 		VkDescriptorPoolCreateInfo,
 		VkSamplerCreateInfo,
 		VkImageCreateInfo,
@@ -288,6 +289,19 @@
 				fields = (renderPass);
 			};
 			subpass = auto;
+			basePipelineHandle = {
+				type = (custom, QFString, parse_BasePipeline);
+				fields = (basePipelineHandle);
+			};
+			basePipelineIndex = auto;
+		};
+		VkComputePipelineCreateInfo = {
+			flags = auto;
+			stage = auto;
+			layout = {
+				type = (custom,	QFString, parse_VkPipelineLayout);
+				fields = (layout);
+			};
 			basePipelineHandle = {
 				type = (custom, QFString, parse_BasePipeline);
 				fields = (basePipelineHandle);

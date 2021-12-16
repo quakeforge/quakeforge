@@ -396,7 +396,7 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 
 	flush_draw_scrap (ctx);
 
-	dctx->pipeline = Vulkan_CreatePipeline (ctx, "twod");
+	dctx->pipeline = Vulkan_CreateGraphicsPipeline (ctx, "twod");
 
 	dctx->layout = Vulkan_CreatePipelineLayout (ctx, "twod_layout");
 

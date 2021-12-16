@@ -551,7 +551,7 @@ Vulkan_DestroyRenderPasses (vulkan_ctx_t *ctx)
 }
 
 VkPipeline
-Vulkan_CreatePipeline (vulkan_ctx_t *ctx, const char *name)
+Vulkan_CreateComputePipeline (vulkan_ctx_t *ctx, const char *name)
 {
 	plitem_t   *item = qfv_load_pipeline (ctx, "pipelines");
 	if (!(item = PL_ObjectForKey (item, name))) {
@@ -560,7 +560,25 @@ Vulkan_CreatePipeline (vulkan_ctx_t *ctx, const char *name)
 	} else {
 		Sys_MaskPrintf (SYS_vulkan_parse, "Found pipeline def %s\n", name);
 	}
-	VkPipeline pipeline = QFV_ParsePipeline (ctx, item, ctx->pipelineDef);
+	VkPipeline pipeline = QFV_ParseComputePipeline (ctx, item,
+													 ctx->pipelineDef);
+	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_PIPELINE, pipeline,
+						 va (ctx->va_ctx, "pipeline:%s", name));
+	return pipeline;
+}
+
+VkPipeline
+Vulkan_CreateGraphicsPipeline (vulkan_ctx_t *ctx, const char *name)
+{
+	plitem_t   *item = qfv_load_pipeline (ctx, "pipelines");
+	if (!(item = PL_ObjectForKey (item, name))) {
+		Sys_Printf ("error loading pipeline %s\n", name);
+		return 0;
+	} else {
+		Sys_MaskPrintf (SYS_vulkan_parse, "Found pipeline def %s\n", name);
+	}
+	VkPipeline pipeline = QFV_ParseGraphicsPipeline (ctx, item,
+													 ctx->pipelineDef);
 	QFV_duSetObjectName (ctx->device, VK_OBJECT_TYPE_PIPELINE, pipeline,
 						 va (ctx->va_ctx, "pipeline:%s", name));
 	return pipeline;

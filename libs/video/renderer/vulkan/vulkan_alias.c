@@ -353,8 +353,8 @@ Vulkan_Alias_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&actx->frames, frames);
 	actx->frames.grow = 0;
 
-	actx->depth = Vulkan_CreatePipeline (ctx, "alias_depth");
-	actx->gbuf = Vulkan_CreatePipeline (ctx, "alias_gbuf");
+	actx->depth = Vulkan_CreateGraphicsPipeline (ctx, "alias_depth");
+	actx->gbuf = Vulkan_CreateGraphicsPipeline (ctx, "alias_gbuf");
 	actx->layout = Vulkan_CreatePipelineLayout (ctx, "alias_layout");
 	actx->sampler = Vulkan_CreateSampler (ctx, "alias_sampler");
 

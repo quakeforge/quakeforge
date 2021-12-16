@@ -316,7 +316,7 @@ Vulkan_Lighting_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&lctx->frames, frames);
 	lctx->frames.grow = 0;
 
-	lctx->pipeline = Vulkan_CreatePipeline (ctx, "lighting");
+	lctx->pipeline = Vulkan_CreateGraphicsPipeline (ctx, "lighting");
 	lctx->layout = Vulkan_CreatePipelineLayout (ctx, "lighting_layout");
 	lctx->sampler = Vulkan_CreateSampler (ctx, "shadow_sampler");
 

@@ -1402,11 +1402,11 @@ Vulkan_Bsp_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&bctx->frames, frames);
 	bctx->frames.grow = 0;
 
-	bctx->depth = Vulkan_CreatePipeline (ctx, "bsp_depth");
-	bctx->gbuf = Vulkan_CreatePipeline (ctx, "bsp_gbuf");
-	bctx->skybox = Vulkan_CreatePipeline (ctx, "bsp_skybox");
-	bctx->skysheet = Vulkan_CreatePipeline (ctx, "bsp_skysheet");
-	bctx->turb = Vulkan_CreatePipeline (ctx, "bsp_turb");
+	bctx->depth = Vulkan_CreateGraphicsPipeline (ctx, "bsp_depth");
+	bctx->gbuf = Vulkan_CreateGraphicsPipeline (ctx, "bsp_gbuf");
+	bctx->skybox = Vulkan_CreateGraphicsPipeline (ctx, "bsp_skybox");
+	bctx->skysheet = Vulkan_CreateGraphicsPipeline (ctx, "bsp_skysheet");
+	bctx->turb = Vulkan_CreateGraphicsPipeline (ctx, "bsp_turb");
 	bctx->layout = Vulkan_CreatePipelineLayout (ctx, "quakebsp_layout");
 	bctx->sampler = Vulkan_CreateSampler (ctx, "quakebsp_sampler");
 

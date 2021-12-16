@@ -1142,7 +1142,35 @@ QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
 }
 
 VkPipeline
-QFV_ParsePipeline (vulkan_ctx_t *ctx, plitem_t *plist, plitem_t *properties)
+QFV_ParseComputePipeline (vulkan_ctx_t *ctx, plitem_t *plist,
+						  plitem_t *properties)
+{
+	memsuper_t *memsuper = new_memsuper ();
+	qfv_device_t *device = ctx->device;
+
+	__auto_type cInfo = QFV_AllocComputePipelineCreateInfoSet (1, alloca);
+	memset (&cInfo->a[0], 0, sizeof (cInfo->a[0]));
+
+	if (!parse_object (ctx, memsuper, plist, parse_VkComputePipelineCreateInfo,
+					   &cInfo->a[0], properties)) {
+		delete_memsuper (memsuper);
+		return 0;
+	}
+
+	qfvPushDebug (ctx, va (ctx->va_ctx,
+						   "QFV_ParseComputePipeline: %d", PL_Line (plist)));
+
+	__auto_type plSet = QFV_CreateComputePipelines (device, 0, cInfo);
+	qfvPopDebug (ctx);
+	VkPipeline pipeline = plSet->a[0];
+	free (plSet);
+	delete_memsuper (memsuper);
+	return pipeline;
+}
+
+VkPipeline
+QFV_ParseGraphicsPipeline (vulkan_ctx_t *ctx, plitem_t *plist,
+						   plitem_t *properties)
 {
 	memsuper_t *memsuper = new_memsuper ();
 	qfv_device_t *device = ctx->device;

@@ -297,8 +297,8 @@ Vulkan_Sprite_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&sctx->frames, frames);
 	sctx->frames.grow = 0;
 
-	sctx->depth = Vulkan_CreatePipeline (ctx, "sprite_depth");
-	sctx->gbuf = Vulkan_CreatePipeline (ctx, "sprite_gbuf");
+	sctx->depth = Vulkan_CreateGraphicsPipeline (ctx, "sprite_depth");
+	sctx->gbuf = Vulkan_CreateGraphicsPipeline (ctx, "sprite_gbuf");
 	sctx->layout = Vulkan_CreatePipelineLayout (ctx, "sprite_layout");
 	sctx->sampler = Vulkan_CreateSampler (ctx, "sprite_sampler");
 
