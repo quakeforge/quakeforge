@@ -67,13 +67,6 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
-typedef struct {
-	VkShaderStageFlags stageFlags;
-	uint32_t    offset;
-	uint32_t    size;
-	const void *data;
-} qfv_push_constants_t;
-
 static const char * __attribute__((used)) sprite_pass_names[] = {
 	"depth",
 	"g-buffer",
@@ -96,11 +89,7 @@ emit_commands (VkCommandBuffer cmd, qfv_sprite_t *sprite,
 	qfv_devfuncs_t *dfunc = device->funcs;
 	spritectx_t *sctx = ctx->sprite_context;
 
-	for (int i = 0; i < numPC; i++) {
-		dfunc->vkCmdPushConstants (cmd, sctx->layout, constants[i].stageFlags,
-								   constants[i].offset, constants[i].size,
-								   constants[i].data);
-	}
+	QFV_PushConstants (device, cmd, sctx->layout, numPC, constants);
 	VkDescriptorSet sets[] = {
 		sprite->descriptors,
 	};

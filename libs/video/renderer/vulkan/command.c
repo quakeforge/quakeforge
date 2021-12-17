@@ -162,3 +162,17 @@ QFV_QueueWaitIdle (qfv_queue_t *queue)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	return dfunc->vkQueueWaitIdle (queue->queue) == VK_SUCCESS;
 }
+
+void
+QFV_PushConstants (qfv_device_t *device, VkCommandBuffer cmd,
+				   VkPipelineLayout layout, uint32_t numPC,
+				   const qfv_push_constants_t *constants)
+{
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	for (uint32_t i = 0; i < numPC; i++) {
+		dfunc->vkCmdPushConstants (cmd, layout, constants[i].stageFlags,
+								   constants[i].offset, constants[i].size,
+								   constants[i].data);
+	}
+}
