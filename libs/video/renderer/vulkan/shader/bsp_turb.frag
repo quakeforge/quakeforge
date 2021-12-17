@@ -1,15 +1,11 @@
 #version 450
 
-layout (constant_id = 0) const int MaxTextures = 256;
-
-layout (set = 1, binding = 0) uniform sampler samp;
-layout (set = 1, binding = 1) uniform texture2DArray textures[MaxTextures];
+layout (set = 1, binding = 0) uniform sampler2DArray Texture;
 
 layout (push_constant) uniform PushConstants {
 	layout (offset = 64)
 	vec4        fog;
 	float       time;
-	int         texind;
 };
 
 layout (location = 0) in vec4 tl_st;
@@ -50,7 +46,7 @@ main (void)
 	vec3        t_st = vec3 (warp_st (tl_st.xy, time), 0);
 	vec3        e_st = vec3 (warp_st (tl_st.xy, time), 1);
 
-	c = texture (sampler2DArray (textures[texind], samp), t_st);
-	e = texture (sampler2DArray (textures[texind], samp), e_st);
+	c = texture (Texture, t_st);
+	e = texture (Texture, e_st);
 	frag_color = c + e;//fogBlend (c);
 }

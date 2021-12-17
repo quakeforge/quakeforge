@@ -54,6 +54,7 @@
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/debug.h"
+#include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
@@ -426,6 +427,14 @@ static tex_t default_magenta_tex = {1, 1, tex_rgba, 1, 0, magenta_data};
 void
 Vulkan_Texture_Init (vulkan_ctx_t *ctx)
 {
+	qfvPushDebug (ctx, "texture init");
+
+	texturectx_t   *tctx = calloc (1, sizeof (texturectx_t));
+	ctx->texture_context = tctx;
+
+	tctx->pool = Vulkan_CreateDescriptorPool (ctx, "texture_pool");
+	tctx->setLayout = Vulkan_CreateDescriptorSetLayout (ctx, "texture_set");
+
 	ctx->default_black = Vulkan_LoadTex (ctx, &default_black_tex, 1,
 										 "default_black");
 	ctx->default_white = Vulkan_LoadTex (ctx, &default_white_tex, 1,
@@ -440,6 +449,7 @@ Vulkan_Texture_Init (vulkan_ctx_t *ctx)
 									 VK_IMAGE_VIEW_TYPE_2D_ARRAY,
 									 VK_FORMAT_R8G8B8A8_UNORM,
 									 VK_IMAGE_ASPECT_COLOR_BIT);
+	qfvPopDebug (ctx);
 }
 
 void
@@ -449,4 +459,66 @@ Vulkan_Texture_Shutdown (vulkan_ctx_t *ctx)
 	Vulkan_UnloadTex (ctx, ctx->default_white);
 	Vulkan_UnloadTex (ctx, ctx->default_magenta);
 	Vulkan_UnloadTex (ctx, ctx->default_magenta_array);
+}
+
+static VkDescriptorImageInfo base_image_info = {
+	.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+};
+static VkWriteDescriptorSet base_image_write = {
+	.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET,
+	.dstBinding = 0,
+	.descriptorCount = 1,
+	.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+};
+
+VkDescriptorSet
+Vulkan_CreateCombinedImageSampler (vulkan_ctx_t *ctx, VkImageView view,
+								   VkSampler sampler)
+{
+	qfvPushDebug (ctx, "Vulkan_CreateCombinedImageSampler");
+
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	texturectx_t *tctx = ctx->texture_context;
+
+	//FIXME kinda dumb
+	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (1, alloca);
+	for (size_t i = 0; i < layouts->size; i++) {
+		layouts->a[i] = tctx->setLayout;
+	}
+	__auto_type sets = QFV_AllocateDescriptorSet (device, tctx->pool, layouts);
+	VkDescriptorSet descriptor = sets->a[0];
+	free (sets);
+
+	VkDescriptorImageInfo imageInfo[1];
+	imageInfo[0] = base_image_info;
+	imageInfo[0].sampler = sampler;
+	imageInfo[0].imageView = view;
+
+	VkWriteDescriptorSet write[1];
+	write[0] = base_image_write;
+	write[0].dstSet = descriptor;
+	write[0].pImageInfo = imageInfo;
+	dfunc->vkUpdateDescriptorSets (device->dev, 1, write, 0, 0);
+
+	qfvPopDebug (ctx);
+
+	return descriptor;
+}
+
+VkDescriptorSet
+Vulkan_CreateTextureDescriptor (vulkan_ctx_t *ctx, qfv_tex_t *tex,
+								VkSampler sampler)
+{
+	return Vulkan_CreateCombinedImageSampler (ctx, tex->view, sampler);
+}
+
+void
+Vulkan_FreeTexture (vulkan_ctx_t *ctx, VkDescriptorSet texture)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	texturectx_t *tctx = ctx->texture_context;
+
+	dfunc->vkFreeDescriptorSets (device->dev, tctx->pool, 1, &texture);
 }

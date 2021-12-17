@@ -4,7 +4,6 @@
 		//needs to agree on the size, so it might as well set maxSamplers
 		//directly (and any other such variable)
 		maxSamplers = "min (256u, $physDevLimits.maxPerStageDescriptorSamplers)";
-		maxImages = "min (256u, $physDevLimits.maxPerStageDescriptorSampledImages - 8u)";
 	};
 	samplers = {
 		quakepic = {
@@ -99,16 +98,12 @@
 			);
 		};
 		texture_pool = {
-			flags = 0;
-			maxSets = 1;
+			flags = free_descriptor_set;
+			maxSets = 512;
 			bindings = (
 				{
-					type = sampler;
-					descriptorCount = 1;
-				},
-				{
-					type = sampled_image;
-					descriptorCount = $properties.limits.maxImages;
+					type = combined_image_sampler;
+					descriptorCount = $properties.descriptorPools.texture_pool.maxSets;
 				},
 			);
 		};
@@ -205,14 +200,8 @@
 			bindings = (
 				{
 					binding = 0;
-					descriptorType = sampler;
+					descriptorType = combined_image_sampler;
 					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 1;
-					descriptorType = sampled_image;
-					descriptorCount = $properties.limits.maxImages;
 					stageFlags = fragment;
 				},
 			);
@@ -333,7 +322,7 @@
 			setLayouts = (matrix_set, twod_set);
 		};
 		quakebsp_layout = {
-			setLayouts = (matrix_set, quakebsp_set);
+			setLayouts = (matrix_set, texture_set, texture_set);
 			pushConstantRanges = (
 				{
 					stageFlags = vertex;
@@ -343,7 +332,7 @@
 				{
 					stageFlags = fragment;
 					offset = 64;
-					size = 32;
+					size = "4 * 4 + 4";
 				},
 			);
 		};
@@ -697,13 +686,6 @@
 					stage = fragment;
 					name = main;
 					module = $builtin/alias_gbuf.frag;
-					specializationInfo = {
-						mapEntries = (
-							// MaxTextures
-							{ size = 4; offset = 0; constantID = 0; },
-						);
-						data = "array(uint($properties.limits.maxImages))";
-					};
 				},
 			);
 			vertexInput   = $properties.vertexInput.alias;
@@ -773,13 +755,6 @@
 					stage = fragment;
 					name = main;
 					module = $builtin/bsp_gbuf.frag;
-					specializationInfo = {
-						mapEntries = (
-							// MaxTextures
-							{ size = 4; offset = 0; constantID = 0; },
-						);
-						data = "array(uint($properties.limits.maxImages))";
-					};
 				},
 			);
 			vertexInput   = $properties.vertexInput.brush;
@@ -817,14 +792,12 @@
 					module = $builtin/bsp_sky.frag;
 					specializationInfo = {
 						mapEntries = (
-							// MaxTextures
-							{ size = 4; offset = 8; constantID = 0; },
 							// doSkyBox
-							{ size = 4; offset = 4; constantID = 1; },
+							{ size = 4; offset = 4; constantID = 0; },
 							// doSkySheet
-							{ size = 4; offset = 0; constantID = 2; },
+							{ size = 4; offset = 0; constantID = 1; },
 						);
-						data = "array(0, 1, uint($properties.limits.maxImages))";
+						data = "array(0, 1)";
 					};
 				},
 			);
@@ -858,14 +831,12 @@
 					module = $builtin/bsp_sky.frag;
 					specializationInfo = {
 						mapEntries = (
-							// MaxTextures
-							{ size = 4; offset = 8; constantID = 0; },
 							// doSkyBox
-							{ size = 4; offset = 0; constantID = 1; },
+							{ size = 4; offset = 0; constantID = 0; },
 							// doSkySheet
-							{ size = 4; offset = 4; constantID = 2; },
+							{ size = 4; offset = 4; constantID = 1; },
 						);
-						data = "array(0, 1, uint($properties.limits.maxImages))";
+						data = "array(0, 1)";
 					};
 				},
 			);
@@ -897,13 +868,6 @@
 					stage = fragment;
 					name = main;
 					module = $builtin/bsp_turb.frag;
-					specializationInfo = {
-						mapEntries = (
-							// MaxTextures
-							{ size = 4; offset = 0; constantID = 0; },
-						);
-						data = "array(uint($properties.limits.maxImages))";
-					};
 				},
 			);
 			vertexInput   = $properties.vertexInput.brush;

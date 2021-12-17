@@ -1,7 +1,5 @@
 #version 450
 
-layout (constant_id = 0) const int MaxTextures = 256;
-
 layout (location = 0) in vec4 uv_tr;
 layout (location = 1) in vec4 color;
 

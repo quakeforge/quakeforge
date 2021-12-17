@@ -83,6 +83,10 @@ vulkan_brush_clear (model_t *mod, void *data)
 		vulktex_t  *tex = tx->render;
 		dfunc->vkDestroyImage (device->dev, tex->tex->image, 0);
 		dfunc->vkDestroyImageView (device->dev, tex->tex->view, 0);
+		if (tex->descriptor) {
+			Vulkan_FreeTexture (ctx, tex->descriptor);
+			tex->descriptor = 0;
+		}
 	}
 	dfunc->vkFreeMemory (device->dev, mctx->texture_memory, 0);
 }

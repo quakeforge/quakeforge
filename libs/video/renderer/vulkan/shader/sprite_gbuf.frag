@@ -1,7 +1,5 @@
 #version 450
 
-layout (constant_id = 0) const int MaxTextures = 256;
-
 layout (set = 1, binding = 1) uniform sampler2DArray Texture;
 
 layout (push_constant) uniform PushConstants {

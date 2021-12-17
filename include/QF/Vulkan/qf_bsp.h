@@ -46,7 +46,7 @@ typedef struct vulktex_s {
 	struct elechain_s *elechain;
 	struct elechain_s **elechain_tail;
 	struct qfv_tex_s *tex;
-	int         texind;
+	VkDescriptorSet descriptor;
 } vulktex_t;
 
 typedef struct bspvert_s {
@@ -96,7 +96,6 @@ typedef struct bspframe_s {
 typedef struct fragconst_s {
 	quat_t      fog;
 	float       time;
-	int         texind;
 } fragconst_t;
 
 typedef struct bspframeset_s
@@ -138,6 +137,7 @@ typedef struct bspctx_s {
 
 	struct qfv_tex_s *default_skybox;
 	struct qfv_tex_s *skybox_tex;
+	VkDescriptorSet skybox_descriptor;
 	vec4f_t      sky_rotation[2];
 	vec4f_t      sky_velocity;
 	vec4f_t      sky_fix;
@@ -152,11 +152,7 @@ typedef struct bspctx_s {
 	struct bsppoly_s *polys;
 
 	VkSampler    sampler;
-	VkDescriptorSet descriptors;
-	VkDescriptorPool pool;
-	VkDescriptorSetLayout setLayout;
 	VkPipelineLayout layout;
-	unsigned     maxImages;
 
 	VkDeviceMemory texture_memory;
 	VkPipeline   depth;

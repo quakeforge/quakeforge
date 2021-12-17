@@ -1,19 +1,15 @@
 #version 450
 
-layout (constant_id = 0) const int MaxTextures = 256;
 layout (constant_id = 1) const bool doSkyBox = false;
 layout (constant_id = 2) const bool doSkySheet = false;
 
-layout (set = 1, binding = 0) uniform sampler samp;
-layout (set = 1, binding = 1) uniform texture2DArray sheet_tex[MaxTextures];
-layout (set = 1, binding = 1) uniform textureCube cube_tex[MaxTextures];
+layout (set = 1, binding = 0) uniform sampler2DArray SkySheet;
+layout (set = 2, binding = 0) uniform samplerCube SkyBox;
 
 layout (push_constant) uniform PushConstants {
 	layout (offset = 64)
 	vec4        fog;
 	float       time;
-	int         sheet_ind;
-	int         cube_ind;
 };
 
 layout (location = 0) in vec4 tl_st;
@@ -34,7 +30,7 @@ fogBlend (vec4 color)
 }
 
 vec4
-sky_sheet (vec3 dir, float time, texture2DArray tex)
+sky_sheet (vec3 dir, float time)
 {
 	float       len;
 	vec2        flow = vec2 (1.0, 1.0);
@@ -50,8 +46,8 @@ sky_sheet (vec3 dir, float time, texture2DArray tex)
 	st1 = vec3 (base + flow * time / 8.0, 0);
 	st2 = vec3 (base + flow * time / 16.0, 1);
 
-	c1 = texture (sampler2DArray(tex, samp), st1);
-	c2 = texture (sampler2DArray(tex, samp), st2);
+	c1 = texture (SkySheet, st1);
+	c2 = texture (SkySheet, st2);
 
 	c = vec4 (mix (c2.rgb, c1.rgb, c1.a), max (c1.a, c2.a));
 
@@ -59,7 +55,7 @@ sky_sheet (vec3 dir, float time, texture2DArray tex)
 }
 
 vec4
-sky_box (vec3 dir, float time, textureCube tex)
+sky_box (vec3 dir, float time)
 {
 	// NOTE: quake's world is right-handed with Z up and X forward, but
 	// Vulkan's cube maps are left-handed with Y up and Z forward. The
@@ -67,21 +63,21 @@ sky_box (vec3 dir, float time, textureCube tex)
 	// to do here is swizzle the Y and Z coordinates
 	dir = normalize(dir);
 	//return vec4(dir.xyz, 1) * 0.5 + vec4(0.5);
-	return texture (samplerCube (tex, samp), dir.xzy);
+	return texture (SkyBox, dir.xzy);
 }
 
 vec4
 sky_color (vec3 dir, float time)
 {
 	if (!doSkySheet) {
-		return sky_box (dir, time, cube_tex[cube_ind]);
+		return sky_box (dir, time);
 	} if (!doSkyBox) {
-		return sky_sheet (dir, time, sheet_tex[sheet_ind]);
+		return sky_sheet (dir, time);
 	} else {
 		// can see through the sheet (may look funny when looking down)
 		// maybe have 4 sheet layers instead of 2?
-		vec4        c1 = sky_sheet (dir, time, sheet_tex[sheet_ind]);
-		vec4        c2 = sky_box (dir, time, cube_tex[cube_ind]);
+		vec4        c1 = sky_sheet (dir, time);
+		vec4        c2 = sky_box (dir, time);
 		return vec4 (mix (c2.rgb, c1.rgb, c1.a), max (c1.a, c2.a));
 		return vec4 (1, 0, 1, 1);
 	}

@@ -60,7 +60,7 @@ typedef struct qfv_alias_skin_s {
 	VkImageView view;
 	byte        colora[4];
 	byte        colorb[4];
-	int         texind;
+	VkDescriptorSet descriptor;
 } qfv_alias_skin_t;
 
 typedef enum {
@@ -85,13 +85,8 @@ typedef struct aliasctx_s {
 	aliasframeset_t frames;
 	VkPipeline   depth;
 	VkPipeline   gbuf;
-	VkDescriptorSet descriptors;
-	VkDescriptorPool pool;
-	VkDescriptorSetLayout setLayout;
 	VkPipelineLayout layout;
-	unsigned     maxImages;
 	VkSampler    sampler;
-	aliasindset_t texindices;
 } aliasctx_t;
 
 struct vulkan_ctx_s;

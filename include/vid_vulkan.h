@@ -56,6 +56,7 @@ typedef struct vulkan_ctx_s {
 	struct hashtab_s *imageViews;
 	struct hashtab_s *renderpasses;
 
+	struct texturectx_s *texture_context;
 	struct matrixctx_s *matrix_context;
 	struct aliasctx_s *alias_context;
 	struct bspctx_s *bsp_context;
