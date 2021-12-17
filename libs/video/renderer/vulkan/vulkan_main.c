@@ -131,7 +131,7 @@ void
 Vulkan_RenderView (qfv_renderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
-	double      t[9] = {};
+	double      t[10] = {};
 	int         speeds = r_speeds->int_val;
 
 	if (!r_worldentity.renderer.model) {
@@ -165,14 +165,18 @@ Vulkan_RenderView (qfv_renderframe_t *rFrame)
 	Vulkan_DrawParticles (ctx);
 	if (speeds)
 		t[8] = Sys_DoubleTime ();
+	Vulkan_Bsp_Flush (ctx);
+	if (speeds)
+		t[9] = Sys_DoubleTime ();
 	if (speeds) {
+		double      total = (t[9]  - t[0]) * 1000;
+		for (int i = 0; i < 9; i++) {
+			t[i] = (t[i + 1] - t[i]) * 1000;
+		}
 		Sys_Printf ("frame: %g, setup: %g, mark: %g, pushdl: %g, world: %g,"
-					" sky: %g, ents: %g, water: %g, part: %g\n",
-					(t[8] - t[0]) * 1000, (t[1] - t[0]) * 1000,
-					(t[2] - t[1]) * 1000, (t[3] - t[2]) * 1000,
-					(t[4] - t[3]) * 1000, (t[5] - t[4]) * 1000,
-					(t[6] - t[5]) * 1000, (t[7] - t[6]) * 1000,
-					(t[8] - t[7]) * 1000);
+					" sky: %g, ents: %g, water: %g, flush: %g, part: %g\n",
+					total,
+					t[0], t[1], t[2], t[3], t[4], t[5], t[6], t[7], t[8]);
 	}
 }
 

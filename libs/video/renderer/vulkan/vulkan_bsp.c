@@ -1041,7 +1041,7 @@ build_tex_elechain (vulktex_t *tex, bspctx_t *bctx, bspframe_t *bframe)
 	elements_t *el = 0;
 
 	for (is = tex->tex_chain; is; is = is->tex_chain) {
-		// emit the polygon indices for the the surface to the texture's
+		// emit the polygon indices for the surface to the texture's
 		// element chain
 		add_surf_elements (tex, is, &ec, &el, bctx, bframe);
 	}
@@ -1110,7 +1110,15 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 		tex->elechain_tail = &tex->elechain;
 	}
 	bsp_end (ctx);
+}
 
+void
+Vulkan_Bsp_Flush (vulkan_ctx_t *ctx)
+{
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+	bspctx_t   *bctx = ctx->bsp_context;
+	bspframe_t *bframe = &bctx->frames.a[ctx->curFrame];
 	size_t      atom = device->physDev->properties.limits.nonCoherentAtomSize;
 	size_t      atom_mask = atom - 1;
 	size_t      offset = bframe->index_offset;
@@ -1119,7 +1127,6 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 	offset &= ~atom_mask;
 	size = (size + atom_mask) & ~atom_mask;
 
-	//FIXME this needs to come at the end of the frame after all passes
 	VkMappedMemoryRange range = {
 		VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
 		bctx->index_memory, offset, size
@@ -1165,7 +1172,7 @@ Vulkan_DrawWaterSurfaces (qfv_renderframe_t *rFrame)
 			}
 			tex = surf->texinfo->texture->render;
 		}
-		// emit the polygon indices for the the surface to the texture's
+		// emit the polygon indices for the surface to the texture's
 		// element chain
 		add_surf_elements (tex, is, &ec, &el, bctx, bframe);
 	}
@@ -1227,7 +1234,7 @@ Vulkan_DrawSky (qfv_renderframe_t *rFrame)
 			}
 			tex = surf->texinfo->texture->render;
 		}
-		// emit the polygon indices for the the surface to the texture's
+		// emit the polygon indices for the surface to the texture's
 		// element chain
 		add_surf_elements (tex, is, &ec, &el, bctx, bframe);
 	}

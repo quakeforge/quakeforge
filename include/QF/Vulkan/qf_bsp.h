@@ -170,6 +170,7 @@ void Vulkan_ClearElements (struct vulkan_ctx_s *ctx);
 void Vulkan_DrawWorld (struct qfv_renderframe_s *rFrame);
 void Vulkan_DrawSky (struct qfv_renderframe_s *rFrame);
 void Vulkan_DrawWaterSurfaces (struct qfv_renderframe_s *rFrame);
+void Vulkan_Bsp_Flush (struct vulkan_ctx_s *ctx);
 void Vulkan_LoadSkys (const char *sky, struct vulkan_ctx_s *ctx);
 void Vulkan_RegisterTextures (model_t **models, int num_models,
 							  struct vulkan_ctx_s *ctx);
