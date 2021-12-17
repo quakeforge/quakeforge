@@ -71,6 +71,12 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
+typedef struct bsp_push_constants_s {
+	mat4f_t     Model;
+	quat_t      fog;
+	float       time;
+} bsp_push_constants_t;
+
 static const char * __attribute__((used)) bsp_pass_names[] = {
 	"depth",
 	"g-buffer",
@@ -752,10 +758,14 @@ R_VisitWorldNodes (mod_brush_t *brush, vulkan_ctx_t *ctx)
 
 static void
 push_transform (vec_t *transform, VkPipelineLayout layout,
-				qfv_devfuncs_t *dfunc, VkCommandBuffer cmd)
+				qfv_device_t *device, VkCommandBuffer cmd)
 {
-	dfunc->vkCmdPushConstants (cmd, layout, VK_SHADER_STAGE_VERTEX_BIT,
-							   0, 16 * sizeof (float), transform);
+	qfv_push_constants_t push_constants[] = {
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (bsp_push_constants_t, Model),
+			sizeof (mat4f_t), transform },
+	};
+	QFV_PushConstants (device, cmd, layout, 1, push_constants);
 }
 
 static void
@@ -770,24 +780,33 @@ bind_texture (vulktex_t *tex, uint32_t setnum, VkPipelineLayout layout,
 }
 
 static void
-push_fragconst (fragconst_t *fragconst, VkPipelineLayout layout,
-				qfv_devfuncs_t *dfunc, VkCommandBuffer cmd)
+push_fragconst (bsp_push_constants_t *constants, VkPipelineLayout layout,
+				qfv_device_t *device, VkCommandBuffer cmd)
 {
-	dfunc->vkCmdPushConstants (cmd, layout, VK_SHADER_STAGE_FRAGMENT_BIT,
-							   64, sizeof (fragconst_t), fragconst);//FIXME 64
+	qfv_push_constants_t push_constants[] = {
+		//{ VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof (mat), mat },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (bsp_push_constants_t, fog),
+			sizeof (constants->fog), &constants->fog },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (bsp_push_constants_t, time),
+			sizeof (constants->time), &constants->time },
+	};
+	QFV_PushConstants (device, cmd, layout, 2, push_constants);
 }
 
 static void
-draw_elechain (elechain_t *ec, VkPipelineLayout layout, qfv_devfuncs_t *dfunc,
+draw_elechain (elechain_t *ec, VkPipelineLayout layout, qfv_device_t *device,
 			   VkCommandBuffer cmd)
 {
+	qfv_devfuncs_t *dfunc = device->funcs;
 	elements_t *el;
 
 	if (ec->transform) {
-		push_transform (ec->transform, layout, dfunc, cmd);
+		push_transform (ec->transform, layout, device, cmd);
 	} else {
 		//FIXME should cache current transform
-		push_transform (identity, layout, dfunc, cmd);
+		push_transform (identity, layout, device, cmd);
 	}
 	for (el = ec->elements; el; el = el->next) {
 		if (!el->index_count)
@@ -1062,12 +1081,12 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 
 	bsp_begin (rFrame);
 
-	push_transform (identity, bctx->layout, dfunc,
+	push_transform (identity, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspDepth]);
-	push_transform (identity, bctx->layout, dfunc,
+	push_transform (identity, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspGBuffer]);
-	fragconst_t frag_constants = { time: vr_data.realtime };
-	push_fragconst (&frag_constants, bctx->layout, dfunc,
+	bsp_push_constants_t frag_constants = { time: vr_data.realtime };
+	push_fragconst (&frag_constants, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspGBuffer]);
 	for (size_t i = 0; i < bctx->texture_chains.size; i++) {
 		vulktex_t  *tex;
@@ -1081,9 +1100,9 @@ Vulkan_DrawWorld (qfv_renderframe_t *rFrame)
 					  bframe->cmdSet.a[QFV_bspGBuffer]);
 
 		for (ec = tex->elechain; ec; ec = ec->next) {
-			draw_elechain (ec, bctx->layout, dfunc,
+			draw_elechain (ec, bctx->layout, device,
 						   bframe->cmdSet.a[QFV_bspDepth]);
-			draw_elechain (ec, bctx->layout, dfunc,
+			draw_elechain (ec, bctx->layout, device,
 						   bframe->cmdSet.a[QFV_bspGBuffer]);
 			reset_elechain (ec);
 		}
@@ -1125,10 +1144,10 @@ Vulkan_DrawWaterSurfaces (qfv_renderframe_t *rFrame)
 		return;
 
 	turb_begin (rFrame);
-	push_transform (identity, bctx->layout, dfunc,
+	push_transform (identity, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspTurb]);
-	fragconst_t frag_constants = { time: vr_data.realtime };
-	push_fragconst (&frag_constants, bctx->layout, dfunc,
+	bsp_push_constants_t frag_constants = { time: vr_data.realtime };
+	push_fragconst (&frag_constants, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspTurb]);
 	for (is = bctx->waterchain; is; is = is->tex_chain) {
 		msurface_t *surf = is->surface;
@@ -1137,7 +1156,7 @@ Vulkan_DrawWaterSurfaces (qfv_renderframe_t *rFrame)
 				bind_texture (tex, 1, bctx->layout, dfunc,
 							  bframe->cmdSet.a[QFV_bspTurb]);
 				for (ec = tex->elechain; ec; ec = ec->next) {
-					draw_elechain (ec, bctx->layout, dfunc,
+					draw_elechain (ec, bctx->layout, device,
 								   bframe->cmdSet.a[QFV_bspTurb]);
 					reset_elechain (ec);
 				}
@@ -1154,7 +1173,7 @@ Vulkan_DrawWaterSurfaces (qfv_renderframe_t *rFrame)
 		bind_texture (tex, 1, bctx->layout, dfunc,
 					  bframe->cmdSet.a[QFV_bspTurb]);
 		for (ec = tex->elechain; ec; ec = ec->next) {
-			draw_elechain (ec, bctx->layout, dfunc,
+			draw_elechain (ec, bctx->layout, device,
 						   bframe->cmdSet.a[QFV_bspTurb]);
 			reset_elechain (ec);
 		}
@@ -1187,10 +1206,10 @@ Vulkan_DrawSky (qfv_renderframe_t *rFrame)
 	vulktex_t skybox = { .descriptor = bctx->skybox_descriptor };
 	bind_texture (&skybox, 2, bctx->layout, dfunc,
 				  bframe->cmdSet.a[QFV_bspSky]);
-	push_transform (identity, bctx->layout, dfunc,
+	push_transform (identity, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspSky]);
-	fragconst_t frag_constants = { time: vr_data.realtime };
-	push_fragconst (&frag_constants, bctx->layout, dfunc,
+	bsp_push_constants_t frag_constants = { time: vr_data.realtime };
+	push_fragconst (&frag_constants, bctx->layout, device,
 					bframe->cmdSet.a[QFV_bspSky]);
 	for (is = bctx->sky_chain; is; is = is->tex_chain) {
 		msurface_t *surf = is->surface;
@@ -1199,7 +1218,7 @@ Vulkan_DrawSky (qfv_renderframe_t *rFrame)
 				bind_texture (tex, 1, bctx->layout, dfunc,
 							  bframe->cmdSet.a[QFV_bspSky]);
 				for (ec = tex->elechain; ec; ec = ec->next) {
-					draw_elechain (ec, bctx->layout, dfunc,
+					draw_elechain (ec, bctx->layout, device,
 								   bframe->cmdSet.a[QFV_bspSky]);
 					reset_elechain (ec);
 				}
@@ -1216,7 +1235,7 @@ Vulkan_DrawSky (qfv_renderframe_t *rFrame)
 		bind_texture (tex, 1, bctx->layout, dfunc,
 					  bframe->cmdSet.a[QFV_bspSky]);
 		for (ec = tex->elechain; ec; ec = ec->next) {
-			draw_elechain (ec, bctx->layout, dfunc,
+			draw_elechain (ec, bctx->layout, device,
 						   bframe->cmdSet.a[QFV_bspSky]);
 			reset_elechain (ec);
 		}

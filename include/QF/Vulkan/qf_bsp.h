@@ -93,11 +93,6 @@ typedef struct bspframe_s {
 	qfv_cmdbufferset_t cmdSet;
 } bspframe_t;
 
-typedef struct fragconst_s {
-	quat_t      fog;
-	float       time;
-} fragconst_t;
-
 typedef struct bspframeset_s
     DARRAY_TYPE (bspframe_t) bspframeset_t;
 
