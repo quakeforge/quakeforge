@@ -183,6 +183,13 @@ Transform_GetWorldMatrix (const transform_t *transform, mat4f_t mat)
 	memcpy (mat, h->worldMatrix.a[transform->index], sizeof (mat4f_t));
 }
 
+const vec4f_t *
+Transform_GetWorldMatrixPtr (const transform_t *transform)
+{
+	hierarchy_t *h = transform->hierarchy;
+	return h->worldMatrix.a[transform->index];
+}
+
 void
 Transform_GetWorldInverse (const transform_t *transform, mat4f_t mat)
 {

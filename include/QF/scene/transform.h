@@ -61,6 +61,8 @@ uint32_t Transform_GetTag (const transform_t *transform) __attribute__((pure));
 void Transform_GetLocalMatrix (const transform_t *transform, mat4f_t mat);
 void Transform_GetLocalInverse (const transform_t *transform, mat4f_t mat);
 void Transform_GetWorldMatrix (const transform_t *transform, mat4f_t mat);
+// XXX the pointer may be invalidated by hierarchy updates
+const vec4f_t *Transform_GetWorldMatrixPtr (const transform_t *transform) __attribute__((pure));
 void Transform_GetWorldInverse (const transform_t *transform, mat4f_t mat);
 vec4f_t Transform_GetLocalPosition (const transform_t *transform) __attribute__((pure));
 void Transform_SetLocalPosition (transform_t *transform, vec4f_t position);
