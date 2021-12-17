@@ -67,6 +67,15 @@
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
+typedef struct {
+	mat4f_t     mat;
+	float       blend;
+	byte        colorA[4];
+	byte        colorB[4];
+	vec4f_t     base_color;
+	vec4f_t     fog;
+} alias_push_constants_t;
+
 static const char * __attribute__((used)) alias_pass_names[] = {
 	"depth",
 	"g-buffer",
@@ -82,8 +91,7 @@ static QFV_Subpass subpass_map[] = {
 static void
 emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 			   qfv_alias_skin_t *skin,
-			   void *vert_constants, int vert_size,
-			   void *frag_constants, int frag_size,
+			   uint32_t numPC, qfv_push_constants_t *constants,
 			   aliashdr_t *hdr, qfv_renderframe_t *rFrame)
 {
 	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
@@ -108,12 +116,8 @@ emit_commands (VkCommandBuffer cmd, int pose1, int pose2,
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, bindingCount, buffers, offsets);
 	dfunc->vkCmdBindIndexBuffer (cmd, mesh->index_buffer, 0,
 								 VK_INDEX_TYPE_UINT32);
-	dfunc->vkCmdPushConstants (cmd, actx->layout, VK_SHADER_STAGE_VERTEX_BIT,
-							   0, vert_size, vert_constants);
+	QFV_PushConstants (device, cmd, actx->layout, numPC, constants);
 	if (skin) {
-		dfunc->vkCmdPushConstants (cmd, actx->layout,
-								   VK_SHADER_STAGE_FRAGMENT_BIT,
-								   68, frag_size, frag_constants);
 		VkDescriptorSet sets[] = {
 			skin->descriptor,
 		};
@@ -133,24 +137,34 @@ Vulkan_DrawAlias (entity_t *ent, qfv_renderframe_t *rFrame)
 	aliashdr_t *hdr;
 	qfv_alias_skin_t *skin;
 	animation_t *animation = &ent->animation;
-	struct {
-		mat4f_t     mat;
-		float       blend;
-	}           vertex_constants;
-	struct {
-		byte        colorA[4];
-		byte        colorB[4];
-		float       pad;
-		float       base_color[4];
-		float       fog[4];
-	}           fragment_constants;
+	alias_push_constants_t constants = {};
 
 	if (!(hdr = model->aliashdr)) {
 		hdr = Cache_Get (&model->cache);
 	}
 
-	Transform_GetWorldMatrix (ent->transform, vertex_constants.mat);
-	vertex_constants.blend = R_AliasGetLerpedFrames (animation, hdr);
+	constants.blend = R_AliasGetLerpedFrames (animation, hdr);
+
+	qfv_push_constants_t push_constants[] = {
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (alias_push_constants_t, mat),
+			sizeof (mat4f_t), Transform_GetWorldMatrixPtr (ent->transform) },
+		{ VK_SHADER_STAGE_VERTEX_BIT,
+			field_offset (alias_push_constants_t, blend),
+			sizeof (float), &constants.blend },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (alias_push_constants_t, colorA),
+			sizeof (constants.colorA), constants.colorA },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (alias_push_constants_t, colorB),
+			sizeof (constants.colorB), constants.colorB },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (alias_push_constants_t, base_color),
+			sizeof (constants.base_color), &constants.base_color },
+		{ VK_SHADER_STAGE_FRAGMENT_BIT,
+			field_offset (alias_push_constants_t, fog),
+			sizeof (constants.fog), &constants.fog },
+	};
 
 	if (0/*XXX ent->skin && ent->skin->tex*/) {
 		//skin = ent->skin->tex;
@@ -159,22 +173,17 @@ Vulkan_DrawAlias (entity_t *ent, qfv_renderframe_t *rFrame)
 		skindesc = R_AliasGetSkindesc (animation, ent->renderer.skinnum, hdr);
 		skin = (qfv_alias_skin_t *) ((byte *) hdr + skindesc->skin);
 	}
-	fragment_constants.pad = 0;
-	QuatCopy (ent->renderer.colormod, fragment_constants.base_color);
-	QuatCopy (skin->colora, fragment_constants.colorA);
-	QuatCopy (skin->colorb, fragment_constants.colorB);
-	QuatZero (fragment_constants.fog);
+	QuatCopy (ent->renderer.colormod, constants.base_color);
+	QuatCopy (skin->colora, constants.colorA);
+	QuatCopy (skin->colorb, constants.colorB);
+	QuatZero (constants.fog);
 
 	emit_commands (aframe->cmdSet.a[QFV_aliasDepth],
 				   ent->animation.pose1, ent->animation.pose2,
-				   0, &vertex_constants, 17 * sizeof (float),
-				   &fragment_constants, sizeof (fragment_constants),
-				   hdr, rFrame);
+				   0, 2, push_constants, hdr, rFrame);
 	emit_commands (aframe->cmdSet.a[QFV_aliasGBuffer],
 				   ent->animation.pose1, ent->animation.pose2,
-				   skin, &vertex_constants, 17 * sizeof (float),
-				   &fragment_constants, sizeof (fragment_constants),
-				   hdr, rFrame);
+				   skin, 6, push_constants, hdr, rFrame);
 }
 
 static void
