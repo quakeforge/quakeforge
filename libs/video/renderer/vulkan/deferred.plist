@@ -253,7 +253,7 @@
 			{
 				format = $properties.images.color.format;
 				samples = 1;
-				loadOp = dont_care;
+				loadOp = clear;
 				storeOp = dont_care;
 				stencilLoadOp = dont_care;
 				stencilStoreOp = dont_care;
@@ -263,7 +263,7 @@
 			{
 				format = $properties.images.emission.format;
 				samples = 1;
-				loadOp = dont_care;
+				loadOp = clear;
 				storeOp = dont_care;
 				stencilLoadOp = dont_care;
 				stencilStoreOp = dont_care;
@@ -303,7 +303,7 @@
 			{
 				format = $properties.images.translucent.format;
 				samples = 1;
-				loadOp = dont_care;
+				loadOp = clear;
 				storeOp = dont_care;
 				stencilLoadOp = dont_care;
 				stencilStoreOp = dont_care;
