@@ -649,6 +649,8 @@ IMT_ProcessButton (int button, int state)
 	while (imt) {
 		in_buttonbinding_t *b = imt->button_bindings.a[button];
 		if (b) {
+			// ensure IN_ButtonAction never sees button id 0
+			button += 1;
 			switch (b->type) {
 				case inb_button:
 					IN_ButtonAction (b->button, button, state);
