@@ -142,6 +142,16 @@
 					},
 					{
 						imt = imt_demo;
+						num = 61;
+						binding = menu_load;
+					},
+					{
+						imt = imt_demo;
+						num = 67;
+						binding = "echo Quickloading...; wait; load quick";
+					},
+					{
+						imt = imt_demo;
 						num = 68;
 						binding = quit;
 					},
