@@ -448,12 +448,12 @@ draw_pic (float x, float y, int w, int h, qpic_t *pic,
 		  int srcx, int srcy, int srcw, int srch,
 		  float *color, drawframe_t *frame)
 {
-	if (frame->num_quads + VERTS_PER_QUAD > MAX_QUADS) {
+	if (frame->num_quads >= MAX_QUADS) {
 		return;
 	}
 
 	drawvert_t *verts = frame->verts + frame->num_quads * VERTS_PER_QUAD;
-	frame->num_quads += VERTS_PER_QUAD;
+	frame->num_quads++;
 
 	subpic_t   *subpic = *(subpic_t **) pic->data;
 	srcx += subpic->rect->x;
