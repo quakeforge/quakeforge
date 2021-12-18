@@ -151,6 +151,7 @@ sw32_R_Init (void)
 	sw32_Draw_Init ();
 	SCR_Init ();
 	sw32_R_InitTurb ();
+	sw32_R_InitParticles ();
 
 	Cmd_AddCommand ("timerefresh", sw32_R_TimeRefresh_f, "Tests the current "
 					"refresh rate for the current location");

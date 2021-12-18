@@ -131,6 +131,7 @@ sw_R_Init (void)
 #endif
 
 	R_InitTurb ();
+	R_InitParticles ();
 
 	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f, "Tests the current "
 					"refresh rate for the current location");
