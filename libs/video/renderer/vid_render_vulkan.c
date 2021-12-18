@@ -157,33 +157,45 @@ vulkan_R_RenderFrame (SCR_Func *scr_funcs)
 		__auto_type rp = vulkan_ctx->renderPasses.a[i];
 		__auto_type rpFrame = &rp->frames.a[vulkan_ctx->curFrame];
 
-		frame->framebuffer = rp->framebuffers->a[imageIndex];
-		renderPassInfo.framebuffer = frame->framebuffer,
-		renderPassInfo.renderPass = rp->renderpass;
-		renderPassInfo.clearValueCount = rp->clearValues->size;
-		renderPassInfo.pClearValues = rp->clearValues->a;
+		if (rpFrame->renderpass) {
+			frame->framebuffer = rp->framebuffers->a[imageIndex];
+			renderPassInfo.framebuffer = frame->framebuffer,
+			renderPassInfo.renderPass = rp->renderpass;
+			renderPassInfo.clearValueCount = rp->clearValues->size;
+			renderPassInfo.pClearValues = rp->clearValues->a;
 
-		dfunc->vkCmdBeginRenderPass (frame->cmdBuffer, &renderPassInfo,
-									 rpFrame->subpassContents);
-
-		for (int j = 0; j < rpFrame->subpassCount; j++) {
-			__auto_type cmdSet = &rpFrame->subpassCmdSets[j];
-			if (cmdSet->size) {
-				dfunc->vkCmdExecuteCommands (frame->cmdBuffer,
-											 cmdSet->size, cmdSet->a);
-			}
-			// reset for next time around
-			cmdSet->size = 0;
-
-			//Regardless of whether any commands were submitted for this
-			//subpass, must step through each and every subpass, otherwise
-			//the attachments won't be transitioned correctly.
-			if (j < rpFrame->subpassCount - 1) {
-				dfunc->vkCmdNextSubpass (frame->cmdBuffer,
+			dfunc->vkCmdBeginRenderPass (frame->cmdBuffer, &renderPassInfo,
 										 rpFrame->subpassContents);
+
+			for (int j = 0; j < rpFrame->subpassCount; j++) {
+				__auto_type cmdSet = &rpFrame->subpassCmdSets[j];
+				if (cmdSet->size) {
+					dfunc->vkCmdExecuteCommands (frame->cmdBuffer,
+												 cmdSet->size, cmdSet->a);
+				}
+				// reset for next time around
+				cmdSet->size = 0;
+
+				//Regardless of whether any commands were submitted for this
+				//subpass, must step through each and every subpass, otherwise
+				//the attachments won't be transitioned correctly.
+				if (j < rpFrame->subpassCount - 1) {
+					dfunc->vkCmdNextSubpass (frame->cmdBuffer,
+											 rpFrame->subpassContents);
+				}
+			}
+			dfunc->vkCmdEndRenderPass (frame->cmdBuffer);
+		} else {
+			for (int j = 0; j < rpFrame->subpassCount; j++) {
+				__auto_type cmdSet = &rpFrame->subpassCmdSets[j];
+				if (cmdSet->size) {
+					dfunc->vkCmdExecuteCommands (frame->cmdBuffer,
+												 cmdSet->size, cmdSet->a);
+				}
+				// reset for next time around
+				cmdSet->size = 0;
 			}
 		}
-		dfunc->vkCmdEndRenderPass (frame->cmdBuffer);
 	}
 
 	if (vulkan_ctx->capture_callback) {
