@@ -61,9 +61,8 @@ void R_InitSprites (void);
 
 extern unsigned int r_maxparticles;
 extern unsigned int numparticles;
-extern struct particle_s *active_particles;
-extern struct particle_s *free_particles;
 extern struct particle_s *particles;
-extern struct particle_s **freeparticles;
+extern struct partparm_s *partparams;
+extern const int **partramps;
 
 #endif // _R_DYNAMIC_H

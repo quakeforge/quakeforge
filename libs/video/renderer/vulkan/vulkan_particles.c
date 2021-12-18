@@ -67,130 +67,130 @@ Vulkan_InitParticles (vulkan_ctx_t *ctx)
 }
 
 static void
-R_RocketTrail_QF (const entity_t *ent)
+R_RocketTrail_QF (vec4f_t start, vec4f_t end)
 {
 }
 
 static void
-R_GrenadeTrail_QF (const entity_t *ent)
+R_GrenadeTrail_QF (vec4f_t start, vec4f_t end)
 {
 }
 
 static void
-R_BloodTrail_QF (const entity_t *ent)
+R_BloodTrail_QF (vec4f_t start, vec4f_t end)
 {
 }
 
 static void
-R_SlightBloodTrail_QF (const entity_t *ent)
+R_SlightBloodTrail_QF (vec4f_t start, vec4f_t end)
 {
 }
 
 static void
-R_WizTrail_QF (const entity_t *ent)
+R_WizTrail_QF (vec4f_t start, vec4f_t end)
 {
 }
 
 static void
-R_FlameTrail_QF (const entity_t *ent)
+R_FlameTrail_QF (vec4f_t start, vec4f_t end)
 {
 }
 
 static void
-R_VoorTrail_QF (const entity_t *ent)
+R_VoorTrail_QF (vec4f_t start, vec4f_t end)
 {
 }
 
 static void
-R_GlowTrail_QF (const entity_t *ent, int glow_color)
+R_GlowTrail_QF (vec4f_t start, vec4f_t end, int glow_color)
 {
 }
 
 static void
-R_RunParticleEffect_QF (const vec3_t org, const vec3_t dir, int color,
+R_RunParticleEffect_QF (vec4f_t org, vec4f_t dir, int color,
 					    int count)
 {
 }
 
 static void
-R_BloodPuffEffect_QF (const vec3_t org, int count)
+R_BloodPuffEffect_QF (vec4f_t org, int count)
 {
 }
 
 static void
-R_GunshotEffect_QF (const vec3_t org, int count)
+R_GunshotEffect_QF (vec4f_t org, int count)
 {
 }
 
 static void
-R_LightningBloodEffect_QF (const vec3_t org)
+R_LightningBloodEffect_QF (vec4f_t org)
 {
 }
 
 static void
-R_SpikeEffect_QF (const vec3_t org)
+R_SpikeEffect_QF (vec4f_t org)
 {
 }
 
 static void
-R_KnightSpikeEffect_QF (const vec3_t org)
+R_KnightSpikeEffect_QF (vec4f_t org)
 {
 }
 
 static void
-R_SuperSpikeEffect_QF (const vec3_t org)
+R_SuperSpikeEffect_QF (vec4f_t org)
 {
 }
 
 static void
-R_WizSpikeEffect_QF (const vec3_t org)
+R_WizSpikeEffect_QF (vec4f_t org)
 {
 }
 
 static void
-R_BlobExplosion_QF (const vec3_t org)
+R_BlobExplosion_QF (vec4f_t org)
 {
 }
 
 static void
-R_ParticleExplosion_QF (const vec3_t org)
+R_ParticleExplosion_QF (vec4f_t org)
 {
 }
 
 static void
-R_ParticleExplosion2_QF (const vec3_t org, int colorStart, int colorLength)
+R_ParticleExplosion2_QF (vec4f_t org, int colorStart, int colorLength)
 {
 }
 
 static void
-R_LavaSplash_QF (const vec3_t org)
+R_LavaSplash_QF (vec4f_t org)
 {
 }
 
 static void
-R_TeleportSplash_QF (const vec3_t org)
+R_TeleportSplash_QF (vec4f_t org)
 {
 }
 
 static void
-R_DarkFieldParticles_ID (const entity_t *ent)
+R_DarkFieldParticles_ID (vec4f_t org)
 {
 }
 
 static void
-R_EntityParticles_ID (const entity_t *ent)
+R_EntityParticles_ID (vec4f_t org)
 {
 }
 
 static void
-R_Particle_New (ptype_t type, int texnum, const vec3_t org,
-				float scale, const vec3_t vel, float die,
+R_Particle_New (ptype_t type, int texnum, vec4f_t org,
+				float scale, vec4f_t vel, float die,
 				int color, float alpha, float ramp)
 {
 }
 
 static void
-R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org,
+R_Particle_NewRandom (ptype_t type, int texnum, vec4f_t org,
 					  int org_fuzz, float scale, int vel_fuzz,
 					  float die, int color, float alpha,
 					  float ramp)

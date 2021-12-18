@@ -118,35 +118,37 @@ CL_ModelEffects (entity_t *ent, int num, int glow_color, double time)
 {
 	dlight_t   *dl;
 	model_t    *model = ent->renderer.model;
+	vec4f_t     old_origin = ent->old_origin;
+	vec4f_t     ent_origin = Transform_GetWorldPosition (ent->transform);
 
 	// add automatic particle trails
 	if (model->flags & EF_ROCKET) {
 		dl = r_funcs->R_AllocDlight (num);
 		if (dl) {
-			VectorCopy (Transform_GetWorldPosition (ent->transform),
-						dl->origin);
+			VectorCopy (ent_origin, dl->origin);
 			dl->radius = 200.0;
 			dl->die = time + 0.1;
 			//FIXME VectorCopy (r_firecolor->vec, dl->color);
 			VectorSet (0.9, 0.7, 0.0, dl->color);
 			dl->color[3] = 0.7;
 		}
-		r_funcs->particles->R_RocketTrail (ent);
+		r_funcs->particles->R_RocketTrail (old_origin, ent_origin);
 	} else if (model->flags & EF_GRENADE)
-		r_funcs->particles->R_GrenadeTrail (ent);
+		r_funcs->particles->R_GrenadeTrail (old_origin, ent_origin);
 	else if (model->flags & EF_GIB)
-		r_funcs->particles->R_BloodTrail (ent);
+		r_funcs->particles->R_BloodTrail (old_origin, ent_origin);
 	else if (model->flags & EF_ZOMGIB)
-		r_funcs->particles->R_SlightBloodTrail (ent);
+		r_funcs->particles->R_SlightBloodTrail (old_origin, ent_origin);
 	else if (model->flags & EF_TRACER)
-		r_funcs->particles->R_WizTrail (ent);
+		r_funcs->particles->R_WizTrail (old_origin, ent_origin);
 	else if (model->flags & EF_TRACER2)
-		r_funcs->particles->R_FlameTrail (ent);
+		r_funcs->particles->R_FlameTrail (old_origin, ent_origin);
 	else if (model->flags & EF_TRACER3)
-		r_funcs->particles->R_VoorTrail (ent);
+		r_funcs->particles->R_VoorTrail (old_origin, ent_origin);
 	else if (model->flags & EF_GLOWTRAIL)
 		if (r_funcs->particles->R_GlowTrail)
-			r_funcs->particles->R_GlowTrail (ent, glow_color);
+			r_funcs->particles->R_GlowTrail (old_origin, ent_origin,
+											 glow_color);
 }
 
 void
@@ -171,10 +173,10 @@ CL_MuzzleFlash (vec4f_t position, vec4f_t fv, float zoffset, int num,
 void
 CL_EntityEffects (int num, entity_t *ent, entity_state_t *state, double time)
 {
+	vec4f_t     position = Transform_GetWorldPosition (ent->transform);
 	if (state->effects & EF_BRIGHTFIELD)
-		r_funcs->particles->R_EntityParticles (ent);
+		r_funcs->particles->R_EntityParticles (position);
 	if (state->effects & EF_MUZZLEFLASH) {
-		vec4f_t     position = Transform_GetWorldPosition (ent->transform);
 		vec4f_t     fv = Transform_Forward (ent->transform);
 		CL_MuzzleFlash (position, fv, 16, num, time);
 	}

@@ -47,7 +47,7 @@ D_DrawParticle (particle_t *pparticle)
 	int         i, izi, pix, count, u, v;
 
 	// transform point
-	VectorSubtract (pparticle->org, r_origin, local);
+	VectorSubtract (pparticle->pos, r_origin, local);
 
 	transformed[0] = DotProduct (local, r_pright);
 	transformed[1] = DotProduct (local, r_pup);
@@ -84,7 +84,7 @@ D_DrawParticle (particle_t *pparticle)
 		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
-				pdest[0] = pparticle->color;
+				pdest[0] = pparticle->icolor;
 			}
 		}
 		break;
@@ -94,12 +94,12 @@ D_DrawParticle (particle_t *pparticle)
 		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
-				pdest[0] = pparticle->color;
+				pdest[0] = pparticle->icolor;
 			}
 
 			if (pz[1] <= izi) {
 				pz[1] = izi;
-				pdest[1] = pparticle->color;
+				pdest[1] = pparticle->icolor;
 			}
 		}
 		break;
@@ -109,17 +109,17 @@ D_DrawParticle (particle_t *pparticle)
 		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
-				pdest[0] = pparticle->color;
+				pdest[0] = pparticle->icolor;
 			}
 
 			if (pz[1] <= izi) {
 				pz[1] = izi;
-				pdest[1] = pparticle->color;
+				pdest[1] = pparticle->icolor;
 			}
 
 			if (pz[2] <= izi) {
 				pz[2] = izi;
-				pdest[2] = pparticle->color;
+				pdest[2] = pparticle->icolor;
 			}
 		}
 		break;
@@ -129,22 +129,22 @@ D_DrawParticle (particle_t *pparticle)
 		for (; count; count--, pz += d_zwidth, pdest += screenwidth) {
 			if (pz[0] <= izi) {
 				pz[0] = izi;
-				pdest[0] = pparticle->color;
+				pdest[0] = pparticle->icolor;
 			}
 
 			if (pz[1] <= izi) {
 				pz[1] = izi;
-				pdest[1] = pparticle->color;
+				pdest[1] = pparticle->icolor;
 			}
 
 			if (pz[2] <= izi) {
 				pz[2] = izi;
-				pdest[2] = pparticle->color;
+				pdest[2] = pparticle->icolor;
 			}
 
 			if (pz[3] <= izi) {
 				pz[3] = izi;
-				pdest[3] = pparticle->color;
+				pdest[3] = pparticle->icolor;
 			}
 		}
 		break;
@@ -155,7 +155,7 @@ D_DrawParticle (particle_t *pparticle)
 			for (i = 0; i < pix; i++) {
 				if (pz[i] <= izi) {
 					pz[i] = izi;
-					pdest[i] = pparticle->color;
+					pdest[i] = pparticle->icolor;
 				}
 			}
 		}

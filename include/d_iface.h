@@ -63,27 +63,37 @@ typedef enum {
 } ptextype_t;
 
 typedef struct particle_s particle_t;
-typedef void (*pt_phys_func)(particle_t *);
-
-pt_phys_func R_ParticlePhysics (ptype_t type) __attribute__((pure));
 
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
-struct particle_s
-{
-// driver-usable fields
-	vec3_t		org;
-	int			color;
-	float		alpha;
+struct particle_s {
+	vec4f_t     pos;
+	vec4f_t     vel;
+
+	union {
+		struct {
+			int			icolor;
+			int         pad[2];
+			float		alpha;
+		};
+		vec4f_t     color;
+	};
+
 	ptextype_t	tex;
-	float		scale;
-// drivers never touch the following fields
-	vec3_t		vel;
-	ptype_t		type;
-	float		die;
 	float		ramp;
-	pt_phys_func phys;
-	particle_t *next;
+	float		scale;
+	float		live;
 };
+
+typedef struct partparm_s {
+	vec4f_t     drag;	// drag[3] is grav scale
+	float       ramp;
+	float       ramp_max;
+	float       scale_rate;
+	float       alpha_rate;
+} partparm_t;
+
+partparm_t R_ParticlePhysics (ptype_t type) __attribute__((pure));
+const int *R_ParticleRamp (ptype_t type) __attribute__((pure));
 
 #define PARTICLE_Z_CLIP	8.0
 

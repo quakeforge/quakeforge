@@ -291,6 +291,7 @@ locs_draw (vec4f_t simorg)
 	dlight_t   *dl;
 	location_t *nearloc;
 	vec4f_t     trueloc;
+	vec4f_t     zero = {};
 	int         i;
 
 	nearloc = locs_find (simorg);
@@ -307,12 +308,12 @@ locs_draw (vec4f_t simorg)
 		}
 		trueloc = nearloc->loc;
 		r_funcs->particles->R_Particle_New (pt_smokecloud, part_tex_smoke,
-				&trueloc[0], 2.0,//FIXME
-				vec3_origin, r_data->realtime + 9.0, 254,
+				trueloc, 2.0,
+				zero, r_data->realtime + 9.0, 254,
 				0.25 + qfrandom (0.125), 0.0);
 		for (i = 0; i < 15; i++)
 			r_funcs->particles->R_Particle_NewRandom (pt_fallfade,
-					part_tex_dot, &trueloc[0], 12,//FIXME
+					part_tex_dot, trueloc, 12,
 					0.7, 96, r_data->realtime + 5.0,
 					104 + (rand () & 7), 1.0, 0.0);
 	}

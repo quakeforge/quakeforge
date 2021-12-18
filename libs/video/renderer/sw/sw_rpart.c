@@ -49,11 +49,56 @@
 #include "compat.h"
 #include "r_internal.h"
 
-static int		ramp1[8] = { 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61 };
-//static int	ramp2[8] = { 0x6f, 0x6e, 0x6d, 0x6c, 0x6b, 0x6a, 0x68, 0x66 };
-static int		ramp3[8] = { 0x6d, 0x6b, 6, 5, 4, 3 };
-
 static mtstate_t mt;	// private PRNG state
+
+static vec4f_t
+roffs (int mod)
+{
+	vec4f_t     offs = {
+		(mtwist_rand (&mt) % mod) - 0.5 * (mod - 1),
+		(mtwist_rand (&mt) % mod) - 0.5 * (mod - 1),
+		(mtwist_rand (&mt) % mod) - 0.5 * (mod - 1),
+		0
+	};
+	return offs;
+}
+
+static vec4f_t
+tracer_vel (int tracercount, vec4f_t vec)
+{
+	if (tracercount & 1) {
+		return (vec4f_t) { vec[1], -vec[0], 0, 0 };
+	} else {
+		return (vec4f_t) { -vec[1], vec[0], 0, 0 };
+	}
+}
+
+static void
+add_particle (ptype_t type, vec4f_t pos, vec4f_t vel, float live, int color,
+			  float ramp)
+{
+	if (numparticles >= r_maxparticles)
+		return;
+	particle_t *p = &particles[numparticles];
+	partparm_t *parm = &partparams[numparticles];
+	const int **rampptr = &partramps[numparticles];
+	numparticles += 1;
+
+	p->pos = pos;
+	p->vel = vel;
+	p->icolor = color;
+	p->alpha = 1;
+	p->tex = 0;
+	p->ramp = ramp;
+	p->scale = 1;
+	p->live = live;
+
+	*parm = R_ParticlePhysics (type);
+	*rampptr = R_ParticleRamp (type);
+	if (*rampptr) {
+		p->icolor = (*rampptr) [(int) p->ramp];
+	}
+}
 
 void
 R_InitParticles (void)
@@ -64,26 +109,19 @@ R_InitParticles (void)
 void
 R_ClearParticles (void)
 {
-	unsigned int i;
-
-	free_particles = &particles[0];
-	active_particles = NULL;
-
-	for (i = 0; i < r_maxparticles; i++)
-		particles[i].next = &particles[i + 1];
-	if (r_maxparticles)
-		particles[r_maxparticles - 1].next = NULL;
+	if (r_maxparticles) {
+		memset (particles, 0, r_maxparticles * sizeof (*particles));
+	}
 }
 
 void
 R_ReadPointFile_f (void)
 {
 	QFile      *f;
-	vec3_t      org;
 	int         c, r;
-	particle_t *p;
 	const char *name;
 	char       *mapname;
+	vec4f_t     zero = {};
 
 	mapname = strdup (r_worldentity.renderer.model->path);
 	if (!mapname)
@@ -103,6 +141,7 @@ R_ReadPointFile_f (void)
 	c = 0;
 	for (;;) {
 		char        buf[64];
+		vec4f_t     org = { 0, 0, 0, 1 };
 
 		Qgets (f, buf, sizeof (buf));
 		r = sscanf (buf, "%f %f %f\n", &org[0], &org[1], &org[2]);
@@ -110,21 +149,11 @@ R_ReadPointFile_f (void)
 			break;
 		c++;
 
-		if (!free_particles) {
-			Sys_Printf ("Not enough free particles\n");
-			break;
-		}
-		p = free_particles;
-		free_particles = p->next;
-		p->next = active_particles;
-		active_particles = p;
-
-		p->die = 99999;
-		p->color = (-c) & 15;
-		p->type = pt_static;
-		p->phys = R_ParticlePhysics (p->type);
-		VectorZero (p->vel);
-		VectorCopy (org, p->org);
+		//if (!free_particles) {
+		//	Sys_Printf ("Not enough free particles\n");
+		//	break;
+		//}
+		add_particle (pt_static, org, zero, INFINITY, (-c) & 15, 0);
 	}
 
 	Qclose (f);
@@ -132,324 +161,218 @@ R_ReadPointFile_f (void)
 }
 
 static void
-R_ParticleExplosion_QF (const vec3_t org)
+R_ParticleExplosion_QF (vec4f_t org)
 {
-	int         i, j;
-	particle_t *p;
-
 	if (!r_particles->int_val)
 		return;
 
-	for (i = 0; i < 1024; i++) {
-		if (!free_particles)
-			return;
-		p = free_particles;
-		free_particles = p->next;
-		p->next = active_particles;
-		active_particles = p;
-
-		p->die = vr_data.realtime + 5;
-		p->color = ramp1[0];
-		p->ramp = mtwist_rand (&mt) & 3;
-		if (i & 1)
-			p->type = pt_explode;
-		else
-			p->type = pt_explode2;
-		p->phys = R_ParticlePhysics (p->type);
-		for (j = 0; j < 3; j++) {
-			p->org[j] = org[j] + ((mtwist_rand (&mt) % 32) - 16);
-			p->vel[j] = (mtwist_rand (&mt) % 512) - 256;
-		}
+	for (int i = 0; i < 1024; i++) {
+		ptype_t     type = i & 1 ? pt_explode2 : pt_explode;
+		add_particle (type, org + roffs (32), roffs (512), 5,
+					  0, mtwist_rand (&mt) & 3);
 	}
 }
 
 static void
-R_ParticleExplosion2_QF (const vec3_t org, int colorStart, int colorLength)
+R_ParticleExplosion2_QF (vec4f_t org, int colorStart, int colorLength)
 {
-	int              i, j;
 	int              colorMod = 0;
-	particle_t      *p;
 
-	for (i=0; i<512; i++) {
-		if (!free_particles)
-			return;
-		p = free_particles;
-		free_particles = p->next;
-		p->next = active_particles;
-		active_particles = p;
-
-		p->die = vr_data.realtime + 0.3;
-		p->color = colorStart + (colorMod % colorLength);
-		colorMod++;
-
-		p->type = pt_blob;
-		p->phys = R_ParticlePhysics (p->type);
-		for (j=0 ; j<3 ; j++) {
-			p->org[j] = org[j] + ((mtwist_rand (&mt)%32)-16);
-			p->vel[j] = (mtwist_rand (&mt)%512)-256;
-		}
+	for (int i=0; i<512; i++) {
+		add_particle (pt_blob, org + roffs (32), roffs (512), 0.3,
+					  colorStart + (colorMod % colorLength), 0);
 	}
 }
 
 static void
-R_BlobExplosion_QF (const vec3_t org)
+R_BlobExplosion_QF (vec4f_t org)
 {
-	int         i, j;
-	particle_t *p;
-
 	if (!r_particles->int_val)
 		return;
 
-	for (i = 0; i < 1024; i++) {
-		if (!free_particles)
-			return;
-		p = free_particles;
-		free_particles = p->next;
-		p->next = active_particles;
-		active_particles = p;
-
-		p->die = vr_data.realtime + 1 + (mtwist_rand (&mt) & 8) * 0.05;
-
-		if (i & 1) {
-			p->type = pt_blob;
-			p->color = 66 + mtwist_rand (&mt) % 6;
-		} else {
-			p->type = pt_blob2;
-			p->color = 150 + mtwist_rand (&mt) % 6;
-		}
-		p->phys = R_ParticlePhysics (p->type);
-		for (j = 0; j < 3; j++) {
-			p->org[j] = org[j] + ((mtwist_rand (&mt) % 32) - 16);
-			p->vel[j] = (mtwist_rand (&mt) % 512) - 256;
-		}
+	for (int i = 0; i < 1024; i++) {
+		ptype_t     type = i & 1 ? pt_blob : pt_blob2;
+		int         color = i & 1 ? 66 : 150;
+		add_particle (type, org + roffs (32), roffs (512),
+					  color + mtwist_rand (&mt) % 6,
+					  (color & ~7) + (mtwist_rand (&mt) & 7), 0);
 	}
 }
 
 static void
-R_RunParticleEffect_QF (const vec3_t org, const vec3_t dir, int color,
-						int count)
+R_RunParticleEffect_QF (vec4f_t org, vec4f_t dir, int color, int count)
 {
-	int         i, j;
-	particle_t *p;
-
 	if (!r_particles->int_val)
 		return;
 
-	for (i = 0; i < count; i++) {
-		if (!free_particles)
-			return;
-		p = free_particles;
-		free_particles = p->next;
-		p->next = active_particles;
-		active_particles = p;
-
-		p->die = vr_data.realtime + 0.1 * (mtwist_rand (&mt) % 5);
-		p->color = (color & ~7) + (mtwist_rand (&mt) & 7);
-		p->type = pt_grav;
-		p->phys = R_ParticlePhysics (p->type);
-		for (j = 0; j < 3; j++) {
-			p->org[j] = org[j] + ((mtwist_rand (&mt) & 15) - 8);
-			p->vel[j] = dir[j];	// + (mtwist_rand (&mt)%300)-150;
-		}
+	for (int i = 0; i < count; i++) {
+		add_particle (pt_slowgrav, org + roffs (16),
+					  dir/* + roffs (300)*/,
+					  0.1 * (mtwist_rand (&mt) % 5),
+					  (color & ~7) + (mtwist_rand (&mt) & 7), 0);
 	}
 }
 
 static void
-R_SpikeEffect_QF (const vec3_t org)
+R_SpikeEffect_QF (vec4f_t org)
 {
-	R_RunParticleEffect_QF (org, vec3_origin, 0, 10);
+	vec4f_t     zero = {};
+	R_RunParticleEffect_QF (org, zero, 0, 10);
 }
 
 static void
-R_SuperSpikeEffect_QF (const vec3_t org)
+R_SuperSpikeEffect_QF (vec4f_t org)
 {
-	R_RunParticleEffect_QF (org, vec3_origin, 0, 20);
+	vec4f_t     zero = {};
+	R_RunParticleEffect_QF (org, zero, 0, 20);
 }
 
 static void
-R_KnightSpikeEffect_QF (const vec3_t org)
+R_KnightSpikeEffect_QF (vec4f_t org)
 {
-	R_RunParticleEffect_QF (org, vec3_origin, 226, 20);
+	vec4f_t     zero = {};
+	R_RunParticleEffect_QF (org, zero, 226, 20);
 }
 
 static void
-R_WizSpikeEffect_QF (const vec3_t org)
+R_WizSpikeEffect_QF (vec4f_t org)
 {
-	R_RunParticleEffect_QF (org, vec3_origin, 20, 30);
+	vec4f_t     zero = {};
+	R_RunParticleEffect_QF (org, zero, 20, 30);
 }
 
 static void
-R_BloodPuffEffect_QF (const vec3_t org, int count)
+R_BloodPuffEffect_QF (vec4f_t org, int count)
 {
-	R_RunParticleEffect_QF (org, vec3_origin, 73, count);
+	vec4f_t     zero = {};
+	R_RunParticleEffect_QF (org, zero, 73, count);
 }
 
 static void
-R_GunshotEffect_QF (const vec3_t org, int count)
+R_GunshotEffect_QF (vec4f_t org, int count)
 {
-	R_RunParticleEffect_QF (org, vec3_origin, 0, count);
+	vec4f_t     zero = {};
+	R_RunParticleEffect_QF (org, zero, 0, count);
 }
 
 static void
-R_LightningBloodEffect_QF (const vec3_t org)
+R_LightningBloodEffect_QF (vec4f_t org)
 {
-	R_RunParticleEffect_QF (org, vec3_origin, 225, 50);
+	vec4f_t     zero = {};
+	R_RunParticleEffect_QF (org, zero, 225, 50);
 }
 
 static void
-R_LavaSplash_QF (const vec3_t org)
+R_LavaSplash_QF (vec4f_t org)
 {
-	int         i, j, k;
-	particle_t *p;
-	float       vel;
-	vec3_t      dir;
-
 	if (!r_particles->int_val)
 		return;
 
-	for (i = -16; i < 16; i++)
-		for (j = -16; j < 16; j++)
-			for (k = 0; k < 1; k++) {
-				if (!free_particles)
-					return;
-				p = free_particles;
-				free_particles = p->next;
-				p->next = active_particles;
-				active_particles = p;
-
-				p->die = vr_data.realtime + 2 + (mtwist_rand (&mt) & 31) * 0.02;
-				p->color = 224 + (mtwist_rand (&mt) & 7);
-				p->type = pt_grav;
-				p->phys = R_ParticlePhysics (p->type);
-
-				dir[0] = j * 8 + (mtwist_rand (&mt) & 7);
-				dir[1] = i * 8 + (mtwist_rand (&mt) & 7);
-				dir[2] = 256;
-
-				p->org[0] = org[0] + dir[0];
-				p->org[1] = org[1] + dir[1];
-				p->org[2] = org[2] + (mtwist_rand (&mt) & 63);
-
-				VectorNormalize (dir);
-				vel = 50 + (mtwist_rand (&mt) & 63);
-				VectorScale (dir, vel, p->vel);
-			}
-}
-
-static void
-R_TeleportSplash_QF (const vec3_t org)
-{
-	int         i, j, k;
-	particle_t *p;
-	float       vel;
-	vec3_t      dir;
-
-	if (!r_particles->int_val)
-		return;
-
-	for (i = -16; i < 16; i += 4)
-		for (j = -16; j < 16; j += 4)
-			for (k = -24; k < 32; k += 4) {
-				if (!free_particles)
-					return;
-				p = free_particles;
-				free_particles = p->next;
-				p->next = active_particles;
-				active_particles = p;
-
-				p->die = vr_data.realtime + 0.2 + (mtwist_rand (&mt) & 7) * 0.02;
-				p->color = 7 + (mtwist_rand (&mt) & 7);
-				p->type = pt_grav;
-				p->phys = R_ParticlePhysics (p->type);
-
-				dir[0] = j * 8;
-				dir[1] = i * 8;
-				dir[2] = k * 8;
-
-				p->org[0] = org[0] + i + (mtwist_rand (&mt) & 3);
-				p->org[1] = org[1] + j + (mtwist_rand (&mt) & 3);
-				p->org[2] = org[2] + k + (mtwist_rand (&mt) & 3);
-
-				VectorNormalize (dir);
-				vel = 50 + (mtwist_rand (&mt) & 63);
-				VectorScale (dir, vel, p->vel);
-			}
-}
-
-static void
-R_DarkFieldParticles_ID (const entity_t *ent)
-{
-	int				i, j, k;
-	unsigned int	rnd;
-	float			vel;
-	particle_t	   *p;
-	vec3_t			dir, org;
-
-	if (!r_particles->int_val)
-		return;
-
-	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
-	for (i = -16; i < 16; i += 8) {
-		for (j = -16; j < 16; j += 8) {
-			for (k = 0; k < 32; k += 8) {
-				if (!free_particles)
-					return;
-				p = free_particles;
-				free_particles = p->next;
-                p->next = active_particles;
-				active_particles = p;
-
-				rnd = mtwist_rand (&mt);
-
-				p->die = vr_data.realtime + 0.2 + (rnd & 7) * 0.02;
-				p->color = 150 + mtwist_rand (&mt) % 6;
-				p->type = pt_slowgrav;
-				p->phys = R_ParticlePhysics (p->type);
-				dir[0] = j * 8;
-				dir[1] = i * 8;
-				dir[2] = k * 8;
-
-				p->org[0] = org[0] + i + ((rnd >> 3) & 3);
-				p->org[1] = org[1] + j + ((rnd >> 5) & 3);
-				p->org[2] = org[2] + k + ((rnd >> 7) & 3);
-
-				VectorNormalize (dir);
-				vel = 50 + ((rnd >> 9) & 63);
-				VectorScale (dir, vel, p->vel);
+	for (int i = -16; i < 16; i++) {
+		for (int j = -16; j < 16; j++) {
+			for (int k = 0; k < 1; k++) {
+				float       vel = 50 + (mtwist_rand (&mt) & 63);
+				vec4f_t     dir = {
+					j * 8 + (mtwist_rand (&mt) & 7),
+					i * 8 + (mtwist_rand (&mt) & 7),
+					256,
+					0
+				};
+				vec4f_t     offs = {
+					dir[0],
+					dir[1],
+					(mtwist_rand (&mt) & 63),
+					0
+				};
+				dir = normalf (dir);
+				add_particle (pt_grav, org + offs, vel * dir,
+							  2 + (mtwist_rand (&mt) & 31) * 0.02,
+							  224 + (mtwist_rand (&mt) & 7), 0);
 			}
 		}
 	}
 }
 
-static vec3_t		avelocities[NUMVERTEXNORMALS];
+static void
+R_TeleportSplash_QF (vec4f_t org)
+{
+	if (!r_particles->int_val)
+		return;
+
+	for (int i = -16; i < 16; i += 4) {
+		for (int j = -16; j < 16; j += 4) {
+			for (int k = -24; k < 32; k += 4) {
+				float       vel = 50 + (mtwist_rand (&mt) & 63);
+				vec4f_t     dir = normalf ((vec4f_t) { j, i, k, 0 } * 8);
+				vec4f_t     offs = {
+					i + (mtwist_rand (&mt) & 3),
+					j + (mtwist_rand (&mt) & 3),
+					k + (mtwist_rand (&mt) & 3),
+					0
+				};
+				add_particle (pt_grav, org + offs, vel * dir,
+							  0.2 + (mtwist_rand (&mt) & 7) * 0.02,
+							  7 + (mtwist_rand (&mt) & 7), 0);
+			}
+		}
+	}
+}
 
 static void
-R_EntityParticles_ID (const entity_t *ent)
+R_DarkFieldParticles_ID (vec4f_t org)
+{
+	if (!r_particles->int_val)
+		return;
+
+	for (int i = -16; i < 16; i += 8) {
+		for (int j = -16; j < 16; j += 8) {
+			for (int k = 0; k < 32; k += 8) {
+				uint32_t    rnd = mtwist_rand (&mt);
+				float       vel = 50 + ((rnd >> 9) & 63);
+				vec4f_t     dir = normalf ((vec4f_t) { j, i, k, 0 } * 8);
+				vec4f_t     offs = {
+					i + ((rnd >> 3) & 3),
+					j + ((rnd >> 5) & 3),
+					k + ((rnd >> 7) & 3),
+					0
+				};
+
+				add_particle (pt_slowgrav, org + offs, vel * dir,
+							  0.2 + (rnd & 7) * 0.02,
+							  150 + mtwist_rand (&mt) % 6, 0);
+			}
+		}
+	}
+}
+
+static vec4f_t  velocities[NUMVERTEXNORMALS];
+static vec4f_t  normals[NUMVERTEXNORMALS] = {
+#include "anorms.h"
+};
+
+static void
+R_EntityParticles_ID (vec4f_t org)
 {
 	int			i;
 	float		angle, sp, sy, cp, cy; // cr, sr
 	float		beamlength = 16.0, dist = 64.0;
-	particle_t *p;
-	vec3_t		forward;
-	vec3_t      org;
 
 	if (!r_particles->int_val)
 		return;
 
-	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
-
 	for (i = 0; i < NUMVERTEXNORMALS; i++) {
 		int         k;
 		for (k = 0; k < 3; k++) {
-			avelocities[i][k] = (mtwist_rand (&mt) & 255) * 0.01;
+			velocities[i][k] = (mtwist_rand (&mt) & 255) * 0.01;
 		}
 	}
 
+	vec4f_t     zero = {};
 	for (i = 0; i < NUMVERTEXNORMALS; i++) {
-		angle = vr_data.realtime * avelocities[i][0];
+		angle = vr_data.realtime * velocities[i][0];
 		cy = cos (angle);
 		sy = sin (angle);
-		angle = vr_data.realtime * avelocities[i][1];
+		angle = vr_data.realtime * velocities[i][1];
 		cp = cos (angle);
 		sp = sin (angle);
 // Next 3 lines results aren't currently used, may be in future. --Despair
@@ -457,355 +380,194 @@ R_EntityParticles_ID (const entity_t *ent)
 //		sr = sin (angle);
 //		cr = cos (angle);
 
-		forward[0] = cp * cy;
-		forward[1] = cp * sy;
-		forward[2] = -sp;
-
-		if (!free_particles)
-			return;
-		p = free_particles;
-		free_particles = p->next;
-		p->next = active_particles;
-		active_particles = p;
-
-		p->die = vr_data.realtime + 0.01;
-		p->color = 0x6f;
-		p->type = pt_explode;
-		p->phys = R_ParticlePhysics (p->type);
-
-		p->org[0] = org[0] + r_avertexnormals[i][0] * dist +
-			forward[0] * beamlength;
-		p->org[1] = org[1] + r_avertexnormals[i][1] * dist +
-			forward[1] * beamlength;
-		p->org[2] = org[2] + r_avertexnormals[i][2] * dist +
-			forward[2] * beamlength;
+		vec4f_t     forward = { cp * cy, cp * sy, -sp, 0 };
+		vec4f_t     pos = org + normals[i] * dist + forward * beamlength;
+		//FIXME 0 velocity?
+		add_particle (pt_explode, pos, zero, 0.01, 0x6f, 0);
 	}
 }
 
 static void
-R_RocketTrail_QF (const entity_t *ent)
+R_RocketTrail_QF (vec4f_t start, vec4f_t end)
 {
-	float		len;
-	int			j;
-	particle_t *p;
-	vec3_t		old_origin, vec;
-	vec3_t		org;
-
 	if (!r_particles->int_val)
 		return;
 
-	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
-	VectorCopy (ent->old_origin, old_origin);
-	VectorSubtract (org, old_origin, vec);
-	len = VectorNormalize (vec);
+	vec4f_t     vec = end - start;
+	float       len = magnitudef (vec)[0];
+	vec = normalf (vec);
 
+	vec4f_t     zero = {};
+	vec4f_t     pos = start;
 	while (len > 0) {
 		len -= 3;
-
-		if (!free_particles)
-			return;
-		p = free_particles;
-		free_particles = p->next;
-		p->next = active_particles;
-		active_particles = p;
-
-		VectorZero (p->vel);
-
-		p->die = vr_data.realtime + 2;
-		p->ramp = (mtwist_rand (&mt) & 3);
-		p->color = ramp3[(int) p->ramp];
-		p->type = pt_fire;
-		p->phys = R_ParticlePhysics (p->type);
-		for (j = 0; j < 3; j++)
-			p->org[j] = old_origin[j] + ((mtwist_rand (&mt) % 6) - 3);
-
-		VectorAdd (old_origin, vec, old_origin);
+		add_particle (pt_fire, pos + roffs (6), zero, 2,
+					  0, (mtwist_rand (&mt) & 3));
+		pos += vec;
 	}
 }
 
 static void
-R_GrenadeTrail_QF (const entity_t *ent)
+R_GrenadeTrail_QF (vec4f_t start, vec4f_t end)
 {
-	float		len;
-	int			j;
-	particle_t *p;
-	vec3_t		old_origin, vec;
-	vec3_t		org;
-
 	if (!r_particles->int_val)
 		return;
 
-	VectorCopy (ent->old_origin, old_origin);
-	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
-	VectorSubtract (org, old_origin, vec);
-	len = VectorNormalize (vec);
+	vec4f_t     vec = end - start;
+	float       len = magnitudef (vec)[0];
+	vec = normalf (vec);
 
+	vec4f_t     zero = {};
+	vec4f_t     pos = start;
 	while (len > 0) {
 		len -= 3;
-
-		if (!free_particles)
-			return;
-		p = free_particles;
-		free_particles = p->next;
-		p->next = active_particles;
-		active_particles = p;
-
-		VectorZero (p->vel);
-
-		p->die = vr_data.realtime + 2;
-		p->ramp = (mtwist_rand (&mt) & 3) + 2;
-		p->color = ramp3[(int) p->ramp];
-		p->type = pt_fire;
-		p->phys = R_ParticlePhysics (p->type);
-		for (j = 0; j < 3; j++)
-			p->org[j] = old_origin[j] + ((mtwist_rand (&mt) % 6) - 3);
-
-		VectorAdd (old_origin, vec, old_origin);
+		add_particle (pt_fire, pos + roffs (6), zero, 2,
+					  0, (mtwist_rand (&mt) & 3) + 2);
+		pos += vec;
 	}
 }
 
 static void
-R_BloodTrail_QF (const entity_t *ent)
+R_BloodTrail_QF (vec4f_t start, vec4f_t end)
 {
-	float		len;
-	int			j;
-	particle_t *p;
-	vec3_t		old_origin, vec;
-	vec3_t      org;
-
 	if (!r_particles->int_val)
 		return;
 
-	VectorCopy (ent->old_origin, old_origin);
-	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
-	VectorSubtract (org, old_origin, vec);
-	len = VectorNormalize (vec);
+	vec4f_t     vec = end - start;
+	float       len = magnitudef (vec)[0];
+	vec = normalf (vec);
 
+	vec4f_t     zero = {};
+	vec4f_t     pos = start;
 	while (len > 0) {
 		len -= 3;
-
-		if (!free_particles)
-			return;
-		p = free_particles;
-		free_particles = p->next;
-		p->next = active_particles;
-		active_particles = p;
-
-		VectorZero (p->vel);
-
-		p->die = vr_data.realtime + 2;
-		p->type = pt_slowgrav;
-		p->phys = R_ParticlePhysics (p->type);
-		p->color = 67 + (mtwist_rand (&mt) & 3);
-		for (j = 0; j < 3; j++)
-			p->org[j] = old_origin[j] + ((mtwist_rand (&mt) % 6) - 3);
-
-		VectorAdd (old_origin, vec, old_origin);
+		add_particle (pt_slowgrav, pos + roffs (6), zero, 2,
+					  67 + (mtwist_rand (&mt) & 3), 0);
+		pos += vec;
 	}
 }
 
 static void
-R_SlightBloodTrail_QF (const entity_t *ent)
+R_SlightBloodTrail_QF (vec4f_t start, vec4f_t end)
 {
-	float		len;
-	int			j;
-	particle_t *p;
-	vec3_t		old_origin, vec;
-	vec3_t		org;
-
 	if (!r_particles->int_val)
 		return;
 
-	VectorCopy (ent->old_origin, old_origin);
-	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
-	VectorSubtract (org, old_origin, vec);
-	len = VectorNormalize (vec);
+	vec4f_t     vec = end - start;
+	float       len = magnitudef (vec)[0];
+	vec = normalf (vec);
 
+	vec4f_t     zero = {};
+	vec4f_t     pos = start;
 	while (len > 0) {
 		len -= 6;
-
-		if (!free_particles)
-			return;
-		p = free_particles;
-		free_particles = p->next;
-		p->next = active_particles;
-		active_particles = p;
-
-		VectorZero (p->vel);
-
-		p->die = vr_data.realtime + 2;
-		p->type = pt_slowgrav;
-		p->phys = R_ParticlePhysics (p->type);
-		p->color = 67 + (mtwist_rand (&mt) & 3);
-		for (j = 0; j < 3; j++)
-			p->org[j] = old_origin[j] + ((mtwist_rand (&mt) % 6) - 3);
-
-		VectorAdd (old_origin, vec, old_origin);
+		add_particle (pt_slowgrav, pos + roffs (6), zero, 2,
+					  67 + (mtwist_rand (&mt) & 3), 0);
+		pos += vec;
 	}
 }
 
 static void
-R_WizTrail_QF (const entity_t *ent)
+R_WizTrail_QF (vec4f_t start, vec4f_t end)
 {
-	float		len;
-	particle_t *p;
-	vec3_t		old_origin, vec;
-	vec3_t		org;
-
 	if (!r_particles->int_val)
 		return;
 
-	VectorCopy (ent->old_origin, old_origin);
-	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
-	VectorSubtract (org, old_origin, vec);
-	len = VectorNormalize (vec);
+	vec4f_t     vec = end - start;
+	float       len = magnitudef (vec)[0];
+	vec = normalf (vec);
 
+	vec4f_t     pos = start;
 	while (len > 0) {
 		static int  tracercount;
-
 		len -= 3;
-
-		if (!free_particles)
-			return;
-		p = free_particles;
-		free_particles = p->next;
-		p->next = active_particles;
-		active_particles = p;
-
-		p->die = vr_data.realtime + 0.5;
-		p->type = pt_static;
-		p->phys = R_ParticlePhysics (p->type);
-		p->color = 52 + ((tracercount & 4) << 1);
-
+		add_particle (pt_static, pos, 30 * tracer_vel (tracercount, vec), 0.5,
+					  52 + ((tracercount & 4) << 1), 0);
 		tracercount++;
-
-		VectorCopy (old_origin, p->org);
-		if (tracercount & 1) {
-			p->vel[0] = 30.0 * vec[1];
-			p->vel[1] = 30.0 * -vec[0];
-		} else {
-			p->vel[0] = 30.0 * -vec[1];
-			p->vel[1] = 30.0 * vec[0];
-		}
-		p->vel[2] = 0.0;
-
-		VectorAdd (old_origin, vec, old_origin);
+		pos += vec;
 	}
 }
 
 static void
-R_FlameTrail_QF (const entity_t *ent)
+R_FlameTrail_QF (vec4f_t start, vec4f_t end)
 {
-	float		len;
-	particle_t *p;
-	vec3_t		old_origin, vec;
-	vec3_t		org;
-
 	if (!r_particles->int_val)
 		return;
 
-	VectorCopy (ent->old_origin, old_origin);
-	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
-	VectorSubtract (org, old_origin, vec);
-	len = VectorNormalize (vec);
+	vec4f_t     vec = end - start;
+	float       len = magnitudef (vec)[0];
+	vec = normalf (vec);
 
+	vec4f_t     pos = start;
 	while (len > 0) {
 		static int tracercount;
-
 		len -= 3;
-
-		if (!free_particles)
-			return;
-		p = free_particles;
-		free_particles = p->next;
-		p->next = active_particles;
-		active_particles = p;
-
-		p->die = vr_data.realtime + 0.5;
-		p->type = pt_static;
-		p->phys = R_ParticlePhysics (p->type);
-		p->color = 230 + ((tracercount & 4) << 1);
-
+		add_particle (pt_static, pos, 30 * tracer_vel (tracercount, vec), 0.5,
+					  230 + ((tracercount & 4) << 1), 0);
 		tracercount++;
-
-		VectorCopy (old_origin, p->org);
-		if (tracercount & 1) {
-			p->vel[0] = 30 * vec[1];
-			p->vel[1] = 30 * -vec[0];
-		} else {
-			p->vel[0] = 30 * -vec[1];
-			p->vel[1] = 30 * vec[0];
-		}
-		p->vel[2] = 0.0;
-
-		VectorAdd (old_origin, vec, old_origin);
+		pos += vec;
 	}
 }
 
 static void
-R_VoorTrail_QF (const entity_t *ent)
+R_VoorTrail_QF (vec4f_t start, vec4f_t end)
 {
-	float		len;
-	int			j;
-	particle_t *p;
-	vec3_t		old_origin, vec;
-	vec3_t      org;
-
 	if (!r_particles->int_val)
 		return;
 
-	VectorCopy (ent->old_origin, old_origin);
-	VectorCopy (Transform_GetWorldPosition (ent->transform), org);
-	VectorSubtract (org, old_origin, vec);
-	len = VectorNormalize (vec);
+	vec4f_t     vec = end - start;
+	float       len = magnitudef (vec)[0];
+	vec = normalf (vec);
 
+	vec4f_t     zero = {};
+	vec4f_t     pos = start;
 	while (len > 0) {
 		len -= 3;
-
-		if (!free_particles)
-			return;
-		p = free_particles;
-		free_particles = p->next;
-		p->next = active_particles;
-		active_particles = p;
-
-		VectorZero (p->vel);
-
-		p->die = vr_data.realtime + 0.3;
-		p->type = pt_static;
-		p->phys = R_ParticlePhysics (p->type);
-		p->color = 9 * 16 + 8 + (mtwist_rand (&mt) & 3);
-		for (j = 0; j < 3; j++)
-			p->org[j] = old_origin[j] + ((mtwist_rand (&mt) & 15) - 8);
-
-		VectorAdd (old_origin, vec, old_origin);
+		add_particle (pt_static, pos + roffs (16), zero, 0.3,
+					  9 * 16 + 8 + (mtwist_rand (&mt) & 3), 0);
+		pos += vec;
 	}
 }
 
 void
 R_DrawParticles (void)
 {
-	particle_t *p, **particle;
-
 	VectorScale (vright, xscaleshrink, r_pright);
 	VectorScale (vup, yscaleshrink, r_pup);
 	VectorCopy (vpn, r_ppn);
 
-	for (particle = &active_particles; *particle;) {
-		if ((*particle)->die < vr_data.realtime) {
-			p = (*particle)->next;
-			(*particle)->next = free_particles;
-			free_particles = (*particle);
-			(*particle) = p;
-		} else {
-			p = *particle;
-			particle = &(*particle)->next;
+	vec4f_t     gravity = {0, 0, -vr_data.gravity, 0};
 
-			D_DrawParticle (p);
+	unsigned    j = 0;
+	for (unsigned i = 0; i < numparticles; i++) {
+		particle_t *p = &particles[i];
+		partparm_t *parm = &partparams[i];
 
-			p->phys (p);
+		if (p->live <= 0 || p->ramp >= parm->ramp_max) {
+			continue;
+		}
+		const int  *ramp = partramps[j];
+		if (i > j) {
+			particles[j] = *p;
+			partparams[j] = *parm;
+			partramps[j] = ramp;
+		}
+		p = &particles[j];
+		parm = &partparams[j];
+		j += 1;
+
+		D_DrawParticle (p);
+
+		float       dT = vr_data.frametime;
+		p->pos += dT * p->vel;
+		p->vel += dT * (p->vel * parm->drag + gravity * parm->drag[3]);
+		p->ramp += dT * parm->ramp;
+		p->live -= dT;
+		if (ramp) {
+			p->icolor = ramp[(int)p->ramp];
 		}
 	}
+	numparticles = j;
 }
 
 void
@@ -819,49 +581,33 @@ r_particles_style_f (cvar_t *var)
 }
 
 static void
-R_Particle_New (ptype_t type, int texnum, const vec3_t org, float scale,
-			    const vec3_t vel, float die, int color, float alpha, float ramp)
+R_Particle_New (ptype_t type, int texnum, vec4f_t pos, float scale,
+			    vec4f_t vel, float live, int color, float alpha, float ramp)
 {
-	particle_t *p;
-
-	if (!free_particles)
-		return;
-	p = free_particles;
-	free_particles = p->next;
-	p->next = active_particles;
-	active_particles = p;
-
-	VectorCopy (org, p->org);
-	p->color = color;
-	p->tex = texnum;
-	p->scale = scale;
-	p->alpha = alpha;
-	VectorCopy (vel, p->vel);
-	p->type = type;
-	p->phys = R_ParticlePhysics (p->type);
-	p->die = die;
-	p->ramp = ramp;
+	add_particle (type, pos, vel, live, color, ramp);
 }
 
 static void
-R_Particle_NewRandom (ptype_t type, int texnum, const vec3_t org, int org_fuzz,
-					  float scale, int vel_fuzz, float die, int color,
+R_Particle_NewRandom (ptype_t type, int texnum, vec4f_t org, int org_fuzz,
+					  float scale, int vel_fuzz, float live, int color,
 					  float alpha, float ramp)
 {
 	float       o_fuzz = org_fuzz, v_fuzz = vel_fuzz;
 	int         rnd;
-	vec3_t      porg, pvel;
+	vec4f_t     pos, vel;
 
 	rnd = mtwist_rand (&mt);
-	porg[0] = o_fuzz * ((rnd & 63) - 31.5) / 63.0 + org[0];
-	porg[1] = o_fuzz * (((rnd >> 6) & 63) - 31.5) / 63.0 + org[1];
-	porg[2] = o_fuzz * (((rnd >> 10) & 63) - 31.5) / 63.0 + org[2];
+	pos[0] = o_fuzz * ((rnd & 63) - 31.5) / 63.0 + org[0];
+	pos[1] = o_fuzz * (((rnd >> 6) & 63) - 31.5) / 63.0 + org[1];
+	pos[2] = o_fuzz * (((rnd >> 10) & 63) - 31.5) / 63.0 + org[2];
+	pos[3] = 1;
 	rnd = mtwist_rand (&mt);
-	pvel[0] = v_fuzz * ((rnd & 63) - 31.5) / 63.0;
-	pvel[1] = v_fuzz * (((rnd >> 6) & 63) - 31.5) / 63.0;
-	pvel[2] = v_fuzz * (((rnd >> 10) & 63) - 31.5) / 63.0;
+	vel[0] = v_fuzz * ((rnd & 63) - 31.5) / 63.0;
+	vel[1] = v_fuzz * (((rnd >> 6) & 63) - 31.5) / 63.0;
+	vel[2] = v_fuzz * (((rnd >> 10) & 63) - 31.5) / 63.0;
+	vel[3] = 0;
 
-	R_Particle_New (type, texnum, porg, scale, pvel, die, color, alpha, ramp);
+	add_particle (type, pos, vel, live, color, ramp);
 }
 
 static vid_particle_funcs_t particles_QF = {
