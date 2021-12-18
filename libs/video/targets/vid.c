@@ -241,6 +241,10 @@ VID_InitGamma (const byte *pal)
 						  VID_UpdateGamma, "Gamma correction");
 
 	VID_BuildGammaTable (vid_gamma->value);
+
+	if (viddef.onPaletteChanged) {
+		LISTENER_INVOKE (viddef.onPaletteChanged, &viddef);
+	}
 }
 
 void
@@ -315,5 +319,23 @@ VID_ClearMemory (void)
 {
 	if (vi->flush_caches) {
 		vi->flush_caches (vi->data);
+	}
+}
+
+VISIBLE void
+VID_OnPaletteChange_AddListener (viddef_listener_t listener, void *data)
+{
+	if (!viddef.onPaletteChanged) {
+		viddef.onPaletteChanged = malloc (sizeof (*viddef.onPaletteChanged));
+		LISTENER_SET_INIT (viddef.onPaletteChanged, 8);
+	}
+	LISTENER_ADD (viddef.onPaletteChanged, listener, data);
+}
+
+VISIBLE void
+VID_OnPaletteChange_RemoveListener (viddef_listener_t listener, void *data)
+{
+	if (viddef.onPaletteChanged) {
+		LISTENER_REMOVE (viddef.onPaletteChanged, listener, data);
 	}
 }

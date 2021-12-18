@@ -28,6 +28,7 @@
 #ifndef __QF_vid_h
 #define __QF_vid_h
 
+#include "QF/listener.h"
 #include "QF/qtypes.h"
 
 #define VID_CBITS	6
@@ -56,7 +57,13 @@ typedef struct {
 	quat_t           cshift_color;
 	struct view_s   *conview;
 	struct vid_internal_s *vid_internal;
+
+	struct viddef_listener_set_s *onPaletteChanged;
 } viddef_t;
+
+typedef struct viddef_listener_set_s LISTENER_SET_TYPE (viddef_t)
+	viddef_listener_set_t;
+typedef void (*viddef_listener_t) (void *data, const viddef_t *viddef);
 
 #define viddef (*r_data->vid)
 
@@ -72,5 +79,9 @@ void VID_Init_Cvars (void);
 void VID_Init (byte *palette, byte *colormap);
 void VID_SetCaption (const char *text);
 void VID_ClearMemory (void);
+
+void VID_OnPaletteChange_AddListener (viddef_listener_t listener, void *data);
+void VID_OnPaletteChange_RemoveListener (viddef_listener_t listener,
+										 void *data);
 
 #endif//__QF_vid_h
