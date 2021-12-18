@@ -95,6 +95,7 @@ typedef struct drawctx_s {
 	VkSampler   sampler;
 	scrap_t    *scrap;
 	qfv_stagebuf_t *stage;
+	qpic_t     *crosshair;
 	qpic_t     *conchars;
 	qpic_t     *conback;
 	qpic_t     *white_pic;
@@ -389,6 +390,13 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 		qpic_t     *charspic = Draw_Font8x8Pic ();
 		dctx->conchars = pic_data ("conchars", charspic->width,
 								   charspic->height, charspic->data, dctx);
+		free (charspic);
+	}
+	{
+		qpic_t     *hairpic = Draw_CrosshairPic ();
+		dctx->crosshair = pic_data ("crosshair", hairpic->width,
+									hairpic->height, hairpic->data, dctx);
+		free (hairpic);
 	}
 
 	byte white_block = 0xfe;
@@ -570,14 +578,59 @@ Vulkan_Draw_AltString (int x, int y, const char *str, vulkan_ctx_t *ctx)
 	}
 }
 
+static void
+draw_crosshair_plus (int ch, int x, int y, vulkan_ctx_t *ctx)
+{
+	Vulkan_Draw_Character (x - 4, y - 4, '+', ctx);
+}
+
+static void
+draw_crosshair_pic (int ch, int x, int y, vulkan_ctx_t *ctx)
+{
+	drawctx_t  *dctx = ctx->draw_context;
+	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
+
+	static const int pos[CROSSHAIR_COUNT][4] = {
+		{0,               0,                CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT},
+		{CROSSHAIR_WIDTH, 0,                CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT},
+		{0,               CROSSHAIR_HEIGHT, CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT},
+		{CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT},
+	};
+	const int *p = pos[ch - 1];
+
+	draw_pic (x - CROSSHAIR_WIDTH + 1, y - CROSSHAIR_HEIGHT + 1,
+			  CROSSHAIR_WIDTH * 2, CROSSHAIR_HEIGHT * 2, dctx->crosshair,
+			  p[0], p[1], p[2], p[3], crosshair_color, frame);
+}
+
+static void (*crosshair_func[]) (int ch, int x, int y, vulkan_ctx_t *ctx) = {
+	draw_crosshair_plus,
+	draw_crosshair_pic,
+	draw_crosshair_pic,
+	draw_crosshair_pic,
+	draw_crosshair_pic,
+};
+
 void
 Vulkan_Draw_CrosshairAt (int ch, int x, int y, vulkan_ctx_t *ctx)
 {
+	unsigned    c = ch - 1;
+
+	if (c >= sizeof (crosshair_func) / sizeof (crosshair_func[0]))
+		return;
+
+	crosshair_func[c] (c, x, y, ctx);
 }
 
 void
 Vulkan_Draw_Crosshair (vulkan_ctx_t *ctx)
 {
+	int         x, y;
+
+	x = vid.conview->xlen / 2 + cl_crossx->int_val;
+	y = vid.conview->ylen / 2 + cl_crossy->int_val;
+
+	Vulkan_Draw_CrosshairAt (crosshair->int_val, x, y, ctx);
 }
 
 void
