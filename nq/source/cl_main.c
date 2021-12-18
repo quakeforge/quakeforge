@@ -526,6 +526,7 @@ CL_SetState (cactive_t state)
 		if (old_state == ca_active) {
 			// leaving active state
 			S_AmbientOff ();
+			r_funcs->R_ClearState ();
 		}
 		switch (state) {
 			case ca_dedicated:

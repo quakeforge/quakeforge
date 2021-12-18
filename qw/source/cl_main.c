@@ -1150,6 +1150,8 @@ CL_SetState (cactive_t state)
 			// Auto demo recorder stops here
 			if (cl_autorecord->int_val && cls.demorecording)
 				CL_StopRecording ();
+
+			r_funcs->R_ClearState ();
 		} else if (state == ca_active) {
 			// entering active state
 			VID_SetCaption (cls.servername->str);
