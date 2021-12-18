@@ -108,11 +108,22 @@ int         r_viewsize;
 quat_t      crosshair_color;
 
 static void
+crosshaircolor_update (void *_var, const viddef_t *vid)
+{
+	cvar_t     *var = _var;
+	byte       *color;
+	color = &vid->palette32[bound (0, var->int_val, 255) * 4];
+	QuatScale (color, 1.0 / 255, crosshair_color);
+}
+
+static void
 crosshaircolor_f (cvar_t *var)
 {
-	byte       *color;
-	color = (byte *) &d_8to24table[bound (0, var->int_val, 255)];
-	QuatScale (color, 1.0 / 255, crosshair_color);
+	if (!r_data->vid->palette32) {
+		// palette not initialized yet
+		return;
+	}
+	crosshaircolor_update (var, r_data->vid);
 }
 
 static void
@@ -208,6 +219,7 @@ R_Init_Cvars (void)
 						  "type. 0 off, 1 old white, 2 new with colors");
 	crosshaircolor = Cvar_Get ("crosshaircolor", "79", CVAR_ARCHIVE,
 							   crosshaircolor_f, "Color of the new crosshair");
+	VID_OnPaletteChange_AddListener (crosshaircolor_update, crosshaircolor);
 	d_mipcap = Cvar_Get ("d_mipcap", "0", CVAR_NONE, NULL,
 						 "Detail level. 0 is highest, 3 is lowest.");
 	d_mipscale = Cvar_Get ("d_mipscale", "1", CVAR_NONE, NULL, "Detail level "
