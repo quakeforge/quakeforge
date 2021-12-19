@@ -203,6 +203,7 @@ Vulkan_Init_Common (vulkan_ctx_t *ctx)
 	Vulkan_Init_Cvars ();
 	ctx->instance = QFV_CreateInstance (ctx, PACKAGE_STRING, 0x000702ff, 0,
 										instance_extensions);//FIXME version
+	DARRAY_INIT (&ctx->renderPasses, 4);
 }
 
 static void
@@ -445,9 +446,6 @@ Vulkan_CreateRenderPass (vulkan_ctx_t *ctx)
 
 	rp->draw = renderpass_draw;
 
-	if (!ctx->renderPasses.grow) {
-		DARRAY_INIT (&ctx->renderPasses, 4);
-	}
 	DARRAY_APPEND (&ctx->renderPasses, rp);
 
 	qfv_device_t *device = ctx->device;
