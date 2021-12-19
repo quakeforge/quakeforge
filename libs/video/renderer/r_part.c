@@ -85,3 +85,37 @@ R_ClearParticles (void)
 {
 	numparticles = 0;
 }
+
+void
+R_RunParticles (float dT)
+{
+	vec4f_t     gravity = {0, 0, -vr_data.gravity, 0};
+
+	unsigned    j = 0;
+	for (unsigned i = 0; i < numparticles; i++) {
+		particle_t *p = &particles[i];
+		partparm_t *parm = &partparams[i];
+
+		if (p->live <= 0 || p->ramp >= parm->ramp_max) {
+			continue;
+		}
+		const int  *ramp = partramps[j];
+		if (i > j) {
+			particles[j] = *p;
+			partparams[j] = *parm;
+			partramps[j] = ramp;
+		}
+		p = &particles[j];
+		parm = &partparams[j];
+		j += 1;
+
+		p->pos += dT * p->vel;
+		p->vel += dT * (p->vel * parm->drag + gravity * parm->drag[3]);
+		p->ramp += dT * parm->ramp;
+		p->live -= dT;
+		if (ramp) {
+			p->icolor = ramp[(int)p->ramp];
+		}
+	}
+	numparticles = j;
+}

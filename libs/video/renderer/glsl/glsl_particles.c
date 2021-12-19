@@ -256,27 +256,8 @@ draw_qf_particles (void)
 	vacount = 0;
 	VA = particleVertexArray;
 
-	vec4f_t     gravity = {0, 0, -vr_data.gravity, 0};
-
-	unsigned    j = 0;
 	for (unsigned i = 0; i < numparticles; i++) {
 		particle_t *p = &particles[i];
-		partparm_t *parm = &partparams[i];
-
-		if (p->live <= 0 || p->ramp >= parm->ramp_max
-			|| p->alpha <= 0 || p->scale <= 0) {
-			continue;
-		}
-		const int  *ramp = partramps[j];
-		if (i > j) {
-			particles[j] = *p;
-			partparams[j] = *parm;
-			partramps[j] = ramp;
-		}
-		p = &particles[j];
-		parm = &partparams[j];
-		j += 1;
-
 		// Don't render particles too close to us.
 		// Note, we must still do physics and such on them.
 		if (!(DotProduct (p->pos, vpn) < minparticledist)) {
@@ -338,19 +319,7 @@ draw_qf_particles (void)
 			VA += 4;
 			vacount += 6;
 		}
-
-		float       dT = vr_data.frametime;
-		p->pos += dT * p->vel;
-		p->vel += dT * (p->vel * parm->drag + gravity * parm->drag[3]);
-		p->ramp += dT * parm->ramp;
-		p->live -= dT;
-		p->alpha -= dT * parm->alpha_rate;
-		p->scale += dT * parm->scale_rate;
-		if (ramp) {
-			p->icolor = ramp[(int)p->ramp];
-		}
 	}
-	numparticles = j;
 
 	qfeglVertexAttribPointer (quake_part.vertex.location, 3, GL_FLOAT,
 							 0, sizeof (partvert_t),
@@ -406,27 +375,8 @@ draw_id_particles (void)
 	vacount = 0;
 	VA = particleVertexArray;
 
-	vec4f_t     gravity = {0, 0, -vr_data.gravity, 0};
-
-	unsigned    j = 0;
 	for (unsigned i = 0; i < numparticles; i++) {
 		particle_t *p = &particles[i];
-		partparm_t *parm = &partparams[i];
-
-		if (p->live <= 0 || p->ramp >= parm->ramp_max
-			|| p->alpha <= 0 || p->scale <= 0) {
-			continue;
-		}
-		const int  *ramp = partramps[j];
-		if (i > j) {
-			particles[j] = *p;
-			partparams[j] = *parm;
-			partramps[j] = ramp;
-		}
-		p = &particles[j];
-		parm = &partparams[j];
-		j += 1;
-
 		// Don't render particles too close to us.
 		// Note, we must still do physics and such on them.
 		if (!(DotProduct (p->pos, vpn) < minparticledist)) {
@@ -435,19 +385,7 @@ draw_id_particles (void)
 			VA++;
 			vacount++;
 		}
-
-		float       dT = vr_data.frametime;
-		p->pos += dT * p->vel;
-		p->vel += dT * (p->vel * parm->drag + gravity * parm->drag[3]);
-		p->ramp += dT * parm->ramp;
-		p->live -= dT;
-		p->alpha -= dT * parm->alpha_rate;
-		p->scale += dT * parm->scale_rate;
-		if (ramp) {
-			p->icolor = ramp[(int)p->ramp];
-		}
 	}
-	numparticles = j;
 
 	qfeglVertexAttribPointer (quake_point.vertex.location, 3, GL_FLOAT,
 							 0, sizeof (partvert_t),
@@ -469,6 +407,7 @@ glsl_R_DrawParticles (void)
 {
 	if (!r_particles->int_val || !numparticles)
 		return;
+	R_RunParticles (vr_data.frametime);
 	if (0/*FIXME r_particles_style->int_val*/) {
 		draw_qf_particles ();
 	} else {
