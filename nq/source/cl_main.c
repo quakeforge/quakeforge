@@ -52,6 +52,7 @@
 #include "compat.h"
 #include "sbar.h"
 
+#include "client/particles.h"
 #include "client/temp_entities.h"
 
 #include "nq/include/chase.h"
@@ -597,6 +598,7 @@ CL_Init (cbuf_t *cbuf)
 	Sbar_Init ();
 
 	CL_Input_Init (cbuf);
+	CL_Particles_Init ();
 	CL_TEnts_Init ();
 	CL_ClearState ();
 

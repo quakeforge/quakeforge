@@ -156,12 +156,7 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 	R_MaxDlightsCheck,
 	R_DecayLights,
 	sw32_R_ViewChanged,
-	sw32_R_ClearParticles,
-	sw32_R_InitParticles,
 	sw32_SCR_ScreenShot_f,
-	sw32_r_easter_eggs_f,
-	sw32_r_particles_style_f,
-	0,
 	&model_funcs
 };
 

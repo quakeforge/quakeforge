@@ -77,60 +77,11 @@ R_MaxParticlesCheck (cvar_t *r_particles, cvar_t *r_particles_max)
 		partparams = (partparm_t *) &particles[r_maxparticles];
 		partramps = (const int **) &partparams[r_maxparticles];
 	}
-
-	vr_funcs->R_ClearParticles ();
-
-	if (r_init)
-		vr_funcs->R_InitParticles ();
+	R_ClearParticles ();
 }
 
-static int  ramp[] = {
-	/*ramp1*/ 0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61,
-	/*ramp2*/ 0x6f, 0x6e, 0x6d, 0x6c, 0x6b, 0x6a, 0x68, 0x66,
-	/*ramp3*/ 0x6d, 0x6b, 0x06, 0x05, 0x04, 0x03, 0x02, 0x01,
-};
-
-static partparm_t part_params[] = {
-	[pt_static]         = {{0, 0, 0, 0},      0, 1,  0,     0},
-	[pt_grav]           = {{0, 0, 0, 0.05},   0, 1,  0,     0},
-	[pt_slowgrav]       = {{0, 0, 0, 0.05},   0, 1,  0,     0},
-	[pt_fire]           = {{0, 0, 0, 0.05},   5, 6,  0,  5./6},
-	[pt_explode]        = {{4, 4, 4, 0.05},  10, 8,  0,     0},
-	[pt_explode2]       = {{1, 1, 1, 0.05},  15, 8,  0,     0},
-	[pt_blob]           = {{4, 4, 4, 0.05},   0, 1,  0,     0},
-	[pt_blob2]          = {{4, 4, 0, 0.05},   0, 1,  0,     0},
-	[pt_smoke]          = {{0, 0, 0, 0},      0, 1,  4,   0.4},
-	[pt_smokecloud]     = {{0, 0, 0, 0.0375}, 0, 1, 50,  0.55},
-	[pt_bloodcloud]     = {{0, 0, 0, 0.05},   0, 1,  4,  0.25},
-	[pt_fadespark]      = {{0, 0, 0, 0},      0, 1,  0,     0},
-	[pt_fadespark2]     = {{0, 0, 0, 0},      0, 1,  0,     0},
-	[pt_fallfade]       = {{0, 0, 0, 1},      0, 1,  0,     1},
-	[pt_fallfadespark]  = {{0, 0, 0, 1},     15, 8,  0,     1},
-	[pt_flame]          = {{0, 0, 0, 0},      0, 1, -2, 0.125},
-};
-
-static const int *part_ramps[] = {
-	[pt_fire]           = ramp + 2 * 8, // ramp3
-	[pt_explode]        = ramp + 0 * 8, // ramp1
-	[pt_explode2]       = ramp + 1 * 8, // ramp2
-	[pt_fallfadespark]  = ramp + 0 * 8, // ramp1
-	[pt_flame]          = 0,
-};
-
-partparm_t
-R_ParticlePhysics (ptype_t type)
+void
+R_ClearParticles (void)
 {
-	if (type > pt_flame) {
-		Sys_Error ("R_ParticlePhysics: invalid particle type");
-	}
-	return part_params[type];
-}
-
-const int *
-R_ParticleRamp (ptype_t type)
-{
-	if (type > pt_flame) {
-		Sys_Error ("R_ParticleRamp: invalid particle type");
-	}
-	return part_ramps[type];
+	numparticles = 0;
 }

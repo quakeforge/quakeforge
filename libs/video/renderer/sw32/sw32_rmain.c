@@ -151,12 +151,9 @@ sw32_R_Init (void)
 	sw32_Draw_Init ();
 	SCR_Init ();
 	sw32_R_InitTurb ();
-	sw32_R_InitParticles ();
 
 	Cmd_AddCommand ("timerefresh", sw32_R_TimeRefresh_f, "Tests the current "
 					"refresh rate for the current location");
-	Cmd_AddCommand ("pointfile", sw32_R_ReadPointFile_f, "Load a pointfile to "
-					"determine map leaks");
 	Cmd_AddCommand ("loadsky", sw32_R_LoadSky_f, "Load a skybox");
 
 	Cvar_SetValue (r_maxedges, (float) NUMSTACKEDGES);
@@ -198,7 +195,7 @@ sw32_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	r_viewleaf = NULL;
 	R_MarkLeaves ();
 
-	sw32_R_ClearParticles ();
+	R_ClearParticles ();
 
 	r_cnumsurfs = r_maxsurfs->int_val;
 
@@ -875,5 +872,5 @@ sw32_R_ClearState (void)
 	r_worldentity.renderer.model = 0;
 	R_ClearEfrags ();
 	R_ClearDlights ();
-	sw32_R_ClearParticles ();
+	R_ClearParticles ();
 }

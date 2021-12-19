@@ -246,7 +246,7 @@ vulkan_R_ClearState (void)
 	r_worldentity.renderer.model = 0;
 	R_ClearEfrags ();
 	R_ClearDlights ();
-	Vulkan_ClearParticles (vulkan_ctx);
+	R_ClearParticles ();
 }
 
 static void
@@ -392,18 +392,6 @@ vulkan_R_ViewChanged (void)
 	Vulkan_CalcProjectionMatrices (vulkan_ctx);
 }
 
-static void
-vulkan_R_ClearParticles (void)
-{
-	Vulkan_ClearParticles (vulkan_ctx);
-}
-
-static void
-vulkan_R_InitParticles (void)
-{
-	Vulkan_InitParticles (vulkan_ctx);
-}
-
 static int
 is_bgr (VkFormat format)
 {
@@ -453,18 +441,6 @@ vulkan_SCR_ScreenShot_f (void)
 		return;
 	}
 	vulkan_ctx->capture_callback = capture_screenshot;
-}
-
-static void
-vulkan_r_easter_eggs_f (struct cvar_s *var)
-{
-	Vulkan_r_easter_eggs_f (var, vulkan_ctx);
-}
-
-static void
-vulkan_r_particles_style_f (struct cvar_s *var)
-{
-	Vulkan_r_particles_style_f (var, vulkan_ctx);
 }
 
 static void
@@ -700,12 +676,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	R_MaxDlightsCheck,
 	R_DecayLights,
 	vulkan_R_ViewChanged,
-	vulkan_R_ClearParticles,
-	vulkan_R_InitParticles,
 	vulkan_SCR_ScreenShot_f,
-	vulkan_r_easter_eggs_f,
-	vulkan_r_particles_style_f,
-	0,
 	&model_funcs
 };
 

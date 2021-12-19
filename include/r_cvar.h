@@ -1,9 +1,5 @@
 #include "QF/mathlib.h"
 
-extern struct cvar_s	 *easter_eggs;
-extern void r_easter_eggs_f (struct cvar_s *var);
-extern void r_particles_style_f (struct cvar_s *var);
-
 extern void gl_overbright_f (struct cvar_s *cvar);
 
 extern struct cvar_s     *cl_crossx;
@@ -80,7 +76,6 @@ extern struct cvar_s     *r_numsurfs;
 extern struct cvar_s     *r_particles;
 extern struct cvar_s     *r_particles_max;
 extern struct cvar_s     *r_particles_nearclip;
-extern struct cvar_s     *r_particles_style;
 extern struct cvar_s     *r_reportedgeout;
 extern struct cvar_s     *r_reportsurfout;
 extern struct cvar_s     *r_shadows;

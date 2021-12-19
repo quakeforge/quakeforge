@@ -229,8 +229,6 @@ glsl_R_RenderView (void)
 void
 glsl_R_Init (void)
 {
-	Cmd_AddCommand ("pointfile", glsl_R_ReadPointFile_f,
-					"Load a pointfile to determine map leaks.");
 	Cmd_AddCommand ("timerefresh", glsl_R_TimeRefresh_f,
 					"Test the current refresh rate for the current location.");
 	R_Init_Cvars ();
@@ -262,7 +260,7 @@ glsl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	R_MarkLeaves ();
 
 	R_FreeAllEntities ();
-	glsl_R_ClearParticles ();
+	R_ClearParticles ();
 	glsl_R_RegisterTextures (models, num_models);
 	glsl_R_BuildLightmaps (models, num_models);
 	glsl_R_BuildDisplayLists (models, num_models);
@@ -279,7 +277,7 @@ glsl_R_ClearState (void)
 	r_worldentity.renderer.model = 0;
 	R_ClearEfrags ();
 	R_ClearDlights ();
-	glsl_R_ClearParticles ();
+	R_ClearParticles ();
 }
 
 void

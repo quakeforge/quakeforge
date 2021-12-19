@@ -95,6 +95,7 @@
 #include "compat.h"
 #include "sbar.h"
 
+#include "client/particles.h"
 #include "client/temp_entities.h"
 #include "client/view.h"
 
@@ -1206,6 +1207,7 @@ CL_Init (void)
 
 	CL_Input_Init ();
 	CL_Ents_Init ();
+	CL_Particles_Init ();
 	CL_TEnts_Init ();
 	CL_ClearState ();
 	Pmove_Init ();

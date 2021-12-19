@@ -154,12 +154,7 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	R_MaxDlightsCheck,
 	R_DecayLights,
 	glsl_R_ViewChanged,
-	glsl_R_ClearParticles,
-	glsl_R_InitParticles,
 	glsl_SCR_ScreenShot_f,
-	glsl_r_easter_eggs_f,
-	glsl_r_particles_style_f,
-	0,
 	&model_funcs
 };
 

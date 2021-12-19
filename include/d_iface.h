@@ -56,45 +56,6 @@ typedef struct
 	float	zi;
 } emitpoint_t;
 
-typedef enum {
-	part_tex_dot,
-	part_tex_spark,
-	part_tex_smoke,
-} ptextype_t;
-
-typedef struct particle_s particle_t;
-
-// !!! if this is changed, it must be changed in d_ifacea.h too !!!
-struct particle_s {
-	vec4f_t     pos;
-	vec4f_t     vel;
-
-	union {
-		struct {
-			int			icolor;
-			int         pad[2];
-			float		alpha;
-		};
-		vec4f_t     color;
-	};
-
-	ptextype_t	tex;
-	float		ramp;
-	float		scale;
-	float		live;
-};
-
-typedef struct partparm_s {
-	vec4f_t     drag;	// drag[3] is grav scale
-	float       ramp;
-	float       ramp_max;
-	float       scale_rate;
-	float       alpha_rate;
-} partparm_t;
-
-partparm_t R_ParticlePhysics (ptype_t type) __attribute__((pure));
-const int *R_ParticleRamp (ptype_t type) __attribute__((pure));
-
 #define PARTICLE_Z_CLIP	8.0
 
 typedef struct polyvert_s {

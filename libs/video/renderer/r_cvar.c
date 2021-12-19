@@ -41,8 +41,6 @@
 #include "compat.h"
 #include "r_internal.h"
 
-cvar_t	   *easter_eggs;
-
 cvar_t     *cl_crossx;
 cvar_t     *cl_crossy;
 cvar_t     *cl_verstring;
@@ -80,7 +78,6 @@ cvar_t     *r_novis;
 cvar_t     *r_numedges;
 cvar_t     *r_numsurfs;
 cvar_t     *r_particles;
-cvar_t	   *r_particles_style;
 cvar_t	   *r_particles_max;
 cvar_t	   *r_particles_nearclip;
 cvar_t     *r_reportedgeout;

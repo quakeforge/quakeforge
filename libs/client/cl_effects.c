@@ -45,6 +45,7 @@
 
 #include "client/entities.h"
 #include "client/effects.h"
+#include "client/particles.h"
 
 void
 CL_NewDlight (int key, vec4f_t org, int effects, byte glow_size,
@@ -132,23 +133,21 @@ CL_ModelEffects (entity_t *ent, int num, int glow_color, double time)
 			VectorSet (0.9, 0.7, 0.0, dl->color);
 			dl->color[3] = 0.7;
 		}
-		r_funcs->particles->R_RocketTrail (old_origin, ent_origin);
+		clp_funcs->RocketTrail (old_origin, ent_origin);
 	} else if (model->flags & EF_GRENADE)
-		r_funcs->particles->R_GrenadeTrail (old_origin, ent_origin);
+		clp_funcs->GrenadeTrail (old_origin, ent_origin);
 	else if (model->flags & EF_GIB)
-		r_funcs->particles->R_BloodTrail (old_origin, ent_origin);
+		clp_funcs->BloodTrail (old_origin, ent_origin);
 	else if (model->flags & EF_ZOMGIB)
-		r_funcs->particles->R_SlightBloodTrail (old_origin, ent_origin);
+		clp_funcs->SlightBloodTrail (old_origin, ent_origin);
 	else if (model->flags & EF_TRACER)
-		r_funcs->particles->R_WizTrail (old_origin, ent_origin);
+		clp_funcs->WizTrail (old_origin, ent_origin);
 	else if (model->flags & EF_TRACER2)
-		r_funcs->particles->R_FlameTrail (old_origin, ent_origin);
+		clp_funcs->FlameTrail (old_origin, ent_origin);
 	else if (model->flags & EF_TRACER3)
-		r_funcs->particles->R_VoorTrail (old_origin, ent_origin);
+		clp_funcs->VoorTrail (old_origin, ent_origin);
 	else if (model->flags & EF_GLOWTRAIL)
-		if (r_funcs->particles->R_GlowTrail)
-			r_funcs->particles->R_GlowTrail (old_origin, ent_origin,
-											 glow_color);
+		clp_funcs->GlowTrail (old_origin, ent_origin, glow_color);
 }
 
 void
@@ -175,7 +174,7 @@ CL_EntityEffects (int num, entity_t *ent, entity_state_t *state, double time)
 {
 	vec4f_t     position = Transform_GetWorldPosition (ent->transform);
 	if (state->effects & EF_BRIGHTFIELD)
-		r_funcs->particles->R_EntityParticles (position);
+		clp_funcs->EntityParticles (position);
 	if (state->effects & EF_MUZZLEFLASH) {
 		vec4f_t     fv = Transform_Forward (ent->transform);
 		CL_MuzzleFlash (position, fv, 16, num, time);

@@ -146,8 +146,6 @@ gl_R_Init (void)
 	Cmd_AddCommand ("timerefresh", gl_R_TimeRefresh_f,
 					"Tests the current refresh rate for the current location");
 	Cmd_AddCommand ("envmap", R_Envmap_f, "No Description");
-	Cmd_AddCommand ("pointfile", gl_R_ReadPointFile_f,
-					"Load a pointfile to determine map leaks");
 	Cmd_AddCommand ("loadsky", gl_R_LoadSky_f, "Load a skybox");
 
 	gl_Draw_Init ();
@@ -203,7 +201,7 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	r_viewleaf = NULL;
 	R_MarkLeaves ();
 
-	gl_R_ClearParticles ();
+	R_ClearParticles ();
 
 	GL_BuildLightmaps (models, num_models);
 

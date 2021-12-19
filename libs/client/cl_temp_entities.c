@@ -47,7 +47,9 @@
 #include "QF/plugin/vid_render.h"	//FIXME
 #include "QF/scene/entity.h"
 
+#include "client/effects.h"
 #include "client/entities.h"
+#include "client/particles.h"
 #include "client/temp_entities.h"
 
 typedef struct tent_s {
@@ -337,13 +339,13 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 		case TE_Blood:
 			count = MSG_ReadByte (net_message) * 20;
 			MSG_ReadCoordV (net_message, &position[0]);
-			r_funcs->particles->R_BloodPuffEffect (position, count);
+			clp_funcs->BloodPuffEffect (position, count);
 			break;
 		case TE_Explosion:
 			MSG_ReadCoordV (net_message, &position[0]);
 
 			// particles
-			r_funcs->particles->R_ParticleExplosion (position);
+			clp_funcs->ParticleExplosion (position);
 
 			// light
 			dl = r_funcs->R_AllocDlight (0);
@@ -380,8 +382,7 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			colorStart = MSG_ReadByte (net_message);
 			colorLength = MSG_ReadByte (net_message);
 			S_StartSound (-1, 0, cl_sfx_r_exp3, &position[0], 1, 1);
-			r_funcs->particles->R_ParticleExplosion2 (position, colorStart,
-													  colorLength);
+			clp_funcs->ParticleExplosion2 (position, colorStart, colorLength);
 			dl = r_funcs->R_AllocDlight (0);
 			if (!dl)
 				break;
@@ -398,7 +399,7 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			MSG_ReadCoordV (net_message, &position[0]);
 			MSG_ReadCoordV (net_message, color);		// OUCH!
 			color[3] = 0.7;
-			r_funcs->particles->R_ParticleExplosion (position);
+			clp_funcs->ParticleExplosion (position);
 			S_StartSound (-1, 0, cl_sfx_r_exp3, &position[0], 1, 1);
 			dl = r_funcs->R_AllocDlight (0);
 			if (dl) {
@@ -411,21 +412,21 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			break;
 		case TE_Gunshot1:
 			MSG_ReadCoordV (net_message, &position[0]);
-			r_funcs->particles->R_GunshotEffect (position, 20);
+			clp_funcs->GunshotEffect (position, 20);
 			break;
 		case TE_Gunshot2:
 			count = MSG_ReadByte (net_message) * 20;
 			MSG_ReadCoordV (net_message, &position[0]);
-			r_funcs->particles->R_GunshotEffect (position, count);
+			clp_funcs->GunshotEffect (position, count);
 			break;
 		case TE_KnightSpike:
 			MSG_ReadCoordV (net_message, &position[0]);
-			r_funcs->particles->R_KnightSpikeEffect (position);
+			clp_funcs->KnightSpikeEffect (position);
 			S_StartSound (-1, 0, cl_sfx_knighthit, &position[0], 1, 1);
 			break;
 		case TE_LavaSplash:
 			MSG_ReadCoordV (net_message, &position[0]);
-			r_funcs->particles->R_LavaSplash (position);
+			clp_funcs->LavaSplash (position);
 			break;
 		case TE_Lightning1:
 			CL_ParseBeam (net_message, cl_mod_bolt, time, ctx);
@@ -453,11 +454,11 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 				QuatSet (0.25, 0.40, 0.65, 1, dl->color);
 			}
 
-			r_funcs->particles->R_LightningBloodEffect (position);
+			clp_funcs->LightningBloodEffect (position);
 			break;
 		case TE_Spike:
 			MSG_ReadCoordV (net_message, &position[0]);
-			r_funcs->particles->R_SpikeEffect (position);
+			clp_funcs->SpikeEffect (position);
 			{
 				int		i;
 				sfx_t  *sound;
@@ -473,7 +474,7 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			break;
 		case TE_SuperSpike:
 			MSG_ReadCoordV (net_message, &position[0]);
-			r_funcs->particles->R_SuperSpikeEffect (position);
+			clp_funcs->SuperSpikeEffect (position);
 			{
 				int		i;
 				sfx_t  *sound;
@@ -489,17 +490,17 @@ parse_tent (qmsg_t *net_message, double time, TEntContext_t *ctx,
 			break;
 		case TE_TarExplosion:
 			MSG_ReadCoordV (net_message, &position[0]);
-			r_funcs->particles->R_BlobExplosion (position);
+			clp_funcs->BlobExplosion (position);
 
 			S_StartSound (-1, 0, cl_sfx_r_exp3, &position[0], 1, 1);
 			break;
 		case TE_Teleport:
 			MSG_ReadCoordV (net_message, &position[0]);
-			r_funcs->particles->R_TeleportSplash (position);
+			clp_funcs->TeleportSplash (position);
 			break;
 		case TE_WizSpike:
 			MSG_ReadCoordV (net_message, &position[0]);
-			r_funcs->particles->R_WizSpikeEffect (position);
+			clp_funcs->WizSpikeEffect (position);
 			S_StartSound (-1, 0, cl_sfx_wizhit, &position[0], 1, 1);
 			break;
 	}
@@ -659,9 +660,9 @@ CL_ParseParticleEffect (qmsg_t *net_message)
 	color = MSG_ReadByte (net_message);
 
 	if (count == 255)
-		r_funcs->particles->R_ParticleExplosion (org);
+		clp_funcs->ParticleExplosion (org);
 	else
-		r_funcs->particles->R_RunParticleEffect (org, dir, color, count);
+		clp_funcs->RunParticleEffect (org, dir, color, count);
 }
 
 void

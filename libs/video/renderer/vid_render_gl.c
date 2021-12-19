@@ -155,12 +155,7 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	R_MaxDlightsCheck,
 	R_DecayLights,
 	gl_R_ViewChanged,
-	gl_R_ClearParticles,
-	gl_R_InitParticles,
 	gl_SCR_ScreenShot_f,
-	gl_r_easter_eggs_f,
-	gl_r_particles_style_f,
-	0,
 	&model_funcs
 };
 

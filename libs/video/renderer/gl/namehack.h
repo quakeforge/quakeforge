@@ -34,7 +34,6 @@
 #define R_AddTexture gl_R_AddTexture
 #define R_BlendLightmaps gl_R_BlendLightmaps
 #define R_CalcLightmaps gl_R_CalcLightmaps
-#define R_ClearParticles gl_R_ClearParticles
 #define R_ClearState gl_R_ClearState
 #define R_ClearTextures gl_R_ClearTextures
 #define R_DrawAliasModel gl_R_DrawAliasModel
@@ -88,7 +87,6 @@
 #undef R_AddTexture
 #undef R_BlendLightmaps
 #undef R_CalcLightmaps
-#undef R_ClearParticles
 #undef R_ClearState
 #undef R_ClearTextures
 #undef R_DrawAliasModel

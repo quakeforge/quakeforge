@@ -131,12 +131,9 @@ sw_R_Init (void)
 #endif
 
 	R_InitTurb ();
-	R_InitParticles ();
 
 	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f, "Tests the current "
 					"refresh rate for the current location");
-	Cmd_AddCommand ("pointfile", R_ReadPointFile_f, "Load a pointfile to "
-					"determine map leaks");
 	Cmd_AddCommand ("loadsky", R_LoadSky_f, "Load a skybox");
 
 	Cvar_SetValue (r_maxedges, (float) NUMSTACKEDGES);

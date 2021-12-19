@@ -151,12 +151,7 @@ vid_render_funcs_t sw_vid_render_funcs = {
 	R_MaxDlightsCheck,
 	R_DecayLights,
 	R_ViewChanged,
-	R_ClearParticles,
-	R_InitParticles,
 	SCR_ScreenShot_f,
-	r_easter_eggs_f,
-	r_particles_style_f,
-	0,
 	&model_funcs
 };
 

@@ -198,7 +198,7 @@ Vulkan_NewMap (model_t *worldmodel, struct model_s **models, int num_models,
 	R_MarkLeaves ();
 
 	R_FreeAllEntities ();
-	Vulkan_ClearParticles (ctx);
+	R_ClearParticles ();
 	Vulkan_RegisterTextures (models, num_models, ctx);
 	//Vulkan_BuildLightmaps (models, num_models, ctx);
 	Vulkan_BuildDisplayLists (models, num_models, ctx);

@@ -895,5 +895,5 @@ gl_R_ClearState (void)
 	r_worldentity.renderer.model = 0;
 	R_ClearEfrags ();
 	R_ClearDlights ();
-	gl_R_ClearParticles ();
+	R_ClearParticles ();
 }

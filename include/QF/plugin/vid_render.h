@@ -44,42 +44,6 @@ struct mod_sprite_ctx_s;
 	All video plugins must export these functions
 */
 
-typedef struct vid_particle_funcs_s {
-	void (*R_RocketTrail) (vec4f_t start, vec4f_t end);
-	void (*R_GrenadeTrail) (vec4f_t start, vec4f_t end);
-	void (*R_BloodTrail) (vec4f_t start, vec4f_t end);
-	void (*R_SlightBloodTrail) (vec4f_t start, vec4f_t end);
-	void (*R_WizTrail) (vec4f_t start, vec4f_t end);
-	void (*R_FlameTrail) (vec4f_t start, vec4f_t end);
-	void (*R_VoorTrail) (vec4f_t start, vec4f_t end);
-	void (*R_GlowTrail) (vec4f_t start, vec4f_t end, int glow_color);
-
-	void (*R_RunParticleEffect) (vec4f_t org, vec4f_t dir, int color, int count);
-	void (*R_BloodPuffEffect) (vec4f_t org, int count);
-	void (*R_GunshotEffect) (vec4f_t org, int count);
-	void (*R_LightningBloodEffect) (vec4f_t org);
-	void (*R_SpikeEffect) (vec4f_t org);
-	void (*R_KnightSpikeEffect) (vec4f_t org);
-	void (*R_SuperSpikeEffect) (vec4f_t org);
-	void (*R_WizSpikeEffect) (vec4f_t org);
-
-	void (*R_BlobExplosion) (vec4f_t org);
-	void (*R_ParticleExplosion) (vec4f_t org);
-	void (*R_ParticleExplosion2) (vec4f_t org, int colorStart, int colorLength);
-	void (*R_LavaSplash) (vec4f_t org);
-	void (*R_TeleportSplash) (vec4f_t org);
-	void (*R_DarkFieldParticles) (vec4f_t org);
-	void (*R_EntityParticles) (vec4f_t org);
-
-	void (*R_Particle_New) (ptype_t type, int texnum, vec4f_t org,
-							float scale, vec4f_t vel, float die,
-							int color, float alpha, float ramp);
-	void (*R_Particle_NewRandom) (ptype_t type, int texnum, vec4f_t org,
-								  int org_fuzz, float scale, int vel_fuzz,
-								  float die, int color, float alpha,
-								  float ramp);
-} vid_particle_funcs_t;
-
 typedef struct vid_model_funcs_s {
 	size_t      texture_render_size;// size of renderer specific texture data
 	void (*Mod_LoadLighting) (model_t *mod, bsp_t *bsp);
@@ -159,13 +123,8 @@ typedef struct vid_render_funcs_s {
 	void (*R_DecayLights) (double frametime);
 
 	void (*R_ViewChanged) (void);
-	void (*R_ClearParticles) (void);
-	void (*R_InitParticles) (void);
 	void (*SCR_ScreenShot_f) (void);
-	void (*r_easter_eggs_f) (struct cvar_s *var);
-	void (*r_particles_style_f) (struct cvar_s *var);
 
-	vid_particle_funcs_t *particles;
 	vid_model_funcs_t *model_funcs;
 } vid_render_funcs_t;
 
