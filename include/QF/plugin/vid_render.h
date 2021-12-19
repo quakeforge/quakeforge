@@ -109,6 +109,7 @@ typedef struct vid_render_funcs_s {
 						float time);
 	void (*Fog_ParseWorldspawn) (struct plitem_s *worldspawn);
 
+	struct psystem_s *(*ParticleSystem) (void);
 	void (*R_Init) (void);
 	void (*R_RenderFrame) (SCR_Func *scr_funcs);
 	void (*R_ClearState) (void);

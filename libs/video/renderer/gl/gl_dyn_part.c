@@ -71,18 +71,18 @@ gl_R_InitParticles (void)
 {
 	int		i;
 
-	if (r_maxparticles && r_init) {
+	if (r_psystem.maxparticles && r_init) {
 		if (vaelements) {
 			partUseVA = 0;
-			pVAsize = r_maxparticles * 4;
+			pVAsize = r_psystem.maxparticles * 4;
 			Sys_MaskPrintf (SYS_dev,
 							"Particles: Vertex Array use disabled.\n");
 		} else {
 			if (vaelements > 3)
 				pVAsize = min ((unsigned int) (vaelements - (vaelements % 4)),
-							   r_maxparticles * 4);
+							   r_psystem.maxparticles * 4);
 			else if (vaelements >= 0)
-				pVAsize = r_maxparticles * 4;
+				pVAsize = r_psystem.maxparticles * 4;
 			Sys_MaskPrintf (SYS_dev,
 							"Particles: %i maximum vertex elements.\n",
 							pVAsize);
@@ -137,8 +137,8 @@ gl_R_DrawParticles (void)
 	vacount = 0;
 	VA = particleVertexArray;
 
-	for (unsigned i = 0; i < numparticles; i++) {
-		particle_t *p = &particles[i];
+	for (unsigned i = 0; i < r_psystem.numparticles; i++) {
+		particle_t *p = &r_psystem.particles[i];
 		// Don't render particles too close to us.
 		// Note, we must still do physics and such on them.
 		if (!(DotProduct (p->pos, vpn) < minparticledist)) {
@@ -262,4 +262,10 @@ gl_R_Particles_Init_Cvars (void)
 									 CVAR_ARCHIVE, r_particles_nearclip_f,
 									 "Distance of the particle near clipping "
 									 "plane from the player.");
+}
+
+psystem_t * __attribute__((const))//FIXME
+gl_ParticleSystem (void)
+{
+	return &r_psystem;
 }

@@ -90,12 +90,15 @@ typedef struct partparm_s {
 	float       alpha_rate;
 } partparm_t;
 
-// FIXME these really shouldn't be global, but they speed up particle creation
-extern unsigned int r_maxparticles;
-extern unsigned int numparticles;
-extern struct particle_s *particles;
-extern struct partparm_s *partparams;
-extern const int **partramps;
+typedef struct psystem_s {
+	uint32_t    maxparticles;
+	uint32_t    numparticles;
+	particle_t *particles;
+	partparm_t *partparams;
+	const int **partramps;
+
+	int         points_only;
+} psystem_t;
 
 extern struct vid_render_funcs_s *r_funcs;
 extern struct vid_render_data_s *r_data;

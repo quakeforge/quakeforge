@@ -125,3 +125,9 @@ Vulkan_Particles_Shutdown (vulkan_ctx_t *ctx)
 	free (pctx->frames.a);
 	free (pctx);
 }
+
+psystem_t *__attribute__((pure))//FIXME?
+Vulkan_ParticleSystem (vulkan_ctx_t *ctx)
+{
+	return &ctx->particle_context->psystem;	//FIXME support more
+}

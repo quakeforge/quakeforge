@@ -51,10 +51,16 @@ void R_InitEfrags (void);
 void R_ClearState (void);
 void R_InitSky (struct texture_s *mt);	// called at level load
 void R_Textures_Init (void);
-void R_RunParticles (float dT);
 void R_RenderView (void);			// must set r_refdef first
 void R_ViewChanged (void);			// must set r_refdef first
 								// called whenever r_refdef or vid change
+
+extern struct psystem_s r_psystem;
+struct psystem_s *gl_ParticleSystem (void);
+struct psystem_s *glsl_ParticleSystem (void);
+struct psystem_s *sw_ParticleSystem (void);
+struct psystem_s *sw32_ParticleSystem (void);
+void R_RunParticles (float dT);
 
 void R_AddEfrags (mod_brush_t *, entity_t *ent);
 void R_RemoveEfrags (entity_t *ent);

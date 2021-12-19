@@ -142,6 +142,7 @@ vid_render_funcs_t gl_vid_render_funcs = {
 	gl_Fog_Update,
 	gl_Fog_ParseWorldspawn,
 
+	gl_ParticleSystem,
 	gl_R_Init,
 	gl_R_RenderFrame,
 	gl_R_ClearState,

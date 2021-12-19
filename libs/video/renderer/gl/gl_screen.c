@@ -250,7 +250,7 @@ gl_R_RenderFrame (SCR_Func *scr_funcs)
 		time2 = Sys_DoubleTime ();
 		Sys_MaskPrintf (SYS_dev, "%3i ms  %4i wpoly %4i epoly %4i parts\n",
 						(int) ((time2 - time1) * 1000), gl_c_brush_polys,
-						gl_c_alias_polys, numparticles);
+						gl_c_alias_polys, r_psystem.numparticles);
 	}
 
 	GL_FlushText ();

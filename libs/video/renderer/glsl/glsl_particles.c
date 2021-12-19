@@ -1,5 +1,5 @@
 /*
-	gl_dyn_part.c
+	glsl_particles.c
 
 	OpenGL particle system.
 
@@ -201,12 +201,13 @@ glsl_R_InitParticles (void)
 
 	if (particleVertexArray)
 		free (particleVertexArray);
-	particleVertexArray = calloc (r_maxparticles * 4, sizeof (partvert_t));
+	particleVertexArray = calloc (r_psystem.maxparticles * 4,
+								  sizeof (partvert_t));
 
 	if (pVAindices)
 		free (pVAindices);
-	pVAindices = calloc (r_maxparticles * 6, sizeof (GLushort));
-	for (i = 0; i < r_maxparticles; i++) {
+	pVAindices = calloc (r_psystem.maxparticles * 6, sizeof (GLushort));
+	for (i = 0; i < r_psystem.maxparticles; i++) {
 		pVAindices[i * 6 + 0] = i * 4 + 0;
 		pVAindices[i * 6 + 1] = i * 4 + 1;
 		pVAindices[i * 6 + 2] = i * 4 + 2;
@@ -256,8 +257,8 @@ draw_qf_particles (void)
 	vacount = 0;
 	VA = particleVertexArray;
 
-	for (unsigned i = 0; i < numparticles; i++) {
-		particle_t *p = &particles[i];
+	for (unsigned i = 0; i < r_psystem.numparticles; i++) {
+		particle_t *p = &r_psystem.particles[i];
 		// Don't render particles too close to us.
 		// Note, we must still do physics and such on them.
 		if (!(DotProduct (p->pos, vpn) < minparticledist)) {
@@ -375,8 +376,8 @@ draw_id_particles (void)
 	vacount = 0;
 	VA = particleVertexArray;
 
-	for (unsigned i = 0; i < numparticles; i++) {
-		particle_t *p = &particles[i];
+	for (unsigned i = 0; i < r_psystem.numparticles; i++) {
+		particle_t *p = &r_psystem.particles[i];
 		// Don't render particles too close to us.
 		// Note, we must still do physics and such on them.
 		if (!(DotProduct (p->pos, vpn) < minparticledist)) {
@@ -405,10 +406,10 @@ draw_id_particles (void)
 void
 glsl_R_DrawParticles (void)
 {
-	if (!r_particles->int_val || !numparticles)
+	if (!r_particles->int_val || !r_psystem.numparticles)
 		return;
 	R_RunParticles (vr_data.frametime);
-	if (0/*FIXME r_particles_style->int_val*/) {
+	if (!r_psystem.points_only) {
 		draw_qf_particles ();
 	} else {
 		draw_id_particles ();
@@ -447,4 +448,10 @@ glsl_R_Particles_Init_Cvars (void)
 									 CVAR_ARCHIVE, r_particles_nearclip_f,
 									 "Distance of the particle near clipping "
 									 "plane from the player.");
+}
+
+psystem_t * __attribute__((const))//FIXME
+glsl_ParticleSystem (void)
+{
+	return &r_psystem;
 }

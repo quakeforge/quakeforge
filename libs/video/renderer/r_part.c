@@ -36,10 +36,8 @@
 #include "compat.h"
 #include "r_internal.h"
 
-unsigned int    r_maxparticles, numparticles;
-particle_t     *particles;
-partparm_t     *partparams;
-const int  	  **partramps;
+psystem_t   r_psystem;	//FIXME singleton
+
 vec3_t          r_pright, r_pup, r_ppn;
 
 /*
@@ -52,30 +50,31 @@ vec3_t          r_pright, r_pup, r_ppn;
 void
 R_MaxParticlesCheck (cvar_t *r_particles, cvar_t *r_particles_max)
 {
+	psystem_t  *ps = &r_psystem;//FIXME
 	unsigned    maxparticles = 0;
 	if (r_particles && r_particles->int_val) {
 		maxparticles = r_particles_max ? r_particles_max->int_val : 0;
 	}
 
-	if (r_maxparticles == maxparticles) {
+	if (ps->maxparticles == maxparticles) {
 		return;
 	}
 
 	size_t      size = sizeof (particle_t) + sizeof (partparm_t)
 						+ sizeof (int *);
 
-	if (particles) {
-		Sys_Free (particles, r_maxparticles * size);
-		particles = 0;
-		partparams = 0;
-		partramps = 0;
+	if (ps->particles) {
+		Sys_Free (ps->particles, ps->maxparticles * size);
+		ps->particles = 0;
+		ps->partparams = 0;
+		ps->partramps = 0;
 	}
-	r_maxparticles = maxparticles;
+	ps->maxparticles = maxparticles;
 
-	if (r_maxparticles) {
-		particles = Sys_Alloc (r_maxparticles * size);
-		partparams = (partparm_t *) &particles[r_maxparticles];
-		partramps = (const int **) &partparams[r_maxparticles];
+	if (ps->maxparticles) {
+		ps->particles = Sys_Alloc (ps->maxparticles * size);
+		ps->partparams = (partparm_t *) &ps->particles[ps->maxparticles];
+		ps->partramps = (const int **) &ps->partparams[ps->maxparticles];
 	}
 	R_ClearParticles ();
 }
@@ -83,30 +82,32 @@ R_MaxParticlesCheck (cvar_t *r_particles, cvar_t *r_particles_max)
 void
 R_ClearParticles (void)
 {
-	numparticles = 0;
+	psystem_t  *ps = &r_psystem;//FIXME
+	ps->numparticles = 0;
 }
 
 void
 R_RunParticles (float dT)
 {
+	psystem_t  *ps = &r_psystem;//FIXME
 	vec4f_t     gravity = {0, 0, -vr_data.gravity, 0};
 
 	unsigned    j = 0;
-	for (unsigned i = 0; i < numparticles; i++) {
-		particle_t *p = &particles[i];
-		partparm_t *parm = &partparams[i];
+	for (unsigned i = 0; i < ps->numparticles; i++) {
+		particle_t *p = &ps->particles[i];
+		partparm_t *parm = &ps->partparams[i];
 
 		if (p->live <= 0 || p->ramp >= parm->ramp_max) {
 			continue;
 		}
-		const int  *ramp = partramps[j];
+		const int  *ramp = ps->partramps[j];
 		if (i > j) {
-			particles[j] = *p;
-			partparams[j] = *parm;
-			partramps[j] = ramp;
+			ps->particles[j] = *p;
+			ps->partparams[j] = *parm;
+			ps->partramps[j] = ramp;
 		}
-		p = &particles[j];
-		parm = &partparams[j];
+		p = &ps->particles[j];
+		parm = &ps->partparams[j];
 		j += 1;
 
 		p->pos += dT * p->vel;
@@ -117,5 +118,5 @@ R_RunParticles (float dT)
 			p->icolor = ramp[(int)p->ramp];
 		}
 	}
-	numparticles = j;
+	ps->numparticles = j;
 }

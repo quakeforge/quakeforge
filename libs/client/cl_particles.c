@@ -46,6 +46,7 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 
+#include "QF/plugin/vid_render.h"	//FIXME
 #include "QF/scene/entity.h"
 
 #include "compat.h"
@@ -57,6 +58,7 @@ float cl_realtime;
 cl_particle_funcs_t *clp_funcs;
 
 static mtstate_t mt;	// private PRNG state
+static psystem_t *cl_psystem;
 
 static cvar_t *easter_eggs;
 static cvar_t *particles_style;
@@ -116,12 +118,15 @@ inline static int
 particle_new (ptype_t type, int texnum, vec4f_t pos, float scale,
 			  vec4f_t vel, float live, int color, float alpha, float ramp)
 {
-	if (numparticles >= r_maxparticles)
+	if (cl_psystem->numparticles >= cl_psystem->maxparticles) {
 		return 0;
-	particle_t *p = &particles[numparticles];
-	partparm_t *parm = &partparams[numparticles];
-	const int **rampptr = &partramps[numparticles];
-	numparticles += 1;
+	}
+
+	__auto_type ps = cl_psystem;
+	particle_t *p = &ps->particles[ps->numparticles];
+	partparm_t *parm = &ps->partparams[ps->numparticles];
+	const int **rampptr = &ps->partramps[ps->numparticles];
+	ps->numparticles += 1;
 
 	p->pos = pos;
 	p->vel = vel;
@@ -216,14 +221,6 @@ add_particle (ptype_t type, vec4f_t pos, vec4f_t vel, float live, int color,
 {
 	particle_new (type, part_tex_dot, pos, 1, vel, live, color, 1, ramp);
 }
-/*
-void
-CL_ClearParticles (void)
-{
-	numparticles = 0;
-}
-*/
-
 
 static void
 pointfile_f (void)
@@ -260,12 +257,10 @@ pointfile_f (void)
 			break;
 		c++;
 
-		if (numparticles >= r_maxparticles) {
+		if (!particle_new (pt_static, part_tex_dot, org, 1.5, zero,
+						   99999, (-c) & 15, 1.0, 0.0)) {
 			Sys_MaskPrintf (SYS_dev, "Not enough free particles\n");
 			break;
-		} else {
-			particle_new (pt_static, part_tex_dot, org, 1.5, zero,
-						  99999, (-c) & 15, 1.0, 0.0);
 		}
 	}
 	Qclose (f);
@@ -276,8 +271,6 @@ static void
 CL_ParticleExplosion_QF (vec4f_t org)
 {
 //	CL_NewExplosion (org);
-	if (numparticles >= r_maxparticles)
-		return;
 	particle_new_random (pt_smokecloud, part_tex_smoke, org, 4, 30, 8,
 						 5.0, (mtwist_rand (&mt) & 7) + 8,
 						 0.5 + qfrandom (0.25), 0.0);
@@ -287,11 +280,6 @@ static void
 CL_ParticleExplosion2_QF (vec4f_t org, int colorStart, int colorLength)
 {
 	unsigned int	i, j = 512;
-
-	if (numparticles >= r_maxparticles)
-		return;
-	else if (numparticles + j >= r_maxparticles)
-		j = r_maxparticles - numparticles;
 
 	for (i = 0; i < j; i++) {
 		particle_new_random (pt_blob, part_tex_dot, org, 16, 2, 256,
@@ -305,11 +293,6 @@ CL_BlobExplosion_QF (vec4f_t org)
 {
 	unsigned int	i;
 	unsigned int	j = 1024;
-
-	if (numparticles >= r_maxparticles)
-		return;
-	else if (numparticles + j >= r_maxparticles)
-		j = r_maxparticles - numparticles;
 
 	for (i = 0; i < j >> 1; i++) {
 		particle_new_random (pt_blob, part_tex_dot, org, 12, 2, 256,
@@ -486,9 +469,6 @@ CL_TeleportSplash_QF (vec4f_t org)
 static void
 CL_RocketTrail_QF (vec4f_t start, vec4f_t end)
 {
-	if (numparticles >= r_maxparticles)
-		return;
-
 	vec4f_t     vec = end - start;
 	float       maxlen = magnitudef (vec)[0];
 	vec = normalf (vec);
@@ -511,8 +491,6 @@ CL_RocketTrail_QF (vec4f_t start, vec4f_t end)
 					  2.0 - percent * 2.0,
 					  12 + (mtwist_rand (&mt) & 3),
 					  0.5 + qfrandom (0.125) - percent * 0.40, 0.0);
-		if (numparticles >= r_maxparticles)
-			break;
 		len += dist;
 		pos += step;
 		pscale = pscalenext;
@@ -522,9 +500,6 @@ CL_RocketTrail_QF (vec4f_t start, vec4f_t end)
 static void
 CL_GrenadeTrail_QF (vec4f_t start, vec4f_t end)
 {
-	if (numparticles >= r_maxparticles)
-		return;
-
 	vec4f_t     vec = end - start;
 	float       maxlen = magnitudef (vec)[0];
 	vec = normalf (vec);
@@ -547,8 +522,6 @@ CL_GrenadeTrail_QF (vec4f_t start, vec4f_t end)
 					  2.0 - percent * 2.0,
 					  1 + (mtwist_rand (&mt) & 3),
 					  0.625 + qfrandom (0.125) - percent * 0.40, 0.0);
-		if (numparticles >= r_maxparticles)
-			break;
 		len += dist;
 		pos += step;
 		pscale = pscalenext;
@@ -558,9 +531,6 @@ CL_GrenadeTrail_QF (vec4f_t start, vec4f_t end)
 static void
 CL_BloodTrail_QF (vec4f_t start, vec4f_t end)
 {
-	if (numparticles >= r_maxparticles)
-		return;
-
 	vec4f_t     vec = end - start;
 	float       maxlen = magnitudef (vec)[0];
 	vec = normalf (vec);
@@ -582,8 +552,6 @@ CL_BloodTrail_QF (vec4f_t start, vec4f_t end)
 		particle_new (pt_grav, part_tex_smoke, pos + roffs (4), pscale, vel,
 					  2.0 - percent * 2.0,
 					  68 + (mtwist_rand (&mt) & 3), 1.0, 0.0);
-		if (numparticles >= r_maxparticles)
-			break;
 		len += dist;
 		pos += step;
 		pscale = pscalenext;
@@ -593,9 +561,6 @@ CL_BloodTrail_QF (vec4f_t start, vec4f_t end)
 static void
 CL_SlightBloodTrail_QF (vec4f_t start, vec4f_t end)
 {
-	if (numparticles >= r_maxparticles)
-		return;
-
 	vec4f_t     vec = end - start;
 	float       maxlen = magnitudef (vec)[0];
 	vec = normalf (vec);
@@ -616,8 +581,6 @@ CL_SlightBloodTrail_QF (vec4f_t start, vec4f_t end)
 		particle_new (pt_grav, part_tex_smoke, pos + roffs (4), pscale, vel,
 					  1.5 - percent * 1.5,
 					  68 + (mtwist_rand (&mt) & 3), 0.75, 0.0);
-		if (numparticles >= r_maxparticles)
-			break;
 		len += dist;
 		pos += step;
 		pscale = pscalenext;
@@ -628,9 +591,6 @@ static void
 CL_WizTrail_QF (vec4f_t start, vec4f_t end)
 {
 	float		dist = 3.0;
-
-	if (numparticles >= r_maxparticles)
-		return;
 
 	vec4f_t     vec = end - start;
 	float       maxlen = magnitudef (vec)[0];
@@ -650,8 +610,6 @@ CL_WizTrail_QF (vec4f_t start, vec4f_t end)
 					  30 * tracer_vel (tracercount++, vec),
 					  0.5 - percent * 0.5,
 					  52 + (mtwist_rand (&mt) & 4), 1.0 - percent * 0.125, 0.0);
-		if (numparticles >= r_maxparticles)
-			break;
 		len += dist;
 		pos += step;
 	}
@@ -661,9 +619,6 @@ static void
 CL_FlameTrail_QF (vec4f_t start, vec4f_t end)
 {
 	float		dist = 3.0;
-
-	if (numparticles >= r_maxparticles)
-		return;
 
 	vec4f_t     vec = end - start;
 	float       maxlen = magnitudef (vec)[0];
@@ -693,9 +648,6 @@ CL_VoorTrail_QF (vec4f_t start, vec4f_t end)
 {
 	float		dist = 3.0;
 
-	if (numparticles >= r_maxparticles)
-		return;
-
 	vec4f_t     vec = end - start;
 	float       maxlen = magnitudef (vec)[0];
 	vec = normalf (vec);
@@ -723,9 +675,6 @@ CL_GlowTrail_QF (vec4f_t start, vec4f_t end, int glow_color)
 {
 	float		dist = 3.0;
 
-	if (numparticles >= r_maxparticles)
-		return;
-
 	vec4f_t     vec = end - start;
 	float       maxlen = magnitudef (vec)[0];
 	vec = normalf (vec);
@@ -741,8 +690,6 @@ CL_GlowTrail_QF (vec4f_t start, vec4f_t end, int glow_color)
 
 		particle_new (pt_smoke, part_tex_dot, pos + roffs (5), 1.0, zero,
 					  2.0 - percent * 0.2, glow_color, 1.0, 0.0);
-		if (numparticles >= r_maxparticles)
-			break;
 		len += dist;
 		pos += step;
 	}
@@ -754,8 +701,6 @@ CL_ParticleExplosion_EE (vec4f_t org)
 /*
 	CL_NewExplosion (org);
 */
-	if (numparticles >= r_maxparticles)
-		return;
 	particle_new_random (pt_smokecloud, part_tex_smoke, org, 4, 30, 8,
 						 5.0, mtwist_rand (&mt) & 255,
 						 0.5 + qfrandom (0.25), 0.0);
@@ -788,9 +733,6 @@ CL_TeleportSplash_EE (vec4f_t org)
 static void
 CL_RocketTrail_EE (vec4f_t start, vec4f_t end)
 {
-	if (numparticles >= r_maxparticles)
-		return;
-
 	vec4f_t     vec = end - start;
 	float       maxlen = magnitudef (vec)[0];
 	vec = normalf (vec);
@@ -811,8 +753,6 @@ CL_RocketTrail_EE (vec4f_t start, vec4f_t end)
 					  2.0 - percent * 2.0,
 					  mtwist_rand (&mt) & 255,
 					  0.5 + qfrandom (0.125) - percent * 0.40, 0.0);
-		if (numparticles >= r_maxparticles)
-			break;
 		len += dist;
 		pos += len * vec;
 		pscale = pscalenext;
@@ -1169,8 +1109,6 @@ CL_Particle_New (ptype_t type, int texnum, vec4f_t org, float scale,
 				 vec4f_t vel, float live, int color, float alpha,
 				 float ramp)
 {
-	if (numparticles >= r_maxparticles)
-		return;
 	particle_new (type, texnum, org, scale, vel, live, color, alpha, ramp);
 }
 
@@ -1179,8 +1117,6 @@ CL_Particle_NewRandom (ptype_t type, int texnum, vec4f_t org,
 					   int org_fuzz, float scale, int vel_fuzz, float live,
 					   int color, float alpha, float ramp)
 {
-	if (numparticles >= r_maxparticles)
-		return;
 	particle_new_random (type, texnum, org, org_fuzz, scale, vel_fuzz, live,
 						 color, alpha, ramp);
 }
@@ -1321,6 +1257,7 @@ static void
 particles_style_f (cvar_t *var)
 {
 	easter_eggs_f (easter_eggs);
+	cl_psystem->points_only = !var->int_val;
 }
 
 static void
@@ -1330,12 +1267,11 @@ CL_ParticleFunctionInit (void)
 	easter_eggs_f (easter_eggs);
 }
 
-/*
- */
 void
 CL_Particles_Init (void)
 {
 	mtwist_seed (&mt, 0xdeadbeef);
+	cl_psystem = r_funcs->ParticleSystem ();
 	Cmd_AddCommand ("pointfile", pointfile_f,
 					"Load a pointfile to determine map leaks.");
 	easter_eggs = Cvar_Get ("easter_eggs", "0", CVAR_NONE, easter_eggs_f,

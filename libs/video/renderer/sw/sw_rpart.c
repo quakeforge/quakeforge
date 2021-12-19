@@ -58,8 +58,8 @@ R_DrawParticles (void)
 
 	R_RunParticles (vr_data.frametime);
 
-	for (unsigned i = 0; i < numparticles; i++) {
-		particle_t *p = &particles[i];
+	for (unsigned i = 0; i < r_psystem.numparticles; i++) {
+		particle_t *p = &r_psystem.particles[i];
 		D_DrawParticle (p);
 	}
 }
@@ -96,4 +96,10 @@ R_Particles_Init_Cvars (void)
 									 CVAR_ARCHIVE, r_particles_nearclip_f,
 									 "Distance of the particle near clipping "
 									 "plane from the player.");
+}
+
+psystem_t * __attribute__((const))//FIXME
+sw_ParticleSystem (void)
+{
+	return &r_psystem;
 }

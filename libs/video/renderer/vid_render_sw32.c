@@ -143,6 +143,7 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 	0,
 	0,
 
+	sw32_ParticleSystem,
 	sw32_R_Init,
 	sw32_R_RenderFrame,
 	sw32_R_ClearState,

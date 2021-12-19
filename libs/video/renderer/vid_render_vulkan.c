@@ -91,6 +91,12 @@ vulkan_Fog_ParseWorldspawn (struct plitem_s *worldspawn)
 {
 }
 
+static struct psystem_s *
+vulkan_ParticleSystem (void)
+{
+	return Vulkan_ParticleSystem (vulkan_ctx);
+}
+
 static void
 vulkan_R_Init (void)
 {
@@ -663,6 +669,7 @@ vid_render_funcs_t vulkan_vid_render_funcs = {
 	vulkan_Fog_Update,
 	vulkan_Fog_ParseWorldspawn,
 
+	vulkan_ParticleSystem,
 	vulkan_R_Init,
 	vulkan_R_RenderFrame,
 	vulkan_R_ClearState,
