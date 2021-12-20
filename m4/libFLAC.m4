@@ -8,10 +8,10 @@ AC_DEFUN([AM_PATH_LIBFLAC],
 [dnl 
 dnl Get the cflags and libraries
 dnl
-AC_ARG_WITH(libFLAC,[  --with-libFLAC=PFX   Prefix where libFLAC is installed (optional)], libFLAC_prefix="$withval", libFLAC_prefix="")
-AC_ARG_WITH(libFLAC-libraries,[  --with-libFLAC-libraries=DIR   Directory where libFLAC library is installed (optional)], libFLAC_libraries="$withval", libFLAC_libraries="")
-AC_ARG_WITH(libFLAC-includes,[  --with-libFLAC-includes=DIR   Directory where libFLAC header files are installed (optional)], libFLAC_includes="$withval", libFLAC_includes="")
-AC_ARG_ENABLE(libFLACtest, [  --disable-libFLACtest       Do not try to compile and run a test libFLAC program],, enable_libFLACtest=yes)
+AC_ARG_WITH(libFLAC,AS_HELP_STRING([--with-libFLAC=PFX], [prefix where libFLAC is installed (optional)]), libFLAC_prefix="$withval", libFLAC_prefix="")
+AC_ARG_WITH(libFLAC-libraries,AS_HELP_STRING([--with-libFLAC-libraries=DIR], [directory where libFLAC library is installed (optional)]), libFLAC_libraries="$withval", libFLAC_libraries="")
+AC_ARG_WITH(libFLAC-includes,AS_HELP_STRING([--with-libFLAC-includes=DIR], [directory where libFLAC header files are installed (optional)]), libFLAC_includes="$withval", libFLAC_includes="")
+AC_ARG_ENABLE(libFLACtest, AS_HELP_STRING([--disable-libFLACtest], [do not try to compile and run a test libFLAC program]),, enable_libFLACtest=yes)
 
   if test "x$libFLAC_libraries" != "x" ; then
     LIBFLAC_LIBS="-L$libFLAC_libraries"

@@ -14,7 +14,8 @@ fi
 
 dnl Check for XFree86-VidMode support
 AC_ARG_ENABLE(vidmode,
-[  --disable-vidmode       do not use XFree86 VidMode extension],
+	AS_HELP_STRING([--disable-vidmode],
+		[do not use XFree86 VidMode extension]),
 	HAVE_VIDMODE=$enable_vidmode, HAVE_VIDMODE=auto)
 if test "x$HAVE_VIDMODE" != xno; then
 	save_CPPFLAGS="$CPPFLAGS"
@@ -35,8 +36,8 @@ AC_SUBST(VIDMODE_LIBS)
 
 dnl Check for XInput2 support
 AC_ARG_ENABLE(xi2,
-[  --disable-xi2           do not use Xorg XInput2 extension],
-HAVE_XI2=$enable_xi2, HAVE_XI2=auto)
+	AS_HELP_STRING([--disable-xi2], [do not use Xorg XInput2 extension]),
+	HAVE_XI2=$enable_xi2, HAVE_XI2=auto)
 if test "x$HAVE_XI2" != xno; then
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$X_CFLAGS $CPPFLAGS"
@@ -55,8 +56,8 @@ AC_SUBST(XI2_LIBS)
 
 dnl Check for XInput2 support
 AC_ARG_ENABLE(xfixes,
-[  --disable-xfixes        do not use Xorg Xfixes extension],
-HAVE_XFIXES=$enable_xfixes, HAVE_XFIXES=auto)
+	AS_HELP_STRING([--disable-xfixes], [do not use Xorg Xfixes extension]),
+	HAVE_XFIXES=$enable_xfixes, HAVE_XFIXES=auto)
 if test "x$HAVE_XFIXES" != xno; then
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$X_CFLAGS $CPPFLAGS"
@@ -75,8 +76,8 @@ AC_SUBST(XFIXES_LIBS)
 
 dnl Check for DGA support
 AC_ARG_ENABLE(dga,
-[  --disable-dga           do not use XFree86 DGA extension],
-HAVE_DGA=$enable_dga, HAVE_DGA=auto)
+	AS_HELP_STRING([--disable-dga], [do not use XFree86 DGA extension]),
+	HAVE_DGA=$enable_dga, HAVE_DGA=auto)
 if test "x$HAVE_DGA" != xno; then
 	save_CPPFLAGS="$CPPFLAGS"
 	CPPFLAGS="$X_CFLAGS $CPPFLAGS"

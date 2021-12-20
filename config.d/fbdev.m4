@@ -1,7 +1,8 @@
 dnl Checks for Linux FBDev support
 AC_ARG_WITH(fbdev,
-[  --with-fbdev            use Linux framebuffer device],
-HAVE_FBDEV=$withval, HAVE_FBDEV=no)
+	AS_HELP_STRING([--with-fbdev], [use Linux framebuffer device]),
+	HAVE_FBDEV=$withval,
+	HAVE_FBDEV=no)
 if test "x$HAVE_FBDEV" != xno; then
 	dnl We should still be able to compile it even if
 	dnl there is no fbdev support in the running kernel

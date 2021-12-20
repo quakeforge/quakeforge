@@ -1,7 +1,5 @@
 dnl SDL/SDL-GL checks
-AC_ARG_ENABLE(sdl,
-[  --enable-sdl            enable checking for SDL],
-)
+AC_ARG_ENABLE(sdl, AS_HELP_STRING([--enable-sdl], [enable checking for SDL]))
 
 if test "x$enable_sdl" = xyes; then
 	if test "x$PKG_CONFIG" != "x"; then
@@ -24,8 +22,7 @@ fi
 
 dnl SDL-AUDIO checks
 AC_ARG_ENABLE(sdl-audio,
-[  --disable-sdl-audio     disable checking for SDL-AUDIO],
-)
+	AS_HELP_STRING([  --disable-sdl-audio], [disable checking for SDL-AUDIO]))
 
 if test "x$enable_sdl_audio" != xno; then
 	if test "x$HAVE_SDL" = "xyes"; then
@@ -35,8 +32,7 @@ fi
 
 dnl SDL-CD checks
 AC_ARG_ENABLE(sdl-cd,
-[  --disable-sdl-cd        disable checking for SDL-CD],
-)
+	AS_HELP_STRING([--disable-sdl-cd], [disable checking for SDL-CD]))
 if test "x$enable_sdl_cd" != xno; then
 	if test "x$HAVE_SDL" = "xyes"; then
 		HAVE_SDL_CD=yes

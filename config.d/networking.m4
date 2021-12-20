@@ -16,8 +16,8 @@ else
 fi
 
 AC_ARG_WITH(ipv6,
-	AS_HELP_STRING([--with-ipv6=DIR],
-				   [Enable IPv6 support.]
+	AS_HELP_STRING([--with-ipv6@<:@=DIR@:>@],
+				   [enable IPv6 support.]
 				   [Optional argument specifies location of inet6 libraries.]), 
 	[
 	if test "x$withval" = xno ; then

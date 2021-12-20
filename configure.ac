@@ -123,8 +123,8 @@ m4_include(config.d/qfcc.m4)
 m4_include(config.d/compiling.m4)
 
 AC_ARG_ENABLE(static-doc,
-	[  --enable-static-doc     Enable generation of doxygen docs for static]
-	[                          functions.])
+	AS_HELP_STRING([--enable-static-doc],
+		[enable generation of doxygen docs for static functions.]))
 STATIC_DOC=NO
 if test "x$enable_static_doc" = xyes; then
 	STATIC_DOC=YES
@@ -132,7 +132,8 @@ fi
 AC_SUBST(STATIC_DOC)
 
 AC_ARG_ENABLE(typecheck-progs,
-	[  --enable-typecheck-progs Enable type checking on progs field access])
+	AS_HELP_STRING([--enable-typecheck-progs],
+		[enable type checking on progs field access]))
 if test "x$enable_typecheck_progs" = xyes; then
 	AC_DEFINE(TYPECHECK_PROGS, 1, [Define this if you want progs typechecking])
 fi

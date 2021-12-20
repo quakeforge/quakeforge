@@ -4,7 +4,7 @@ dnl ==================================================================
 
 dnl XMMS Checks
 AC_ARG_ENABLE(xmms,
-[  --enable-xmms           enable checking for XMMS],
+	AS_HELP_STRING([--enable-xmms], [enable checking for XMMS])
 )
 if test "x$mingw" != xyes -a "x$enable_xmms" == xyes; then
 	AM_PATH_XMMS(0.9.5.1, HAVE_XMMS=yes, HAVE_XMMS=no)
@@ -78,8 +78,8 @@ AC_SUBST(CD_LIBS)
 
 AC_ARG_WITH([cd-default],
 	AS_HELP_STRING([--with-cd-default=...],
-				   [Plugin to use for the default cd driver.]
-				   [Defaults to File.]
+				   [plugin to use for the default cd driver.]
+				   [Defaults to file.]
 				   [[file linux xmms sdl sgi win32]]),
 	[cd_default="$withval"]
 )

@@ -2,9 +2,6 @@ dnl ==================================================================
 dnl Checks for sound
 dnl ==================================================================
 
-dnl AC_ARG_ENABLE(samplerate,
-dnl [  --disable-samplerate    disable libsamplerate support],
-dnl )
 HAVE_SAMPLERATE=no
 SAMPLERATE_LIBS=""
 if test "x$enable_samplerate" != "xno"; then
@@ -40,16 +37,16 @@ if test "x$enable_sound" != "xno"; then
 	AC_CHECK_LIB(mme, waveOutOpen, HAVE_LIBMME=yes)
 
 	AC_ARG_ENABLE(alsa,
-		[  --disable-alsa          disable checks for ALSA support])
+		AS_HELP_STRING([--disable-alsa], [disable checks for ALSA support]))
 
 	AC_ARG_ENABLE(oss,
-		[  --disable-oss           disable checks for OSS support])
+		AS_HELP_STRING([--disable-oss], [disable checks for OSS support]))
 
 	AC_ARG_ENABLE(sun,
-		[  --disable-sun           disable checks for Sun audio support])
+		AS_HELP_STRING([--disable-sun], [disable checks for Sun audio support]))
 
 	AC_ARG_ENABLE(sound,
-		[  --disable-sound         disable sound outright])
+		AS_HELP_STRING([--disable-sound], [disable sound outright]))
 
 	unset SOUND_TYPES
 
@@ -96,8 +93,7 @@ QF_maGiC_VALUE
 	AC_SUBST(ALSA_LIBS)
 
 	AC_ARG_ENABLE(jack,
-	[  --disable-jack          disable jack support],
-	)
+		AS_HELP_STRING([--disable-jack], [disable jack support]))
 	HAVE_JACK=no
 	JACK_LIBS=""
 	if test "x$enable_jack" != "xno"; then

@@ -1,6 +1,5 @@
 AC_ARG_ENABLE(curses,
-[  --disable-curses        disable curses support]
-)
+	AS_HELP_STRING([--disable-curses], [disable curses support]))
 if test "x$enable_curses" != "xno"; then
   if test "x$PKG_CONFIG" != "x"; then
     PKG_CHECK_MODULES([NCURSES], [ncurses], HAVE_NCURSES=yes, HAVE_NCURSES=no)

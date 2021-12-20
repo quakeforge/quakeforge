@@ -53,7 +53,7 @@ if test "x$GCC" = xyes; then
 fi
 
 AC_ARG_ENABLE(debug,
-	[  --disable-debug         compile without debugging],
+	AS_HELP_STRING([--disable-debug], [compile without debugging]),
 	debug=$enable_debug
 )
 
@@ -77,13 +77,15 @@ else
 fi
 
 AC_ARG_ENABLE(optimize,
-	[  --disable-optimize      compile without optimizations (for development)],
+	AS_HELP_STRING([--disable-optimize],
+		[compile without optimizations (for development)]),
 	optimize=$enable_optimize,
 	optimize=yes
 )
 
 AC_ARG_ENABLE(simd,
-	[  --enable-simd[=arg]     Enable SIMD support (default auto)],
+	AS_HELP_STRING([--enable-simd@<:@=arg@:.@],
+		[enable SIMD support (default auto)]),
 	[],
 	[enable_simd=yes]
 )
@@ -123,7 +125,8 @@ if test "x$optimize" = xyes -a "x$leave_cflags_alone" != "xyes"; then
 		CFLAGS="$saved_cflags"
 		light="-O2"
 		AC_ARG_ENABLE(strict-aliasing,
-	[  --enable-strict-aliasing enable the -fstrict-aliasing option of gcc])
+			AS_HELP_STRING([--enable-strict-aliasing],
+				[enable the -fstrict-aliasing option of gcc]))
 		if test "x$enable_strict_aliasing" = "xyes"; then
 			heavy="$heavy -fstrict-aliasing"
 			light="$light -fstrict-aliasing"
@@ -144,7 +147,8 @@ if test "x$optimize" = xyes -a "x$leave_cflags_alone" != "xyes"; then
 		fi
 		AC_MSG_CHECKING(for special compiler settings)
 		AC_ARG_WITH(arch,
-		[  --with-arch=ARCH        control compiler architecture directly],
+			AS_HELP_STRING([--with-arch=ARCH],
+				[control compiler architecture directly]),
 			arch="$withval", arch=auto
 		)
 		case "$arch" in
@@ -195,7 +199,8 @@ fi
 
 dnl CFLAGS for release and devel versions
 AC_ARG_ENABLE(profile,
-	[  --enable-profile        compile with profiling (for development)],
+	AS_HELP_STRING([--enable-profile],
+		[compile with profiling (for development)]),
 	profile=$enable_profile
 )
 if test "x$profile" = xyes; then
@@ -213,7 +218,7 @@ if test "x$GCC" = xyes; then
 	dnl Check for -pipe vs -save-temps.
 	AC_MSG_CHECKING(for -pipe vs -save-temps)
 	AC_ARG_ENABLE(save-temps,
-		[  --enable-save-temps     save temporary files],
+		AS_HELP_STRING([--enable-save-temps], [save temporary files]),
 		AC_MSG_RESULT(-save-temps)
 		CFLAGS="$CFLAGS -save-temps"
 		BUILD_TYPE="$BUILD_TYPE Save-temps"
@@ -238,7 +243,7 @@ QF_CC_OPTION(-Wsuggest-attribute=format)
 QF_CC_OPTION(-Wformat-nonliteral)
 
 AC_ARG_ENABLE(coverage,
-[  --enable-coverage       Enable generation of data for gcov])
+	AS_HELP_STRING([--enable-coverage], [enable generation of data for gcov]))
 if test "x$enable_coverage" = xyes; then
 	QF_CC_OPTION(-fprofile-arcs -ftest-coverage)
 fi
@@ -270,7 +275,7 @@ if test "x$GCC" != xyes; then
 fi
 
 AC_ARG_ENABLE(Werror,
-[  --disable-Werror        Do not treat warnings as errors])
+	AS_HELP_STRING([--disable-Werror], [do not treat warnings as errors]))
 dnl We want warnings, lots of warnings...
 dnl The help text should be INVERTED before release!
 dnl when in git, this test defaults to ENABLED.

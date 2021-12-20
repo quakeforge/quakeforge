@@ -4,17 +4,17 @@ dnl ==================================================================
 
 QF_WITH_TARGETS(
 	clients,
-	[  --with-clients=<list>   compile clients in <list>:],
+	[compile clients],
 	[fbdev,sdl,svga,win,x11],dummy
 )
 QF_WITH_TARGETS(
 	servers,
-	[  --with-servers=<list>   compile dedicated server:],
+	[compile dedicated servers],
 	[master,nq,qw,qtv],dummy
 )
 QF_WITH_TARGETS(
 	tools,
-	[  --with-tools=<list>     compile qf tools:],
+	[compile qf tools],
 	[bsp2img,carne,gsc,pak,qfbsp,qfcc,qflight,qflmp,qfmodelgen,qfspritegen,qfvis,qwaq,wad,wav],dummy
 )
 
@@ -390,7 +390,8 @@ QF_SUBST(PREFER_NON_PIC)
 QF_SUBST(STATIC)
 
 AC_ARG_WITH(static-plugins,
-[  --with-static-plugins   build plugins into executable rather than separate],
+	AS_HELP_STRING([--with-static-plugins],
+		[build plugins into executable rather than separate]),
 	static_plugins="$withval", static_plugins=auto)
 if test "x$static_plugins" = xauto; then
 	if test "x$enable_shared" = xno -o "x$SYSTYPE" = xWIN32; then

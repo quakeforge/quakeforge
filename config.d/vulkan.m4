@@ -1,6 +1,6 @@
 dnl Check for vulkan support
 AC_ARG_ENABLE(vulkan,
-[  --disable-vulkan        do not use Vulkan],
+	AS_HELP_STRING([--disable-vulkan], [do not use Vulkan]),
 	HAVE_VULKAN=$enable_vulkan, HAVE_VULKAN=auto)
 if test "x$HAVE_VULKAN" != xno; then
 	save_CPPFLAGS="$CPPFLAGS"

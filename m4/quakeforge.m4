@@ -144,10 +144,8 @@ QF_STATIC_PLUGIN_PROTOS(m4_default($4,$1),[$1],[$2])
 QF_STATIC_PLUGIN_LIST(m4_default($4,$1),[$1],[$2])])
 
 AC_DEFUN([QF_WITH_TARGETS], [
-AC_ARG_WITH($1,
-	[$2]
-	[$3], $1="$withval", $1=all
-)
+AC_ARG_WITH($1, AS_HELP_STRING([--with-$1=<list>], [$2:] [$3]),
+	$1="$withval", $1=all)
 if test "x${$1}" = "xall"; then
 	for qf_t in `echo '$3' | sed -e "s/,/ /g"`''; do
 		eval ENABLE_$1_${qf_t}=yes
