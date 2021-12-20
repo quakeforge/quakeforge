@@ -1,5 +1,5 @@
 /*
-	input.c
+	term-input.c
 
 	Input handling
 
@@ -891,7 +891,7 @@ bi_input_shutdown (void *_pr)
 }
 
 void
-BI_Input_Init (progs_t *pr)
+BI_TermInput_Init (progs_t *pr)
 {
 	qwaq_input_resources_t *res = calloc (sizeof (*res), 1);
 	res->pr = pr;

@@ -26,7 +26,7 @@ typedef struct qwaq_thread_set_s DARRAY_TYPE(qwaq_thread_t *) qwaq_thread_set_t;
 struct memhunk_s;
 void BI_Init (struct memhunk_s *hunk, progs_t *pr);
 void BI_Curses_Init (progs_t *pr);
-void BI_Input_Init (progs_t *pr);
+void BI_TermInput_Init (progs_t *pr);
 void QWAQ_EditBuffer_Init (progs_t *pr);
 extern struct cbuf_s *qwaq_cbuf;
 qwaq_thread_t *create_thread (void *(*thread_func) (qwaq_thread_t *), void *);

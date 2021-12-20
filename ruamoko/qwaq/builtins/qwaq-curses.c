@@ -60,7 +60,7 @@
 
 static progsinit_f main_app[] = {
 	BI_Curses_Init,
-	BI_Input_Init,
+	BI_TermInput_Init,
 	QWAQ_EditBuffer_Init,
 	QWAQ_Debug_Init,
 	0

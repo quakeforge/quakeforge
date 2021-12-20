@@ -73,8 +73,8 @@ ruamoko_qwaq_qwaq_curses_SOURCES= \
 	ruamoko/qwaq/builtins/curses.c \
 	ruamoko/qwaq/builtins/debug.c \
 	ruamoko/qwaq/builtins/editbuffer.c \
-	ruamoko/qwaq/builtins/input.c \
 	ruamoko/qwaq/builtins/qwaq-curses.c \
+	ruamoko/qwaq/builtins/term-input.c \
 	ruamoko/qwaq/builtins/threading.c
 
 ruamoko_qwaq_qwaq_curses_LDADD= $(qwaq_curses_libs) $(QWAQ_LIBS) \
