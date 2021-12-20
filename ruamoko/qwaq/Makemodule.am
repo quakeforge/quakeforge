@@ -113,10 +113,13 @@ qwaq_x11_libs= \
 	$(top_builddir)/libs/models/libQFmodels.la \
 	$(top_builddir)/libs/video/targets/libQFx11.la \
 	$(qwaq_client_libs)
-ruamoko_qwaq_qwaq_x11_SOURCES=ruamoko/qwaq/builtins/qwaq.c ruamoko/qwaq/builtins/qwaq-bi.c
+ruamoko_qwaq_qwaq_x11_SOURCES= \
+	ruamoko/qwaq/builtins/main.c \
+	ruamoko/qwaq/builtins/qwaq-graphics.c \
+	ruamoko/qwaq/builtins/graphics.c
 ruamoko_qwaq_qwaq_x11_LDADD= $(qwaq_x11_libs) $(QWAQ_LIBS) \
 			$(VIDMODE_LIBS) $(DGA_LIBS) ${XFIXES_LIBS} $(XI2_LIBS) $(X_LIBS) \
-			-lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB) $(DL_LIBS)
+			-lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB) $(PTHREAD_LDFLAGS) $(DL_LIBS)
 ruamoko_qwaq_qwaq_x11_LDFLAGS=
 ruamoko_qwaq_qwaq_x11_DEPENDENCIES= $(qwaq_x11_libs) $(QWAQ_DEPS)
 

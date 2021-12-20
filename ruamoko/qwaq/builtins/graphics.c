@@ -1,5 +1,5 @@
 /*
-	qwaq-bi.c
+	graphics.c
 
 	Basic game engine builtins
 
@@ -80,21 +80,6 @@ quit_f (void)
 	Sys_Quit ();
 }
 
-static void
-bi_printf (progs_t *pr)
-{
-	const char *fmt = P_GSTRING (pr, 0);
-	int         count = pr->pr_argc - 1;
-	pr_type_t **args = pr->pr_params + 1;
-	dstring_t  *dstr = dstring_new ();
-
-	PR_Sprintf (pr, dstr, "bi_printf", fmt, count, args);
-	if (dstr->str) {
-		Con_Printf ("%s", dstr->str);
-	}
-	dstring_delete (dstr);
-}
-
 static progs_t *bi_rprogs;
 static func_t qc2d;
 
@@ -138,7 +123,6 @@ bi_shutdown_ (progs_t *pr)
 }
 
 static builtin_t builtins[] = {
-	{"printf",		bi_printf,		-1},
 	{"refresh",		bi_refresh,		-1},
 	{"refresh_2d",	bi_refresh_2d,	-1},
 	{"shutdown",	bi_shutdown_,	-1},
@@ -151,9 +135,11 @@ bi_shutdown (void *data)
 }
 
 void
-BI_Init (memhunk_t *hunk, progs_t *pr)
+BI_Graphics_Init (progs_t *pr)
 {
 	byte       *basepal, *colormap;
+	size_t      memsize = 8 * 1024 * 1024;
+	memhunk_t  *hunk = Memory_Init (Sys_Alloc (memsize), memsize);
 
 	PR_RegisterBuiltins (pr, builtins);
 
