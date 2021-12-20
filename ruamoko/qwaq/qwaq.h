@@ -16,6 +16,8 @@ typedef struct qwaq_thread_s {
 	sys_printf_t sys_printf;
 	progsinit_f*progsinit;
 	progs_t    *pr;
+	int         rua_security;
+	struct memhunk_s *hunk;
 	struct hashlink_s *hashlink_freelist;
 	func_t      main_func;
 	void       *data;

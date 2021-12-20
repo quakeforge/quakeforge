@@ -33,22 +33,7 @@
 
 #include <string.h>
 
-//#include "QF/cbuf.h"
-//#include "QF/cmd.h"
-//#include "QF/cvar.h"
-//#include "QF/gib.h"
-//#include "QF/idparse.h"
-#include "QF/input.h"
-//#include "QF/keys.h"
-//#include "QF/progs.h"
-//#include "QF/qargs.h"
-//#include "QF/quakefs.h"
-//#include "QF/ruamoko.h"
-//#include "QF/sys.h"
-//#include "QF/va.h"
-//#include "QF/zone.h"
-
-//#include "compat.h"
+#include "QF/zone.h"
 
 #include "ruamoko/qwaq/qwaq.h"
 
@@ -74,12 +59,11 @@ int
 qwaq_init_threads (qwaq_thread_set_t *thread_data)
 {
 	int         main_ind = -1;
+	size_t      memsize = 8 * 1024 * 1024;
+	memhunk_t  *hunk = Memory_Init (Sys_Alloc (memsize), memsize);
 
 	logfile = fopen ("qwaq-graphics.log", "wt");
 	Sys_SetStdPrintf (qwaq_print);
-
-	IN_Init_Cvars ();
-	//IN_Init ();
 
 	for (size_t i = 1, thread_ind = 0; i < thread_data->size; i++) {
 		qwaq_thread_t *thread = thread_data->a[i];
@@ -101,6 +85,8 @@ qwaq_init_threads (qwaq_thread_set_t *thread_data)
 			app_funcs = main_app;
 		}
 		thread->progsinit = app_funcs;
+		thread->rua_security = 1;
+		thread->hunk = hunk;	//FIXME shared (but currently only one thread)
 	}
 	return main_ind;
 }

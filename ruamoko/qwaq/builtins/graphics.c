@@ -55,7 +55,6 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
-#include "QF/zone.h"
 
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
@@ -137,17 +136,16 @@ bi_shutdown (void *data)
 void
 BI_Graphics_Init (progs_t *pr)
 {
+	qwaq_thread_t *thread = PR_Resources_Find (pr, "qwaq_thread");
 	byte       *basepal, *colormap;
-	size_t      memsize = 8 * 1024 * 1024;
-	memhunk_t  *hunk = Memory_Init (Sys_Alloc (memsize), memsize);
 
 	PR_RegisterBuiltins (pr, builtins);
 
-	QFS_Init (hunk, "nq");
+	QFS_Init (thread->hunk, "nq");
 	PI_Init ();
 	PI_RegisterPlugins (client_plugin_list);
 
-	Sys_RegisterShutdown (bi_shutdown, 0);
+	Sys_RegisterShutdown (bi_shutdown, pr);
 
 	VID_Init_Cvars ();
 	IN_Init_Cvars ();

@@ -189,6 +189,11 @@ common_builtins_init (progs_t *pr)
 	PR_RegisterBuiltins (pr, common_builtins);
 }
 
+static void
+qwaq_thread_clear (progs_t *pr, void *_thread)
+{
+}
+
 static progs_t *
 create_progs (qwaq_thread_t *thread)
 {
@@ -203,7 +208,8 @@ create_progs (qwaq_thread_t *thread)
 
 	PR_Init_Cvars ();
 	PR_Init (pr);
-	RUA_Init (pr, 0);
+	PR_Resources_Register (pr, "qwaq_thread", thread, qwaq_thread_clear);
+	RUA_Init (pr, thread->rua_security);
 	common_builtins_init (pr);
 	while (*funcs) {
 		(*funcs++) (pr);
