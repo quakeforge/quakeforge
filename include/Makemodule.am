@@ -40,6 +40,7 @@ EXTRA_DIST += \
 	include/gib_vars.h \
 	include/gl_warp_sin.h \
 	include/in_win.h \
+	include/in_x11.h \
 	include/logos.h \
 	include/mod_internal.h \
 	include/net_dgrm.h \
@@ -54,6 +55,7 @@ EXTRA_DIST += \
 	include/ops.h \
 	include/pstdint.h \
 	include/qfalloca.h \
+	include/qfselect.h \
 	include/qstring.h \
 	include/quakeasm.h \
 	include/quicksort.h \
@@ -81,8 +83,10 @@ EXTRA_DIST += \
 	include/world.h \
 	include/client/effects.h \
 	include/client/entities.h \
+	include/client/input.h \
 	include/client/temp_entities.h \
 	include/client/locs.h \
+	include/client/particles.h \
 	include/client/state.h \
 	include/client/view.h \
 	include/evdev/hotplug.h \

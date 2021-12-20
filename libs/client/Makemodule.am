@@ -15,3 +15,8 @@ default_input_src = libs/client/default_input.plist
 default_input_gen = libs/client/default_input.plc
 
 libs/client/cl_input.lo: libs/client/cl_input.c $(default_input_gen)
+
+EXTRA_DIST += \
+	libs/client/default_input.plist
+CLEANFILES += \
+	libs/client/*.plc

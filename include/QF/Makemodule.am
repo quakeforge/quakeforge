@@ -27,6 +27,7 @@ include_qf = \
 	include/QF/joystick.h \
 	include/QF/keys.h \
 	include/QF/link.h \
+	include/QF/listener.h \
 	include/QF/llist.h \
 	include/QF/mathlib.h \
 	include/QF/mdfour.h \
@@ -112,9 +113,10 @@ include_qf_glsl = \
 	include/QF/GLSL/types.h
 
 include_qf_input = \
-	include/QF/binding.h \
-	include/QF/event.h
-	include/QF/imt.h
+	include/QF/input/binding.h \
+	include/QF/input/event.h \
+	include/QF/input/event_names.h \
+	include/QF/input/imt.h
 
 include_qf_math = \
 	include/QF/math/dual.h \
@@ -175,8 +177,10 @@ include_qf_vulkan = \
 	include/QF/Vulkan/qf_lighting.h \
 	include/QF/Vulkan/qf_lightmap.h \
 	include/QF/Vulkan/qf_main.h \
+	include/QF/Vulkan/qf_matrices.h \
 	include/QF/Vulkan/qf_model.h \
 	include/QF/Vulkan/qf_particles.h \
+	include/QF/Vulkan/qf_sprite.h \
 	include/QF/Vulkan/qf_texture.h \
 	include/QF/Vulkan/qf_vid.h \
 	include/QF/Vulkan/renderpass.h \

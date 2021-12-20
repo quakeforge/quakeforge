@@ -488,9 +488,18 @@ EXTRA_DIST += \
 	libs/video/renderer/vulkan/shader/compose.frag \
 	libs/video/renderer/vulkan/shader/lighting.frag \
 	libs/video/renderer/vulkan/shader/passthrough.vert \
+	libs/video/renderer/vulkan/shader/partphysics.comp \
+	libs/video/renderer/vulkan/shader/partupdate.comp \
+	libs/video/renderer/vulkan/shader/particle.vert \
+	libs/video/renderer/vulkan/shader/particle.geom \
+	libs/video/renderer/vulkan/shader/particle.frag \
 	libs/video/renderer/vulkan/shader/pushcolor.frag \
 	libs/video/renderer/vulkan/shader/quakebsp.frag \
 	libs/video/renderer/vulkan/shader/quakebsp.vert \
 	libs/video/renderer/vulkan/shader/shadow.geom \
+	libs/video/renderer/vulkan/shader/sprite_depth.vert \
+	libs/video/renderer/vulkan/shader/sprite_depth.frag \
+	libs/video/renderer/vulkan/shader/sprite_gbuf.vert \
+	libs/video/renderer/vulkan/shader/sprite_gbuf.frag \
 	libs/video/renderer/vulkan/shader/twod.frag \
 	libs/video/renderer/vulkan/shader/twod.vert

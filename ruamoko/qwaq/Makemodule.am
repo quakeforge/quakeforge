@@ -166,6 +166,7 @@ EXTRA_DIST += \
 	ruamoko/qwaq/debugger/debugger.h \
 	ruamoko/qwaq/debugger/localsdata.h \
 	ruamoko/qwaq/debugger/typeencodings.h \
+	ruamoko/qwaq/debugger/views/arrayview.h \
 	ruamoko/qwaq/debugger/views/basicview.h \
 	ruamoko/qwaq/debugger/views/defview.h \
 	ruamoko/qwaq/debugger/views/doubleview.h \
@@ -173,19 +174,28 @@ EXTRA_DIST += \
 	ruamoko/qwaq/debugger/views/fieldview.h \
 	ruamoko/qwaq/debugger/views/floatview.h \
 	ruamoko/qwaq/debugger/views/funcview.h \
+	ruamoko/qwaq/debugger/views/indexview.h \
 	ruamoko/qwaq/debugger/views/intview.h \
 	ruamoko/qwaq/debugger/views/nameview.h \
 	ruamoko/qwaq/debugger/views/pointerview.h \
 	ruamoko/qwaq/debugger/views/quatview.h \
 	ruamoko/qwaq/debugger/views/stringview.h \
+	ruamoko/qwaq/debugger/views/structview.h \
 	ruamoko/qwaq/debugger/views/uintview.h \
 	ruamoko/qwaq/debugger/views/vectorview.h \
 	ruamoko/qwaq/debugger/views/voidview.h \
+	ruamoko/qwaq/device/axisdata.h \
+	ruamoko/qwaq/device/axisview.h \
+	ruamoko/qwaq/device/nameview.h \
+	ruamoko/qwaq/device/device.h \
 	ruamoko/qwaq/editor/editbuffer.h \
 	ruamoko/qwaq/editor/editor.h \
 	ruamoko/qwaq/editor/status.h \
+	ruamoko/qwaq/input-app.h \
 	ruamoko/qwaq/qwaq-app.h \
+	ruamoko/qwaq/qwaq-input.h \
 	ruamoko/qwaq/qwaq.h \
+	ruamoko/qwaq/threading.h \
 	ruamoko/qwaq/ui/button.h \
 	ruamoko/qwaq/ui/color.h \
 	ruamoko/qwaq/ui/curses.h \
@@ -197,6 +207,7 @@ EXTRA_DIST += \
 	ruamoko/qwaq/ui/proxyview.h \
 	ruamoko/qwaq/ui/rect.h \
 	ruamoko/qwaq/ui/scrollbar.h \
+	ruamoko/qwaq/ui/stringview.h \
 	ruamoko/qwaq/ui/tableview.h \
 	ruamoko/qwaq/ui/textcontext.h \
 	ruamoko/qwaq/ui/titlebar.h \
