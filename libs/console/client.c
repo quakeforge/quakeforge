@@ -456,6 +456,7 @@ C_Print (const char *fmt, va_list args)
 	}
 
 	// echo to debugging console
+	// but don't print the highchars flag (leading \x01)
 	if ((byte)buffer->str[0] > 2)
 		fputs (buffer->str, stdout);
 	else if ((byte)buffer->str[0])
