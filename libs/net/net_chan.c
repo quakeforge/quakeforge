@@ -49,8 +49,6 @@
 #include "compat.h"
 #include "netchan.h"
 
-#include "../qw/include/client.h"
-
 #define	PACKET_HEADER	8
 
 int         net_nochoke;
