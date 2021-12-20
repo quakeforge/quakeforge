@@ -425,6 +425,12 @@ CL_NextDemo (void)
 }
 
 static void
+pointfile_f (void)
+{
+	CL_LoadPointFile (cl.worldmodel);
+}
+
+static void
 CL_PrintEntities_f (void)
 {
 	entity_t   *ent;
@@ -604,6 +610,8 @@ CL_Init (cbuf_t *cbuf)
 
 	V_Init ();
 
+	Cmd_AddCommand ("pointfile", pointfile_f,
+					"Load a pointfile to determine map leaks.");
 	Cmd_AddCommand ("entities", CL_PrintEntities_f, "No Description");
 	Cmd_AddCommand ("disconnect", CL_Disconnect_f, "No Description");
 	Cmd_AddCommand ("maplist", Con_Maplist_f, "List available maps");

@@ -71,4 +71,7 @@ extern float cl_realtime;
 
 void CL_Particles_Init (void);
 
+struct model_s;
+void CL_LoadPointFile (const struct model_s *model);
+
 #endif // __client_particles_h_

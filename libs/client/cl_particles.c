@@ -222,15 +222,15 @@ add_particle (ptype_t type, vec4f_t pos, vec4f_t vel, float live, int color,
 	particle_new (type, part_tex_dot, pos, 1, vel, live, color, 1, ramp);
 }
 
-static void
-pointfile_f (void)
+void
+CL_LoadPointFile (const model_t *model)
 {
 	const char *name;
 	char       *mapname;
 	int         c;
 	QFile      *f;
 
-	mapname = strdup (r_worldentity.renderer.model->path);
+	mapname = strdup (model->path);
 	if (!mapname)
 		Sys_Error ("Can't duplicate mapname!");
 	QFS_StripExtension (mapname, mapname);
@@ -1272,8 +1272,6 @@ CL_Particles_Init (void)
 {
 	mtwist_seed (&mt, 0xdeadbeef);
 	cl_psystem = r_funcs->ParticleSystem ();
-	Cmd_AddCommand ("pointfile", pointfile_f,
-					"Load a pointfile to determine map leaks.");
 	easter_eggs = Cvar_Get ("easter_eggs", "0", CVAR_NONE, easter_eggs_f,
 							"Enables easter eggs.");
 	particles_style = Cvar_Get ("particles_style", "1", CVAR_ARCHIVE,

@@ -238,6 +238,12 @@ CL_Quit_f (void)
 }
 
 static void
+pointfile_f (void)
+{
+	CL_LoadPointFile (cl.worldmodel);
+}
+
+static void
 CL_Version_f (void)
 {
 	Sys_Printf ("%s Version %s\n", PACKAGE_NAME, PACKAGE_VERSION);
@@ -1229,6 +1235,8 @@ CL_Init (void)
 	cl.players = calloc (MAX_CLIENTS, sizeof (player_info_t));
 
 	// register our commands
+	Cmd_AddCommand ("pointfile", pointfile_f,
+					"Load a pointfile to determine map leaks.");
 	Cmd_AddCommand ("version", CL_Version_f, "Report version information");
 	Cmd_AddCommand ("changing", CL_Changing_f, "Used when maps are changing");
 	Cmd_AddCommand ("disconnect", CL_Disconnect_f, "Disconnect from server");
