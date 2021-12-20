@@ -30,9 +30,9 @@
 #define __QF_input_binding_h
 
 #ifndef __QFCC__
-
 #include "QF/listener.h"
 #include "QF/mathlib.h"
+#endif
 
 /*** Recipe for converting an axis to a floating point value.
 
@@ -86,17 +86,21 @@ typedef struct in_axis_s {
 	in_axis_mode mode;		///< method used for updating the destination
 	float       abs_input;	///< input from an absolute axis (eg, joystick)
 	float       rel_input;	///< input from a relative axis (eg, mouse)
+#ifndef __QFCC__
 	struct axis_listener_set_s *listeners;
 	const char *name;
 	const char *description;
+#endif
 } in_axis_t;
 
+#ifndef __QFCC__
 typedef struct axis_listener_set_s LISTENER_SET_TYPE (in_axis_t)
 	axis_listener_set_t;
 
 /*** Function type for axis listeners.
 */
 typedef void (*axis_listener_t) (void *data, const in_axis_t *axis);
+#endif
 
 /*** Current state of the logical button.
 
@@ -123,11 +127,14 @@ typedef enum {
 typedef struct in_button_s {
 	int         down[2];    ///< button ids holding this button down
 	int         state;      ///< in_button_state
+#ifndef __QFCC__
 	struct button_listener_set_s *listeners;
 	const char *name;
 	const char *description;
+#endif
 } in_button_t;
 
+#ifndef __QFCC__
 typedef struct button_listener_set_s LISTENER_SET_TYPE (in_button_t)
 	button_listener_set_t;
 

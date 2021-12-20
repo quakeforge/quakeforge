@@ -51,6 +51,7 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/progs.h"
 #include "QF/quakefs.h"
 #include "QF/render.h"
+#include "QF/ruamoko.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
@@ -165,7 +166,7 @@ BI_Graphics_Init (progs_t *pr)
 	Mod_Init ();
 	R_Init ();
 	R_Progs_Init (pr);
-	RUA_Key_Init (pr);
+	RUA_Game_Init (pr, thread->rua_security);
 	S_Progs_Init (pr);
 
 	Con_Init ("client");

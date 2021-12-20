@@ -35,4 +35,5 @@ libs_ruamoko_libQFruamoko_client_la_DEPENDENCIES= \
 	libs/ruamoko/libQFruamoko.la \
 	$(ruamoko_rua_libs)
 libs_ruamoko_libQFruamoko_client_la_SOURCES= \
-	libs/ruamoko/rua_keys.c
+	libs/ruamoko/rua_game_init.c \
+	libs/ruamoko/rua_input.c

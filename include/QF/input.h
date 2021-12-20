@@ -105,6 +105,7 @@ int IN_AddDevice (int driver, void *device, const char *name, const char *id);
 void IN_RemoveDevice (int devid);
 
 void IN_SendConnectedDevices (void);
+int IN_FindDeviceId (const char *id) __attribute__((pure));
 const char *IN_GetDeviceName (int devid) __attribute__((pure));
 const char *IN_GetDeviceId (int devid) __attribute__((pure));
 void IN_SetDeviceEventData (int devid, void *data);

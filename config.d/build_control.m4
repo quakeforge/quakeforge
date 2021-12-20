@@ -315,13 +315,16 @@ QF_PROCESS_NEED_LIST(ruamoko,[qwaq])
 if test "$ENABLE_tools_qfcc" = "yes" -a "$ENABLE_tools_pak" = "yes"; then
 	QF_NEED(top, [ruamoko])
 	qfac_qfcc_include_qf="\$(qfcc_include_qf)"
+	qfac_qfcc_include_qf_input="\$(qfcc_include_qf_input)"
 fi
 QF_SUBST(qfac_qfcc_include_qf)
+QF_SUBST(qfac_qfcc_include_qf_input)
 
 if test x"${top_need_libs}" = xyes; then
 	qfac_include_qf="\$(include_qf)"
 	qfac_include_qf_gl="\$(include_qf_gl)"
 	qfac_include_qf_glsl="\$(include_qf_glsl)"
+	qfac_include_qf_input="\$(include_qf_input)"
 	qfac_include_qf_math="\$(include_qf_math)"
 	qfac_include_qf_plugin="\$(include_qf_plugin)"
 	qfac_include_qf_scene="\$(include_qf_scene)"
@@ -332,6 +335,7 @@ fi
 QF_SUBST(qfac_include_qf)
 QF_SUBST(qfac_include_qf_gl)
 QF_SUBST(qfac_include_qf_glsl)
+QF_SUBST(qfac_include_qf_input)
 QF_SUBST(qfac_include_qf_math)
 QF_SUBST(qfac_include_qf_plugin)
 QF_SUBST(qfac_include_qf_scene)

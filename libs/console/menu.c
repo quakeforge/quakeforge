@@ -597,10 +597,10 @@ Menu_Init (void)
 
 	PR_RegisterBuiltins (&menu_pr_state, builtins);
 
-	RUA_Init (&menu_pr_state, 1);
+	RUA_Init (&menu_pr_state, 3);
 
 	InputLine_Progs_Init (&menu_pr_state);
-	RUA_Key_Init (&menu_pr_state);
+	RUA_Game_Init (&menu_pr_state, 1);
 	GIB_Progs_Init (&menu_pr_state);
 	PR_Cmds_Init (&menu_pr_state);
 	R_Progs_Init (&menu_pr_state);

@@ -174,6 +174,17 @@ IN_SendConnectedDevices (void)
 	}
 }
 
+int
+IN_FindDeviceId (const char *id)
+{
+	for (size_t i = 0; i < in_devices.size; i++) {
+		if (strcmp (id, in_devices.a[i].id) == 0) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 const char *
 IN_GetDeviceName (int devid)
 {
