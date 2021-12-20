@@ -1,5 +1,5 @@
 /*
-	#FILENAME#
+	main.c
 
 	Qwaq
 

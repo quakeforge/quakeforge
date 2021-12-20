@@ -1,12 +1,12 @@
 /*
-	#FILENAME#
+	qwaq-bi.c
 
-	#DESCRIPTION#
+	Basic game engine builtins
 
-	Copyright (C) 2001 #AUTHOR#
+	Copyright (C) 2012 Bill Currie <bill@taniwha.org>
 
-	Author: #AUTHOR#
-	Date: #DATE#
+	Author: Bill Currie <bill@taniwha.org>
+	Date: 2012/7/24
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License

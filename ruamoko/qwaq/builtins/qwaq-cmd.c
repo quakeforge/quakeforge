@@ -1,12 +1,12 @@
 /*
-	#FILENAME#
+	qwaq-cmd.c
 
-	Qwaq
+	Qwaq command-line tool initialization
 
-	Copyright (C) 2001 Bill Currie
+	Copyright (C) 2021 Bill Currie
 
 	Author: Bill Currie <bill@taniwha.org>
-	Date: 2001/06/01
+	Date: 2021/07/06
 
 	This program is free software; you can redistribute it and/or
 	modify it under the terms of the GNU General Public License
