@@ -529,7 +529,7 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 	reloc_t    *relocs = 0;
 
 	if (check && check->table == current_symtab) {
-		if (check->sy_type != sy_var || check->type != sym->type) {
+		if (check->sy_type != sy_var || !type_same (check->type, sym->type)) {
 			error (0, "%s redefined", sym->name);
 		} else {
 			// is var and same type

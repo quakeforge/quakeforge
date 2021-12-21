@@ -1067,6 +1067,15 @@ type_assignable (const type_t *dst, const type_t *src)
 }
 
 int
+type_same (const type_t *dst, const type_t *src)
+{
+	dst = unalias_type (dst);
+	src = unalias_type (src);
+
+	return dst == src;
+}
+
+int
 type_size (const type_t *type)
 {
 	switch (type->meta) {
