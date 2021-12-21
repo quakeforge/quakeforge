@@ -1261,6 +1261,30 @@ in_x11_get_button_name (void *data, void *device, int button_num)
 }
 
 static int
+in_x11_get_axis_info (void *data, void *device, int axis_num,
+					  in_axisinfo_t *info)
+{
+	x11_device_t *dev = device;
+	if (axis_num < 0 || axis_num > dev->num_axes) {
+		return 0;
+	}
+	*info = dev->axes[axis_num];
+	return 1;
+}
+
+static int
+in_x11_get_button_info (void *data, void *device, int button_num,
+						in_buttoninfo_t *info)
+{
+	x11_device_t *dev = device;
+	if (button_num < 0 || button_num > dev->num_buttons) {
+		return 0;
+	}
+	*info = dev->buttons[button_num];
+	return 1;
+}
+
+static int
 in_x11_get_axis_num (void *data, void *device, const char *axis_name)
 {
 	x11_device_t *dev = device;
@@ -1568,8 +1592,12 @@ static in_driver_t in_x11_driver = {
 
 	.get_axis_name = in_x11_get_axis_name,
 	.get_button_name = in_x11_get_button_name,
+
 	.get_axis_num = in_x11_get_axis_num,
 	.get_button_num = in_x11_get_button_num,
+
+	.get_axis_info = in_x11_get_axis_info,
+	.get_button_info = in_x11_get_button_info,
 };
 
 static void __attribute__((constructor))

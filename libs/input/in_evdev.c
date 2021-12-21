@@ -232,7 +232,7 @@ in_evdev_axis_info (void *data, void *device, in_axisinfo_t *axes,
 
 static void
 in_evdev_button_info (void *data, void *device, in_buttoninfo_t *buttons,
-					int *numbuttons)
+					  int *numbuttons)
 {
 	device_t   *dev = device;
 	if (!buttons) {
@@ -248,6 +248,34 @@ in_evdev_button_info (void *data, void *device, in_buttoninfo_t *buttons,
 	}
 }
 
+static int
+in_evdev_get_axis_info (void *data, void *device, int axis_num,
+						in_axisinfo_t *info)
+{
+	device_t   *dev = device;
+	if (axis_num < 0 || axis_num > dev->num_axes) {
+		return 0;
+	}
+	info->axis = dev->axes[axis_num].num;
+	info->value = dev->axes[axis_num].value;
+	info->min = dev->axes[axis_num].min;
+	info->max = dev->axes[axis_num].max;
+	return 1;
+}
+
+static int
+in_evdev_get_button_info (void *data, void *device, int button_num,
+						  in_buttoninfo_t *info)
+{
+	device_t   *dev = device;
+	if (button_num < 0 || button_num > dev->num_buttons) {
+		return 0;
+	}
+	info->button = dev->buttons[button_num].num;
+	info->state = dev->buttons[button_num].state;
+	return 1;
+}
+
 static in_driver_t in_evdev_driver = {
 	.init = in_evdev_init,
 	.shutdown = in_evdev_shutdown,
@@ -259,6 +287,9 @@ static in_driver_t in_evdev_driver = {
 
 	.axis_info = in_evdev_axis_info,
 	.button_info = in_evdev_button_info,
+
+	.get_axis_info = in_evdev_get_axis_info,
+	.get_button_info = in_evdev_get_button_info,
 };
 
 static int

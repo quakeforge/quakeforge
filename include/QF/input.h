@@ -77,6 +77,11 @@ typedef struct in_driver_s {
 	// -1 for invalid name
 	int (*get_axis_num) (void *data, void *device, const char *axis_name);
 	int (*get_button_num) (void *data, void *device, const char *button_name);
+	// null means invalid number
+	int (*get_axis_info) (void *data, void *device, int axis_num,
+						  in_axisinfo_t *info);
+	int (*get_button_info) (void *data, void *device, int button_num,
+							in_buttoninfo_t *info);
 } in_driver_t;
 
 typedef struct in_device_s {
@@ -114,6 +119,8 @@ const char *IN_GetAxisName (int devid, int axis_num);
 const char *IN_GetButtonName (int devid, int button_num);
 int IN_GetAxisNumber (int devid, const char *axis_name);
 int IN_GetButtonNumber (int devid, const char *button_name);
+int IN_GetAxisInfo (int devid, int axis_num, in_axisinfo_t *info);
+int IN_GetButtonInfo (int devid, int button_num, in_buttoninfo_t *info);
 
 void IN_ProcessEvents (void);
 

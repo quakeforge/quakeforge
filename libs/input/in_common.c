@@ -356,6 +356,44 @@ IN_GetButtonNumber (int devid, const char *button_name)
 									  button_name);
 }
 
+int
+IN_GetAxisInfo (int devid, int axis_num, in_axisinfo_t *info)
+{
+	if ((size_t) devid >= in_devices.size) {
+		return 0;
+	}
+	if (!in_devices.a[devid].device || in_devices.a[devid].driverid == -1) {
+		return 0;
+	}
+	int         driver = in_devices.a[devid].driverid;
+	in_regdriver_t *rd = &in_drivers.a[driver];
+	if (rd->driver.get_axis_info (rd->data, in_devices.a[devid].device,
+								  axis_num, info)) {
+		info->deviceid = devid;
+		return 1;
+	}
+	return 0;
+}
+
+int
+IN_GetButtonInfo (int devid, int button_num, in_buttoninfo_t *info)
+{
+	if ((size_t) devid >= in_devices.size) {
+		return 0;
+	}
+	if (!in_devices.a[devid].device || in_devices.a[devid].driverid == -1) {
+		return 0;
+	}
+	int         driver = in_devices.a[devid].driverid;
+	in_regdriver_t *rd = &in_drivers.a[driver];
+	if (rd->driver.get_button_info (rd->data, in_devices.a[devid].device,
+									button_num, info)) {
+		info->deviceid = devid;
+		return 1;
+	}
+	return 0;
+}
+
 void
 IN_UpdateGrab (cvar_t *var)		// called from context_*.c
 {
