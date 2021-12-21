@@ -1,5 +1,6 @@
 #include "input.h"
 
+void IN_LoadConfig (struct plitem_s *config) = #0;
 in_button_t *IN_CreateButton (string name, string description) = #0;
 in_axis_t *IN_CreateAxis (string name, string description) = #0;
 int IN_FindDeviceId (string _id) = #0;

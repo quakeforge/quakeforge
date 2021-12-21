@@ -205,6 +205,7 @@ rua_add_axis_listener (progs_t *pr, axis_listener_t listener)
 	if (cookie) {
 		cookie = cmemalloc (res->cookie_super, sizeof (rua_in_cookie_t));
 		*cookie = search;
+		cookie->pr = pr;
 	}
 	cookie->users++;
 	IN_AxisAddListener (axis, listener, cookie);
@@ -235,9 +236,10 @@ rua_add_button_listener (progs_t *pr, button_listener_t listener)
 		.data = P_POINTER (pr, 2),
 	};
 	rua_in_cookie_t *cookie = Hash_FindElement (res->cookies, &search);
-	if (cookie) {
+	if (!cookie) {
 		cookie = cmemalloc (res->cookie_super, sizeof (rua_in_cookie_t));
 		*cookie = search;
+		cookie->pr = pr;
 	}
 	cookie->users++;
 	IN_ButtonAddListener (button, listener, cookie);
@@ -356,6 +358,12 @@ rua_IN_AxisRemoveListener_method (progs_t *pr)
 }
 
 static void
+bi_IN_LoadConfig (progs_t *pr)
+{
+	IN_LoadConfig (Plist_GetItem (pr, P_INT (pr, 0)));
+}
+
+static void
 secured (progs_t *pr)
 {
 	PR_RunError (pr, "Secured function called");
@@ -365,6 +373,7 @@ secured (progs_t *pr)
 static builtin_t secure_builtins[] = {
 	bi(IN_CreateButton),
 	bi(IN_CreateAxis),
+	bi(IN_LoadConfig),
 	{0}
 };
 
@@ -373,6 +382,7 @@ static builtin_t secure_builtins[] = {
 static builtin_t insecure_builtins[] = {
 	bi(IN_CreateButton),
 	bi(IN_CreateAxis),
+	bi(IN_LoadConfig),
 	{0}
 };
 static builtin_t builtins[] = {

@@ -3,6 +3,8 @@
 
 #include <QF/input.h>
 
+struct plitem_s;
+void IN_LoadConfig (struct plitem_s *config);
 in_button_t *IN_CreateButton (string name, string description);
 in_axis_t *IN_CreateAxis (string name, string description);
 int IN_FindDeviceId (string _id);
