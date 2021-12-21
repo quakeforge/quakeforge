@@ -190,8 +190,10 @@ include_qf_vulkan = \
 	include/QF/Vulkan/swapchain.h
 
 # headers shared with ruamoko
-qfcc_include_qf = include/QF/keys.h
-qfcc_include_qf_input = include/QF/input/binding.h
+qfcc_include_qf = include/QF/input.h
+qfcc_include_qf_input = \
+	include/QF/input/binding.h \
+	include/QF/input/imt.h
 
 qf_includedir = $(includedir)/QF
 qf_gl_includedir = $(includedir)/QF/GL

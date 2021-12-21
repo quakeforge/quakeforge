@@ -28,8 +28,6 @@
 #ifndef __QF_input_h
 #define __QF_input_h
 
-#include "QF/keys.h"
-
 typedef struct in_axisinfo_s {
 	int         deviceid;
 	int         axis;

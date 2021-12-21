@@ -40,6 +40,7 @@
 #include "QF/input.h"
 #include "QF/sys.h"
 #include "QF/gib.h"
+#include "QF/keys.h"
 
 #include "compat.h"
 #include "old_keys.h"
