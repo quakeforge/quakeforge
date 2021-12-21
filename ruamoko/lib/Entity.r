@@ -35,7 +35,7 @@ int PR_SetField (entity ent, string field, string value) = #0;
 	return self;
 }
 
-- (id) initWithEntity: (entity)e fromPlist: (plitem_t) dict
+- (id) initWithEntity: (entity)e fromPlist: (plitem_t *) dict
 {
 	self = [self initWithEntity: e];
 	return self;
@@ -58,14 +58,14 @@ int PR_SetField (entity ent, string field, string value) = #0;
 	//XXX EntityParseFunction (ParseEntities);
 }
 
-+ createFromPlist:(plitem_t) dict
++ createFromPlist:(plitem_t *) dict
 {
 	local string classname;
 	local id class;
 	local entity ent;
 	local int count;
 	local string field, value;
-	local plitem_t keys;
+	local plitem_t *keys;
 	local @function func;
 	local Entity *e;
 
@@ -104,7 +104,7 @@ int PR_SetField (entity ent, string field, string value) = #0;
 @static void ParseEntities (string ent_data)
 {
 	local script_t script;
-	local plitem_t plist, ent, key, value;
+	local plitem_t *plist, *ent, *key, *value;
 	local string token;
 	local int anglehack, i, count;
 
