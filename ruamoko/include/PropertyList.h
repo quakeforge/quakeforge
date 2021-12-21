@@ -40,6 +40,7 @@
 
 - initWithItem:(plitem_t *) item;
 - initWithOwnItem:(plitem_t *) item;
+- (plitem_t *) item;
 - (string) write;
 - (pltype_t) type;
 - (int) line;

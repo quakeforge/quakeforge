@@ -51,6 +51,7 @@ void RUA_QFS_Init (struct progs_s *pr, int secure);
 
 int QFile_AllocHandle (struct progs_s *pr, QFile *file);
 QFile *QFile_GetFile (struct progs_s *pr, int handle);
+struct plitem_s *Plist_GetItem (struct progs_s *pr, int handle);
 
 void RUA_Input_Init (struct progs_s *pr, int secure);
 void RUA_Mersenne_Init (struct progs_s *pr, int secure);

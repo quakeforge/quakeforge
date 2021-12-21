@@ -422,6 +422,13 @@ bi_PL_Free (progs_t *pr)
 	plist_free_handle (res, plist);
 }
 
+plitem_t *
+Plist_GetItem (progs_t *pr, int handle)
+{
+	bi_plist_t *plist = get_plist (pr, __FUNCTION__, handle);
+	return plist->plitem;
+}
+
 static uintptr_t
 plist_get_hash (const void *key, void *unused)
 {

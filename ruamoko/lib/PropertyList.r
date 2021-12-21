@@ -84,6 +84,11 @@
 	[super dealloc];
 }
 
+- (plitem_t *) item
+{
+	return item;
+}
+
 - (string) write
 {
 	return PL_WritePropertyList (item);
