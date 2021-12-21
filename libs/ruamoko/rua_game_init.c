@@ -35,6 +35,7 @@
 
 static void (*init_funcs[])(progs_t *, int) = {
 	RUA_Input_Init,
+	RUA_Mersenne_Init,
 };
 
 VISIBLE void

@@ -5,6 +5,7 @@ ruamoko_include = \
 	ruamoko/include/infokey.h \
 	ruamoko/include/input.h \
 	ruamoko/include/math.h \
+	ruamoko/include/mersenne.h \
 	ruamoko/include/message.h \
 	ruamoko/include/nq_message.h \
 	ruamoko/include/physics.h \

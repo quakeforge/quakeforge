@@ -49,6 +49,7 @@ ruamoko_lib_libcsqc_a_src= \
 	ruamoko/lib/draw.r \
 	ruamoko/lib/gib.r \
 	ruamoko/lib/input.r \
+	ruamoko/lib/mersenne.r \
 	ruamoko/lib/key.r
 
 ruamoko_lib_common_dep=$(call qcautodep,$(ruamoko_lib_common_src))
