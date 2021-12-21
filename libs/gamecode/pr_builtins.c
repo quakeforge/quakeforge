@@ -220,7 +220,7 @@ PR_RelocateBuiltins (progs_t *pr)
 			ind = pr->bi_map (pr, ind);
 		bi = PR_FindBuiltinNum (pr, ind);
 		if (!bi || !(proc = bi->proc)) {
-			Sys_MaskPrintf (SYS_dev,
+			Sys_MaskPrintf (SYS_rua_resolve,
 							"WARNING: Bad builtin call number: %s = #%d\n",
 							bi_name, -desc->first_statement);
 			proc = bi_no_function;
