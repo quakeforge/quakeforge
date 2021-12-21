@@ -92,8 +92,6 @@ typedef struct in_device_s {
 	void       *event_data;
 } in_device_t;
 
-#define freelook (in_mlook.state & 1 || in_freelook->int_val)
-
 struct cvar_s;
 
 int IN_RegisterDriver (in_driver_t *driver, void *data);

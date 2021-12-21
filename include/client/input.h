@@ -29,4 +29,6 @@
 
 void CL_Legacy_Init (void);
 
+#define freelook (in_mlook.state & 1 || in_freelook->int_val)
+
 #endif // __client_input_h_
