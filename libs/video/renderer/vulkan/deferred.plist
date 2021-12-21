@@ -433,6 +433,14 @@
 				dependencyFlags = by_region;
 			},
 			{
+				srcSubpass = ~0u;	// external
+				dstSubpass = 1; // translucent
+				srcStageMask = compute_shader;
+				dstStageMask = vertex_input|draw_indirect;
+				srcAccessMask = shader_write;
+				dstAccessMask = vertex_attribute_read|indirect_command_read;
+			},
+			{
 				srcSubpass = 0;	// depth
 				dstSubpass = 2; // g-buffer
 				srcStageMask = late_fragment_tests;
