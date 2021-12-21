@@ -275,24 +275,9 @@ QFV_PacketSubmit (qfv_packet_t *packet)
 	qfv_device_t *device = stage->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	if (!packet->length) {
-		// XXX at this stage, this looks the same as below, I think a queue
-		// completing is the only way to set a fence (other than creation),
-		// so submit the (hopefully) empty command buffer so the fence becomes
-		// set, but without waiting on or triggering any semaphores.
-		dfunc->vkEndCommandBuffer (packet->cmd);
-		VkSubmitInfo submitInfo = {
-			VK_STRUCTURE_TYPE_SUBMIT_INFO, 0,
-			0, 0, 0,
-			1, &packet->cmd,
-			0, 0,
-		};
-		dfunc->vkQueueSubmit (device->queue.queue, 1, &submitInfo,
-							  packet->fence);
-		return;
+	if (packet->length) {
+		QFV_FlushStagingBuffer (stage, packet->offset, packet->length);
 	}
-
-	QFV_FlushStagingBuffer (stage, packet->offset, packet->length);
 
 	dfunc->vkEndCommandBuffer (packet->cmd);
 	//XXX it may become necessary to pass in semaphores etc (maybe add to
