@@ -42,5 +42,45 @@ typedef struct {
 
 void mtwist_seed (mtstate_t *state, uint32_t seed);
 uint32_t mtwist_rand (mtstate_t *state);
+GNU89INLINE inline float mtwist_rand_0_1 (mtstate_t *state);
+GNU89INLINE inline float mtwist_rand_m1_1 (mtstate_t *state);
+
+#ifndef IMPLEMENT_MTWIST_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+float
+mtwist_rand_0_1 (mtstate_t *state)
+{
+	union {
+		uint32_t    u;
+		float       f;
+	}           uf;
+
+	uf.u = mtwist_rand (state) & 0x007fffff;
+	uf.u |= 0x3f800000;
+	return uf.f - 1.0;
+}
+
+#ifndef IMPLEMENT_MTWIST_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+float
+mtwist_rand_m1_1 (mtstate_t *state)
+{
+	union {
+		uint32_t    u;
+		float       f;
+	}           uf;
+
+	do {
+		uf.u = mtwist_rand (state) & 0x007fffff;
+	} while (!uf.u);
+	uf.u |= 0x40000000;
+	return uf.f - 3.0;
+}
 
 #endif//__QF_mersenne_h
