@@ -3,6 +3,7 @@ ruamoko_include = \
 	ruamoko/include/debug.h \
 	ruamoko/include/entities.h \
 	ruamoko/include/infokey.h \
+	ruamoko/include/input.h \
 	ruamoko/include/math.h \
 	ruamoko/include/message.h \
 	ruamoko/include/nq_message.h \
@@ -23,7 +24,6 @@ ruamoko_include = \
 	ruamoko/include/types.h \
 	ruamoko/include/legacy_string.h \
 	ruamoko/include/draw.h \
-	ruamoko/include/key.h \
 	ruamoko/include/cbuf.h \
 	ruamoko/include/cmd.h \
 	ruamoko/include/cvar.h \
@@ -55,3 +55,6 @@ ruamoko_gui_includedir = $(datarootdir)/qfcc/include/gui
 
 ruamoko_include_HEADERS = $(ruamoko_include)
 ruamoko_gui_include_HEADERS = $(ruamoko_gui_include)
+
+EXTRA_DIST += \
+	ruamoko/include/key.h

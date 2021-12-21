@@ -45,7 +45,11 @@ ruamoko_lib_libqw_a_src= \
 	ruamoko/lib/qw_message.r ruamoko/lib/qw_physics.r ruamoko/lib/qw_sys.r
 ruamoko_lib_libnq_a_src= \
 	ruamoko/lib/nq_message.r
-ruamoko_lib_libcsqc_a_src= ruamoko/lib/draw.r ruamoko/lib/gib.r ruamoko/lib/key.r
+ruamoko_lib_libcsqc_a_src= \
+	ruamoko/lib/draw.r \
+	ruamoko/lib/gib.r \
+	ruamoko/lib/input.r \
+	ruamoko/lib/key.r
 
 ruamoko_lib_common_dep=$(call qcautodep,$(ruamoko_lib_common_src))
 include $(ruamoko_lib_common_dep) # am--include-marker
