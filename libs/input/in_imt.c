@@ -588,8 +588,8 @@ IMT_ProcessAxis (int axis, int value)
 				if (recipe->deadzone >= 0) {
 					// balanced axis: -1..1
 					int         center = (recipe->min + recipe->max + 1) / 2;
-					minval += deadzone - center;
-					maxval -= deadzone + center;
+					minval += deadzone;
+					maxval -= deadzone;
 					input -= center;
 					if (input < -deadzone) {
 						input += deadzone;
