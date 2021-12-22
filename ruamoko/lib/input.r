@@ -36,3 +36,7 @@ void IN_ButtonRemoveListener (in_button_t *button, IMP listener, id obj) = #0;
 void IN_AxisAddListener (in_axis_t *axis, IMP listener, id obj) = #0;
 @overload
 void IN_AxisRemoveListener (in_axis_t *axis, IMP listener, id obj) = #0;
+
+int IMT_CreateContext (string name) = #0;
+int IMT_GetContext (void) = #0;
+void IMT_SetContext (int ctx) = #0;

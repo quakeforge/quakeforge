@@ -38,4 +38,8 @@ typedef void (*axis_listener_t) (void *data, in_axis_t *axis);//FIXME const
 @overload void IN_AxisAddListener (in_axis_t *axis, IMP listener, id obj);
 @overload void IN_AxisRemoveListener (in_axis_t *axis, IMP listener, id obj);
 
+int IMT_CreateContext (string name);
+int IMT_GetContext (void);
+void IMT_SetContext (int ctx);
+
 #endif//__ruamoko_input_h

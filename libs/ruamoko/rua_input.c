@@ -364,6 +364,25 @@ bi_IN_LoadConfig (progs_t *pr)
 }
 
 static void
+bi_IMT_CreateContext (progs_t *pr)
+{
+	const char *name = P_GSTRING (pr, 0);
+	R_INT (pr) = IMT_CreateContext (name);
+}
+
+static void
+bi_IMT_GetContext (progs_t *pr)
+{
+	R_INT (pr) = IMT_GetContext ();
+}
+
+static void
+bi_IMT_SetContext (progs_t *pr)
+{
+	IMT_SetContext (P_INT (pr, 0));
+}
+
+static void
 secured (progs_t *pr)
 {
 	PR_RunError (pr, "Secured function called");
@@ -415,6 +434,11 @@ static builtin_t builtins[] = {
 		rua_IN_AxisAddListener_method, -1},
 	{"IN_AxisRemoveListener|^{tag in_axis_s=}(@@:.)@",
 		rua_IN_AxisRemoveListener_method, -1},
+
+	bi(IMT_CreateContext),
+	bi(IMT_GetContext),
+	bi(IMT_SetContext),
+
 	{0}
 };
 
