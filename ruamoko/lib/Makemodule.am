@@ -40,7 +40,9 @@ r_depfiles_remade += $(ruamoko_lib_libr_a_dep)
 ruamoko_lib_common_src= \
 	ruamoko/lib/debug.r \
 	ruamoko/lib/system.r \
+	ruamoko/lib/legacy_math.r \
 	ruamoko/lib/legacy_string.r
+
 ruamoko_lib_server_src= \
 	ruamoko/lib/crudefile.r \
 	ruamoko/lib/entities.r \
