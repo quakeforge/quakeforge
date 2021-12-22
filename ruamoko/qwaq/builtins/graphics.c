@@ -57,6 +57,8 @@ static __attribute__ ((used)) const char rcsid[] = "$Id$";
 #include "QF/sys.h"
 #include "QF/vid.h"
 
+#include "QF/input/event.h"
+
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
 
@@ -82,6 +84,7 @@ quit_f (void)
 
 static progs_t *bi_rprogs;
 static func_t qc2d;
+static int event_handler_id;
 
 static void
 bi_2d (void)
@@ -129,6 +132,12 @@ static builtin_t builtins[] = {
 	{0}
 };
 
+static int
+event_handler (const IE_event_t *ie_event, void *_pr)
+{
+	return IN_Binding_HandleEvent (ie_event);
+}
+
 static void
 bi_shutdown (void *data)
 {
@@ -168,6 +177,9 @@ BI_Graphics_Init (progs_t *pr)
 	R_Progs_Init (pr);
 	RUA_Game_Init (pr, thread->rua_security);
 	S_Progs_Init (pr);
+
+	event_handler_id = IE_Add_Handler (event_handler, pr);
+	IE_Set_Focus (event_handler_id);
 
 	Con_Init ("client");
 	if (con_module) {
