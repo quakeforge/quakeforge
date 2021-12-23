@@ -52,6 +52,7 @@ typedef struct {
 
 typedef struct {
 	pr_id_t     obj;
+	pr_int_t    set;
 	pr_int_t    iter;
 } pr_set_iter_t;
 

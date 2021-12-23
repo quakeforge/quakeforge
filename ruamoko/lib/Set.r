@@ -27,20 +27,32 @@ string set_as_string (set_t *set) = #0;
 
 
 @implementation SetIterator: Object
-- initWithIterator: (set_iter_t *) iter
+
+- initWithSet: (Set *)set iterator:(set_iter_t *) iter
 {
 	if (!(self = [super init])) {
 		return nil;
 	}
+	self.set = [set retain];
 	self.iter = iter;
 	return self;
+}
+
++ (id) withSet: (Set *)set iterator:(set_iter_t *) iter
+{
+	return [[[self alloc] initWithSet: set iterator: iter] autorelease];
+}
+
+- (void) dealloc
+{
+	[set release];
+	[super dealloc];
 }
 
 - (SetIterator *) next
 {
 	if ((iter = set_next (iter)))
 		return self;
-	[self dealloc];
 	return nil;
 }
 
@@ -93,7 +105,7 @@ string set_as_string (set_t *set) = #0;
 
 	if (!iter)
 		return nil;
-	iterator = [[SetIterator alloc] initWithIterator: iter];
+	iterator = [SetIterator withSet: self iterator: iter];
 	return iterator;
 }
 

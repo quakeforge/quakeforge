@@ -1,8 +1,8 @@
 #ifndef __ruamoko_Set_h
 #define __ruamoko_Set_h
 
-typedef struct set_s *set_t;
-typedef struct set_iter_s *set_iter_t;
+typedef struct set_s set_t;
+typedef struct set_iter_s set_iter_t;
 
 @extern void set_del_iter (set_iter_t *set_iter);
 @extern unsigned set_iter_element (set_iter_t *set_iter);
@@ -32,8 +32,11 @@ typedef struct set_iter_s *set_iter_t;
 
 #include <Object.h>
 
+@class Set;
+
 @interface SetIterator: Object
 {
+	Set        *set;
 	set_iter_t *iter;
 }
 - (SetIterator *) next;
