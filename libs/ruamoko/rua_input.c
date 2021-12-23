@@ -205,6 +205,7 @@ make_cookie (progs_t *pr, func_t func, pointer_t data)
 		cookie = cmemalloc (res->cookie_super, sizeof (rua_in_cookie_t));
 		*cookie = search;
 		cookie->pr = pr;
+		Hash_AddElement (res->cookies, cookie);
 	}
 	cookie->users++;
 	return cookie;
