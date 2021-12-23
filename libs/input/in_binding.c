@@ -298,13 +298,9 @@ in_keyhelp_event_handler (const IE_event_t *ie_event, void *unused)
 		if (db) {
 			ai = &db->axis_info[axis];
 		} else {
-			//FIXME set single axis info entry
-			int         num_axes;
-			in_axisinfo_t *axis_info;
-			IN_AxisInfo (devid, 0, &num_axes);
-			axis_info = alloca (num_axes * sizeof (in_axisinfo_t));
-			IN_AxisInfo (devid, axis_info, &num_axes);
-			ai = &axis_info[axis];
+			in_axisinfo_t axis_info;
+			IN_GetAxisInfo (devid, axis, &axis_info);
+			ai = &axis_info;
 		}
 		if (!ai->min && !ai->max) {
 			if (abs (value) > keyhelp_axis_threshold) {
