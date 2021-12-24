@@ -256,6 +256,8 @@ get_type (expr_t *e)
 			break;
 		case ex_vector:
 			return e->e.vector.type;
+		case ex_selector:
+			return &type_SEL;
 		case ex_count:
 			internal_error (e, "invalid expression");
 	}
@@ -447,6 +449,11 @@ copy_expr (expr_t *e)
 				e = e->next;
 				t = t->next;
 			}
+			return n;
+		case ex_selector:
+			n = new_expr ();
+			*n = *e;
+			n->e.selector.sel_ref = copy_expr (e->e.selector.sel_ref);
 			return n;
 		case ex_compound:
 			n = new_expr ();
@@ -1641,6 +1648,7 @@ unary_expr (int op, expr_t *e)
 				case ex_state:
 				case ex_compound:
 				case ex_memset:
+				case ex_selector:
 					internal_error (e, 0);
 				case ex_uexpr:
 					if (e->e.expr.op == '-') {
@@ -1732,6 +1740,7 @@ unary_expr (int op, expr_t *e)
 				case ex_state:
 				case ex_compound:
 				case ex_memset:
+				case ex_selector:
 					internal_error (e, 0);
 				case ex_bool:
 					return new_bool_expr (e->e.bool.false_list,
@@ -1802,6 +1811,7 @@ unary_expr (int op, expr_t *e)
 				case ex_state:
 				case ex_compound:
 				case ex_memset:
+				case ex_selector:
 					internal_error (e, 0);
 				case ex_uexpr:
 					if (e->e.expr.op == '~')

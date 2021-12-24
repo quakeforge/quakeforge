@@ -50,6 +50,7 @@
 #include "tools/qfcc/include/dot.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/method.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/reloc.h"
@@ -1451,6 +1452,12 @@ expr_value (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
+expr_selector (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	return statement_subexpr (sblock, e->e.selector.sel_ref, op);
+}
+
+static sblock_t *
 statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	static expr_f sfuncs[ex_count] = {
@@ -1463,6 +1470,7 @@ statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 		[ex_vector] = expr_vector_e,
 		[ex_nil] = expr_nil,
 		[ex_value] = expr_value,
+		[ex_selector] = expr_selector,
 	};
 	if (!e) {
 		*op = 0;

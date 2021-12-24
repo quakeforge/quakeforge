@@ -483,6 +483,9 @@ get_selector (expr_t *sel)
 {
 	selector_t  _sel = {0, 0, 0};
 
+	if (sel->type == ex_selector) {
+		return sel->e.selector.sel;
+	}
 	if (sel->type != ex_expr && sel->e.expr.op != '&'
 		&& !is_SEL(sel->e.expr.type)) {
 		error (sel, "not a selector");

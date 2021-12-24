@@ -47,6 +47,7 @@
 #include "qfalloca.h"
 
 #include "tools/qfcc/include/expr.h"
+#include "tools/qfcc/include/method.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 #include "tools/qfcc/include/strpool.h"
@@ -427,6 +428,15 @@ print_vector (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 }
 
 static void
+print_selector (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	dasprintf (dstr, "%*se_%p [label=\"%s\"];\n", indent, "", e,
+			   e->e.selector.sel->name);
+}
+
+static void
 print_nil (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	int         indent = level * 2 + 2;
@@ -564,6 +574,7 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		[ex_symbol] = print_symbol,
 		[ex_temp] = print_temp,
 		[ex_vector] = print_vector,
+		[ex_selector] = print_selector,
 		[ex_nil] = print_nil,
 		[ex_value] = print_value,
 		[ex_compound] = print_compound,
