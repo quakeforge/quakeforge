@@ -68,10 +68,10 @@ C(D_DrawParticle):
 // transform point
 //	VectorSubtract (p->org, r_origin, local);
 	flds	C(r_origin)
-	fsubrs	pt_org(%edi)
-	flds	pt_org+4(%edi)
+	fsubrs	pt_pos(%edi)
+	flds	pt_pos+4(%edi)
 	fsubs	C(r_origin)+4
-	flds	pt_org+8(%edi)
+	flds	pt_pos+8(%edi)
 	fsubs	C(r_origin)+8
 	fxch	%st(2)			// local[0] | local[1] | local[2]
 
