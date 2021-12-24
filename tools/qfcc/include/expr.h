@@ -586,6 +586,13 @@ int expr_integral (expr_t *e) __attribute__((pure));
 */
 int is_constant (expr_t *e) __attribute__((pure));
 
+/** Check if the expression refers to a selector
+
+	\param e		The expression to check.
+	\return			True if the expression is a selector.
+*/
+int is_selector (expr_t *e) __attribute__((pure));
+
 /**	Return a value expression representing the constant stored in \a e.
 
 	If \a e does not represent a constant, or \a e is already a value or

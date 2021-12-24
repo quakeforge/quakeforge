@@ -32,6 +32,7 @@ parseItemType (PLItem *item)
 	str_free (type);
 	str_free (parser);
 	str_free (parse_type);
+	[super dealloc];
 }
 
 -initWithItem:(PLItem *)item

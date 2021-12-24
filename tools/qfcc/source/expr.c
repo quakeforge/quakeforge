@@ -887,6 +887,12 @@ is_constant (expr_t *e)
 	return 0;
 }
 
+int
+is_selector (expr_t *e)
+{
+	return e->type == ex_selector;
+}
+
 expr_t *
 constant_expr (expr_t *e)
 {

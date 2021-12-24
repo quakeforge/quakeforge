@@ -68,6 +68,7 @@
 {
 	str_free (struct_name);
 	str_free (field_name);
+	[super dealloc];
 }
 
 -writeParseData

@@ -27,6 +27,7 @@
 {
 	str_free (pltype);
 	str_free (parser);
+	[super dealloc];
 }
 
 -writeParseData

@@ -45,6 +45,7 @@
 #include "QF/mathlib.h"
 #include "QF/va.h"
 
+#include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/dags.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/dot.h"
@@ -1002,6 +1003,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 	const char *pref = "";
 	statement_t *s;
 
+	// function arguments are in reverse order
 	for (a = args; a; a = a->next)
 		count++;
 	ind = count;
@@ -2028,6 +2030,42 @@ remove_dead_blocks (sblock_t *blocks)
 }
 
 static void
+search_for_super_dealloc (sblock_t *sblock)
+{
+	while (sblock) {
+		for (statement_t *st = sblock->statements; st; st = st->next) {
+			if (!statement_is_call (st)) {
+				continue;
+			}
+			if (st->opa->op_type != op_def
+				|| strcmp (st->opa->o.def->name, "obj_msgSend_super") != 0) {
+				continue;
+			}
+			// FIXME this is messy (calls should have their own expression
+			// type)
+			// have effectively checked e1 above
+			if (st->expr->type != ex_expr) {
+				continue;
+			}
+			// function arguments are in reverse order, and the selector
+			// is the second argument (or second last in the list)
+			expr_t     *arg;
+			for (arg = st->expr->e.expr.e2;
+				 arg && arg->next && arg->next->next; arg = arg->next) {
+			}
+			if (arg && arg->next && is_selector (arg)) {
+				selector_t *sel = get_selector (st->expr->e.expr.e2);
+				if (sel && strcmp (sel->name, "dealloc") == 0) {
+					return;
+				}
+			}
+		}
+		sblock = sblock->next;
+	}
+	warning (0, "Derived class -dealloc does not call [super dealloc]");
+}
+
+static void
 check_final_block (sblock_t *sblock)
 {
 	statement_t *s = 0;
@@ -2071,6 +2109,7 @@ make_statements (expr_t *e)
 	sblock_t   *sblock = new_sblock ();
 	int         did_something;
 	int         pass = 0;
+	class_t    *class;
 
 	if (options.block_dot.expr)
 		dump_dot ("expr", e, dump_dot_expr);
@@ -2088,6 +2127,16 @@ make_statements (expr_t *e)
 		pass++;
 	} while (did_something);
 	check_final_block (sblock);
+	if (current_class && (class = extract_class (current_class))) {
+		// If the class is a root class, then it is not possible for there
+		// to be a call to [super dealloc] so do not check. However, any
+		// derived class implementeing -dealloc must call [super dealloc]
+		// (or some other deallocator (FIXME: later))
+		// FIXME better check for dealloc?
+		if (class->super_class && !strcmp (current_func->name, "-dealloc")) {
+			search_for_super_dealloc (sblock);
+		}
+	}
 	if (options.block_dot.final)
 		dump_dot ("final", sblock, dump_dot_sblock);
 
