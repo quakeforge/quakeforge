@@ -17,6 +17,7 @@ test_progs_dat=\
 	tools/qfcc/test/comma-expr.dat \
 	tools/qfcc/test/compound.dat \
 	tools/qfcc/test/deadbool.dat \
+	tools/qfcc/test/dealloc-nowarn.dat \
 	tools/qfcc/test/double.dat \
 	tools/qfcc/test/double-alias.dat \
 	tools/qfcc/test/enum.dat \
@@ -63,6 +64,7 @@ fail_progs_dat=
 
 test_build_errors=\
 	tools/qfcc/test/classarray.r \
+	tools/qfcc/test/dealloc-warn.r \
 	tools/qfcc/test/double-demote-float.r \
 	tools/qfcc/test/double-demote-float-ainit.r \
 	tools/qfcc/test/double-demote-float-ginit.r \
@@ -193,6 +195,16 @@ tools/qfcc/test/deadbool.run: $(qfcc_test_run_deps)
 include $(deadbool_dep) # am--include-marker
 r_depfiles_remade += $(deadbool_dep)
 
+tools_qfcc_test_dealloc_nowarn_dat_SOURCES=tools/qfcc/test/dealloc-nowarn.r
+dealloc_nowarn_obj=$(tools_qfcc_test_dealloc_nowarn_dat_SOURCES:.r=.o)
+dealloc_nowarn_dep=$(call qcautodep,$(tools_qfcc_test_dealloc_nowarn_dat_SOURCES))
+tools/qfcc/test/dealloc-nowarn.dat$(EXEEXT): $(dealloc_nowarn_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(dealloc_nowarn_obj)
+tools/qfcc/test/dealloc-nowarn.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(dealloc_nowarn_dep) # am--include-marker
+r_depfiles_remade += $(dealloc_nowarn_dep)
+
 tools_qfcc_test_double_dat_SOURCES=tools/qfcc/test/double.r
 double_obj=$(tools_qfcc_test_double_dat_SOURCES:.r=.o)
 double_dep=$(call qcautodep,$(tools_qfcc_test_double_dat_SOURCES))
@@ -214,6 +226,9 @@ include $(double_alias_dep) # am--include-marker
 r_depfiles_remade += $(double_alias_dep)
 
 tools/qfcc/test/classarray.run$(EXEEXT): tools/qfcc/test/classarray.r $(qfcc_fail_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
+
+tools/qfcc/test/dealloc-warn.run$(EXEEXT): tools/qfcc/test/dealloc-warn.r $(qfcc_fail_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-compile-fail-run $@ $(QFCC) $(QCFLAGS) $<
 
 tools/qfcc/test/double-demote-int.run$(EXEEXT): tools/qfcc/test/double-demote-int.r $(qfcc_fail_run_deps)
