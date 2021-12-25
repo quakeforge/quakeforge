@@ -97,6 +97,7 @@ typedef struct function_s {
 	struct statement_s **statements;
 	int                 num_statements;
 	int                 pseudo_addr;///< pseudo address space for flow analysis
+	struct pseudoop_s  *pseudo_ops;///< pseudo operands used by this function
 } function_t;
 
 extern function_t *current_func;

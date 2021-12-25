@@ -70,6 +70,7 @@ const char *op_type_names[] = {
 	"op_temp",
 	"op_alias",
 	"op_nil",
+	"op_pseudo",
 };
 
 const char *st_type_names[] = {
@@ -183,7 +184,9 @@ operand_string (operand_t *op)
 						   buf);
 			}
 		case op_nil:
-			return va (0, "nil");
+			return "nil";
+		case op_pseudo:
+			return va (0, "pseudo: %s", op->pseudoop->name);
 	}
 	return ("??");
 }
@@ -260,6 +263,9 @@ _print_operand (operand_t *op)
 		case op_nil:
 			printf ("nil");
 			break;
+		case op_pseudo:
+			printf ("pseudo: %s", op->pseudoop->name);
+			break;
 	}
 }
 
@@ -268,6 +274,20 @@ print_operand (operand_t *op)
 {
 	_print_operand (op);
 	puts ("");
+}
+
+static void
+print_operand_chain (const char *name, operand_t *op)
+{
+	if (op) {
+		printf ("    %s:", name);
+		while (op) {
+			printf (" ");
+			_print_operand (op);
+			op = op->next;
+		}
+		printf ("\n");
+	}
 }
 
 void
@@ -283,8 +303,12 @@ print_statement (statement_t *s)
 	if (s->opc)
 		_print_operand (s->opc);
 	printf (")\n");
+	print_operand_chain ("use", s->use);
+	print_operand_chain ("def", s->def);
+	print_operand_chain ("kill", s->kill);
 }
 
+static pseudoop_t *pseudoops_freelist;
 static sblock_t *sblocks_freelist;
 static statement_t *statements_freelist;
 static operand_t *operands_freelist;
@@ -317,6 +341,16 @@ new_statement (st_type_t type, const char *opcode, expr_t *expr)
 	statement->expr = expr;
 	statement->number = -1;	// indicates flow analysis not done yet
 	return statement;
+}
+
+static pseudoop_t *
+new_pseudoop (const char *name)
+{
+	pseudoop_t *pseudoop;
+	ALLOC (256, pseudoop_t, pseudoops, pseudoop);
+	pseudoop->name = save_string (name);
+	return pseudoop;
+
 }
 
 static operand_t *
@@ -357,6 +391,16 @@ free_sblock (sblock_t *sblock)
 		free_statement (s);
 	}
 	FREE (sblocks, sblock);
+}
+
+static operand_t *
+pseudo_operand (pseudoop_t *pseudoop, expr_t *expr)
+{
+	operand_t  *op;
+	op = new_operand (op_pseudo, expr, __builtin_return_address (0));
+	op->pseudoop = pseudoop;
+	op->size = 1;
+	return op;
 }
 
 operand_t *
@@ -729,6 +773,7 @@ operand_address (operand_t *reference, expr_t *e)
 		case op_value:
 		case op_label:
 		case op_nil:
+		case op_pseudo:
 			break;
 	}
 	internal_error (e, "invalid operand type for operand address: %s",
@@ -2030,10 +2075,30 @@ remove_dead_blocks (sblock_t *blocks)
 }
 
 static void
+super_dealloc_warning (expr_t *expr, pseudoop_t *op)
+{
+	warning (expr,
+			 "control may reach end of derived -dealloc without invoking %s",
+			 op->name);
+}
+
+static void
 search_for_super_dealloc (sblock_t *sblock)
 {
+	operand_t  *op;
+	pseudoop_t *super_dealloc = new_pseudoop ("[super dealloc]");
+	int         super_dealloc_found = 0;
+	super_dealloc->next = current_func->pseudo_ops;
+	current_func->pseudo_ops = super_dealloc;
+	super_dealloc->uninitialized = super_dealloc_warning;
 	while (sblock) {
 		for (statement_t *st = sblock->statements; st; st = st->next) {
+			if (statement_is_return (st)) {
+				op = pseudo_operand (super_dealloc, st->expr);
+				op->next = st->use;
+				st->use = op;
+				continue;
+			}
 			if (!statement_is_call (st)) {
 				continue;
 			}
@@ -2056,13 +2121,20 @@ search_for_super_dealloc (sblock_t *sblock)
 			if (arg && arg->next && is_selector (arg)) {
 				selector_t *sel = get_selector (st->expr->e.expr.e2);
 				if (sel && strcmp (sel->name, "dealloc") == 0) {
-					return;
+					op = pseudo_operand (super_dealloc, st->expr);
+					op->next = st->use;
+					st->def = op;
+					super_dealloc_found++;
 				}
 			}
 		}
 		sblock = sblock->next;
 	}
-	warning (0, "Derived class -dealloc does not call [super dealloc]");
+	// warn only when NOT optimizing because flow analysis will catch the
+	// missed invokation
+	if (!super_dealloc_found && !options.code.optimize) {
+		warning (0, "Derived class -dealloc does not call [super dealloc]");
+	}
 }
 
 static void
