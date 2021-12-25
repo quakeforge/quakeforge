@@ -92,7 +92,7 @@ void IMT_SetContextCbuf (int ctx, struct cbuf_s *cbuf);
 	Searches through all contexts for the named imt. The search is case
 	insensitive.
 
-	\param imt_name	The name of the imt to find. Case insensitive.
+	\param name		The name of the imt to find. Case insensitive.
 	\return			The named imt, or null if not found.
 */
 imt_t *IMT_FindIMT (const char *name) __attribute__ ((pure));

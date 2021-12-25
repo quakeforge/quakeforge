@@ -1637,7 +1637,7 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 /** Retrieve a resource from the resource map using a handle.
 
 	\param map		The resource map.
-	\param col		The handle.
+	\param ind		The handle.
 	\return			A pointer to the resource, or NULL if the handle is
 					invalid.
 */
