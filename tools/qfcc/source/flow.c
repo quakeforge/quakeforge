@@ -248,7 +248,7 @@ flowvar_is_param (flowvar_t *var)
 	return 1;
 }
 
-/**	Check if the flowvar refers to a function parameter.
+/**	Check if the flowvar refers to a local variable.
  *
  *	As this is simply "neither global nor pamam", all other flowvars are
  *	considered local, in particular actual non-staic function scope variables
@@ -376,8 +376,8 @@ get_temp_address (function_t *func, operand_t *op)
 		top = top->o.tempop.alias;
 	}
 	if (!top->o.tempop.flowaddr) {
-		top->o.tempop.flowaddr = func->tmpaddr;
-		func->tmpaddr += top->size;
+		top->o.tempop.flowaddr = func->pseudo_addr;
+		func->pseudo_addr += top->size;
 	}
 	if (top->o.tempop.offset) {
 		internal_error (top->expr, "real tempop with a non-zero offset");
@@ -509,7 +509,7 @@ static int flow_def_clear_flowvars (def_t *def, void *data)
  *	recycled. Thus, give temp vars a pseudo address space just past the
  *	address space used for source-defined local variables. As each temp
  *	var is added to the analyzer, get_temp_address() assigns the temp var
- *	an address using function_t::tmpaddr as a starting point.
+ *	an address using function_t::pseudo_addr as a starting point.
  *
  *	add_operand() takes care of setting flowvar_t::flowaddr for both locals
  *	and temps.
@@ -567,7 +567,7 @@ flow_build_vars (function_t *func)
 
 	// set up pseudo address space for temp vars so accessing tmp vars
 	// though aliases analyses correctly
-	func->tmpaddr = func->num_statements + func->symtab->space->size;
+	func->pseudo_addr = func->num_statements + func->symtab->space->size;
 
 	func->num_vars = 0;	// incremented by add_operand
 	// first, add .return and .param_[0-7] as they are always needed

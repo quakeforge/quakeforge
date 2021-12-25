@@ -96,7 +96,7 @@ typedef struct function_s {
 	struct set_s       *global_vars;///< set indicating which vars are global
 	struct statement_s **statements;
 	int                 num_statements;
-	int                 tmpaddr;	///< tmp var "address" for flow analysis
+	int                 pseudo_addr;///< pseudo address space for flow analysis
 } function_t;
 
 extern function_t *current_func;
