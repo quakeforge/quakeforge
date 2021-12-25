@@ -215,7 +215,7 @@ flowvar_is_global (flowvar_t *var)
 
 	if (var->op->op_type != op_def)
 		return 0;
-	def = var->op->o.def;
+	def = var->op->def;
 	if (def->alias)
 		def = def->alias;
 	if (def->local)
@@ -238,7 +238,7 @@ flowvar_is_param (flowvar_t *var)
 
 	if (var->op->op_type != op_def)
 		return 0;
-	def = var->op->o.def;
+	def = var->op->def;
 	if (def->alias)
 		def = def->alias;
 	if (!def->local)
@@ -273,12 +273,12 @@ flowvar_get_def (flowvar_t *var)
 
 	switch (op->op_type) {
 		case op_def:
-			return op->o.def;
+			return op->def;
 		case op_value:
 		case op_label:
 			return 0;
 		case op_temp:
-			return op->o.tempop.def;
+			return op->tempop.def;
 		case op_alias:
 			internal_error (op->expr, "unexpected alias operand");
 		case op_nil:
@@ -302,14 +302,14 @@ flow_get_var (operand_t *op)
 		return 0;
 
 	if (op->op_type == op_temp) {
-		if (!op->o.tempop.flowvar)
-			op->o.tempop.flowvar = new_flowvar ();
-		return op->o.tempop.flowvar;
+		if (!op->tempop.flowvar)
+			op->tempop.flowvar = new_flowvar ();
+		return op->tempop.flowvar;
 	}
 	if (op->op_type == op_def) {
-		if (!op->o.def->flowvar)
-			op->o.def->flowvar = new_flowvar ();
-		return op->o.def->flowvar;
+		if (!op->def->flowvar)
+			op->def->flowvar = new_flowvar ();
+		return op->def->flowvar;
 	}
 	return 0;
 }
@@ -369,21 +369,21 @@ static int
 get_temp_address (function_t *func, operand_t *op)
 {
 	operand_t  *top = op;
-	if (op->o.tempop.flowaddr) {
-		return op->o.tempop.flowaddr;
+	if (op->tempop.flowaddr) {
+		return op->tempop.flowaddr;
 	}
-	while (top->o.tempop.alias) {
-		top = top->o.tempop.alias;
+	while (top->tempop.alias) {
+		top = top->tempop.alias;
 	}
-	if (!top->o.tempop.flowaddr) {
-		top->o.tempop.flowaddr = func->pseudo_addr;
+	if (!top->tempop.flowaddr) {
+		top->tempop.flowaddr = func->pseudo_addr;
 		func->pseudo_addr += top->size;
 	}
-	if (top->o.tempop.offset) {
+	if (top->tempop.offset) {
 		internal_error (top->expr, "real tempop with a non-zero offset");
 	}
-	op->o.tempop.flowaddr = top->o.tempop.flowaddr + op->o.tempop.offset;
-	return op->o.tempop.flowaddr;
+	op->tempop.flowaddr = top->tempop.flowaddr + op->tempop.offset;
+	return op->tempop.flowaddr;
 }
 
 /**	Add an operand's flowvar to the function's list of variables.
@@ -415,7 +415,7 @@ add_operand (function_t *func, operand_t *op)
 		if (op->op_type == op_temp) {
 			var->flowaddr = get_temp_address (func, op);
 		} else if (flowvar_is_local (var)) {
-			var->flowaddr = func->num_statements + def_offset (var->op->o.def);
+			var->flowaddr = func->num_statements + def_offset (var->op->def);
 		}
 	}
 }
@@ -537,7 +537,7 @@ flow_build_vars (function_t *func)
 		flow_analyze_statement (s, 0, 0, 0, operands);
 		for (j = 0; j < FLOW_OPERANDS; j++) {
 			if (operands[j] && operands[j]->op_type == op_def) {
-				def_visit_all (operands[j]->o.def, 0,
+				def_visit_all (operands[j]->def, 0,
 							   flow_def_clear_flowvars, 0);
 			}
 		}
@@ -546,7 +546,7 @@ flow_build_vars (function_t *func)
 	for (i = 0; i < num_flow_params; i++) {
 		def_t      *def = param_symbol (flow_params[i].name)->s.def;
 		def_visit_all (def, 0, flow_def_clear_flowvars, 0);
-		flow_params[i].op.o.def = def;
+		flow_params[i].op.def = def;
 		num_vars += count_operand (&flow_params[i].op);
 	}
 	// then run through the statements in the function looking for accessed
@@ -664,9 +664,9 @@ flow_kill_aliases (set_t *kill, flowvar_t *var, const set_t *uninit)
 	tmp = set_new ();
 	// collect the kill sets from any aliases
 	if (op->op_type == op_temp) {
-		tempop_visit_all (&op->o.tempop, 1, flow_tempop_kill_aliases, tmp);
+		tempop_visit_all (&op->tempop, 1, flow_tempop_kill_aliases, tmp);
 	} else if (op->op_type == op_def) {
-		def_visit_all (op->o.def, 1, flow_def_kill_aliases, tmp);
+		def_visit_all (op->def, 1, flow_def_kill_aliases, tmp);
 	}
 	// don't allow aliases to kill definitions in the entry dummy block
 	if (uninit) {
@@ -912,13 +912,13 @@ flow_uninit_scan_statements (flownode_t *node, set_t *defs, set_t *uninit)
 			set_difference (defs, var->define);
 			if (var->op->op_type == op_temp) {
 				op = var->op;
-				if (op->o.tempop.alias) {
-					var = op->o.tempop.alias->o.tempop.flowvar;
+				if (op->tempop.alias) {
+					var = op->tempop.alias->tempop.flowvar;
 					if (var)
 						set_difference (defs, var->define);
 				}
-				for (op = op->o.tempop.alias_ops; op; op = op->next) {
-					var = op->o.tempop.flowvar;
+				for (op = op->tempop.alias_ops; op; op = op->next) {
+					var = op->tempop.flowvar;
 					if (var)
 						set_difference (defs, var->define);
 				}
@@ -1062,9 +1062,9 @@ flow_add_op_var (set_t *set, operand_t *op, int is_use)
 	// var is being treated as assigned as well. Want to handle partial
 	// defs properly, but I am as yet uncertain of how.
 	if (op->op_type == op_temp) {
-		tempop_visit_all (&op->o.tempop, ol, flow_tempop_add_aliases, set);
+		tempop_visit_all (&op->tempop, ol, flow_tempop_add_aliases, set);
 	} else {
-		def_visit_all (op->o.def, ol, flow_def_add_aliases, set);
+		def_visit_all (op->def, ol, flow_def_add_aliases, set);
 	}
 }
 
@@ -1073,15 +1073,15 @@ flow_analyze_pointer_operand (operand_t *ptrop, set_t *def)
 {
 	operand_t  *op = 0;
 
-	if (ptrop->op_type == op_value && ptrop->o.value->lltype == ev_pointer) {
-		ex_pointer_t *ptr = &ptrop->o.value->v.pointer;
-		if (ptrop->o.value->v.pointer.def) {
+	if (ptrop->op_type == op_value && ptrop->value->lltype == ev_pointer) {
+		ex_pointer_t *ptr = &ptrop->value->v.pointer;
+		if (ptrop->value->v.pointer.def) {
 			def_t      *alias;
 			alias = alias_def (ptr->def, ptr->type, ptr->val);
 			op = def_operand (alias, ptr->type, ptrop->expr);
 		}
-		if (ptrop->o.value->v.pointer.tempop) {
-			op = ptrop->o.value->v.pointer.tempop;
+		if (ptrop->value->v.pointer.tempop) {
+			op = ptrop->value->v.pointer.tempop;
 		}
 		if (op) {
 			flow_add_op_var (def, op, 0);

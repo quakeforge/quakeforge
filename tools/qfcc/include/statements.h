@@ -66,7 +66,7 @@ typedef struct operand_s {
 		struct ex_label_s *label;
 		tempop_t    tempop;
 		struct operand_s *alias;
-	} o;
+	};
 } operand_t;
 
 /** Overall type of statement.
