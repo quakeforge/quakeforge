@@ -394,7 +394,6 @@ pr_debug_clear (progs_t *pr, void *data)
 	res->linenos = 0;
 	res->local_defs = 0;
 
-	pr->pr_debug_resources = res;
 	pr->watch = 0;
 	pr->wp_conditional = 0;
 	pr->wp_val.integer_var = 0;
@@ -530,7 +529,7 @@ func_compare_search (const void *_key, const void *_f, void *_res)
 VISIBLE int
 PR_LoadDebug (progs_t *pr)
 {
-	prdeb_resources_t *res = PR_Resources_Find (pr, "PR_Debug");
+	prdeb_resources_t *res = pr->pr_debug_resources;
 	char       *sym_path;
 	const char *path_end, *sym_file;
 	off_t       debug_size;
@@ -543,7 +542,6 @@ PR_LoadDebug (progs_t *pr)
 	qfot_type_t *type;
 	string_t    compunit_str;
 
-	pr->pr_debug_resources = res;
 	if (!pr_debug->int_val)
 		return 1;
 
@@ -1816,6 +1814,7 @@ PR_Debug_Init (progs_t *pr)
 									pr->hashlink_freelist);
 
 	PR_Resources_Register (pr, "PR_Debug", res, pr_debug_clear);
+	pr->pr_debug_resources = res;
 }
 
 void
