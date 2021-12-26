@@ -79,6 +79,9 @@ typedef struct dagnode_s {
 	struct set_s *edges;		///< includes nodes pointed to by \a children
 	//@}
 	struct set_s *identifiers;	///< set of identifiers attached to this node
+	struct set_s *reachable;	///< set of nodes reachable via edges (not
+								///< parents) for ensuring cycles are not
+								///< created
 } dagnode_t;
 
 typedef struct dag_s {

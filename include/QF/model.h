@@ -154,10 +154,9 @@ typedef struct msurface_s {
 
 	glpoly_t   *polys;				// multiple if warped
 	instsurf_t *instsurf;	///< null if not part of world model/sub-model
-	instsurf_t *tinst;		///< for instance models
 
 	mtexinfo_t *texinfo;
-	int         ec_index;
+	int         model_index;	///< < 0: instance, 0 main, > 0: sub
 	byte       *base;
 
 // lighting info
@@ -207,7 +206,7 @@ typedef struct mleaf_s {
 } mleaf_t;
 
 typedef struct mclipnode_s {
-	int         planenum;
+	unsigned    planenum;
 	int         children[2];
 } mclipnode_t;
 
@@ -223,55 +222,57 @@ typedef struct hull_s {
 } hull_t;
 
 typedef struct mod_brush_s {
-	int			 firstmodelsurface, nummodelsurfaces;
+	unsigned    firstmodelsurface, nummodelsurfaces;
 
-	int			 numsubmodels;
-	dmodel_t	*submodels;
+	unsigned    numsubmodels;
+	dmodel_t   *submodels;
 
-	int			 numplanes;
-	plane_t		*planes;
+	unsigned    numplanes;
+	plane_t    *planes;
 
-	int			 numleafs;		// number of visible leafs, not counting 0
-	mleaf_t		*leafs;
+	unsigned    modleafs;		///< number of leafs in model, including 0
+	unsigned    visleafs;		///< number of visible leafs, not counting 0
+	mleaf_t    *leafs;
 
-	int			 numvertexes;
-	mvertex_t	*vertexes;
+	unsigned    numvertexes;
+	mvertex_t  *vertexes;
 
-	int			 numedges;
-	medge_t		*edges;
+	unsigned    numedges;
+	medge_t    *edges;
 
-	int			 numnodes;
-	mnode_t		*nodes;
-	int          depth;				///< maximum depth of the tree
+	unsigned    numnodes;
+	mnode_t    *nodes;
+	int         depth;				///< maximum depth of the tree
 
-	int			 numtexinfo;
-	mtexinfo_t	*texinfo;
+	unsigned    numtexinfo;
+	mtexinfo_t *texinfo;
 
-	int			 numsurfaces;
-	msurface_t	*surfaces;
+	unsigned    numsurfaces;
+	msurface_t *surfaces;
 
-	int			 numsurfedges;
-	int			*surfedges;
+	unsigned    numsurfedges;
+	int        *surfedges;
 
-	int			 numclipnodes;
-	mclipnode_t	*clipnodes;
+	unsigned    numclipnodes;
+	mclipnode_t *clipnodes;
 
-	int			 nummarksurfaces;
-	msurface_t	**marksurfaces;
+	unsigned    nummarksurfaces;
+	msurface_t **marksurfaces;
 
-	hull_t		 hulls[MAX_MAP_HULLS];
-	hull_t		*hull_list[MAX_MAP_HULLS];
+	hull_t      hulls[MAX_MAP_HULLS];
+	hull_t     *hull_list[MAX_MAP_HULLS];
 
-	int			 numtextures;
-	texture_t	**textures;
-	texture_t	*skytexture;
+	unsigned    numtextures;
+	texture_t **textures;
+	texture_t  *skytexture;
 
-	byte		*visdata;
-	byte		*lightdata;
-	char		*entities;	//FIXME should not be here
+	byte       *visdata;
+	byte       *lightdata;
+	char       *entities;	//FIXME should not be here
 
-	mnode_t    **node_parents;
-	mnode_t    **leaf_parents;
+	mnode_t   **node_parents;
+	mnode_t   **leaf_parents;
+	int        *leaf_flags;	// union of surf flags for surfs in leaf
 
 	unsigned int checksum;
 	unsigned int checksum2;
@@ -279,7 +280,6 @@ typedef struct mod_brush_s {
 
 // SPRITE MODELS ==============================================================
 
-// FIXME: shorten these?
 typedef struct mspriteframe_s {
 	int		width;
 	int		height;
@@ -296,16 +296,17 @@ typedef struct {
 
 typedef struct {
 	spriteframetype_t	type;
-	mspriteframe_t		*frameptr;
+	union {
+		mspriteframe_t *frame;
+		mspritegroup_t *group;
+	};
 } mspriteframedesc_t;
 
 typedef struct {
-	int					type;
-	int					maxwidth;
-	int					maxheight;
-	int					numframes;
-	float				beamlength;		// remove?
-	void				*cachespot;		// remove?
+	int         type;
+	float       beamlength;
+	int         numframes;
+	int         data;
 	mspriteframedesc_t	frames[1];
 } msprite_t;
 
@@ -432,13 +433,12 @@ model_t *Mod_ForName (const char *name, qboolean crash);
 void Mod_TouchModel (const char *name);
 // brush specific
 mleaf_t *Mod_PointInLeaf (const vec3_t p, model_t *model) __attribute__((pure));
-byte *Mod_LeafPVS (const mleaf_t *leaf, const model_t *model);
+struct set_s *Mod_LeafPVS (const mleaf_t *leaf, const model_t *model);
 
-// NOTE: the buffer pointed to by out must be at least MAP_PVS_BYTES in size
 void Mod_LeafPVS_set (const mleaf_t *leaf, const model_t *model, byte defvis,
-					  byte *out);
+					  struct set_s *pvs);
 void Mod_LeafPVS_mix (const mleaf_t *leaf, const model_t *model, byte defvis,
-					  byte *out);
+					  struct set_s *pvs);
 
 void Mod_Print (void);
 

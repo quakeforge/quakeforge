@@ -28,6 +28,8 @@
 #ifndef __QF_simd_types_h
 #define __QF_simd_types_h
 
+#include <stdint.h>
+
 #define VEC_TYPE(t,n) typedef t n __attribute__ ((vector_size (4*sizeof (t))))
 
 /** Three element vector type for interfacing with compact data.
@@ -37,7 +39,7 @@
  */
 typedef double vec3d_t[3];
 
-#ifdef __AVX__
+#ifdef __AVX2__
 /** Four element vector type for horizontal (AOS) vector data.
  *
  * This is used for both vectors (3D and 4D) and quaternions. 3D vectors
@@ -51,7 +53,7 @@ VEC_TYPE (double, vec4d_t);
 
 /** Used mostly for __builtin_shuffle.
  */
-VEC_TYPE (long, vec4l_t);
+VEC_TYPE (int64_t, vec4l_t);
 #endif
 
 /** Three element vector type for interfacing with compact data.
@@ -77,7 +79,11 @@ VEC_TYPE (float, vec4f_t);
 VEC_TYPE (int, vec4i_t);
 
 #define VEC4D_FMT "[%.17g, %.17g, %.17g, %.17g]"
+#if __WORDSIZE == 64
 #define VEC4L_FMT "[%ld, %ld, %ld, %ld]"
+#else
+#define VEC4L_FMT "[%lld, %lld, %lld, %lld]"
+#endif
 #define VEC4F_FMT "[%.9g, %.9g, %.9g, %.9g]"
 #define VEC4I_FMT "[%d, %d, %d, %d]"
 #define VEC4_EXP(v) (v)[0], (v)[1], (v)[2], (v)[3]
@@ -86,4 +92,36 @@ VEC_TYPE (int, vec4i_t);
 
 typedef vec4f_t mat4f_t[4];
 typedef vec4i_t mat4i_t[4];
+
+typedef struct vspheref_s {
+	vec4f_t     center; // w set to 1
+	float       radius;
+} vspheref_t;
+
+#include <immintrin.h>
+#ifndef __SSE__
+#define _mm_xor_ps __qf_mm_xor_ps
+#define _mm_and_ps __qf_mm_and_ps
+GNU89INLINE inline __m128 _mm_xor_ps (__m128 a, __m128 b);
+GNU89INLINE inline __m128 _mm_and_ps (__m128 a, __m128 b);
+#ifndef IMPLEMENT_MAT4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+__m128 _mm_xor_ps (__m128 a, __m128 b)
+{
+	return (__m128) ((vec4i_t) a ^ (vec4i_t) b);
+}
+#ifndef IMPLEMENT_MAT4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+__m128 _mm_and_ps (__m128 a, __m128 b)
+{
+	return (__m128) ((vec4i_t) a & (vec4i_t) b);
+}
+#endif
+
 #endif//__QF_simd_types_h

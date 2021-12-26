@@ -45,7 +45,7 @@
 #include "QF/zone.h"
 
 typedef struct portable_samplepair_s portable_samplepair_t;
-typedef struct dma_s dma_t;
+typedef struct snd_s snd_t;
 typedef struct wavinfo_s wavinfo_t;
 typedef struct channel_s channel_t;
 typedef struct sfxbuffer_s sfxbuffer_t;
@@ -68,15 +68,16 @@ struct portable_samplepair_s {
 	float        right;						//!< right sample
 };
 
-/** communication structure between output drivers and renderer
+/** Sound system state
 */
-struct dma_s {
+struct snd_s {
 	int				speed;					//!< sample rate
 	int				samplebits;				//!< bits per sample
 	int				channels;				//!< number of output channels
 	int				frames;					//!< frames in buffer
 											//!< 1 frame = channels samples
 	int				submission_chunk;		//!< don't mix less than this #
+	unsigned        paintedtime;			//!< sound clock in samples
 	int				framepos;				//!< position of dma cursor
 	unsigned char	*buffer;				//!< destination for mixed sound
 	/** Transfer mixed samples to the output.
@@ -84,11 +85,15 @@ struct dma_s {
 		\param count	The number of sample to transfer.
 		\param volume	The gain for the samples.
 	*/
-	void            (*xfer) (portable_samplepair_t *paintbuffer, int count,
+	void            (*xfer) (struct snd_s *snd,
+							 portable_samplepair_t *paintbuffer, int count,
 							 float volume);
 	/** Optional data for the xfer function.
 	*/
 	void            *xfer_data;
+
+	void      (*finish_channels) (void);
+	void      (*paint_channels) (struct snd_s *snd, unsigned endtime);
 };
 
 /** Describes the sound data.
@@ -229,8 +234,6 @@ extern struct cvar_s *snd_volume;
 extern struct cvar_s *snd_interp;
 extern struct cvar_s *snd_stereo_phase_separation;
 
-extern volatile dma_t *snd_shm;
-
 extern snd_render_data_t snd_render_data;
 #define PAINTBUFFER_SIZE    512
 extern portable_samplepair_t snd_paintbuffer[PAINTBUFFER_SIZE * 2];
@@ -277,18 +280,21 @@ sfx_t *SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 void SND_SFX_StreamClose (sfx_t *sfx);
 
 /** Pre-load a sound into the cache.
+	\param snd		sound system state
 	\param sample	name of sound to precache
 */
-sfx_t *SND_PrecacheSound (const char *sample);
+sfx_t *SND_PrecacheSound (snd_t *snd, const char *sample);
 
 /** Pre-load a sound.
+	\param snd		sound system state
 	\param name		name of sound to load
 */
-sfx_t *SND_LoadSound (const char *name);
+sfx_t *SND_LoadSound (snd_t *snd, const char *name);
 
 /** Initialize the sfx sub-subsystem
+	\param snd		sound system state
 */
-void SND_SFX_Init (void);
+void SND_SFX_Init (snd_t *snd);
 
 ///@}
 
@@ -311,33 +317,45 @@ extern	channel_t   snd_channels[MAX_CHANNELS];	//!< pool of available channels
 extern	int			snd_total_channels;	//!< number of active channels
 
 /** Allocate a sound channel that can be used for playing sounds.
+	\param snd		sound system state
 */
-struct channel_s *SND_AllocChannel (void);
+struct channel_s *SND_AllocChannel (snd_t *snd);
 
 /** Stop a channel from playing.
+	\param snd		sound system state
 	\param chan the channel to stop
 */
-void SND_ChannelStop (channel_t *chan);
+void SND_ChannelStop (snd_t *snd, channel_t *chan);
+
+/** Mark all channels as no longer in use.
+
+	For use by asynchronous output drivers.
+*/
+void SND_FinishChannels (void);
 
 /** Scan channels looking for stopped channels.
+	\param snd		sound system state
 	\param wait	if true, wait for the channels to be done. if false, force the
 				channels to be done. true is for threaded, false for
 				non-threaded.
 */
-void SND_ScanChannels (int wait);
+void SND_ScanChannels (snd_t *snd, int wait);
 
 /** Disable ambient sounds.
+	\param snd		sound system state
 	\todo not used, remove?
 */
-void SND_AmbientOff (void);
+void SND_AmbientOff (snd_t *snd);
 
 /** Enable ambient sounds.
+	\param snd		sound system state
 	\todo not used, remove?
 */
-void SND_AmbientOn (void);
+void SND_AmbientOn (snd_t *snd);
 
 /** Update the sound engine with the client's position and orientation and
 	render some sound.
+	\param snd		sound system state
 	\param origin	3d coords of the client
 	\param v_forward 3d vector of the client's facing direction
 	\param v_right	3d vector of the client's rightward direction
@@ -345,19 +363,22 @@ void SND_AmbientOn (void);
 	\param ambient_sound_level Pointer to 4 bytes indicating the levels at
 					which to play the ambient sounds.
 */
-void SND_SetListener (const vec3_t origin, const vec3_t v_forward,
+void SND_SetListener (snd_t *snd, const vec3_t origin, const vec3_t v_forward,
 					  const vec3_t v_right, const vec3_t v_up,
 					  const byte *ambient_sound_level);
 
 /** Stop all sounds from playing.
+	\param snd		sound system state
 */
-void SND_StopAllSounds(void);
+void SND_StopAllSounds (snd_t *snd);
 
 /** Initialize the channels sub-subsystem
+	\param snd		sound system state
 */
-void SND_Channels_Init (void);
+void SND_Channels_Init (snd_t *snd);
 
 /** Start a sound playing.
+	\param snd		sound system state
 	\param entnum	index of entity the sound is associated with.
 	\param entchannel 0-7
 		- 0 auto (never willingly overrides)
@@ -370,27 +391,30 @@ void SND_Channels_Init (void);
 	\param fvol		absolute volume of the sound
 	\param attenuation rate of volume dropoff vs distance
 */
-void SND_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
-				   float fvol,  float attenuation);
+void SND_StartSound (snd_t *snd, int entnum, int entchannel, sfx_t *sfx,
+					 const vec3_t origin, float fvol,  float attenuation);
 
 /** Create a sound generated by the world.
+	\param snd		sound system state
 	\param sfx		sound to play
 	\param origin	3d coords of where the sound originates
 	\param vol		absolute volume of the sound
 	\param attenuation rate of volume dropoff vs distance
 */
-void SND_StaticSound (sfx_t *sfx, const vec3_t origin, float vol,
-					float attenuation);
+void SND_StaticSound (snd_t *snd, sfx_t *sfx, const vec3_t origin, float vol,
+					  float attenuation);
 /** Stop an entity's sound.
+	\param snd		sound system state
 	\param entnum	index of entity the sound is associated with.
 	\param entchannel channel to silence
 */
-void SND_StopSound (int entnum, int entchannel);
+void SND_StopSound (snd_t *snd, int entnum, int entchannel);
 
 /** Start a sound local to the client view.
+	\param snd		sound system state
 	\param s name of sound to play
 */
-void SND_LocalSound (const char *s);
+void SND_LocalSound (snd_t *snd, const char *s);
 ///@}
 
 
@@ -398,18 +422,17 @@ void SND_LocalSound (const char *s);
 	\ingroup sound_render
 */
 ///@{
-/** sound clock in samples
-*/
-extern unsigned snd_paintedtime;
 
 /** Mix all active channels into the output buffer.
+	\param snd		sound system state
 	\param endtime	sample time until when to mix
 */
-void SND_PaintChannels(unsigned int endtime);
+void SND_PaintChannels(snd_t *snd, unsigned int endtime);
 
 /** Initialize the scale table for painting of 8 bit samples.
+	\param snd		sound system state
 */
-void SND_InitScaletable (void);
+void SND_InitScaletable (snd_t *snd);
 
 /** Set the paint function of the sfxbuffer
 	\param sc		sfxbuffer to set.
@@ -447,8 +470,8 @@ void SND_Resample (sfxbuffer_t *sc, float *data, int length);
 	\param channels	number of channels per frame
 	\param width	bytes per channel
 */
-void SND_Convert (byte *idata, float *fdata, int frames, int channels,
-				  int width);
+void SND_Convert (byte *idata, float *fdata, int frames,
+				  int channels, int width);
 ///@}
 
 

@@ -64,8 +64,8 @@ void PR_Init (progs_t *pr);
 */
 void PR_Init_Cvars (void);
 
-void PR_Error (progs_t *pr, const char *error, ...) __attribute__((format(printf,2,3), noreturn));
-void PR_RunError (progs_t *pr, const char *error, ...) __attribute__((format(printf,2,3), noreturn));
+void PR_Error (progs_t *pr, const char *error, ...) __attribute__((format(PRINTF,2,3), noreturn));
+void PR_RunError (progs_t *pr, const char *error, ...) __attribute__((format(PRINTF,2,3), noreturn));
 
 ///@}
 
@@ -292,9 +292,9 @@ void ED_Count (progs_t *pr);
 qboolean PR_EdictValid (progs_t *pr, pr_int_t e) __attribute__((pure));
 
 // pr_debug.c
-void ED_Print (progs_t *pr, edict_t *ed);
+void ED_Print (progs_t *pr, edict_t *ed, const char *fieldname);
 void ED_PrintEdicts (progs_t *pr, const char *fieldval);
-void ED_PrintNum (progs_t *pr, pr_int_t ent);
+void ED_PrintNum (progs_t *pr, pr_int_t ent, const char *fieldname);
 
 // pr_parse.c
 struct script_s;
@@ -312,7 +312,7 @@ struct plitem_s *ED_Parse (progs_t *pr, const char *data);
 void ED_LoadFromFile (progs_t *pr, const char *data);
 void ED_EntityParseFunction (progs_t *pr);
 
-#define PR_edicts(p)		(*(p)->edicts)
+#define PR_edicts(p)		(*(p)->pr_edicts)
 
 #define NEXT_EDICT(p,e)		((e) + 1)
 #define EDICT_TO_PROG(p,e)	((e)->entnum * (p)->pr_edict_size)
@@ -1539,6 +1539,9 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 
 	\param type		The type of the resource. The size must be at least
 					as large as \c sizeof(type *).
+	\note			\a _size is <em>NOT</em> the number of objects in the
+					map. It is the number of rows in the map array (each row
+					has multiple objects).
 */
 #define PR_RESMAP(type) struct { type *_free; type **_map; unsigned _size; }
 
@@ -1550,34 +1553,41 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 */
 #define PR_RESNEW_NC(map)													\
 	({																		\
-		if (!(map)._free) {													\
-			int         i, size;											\
-			(map)._size++;													\
-			size = (map)._size * sizeof ((map)._free);						\
-			(map)._map = realloc ((map)._map, size);						\
-			if (!(map)._map) {												\
-				return 0;													\
-			}																\
-			(map)._free = malloc (1024 * sizeof (*(map)._free));			\
+		__auto_type ret = (map)._free;										\
+		do {																\
 			if (!(map)._free) {												\
-				return 0;													\
+				int         i, size;										\
+				(map)._size++;												\
+				size = (map)._size * sizeof ((map)._free);					\
+				(map)._map = realloc ((map)._map, size);					\
+				if (!(map)._map) {											\
+					ret = 0;												\
+					break;													\
+				}															\
+				(map)._free = malloc (1024 * sizeof (*(map)._free));		\
+				if (!(map)._free) {											\
+					ret = 0;												\
+					break;													\
+				}															\
+				(map)._map[(map)._size - 1] = (map)._free;					\
+				for (i = 0; i < 1023; i++) {								\
+					*(typeof ((map)._free) *) &(map)._free[i]				\
+						= &(map)._free[i + 1];								\
+				}															\
+				*(typeof ((map)._free) *) &(map)._free[i] = 0;				\
 			}																\
-			(map)._map[(map)._size - 1] = (map)._free;						\
-			for (i = 0; i < 1023; i++) {									\
-				*(typeof ((map)._free) *) &(map)._free[i]					\
-					= &(map)._free[i + 1];									\
-			}																\
-			*(typeof ((map)._free) *) &(map)._free[i] = 0;					\
-		}																	\
-		__auto_type t = (map)._free;										\
-		(map)._free = *(typeof ((map)._free) *) t;							\
-		t;																	\
+			ret = (map)._free;												\
+			(map)._free = *(typeof ((map)._free) *) ret;					\
+		} while (0);														\
+		ret;																\
 	})
 
 #define PR_RESNEW(map)														\
 	({																		\
 		__auto_type t = PR_RESNEW_NC (map);									\
-		memset (t, 0, sizeof (*(map)._free));								\
+		if (t) {															\
+			memset (t, 0, sizeof (*(map)._free));							\
+		}																	\
 		t;																	\
 	})
 
@@ -1606,7 +1616,7 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 	do {																	\
 		unsigned    i, j;													\
 		if (!(map)._size) {													\
-			return;															\
+			break;															\
 		}																	\
 		for (i = 0; i < (map)._size; i++) {									\
 			(map)._free = (map)._map[i];									\
@@ -1627,17 +1637,21 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 /** Retrieve a resource from the resource map using a handle.
 
 	\param map		The resource map.
-	\param col		The handle.
+	\param ind		The handle.
 	\return			A pointer to the resource, or NULL if the handle is
 					invalid.
 */
-#define PR_RESGET(map,col)										\
+#define PR_RESGET(map,ind)										\
 	({															\
-		unsigned    row = ~col / 1024;							\
-		col = ~col % 1024;										\
-		if (row >= (map)._size)									\
-			return 0;											\
-		&(map)._map[row][col];									\
+		__auto_type ret = (map)._free;							\
+		unsigned    row = ~ind / 1024;							\
+		unsigned    col = ~ind % 1024;							\
+		if (row >= (map)._size) {								\
+			ret = 0;											\
+		} else {												\
+			ret = &(map)._map[row][col];						\
+		}														\
+		ret;													\
 	})
 
 /** Convert a resource pointer to a handle.
@@ -1742,6 +1756,7 @@ pr_auxfunction_t *PR_Get_Lineno_Func (progs_t *pr, pr_lineno_t *lineno) __attrib
 pr_uint_t PR_Get_Lineno_Addr (progs_t *pr, pr_lineno_t *lineno) __attribute__((pure));
 pr_uint_t PR_Get_Lineno_Line (progs_t *pr, pr_lineno_t *lineno) __attribute__((pure));
 pr_lineno_t *PR_Find_Lineno (progs_t *pr, pr_uint_t addr) __attribute__((pure));
+pr_uint_t PR_FindSourceLineAddr (progs_t *pr, const char *file, pr_uint_t line) __attribute__((pure));
 const char *PR_Get_Source_File (progs_t *pr, pr_lineno_t *lineno) __attribute__((pure));
 const char *PR_Get_Source_Line (progs_t *pr, pr_uint_t addr);
 pr_def_t *PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm) __attribute__((pure));
@@ -1815,6 +1830,7 @@ struct progs_s {
 	struct hashtab_s *builtin_hash;
 	struct hashtab_s *builtin_num_hash;
 	struct biblock_s *builtin_blocks;
+	pr_int_t    bi_no_function;
 	unsigned    bi_next;
 	unsigned  (*bi_map) (progs_t *pr, unsigned binum);
 	///@}
@@ -1873,7 +1889,7 @@ struct progs_s {
 	/// \name edicts
 	/// \todo FIXME should this be outside the VM?
 	///@{
-	edict_t   **edicts;
+	edict_t   **pr_edicts;
 	int         max_edicts;			///< set by user
 	int        *num_edicts;
 	int        *reserved_edicts;	///< alloc will start at reserved_edicts+1

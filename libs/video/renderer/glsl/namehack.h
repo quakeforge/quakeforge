@@ -36,7 +36,6 @@
 #define R_BlendLightmaps glsl_R_BlendLightmaps
 #define R_BuildLightMap glsl_R_BuildLightMap
 #define R_CalcLightmaps glsl_R_CalcLightmaps
-#define R_ClearParticles glsl_R_ClearParticles
 #define R_ClearState glsl_R_ClearState
 #define R_ClearTextures glsl_R_ClearTextures
 #define R_DrawAliasModel glsl_R_DrawAliasModel
@@ -44,7 +43,6 @@
 #define R_DrawParticles glsl_R_DrawParticles
 #define R_DrawSky glsl_R_DrawSky
 #define R_DrawSkyChain glsl_R_DrawSkyChain
-#define R_DrawSprite glsl_R_DrawSprite
 #define R_DrawSpriteModel glsl_R_DrawSpriteModel
 #define R_DrawWaterSurfaces glsl_R_DrawWaterSurfaces
 #define R_DrawWorld glsl_R_DrawWorld
@@ -93,7 +91,6 @@
 #undef R_BlendLightmaps
 #undef R_BuildLightMap
 #undef R_CalcLightmaps
-#undef R_ClearParticles
 #undef R_ClearState
 #undef R_ClearTextures
 #undef R_DrawAliasModel

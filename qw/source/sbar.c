@@ -50,9 +50,10 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
-#include "QF/view.h"
 
 #include "QF/plugin/console.h"
+
+#include "QF/ui/view.h"
 
 #include "compat.h"
 
@@ -122,15 +123,12 @@ hud_swap_f (cvar_t *var)
 {
 	hudswap = var->int_val;
 	if (var->int_val) {
-		hud_armament_view->gravity = grav_southwest;
-		stuff_view->gravity = grav_southeast;
+		view_setgravity (hud_armament_view, grav_southwest);
+		view_setgravity (stuff_view, grav_southeast);
 	} else {
-		hud_armament_view->gravity = grav_southeast;
-		stuff_view->gravity = grav_southwest;
+		view_setgravity (hud_armament_view, grav_southeast);
+		view_setgravity (stuff_view, grav_southwest);
 	}
-	view_move (hud_armament_view, hud_armament_view->xpos,
-			   hud_armament_view->ypos);
-	view_move (stuff_view, stuff_view->xpos, stuff_view->ypos);
 }
 
 static void
@@ -570,7 +568,7 @@ draw_weapons_hud (view_t *view)
 	if (view->parent->gravity == grav_southeast)
 		x = view->xlen - 24;
 
-	for (i = r_data->vid->conheight < 204; i < 7; i++) {
+	for (i = r_data->vid->conview->ylen < 204; i < 7; i++) {
 		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
 			flashon = calc_flashon (cl.item_gettime[i], IT_SHOTGUN << i);
 			draw_subpic (view, x, i * 16, sb_weapons[flashon][i], 0, 0, 24, 16);
@@ -902,7 +900,7 @@ Sbar_DeathmatchOverlay (view_t *view, int start)
 	int			l, y;
 	int			skip = 10;
 
-	if (r_data->vid->conwidth < 244) // FIXME: magic number, gained through experimentation
+	if (r_data->vid->conview->xlen < 244) // FIXME: magic number, gained through experimentation
 		return;
 
 	if (largegame)
@@ -1055,7 +1053,7 @@ sbar_update_vis (void)
 		return;
 
 	if (con_module
-		&& con_module->data->console->lines == r_data->vid->conheight)
+		&& con_module->data->console->lines == r_data->vid->conview->ylen)
 		return;							// console is full screen
 
 	if (!sb_lines)
@@ -1555,23 +1553,30 @@ draw_miniteam (view_t *view)
 static void
 draw_time (view_t *view)
 {
-	struct tm  *local = NULL;
+	struct tm  *local = 0;
 	time_t      utc = 0;
-	const char *timefmt = NULL;
 	char        st[80];
 
 	// Get local time
-	utc = time (NULL);
+	utc = time (0);
 	local = localtime (&utc);
 
+#if defined(_WIN32) || defined(_WIN64)
+#  define HOUR12 "%I"
+#  define HOUR24 "%H"
+#  define PM "%p"
+#else
+#  define HOUR12 "%l"
+#  define HOUR24 "%k"
+#  define PM "%P"
+#endif
 	if (hud_time->int_val == 1) {  // Use international format
-		timefmt = "%k:%M";
+		strftime (st, sizeof (st), HOUR24":%M", local);
+		draw_string (view, 8, 0, st);
 	} else if (hud_time->int_val >= 2) {   // US AM/PM display
-		timefmt = "%l:%M %P";
+		strftime (st, sizeof (st), HOUR12":%M "PM, local);
+		draw_string (view, 8, 0, st);
 	}
-
-	strftime (st, sizeof (st), timefmt, local);
-	draw_string (view, 8, 8, st);
 }
 
 static void
@@ -1742,12 +1747,12 @@ init_sbar_views (void)
 	view_t     *minifrags_view = 0;
 	view_t     *miniteam_view = 0;
 
-	if (r_data->vid->conwidth < 512) {
+	if (r_data->vid->conview->xlen < 512) {
 		sbar_view = view_new (0, 0, 320, 48, grav_south);
 
 		sbar_frags_view = view_new (0, 0, 130, 8, grav_northeast);
 		sbar_frags_view->draw = draw_frags;
-	} else if (r_data->vid->conwidth < 640) {
+	} else if (r_data->vid->conview->xlen < 640) {
 		sbar_view = view_new (0, 0, 512, 48, grav_south);
 		minifrags_view = view_new (320, 0, 192, 48, grav_southwest);
 		minifrags_view->draw = draw_minifrags;
@@ -1809,8 +1814,8 @@ init_sbar_views (void)
 	if (miniteam_view)
 		view_add (sbar_view, miniteam_view);
 
-	if (r_data->vid->conwidth > 640) {
-		int         l = (r_data->vid->conwidth - 640) / 2;
+	if (r_data->vid->conview->xlen > 640) {
+		int         l = (r_data->vid->conview->xlen - 640) / 2;
 
 		view = view_new (-l, 0, l, 48, grav_southwest);
 		view->draw = draw_tile;
@@ -1831,12 +1836,12 @@ init_hud_views (void)
 	view_t     *minifrags_view = 0;
 	view_t     *miniteam_view = 0;
 
-	if (r_data->vid->conwidth < 512) {
+	if (r_data->vid->conview->xlen < 512) {
 		hud_view = view_new (0, 0, 320, 48, grav_south);
 
 		hud_frags_view = view_new (0, 0, 130, 8, grav_northeast);
 		hud_frags_view->draw = draw_frags;
-	} else if (r_data->vid->conwidth < 640) {
+	} else if (r_data->vid->conview->xlen < 640) {
 		hud_view = view_new (0, 0, 512, 48, grav_south);
 
 		minifrags_view = view_new (320, 0, 192, 48, grav_southwest);
@@ -1888,7 +1893,7 @@ init_hud_views (void)
 	if (miniteam_view)
 		view_add (hud_view, miniteam_view);
 
-	view = view_new (0, 0, r_data->vid->conwidth, 48, grav_south);
+	view = view_new (0, 0, r_data->vid->conview->xlen, 48, grav_south);
 	view_add (view, hud_view);
 	hud_view = view;
 
@@ -1900,17 +1905,18 @@ init_hud_views (void)
 static void
 init_views (void)
 {
-	main_view = view_new (0, 0, r_data->vid->conwidth, r_data->vid->conheight,
+	main_view = view_new (0, 0, r_data->vid->conview->xlen,
+						  r_data->vid->conview->ylen,
 						  grav_northwest);
 	if (con_module)
 		view_insert (con_module->data->console->view, main_view, 0);
 	main_view->resize_x = 1;	// get resized if the 2d view resizes
 	main_view->resize_y = 1;
 	main_view->visible = 0;		// but don't let the console draw our stuff
-	if (r_data->vid->conheight > 300)
+	if (r_data->vid->conview->ylen > 300)
 		overlay_view = view_new (0, 0, 320, 300, grav_center);
 	else
-		overlay_view = view_new (0, 0, 320, r_data->vid->conheight,
+		overlay_view = view_new (0, 0, 320, r_data->vid->conview->ylen,
 								 grav_center);
 	overlay_view->draw = draw_overlay;
 	overlay_view->visible = 0;
@@ -1934,20 +1940,12 @@ Sbar_GIB_Print_Center_f (void)
 		Sbar_CenterPrint (GIB_Argv(1));
 }
 
-static void
-sbar_keydest_callback (keydest_t kd)
-{
-	overlay_view->visible = kd == key_game;
-}
-
 void
 Sbar_Init (void)
 {
 	int         i;
 
 	init_views ();
-
-	Key_KeydestCallback (sbar_keydest_callback);
 
 	for (i = 0; i < 10; i++) {
 		sb_nums[0][i] = r_funcs->Draw_PicFromWad (va (0, "num_%i", i));

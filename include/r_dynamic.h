@@ -59,11 +59,4 @@ void R_MaxParticlesCheck (struct cvar_s *r_particles,
 						  struct cvar_s *r_particles_max);
 void R_InitSprites (void);
 
-extern unsigned int r_maxparticles;
-extern unsigned int numparticles;
-extern struct particle_s *active_particles;
-extern struct particle_s *free_particles;
-extern struct particle_s *particles;
-extern struct particle_s **freeparticles;
-
 #endif // _R_DYNAMIC_H

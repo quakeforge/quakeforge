@@ -28,7 +28,7 @@ static string type_views[] = {
 	return self;
 }
 
-+(DefView *)withType:(qfot_type_t *)type at:(unsigned)offset in:(void *)data
++(DefView *)withDef:(qdb_def_t)def in:(void *)data type:(qfot_type_t *)type
 {
 	string typename = nil;
 	if (type.type == ty_alias) {
@@ -40,7 +40,7 @@ static string type_views[] = {
 	}
 	id class = obj_lookup_class (typename);
 	if (class) {
-		return [class withType:type at:offset in:data];
+		return [class withDef:def in:data type:type];
 	}
 	return [NameView withName:"Invalid Type"];
 }

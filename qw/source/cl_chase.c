@@ -192,16 +192,16 @@ Chase_Update (void)
 //		VectorCopy (cl.viewstate.angles, cmd.angles);
 
 		if (in_strafe.state & 1) {
-			cmd.sidemove += cl_sidespeed->value * CL_KeyState (&in_right);
-			cmd.sidemove -= cl_sidespeed->value * CL_KeyState (&in_left);
+			cmd.sidemove += cl_sidespeed->value * IN_ButtonState (&in_right);
+			cmd.sidemove -= cl_sidespeed->value * IN_ButtonState (&in_left);
 		}
-		cmd.sidemove += cl_sidespeed->value * CL_KeyState (&in_moveright);
-		cmd.sidemove -= cl_sidespeed->value * CL_KeyState (&in_moveleft);
+		cmd.sidemove += cl_sidespeed->value * IN_ButtonState (&in_moveright);
+		cmd.sidemove -= cl_sidespeed->value * IN_ButtonState (&in_moveleft);
 
 		if (!(in_klook.state & 1)) {
 			cmd.forwardmove += cl_forwardspeed->value
-				* CL_KeyState (&in_forward);
-			cmd.forwardmove -= cl_backspeed->value * CL_KeyState (&in_back);
+				* IN_ButtonState (&in_forward);
+			cmd.forwardmove -= cl_backspeed->value * IN_ButtonState (&in_back);
 		}
 		if (in_speed.state & 1) {
 			cmd.forwardmove *= cl_movespeedkey->value;
@@ -211,8 +211,8 @@ Chase_Update (void)
 		// mouse and joystick controllers add to movement
 		VectorSet (0, cl.viewstate.angles[1] - camera_angles[1], 0, dir);
 		AngleVectors (&dir[0], &forward[0], &right[0], &up[0]); //FIXME
-		forward *= viewdelta.position[2] * m_forward->value;
-		right *= viewdelta.position[0] * m_side->value;
+		//forward *= viewdelta.position[2] * m_forward->value; FIXME
+		//right *= viewdelta.position[0] * m_side->value; FIXME
 		dir = forward + right;
 		cmd.forwardmove += dir[0];
 		cmd.sidemove    -= dir[1];

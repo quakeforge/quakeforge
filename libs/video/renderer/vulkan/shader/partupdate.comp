@@ -1,0 +1,105 @@
+#version 450
+
+layout (constant_id = 0) const int MaxParticles = 2048;
+
+layout (local_size_x = 1, local_size_y = 1)  in;
+
+struct Particle {
+	vec4        pos;
+	vec4        vel;
+	vec4        color;
+	float       tex;
+	float       ramp;
+	float       scale;
+	float       live;
+};
+
+struct Parameters {
+	vec4        drag;	// [dx, dy, dz, grav scale]
+	vec4        ramp;	// [rate, max, alpha rate, scale rate]
+};
+
+layout(std140, set = 0, binding = 0) buffer InStates {
+	Particle particles[];
+} inState;
+
+layout(std140, set = 0, binding = 1) buffer InParameters {
+	Parameters parameters[];
+} inParameters;
+
+//doubles as VkDrawIndirectCommand
+layout(std140, set = 0, binding = 2) buffer InSystem {
+	uint        vertexCount;
+	uint        particleCount;	//instanceCount
+	uint        firstVertex;
+	uint        firstInstance;
+} inSystem;
+
+layout(std140, set = 1, binding = 0) buffer OutStates {
+	Particle particles[];
+} outStates;
+
+layout(std140, set = 1, binding = 1) buffer OutParameters {
+	Parameters parameters[];
+} outParameters;
+
+//doubles as VkDrawIndirectCommand
+layout(std140, set = 1, binding = 2) buffer OutSystem {
+	uint        vertexCount;
+	uint        particleCount;	//instanceCount
+	uint        firstVertex;
+	uint        firstInstance;
+} outSystem;
+
+layout(std140, set = 2, binding = 0) buffer NewStates {
+	Particle particles[];
+} newStates;
+
+layout(std140, set = 2, binding = 1) buffer NewParameters {
+	Parameters parameters[];
+} newParameters;
+
+//doubles as VkDrawIndirectCommand
+layout(std140, set = 2, binding = 2) buffer NewSystem {
+	uint        vertexCount;
+	uint        particleCount;	//instanceCount
+	uint        firstVertex;
+	uint        firstInstance;
+} newSystem;
+
+bool
+is_dead (in Particle part, in Parameters parm)
+{
+	if (part.live <= 0) {
+		return true;
+	}
+	if (part.ramp >= parm.ramp.y || part.color.a <= 0 || part.scale <= 0) {
+		return true;
+	}
+	return false;
+}
+
+void
+main ()
+{
+	uint        j = 0;
+	// compact existing partles removing dead particles
+	for (uint i = 0; i < inSystem.particleCount; i++) {
+		if (is_dead (inState.particles[i], inParameters.parameters[i])) {
+			continue;
+		}
+		outStates.particles[j] = inState.particles[i];
+		outParameters.parameters[j] = inParameters.parameters[i];
+		j++;
+	}
+	// inject any new particles that aren't DOA
+	for (uint i = 0; i < newSystem.particleCount && j < MaxParticles; i++) {
+		if (is_dead (inState.particles[i], inParameters.parameters[i])) {
+			continue;
+		}
+		outStates.particles[j] = newStates.particles[i];
+		outParameters.parameters[j] = newParameters.parameters[i];
+		j++;
+	}
+	outSystem.particleCount = j;
+}

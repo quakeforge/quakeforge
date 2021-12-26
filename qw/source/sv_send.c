@@ -43,6 +43,7 @@
 #include "QF/console.h"
 #include "QF/dstring.h"
 #include "QF/msg.h"
+#include "QF/set.h"
 #include "QF/sound.h" // FIXME: DEFAULT_SOUND_PACKET_*
 #include "QF/sys.h"
 
@@ -164,6 +165,9 @@ find_userid (const char *name)
 	return 0;
 }
 
+#define hstrftime ((size_t (*)(char *s, size_t, const char *, \
+					const struct tm*))strftime)
+
 /*
 	SV_Printf
 
@@ -229,7 +233,7 @@ SV_Print (const char *fmt, va_list args)
 		if (timestamps) {
 			mytime = time (NULL);
 			local = localtime (&mytime);
-			strftime (msg3, sizeof (msg3), sv_timefmt->string, local);
+			hstrftime (msg3, sizeof (msg3), sv_timefmt->string, local);
 
 			dsprintf (msg2, "%s%s", msg3, msg->str);
 		} else {
@@ -292,7 +296,7 @@ SV_PrintToClient (client_t *cl, int level, const char *string)
 void
 SV_Multicast (const vec3_t origin, int to)
 {
-	byte       *mask;
+	set_t      *mask;
 	client_t   *client;
 	int         leafnum, j;
 	mleaf_t    *leaf;
@@ -311,23 +315,22 @@ SV_Multicast (const vec3_t origin, int to)
 	case MULTICAST_ALL_R:
 		reliable = true;			// intentional fallthrough
 	case MULTICAST_ALL:
-		mask = sv.pvs;				// leaf 0 is everything;
+		mask = &sv.pvs[0];			// leaf 0 is everything;
 		break;
 
 	case MULTICAST_PHS_R:
 		reliable = true;			// intentional fallthrough
 	case MULTICAST_PHS:
-		mask = sv.phs + leafnum * 4 * ((brush->numleafs + 31) >> 5);
+		mask = &sv.phs[leafnum];
 		break;
 
 	case MULTICAST_PVS_R:
 		reliable = true;			// intentional fallthrough
 	case MULTICAST_PVS:
-		mask = sv.pvs + leafnum * 4 * ((brush->numleafs + 31) >> 5);
+		mask = &sv.pvs[leafnum];
 		break;
 
 	default:
-		mask = NULL;
 		Sys_Error ("SV_Multicast: bad to:%i", to);
 	}
 
@@ -349,7 +352,7 @@ SV_Multicast (const vec3_t origin, int to)
 		if (leaf) {
 			// -1 is because pvs rows are 1 based, not 0 based like leafs
 			leafnum = leaf - brush->leafs - 1;
-			if (!(mask[leafnum >> 3] & (1 << (leafnum & 7)))) {
+			if (!set_is_member (mask, leafnum)) {
 //				SV_Printf ("supressed multicast\n");
 				continue;
 			}

@@ -57,6 +57,8 @@ extern int		nanmask;
 
 #define IS_NAN(x) (((*(int *) (char *) &x) & nanmask) == nanmask)
 
+#define Blend(a,b,blend) ((1 - (blend)) * (a) + (blend) * (b))
+
 #include "QF/math/vector.h"
 #include "QF/math/quaternion.h"
 #include "QF/math/dual.h"
@@ -187,9 +189,11 @@ R_CullBox (const vec3_t mins, const vec3_t maxs)
 {
 	int		i;
 
-	for (i=0 ; i < 4 ; i++)
-		if (BoxOnPlaneSide (mins, maxs, &frustum[i]) == 2)
+	for (i=0 ; i < 4 ; i++) {
+		if (BOX_ON_PLANE_SIDE (mins, maxs, &frustum[i]) == 2) {
 			return true;
+		}
+	}
 	return false;
 }
 

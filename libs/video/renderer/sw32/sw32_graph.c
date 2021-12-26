@@ -38,6 +38,7 @@
 
 #include "r_internal.h"
 #include "vid_internal.h"
+#include "vid_sw.h"
 
 /*
 	R_LineGraph
@@ -45,12 +46,12 @@
 	Called by only R_DisplayTime
 */
 void
-sw32_R_LineGraph (int x, int y, int *h_vals, int count)
+sw32_R_LineGraph (int x, int y, int *h_vals, int count, int height)
 {
 	int         h, i, s, color;
 
 	// FIXME: disable on no-buffer adapters, or put in the driver
-	s = r_graphheight->int_val;
+	s = height;
 
 	while (count--) {
 		h = *h_vals++;
@@ -67,11 +68,11 @@ sw32_R_LineGraph (int x, int y, int *h_vals, int count)
 		if (h > s)
 			h = s;
 
-		switch(sw32_r_pixbytes) {
+		switch(sw32_ctx->pixbytes) {
 			case 1:
 				{
 					byte *dest = (byte *) vid.buffer + vid.rowbytes * y + x;
-					for (i = 0; i < h; i++, dest -= vid.rowbytes * 2)
+					for (i = 0; i < h; i++, dest -= vid.rowbytes)
 						*dest = color;
 				}
 				break;
@@ -80,7 +81,7 @@ sw32_R_LineGraph (int x, int y, int *h_vals, int count)
 					short *dest = (short *) vid.buffer +
 								  (vid.rowbytes >> 1) * y + x;
 					color = sw32_8to16table[color];
-					for (i = 0; i < h; i++, dest -= vid.rowbytes)
+					for (i = 0; i < h; i++, dest -= (vid.rowbytes >> 1))
 						*dest = color;
 				}
 				break;
@@ -89,13 +90,13 @@ sw32_R_LineGraph (int x, int y, int *h_vals, int count)
 					int *dest = (int *) vid.buffer +
 								(vid.rowbytes >> 2) * y + x;
 					color = d_8to24table[color];
-					for (i = 0; i < h; i++, dest -= (vid.rowbytes >> 1))
+					for (i = 0; i < h; i++, dest -= (vid.rowbytes >> 2))
 						*dest = color;
 				}
 			break;
 			default:
 				Sys_Error("R_LineGraph: unsupported r_pixbytes %i",
-						  sw32_r_pixbytes);
+						  sw32_ctx->pixbytes);
 		}
 	}
 }

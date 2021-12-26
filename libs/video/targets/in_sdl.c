@@ -71,7 +71,7 @@ event_focusin (void)
 }
 
 static void
-sdl_keydest_callback (keydest_t key_dest)
+sdl_keydest_callback (keydest_t key_dest, void *data)
 {
 	if (key_dest == key_game)
 		SDL_EnableKeyRepeat (0, SDL_DEFAULT_REPEAT_INTERVAL);
@@ -588,7 +588,7 @@ IN_LL_Init (void)
 {
 	SDL_EnableUNICODE (1);	// Enable UNICODE translation for keyboard input
 
-	Key_KeydestCallback (sdl_keydest_callback);
+	Key_KeydestCallback (sdl_keydest_callback, 0);
 	if (COM_CheckParm ("-nomouse"))
 		return;
 

@@ -194,6 +194,11 @@ x11_vulkan_create_surface (vulkan_ctx_t *ctx)
 		.window = pres->window
 	};
 
+	int         width = viddef.width;
+	int         height = viddef.height;
+	ctx->viewport = (VkViewport) { 0, 0, width, height, 0, 1 };
+	ctx->scissor = (VkRect2D) { {0, 0}, {width, height} };
+
 	if (pres->vkCreateXlibSurfaceKHR (inst, &createInfo, 0, &surface)
 		!= VK_SUCCESS) {
 		return 0;
@@ -212,7 +217,7 @@ X11_Vulkan_Context (void)
 	ctx->create_window = x11_vulkan_create_window;
 	ctx->create_surface = x11_vulkan_create_surface;
 	ctx->required_extensions = required_extensions;
-	ctx->va_ctx = va_create_context (4);
+	ctx->va_ctx = va_create_context (32);
 	return ctx;
 }
 

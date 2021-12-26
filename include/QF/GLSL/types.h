@@ -3,8 +3,8 @@
  * 2.0. For details, see http://oss.sgi.com/projects/FreeB/ .
  */
 
-#ifndef __QFGL_types_h
-#define __QFGL_types_h
+#ifndef __QF_GLSL_types_h
+#define __QF_GLSL_types_h
 
 #include "QF/qtypes.h"
 

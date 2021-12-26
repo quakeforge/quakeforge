@@ -44,9 +44,10 @@
 #endif
 #include <stdlib.h>
 
-#include "QF/entity.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+
+#include "QF/scene/entity.h"
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
@@ -62,10 +63,11 @@ static scrap_t *light_scrap;
 static unsigned *blocklights;
 static int      bl_extents[2];
 
-void (*glsl_R_BuildLightMap) (mod_brush_t *brush, msurface_t *surf);
+void (*glsl_R_BuildLightMap) (const transform_t *transform, mod_brush_t *brush,
+							  msurface_t *surf);
 
 static void
-R_AddDynamicLights_1 (msurface_t *surf)
+R_AddDynamicLights_1 (const transform_t *transform, msurface_t *surf)
 {
 	unsigned    lnum;
 	int         sd, td;
@@ -80,9 +82,9 @@ R_AddDynamicLights_1 (msurface_t *surf)
 	tmax = (surf->extents[1] >> 4) + 1;
 	tex = surf->texinfo;
 
-	if (currententity->transform) {
+	if (transform) {
 		//FIXME give world entity a transform
-		entorigin = Transform_GetWorldPosition (currententity->transform);
+		entorigin = Transform_GetWorldPosition (transform);
 	}
 
 	for (lnum = 0; lnum < r_maxdlights; lnum++) {
@@ -127,7 +129,8 @@ R_AddDynamicLights_1 (msurface_t *surf)
 }
 
 static void
-R_BuildLightMap_1 (mod_brush_t *brush, msurface_t *surf)
+R_BuildLightMap_1 (const transform_t *transform, mod_brush_t *brush,
+				   msurface_t *surf)
 {
 	int         smax, tmax, size;
 	unsigned    scale;
@@ -168,7 +171,7 @@ R_BuildLightMap_1 (mod_brush_t *brush, msurface_t *surf)
 	}
 	// add all the dynamic lights
 	if (surf->dlightframe == r_framecount)
-		R_AddDynamicLights_1 (surf);
+		R_AddDynamicLights_1 (transform, surf);
 
 	// bound, invert, and shift
 	out = (byte *) blocklights;
@@ -200,7 +203,7 @@ create_surf_lightmap (msurface_t *surf)
 void
 glsl_R_BuildLightmaps (model_t **models, int num_models)
 {
-	int         i, j, size;
+	int         size;
 	model_t    *m;
 	mod_brush_t *brush;
 
@@ -213,7 +216,7 @@ glsl_R_BuildLightmaps (model_t **models, int num_models)
 	glsl_R_BuildLightMap = R_BuildLightMap_1;
 
 	bl_extents[1] = bl_extents[0] = 0;
-	for (j = 1; j < num_models; j++) {
+	for (int j = 1; j < num_models; j++) {
 		m = models[j];
 		if (!m)
 			break;
@@ -223,7 +226,7 @@ glsl_R_BuildLightmaps (model_t **models, int num_models)
 		}
 		brush = &m->brush;
 		// non-bsp models don't have surfaces.
-		for (i = 0; i < brush->numsurfaces; i++) {
+		for (unsigned i = 0; i < brush->numsurfaces; i++) {
 			msurface_t *surf = brush->surfaces + i;
 			surf->lightpic = 0;		// paranoia
 			if (surf->flags & SURF_DRAWTURB)
@@ -235,7 +238,7 @@ glsl_R_BuildLightmaps (model_t **models, int num_models)
 	}
 	size = bl_extents[0] * bl_extents[1] * 3;	// * 3 for rgb support
 	blocklights = realloc (blocklights, size * sizeof (blocklights[0]));
-	for (j = 1; j < num_models; j++) {
+	for (int j = 1; j < num_models; j++) {
 		m = models[j];
 		if (!m)
 			break;
@@ -245,10 +248,10 @@ glsl_R_BuildLightmaps (model_t **models, int num_models)
 		}
 		brush = &m->brush;
 		// non-bsp models don't have surfaces.
-		for (i = 0; i < brush->numsurfaces; i++) {
+		for (unsigned i = 0; i < brush->numsurfaces; i++) {
 			msurface_t *surf = brush->surfaces + i;
 			if (surf->lightpic)
-				glsl_R_BuildLightMap (brush, surf);
+				glsl_R_BuildLightMap (0, brush, surf);
 		}
 	}
 }

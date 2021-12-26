@@ -31,8 +31,8 @@
 # include "config.h"
 #endif
 
-#include "QF/entity.h"
 #include "QF/render.h" //FIXME for entity_t
+#include "QF/scene/entity.h"
 #include "QF/simd/vec4f.h"
 
 #include "client/entities.h"

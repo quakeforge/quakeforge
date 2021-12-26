@@ -34,33 +34,26 @@
 #include "QF/quakeio.h"
 
 void RUA_Cbuf_Init (struct progs_s *pr, int secure);
-
 void RUA_Cmd_Init (struct progs_s *pr, int secure);
-
 void RUA_Cvar_Init (struct progs_s *pr, int secure);
-
 void RUA_Hash_Init (struct progs_s *pr, int secure);
-
 void RUA_Math_Init (struct progs_s *pr, int secure);
-
 void RUA_MsgBuf_Init (struct progs_s *pr, int secure);
-
 void RUA_Obj_Init (struct progs_s *pr, int secure);
-
 void RUA_Plist_Init (struct progs_s *pr, int secure);
-
 void RUA_Runtime_Init (struct progs_s *pr, int secure);
-
 void RUA_Script_Init (progs_t *pr, int secure);
-
 void RUA_Set_Init (progs_t *pr, int secure);
-
+void RUA_Stdlib_Init (struct progs_s *pr, int secure);
 void RUA_String_Init (struct progs_s *pr, int secure);
-
 void RUA_QFile_Init (struct progs_s *pr, int secure);
+void RUA_QFS_Init (struct progs_s *pr, int secure);
+
 int QFile_AllocHandle (struct progs_s *pr, QFile *file);
 QFile *QFile_GetFile (struct progs_s *pr, int handle);
+struct plitem_s *Plist_GetItem (struct progs_s *pr, int handle);
 
-void RUA_QFS_Init (struct progs_s *pr, int secure);
+void RUA_Input_Init (struct progs_s *pr, int secure);
+void RUA_Mersenne_Init (struct progs_s *pr, int secure);
 
 #endif//__rua_internal_h

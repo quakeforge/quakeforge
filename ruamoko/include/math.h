@@ -79,6 +79,12 @@
 ///\name Exponentials and Logarithms
 //\{
 /**
+	Returns e to the power of \a x.
+*/
+@extern @overload float exp (float x);
+@extern @overload double exp (double x);
+
+/**
 	Returns the natural log of \a x.
 */
 @extern @overload float log (float x);

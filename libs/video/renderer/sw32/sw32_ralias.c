@@ -28,19 +28,21 @@
 # include "config.h"
 #endif
 
+#include <stdlib.h>
+
 #define NH_DEFINE
 #include "namehack.h"
 
-#include "QF/entity.h"
 #include "QF/image.h"
 #include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
 
+#include "QF/scene/entity.h"
+
 #include "d_ifacea.h"
 #include "r_internal.h"
-
-#include "stdlib.h"
+#include "vid_sw.h"
 
 #define LIGHT_MIN	5					// lowest light value we'll allow, to
 										// avoid the need for inner-loop light
@@ -110,7 +112,7 @@ sw32_R_AliasCheckBBox (void)
 	frame = currententity->animation.frame;
 // TODO: don't repeat this check when drawing?
 	if ((frame >= pmdl->numframes) || (frame < 0)) {
-		Sys_MaskPrintf (SYS_DEV, "No such frame %d %s\n", frame, pmodel->path);
+		Sys_MaskPrintf (SYS_dev, "No such frame %d %s\n", frame, pmodel->path);
 		frame = 0;
 	}
 
@@ -542,18 +544,18 @@ R_AliasPrepareUnclippedPoints (void)
 
 
 static void
-R_AliasSetupSkin (void)
+R_AliasSetupSkin (entity_t *ent)
 {
 	int         skinnum;
 
-	skinnum = currententity->renderer.skinnum;
+	skinnum = ent->renderer.skinnum;
 	if ((skinnum >= pmdl->numskins) || (skinnum < 0)) {
-		Sys_MaskPrintf (SYS_DEV, "R_AliasSetupSkin: no such skin # %d\n",
+		Sys_MaskPrintf (SYS_dev, "R_AliasSetupSkin: no such skin # %d\n",
 						skinnum);
 		skinnum = 0;
 	}
 
-	pskindesc = R_AliasGetSkindesc (skinnum, paliashdr);
+	pskindesc = R_AliasGetSkindesc (&ent->animation, skinnum, paliashdr);
 	a_skinwidth = pmdl->skinwidth;
 
 	sw32_r_affinetridesc.pskin = (void *) ((byte *) paliashdr + pskindesc->skin);
@@ -562,16 +564,16 @@ R_AliasSetupSkin (void)
 	sw32_r_affinetridesc.skinheight = pmdl->skinheight;
 
 	sw32_acolormap = vid.colormap8;
-	if (currententity->renderer.skin) {
+	if (ent->renderer.skin) {
 		tex_t      *base;
 
-		base = currententity->renderer.skin->texels;
+		base = ent->renderer.skin->texels;
 		if (base) {
 			sw32_r_affinetridesc.pskin = base->data;
 			sw32_r_affinetridesc.skinwidth = base->width;
 			sw32_r_affinetridesc.skinheight = base->height;
 		}
-		sw32_acolormap = currententity->renderer.skin->colormap;
+		sw32_acolormap = ent->renderer.skin->colormap;
 	}
 }
 
@@ -610,11 +612,11 @@ R_AliasSetupLighting (alight_t *plighting)
 	set sw32_r_apverts
 */
 static void
-R_AliasSetupFrame (void)
+R_AliasSetupFrame (entity_t *ent)
 {
 	maliasframedesc_t *frame;
 
-	frame = R_AliasGetFramedesc (currententity->animation.frame, paliashdr);
+	frame = R_AliasGetFramedesc (&ent->animation, paliashdr);
 	sw32_r_apverts = (trivertx_t *) ((byte *) paliashdr + frame->frame);
 }
 
@@ -622,19 +624,20 @@ R_AliasSetupFrame (void)
 void
 sw32_R_AliasDrawModel (alight_t *plighting)
 {
+	entity_t   *ent = currententity;
 	int         size;
 	finalvert_t *finalverts;
 
 	sw32_r_amodels_drawn++;
 
-	if (!(paliashdr = currententity->renderer.model->aliashdr))
-		paliashdr = Cache_Get (&currententity->renderer.model->cache);
+	if (!(paliashdr = ent->renderer.model->aliashdr))
+		paliashdr = Cache_Get (&ent->renderer.model->cache);
 	pmdl = (mdl_t *) ((byte *) paliashdr + paliashdr->model);
 
 	size = (CACHE_SIZE - 1)
 		   + sizeof (finalvert_t) * (pmdl->numverts + 1)
 		   + sizeof (auxvert_t) * pmdl->numverts;
-	finalverts = (finalvert_t *) Hunk_TempAlloc (size);
+	finalverts = (finalvert_t *) Hunk_TempAlloc (0, size);
 	if (!finalverts)
 		Sys_Error ("R_AliasDrawModel: out of memory");
 
@@ -643,36 +646,36 @@ sw32_R_AliasDrawModel (alight_t *plighting)
 		(((intptr_t) &finalverts[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 	sw32_pauxverts = (auxvert_t *) &pfinalverts[pmdl->numverts + 1];
 
-	R_AliasSetupSkin ();
-	sw32_R_AliasSetUpTransform (currententity->visibility.trivial_accept);
+	R_AliasSetupSkin (ent);
+	sw32_R_AliasSetUpTransform (ent->visibility.trivial_accept);
 	R_AliasSetupLighting (plighting);
-	R_AliasSetupFrame ();
+	R_AliasSetupFrame (ent);
 
 	if (!sw32_acolormap)
 		sw32_acolormap = vid.colormap8;
-	if (sw32_acolormap == &vid.colormap8 && sw32_r_pixbytes != 1)
+	if (sw32_acolormap == &vid.colormap8 && sw32_ctx->pixbytes != 1)
 	{
-		if (sw32_r_pixbytes == 2)
+		if (sw32_ctx->pixbytes == 2)
 			sw32_acolormap = vid.colormap16;
-		else if (sw32_r_pixbytes == 4)
+		else if (sw32_ctx->pixbytes == 4)
 			sw32_acolormap = vid.colormap32;
 		else
 			Sys_Error("R_AliasDrawmodel: unsupported r_pixbytes %i",
-					  sw32_r_pixbytes);
+					  sw32_ctx->pixbytes);
 	}
 
-	if (currententity != vr_data.view_model)
+	if (ent != vr_data.view_model)
 		sw32_ziscale = (float) 0x8000 *(float) 0x10000;
 	else
 		sw32_ziscale = (float) 0x8000 *(float) 0x10000 *3.0;
 
-	if (currententity->visibility.trivial_accept) {
+	if (ent->visibility.trivial_accept) {
 		R_AliasPrepareUnclippedPoints ();
 	} else {
 		R_AliasPreparePoints ();
 	}
 
-	if (!currententity->renderer.model->aliashdr) {
-		Cache_Release (&currententity->renderer.model->cache);
+	if (!ent->renderer.model->aliashdr) {
+		Cache_Release (&ent->renderer.model->cache);
 	}
 }

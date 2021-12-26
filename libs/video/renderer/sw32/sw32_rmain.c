@@ -42,12 +42,13 @@
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
-#include "QF/entity.h"
 #include "QF/mathlib.h"
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
+
+#include "QF/scene/entity.h"
 
 #include "compat.h"
 #include "mod_internal.h"
@@ -62,7 +63,6 @@ int         sw32_r_numallocatededges;
 qboolean    sw32_r_drawpolys;
 qboolean    sw32_r_drawculledpolys;
 qboolean    sw32_r_worldpolysbacktofront;
-int         sw32_r_pixbytes = 1;
 float       sw32_r_aliasuvscale = 1.0;
 int         sw32_r_outofsurfaces;
 int         sw32_r_outofedges;
@@ -115,7 +115,7 @@ sw32_R_Textures_Init (void)
 
 	// create a simple checkerboard texture for the default
 	r_notexture_mip =
-		Hunk_AllocName (sizeof (texture_t) + 16 * 16 + 8 * 8 + 4 * 4 + 2 * 2,
+		Hunk_AllocName (0, sizeof (texture_t) + 16 * 16 + 8 * 8 + 4 * 4 + 2 * 2,
 						"notexture");
 
 	r_notexture_mip->width = r_notexture_mip->height = 16;
@@ -154,8 +154,6 @@ sw32_R_Init (void)
 
 	Cmd_AddCommand ("timerefresh", sw32_R_TimeRefresh_f, "Tests the current "
 					"refresh rate for the current location");
-	Cmd_AddCommand ("pointfile", sw32_R_ReadPointFile_f, "Load a pointfile to "
-					"determine map leaks");
 	Cmd_AddCommand ("loadsky", sw32_R_LoadSky_f, "Load a skybox");
 
 	Cvar_SetValue (r_maxedges, (float) NUMSTACKEDGES);
@@ -179,7 +177,6 @@ sw32_R_Init (void)
 void
 sw32_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
-	int         i;
 	mod_brush_t *brush = &worldmodel->brush;
 
 	memset (&r_worldentity, 0, sizeof (r_worldentity));
@@ -188,8 +185,7 @@ sw32_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	R_FreeAllEntities ();
 
 	// clear out efrags in case the level hasn't been reloaded
-	// FIXME: is this one short?
-	for (i = 0; i < brush->numleafs; i++)
+	for (unsigned i = 0; i < brush->modleafs; i++)
 		brush->leafs[i].efrags = NULL;
 
 	if (brush->skytexture)
@@ -199,7 +195,7 @@ sw32_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	r_viewleaf = NULL;
 	R_MarkLeaves ();
 
-	sw32_R_ClearParticles ();
+	R_ClearParticles ();
 
 	r_cnumsurfs = r_maxsurfs->int_val;
 
@@ -207,7 +203,8 @@ sw32_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 		r_cnumsurfs = MINSURFACES;
 
 	if (r_cnumsurfs > NUMSTACKSURFACES) {
-		sw32_surfaces = Hunk_AllocName (r_cnumsurfs * sizeof (surf_t), "surfaces");
+		sw32_surfaces = Hunk_AllocName (0, r_cnumsurfs * sizeof (surf_t),
+										"surfaces");
 
 		sw32_surface_p = sw32_surfaces;
 		sw32_surf_max = &sw32_surfaces[r_cnumsurfs];
@@ -230,8 +227,9 @@ sw32_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	if (sw32_r_numallocatededges <= NUMSTACKEDGES) {
 		sw32_auxedges = NULL;
 	} else {
-		sw32_auxedges = Hunk_AllocName (sw32_r_numallocatededges * sizeof (edge_t),
-								   "edges");
+		sw32_auxedges = Hunk_AllocName (0,
+									sw32_r_numallocatededges * sizeof (edge_t),
+									"edges");
 	}
 
 	sw32_r_dowarpold = false;
@@ -245,7 +243,7 @@ sw32_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	Guaranteed to be called before the first refresh
 */
 void
-sw32_R_ViewChanged (float aspect)
+sw32_R_ViewChanged (void)
 {
 	int         i;
 	float       res_scale;
@@ -278,7 +276,7 @@ sw32_R_ViewChanged (float aspect)
 	r_refdef.aliasvrectbottom = r_refdef.aliasvrect.y +
 		r_refdef.aliasvrect.height;
 
-	sw32_pixelAspect = aspect;
+	sw32_pixelAspect = 1;//FIXME vid.aspect;
 	xOrigin = r_refdef.xOrigin;
 	yOrigin = r_refdef.yOrigin;
 
@@ -750,6 +748,9 @@ R_RenderView_ (void)
 {
 	if (r_norefresh->int_val)
 		return;
+	if (!r_worldentity.renderer.model) {
+		return;
+	}
 
 	sw32_r_warpbuffer = warpbuffer;
 
@@ -841,7 +842,7 @@ sw32_R_RenderView (void)
 	if (delta < -10000 || delta > 10000)
 		Sys_Error ("R_RenderView: called without enough stack");
 
-	if (Hunk_LowMark () & 3)
+	if (Hunk_LowMark (0) & 3)
 		Sys_Error ("Hunk is missaligned");
 
 	if ((intptr_t) (&dummy) & 3)
@@ -868,7 +869,8 @@ sw32_R_InitTurb (void)
 void
 sw32_R_ClearState (void)
 {
+	r_worldentity.renderer.model = 0;
 	R_ClearEfrags ();
 	R_ClearDlights ();
-	sw32_R_ClearParticles ();
+	R_ClearParticles ();
 }

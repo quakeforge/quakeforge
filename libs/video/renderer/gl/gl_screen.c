@@ -55,6 +55,7 @@
 #include "QF/GL/qf_draw.h"
 #include "QF/GL/qf_rmain.h"
 #include "QF/GL/qf_vid.h"
+#include "QF/ui/view.h"
 
 #include "compat.h"
 #include "r_internal.h"
@@ -83,14 +84,14 @@ gl_SCR_CaptureBGR (void)
 }
 
 tex_t *
-gl_SCR_ScreenShot (int width, int height)
+gl_SCR_ScreenShot (unsigned width, unsigned height)
 {
 	unsigned char *src, *dest, *snap;
 	float          fracw, frach;
 	int            count, dex, dey, dx, dy, nx, r, g, b, x, y, w, h;
 	tex_t         *tex;
 
-	snap = Hunk_TempAlloc (vid.width * vid.height * 3);
+	snap = Hunk_TempAlloc (0, vid.width * vid.height * 3);
 
 	qfglReadPixels (0, 0, vid.width, vid.height, GL_RGB, GL_UNSIGNED_BYTE,
 				    snap);
@@ -190,8 +191,17 @@ SCR_TileClear (void)
 	}
 }
 
+static void
+R_Clear (void)
+{
+	if (gl_clear->int_val)
+		qfglClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	else
+		qfglClear (GL_DEPTH_BUFFER_BIT);
+}
+
 void
-gl_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
+gl_R_RenderFrame (SCR_Func *scr_funcs)
 {
 	double      time1 = 0, time2;
 	static int  begun = 0;
@@ -207,6 +217,8 @@ gl_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	//update in sw modes but must in gl mode
 	vr_data.scr_copyeverything = 1;
 
+	R_Clear ();
+
 	begun = 1;
 
 	if (r_speeds->int_val) {
@@ -219,7 +231,7 @@ gl_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 		SCR_CalcRefdef ();
 
 	// do 3D refresh drawing, and then update the screen
-	scr_3dfunc ();
+	gl_R_RenderView ();
 
 	SCR_SetUpToDrawConsole ();
 	GL_Set2D ();
@@ -230,6 +242,7 @@ gl_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 
 	GL_Set2DScaled ();
 
+	view_draw (vr_data.scr_view);
 	while (*scr_funcs) {
 		(*scr_funcs)();
 		scr_funcs++;
@@ -238,9 +251,9 @@ gl_R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	if (r_speeds->int_val) {
 //		qfglFinish ();
 		time2 = Sys_DoubleTime ();
-		Sys_MaskPrintf (SYS_DEV, "%3i ms  %4i wpoly %4i epoly %4i parts\n",
+		Sys_MaskPrintf (SYS_dev, "%3i ms  %4i wpoly %4i epoly %4i parts\n",
 						(int) ((time2 - time1) * 1000), gl_c_brush_polys,
-						gl_c_alias_polys, numparticles);
+						gl_c_alias_polys, r_psystem.numparticles);
 	}
 
 	GL_FlushText ();

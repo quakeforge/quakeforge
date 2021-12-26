@@ -43,6 +43,7 @@
 #include "QF/quakefs.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
+#include "QF/ui/view.h"
 
 #include "d_iface.h"
 #include "r_internal.h"
@@ -267,7 +268,7 @@ Draw_Character (int x, int y, unsigned int chr)
 	if (y <= -8)
 		return;							// totally off screen
 
-	if (y > vid.conheight - 8 || x < 0 || x > vid.conwidth - 8)
+	if (y > vid.conview->ylen - 8 || x < 0 || x > vid.conview->xlen - 8)
 		return;
 	if (chr > 255)
 		return;
@@ -283,7 +284,7 @@ Draw_Character (int x, int y, unsigned int chr)
 	} else
 		drawline = 8;
 
-	dest = ((byte*)vid.conbuffer) + y * vid.conrowbytes + x;
+	dest = ((byte*)vid.buffer) + y * vid.rowbytes + x;
 
 	while (drawline--) {
 		if (source[0])
@@ -303,7 +304,7 @@ Draw_Character (int x, int y, unsigned int chr)
 		if (source[7])
 			dest[7] = source[7];
 		source += 128;
-		dest += vid.conrowbytes;
+		dest += vid.rowbytes;
 	}
 }
 
@@ -343,7 +344,7 @@ Draw_Pixel (int x, int y, byte color)
 {
 	byte       *dest;
 
-	dest = ((byte*)vid.conbuffer) + y * vid.conrowbytes + x;
+	dest = ((byte*)vid.buffer) + y * vid.rowbytes + x;
 	*dest = color;
 }
 
@@ -465,8 +466,8 @@ Draw_Crosshair (void)
 	if ((unsigned) ch >= sizeof (crosshair_func) / sizeof (crosshair_func[0]))
 		return;
 
-	x = vid.conwidth / 2 + cl_crossx->int_val;
-	y = vid.conheight / 2 + cl_crossy->int_val;
+	x = vid.conview->xlen / 2 + cl_crossx->int_val;
+	y = vid.conview->ylen / 2 + cl_crossy->int_val;
 
 	crosshair_func[ch] (x, y);
 }
@@ -488,9 +489,9 @@ Draw_Pic (int x, int y, qpic_t *pic)
 	byte       *dest, *source, tbyte;
 	int         v, u;
 
-	if (x < 0 || (x + pic->width) > vid.conwidth
-		|| y < 0 || (y + pic->height) > vid.conheight) {
-		Sys_MaskPrintf (SYS_VID, "Draw_Pic: bad coordinates");
+	if (x < 0 || (x + pic->width) > vid.conview->xlen
+		|| y < 0 || (y + pic->height) > vid.conview->ylen) {
+		Sys_MaskPrintf (SYS_vid, "Draw_Pic: bad coordinates");
 		Draw_SubPic (x, y, pic, 0, 0, pic->width, pic->height);
 		return;
 	}
@@ -547,9 +548,9 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	byte       *dest, *source, tbyte;
 	int         u, v;
 
-	if ((x < 0) || (x + width > vid.conwidth)
-		|| (y < 0) || (y + height > vid.conheight)) {
-		Sys_MaskPrintf (SYS_VID, "Draw_SubPic: bad coordinates");
+	if ((x < 0) || (x + width > vid.conview->xlen)
+		|| (y < 0) || (y + height > vid.conview->ylen)) {
+		Sys_MaskPrintf (SYS_vid, "Draw_SubPic: bad coordinates");
 	}
 	// first, clip to screen
 	if (x < 0) {
@@ -557,7 +558,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 		width += x;
 		x = 0;
 	}
-	if (x + width > vid.width)
+	if ((unsigned) (x + width) > vid.width)
 		width = vid.width - x;
 	if (width <= 0)
 		return;
@@ -566,7 +567,7 @@ Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 		height += y;
 		y = 0;
 	}
-	if (y + height > vid.height)
+	if ((unsigned) (y + height) > vid.height)
 		height = vid.height - y;
 	if (height <= 0)
 		return;
@@ -624,17 +625,17 @@ Draw_ConsoleBackground (int lines, byte alpha)
 	conback = Draw_CachePic ("gfx/conback.lmp", false);
 
 	// draw the pic
-	dest = vid.conbuffer;
+	dest = vid.buffer;
 
-	for (y = 0; y < lines; y++, dest += vid.conrowbytes) {
-		v = (vid.conheight - lines + y) * 200 / vid.conheight;
+	for (y = 0; y < lines; y++, dest += vid.rowbytes) {
+		v = (vid.conview->ylen - lines + y) * 200 / vid.conview->ylen;
 		src = conback->data + v * 320;
-		if (vid.conwidth == 320)
-			memcpy (dest, src, vid.conwidth);
+		if (vid.conview->xlen == 320)
+			memcpy (dest, src, vid.conview->xlen);
 		else {
 			f = 0;
-			fstep = 320 * 0x10000 / vid.conwidth;
-			for (x = 0; x < vid.conwidth; x += 4) {
+			fstep = 320 * 0x10000 / vid.conview->xlen;
+			for (x = 0; x < vid.conview->xlen; x += 4) {
 				dest[x] = src[f >> 16];
 				f += fstep;
 				dest[x + 1] = src[f >> 16];
@@ -647,7 +648,7 @@ Draw_ConsoleBackground (int lines, byte alpha)
 		}
 	}
 
-	Draw_AltString (vid.conwidth - strlen (cl_verstring->string) * 8 - 11,
+	Draw_AltString (vid.conview->xlen - strlen (cl_verstring->string) * 8 - 11,
 					lines - 14, cl_verstring->string);
 }
 
@@ -700,7 +701,7 @@ Draw_TileClear (int x, int y, int w, int h)
 	byte       *psrc;
 	vrect_t     vr;
 
-	CLIP (x, y, w, h, vid.width, vid.height);
+	CLIP (x, y, w, h, (int) vid.width, (int) vid.height);
 
 	r_rectdesc.rect.x = x;
 	r_rectdesc.rect.y = y;
@@ -763,12 +764,12 @@ Draw_Fill (int x, int y, int w, int h, int c)
 	byte       *dest;
 	int         u, v;
 
-	if (x < 0 || x + w > vid.conwidth
-		|| y < 0 || y + h > vid.conheight) {
-		Sys_MaskPrintf (SYS_VID, "Bad Draw_Fill(%d, %d, %d, %d, %c)\n",
+	if (x < 0 || x + w > vid.conview->xlen
+		|| y < 0 || y + h > vid.conview->ylen) {
+		Sys_MaskPrintf (SYS_vid, "Bad Draw_Fill(%d, %d, %d, %d, %c)\n",
 						x, y, w, h, c);
 	}
-	CLIP (x, y, w, h, vid.width, vid.height);
+	CLIP (x, y, w, h, (int) vid.width, (int) vid.height);
 
 	dest = ((byte*)vid.buffer) + y * vid.rowbytes + x;
 	for (v = 0; v < h; v++, dest += vid.rowbytes)
@@ -794,21 +795,22 @@ void
 Draw_FadeScreen (void)
 {
 	int         x, y;
-	byte       *pbuf;
+	int         height = vid.conview->ylen;
+	int         width = vid.conview->xlen / 4;
+	uint32_t   *pbuf;
 
 	VID_UnlockBuffer ();
 	S_ExtraUpdate ();
 	VID_LockBuffer ();
 
-	for (y = 0; y < vid.conheight; y++) {
-		unsigned int t;
+	for (y = 0; y < height; y++) {
+		uint32_t    mask;
 
-		pbuf = ((byte *)vid.buffer) + vid.rowbytes * y;
-		t = (y & 1) << 1;
+		pbuf = (uint32_t *) ((byte *)vid.buffer + vid.rowbytes * y);
+		mask = 0xff << ((y & 1) << 4);
 
-		for (x = 0; x < vid.conwidth; x++) {
-			if ((x & 3) != t)
-				pbuf[x] = 0;
+		for (x = 0; x < width; x++) {
+			*pbuf++ &= mask;
 		}
 	}
 	vr_data.scr_copyeverything = 1;
@@ -822,7 +824,8 @@ void
 Draw_BlendScreen (quat_t color)
 {
 	int         r, g, b, i;
-	byte       *basepal, *newpal;
+	const byte *basepal;
+	byte       *newpal;
 	byte        pal[768];
 	basepal = vid.basepal;
 	newpal = pal;
@@ -842,5 +845,5 @@ Draw_BlendScreen (quat_t color)
 		newpal[2] = vid.gammatable[b];
 		newpal += 3;
 	}
-	vid.vid_internal->set_palette (pal);
+	vid.vid_internal->set_palette (vid.vid_internal->data, pal);
 }

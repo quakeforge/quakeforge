@@ -18,9 +18,11 @@ struct {
 	{0x0001, 5.9604644775390625e-08f},
 	{0x0000, 0.0f},
 	{0x8000, -0.0f},
-#if __GNUC_PREREQ(3,3)
+#if defined(__GNUC_PREREQ)
+# if __GNUC_PREREQ(3,3)
 	{0x7c00, __builtin_huge_val ()},
 	{0xfc00, -__builtin_huge_val ()},
+# endif
 #endif
 	{0x3555, 0.333251953125f},
 	{0x3e00, 1.5f},

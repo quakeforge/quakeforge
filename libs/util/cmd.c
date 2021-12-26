@@ -130,7 +130,7 @@ Cmd_Command (cbuf_args_t *args)
 		return 0;
 	if (cbuf_active->strict)
 		return -1;
-	else if (cmd_warncmd->int_val || developer->int_val & SYS_DEV)
+	else if (cmd_warncmd->int_val || developer->int_val & SYS_dev)
 		Sys_Printf ("Unknown command \"%s\"\n", Cmd_Argv (0));
 	return 0;
 }
@@ -145,7 +145,7 @@ add_command (const char *cmd_name, xcommand_t func, xdatacmd_t datafunc,
 	// fail if the command already exists
 	cmd = (cmd_function_t *) Hash_Find (cmd_hash, cmd_name);
 	if (cmd) {
-		Sys_MaskPrintf (SYS_DEV, "Cmd_AddCommand: %s already defined\n",
+		Sys_MaskPrintf (SYS_dev, "Cmd_AddCommand: %s already defined\n",
 						cmd_name);
 		return 0;
 	}
@@ -497,18 +497,19 @@ Cmd_Help_f (void)
 
 	Sys_Printf ("variable/command not found\n");
 }
+
 static void
 Cmd_Exec_f (void)
 {
 	char       *f;
-	int         mark;
+	size_t      mark;
 
 	if (Cmd_Argc () != 2) {
 		Sys_Printf ("exec <filename> : execute a script file\n");
 		return;
 	}
 
-	mark = Hunk_LowMark ();
+	mark = Hunk_LowMark (0);
 	f = (char *) QFS_LoadHunkFile (QFS_FOpenFile (Cmd_Argv (1)));
 	if (!f) {
 		Sys_Printf ("couldn't exec %s\n", Cmd_Argv (1));
@@ -516,10 +517,10 @@ Cmd_Exec_f (void)
 	}
 	if (!Cvar_Command ()
 		&& (cmd_warncmd->int_val
-			|| (developer && developer->int_val & SYS_DEV)))
+			|| (developer && developer->int_val & SYS_dev)))
 		Sys_Printf ("execing %s\n", Cmd_Argv (1));
 	Cbuf_InsertText (cbuf_active, f);
-	Hunk_FreeToLowMark (mark);
+	Hunk_FreeToLowMark (0, mark);
 }
 
 /*
@@ -649,7 +650,7 @@ Cmd_ExecuteString (const char *text, cmd_source_t src)
 	return 0;
 }
 
-VISIBLE void
+VISIBLE int
 Cmd_Exec_File (cbuf_t *cbuf, const char *path, int qfs)
 {
 	char       *f;
@@ -657,7 +658,7 @@ Cmd_Exec_File (cbuf_t *cbuf, const char *path, int qfs)
 	QFile      *file;
 
 	if (!path || !*path)
-		return;
+		return 0;
 	if (qfs) {
 		file = QFS_FOpenFile (path);
 	} else {
@@ -675,7 +676,9 @@ Cmd_Exec_File (cbuf_t *cbuf, const char *path, int qfs)
 			free (f);
 		}
 		Qclose (file);
+		return 1;
 	}
+	return 0;
 }
 
 VISIBLE void

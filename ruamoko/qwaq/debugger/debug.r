@@ -18,6 +18,7 @@ int qdb_get_data (qdb_target_t target, unsigned src, unsigned len,
 string qdb_get_string (qdb_target_t target, unsigned str) = #0;
 string qdb_get_string (qdb_target_t target, string str) = #0;
 string qdb_get_file_path (qdb_target_t target, string file) = #0;
+int qdb_find_string (qdb_target_t target, string str) = #0;
 qdb_def_t qdb_find_global (qdb_target_t target, string name) = #0;
 qdb_def_t qdb_find_field (qdb_target_t target, string name) = #0;
 qdb_function_t *qdb_find_function (qdb_target_t target, string name) = #0;
@@ -27,3 +28,5 @@ qdb_auxfunction_t *qdb_find_auxfunction (qdb_target_t target,
 qdb_auxfunction_t *qdb_get_auxfunction (qdb_target_t target,
 										unsigned fnum) = #0;
 qdb_def_t *qdb_get_local_defs (qdb_target_t target, unsigned fnum) = #0;
+unsigned qdb_get_source_line_addr(qdb_target_t target, string file,
+								  unsigned line) = #0;

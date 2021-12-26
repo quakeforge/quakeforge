@@ -3,7 +3,6 @@ dnl Checks for header files.
 dnl ==================================================================
 
 AC_HEADER_DIRENT
-AC_HEADER_STDC
 AC_HEADER_MAJOR
 AC_HEADER_SYS_WAIT
 AC_CHECK_HEADERS(
@@ -12,7 +11,7 @@ AC_CHECK_HEADERS(
 	dmedia/cdaudio.h dpmi.h dsound.h errno.h fcntl.h io.h \
 	ifaddrs.h libc.h limits.h linux/cdrom.h linux/joystick.h \
 	linux/soundcard.h machine/soundcard.h malloc.h math.h mgraph.h _mingw.h \
-	netdb.h net/if.h netinet/in.h process.h pthread.h pwd.h rpc/types.h \
+	netdb.h net/if.h netinet/in.h process.h pthread.h pwd.h \
 	setjmp.h signal.h stdarg.h stdio.h stdlib.h string.h strings.h \
 	sys/asoundlib.h sys/audioio.h sys/filio.h sys/ioctl.h sys/io.h sys/ipc.h \
 	sys/mman.h sys/param.h sys/poll.h sys/select.h sys/shm.h sys/signal.h \
@@ -33,28 +32,21 @@ fi
 AC_FUNC_ALLOCA
 
 AC_MSG_CHECKING(for fnmatch in fnmatch.h)
-AC_TRY_COMPILE(
-	[#include "fnmatch.h"],
-	[int (*foo)() = fnmatch;],
-	AC_DEFINE(HAVE_FNMATCH_PROTO, 1, [Define this if fnmatch is prototyped in fnmatch.h])
-	AC_MSG_RESULT(yes),
-	AC_MSG_RESULT(no)
-)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include "fnmatch.h"]], [[int (*foo)() = fnmatch;]])],[AC_DEFINE(HAVE_FNMATCH_PROTO, 1, Define this if fnmatch is prototyped in fnmatch.h)
+	AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
+])
 
 AC_MSG_CHECKING(for strnlen in string.h)
-AC_TRY_COMPILE(
-	[#include "string.h"],
-	[int (*foo)() = strnlen;],
-	AC_DEFINE(HAVE_STRNLEN_PROTO, 1, [Define this if strnlen is prototyped in string.h])
-	AC_MSG_RESULT(yes),
-	AC_MSG_RESULT(no)
-)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include "string.h"]], [[int (*foo)() = strnlen;]])],[AC_DEFINE(HAVE_STRNLEN_PROTO, 1, Define this if strnlen is prototyped in string.h)
+	AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
+])
+
+AC_MSG_CHECKING(for strndup in string.h)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include "string.h"]], [[int (*foo)() = strndup;]])],[AC_DEFINE(HAVE_STRNDUP_PROTO, 1, Define this if strndup is prototyped in string.h)
+	AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
+])
 
 AC_MSG_CHECKING(for strcasestr in string.h)
-AC_TRY_COMPILE(
-	[#include "string.h"],
-	[int (*foo)() = strcasestr;],
-	AC_DEFINE(HAVE_STRCASESTR_PROTO, 1, [Define this if strcasestr is prototyped in string.h])
-	AC_MSG_RESULT(yes),
-	AC_MSG_RESULT(no)
-)
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include "string.h"]], [[int (*foo)() = strcasestr;]])],[AC_DEFINE(HAVE_STRCASESTR_PROTO, 1, Define this if strcasestr is prototyped in string.h)
+	AC_MSG_RESULT(yes)],[AC_MSG_RESULT(no)
+])

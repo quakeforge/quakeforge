@@ -64,6 +64,8 @@ typedef struct obj_list_s {
 } obj_list;
 
 typedef struct dtable_s {
+	struct dtable_s *next;
+	struct dtable_s **prev;
 	size_t      size;
 	func_t     *imp;
 } dtable_t;
@@ -75,6 +77,7 @@ typedef struct probj_resources_s {
 	obj_list  **selector_sels;
 	string_t   *selector_names;
 	PR_RESMAP (dtable_t) dtables;
+	dtable_t   *dtable_list;
 	func_t      obj_forward;
 	pr_sel_t   *forward_selector;
 	dstring_t  *msg;
@@ -93,7 +96,14 @@ typedef struct probj_resources_s {
 static dtable_t *
 dtable_new (probj_t *probj)
 {
-	return PR_RESNEW (probj->dtables);
+	dtable_t   *dtable = PR_RESNEW (probj->dtables);
+	dtable->next = probj->dtable_list;
+	dtable->prev = &probj->dtable_list;
+	if (probj->dtable_list) {
+		probj->dtable_list->prev = &dtable->next;
+	}
+	probj->dtable_list = dtable;
+	return dtable;
 }
 
 static void
@@ -456,7 +466,7 @@ finish_class (probj_t *probj, pr_class_t *class, pointer_t object_ptr)
 			ml = &G_STRUCT (pr, pr_method_list_t, *ml).method_next;
 		*ml = class->methods;
 	}
-	Sys_MaskPrintf (SYS_RUA_OBJ, "    %x %x %x\n", meta->class_pointer,
+	Sys_MaskPrintf (SYS_rua_obj, "    %x %x %x\n", meta->class_pointer,
 					meta->super_class, class->super_class);
 }
 
@@ -514,7 +524,7 @@ sel_register_typed_name (probj_t *probj, const char *name, const char *types,
 			}
 		}
 	} else {
-		Sys_MaskPrintf (SYS_RUA_OBJ, "    Registering SEL %s %s\n",
+		Sys_MaskPrintf (SYS_rua_obj, "    Registering SEL %s %s\n",
 						name, types);
 		index = add_sel_name (probj, name);
 		is_new = 1;
@@ -533,7 +543,7 @@ sel_register_typed_name (probj_t *probj, const char *name, const char *types,
 	if (is_new)
 		Hash_Add (probj->selector_hash, (void *) index);
 done:
-	Sys_MaskPrintf (SYS_RUA_OBJ, "        %d @ %x\n",
+	Sys_MaskPrintf (SYS_rua_obj, "        %d @ %x\n",
 					sel->sel_id, PR_SetPointer (pr, sel));
 	return sel;
 }
@@ -795,32 +805,32 @@ obj_find_message (probj_t *probj, pr_class_t *class, pr_sel_t *selector)
 	int         dev = developer->int_val;
 	string_t   *names;
 
-	if (dev & SYS_RUA_MSG) {
+	if (dev & SYS_rua_msg) {
 		names = probj->selector_names;
 		Sys_Printf ("Searching for %s\n",
 					PR_GetString (pr, names[selector->sel_id]));
 	}
 	while (c) {
-		if (dev & SYS_RUA_MSG)
+		if (dev & SYS_rua_msg)
 			Sys_Printf ("Checking class %s @ %x\n",
 						PR_GetString (pr, c->name),
 						PR_SetPointer (pr, c));
 		method_list = &G_STRUCT (pr, pr_method_list_t, c->methods);
 		while (method_list) {
-			if (dev & SYS_RUA_MSG) {
+			if (dev & SYS_rua_msg) {
 				Sys_Printf ("method list %x\n",
 							PR_SetPointer (pr, method_list));
 			}
 			for (i = 0, method = method_list->method_list;
 				 i < method_list->method_count; i++, method++) {
 				sel = &G_STRUCT (pr, pr_sel_t, method->method_name);
-				if (developer->int_val & SYS_RUA_MSG) {
+				if (developer->int_val & SYS_rua_msg) {
 					names = probj->selector_names;
 					Sys_Printf ("  %s\n",
 								PR_GetString (pr, names[sel->sel_id]));
 				}
 				if (sel->sel_id == selector->sel_id) {
-					if (dev & SYS_RUA_MSG) {
+					if (dev & SYS_rua_msg) {
 						names = probj->selector_names;
 						Sys_Printf ("found %s: %x\n",
 									PR_GetString (pr, names[selector->sel_id]),
@@ -912,7 +922,7 @@ obj_install_dispatch_table_for_class (probj_t *probj, pr_class_t *class)
 	pr_class_t *super = &G_STRUCT (pr, pr_class_t, class->super_class);
 	dtable_t   *dtable;
 
-	Sys_MaskPrintf (SYS_RUA_OBJ, "    install dispatch for class %s %x %d\n",
+	Sys_MaskPrintf (SYS_rua_obj, "    install dispatch for class %s %x %d\n",
 					PR_GetString (pr, class->name),
 					class->methods,
 					PR_CLS_ISMETA(class));
@@ -1054,7 +1064,7 @@ obj_init_statics (probj_t *probj)
 	pointer_t  *ptr;
 	pointer_t  *inst;
 
-	Sys_MaskPrintf (SYS_RUA_OBJ, "Initializing statics\n");
+	Sys_MaskPrintf (SYS_rua_obj, "Initializing statics\n");
 	while (*cell) {
 		int         initialized = 1;
 
@@ -1063,7 +1073,7 @@ obj_init_statics (probj_t *probj)
 			const char *class_name = PR_GetString (pr, statics->class_name);
 			pr_class_t *class = Hash_Find (probj->classes, class_name);
 
-			Sys_MaskPrintf (SYS_RUA_OBJ, "    %s %p\n", class_name, class);
+			Sys_MaskPrintf (SYS_rua_obj, "    %s %p\n", class_name, class);
 			if (!class) {
 				initialized = 0;
 				continue;
@@ -1107,7 +1117,7 @@ rua___obj_exec_class (progs_t *pr)
 	symtab = &G_STRUCT (pr, pr_symtab_t, module->symtab);
 	if (!symtab)
 		return;
-	Sys_MaskPrintf (SYS_RUA_OBJ, "Initializing %s module\n"
+	Sys_MaskPrintf (SYS_rua_obj, "Initializing %s module\n"
 					"symtab @ %x : %d selector%s @ %x, "
 					"%d class%s and %d categor%s\n"
 					"static instance lists: %s\n",
@@ -1137,26 +1147,26 @@ rua___obj_exec_class (progs_t *pr)
 		pr_class_t *meta = &G_STRUCT (pr, pr_class_t, class->class_pointer);
 		const char *super_class = PR_GetString (pr, class->super_class);
 
-		Sys_MaskPrintf (SYS_RUA_OBJ, "Class %s @ %x\n",
+		Sys_MaskPrintf (SYS_rua_obj, "Class %s @ %x\n",
 						PR_GetString (pr, class->name), *ptr);
-		Sys_MaskPrintf (SYS_RUA_OBJ, "    class pointer: %x\n",
+		Sys_MaskPrintf (SYS_rua_obj, "    class pointer: %x\n",
 						class->class_pointer);
-		Sys_MaskPrintf (SYS_RUA_OBJ, "    super class: %s\n",
+		Sys_MaskPrintf (SYS_rua_obj, "    super class: %s\n",
 						PR_GetString (pr, class->super_class));
-		Sys_MaskPrintf (SYS_RUA_OBJ, "    instance variables: %d @ %x\n",
+		Sys_MaskPrintf (SYS_rua_obj, "    instance variables: %d @ %x\n",
 						class->instance_size,
 						class->ivars);
-		if (developer->int_val & SYS_RUA_OBJ)
+		if (developer->int_val & SYS_rua_obj)
 			dump_ivars (probj, class->ivars);
-		Sys_MaskPrintf (SYS_RUA_OBJ, "    instance methods: %x\n",
+		Sys_MaskPrintf (SYS_rua_obj, "    instance methods: %x\n",
 						class->methods);
-		Sys_MaskPrintf (SYS_RUA_OBJ, "    protocols: %x\n", class->protocols);
+		Sys_MaskPrintf (SYS_rua_obj, "    protocols: %x\n", class->protocols);
 
-		Sys_MaskPrintf (SYS_RUA_OBJ, "    class methods: %x\n", meta->methods);
-		Sys_MaskPrintf (SYS_RUA_OBJ, "    instance variables: %d @ %x\n",
+		Sys_MaskPrintf (SYS_rua_obj, "    class methods: %x\n", meta->methods);
+		Sys_MaskPrintf (SYS_rua_obj, "    instance variables: %d @ %x\n",
 						meta->instance_size,
 						meta->ivars);
-		if (developer->int_val & SYS_RUA_OBJ)
+		if (developer->int_val & SYS_rua_obj)
 			dump_ivars (probj, meta->ivars);
 
 		class->subclass_list = 0;
@@ -1183,14 +1193,14 @@ rua___obj_exec_class (progs_t *pr)
 		const char *class_name = PR_GetString (pr, category->class_name);
 		pr_class_t *class = Hash_Find (probj->classes, class_name);
 
-		Sys_MaskPrintf (SYS_RUA_OBJ, "Category %s (%s) @ %x\n",
+		Sys_MaskPrintf (SYS_rua_obj, "Category %s (%s) @ %x\n",
 						PR_GetString (pr, category->class_name),
 						PR_GetString (pr, category->category_name), *ptr);
-		Sys_MaskPrintf (SYS_RUA_OBJ, "    instance methods: %x\n",
+		Sys_MaskPrintf (SYS_rua_obj, "    instance methods: %x\n",
 						category->instance_methods);
-		Sys_MaskPrintf (SYS_RUA_OBJ, "    class methods: %x\n",
+		Sys_MaskPrintf (SYS_rua_obj, "    class methods: %x\n",
 						category->class_methods);
-		Sys_MaskPrintf (SYS_RUA_OBJ, "    protocols: %x\n",
+		Sys_MaskPrintf (SYS_rua_obj, "    protocols: %x\n",
 						category->protocols);
 
 		if (class) {
@@ -1202,7 +1212,7 @@ rua___obj_exec_class (progs_t *pr)
 	}
 
 	if (*ptr) {
-		Sys_MaskPrintf (SYS_RUA_OBJ, "Static instances lists: %x\n", *ptr);
+		Sys_MaskPrintf (SYS_rua_obj, "Static instances lists: %x\n", *ptr);
 		probj->uninitialized_statics
 			= list_cons (&G_STRUCT (pr, pointer_t, *ptr),
 						 probj->uninitialized_statics);
@@ -1232,10 +1242,10 @@ rua___obj_exec_class (progs_t *pr)
 		}
 	}
 
-	Sys_MaskPrintf (SYS_RUA_OBJ, "Finished initializing %s module\n",
+	Sys_MaskPrintf (SYS_rua_obj, "Finished initializing %s module\n",
 					PR_GetString (pr, module->name));
 	obj_send_load (probj);
-	Sys_MaskPrintf (SYS_RUA_OBJ, "Leaving %s module init\n",
+	Sys_MaskPrintf (SYS_rua_obj, "Leaving %s module init\n",
 					PR_GetString (pr, module->name));
 }
 
@@ -1989,7 +1999,7 @@ obj_protocol_conformsToProtocol (probj_t *probj, pr_protocol_t *proto,
 	}
 	proto_list = &G_STRUCT (pr, pr_protocol_list_t, proto->protocol_list);
 	while (proto_list) {
-		Sys_MaskPrintf (SYS_RUA_OBJ, "%x %x %d\n",
+		Sys_MaskPrintf (SYS_rua_obj, "%x %x %d\n",
 						PR_SetPointer (pr, proto_list), proto_list->next,
 						proto_list->count);
 		for (int i = 0; i < proto_list->count; i++) {
@@ -2028,7 +2038,7 @@ rua__c_Object__conformsToProtocol_ (progs_t *pr)
 	}
 	proto_list = &G_STRUCT (pr, pr_protocol_list_t, class->protocols);
 	while (proto_list) {
-		Sys_MaskPrintf (SYS_RUA_OBJ, "%x %x %d\n",
+		Sys_MaskPrintf (SYS_rua_obj, "%x %x %d\n",
 						PR_SetPointer (pr, proto_list), proto_list->next,
 						proto_list->count);
 		for (int i = 0; i < proto_list->count; i++) {
@@ -2043,11 +2053,11 @@ rua__c_Object__conformsToProtocol_ (progs_t *pr)
 		proto_list = &G_STRUCT (pr, pr_protocol_list_t, proto_list->next);
 	}
 not_conforms:
-	Sys_MaskPrintf (SYS_RUA_OBJ, "does not conform\n");
+	Sys_MaskPrintf (SYS_rua_obj, "does not conform\n");
 	R_INT (pr) = 0;
 	return;
 conforms:
-	Sys_MaskPrintf (SYS_RUA_OBJ, "conforms\n");
+	Sys_MaskPrintf (SYS_rua_obj, "conforms\n");
 	R_INT (pr) = 1;
 	return;
 }
@@ -2195,14 +2205,8 @@ rua_obj_cleanup (progs_t *pr, void *data)
 		probj->selector_names[i] = 0;
 	}
 
-	for (i = 0; i < probj->dtables._size; i++) {
-		/* dtable_get expects a handle, but a handle is the ones-compliment
-		 * negative of the index.
-		 */
-		dtable_t   *dtable = dtable_get (probj, ~i);
-		if (!dtable->imp) {
-			break;
-		}
+	for (dtable_t *dtable = probj->dtable_list; dtable;
+		 dtable = dtable->next) {
 		free (dtable->imp);
 	}
 	dtable_reset (probj);

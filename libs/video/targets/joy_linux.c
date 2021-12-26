@@ -96,8 +96,8 @@ JOY_Close (void)
 
 	i = close (joy_handle);
 	if (i) {
-		Sys_MaskPrintf (SYS_VID, "JOY: Failed to close joystick device!\n");
+		Sys_MaskPrintf (SYS_vid, "JOY: Failed to close joystick device!\n");
 	} else {
-		Sys_MaskPrintf (SYS_VID, "JOY_Shutdown\n");
+		Sys_MaskPrintf (SYS_vid, "JOY_Shutdown\n");
 	}
 }

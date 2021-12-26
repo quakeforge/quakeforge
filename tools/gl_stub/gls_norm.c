@@ -5,12 +5,32 @@
 
 #include "QF/GL/defines.h"
 #include "QF/GL/types.h"
+#include "QF/GLSL/types.h"
 
 typedef struct __GLXcontextRec *GLXContext;
 typedef XID GLXDrawable;
 
+#define QFGL_DONT_NEED(ret, func, params) QFGL_NEED(ret, func, params)
+
+#undef QFGL_WANT
+#undef QFGL_NEED
+
+#define QFGL_WANT(ret, name, args) \
+ret GLAPIENTRY norm_##name args;
+#define QFGL_NEED(ret, name, args) \
+ret GLAPIENTRY norm_##name args;
+#include "QF/GL/qf_funcs_list.h"
+#include "QF/GLSL/qf_funcs_list.h"
+#undef QFGL_NEED
+#undef QFGL_WANT
+
 void
 norm_glAccum (GLenum op, GLfloat value)
+{
+}
+
+void
+norm_glActiveTexture (GLenum texture)
 {
 }
 
@@ -32,7 +52,32 @@ norm_glArrayElement (GLint i)
 }
 
 void
+norm_glAttachShader (GLuint program, GLuint shader)
+{
+}
+
+void
 norm_glBegin (GLenum mode)
+{
+}
+
+void
+norm_glBindAttribLocation (GLuint program, GLuint index, const GLchar* name)
+{
+}
+
+void
+norm_glBindBuffer (GLenum target, GLuint buffer)
+{
+}
+
+void
+norm_glBindFramebuffer (GLenum target, GLuint framebuffer)
+{
+}
+
+void
+norm_glBindRenderbuffer (GLenum target, GLuint renderbuffer)
 {
 }
 
@@ -58,7 +103,27 @@ norm_glBlendEquation (GLenum mode)
 }
 
 void
+norm_glBlendEquationSeparate (GLenum modeRGB, GLenum modeAlpha)
+{
+}
+
+void
 norm_glBlendFunc (GLenum sfactor, GLenum dfactor)
+{
+}
+
+void
+norm_glBlendFuncSeparate (GLenum srcRGB, GLenum dstRGB, GLenum srcAlpha, GLenum dstAlpha)
+{
+}
+
+void
+norm_glBufferData (GLenum target, GLsizeiptr size, const GLvoid* data, GLenum usage)
+{
+}
+
+void
+norm_glBufferSubData (GLenum target, GLintptr offset, GLsizeiptr size, const GLvoid* data)
 {
 }
 
@@ -69,6 +134,443 @@ norm_glCallList (GLuint list)
 
 void
 norm_glCallLists (GLsizei n, GLenum type, const GLvoid * lists)
+{
+}
+
+GLenum
+norm_glCheckFramebufferStatus (GLenum target)
+{
+	return 0x8CD5;
+}
+
+void
+norm_glClearDepthf (GLclampf depth)
+{
+}
+
+void
+norm_glCompileShader (GLuint shader)
+{
+}
+
+void
+norm_glCompressedTexImage2D (GLenum target, GLint level, GLenum internalformat, GLsizei width, GLsizei height, GLint border, GLsizei imageSize, const GLvoid* data)
+{
+}
+
+void
+norm_glCompressedTexSubImage2D (GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLsizei imageSize, const GLvoid* data)
+{
+}
+
+GLuint
+norm_glCreateProgram (void)
+{
+	static int program;
+	return ++program;
+}
+
+GLuint
+norm_glCreateShader (GLenum type)
+{
+	static int shader;
+	return ++shader;
+}
+
+void
+norm_glDeleteBuffers (GLsizei n, const GLuint* buffers)
+{
+}
+
+void
+norm_glDeleteFramebuffers (GLsizei n, const GLuint* framebuffers)
+{
+}
+
+void
+norm_glDeleteProgram (GLuint program)
+{
+}
+
+void
+norm_glDeleteRenderbuffers (GLsizei n, const GLuint* renderbuffers)
+{
+}
+
+void
+norm_glDeleteShader (GLuint shader)
+{
+}
+
+void
+norm_glDepthRangef (GLclampf zNear, GLclampf zFar)
+{
+}
+
+void
+norm_glDetachShader (GLuint program, GLuint shader)
+{
+}
+
+void
+norm_glDisableVertexAttribArray (GLuint index)
+{
+}
+
+void
+norm_glEnableVertexAttribArray (GLuint index)
+{
+}
+
+void
+norm_glFramebufferRenderbuffer (GLenum target, GLenum attachment, GLenum renderbuffertarget, GLuint renderbuffer)
+{
+}
+
+void
+norm_glFramebufferTexture2D (GLenum target, GLenum attachment, GLenum textarget, GLuint texture, GLint level)
+{
+}
+
+void
+norm_glGenBuffers (GLsizei n, GLuint* buffers)
+{
+}
+
+void
+norm_glGenFramebuffers (GLsizei n, GLuint* framebuffers)
+{
+}
+
+void
+norm_glGenRenderbuffers (GLsizei n, GLuint* renderbuffers)
+{
+}
+
+void
+norm_glGenerateMipmap (GLenum target)
+{
+}
+
+void
+norm_glGetActiveAttrib (GLuint program, GLuint index, GLsizei bufsize, GLsizei* length, GLint* size, GLenum* type, GLchar* name)
+{
+}
+
+void
+norm_glGetActiveUniform (GLuint program, GLuint index, GLsizei bufsize, GLsizei* length, GLint* size, GLenum* type, GLchar* name)
+{
+}
+
+void
+norm_glGetAttachedShaders (GLuint program, GLsizei maxcount, GLsizei* count, GLuint* shaders)
+{
+}
+
+int
+norm_glGetAttribLocation (GLuint program, const GLchar* name)
+{
+	return 0;
+}
+
+void
+norm_glGetBufferParameteriv (GLenum target, GLenum pname, GLint* params)
+{
+}
+
+void
+norm_glGetFramebufferAttachmentParameteriv (GLenum target, GLenum attachment, GLenum pname, GLint* params)
+{
+}
+
+void
+norm_glGetProgramInfoLog (GLuint program, GLsizei bufsize, GLsizei* length, GLchar* infolog)
+{
+}
+
+void
+norm_glGetProgramiv (GLuint program, GLenum pname, GLint* params)
+{
+}
+
+void
+norm_glGetRenderbufferParameteriv (GLuint shader, GLenum pname, GLint* params)
+{
+}
+
+void
+norm_glGetShaderInfoLog (GLuint shader, GLsizei bufsize, GLsizei* length, GLchar* infolog)
+{
+}
+
+void
+norm_glGetShaderPrecisionFormat (GLenum shadertype, GLenum precisiontype, GLint* range, GLint* precision)
+{
+}
+
+void
+norm_glGetShaderSource (GLuint shader, GLsizei bufsize, GLsizei* length, GLchar* source)
+{
+}
+
+void
+norm_glGetShaderiv (GLuint shader, GLenum pname, GLint* params)
+{
+}
+
+int
+norm_glGetUniformLocation (GLuint program, const GLchar* name)
+{
+	return 0;
+}
+
+void
+norm_glGetUniformfv (GLuint program, GLint location, GLfloat* params)
+{
+}
+
+void
+norm_glGetUniformiv (GLuint program, GLint location, GLint* params)
+{
+}
+
+void
+norm_glGetVertexAttribPointerv (GLuint index, GLenum pname, GLvoid** pointer)
+{
+}
+
+void
+norm_glGetVertexAttribfv (GLuint index, GLenum pname, GLfloat* params)
+{
+}
+
+void
+norm_glGetVertexAttribiv (GLuint index, GLenum pname, GLint* params)
+{
+}
+
+GLboolean
+norm_glIsBuffer (GLuint buffer)
+{
+	return 0;
+}
+
+GLboolean
+norm_glIsFramebuffer (GLuint framebuffer)
+{
+	return 0;
+}
+
+GLboolean
+norm_glIsProgram (GLuint program)
+{
+	return 0;
+}
+
+GLboolean
+norm_glIsRenderbuffer (GLuint renderbuffer)
+{
+	return 0;
+}
+
+GLboolean
+norm_glIsShader (GLuint shader)
+{
+	return 0;
+}
+
+void
+norm_glLinkProgram (GLuint program)
+{
+}
+
+void
+norm_glReleaseShaderCompiler (void)
+{
+}
+
+void
+norm_glRenderbufferStorage (GLenum target, GLenum internalformat, GLsizei width, GLsizei height)
+{
+}
+
+void
+norm_glSampleCoverage (GLclampf value, GLboolean invert)
+{
+}
+
+void
+norm_glShaderBinary (GLsizei n, const GLuint* shaders, GLenum binaryformat, const GLvoid* binary, GLsizei length)
+{
+}
+
+void
+norm_glShaderSource (GLuint shader, GLsizei count, const GLchar** string, const GLint* length)
+{
+}
+
+void
+norm_glStencilFuncSeparate (GLenum face, GLenum func, GLint ref, GLuint mask)
+{
+}
+
+void
+norm_glStencilMaskSeparate (GLenum face, GLuint mask)
+{
+}
+
+void
+norm_glStencilOpSeparate (GLenum face, GLenum fail, GLenum zfail, GLenum zpass)
+{
+}
+
+void
+norm_glUniform1f (GLint location, GLfloat x)
+{
+}
+
+void
+norm_glUniform1fv (GLint location, GLsizei count, const GLfloat* v)
+{
+}
+
+void
+norm_glUniform1i (GLint location, GLint x)
+{
+}
+
+void
+norm_glUniform1iv (GLint location, GLsizei count, const GLint* v)
+{
+}
+
+void
+norm_glUniform2f (GLint location, GLfloat x, GLfloat y)
+{
+}
+
+void
+norm_glUniform2fv (GLint location, GLsizei count, const GLfloat* v)
+{
+}
+
+void
+norm_glUniform2i (GLint location, GLint x, GLint y)
+{
+}
+
+void
+norm_glUniform2iv (GLint location, GLsizei count, const GLint* v)
+{
+}
+
+void
+norm_glUniform3f (GLint location, GLfloat x, GLfloat y, GLfloat z)
+{
+}
+
+void
+norm_glUniform3fv (GLint location, GLsizei count, const GLfloat* v)
+{
+}
+
+void
+norm_glUniform3i (GLint location, GLint x, GLint y, GLint z)
+{
+}
+
+void
+norm_glUniform3iv (GLint location, GLsizei count, const GLint* v)
+{
+}
+
+void
+norm_glUniform4f (GLint location, GLfloat x, GLfloat y, GLfloat z, GLfloat w)
+{
+}
+
+void
+norm_glUniform4fv (GLint location, GLsizei count, const GLfloat* v)
+{
+}
+
+void
+norm_glUniform4i (GLint location, GLint x, GLint y, GLint z, GLint w)
+{
+}
+
+void
+norm_glUniform4iv (GLint location, GLsizei count, const GLint* v)
+{
+}
+
+void
+norm_glUniformMatrix2fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat* value)
+{
+}
+
+void
+norm_glUniformMatrix3fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat* value)
+{
+}
+
+void
+norm_glUniformMatrix4fv (GLint location, GLsizei count, GLboolean transpose, const GLfloat* value)
+{
+}
+
+void
+norm_glUseProgram (GLuint program)
+{
+}
+
+void
+norm_glValidateProgram (GLuint program)
+{
+}
+
+void
+norm_glVertexAttrib1f (GLuint indx, GLfloat x)
+{
+}
+
+void
+norm_glVertexAttrib1fv (GLuint indx, const GLfloat* values)
+{
+}
+
+void
+norm_glVertexAttrib2f (GLuint indx, GLfloat x, GLfloat y)
+{
+}
+
+void
+norm_glVertexAttrib2fv (GLuint indx, const GLfloat* values)
+{
+}
+
+void
+norm_glVertexAttrib3f (GLuint indx, GLfloat x, GLfloat y, GLfloat z)
+{
+}
+
+void
+norm_glVertexAttrib3fv (GLuint indx, const GLfloat* values)
+{
+}
+
+void
+norm_glVertexAttrib4f (GLuint indx, GLfloat x, GLfloat y, GLfloat z, GLfloat w)
+{
+}
+
+void
+norm_glVertexAttrib4fv (GLuint indx, const GLfloat* values)
+{
+}
+
+void
+norm_glVertexAttribPointer (GLuint indx, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid* ptr)
 {
 }
 

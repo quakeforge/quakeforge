@@ -35,6 +35,8 @@
 # include <strings.h>
 #endif
 
+#include "qfalloca.h"
+
 #include <math.h>
 
 #define IMPLEMENT_R_Cull
@@ -42,6 +44,7 @@
 
 #include "QF/mathlib.h"
 #include "QF/qtypes.h"
+#include "QF/set.h"
 #include "QF/sys.h"
 
 VISIBLE int nanmask = 255 << 23;
@@ -1199,10 +1202,11 @@ BarycentricCoords (const vec_t **points, int num_points, const vec3_t p,
 			CrossProduct (a, b, ab);
 			div = DotProduct (ab, ab);
 			CrossProduct (x, b, n);
-			lambda[1] = DotProduct (n, ab) / div;
+			lambda[1] = DotProduct (n, ab);
 			CrossProduct (a, x, n);
-			lambda[2] = DotProduct (n, ab) / div;
-			lambda[0] = 1 - lambda[1] - lambda[2];
+			lambda[2] = DotProduct (n, ab);
+			lambda[0] = div - lambda[1] - lambda[2];
+			VectorScale (lambda, 1 / div, lambda);
 			return;
 		case 4:
 			VectorSubtract (p, points[0], x);
@@ -1347,12 +1351,13 @@ test_support_points(const vec_t **points, int *num_points, const vec3_t center)
 			break;
 		case 2:
 			VectorSubtract (points[1], points[0], v);
-			VectorSubtract (center, points[0], d);
+			VectorAdd (points[0], points[1], d);
+			VectorScale (d, 0.5, d);
+			VectorSubtract (center, d, d);
 			CrossProduct (v, d, n);
 			nn = DotProduct (n, n);
-			dd = DotProduct (d, d);
 			vv = DotProduct (v, v);
-			in_affine = nn < 1e-8 * vv * dd;
+			in_affine = nn < 1e-5 * vv * vv;
 			break;
 		case 3:
 			VectorSubtract (points[1], points[0], a);
@@ -1362,7 +1367,7 @@ test_support_points(const vec_t **points, int *num_points, const vec3_t center)
 			dn = DotProduct (d, n);
 			dd = DotProduct (d, d);
 			nn = DotProduct (n, n);
-			in_affine = dn * dn < 1e-8 * dd * nn;
+			in_affine = dn * dn < 1e-5 * dd * nn;
 			break;
 		case 4:
 			in_affine = 1;
@@ -1402,12 +1407,14 @@ test_support_points(const vec_t **points, int *num_points, const vec3_t center)
 sphere_t
 SmallestEnclosingBall (const vec3_t points[], int num_points)
 {
+	set_t       was_support = SET_STATIC_INIT (num_points, alloca);
 	sphere_t    sphere;
 	const vec_t *best;
 	const vec_t *support[4];
 	int         num_support;
 	vec_t       dist, best_dist;
 	int         i;
+	int         best_i = 0;
 	int         iters = 0;
 
 	if (num_points < 1) {
@@ -1418,6 +1425,7 @@ SmallestEnclosingBall (const vec3_t points[], int num_points)
 
 	for (i = 0; i < 4; i++)
 		support[i] = 0;
+	set_empty (&was_support);
 
 	VectorCopy (points[0], sphere.center);
 	best_dist = dist = 0;
@@ -1426,49 +1434,51 @@ SmallestEnclosingBall (const vec3_t points[], int num_points)
 		dist = VectorDistance_fast (points[i], sphere.center);
 		if (dist > best_dist) {
 			best_dist = dist;
+			best_i = i;
 			best = points[i];
 		}
 	}
 	num_support = 1;
 	support[0] = best;
 	sphere.radius = best_dist;	// note: radius squared until the end
+	set_add (&was_support, best_i);
 
 	while (!test_support_points (support, &num_support, sphere.center)) {
-		vec3_t      affine;
-		vec3_t      center_to_affine, center_to_point;
-		vec_t       affine_dist, point_proj, point_dist, bound;
-		vec_t       scale = 1;
+		vec3_t      affine, v, p, r;
+		vec_t       x, best_x = 0, rr, pv, pp;
 		int         i;
 
-		if (iters++ > 10)
+		if (iters++ > 2 * num_points)
 			Sys_Error ("stuck SEB");
-		best = 0;
 
 		closest_affine_point (support, num_support, sphere.center, affine);
-		VectorSubtract (affine, sphere.center, center_to_affine);
-		affine_dist = DotProduct (center_to_affine, center_to_affine);
+		VectorSubtract (support[0], affine, r);
+		rr = DotProduct (r, r);
+		VectorSubtract (sphere.center, affine, v);
+
+		best = 0;
 		for (i = 0; i < num_points; i++) {
-			if (points[i] == support[0] || points[i] == support[1]
-				|| points[i] == support[2])
+			if (SET_TEST_MEMBER (&was_support, i)) {
 				continue;
-			VectorSubtract (points[i], sphere.center, center_to_point);
-			point_proj = DotProduct (center_to_affine, center_to_point);
-			if (affine_dist - point_proj <= 0
-				|| ((affine_dist - point_proj) * (affine_dist - point_proj)
-					< 1e-8 * sphere.radius * affine_dist))
+			}
+			VectorSubtract (points[i], affine, p);
+			pp = DotProduct (p, p);
+			pv = DotProduct (p, v);
+			if (pp <= rr || pv <= 0 || pv * pv < 1e-6 * rr) {
 				continue;
-			point_dist = DotProduct (center_to_point, center_to_point);
-			bound = sphere.radius - point_dist;
-			bound /= 2 * (affine_dist - point_proj);
-			if (bound < scale) {
+			}
+			x = (pp - rr) / (2 * pv);
+			if (x > best_x) {
 				best = points[i];
-				scale = bound;
+				best_i = i;
+				best_x = x;
 			}
 		}
-		VectorMultAdd (sphere.center, scale, center_to_affine, sphere.center);
+		VectorMultAdd (affine, best_x, v, sphere.center);
 		sphere.radius = VectorDistance_fast (sphere.center, support[0]);
 		if (best) {
 			support[num_support++] = best;
+			set_add (&was_support, best_i);
 		}
 	}
 	best_dist = 0;

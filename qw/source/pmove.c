@@ -724,7 +724,7 @@ NudgePosition (void)
 		}
 	}
 	VectorCopy (base, pmove.origin);
-//	Sys_MaskPrintf (SYS_DEV, "NudgePosition: stuck\n");
+//	Sys_MaskPrintf (SYS_dev, "NudgePosition: stuck\n");
 }
 
 static void

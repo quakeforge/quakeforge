@@ -49,7 +49,11 @@ QF_ALSA_NEED (int, snd_pcm_hw_params_get_period_size, (const snd_pcm_hw_params_t
 QF_ALSA_NEED (int, snd_pcm_hw_params_set_access, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params, snd_pcm_access_t access))
 QF_ALSA_NEED (int, snd_pcm_hw_params_set_period_size_near, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params, snd_pcm_uframes_t *val, int *dir))
 QF_ALSA_NEED (int, snd_pcm_hw_params_set_rate_near, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params, unsigned int *val, int *dir))
+QF_ALSA_NEED (int, snd_pcm_hw_params_set_rate, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params, unsigned int val, int dir))
+QF_ALSA_NEED (int, snd_pcm_hw_params_get_rate, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params, unsigned int *val, int *dir))
 #endif
+QF_ALSA_NEED (int, snd_pcm_prepare, (snd_pcm_t *pcm))
+QF_ALSA_NEED (int, snd_pcm_resume, (snd_pcm_t *pcm))
 QF_ALSA_NEED (int, snd_pcm_hw_params_set_channels, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params, unsigned int val))
 QF_ALSA_NEED (int, snd_pcm_hw_params_set_format, (snd_pcm_t *pcm, snd_pcm_hw_params_t *params, snd_pcm_format_t val))
 QF_ALSA_NEED (size_t, snd_pcm_hw_params_sizeof, (void))
@@ -66,6 +70,11 @@ QF_ALSA_NEED (int, snd_pcm_sw_params_set_start_threshold, (snd_pcm_t *pcm, snd_p
 QF_ALSA_NEED (int, snd_pcm_sw_params_set_stop_threshold, (snd_pcm_t *pcm, snd_pcm_sw_params_t *params, snd_pcm_uframes_t val))
 QF_ALSA_NEED (size_t, snd_pcm_sw_params_sizeof, (void))
 QF_ALSA_NEED (const char *, snd_strerror, (int errnum))
+
+QF_ALSA_NEED (int, snd_async_add_pcm_handler, (snd_async_handler_t **handler, snd_pcm_t *pcm, snd_async_callback_t callback, void *private_data))
+QF_ALSA_NEED (snd_pcm_t *, snd_async_handler_get_pcm, (snd_async_handler_t *handler))
+QF_ALSA_NEED (void *, snd_async_handler_get_callback_private, (snd_async_handler_t *handler))
+QF_ALSA_NEED (int, snd_async_del_handler, (snd_async_handler_t *handler))
 
 #ifdef UNDEF_QF_ALSA_NEED
 #undef QF_ALSA_NEED

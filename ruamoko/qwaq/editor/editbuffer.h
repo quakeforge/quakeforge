@@ -34,6 +34,7 @@ typedef struct eb_color_s {
 - (unsigned) prevChar: (unsigned) charPtr;
 - (unsigned) nextNonSpace: (unsigned) charPtr;
 - (unsigned) prevNonSpace: (unsigned) charPtr;
+- (int) isWord: (unsigned) charPtr;
 - (unsigned) nextWord: (unsigned) wordPtr;
 - (unsigned) prevWord: (unsigned) wordPtr;
 - (unsigned) nextLine: (unsigned) linePtr;
@@ -50,7 +51,11 @@ typedef struct eb_color_s {
 - (unsigned) getEOL: (unsigned) linePtr;
 - (unsigned) getBOT;
 - (unsigned) getEOT;
+
 - (string) readString: (eb_sel_t) selection;
+- (int) getChar: (unsigned) charPtr;
+- (void) putChar: (int) char at:(unsigned) charPtr;
+- (void) insertChar: (int) char at:(unsigned) charPtr;
 
 - (unsigned) countLines: (eb_sel_t) selection;
 - (eb_sel_t) search: (eb_sel_t) selection

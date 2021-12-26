@@ -28,13 +28,13 @@
 #ifndef _CLIENT_H
 #define _CLIENT_H
 
-#include "QF/entity.h"
 #include "QF/info.h"
 #include "QF/quakefs.h"
 #include "QF/vid.h"
 #include "QF/zone.h"
 
 #include "QF/plugin/vid_render.h"
+#include "QF/scene/entity.h"
 
 #include "client/entities.h"
 #include "client/state.h"
@@ -270,9 +270,11 @@ typedef struct client_state_s {
 /*
   cvars
 */
-extern	struct cvar_s	*r_netgraph;
-extern	struct cvar_s	*r_netgraph_alpha;
-extern	struct cvar_s	*r_netgraph_box;
+extern	struct cvar_s	*cl_netgraph;
+extern	struct cvar_s	*cl_netgraph_height;
+extern	struct cvar_s	*cl_netgraph_alpha;
+extern	struct cvar_s	*cl_netgraph_box;
+
 extern	struct cvar_s	*cl_upspeed;
 extern	struct cvar_s	*cl_forwardspeed;
 extern	struct cvar_s	*cl_backspeed;
@@ -331,7 +333,10 @@ extern struct cbuf_s *cl_stbuf;
 
 void Cvar_Info (struct cvar_s *var);
 
-void CL_NetGraph (void);
+extern struct view_s *cl_netgraph_view;
+void CL_NetGraph (struct view_s *view);
+void CL_NetGraph_Init_Cvars (void);
+
 void CL_UpdateScreen (double realtime);
 
 void CL_SetState (cactive_t state);

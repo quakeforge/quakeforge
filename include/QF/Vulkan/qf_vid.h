@@ -61,21 +61,18 @@ struct vulkan_ctx_s;
 void Vulkan_DestroyFrames (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateFrames (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateCapture (struct vulkan_ctx_s *ctx);
-void Vulkan_CreateFramebuffers (struct vulkan_ctx_s *ctx);
-void Vulkan_DestroyFramebuffers (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateRenderPass (struct vulkan_ctx_s *ctx);
-void Vulkan_DestroyRenderPass (struct vulkan_ctx_s *ctx);
-void Vulkan_CreateMatrices (struct vulkan_ctx_s *ctx);
-void Vulkan_DestroyMatrices (struct vulkan_ctx_s *ctx);
-void Vulkan_CalcProjectionMatrices (struct vulkan_ctx_s *ctx, float aspect);
-void Vulkan_CalcViewMatrix (struct vulkan_ctx_s *ctx);
+void Vulkan_DestroyRenderPasses (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateSwapchain (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateDevice (struct vulkan_ctx_s *ctx);
 void Vulkan_Init_Common (struct vulkan_ctx_s *ctx);
 void Vulkan_Shutdown_Common (struct vulkan_ctx_s *ctx);
 void Vulkan_CreateStagingBuffers (struct vulkan_ctx_s *ctx);
 
-VkPipeline Vulkan_CreatePipeline (struct vulkan_ctx_s *ctx, const char *name);
+VkPipeline Vulkan_CreateComputePipeline (struct vulkan_ctx_s *ctx,
+										 const char *name);
+VkPipeline Vulkan_CreateGraphicsPipeline (struct vulkan_ctx_s *ctx,
+										  const char *name);
 VkDescriptorPool Vulkan_CreateDescriptorPool (struct vulkan_ctx_s *ctx,
 											  const char *name);
 VkPipelineLayout Vulkan_CreatePipelineLayout (struct vulkan_ctx_s *ctx,

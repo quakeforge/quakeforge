@@ -61,4 +61,13 @@ byte ConvertColor (const byte *rgb, const byte *pal, colcache_t *cache);
 byte ConvertFloatColor (const float *rgb, const byte *pal, colcache_t *cache);
 tex_t *ConvertImage (const tex_t *tex, const byte *pal);
 
+size_t ImageSize (const tex_t *tex, int incl_struct) __attribute__((pure));
+
+typedef struct colcache_s colcache_t;
+
+colcache_t *ColorCache_New (void);
+void ColorCache_Delete (colcache_t *cache);
+byte ConvertColor (const byte *rgb, const byte *pal, colcache_t *cache);
+tex_t *ConvertImage (const tex_t *tex, const byte *pal);
+
 #endif//__QF_image_h

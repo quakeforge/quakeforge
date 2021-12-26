@@ -148,7 +148,7 @@ I_XMMS_Running (void)
 				break;
 			case -1:					// ICH!
 				// inform user
-				Sys_MaskPrintf (SYS_SND, "XMMSAudio: error, can't fork!?\n");
+				Sys_MaskPrintf (SYS_snd, "XMMSAudio: error, can't fork!?\n");
 				break;
 			default:					// Parent
 				// don't need now :/
@@ -489,6 +489,7 @@ static general_funcs_t plugin_info_general_funcs = {
 };
 
 static cd_funcs_t plugin_info_cd_funcs = {
+	0,
 	I_XMMS_f,
 	I_XMMS_Pause,
 	I_XMMS_Play,

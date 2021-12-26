@@ -42,6 +42,7 @@
 #include "QF/cvar.h"
 #include "QF/msg.h"
 #include "QF/ruamoko.h"
+#include "QF/set.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
@@ -74,7 +75,7 @@ PF_error (progs_t *pr)
 	Sys_Printf ("======SERVER ERROR in %s:\n%s\n",
 				PR_GetString (pr, pr->pr_xfunction->descriptor->s_name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
-	ED_Print (pr, ed);
+	ED_Print (pr, ed, 0);
 
 	Host_Error ("Program error");
 }
@@ -98,7 +99,7 @@ PF_objerror (progs_t *pr)
 	Sys_Printf ("======OBJECT ERROR in %s:\n%s\n",
 				PR_GetString (pr, pr->pr_xfunction->descriptor->s_name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
-	ED_Print (pr, ed);
+	ED_Print (pr, ed, 0);
 	ED_Free (pr, ed);
 
 	Host_Error ("Program error");
@@ -539,12 +540,11 @@ PF_checkpos (progs_t *pr)
 {
 }
 
-byte        checkpvs[MAP_PVS_BYTES];
+static set_t *checkpvs;
 
 static int
 PF_newcheckclient (progs_t *pr, int check)
 {
-	byte       *pvs;
 	edict_t    *ent;
 	int         i;
 	mleaf_t    *leaf;
@@ -584,8 +584,10 @@ PF_newcheckclient (progs_t *pr, int check)
 	// get the PVS for the entity
 	VectorAdd (SVvector (ent, origin), SVvector (ent, view_ofs), org);
 	leaf = Mod_PointInLeaf (org, sv.worldmodel);
-	pvs = Mod_LeafPVS (leaf, sv.worldmodel);
-	memcpy (checkpvs, pvs, (sv.worldmodel->brush.numleafs + 7) >> 3);
+	if (!checkpvs) {
+		checkpvs = set_new_size (sv.worldmodel->brush.visleafs);
+	}
+	set_assign (checkpvs, Mod_LeafPVS (leaf, sv.worldmodel));
 
 	return i;
 }
@@ -631,7 +633,7 @@ PF_checkclient (progs_t *pr)
 	VectorAdd (SVvector (self, origin), SVvector (self, view_ofs), view);
 	leaf = Mod_PointInLeaf (view, sv.worldmodel);
 	l = (leaf - sv.worldmodel->brush.leafs) - 1;
-	if ((l < 0) || !(checkpvs[l >> 3] & (1 << (l & 7)))) {
+	if (!set_is_member (checkpvs, l)) {
 		c_notvis++;
 		RETURN_EDICT (pr, sv.edicts);
 		return;
@@ -767,7 +769,7 @@ do_precache (progs_t *pr, const char **cache, int max, const char *name,
 
 	PR_CheckEmptyString (pr, name);
 
-	s = Hunk_TempAlloc (strlen (name) + 1);
+	s = Hunk_TempAlloc (0, strlen (name) + 1);
 	for (i = 0; *name; i++, name++) {
 		int         c = (byte) *name;
 		s[i] = tolower (c);
@@ -776,10 +778,10 @@ do_precache (progs_t *pr, const char **cache, int max, const char *name,
 
 	for (i = 0; i < MAX_SOUNDS; i++) {
 		if (!cache[i]) {
-			char *c = Hunk_Alloc (strlen (s) + 1);
+			char *c = Hunk_Alloc (0, strlen (s) + 1);
 			strcpy (c, s);
 			cache[i] = c; // blah, const
-			Sys_MaskPrintf (SYS_DEV, "%s: %3d %s\n", func, i, s);
+			Sys_MaskPrintf (SYS_dev, "%s: %3d %s\n", func, i, s);
 			return i;
 		}
 		if (!strcmp (cache[i], s))

@@ -24,8 +24,8 @@
 		Boston, MA  02111-1307, USA
 
 */
-#ifndef __QF_plugin_vid_render_h_
-#define __QF_plugin_vid_render_h_
+#ifndef __QF_plugin_vid_render_h
+#define __QF_plugin_vid_render_h
 
 #include <QF/draw.h>
 #include <QF/plugin.h>
@@ -38,48 +38,11 @@ struct cvar_s;
 struct skin_s;
 
 struct mod_alias_ctx_s;
+struct mod_sprite_ctx_s;
 
 /*
 	All video plugins must export these functions
 */
-
-typedef struct vid_particle_funcs_s {
-	void (*R_RocketTrail) (const struct entity_s *ent);
-	void (*R_GrenadeTrail) (const struct entity_s *ent);
-	void (*R_BloodTrail) (const struct entity_s *ent);
-	void (*R_SlightBloodTrail) (const struct entity_s *ent);
-	void (*R_WizTrail) (const struct entity_s *ent);
-	void (*R_FlameTrail) (const struct entity_s *ent);
-	void (*R_VoorTrail) (const struct entity_s *ent);
-	void (*R_GlowTrail) (const struct entity_s *ent, int glow_color);
-
-	void (*R_RunParticleEffect) (const vec3_t org, const vec3_t dir,
-									int color, int count);
-	void (*R_BloodPuffEffect) (const vec3_t org, int count);
-	void (*R_GunshotEffect) (const vec3_t org, int count);
-	void (*R_LightningBloodEffect) (const vec3_t org);
-	void (*R_SpikeEffect) (const vec3_t org);
-	void (*R_KnightSpikeEffect) (const vec3_t org);
-	void (*R_SuperSpikeEffect) (const vec3_t org);
-	void (*R_WizSpikeEffect) (const vec3_t org);
-
-	void (*R_BlobExplosion) (const vec3_t org);
-	void (*R_ParticleExplosion) (const vec3_t org);
-	void (*R_ParticleExplosion2) (const vec3_t org, int colorStart,
-									 int colorLength);
-	void (*R_LavaSplash) (const vec3_t org);
-	void (*R_TeleportSplash) (const vec3_t org);
-	void (*R_DarkFieldParticles) (const struct entity_s *ent);
-	void (*R_EntityParticles) (const struct entity_s *ent);
-
-	void (*R_Particle_New) (ptype_t type, int texnum, const vec3_t org,
-							float scale, const vec3_t vel, float die,
-							int color, float alpha, float ramp);
-	void (*R_Particle_NewRandom) (ptype_t type, int texnum, const vec3_t org,
-								  int org_fuzz, float scale, int vel_fuzz,
-								  float die, int color, float alpha,
-								  float ramp);
-} vid_particle_funcs_t;
 
 typedef struct vid_model_funcs_s {
 	size_t      texture_render_size;// size of renderer specific texture data
@@ -99,8 +62,7 @@ typedef struct vid_model_funcs_s {
 	void (*Mod_LoadExternalSkins) (struct mod_alias_ctx_s *alias_ctx);
 	void (*Mod_IQMFinish) (model_t *mod);
 	int alias_cache;
-	void (*Mod_SpriteLoadTexture) (model_t *mod, mspriteframe_t *pspriteframe,
-								   int framenum);
+	void (*Mod_SpriteLoadFrames) (struct mod_sprite_ctx_s *sprite_ctx);
 
 	struct skin_s *(*Skin_SetColormap) (struct skin_s *skin, int cmap);
 	struct skin_s *(*Skin_SetSkin) (struct skin_s *skin, int cmap,
@@ -112,6 +74,7 @@ typedef struct vid_model_funcs_s {
 } vid_model_funcs_t;
 
 typedef struct vid_render_funcs_s {
+	void      (*init) (void);
 	void (*Draw_Character) (int x, int y, unsigned ch);
 	void (*Draw_String) (int x, int y, const char *str);
 	void (*Draw_nString) (int x, int y, const char *str, int count);
@@ -139,7 +102,7 @@ typedef struct vid_render_funcs_s {
 	void (*SCR_DrawTurtle) (void);
 	void (*SCR_DrawPause) (void);
 	struct tex_s *(*SCR_CaptureBGR) (void);
-	struct tex_s *(*SCR_ScreenShot) (int width, int height);
+	struct tex_s *(*SCR_ScreenShot) (unsigned width, unsigned height);
 	void (*SCR_DrawStringToSnap) (const char *s, struct tex_s *tex,
 								  int x, int y);
 
@@ -147,36 +110,30 @@ typedef struct vid_render_funcs_s {
 						float time);
 	void (*Fog_ParseWorldspawn) (struct plitem_s *worldspawn);
 
+	struct psystem_s *(*ParticleSystem) (void);
 	void (*R_Init) (void);
-	void (*R_RenderFrame) (SCR_Func scr_3dfunc, SCR_Func *scr_funcs);
+	void (*R_RenderFrame) (SCR_Func *scr_funcs);
 	void (*R_ClearState) (void);
 	void (*R_LoadSkys) (const char *);
 	void (*R_NewMap) (model_t *worldmodel, model_t **models, int num_models);
 	void (*R_AddEfrags) (mod_brush_t *brush, entity_t *ent);
 	void (*R_RemoveEfrags) (entity_t *ent);
-	void (*R_EnqueueEntity) (struct entity_s *ent);	//FIXME should not be here
-	void (*R_LineGraph) (int x, int y, int *h_vals, int count);
+	void (*R_LineGraph) (int x, int y, int *h_vals, int count, int height);
 	dlight_t *(*R_AllocDlight) (int key);
 	entity_t *(*R_AllocEntity) (void);
 	void (*R_MaxDlightsCheck) (struct cvar_s *var);
-	void (*R_RenderView) (void);
 	void (*R_DecayLights) (double frametime);
 
-	void (*R_ViewChanged) (float aspect);
-	void (*R_ClearParticles) (void);
-	void (*R_InitParticles) (void);
+	void (*R_ViewChanged) (void);
 	void (*SCR_ScreenShot_f) (void);
-	void (*r_easter_eggs_f) (struct cvar_s *var);
-	void (*r_particles_style_f) (struct cvar_s *var);
 
-	vid_particle_funcs_t *particles;
 	vid_model_funcs_t *model_funcs;
 } vid_render_funcs_t;
 
 typedef struct vid_render_data_s {
 	viddef_t   *vid;
 	refdef_t   *refdef;
-	vrect_t    *scr_vrect;
+	struct view_s *scr_view;
 	int         scr_copytop;
 	int         scr_copyeverything;
 	int         scr_fullupdate;	// set to 0 to force full redraw
@@ -200,4 +157,4 @@ typedef struct vid_render_data_s {
 	vec_t      *vup;
 } vid_render_data_t;
 
-#endif // __QF_plugin_vid_render_h_
+#endif // __QF_plugin_vid_render_h

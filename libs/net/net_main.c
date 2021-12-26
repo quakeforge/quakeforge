@@ -97,8 +97,10 @@ qboolean    recording = false;
 
 int         net_driverlevel;
 
-
 double      net_time;
+
+static int         hostCacheCount = 0;
+static hostcache_t hostcache[HOSTCACHESIZE];
 
 double
 SetNetTime (void)
@@ -265,6 +267,58 @@ PrintSlistHeader (void)
 	slistLastShown = 0;
 }
 
+void
+NET_AddCachedHost (const char *name, const char *map, const char *cname,
+				   int users, int maxusers, int driver, int ldriver,
+				   const netadr_t *addr)
+{
+	if (hostCacheCount == HOSTCACHESIZE) {
+		return;
+	}
+	for (int i = 0; i < hostCacheCount; i++) {
+		// addr will be 0 for loopback, and there can be only one loopback
+		// server.
+		if (!addr || !memcmp (addr, &hostcache[i].addr, sizeof (netadr_t))) {
+			return;
+		}
+	}
+
+	const int   namesize = sizeof (hostcache[0].name) - 1;
+	const int   mapsize = sizeof (hostcache[0].map) - 1;
+	const int   cnamesize = sizeof (hostcache[0].cname) - 1;
+
+	hostcache_t *host = &hostcache[hostCacheCount++];
+	strncpy (host->name, name, namesize);
+	strncpy (host->map, map, mapsize);
+	strncpy (host->cname, cname, cnamesize);
+	host->name[namesize] = 0;
+	host->map[mapsize] = 0;
+	host->cname[cnamesize] = 0;
+
+	host->users = users;
+	host->maxusers = maxusers;
+	host->driver = driver;
+	host->ldriver = ldriver;
+	if (addr) {
+		host->addr = *addr;
+	} else {
+		memset (&host->addr, 0, sizeof (host->addr));
+	}
+
+	// check for and resolve name conflicts
+	for (int i = 0; i < hostCacheCount - 1; i++) {
+		if (strcasecmp (host->name, hostcache[i].name) == 0) {
+			int         len = strlen (host->name);
+			if (len < namesize && host->name[len - 1] > '8') {
+				host->name[len] = '0';
+				host->name[len + 1] = 0;
+			} else {
+				host->name[len - 1]++;
+			}
+			i = -1;	// restart loop
+		}
+	}
+}
 
 static void
 PrintSlist (void)
@@ -358,10 +412,6 @@ Slist_Poll (void *unused)
 	slistSilent = false;
 	slistLocal = true;
 }
-
-
-int         hostCacheCount = 0;
-hostcache_t hostcache[HOSTCACHESIZE];
 
 qsocket_t *
 NET_Connect (const char *host)
@@ -488,7 +538,7 @@ NET_Close (qsocket_t *sock)
 	// call the driver_Close function
 	sfunc.Close (sock);
 
-	Sys_MaskPrintf (SYS_NET, "closing socket\n");
+	Sys_MaskPrintf (SYS_net, "closing socket\n");
 	NET_FreeQSocket (sock);
 }
 
@@ -522,7 +572,7 @@ NET_GetMessage (qsocket_t *sock)
 	// see if this connection has timed out
 	if (ret == 0 && sock->driver) {
 		if (net_time - sock->lastMessageTime > net_messagetimeout->value) {
-			Sys_MaskPrintf (SYS_NET, "socket timed out\n");
+			Sys_MaskPrintf (SYS_net, "socket timed out\n");
 			NET_Close (sock);
 			return -1;
 		}
@@ -785,7 +835,7 @@ NET_Init (void)
 	SetNetTime ();
 
 	for (i = 0; i < net_numsockets; i++) {
-		s = (qsocket_t *) Hunk_AllocName (sizeof (qsocket_t), "qsocket");
+		s = (qsocket_t *) Hunk_AllocName (0, sizeof (qsocket_t), "qsocket");
 		s->next = net_freeSockets;
 		net_freeSockets = s;
 		s->disconnected = true;
@@ -816,7 +866,7 @@ NET_Init (void)
 	}
 
 	if (*my_tcpip_address)
-		Sys_MaskPrintf (SYS_NET, "TCP/IP address %s\n", my_tcpip_address);
+		Sys_MaskPrintf (SYS_net, "TCP/IP address %s\n", my_tcpip_address);
 }
 
 

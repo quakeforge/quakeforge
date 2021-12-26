@@ -116,7 +116,7 @@ void Mat3SymEigen (const mat3_t m, vec3_t e);
 	VectorShear (shear, v, v);
 	VectorCompMult (scale, v, v);
 */
-int Mat3Decompose (const mat4_t mat, quat_t rot, vec3_t shear, vec3_t scale);
+int Mat3Decompose (const mat3_t mat, quat_t rot, vec3_t shear, vec3_t scale);
 
 ///@}
 

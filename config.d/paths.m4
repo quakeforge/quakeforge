@@ -1,9 +1,7 @@
 dnl Whether to enable XDG support or not
-AC_ARG_ENABLE(xdg,
-[  --enable-xdg               enable XDG support],
+AC_ARG_ENABLE(xdg, AS_HELP_STRING([--enable-xdg], [enable XDG support]),
   xdg=$enable_xdg,
-  xdg=no
-)
+  xdg=no)
 if test "x$xdg" != xno; then
   HAVE_XDG=yes
 else
@@ -36,10 +34,10 @@ else
 fi
 
 AC_ARG_WITH(global-cfg,
-[  --with-global-cfg=FILE  If set will change the name and location of the
-                          global config file used by QuakeForge.  Defaults to
-                          /etc/quakeforge.conf.],
-globalconf="$withval", globalconf="auto")
+	AS_HELP_STRING([--with-global-cfg=FILE],
+		[if set will change the name and location of the global config file]
+		[used by QuakeForge.  Defaults to /etc/quakeforge.conf.]),
+	globalconf="$withval", globalconf="auto")
 if test "x$globalconf" = "xauto" || test "x$globalconf" = "xyes" || \
 	test "x$globalconf" = "xno"; then  dnl yes/no sanity checks
 	globalconf="$default_globalconf"
@@ -47,10 +45,10 @@ fi
 AC_DEFINE_UNQUOTED(FS_GLOBALCFG, "$globalconf", [Define this to the location of the global config file])
 
 AC_ARG_WITH(user-cfg,
-[  --with-user-cfg=FILE    If set will change the name and location of the
-                          user-specific config file used by QuakeForge.
-                          Defaults to ~/.quakeforgerc.],
-userconf="$withval", userconf="auto")
+	AS_HELP_STRING([--with-user-cfg=FILE],
+		[if set will change the name and location of the user-specific config]
+		[file used by QuakeForge.  Defaults to ~/.quakeforgerc.]),
+	userconf="$withval", userconf="auto")
 if test "x$userconf" = "xauto" || test "x$userconf" = "xyes" || \
 	test "x$userconf" = "xno"; then  dnl yes/no sanity checks
 	userconf="$default_userconf"
@@ -58,9 +56,10 @@ fi
 AC_DEFINE_UNQUOTED(FS_USERCFG, "$userconf", [Define this to the location of the user config file])
 
 AC_ARG_WITH(sharepath,
-[  --with-sharepath=DIR    Use DIR for shared game data, defaults to
-                          '.' or \${datarootdir}/games/quakeforge (if new style)],
-sharepath=$withval, sharepath="auto")
+	AS_HELP_STRING([--with-sharepath=DIR],
+		[use DIR for shared game data, defaults to '.' or]
+		[${datarootdir}/games/quakeforge (if new style)]),
+	sharepath=$withval, sharepath="auto")
 if test "x$sharepath" = "xauto" -o "x$sharepath" = "xyes" -o "x$sharepath" = "x"; then
 	sharepath="$default_sharepath"
 elif test "x$sharepath" = xno; then
@@ -70,9 +69,10 @@ AC_DEFINE_UNQUOTED(FS_SHAREPATH, "$sharepath", [Define this to the shared game d
 QF_SUBST(sharepath)
 
 AC_ARG_WITH(userpath,
-[  --with-userpath=DIR     Use DIR for unshared game data, defaults to
-                          '.' or ~/.quakeforge (if new style)],
-userpath=$withval, userpath="auto")
+	AS_HELP_STRING([--with-userpath=DIR],
+		[use DIR for unshared game data, defaults to '.' or ~/.quakeforge]
+		[(if new style)]),
+	userpath=$withval, userpath="auto")
 if test "x$userpath" = "xauto" -o "x$userpath" = "xyes" -o "x$userpath" = "x"; then
 	userpath="$default_userpath"
 elif test "x$userpath" = xno; then
@@ -81,9 +81,9 @@ fi
 AC_DEFINE_UNQUOTED(FS_USERPATH, "$userpath", [Define this to the unshared game directory root])
 
 AC_ARG_WITH(plugin-path,
-[  --with-plugin-path=DIR  Use DIR for loading plugins, defaults to
-                          \${libdir}/quakeforge],
-plugindir=$withval, plugindir="auto")
+	AS_HELP_STRING([--with-plugin-path=DIR],
+		[use DIR for loading plugins, defaults to ${libdir}/quakeforge]),
+	plugindir=$withval, plugindir="auto")
 
 PLUGINDIR="\${libdir}/quakeforge/plugins"
 if test "x$plugindir" = "xauto" -o "x$plugindir" = "xyes" -o "x$plugindir" = "x"; then
@@ -112,7 +112,7 @@ AC_DEFINE_UNQUOTED(FS_SHADERPATH, "$expanded_shaderdir", [Define this to the pat
 AC_SUBST(plugindir)
 
 AC_ARG_WITH(gl-driver,
-	[  --with-gl-driver=NAME   Name of OpenGL driver DLL/DSO],
+	AS_HELP_STRING([--with-gl-driver=NAME], [name of OpenGL driver DLL/DSO]),
 	gl_driver=$withval,
 	gl_driver=auto
 )

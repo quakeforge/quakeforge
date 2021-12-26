@@ -1,22 +1,28 @@
 libs_util_tests = \
 	libs/util/test/test-bary \
+	libs/util/test/test-baryvf \
+	libs/util/test/test-bsearch \
 	libs/util/test/test-cexpr \
 	libs/util/test/test-cmem \
 	libs/util/test/test-cs \
+	libs/util/test/test-csvf \
 	libs/util/test/test-darray \
 	libs/util/test/test-dq \
 	libs/util/test/test-half \
+	libs/util/test/test-heapsort \
+	libs/util/test/test-listener \
 	libs/util/test/test-mat3 \
 	libs/util/test/test-mat4 \
 	libs/util/test/test-plist \
+	libs/util/test/test-pqueue \
 	libs/util/test/test-qfs \
 	libs/util/test/test-quat \
 	libs/util/test/test-seb \
+	libs/util/test/test-sebvf \
 	libs/util/test/test-seg \
 	libs/util/test/test-set \
 	libs/util/test/test-simd \
-	libs/util/test/test-txtbuffer \
-	libs/util/test/test-vrect
+	libs/util/test/test-utf8
 
 TESTS += $(libs_util_tests)
 
@@ -25,6 +31,14 @@ check_PROGRAMS += $(libs_util_tests)
 libs_util_test_test_bary_SOURCES=libs/util/test/test-bary.c
 libs_util_test_test_bary_LDADD=libs/util/libQFutil.la
 libs_util_test_test_bary_DEPENDENCIES=libs/util/libQFutil.la
+
+libs_util_test_test_baryvf_SOURCES=libs/util/test/test-baryvf.c
+libs_util_test_test_baryvf_LDADD=libs/util/libQFutil.la
+libs_util_test_test_baryvf_DEPENDENCIES=libs/util/libQFutil.la
+
+libs_util_test_test_bsearch_SOURCES=libs/util/test/test-bsearch.c
+libs_util_test_test_bsearch_LDADD=libs/util/libQFutil.la
+libs_util_test_test_bsearch_DEPENDENCIES=libs/util/libQFutil.la
 
 libs_util_test_test_cexpr_SOURCES=libs/util/test/test-cexpr.c
 libs_util_test_test_cexpr_LDADD=libs/util/libQFutil.la
@@ -38,6 +52,10 @@ libs_util_test_test_cs_SOURCES=libs/util/test/test-cs.c
 libs_util_test_test_cs_LDADD=libs/util/libQFutil.la
 libs_util_test_test_cs_DEPENDENCIES=libs/util/libQFutil.la
 
+libs_util_test_test_csvf_SOURCES=libs/util/test/test-csvf.c
+libs_util_test_test_csvf_LDADD=libs/util/libQFutil.la
+libs_util_test_test_csvf_DEPENDENCIES=libs/util/libQFutil.la
+
 libs_util_test_test_darray_SOURCES=libs/util/test/test-darray.c
 libs_util_test_test_darray_LDADD=libs/util/libQFutil.la
 libs_util_test_test_darray_DEPENDENCIES=libs/util/libQFutil.la
@@ -49,6 +67,14 @@ libs_util_test_test_dq_DEPENDENCIES=libs/util/libQFutil.la
 libs_util_test_test_half_SOURCES=libs/util/test/test-half.c
 libs_util_test_test_half_LDADD=libs/util/libQFutil.la
 libs_util_test_test_half_DEPENDENCIES=libs/util/libQFutil.la
+
+libs_util_test_test_heapsort_SOURCES=libs/util/test/test-heapsort.c
+libs_util_test_test_heapsort_LDADD=libs/util/libQFutil.la
+libs_util_test_test_heapsort_DEPENDENCIES=libs/util/libQFutil.la
+
+libs_util_test_test_listener_SOURCES=libs/util/test/test-listener.c
+libs_util_test_test_listener_LDADD=libs/util/libQFutil.la
+libs_util_test_test_listener_DEPENDENCIES=libs/util/libQFutil.la
 
 libs_util_test_test_mat3_SOURCES=libs/util/test/test-mat3.c
 libs_util_test_test_mat3_LDADD=libs/util/libQFutil.la
@@ -62,6 +88,10 @@ libs_util_test_test_plist_SOURCES=libs/util/test/test-plist.c
 libs_util_test_test_plist_LDADD=libs/util/libQFutil.la
 libs_util_test_test_plist_DEPENDENCIES=libs/util/libQFutil.la
 
+libs_util_test_test_pqueue_SOURCES=libs/util/test/test-pqueue.c
+libs_util_test_test_pqueue_LDADD=libs/util/libQFutil.la
+libs_util_test_test_pqueue_DEPENDENCIES=libs/util/libQFutil.la
+
 libs_util_test_test_qfs_SOURCES=libs/util/test/test-qfs.c
 libs_util_test_test_qfs_LDADD=libs/util/libQFutil.la
 libs_util_test_test_qfs_DEPENDENCIES=libs/util/libQFutil.la
@@ -73,6 +103,10 @@ libs_util_test_test_quat_DEPENDENCIES=libs/util/libQFutil.la
 libs_util_test_test_seb_SOURCES=libs/util/test/test-seb.c
 libs_util_test_test_seb_LDADD=libs/util/libQFutil.la
 libs_util_test_test_seb_DEPENDENCIES=libs/util/libQFutil.la
+
+libs_util_test_test_sebvf_SOURCES=libs/util/test/test-sebvf.c
+libs_util_test_test_sebvf_LDADD=libs/util/libQFutil.la
+libs_util_test_test_sebvf_DEPENDENCIES=libs/util/libQFutil.la
 
 libs_util_test_test_seg_SOURCES=libs/util/test/test-seg.c
 libs_util_test_test_seg_LDADD=libs/util/libQFutil.la
@@ -86,10 +120,6 @@ libs_util_test_test_simd_SOURCES=libs/util/test/test-simd.c
 libs_util_test_test_simd_LDADD=libs/util/libQFutil.la
 libs_util_test_test_simd_DEPENDENCIES=libs/util/libQFutil.la
 
-libs_util_test_test_txtbuffer_SOURCES=libs/util/test/test-txtbuffer.c
-libs_util_test_test_txtbuffer_LDADD=libs/util/libQFutil.la
-libs_util_test_test_txtbuffer_DEPENDENCIES=libs/util/libQFutil.la
-
-libs_util_test_test_vrect_SOURCES=libs/util/test/test-vrect.c
-libs_util_test_test_vrect_LDADD=libs/util/libQFutil.la
-libs_util_test_test_vrect_DEPENDENCIES=libs/util/libQFutil.la
+libs_util_test_test_utf8_SOURCES=libs/util/test/test-utf8.c
+libs_util_test_test_utf8_LDADD=libs/util/libQFutil.la
+libs_util_test_test_utf8_DEPENDENCIES=libs/util/libQFutil.la

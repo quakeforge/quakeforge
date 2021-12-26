@@ -54,7 +54,7 @@ vid_render_data_t *r_data;
 vid_render_funcs_t *r_funcs;
 
 void
-Key_KeydestCallback (keydest_callback_t *callback)
+GIB_Key_Init (void)
 {
 }
 
@@ -114,6 +114,12 @@ CL_NextDemo (void)
 }
 
 __attribute__((const)) int
+CL_ReadConfiguration (const char *cfg_name)
+{
+	return 0;
+}
+
+__attribute__((const)) int
 CL_ReadFromServer (void)
 {
 	return 0;
@@ -131,11 +137,6 @@ CL_StopPlayback (void)
 
 void
 IN_ProcessEvents (void)
-{
-}
-
-void
-Key_WriteBindings (QFile *f)
 {
 }
 

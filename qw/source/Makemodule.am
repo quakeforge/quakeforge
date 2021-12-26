@@ -30,7 +30,7 @@
 bin_PROGRAMS += @QW_TARGETS@
 
 EXTRA_PROGRAMS += \
-	qw-client-fbdev qw-client-sdl qw-client-svga qw-client-wgl qw-client-x11 \
+	qw-client-fbdev qw-client-sdl qw-client-svga qw-client-win qw-client-x11 \
 	qw-server qw-master
 
 noinst_LIBRARIES += @qw_libs@
@@ -67,6 +67,7 @@ qw_server_LIBS= \
 		libs/ruamoko/libQFruamoko.la \
 		libs/gamecode/libQFgamecode.la \
 		libs/console/libQFconsole.la \
+		libs/ui/libQFui.la \
 		libs/util/libQFutil.la
 
 qw_server_deps=qw/source/libqw_server.a qw/source/libqw_common.a $(qw_server_LIBS)
@@ -86,15 +87,17 @@ qw_cl_plugin_LIBS= \
 
 qw_client_LIBS= \
 		libs/qw/libqw.a \
+		libs/gib/libQFgib_client.la \
 		libs/net/libnet_chan.la \
-		libs/entity/libQFentity.la \
+		libs/scene/libQFscene.la \
 		libs/console/libQFconsole.la \
-		libs/video/targets/libQFjs.la \
 		libs/audio/libQFcd.la \
 		libs/audio/libQFsound.la \
 		libs/image/libQFimage.la \
 		libs/gib/libQFgib.la \
 		libs/ruamoko/libQFruamoko.la \
+		libs/ui/libQFui.la \
+		libs/input/libQFinput.la \
 		libs/util/libQFutil.la
 qw_client_libs= qw/source/libqw_client.a qw/source/libqw_common.a \
 			libs/client/libQFclient.la
@@ -158,19 +161,21 @@ qw_client_x11_libs= \
 			$(qw_client_LIBS)
 qw_client_x11_SOURCES=	qw/source/cl_sys_unix.c
 qw_client_x11_LDADD= $(qw_client_x11_libs) \
-			$(VIDMODE_LIBS) $(DGA_LIBS) $(X_LIBS) -lX11 \
-			$(X_EXTRA_LIBS) $(X_SHM_LIB) $(NET_LIBS) $(LIBCURL_LIBS) $(DL_LIBS)
+			$(VIDMODE_LIBS) $(DGA_LIBS) ${XFIXES_LIBS} $(XI2_LIBS) $(X_LIBS) \
+			-lX11 $(X_EXTRA_LIBS) $(X_SHM_LIB) $(NET_LIBS) $(LIBCURL_LIBS) \
+			$(DL_LIBS)
 qw_client_x11_LDFLAGS=	$(common_ldflags)
 qw_client_x11_DEPENDENCIES= $(qw_client_x11_libs)
 
 # ... SGI/Microsoft WGL (Windows OpenGL)
-qw_client_wgl_libs= \
+qw_client_win_libs= \
 			$(qw_client_libs) \
 			$(qw_cl_plugin_LIBS) \
-			$(opengl_LIBS) \
-			libs/video/targets/libQFwgl.la \
+			libs/video/renderer/libQFrenderer.la \
+			libs/models/libQFmodels.la \
+			libs/video/targets/libQFwin.la \
 			$(qw_client_LIBS)
-qw_client_wgl_SOURCES=	qw/source/cl_sys_win.c
-qw_client_wgl_LDADD= $(qw_client_wgl_libs) -lgdi32 -lwinmm $(NET_LIBS) $(LIBCURL_LIBS)
-qw_client_wgl_LDFLAGS=  $(common_ldflags)
-qw_client_wgl_DEPENDENCIES= $(qw_client_wgl_libs)
+qw_client_win_SOURCES=	qw/source/cl_sys_win.c
+qw_client_win_LDADD= $(qw_client_win_libs) -lgdi32 -lwinmm $(NET_LIBS) $(LIBCURL_LIBS)
+qw_client_win_LDFLAGS=  $(common_ldflags)
+qw_client_win_DEPENDENCIES= $(qw_client_win_libs)

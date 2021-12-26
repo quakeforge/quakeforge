@@ -47,6 +47,29 @@
 #include "tools/qfcc/include/qfprogs.h"
 
 static void
+dump_ivars (progs_t *pr, pr_ivar_list_t *ivars)
+{
+	if (!ivars || !ivars->ivar_count) {
+		puts ("        { }");
+		return;
+	}
+	puts ("        {");
+	for (int i = 0; i < ivars->ivar_count; i++) {
+		const char *name = "<invalid string>";
+		const char *type = "<invalid string>";
+		if (PR_StringValid (pr, ivars->ivar_list[i].ivar_name)) {
+			name = PR_GetString (pr, ivars->ivar_list[i].ivar_name);
+		}
+		if (PR_StringValid (pr, ivars->ivar_list[i].ivar_type)) {
+			type = PR_GetString (pr, ivars->ivar_list[i].ivar_type);
+		}
+		printf ("            %d %s %s\n", ivars->ivar_list[i].ivar_offset,
+				name, type);
+	}
+	puts ("        }");
+}
+
+static void
 dump_methods (progs_t *pr, pr_method_list_t *methods, int class)
 {
 	int         i;
@@ -158,6 +181,7 @@ dump_class (progs_t *pr, pr_class_t *class)
 	printf ("        meta:%x verion:%d info:%u size:%d\n",
 			class->class_pointer, class->version,
 			class->info, class->instance_size);
+	dump_ivars (pr, &G_STRUCT (pr, pr_ivar_list_t, class->ivars));
 	dump_methods (pr, &G_STRUCT (pr, pr_method_list_t, class->methods), 0);
 	dump_methods (pr, &G_STRUCT (pr, pr_method_list_t, meta->methods), 1);
 	printf ("        %x\n", class->protocols);

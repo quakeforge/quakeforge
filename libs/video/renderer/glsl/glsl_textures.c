@@ -46,11 +46,12 @@
 #include "QF/model.h"
 #include "QF/render.h"
 #include "QF/sys.h"
-#include "QF/vrect.h"
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
 #include "QF/GLSL/qf_textures.h"
+
+#include "QF/ui/vrect.h"
 
 #include "r_scrap.h"
 
@@ -71,7 +72,7 @@ static int max_tex_size;
 
 int
 GLSL_LoadQuakeTexture (const char *identifier, int width, int height,
-					   byte *data)
+					   const byte *data)
 {
 	GLuint      tnum;
 
@@ -203,7 +204,8 @@ GLSL_LoadQuakeMipTex (const texture_t *tex)
 }
 
 int
-GLSL_LoadRGBTexture (const char *identifier, int width, int height, byte *data)
+GLSL_LoadRGBTexture (const char *identifier, int width, int height,
+					 const byte *data)
 {
 	GLuint      tnum;
 
@@ -221,7 +223,8 @@ GLSL_LoadRGBTexture (const char *identifier, int width, int height, byte *data)
 }
 
 int
-GLSL_LoadRGBATexture (const char *identifier, int width, int height, byte *data)
+GLSL_LoadRGBATexture (const char *identifier, int width, int height,
+					  const byte *data)
 {
 	GLuint      tnum;
 
@@ -273,7 +276,7 @@ void
 GLSL_TextureInit (void)
 {
 	qfeglGetIntegerv (GL_MAX_TEXTURE_SIZE, &max_tex_size);
-	Sys_MaskPrintf (SYS_GLSL, "max texture size: %d\n", max_tex_size);
+	Sys_MaskPrintf (SYS_glsl, "max texture size: %d\n", max_tex_size);
 
 	Cmd_AddCommand ("glsl_scraps", glsl_scraps_f, "Dump GLSL scrap stats");
 }

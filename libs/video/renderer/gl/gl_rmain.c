@@ -44,7 +44,6 @@
 
 #include "QF/cvar.h"
 #include "QF/draw.h"
-#include "QF/entity.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
 #include "QF/render.h"
@@ -52,6 +51,9 @@
 #include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
+
+#include "QF/scene/entity.h"
+
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_draw.h"
@@ -221,9 +223,7 @@ R_DrawEntitiesOnList (void)
 	for (ent = r_ent_queue; ent; ent = ent->next) {
 		if (ent->renderer.model->type != mod_alias)
 			continue;
-		currententity = ent;
-
-		gl_R_DrawAliasModel (currententity);
+		gl_R_DrawAliasModel (ent);
 	}
 	qfglColor3ubv (color_white);
 
@@ -253,9 +253,7 @@ R_DrawEntitiesOnList (void)
 	for (ent = r_ent_queue; ent; ent = ent->next) {
 		if (ent->renderer.model->type != mod_iqm)
 			continue;
-		currententity = ent;
-
-		gl_R_DrawIQMModel (currententity);
+		gl_R_DrawIQMModel (ent);
 	}
 	qfglColor3ubv (color_white);
 
@@ -266,9 +264,7 @@ R_DrawEntitiesOnList (void)
 	for (ent = r_ent_queue; ent; ent = ent->next) {
 		if (ent->renderer.model->type != mod_sprite)
 			continue;
-		currententity = ent;
-
-		R_DrawSpriteModel (currententity);
+		R_DrawSpriteModel (ent);
 	}
 	qfglDisable (GL_ALPHA_TEST);
 }
@@ -276,12 +272,12 @@ R_DrawEntitiesOnList (void)
 static void
 R_DrawViewModel (void)
 {
-	currententity = vr_data.view_model;
+	entity_t   *ent = vr_data.view_model;
 	if (vr_data.inhibit_viewmodel
 		|| !r_drawviewmodel->int_val
 		|| gl_envmap
 		|| !r_drawentities->int_val
-		|| !currententity->renderer.model)
+		|| !ent->renderer.model)
 		return;
 
 	// hack the depth range to prevent view model from poking into walls
@@ -305,7 +301,7 @@ R_DrawViewModel (void)
 		qglActiveTexture (gl_mtex_enum + 0);
 	}
 
-	gl_R_DrawAliasModel (currententity);
+	gl_R_DrawAliasModel (ent);
 
 	qfglColor3ubv (color_white);
 	if (gl_mtex_active_tmus >= 2) { // FIXME: Ugly, but faster than cleaning
@@ -366,7 +362,7 @@ static void
 MYgluPerspective (GLdouble fovy, GLdouble aspect, GLdouble zNear,
 				  GLdouble zFar)
 {
-	GLdouble		xmin, xmax, ymin, ymax;
+	GLdouble    xmin, xmax, ymin, ymax;
 
 	ymax = zNear * tan (fovy * M_PI / 360.0);
 	ymin = -ymax;
@@ -400,7 +396,7 @@ R_SetupGL_Viewport_and_Perspective (void)
 	}
 //	printf ("glViewport(%d, %d, %d, %d)\n", glx + x, gly + y2, w, h);
 	qfglViewport (x, y2, w, h);
-	screenaspect = r_refdef.vrect.width * vid.aspect / r_refdef.vrect.height;
+	screenaspect = r_refdef.vrect.width / (float) r_refdef.vrect.height;
 	MYgluPerspective (r_refdef.fov_y, screenaspect, r_nearclip->value,
 					  r_farclip->value);
 }
@@ -450,15 +446,6 @@ R_SetupGL (void)
 }
 
 static void
-R_Clear (void)
-{
-	if (gl_clear->int_val)
-		qfglClear (GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-	else
-		qfglClear (GL_DEPTH_BUFFER_BIT);
-}
-
-static void
 R_RenderScene (void)
 {
 	if (r_timegraph->int_val || r_speeds->int_val || r_dspeeds->int_val)
@@ -490,7 +477,7 @@ static void
 R_Mirror (void)
 {
 	//float		d;
-//	msurface_t *s;
+//	msurface_t *surf;
 
 //	if (!gl_mirror) // FIXME: Broken
 		return;
@@ -537,25 +524,25 @@ R_Mirror (void)
 	color_white[3] = r_mirroralpha->value * 255;
 	qfglColor4ubv (color_white);
 #if 0//FIXME
-	s = r_worldentity.model->textures[gl_mirrortexturenum]->texturechain;
-	for (; s; s = s->texturechain) {
+	surf = r_worldentity.model->textures[gl_mirrortexturenum]->texturechain;
+	for (; surf; surf = surf->texturechain) {
 		texture_t  *tex;
 
-		if (!s->texinfo->texture->anim_total)
-			tex = s->texinfo->texture;
+		if (!surf->texinfo->texture->anim_total)
+			tex = surf->texinfo->texture;
 		else
-			tex = R_TextureAnimation (s);
+			tex = R_TextureAnimation (surf);
 
 // FIXME: Needs to set the texture, the tmu, and include the header, and then
 //	clean up afterwards.
 //		if (tex->gl_fb_texturenum && gl_mtex_fullbright
 //			&& gl_fb_models->int_val) {
-//			s->polys->fb_chain = fullbright_polys[tex->gl_fb_texturenum];
-//			fullbright_polys[tex->gl_fb_texturenum] = s->polys;
+//			surf->polys->fb_chain = fullbright_polys[tex->gl_fb_texturenum];
+//			fullbright_polys[tex->gl_fb_texturenum] = surf->polys;
 //		}
 
 		qfglBindTexture (GL_TEXTURE_2D, tex->gl_texturenum);
-//		R_RenderBrushPoly (s, tex); // FIXME: Need to move R_Mirror to gl_rsurf.c, and uncommment this line!
+//		R_RenderBrushPoly (surf, tex); // FIXME: Need to move R_Mirror to gl_rsurf.c, and uncommment this line!
 	}
 	r_worldentity.model->textures[gl_mirrortexturenum]->texturechain = NULL;
 #endif
@@ -575,12 +562,10 @@ R_RenderView_ (void)
 		return;
 	}
 	if (!r_worldentity.renderer.model) {
-		Sys_Error ("R_RenderView: NULL worldmodel");
+		return;
 	}
 
 	gl_mirror = false;
-
-	R_Clear ();
 
 	// render normal view
 	R_RenderScene ();
@@ -757,15 +742,15 @@ R_InitFishEyeOnce (void)
 
 	if (fisheye_init_once_completed)
 		return 1;
-	Sys_MaskPrintf (SYS_DEV, "GL_ARB_texture_cube_map ");
+	Sys_MaskPrintf (SYS_dev, "GL_ARB_texture_cube_map ");
 	if (QFGL_ExtensionPresent ("GL_ARB_texture_cube_map")) {
 		qfglGetIntegerv (GL_MAX_CUBE_MAP_TEXTURE_SIZE_ARB,
 						 &gl_cube_map_maxtex);
-		Sys_MaskPrintf (SYS_DEV, "present, max texture size %d.\n",
+		Sys_MaskPrintf (SYS_dev, "present, max texture size %d.\n",
 						(int) gl_cube_map_maxtex);
 		gl_cube_map_capable = true;
 	} else {
-		Sys_MaskPrintf (SYS_DEV, "not found.\n");
+		Sys_MaskPrintf (SYS_dev, "not found.\n");
 		gl_cube_map_capable = false;
 	}
 	fisheye_init_once_completed = true;
@@ -910,5 +895,5 @@ gl_R_ClearState (void)
 	r_worldentity.renderer.model = 0;
 	R_ClearEfrags ();
 	R_ClearDlights ();
-	gl_R_ClearParticles ();
+	R_ClearParticles ();
 }

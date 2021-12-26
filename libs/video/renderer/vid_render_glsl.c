@@ -34,6 +34,7 @@
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
+#include "QF/GLSL/qf_bsp.h"
 #include "QF/GLSL/qf_vid.h"
 
 #include "mod_internal.h"
@@ -44,6 +45,18 @@
 #include "glsl/namehack.h"
 
 gl_ctx_t *glsl_ctx;
+
+static void
+glsl_vid_render_choose_visual (void *data)
+{
+	glsl_ctx->choose_visual (glsl_ctx);
+}
+
+static void
+glsl_vid_render_create_context (void *data)
+{
+	glsl_ctx->create_context (glsl_ctx);
+}
 
 static vid_model_funcs_t model_funcs = {
 	sizeof (glsltex_t),
@@ -61,7 +74,7 @@ static vid_model_funcs_t model_funcs = {
 	glsl_Mod_LoadExternalSkins,
 	glsl_Mod_IQMFinish,
 	0,
-	glsl_Mod_SpriteLoadTexture,
+	glsl_Mod_SpriteLoadFrames,
 
 	Skin_SetColormap,
 	Skin_SetSkin,
@@ -71,7 +84,31 @@ static vid_model_funcs_t model_funcs = {
 	glsl_Skin_InitTranslations,
 };
 
+static void
+glsl_vid_render_init (void)
+{
+	if (!vr_data.vid->vid_internal->sw_context) {
+		Sys_Error ("Sorry, OpenGL (GLSL) not supported by this program.");
+	}
+	glsl_ctx = vr_data.vid->vid_internal->gl_context ();
+	glsl_ctx->init_gl = GLSL_Init_Common;
+	glsl_ctx->load_gl ();
+
+	vr_data.vid->vid_internal->data = glsl_ctx;
+	vr_data.vid->vid_internal->set_palette = GLSL_SetPalette;
+	vr_data.vid->vid_internal->choose_visual = glsl_vid_render_choose_visual;
+	vr_data.vid->vid_internal->create_context = glsl_vid_render_create_context;
+	vr_funcs = &glsl_vid_render_funcs;
+	m_funcs = &model_funcs;
+}
+
+static void
+glsl_vid_render_shutdown (void)
+{
+}
+
 vid_render_funcs_t glsl_vid_render_funcs = {
+	glsl_vid_render_init,
 	glsl_Draw_Character,
 	glsl_Draw_String,
 	glsl_Draw_nString,
@@ -105,6 +142,7 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	glsl_Fog_Update,
 	glsl_Fog_ParseWorldspawn,
 
+	glsl_ParticleSystem,
 	glsl_R_Init,
 	glsl_R_RenderFrame,
 	glsl_R_ClearState,
@@ -112,79 +150,30 @@ vid_render_funcs_t glsl_vid_render_funcs = {
 	glsl_R_NewMap,
 	R_AddEfrags,
 	R_RemoveEfrags,
-	R_EnqueueEntity,
 	glsl_R_LineGraph,
 	R_AllocDlight,
 	R_AllocEntity,
 	R_MaxDlightsCheck,
-	glsl_R_RenderView,
 	R_DecayLights,
 	glsl_R_ViewChanged,
-	glsl_R_ClearParticles,
-	glsl_R_InitParticles,
 	glsl_SCR_ScreenShot_f,
-	glsl_r_easter_eggs_f,
-	glsl_r_particles_style_f,
-	0,
 	&model_funcs
 };
 
-static void
-glsl_vid_render_choose_visual (void)
-{
-	glsl_ctx->choose_visual (glsl_ctx);
-}
-
-static void
-glsl_vid_render_create_context (void)
-{
-	glsl_ctx->create_context (glsl_ctx);
-}
-
-static void
-glsl_vid_render_init (void)
-{
-	glsl_ctx = vr_data.vid->vid_internal->gl_context ();
-	glsl_ctx->init_gl = GLSL_Init_Common;
-	glsl_ctx->load_gl ();
-
-	vr_data.vid->vid_internal->set_palette = GLSL_SetPalette;
-	vr_data.vid->vid_internal->choose_visual = glsl_vid_render_choose_visual;
-	vr_data.vid->vid_internal->create_context = glsl_vid_render_create_context;
-	vr_funcs = &glsl_vid_render_funcs;
-	m_funcs = &model_funcs;
-}
-
-static void
-glsl_vid_render_shutdown (void)
-{
-}
-
 static general_funcs_t plugin_info_general_funcs = {
-	glsl_vid_render_init,
-	glsl_vid_render_shutdown,
+	.shutdown = glsl_vid_render_shutdown,
 };
 
 static general_data_t plugin_info_general_data;
 
 static plugin_funcs_t plugin_info_funcs = {
-	&plugin_info_general_funcs,
-	0,
-	0,
-	0,
-	0,
-	0,
-	&glsl_vid_render_funcs,
+	.general = &plugin_info_general_funcs,
+	.vid_render = &glsl_vid_render_funcs,
 };
 
 static plugin_data_t plugin_info_data = {
-	&plugin_info_general_data,
-	0,
-	0,
-	0,
-	0,
-	0,
-	&vid_render_data,
+	.general = &plugin_info_general_data,
+	.vid_render = &vid_render_data,
 };
 
 static plugin_t plugin_info = {

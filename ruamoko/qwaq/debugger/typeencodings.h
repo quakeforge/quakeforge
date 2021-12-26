@@ -8,6 +8,7 @@
 
 @interface TypeEncodings : Object
 +(qfot_type_t *)getType:(unsigned)typeAddr fromTarget:(qdb_target_t)target;
++(int)typeSize:(qfot_type_t *)type;
 @end
 
 #endif//__qwaq_debugger_typeencodings_h

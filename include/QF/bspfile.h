@@ -52,8 +52,8 @@
 #define TOOLVERSION		2
 
 typedef struct lump_s {
-	int32_t fileofs;
-	int32_t filelen;
+	uint32_t fileofs;
+	uint32_t filelen;
 } lump_t;
 
 #define LUMP_ENTITIES		0
@@ -76,19 +76,19 @@ typedef struct lump_s {
 typedef struct dmodel_s {
 	float       mins[3], maxs[3];
 	float       origin[3];
-	int32_t     headnode[MAX_MAP_HULLS];
-	int32_t     visleafs;				// not including the solid leaf 0
-	int32_t     firstface, numfaces;
+	uint32_t    headnode[MAX_MAP_HULLS];
+	uint32_t    visleafs;				// not including the solid leaf 0
+	uint32_t    firstface, numfaces;
 } dmodel_t;
 
 typedef struct dheader_s {
-	int32_t     version;
+	uint32_t    version;
 	lump_t      lumps[HEADER_LUMPS];
 } dheader_t;
 
 typedef struct dmiptexlump_s {
-	int32_t     nummiptex;
-	int32_t     dataofs[4];				// [nummiptex]
+	uint32_t    nummiptex;
+	uint32_t    dataofs[4];				// [nummiptex]
 } dmiptexlump_t;
 
 #define MIPTEXNAME  16
@@ -138,7 +138,7 @@ typedef struct dplane_s {
 
 //BSP2 version (bsp 29 version is in bspfile.c)
 typedef struct dnode_s {
-	int32_t     planenum;
+	uint32_t    planenum;
 	int32_t     children[2];	// negative numbers are -(leafs+1), not nodes
 	float       mins[3];		// for sphere culling
 	float       maxs[3];
@@ -148,15 +148,15 @@ typedef struct dnode_s {
 
 //BSP2 version (bsp 29 version is in bspfile.c)
 typedef struct dclipnode_s {
-	int32_t     planenum;
+	uint32_t    planenum;
 	int32_t     children[2];	// negative numbers are contents
 } dclipnode_t;
 
 
 typedef struct texinfo_s {
 	float       vecs[2][4];		// [s/t][xyz offset]
-	int32_t     miptex;
-	int32_t     flags;
+	uint32_t    miptex;
+	uint32_t    flags;
 } texinfo_t;
 #define TEX_SPECIAL 1			// sky or slime, no lightmap or 256 subdivision
 #define TEX_MISSING 2			// this texinfo does not have a texture
@@ -171,16 +171,16 @@ typedef struct dedge_s {
 #define MAXLIGHTMAPS 4
 //BSP2 version (bsp 29 version is in bspfile.c)
 typedef struct dface_s {
-	int32_t     planenum;
+	uint32_t    planenum;
 	int32_t     side;
 
-	int32_t     firstedge;		// we must support > 64k edges
-	int32_t     numedges;
-	int32_t     texinfo;
+	uint32_t    firstedge;		// we must support > 64k edges
+	uint32_t    numedges;
+	uint32_t    texinfo;
 
 // lighting info
 	byte        styles[MAXLIGHTMAPS];
-	int32_t     lightofs;		// start of [numstyles*surfsize] samples
+	uint32_t    lightofs;		// start of [numstyles*surfsize] samples
 } dface_t;
 
 
@@ -214,7 +214,7 @@ typedef struct bsp_s {
 	dheader_t  *header;
 
 	int         own_models;
-	int         nummodels;
+	size_t      nummodels;
 	dmodel_t   *models;
 
 	int         own_visdata;
@@ -234,43 +234,43 @@ typedef struct bsp_s {
 	char       *entdata;
 
 	int         own_leafs;
-	int         numleafs;
+	size_t      numleafs;
 	dleaf_t    *leafs;
 
 	int         own_planes;
-	int         numplanes;
+	size_t      numplanes;
 	dplane_t   *planes;
 
 	int         own_vertexes;
-	int         numvertexes;
+	size_t      numvertexes;
 	dvertex_t  *vertexes;
 
 	int         own_nodes;
-	int         numnodes;
+	size_t      numnodes;
 	dnode_t    *nodes;
 
 	int         own_texinfo;
-	int         numtexinfo;
+	size_t      numtexinfo;
 	texinfo_t  *texinfo;
 
 	int         own_faces;
-	int         numfaces;
+	size_t      numfaces;
 	dface_t    *faces;
 
 	int         own_clipnodes;
-	int         numclipnodes;
+	size_t      numclipnodes;
 	dclipnode_t *clipnodes;
 
 	int         own_edges;
-	int         numedges;
+	size_t      numedges;
 	dedge_t    *edges;
 
 	int         own_marksurfaces;
-	int         nummarksurfaces;
+	size_t      nummarksurfaces;
 	uint32_t   *marksurfaces;
 
 	int         own_surfedges;
-	int         numsurfedges;
+	size_t      numsurfedges;
 	int32_t    *surfedges;
 } bsp_t;
 

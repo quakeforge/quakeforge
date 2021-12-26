@@ -174,7 +174,7 @@ ConvertFloatColor (const float *frgb, const byte *pal, colcache_t *cache)
 tex_t *
 ConvertImage (const tex_t *tex, const byte *pal)
 {
-	tex_t      *new = 0;
+	tex_t      *new;
 	int         pixels;
 	int         bpp = 3;
 	int         i;
@@ -189,11 +189,11 @@ ConvertImage (const tex_t *tex, const byte *pal)
 	new->palette = pal;
 	switch (tex->format) {
 		case tex_palette:
-		case tex_l:			// will not work as expected
-		case tex_a:			// will not work as expected
+		case tex_l:			// will not work as expected FIXME
+		case tex_a:			// will not work as expected FIXME
 			memcpy (new->data, tex->data, pixels);
 			break;
-		case tex_la:		// will not work as expected
+		case tex_la:		// will not work as expected FIXME
 			for (i = 0; i < pixels; i++)
 				new->data[i] = tex->data[i * 2];
 			break;

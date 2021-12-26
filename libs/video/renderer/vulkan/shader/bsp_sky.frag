@@ -1,7 +1,10 @@
 #version 450
 
-layout (set = 0, binding = 4) uniform sampler2DArray SkySheet;
-layout (set = 0, binding = 5) uniform samplerCube SkyCube;
+layout (constant_id = 1) const bool doSkyBox = false;
+layout (constant_id = 2) const bool doSkySheet = false;
+
+layout (set = 1, binding = 0) uniform sampler2DArray SkySheet;
+layout (set = 2, binding = 0) uniform samplerCube SkyBox;
 
 layout (push_constant) uniform PushConstants {
 	layout (offset = 64)
@@ -14,10 +17,7 @@ layout (location = 1) in vec3 direction;
 
 layout (location = 0) out vec4 frag_color;
 
-layout (constant_id = 0) const bool doSkyBox = false;
-layout (constant_id = 1) const bool doSkySheet = false;
-
-const float SCALE = 8.0;
+const float SCALE = 189.0 / 64.0;
 
 vec4
 fogBlend (vec4 color)
@@ -63,7 +63,7 @@ sky_box (vec3 dir, float time)
 	// to do here is swizzle the Y and Z coordinates
 	dir = normalize(dir);
 	//return vec4(dir.xyz, 1) * 0.5 + vec4(0.5);
-	return texture (SkyCube, dir.xzy);
+	return texture (SkyBox, dir.xzy);
 }
 
 vec4

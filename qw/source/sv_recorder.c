@@ -56,8 +56,8 @@
 
 typedef struct dbuffer_s {
 	byte       *data;
-	int         start, end, last;
-	int         maxsize;
+	unsigned    start, end, last;
+	unsigned    maxsize;
 } dbuffer_t;
 
 typedef struct header_s {
@@ -70,7 +70,7 @@ typedef struct header_s {
 
 typedef struct demobuf_s {
 	sizebuf_t   sz;
-	int         bufsize;
+	unsigned    bufsize;
 	header_t   *h;
 } demobuf_t;
 
@@ -200,9 +200,9 @@ write_msg (sizebuf_t *msg, int type, int to, float time, sizebuf_t *dst)
 static void
 write_to_msg (int type, int to, float time, sizebuf_t *dst)
 {
-	int         pos = 0;
+	unsigned    pos = 0;
 	header_t   *p;
-	int         size;
+	unsigned    size;
 	sizebuf_t   msg;
 
 	p = (header_t *) rec.dbuf->sz.data;
@@ -256,7 +256,7 @@ static void
 set_buf (byte type, int to)
 {
 	header_t   *p;
-	int         pos = 0;
+	unsigned    pos = 0;
 
 	p = (header_t *) rec.dbuf->sz.data;
 
@@ -464,7 +464,7 @@ write_packet (void)
 }
 
 sizebuf_t *
-SVR_WriteBegin (byte type, int to, int size)
+SVR_WriteBegin (byte type, int to, unsigned size)
 {
 	byte       *p;
 	qboolean    move = false;

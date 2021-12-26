@@ -53,7 +53,9 @@
 #include "QF/Vulkan/qf_lightmap.h"
 #include "QF/Vulkan/qf_main.h"
 #include "QF/Vulkan/qf_particles.h"
+#include "QF/Vulkan/qf_sprite.h"
 //#include "QF/Vulkan/qf_textures.h"
+#include "QF/Vulkan/renderpass.h"
 
 #include "mod_internal.h"
 #include "r_internal.h"
@@ -77,33 +79,7 @@ setup_frame (vulkan_ctx_t *ctx)
 }
 
 static void
-setup_view (vulkan_ctx_t *ctx)
-{
-	mat4f_t     view;
-	static mat4f_t z_up = {
-		{ 0, 0, -1, 0},
-		{-1, 0,  0, 0},
-		{ 0, 1,  0, 0},
-		{ 0, 0,  0, 1},
-	};
-	vec4f_t     offset = { 0, 0, 0, 1 };
-
-	/*x = r_refdef.vrect.x;
-	y = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height));
-	w = r_refdef.vrect.width;
-	h = r_refdef.vrect.height;
-	qfeglViewport (x, y, w, h);*/
-
-	mat4fquat (view, qconjf (r_refdef.viewrotation));
-	mmulf (view, z_up, view);
-	offset = -r_refdef.viewposition;
-	offset[3] = 1;
-	view[3] = mvmulf (view, offset);
-	memcpy (ctx->matrices.view_3d, view, sizeof (view));
-}
-
-static void
-R_RenderEntities (vulkan_ctx_t *ctx)
+Vulkan_RenderEntities (qfv_renderframe_t *rFrame)
 {
 	if (!r_drawentities->int_val)
 		return;
@@ -115,48 +91,56 @@ R_RenderEntities (vulkan_ctx_t *ctx)
 			if (ent->renderer.model->type != mod_##type_name) \
 				continue; \
 			if (!begun) { \
-				Vulkan_##Type##Begin (ctx); \
+				Vulkan_##Type##Begin (rFrame); \
 				begun = 1; \
 			} \
-			Vulkan_Draw##Type (ent, ctx); \
+			/* hack the depth range to prevent view model */\
+			/* from poking into walls */\
+			if (ent == vr_data.view_model) { \
+				Vulkan_AliasDepthRange (rFrame, 0, 0.3); \
+			} \
+			Vulkan_Draw##Type (ent, rFrame); \
+			/* unhack in case the view_model is not the last */\
+			if (ent == vr_data.view_model) { \
+				Vulkan_AliasDepthRange (rFrame, 0, 1); \
+			} \
 		} \
 		if (begun) \
-			Vulkan_##Type##End (ctx); \
+			Vulkan_##Type##End (rFrame); \
 	} while (0)
 
 	RE_LOOP (alias, Alias);
 	//RE_LOOP (iqm, IQM);
-	//RE_LOOP (sprite, Sprite);
+	RE_LOOP (sprite, Sprite);
 }
 
 static void
-R_DrawViewModel (void)
+Vulkan_DrawViewModel (vulkan_ctx_t *ctx)
 {
-	currententity = vr_data.view_model;
+	entity_t   *ent = vr_data.view_model;
 	if (vr_data.inhibit_viewmodel
 		|| !r_drawviewmodel->int_val
 		|| !r_drawentities->int_val
-		|| !currententity->renderer.model)
+		|| !ent->renderer.model)
 		return;
 
-	// hack the depth range to prevent view model from poking into walls
-	//qfeglDepthRangef (0, 0.3);
-	//glsl_R_AliasBegin ();
-	//glsl_R_DrawAlias ();
-	//glsl_R_AliasEnd ();
-	//qfeglDepthRangef (0, 1);
+	R_EnqueueEntity (ent);
 }
 
 void
-Vulkan_RenderView (vulkan_ctx_t *ctx)
+Vulkan_RenderView (qfv_renderframe_t *rFrame)
 {
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	double      t[10] = {};
 	int         speeds = r_speeds->int_val;
+
+	if (!r_worldentity.renderer.model) {
+		return;
+	}
 
 	if (speeds)
 		t[0] = Sys_DoubleTime ();
 	setup_frame (ctx);
-	setup_view (ctx);
 	if (speeds)
 		t[1] = Sys_DoubleTime ();
 	R_MarkLeaves ();
@@ -165,32 +149,34 @@ Vulkan_RenderView (vulkan_ctx_t *ctx)
 	R_PushDlights (vec3_origin);
 	if (speeds)
 		t[3] = Sys_DoubleTime ();
-	Vulkan_DrawWorld (ctx);
+	Vulkan_DrawWorld (rFrame);
 	if (speeds)
 		t[4] = Sys_DoubleTime ();
-	Vulkan_DrawSky (ctx);
+	Vulkan_DrawSky (rFrame);
 	if (speeds)
 		t[5] = Sys_DoubleTime ();
-	R_RenderEntities (ctx);
+	Vulkan_DrawViewModel (ctx);
+	Vulkan_RenderEntities (rFrame);
 	if (speeds)
 		t[6] = Sys_DoubleTime ();
-	Vulkan_DrawWaterSurfaces (ctx);
+	Vulkan_DrawWaterSurfaces (rFrame);
 	if (speeds)
 		t[7] = Sys_DoubleTime ();
 	Vulkan_DrawParticles (ctx);
 	if (speeds)
 		t[8] = Sys_DoubleTime ();
-	R_DrawViewModel ();
+	Vulkan_Bsp_Flush (ctx);
 	if (speeds)
 		t[9] = Sys_DoubleTime ();
 	if (speeds) {
+		double      total = (t[9]  - t[0]) * 1000;
+		for (int i = 0; i < 9; i++) {
+			t[i] = (t[i + 1] - t[i]) * 1000;
+		}
 		Sys_Printf ("frame: %g, setup: %g, mark: %g, pushdl: %g, world: %g,"
-					" sky: %g, ents: %g, water: %g, part: %g, view: %g\n",
-					(t[9] - t[0]) * 1000, (t[1] - t[0]) * 1000,
-					(t[2] - t[1]) * 1000, (t[3] - t[2]) * 1000,
-					(t[4] - t[3]) * 1000, (t[5] - t[4]) * 1000,
-					(t[6] - t[5]) * 1000, (t[7] - t[6]) * 1000,
-					(t[8] - t[7]) * 1000, (t[9] - t[8]) * 1000);
+					" sky: %g, ents: %g, water: %g, flush: %g, part: %g\n",
+					total,
+					t[0], t[1], t[2], t[3], t[4], t[5], t[6], t[7], t[8]);
 	}
 }
 
@@ -212,7 +198,7 @@ Vulkan_NewMap (model_t *worldmodel, struct model_s **models, int num_models,
 	R_MarkLeaves ();
 
 	R_FreeAllEntities ();
-	Vulkan_ClearParticles (ctx);
+	R_ClearParticles ();
 	Vulkan_RegisterTextures (models, num_models, ctx);
 	//Vulkan_BuildLightmaps (models, num_models, ctx);
 	Vulkan_BuildDisplayLists (models, num_models, ctx);

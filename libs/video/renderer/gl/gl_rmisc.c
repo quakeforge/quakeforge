@@ -146,8 +146,6 @@ gl_R_Init (void)
 	Cmd_AddCommand ("timerefresh", gl_R_TimeRefresh_f,
 					"Tests the current refresh rate for the current location");
 	Cmd_AddCommand ("envmap", R_Envmap_f, "No Description");
-	Cmd_AddCommand ("pointfile", gl_R_ReadPointFile_f,
-					"Load a pointfile to determine map leaks");
 	Cmd_AddCommand ("loadsky", gl_R_LoadSky_f, "Load a skybox");
 
 	gl_Draw_Init ();
@@ -170,10 +168,9 @@ gl_R_Init (void)
 static void
 register_textures (mod_brush_t *brush)
 {
-	int         i;
 	texture_t  *tex;
 
-	for (i = 0; i < brush->numtextures; i++) {
+	for (unsigned i = 0; i < brush->numtextures; i++) {
 		tex = brush->textures[i];
 		if (!tex)
 			continue;
@@ -184,11 +181,10 @@ register_textures (mod_brush_t *brush)
 void
 gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
-	int         i;
 	texture_t  *tex;
 	mod_brush_t *brush;
 
-	for (i = 0; i < 256; i++)
+	for (int i = 0; i < 256; i++)
 		d_lightstylevalue[i] = 264;		// normal light value
 
 	memset (&r_worldentity, 0, sizeof (r_worldentity));
@@ -198,21 +194,21 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	R_FreeAllEntities ();
 
 	// clear out efrags in case the level hasn't been reloaded
-	for (i = 0; i < brush->numleafs; i++)
+	for (unsigned i = 0; i < brush->modleafs; i++)
 		brush->leafs[i].efrags = NULL;
 
 	// Force a vis update
 	r_viewleaf = NULL;
 	R_MarkLeaves ();
 
-	gl_R_ClearParticles ();
+	R_ClearParticles ();
 
 	GL_BuildLightmaps (models, num_models);
 
 	// identify sky texture
 	gl_mirrortexturenum = -1;
 	gl_R_ClearTextures ();
-	for (i = 0; i < brush->numtextures; i++) {
+	for (unsigned i = 0; i < brush->numtextures; i++) {
 		tex = brush->textures[i];
 		if (!tex)
 			continue;
@@ -226,7 +222,7 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	gl_R_InitSurfaceChains (brush);
 	gl_R_AddTexture (r_notexture_mip);
 	register_textures (brush);
-	for (i = 0; i < num_models; i++) {
+	for (int i = 0; i < num_models; i++) {
 		if (!models[i])
 			continue;
 		if (*models[i]->path == '*')
@@ -238,7 +234,7 @@ gl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 }
 
 void
-gl_R_ViewChanged (float aspect)
+gl_R_ViewChanged (void)
 {
 }
 

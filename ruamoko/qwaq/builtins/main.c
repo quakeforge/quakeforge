@@ -1,5 +1,5 @@
 /*
-	#FILENAME#
+	main.c
 
 	Qwaq
 
@@ -52,6 +52,8 @@
 #include "QF/va.h"
 #include "QF/zone.h"
 
+#include "compat.h"
+
 #include "ruamoko/qwaq/qwaq.h"
 #include "ruamoko/qwaq/debugger/debug.h"
 
@@ -75,7 +77,7 @@ static const char *short_options =
 	"-"		// magic option parsing mode doohicky (must come first)
 	;
 
-struct DARRAY_TYPE(qwaq_thread_t *) thread_data;
+qwaq_thread_set_t thread_data;
 
 static QFile *
 open_file (const char *path, int *len)
@@ -132,7 +134,7 @@ init_qf (void)
 	qwaq_cbuf = Cbuf_New (&id_interp);
 
 	Sys_Init ();
-	COM_ParseConfig ();
+	COM_ParseConfig (qwaq_cbuf);
 
 	//Cvar_Set (developer, "1");
 
@@ -144,6 +146,52 @@ init_qf (void)
 	// Normally, this is done by PR_Init, but PR_Init is not called in the main
 	// thread. However, PR_Opcode_Init() is idempotent.
 	PR_Opcode_Init ();
+}
+
+static void
+bi_printf (progs_t *pr)
+{
+	const char *fmt = P_GSTRING (pr, 0);
+	int         count = pr->pr_argc - 1;
+	pr_type_t **args = pr->pr_params + 1;
+	dstring_t  *dstr = dstring_new ();
+
+	PR_Sprintf (pr, dstr, "bi_printf", fmt, count, args);
+	if (dstr->str) {
+		Sys_Printf ("%s", dstr->str);
+	}
+	dstring_delete (dstr);
+}
+
+static void
+bi_traceon (progs_t *pr)
+{
+	pr->pr_trace = true;
+	pr->pr_trace_depth = pr->pr_depth;
+}
+
+static void
+bi_traceoff (progs_t *pr)
+{
+	pr->pr_trace = false;
+}
+
+static builtin_t common_builtins[] = {
+	{"printf",			bi_printf,		-1},
+	{"traceon",			bi_traceon,		-1},
+	{"traceoff",		bi_traceoff,	-1},
+	{},
+};
+
+static void
+common_builtins_init (progs_t *pr)
+{
+	PR_RegisterBuiltins (pr, common_builtins);
+}
+
+static void
+qwaq_thread_clear (progs_t *pr, void *_thread)
+{
 }
 
 static progs_t *
@@ -160,7 +208,9 @@ create_progs (qwaq_thread_t *thread)
 
 	PR_Init_Cvars ();
 	PR_Init (pr);
-	RUA_Init (pr, 0);
+	PR_Resources_Register (pr, "qwaq_thread", thread, qwaq_thread_clear);
+	RUA_Init (pr, thread->rua_security);
+	common_builtins_init (pr);
 	while (*funcs) {
 		(*funcs++) (pr);
 	}
@@ -229,8 +279,9 @@ spawn_progs (qwaq_thread_t *thread)
 	}
 	pr_argv = PR_Zone_Malloc (pr, (pr_argc + 1) * 4);
 	pr_argv[0] = PR_SetTempString (pr, name);
-	for (i = 1; i < pr_argc; i++)
+	for (i = 1; i < pr_argc; i++) {
 		pr_argv[i] = PR_SetTempString (pr, thread->args.a[i]);
+	}
 	pr_argv[i] = 0;
 
 	PR_RESET_PARAMS (pr);
@@ -245,7 +296,7 @@ run_progs (void *data)
 	__auto_type thread = (qwaq_thread_t *) data;
 
 	spawn_progs (thread);
-	Sys_Printf ("starting thread for %s\n", thread->args.a[0]);
+	//Sys_Printf ("starting thread for %s\n", thread->args.a[0]);
 
 	PR_ExecuteProgram (thread->pr, thread->main_func);
 	PR_PopFrame (thread->pr);
@@ -341,60 +392,6 @@ done:
 	return qargs_ind;
 }
 
-static void
-bi_printf (progs_t *pr)
-{
-	const char *fmt = P_GSTRING (pr, 0);
-	int         count = pr->pr_argc - 1;
-	pr_type_t **args = pr->pr_params + 1;
-	dstring_t  *dstr = dstring_new ();
-
-	PR_Sprintf (pr, dstr, "bi_printf", fmt, count, args);
-	if (dstr->str)
-		Sys_Printf (dstr->str, stdout);
-	dstring_delete (dstr);
-}
-
-static void
-bi_traceon (progs_t *pr)
-{
-	pr->pr_trace = true;
-	pr->pr_trace_depth = pr->pr_depth;
-}
-
-static void
-bi_traceoff (progs_t *pr)
-{
-	pr->pr_trace = false;
-}
-
-static builtin_t common_builtins[] = {
-	{"printf",			bi_printf,		-1},
-	{"traceon",			bi_traceon,		-1},
-	{"traceoff",		bi_traceoff,	-1},
-	{},
-};
-
-static void
-common_builtins_init (progs_t *pr)
-{
-	PR_RegisterBuiltins (pr, common_builtins);
-}
-
-static progsinit_f main_app[] = {
-	Key_Progs_Init,
-	BI_Init,
-	common_builtins_init,
-	QWAQ_EditBuffer_Init,
-	QWAQ_Debug_Init,
-	0
-};
-
-static progsinit_f target_app[] = {
-	common_builtins_init,
-	QWAQ_DebugTarget_Init,
-	0
-};
 
 int
 main (int argc, char **argv)
@@ -451,27 +448,7 @@ main (int argc, char **argv)
 		DARRAY_APPEND (&thread_data, thread);
 	}
 
-	for (size_t i = 1, thread_ind = 0; i < thread_data.size; i++) {
-		qwaq_thread_t *thread = thread_data.a[i];
-		progsinit_f *app_funcs = target_app;
-
-		if (thread->args.size && thread->args.a[0]
-			&& strcmp (thread->args.a[0], "--qargs")) {
-			// skip the args set that's passed to qargs
-			continue;
-		}
-		if (thread_ind < thread_data.a[0]->args.size) {
-			thread->args.a[0] = thread_data.a[0]->args.a[thread_ind++];
-		} else {
-			printf ("ignoring extra arg sets\n");
-			break;
-		}
-		if (main_ind < 0) {
-			main_ind = i;
-			app_funcs = main_app;
-		}
-		thread->progsinit = app_funcs;
-	}
+	main_ind = qwaq_init_threads (&thread_data);
 	if (main_ind >= 0) {
 		// threads might start new threads before the end is reached
 		size_t      count = thread_data.size;

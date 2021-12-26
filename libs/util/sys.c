@@ -89,9 +89,11 @@
 #include "QF/va.h"
 
 #include "compat.h"
+#define IMPLEMENT_QFSELECT_Funcs
+#include "qfselect.h"
 
-static void Sys_StdPrintf (const char *fmt, va_list args) __attribute__((format(printf, 1, 0)));
-static void Sys_ErrPrintf (const char *fmt, va_list args) __attribute__((format(printf, 1, 0)));
+static void Sys_StdPrintf (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
+static void Sys_ErrPrintf (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
 
 VISIBLE cvar_t *sys_nostdout;
 VISIBLE cvar_t *sys_extrasleep;
@@ -102,19 +104,6 @@ int         sys_checksum;
 
 static sys_printf_t sys_std_printf_function = Sys_StdPrintf;
 static sys_printf_t sys_err_printf_function = Sys_ErrPrintf;
-
-#ifndef _WIN32
-static struct sigaction save_hup;
-static struct sigaction save_quit;
-static struct sigaction save_trap;
-static struct sigaction save_iot;
-static struct sigaction save_bus;
-#endif
-static struct sigaction save_int;
-static struct sigaction save_ill;
-static struct sigaction save_segv;
-static struct sigaction save_term;
-static struct sigaction save_fpe;
 
 typedef struct shutdown_list_s {
 	struct shutdown_list_s *next;
@@ -333,6 +322,14 @@ Sys_MaskPrintf (int mask, const char *fmt, ...)
 	va_end (args);
 }
 
+static int64_t sys_starttime = -1;
+
+VISIBLE int64_t
+Sys_StartTime (void)
+{
+	return sys_starttime;
+}
+
 VISIBLE int64_t
 Sys_LongTime (void)
 {
@@ -366,11 +363,10 @@ Sys_LongTime (void)
 	static int64_t qpcfudge = 0;
 	int64_t currtime = 0;
 	static int64_t lasttime = 0;
-	static int64_t starttime = 0;
 
 	if (first) {
 		timeBeginPeriod (1);
-		starttime = lasttime = timeGetTime ();
+		sys_starttime = lasttime = timeGetTime () * 1000;
 		QueryPerformanceFrequency ((LARGE_INTEGER *) &qpcfreq);
 		QueryPerformanceCounter ((LARGE_INTEGER *) &lastqpccount);
 		first = false;
@@ -378,7 +374,7 @@ Sys_LongTime (void)
 	}
 
 	// get the current time from both counters
-	currtime = timeGetTime ();
+	currtime = timeGetTime () * 1000;
     QueryPerformanceCounter ((LARGE_INTEGER *) &currqpccount);
 
 	if (currtime != lasttime)  {
@@ -389,7 +385,7 @@ Sys_LongTime (void)
 		// store back times and calc a fudge factor as timeGetTime can
 		// overshoot on a sub-millisecond scale
 		qpcfudge = (( (currqpccount - lastqpccount) * 1000000 / qpcfreq))
-				- ((currtime - lasttime) * 1000);
+				- (currtime - lasttime);
 		lastqpccount = currqpccount;
 		lasttime = currtime;
 	} else {
@@ -397,32 +393,51 @@ Sys_LongTime (void)
 	}
 
 	// the final time is the base from timeGetTime plus an addition from QPC
-	return (((currtime - starttime) * 1000)
+	return ((currtime - sys_starttime)
 			+ ((currqpccount - lastqpccount) * 1000000 / qpcfreq) + qpcfudge);
 # endif
 #else
+	int64_t now;
+#ifdef CLOCK_BOOTTIME
+	struct timespec tp;
+
+	clock_gettime (CLOCK_BOOTTIME, &tp);
+
+	now = tp.tv_sec * 1000000 + tp.tv_nsec / 1000;
+#else
 	struct timeval tp;
 	struct timezone tzp;
-	int64_t now;
-	static int64_t start_time;
 
 	gettimeofday (&tp, &tzp);
 
 	now = tp.tv_sec * 1000000 + tp.tv_usec;
+#endif
 
 	if (first) {
 		first = false;
-		start_time = now;
+		sys_starttime = now;
 	}
 
-	return now - start_time;
+	return now - sys_starttime;
 #endif
+}
+
+VISIBLE int64_t
+Sys_TimeBase (void)
+{
+	return __INT64_C (4294967296000000);
 }
 
 VISIBLE double
 Sys_DoubleTime (void)
 {
-	return (__INT64_C (4294967296000000) + Sys_LongTime ()) / 1e6;
+	return (Sys_TimeBase () + Sys_LongTime ()) / 1e6;
+}
+
+VISIBLE double
+Sys_DoubleTimeBase (void)
+{
+	return Sys_TimeBase () / 1e6;
 }
 
 VISIBLE void
@@ -450,25 +465,15 @@ Sys_MakeCodeWriteable (uintptr_t startaddr, size_t length)
 	DWORD       flOldProtect;
 
 	if (!VirtualProtect
-		((LPVOID) startaddr, length, PAGE_READWRITE, &flOldProtect))
+		((LPVOID) startaddr, length, PAGE_EXECUTE_READWRITE, &flOldProtect))
 		Sys_Error ("Protection change failed");
 #else
 # ifdef HAVE_MPROTECT
 	int         r;
+	long        psize = Sys_PageSize ();
 	unsigned long endaddr = startaddr + length;
-#  ifdef HAVE__SC_PAGESIZE
-	long		psize = sysconf (_SC_PAGESIZE);
-
-	startaddr &= ~(psize - 1);
-	endaddr = (endaddr + psize - 1) & ~(psize -1);
-#  else
-#   ifdef HAVE_GETPAGESIZE
-	int         psize = getpagesize ();
-
 	startaddr &= ~(psize - 1);
 	endaddr = (endaddr + psize - 1) & ~(psize - 1);
-#   endif
-#  endif
 	// systems with mprotect but not getpagesize (or similar) probably don't
 	// need to page align the arguments to mprotect (eg, QNX)
 	r = mprotect ((char *) startaddr, endaddr - startaddr,
@@ -506,10 +511,13 @@ Sys_Shutdown (void)
 	shutdown_list_t *t;
 
 	while (shutdown_list) {
-		shutdown_list->func (shutdown_list->data);
+		void      (*func) (void *) = shutdown_list->func;
+		void       *data = shutdown_list->data;
 		t = shutdown_list;
 		shutdown_list = shutdown_list->next;
 		free (t);
+
+		func (data);
 	}
 }
 
@@ -632,14 +640,66 @@ Sys_PageIn (void *ptr, size_t size)
 //#endif
 }
 
+VISIBLE size_t
+Sys_PageSize (void)
+{
+#ifdef _WIN32
+	SYSTEM_INFO si;
+	GetSystemInfo (&si);
+	return si.dwPageSize;
+#else
+# ifdef HAVE__SC_PAGESIZE
+	return sysconf (_SC_PAGESIZE);
+# else
+#  ifdef HAVE_GETPAGESIZE
+	return getpagesize ();
+#  endif
+# endif
+#endif
+}
+
 VISIBLE void *
 Sys_Alloc (size_t size)
 {
-	size_t      page_size = sysconf (_SC_PAGESIZE);
+	size_t      page_size = Sys_PageSize ();
 	size_t      page_mask = page_size - 1;
 	size = (size + page_mask) & ~page_mask;
+#ifdef _WIN32
+	return VirtualAlloc (0, size, MEM_COMMIT | MEM_RESERVE, PAGE_READWRITE);
+#else
 	return mmap (0, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS,
 				 -1, 0);
+#endif
+}
+
+VISIBLE void
+Sys_Free (void *mem, size_t size)
+{
+	size_t      page_size = Sys_PageSize ();
+	size_t      page_mask = page_size - 1;
+	size = (size + page_mask) & ~page_mask;
+#ifdef _WIN32
+	VirtualFree (mem, 0, MEM_RELEASE | MEM_DECOMMIT);
+#else
+	munmap (mem, size);
+#endif
+}
+
+VISIBLE int
+Sys_ProcessorCount (void)
+{
+	int         cpus = 1;
+#if defined (_SC_NPROCESSORS_ONLN)
+	cpus = sysconf(_SC_NPROCESSORS_ONLN);
+#elif defined (_WIN32)
+	SYSTEM_INFO sysinfo;
+	GetSystemInfo(&sysinfo);
+	cpus = sysinfo.dwNumberOfProcessors;
+#endif
+	if (cpus < 1) {
+		cpus = 1;
+	}
+	return cpus;
 }
 
 VISIBLE void
@@ -663,12 +723,31 @@ Sys_DebugLog (const char *file, const char *fmt, ...)
 }
 
 VISIBLE int
-Sys_CheckInput (int idle, int net_socket)
+Sys_Select (int maxfd, qf_fd_set *fdset, int64_t usec)
 {
-	fd_set      fdset;
-	int         res;
 	struct timeval _timeout;
 	struct timeval *timeout = 0;
+
+	if (usec >= 0) {
+		timeout = &_timeout;
+		if (usec < 1000000) {
+			_timeout.tv_sec = 0;
+			_timeout.tv_usec = usec;
+		} else {
+			_timeout.tv_sec = usec / 1000000;
+			_timeout.tv_usec = usec % 1000000;
+		}
+	}
+
+	return select (maxfd + 1, &fdset->fdset, NULL, NULL, timeout);
+}
+
+VISIBLE int
+Sys_CheckInput (int idle, int net_socket)
+{
+	qf_fd_set   fdset;
+	int         res;
+	int64_t     usec;
 
 #ifdef _WIN32
 	int         sleep_msec;
@@ -681,32 +760,30 @@ Sys_CheckInput (int idle, int net_socket)
 		Sleep (sleep_msec);
 	}
 
-	_timeout.tv_sec = 0;
-	_timeout.tv_usec = net_socket < 0 ? 0 : 20;
+	usec = net_socket < 0 ? 0 : 20;
 #else
-	_timeout.tv_sec = 0;
-	_timeout.tv_usec = net_socket < 0 ? 0 : 2000;
+	usec = net_socket < 0 ? 0 : 2000;
 #endif
 	// select on the net socket and stdin
 	// the only reason we have a timeout at all is so that if the last
 	// connected client times out, the message would not otherwise
 	// be printed until the next event.
-	FD_ZERO (&fdset);
+	QF_FD_ZERO (&fdset);
 #ifndef _WIN32
 	if (do_stdin)
-		FD_SET (0, &fdset);
+		QF_FD_SET (0, &fdset);
 #endif
 	if (net_socket >= 0)
-		FD_SET (((unsigned) net_socket), &fdset);	// cast needed for windows
+		QF_FD_SET (((unsigned) net_socket), &fdset);// cast needed for windows
 
-	if (!idle || !sys_dead_sleep->int_val)
-		timeout = &_timeout;
+	if (idle && sys_dead_sleep->int_val)
+		usec = -1;
 
-	res = select (max (net_socket, 0) + 1, &fdset, NULL, NULL, timeout);
+	res = Sys_Select (max (net_socket, 0), &fdset, usec);
 	if (res == 0 || res == -1)
 		return 0;
 #ifndef _WIN32
-	stdin_ready = FD_ISSET (0, &fdset);
+	stdin_ready = QF_FD_ISSET (0, &fdset);
 #endif
 	return 1;
 }
@@ -831,8 +908,68 @@ static void __attribute__((noreturn))
 aiee (int sig)
 {
 	printf ("AIEE, signal %d in shutdown code, giving up\n", sig);
+#ifdef _WIN32
+	longjmp (aiee_abort, 1);
+#else
 	siglongjmp (aiee_abort, 1);
+#endif
 }
+
+#ifdef _WIN32
+static void
+signal_handler (int sig)
+{
+	int volatile recover = 0;	// volatile for longjump
+	static volatile int in_signal_handler = 0;
+
+	if (in_signal_handler) {
+		aiee (sig);
+	}
+	printf ("Received signal %d, exiting...\n", sig);
+
+	switch (sig) {
+		case SIGINT:
+		case SIGTERM:
+			signal (SIGINT,  SIG_DFL);
+			signal (SIGTERM, SIG_DFL);
+			exit(1);
+		default:
+			if (!setjmp (aiee_abort)) {
+				if (signal_hook)
+					recover = signal_hook (sig, signal_hook_data);
+				Sys_Shutdown ();
+			}
+
+			if (!recover) {
+				signal (SIGILL,  SIG_DFL);
+				signal (SIGSEGV, SIG_DFL);
+				signal (SIGFPE,  SIG_DFL);
+			}
+	}
+}
+
+static void
+hook_signlas (void)
+{
+	// catch signals
+	signal (SIGINT,  signal_handler);
+	signal (SIGILL,  signal_handler);
+	signal (SIGSEGV, signal_handler);
+	signal (SIGTERM, signal_handler);
+	signal (SIGFPE,  signal_handler);
+}
+#else
+
+static struct sigaction save_hup;
+static struct sigaction save_quit;
+static struct sigaction save_trap;
+static struct sigaction save_iot;
+static struct sigaction save_bus;
+static struct sigaction save_int;
+static struct sigaction save_ill;
+static struct sigaction save_segv;
+static struct sigaction save_term;
+static struct sigaction save_fpe;
 
 static void
 signal_handler (int sig, siginfo_t *info, void *ucontext)
@@ -848,13 +985,13 @@ signal_handler (int sig, siginfo_t *info, void *ucontext)
 	switch (sig) {
 		case SIGINT:
 		case SIGTERM:
-#ifndef _WIN32
 		case SIGHUP:
+		case SIGQUIT:
 			sigaction (SIGHUP,  &save_hup,  0);
-#endif
 			sigaction (SIGINT,  &save_int,  0);
 			sigaction (SIGTERM, &save_term, 0);
-			Sys_Quit ();
+			sigaction (SIGQUIT, &save_quit, 0);
+			exit(1);
 		default:
 			if (!sigsetjmp (aiee_abort, 1)) {
 				if (signal_hook)
@@ -863,12 +1000,9 @@ signal_handler (int sig, siginfo_t *info, void *ucontext)
 			}
 
 			if (!recover) {
-#ifndef _WIN32
-				sigaction (SIGQUIT, &save_quit, 0);
 				sigaction (SIGTRAP, &save_trap, 0);
 				sigaction (SIGIOT,  &save_iot,  0);
 				sigaction (SIGBUS,  &save_bus,  0);
-#endif
 				sigaction (SIGILL,  &save_ill,  0);
 				sigaction (SIGSEGV, &save_segv, 0);
 				sigaction (SIGFPE,  &save_fpe,  0);
@@ -876,8 +1010,8 @@ signal_handler (int sig, siginfo_t *info, void *ucontext)
 	}
 }
 
-VISIBLE void
-Sys_Init (void)
+static void
+hook_signlas (void)
 {
 	// catch signals
 	struct sigaction action = {};
@@ -895,6 +1029,13 @@ Sys_Init (void)
 	sigaction (SIGSEGV, &action, &save_segv);
 	sigaction (SIGTERM, &action, &save_term);
 	sigaction (SIGFPE,  &action, &save_fpe);
+}
+#endif
+
+VISIBLE void
+Sys_Init (void)
+{
+	hook_signlas ();
 
 	Cvar_Init_Hash ();
 	Cmd_Init_Hash ();

@@ -1,0 +1,172 @@
+/*
+	bi_stdlib.c
+
+	QuakeC stdlib api
+
+	Copyright (C) 2021 Bill Currie
+
+	Author: Bill Currie <bill@taniwha.org>
+	Date: 2021/5/31
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License
+	as published by the Free Software Foundation; either version 2
+	of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+*/
+#ifdef HAVE_CONFIG_H
+# include "config.h"
+#endif
+
+#define _GNU_SOURCE	// for qsort_r
+
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+#include <stdlib.h>
+#include <ctype.h>
+
+#include "compat.h"
+#include "qfalloca.h"
+
+#if defined(_WIN32) && defined(HAVE_MALLOC_H)
+#include <malloc.h>
+#endif
+
+#include "QF/fbsearch.h"
+#include "QF/progs.h"
+
+#include "rua_internal.h"
+
+typedef struct {
+	progs_t    *pr;
+	func_t      func;
+} function_t;
+
+static int
+int_compare (const void *_a, const void *_b)
+{
+	const int  *a = _a;
+	const int  *b = _b;
+	return *a - *b;
+}
+
+static int
+rua_compare (const void *a, const void *b, void *_f)
+{
+	function_t *f = _f;
+
+	PR_RESET_PARAMS (f->pr);
+	P_POINTER (f->pr, 0) = PR_SetPointer (f->pr, a);
+	P_POINTER (f->pr, 1) = PR_SetPointer (f->pr, b);
+	f->pr->pr_argc = 2;
+	PR_ExecuteProgram (f->pr, f->func);
+	return R_INT (f->pr);
+}
+
+static void
+bi_bsearch (progs_t *pr)
+{
+	const void *key = P_GPOINTER (pr, 0);
+	const void *array = P_GPOINTER (pr, 1);
+	size_t      nmemb = P_INT (pr, 2);
+	size_t      size = P_INT (pr, 3) * sizeof (pr_int_t);
+	func_t      cmp = P_FUNCTION (pr, 4);
+	void       *p = 0;
+
+	if (!cmp) {
+		p = bsearch (key, array, nmemb, size, int_compare);
+	} else {
+		function_t  func = { pr, cmp };
+		p = bsearch_r (key, array, nmemb, size, rua_compare, &func);
+	}
+	RETURN_POINTER (pr, p);
+}
+
+static void
+bi_fbsearch (progs_t *pr)
+{
+	const void *key = P_GPOINTER (pr, 0);
+	const void *array = P_GPOINTER (pr, 1);
+	size_t      nmemb = P_INT (pr, 2);
+	size_t      size = P_INT (pr, 3) * sizeof (pr_int_t);
+	func_t      cmp = P_FUNCTION (pr, 4);
+	void       *p = 0;
+
+	if (!cmp) {
+		p = fbsearch (key, array, nmemb, size, int_compare);
+	} else {
+		function_t  func = { pr, cmp };
+		p = fbsearch_r (key, array, nmemb, size, rua_compare, &func);
+	}
+	RETURN_POINTER (pr, p);
+}
+
+static void
+bi_qsort (progs_t *pr)
+{
+	void       *array = P_GPOINTER (pr, 0);
+	size_t      nmemb = P_INT (pr, 1);
+	size_t      size = P_INT (pr, 2) * sizeof (pr_int_t);
+	func_t      cmp = P_FUNCTION (pr, 3);
+
+	if (!cmp) {
+		qsort (array, nmemb, size, int_compare);
+	} else {
+		function_t  func = { pr, cmp };
+		qsort_r (array, nmemb, size, rua_compare, &func);
+	}
+}
+
+static void
+bi_prefixsumi (progs_t *pr)
+{
+	int        *array = (int *) P_GPOINTER (pr, 0);
+	int         count = P_INT (pr, 1);
+
+	for (int i = 1; i < count; i++) {
+		array[i] += array[i - 1];
+	}
+}
+
+static void
+bi_prefixsumf (progs_t *pr)
+{
+	float      *array = (float *) P_GPOINTER (pr, 0);
+	int         count = P_INT (pr, 1);
+
+	for (int i = 1; i < count; i++) {
+		array[i] += array[i - 1];
+	}
+}
+
+static builtin_t builtins[] = {
+	{"bsearch",			bi_bsearch,		-1},
+	{"fbsearch",		bi_fbsearch,	-1},
+	{"qsort",			bi_qsort,		-1},
+	{"prefixsum|^ii",	bi_prefixsumi,	-1},
+	{"prefixsum|^fi",	bi_prefixsumf,	-1},
+	{0}
+};
+
+void
+RUA_Stdlib_Init (progs_t *pr, int secure)
+{
+	PR_RegisterBuiltins (pr, builtins);
+}

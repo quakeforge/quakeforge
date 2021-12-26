@@ -1,3 +1,32 @@
+/*
+	editbuffer.c
+
+	High level wrapper for TextBuffer_Destroy
+
+	Copyright (C) 2020 Bill Currie <bill@taniwha.org>
+
+	Author: Bill Currie <bill@taniwha.org>
+	Date: 2020/03/22
+
+	This program is free software; you can redistribute it and/or
+	modify it under the terms of the GNU General Public License
+	as published by the Free Software Foundation; either version 2
+	of the License, or (at your option) any later version.
+
+	This program is distributed in the hope that it will be useful,
+	but WITHOUT ANY WARRANTY; without even the implied warranty of
+	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+	See the GNU General Public License for more details.
+
+	You should have received a copy of the GNU General Public License
+	along with this program; if not, write to:
+
+		Free Software Foundation, Inc.
+		59 Temple Place - Suite 330
+		Boston, MA  02111-1307, USA
+
+*/
 #ifdef HAVE_CONFIG_H
 # include "config.h"
 #endif
@@ -9,7 +38,8 @@
 #include "QF/progs.h"
 #include "QF/ruamoko.h"
 #include "QF/quakeio.h"
-#include "QF/txtbuffer.h"
+
+#include "QF/ui/txtbuffer.h"
 
 #include "ruamoko/qwaq/qwaq.h"
 #include "ruamoko/qwaq/editor/editbuffer.h"
@@ -17,7 +47,8 @@
 #define always_inline inline __attribute__((__always_inline__))
 
 typedef struct editbuffer_s {
-	void       *freenext;	// for PR_RESMAP
+	struct editbuffer_s *next;
+	struct editbuffer_s **prev;
 	txtbuffer_t *txtbuffer;
 	int         modified;
 	int         tabSize;
@@ -26,17 +57,29 @@ typedef struct editbuffer_s {
 typedef struct qwaq_ebresources_s {
 	progs_t    *pr;
 	PR_RESMAP (editbuffer_t) buffers;
+	editbuffer_t *buffer_list;
 } qwaq_ebresources_t;
 
 static editbuffer_t *
 editbuffer_new (qwaq_ebresources_t *res)
 {
-	return PR_RESNEW (res->buffers);
+	editbuffer_t *buffer = PR_RESNEW (res->buffers);
+	buffer->next = res->buffer_list;
+	buffer->prev = &res->buffer_list;
+	if (res->buffer_list) {
+		res->buffer_list->prev = &buffer->next;
+	}
+	res->buffer_list = buffer;
+	return buffer;
 }
 
 static void
 editbuffer_free (qwaq_ebresources_t *res, editbuffer_t *buffer)
 {
+	if (buffer->next) {
+		buffer->next->prev = buffer->prev;
+	}
+	*buffer->prev = buffer->next;
 	PR_RESFREE (res->buffers, buffer);
 }
 
@@ -162,7 +205,10 @@ prevWord (txtbuffer_t *buffer, unsigned ptr)
 	if (ptr > 0) {
 		while (ptr > 0) {
 			char        c = getChar (buffer, ptr - 1);
-			if (!isword (c)) {
+			if (c == '\n') {
+				return ptr;
+			}
+			if (isword (c)) {
 				break;
 			}
 			ptr--;
@@ -172,7 +218,7 @@ prevWord (txtbuffer_t *buffer, unsigned ptr)
 			if (c == '\n') {
 				return ptr;
 			}
-			if (isword (c)) {
+			if (!isword (c)) {
 				break;
 			}
 			ptr--;
@@ -620,6 +666,17 @@ bi_i_EditBuffer__prevNonSpace_ (progs_t *pr)
 }
 
 static void
+bi_i_EditBuffer__isWord_ (progs_t *pr)
+{
+	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
+	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
+	unsigned    ptr = P_UINT (pr, 2);
+
+	R_INT (pr) = isword (getChar (buffer->txtbuffer, ptr));
+}
+
+static void
 bi_i_EditBuffer__nextWord_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
@@ -811,6 +868,50 @@ bi_i_EditBuffer__readString_ (progs_t *pr)
 }
 
 static void
+bi_i_EditBuffer__getChar_ (progs_t *pr)
+{
+	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
+	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
+	unsigned    ptr = P_UINT (pr, 2);
+
+	if (ptr >= buffer->txtbuffer->textSize) {
+		PR_RunError (pr, "EditBuffer: character index out of bounds\n");
+	}
+	R_INT (pr) = (byte) getChar (buffer->txtbuffer, ptr);
+}
+
+static void
+bi_i_EditBuffer__putChar_at_ (progs_t *pr)
+{
+	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
+	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
+	int         chr = P_UINT (pr, 2);
+	unsigned    ptr = P_UINT (pr, 3);
+
+	if (ptr >= buffer->txtbuffer->textSize) {
+		PR_RunError (pr, "EditBuffer: character index out of bounds\n");
+	}
+	buffer->txtbuffer->text[spanGap (buffer->txtbuffer, ptr)] = chr;
+}
+
+static void
+bi_i_EditBuffer__insertChar_at_ (progs_t *pr)
+{
+	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
+	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
+	editbuffer_t *buffer = get_editbuffer (res, __FUNCTION__, buffer_id);
+	char        chr = P_UINT (pr, 2);
+	unsigned    ptr = P_UINT (pr, 3);
+
+	if (ptr > buffer->txtbuffer->textSize) {
+		PR_RunError (pr, "EditBuffer: character index out of bounds\n");
+	}
+	TextBuffer_InsertAt (buffer->txtbuffer, ptr, &chr, 1);
+}
+
+static void
 bi_i_EditBuffer__countLines_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
@@ -906,12 +1007,10 @@ qwaq_ebresources_clear (progs_t *pr, void *data)
 {
 	__auto_type res = (qwaq_ebresources_t *) data;
 
-	for (size_t i = 0; i < res->buffers._size; i++) {
-		editbuffer_t *buffer = editbuffer_get (res, ~i);
-		if (buffer->txtbuffer) {
-			TextBuffer_Destroy (buffer->txtbuffer);
-			buffer->txtbuffer = 0;
-		}
+	for (editbuffer_t *buffer = res->buffer_list; buffer;
+		 buffer = buffer->next) {
+		TextBuffer_Destroy (buffer->txtbuffer);
+		buffer->txtbuffer = 0;
 	}
 	editbuffer_reset (res);
 }
@@ -924,6 +1023,7 @@ static builtin_t builtins[] = {
 	{"_i_EditBuffer__prevChar_",		bi_i_EditBuffer__prevChar_,		-1},
 	{"_i_EditBuffer__nextNonSpace_",	bi_i_EditBuffer__nextNonSpace_,	-1},
 	{"_i_EditBuffer__prevNonSpace_",	bi_i_EditBuffer__prevNonSpace_,	-1},
+	{"_i_EditBuffer__isWord_",			bi_i_EditBuffer__isWord_,		-1},
 	{"_i_EditBuffer__nextWord_",		bi_i_EditBuffer__nextWord_,		-1},
 	{"_i_EditBuffer__prevWord_",		bi_i_EditBuffer__prevWord_,		-1},
 	{"_i_EditBuffer__nextLine_",		bi_i_EditBuffer__nextLine_,		-1},
@@ -939,13 +1039,16 @@ static builtin_t builtins[] = {
 	{"_i_EditBuffer__getBOT",			bi_i_EditBuffer__getBOT,		-1},
 	{"_i_EditBuffer__getEOT",			bi_i_EditBuffer__getEOT,		-1},
 	{"_i_EditBuffer__readString_",		bi_i_EditBuffer__readString_,	-1},
+	{"_i_EditBuffer__getChar_",			bi_i_EditBuffer__getChar_,		-1},
+	{"_i_EditBuffer__putChar_at_",		bi_i_EditBuffer__putChar_at_,	-1},
+	{"_i_EditBuffer__insertChar_at_",	bi_i_EditBuffer__insertChar_at_,-1},
 	{"_i_EditBuffer__countLines_",		bi_i_EditBuffer__countLines_,	-1},
 	{"_i_EditBuffer__search_for_direction_",
 								bi_i_EditBuffer__search_for_direction_,	-1},
 	{"_i_EditBuffer__isearch_for_direction_",
 								bi_i_EditBuffer__isearch_for_direction_,-1},
 	{"_i_EditBuffer__formatLine_from_into_width_highlight_colors_",
-	bi_i_EditBuffer__formatLine_from_into_width_highlight_colors_,	-1},
+		bi_i_EditBuffer__formatLine_from_into_width_highlight_colors_,	-1},
 	{"_i_EditBuffer__modified",			bi_i_EditBuffer__modified,		-1},
 	{"_i_EditBuffer__textSize",			bi_i_EditBuffer__textSize,		-1},
 	{"_i_EditBuffer__saveFile_",		bi_i_EditBuffer__saveFile_,		-1},

@@ -102,8 +102,8 @@ free_edict (progs_t *pr, edict_t *ent)
 		E_fld (ent, sv_fields.frame).float_var = 0;
 		E_fld (ent, sv_fields.nextthink).float_var = -1;
 		E_fld (ent, sv_fields.solid).float_var = 0;
-		memset (&E_fld (ent, sv_fields.origin).vector_var, 0, 3*sizeof(float));
-		memset (&E_fld (ent, sv_fields.angles).vector_var, 0, 3*sizeof(float));
+		memset (&E_fld (ent, sv_fields.origin).vector_var, 0, 3*sizeof (float));
+		memset (&E_fld (ent, sv_fields.angles).vector_var, 0, 3*sizeof (float));
 	} else {
 		ED_ClearEdict (pr, ent, 0);
 	}
@@ -151,10 +151,17 @@ static void
 ED_PrintEdict_f (void)
 {
 	int         i;
+	const char *fieldname = 0;
 
+	if (Cmd_Argc () < 2) {
+		SV_Printf ("edict num [fieldname]\n");
+		return;
+	}
+	if (Cmd_Argc () >= 3) {
+		fieldname = Cmd_Argv (2);
+	}
 	i = atoi (Cmd_Argv (1));
-	SV_Printf ("\n EDICT %i:\n", i);
-	ED_PrintNum (&sv_pr_state, i);
+	ED_PrintNum (&sv_pr_state, i, fieldname);
 }
 
 static void
@@ -530,7 +537,7 @@ SV_LoadProgs (void)
 		sv_range = PR_RANGE_NONE;
 		range = "None";
 	}
-	Sys_MaskPrintf (SYS_DEV, "Using %s builtin extention mapping\n", range);
+	Sys_MaskPrintf (SYS_dev, "Using %s builtin extention mapping\n", range);
 
 	memset (&sv_globals, 0, sizeof (sv_funcs));
 	memset (&sv_funcs, 0, sizeof (sv_funcs));
@@ -549,6 +556,8 @@ SV_LoadProgs (void)
 	sv.edicts = sv_edicts;
 	sv_pr_state.max_edicts = MAX_EDICTS;
 	sv_pr_state.zone_size = sv_progs_zone->int_val * 1024;
+	sv.edicts = sv_edicts;
+
 	PR_LoadProgs (&sv_pr_state, progs_name);
 	if (!sv_pr_state.progs)
 		Sys_Error ("SV_LoadProgs: couldn't load %s", progs_name);
@@ -560,7 +569,7 @@ SV_Progs_Init (void)
 	SV_Progs_Init_Cvars ();
 
 	pr_gametype = "quakeworld";
-	sv_pr_state.edicts = &sv.edicts;
+	sv_pr_state.pr_edicts = &sv.edicts;
 	sv_pr_state.num_edicts = &sv.num_edicts;
 	sv_pr_state.reserved_edicts = &reserved_edicts;
 	sv_pr_state.unlink = SV_UnlinkEdict;
@@ -571,6 +580,7 @@ SV_Progs_Init (void)
 	sv_pr_state.bi_map = bi_map;
 	sv_pr_state.resolve = resolve;
 
+	PR_AddLoadFunc (&sv_pr_state, sv_init_edicts);
 	PR_Init (&sv_pr_state);
 	PR_AddLoadFunc (&sv_pr_state, sv_init_edicts);
 

@@ -86,7 +86,7 @@ load_file (progs_t *pr, const char *path, off_t *size)
 static void *
 allocate_progs_mem (progs_t *pr, int size)
 {
-	return Hunk_AllocName (size, pr->progs_name);
+	return Hunk_AllocName (0, size, pr->progs_name);
 }
 
 static void
@@ -170,7 +170,7 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 
 	// size of progs themselves
 	pr->progs_size = size + offset_tweak;
-	Sys_MaskPrintf (SYS_DEV, "Programs occupy %iK.\n", size / 1024);
+	Sys_MaskPrintf (SYS_dev, "Programs occupy %iK.\n", size / 1024);
 
 	// size of edict asked for by progs, but at least 1
 	pr->pr_edict_size = max (1, progs.entityfields);
@@ -185,10 +185,18 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	pr->zone_size = align_size (pr->zone_size);
 	pr->stack_size = align_size (pr->stack_size);
 
+	// size of edict asked for by progs, but at least 1
+	pr->pr_edict_size = max (1, progs.entityfields);
+	// round off to next highest multiple of 4 words
+	// this ensures that progs that try to align vectors and quaternions
+	// get what they want
+	pr->pr_edict_size += (4 - 1);
+	pr->pr_edict_size &= ~(4 - 1);
+	pr->pr_edict_area_size = pr->max_edicts * pr->pr_edict_size;
+	pr->edict_parse = 0;
+
 	mem_size = pr->pr_edict_area_size * sizeof (pr_type_t);
 	mem_size += pr->progs_size + pr->zone_size + pr->stack_size;
-
-	pr->edict_parse = 0;
 
 	// +1 for a nul terminator
 	pr->progs = pr->allocate_progs_mem (pr, mem_size + 1);
@@ -202,9 +210,10 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	base = (byte *) (pr->progs + 1) + offset_tweak;
 	Qread (file, base, size - sizeof (progs));
 	CRC_ProcessBlock (base, &pr->crc, size - sizeof (progs));
-	base -= sizeof (progs);	// offsets are from file start
 
 	pr->pr_edict_area = (pr_type_t *)((byte *) pr->progs + pr->progs_size);
+
+	base -= sizeof (progs);	// offsets are from file start
 	heap = (byte *) &pr->pr_edict_area[pr->pr_edict_area_size];
 
 	pr->zone = 0;
@@ -216,13 +225,13 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 
 	pr->pr_functions = (dfunction_t *) (base + pr->progs->ofs_functions);
 	pr->pr_strings = (char *) base + pr->progs->ofs_strings;
-	pr->pr_stringsize = (char *) heap + pr->zone_size - (char *) base;
+	pr->pr_stringsize = (heap - base) + pr->zone_size;
 	global_ddefs = (ddef_t *) (base + pr->progs->ofs_globaldefs);
 	field_ddefs = (ddef_t *) (base + pr->progs->ofs_fielddefs);
 	pr->pr_statements = (dstatement_t *) (base + pr->progs->ofs_statements);
 
 	pr->pr_globals = (pr_type_t *) (base + pr->progs->ofs_globals);
-	pr->stack = (pr_type_t *) ((byte *) heap + pr->zone_size);
+	pr->stack = (pr_type_t *) ((byte *) pr->zone + pr->zone_size);
 	pr->stack_bottom = pr->stack - pr->pr_globals;
 	pr->globals_size = (pr_type_t *) ((byte *) pr->stack + pr->stack_size)
 						- pr->pr_globals;
@@ -258,7 +267,7 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 		pr->pr_statements[i].c = LittleShort (pr->pr_statements[i].c);
 	}
 
-	for (i = 0; i < (size_t) pr->progs->numfunctions; i++) {
+	for (i = 0; i < pr->progs->numfunctions; i++) {
 		pr->pr_functions[i].first_statement =
 			LittleLong (pr->pr_functions[i].first_statement);
 		pr->pr_functions[i].parm_start =
@@ -324,6 +333,16 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 			 i++, xdef++, def++) {
 			def->ofs = xdef->ofs;
 			def->type_encoding = xdef->type;
+		}
+	} else {
+		pr_def_t   *def;
+		for (def = pr->pr_globaldefs, i = 0; i < pr->progs->numglobaldefs;
+			 i++, def++) {
+			def->size = pr_type_size[def->type & ~DEF_SAVEGLOBAL];
+		}
+		for (def = pr->pr_fielddefs, i = 0; i < pr->progs->numfielddefs;
+			 i++, def++) {
+			def->size = pr_type_size[def->type & ~DEF_SAVEGLOBAL];
 		}
 	}
 	pr->pr_trace = 0;

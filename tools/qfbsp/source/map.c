@@ -64,7 +64,7 @@ int         numdetailbrushes;
 
 script_t   *map_script;
 
-static void __attribute__ ((format (printf, 1, 2), noreturn))
+static void __attribute__ ((format (PRINTF, 1, 2), noreturn))
 map_error (const char *fmt, ...)
 {
 	va_list     args;
@@ -122,10 +122,11 @@ FindMiptex (const char *name)
 static int
 FindTexinfo (texinfo_t *t)
 {
-	int         i, j;
+	size_t      i;
+	int         j;
 	texinfo_t  *tex;
 
-	if (t->miptex < 0)
+	if (t->miptex == ~0u)
 		return t->miptex;		// it's HINT or SKIP
 
 	// set the special flag
@@ -545,7 +546,7 @@ LoadMapFile (const char *filename)
 	qprintf ("%5i brushes (%i detail)\n", nummapbrushes, numdetailbrushes);
 	qprintf ("%5i entities\n", num_entities);
 	qprintf ("%5i textures\n", nummiptexnames);
-	qprintf ("%5i texinfo\n", bsp->numtexinfo);
+	qprintf ("%5zd texinfo\n", bsp->numtexinfo);
 }
 
 void

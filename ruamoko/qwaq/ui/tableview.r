@@ -1,5 +1,6 @@
 #include <Array.h>
 #include "ruamoko/qwaq/ui/listener.h"
+#include "ruamoko/qwaq/ui/scrollbar.h"
 #include "ruamoko/qwaq/ui/tableview.h"
 
 @implementation TableViewColumn
@@ -97,7 +98,15 @@
 -setDataSource:(id<TableViewDataSource>)dataSource
 {
 	self.dataSource = [dataSource retain];
+	[[dataSource onRowCountChanged] addListener:self
+											   :@selector(onRowCountChanged:)];
+	[vScrollBar setRange:[dataSource numberOfRows:self]];
 	return self;
+}
+
+-(void)onRowCountChanged:(id)sender
+{
+	[vScrollBar setRange:[sender numberOfRows:self]];
 }
 
 -resize:(Extent)delta
@@ -127,7 +136,10 @@
 			}
 			col = [columns objectAtIndex:i];
 			cell = [dataSource tableView:self forColumn:col row:row];
-			[[[cell setContext:buffer] moveTo:{x, y}] draw];
+			[[[[cell setContext:buffer]
+				moveTo:{x, y}]
+				resizeTo:{[col width], 1}]
+				draw];
 			x += [col width];
 		}
 	}
@@ -141,6 +153,105 @@
 		base.y = scroll.y;
 		[self redraw];
 	}
+}
+
+static int
+handleEvent (TableView *self, qwaq_event_t *event)
+{
+	if (event.what & qe_mouse) {
+		if (event.what == qe_mouseclick) {
+			if (event.mouse.buttons & (1 << 3)) {
+				[self.vScrollBar page:1 dir:0];
+				return 1;
+			}
+			if (event.mouse.buttons & (1 << 4)) {
+				[self.vScrollBar page:1 dir:1];
+				return 1;
+			}
+#if 0
+			if (event.mouse.buttons & (1 << 5)) {
+				[self scrollLeft: 1];
+				return 1;
+			}
+			if (event.mouse.buttons & (1 << 6)) {
+				[self scrollRight: 1];
+				return 1;
+			}
+#endif
+		}
+	} else if (event.what == qe_keydown) {
+#if 0
+		switch (event.key.code) {
+			case QFK_PAGEUP:
+				if (event.key.shift & qe_control) {
+					[self moveBOT];
+				} else {
+					[self pageUp];
+				}
+				return 1;
+			case QFK_PAGEDOWN:
+				if (event.key.shift & qe_control) {
+					[self moveEOT];
+				} else {
+					[self pageDown];
+				}
+				return 1;
+			case QFK_UP:
+				if (event.key.shift & qe_control) {
+					[self linesUp];
+				} else {
+					[self charUp];
+				}
+				return 1;
+			case QFK_DOWN:
+				if (event.key.shift & qe_control) {
+					[self linesDown];
+				} else {
+					[self charDown];
+				}
+				return 1;
+			case QFK_LEFT:
+				if (event.key.shift & qe_control) {
+					[self wordLeft];
+				} else {
+					[self charLeft];
+				}
+				return 1;
+			case QFK_RIGHT:
+				if (event.key.shift & qe_control) {
+					[self wordRight];
+				} else {
+					[self charRight];
+				}
+				return 1;
+			case QFK_HOME:
+				if (event.key.shift & qe_control) {
+					[self moveBOS];
+				} else {
+					[self moveBOL];
+				}
+				return 1;
+			case QFK_END:
+				if (event.key.shift & qe_control) {
+					[self moveEOS];
+				} else {
+					[self moveEOL];
+				}
+				return 1;
+		}
+#endif
+	}
+	return 0;
+}
+
+-handleEvent:(qwaq_event_t *) event
+{
+	[super handleEvent: event];
+
+	if (handleEvent (self, event)) {
+		event.what = qe_none;
+	}
+	return self;
 }
 
 @end

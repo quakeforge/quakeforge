@@ -323,7 +323,7 @@
 			cause something else to happen).
 		*/
 		tmp = _objs[--count];
-		_objs[i] = nil;
+		_objs[count] = nil;
 		[tmp release];
 	}
 #else

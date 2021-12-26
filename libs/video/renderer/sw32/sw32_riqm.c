@@ -43,11 +43,12 @@
 #include "namehack.h"
 
 #include "QF/cvar.h"
-#include "QF/entity.h"
 #include "QF/image.h"
 #include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
+
+#include "QF/scene/entity.h"
 
 #include "d_ifacea.h"
 #include "r_internal.h"

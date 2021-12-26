@@ -43,6 +43,24 @@
 
 sw_ctx_t *sw32_ctx;
 
+static void
+sw32_vid_render_choose_visual (void *data)
+{
+    sw32_ctx->choose_visual (sw32_ctx);
+}
+
+static void
+sw32_vid_render_create_context (void *data)
+{
+    sw32_ctx->create_context (sw32_ctx);
+}
+
+static void
+sw32_vid_render_set_palette (void *data, const byte *palette)
+{
+    sw32_ctx->set_palette (sw32_ctx, palette);
+}
+
 static vid_model_funcs_t model_funcs = {
 	0,
 	sw_Mod_LoadLighting,
@@ -59,7 +77,7 @@ static vid_model_funcs_t model_funcs = {
 	0,
 	sw_Mod_IQMFinish,
 	1,
-	sw_Mod_SpriteLoadTexture,
+	sw_Mod_SpriteLoadFrames,
 
 	Skin_SetColormap,
 	Skin_SetSkin,
@@ -69,7 +87,30 @@ static vid_model_funcs_t model_funcs = {
 	sw_Skin_InitTranslations,
 };
 
+static void
+sw32_vid_render_init (void)
+{
+	if (!vr_data.vid->vid_internal->sw_context) {
+		Sys_Error ("Sorry, software rendering not supported by this program.");
+	}
+	sw32_ctx = vr_data.vid->vid_internal->sw32_context ();
+
+	vr_data.vid->vid_internal->data = sw32_ctx;
+	vr_data.vid->vid_internal->set_palette = sw32_vid_render_set_palette;
+	vr_data.vid->vid_internal->choose_visual = sw32_vid_render_choose_visual;
+	vr_data.vid->vid_internal->create_context = sw32_vid_render_create_context;
+
+	vr_funcs = &sw32_vid_render_funcs;
+	m_funcs = &model_funcs;
+}
+
+static void
+sw32_vid_render_shutdown (void)
+{
+}
+
 vid_render_funcs_t sw32_vid_render_funcs = {
+	sw32_vid_render_init,
 	sw32_Draw_Character,
 	sw32_Draw_String,
 	sw32_Draw_nString,
@@ -103,6 +144,7 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 	0,
 	0,
 
+	sw32_ParticleSystem,
 	sw32_R_Init,
 	sw32_R_RenderFrame,
 	sw32_R_ClearState,
@@ -110,78 +152,30 @@ vid_render_funcs_t sw32_vid_render_funcs = {
 	sw32_R_NewMap,
 	R_AddEfrags,
 	R_RemoveEfrags,
-	R_EnqueueEntity,
 	sw32_R_LineGraph,
 	R_AllocDlight,
 	R_AllocEntity,
 	R_MaxDlightsCheck,
-	sw32_R_RenderView,
 	R_DecayLights,
 	sw32_R_ViewChanged,
-	sw32_R_ClearParticles,
-	sw32_R_InitParticles,
 	sw32_SCR_ScreenShot_f,
-	sw32_r_easter_eggs_f,
-	sw32_r_particles_style_f,
-	0,
 	&model_funcs
 };
 
-static void
-sw32_vid_render_choose_visual (void)
-{
-    sw32_ctx->choose_visual (sw32_ctx);
-}
-
-static void
-sw32_vid_render_create_context (void)
-{
-    sw32_ctx->create_context (sw32_ctx);
-}
-
-static void
-sw32_vid_render_init (void)
-{
-	sw32_ctx = vr_data.vid->vid_internal->sw_context ();
-
-	vr_data.vid->vid_internal->set_palette = sw32_ctx->set_palette;
-	vr_data.vid->vid_internal->choose_visual = sw32_vid_render_choose_visual;
-	vr_data.vid->vid_internal->create_context = sw32_vid_render_create_context;
-
-	vr_funcs = &sw32_vid_render_funcs;
-	m_funcs = &model_funcs;
-}
-
-static void
-sw32_vid_render_shutdown (void)
-{
-}
-
 static general_funcs_t plugin_info_general_funcs = {
-	sw32_vid_render_init,
-	sw32_vid_render_shutdown,
+	.shutdown = sw32_vid_render_shutdown,
 };
 
 static general_data_t plugin_info_general_data;
 
 static plugin_funcs_t plugin_info_funcs = {
-	&plugin_info_general_funcs,
-	0,
-	0,
-	0,
-	0,
-	0,
-	&sw32_vid_render_funcs,
+	.general = &plugin_info_general_funcs,
+	.vid_render = &sw32_vid_render_funcs,
 };
 
 static plugin_data_t plugin_info_data = {
-	&plugin_info_general_data,
-	0,
-	0,
-	0,
-	0,
-	0,
-	&vid_render_data,
+	.general = &plugin_info_general_data,
+	.vid_render = &vid_render_data,
 };
 
 static plugin_t plugin_info = {

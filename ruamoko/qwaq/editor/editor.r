@@ -7,28 +7,64 @@
 
 @implementation Editor
 
--initWithRect:(Rect) rect file:(string) filename
+static int
+center (unsigned v, int len)
+{
+	return v > len / 2 ? v / 2 : 0;
+}
+
+static void
+trackCursor (Editor *self)
+{
+	unsigned    cx = [self.buffer charPos:self.line_index at:self.char_index];
+	if (self.cursor.x != cx) {
+		if (self.char_index < [self.buffer getEOT]) {
+			int c = [self.buffer getChar:self.char_index];
+		}
+	}
+}
+
+-initWithRect:(Rect) rect file:(string) filename path:(string) filepath
 {
 	if (!(self = [super initWithRect: rect])) {
 		return nil;
 	}
 	self.filename = str_hold (filename);
-	buffer = [[EditBuffer withFile:filename] retain];
+	if (filepath != filename) {
+		self.filepath = str_hold (filepath);
+	} else {
+		self.filepath = filename;
+	}
+	buffer = [[EditBuffer withFile:filepath] retain];
 	line_count = [buffer countLines: {0, [buffer textSize]}];
 	linebuffer = [[DrawBuffer buffer: { xlen, 1 }] retain];
 	growMode = gfGrowHi;
 	options = ofCanFocus | ofRelativeEvents;
 	[onViewScrolled addListener:self :@selector(onScroll:)];
+	[self setCursorVisible:1];
+
 	return self;
 }
 
 +(Editor *)withRect:(Rect)rect file:(string)filename
 {
-	return [[[self alloc] initWithRect:rect file:filename] autorelease];
+	return [[[self alloc] initWithRect:rect
+								  file:filename
+								  path:filename] autorelease];
+}
+
++(Editor *)withRect:(Rect)rect file:(string)filename path:(string)filepath
+{
+	return [[[self alloc] initWithRect:rect
+								  file:filename
+								  path:filepath] autorelease];
 }
 
 -(void)dealloc
 {
+	if (filepath != filename) {
+		str_free (filepath);
+	}
 	str_free (filename);
 	[vScrollBar release];
 	[buffer release];
@@ -39,6 +75,55 @@
 -(string)filename
 {
 	return filename;
+}
+
+-(string)filepath
+{
+	return filepath;
+}
+
+-(Point)cursor
+{
+	return cursor;
+}
+
+-setStatusView:(EditStatus *)status
+{
+	self.status = status;
+	[status setModified:modified];
+	[status setCursorMode:cursorMode];
+	[status redraw];
+	return self;
+}
+
+-trackCursor:(int)fwd
+{
+	unsigned    tx = [buffer charPos:line_index at:char_index];
+
+	cursorMode &= ~cmVInsert;
+	if (tx != cursor.x) {
+		if (char_index < [buffer getEOT]) {
+			int         c = [buffer getChar:char_index];
+
+			if (virtualInsert) {
+				if (c != '\t' || cursorThroughTabs) {
+					cursorMode |= cmVInsert;
+					goto done;
+				}
+			}
+			if (c == '\t' && fwd) {
+				tx = [buffer charPos:line_index at:++char_index];
+			}
+		} else if (virtualInsert) {
+			cursorMode |= cmVInsert;
+			goto done;
+		}
+		cursor.x = tx;
+	}
+done:
+	[status setCursorMode:cursorMode];
+	[status redraw];
+	return self;
 }
 
 -draw
@@ -63,16 +148,17 @@
 	return self;
 }
 
-static int handleEvent (Editor *self, qwaq_event_t *event)
+static int
+handleEvent (Editor *self, qwaq_event_t *event)
 {
 	if (event.what & qe_mouse) {
 		if (event.what == qe_mouseclick) {
 			if (event.mouse.buttons & (1 << 3)) {
-				[self scrollUp: 1];
+				[self.vScrollBar page:1 dir:0];
 				return 1;
 			}
 			if (event.mouse.buttons & (1 << 4)) {
-				[self scrollDown: 1];
+				[self.vScrollBar page:1 dir:1];
 				return 1;
 			}
 			if (event.mouse.buttons & (1 << 5)) {
@@ -87,10 +173,60 @@ static int handleEvent (Editor *self, qwaq_event_t *event)
 	} else if (event.what == qe_keydown) {
 		switch (event.key.code) {
 			case QFK_PAGEUP:
-				[self scrollUp: self.ylen];
+				if (event.key.shift & qe_control) {
+					[self moveBOT];
+				} else {
+					[self pageUp];
+				}
 				return 1;
 			case QFK_PAGEDOWN:
-				[self scrollDown: self.ylen];
+				if (event.key.shift & qe_control) {
+					[self moveEOT];
+				} else {
+					[self pageDown];
+				}
+				return 1;
+			case QFK_UP:
+				if (event.key.shift & qe_control) {
+					[self linesUp];
+				} else {
+					[self charUp];
+				}
+				return 1;
+			case QFK_DOWN:
+				if (event.key.shift & qe_control) {
+					[self linesDown];
+				} else {
+					[self charDown];
+				}
+				return 1;
+			case QFK_LEFT:
+				if (event.key.shift & qe_control) {
+					[self wordLeft];
+				} else {
+					[self charLeft];
+				}
+				return 1;
+			case QFK_RIGHT:
+				if (event.key.shift & qe_control) {
+					[self wordRight];
+				} else {
+					[self charRight];
+				}
+				return 1;
+			case QFK_HOME:
+				if (event.key.shift & qe_control) {
+					[self moveBOS];
+				} else {
+					[self moveBOL];
+				}
+				return 1;
+			case QFK_END:
+				if (event.key.shift & qe_control) {
+					[self moveEOS];
+				} else {
+					[self moveEOL];
+				}
 				return 1;
 		}
 	}
@@ -107,28 +243,6 @@ static int handleEvent (Editor *self, qwaq_event_t *event)
 	return self;
 }
 
--scrollUp:(unsigned) count
-{
-	if (count == 1) {
-		base_index = [buffer prevLine: base_index];
-	} else {
-		base_index = [buffer prevLine: base_index :count];
-	}
-	[self redraw];
-	return self;
-}
-
--scrollDown:(unsigned) count
-{
-	if (count == 1) {
-		base_index = [buffer nextLine: base_index];
-	} else {
-		base_index = [buffer nextLine: base_index :count];
-	}
-	[self redraw];
-	return self;
-}
-
 -scrollLeft:(unsigned) count
 {
 	if (base.x > count) {
@@ -137,6 +251,7 @@ static int handleEvent (Editor *self, qwaq_event_t *event)
 		base.x = 0;
 	}
 	[self redraw];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
 	return self;
 }
 
@@ -148,6 +263,7 @@ static int handleEvent (Editor *self, qwaq_event_t *event)
 		base.x = 1024;
 	}
 	[self redraw];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
 	return self;
 }
 
@@ -159,13 +275,314 @@ static int handleEvent (Editor *self, qwaq_event_t *event)
 		base_index = [buffer prevLine:base_index :base.y - target];
 	}
 	base.y = target;
+	[vScrollBar setIndex:base.y];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+	return self;
+}
+
+-pageUp
+{
+	[self recenter:0];
+	unsigned count = cursor.y;
+
+	if (count > ylen) {
+		count = ylen;
+	}
+	if (count) {
+		cursor.y -= count;
+		[vScrollBar setIndex:[vScrollBar index] - count];
+		line_index = [buffer prevLine:line_index :count];
+		char_index = [buffer charPtr:line_index at:cursor.x];
+		[self trackCursor:1];
+
+		[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+	}
+	return self;
+}
+
+-pageDown
+{
+	[self recenter:0];
+	unsigned count = line_count - cursor.y;
+
+	if (count > ylen) {
+		count = ylen;
+	}
+	if (count) {
+		cursor.y += count;
+		[vScrollBar setIndex:[vScrollBar index] + count];
+		line_index = [buffer nextLine:line_index :count];
+		char_index = [buffer charPtr:line_index at:cursor.x];
+		[self trackCursor:1];
+
+		[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+	}
+	return self;
+}
+
+-linesUp
+{
+	while (line_index > 0) {
+		line_index = [buffer prevLine: line_index];
+		cursor.y--;
+		unsigned p = [buffer nextNonSpace: line_index];
+		if ([buffer getChar:p] == '\n') {
+			continue;
+		}
+		int x = [buffer charPos:line_index at:p];
+		if (x <= cursor.x) {
+			break;
+		}
+	}
+	char_index = [buffer charPtr:line_index at:cursor.x];
+
+	[self recenter:0];
+	[self trackCursor:1];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+
+	return self;
+}
+
+-linesDown
+{
+	unsigned end = [buffer getEOT];
+	unsigned last = [buffer getBOL:end];
+	while (line_index < last) {
+		line_index = [buffer nextLine: line_index];
+		cursor.y++;
+		unsigned p = [buffer nextNonSpace: line_index];
+		if (p >= end || [buffer getChar:p] == '\n') {
+			continue;
+		}
+		int x = [buffer charPos:line_index at:p];
+		if (x <= cursor.x) {
+			break;
+		}
+	}
+	char_index = [buffer charPtr:line_index at:cursor.x];
+
+	[self recenter:0];
+	[self trackCursor:1];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+
+	return self;
+}
+
+-charUp
+{
+	[self recenter:0];
+	if (cursor.y < 1) {
+		return self;
+	}
+	cursor.y--;
+	line_index = [buffer prevLine:line_index :1];
+	char_index = [buffer charPtr:line_index at:cursor.x];
+	[self trackCursor:1];
+
+	if (base.y > cursor.y) {
+		[vScrollBar setIndex:cursor.y];
+	}
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+	return self;
+}
+
+-charDown
+{
+	[self recenter:0];
+	if (cursor.y >= line_count) {
+		return self;
+	}
+	cursor.y++;
+	line_index = [buffer nextLine:line_index :1];
+	char_index = [buffer charPtr:line_index at:cursor.x];
+	[self trackCursor:1];
+
+	if (base.y + ylen - 1 < cursor.y) {
+		[vScrollBar setIndex:cursor.y + 1 - ylen];
+	}
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+	return self;
+}
+
+-charLeft
+{
+	[self recenter:0];
+	if (cursor.x < 1) {
+		return self;
+	}
+	cursor.x--;
+	char_index = [buffer charPtr:line_index at:cursor.x];
+	[self trackCursor:0];
+
+	if (base.x > cursor.x) {
+		[hScrollBar setIndex:cursor.x];
+	}
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+	return self;
+}
+
+-charRight
+{
+	[self recenter:0];
+	// FIXME handle horizontal scrolling and how to deal with max scroll
+	cursor.x++;
+	char_index = [buffer charPtr:line_index at:cursor.x];
+	[self trackCursor:1];
+
+	if (base.x + xlen - 1 < cursor.x) {
+		[hScrollBar setIndex:cursor.x + 1 - xlen];
+	}
+	if (base.x + xlen - 1 < cursor.x) {
+		cursor.x = base.x + xlen - 1;
+	}
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+	return self;
+}
+
+-wordLeft
+{
+	[self recenter:0];
+	//unsigned oc = char_index;
+	Point    b = base;
+
+	do {
+		if (char_index && char_index == line_index) {
+			line_index = [buffer prevLine: line_index];
+			char_index = [buffer getEOL: line_index];
+			if (--cursor.y < b.y) {
+				b.y = cursor.y;
+			}
+		}
+		char_index = [buffer prevWord:char_index];
+	} while (char_index && char_index < [buffer getEOT]
+			 && ![buffer isWord:char_index]);
+
+	cursor.x = [buffer charPos:line_index at:char_index];
+	if (cursor.x < b.x) {
+		b.x = cursor.x;
+	} else if (cursor.x >= b.x) {
+		b.x = center (b.x, xlen);
+	}
+	base.x = b.x;
+	[vScrollBar setIndex:b.y];
+	trackCursor (self);
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+
+	return self;
+}
+
+-wordRight
+{
+	[self recenter:0];
+	//unsigned oc = char_index;
+	Point    b = base;
+
+	if (char_index >= [buffer getEOT]) {
+		return self;
+	}
+	if ([buffer getChar:char_index] == '\n') {
+		while ([buffer getChar:char_index] == '\n') {
+			char_index = line_index = [buffer nextLine:line_index];
+			if (++cursor.y >= b.y + ylen) {
+				b.y = cursor.y + 1 - ylen;
+			}
+			if (char_index >= [buffer getEOT]) {
+				break;
+			}
+			if (![buffer isWord:char_index]) {
+				char_index = [buffer nextWord: char_index];
+			}
+		}
+	} else {
+		char_index = [buffer nextWord: char_index];
+	}
+
+	cursor.x = [buffer charPos:line_index at:char_index];
+	if (cursor.x < b.x) {
+		b.x = cursor.x;
+	} else if (cursor.x >= b.x) {
+		b.x = center (b.x, xlen);
+	}
+	base.x = b.x;
+	[vScrollBar setIndex:b.y];
+	trackCursor (self);
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+
+	return self;
+}
+
+-moveBOT
+{
+	line_index = base_index = char_index = 0;;
+	cursor = nil;
+	base.x = 0;
+	[vScrollBar setIndex:0];
+	[self trackCursor:1];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+	return self;
+}
+
+-moveEOT
+{
+	char_index = [buffer getEOT];
+	line_index = [buffer getBOL:char_index];
+	cursor.x = [buffer charPos:line_index at:char_index];
+	cursor.y = line_count;
+	[self recenter:0];
+	[self trackCursor:1];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+	return self;
+}
+
+-moveBOS
+{
+	line_index = base_index;
+	cursor.y = base.y;
+	char_index = [buffer charPtr:line_index at:cursor.x];
+	[self trackCursor:1];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+	return self;
+}
+
+-moveEOS
+{
+	unsigned count = line_count - base.y;
+	if (count > ylen - 1) {
+		count = ylen - 1;
+	}
+	line_index = [buffer nextLine:base_index :count];
+	cursor.y = base.y + count;
+	char_index = [buffer charPtr:line_index at:cursor.x];
+	[self trackCursor:1];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+	return self;
+}
+
+-moveBOL
+{
+	char_index = line_index;
+	cursor.x = 0;
+	base.x = 0;
+	[self recenter:0];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
+	return self;
+}
+
+-moveEOL
+{
+	char_index = [buffer getEOL:line_index];
+	cursor.x = [buffer charPos:line_index at:char_index];
+	[self recenter:0];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
 	return self;
 }
 
 -(void)onScroll:(id)sender
 {
 	base.x = scroll.x;
-	[self scrollTo:scroll.y];
+	if (base.y != scroll.y) {
+		[self scrollTo:scroll.y];
+	}
 }
 
 -setVerticalScrollBar:(ScrollBar *)scrollbar
@@ -178,18 +595,9 @@ static int handleEvent (Editor *self, qwaq_event_t *event)
 
 -recenter:(int) force
 {
-	if (!force) {
-		if (cursor.y >= base.y && cursor.y - base.y < ylen) {
-			return self;
-		}
+	if (force || cursor.y < base.y || cursor.y - base.y >= ylen) {
+		[self scrollTo: center (cursor.y, ylen)];
 	}
-	unsigned target;
-	if (cursor.y < ylen / 2) {
-		target = 0;
-	} else {
-		target = cursor.y - ylen / 2;
-	}
-	[self scrollTo:target];
 	return self;
 }
 
@@ -201,7 +609,9 @@ static int handleEvent (Editor *self, qwaq_event_t *event)
 		line_index = [buffer prevLine:line_index :cursor.y - line];
 	}
 	cursor.y = line;
-	[self recenter: 0];
+	char_index = [buffer charPtr:line_index at:cursor.x];
+	[self recenter:0];
+	[self moveCursor: {cursor.x - base.x, cursor.y - base.y}];
 	return self;
 }
 

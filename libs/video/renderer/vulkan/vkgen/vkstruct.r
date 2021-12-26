@@ -21,18 +21,30 @@
 {
 	string name = [self name];
 	if (!Hash_Find (processed_types, name)) {
-		printf ("    +%s\n", name);
+		//printf ("    +%s\n", name);
 		Hash_Add (processed_types, (void *) name);
 		[queue addObject: self];
 	}
 }
 
--(void) forEachFieldCall: (varfunc) func
+-(void) queueFieldTypes
 {
 	qfot_struct_t *strct =&type.strct;
+	PLItem     *field_dict = [parse getObjectForKey:[self name]];
 
 	for (int i = 0; i < strct.num_fields; i++) {
-		func (&strct.fields[i]);
+		qfot_var_t *var = &strct.fields[i];
+		if (field_dict) {
+			PLItem     *item = [field_dict getObjectForKey:var.name];
+			FieldDef   *def = [FieldDef fielddef:item
+										  struct:self
+										   field:var.name];
+			if (![def searchType]) {
+				continue;
+			}
+		}
+		Type       *type = [Type findType:var.type];
+		[type addToQueue];
 	}
 }
 

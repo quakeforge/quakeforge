@@ -13,7 +13,6 @@ gcd (int a, int b)
 int
 main (int argc, string *argv)
 {
-	traceon ();
 	x = 130;
 	y = 120;
 	printf ("%d\n", gcd (x, y));

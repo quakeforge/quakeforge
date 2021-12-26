@@ -41,7 +41,7 @@ ruamoko/cl_menu/menu.dat$(EXEEXT): $(ruamoko_menu_obj) $(QFCC_DEP) ruamoko/lib/l
 include $(ruamoko_menu_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_menu_dep)
 
-ruamoko/cl_menu/menu.sym: ruamoko/cl_menu/menu.dat
+ruamoko/cl_menu/menu.sym: ruamoko/cl_menu/menu.dat$(EXEEXT)
 
 EXTRA_DIST += \
 	ruamoko/cl_menu/CrosshairCvar.h \

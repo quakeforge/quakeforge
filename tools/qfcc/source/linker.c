@@ -75,15 +75,15 @@
 #include "tools/qfcc/include/type.h"
 
 static void linker_internal_error (const char *fmt, ...)
-	__attribute__ ((format (printf, 1, 2), noreturn));
+	__attribute__ ((format (PRINTF, 1, 2), noreturn));
 static void linker_error (const char *fmt, ...)
-	__attribute__ ((format (printf, 1, 2)));
+	__attribute__ ((format (PRINTF, 1, 2)));
 static void linker_warning (const char *fmt, ...)
-	__attribute__ ((format (printf, 1, 2)));
+	__attribute__ ((format (PRINTF, 1, 2)));
 static void def_error (qfo_def_t *def, const char *fmt, ...)
-	__attribute__ ((format (printf, 2, 3)));
+	__attribute__ ((format (PRINTF, 2, 3)));
 static void def_warning (qfo_def_t *def, const char *fmt, ...)
-	__attribute__ ((used, format (printf, 2, 3)));
+	__attribute__ ((used, format (PRINTF, 2, 3)));
 
 /**	Safe handling of defs in hash tables and other containers.
 
@@ -1191,7 +1191,7 @@ undefined_def (qfo_def_t *def)
 			pr_uint_t    best_dist;
 			pr_lineno_t *line;
 
-			while (func - work->funcs < work->num_funcs) {
+			while (func - work->funcs < (ptrdiff_t) work->num_funcs) {
 				if (func->code >= 0
 					&& (pr_uint_t) func->code <= reloc->offset) {
 					if (!best || reloc->offset - func->code < best_dist) {
@@ -1206,7 +1206,7 @@ undefined_def (qfo_def_t *def)
 			line_def.line = best->line;
 			if (!line->line
 				&& line->fa.func == (pr_uint_t) (best - work->funcs)) {
-				while (line - work->lines < work->num_lines - 1
+				while (line - work->lines < (ptrdiff_t) work->num_lines - 1
 					   && line[1].line
 					   && line[1].fa.addr <= (pr_uint_t) reloc->offset)
 					line++;

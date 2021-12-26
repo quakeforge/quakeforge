@@ -47,10 +47,10 @@
 
 
 VISIBLE tex_t *
-LoadPCX (QFile *f, qboolean convert, byte *pal, int load)
+LoadPCX (QFile *f, qboolean convert, const byte *pal, int load)
 {
 	pcx_t      *pcx;
-	int         pcx_mark;
+	size_t      pcx_mark;
 	byte       *palette;
 	byte       *end;
 	byte       *pix;
@@ -64,8 +64,8 @@ LoadPCX (QFile *f, qboolean convert, byte *pal, int load)
 		fsize = Qfilesize(f);
 	}
 	// parse the PCX file
-	pcx_mark = Hunk_LowMark ();
-	pcx = Hunk_AllocName (fsize, "PCX");
+	pcx_mark = Hunk_LowMark (0);
+	pcx = Hunk_AllocName (0, fsize, "PCX");
 	Qread (f, pcx, fsize);
 
 	pcx->xmax = LittleShort (pcx->xmax);
@@ -84,7 +84,7 @@ LoadPCX (QFile *f, qboolean convert, byte *pal, int load)
 		Sys_Printf ("Bad pcx file: %x %d %d %d\n",
 					pcx->manufacturer, pcx->version, pcx->encoding,
 					pcx->bits_per_pixel);
-		Hunk_FreeToLowMark (pcx_mark);
+		Hunk_FreeToLowMark (0, pcx_mark);
 		return 0;
 	}
 
@@ -93,12 +93,12 @@ LoadPCX (QFile *f, qboolean convert, byte *pal, int load)
 
 	count = load ? (pcx->xmax + 1) * (pcx->ymax + 1) : 0;
 	if (convert) {
-		tex = Hunk_TempAlloc (sizeof (tex_t) + count * 3);
+		tex = Hunk_TempAlloc (0, sizeof (tex_t) + count * 3);
 		tex->data = (byte *) (tex + 1);
 		tex->format = tex_rgb;
 		tex->palette = 0;
 	} else {
-		tex = Hunk_TempAlloc (sizeof (tex_t) + count);
+		tex = Hunk_TempAlloc (0, sizeof (tex_t) + count);
 		tex->data = (byte *) (tex + 1);
 		tex->format = tex_palette;
 		if (pal)
@@ -110,7 +110,7 @@ LoadPCX (QFile *f, qboolean convert, byte *pal, int load)
 	tex->height = pcx->ymax + 1;
 	tex->loaded = load;
 	if (!load) {
-		Hunk_FreeToLowMark (pcx_mark);
+		Hunk_FreeToLowMark (0, pcx_mark);
 		return tex;
 	}
 	pix = tex->data;
@@ -144,7 +144,7 @@ LoadPCX (QFile *f, qboolean convert, byte *pal, int load)
 		}
 		dataByte++;
 	}
-	Hunk_FreeToLowMark (pcx_mark);
+	Hunk_FreeToLowMark (0, pcx_mark);
 	if (count || runLength) {
 		Sys_Printf ("PCX was malformed. You should delete it.\n");
 		return 0;
@@ -153,15 +153,16 @@ LoadPCX (QFile *f, qboolean convert, byte *pal, int load)
 }
 
 VISIBLE pcx_t *
-EncodePCX (byte * data, int width, int height,
-		   int rowbytes, byte * palette, qboolean flip, int *length)
+EncodePCX (const byte *data, int width, int height,
+		   int rowbytes, const byte *palette, qboolean flip, int *length)
 {
-	int 	i, run, pix, size;
-	pcx_t	*pcx;
-	byte	*pack, *dataend;
+	int         i, run, pix, size;
+	pcx_t      *pcx;
+	byte       *pack;
+	const byte *dataend;
 
 	size = width * height * 2 + 1000;
-	if (!(pcx = Hunk_TempAlloc (size))) {
+	if (!(pcx = Hunk_TempAlloc (0, size))) {
 		Sys_Printf ("EncodePCX: not enough memory\n");
 		return 0;
 	}

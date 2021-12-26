@@ -28,178 +28,254 @@
 # include "config.h"
 #endif
 
+#ifdef HAVE_STRING_H
+# include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+# include <strings.h>
+#endif
+
 #ifdef HAVE_MATH_H
 # include <math.h>
 #endif
 
 #include "QF/cvar.h"
-#include "QF/mathlib.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 #include "QF/vid.h"
-#include "QF/Vulkan/qf_vid.h"
+#include "QF/Vulkan/qf_matrices.h"
+#include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
+#include "QF/Vulkan/debug.h"
+#include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
+#include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/projection.h"
+#include "QF/Vulkan/renderpass.h"
+#include "QF/Vulkan/staging.h"
+#include "QF/ui/view.h"
 
-#include "compat.h"
-#include "d_iface.h"
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
 #include "util.h"
 
-#define MAT_SIZE (16 * sizeof (float))
-
 static void
-ortho_mat (float *proj, float xmin, float xmax, float ymin, float ymax,
-		   float znear, float zfar)
+setup_view (vulkan_ctx_t *ctx)
 {
-	proj[0] = 2 / (xmax - xmin);
-	proj[4] = 0;
-	proj[8] = 0;
-	proj[12] = -(xmax + xmin) / (xmax - xmin);
-
-	proj[1] = 0;
-	proj[5] = 2 / (ymax - ymin);
-	proj[9] = 0;
-	proj[13] = -(ymax + ymin) / (ymax - ymin);
-
-	proj[2] = 0;
-	proj[6] = 0;
-	proj[10] = -2 / (zfar - znear);
-	proj[14] = -(zfar + znear) / (zfar - znear);
-
-	proj[3] = 0;
-	proj[7] = 0;
-	proj[11] = 0;
-	proj[15] = 1;
-}
-
-static void
-persp_mat (float *proj, float xmin, float xmax, float ymin, float ymax,
-		   float aspect)
-{
-	float       fovx, fovy, neard, fard;
-
-	fovx = r_refdef.fov_x;
-	fovy = r_refdef.fov_y;
-	neard = r_nearclip->value;
-	fard = r_farclip->value;
-
-	ymax = neard * tan (fovy * M_PI / 360);		// fov_2 / 2
-	ymin = -ymax;
-	xmax = neard * tan (fovx * M_PI / 360);		// fov_2 / 2
-	xmin = -xmax;
-
-	proj[0] = (2 * neard) / (xmax - xmin);
-	proj[4] = 0;
-	proj[8] = (xmax + xmin) / (xmax - xmin);
-	proj[12] = 0;
-
-	proj[1] = 0;
-	proj[5] = -(2 * neard) / (ymax - ymin);
-	proj[9] = (ymax + ymin) / (ymax - ymin);
-	proj[13] = 0;
-
-	proj[2] = 0;
-	proj[6] = 0;
-	proj[10] = (fard) / (neard - fard);
-	proj[14] = (fard * neard) / (neard - fard);
-
-	proj[3] = 0;
-	proj[7] = 0;
-	proj[11] = -1;
-	proj[15] = 0;
-}
-
-void
-Vulkan_DestroyMatrices (vulkan_ctx_t *ctx)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	__auto_type mat = &ctx->matrices;
-
-	dfunc->vkUnmapMemory (device->dev, mat->memory);
-	dfunc->vkFreeMemory (device->dev, mat->memory, 0);
-	dfunc->vkDestroyBuffer (device->dev, mat->buffer_2d, 0);
-	dfunc->vkDestroyBuffer (device->dev, mat->buffer_3d, 0);
-}
-
-void
-Vulkan_CreateMatrices (vulkan_ctx_t *ctx)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	__auto_type mat = &ctx->matrices;
-	mat->buffer_2d = QFV_CreateBuffer (device, 1 * MAT_SIZE,
-									   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-	mat->buffer_3d = QFV_CreateBuffer (device, 3 * MAT_SIZE,
-									   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-
-	size_t      size = 0;
-	size_t      offset;
-	VkMemoryRequirements req;
-
-	dfunc->vkGetBufferMemoryRequirements (device->dev, mat->buffer_2d, &req);
-	size += req.size;
-	offset = size;
-
-	dfunc->vkGetBufferMemoryRequirements (device->dev, mat->buffer_3d, &req);
-	offset = (offset + req.alignment - 1) & ~(req.alignment - 1);
-	size += req.size;
-
-	mat->memory = QFV_AllocBufferMemory (device, mat->buffer_2d,
-										 VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-										 size, 0);
-	QFV_BindBufferMemory (device, mat->buffer_2d, mat->memory, 0);
-	QFV_BindBufferMemory (device, mat->buffer_3d, mat->memory, offset);
-	void       *data;
-	dfunc->vkMapMemory (device->dev, mat->memory, 0, size, 0, &data);
-	mat->projection_2d = data;
-	mat->projection_3d = mat->projection_2d + offset / sizeof (float);
-	mat->view_3d = mat->projection_3d + 16;
-	mat->sky_3d = mat->view_3d + 16;
-}
-
-void
-Vulkan_CalcProjectionMatrices (vulkan_ctx_t *ctx, float aspect)
-{
-	qfv_device_t *device = ctx->device;
-	qfv_devfuncs_t *dfunc = device->funcs;
-
-	__auto_type mat = &ctx->matrices;
-
-	int width = vid.conwidth;
-	int height = vid.conheight;
-
-	ortho_mat (mat->projection_2d, 0, width, 0, height, -99999, 99999);
-	persp_mat (mat->projection_3d, 0, width, 0, height, aspect);
-#if 0
-	Sys_MaskPrintf (SYS_VULKAN, "ortho:\n");
-	Sys_MaskPrintf (SYS_VULKAN, "   [[%g, %g, %g, %g],\n",
-					QuatExpand (mat->projection_2d + 0));
-	Sys_MaskPrintf (SYS_VULKAN, "    [%g, %g, %g, %g],\n",
-					QuatExpand (mat->projection_2d + 4));
-	Sys_MaskPrintf (SYS_VULKAN, "    [%g, %g, %g, %g],\n",
-					QuatExpand (mat->projection_2d + 8));
-	Sys_MaskPrintf (SYS_VULKAN, "    [%g, %g, %g, %g]]\n",
-					QuatExpand (mat->projection_2d + 12));
-	Sys_MaskPrintf (SYS_VULKAN, "presp:\n");
-	Sys_MaskPrintf (SYS_VULKAN, "   [[%g, %g, %g, %g],\n",
-					QuatExpand (mat->projection_3d + 0));
-	Sys_MaskPrintf (SYS_VULKAN, "    [%g, %g, %g, %g],\n",
-					QuatExpand (mat->projection_3d + 4));
-	Sys_MaskPrintf (SYS_VULKAN, "    [%g, %g, %g, %g],\n",
-					QuatExpand (mat->projection_3d + 8));
-	Sys_MaskPrintf (SYS_VULKAN, "    [%g, %g, %g, %g]]\n",
-					QuatExpand (mat->projection_3d + 12));
-#endif
-	VkMappedMemoryRange ranges[] = {
-		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0, mat->memory, 0, MAT_SIZE },
-		{ VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0, mat->memory,
-		  (mat->projection_3d - mat->projection_2d) * sizeof (float),
-		  MAT_SIZE},
+	mat4f_t     view;
+	static mat4f_t z_up = {
+		{ 0, 0, -1, 0},
+		{-1, 0,  0, 0},
+		{ 0, 1,  0, 0},
+		{ 0, 0,  0, 1},
 	};
-	dfunc->vkFlushMappedMemoryRanges (device->dev, 2, ranges);
+	vec4f_t     offset = { 0, 0, 0, 1 };
+
+	/*x = r_refdef.vrect.x;
+	y = (vid.height - (r_refdef.vrect.y + r_refdef.vrect.height));
+	w = r_refdef.vrect.width;
+	h = r_refdef.vrect.height;
+	qfeglViewport (x, y, w, h);*/
+
+	mat4fquat (view, qconjf (r_refdef.viewrotation));
+	mmulf (view, z_up, view);
+	offset = -r_refdef.viewposition;
+	offset[3] = 1;
+	view[3] = mvmulf (view, offset);
+	Vulkan_SetViewMatrix (ctx, view);
+}
+
+void
+Vulkan_SetViewMatrix (vulkan_ctx_t *ctx, mat4f_t view)
+{
+	__auto_type mctx = ctx->matrix_context;
+
+	if (memcmp (mctx->matrices.View, view, sizeof (mat4f_t))) {
+		memcpy (mctx->matrices.View, view, sizeof (mat4f_t));
+		mctx->dirty = mctx->frames.size;
+	}
+}
+
+void
+Vulkan_Matrix_Draw (qfv_renderframe_t *rFrame)
+{
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	__auto_type mctx = ctx->matrix_context;
+	__auto_type mframe = &mctx->frames.a[ctx->curFrame];
+
+	setup_view (ctx);
+
+	if (mctx->dirty <= 0) {
+		mctx->dirty = 0;
+		return;
+	}
+
+	mctx->dirty--;
+
+	qfv_packet_t *packet = QFV_PacketAcquire (mctx->stage);
+	qfv_matrix_buffer_t *m = QFV_PacketExtend (packet, sizeof (*m));
+	*m = mctx->matrices;
+
+	qfv_bufferbarrier_t bb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];		bb.barrier.buffer = mframe->buffer;
+	bb.barrier.size = packet->length;
+
+	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
+								 0, 0, 0, 1, &bb.barrier, 0, 0);
+
+	VkBufferCopy copy_region = { packet->offset, 0, packet->length };
+	dfunc->vkCmdCopyBuffer (packet->cmd, mctx->stage->buffer,
+							mframe->buffer, 1, &copy_region);
+
+	bb = bufferBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+	bb.barrier.buffer = mframe->buffer;
+	bb.barrier.size = packet->length;
+
+	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
+								 0, 0, 0, 1, &bb.barrier, 0, 0);
+
+	QFV_PacketSubmit (packet);
+}
+
+void
+Vulkan_CalcProjectionMatrices (vulkan_ctx_t *ctx)
+{
+	__auto_type mctx = ctx->matrix_context;
+	__auto_type mat = &mctx->matrices;
+
+	int width = vid.conview->xlen;
+	int height = vid.conview->ylen;
+	QFV_Orthographic (mat->Projection2d, 0, width, 0, height, 0, 99999);
+
+	float       aspect = (float) r_refdef.vrect.width / r_refdef.vrect.height;
+	QFV_Perspective (mat->Projection3d, r_refdef.fov_y, aspect);
+#if 0
+	Sys_MaskPrintf (SYS_vulkan, "ortho:\n");
+	Sys_MaskPrintf (SYS_vulkan, "   [[%g, %g, %g, %g],\n",
+					QuatExpand (mat->Projection2d + 0));
+	Sys_MaskPrintf (SYS_vulkan, "    [%g, %g, %g, %g],\n",
+					QuatExpand (mat->Projection2d + 4));
+	Sys_MaskPrintf (SYS_vulkan, "    [%g, %g, %g, %g],\n",
+					QuatExpand (mat->Projection2d + 8));
+	Sys_MaskPrintf (SYS_vulkan, "    [%g, %g, %g, %g]]\n",
+					QuatExpand (mat->Projection2d + 12));
+	Sys_MaskPrintf (SYS_vulkan, "presp:\n");
+	Sys_MaskPrintf (SYS_vulkan, "   [[%g, %g, %g, %g],\n",
+					QuatExpand (mat->Projection3d + 0));
+	Sys_MaskPrintf (SYS_vulkan, "    [%g, %g, %g, %g],\n",
+					QuatExpand (mat->Projection3d + 4));
+	Sys_MaskPrintf (SYS_vulkan, "    [%g, %g, %g, %g],\n",
+					QuatExpand (mat->Projection3d + 8));
+	Sys_MaskPrintf (SYS_vulkan, "    [%g, %g, %g, %g]]\n",
+					QuatExpand (mat->Projection3d + 12));
+#endif
+	mctx->dirty = mctx->frames.size;
+}
+
+void
+Vulkan_Matrix_Init (vulkan_ctx_t *ctx)
+{
+	qfvPushDebug (ctx, "matrix init");
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	matrixctx_t *mctx = calloc (1, sizeof (matrixctx_t));
+	ctx->matrix_context = mctx;
+
+	size_t      frames = ctx->frames.size;
+	DARRAY_INIT (&mctx->frames, frames);
+	DARRAY_RESIZE (&mctx->frames, frames);
+	mctx->frames.grow = 0;
+
+	//__auto_type cmdBuffers = QFV_AllocCommandBufferSet (frames, alloca);
+	//QFV_AllocateCommandBuffers (device, ctx->cmdpool, 1, cmdBuffers);
+
+	mctx->pool = Vulkan_CreateDescriptorPool (ctx, "matrix_pool");
+	mctx->setLayout = Vulkan_CreateDescriptorSetLayout (ctx, "matrix_set");
+	__auto_type layouts = QFV_AllocDescriptorSetLayoutSet (frames, alloca);
+	for (size_t i = 0; i < layouts->size; i++) {
+		layouts->a[i] = mctx->setLayout;
+	}
+
+	for (size_t i = 0; i < frames; i++) {
+		__auto_type mframe = &mctx->frames.a[i];
+		//mframe->cmd = cmdBuffers->a[i];
+		mframe->buffer = QFV_CreateBuffer (device, sizeof (qfv_matrix_buffer_t),
+										   VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT
+										   | VK_BUFFER_USAGE_TRANSFER_DST_BIT);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_BUFFER,
+							 mframe->buffer, va (ctx->va_ctx,
+												 "buffer:matrices:%zd", i));
+	}
+
+	VkMemoryRequirements req;
+	//offset = (offset + req.alignment - 1) & ~(req.alignment - 1);
+	dfunc->vkGetBufferMemoryRequirements (device->dev,
+										  mctx->frames.a[0].buffer, &req);
+	mctx->memory = QFV_AllocBufferMemory (device, mctx->frames.a[0].buffer,
+										  VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+										  frames * req.size, 0);
+	QFV_duSetObjectName (device, VK_OBJECT_TYPE_DEVICE_MEMORY,
+						 mctx->memory, "memory:matrices");
+
+	__auto_type sets = QFV_AllocateDescriptorSet (device, mctx->pool, layouts);
+	for (size_t i = 0; i < frames; i++) {
+		__auto_type mframe = &mctx->frames.a[i];
+		QFV_BindBufferMemory (device, mframe->buffer, mctx->memory,
+							  i * req.size);
+
+		mframe->descriptors = sets->a[i];
+		VkDescriptorBufferInfo bufferInfo = {
+			mframe->buffer, 0, VK_WHOLE_SIZE
+		};
+		VkWriteDescriptorSet write[] = {
+			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
+			  mframe->descriptors, 0, 0, 1,
+			  VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+			  0, &bufferInfo, 0 },
+		};
+		dfunc->vkUpdateDescriptorSets (device->dev, 1, write, 0, 0);
+	}
+	free (sets);
+
+	mat4fidentity (mctx->matrices.Projection3d);
+	mat4fidentity (mctx->matrices.View);
+	mat4fidentity (mctx->matrices.Sky);
+	mat4fidentity (mctx->matrices.Projection2d);
+	mctx->dirty = mctx->frames.size;
+
+	mctx->stage = QFV_CreateStagingBuffer (device, "matrix",
+										frames * sizeof (qfv_matrix_buffer_t),
+										ctx->cmdpool);
+
+	qfvPopDebug (ctx);
+}
+
+void
+Vulkan_Matrix_Shutdown (vulkan_ctx_t *ctx)
+{
+	qfvPushDebug (ctx, "matrix shutdown");
+	qfv_device_t *device = ctx->device;
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	__auto_type mctx = ctx->matrix_context;
+
+	QFV_DestroyStagingBuffer (mctx->stage);
+
+	for (size_t i = 0; i < mctx->frames.size; i++) {
+		__auto_type mframe = &mctx->frames.a[i];
+		dfunc->vkDestroyBuffer (device->dev, mframe->buffer, 0);
+	}
+	dfunc->vkFreeMemory (device->dev, mctx->memory, 0);
+	qfvPopDebug (ctx);
+}
+
+VkDescriptorSet
+Vulkan_Matrix_Descriptors (vulkan_ctx_t *ctx, int frame)
+{
+	__auto_type mctx = ctx->matrix_context;
+	return mctx->frames.a[frame].descriptors;
 }

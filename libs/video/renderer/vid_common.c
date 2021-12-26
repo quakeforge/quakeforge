@@ -31,13 +31,16 @@
 #include "QF/plugin/general.h"
 #include "QF/plugin/vid_render.h"
 
+#include "QF/ui/view.h"
+
 #include "mod_internal.h"
 #include "r_internal.h"
 
 viddef_t    vid;					// global video state
+view_t      scr_view;
 
 vid_render_data_t vid_render_data = {
-	&vid, &r_refdef, &scr_vrect,
+	&vid, &r_refdef, &scr_view,
 	0, 0, 0,
 	0,
 	0, 0,

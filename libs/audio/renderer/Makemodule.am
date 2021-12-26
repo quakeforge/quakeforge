@@ -1,6 +1,6 @@
 plugin_LTLIBRARIES +=	@snd_render_plugins@
 noinst_LTLIBRARIES +=	@snd_render_static_plugins@
-EXTRA_LTLIBRARIES +=	libs/audio/renderer/snd_render_default.la libs/audio/renderer/snd_render_jack.la
+EXTRA_LTLIBRARIES +=	libs/audio/renderer/snd_render_default.la
 
 flac_src=libs/audio/renderer/flac.c
 midi_src=libs/audio/renderer/midi.c
@@ -38,9 +38,3 @@ libs_audio_renderer_snd_render_default_la_SOURCES=		libs/audio/renderer/snd_dma.
 libs_audio_renderer_snd_render_default_la_LIBADD=		$(snd_libs) $(format_libs)
 libs_audio_renderer_snd_render_default_la_DEPENDENCIES=	$(snd_libs)
 EXTRA_libs_audio_renderer_snd_render_default_la_SOURCES=$(extra_format_src)
-
-libs_audio_renderer_snd_render_jack_la_LDFLAGS=			$(plugin_ldflags)
-libs_audio_renderer_snd_render_jack_la_SOURCES=			libs/audio/renderer/snd_jack.c $(snd_common) $(format_src)
-libs_audio_renderer_snd_render_jack_la_LIBADD=			$(snd_libs) $(format_libs) $(JACK_LIBS)
-libs_audio_renderer_snd_render_jack_la_DEPENDENCIES=	$(snd_libs)
-EXTRA_libs_audio_renderer_snd_render_jack_la_SOURCES=	$(extra_format_src)

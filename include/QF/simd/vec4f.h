@@ -29,9 +29,11 @@
 #define __QF_simd_vec4f_h
 
 #include <immintrin.h>
+#include <math.h>
 
 #include "QF/simd/types.h"
 
+GNU89INLINE inline vec4f_t vabsf (vec4f_t v) __attribute__((const));
 GNU89INLINE inline vec4f_t vsqrtf (vec4f_t v) __attribute__((const));
 GNU89INLINE inline vec4f_t vceilf (vec4f_t v) __attribute__((const));
 GNU89INLINE inline vec4f_t vfloorf (vec4f_t v) __attribute__((const));
@@ -91,8 +93,9 @@ GNU89INLINE inline vec4f_t qrotf (vec4f_t a, vec4f_t b) __attribute__((const));
  * That is, [-x, -y, -z, w].
  */
 GNU89INLINE inline vec4f_t qconjf (vec4f_t q) __attribute__((const));
-GNU89INLINE inline vec4f_t loadvec3f (const float v3[3]) __attribute__((pure, access(read_only, 1)));
-GNU89INLINE inline void storevec3f (float v3[3], vec4f_t v4) __attribute__((access (write_only, 1)));
+GNU89INLINE inline vec4f_t qexpf (vec4f_t q) __attribute__((const));
+GNU89INLINE inline vec4f_t loadvec3f (const float *v3) __attribute__((pure));
+GNU89INLINE inline void storevec3f (float *v3, vec4f_t v4);
 GNU89INLINE inline vec4f_t normalf (vec4f_t v) __attribute__((pure));
 GNU89INLINE inline vec4f_t magnitudef (vec4f_t v) __attribute__((pure));
 GNU89INLINE inline vec4f_t magnitude3f (vec4f_t v) __attribute__((pure));
@@ -103,9 +106,31 @@ GNU89INLINE inline
 VISIBLE
 #endif
 vec4f_t
+vabsf (vec4f_t v)
+{
+	const uint32_t  nan = ~0u >> 1;
+	const vec4i_t   abs = { nan, nan, nan, nan };
+#ifndef __SSE__
+	return (vec4f_t) ((vec4i_t) v & abs);
+#else
+	return _mm_and_ps (v, (__m128) abs);
+#endif
+}
+
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+vec4f_t
 vsqrtf (vec4f_t v)
 {
+#ifndef __SSE__
+	vec4f_t     r = { sqrtf (v[0]), sqrtf (v[1]), sqrtf (v[2]), sqrtf (v[3]) };
+	return r;
+#else
 	return _mm_sqrt_ps (v);
+#endif
 }
 
 #ifndef IMPLEMENT_VEC4F_Funcs
@@ -116,7 +141,16 @@ VISIBLE
 vec4f_t
 vceilf (vec4f_t v)
 {
+#ifndef __SSE4_1__
+	return (vec4f_t) {
+		ceilf (v[0]),
+		ceilf (v[1]),
+		ceilf (v[2]),
+		ceilf (v[3])
+	};
+#else
 	return _mm_ceil_ps (v);
+#endif
 }
 
 #ifndef IMPLEMENT_VEC4F_Funcs
@@ -127,7 +161,16 @@ VISIBLE
 vec4f_t
 vfloorf (vec4f_t v)
 {
+#ifndef __SSE4_1__
+	return (vec4f_t) {
+		floorf (v[0]),
+		floorf (v[1]),
+		floorf (v[2]),
+		floorf (v[3])
+	};
+#else
 	return _mm_floor_ps (v);
+#endif
 }
 
 #ifndef IMPLEMENT_VEC4F_Funcs
@@ -138,7 +181,16 @@ VISIBLE
 vec4f_t
 vtruncf (vec4f_t v)
 {
+#ifndef __SSE4_1__
+	return (vec4f_t) {
+		truncf (v[0]),
+		truncf (v[1]),
+		truncf (v[2]),
+		truncf (v[3])
+	};
+#else
 	return _mm_round_ps (v, _MM_FROUND_TRUNC);
+#endif
 }
 
 #ifndef IMPLEMENT_VEC4F_Funcs
@@ -163,8 +215,13 @@ vec4f_t
 dotf (vec4f_t a, vec4f_t b)
 {
 	vec4f_t c = a * b;
+#ifndef __SSE3__
+	float x = c[0] + c[1] + c[2] + c[3];
+	c = (vec4f_t) { x, x, x, x };
+#else
 	c = _mm_hadd_ps (c, c);
 	c = _mm_hadd_ps (c, c);
+#endif
 	return c;
 }
 
@@ -181,7 +238,11 @@ qmulf (vec4f_t a, vec4f_t b)
 	vec4f_t c = crossf (a, b) + a * b[3] + a[3] * b;
 	vec4f_t d = dotf (a, b);
 	// zero out the vector component of dot product so only the scalar remains
+#ifndef __SSE4_1__
+	d = (vec4f_t) { 0, 0, 0, d[3] };
+#else
 	d = _mm_insert_ps (d, d, 0xf7);
+#endif
 	return c - d;
 }
 
@@ -196,7 +257,11 @@ qvmulf (vec4f_t q, vec4f_t v)
 	float s = q[3];
 	// zero the scalar of the quaternion. Results in an extra operation, but
 	// avoids adding precision issues.
+#ifndef __SSE4_1__
+	q[3] = 0;
+#else
 	q = _mm_insert_ps (q, q, 0xf8);
+#endif
 	vec4f_t c = crossf (q, v);
 	vec4f_t qv = dotf (q, v);	// q.w is 0 so v.w is irrelevant
 	vec4f_t qq = dotf (q, q);
@@ -215,7 +280,11 @@ vqmulf (vec4f_t v, vec4f_t q)
 	float s = q[3];
 	// zero the scalar of the quaternion. Results in an extra operation, but
 	// avoids adding precision issues.
+#ifndef __SSE4_1__
+	q[3] = 0;
+#else
 	q = _mm_insert_ps (q, q, 0xf8);
+#endif
 	vec4f_t c = crossf (q, v);
 	vec4f_t qv = dotf (q, v);	// q.w is 0 so v.w is irrelevant
 	vec4f_t qq = dotf (q, q);
@@ -250,7 +319,11 @@ vec4f_t
 qconjf (vec4f_t q)
 {
 	const vec4i_t neg = { 1u << 31, 1u << 31, 1u << 31, 0 };
+#ifndef __SSE__
+	return (vec4f_t) ((vec4i_t) q ^ neg);
+#else
 	return _mm_xor_ps (q, (__m128) neg);
+#endif
 }
 
 #ifndef IMPLEMENT_VEC4F_Funcs
@@ -259,10 +332,33 @@ GNU89INLINE inline
 VISIBLE
 #endif
 vec4f_t
-loadvec3f (const float v3[3])
+qexpf (vec4f_t q)
+{
+	vec4f_t     th = magnitude3f (q);
+	float       r = expf (q[3]);
+	if (!th[0]) {
+		return (vec4f_t) { 0, 0, 0, r };
+	}
+	float       c = cosf (th[0]);
+	float       s = sinf (th[0]);
+	vec4f_t     n = (r * s) * (q / th);
+	n[3] = r * c;
+	return n;
+}
+
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+vec4f_t
+loadvec3f (const float *v3)
 {
 	vec4f_t v4;
 
+#ifndef __SSE4_1__
+	v4 = (vec4f_t) { v3[0], v3[1], v3[2], 0 };
+#else
 	// this had to be in asm otherwise gcc thinks v4 is only partially
 	// initialized, and gcc 10 does not use the zero flags when generating
 	// the code, resulting in a memory access to load a 0 into v4[3]
@@ -275,6 +371,7 @@ loadvec3f (const float v3[3])
 		"
 		: "=v"(v4)
 		: "m"(v3[0]), "m"(v3[1]), "m"(v3[2]));
+#endif
 	return v4;
 }
 
@@ -284,7 +381,7 @@ GNU89INLINE inline
 VISIBLE
 #endif
 void
-storevec3f (float v3[3], vec4f_t v4)
+storevec3f (float *v3, vec4f_t v4)
 {
 	v3[0] = v4[0];
 	v3[1] = v4[1];
@@ -324,5 +421,13 @@ magnitude3f (vec4f_t v)
 	v[3] = 0;
 	return vsqrtf (dotf (v, v));
 }
+
+vec4f_t __attribute__((pure))
+BarycentricCoords_vf (const vec4f_t **points, int num_points, vec4f_t p);
+
+vspheref_t __attribute__((pure))
+CircumSphere_vf (const vec4f_t *points, int num_points);
+
+vspheref_t SmallestEnclosingBall_vf (const vec4f_t *points, int num_points);
 
 #endif//__QF_simd_vec4f_h

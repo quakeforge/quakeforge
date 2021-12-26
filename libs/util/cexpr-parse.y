@@ -51,8 +51,8 @@
 
 #include "QF/cexpr.h"
 
-static void assign_expr (exprval_t *dst, const exprval_t *src,
-						 exprctx_t *context);
+static exprval_t *assign_expr (exprval_t *dst, const exprval_t *src,
+							   exprctx_t *context);
 static exprval_t *binary_expr (int op, const exprval_t *a, const exprval_t *b,
 							   exprctx_t *context);
 static exprval_t *field_expr (const exprval_t *a, const exprval_t *b,
@@ -138,6 +138,7 @@ uexpr
 
 expr
 	: uexpr
+	| expr '=' expr		{ $$ = assign_expr ($1, $3, context); }
 	| expr SHL expr		{ $$ = binary_expr (SHL, $1, $3, context); }
 	| expr SHR expr		{ $$ = binary_expr (SHR, $1, $3, context); }
 	| expr '+' expr		{ $$ = binary_expr ('+', $1, $3, context); }
@@ -184,16 +185,16 @@ arg_expr
 
 %%
 
-static void
+static exprval_t *
 assign_expr (exprval_t *dst, const exprval_t *src, exprctx_t *context)
 {
 	binop_t    *binop;
-	if (!src) {
-		return;
+	if (!dst || !src) {
+		return 0;
 	}
 	if (dst->type == &cexpr_exprval) {
 		*(exprval_t **) dst->value = (exprval_t *) src;
-		return;
+		return dst;
 	}
 	binop = cexpr_find_cast (dst->type, src->type);
 	if (binop && binop->op) {
@@ -203,10 +204,11 @@ assign_expr (exprval_t *dst, const exprval_t *src, exprctx_t *context)
 			cexpr_error (context,
 						 "type mismatch in expression result: %s = %s",
 						 dst->type->name, src->type->name);
-			return;
+			return dst;
 		}
 		memcpy (dst->value, src->value, dst->type->size);
 	}
+	return dst;
 }
 
 static exprval_t *
@@ -361,7 +363,7 @@ static exprval_t *function_expr (exprsym_t *fsym, exprlist_t *list,
 								 exprctx_t *context)
 {
 	exprlist_t *l;
-	int         num_args = 0;
+	int         num_args = 1;// one extra for terminating null
 	exprfunc_t *func = 0;
 	exprval_t  *result;
 
@@ -369,6 +371,7 @@ static exprval_t *function_expr (exprsym_t *fsym, exprlist_t *list,
 		num_args++;
 	}
 	__auto_type args = (const exprval_t **) alloca (num_args * sizeof (exprval_t *));
+	args[num_args - 1] = 0;	// terminate array of args for varargs functions
 	__auto_type types = (exprtype_t **) alloca (num_args * sizeof (exprtype_t *));
 	for (num_args = 0; list; list = l, num_args++) {
 		args[num_args] = list->value;
@@ -383,8 +386,15 @@ static exprval_t *function_expr (exprsym_t *fsym, exprlist_t *list,
 		return result;
 	}
 	for (exprfunc_t *f = fsym->value; f->result; f++) {
-		if (f->num_params == num_args
-			&& memcmp (f->param_types, types,
+		int         num_params = f->num_params;
+		if (num_params >= 0 && num_args == num_params) {
+		} else if (num_params < 0 && num_args >= ~num_params) {
+			num_params = ~num_params;
+		} else {
+			continue;
+		}
+		if (!num_params
+			|| memcmp (f->param_types, types,
 					   num_args * sizeof (exprtype_t *)) == 0) {
 			func = f;
 			break;

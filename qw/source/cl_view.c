@@ -518,8 +518,8 @@ idle_quat (vec4f_t axis, cvar_t *cycle, cvar_t *level)
 	}
 	float       scale = sin (cl.time * cycle->value);
 	float       ang = scale * level->value * v_idlescale->value;
-	float       c = cos (ang);
-	float       s = sin (ang);
+	float       c = cos (ang * M_PI / 360);
+	float       s = sin (ang * M_PI / 360);
 	return axis * s + identity * c;
 }
 
@@ -580,14 +580,18 @@ V_CalcViewRoll (void)
 static void
 V_CalcIntermissionRefdef (void)
 {
+    entity_t   *ent = &cl_entities[cl.viewentity];
 	entity_t   *view;
 	float       old;
+    vec4f_t     origin = Transform_GetWorldPosition (ent->transform);
+    vec4f_t     rotation = Transform_GetWorldRotation (ent->transform);
 
 	// view is the weapon model (visible only from inside body)
 	view = &cl.viewent;
 
-	r_data->refdef->viewposition = cl.viewstate.origin;
-	AngleQuat (cl.viewstate.angles, &r_data->refdef->viewrotation[0]);//FIXME
+	r_data->refdef->viewposition = origin;
+	r_data->refdef->viewrotation = rotation;
+	view->renderer.model = NULL;
 	view->renderer.model = NULL;
 
 	// always idle in intermission
@@ -659,11 +663,14 @@ V_CalcRefdef (void)
 		origin += (vec4f_t) { 0, 0, 0.5, 0};
 	}
 
+	model_t    *model = cl.model_precache[cl.stats[STAT_WEAPON]];
 	if (cl.viewstate.flags & (VF_GIB | VF_DEAD)) {
-		view->renderer.model = NULL;
-	} else {
-		view->renderer.model = cl.model_precache[cl.stats[STAT_WEAPON]];
+		model = NULL;
 	}
+	if (view->renderer.model != model) {
+		view->animation.pose2 = -1;
+	}
+	view->renderer.model = model;
 	view->animation.frame = cl.viewstate.weaponframe;
 	view->renderer.skin = 0;
 
@@ -753,8 +760,6 @@ V_RenderView (void)
 	} else {
 		V_CalcRefdef ();
 	}
-
-	r_funcs->R_RenderView ();
 }
 
 void

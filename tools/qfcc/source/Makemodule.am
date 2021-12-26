@@ -2,7 +2,8 @@ QFCC_LIBS=@QFCC_LIBS@
 QFCC_DEPS=@QFCC_DEPS@
 QFCC_INCS=@QFCC_INCS@
 
-bin_PROGRAMS +=	qfcc qfprogs
+EXTRA_PROGRAMS +=	qfcc$(EXEEXT) qfprogs$(EXEEXT)
+bin_PROGRAMS +=	@QFCC_TARGETS@
 bin_SCRIPTS += tools/qfcc/source/qfpreqcc
 
 qfcc_SOURCES = \

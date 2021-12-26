@@ -212,7 +212,7 @@ static struct fb_var_screeninfo orig_var;
 static void
 VID_shutdown (void)
 {
-	Sys_MaskPrintf (SYS_VID, "VID_Shutdown\n");
+	Sys_MaskPrintf (SYS_vid, "VID_Shutdown\n");
 
 	if (!fbdev_inited)
 		return;
@@ -446,7 +446,7 @@ VID_Init (byte *palette, byte *colormap)
 	Cmd_AddCommand ("vid_fbset", VID_fbset_f, "No Description");
 
 	/* Interpret command-line params */
-	VID_GetWindowSize (320, 200);
+	VID_GetWindowSize (640, 480);
 
 	modestr = get_mode (viddef.width, viddef.height, 8);
 

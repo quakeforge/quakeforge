@@ -31,7 +31,7 @@
 # include "config.h"
 #endif
 
-#ifdef HAVE_CURSES_H
+#ifdef HAVE_NCURSES
 # include <curses.h>
 #endif
 #ifdef HAVE_STRING_H
@@ -68,10 +68,13 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
-#include "QF/view.h"
 
 #include "QF/plugin/general.h"
 #include "QF/plugin/console.h"
+
+#include "QF/ui/view.h"
+
+#include "QF/ui/inputline.h"
 
 #include "compat.h"
 #include "sv_console.h"
@@ -82,9 +85,9 @@ static QFile  *log_file;
 static cvar_t *sv_logfile;
 static cvar_t *sv_conmode;
 
-static void C_KeyEvent (knum_t key, short unicode, qboolean down);
+#ifdef HAVE_NCURSES
 
-#ifdef HAVE_CURSES_H
+static void key_event (knum_t key, short unicode, qboolean down);
 
 enum {
 	sv_resize_x = 1,
@@ -370,7 +373,7 @@ process_input (void)
 		interrupted = 0;
 #ifdef SIGWINCH
 		get_size (&screen_x, &screen_y);
-		Sys_MaskPrintf (SYS_DEV, "resizing to %d x %d\n", screen_x, screen_y);
+		Sys_MaskPrintf (SYS_dev, "resizing to %d x %d\n", screen_x, screen_y);
 		resizeterm (screen_y, screen_x);
 		con_linewidth = screen_x;
 		view_resize (sv_con_data.view, screen_x, screen_y);
@@ -462,7 +465,7 @@ process_input (void)
 				if (ch < 0 || ch >= 256)
 					ch = 0;
 		}
-		C_KeyEvent (ch, 0, 1);
+		key_event (ch, 0, 1);
 	}
 }
 
@@ -682,7 +685,7 @@ sv_conmode_f (cvar_t *var)
 static void
 C_Init (void)
 {
-#ifdef HAVE_CURSES_H
+#ifdef HAVE_NCURSES
 	cvar_t	  *curses = Cvar_Get ("sv_use_curses", "0", CVAR_ROM, NULL,
 								  "Set to 1 to enable curses server console.");
 	use_curses = curses->int_val;
@@ -705,13 +708,13 @@ C_shutdown (void)
 		Qclose (log_file);
 		log_file = 0;
 	}
-#ifdef HAVE_CURSES_H
+#ifdef HAVE_NCURSES
 	if (use_curses)
 		endwin ();
 #endif
 }
 
-static __attribute__((format(printf, 1, 0))) void
+static __attribute__((format(PRINTF, 1, 0))) void
 C_Print (const char *fmt, va_list args)
 {
 	static dstring_t *buffer;
@@ -725,7 +728,7 @@ C_Print (const char *fmt, va_list args)
 		Qputs (log_file, buffer->str);
 		Qflush (log_file);
 	}
-#ifdef HAVE_CURSES_H
+#ifdef HAVE_NCURSES
 	if (use_curses) {
 		print (buffer->str);
 	} else
@@ -741,7 +744,7 @@ C_Print (const char *fmt, va_list args)
 static void
 C_ProcessInput (void)
 {
-#ifdef HAVE_CURSES_H
+#ifdef HAVE_NCURSES
 	if (use_curses) {
 		process_input ();
 	} else
@@ -752,14 +755,6 @@ C_ProcessInput (void)
 				break;
 			Con_ExecLine (cmd);
 		}
-}
-
-static void
-C_KeyEvent (knum_t key, short unicode, qboolean down)
-{
-#ifdef HAVE_CURSES_H
-	key_event (key, unicode, down);
-#endif
 }
 
 static void
@@ -782,32 +777,27 @@ C_NewMap (void)
 }
 
 static general_funcs_t plugin_info_general_funcs = {
-	C_Init,
-	C_shutdown,
+	.init = C_Init,
+	.shutdown = C_shutdown,
 };
 static general_data_t plugin_info_general_data;
 
 static console_funcs_t plugin_info_console_funcs = {
-	C_Print,
-	C_ProcessInput,
-	C_KeyEvent,
-	C_DrawConsole,
-	C_CheckResize,
-	C_NewMap,
+	.print = C_Print,
+	.process_input = C_ProcessInput,
+	.draw_console = C_DrawConsole,
+	.check_resize = C_CheckResize,
+	.new_map = C_NewMap,
 };
 
 static plugin_funcs_t plugin_info_funcs = {
-	&plugin_info_general_funcs,
-	0,
-	0,
-	&plugin_info_console_funcs,
+	.general = &plugin_info_general_funcs,
+	.console = &plugin_info_console_funcs,
 };
 
 static plugin_data_t plugin_info_data = {
-	&plugin_info_general_data,
-	0,
-	0,
-	&sv_con_data,
+	.general = &plugin_info_general_data,
+	.console = &sv_con_data,
 };
 
 static plugin_t plugin_info = {

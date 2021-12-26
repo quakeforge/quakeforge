@@ -7,8 +7,10 @@
 @class TableView;
 @class TableViewColumn;
 @class Array;
+@class ListenerGroup;
 
 @protocol TableViewDataSource
+-(ListenerGroup *)onRowCountChanged;
 -(int)numberOfRows:(TableView *)tableview;
 -(View *)tableView:(TableView *)tableView
 		 forColumn:(TableViewColumn *)column

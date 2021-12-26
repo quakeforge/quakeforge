@@ -2,7 +2,8 @@ WAD_LIBS=@WAD_LIBS@
 WAD_DEPS=@WAD_DEPS@
 WAD_INCS=@WAD_INCS@
 
-bin_PROGRAMS +=	wad
+EXTRA_PROGRAMS +=		wad
+bin_PROGRAMS +=	@WAD_TARGETS@
 
 man_MANS += tools/wad/wad.1
 

@@ -49,8 +49,6 @@
 #include "compat.h"
 #include "netchan.h"
 
-#include "../qw/include/client.h"
-
 #define	PACKET_HEADER	8
 
 int         net_nochoke;
@@ -92,7 +90,7 @@ Netchan_Init_Cvars (void)
 	Sends an out-of-band datagram
 */
 void
-Netchan_OutOfBand (netadr_t adr, int length, byte * data)
+Netchan_OutOfBand (netadr_t adr, unsigned length, byte * data)
 {
 	byte        send_buf[MAX_MSGLEN + PACKET_HEADER];
 	sizebuf_t   send;
@@ -185,7 +183,7 @@ Netchan_CanReliable (netchan_t *chan)
 }
 
 void
-Netchan_Transmit (netchan_t *chan, int length, byte *data)
+Netchan_Transmit (netchan_t *chan, unsigned length, byte *data)
 {
 	byte        send_buf[MAX_MSGLEN + PACKET_HEADER];
 	int         i;

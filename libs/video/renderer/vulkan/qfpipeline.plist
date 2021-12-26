@@ -1,4 +1,10 @@
 {
+	limits = {
+		//FIXME this really needs to be an external variable as the C code
+		//needs to agree on the size, so it might as well set maxSamplers
+		//directly (and any other such variable)
+		maxSamplers = "min (256u, $physDevLimits.maxPerStageDescriptorSamplers)";
+	};
 	samplers = {
 		quakepic = {
 			magFilter = nearest;
@@ -51,9 +57,27 @@
 			borderColor = float_transparent_black;
 			unnormalizedCoordinates = false;
 		};
+		sprite_sampler = $properties.samplers.alias_sampler;
+		shadow_sampler = {
+			magFilter = linear;
+			minFilter = linear;
+			mipmapMode = linear;
+			addressModeU = clamp_to_edge;
+			addressModeV = clamp_to_edge;
+			addressModeW = clamp_to_edge;
+			mipLodBias = 0;
+			anisotropyEnable = false;
+			maxAnisotropy = 0;
+			compareEnable = true;
+			compareOp = greater_or_equal;
+			minLod = 0;
+			maxLod = 1000;
+			borderColor = float_transparent_black;
+			unnormalizedCoordinates = false;
+		};
 	};
 	descriptorPools = {
-		twod_pool = {
+		matrix_pool = {
 			flags = 0;
 			maxSets = $frames.size;
 			bindings = (
@@ -61,22 +85,55 @@
 					type = uniform_buffer;
 					descriptorCount = $frames.size;
 				},
+			);
+		};
+		twod_pool = {
+			flags = 0;
+			maxSets = $frames.size;
+			bindings = (
 				{
 					type = combined_image_sampler;
 					descriptorCount = $frames.size;
 				},
 			);
 		};
-		alias_pool = {
-			flags = 0;
-			maxSets = "2z * $frames.size";
+		texture_pool = {
+			flags = free_descriptor_set;
+			maxSets = 512;
 			bindings = (
 				{
-					type = uniform_buffer;
-					descriptorCount = "2z * $frames.size";
+					type = combined_image_sampler;
+					descriptorCount = $properties.descriptorPools.texture_pool.maxSets;
 				},
 			);
 		};
+		particle_pool = {
+			flags = 0;
+			maxSets = $frames.size;
+			bindings = (
+				{
+					type = storage_buffer;
+					descriptorCount = 3;
+				},
+			);
+		};
+		sprite_pool = {
+			flags = free_descriptor_set;
+			maxSets = 64;	//FIXME cvar?
+			bindings = (
+				{
+					type = uniform_buffer;
+					descriptorCount = $properties.descriptorPools.sprite_pool.maxSets;
+				},
+				{
+					type = combined_image_sampler;
+					descriptorCount = $properties.descriptorPools.sprite_pool.maxSets;
+				},
+			);
+		};
+		//FIXME probably should just share a larger pool
+		alias_pool = $properties.descriptorPools.texture_pool;
+		quakebsp_pool = $properties.descriptorPools.texture_pool;
 		lighting_attach_pool = {
 			flags = 0;
 			maxSets = $frames.size;
@@ -97,6 +154,16 @@
 				},
 			);
 		};
+		lighting_shadow_pool = {
+			flags = 0;
+			maxSets = $frames.size;
+			bindings = (
+				{
+					type = combined_image_sampler;
+					descriptorCount = "$frames.size * size_t($properties.limits.maxSamplers)";
+				},
+			);
+		};
 		compose_attach_pool = {
 			flags = 0;
 			maxSets = $frames.size;
@@ -109,24 +176,7 @@
 		};
 	};
 	setLayouts = {
-		twod_set = {
-			bindings = (
-				{
-					binding = 0;
-					descriptorType = uniform_buffer;
-					descriptorCount = 1;
-					stageFlags = vertex;
-				},
-				{
-					binding = 1;
-					descriptorType = combined_image_sampler;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-			);
-		};
-		quakebsp_set = {
-			flags = push_descriptor;
+		matrix_set = {
 			bindings = (
 				{
 					binding = 0;
@@ -134,40 +184,31 @@
 					descriptorCount = 1;
 					stageFlags = vertex|geometry;
 				},
+			);
+		};
+		twod_set = {
+			bindings = (
 				{
-					binding = 1;
-					descriptorType = combined_image_sampler;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 2;
-					descriptorType = combined_image_sampler;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 3;
-					descriptorType = combined_image_sampler;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 4;
-					descriptorType = combined_image_sampler;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 5;
+					binding = 0;
 					descriptorType = combined_image_sampler;
 					descriptorCount = 1;
 					stageFlags = fragment;
 				},
 			);
 		};
-		alias_set = {
-			flags = push_descriptor;
+		texture_set = {
+			bindings = (
+				{
+					binding = 0;
+					descriptorType = combined_image_sampler;
+					descriptorCount = 1;
+					stageFlags = fragment;
+				},
+			);
+		};
+		quakebsp_set = $properties.setLayouts.texture_set;
+		alias_set = $properties.setLayouts.texture_set;
+		sprite_set = {
 			bindings = (
 				{
 					binding = 0;
@@ -178,55 +219,6 @@
 				{
 					binding = 1;
 					descriptorType = combined_image_sampler;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-			);
-		};
-		alias_matrices = {
-			bindings = (
-				{
-					binding = 0;
-					descriptorType = uniform_buffer;
-					descriptorCount = 1;
-					stageFlags = vertex;
-				},
-			);
-		};
-		alias_textures = {
-			flags = push_descriptor;
-			bindings = (
-				{
-					binding = 0;
-					descriptorType = combined_image_sampler;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 1;
-					descriptorType = combined_image_sampler;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 2;
-					descriptorType = combined_image_sampler;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-				{
-					binding = 3;
-					descriptorType = combined_image_sampler;
-					descriptorCount = 1;
-					stageFlags = fragment;
-				},
-			);
-		};
-		alias_lights = {
-			bindings = (
-				{
-					binding = 0;
-					descriptorType = uniform_buffer;
 					descriptorCount = 1;
 					stageFlags = fragment;
 				},
@@ -276,6 +268,16 @@
 				},
 			);
 		};
+		lighting_shadow = {
+			bindings = (
+				{
+					binding = 0;
+					descriptorType = combined_image_sampler;
+					descriptorCount = $properties.limits.maxSamplers;
+					stageFlags = fragment;
+				},
+			);
+		};
 		compose_attach = {
 			bindings = (
 				{
@@ -292,13 +294,35 @@
 				},
 			);
 		};
+		particle_set = {
+			bindings = (
+				{
+					binding = 0;
+					descriptorType = storage_buffer;
+					descriptorCount = 1;
+					stageFlags = compute;
+				},
+				{
+					binding = 1;
+					descriptorType = storage_buffer;
+					descriptorCount = 1;
+					stageFlags = compute;
+				},
+				{
+					binding = 2;
+					descriptorType = storage_buffer;
+					descriptorCount = 1;
+					stageFlags = compute;
+				},
+			);
+		};
 	};
 	pipelineLayouts = {
 		twod_layout = {
-			setLayouts = (twod_set);
+			setLayouts = (matrix_set, twod_set);
 		};
 		quakebsp_layout = {
-			setLayouts = (quakebsp_set);
+			setLayouts = (matrix_set, texture_set, texture_set);
 			pushConstantRanges = (
 				{
 					stageFlags = vertex;
@@ -308,13 +332,12 @@
 				{
 					stageFlags = fragment;
 					offset = 64;
-					size = 32;
+					size = "4 * 4 + 4";
 				},
 			);
 		};
 		alias_layout = {
-			//setLayouts = (alias_matrices, alias_lights, alias_textures);
-			setLayouts = (alias_set);
+			setLayouts = (matrix_set, alias_set);
 			pushConstantRanges = (
 				{
 					stageFlags = vertex;
@@ -324,15 +347,53 @@
 				{
 					stageFlags = fragment;
 					offset = 68;
-					size = "3 * 4 + 2 * 4 * 4";
+					size = "3 * 4 + 2 * 4 * 4 + 4";
+				},
+			);
+		};
+		sprite_layout = {
+			setLayouts = (matrix_set, sprite_set);
+			pushConstantRanges = (
+				{
+					stageFlags = vertex;
+					offset = 0;
+					size = "16 * 4 + 4";
+				},
+				{
+					stageFlags = fragment;
+					offset = 64;
+					size = "2 * 4 + 2 * 4 + 4 * 4";
 				},
 			);
 		};
 		lighting_layout = {
-			setLayouts = (lighting_attach, lighting_lights);
+			setLayouts = (lighting_attach, lighting_lights, lighting_shadow);
 		};
 		compose_layout = {
 			setLayouts = (compose_attach);
+		};
+		partphysics_layout = {
+			setLayouts = (particle_set);
+			pushConstantRanges = (
+				{
+					stageFlags = compute;
+					offset = 0;
+					size = "16 * 4 + 4";
+				},
+			);
+		};
+		partupdate_layout = {
+			setLayouts = (particle_set, particle_set, particle_set);
+		};
+		partdraw_layout = {
+			setLayouts = (matrix_set);
+			pushConstantRanges = (
+				{
+					stageFlags = vertex;
+					offset = 0;
+					size = "16 * 4";
+				},
+			);
 		};
 	};
 
@@ -373,9 +434,17 @@
 			topology = triangle_strip;
 			primitiveRestartEnable = true;
 		};
+		sprite = {
+			topology = triangle_strip;
+			primitiveRestartEnable = true;
+		};
 	};
 
 	vertexInput = {
+		index_only = {
+			bindings = ();
+			attributes = ();
+		};
 		alias = {
 			bindings = (
 				{ binding = 0; stride = "2 * 4 * 4"; inputRate = vertex; },
@@ -397,6 +466,17 @@
 			attributes = (
 				{ location = 0; binding = 0; format = r32g32b32a32_sfloat; offset = 0;  },
 				{ location = 1; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
+			);
+		};
+		particle = {
+			bindings = (
+				{ binding = 0; stride = "4 * 4 * 4"; inputRate = vertex; },
+			);
+			attributes = (
+				{ location = 0; binding = 0; format = r32g32b32a32_sfloat; offset = 0;  },
+				{ location = 1; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
+				{ location = 2; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
+				{ location = 3; binding = 0; format = r32g32b32a32_sfloat; offset = 16; },
 			);
 		};
 		twod = {
@@ -499,6 +579,67 @@
 	};
 
 	pipelines = {
+		alias_shadow = {
+			subpass = 0;
+			stages = (
+				{
+					stage = vertex;
+					name = main;
+					module = $builtin/alias_shadow.vert;
+				},
+			);
+			vertexInput = {
+				bindings = (
+					"$properties.vertexInput.alias.bindings[0]",
+					"$properties.vertexInput.alias.bindings[1]",
+				);
+				attributes = (
+					"$properties.vertexInput.alias.attributes[0]",
+					"$properties.vertexInput.alias.attributes[1]",
+					"$properties.vertexInput.alias.attributes[2]",
+					"$properties.vertexInput.alias.attributes[3]",
+				);
+			};
+			inputAssembly = $properties.inputAssembly.alias;
+			viewport      = $properties.viewport;
+			rasterization = $properties.rasterization.cw_cull_back;
+			multisample   = $properties.multisample;
+			depthStencil  = $properties.depthStencil.test_and_write;
+			colorBlend    = $properties.pipelines.alias_gbuf.colorBlend;
+			dynamic = {
+				dynamicState = ( viewport, scissor );
+			};
+			layout = alias_layout;
+		};
+		bsp_shadow = {
+			subpass = 0;
+			stages = (
+				{
+					stage = vertex;
+					name = main;
+					module = $builtin/bsp_shadow.vert;
+				},
+			);
+			vertexInput = {
+				bindings = (
+					"$properties.vertexInput.brush.bindings[0]",
+				);
+				attributes = (
+					"$properties.vertexInput.brush.attributes[0]",
+				);
+			};
+			inputAssembly = $properties.inputAssembly.brush;
+			viewport      = $properties.viewport;
+			rasterization = $properties.rasterization.cw_cull_back;
+			multisample   = $properties.multisample;
+			depthStencil  = $properties.depthStencil.test_and_write;
+			colorBlend    = $properties.pipelines.bsp_gbuf.colorBlend;
+			dynamic = {
+				dynamicState = ( viewport, scissor );
+			};
+			layout = quakebsp_layout;
+			renderPass = renderpass;
+		};
 		alias_depth = {
 			subpass = 0;
 			stages = (
@@ -531,7 +672,7 @@
 				dynamicState = ( viewport, scissor );
 			};
 			layout = alias_layout;
-			//renderPass = renderpass;
+			renderPass = renderpass;
 		};
 		alias_gbuf = {
 			subpass = 2;
@@ -545,12 +686,6 @@
 					stage = fragment;
 					name = main;
 					module = $builtin/alias_gbuf.frag;
-					specializationInfo = {
-						mapEntries = (
-							{ size = 4; offset = 0; constantID = 0; },
-						);
-						data = <00000008>;
-					};
 				},
 			);
 			vertexInput   = $properties.vertexInput.alias;
@@ -572,7 +707,7 @@
 				dynamicState = ( viewport, scissor, blend_constants );
 			};
 			layout = alias_layout;
-			//renderPass = renderpass;
+			renderPass = renderpass;
 		};
 		bsp_depth = {
 			subpass = 0;
@@ -601,7 +736,7 @@
 				dynamicState = ( viewport, scissor );
 			};
 			layout = quakebsp_layout;
-			//renderPass = renderpass;
+			renderPass = renderpass;
 		};
 		bsp_gbuf = {
 			subpass = 2;
@@ -620,15 +755,6 @@
 					stage = fragment;
 					name = main;
 					module = $builtin/bsp_gbuf.frag;
-					specializationInfo = {
-						mapEntries = (
-							{ size = 4; offset = 0; constantID = 0; },
-							{ size = 4; offset = 0; constantID = 1; },
-							{ size = 4; offset = 0; constantID = 2; },
-							{ size = 4; offset = 0; constantID = 3; },
-						);
-						data = <00000000ffffffff>;
-					};
 				},
 			);
 			vertexInput   = $properties.vertexInput.brush;
@@ -650,7 +776,7 @@
 				dynamicState = ( viewport, scissor, blend_constants );
 			};
 			layout = quakebsp_layout;
-			//renderPass = renderpass;
+			renderPass = renderpass;
 		};
 		bsp_skybox = {
 			subpass = 1;
@@ -666,10 +792,12 @@
 					module = $builtin/bsp_sky.frag;
 					specializationInfo = {
 						mapEntries = (
-							{ size = 4; offset = 0; constantID = 1; },
+							// doSkyBox
 							{ size = 4; offset = 4; constantID = 0; },
+							// doSkySheet
+							{ size = 4; offset = 0; constantID = 1; },
 						);
-						data = <00000000ffffffff>;
+						data = "array(0, 1)";
 					};
 				},
 			);
@@ -687,7 +815,7 @@
 				dynamicState = ( viewport, scissor );
 			};
 			layout = quakebsp_layout;
-			//renderPass = renderpass;
+			renderPass = renderpass;
 		};
 		bsp_skysheet = {
 			subpass = 1;
@@ -703,10 +831,12 @@
 					module = $builtin/bsp_sky.frag;
 					specializationInfo = {
 						mapEntries = (
+							// doSkyBox
 							{ size = 4; offset = 0; constantID = 0; },
+							// doSkySheet
 							{ size = 4; offset = 4; constantID = 1; },
 						);
-						data = <00000000ffffffff>;
+						data = "array(0, 1)";
 					};
 				},
 			);
@@ -724,7 +854,7 @@
 				dynamicState = ( viewport, scissor );
 			};
 			layout = quakebsp_layout;
-			//renderPass = renderpass;
+			renderPass = renderpass;
 		};
 		bsp_turb = {
 			subpass = 1;
@@ -738,13 +868,6 @@
 					stage = fragment;
 					name = main;
 					module = $builtin/bsp_turb.frag;
-					specializationInfo = {
-						mapEntries = (
-							{ size = 4; offset = 0; constantID = 0; },
-							{ size = 4; offset = 4; constantID = 1; },
-						);
-						data = <00000000ffffffff>;
-					};
 				},
 			);
 			vertexInput   = $properties.vertexInput.brush;
@@ -761,7 +884,93 @@
 				dynamicState = ( viewport, scissor );
 			};
 			layout = quakebsp_layout;
-			//renderPass = renderpass;
+			renderPass = renderpass;
+		};
+		partdraw = {
+			subpass = 1;
+			stages = (
+				{
+					stage = vertex;
+					name = main;
+					module = $builtin/particle.vert;
+				},
+				{
+					stage = geometry;
+					name = main;
+					module = $builtin/particle.geom;
+				},
+				{
+					stage = fragment;
+					name = main;
+					module = $builtin/particle.frag;
+				},
+			);
+			vertexInput   = $properties.vertexInput.particle;
+			inputAssembly = $properties.inputAssembly.sprite;
+			viewport      = $properties.viewport;
+			rasterization = $properties.rasterization.cw_cull_back;
+			multisample   = $properties.multisample;
+			depthStencil  = $properties.depthStencil.test_only;
+			colorBlend    = $properties.pipelines.bsp_turb.colorBlend;
+			dynamic = {
+				dynamicState = ( viewport, scissor, blend_constants );
+			};
+			layout = partdraw_layout;
+			renderPass = renderpass;
+		};
+		sprite_gbuf = {
+			subpass = 2;
+			stages = (
+				{
+					stage = vertex;
+					name = main;
+					module = $builtin/sprite_gbuf.vert;
+				},
+				{
+					stage = fragment;
+					name = main;
+					module = $builtin/sprite_gbuf.frag;
+				},
+			);
+			vertexInput   = $properties.vertexInput.index_only;
+			inputAssembly = $properties.inputAssembly.sprite;
+			viewport      = $properties.viewport;
+			rasterization = $properties.rasterization.cw_cull_back;
+			multisample   = $properties.multisample;
+			depthStencil  = $properties.depthStencil.test_only;
+			colorBlend    = $properties.pipelines.alias_gbuf.colorBlend;
+			dynamic = {
+				dynamicState = ( viewport, scissor, blend_constants );
+			};
+			layout = sprite_layout;
+			renderPass = renderpass;
+		};
+		sprite_depth = {
+			subpass = 0;
+			stages = (
+				{
+					stage = vertex;
+					name = main;
+					module = $builtin/sprite_depth.vert;
+				},
+				{
+					stage = fragment;
+					name = main;
+					module = $builtin/sprite_depth.frag;
+				},
+			);
+			vertexInput   = $properties.vertexInput.index_only;
+			inputAssembly = $properties.inputAssembly.alias;
+			viewport      = $properties.viewport;
+			rasterization = $properties.rasterization.cw_cull_back;
+			multisample   = $properties.multisample;
+			depthStencil  = $properties.depthStencil.test_and_write;
+			colorBlend    = $properties.pipelines.alias_gbuf.colorBlend;
+			dynamic = {
+				dynamicState = ( viewport, scissor );
+			};
+			layout = sprite_layout;
+			renderPass = renderpass;
 		};
 		twod = {
 			subpass = 1;
@@ -791,7 +1000,7 @@
 				dynamicState = ( viewport, scissor );
 			};
 			layout = twod_layout;
-			//renderPass = renderpass;
+			renderPass = renderpass;
 		};
 		lighting = {
 			subpass = 3;
@@ -809,7 +1018,7 @@
 						mapEntries = (
 							{ size = 4; offset = 0; constantID = 0; },
 						);
-						data = <00000100>;
+						data = "array(uint($properties.limits.maxSamplers))";
 					};
 				},
 			);
@@ -824,7 +1033,7 @@
 				dynamicState = ( viewport, scissor );
 			};
 			layout = lighting_layout;
-			//renderPass = renderpass;
+			renderPass = renderpass;
 		};
 		compose = {
 			subpass = 4;
@@ -851,7 +1060,23 @@
 				dynamicState = ( viewport, scissor );
 			};
 			layout = compose_layout;
-			//renderPass = renderpass;
+			renderPass = renderpass;
+		};
+		partphysics = {
+			stage = {
+				stage = compute;
+				name = main;
+				module = $builtin/partphysics.comp;
+			};
+			layout = partphysics_layout;
+		};
+		partupdate = {
+			stage = {
+				stage = compute;
+				name = main;
+				module = $builtin/partupdate.comp;
+			};
+			layout = partupdate_layout;
 		};
 	};
 }

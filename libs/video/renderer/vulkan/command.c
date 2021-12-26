@@ -41,7 +41,6 @@
 
 #include "QF/cvar.h"
 #include "QF/dstring.h"
-#include "QF/input.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
@@ -49,10 +48,10 @@
 #include "QF/va.h"
 #include "QF/vid.h"
 #include "QF/Vulkan/qf_vid.h"
-#include "QF/Vulkan/buffer.h"//FIXME should QFV_CmdPipelineBarrier be here?
-#include "QF/Vulkan/image.h"//FIXME should QFV_CmdPipelineBarrier be here?
-#include "QF/Vulkan/renderpass.h"//FIXME should QFV_CmdPipelineBarrier be here?
-#include "QF/Vulkan/pipeline.h"//FIXME should QFV_CmdPipelineBarrier be here?
+#include "QF/Vulkan/buffer.h"
+#include "QF/Vulkan/image.h"
+#include "QF/Vulkan/renderpass.h"
+#include "QF/Vulkan/pipeline.h"
 #include "QF/Vulkan/command.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/instance.h"
@@ -162,4 +161,18 @@ QFV_QueueWaitIdle (qfv_queue_t *queue)
 	qfv_device_t *device = queue->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	return dfunc->vkQueueWaitIdle (queue->queue) == VK_SUCCESS;
+}
+
+void
+QFV_PushConstants (qfv_device_t *device, VkCommandBuffer cmd,
+				   VkPipelineLayout layout, uint32_t numPC,
+				   const qfv_push_constants_t *constants)
+{
+	qfv_devfuncs_t *dfunc = device->funcs;
+
+	for (uint32_t i = 0; i < numPC; i++) {
+		dfunc->vkCmdPushConstants (cmd, layout, constants[i].stageFlags,
+								   constants[i].offset, constants[i].size,
+								   constants[i].data);
+	}
 }

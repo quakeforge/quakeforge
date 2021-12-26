@@ -40,6 +40,7 @@
 #include "compat.h"
 #include "d_local.h"
 #include "r_internal.h"
+#include "vid_sw.h"
 
 static float        surfscale;
 
@@ -58,7 +59,7 @@ sw32_D_SurfaceCacheAddress (void)
 
 
 int
-sw32_D_SurfaceCacheForRes (int width, int height)
+sw32_D_SurfaceCacheForRes (void *data, int width, int height)
 {
 	int         size, pix;
 
@@ -73,7 +74,7 @@ sw32_D_SurfaceCacheForRes (int width, int height)
 	if (pix > 64000)
 		size += (pix - 64000) * 3;
 
-	size *= sw32_r_pixbytes;
+	size *= sw32_ctx->pixbytes;
 
 	return size;
 }
@@ -105,9 +106,9 @@ D_ClearCacheGuard (void)
 
 
 void
-sw32_D_InitCaches (void *buffer, int size)
+sw32_D_InitCaches (void *data, void *buffer, int size)
 {
-	Sys_MaskPrintf (SYS_DEV, "D_InitCaches: %ik surface cache\n", size/1024);
+	Sys_MaskPrintf (SYS_dev, "D_InitCaches: %ik surface cache\n", size/1024);
 
 	sc_size = size - GUARDSIZE;
 	sc_base = (surfcache_t *) buffer;
@@ -124,7 +125,7 @@ sw32_D_InitCaches (void *buffer, int size)
 
 
 void
-sw32_D_FlushCaches (void)
+sw32_D_FlushCaches (void *data)
 {
 	surfcache_t *c;
 
@@ -152,7 +153,7 @@ D_SCAlloc (int width, int size)
 	if ((width < 0) || (width > 512))	// FIXME shouldn't really have a max
 		Sys_Error ("D_SCAlloc: bad cache width %d", width);
 
-	if ((size <= 0) || (size > (0x40000 * sw32_r_pixbytes))) //FIXME ditto
+	if ((size <= 0) || (size > (0x40000 * sw32_ctx->pixbytes))) //FIXME ditto
 		Sys_Error ("D_SCAlloc: bad cache size %d", size);
 
 	/* This adds the offset of data[0] in the surfcache_t struct. */
@@ -207,7 +208,7 @@ D_SCAlloc (int width, int size)
 // DEBUG
 	if (width > 0)
 		new->height = (size - sizeof (*new) + sizeof (new->data)) /
-			(width * sw32_r_pixbytes);
+			(width * sw32_ctx->pixbytes);
 
 	new->owner = NULL;					// should be set properly after return
 
@@ -229,7 +230,7 @@ sw32_D_CacheSurface (msurface_t *surface, int miplevel)
 	surfcache_t *cache;
 
 	// if the surface is animating or flashing, flush the cache
-	sw32_r_drawsurf.texture = R_TextureAnimation (surface);
+	sw32_r_drawsurf.texture = R_TextureAnimation (currententity, surface);
 	sw32_r_drawsurf.lightadj[0] = d_lightstylevalue[surface->styles[0]];
 	sw32_r_drawsurf.lightadj[1] = d_lightstylevalue[surface->styles[1]];
 	sw32_r_drawsurf.lightadj[2] = d_lightstylevalue[surface->styles[2]];
@@ -250,7 +251,7 @@ sw32_D_CacheSurface (msurface_t *surface, int miplevel)
 	surfscale = 1.0 / (1 << miplevel);
 	sw32_r_drawsurf.surfmip = miplevel;
 	sw32_r_drawsurf.surfwidth = surface->extents[0] >> miplevel;
-	sw32_r_drawsurf.rowbytes = sw32_r_drawsurf.surfwidth * sw32_r_pixbytes;
+	sw32_r_drawsurf.rowbytes = sw32_r_drawsurf.surfwidth * sw32_ctx->pixbytes;
 	sw32_r_drawsurf.surfheight = surface->extents[1] >> miplevel;
 
 	// allocate memory if needed

@@ -88,6 +88,19 @@ builtin_next (progs_t *pr)
 	return pr->bi_next++;
 }
 
+static void
+bi_no_function (progs_t *pr)
+{
+	// no need for checking: the /only/ way to get here is via a function
+	// descriptor with a bad builtin number
+	dstatement_t *st = pr->pr_statements + pr->pr_xstatement;
+	dfunction_t *desc = pr->pr_functions + G_FUNCTION (pr, st->a);
+	const char *bi_name = PR_GetString (pr, desc->s_name);
+	int         ind = -desc->first_statement;
+
+	PR_RunError (pr, "Bad builtin called: %s = #%d", bi_name, ind);
+}
+
 VISIBLE void
 PR_RegisterBuiltins (progs_t *pr, builtin_t *builtins)
 {
@@ -103,6 +116,14 @@ PR_RegisterBuiltins (progs_t *pr, builtin_t *builtins)
 											  pr->hashlink_freelist);
 		Hash_SetHashCompare (pr->builtin_num_hash, builtin_get_hash,
 							 builtin_compare);
+
+		bi = malloc (sizeof (builtin_t));
+		bi->name = "invalid function";
+		bi->proc = bi_no_function;
+		bi->binum = builtin_next (pr);
+		pr->bi_no_function = bi->binum;
+		DARRAY_APPEND (pr->builtin_blocks, bi);
+		Hash_AddElement (pr->builtin_num_hash, bi);
 	}
 
 	// count = 1 for terminator
@@ -149,19 +170,6 @@ PR_FindBuiltinNum (progs_t *pr, pr_int_t num)
 	return (builtin_t *) Hash_FindElement (pr->builtin_num_hash, &bi);
 }
 
-static void
-bi_no_function (progs_t *pr)
-{
-	// no need for checking: the /only/ way to get here is via a function
-	// descriptor with a bad builtin number
-	dstatement_t *st = pr->pr_statements + pr->pr_xstatement;
-	dfunction_t *desc = pr->pr_functions + G_FUNCTION (pr, st->a);
-	const char *bi_name = PR_GetString (pr, desc->s_name);
-	int         ind = -desc->first_statement;
-
-	PR_RunError (pr, "Bad builtin called: %s = #%d", bi_name, ind);
-}
-
 VISIBLE int
 PR_RelocateBuiltins (progs_t *pr)
 {
@@ -200,6 +208,7 @@ PR_RelocateBuiltins (progs_t *pr)
 			if (!bi) {
 				Sys_Printf ("PR_RelocateBuiltins: %s: undefined builtin %s\n",
 							pr->progs_name, bi_name);
+				desc->first_statement = -pr->bi_no_function;
 				bad = 1;
 				continue;
 			}
@@ -211,7 +220,7 @@ PR_RelocateBuiltins (progs_t *pr)
 			ind = pr->bi_map (pr, ind);
 		bi = PR_FindBuiltinNum (pr, ind);
 		if (!bi || !(proc = bi->proc)) {
-			Sys_MaskPrintf (SYS_DEV,
+			Sys_MaskPrintf (SYS_rua_resolve,
 							"WARNING: Bad builtin call number: %s = #%d\n",
 							bi_name, -desc->first_statement);
 			proc = bi_no_function;
@@ -223,5 +232,9 @@ PR_RelocateBuiltins (progs_t *pr)
 		func->first_statement = desc->first_statement;
 		func->func = proc;
 	}
-	return !bad;
+	if (bad) {
+		Sys_Printf ("PR_RelocateBuiltins: %s: progs may not work due to "
+					"unresolved builtins\n", pr->progs_name);
+	}
+	return 1;
 }

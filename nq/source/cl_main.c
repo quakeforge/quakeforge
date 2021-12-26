@@ -34,7 +34,6 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/draw.h"
-#include "QF/entity.h"
 #include "QF/input.h"
 #include "QF/joystick.h"
 #include "QF/keys.h"
@@ -48,10 +47,12 @@
 
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
+#include "QF/scene/entity.h"
 
 #include "compat.h"
 #include "sbar.h"
 
+#include "client/particles.h"
 #include "client/temp_entities.h"
 
 #include "nq/include/chase.h"
@@ -103,24 +104,51 @@ client_state_t cl;
 static void
 CL_WriteConfiguration (void)
 {
-	QFile      *f;
-
 	// dedicated servers initialize the host but don't parse and set the
 	// config.cfg cvars
 	if (host_initialized && !isDedicated && cl_writecfg->int_val) {
-		char       *path = va (0, "%s/config.cfg", qfs_gamedir->dir.def);
-		f = QFS_WOpen (path, 0);
+		plitem_t   *config = PL_NewDictionary (0); //FIXME hashlinks
+		Cvar_SaveConfig (config);
+		IN_SaveConfig (config);
+
+		const char *path = va (0, "%s/quakeforge.cfg", qfs_gamedir->dir.def);
+		QFile      *f = QFS_WOpen (path, 0);
+
 		if (!f) {
-			Sys_Printf ("Couldn't write config.cfg.\n");
-			return;
+			Sys_Printf ("Couldn't write quakeforge.cfg.\n");
+		} else {
+			char       *cfg = PL_WritePropertyList (config);
+			Qputs (f, cfg);
+			free (cfg);
+			Qclose (f);
 		}
-
-		Key_WriteBindings (f);
-		Cvar_WriteVariables (f);
-		Joy_WriteBindings (f);
-
-		Qclose (f);
+		PL_Free (config);
 	}
+}
+
+int
+CL_ReadConfiguration (const char *cfg_name)
+{
+	QFile      *cfg_file = QFS_FOpenFile (cfg_name);
+	if (!cfg_file) {
+		return 0;
+	}
+	size_t      len = Qfilesize (cfg_file);
+	char       *cfg = malloc (len + 1);
+	Qread (cfg_file, cfg, len);
+	cfg[len] = 0;
+	Qclose (cfg_file);
+
+	plitem_t   *config = PL_GetPropertyList (cfg, 0);	// FIXME hashlinks
+	if (!config) {
+		return 0;
+	}
+
+	Cvar_LoadConfig (config);
+	IN_LoadConfig (config);
+
+	PL_Free (config);
+	return 1;
 }
 
 static void
@@ -275,7 +303,7 @@ CL_Disconnect (void)
 		if (cls.demorecording)
 			CL_StopRecording ();
 
-		Sys_MaskPrintf (SYS_DEV, "Sending clc_disconnect\n");
+		Sys_MaskPrintf (SYS_dev, "Sending clc_disconnect\n");
 		SZ_Clear (&cls.message);
 		MSG_WriteByte (&cls.message, clc_disconnect);
 		NET_SendUnreliableMessage (cls.netcon, &cls.message);
@@ -318,12 +346,11 @@ CL_EstablishConnection (const char *host)
 	cls.netcon = NET_Connect (host);
 	if (!cls.netcon)
 		Host_Error ("CL_Connect: connect failed\n");
-	Sys_MaskPrintf (SYS_DEV, "CL_EstablishConnection: connected to %s\n",
+	Sys_MaskPrintf (SYS_dev, "CL_EstablishConnection: connected to %s\n",
 					host);
 
 	cls.demonum = -1;					// not in the demo loop now
 	CL_SetState (ca_connected);
-	Key_SetKeyDest (key_game);
 }
 
 /*
@@ -334,7 +361,7 @@ CL_EstablishConnection (const char *host)
 void
 CL_SignonReply (void)
 {
-	Sys_MaskPrintf (SYS_DEV, "CL_SignonReply: %i\n", cls.signon);
+	Sys_MaskPrintf (SYS_dev, "CL_SignonReply: %i\n", cls.signon);
 
 	switch (cls.signon) {
 	case so_none:
@@ -395,6 +422,12 @@ CL_NextDemo (void)
 	Cbuf_InsertText (host_cbuf, va (0, "playdemo %s\n",
 									cls.demos[cls.demonum]));
 	cls.demonum++;
+}
+
+static void
+pointfile_f (void)
+{
+	CL_LoadPointFile (cl.worldmodel);
 }
 
 static void
@@ -480,7 +513,7 @@ CL_SendCmd (void)
 		return;							// no message at all
 
 	if (!NET_CanSendMessage (cls.netcon)) {
-		Sys_MaskPrintf (SYS_DEV, "CL_WriteToServer: can't send\n");
+		Sys_MaskPrintf (SYS_dev, "CL_WriteToServer: can't send\n");
 		return;
 	}
 
@@ -495,17 +528,18 @@ CL_SetState (cactive_t state)
 {
 	cactive_t   old_state = cls.state;
 	cls.state = state;
-	Sys_MaskPrintf (SYS_NET, "CL_SetState: %d -> %d\n", old_state, state);
+	Sys_MaskPrintf (SYS_net, "CL_SetState: %d -> %d\n", old_state, state);
 	if (old_state != state) {
 		if (old_state == ca_active) {
 			// leaving active state
-			Key_SetKeyDest (key_console);
 			S_AmbientOff ();
+			r_funcs->R_ClearState ();
 		}
 		switch (state) {
 			case ca_dedicated:
 				break;
 			case ca_disconnected:
+				CL_ClearState ();
 				cls.signon = so_none;
 				cl.loading = false;
 				VID_SetCaption ("Disconnected");
@@ -514,14 +548,12 @@ CL_SetState (cactive_t state)
 				cls.signon = so_none;		// need all the signon messages
 											// before playing
 				cl.loading = true;
-				Key_SetKeyDest (key_game);
 				IN_ClearStates ();
 				VID_SetCaption ("Connected");
 				break;
 			case ca_active:
 				// entering active state
 				cl.loading = false;
-				Key_SetKeyDest (key_game);
 				IN_ClearStates ();
 				VID_SetCaption ("");
 				S_AmbientOn ();
@@ -529,8 +561,11 @@ CL_SetState (cactive_t state)
 		}
 		CL_UpdateScreen (cl.time);
 	}
-	if (con_module)
-		con_module->data->console->force_commandline = (state < ca_connected);
+	host_in_game = 0;
+	Con_SetState (state == ca_active ? con_inactive : con_fullscreen);
+	if (state != old_state && state == ca_active) {
+		CL_Input_Activate ();
+	}
 }
 
 static void
@@ -555,7 +590,7 @@ CL_Init (cbuf_t *cbuf)
 
 	W_LoadWadFile ("gfx.wad");
 	VID_Init (basepal, colormap);
-	IN_Init (cbuf);
+	IN_Init ();
 	R_Init ();
 	r_data->lightstyle = cl.lightstyle;
 
@@ -568,12 +603,15 @@ CL_Init (cbuf_t *cbuf)
 
 	Sbar_Init ();
 
-	CL_Input_Init ();
+	CL_Input_Init (cbuf);
+	CL_Particles_Init ();
 	CL_TEnts_Init ();
 	CL_ClearState ();
 
 	V_Init ();
 
+	Cmd_AddCommand ("pointfile", pointfile_f,
+					"Load a pointfile to determine map leaks.");
 	Cmd_AddCommand ("entities", CL_PrintEntities_f, "No Description");
 	Cmd_AddCommand ("disconnect", CL_Disconnect_f, "No Description");
 	Cmd_AddCommand ("maplist", Con_Maplist_f, "List available maps");

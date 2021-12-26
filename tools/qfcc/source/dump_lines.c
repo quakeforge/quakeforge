@@ -168,7 +168,8 @@ qfo_lines (qfo_t *qfo)
 	pr_lineno_t *lineno;
 	qfo_func_t  *func = 0;
 
-	for (func = qfo->funcs; func - qfo->funcs < qfo->num_funcs; func++) {
+	for (func = qfo->funcs;
+		 (size_t) (func - qfo->funcs) < qfo->num_funcs; func++) {
 		if (!func->line_info) {
 			// builtin
 			continue;
@@ -182,7 +183,7 @@ qfo_lines (qfo_t *qfo)
 		qfo_set_func_data(qfo, func, &func_data);
 		start_lineno = qfo->lines + func->line_info;
 		for (lineno = start_lineno + 1;
-			 lineno - qfo->lines < qfo->num_lines && lineno->line;
+			 (size_t) (lineno - qfo->lines) < qfo->num_lines && lineno->line;
 			 lineno++)
 		{
 		}

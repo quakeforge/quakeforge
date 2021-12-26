@@ -2,7 +2,8 @@ QFLMP_LIBS=@QFLMP_LIBS@
 QFLMP_DEPS=@QFLMP_DEPS@
 QFLMP_INCS=@QFLMP_INCS@
 
-bin_PROGRAMS +=	qflmp
+EXTRA_PROGRAMS +=		qflmp
+bin_PROGRAMS +=	@QFLMP_TARGETS@
 
 #mans=qflmp.1
 man_MANS +=	$(mans)

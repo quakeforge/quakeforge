@@ -71,7 +71,7 @@ dstring_t *lightdata;
 dstring_t *rgblightdata;
 
 dmodel_t *bspmodel;
-int bspfileface;		// next surface to dispatch
+size_t  bspfileface;		// next surface to dispatch
 int bspfileent;			// next entity to dispatch
 
 vec3_t bsp_origin;
@@ -119,13 +119,13 @@ VisThread (void *junk)
 static void *
 LightThread (void *l)
 {
-	int         i;
+	size_t      i;
 
 	while (1) {
 		LOCK;
 		i = bspfileface++;
 		if (i < bsp->numfaces) {
-			printf ("%5d / %d\r", i, bsp->numfaces);
+			printf ("%5zd / %zd\r", i, bsp->numfaces);
 			fflush (stdout);
 		}
 		UNLOCK;
@@ -139,22 +139,21 @@ LightThread (void *l)
 static void
 FindFaceOffsets (void)
 {
-	int         i, j;
 	entity_t   *ent;
 	vec3_t      org;
 	const char *name;
 
 	surfaceorgs = (vec3_t *) calloc (bsp->numfaces, sizeof (vec3_t));
 
-	for (i = 1; i < bsp->nummodels; i++) {
-		ent = FindEntityWithKeyPair ("model", name = va (0, "*%d", i));
+	for (size_t i = 1; i < bsp->nummodels; i++) {
+		ent = FindEntityWithKeyPair ("model", name = va (0, "*%zd", i));
 		VectorZero (org);
 		if (!ent)
 			Sys_Error ("FindFaceOffsets: Couldn't find entity for model %s.\n",
 					   name);
 		if (!strncmp (ValueForKey (ent, "classname"), "rotate_", 7))
 			GetVectorForKey (ent, "origin", org);
-		for (j = 0; j < bsp->models[i].numfaces; j++)
+		for (uint32_t j = 0; j < bsp->models[i].numfaces; j++)
 			VectorCopy (org, surfaceorgs[bsp->models[i].firstface]);
 	}
 }

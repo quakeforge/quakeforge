@@ -62,7 +62,7 @@ int	Sys_FileExists (const char *path);
 int Sys_isdir (const char *path);
 int Sys_mkdir (const char *path);
 
-typedef void (*sys_printf_t) (const char *fmt, va_list args) __attribute__((format(printf, 1, 0)));
+typedef void (*sys_printf_t) (const char *fmt, va_list args) __attribute__((format(PRINTF, 1, 0)));
 typedef void (*sys_error_t) (void *data);
 
 sys_printf_t Sys_SetStdPrintf (sys_printf_t func);
@@ -71,37 +71,37 @@ sys_printf_t Sys_SetErrPrintf (sys_printf_t func);
 void Sys_PushErrorHandler (sys_error_t func, void *data);
 void Sys_PopErrorHandler (void);
 
-void Sys_Print (FILE *stream, const char *fmt, va_list args) __attribute__((format(printf, 2, 0)));
-void Sys_Printf (const char *fmt, ...) __attribute__((format(printf,1,2)));
-void Sys_Error (const char *error, ...) __attribute__((format(printf,1,2), noreturn));
-void Sys_FatalError (const char *error, ...) __attribute__((format(printf,1,2), noreturn));
+void Sys_Print (FILE *stream, const char *fmt, va_list args) __attribute__((format(PRINTF, 2, 0)));
+void Sys_Printf (const char *fmt, ...) __attribute__((format(PRINTF,1,2)));
+void Sys_Error (const char *error, ...) __attribute__((format(PRINTF,1,2), noreturn));
+void Sys_FatalError (const char *error, ...) __attribute__((format(PRINTF,1,2), noreturn));
 void Sys_Quit (void) __attribute__((noreturn));
 void Sys_Shutdown (void);
 void Sys_RegisterShutdown (void (*func) (void *), void *data);
+int64_t Sys_StartTime (void) __attribute__ ((const));
 int64_t Sys_LongTime (void);
 double Sys_DoubleTime (void);
+int64_t Sys_TimeBase (void) __attribute__ ((const));
+double Sys_DoubleTimeBase (void) __attribute__ ((const));
 void Sys_TimeOfDay(date_t *date);
 
-void Sys_MaskPrintf (int mask, const char *fmt, ...) __attribute__((format(printf,2,3)));
-// remember to update developer_flags in cvar.c
-#define SYS_DEV             (1|0)
-#define SYS_WARN            (1|2)	// bit 0 so developer 1 will pick it up
-#define SYS_VID             (1|4)
-#define SYS_FS_NF           (1|8)
-#define SYS_FS_F            (1|16)
-#define SYS_FS              (1|32)
-#define SYS_NET             (1|64)
-#define SYS_RUA_OBJ         (1|128)
-#define SYS_RUA_MSG         (1|256)
-#define SYS_SND             (1|512)
-#define SYS_GLT             (1|1024)
-#define SYS_GLSL            (1|2048)
-#define SYS_SKIN            (1|4096)
-#define SYS_MODEL           (1|8192)
-#define SYS_VULKAN          (1|16384)
-#define SYS_VULKAN_PARSE    (1|32768)
-#define SYS_CSQC            (1|65536)
+void Sys_MaskPrintf (int mask, const char *fmt, ...) __attribute__((format(PRINTF,2,3)));
 
+#define SYS_DEVELOPER(developer) SYS_DeveloperID_##developer,
+enum {
+#include "QF/sys_developer.h"
+};
+
+// bit 0 so developer 1 will pick it up
+#define SYS_DEVELOPER(developer) \
+	SYS_##developer = (SYS_dev | (1 << (SYS_DeveloperID_##developer + 1))),
+enum {
+	SYS_dev = 1,
+#include "QF/sys_developer.h"
+};
+
+struct qf_fd_set;
+int Sys_Select (int maxfd, struct qf_fd_set *fdset, int64_t usec);
 int Sys_CheckInput (int idle, int net_socket);
 const char *Sys_ConsoleInput (void);
 
@@ -125,12 +125,16 @@ void Sys_Init_Cvars (void);
 //
 void Sys_MakeCodeWriteable (uintptr_t startaddr, size_t length);
 void Sys_PageIn (void *ptr, size_t size);
+size_t Sys_PageSize (void);
 void *Sys_Alloc (size_t size);
+void Sys_Free (void *mem, size_t size);
+
+int Sys_ProcessorCount (void);
 
 //
 // system IO
 //
-void Sys_DebugLog(const char *file, const char *fmt, ...) __attribute__((format(printf,2,3)));
+void Sys_DebugLog(const char *file, const char *fmt, ...) __attribute__((format(PRINTF,2,3)));
 
 #define SYS_CHECKMEM(x) 												\
 	do {																\

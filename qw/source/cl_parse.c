@@ -213,15 +213,18 @@ CL_CalcNet (void)
 	for (i = cls.netchan.outgoing_sequence - UPDATE_BACKUP + 1;
 		 i <= cls.netchan.outgoing_sequence; i++) {
 		frame = &cl.frames[i & UPDATE_MASK];
-		if (frame->receivedtime == -1)
+		if (frame->receivedtime == -1) {
 			packet_latency[i & NET_TIMINGSMASK] = 9999;		// dropped
-		else if (frame->receivedtime == -2)
+		} else if (frame->receivedtime == -2) {
 			packet_latency[i & NET_TIMINGSMASK] = 10000;	// choked
-		else if (frame->invalid)
+		} else if (frame->invalid) {
 			packet_latency[i & NET_TIMINGSMASK] = 9998;		// invalid delta
-		else
-			packet_latency[i & NET_TIMINGSMASK] =
-				(frame->receivedtime - frame->senttime) * 20;
+		} else {
+			double      d = frame->receivedtime - frame->senttime;
+			d = log (d * 1000 + 1) / log (1000);
+			d *= d * cl_netgraph_height->int_val;
+			packet_latency[i & NET_TIMINGSMASK] = d;
+		}
 	}
 
 	lost = 0;
@@ -316,7 +319,7 @@ CL_NewMap (const char *mapname)
 	r_funcs->R_NewMap (cl.worldmodel, cl.model_precache, cl.nummodels);
 	Team_NewMap ();
 	Con_NewMap ();
-	Hunk_Check ();								// make sure nothing is hurt
+	Hunk_Check (0);								// make sure nothing is hurt
 	Sbar_CenterPrint (0);
 
 	if (cl.model_precache[1] && cl.model_precache[1]->brush.entities) {
@@ -357,7 +360,7 @@ Model_NextDownload (void)
 		map_cfg (cl.model_name[1], 0);
 
 	for (i = 1; i < cl.nummodels; i++) {
-		char *info_key = 0;
+		const char *info_key = 0;
 
 		if (!cl.model_name[i][0])
 			break;
@@ -478,7 +481,7 @@ CL_RequestNextDownload (void)
 			break;
 		case dl_none:
 		default:
-			Sys_MaskPrintf (SYS_DEV, "Unknown download type.\n");
+			Sys_MaskPrintf (SYS_dev, "Unknown download type.\n");
 	}
 }
 
@@ -714,7 +717,7 @@ CL_NextUpload (void)
 	MSG_WriteByte (&cls.netchan.message, percent);
 	SZ_Write (&cls.netchan.message, buffer, r);
 
-	Sys_MaskPrintf (SYS_DEV, "UPLOAD: %6d: %d written\n", upload_pos - r, r);
+	Sys_MaskPrintf (SYS_dev, "UPLOAD: %6d: %d written\n", upload_pos - r, r);
 
 	if (upload_pos != upload_size)
 		return;
@@ -736,7 +739,7 @@ CL_StartUpload (byte * data, int size)
 	if (upload_data)
 		free (upload_data);
 
-	Sys_MaskPrintf (SYS_DEV, "Upload starting of %d...\n", size);
+	Sys_MaskPrintf (SYS_dev, "Upload starting of %d...\n", size);
 
 	upload_data = malloc (size);
 	memcpy (upload_data, data, size);
@@ -788,7 +791,7 @@ CL_ParseServerData (void)
 	int			protover;
 	//FIXME qboolean	cflag = false;
 
-	Sys_MaskPrintf (SYS_DEV, "Serverdata packet received.\n");
+	Sys_MaskPrintf (SYS_dev, "Serverdata packet received.\n");
 
 	// wipe the client_state_t struct
 	CL_ClearState ();
@@ -1195,7 +1198,7 @@ CL_SetInfo (void)
 
 	CL_ProcessUserInfo (slot, player);
 
-	Sys_MaskPrintf (SYS_DEV, "SETINFO %s: %s=%s\n", player->name->value, key,
+	Sys_MaskPrintf (SYS_dev, "SETINFO %s: %s=%s\n", player->name->value, key,
 					value);
 }
 
@@ -1209,7 +1212,7 @@ CL_ServerInfo (void)
 	strncpy (value, MSG_ReadString (net_message), sizeof (value) - 1);
 	key[sizeof (value) - 1] = 0;
 
-	Sys_MaskPrintf (SYS_DEV, "SERVERINFO: %s=%s\n", key, value);
+	Sys_MaskPrintf (SYS_dev, "SERVERINFO: %s=%s\n", key, value);
 
 	Info_SetValueForKey (cl.serverinfo, key, value, 0);
 	if (strequal (key, "chase")) {
@@ -1411,16 +1414,16 @@ CL_ParseServerMessage (void)
 				str = MSG_ReadString (net_message);
 				if (str[strlen (str) - 1] == '\n') {
 					if (stuffbuf && stuffbuf->str[0]) {
-						Sys_MaskPrintf (SYS_DEV, "stufftext: %s%s\n",
+						Sys_MaskPrintf (SYS_dev, "stufftext: %s%s\n",
 										stuffbuf->str, str);
 						Cbuf_AddText (cl_stbuf, stuffbuf->str);
 						dstring_clearstr (stuffbuf);
 					} else {
-						Sys_MaskPrintf (SYS_DEV, "stufftext: %s\n", str);
+						Sys_MaskPrintf (SYS_dev, "stufftext: %s\n", str);
 					}
 					Cbuf_AddText (cl_stbuf, str);
 				} else {
-					Sys_MaskPrintf (SYS_DEV, "partial stufftext: %s\n", str);
+					Sys_MaskPrintf (SYS_dev, "partial stufftext: %s\n", str);
 					if (!stuffbuf)
 						stuffbuf = dstring_newstr ();
 					dstring_appendstr (stuffbuf, str);
@@ -1548,23 +1551,23 @@ CL_ParseServerMessage (void)
 				break;
 
 			case svc_intermission:
-				Sys_MaskPrintf (SYS_DEV, "svc_intermission\n");
+				Sys_MaskPrintf (SYS_dev, "svc_intermission\n");
 
 				cl.intermission = 1;
 				r_data->force_fullscreen = 1;
 				cl.completed_time = realtime;
 				r_data->vid->recalc_refdef = true;		// go to full screen
-				Sys_MaskPrintf (SYS_DEV, "intermission simorg: ");
+				Sys_MaskPrintf (SYS_dev, "intermission simorg: ");
 				MSG_ReadCoordV (net_message, &cl.viewstate.origin[0]);//FIXME
 				cl.viewstate.origin[3] = 1;
-				Sys_MaskPrintf (SYS_DEV, VEC4F_FMT,
+				Sys_MaskPrintf (SYS_dev, VEC4F_FMT,
 								VEC4_EXP (cl.viewstate.origin));
-				Sys_MaskPrintf (SYS_DEV, "\nintermission simangles: ");
+				Sys_MaskPrintf (SYS_dev, "\nintermission simangles: ");
 				MSG_ReadAngleV (net_message, cl.viewstate.angles);
 				cl.viewstate.angles[ROLL] = 0;			// FIXME @@@
-				Sys_MaskPrintf (SYS_DEV, "%f %f %f",
+				Sys_MaskPrintf (SYS_dev, "%f %f %f",
 								VectorExpand (cl.viewstate.angles));
-				Sys_MaskPrintf (SYS_DEV, "\n");
+				Sys_MaskPrintf (SYS_dev, "\n");
 				cl.viewstate.velocity = (vec4f_t) { };
 
 				// automatic fraglogging (by elmex)

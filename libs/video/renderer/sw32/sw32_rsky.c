@@ -43,6 +43,7 @@
 
 #include "r_internal.h"
 #include "vid_internal.h"
+#include "vid_sw.h"
 
 
 static int         iskyspeed = 8;
@@ -128,7 +129,7 @@ sw32_R_MakeSky (void)
 	xshift1 = xshift2 >> 1;
 	yshift1 = yshift2 >> 1;
 
-	switch(sw32_r_pixbytes)
+	switch(sw32_ctx->pixbytes)
 	{
 	case 1:
 		{
@@ -188,7 +189,7 @@ sw32_R_MakeSky (void)
 		}
 		break;
 	default:
-		Sys_Error("R_MakeSky: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("R_MakeSky: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 	}
 	sw32_r_skymade = 1;
 }

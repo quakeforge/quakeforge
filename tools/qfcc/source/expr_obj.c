@@ -90,7 +90,7 @@ expr_t *
 selector_expr (keywordarg_t *selector)
 {
 	dstring_t  *sel_id = dstring_newstr ();
-	expr_t     *sel;
+	expr_t     *sel_ref;
 	symbol_t   *sel_sym;
 	symbol_t   *sel_table;
 	int         index;
@@ -111,10 +111,15 @@ selector_expr (keywordarg_t *selector)
 			symtab_addsymbol (pr.symtab, sel_table);
 		reloc_def_def (sel_table->s.def, sel_sym->s.def);
 	}
-	sel = new_symbol_expr (sel_sym);
+	sel_ref = new_symbol_expr (sel_sym);
+	sel_ref = new_binary_expr ('&', sel_ref, new_short_expr (index));
+	sel_ref->e.expr.type = &type_SEL;
+
+	expr_t     *sel = new_expr ();
+	sel->type = ex_selector;
+	sel->e.selector.sel_ref = sel_ref;
+	sel->e.selector.sel = get_selector (sel_ref);
 	dstring_delete (sel_id);
-	sel = new_binary_expr ('&', sel, new_short_expr (index));
-	sel->e.expr.type = &type_SEL;
 	return sel;
 }
 

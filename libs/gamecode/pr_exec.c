@@ -887,7 +887,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 									 "field in an edict");
 				}
 				fldofs = OPA.entity_var + OPB.integer_var;
-				OPC_double_var = *(double *) &pr->pr_edict_area[fldofs];
+				memcpy (&OPC, &pr->pr_edict_area[fldofs], sizeof (double));
 				break;
 
 			case OP_LOADB_F:
@@ -1225,7 +1225,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 					if (pr_boundscheck->int_val) {
 						check_stack_pointer (pr, stack, 1);
 					}
-					stk->integer_var = OPA.integer_var;
+					OPA.integer_var = stk->integer_var;
 					*pr->globals.stack = stack + 1;
 				}
 				break;
@@ -1236,7 +1236,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 					if (pr_boundscheck->int_val) {
 						check_stack_pointer (pr, stack, 3);
 					}
-					memcpy (stk, &OPA, 3 * sizeof (OPC));
+					memcpy (&OPA, stk, 3 * sizeof (OPC));
 					*pr->globals.stack = stack + 3;
 				}
 				break;
@@ -1247,7 +1247,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 					if (pr_boundscheck->int_val) {
 						check_stack_pointer (pr, stack, 4);
 					}
-					memcpy (stk, &OPA, 4 * sizeof (OPC));
+					memcpy (&OPA, stk, 4 * sizeof (OPC));
 					*pr->globals.stack = stack + 4;
 				}
 				break;
@@ -1271,7 +1271,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 						PR_BoundsCheck (pr, pointer, ev_integer);
 					}
 
-					stk->integer_var = ptr->integer_var;
+					ptr->integer_var = stk->integer_var;
 					*pr->globals.stack = stack + 1;
 				}
 				break;
@@ -1288,7 +1288,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 						PR_BoundsCheck (pr, pointer, ev_integer);
 					}
 
-					VectorCopy (&ptr->vector_var, &stk->vector_var);
+					VectorCopy (&stk->vector_var, &ptr->vector_var);
 					*pr->globals.stack = stack + 3;
 				}
 				break;
@@ -1305,7 +1305,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 						PR_BoundsCheck (pr, pointer, ev_quat);
 					}
 
-					QuatCopy (&ptr->quat_var, &stk->quat_var);
+					QuatCopy (&stk->quat_var, &ptr->quat_var);
 					*pr->globals.stack = stack + 4;
 				}
 				break;
@@ -1329,7 +1329,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 						PR_BoundsCheck (pr, pointer, ev_integer);
 					}
 
-					stk->integer_var = ptr->integer_var;
+					ptr->integer_var = stk->integer_var;
 					*pr->globals.stack = stack + 1;
 				}
 				break;
@@ -1346,7 +1346,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 						PR_BoundsCheck (pr, pointer, ev_integer);
 					}
 
-					VectorCopy (&ptr->vector_var, &stk->vector_var);
+					VectorCopy (&stk->vector_var, &ptr->vector_var);
 					*pr->globals.stack = stack + 3;
 				}
 				break;
@@ -1363,7 +1363,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 						PR_BoundsCheck (pr, pointer, ev_quat);
 					}
 
-					QuatCopy (&ptr->quat_var, &stk->quat_var);
+					QuatCopy (&stk->quat_var, &ptr->quat_var);
 					*pr->globals.stack = stack + 4;
 				}
 				break;
@@ -1488,31 +1488,25 @@ op_call:
 			case OP_STATE:
 				{
 					int         self = *pr->globals.self;
-					int         nextthink = pr->fields.nextthink;
-					int         frame = pr->fields.frame;
-					int         think = pr->fields.think;
-					fldofs = self + nextthink;
-					pr->pr_edict_area[fldofs].float_var = *pr->globals.time +
-															0.1;
-					fldofs = self + frame;
-					pr->pr_edict_area[fldofs].float_var = OPA.float_var;
-					fldofs = self + think;
-					pr->pr_edict_area[fldofs].func_var = OPB.func_var;
+					int         nextthink = pr->fields.nextthink + self;
+					int         frame = pr->fields.frame + self;
+					int         think = pr->fields.think + self;
+					float       time = *pr->globals.time + 0.1;
+					pr->pr_edict_area[nextthink].float_var = time;
+					pr->pr_edict_area[frame].float_var = OPA.float_var;
+					pr->pr_edict_area[think].func_var = OPB.func_var;
 				}
 				break;
 			case OP_STATE_F:
 				{
 					int         self = *pr->globals.self;
-					int         nextthink = pr->fields.nextthink;
-					int         frame = pr->fields.frame;
-					int         think = pr->fields.think;
-					fldofs = self + nextthink;
-					pr->pr_edict_area[fldofs].float_var = *pr->globals.time +
-															OPC.float_var;
-					fldofs = self + frame;
-					pr->pr_edict_area[fldofs].float_var = OPA.float_var;
-					fldofs = self + think;
-					pr->pr_edict_area[fldofs].func_var = OPB.func_var;
+					int         nextthink = pr->fields.nextthink + self;
+					int         frame = pr->fields.frame + self;
+					int         think = pr->fields.think + self;
+					float       time = *pr->globals.time + OPC.float_var;
+					pr->pr_edict_area[nextthink].float_var = time;
+					pr->pr_edict_area[frame].float_var = OPA.float_var;
+					pr->pr_edict_area[think].func_var = OPB.func_var;
 				}
 				break;
 			case OP_ADD_I:

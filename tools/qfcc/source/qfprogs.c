@@ -237,7 +237,7 @@ init_qf (void)
 	Cvar_Get ("pr_source_path", source_path, 0, 0, "");
 	PR_Init_Cvars ();
 
-	pr.edicts = &edicts;
+	pr.pr_edicts = &edicts;
 	pr.num_edicts = &num_edicts;
 	pr.reserved_edicts = &reserved_edicts;
 	pr.file_error = file_error;

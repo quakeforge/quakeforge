@@ -41,7 +41,6 @@
 
 #include "QF/cvar.h"
 #include "QF/dstring.h"
-#include "QF/input.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
@@ -216,45 +215,16 @@ QFV_GenerateMipMaps (qfv_device_t *device, VkCommandBuffer cmd,
 {
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	qfv_pipelinestagepair_t pre_stages = {
-		VK_PIPELINE_STAGE_TRANSFER_BIT,
-		VK_PIPELINE_STAGE_TRANSFER_BIT,
-	};
-	qfv_pipelinestagepair_t post_stages = {
-		VK_PIPELINE_STAGE_TRANSFER_BIT,
-		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-	};
-	qfv_pipelinestagepair_t final_stages = {
-		VK_PIPELINE_STAGE_TRANSFER_BIT,
-		VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-	};
-	VkImageMemoryBarrier pre_barrier = {
-		VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, 0,
-		VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
-		image,
-		{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, layers }
-	};
-	VkImageMemoryBarrier post_barrier = {
-		VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, 0,
-		VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_SHADER_READ_BIT,
-		VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
-		image,
-		{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, layers }
-	};
-	VkImageMemoryBarrier final_barrier = {
-		VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER, 0,
-		VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_SHADER_READ_BIT,
-		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-		VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
-		image,
-		{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, layers }
-	};
+	qfv_imagebarrier_t pre=imageBarriers[qfv_LT_TransferDst_to_TransferSrc];
+	qfv_imagebarrier_t pst=imageBarriers[qfv_LT_TransferSrc_to_ShaderReadOnly];
+	qfv_imagebarrier_t fnl=imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+
+	pre.barrier.image = image;
+	pre.barrier.subresourceRange.layerCount = layers;
+	pst.barrier.image = image;
+	pst.barrier.subresourceRange.layerCount = layers;
+	fnl.barrier.image = image;
+	fnl.barrier.subresourceRange.layerCount = layers;
 
 	VkImageBlit blit = {
 		{VK_IMAGE_ASPECT_COLOR_BIT, 0, 0, layers},
@@ -264,17 +234,17 @@ QFV_GenerateMipMaps (qfv_device_t *device, VkCommandBuffer cmd,
 	};
 
 	while (--mips > 0) {
-		dfunc->vkCmdPipelineBarrier (cmd, pre_stages.src, pre_stages.dst, 0,
+		dfunc->vkCmdPipelineBarrier (cmd, pre.srcStages, pre.dstStages, 0,
 									 0, 0, 0, 0,
-									 1, &pre_barrier);
+									 1, &pre.barrier);
 		dfunc->vkCmdBlitImage (cmd,
 							   image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
 							   image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 							   1, &blit, VK_FILTER_LINEAR);
 
-		dfunc->vkCmdPipelineBarrier (cmd, post_stages.src, post_stages.dst, 0,
+		dfunc->vkCmdPipelineBarrier (cmd, pst.srcStages, pst.dstStages, 0,
 									 0, 0, 0, 0,
-									 1, &post_barrier);
+									 1, &pst.barrier);
 
 		blit.srcSubresource.mipLevel++;
 		blit.srcOffsets[1].x = blit.dstOffsets[1].x;
@@ -282,13 +252,13 @@ QFV_GenerateMipMaps (qfv_device_t *device, VkCommandBuffer cmd,
 		blit.dstSubresource.mipLevel++;
 		blit.dstOffsets[1].x = max (blit.dstOffsets[1].x >> 1, 1);
 		blit.dstOffsets[1].y = max (blit.dstOffsets[1].y >> 1, 1);
-		pre_barrier.subresourceRange.baseMipLevel++;
-		post_barrier.subresourceRange.baseMipLevel++;
-		final_barrier.subresourceRange.baseMipLevel++;
+		pre.barrier.subresourceRange.baseMipLevel++;
+		pst.barrier.subresourceRange.baseMipLevel++;
+		fnl.barrier.subresourceRange.baseMipLevel++;
 	}
-	dfunc->vkCmdPipelineBarrier (cmd, final_stages.src, final_stages.dst, 0,
+	dfunc->vkCmdPipelineBarrier (cmd, fnl.srcStages, fnl.dstStages, 0,
 								 0, 0, 0, 0,
-								 1, &final_barrier);
+								 1, &fnl.barrier);
 }
 
 static int

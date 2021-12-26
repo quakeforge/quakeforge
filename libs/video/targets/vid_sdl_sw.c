@@ -52,15 +52,11 @@
 #ifdef _WIN32	// FIXME: evil hack to get full DirectSound support with SDL
 #include <windows.h>
 #include <SDL_syswm.h>
-HWND 		mainwindow;
 #endif
 
 // The original defaults
 #define BASEWIDTH 320
 #define BASEHEIGHT 200
-
-byte       *VGA_pagebase;
-int         VGA_width, VGA_height, VGA_rowbytes, VGA_bufferrowbytes = 0;
 
 // Define GLAPIENTRY to a useful value
 #ifndef GLAPIENTRY
@@ -95,7 +91,7 @@ sdl_update_palette (const byte *palette)
 }
 
 static void
-VID_SetPalette (const byte *palette)
+sdl_set_palette (const byte *palette)
 {
 	if (memcmp (cached_palette, palette, sizeof (cached_palette))) {
 		memcpy (cached_palette, palette, sizeof (cached_palette));
@@ -104,12 +100,17 @@ VID_SetPalette (const byte *palette)
 }
 
 static void
-do_screen_buffer (void)
+sdl_init_buffers (void)
 {
+	viddef.buffer = sdl_screen->pixels;
+	viddef.rowbytes = sdl_screen->pitch;
+	viddef.conbuffer = viddef.buffer;
+	viddef.conrowbytes = viddef.rowbytes;
+	viddef.direct = 0;
 }
 
 static void
-sdl_set_vid_mode (sw_ctx_t *ctx)
+sdl_create_context (sw_ctx_t *ctx)
 {
 	// Initialize display
 	if (!(sdl_screen = SDL_SetVideoMode (viddef.width, viddef.height, 8,
@@ -117,16 +118,7 @@ sdl_set_vid_mode (sw_ctx_t *ctx)
 		Sys_Error ("VID: Couldn't set video mode: %s", SDL_GetError ());
 
 	// now know everything we need to know about the buffer
-	VGA_width = viddef.width;
-	VGA_height = viddef.height;
-	viddef.vid_internal->do_screen_buffer = do_screen_buffer;
-	VGA_pagebase = viddef.buffer = sdl_screen->pixels;
-	VGA_rowbytes = viddef.rowbytes = sdl_screen->pitch;
-	viddef.conbuffer = viddef.buffer;
-	viddef.conrowbytes = viddef.rowbytes;
-	viddef.direct = 0;
-
-	VID_InitBuffers ();		// allocate z buffer and surface cache
+	viddef.vid_internal->init_buffers = sdl_init_buffers;
 }
 
 static void
@@ -171,8 +163,8 @@ sw_ctx_t *
 SDL_SW_Context (void)
 {
 	sw_ctx_t *ctx = calloc (1, sizeof (sw_ctx_t));
-    ctx->set_palette = VID_SetPalette;
-    ctx->create_context = sdl_set_vid_mode;
+    ctx->set_palette = sdl_set_palette;
+    ctx->create_context = sdl_create_context;
     ctx->update = sdl_sw_update;
     return ctx;
 }

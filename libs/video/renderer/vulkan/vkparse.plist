@@ -1,6 +1,7 @@
 {
 	search = (
 		VkAttachmentDescription,
+		VkDebugUtilsMessageSeverityFlagBitsEXT,
 		VkSubpassDescription,
 		VkSubpassDependency,
 		VkSpecializationInfo,
@@ -18,12 +19,14 @@
 		VkPushConstantRange,
 		VkPipelineLayoutCreateInfo,
 		VkGraphicsPipelineCreateInfo,
+		VkComputePipelineCreateInfo,
 		VkDescriptorPoolCreateInfo,
 		VkSamplerCreateInfo,
 		VkImageCreateInfo,
 		VkImageViewCreateInfo,
 		VkFramebufferCreateInfo,
 		VkClearValue,
+		VkPhysicalDeviceLimits,
 	);
 	parse = {
 		VkSubpassDescription = {
@@ -79,9 +82,9 @@
 				values = pMapEntries;
 			};
 			data = {
-				type = data;
-				size = dataSize;
-				data = pData;
+				type = (custom,	(QFBinary, QFString),
+						parse_specialization_data);
+				fields = (dataSize, pData);
 			};
 		};
 		VkPipelineShaderStageCreateInfo = {
@@ -281,7 +284,24 @@
 				type = (custom,	QFString, parse_VkPipelineLayout);
 				fields = (layout);
 			};
+			renderPass = {
+				type = (custom,	QFString, parse_VkRenderPass);
+				fields = (renderPass);
+			};
 			subpass = auto;
+			basePipelineHandle = {
+				type = (custom, QFString, parse_BasePipeline);
+				fields = (basePipelineHandle);
+			};
+			basePipelineIndex = auto;
+		};
+		VkComputePipelineCreateInfo = {
+			flags = auto;
+			stage = auto;
+			layout = {
+				type = (custom,	QFString, parse_VkPipelineLayout);
+				fields = (layout);
+			};
 			basePipelineHandle = {
 				type = (custom, QFString, parse_BasePipeline);
 				fields = (basePipelineHandle);

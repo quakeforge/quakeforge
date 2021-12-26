@@ -32,7 +32,8 @@
 #endif
 
 #include "QF/sys.h"
-#include "QF/vrect.h"
+
+#include "QF/ui/vrect.h"
 
 #include "compat.h"
 #include "r_scrap.h"

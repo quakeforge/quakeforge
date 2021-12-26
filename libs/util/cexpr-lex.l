@@ -108,7 +108,8 @@ m			[\-+]
 D			[0-9]
 B			[01]
 X			[0-9a-fA-F]
-ID			[a-zA-Z_][a-zA-Z_0-9]*
+id			[a-zA-Z_0-9]*
+ID			[a-zA-Z_]{id}
 FLOAT		({D}+|{D}*\.{D}+|{D}+\.{D}*)([eE]{m}?{D}+)?
 FLOATf		{FLOAT}[fF]
 FLOATd		{FLOAT}[dD]
@@ -153,6 +154,11 @@ STRING		\"(\\.|[^"\\])*\"
 						return NAME;
 					}
 
+`{id}				{
+						yylval->symbol = parse_name (yytext + 1, context);
+						return NAME;
+					}
+
 \${ID}				{
 						yylval->value = parse_variable (yytext + 1, context);
 						return VALUE;
@@ -166,15 +172,23 @@ STRING		\"(\\.|[^"\\])*\"
 					}
 
 [+\-*/&|^%]=		{
+						yylval->op = yytext[0];
+						return ASX;
 					}
 
 "%%="				{
+						yylval->op = MOD;
+						return ASX;
 					}
 
 "<<="				{
+						yylval->op = SHL;
+						return ASX;
 					}
 
 ">>="				{
+						yylval->op = SHR;
+						return ASX;
 					}
 
 [!(){}.*/&|^~+\-=\[\];,#%?:] {
@@ -182,6 +196,7 @@ STRING		\"(\\.|[^"\\])*\"
 					}
 
 "%%"				{
+						return MOD;
 					}
 
 "<<"				return SHL;
@@ -271,12 +286,23 @@ static exprval_t *parse_double (const char *str, exprctx_t *context)
 static exprsym_t *
 parse_name (const char *name, exprctx_t *context)
 {
-	exprtab_t  *symtab = context->symtab;
+	exprsym_t  *sym = 0;
+	exprtab_t  *prev_tab = 0;
 
-	if (!symtab) {
-		return 0;
+	for (exprctx_t *ctx = context; ctx && !sym; ctx = ctx->parent) {
+		exprtab_t  *symtab = ctx->symtab;
+		if (!symtab) {
+			// scope barrier
+			break;
+		}
+		if (symtab == prev_tab) {
+			// already checked this symtab
+			continue;
+		}
+		prev_tab = symtab;
+
+		sym = Hash_Find (symtab->tab, name);
 	}
-	__auto_type sym = (exprsym_t *) Hash_Find (symtab->tab, name);
 	return sym;
 }
 
@@ -287,12 +313,22 @@ parse_variable (const char *name, exprctx_t *context)
 	if (strcmp (name, "cvars") == 0) {
 		val = cexpr_cvar_struct (context);
 	} else {
-		exprtab_t  *symtab = context->external_variables;
-		__auto_type sym = (exprsym_t *) Hash_Find (symtab->tab, name);
+		exprsym_t  *sym = 0;
+		exprtab_t  *prev_tab = 0;
+		for (exprctx_t *ctx = context; ctx && !sym; ctx = ctx->parent) {
+			exprtab_t  *symtab = ctx->external_variables;
+			if (!symtab) {
+				// scope barrier
+				break;
+			}
+			if (symtab == prev_tab) {
+				// already checked this symtab
+				continue;
+			}
+			sym = Hash_Find (symtab->tab, name);
+		}
 		if (sym) {
 			val = cexpr_value_reference (sym->type, sym->value, context);
-		} else {
-			//val = cexpr_cvar (name, context);
 		}
 	}
 	if (!val) {

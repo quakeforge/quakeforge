@@ -25,29 +25,16 @@
 
 */
 
-#ifndef __QF_plugin_input_h_
-#define __QF_plugin_input_h_
+#ifndef __QF_plugin_input_h
+#define __QF_plugin_input_h
 
 #include <QF/plugin.h>
 #include <QF/qtypes.h>
 
-/*
-	All input plugins must export these functions
-*/
-typedef void (*P_IN_Commands) (void);
-typedef void (*P_IN_SendKeyEvents) (void);
-typedef void (*P_IN_Move) (void);
-typedef void (*P_IN_ModeChanged) (void);
-
 typedef struct input_funcs_s {
-	P_IN_Commands 		pIN_Commands;
-	P_IN_SendKeyEvents	pIN_SendKeyEvents;
-	P_IN_Move			pIN_Move;
-	P_IN_ModeChanged 	pIN_ModeChanged;
 } input_funcs_t;
 
 typedef struct input_data_s {
-	int unused; /* C requires that a struct or union has at least one member */
 } input_data_t;
 
-#endif // __QF_plugin_input_h_
+#endif // __QF_plugin_input_h

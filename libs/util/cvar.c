@@ -45,6 +45,7 @@
 #include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/mathlib.h"
+#include "QF/plist.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
 #include "QF/sys.h"
@@ -249,6 +250,24 @@ Cvar_CompleteBuildList (const char *partial)
 }
 
 VISIBLE void
+Cvar_AddListener (cvar_t *cvar, cvar_listener_t listener, void *data)
+{
+	if (!cvar->listeners) {
+		cvar->listeners = malloc (sizeof (*cvar->listeners));
+		LISTENER_SET_INIT (cvar->listeners, 8);
+	}
+	LISTENER_ADD (cvar->listeners, listener, data);
+}
+
+VISIBLE void
+Cvar_RemoveListener (cvar_t *cvar, cvar_listener_t listener, void *data)
+{
+	if (cvar->listeners) {
+		LISTENER_REMOVE (cvar->listeners, listener, data);
+	}
+}
+
+VISIBLE void
 Cvar_Set (cvar_t *var, const char *value)
 {
 	int     changed;
@@ -258,7 +277,7 @@ Cvar_Set (cvar_t *var, const char *value)
 		return;
 
 	if (var->flags & CVAR_ROM) {
-		Sys_MaskPrintf (SYS_DEV, "Cvar \"%s\" is read-only, cannot modify\n",
+		Sys_MaskPrintf (SYS_dev, "Cvar \"%s\" is read-only, cannot modify\n",
 						var->name);
 		return;
 	}
@@ -278,6 +297,10 @@ Cvar_Set (cvar_t *var, const char *value)
 
 		if (var->callback)
 			var->callback (var);
+
+		if (var->listeners) {
+			LISTENER_INVOKE (var->listeners, var);
+		}
 	}
 }
 
@@ -330,23 +353,46 @@ Cvar_WriteVariables (QFile *f)
 			Qprintf (f, "seta %s \"%s\"\n", var->name, var->string);
 }
 
-// XXX make sure in sync with SYS_* in sys.h
+VISIBLE void
+Cvar_SaveConfig (plitem_t *config)
+{
+	plitem_t   *cvars = PL_NewDictionary (0);	//FIXME hashlinks
+	PL_D_AddObject (config, "cvars", cvars);
+	for (cvar_t *var = cvar_vars; var; var = var->next) {
+		if (var->flags & CVAR_ARCHIVE) {
+			PL_D_AddObject (cvars, var->name, PL_NewString (var->string));
+		}
+	}
+}
+
+VISIBLE void
+Cvar_LoadConfig (plitem_t *config)
+{
+	plitem_t   *cvars = PL_ObjectForKey (config, "cvars");
+
+	if (!cvars) {
+		return;
+	}
+	for (int i = 0, count = PL_D_NumKeys (cvars); i < count; i++) {
+		const char *cvar_name = PL_KeyAtIndex (cvars, i);
+		const char *value = PL_String (PL_ObjectForKey (cvars, cvar_name));
+		if (value) {
+			cvar_t      *var = Cvar_FindVar (cvar_name);
+			if (var) {
+				Cvar_Set (var, value);
+				Cvar_SetFlags (var, var->flags | CVAR_ARCHIVE);
+			} else {
+				Cvar_Get (cvar_name, value, CVAR_USER_CREATED | CVAR_ARCHIVE,
+						  0, USER_CVAR);
+			}
+		}
+	}
+}
+
+#define SYS_DEVELOPER(developer) #developer,
 static const char *developer_flags[] = {
 	"dev",
-	"warn",
-	"vid",
-	"fs_nf",
-	"fs_f",
-	"fs",
-	"net",
-	"rua_obj",
-	"rua_msg",
-	"snd",
-	"glt",
-	"glsl",
-	"skin",
-	"model",
-	"vulkan",
+#include "QF/sys_developer.h"
 	0
 };
 
@@ -427,7 +473,7 @@ set_cvar (const char *cmd, int orflags)
 
 	if (var) {
 		if (var->flags & CVAR_ROM) {
-			Sys_MaskPrintf (SYS_DEV,
+			Sys_MaskPrintf (SYS_dev,
 							"Cvar \"%s\" is read-only, cannot modify\n",
 							var_name);
 		} else {
@@ -690,7 +736,7 @@ VISIBLE cvar_t *
 Cvar_Get (const char *name, const char *string, int cvarflags,
 		  void (*callback)(cvar_t*), const char *description)
 {
-
+	int         changed = 0;
 	cvar_t     *var;
 
 	if (Cmd_Exists (name)) {
@@ -720,10 +766,13 @@ Cvar_Get (const char *name, const char *string, int cvarflags,
 				break;
 		var->next = *v;
 		*v = var;
+
+		changed = 1;
 	} else {
 		// Cvar does exist, so we update the flags and return.
 		var->flags &= ~CVAR_USER_CREATED;
 		var->flags |= cvarflags;
+		changed = !strequal (var->string, string) || var->callback != callback;
 		if (!var->callback)
 			var->callback = callback;
 		if (!var->description
@@ -733,8 +782,14 @@ Cvar_Get (const char *name, const char *string, int cvarflags,
 		if (!var->default_string)
 			var->default_string = strdup (string);
 	}
-	if (var->callback)
-		var->callback (var);
+	if (changed) {
+		if (var->callback)
+			var->callback (var);
+
+		if (var->listeners) {
+			LISTENER_INVOKE (var->listeners, var);
+		}
+	}
 
 	return var;
 }

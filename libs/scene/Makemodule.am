@@ -1,0 +1,13 @@
+include libs/scene/test/Makemodule.am
+
+scene_deps=libs/util/libQFutil.la
+
+lib_LTLIBRARIES += libs/scene/libQFscene.la
+
+libs_scene_libQFscene_la_LDFLAGS=		$(lib_ldflags)
+libs_scene_libQFscene_la_LIBADD=		$(scene_deps)
+libs_scene_libQFscene_la_DEPENDENCIES=	$(scene_deps)
+libs_scene_libQFscene_la_SOURCES= \
+	libs/scene/hierarchy.c \
+	libs/scene/scene.c \
+	libs/scene/transform.c

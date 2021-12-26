@@ -36,6 +36,7 @@
 
 #include "d_local.h"
 #include "r_internal.h"
+#include "vid_sw.h"
 
 static int  ubasestep, errorterm, erroradjustup, erroradjustdown;
 
@@ -383,7 +384,7 @@ D_PolysetDrawSpans (spanpackage_t * pspanpackage)
 		texscantable[i] = j;
 	texscan = texscantable + sw32_r_affinetridesc.skinheight;
 
-	switch(sw32_r_pixbytes) {
+	switch(sw32_ctx->pixbytes) {
 	case 1:
 	{
 		int         lcount, count = 0;
@@ -622,7 +623,7 @@ done32:			;
 
 	default:
 		Sys_Error("D_PolysetDrawSpans: unsupported r_pixbytes %i",
-				  sw32_r_pixbytes);
+				  sw32_ctx->pixbytes);
 	}
 }
 

@@ -31,14 +31,12 @@
 # include "config.h"
 #endif
 
-#include <sys/ioctl.h>
 #include <ctype.h>
 #include <errno.h>
 #include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
 #include <string.h>
-#include <termios.h>
 #include <unistd.h>
 
 #include "QF/dstring.h"
@@ -64,7 +62,7 @@ typedef struct qwaq_target_s {
 
 typedef struct qwaq_debug_s {
 	progs_t    *pr;
-	qwaq_resources_t *qwaq;	// to communicate with the debugger thread
+	qwaq_input_resources_t *input;	// to communicate with the debugger thread
 	PR_RESMAP (qwaq_target_t) targets;
 } qwaq_debug_t;
 
@@ -124,7 +122,7 @@ qwaq_debug_handler (prdebug_t debug_event, void *param, void *data)
 	event.what = qe_debug_event;
 	event.message.pointer_val = target->handle;
 
-	while ((ret = qwaq_add_event (debug->qwaq, &event)) == ETIMEDOUT) {
+	while ((ret = qwaq_add_event (debug->input, &event)) == ETIMEDOUT) {
 		// spin
 	}
 	if (ret == EINVAL) {
@@ -227,8 +225,9 @@ qdb_set_breakpoint (progs_t *pr)
 		R_INT (pr) = -1;
 		return;
 	}
+	int         set = (tpr->pr_statements[staddr].op & OP_BREAK) != 0;
 	tpr->pr_statements[staddr].op |= OP_BREAK;
-	R_INT (pr) = 0;
+	R_INT (pr) = set;
 }
 
 static void
@@ -302,7 +301,11 @@ qdb_get_state (progs_t *pr)
 	string_t    file = 0;
 	unsigned    line = 0;
 	unsigned    staddr = tpr->pr_xstatement;
-	func_t      func = tpr->pr_xfunction - tpr->function_table;
+	func_t      func = 0;
+
+	if (tpr->pr_xfunction) {
+		func = tpr->pr_xfunction - tpr->function_table;
+	}
 
 	lineno = PR_Find_Lineno (tpr, staddr);
 	if (lineno) {
@@ -365,7 +368,7 @@ qdb_get_event (progs_t *pr)
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
 	pointer_t   handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
-	__auto_type event = &G_STRUCT (pr, qdb_event_t, P_INT (pr, 1));
+	__auto_type event = &P_STRUCT (pr, qdb_event_t, 1);
 
 	memset (event, 0, sizeof (*event));
 	event->what = target->event;
@@ -457,6 +460,18 @@ qdb_get_file_path (progs_t *pr)
 	} else {
 		R_STRING (pr) = P_STRING (pr, 1);
 	}
+}
+
+static void
+qdb_find_string (progs_t *pr)
+{
+	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
+	pointer_t   handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+	progs_t    *tpr = target->pr;
+	const char *str = P_GSTRING (pr, 1);
+
+	R_INT (pr) = PR_FindString (tpr, str);
 }
 
 static void
@@ -621,6 +636,19 @@ qdb_get_local_defs (progs_t *pr)
 	}
 }
 
+static void
+qdb_get_source_line_addr (progs_t *pr)
+{
+	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
+	pointer_t   handle = P_INT (pr, 0);
+	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
+	progs_t    *tpr = target->pr;
+	const char *file = P_GSTRING (pr, 1);
+	pr_uint_t   line = P_UINT (pr, 2);
+
+	R_UINT (pr) = PR_FindSourceLineAddr (tpr, file, line);
+}
+
 static builtin_t builtins[] = {
 	{"qdb_set_trace",			qdb_set_trace,			-1},
 	{"qdb_set_breakpoint",		qdb_set_breakpoint,		-1},
@@ -636,6 +664,7 @@ static builtin_t builtins[] = {
 	{"qdb_get_string|{tag qdb_target_s=}i",	qdb_get_string,	-1},
 	{"qdb_get_string|{tag qdb_target_s=}*",	qdb_get_string,	-1},
 	{"qdb_get_file_path",		qdb_get_file_path,		-1},
+	{"qdb_find_string",			qdb_find_string,		-1},
 	{"qdb_find_global",			qdb_find_global,		-1},
 	{"qdb_find_field",			qdb_find_field,			-1},
 	{"qdb_find_function",		qdb_find_function,		-1},
@@ -643,6 +672,7 @@ static builtin_t builtins[] = {
 	{"qdb_find_auxfunction",	qdb_find_auxfunction,	-1},
 	{"qdb_get_auxfunction",		qdb_get_auxfunction,	-1},
 	{"qdb_get_local_defs",		qdb_get_local_defs,		-1},
+	{"qdb_get_source_line_addr", qdb_get_source_line_addr, -1},
 	{}
 };
 
@@ -652,7 +682,7 @@ QWAQ_Debug_Init (progs_t *pr)
 	qwaq_debug_t *debug = calloc (sizeof (*debug), 1);
 
 	debug->pr = pr;
-	debug->qwaq = PR_Resources_Find (pr, "qwaq");
+	debug->input = PR_Resources_Find (pr, "input");
 
 	PR_AddLoadFunc (pr, qwaq_debug_load);
 	PR_Resources_Register (pr, "qwaq-debug", debug, qwaq_debug_clear);

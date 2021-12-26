@@ -125,7 +125,7 @@ static void
 init_quotables (void)
 {
 	const char *unquotables = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-							  "abcdefghijklmnopqrstuvwxyz!#$%&*+-./:?@|~_^";
+							  "`abcdefghijklmnopqrstuvwxyz!#$%&*+-./:?@|~_^";
 	const byte *c;
 	memset (quotable_bitmap, ~0, sizeof (quotable_bitmap));
 	for (c = (byte *) unquotables; *c; c++)
@@ -312,7 +312,7 @@ PL_KeyAtIndex (const plitem_t *item, int index)
 }
 
 VISIBLE plitem_t *
-PL_RemoveObjectForKey (const plitem_t *item, const char *key)
+PL_RemoveObjectForKey (plitem_t *item, const char *key)
 {
 	if (!item || item->type != QFDictionary) {
 		return NULL;

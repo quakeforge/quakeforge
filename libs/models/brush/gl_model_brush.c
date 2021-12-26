@@ -45,6 +45,7 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/GL/qf_rsurf.h"
 #include "QF/GL/qf_textures.h"
 
 #include "compat.h"
@@ -54,7 +55,7 @@
 static gltex_t gl_notexture = { };
 
 static tex_t *
-Mod_LoadAnExternalTexture (char *tname, char *mname)
+Mod_LoadAnExternalTexture (const char *tname, const char *mname)
 {
 	char		rname[32];
 	tex_t	   *image;
@@ -165,14 +166,14 @@ gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
 				&& data[3] == 'T') {
 				ver = LittleLong (((int32_t *) data)[1]);
 				if (ver == 1) {
-					Sys_MaskPrintf (SYS_DEV, "%s loaded", litfilename->str);
+					Sys_MaskPrintf (SYS_dev, "%s loaded", litfilename->str);
 					brush->lightdata = data + 8;
 					return;
 				} else
-					Sys_MaskPrintf (SYS_DEV,
+					Sys_MaskPrintf (SYS_dev,
 									"Unknown .lit file version (%d)\n", ver);
 			} else
-				Sys_MaskPrintf (SYS_DEV, "Corrupt .lit file (old version?)\n");
+				Sys_MaskPrintf (SYS_dev, "Corrupt .lit file (old version?)\n");
 		}
 	}
 	// LordHavoc: oh well, expand the white lighting data
@@ -180,7 +181,8 @@ gl_Mod_LoadLighting (model_t *mod, bsp_t *bsp)
 		dstring_delete (litfilename);
 		return;
 	}
-	brush->lightdata = Hunk_AllocName (bsp->lightdatasize * mod_lightmap_bytes,
+	brush->lightdata = Hunk_AllocName (0,
+									   bsp->lightdatasize * mod_lightmap_bytes,
 									   litfilename->str);
 	in = bsp->lightdata;
 	out = brush->lightdata;
@@ -282,7 +284,7 @@ SubdividePolygon (int numverts, float *verts)
 		return;
 	}
 
-	poly = Hunk_Alloc (sizeof (glpoly_t) + (numverts - 4) * VERTEXSIZE *
+	poly = Hunk_Alloc (0, sizeof (glpoly_t) + (numverts - 4) * VERTEXSIZE *
 					   sizeof (float));
 	poly->next = warpface->polys;
 	warpface->polys = poly;

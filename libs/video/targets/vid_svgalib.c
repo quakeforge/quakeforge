@@ -242,7 +242,7 @@ get_mode (int width, int height, int depth)
 static void
 VID_shutdown (void)
 {
-	Sys_MaskPrintf (SYS_VID, "VID_Shutdown\n");
+	Sys_MaskPrintf (SYS_vid, "VID_Shutdown\n");
 
 	if (!svgalib_inited)
 		return;
@@ -376,7 +376,7 @@ VID_Init (byte *palette, byte *colormap)
 	VID_InitModes ();
 
 	/* Interpret command-line params */
-	VID_GetWindowSize (320, 200);
+	VID_GetWindowSize (640, 480);
 
 	current_mode = get_mode (vid.width, vid.height, 8);
 

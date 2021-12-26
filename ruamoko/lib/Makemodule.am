@@ -17,6 +17,7 @@ ruamoko_lib_libr_a_SOURCES=\
 	ruamoko/lib/qfs.r \
 	ruamoko/lib/script.r \
 	ruamoko/lib/sound.r \
+	ruamoko/lib/stdlib.r \
 	ruamoko/lib/string.r \
 	ruamoko/lib/math.r \
 	ruamoko/lib/types.r \
@@ -36,15 +37,35 @@ EXTRA_ruamoko_lib_libr_a_DEPENDENCIES=pak
 include $(ruamoko_lib_libr_a_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_lib_libr_a_dep)
 
-ruamoko_lib_common_src=ruamoko/lib/debug.r ruamoko/lib/system.r ruamoko/lib/legacy_string.r
+ruamoko_lib_common_src= \
+	ruamoko/lib/debug.r \
+	ruamoko/lib/system.r \
+	ruamoko/lib/legacy_math.r \
+	ruamoko/lib/legacy_string.r
+
 ruamoko_lib_server_src= \
-	ruamoko/lib/crudefile.r ruamoko/lib/entities.r ruamoko/lib/infokey.r ruamoko/lib/message.r \
-	ruamoko/lib/physics.r ruamoko/lib/server.r ruamoko/lib/sv_sound.r
+	ruamoko/lib/crudefile.r \
+	ruamoko/lib/entities.r \
+	ruamoko/lib/infokey.r \
+	ruamoko/lib/message.r \
+	ruamoko/lib/physics.r \
+	ruamoko/lib/server.r \
+	ruamoko/lib/sv_sound.r
+
 ruamoko_lib_libqw_a_src= \
-	ruamoko/lib/qw_message.r ruamoko/lib/qw_physics.r ruamoko/lib/qw_sys.r
+	ruamoko/lib/qw_message.r \
+	ruamoko/lib/qw_physics.r \
+	ruamoko/lib/qw_sys.r
+
 ruamoko_lib_libnq_a_src= \
 	ruamoko/lib/nq_message.r
-ruamoko_lib_libcsqc_a_src= ruamoko/lib/draw.r ruamoko/lib/gib.r ruamoko/lib/key.r
+
+ruamoko_lib_libcsqc_a_src= \
+	ruamoko/lib/draw.r \
+	ruamoko/lib/gib.r \
+	ruamoko/lib/input.r \
+	ruamoko/lib/mersenne.r \
+	ruamoko/lib/key.r
 
 ruamoko_lib_common_dep=$(call qcautodep,$(ruamoko_lib_common_src))
 include $(ruamoko_lib_common_dep) # am--include-marker
@@ -54,21 +75,31 @@ ruamoko_lib_server_dep=$(call qcautodep,$(ruamoko_lib_server_src))
 include $(ruamoko_lib_server_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_lib_server_dep)
 
-ruamoko_lib_libqw_a_SOURCES=$(ruamoko_lib_libqw_a_src) $(ruamoko_lib_common_src) $(ruamoko_lib_server_src) ruamoko/lib/math.r
+ruamoko_lib_libqw_a_SOURCES= \
+	$(ruamoko_lib_libqw_a_src) \
+	$(ruamoko_lib_common_src) \
+	$(ruamoko_lib_server_src) \
+	ruamoko/lib/math.r
 ruamoko_lib_libqw_a_dep=$(call qcautodep,$(ruamoko_lib_libqw_a_src))
 ruamoko_lib_libqw_a_AR=$(PAK) -cf
 EXTRA_ruamoko_lib_libqw_a_DEPENDENCIES=pak
 include $(ruamoko_lib_libqw_a_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_lib_libqw_a_dep)
 
-ruamoko_lib_libnq_a_SOURCES=$(ruamoko_lib_libnq_a_src) $(ruamoko_lib_common_src) $(ruamoko_lib_server_src) ruamoko/lib/math.r
+ruamoko_lib_libnq_a_SOURCES=\
+	$(ruamoko_lib_libnq_a_src) \
+	$(ruamoko_lib_common_src) \
+	$(ruamoko_lib_server_src) \
+	ruamoko/lib/math.r
 ruamoko_lib_libnq_a_dep=$(call qcautodep,$(ruamoko_lib_libnq_a_src))
 ruamoko_lib_libnq_a_AR=$(PAK) -cf
 EXTRA_ruamoko_lib_libnq_a_DEPENDENCIES=pak
 include $(ruamoko_lib_libnq_a_dep) # am--include-marker
 r_depfiles_remade += $(ruamoko_lib_libnq_a_dep)
 
-ruamoko_lib_libcsqc_a_SOURCES=$(ruamoko_lib_libcsqc_a_src) $(ruamoko_lib_common_src)
+ruamoko_lib_libcsqc_a_SOURCES=\
+	$(ruamoko_lib_libcsqc_a_src) \
+	$(ruamoko_lib_common_src)
 ruamoko_lib_libcsqc_a_dep=$(call qcautodep,$(ruamoko_lib_libcsqc_a_src))
 ruamoko_lib_libcsqc_a_AR=	$(PAK) -cf
 EXTRA_ruamoko_lib_libcsqc_a_DEPENDENCIES=pak

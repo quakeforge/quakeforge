@@ -87,7 +87,13 @@ typedef struct exprtab_s {
 	struct hashtab_s *tab;
 } exprtab_t;
 
+typedef struct exprarray_s {
+	exprtype_t *type;
+	unsigned    size;
+} exprarray_t;
+
 typedef struct exprctx_s {
+	struct exprctx_s *parent;		// for nested symol scopes
 	exprval_t  *result;
 	exprtab_t  *symtab;				// directly accessible symbols
 	exprtab_t  *external_variables;	// accessible via $id
@@ -109,8 +115,10 @@ binop_t *cexpr_find_cast (exprtype_t *dst_type, exprtype_t *src_type) __attribut
 exprval_t *cexpr_value (exprtype_t *type, exprctx_t *ctx);
 exprval_t *cexpr_value_reference (exprtype_t *type, void *data, exprctx_t *ctx);
 int cexpr_eval_string (const char *str, exprctx_t *context);
-void cexpr_error(exprctx_t *ctx, const char *fmt, ...) __attribute__((format(printf,2,3)));
+void cexpr_error(exprctx_t *ctx, const char *fmt, ...) __attribute__((format(PRINTF,2,3)));
 
+void cexpr_array_getelement (const exprval_t *a, const exprval_t *b,
+							 exprval_t *c, exprctx_t *ctx);
 void cexpr_struct_getfield (const exprval_t *a, const exprval_t *b,
 							exprval_t *c, exprctx_t *ctx);
 void cexpr_struct_pointer_getfield (const exprval_t *a, const exprval_t *b,
@@ -137,7 +145,10 @@ extern exprtype_t cexpr_field;
 extern exprtype_t cexpr_function;
 extern exprtype_t cexpr_plitem;
 
+extern binop_t cexpr_array_binops[];
 extern binop_t cexpr_struct_binops[];
 extern binop_t cexpr_struct_pointer_binops[];
+
+extern exprsym_t cexpr_lib_symbols[];
 
 #endif//__QF_expr_h

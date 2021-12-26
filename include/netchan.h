@@ -65,7 +65,7 @@ extern	struct msg_s *net_message;
 extern	struct cvar_s	*qport;
 
 int Net_Log_Init (const char **sound_precache);
-void Net_LogPrintf (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+void Net_LogPrintf (const char *fmt, ...) __attribute__ ((format (PRINTF, 1, 2)));
 void Log_Incoming_Packet (const byte *p, int len, int has_sequence,
 						  int is_server);
 void Log_Outgoing_Packet (const byte *p, int len, int has_sequence,
@@ -112,7 +112,7 @@ void NET_SendPacket (int length, const void *data, netadr_t to);
 	\param b		The second address to compare.
 	\return			True of the addresses match, otherwise false.
 */
-qboolean NET_CompareAdr (netadr_t a, netadr_t b) __attribute__((pure));
+qboolean NET_CompareAdr (netadr_t a, netadr_t b) __attribute__((const));
 
 /** Compare two network addresses.
 
@@ -122,7 +122,7 @@ qboolean NET_CompareAdr (netadr_t a, netadr_t b) __attribute__((pure));
 	\param b		The second address to compare.
 	\return			True of the addresses match, otherwise false.
 */
-qboolean NET_CompareBaseAdr (netadr_t a, netadr_t b) __attribute__((pure));
+qboolean NET_CompareBaseAdr (netadr_t a, netadr_t b) __attribute__((const));
 
 /** Convert an address to a string.
 
@@ -317,7 +317,7 @@ void Netchan_Init_Cvars (void);
 	\param length	The size of the unreliable packet.
 	\param data		The data of the unreliable packet.
 */
-void Netchan_Transmit (netchan_t *chan, int length, byte *data);
+void Netchan_Transmit (netchan_t *chan, unsigned length, byte *data);
 
 /** Send an out-of-band packet.
 
@@ -325,14 +325,14 @@ void Netchan_Transmit (netchan_t *chan, int length, byte *data);
 	\param length	The length of the data to be sent.
 	\param data		The data to be sent.
 */
-void Netchan_OutOfBand (netadr_t adr, int length, byte *data);
+void Netchan_OutOfBand (netadr_t adr, unsigned length, byte *data);
 /** Send a formatted string as an out-of-band packet.
 
 	\param adr		The address to which the data will be sent.
 	\param format	The printf style format string.
 */
 void Netchan_OutOfBandPrint (netadr_t adr, const char *format, ...)
-	__attribute__ ((format (printf,2,3)));
+	__attribute__ ((format (PRINTF,2,3)));
 
 /** Process a packet for the specifiied connection.
 

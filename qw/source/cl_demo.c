@@ -271,7 +271,7 @@ check_next_demopacket (void)
 static int
 read_demopacket (void)
 {
-	int         r;
+	unsigned    r;
 
 	Qread (cls.demofile, &net_message->message->cursize, 4);
 	net_message->message->cursize =
@@ -1014,13 +1014,12 @@ CL_StartDemo (void)
 	Sys_Printf ("Playing demo from %s.\n", name->str);
 
 	cls.demoplayback = true;
-	Key_SetKeyDest (key_demo);
 	net_blocksend = 1;
 	if (type == 2) {
 		cls.demoplayback2 = true;
-		Sys_MaskPrintf (SYS_DEV, "mvd\n");
+		Sys_MaskPrintf (SYS_dev, "mvd\n");
 	} else {
-		Sys_MaskPrintf (SYS_DEV, "qwd\n");
+		Sys_MaskPrintf (SYS_dev, "qwd\n");
 	}
 	CL_SetState (ca_demostart);
 	Netchan_Setup (&cls.netchan, net_from, 0, NC_QPORT_SEND);

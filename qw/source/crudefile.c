@@ -182,7 +182,7 @@ CF_CloseAllFiles ()
 
 	for (i = 0; i < cf_filepcount; i++)
 		if (cf_filep[i].file) {
-			Sys_MaskPrintf (SYS_DEV, "Warning: closing Crude File %d left "
+			Sys_MaskPrintf (SYS_dev, "Warning: closing Crude File %d left "
 							"over from last map\n", i);
 			CF_Close (i);
 		}

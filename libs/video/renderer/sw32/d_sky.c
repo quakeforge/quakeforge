@@ -36,6 +36,7 @@
 
 #include "d_local.h"
 #include "r_internal.h"
+#include "vid_sw.h"
 
 #define SKY_SPAN_SHIFT	5
 #define SKY_SPAN_MAX	(1 << SKY_SPAN_SHIFT)
@@ -69,7 +70,7 @@ D_Sky_uv_To_st (int u, int v, fixed16_t *s, fixed16_t *t)
 void
 sw32_D_DrawSkyScans (espan_t *pspan)
 {
-	switch(sw32_r_pixbytes) {
+	switch(sw32_ctx->pixbytes) {
 	case 1:
 	{
 		int         count, spancount, u, v;
@@ -278,6 +279,6 @@ sw32_D_DrawSkyScans (espan_t *pspan)
 	break;
 
 	default:
-		Sys_Error("D_DrawSkyScans: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("D_DrawSkyScans: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 	}
 }

@@ -7,6 +7,7 @@
 #include <vulkan/vulkan.h>
 
 #include "QF/darray.h"
+#include "QF/simd/types.h"
 
 typedef struct vulkan_frame_s {
 	VkFramebuffer framebuffer;
@@ -14,26 +15,13 @@ typedef struct vulkan_frame_s {
 	VkSemaphore imageAvailableSemaphore;
 	VkSemaphore renderDoneSemaphore;
 	VkCommandBuffer cmdBuffer;
-
-	int         cmdSetCount;
-	struct qfv_cmdbufferset_s *cmdSets;
 } vulkan_frame_t;
-
-typedef struct vulkan_matrices_s {
-	VkBuffer    buffer_2d;
-	VkBuffer    buffer_3d;
-	VkDeviceMemory memory;
-	float      *projection_2d;
-	float      *projection_3d;
-	float      *view_3d;
-	float      *sky_3d;
-} vulkan_matrices_t;
 
 typedef struct vulkan_frameset_s
 	DARRAY_TYPE (vulkan_frame_t) vulkan_frameset_t;
 
-typedef struct clearvalueset_s
-	DARRAY_TYPE (VkClearValue) clearvalueset_t;
+typedef struct qfv_renderpassset_s
+	DARRAY_TYPE (struct qfv_renderpass_s *) qfv_renderpassset_t;
 
 typedef struct vulkan_ctx_s {
 	void        (*load_vulkan) (struct vulkan_ctx_s *ctx);
@@ -57,15 +45,7 @@ typedef struct vulkan_ctx_s {
 	VkSurfaceKHR surface;	//FIXME surface = window, so "contains" swapchain
 	struct plitem_s  *pipelineDef;
 
-	struct plitem_s  *renderpassDef;
-	VkRenderPass renderpass;
-	clearvalueset_t *clearValues;
-	struct qfv_imageset_s *attachment_images;
-	struct qfv_imageviewset_s *attachment_views;
-	VkDeviceMemory attachmentMemory;
-
 	uint32_t    swapImageIndex;
-	struct qfv_framebufferset_s *framebuffers;
 
 	struct hashtab_s *shaderModules;
 	struct hashtab_s *setLayouts;
@@ -76,8 +56,12 @@ typedef struct vulkan_ctx_s {
 	struct hashtab_s *imageViews;
 	struct hashtab_s *renderpasses;
 
+	struct texturectx_s *texture_context;
+	struct matrixctx_s *matrix_context;
 	struct aliasctx_s *alias_context;
 	struct bspctx_s *bsp_context;
+	struct particlectx_s *particle_context;
+	struct spritectx_s *sprite_context;
 	struct drawctx_s *draw_context;
 	struct lightingctx_s *lighting_context;
 	struct composectx_s *compose_context;
@@ -91,6 +75,7 @@ typedef struct vulkan_ctx_s {
 	struct qfv_stagebuf_s *staging;
 	size_t      curFrame;
 	vulkan_frameset_t frames;
+	qfv_renderpassset_t renderPasses;
 
 	struct qfv_capture_s *capture;
 	void      (*capture_callback) (const byte *data, int width, int height);
@@ -98,13 +83,28 @@ typedef struct vulkan_ctx_s {
 	struct qfv_tex_s *default_black;
 	struct qfv_tex_s *default_white;
 	struct qfv_tex_s *default_magenta;
+	struct qfv_tex_s *default_magenta_array;
 
-	// projection and view matrices (model is push constant)
-	vulkan_matrices_t matrices;
+	VkViewport  viewport;
+	VkRect2D    scissor;
 
 #define EXPORTED_VULKAN_FUNCTION(fname) PFN_##fname fname;
 #define GLOBAL_LEVEL_VULKAN_FUNCTION(fname) PFN_##fname fname;
 #include "QF/Vulkan/funclist.h"
 } vulkan_ctx_t;
+
+#define qfvPushDebug(ctx, x)									\
+	do {														\
+		if (developer->int_val & SYS_vulkan) {					\
+			DARRAY_APPEND(&(ctx)->instance->debug_stack, (x));	\
+		}														\
+	} while (0)
+#define qfvPopDebug(ctx) 										\
+	do {														\
+		if (developer->int_val & SYS_vulkan) {					\
+			__auto_type ds = &(ctx)->instance->debug_stack;		\
+			DARRAY_REMOVE_AT(ds, ds->size - 1);					\
+		}														\
+	} while (0)
 
 #endif//__vid_vulkan_h

@@ -27,6 +27,8 @@
 #ifndef __QF_zone_h
 #define __QF_zone_h
 
+#include "QF/qtypes.h"
+
 /** \defgroup zone Memory Management
 	\ingroup utils
 
@@ -91,32 +93,39 @@
 ///@{
 
 typedef struct memzone_s memzone_t;
+typedef struct memhunk_s memhunk_t;
 
-void Memory_Init (void *buf, int size);
+memhunk_t *Memory_Init (void *buf, size_t size);
 
-void Z_ClearZone (memzone_t *zone, int size, int zone_offset, int ele_size);
+void Z_ClearZone (memzone_t *zone, size_t size, size_t zone_offset,
+				  size_t ele_size);
 void Z_Free (memzone_t *zone, void *ptr);
-void *Z_Malloc (memzone_t *zone, int size);			// returns 0 filled memory
-void *Z_TagMalloc (memzone_t *zone, int size, int tag);
-void *Z_Realloc (memzone_t *zone, void *ptr, int size);
+void *Z_Malloc (memzone_t *zone, size_t size);		// returns 0 filled memory
+void *Z_TagMalloc (memzone_t *zone, size_t size, int tag);
+void *Z_Realloc (memzone_t *zone, void *ptr, size_t size);
 void Z_Print (memzone_t *zone);
 void Z_CheckHeap (memzone_t *zone);
 void Z_SetError (memzone_t *zone, void (*err) (void *data, const char *msg),
 				 void *data);
-void Z_CheckPointer (const memzone_t *zone, const void *ptr, int size);
+void Z_CheckPointer (const memzone_t *zone, const void *ptr, size_t size);
 
-void Hunk_Print (qboolean all);
-void *Hunk_Alloc (int size);		// returns 0 filled memory
-void *Hunk_AllocName (int size, const char *name);
-int	Hunk_LowMark (void) __attribute__((pure));
-void Hunk_FreeToLowMark (int mark);
-void *Hunk_TempAlloc (int size);
-void Hunk_Check (void);
+memhunk_t *Hunk_Init (void *buf, size_t size);
+void Hunk_Print (memhunk_t *hunk, qboolean all);
+void Hunk_Check (memhunk_t *hunk);
+void *Hunk_RawAlloc (memhunk_t *hunk, size_t size) __attribute__((nonnull(1)));
+void *Hunk_RawAllocName (memhunk_t *hunk, size_t size, const char *name) __attribute__((nonnull(1)));
+void *Hunk_Alloc (memhunk_t *hunk, size_t size);	// returns 0 filled memory
+void *Hunk_AllocName (memhunk_t *hunk, size_t size, const char *name);
+size_t Hunk_LowMark (memhunk_t *hunk) __attribute__((pure));
+void Hunk_RawFreeToLowMark (memhunk_t *hunk, size_t mark) __attribute__((nonnull(1)));
+void Hunk_FreeToLowMark (memhunk_t *hunk, size_t mark);
+void *Hunk_TempAlloc (memhunk_t *hunk, size_t size);
+int Hunk_PointerIsValid (memhunk_t *hunk, void *ptr) __attribute__((pure));
 
 
 
 struct cache_user_s;
-typedef void *(*cache_allocator_t) (struct cache_user_s *c, int size, const char *name);
+typedef void *(*cache_allocator_t) (struct cache_user_s *c, size_t size, const char *name);
 typedef void (*cache_loader_t) (void *object, cache_allocator_t allocator);
 typedef struct cache_user_s {
 	void	*data;
@@ -130,7 +139,7 @@ void *Cache_Check (cache_user_t *c);
 // if present, otherwise returns NULL
 
 void Cache_Free (cache_user_t *c);
-void *Cache_Alloc (cache_user_t *c, int size, const char *name);
+void *Cache_Alloc (cache_user_t *c, size_t size, const char *name);
 // Returns NULL if all purgable data was tossed and there still
 // wasn't enough room.
 void Cache_Report (void);

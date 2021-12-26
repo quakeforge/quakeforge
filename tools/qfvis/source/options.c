@@ -40,13 +40,25 @@
 #include <unistd.h>
 
 #include "QF/dstring.h"
+#include "QF/sys.h"
 
 #include "tools/qfvis/include/options.h"
 #include "tools/qfvis/include/vis.h"
 
 const char *this_program;
 
+enum {
+	start_opts = 255,	// not used, starts the enum.
+	OPT_PORTAL_LIMIT,
+	OPT_FAT_PVS,
+	OPT_FULL_PVS,
+	OPT_UTF8,
+};
+
 static struct option const long_options[] = {
+	{"fat-pvs", no_argument, 0, OPT_FAT_PVS},
+	{"full-pvs", no_argument, 0, OPT_FULL_PVS},
+	{"utf8", no_argument, 0, OPT_UTF8},
 	{"quiet", no_argument, 0, 'q'},
 	{"verbose", no_argument, 0, 'v'},
 	{"help", no_argument, 0, 'h'},
@@ -55,6 +67,7 @@ static struct option const long_options[] = {
 	{"minimal", no_argument, 0, 'm'},
 	{"level", required_argument, 0, 'l'},
 	{"file", required_argument, 0, 'f'},
+	{"portal-limit", required_argument, 0, OPT_PORTAL_LIMIT},
 	{NULL, 0, NULL, 0}
 };
 
@@ -93,11 +106,7 @@ default_threads (void)
 {
 	int         threads = 1;
 #ifdef USE_PTHREADS
-# ifdef _SC_NPROCESSORS_ONLN
-		threads = sysconf(_SC_NPROCESSORS_ONLN);
-		if (threads < 1)
-			threads = 1;
-# endif
+	threads = Sys_ProcessorCount ();
 #endif
 	return threads;
 }
@@ -130,6 +139,19 @@ DecodeArgs (int argc, char **argv)
 				break;
 			case 't':					// threads
 				options.threads = atoi (optarg);
+				break;
+			case OPT_PORTAL_LIMIT:
+				options.portal_limit = atoi (optarg);
+				break;
+			case OPT_FAT_PVS:
+				options.fat_pvs = true;
+				options.no_auto_pvs = true;
+				break;
+			case OPT_FULL_PVS:
+				options.fat_pvs = true;
+				break;
+			case OPT_UTF8:
+				options.utf8 = true;
 				break;
 			case 'm':					// minimal vis
 				options.minimal = true;

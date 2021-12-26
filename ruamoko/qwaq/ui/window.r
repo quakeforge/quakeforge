@@ -71,6 +71,23 @@
 	return self;
 }
 
+-(void)dealloc
+{
+	destroy_panel (panel);
+	[textContext release];
+	[objects release];
+	[super dealloc];
+}
+
+-updateScreenCursor
+{
+	window_t    window = [(id)textContext window];
+	curs_set (cursorState);
+	wmove (window, cursorPos.x, cursorPos.y);
+	[[TextContext screen] refresh];
+	return self;
+}
+
 -setTitle:(string) title
 {
 	[titleBar setTitle:title];
@@ -238,6 +255,13 @@
 -setBackground: (int) ch
 {
 	[(id)textContext bkgd: ch];
+	return self;
+}
+
+-updateAbsPos: (Point) absPos
+{
+	[super updateAbsPos: absPos];
+	[objects updateAbsPos: absRect.offset];
 	return self;
 }
 

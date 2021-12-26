@@ -120,6 +120,7 @@ int init_pair (int pair, int f, int b);
 void wbkgd (window_t win, int ch);
 void werase (window_t win);
 void scrollok (window_t win, int flag);
+int wmove (window_t win, int x, int y);
 
 int acs_char (int acs);
 int curs_set (int visibility);
@@ -144,6 +145,8 @@ void printf(string fmt, ...);
 #include "QF/progs.h"
 #include "QF/ringbuffer.h"
 
+#include "ruamoko/qwaq/threading.h"
+
 #define QUEUE_SIZE 16
 #define STRING_ID_QUEUE_SIZE 8		// must be > 1
 #define COMMAND_QUEUE_SIZE 1280
@@ -157,53 +160,17 @@ typedef struct panel_s {
 	int         window_id;
 } panel_t;
 
-typedef struct rwcond_s {
-	pthread_cond_t rcond;
-	pthread_cond_t wcond;
-	pthread_mutex_t mut;
-} rwcond_t;
-
-typedef enum {
-	esc_ground,
-	esc_escape,
-	esc_csi,
-	esc_mouse,
-	esc_sgr,
-	esc_key,
-} esc_state_t;
-
 typedef struct qwaq_resources_s {
 	progs_t    *pr;
 	int         initialized;
 	window_t    stdscr;
 	PR_RESMAP (window_t) window_map;
 	PR_RESMAP (panel_t) panel_map;
-	rwcond_t    event_cond;
-	RING_BUFFER (qwaq_event_t, QUEUE_SIZE) event_queue;
-	rwcond_t    command_cond;
-	RING_BUFFER (int, COMMAND_QUEUE_SIZE) command_queue;
-	rwcond_t    results_cond;
-	RING_BUFFER (int, COMMAND_QUEUE_SIZE) results;
-	rwcond_t    string_id_cond;
-	RING_BUFFER (int, STRING_ID_QUEUE_SIZE) string_ids;
-	dstring_t   strings[STRING_ID_QUEUE_SIZE - 1];
 
-	dstring_t   escbuff;
-	esc_state_t escstate;
-	unsigned    button_state;
-	int         mouse_x;
-	int         mouse_y;
-	qwaq_event_t lastClick;
-	struct hashtab_s *key_sequences;
+	qwaq_pipe_t commands;
+	qwaq_pipe_t results;
 } qwaq_resources_t;
 // gcc stuff
-
-void qwaq_input_init (qwaq_resources_t *res);
-void qwaq_input_shutdown (qwaq_resources_t *res);
-void qwaq_process_input (qwaq_resources_t *res);
-void qwaq_init_timeout (struct timespec *timeout, long time);
-int qwaq_add_event (qwaq_resources_t *res, qwaq_event_t *event);
-void qwaq_init_cond (rwcond_t *cond);
 #endif
 
 #endif//__qwaq_ui_curses_h

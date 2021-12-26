@@ -50,8 +50,6 @@
 
 cvar_t     *snd_volume;
 
-unsigned    snd_paintedtime;				// sample PAIRS
-
 portable_samplepair_t snd_paintbuffer[PAINTBUFFER_SIZE * 2];
 static int  max_overpaint;				// number of extra samples painted
 										// due to phase shift
@@ -104,7 +102,7 @@ snd_paint_channel (channel_t *ch, sfxbuffer_t *sc, int count)
 }
 
 void
-SND_PaintChannels (unsigned endtime)
+SND_PaintChannels (snd_t *snd, unsigned endtime)
 {
 	unsigned    end, ltime;
 	int         i, count;
@@ -118,11 +116,11 @@ SND_PaintChannels (unsigned endtime)
 		snd_paintbuffer[i].right = 0;
 	}
 
-	while (snd_paintedtime < endtime) {
+	while (snd->paintedtime < endtime) {
 		// if snd_paintbuffer is smaller than DMA buffer
 		end = endtime;
-		if (end - snd_paintedtime > PAINTBUFFER_SIZE)
-			end = snd_paintedtime + PAINTBUFFER_SIZE;
+		if (end - snd->paintedtime > PAINTBUFFER_SIZE)
+			end = snd->paintedtime + PAINTBUFFER_SIZE;
 
 		max_overpaint = 0;
 
@@ -144,9 +142,9 @@ SND_PaintChannels (unsigned endtime)
 			}
 
 			if (!ch->end)
-				ch->end = snd_paintedtime + sfx->length - ch->pos;
+				ch->end = snd->paintedtime + sfx->length - ch->pos;
 
-			ltime = snd_paintedtime;
+			ltime = snd->paintedtime;
 
 			while (ltime < end) {		// paint up to end
 				count = ((ch->end < end) ? ch->end : end) - ltime;
@@ -171,15 +169,15 @@ SND_PaintChannels (unsigned endtime)
 		}
 
 		// transfer out according to DMA format
-		snd_shm->xfer (snd_paintbuffer, end - snd_paintedtime,
-					   snd_volume->value);
+		snd->xfer (snd, snd_paintbuffer, end - snd->paintedtime,
+				   snd_volume->value);
 
-		memmove (snd_paintbuffer, snd_paintbuffer + end - snd_paintedtime,
+		memmove (snd_paintbuffer, snd_paintbuffer + end - snd->paintedtime,
 				 max_overpaint * sizeof (snd_paintbuffer[0]));
 		memset (snd_paintbuffer + max_overpaint, 0, sizeof (snd_paintbuffer)
 				- max_overpaint * sizeof (snd_paintbuffer[0]));
 
-		snd_paintedtime = end;
+		snd->paintedtime = end;
 	}
 }
 

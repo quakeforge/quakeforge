@@ -41,7 +41,6 @@
 
 #include "QF/cvar.h"
 #include "QF/dstring.h"
-#include "QF/input.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
@@ -115,10 +114,10 @@ load_device_funcs (qfv_instance_t *inst, qfv_device_t *dev)
 	if (!ext || dev->extension_enabled (dev, ext)) { \
 		dfunc->name = (PFN_##name) ifunc->vkGetDeviceProcAddr (device, #name); \
 		if (!dfunc->name) { \
-			Sys_MaskPrintf (SYS_VULKAN_PARSE, \
+			Sys_MaskPrintf (SYS_vulkan_parse, \
 							"Couldn't find device level function %s", #name); \
 		} else { \
-			Sys_MaskPrintf (SYS_VULKAN_PARSE, \
+			Sys_MaskPrintf (SYS_vulkan_parse, \
 							"Found device level function %s\n", #name); \
 		} \
 	}

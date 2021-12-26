@@ -171,6 +171,8 @@ ClipWinding (winding_t *in, plane_t *split, qboolean keepon)
 	// +1 for duplicating the first point
 	sides = alloca ((in->numpoints + 1) * sizeof (int));
 	dists = alloca ((in->numpoints + 1) * sizeof (vec_t));
+	sides[0] = 0;
+	dists[0] = 0;
 
 	// determine sides for each point
 	for (i = 0; i < in->numpoints; i++) {

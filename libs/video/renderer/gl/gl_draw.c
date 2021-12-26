@@ -59,6 +59,7 @@
 #include "QF/GL/qf_textures.h"
 #include "QF/GL/qf_vid.h"
 #include "QF/GL/types.h"
+#include "QF/ui/view.h"
 
 #include "compat.h"
 #include "r_internal.h"
@@ -116,14 +117,14 @@ Draw_InitText (void)
 	if (vaelements < 0) {
 		textUseVA = 0;
 		tVAsize = 2048;
-		Sys_MaskPrintf (SYS_DEV, "Text: Vertex Array use disabled.\n");
+		Sys_MaskPrintf (SYS_dev, "Text: Vertex Array use disabled.\n");
 	} else {
 		textUseVA = 1;
 		if (vaelements > 3)
 			tVAsize = vaelements - (vaelements % 4);
 		else
 			tVAsize = 2048;
-		Sys_MaskPrintf (SYS_DEV, "Text: %i maximum vertex elements.\n",
+		Sys_MaskPrintf (SYS_dev, "Text: %i maximum vertex elements.\n",
 						tVAsize);
 	}
 
@@ -682,8 +683,8 @@ gl_Draw_Crosshair (void)
 	if ((unsigned) ch >= sizeof (crosshair_func) / sizeof (crosshair_func[0]))
 		return;
 
-	x = vid.conwidth / 2 + cl_crossx->int_val;
-	y = vid.conheight / 2 + cl_crossy->int_val;
+	x = vid.conview->xlen / 2 + cl_crossx->int_val;
+	y = vid.conview->ylen / 2 + cl_crossy->int_val;
 
 	crosshair_func[ch] (x, y);
 }
@@ -808,7 +809,7 @@ gl_Draw_ConsoleBackground (int lines, byte alpha)
 	if (gl_constretch->int_val) {
 		ofs = 0;
 	} else
-		ofs = (vid.conheight - lines) / (float) vid.conheight;
+		ofs = (vid.conview->ylen - lines) / (float) vid.conview->ylen;
 
 	color_0_8[3] = alpha;
 	qfglColor4ubv (color_0_8);
@@ -819,9 +820,9 @@ gl_Draw_ConsoleBackground (int lines, byte alpha)
 	qfglTexCoord2f (0, 0 + ofs);
 	qfglVertex2f (0, 0);
 	qfglTexCoord2f (1, 0 + ofs);
-	qfglVertex2f (vid.conwidth, 0);
+	qfglVertex2f (vid.conview->xlen, 0);
 	qfglTexCoord2f (1, 1);
-	qfglVertex2f (vid.conwidth, lines);
+	qfglVertex2f (vid.conview->xlen, lines);
 	qfglTexCoord2f (0, 1);
 	qfglVertex2f (0, lines);
 	qfglEnd ();
@@ -837,8 +838,9 @@ gl_Draw_ConsoleBackground (int lines, byte alpha)
 		qfglPopMatrix ();
 	}
 
-	gl_Draw_AltString (vid.conwidth - strlen (cl_verstring->string) * 8 - 11,
-					   lines - 14, cl_verstring->string);
+	int         len = strlen (cl_verstring->string);
+	gl_Draw_AltString (vid.conview->xlen - len * 8 - 11, lines - 14,
+					   cl_verstring->string);
 	qfglColor3ubv (color_white);
 }
 
@@ -919,9 +921,9 @@ gl_Draw_FadeScreen (void)
 	qfglBegin (GL_QUADS);
 
 	qfglVertex2f (0, 0);
-	qfglVertex2f (vid.conwidth, 0);
-	qfglVertex2f (vid.conwidth, vid.conheight);
-	qfglVertex2f (0, vid.conheight);
+	qfglVertex2f (vid.conview->xlen, 0);
+	qfglVertex2f (vid.conview->xlen, vid.conview->ylen);
+	qfglVertex2f (0, vid.conview->ylen);
 
 	qfglEnd ();
 	qfglColor3ubv (color_white);
@@ -961,7 +963,7 @@ GL_Set2D (void)
 void
 GL_Set2DScaled (void)
 {
-	set_2d (vid.conwidth, vid.conheight);
+	set_2d (vid.conview->xlen, vid.conview->ylen);
 }
 
 void
@@ -992,9 +994,9 @@ gl_Draw_BlendScreen (quat_t color)
 
 	qfglColor4fv (color);
 	qfglVertex2f (0, 0);
-	qfglVertex2f (vid.conwidth, 0);
-	qfglVertex2f (vid.conwidth, vid.conheight);
-	qfglVertex2f (0, vid.conheight);
+	qfglVertex2f (vid.conview->xlen, 0);
+	qfglVertex2f (vid.conview->xlen, vid.conview->ylen);
+	qfglVertex2f (0, vid.conview->ylen);
 
 	qfglEnd ();
 

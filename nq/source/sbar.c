@@ -47,11 +47,12 @@
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/vid.h"
-#include "QF/view.h"
 #include "QF/wad.h"
 
 #include "QF/plugin/console.h"
 #include "QF/plugin/vid_render.h"
+
+#include "QF/ui/view.h"
 
 #include "compat.h"
 #include "sbar.h"
@@ -446,7 +447,7 @@ draw_weapons_hud (view_t *view)
 	if (view->parent->gravity == grav_southeast)
 		x = view->xlen - 24;
 
-	for (i = r_data->vid->conheight < 204; i < 7; i++) {
+	for (i = r_data->vid->conview->ylen < 204; i < 7; i++) {
 		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
 			flashon = calc_flashon (cl.item_gettime[i], IT_SHOTGUN << i);
 			draw_subpic (view, x, i * 16, sb_weapons[flashon][i], 0, 0, 24, 16);
@@ -732,7 +733,7 @@ draw_rogue_weapons_hud (view_t *view)
 	int         flashon, i, j;
 	qpic_t     *pic;
 
-	for (i = r_data->vid->conheight < 204; i < 7; i++) {
+	for (i = r_data->vid->conview->ylen < 204; i < 7; i++) {
 		if (cl.stats[STAT_ITEMS] & (IT_SHOTGUN << i)) {
 			flashon = calc_flashon (cl.item_gettime[i], IT_SHOTGUN << i);
 			if (i >= 2) {
@@ -1003,7 +1004,7 @@ sbar_update_vis (void)
 		return;
 
 	if (con_module &&
-		con_module->data->console->lines == r_data->vid->conheight)
+		con_module->data->console->lines == r_data->vid->conview->ylen)
 		return;							// console is full screen
 
 	if (cls.state == ca_active
@@ -1093,23 +1094,30 @@ draw_overlay (view_t *view)
 static void
 draw_time (view_t *view)
 {
-	struct tm  *local = NULL;
+	struct tm  *local = 0;
 	time_t      utc = 0;
-	const char *timefmt = NULL;
 	char        st[80];		//FIXME: overflow
 
 	// Get local time
-	utc = time (NULL);
+	utc = time (0);
 	local = localtime (&utc);
 
+#if defined(_WIN32) || defined(_WIN64)
+#  define HOUR12 "%I"
+#  define HOUR24 "%H"
+#  define PM "%p"
+#else
+#  define HOUR12 "%l"
+#  define HOUR24 "%k"
+#  define PM "%P"
+#endif
 	if (hud_time->int_val == 1) {  // Use international format
-		timefmt = "%k:%M";
+		strftime (st, sizeof (st), HOUR24":%M", local);
+		draw_string (view, 8, 0, st);
 	} else if (hud_time->int_val >= 2) {   // US AM/PM display
-		timefmt = "%l:%M %P";
+		strftime (st, sizeof (st), HOUR12":%M "PM, local);
+		draw_string (view, 8, 0, st);
 	}
-
-	strftime (st, sizeof (st), timefmt, local);
-	draw_string (view, 8, 0, st);
 }
 
 static void
@@ -1317,8 +1325,8 @@ init_sbar_views (void)
 	view->draw = draw_status;
 	view_add (sbar_view, view);
 
-	if (r_data->vid->conwidth > 320) {
-		int         l = (r_data->vid->conwidth - 320) / 2;
+	if (r_data->vid->conview->xlen > 320) {
+		int         l = (r_data->vid->conview->xlen - 320) / 2;
 
 		view = view_new (-l, 0, l, 48, grav_southwest);
 		view->draw = draw_tile;
@@ -1371,7 +1379,7 @@ init_hud_views (void)
 	if (hud_frags_view)
 		view_add (hud_inventory_view, hud_frags_view);
 
-	view = view_new (0, 0, r_data->vid->conwidth, 48, grav_south);
+	view = view_new (0, 0, r_data->vid->conview->xlen, 48, grav_south);
 	view_add (view, hud_view);
 	hud_view = view;
 
@@ -1422,8 +1430,8 @@ init_hipnotic_sbar_views (void)
 	view->draw = draw_hipnotic_status;
 	view_add (sbar_view, view);
 
-	if (r_data->vid->conwidth > 320) {
-		int         l = (r_data->vid->conwidth - 320) / 2;
+	if (r_data->vid->conview->xlen > 320) {
+		int         l = (r_data->vid->conview->xlen - 320) / 2;
 
 		view = view_new (-l, 0, l, 48, grav_southwest);
 		view->draw = draw_tile;
@@ -1448,9 +1456,10 @@ init_hipnotic_hud_views (void)
 
 	hud_view->resize_y = 1;
 
-	if (r_data->vid->conheight < 252) {
+	if (r_data->vid->conview->ylen < 252) {
 		hud_armament_view = view_new (0,
-									  min (r_data->vid->conheight - 160, 48),
+									  min (r_data->vid->conview->ylen - 160,
+										   48),
 									  66, 160, grav_southeast);
 	} else {
 		hud_armament_view = view_new (0, 48, 42, 204, grav_southeast);
@@ -1482,7 +1491,7 @@ init_hipnotic_hud_views (void)
 	if (hud_frags_view)
 		view_add (hud_inventory_view, hud_frags_view);
 
-	view = view_new (0, 0, r_data->vid->conwidth, 48, grav_south);
+	view = view_new (0, 0, r_data->vid->conview->xlen, 48, grav_south);
 	view_add (view, hud_view);
 	hud_view = view;
 
@@ -1529,8 +1538,8 @@ init_rogue_sbar_views (void)
 	view->draw = draw_rogue_status;
 	view_add (sbar_view, view);
 
-	if (r_data->vid->conwidth > 320) {
-		int         l = (r_data->vid->conwidth - 320) / 2;
+	if (r_data->vid->conview->xlen > 320) {
+		int         l = (r_data->vid->conview->xlen - 320) / 2;
 
 		view = view_new (-l, 0, l, 48, grav_southwest);
 		view->draw = draw_tile;
@@ -1579,7 +1588,7 @@ init_rogue_hud_views (void)
 	if (hud_frags_view)
 		view_add (hud_inventory_view, hud_frags_view);
 
-	view = view_new (0, 0, r_data->vid->conwidth, 48, grav_south);
+	view = view_new (0, 0, r_data->vid->conview->xlen, 48, grav_south);
 	view_add (view, hud_view);
 	hud_view = view;
 
@@ -1591,17 +1600,18 @@ init_rogue_hud_views (void)
 static void
 init_views (void)
 {
-	main_view = view_new (0, 0, r_data->vid->conwidth, r_data->vid->conheight,
+	main_view = view_new (0, 0, r_data->vid->conview->xlen,
+						  r_data->vid->conview->ylen,
 						  grav_northwest);
 	if (con_module)
 		view_insert (con_module->data->console->view, main_view, 0);
 	main_view->resize_x = 1;	// get resized if the 2d view resizes
 	main_view->resize_y = 1;
 	main_view->visible = 0;		// but don't let the console draw our stuff
-	if (r_data->vid->conheight > 300)
+	if (r_data->vid->conview->ylen > 300)
 		overlay_view = view_new (0, 0, 320, 300, grav_center);
 	else
-		overlay_view = view_new (0, 0, 320, r_data->vid->conheight,
+		overlay_view = view_new (0, 0, 320, r_data->vid->conview->ylen,
 								 grav_center);
 	overlay_view->draw = draw_overlay;
 	overlay_view->visible = 0;
@@ -1633,20 +1643,12 @@ Sbar_GIB_Print_Center_f (void)
 		Sbar_CenterPrint (GIB_Argv(1));
 }
 
-static void
-sbar_keydest_callback (keydest_t kd)
-{
-	overlay_view->visible = kd == key_game;
-}
-
 void
 Sbar_Init (void)
 {
 	int         i;
 
 	init_views ();
-
-	Key_KeydestCallback (sbar_keydest_callback);
 
 	for (i = 0; i < 10; i++) {
 		sb_nums[0][i] = r_funcs->Draw_PicFromWad (va (0, "num_%i", i));

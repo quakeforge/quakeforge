@@ -1,6 +1,4 @@
-AC_ARG_ENABLE(flac,
-[  --disable-flac           disable flac support],
-)
+AC_ARG_ENABLE(flac, AS_HELP_STRING([--disable-flac], [disable flac support]))
 HAVE_FLAC=no
 if test "x$enable_flac" != "xno"; then
   if test "x$PKG_CONFIG" != "x"; then
@@ -15,8 +13,7 @@ fi
 AM_CONDITIONAL(HAVE_FLAC, test "x$HAVE_FLAC" = "xyes")
 
 AC_ARG_ENABLE(wildmidi,
-[  --disable-wildmidi         disable libWildMidi support],
-)
+	AS_HELP_STRING([--disable-wildmidi], disable libWildMidi support]))
 HAVE_WILDMIDI=no
 WM_LIBS=
 if test "x$enable_wildmidi" != "xno"; then
@@ -33,8 +30,7 @@ AC_SUBST(WM_LIBS)
 AM_CONDITIONAL(HAVE_MIDI, test "x$HAVE_WILDMIDI" = "xyes")
 
 AC_ARG_ENABLE(vorbis,
-[  --disable-vorbis         disable ogg vorbis support],
-)
+	AS_HELP_STRING([--disable-vorbis], [disable ogg vorbis support]))
 HAVE_VORBIS=no
 if test "x$enable_vorbis" != "xno"; then
   if test "x$PKG_CONFIG" != "x"; then
@@ -59,7 +55,7 @@ fi
 AM_CONDITIONAL(HAVE_VORBIS, test "x$HAVE_VORBIS" = "xyes")
 
 
-AC_ARG_ENABLE(zlib, [  --disable-zlib          disable zlib support])
+AC_ARG_ENABLE(zlib, AS_HELP_STRING([--disable-zlib], [disable zlib support]))
 HAVE_ZLIB=no
 Z_LIBS=""
 if test "x$enable_zlib" != "xno"; then
@@ -83,9 +79,7 @@ if test "x$HAVE_ZLIB" = "xyes"; then
 	 AC_DEFINE(HAVE_ZLIB, 1, [Define if you have zlib])
 fi
 
-AC_ARG_ENABLE(png,
-[  --disable-png           disable png support],
-)
+AC_ARG_ENABLE(png, AS_HELP_STRING([--disable-png], [disable png support]))
 HAVE_PNG=no
 PNG_LIBS=""
 if test "x$enable_png" != "xno"; then

@@ -37,6 +37,18 @@
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/command.h"
 
+#include "QF/simd/types.h"
+
+typedef struct vulktex_s {
+	struct texture_s  *texture;
+	struct instsurf_s *tex_chain;	// for gl_texsort drawing
+	struct instsurf_s **tex_chain_tail;
+	struct elechain_s *elechain;
+	struct elechain_s **elechain_tail;
+	struct qfv_tex_s *tex;
+	VkDescriptorSet descriptor;
+} vulktex_t;
+
 typedef struct bspvert_s {
 	quat_t      vertex;
 	quat_t      tlst;
@@ -52,7 +64,6 @@ typedef struct elements_s {
 typedef struct elechain_s {
 	struct elechain_s *_next;
 	struct elechain_s *next;
-	int         index;
 	elements_t *elements;
 	vec_t      *transform;
 	float      *color;
@@ -65,10 +76,6 @@ typedef enum {
 	qfv_bsp_skysheet,
 	qfv_bsp_skycube,
 } qfv_bsp_tex;
-// view matrix
-#define BSP_BUFFER_INFOS 1
-// Texture, GlowMap, LightMap, SkySheet, SkyCube
-#define BSP_IMAGE_INFOS 5
 
 typedef enum {
 	QFV_bspDepth,
@@ -84,23 +91,19 @@ typedef struct bspframe_s {
 	uint32_t     index_offset;	// offset of index_data within mega-buffer (c)
 	uint32_t     index_count;	// number if indices queued (d)
 	qfv_cmdbufferset_t cmdSet;
-	VkDescriptorBufferInfo bufferInfo[BSP_BUFFER_INFOS];
-	VkDescriptorImageInfo imageInfo[BSP_IMAGE_INFOS];
-	VkWriteDescriptorSet descriptors[BSP_BUFFER_INFOS + BSP_IMAGE_INFOS];
 } bspframe_t;
-
-typedef struct fragconst_s {
-	quat_t      fog;
-	float       time;
-} fragconst_t;
 
 typedef struct bspframeset_s
     DARRAY_TYPE (bspframe_t) bspframeset_t;
 
 typedef struct texchainset_s
-    DARRAY_TYPE (struct vulktex_s *) texchainset_t;
+    DARRAY_TYPE (vulktex_t *) texchainset_t;
 
 typedef struct bspctx_s {
+	struct entity_s *entity;
+	vec_t       *transform;
+	float       *color;
+
 	instsurf_t  *waterchain;
 	instsurf_t **waterchain_tail;
 	instsurf_t  *sky_chain;
@@ -129,9 +132,10 @@ typedef struct bspctx_s {
 
 	struct qfv_tex_s *default_skybox;
 	struct qfv_tex_s *skybox_tex;
-	quat_t       sky_rotation[2];
-	quat_t       sky_velocity;
-	quat_t       sky_fix;
+	VkDescriptorSet skybox_descriptor;
+	vec4f_t      sky_rotation[2];
+	vec4f_t      sky_velocity;
+	vec4f_t      sky_fix;
 	double       sky_time;
 
 	quat_t       default_color;
@@ -143,13 +147,14 @@ typedef struct bspctx_s {
 	struct bsppoly_s *polys;
 
 	VkSampler    sampler;
+	VkPipelineLayout layout;
+
 	VkDeviceMemory texture_memory;
 	VkPipeline   depth;
 	VkPipeline   gbuf;
 	VkPipeline   skysheet;
 	VkPipeline   skybox;
 	VkPipeline   turb;
-	VkPipelineLayout layout;
 	size_t       vertex_buffer_size;
 	size_t       index_buffer_size;
 	VkBuffer     vertex_buffer;
@@ -160,9 +165,12 @@ typedef struct bspctx_s {
 } bspctx_t;
 
 struct vulkan_ctx_s;
+struct qfv_renderframe_s;
 void Vulkan_ClearElements (struct vulkan_ctx_s *ctx);
-void Vulkan_DrawWorld (struct vulkan_ctx_s *ctx);
-void Vulkan_DrawSky (struct vulkan_ctx_s *ctx);
+void Vulkan_DrawWorld (struct qfv_renderframe_s *rFrame);
+void Vulkan_DrawSky (struct qfv_renderframe_s *rFrame);
+void Vulkan_DrawWaterSurfaces (struct qfv_renderframe_s *rFrame);
+void Vulkan_Bsp_Flush (struct vulkan_ctx_s *ctx);
 void Vulkan_LoadSkys (const char *sky, struct vulkan_ctx_s *ctx);
 void Vulkan_RegisterTextures (model_t **models, int num_models,
 							  struct vulkan_ctx_s *ctx);
@@ -170,6 +178,5 @@ void Vulkan_BuildDisplayLists (model_t **models, int num_models,
 							   struct vulkan_ctx_s *ctx);
 void Vulkan_Bsp_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Bsp_Shutdown (struct vulkan_ctx_s *ctx);
-void Vulkan_DrawWaterSurfaces (struct vulkan_ctx_s *ctx);
 
 #endif//__QF_Vulkan_qf_bsp_h

@@ -138,7 +138,7 @@ ChooseMidPlaneFromList (surface_t *surfaces,
 		if (p->onnode)
 			continue;
 
-		plane = &planes[p->planenum];
+		plane = &planes.a[p->planenum];
 
 		// check for axis aligned surfaces
 		l = plane->type;
@@ -215,7 +215,7 @@ ChoosePlaneFromList (surface_t *surfaces, const vec3_t mins, const vec3_t maxs,
 		if (!p->has_struct && !usedetail)
 			continue;
 
-		plane = &planes[p->planenum];
+		plane = &planes.a[p->planenum];
 		k = 0;
 
 		if (!usefloors && plane->normal[2] == 1)
@@ -393,7 +393,7 @@ DividePlane (surface_t *in, plane_t *split, surface_t **front,
 
 	int         have[2][2];	// [front|back][detail|struct]
 
-	inplane = &planes[in->planenum];
+	inplane = &planes.a[in->planenum];
 
 	// parallel case is easy
 	if (_VectorCompare (inplane->normal, split->normal)) {
@@ -638,7 +638,7 @@ PartitionSurfaces (surface_t *surfaces, node_t *node)
 	node->children[1] = AllocNode ();
 	node->planenum = split->planenum;
 
-	splitplane = &planes[split->planenum];
+	splitplane = &planes.a[split->planenum];
 
 	// multiple surfaces, so split all the polysurfaces into front and back
 	// lists

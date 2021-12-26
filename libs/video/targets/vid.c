@@ -42,13 +42,15 @@
 #include "QF/qargs.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/ui/view.h"
 
 #include "compat.h"
+#include "d_iface.h"
 #include "vid_internal.h"
 
 /* Software and hardware gamma support */
 #define viddef (*r_data->vid)
-byte       *vid_colormap;
+#define vi (viddef.vid_internal)
 cvar_t	   *vid_gamma;
 cvar_t	   *vid_system_gamma;
 cvar_t     *con_width; // FIXME: Try to move with rest of con code
@@ -60,30 +62,10 @@ VISIBLE unsigned int	d_8to24table[256];
 /* Screen size */
 cvar_t	   *vid_width;
 cvar_t	   *vid_height;
-cvar_t     *vid_aspect;
 
 cvar_t     *vid_fullscreen;
 
-static void
-vid_aspect_f (cvar_t *var)
-{
-	const char *p = strchr (var->string, ':');
-	float       w, h;
-
-	if (p) {
-		w = atof (var->string);
-		h = atof (p + 1);
-		if (w > 0.0 && h > 0.0) {
-			var->vec[0] = w;
-			var->vec[1] = h;
-			return;
-		}
-	}
-	Sys_Printf ("badly formed aspect ratio: %s. Using default 4:3\n",
-				var->string);
-	var->vec[0] = 4.0;
-	var->vec[1] = 3.0;
-}
+static view_t conview;
 
 void
 VID_GetWindowSize (int def_w, int def_h)
@@ -94,11 +76,6 @@ VID_GetWindowSize (int def_w, int def_h)
 			"screen width");
 	vid_height = Cvar_Get ("vid_height", va (0, "%d", def_h), CVAR_NONE, NULL,
 			"screen height");
-	vid_aspect = Cvar_Get ("vid_aspect", "4:3", CVAR_ROM, vid_aspect_f,
-			"Physical screen aspect ratio in \"width:height\" format. "
-			"Common values are 4:3, 5:3, 8:5, 16:9, but any width:height "
-			"measurement will do (eg, 475:296.875 the approximate dimentions "
-			"in mm of the display area of a certain monitor)");
 
 	if ((pnum = COM_CheckParm ("-width"))) {
 		if (pnum >= com_argc - 1)
@@ -134,11 +111,12 @@ VID_GetWindowSize (int def_w, int def_h)
 	Cvar_SetFlags (vid_width, vid_width->flags | CVAR_ROM);
 	Cvar_SetFlags (vid_height, vid_height->flags | CVAR_ROM);
 
+	// viddef.maxlowwidth = LOW_WIDTH;
+	// viddef.maxlowheight = LOW_HEIGHT;
+
 	viddef.width = vid_width->int_val;
 	viddef.height = vid_height->int_val;
-
-	viddef.aspect = ((vid_aspect->vec[0] * viddef.height)
-				  / (vid_aspect->vec[1] * viddef.width));
+	viddef.conview = &conview;
 
 	con_width = Cvar_Get ("con_width", va (0, "%d", viddef.width), CVAR_NONE,
 						  NULL, "console effective width (GL only)");
@@ -150,9 +128,9 @@ VID_GetWindowSize (int def_w, int def_h)
 	// make con_width a multiple of 8 and >= 320
 	Cvar_Set (con_width, va (0, "%d", max (con_width->int_val & ~7, 320)));
 	Cvar_SetFlags (con_width, con_width->flags | CVAR_ROM);
-	viddef.conwidth = con_width->int_val;
+	viddef.conview->xlen = con_width->int_val;
 
-	conheight = (viddef.conwidth * vid_aspect->vec[1]) / vid_aspect->vec[0];
+	conheight = (viddef.conview->xlen * viddef.height) / viddef.width;
 	con_height = Cvar_Get ("con_height", va (0, "%d", conheight), CVAR_NONE,
 						   NULL, "console effective height (GL only)");
 	if ((pnum = COM_CheckParm ("-conheight"))) {
@@ -163,7 +141,7 @@ VID_GetWindowSize (int def_w, int def_h)
 	// make con_height >= 200
 	Cvar_Set (con_height, va (0, "%d", max (con_height->int_val, 200)));
 	Cvar_SetFlags (con_height, con_height->flags | CVAR_ROM);
-	viddef.conheight = con_height->int_val;
+	viddef.conview->ylen = con_height->int_val;
 
 	Con_CheckResize ();     // Now that we have a window size, fix console
 }
@@ -202,13 +180,13 @@ VID_UpdateGamma (cvar_t *vid_gamma)
 	double gamma = bound (0.1, vid_gamma->value, 9.9);
 	byte       *p24;
 	byte       *p32;
-	byte       *col;
+	const byte *col;
 	int         i;
 
 	viddef.recalc_refdef = 1;				// force a surface cache flush
 
 	if (vid_gamma_avail && vid_system_gamma->int_val) {	// Have system, use it
-		Sys_MaskPrintf (SYS_VID, "Setting hardware gamma to %g\n", gamma);
+		Sys_MaskPrintf (SYS_vid, "Setting hardware gamma to %g\n", gamma);
 		VID_BuildGammaTable (1.0);	// hardware gamma wants a linear palette
 		VID_SetGamma (gamma);
 		p24 = viddef.palette;
@@ -222,7 +200,7 @@ VID_UpdateGamma (cvar_t *vid_gamma)
 		}
 		p32[-1] = 0;	// color 255 is transparent
 	} else {	// We have to hack the palette
-		Sys_MaskPrintf (SYS_VID, "Setting software gamma to %g\n", gamma);
+		Sys_MaskPrintf (SYS_vid, "Setting software gamma to %g\n", gamma);
 		VID_BuildGammaTable (gamma);
 		p24 = viddef.palette;
 		p32 = viddef.palette32;
@@ -234,7 +212,8 @@ VID_UpdateGamma (cvar_t *vid_gamma)
 			*p32++ = 255;
 		}
 		p32[-1] = 0;	// color 255 is transparent
-		viddef.vid_internal->set_palette (viddef.palette); // update with the new palette
+		// update with the new palette
+		vi->set_palette (vi->data, viddef.palette);
 	}
 }
 
@@ -244,7 +223,7 @@ VID_UpdateGamma (cvar_t *vid_gamma)
 	Initialize the vid_gamma Cvar, and set up the palette
 */
 void
-VID_InitGamma (unsigned char *pal)
+VID_InitGamma (const byte *pal)
 {
 	int 	i;
 	double	gamma = 1.0;
@@ -262,6 +241,10 @@ VID_InitGamma (unsigned char *pal)
 						  VID_UpdateGamma, "Gamma correction");
 
 	VID_BuildGammaTable (vid_gamma->value);
+
+	if (viddef.onPaletteChanged) {
+		LISTENER_INVOKE (viddef.onPaletteChanged, &viddef);
+	}
 }
 
 void
@@ -270,16 +253,17 @@ VID_InitBuffers (void)
 	int         buffersize, zbuffersize, cachesize = 1;
 
 	// No console scaling in the sw renderer
-	viddef.conwidth = viddef.width;
-	viddef.conheight = viddef.height;
+	viddef.conview->xlen = viddef.width;
+	viddef.conview->ylen = viddef.height;
 	Con_CheckResize ();
 
 	// Calculate the sizes we want first
 	buffersize = viddef.rowbytes * viddef.height;
 	zbuffersize = viddef.width * viddef.height * sizeof (*viddef.zbuffer);
-	if (viddef.vid_internal->surf_cache_size)
-		cachesize = viddef.vid_internal->surf_cache_size (viddef.width,
-														  viddef.height);
+	if (vi->surf_cache_size) {
+		cachesize = vi->surf_cache_size (vi->data,
+										 viddef.width, viddef.height);
+	}
 
 	// Free the old z-buffer
 	if (viddef.zbuffer) {
@@ -288,22 +272,23 @@ VID_InitBuffers (void)
 	}
 	// Free the old surface cache
 	if (viddef.surfcache) {
-		if (viddef.vid_internal->flush_caches)
-			viddef.vid_internal->flush_caches ();
+		if (vi->flush_caches) {
+			vi->flush_caches (vi->data);
+		}
 		free (viddef.surfcache);
 		viddef.surfcache = NULL;
 	}
-	if (viddef.vid_internal->do_screen_buffer) {
-		viddef.vid_internal->do_screen_buffer ();
+	if (vi->init_buffers) {
+		vi->init_buffers (vi->data);
 	} else {
 		// Free the old screen buffer
 		if (viddef.buffer) {
 			free (viddef.buffer);
-			viddef.conbuffer = viddef.buffer = NULL;
+			viddef.buffer = NULL;
 		}
 		// Allocate the new screen buffer
-		viddef.conbuffer = viddef.buffer = calloc (buffersize, 1);
-		if (!viddef.conbuffer) {
+		viddef.buffer = calloc (buffersize, 1);
+		if (!viddef.buffer) {
 			Sys_Error ("Not enough memory for video mode");
 		}
 	}
@@ -311,7 +296,7 @@ VID_InitBuffers (void)
 	viddef.zbuffer = calloc (zbuffersize, 1);
 	if (!viddef.zbuffer) {
 		free (viddef.buffer);
-		viddef.conbuffer = viddef.buffer = NULL;
+		viddef.buffer = NULL;
 		Sys_Error ("Not enough memory for video mode");
 	}
 	// Allocate the new surface cache; free the z-buffer if we fail
@@ -319,18 +304,38 @@ VID_InitBuffers (void)
 	if (!viddef.surfcache) {
 		free (viddef.buffer);
 		free (viddef.zbuffer);
-		viddef.conbuffer = viddef.buffer = NULL;
+		viddef.buffer = NULL;
 		viddef.zbuffer = NULL;
 		Sys_Error ("Not enough memory for video mode");
 	}
 
-	if (viddef.vid_internal->init_caches)
-		viddef.vid_internal->init_caches (viddef.surfcache, cachesize);
+	if (vi->init_caches) {
+		vi->init_caches (vi->data, viddef.surfcache, cachesize);
+	}
 }
 
 void
 VID_ClearMemory (void)
 {
-	if (viddef.vid_internal->flush_caches)
-		viddef.vid_internal->flush_caches ();
+	if (vi->flush_caches) {
+		vi->flush_caches (vi->data);
+	}
+}
+
+VISIBLE void
+VID_OnPaletteChange_AddListener (viddef_listener_t listener, void *data)
+{
+	if (!viddef.onPaletteChanged) {
+		viddef.onPaletteChanged = malloc (sizeof (*viddef.onPaletteChanged));
+		LISTENER_SET_INIT (viddef.onPaletteChanged, 8);
+	}
+	LISTENER_ADD (viddef.onPaletteChanged, listener, data);
+}
+
+VISIBLE void
+VID_OnPaletteChange_RemoveListener (viddef_listener_t listener, void *data)
+{
+	if (viddef.onPaletteChanged) {
+		LISTENER_REMOVE (viddef.onPaletteChanged, listener, data);
+	}
 }

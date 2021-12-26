@@ -34,11 +34,13 @@
 #include "QF/qendian.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+#include "QF/ui/view.h"
 
 #include "compat.h"
 #include "d_local.h"
 #include "r_internal.h"
 #include "vid_internal.h"
+#include "vid_sw.h"
 
 static byte       *r_turb_pbase;
 static void       *r_turb_pdest;
@@ -55,11 +57,15 @@ static int         r_turb_spancount;
 void
 sw32_D_WarpScreen (void)
 {
-	switch(sw32_r_pixbytes) {
+	switch(sw32_ctx->pixbytes) {
 	case 1:
 	{
 		int         w, h;
 		int         u, v;
+		int         scr_x = vr_data.scr_view->xpos;
+		int         scr_y = vr_data.scr_view->ylen;
+		int         scr_w = vr_data.scr_view->xpos;
+		int         scr_h = vr_data.scr_view->ylen;
 		byte       *dest;
 		int        *turb;
 		int        *col;
@@ -71,29 +77,28 @@ sw32_D_WarpScreen (void)
 		w = r_refdef.vrect.width;
 		h = r_refdef.vrect.height;
 
-		wratio = w / (float) scr_vrect.width;
-		hratio = h / (float) scr_vrect.height;
+		wratio = w / (float) scr_w;
+		hratio = h / (float) scr_h;
 
-		for (v = 0; v < scr_vrect.height + AMP2 * 2; v++) {
+		for (v = 0; v < scr_h + AMP2 * 2; v++) {
 			rowptr[v] = (byte *) sw32_d_viewbuffer + (r_refdef.vrect.y *
 												 sw32_screenwidth) +
 				(sw32_screenwidth * (int) ((float) v * hratio * h /
 									  (h + AMP2 * 2)));
 		}
 
-		for (u = 0; u < scr_vrect.width + AMP2 * 2; u++) {
+		for (u = 0; u < scr_w + AMP2 * 2; u++) {
 			column[u] = r_refdef.vrect.x +
 				(int) ((float) u * wratio * w / (w + AMP2 * 2));
 		}
 
 		turb = sw32_intsintable + ((int) (vr_data.realtime * SPEED) & (CYCLE - 1));
-		dest = (byte *)vid.buffer + scr_vrect.y * vid.rowbytes +
-						 scr_vrect.x;
+		dest = (byte *)vid.buffer + scr_y * vid.rowbytes + scr_x;
 
-		for (v = 0; v < scr_vrect.height; v++, dest += vid.rowbytes) {
+		for (v = 0; v < scr_h; v++, dest += vid.rowbytes) {
 			col = &column[turb[v]];
 			row = &rowptr[v];
-			for (u = 0; u < scr_vrect.width; u += 4) {
+			for (u = 0; u < scr_w; u += 4) {
 				dest[u + 0] = row[turb[u + 0]][col[u + 0]];
 				dest[u + 1] = row[turb[u + 1]][col[u + 1]];
 				dest[u + 2] = row[turb[u + 2]][col[u + 2]];
@@ -106,6 +111,10 @@ sw32_D_WarpScreen (void)
 	{
 		int         w, h;
 		int         u, v;
+		int         scr_x = vr_data.scr_view->xpos;
+		int         scr_y = vr_data.scr_view->ylen;
+		int         scr_w = vr_data.scr_view->xpos;
+		int         scr_h = vr_data.scr_view->ylen;
 		short      *dest;
 		int        *turb;
 		int        *col;
@@ -117,29 +126,28 @@ sw32_D_WarpScreen (void)
 		w = r_refdef.vrect.width;
 		h = r_refdef.vrect.height;
 
-		wratio = w / (float) scr_vrect.width;
-		hratio = h / (float) scr_vrect.height;
+		wratio = w / (float) scr_w;
+		hratio = h / (float) scr_h;
 
-		for (v = 0; v < scr_vrect.height + AMP2 * 2; v++) {
+		for (v = 0; v < scr_h + AMP2 * 2; v++) {
 			rowptr[v] = (short *) sw32_d_viewbuffer +
 				(r_refdef.vrect.y * sw32_screenwidth) +
 				(sw32_screenwidth * (int) ((float) v * hratio * h /
 									  (h + AMP2 * 2)));
 		}
 
-		for (u = 0; u < scr_vrect.width + AMP2 * 2; u++) {
+		for (u = 0; u < scr_w + AMP2 * 2; u++) {
 			column[u] = r_refdef.vrect.x +
 				(int) ((float) u * wratio * w / (w + AMP2 * 2));
 		}
 
 		turb = sw32_intsintable + ((int) (vr_data.realtime * SPEED) & (CYCLE - 1));
-		dest = (short *) vid.buffer + scr_vrect.y * (vid.rowbytes >> 1) +
-			scr_vrect.x;
+		dest = (short *) vid.buffer + scr_y * (vid.rowbytes >> 1) + scr_x;
 
-		for (v = 0; v < scr_vrect.height; v++, dest += (vid.rowbytes >> 1)) {
+		for (v = 0; v < scr_h; v++, dest += (vid.rowbytes >> 1)) {
 			col = &column[turb[v]];
 			row = &rowptr[v];
-			for (u = 0; u < scr_vrect.width; u += 4) {
+			for (u = 0; u < scr_w; u += 4) {
 				dest[u + 0] = row[turb[u + 0]][col[u + 0]];
 				dest[u + 1] = row[turb[u + 1]][col[u + 1]];
 				dest[u + 2] = row[turb[u + 2]][col[u + 2]];
@@ -152,6 +160,10 @@ sw32_D_WarpScreen (void)
 	{
 		int         w, h;
 		int         u, v;
+		int         scr_x = vr_data.scr_view->xpos;
+		int         scr_y = vr_data.scr_view->ylen;
+		int         scr_w = vr_data.scr_view->xpos;
+		int         scr_h = vr_data.scr_view->ylen;
 		int        *dest;
 		int        *turb;
 		int        *col;
@@ -163,29 +175,28 @@ sw32_D_WarpScreen (void)
 		w = r_refdef.vrect.width;
 		h = r_refdef.vrect.height;
 
-		wratio = w / (float) scr_vrect.width;
-		hratio = h / (float) scr_vrect.height;
+		wratio = w / (float) scr_w;
+		hratio = h / (float) scr_h;
 
-		for (v = 0; v < scr_vrect.height + AMP2 * 2; v++) {
+		for (v = 0; v < scr_h + AMP2 * 2; v++) {
 			rowptr[v] = (int *) sw32_d_viewbuffer +
 				(r_refdef.vrect.y * sw32_screenwidth) +
 				(sw32_screenwidth * (int) ((float) v * hratio * h /
 									  (h + AMP2 * 2)));
 		}
 
-		for (u = 0; u < scr_vrect.width + AMP2 * 2; u++) {
+		for (u = 0; u < scr_w + AMP2 * 2; u++) {
 			column[u] = r_refdef.vrect.x +
 				(int) ((float) u * wratio * w / (w + AMP2 * 2));
 		}
 
 		turb = sw32_intsintable + ((int) (vr_data.realtime * SPEED) & (CYCLE - 1));
-		dest = (int *) vid.buffer + scr_vrect.y * (vid.rowbytes >> 2) +
-			scr_vrect.x;
+		dest = (int *) vid.buffer + scr_y * (vid.rowbytes >> 2) + scr_x;
 
-		for (v = 0; v < scr_vrect.height; v++, dest += (vid.rowbytes >> 2)) {
+		for (v = 0; v < scr_h; v++, dest += (vid.rowbytes >> 2)) {
 			col = &column[turb[v]];
 			row = &rowptr[v];
-			for (u = 0; u < scr_vrect.width; u += 4) {
+			for (u = 0; u < scr_w; u += 4) {
 				dest[u + 0] = row[turb[u + 0]][col[u + 0]];
 				dest[u + 1] = row[turb[u + 1]][col[u + 1]];
 				dest[u + 2] = row[turb[u + 2]][col[u + 2]];
@@ -195,7 +206,7 @@ sw32_D_WarpScreen (void)
 	}
 	break;
 	default:
-		Sys_Error("D_WarpScreen: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("D_WarpScreen: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 	}
 }
 
@@ -204,7 +215,7 @@ D_DrawTurbulentSpan (void)
 {
 	int         sturb, tturb;
 
-	switch (sw32_r_pixbytes) {
+	switch (sw32_ctx->pixbytes) {
 	case 1:
 	{
 		byte *pdest = (byte *) r_turb_pdest;
@@ -252,7 +263,7 @@ D_DrawTurbulentSpan (void)
 		break;
 	default:
 		Sys_Error("D_DrawTurbulentSpan: unsupported r_pixbytes %i",
-				  sw32_r_pixbytes);
+				  sw32_ctx->pixbytes);
 	}
 }
 
@@ -277,7 +288,7 @@ sw32_Turbulent (espan_t *pspan)
 
 	do {
 		r_turb_pdest = (byte *) sw32_d_viewbuffer + ((sw32_screenwidth * pspan->v) +
-												pspan->u) * sw32_r_pixbytes;
+												pspan->u) * sw32_ctx->pixbytes;
 
 		count = pspan->count;
 
@@ -384,7 +395,7 @@ sw32_Turbulent (espan_t *pspan)
 void
 sw32_D_DrawSpans (espan_t *pspan)
 {
-	switch(sw32_r_pixbytes) {
+	switch(sw32_ctx->pixbytes) {
 	case 1:
 	{
 		byte       *pbase = (byte *) sw32_cacheblock, *pdest;
@@ -802,7 +813,7 @@ sw32_D_DrawSpans (espan_t *pspan)
 	}
 	break;
 	default:
-		Sys_Error("D_DrawSpans: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("D_DrawSpans: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 	}
 }
 

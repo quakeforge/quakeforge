@@ -56,7 +56,7 @@ sw_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skin,
 {
 	byte		*pskin;
 
-	pskin = Hunk_AllocName (skinsize, alias_ctx->mod->name);
+	pskin = Hunk_AllocName (0, skinsize, alias_ctx->mod->name);
 	skindesc->skin = (byte *) pskin - (byte *) alias_ctx->header;
 
 	memcpy (pskin, skin, skinsize);
@@ -75,7 +75,7 @@ process_frame (mod_alias_ctx_t *alias_ctx, maliasframedesc_t *frame,
 	if (extra)
 		size *= 2;
 
-	frame_verts = Hunk_AllocName (size, alias_ctx->mod->name);
+	frame_verts = Hunk_AllocName (0, size, alias_ctx->mod->name);
 	frame->frame = (byte *) frame_verts - (byte *) header;
 
 	// The low-order 8 bits (actually, fractional) are completely separate
@@ -96,9 +96,9 @@ sw_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 	stvert_t	*stverts;
 	mtriangle_t *tris;
 
-	stverts = (stvert_t *) Hunk_AllocName (numv * sizeof (stvert_t),
+	stverts = (stvert_t *) Hunk_AllocName (0, numv * sizeof (stvert_t),
 										   alias_ctx->mod->name);
-	tris = (mtriangle_t *) Hunk_AllocName (numt * sizeof (mtriangle_t),
+	tris = (mtriangle_t *) Hunk_AllocName (0, numt * sizeof (mtriangle_t),
 										   alias_ctx->mod->name);
 
 	header->stverts = (byte *) stverts - (byte *) header;

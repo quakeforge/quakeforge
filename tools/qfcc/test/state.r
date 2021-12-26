@@ -25,7 +25,7 @@ state1 (void)
 {
 	if (self.frame != $frame2 || self.think != state2
 		|| self.nextthink != 0.2f) {
-		printf ("state0: %g %x %g\n", self.frame, self.think, self.nextthink);
+		printf ("state1: %g %x %g\n", self.frame, self.think, self.nextthink);
 		exit (1);
 	}
 }
@@ -36,7 +36,7 @@ state2 (void)
 {
 	if (self.frame != $frame0 || self.think != state0
 		|| self.nextthink != 0.5f) {
-		printf ("state0: %g %x %g\n", self.frame, self.think, self.nextthink);
+		printf ("state2: %g %x %g\n", self.frame, self.think, self.nextthink);
 		exit (1);
 	}
 }

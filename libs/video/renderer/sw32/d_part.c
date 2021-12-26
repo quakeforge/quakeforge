@@ -36,6 +36,7 @@
 #include "d_local.h"
 #include "r_internal.h"
 #include "vid_internal.h"
+#include "vid_sw.h"
 
 
 void
@@ -47,7 +48,7 @@ sw32_D_DrawParticle (particle_t *pparticle)
 	int         i, izi, pix, count, u, v;
 
 	// transform point
-	VectorSubtract (pparticle->org, r_origin, local);
+	VectorSubtract (pparticle->pos, r_origin, local);
 
 	transformed[0] = DotProduct (local, r_pright);
 	transformed[1] = DotProduct (local, r_pup);
@@ -78,12 +79,12 @@ sw32_D_DrawParticle (particle_t *pparticle)
 	else if (pix > sw32_d_pix_max)
 		pix = sw32_d_pix_max;
 
-	switch(sw32_r_pixbytes)
+	switch(sw32_ctx->pixbytes)
 	{
 	case 1:
 		{
 			byte *pdest = (byte *) sw32_d_viewbuffer + sw32_d_scantable[v] + u,
-				pixcolor = pparticle->color;
+				pixcolor = pparticle->icolor;
 			switch (pix) {
 				case 1:
 					count = 1 << sw32_d_y_aspect_shift;
@@ -179,7 +180,7 @@ sw32_D_DrawParticle (particle_t *pparticle)
 		{
 			unsigned short *pdest = (unsigned short *) sw32_d_viewbuffer +
 				sw32_d_scantable[v] + u,
-				pixcolor = sw32_8to16table[(int) pparticle->color];
+				pixcolor = sw32_8to16table[(int) pparticle->icolor];
 			switch (pix) {
 				case 1:
 					count = 1 << sw32_d_y_aspect_shift;
@@ -274,7 +275,7 @@ sw32_D_DrawParticle (particle_t *pparticle)
 	case 4:
 		{
 			int *pdest = (int *) sw32_d_viewbuffer + sw32_d_scantable[v] + u,
-				pixcolor = d_8to24table[(int) pparticle->color];
+				pixcolor = d_8to24table[(int) pparticle->icolor];
 			switch (pix) {
 				case 1:
 					count = 1 << sw32_d_y_aspect_shift;
@@ -368,6 +369,6 @@ sw32_D_DrawParticle (particle_t *pparticle)
 		break;
 	default:
 		Sys_Error("D_DrawParticles: unsupported r_pixbytes %i",
-				  sw32_r_pixbytes);
+				  sw32_ctx->pixbytes);
 	}
 }

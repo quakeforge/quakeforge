@@ -96,7 +96,7 @@ TryMerge (const face_t *f1, const face_t *f2)
 found_edge:
 	// check slope of connected lines
 	// if the slopes are colinear, the point can be removed
-	plane = &planes[f1->planenum];
+	plane = &planes.a[f1->planenum];
 	VectorCopy (plane->normal, planenormal);
 	if (f1->planeside)
 		VectorNegate (planenormal, planenormal);

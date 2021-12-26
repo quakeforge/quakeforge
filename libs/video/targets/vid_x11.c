@@ -64,7 +64,6 @@
 #include "compat.h"
 #include "context_x11.h"
 #include "d_iface.h"
-#include "dga_check.h"
 #include "vid_internal.h"
 
 static vid_internal_t vid_internal;
@@ -86,7 +85,7 @@ D_EndDirectRect (int x, int y, int width, int height)
 static void
 VID_shutdown (void *data)
 {
-	Sys_MaskPrintf (SYS_VID, "VID_shutdown\n");
+	Sys_MaskPrintf (SYS_vid, "VID_shutdown\n");
 	X11_CloseDisplay ();
 }
 
@@ -102,6 +101,7 @@ VID_Init (byte *palette, byte *colormap)
 
 	vid_internal.gl_context = X11_GL_Context;
 	vid_internal.sw_context = X11_SW_Context;
+	vid_internal.sw32_context = X11_SW32_Context;
 #ifdef HAVE_VULKAN
 	vid_internal.vulkan_context = X11_Vulkan_Context;
 #endif
@@ -114,18 +114,18 @@ VID_Init (byte *palette, byte *colormap)
 
 	srandom (getpid ());
 
-	VID_GetWindowSize (320, 200);
+	VID_GetWindowSize (640, 480);
 	X11_OpenDisplay ();
-	vid_internal.choose_visual ();
+	vid_internal.choose_visual (vid_internal.data);
 	X11_SetVidMode (viddef.width, viddef.height);
 	X11_CreateWindow (viddef.width, viddef.height);
 	X11_CreateNullCursor ();	// hide mouse pointer
-	vid_internal.create_context ();
+	vid_internal.create_context (vid_internal.data);
 
 	VID_InitGamma (palette);
-	viddef.vid_internal->set_palette (viddef.palette);
+	vid_internal.set_palette (vid_internal.data, viddef.palette);
 
-	Sys_MaskPrintf (SYS_VID, "Video mode %dx%d initialized.\n",
+	Sys_MaskPrintf (SYS_vid, "Video mode %dx%d initialized.\n",
 					viddef.width, viddef.height);
 
 	viddef.initialized = true;
@@ -140,6 +140,7 @@ VID_Init_Cvars ()
 	X11_Vulkan_Init_Cvars ();
 #endif
 	X11_GL_Init_Cvars ();
+	X11_SW_Init_Cvars ();
 }
 
 #if 0

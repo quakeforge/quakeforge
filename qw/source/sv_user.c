@@ -109,7 +109,7 @@ cvar_t     *sv_timecheck_decay;
 
 cvar_t     *sv_http_url_base;
 
-static void OutofBandPrintf (netadr_t where, const char *fmt, ...) __attribute__ ((format (printf, 2, 3)));
+static void OutofBandPrintf (netadr_t where, const char *fmt, ...) __attribute__ ((format (PRINTF, 2, 3)));
 
 //	USER STRINGCMD EXECUTION host_client and sv_player will be valid.
 
@@ -309,9 +309,9 @@ SV_Modellist_f (void *unused)
 static void
 SV_PreSpawn_f (void *unused)
 {
-	char *command;
-	int buf, size;
-	unsigned int check;
+	const char *command;
+	int         buf, size;
+	unsigned    check;
 	sizebuf_t  *msg;
 
 	if (host_client->state != cs_connected) {
@@ -333,7 +333,7 @@ SV_PreSpawn_f (void *unused)
 		// should be three numbers following containing checksums
 		check = atoi (Cmd_Argv (3));
 
-//      Sys_MaskPrintf (SYS_DEV, , "Client check = %d\n", check);
+//      Sys_MaskPrintf (SYS_dev, , "Client check = %d\n", check);
 
 		if (sv_mapcheck->int_val && check != sv.worldmodel->brush.checksum &&
 			check != sv.worldmodel->brush.checksum2) {
@@ -687,7 +687,7 @@ SV_NextUpload (void)
 			net_message->readcount, size);
 	net_message->readcount += size;
 
-	Sys_MaskPrintf (SYS_DEV, "UPLOAD: %d received\n", size);
+	Sys_MaskPrintf (SYS_dev, "UPLOAD: %d received\n", size);
 
 	if (percent != 100) {
 		MSG_ReliableWrite_Begin (&host_client->backbuf, svc_stufftext, 8);
@@ -758,7 +758,7 @@ SV_BeginDownload_f (void *unused)
 	file = _QFS_FOpenFile (name, !zip);
 
 	host_client->download = file;
-	host_client->downloadsize = Qfilesize (file);
+	host_client->downloadsize = file ? Qfilesize (file) : 0;
 	host_client->downloadcount = 0;
 
 	if (!host_client->download
@@ -820,7 +820,7 @@ SV_Say (qboolean team)
 {
 	char       *i, *p;
 	dstring_t  *text;
-	const char *t1 = 0, *t2, *type, *fmt;
+	const char *t1 = 0, *t2, *type;
 	client_t   *client;
 	int			tmp, j, cls = 0;
 	sizebuf_t  *dbuf;
@@ -862,7 +862,7 @@ SV_Say (qboolean team)
 		host_client->whensaid[host_client->whensaidhead] = realtime;
 	}
 
-	p = Hunk_TempAlloc (strlen (Cmd_Args (1)) + 1);
+	p = Hunk_TempAlloc (0, strlen (Cmd_Args (1)) + 1);
 	strcpy (p, Cmd_Args (1));
 
 	if (*p == '"') {
@@ -903,16 +903,15 @@ SV_Say (qboolean team)
 
 	text = dstring_new ();
 	if (host_client->spectator && (!sv_spectalk->int_val || team)) {
-		fmt = "[SPEC] %s: ";
 		type = "2";
+		dsprintf (text, "[SPEC] %s: ", host_client->name);
 	} else if (team) {
-		fmt = "(%s): ";
 		type = "1";
+		dsprintf (text, "(%s): ", host_client->name);
 	} else {
-		fmt = "%s: ";
 		type = "0";
+		dsprintf (text, "%s: ", host_client->name);
 	}
-	dsprintf (text, fmt, host_client->name);
 
 	if (sv_chat_e->func)
 		GIB_Event_Callback (sv_chat_e, 2, va (0, "%i", host_client->userid), p,
@@ -1952,7 +1951,7 @@ SV_ExecuteClientMessage (client_t *cl)
 											  checksumIndex - 1, seq_hash);
 
 				if (calculatedChecksum != checksum) {
-					Sys_MaskPrintf (SYS_DEV,
+					Sys_MaskPrintf (SYS_dev,
 									"Failed command checksum for %s(%d) "
 									"(%d != %d)\n",
 									cl->name, cl->netchan.incoming_sequence,

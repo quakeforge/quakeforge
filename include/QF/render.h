@@ -33,6 +33,7 @@
 #include "QF/qdefs.h" // FIXME
 #include "QF/vid.h"
 #include "QF/simd/types.h"
+#include "QF/ui/vrect.h"
 
 typedef enum {
 	pt_static,
@@ -52,6 +53,52 @@ typedef enum {
 	pt_fallfadespark,
 	pt_flame
 } ptype_t;
+
+typedef enum {
+	part_tex_dot,
+	part_tex_spark,
+	part_tex_smoke,
+} ptextype_t;
+
+typedef struct particle_s particle_t;
+
+// !!! if this is changed, it must be changed in d_ifacea.h too !!!
+struct particle_s {
+	vec4f_t     pos;
+	vec4f_t     vel;
+
+	union {
+		struct {
+			int			icolor;
+			int         pad[2];
+			float		alpha;
+		};
+		vec4f_t     color;
+	};
+
+	ptextype_t	tex;
+	float		ramp;
+	float		scale;
+	float		live;
+};
+
+typedef struct partparm_s {
+	vec4f_t     drag;	// drag[3] is grav scale
+	float       ramp;
+	float       ramp_max;
+	float       scale_rate;
+	float       alpha_rate;
+} partparm_t;
+
+typedef struct psystem_s {
+	uint32_t    maxparticles;
+	uint32_t    numparticles;
+	particle_t *particles;
+	partparm_t *partparams;
+	const int **partramps;
+
+	int         points_only;
+} psystem_t;
 
 extern struct vid_render_funcs_s *r_funcs;
 extern struct vid_render_data_s *r_data;
@@ -161,9 +208,9 @@ typedef struct {
 	vec4f_t     viewposition;
 	vec4f_t     viewrotation;
 
-	float		fov_x, fov_y;
-
 	int			ambientlight;
+
+	float		fov_x, fov_y;
 } refdef_t;
 
 // color shifts =============================================================

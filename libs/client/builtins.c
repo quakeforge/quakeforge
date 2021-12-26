@@ -697,7 +697,7 @@ version_number (void)
 	// leaving 17 for the revision count. There better not be 128k revisions
 	// between releases :P
 	version.i |= ver[3];
-	Sys_MaskPrintf (SYS_CSQC, "version: %.8e\n", version.f);
+	Sys_MaskPrintf (SYS_csqc, "version: %.8e\n", version.f);
 	return version.f;
 }
 

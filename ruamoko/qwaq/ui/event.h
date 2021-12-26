@@ -1,6 +1,8 @@
 #ifndef __qwaq_ui_event_h
 #define __qwaq_ui_event_h
 
+#include "ruamoko/qwaq/threading.h"
+
 typedef enum {
 	qe_mousedown = 0x0001,
 	qe_mouseup   = 0x0002,
@@ -14,9 +16,19 @@ typedef enum {
 } qwaq_key_event;
 
 typedef enum {
+	qe_shift     = 1,
+	qe_control   = 4,
+} qwaq_key_shift;
+
+typedef enum {
 	qe_command   = 0x0200,		// application level command
 	qe_broadcast = 0x0400,
 	qe_resize    = 0x0800,		// screen resized
+
+	qe_dev_add   = 0x1000,
+	qe_dev_rem   = 0x2000,
+	qe_axis      = 0x4000,
+	qe_button    = 0x8000,
 } qwaq_message_event;
 
 typedef enum {
@@ -56,6 +68,7 @@ typedef union qwaq_message_s {
 	int         int_val;
 	float       float_val;
 	float       vector_val[4];	// vector and quaternion
+	int         ivector_val[4];
 	double      double_val;
 #ifdef __QFCC__
 	void       *pointer_val;
@@ -68,6 +81,7 @@ typedef union qwaq_message_s {
 
 typedef struct qwaq_event_s {
 	int         what;
+	int         __pad;
 	double      when;		// NOTE: 1<<32 based
 	union {
 		qwaq_kevent_t key;
@@ -76,5 +90,46 @@ typedef struct qwaq_event_s {
 		qwaq_resize_t resize;
 	};
 } qwaq_event_t;
+
+#ifndef __QFCC__
+typedef struct qwaq_event_queue_s {
+	rwcond_t    cond;
+	RING_BUFFER (qwaq_event_t, QUEUE_SIZE) queue;
+} qwaq_event_queue_t;
+
+typedef enum {
+	esc_ground,
+	esc_escape,
+	esc_csi,
+	esc_mouse,
+	esc_sgr,
+	esc_key,
+} esc_state_t;
+
+typedef struct qwaq_input_resources_s {
+	progs_t    *pr;
+	int         initialized;
+
+	qwaq_event_queue_t events;
+
+	qwaq_pipe_t commands;
+	qwaq_pipe_t results;
+
+	dstring_t   escbuff;
+	esc_state_t escstate;
+	unsigned    button_state;
+	int         mouse_x;
+	int         mouse_y;
+	qwaq_event_t lastClick;
+	struct hashtab_s *key_sequences;
+
+	int         input_event_handler;
+} qwaq_input_resources_t;
+
+int qwaq_add_event (qwaq_input_resources_t *res, qwaq_event_t *event);
+void qwaq_input_enable_mouse (void);
+void qwaq_input_disable_mouse (void);
+
+#endif
 
 #endif//__qwaq_ui_event_h

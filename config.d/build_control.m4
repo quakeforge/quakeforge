@@ -4,17 +4,17 @@ dnl ==================================================================
 
 QF_WITH_TARGETS(
 	clients,
-	[  --with-clients=<list>   compile clients in <list>:],
-	[fbdev,sdl,svga,x11],dummy
+	[compile clients],
+	[fbdev,sdl,svga,win,x11],dummy
 )
 QF_WITH_TARGETS(
 	servers,
-	[  --with-servers=<list>   compile dedicated server:],
+	[compile dedicated servers],
 	[master,nq,qw,qtv],dummy
 )
 QF_WITH_TARGETS(
 	tools,
-	[  --with-tools=<list>     compile qf tools:],
+	[compile qf tools],
 	[bsp2img,carne,gsc,pak,qfbsp,qfcc,qflight,qflmp,qfmodelgen,qfspritegen,qfvis,qwaq,wad,wav],dummy
 )
 
@@ -26,6 +26,20 @@ NQ_TARGETS=""
 QWAQ_TARGETS=""
 QW_DESKTOP_DATA=""
 NQ_DESKTOP_DATA=""
+
+BSP2IMG_TARGETS=""
+CARNE_TARGETS=""
+PAK_TARGETS=""
+QFBSP_TARGETS=""
+QFCC_TARGETS=""
+QFLIGHT_TARGETS=""
+QFLMP_TARGETS=""
+QFMODELGEN_TARGETS=""
+QFSPRITEGEN_TARGETS=""
+QFVIS_TARGETS=""
+WAD_TARGETS=""
+WAV_TARGETS=""
+VKGEN_TARGETS=""
 
 CD_TARGETS=""
 SND_TARGETS=""
@@ -106,14 +120,6 @@ if test "x$HAVE_SDL" = xyes; then
 		NQ_DESKTOP_DATA="$NQ_DESKTOP_DATA desktop/quakeforge-nq-sdl.desktop"
 		CL_TARGETS="$CL_TARGETS SDL"
 		VID_TARGETS="$VID_TARGETS libs/video/targets/libQFsdl.la"
-		if test "$HAVE_VULKAN" = "yes"; then
-			QF_NEED(vid_render, [vulkan])
-			QF_NEED(render, [vulkan])
-			QF_NEED(alias, [vulkan])
-			QF_NEED(brush, [vulkan])
-			QF_NEED(iqm, [vulkan])
-			QF_NEED(sprite, [vulkan])
-		fi
 		QF_NEED(vid_render, [sw sw32 gl glsl])
 		QF_NEED(render, [sw sw32 gl glsl])
 		QF_NEED(models, [sw gl glsl])
@@ -154,26 +160,37 @@ if test "x$HAVE_SVGA" = xyes; then
 		QF_NEED(libs,[util gamecode ruamoko gib audio image models video console net qw client])
 	fi
 fi
-#if test "x$mingw" = xyes; then
-#	if test "x$ENABLE_clients_wgl" = xyes; then
-#		QW_TARGETS="$QW_TARGETS qw-client-wgl\$(EXEEXT)"
-#		NQ_TARGETS="$NQ_TARGETS nq-wgl\$(EXEEXT)"
-#		CL_TARGETS="$CL_TARGETS WGL"
-#		VID_TARGETS="$VID_TARGETS libs/video/targets/libQFwgl.la"
-#		QF_NEED(vid_render, [gl])
-#		QF_NEED(render, [gl])
-#		QF_NEED(models, [gl])
-#		QF_NEED(alias, [gl])
-#		QF_NEED(brush, [gl])
-#		QF_NEED(iqm, [gl])
-#		QF_NEED(sprite, [gl])
-#		QF_NEED(vid, [common])
-#		QF_NEED(qw, [client common])
-#		QF_NEED(nq, [client common])
-#		QF_NEED(console, [client])
-#		QF_NEED(libs,[util gamecode ruamoko gib audio image models video console net qw client])
-#	fi
-#fi
+if test "x$mingw" = xyes; then
+	if test "x$ENABLE_clients_win" = xyes; then
+		QW_TARGETS="$QW_TARGETS qw-client-win\$(EXEEXT)"
+		NQ_TARGETS="$NQ_TARGETS nq-win\$(EXEEXT)"
+		CL_TARGETS="$CL_TARGETS WIN"
+		VID_TARGETS="$VID_TARGETS libs/video/targets/libQFwin.la"
+		if test "$HAVE_VULKAN" = "yes"; then
+			QF_NEED(vid_render, [vulkan])
+			QF_NEED(render, [vulkan])
+			QF_NEED(models, [vulkan])
+			QF_NEED(alias, [vulkan])
+			QF_NEED(brush, [vulkan])
+			QF_NEED(iqm, [vulkan])
+			QF_NEED(sprite, [vulkan])
+		fi
+		QF_NEED(vid_render, [sw sw32 gl glsl])
+		QF_NEED(models, [sw gl glsl])
+		QF_NEED(alias, [sw gl glsl])
+		QF_NEED(brush, [sw gl glsl])
+		QF_NEED(iqm, [sw gl glsl])
+		QF_NEED(sprite, [sw gl glsl])
+		if test "x$ASM_ARCH" = "xyes"; then
+			QF_NEED(swrend, [asm])
+		fi
+		QF_NEED(vid, [common win])
+		QF_NEED(qw, [client common])
+		QF_NEED(nq, [client common])
+		QF_NEED(console, [client])
+		QF_NEED(libs,[util gamecode ruamoko gib audio image models video console net qw client])
+	fi
+fi
 
 unset SV_TARGETS
 if test "x$ENABLE_servers_nq" = xyes; then
@@ -209,85 +226,121 @@ if test "x$ENABLE_servers_qw" = xyes; then
 fi
 
 if test "x$ENABLE_tools_bsp2img" = xyes; then
+	BSP2IMG_TARGETS="bsp2img\$(EXEEXT)"
 	QF_NEED(tools,[bsp2img])
 	QF_NEED(libs,[image util])
 fi
 if test "x$ENABLE_tools_carne" = xyes; then
+	CARNE_TARGETS="carne\$(EXEEXT)"
 	QF_NEED(tools,[carne])
 	QF_NEED(libs,[gib ruamoko gamecode util])
 fi
 if test "x$ENABLE_tools_pak" = xyes; then
+	PAK_TARGETS="pak\$(EXEEXT)"
 	QF_NEED(tools,[pak])
 	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qfbsp" = xyes; then
+	QFBSP_TARGETS="qfbsp\$(EXEEXT)"
 	QF_NEED(tools,[qfbsp])
 	QF_NEED(libs,[models image util])
 fi
 if test "x$ENABLE_tools_qfcc" = xyes; then
+	QFCC_TARGETS="qfcc qfprogs\$(EXEEXT)"
 	QF_NEED(tools,[qfcc])
 	QF_NEED(libs,[gamecode util])
 fi
 if test "x$ENABLE_tools_qflight" = xyes; then
+	QFLIGHT_TARGETS="qflight\$(EXEEXT)"
 	QF_NEED(tools,[qflight])
 	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qflmp" = xyes; then
+	QFLMP_TARGETS="qflmp\$(EXEEXT)"
 	QF_NEED(tools,[qflmp])
 	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qfmodelgen" = xyes; then
+	QFMODELGEN_TARGETS="qfmodelgen\$(EXEEXT)"
 	QF_NEED(tools,[qfmodelgen])
 	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qfspritegen" = xyes; then
+	QFSPRITEGEN_TARGETS="qfspritegen\$(EXEEXT)"
 	QF_NEED(tools,[qfspritegen])
 	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qfvis" = xyes; then
+	QFVIS_TARGETS="qfvis\$(EXEEXT)"
 	QF_NEED(tools,[qfvis])
 	QF_NEED(libs,[util])
 fi
 if test "x$ENABLE_tools_qwaq" = xyes; then
-	if test "x$HAVE_PANEL" = xyes -a "x$HAVE_PTHREAD" = xyes; then
+	if test "x$HAVE_NCURSES" == "xyes" -a "x$HAVE_PANEL" = xyes -a "x$HAVE_PTHREAD" = xyes; then
 		QWAQ_TARGETS="$QWAQ_TARGETS ruamoko/qwaq/qwaq-curses\$(EXEEXT)"
+		dnl FIXME move key code (maybe to ui?)
+		QF_NEED(vid, [common])
+	fi
+	if test "x$HAVE_PTHREAD" = xyes; then
+		QWAQ_TARGETS="$QWAQ_TARGETS ruamoko/qwaq/qwaq-cmd\$(EXEEXT)"
 	fi
 	QF_NEED(tools,[qfcc])
 	QF_NEED(ruamoko,[qwaq])
 	QF_NEED(libs,[ruamoko gamecode util])
 fi
 if test "x$ENABLE_tools_wad" = xyes; then
+	WAD_TARGETS="wad\$(EXEEXT)"
 	QF_NEED(tools,[wad])
 	QF_NEED(libs,[image util])
 fi
 if test "x$ENABLE_tools_wav" = xyes; then
+	WAV_TARGETS="qfwavinfo\$(EXEEXT)"
 	QF_NEED(tools,[wav])
 	QF_NEED(libs,[util])
+fi
+if test "x$render_need_vulkan" = xyes; then
+	VKGEN_TARGETS="vkgen.dat\$(EXEEXT)"
+	QF_NEED(tools,[qfcc pak qwaq])
 fi
 
 QF_NEED(top, [libs hw nq qtv qw])
 
+QF_PROCESS_NEED_LIST(tools,[bsp2img carne pak qfbsp qfcc qflight qflmp qfmodelgen qfspritegen qfvis wad wav])
 QF_PROCESS_NEED_FUNC(tools,[bsp2img carne pak qfbsp qfcc qflight qflmp qfmodelgen qfspritegen qfvis wad wav], QF_NEED(top,tools))
+
+QF_PROCESS_NEED_LIST(libs,[util gamecode ruamoko gib audio image models video console net qw client])
+
+QF_PROCESS_NEED_LIST(ruamoko,[qwaq])
 
 if test "$ENABLE_tools_qfcc" = "yes" -a "$ENABLE_tools_pak" = "yes"; then
 	QF_NEED(top, [ruamoko])
 	qfac_qfcc_include_qf="\$(qfcc_include_qf)"
+	qfac_qfcc_include_qf_input="\$(qfcc_include_qf_input)"
 fi
 QF_SUBST(qfac_qfcc_include_qf)
+QF_SUBST(qfac_qfcc_include_qf_input)
 
 if test x"${top_need_libs}" = xyes; then
 	qfac_include_qf="\$(include_qf)"
 	qfac_include_qf_gl="\$(include_qf_gl)"
 	qfac_include_qf_glsl="\$(include_qf_glsl)"
+	qfac_include_qf_input="\$(include_qf_input)"
 	qfac_include_qf_math="\$(include_qf_math)"
 	qfac_include_qf_plugin="\$(include_qf_plugin)"
+	qfac_include_qf_scene="\$(include_qf_scene)"
+	qfac_include_qf_simd="\$(include_qf_simd)"
+	qfac_include_qf_ui="\$(include_qf_ui)"
 	qfac_include_qf_vulkan="\$(include_qf_vulkan)"
 fi
 QF_SUBST(qfac_include_qf)
 QF_SUBST(qfac_include_qf_gl)
 QF_SUBST(qfac_include_qf_glsl)
+QF_SUBST(qfac_include_qf_input)
 QF_SUBST(qfac_include_qf_math)
 QF_SUBST(qfac_include_qf_plugin)
+QF_SUBST(qfac_include_qf_scene)
+QF_SUBST(qfac_include_qf_simd)
+QF_SUBST(qfac_include_qf_ui)
 QF_SUBST(qfac_include_qf_vulkan)
 
 progs_gz=
@@ -296,28 +349,30 @@ if test "$HAVE_ZLIB" = "yes"; then
 fi
 QF_SUBST(progs_gz)
 
+QF_PROCESS_NEED_LIST(top, [libs hw nq qtv qw tools ruamoko])
+
 QF_PROCESS_NEED_LIBS(swrend, [asm])
 QF_PROCESS_NEED_LIBS(render, [gl glsl sw sw32 vulkan], [libs/video/renderer])
+QF_PROCESS_NEED_LIST(vid_render, [gl glsl sw sw32 vulkan])
 QF_PROCESS_NEED_LIBS(models, [gl glsl sw vulkan], [libs/models])
 QF_PROCESS_NEED_LIBS(alias, [gl glsl sw vulkan], [libs/models/alias])
 QF_PROCESS_NEED_LIBS(brush, [gl glsl sw vulkan], [libs/models/brush])
 QF_PROCESS_NEED_LIBS(iqm, [gl glsl sw vulkan], [libs/models/iqm])
 QF_PROCESS_NEED_LIBS(sprite, [gl glsl sw vulkan], [libs/models/sprite])
 
-QF_PROCESS_NEED_LIBS(vid, [common sdl svga x11], [libs/video/targets])
-QF_PROCESS_NEED_LIBS(qw, [client common sdl server], [qw/source], a)
-QF_PROCESS_NEED_LIBS(nq, [client common sdl server], [nq/source], a)
+QF_PROCESS_NEED_LIBS(input, [evdev], [libs/input])
+QF_PROCESS_NEED_LIBS(vid, [common sdl svga win x11], [libs/video/targets])
+QF_PROCESS_NEED_LIBS(qw, [client common sdl win server], [qw/source], a)
+QF_PROCESS_NEED_LIBS(nq, [client common sdl win server], [nq/source], a)
 
 if test -n "$CL_TARGETS"; then
 	CD_TARGETS="libs/audio/libQFcd.la"
 	SND_TARGETS="libs/audio/libQFsound.la"
-	AUDIO_TARGETS="testsound\$(EXEEXT)"
-	JOY_TARGETS="libs/video/targets/libQFjs.la"
+	AUDIO_TARGETS="libs/audio/test/testsound\$(EXEEXT)"
 else
 	unset CDTYPE
 	unset SOUND_TYPES
 	CD_TARGETS=""
-	JOY_TARGETS=""
 	SND_TARGETS=""
 	AUDIO_TARGETS=""
 fi
@@ -339,7 +394,8 @@ QF_SUBST(PREFER_NON_PIC)
 QF_SUBST(STATIC)
 
 AC_ARG_WITH(static-plugins,
-[  --with-static-plugins   build plugins into executable rather than separate],
+	AS_HELP_STRING([--with-static-plugins],
+		[build plugins into executable rather than separate]),
 	static_plugins="$withval", static_plugins=auto)
 if test "x$static_plugins" = xauto; then
 	if test "x$enable_shared" = xno -o "x$SYSTYPE" = xWIN32; then
@@ -351,8 +407,8 @@ if test "x$static_plugins" = xyes; then
 	QF_PROCESS_NEED_STATIC_PLUGINS(console, [server], [libs/console], [server])
 	QF_PROCESS_NEED_STATIC_PLUGINS(console, [client], [libs/console], [client])
 
-	QF_PROCESS_NEED_STATIC_PLUGINS(snd_output, [sdl mme sgi sun win dx oss alsa], [libs/audio/targets])
-	QF_PROCESS_NEED_STATIC_PLUGINS(snd_render, [jack default], [libs/audio/renderer])
+	QF_PROCESS_NEED_STATIC_PLUGINS(snd_output, [sdl mme sgi sun win dx oss jack alsa], [libs/audio/targets])
+	QF_PROCESS_NEED_STATIC_PLUGINS(snd_render, [default], [libs/audio/renderer])
 	QF_PROCESS_NEED_STATIC_PLUGINS(cd, [xmms sdl sgi win linux file], [libs/audio])
 	AC_DEFINE(STATIC_PLUGINS, 1, [Define this if you are building static plugins])
 	if test -n "$SOUND_TYPES"; then
@@ -365,8 +421,8 @@ else
 	QF_PROCESS_NEED_PLUGINS(vid_render, [sw sw32 glsl gl vulkan], [libs/video/renderer])
 	QF_PROCESS_NEED_PLUGINS(console, [server], [libs/console], [server])
 	QF_PROCESS_NEED_PLUGINS(console, [client], [libs/console], [client])
-	QF_PROCESS_NEED_PLUGINS(snd_output, [sdl mme sgi sun win dx oss alsa], [libs/audio/targets])
-	QF_PROCESS_NEED_PLUGINS(snd_render, [jack default], [libs/audio/renderer])
+	QF_PROCESS_NEED_PLUGINS(snd_output, [sdl mme sgi sun win dx oss jack alsa], [libs/audio/targets])
+	QF_PROCESS_NEED_PLUGINS(snd_render, [default], [libs/audio/renderer])
 	QF_PROCESS_NEED_PLUGINS(cd, [xmms sdl sgi win linux file], [libs/audio])
 fi
 
@@ -381,13 +437,27 @@ QF_SUBST(QWAQ_TARGETS)
 QF_SUBST(QW_TARGETS)
 QF_SUBST(QW_DESKTOP_DATA)
 QF_SUBST(CD_TARGETS)
-QF_SUBST(JOY_TARGETS)
 QF_SUBST(SND_TARGETS)
 QF_SUBST(AUDIO_TARGETS)
 QF_SUBST(VID_MODEL_TARGETS)
 QF_SUBST(VID_REND_TARGETS)
 QF_SUBST(VID_REND_NOINST_TARGETS)
 QF_SUBST(VID_TARGETS)
+
+QF_SUBST(BSP2IMG_TARGETS)
+QF_SUBST(CARNE_TARGETS)
+QF_SUBST(PAK_TARGETS)
+QF_SUBST(QFBSP_TARGETS)
+QF_SUBST(QFCC_TARGETS)
+QF_SUBST(QFLIGHT_TARGETS)
+QF_SUBST(QFLMP_TARGETS)
+QF_SUBST(QFMODELGEN_TARGETS)
+QF_SUBST(QFSPRITEGEN_TARGETS)
+QF_SUBST(QFVIS_TARGETS)
+QF_SUBST(WAD_TARGETS)
+QF_SUBST(WAV_TARGETS)
+
+QF_SUBST(VKGEN_TARGETS)
 
 QF_DEPS(BSP2IMG,
 	[],
@@ -473,4 +543,9 @@ QF_DEPS(WAV,
 	[],
 	[$(top_builddir)/libs/util/libQFutil.la],
 	[$(WIN32_LIBS)],
+)
+QF_DEPS(VKGEN,
+	[],
+	[],
+	[],
 )

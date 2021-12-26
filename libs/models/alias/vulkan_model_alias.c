@@ -40,6 +40,7 @@
 
 #include <stdlib.h>
 
+#include "QF/cvar.h"
 #include "QF/va.h"
 
 #include "QF/modelgen.h"
@@ -69,6 +70,7 @@ skin_clear (int skin_offset, aliashdr_t *hdr, vulkan_ctx_t *ctx)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	qfv_alias_skin_t *skin = (qfv_alias_skin_t *) ((byte *) hdr + skin_offset);
 
+	Vulkan_AliasRemoveSkin (ctx, skin);
 	dfunc->vkDestroyImageView (device->dev, skin->view, 0);
 	dfunc->vkDestroyImage (device->dev, skin->image, 0);
 	dfunc->vkFreeMemory (device->dev, skin->memory, 0);
@@ -82,6 +84,8 @@ vulkan_alias_clear (model_t *m, void *data)
 	qfv_devfuncs_t *dfunc = device->funcs;
 	aliashdr_t *hdr;
 	qfv_alias_mesh_t *mesh;
+
+	QFV_DeviceWaitIdle (device);
 
 	m->needload = true;	//FIXME is this right?
 	if (!(hdr = m->aliashdr)) {
@@ -112,6 +116,7 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 					 int snum, int gnum, qboolean group,
 					 maliasskindesc_t *skindesc, vulkan_ctx_t *ctx)
 {
+	qfvPushDebug (ctx, va (ctx->va_ctx, "alias.load_skin: %s", alias_ctx->mod->name));
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
 	aliashdr_t *header = alias_ctx->header;
@@ -119,7 +124,7 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 	byte       *tskin;
 	int         w, h;
 
-	skin = Hunk_Alloc (sizeof (qfv_alias_skin_t));
+	skin = Hunk_Alloc (0, sizeof (qfv_alias_skin_t));
 	QuatCopy (vid.palette32 + (TOP_RANGE + 15) * 4, skin->colora);
 	QuatCopy (vid.palette32 + (BOTTOM_RANGE + 15) * 4, skin->colorb);
 	skindesc->skin = (byte *) skin - (byte *) header;
@@ -165,34 +170,30 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 	byte       *colb_data = QFV_PacketExtend (packet, skinsize * 4);
 	byte       *glow_data = QFV_PacketExtend (packet, skinsize * 4);
 
-	Mod_CalcFullbright (tskin, tskin + skinsize, skinsize);
+	Mod_CalcFullbright (tskin + skinsize, tskin, skinsize);
 	Vulkan_ExpandPalette (glow_data, tskin + skinsize, vid.palette, 1,
 						  skinsize);
 	Mod_ClearFullbright (tskin, tskin, skinsize);
 
-	Skin_CalcTopColors (tskin, tskin + skinsize, skinsize);
+	Skin_CalcTopColors (tskin + skinsize, tskin, skinsize);
 	Vulkan_ExpandPalette (cola_data, tskin + skinsize, vid.palette, 1,
 						  skinsize);
 	Skin_ClearTopColors (tskin, tskin, skinsize);
 
-	Skin_CalcBottomColors (tskin, tskin + skinsize, skinsize);
+	Skin_CalcBottomColors (tskin + skinsize, tskin, skinsize);
 	Vulkan_ExpandPalette (colb_data, tskin + skinsize, vid.palette, 1,
 						  skinsize);
 	Skin_ClearBottomColors (tskin, tskin, skinsize);
 
 	Vulkan_ExpandPalette (base_data, tskin, vid.palette, 1, skinsize);
 
-	VkImageMemoryBarrier barrier;
-	qfv_pipelinestagepair_t stages;
-
-	stages = imageLayoutTransitionStages[qfv_LT_Undefined_to_TransferDst];
-	barrier = imageLayoutTransitionBarriers[qfv_LT_Undefined_to_TransferDst];
-	barrier.image = skin->image;
-	barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-	barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-	dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+	qfv_imagebarrier_t ib = imageBarriers[qfv_LT_Undefined_to_TransferDst];
+	ib.barrier.image = skin->image;
+	ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+	ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
 								 0, 0, 0, 0, 0,
-								 1, &barrier);
+								 1, &ib.barrier);
 
 	VkBufferImageCopy copy = {
 		packet->offset, 0, 0,
@@ -205,14 +206,13 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 								   1, &copy);
 
 	if (mipLevels == 1) {
-		stages = imageLayoutTransitionStages[qfv_LT_TransferDst_to_ShaderReadOnly];
-		barrier=imageLayoutTransitionBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
-		barrier.image = skin->image;
-		barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
-		barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
-		dfunc->vkCmdPipelineBarrier (packet->cmd, stages.src, stages.dst,
+		ib = imageBarriers[qfv_LT_TransferDst_to_ShaderReadOnly];
+		ib.barrier.image = skin->image;
+		ib.barrier.subresourceRange.levelCount = VK_REMAINING_MIP_LEVELS;
+		ib.barrier.subresourceRange.layerCount = VK_REMAINING_ARRAY_LAYERS;
+		dfunc->vkCmdPipelineBarrier (packet->cmd, ib.srcStages, ib.dstStages,
 									 0, 0, 0, 0, 0,
-									 1, &barrier);
+									 1, &ib.barrier);
 	} else {
 		QFV_GenerateMipMaps (device, packet->cmd, skin->image,
 							 mipLevels, w, h, 4);
@@ -222,6 +222,9 @@ Vulkan_Mod_LoadSkin (mod_alias_ctx_t *alias_ctx, byte *skinpix, int skinsize,
 
 	free (tskin);
 
+	Vulkan_AliasAddSkin (ctx, skin);
+
+	qfvPopDebug (ctx);
 	return skinpix + skinsize;
 }
 
@@ -410,23 +413,17 @@ Vulkan_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 
 	header->poseverts = numverts;
 
+	qfv_bufferbarrier_t bb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
 	VkBufferMemoryBarrier wr_barriers[] = {
-		{	VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
-			0, VK_ACCESS_TRANSFER_WRITE_BIT,
-			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
-			vbuff, 0, vert_size},
-		{	VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
-			0, VK_ACCESS_TRANSFER_WRITE_BIT,
-			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
-			uvbuff, 0, uv_size},
-		{	VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
-			0, VK_ACCESS_TRANSFER_WRITE_BIT,
-			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
-			ibuff, 0, ind_size},
+		bb.barrier, bb.barrier, bb.barrier,
 	};
-	dfunc->vkCmdPipelineBarrier (packet->cmd,
-								 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-								 VK_PIPELINE_STAGE_TRANSFER_BIT,
+	wr_barriers[0].buffer = vbuff;
+	wr_barriers[0].size = vert_size;
+	wr_barriers[1].buffer = uvbuff;
+	wr_barriers[1].size = uv_size;
+	wr_barriers[2].buffer = ibuff;
+	wr_barriers[2].size = ind_size;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
 								 0, 0, 0, 3, wr_barriers, 0, 0);
 	VkBufferCopy copy_region[] = {
 		{ packet->offset, 0, vert_size },
@@ -439,28 +436,26 @@ Vulkan_Mod_MakeAliasModelDisplayLists (mod_alias_ctx_t *alias_ctx, void *_m,
 							uvbuff, 1, &copy_region[1]);
 	dfunc->vkCmdCopyBuffer (packet->cmd, stage->buffer,
 							ibuff, 1, &copy_region[2]);
+	// both qfv_BB_TransferWrite_to_VertexAttrRead and
+	// qfv_BB_TransferWrite_to_IndexRead have the same stage flags
+	bb = bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead];
 	VkBufferMemoryBarrier rd_barriers[] = {
-		{	VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
-			VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
-			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
-			vbuff, 0, vert_size },
-		{	VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
-			VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT,
-			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
-			uvbuff, 0, uv_size },
-		{	VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
-			VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_INDEX_READ_BIT,
-			VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED,
-			ibuff, 0, ind_size },
+		bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead].barrier,
+		bufferBarriers[qfv_BB_TransferWrite_to_VertexAttrRead].barrier,
+		bufferBarriers[qfv_BB_TransferWrite_to_IndexRead].barrier,
 	};
-	dfunc->vkCmdPipelineBarrier (packet->cmd,
-								 VK_PIPELINE_STAGE_TRANSFER_BIT,
-								 VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
+	rd_barriers[0].buffer = vbuff;
+	rd_barriers[0].size = vert_size;
+	rd_barriers[1].buffer = uvbuff;
+	rd_barriers[1].size = uv_size;
+	rd_barriers[2].buffer = ibuff;
+	rd_barriers[2].size = ind_size;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
 								 0, 0, 0, 3, rd_barriers, 0, 0);
 	QFV_PacketSubmit (packet);
 	QFV_DestroyStagingBuffer (stage);
 
-	qfv_alias_mesh_t *mesh = Hunk_Alloc (sizeof (qfv_alias_mesh_t));
+	qfv_alias_mesh_t *mesh = Hunk_Alloc (0, sizeof (qfv_alias_mesh_t));
 	mesh->vertex_buffer = vbuff;
 	mesh->uv_buffer = uvbuff;
 	mesh->index_buffer = ibuff;

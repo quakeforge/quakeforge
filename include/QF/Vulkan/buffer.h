@@ -45,4 +45,8 @@ VkBufferView QFV_CreateBufferView (struct qfv_device_s *device,
 								   VkBuffer buffer, VkFormat format,
 								   VkDeviceSize offset, VkDeviceSize size);
 
+VkDeviceSize QFV_NextOffset (VkDeviceSize current,
+							 const VkMemoryRequirements *requirements)
+	__attribute__((pure));
+
 #endif//__QF_Vulkan_buffer_h

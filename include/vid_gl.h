@@ -1,11 +1,11 @@
 #ifndef __vid_gl_h
 #define __vid_gl_h
 
-// GLXContext is a pointer to opaque data
-typedef struct __GLXcontextRec *GLXContext;
+// GL_context is a pointer to opaque data
+typedef struct GL_context *GL_context;
 
 typedef struct gl_ctx_s {
-	GLXContext  context;
+	GL_context  context;
 	void        (*load_gl) (void);
 	void        (*choose_visual) (struct gl_ctx_s *ctx);
 	void        (*create_context) (struct gl_ctx_s *ctx);

@@ -196,7 +196,7 @@ plitem_t *PL_ObjectForKey (const plitem_t *dict, const char *key);
 	isn't a dictionary (includes if \a dict is null).
 	\note	You are responsible for freeing the returned object.
 */
-plitem_t *PL_RemoveObjectForKey (const plitem_t *dict, const char *key);
+plitem_t *PL_RemoveObjectForKey (plitem_t *dict, const char *key);
 
 /** Retrieve a key from a dictionary object.
 
@@ -500,7 +500,7 @@ int PL_ParseLabeledArray (const plfield_t *field, const plitem_t *dict,
 */
 int PL_ParseSymtab (const plfield_t *field, const plitem_t *dict,
 					void *data, plitem_t *messages, void *context);
-void __attribute__((format(printf,3,4)))
+void __attribute__((format(PRINTF,3,4)))
 PL_Message (plitem_t *messages, const plitem_t *item, const char *fmt, ...);
 
 ///@}

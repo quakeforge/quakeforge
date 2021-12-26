@@ -37,12 +37,23 @@
 
 #include "libs/util/cexpr-parse.h"
 
+#undef uint
+#define uint unsigned
+
 #define BINOP(pre, opname, type, op)										\
 static void																	\
 pre##_##opname (const exprval_t *a, const exprval_t *b, exprval_t *c,		\
 				exprctx_t *ctx)												\
 {																			\
 	(*(type *) c->value) = (*(type *) a->value) op (*(type *) b->value);	\
+}
+
+#define CASTOP(dst_type, src_type)											\
+static void																	\
+dst_type##_##cast##_##src_type (const exprval_t *a, const exprval_t *src,	\
+							 exprval_t *res, exprctx_t *ctx)				\
+{																			\
+	(*(dst_type *) res->value) = *(src_type *) src->value;					\
 }
 
 #define UNOP(pre, opname, type, op)									\
@@ -291,12 +302,8 @@ float_div_quat (const exprval_t *val1, const exprval_t *val2,
 	*c = a * qconjf (b) / dotf (b, b);
 }
 
-static void
-float_cast_int (const exprval_t *val1, const exprval_t *src, exprval_t *result,
-			    exprctx_t *ctx)
-{
-	*(float *) result->value = *(int *) src->value;
-}
+CASTOP (float, int)
+CASTOP (float, uint)
 
 UNOP(float, pos, float, +)
 UNOP(float, neg, float, -)
@@ -313,6 +320,7 @@ binop_t float_binops[] = {
 	{ '%', &cexpr_float, &cexpr_float, float_rem },
 	{ MOD, &cexpr_float, &cexpr_float, float_mod },
 	{ '=', &cexpr_int,  &cexpr_float, float_cast_int },
+	{ '=', &cexpr_uint,  &cexpr_float, float_cast_uint },
 	{ '=', &cexpr_plitem, &cexpr_float, cexpr_cast_plitem },
 	{}
 };
@@ -359,6 +367,10 @@ double_mod (const exprval_t *val1, const exprval_t *val2, exprval_t *result,
 	*(double *) result->value = a - b * floorf (a / b);
 }
 
+CASTOP (double, int)
+CASTOP (double, uint)
+CASTOP (double, float)
+
 UNOP(double, pos, double, +)
 UNOP(double, neg, double, -)
 UNOP(double, tnot, double, !)
@@ -370,6 +382,9 @@ binop_t double_binops[] = {
 	{ '/', &cexpr_double, &cexpr_double, double_div },
 	{ '%', &cexpr_double, &cexpr_double, double_rem },
 	{ MOD, &cexpr_double, &cexpr_double, double_mod },
+	{ '=', &cexpr_int,    &cexpr_double, double_cast_int },
+	{ '=', &cexpr_uint,   &cexpr_double, double_cast_uint },
+	{ '=', &cexpr_uint,   &cexpr_double, double_cast_float },
 	{ '=', &cexpr_plitem, &cexpr_double, cexpr_cast_plitem },
 	{}
 };

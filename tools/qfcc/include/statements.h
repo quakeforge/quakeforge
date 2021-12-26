@@ -39,7 +39,10 @@ typedef enum {
 	op_temp,
 	op_alias,
 	op_nil,
+	op_pseudo,
 } op_type_e;
+
+struct expr_s;
 
 typedef struct tempop_s {
 	struct def_s   *def;
@@ -52,6 +55,13 @@ typedef struct tempop_s {
 	int         users;
 	int         flowaddr;		///< "address" of temp in flow analysis, != 0
 } tempop_t;
+
+typedef struct pseudoop_s {
+	struct pseudoop_s *next;
+	const char *name;
+	struct flowvar_s *flowvar;
+	void      (*uninitialized) (struct expr_s *expr, struct pseudoop_s *op);
+} pseudoop_t;
 
 typedef struct operand_s {
 	struct operand_s *next;
@@ -66,7 +76,8 @@ typedef struct operand_s {
 		struct ex_label_s *label;
 		tempop_t    tempop;
 		struct operand_s *alias;
-	} o;
+		pseudoop_t *pseudoop;
+	};
 } operand_t;
 
 /** Overall type of statement.
@@ -101,6 +112,9 @@ typedef struct statement_s {
 	operand_t  *opc;
 	struct expr_s *expr;		///< source expression for this statement
 	int         number;			///< number of this statement in function
+	operand_t  *use;			///< list of pseudo operands used
+	operand_t  *def;			///< list of pseudo operands defined
+	operand_t  *kill;			///< list of pseudo operands killed
 } statement_t;
 
 typedef struct sblock_s {

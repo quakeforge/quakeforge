@@ -106,7 +106,7 @@ entity_state_t cl_entities[MAX_CLIENTS][UPDATE_BACKUP+1][MAX_PACKET_ENTITIES]; /
 double      sv_frametime;
 double      realtime;					// without any filtering or bounding
 
-int         host_hunklevel;
+size_t      host_hunklevel;
 
 netadr_t    master_adr[MAX_MASTERS];	// address of group servers
 
@@ -255,7 +255,7 @@ SV_Shutdown (void *data)
 	Sends a datagram to all the clients informing them of the server crash,
 	then exits
 */
-static __attribute__((format(printf, 1, 0))) void
+static __attribute__((format(PRINTF, 1, 0))) void
 SV_Error (const char *error, va_list argptr)
 {
 	static qboolean inerror = false;
@@ -627,7 +627,7 @@ SVC_Log (void)
 		return;
 	}
 
-	Sys_MaskPrintf (SYS_DEV, "sending log %i to %s\n", svs.logsequence - 1,
+	Sys_MaskPrintf (SYS_dev, "sending log %i to %s\n", svs.logsequence - 1,
 					NET_AdrToString (net_from));
 
 //	snprintf (data, sizeof (data), "stdlog %i\n", svs.logsequence - 1);
@@ -1788,7 +1788,7 @@ SV_ReadPackets (void)
 			if (cl->netchan.qport != qport)
 				continue;
 			if (cl->netchan.remote_address.port != net_from.port) {
-				Sys_MaskPrintf (SYS_DEV, "SV_ReadPackets: fixing up a "
+				Sys_MaskPrintf (SYS_dev, "SV_ReadPackets: fixing up a "
 								"translated port\n");
 				cl->netchan.remote_address.port = net_from.port;
 			}
@@ -2446,11 +2446,11 @@ SV_InitNet (void)
 	sv_net_initialized = 1;
 }
 
-static void
+static memhunk_t *
 SV_Init_Memory (void)
 {
 	int         mem_parm = COM_CheckParm ("-mem");
-	int         mem_size;
+	size_t      mem_size;
 	void       *mem_base;
 
 	sv_mem_size = Cvar_Get ("sv_mem_size", "8", CVAR_NONE, NULL,
@@ -2464,7 +2464,7 @@ SV_Init_Memory (void)
 
 	Cvar_SetFlags (sv_mem_size, sv_mem_size->flags | CVAR_ROM);
 
-	mem_size = (int) (sv_mem_size->value * 1024 * 1024);
+	mem_size = ((size_t) sv_mem_size->value * 1024 * 1024);
 
 	if (mem_size < MINIMUM_MEMORY)
 		Sys_Error ("Only %4.1f megs of memory reported, can't execute game",
@@ -2473,9 +2473,9 @@ SV_Init_Memory (void)
 	mem_base = Sys_Alloc (mem_size);
 
 	if (!mem_base)
-		Sys_Error ("Can't allocate %d", mem_size);
+		Sys_Error ("Can't allocate %zd", mem_size);
 
-	Memory_Init (mem_base, mem_size);
+	return Memory_Init (mem_base, mem_size);
 }
 
 void
@@ -2488,14 +2488,14 @@ SV_Init (void)
 
 	Sys_Init ();
 	GIB_Init (true);
-	COM_ParseConfig ();
+	COM_ParseConfig (sv_cbuf);
 
 	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
 
 	// snax: Init experimental object system and run a test
 	//Object_Init();
 
-	SV_Init_Memory ();
+	memhunk_t  *hunk = SV_Init_Memory ();
 
 	QFS_GamedirCallback (gamedir_f);
 	svs.maxclients = MAX_CLIENTS;
@@ -2504,7 +2504,7 @@ SV_Init (void)
 	SV_InitOperatorCommands ();
 	SV_GIB_Init ();
 
-	QFS_Init ("qw");
+	QFS_Init (hunk, "qw");
 	PI_Init ();
 
 	sv_console_plugin = Cvar_Get ("sv_console_plugin", "server",
@@ -2541,8 +2541,8 @@ SV_Init (void)
 	SVR_Init ();
 	Demo_Init ();
 
-	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
-	host_hunklevel = Hunk_LowMark ();
+	Hunk_AllocName (0, 0, "-HOST_HUNKLEVEL-");
+	host_hunklevel = Hunk_LowMark (0);
 
 	Cbuf_InsertText (sv_cbuf, "exec server.cfg\n");
 

@@ -73,7 +73,8 @@ Mod_Init (void)
 	int		m, x, y;
 	int		mip0size = 16*16, mip1size = 8*8, mip2size = 4*4, mip3size = 2*2;
 
-	r_notexture_mip = Hunk_AllocName (sizeof (texture_t) + mip0size + mip1size
+	r_notexture_mip = Hunk_AllocName (0,
+									  sizeof (texture_t) + mip0size + mip1size
 									  + mip2size + mip3size, "notexture");
 
 	r_notexture_mip->width = r_notexture_mip->height = 16;
@@ -280,7 +281,7 @@ Mod_ForName (const char *name, qboolean crash)
 
 	mod = Mod_FindName (name);
 
-	Sys_MaskPrintf (SYS_DEV, "Mod_ForName: %s, %p\n", name, mod);
+	Sys_MaskPrintf (SYS_dev, "Mod_ForName: %s, %p\n", name, mod);
 	return Mod_LoadModel (mod, crash);
 }
 

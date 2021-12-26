@@ -1,13 +1,15 @@
 include libs/util/Makemodule.am
+include libs/ui/Makemodule.am
 include libs/gamecode/Makemodule.am
 include libs/ruamoko/Makemodule.am
 include libs/gib/Makemodule.am
 include libs/audio/Makemodule.am
 include libs/image/Makemodule.am
 include libs/models/Makemodule.am
+include libs/input/Makemodule.am
 include libs/video/Makemodule.am
 include libs/console/Makemodule.am
-include libs/entity/Makemodule.am
+include libs/scene/Makemodule.am
 
 include libs/net/Makemodule.am
 include libs/client/Makemodule.am

@@ -33,6 +33,7 @@
 #include "QF/draw.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+#include "QF/ui/view.h"
 
 #include "compat.h"
 #include "r_internal.h"
@@ -264,7 +265,7 @@ R_SetupFrame (void)
 				vrect.height = vid.height;
 
 				R_SetVrect (&vrect, &r_refdef.vrect, vr_data.lineadj);
-				R_ViewChanged (vid.aspect);
+				R_ViewChanged ();
 			} else {
 				w = vid.width;
 				h = vid.height;
@@ -287,12 +288,14 @@ R_SetupFrame (void)
 				R_SetVrect (&vrect, &r_refdef.vrect,
 							(int) ((float) vr_data.lineadj *
 								   (h / (float) vid.height)));
-				R_ViewChanged (vid.aspect * (h / w) * ((float) vid.width /
-													   (float) vid.height));
+				R_ViewChanged ();
 			}
 		} else {
-			r_refdef.vrect = scr_vrect;
-			R_ViewChanged (vid.aspect);
+			r_refdef.vrect.x = vr_data.scr_view->xpos;
+			r_refdef.vrect.y = vr_data.scr_view->ypos;
+			r_refdef.vrect.width = vr_data.scr_view->xlen;
+			r_refdef.vrect.height = vr_data.scr_view->ylen;
+			R_ViewChanged ();
 		}
 
 		r_viewchanged = false;

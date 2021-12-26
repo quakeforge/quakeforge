@@ -2,15 +2,18 @@
 #define __qwaq_editor_editor_h
 
 #include "ruamoko/qwaq/editor/editbuffer.h"
+#include "ruamoko/qwaq/editor/status.h"
 #include "ruamoko/qwaq/ui/view.h"
 
 @class Editor;
 @class EditBuffer;
 @class ListenerGroup;
+@class EditStatus;
 
 @interface Editor : View
 {
 	EditBuffer *buffer;
+	EditStatus *status;
 	DrawBuffer *linebuffer;
 	eb_sel_t    selection;
 	unsigned    base_index;		// top left corner
@@ -21,13 +24,37 @@
 	Point       cursor;
 	unsigned    line_count;
 	string      filename;
+	string      filepath;
+	int         modified;
+	CursorMode  cursorMode;
+
+	int         virtualInsert;
+	int         cursorThroughTabs;
 }
 +(Editor *)withRect:(Rect)rect file:(string)filename;
++(Editor *)withRect:(Rect)rect file:(string)filename path:(string)filepath;
 -(string)filename;
--scrollUp:(unsigned) count;
--scrollDown:(unsigned) count;
+-(string)filepath;
+-(Point)cursor;
+-setStatusView:(EditStatus *)status;
 -scrollLeft:(unsigned) count;
 -scrollRight:(unsigned) count;
+-pageUp;
+-pageDown;
+-linesUp;
+-linesDown;
+-charUp;
+-charDown;
+-charLeft;
+-charRight;
+-wordLeft;
+-wordRight;
+-moveBOT;
+-moveEOT;
+-moveBOS;
+-moveEOS;
+-moveBOL;
+-moveEOL;
 
 -recenter:(int) force;
 -gotoLine:(unsigned) line;

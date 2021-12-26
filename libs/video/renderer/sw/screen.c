@@ -47,6 +47,7 @@
 #include "QF/screen.h"
 #include "QF/sys.h"
 #include "QF/va.h"
+#include "QF/ui/view.h"
 
 #include "compat.h"
 #include "r_internal.h"
@@ -87,7 +88,7 @@ SCR_CaptureBGR (void)
 }
 
 tex_t *
-SCR_ScreenShot (int width, int height)
+SCR_ScreenShot (unsigned width, unsigned height)
 {
 	unsigned char *src, *dest;
 	float          fracw, frach;
@@ -181,7 +182,7 @@ SCR_ScreenShot_f (void)
 }
 
 void
-R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
+R_RenderFrame (SCR_Func *scr_funcs)
 {
 	vrect_t     vrect;
 
@@ -204,12 +205,13 @@ R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 	D_DisableBackBufferAccess ();		// for adapters that can't stay mapped
 										// in for linear writes all the time
 	VID_LockBuffer ();
-	scr_3dfunc ();
+	R_RenderView ();
 	VID_UnlockBuffer ();
 
 	D_EnableBackBufferAccess ();		// of all overlay stuff if drawing
 										// directly
 
+	view_draw (vr_data.scr_view);
 	while (*scr_funcs) {
 		(*scr_funcs)();
 		scr_funcs++;
@@ -235,11 +237,11 @@ R_RenderFrame (SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
 		vrect.height = vid.height - vr_data.lineadj;
 		vrect.next = 0;
 	} else {
-		vrect.x = scr_vrect.x;
-		vrect.y = scr_vrect.y;
-		vrect.width = scr_vrect.width;
-		vrect.height = scr_vrect.height;
+		vrect.x = vr_data.scr_view->xpos;
+		vrect.y = vr_data.scr_view->ypos;
+		vrect.width = vr_data.scr_view->xlen;
+		vrect.height = vr_data.scr_view->ylen;
 		vrect.next = 0;
 	}
-	sw_ctx->update (&vrect);
+	sw_ctx->update (sw_ctx, &vrect);
 }

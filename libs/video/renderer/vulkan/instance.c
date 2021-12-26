@@ -35,7 +35,6 @@
 
 #include "QF/cvar.h"
 #include "QF/dstring.h"
-#include "QF/input.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
@@ -92,7 +91,7 @@ get_instance_layers_and_extensions  (vulkan_ctx_t *ctx)
 		strset_add (instanceExtensions, extensions[i].extensionName);
 	}
 
-	if (developer->int_val & SYS_VULKAN) {
+	if (developer->int_val & SYS_vulkan) {
 		for (i = 0; i < numLayers; i++) {
 			Sys_Printf ("%s %x %u %s\n",
 						layers[i].layerName,
@@ -117,6 +116,7 @@ instance_extension_enabled (qfv_instance_t *inst, const char *ext)
 }
 
 static int message_severities =
+	VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT |
 	VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
 	VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
 	VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
@@ -136,6 +136,10 @@ debug_callback (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 				const VkDebugUtilsMessengerCallbackDataEXT* callbackData,
 				void *data)
 {
+	qfv_instance_t *instance = data;
+	if (!(messageSeverity & vulkan_use_validation->int_val)) {
+		return 0;
+	}
 	const char *msgSev = "";
 	if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
 		msgSev = "verbose: ";
@@ -151,6 +155,9 @@ debug_callback (VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 	}
 	fprintf (stderr, "validation layer: %s%s\n", msgSev,
 			 callbackData->pMessage);
+	for (size_t i = instance->debug_stack.size; i-- > 0; ) {
+		fprintf (stderr, "    %s\n", instance->debug_stack.a[i]);
+	}
 	debug_breakpoint (messageSeverity);
 	return VK_FALSE;
 }
@@ -166,6 +173,10 @@ setup_debug_callback (qfv_instance_t *instance)
 		.pfnUserCallback = debug_callback,
 		.pUserData = instance,
 	};
+	if (!instance->funcs->vkCreateDebugUtilsMessengerEXT) {
+		Sys_Printf ("Cound not set up Vulkan validation debug callback\n");
+		return;
+	}
 	instance->funcs->vkCreateDebugUtilsMessengerEXT(instance->instance,
 													&createInfo, 0,
 													&debug_handle);
@@ -204,7 +215,7 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 		VK_STRUCTURE_TYPE_APPLICATION_INFO, 0,
 		appName, appVersion,
 		PACKAGE_STRING, 0x000702ff, //FIXME version
-		VK_API_VERSION_1_0,
+		VK_API_VERSION_1_1,
 	};
 	VkInstanceCreateInfo createInfo = {
 		VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO, 0, 0,
@@ -257,6 +268,7 @@ QFV_CreateInstance (vulkan_ctx_t *ctx,
 	inst->funcs = (qfv_instfuncs_t *)(inst + 1);
 	inst->enabled_extensions = new_strset (ext);
 	inst->extension_enabled = instance_extension_enabled;
+	DARRAY_INIT (&inst->debug_stack, 8);
 	ctx->instance = inst;
 	load_instance_funcs (ctx);
 
@@ -306,6 +318,6 @@ QFV_GetMaxSampleCount (qfv_physdev_t *physdev)
 	while (maxSamples && maxSamples > counts) {
 		maxSamples >>= 1;
 	}
-	Sys_MaskPrintf (SYS_VULKAN, "Max samples: %x (%d)\n", maxSamples, counts);
+	Sys_MaskPrintf (SYS_vulkan, "Max samples: %x (%d)\n", maxSamples, counts);
 	return maxSamples;
 }

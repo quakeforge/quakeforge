@@ -56,7 +56,15 @@ typedef uint32_t set_bits_t;
 #define SET_ZERO ((set_bits_t) 0)
 #define SET_ONE ((set_bits_t) 1)
 #define SET_TEST_MEMBER(s, x) \
-	((s)->map[(x) / SET_BITS] & (SET_ONE << ((x) % SET_BITS)))
+	(((const byte *)(s)->map)[(x) / 8] & (SET_ONE << ((x) % 8)))
+#define SET_ADD(s, x) \
+	(((byte *)(s)->map)[(x) / 8] |= (SET_ONE << ((x) % 8)))
+#define SET_REMOVE(s, x) \
+	(((byte *)(s)->map)[(x) / 8] &= ~(SET_ONE << ((x) % 8)))
+#define SET_STATIC_INIT(x, alloc) { \
+	.size = SET_SIZE (x), \
+	.map = alloc (SET_SIZE (x) / 8), \
+}
 
 /** Represent a set using a bitmap.
 
@@ -129,9 +137,11 @@ set_t *set_new_r (set_pool_t *set_pool);
 
 	\param size		The number of elements for which space is to be allocated.
 	\return			The newly created, empty set.
+	\note \a size is the actual amount of elements, not the number of the
+	highest element (ie, for values 0..n, size is n + 1).
 */
-set_t *set_new_size (int size);
-set_t *set_new_size_r (set_pool_t *set_pool, int size);
+set_t *set_new_size (unsigned size);
+set_t *set_new_size_r (set_pool_t *set_pool, unsigned size);
 
 /** Delete a set that is no longer needed.
 
@@ -139,6 +149,27 @@ set_t *set_new_size_r (set_pool_t *set_pool, int size);
 */
 void set_delete (set_t *set);
 void set_delete_r (set_pool_t *set_pool, set_t *set);
+
+/** Pre-expand a set with space for the specified element
+
+	Has no effect if the set is already large enough to hold the specified
+	element.
+
+	\param set      The set to be expanded
+	\param size		The minimum number of elements representable by the set
+	\note \a size is the actual amount of elements, not the number of the
+	highest element (ie, for values 0..n, size is n + 1).
+*/
+void set_expand (set_t *set, unsigned size);
+
+/** Shrink the set's backing memory to the minimum required to hold the set.
+
+	This does not affect (nor is affected by) whether the set is an infinite
+	set.
+
+	\param set      The set to trim
+*/
+void set_trim (set_t *set);
 
 /** Add an element to a set.
 
@@ -322,7 +353,7 @@ int set_is_member (const set_t *set, unsigned x) __attribute__((pure));
 	\return			The number of (non-)members. Both empty sets and sets of
 					evertything will return 0.
 */
-unsigned set_size (const set_t *set) __attribute__((pure));
+unsigned set_count (const set_t *set) __attribute__((pure));
 
 /** Find the first "member" of the set.
 
@@ -356,6 +387,7 @@ set_iter_t *set_first_r (set_pool_t *set_pool, const set_t *set);
 set_iter_t *set_next (set_iter_t *set_iter);
 set_iter_t *set_next_r (set_pool_t *set_pool, set_iter_t *set_iter);
 
+struct dstring_s;
 /** Return a human-readable string representing the set.
 
 	Empty sets will be represented by the string "{}". Sets of everything
@@ -369,6 +401,24 @@ set_iter_t *set_next_r (set_pool_t *set_pool, set_iter_t *set_iter);
 				will overwrite the results of preceeding calls.
 */
 const char *set_as_string (const set_t *set);
+
+/** Return a human-readable string representing the set.
+
+	Empty sets will be represented by the string "{}". Sets of everything
+	will be represented by the string "{...}". Inverted sets will have
+	the first implicit member followed by "..." (eg, "256 ...").
+
+	\param str		dstring to which the representation will be written
+	\param set		The set to be converted to a string.
+	\return			The string held in str
+
+	\warning	The string is NOT cleared, but rather the set representation
+				is appeneded to the string. This makes it more useful when
+				constructing strings in a threaded environment.
+*/
+const char *set_to_dstring (struct dstring_s *str, const set_t *set);
+const char *set_to_dstring_r (set_pool_t *set_pool, struct dstring_s *str,
+							  const set_t *set);
 
 ///@}
 #endif//__QF_set_h

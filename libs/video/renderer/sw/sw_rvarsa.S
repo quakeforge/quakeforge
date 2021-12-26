@@ -76,6 +76,7 @@ C(r_single_cw):	.long	0
 .globl	C(r_bmodelactive)
 C(r_bmodelactive):		.long	0
 
+	.text
 .global C(R_InitVars)
 C(R_InitVars):
 	movl	C(ceil_cw), %eax
@@ -86,3 +87,6 @@ C(R_InitVars):
 
 #endif	// USE_INTEL_ASM
 
+#if defined(__linux__) && defined(__ELF__)
+.section .note.GNU-stack,"",%progbits
+#endif

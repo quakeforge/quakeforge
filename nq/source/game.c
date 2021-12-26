@@ -72,7 +72,7 @@ Game_CheckRegistered (void)
 }
 
 void
-Game_Init (void)
+Game_Init (memhunk_t *hunk)
 {
 	int         i;
 	const char *game = "nq";
@@ -89,7 +89,7 @@ Game_Init (void)
 	} else if ((i = COM_CheckParm ("-abyss"))) {
 		game = "abyss";
 	}
-	QFS_Init (game);
+	QFS_Init (hunk, game);
 
 	registered = Cvar_Get ("registered", "0", CVAR_NONE, NULL,
 						   "Is the game the registered version. 1 yes 0 no");

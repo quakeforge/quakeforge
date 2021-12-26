@@ -45,6 +45,7 @@
 #include "QF/quakefs.h"
 #include "QF/sys.h"
 #include "QF/Vulkan/qf_vid.h"
+#include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
 #include "QF/Vulkan/instance.h"
@@ -53,6 +54,24 @@
 
 #include "vid_vulkan.h"
 
+static
+#include "libs/video/renderer/vulkan/shader/particle.vert.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/particle.geom.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/particle.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/partphysics.comp.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/partupdate.comp.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/sprite_gbuf.vert.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/sprite_gbuf.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/sprite_depth.vert.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/sprite_depth.frag.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/twod.vert.spvc"
 static
@@ -70,6 +89,8 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/bsp_gbuf.frag.spvc"
 static
+#include "libs/video/renderer/vulkan/shader/bsp_shadow.vert.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/bsp_sky.frag.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/bsp_turb.frag.spvc"
@@ -86,9 +107,13 @@ static
 static
 #include "libs/video/renderer/vulkan/shader/alias_gbuf.frag.spvc"
 static
+#include "libs/video/renderer/vulkan/shader/alias_shadow.vert.spvc"
+static
 #include "libs/video/renderer/vulkan/shader/passthrough.vert.spvc"
 static
 #include "libs/video/renderer/vulkan/shader/pushcolor.frag.spvc"
+static
+#include "libs/video/renderer/vulkan/shader/shadow.geom.spvc"
 
 typedef struct shaderdata_s {
 	const char *name;
@@ -97,6 +122,15 @@ typedef struct shaderdata_s {
 } shaderdata_t;
 
 static shaderdata_t builtin_shaders[] = {
+	{ "particle.vert", particle_vert, sizeof (particle_vert) },
+	{ "particle.geom", particle_geom, sizeof (particle_geom) },
+	{ "particle.frag", particle_frag, sizeof (particle_frag) },
+	{ "partphysics.comp", partphysics_comp, sizeof (partphysics_comp) },
+	{ "partupdate.comp", partupdate_comp, sizeof (partupdate_comp) },
+	{ "sprite_gbuf.vert", sprite_gbuf_vert, sizeof (sprite_gbuf_vert) },
+	{ "sprite_gbuf.frag", sprite_gbuf_frag, sizeof (sprite_gbuf_frag) },
+	{ "sprite_depth.vert", sprite_depth_vert, sizeof (sprite_depth_vert) },
+	{ "sprite_depth.frag", sprite_depth_frag, sizeof (sprite_depth_frag) },
 	{ "twod.vert", twod_vert, sizeof (twod_vert) },
 	{ "twod.frag", twod_frag, sizeof (twod_frag) },
 	{ "quakebsp.vert", quakebsp_vert, sizeof (quakebsp_vert) },
@@ -105,6 +139,7 @@ static shaderdata_t builtin_shaders[] = {
 	{ "bsp_gbuf.vert", bsp_gbuf_vert, sizeof (bsp_gbuf_vert) },
 	{ "bsp_gbuf.geom", bsp_gbuf_geom, sizeof (bsp_gbuf_geom) },
 	{ "bsp_gbuf.frag", bsp_gbuf_frag, sizeof (bsp_gbuf_frag) },
+	{ "bsp_shadow.vert", bsp_shadow_vert, sizeof (bsp_shadow_vert) },
 	{ "bsp_sky.frag", bsp_sky_frag, sizeof (bsp_sky_frag) },
 	{ "bsp_turb.frag", bsp_turb_frag, sizeof (bsp_turb_frag) },
 	{ "lighting.frag", lighting_frag, sizeof (lighting_frag) },
@@ -113,8 +148,10 @@ static shaderdata_t builtin_shaders[] = {
 	{ "alias_depth.vert", alias_depth_vert, sizeof (alias_depth_vert) },
 	{ "alias.frag", alias_frag, sizeof (alias_frag) },
 	{ "alias_gbuf.frag", alias_gbuf_frag, sizeof (alias_gbuf_frag) },
+	{ "alias_shadow.vert", alias_shadow_vert, sizeof (alias_shadow_vert) },
 	{ "passthrough.vert", passthrough_vert, sizeof (passthrough_vert) },
 	{ "pushcolor.frag", pushcolor_frag, sizeof (pushcolor_frag) },
+	{ "shadow.geom", shadow_geom, sizeof (shadow_geom) },
 	{}
 };
 
@@ -161,7 +198,7 @@ QFV_CreateShaderModule (qfv_device_t *device, const char *shader_path)
 	}
 
 	if (data) {
-		Sys_MaskPrintf (SYS_VULKAN,
+		Sys_MaskPrintf (SYS_vulkan,
 						"QFV_CreateShaderModule: creating shader module %s\n",
 						shader_path);
 		VkShaderModuleCreateInfo createInfo = {
@@ -170,8 +207,10 @@ QFV_CreateShaderModule (qfv_device_t *device, const char *shader_path)
 		};
 
 		dfunc->vkCreateShaderModule (dev, &createInfo, 0, &shader);
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_SHADER_MODULE, shader,
+							 shader_path);
 	} else {
-		Sys_MaskPrintf (SYS_VULKAN,
+		Sys_MaskPrintf (SYS_vulkan,
 						"QFV_CreateShaderModule: could not find shader %s\n",
 						shader_path);
 	}

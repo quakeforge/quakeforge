@@ -84,7 +84,7 @@ Skin_SetTranslation (int cmap, int top, int bottom)
 	bottom = bound (0, bottom, 13) * 16;
 
 	if (cmap < 0 || cmap > MAX_TRANSLATIONS) {
-		Sys_MaskPrintf (SYS_SKIN, "invalid skin slot: %d\n", cmap);
+		Sys_MaskPrintf (SYS_skin, "invalid skin slot: %d\n", cmap);
 		cmap = 1;
 	}
 
@@ -129,7 +129,7 @@ Skin_SetColormap (skin_t *skin, int cmap)
 		skin = new_skin ();
 	skin->colormap = 0;
 	if (cmap < 0 || cmap > MAX_TRANSLATIONS) {
-		Sys_MaskPrintf (SYS_SKIN, "invalid skin slot: %d\n", cmap);
+		Sys_MaskPrintf (SYS_skin, "invalid skin slot: %d\n", cmap);
 		cmap = 0;
 	}
 	if (cmap)
@@ -248,7 +248,7 @@ Skin_Init (void)
 }
 
 VISIBLE int
-Skin_CalcTopColors (const byte *in, byte *out, int pixels)
+Skin_CalcTopColors (byte *out, const byte *in, size_t pixels)
 {
 	byte        tc = 0;
 
@@ -265,7 +265,7 @@ Skin_CalcTopColors (const byte *in, byte *out, int pixels)
 }
 
 VISIBLE int
-Skin_CalcBottomColors (const byte *in, byte *out, int pixels)
+Skin_CalcBottomColors (byte *out, const byte *in, size_t pixels)
 {
 	byte        bc = 0;
 
@@ -281,8 +281,8 @@ Skin_CalcBottomColors (const byte *in, byte *out, int pixels)
 	return bc;
 }
 
-VISIBLE void
-Skin_ClearTopColors (const byte *in, byte *out, int pixels)
+VISIBLE int
+Skin_ClearTopColors (byte *out, const byte *in, size_t pixels)
 {
 	while (pixels-- > 0) {
 		byte        pix = *in++;
@@ -292,10 +292,11 @@ Skin_ClearTopColors (const byte *in, byte *out, int pixels)
 			*out++ = pix;
 		}
 	}
+	return 0;
 }
 
-VISIBLE void
-Skin_ClearBottomColors (const byte *in, byte *out, int pixels)
+VISIBLE int
+Skin_ClearBottomColors (byte *out, const byte *in, size_t pixels)
 {
 	while (pixels-- > 0) {
 		byte        pix = *in++;
@@ -305,4 +306,5 @@ Skin_ClearBottomColors (const byte *in, byte *out, int pixels)
 			*out++ = pix;
 		}
 	}
+	return 0;
 }

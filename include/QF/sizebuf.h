@@ -37,18 +37,18 @@
 
 typedef struct sizebuf_s
 {
-	qboolean	allowoverflow;	// if false, do a Sys_Error
-	qboolean	overflowed;		// set to true if the buffer size failed
-	byte	*data;
-	int		maxsize;
-	int		cursize;
+	qboolean    allowoverflow;	// if false, do a Sys_Error
+	qboolean    overflowed;		// set to true if the buffer size failed
+	byte       *data;
+	unsigned    maxsize;
+	unsigned    cursize;
 } sizebuf_t;
 
-void SZ_Alloc (sizebuf_t *buf, int startsize);
+void SZ_Alloc (sizebuf_t *buf, unsigned maxsize);
 void SZ_Free (sizebuf_t *buf);
 void SZ_Clear (sizebuf_t *buf);
-void *SZ_GetSpace (sizebuf_t *buf, int length);
-void SZ_Write (sizebuf_t *buf, const void *data, int length);
+void *SZ_GetSpace (sizebuf_t *buf, unsigned length);
+void SZ_Write (sizebuf_t *buf, const void *data, unsigned length);
 void SZ_Print (sizebuf_t *buf, const char *data);	// strcats onto the sizebuf
 void SZ_Dump (sizebuf_t *buf);
 

@@ -644,10 +644,10 @@ EmitSkyPolys (float speedscale, const instsurf_t *sc)
 	int         i;
 	glpoly_t   *p;
 	vec3_t      dir;
-	msurface_t *fa = sc->surface;
+	msurface_t *surf = sc->surface;
 
 	//FIXME transform/color
-	for (p = fa->polys; p; p = p->next) {
+	for (p = surf->polys; p; p = p->next) {
 		qfglBegin (GL_POLYGON);
 		for (i = 0, v = p->verts[0]; i < p->numverts; i++, v += VERTEXSIZE) {
 			VectorSubtract (v, r_origin, dir);

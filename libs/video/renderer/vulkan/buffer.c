@@ -41,7 +41,6 @@
 
 #include "QF/cvar.h"
 #include "QF/dstring.h"
-#include "QF/input.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
@@ -162,4 +161,11 @@ QFV_CreateBufferView (qfv_device_t *device, VkBuffer buffer, VkFormat format,
 	VkBufferView view;
 	dfunc->vkCreateBufferView (dev, &createInfo, 0, &view);
 	return view;
+}
+
+VkDeviceSize
+QFV_NextOffset (VkDeviceSize current, const VkMemoryRequirements *requirements)
+{
+	VkDeviceSize align = requirements->alignment - 1;
+	return ((current + align) & ~align);
 }

@@ -5,12 +5,17 @@
 *.obj
 *.a
 *.o
+*.output
+*.slc
+*.dat
+*.sym
 *~
 __pycache__/
 autom4te.cache/
 .deps/
 .libs/
 .vimrc
+.dirstamp
 ChangeLog
 Makefile
 Makefile.in
@@ -104,7 +109,7 @@ core
 /hw/source/*.d
 /hw/source/*.i
 /hw/source/*.s
-/hw/source/hw-master
+/hw-master
 
 # /include/
 /include/config.h.in
@@ -219,16 +224,9 @@ core
 /nq/source/fbset_modes_l.c
 /nq/source/fbset_modes_y.c
 /nq/source/fbset_modes_y.h
-/nq/source/nq-3dfx
-/nq/source/nq-fbdev
-/nq/source/nq-glslx
-/nq/source/nq-glx
-/nq/source/nq-sdl
-/nq/source/nq-sdl32
-/nq/source/nq-sgl
-/nq/source/nq-svga
-/nq/source/nq-x11
-/nq/source/nq-server
+/nq-sdl
+/nq-x11
+/nq-server
 
 # /pkg-config/
 /pkg-config/*.pc
@@ -245,7 +243,7 @@ core
 /qtv/source/*.d
 /qtv/source/*.i
 /qtv/source/*.s
-/qtv/source/qtv
+/qtv-server
 
 # /qw/
 
@@ -262,17 +260,10 @@ core
 /qw/source/fbset_modes_l.c
 /qw/source/fbset_modes_y.c
 /qw/source/fbset_modes_y.h
-/qw/source/qw-client-3dfx
-/qw/source/qw-client-fbdev
-/qw/source/qw-client-glx
-/qw/source/qw-client-glslx
-/qw/source/qw-client-sdl
-/qw/source/qw-client-sdl32
-/qw/source/qw-client-sgl
-/qw/source/qw-client-svga
-/qw/source/qw-client-x11
-/qw/source/qw-master
-/qw/source/qw-server
+/qw-client-sdl
+/qw-client-x11
+/qw-master
+/qw-server
 
 # /ruamoko/
 /ruamoko/*.d
@@ -281,6 +272,9 @@ core
 /ruamoko/*.sym
 /ruamoko/Doxyfile
 /ruamoko/doxygen/
+/ruamoko/qwaq/qwaq-curses
+/ruamoko/qwaq/qwaq-x11
+
 
 # /ruamoko/cl_menu/
 /ruamoko/cl_menu/*.dat
@@ -351,10 +345,10 @@ core
 /tools/Forge/Bundles/MapEdit/*.app
 
 # /tools/bsp2img/
-/tools/bsp2img/bsp2img
+/bsp2img
 
 # /tools/carne/
-/tools/carne/carne
+/carne
 
 # /tools/cross/
 /tools/cross/binutils-i386-mingw32msvc
@@ -370,14 +364,14 @@ core
 
 # /tools/pak/
 /tools/pak/*.d
-/tools/pak/pak
+/pak
 
 # /tools/qfbsp/
 
 # /tools/qfbsp/include/
 
 # /tools/qfbsp/source/
-/tools/qfbsp/source/qfbsp
+/qfbsp
 
 # /tools/qfcc/
 /tools/qfcc/aclocal.m4
@@ -403,14 +397,11 @@ core
 /tools/qfcc/source/qc-lex.c
 /tools/qfcc/source/qc-parse.c
 /tools/qfcc/source/qc-parse.h
-/tools/qfcc/source/qc-parse.output
-/tools/qfcc/source/qfcc
-/tools/qfcc/source/qfpc
-/tools/qfcc/source/qfprogs
+/qfcc
+/qfprogs
 /tools/qfcc/source/qp-lex.c
 /tools/qfcc/source/qp-parse.c
 /tools/qfcc/source/qp-parse.h
-/tools/qfcc/source/qp-parse.output
 
 # /tools/qfcc/test/
 /tools/qfcc/test/*.dat
@@ -421,27 +412,27 @@ core
 # /tools/qflight/include/
 
 # /tools/qflight/source/
-/tools/qflight/source/qflight
+/qflight
 
 # /tools/qflmp/
-/tools/qflmp/qflmp
+/qflmp
 
 # /tools/qfmodelgen/
 
 # /tools/qfmodelgen/include/
 
 # /tools/qfmodelgen/source/
-/tools/qfmodelgen/source/qfmodelgen
+/qfmodelgen
 
 # /tools/qfspritegen/qfspritegen
-/tools/qfspritegen/qfspritegen
+/qfspritegen
 
 # /tools/qfvis/
 
 # /tools/qfvis/include/
 
 # /tools/qfvis/source/
-/tools/qfvis/source/qfvis
+/qfvis
 
 # /tools/quaketoascii/
 /tools/quaketoascii/quaketoascii
@@ -466,8 +457,8 @@ core
 
 # /tools/wad/
 /tools/wad/*.d
-/tools/wad/wad
+/wad
 
 # /tools/wav/
 /tools/wav/*.d
-/tools/wav/qfwavinfo
+/qfwavinfo

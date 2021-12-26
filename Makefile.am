@@ -26,10 +26,11 @@ NOCONV_DIST= \
 
 BUILT_SOURCES = $(top_srcdir)/.version
 #AM_CFLAGS= @PREFER_NON_PIC@
-AM_CPPFLAGS= -I$(top_srcdir)/include $(PTHREAD_CFLAGS)
+AM_CPPFLAGS= -I$(top_srcdir)/include $(PTHREAD_CFLAGS) $(FNM_FLAGS) $(NCURSES_CFLAGS)
 
 common_ldflags= -export-dynamic @PTHREAD_LDFLAGS@
 
+SUFFICES =
 TESTS =
 XFAIL_TESTS =
 bin_PROGRAMS =
@@ -69,6 +70,8 @@ XMMS_LIBS= @XMMS_LIBS@
 PAK=$(top_builddir)/pak$(EXEEXT)
 QFCC_DEP=qfcc$(EXEEXT)
 QFCC=$(top_builddir)/$(QFCC_DEP)
+QWAQ=$(top_builddir)/ruamoko/qwaq/qwaq-cmd$(EXEEXT)
+
 GZ=@progs_gz@
 
 V_QFCC = $(V_QFCC_@AM_V@)
@@ -116,6 +119,16 @@ V_XXD = $(V_XXD_@AM_V@)
 V_XXD_ = $(V_XXD_@AM_DEFAULT_V@)
 V_XXD_0 = @echo "  XXD     " $@;
 V_XXD_1 =
+
+V_SED = $(V_SED_@AM_V@)
+V_SED_ = $(V_SED_@AM_DEFAULT_V@)
+V_SED_0 = @echo "  SED     " $@;
+V_SED_1 =
+
+SUFFICES += .plist .plc
+.plist.plc:
+	$(V_SED)sed -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' $< > $@.t &&\
+	$(am__mv) $@.t $@
 
 %.spv: %
 	@$(mkdir_p) $(builddir)/`dirname $@`

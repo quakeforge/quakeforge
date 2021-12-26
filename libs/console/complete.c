@@ -47,6 +47,8 @@
 
 #include "QF/plugin/console.h"
 
+#include "QF/ui/inputline.h"
+
 #include "compat.h"
 
 /*

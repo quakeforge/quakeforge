@@ -92,7 +92,7 @@ typedef struct bsp29_s {
 	dheader_t  *header;
 
 	int         own_models;
-	int         nummodels;
+	size_t      nummodels;
 	dmodel_t   *models;
 
 	int         own_visdata;
@@ -112,56 +112,55 @@ typedef struct bsp29_s {
 	char       *entdata;
 
 	int         own_leafs;
-	int         numleafs;
+	size_t      numleafs;
 	dleaf29_t    *leafs;
 
 	int         own_planes;
-	int         numplanes;
+	size_t      numplanes;
 	dplane_t   *planes;
 
 	int         own_vertexes;
-	int         numvertexes;
+	size_t      numvertexes;
 	dvertex_t  *vertexes;
 
 	int         own_nodes;
-	int         numnodes;
+	size_t      numnodes;
 	dnode29_t  *nodes;
 
 	int         own_texinfo;
-	int         numtexinfo;
+	size_t      numtexinfo;
 	texinfo_t  *texinfo;
 
 	int         own_faces;
-	int         numfaces;
+	size_t      numfaces;
 	dface29_t    *faces;
 
 	int         own_clipnodes;
-	int         numclipnodes;
+	size_t      numclipnodes;
 	dclipnode29_t *clipnodes;
 
 	int         own_edges;
-	int         numedges;
+	size_t      numedges;
 	dedge29_t  *edges;
 
 	int         own_marksurfaces;
-	int         nummarksurfaces;
+	size_t      nummarksurfaces;
 	uint16_t   *marksurfaces;
 
 	int         own_surfedges;
-	int         numsurfedges;
+	size_t      numsurfedges;
 	int32_t    *surfedges;
 } bsp29_t;
 
 static void
 swap_to_bsp29 (bsp29_t *bsp29, const bsp_t *bsp2)
 {
-	int             c, i, j;
 	dmiptexlump_t  *mtl;
 	dmodel_t       *d;
 
 	if (bsp29->header) {
 		bsp29->header->version = LittleLong (bsp29->header->version);
-		for (i = 0; i < HEADER_LUMPS; i++) {
+		for (int i = 0; i < HEADER_LUMPS; i++) {
 			bsp29->header->lumps[i].fileofs =
 				LittleLong (bsp29->header->lumps[i].fileofs);
 			bsp29->header->lumps[i].filelen =
@@ -170,17 +169,17 @@ swap_to_bsp29 (bsp29_t *bsp29, const bsp_t *bsp2)
 	}
 
 	// models
-	for (i=0 ; i<bsp29->nummodels ; i++) {
+	for (size_t i=0 ; i<bsp29->nummodels ; i++) {
 		d = &bsp29->models[i];
 
-		for (j=0 ; j<MAX_MAP_HULLS ; j++)
+		for (int j = 0; j < MAX_MAP_HULLS; j++)
 			d->headnode[j] = LittleLong (d->headnode[j]);
 
 		d->visleafs = LittleLong (d->visleafs);
 		d->firstface = LittleLong (d->firstface);
 		d->numfaces = LittleLong (d->numfaces);
 
-		for (j=0 ; j<3 ; j++) {
+		for (int j = 0; j < 3; j++) {
 			d->mins[j] = LittleFloat(d->mins[j]);
 			d->maxs[j] = LittleFloat(d->maxs[j]);
 			d->origin[j] = LittleFloat(d->origin[j]);
@@ -188,25 +187,25 @@ swap_to_bsp29 (bsp29_t *bsp29, const bsp_t *bsp2)
 	}
 
 	// vertexes
-	for (i=0 ; i<bsp29->numvertexes ; i++) {
+	for (size_t i = 0; i < bsp29->numvertexes; i++) {
 		dvertex_t  *vertex = &bsp29->vertexes[i];
-		for (j=0 ; j<3 ; j++)
+		for (int j = 0; j < 3; j++)
 			vertex->point[j] = LittleFloat (vertex->point[j]);
 	}
 
 	// planes
-	for (i=0 ; i<bsp29->numplanes ; i++) {
+	for (size_t i = 0; i < bsp29->numplanes; i++) {
 		dplane_t   *plane = &bsp29->planes[i];
-		for (j=0 ; j<3 ; j++)
+		for (int j = 0; j < 3; j++)
 			plane->normal[j] = LittleFloat (plane->normal[j]);
 		plane->dist = LittleFloat (plane->dist);
 		plane->type = LittleLong (plane->type);
 	}
 
 	// texinfos
-	for (i=0 ; i<bsp29->numtexinfo ; i++) {
+	for (size_t i = 0; i < bsp29->numtexinfo; i++) {
 		texinfo_t  *texinfo = &bsp29->texinfo[i];
-		for (j=0 ; j < 4 ; j++) {
+		for (int j = 0; j < 4; j++) {
 			texinfo->vecs[0][j] = LittleFloat (texinfo->vecs[0][j]);
 			texinfo->vecs[1][j] = LittleFloat (texinfo->vecs[1][j]);
 		}
@@ -215,7 +214,7 @@ swap_to_bsp29 (bsp29_t *bsp29, const bsp_t *bsp2)
 	}
 
 	// faces
-	for (i=0 ; i<bsp29->numfaces ; i++) {
+	for (size_t i = 0; i < bsp29->numfaces; i++) {
 		const dface_t *face2 = &bsp2->faces[i];
 		dface29_t  *face29 = &bsp29->faces[i];
 		face29->planenum = LittleShort (face2->planenum);
@@ -228,28 +227,28 @@ swap_to_bsp29 (bsp29_t *bsp29, const bsp_t *bsp2)
 	}
 
 	// nodes
-	for (i=0 ; i<bsp29->numnodes ; i++) {
+	for (size_t i = 0; i < bsp29->numnodes; i++) {
 		const dnode_t *node2 = &bsp2->nodes[i];
 		dnode29_t  *node29 = &bsp29->nodes[i];
 		node29->planenum = LittleLong (node2->planenum);
-		for (j=0 ; j<3 ; j++) {
-			node29->mins[j] = LittleShort (node2->mins[j]);
-			node29->maxs[j] = LittleShort (node2->maxs[j]);
+		for (int j = 0; j < 3; j++) {
+			node29->mins[j] = LittleShort ((int16_t) node2->mins[j]);
+			node29->maxs[j] = LittleShort ((int16_t) node2->maxs[j]);
 		}
-		node29->children[0] = (uint16_t) LittleShort (node2->children[0]);
-		node29->children[1] = (uint16_t) LittleShort (node2->children[1]);
+		node29->children[0] = LittleShort (node2->children[0]);
+		node29->children[1] = LittleShort (node2->children[1]);
 		node29->firstface = LittleShort (node2->firstface);
 		node29->numfaces = LittleShort (node2->numfaces);
 	}
 
 	// leafs
-	for (i=0 ; i<bsp29->numleafs ; i++) {
+	for (size_t i = 0; i < bsp29->numleafs; i++) {
 		const dleaf_t *leaf2 = &bsp2->leafs[i];
 		dleaf29_t  *leaf29 = &bsp29->leafs[i];
 		leaf29->contents = LittleLong (leaf2->contents);
-		for (j=0 ; j<3 ; j++) {
-			leaf29->mins[j] = LittleShort (leaf2->mins[j]);
-			leaf29->maxs[j] = LittleShort (leaf2->maxs[j]);
+		for (int j = 0; j < 3; j++) {
+			leaf29->mins[j] = LittleShort ((int16_t) leaf2->mins[j]);
+			leaf29->maxs[j] = LittleShort ((int16_t) leaf2->maxs[j]);
 		}
 
 		leaf29->firstmarksurface = LittleShort (leaf2->firstmarksurface);
@@ -260,39 +259,39 @@ swap_to_bsp29 (bsp29_t *bsp29, const bsp_t *bsp2)
 	}
 
 	// clipnodes
-	for (i=0 ; i<bsp29->numclipnodes ; i++) {
+	for (size_t i = 0; i < bsp29->numclipnodes; i++) {
 		const dclipnode_t *clipnode2 = &bsp2->clipnodes[i];
 		dclipnode29_t *clipnode29 = (dclipnode29_t *) &bsp29->clipnodes[i];
 		clipnode29->planenum = LittleLong (clipnode2->planenum);
-		clipnode29->children[0] = (uint16_t) LittleShort (clipnode2->children[0]);
-		clipnode29->children[1] = (uint16_t) LittleShort (clipnode2->children[1]);
+		clipnode29->children[0] = LittleShort (clipnode2->children[0]);
+		clipnode29->children[1] = LittleShort (clipnode2->children[1]);
 	}
 
 	// miptex
 	if (bsp29->texdatasize) {
 		mtl = (dmiptexlump_t *)bsp29->texdata;
 		//miptexlumps have not yet been swapped
-		c = mtl->nummiptex;
+		uint32_t    c = mtl->nummiptex;
 		mtl->nummiptex = LittleLong (mtl->nummiptex);
-		for (i=0 ; i<c ; i++)
+		for (uint32_t i = 0; i < c ; i++)
 			mtl->dataofs[i] = LittleLong(mtl->dataofs[i]);
 	}
 
 	// marksurfaces
-	for (i=0 ; i<bsp29->nummarksurfaces ; i++) {
+	for (size_t i = 0 ; i < bsp29->nummarksurfaces; i++) {
 		const uint32_t *marksurface2 = &bsp2->marksurfaces[i];
 		uint16_t   *marksurface29 = (uint16_t *) &bsp29->marksurfaces[i];
 		*marksurface29 = LittleShort (*marksurface2);
 	}
 
 	// surfedges
-	for (i=0 ; i<bsp29->numsurfedges ; i++) {
+	for (size_t i = 0; i < bsp29->numsurfedges; i++) {
 		int32_t    *surfedge = &bsp29->surfedges[i];
 		*surfedge = LittleLong (*surfedge);
 	}
 
 	// edges
-	for (i=0 ; i<bsp29->numedges ; i++) {
+	for (size_t i = 0; i < bsp29->numedges; i++) {
 		const dedge_t *edge2 = &bsp2->edges[i];
 		dedge29_t  *edge29 = (dedge29_t *) &bsp29->edges[i];
 		edge29->v[0] = LittleShort (edge2->v[0]);
@@ -304,13 +303,12 @@ static void
 swap_from_bsp29 (bsp_t *bsp2, const bsp29_t *bsp29,
 				 void (*cb) (const bsp_t *, void *), void *cbdata)
 {
-	int             c, i, j;
 	dmiptexlump_t  *mtl;
 	dmodel_t       *d;
 
 	if (bsp2->header) {
 		bsp2->header->version = LittleLong (bsp2->header->version);
-		for (i = 0; i < HEADER_LUMPS; i++) {
+		for (int i = 0; i < HEADER_LUMPS; i++) {
 			bsp2->header->lumps[i].fileofs =
 				LittleLong (bsp2->header->lumps[i].fileofs);
 			bsp2->header->lumps[i].filelen =
@@ -321,17 +319,17 @@ swap_from_bsp29 (bsp_t *bsp2, const bsp29_t *bsp29,
 	}
 
 	// models
-	for (i=0 ; i<bsp2->nummodels ; i++) {
+	for (size_t i = 0; i < bsp2->nummodels; i++) {
 		d = &bsp2->models[i];
 
-		for (j=0 ; j<MAX_MAP_HULLS ; j++)
+		for (int j = 0; j < MAX_MAP_HULLS; j++)
 			d->headnode[j] = LittleLong (d->headnode[j]);
 
 		d->visleafs = LittleLong (d->visleafs);
 		d->firstface = LittleLong (d->firstface);
 		d->numfaces = LittleLong (d->numfaces);
 
-		for (j=0 ; j<3 ; j++) {
+		for (int j = 0; j < 3; j++) {
 			d->mins[j] = LittleFloat(d->mins[j]);
 			d->maxs[j] = LittleFloat(d->maxs[j]);
 			d->origin[j] = LittleFloat(d->origin[j]);
@@ -339,25 +337,25 @@ swap_from_bsp29 (bsp_t *bsp2, const bsp29_t *bsp29,
 	}
 
 	// vertexes
-	for (i=0 ; i<bsp2->numvertexes ; i++) {
+	for (size_t i = 0; i < bsp2->numvertexes; i++) {
 		dvertex_t  *vertex = &bsp2->vertexes[i];
-		for (j=0 ; j<3 ; j++)
+		for (int j = 0; j < 3; j++)
 			vertex->point[j] = LittleFloat (vertex->point[j]);
 	}
 
 	// planes
-	for (i=0 ; i<bsp2->numplanes ; i++) {
+	for (size_t i = 0; i < bsp2->numplanes; i++) {
 		dplane_t   *plane = &bsp2->planes[i];
-		for (j=0 ; j<3 ; j++)
+		for (int j = 0; j < 3; j++)
 			plane->normal[j] = LittleFloat (plane->normal[j]);
 		plane->dist = LittleFloat (plane->dist);
 		plane->type = LittleLong (plane->type);
 	}
 
 	// texinfos
-	for (i=0 ; i<bsp2->numtexinfo ; i++) {
+	for (size_t i = 0; i < bsp2->numtexinfo; i++) {
 		texinfo_t  *texinfo = &bsp2->texinfo[i];
-		for (j=0 ; j < 4 ; j++) {
+		for (int j = 0; j < 4; j++) {
 			texinfo->vecs[0][j] = LittleFloat (texinfo->vecs[0][j]);
 			texinfo->vecs[1][j] = LittleFloat (texinfo->vecs[1][j]);
 		}
@@ -366,7 +364,7 @@ swap_from_bsp29 (bsp_t *bsp2, const bsp29_t *bsp29,
 	}
 
 	// faces
-	for (i=0 ; i<bsp2->numfaces ; i++) {
+	for (size_t i = 0; i < bsp2->numfaces; i++) {
 		dface_t    *face2 = &bsp2->faces[i];
 		const dface29_t *face29 = &bsp29->faces[i];
 		face2->planenum = LittleShort (face29->planenum);
@@ -379,17 +377,17 @@ swap_from_bsp29 (bsp_t *bsp2, const bsp29_t *bsp29,
 	}
 
 	// nodes
-	for (i=0 ; i<bsp2->numnodes ; i++) {
+	for (size_t i = 0; i < bsp2->numnodes; i++) {
 		dnode_t    *node2 = &bsp2->nodes[i];
 		const dnode29_t  *node29 = &bsp29->nodes[i];
 		node2->planenum = LittleLong (node29->planenum);
-		for (j=0 ; j<3 ; j++) {
+		for (int j = 0; j < 3; j++) {
 			node2->mins[j] = (int16_t) LittleShort (node29->mins[j]);
 			node2->maxs[j] = (int16_t) LittleShort (node29->maxs[j]);
 		}
-		for (j = 0; j < 2; j++) {
+		for (int j = 0; j < 2; j++) {
 			node2->children[j] = LittleShort (node29->children[j]);
-			if (node2->children[j] >= bsp2->numnodes)
+			if (node2->children[j] >= (int32_t) bsp2->numnodes)
 				node2->children[j] = (int16_t) node2->children[j];
 		}
 		node2->firstface = LittleShort (node29->firstface);
@@ -397,13 +395,13 @@ swap_from_bsp29 (bsp_t *bsp2, const bsp29_t *bsp29,
 	}
 
 	// leafs
-	for (i=0 ; i<bsp2->numleafs ; i++) {
+	for (size_t i = 0; i < bsp2->numleafs; i++) {
 		dleaf_t    *leaf2 = &bsp2->leafs[i];
 		const dleaf29_t *leaf29 = &bsp29->leafs[i];
 		leaf2->contents = LittleLong (leaf29->contents);
-		for (j=0 ; j<3 ; j++) {
-			leaf2->mins[j] = LittleShort (leaf29->mins[j]);
-			leaf2->maxs[j] = LittleShort (leaf29->maxs[j]);
+		for (int j = 0; j < 3; j++) {
+			leaf2->mins[j] = (int16_t) LittleShort (leaf29->mins[j]);
+			leaf2->maxs[j] = (int16_t) LittleShort (leaf29->maxs[j]);
 		}
 
 		leaf2->firstmarksurface = LittleShort (leaf29->firstmarksurface);
@@ -414,38 +412,38 @@ swap_from_bsp29 (bsp_t *bsp2, const bsp29_t *bsp29,
 	}
 
 	// clipnodes
-	for (i=0 ; i<bsp2->numclipnodes ; i++) {
+	for (size_t i = 0; i < bsp2->numclipnodes; i++) {
 		dclipnode_t *clipnode2 = &bsp2->clipnodes[i];
 		const dclipnode29_t *clipnode29 = &bsp29->clipnodes[i];
 		clipnode2->planenum = LittleLong (clipnode29->planenum);
-		clipnode2->children[0] = (uint16_t) LittleShort (clipnode29->children[0]);
-		clipnode2->children[1] = (uint16_t) LittleShort (clipnode29->children[1]);
+		clipnode2->children[0] = LittleShort (clipnode29->children[0]);
+		clipnode2->children[1] = LittleShort (clipnode29->children[1]);
 	}
 
 	// miptex
 	if (bsp2->texdatasize) {
 		mtl = (dmiptexlump_t *)bsp2->texdata;
-		c = LittleLong(mtl->nummiptex);
+		uint32_t    c = LittleLong (mtl->nummiptex);
 		mtl->nummiptex = LittleLong (mtl->nummiptex);
-		for (i=0 ; i<c ; i++)
-			mtl->dataofs[i] = LittleLong(mtl->dataofs[i]);
+		for (uint32_t i = 0; i < c; i++)
+			mtl->dataofs[i] = LittleLong (mtl->dataofs[i]);
 	}
 
 	// marksurfaces
-	for (i=0 ; i<bsp2->nummarksurfaces ; i++) {
+	for (size_t i = 0; i < bsp2->nummarksurfaces; i++) {
 		uint32_t   *marksurface2 = &bsp2->marksurfaces[i];
 		const uint16_t *marksurface29 = &bsp29->marksurfaces[i];
 		*marksurface2 = LittleShort (*marksurface29);
 	}
 
 	// surfedges
-	for (i=0 ; i<bsp2->numsurfedges ; i++) {
+	for (size_t i = 0; i < bsp2->numsurfedges; i++) {
 		int32_t    *surfedge = &bsp2->surfedges[i];
 		*surfedge = LittleLong (*surfedge);
 	}
 
 	// edges
-	for (i=0 ; i<bsp2->numedges ; i++) {
+	for (size_t i = 0; i < bsp2->numedges; i++) {
 		dedge_t    *edge2 = &bsp2->edges[i];
 		const dedge29_t *edge29 = &bsp29->edges[i];
 		edge2->v[0] = LittleShort (edge29->v[0]);
@@ -457,13 +455,12 @@ static void
 swap_bsp (bsp_t *bsp, int todisk, void (*cb) (const bsp_t *, void *),
 		  void *cbdata)
 {
-	int             c, i, j;
 	dmiptexlump_t  *mtl;
 	dmodel_t       *d;
 
 	if (bsp->header) {
 		bsp->header->version = LittleLong (bsp->header->version);
-		for (i = 0; i < HEADER_LUMPS; i++) {
+		for (int i = 0; i < HEADER_LUMPS; i++) {
 			bsp->header->lumps[i].fileofs =
 				LittleLong (bsp->header->lumps[i].fileofs);
 			bsp->header->lumps[i].filelen =
@@ -474,17 +471,17 @@ swap_bsp (bsp_t *bsp, int todisk, void (*cb) (const bsp_t *, void *),
 	}
 
 	// models
-	for (i=0 ; i<bsp->nummodels ; i++) {
+	for (size_t i = 0; i < bsp->nummodels; i++) {
 		d = &bsp->models[i];
 
-		for (j=0 ; j<MAX_MAP_HULLS ; j++)
+		for (int j = 0; j < MAX_MAP_HULLS; j++)
 			d->headnode[j] = LittleLong (d->headnode[j]);
 
 		d->visleafs = LittleLong (d->visleafs);
 		d->firstface = LittleLong (d->firstface);
 		d->numfaces = LittleLong (d->numfaces);
 
-		for (j=0 ; j<3 ; j++) {
+		for (int j = 0; j < 3; j++) {
 			d->mins[j] = LittleFloat(d->mins[j]);
 			d->maxs[j] = LittleFloat(d->maxs[j]);
 			d->origin[j] = LittleFloat(d->origin[j]);
@@ -492,25 +489,25 @@ swap_bsp (bsp_t *bsp, int todisk, void (*cb) (const bsp_t *, void *),
 	}
 
 	// vertexes
-	for (i=0 ; i<bsp->numvertexes ; i++) {
+	for (size_t i = 0; i < bsp->numvertexes; i++) {
 		dvertex_t  *vertex = &bsp->vertexes[i];
-		for (j=0 ; j<3 ; j++)
+		for (int j = 0; j < 3; j++)
 			vertex->point[j] = LittleFloat (vertex->point[j]);
 	}
 
 	// planes
-	for (i=0 ; i<bsp->numplanes ; i++) {
+	for (size_t i = 0; i < bsp->numplanes; i++) {
 		dplane_t   *plane = &bsp->planes[i];
-		for (j=0 ; j<3 ; j++)
+		for (int j = 0; j < 3; j++)
 			plane->normal[j] = LittleFloat (plane->normal[j]);
 		plane->dist = LittleFloat (plane->dist);
 		plane->type = LittleLong (plane->type);
 	}
 
 	// texinfos
-	for (i=0 ; i<bsp->numtexinfo ; i++) {
+	for (size_t i = 0; i < bsp->numtexinfo; i++) {
 		texinfo_t  *texinfo = &bsp->texinfo[i];
-		for (j=0 ; j < 4 ; j++) {
+		for (int j = 0; j < 4; j++) {
 			texinfo->vecs[0][j] = LittleFloat (texinfo->vecs[0][j]);
 			texinfo->vecs[1][j] = LittleFloat (texinfo->vecs[1][j]);
 		}
@@ -519,7 +516,7 @@ swap_bsp (bsp_t *bsp, int todisk, void (*cb) (const bsp_t *, void *),
 	}
 
 	// faces
-	for (i=0 ; i<bsp->numfaces ; i++) {
+	for (size_t i = 0; i < bsp->numfaces; i++) {
 		dface_t    *face = &bsp->faces[i];
 		face->texinfo = LittleLong (face->texinfo);
 		face->planenum = LittleLong (face->planenum);
@@ -530,10 +527,10 @@ swap_bsp (bsp_t *bsp, int todisk, void (*cb) (const bsp_t *, void *),
 	}
 
 	// nodes
-	for (i=0 ; i<bsp->numnodes ; i++) {
+	for (size_t i = 0; i < bsp->numnodes; i++) {
 		dnode_t    *node = &bsp->nodes[i];
 		node->planenum = LittleLong (node->planenum);
-		for (j=0 ; j<3 ; j++) {
+		for (int j = 0; j < 3; j++) {
 			node->mins[j] = LittleFloat (node->mins[j]);
 			node->maxs[j] = LittleFloat (node->maxs[j]);
 		}
@@ -544,10 +541,10 @@ swap_bsp (bsp_t *bsp, int todisk, void (*cb) (const bsp_t *, void *),
 	}
 
 	// leafs
-	for (i=0 ; i<bsp->numleafs ; i++) {
+	for (size_t i = 0; i < bsp->numleafs; i++) {
 		dleaf_t    *leaf = &bsp->leafs[i];
 		leaf->contents = LittleLong (leaf->contents);
-		for (j=0 ; j<3 ; j++) {
+		for (int j = 0; j < 3 ; j++) {
 			leaf->mins[j] = LittleFloat (leaf->mins[j]);
 			leaf->maxs[j] = LittleFloat (leaf->maxs[j]);
 		}
@@ -558,7 +555,7 @@ swap_bsp (bsp_t *bsp, int todisk, void (*cb) (const bsp_t *, void *),
 	}
 
 	// clipnodes
-	for (i=0 ; i<bsp->numclipnodes ; i++) {
+	for (size_t i = 0; i < bsp->numclipnodes; i++) {
 		dclipnode_t *clipnode = &bsp->clipnodes[i];
 		clipnode->planenum = LittleLong (clipnode->planenum);
 		clipnode->children[0] = LittleLong (clipnode->children[0]);
@@ -567,30 +564,31 @@ swap_bsp (bsp_t *bsp, int todisk, void (*cb) (const bsp_t *, void *),
 
 	// miptex
 	if (bsp->texdatasize) {
-		mtl = (dmiptexlump_t *)bsp->texdata;
+		mtl = (dmiptexlump_t *) bsp->texdata;
+		uint32_t    c;
 		if (todisk)
 			c = mtl->nummiptex;
 		else
 			c = LittleLong(mtl->nummiptex);
 		mtl->nummiptex = LittleLong (mtl->nummiptex);
-		for (i=0 ; i<c ; i++)
+		for (uint32_t i = 0; i < c; i++)
 			mtl->dataofs[i] = LittleLong(mtl->dataofs[i]);
 	}
 
 	// marksurfaces
-	for (i=0 ; i<bsp->nummarksurfaces ; i++) {
+	for (size_t i = 0; i < bsp->nummarksurfaces; i++) {
 		uint32_t   *marksurface = &bsp->marksurfaces[i];
 		*marksurface = LittleLong (*marksurface);
 	}
 
 	// surfedges
-	for (i=0 ; i<bsp->numsurfedges ; i++) {
+	for (size_t i = 0; i < bsp->numsurfedges; i++) {
 		int32_t    *surfedge = &bsp->surfedges[i];
 		*surfedge = LittleLong (*surfedge);
 	}
 
 	// edges
-	for (i=0 ; i<bsp->numedges ; i++) {
+	for (size_t i = 0; i < bsp->numedges; i++) {
 		dedge_t    *edge = &bsp->edges[i];
 		edge->v[0] = LittleLong (edge->v[0]);
 		edge->v[1] = LittleLong (edge->v[1]);
@@ -810,7 +808,8 @@ do { \
 	} \
 } while (0)
 
-	tbsp->header->version = BSPVERSION;
+	memcpy (&tbsp->header->version, BSP2VERSION,
+			sizeof (tbsp->header->version));
 
 	data = (byte *) &tbsp->header[1];
 	SET_LUMP (LUMP_PLANES, planes);

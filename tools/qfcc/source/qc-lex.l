@@ -122,7 +122,7 @@ STRING		\"(\\.|[^"\\])*\"
 
 ^{s}*#{s}*pragma{s}+	{ BEGIN (PRAGMA); }
 
-{INT}+[uU]?			{
+{INT}+[uU]?([lL][lL]?)?	{
 						const char *c = yytext + yyleng - 1;
 						int         i;
 

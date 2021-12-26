@@ -68,6 +68,7 @@
 {
 	str_free (struct_name);
 	str_free (field_name);
+	[super dealloc];
 }
 
 -writeParseData
@@ -93,6 +94,11 @@
 -(string) name
 {
 	return field_name;
+}
+
+-(int) searchType
+{
+	return 1;
 }
 
 @end

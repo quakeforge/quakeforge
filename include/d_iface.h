@@ -56,35 +56,6 @@ typedef struct
 	float	zi;
 } emitpoint_t;
 
-typedef enum {
-	part_tex_dot,
-	part_tex_spark,
-	part_tex_smoke,
-} ptextype_t;
-
-typedef struct particle_s particle_t;
-typedef void (*pt_phys_func)(particle_t *);
-
-pt_phys_func R_ParticlePhysics (ptype_t type) __attribute__((pure));
-
-// !!! if this is changed, it must be changed in d_ifacea.h too !!!
-struct particle_s
-{
-// driver-usable fields
-	vec3_t		org;
-	int			color;
-	float		alpha;
-	ptextype_t	tex;
-	float		scale;
-// drivers never touch the following fields
-	vec3_t		vel;
-	ptype_t		type;
-	float		die;
-	float		ramp;
-	pt_phys_func phys;
-	particle_t *next;
-};
-
 #define PARTICLE_Z_CLIP	8.0
 
 typedef struct polyvert_s {
@@ -158,7 +129,6 @@ extern qboolean	r_recursiveaffinetriangles;	// true if a driver wants to use
 											//  a certain distance (normally
 											//  used only by the software
 											//  driver)
-extern int		r_pixbytes;
 extern qboolean	r_dowarp;
 
 extern affinetridesc_t	r_affinetridesc;
@@ -257,7 +227,6 @@ extern float	r_skyspeed;
 extern float	r_skytime;
 
 extern int		c_surf;
-extern vrect_t	scr_vrect;
 
 extern byte		*r_warpbuffer;
 

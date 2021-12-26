@@ -36,12 +36,12 @@
 #include "d_iface.h"
 #include "r_internal.h"
 #include "vid_internal.h"
-
+#include "vid_sw.h"
 
 void
 sw32_D_FillRect (vrect_t *rect, int color)
 {
-	switch (sw32_r_pixbytes)
+	switch (sw32_ctx->pixbytes)
 	{
 	case 1:
 		{
@@ -63,9 +63,9 @@ sw32_D_FillRect (vrect_t *rect, int color)
 				rheight += ry;
 				ry = 0;
 			}
-			if (rx + rwidth > vid.width)
+			if ((unsigned) (rx + rwidth) > vid.width)
 				rwidth = vid.width - rx;
-			if (ry + rheight > vid.height)
+			if ((unsigned) (ry + rheight) > vid.height)
 				rheight = vid.height - rx;
 
 			if (rwidth < 1 || rheight < 1)
@@ -101,9 +101,9 @@ sw32_D_FillRect (vrect_t *rect, int color)
 				rheight += ry;
 				ry = 0;
 			}
-			if (rx + rwidth > vid.width)
+			if ((unsigned) (rx + rwidth) > vid.width)
 				rwidth = vid.width - rx;
-			if (ry + rheight > vid.height)
+			if ((unsigned) (ry + rheight) > vid.height)
 				rheight = vid.height - rx;
 
 			if (rwidth < 1 || rheight < 1)
@@ -140,9 +140,9 @@ sw32_D_FillRect (vrect_t *rect, int color)
 				rheight += ry;
 				ry = 0;
 			}
-			if (rx + rwidth > vid.width)
+			if ((unsigned) (rx + rwidth) > vid.width)
 				rwidth = vid.width - rx;
-			if (ry + rheight > vid.height)
+			if ((unsigned) (ry + rheight) > vid.height)
 				rheight = vid.height - rx;
 
 			if (rwidth < 1 || rheight < 1)
@@ -159,6 +159,6 @@ sw32_D_FillRect (vrect_t *rect, int color)
 		}
 		break;
 	default:
-		Sys_Error("D_FillRect: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("D_FillRect: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 	}
 }

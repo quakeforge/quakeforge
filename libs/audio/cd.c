@@ -52,42 +52,42 @@ VISIBLE void
 CDAudio_Pause (void)
 {
 	if (cdmodule)
-		cdmodule->functions->cd->pCDAudio_Pause ();
+		cdmodule->functions->cd->pause ();
 }
 
 VISIBLE void
 CDAudio_Play (int track, qboolean looping)
 {
 	if (cdmodule)
-		cdmodule->functions->cd->pCDAudio_Play (track, looping);
+		cdmodule->functions->cd->play (track, looping);
 }
 
 VISIBLE void
 CDAudio_Resume (void)
 {
 	if (cdmodule)
-		cdmodule->functions->cd->pCDAudio_Resume ();
+		cdmodule->functions->cd->resume ();
 }
 
 static void
 CDAudio_shutdown (void *data)
 {
 	if (cdmodule)
-		cdmodule->functions->general->p_Shutdown ();
+		cdmodule->functions->general->shutdown ();
 }
 
 VISIBLE void
 CDAudio_Update (void)
 {
 	if (cdmodule)
-		cdmodule->functions->cd->pCDAudio_Update ();
+		cdmodule->functions->cd->update ();
 }
 
 static void
 CD_f (void)
 {
 	if (cdmodule)
-		cdmodule->functions->cd->pCD_f ();
+		cdmodule->functions->cd->cd_f ();
 }
 
 VISIBLE int
@@ -111,7 +111,6 @@ CDAudio_Init (void)
 		Sys_Printf ("Loading of cd module: %s failed!\n", cd_plugin->string);
 		return -1;
 	}
-	cdmodule->functions->general->p_Init ();
 	Cmd_AddCommand (
 		"cd", CD_f, "Control the CD player.\n"
 		"Commands:\n"

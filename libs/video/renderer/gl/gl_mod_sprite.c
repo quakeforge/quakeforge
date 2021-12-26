@@ -38,13 +38,14 @@
 # include <strings.h>
 #endif
 
-#include "QF/GL/defines.h"
-#include "QF/GL/funcs.h"
-
-#include "QF/entity.h"
 #include "QF/model.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+
+#include "QF/scene/entity.h"
+
+#include "QF/GL/defines.h"
+#include "QF/GL/funcs.h"
 
 #include "compat.h"
 #include "r_internal.h"
@@ -56,72 +57,27 @@ varray_t2f_c4ub_v3f_t	*gl_spriteVertexArray;
 
 void (*gl_R_DrawSpriteModel) (struct entity_s *ent);
 
-
-static mspriteframe_t *
-R_GetSpriteFrame (entity_t *currententity)
-{
-	float			fullinterval, targettime, time;
-	float		   *pintervals;
-	int				frame, numframes, i;
-	msprite_t      *psprite;
-	mspriteframe_t *pspriteframe;
-	mspritegroup_t *pspritegroup;
-
-	psprite = currententity->renderer.model->cache.data;
-	frame = currententity->animation.frame;
-
-	if ((frame >= psprite->numframes) || (frame < 0)) {
-		Sys_MaskPrintf (SYS_DEV, "R_DrawSprite: no such frame %d\n", frame);
-		frame = 0;
-	}
-
-	if (psprite->frames[frame].type == SPR_SINGLE) {
-		pspriteframe = psprite->frames[frame].frameptr;
-	} else {
-		pspritegroup = (mspritegroup_t *) psprite->frames[frame].frameptr;
-		pintervals = pspritegroup->intervals;
-		numframes = pspritegroup->numframes;
-		fullinterval = pintervals[numframes - 1];
-
-		time = vr_data.realtime + currententity->animation.syncbase;
-
-		// when loading in Mod_LoadSpriteGroup, we guaranteed all interval
-		// values are positive, so we don't have to worry about division by 0
-		targettime = time - ((int) (time / fullinterval)) * fullinterval;
-
-		for (i = 0; i < (numframes - 1); i++) {
-			if (pintervals[i] > targettime)
-				break;
-		}
-
-		pspriteframe = pspritegroup->frames[i];
-	}
-
-	return pspriteframe;
-}
-
 static void
 R_DrawSpriteModel_f (entity_t *e)
 {
 	float			 modelalpha, color[4];
-	vec4f_t          up = {}, right = {};
+	vec4f_t          cameravec = {};
+	vec4f_t          up = {}, right = {}, pn = {};
 	vec4f_t          origin, point;
-	msprite_t		*psprite;
+	msprite_t		*sprite = e->renderer.model->cache.data;
 	mspriteframe_t	*frame;
 
-	// don't bother culling, it's just a single polygon without a surface cache
-	frame = R_GetSpriteFrame (e);
-	psprite = e->renderer.model->cache.data;
+	origin = Transform_GetWorldPosition (e->transform);
+	VectorCopy (r_origin, cameravec);
+	cameravec -= origin;
 
-	if (psprite->type == SPR_ORIENTED) {	// bullet marks on walls
-		up = Transform_Up (e->transform);
-		right = Transform_Right (e->transform);
-	} else if (psprite->type == SPR_VP_PARALLEL_UPRIGHT) {
-		up = (vec4f_t) { 0, 0, 1, 0 };
-		VectorCopy (vright, right);
-	} else {								// normal sprite
-		VectorCopy (vup, up);
-		VectorCopy (vright, right);
+	// don't bother culling, it's just a single polygon without a surface cache
+	frame = R_GetSpriteFrame (sprite, &e->animation);
+
+	if (!R_BillboardFrame (e, sprite->type, &cameravec[0],
+						   &up[0], &right[0], &pn[0])) {
+		// the orientation is undefined so can't draw the sprite
+		return;
 	}
 
 	VectorCopy (e->renderer.colormod, color);
@@ -135,7 +91,6 @@ R_DrawSpriteModel_f (entity_t *e)
 
 	qfglColor4fv (color);
 
-	origin = Transform_GetWorldPosition (e->transform);
 	point = origin + frame->down * up + frame->left * right;
 
 	qfglTexCoord2f (0, 1);
@@ -168,15 +123,14 @@ R_DrawSpriteModel_VA_f (entity_t *e)
 	vec4f_t          origin, point;
 	int				 i;
 //	unsigned int	 vacount;
-	msprite_t		*psprite;
+	msprite_t		*psprite = e->renderer.model->cache.data;
 	mspriteframe_t	*frame;
 	varray_t2f_c4ub_v3f_t		*VA;
 
 	VA = gl_spriteVertexArray; // FIXME: Despair
 
 	// don't bother culling, it's just a single polygon without a surface cache
-	frame = R_GetSpriteFrame (e);
-	psprite = e->renderer.model->cache.data;
+	frame = R_GetSpriteFrame (psprite, &e->animation);
 
 	qfglBindTexture (GL_TEXTURE_2D, frame->gl_texturenum); // FIXME: DESPAIR
 
@@ -247,7 +201,7 @@ gl_R_InitSprites (void)
 #else
 			sVAsize = 4;
 #endif
-			Sys_MaskPrintf (SYS_DEV, "Sprites: %i maximum vertex elements.\n",
+			Sys_MaskPrintf (SYS_dev, "Sprites: %i maximum vertex elements.\n",
 							sVAsize);
 
 			if (gl_spriteVertexArray)

@@ -71,7 +71,7 @@ gl_R_InitGraphTextures (int base)
 }
 
 void
-gl_R_LineGraph (int x, int y, int *h_vals, int count)
+gl_R_LineGraph (int x, int y, int *h_vals, int count, int height)
 {
 	byte        color;
 	byte        *dest;
@@ -80,7 +80,7 @@ gl_R_LineGraph (int x, int y, int *h_vals, int count)
 	if (!count)
 		return;
 
-	s = r_graphheight->int_val;
+	s = height;
 
 	size = s * count;
 	if (size > graph_size[graph_index]) {

@@ -31,7 +31,7 @@
 /** Type declaration for a type-safe ring buffer.
  *
  * While not in itself thread-safe, the buffer is designed (and tested) to be
- * used in a threaded environment using sutable locking mechanisms.
+ * used in a threaded environment using suitable locking mechanisms.
  *
  * \param type		The type of data element stored in the ring buffer.
  * \param size		The number of objects in the ring buffer. Note that the

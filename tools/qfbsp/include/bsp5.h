@@ -111,7 +111,7 @@ extern struct brushset_s *brushset;
 
 	Behaves the same as printf except it prints only when verbose is true.
 */
-void qprintf (const char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+void qprintf (const char *fmt, ...) __attribute__ ((format (PRINTF, 1, 2)));
 
 extern int  valid;
 
@@ -128,6 +128,8 @@ node_t *AllocNode (void);
 //=============================================================================
 
 extern bsp_t *bsp;
+
+void bspinfo (void);
 
 ///@}
 

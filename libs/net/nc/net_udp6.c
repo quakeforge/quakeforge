@@ -166,7 +166,7 @@ NetadrToSockadr (netadr_t *a, AF_address_t *s)
 
 	switch (a->family) {
 		case AF_INET: {
-			Sys_MaskPrintf (SYS_NET, "err, converting v4 to v6...\n");
+			Sys_MaskPrintf (SYS_net, "err, converting v4 to v6...\n");
 			s->ss.ss_family = AF_INET6;
 			s->s6.sin6_addr.s6_addr[10] = s->s6.sin6_addr.s6_addr[11] = 0xff;
 			memcpy (&s->s6.sin6_addr.s6_addr[12], &a->ip, sizeof (s->s4.sin_addr));
@@ -186,7 +186,7 @@ NetadrToSockadr (netadr_t *a, AF_address_t *s)
 			break;
 		}
 		default:
-			Sys_MaskPrintf (SYS_NET, "%s: Unknown address family %d", __FUNCTION__, a->family);
+			Sys_MaskPrintf (SYS_net, "%s: Unknown address family %d", __FUNCTION__, a->family);
 			break;
 	}
 }
@@ -207,7 +207,7 @@ SockadrToNetadr (AF_address_t *s, netadr_t *a)
 			break;
 		}
 		default:
-			Sys_MaskPrintf (SYS_NET, "%s: Unknown address family 0x%x\n", __FUNCTION__, s->ss.ss_family);
+			Sys_MaskPrintf (SYS_net, "%s: Unknown address family 0x%x\n", __FUNCTION__, s->ss.ss_family);
 			break;
 	}
 }
@@ -387,7 +387,7 @@ NET_StringToAdr (const char *s, netadr_t *a)
 	freeaddrinfo (resultp);
 
 	SockadrToNetadr (&addr, a);
-	Sys_MaskPrintf (SYS_NET, "Raw address: %s\n", NET_BaseAdrToString (*a));
+	Sys_MaskPrintf (SYS_net, "Raw address: %s\n", NET_BaseAdrToString (*a));
 
 	return true;
 }
@@ -509,7 +509,7 @@ UDP_OpenSocket (int port)
 	} else {
 		Host = "::0";
 	}
-	Sys_MaskPrintf (SYS_NET, "Binding to IP address [%s]\n", Host);
+	Sys_MaskPrintf (SYS_net, "Binding to IP address [%s]\n", Host);
 
 	if (port == PORT_ANY)
 		Service = NULL;

@@ -54,7 +54,7 @@ D_SurfaceCacheAddress (void)
 }
 
 int
-D_SurfaceCacheForRes (int width, int height)
+D_SurfaceCacheForRes (void *data, int width, int height)
 {
 	int         size, pix;
 
@@ -96,9 +96,9 @@ D_ClearCacheGuard (void)
 }
 
 void
-D_InitCaches (void *buffer, int size)
+D_InitCaches (void *data, void *buffer, int size)
 {
-	Sys_MaskPrintf (SYS_DEV, "D_InitCaches: %ik surface cache\n", size/1024);
+	Sys_MaskPrintf (SYS_dev, "D_InitCaches: %ik surface cache\n", size/1024);
 
 	sc_size = size - GUARDSIZE;
 	sc_base = (surfcache_t *) buffer;
@@ -114,7 +114,7 @@ D_InitCaches (void *buffer, int size)
 }
 
 void
-D_FlushCaches (void)
+D_FlushCaches (void *data)
 {
 	surfcache_t *c;
 
@@ -231,7 +231,7 @@ D_CacheSurface (msurface_t *surface, int miplevel)
 	surfcache_t *cache;
 
 	// if the surface is animating or flashing, flush the cache
-	r_drawsurf.texture = R_TextureAnimation (surface);
+	r_drawsurf.texture = R_TextureAnimation (currententity, surface);
 	r_drawsurf.lightadj[0] = d_lightstylevalue[surface->styles[0]];
 	r_drawsurf.lightadj[1] = d_lightstylevalue[surface->styles[1]];
 	r_drawsurf.lightadj[2] = d_lightstylevalue[surface->styles[2]];

@@ -12,6 +12,7 @@
 +(TitleBar *)withTitle:(string)title;
 -initWithTitle:(string)title;
 -setTitle:(string)newTitle;
+-(string)title;
 @end
 
 #endif//__qwaq_ui_titlebar_h

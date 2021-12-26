@@ -55,7 +55,7 @@
 #include "nq/include/host.h"
 
 #ifdef _WIN32
-# include "nq/include/winquake.h"
+# include "winquake.h"
 #endif
 
 int qf_sdl_link;
@@ -122,6 +122,11 @@ SDL_main (int argc, char *argv[])
 	if (!sys_nostdout->int_val) {
 		fcntl (0, F_SETFL, fcntl (0, F_GETFL, 0) | O_NONBLOCK);
 		Sys_Printf ("Quake -- Version %s\n", NQ_VERSION);
+	}
+#else
+	// hack to prevent gcc suggesting noreturn
+	if (!sys_nostdout) {
+		return 1;
 	}
 #endif
 

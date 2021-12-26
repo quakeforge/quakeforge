@@ -58,10 +58,10 @@ glsl_sprite_clear (model_t *m, void *data)
 	m->cache.data = 0;
 	for (i = 0; i < sprite->numframes; i++) {
 		if (sprite->frames[i].type == SPR_SINGLE) {
-			frame = sprite->frames[i].frameptr;
+			frame = sprite->frames[i].frame;
 			GLSL_ReleaseTexture (frame->gl_texturenum);
 		} else {
-			group = (mspritegroup_t *) sprite->frames[i].frameptr;
+			group = sprite->frames[i].group;
 			for (j = 0; j < group->numframes; j++) {
 				frame = group->frames[j];
 				GLSL_ReleaseTexture (frame->gl_texturenum);
@@ -71,14 +71,19 @@ glsl_sprite_clear (model_t *m, void *data)
 }
 
 void
-glsl_Mod_SpriteLoadTexture (model_t *mod, mspriteframe_t *pspriteframe,
-							int framenum)
+glsl_Mod_SpriteLoadFrames (mod_sprite_ctx_t *ctx)
 {
-	const char *name;
-
-	mod->clear = glsl_sprite_clear;
-	name = va (0, "%s_%i", mod->path, framenum);
-	pspriteframe->gl_texturenum =
-		GLSL_LoadQuakeTexture (name, pspriteframe->width, pspriteframe->height,
-							   pspriteframe->pixels);
+	ctx->mod->clear = glsl_sprite_clear;
+	for (int i = 0; i < ctx->numframes; i++) {
+		__auto_type dframe = ctx->dframes[i];
+		size_t      size = sizeof (mspriteframe_t);
+		mspriteframe_t *frame = Hunk_AllocName (0, size, ctx->mod->name);
+		*ctx->frames[i] = frame;
+		Mod_LoadSpriteFrame (frame, dframe);
+		const char *name = va (0, "%s_%i", ctx->mod->path,
+							   ctx->frame_numbers[i]);
+		frame->gl_texturenum =
+			GLSL_LoadQuakeTexture (name, dframe->width, dframe->height,
+								   (const byte *)(dframe + 1));
+	}
 }

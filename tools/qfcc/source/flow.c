@@ -215,7 +215,7 @@ flowvar_is_global (flowvar_t *var)
 
 	if (var->op->op_type != op_def)
 		return 0;
-	def = var->op->o.def;
+	def = var->op->def;
 	if (def->alias)
 		def = def->alias;
 	if (def->local)
@@ -238,7 +238,7 @@ flowvar_is_param (flowvar_t *var)
 
 	if (var->op->op_type != op_def)
 		return 0;
-	def = var->op->o.def;
+	def = var->op->def;
 	if (def->alias)
 		def = def->alias;
 	if (!def->local)
@@ -248,7 +248,7 @@ flowvar_is_param (flowvar_t *var)
 	return 1;
 }
 
-/**	Check if the flowvar refers to a function parameter.
+/**	Check if the flowvar refers to a local variable.
  *
  *	As this is simply "neither global nor pamam", all other flowvars are
  *	considered local, in particular actual non-staic function scope variables
@@ -273,16 +273,18 @@ flowvar_get_def (flowvar_t *var)
 
 	switch (op->op_type) {
 		case op_def:
-			return op->o.def;
+			return op->def;
 		case op_value:
 		case op_label:
 			return 0;
 		case op_temp:
-			return op->o.tempop.def;
+			return op->tempop.def;
 		case op_alias:
 			internal_error (op->expr, "unexpected alias operand");
 		case op_nil:
 			internal_error (op->expr, "unexpected nil operand");
+		case op_pseudo:
+			internal_error (op->expr, "unexpected pseudo operand");
 	}
 	internal_error (op->expr, "oops, blue pill");
 	return 0;
@@ -302,14 +304,19 @@ flow_get_var (operand_t *op)
 		return 0;
 
 	if (op->op_type == op_temp) {
-		if (!op->o.tempop.flowvar)
-			op->o.tempop.flowvar = new_flowvar ();
-		return op->o.tempop.flowvar;
+		if (!op->tempop.flowvar)
+			op->tempop.flowvar = new_flowvar ();
+		return op->tempop.flowvar;
 	}
 	if (op->op_type == op_def) {
-		if (!op->o.def->flowvar)
-			op->o.def->flowvar = new_flowvar ();
-		return op->o.def->flowvar;
+		if (!op->def->flowvar)
+			op->def->flowvar = new_flowvar ();
+		return op->def->flowvar;
+	}
+	if (op->op_type == op_pseudo) {
+		if (!op->pseudoop->flowvar)
+			op->pseudoop->flowvar = new_flowvar ();
+		return op->pseudoop->flowvar;
 	}
 	return 0;
 }
@@ -349,6 +356,27 @@ count_operand (operand_t *op)
 	return 0;
 }
 
+static int
+count_operand_chain (operand_t *op)
+{
+	int         count = 0;
+	while (op) {
+		count += count_operand (op);
+		op = op->next;
+	}
+	return count;
+}
+
+/**	Allocate flow analysis pseudo address space.
+ */
+static int
+get_pseudo_address (function_t *func, int size)
+{
+	int         addr = func->pseudo_addr;
+	func->pseudo_addr += size;
+	return addr;
+}
+
 /**	Allocate flow analysis pseudo address space to a temporary variable.
  *
  *	If the operand already has an address allocated (flowvar_t::flowaddr is
@@ -369,21 +397,20 @@ static int
 get_temp_address (function_t *func, operand_t *op)
 {
 	operand_t  *top = op;
-	if (op->o.tempop.flowaddr) {
-		return op->o.tempop.flowaddr;
+	if (op->tempop.flowaddr) {
+		return op->tempop.flowaddr;
 	}
-	while (top->o.tempop.alias) {
-		top = top->o.tempop.alias;
+	while (top->tempop.alias) {
+		top = top->tempop.alias;
 	}
-	if (!top->o.tempop.flowaddr) {
-		top->o.tempop.flowaddr = func->tmpaddr;
-		func->tmpaddr += top->size;
+	if (!top->tempop.flowaddr) {
+		top->tempop.flowaddr = get_pseudo_address (func, top->size);
 	}
-	if (top->o.tempop.offset) {
+	if (top->tempop.offset) {
 		internal_error (top->expr, "real tempop with a non-zero offset");
 	}
-	op->o.tempop.flowaddr = top->o.tempop.flowaddr + op->o.tempop.offset;
-	return op->o.tempop.flowaddr;
+	op->tempop.flowaddr = top->tempop.flowaddr + op->tempop.offset;
+	return op->tempop.flowaddr;
 }
 
 /**	Add an operand's flowvar to the function's list of variables.
@@ -412,11 +439,22 @@ add_operand (function_t *func, operand_t *op)
 		var->number = func->num_vars++;
 		var->op = op;
 		func->vars[var->number] = var;
-		if (op->op_type == op_temp) {
+		if (op->op_type == op_pseudo) {
+			var->flowaddr = get_pseudo_address (func, 1);
+		} else if (op->op_type == op_temp) {
 			var->flowaddr = get_temp_address (func, op);
 		} else if (flowvar_is_local (var)) {
-			var->flowaddr = func->num_statements + def_offset (var->op->o.def);
+			var->flowaddr = func->num_statements + def_offset (var->op->def);
 		}
+	}
+}
+
+static void
+add_operand_chain (function_t *func, operand_t *op)
+{
+	while (op) {
+		add_operand (func, op);
+		op = op->next;
 	}
 }
 
@@ -509,7 +547,7 @@ static int flow_def_clear_flowvars (def_t *def, void *data)
  *	recycled. Thus, give temp vars a pseudo address space just past the
  *	address space used for source-defined local variables. As each temp
  *	var is added to the analyzer, get_temp_address() assigns the temp var
- *	an address using function_t::tmpaddr as a starting point.
+ *	an address using function_t::pseudo_addr as a starting point.
  *
  *	add_operand() takes care of setting flowvar_t::flowaddr for both locals
  *	and temps.
@@ -528,7 +566,7 @@ flow_build_vars (function_t *func)
 
 	// First, run through the statements making sure any accessed variables
 	// have their flowvars reset.  Local variables will be fine, but global
-	// variables make have had flowvars added in a previous function, and it's
+	// variables may have had flowvars added in a previous function, and it's
 	// easier to just clear them all.
 	// This is done before .return and .param so they won't get reset just
 	// after being counted
@@ -537,7 +575,7 @@ flow_build_vars (function_t *func)
 		flow_analyze_statement (s, 0, 0, 0, operands);
 		for (j = 0; j < FLOW_OPERANDS; j++) {
 			if (operands[j] && operands[j]->op_type == op_def) {
-				def_visit_all (operands[j]->o.def, 0,
+				def_visit_all (operands[j]->def, 0,
 							   flow_def_clear_flowvars, 0);
 			}
 		}
@@ -546,7 +584,7 @@ flow_build_vars (function_t *func)
 	for (i = 0; i < num_flow_params; i++) {
 		def_t      *def = param_symbol (flow_params[i].name)->s.def;
 		def_visit_all (def, 0, flow_def_clear_flowvars, 0);
-		flow_params[i].op.o.def = def;
+		flow_params[i].op.def = def;
 		num_vars += count_operand (&flow_params[i].op);
 	}
 	// then run through the statements in the function looking for accessed
@@ -556,6 +594,10 @@ flow_build_vars (function_t *func)
 		flow_analyze_statement (s, 0, 0, 0, operands);
 		for (j = 0; j < 4; j++)
 			num_vars += count_operand (operands[j]);
+		// count any pseudo operands referenced by the statement
+		num_vars += count_operand_chain (s->use);
+		num_vars += count_operand_chain (s->def);
+		num_vars += count_operand_chain (s->kill);
 	}
 	if (!num_vars)
 		return;
@@ -567,7 +609,7 @@ flow_build_vars (function_t *func)
 
 	// set up pseudo address space for temp vars so accessing tmp vars
 	// though aliases analyses correctly
-	func->tmpaddr = func->num_statements + func->symtab->space->size;
+	func->pseudo_addr = func->num_statements + func->symtab->space->size;
 
 	func->num_vars = 0;	// incremented by add_operand
 	// first, add .return and .param_[0-7] as they are always needed
@@ -580,6 +622,9 @@ flow_build_vars (function_t *func)
 		flow_analyze_statement (s, 0, 0, 0, operands);
 		for (j = 0; j < 4; j++)
 			add_operand (func, operands[j]);
+		add_operand_chain (func, s->use);
+		add_operand_chain (func, s->def);
+		add_operand_chain (func, s->kill);
 	}
 	// and set the use/def sets for the vars (has to be a separate pass
 	// because the allias handling reqruires the flow address to be valid
@@ -664,9 +709,9 @@ flow_kill_aliases (set_t *kill, flowvar_t *var, const set_t *uninit)
 	tmp = set_new ();
 	// collect the kill sets from any aliases
 	if (op->op_type == op_temp) {
-		tempop_visit_all (&op->o.tempop, 1, flow_tempop_kill_aliases, tmp);
+		tempop_visit_all (&op->tempop, 1, flow_tempop_kill_aliases, tmp);
 	} else if (op->op_type == op_def) {
-		def_visit_all (op->o.def, 1, flow_def_kill_aliases, tmp);
+		def_visit_all (op->def, 1, flow_def_kill_aliases, tmp);
 	}
 	// don't allow aliases to kill definitions in the entry dummy block
 	if (uninit) {
@@ -892,15 +937,24 @@ flow_uninit_scan_statements (flownode_t *node, set_t *defs, set_t *uninit)
 		for (var_i = set_first (stuse); var_i; var_i = set_next (var_i)) {
 			var = node->graph->func->vars[var_i->element];
 			if (set_is_intersecting (defs, var->define)) {
-				def_t      *def = flowvar_get_def (var);
-				if (def) {
-					if (options.warnings.uninited_variable) {
-						warning (st->expr, "%s may be used uninitialized",
-								 def->name);
+				if (var->op->op_type == op_pseudo) {
+					pseudoop_t *op = var->op->pseudoop;
+					if (op->uninitialized) {
+						op->uninitialized (st->expr, op);
+					} else {
+						internal_error (0, "pseudoop uninitialized not set");
 					}
 				} else {
-					bug (st->expr, "st %d, uninitialized temp %s",
-						 st->number, operand_string (var->op));
+					def_t      *def = flowvar_get_def (var);
+					if (def) {
+						if (options.warnings.uninited_variable) {
+							warning (st->expr, "%s may be used uninitialized",
+									 def->name);
+						}
+					} else {
+						bug (st->expr, "st %d, uninitialized temp %s",
+							 st->number, operand_string (var->op));
+					}
 				}
 			}
 			// avoid repeat warnings in this node
@@ -912,13 +966,13 @@ flow_uninit_scan_statements (flownode_t *node, set_t *defs, set_t *uninit)
 			set_difference (defs, var->define);
 			if (var->op->op_type == op_temp) {
 				op = var->op;
-				if (op->o.tempop.alias) {
-					var = op->o.tempop.alias->o.tempop.flowvar;
+				if (op->tempop.alias) {
+					var = op->tempop.alias->tempop.flowvar;
 					if (var)
 						set_difference (defs, var->define);
 				}
-				for (op = op->o.tempop.alias_ops; op; op = op->next) {
-					var = op->o.tempop.flowvar;
+				for (op = op->tempop.alias_ops; op; op = op->next) {
+					var = op->tempop.flowvar;
 					if (var)
 						set_difference (defs, var->define);
 				}
@@ -1062,9 +1116,9 @@ flow_add_op_var (set_t *set, operand_t *op, int is_use)
 	// var is being treated as assigned as well. Want to handle partial
 	// defs properly, but I am as yet uncertain of how.
 	if (op->op_type == op_temp) {
-		tempop_visit_all (&op->o.tempop, ol, flow_tempop_add_aliases, set);
-	} else {
-		def_visit_all (op->o.def, ol, flow_def_add_aliases, set);
+		tempop_visit_all (&op->tempop, ol, flow_tempop_add_aliases, set);
+	} else if (op->op_type == op_def) {
+		def_visit_all (op->def, ol, flow_def_add_aliases, set);
 	}
 }
 
@@ -1073,15 +1127,15 @@ flow_analyze_pointer_operand (operand_t *ptrop, set_t *def)
 {
 	operand_t  *op = 0;
 
-	if (ptrop->op_type == op_value && ptrop->o.value->lltype == ev_pointer) {
-		ex_pointer_t *ptr = &ptrop->o.value->v.pointer;
-		if (ptrop->o.value->v.pointer.def) {
+	if (ptrop->op_type == op_value && ptrop->value->lltype == ev_pointer) {
+		ex_pointer_t *ptr = &ptrop->value->v.pointer;
+		if (ptrop->value->v.pointer.def) {
 			def_t      *alias;
 			alias = alias_def (ptr->def, ptr->type, ptr->val);
 			op = def_operand (alias, ptr->type, ptrop->expr);
 		}
-		if (ptrop->o.value->v.pointer.tempop) {
-			op = ptrop->o.value->v.pointer.tempop;
+		if (ptrop->value->v.pointer.tempop) {
+			op = ptrop->value->v.pointer.tempop;
 		}
 		if (op) {
 			flow_add_op_var (def, op, 0);
@@ -1099,12 +1153,24 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 	operand_t  *aux_op1 = 0;
 	operand_t  *aux_op2 = 0;
 
-	if (use)
+	if (use) {
 		set_empty (use);
-	if (def)
+		for (operand_t *op = s->use; op; op = op->next) {
+			flow_add_op_var (use, op, 1);
+		}
+	}
+	if (def) {
 		set_empty (def);
-	if (kill)
+		for (operand_t *op = s->def; op; op = op->next) {
+			flow_add_op_var (def, op, 0);
+		}
+	}
+	if (kill) {
 		set_empty (kill);
+		for (operand_t *op = s->kill; op; op = op->next) {
+			flow_add_op_var (kill, op, 0);
+		}
+	}
 	if (operands) {
 		for (i = 0; i < FLOW_OPERANDS; i++)
 			operands[i] = 0;
@@ -1300,12 +1366,12 @@ flow_find_successors (flowgraph_t *graph)
 				set_add (node->successors, graph->num_nodes + 1);
 			}
 		}
-		graph->num_edges += set_size (node->successors);
+		graph->num_edges += set_count (node->successors);
 	}
 	// set the successor for the entry dummy node to the real entry node
 	node = graph->nodes[graph->num_nodes];
 	set_add (node->successors, 0);
-	graph->num_edges += set_size (node->successors);
+	graph->num_edges += set_count (node->successors);
 }
 
 static void

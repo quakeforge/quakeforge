@@ -3,6 +3,7 @@
 #include "ruamoko/qwaq/ui/group.h"
 #include "ruamoko/qwaq/ui/scrollbar.h"
 #include "ruamoko/qwaq/ui/view.h"
+#include "ruamoko/qwaq/debugger/debug.h"
 
 @implementation View
 
@@ -122,37 +123,75 @@ setScrollBar (View *self, ScrollBar **sb, ScrollBar *scrollbar)
 	return self;
 }
 
+-(window_t) window
+{
+	return nil;
+}
+
+static void updateScreenCursor (View *view);
+
+-updateScreenCursor
+{
+	updateScreenCursor (self);
+	return self;
+}
+
 static void
 updateScreenCursor (View *view)
 {
-	// XXX this does not work
-/*	while ((view.state & sfInFocus) && view.owner) {
-		View       *owner = (View *) view.owner;
-		if (view.cursor.x >= 0 && view.cursor.x < view.xlen
-			&& view.cursor.y >= 0 && view.cursor.y < view.ylen) {
-			owner.cursor.x = view.cursor.x + view.xpos;
-			owner.cursor.y = view.cursor.y + view.ypos;
-			owner.cursorState = view.cursorState;
-		} else {
-			owner.cursorState = 0;
-		}
-		view = owner;
-	}
 	if (view.state & sfInFocus) {
-		if (view.cursor.x >= 0 && view.cursor.x < view.xlen
-			&& view.cursor.y >= 0 && view.cursor.y < view.ylen) {
-			curs_set (view.cursorState);
-			move(view.cursor.x, view.cursor.y);
+		if (view.owner) {
+			View       *owner = [view.owner owner];
+			if (view.cursorPos.x >= 0 && view.cursorPos.x < view.xlen
+				&& view.cursorPos.y >= 0 && view.cursorPos.y < view.ylen) {
+				owner.cursorPos.x = view.cursorPos.x + view.xpos;
+				owner.cursorPos.y = view.cursorPos.y + view.ypos;
+				owner.cursorState = view.cursorState;
+			} else {
+				owner.cursorState = 0;
+			}
+			[owner updateScreenCursor];
 		} else {
-			curs_set (0);
 		}
-	}*/
+	}
+/*
+			curs_set (cursorState);
+			wmove (get_window (view), cursorPos.x, cursorPos.y);
+*/
+}
+
+-hideCursor
+{
+	return [self setCursorVisible: 0];
+}
+
+-showCursor
+{
+	return [self setCursorVisible: 1];
+}
+
+-setCursorVisible: (int) visible
+{
+	cursorState = visible;
+	if ((state & (sfInFocus | sfDrawn)) == (sfInFocus | sfDrawn)) {
+		[self updateScreenCursor];
+	}
+	return self;
+}
+
+-moveCursor: (Point) pos
+{
+	cursorPos = pos;
+	if ((state & (sfInFocus | sfDrawn)) == (sfInFocus | sfDrawn)) {
+		[self updateScreenCursor];
+	}
+	return self;
 }
 
 -draw
 {
 	state |= sfDrawn;
-	updateScreenCursor (self);
+	[self updateScreenCursor];
 	return self;
 }
 
@@ -160,7 +199,7 @@ updateScreenCursor (View *view)
 {
 	if (state & sfDrawn) {
 		state &= ~sfDrawn;
-		updateScreenCursor (self);
+		[self updateScreenCursor];
 	}
 	return self;
 }
@@ -187,6 +226,11 @@ updateScreenCursor (View *view)
 }
 
 - (Rect) rect
+{
+	return rect;
+}
+
+- (Rect) absRect
 {
 	return rect;
 }
@@ -280,14 +324,25 @@ updateScreenCursor (View *view)
 		ypos = 0;
 	}
 	if (owner) {
+		Rect        r = [owner absRect];
 		Extent      s = [owner size];
-		if (xpos > s.width - 1) {
-			xpos = s.width - 1;
+		if (xpos > r.extent.width - 1) {
+			xpos = r.extent.width - 1;
 		}
-		if (ypos > s.height - 1) {
-			ypos = s.height - 1;
+		if (ypos > r.extent.height - 1) {
+			ypos = r.extent.height - 1;
 		}
+		[self updateAbsPos: r.offset];
+	} else {
+		[self updateAbsPos: nil];
 	}
+	return self;
+}
+
+-updateAbsPos: (Point) absPos
+{
+	absRect.offset.x = absPos.x + xpos;
+	absRect.offset.y = absPos.y + ypos;
 	return self;
 }
 
@@ -387,6 +442,7 @@ updateScreenCursor (View *view)
 -takeFocus
 {
 	state |= sfInFocus;
+	[self updateScreenCursor];
 	[onReceiveFocus respond:self];
 	return self;
 }
@@ -394,6 +450,7 @@ updateScreenCursor (View *view)
 -loseFocus
 {
 	state &= ~sfInFocus;
+	[self updateScreenCursor];
 	[onReleaseFocus respond:self];
 	return self;
 }

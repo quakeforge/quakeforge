@@ -78,7 +78,7 @@ do_fb_skin (glskin_t *s)
 	s->fb_tex->height = s->tex->height;
 	s->fb_tex->format = tex_palette;
 	s->fb_tex->palette = vid.palette;
-	s->fb = Mod_CalcFullbright (s->tex->data, s->fb_tex->data, size);
+	s->fb = Mod_CalcFullbright (s->fb_tex->data, s->tex->data, size);
 }
 
 void
@@ -134,7 +134,8 @@ build_skin_32 (tex_t *tex, int texnum, byte *translate,
 	unsigned    i, j;
 	int         samples = alpha ? gl_alpha_format : gl_solid_format;
 	unsigned    frac, fracstep;
-	byte        pixels[512 * 256 * 4], *out, *pal;
+	byte        pixels[512 * 256 * 4], *out;
+	const byte *pal;
 	byte        c;
 
 	out = pixels;

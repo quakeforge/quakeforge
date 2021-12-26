@@ -41,7 +41,6 @@
 #include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/dstring.h"
-#include "QF/entity.h"
 #include "QF/idparse.h"
 #include "QF/input.h"
 #include "QF/msg.h"
@@ -53,6 +52,7 @@
 #include "QF/va.h"
 
 #include "QF/plugin/vid_render.h"
+#include "QF/scene/entity.h"
 
 #include "client/temp_entities.h"
 
@@ -315,7 +315,7 @@ CL_NewMap (const char *mapname)
 {
 	r_funcs->R_NewMap (cl.worldmodel, cl.model_precache, cl.nummodels);
 	Con_NewMap ();
-	Hunk_Check ();								// make sure nothing is hurt
+	Hunk_Check (0);								// make sure nothing is hurt
 	Sbar_CenterPrint (0);
 
 	if (cl.model_precache[1] && cl.model_precache[1]->brush.entities) {
@@ -339,7 +339,7 @@ CL_ParseServerInfo (void)
 	const char *str;
 	int         i;
 
-	Sys_MaskPrintf (SYS_DEV, "Serverinfo packet received.\n");
+	Sys_MaskPrintf (SYS_dev, "Serverinfo packet received.\n");
 
 	S_BlockSound ();
 	S_StopAllSounds ();
@@ -365,7 +365,7 @@ CL_ParseServerInfo (void)
 		Sys_Printf ("Bad maxclients (%u) from server\n", cl.maxclients);
 		goto done;
 	}
-	cl.players = Hunk_AllocName (cl.maxclients * sizeof (*cl.players),
+	cl.players = Hunk_AllocName (0, cl.maxclients * sizeof (*cl.players),
 								 "players");
 	for (i = 0; i < cl.maxclients; i++) {
 		cl.players[i].userinfo = Info_ParseString ("name\\", 0, 0);
@@ -444,7 +444,7 @@ CL_ParseServerInfo (void)
 		dstring_clearstr (centerprint);
 	CL_NewMap (model_precache[1]);
 
-	Hunk_Check ();						// make sure nothing is hurt
+	Hunk_Check (0);						// make sure nothing is hurt
 
 	noclip_anglehack = false;			// noclip is turned off at start
 	r_data->gravity = 800.0;			// Set up gravity for renderer effects
@@ -934,16 +934,16 @@ CL_ParseServerMessage (void)
 				str = MSG_ReadString (net_message);
 				if (str[strlen (str) - 1] == '\n') {
 					if (stuffbuf && stuffbuf->str[0]) {
-						Sys_MaskPrintf (SYS_DEV, "stufftext: %s%s\n",
+						Sys_MaskPrintf (SYS_dev, "stufftext: %s%s\n",
 										stuffbuf->str, str);
 						Cbuf_AddText (host_cbuf, stuffbuf->str);
 						dstring_clearstr (stuffbuf);
 					} else {
-						Sys_MaskPrintf (SYS_DEV, "stufftext: %s\n", str);
+						Sys_MaskPrintf (SYS_dev, "stufftext: %s\n", str);
 					}
 					Cbuf_AddText (host_cbuf, str);
 				} else {
-					Sys_MaskPrintf (SYS_DEV, "partial stufftext: %s\n", str);
+					Sys_MaskPrintf (SYS_dev, "partial stufftext: %s\n", str);
 					if (!stuffbuf)
 						stuffbuf = dstring_newstr ();
 					dstring_appendstr (stuffbuf, str);

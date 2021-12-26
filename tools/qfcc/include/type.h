@@ -152,6 +152,7 @@ type_t *array_type (type_t *aux, int size);
 type_t *based_array_type (type_t *aux, int base, int top);
 type_t *alias_type (type_t *type, type_t *alias_chain, const char *name);
 const type_t *unalias_type (const type_t *type) __attribute__((pure));
+const type_t *dereference_type (const type_t *type) __attribute__((pure));
 void print_type_str (struct dstring_s *str, const type_t *type);
 void print_type (const type_t *type);
 void dump_dot_type (void *t, const char *filename);
@@ -180,6 +181,7 @@ int is_func (const type_t *type) __attribute__((pure));
 int is_string (const type_t *type) __attribute__((pure));
 int type_compatible (const type_t *dst, const type_t *src) __attribute__((pure));
 int type_assignable (const type_t *dst, const type_t *src);
+int type_same (const type_t *dst, const type_t *src) __attribute__((pure));
 int type_size (const type_t *type) __attribute__((pure));
 
 void init_types (void);

@@ -1,7 +1,7 @@
 {
 	images = {
 		depth = {
-			imageType = VK_IMAGE_TYPE_2D;	//FIXME short form is 2d...
+			imageType = `2d;
 			format = x8_d24_unorm_pack32;
 			samples = 1;
 			extent = {
@@ -16,7 +16,7 @@
 			initialLayout = undefined;
 		};
 		color = {
-			imageType = VK_IMAGE_TYPE_2D;
+			imageType = `2d;
 			format = r8g8b8a8_unorm;
 			samples = 1;
 			extent = {
@@ -31,7 +31,7 @@
 			initialLayout = undefined;
 		};
 		emission = {
-			imageType = VK_IMAGE_TYPE_2D;
+			imageType = `2d;
 			format = r16g16b16a16_sfloat;
 			samples = 1;
 			extent = {
@@ -46,7 +46,7 @@
 			initialLayout = undefined;
 		};
 		normal = {
-			imageType = VK_IMAGE_TYPE_2D;
+			imageType = `2d;
 			format = r16g16b16a16_sfloat;
 			samples = 1;
 			extent = {
@@ -61,7 +61,7 @@
 			initialLayout = undefined;
 		};
 		position = {
-			imageType = VK_IMAGE_TYPE_2D;
+			imageType = `2d;
 			format = r32g32b32a32_sfloat;
 			samples = 1;
 			extent = {
@@ -76,7 +76,7 @@
 			initialLayout = undefined;
 		};
 		opaque = {
-			imageType = VK_IMAGE_TYPE_2D;
+			imageType = `2d;
 			format = r8g8b8a8_unorm;
 			samples = 1;
 			extent = {
@@ -91,7 +91,7 @@
 			initialLayout = undefined;
 		};
 		translucent = {
-			imageType = VK_IMAGE_TYPE_2D;
+			imageType = `2d;
 			format = r8g8b8a8_unorm;
 			samples = 1;
 			extent = {
@@ -253,7 +253,7 @@
 			{
 				format = $properties.images.color.format;
 				samples = 1;
-				loadOp = dont_care;
+				loadOp = clear;
 				storeOp = dont_care;
 				stencilLoadOp = dont_care;
 				stencilStoreOp = dont_care;
@@ -263,7 +263,7 @@
 			{
 				format = $properties.images.emission.format;
 				samples = 1;
-				loadOp = dont_care;
+				loadOp = clear;
 				storeOp = dont_care;
 				stencilLoadOp = dont_care;
 				stencilStoreOp = dont_care;
@@ -303,7 +303,7 @@
 			{
 				format = $properties.images.translucent.format;
 				samples = 1;
-				loadOp = dont_care;
+				loadOp = clear;
 				storeOp = dont_care;
 				stencilLoadOp = dont_care;
 				stencilStoreOp = dont_care;
@@ -426,19 +426,27 @@
 			{
 				srcSubpass = 0;	// depth
 				dstSubpass = 1; // translucent
-				srcStageMask = color_attachment_output;
-				dstStageMask = fragment_shader;
-				srcAccessMask = color_attachment_write;
-				dstAccessMask = shader_read;
+				srcStageMask = late_fragment_tests;
+				dstStageMask = fragment_shader|early_fragment_tests;
+				srcAccessMask = depth_stencil_attachment_write;
+				dstAccessMask = input_attachment_read|depth_stencil_attachment_read;
 				dependencyFlags = by_region;
+			},
+			{
+				srcSubpass = ~0u;	// external
+				dstSubpass = 1; // translucent
+				srcStageMask = compute_shader;
+				dstStageMask = vertex_input|draw_indirect;
+				srcAccessMask = shader_write;
+				dstAccessMask = vertex_attribute_read|indirect_command_read;
 			},
 			{
 				srcSubpass = 0;	// depth
 				dstSubpass = 2; // g-buffer
-				srcStageMask = color_attachment_output;
-				dstStageMask = fragment_shader;
-				srcAccessMask = color_attachment_write;
-				dstAccessMask = shader_read;
+				srcStageMask = late_fragment_tests;
+				dstStageMask = early_fragment_tests;
+				srcAccessMask = depth_stencil_attachment_write;
+				dstAccessMask = depth_stencil_attachment_read;
 				dependencyFlags = by_region;
 			},
 			{
@@ -447,7 +455,7 @@
 				srcStageMask = color_attachment_output;
 				dstStageMask = fragment_shader;
 				srcAccessMask = color_attachment_write;
-				dstAccessMask = shader_read;
+				dstAccessMask = input_attachment_read;
 				dependencyFlags = by_region;
 			},
 			{
@@ -456,7 +464,7 @@
 				srcStageMask = color_attachment_output;
 				dstStageMask = fragment_shader;
 				srcAccessMask = color_attachment_write;
-				dstAccessMask = shader_read;
+				dstAccessMask = input_attachment_read;
 				dependencyFlags = by_region;
 			},
 			{
@@ -465,7 +473,7 @@
 				srcStageMask = color_attachment_output;
 				dstStageMask = fragment_shader;
 				srcAccessMask = color_attachment_write;
-				dstAccessMask = shader_read;
+				dstAccessMask = input_attachment_read;
 				dependencyFlags = by_region;
 			},
 		);

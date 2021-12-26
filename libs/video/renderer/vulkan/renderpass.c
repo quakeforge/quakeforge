@@ -42,7 +42,6 @@
 #include "QF/cvar.h"
 #include "QF/dstring.h"
 #include "QF/hash.h"
-#include "QF/input.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
 #include "QF/quakefs.h"
@@ -71,8 +70,8 @@ QFV_CreateRenderPass (qfv_device_t *device,
 	VkDevice    dev = device->dev;
 	qfv_devfuncs_t *dfunc = device->funcs;
 
-	if (developer->int_val & SYS_VULKAN) {
-		Sys_Printf ("attachments: %ld\n", attachments->size);
+	if (developer->int_val & SYS_vulkan) {
+		Sys_Printf ("attachments: %zd\n", attachments->size);
 		for (size_t i = 0; i < attachments->size; i++) {
 			Sys_Printf ("  attachment: %zd\n", i);
 			Sys_Printf ("    flags: %x\n", attachments->a[i].flags);
@@ -89,7 +88,7 @@ QFV_CreateRenderPass (qfv_device_t *device,
 			Sys_Printf ("    finalLayout: %d\n",
 						attachments->a[i].finalLayout);
 		}
-		Sys_Printf ("subpassparams: %ld\n", subpassparams->size);
+		Sys_Printf ("subpassparams: %zd\n", subpassparams->size);
 		for (size_t i = 0; i < subpassparams->size; i++) {
 			VkSubpassDescription *sp = &subpassparams->a[i];
 			Sys_Printf ("    flags: %x\n", sp->flags);
@@ -126,7 +125,7 @@ QFV_CreateRenderPass (qfv_device_t *device,
 				Sys_Printf ("        %d\n", sp->pPreserveAttachments[j]);
 			}
 		}
-		Sys_Printf ("dependencies: %ld\n", dependencies->size);
+		Sys_Printf ("dependencies: %zd\n", dependencies->size);
 		for (size_t i = 0; i < dependencies->size; i++) {
 			Sys_Printf ("    srcSubpass: %d\n", dependencies->a[i].srcSubpass);
 			Sys_Printf ("    dstSubpass: %d\n", dependencies->a[i].dstSubpass);

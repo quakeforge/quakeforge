@@ -132,13 +132,13 @@ ED_Free (progs_t *pr, edict_t *ed)
 
 
 VISIBLE void
-ED_PrintNum (progs_t *pr, pr_int_t ent)
+ED_PrintNum (progs_t *pr, pr_int_t ent, const char *fieldname)
 {
 	if (!pr->num_edicts) {
 		Sys_Printf ("Edicts not supported in this VM\n");
 		return;
 	}
-	ED_Print (pr, EDICT_NUM (pr, ent));
+	ED_Print (pr, EDICT_NUM (pr, ent), fieldname);
 }
 
 /*
@@ -164,13 +164,13 @@ ED_PrintEdicts (progs_t *pr, const char *fieldval)
 		for (i = 0; i < *pr->num_edicts; i++)
 			if (strequal(fieldval,
 						 E_GSTRING (pr, EDICT_NUM(pr, i), def->ofs))) {
-				ED_PrintNum (pr, i);
+				ED_PrintNum (pr, i, 0);
 				count++;
 			}
 		Sys_Printf ("%i entities\n", count);
 	} else {
 		for (i = 0; i < *pr->num_edicts; i++)
-			ED_PrintNum (pr, i);
+			ED_PrintNum (pr, i, 0);
 		Sys_Printf ("%i entities\n", *pr->num_edicts);
 	}
 }
@@ -235,7 +235,7 @@ ED_NumForEdict (progs_t *pr, edict_t *e)
 
 	if (b && (b < 0 || b >= *pr->num_edicts))
 		PR_RunError (pr, "NUM_FOR_EDICT: bad pointer %d %p %p", b, e,
-					 pr->edicts);
+					 pr->pr_edicts);
 
 	return b;
 }

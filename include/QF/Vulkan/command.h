@@ -44,4 +44,15 @@ int QFV_QueueSubmit (struct qfv_queue_s *queue,
 					 qfv_semaphoreset_t *signalSemaphores, VkFence fence);
 int QFV_QueueWaitIdle (struct qfv_queue_s *queue);
 
+typedef struct {
+	VkShaderStageFlags stageFlags;
+	uint32_t    offset;
+	uint32_t    size;
+	const void *data;
+} qfv_push_constants_t;
+
+void QFV_PushConstants (struct qfv_device_s *device, VkCommandBuffer cmd,
+						VkPipelineLayout layout, uint32_t numPC,
+						const qfv_push_constants_t *constants);
+
 #endif//__QF_Vulkan_command_h

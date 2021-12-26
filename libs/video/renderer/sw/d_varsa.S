@@ -203,3 +203,6 @@ C(spr8entryvec_table):	.long	0, C(Spr8Entry2_8), C(Spr8Entry3_8), C(Spr8Entry4_8
 
 #endif	// USE_INTEL_ASM
 
+#if defined(__linux__) && defined(__ELF__)
+.section .note.GNU-stack,"",%progbits
+#endif

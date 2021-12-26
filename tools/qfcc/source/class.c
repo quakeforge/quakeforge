@@ -455,7 +455,7 @@ category_implements (category_t *cat, protocol_t *protocol)
 int
 obj_types_assignable (const type_t *dst, const type_t *src)
 {
-	class_t    *dst_class, *src_class;
+	class_t    *dst_class, *src_class = 0;
 	category_t *cat;
 	int         dst_is_proto, src_is_proto;
 	protocollist_t *dst_protos = 0, *src_protos = 0;
@@ -507,7 +507,9 @@ obj_types_assignable (const type_t *dst, const type_t *src)
 
 	// check dst is a base class of src
 	dst_class = dst->t.fldptr.type->t.class;
-	src_class = src->t.fldptr.type->t.class;
+	if (src->t.fldptr.type->meta == ty_class) {
+		src_class = src->t.fldptr.type->t.class;
+	}
 	//printf ("%s %s\n", dst_class->name, src_class->name);
 	while (dst_class != src_class && src_class) {
 		src_class = src_class->super_class;
@@ -1505,7 +1507,6 @@ class_finish_module (void)
 	symbol_t   *exec_class_sym;
 	symbol_t   *init_sym;
 	expr_t     *init_expr;
-	storage_class_t save_storage;
 
 	data.refs = emit_selectors ();
 	if (class_hash) {
@@ -1561,12 +1562,8 @@ class_finish_module (void)
 				 build_function_call (new_symbol_expr (exec_class_sym),
 									  exec_class_sym->type, module_expr));
 
-	save_storage = current_storage;
-	current_storage = sc_static;
-	current_func = begin_function (init_sym, 0, current_symtab, 1);
+	current_func = begin_function (init_sym, 0, current_symtab, 1, sc_static);
 	build_code_function (init_sym, 0, init_expr);
-	current_func = 0;
-	current_storage = save_storage;
 }
 
 protocol_t *

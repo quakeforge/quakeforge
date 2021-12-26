@@ -4,8 +4,7 @@
 #include "ruamoko/qwaq/debugger/views/defview.h"
 
 @interface BasicView : DefView
-// might return a NameView (which is also a DefView)
-+(DefView *)withType:(qfot_type_t *)type at:(unsigned)offset in:(void *)data;
++(DefView *)withDef:(qdb_def_t)def in:(void *)data type:(qfot_type_t *)type;
 @end
 
 #endif//__qwaq_debugger_basicview_h

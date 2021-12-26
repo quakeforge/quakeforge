@@ -9,6 +9,7 @@
 
 @class ProxyView;
 @class Editor;
+@class EditStatus;
 @class ScrollBar;
 @class Window;
 @class Array;
@@ -28,10 +29,12 @@
 		int         onExit;
 	}           sub_cond;
 	SEL         traceHandler;
+	SEL         breakHandler;
 	int         running;
 
 	Window     *source_window;
 	ScrollBar  *source_scrollbar;
+	EditStatus *source_status;
 	ProxyView  *file_proxy;
 	Array      *files;
 	Editor     *current_file;

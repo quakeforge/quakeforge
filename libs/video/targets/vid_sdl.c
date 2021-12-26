@@ -51,12 +51,8 @@
 #ifdef _WIN32	// FIXME: evil hack to get full DirectSound support with SDL
 #include <windows.h>
 #include <SDL_syswm.h>
-HWND 		mainwindow;
+HWND 		win_mainwindow;
 #endif
-
-// The original defaults
-#define BASEWIDTH 320
-#define BASEHEIGHT 200
 
 SDL_Surface *sdl_screen = NULL;
 
@@ -88,7 +84,7 @@ VID_Init (byte *palette, byte *colormap)
 	viddef.fullbright = 256 - viddef.colormap8[256 * VID_GRADES];
 
 	// Set up display mode (width and height)
-	VID_GetWindowSize (BASEWIDTH, BASEHEIGHT);
+	VID_GetWindowSize (640, 480);
 
 	// Set video width, height and flags
 	sdl_flags = (SDL_SWSURFACE | SDL_HWPALETTE);
@@ -120,7 +116,7 @@ VID_Init (byte *palette, byte *colormap)
 
 //	SDL_GetWMInfo(&info);
 //	mainwindow=info.window;
-	mainwindow=GetActiveWindow();
+	win_mainwindow=GetActiveWindow();
 #endif
 
 	viddef.recalc_refdef = 1;				// force a surface cache flush

@@ -559,6 +559,18 @@ unalias_type (const type_t *type)
 	return type;
 }
 
+const type_t *
+dereference_type (const type_t *type)
+{
+	if (!is_pointer (type) && !is_field (type)) {
+		internal_error (0, "dereference non pointer/field type");
+	}
+	if (type->meta == ty_alias) {
+		type = type->t.alias.full_type;
+	}
+	return type->t.fldptr.type;
+}
+
 void
 print_type_str (dstring_t *str, const type_t *type)
 {
@@ -729,8 +741,8 @@ encode_type (dstring_t *encoding, const type_t *type)
 	if (!type)
 		return;
 	switch (type->meta) {
-		case ty_alias: // XXX do I want this, or just the unaliased type?
-			dasprintf (encoding, "{%s>", type->name);
+		case ty_alias:
+			dasprintf (encoding, "{%s>", type->name ? type->name : "");
 			encode_type (encoding, type->t.alias.aux_type);
 			dasprintf (encoding, "}");
 			return;
@@ -1052,6 +1064,15 @@ type_assignable (const type_t *dst, const type_t *src)
 	if (is_void (src))
 		return 1;
 	return 0;
+}
+
+int
+type_same (const type_t *dst, const type_t *src)
+{
+	dst = unalias_type (dst);
+	src = unalias_type (src);
+
+	return dst == src;
 }
 
 int

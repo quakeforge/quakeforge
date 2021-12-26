@@ -74,7 +74,7 @@ I_CDAudio_Eject (void)
 		return;
 
 	if (SDL_CDEject (cd_id))
-		Sys_MaskPrintf (SYS_SND, "Unable to eject CD-ROM tray.\n");
+		Sys_MaskPrintf (SYS_snd, "Unable to eject CD-ROM tray.\n");
 }
 
 static void
@@ -86,7 +86,7 @@ I_CDAudio_Pause (void)
 		return;
 
 	if (SDL_CDPause (cd_id))
-		Sys_MaskPrintf (SYS_SND, "CDAudio_Pause: Failed to pause track.\n");
+		Sys_MaskPrintf (SYS_snd, "CDAudio_Pause: Failed to pause track.\n");
 }
 
 static void
@@ -101,7 +101,7 @@ I_CDAudio_Stop (void)
 		return;
 
 	if (SDL_CDStop (cd_id))
-		Sys_MaskPrintf (SYS_SND, "CDAudio_Stop: Failed to stop track.\n");
+		Sys_MaskPrintf (SYS_snd, "CDAudio_Stop: Failed to stop track.\n");
 }
 
 static void
@@ -134,7 +134,7 @@ I_CDAudio_Play (int track, qboolean looping)
 
 	if (SDL_CDPlay (cd_id, cd_id->track[track].offset,
 					cd_id->track[track].length)) {
-		Sys_MaskPrintf (SYS_SND, "CDAudio_Play: Unable to play track: %d\n",
+		Sys_MaskPrintf (SYS_snd, "CDAudio_Play: Unable to play track: %d\n",
 						track + 1);
 		return;
 	}
@@ -150,7 +150,7 @@ I_CDAudio_Resume (void)
 		return;
 
 	if (SDL_CDResume (cd_id))
-		Sys_MaskPrintf (SYS_SND, "CDAudio_Resume: Failed to resume track.\n");
+		Sys_MaskPrintf (SYS_snd, "CDAudio_Resume: Failed to resume track.\n");
 }
 
 static void
@@ -288,6 +288,7 @@ static general_funcs_t plugin_info_general_funcs = {
 };
 
 static cd_funcs_t plugin_info_cd_funcs = {
+	0,
 	I_CD_f,
 	I_CDAudio_Pause,
 	I_CDAudio_Play,

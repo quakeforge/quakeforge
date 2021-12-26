@@ -49,9 +49,6 @@
 #ifdef HAVE_WINSOCK_H
 # include <winsock.h>
 #endif
-#ifdef HAVE_RPC_TYPES_H
-# include <rpc/types.h>
-#endif
 
 #if defined(_WIN32) && defined(HAVE_MALLOC_H)
 #include <malloc.h>
@@ -72,6 +69,7 @@
 #include "QF/draw.h"
 #include "QF/image.h"
 #include "QF/input.h"
+#include "QF/joystick.h"
 #include "QF/keys.h"
 #include "QF/model.h"
 #include "QF/msg.h"
@@ -80,7 +78,9 @@
 #include "QF/qargs.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
+#include "QF/quakeio.h"
 #include "QF/ruamoko.h"
+#include "QF/plist.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
@@ -96,6 +96,7 @@
 #include "csqc.h"
 #include "sbar.h"
 
+#include "client/particles.h"
 #include "client/temp_entities.h"
 #include "client/view.h"
 
@@ -211,7 +212,7 @@ double      con_frametime;
 double      con_realtime;
 double      oldcon_realtime;
 
-int         host_hunklevel;
+size_t      host_hunklevel;
 
 cvar_t     *host_speeds;
 cvar_t     *hud_fps;
@@ -225,12 +226,6 @@ jmp_buf     host_abort;
 
 char       *server_version = NULL;		// version of server we connected to
 
-char        emodel_name[] = "emodel";
-char        pmodel_name[] = "pmodel";
-char        prespawn_name[] = "prespawn %i 0 %i";
-char        modellist_name[] = "modellist %i %i";
-char        soundlist_name[] = "soundlist %i %i";
-
 extern cvar_t *hud_scoreboard_uid;
 static netadr_t cl_cmd_packet_address;
 
@@ -241,6 +236,12 @@ CL_Quit_f (void)
 		Sys_Printf ("I hope you wanted to quit\n");
 	CL_Disconnect ();
 	Sys_Quit ();
+}
+
+static void
+pointfile_f (void)
+{
+	CL_LoadPointFile (cl.worldmodel);
 }
 
 static void
@@ -418,11 +419,11 @@ CL_ClearState (void)
 
 	CL_Init_Entity (&cl.viewent);
 
-	Sys_MaskPrintf (SYS_DEV, "Clearing memory\n");
+	Sys_MaskPrintf (SYS_dev, "Clearing memory\n");
 	VID_ClearMemory ();
 	Mod_ClearAll ();
 	if (host_hunklevel)					// FIXME: check this...
-		Hunk_FreeToLowMark (host_hunklevel);
+		Hunk_FreeToLowMark (0, host_hunklevel);
 
 	CL_ClearEnts ();
 	CL_ClearTEnts ();
@@ -602,10 +603,10 @@ CL_FullServerinfo_f (void)
 		return;
 	}
 
-	Sys_MaskPrintf (SYS_DEV, "Cmd_Argv (1): '%s'\n", Cmd_Argv (1));
+	Sys_MaskPrintf (SYS_dev, "Cmd_Argv (1): '%s'\n", Cmd_Argv (1));
 	Info_Destroy (cl.serverinfo);
 	cl.serverinfo = Info_ParseString (Cmd_Argv (1), MAX_SERVERINFO_STRING, 0);
-	Sys_MaskPrintf (SYS_DEV, "cl.serverinfo: '%s'\n",
+	Sys_MaskPrintf (SYS_dev, "cl.serverinfo: '%s'\n",
 					Info_MakeString (cl.serverinfo, 0));
 
 	if ((p = Info_ValueForKey (cl.serverinfo, "*qf_version")) && *p) {
@@ -1020,8 +1021,10 @@ CL_ReadPackets (void)
 {
 	while (CL_GetMessage ()) {
 
-		if (net_message->message->cursize == -1)
+		// non-packet set up by the demo reader
+		if ((int) net_message->message->cursize == -1) {
 			continue;
+		}
 
 		if (cls.demoplayback && net_packetlog->int_val)
 			Log_Incoming_Packet (net_message->message->data,
@@ -1032,8 +1035,9 @@ CL_ReadPackets (void)
 			CL_ConnectionlessPacket ();
 			continue;
 		}
-		if (*(char *) net_message->message->data == A2A_ACK)
-		{
+		if (net_message->message->cursize == 1
+			&& *(char *) net_message->message->data == A2A_ACK) {
+			Sys_Printf ("ping ack\n");
 			SL_CheckPing (NET_AdrToString (net_from));
 			continue;
 		}
@@ -1045,7 +1049,7 @@ CL_ReadPackets (void)
 		// packet from server
 		if (!cls.demoplayback &&
 			!NET_CompareAdr (net_from, cls.netchan.remote_address)) {
-			Sys_MaskPrintf (SYS_DEV,
+			Sys_MaskPrintf (SYS_dev,
 							"%s:sequenced packet without connection\n",
 							NET_AdrToString (net_from));
 			continue;
@@ -1143,22 +1147,23 @@ CL_SetState (cactive_t state)
 	};
 	cactive_t   old_state = cls.state;
 
-	Sys_MaskPrintf (SYS_DEV, "CL_SetState (%s)\n", state_names[state]);
+	Sys_MaskPrintf (SYS_dev, "CL_SetState (%s)\n", state_names[state]);
 	cls.state = state;
 	if (old_state != state) {
 		if (old_state == ca_active) {
 			// leaving active state
 			IN_ClearStates ();
-			Key_SetKeyDest (key_console);
+			CL_ClearState ();
 
 			// Auto demo recorder stops here
 			if (cl_autorecord->int_val && cls.demorecording)
 				CL_StopRecording ();
+
+			r_funcs->R_ClearState ();
 		} else if (state == ca_active) {
 			// entering active state
 			VID_SetCaption (cls.servername->str);
 			IN_ClearStates ();
-			Key_SetKeyDest (key_game);
 
 			// Auto demo recorder starts here
 			if (cl_autorecord->int_val && !cls.demoplayback
@@ -1166,8 +1171,10 @@ CL_SetState (cactive_t state)
 				CL_Record (0, -1);
 		}
 	}
-	if (con_module)
-		con_module->data->console->force_commandline = (state != ca_active);
+	Con_SetState (state == ca_active ? con_inactive : con_fullscreen);
+	if (state != old_state && state == ca_active) {
+		CL_Input_Activate ();
+	}
 }
 
 void
@@ -1184,7 +1191,7 @@ CL_Init (void)
 
 	W_LoadWadFile ("gfx.wad");
 	VID_Init (basepal, colormap);
-	IN_Init (cl_cbuf);
+	IN_Init ();
 	Mod_Init ();
 	R_Init ();
 	r_data->lightstyle = cl.lightstyle;
@@ -1207,6 +1214,7 @@ CL_Init (void)
 
 	CL_Input_Init ();
 	CL_Ents_Init ();
+	CL_Particles_Init ();
 	CL_TEnts_Init ();
 	CL_ClearState ();
 	Pmove_Init ();
@@ -1230,6 +1238,8 @@ CL_Init (void)
 	cl.players = calloc (MAX_CLIENTS, sizeof (player_info_t));
 
 	// register our commands
+	Cmd_AddCommand ("pointfile", pointfile_f,
+					"Load a pointfile to determine map leaks.");
 	Cmd_AddCommand ("version", CL_Version_f, "Report version information");
 	Cmd_AddCommand ("changing", CL_Changing_f, "Used when maps are changing");
 	Cmd_AddCommand ("disconnect", CL_Disconnect_f, "Disconnect from server");
@@ -1316,18 +1326,11 @@ CL_Init_Cvars (void)
 	CL_Cam_Init_Cvars ();
 	CL_Input_Init_Cvars ();
 	CL_Prediction_Init_Cvars ();
+	CL_NetGraph_Init_Cvars ();
 	Game_Init_Cvars ();
 	Pmove_Init_Cvars ();
 	Team_Init_Cvars ();
 	V_Init_Cvars ();
-
-	r_netgraph = Cvar_Get ("r_netgraph", "0", CVAR_NONE, NULL,
-						   "Toggle the display of a graph showing network "
-						   "performance");
-	r_netgraph_alpha = Cvar_Get ("r_netgraph_alpha", "0.5", CVAR_ARCHIVE, NULL,
-								 "Net graph translucency");
-	r_netgraph_box = Cvar_Get ("r_netgraph_box", "1", CVAR_ARCHIVE, NULL,
-							   "Draw box around net graph");
 
 	cls.userinfo = Info_ParseString ("", MAX_INFO_STRING, 0);
 
@@ -1512,29 +1515,77 @@ Host_Error (const char *error, ...)
 	}
 }
 
-/*
-	Host_WriteConfiguration
-
-	Writes key bindings and archived cvars to config.cfg
-*/
 void
 Host_WriteConfiguration (void)
 {
-	QFile      *f;
-
 	if (host_initialized && cl_writecfg->int_val) {
-		char       *path = va (0, "%s/config.cfg", qfs_gamedir->dir.def);
+		plitem_t   *config = PL_NewDictionary (0); //FIXME hashlinks
+		Cvar_SaveConfig (config);
+		IN_SaveConfig (config);
 
-		f = QFS_WOpen (path, 0);
+		const char *path = va (0, "%s/quakeforge.cfg", qfs_gamedir->dir.def);
+		QFile      *f = QFS_WOpen (path, 0);
+
 		if (!f) {
-			Sys_Printf ("Couldn't write config.cfg.\n");
-			return;
+			Sys_Printf ("Couldn't write quakeforge.cfg.\n");
+		} else {
+			char       *cfg = PL_WritePropertyList (config);
+			Qputs (f, cfg);
+			free (cfg);
+			Qclose (f);
 		}
+		PL_Free (config);
+	}
+}
 
-		Key_WriteBindings (f);
-		Cvar_WriteVariables (f);
+int
+Host_ReadConfiguration (const char *cfg_name)
+{
+	QFile      *cfg_file = QFS_FOpenFile (cfg_name);
+	if (!cfg_file) {
+		return 0;
+	}
+	size_t      len = Qfilesize (cfg_file);
+	char       *cfg = malloc (len + 1);
+	Qread (cfg_file, cfg, len);
+	cfg[len] = 0;
+	Qclose (cfg_file);
 
-		Qclose (f);
+	plitem_t   *config = PL_GetPropertyList (cfg, 0);	// FIXME hashlinks
+	if (!config) {
+		return 0;
+	}
+
+	Cvar_LoadConfig (config);
+	IN_LoadConfig (config);
+
+	PL_Free (config);
+	return 1;
+}
+
+static void
+Host_ExecConfig (cbuf_t *cbuf, int skip_quakerc)
+{
+	// quakeforge.cfg overrides quake.rc as it contains quakeforge-specific
+	// commands. If it doesn't exist, then this is the first time quakeforge
+	// has been used in this installation, thus any existing legacy config
+	// should be used to set up defaults on the assumption that the user has
+	// things set up to work with another (hopefully compatible) client
+	if (Host_ReadConfiguration ("quakeforge.cfg")) {
+		Cmd_Exec_File (cbuf, fs_usercfg->string, 0);
+		Cmd_StuffCmds (cbuf);
+		COM_Check_quakerc ("startdemos", cbuf);
+	} else {
+		if (!skip_quakerc) {
+			Cbuf_InsertText (cbuf, "exec quake.rc\n");
+		}
+		Cmd_Exec_File (cbuf, fs_usercfg->string, 0);
+		// Reparse the command line for + commands.
+		// (sets still done, but it doesn't matter)
+		// (Note, no non-base commands exist yet)
+		if (skip_quakerc || !COM_Check_quakerc ("stuffcmds", 0)) {
+			Cmd_StuffCmds (cbuf);
+		}
 	}
 }
 
@@ -1720,33 +1771,11 @@ Host_Frame (float time)
 	fps_count++;
 }
 
-static int
-check_quakerc (void)
-{
-	const char *l, *p;
-	int ret = 1;
-	QFile *f;
-
-	f = QFS_FOpenFile ("quake.rc");
-	if (!f)
-		return 1;
-	while ((l = Qgetline (f))) {
-		if ((p = strstr (l, "stuffcmds"))) {
-			if (p == l) {				// only known case so far
-				ret = 0;
-				break;
-			}
-		}
-	}
-	Qclose (f);
-	return ret;
-}
-
-static void
+static memhunk_t *
 CL_Init_Memory (void)
 {
 	int         mem_parm = COM_CheckParm ("-mem");
-	int         mem_size;
+	size_t      mem_size;
 	void       *mem_base;
 
 	cl_mem_size = Cvar_Get ("cl_mem_size", "32", CVAR_NONE, NULL,
@@ -1760,7 +1789,7 @@ CL_Init_Memory (void)
 
 	Cvar_SetFlags (cl_mem_size, cl_mem_size->flags | CVAR_ROM);
 
-	mem_size = (int) (cl_mem_size->value * 1024 * 1024);
+	mem_size = ((size_t) cl_mem_size->value * 1024 * 1024);
 
 	if (mem_size < MINIMUM_MEMORY)
 		Sys_Error ("Only %4.1f megs of memory reported, can't execute game",
@@ -1769,30 +1798,33 @@ CL_Init_Memory (void)
 	mem_base = Sys_Alloc (mem_size);
 
 	if (!mem_base)
-		Sys_Error ("Can't allocate %d", mem_size);
+		Sys_Error ("Can't allocate %zd", mem_size);
 
 	Sys_PageIn (mem_base, mem_size);
-	Memory_Init (mem_base, mem_size);
+	memhunk_t  *hunk = Memory_Init (mem_base, mem_size);
 
 	Sys_Printf ("%4.1f megabyte heap.\n", cl_mem_size->value);
+	return hunk;
 }
 
 static void
 CL_Autoexec (int phase)
 {
-	int         cmd_warncmd_val = cmd_warncmd->int_val;
-
 	if (!phase)
 		return;
-	Cbuf_AddText (cl_cbuf, "cmd_warncmd 0\n");
-	Cbuf_AddText (cl_cbuf, "exec config.cfg\n");
-	Cbuf_AddText (cl_cbuf, "exec frontend.cfg\n");
+	if (!Host_ReadConfiguration ("quakeforge.cfg")) {
+		int         cmd_warncmd_val = cmd_warncmd->int_val;
+
+		Cbuf_AddText (cl_cbuf, "cmd_warncmd 0\n");
+		Cbuf_AddText (cl_cbuf, "exec config.cfg\n");
+		Cbuf_AddText (cl_cbuf, "exec frontend.cfg\n");
+
+		Cbuf_AddText (cl_cbuf, va (0, "cmd_warncmd %d\n", cmd_warncmd_val));
+	}
 
 	if (cl_autoexec->int_val) {
 		Cbuf_AddText (cl_cbuf, "exec autoexec.cfg\n");
 	}
-
-	Cbuf_AddText (cl_cbuf, va (0, "cmd_warncmd %d\n", cmd_warncmd_val));
 }
 
 void
@@ -1803,13 +1835,14 @@ Host_Init (void)
 
 	Sys_Init ();
 	GIB_Init (true);
-	COM_ParseConfig ();
+	GIB_Key_Init ();
+	COM_ParseConfig (cl_cbuf);
 
-	CL_Init_Memory ();
+	memhunk_t  *hunk = CL_Init_Memory ();
 
 	pr_gametype = "quakeworld";
 
-	QFS_Init ("qw");
+	QFS_Init (hunk, "qw");
 	QFS_GamedirCallback (CL_Autoexec);
 	PI_Init ();
 
@@ -1844,24 +1877,18 @@ Host_Init (void)
 	CL_UpdateScreen (realtime);
 	CL_UpdateScreen (realtime);
 
-	if (cl_quakerc->int_val)
-		Cbuf_InsertText (cl_cbuf, "exec quake.rc\n");
-	Cmd_Exec_File (cl_cbuf, fs_usercfg->string, 0);
-	// Reparse the command line for + commands.
-	// (Note, no non-base commands exist yet)
-	if (!cl_quakerc->int_val || check_quakerc ())
-		Cmd_StuffCmds (cl_cbuf);
+	Host_ExecConfig (cl_cbuf, !cl_quakerc->int_val);
 
-	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
-	host_hunklevel = Hunk_LowMark ();
+	// make sure all + commands have been executed
+	Cbuf_Execute_Stack (cl_cbuf);
+
+	Hunk_AllocName (0, 0, "-HOST_HUNKLEVEL-");
+	host_hunklevel = Hunk_LowMark (0);
 
 	Sys_Printf ("\nClient version %s (build %04d)\n\n", PACKAGE_VERSION,
 				build_number ());
 	Sys_Printf ("\x80\x81\x81\x82 %s initialized \x80\x81\x81\x82\n",
 				PACKAGE_NAME);
-
-	// make sure all + commands have been executed
-	Cbuf_Execute_Stack (cl_cbuf);
 
 	host_initialized = true;
 

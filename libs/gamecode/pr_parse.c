@@ -475,7 +475,7 @@ ED_SpawnEntities (progs_t *pr, plitem_t *entity_list)
 		func = PR_FindFunction (pr, classname);
 		if (!func) {
 			Sys_Printf ("No spawn function for :\n");
-			ED_Print (pr, ent);
+			ED_Print (pr, ent, 0);
 			ED_Free (pr, ent);
 			continue;
 		}

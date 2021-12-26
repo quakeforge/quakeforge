@@ -278,7 +278,7 @@ free_def (def_t *def)
 void
 def_to_ddef (def_t *def, ddef_t *ddef, int aux)
 {
-	type_t     *type = def->type;
+	const type_t *type = unalias_type (def->type);
 
 	if (aux)
 		type = type->t.fldptr.type;	// aux is true only for fields
@@ -468,7 +468,7 @@ init_vector_components (symbol_t *vector_sym, int is_field)
 static void
 init_field_def (def_t *def, expr_t *init, storage_class_t storage)
 {
-	type_t     *type = def->type->t.fldptr.type;
+	type_t     *type = (type_t *) dereference_type (def->type);//FIXME cast
 	def_t      *field_def;
 	symbol_t   *field_sym;
 	reloc_t    *relocs = 0;
@@ -529,7 +529,7 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 	reloc_t    *relocs = 0;
 
 	if (check && check->table == current_symtab) {
-		if (check->sy_type != sy_var || check->type != sym->type) {
+		if (check->sy_type != sy_var || !type_same (check->type, sym->type)) {
 			error (0, "%s redefined", sym->name);
 		} else {
 			// is var and same type
@@ -559,7 +559,7 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 	}
 	if (!sym->s.def) {
 		if (is_array (sym->type) && !type_size (sym->type)
-			&& init->type == ex_compound) {
+			&& init && init->type == ex_compound) {
 			sym->type = array_type (sym->type->t.array.type,
 									num_elements (init));
 		}

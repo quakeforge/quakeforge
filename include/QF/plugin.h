@@ -88,11 +88,11 @@ typedef struct plugin_s {
 /*
 	General plugin info return function type
 */
-typedef plugin_t * (*P_PluginInfo) (void);
+typedef plugin_t *(*plugin_info_t) (void);
 
 typedef struct plugin_list_s {
-	const char		*name;
-	P_PluginInfo	info;
+	const char *name;
+	plugin_info_t info;
 } plugin_list_t;
 
 /*

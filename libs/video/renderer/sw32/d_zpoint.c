@@ -36,6 +36,7 @@
 #include "d_local.h"
 #include "r_internal.h"
 #include "vid_internal.h"
+#include "vid_sw.h"
 
 
 void
@@ -49,7 +50,7 @@ sw32_D_DrawZPoint (void)
 
 	if (*pz <= izi) {
 		*pz = izi;
-		switch(sw32_r_pixbytes)
+		switch(sw32_ctx->pixbytes)
 		{
 		case 1:
 			((byte *) sw32_d_viewbuffer) [sw32_d_scantable[sw32_r_zpointdesc.v] +
@@ -66,7 +67,7 @@ sw32_D_DrawZPoint (void)
 				d_8to24table[sw32_r_zpointdesc.color];
 			break;
 		default:
-			Sys_Error("D_DrawZPoint: unsupported r_pixbytes %i", sw32_r_pixbytes);
+			Sys_Error("D_DrawZPoint: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 		}
 	}
 }

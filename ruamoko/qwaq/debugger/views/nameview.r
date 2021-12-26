@@ -5,7 +5,7 @@
 
 -initWithName:(string)name
 {
-	if (!(self = [super initWithType:type])) {
+	if (!(self = [super initWithDef:def type:nil])) {
 		return nil;
 	}
 	self.name = name;
@@ -27,6 +27,11 @@
 {
 	[super draw];
 	[self mvaddstr:{0, 0}, str_mid (name, 0, xlen)];
+	return self;
+}
+
+-(View *) viewAtRow:(int) row forColumn:(TableViewColumn *)column
+{
 	return self;
 }
 

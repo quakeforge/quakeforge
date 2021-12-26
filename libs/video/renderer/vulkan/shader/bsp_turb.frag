@@ -1,6 +1,6 @@
 #version 450
 
-layout (set = 0, binding = 1) uniform sampler2D Texture;
+layout (set = 1, binding = 0) uniform sampler2DArray Texture;
 
 layout (push_constant) uniform PushConstants {
 	layout (offset = 64)
@@ -43,10 +43,10 @@ main (void)
 {
 	vec4        c = vec4 (0);
 	vec4        e;
-	vec2        t_st = tl_st.xy;
-	vec2        l_st = tl_st.zw;
+	vec3        t_st = vec3 (warp_st (tl_st.xy, time), 0);
+	vec3        e_st = vec3 (warp_st (tl_st.xy, time), 1);
 
-	t_st = warp_st (t_st, time);
 	c = texture (Texture, t_st);
-	frag_color = c;//fogBlend (c);
+	e = texture (Texture, e_st);
+	frag_color = c + e;//fogBlend (c);
 }

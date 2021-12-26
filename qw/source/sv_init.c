@@ -40,6 +40,7 @@
 #include "QF/info.h"
 #include "QF/msg.h"
 #include "QF/quakefs.h"
+#include "QF/set.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
@@ -213,6 +214,34 @@ SV_SaveSpawnparms (void)
 	}
 }
 
+static set_t *
+sv_alloc_vis_array (unsigned numleafs)
+{
+	// the passed in numleafs is the true number of leafs in the map and thus
+	// does include leaf 0, but pvs bits do not include leaf 0
+	unsigned    size = SET_SIZE (numleafs - 1);
+
+	if (size > SET_DEFMAP_SIZE * SET_BITS) {
+		set_t      *sets = Hunk_Alloc (0,
+									   numleafs * (sizeof (set_t) + size / 8));
+		unsigned    words = size / SET_BITS;
+		set_bits_t *bits = (set_bits_t *) (&sets[numleafs]);
+		for (unsigned i = 0; i < numleafs; i++) {
+			sets[i].size = size;
+			sets[i].map = bits;
+			bits += words;
+		}
+		return sets;
+	} else {
+		set_t      *sets = Hunk_Alloc (0, numleafs * sizeof (set_t));
+		for (unsigned i = 0; i < numleafs; i++) {
+			sets[i].size = size;
+			sets[i].map = sets[i].defmap;
+		}
+		return sets;
+	}
+}
+
 /*
 	SV_CalcPHS
 
@@ -222,66 +251,41 @@ SV_SaveSpawnparms (void)
 static void
 SV_CalcPHS (void)
 {
-	byte       *scan;
-	int			bitbyte, count, index, num, rowbytes, rowwords, vcount, i, j,
-				k, l;
-	unsigned int *dest, *src;
+	int64_t     count, vcount;
+	int         num, i;
 
 	SV_Printf ("Building PHS...\n");
 
-	num = sv.worldmodel->brush.numleafs;
-	rowwords = (num + 31) >> 5;
-	rowbytes = rowwords * 4;
-
-	sv.pvs = Hunk_Alloc (rowbytes * num);
-	scan = sv.pvs;
+	num = sv.worldmodel->brush.modleafs;
+	sv.pvs = sv_alloc_vis_array (num);
 	vcount = 0;
-	for (i = 0; i < num; i++, scan += rowbytes) {
-		memcpy (scan, Mod_LeafPVS (sv.worldmodel->brush.leafs + i,
-								   sv.worldmodel),
-				rowbytes);
+	for (i = 0; i < num; i++) {
+		Mod_LeafPVS_set (sv.worldmodel->brush.leafs + i, sv.worldmodel, 0xff,
+						 &sv.pvs[i]);
 		if (i == 0)
 			continue;
-		for (j = 0; j < num; j++) {
-			if (scan[j >> 3] & (1 << (j & 7))) {
-				vcount++;
-			}
-		}
+		vcount += set_count (&sv.pvs[i]);
 	}
 
-	sv.phs = Hunk_Alloc (rowbytes * num);
+	sv.phs = sv_alloc_vis_array (num);
 	count = 0;
-	scan = sv.pvs;
-	dest = (unsigned int *) sv.phs;
-	for (i = 0; i < num; i++, dest += rowwords, scan += rowbytes) {
-		memcpy (dest, scan, rowbytes);
-		for (j = 0; j < rowbytes; j++) {
-			bitbyte = scan[j];
-			if (!bitbyte)
-				continue;
-			for (k = 0; k < 8; k++) {
-				if (!(bitbyte & (1 << k)))
-					continue;
-				// or this pvs row into the phs
-				// +1 because pvs is 1 based
-				index = ((j << 3) + k + 1);
-				if (index >= num)
-					continue;
-				src = (unsigned int *) sv.pvs + index * rowwords;
-				for (l = 0; l < rowwords; l++)
-					dest[l] |= src[l];
-			}
+	for (i = 0; i < num; i++) {
+		set_assign (&sv.phs[i], &sv.pvs[i]);
+
+		for (set_iter_t *iter = set_first (&sv.pvs[i]); iter;
+			 iter = set_next (iter)) {
+			// or this pvs row into the phs
+			// +1 because pvs is 1 based
+			set_union (&sv.phs[i], &sv.pvs[iter->element + 1]);
 		}
 
 		if (i == 0)
 			continue;
-		for (j = 0; j < num; j++)
-			if (((byte *) dest)[j >> 3] & (1 << (j & 7)))
-				count++;
+		count += set_count (&sv.phs[i]);
 	}
 
 	SV_Printf ("Average leafs visible / hearable / total: %i / %i / %i\n",
-				vcount / num, count / num, num);
+			   (int) (vcount / num), (int) (count / num), num);
 }
 
 static unsigned int
@@ -316,14 +320,13 @@ SV_SpawnServer (const char *server)
 {
 	byte       *buf;
 	edict_t    *ent;
-	int         i;
 	void       *so_buffers;
 	int        *so_sizes;
 	int         max_so;
 	struct recorder_s *recorders;
 	QFile      *ent_file;
 
-	Sys_MaskPrintf (SYS_DEV, "SpawnServer: %s\n", server);
+	Sys_MaskPrintf (SYS_dev, "SpawnServer: %s\n", server);
 
 	SV_SaveSpawnparms ();
 
@@ -334,7 +337,7 @@ SV_SpawnServer (const char *server)
 	sv_pr_state.null_bad = 0;
 
 	Mod_ClearAll ();
-	Hunk_FreeToLowMark (host_hunklevel);
+	Hunk_FreeToLowMark (0, host_hunklevel);
 
 	// wipe the entire per-level structure, but don't lose sv.recorders
 	// or signon buffers (good thing we're not multi-threaded FIXME?)
@@ -380,7 +383,7 @@ SV_SpawnServer (const char *server)
 
 	// leave slots at start for only clients
 	sv.num_edicts = MAX_CLIENTS + 1;
-	for (i = 0; i < MAX_CLIENTS; i++) {
+	for (int i = 0; i < MAX_CLIENTS; i++) {
 		ent = EDICT_NUM (&sv_pr_state, i + 1);
 		svs.clients[i].edict = ent;
 // ZOID - make sure we update frags right
@@ -403,7 +406,7 @@ SV_SpawnServer (const char *server)
 	sv.model_precache[0] = sv_pr_state.pr_strings;
 	sv.model_precache[1] = sv.modelname;
 	sv.models[1] = sv.worldmodel;
-	for (i = 1; i < sv.worldmodel->brush.numsubmodels; i++) {
+	for (unsigned i = 1; i < sv.worldmodel->brush.numsubmodels; i++) {
 		sv.model_precache[1 + i] = localmodels[i];
 		sv.models[i + 1] = Mod_ForName (localmodels[i], false);
 	}
@@ -468,7 +471,7 @@ SV_SpawnServer (const char *server)
 	sv.signon_buffer_size[sv.num_signon_buffers - 1] = sv.signon.cursize;
 
 	Info_SetValueForKey (svs.info, "map", sv.name, !sv_highchars->int_val);
-	Sys_MaskPrintf (SYS_DEV, "Server spawned.\n");
+	Sys_MaskPrintf (SYS_dev, "Server spawned.\n");
 	if (sv_map_e->func)
 		GIB_Event_Callback (sv_map_e, 1, server);
 }

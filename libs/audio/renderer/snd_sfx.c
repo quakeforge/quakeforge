@@ -112,6 +112,7 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 					int (*seek)(sfxstream_t *, int),
 					void (*close) (sfx_t *))
 {
+	snd_t      *snd = sfx->snd;
 	sfxstream_t *stream = sfx->data.stream;
 	wavinfo_t  *info = &stream->wavinfo;
 	int         frames;
@@ -119,11 +120,12 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 
 	// if the speed is 0, there is no sound driver (probably failed to connect
 	// to jackd)
-	if (!snd_shm->speed)
+	if (!snd->speed)
 		return 0;
 
 	sfx_t      *new_sfx = calloc (1, sizeof (sfx_t));
 
+	new_sfx->snd = sfx->snd;
 	new_sfx->name = sfx->name;
 	new_sfx->owner = sfx;
 	new_sfx->wavinfo = SND_CacheWavinfo;
@@ -132,7 +134,7 @@ SND_SFX_StreamOpen (sfx_t *sfx, void *file,
 	new_sfx->getbuffer = SND_StreamGetBuffer;
 	new_sfx->close = close;
 
-	frames = snd_shm->speed * 0.3;
+	frames = snd->speed * 0.3;
 	frames = (frames + 255) & ~255;
 	size = frames * info->channels * sizeof (float);
 
@@ -168,7 +170,7 @@ SND_SFX_StreamClose (sfx_t *sfx)
 }
 
 sfx_t *
-SND_LoadSound (const char *name)
+SND_LoadSound (snd_t *snd, const char *name)
 {
 	sfx_t      *sfx;
 
@@ -181,6 +183,7 @@ SND_LoadSound (const char *name)
 		Sys_Error ("s_load_sound: out of sfx_t");
 
 	sfx = &snd_sfx[snd_num_sfx++];
+	sfx->snd = snd;
 	sfx->name = strdup (name);
 	sfx->owner = sfx;
 	if (SND_Load (sfx) == -1) {
@@ -192,14 +195,14 @@ SND_LoadSound (const char *name)
 }
 
 sfx_t *
-SND_PrecacheSound (const char *name)
+SND_PrecacheSound (snd_t *snd, const char *name)
 {
 	sfx_t      *sfx;
 
 	if (!name)
 		Sys_Error ("SND_PrecacheSound: NULL");
 
-	sfx = SND_LoadSound (va (0, "sound/%s", name));
+	sfx = SND_LoadSound (snd, va (0, "sound/%s", name));
 	if (sfx && precache->int_val) {
 		if (sfx->retain (sfx))
 			sfx->release (sfx);
@@ -243,7 +246,7 @@ s_soundlist_f (void)
 }
 
 void
-SND_SFX_Init (void)
+SND_SFX_Init (snd_t *snd)
 {
 	snd_sfx_hash = Hash_NewTable (511, snd_sfx_getkey, snd_sfx_free, 0, 0);
 	precache = Cvar_Get ("precache", "1", CVAR_NONE, NULL,

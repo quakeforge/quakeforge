@@ -20,5 +20,6 @@
 -(void)dealloc
 {
 	str_free (name);
+	[super dealloc];
 }
 @end

@@ -34,7 +34,7 @@
 #include "mod_internal.h"
 
 VISIBLE int
-Mod_CalcFullbright (const byte *in, byte *out, int pixels)
+Mod_CalcFullbright (byte *out, const byte *in, size_t pixels)
 {
 	byte	fb = 0;
 
@@ -50,8 +50,8 @@ Mod_CalcFullbright (const byte *in, byte *out, int pixels)
 	return fb;
 }
 
-VISIBLE void
-Mod_ClearFullbright (const byte *in, byte *out, int pixels)
+VISIBLE int
+Mod_ClearFullbright (byte *out, const byte *in, size_t pixels)
 {
 	while (pixels-- > 0) {
 		byte        pix = *in++;
@@ -61,4 +61,5 @@ Mod_ClearFullbright (const byte *in, byte *out, int pixels)
 			*out++ = pix;
 		}
 	}
+	return 0;
 }

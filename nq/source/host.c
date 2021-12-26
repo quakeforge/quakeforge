@@ -94,9 +94,9 @@ double      con_realtime;
 double      oldcon_realtime;
 
 int			host_framecount;
-int			host_hunklevel;
+size_t      host_hunklevel;
 int         host_in_game;
-int			minimum_memory;
+size_t      minimum_memory;
 
 client_t   *host_client;				// current client
 
@@ -149,7 +149,7 @@ Host_EndGame (const char *message, ...)
 	va_start (argptr, message);
 	dvsprintf (str, message, argptr);
 	va_end (argptr);
-	Sys_MaskPrintf (SYS_DEV, "Host_EndGame: %s\n", str->str);
+	Sys_MaskPrintf (SYS_dev, "Host_EndGame: %s\n", str->str);
 
 	if (sv.active)
 		Host_ShutdownServer (false);
@@ -242,7 +242,7 @@ Host_FindMaxClients (void)
 	if (svs.maxclientslimit < 4)
 		svs.maxclientslimit = 4;
 	svs.clients =
-		Hunk_AllocName (svs.maxclientslimit * sizeof (client_t), "clients");
+		Hunk_AllocName (0, svs.maxclientslimit * sizeof (client_t), "clients");
 
 	if (svs.maxclients > 1)
 		Cvar_SetValue (deathmatch, 1.0);
@@ -395,7 +395,7 @@ SV_DropClient (qboolean crash)
 		Sys_Printf ("Client %s removed\n", host_client->name);
 	}
 	// break the net connection
-	Sys_MaskPrintf (SYS_NET, "dropping client\n");
+	Sys_MaskPrintf (SYS_net, "dropping client\n");
 	NET_Close (host_client->netconnection);
 	host_client->netconnection = NULL;
 
@@ -495,11 +495,11 @@ Host_ShutdownServer (qboolean crash)
 void
 Host_ClearMemory (void)
 {
-	Sys_MaskPrintf (SYS_DEV, "Clearing memory\n");
+	Sys_MaskPrintf (SYS_dev, "Clearing memory\n");
 	CL_ClearMemory ();
 	Mod_ClearAll ();
 	if (host_hunklevel)
-		Hunk_FreeToLowMark (host_hunklevel);
+		Hunk_FreeToLowMark (0, host_hunklevel);
 
 	cls.signon = 0;
 	memset (&sv, 0, sizeof (sv));
@@ -808,33 +808,11 @@ Host_InitVCR (quakeparms_t *parms)
 
 }
 
-static int
-check_quakerc (void)
-{
-	const char *l, *p;
-	int ret = 1;
-	QFile *f;
-
-	f = QFS_FOpenFile ("quake.rc");
-	if (!f)
-		return 1;
-	while ((l = Qgetline (f))) {
-		if ((p = strstr (l, "stuffcmds"))) {
-			if (p == l) {				// only known case so far
-				ret = 0;
-				break;
-			}
-		}
-	}
-	Qclose (f);
-	return ret;
-}
-
-static void
+static memhunk_t *
 Host_Init_Memory (void)
 {
 	int         mem_parm = COM_CheckParm ("-mem");
-	int         mem_size;
+	size_t      mem_size;
 	void       *mem_base;
 
 	if (standard_quake)
@@ -853,7 +831,7 @@ Host_Init_Memory (void)
 
 	Cvar_SetFlags (host_mem_size, host_mem_size->flags | CVAR_ROM);
 
-	mem_size = (int) (host_mem_size->value * 1024 * 1024);
+	mem_size = ((size_t) host_mem_size->value * 1024 * 1024);
 
 	if (mem_size < minimum_memory)
 		Sys_Error ("Only %4.1f megs of memory reported, can't execute game",
@@ -862,18 +840,39 @@ Host_Init_Memory (void)
 	mem_base = Sys_Alloc (mem_size);
 
 	if (!mem_base)
-		Sys_Error ("Can't allocate %d", mem_size);
+		Sys_Error ("Can't allocate %zd", mem_size);
 
 	Sys_PageIn (mem_base, mem_size);
-	Memory_Init (mem_base, mem_size);
+	memhunk_t  *hunk = Memory_Init (mem_base, mem_size);
 
 	Sys_Printf ("%4.1f megabyte heap\n", host_mem_size->value);
+	return hunk;
 }
 
 static void
-host_keydest_callback (keydest_t kd)
+Host_ExecConfig (cbuf_t *cbuf, int skip_quakerc)
 {
-	host_in_game = kd == key_game;
+	// quakeforge.cfg overrides quake.rc as it contains quakeforge-specific
+	// commands. If it doesn't exist, then this is the first time quakeforge
+	// has been used in this installation, thus any existing legacy config
+	// should be used to set up defaults on the assumption that the user has
+	// things set up to work with another (hopefully compatible) client
+	if (CL_ReadConfiguration ("quakeforge.cfg")) {
+		Cmd_Exec_File (cbuf, fs_usercfg->string, 0);
+		Cmd_StuffCmds (cbuf);
+		COM_Check_quakerc ("startdemos", cbuf);
+	} else {
+		if (!skip_quakerc) {
+			Cbuf_InsertText (cbuf, "exec quake.rc\n");
+		}
+		Cmd_Exec_File (cbuf, fs_usercfg->string, 0);
+		// Reparse the command line for + commands.
+		// (sets still done, but it doesn't matter)
+		// (Note, no non-base commands exist yet)
+		if (skip_quakerc || !COM_Check_quakerc ("stuffcmds", 0)) {
+			Cmd_StuffCmds (cbuf);
+		}
+	}
 }
 
 void
@@ -886,13 +885,14 @@ Host_Init (void)
 
 	Sys_Init ();
 	GIB_Init (true);
-	COM_ParseConfig ();
+	GIB_Key_Init ();
+	COM_ParseConfig (host_cbuf);
 
-	Host_Init_Memory ();
+	memhunk_t  *hunk = Host_Init_Memory ();
 
 	PI_Init ();
 
-	Game_Init ();
+	Game_Init (hunk);
 
 	if (!isDedicated)
 		CL_InitCvars ();
@@ -909,8 +909,6 @@ Host_Init (void)
 
 	Mod_Init ();
 
-	Key_KeydestCallback (host_keydest_callback);
-
 	SV_Init ();
 
 	if (cls.state != ca_dedicated)
@@ -926,16 +924,10 @@ Host_Init (void)
 	CL_UpdateScreen (cl.time);
 	CL_UpdateScreen (cl.time);
 
-	if (!isDedicated && cl_quakerc->int_val)
-		Cbuf_InsertText (host_cbuf, "exec quake.rc\n");
-	Cmd_Exec_File (host_cbuf, fs_usercfg->string, 0);
-	// reparse the command line for + commands other than set
-	// (sets still done, but it doesn't matter)
-	if (isDedicated || (cl_quakerc->int_val && check_quakerc ()))
-		Cmd_StuffCmds (host_cbuf);
+	Host_ExecConfig (host_cbuf, isDedicated || !cl_quakerc->int_val);
 
-	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
-	host_hunklevel = Hunk_LowMark ();
+	Hunk_AllocName (0, 0, "-HOST_HUNKLEVEL-");
+	host_hunklevel = Hunk_LowMark (0);
 
 	Sys_Printf ("\nVersion %s (build %04d)\n\n", PACKAGE_VERSION,
 				build_number ());

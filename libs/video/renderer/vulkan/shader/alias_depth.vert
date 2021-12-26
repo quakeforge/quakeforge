@@ -1,9 +1,10 @@
 #version 450
 
 layout (set = 0, binding = 0) uniform Matrices {
-	mat4 Projection;
+	mat4 Projection3d;
 	mat4 View;
 	mat4 Sky;
+	mat4 Projection2d;
 };
 
 layout (push_constant) uniform PushConstants {
@@ -24,5 +25,5 @@ main (void)
 
 	vertex = mix (vertexa, vertexb, blend);
 	pos = (Model * vertex);
-	gl_Position = Projection * (View * pos);
+	gl_Position = Projection3d * (View * pos);
 }

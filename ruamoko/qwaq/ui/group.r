@@ -5,6 +5,8 @@
 #include "ruamoko/qwaq/ui/group.h"
 #include "ruamoko/qwaq/ui/view.h"
 
+@reference Array (Group);
+
 @implementation Group
 
 +(Group *)withContext:(id<TextContext>)context owner:(View *)owner
@@ -69,7 +71,9 @@
 {
 	int         index = [views indexOfObject: view];
 	if (index != NotFound) {
+		[views removeObjectAtIndex: index];
 		if (focused == index) {
+			focused--;
 			[self selectPrev];
 			if (focused == index) {
 				focused = -1;
@@ -77,7 +81,6 @@
 		} else if (focused > index) {
 			focused--;
 		}
-		[views removeObjectAtIndex: index];
 		if (mouse_within == view) {
 			mouse_within = nil;
 		}
@@ -182,10 +185,23 @@ trySetFocus (Group *self, int viewIndex)
 	return self;
 }
 
+-(View *) owner
+{
+	return owner;
+}
+
 -(Rect) rect
 {
 	if (owner) {
 		return [owner rect];
+	}
+	return {[self origin], [self size]};
+}
+
+-(Rect) absRect
+{
+	if (owner) {
+		return [owner absRect];
 	}
 	return {[self origin], [self size]};
 }
@@ -232,6 +248,14 @@ not_dont_draw (id aView, void *aGroup)
 		if (__obj_responds_to (context, @selector(refresh))) {
 			[(id)context refresh];
 		}
+	}
+	return self;
+}
+
+-updateAbsPos: (Point) absPos
+{
+	for (int i = [views count]; i-- > 0; ) {
+		[[views objectAtIndex: i] updateAbsPos: absPos];
 	}
 	return self;
 }

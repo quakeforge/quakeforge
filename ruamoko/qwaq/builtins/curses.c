@@ -79,6 +79,7 @@ typedef enum qwaq_commands_e {
 	qwaq_cmd_wbkgd,
 	qwaq_cmd_werase,
 	qwaq_cmd_scrollok,
+	qwaq_cmd_wmove,
 	qwaq_cmd_move,
 	qwaq_cmd_curs_set,
 	qwaq_cmd_wborder,
@@ -114,6 +115,7 @@ static const char *qwaq_command_names[]= {
 	"wbkgd",
 	"werase",
 	"scrollok",
+	"wmove",
 	"move",
 	"curs_set",
 	"wborder",
@@ -122,6 +124,9 @@ static const char *qwaq_command_names[]= {
 	"resizeterm",
 	"mvwhline",
 	"mvwvline",
+
+	"send_connected_devices",
+	"get_device_info",
 };
 
 static window_t *
@@ -212,92 +217,33 @@ get_panel (qwaq_resources_t *res, const char *name, int handle)
 }
 
 static int
-acquire_string (qwaq_resources_t *res)
+qwaq_cmd_peek (qwaq_resources_t *res, int ahead)
 {
-	int         string_id = -1;
-
-	pthread_mutex_lock (&res->string_id_cond.mut);
-	while (RB_DATA_AVAILABLE (res->string_ids) < 1) {
-		pthread_cond_wait (&res->string_id_cond.rcond,
-						   &res->string_id_cond.mut);
-	}
-	RB_READ_DATA (res->string_ids, &string_id, 1);
-	pthread_cond_broadcast (&res->string_id_cond.wcond);
-	pthread_mutex_unlock (&res->string_id_cond.mut);
-	return string_id;
+	return *RB_PEEK_DATA (res->commands.pipe, ahead);
 }
 
-static void
-release_string (qwaq_resources_t *res, int string_id)
+static dstring_t *
+qwaq_cmd_string (qwaq_resources_t *res, int string_id)
 {
-	pthread_mutex_lock (&res->string_id_cond.mut);
-	while (RB_SPACE_AVAILABLE (res->string_ids) < 1) {
-		pthread_cond_wait (&res->string_id_cond.wcond,
-						   &res->string_id_cond.mut);
-	}
-	RB_WRITE_DATA (res->string_ids, &string_id, 1);
-	pthread_cond_broadcast (&res->string_id_cond.rcond);
-	pthread_mutex_unlock (&res->string_id_cond.mut);
-}
-
-static void
-qwaq_submit_command (qwaq_resources_t *res, const int *cmd)
-{
-	unsigned    len = cmd[1];
-
-	pthread_mutex_lock (&res->command_cond.mut);
-	while (RB_SPACE_AVAILABLE (res->command_queue) < len) {
-		pthread_cond_wait (&res->command_cond.wcond,
-						   &res->command_cond.mut);
-	}
-	RB_WRITE_DATA (res->command_queue, cmd, len);
-	pthread_cond_broadcast (&res->command_cond.rcond);
-	pthread_mutex_unlock (&res->command_cond.mut);
-}
-
-static void
-qwaq_submit_result (qwaq_resources_t *res, const int *result, unsigned len)
-{
-	pthread_mutex_lock (&res->results_cond.mut);
-	while (RB_SPACE_AVAILABLE (res->results) < len) {
-		pthread_cond_wait (&res->results_cond.wcond,
-						   &res->results_cond.mut);
-	}
-	RB_WRITE_DATA (res->results, result, len);
-	pthread_cond_broadcast (&res->results_cond.rcond);
-	pthread_mutex_unlock (&res->results_cond.mut);
-}
-
-static void
-qwaq_wait_result (qwaq_resources_t *res, int *result, int cmd, unsigned len)
-{
-	pthread_mutex_lock (&res->results_cond.mut);
-	while (RB_DATA_AVAILABLE (res->results) < len
-		   || *RB_PEEK_DATA (res->results, 0) != cmd) {
-		pthread_cond_wait (&res->results_cond.rcond,
-						   &res->results_cond.mut);
-	}
-	RB_READ_DATA (res->results, result, len);
-	pthread_cond_broadcast (&res->results_cond.wcond);
-	pthread_mutex_unlock (&res->results_cond.mut);
+	return res->commands.strings + string_id;
 }
 
 static void
 cmd_syncprint (qwaq_resources_t *res)
 {
-	int         string_id = *RB_PEEK_DATA (res->command_queue, 2);
+	int         string_id = qwaq_cmd_peek (res, 2);
 
-	Sys_Printf ("%s\n", res->strings[string_id].str);
-	release_string (res, string_id);
+	Sys_Printf ("%s\n", qwaq_cmd_string (res, string_id)->str);
+	qwaq_pipe_release_string (&res->commands, string_id);
 }
 
 static void
 cmd_newwin (qwaq_resources_t *res)
 {
-	int         xpos = *RB_PEEK_DATA (res->command_queue, 2);
-	int         ypos = *RB_PEEK_DATA (res->command_queue, 3);
-	int         xlen = *RB_PEEK_DATA (res->command_queue, 4);
-	int         ylen = *RB_PEEK_DATA (res->command_queue, 5);
+	int         xpos = qwaq_cmd_peek (res, 2);
+	int         ypos = qwaq_cmd_peek (res, 3);
+	int         xlen = qwaq_cmd_peek (res, 4);
+	int         ylen = qwaq_cmd_peek (res, 5);
 
 	window_t   *window = window_new (res);
 	window->win = newwin (ylen, xlen, ypos, xpos);
@@ -305,13 +251,13 @@ cmd_newwin (qwaq_resources_t *res)
 
 	int         window_id = window_index (res, window);
 	int         cmd_result[] = { qwaq_cmd_newwin, window_id };
-	qwaq_submit_result (res, cmd_result, CMD_SIZE (cmd_result));
+	qwaq_pipe_submit (&res->results, cmd_result, CMD_SIZE (cmd_result));
 }
 
 static void
 cmd_delwin (qwaq_resources_t *res)
 {
-	int         window_id = *RB_PEEK_DATA (res->command_queue, 2);
+	int         window_id = qwaq_cmd_peek (res, 2);
 
 	window_t   *window = get_window (res, __FUNCTION__, window_id);
 	delwin (window->win);
@@ -321,7 +267,7 @@ cmd_delwin (qwaq_resources_t *res)
 static void
 cmd_getwrect (qwaq_resources_t *res)
 {
-	int         window_id = *RB_PEEK_DATA (res->command_queue, 2);
+	int         window_id = qwaq_cmd_peek (res, 2);
 	int         xpos, ypos;
 	int         xlen, ylen;
 
@@ -333,13 +279,13 @@ cmd_getwrect (qwaq_resources_t *res)
 	getmaxyx (window->win, ylen, xlen);
 
 	int         cmd_result[] = { qwaq_cmd_getwrect, xpos, ypos, xlen, ylen };
-	qwaq_submit_result (res, cmd_result, CMD_SIZE (cmd_result));
+	qwaq_pipe_submit (&res->results, cmd_result, CMD_SIZE (cmd_result));
 }
 
 static void
 cmd_new_panel (qwaq_resources_t *res)
 {
-	int         window_id = *RB_PEEK_DATA (res->command_queue, 2);
+	int         window_id = qwaq_cmd_peek (res, 2);
 
 	window_t   *window = get_window (res, __FUNCTION__, window_id);
 	panel_t    *panel = panel_new (res);
@@ -348,13 +294,13 @@ cmd_new_panel (qwaq_resources_t *res)
 
 	int         panel_id = panel_index (res, panel);
 	int         cmd_result[] = { qwaq_cmd_new_panel, panel_id };
-	qwaq_submit_result (res, cmd_result, CMD_SIZE (cmd_result));
+	qwaq_pipe_submit (&res->results, cmd_result, CMD_SIZE (cmd_result));
 }
 
 static void
 cmd_del_panel (qwaq_resources_t *res)
 {
-	int         panel_id = *RB_PEEK_DATA (res->command_queue, 2);
+	int         panel_id = qwaq_cmd_peek (res, 2);
 
 	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
 	del_panel (panel->panel);
@@ -364,7 +310,7 @@ cmd_del_panel (qwaq_resources_t *res)
 static void
 cmd_hide_panel (qwaq_resources_t *res)
 {
-	int         panel_id = *RB_PEEK_DATA (res->command_queue, 2);
+	int         panel_id = qwaq_cmd_peek (res, 2);
 
 	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
 	hide_panel (panel->panel);
@@ -373,7 +319,7 @@ cmd_hide_panel (qwaq_resources_t *res)
 static void
 cmd_show_panel (qwaq_resources_t *res)
 {
-	int         panel_id = *RB_PEEK_DATA (res->command_queue, 2);
+	int         panel_id = qwaq_cmd_peek (res, 2);
 
 	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
 	show_panel (panel->panel);
@@ -382,7 +328,7 @@ cmd_show_panel (qwaq_resources_t *res)
 static void
 cmd_top_panel (qwaq_resources_t *res)
 {
-	int         panel_id = *RB_PEEK_DATA (res->command_queue, 2);
+	int         panel_id = qwaq_cmd_peek (res, 2);
 
 	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
 	top_panel (panel->panel);
@@ -391,7 +337,7 @@ cmd_top_panel (qwaq_resources_t *res)
 static void
 cmd_bottom_panel (qwaq_resources_t *res)
 {
-	int         panel_id = *RB_PEEK_DATA (res->command_queue, 2);
+	int         panel_id = qwaq_cmd_peek (res, 2);
 
 	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
 	bottom_panel (panel->panel);
@@ -400,9 +346,9 @@ cmd_bottom_panel (qwaq_resources_t *res)
 static void
 cmd_move_panel (qwaq_resources_t *res)
 {
-	int         panel_id = *RB_PEEK_DATA (res->command_queue, 2);
-	int         x = *RB_PEEK_DATA (res->command_queue, 3);
-	int         y = *RB_PEEK_DATA (res->command_queue, 4);
+	int         panel_id = qwaq_cmd_peek (res, 2);
+	int         x = qwaq_cmd_peek (res, 3);
+	int         y = qwaq_cmd_peek (res, 4);
 
 	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
 	move_panel (panel->panel, y, x);
@@ -411,20 +357,20 @@ cmd_move_panel (qwaq_resources_t *res)
 static void
 cmd_panel_window (qwaq_resources_t *res)
 {
-	int         panel_id = *RB_PEEK_DATA (res->command_queue, 2);
+	int         panel_id = qwaq_cmd_peek (res, 2);
 
 	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
 
 	int         window_id = panel->window_id;
 	int         cmd_result[] = { qwaq_cmd_panel_window, window_id, };
-	qwaq_submit_result (res, cmd_result, CMD_SIZE (cmd_result));
+	qwaq_pipe_submit (&res->results, cmd_result, CMD_SIZE (cmd_result));
 }
 
 static void
 cmd_replace_panel (qwaq_resources_t *res)
 {
-	int         panel_id = *RB_PEEK_DATA (res->command_queue, 2);
-	int         window_id = *RB_PEEK_DATA (res->command_queue, 3);
+	int         panel_id = qwaq_cmd_peek (res, 2);
+	int         window_id = qwaq_cmd_peek (res, 3);
 
 	panel_t   *panel = get_panel (res, __FUNCTION__, panel_id);
 	window_t  *window = get_window (res, __FUNCTION__, window_id);
@@ -447,34 +393,34 @@ cmd_doupdate (qwaq_resources_t *res)
 static void
 cmd_mvwaddstr (qwaq_resources_t *res)
 {
-	int         window_id = *RB_PEEK_DATA (res->command_queue, 2);
-	int         x = *RB_PEEK_DATA (res->command_queue, 3);
-	int         y = *RB_PEEK_DATA (res->command_queue, 4);
-	int         string_id = *RB_PEEK_DATA (res->command_queue, 5);
+	int         window_id = qwaq_cmd_peek (res, 2);
+	int         x = qwaq_cmd_peek (res, 3);
+	int         y = qwaq_cmd_peek (res, 4);
+	int         string_id = qwaq_cmd_peek (res, 5);
 
 	window_t   *window = get_window (res, __FUNCTION__, window_id);
-	mvwaddstr (window->win, y, x, res->strings[string_id].str);
-	release_string (res, string_id);
+	mvwaddstr (window->win, y, x, qwaq_cmd_string (res, string_id)->str);
+	qwaq_pipe_release_string (&res->commands, string_id);
 }
 
 static void
 cmd_waddstr (qwaq_resources_t *res)
 {
-	int         window_id = *RB_PEEK_DATA (res->command_queue, 2);
-	int         string_id = *RB_PEEK_DATA (res->command_queue, 3);
+	int         window_id = qwaq_cmd_peek (res, 2);
+	int         string_id = qwaq_cmd_peek (res, 3);
 
 	window_t   *window = get_window (res, __FUNCTION__, window_id);
-	waddstr (window->win, res->strings[string_id].str);
-	release_string (res, string_id);
+	waddstr (window->win, qwaq_cmd_string (res, string_id)->str);
+	qwaq_pipe_release_string (&res->commands, string_id);
 }
 
 static void
 cmd_mvwaddch (qwaq_resources_t *res)
 {
-	int         window_id = *RB_PEEK_DATA (res->command_queue, 2);
-	int         x = *RB_PEEK_DATA (res->command_queue, 3);
-	int         y = *RB_PEEK_DATA (res->command_queue, 4);
-	int         ch = *RB_PEEK_DATA (res->command_queue, 5);
+	int         window_id = qwaq_cmd_peek (res, 2);
+	int         x = qwaq_cmd_peek (res, 3);
+	int         y = qwaq_cmd_peek (res, 4);
+	int         ch = qwaq_cmd_peek (res, 5);
 
 	window_t   *window = get_window (res, __FUNCTION__, window_id);
 	mvwaddch (window->win, y, x, ch);
@@ -483,8 +429,8 @@ cmd_mvwaddch (qwaq_resources_t *res)
 static void
 cmd_waddch (qwaq_resources_t *res)
 {
-	int         window_id = *RB_PEEK_DATA (res->command_queue, 2);
-	int         ch = *RB_PEEK_DATA (res->command_queue, 3);
+	int         window_id = qwaq_cmd_peek (res, 2);
+	int         ch = qwaq_cmd_peek (res, 3);
 
 	window_t   *window = get_window (res, __FUNCTION__, window_id);
 	waddch (window->win, ch);
@@ -493,7 +439,7 @@ cmd_waddch (qwaq_resources_t *res)
 static void
 cmd_wrefresh (qwaq_resources_t *res)
 {
-	int         window_id = *RB_PEEK_DATA (res->command_queue, 2);
+	int         window_id = qwaq_cmd_peek (res, 2);
 
 	window_t   *window = get_window (res, __FUNCTION__, window_id);
 	wrefresh (window->win);
@@ -502,9 +448,9 @@ cmd_wrefresh (qwaq_resources_t *res)
 static void
 cmd_init_pair (qwaq_resources_t *res)
 {
-	int         pair = *RB_PEEK_DATA (res->command_queue, 2);
-	int         f = *RB_PEEK_DATA (res->command_queue, 3);
-	int         b = *RB_PEEK_DATA (res->command_queue, 4);
+	int         pair = qwaq_cmd_peek (res, 2);
+	int         f = qwaq_cmd_peek (res, 3);
+	int         b = qwaq_cmd_peek (res, 4);
 
 	init_pair (pair, f, b);
 }
@@ -512,8 +458,8 @@ cmd_init_pair (qwaq_resources_t *res)
 static void
 cmd_wbkgd (qwaq_resources_t *res)
 {
-	int         window_id = *RB_PEEK_DATA (res->command_queue, 2);
-	int         ch = *RB_PEEK_DATA (res->command_queue, 3);
+	int         window_id = qwaq_cmd_peek (res, 2);
+	int         ch = qwaq_cmd_peek (res, 3);
 
 	window_t   *window = get_window (res, __FUNCTION__, window_id);
 	wbkgd (window->win, ch);
@@ -522,7 +468,7 @@ cmd_wbkgd (qwaq_resources_t *res)
 static void
 cmd_werase (qwaq_resources_t *res)
 {
-	int         window_id = *RB_PEEK_DATA (res->command_queue, 2);
+	int         window_id = qwaq_cmd_peek (res, 2);
 
 	window_t   *window = get_window (res, __FUNCTION__, window_id);
 	werase (window->win);
@@ -531,18 +477,29 @@ cmd_werase (qwaq_resources_t *res)
 static void
 cmd_scrollok (qwaq_resources_t *res)
 {
-	int         window_id = *RB_PEEK_DATA (res->command_queue, 2);
-	int         flag = *RB_PEEK_DATA (res->command_queue, 3);
+	int         window_id = qwaq_cmd_peek (res, 2);
+	int         flag = qwaq_cmd_peek (res, 3);
 
 	window_t   *window = get_window (res, __FUNCTION__, window_id);
 	scrollok (window->win, flag);
 }
 
 static void
+cmd_wmove (qwaq_resources_t *res)
+{
+	int         window_id = qwaq_cmd_peek (res, 2);
+	int         x = qwaq_cmd_peek (res, 3);
+	int         y = qwaq_cmd_peek (res, 4);
+
+	window_t   *window = get_window (res, __FUNCTION__, window_id);
+	wmove (window->win, y, x);
+}
+
+static void
 cmd_move (qwaq_resources_t *res)
 {
-	int         x = *RB_PEEK_DATA (res->command_queue, 2);
-	int         y = *RB_PEEK_DATA (res->command_queue, 3);
+	int         x = qwaq_cmd_peek (res, 2);
+	int         y = qwaq_cmd_peek (res, 3);
 
 	move (y, x);
 }
@@ -550,7 +507,7 @@ cmd_move (qwaq_resources_t *res)
 static void
 cmd_curs_set (qwaq_resources_t *res)
 {
-	int         visibility = *RB_PEEK_DATA (res->command_queue, 2);
+	int         visibility = qwaq_cmd_peek (res, 2);
 
 	curs_set (visibility);
 }
@@ -558,15 +515,15 @@ cmd_curs_set (qwaq_resources_t *res)
 static void
 cmd_wborder (qwaq_resources_t *res)
 {
-	int         window_id = *RB_PEEK_DATA (res->command_queue, 2);
-	int         ls = *RB_PEEK_DATA (res->command_queue, 3);
-	int         rs = *RB_PEEK_DATA (res->command_queue, 4);
-	int         ts = *RB_PEEK_DATA (res->command_queue, 5);
-	int         bs = *RB_PEEK_DATA (res->command_queue, 6);
-	int         tl = *RB_PEEK_DATA (res->command_queue, 7);
-	int         tr = *RB_PEEK_DATA (res->command_queue, 8);
-	int         bl = *RB_PEEK_DATA (res->command_queue, 9);
-	int         br = *RB_PEEK_DATA (res->command_queue, 10);
+	int         window_id = qwaq_cmd_peek (res, 2);
+	int         ls = qwaq_cmd_peek (res, 3);
+	int         rs = qwaq_cmd_peek (res, 4);
+	int         ts = qwaq_cmd_peek (res, 5);
+	int         bs = qwaq_cmd_peek (res, 6);
+	int         tl = qwaq_cmd_peek (res, 7);
+	int         tr = qwaq_cmd_peek (res, 8);
+	int         bl = qwaq_cmd_peek (res, 9);
+	int         br = qwaq_cmd_peek (res, 10);
 
 	window_t   *window = get_window (res, __FUNCTION__, window_id);
 	wborder (window->win, ls, rs, ts, bs, tl, tr, bl, br);
@@ -575,12 +532,12 @@ cmd_wborder (qwaq_resources_t *res)
 static void
 cmd_mvwblit_line (qwaq_resources_t *res)
 {
-	int         window_id = *RB_PEEK_DATA (res->command_queue, 2);
-	int         x = *RB_PEEK_DATA (res->command_queue, 3);
-	int         y = *RB_PEEK_DATA (res->command_queue, 4);
-	int         chs_id = *RB_PEEK_DATA (res->command_queue, 5);
-	int         len = *RB_PEEK_DATA (res->command_queue, 6);
-	int        *chs = (int *) res->strings[chs_id].str;
+	int         window_id = qwaq_cmd_peek (res, 2);
+	int         x = qwaq_cmd_peek (res, 3);
+	int         y = qwaq_cmd_peek (res, 4);
+	int         chs_id = qwaq_cmd_peek (res, 5);
+	int         len = qwaq_cmd_peek (res, 6);
+	int        *chs = (int *) qwaq_cmd_string (res, chs_id)->str;
 	int         save_x;
 	int         save_y;
 
@@ -592,15 +549,15 @@ cmd_mvwblit_line (qwaq_resources_t *res)
 		}
 	}
 	wmove (window->win, save_y, save_x);
-	release_string (res, chs_id);
+	qwaq_pipe_release_string (&res->commands, chs_id);
 }
 
 static void
 cmd_wresize (qwaq_resources_t *res)
 {
-	int         window_id = *RB_PEEK_DATA (res->command_queue, 2);
-	int         width = *RB_PEEK_DATA (res->command_queue, 3);
-	int         height = *RB_PEEK_DATA (res->command_queue, 4);
+	int         window_id = qwaq_cmd_peek (res, 2);
+	int         width = qwaq_cmd_peek (res, 3);
+	int         height = qwaq_cmd_peek (res, 4);
 
 	window_t   *window = get_window (res, __FUNCTION__, window_id);
 	wresize (window->win, height, width);
@@ -609,8 +566,8 @@ cmd_wresize (qwaq_resources_t *res)
 static void
 cmd_resizeterm (qwaq_resources_t *res)
 {
-	int         width = *RB_PEEK_DATA (res->command_queue, 2);
-	int         height = *RB_PEEK_DATA (res->command_queue, 3);
+	int         width = qwaq_cmd_peek (res, 2);
+	int         height = qwaq_cmd_peek (res, 3);
 
 	resizeterm (height, width);
 }
@@ -618,11 +575,11 @@ cmd_resizeterm (qwaq_resources_t *res)
 static void
 cmd_mvwhline (qwaq_resources_t *res)
 {
-	int         window_id = *RB_PEEK_DATA (res->command_queue, 2);
-	int         x = *RB_PEEK_DATA (res->command_queue, 3);
-	int         y = *RB_PEEK_DATA (res->command_queue, 4);
-	int         ch = *RB_PEEK_DATA (res->command_queue, 5);
-	int         n = *RB_PEEK_DATA (res->command_queue, 6);
+	int         window_id = qwaq_cmd_peek (res, 2);
+	int         x = qwaq_cmd_peek (res, 3);
+	int         y = qwaq_cmd_peek (res, 4);
+	int         ch = qwaq_cmd_peek (res, 5);
+	int         n = qwaq_cmd_peek (res, 6);
 
 	window_t   *window = get_window (res, __FUNCTION__, window_id);
 	mvwhline (window->win, y, x, ch, n);
@@ -631,11 +588,11 @@ cmd_mvwhline (qwaq_resources_t *res)
 static void
 cmd_mvwvline (qwaq_resources_t *res)
 {
-	int         window_id = *RB_PEEK_DATA (res->command_queue, 2);
-	int         x = *RB_PEEK_DATA (res->command_queue, 3);
-	int         y = *RB_PEEK_DATA (res->command_queue, 4);
-	int         ch = *RB_PEEK_DATA (res->command_queue, 5);
-	int         n = *RB_PEEK_DATA (res->command_queue, 6);
+	int         window_id = qwaq_cmd_peek (res, 2);
+	int         x = qwaq_cmd_peek (res, 3);
+	int         y = qwaq_cmd_peek (res, 4);
+	int         ch = qwaq_cmd_peek (res, 5);
+	int         n = qwaq_cmd_peek (res, 6);
 
 	window_t   *window = get_window (res, __FUNCTION__, window_id);
 	mvwvline (window->win, y, x, ch, n);
@@ -645,30 +602,16 @@ static void
 dump_command (qwaq_resources_t *res, int len)
 {
 	if (0) {
-		qwaq_commands cmd = *RB_PEEK_DATA (res->command_queue, 0);
+		qwaq_commands cmd = qwaq_cmd_peek (res, 0);
 		Sys_Printf ("%s[%d]", qwaq_command_names[cmd], len);
 		if (cmd == qwaq_cmd_syncprint) {
 			Sys_Printf (" ");
 		} else {
 			for (int i = 2; i < len; i++) {
-				Sys_Printf (" %d", *RB_PEEK_DATA (res->command_queue, i));
+				Sys_Printf (" %d", qwaq_cmd_peek (res, i));
 			}
 			Sys_Printf ("\n");
 		}
-	}
-}
-
-void
-qwaq_init_timeout (struct timespec *timeout, long time)
-{
-	#define SEC 1000000000L
-	struct timeval now;
-	gettimeofday(&now, 0);
-	timeout->tv_sec = now.tv_sec;
-	timeout->tv_nsec = now.tv_usec * 1000L + time;
-	if (timeout->tv_nsec >= SEC) {
-		timeout->tv_sec += timeout->tv_nsec / SEC;
-		timeout->tv_nsec %= SEC;
 	}
 }
 
@@ -680,22 +623,22 @@ process_commands (qwaq_resources_t *res)
 	int         len;
 	int         ret = 0;
 
-	pthread_mutex_lock (&res->command_cond.mut);
+	pthread_mutex_lock (&res->commands.pipe_cond.mut);
 	qwaq_init_timeout (&timeout, 20 * 1000000);
-	while (RB_DATA_AVAILABLE (res->command_queue) < 2 && ret == 0) {
-		ret = pthread_cond_timedwait (&res->command_cond.rcond,
-									  &res->command_cond.mut, &timeout);
+	while (RB_DATA_AVAILABLE (res->commands.pipe) < 2 && ret == 0) {
+		ret = pthread_cond_timedwait (&res->commands.pipe_cond.rcond,
+									  &res->commands.pipe_cond.mut, &timeout);
 	}
 	// The mutex is unlocked at the top of the loop and locked again
 	// (for broadcast) at the bottom, then finally unlocked after the loop.
 	// It should be only the data availability check that's not threadsafe
 	// as the mutex is not released until after the data has been written to
 	// the buffer.
-	while ((avail = RB_DATA_AVAILABLE (res->command_queue)) >= 2
-		   && avail >= (len = *RB_PEEK_DATA (res->command_queue, 1))) {
-		pthread_mutex_unlock (&res->command_cond.mut);
+	while ((avail = RB_DATA_AVAILABLE (res->commands.pipe)) >= 2
+		   && avail >= (len = qwaq_cmd_peek (res, 1))) {
+		pthread_mutex_unlock (&res->commands.pipe_cond.mut);
 		dump_command (res, len);
-		qwaq_commands cmd = *RB_PEEK_DATA (res->command_queue, 0);
+		qwaq_commands cmd = qwaq_cmd_peek (res, 0);
 		switch (cmd) {
 			case qwaq_cmd_syncprint:
 				cmd_syncprint (res);
@@ -769,6 +712,9 @@ process_commands (qwaq_resources_t *res)
 			case qwaq_cmd_scrollok:
 				cmd_scrollok (res);
 				break;
+			case qwaq_cmd_wmove:
+				cmd_wmove (res);
+				break;
 			case qwaq_cmd_move:
 				cmd_move (res);
 				break;
@@ -794,56 +740,21 @@ process_commands (qwaq_resources_t *res)
 				cmd_mvwvline (res);
 				break;
 		}
-		pthread_mutex_lock (&res->command_cond.mut);
-		RB_RELEASE (res->command_queue, len);
-		pthread_cond_broadcast (&res->command_cond.wcond);
+		pthread_mutex_lock (&res->commands.pipe_cond.mut);
+		RB_RELEASE (res->commands.pipe, len);
+		pthread_cond_broadcast (&res->commands.pipe_cond.wcond);
 		// unlocked at top of top if there's more data, otherwise just after
 		// the loop
 	}
-	pthread_mutex_unlock (&res->command_cond.mut);
-}
-
-static int
-get_event (qwaq_resources_t *res, qwaq_event_t *event)
-{
-	struct timespec timeout;
-	int         ret = 0;
-	int         was_event = 0;
-
-	pthread_mutex_lock (&res->event_cond.mut);
-	qwaq_init_timeout (&timeout, 20 * 1000000);
-	while (RB_DATA_AVAILABLE (res->event_queue) < 1 && ret == 0) {
-		ret = pthread_cond_timedwait (&res->event_cond.rcond,
-									  &res->event_cond.mut, &timeout);
-	}
-	if (event) {
-		if (ret == 0) {
-			RB_READ_DATA (res->event_queue, event, 1);
-			was_event = 1;
-		} else if (res->button_state) {
-			event->what = qe_mouseauto;
-			event->when = Sys_DoubleTime ();
-			event->mouse.buttons = res->button_state;
-			event->mouse.x = res->mouse_x;
-			event->mouse.y = res->mouse_y;
-		} else {
-			event->what = qe_none;
-		}
-	}
-	pthread_cond_broadcast (&res->event_cond.wcond);
-	pthread_mutex_unlock (&res->event_cond.mut);
-	return was_event;
+	pthread_mutex_unlock (&res->commands.pipe_cond.mut);
 }
 
 static int need_endwin;
 static void
 bi_shutdown (void *_pr)
 {
-	__auto_type pr = (progs_t *) _pr;
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
-
 	if (need_endwin) {
-		qwaq_input_shutdown (res);
+		qwaq_input_disable_mouse ();
 		endwin ();
 	}
 }
@@ -851,12 +762,12 @@ bi_shutdown (void *_pr)
 static void
 bi_syncprintf (progs_t *pr)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 	const char *fmt = P_GSTRING (pr, 0);
 	int         count = pr->pr_argc - 1;
 	pr_type_t **args = pr->pr_params + 1;
-	int         string_id = acquire_string (res);
-	dstring_t  *print_buffer = res->strings + string_id;
+	int         string_id = qwaq_pipe_acquire_string (&res->commands);
+	dstring_t  *print_buffer = qwaq_cmd_string (res, string_id);
 	int         command[] = { qwaq_cmd_syncprint, 0, string_id };
 
 	command[1] = CMD_SIZE(command);
@@ -864,13 +775,13 @@ bi_syncprintf (progs_t *pr)
 	dstring_clearstr (print_buffer);
 	PR_Sprintf (pr, print_buffer, "mvwaddstr", fmt, count, args);
 
-	qwaq_submit_command (res, command);
+	qwaq_pipe_submit (&res->commands, command, command[1]);
 }
 
 static void
 bi_newwin (progs_t *pr)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 	int         xpos = P_INT (pr, 0);
 	int         ypos = P_INT (pr, 1);
 	int         xlen = P_INT (pr, 2);
@@ -880,39 +791,40 @@ bi_newwin (progs_t *pr)
 					xpos, ypos, xlen, ylen,
 				};
 	command[1] = CMD_SIZE(command);
-	qwaq_submit_command (res, command);
+	qwaq_pipe_submit (&res->commands, command, command[1]);
 
 	int         cmd_result[2];
-	qwaq_wait_result (res, cmd_result, qwaq_cmd_newwin, CMD_SIZE (cmd_result));
+	qwaq_pipe_receive (&res->results, cmd_result, qwaq_cmd_newwin,
+					   CMD_SIZE (cmd_result));
 	R_INT (pr) = cmd_result[1];
 }
 
 static void
 bi_delwin (progs_t *pr)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 	int         window_id = P_INT (pr, 0);
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_delwin, 0, window_id, };
 		command[1] = CMD_SIZE(command);
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
 }
 
 static void
 qwaq_getwrect (progs_t *pr, int window_id)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_getwrect, 0, window_id, };
 		command[1] = CMD_SIZE(command);
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 
 		int         cmd_result[5];
-		qwaq_wait_result (res, cmd_result, qwaq_cmd_getwrect,
-						  CMD_SIZE (cmd_result));
+		qwaq_pipe_receive (&res->results, cmd_result, qwaq_cmd_getwrect,
+						   CMD_SIZE (cmd_result));
 		// return xpos, ypos, xlen, ylen
 		(&R_INT (pr))[0] = cmd_result[1];
 		(&R_INT (pr))[1] = cmd_result[2];
@@ -929,17 +841,17 @@ bi_getwrect (progs_t *pr)
 static void
 bi_new_panel (progs_t *pr)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 	int         window_id = P_INT (pr, 0);
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_new_panel, 0, window_id, };
 		command[1] = CMD_SIZE(command);
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 
 		int         cmd_result[2];
-		qwaq_wait_result (res, cmd_result, qwaq_cmd_new_panel,
-						  CMD_SIZE (cmd_result));
+		qwaq_pipe_receive (&res->results, cmd_result, qwaq_cmd_new_panel,
+						   CMD_SIZE (cmd_result));
 		R_INT (pr) = cmd_result[1];
 	}
 }
@@ -947,13 +859,13 @@ bi_new_panel (progs_t *pr)
 static void
 panel_command (progs_t *pr, qwaq_commands cmd)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 	int         panel_id = P_INT (pr, 0);
 
 	if (get_panel (res, __FUNCTION__, panel_id)) {
 		int         command[] = { cmd, 0, panel_id, };
 		command[1] = CMD_SIZE(command);
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
 }
 
@@ -990,7 +902,7 @@ bi_bottom_panel (progs_t *pr)
 static void
 bi_move_panel (progs_t *pr)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 	int         panel_id = P_INT (pr, 0);
 	int         x = P_INT (pr, 1);
 	int         y = P_INT (pr, 2);
@@ -998,24 +910,24 @@ bi_move_panel (progs_t *pr)
 	if (get_panel (res, __FUNCTION__, panel_id)) {
 		int         command[] = { qwaq_cmd_move_panel, 0, panel_id, x, y, };
 		command[1] = CMD_SIZE(command);
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
 }
 
 static void
 bi_panel_window (progs_t *pr)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 	int         panel_id = P_INT (pr, 0);
 
 	if (get_panel (res, __FUNCTION__, panel_id)) {
 		int         command[] = { qwaq_cmd_panel_window, 0, panel_id, };
 		command[1] = CMD_SIZE(command);
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 
 		int         cmd_result[2];
-		qwaq_wait_result (res, cmd_result, qwaq_cmd_panel_window,
-						  CMD_SIZE (cmd_result));
+		qwaq_pipe_receive (&res->results, cmd_result, qwaq_cmd_panel_window,
+						   CMD_SIZE (cmd_result));
 		(&R_INT (pr))[0] = cmd_result[1];
 	}
 }
@@ -1023,7 +935,7 @@ bi_panel_window (progs_t *pr)
 static void
 bi_replace_panel (progs_t *pr)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 	int         panel_id = P_INT (pr, 0);
 	int         window_id = P_INT (pr, 1);
 
@@ -1032,18 +944,18 @@ bi_replace_panel (progs_t *pr)
 		int         command[] = { qwaq_cmd_replace_panel, 0,
 								  panel_id, window_id};
 		command[1] = CMD_SIZE(command);
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
 }
 
 static void
 qwaq_update_panels (progs_t *pr)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	int         command[] = { qwaq_cmd_update_panels, 0, };
 	command[1] = CMD_SIZE(command);
-	qwaq_submit_command (res, command);
+	qwaq_pipe_submit (&res->commands, command, command[1]);
 }
 static void
 bi_update_panels (progs_t *pr)
@@ -1054,11 +966,11 @@ bi_update_panels (progs_t *pr)
 static void
 qwaq_doupdate (progs_t *pr)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	int         command[] = { qwaq_cmd_doupdate, 0, };
 	command[1] = CMD_SIZE(command);
-	qwaq_submit_command (res, command);
+	qwaq_pipe_submit (&res->commands, command, command[1]);
 }
 static void
 bi_doupdate (progs_t *pr)
@@ -1069,11 +981,11 @@ bi_doupdate (progs_t *pr)
 static void
 qwaq_waddstr (progs_t *pr, int window_id, const char *str)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	if (get_window (res, __FUNCTION__, window_id)) {
-		int         string_id = acquire_string (res);
-		dstring_t  *print_buffer = res->strings + string_id;
+		int         string_id = qwaq_pipe_acquire_string (&res->commands);
+		dstring_t  *print_buffer = qwaq_cmd_string (res, string_id);
 		int         command[] = {
 						qwaq_cmd_waddstr, 0,
 						window_id, string_id
@@ -1082,7 +994,7 @@ qwaq_waddstr (progs_t *pr, int window_id, const char *str)
 		command[1] = CMD_SIZE(command);
 
 		dstring_copystr (print_buffer, str);
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
 }
 static void
@@ -1097,7 +1009,7 @@ bi_waddstr (progs_t *pr)
 static void
 qwaq_wresize (progs_t *pr, int window_id, int width, int height)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = {
@@ -1106,7 +1018,7 @@ qwaq_wresize (progs_t *pr, int window_id, int width, int height)
 					};
 
 		command[1] = CMD_SIZE(command);
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
 }
 static void
@@ -1122,12 +1034,12 @@ bi_wresize (progs_t *pr)
 static void
 qwaq_resizeterm (progs_t *pr, int width, int height)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	int         command[] = { qwaq_cmd_resizeterm, 0, width, height };
 
 	command[1] = CMD_SIZE(command);
-	qwaq_submit_command (res, command);
+	qwaq_pipe_submit (&res->commands, command, command[1]);
 }
 static void
 bi_resizeterm (progs_t *pr)
@@ -1141,7 +1053,7 @@ bi_resizeterm (progs_t *pr)
 static void
 qwaq_mvwhline (progs_t *pr, int window_id, int x, int y, int ch, int n)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = {
@@ -1150,7 +1062,7 @@ qwaq_mvwhline (progs_t *pr, int window_id, int x, int y, int ch, int n)
 					};
 
 		command[1] = CMD_SIZE(command);
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
 }
 static void
@@ -1168,7 +1080,7 @@ bi_mvwhline (progs_t *pr)
 static void
 qwaq_mvwvline (progs_t *pr, int window_id, int x, int y, int ch, int n)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = {
@@ -1177,7 +1089,7 @@ qwaq_mvwvline (progs_t *pr, int window_id, int x, int y, int ch, int n)
 					};
 
 		command[1] = CMD_SIZE(command);
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
 }
 static void
@@ -1195,11 +1107,11 @@ bi_mvwvline (progs_t *pr)
 static void
 qwaq_mvwaddstr (progs_t *pr, int window_id, int x, int y, const char *str)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	if (get_window (res, __FUNCTION__, window_id)) {
-		int         string_id = acquire_string (res);
-		dstring_t  *print_buffer = res->strings + string_id;
+		int         string_id = qwaq_pipe_acquire_string (&res->commands);
+		dstring_t  *print_buffer = qwaq_cmd_string (res, string_id);
 		int         command[] = {
 						qwaq_cmd_mvwaddstr, 0,
 						window_id, x, y, string_id
@@ -1208,7 +1120,7 @@ qwaq_mvwaddstr (progs_t *pr, int window_id, int x, int y, const char *str)
 		command[1] = CMD_SIZE(command);
 
 		dstring_copystr (print_buffer, str);
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
 }
 static void
@@ -1226,11 +1138,11 @@ static void
 qwaq_mvwprintf (progs_t *pr, int window_id, int x, int y, const char *fmt,
 				int count, pr_type_t **args)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	if (get_window (res, __FUNCTION__, window_id)) {
-		int         string_id = acquire_string (res);
-		dstring_t  *print_buffer = res->strings + string_id;
+		int         string_id = qwaq_pipe_acquire_string (&res->commands);
+		dstring_t  *print_buffer = qwaq_cmd_string (res, string_id);
 		int         command[] = {
 						qwaq_cmd_mvwaddstr, 0,
 						window_id, x, y, string_id
@@ -1241,7 +1153,7 @@ qwaq_mvwprintf (progs_t *pr, int window_id, int x, int y, const char *fmt,
 		dstring_clearstr (print_buffer);
 		PR_Sprintf (pr, print_buffer, "mvwaddstr", fmt, count, args);
 
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
 }
 static void
@@ -1261,11 +1173,11 @@ static void
 qwaq_wprintf (progs_t *pr, int window_id, const char *fmt,
 			  int count, pr_type_t **args)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	if (get_window (res, __FUNCTION__, window_id)) {
-		int         string_id = acquire_string (res);
-		dstring_t  *print_buffer = res->strings + string_id;
+		int         string_id = qwaq_pipe_acquire_string (&res->commands);
+		dstring_t  *print_buffer = qwaq_cmd_string (res, string_id);
 		int         command[] = {
 						qwaq_cmd_waddstr, 0,
 						window_id, string_id
@@ -1276,7 +1188,7 @@ qwaq_wprintf (progs_t *pr, int window_id, const char *fmt,
 		dstring_clearstr (print_buffer);
 		PR_Sprintf (pr, print_buffer, "waddstr", fmt, count, args);
 
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
 }
 static void
@@ -1293,7 +1205,7 @@ bi_wprintf (progs_t *pr)
 static void
 qwaq_wvprintf (progs_t *pr, int window_id, const char *fmt, pr_va_list_t *args)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 	pr_type_t  *list_start = PR_GetPointer (pr, args->list);
 	pr_type_t **list = alloca (args->count * sizeof (*list));
 
@@ -1302,8 +1214,8 @@ qwaq_wvprintf (progs_t *pr, int window_id, const char *fmt, pr_va_list_t *args)
 	}
 
 	if (get_window (res, __FUNCTION__, window_id)) {
-		int         string_id = acquire_string (res);
-		dstring_t  *print_buffer = res->strings + string_id;
+		int         string_id = qwaq_pipe_acquire_string (&res->commands);
+		dstring_t  *print_buffer = qwaq_cmd_string (res, string_id);
 		int         command[] = {
 						qwaq_cmd_waddstr, 0,
 						window_id, string_id
@@ -1314,7 +1226,7 @@ qwaq_wvprintf (progs_t *pr, int window_id, const char *fmt, pr_va_list_t *args)
 		dstring_clearstr (print_buffer);
 		PR_Sprintf (pr, print_buffer, "waddstr", fmt, args->count, list);
 
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
 }
 static void
@@ -1330,13 +1242,13 @@ bi_wvprintf (progs_t *pr)
 static void
 qwaq_waddch (progs_t *pr, int window_id, int ch)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_waddch, 0, window_id, ch };
 
 		command[1] = CMD_SIZE(command);
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
 }
 static void
@@ -1352,7 +1264,7 @@ static void
 qwaq_mvwvprintf (progs_t *pr, int window_id, int x, int y,
 				 const char *fmt, pr_va_list_t *args)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 	pr_type_t  *list_start = PR_GetPointer (pr, args->list);
 	pr_type_t **list = alloca (args->count * sizeof (*list));
 
@@ -1361,8 +1273,8 @@ qwaq_mvwvprintf (progs_t *pr, int window_id, int x, int y,
 	}
 
 	if (get_window (res, __FUNCTION__, window_id)) {
-		int         string_id = acquire_string (res);
-		dstring_t  *print_buffer = res->strings + string_id;
+		int         string_id = qwaq_pipe_acquire_string (&res->commands);
+		dstring_t  *print_buffer = qwaq_cmd_string (res, string_id);
 		int         command[] = {
 						qwaq_cmd_mvwaddstr, 0,
 						window_id, x, y, string_id
@@ -1373,7 +1285,7 @@ qwaq_mvwvprintf (progs_t *pr, int window_id, int x, int y,
 		dstring_clearstr (print_buffer);
 		PR_Sprintf (pr, print_buffer, "waddstr", fmt, args->count, list);
 
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
 }
 static void
@@ -1391,7 +1303,7 @@ bi_mvwvprintf (progs_t *pr)
 static void
 qwaq_mvwaddch (progs_t *pr, int window_id, int x, int y, int ch)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = {
@@ -1399,7 +1311,7 @@ qwaq_mvwaddch (progs_t *pr, int window_id, int x, int y, int ch)
 						window_id, x, y, ch
 					};
 		command[1] = CMD_SIZE(command);
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
 }
 static void
@@ -1416,12 +1328,12 @@ bi_mvwaddch (progs_t *pr)
 static void
 qwaq_wrefresh (progs_t *pr, int window_id)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_wrefresh, 0, window_id, };
 		command[1] = CMD_SIZE(command);
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
 }
 static void
@@ -1430,15 +1342,6 @@ bi_wrefresh (progs_t *pr)
 	int         window_id = P_INT (pr, 0);
 
 	qwaq_wrefresh (pr, window_id);
-}
-
-static void
-bi_get_event (progs_t *pr)
-{
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
-	qwaq_event_t *event = &G_STRUCT (pr, qwaq_event_t, P_INT (pr, 0));
-
-	R_INT (pr) = get_event (res, event);
 }
 
 static void
@@ -1456,11 +1359,11 @@ bi_max_color_pairs (progs_t *pr)
 static void
 qwaq_init_pair (progs_t *pr, int pair, int f, int b)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	int         command[] = { qwaq_cmd_init_pair, 0, pair, f, b, };
 	command[1] = CMD_SIZE(command);
-	qwaq_submit_command (res, command);
+	qwaq_pipe_submit (&res->commands, command, command[1]);
 }
 static void
 bi_init_pair (progs_t *pr)
@@ -1475,12 +1378,12 @@ bi_init_pair (progs_t *pr)
 static void
 qwaq_wbkgd (progs_t *pr, int window_id, int ch)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_wbkgd, 0, window_id, ch, };
 		command[1] = CMD_SIZE(command);
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
 }
 static void
@@ -1495,12 +1398,12 @@ bi_wbkgd (progs_t *pr)
 static void
 qwaq_werase (progs_t *pr, int window_id, int ch)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_werase, 0, window_id, };
 		command[1] = CMD_SIZE(command);
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
 }
 static void
@@ -1515,12 +1418,12 @@ bi_werase (progs_t *pr)
 static void
 qwaq_scrollok (progs_t *pr, int window_id, int flag)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_scrollok, 0, window_id, flag, };
 		command[1] = CMD_SIZE(command);
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
 }
 static void
@@ -1530,6 +1433,27 @@ bi_scrollok (progs_t *pr)
 	int         flag = P_INT (pr, 1);
 
 	qwaq_scrollok (pr, window_id, flag);
+}
+
+static void
+qwaq_wmove (progs_t *pr, int window_id, int x, int y)
+{
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
+
+	if (get_window (res, __FUNCTION__, window_id)) {
+		int         command[] = { qwaq_cmd_wmove, 0, window_id, x, y, };
+		command[1] = CMD_SIZE(command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
+	}
+}
+static void
+bi_wmove (progs_t *pr)
+{
+	int         window_id = P_INT (pr, 0);
+	int         x = P_INT (pr, 1);
+	int         y = P_INT (pr, 2);
+
+	qwaq_wmove (pr, window_id, x, y);
 }
 
 static const char qwaq_acs_char_map[] = "lmkjtuvwqxnos`afg~,+.-hi0pryz{|}";
@@ -1555,11 +1479,11 @@ bi_acs_char (progs_t *pr)
 static void
 qwaq_move (progs_t *pr, int x, int y)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	int         command[] = { qwaq_cmd_move, 0, x, y, };
 	command[1] = CMD_SIZE(command);
-	qwaq_submit_command (res, command);
+	qwaq_pipe_submit (&res->commands, command, command[1]);
 }
 static void
 bi_move (progs_t *pr)
@@ -1573,11 +1497,11 @@ bi_move (progs_t *pr)
 static void
 qwaq_curs_set (progs_t *pr, int visibility)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	int         command[] = { qwaq_cmd_curs_set, 0, visibility, };
 	command[1] = CMD_SIZE(command);
-	qwaq_submit_command (res, command);
+	qwaq_pipe_submit (&res->commands, command, command[1]);
 }
 static void
 bi_curs_set (progs_t *pr)
@@ -1591,14 +1515,14 @@ static void
 qwaq_wborder (progs_t *pr, int window_id,
 			  box_sides_t sides, box_corners_t corns)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	if (get_window (res, __FUNCTION__, window_id)) {
 		int         command[] = { qwaq_cmd_wborder, 0, window_id,
 								  sides.ls, sides.rs, sides.ts, sides.bs,
 								  corns.tl, corns.tr, corns.bl, corns.br, };
 		command[1] = CMD_SIZE(command);
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
 }
 static void
@@ -1615,11 +1539,11 @@ static void
 qwaq__mvwblit_line (progs_t *pr, int window_id, int x, int y,
 				    int *chs, int len)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	if (get_window (res, __FUNCTION__, window_id)) {
-		int         chs_id = acquire_string (res);
-		dstring_t  *chs_buf = res->strings + chs_id;
+		int         chs_id = qwaq_pipe_acquire_string (&res->commands);
+		dstring_t  *chs_buf = qwaq_cmd_string (res, chs_id);
 		int         command[] = { qwaq_cmd_mvwblit_line, 0, window_id,
 								  x, y, chs_id, len,};
 
@@ -1629,7 +1553,7 @@ qwaq__mvwblit_line (progs_t *pr, int window_id, int x, int y,
 		dstring_adjust (chs_buf);
 		memcpy (chs_buf->str, chs, len * sizeof (int));
 
-		qwaq_submit_command (res, command);
+		qwaq_pipe_submit (&res->commands, command, command[1]);
 	}
 }
 static void
@@ -1650,7 +1574,6 @@ qwaq_curses_thread (qwaq_thread_t *thread)
 
 	while (1) {
 		process_commands (res);
-		qwaq_process_input (res);
 	}
 	thread->return_code = 0;
 	return thread;
@@ -1659,7 +1582,7 @@ qwaq_curses_thread (qwaq_thread_t *thread)
 static void
 bi_initialize (progs_t *pr)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 
 	initscr ();
 	need_endwin = 1;
@@ -1671,8 +1594,9 @@ bi_initialize (progs_t *pr)
 	nonl ();
 	nodelay (stdscr, TRUE);
 	mousemask(ALL_MOUSE_EVENTS | REPORT_MOUSE_POSITION, NULL);
-	qwaq_input_init (res);
 	refresh();
+
+	qwaq_input_enable_mouse ();
 
 	res->stdscr.win = stdscr;
 
@@ -1682,7 +1606,7 @@ bi_initialize (progs_t *pr)
 static void
 bi_c_TextContext__is_initialized (progs_t *pr)
 {
-	qwaq_resources_t *res = PR_Resources_Find (pr, "qwaq");
+	qwaq_resources_t *res = PR_Resources_Find (pr, "curses");
 	R_INT (pr) = res->initialized;
 }
 
@@ -1825,9 +1749,9 @@ bi_i_TextContext__refresh (progs_t *pr)
 {
 	int         window_id = P_STRUCT (pr, qwaq_textcontext_t, 0).window;
 
-	//qwaq_wrefresh (pr, window_id);
 	qwaq_update_panels (pr);
 	if (window_id == 1) {
+		qwaq_wrefresh (pr, window_id);
 		qwaq_doupdate (pr);
 	}
 }
@@ -1917,12 +1841,12 @@ bi_i_TextContext__mvvline_ (progs_t *pr)
 }
 
 static void
-bi_qwaq_clear (progs_t *pr, void *data)
+bi_curses_clear (progs_t *pr, void *data)
 {
 	__auto_type res = (qwaq_resources_t *) data;
 
 	if (res->initialized) {
-		qwaq_input_shutdown (res);
+		qwaq_input_disable_mouse ();
 		endwin ();
 	}
 	need_endwin = 0;
@@ -1956,13 +1880,13 @@ static builtin_t builtins[] = {
 	{"mvwaddstr",		bi_mvwaddstr,		-1},
 	{"waddstr",			bi_waddstr,			-1},
 	{"wrefresh",		bi_wrefresh,		-1},
-	{"get_event",		bi_get_event,		-1},
 	{"max_colors",		bi_max_colors,		-1},
 	{"max_color_pairs",	bi_max_color_pairs,	-1},
 	{"init_pair",		bi_init_pair,		-1},
 	{"wbkgd",			bi_wbkgd,			-1},
 	{"werase",			bi_werase,			-1},
 	{"scrollok",		bi_scrollok,		-1},
+	{"wmove",			bi_wmove,			-1},
 	{"acs_char",		bi_acs_char,		-1},
 	{"move",			bi_move,			-1},
 	{"curs_set",		bi_curs_set,		-1},
@@ -2002,45 +1926,16 @@ static builtin_t builtins[] = {
 	{0}
 };
 
-static FILE *logfile;
-
-static __attribute__((format(printf, 1, 0))) void
-qwaq_print (const char *fmt, va_list args)
-{
-	vfprintf (logfile, fmt, args);
-	fflush (logfile);
-}
-
 void
-qwaq_init_cond (rwcond_t *cond)
-{
-	pthread_cond_init (&cond->rcond, 0);
-	pthread_cond_init (&cond->wcond, 0);
-	pthread_mutex_init (&cond->mut, 0);
-}
-
-void
-BI_Init (progs_t *pr)
+BI_Curses_Init (progs_t *pr)
 {
 	qwaq_resources_t *res = calloc (sizeof (*res), 1);
 	res->pr = pr;
 
-	for (int i = 0; i < STRING_ID_QUEUE_SIZE - 1; i++) {
-		RB_WRITE_DATA (res->string_ids, &i, 1);
-		res->strings[i].mem = &dstring_default_mem;
-	}
-	res->escbuff.mem = &dstring_default_mem;
-	// ensure the backing buffer exists
-	dstring_clearstr (&res->escbuff);
+	qwaq_init_pipe (&res->commands);
+	qwaq_init_pipe (&res->results);
 
-	qwaq_init_cond (&res->event_cond);
-	qwaq_init_cond (&res->command_cond);
-	qwaq_init_cond (&res->results_cond);
-	qwaq_init_cond (&res->string_id_cond);
-
-	PR_Resources_Register (pr, "qwaq", res, bi_qwaq_clear);
+	PR_Resources_Register (pr, "curses", res, bi_curses_clear);
 	PR_RegisterBuiltins (pr, builtins);
 	Sys_RegisterShutdown (bi_shutdown, pr);
-	logfile = fopen ("qwaq-curses.log", "wt");
-	Sys_SetStdPrintf (qwaq_print);
 }

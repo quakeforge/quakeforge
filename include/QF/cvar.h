@@ -33,6 +33,7 @@
 */
 ///@{
 
+#include "QF/listener.h"
 #include "QF/qtypes.h"
 #include "QF/quakeio.h"
 
@@ -51,12 +52,17 @@ typedef struct cvar_s {
 		\param var	This cvar.
 	*/
 	void      (*callback)(struct cvar_s *var);
+	struct cvar_listener_set_s *listeners;
 	const char *description;	///< for "help" command
 	float       value;			///< The current cvar value as a float
 	int         int_val;		///< The current cvar value as an integer
 	vec3_t      vec;			///< The current cvar value as a vector
 	struct cvar_s *next;		///< \internal Linked list of cvars.
 } cvar_t;
+
+typedef struct cvar_listener_set_s LISTENER_SET_TYPE (cvar_t)
+	cvar_listener_set_t;
+typedef void (*cvar_listener_t) (void *data, const cvar_t *cvar);
 
 typedef struct cvar_alias_s {
 	char       *name;			///< The name of the alias.
@@ -97,6 +103,8 @@ cvar_t	*Cvar_FindAlias (const char *alias_name);
 
 cvar_t	*Cvar_MakeAlias (const char *name, cvar_t *cvar);
 cvar_t	*Cvar_RemoveAlias (const char *name);
+void Cvar_AddListener (cvar_t *cvar, cvar_listener_t listener, void *data);
+void Cvar_RemoveListener (cvar_t *cvar, cvar_listener_t listener, void *data);
 
 // equivelants to "<name> <variable>" typed at the console
 void 	Cvar_Set (cvar_t *var, const char *value);
@@ -119,6 +127,10 @@ qboolean Cvar_Command (void);
 // Writes lines containing "set variable value" for all variables
 // with the archive flag set to true.
 void 	Cvar_WriteVariables (QFile *f);
+
+struct plitem_s;
+void Cvar_SaveConfig (struct plitem_s *config);
+void Cvar_LoadConfig (struct plitem_s *config);
 
 // attempts to match a partial variable name for command line completion
 // returns NULL if nothing fits

@@ -26,9 +26,11 @@
 #endif
 #include <stdlib.h>
 
+#include "QF/progs.h"	// for PR_RESMAP
 #include "QF/sys.h"
 
 #include "tools/qfbsp/include/bsp5.h"
+#include "tools/qfbsp/include/brush.h"
 #include "tools/qfbsp/include/csg4.h"
 #include "tools/qfbsp/include/options.h"
 #include "tools/qfbsp/include/region.h"
@@ -162,8 +164,8 @@ GatherNodeFaces_r (node_t *node)
 			if (!f->points) {		// face was removed outside
 				FreeFace (f);
 			} else {
-				f->next = validfaces[f->planenum];
-				validfaces[f->planenum] = f;
+				f->next = validfaces.a[f->planenum];
+				validfaces.a[f->planenum] = f;
 			}
 		}
 
@@ -180,7 +182,8 @@ GatherNodeFaces_r (node_t *node)
 surface_t *
 GatherNodeFaces (node_t *headnode)
 {
-	memset (validfaces, 0, sizeof (validfaces));
+	DARRAY_RESIZE (&validfaces, planes.size);
+	memset (validfaces.a, 0, validfaces.size * sizeof (validfaces.a[0]));
 	GatherNodeFaces_r (headnode);
 	return BuildSurfaces ();
 }
@@ -198,11 +201,10 @@ typedef struct hashvert_s {
 
 int         c_cornerverts;
 
-hashvert_t  hvertex[MAX_MAP_VERTS];
-hashvert_t *hvert_p;
+static PR_RESMAP (hashvert_t) hvertex;
 
 #define EDGEFACE_CHUNK 4096
-int         numedgefaces = 0;
+size_t      numedgefaces = 0;
 edgeface_t *edgefaces = 0;
 int         firstmodeledge = 1;
 int         firstmodelface;
@@ -241,7 +243,7 @@ InitHash (void)
 	hash_scale[1] = newsize[1] / size[1];
 	hash_scale[2] = newsize[1];
 
-	hvert_p = hvertex;
+	PR_RESRESET (hvertex);
 }
 
 /**	Calulate the hash value of a vector.
@@ -302,7 +304,7 @@ GetVertex (const vec3_t in, int planenum)
 		}
 	}
 
-	hv = hvert_p;
+	hv = PR_RESNEW (hvertex);
 	hv->numedges = 1;
 	hv->numplanes = 1;
 	hv->planenums[0] = planenum;
@@ -310,14 +312,8 @@ GetVertex (const vec3_t in, int planenum)
 	hashverts[h] = hv;
 	VectorCopy (vert, hv->point);
 	hv->num = bsp->numvertexes;
-	if (hv->num == MAX_MAP_VERTS)
-		Sys_Error ("GetVertex: MAX_MAP_VERTS");
-	hvert_p++;
 
 	// emit a vertex
-	if (bsp->numvertexes == MAX_MAP_VERTS)
-		Sys_Error ("numvertexes == MAX_MAP_VERTS");
-
 	v.point[0] = vert[0];
 	v.point[1] = vert[1];
 	v.point[2] = vert[2];
@@ -340,12 +336,12 @@ int         c_tryedges;
 	\return			The edge number. For a re-used edge, the edge number will
 					be negative, indicating the ends of the edge are reversed.
 */
-static int
+static size_t
 GetEdge (const vec3_t p1, const vec3_t p2, face_t *f)
 {
 	dedge_t     edge;
 	unsigned    v1, v2;
-	int         i;
+	size_t      i;
 
 	if (!f->contents[0])
 		Sys_Error ("GetEdge: 0 contents");

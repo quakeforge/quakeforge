@@ -69,16 +69,16 @@ Loop_SearchForHosts (qboolean xmit)
 	if (!sv.active)
 		return;
 
-	hostCacheCount = 1;
-	if (strcmp (hostname->string, "UNNAMED") == 0)
-		strcpy (hostcache[0].name, "local");
-	else
-		strcpy (hostcache[0].name, hostname->string);
-	strcpy (hostcache[0].map, sv.name);
-	hostcache[0].users = net_activeconnections;
-	hostcache[0].maxusers = svs.maxclients;
-	hostcache[0].driver = net_driverlevel;
-	strcpy (hostcache[0].cname, "local");
+	const char *name = "local";
+	if (strcmp (hostname->string, "UNNAMED") != 0) {
+		name = hostname->string;
+	}
+	const char *map = sv.name;
+	int         users = net_activeconnections;
+	int         maxusers = svs.maxclients;
+	const char *cname = "local";
+	NET_AddCachedHost (name, map, cname, users, maxusers, net_driverlevel,
+					   0, 0);
 }
 
 

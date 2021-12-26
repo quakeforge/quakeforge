@@ -49,7 +49,7 @@
 
 #ifdef _WIN32
 # include "winquake.h"
-HWND mainwindow;
+HWND win_mainwindow;
 #endif
 
 #define MEMSIZE (32 * 1024 * 1024)
@@ -65,12 +65,12 @@ init (void)
 	testsound_args = Cbuf_ArgsNew ();
 
 	Sys_Init ();
-	COM_ParseConfig ();
+	COM_ParseConfig (testsound_cbuf);
 	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
 
-	Memory_Init (Sys_Alloc (MEMSIZE), MEMSIZE);
+	memhunk_t *hunk = Memory_Init (Sys_Alloc (MEMSIZE), MEMSIZE);
 
-	QFS_Init ("qw");
+	QFS_Init (hunk, "qw");
 	PI_Init ();
 
 	S_Init_Cvars ();

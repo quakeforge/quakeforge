@@ -173,7 +173,8 @@ check_next_demopacket (void)
 static int
 read_demopacket (void)
 {
-	int         i, r;
+	int         i;
+	unsigned    r;
 	float       f;
 
 	Qread (cls.demofile, &net_message->message->cursize, 4);
@@ -478,7 +479,6 @@ CL_StartDemo (void)
 	cls.demoplayback = true;
 	CL_SetState (ca_connected);
 	cls.forcetrack = 0;
-	Key_SetKeyDest (key_demo);
 
 	while ((c = Qgetc (cls.demofile)) != '\n')
 		if (c == '-')

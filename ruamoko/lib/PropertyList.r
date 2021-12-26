@@ -22,7 +22,7 @@
 	return [PLString new:str];
 }
 
-+ itemClass:(plitem_t) item
++ itemClass:(plitem_t *) item
 {
 	local string classname = nil;
 	local id class;
@@ -59,7 +59,7 @@
 	return [[PLItem itemClass: PL_GetFromFile (file)] autorelease];
 }
 
-- initWithItem:(plitem_t) item
+- initWithItem:(plitem_t *) item
 {
 	if (!(self = [super init]))
 		return self;
@@ -68,7 +68,7 @@
 	return self;
 }
 
--initWithOwnItem:(plitem_t) item
+-initWithOwnItem:(plitem_t *) item
 {
 	if (!(self = [super init]))
 		return self;
@@ -82,6 +82,11 @@
 	if (own)
 		PL_Free (item);
 	[super dealloc];
+}
+
+- (plitem_t *) item
+{
+	return item;
 }
 
 - (string) write

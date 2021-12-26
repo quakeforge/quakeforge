@@ -30,11 +30,12 @@
 
 #include <stdlib.h>
 
-#include "QF/entity.h"
 #include "QF/image.h"
 #include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
+
+#include "QF/scene/entity.h"
 
 #include "d_ifacea.h"
 #include "r_internal.h"
@@ -107,7 +108,7 @@ R_AliasCheckBBox (void)
 	frame = currententity->animation.frame;
 // TODO: don't repeat this check when drawing?
 	if ((frame >= pmdl->numframes) || (frame < 0)) {
-		Sys_MaskPrintf (SYS_DEV, "No such frame %d %s\n", frame, pmodel->path);
+		Sys_MaskPrintf (SYS_dev, "No such frame %d %s\n", frame, pmodel->path);
 		frame = 0;
 	}
 
@@ -541,18 +542,18 @@ R_AliasPrepareUnclippedPoints (void)
 }
 
 static void
-R_AliasSetupSkin (void)
+R_AliasSetupSkin (entity_t *ent)
 {
 	int         skinnum;
 
-	skinnum = currententity->renderer.skinnum;
+	skinnum = ent->renderer.skinnum;
 	if ((skinnum >= pmdl->numskins) || (skinnum < 0)) {
-		Sys_MaskPrintf (SYS_DEV, "R_AliasSetupSkin: no such skin # %d\n",
+		Sys_MaskPrintf (SYS_dev, "R_AliasSetupSkin: no such skin # %d\n",
 						skinnum);
 		skinnum = 0;
 	}
 
-	pskindesc = R_AliasGetSkindesc (skinnum, paliashdr);
+	pskindesc = R_AliasGetSkindesc (&ent->animation, skinnum, paliashdr);
 
 	a_skinwidth = pmdl->skinwidth;
 
@@ -562,16 +563,16 @@ R_AliasSetupSkin (void)
 	r_affinetridesc.skinheight = pmdl->skinheight;
 
 	acolormap = vid.colormap8;
-	if (currententity->renderer.skin) {
+	if (ent->renderer.skin) {
 		tex_t      *base;
 
-		base = currententity->renderer.skin->texels;
+		base = ent->renderer.skin->texels;
 		if (base) {
 			r_affinetridesc.pskin = base->data;
 			r_affinetridesc.skinwidth = base->width;
 			r_affinetridesc.skinheight = base->height;
 		}
-		acolormap = currententity->renderer.skin->colormap;
+		acolormap = ent->renderer.skin->colormap;
 	}
 }
 
@@ -610,11 +611,11 @@ R_AliasSetupLighting (alight_t *plighting)
 	set r_apverts
 */
 static void
-R_AliasSetupFrame (void)
+R_AliasSetupFrame (entity_t *ent)
 {
 	maliasframedesc_t *frame;
 
-	frame = R_AliasGetFramedesc (currententity->animation.frame, paliashdr);
+	frame = R_AliasGetFramedesc (&ent->animation, paliashdr);
 	r_apverts = (trivertx_t *) ((byte *) paliashdr + frame->frame);
 }
 
@@ -622,19 +623,20 @@ R_AliasSetupFrame (void)
 void
 R_AliasDrawModel (alight_t *plighting)
 {
+	entity_t    *ent = currententity;
 	int          size;
 	finalvert_t *finalverts;
 
 	r_amodels_drawn++;
 
-	if (!(paliashdr = currententity->renderer.model->aliashdr))
-		paliashdr = Cache_Get (&currententity->renderer.model->cache);
+	if (!(paliashdr = ent->renderer.model->aliashdr))
+		paliashdr = Cache_Get (&ent->renderer.model->cache);
 	pmdl = (mdl_t *) ((byte *) paliashdr + paliashdr->model);
 
 	size = (CACHE_SIZE - 1)
 		+ sizeof (finalvert_t) * (pmdl->numverts + 1)
 		+ sizeof (auxvert_t) * pmdl->numverts;
-	finalverts = (finalvert_t *) Hunk_TempAlloc (size);
+	finalverts = (finalvert_t *) Hunk_TempAlloc (0, size);
 	if (!finalverts)
 		Sys_Error ("R_AliasDrawModel: out of memory");
 
@@ -643,12 +645,12 @@ R_AliasDrawModel (alight_t *plighting)
 		(((intptr_t) &finalverts[0] + CACHE_SIZE - 1) & ~(CACHE_SIZE - 1));
 	pauxverts = (auxvert_t *) &pfinalverts[pmdl->numverts + 1];
 
-	R_AliasSetupSkin ();
-	R_AliasSetUpTransform (currententity->visibility.trivial_accept);
+	R_AliasSetupSkin (ent);
+	R_AliasSetUpTransform (ent->visibility.trivial_accept);
 	R_AliasSetupLighting (plighting);
-	R_AliasSetupFrame ();
+	R_AliasSetupFrame (ent);
 
-	r_affinetridesc.drawtype = ((currententity->visibility.trivial_accept == 3)
+	r_affinetridesc.drawtype = ((ent->visibility.trivial_accept == 3)
 								&& r_recursiveaffinetriangles);
 
 	if (!acolormap)
@@ -662,19 +664,19 @@ R_AliasDrawModel (alight_t *plighting)
 #endif
 	}
 
-	if (currententity != vr_data.view_model)
+	if (ent != vr_data.view_model)
 		ziscale = (float) 0x8000 *(float) 0x10000;
 	else
 		ziscale = (float) 0x8000 *(float) 0x10000 *3.0;
 
-	if (currententity->visibility.trivial_accept
+	if (ent->visibility.trivial_accept
 		&& pmdl->ident != HEADER_MDL16) {
 		R_AliasPrepareUnclippedPoints ();
 	} else {
 		R_AliasPreparePoints ();
 	}
 
-	if (!currententity->renderer.model->aliashdr) {
-		Cache_Release (&currententity->renderer.model->cache);
+	if (!ent->renderer.model->aliashdr) {
+		Cache_Release (&ent->renderer.model->cache);
 	}
 }

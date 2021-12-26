@@ -126,10 +126,17 @@ static void
 ED_PrintEdict_f (void)
 {
 	int         i;
+	const char *fieldname = 0;
 
+	if (Cmd_Argc () < 2) {
+		Sys_Printf ("edict num [fieldname]\n");
+		return;
+	}
+	if (Cmd_Argc () >= 3) {
+		fieldname = Cmd_Argv (2);
+	}
 	i = atoi (Cmd_Argv (1));
-	Sys_Printf ("\n EDICT %i:\n", i);
-	ED_PrintNum (&sv_pr_state, i);
+	ED_PrintNum (&sv_pr_state, i, fieldname);
 }
 
 static void
@@ -490,7 +497,7 @@ SV_LoadProgs (void)
 		sv_range = PR_RANGE_NONE;
 		range = "None";
 	}
-	Sys_MaskPrintf (SYS_DEV, "Using %s builtin extention mapping\n", range);
+	Sys_MaskPrintf (SYS_dev, "Using %s builtin extention mapping\n", range);
 
 	memset (&sv_globals, 0, sizeof (sv_funcs));
 	memset (&sv_funcs, 0, sizeof (sv_funcs));
@@ -503,6 +510,8 @@ SV_LoadProgs (void)
 	sv.edicts = sv_edicts;
 	sv_pr_state.max_edicts = sv.max_edicts;
 	sv_pr_state.zone_size = sv_progs_zone->int_val * 1024;
+	sv.edicts = sv_edicts;
+
 	PR_LoadProgs (&sv_pr_state, progs_name);
 	if (!sv_pr_state.progs)
 		Host_Error ("SV_LoadProgs: couldn't load %s", progs_name);
@@ -514,7 +523,7 @@ SV_Progs_Init (void)
 	SV_Progs_Init_Cvars ();
 
 	pr_gametype = "netquake";
-	sv_pr_state.edicts = &sv.edicts;
+	sv_pr_state.pr_edicts = &sv.edicts;
 	sv_pr_state.num_edicts = &sv.num_edicts;
 	sv_pr_state.reserved_edicts = &svs.maxclients;
 	sv_pr_state.unlink = SV_UnlinkEdict;
@@ -523,6 +532,7 @@ SV_Progs_Init (void)
 	sv_pr_state.bi_map = bi_map;
 	sv_pr_state.resolve = resolve;
 
+	PR_AddLoadFunc (&sv_pr_state, sv_init_edicts);
 	PR_Init (&sv_pr_state);
 	PR_AddLoadFunc (&sv_pr_state, sv_init_edicts);
 

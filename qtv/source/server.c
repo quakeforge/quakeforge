@@ -124,7 +124,7 @@ server_compare (const void *a, const void *b)
 }
 
 static void
-setup_sub_message (qmsg_t *msg, qmsg_t *sub, sizebuf_t *buf, int len)
+setup_sub_message (qmsg_t *msg, qmsg_t *sub, sizebuf_t *buf, unsigned len)
 {
 	memset (sub, 0, sizeof (qmsg_t));
 	memset (buf, 0, sizeof (sizebuf_t));
@@ -274,7 +274,7 @@ server_handler (connection_t *con, void *object)
 	if (!Netchan_Process (&sv->netchan))
 		return;
 	if (0) {
-		int         i;
+		unsigned    i;
 
 		for (i = 0; i < net_message->message->cursize; i++)
 			qtv_printf ("%c%02x", (i % 16) ? ' ' : '\n',

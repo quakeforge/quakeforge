@@ -29,6 +29,7 @@ video_renderer_common_sources = \
 	libs/video/renderer/font8x8.c \
 	libs/video/renderer/noisetextures.c \
 	libs/video/renderer/r_alias.c \
+	libs/video/renderer/r_billboard.c \
 	libs/video/renderer/r_bsp.c \
 	libs/video/renderer/r_dyn_textures.c \
 	libs/video/renderer/r_efrag.c \
@@ -38,6 +39,7 @@ video_renderer_common_sources = \
 	libs/video/renderer/r_light.c \
 	libs/video/renderer/r_main.c \
 	libs/video/renderer/r_part.c \
+	libs/video/renderer/r_sprite.c \
 	libs/video/renderer/vid_common.c
 
 renderer_libs= \
@@ -91,18 +93,9 @@ libs_video_renderer_librender_gl_la_SOURCES = \
 shader_src= libs/video/renderer/glsl/quakeforge.glsl
 shader_gen= libs/video/renderer/glsl/quakeforge.slc
 
-V_SED = $(V_SED_@AM_V@)
-V_SED_ = $(V_SED_@AM_DEFAULT_V@)
-V_SED_0 = @echo "  SED     " $@;
-V_SED_1 =
-
-SUFFICES=.frag .vert .spv .spvc .fc .vc .slc .glsl .plist .plc
+SUFFICES += .frag .vert .spv .spvc .fc .vc .slc .glsl
 .glsl.slc:
 	$(V_SED)sed -e 's/^/"/' -e 's/$$/\\n"/' $< > $@.t &&\
-	$(am__mv) $@.t $@
-
-.plist.plc:
-	$(V_SED)sed -e 's/"/\\"/g' -e 's/^/"/' -e 's/$$/\\n"/' $< > $@.t &&\
 	$(am__mv) $@.t $@
 
 video_renderer_glsl_libs= \
@@ -256,8 +249,8 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/image.c \
 	libs/video/renderer/vulkan/instance.c \
 	libs/video/renderer/vulkan/memory.c \
-	libs/video/renderer/vulkan/namehack.h \
 	libs/video/renderer/vulkan/pipeline.c \
+	libs/video/renderer/vulkan/projection.c \
 	libs/video/renderer/vulkan/renderpass.c \
 	libs/video/renderer/vulkan/scrap.c \
 	libs/video/renderer/vulkan/shader.c \
@@ -274,6 +267,7 @@ libs_video_renderer_librender_vulkan_la_SOURCES = \
 	libs/video/renderer/vulkan/vulkan_main.c \
 	libs/video/renderer/vulkan/vulkan_matrices.c \
 	libs/video/renderer/vulkan/vulkan_particles.c \
+	libs/video/renderer/vulkan/vulkan_sprite.c \
 	libs/video/renderer/vulkan/vulkan_texture.c \
 	libs/video/renderer/vulkan/vulkan_vid_common.c
 
@@ -284,9 +278,9 @@ libs/video/renderer/vulkan/shader.lo: libs/video/renderer/vulkan/shader.c $(vksh
 libs/video/renderer/vulkan/vulkan_vid_common.lo: libs/video/renderer/vulkan/vulkan_vid_common.c $(vkparse_src) $(pipeline_gen) ${renderpass_gen}
 
 
-qwaq_curses = ruamoko/qwaq/qwaq-curses$(EXEEXT)
-vkparse_cinc = libs/video/renderer/vulkan/vkparse.cinc
-vkparse_hinc = libs/video/renderer/vulkan/vkparse.hinc
+qwaq_cmd = $(top_builddir)/ruamoko/qwaq/qwaq-cmd$(EXEEXT)
+vkparse_cinc = $(top_builddir)/libs/video/renderer/vulkan/vkparse.cinc
+vkparse_hinc = $(top_builddir)/libs/video/renderer/vulkan/vkparse.hinc
 vkparse_src = \
 	$(vkparse_cinc) \
 	$(vkparse_hinc)
@@ -295,6 +289,24 @@ vkparse_plist = \
 
 vkshaderpath = libs/video/renderer/vulkan/shader
 
+partphysicsc_src = $(vkshaderpath)/partphysics.comp
+partphysicsc_c = $(vkshaderpath)/partphysics.comp.spvc
+partupdatec_src = $(vkshaderpath)/partupdate.comp
+partupdatec_c = $(vkshaderpath)/partupdate.comp.spvc
+particlev_src = $(vkshaderpath)/particle.vert
+particlev_c = $(vkshaderpath)/particle.vert.spvc
+particleg_src = $(vkshaderpath)/particle.geom
+particleg_c = $(vkshaderpath)/particle.geom.spvc
+particlef_src = $(vkshaderpath)/particle.frag
+particlef_c = $(vkshaderpath)/particle.frag.spvc
+sprite_gbufv_src = $(vkshaderpath)/sprite_gbuf.vert
+sprite_gbufv_c = $(vkshaderpath)/sprite_gbuf.vert.spvc
+sprite_gbuff_src = $(vkshaderpath)/sprite_gbuf.frag
+sprite_gbuff_c = $(vkshaderpath)/sprite_gbuf.frag.spvc
+sprite_depthv_src = $(vkshaderpath)/sprite_depth.vert
+sprite_depthv_c = $(vkshaderpath)/sprite_depth.vert.spvc
+sprite_depthf_src = $(vkshaderpath)/sprite_depth.frag
+sprite_depthf_c = $(vkshaderpath)/sprite_depth.frag.spvc
 twodv_src = $(vkshaderpath)/twod.vert
 twodv_c = $(vkshaderpath)/twod.vert.spvc
 twodf_src = $(vkshaderpath)/twod.frag
@@ -312,6 +324,8 @@ bsp_gbufg_src = $(vkshaderpath)/bsp_gbuf.geom
 bsp_gbufg_c = $(vkshaderpath)/bsp_gbuf.geom.spvc
 bsp_gbuff_src = $(vkshaderpath)/bsp_gbuf.frag
 bsp_gbuff_c = $(vkshaderpath)/bsp_gbuf.frag.spvc
+bsp_shadow_src = $(vkshaderpath)/bsp_shadow.vert
+bsp_shadow_c = $(vkshaderpath)/bsp_shadow.vert.spvc
 bsp_skyf_src = $(vkshaderpath)/bsp_sky.frag
 bsp_skyf_c = $(vkshaderpath)/bsp_sky.frag.spvc
 bsp_turbf_src = $(vkshaderpath)/bsp_turb.frag
@@ -328,10 +342,28 @@ alias_depth_src = $(vkshaderpath)/alias_depth.vert
 alias_depth_c = $(vkshaderpath)/alias_depth.vert.spvc
 alias_gbuf_src = $(vkshaderpath)/alias_gbuf.frag
 alias_gbuf_c = $(vkshaderpath)/alias_gbuf.frag.spvc
+alias_shadow_src = $(vkshaderpath)/alias_shadow.vert
+alias_shadow_c = $(vkshaderpath)/alias_shadow.vert.spvc
 passthrough_src = $(vkshaderpath)/passthrough.vert
 passthrough_c = $(vkshaderpath)/passthrough.vert.spvc
 pushcolor_src = $(vkshaderpath)/pushcolor.frag
 pushcolor_c = $(vkshaderpath)/pushcolor.frag.spvc
+shadow_src = $(vkshaderpath)/shadow.geom
+shadow_c = $(vkshaderpath)/shadow.geom.spvc
+
+$(partphysicsc_c): $(partphysicsc_src)
+$(partupdatec_c): $(partupdatec_src)
+$(particlev_c): $(particlev_src)
+$(particleg_c): $(particleg_src)
+$(particlef_c): $(particlef_src)
+
+$(sprite_gbufv_c): $(sprite_gbufv_src)
+
+$(sprite_gbuff_c): $(sprite_gbuff_src)
+
+$(sprite_depthv_c): $(sprite_depthv_src)
+
+$(sprite_depthf_c): $(sprite_depthf_src)
 
 $(twodv_c): $(twodv_src)
 
@@ -349,6 +381,8 @@ $(bsp_gbufg_c): $(bsp_gbufg_src)
 
 $(bsp_gbuff_c): $(bsp_gbuff_src)
 
+$(bsp_shadow_c): $(bsp_shadow_src)
+
 $(bsp_skyf_c): $(bsp_skyf_src)
 
 $(bsp_turbf_c): $(bsp_turbf_src)
@@ -365,11 +399,24 @@ $(aliasf_c): $(aliasf_src)
 
 $(alias_gbuf_c): $(alias_gbuf_src)
 
+$(alias_shadow_c): $(alias_shadow_src)
+
 $(passthrough_c): $(passthrough_src)
 
 $(pushcolor_c): $(pushcolor_src)
 
+$(shadow_c): $(shadow_src)
+
 vkshader_c = \
+	$(partphysicsc_c) \
+	$(partupdatec_c) \
+	$(particlev_c) \
+	$(particleg_c) \
+	$(particlef_c) \
+	$(sprite_gbufv_c) \
+	$(sprite_gbuff_c) \
+	$(sprite_depthv_c) \
+	$(sprite_depthf_c) \
 	$(twodv_c) \
 	$(twodf_c) \
 	$(quakebspv_c) \
@@ -378,6 +425,7 @@ vkshader_c = \
 	$(bsp_gbufv_c) \
 	$(bsp_gbufg_c) \
 	$(bsp_gbuff_c) \
+	$(bsp_shadow_c) \
 	$(bsp_skyf_c) \
 	$(bsp_turbf_c) \
 	$(lightingf_c) \
@@ -386,16 +434,18 @@ vkshader_c = \
 	$(alias_depth_c) \
 	$(aliasf_c) \
 	$(alias_gbuf_c) \
+	$(alias_shadow_c) \
 	$(passthrough_c) \
-	$(pushcolor_c)
+	$(pushcolor_c) \
+	$(shadow_c)
 
 V_VKGEN = $(V_VKGEN_@AM_V@)
 V_VKGEN_ = $(V_VKGEN_@AM_DEFAULT_V@)
 V_VKGEN_0 = @echo "  VKGEN   " $@;
 V_VKGEN_1 =
 
-$(vkparse_cinc): $(vkgen) $(qwaq_curses) $(vkparse_plist)
-	$(V_VKGEN)$(qwaq_curses) $(vkgen) -- $(vkparse_plist) $(vkparse_cinc).t $(vkparse_hinc).t &&\
+$(vkparse_cinc): $(vkgen) $(qwaq_cmd) $(vkparse_plist)
+	$(V_VKGEN)$(QWAQ) $(vkgen) -- $(vkparse_plist) $(vkparse_cinc).t $(vkparse_hinc).t &&\
 	$(am__mv) $(vkparse_cinc).t $(vkparse_cinc) &&\
 	$(am__mv) $(vkparse_hinc).t $(vkparse_hinc)
 
@@ -407,9 +457,9 @@ CLEANFILES += \
 	libs/video/renderer/glsl/*.fc \
 	libs/video/renderer/glsl/*.slc \
 	libs/video/renderer/vulkan/*.plc \
-	libs/video/renderer/vulkan/*.spv \
-	libs/video/renderer/vulkan/*.spvc \
-	libs/video/renderer/vulkan/vkgen.sym \
+	libs/video/renderer/vulkan/shader/*.spv \
+	libs/video/renderer/vulkan/shader/*.spvc \
+	vkgen.sym \
 	$(vkparse_src)
 
 BUILT_SOURCES += $(shader_gen)
@@ -418,4 +468,38 @@ BUILT_SOURCES += $(shader_gen)
 #	libs/video/renderer/vulkan/passthrough.vert.spv \
 #	libs/video/renderer/vulkan/pushcolor.frag.spv
 
-EXTRA_DIST += $(shader_DATA:.spv=)
+EXTRA_DIST += \
+	libs/video/renderer/vulkan/deferred.plist \
+	libs/video/renderer/vulkan/qfpipeline.plist \
+	libs/video/renderer/vulkan/vkparse.plist \
+	libs/video/renderer/vulkan/vkparse.h \
+	libs/video/renderer/vulkan/shader/alias.frag \
+	libs/video/renderer/vulkan/shader/alias.vert \
+	libs/video/renderer/vulkan/shader/alias_depth.vert \
+	libs/video/renderer/vulkan/shader/alias_gbuf.frag \
+	libs/video/renderer/vulkan/shader/alias_shadow.vert \
+	libs/video/renderer/vulkan/shader/bsp_depth.vert \
+	libs/video/renderer/vulkan/shader/bsp_gbuf.frag \
+	libs/video/renderer/vulkan/shader/bsp_gbuf.geom \
+	libs/video/renderer/vulkan/shader/bsp_gbuf.vert \
+	libs/video/renderer/vulkan/shader/bsp_shadow.vert \
+	libs/video/renderer/vulkan/shader/bsp_sky.frag \
+	libs/video/renderer/vulkan/shader/bsp_turb.frag \
+	libs/video/renderer/vulkan/shader/compose.frag \
+	libs/video/renderer/vulkan/shader/lighting.frag \
+	libs/video/renderer/vulkan/shader/passthrough.vert \
+	libs/video/renderer/vulkan/shader/partphysics.comp \
+	libs/video/renderer/vulkan/shader/partupdate.comp \
+	libs/video/renderer/vulkan/shader/particle.vert \
+	libs/video/renderer/vulkan/shader/particle.geom \
+	libs/video/renderer/vulkan/shader/particle.frag \
+	libs/video/renderer/vulkan/shader/pushcolor.frag \
+	libs/video/renderer/vulkan/shader/quakebsp.frag \
+	libs/video/renderer/vulkan/shader/quakebsp.vert \
+	libs/video/renderer/vulkan/shader/shadow.geom \
+	libs/video/renderer/vulkan/shader/sprite_depth.vert \
+	libs/video/renderer/vulkan/shader/sprite_depth.frag \
+	libs/video/renderer/vulkan/shader/sprite_gbuf.vert \
+	libs/video/renderer/vulkan/shader/sprite_gbuf.frag \
+	libs/video/renderer/vulkan/shader/twod.frag \
+	libs/video/renderer/vulkan/shader/twod.vert

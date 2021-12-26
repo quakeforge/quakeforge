@@ -23,6 +23,7 @@
 -writeField;
 -writeSymbol;
 -(string) name;
+-(int) searchType;
 @end
 
 #endif//__renderer_vulkan_vkgen_vkfielddef_h

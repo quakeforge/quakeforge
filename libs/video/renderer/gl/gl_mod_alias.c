@@ -43,7 +43,6 @@
 #include <stdlib.h>
 
 #include "QF/cvar.h"
-#include "QF/entity.h"
 #include "QF/mathlib.h"
 #include "QF/qargs.h"
 #include "QF/render.h"
@@ -51,6 +50,9 @@
 #include "QF/sound.h"
 #include "QF/sys.h"
 #include "QF/vid.h"
+
+#include "QF/scene/entity.h"
+
 #include "QF/GL/defines.h"
 #include "QF/GL/funcs.h"
 #include "QF/GL/qf_rlight.h"
@@ -188,7 +190,8 @@ GL_DrawAliasFrameMulti (vert_order_t *vo)
 	Standard shadow drawing (triangles version)
 */
 static void
-GL_DrawAliasShadowTri (const aliashdr_t *paliashdr, const vert_order_t *vo)
+GL_DrawAliasShadowTri (const transform_t *transform,
+					   const aliashdr_t *paliashdr, const vert_order_t *vo)
 {
 	int         count = vo->count;
 	const blended_vert_t *verts = vo->verts;
@@ -198,7 +201,7 @@ GL_DrawAliasShadowTri (const aliashdr_t *paliashdr, const vert_order_t *vo)
 	const vec_t *scale_origin = paliashdr->mdl.scale_origin;
 	vec4f_t     entorigin;
 
-	entorigin = Transform_GetWorldPosition (currententity->transform);
+	entorigin = Transform_GetWorldPosition (transform);
 	lheight = entorigin[2] - lightspot[2];
 	height = -lheight + 1.0;
 
@@ -227,7 +230,8 @@ GL_DrawAliasShadowTri (const aliashdr_t *paliashdr, const vert_order_t *vo)
 	Standard shadow drawing
 */
 static void
-GL_DrawAliasShadow (const aliashdr_t *paliashdr, const vert_order_t *vo)
+GL_DrawAliasShadow (const transform_t *transform, const aliashdr_t *paliashdr,
+				    const vert_order_t *vo)
 {
 	float       height, lheight;
 	int         count;
@@ -236,7 +240,7 @@ GL_DrawAliasShadow (const aliashdr_t *paliashdr, const vert_order_t *vo)
 	const blended_vert_t *verts = vo->verts;
 	vec4f_t     entorigin;
 
-	entorigin = Transform_GetWorldPosition (currententity->transform);
+	entorigin = Transform_GetWorldPosition (transform);
 	lheight = entorigin[2] - lightspot[2];
 	height = -lheight + 1.0;
 
@@ -276,18 +280,19 @@ GL_DrawAliasShadow (const aliashdr_t *paliashdr, const vert_order_t *vo)
 static inline vert_order_t *
 GL_GetAliasFrameVerts16 (aliashdr_t *paliashdr, entity_t *e)
 {
+	animation_t  *animation = &e->animation;
 	float         blend;
 	int           count, i;
 	trivertx16_t *verts;
 	vert_order_t *vo;
 	blended_vert_t *vo_v;
 
-	blend = R_AliasGetLerpedFrames (e, paliashdr);
+	blend = R_AliasGetLerpedFrames (animation, paliashdr);
 
 	verts = (trivertx16_t *) ((byte *) paliashdr + paliashdr->posedata);
 
 	count = paliashdr->poseverts;
-	vo = Hunk_TempAlloc (sizeof (*vo) + count * sizeof (blended_vert_t));
+	vo = Hunk_TempAlloc (0, sizeof (*vo) + count * sizeof (blended_vert_t));
 	vo->order = (int *) ((byte *) paliashdr + paliashdr->commands);
 	vo->verts = (blended_vert_t *) &vo[1];
 	if (paliashdr->tex_coord) {
@@ -341,18 +346,19 @@ GL_GetAliasFrameVerts16 (aliashdr_t *paliashdr, entity_t *e)
 static inline vert_order_t *
 GL_GetAliasFrameVerts (aliashdr_t *paliashdr, entity_t *e)
 {
+	animation_t  *animation = &e->animation;
 	float       blend;
 	int         count, i;
 	trivertx_t *verts;
 	vert_order_t *vo;
 	blended_vert_t *vo_v;
 
-	blend = R_AliasGetLerpedFrames (e, paliashdr);
+	blend = R_AliasGetLerpedFrames (animation, paliashdr);
 
 	verts = (trivertx_t *) ((byte *) paliashdr + paliashdr->posedata);
 
 	count = paliashdr->poseverts;
-	vo = Hunk_TempAlloc (sizeof (*vo) + count * sizeof (blended_vert_t));
+	vo = Hunk_TempAlloc (0, sizeof (*vo) + count * sizeof (blended_vert_t));
 	vo->order = (int *) ((byte *) paliashdr + paliashdr->commands);
 	vo->verts = (blended_vert_t *) &vo[1];
 	if (paliashdr->tex_coord) {
@@ -566,8 +572,10 @@ gl_R_DrawAliasModel (entity_t *e)
 		}
 	} else {
 		maliasskindesc_t *skindesc;
+		animation_t  *animation = &e->animation;
 
-		skindesc = R_AliasGetSkindesc (e->renderer.skinnum, paliashdr);
+		skindesc = R_AliasGetSkindesc (animation, e->renderer.skinnum,
+									   paliashdr);
 		texture = skindesc->texnum;
 		if (gl_fb_models->int_val && !is_fullbright) {
 			fb_texture = skindesc->fb_texnum;
@@ -718,9 +726,9 @@ gl_R_DrawAliasModel (entity_t *e)
 		vec = m3vmulf (shadow_mat, vec);
 		VectorCopy (vec, shadevector);
 		if (vo->tex_coord)
-			GL_DrawAliasShadowTri (paliashdr, vo);
+			GL_DrawAliasShadowTri (e->transform, paliashdr, vo);
 		else
-			GL_DrawAliasShadow (paliashdr, vo);
+			GL_DrawAliasShadow (e->transform, paliashdr, vo);
 
 		qfglDepthMask (GL_TRUE);
 		qfglEnable (GL_TEXTURE_2D);

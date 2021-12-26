@@ -37,16 +37,21 @@
 
 #include "QF/checksum.h"
 #include "QF/cmd.h"
+#include "QF/console.h"
 #include "QF/cvar.h"
 #include "QF/input.h"
 #include "QF/keys.h"
+#include "QF/listener.h"
 #include "QF/msg.h"
 #include "QF/sys.h"
 #include "QF/teamplay.h"
 #include "QF/va.h"
 
+#include "QF/input/event.h"
+
 #include "compat.h"
 
+#include "client/input.h"
 #include "client/view.h"
 
 #include "qw/msg_ucmd.h"
@@ -59,108 +64,154 @@
 #include "qw/include/client.h"
 #include "qw/include/host.h"
 
+int         cl_game_context;
+int         cl_demo_context;
+static int  cl_event_id;
+static struct LISTENER_SET_TYPE(int) cl_on_focus_change
+	= LISTENER_SET_STATIC_INIT(4);
+
 cvar_t     *cl_nodelta;
 cvar_t     *cl_maxnetfps;
 cvar_t     *cl_spamimpulse;
 
-/*
-	KEY BUTTONS
+in_axis_t viewdelta_position_forward = {
+	.mode = ina_set,
+	.name = "move.forward",
+	.description = "Move forward (negative) or backward (positive)",
+};
+in_axis_t viewdelta_position_side = {
+	.mode = ina_set,
+	.name = "move.side",
+	.description = "Move right (positive) or left (negative)",
+};
+in_axis_t viewdelta_position_up = {
+	.mode = ina_set,
+	.name = "move.up",
+	.description = "Move up (positive) or down (negative)",
+};
 
-	Continuous button event tracking is complicated by the fact that two
-	different input sources (say, mouse button 1 and the control key) can
-	both press the same button, but the button should be released only when
-	both of the pressing key have been released.
+in_axis_t viewdelta_angles_pitch = {
+	.mode = ina_set,
+	.name = "move.pitch",
+	.description = "Pitch axis",
+};
+in_axis_t viewdelta_angles_yaw = {
+	.mode = ina_set,
+	.name = "move.yaw",
+	.description = "Yaw axis",
+};
+in_axis_t viewdelta_angles_roll = {
+	.mode = ina_set,
+	.name = "move.roll",
+	.description = "Roll axis",
+};
 
-	When a key event issues a button command (+forward, +attack, etc), it
-	appends its key number as a parameter to the command so it can be
-	matched up with the release.
+in_button_t in_left = {
+	.name = "left",
+	.description = "When active the player is turning left"
+};
+in_button_t in_right = {
+	.name = "right",
+	.description = "When active the player is turning right"
+};
+in_button_t in_forward = {
+	.name = "forward",
+	.description = "When active the player is moving forward"
+};
+in_button_t in_back = {
+	.name = "back",
+	.description = "When active the player is moving backwards"
+};
+in_button_t in_lookup = {
+	.name = "lookup",
+	.description = "When active the player's view is looking up"
+};
+in_button_t in_lookdown = {
+	.name = "lookdown",
+	.description = "When active the player's view is looking down"
+};
+in_button_t in_moveleft = {
+	.name = "moveleft",
+	.description = "When active the player is strafing left"
+};
+in_button_t in_moveright = {
+	.name = "moveright",
+	.description = "When active the player is strafing right"
+};
+in_button_t in_use = {
+	.name = "use",
+	.description = "Left over command for opening doors and triggering"
+				   " switches"
+};
+in_button_t in_jump = {
+	.name = "jump",
+	.description = "When active the player is jumping"
+};
+in_button_t in_attack = {
+	.name = "attack",
+	.description = "When active player is firing/using current weapon"
+};
+in_button_t in_up = {
+	.name = "moveup",
+	.description = "When active the player is swimming up in a liquid"
+};
+in_button_t in_down = {
+	.name = "movedown",
+	.description = "When active the player is swimming down in a liquid"
+};
+in_button_t in_strafe = {
+	.name = "strafe",
+	.description = "When active, +left and +right function like +moveleft and"
+				   " +moveright"
+};
+in_button_t in_klook = {
+	.name = "klook",
+	.description = "When active, +forward and +back perform +lookup and"
+				   " +lookdown"
+};
+in_button_t in_speed = {
+	.name = "speed",
+	.description = "When active the player is running"
+};
+in_button_t in_mlook = {
+	.name = "mlook",
+	.description = "When active moving the mouse or joystick forwards "
+				   "and backwards performs +lookup and "
+				   "+lookdown"
+};
 
-	state bit 0 is the current state of the key
-	state bit 1 is edge triggered on the up to down transition
-	state bit 2 is edge triggered on the down to up transition
-*/
+static in_axis_t *cl_in_axes[] = {
+	&viewdelta_position_forward,
+	&viewdelta_position_side,
+	&viewdelta_position_up,
+	&viewdelta_angles_pitch,
+	&viewdelta_angles_yaw,
+	&viewdelta_angles_roll,
+	0,
+};
 
-kbutton_t   in_left, in_right, in_forward, in_back;
-kbutton_t   in_lookup, in_lookdown, in_moveleft, in_moveright;
-kbutton_t   in_use, in_jump, in_attack;
-kbutton_t   in_up, in_down;
+static in_button_t *cl_in_buttons[] = {
+	&in_left,
+	&in_right,
+	&in_forward,
+	&in_back,
+	&in_lookup,
+	&in_lookdown,
+	&in_moveleft,
+	&in_moveright,
+	&in_use,
+	&in_jump,
+	&in_attack,
+	&in_up,
+	&in_down,
+	&in_strafe,
+	&in_klook,
+	&in_speed,
+	&in_mlook,
+	0
+};
 
 int         in_impulse;
-
-
-static void
-KeyPress (void *_b)
-{
-	kbutton_t  *b = _b;
-	const char *c;
-	int         k;
-
-	c = Cmd_Argv (1);
-	if (c[0])
-		k = atoi (c);
-	else
-		k = -1;							// typed manually at the console for
-										// continuous down
-
-	if (k == b->down[0] || k == b->down[1])
-		return;							// repeating key
-
-	if (!b->down[0])
-		b->down[0] = k;
-	else if (!b->down[1])
-		b->down[1] = k;
-	else {
-		Sys_Printf ("Three keys down for a button!\n");
-		return;
-	}
-
-	if (b->state & 1)
-		return;							// still down
-	b->state |= 1 + 2;					// down + impulse down
-}
-
-static void
-KeyRelease (void *_b)
-{
-	kbutton_t  *b = _b;
-	const char *c;
-	int         k;
-
-	c = Cmd_Argv (1);
-	if (c[0])
-		k = atoi (c);
-	else {								// typed manually at the console,
-										// assume for unsticking, so clear
-										// all
-		b->down[0] = b->down[1] = 0;
-		b->state = 4;					// impulse up
-		return;
-	}
-
-	if (b->down[0] == k)
-		b->down[0] = 0;
-	else if (b->down[1] == k)
-		b->down[1] = 0;
-	else
-		return;							// key up without coresponding down
-										// (menu pass through)
-	if (b->down[0] || b->down[1])
-		return;							// some other key is still holding it
-										// down
-
-	if (!(b->state & 1))
-		return;							// still up (this should not happen)
-	b->state &= ~1;						// now up
-	b->state |= 4;						// impulse up
-}
-
-static void
-IN_MLookRelease (void *data)
-{
-	KeyRelease (&in_mlook);
-	if (!freelook && lookspring->int_val)
-		V_StartPitchDrift ();
-}
 
 static void
 IN_Impulse (void *data)
@@ -170,55 +221,6 @@ IN_Impulse (void *data)
 		return;
 
 	Team_BestWeaponImpulse ();			// HACK HACK HACK
-}
-
-/*
-	CL_KeyState
-
-	Returns 0.25 if a key was pressed and released during the frame,
-	0.5 if it was pressed and held
-	0 if held then released, and
-	1.0 if held for the entire time
-*/
-float
-CL_KeyState (kbutton_t *key)
-{
-	float       val;
-	qboolean    impulsedown, impulseup, down;
-
-	impulsedown = key->state & 2;
-	impulseup = key->state & 4;
-	down = key->state & 1;
-	val = 0;
-
-	if (impulsedown && !impulseup) {
-		if (down)
-			val = 0.5;					// pressed and held this frame
-		else
-			val = 0;					// I_Error ();
-	}
-	if (impulseup && !impulsedown) {
-		if (down)
-			val = 0;					// I_Error ();
-		else
-			val = 0;					// released this frame
-	}
-	if (!impulsedown && !impulseup) {
-		if (down)
-			val = 1.0;					// held the entire frame
-		else
-			val = 0;					// up the entire frame
-	}
-	if (impulsedown && impulseup) {
-		if (down)
-			val = 0.75;					// released and re-pressed this frame
-		else
-			val = 0.25;					// pressed and released this frame
-	}
-
-	key->state &= 1;					// clear impulses
-
-	return val;
 }
 
 cvar_t     *cl_anglespeedkey;
@@ -244,7 +246,7 @@ CL_AdjustAngles (void)
 	pitchspeed = cl_pitchspeed->value;
 	yawspeed = cl_yawspeed->value;
 
-	if (in_speed.state & 1) {
+	if (in_speed.state & inb_down) {
 		pitchspeed *= cl_anglespeedkey->value;
 		yawspeed *= cl_anglespeedkey->value;
 	}
@@ -257,19 +259,19 @@ CL_AdjustAngles (void)
 	pitchspeed *= host_frametime;
 	yawspeed *= host_frametime;
 
-	if (!(in_strafe.state & 1)) {
-		cl.viewstate.angles[YAW] -= yawspeed * CL_KeyState (&in_right);
-		cl.viewstate.angles[YAW] += yawspeed * CL_KeyState (&in_left);
+	if (!(in_strafe.state & inb_down)) {
+		cl.viewstate.angles[YAW] -= yawspeed * IN_ButtonState (&in_right);
+		cl.viewstate.angles[YAW] += yawspeed * IN_ButtonState (&in_left);
 		cl.viewstate.angles[YAW] = anglemod (cl.viewstate.angles[YAW]);
 	}
-	if (in_klook.state & 1) {
+	if (in_klook.state & inb_down) {
 		V_StopPitchDrift ();
-		cl.viewstate.angles[PITCH] -= pitchspeed * CL_KeyState (&in_forward);
-		cl.viewstate.angles[PITCH] += pitchspeed * CL_KeyState (&in_back);
+		cl.viewstate.angles[PITCH] -= pitchspeed * IN_ButtonState (&in_forward);
+		cl.viewstate.angles[PITCH] += pitchspeed * IN_ButtonState (&in_back);
 	}
 
-	up = CL_KeyState (&in_lookup);
-	down = CL_KeyState (&in_lookdown);
+	up = IN_ButtonState (&in_lookup);
+	down = IN_ButtonState (&in_lookdown);
 
 	cl.viewstate.angles[PITCH] -= pitchspeed * up;
 	cl.viewstate.angles[PITCH] += pitchspeed * down;
@@ -297,6 +299,10 @@ CL_AdjustAngles (void)
 void
 CL_BaseMove (usercmd_t *cmd)
 {
+	if (IN_ButtonReleased (&in_mlook) && !freelook && lookspring->int_val) {
+		V_StartPitchDrift ();
+	}
+
 	if (cls.state != ca_active) {
 		return;
 	}
@@ -306,24 +312,24 @@ CL_BaseMove (usercmd_t *cmd)
 	memset (cmd, 0, sizeof (*cmd));
 
 	VectorCopy (cl.viewstate.angles, cmd->angles);
-	if (in_strafe.state & 1) {
-		cmd->sidemove += cl_sidespeed->value * CL_KeyState (&in_right);
-		cmd->sidemove -= cl_sidespeed->value * CL_KeyState (&in_left);
+	if (in_strafe.state & inb_down) {
+		cmd->sidemove += cl_sidespeed->value * IN_ButtonState (&in_right);
+		cmd->sidemove -= cl_sidespeed->value * IN_ButtonState (&in_left);
 	}
 
-	cmd->sidemove += cl_sidespeed->value * CL_KeyState (&in_moveright);
-	cmd->sidemove -= cl_sidespeed->value * CL_KeyState (&in_moveleft);
+	cmd->sidemove += cl_sidespeed->value * IN_ButtonState (&in_moveright);
+	cmd->sidemove -= cl_sidespeed->value * IN_ButtonState (&in_moveleft);
 
-	cmd->upmove += cl_upspeed->value * CL_KeyState (&in_up);
-	cmd->upmove -= cl_upspeed->value * CL_KeyState (&in_down);
+	cmd->upmove += cl_upspeed->value * IN_ButtonState (&in_up);
+	cmd->upmove -= cl_upspeed->value * IN_ButtonState (&in_down);
 
-	if (!(in_klook.state & 1)) {
-		cmd->forwardmove += cl_forwardspeed->value * CL_KeyState (&in_forward);
-		cmd->forwardmove -= cl_backspeed->value * CL_KeyState (&in_back);
+	if (!(in_klook.state & inb_down)) {
+		cmd->forwardmove += cl_forwardspeed->value * IN_ButtonState (&in_forward);
+		cmd->forwardmove -= cl_backspeed->value * IN_ButtonState (&in_back);
 	}
 
 	// adjust for speed key
-	if (in_speed.state & 1) {
+	if (in_speed.state & inb_down) {
 		cmd->forwardmove *= cl_movespeedkey->value;
 		cmd->sidemove *= cl_movespeedkey->value;
 		cmd->upmove *= cl_movespeedkey->value;
@@ -331,11 +337,6 @@ CL_BaseMove (usercmd_t *cmd)
 
 	if (freelook)
 		V_StopPitchDrift ();
-
-	viewdelta.angles[0] = viewdelta.angles[1] = viewdelta.angles[2] = 0;
-	viewdelta.position[0] = viewdelta.position[1] = viewdelta.position[2] = 0;
-
-	IN_Move ();
 
 	// adjust for chase camera angles
 	/*FIXME:chase figure out just what this does and get it working
@@ -357,14 +358,14 @@ CL_BaseMove (usercmd_t *cmd)
 	}
 	*/
 
-	cmd->forwardmove += viewdelta.position[2] * m_forward->value;
-	cmd->sidemove += viewdelta.position[0] * m_side->value;
-	cmd->upmove += viewdelta.position[1];
-	cl.viewstate.angles[PITCH] += viewdelta.angles[PITCH] * m_pitch->value;
-	cl.viewstate.angles[YAW] += viewdelta.angles[YAW] * m_yaw->value;
-	cl.viewstate.angles[ROLL] += viewdelta.angles[ROLL];
+	cmd->forwardmove -= IN_UpdateAxis (&viewdelta_position_forward) * m_forward->value;
+	cmd->sidemove += IN_UpdateAxis (&viewdelta_position_side) * m_side->value;
+	cmd->upmove -= IN_UpdateAxis (&viewdelta_position_up);
+	cl.viewstate.angles[PITCH] -= IN_UpdateAxis (&viewdelta_angles_pitch) * m_pitch->value;
+	cl.viewstate.angles[YAW] -= IN_UpdateAxis (&viewdelta_angles_yaw) * m_yaw->value;
+	cl.viewstate.angles[ROLL] -= IN_UpdateAxis (&viewdelta_angles_roll) * m_pitch->value;
 
-	if (freelook && !(in_strafe.state & 1)) {
+	if (freelook && !(in_strafe.state & inb_down)) {
 		cl.viewstate.angles[PITCH]
 			= bound (-70, cl.viewstate.angles[PITCH], 80);
 	}
@@ -393,19 +394,9 @@ CL_FinishMove (usercmd_t *cmd)
 		return;
 
 	// figure button bits
-	if (in_attack.state & 3)
-		cmd->buttons |= 1;
-	in_attack.state &= ~2;
-
-	if (in_jump.state & 3)
-		cmd->buttons |= 2;
-	in_jump.state &= ~2;
-
-// 1999-10-29 +USE fix by Maddes  start
-	if (in_use.state & 3)
-		cmd->buttons |= 4;
-	in_use.state &= ~2;
-// 1999-10-29 +USE fix by Maddes  end
+	cmd->buttons |= IN_ButtonPressed (&in_attack) << 0;
+	cmd->buttons |= IN_ButtonPressed (&in_jump)   << 1;
+	cmd->buttons |= IN_ButtonPressed (&in_use)    << 2;
 
 	// send milliseconds of time to apply the move
 	accum += (host_frametime * 1000.0);
@@ -573,91 +564,77 @@ CL_SendCmd (void)
 		Netchan_Transmit (&cls.netchan, buf.cursize, buf.data);
 }
 
+static int
+cl_key_event (const IE_event_t *ie_event)
+{
+	if (ie_event->key.code == QFK_ESCAPE) {
+		Con_SetState (con_menu);
+		return 1;
+	}
+	return 0;
+}
+
+static void
+cl_on_focus_change_redirect (void *_func, const int *game)
+{
+	void (*func) (int game) = _func;
+	func (*game);
+}
+
+void
+CL_OnFocusChange (void (*func) (int game))
+{
+	LISTENER_ADD (&cl_on_focus_change, cl_on_focus_change_redirect, func);
+}
+
+static int
+cl_focus_event (const IE_event_t *ie_event)
+{
+	int         game = ie_event->type == ie_gain_focus;
+	LISTENER_INVOKE (&cl_on_focus_change, &game);
+	return 1;
+}
+
+static int
+cl_event_handler (const IE_event_t *ie_event, void *unused)
+{
+	static int (*handlers[ie_event_count]) (const IE_event_t *ie_event) = {
+		[ie_key] = cl_key_event,
+		[ie_gain_focus] = cl_focus_event,
+		[ie_lose_focus] = cl_focus_event,
+	};
+	if (ie_event->type < 0 || ie_event->type >= ie_event_count
+		|| !handlers[ie_event->type]) {
+		return IN_Binding_HandleEvent (ie_event);
+	}
+	return handlers[ie_event->type] (ie_event);
+}
+
 void
 CL_Input_Init (void)
 {
-	Cmd_AddDataCommand ("+moveup", KeyPress, &in_up,
-						"When active the player is swimming up in a liquid");
-	Cmd_AddDataCommand ("-moveup", KeyRelease, &in_up,
-						"When active the player is not swimming up in a "
-						"liquid");
-	Cmd_AddDataCommand ("+movedown", KeyPress, &in_down,
-						"When active the player is swimming down in a liquid");
-	Cmd_AddDataCommand ("-movedown", KeyRelease, &in_down,
-						"When active the player is not swimming down in a "
-						"liquid");
-	Cmd_AddDataCommand ("+left", KeyPress, &in_left,
-						"When active the player is turning left");
-	Cmd_AddDataCommand ("-left", KeyRelease, &in_left,
-						"When active the player is not turning left");
-	Cmd_AddDataCommand ("+right", KeyPress, &in_right,
-						"When active the player is turning right");
-	Cmd_AddDataCommand ("-right", KeyRelease, &in_right,
-						"When active the player is not turning right");
-	Cmd_AddDataCommand ("+forward", KeyPress, &in_forward,
-						"When active the player is moving forward");
-	Cmd_AddDataCommand ("-forward", KeyRelease, &in_forward,
-						"When active the player is not moving forward");
-	Cmd_AddDataCommand ("+back", KeyPress, &in_back,
-						"When active the player is moving backwards");
-	Cmd_AddDataCommand ("-back", KeyRelease, &in_back,
-						"When active the player is not moving backwards");
-	Cmd_AddDataCommand ("+lookup", KeyPress, &in_lookup,
-						"When active the player's view is looking up");
-	Cmd_AddDataCommand ("-lookup", KeyRelease, &in_lookup,
-						"When active the player's view is not looking up");
-	Cmd_AddDataCommand ("+lookdown", KeyPress, &in_lookdown,
-						"When active the player's view is looking down");
-	Cmd_AddDataCommand ("-lookdown", KeyRelease, &in_lookdown,
-						"When active the player's view is not looking up");
-	Cmd_AddDataCommand ("+strafe", KeyPress, &in_strafe,
-						"When active, +left and +right function like "
-						"+moveleft and +moveright");
-	Cmd_AddDataCommand ("-strafe", KeyRelease, &in_strafe,
-						"When active, +left and +right stop functioning like "
-						"+moveleft and +moveright");
-	Cmd_AddDataCommand ("+moveleft", KeyPress, &in_moveleft,
-						"When active the player is strafing left");
-	Cmd_AddDataCommand ("-moveleft", KeyRelease, &in_moveleft,
-						"When active the player is not strafing left");
-	Cmd_AddDataCommand ("+moveright", KeyPress, &in_moveright,
-						"When active the player is strafing right");
-	Cmd_AddDataCommand ("-moveright", KeyRelease, &in_moveright,
-						"When active the player is not strafing right");
-	Cmd_AddDataCommand ("+speed", KeyPress, &in_speed,
-						"When active the player is running");
-	Cmd_AddDataCommand ("-speed", KeyRelease, &in_speed,
-						"When active the player is not running");
-	Cmd_AddDataCommand ("+attack", KeyPress, &in_attack,
-						"When active player is firing/using current weapon");
-	Cmd_AddDataCommand ("-attack", KeyRelease, &in_attack,
-						"When active player is not firing/using current "
-						"weapon");
-	Cmd_AddDataCommand ("+use", KeyPress, &in_use,
-						"Non-functional. Left over command for opening doors "
-						"and triggering switches");
-	Cmd_AddDataCommand ("-use", KeyRelease, &in_use,
-						"Non-functional. Left over command for opening doors "
-						"and triggering switches");
-	Cmd_AddDataCommand ("+jump", KeyPress, &in_jump,
-						"When active the player is jumping");
-	Cmd_AddDataCommand ("-jump", KeyRelease, &in_jump,
-						"When active the player is not jumping");
+	cl_event_id = IE_Add_Handler (cl_event_handler, 0);
+
+	for (int i = 0; cl_in_axes[i]; i++) {
+		IN_RegisterAxis (cl_in_axes[i]);
+	}
+	for (int i = 0; cl_in_buttons[i]; i++) {
+		IN_RegisterButton (cl_in_buttons[i]);
+	}
+	cl_game_context = IMT_CreateContext ("key_game");
+	IMT_SetContextCbuf (cl_game_context, cl_cbuf);
+	cl_demo_context = IMT_CreateContext ("key_demo");
+	IMT_SetContextCbuf (cl_demo_context, cl_cbuf);
 	Cmd_AddDataCommand ("impulse", IN_Impulse, 0,
 						"Call a game function or QuakeC function.");
-	Cmd_AddDataCommand ("+klook", KeyPress, &in_klook,
-						"When active, +forward and +back perform +lookup and "
-						"+lookdown");
-	Cmd_AddDataCommand ("-klook", KeyRelease, &in_klook,
-						"When active, +forward and +back don't perform "
-						"+lookup and +lookdown");
-	Cmd_AddDataCommand ("+mlook", KeyPress, &in_mlook,
-						"When active moving the mouse or joystick forwards "
-						"and backwards performs +lookup and "
-						"+lookdown");
-	Cmd_AddDataCommand ("-mlook", IN_MLookRelease, &in_mlook,
-						"When active moving the mouse or joystick forwards "
-						"and backwards doesn't perform +lookup and +lookdown");
+	CL_Legacy_Init ();
+}
+
+void
+CL_Input_Activate (void)
+{
+	IMT_SetContext (cls.demoplayback ? cl_demo_context : cl_game_context);
+	IE_Set_Focus (cl_event_id);
 }
 
 void

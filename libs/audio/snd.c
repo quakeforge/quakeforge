@@ -99,8 +99,7 @@ S_Init (int *viewentity, double *host_frametime)
 				host_frametime;
 			snd_render_module->data->snd_render->output = snd_output_module;
 
-			snd_output_module->functions->general->p_Init ();
-			snd_render_module->functions->general->p_Init ();
+			snd_render_module->functions->snd_render->init ();
 
 			snd_output_module->data->snd_output->soundtime
 				= snd_render_module->data->snd_render->soundtime;
@@ -125,29 +124,29 @@ VISIBLE void
 S_AmbientOff (void)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_AmbientOff ();
+		snd_render_funcs->ambient_off ();
 }
 
 VISIBLE void
 S_AmbientOn (void)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_AmbientOn ();
+		snd_render_funcs->ambient_on ();
 }
 
 VISIBLE void
 S_StaticSound (sfx_t *sfx, const vec3_t origin, float vol, float attenuation)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_StaticSound (sfx, origin, vol, attenuation);
+		snd_render_funcs->static_sound (sfx, origin, vol, attenuation);
 }
 
 VISIBLE void
 S_StartSound (int entnum, int entchannel, sfx_t *sfx, const vec3_t origin,
-			  float fvol, float attenuation)
+			  float vol, float attenuation)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_StartSound (entnum, entchannel, sfx, origin, fvol,
+		snd_render_funcs->start_sound (entnum, entchannel, sfx, origin, vol,
 										 attenuation);
 }
 
@@ -155,14 +154,14 @@ VISIBLE void
 S_StopSound (int entnum, int entchannel)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_StopSound (entnum, entchannel);
+		snd_render_funcs->stop_sound (entnum, entchannel);
 }
 
 VISIBLE sfx_t *
 S_PrecacheSound (const char *sample)
 {
 	if (snd_render_funcs)
-		return snd_render_funcs->pS_PrecacheSound (sample);
+		return snd_render_funcs->precache_sound (sample);
 	return NULL;
 }
 
@@ -171,7 +170,7 @@ S_Update (const vec3_t origin, const vec3_t v_forward, const vec3_t v_right,
 		  const vec3_t v_up, const byte *ambient_sound_level)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_Update (origin, v_forward, v_right, v_up,
+		snd_render_funcs->update (origin, v_forward, v_right, v_up,
 									 ambient_sound_level);
 }
 
@@ -179,42 +178,42 @@ VISIBLE void
 S_StopAllSounds (void)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_StopAllSounds ();
+		snd_render_funcs->stop_all_sounds ();
 }
 
 VISIBLE void
 S_ExtraUpdate (void)
 {
-//	if (snd_render_funcs)
-//		snd_render_funcs->pS_ExtraUpdate ();
+	if (snd_render_funcs && snd_render_funcs->extra_update)
+		snd_render_funcs->extra_update ();
 }
 
 VISIBLE void
 S_LocalSound (const char *s)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_LocalSound (s);
+		snd_render_funcs->local_sound (s);
 }
 
 VISIBLE void
 S_BlockSound (void)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_BlockSound ();
+		snd_render_funcs->block_sound ();
 }
 
 VISIBLE void
 S_UnblockSound (void)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_UnblockSound ();
+		snd_render_funcs->unblock_sound ();
 }
 
 VISIBLE sfx_t *
 S_LoadSound (const char *name)
 {
 	if (snd_render_funcs)
-		return snd_render_funcs->pS_LoadSound (name);
+		return snd_render_funcs->load_sound (name);
 	return 0;
 }
 
@@ -222,7 +221,7 @@ VISIBLE struct channel_s *
 S_AllocChannel (void)
 {
 	if (snd_render_funcs)
-		return snd_render_funcs->pS_AllocChannel ();
+		return snd_render_funcs->alloc_channel ();
 	return 0;
 }
 
@@ -230,5 +229,5 @@ VISIBLE void
 S_ChannelStop (struct channel_s *chan)
 {
 	if (snd_render_funcs)
-		snd_render_funcs->pS_ChannelStop (chan);
+		snd_render_funcs->channel_stop (chan);
 }

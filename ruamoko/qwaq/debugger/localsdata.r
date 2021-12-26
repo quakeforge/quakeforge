@@ -1,9 +1,10 @@
+#include <stdlib.h>
 #include <string.h>
 #include <types.h>
 #include "ruamoko/qwaq/debugger/views/defview.h"
 #include "ruamoko/qwaq/debugger/views/nameview.h"
 #include "ruamoko/qwaq/debugger/localsdata.h"
-#include "ruamoko/qwaq/debugger/typeencodings.h"
+#include "ruamoko/qwaq/ui/listener.h"
 
 @implementation LocalsData
 
@@ -18,6 +19,7 @@
 	qdb_get_data (target, encodings_def.offset, sizeof(target_encodings),
 				  &target_encodings);
 
+	self.onRowCountChanged = [[ListenerGroup listener] retain];
 	return self;
 }
 
@@ -26,16 +28,31 @@
 	return [[[self alloc] initWithTarget:target] autorelease];
 }
 
+static void
+free_defs (LocalsData *self)
+{
+	obj_free (self.defs);
+	self.defs = nil;
+	for (int i = 0; i < self.aux_func.num_locals; i++) {
+		[self.def_views[i] release];
+	}
+	obj_free (self.def_views);
+	self.def_views = nil;
+	obj_free (self.def_rows);
+	self.def_rows = nil;
+}
+
 -(void)dealloc
 {
+	[onRowCountChanged release];
 	if (defs) {
-		obj_free (defs);
-		defs = nil;
+		free_defs (self);
 	}
 	if (data) {
 		obj_free (data);
 		data = nil;
 	}
+	[super dealloc];
 }
 
 -setFunction:(unsigned) fnum
@@ -43,24 +60,33 @@
 	if (current_fnum == fnum) {
 		return self;
 	}
-	current_fnum =fnum;
+	current_fnum = fnum;
 
 	if (defs) {
-		obj_free (defs);
-		defs = nil;
+		free_defs (self);
 	}
 	if (data) {
 		obj_free (data);
 		data = nil;
 	}
 	func = qdb_get_function (target, fnum);
-	aux_func = qdb_get_auxfunction (target, fnum);
-	if (aux_func) {
-		defs = qdb_get_local_defs (target, fnum);
-	}
 	if (func && func.local_size) {
 		data = obj_malloc (func.local_size);
 	}
+	aux_func = qdb_get_auxfunction (target, fnum);
+	if (aux_func) {
+		defs = qdb_get_local_defs (target, fnum);
+		def_views = obj_malloc (aux_func.num_locals);
+		def_rows = obj_malloc (aux_func.num_locals + 1);
+		def_rows[0] = 0;
+		for (int i = 0; i < aux_func.num_locals; i++) {
+			def_views[i] = [[DefView withDef:defs[i] in:data target:target]
+							retain];
+			def_rows[i + 1] = [def_views[i] rows];
+		}
+		prefixsum (def_rows, aux_func.num_locals + 1);
+	}
+	[onRowCountChanged respond:self];
 	return self;
 }
 
@@ -69,13 +95,33 @@
 	if (data && func.local_size && func.local_data) {
 		qdb_get_data (target, func.local_data, func.local_size, data);
 	}
+	int         rowCount = def_rows[aux_func.num_locals];
+	if (aux_func) {
+		def_rows[0] = 0;
+		for (int i = 0; i < aux_func.num_locals; i++) {
+			[def_views[i] fetchData];
+			def_rows[i + 1] = [def_views[i] rows];
+		}
+		prefixsum (def_rows, aux_func.num_locals + 1);
+	}
+	if (rowCount != def_rows[aux_func.num_locals]) {
+		[onRowCountChanged respond:self];
+	}
 	return self;
+}
+
+-(ListenerGroup *)onRowCountChanged
+{
+	return onRowCountChanged;
 }
 
 -(int)numberOfRows:(TableView *)tableview
 {
 	if (aux_func) {
-		return aux_func.num_locals;
+		if (!aux_func.num_locals) {
+			return 0;
+		}
+		return def_rows[aux_func.num_locals];
 	} else if (func) {
 		return (func.local_size + 3) / 4;
 	}
@@ -86,17 +132,14 @@
 		 forColumn:(TableViewColumn *)column
 			   row:(int)row
 {
-	View      *view;
+	View      *view = nil;
+	int       *index = fbsearch (&row, def_rows, aux_func.num_locals, 1, nil);
 
-	if ([column name] == "name") {
-		view = [NameView withName:qdb_get_string (target, defs[row].name)];
-	} else {
-		qfot_type_t *type = [TypeEncodings getType:defs[row].type_encoding
-										fromTarget:target];
-		unsigned    offset = defs[row].offset;
-		view = [DefView withType:type at:offset in:data target:target];
+	if (index) {
+		DefView    *dv = def_views[index - def_rows];
+		int         r = row - *index;
+		view = [dv viewAtRow: r forColumn:column];
 	}
-	[view resizeTo:{[column width], 1}];
 	return view;
 }
 

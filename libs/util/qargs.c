@@ -46,8 +46,10 @@
 #include "QF/cvar.h"
 #include "QF/idparse.h"
 #include "QF/qargs.h"
+#include "QF/quakefs.h"
 #include "QF/qtypes.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 
 cvar_t     *fs_globalcfg;
 cvar_t     *fs_usercfg;
@@ -151,20 +153,13 @@ COM_AddParm (const char *parm)
 }
 
 void
-COM_ParseConfig (void)
+COM_ParseConfig (cbuf_t *cbuf)
 {
-	cbuf_t     *cbuf;
-
-	cbuf = Cbuf_New (&id_interp);
-
 	// execute +set as early as possible
 	Cmd_StuffCmds (cbuf);
 	Cbuf_Execute_Sets (cbuf);
 
-	// execute the global configuration file if it exists
-	// would have been nice if Cmd_Exec_f could have been used, but it
-	// reads from only within the quake file system, and changing that is
-	// probably Not A Good Thing (tm).
+	// execute set commands in the global configuration file if it exists
 	fs_globalcfg = Cvar_Get ("fs_globalcfg", FS_GLOBALCFG, CVAR_ROM, NULL,
 							 "global configuration file");
 	Cmd_Exec_File (cbuf, fs_globalcfg->string, 0);
@@ -174,6 +169,7 @@ COM_ParseConfig (void)
 	Cmd_StuffCmds (cbuf);
 	Cbuf_Execute_Sets (cbuf);
 
+	// execute set commands in the user configuration file if it exists
 	fs_usercfg = Cvar_Get ("fs_usercfg", FS_USERCFG, CVAR_ROM, NULL,
 						   "user configuration file");
 	Cmd_Exec_File (cbuf, fs_usercfg->string, 0);
@@ -182,6 +178,53 @@ COM_ParseConfig (void)
 	// execute +set again to override the config file
 	Cmd_StuffCmds (cbuf);
 	Cbuf_Execute_Sets (cbuf);
+}
 
-	Cbuf_Delete (cbuf);
+int
+COM_Check_quakerc (const char *cmd, cbuf_t *cbuf)
+{
+	const char *l, *p;
+	int ret = 0;
+	QFile *f;
+
+	f = QFS_FOpenFile ("quake.rc");
+	while (f && (l = Qgetline (f))) {
+		if ((p = strstr (l, cmd))) {
+			if (p == l) {
+				if (cbuf) {
+					Cbuf_AddText (cbuf, l);
+				}
+				ret = 1;
+				break;
+			}
+		}
+	}
+	Qclose (f);
+	return ret;
+}
+
+void
+COM_ExecConfig (cbuf_t *cbuf, int skip_quakerc)
+{
+	// quakeforge.cfg overrides quake.rc as it contains quakeforge-specific
+	// commands. If it doesn't exist, then this is the first time quakeforge
+	// has been used in this installation, thus any existing legacy config
+	// should be used to set up defaults on the assumption that the user has
+	// things set up to work with another (hopefully compatible) client
+	if (Cmd_Exec_File (cbuf, "quakeforge.cfg", 1)) {
+		Cmd_Exec_File (cbuf, fs_usercfg->string, 0);
+		Cmd_StuffCmds (cbuf);
+		COM_Check_quakerc ("startdemos", cbuf);
+	} else {
+		if (!skip_quakerc) {
+			Cbuf_InsertText (cbuf, "exec quake.rc\n");
+		}
+		Cmd_Exec_File (cbuf, fs_usercfg->string, 0);
+		// Reparse the command line for + commands.
+		// (sets still done, but it doesn't matter)
+		// (Note, no non-base commands exist yet)
+		if (skip_quakerc || !COM_Check_quakerc ("stuffcmds", 0)) {
+			Cmd_StuffCmds (cbuf);
+		}
+	}
 }

@@ -3,9 +3,8 @@ F77=touch
 AC_SUBST(F77)
 
 AC_ARG_WITH(cpp,
-[  --with-cpp=CPP          how qfcc should invoke cpp],
-	cpp_name="$withval", cpp_name=auto
-)
+	AS_HELP_STRING([--with-cpp=CPP], [how qfcc should invoke cpp]),
+	cpp_name="$withval", cpp_name=auto)
 if test "x$cpp_name" != xauto; then
 	CPP_NAME="$cpp_name"
 else

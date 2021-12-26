@@ -98,8 +98,7 @@ extern float	cl_wateralpha;
 #define	DIST_NOT_SET	98765
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!
-typedef struct clipplane_s
-{
+typedef struct clipplane_s {
 	vec3_t		normal;
 	float		dist;
 	struct		clipplane_s	*next;
@@ -153,7 +152,7 @@ void R_TransformPlane (plane_t *p, float *normal, float *dist);
 void R_TransformFrustum (void);
 void R_SetSkyFrame (void);
 void R_DrawSurfaceBlock (void);
-texture_t *R_TextureAnimation (msurface_t *surf) __attribute__((pure));
+texture_t *R_TextureAnimation (const entity_t *entity, msurface_t *surf) __attribute__((pure));
 
 void R_GenSkyTile (void *pdest);
 void R_SurfPatch (void);
@@ -165,16 +164,16 @@ surf_t *R_GetSurf (void);
 void R_AliasClipAndProjectFinalVert (finalvert_t *fv, auxvert_t *av);
 void R_AliasDrawModel (alight_t *plighting);
 void R_IQMDrawModel (alight_t *plighting);
-maliasskindesc_t *R_AliasGetSkindesc (int skinnum, aliashdr_t *hdr);
-maliasframedesc_t *R_AliasGetFramedesc (int framenum, aliashdr_t *hdr);
-float R_AliasGetLerpedFrames (entity_t *ent, aliashdr_t *hdr);
+maliasskindesc_t *R_AliasGetSkindesc (animation_t *animation, int skinnum, aliashdr_t *hdr);
+maliasframedesc_t *R_AliasGetFramedesc (animation_t *animation, aliashdr_t *hdr);
+float R_AliasGetLerpedFrames (animation_t *animation, aliashdr_t *hdr);
 float R_IQMGetLerpedFrames (entity_t *ent, iqm_t *hdr);
 iqmframe_t *R_IQMBlendFrames (const iqm_t *iqm, int frame1, int frame2,
 							  float blend, int extra);
 iqmframe_t *R_IQMBlendPalette (const iqm_t *iqm, int frame1, int frame2,
 							   float blend, int extra,
 							   iqmblend_t *blend_palette, int palette_size);
-float R_EntityBlend (entity_t *ent, int pose, float interval);
+float R_EntityBlend (animation_t *animation, int pose, float interval);
 void R_BeginEdgeFrame (void);
 void R_ScanEdges (void);
 void D_DrawSurfaces (void);

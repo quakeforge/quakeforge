@@ -88,7 +88,7 @@ redirect_t  qtv_redirected;
 client_t   *qtv_redirect_client;
 dstring_t   outputbuf = {&dstring_default_mem};
 
-static __attribute__((format(printf, 1, 0))) void
+static __attribute__((format(PRINTF, 1, 0))) void
 qtv_print (const char *fmt, va_list args)
 {
 	static int pending;
@@ -202,7 +202,7 @@ qtv_end_redirect (void)
 	qtv_redirect_client = 0;
 }
 
-static void
+static memhunk_t *
 qtv_memory_init (void)
 {
 	int         mem_size;
@@ -217,7 +217,7 @@ qtv_memory_init (void)
 	mem_base = Sys_Alloc (mem_size);
 	if (!mem_base)
 		Sys_Error ("Can't allocate %d", mem_size);
-	Memory_Init (mem_base, mem_size);
+	return Memory_Init (mem_base, mem_size);
 }
 
 static void
@@ -255,12 +255,12 @@ qtv_init (void)
 	Sys_RegisterShutdown (qtv_shutdown, 0);
 
 	Sys_Init ();
-	COM_ParseConfig ();
+	COM_ParseConfig (qtv_cbuf);
 	Cvar_Get ("cmd_warncmd", "1", CVAR_NONE, NULL, NULL);
 
-	qtv_memory_init ();
+	memhunk_t  *hunk = qtv_memory_init ();
 
-	QFS_Init ("qw");
+	QFS_Init (hunk, "qw");
 	PI_Init ();
 
 	qtv_console_plugin = Cvar_Get ("qtv_console_plugin", "server",

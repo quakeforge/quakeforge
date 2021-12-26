@@ -46,6 +46,7 @@
 
 #include "qw/include/client.h"
 #include "qw/include/cl_chat.h"
+#include "qw/include/cl_input.h"
 
 llist_t *ignore_list, *dead_ignore_list;
 
@@ -250,24 +251,12 @@ CL_ChatInfo (int val)
 }
 
 static void
-cl_chat_keydest (keydest_t keydest)
+cl_chat_on_focus_change (int game)
 {
-	switch (keydest) {
-		case key_game:
-		case key_demo:
-			CL_ChatInfo (0);
-			break;
-		case key_message:
-			CL_ChatInfo (1);
-			break;
-		case key_console:
-		case key_menu:
-		case key_unfocused:
-		case key_last:			// should not happen
-			CL_ChatInfo (2);
-			break;
-	}
+	//FIXME afk mode
+	CL_ChatInfo (!!game);
 }
+
 
 void
 CL_Chat_Init (void)
@@ -277,5 +266,5 @@ CL_Chat_Init (void)
 
 	Cmd_AddCommand ("ignore", CL_Ignore_f, "Ignores chat and name-change messages from a user.");
 	Cmd_AddCommand ("unignore", CL_Unignore_f, "Removes a previously ignored user from the ignore list.");
-	Key_KeydestCallback (cl_chat_keydest);
+	CL_OnFocusChange (cl_chat_on_focus_change);
 }

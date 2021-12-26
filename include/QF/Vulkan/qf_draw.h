@@ -29,6 +29,8 @@
 #define __QF_Vulkan_qf_draw_h
 
 struct vulkan_ctx_s;
+struct qfv_renderframe_s;
+struct qpic_s;
 
 void Vulkan_Draw_Init (struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_Shutdown (struct vulkan_ctx_s *ctx);
@@ -54,16 +56,19 @@ void Vulkan_Draw_TextBox (int x, int y, int width, int lines, byte alpha,
 						  struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_FadeScreen (struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_BlendScreen (quat_t color, struct vulkan_ctx_s *ctx);
-qpic_t *Vulkan_Draw_CachePic (const char *path, qboolean alpha,
-							  struct vulkan_ctx_s *ctx);
+struct qpic_s *Vulkan_Draw_CachePic (const char *path, qboolean alpha,
+									 struct vulkan_ctx_s *ctx);
 void Vulkan_Draw_UncachePic (const char *path, struct vulkan_ctx_s *ctx);
-qpic_t *Vulkan_Draw_MakePic (int width, int height, const byte *data,
-							 struct vulkan_ctx_s *ctx);
-void Vulkan_Draw_DestroyPic (qpic_t *pic, struct vulkan_ctx_s *ctx);
-qpic_t *Vulkan_Draw_PicFromWad (const char *name, struct vulkan_ctx_s *ctx);
-void Vulkan_Draw_Pic (int x, int y, qpic_t *pic, struct vulkan_ctx_s *ctx);
-void Vulkan_Draw_Picf (float x, float y, qpic_t *pic, struct vulkan_ctx_s *ctx);
-void Vulkan_Draw_SubPic(int x, int y, qpic_t *pic,
+struct qpic_s *Vulkan_Draw_MakePic (int width, int height, const byte *data,
+									struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_DestroyPic (struct qpic_s *pic, struct vulkan_ctx_s *ctx);
+struct qpic_s *Vulkan_Draw_PicFromWad (const char *name,
+									   struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_Pic (int x, int y, struct qpic_s *pic,
+					  struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_Picf (float x, float y, struct qpic_s *pic,
+					   struct vulkan_ctx_s *ctx);
+void Vulkan_Draw_SubPic(int x, int y, struct qpic_s *pic,
 						int srcx, int srcy, int width, int height,
 						struct vulkan_ctx_s *ctx);
 
@@ -71,6 +76,6 @@ void Vulkan_Set2D (struct vulkan_ctx_s *ctx);
 void Vulkan_Set2DScaled (struct vulkan_ctx_s *ctx);
 void Vulkan_End2D (struct vulkan_ctx_s *ctx);
 void Vulkan_DrawReset (struct vulkan_ctx_s *ctx);
-void Vulkan_FlushText (struct vulkan_ctx_s *ctx);
+void Vulkan_FlushText (struct qfv_renderframe_s *rFrame);
 
 #endif//__QF_Vulkan_qf_draw_h

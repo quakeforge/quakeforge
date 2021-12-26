@@ -43,10 +43,11 @@
 #include <stdlib.h>
 
 #include "QF/cvar.h"
-#include "QF/entity.h"
 #include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
+
+#include "QF/scene/entity.h"
 
 #include "QF/GLSL/defines.h"
 #include "QF/GLSL/funcs.h"
@@ -204,10 +205,9 @@ set_arrays (iqm_t *iqm)
 }
 
 void
-glsl_R_DrawIQM (void)
+glsl_R_DrawIQM (entity_t *ent)
 {
 	static quat_t color = { 1, 1, 1, 1};
-	entity_t   *ent = currententity;
 	model_t    *model = ent->renderer.model;
 	iqm_t      *iqm = (iqm_t *) model->aliashdr;
 	glsliqm_t  *glsl = (glsliqm_t *) iqm->extra_data;

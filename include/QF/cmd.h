@@ -79,7 +79,7 @@ int Cmd_Command (struct cbuf_args_s *args);
 int Cmd_ExecuteString (const char *text, cmd_source_t src);
 struct cbuf_s;
 void Cmd_StuffCmds (struct cbuf_s *cbuf);
-void Cmd_Exec_File (struct cbuf_s *cbuf, const char *path, int qfs);
+int Cmd_Exec_File (struct cbuf_s *cbuf, const char *path, int qfs);
 void Cmd_AddProvider(const char *name, struct cbuf_interpreter_s *interp);
 struct cbuf_interpreter_s *Cmd_GetProvider(const char *name);
 

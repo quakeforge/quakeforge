@@ -35,6 +35,7 @@
 
 #include "d_local.h"
 #include "r_internal.h"
+#include "vid_sw.h"
 
 int         sw32_d_vrectx, sw32_d_vrecty, sw32_d_vrectright_particle, sw32_d_vrectbottom_particle;
 
@@ -57,7 +58,7 @@ sw32_D_ViewChanged (void)
 	if (sw32_r_dowarp)
 		rowpixels = WARP_WIDTH;
 	else
-		rowpixels = vid.rowbytes / sw32_r_pixbytes;
+		rowpixels = vid.rowbytes / sw32_ctx->pixbytes;
 
 	sw32_scale_for_mip = sw32_xscale;
 	if (sw32_yscale > sw32_xscale)
@@ -87,7 +88,7 @@ sw32_D_ViewChanged (void)
 		r_refdef.vrectbottom - (sw32_d_pix_max << sw32_d_y_aspect_shift);
 
 	{
-		int i;
+		unsigned    i;
 
 		for (i = 0; i < vid.height; i++) {
 			sw32_d_scantable[i] = i * rowpixels;

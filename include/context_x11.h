@@ -41,7 +41,7 @@
 #define X11_KEY_MASK (KeyPressMask | KeyReleaseMask)
 #define X11_MOUSE_MASK (ButtonPressMask | ButtonReleaseMask \
 						| PointerMotionMask)
-#define X11_FOCUS_MASK (FocusChangeMask | EnterWindowMask)
+#define X11_FOCUS_MASK (FocusChangeMask | EnterWindowMask | LeaveWindowMask)
 #define X11_INPUT_MASK (X11_KEY_MASK | X11_MOUSE_MASK | X11_FOCUS_MASK)
 #define X11_MASK (X11_WINDOW_MASK | X11_FOCUS_MASK | PointerMotionMask)
 
@@ -52,6 +52,8 @@ extern Window	x_win;
 extern Colormap x_cmap;
 extern XVisualInfo *x_visinfo;
 extern int		x_screen;
+extern int		x_width;
+extern int		x_height;
 extern int		x_shmeventtype;
 extern Time		x_time;
 extern Time		x_mouse_time;
@@ -81,7 +83,8 @@ struct gl_ctx_s *X11_GL_Context (void);
 void X11_GL_Init_Cvars (void);
 
 struct sw_ctx_s *X11_SW_Context (void);
-void X11_SW_Init_Cvars (void);
+struct sw_ctx_s *X11_SW32_Context (void);
+void X11_SW_Init_Cvars (void);	// sw and sw32 cvars shared
 
 struct vulkan_ctx_s *X11_Vulkan_Context (void);
 void X11_Vulkan_Init_Cvars (void);

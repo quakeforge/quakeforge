@@ -36,6 +36,7 @@
 #endif
 
 #include "QF/cvar.h"
+#include "QF/set.h"
 #include "QF/sys.h"
 
 #include "r_internal.h"
@@ -43,14 +44,13 @@
 mvertex_t  *r_pcurrentvertbase;
 mleaf_t    *r_viewleaf;
 static mleaf_t *r_oldviewleaf;
+static set_t *solid;
 
 void
 R_MarkLeaves (void)
 {
-	byte         solid[8192];
-	byte        *vis;
+	set_t       *vis;
 	int			 c;
-	unsigned int i;
 	mleaf_t     *leaf;
 	mnode_t     *node;
 	msurface_t **mark;
@@ -67,13 +67,16 @@ R_MarkLeaves (void)
 	if (r_novis->int_val) {
 		r_oldviewleaf = 0;	// so vis will be recalcualted when novis gets
 							// turned off
+		if (!solid) {
+			solid = set_new ();
+			set_everything (solid);
+		}
 		vis = solid;
-		memset (solid, 0xff, (brush->numleafs + 7) >> 3);
 	} else
 		vis = Mod_LeafPVS (r_viewleaf, r_worldentity.renderer.model);
 
-	for (i = 0; (int) i < brush->numleafs; i++) {
-		if (vis[i >> 3] & (1 << (i & 7))) {
+	for (unsigned i = 0; i < brush->visleafs; i++) {
+		if (set_is_member (vis, i)) {
 			leaf = &brush->leafs[i + 1];
 			if ((c = leaf->nummarksurfaces)) {
 				mark = leaf->firstmarksurface;
@@ -100,12 +103,12 @@ R_MarkLeaves (void)
   Returns the proper texture for a given time and base texture
 */
 texture_t  *
-R_TextureAnimation (msurface_t *surf)
+R_TextureAnimation (const entity_t *entity, msurface_t *surf)
 {
 	texture_t  *base = surf->texinfo->texture;
 	int         count, relative;
 
-	if (currententity->animation.frame) {
+	if (entity->animation.frame) {
 		if (base->alternate_anims)
 			base = base->alternate_anims;
 	}

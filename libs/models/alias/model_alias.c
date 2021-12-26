@@ -66,7 +66,7 @@ Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx, int numskins,
 		Sys_Error ("Mod_LoadAliasModel: Invalid # of skins: %d", numskins);
 
 	skinsize = header->mdl.skinwidth * header->mdl.skinheight;
-	pskindesc = Hunk_AllocName (numskins * sizeof (maliasskindesc_t),
+	pskindesc = Hunk_AllocName (0, numskins * sizeof (maliasskindesc_t),
 								alias_ctx->mod->name);
 
 	*pskinindex = (byte *) pskindesc - (byte *) header;
@@ -83,13 +83,13 @@ Mod_LoadAllSkins (mod_alias_ctx_t *alias_ctx, int numskins,
 			groupskins = LittleLong (pinskingroup->numskins);
 
 			t = field_offset (maliasskingroup_t, skindescs[groupskins]);
-			paliasskingroup = Hunk_AllocName (t, alias_ctx->mod->name);
+			paliasskingroup = Hunk_AllocName (0, t, alias_ctx->mod->name);
 			paliasskingroup->numskins = groupskins;
 
 			pskindesc[snum].skin = (byte *) paliasskingroup - (byte *) header;
 
 			pinskinintervals = (daliasskininterval_t *) (pinskingroup + 1);
-			poutskinintervals = Hunk_AllocName (groupskins * sizeof (float),
+			poutskinintervals = Hunk_AllocName (0, groupskins * sizeof (float),
 												alias_ctx->mod->name);
 			paliasskingroup->intervals =
 				(byte *) poutskinintervals - (byte *) header;
@@ -173,8 +173,9 @@ Mod_LoadAliasGroup (mod_alias_ctx_t *alias_ctx, void *pin, int *posenum,
 	frame->firstpose = (*posenum);
 	frame->numposes = numframes;
 
-	paliasgroup = Hunk_AllocName (field_offset (maliasgroup_t,
-												frames[numframes]), mod->name);
+	paliasgroup = Hunk_AllocName (0, field_offset (maliasgroup_t,
+												   frames[numframes]),
+								  mod->name);
 	paliasgroup->numframes = numframes;
 	frame->frame = (byte *) paliasgroup - (byte *) header;
 
@@ -187,7 +188,7 @@ Mod_LoadAliasGroup (mod_alias_ctx_t *alias_ctx, void *pin, int *posenum,
 				   alias_ctx->aliasbboxmaxs);
 
 	pin_intervals = (daliasinterval_t *) (pingroup + 1);
-	poutintervals = Hunk_AllocName (numframes * sizeof (float), mod->name);
+	poutintervals = Hunk_AllocName (0, numframes * sizeof (float), mod->name);
 	paliasgroup->intervals = (byte *) poutintervals - (byte *) header;
 	frame->interval = LittleFloat (pin_intervals->interval);
 	for (i = 0; i < numframes; i++) {
@@ -213,7 +214,8 @@ Mod_LoadAliasGroup (mod_alias_ctx_t *alias_ctx, void *pin, int *posenum,
 void
 Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 {
-	int         size, version, numframes, start, end, total, i, j;
+	size_t      size, start, end, total;
+	int         version, numframes, i, j;
 	int			extra = 0;		// extra precision bytes
 	void       *mem;
 	dtriangle_t *pintriangles;
@@ -237,7 +239,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	CRC_Init (&crc);
 	CRC_ProcessBlock (buffer, &crc, qfs_filesize);
 
-	start = Hunk_LowMark ();
+	start = Hunk_LowMark (0);
 
 	pinmodel = (mdl_t *) buffer;
 
@@ -249,7 +251,7 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 	// allocate space for a working header, plus all the data except the
 	// frames, skin and group info
 	size = field_offset (aliashdr_t, frames[LittleLong (pinmodel->numframes)]);
-	header = Hunk_AllocName (size, mod->name);
+	header = Hunk_AllocName (0, size, mod->name);
 	memset (header, 0, size);
 	alias_ctx.header = header;
 	pmodel = &header->mdl;
@@ -375,14 +377,14 @@ Mod_LoadAliasModel (model_t *mod, void *buffer, cache_allocator_t allocator)
 
 	// move the complete, relocatable alias model to the cache
 	if (m_funcs->alias_cache) {
-		end = Hunk_LowMark ();
+		end = Hunk_LowMark (0);
 		total = end - start;
 
 		mem = allocator (&mod->cache, total, mod->name);
 		if (mem)
 			memcpy (mem, header, total);
 
-		Hunk_FreeToLowMark (start);
+		Hunk_FreeToLowMark (0, start);
 		mod->aliashdr = 0;
 	} else {
 		mod->aliashdr = header;

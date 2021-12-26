@@ -54,6 +54,7 @@
 #include "QF/GLSL/qf_bsp.h"
 #include "QF/GLSL/qf_iqm.h"
 #include "QF/GLSL/qf_lightmap.h"
+#include "QF/GLSL/qf_sprite.h"
 #include "QF/GLSL/qf_textures.h"
 
 #include "mod_internal.h"
@@ -64,46 +65,21 @@ mat4f_t glsl_projection;
 mat4f_t glsl_view;
 
 void
-glsl_R_ViewChanged (float aspect)
+glsl_R_ViewChanged (void)
 {
-	double      xmin, xmax, ymin, ymax;
-	float       fovx, fovy, neard, fard;
+	float       aspect = (float) r_refdef.vrect.width / r_refdef.vrect.height;
+	float       f = 1 / tan (r_refdef.fov_y * M_PI / 360);
+	float       neard, fard;
 	vec4f_t    *proj = glsl_projection;
 
-	fovx = r_refdef.fov_x;
-	fovy = r_refdef.fov_y;
 	neard = r_nearclip->value;
 	fard = r_farclip->value;
 
-	ymax = neard * tan (fovy * M_PI / 360);		// fov_2 / 2
-	ymin = -ymax;
-	xmax = neard * tan (fovx * M_PI / 360);		// fov_2 / 2
-	xmin = -xmax;
-
-	proj[0] = (vec4f_t) {
-		(2 * neard) / (xmax - xmin),
-		0,
-		0,
-		0
-	};
-	proj[1] = (vec4f_t) {
-		0,
-		(2 * neard) / (ymax - ymin),
-		0,
-		0
-	};
-	proj[2] = (vec4f_t) {
-		(xmax + xmin) / (xmax - xmin),
-		(ymax + ymin) / (ymax - ymin),
-		(fard + neard) / (neard - fard),
-		-1
-	};
-	proj[3] = (vec4f_t) {
-		0,
-		0,
-		(2 * fard * neard) / (neard - fard),
-		0
-	};
+	// NOTE columns!
+	proj[0] = (vec4f_t) { f / aspect, 0, 0, 0 };
+	proj[1] = (vec4f_t) { 0, f, 0, 0 };
+	proj[2] = (vec4f_t) { 0, 0, (fard + neard) / (neard - fard), -1 };
+	proj[3] = (vec4f_t) { 0, 0, (2 * fard * neard) / (neard - fard), 0 };
 }
 
 void
@@ -170,8 +146,7 @@ R_RenderEntities (void)
 				glsl_R_##Type##Begin (); \
 				begun = 1; \
 			} \
-			currententity = ent; \
-			glsl_R_Draw##Type (); \
+			glsl_R_Draw##Type (ent); \
 		} \
 		if (begun) \
 			glsl_R_##Type##End (); \
@@ -185,17 +160,17 @@ R_RenderEntities (void)
 static void
 R_DrawViewModel (void)
 {
-	currententity = vr_data.view_model;
+	entity_t   *ent = vr_data.view_model;
 	if (vr_data.inhibit_viewmodel
 		|| !r_drawviewmodel->int_val
 		|| !r_drawentities->int_val
-		|| !currententity->renderer.model)
+		|| !ent->renderer.model)
 		return;
 
 	// hack the depth range to prevent view model from poking into walls
 	qfeglDepthRangef (0, 0.3);
 	glsl_R_AliasBegin ();
-	glsl_R_DrawAlias ();
+	glsl_R_DrawAlias (ent);
 	glsl_R_AliasEnd ();
 	qfeglDepthRangef (0, 1);
 }
@@ -205,6 +180,10 @@ glsl_R_RenderView (void)
 {
 	double      t[10] = {};
 	int         speeds = r_speeds->int_val;
+
+	if (!r_worldentity.renderer.model) {
+		return;
+	}
 
 	if (speeds)
 		t[0] = Sys_DoubleTime ();
@@ -250,8 +229,6 @@ glsl_R_RenderView (void)
 void
 glsl_R_Init (void)
 {
-	Cmd_AddCommand ("pointfile", glsl_R_ReadPointFile_f,
-					"Load a pointfile to determine map leaks.");
 	Cmd_AddCommand ("timerefresh", glsl_R_TimeRefresh_f,
 					"Test the current refresh rate for the current location.");
 	R_Init_Cvars ();
@@ -283,23 +260,24 @@ glsl_R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	R_MarkLeaves ();
 
 	R_FreeAllEntities ();
-	glsl_R_ClearParticles ();
+	R_ClearParticles ();
 	glsl_R_RegisterTextures (models, num_models);
 	glsl_R_BuildLightmaps (models, num_models);
 	glsl_R_BuildDisplayLists (models, num_models);
 }
 
 void
-glsl_R_LineGraph (int x, int y, int *h_vals, int count)
+glsl_R_LineGraph (int x, int y, int *h_vals, int count, int height)
 {
 }
 
 void
 glsl_R_ClearState (void)
 {
+	r_worldentity.renderer.model = 0;
 	R_ClearEfrags ();
 	R_ClearDlights ();
-	glsl_R_ClearParticles ();
+	R_ClearParticles ();
 }
 
 void

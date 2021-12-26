@@ -51,6 +51,7 @@
 #define FMT_ADDBLANK	(1<<4)
 #define FMT_HEX			(1<<5)
 #define FMT_LONG		(1<<6)
+#define FMT_WIDTH		(1<<7)
 
 typedef struct fmt_item_s {
 	byte        type;
@@ -712,22 +713,24 @@ PR_FreeTempStrings (progs_t *pr)
 	pr->pr_xtstr = 0;
 }
 
+#define hasprintf ((char *(*)(dstring_t *, const char *, ...))dasprintf)
+
 #define PRINT(t)													\
 	switch ((doWidth << 1) | doPrecision) {							\
 		case 3:														\
-			dasprintf (result, tmp->str, current->minFieldWidth,	\
+			hasprintf (result, tmp->str, current->minFieldWidth,	\
 					   current->precision, current->data.t##_var);	\
 			break;													\
 		case 2:														\
-			dasprintf (result, tmp->str, current->minFieldWidth,	\
+			hasprintf (result, tmp->str, current->minFieldWidth,	\
 					   current->data.t##_var);						\
 			break;													\
 		case 1:														\
-			dasprintf (result, tmp->str, current->precision,		\
+			hasprintf (result, tmp->str, current->precision,		\
 					   current->data.t##_var);						\
 			break;													\
 		case 0:														\
-			dasprintf (result, tmp->str, current->data.t##_var);	\
+			hasprintf (result, tmp->str, current->data.t##_var);	\
 			break;													\
 	}
 
@@ -746,7 +749,7 @@ I_DoPrint (dstring_t *tmp, dstring_t *result, fmt_item_t *formatting)
 		qboolean	doPrecision, doWidth;
 
 		doPrecision = -1 != current->precision;
-		doWidth = 0 != current->minFieldWidth;
+		doWidth = 0 != (current->flags & FMT_WIDTH);
 
 		dsprintf (tmp, "%%%s%s%s%s%s%s%s",
 			(current->flags & FMT_ALTFORM) ? "#" : "",	// hash
@@ -954,6 +957,7 @@ fmt_state_flags (fmt_state_t *state)
 static void
 fmt_state_var_field_width (fmt_state_t *state)
 {
+	(*state->fi)->flags |= FMT_WIDTH;
 	(*state->fi)->minFieldWidth = P_INT (pr, state->fmt_count);
 	state->fmt_count++;
 	if (*++state->c == '.') {
@@ -966,6 +970,7 @@ fmt_state_var_field_width (fmt_state_t *state)
 static void
 fmt_state_field_width (fmt_state_t *state)
 {
+	(*state->fi)->flags |= FMT_WIDTH;
 	while (isdigit ((byte )*state->c)) {
 		(*state->fi)->minFieldWidth *= 10;
 		(*state->fi)->minFieldWidth += *state->c++ - '0';

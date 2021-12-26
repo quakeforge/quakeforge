@@ -787,7 +787,7 @@ Demo_Init (void)
 	demo_name = dstring_newstr ();
 	demo_text = dstring_newstr ();
 
-	svs.demomem = Hunk_AllocName (size, "demo");
+	svs.demomem = Hunk_AllocName (0, size, "demo");
 	svs.demomemsize = size;
 	demo_max_size = size - 0x80000;
 

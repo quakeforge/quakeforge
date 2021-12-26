@@ -36,12 +36,13 @@
 # include <strings.h>
 #endif
 
-#include "QF/console.h"
 #include "QF/csqc.h"
 #include "QF/draw.h"
 #include "QF/progs.h"
 #include "QF/sys.h"
 #include "QF/zone.h"
+
+#include "QF/ui/inputline.h"
 
 typedef struct il_data_s {
 	struct il_data_s *next;

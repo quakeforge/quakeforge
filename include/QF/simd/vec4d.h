@@ -28,6 +28,7 @@
 #ifndef __QF_simd_vec4d_h
 #define __QF_simd_vec4d_h
 
+#ifdef __AVX2__
 #include <immintrin.h>
 
 #include "QF/simd/types.h"
@@ -93,8 +94,8 @@ GNU89INLINE inline vec4d_t qrotd (vec4d_t a, vec4d_t b) __attribute__((const));
  * That is, [-x, -y, -z, w].
  */
 GNU89INLINE inline vec4d_t qconjd (vec4d_t q) __attribute__((const));
-GNU89INLINE inline vec4d_t loadvec3d (const double v3[]) __attribute__((pure, access(read_only, 1)));
-GNU89INLINE inline void storevec3d (double v3[3], vec4d_t v4) __attribute__((access (write_only, 1)));
+GNU89INLINE inline vec4d_t loadvec3d (const double v3[]) __attribute__((pure));
+GNU89INLINE inline void storevec3d (double v3[3], vec4d_t v4);
 
 #ifndef IMPLEMENT_VEC4D_Funcs
 GNU89INLINE inline
@@ -258,7 +259,8 @@ VISIBLE
 vec4d_t
 qconjd (vec4d_t q)
 {
-	const vec4l_t neg = { 1lu << 63, 1lu << 63, 1lu << 63, 0 };
+	const uint64_t sign = UINT64_C(1) << 63;
+	const vec4l_t neg = { sign, sign, sign, 0 };
 	return _mm256_xor_pd (q, (__m256d) neg);
 }
 
@@ -290,5 +292,7 @@ storevec3d (double v3[3], vec4d_t v4)
 	v3[1] = v4[1];
 	v3[2] = v4[2];
 }
+
+#endif
 
 #endif//__QF_simd_vec4d_h

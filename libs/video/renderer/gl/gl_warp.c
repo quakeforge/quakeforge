@@ -54,7 +54,7 @@ static float turbsin[] = {
 	Does a water warp on the pre-fragmented glpoly_t chain
 */
 void
-GL_EmitWaterPolys (msurface_t *fa)
+GL_EmitWaterPolys (msurface_t *surf)
 {
 	float		os, ot, s, t, timetemp;
 	float      *v;
@@ -63,7 +63,7 @@ GL_EmitWaterPolys (msurface_t *fa)
 
 	timetemp = vr_data.realtime * TURBSCALE;
 
-	for (p = fa->polys; p; p = p->next) {
+	for (p = surf->polys; p; p = p->next) {
 		qfglBegin (GL_POLYGON);
 		for (i = 0, v = p->verts[0]; i < p->numverts; i++, v += VERTEXSIZE) {
 			os = turbsin[(int) (v[3] * TURBFRAC + timetemp) & 255];

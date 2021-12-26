@@ -50,19 +50,15 @@
 
 // particle_t structure
 // !!! if this is changed, it must be changed in d_iface.h too !!!
-// driver-usable fields
-#define pt_org				0
-#define pt_color			12
-#define pt_alpha			16
-#define pt_tex				20
-#define pt_scale			24
-// drivers never touch the following fields
-#define pt_vel				28
-#define pt_type				40
-#define pt_die				44
-#define pt_ramp				48
-#define pt_next				52
-#define pt_size				56
+#define pt_pos				0
+#define pt_vel				16
+#define pt_color			32
+#define pt_alpha			44
+#define pt_tex				48
+#define pt_ramp				52
+#define pt_scale			56
+#define pt_live				60
+#define pt_size				64
 
 #define PARTICLE_Z_CLIP	8.0
 

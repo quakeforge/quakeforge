@@ -50,6 +50,8 @@ typedef struct player_info_s {
 	struct info_key_s *skinname;
 	struct skin_s *skin;
 
+	struct entity_s *flag_ent;
+
 	int         spectator;
 	int         stats[MAX_CL_STATS];	// health, etc
 	int         prevcount;

@@ -46,10 +46,12 @@
 #include "QF/quakefs.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
+#include "QF/ui/view.h"
 
 #include "d_iface.h"
 #include "r_internal.h"
 #include "vid_internal.h"
+#include "vid_sw.h"
 
 typedef struct {
 	vrect_t     rect;
@@ -269,7 +271,7 @@ sw32_Draw_Character (int x, int y, unsigned int chr)
 	if (y <= -8)
 		return;							// totally off screen
 
-	if (y > vid.conheight - 8 || x < 0 || x > vid.conwidth - 8)
+	if (y > vid.conview->ylen - 8 || x < 0 || x > vid.conview->xlen - 8)
 		return;
 	if (chr > 255)
 		return;
@@ -286,10 +288,10 @@ sw32_Draw_Character (int x, int y, unsigned int chr)
 		drawline = 8;
 
 
-	switch(sw32_r_pixbytes) {
+	switch(sw32_ctx->pixbytes) {
 	case 1:
 	{
-		byte       *dest = (byte *) vid.conbuffer + y * vid.conrowbytes + x;
+		byte       *dest = (byte *) vid.buffer + y * vid.rowbytes + x;
 
 		while (drawline--) {
 			if (source[0])
@@ -309,14 +311,14 @@ sw32_Draw_Character (int x, int y, unsigned int chr)
 			if (source[7])
 				dest[7] = source[7];
 			source += 128;
-			dest += vid.conrowbytes;
+			dest += vid.rowbytes;
 		}
 	}
 	break;
 	case 2:
 	{
-		unsigned short *dest = (unsigned short *) vid.conbuffer + y *
-			(vid.conrowbytes >> 1) + x;
+		unsigned short *dest = (unsigned short *) vid.buffer + y *
+			(vid.rowbytes >> 1) + x;
 
 		while (drawline--) {
 			if (source[0])
@@ -337,14 +339,14 @@ sw32_Draw_Character (int x, int y, unsigned int chr)
 				dest[7] = sw32_8to16table[source[7]];
 
 			source += 128;
-			dest += (vid.conrowbytes >> 1);
+			dest += (vid.rowbytes >> 1);
 		}
 	}
 	break;
 	case 4:
 	{
-		unsigned int *dest = (unsigned int *) vid.conbuffer + y *
-			(vid.conrowbytes >> 2) + x;
+		unsigned int *dest = (unsigned int *) vid.buffer + y *
+			(vid.rowbytes >> 2) + x;
 
 		while (drawline--) {
 			if (source[0])
@@ -365,12 +367,12 @@ sw32_Draw_Character (int x, int y, unsigned int chr)
 				dest[7] = d_8to24table[source[7]];
 
 			source += 128;
-			dest += (vid.conrowbytes >> 2);
+			dest += (vid.rowbytes >> 2);
 		}
 	}
 	break;
 	default:
-		Sys_Error("Draw_Character: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("Draw_Character: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 	}
 }
 
@@ -406,21 +408,21 @@ sw32_Draw_AltString (int x, int y, const char *str)
 static void
 Draw_Pixel (int x, int y, byte color)
 {
-	switch(sw32_r_pixbytes)
+	switch(sw32_ctx->pixbytes)
 	{
 	case 1:
-		((byte *) vid.conbuffer)[y * vid.conrowbytes + x] = color;
+		((byte *) vid.buffer)[y * vid.rowbytes + x] = color;
 		break;
 	case 2:
-		((unsigned short *) vid.conbuffer)[y * (vid.conrowbytes >> 1) + x] =
+		((unsigned short *) vid.buffer)[y * (vid.rowbytes >> 1) + x] =
 			sw32_8to16table[color];
 		break;
 	case 4:
-		((unsigned int *) vid.conbuffer)[y * (vid.conrowbytes >> 2) + x] =
+		((unsigned int *) vid.buffer)[y * (vid.rowbytes >> 2) + x] =
 			d_8to24table[color];
 		break;
 	default:
-		Sys_Error("Draw_Pixel: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("Draw_Pixel: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 	}
 }
 
@@ -542,8 +544,8 @@ sw32_Draw_Crosshair (void)
 	if ((unsigned) ch >= sizeof (crosshair_func) / sizeof (crosshair_func[0]))
 		return;
 
-	x = vid.conwidth / 2 + cl_crossx->int_val;
-	y = vid.conheight / 2 + cl_crossy->int_val;
+	x = vid.conview->xlen / 2 + cl_crossx->int_val;
+	y = vid.conview->ylen / 2 + cl_crossy->int_val;
 
 	crosshair_func[ch] (x, y);
 }
@@ -564,16 +566,16 @@ sw32_Draw_Pic (int x, int y, qpic_t *pic)
 	byte       *source, tbyte;
 	int         v, u;
 
-	if (x < 0 || (x + pic->width) > vid.conwidth
-		|| y < 0 || (y + pic->height) > vid.conheight) {
-		Sys_MaskPrintf (SYS_VID, "Draw_Pic: bad coordinates");
+	if (x < 0 || (x + pic->width) > vid.conview->xlen
+		|| y < 0 || (y + pic->height) > vid.conview->ylen) {
+		Sys_MaskPrintf (SYS_vid, "Draw_Pic: bad coordinates");
 		sw32_Draw_SubPic (x, y, pic, 0, 0, pic->width, pic->height);
 		return;
 	}
 
 	source = pic->data;
 
-	switch(sw32_r_pixbytes) {
+	switch(sw32_ctx->pixbytes) {
 	case 1:
 	{
 		byte       *dest = (byte *) vid.buffer + y * vid.rowbytes + x;
@@ -646,7 +648,7 @@ sw32_Draw_Pic (int x, int y, qpic_t *pic)
 	}
 	break;
 	default:
-		Sys_Error("Draw_Pic: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("Draw_Pic: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 	}
 }
 
@@ -663,9 +665,9 @@ sw32_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	byte       *source, tbyte;
 	int   v, u;
 
-	if ((x < 0) || (x + width > vid.conwidth)
-		|| (y < 0) || (y + height > vid.conheight)) {
-		Sys_MaskPrintf (SYS_VID, "Draw_SubPic: bad coordinates");
+	if ((x < 0) || (x + width > vid.conview->xlen)
+		|| (y < 0) || (y + height > vid.conview->ylen)) {
+		Sys_MaskPrintf (SYS_vid, "Draw_SubPic: bad coordinates");
 	}
 	// first, clip to screen
 	if (x < 0) {
@@ -673,7 +675,7 @@ sw32_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 		width += x;
 		x = 0;
 	}
-	if (x + width > vid.width)
+	if ((unsigned) (x + width) > vid.width)
 		width = vid.width - x;
 	if (width <= 0)
 		return;
@@ -682,7 +684,7 @@ sw32_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 		height += y;
 		y = 0;
 	}
-	if (y + height > vid.height)
+	if ((unsigned) (y + height) > vid.height)
 		height = vid.height - y;
 	if (height <= 0)
 		return;
@@ -691,7 +693,7 @@ sw32_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 
 	source = pic->data + srcy * pic->width + srcx;
 
-	switch (sw32_r_pixbytes) {
+	switch (sw32_ctx->pixbytes) {
 	case 1:
 	{
 		byte       *dest = (byte *) vid.buffer + y * vid.rowbytes + x;
@@ -728,7 +730,7 @@ sw32_Draw_SubPic (int x, int y, qpic_t *pic, int srcx, int srcy, int width,
 	}
 	break;
 	default:
-		Sys_Error("Draw_SubPic: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("Draw_SubPic: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 	}
 }
 
@@ -744,20 +746,20 @@ sw32_Draw_ConsoleBackground (int lines, byte alpha)
 	conback = sw32_Draw_CachePic ("gfx/conback.lmp", true);
 
 	// draw the pic
-	switch(sw32_r_pixbytes) {
+	switch(sw32_ctx->pixbytes) {
 	case 1:
 	{
-		byte       *dest = vid.conbuffer;
+		byte       *dest = vid.buffer;
 
-		for (y = 0; y < lines; y++, dest += vid.conrowbytes) {
-			v = (vid.conheight - lines + y) * 200 / vid.conheight;
+		for (y = 0; y < lines; y++, dest += vid.rowbytes) {
+			v = (vid.conview->ylen - lines + y) * 200 / vid.conview->ylen;
 			src = conback->data + v * 320;
-			if (vid.conwidth == 320)
-				memcpy (dest, src, vid.conwidth);
+			if (vid.conview->xlen == 320)
+				memcpy (dest, src, vid.conview->xlen);
 			else {
 				f = 0;
-				fstep = 320 * 0x10000 / vid.conwidth;
-				for (x = 0; x < vid.conwidth; x += 4) {
+				fstep = 320 * 0x10000 / vid.conview->xlen;
+				for (x = 0; x < vid.conview->xlen; x += 4) {
 					dest[x] = src[f >> 16];
 					f += fstep;
 					dest[x + 1] = src[f >> 16];
@@ -773,16 +775,16 @@ sw32_Draw_ConsoleBackground (int lines, byte alpha)
 	break;
 	case 2:
 	{
-		unsigned short *dest = (unsigned short *) vid.conbuffer;
+		unsigned short *dest = (unsigned short *) vid.buffer;
 
-		for (y = 0; y < lines; y++, dest += (vid.conrowbytes >> 1)) {
+		for (y = 0; y < lines; y++, dest += (vid.rowbytes >> 1)) {
 			// FIXME: pre-expand to native format?
 			// FIXME: does the endian switching go away in production?
-			v = (vid.conheight - lines + y) * 200 / vid.conheight;
+			v = (vid.conview->ylen - lines + y) * 200 / vid.conview->ylen;
 			src = conback->data + v * 320;
 			f = 0;
-			fstep = 320 * 0x10000 / vid.conwidth;
-			for (x = 0; x < vid.conwidth; x += 4) {
+			fstep = 320 * 0x10000 / vid.conview->xlen;
+			for (x = 0; x < vid.conview->xlen; x += 4) {
 				dest[x] = sw32_8to16table[src[f >> 16]];
 				f += fstep;
 				dest[x + 1] = sw32_8to16table[src[f >> 16]];
@@ -797,13 +799,13 @@ sw32_Draw_ConsoleBackground (int lines, byte alpha)
 	break;
 	case 4:
 	{
-		unsigned int *dest = (unsigned int *) vid.conbuffer;
-		for (y = 0; y < lines; y++, dest += (vid.conrowbytes >> 2)) {
-			v = (vid.conheight - lines + y) * 200 / vid.conheight;
+		unsigned int *dest = (unsigned int *) vid.buffer;
+		for (y = 0; y < lines; y++, dest += (vid.rowbytes >> 2)) {
+			v = (vid.conview->ylen - lines + y) * 200 / vid.conview->ylen;
 			src = conback->data + v * 320;
 			f = 0;
-			fstep = 320 * 0x10000 / vid.conwidth;
-			for (x = 0; x < vid.conwidth; x += 4) {
+			fstep = 320 * 0x10000 / vid.conview->xlen;
+			for (x = 0; x < vid.conview->xlen; x += 4) {
 				dest[x    ] = d_8to24table[src[f >> 16]];f += fstep;
 				dest[x + 1] = d_8to24table[src[f >> 16]];f += fstep;
 				dest[x + 2] = d_8to24table[src[f >> 16]];f += fstep;
@@ -815,18 +817,19 @@ sw32_Draw_ConsoleBackground (int lines, byte alpha)
 
 	default:
 		Sys_Error("Draw_ConsoleBackground: unsupported r_pixbytes %i",
-				  sw32_r_pixbytes);
+				  sw32_ctx->pixbytes);
 	}
 
 //	if (!cls.download)
-	sw32_Draw_AltString (vid.conwidth - strlen (cl_verstring->string) * 8 - 11,
+	int         len = strlen (cl_verstring->string);
+	sw32_Draw_AltString (vid.conview->xlen - len * 8 - 11,
 						 lines - 14, cl_verstring->string);
 }
 
 static void
 R_DrawRect (vrect_t *prect, int rowbytes, byte * psrc, int transparent)
 {
-	switch(sw32_r_pixbytes) {
+	switch(sw32_ctx->pixbytes) {
 	case 1:
 	{
 		byte        t;
@@ -1099,7 +1102,7 @@ R_DrawRect (vrect_t *prect, int rowbytes, byte * psrc, int transparent)
 	}
 	break;
 	default:
-		Sys_Error("R_DrawRect: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("R_DrawRect: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 	}
 }
 
@@ -1116,7 +1119,7 @@ sw32_Draw_TileClear (int x, int y, int w, int h)
 	byte       *psrc;
 	vrect_t     vr;
 
-	CLIP (x, y, w, h, vid.width, vid.height);
+	CLIP (x, y, w, h, (int) vid.width, (int) vid.height);
 
 	r_rectdesc.rect.x = x;
 	r_rectdesc.rect.y = y;
@@ -1178,14 +1181,14 @@ sw32_Draw_Fill (int x, int y, int w, int h, int c)
 {
 	int         u, v;
 
-	if (x < 0 || x + w > vid.conwidth
-		|| y < 0 || y + h > vid.conheight) {
-		Sys_MaskPrintf (SYS_VID, "Bad Draw_Fill(%d, %d, %d, %d, %c)\n",
+	if (x < 0 || x + w > vid.conview->xlen
+		|| y < 0 || y + h > vid.conview->ylen) {
+		Sys_MaskPrintf (SYS_vid, "Bad Draw_Fill(%d, %d, %d, %d, %c)\n",
 						x, y, w, h, c);
 	}
-	CLIP (x, y, w, h, vid.width, vid.height);
+	CLIP (x, y, w, h, (int) vid.width, (int) vid.height);
 
-	switch (sw32_r_pixbytes) {
+	switch (sw32_ctx->pixbytes) {
 	case 1:
 	{
 		byte       *dest = (byte *) vid.buffer + y * vid.rowbytes + x;
@@ -1215,7 +1218,7 @@ sw32_Draw_Fill (int x, int y, int w, int h, int c)
 	}
 	break;
 	default:
-		Sys_Error("Draw_Fill: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("Draw_Fill: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 	}
 }
 
@@ -1244,15 +1247,15 @@ sw32_Draw_FadeScreen (void)
 	S_ExtraUpdate ();
 	VID_LockBuffer ();
 
-	switch(sw32_r_pixbytes) {
+	switch(sw32_ctx->pixbytes) {
 	case 1:
 	{
-		for (y = 0; y < vid.conheight; y++) {
+		for (y = 0; y < vid.conview->ylen; y++) {
 			unsigned int t;
 			byte     *pbuf = (byte *) ((byte *) vid.buffer + vid.rowbytes * y);
 			t = (y & 1) << 1;
 
-			for (x = 0; x < vid.conwidth; x++) {
+			for (x = 0; x < vid.conview->xlen; x++) {
 				if ((x & 3) != t)
 					pbuf[x] = 0;
 			}
@@ -1261,27 +1264,27 @@ sw32_Draw_FadeScreen (void)
 	break;
 	case 2:
 	{
-		for (y = 0; y < vid.conheight; y++) {
+		for (y = 0; y < vid.conview->ylen; y++) {
 			unsigned short *pbuf = (unsigned short *)
 				((byte *) vid.buffer + vid.rowbytes * y);
 			pbuf = (unsigned short *) vid.buffer + (vid.rowbytes >> 1) * y;
-			for (x = 0; x < vid.conwidth; x++)
+			for (x = 0; x < vid.conview->xlen; x++)
 				pbuf[x] = (pbuf[x] >> 1) & 0x7BEF;
 		}
 	}
 	break;
 	case 4:
 	{
-		for (y = 0; y < vid.conheight; y++) {
+		for (y = 0; y < vid.conview->ylen; y++) {
 			unsigned int *pbuf = (unsigned int *)
 				((byte *) vid.buffer + vid.rowbytes * y);
-			for (x = 0; x < vid.conwidth; x++)
+			for (x = 0; x < vid.conview->xlen; x++)
 				pbuf[x] = (pbuf[x] >> 1) & 0x7F7F7F7F;
 		}
 	}
 	break;
 	default:
-		Sys_Error("Draw_FadeScreen: unsupported r_pixbytes %i", sw32_r_pixbytes);
+		Sys_Error("Draw_FadeScreen: unsupported r_pixbytes %i", sw32_ctx->pixbytes);
 	}
 	vr_data.scr_copyeverything = 1;
 
@@ -1294,10 +1297,11 @@ void
 sw32_Draw_BlendScreen (quat_t color)
 {
 	int         r, g, b, i;
-	byte       *basepal, *newpal;
+	const byte *basepal;
+	byte       *newpal;
 	byte        pal[768];
 
-	switch(sw32_r_pixbytes) {
+	switch(sw32_ctx->pixbytes) {
 	case 1:
 	{
 		basepal = vid.basepal;
@@ -1318,12 +1322,13 @@ sw32_Draw_BlendScreen (quat_t color)
 			newpal[2] = vid.gammatable[b];
 			newpal += 3;
 		}
-		vid.vid_internal->set_palette (pal);
+		vid.vid_internal->set_palette (vid.vid_internal->data, pal);
 	}
 	break;
 	case 2:
 	{
-		int     g1, g2, x, y;
+		int         g1, g2;
+		unsigned    x, y;
 		unsigned short rramp[32], gramp[64], bramp[32], *temp;
 		for (i = 0; i < 32; i++) {
 			r = i << 3;
@@ -1350,7 +1355,7 @@ sw32_Draw_BlendScreen (quat_t color)
 	break;
 	case 4:
 	{
-		int         x, y;
+		unsigned    x, y;
 
 		byte ramp[256][4], *temp;
 		for (i = 0; i < 256; i++) {
@@ -1382,6 +1387,6 @@ sw32_Draw_BlendScreen (quat_t color)
 	break;
 	default:
 		Sys_Error("sw32_Draw_BlendScreen: unsupported r_pixbytes %i",
-				  sw32_r_pixbytes);
+				  sw32_ctx->pixbytes);
 	}
 }

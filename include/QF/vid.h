@@ -28,8 +28,8 @@
 #ifndef __QF_vid_h
 #define __QF_vid_h
 
+#include "QF/listener.h"
 #include "QF/qtypes.h"
-#include "QF/vrect.h"
 
 #define VID_CBITS	6
 #define VID_GRADES	(1 << VID_CBITS)
@@ -41,7 +41,7 @@ typedef struct {
 	short			*zbuffer;
 	void			*surfcache;
 	byte			*gammatable;	// 256
-	byte            *basepal;		// 256 * 3
+	const byte      *basepal;		// 256 * 3
 	byte            *palette;		// 256 * 3
 	byte            *palette32;		// 256 * 4 includes alpha
 	byte			*colormap8;		// 256 * VID_GRADES size
@@ -49,21 +49,21 @@ typedef struct {
 	unsigned int	*colormap32;	// 256 * VID_GRADES size
 	int				 fullbright;	// index of first fullbright color
 	int				 rowbytes;		// may be > width if displayed in a window
-	int				 width;
-	int				 height;
-	float			 aspect;	// width / height -- < 1 is taller than wide
+	unsigned		 width;
+	unsigned		 height;
 	int				 numpages;
 	qboolean		 recalc_refdef;	// if true, recalc vid-based stuff
 	qboolean		 cshift_changed;
 	quat_t           cshift_color;
-	void			*conbuffer;
-	int				 conrowbytes;
-	int				 conwidth;
-	int				 conheight;
-	byte			*direct;		// direct drawing to framebuffer, if not
-									//  NULL
+	struct view_s   *conview;
 	struct vid_internal_s *vid_internal;
+
+	struct viddef_listener_set_s *onPaletteChanged;
 } viddef_t;
+
+typedef struct viddef_listener_set_s LISTENER_SET_TYPE (viddef_t)
+	viddef_listener_set_t;
+typedef void (*viddef_listener_t) (void *data, const viddef_t *viddef);
 
 #define viddef (*r_data->vid)
 
@@ -79,5 +79,9 @@ void VID_Init_Cvars (void);
 void VID_Init (byte *palette, byte *colormap);
 void VID_SetCaption (const char *text);
 void VID_ClearMemory (void);
+
+void VID_OnPaletteChange_AddListener (viddef_listener_t listener, void *data);
+void VID_OnPaletteChange_RemoveListener (viddef_listener_t listener,
+										 void *data);
 
 #endif//__QF_vid_h

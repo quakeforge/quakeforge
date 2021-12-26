@@ -65,7 +65,7 @@ static def_t *get_operand_def (expr_t *expr, operand_t *op);
 static def_t *
 get_tempop_def (expr_t *expr, operand_t *tmpop, type_t *type)
 {
-	tempop_t   *tempop = &tmpop->o.tempop;
+	tempop_t   *tempop = &tmpop->tempop;
 	if (tempop->def) {
 		return tempop->def;
 	}
@@ -108,9 +108,9 @@ get_operand_def (expr_t *expr, operand_t *op)
 		return 0;
 	switch (op->op_type) {
 		case op_def:
-			return op->o.def;
+			return op->def;
 		case op_value:
-			return get_value_def (expr, op->o.value, op->type);
+			return get_value_def (expr, op->value, op->type);
 		case op_label:
 			op->type = &type_short;
 			zero_def.type = &type_short;
@@ -118,9 +118,11 @@ get_operand_def (expr_t *expr, operand_t *op)
 		case op_temp:
 			return get_tempop_def (expr, op, op->type);
 		case op_alias:
-			return get_operand_def (expr, op->o.alias);
+			return get_operand_def (expr, op->alias);
 		case op_nil:
 			internal_error (expr, "unexpected nil operand");
+		case op_pseudo:
+			internal_error (expr, "unexpected pseudo operand");
 	}
 	internal_error (expr, "unexpected operand");
 	return 0;
@@ -160,8 +162,8 @@ add_statement_op_ref (operand_t *op, dstatement_t *st, int field)
 		int         st_ofs = st - pr.code->code;
 		reloc_t    *reloc = new_reloc (0, st_ofs, rel_op_a_op + field);
 
-		reloc->next = op->o.label->dest->relocs;
-		op->o.label->dest->relocs = reloc;
+		reloc->next = op->label->dest->relocs;
+		op->label->dest->relocs = reloc;
 	}
 }
 
@@ -170,11 +172,11 @@ use_tempop (operand_t *op, expr_t *expr)
 {
 	if (!op || op->op_type != op_temp)
 		return;
-	while (op->o.tempop.alias)
-		op = op->o.tempop.alias;
-	if (--op->o.tempop.users == 0)
-		free_temp_def (op->o.tempop.def);
-	if (op->o.tempop.users <= -1)
+	while (op->tempop.alias)
+		op = op->tempop.alias;
+	if (--op->tempop.users == 0)
+		free_temp_def (op->tempop.def);
+	if (op->tempop.users <= -1)
 		bug (expr, "temp users went negative: %s", operand_string (op));
 }
 

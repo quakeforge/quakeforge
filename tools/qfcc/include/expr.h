@@ -53,11 +53,14 @@ typedef enum {
 	ex_symbol,		///< non-temporary variable (::symbol_t)
 	ex_temp,		///< temporary variable (::ex_temp_t)
 	ex_vector,		///< "vector" expression (::ex_vector_t)
+	ex_selector,	///< selector expression (::ex_selector_t)
 
 	ex_nil,			///< umm, nil, null. nuff said (0 of any type)
 	ex_value,		///< constant value (::ex_value_t)
 	ex_compound,	///< compound initializer
 	ex_memset,		///< memset needs three params...
+
+	ex_count,		///< number of valid expression types
 } expr_type;
 
 /**	Binary and unary expressions.
@@ -118,6 +121,11 @@ typedef struct {
 	struct type_s *type;	///< Type of vector (vector/quaternion)
 	struct expr_s *list;	///< Linked list of element expressions.
 } ex_vector_t;
+
+typedef struct {
+	struct expr_s *sel_ref;	///< Reference to selector in selector table
+	struct selector_s *sel;	///< selector
+} ex_selector_t;
 
 /**	Pointer constant expression.
 
@@ -235,6 +243,7 @@ typedef struct expr_s {
 		struct symbol_s *symbol;		///< symbol reference expression
 		ex_temp_t   temp;				///< temporary variable expression
 		ex_vector_t vector;				///< vector expression list
+		ex_selector_t selector;			///< selector ref and name
 		ex_value_t *value;				///< constant value
 		element_chain_t compound;		///< compound initializer
 		ex_memset_t memset;				///< memset expr params
@@ -570,12 +579,19 @@ short expr_short (expr_t *e) __attribute__((pure));
 
 int expr_integral (expr_t *e) __attribute__((pure));
 
-/**	Check of the expression refers to a constant value.
+/**	Check if the expression refers to a constant value.
 
 	\param e		The expression to check.
 	\return			True if the expression is constant.
 */
 int is_constant (expr_t *e) __attribute__((pure));
+
+/** Check if the expression refers to a selector
+
+	\param e		The expression to check.
+	\return			True if the expression is a selector.
+*/
+int is_selector (expr_t *e) __attribute__((pure));
 
 /**	Return a value expression representing the constant stored in \a e.
 

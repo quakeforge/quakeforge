@@ -79,7 +79,7 @@ Host_Status_f (void)
 	int         minutes;
 	int         hours = 0;
 	int         j;
-	__attribute__((format(printf, 1, 2))) void (*print) (const char *fmt, ...);
+	__attribute__((format(PRINTF, 1, 2))) void (*print) (const char *fmt, ...);
 
 	if (cmd_source == src_command) {
 		if (!sv.active) {
@@ -493,7 +493,7 @@ convert_to_game_dict (script_t *script)
 		PL_A_AddObject (item, PL_NewString (script->token->str));
 		//char       *s;
 
-		//s = Hunk_Alloc (strlen (script->token->str) + 1);
+		//s = Hunk_Alloc (0, strlen (script->token->str) + 1);
 		//strcpy (s, script->token->str);
 		//sv.lightstyles[i] = s;
 	}
@@ -687,7 +687,7 @@ Host_Loadgame_f (void)
 			break;
 		item = PL_ObjectAtIndex (list, i);
 		style = PL_String (item);
-		sv.lightstyles[i] = str = Hunk_Alloc (strlen (style) + 1);
+		sv.lightstyles[i] = str = Hunk_Alloc (0, strlen (style) + 1);
 		strcpy (str, style);
 	}
 
@@ -803,7 +803,7 @@ Host_Say (qboolean teamonly)
 
 	save = host_client;
 
-	p = Hunk_TempAlloc (strlen (Cmd_Args (1)) + 1);
+	p = Hunk_TempAlloc (0, strlen (Cmd_Args (1)) + 1);
 	strcpy (p, Cmd_Args (1));
 	// remove quotes if present
 	if (*p == '"') {
@@ -869,7 +869,7 @@ Host_Tell_f (void)
 	strcpy (text, host_client->name);
 	strcat (text, ": ");
 
-	p = Hunk_TempAlloc (strlen (Cmd_Args (1)) + 1);
+	p = Hunk_TempAlloc (0, strlen (Cmd_Args (1)) + 1);
 	strcpy (p, Cmd_Args (1));
 
 	// remove quotes if present

@@ -36,8 +36,10 @@ void QFV_AddHandle (struct hashtab_s *tab, const char *name, uint64_t handle);
 
 VkRenderPass QFV_ParseRenderPass (vulkan_ctx_t *ctx, plitem_t *plist,
 								  plitem_t *properties);
-VkPipeline QFV_ParsePipeline (vulkan_ctx_t *ctx, plitem_t *plist,
-							  plitem_t *properties);
+VkPipeline QFV_ParseComputePipeline (vulkan_ctx_t *ctx, plitem_t *plist,
+									 plitem_t *properties);
+VkPipeline QFV_ParseGraphicsPipeline (vulkan_ctx_t *ctx, plitem_t *plist,
+									  plitem_t *properties);
 VkDescriptorPool QFV_ParseDescriptorPool (vulkan_ctx_t *ctx, plitem_t *plist,
 										  plitem_t *properties);
 VkDescriptorSetLayout QFV_ParseDescriptorSetLayout (vulkan_ctx_t *ctx,
@@ -58,8 +60,9 @@ struct qfv_imageviewset_s *QFV_ParseImageViewSet (vulkan_ctx_t *ctx,
 												  plitem_t *properties);
 VkFramebuffer QFV_ParseFramebuffer (vulkan_ctx_t *ctx, plitem_t *plist,
 									plitem_t *properties);
-int QFV_ParseClearValues (vulkan_ctx_t *ctx, plitem_t *plist,
-						  plitem_t *properties);
+struct clearvalueset_s *QFV_ParseClearValues (vulkan_ctx_t *ctx,
+											  plitem_t *plist,
+											  plitem_t *properties);
 
 
 #endif//__vkparse_h

@@ -262,8 +262,9 @@ typedef struct {
 	netadr_t addr;
 } hostcache_t;
 
-extern int hostCacheCount;
-extern hostcache_t hostcache[HOSTCACHESIZE];
+void NET_AddCachedHost (const char *name, const char *map, const char *cname,
+						int users, int maxusers, int driver, int ldriver,
+						const netadr_t *addr);
 
 extern	double		net_time;
 extern	struct msg_s *net_message;

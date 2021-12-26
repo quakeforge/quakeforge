@@ -27,6 +27,7 @@
 {
 	str_free (pltype);
 	str_free (parser);
+	[super dealloc];
 }
 
 -writeParseData
@@ -63,6 +64,11 @@
 			 "\t{\"%s\", 0/*FIXME*/, 0/*(void *) field_offset (%s, %s)*/},\n",
 			 field_name, struct_name, "FIXME");
 	return self;
+}
+
+-(int) searchType
+{
+	return 0;
 }
 
 @end

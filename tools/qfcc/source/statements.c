@@ -45,11 +45,13 @@
 #include "QF/mathlib.h"
 #include "QF/va.h"
 
+#include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/dags.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/dot.h"
 #include "tools/qfcc/include/expr.h"
 #include "tools/qfcc/include/function.h"
+#include "tools/qfcc/include/method.h"
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/reloc.h"
@@ -68,6 +70,7 @@ const char *op_type_names[] = {
 	"op_temp",
 	"op_alias",
 	"op_nil",
+	"op_pseudo",
 };
 
 const char *st_type_names[] = {
@@ -95,14 +98,14 @@ optype_str (op_type_e type)
 static const char *
 tempop_string (operand_t *tmpop)
 {
-	tempop_t   *tempop = &tmpop->o.tempop;
+	tempop_t   *tempop = &tmpop->tempop;
 	if (tempop->alias) {
 		return va (0, "<tmp %s %p:%d:%p:%d:%d>",
 				   pr_type_name[tempop->type->type],
 				   tmpop, tempop->users,
 				   tempop->alias,
 				   tempop->offset,
-				   tempop->alias->o.tempop.users);
+				   tempop->alias->tempop.users);
 	}
 	return va (0, "<tmp %s %p:%d>", pr_type_name[tempop->type->type],
 			   tmpop, tempop->users);
@@ -115,51 +118,51 @@ operand_string (operand_t *op)
 		return "";
 	switch (op->op_type) {
 		case op_def:
-			return op->o.def->name;
+			return op->def->name;
 		case op_value:
-			switch (op->o.value->lltype) {
+			switch (op->value->lltype) {
 				case ev_string:
 					return va (0, "\"%s\"",
-							   quote_string (op->o.value->v.string_val));
+							   quote_string (op->value->v.string_val));
 				case ev_double:
-					return va (0, "%g", op->o.value->v.double_val);
+					return va (0, "%g", op->value->v.double_val);
 				case ev_float:
-					return va (0, "%g", op->o.value->v.float_val);
+					return va (0, "%g", op->value->v.float_val);
 				case ev_vector:
 					return va (0, "'%g %g %g'",
-							   op->o.value->v.vector_val[0],
-							   op->o.value->v.vector_val[1],
-							   op->o.value->v.vector_val[2]);
+							   op->value->v.vector_val[0],
+							   op->value->v.vector_val[1],
+							   op->value->v.vector_val[2]);
 				case ev_quat:
 					return va (0, "'%g %g %g %g'",
-							   op->o.value->v.quaternion_val[0],
-							   op->o.value->v.quaternion_val[1],
-							   op->o.value->v.quaternion_val[2],
-							   op->o.value->v.quaternion_val[3]);
+							   op->value->v.quaternion_val[0],
+							   op->value->v.quaternion_val[1],
+							   op->value->v.quaternion_val[2],
+							   op->value->v.quaternion_val[3]);
 				case ev_pointer:
-					if (op->o.value->v.pointer.def) {
+					if (op->value->v.pointer.def) {
 						return va (0, "ptr %s+%d",
-								   op->o.value->v.pointer.def->name,
-								   op->o.value->v.pointer.val);
-					} else if(op->o.value->v.pointer.tempop) {
-						operand_t  *tempop = op->o.value->v.pointer.tempop;
+								   op->value->v.pointer.def->name,
+								   op->value->v.pointer.val);
+					} else if(op->value->v.pointer.tempop) {
+						operand_t  *tempop = op->value->v.pointer.tempop;
 						return va (0, "ptr %s+%d", tempop_string (tempop),
-								   op->o.value->v.pointer.val);
+								   op->value->v.pointer.val);
 					} else {
-						return va (0, "ptr %d", op->o.value->v.pointer.val);
+						return va (0, "ptr %d", op->value->v.pointer.val);
 					}
 				case ev_field:
-					return va (0, "field %d", op->o.value->v.pointer.val);
+					return va (0, "field %d", op->value->v.pointer.val);
 				case ev_entity:
-					return va (0, "ent %d", op->o.value->v.integer_val);
+					return va (0, "ent %d", op->value->v.integer_val);
 				case ev_func:
-					return va (0, "func %d", op->o.value->v.integer_val);
+					return va (0, "func %d", op->value->v.integer_val);
 				case ev_integer:
-					return va (0, "int %d", op->o.value->v.integer_val);
+					return va (0, "int %d", op->value->v.integer_val);
 				case ev_uinteger:
-					return va (0, "uint %u", op->o.value->v.uinteger_val);
+					return va (0, "uint %u", op->value->v.uinteger_val);
 				case ev_short:
-					return va (0, "short %d", op->o.value->v.short_val);
+					return va (0, "short %d", op->value->v.short_val);
 				case ev_void:
 					return "(void)";
 				case ev_invalid:
@@ -169,19 +172,21 @@ operand_string (operand_t *op)
 			}
 			break;
 		case op_label:
-			return op->o.label->name;
+			return op->label->name;
 		case op_temp:
 			return tempop_string (op);
 		case op_alias:
 			{
-				const char *alias = operand_string (op->o.alias);
+				const char *alias = operand_string (op->alias);
 				char       *buf = alloca (strlen (alias) + 1);
 				strcpy (buf, alias);
 				return va (0, "alias(%s,%s)", pr_type_name[op->type->type],
 						   buf);
 			}
 		case op_nil:
-			return va (0, "nil");
+			return "nil";
+		case op_pseudo:
+			return va (0, "pseudo: %s", op->pseudoop->name);
 	}
 	return ("??");
 }
@@ -192,49 +197,49 @@ _print_operand (operand_t *op)
 	switch (op->op_type) {
 		case op_def:
 			printf ("(%s) ", pr_type_name[op->type->type]);
-			printf ("%s", op->o.def->name);
+			printf ("%s", op->def->name);
 			break;
 		case op_value:
 			printf ("(%s) ", pr_type_name[op->type->type]);
-			switch (op->o.value->lltype) {
+			switch (op->value->lltype) {
 				case ev_string:
-					printf ("\"%s\"", op->o.value->v.string_val);
+					printf ("\"%s\"", op->value->v.string_val);
 					break;
 				case ev_double:
-					printf ("%g", op->o.value->v.double_val);
+					printf ("%g", op->value->v.double_val);
 					break;
 				case ev_float:
-					printf ("%g", op->o.value->v.float_val);
+					printf ("%g", op->value->v.float_val);
 					break;
 				case ev_vector:
-					printf ("'%g", op->o.value->v.vector_val[0]);
-					printf (" %g", op->o.value->v.vector_val[1]);
-					printf (" %g'", op->o.value->v.vector_val[2]);
+					printf ("'%g", op->value->v.vector_val[0]);
+					printf (" %g", op->value->v.vector_val[1]);
+					printf (" %g'", op->value->v.vector_val[2]);
 					break;
 				case ev_quat:
-					printf ("'%g", op->o.value->v.quaternion_val[0]);
-					printf (" %g", op->o.value->v.quaternion_val[1]);
-					printf (" %g", op->o.value->v.quaternion_val[2]);
-					printf (" %g'", op->o.value->v.quaternion_val[3]);
+					printf ("'%g", op->value->v.quaternion_val[0]);
+					printf (" %g", op->value->v.quaternion_val[1]);
+					printf (" %g", op->value->v.quaternion_val[2]);
+					printf (" %g'", op->value->v.quaternion_val[3]);
 					break;
 				case ev_pointer:
 					printf ("(%s)[%d]",
-							pr_type_name[op->o.value->v.pointer.type->type],
-							op->o.value->v.pointer.val);
+							pr_type_name[op->value->v.pointer.type->type],
+							op->value->v.pointer.val);
 					break;
 				case ev_field:
-					printf ("%d", op->o.value->v.pointer.val);
+					printf ("%d", op->value->v.pointer.val);
 					break;
 				case ev_entity:
 				case ev_func:
 				case ev_integer:
-					printf ("%d", op->o.value->v.integer_val);
+					printf ("%d", op->value->v.integer_val);
 					break;
 				case ev_uinteger:
-					printf ("%u", op->o.value->v.uinteger_val);
+					printf ("%u", op->value->v.uinteger_val);
 					break;
 				case ev_short:
-					printf ("%d", op->o.value->v.short_val);
+					printf ("%d", op->value->v.short_val);
 					break;
 				case ev_void:
 				case ev_invalid:
@@ -243,20 +248,23 @@ _print_operand (operand_t *op)
 			}
 			break;
 		case op_label:
-			printf ("block %p", op->o.label->dest);
+			printf ("block %p", op->label->dest);
 			break;
 		case op_temp:
 			printf ("tmp (%s) %p", pr_type_name[op->type->type], op);
-			if (op->o.tempop.def)
-				printf (" %s", op->o.tempop.def->name);
+			if (op->tempop.def)
+				printf (" %s", op->tempop.def->name);
 			break;
 		case op_alias:
 			printf ("alias(%s,", pr_type_name[op->type->type]);
-			_print_operand (op->o.alias);
+			_print_operand (op->alias);
 			printf (")");
 			break;
 		case op_nil:
 			printf ("nil");
+			break;
+		case op_pseudo:
+			printf ("pseudo: %s", op->pseudoop->name);
 			break;
 	}
 }
@@ -266,6 +274,20 @@ print_operand (operand_t *op)
 {
 	_print_operand (op);
 	puts ("");
+}
+
+static void
+print_operand_chain (const char *name, operand_t *op)
+{
+	if (op) {
+		printf ("    %s:", name);
+		while (op) {
+			printf (" ");
+			_print_operand (op);
+			op = op->next;
+		}
+		printf ("\n");
+	}
 }
 
 void
@@ -281,8 +303,12 @@ print_statement (statement_t *s)
 	if (s->opc)
 		_print_operand (s->opc);
 	printf (")\n");
+	print_operand_chain ("use", s->use);
+	print_operand_chain ("def", s->def);
+	print_operand_chain ("kill", s->kill);
 }
 
+static pseudoop_t *pseudoops_freelist;
 static sblock_t *sblocks_freelist;
 static statement_t *statements_freelist;
 static operand_t *operands_freelist;
@@ -315,6 +341,16 @@ new_statement (st_type_t type, const char *opcode, expr_t *expr)
 	statement->expr = expr;
 	statement->number = -1;	// indicates flow analysis not done yet
 	return statement;
+}
+
+static pseudoop_t *
+new_pseudoop (const char *name)
+{
+	pseudoop_t *pseudoop;
+	ALLOC (256, pseudoop_t, pseudoops, pseudoop);
+	pseudoop->name = save_string (name);
+	return pseudoop;
+
 }
 
 static operand_t *
@@ -357,6 +393,16 @@ free_sblock (sblock_t *sblock)
 	FREE (sblocks, sblock);
 }
 
+static operand_t *
+pseudo_operand (pseudoop_t *pseudoop, expr_t *expr)
+{
+	operand_t  *op;
+	op = new_operand (op_pseudo, expr, __builtin_return_address (0));
+	op->pseudoop = pseudoop;
+	op->size = 1;
+	return op;
+}
+
 operand_t *
 nil_operand (type_t *type, expr_t *expr)
 {
@@ -377,7 +423,7 @@ def_operand (def_t *def, type_t *type, expr_t *expr)
 	op = new_operand (op_def, expr, __builtin_return_address (0));
 	op->type = type;
 	op->size = type_size (type);
-	op->o.def = def;
+	op->def = def;
 	return op;
 }
 
@@ -396,7 +442,7 @@ value_operand (ex_value_t *value, expr_t *expr)
 	operand_t  *op;
 	op = new_operand (op_value, expr, __builtin_return_address (0));
 	op->type = value->type;
-	op->o.value = value;
+	op->value = value;
 	return op;
 }
 
@@ -405,7 +451,7 @@ temp_operand (type_t *type, expr_t *expr)
 {
 	operand_t  *op = new_operand (op_temp, expr, __builtin_return_address (0));
 
-	op->o.tempop.type = type;
+	op->tempop.type = type;
 	op->type = type;
 	op->size = type_size (type);
 	return op;
@@ -420,10 +466,10 @@ tempop_overlap (tempop_t *t1, tempop_t *t2)
 	int         size2 = type_size (t2->type);
 
 	if (t1->alias) {
-		offs1 += t1->alias->o.tempop.offset;
+		offs1 += t1->alias->tempop.offset;
 	}
 	if (t2->alias) {
-		offs2 += t2->alias->o.tempop.offset;
+		offs2 += t2->alias->tempop.offset;
 	}
 	if (offs1 <= offs2 && offs1 + size1 >= offs2 + size2)
 		return 2;	// t1 fully overlaps t2
@@ -447,7 +493,7 @@ tempop_visit_all (tempop_t *tempop, int overlap,
 		if (top->op_type != op_temp) {
 			internal_error (top->expr, "temp alias of non-temp operand");
 		}
-		tempop = &top->o.tempop;
+		tempop = &top->tempop;
 		if ((ret = visit (tempop, data)))
 			return ret;
 	} else {
@@ -457,7 +503,7 @@ tempop_visit_all (tempop_t *tempop, int overlap,
 		if (top->op_type != op_temp) {
 			internal_error (top->expr, "temp alias of non-temp operand");
 		}
-		tempop = &top->o.tempop;
+		tempop = &top->tempop;
 		if (tempop == start_tempop)
 			continue;
 		if (overlap && tempop_overlap (tempop, start_tempop) < overlap)
@@ -479,7 +525,7 @@ alias_operand (type_t *type, operand_t *op, expr_t *expr)
 						type_size (type), type_size (op->type));
 	}
 	aop = new_operand (op_alias, expr, __builtin_return_address (0));
-	aop->o.alias = op;
+	aop->alias = op;
 	aop->type = type;
 	aop->size = type_size (type);
 	return aop;
@@ -494,7 +540,7 @@ label_operand (expr_t *label)
 		internal_error (label, "not a label expression");
 	}
 	lop = new_operand (op_label, label, __builtin_return_address (0));
-	lop->o.label = &label->e.label;
+	lop->label = &label->e.label;
 	return lop;
 }
 
@@ -593,9 +639,9 @@ sblock_t *
 statement_get_target (statement_t *s)
 {
 	if (statement_is_cond (s))
-		return s->opb->o.label->dest;
+		return s->opb->label->dest;
 	if (statement_is_goto (s))
-		return s->opa->o.label->dest;
+		return s->opa->label->dest;
 	return 0;
 }
 
@@ -612,7 +658,7 @@ statement_get_targetlist (statement_t *s)
 	} else if (statement_is_goto (s)) {
 		count = 1;
 	} else if (statement_is_jumpb (s)) {
-		table = s->opa->o.def;
+		table = s->opa->def;
 		count = table->type->t.array.size;
 	}
 	target_list = malloc ((count + 1) * sizeof (sblock_t *));
@@ -706,7 +752,7 @@ operand_address (operand_t *reference, expr_t *e)
 		case op_def:
 			// assumes aliasing is only one level deep which should be the
 			// case
-			def = reference->o.def;
+			def = reference->def;
 			if (def->alias) {
 				offset = def->offset;
 				def = def->alias;
@@ -715,9 +761,9 @@ operand_address (operand_t *reference, expr_t *e)
 		case op_temp:
 			// assumes aliasing is only one level deep which should be the
 			// case
-			if (reference->o.tempop.alias) {
-				offset = reference->o.tempop.offset;
-				reference = reference->o.tempop.alias;
+			if (reference->tempop.alias) {
+				offset = reference->tempop.offset;
+				reference = reference->tempop.alias;
 			}
 			return value_operand (new_pointer_val (offset, type, 0,
 												   reference), e);
@@ -727,6 +773,7 @@ operand_address (operand_t *reference, expr_t *e)
 		case op_value:
 		case op_label:
 		case op_nil:
+		case op_pseudo:
 			break;
 	}
 	internal_error (e, "invalid operand type for operand address: %s",
@@ -787,9 +834,13 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 		}
 		type = st_memset;
 		if (is_indirect (dst_expr)) {
-			goto dereference_dst;
+			need_ptr = 1;
 		}
 	} else {
+		if (is_indirect (src_expr)) {
+			src_expr = expr_file_line (address_expr (src_expr, 0, 0), e);
+			need_ptr = 1;
+		}
 		if (!src) {
 			// This is the very right-hand node of a non-nil assignment chain
 			// (there may be more chains somwhere within src_expr, but they
@@ -802,15 +853,15 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 		if (op) {
 			*op = src;
 		}
-		if (is_indirect (dst_expr) || is_indirect (src_expr)) {
+		if (is_indirect (dst_expr)) {
 			src = operand_address (src, src_expr);
-			goto dereference_dst;
+			need_ptr = 1;
 		}
 	}
-	if (0) {
-dereference_dst:
-		// dst_expr is a dereferenced pointer, so need to un-dereference it
-		// to get the pointer and switch to storep instructions.
+	if (need_ptr) {
+		// dst_expr and/or src_expr are dereferenced pointers, so need to
+		// un-dereference dst_expr to get the pointer and switch to movep
+		// or memsetp instructions.
 		dst_expr = expr_file_line (address_expr (dst_expr, 0, 0), e);
 		need_ptr = 1;
 	}
@@ -997,6 +1048,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 	const char *pref = "";
 	statement_t *s;
 
+	// function arguments are in reverse order
 	for (a = args; a; a = a->next)
 		count++;
 	ind = count;
@@ -1153,33 +1205,33 @@ expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 		return sblock;
 	}
 	if (aop->op_type == op_temp) {
-		while (aop->o.tempop.alias) {
-			aop = aop->o.tempop.alias;
+		while (aop->tempop.alias) {
+			aop = aop->tempop.alias;
 			if (aop->op_type != op_temp)
 				internal_error (e, "temp alias of non-temp var");
-			if (aop->o.tempop.alias)
+			if (aop->tempop.alias)
 				bug (e, "aliased temp alias");
 		}
-		for (top = aop->o.tempop.alias_ops; top; top = top->next) {
-			if (top->type == type && top->o.tempop.offset == offset) {
+		for (top = aop->tempop.alias_ops; top; top = top->next) {
+			if (top->type == type && top->tempop.offset == offset) {
 				break;
 			}
 		}
 		if (!top) {
 			top = temp_operand (type, e);
-			top->o.tempop.alias = aop;
-			top->o.tempop.offset = offset;
-			top->next = aop->o.tempop.alias_ops;
-			aop->o.tempop.alias_ops = top;
+			top->tempop.alias = aop;
+			top->tempop.offset = offset;
+			top->next = aop->tempop.alias_ops;
+			aop->tempop.alias_ops = top;
 		}
 		*op = top;
 	} else if (aop->op_type == op_def) {
-		def = aop->o.def;
+		def = aop->def;
 		while (def->alias)
 			def = def->alias;
 		*op = def_operand (alias_def (def, type, offset), 0, e);
 	} else if (aop->op_type == op_value) {
-		*op = value_operand (aop->o.value, e);
+		*op = value_operand (aop->value, e);
 		(*op)->type = type;
 	} else {
 		internal_error (e, "invalid alias target: %s: %s",
@@ -1447,32 +1499,32 @@ expr_value (sblock_t *sblock, expr_t *e, operand_t **op)
 }
 
 static sblock_t *
+expr_selector (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	return statement_subexpr (sblock, e->e.selector.sel_ref, op);
+}
+
+static sblock_t *
 statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 {
-	static expr_f sfuncs[] = {
-		0,					// ex_error
-		0,					// ex_state
-		0,					// ex_bool
-		0,					// ex_label
-		0,					// ex_labelref
-		expr_block,			// ex_block
-		expr_expr,
-		expr_uexpr,
-		expr_def,
-		expr_symbol,
-		expr_temp,
-		expr_vector_e,		// ex_vector
-		expr_nil,
-		expr_value,
-		0,					// ex_compound
-		0,					// ex_memset
+	static expr_f sfuncs[ex_count] = {
+		[ex_block] = expr_block,
+		[ex_expr] = expr_expr,
+		[ex_uexpr] = expr_uexpr,
+		[ex_def] = expr_def,
+		[ex_symbol] = expr_symbol,
+		[ex_temp] = expr_temp,
+		[ex_vector] = expr_vector_e,
+		[ex_nil] = expr_nil,
+		[ex_value] = expr_value,
+		[ex_selector] = expr_selector,
 	};
 	if (!e) {
 		*op = 0;
 		return sblock;
 	}
 
-	if (e->type > ex_memset)
+	if (e->type >= ex_count)
 		internal_error (e, "bad sub-expression type");
 	if (!sfuncs[e->type])
 		internal_error (e, "unexpected sub-expression type: %s",
@@ -1767,27 +1819,25 @@ statement_nonexec (sblock_t *sblock, expr_t *e)
 static sblock_t *
 statement_slist (sblock_t *sblock, expr_t *e)
 {
-	static statement_f sfuncs[] = {
-		statement_ignore,	// ex_error
-		statement_state,
-		statement_bool,
-		statement_label,
-		0,					// ex_labelref
-		statement_block,
-		statement_expr,
-		statement_uexpr,
-		statement_nonexec,	// ex_def
-		statement_nonexec,	// ex_symbol
-		statement_nonexec,	// ex_temp
-		statement_nonexec,	// ex_vector
-		statement_nonexec,	// ex_nil
-		statement_nonexec,	// ex_value
-		0,					// ex_compound
-		statement_memset,
+	static statement_f sfuncs[ex_count] = {
+		[ex_error] = statement_ignore,
+		[ex_state] = statement_state,
+		[ex_bool] = statement_bool,
+		[ex_label] = statement_label,
+		[ex_block] = statement_block,
+		[ex_expr] = statement_expr,
+		[ex_uexpr] = statement_uexpr,
+		[ex_def] = statement_nonexec,
+		[ex_symbol] = statement_nonexec,
+		[ex_temp] = statement_nonexec,
+		[ex_vector] = statement_nonexec,
+		[ex_nil] = statement_nonexec,
+		[ex_value] = statement_nonexec,
+		[ex_memset] = statement_memset,
 	};
 
 	for (/**/; e; e = e->next) {
-		if (e->type > ex_memset)
+		if (e->type >= ex_count || !sfuncs[e->type])
 			internal_error (e, "bad expression type");
 		sblock = sfuncs[e->type] (sblock, e);
 	}
@@ -1914,21 +1964,21 @@ thread_jumps (sblock_t *blocks)
 			continue;
 		s = (statement_t *) sblock->tail;
 		if (statement_is_goto (s)) {
-			label = &s->opa->o.label;
+			label = &s->opa->label;
 			if (!(*label)->dest && (*label)->symbol) {
 				error (s->opa->expr, "undefined label `%s'",
 					   (*label)->symbol->name);
 				(*label)->symbol = 0;
 			}
 		} else if (statement_is_cond (s)) {
-			label = &s->opb->o.label;
+			label = &s->opb->label;
 		} else {
 			continue;
 		}
 		for (l = *label;
 			 l->dest && l->dest->statements
 			 && statement_is_goto (l->dest->statements);
-			 l = l->dest->statements->opa->o.label) {
+			 l = l->dest->statements->opa->label) {
 		}
 		if (l != *label) {
 			unuse_label (*label);
@@ -1981,11 +2031,11 @@ remove_dead_blocks (sblock_t *blocks)
 			s = (statement_t *) sblock->tail;
 			if (statement_is_cond (s)
 				&& sb->statements && statement_is_goto (sb->statements)
-				&& s->opb->o.label->dest == sb->next) {
+				&& s->opb->label->dest == sb->next) {
 				debug (0, "merging if/goto %p %p", sblock, sb);
-				unuse_label (s->opb->o.label);
-				s->opb->o.label = sb->statements->opa->o.label;
-				s->opb->o.label->used++;
+				unuse_label (s->opb->label);
+				s->opb->label = sb->statements->opa->label;
+				s->opb->label->used++;
 				invert_conditional (s);
 				sb->reachable = 0;
 				for (sb = sb->next; sb; sb = sb->next)
@@ -2008,9 +2058,9 @@ remove_dead_blocks (sblock_t *blocks)
 				if (sb->statements) {
 					s = (statement_t *) sb->tail;
 					if (statement_is_goto (s))
-						label = s->opa->o.label;
+						label = s->opa->label;
 					else if (statement_is_cond (s))
-						label = s->opb->o.label;
+						label = s->opb->label;
 				}
 				unuse_label (label);
 				did_something = 1;
@@ -2022,6 +2072,69 @@ remove_dead_blocks (sblock_t *blocks)
 		}
 	} while (did_something);
 	return did_anything;
+}
+
+static void
+super_dealloc_warning (expr_t *expr, pseudoop_t *op)
+{
+	warning (expr,
+			 "control may reach end of derived -dealloc without invoking %s",
+			 op->name);
+}
+
+static void
+search_for_super_dealloc (sblock_t *sblock)
+{
+	operand_t  *op;
+	pseudoop_t *super_dealloc = new_pseudoop ("[super dealloc]");
+	int         super_dealloc_found = 0;
+	super_dealloc->next = current_func->pseudo_ops;
+	current_func->pseudo_ops = super_dealloc;
+	super_dealloc->uninitialized = super_dealloc_warning;
+	while (sblock) {
+		for (statement_t *st = sblock->statements; st; st = st->next) {
+			if (statement_is_return (st)) {
+				op = pseudo_operand (super_dealloc, st->expr);
+				op->next = st->use;
+				st->use = op;
+				continue;
+			}
+			if (!statement_is_call (st)) {
+				continue;
+			}
+			if (st->opa->op_type != op_def
+				|| strcmp (st->opa->def->name, "obj_msgSend_super") != 0) {
+				continue;
+			}
+			// FIXME this is messy (calls should have their own expression
+			// type)
+			// have effectively checked e1 above
+			if (st->expr->type != ex_expr) {
+				continue;
+			}
+			// function arguments are in reverse order, and the selector
+			// is the second argument (or second last in the list)
+			expr_t     *arg;
+			for (arg = st->expr->e.expr.e2;
+				 arg && arg->next && arg->next->next; arg = arg->next) {
+			}
+			if (arg && arg->next && is_selector (arg)) {
+				selector_t *sel = get_selector (st->expr->e.expr.e2);
+				if (sel && strcmp (sel->name, "dealloc") == 0) {
+					op = pseudo_operand (super_dealloc, st->expr);
+					op->next = st->use;
+					st->def = op;
+					super_dealloc_found++;
+				}
+			}
+		}
+		sblock = sblock->next;
+	}
+	// warn only when NOT optimizing because flow analysis will catch the
+	// missed invokation
+	if (!super_dealloc_found && !options.code.optimize) {
+		warning (0, "Derived class -dealloc does not call [super dealloc]");
+	}
 }
 
 static void
@@ -2068,6 +2181,7 @@ make_statements (expr_t *e)
 	sblock_t   *sblock = new_sblock ();
 	int         did_something;
 	int         pass = 0;
+	class_t    *class;
 
 	if (options.block_dot.expr)
 		dump_dot ("expr", e, dump_dot_expr);
@@ -2085,6 +2199,16 @@ make_statements (expr_t *e)
 		pass++;
 	} while (did_something);
 	check_final_block (sblock);
+	if (current_class && (class = extract_class (current_class))) {
+		// If the class is a root class, then it is not possible for there
+		// to be a call to [super dealloc] so do not check. However, any
+		// derived class implementeing -dealloc must call [super dealloc]
+		// (or some other deallocator (FIXME: later))
+		// FIXME better check for dealloc?
+		if (class->super_class && !strcmp (current_func->name, "-dealloc")) {
+			search_for_super_dealloc (sblock);
+		}
+	}
 	if (options.block_dot.final)
 		dump_dot ("final", sblock, dump_dot_sblock);
 
@@ -2097,9 +2221,9 @@ count_temp (operand_t *op)
 	if (!op)
 		return;
 	if (op->op_type == op_temp) {
-		while (op->o.tempop.alias)
-			op = op->o.tempop.alias;
-		op->o.tempop.users++;
+		while (op->tempop.alias)
+			op = op->tempop.alias;
+		op->tempop.users++;
 	}
 }
 

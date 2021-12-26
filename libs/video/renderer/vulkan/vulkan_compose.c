@@ -41,6 +41,7 @@
 
 #include "qfalloca.h"
 
+#include "QF/cvar.h"
 #include "QF/sys.h"
 
 #include "QF/Vulkan/qf_compose.h"
@@ -48,27 +49,31 @@
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
+#include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/renderpass.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
 
 void
-Vulkan_Compose_Draw (vulkan_ctx_t *ctx)
+Vulkan_Compose_Draw (qfv_renderframe_t *rFrame)
 {
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
+	qfv_renderpass_t *renderpass = rFrame->renderpass;
 
 	composectx_t *cctx = ctx->compose_context;
 	__auto_type frame = &ctx->frames.a[ctx->curFrame];
 	composeframe_t *cframe = &cctx->frames.a[ctx->curFrame];
 	VkCommandBuffer cmd = cframe->cmd;
 
-	DARRAY_APPEND (&frame->cmdSets[QFV_passCompose], cmd);
+	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passCompose], cmd);
 
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		ctx->renderpass, QFV_passCompose,
+		renderpass->renderpass, QFV_passCompose,
 		frame->framebuffer,
 		0, 0, 0,
 	};
@@ -79,14 +84,17 @@ Vulkan_Compose_Draw (vulkan_ctx_t *ctx)
 	};
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 
+	QFV_duCmdBeginLabel (device, cmd, "compose", { 0, 0.2, 0.6, 1});
+
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 							  cctx->pipeline);
 
 	cframe->imageInfo[0].imageView
-		= ctx->attachment_views->a[QFV_attachOpaque];
+		= renderpass->attachment_views->a[QFV_attachOpaque];
 	cframe->imageInfo[1].imageView
-		= ctx->attachment_views->a[QFV_attachTranslucent];
-	dfunc->vkUpdateDescriptorSets (device->dev, 2, cframe->descriptors, 0, 0);
+		= renderpass->attachment_views->a[QFV_attachTranslucent];
+	dfunc->vkUpdateDescriptorSets (device->dev, COMPOSE_IMAGE_INFOS,
+								   cframe->descriptors, 0, 0);
 
 	VkDescriptorSet sets[] = {
 		cframe->descriptors[0].dstSet,
@@ -94,15 +102,14 @@ Vulkan_Compose_Draw (vulkan_ctx_t *ctx)
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 									cctx->layout, 0, 1, sets, 0, 0);
 
-	VkViewport  viewport = {0, 0, vid.width, vid.height, 0, 1};
-	VkRect2D    scissor = { {0, 0}, {vid.width, vid.height} };
-	dfunc->vkCmdSetViewport (cmd, 0, 1, &viewport);
-	dfunc->vkCmdSetScissor (cmd, 0, 1, &scissor);
+	dfunc->vkCmdSetViewport (cmd, 0, 1, &ctx->viewport);
+	dfunc->vkCmdSetScissor (cmd, 0, 1, &ctx->scissor);
 
 	VkDeviceSize offset = 0;
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &ctx->quad_buffer, &offset);
 	dfunc->vkCmdDraw (cmd, 4, 1, 0, 0);
 
+	QFV_duCmdEndLabel (device, cmd);
 	dfunc->vkEndCommandBuffer (cmd);
 }
 
@@ -121,6 +128,8 @@ Vulkan_Compose_Init (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 
+	qfvPushDebug (ctx, "compose init");
+
 	composectx_t *cctx = calloc (1, sizeof (composectx_t));
 	ctx->compose_context = cctx;
 
@@ -129,7 +138,7 @@ Vulkan_Compose_Init (vulkan_ctx_t *ctx)
 	DARRAY_RESIZE (&cctx->frames, frames);
 	cctx->frames.grow = 0;
 
-	cctx->pipeline = Vulkan_CreatePipeline (ctx, "compose");
+	cctx->pipeline = Vulkan_CreateGraphicsPipeline (ctx, "compose");
 	cctx->layout = Vulkan_CreatePipelineLayout (ctx, "compose_layout");
 
 	__auto_type cmdSet = QFV_AllocCommandBufferSet (1, alloca);
@@ -162,6 +171,7 @@ Vulkan_Compose_Init (vulkan_ctx_t *ctx)
 		}
 	}
 	free (attach_set);
+	qfvPopDebug (ctx);
 }
 
 void

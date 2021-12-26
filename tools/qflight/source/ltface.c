@@ -71,7 +71,7 @@ get_tex_name (int texindex)
 	if (bsp->texdatasize) {
 		mtl = (dmiptexlump_t *) bsp->texdata;
 		miptex = bsp->texinfo[texindex].miptex;
-		if (mtl->dataofs[miptex] != -1) {
+		if (mtl->dataofs[miptex] != ~0u) {
 			mt = (miptex_t *) (bsp->texdata + mtl->dataofs[miptex]);
 			return mt->name;
 		}
@@ -172,7 +172,6 @@ CalcFaceVectors (lightinfo_t *l, vec3_t faceorg)
 static void
 CalcFaceExtents (lightinfo_t *l)
 {
-	int			i, j, e;
 	vec_t		mins[2], maxs[2], val;
 	dface_t		*s;
 	dvertex_t	*v;
@@ -185,14 +184,14 @@ CalcFaceExtents (lightinfo_t *l)
 
 	tex = &bsp->texinfo[s->texinfo];
 
-	for (i = 0; i < s->numedges; i++) {
-		e = bsp->surfedges[s->firstedge + i];
+	for (uint32_t i = 0; i < s->numedges; i++) {
+		int     e = bsp->surfedges[s->firstedge + i];
 		if (e >= 0)
 			v = bsp->vertexes + bsp->edges[e].v[0];
 		else
 			v = bsp->vertexes + bsp->edges[-e].v[1];
 
-		for (j = 0; j < 2; j++) {
+		for (int j = 0; j < 2; j++) {
 			val = DotProduct (v->point, tex->vecs[j]) + tex->vecs[j][3];
 			if (val < mins[j])
 				mins[j] = val;
@@ -201,7 +200,7 @@ CalcFaceExtents (lightinfo_t *l)
 		}
 	}
 
-	for (i = 0; i < 2; i++) {
+	for (int i = 0; i < 2; i++) {
 		l->exactmins[i] = mins[i];
 		l->exactmaxs[i] = maxs[i];
 

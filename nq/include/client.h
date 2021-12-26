@@ -283,6 +283,7 @@ struct cbuf_s;
 void CL_Init (struct cbuf_s *cbuf);
 void CL_InitCvars (void);
 void CL_ClearMemory (void);
+int CL_ReadConfiguration (const char *cfg_name);
 
 void CL_EstablishConnection (const char *host);
 void CL_Signon1 (void);
@@ -296,7 +297,8 @@ void CL_NextDemo (void);
 
 
 // cl_input
-void CL_Input_Init (void);
+void CL_Input_Init (struct cbuf_s *cbuf);
+void CL_Input_Activate (void);
 void CL_SendCmd (void);
 void CL_SendMove (usercmd_t *cmd);
 
@@ -305,8 +307,6 @@ void CL_ClearState (void);
 int  CL_ReadFromServer (void);
 void CL_WriteToServer (usercmd_t *cmd);
 void CL_BaseMove (usercmd_t *cmd);
-
-float CL_KeyState (kbutton_t *key);
 
 // cl_demo.c
 void CL_StopPlayback (void);
@@ -328,7 +328,6 @@ void CL_NewTranslation (int slot, struct skin_s *skin);
 void V_StartPitchDrift (void);
 void V_StopPitchDrift (void);
 
-void V_RenderView (void);
 void V_UpdatePalette (void);
 void V_Register (void);
 void V_ParseDamage (void);
@@ -340,10 +339,11 @@ void CL_SignonReply (void);
 void CL_RelinkEntities (void);
 void CL_ClearEnts (void);
 
-extern kbutton_t   in_left, in_right, in_forward, in_back;
-extern kbutton_t   in_lookup, in_lookdown, in_moveleft, in_moveright;
-extern kbutton_t   in_use, in_jump, in_attack;
-extern kbutton_t   in_up, in_down;
+extern in_button_t  in_left, in_right, in_forward, in_back;
+extern in_button_t  in_lookup, in_lookdown, in_moveleft, in_moveright;
+extern in_button_t  in_use, in_jump, in_attack;
+extern in_button_t  in_up, in_down;
+extern in_button_t  in_strafe, in_klook, in_speed, in_mlook;
 
 extern	double			realtime;
 

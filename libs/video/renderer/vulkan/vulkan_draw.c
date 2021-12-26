@@ -46,19 +46,25 @@
 #include "QF/quakefs.h"
 #include "QF/render.h"
 #include "QF/sys.h"
+#include "QF/va.h"
 #include "QF/vid.h"
 
 #include "compat.h"
 #include "QF/Vulkan/qf_draw.h"
+#include "QF/Vulkan/qf_matrices.h"
 #include "QF/Vulkan/qf_vid.h"
 #include "QF/Vulkan/barrier.h"
 #include "QF/Vulkan/buffer.h"
 #include "QF/Vulkan/command.h"
+#include "QF/Vulkan/debug.h"
 #include "QF/Vulkan/descriptor.h"
 #include "QF/Vulkan/device.h"
 #include "QF/Vulkan/image.h"
+#include "QF/Vulkan/instance.h"
+#include "QF/Vulkan/renderpass.h"
 #include "QF/Vulkan/scrap.h"
 #include "QF/Vulkan/staging.h"
+#include "QF/ui/view.h"
 
 #include "r_internal.h"
 #include "vid_vulkan.h"
@@ -89,6 +95,7 @@ typedef struct drawctx_s {
 	VkSampler   sampler;
 	scrap_t    *scrap;
 	qfv_stagebuf_t *stage;
+	qpic_t     *crosshair;
 	qpic_t     *conchars;
 	qpic_t     *conback;
 	qpic_t     *white_pic;
@@ -171,27 +178,19 @@ create_quad_buffers (vulkan_ctx_t *ctx)
 		*ind++ = -1;
 	}
 
-	VkBufferMemoryBarrier wr_barrier = {
-		VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
-		0, VK_ACCESS_TRANSFER_WRITE_BIT,
-		VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, ibuf, 0, ind_size
-	};
-	dfunc->vkCmdPipelineBarrier (packet->cmd,
-								 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-								 VK_PIPELINE_STAGE_TRANSFER_BIT,
-								 0, 0, 0, 1, &wr_barrier, 0, 0);
+	qfv_bufferbarrier_t bb = bufferBarriers[qfv_BB_Unknown_to_TransferWrite];
+	bb.barrier.buffer = ibuf;
+	bb.barrier.size = ind_size;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
+								 0, 0, 0, 1, &bb.barrier, 0, 0);
 	VkBufferCopy copy_region = { packet->offset, 0, ind_size };
 	dfunc->vkCmdCopyBuffer (packet->cmd, ctx->staging->buffer, ibuf,
 							1, &copy_region);
-	VkBufferMemoryBarrier rd_barrier = {
-		VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER, 0,
-		VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_INDEX_READ_BIT,
-		VK_QUEUE_FAMILY_IGNORED, VK_QUEUE_FAMILY_IGNORED, ibuf, 0, ind_size
-	};
-	dfunc->vkCmdPipelineBarrier (packet->cmd,
-								 VK_PIPELINE_STAGE_TRANSFER_BIT,
-								 VK_PIPELINE_STAGE_VERTEX_INPUT_BIT,
-								 0, 0, 0, 1, &rd_barrier, 0, 0);
+	bb = bufferBarriers[qfv_BB_TransferWrite_to_IndexRead];
+	bb.barrier.buffer = ibuf;
+	bb.barrier.size = ind_size;
+	dfunc->vkCmdPipelineBarrier (packet->cmd, bb.srcStages, bb.dstStages,
+								 0, 0, 0, 1, &bb.barrier, 0, 0);
 	QFV_PacketSubmit (packet);
 }
 
@@ -218,7 +217,7 @@ flush_draw_scrap (vulkan_ctx_t *ctx)
 static void
 pic_free (drawctx_t *dctx, qpic_t *pic)
 {
-	subpic_t   *subpic = *(subpic_t **) pic->data;
+	subpic_t   *subpic = *(subpic_t **) &pic->data[0];
 	QFV_SubpicDelete (subpic);
 	cmemfree (dctx->pic_memsuper, pic);
 }
@@ -335,12 +334,6 @@ Vulkan_Draw_UncachePic (const char *path, vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_Draw_TextBox (int x, int y, int width, int lines, byte alpha,
-					 vulkan_ctx_t *ctx)
-{
-}
-
-void
 Vulkan_Draw_Shutdown (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
@@ -362,6 +355,8 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 {
 	qfv_device_t *device = ctx->device;
 	qfv_devfuncs_t *dfunc = device->funcs;
+
+	qfvPushDebug (ctx, "draw init");
 
 	drawctx_t  *dctx = calloc (1, sizeof (drawctx_t));
 	ctx->draw_context = dctx;
@@ -395,6 +390,13 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 		qpic_t     *charspic = Draw_Font8x8Pic ();
 		dctx->conchars = pic_data ("conchars", charspic->width,
 								   charspic->height, charspic->data, dctx);
+		free (charspic);
+	}
+	{
+		qpic_t     *hairpic = Draw_CrosshairPic ();
+		dctx->crosshair = pic_data ("crosshair", hairpic->width,
+									hairpic->height, hairpic->data, dctx);
+		free (hairpic);
 	}
 
 	byte white_block = 0xfe;
@@ -402,7 +404,7 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 
 	flush_draw_scrap (ctx);
 
-	dctx->pipeline = Vulkan_CreatePipeline (ctx, "twod");
+	dctx->pipeline = Vulkan_CreateGraphicsPipeline (ctx, "twod");
 
 	dctx->layout = Vulkan_CreatePipelineLayout (ctx, "twod_layout");
 
@@ -412,9 +414,6 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 	}
 	__auto_type pool = Vulkan_CreateDescriptorPool (ctx, "twod_pool");
 
-	VkDescriptorBufferInfo bufferInfo = {
-		ctx->matrices.buffer_2d, 0, VK_WHOLE_SIZE
-	};
 	VkDescriptorImageInfo imageInfo = {
 		dctx->sampler,
 		QFV_ScrapImageView (dctx->scrap),
@@ -431,17 +430,17 @@ Vulkan_Draw_Init (vulkan_ctx_t *ctx)
 		VkWriteDescriptorSet write[] = {
 			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
 			  dframe->descriptors, 0, 0, 1,
-			  VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-			  0, &bufferInfo, 0 },
-			{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET, 0,
-			  dframe->descriptors, 1, 0, 1,
 			  VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 			  &imageInfo, 0, 0 },
 		};
-		dfunc->vkUpdateDescriptorSets (device->dev, 2, write, 0, 0);
+		dfunc->vkUpdateDescriptorSets (device->dev, 1, write, 0, 0);
 		dframe->cmd = cmdBuffers->a[i];
+		QFV_duSetObjectName (device, VK_OBJECT_TYPE_COMMAND_BUFFER,
+							 dframe->cmd,
+							 va (ctx->va_ctx, "cmd:draw:%zd", i));
 	}
 	free (sets);
+	qfvPopDebug (ctx);
 }
 
 static inline void
@@ -449,12 +448,12 @@ draw_pic (float x, float y, int w, int h, qpic_t *pic,
 		  int srcx, int srcy, int srcw, int srch,
 		  const float *color, drawframe_t *frame)
 {
-	if (frame->num_quads + VERTS_PER_QUAD > MAX_QUADS) {
+	if (frame->num_quads >= MAX_QUADS) {
 		return;
 	}
 
 	drawvert_t *verts = frame->verts + frame->num_quads * VERTS_PER_QUAD;
-	frame->num_quads += VERTS_PER_QUAD;
+	frame->num_quads++;
 
 	subpic_t   *subpic = *(subpic_t **) pic->data;
 	srcx += subpic->rect->x;
@@ -511,10 +510,10 @@ Vulkan_Draw_Character (int x, int y, unsigned int chr, vulkan_ctx_t *ctx)
 	if (chr == ' ') {
 		return;
 	}
-	if (y <= -8 || y >= vid.conheight) {
+	if (y <= -8 || y >= vid.conview->ylen) {
 		return;
 	}
-	if (x <= -8 || x >= vid.conwidth) {
+	if (x <= -8 || x >= vid.conview->xlen) {
 		return;
 	}
 	queue_character (x, y, chr, ctx);
@@ -528,11 +527,11 @@ Vulkan_Draw_String (int x, int y, const char *str, vulkan_ctx_t *ctx)
 	if (!str || !str[0]) {
 		return;
 	}
-	if (y <= -8 || y >= vid.conheight) {
+	if (y <= -8 || y >= vid.conview->ylen) {
 		return;
 	}
 	while (*str) {
-		if ((chr = *str++) != ' ' && x >= -8 && x < vid.conwidth) {
+		if ((chr = *str++) != ' ' && x >= -8 && x < vid.conview->xlen) {
 			queue_character (x, y, chr, ctx);
 		}
 		x += 8;
@@ -548,11 +547,11 @@ Vulkan_Draw_nString (int x, int y, const char *str, int count,
 	if (!str || !str[0]) {
 		return;
 	}
-	if (y <= -8 || y >= vid.conheight) {
+	if (y <= -8 || y >= vid.conview->ylen) {
 		return;
 	}
 	while (count-- > 0 && *str) {
-		if ((chr = *str++) != ' ' && x >= -8 && x < vid.conwidth) {
+		if ((chr = *str++) != ' ' && x >= -8 && x < vid.conview->xlen) {
 			queue_character (x, y, chr, ctx);
 		}
 		x += 8;
@@ -567,26 +566,132 @@ Vulkan_Draw_AltString (int x, int y, const char *str, vulkan_ctx_t *ctx)
 	if (!str || !str[0]) {
 		return;
 	}
-	if (y <= -8 || y >= vid.conheight) {
+	if (y <= -8 || y >= vid.conview->ylen) {
 		return;
 	}
 	while (*str) {
 		if ((chr = *str++ | 0x80) != (' ' | 0x80)
-			&& x >= -8 && x < vid.conwidth) {
+			&& x >= -8 && x < vid.conview->xlen) {
 			queue_character (x, y, chr, ctx);
 		}
 		x += 8;
 	}
 }
 
+static void
+draw_crosshair_plus (int ch, int x, int y, vulkan_ctx_t *ctx)
+{
+	Vulkan_Draw_Character (x - 4, y - 4, '+', ctx);
+}
+
+static void
+draw_crosshair_pic (int ch, int x, int y, vulkan_ctx_t *ctx)
+{
+	drawctx_t  *dctx = ctx->draw_context;
+	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
+
+	static const int pos[CROSSHAIR_COUNT][4] = {
+		{0,               0,                CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT},
+		{CROSSHAIR_WIDTH, 0,                CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT},
+		{0,               CROSSHAIR_HEIGHT, CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT},
+		{CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT, CROSSHAIR_WIDTH, CROSSHAIR_HEIGHT},
+	};
+	const int *p = pos[ch - 1];
+
+	draw_pic (x - CROSSHAIR_WIDTH + 1, y - CROSSHAIR_HEIGHT + 1,
+			  CROSSHAIR_WIDTH * 2, CROSSHAIR_HEIGHT * 2, dctx->crosshair,
+			  p[0], p[1], p[2], p[3], crosshair_color, frame);
+}
+
+static void (*crosshair_func[]) (int ch, int x, int y, vulkan_ctx_t *ctx) = {
+	draw_crosshair_plus,
+	draw_crosshair_pic,
+	draw_crosshair_pic,
+	draw_crosshair_pic,
+	draw_crosshair_pic,
+};
+
 void
 Vulkan_Draw_CrosshairAt (int ch, int x, int y, vulkan_ctx_t *ctx)
 {
+	unsigned    c = ch - 1;
+
+	if (c >= sizeof (crosshair_func) / sizeof (crosshair_func[0]))
+		return;
+
+	crosshair_func[c] (c, x, y, ctx);
 }
 
 void
 Vulkan_Draw_Crosshair (vulkan_ctx_t *ctx)
 {
+	int         x, y;
+
+	x = vid.conview->xlen / 2 + cl_crossx->int_val;
+	y = vid.conview->ylen / 2 + cl_crossy->int_val;
+
+	Vulkan_Draw_CrosshairAt (crosshair->int_val, x, y, ctx);
+}
+
+void
+Vulkan_Draw_TextBox (int x, int y, int width, int lines, byte alpha,
+					 vulkan_ctx_t *ctx)
+{
+	drawctx_t  *dctx = ctx->draw_context;
+	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
+
+	quat_t      color = {1, 1, 1, 1};
+	qpic_t     *p;
+	int         cx, cy, n;
+#define draw(px, py, pp) \
+	draw_pic (px, py, pp->width, pp->height, pp, \
+			  0, 0, pp->width, pp->height, color, frame);
+
+	color[3] = alpha;
+	// draw left side
+	cx = x;
+	cy = y;
+	p = Vulkan_Draw_CachePic ("gfx/box_tl.lmp", true, ctx);
+	draw (cx, cy, p);
+	p = Vulkan_Draw_CachePic ("gfx/box_ml.lmp", true, ctx);
+	for (n = 0; n < lines; n++) {
+		cy += 8;
+		draw (cx, cy, p);
+	}
+	p = Vulkan_Draw_CachePic ("gfx/box_bl.lmp", true, ctx);
+	draw (cx, cy + 8, p);
+
+	// draw middle
+	cx += 8;
+	while (width > 0) {
+		cy = y;
+		p = Vulkan_Draw_CachePic ("gfx/box_tm.lmp", true, ctx);
+		draw (cx, cy, p);
+		p = Vulkan_Draw_CachePic ("gfx/box_mm.lmp", true, ctx);
+		for (n = 0; n < lines; n++) {
+			cy += 8;
+			if (n == 1)
+				p = Vulkan_Draw_CachePic ("gfx/box_mm2.lmp", true, ctx);
+			draw (cx, cy, p);
+		}
+		p = Vulkan_Draw_CachePic ("gfx/box_bm.lmp", true, ctx);
+		draw (cx, cy + 8, p);
+		width -= 2;
+		cx += 16;
+	}
+
+	// draw right side
+	cy = y;
+	p = Vulkan_Draw_CachePic ("gfx/box_tr.lmp", true, ctx);
+	draw (cx, cy, p);
+	p = Vulkan_Draw_CachePic ("gfx/box_mr.lmp", true, ctx);
+	for (n = 0; n < lines; n++) {
+		cy += 8;
+		draw (cx, cy, p);
+	}
+	p = Vulkan_Draw_CachePic ("gfx/box_br.lmp", true, ctx);
+	draw (cx, cy + 8, p);
+#undef draw
 }
 
 void
@@ -635,7 +740,7 @@ Vulkan_Draw_ConsoleBackground (int lines, byte alpha, vulkan_ctx_t *ctx)
 	cpic = Vulkan_Draw_CachePic ("gfx/conback.lmp", false, ctx);
 	int         ofs = max (0, cpic->height - lines);
 	lines = min (lines, cpic->height);
-	draw_pic (0, 0, vid.conwidth, lines, cpic,
+	draw_pic (0, 0, vid.conview->xlen, lines, cpic,
 			  0, ofs, cpic->width, lines, color, frame);
 }
 
@@ -673,8 +778,8 @@ draw_blendscreen (quat_t color, vulkan_ctx_t *ctx)
 	drawctx_t  *dctx = ctx->draw_context;
 	drawframe_t *frame = &dctx->frames.a[ctx->curFrame];
 
-	draw_pic (0, 0, vid.conwidth, vid.conheight, dctx->white_pic, 0, 0, 1, 1,
-			  color, frame);
+	draw_pic (0, 0, vid.conview->xlen, vid.conview->ylen, dctx->white_pic,
+			  0, 0, 1, 1, color, frame);
 }
 
 void
@@ -705,8 +810,9 @@ Vulkan_DrawReset (vulkan_ctx_t *ctx)
 }
 
 void
-Vulkan_FlushText (vulkan_ctx_t *ctx)
+Vulkan_FlushText (qfv_renderframe_t *rFrame)
 {
+	vulkan_ctx_t *ctx = rFrame->vulkan_ctx;
 	flush_draw_scrap (ctx);
 
 	qfv_device_t *device = ctx->device;
@@ -717,7 +823,7 @@ Vulkan_FlushText (vulkan_ctx_t *ctx)
 
 	VkCommandBuffer cmd = dframe->cmd;
 	//FIXME which pass?
-	DARRAY_APPEND (&cframe->cmdSets[QFV_passTranslucent], cmd);
+	DARRAY_APPEND (&rFrame->subpassCmdSets[QFV_passTranslucent], cmd);
 
 	VkMappedMemoryRange range = {
 		VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE, 0,
@@ -729,7 +835,7 @@ Vulkan_FlushText (vulkan_ctx_t *ctx)
 	dfunc->vkResetCommandBuffer (cmd, 0);
 	VkCommandBufferInheritanceInfo inherit = {
 		VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO, 0,
-		ctx->renderpass, QFV_passTranslucent,
+		rFrame->renderpass->renderpass, QFV_passTranslucent,
 		cframe->framebuffer,
 		0, 0, 0
 	};
@@ -740,23 +846,27 @@ Vulkan_FlushText (vulkan_ctx_t *ctx)
 	};
 	dfunc->vkBeginCommandBuffer (cmd, &beginInfo);
 
+	QFV_duCmdBeginLabel (device, cmd, "twod", { 0.6, 0.2, 0, 1});
+
 	dfunc->vkCmdBindPipeline (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
 							  dctx->pipeline);
-	VkViewport viewport = {0, 0, vid.width, vid.height, 0, 1};
-	VkRect2D scissor = { {0, 0}, {vid.width, vid.height} };
-	dfunc->vkCmdSetViewport (cmd, 0, 1, &viewport);
-	dfunc->vkCmdSetScissor (cmd, 0, 1, &scissor);
+	dfunc->vkCmdSetViewport (cmd, 0, 1, &ctx->viewport);
+	dfunc->vkCmdSetScissor (cmd, 0, 1, &ctx->scissor);
 	VkDeviceSize offsets[] = {dframe->vert_offset};
 	dfunc->vkCmdBindVertexBuffers (cmd, 0, 1, &dctx->vert_buffer, offsets);
 	dfunc->vkCmdBindIndexBuffer (cmd, dctx->ind_buffer, 0,
 								 VK_INDEX_TYPE_UINT32);
-	VkDescriptorSet set = dframe->descriptors;
+	VkDescriptorSet set[2] = {
+		Vulkan_Matrix_Descriptors (ctx, ctx->curFrame),
+		dframe->descriptors,
+	};
 	VkPipelineLayout layout = dctx->layout;
 	dfunc->vkCmdBindDescriptorSets (cmd, VK_PIPELINE_BIND_POINT_GRAPHICS,
-									layout, 0, 1, &set, 0, 0);
+									layout, 0, 2, set, 0, 0);
 	dfunc->vkCmdDrawIndexed (cmd, dframe->num_quads * INDS_PER_QUAD,
 							 1, 0, 0, 0);
 
+	QFV_duCmdEndLabel (device, cmd);
 	dfunc->vkEndCommandBuffer (cmd);
 
 	dframe->num_quads = 0;

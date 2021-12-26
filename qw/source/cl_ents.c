@@ -36,11 +36,12 @@
 #endif
 
 #include "QF/cvar.h"
-#include "QF/entity.h"
 #include "QF/msg.h"
 #include "QF/render.h"
 #include "QF/skin.h"
 #include "QF/sys.h"
+
+#include "QF/scene/entity.h"
 
 #include "compat.h"
 #include "d_iface.h"
@@ -228,20 +229,18 @@ CL_LinkPacketEntities (void)
 				CL_TransformEntity (ent, new->scale / 16, new->angles,
 									new->origin);
 				animation->pose1 = animation->pose2 = -1;
-			} else {
+			} else if (!(renderer->model->flags & EF_ROTATE)) {
 				vec3_t      angles, d;
 				vec4f_t     origin = old->origin + f * delta;
 				// interpolate the origin and angles
-				if (!(renderer->model->flags & EF_ROTATE)) {
-					VectorSubtract (new->angles, old->angles, d);
-					for (j = 0; j < 3; j++) {
-						if (d[j] > 180)
-							d[j] -= 360;
-						else if (d[j] < -180)
-							d[j] += 360;
-					}
-					VectorMultAdd (old->angles, f, d, angles);
+				VectorSubtract (new->angles, old->angles, d);
+				for (j = 0; j < 3; j++) {
+					if (d[j] > 180)
+						d[j] -= 360;
+					else if (d[j] < -180)
+						d[j] += 360;
 				}
+				VectorMultAdd (old->angles, f, d, angles);
 				CL_TransformEntity (ent, new->scale / 16.0, angles, origin);
 			}
 			if (i != cl.viewentity || chase_active->int_val) {
@@ -280,16 +279,8 @@ CL_LinkPacketEntities (void)
 	}
 }
 
-/*
-	CL_AddFlagModels
-
-	Called when the CTF flags are set. Flags are effectively temp entities.
-
-	NOTE: this must be called /after/ the entity has been transformed as it
-	uses the entity's transform matrix to get the frame vectors
-*/
 static void
-CL_AddFlagModels (entity_t *ent, int team, int key)
+CL_UpdateFlagModels (entity_t *ent, int key)
 {
 	static float flag_offsets[] = {
 		16.0, 22.0, 26.0, 25.0, 24.0, 18.0,					// 29-34 axpain
@@ -300,12 +291,10 @@ CL_AddFlagModels (entity_t *ent, int team, int key)
 
 	fent = &cl_flag_ents[key];
 
-	if (cl_flagindex == -1) {
-		fent->active = 0;
+	if (!fent->active) {
 		return;
 	}
 
-	fent->active = 1;
 	f = 14.0;
 	if (ent->animation.frame >= 29 && ent->animation.frame <= 40) {
 		f = flag_offsets[ent->animation.frame - 29];
@@ -317,23 +306,51 @@ CL_AddFlagModels (entity_t *ent, int team, int key)
 		}
 	}
 
-	vec4f_t     position = { 22, -f, -16, 1};
+	vec4f_t     scale = { 1, 1, 1, 1 };
+	// -45 degree roll (x is forward)
+	vec4f_t     rotation = { -0.382683432, 0, 0, 0.923879533 };
+	vec4f_t     position = { -f, -22, 0, 1};
+
+	Transform_SetLocalPosition (fent->transform, position);
+	Transform_SetLocalTransform (fent->transform, scale, rotation, position);
+	position = Transform_GetWorldPosition (fent->transform);
+	position[3] -= 16;
+	Transform_SetWorldPosition (fent->transform, position);
+}
+
+static entity_t *
+CL_AddFlagModels (entity_t *ent, int team, int key)
+{
+	entity_t   *fent;
+
+	fent = &cl_flag_ents[key];
+
+	if (cl_flagindex == -1) {
+		fent->active = 0;
+		return 0;
+	}
+
+	fent->active = 1;
 
 	if (!Transform_GetParent (fent->transform)) {
-		vec4f_t     scale = { 1, 1, 1, 1 };
-		// -45 degree roll (x is forward)
-		vec4f_t     rotation = { -0.382683432, 0, 0, 0.923879533 };
 		Transform_SetParent (fent->transform, ent->transform);
-		Transform_SetLocalTransform (fent->transform, scale, rotation,
-									 position);
-	} else {
-		Transform_SetLocalPosition (fent->transform, position);
 	}
+	CL_UpdateFlagModels (ent, key);
+
 	fent->renderer.model = cl.model_precache[cl_flagindex];
 	fent->renderer.skinnum = team;
 
-	r_funcs->R_EnqueueEntity (fent);//FIXME should use efrag (needs smarter
-									// handling //in the player code)
+	return fent;
+}
+
+static void
+CL_RemoveFlagModels (int key)
+{
+	entity_t   *fent;
+
+	fent = &cl_flag_ents[key];
+	fent->active = 0;
+	Transform_SetParent (fent->transform, 0);
 }
 
 /*
@@ -349,7 +366,7 @@ CL_LinkPlayers (void)
 	int				msec, oldphysent, j;
 	entity_t	   *ent;
 	frame_t		   *frame;
-	player_info_t  *info;
+	player_info_t  *player;
 	player_state_t	exact;
 	player_state_t *state;
 	qboolean		clientplayer;
@@ -362,15 +379,18 @@ CL_LinkPlayers (void)
 
 	frame = &cl.frames[cl.parsecount & UPDATE_MASK];
 
-	for (j = 0, info = cl.players, state = frame->playerstate; j < MAX_CLIENTS;
-		 j++, info++, state++) {
+	for (j = 0, player = cl.players, state = frame->playerstate;
+		 j < MAX_CLIENTS; j++, player++, state++) {
 		ent = &cl_player_ents[j];
 		if (ent->visibility.efrag)
 			r_funcs->R_RemoveEfrags (ent);
+		if (player->flag_ent && player->flag_ent->visibility.efrag) {
+			r_funcs->R_RemoveEfrags (player->flag_ent);
+		}
 		if (state->messagenum != cl.parsecount)
 			continue;							// not present this frame
 
-		if (!info->name || !info->name->value[0])
+		if (!player->name || !player->name->value[0])
 			continue;
 
 		// spawn light flashes, even ones coming from invisible objects
@@ -382,7 +402,7 @@ CL_LinkPlayers (void)
 			org = state->pls.es.origin;
 			clientplayer = false;
 		}
-		if (info->chat && info->chat->value[0] != '0') {
+		if (player->chat && player->chat->value[0] != '0') {
 			dlight_t   *dl = r_funcs->R_AllocDlight (j + 1);
 			VectorCopy (org, dl->origin);
 			dl->radius = 100;
@@ -449,7 +469,7 @@ CL_LinkPlayers (void)
 
 		if (state->pls.es.modelindex == cl_playerindex) { //XXX
 			// use custom skin
-			ent->renderer.skin = info->skin;
+			ent->renderer.skin = player->skin;
 
 			ent->renderer.min_light = min (cl.fbskins, cl_fb_players->value);
 
@@ -461,13 +481,23 @@ CL_LinkPlayers (void)
 			ent->renderer.skin = 0;
 		}
 
+		int     flag_state = state->pls.es.effects & (EF_FLAG1 | EF_FLAG2);
+		if (player->flag_ent && !flag_state) {
+			CL_RemoveFlagModels (j);
+			player->flag_ent = 0;
+		} else if (!player->flag_ent && flag_state) {
+			if (flag_state & EF_FLAG1)
+				player->flag_ent = CL_AddFlagModels (ent, 0, j);
+			else if (flag_state & EF_FLAG2)
+				player->flag_ent = CL_AddFlagModels (ent, 1, j);
+		}
+
 		// stuff entity in map
 		r_funcs->R_AddEfrags (&cl.worldmodel->brush, ent);
-
-		if (state->pls.es.effects & EF_FLAG1)
-			CL_AddFlagModels (ent, 0, j);
-		else if (state->pls.es.effects & EF_FLAG2)
-			CL_AddFlagModels (ent, 1, j);
+		if (player->flag_ent) {
+			CL_UpdateFlagModels (ent, j);
+			r_funcs->R_AddEfrags (&cl.worldmodel->brush, player->flag_ent);
+		}
 	}
 }
 

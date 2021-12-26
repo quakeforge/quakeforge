@@ -77,6 +77,7 @@
 # include <libc.h>
 #endif
 
+#include <ctype.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -203,7 +204,7 @@ get_iface_list (int sock)
 			num_ifaces = index;
 	}
 	ifaces = malloc (num_ifaces * sizeof (uint32_t));
-	Sys_MaskPrintf (SYS_NET, "%d interfaces\n", num_ifaces);
+	Sys_MaskPrintf (SYS_net, "%d interfaces\n", num_ifaces);
 	for (ifa = ifa_head; ifa; ifa = ifa->ifa_next) {
 		struct sockaddr_in *sa;
 
@@ -214,7 +215,7 @@ get_iface_list (int sock)
 		index = if_nametoindex (ifa->ifa_name) - 1;
 		sa = (struct sockaddr_in *) ifa->ifa_addr;
 		memcpy (&ifaces[index], &sa->sin_addr, sizeof (uint32_t));
-		Sys_MaskPrintf (SYS_NET, "    %-10s %s\n", ifa->ifa_name,
+		Sys_MaskPrintf (SYS_net, "    %-10s %s\n", ifa->ifa_name,
 						inet_ntoa (sa->sin_addr));
 		if (!default_iface && ifaces[index] != htonl (0x7f000001))
 			default_iface = &ifaces[index];
@@ -471,6 +472,29 @@ UDP_CheckNewConnections (void)
 #endif
 }
 
+static void
+hex_dump_buf (byte *buf, int len)
+{
+	int         pos = 0, llen, i;
+
+	while (pos < len) {
+		llen = (len - pos < 16 ? len - pos : 16);
+		printf ("%08x: ", pos);
+		for (i = 0; i < llen; i++)
+			printf ("%02x ", buf[pos + i]);
+		for (i = 0; i < 16 - llen; i++)
+			printf ("   ");
+		printf (" | ");
+
+		for (i = 0; i < llen; i++)
+			printf ("%c", isprint (buf[pos + i]) ? buf[pos + i] : '.');
+		for (i = 0; i < 16 - llen; i++)
+			printf (" ");
+		printf ("\n");
+		pos += llen;
+	}
+}
+
 int
 UDP_Read (int socket, byte *buf, int len, netadr_t *from)
 {
@@ -498,7 +522,7 @@ UDP_Read (int socket, byte *buf, int len, netadr_t *from)
 		return 0;
 	for (cmsg = CMSG_FIRSTHDR (&msghdr); cmsg;
 		 cmsg = CMSG_NXTHDR (&msghdr, cmsg)) {
-		Sys_MaskPrintf (SYS_NET, "%d\n", cmsg->cmsg_type);
+		Sys_MaskPrintf (SYS_net, "%d\n", cmsg->cmsg_type);
 		if (cmsg->cmsg_type == IP_PKTINFO) {
 			info = (struct in_pktinfo *) CMSG_DATA (cmsg);
 			break;
@@ -512,7 +536,7 @@ UDP_Read (int socket, byte *buf, int len, netadr_t *from)
 		last_iface = &ifaces[info->ipi_ifindex - 1];
 	}
 	SockadrToNetadr (&addr, from);
-	Sys_MaskPrintf (SYS_NET, "got %d bytes from %s on iface %d (%s)\n", ret,
+	Sys_MaskPrintf (SYS_net, "got %d bytes from %s on iface %d (%s)\n", ret,
 					UDP_AddrToString (from), info ? info->ipi_ifindex - 1 : -1,
 					last_iface ? inet_ntoa (info->ipi_addr) : "?");
 #else
@@ -524,10 +548,13 @@ UDP_Read (int socket, byte *buf, int len, netadr_t *from)
 	if (ret == -1 && (errno == EWOULDBLOCK || errno == ECONNREFUSED))
 		return 0;
 	SockadrToNetadr (&addr, from);
-	Sys_MaskPrintf (SYS_NET, "got %d bytes from %s\n", ret,
+	Sys_MaskPrintf (SYS_net, "got %d bytes from %s\n", ret,
 					UDP_AddrToString (from));
 	last_iface = default_iface;
 #endif
+	if (developer->int_val & SYS_net) {
+		hex_dump_buf (buf, ret);
+	}
 	return ret;
 }
 
@@ -574,8 +601,11 @@ UDP_Write (int socket, byte *buf, int len, netadr_t *to)
 				  SA_LEN (&addr.sa));
 	if (ret == -1 && errno == EWOULDBLOCK)
 		return 0;
-	Sys_MaskPrintf (SYS_NET, "sent %d bytes to %s\n", ret,
+	Sys_MaskPrintf (SYS_net, "sent %d bytes to %s\n", ret,
 					UDP_AddrToString (to));
+	if (developer->int_val & SYS_net) {
+		hex_dump_buf (buf, len);
+	}
 	return ret;
 }
 

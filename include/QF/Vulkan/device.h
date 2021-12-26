@@ -1,6 +1,8 @@
 #ifndef __QF_Vulkan_device_h
 #define __QF_Vulkan_device_h
 
+#include "QF/Vulkan/qf_vid.h"
+
 typedef struct qfv_devfuncs_s {
 #define DEVICE_LEVEL_VULKAN_FUNCTION(name) PFN_##name name;
 #define DEVICE_LEVEL_VULKAN_FUNCTION_FROM_EXTENSION(name,ext) PFN_##name name;

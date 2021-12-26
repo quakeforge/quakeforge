@@ -18,6 +18,8 @@ typedef enum VkBool32 {
 
 	if (str_mid([self name], -8) == "FlagBits") {
 		end = "_FLAG_BITS_MAX_ENUM";
+	} else if (str_mid([self name], -11) == "FlagBitsEXT") {
+		end = "_FLAG_BITS_MAX_ENUM_EXT";
 	}
 	len = -strlen (end);
 	for (int i = 0; i < type.strct.num_fields; i++) {
@@ -50,7 +52,7 @@ typedef enum VkBool32 {
 {
 	string name = [self name];
 	if (!Hash_Find (processed_types, name)) {
-		printf ("    +%s\n", name);
+		//printf ("    +%s\n", name);
 		Hash_Add (processed_types, (void *) name);
 		[queue addObject: self];
 	}
@@ -65,10 +67,25 @@ skip_value(string name)
 			|| str_str (name, "_RANGE_SIZE") >= 0);
 }
 
+-(int) isEmpty
+{
+	int         num_values = 0;
+
+	for (int i = 0, index = 0; i < type.strct.num_fields; i++) {
+		qfot_var_t *var = &type.strct.fields[i];
+		if (skip_value (var.name)) {
+			continue;
+		}
+		num_values++;
+	}
+	return !num_values;
+}
+
 -(void) writeTable
 {
 	int         strip_bit = 0;
-	if (str_mid([self name], -8) == "FlagBits") {
+	if (str_mid([self name], -8) == "FlagBits"
+		|| str_mid([self name], -11) == "FlagBitsEXT") {
 		strip_bit = 1;
 	}
 
@@ -84,17 +101,19 @@ skip_value(string name)
 	}
 	fprintf (output_file, "};\n");
 
-	fprintf (output_file, "static %s %s_values[] = {\n", [self name], [self name]);
-	for (int i = 0, index = 0; i < type.strct.num_fields; i++) {
-		qfot_var_t *var = &type.strct.fields[i];
-		if (skip_value (var.name)) {
-			continue;
+	if (![self isEmpty]) {
+		fprintf (output_file, "static %s %s_values[] = {\n", [self name], [self name]);
+		for (int i = 0, index = 0; i < type.strct.num_fields; i++) {
+			qfot_var_t *var = &type.strct.fields[i];
+			if (skip_value (var.name)) {
+				continue;
+			}
+			fprintf (output_file, "\t%s,    // %d 0x%x\n",
+					 var.name, var.offset, var.offset);
+			index++;
 		}
-		fprintf (output_file, "\t%s,    // %d 0x%x\n",
-				 var.name, var.offset, var.offset);
-		index++;
+		fprintf (output_file, "};\n");
 	}
-	fprintf (output_file, "};\n");
 	fprintf (output_file, "static exprsym_t %s_symbols[] = {\n", [self name]);
 	for (int i = 0, index = 0; i < type.strct.num_fields; i++) {
 		qfot_var_t *var = &type.strct.fields[i];

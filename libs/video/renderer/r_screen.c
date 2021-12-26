@@ -43,7 +43,8 @@
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/sys.h"
-#include "QF/view.h"
+
+#include "QF/ui/view.h"
 
 #include "compat.h"
 #include "r_internal.h"
@@ -106,11 +107,8 @@ qpic_t     *scr_turtle;
 int         clearconsole;
 
 vrect_t    *pconupdate;
-vrect_t     scr_vrect;
 
 qboolean    scr_skipupdate;
-
-static float oldfov = -1;
 
 void
 R_SetVrect (const vrect_t *vrectin, vrect_t *vrect, int lineadj)
@@ -144,63 +142,6 @@ R_SetVrect (const vrect_t *vrectin, vrect_t *vrect, int lineadj)
 	vrect->y = (h - vrect->height) / 2;
 }
 
-void
-SCR_CalcRefdef (void)
-{
-	vrect_t     vrect;
-	refdef_t   *refdef = r_data->refdef;
-
-	// force a background redraw
-	r_data->scr_fullupdate = 0;
-	r_data->vid->recalc_refdef = 0;
-
-	// bound field of view
-	Cvar_SetValue (scr_fov, bound (1, scr_fov->value, 170));
-
-	vrect.x = 0;
-	vrect.y = 0;
-	vrect.width = r_data->vid->width;
-	vrect.height = r_data->vid->height;
-
-	R_SetVrect (&vrect, &scr_vrect, r_data->lineadj);
-
-	refdef->vrect = scr_vrect;
-
-	// notify the refresh of the change
-	r_funcs->R_ViewChanged (r_data->vid->aspect);
-}
-
-/*
-	SCR_UpdateScreen
-
-	This is called every frame, and can also be called explicitly to flush
-	text to the screen.
-
-	WARNING: be very careful calling this from elsewhere, because the refresh
-	needs almost the entire 256k of stack space!
-*/
-void
-SCR_UpdateScreen (double realtime, SCR_Func scr_3dfunc, SCR_Func *scr_funcs)
-{
-	if (scr_skipupdate || !scr_initialized) {
-		return;
-	}
-
-	r_data->realtime = realtime;
-	scr_copytop = r_data->scr_copyeverything = 0;
-
-	if (oldfov != scr_fov->value) {
-		oldfov = scr_fov->value;
-		r_data->vid->recalc_refdef = true;
-	}
-
-	if (r_data->vid->recalc_refdef) {
-		SCR_CalcRefdef ();
-	}
-
-	r_funcs->R_RenderFrame (scr_3dfunc, scr_funcs);
-}
-
 static float __attribute__((pure))
 CalcFov (float fov_x, float width, float height)
 {
@@ -219,11 +160,66 @@ CalcFov (float fov_x, float width, float height)
 }
 
 void
+SCR_CalcRefdef (void)
+{
+	vrect_t     vrect;
+	refdef_t   *refdef = r_data->refdef;
+
+	// force a background redraw
+	r_data->scr_fullupdate = 0;
+	r_data->vid->recalc_refdef = 0;
+
+	vrect.x = 0;
+	vrect.y = 0;
+	vrect.width = r_data->vid->width;
+	vrect.height = r_data->vid->height;
+
+	R_SetVrect (&vrect, &refdef->vrect, r_data->lineadj);
+
+	view_setgeometry (r_data->scr_view, refdef->vrect.x, refdef->vrect.y,
+					  refdef->vrect.width, refdef->vrect.height);
+
+	// bound field of view
+	Cvar_SetValue (scr_fov, bound (1, scr_fov->value, 170));
+
+	refdef->fov_y = CalcFov (refdef->fov_x, refdef->vrect.width,
+							 refdef->vrect.height);
+
+	// notify the refresh of the change
+	r_funcs->R_ViewChanged ();
+}
+
+/*
+	SCR_UpdateScreen
+
+	This is called every frame, and can also be called explicitly to flush
+	text to the screen.
+
+	WARNING: be very careful calling this from elsewhere, because the refresh
+	needs almost the entire 256k of stack space!
+*/
+void
+SCR_UpdateScreen (double realtime, SCR_Func *scr_funcs)
+{
+	if (scr_skipupdate || !scr_initialized) {
+		return;
+	}
+
+	r_data->realtime = realtime;
+	scr_copytop = r_data->scr_copyeverything = 0;
+
+	if (r_data->vid->recalc_refdef) {
+		SCR_CalcRefdef ();
+	}
+
+	r_funcs->R_RenderFrame (scr_funcs);
+}
+
+void
 SCR_SetFOV (float fov)
 {
 	refdef_t   *refdef = r_data->refdef;
 	refdef->fov_x = fov;
-	refdef->fov_y = CalcFov (fov, refdef->vrect.width, refdef->vrect.height);
 	r_data->vid->recalc_refdef = 1;
 }
 
@@ -268,7 +264,9 @@ SCR_DrawRam (void)
 	if (!r_cache_thrash)
 		return;
 
-	r_funcs->Draw_Pic (scr_vrect.x + 32, scr_vrect.y, scr_ram);
+	//FIXME view
+	r_funcs->Draw_Pic (r_data->scr_view->xpos + 32, r_data->scr_view->ypos,
+					   scr_ram);
 }
 
 void
@@ -288,7 +286,9 @@ SCR_DrawTurtle (void)
 	if (count < 3)
 		return;
 
-	r_funcs->Draw_Pic (scr_vrect.x, scr_vrect.y, scr_turtle);
+	//FIXME view
+	r_funcs->Draw_Pic (r_data->scr_view->xpos, r_data->scr_view->ypos,
+					   scr_turtle);
 }
 
 void
@@ -302,9 +302,11 @@ SCR_DrawPause (void)
 	if (!r_data->paused)
 		return;
 
+	//FIXME view conwidth
 	pic = r_funcs->Draw_CachePic ("gfx/pause.lmp", true);
-	r_funcs->Draw_Pic ((r_data->vid->conwidth - pic->width) / 2,
-					   (r_data->vid->conheight - 48 - pic->height) / 2, pic);
+	r_funcs->Draw_Pic ((r_data->vid->conview->xlen - pic->width) / 2,
+					   (r_data->vid->conview->ylen - 48 - pic->height) / 2,
+					   pic);
 }
 
 void

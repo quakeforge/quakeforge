@@ -37,6 +37,7 @@
 
 #include "QF/cvar.h"
 #include "QF/msg.h"
+#include "QF/set.h"
 #include "QF/sys.h"
 
 #include "compat.h"
@@ -54,25 +55,21 @@
 	when the bob crosses a waterline.
 */
 
-byte		fatpvs[MAP_PVS_BYTES];
-int			fatbytes;
+static set_t *fatpvs;
 
 
 static void
 SV_AddToFatPVS (vec3_t org, mnode_t *node)
 {
-	byte	   *pvs;
-	int			i;
-	float		d;
+	float       d;
 	plane_t    *plane;
 
 	while (1) {
 		// if this is a leaf, accumulate the pvs bits
 		if (node->contents < 0) {
 			if (node->contents != CONTENTS_SOLID) {
-				pvs = Mod_LeafPVS ((mleaf_t *) node, sv.worldmodel);
-				for (i = 0; i < fatbytes; i++)
-					fatpvs[i] |= pvs[i];
+				set_union (fatpvs, Mod_LeafPVS ((mleaf_t *) node,
+												sv.worldmodel));
 			}
 			return;
 		}
@@ -96,11 +93,14 @@ SV_AddToFatPVS (vec3_t org, mnode_t *node)
 	Calculates a PVS that is the inclusive or of all leafs within 8 pixels
 	of the given point.
 */
-static byte *
+static set_t *
 SV_FatPVS (vec3_t org)
 {
-	fatbytes = (sv.worldmodel->brush.numleafs + 31) >> 3;
-	memset (fatpvs, 0, fatbytes);
+	if (!fatpvs) {
+		fatpvs = set_new_size (sv.worldmodel->brush.visleafs);
+	}
+	set_expand (fatpvs, sv.worldmodel->brush.visleafs);
+	set_empty (fatpvs);
 	SV_AddToFatPVS (org, sv.worldmodel->brush.nodes);
 	return fatpvs;
 }
@@ -549,7 +549,7 @@ write_player (delta_t *delta, plent_state_t *from, plent_state_t *to,
 }
 
 static void
-SV_WritePlayersToClient (delta_t *delta, byte *pvs, sizebuf_t *msg)
+SV_WritePlayersToClient (delta_t *delta, set_t *pvs, sizebuf_t *msg)
 {
 	int			j, k;
 	client_t   *cl;
@@ -613,7 +613,7 @@ SV_WritePlayersToClient (delta_t *delta, byte *pvs, sizebuf_t *msg)
 			if (pvs) {
 				// ignore if not touching a PV leaf
 				for (el = SVdata (ent)->leafs; el; el = el->next) {
-					if (pvs[el->leafnum >> 3] & (1 << (el->leafnum & 7)))
+					if (set_is_member (pvs, el->leafnum))
 						break;
 				}
 				if (!el)
@@ -706,10 +706,10 @@ SV_WritePlayersToClient (delta_t *delta, byte *pvs, sizebuf_t *msg)
 	}
 }
 
-static inline byte *
+static inline set_t *
 calc_pvs (delta_t *delta)
 {
-	byte       *pvs = 0;
+	set_t      *pvs = 0;
 	vec3_t      org;
 
 	// find the client's PVS
@@ -756,7 +756,7 @@ calc_pvs (delta_t *delta)
 void
 SV_WriteEntitiesToClient (delta_t *delta, sizebuf_t *msg)
 {
-	byte	   *pvs = 0;
+	set_t      *pvs = 0;
 	int			e, num_edicts;
 	int         max_packet_entities = MAX_DEMO_PACKET_ENTITIES;
 	int         stdver = 1;
@@ -801,7 +801,7 @@ SV_WriteEntitiesToClient (delta_t *delta, sizebuf_t *msg)
 		if (pvs) {
 			// ignore if not touching a PV leaf
 			for (el = SVdata (ent)->leafs; el; el = el->next) {
-				if (pvs[el->leafnum >> 3] & (1 << (el->leafnum & 7)))
+				if (set_is_member (pvs, el->leafnum))
 					break;
 			}
 			if (!el)

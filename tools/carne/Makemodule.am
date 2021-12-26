@@ -1,7 +1,8 @@
 CARNE_LIBS=@CARNE_LIBS@
 CARNE_DEPS=@CARNE_DEPS@
 
-noinst_PROGRAMS += carne
+EXTRA_PROGRAMS +=		carne
+noinst_PROGRAMS += @CARNE_TARGETS@
 
 carne_SOURCES=	tools/carne/main.c
 carne_LDADD=	$(CARNE_LIBS)

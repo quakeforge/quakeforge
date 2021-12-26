@@ -64,22 +64,32 @@ PR_Zone_Init (progs_t *pr)
 VISIBLE void
 PR_Zone_Free (progs_t *pr, void *ptr)
 {
-	Z_Free (pr->zone, ptr);
+	if (ptr) {
+		Z_Free (pr->zone, ptr);
+	}
 }
 
 VISIBLE void *
 PR_Zone_Malloc (progs_t *pr, pr_int_t size)
 {
-	if (size <= 0)
-		PR_RunError (pr, "attempt to allocate less than 1 byte");
+	if (!size) {
+		return 0;
+	}
+	if (size < 0) {
+		PR_RunError (pr, "attempt to allocate less than 0 bytes");
+	}
 	return Z_Malloc (pr->zone, size);
 }
 
 VISIBLE void *
 PR_Zone_TagMalloc (progs_t *pr, int size, int tag)
 {
-	if (size <= 0)
-		PR_RunError (pr, "attempt to allocate less than 1 byte");
+	if (!size) {
+		return 0;
+	}
+	if (size < 0) {
+		PR_RunError (pr, "attempt to allocate less than 0 bytes");
+	}
 	return Z_TagMalloc (pr->zone, size, tag);
 }
 
@@ -90,7 +100,11 @@ PR_Zone_Realloc (progs_t *pr, void *ptr, pr_int_t size)
 		Z_Free (pr->zone, ptr);
 		return 0;
 	}
-	if (size <= 0)
-		PR_RunError (pr, "attempt to allocate less than 1 byte");
+	if (!size) {
+		return 0;
+	}
+	if (size < 0) {
+		PR_RunError (pr, "attempt to allocate less than 0 bytes");
+	}
 	return Z_Realloc (pr->zone, ptr, size);
 }

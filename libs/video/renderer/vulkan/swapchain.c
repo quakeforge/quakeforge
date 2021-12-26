@@ -56,7 +56,7 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 			useMode = modes[i];
 		}
 	}
-	Sys_MaskPrintf (SYS_VULKAN, "presentation mode: %d (%d)\n", useMode,
+	Sys_MaskPrintf (SYS_vulkan, "presentation mode: %d (%d)\n", useMode,
 					vulkan_presentation_mode->int_val);
 
 	VkSurfaceCapabilitiesKHR surfCaps;
@@ -79,13 +79,13 @@ QFV_CreateSwapchain (vulkan_ctx_t *ctx, VkSwapchainKHR old_swapchain)
 	} else {
 		imageSize = surfCaps.currentExtent;
 	}
-	Sys_MaskPrintf (SYS_VULKAN, "%d [%d, %d]\n", numImages,
+	Sys_MaskPrintf (SYS_vulkan, "%d [%d, %d]\n", numImages,
 					imageSize.width, imageSize.height);
 
 	VkImageUsageFlags imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 	imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 	imageUsage &= surfCaps.supportedUsageFlags;
-	Sys_MaskPrintf (SYS_VULKAN, "%x %x\n", imageUsage,
+	Sys_MaskPrintf (SYS_vulkan, "%x %x\n", imageUsage,
 					surfCaps.supportedUsageFlags);
 
 	VkSurfaceTransformFlagBitsKHR surfTransform

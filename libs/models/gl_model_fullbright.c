@@ -53,10 +53,10 @@ Mod_Fullbright (byte *skin, int width, int height, const char *name)
 	SYS_CHECKMEM (texels);
 
 	// Check for fullbright pixels
-	if (Mod_CalcFullbright (skin, texels, pixels)) {
+	if (Mod_CalcFullbright (texels, skin, pixels)) {
 		//FIXME black should be transparent for fullbrights (or just fix
 		//fullbright rendering in gl)
-		Sys_MaskPrintf (SYS_DEV, "FB Model ID: '%s'\n", name);
+		Sys_MaskPrintf (SYS_dev, "FB Model ID: '%s'\n", name);
 		for (int i = 0; i < pixels; i++) {
 			if (!texels[i]) {
 				texels[i] = 255;

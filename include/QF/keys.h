@@ -42,6 +42,7 @@
 ///@{
 
 /// these are the key numbers that should be passed to Key_Event
+/// FIXME clashes with actual inicode and OS keys
 typedef enum {
 	/* The keyboard syms have been cleverly chosen to map to ASCII */
 	QFK_UNKNOWN		= 0,
@@ -375,295 +376,10 @@ typedef enum {
 	QFK_BACK,
 	QFK_FORWARD,
 
-	/* Add any other keys here */
-
-//
-// mouse buttons generate virtual keys
-//
-	QFM_BUTTON1,
-	QFM_BUTTON2,
-	QFM_BUTTON3,
-	QFM_WHEEL_UP,
-	QFM_WHEEL_DOWN,
-	QFM_BUTTON6,
-	QFM_BUTTON7,
-	QFM_BUTTON8,
-	QFM_BUTTON9,
-	QFM_BUTTON10,
-	QFM_BUTTON11,
-	QFM_BUTTON12,
-	QFM_BUTTON13,
-	QFM_BUTTON14,
-	QFM_BUTTON15,
-	QFM_BUTTON16,
-	QFM_BUTTON17,
-	QFM_BUTTON18,
-	QFM_BUTTON19,
-	QFM_BUTTON20,
-	QFM_BUTTON21,
-	QFM_BUTTON22,
-	QFM_BUTTON23,
-	QFM_BUTTON24,
-	QFM_BUTTON25,
-	QFM_BUTTON26,
-	QFM_BUTTON27,
-	QFM_BUTTON28,
-	QFM_BUTTON29,
-	QFM_BUTTON30,
-	QFM_BUTTON31,
-	QFM_BUTTON32,
-
-//
-// joystick buttons
-//
-	QFJ_BUTTON1,
-	QFJ_BUTTON2,
-	QFJ_BUTTON3,
-	QFJ_BUTTON4,
-	QFJ_BUTTON5,
-	QFJ_BUTTON6,
-	QFJ_BUTTON7,
-	QFJ_BUTTON8,
-	QFJ_BUTTON9,
-	QFJ_BUTTON10,
-	QFJ_BUTTON11,
-	QFJ_BUTTON12,
-	QFJ_BUTTON13,
-	QFJ_BUTTON14,
-	QFJ_BUTTON15,
-	QFJ_BUTTON16,
-	QFJ_BUTTON17,
-	QFJ_BUTTON18,
-	QFJ_BUTTON19,
-	QFJ_BUTTON20,
-	QFJ_BUTTON21,
-	QFJ_BUTTON22,
-	QFJ_BUTTON23,
-	QFJ_BUTTON24,
-	QFJ_BUTTON25,
-	QFJ_BUTTON26,
-	QFJ_BUTTON27,
-	QFJ_BUTTON28,
-	QFJ_BUTTON29,
-	QFJ_BUTTON30,
-	QFJ_BUTTON31,
-	QFJ_BUTTON32,
-	QFJ_BUTTON33,
-	QFJ_BUTTON34,
-	QFJ_BUTTON35,
-	QFJ_BUTTON36,
-	QFJ_BUTTON37,
-	QFJ_BUTTON38,
-	QFJ_BUTTON39,
-	QFJ_BUTTON40,
-	QFJ_BUTTON41,
-	QFJ_BUTTON42,
-	QFJ_BUTTON43,
-	QFJ_BUTTON44,
-	QFJ_BUTTON45,
-	QFJ_BUTTON46,
-	QFJ_BUTTON47,
-	QFJ_BUTTON48,
-	QFJ_BUTTON49,
-	QFJ_BUTTON50,
-	QFJ_BUTTON51,
-	QFJ_BUTTON52,
-	QFJ_BUTTON53,
-	QFJ_BUTTON54,
-	QFJ_BUTTON55,
-	QFJ_BUTTON56,
-	QFJ_BUTTON57,
-	QFJ_BUTTON58,
-	QFJ_BUTTON59,
-	QFJ_BUTTON60,
-	QFJ_BUTTON61,
-	QFJ_BUTTON62,
-	QFJ_BUTTON63,
-	QFJ_BUTTON64,
-
-//
-// joystick axes (for button emulation without consuming buttons)
-//
-	QFJ_AXIS1,
-	QFJ_AXIS2,
-	QFJ_AXIS3,
-	QFJ_AXIS4,
-	QFJ_AXIS5,
-	QFJ_AXIS6,
-	QFJ_AXIS7,
-	QFJ_AXIS8,
-	QFJ_AXIS9,
-	QFJ_AXIS10,
-	QFJ_AXIS11,
-	QFJ_AXIS12,
-	QFJ_AXIS13,
-	QFJ_AXIS14,
-	QFJ_AXIS15,
-	QFJ_AXIS16,
-	QFJ_AXIS17,
-	QFJ_AXIS18,
-	QFJ_AXIS19,
-	QFJ_AXIS20,
-	QFJ_AXIS21,
-	QFJ_AXIS22,
-	QFJ_AXIS23,
-	QFJ_AXIS24,
-	QFJ_AXIS25,
-	QFJ_AXIS26,
-	QFJ_AXIS27,
-	QFJ_AXIS28,
-	QFJ_AXIS29,
-	QFJ_AXIS30,
-	QFJ_AXIS31,
-	QFJ_AXIS32,
-
 	QFK_LAST
 } knum_t;
 
-typedef enum {
-	key_unfocused,			///< engine has lost input focus
-	key_game,				///< Normal in-game key bindings
-	key_demo,				///< Demo playback key bindings
-	key_console,			///< Command console key bindings
-	key_message,			///< Message input line key bindings
-	key_menu,				///< Menu key bindings.
-
-	key_last				///< enum size
-} keydest_t;
-
 #ifndef __QFCC__
-typedef struct {
-	int     down[2];        // key nums holding it down
-	int     state;          // low bit is down state
-} kbutton_t;
-
-extern knum_t       key_togglemenu;
-extern knum_t       key_toggleconsole;
-
-typedef struct keybind_s {
-	char *str;
-} keybind_t;
-
-/**	Input Mapping Table
-*/
-typedef struct imt_s {
-	struct imt_s *next;				///< list of tables attached to key_dest
-	struct imt_s *chain;			///< fallback table if key not bound
-	const char *name;				///< for user interaction
-	keybind_t   bindings[QFK_LAST];
-	int         written;			///< avoid duplicate config file writes
-} imt_t;
-
-/**	Chain of input mapping tables ascociated with a keydest sub-system (game,
-	menu, etc).
-*/
-typedef struct keytarget_s {
-	imt_t      *imts;				///< list of tables attached to this target
-	imt_t      *active;				///< currently active table in this target
-} keytarget_t;
-
-extern int		keydown[QFK_LAST];
-
-struct cbuf_s;
-
-void Key_Init (struct cbuf_s *cb);
-void Key_Init_Cvars (void);
-
-/**	Find an Input Mapping Table by name.
-
-	Searches through all keydest targets for the named imt. The search is case
-	insensitive.
-
-	\param imt_name	The name of the imt to find. Case insensitive.
-	\return			The named imt, or null if not found.
-*/
-imt_t *Key_FindIMT (const char *imt_name) __attribute__((pure));
-
-/**	Create a new imt and attach it to the specified keydest target.
-
-	The name of the new imt must be unique (case insensitive) across all
-	keydest targets. This is to simplify the in_bind command.
-
-	If \a chain_imt_name is not null, then it species the fallback imt for when
-	the key is not bound in the new imt. It must be an already existing imt in
-	the specified keydest target. This is to prevent loops and other weird
-	behavior.
-
-	\param kd		The keydest target to which the new imt will be attached.
-	\param imt_name	The name for the new imt. Must be unique (case
-					insensitive).
-	\param chain_imt_name	The name of the fallback imt if not null. Must
-					already exist on the specified keydest target.
-*/
-void Key_CreateIMT (keydest_t kd, const char *imt_name,
-					const char *chain_imt_name);
-
-/**	Handle a key press/release event.
-
-	\param key		The key that was pressed or released for this event.
-	\param unicode	The unicode value of the key.
-	\param down		True if a press event, false if a release event.
-*/
-void Key_Event (knum_t key, short unicode, qboolean down);
-
-/**	Handle loss or gain of input focus (usually in windowed enviroments).
-
-	Sets the keydest target to key_unfocuses when input focus is lost.
-
-	Triggers keydest callbacks.
-
-	\bug			Always sets the target to key_game when focus is gained.
-
-	\param gain		True if focus is gained, false if focus is lost.
-*/
-void Key_FocusEvent (int gain);
-
-void Key_WriteBindings (QFile *f);
-
-/**	Force all key states to unpressed.
-
-	Sends a key release event for any keys that are seen as down.
-*/
-void Key_ClearStates (void);
-
-/**	Return a key binding in the specified input mapping table.
-
-	\param imt		The input mapping table from which to get the binding.
-	\param key		The key for which to get the binding.
-	\return			The command string bound to the key, or null if unbound.
-*/
-const char *Key_GetBinding (imt_t *imt, knum_t key) __attribute__((pure));
-
-/** Bind a command string to a key in the specified input mapping table.
-
-	Only one command string can be bound to a key, but the command string may
-	contain multiple commands.
-
-	\param imt		The input mapping table in which the key will be bound.
-	\param keynum	The key to which the command string will be bound.
-	\param binding	The command string that will be bound.
-*/
-void Key_SetBinding (imt_t *imt, knum_t keynum, const char *binding);
-
-/**	Set the current keydest target.
-
-	Triggers keydest callbacks.
-
-	\param kd		The keydest target to make current.
-*/
-void Key_SetKeyDest(keydest_t kd);
-
-/** keydest callback signature.
-
-	\param kd		The new current keydest target.
-*/
-typedef void keydest_callback_t (keydest_t kd);
-
-/**	Add a callback for when the keydest target changes.
-
-	\param callback	The callback to be added.
-*/
-void Key_KeydestCallback (keydest_callback_t *callback);
 
 /**	Get the string representation of a key.
 
@@ -687,10 +403,14 @@ int Key_StringToKeynum (const char *str) __attribute__((pure));
 
 struct progs_s;
 
+//FIXME location
 /**	Add the Key builtins to the specified progs instance.
 */
-void Key_Progs_Init (struct progs_s *pr);
+void RUA_Key_Init (struct progs_s *pr);
 #endif
+
+//FIXME location
+void GIB_Key_Init (void);
 
 ///@}
 

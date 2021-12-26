@@ -42,12 +42,13 @@
 
 #include "QF/cmd.h"
 #include "QF/cvar.h"
-#include "QF/entity.h"
 #include "QF/mathlib.h"
 #include "QF/render.h"
 #include "QF/screen.h"
 #include "QF/sound.h"
 #include "QF/sys.h"
+
+#include "QF/scene/entity.h"
 
 #include "compat.h"
 #include "mod_internal.h"
@@ -133,8 +134,6 @@ sw_R_Init (void)
 
 	Cmd_AddCommand ("timerefresh", R_TimeRefresh_f, "Tests the current "
 					"refresh rate for the current location");
-	Cmd_AddCommand ("pointfile", R_ReadPointFile_f, "Load a pointfile to "
-					"determine map leaks");
 	Cmd_AddCommand ("loadsky", R_LoadSky_f, "Load a skybox");
 
 	Cvar_SetValue (r_maxedges, (float) NUMSTACKEDGES);
@@ -163,7 +162,6 @@ sw_R_Init (void)
 void
 R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 {
-	int         i;
 	mod_brush_t *brush = &worldmodel->brush;
 
 	memset (&r_worldentity, 0, sizeof (r_worldentity));
@@ -172,8 +170,7 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	R_FreeAllEntities ();
 
 	// clear out efrags in case the level hasn't been reloaded
-	// FIXME: is this one short?
-	for (i = 0; i < brush->numleafs; i++)
+	for (unsigned i = 0; i < brush->modleafs; i++)
 		brush->leafs[i].efrags = NULL;
 
 	if (brush->skytexture)
@@ -191,7 +188,8 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 		r_cnumsurfs = MINSURFACES;
 
 	if (r_cnumsurfs > NUMSTACKSURFACES) {
-		surfaces = Hunk_AllocName (r_cnumsurfs * sizeof (surf_t), "surfaces");
+		surfaces = Hunk_AllocName (0, r_cnumsurfs * sizeof (surf_t),
+								   "surfaces");
 
 		surface_p = surfaces;
 		surf_max = &surfaces[r_cnumsurfs];
@@ -215,7 +213,7 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	if (r_numallocatededges <= NUMSTACKEDGES) {
 		auxedges = NULL;
 	} else {
-		auxedges = Hunk_AllocName (r_numallocatededges * sizeof (edge_t),
+		auxedges = Hunk_AllocName (0, r_numallocatededges * sizeof (edge_t),
 								   "edges");
 	}
 
@@ -230,7 +228,7 @@ R_NewMap (model_t *worldmodel, struct model_s **models, int num_models)
 	Guaranteed to be called before the first refresh
 */
 void
-R_ViewChanged (float aspect)
+R_ViewChanged (void)
 {
 	int         i;
 	float       res_scale;
@@ -263,7 +261,7 @@ R_ViewChanged (float aspect)
 	r_refdef.aliasvrectbottom = r_refdef.aliasvrect.y +
 		r_refdef.aliasvrect.height;
 
-	pixelAspect = vid.aspect;
+	pixelAspect = 1;//FIXME vid.aspect;
 	xOrigin = r_refdef.xOrigin;
 	yOrigin = r_refdef.yOrigin;
 
@@ -744,6 +742,9 @@ R_RenderView_ (void)
 
 	if (r_norefresh->int_val)
 		return;
+	if (!r_worldentity.renderer.model) {
+		return;
+	}
 
 	r_warpbuffer = warpbuffer;
 
@@ -843,7 +844,7 @@ R_RenderView (void)
 	if (delta < -10000 || delta > 10000)
 		Sys_Error ("R_RenderView: called without enough stack");
 
-	if (Hunk_LowMark () & 3)
+	if (Hunk_LowMark (0) & 3)
 		Sys_Error ("Hunk is missaligned");
 
 	if ((intptr_t) (&dummy) & 3)
@@ -1096,7 +1097,7 @@ static void
 renderlookup (byte **offs, byte* bufs)
 {
 	byte       *p = (byte*)vid.buffer;
-	int        x, y;
+	unsigned   x, y;
 	for (y = 0; y < vid.height; y++) {
 		for (x = 0; x < vid.width; x++, offs++)
 		    p[x] = **offs;
@@ -1160,6 +1161,7 @@ R_RenderViewFishEye (void)
 void
 R_ClearState (void)
 {
+	r_worldentity.renderer.model = 0;
 	R_ClearEfrags ();
 	R_ClearDlights ();
 	R_ClearParticles ();

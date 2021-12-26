@@ -49,17 +49,23 @@
 #include <X11/Xlib.h>
 #include <X11/keysym.h>
 #include <X11/XF86keysym.h>
+#include <X11/XKBlib.h>
 #include <X11/Sunkeysym.h>
 #include <X11/Xutil.h>
 #include <X11/Xatom.h>
 
 #ifdef HAVE_DGA
-# include <X11/extensions/XShm.h>
 # ifdef DGA_OLD_HEADERS
 #  include <X11/extensions/xf86dga.h>
 # else
 #  include <X11/extensions/Xxf86dga.h>
+# endif
 #endif
+#ifdef HAVE_XI2
+# include <X11/extensions/XInput2.h>
+#endif
+#ifdef HAVE_XFIXES
+# include <X11/extensions/Xfixes.h>
 #endif
 
 #include "QF/cdaudio.h"
@@ -73,19 +79,86 @@
 #include "QF/sound.h"
 #include "QF/sys.h"
 
+#include "QF/input/event.h"
+
 #include "compat.h"
 #include "context_x11.h"
 #include "dga_check.h"
+#include "in_x11.h"
+#include "qfselect.h"
 #include "vid_internal.h"
 
-cvar_t	   *in_snd_block;
-cvar_t	   *in_dga;
-cvar_t	   *in_mouse_accel;
+typedef struct x11_device_s {
+	const char *name;
+	int         num_axes;
+	int         num_buttons;
+	in_axisinfo_t *axes;
+	in_buttoninfo_t *buttons;
+	void       *event_data;
+	int         devid;
+} x11_device_t;
+
+#define X11_MOUSE_BUTTONS 32
+#define X11_MOUSE_AXES 2
+// The X11 protocol supports only 256 keys
+static in_buttoninfo_t x11_key_buttons[256];
+// X11 mice have only two axes (FIXME NOT always true (XInput says otherwise!)
+static in_axisinfo_t x11_mouse_axes[X11_MOUSE_AXES];
+// FIXME assume up to 32 mouse buttons (see X11_MOUSE_BUTTONS)
+static in_buttoninfo_t x11_mouse_buttons[X11_MOUSE_BUTTONS];
+static const char *x11_mouse_axis_names[] = {"M_X", "M_Y"};
+static const char *x11_mouse_button_names[] = {
+	"M_BUTTON1",    "M_BUTTON2",  "M_BUTTON3",  "M_WHEEL_UP",
+	"M_WHEEL_DOWN", "M_BUTTON6",  "M_BUTTON7",  "M_BUTTON8",
+	"M_BUTTON9",    "M_BUTTON10", "M_BUTTON11", "M_BUTTON12",
+	"M_BUTTON13",   "M_BUTTON14", "M_BUTTON15", "M_BUTTON16",
+	"M_BUTTON17",   "M_BUTTON18", "M_BUTTON19", "M_BUTTON20",
+	"M_BUTTON21",   "M_BUTTON22", "M_BUTTON23", "M_BUTTON24",
+	"M_BUTTON25",   "M_BUTTON26", "M_BUTTON27", "M_BUTTON28",
+	"M_BUTTON29",   "M_BUTTON30", "M_BUTTON31", "M_BUTTON32",
+};
+
+#define SIZE(x) (sizeof (x) / sizeof (x[0]))
+
+static x11_device_t x11_keyboard_device = {
+	"core:keyboard",
+	0, SIZE (x11_key_buttons),
+	0, x11_key_buttons,
+};
+
+static x11_device_t x11_mouse_device = {
+	"core:mouse",
+	SIZE (x11_mouse_axes), SIZE (x11_mouse_buttons),
+	x11_mouse_axes, x11_mouse_buttons,
+};
+
+cvar_t     *in_auto_focus;
+cvar_t     *in_snd_block;
+cvar_t     *in_dga;
+cvar_t     *in_mouse_accel;
 
 static qboolean dga_avail;
 static qboolean dga_active;
-static int  p_mouse_x, p_mouse_y;
+static IE_mouse_event_t x11_mouse;
+static IE_key_event_t x11_key;
 static int input_grabbed = 0;
+
+#ifdef HAVE_XI2
+static int xi_opcode;
+#endif
+#ifdef HAVE_XFIXES
+static int xf_opcode;
+static PointerBarrier x11_left_barrier;
+static PointerBarrier x11_right_barrier;
+static PointerBarrier x11_top_barrier;
+static PointerBarrier x11_bottom_barrier;
+#endif
+static IE_app_window_event_t x11_aw;
+static int x11_have_xi;
+static int x11_fd;
+static int x11_driver_handle = -1;
+static int x11_event_handler_id;
+static qboolean x11_have_pointer;
 
 static void
 dga_on (void)
@@ -94,8 +167,8 @@ dga_on (void)
 	if (dga_avail && !dga_active) {
 		int ret;
 		ret = XF86DGADirectVideo (x_disp, DefaultScreen (x_disp),
-							XF86DGADirectMouse);
-		Sys_MaskPrintf (SYS_VID, "XF86DGADirectVideo returned %d\n", ret);
+								  XF86DGADirectMouse);
+		Sys_MaskPrintf (SYS_vid, "XF86DGADirectVideo returned %d\n", ret);
 		if (ret)
 			dga_active = true;
 	}
@@ -109,7 +182,7 @@ dga_off (void)
 	if (dga_avail && dga_active) {
 		int ret;
 		ret = XF86DGADirectVideo (x_disp, DefaultScreen (x_disp), 0);
-		Sys_MaskPrintf (SYS_VID, "XF86DGADirectVideo returned %d\n", ret);
+		Sys_MaskPrintf (SYS_vid, "XF86DGADirectVideo returned %d\n", ret);
 		if (ret)
 			dga_active = false;
 	}
@@ -120,10 +193,10 @@ static void
 in_dga_f (cvar_t *var)
 {
 	if (var->int_val && input_grabbed) {
-		Sys_MaskPrintf (SYS_VID, "VID: in_dga_f on\n");
+		Sys_MaskPrintf (SYS_vid, "VID: in_dga_f on\n");
 		dga_on ();
 	} else {
-		Sys_MaskPrintf (SYS_VID, "VID: in_dga_f off\n");
+		Sys_MaskPrintf (SYS_vid, "VID: in_dga_f off\n");
 		dga_off ();
 	}
 }
@@ -152,49 +225,26 @@ in_paste_buffer_f (void)
 }
 
 static void
-selection_notify (XEvent *event)
-{
-	unsigned char *data, *p;
-	unsigned long num_bytes;
-	unsigned long tmp, len;
-	int         format;
-	Atom        type, property;
-
-	x_time = event->xselection.time;
-
-	if ((property = event->xselection.property) == None)
-		return;
-
-	XGetWindowProperty (x_disp, x_win, property, 0, 0, False, AnyPropertyType,
-						&type, &format, &len, &num_bytes, &data);
-	if (num_bytes <= 0)
-		return;
-	if (XGetWindowProperty (x_disp, x_win, property, 0, num_bytes, True,
-							AnyPropertyType, &type, &format, &len, &tmp, &data)
-		!= Success) {
-		XFree (data);	// FIXME is this correct for this instance?
-		return;
-	}
-
-	// get bytes to keys.c
-	for (p = data; num_bytes && *p; p++, num_bytes--) {
-		Key_Event (QFK_UNKNOWN, *p, 1);
-		Key_Event (QFK_UNKNOWN, 0, 0);
-	}
-	XFree (data);
-}
-
-static void
 enter_notify (XEvent *event)
 {
+	x11_have_pointer = true;
 	x_time = event->xcrossing.time;
 
-	p_mouse_x = event->xmotion.x;
-	p_mouse_y = event->xmotion.y;
+	x11_mouse.x = event->xmotion.x;
+	x11_mouse.y = event->xmotion.y;
+	if (!x_have_focus && (!in_auto_focus || in_auto_focus->int_val)) {
+		XSetInputFocus (x_disp, x_win, RevertToPointerRoot, CurrentTime);
+	}
 }
 
 static void
-XLateKey (XKeyEvent * ev, int *k, int *u)
+leave_notify (XEvent *event)
+{
+	x11_have_pointer = false;
+}
+
+static void
+XLateKey (XKeyEvent *ev, int *k, int *u)
 {
 	char        buffer[4];
 	int         unicode;
@@ -203,8 +253,7 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 	XComposeStatus compose;
 
 	keysym = XLookupKeysym (ev, 0);
-	XLookupString (ev, buffer, sizeof(buffer), &shifted_keysym,
-						   &compose);
+	XLookupString (ev, buffer, sizeof(buffer), &shifted_keysym, &compose);
 	unicode = (byte) buffer[0];
 
 	switch (keysym) {
@@ -597,58 +646,21 @@ XLateKey (XKeyEvent * ev, int *k, int *u)
 }
 
 static void
-x11_keydest_callback (keydest_t key_dest)
+in_x11_send_focus_event (int gain)
 {
-//	if (key_dest == key_game) {
-//		XAutoRepeatOff (x_disp);
-//	} else {
-//		XAutoRepeatOn (x_disp);
-//	}
-}
-
-static void
-event_key (XEvent *event)
-{
-	int key, unicode;
-
-	x_time = event->xkey.time;
-	XLateKey (&event->xkey, &key, &unicode);
-	Key_Event (key, unicode, event->type == KeyPress);
-}
-
-static void
-event_button (XEvent *event)
-{
-	unsigned    but;
-
-	x_time = event->xbutton.time;
-
-	but = event->xbutton.button;
-	if (but > 32)
-		return;
-	if (but == 2)
-		but = 3;
-	else if (but == 3)
-		but = 2;
-	switch (but) {
-		default:
-			Key_Event (QFM_BUTTON1 + but - 1, 0, event->type == ButtonPress);
-			break;
-		case 4:
-			Key_Event (QFM_WHEEL_UP, 0, event->type == ButtonPress);
-			break;
-		case 5:
-			Key_Event (QFM_WHEEL_DOWN, 0, event->type == ButtonPress);
-			break;
-	}
+	IE_event_t  event = {
+		.type = gain ? ie_app_gain_focus : ie_app_lose_focus,
+		.when = Sys_LongTime (),
+	};
+	IE_Send_Event (&event);
 }
 
 static void
 event_focusout (XEvent *event)
 {
-	Key_FocusEvent (0);
 	if (x_have_focus) {
 		x_have_focus = false;
+		in_x11_send_focus_event (0);
 		if (in_snd_block->int_val) {
 			S_BlockSound ();
 			CDAudio_Pause ();
@@ -660,8 +672,8 @@ event_focusout (XEvent *event)
 static void
 event_focusin (XEvent *event)
 {
+	in_x11_send_focus_event (1);
 	x_have_focus = true;
-	Key_FocusEvent (1);
 	if (in_snd_block->int_val) {
 		S_UnblockSound ();
 		CDAudio_Resume ();
@@ -685,37 +697,355 @@ center_pointer (void)
 }
 
 static void
+in_x11_send_axis_event (int devid, in_axisinfo_t *axis)
+{
+	IE_event_t  event = {
+		.type = ie_axis,
+		.when = Sys_LongTime (),
+		.axis = {
+			.data = x11_mouse_device.event_data,
+			.devid = devid,
+			.axis = axis->axis,
+			.value = axis->value,
+		},
+	};
+	IE_Send_Event (&event);
+}
+
+static int
+in_x11_send_mouse_event (IE_mouse_type type)
+{
+	IE_event_t  event = {
+		.type = ie_mouse,
+		.when = Sys_LongTime (),
+		.mouse = x11_mouse,
+	};
+	event.mouse.type = type;
+	return IE_Send_Event (&event);
+}
+
+static int
+in_x11_send_key_event (void)
+{
+	IE_event_t  event = {
+		.type = ie_key,
+		.when = Sys_LongTime (),
+		.key = x11_key,
+	};
+	return IE_Send_Event (&event);
+}
+
+static void
+in_x11_send_button_event (int devid, in_buttoninfo_t *button, void *event_data)
+{
+	IE_event_t  event = {
+		.type = ie_button,
+		.when = Sys_LongTime (),
+		.button = {
+			.data = event_data,
+			.devid = devid,
+			.button = button->button,
+			.state = button->state,
+		},
+	};
+	IE_Send_Event (&event);
+}
+
+static void
+selection_notify (XEvent *event)
+{
+	unsigned char *data, *p;
+	unsigned long num_bytes;
+	unsigned long tmp, len;
+	int         format;
+	Atom        type, property;
+
+	x_time = event->xselection.time;
+
+	if ((property = event->xselection.property) == None)
+		return;
+
+	XGetWindowProperty (x_disp, x_win, property, 0, 0, False, AnyPropertyType,
+						&type, &format, &len, &num_bytes, &data);
+	if (num_bytes <= 0)
+		return;
+	if (XGetWindowProperty (x_disp, x_win, property, 0, num_bytes, True,
+							AnyPropertyType, &type, &format, &len, &tmp, &data)
+		!= Success) {
+		XFree (data);	// FIXME is this correct for this instance?
+		return;
+	}
+
+	//FIXME send paste event instead of key presses?
+	x11_key.code = 0;
+	for (p = data; num_bytes && *p; p++, num_bytes--) {
+		x11_key.unicode = *p;
+		in_x11_send_key_event ();
+	}
+	XFree (data);
+}
+
+static void
 event_motion (XEvent *event)
 {
 	x_time = event->xmotion.time;
 	if (x_time <= x_mouse_time) {
-		p_mouse_x = event->xmotion.x;
-		p_mouse_y = event->xmotion.y;
+		x11_mouse.x = event->xmotion.x;
+		x11_mouse.y = event->xmotion.y;
 		return;
 	}
 
 	if (dga_active) {
-		in_mouse_x += event->xmotion.x_root;
-		in_mouse_y += event->xmotion.y_root;
+		x11_mouse_axes[0].value = event->xmotion.x_root;
+		x11_mouse_axes[1].value = event->xmotion.y_root;
 	} else {
 		if (vid_fullscreen->int_val || input_grabbed) {
 			if (!event->xmotion.send_event) {
-				int         dist_x = abs (viddef.width / 2 - event->xmotion.x);
-				int         dist_y = abs (viddef.height / 2 - event->xmotion.y);
-				in_mouse_x += (event->xmotion.x - p_mouse_x);
-				in_mouse_y += (event->xmotion.y - p_mouse_y);
+				unsigned    dist_x = abs (viddef.width / 2 - event->xmotion.x);
+				unsigned    dist_y = abs (viddef.height / 2 - event->xmotion.y);
+
+				x11_mouse_axes[0].value = event->xmotion.x - x11_mouse.x;
+				x11_mouse_axes[1].value = event->xmotion.y - x11_mouse.y;
 				if (dist_x > viddef.width / 4 || dist_y > viddef.height / 4) {
 					center_pointer ();
 				}
 			}
 		} else {
-			in_mouse_x += (event->xmotion.x - p_mouse_x);
-			in_mouse_y += (event->xmotion.y - p_mouse_y);
+			x11_mouse_axes[0].value = event->xmotion.x - x11_mouse.x;
+			x11_mouse_axes[1].value = event->xmotion.y - x11_mouse.y;
 		}
-		p_mouse_x = event->xmotion.x;
-		p_mouse_y = event->xmotion.y;
+	}
+
+	x11_mouse.shift = event->xmotion.state & 0xff;
+	x11_mouse.x = event->xmotion.x;
+	x11_mouse.y = event->xmotion.y;
+	if (!in_x11_send_mouse_event (ie_mousemove)) {
+		in_x11_send_axis_event (x11_mouse_device.devid, &x11_mouse_axes[0]);
+		in_x11_send_axis_event (x11_mouse_device.devid, &x11_mouse_axes[1]);
 	}
 }
+
+static void
+event_button (XEvent *event)
+{
+	unsigned    but;
+
+	x_time = event->xbutton.time;
+
+	// x11 buttons are 1-based
+	but = event->xbutton.button - 1;
+	if (but > X11_MOUSE_BUTTONS) {
+		return;
+	}
+
+	int press = event->type == ButtonPress;
+
+	x11_mouse_buttons[but].state = press;
+
+	x11_mouse.shift = event->xmotion.state & 0xff;
+	x11_mouse.x = event->xmotion.x;
+	x11_mouse.y = event->xmotion.y;
+	if (press) {
+		x11_mouse.buttons |= 1 << but;
+	} else {
+		x11_mouse.buttons &= ~(1 << but);
+	}
+	if (!in_x11_send_mouse_event (press ? ie_mousedown : ie_mouseup)) {
+		in_x11_send_button_event (x11_mouse_device.devid,
+								  &x11_mouse_buttons[but],
+								  x11_mouse_device.event_data);
+	}
+}
+
+static unsigned
+in_x11_process_key_button (unsigned keycode, int press)
+{
+	// X11 protocol supports only 256 keys. The key codes are the AT scan codes
+	// offset by 8 (so Esc is 9 instead of 1).
+	unsigned    key = (keycode - 8) & 0xff;
+	x11_key_buttons[key].state = press;
+	return key;
+}
+
+static void
+event_key (XEvent *event)
+{
+	unsigned    key = 0;
+
+	x_time = event->xkey.time;
+	if (!x11_have_xi) {
+		key = in_x11_process_key_button (event->xkey.keycode,
+									     event->type == KeyPress);
+	}
+	x11_key.shift = event->xmotion.state & 0xff;
+	XLateKey (&event->xkey, &x11_key.code, &x11_key.unicode);
+	if (!(event->type == KeyPress && in_x11_send_key_event ())
+		&& !x11_have_xi) {
+		in_x11_send_button_event (x11_keyboard_device.devid,
+								  &x11_key_buttons[key],
+								  x11_keyboard_device.event_data);
+	}
+}
+
+#ifdef HAVE_XI2
+static void
+xi_raw_key (void *event, int press)
+{
+	if (!x_have_focus) {
+		//avoid being a keylogger
+		return;
+	}
+	XIRawEvent *re = event;
+	unsigned    key = in_x11_process_key_button (re->detail, press);
+
+	// Send only the button press: event_key takes care of the UI key event,
+	// which includes character translation and repeat (XInput2 raw key events
+	// do not repeat)
+	in_x11_send_button_event (x11_keyboard_device.devid,
+							  &x11_key_buttons[key],
+							  x11_keyboard_device.event_data);
+}
+
+static void
+xi_raw_key_press (void *event)
+{
+	xi_raw_key (event, 1);
+}
+
+static void
+xi_raw_key_resease (void *event)
+{
+	xi_raw_key (event, 0);
+}
+
+static void
+xi_raw_motion (void *event)
+{
+	int         root_x, root_y;
+	Window      root_w, child_w;
+	XIRawEvent *re = event;
+
+	//FIXME it turns out mice can have multiple axes (my trackball has 4:
+	//usual x and y, +scroll up/down and left/right (clicky and icky, but
+	//still...)
+	unsigned    mask = re->valuators.mask[0] & 3;
+	if (!mask) {
+		return;
+	}
+
+	x11_mouse_axes[0].value = 0;
+	x11_mouse_axes[1].value = 0;
+	for (int axis = 0, ind = 0; mask; axis++, mask >>= 1) {
+		if (mask & 1) {
+			x11_mouse_axes[axis].value = re->raw_values[ind++];
+		}
+	}
+	XQueryPointer (x_disp, x_win, &root_w, &child_w, &root_x, &root_y,
+				   &x11_mouse.x, &x11_mouse.y, &x11_mouse.shift);
+	// want only the modifier state
+	x11_mouse.shift &= 0xff;
+	if (!in_x11_send_mouse_event (ie_mousemove)) {
+		in_x11_send_axis_event (x11_mouse_device.devid,
+								&x11_mouse_axes[0]);
+		in_x11_send_axis_event (x11_mouse_device.devid,
+								&x11_mouse_axes[1]);
+	}
+}
+
+static void
+xi_raw_button (void *event, int press)
+{
+	int         root_x, root_y;
+	Window      root_w, child_w;
+	unsigned    button;
+	XIRawEvent *re = event;
+
+	// x11 buttons are 1-based
+	button = re->detail - 1;
+	if (button > X11_MOUSE_BUTTONS) {
+		return;
+	}
+	XQueryPointer (x_disp, x_win, &root_w, &child_w, &root_x, &root_y,
+				   &x11_mouse.x, &x11_mouse.y, &x11_mouse.shift);
+	// want only the modifier state
+	x11_mouse.shift &= 0xff;
+	if (press) {
+		x11_mouse.buttons |= 1 << button;
+	} else {
+		x11_mouse.buttons &= ~(1 << button);
+	}
+	x11_mouse_buttons[button].state = press;
+	if (!in_x11_send_mouse_event (press ? ie_mousedown : ie_mouseup)) {
+		in_x11_send_button_event (x11_mouse_device.devid,
+								  &x11_mouse_buttons[button],
+								  x11_mouse_device.event_data);
+	}
+}
+
+static void
+xi_raw_button_press (void *event)
+{
+	xi_raw_button (event, 1);
+}
+
+static void
+xi_raw_button_resease (void *event)
+{
+	xi_raw_button (event, 0);
+}
+
+static void
+xi_barrier_hit (void *event)
+{
+	__auto_type be = *(XIBarrierEvent *) event;
+
+	if (be.barrier != x11_left_barrier
+		&& be.barrier != x11_right_barrier
+		&& be.barrier != x11_top_barrier
+		&& be.barrier != x11_bottom_barrier) {
+		Sys_MaskPrintf (SYS_vid, "xi_barrier_hit: bad barrier %ld\n",
+						be.barrier);
+		return;
+	}
+
+	if (!x11_have_pointer || !input_grabbed) {
+		XIBarrierReleasePointer (x_disp, be.deviceid, be.barrier, be.eventid);
+	}
+}
+
+static void
+xi_barrier_leave (void *event)
+{
+}
+
+static void
+event_generic (XEvent *event)
+{
+	// XI_LASTEVENT is the actual last event, not +1
+	static void (*xi_event_handlers[XI_LASTEVENT + 1]) (void *) = {
+		[XI_RawKeyPress] = xi_raw_key_press,
+		[XI_RawKeyRelease] = xi_raw_key_resease,
+		[XI_RawMotion] = xi_raw_motion,
+		[XI_RawButtonPress] = xi_raw_button_press,
+		[XI_RawButtonRelease] = xi_raw_button_resease,
+		[XI_BarrierHit] = xi_barrier_hit,
+		[XI_BarrierLeave] = xi_barrier_leave,
+	};
+	XGenericEventCookie *cookie = &event->xcookie;
+
+	if (cookie->type != GenericEvent || cookie->extension != xi_opcode
+		|| !XGetEventData (x_disp, cookie)) {
+		return;
+	}
+
+	if ((unsigned) cookie->evtype <= XI_LASTEVENT
+		&& xi_event_handlers[cookie->evtype]) {
+		xi_event_handlers[cookie->evtype] (cookie->data);
+	}
+
+	XFreeEventData (x_disp, cookie);
+}
+#endif
 
 static void
 grab_error (int code, const char *device)
@@ -742,11 +1072,70 @@ grab_error (int code, const char *device)
 	Sys_Printf ("failed to grab %s: %s\n", device, reason);
 }
 
-void
-IN_LL_Grab_Input (int grab)
+#ifdef HAVE_XFIXES
+static void
+in_x11_remove_barriers (void)
+{
+	if (x11_left_barrier > 0) {
+		XFixesDestroyPointerBarrier (x_disp, x11_left_barrier);
+		x11_left_barrier = 0;
+	}
+	if (x11_right_barrier > 0) {
+		XFixesDestroyPointerBarrier (x_disp, x11_right_barrier);
+		x11_right_barrier = 0;
+	}
+	if (x11_top_barrier > 0) {
+		XFixesDestroyPointerBarrier (x_disp, x11_top_barrier);
+		x11_top_barrier = 0;
+	}
+	if (x11_bottom_barrier > 0) {
+		XFixesDestroyPointerBarrier (x_disp, x11_bottom_barrier);
+		x11_bottom_barrier = 0;
+	}
+}
+
+static void
+in_x11_setup_barriers (int xpos, int ypos, int xlen, int ylen)
+{
+	in_x11_remove_barriers ();
+
+	int         lx = bound (0, xpos, x_width - 1);
+	int         ty = bound (0, ypos, x_height - 1);
+	int         rx = bound (0, xpos + xlen - 1, x_width - 1);
+	int         by = bound (0, ypos + ylen - 1, x_height - 1);
+	x11_left_barrier = XFixesCreatePointerBarrier (x_disp, x_root,
+												   lx, ty-1, lx, by+1,
+												   BarrierPositiveX, 0, 0);
+	x11_right_barrier = XFixesCreatePointerBarrier (x_disp, x_root,
+													rx, ty-1, rx, by+1,
+												    BarrierNegativeX, 0, 0);
+	x11_top_barrier = XFixesCreatePointerBarrier (x_disp, x_root,
+												  lx-1, ty, rx+1, ty,
+												  BarrierPositiveY, 0, 0);
+	x11_bottom_barrier = XFixesCreatePointerBarrier (x_disp, x_root,
+												     lx-1, by, rx+1, by,
+												     BarrierNegativeY, 0, 0);
+}
+#endif
+
+static void
+in_x11_grab_input (void *data, int grab)
 {
 	if (!x_disp || !x_win)
 		return;
+
+#ifdef HAVE_XFIXES
+	if (xf_opcode) {
+		input_grabbed = grab;
+		if (input_grabbed) {
+			in_x11_setup_barriers (x11_aw.xpos, x11_aw.ypos,
+								   x11_aw.xlen, x11_aw.ylen);
+		} else {
+			in_x11_remove_barriers ();
+		}
+		return;
+	}
+#endif
 
 	if (vid_fullscreen)
 		grab = grab || vid_fullscreen->int_val;
@@ -779,88 +1168,442 @@ IN_LL_Grab_Input (int grab)
 		in_dga_f (in_dga);
 	}
 }
+#ifdef X11_USE_SELECT
+static void
+in_x11_add_select (qf_fd_set *fdset, int *maxfd, void *data)
+{
+	QF_FD_SET (x11_fd, fdset);
+	if (*maxfd < x11_fd) {
+		*maxfd = x11_fd;
+	}
+}
 
-void
-IN_LL_ProcessEvents (void)
+static void
+in_x11_check_select (qf_fd_set *fdset, void *data)
+{
+	if (QF_FD_ISSET (x11_fd, fdset)) {
+		Sys_Printf ("in_x11_check_select\n");
+		X11_ProcessEvents ();	// Get events from X server.
+	}
+}
+#else
+static void
+in_x11_process_events (void *data)
 {
 	X11_ProcessEvents ();	// Get events from X server.
 }
-
-void
-IN_LL_Shutdown (void)
+#endif
+static void
+in_x11_axis_info (void *data, void *device, in_axisinfo_t *axes, int *numaxes)
 {
-	Sys_MaskPrintf (SYS_VID, "IN_LL_Shutdown\n");
-	in_mouse_avail = 0;
+	x11_device_t *dev = device;
+	if (!axes) {
+		*numaxes = dev->num_axes;
+		return;
+	}
+	if (*numaxes > dev->num_axes) {
+		*numaxes = dev->num_axes;
+	}
+	memcpy (axes, dev->axes, *numaxes * sizeof (in_axisinfo_t));
+}
+
+static void
+in_x11_button_info (void *data, void *device, in_buttoninfo_t *buttons,
+					int *numbuttons)
+{
+	x11_device_t *dev = device;
+	if (!buttons) {
+		*numbuttons = dev->num_buttons;
+		return;
+	}
+	if (*numbuttons > dev->num_buttons) {
+		*numbuttons = dev->num_buttons;
+	}
+	memcpy (buttons, dev->buttons, *numbuttons * sizeof (in_buttoninfo_t));
+}
+
+static const char *
+in_x11_get_axis_name (void *data, void *device, int axis_num)
+{
+	x11_device_t *dev = device;
+	const char *name = 0;
+
+	if (dev == &x11_keyboard_device) {
+		// keyboards don't have axes...
+	} else if (dev == &x11_mouse_device) {
+		if ((unsigned) axis_num < SIZE (x11_mouse_axis_names)) {
+			name = x11_mouse_axis_names[axis_num];
+		}
+	}
+	return name;
+}
+
+static const char *
+in_x11_get_button_name (void *data, void *device, int button_num)
+{
+	x11_device_t *dev = device;
+	const char *name = 0;
+
+	if (dev == &x11_keyboard_device) {
+		// X11 protocol supports only 256 keys. The key codes are the AT scan
+		// codes offset by 8 (so Esc is 9 instead of 1).
+		KeyCode     keycode = (button_num + 8) & 0xff;
+		KeySym      keysym = XkbKeycodeToKeysym (x_disp, keycode, 0, 0);
+		if (keysym != NoSymbol) {
+			name = XKeysymToString (keysym);
+		}
+	} else if (dev == &x11_mouse_device) {
+		if ((unsigned) button_num < SIZE (x11_mouse_button_names)) {
+			name = x11_mouse_button_names[button_num];
+		}
+	}
+	return name;
+}
+
+static int
+in_x11_get_axis_info (void *data, void *device, int axis_num,
+					  in_axisinfo_t *info)
+{
+	x11_device_t *dev = device;
+	if (axis_num < 0 || axis_num > dev->num_axes) {
+		return 0;
+	}
+	*info = dev->axes[axis_num];
+	return 1;
+}
+
+static int
+in_x11_get_button_info (void *data, void *device, int button_num,
+						in_buttoninfo_t *info)
+{
+	x11_device_t *dev = device;
+	if (button_num < 0 || button_num > dev->num_buttons) {
+		return 0;
+	}
+	*info = dev->buttons[button_num];
+	return 1;
+}
+
+static int
+in_x11_get_axis_num (void *data, void *device, const char *axis_name)
+{
+	x11_device_t *dev = device;
+	int         num = -1;
+
+	if (dev == &x11_keyboard_device) {
+		// keyboards don't have axes...
+	} else if (dev == &x11_mouse_device) {
+		for (size_t i = 0; i < SIZE (x11_mouse_axis_names); i++) {
+			if (strcasecmp (axis_name, x11_mouse_axis_names[i]) == 0) {
+				num = i;
+				break;
+			}
+		}
+	}
+	return num;
+}
+
+static int
+in_x11_get_button_num (void *data, void *device, const char *button_name)
+{
+	x11_device_t *dev = device;
+	int         num = -1;
+
+	if (dev == &x11_keyboard_device) {
+		KeySym      keysym = XStringToKeysym (button_name);
+		if (keysym != NoSymbol) {
+			KeyCode     keycode = XKeysymToKeycode (x_disp, keysym);
+			if (keycode != 0) {
+				// X11 protocol supports only 256 keys. The key codes are the
+				// AT scan codes offset by 8 (so Esc is 9 instead of 1).
+				num = (keycode - 8) & 0xff;
+			}
+		}
+	} else if (dev == &x11_mouse_device) {
+		for (size_t i = 0; i < SIZE (x11_mouse_button_names); i++) {
+			if (strcasecmp (button_name, x11_mouse_button_names[i]) == 0) {
+				num = i;
+				break;
+			}
+		}
+	}
+	return num;
+}
+
+static void
+in_x11_shutdown (void *data)
+{
+	Sys_MaskPrintf (SYS_vid, "in_x11_shutdown\n");
 	if (x_disp) {
 //		XAutoRepeatOn (x_disp);
 		dga_off ();
 	}
 	if (in_mouse_accel && !in_mouse_accel->int_val)
 		X11_RestoreMouseAcceleration ();
-	X11_CloseDisplay ();
 }
 
-void
-IN_LL_Init (void)
+static void
+in_x11_set_device_event_data (void *device, void *event_data, void *data)
 {
-	// open the display
-	if (!x_disp)
-		Sys_Error ("IN: No display!!");
-	if (!x_win)
-		Sys_Error ("IN: No window!!");
-
-	X11_OpenDisplay (); // call to increment the reference counter
-
-	{
-		int 	attribmask = CWEventMask;
-
-		XWindowAttributes attribs_1;
-		XSetWindowAttributes attribs_2;
-
-		XGetWindowAttributes (x_disp, x_win, &attribs_1);
-
-		attribs_2.event_mask = attribs_1.your_event_mask | X11_INPUT_MASK;
-
-		XChangeWindowAttributes (x_disp, x_win, attribmask, &attribs_2);
-	}
-
-	X11_AddEvent (KeyPress, &event_key);
-	X11_AddEvent (KeyRelease, &event_key);
-	X11_AddEvent (FocusIn, &event_focusin);
-	X11_AddEvent (FocusOut, &event_focusout);
-	X11_AddEvent (SelectionNotify, &selection_notify);
-	X11_AddEvent (EnterNotify, &enter_notify);
-
-	if (!COM_CheckParm ("-nomouse")) {
-		dga_avail = VID_CheckDGA (x_disp, NULL, NULL, NULL);
-		Sys_MaskPrintf (SYS_VID, "VID_CheckDGA returned %d\n", dga_avail);
-
-		X11_AddEvent (ButtonPress, &event_button);
-		X11_AddEvent (ButtonRelease, &event_button);
-		X11_AddEvent (MotionNotify, &event_motion);
-
-		in_mouse_avail = 1;
-	}
-
-	Key_KeydestCallback (x11_keydest_callback);
-
-	Cmd_AddCommand ("in_paste_buffer", in_paste_buffer_f,
-					"Paste the contents of X's C&P buffer to the console");
+	x11_device_t *dev = device;
+	dev->event_data = event_data;
 }
 
-void
-IN_LL_Init_Cvars (void)
+static void *
+in_x11_get_device_event_data (void *device, void *data)
 {
+	x11_device_t *dev = device;
+	return dev->event_data;
+}
+
+static void
+in_x11_init_cvars (void *data)
+{
+	in_auto_focus = Cvar_Get ("in_auto_focus", "1", CVAR_ARCHIVE, 0,
+							  "grab input focus when the mouse enters the"
+							  " window when using xinput2 with certain"
+							  " window managers using focus-follows-mouse"
+							  " (eg, openbox)");
 	in_snd_block = Cvar_Get ("in_snd_block", "0", CVAR_ARCHIVE, NULL,
 							 "block sound output on window focus loss");
-	in_dga = Cvar_Get ("in_dga", "0", CVAR_ARCHIVE, in_dga_f, //FIXME 0 until X fixed
+	in_dga = Cvar_Get ("in_dga", "0", CVAR_ARCHIVE, in_dga_f,
 					   "DGA Input support");
 	in_mouse_accel = Cvar_Get ("in_mouse_accel", "1", CVAR_ARCHIVE,
 							   in_mouse_accel_f,
 							   "set to 0 to remove mouse acceleration");
 }
 
+static void
+x11_add_device (x11_device_t *dev)
+{
+	for (int i = 0; i < dev->num_axes; i++) {
+		dev->axes[i].axis = i;
+	}
+	for (int i = 0; i < dev->num_buttons; i++) {
+		dev->buttons[i].button = i;
+	}
+	dev->devid = IN_AddDevice (x11_driver_handle, dev, dev->name, dev->name);
+}
+
+#ifdef HAVE_XI2
+static int
+in_x11_check_xi2 (void)
+{
+	// Support XI 2.2
+	int         major = 2, minor = 2;
+	int         event, error;
+	int         ret;
+
+	if (!XQueryExtension (x_disp, "XInputExtension",
+						  &xi_opcode, &event, &error)) {
+		Sys_MaskPrintf (SYS_vid, "X Input extenions not available.\n");
+		return 0;
+	}
+	if ((ret = XIQueryVersion (x_disp, &major, &minor)) == BadRequest) {
+		Sys_MaskPrintf (SYS_vid,
+						"No XI2 support. Server supports only %d.%d\n",
+						major, minor);
+		return 0;
+	} else if (ret != Success) {
+		Sys_MaskPrintf (SYS_vid, "in_x11_check_xi2: Xlib return bad: %d\n",
+						ret);
+	}
+	Sys_MaskPrintf (SYS_vid, "XI2 supported: version %d.%d, op: %d err: %d\n",
+					major, minor, xi_opcode, error);
+
+	if (!XQueryExtension (x_disp, "XFIXES", &xf_opcode, &event, &error)) {
+		Sys_MaskPrintf (SYS_vid, "X fixes extenions not available.\n");
+		return 0;
+	}
+	major = 5, minor = 0;
+	if (!XFixesQueryVersion (x_disp, &major, &minor)
+		|| (major * 10 + minor) < 50) {
+		Sys_MaskPrintf (SYS_vid, "Need X fixes 5.0.\n");
+		return 0;
+	}
+	Sys_MaskPrintf (SYS_vid,
+					"XFixes supported: version %d.%d, op: %d err: %d\n",
+					major, minor, xf_opcode, error);
+	return 1;
+}
+
+static void
+in_x11_xi_select_events (void)
+{
+	byte        mask[(XI_LASTEVENT + 7) / 8] = {};
+	XIEventMask evmask = {
+		.deviceid = XIAllMasterDevices,
+		.mask_len = sizeof (mask),
+		.mask = mask,
+	};
+	XISetMask (mask, XI_BarrierHit);
+	XISetMask (mask, XI_BarrierLeave);
+	XISetMask (mask, XI_RawKeyPress);
+	XISetMask (mask, XI_RawKeyRelease);
+	XISelectEvents (x_disp, x_root, &evmask, 1);
+}
+
+static void
+in_x11_xi_setup_grabs (void)
+{
+	// FIXME normal apps aren't supposed to care about the client pointer,
+	// but grabbing all master devices grabs the keyboard, too, which blocks
+	// alt-tab and the like
+	int dev;
+	XIGetClientPointer (x_disp, x_win, &dev);
+
+	byte        mask[(XI_LASTEVENT + 7) / 8] = {};
+	XIEventMask evmask = {
+		.deviceid = dev,
+		.mask_len = sizeof (mask),
+		.mask = mask,
+	};
+	XISetMask (mask, XI_RawMotion);
+	XISetMask (mask, XI_RawButtonPress);
+	XISetMask (mask, XI_RawButtonRelease);
+
+	XIGrabModifiers modif = {
+		.modifiers = XIAnyModifier,
+	};
+
+	// Grab mouse events on the app window so window manager actions (eg,
+	// alt-middle-click) don't interfere. However, the keyboard is not grabbed
+	// so the user always has a way to take control (assuming the window
+	// manager provides such, but most do).
+	XIGrabEnter (x_disp, dev, x_win, None, XIGrabModeAsync, XIGrabModeAsync,
+				 0, &evmask, 1, &modif);
+}
+#endif
+
+static void
+x11_app_window (const IE_event_t *ie_event)
+{
+	x11_aw = ie_event->app_window;
+	Sys_MaskPrintf (SYS_vid, "window: %d %d %d %d\n",
+					x11_aw.xpos, x11_aw.ypos, x11_aw.xlen, x11_aw.ylen);
+#ifdef HAVE_XFIXES
+	if (input_grabbed) {
+		in_x11_setup_barriers (x11_aw.xpos, x11_aw.ypos,
+							   x11_aw.xlen, x11_aw.ylen);
+	}
+#endif
+}
+
+static int
+x11_event_handler (const IE_event_t *ie_event, void *unused)
+{
+	static void (*handlers[ie_event_count]) (const IE_event_t *ie_event) = {
+		[ie_app_window] = x11_app_window,
+	};
+	if (ie_event->type < 0 || ie_event->type >= ie_event_count
+		|| !handlers[ie_event->type]) {
+		return 0;
+	}
+	handlers[ie_event->type] (ie_event);
+	return 1;
+}
+
+long
+IN_X11_Preinit (void)
+{
+	if (!x_disp)
+		Sys_Error ("IN: No display!!");
+
+	long        event_mask = X11_INPUT_MASK;
+
+	x11_event_handler_id = IE_Add_Handler (x11_event_handler, 0);
+#ifdef HAVE_XI2
+	x11_have_xi = in_x11_check_xi2 ();
+#endif
+	X11_AddEvent (KeyPress, &event_key);
+	X11_AddEvent (KeyRelease, &event_key);
+	X11_AddEvent (FocusIn, &event_focusin);
+	X11_AddEvent (FocusOut, &event_focusout);
+	X11_AddEvent (SelectionNotify, &selection_notify);
+	X11_AddEvent (EnterNotify, &enter_notify);
+	X11_AddEvent (LeaveNotify, &leave_notify);
+
+	if (x11_have_xi) {
+#ifdef HAVE_XI2
+		X11_AddEvent (GenericEvent, &event_generic);
+#endif
+	} else {
+		X11_AddEvent (MotionNotify, &event_motion);
+		X11_AddEvent (ButtonPress, &event_button);
+		X11_AddEvent (ButtonRelease, &event_button);
+	}
+
+	Cmd_AddCommand ("in_paste_buffer", in_paste_buffer_f,
+					"Paste the contents of X's C&P buffer to the console");
+	return event_mask;
+}
+
 void
-IN_LL_ClearStates (void)
+IN_X11_Postinit (void)
+{
+	if (!x_disp)
+		Sys_Error ("IN: No display!!");
+	if (!x_win)
+		Sys_Error ("IN: No window!!");
+
+	if (x11_have_xi) {
+#ifdef HAVE_XI2
+		in_x11_xi_select_events ();
+		in_x11_xi_setup_grabs ();
+#endif
+	} else {
+		dga_avail = VID_CheckDGA (x_disp, NULL, NULL, NULL);
+		Sys_MaskPrintf (SYS_vid, "VID_CheckDGA returned %d\n",
+						dga_avail);
+	}
+}
+
+static void
+in_x11_init (void *data)
+{
+	x11_fd = ConnectionNumber (x_disp);
+
+	x11_add_device (&x11_keyboard_device);
+	x11_add_device (&x11_mouse_device);
+}
+
+static void
+in_x11_clear_states (void *data)
 {
 }
+
+static in_driver_t in_x11_driver = {
+	.init_cvars = in_x11_init_cvars,
+	.init = in_x11_init,
+	.shutdown = in_x11_shutdown,
+	.set_device_event_data = in_x11_set_device_event_data,
+	.get_device_event_data = in_x11_get_device_event_data,
+#ifdef X11_USE_SELECT
+	.add_select = in_x11_add_select,
+	.check_select = in_x11_check_select,
+#else
+	.process_events = in_x11_process_events,
+#endif
+	.clear_states = in_x11_clear_states,
+	.grab_input = in_x11_grab_input,
+
+	.axis_info = in_x11_axis_info,
+	.button_info = in_x11_button_info,
+
+	.get_axis_name = in_x11_get_axis_name,
+	.get_button_name = in_x11_get_button_name,
+
+	.get_axis_num = in_x11_get_axis_num,
+	.get_button_num = in_x11_get_button_num,
+
+	.get_axis_info = in_x11_get_axis_info,
+	.get_button_info = in_x11_get_button_info,
+};
+
+static void __attribute__((constructor))
+in_x11_register_driver (void)
+{
+	x11_driver_handle = IN_RegisterDriver (&in_x11_driver, 0);
+}
+
+int x11_force_link;

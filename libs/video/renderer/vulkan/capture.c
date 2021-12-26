@@ -69,7 +69,7 @@ QFV_CreateCapture (qfv_device_t *device, int numframes,
 	}
 	if (!(format_props.optimalTilingFeatures
 		  & VK_FORMAT_FEATURE_BLIT_SRC_BIT)) {
-		Sys_MaskPrintf (SYS_VULKAN,
+		Sys_MaskPrintf (SYS_vulkan,
 						"Device does not support blitting from optimal tiled "
 						"images.\n");
 		canBlit = 0;
@@ -78,7 +78,7 @@ QFV_CreateCapture (qfv_device_t *device, int numframes,
 												&format_props);
 	if (!(format_props.linearTilingFeatures
 		  & VK_FORMAT_FEATURE_BLIT_DST_BIT)) {
-		Sys_MaskPrintf (SYS_VULKAN,
+		Sys_MaskPrintf (SYS_vulkan,
 						"Device does not support blitting from optimal tiled "
 						"images.\n");
 		canBlit = 0;
