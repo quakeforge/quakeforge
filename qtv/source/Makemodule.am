@@ -35,6 +35,7 @@ qtv_LIBS= \
 		@server_static_plugin_libs@ \
 		libs/qw/libqw.a \
 		libs/net/libnet_chan.la \
+		libs/models/libQFmodels.la \
 		libs/console/libQFconsole.la \
 		libs/ui/libQFui.la \
 		libs/util/libQFutil.la

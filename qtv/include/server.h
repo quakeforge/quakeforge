@@ -95,6 +95,7 @@ typedef struct server_s {
 	char       *modellist[MAX_MODELS + 1];
 	char       *lightstyles[MAX_LIGHTSTYLES];
 	struct model_s *worldmodel;
+	struct set_s *fatpvs;
 	int         playermodel;
 	int         num_signon_buffers;
 	int         signon_buffer_size[MAX_SIGNON_BUFFERS];

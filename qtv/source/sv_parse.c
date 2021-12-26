@@ -110,6 +110,50 @@ free_qtv_leafs (qtv_leaf_t **leafs)
 }
 
 static void
+sv_unlink_entity (server_t *sv, qtv_entity_t *ent)
+{
+	free_qtv_leafs (&ent->leafs);
+}
+
+static void
+sv_find_touched_leafs (server_t *sv, qtv_entity_t *ent, mnode_t *node)
+{
+	if (node->contents == CONTENTS_SOLID) {
+		return;
+	}
+	// add an efrag if the node is a leaf
+	if (node->contents < 0) {
+		qtv_leaf_t *ent_leaf = alloc_qtv_leaf ();
+		ent_leaf->num = (mleaf_t *) node - sv->worldmodel->brush.leafs - 1;
+		ent_leaf->next = ent->leafs;
+		ent->leafs = ent_leaf;
+		return;
+	}
+
+	vec3_t      emins, emaxs;
+	vec4f_t     mins = {-64, -64, -64, 0};//FIXME
+	vec4f_t     maxs = {64, 64, 64, 0};
+	VectorAdd (ent->e.origin, mins, emins);
+	VectorAdd (ent->e.origin, maxs, emaxs);
+
+	plane_t    *splitplane = node->plane;
+	int         sides = BOX_ON_PLANE_SIDE (emins, emaxs, splitplane);
+	if (sides & 1) {
+		sv_find_touched_leafs (sv, ent, node->children[0]);
+	}
+	if (sides & 2) {
+		sv_find_touched_leafs (sv, ent, node->children[1]);
+	}
+}
+
+static void
+sv_link_entity (server_t *sv, qtv_entity_t *ent)
+{
+	sv_unlink_entity (sv, ent);
+	sv_find_touched_leafs (sv, ent, sv->worldmodel->brush.nodes);
+}
+
+static void
 sv_serverdata (server_t *sv, qmsg_t *msg)
 {
 	const char *str;
@@ -479,6 +523,7 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 				newp->entities[newindex] = oldp->entities[oldindex];
 				num = newp->entities[newindex].number;
 				sv->entities[num].e = newp->entities[newindex];
+				sv_link_entity (sv, &sv->entities[num]);
 				sv->ent_valid[num] = 1;
 				newindex++;
 				oldindex++;
@@ -506,6 +551,7 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 			newp->entities[newindex] = oldp->entities[oldindex];
 			num = newp->entities[newindex].number;
 			sv->entities[num].e = newp->entities[newindex];
+			sv_link_entity (sv, &sv->entities[num]);
 			sv->ent_valid[num] = 1;
 			newindex++;
 			oldindex++;
@@ -533,6 +579,7 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 			newp->entities[newindex] = sv->baselines[newnum];
 			sv_parse_delta (msg, word, &newp->entities[newindex]);
 			sv->entities[newnum].e = newp->entities[newindex];
+			sv_link_entity (sv, &sv->entities[newnum]);
 			newindex++;
 			continue;
 		}
@@ -549,6 +596,7 @@ sv_packetentities (server_t *sv, qmsg_t *msg, int delta)
 			newp->entities[newindex] = oldp->entities[oldindex];
 			sv_parse_delta (msg, word, &newp->entities[newindex]);
 			sv->entities[newnum].e = newp->entities[newindex];
+			sv_link_entity (sv, &sv->entities[newnum]);
 			sv->ent_valid[newnum] = 1;
 			newindex++;
 			oldindex++;

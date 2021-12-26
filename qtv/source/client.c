@@ -48,6 +48,7 @@
 #include "QF/hash.h"
 #include "QF/idparse.h"
 #include "QF/info.h"
+#include "QF/set.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 
@@ -976,14 +977,9 @@ emit_entities (client_t *client, packet_entities_t *to, sizebuf_t *msg)
 	MSG_WriteShort (msg, 0);			// end of packetentities
 }
 
-static byte fatpvs[MAX_MAP_LEAFS / 8];
-int         fatbytes;
-
 static void
-add_to_fat_pvs (vec3_t org, mnode_t *node, server_t *sv)
+add_to_fat_pvs (vec4f_t org, mnode_t *node, server_t *sv)
 {
-	byte       *pvs;
-	int         i;
 	float       d;
 	plane_t    *plane;
 
@@ -991,9 +987,8 @@ add_to_fat_pvs (vec3_t org, mnode_t *node, server_t *sv)
 		// if this is a leaf, accumulate the pvs bits
 		if (node->contents < 0) {
 			if (node->contents != CONTENTS_SOLID) {
-				pvs = Mod_LeafPVS ((mleaf_t *) node, sv->worldmodel);
-				for (i = 0; i < fatbytes; i++)
-					fatpvs[i] |= pvs[i];
+				set_union (sv->fatpvs, Mod_LeafPVS ((mleaf_t *) node,
+													sv->worldmodel));
 			}
 			return;
 		}
@@ -1011,24 +1006,28 @@ add_to_fat_pvs (vec3_t org, mnode_t *node, server_t *sv)
 	}
 }
 
-static byte *
-fat_pvs (vec3_t org, server_t *sv)
+static set_t *
+fat_pvs (vec4f_t org, server_t *sv)
 {
-	fatbytes = (sv->worldmodel->numleafs + 31) >> 3;
-	memset (fatpvs, 0, fatbytes);
-	add_to_fat_pvs (org, sv->worldmodel->nodes, sv);
-	return fatpvs;
+	if (!sv->fatpvs) {
+		sv->fatpvs = set_new_size (sv->worldmodel->brush.visleafs);
+	}
+	set_expand (sv->fatpvs, sv->worldmodel->brush.visleafs);
+	set_empty (sv->fatpvs);
+
+	add_to_fat_pvs (org, sv->worldmodel->brush.nodes, sv);
+	return sv->fatpvs;
 }
 
 static void
 write_entities (client_t *client, sizebuf_t *msg)
 {
-	byte       *pvs = 0;
-	int         i;
+	set_t      *pvs = 0;
 	int         e;
-	vec3_t      org;
+	vec4f_t     org;
 	frame_t    *frame;
-	entity_state_t *ent;
+	qtv_entity_t *ent;
+	qtv_leaf_t *el;
 	entity_state_t *state;
 	packet_entities_t *pack;
 	server_t   *sv = client->server;
@@ -1037,7 +1036,7 @@ write_entities (client_t *client, sizebuf_t *msg)
 	frame = &client->frames[client->netchan.incoming_sequence & UPDATE_MASK];
 
 	// find the client's PVS
-	VectorCopy (client->state.origin, org);
+	org = client->state.es.origin;
 	org[2] += 22;	//XXX standard spectator view offset
 	pvs = fat_pvs (org, sv);
 
@@ -1052,15 +1051,16 @@ write_entities (client_t *client, sizebuf_t *msg)
 		 e++, ent++) {
 		if (!sv->ent_valid[e])
 			continue;
-		if (ent->number && ent->number != e)
-			qtv_printf ("%d %d\n", e, ent->number);
+		if (ent->e.number && ent->e.number != e)
+			qtv_printf ("%d %d\n", e, ent->e.number);
 		if (pvs) {
 			// ignore if not touching a PV leaf
-			for (i = 0; i < ent->num_leafs; i++)
-				if (pvs[ent->leafnums[i] >> 3] & (1 << (ent->leafnums[i] & 7)))
+			for (el = ent->leafs; el; el = el->next) {
+				if (set_is_member (pvs, el->num))
 					break;
+			}
 
-			if (i == ent->num_leafs)
+			if (!el)
 				continue;					// not visible
 		}
 //		if (SV_AddNailUpdate (ent))
@@ -1074,7 +1074,7 @@ write_entities (client_t *client, sizebuf_t *msg)
 
 		state = &pack->entities[pack->num_entities];
 		pack->num_entities++;
-		*state = *ent;
+		*state = ent->e;
 		state->flags = 0;
 	}
 	// encode the packet entities as a delta from the
