@@ -110,11 +110,7 @@ vabsf (vec4f_t v)
 {
 	const uint32_t  nan = ~0u >> 1;
 	const vec4i_t   abs = { nan, nan, nan, nan };
-#ifndef __SSE__
 	return (vec4f_t) ((vec4i_t) v & abs);
-#else
-	return _mm_and_ps (v, (__m128) abs);
-#endif
 }
 
 #ifndef IMPLEMENT_VEC4F_Funcs
@@ -319,11 +315,7 @@ vec4f_t
 qconjf (vec4f_t q)
 {
 	const vec4i_t neg = { 1u << 31, 1u << 31, 1u << 31, 0 };
-#ifndef __SSE__
 	return (vec4f_t) ((vec4i_t) q ^ neg);
-#else
-	return _mm_xor_ps (q, (__m128) neg);
-#endif
 }
 
 #ifndef IMPLEMENT_VEC4F_Funcs
