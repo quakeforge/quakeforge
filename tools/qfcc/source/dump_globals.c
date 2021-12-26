@@ -325,9 +325,9 @@ qfo_globals (qfo_t *qfo)
 					QFO_GETSTR (qfo, def->name),
 					def->type,
 					QFO_TYPESTR (qfo, def->type));
-			if (!(def->flags & QFOD_EXTERNAL) && qfo->spaces[space].d.data)
+			if (!(def->flags & QFOD_EXTERNAL) && qfo->spaces[space].data)
 				printf (" %d",
-						qfo->spaces[space].d.data[def->offset].integer_var);
+						qfo->spaces[space].data[def->offset].integer_var);
 			puts ("");
 		}
 	}
@@ -481,7 +481,7 @@ qfo_functions (qfo_t *qfo)
 			locals = &qfo->spaces[func->locals_space];
 			printf ("%*s%d %p %d %p %d %d\n", 16, "", locals->type,
 					locals->defs, locals->num_defs,
-					locals->d.data, locals->data_size, locals->id);
+					locals->data, locals->data_size, locals->id);
 			for (j = 0; j < locals->num_defs; j++) {
 				qfo_def_t  *def = locals->defs + j;
 				int         offset;
@@ -627,10 +627,10 @@ dump_types (progs_t *pr)
 	}
 	memset (spaces, 0, sizeof (spaces));
 	spaces[qfo_strings_space].type = qfos_string;
-	spaces[qfo_strings_space].d.strings = pr->pr_strings;
+	spaces[qfo_strings_space].strings = pr->pr_strings;
 	spaces[qfo_strings_space].data_size = pr->pr_stringsize;
 	spaces[qfo_type_space].type = qfos_type;
-	spaces[qfo_type_space].d.data = pr->pr_globals + encodings->types;
+	spaces[qfo_type_space].data = pr->pr_globals + encodings->types;
 	spaces[qfo_type_space].data_size = encodings->size;
 	memset (&qfo, 0, sizeof (qfo));
 	qfo.spaces = spaces;

@@ -254,7 +254,7 @@ typedef struct qfo_mspace_s {
 		dstatement_t *code;
 		pr_type_t  *data;
 		char       *strings;
-	}           d;
+	};
 	unsigned    data_size;
 	unsigned    id;
 } qfo_mspace_t;
@@ -305,7 +305,7 @@ enum {
 
 	\hideinitializer
 */
-#define QFO_var(q, s, t, o)	((q)->spaces[s].d.data[o].t##_var)
+#define QFO_var(q, s, t, o)	((q)->spaces[s].data[o].t##_var)
 
 /** Access a double variable in the object file. Can be assigned to.
 
@@ -318,7 +318,7 @@ enum {
 
 	\hideinitializer
 */
-#define	QFO_DOUBLE(q, s, o)		(*(double *) ((q)->spaces[s].d.data + o))
+#define	QFO_DOUBLE(q, s, o)		(*(double *) ((q)->spaces[s].data + o))
 
 /** Access a float variable in the object file. Can be assigned to.
 
@@ -380,10 +380,10 @@ enum {
 
 	\hideinitializer
 */
-#define QFO_GETSTR(q, s)	((q)->spaces[qfo_strings_space].d.strings + (s))
+#define QFO_GETSTR(q, s)	((q)->spaces[qfo_strings_space].strings + (s))
 
 #define QFO_TYPE(q, t)		((qfot_type_t *) (char *) \
-							 ((q)->spaces[qfo_type_space].d.data + (t)))
+							 ((q)->spaces[qfo_type_space].data + (t)))
 
 /** Retrieve a type string from the object file, converting it to a C string.
 
@@ -399,7 +399,7 @@ enum {
 #define QFO_TYPEMETA(q, t)	QFO_INT (q, qfo_type_space, (t) + 0)
 #define QFO_TYPETYPE(q, t)	QFO_INT (q, qfo_type_space, (t) + 3)
 
-#define QFO_STATEMENT(q, s) ((q)->spaces[qfo_code_space].d.code + (s))
+#define QFO_STATEMENT(q, s) ((q)->spaces[qfo_code_space].code + (s))
 
 /** Access a string global, converting it to a C string.
 

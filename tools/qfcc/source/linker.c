@@ -172,7 +172,7 @@ static dstring_t *linker_current_file;
 #define QFOSTR(q,s)		QFO_GETSTR (q, s)
 #define WORKSTR(s)		QFOSTR (work, s)
 #define QFOTYPE(t)		((qfot_type_t *) (char *) \
-						 (qfo_type_defs->d.data + (t)))
+						 (qfo_type_defs->data + (t)))
 #define WORKTYPE(t)		((qfot_type_t *) (char *) \
 						 (work_type_data->data + (t)))
 
@@ -247,7 +247,7 @@ linker_add_string (const char *str)
 {
 	string_t    new;
 	new = strpool_addstr (work_strings, str);
-	work->spaces[qfo_strings_space].d.strings = work_strings->strings;
+	work->spaces[qfo_strings_space].strings = work_strings->strings;
 	work->spaces[qfo_strings_space].data_size = work_strings->size;
 	return new;
 }
@@ -268,7 +268,7 @@ alloc_data (int space, int size)
 	if (size <= 0)
 		linker_internal_error ("bad size for alloc_data (): %d", space);
 	offset = defspace_alloc_loc (*work_spaces[space], size);
-	work->spaces[space].d.data = (*work_spaces[space])->data;
+	work->spaces[space].data = (*work_spaces[space])->data;
 	work->spaces[space].data_size = (*work_spaces[space])->size;
 	return offset;
 }
@@ -536,11 +536,11 @@ add_defs (qfo_t *qfo, qfo_mspace_t *space, qfo_mspace_t *dest_space,
 static void
 add_qfo_strings (qfo_mspace_t *strings)
 {
-	const char *str = strings->d.strings;
+	const char *str = strings->strings;
 
-	while ((pr_uint_t) (str - strings->d.strings) < strings->data_size) {
+	while ((pr_uint_t) (str - strings->strings) < strings->data_size) {
 		linker_add_string (str);
-		while ((pr_uint_t) (str - strings->d.strings) < strings->data_size
+		while ((pr_uint_t) (str - strings->strings) < strings->data_size
 			   && *str)
 			str++;
 		str++;		// advance past the terminating nul
@@ -554,8 +554,8 @@ add_qfo_strings (qfo_mspace_t *strings)
 static void
 add_code (qfo_mspace_t *code)
 {
-	codespace_addcode (work_code, code->d.code, code->data_size);
-	work->spaces[qfo_code_space].d.code = work_code->code;
+	codespace_addcode (work_code, code->code, code->data_size);
+	work->spaces[qfo_code_space].code = work_code->code;
 	work->spaces[qfo_code_space].data_size = work_code->size;
 }
 
@@ -570,8 +570,8 @@ add_data (int space, qfo_mspace_t *data)
 	if (space < 0 || space >= qfo_num_spaces || !work_spaces[space])
 		linker_internal_error ("bad space for add_data (): %d", space);
 	if (data->data_size)
-		defspace_add_data (*work_spaces[space], data->d.data, data->data_size);
-	work->spaces[space].d.data = (*work_spaces[space])->data;
+		defspace_add_data (*work_spaces[space], data->data, data->data_size);
+	work->spaces[space].data = (*work_spaces[space])->data;
 	work->spaces[space].data_size = (*work_spaces[space])->size;
 }
 
@@ -596,10 +596,10 @@ add_data_space (qfo_t *qfo, qfo_mspace_t *space)
 	ws->type = space->type;
 	if (space->num_defs)
 		add_defs (qfo, space, ws, process_data_def);
-	if (space->d.data) {
+	if (space->data) {
 		int         size = space->data_size * sizeof (pr_type_t);
-		ws->d.data = malloc (size);
-		memcpy (ws->d.data, space->d.data, size);
+		ws->data = malloc (size);
+		memcpy (ws->data, space->data, size);
 	}
 	ws->data_size = space->data_size;
 	ws->id = space->id;
@@ -630,7 +630,7 @@ make_def (int s, const char *name, type_t *type, unsigned flags, void *val)
 	if (val)
 		memcpy (&def_space->data[def->offset], val,
 				type_size (type) * sizeof (pr_type_t));
-	space->d.data = def_space->data;
+	space->data = def_space->data;
 	space->data_size = def_space->size;
 
 	ref = get_defref (def, space);
@@ -695,25 +695,25 @@ linker_begin (void)
 	work->num_spaces = qfo_num_spaces;
 	work->spaces[qfo_null_space].type = qfos_null;
 	work->spaces[qfo_strings_space].type = qfos_string;
-	work->spaces[qfo_strings_space].d.strings = work_strings->strings;
+	work->spaces[qfo_strings_space].strings = work_strings->strings;
 	work->spaces[qfo_strings_space].data_size = work_strings->size;
 	work->spaces[qfo_code_space].type = qfos_code;
-	work->spaces[qfo_code_space].d.code = work_code->code;
+	work->spaces[qfo_code_space].code = work_code->code;
 	work->spaces[qfo_code_space].data_size = work_code->size;
 	work->spaces[qfo_near_data_space].type = qfos_data;
-	work->spaces[qfo_near_data_space].d.data = work_near_data->data;
+	work->spaces[qfo_near_data_space].data = work_near_data->data;
 	work->spaces[qfo_near_data_space].data_size = work_near_data->size;
 	work->spaces[qfo_far_data_space].type = qfos_data;
-	work->spaces[qfo_far_data_space].d.data = work_far_data->data;
+	work->spaces[qfo_far_data_space].data = work_far_data->data;
 	work->spaces[qfo_far_data_space].data_size = work_far_data->size;
 	work->spaces[qfo_entity_space].type = qfos_entity;
-	work->spaces[qfo_entity_space].d.data = work_entity_data->data;
+	work->spaces[qfo_entity_space].data = work_entity_data->data;
 	work->spaces[qfo_entity_space].data_size = work_entity_data->size;
 	work->spaces[qfo_type_space].type = qfos_type;
-	work->spaces[qfo_type_space].d.data = work_type_data->data;
+	work->spaces[qfo_type_space].data = work_type_data->data;
 	work->spaces[qfo_type_space].data_size = work_type_data->size;
 	work->spaces[qfo_debug_space].type = qfos_debug;
-	work->spaces[qfo_debug_space].d.data = work_type_data->data;
+	work->spaces[qfo_debug_space].data = work_type_data->data;
 	work->spaces[qfo_debug_space].data_size = work_type_data->size;
 	for (i = 0; i < qfo_num_spaces; i++)
 		work->spaces[i].id = i;
@@ -739,7 +739,7 @@ process_null_space (qfo_t *qfo, qfo_mspace_t *space, int pass)
 {
 	if (pass != 0)
 		return 0;
-	if (space->defs || space->num_defs || space->d.data || space->data_size
+	if (space->defs || space->num_defs || space->data || space->data_size
 		|| space->id) {
 		linker_error ("non-null null space");
 		return 1;
@@ -1279,7 +1279,7 @@ build_qfo (void)
 	for (i = 0; i < work->num_spaces; i++) {
 		qfo->spaces[i].type = work->spaces[i].type;
 		qfo->spaces[i].id = work->spaces[i].id;
-		qfo->spaces[i].d = work->spaces[i].d;
+		qfo->spaces[i].data = work->spaces[i].data;
 		qfo->spaces[i].data_size = work->spaces[i].data_size;
 	}
 	// allocate space for all relocs and copy in the loose relocs. bound

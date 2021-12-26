@@ -94,5 +94,5 @@ qfo_strings (qfo_t *qfo)
 		printf ("no strings\n");
 		return;
 	}
-	dump_string_block (space->d.strings, space->data_size);
+	dump_string_block (space->strings, space->data_size);
 }
