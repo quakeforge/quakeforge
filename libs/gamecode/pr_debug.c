@@ -526,6 +526,80 @@ func_compare_search (const void *_key, const void *_f, void *_res)
 	return key->line - f_line;
 }
 
+VISIBLE void
+PR_DebugSetSym (progs_t *pr, pr_debug_header_t *debug)
+{
+	prdeb_resources_t *res = pr->pr_debug_resources;
+
+	res->auxfunctions = (pr_auxfunction_t*)((char*)debug + debug->auxfunctions);
+	res->linenos = (pr_lineno_t*)((char*)debug + debug->linenos);
+	res->local_defs = (pr_def_t*)((char*)debug + debug->locals);
+	res->debug_defs = (pr_def_t*)((char*)debug + debug->debug_defs);
+	res->debug_data = (pr_type_t*)((char*)debug + debug->debug_data);
+
+	size_t      size;
+	size = pr->progs->numfunctions * sizeof (pr_auxfunction_t *);
+	res->auxfunction_map = pr->allocate_progs_mem (pr, size);
+	size = pr->progs->numfunctions * sizeof (func_t);
+	res->sorted_functions = pr->allocate_progs_mem (pr, size);
+
+	for (pr_uint_t i = 0; i < pr->progs->numfunctions; i++) {
+		res->auxfunction_map[i] = 0;
+		res->sorted_functions[i] = i;
+	}
+
+	qfot_type_encodings_t *encodings = 0;
+	pointer_t   type_encodings = 0;
+	res->type_encodings_def = PR_FindGlobal (pr, ".type_encodings");
+	if (res->type_encodings_def) {
+		encodings = &G_STRUCT (pr, qfot_type_encodings_t,
+							   res->type_encodings_def->ofs);
+		type_encodings = encodings->types;
+	}
+
+	for (pr_uint_t i = 0; i < debug->num_auxfunctions; i++) {
+		if (type_encodings) {
+			res->auxfunctions[i].return_type += type_encodings;
+		}
+		res->auxfunction_map[res->auxfunctions[i].function] =
+			&res->auxfunctions[i];
+	}
+	qsort_r (res->sorted_functions, pr->progs->numfunctions, sizeof (func_t),
+			 func_compare_sort, res);
+
+	for (pr_uint_t i = 0; i < debug->num_locals; i++) {
+		if (type_encodings) {
+			res->local_defs[i].type_encoding += type_encodings;
+		}
+	}
+
+	string_t    compunit_str = PR_FindString (pr, ".compile_unit");
+	for (pr_uint_t i = 0; i < debug->num_debug_defs; i++) {
+		pr_def_t   *def = &res->debug_defs[i];
+		if (type_encodings) {
+			def->type_encoding += type_encodings;
+		}
+		Hash_Add (res->debug_syms, def);
+		if (def->name == compunit_str) {
+			process_compunit (res, def);
+		}
+	}
+
+	if (encodings) {
+		qfot_type_t *type;
+		for (pointer_t type_ptr = 4; type_ptr < encodings->size;
+			 type_ptr += type->size) {
+			type = &G_STRUCT (pr, qfot_type_t, type_encodings + type_ptr);
+			if (type->meta == ty_basic
+				&& type->type >= 0 && type->type < ev_type_count) {
+				res->type_encodings[type->type] = type;
+			}
+		}
+	}
+
+	res->debug = debug;
+}
+
 VISIBLE int
 PR_LoadDebug (progs_t *pr)
 {
@@ -536,11 +610,9 @@ PR_LoadDebug (progs_t *pr)
 	pr_uint_t   i;
 	pr_def_t   *def;
 	pr_type_t  *str = 0;
-	qfot_type_encodings_t *encodings = 0;
-	pointer_t   type_encodings = 0;
-	pointer_t   type_ptr;
-	qfot_type_t *type;
-	string_t    compunit_str;
+	pr_debug_header_t *debug;
+
+	res->debug = 0;
 
 	if (!pr_debug->int_val)
 		return 1;
@@ -557,123 +629,70 @@ PR_LoadDebug (progs_t *pr)
 	sym_path = malloc (strlen (sym_file) + (path_end - pr->progs_name) + 1);
 	strncpy (sym_path, pr->progs_name, path_end - pr->progs_name);
 	strcpy (sym_path + (path_end - pr->progs_name), sym_file);
-	res->debug = pr->load_file (pr, sym_path, &debug_size);
-	if (!res->debug) {
+	debug = pr->load_file (pr, sym_path, &debug_size);
+	if (!debug) {
 		Sys_Printf ("can't load %s for debug info\n", sym_path);
 		free (sym_path);
 		return 1;
 	}
-	res->debug->version = LittleLong (res->debug->version);
-	if (res->debug->version != PROG_DEBUG_VERSION) {
+	debug->version = LittleLong (debug->version);
+	if (debug->version != PROG_DEBUG_VERSION) {
 		Sys_Printf ("ignoring %s with unsupported version %x.%03x.%03x\n",
 					sym_path,
-					(res->debug->version >> 24) & 0xff,
-					(res->debug->version >> 12) & 0xfff,
-					res->debug->version & 0xfff);
-		res->debug = 0;
+					(debug->version >> 24) & 0xff,
+					(debug->version >> 12) & 0xfff,
+					debug->version & 0xfff);
 		free (sym_path);
 		return 1;
 	}
-	res->debug->crc = LittleShort (res->debug->crc);
-	if (res->debug->crc != pr->crc) {
+	debug->crc = LittleShort (debug->crc);
+	if (debug->crc != pr->crc) {
 		Sys_Printf ("ignoring %s that doesn't match %s. (CRCs: "
 					"sym:%d dat:%d)\n",
-					sym_path,
-					pr->progs_name,
-					res->debug->crc,
-					pr->crc);
-		res->debug = 0;
+					sym_path, pr->progs_name, debug->crc, pr->crc);
 		free (sym_path);
 		return 1;
 	}
 	free (sym_path);
-	res->debug->you_tell_me_and_we_will_both_know = LittleShort
-		(res->debug->you_tell_me_and_we_will_both_know);
-	res->debug->auxfunctions = LittleLong (res->debug->auxfunctions);
-	res->debug->num_auxfunctions = LittleLong (res->debug->num_auxfunctions);
-	res->debug->linenos = LittleLong (res->debug->linenos);
-	res->debug->num_linenos = LittleLong (res->debug->num_linenos);
-	res->debug->locals = LittleLong (res->debug->locals);
-	res->debug->num_locals = LittleLong (res->debug->num_locals);
-	res->debug->debug_defs = LittleLong (res->debug->debug_defs);
-	res->debug->num_debug_defs = LittleLong (res->debug->num_debug_defs);
-	res->debug->debug_data = LittleLong (res->debug->debug_data);
-	res->debug->debug_data_size = LittleLong (res->debug->debug_data_size);
+	debug->you_tell_me_and_we_will_both_know = LittleShort
+		(debug->you_tell_me_and_we_will_both_know);
+	debug->auxfunctions = LittleLong (debug->auxfunctions);
+	debug->num_auxfunctions = LittleLong (debug->num_auxfunctions);
+	debug->linenos = LittleLong (debug->linenos);
+	debug->num_linenos = LittleLong (debug->num_linenos);
+	debug->locals = LittleLong (debug->locals);
+	debug->num_locals = LittleLong (debug->num_locals);
+	debug->debug_defs = LittleLong (debug->debug_defs);
+	debug->num_debug_defs = LittleLong (debug->num_debug_defs);
+	debug->debug_data = LittleLong (debug->debug_data);
+	debug->debug_data_size = LittleLong (debug->debug_data_size);
 
-	res->auxfunctions = (pr_auxfunction_t*)((char*)res->debug +
-										   res->debug->auxfunctions);
-	res->linenos = (pr_lineno_t*)((char*)res->debug + res->debug->linenos);
-	res->local_defs = (pr_def_t*)((char*)res->debug + res->debug->locals);
-	res->debug_defs = (pr_def_t*)((char*)res->debug + res->debug->debug_defs);
-	res->debug_data = (pr_type_t*)((char*)res->debug + res->debug->debug_data);
-
-	i = pr->progs->numfunctions * sizeof (pr_auxfunction_t *);
-	res->auxfunction_map = pr->allocate_progs_mem (pr, i);
-	i = pr->progs->numfunctions * sizeof (func_t);
-	res->sorted_functions = pr->allocate_progs_mem (pr, i);
-	for (i = 0; i < pr->progs->numfunctions; i++) {
-		res->auxfunction_map[i] = 0;
-		res->sorted_functions[i] = i;
+	__auto_type auxfuncs = (pr_auxfunction_t*)((char*)debug
+											   + debug->auxfunctions);
+	for (i = 0; i < debug->num_auxfunctions; i++) {
+		auxfuncs[i].function = LittleLong (auxfuncs[i].function);
+		auxfuncs[i].source_line = LittleLong (auxfuncs[i].source_line);
+		auxfuncs[i].line_info = LittleLong (auxfuncs[i].line_info);
+		auxfuncs[i].local_defs = LittleLong (auxfuncs[i].local_defs);
+		auxfuncs[i].num_locals = LittleLong (auxfuncs[i].num_locals);
 	}
 
-	res->type_encodings_def = PR_FindGlobal (pr, ".type_encodings");
-	if (res->type_encodings_def) {
-		encodings = &G_STRUCT (pr, qfot_type_encodings_t,
-							   res->type_encodings_def->ofs);
-		type_encodings = encodings->types;
+	__auto_type linenos = (pr_lineno_t*)((char*)debug + debug->linenos);
+	for (i = 0; i < debug->num_linenos; i++) {
+		linenos[i].fa.func = LittleLong (linenos[i].fa.func);
+		linenos[i].line = LittleLong (linenos[i].line);
 	}
-	for (i = 0; i < res->debug->num_auxfunctions; i++) {
-		res->auxfunctions[i].function = LittleLong
-			(res->auxfunctions[i].function);
-		res->auxfunctions[i].source_line = LittleLong
-			(res->auxfunctions[i].source_line);
-		res->auxfunctions[i].line_info = LittleLong
-			(res->auxfunctions[i].line_info);
-		res->auxfunctions[i].local_defs = LittleLong
-			(res->auxfunctions[i].local_defs);
-		res->auxfunctions[i].num_locals = LittleLong
-			(res->auxfunctions[i].num_locals);
 
-		if (type_encodings) {
-			res->auxfunctions[i].return_type += type_encodings;
-		}
-		res->auxfunction_map[res->auxfunctions[i].function] =
-			&res->auxfunctions[i];
+	__auto_type local_defs = (pr_def_t*)((char*)debug + debug->locals);
+	for (i = 0; i < debug->num_locals; i++) {
+		byteswap_def (&local_defs[i]);
 	}
-	for (i = 0; i < res->debug->num_linenos; i++) {
-		res->linenos[i].fa.func = LittleLong (res->linenos[i].fa.func);
-		res->linenos[i].line = LittleLong (res->linenos[i].line);
+	__auto_type debug_defs = (pr_def_t*)((char*)debug + debug->locals);
+	for (i = 0; i < debug->num_debug_defs; i++) {
+		byteswap_def (&debug_defs[i]);
 	}
-	qsort_r (res->sorted_functions, pr->progs->numfunctions, sizeof (func_t),
-			 func_compare_sort, res);
-	for (i = 0; i < res->debug->num_locals; i++) {
-		byteswap_def (&res->local_defs[i]);
-		if (type_encodings) {
-			res->local_defs[i].type_encoding += type_encodings;
-		}
-	}
-	compunit_str = PR_FindString (pr, ".compile_unit");
-	for (i = 0; i < res->debug->num_debug_defs; i++) {
-		pr_def_t   *def = &res->debug_defs[i];
-		byteswap_def (def);
-		if (type_encodings) {
-			def->type_encoding += type_encodings;
-		}
-		Hash_Add (res->debug_syms, def);
-		if (def->name == compunit_str) {
-			process_compunit (res, def);
-		}
-	}
-	if (encodings) {
-		for (type_ptr = 4; type_ptr < encodings->size;
-			 type_ptr += type->size) {
-			type = &G_STRUCT (pr, qfot_type_t, type_encodings + type_ptr);
-			if (type->meta == ty_basic
-				&& type->type >= 0 && type->type < ev_type_count) {
-				res->type_encodings[type->type] = type;
-			}
-		}
-	}
+
+	PR_DebugSetSym (pr, debug);
 	return 1;
 }
 

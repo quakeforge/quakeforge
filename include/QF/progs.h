@@ -1743,6 +1743,7 @@ typedef struct type_view_s {
 
 void PR_Debug_Init (progs_t *pr);
 void PR_Debug_Init_Cvars (void);
+void PR_DebugSetSym (progs_t *pr, pr_debug_header_t *debug);
 int PR_LoadDebug (progs_t *pr);
 const char *PR_Debug_GetBaseDirectory (progs_t *pr, const char *file);
 void PR_Debug_Watch (progs_t *pr, const char *expr);
