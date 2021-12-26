@@ -103,6 +103,7 @@ main (int argc, const char **argv)
 
 		for (j = 0; j < 4; j++) {
 			VectorSet (rnd (&mt), rnd (&mt), rnd (&mt), cloud[j]);
+			cloud[j][3] = 1;
 		}
 		cc = CircumSphere_vf (cloud, 4);
 		if (cc.radius < 0) {
