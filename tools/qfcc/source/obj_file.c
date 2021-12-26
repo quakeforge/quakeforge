@@ -919,7 +919,7 @@ qfo_def_compare (const void *i1, const void *i2, void *d)
 }
 
 dprograms_t *
-qfo_to_progs (qfo_t *qfo, int *size)
+qfo_to_progs (qfo_t *in_qfo, int *size)
 {
 	byte       *data;
 	char       *strings;
@@ -948,6 +948,14 @@ qfo_to_progs (qfo_t *qfo, int *size)
 	unsigned   *def_indices;
 	unsigned   *far_def_indices;
 	unsigned   *field_def_indices;
+
+	qfo_t      *qfo = alloca (sizeof (qfo_t)
+							  + in_qfo->num_spaces * sizeof (qfo_mspace_t));
+	*qfo = *in_qfo;
+	qfo->spaces = (qfo_mspace_t *) (qfo + 1);
+	for (i = 0; i < qfo->num_spaces; i++) {
+		qfo->spaces[i] = in_qfo->spaces[i];
+	}
 
 	*size = RUP (sizeof (dprograms_t), 16);
 	progs = calloc (1, *size);

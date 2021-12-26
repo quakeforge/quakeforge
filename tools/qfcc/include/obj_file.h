@@ -486,7 +486,7 @@ qfo_t *qfo_read (QFile *file);
 */
 qfo_t *qfo_open (const char *filename);
 
-dprograms_t *qfo_to_progs (qfo_t *qfo, int *size);
+dprograms_t *qfo_to_progs (qfo_t *in_qfo, int *size);
 pr_debug_header_t *qfo_to_sym (qfo_t *qfo, int *size);
 
 /** Create a new ::qfo_t struct
