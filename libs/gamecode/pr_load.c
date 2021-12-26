@@ -230,24 +230,9 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 		PR_Zone_Init (pr);
 	}
 
-	if (pr->function_hash) {
-		Hash_FlushTable (pr->function_hash);
-	} else {
-		pr->function_hash = Hash_NewTable (1021, function_get_key, 0, pr,
-										   pr->hashlink_freelist);
-	}
-	if (pr->global_hash) {
-		Hash_FlushTable (pr->global_hash);
-	} else {
-		pr->global_hash = Hash_NewTable (1021, var_get_key, 0, pr,
-										 pr->hashlink_freelist);
-	}
-	if (pr->field_hash) {
-		Hash_FlushTable (pr->field_hash);
-	} else {
-		pr->field_hash = Hash_NewTable (1021, var_get_key, 0, pr,
-										pr->hashlink_freelist);
-	}
+	Hash_FlushTable (pr->function_hash);
+	Hash_FlushTable (pr->global_hash);
+	Hash_FlushTable (pr->field_hash);
 
 // byte swap the lumps
 	for (i = 0; i < pr->progs->numstatements; i++) {
@@ -497,6 +482,12 @@ PR_Init (progs_t *pr)
 	PR_Resources_Init (pr);
 	PR_Strings_Init (pr);
 	PR_Debug_Init (pr);
+	pr->function_hash = Hash_NewTable (1021, function_get_key, 0, pr,
+									   pr->hashlink_freelist);
+	pr->global_hash = Hash_NewTable (1021, var_get_key, 0, pr,
+									 pr->hashlink_freelist);
+	pr->field_hash = Hash_NewTable (1021, var_get_key, 0, pr,
+									pr->hashlink_freelist);
 }
 
 VISIBLE void
