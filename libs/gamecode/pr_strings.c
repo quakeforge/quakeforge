@@ -226,7 +226,6 @@ pr_strings_clear (progs_t *pr, void *data)
 		res->rs_slot = rs;
 	}
 
-	pr->pr_string_resources = res;
 	pr->pr_xtstr = 0;
 }
 
@@ -1227,4 +1226,5 @@ PR_Strings_Init (progs_t *pr)
 	res->print_str = dstring_new ();
 
 	PR_Resources_Register (pr, "Strings", res, pr_strings_clear);
+	pr->pr_string_resources = res;
 }
