@@ -30,6 +30,7 @@ test_progs_dat=\
 	tools/qfcc/test/gcd.dat \
 	tools/qfcc/test/infloop.dat \
 	tools/qfcc/test/ivar-struct-return.dat \
+	tools/qfcc/test/link_order.dat \
 	tools/qfcc/test/methodparams.dat \
 	tools/qfcc/test/modulo.dat \
 	tools/qfcc/test/nilparamret.dat \
@@ -369,6 +370,16 @@ tools/qfcc/test/ivar-struct-return.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(ivar_struct_return_dep) # am--include-marker
 r_depfiles_remade += $(ivar_struct_return_dep)
+
+tools_qfcc_test_link_order_dat_SOURCES=tools/qfcc/test/link_order.r
+link_order_obj=$(tools_qfcc_test_link_order_dat_SOURCES:.r=.o)
+link_order_dep=$(call qcautodep,$(tools_qfcc_test_link_order_dat_SOURCES))
+tools/qfcc/test/link_order.dat$(EXEEXT): $(link_order_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(link_order_obj)
+tools/qfcc/test/link_order.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(link_order_dep) # am--include-marker
+r_depfiles_remade += $(link_order_dep)
 
 tools_qfcc_test_methodparams_dat_SOURCES=tools/qfcc/test/methodparams.r
 methodparams_obj=$(tools_qfcc_test_methodparams_dat_SOURCES:.r=.o)
