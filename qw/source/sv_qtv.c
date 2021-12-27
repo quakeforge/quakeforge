@@ -381,6 +381,7 @@ qtv_reliable_send (sv_qtv_t *proxy)
 	byte       *buf = 0;
 
 	SV_Printf ("proxy->begun: %d\n", proxy->begun);
+	SZ_Clear (&proxy->netchan.message);
 	if (!proxy->begun) {
 		MSG_WriteByte (&proxy->netchan.message, qtv_packet);
 		pos = proxy->netchan.message.cursize;
