@@ -642,9 +642,23 @@ dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l)
 	if (l->dagnode) {
 		dagnode_t  *node = l->dagnode;
 		set_remove (node->identifiers, l->number);
-		if (set_is_member (node->reachable, n->number)) {
+
+		// If the target node (n) is reachable by the label's node or its
+		// parents, then attaching the label's node to the target node would
+		// cause the label's node to be written before it used.
+		set_t      *reachable = set_new ();
+		set_assign (reachable, node->reachable);
+		for (set_iter_t *node_iter = set_first (node->parents); node_iter;
+			 node_iter = set_next (node_iter)) {
+			dagnode_t  *p = dag->nodes[node_iter->element];
+			set_union (reachable, p->reachable);
+		}
+		int         is_reachable = set_is_member (reachable, n->number);
+		set_delete (reachable);
+		if (is_reachable) {
 			return 0;
 		}
+
 		set_add (n->edges, node->number);
 		dagnode_set_reachable (dag, n);
 	}
