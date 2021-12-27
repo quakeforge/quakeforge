@@ -310,7 +310,6 @@ sv_skins_f (server_t *sv)
 	// actual in-game update messages
 	MSG_WriteByte (&sv->netchan.message, qtv_stringcmd);
 	MSG_WriteString (&sv->netchan.message, va (0, "begin %d", sv->spawncount));
-	sv->worldmodel = Mod_ForName (sv->modellist[0], false);
 	sv->next_run = realtime;
 	sv->connected = 2;
 	sv->delta = -1;
@@ -1157,6 +1156,7 @@ sv_parse (server_t *sv, qmsg_t *msg, int reliable)
 				break;
 			case svc_modellist:
 				sv_modellist (sv, msg);
+				sv->worldmodel = Mod_ForName (sv->modellist[0], false);
 				send = 0;
 				break;
 
