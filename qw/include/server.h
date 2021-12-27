@@ -483,6 +483,11 @@ extern struct clip_hull_s *pf_hull_list[];
 // sv_main.c
 //
 
+void SV_OutOfBand (netadr_t adr, unsigned length, byte *data);
+void SV_OutOfBandPrint (netadr_t adr, const char *format, ...)
+		__attribute__ ((format (PRINTF,2,3)));
+
+
 client_t *SV_AllocClient (int spectator, int server);
 
 void SV_SavePenaltyFilter (client_t *cl, filtertype_t type, double pentime);

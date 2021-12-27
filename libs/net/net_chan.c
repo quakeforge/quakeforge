@@ -57,6 +57,7 @@ double     *net_realtime;
 cvar_t     *showpackets;
 cvar_t     *showdrop;
 cvar_t     *qport;
+void (*net_log_packet) (int length, const void *data, netadr_t to);
 
 
 void
@@ -375,9 +376,8 @@ Netchan_Process (netchan_t *chan)
 void
 Netchan_SendPacket (int length, const void *data, netadr_t to)
 {
-#if 0
-	if (net_packetlog->int_val)
-		Log_Outgoing_Packet (data, length, 1);
-#endif
+	if (net_log_packet) {
+		net_log_packet (length, data, to);
+	}
 	NET_SendPacket (length, data, to);
 }

@@ -701,8 +701,8 @@ SVC_GetChallenge (void)
 	}
 
 	// send it to the client
-	Netchan_OutOfBandPrint (net_from, "%c%i%s", S2C_CHALLENGE,
-							svs.challenges[i].challenge, extended);
+	SV_OutOfBandPrint (net_from, "%c%i%s", S2C_CHALLENGE,
+					   svs.challenges[i].challenge, extended);
 }
 
 client_t *
@@ -776,8 +776,8 @@ SVC_DirectConnect (void)
 	} else {
 		version = atoi (s);
 		if (version != PROTOCOL_VERSION) {
-			Netchan_OutOfBandPrint (net_from, "%c\nServer is version %s.\n",
-									A2C_PRINT, QW_VERSION);
+			SV_OutOfBandPrint (net_from, "%c\nServer is version %s.\n",
+							   A2C_PRINT, QW_VERSION);
 			SV_Printf ("* rejected connect from version %i\n", version);
 			return;
 		}
@@ -793,8 +793,8 @@ SVC_DirectConnect (void)
 
 	// Validate the userinfo string.
 	if (!userinfo) {
-		Netchan_OutOfBandPrint (net_from, "%c\nInvalid userinfo string.\n",
-								A2C_PRINT);
+		SV_OutOfBandPrint (net_from, "%c\nInvalid userinfo string.\n",
+						   A2C_PRINT);
 		return;
 	}
 
@@ -803,14 +803,13 @@ SVC_DirectConnect (void)
 		if (NET_CompareBaseAdr (net_from, svs.challenges[i].adr)) {
 			if (challenge == svs.challenges[i].challenge)
 				break;					// good
-			Netchan_OutOfBandPrint (net_from, "%c\nBad challenge.\n",
-									A2C_PRINT);
+			SV_OutOfBandPrint (net_from, "%c\nBad challenge.\n", A2C_PRINT);
 			return;
 		}
 	}
 	if (i == MAX_CHALLENGES) {
-		Netchan_OutOfBandPrint (net_from, "%c\nNo challenge for address.\n",
-								A2C_PRINT);
+		SV_OutOfBandPrint (net_from, "%c\nNo challenge for address.\n",
+						   A2C_PRINT);
 		return;
 	}
 
@@ -826,10 +825,10 @@ SVC_DirectConnect (void)
 						NET_AdrToString (net_from), s,
 					   sv_minqfversion->string);
 
-			Netchan_OutOfBandPrint (net_from, "%c\nserver requires QuakeForge "
-									"v%s or greater. Get it from "
-									"http://www.quakeforge.net/\n", A2C_PRINT,
-									sv_minqfversion->string);
+			SV_OutOfBandPrint (net_from, "%c\nserver requires QuakeForge "
+							   "v%s or greater. Get it from "
+							   "http://www.quakeforge.net/\n", A2C_PRINT,
+							   sv_minqfversion->string);
 			return;
 		}
 	}
@@ -841,9 +840,9 @@ SVC_DirectConnect (void)
 			!strequal (spectator_password->string, s)) {	// failed
 			SV_Printf ("%s: spectator password failed\n",
 						NET_AdrToString (net_from));
-			Netchan_OutOfBandPrint (net_from,
-									"%c\nrequires a spectator password\n\n",
-									A2C_PRINT);
+			SV_OutOfBandPrint (net_from,
+							   "%c\nrequires a spectator password\n\n",
+							   A2C_PRINT);
 			return;
 		}
 		Info_RemoveKey (userinfo, "spectator");	// remove passwd
@@ -856,9 +855,9 @@ SVC_DirectConnect (void)
 			&& !strcaseequal (password->string, "none")
 			&& !strequal (password->string, s)) {
 			SV_Printf ("%s:password failed\n", NET_AdrToString (net_from));
-			Netchan_OutOfBandPrint (net_from,
-									"%c\nserver requires a password\n\n",
-									A2C_PRINT);
+			SV_OutOfBandPrint (net_from,
+							   "%c\nserver requires a password\n\n",
+							   A2C_PRINT);
 			return;
 		}
 		spectator = false;
@@ -886,7 +885,7 @@ SVC_DirectConnect (void)
 	}
 	if (!(newcl = SV_AllocClient (spectator, 0))) {
 		SV_Printf ("%s:full connect\n", NET_AdrToString (adr));
-		Netchan_OutOfBandPrint (adr, "%c\nserver is full\n\n", A2C_PRINT);
+		SV_OutOfBandPrint (adr, "%c\nserver is full\n\n", A2C_PRINT);
 		return;
 	}
 	newcl->userinfo = userinfo;
@@ -901,7 +900,7 @@ SVC_DirectConnect (void)
 	}
 	newcl->delta.client = newcl;
 
-	Netchan_OutOfBandPrint (adr, "%c", S2C_CONNECTION);
+	SV_OutOfBandPrint (adr, "%c", S2C_CONNECTION);
 
 	Netchan_Setup (&newcl->netchan, adr, qport, NC_QPORT_READ);
 	newcl->backbuf.netchan = &newcl->netchan;
@@ -1744,6 +1743,32 @@ SV_RestorePenaltyFilter (client_t *cl, filtertype_t type)
 	return 0.0;
 }
 
+void
+SV_OutOfBand (netadr_t adr, unsigned length, byte *data)
+{
+	if (net_packetlog->int_val) {
+		Log_Outgoing_Packet (data, length, 0, 1);
+	}
+	Netchan_OutOfBand (adr, length, data);
+}
+
+void
+SV_OutOfBandPrint (netadr_t adr, const char *format, ...)
+{
+	static dstring_t *string;
+	va_list     argptr;
+
+	if (!string) {
+		string = dstring_new ();
+	}
+
+	va_start (argptr, format);
+	dvsprintf (string, format, argptr);
+	va_end (argptr);
+
+	SV_OutOfBand (adr, string->size - 1, (byte *) string->str);
+}
+
 static void
 SV_ReadPackets (void)
 {
@@ -2368,8 +2393,8 @@ SV_ExtractFromUserinfo (client_t *cl)
 		// If the new name was not set (due to the info string being too
 		// long), drop the client.
 		if (strcmp (val, newname)) {
-			Netchan_OutOfBandPrint (net_from, "%c\nPlease choose a "
-									"different name.\n", A2C_PRINT);
+			SV_OutOfBandPrint (net_from, "%c\nPlease choose a "
+							   "different name.\n", A2C_PRINT);
 			SV_ClientPrintf (1, cl, PRINT_HIGH, "Please choose a "
 							 "different name.\n");
 			SV_Printf ("Client %d kicked for having a invalid name\n",

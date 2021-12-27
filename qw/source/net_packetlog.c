@@ -950,12 +950,20 @@ Analyze_Client_Packet (const byte * data, int len, int has_sequence)
 }
 
 static void
+net_packet_log_f (int length, const void *data, netadr_t to)
+{
+	Log_Outgoing_Packet (data, length, 1, 1);
+}
+
+static void
 Net_PacketLog_f (cvar_t *var)
 {
 	if (var->int_val) {
 		Net_LogStart ("qfpacket.log");
+		net_log_packet = net_packet_log_f;
 	} else {
 		Net_LogStop (0);
+		net_log_packet = 0;
 	}
 }
 

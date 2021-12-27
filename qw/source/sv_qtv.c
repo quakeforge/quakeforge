@@ -404,7 +404,7 @@ SV_qtvConnect (int qport, info_t *info)
 
 	if (!(proxy = alloc_proxy ())) {
 		SV_Printf ("%s:full proxy connect\n", NET_AdrToString (net_from));
-		Netchan_OutOfBandPrint (net_from, "%c\nserver is full\n\n", A2C_PRINT);
+		SV_OutOfBandPrint (net_from, "%c\nserver is full\n\n", A2C_PRINT);
 		return;
 	}
 	proxy->info = info;
@@ -418,7 +418,7 @@ SV_qtvConnect (int qport, info_t *info)
 	proxy->datagram.maxsize = sizeof (proxy->datagram_buf);
 	proxy->begun = 0;
 
-	Netchan_OutOfBandPrint (net_from, "%c", S2C_CONNECTION);
+	SV_OutOfBandPrint (net_from, "%c", S2C_CONNECTION);
 }
 
 int

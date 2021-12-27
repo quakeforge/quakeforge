@@ -297,6 +297,10 @@ extern	int net_blocksend;
 */
 extern	double *net_realtime;
 
+/** Callback to log outgoing packets
+*/
+extern void (*net_log_packet) (int length, const void *data, netadr_t to);
+
 /** Initialize the netchan system.
 
 	Currently only sets the qport cvar default to a random value.
