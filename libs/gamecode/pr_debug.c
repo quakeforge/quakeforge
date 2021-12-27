@@ -1800,6 +1800,8 @@ ED_Print (progs_t *pr, edict_t *ed, const char *fieldname)
 		if (l >= 2 && name[l - 2] == '_' && strchr ("xyz", name[l - 1]))
 			continue;					// skip _x, _y, _z vars
 
+		qfot_type_t dummy_type = { };
+		get_def_type (pr, d, &dummy_type);
 		for (j = 0; j < d->size; j++) {
 			if (E_INT (ed, d->ofs + j)) {
 				break;
