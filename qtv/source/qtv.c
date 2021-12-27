@@ -366,10 +366,10 @@ main (int argc, const char *argv[])
 	Sys_Printf ("Ohayou gozaimasu\n");
 
 	while (1) {
+		realtime = Sys_DoubleTime () + 1;
 		Cbuf_Execute_Stack (qtv_cbuf);
 
 		Sys_CheckInput (1, net_socket);
-		realtime = Sys_DoubleTime () + 1;
 
 		qtv_read_packets ();
 
