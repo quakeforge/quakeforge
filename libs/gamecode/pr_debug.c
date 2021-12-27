@@ -1712,23 +1712,26 @@ VISIBLE void
 PR_Profile (progs_t * pr)
 {
 	pr_uint_t   max, num, i;
-	dfunction_t *best, *f;
+	dfunction_t *f;
+	bfunction_t *best, *bf;
 
 	num = 0;
 	do {
 		max = 0;
 		best = NULL;
 		for (i = 0; i < pr->progs->numfunctions; i++) {
-			f = &pr->pr_functions[i];
-			if (f->profile > max) {
-				max = f->profile;
-				best = f;
+			bf = &pr->function_table[i];
+			if (bf->profile > max) {
+				max = bf->profile;
+				best = bf;
 			}
 		}
 		if (best) {
-			if (num < 10)
+			if (num < 10) {
+				f = pr->pr_functions + (best - pr->function_table);
 				Sys_Printf ("%7i %s\n", best->profile,
-							PR_GetString (pr, best->s_name));
+							PR_GetString (pr, f->s_name));
+			}
 			num++;
 			best->profile = 0;
 		}

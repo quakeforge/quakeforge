@@ -1196,7 +1196,7 @@ typedef struct {
 	pr_int_t    first_statement;
 	pr_int_t    parm_start;
 	pr_int_t    locals;
-	pr_int_t    profile;
+	pr_uint_t   profile;
 	pr_int_t    numparms;
 	dparmsize_t parm_size[MAX_PARMS];
 	dfunction_t *descriptor;
