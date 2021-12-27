@@ -131,10 +131,8 @@ sv_find_touched_leafs (server_t *sv, qtv_entity_t *ent, mnode_t *node)
 	}
 
 	vec3_t      emins, emaxs;
-	vec4f_t     mins = {-64, -64, -64, 0};//FIXME
-	vec4f_t     maxs = {64, 64, 64, 0};
-	VectorAdd (ent->e.origin, mins, emins);
-	VectorAdd (ent->e.origin, maxs, emaxs);
+	VectorAdd (ent->e.origin, ent->model->mins, emins);
+	VectorAdd (ent->e.origin, ent->model->maxs, emaxs);
 
 	plane_t    *splitplane = node->plane;
 	int         sides = BOX_ON_PLANE_SIDE (emins, emaxs, splitplane);
@@ -150,7 +148,13 @@ static void
 sv_link_entity (server_t *sv, qtv_entity_t *ent)
 {
 	sv_unlink_entity (sv, ent);
-	sv_find_touched_leafs (sv, ent, sv->worldmodel->brush.nodes);
+	if (ent->model_index != ent->e.modelindex) {
+		ent->model_index = ent->e.modelindex;
+		ent->model = Mod_ForName (sv->modellist[ent->model_index - 1], false);
+	}
+	if (ent->model) {
+		sv_find_touched_leafs (sv, ent, sv->worldmodel->brush.nodes);
+	}
 }
 
 static void
@@ -269,7 +273,7 @@ sv_modellist (server_t *sv, qmsg_t *msg)
 		}
 		sv->modellist[n] = strdup (str);
 		if (!strcmp (sv->modellist[n], "progs/player.mdl"))
-			sv->playermodel = n;
+			sv->playermodel = n + 1;
 	}
 	n = MSG_ReadByte (msg);
 	if (n) {

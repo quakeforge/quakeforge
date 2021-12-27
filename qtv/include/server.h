@@ -64,6 +64,8 @@ typedef struct qtv_leaf_s {
 
 typedef struct {
 	entity_state_t e;
+	int         model_index;	// 1-based
+	struct model_s *model;
 	qtv_leaf_t *leafs;
 } qtv_entity_t;
 
