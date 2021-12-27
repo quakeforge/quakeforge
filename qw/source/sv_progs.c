@@ -608,7 +608,7 @@ SV_Progs_Init_Cvars (void)
 	sv_progs = Cvar_Get ("sv_progs", "", CVAR_NONE, NULL,
 						 "Override the default game progs.");
 	sv_progs_zone = Cvar_Get ("sv_progs_zone", "256", CVAR_NONE, NULL,
-							  "size of the zone for progs in kb");
+							  "size of the zone for progs in kB");
 	sv_progs_ext = Cvar_Get ("sv_progs_ext", "qf", CVAR_NONE, NULL,
 							 "extention mapping to use: "
 							 "none, id, qf, qwe, ktpro, cpqw");
