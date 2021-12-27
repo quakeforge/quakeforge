@@ -229,7 +229,7 @@ typedef enum {
 typedef struct netchan_s {
 	qboolean	fatal_error;	///< True if the message overflowed
 
-	float		last_received;	///< Time the last packet was received.
+	double      last_received;	///< Time the last packet was received.
 
 	/// \name statistics
 	/// the statistics are cleared at each client begin, because
