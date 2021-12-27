@@ -121,6 +121,7 @@ static int view_offset;
 #define CP_RED_BLUE			(8)
 #define CP_CYAN_BLUE		(9)
 #define CP_MAGENTA_BLUE		(10)
+#define CP_WHITE_BLUE		(11)
 
 static chtype attr_table[16] = {
 	A_NORMAL,
@@ -131,13 +132,13 @@ static chtype attr_table[16] = {
 	COLOR_PAIR (CP_CYAN_BLACK),
 	COLOR_PAIR (CP_MAGENTA_BLACK),
 	0,
-	A_NORMAL,
-	COLOR_PAIR (CP_GREEN_BLUE),
-	COLOR_PAIR (CP_RED_BLUE),
+	COLOR_PAIR(CP_WHITE_BLUE),
+	A_BOLD | COLOR_PAIR (CP_GREEN_BLUE),
+	A_BOLD | COLOR_PAIR (CP_RED_BLUE),
 	0,
-	COLOR_PAIR (CP_YELLOW_BLUE),
-	COLOR_PAIR (CP_CYAN_BLUE),
-	COLOR_PAIR (CP_MAGENTA_BLUE),
+	A_BOLD | COLOR_PAIR (CP_YELLOW_BLUE),
+	A_BOLD | COLOR_PAIR (CP_CYAN_BLUE),
+	A_BOLD | COLOR_PAIR (CP_MAGENTA_BLUE),
 	0,
 };
 
@@ -276,7 +277,7 @@ draw_status (view_t *view)
 	memset (sb->text, ' ', sb->width);
 	view_draw (view);
 	if (memcmp (old, sb->text, sb->width)) {
-		wbkgdset (win, COLOR_PAIR (CP_YELLOW_BLUE));
+		wbkgdset (win, COLOR_PAIR (CP_WHITE_BLUE));
 		wmove (win, 0, 0);
 		for (i = 0; i < sb->width; i++)
 			draw_fun_char (win, sb->text[i], 1);
@@ -620,6 +621,7 @@ init (void)
 	init_pair (CP_RED_BLUE, COLOR_RED, COLOR_BLUE);
 	init_pair (CP_CYAN_BLUE, COLOR_CYAN, COLOR_BLUE);
 	init_pair (CP_MAGENTA_BLUE, COLOR_MAGENTA, COLOR_BLUE);
+	init_pair (CP_WHITE_BLUE, COLOR_WHITE, COLOR_BLUE);
 
 	con_linewidth = screen_x;
 
