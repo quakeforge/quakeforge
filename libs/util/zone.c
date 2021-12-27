@@ -382,7 +382,7 @@ Z_SetError (memzone_t *zone, void (*err) (void *, const char *), void *data)
 	zone->data = data;
 }
 
-void
+VISIBLE void
 Z_CheckPointer (const memzone_t *zone, const void *ptr, size_t size)
 {
 	const memblock_t *block;
@@ -403,6 +403,13 @@ Z_CheckPointer (const memzone_t *zone, const void *ptr, size_t size)
 			zone->error (zone->data, "invalid access to allocated memory");
 		return;		// access ok
 	}
+}
+
+VISIBLE void
+Z_MemInfo (const memzone_t *zone, size_t *used, size_t *size)
+{
+	*used = zone->used;
+	*size = zone->size;
 }
 
 //============================================================================

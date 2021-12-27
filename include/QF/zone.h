@@ -99,6 +99,7 @@ memhunk_t *Memory_Init (void *buf, size_t size);
 
 void Z_ClearZone (memzone_t *zone, size_t size, size_t zone_offset,
 				  size_t ele_size);
+void Z_MemInfo (const memzone_t *zone, size_t *used, size_t *size);
 void Z_Free (memzone_t *zone, void *ptr);
 void *Z_Malloc (memzone_t *zone, size_t size);		// returns 0 filled memory
 void *Z_TagMalloc (memzone_t *zone, size_t size, int tag);
