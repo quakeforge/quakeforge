@@ -54,6 +54,8 @@
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 
+//#define SHOW_SETS
+
 static void
 flow_statement (dstring_t *dstr, statement_t *s)
 {
@@ -63,7 +65,7 @@ flow_statement (dstring_t *dstr, statement_t *s)
 	dasprintf (dstr, "<td>%s</td>", html_string(operand_string (s->opa)));
 	dasprintf (dstr, "<td>%s</td>", html_string(operand_string (s->opb)));
 	dasprintf (dstr, "<td>%s</td>", html_string(operand_string (s->opc)));
-#if 0
+#ifdef SHOW_SETS
 	if (s->number >= 0) {
 		set_t      *use = set_new ();
 		set_t      *def = set_new ();
@@ -106,6 +108,12 @@ dot_sblock (dstring_t *dstr, sblock_t *sblock, int blockno)
 	for (l = sblock->labels; l; l = l->next)
 		dasprintf (dstr, "            %s(%d)\n", l->name, l->used);
 	dasprintf (dstr, "        </td>\n");
+#ifdef SHOW_SETS
+	dasprintf (dstr, "        <td>use</td>\n");
+	dasprintf (dstr, "        <td>def</td>\n");
+	dasprintf (dstr, "        <td>kill</td>\n");
+	dasprintf (dstr, "        <td>ops</td>\n");
+#endif
 	dasprintf (dstr, "      </tr>\n");
 	for (s = sblock->statements; s; s = s->next)
 		flow_statement (dstr, s);
