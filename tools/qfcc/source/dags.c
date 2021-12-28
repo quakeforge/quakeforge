@@ -659,7 +659,10 @@ dagnode_attach_label (dag_t *dag, dagnode_t *n, daglabel_t *l)
 			return 0;
 		}
 
+		// this assignment to  the variable must come after any previous uses,
+		// which includes itself and its parents
 		set_add (n->edges, node->number);
+		set_union (n->edges, node->parents);
 		dagnode_set_reachable (dag, n);
 	}
 	l->live = 0;	// remove live forcing on assignment
