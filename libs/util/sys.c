@@ -247,6 +247,9 @@ VISIBLE sys_printf_t
 Sys_SetStdPrintf (sys_printf_t func)
 {
 	sys_printf_t prev = sys_std_printf_function;
+	if (!func) {
+		func = Sys_StdPrintf;
+	}
 	sys_std_printf_function = func;
 	return prev;
 }
@@ -255,6 +258,9 @@ VISIBLE sys_printf_t
 Sys_SetErrPrintf (sys_printf_t func)
 {
 	sys_printf_t prev = sys_err_printf_function;
+	if (!func) {
+		func = Sys_ErrPrintf;
+	}
 	sys_err_printf_function = func;
 	return prev;
 }

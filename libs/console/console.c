@@ -57,6 +57,7 @@ static U void (*const display)(const char **, int) = Con_DisplayList;
 #undef U
 
 static cvar_t *con_interpreter;
+static sys_printf_t saved_sys_printf;
 
 static void
 Con_Interp_f (cvar_t *var)
@@ -89,6 +90,9 @@ Con_Interp_f (cvar_t *var)
 static void
 Con_shutdown (void *data)
 {
+	if (saved_sys_printf) {
+		Sys_SetStdPrintf (saved_sys_printf);
+	}
 	if (con_module) {
 		con_module->functions->general->shutdown ();
 		PI_UnloadPlugin (con_module);
@@ -102,7 +106,8 @@ Con_Init (const char *plugin_name)
 
 	con_module = PI_LoadPlugin ("console", plugin_name);
 	if (con_module) {
-		Sys_SetStdPrintf (con_module->functions->console->print);
+		__auto_type funcs = con_module->functions->console;
+		saved_sys_printf = Sys_SetStdPrintf (funcs->print);
 	} else {
 		setvbuf (stdout, 0, _IOLBF, BUFSIZ);
 	}

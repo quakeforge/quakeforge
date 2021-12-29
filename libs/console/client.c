@@ -952,6 +952,7 @@ C_Init (void)
 static void
 C_shutdown (void)
 {
+	IE_Remove_Handler (con_event_id);
 }
 
 static general_funcs_t plugin_info_general_funcs = {
