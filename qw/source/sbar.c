@@ -829,8 +829,12 @@ draw_spectator (view_t *view)
 					 "Press [ATTACK] for AutoCamera");
 	} else {
 //		Sbar_DrawString (160-14*8+4,4, "SPECTATOR MODE - TRACK CAMERA");
-		snprintf (st, sizeof (st), "Tracking %-.13s, [JUMP] for next",
-				  cl.players[spec_track].name->value);
+		if (cl.players[spec_track].name) {
+			snprintf (st, sizeof (st), "Tracking %-.13s, [JUMP] for next",
+					  cl.players[spec_track].name->value);
+		} else {
+			snprintf (st, sizeof (st), "Lost player, [JUMP] for next");
+		}
 		draw_string (view, 0, -8, st);
 	}
 }
