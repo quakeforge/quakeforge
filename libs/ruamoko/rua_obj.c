@@ -110,6 +110,7 @@ static void
 dtable_reset (probj_t *probj)
 {
 	PR_RESRESET (probj->dtables);
+	probj->dtable_list = 0;
 }
 
 static inline dtable_t *
