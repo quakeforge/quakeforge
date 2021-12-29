@@ -1829,6 +1829,21 @@ PF_sv_cvar (progs_t *pr)
 	}
 }
 
+// int () SV_ClientNumber
+// returns -1 if the entity is not a client (either not in the client range
+// or the entity is not in use by a client)
+static void
+PF_SV_ClientNumber (progs_t *pr)
+{
+	int         entnum = P_EDICTNUM (pr, 0);
+	client_t   *cl = svs.clients + entnum - 1;
+
+	if (entnum < 1 || entnum > MAX_CLIENTS || cl->state != cs_server) {
+		entnum = 0;	// nil entity
+	}
+	R_INT (pr) = entnum - 1;
+}
+
 // entity () SV_AllocClient
 static void
 PF_SV_AllocClient (progs_t *pr)
@@ -2017,6 +2032,7 @@ static builtin_t builtins[] = {
 	{"cfeof",				PF_cfeof,				QF 107},
 	{"cfquota",				PF_cfquota,				QF 108},
 
+	{"SV_ClientNumber",		PF_SV_ClientNumber,		-1},
 	{"SV_AllocClient",		PF_SV_AllocClient,		-1},
 	{"SV_FreeClient",		PF_SV_FreeClient,		-1},
 	{"SV_SetUserinfo",		PF_SV_SetUserinfo,		-1},
