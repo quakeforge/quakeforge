@@ -15,21 +15,20 @@ int PR_SetField (entity ent, string field, string value) = #0;
 
 @implementation Entity
 
-- (void) own
-{
-	own = 1;
-}
-
 - (id) init
 {
-	self = [self initWithEntity: spawn ()];
-	[self own];
+	if (!(self = [self initWithEntity: spawn ()])) {
+		return nil;
+	}
+	own = 1;
 	return self;
 }
 
 - (id) initWithEntity: (entity)e
 {
-	self = [super init];
+	if (!(self = [super init])) {
+		return nil;
+	}
 	ent = e;
 	ent.@this = self;
 	return self;
@@ -39,6 +38,21 @@ int PR_SetField (entity ent, string field, string value) = #0;
 {
 	self = [self initWithEntity: e];
 	return self;
+}
+
++(Entity *) spawn
+{
+	return [[[self alloc] init] autorelease];
+}
+
++(Entity *) withEntity: (entity) e
+{
+	return [[[self alloc] initWithEntity: e] autorelease];
+}
+
++(Entity *) withEntity: (entity) e fromPlist: (plitem_t *) dict
+{
+	return [[[self alloc] initWithEntity: e fromPlist: dict] autorelease];
 }
 
 - (void) dealloc
@@ -95,7 +109,7 @@ int PR_SetField (entity ent, string field, string value) = #0;
 		}
 	}
 	if (ent)
-		[e own];
+		e.own = 1;
 	return e;
 }
 
