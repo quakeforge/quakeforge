@@ -403,17 +403,16 @@ typedef enum {
 #define OP_BREAK 0x8000
 
 typedef struct opcode_s {
-	const char	*name;
-	const char	*opname;
-	pr_opcode_e opcode;
-	qboolean	right_associative;
-	etype_t		type_a, type_b, type_c;
+	const char *name;
+	const char *opname;
+	qboolean    right_associative;
+	etype_t     type_a, type_b, type_c;
 	unsigned int min_version;
-	const char	*fmt;
+	const char *fmt;
 } opcode_t;
 
 extern const opcode_t pr_opcodes[];
-opcode_t *PR_Opcode (pr_short_t opcode);
+const opcode_t *PR_Opcode (pr_short_t opcode) __attribute__((const));
 void PR_Opcode_Init (void);	// idempotent
 
 typedef struct dstatement_s {

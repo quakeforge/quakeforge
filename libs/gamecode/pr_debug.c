@@ -1482,7 +1482,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 	int         addr = s - pr->pr_statements;
 	int         dump_code = contents & 2;
 	const char *fmt;
-	opcode_t   *op;
+	const opcode_t *op;
 	dfunction_t *call_func = 0;
 	pr_def_t   *parm_def = 0;
 	pr_auxfunction_t *aux_func = 0;

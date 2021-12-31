@@ -48,6 +48,8 @@ extern struct opcode_s *op_jumpb;
 
 struct operand_s;
 
+extern struct opcode_s *opcode_map;
+
 struct opcode_s *opcode_find (const char *name, struct operand_s *op_a,
 							  struct operand_s *op_b, struct operand_s *op_c);
 void opcode_init (void);

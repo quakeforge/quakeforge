@@ -213,7 +213,7 @@ emit_statement (statement_t *statement)
 		}
 	}
 	s = codespace_newstatement (pr.code);
-	s->op = op->opcode;
+	s->op = op - opcode_map;
 	s->a = def_a ? def_a->offset : 0;
 	s->b = def_b ? def_b->offset : 0;
 	s->c = def_c ? def_c->offset : 0;
