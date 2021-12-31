@@ -425,7 +425,7 @@ typedef struct ddef_s {
 	pr_ushort_t type;			// if DEF_SAVEGLOBAL bit is set
 								// the variable needs to be saved in savegames
 	pr_ushort_t ofs;
-	string_t    s_name;
+	string_t    name;
 } ddef_t;
 
 typedef struct xdef_s {
@@ -462,8 +462,8 @@ typedef struct dfunction_s {
 
 	pr_uint_t   profile;			// runtime
 
-	string_t    s_name;				// source function name
-	string_t    s_file;				// source file defined in
+	string_t    name;				// source function name
+	string_t    file;				// source file defined in
 
 	pr_int_t    numparms;			// -ve is varargs (1s comp of real count)
 	dparmsize_t parm_size[MAX_PARMS];

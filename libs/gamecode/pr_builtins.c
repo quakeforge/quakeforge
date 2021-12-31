@@ -95,7 +95,7 @@ bi_no_function (progs_t *pr)
 	// descriptor with a bad builtin number
 	dstatement_t *st = pr->pr_statements + pr->pr_xstatement;
 	dfunction_t *desc = pr->pr_functions + G_FUNCTION (pr, st->a);
-	const char *bi_name = PR_GetString (pr, desc->s_name);
+	const char *bi_name = PR_GetString (pr, desc->name);
 	int         ind = -desc->first_statement;
 
 	PR_RunError (pr, "Bad builtin called: %s = #%d", bi_name, ind);
@@ -201,7 +201,7 @@ PR_RelocateBuiltins (progs_t *pr)
 		if (desc->first_statement > 0)
 			continue;
 
-		bi_name = PR_GetString (pr, desc->s_name);
+		bi_name = PR_GetString (pr, desc->name);
 
 		if (!desc->first_statement) {
 			bi = PR_FindBuiltin (pr, bi_name);
@@ -225,8 +225,8 @@ PR_RelocateBuiltins (progs_t *pr)
 							bi_name, -desc->first_statement);
 			proc = bi_no_function;
 		}
-		if (!desc->s_name && bi) {
-			desc->s_name = PR_SetString (pr, bi->name);
+		if (!desc->name && bi) {
+			desc->name = PR_SetString (pr, bi->name);
 			Hash_Add (pr->function_hash, &pr->pr_functions[i]);
 		}
 		func->first_statement = desc->first_statement;

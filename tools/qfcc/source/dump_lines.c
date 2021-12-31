@@ -79,8 +79,8 @@ progs_get_func_data (unsigned func_index, void *data)
 		func_data.function = aux_func->function;
 		if (aux_func->function < (unsigned int) pr->progs->numfunctions) {
 			func = pr->pr_functions + aux_func->function;
-			func_data.source_file = pr->pr_strings + func->s_file;
-			func_data.source_name = pr->pr_strings + func->s_name;
+			func_data.source_file = pr->pr_strings + func->file;
+			func_data.source_name = pr->pr_strings + func->name;
 			func_data.first_statement = func->first_statement;
 		}
 		return &func_data;

@@ -195,7 +195,7 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 
 	if (pr->pr_trace && !pr->debug_handler) {
 		Sys_Printf ("Entering function %s\n",
-					PR_GetString (pr, f->descriptor->s_name));
+					PR_GetString (pr, f->descriptor->name));
 	}
 
 	PR_PushFrame (pr);
@@ -238,7 +238,7 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 		}
 	}
 
-	//Sys_Printf("%s:\n", PR_GetString(pr,f->s_name));
+	//Sys_Printf("%s:\n", PR_GetString(pr,f->name));
 	pr->pr_xfunction = f;
 	pr->pr_xstatement = f->first_statement - 1;      		// offset the st++
 
@@ -286,14 +286,14 @@ PR_LeaveFunction (progs_t *pr, int to_engine)
 
 	if (pr->pr_trace && !pr->debug_handler) {
 		Sys_Printf ("Leaving function %s\n",
-					PR_GetString (pr, f->descriptor->s_name));
+					PR_GetString (pr, f->descriptor->name));
 		if (to_engine) {
 			Sys_Printf ("Returning to engine\n");
 		} else {
 			bfunction_t *rf = pr->pr_xfunction;
 			if (rf) {
 				Sys_Printf ("Returning to function %s\n",
-							PR_GetString (pr, rf->descriptor->s_name));
+							PR_GetString (pr, rf->descriptor->name));
 			}
 		}
 	}
@@ -407,7 +407,7 @@ PR_CallFunction (progs_t *pr, func_t fnum)
 		// negative statements are built in functions
 		if (pr->pr_trace && !pr->debug_handler) {
 			Sys_Printf ("Calling builtin %s @ %p\n",
-						PR_GetString (pr, f->descriptor->s_name), f->func);
+						PR_GetString (pr, f->descriptor->name), f->func);
 		}
 		f->func (pr);
 		return 0;

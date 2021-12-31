@@ -525,8 +525,8 @@ return_function (progs_t *pr, dfunction_t *func)
 		f->local_data = func->parm_start;
 		f->local_size = func->locals;
 		f->profile = func->profile;
-		f->name = func->s_name;
-		f->file = func->s_file;
+		f->name = func->name;
+		f->file = func->file;
 		f->num_params = func->numparms;
 		R_POINTER (pr) = PR_SetPointer (pr, f);
 	}

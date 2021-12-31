@@ -251,7 +251,7 @@ dump_functions (progs_t *pr)
 	for (i = 0; i < pr->progs->numfunctions; i++) {
 		dfunction_t *func = &pr->pr_functions[i];
 
-		name = PR_GetString (pr, func->s_name);
+		name = PR_GetString (pr, func->name);
 
 		start = func->first_statement;
 		if (start > 0)
@@ -275,7 +275,7 @@ dump_functions (progs_t *pr)
 				continue;
 			}
 			printf ("        %d %s:%d %d %d %d %x\n", aux->function,
-					PR_GetString (pr, func->s_file), aux->source_line,
+					PR_GetString (pr, func->file), aux->source_line,
 					aux->line_info,
 					aux->local_defs, aux->num_locals,
 					aux->return_type);

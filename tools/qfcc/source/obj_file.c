@@ -819,7 +819,7 @@ qfo_def_to_ddef (qfo_t *qfo, const qfo_def_t *def, ddef_t *ddef)
 {
 	ddef->type = get_def_type (qfo, def->type);
 	ddef->ofs = def->offset;
-	ddef->s_name = def->name;
+	ddef->name = def->name;
 	if (!(def->flags & QFOD_NOSAVE)
 		&& !(def->flags & QFOD_CONSTANT)
 		&& (def->flags & QFOD_GLOBAL)
@@ -1079,8 +1079,8 @@ qfo_to_progs (qfo_t *in_qfo, int *size)
 		if (!options.code.local_merging)
 			locals_start += align_globals_size (df->locals);
 		df->profile = 0;
-		df->s_name = qf->name;
-		df->s_file = qf->file;
+		df->name = qf->name;
+		df->file = qf->file;
 		function_params (qfo, qf, df);
 	}
 

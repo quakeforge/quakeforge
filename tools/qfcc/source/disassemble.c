@@ -76,7 +76,7 @@ disassemble_progs (progs_t *pr)
 			memcpy (func.parm_size, desc->parm_size, sizeof (func.parm_size));
 			func.descriptor = desc;
 
-			Sys_Printf ("%s:\n", PR_GetString (pr, desc->s_name));
+			Sys_Printf ("%s:\n", PR_GetString (pr, desc->name));
 			pr->pr_xfunction = &func;
 		}
 		PR_PrintStatement (pr, &pr->pr_statements[i], 2 | (verbosity > 1));

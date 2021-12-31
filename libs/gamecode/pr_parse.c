@@ -76,7 +76,7 @@ PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val, dstring_t *line)
 			break;
 		case ev_func:
 			f = pr->pr_functions + val->func_var;
-			dsprintf (line, "%s", PR_GetString (pr, f->s_name));
+			dsprintf (line, "%s", PR_GetString (pr, f->name));
 			break;
 		case ev_field:
 			def = PR_FieldAtOfs (pr, val->integer_var);

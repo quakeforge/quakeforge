@@ -496,8 +496,8 @@ func_compare_sort (const void *_fa, const void *_fb, void *_res)
 	progs_t    *pr = res->pr;
 	func_t      fa = *(const func_t *)_fa;
 	func_t      fb = *(const func_t *)_fb;
-	const char *fa_file = PR_GetString (pr, pr->pr_functions[fa].s_file);
-	const char *fb_file = PR_GetString (pr, pr->pr_functions[fb].s_file);
+	const char *fa_file = PR_GetString (pr, pr->pr_functions[fa].file);
+	const char *fb_file = PR_GetString (pr, pr->pr_functions[fb].file);
 	int         cmp = strcmp (fa_file, fb_file);
 	if (cmp) {
 		return cmp;
@@ -516,7 +516,7 @@ func_compare_search (const void *_key, const void *_f, void *_res)
 	progs_t    *pr = res->pr;
 	const func_key_t *key = _key;
 	func_t      f = *(const func_t *)_f;
-	const char *f_file = PR_GetString (pr, pr->pr_functions[f].s_file);
+	const char *f_file = PR_GetString (pr, pr->pr_functions[f].file);
 	int         cmp = strcmp (key->file, f_file);
 	if (cmp) {
 		return cmp;
@@ -837,7 +837,7 @@ PR_FindSourceLineAddr (progs_t *pr, const char *file, pr_uint_t line)
 	}
 	dfunction_t *func = &pr->pr_functions[*f];
 	if (func->first_statement <= 0
-		|| strcmp (file, PR_GetString (pr, func->s_file)) != 0) {
+		|| strcmp (file, PR_GetString (pr, func->file)) != 0) {
 		return 0;
 	}
 	pr_auxfunction_t *aux = res->auxfunction_map[*f];
@@ -869,7 +869,7 @@ PR_Get_Source_File (progs_t *pr, pr_lineno_t *lineno)
 	f = PR_Get_Lineno_Func (pr, lineno);
 	if (f->function >= (unsigned) pr->progs->numfunctions)
 		return 0;
-	return PR_GetString(pr, pr->pr_functions[f->function].s_file);
+	return PR_GetString(pr, pr->pr_functions[f->function].file);
 }
 
 const char *
@@ -1292,7 +1292,7 @@ pr_debug_func_view (qfot_type_t *type, pr_type_t *value, void *_data)
 		dstring_appendstr (dstr, "NULL");
 	} else {
 		dfunction_t *f = pr->pr_functions + value->func_var;
-		dasprintf (dstr, "%s()", PR_GetString (pr, f->s_name));
+		dasprintf (dstr, "%s()", PR_GetString (pr, f->name));
 	}
 }
 
@@ -1673,20 +1673,20 @@ dump_frame (progs_t *pr, prstack_t *frame)
 		line += func->source_line;
 		if (addr == frame->staddr) {
 			Sys_Printf ("%12s:%u : %s: %x\n",
-						PR_GetString (pr, f->s_file),
+						PR_GetString (pr, f->file),
 						line,
-						PR_GetString (pr, f->s_name),
+						PR_GetString (pr, f->name),
 						frame->staddr);
 		} else {
 			Sys_Printf ("%12s:%u+%d : %s: %x\n",
-						PR_GetString (pr, f->s_file),
+						PR_GetString (pr, f->file),
 						line, frame->staddr - addr,
-						PR_GetString (pr, f->s_name),
+						PR_GetString (pr, f->name),
 						frame->staddr);
 		}
 	} else {
-		Sys_Printf ("%12s : %s: %x\n", PR_GetString (pr, f->s_file),
-					PR_GetString (pr, f->s_name), frame->staddr);
+		Sys_Printf ("%12s : %s: %x\n", PR_GetString (pr, f->file),
+					PR_GetString (pr, f->name), frame->staddr);
 	}
 }
 
@@ -1730,7 +1730,7 @@ PR_Profile (progs_t * pr)
 			if (num < 10) {
 				f = pr->pr_functions + (best - pr->function_table);
 				Sys_Printf ("%7i %s\n", best->profile,
-							PR_GetString (pr, f->s_name));
+							PR_GetString (pr, f->name));
 			}
 			num++;
 			best->profile = 0;

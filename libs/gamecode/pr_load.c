@@ -58,7 +58,7 @@ function_get_key (const void *f, void *_pr)
 {
 	progs_t *pr = (progs_t*)_pr;
 	dfunction_t *func = (dfunction_t*)f;
-	return PR_GetString (pr, func->s_name);
+	return PR_GetString (pr, func->name);
 }
 
 static const char *
@@ -247,12 +247,12 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 			LittleLong (pr->pr_functions[i].first_statement);
 		pr->pr_functions[i].parm_start =
 			LittleLong (pr->pr_functions[i].parm_start);
-		pr->pr_functions[i].s_name = LittleLong (pr->pr_functions[i].s_name);
-		pr->pr_functions[i].s_file = LittleLong (pr->pr_functions[i].s_file);
+		pr->pr_functions[i].name = LittleLong (pr->pr_functions[i].name);
+		pr->pr_functions[i].file = LittleLong (pr->pr_functions[i].file);
 		pr->pr_functions[i].numparms =
 			LittleLong (pr->pr_functions[i].numparms);
 		pr->pr_functions[i].locals = LittleLong (pr->pr_functions[i].locals);
-		if (pr->pr_functions[i].s_name)
+		if (pr->pr_functions[i].name)
 			Hash_Add (pr->function_hash, &pr->pr_functions[i]);
 	}
 
@@ -265,12 +265,12 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 		pr_ushort_t safe_type = global_ddefs[i].type & ~DEF_SAVEGLOBAL;
 		global_ddefs[i].type = LittleShort (global_ddefs[i].type);
 		global_ddefs[i].ofs = LittleShort (global_ddefs[i].ofs);
-		global_ddefs[i].s_name = LittleLong (global_ddefs[i].s_name);
+		global_ddefs[i].name = LittleLong (global_ddefs[i].name);
 
 		pr->pr_globaldefs[i].type = global_ddefs[i].type;
 		pr->pr_globaldefs[i].size = pr_type_size[safe_type];
 		pr->pr_globaldefs[i].ofs = global_ddefs[i].ofs;
-		pr->pr_globaldefs[i].name = global_ddefs[i].s_name;
+		pr->pr_globaldefs[i].name = global_ddefs[i].name;
 		Hash_Add (pr->global_hash, &pr->pr_globaldefs[i]);
 	}
 
@@ -283,11 +283,11 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 		if (field_ddefs[i].type & DEF_SAVEGLOBAL)
 			PR_Error (pr, "PR_LoadProgs: DEF_SAVEGLOBAL on field def %zd", i);
 		field_ddefs[i].ofs = LittleShort (field_ddefs[i].ofs);
-		field_ddefs[i].s_name = LittleLong (field_ddefs[i].s_name);
+		field_ddefs[i].name = LittleLong (field_ddefs[i].name);
 
 		pr->pr_fielddefs[i].type = field_ddefs[i].type;
 		pr->pr_fielddefs[i].ofs = field_ddefs[i].ofs;
-		pr->pr_fielddefs[i].name = field_ddefs[i].s_name;
+		pr->pr_fielddefs[i].name = field_ddefs[i].name;
 		Hash_Add (pr->field_hash, &pr->pr_fielddefs[i]);
 	}
 
@@ -365,7 +365,7 @@ pr_run_ctors (progs_t *pr)
 
 	for (fnum = 0; fnum < pr->progs->numfunctions; fnum++) {
 		func = pr->pr_functions + fnum;
-		if (strequal (PR_GetString (pr, func->s_name), ".ctor"))
+		if (strequal (PR_GetString (pr, func->name), ".ctor"))
 			PR_ExecuteProgram (pr, fnum);
 	}
 	return 1;

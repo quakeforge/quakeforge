@@ -215,7 +215,7 @@ WriteProgdefs (dprograms_t *progs, const char *filename)
 	strings = (char *) progs + progs->ofs_strings;
 	for (i = 0; i < progs->numglobaldefs; i++) {
 		def = (ddef_t *) ((char *) progs + progs->ofs_globaldefs) + i;
-		name = strings + def->s_name;
+		name = strings + def->name;
 		if (!strcmp (name, "end_sys_globals"))
 			break;
 		if (!def->ofs)
@@ -253,7 +253,7 @@ WriteProgdefs (dprograms_t *progs, const char *filename)
 	dasprintf (dstr, "typedef struct\n{\n");
 	for (i = 0, j = 0; i < progs->numglobaldefs; i++) {
 		def = (ddef_t *) ((char *) progs + progs->ofs_globaldefs) + i;
-		name = strings + def->s_name;
+		name = strings + def->name;
 		if (!strcmp (name, "end_sys_fields"))
 			break;
 
@@ -265,7 +265,7 @@ WriteProgdefs (dprograms_t *progs, const char *filename)
 			continue;
 
 		fdef = (ddef_t *) ((char *) progs + progs->ofs_fielddefs) + j++;
-		if (fdef->s_name != def->s_name)
+		if (fdef->name != def->name)
 			internal_error (0, "def and field order messup");
 
 		switch (fdef->type) {

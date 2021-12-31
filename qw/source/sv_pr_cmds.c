@@ -75,7 +75,7 @@ PF_error (progs_t *pr)
 
 	s = PF_VarString (pr, 0);
 	Sys_Printf ("======SERVER ERROR in %s:\n%s\n",
-				PR_GetString (pr, pr->pr_xfunction->descriptor->s_name), s);
+				PR_GetString (pr, pr->pr_xfunction->descriptor->name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
 	ED_Print (pr, ed, 0);
 
@@ -99,7 +99,7 @@ PF_objerror (progs_t *pr)
 
 	s = PF_VarString (pr, 0);
 	Sys_Printf ("======OBJECT ERROR in %s:\n%s\n",
-				PR_GetString (pr, pr->pr_xfunction->descriptor->s_name), s);
+				PR_GetString (pr, pr->pr_xfunction->descriptor->name), s);
 	ed = PROG_TO_EDICT (pr, *sv_globals.self);
 	ED_Print (pr, ed, 0);
 	ED_Free (pr, ed);

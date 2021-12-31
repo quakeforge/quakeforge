@@ -231,19 +231,19 @@ WriteProgs (dprograms_t *progs, int size)
 		func->parm_start = LittleLong (func->parm_start);
 		func->locals = LittleLong (func->locals);
 		func->profile = LittleLong (func->profile);
-		func->s_name = LittleLong (func->s_name);
-		func->s_file = LittleLong (func->s_file);
+		func->name = LittleLong (func->name);
+		func->file = LittleLong (func->file);
 		func->numparms = LittleLong (func->numparms);
 	}
 	for (i = 0; i < progs->numglobaldefs; i++) {
 		globaldefs[i].type = LittleShort (globaldefs[i].type);
 		globaldefs[i].ofs = LittleShort (globaldefs[i].ofs);
-		globaldefs[i].s_name = LittleLong (globaldefs[i].s_name);
+		globaldefs[i].name = LittleLong (globaldefs[i].name);
 	}
 	for (i = 0; i < progs->numfielddefs; i++) {
 		fielddefs[i].type = LittleShort (fielddefs[i].type);
 		fielddefs[i].ofs = LittleShort (fielddefs[i].ofs);
-		fielddefs[i].s_name = LittleLong (fielddefs[i].s_name);
+		fielddefs[i].name = LittleLong (fielddefs[i].name);
 	}
 	for (i = 0; i < progs->numglobals; i++)
 		globals[i].integer_var = LittleLong (globals[i].integer_var);

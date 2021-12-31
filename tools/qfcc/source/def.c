@@ -284,7 +284,7 @@ def_to_ddef (def_t *def, ddef_t *ddef, int aux)
 		type = type->t.fldptr.type;	// aux is true only for fields
 	ddef->type = type->type;
 	ddef->ofs = def->offset;
-	ddef->s_name = ReuseString (def->name);
+	ddef->name = ReuseString (def->name);
 }
 
 static int
