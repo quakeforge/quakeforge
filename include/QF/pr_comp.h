@@ -457,15 +457,15 @@ typedef struct dparmsize_s {
 
 typedef struct dfunction_s {
 	pr_int_t    first_statement;	// negative numbers are builtins
-	pr_uint_t   parm_start;
+	pr_uint_t   parm_start;			// beginning of locals data space
 	pr_uint_t   locals;				// total ints of parms + locals
 
 	pr_uint_t   profile;			// runtime
 
-	string_t    s_name;
+	string_t    s_name;				// source function name
 	string_t    s_file;				// source file defined in
 
-	pr_int_t    numparms;
+	pr_int_t    numparms;			// -ve is varargs (1s comp of real count)
 	dparmsize_t parm_size[MAX_PARMS];
 } dfunction_t;
 
