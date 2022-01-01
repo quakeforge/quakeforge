@@ -33,10 +33,10 @@
 
 #include "QF/simd/types.h"
 
-GNU89INLINE inline vec4d_t vsqrtd (vec4d_t v) __attribute__((const));
-GNU89INLINE inline vec4d_t vceild (vec4d_t v) __attribute__((const));
-GNU89INLINE inline vec4d_t vfloord (vec4d_t v) __attribute__((const));
-GNU89INLINE inline vec4d_t vtruncd (vec4d_t v) __attribute__((const));
+GNU89INLINE inline vec4d_t vsqrt4d (vec4d_t v) __attribute__((const));
+GNU89INLINE inline vec4d_t vceil4d (vec4d_t v) __attribute__((const));
+GNU89INLINE inline vec4d_t vfloor4d (vec4d_t v) __attribute__((const));
+GNU89INLINE inline vec4d_t vtrunc4d (vec4d_t v) __attribute__((const));
 /** 3D vector cross product.
  *
  * The w (4th) component can be any value on input, and is guaranteed to be 0
@@ -96,6 +96,8 @@ GNU89INLINE inline vec4d_t qrotd (vec4d_t a, vec4d_t b) __attribute__((const));
 GNU89INLINE inline vec4d_t qconjd (vec4d_t q) __attribute__((const));
 GNU89INLINE inline vec4d_t loadvec3d (const double v3[]) __attribute__((pure));
 GNU89INLINE inline void storevec3d (double v3[3], vec4d_t v4);
+GNU89INLINE inline vec4l_t loadvec3l (const long *v3) __attribute__((pure));
+GNU89INLINE inline void storevec3l (long *v3, vec4l_t v4);
 
 #ifndef IMPLEMENT_VEC4D_Funcs
 GNU89INLINE inline
@@ -103,7 +105,7 @@ GNU89INLINE inline
 VISIBLE
 #endif
 vec4d_t
-vsqrtd (vec4d_t v)
+vsqrt4d (vec4d_t v)
 {
 	return _mm256_sqrt_pd (v);
 }
@@ -114,7 +116,7 @@ GNU89INLINE inline
 VISIBLE
 #endif
 vec4d_t
-vceild (vec4d_t v)
+vceil4d (vec4d_t v)
 {
 	return _mm256_ceil_pd (v);
 }
@@ -125,7 +127,7 @@ GNU89INLINE inline
 VISIBLE
 #endif
 vec4d_t
-vfloord (vec4d_t v)
+vfloor4d (vec4d_t v)
 {
 	return _mm256_floor_pd (v);
 }
@@ -136,7 +138,7 @@ GNU89INLINE inline
 VISIBLE
 #endif
 vec4d_t
-vtruncd (vec4d_t v)
+vtrunc4d (vec4d_t v)
 {
 	return _mm256_round_pd (v, _MM_FROUND_TRUNC);
 }
@@ -241,11 +243,11 @@ VISIBLE
 vec4d_t
 qrotd (vec4d_t a, vec4d_t b)
 {
-	vec4d_t ma = vsqrtd (dotd (a, a));
-	vec4d_t mb = vsqrtd (dotd (b, b));
+	vec4d_t ma = vsqrt4d (dotd (a, a));
+	vec4d_t mb = vsqrt4d (dotd (b, b));
 	vec4d_t den = 2 * ma * mb;
 	vec4d_t t = mb * a + ma * b;
-	vec4d_t mba_mab = vsqrtd (dotd (t, t));
+	vec4d_t mba_mab = vsqrt4d (dotd (t, t));
 	vec4d_t q = crossd (a, b) / mba_mab;
 	q[3] = (mba_mab / den)[0];
 	return q;
@@ -287,6 +289,31 @@ VISIBLE
 #endif
 void
 storevec3d (double v3[3], vec4d_t v4)
+{
+	v3[0] = v4[0];
+	v3[1] = v4[1];
+	v3[2] = v4[2];
+}
+
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+vec4l_t
+loadvec3l (const long *v3)
+{
+	vec4l_t v4 = { v3[0], v3[1], v3[2], 0 };
+	return v4;
+}
+
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+void
+storevec3l (long *v3, vec4l_t v4)
 {
 	v3[0] = v4[0];
 	v3[1] = v4[1];

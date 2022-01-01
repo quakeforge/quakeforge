@@ -156,7 +156,7 @@ calc_plane (vec4f_t v1, vec4f_t v2, int flip, vec4f_t p, vec4f_t *plane)
 	if (length[0] < ON_EPSILON)
 		return 0;
 
-	*plane /= vsqrtf (length);
+	*plane /= vsqrt4f (length);
 	(*plane)[3] = -dotf (p, *plane)[0];
 	return 1;
 }
@@ -371,7 +371,7 @@ RecursiveClusterFlow (int clusternum, threaddata_t *thread, pstack_t *prevstack)
 		// get plane of target_portal, point normal into the neighbor cluster
 		backplane = -target_portal->plane;
 
-		vec4f_t     diff = vabsf (pass_plane - backplane);
+		vec4f_t     diff = vabs4f (pass_plane - backplane);
 		vec4i_t     cmp = diff > (vec4f_t) {0.001, 0.001, 0.001, 0.001};
 		if (!(cmp[0] || cmp[1] || cmp[2])) { // dist isn't interesting
 			continue;		// can't go out a coplanar face

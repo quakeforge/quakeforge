@@ -97,17 +97,17 @@ typedef  struct {
 #ifdef __AVX2__
 static vec4d_t tvtruncd (vec4d_t v, vec4d_t ignore)
 {
-	return vtruncd (v);
+	return vtrunc4d (v);
 }
 
 static vec4d_t tvceild (vec4d_t v, vec4d_t ignore)
 {
-	return vceild (v);
+	return vceil4d (v);
 }
 
 static vec4d_t tvfloord (vec4d_t v, vec4d_t ignore)
 {
-	return vfloord (v);
+	return vfloor4d (v);
 }
 
 static vec4d_t tqconjd (vec4d_t v, vec4d_t ignore)
@@ -118,17 +118,17 @@ static vec4d_t tqconjd (vec4d_t v, vec4d_t ignore)
 
 static vec4f_t tvtruncf (vec4f_t v, vec4f_t ignore)
 {
-	return vtruncf (v);
+	return vtrunc4f (v);
 }
 
 static vec4f_t tvceilf (vec4f_t v, vec4f_t ignore)
 {
-	return vceilf (v);
+	return vceil4f (v);
 }
 
 static vec4f_t tvfloorf (vec4f_t v, vec4f_t ignore)
 {
-	return vfloorf (v);
+	return vfloor4f (v);
 }
 
 static vec4f_t tqconjf (vec4f_t v, vec4f_t ignore)
@@ -138,12 +138,12 @@ static vec4f_t tqconjf (vec4f_t v, vec4f_t ignore)
 
 static vec4f_t tvabsf (vec4f_t v, vec4f_t ignore)
 {
-	return vabsf (v);
+	return vabs4f (v);
 }
 
 static vec4f_t tvsqrtf (vec4f_t v, vec4f_t ignore)
 {
-	return vsqrtf (v);
+	return vsqrt4f (v);
 }
 
 static vec4f_t tmagnitudef (vec4f_t v, vec4f_t ignore)
