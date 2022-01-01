@@ -37,25 +37,27 @@
 
 extern const vec_t *const vec3_origin;
 
+#define VectorCompUop(b, op, a) \
+	do { \
+		(b)[0] = op ((a)[0]); \
+		(b)[1] = op ((a)[1]); \
+		(b)[2] = op ((a)[2]); \
+	} while (0)
+#define VectorCompOp(c, a, op, b) \
+	do { \
+		(c)[0] = (a)[0] op (b)[0]; \
+		(c)[1] = (a)[1] op (b)[1]; \
+		(c)[2] = (a)[2] op (b)[2]; \
+	} while (0)
+#define VectorCompAdd(c,a,b) VectorCompOp (c, a, +, b)
+#define VectorCompSub(c,a,b) VectorCompOp (c, a, -, b)
+#define VectorCompMult(c,a,b) VectorCompOp (c, a, *, b)
+#define VectorCompDiv(c,a,b) VectorCompOp (c, a, /, b)
+
 #define DotProduct(a,b) ((a)[0] * (b)[0] + (a)[1] * (b)[1] + (a)[2] * (b)[2])
-#define VectorSubtract(a,b,c) \
-	do { \
-		(c)[0] = (a)[0] - (b)[0]; \
-		(c)[1] = (a)[1] - (b)[1]; \
-		(c)[2] = (a)[2] - (b)[2]; \
-	} while (0)
-#define VectorNegate(a,b) \
-	do { \
-		(b)[0] = -(a)[0]; \
-		(b)[1] = -(a)[1]; \
-		(b)[2] = -(a)[2]; \
-	} while (0)
-#define VectorAdd(a,b,c) \
-	do { \
-		(c)[0] = (a)[0] + (b)[0]; \
-		(c)[1] = (a)[1] + (b)[1]; \
-		(c)[2] = (a)[2] + (b)[2]; \
-	} while (0)
+#define VectorSubtract(a,b,c) VectorCompSub (c, a, b)
+#define VectorNegate(a,b) VectorCompUop (b, -, a)
+#define VectorAdd(a,b,c) VectorCompAdd (c, a, b)
 #define VectorCopy(a,b) \
 	do { \
 		(b)[0] = (a)[0]; \
@@ -118,18 +120,6 @@ extern const vec_t *const vec3_origin;
 		(c)[2] = (b)[2] - (b)[1] * (a)[2] - (b)[0] * ((a)[1]-(a)[0]*(a)[2]); \
 		(c)[1] = (b)[1] - (b)[0] * (a)[0]; \
 		(c)[0] = (b)[0]; \
-	} while (0)
-#define VectorCompMult(a,b,c) \
-	do { \
-		(c)[0] = (a)[0] * (b)[0]; \
-		(c)[1] = (a)[1] * (b)[1]; \
-		(c)[2] = (a)[2] * (b)[2]; \
-	} while (0)
-#define VectorCompDiv(a,b,c) \
-	do { \
-		(c)[0] = (a)[0] / (b)[0]; \
-		(c)[1] = (a)[1] / (b)[1]; \
-		(c)[2] = (a)[2] / (b)[2]; \
 	} while (0)
 #define VectorCompCompare(c, m, a, op, b)	\
 	do { \
