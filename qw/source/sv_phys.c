@@ -487,8 +487,8 @@ SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 			// entity?
 			c_absmin = SVvector (check, absmin);
 			c_absmax = SVvector (check, absmax);
-			if (VectorCompCompare (c_absmin, >=, maxs)
-				|| VectorCompCompare (c_absmax, <=, mins))
+			if (VectorCompCompareAll (c_absmin, >=, maxs)
+				|| VectorCompCompareAll (c_absmax, <=, mins))
 				continue;
 
 			if (!SV_TestEntityPosition (check))

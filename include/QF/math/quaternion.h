@@ -115,10 +115,17 @@ extern const vec_t *const quat_origin;
 		(c)[2] = (a)[2] / (b)[2]; \
 		(c)[3] = (a)[3] / (b)[3]; \
 	} while (0)
-#define QuatCompCompare(x, op, y) \
+#define QuatCompCompare(m, a, op, b, c)	\
+	do { \
+		(c)[0] = m((a)[0] op (b)[0]); \
+		(c)[1] = m((a)[1] op (b)[1]); \
+		(c)[2] = m((a)[2] op (b)[2]); \
+		(c)[3] = m((a)[3] op (b)[3]); \
+	} while (0)
+#define QuatCompCompareAll(x, op, y) \
 	(((x)[0] op (y)[0]) && ((x)[1] op (y)[1]) \
 	 && ((x)[2] op (y)[2]) && ((x)[3] op (y)[3]))
-#define QuatCompare(x, y) QuatCompCompare (x, ==, y)
+#define QuatCompare(x, y) QuatCompCompareAll (x, ==, y)
 #define QuatCompMin(a, b, c) \
 	do { \
 		(c)[0] = min ((a)[0], (b)[0]); \

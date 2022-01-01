@@ -131,9 +131,15 @@ extern const vec_t *const vec3_origin;
 		(c)[1] = (a)[1] / (b)[1]; \
 		(c)[2] = (a)[2] / (b)[2]; \
 	} while (0)
-#define VectorCompCompare(x, op, y)	\
+#define VectorCompCompare(c, m, a, op, b)	\
+	do { \
+		(c)[0] = m((a)[0] op (b)[0]); \
+		(c)[1] = m((a)[1] op (b)[1]); \
+		(c)[2] = m((a)[2] op (b)[2]); \
+	} while (0)
+#define VectorCompCompareAll(x, op, y)	\
 	(((x)[0] op (y)[0]) && ((x)[1] op (y)[1]) && ((x)[2] op (y)[2]))
-#define VectorCompare(x, y) VectorCompCompare (x, ==, y)
+#define VectorCompare(x, y) VectorCompCompareAll (x, ==, y)
 #define VectorCompMin(a, b, c) \
 	do { \
 		(c)[0] = min ((a)[0], (b)[0]); \
