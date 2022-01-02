@@ -49,14 +49,14 @@
 
 hashtab_t  *opcode_type_table;
 hashtab_t  *opcode_void_table;
-opcode_t   *opcode_map;
+v6p_opcode_t *opcode_map;
 
 #define ROTL(x,n) ((((unsigned)(x))<<(n))|((unsigned)(x))>>(32-n))
 
 static uintptr_t
 get_hash (const void *_op, void *_tab)
 {
-	opcode_t   *op = (opcode_t *) _op;
+	v6p_opcode_t *op = (v6p_opcode_t *) _op;
 	uintptr_t   hash;
 
 	hash = ROTL (~op->type_a, 8) + ROTL (~op->type_b, 16)
@@ -67,8 +67,8 @@ get_hash (const void *_op, void *_tab)
 static int
 compare (const void *_opa, const void *_opb, void *unused)
 {
-	opcode_t   *opa = (opcode_t *) _opa;
-	opcode_t   *opb = (opcode_t *) _opb;
+	v6p_opcode_t *opa = (v6p_opcode_t *) _opa;
+	v6p_opcode_t *opb = (v6p_opcode_t *) _opb;
 	int         cmp;
 
 	cmp = (opa->type_a == opb->type_a)
@@ -80,7 +80,7 @@ compare (const void *_opa, const void *_opb, void *unused)
 static const char *
 get_key (const void *op, void *unused)
 {
-	return ((opcode_t *) op)->name;
+	return ((v6p_opcode_t *) op)->name;
 }
 
 static int
@@ -92,13 +92,13 @@ check_operand_type (etype_t ot1, etype_t ot2)
 	return 0;
 }
 
-opcode_t *
+v6p_opcode_t *
 opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 			 operand_t *op_c)
 {
-	opcode_t    search_op = {};
-	opcode_t   *op;
-	opcode_t   *sop;
+	v6p_opcode_t search_op = {};
+	v6p_opcode_t *op;
+	v6p_opcode_t *sop;
 	void      **op_list;
 	int         i;
 
@@ -126,8 +126,8 @@ opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 void
 opcode_init (void)
 {
-	const opcode_t *op;
-	opcode_t   *mop;
+	const v6p_opcode_t *op;
+	v6p_opcode_t *mop;
 
 	if (opcode_type_table) {
 		Hash_FlushTable (opcode_void_table);
@@ -140,14 +140,14 @@ opcode_init (void)
 	}
 
 	int         num_opcodes = 0;
-	for (op = pr_opcodes; op->name; op++) {
+	for (op = pr_v6p_opcodes; op->name; op++) {
 		num_opcodes++;
 	}
 	if (!opcode_map) {
-		opcode_map = calloc (num_opcodes, sizeof (opcode_t));
+		opcode_map = calloc (num_opcodes, sizeof (v6p_opcode_t));
 	}
 	for (int i = 0; i < num_opcodes; i++) {
-		op = pr_opcodes + i;
+		op = pr_v6p_opcodes + i;
 		if (op->min_version > options.code.progsversion)
 			continue;
 		mop = opcode_map + i;

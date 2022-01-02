@@ -355,23 +355,23 @@ signal_hook (int sig, void *data)
 		op_c = pr->pr_globals + st->c;
 
 		switch (st->op) {
-			case OP_DIV_F:
+			case OP_DIV_F_v6p:
 				if ((OPA(int) & 0x80000000)
 					^ (OPB(int) & 0x80000000))
 					OPC(int) = 0xff7fffff;
 				else
 					OPC(int) = 0x7f7fffff;
 				return 1;
-			case OP_DIV_I:
+			case OP_DIV_I_v6p:
 				if (OPA(int) & 0x80000000)
 					OPC(int) = -0x80000000;
 				else
 					OPC(int) = 0x7fffffff;
 				return 1;
-			case OP_MOD_I:
-			case OP_MOD_F:
-			case OP_REM_I:
-			case OP_REM_F:
+			case OP_MOD_I_v6p:
+			case OP_MOD_F_v6p:
+			case OP_REM_I_v6p:
+			case OP_REM_F_v6p:
 				OPC(int) = 0x00000000;
 				return 1;
 			default:
@@ -481,50 +481,50 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 			}
 		}
 
-		pr_opcode_e op = st->op & ~OP_BREAK;
+		pr_opcode_v6p_e op = st->op & ~OP_BREAK;
 		switch (op) {
-			case OP_ADD_D:
+			case OP_ADD_D_v6p:
 				OPC(double) = OPA(double) + OPB(double);
 				break;
-			case OP_ADD_F:
+			case OP_ADD_F_v6p:
 				OPC(float) = OPA(float) + OPB(float);
 				break;
-			case OP_ADD_V:
+			case OP_ADD_V_v6p:
 				VectorAdd (&OPA(float), &OPB(float), &OPC(float));
 				break;
-			case OP_ADD_Q:
+			case OP_ADD_Q_v6p:
 				QuatAdd (&OPA(float), &OPB(float), &OPC(float));
 				break;
-			case OP_ADD_S:
+			case OP_ADD_S_v6p:
 				OPC(string) = PR_CatStrings (pr,
 												PR_GetString (pr,
 															  OPA(string)),
 												PR_GetString (pr,
 															  OPB(string)));
 				break;
-			case OP_SUB_D:
+			case OP_SUB_D_v6p:
 				OPC(double) = OPA(double) - OPB(double);
 				break;
-			case OP_SUB_F:
+			case OP_SUB_F_v6p:
 				OPC(float) = OPA(float) - OPB(float);
 				break;
-			case OP_SUB_V:
+			case OP_SUB_V_v6p:
 				VectorSubtract (&OPA(float), &OPB(float),
 								&OPC(float));
 				break;
-			case OP_SUB_Q:
+			case OP_SUB_Q_v6p:
 				QuatSubtract (&OPA(float), &OPB(float), &OPC(float));
 				break;
-			case OP_MUL_D:
+			case OP_MUL_D_v6p:
 				OPC(double) = OPA(double) * OPB(double);
 				break;
-			case OP_MUL_F:
+			case OP_MUL_F_v6p:
 				OPC(float) = OPA(float) * OPB(float);
 				break;
-			case OP_MUL_V:
+			case OP_MUL_V_v6p:
 				OPC(float) = DotProduct (&OPA(float), &OPB(float));
 				break;
-			case OP_MUL_DV:
+			case OP_MUL_DV_v6p:
 				{
 					// avoid issues with the likes of x = x.x * x;
 					// makes for faster code, too
@@ -532,7 +532,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					VectorScale (&OPB(float), scale, &OPC(float));
 				}
 				break;
-			case OP_MUL_VD:
+			case OP_MUL_VD_v6p:
 				{
 					// avoid issues with the likes of x = x * x.x;
 					// makes for faster code, too
@@ -540,7 +540,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					VectorScale (&OPA(float), scale, &OPC(float));
 				}
 				break;
-			case OP_MUL_FV:
+			case OP_MUL_FV_v6p:
 				{
 					// avoid issues with the likes of x = x.x * x;
 					// makes for faster code, too
@@ -548,7 +548,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					VectorScale (&OPB(float), scale, &OPC(float));
 				}
 				break;
-			case OP_MUL_VF:
+			case OP_MUL_VF_v6p:
 				{
 					// avoid issues with the likes of x = x * x.x;
 					// makes for faster code, too
@@ -556,13 +556,13 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					VectorScale (&OPA(float), scale, &OPC(float));
 				}
 				break;
-			case OP_MUL_Q:
+			case OP_MUL_Q_v6p:
 				QuatMult (&OPA(float), &OPB(float), &OPC(float));
 				break;
-			case OP_MUL_QV:
+			case OP_MUL_QV_v6p:
 				QuatMultVec (&OPA(float), &OPB(float), &OPC(float));
 				break;
-			case OP_MUL_DQ:
+			case OP_MUL_DQ_v6p:
 				{
 					// avoid issues with the likes of x = x.s * x;
 					// makes for faster code, too
@@ -570,7 +570,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					QuatScale (&OPB(float), scale, &OPC(float));
 				}
 				break;
-			case OP_MUL_QD:
+			case OP_MUL_QD_v6p:
 				{
 					// avoid issues with the likes of x = x * x.s;
 					// makes for faster code, too
@@ -578,7 +578,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					QuatScale (&OPA(float), scale, &OPC(float));
 				}
 				break;
-			case OP_MUL_FQ:
+			case OP_MUL_FQ_v6p:
 				{
 					// avoid issues with the likes of x = x.s * x;
 					// makes for faster code, too
@@ -586,7 +586,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					QuatScale (&OPB(float), scale, &OPC(float));
 				}
 				break;
-			case OP_MUL_QF:
+			case OP_MUL_QF_v6p:
 				{
 					// avoid issues with the likes of x = x * x.s;
 					// makes for faster code, too
@@ -594,160 +594,160 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					QuatScale (&OPA(float), scale, &OPC(float));
 				}
 				break;
-			case OP_CONJ_Q:
+			case OP_CONJ_Q_v6p:
 				QuatConj (&OPA(float), &OPC(float));
 				break;
-			case OP_DIV_D:
+			case OP_DIV_D_v6p:
 				OPC(double) = OPA(double) / OPB(double);
 				break;
-			case OP_DIV_F:
+			case OP_DIV_F_v6p:
 				OPC(float) = OPA(float) / OPB(float);
 				break;
-			case OP_BITAND:
+			case OP_BITAND_v6p:
 				OPC(float) = (int) OPA(float) & (int) OPB(float);
 				break;
-			case OP_BITOR:
+			case OP_BITOR_v6p:
 				OPC(float) = (int) OPA(float) | (int) OPB(float);
 				break;
-			case OP_BITXOR_F:
+			case OP_BITXOR_F_v6p:
 				OPC(float) = (int) OPA(float) ^ (int) OPB(float);
 				break;
-			case OP_BITNOT_F:
+			case OP_BITNOT_F_v6p:
 				OPC(float) = ~ (int) OPA(float);
 				break;
-			case OP_SHL_F:
+			case OP_SHL_F_v6p:
 				OPC(float) = (int) OPA(float) << (int) OPB(float);
 				break;
-			case OP_SHR_F:
+			case OP_SHR_F_v6p:
 				OPC(float) = (int) OPA(float) >> (int) OPB(float);
 				break;
-			case OP_SHL_I:
+			case OP_SHL_I_v6p:
 				OPC(int) = OPA(int) << OPB(int);
 				break;
-			case OP_SHR_I:
+			case OP_SHR_I_v6p:
 				OPC(int) = OPA(int) >> OPB(int);
 				break;
-			case OP_SHR_U:
+			case OP_SHR_U_v6p:
 				OPC(uint) = OPA(uint) >> OPB(int);
 				break;
-			case OP_GE_F:
+			case OP_GE_F_v6p:
 				OPC(float) = OPA(float) >= OPB(float);
 				break;
-			case OP_LE_F:
+			case OP_LE_F_v6p:
 				OPC(float) = OPA(float) <= OPB(float);
 				break;
-			case OP_GT_F:
+			case OP_GT_F_v6p:
 				OPC(float) = OPA(float) > OPB(float);
 				break;
-			case OP_LT_F:
+			case OP_LT_F_v6p:
 				OPC(float) = OPA(float) < OPB(float);
 				break;
-			case OP_AND:	// OPA and OPB have to be float for -0.0
+			case OP_AND_v6p:	// OPA and OPB have to be float for -0.0
 				OPC(int) = FNZ (OPA(uint)) && FNZ (OPB(uint));
 				break;
-			case OP_OR:		// OPA and OPB have to be float for -0.0
+			case OP_OR_v6p:		// OPA and OPB have to be float for -0.0
 				OPC(int) = FNZ (OPA(uint)) || FNZ (OPB(uint));
 				break;
-			case OP_NOT_F:
+			case OP_NOT_F_v6p:
 				OPC(int) = !FNZ (OPA(uint));
 				break;
-			case OP_NOT_V:
+			case OP_NOT_V_v6p:
 				OPC(int) = VectorIsZero (&OPA(float));
 				break;
-			case OP_NOT_Q:
+			case OP_NOT_Q_v6p:
 				OPC(int) = QuatIsZero (&OPA(float));
 				break;
-			case OP_NOT_S:
+			case OP_NOT_S_v6p:
 				OPC(int) = !OPA(string) ||
 					!*PR_GetString (pr, OPA(string));
 				break;
-			case OP_NOT_FN:
+			case OP_NOT_FN_v6p:
 				OPC(int) = !OPA(uint);
 				break;
-			case OP_NOT_ENT:
+			case OP_NOT_ENT_v6p:
 				OPC(int) = !OPA(uint);
 				break;
-			case OP_EQ_F:
+			case OP_EQ_F_v6p:
 				OPC(int) = OPA(float) == OPB(float);
 				break;
-			case OP_EQ_V:
+			case OP_EQ_V_v6p:
 				OPC(int) = VectorCompare (&OPA(float),
 												 &OPB(float));
 				break;
-			case OP_EQ_Q:
+			case OP_EQ_Q_v6p:
 				OPC(int) = QuatCompare (&OPA(float), &OPB(float));
 				break;
-			case OP_EQ_E:
+			case OP_EQ_E_v6p:
 				OPC(int) = OPA(int) == OPB(int);
 				break;
-			case OP_EQ_FN:
+			case OP_EQ_FN_v6p:
 				OPC(int) = OPA(uint) == OPB(uint);
 				break;
-			case OP_NE_F:
+			case OP_NE_F_v6p:
 				OPC(int) = OPA(float) != OPB(float);
 				break;
-			case OP_NE_V:
+			case OP_NE_V_v6p:
 				OPC(int) = !VectorCompare (&OPA(float),
 												  &OPB(float));
 				break;
-			case OP_NE_Q:
+			case OP_NE_Q_v6p:
 				OPC(int) = !QuatCompare (&OPA(float), &OPB(float));
 				break;
-			case OP_LE_S:
-			case OP_GE_S:
-			case OP_LT_S:
-			case OP_GT_S:
-			case OP_NE_S:
-			case OP_EQ_S:
+			case OP_LE_S_v6p:
+			case OP_GE_S_v6p:
+			case OP_LT_S_v6p:
+			case OP_GT_S_v6p:
+			case OP_NE_S_v6p:
+			case OP_EQ_S_v6p:
 				{
 					int cmp = strcmp (PR_GetString (pr, OPA(string)),
 									  PR_GetString (pr, OPB(string)));
 					switch (st->op) {
-						case OP_LE_S: cmp = (cmp <= 0); break;
-						case OP_GE_S: cmp = (cmp >= 0); break;
-						case OP_LT_S: cmp = (cmp < 0); break;
-						case OP_GT_S: cmp = (cmp > 0); break;
-						case OP_NE_S: break;
-						case OP_EQ_S: cmp = !cmp; break;
+						case OP_LE_S_v6p: cmp = (cmp <= 0); break;
+						case OP_GE_S_v6p: cmp = (cmp >= 0); break;
+						case OP_LT_S_v6p: cmp = (cmp < 0); break;
+						case OP_GT_S_v6p: cmp = (cmp > 0); break;
+						case OP_NE_S_v6p: break;
+						case OP_EQ_S_v6p: cmp = !cmp; break;
 						default:      break;
 					}
 					OPC(int) = cmp;
 				}
 				break;
-			case OP_NE_E:
+			case OP_NE_E_v6p:
 				OPC(int) = OPA(int) != OPB(int);
 				break;
-			case OP_NE_FN:
+			case OP_NE_FN_v6p:
 				OPC(int) = OPA(uint) != OPB(uint);
 				break;
 
 			// ==================
-			case OP_STORE_F:
-			case OP_STORE_ENT:
-			case OP_STORE_FLD:			// integers
-			case OP_STORE_S:
-			case OP_STORE_FN:			// pointers
-			case OP_STORE_I:
-			case OP_STORE_P:
+			case OP_STORE_F_v6p:
+			case OP_STORE_ENT_v6p:
+			case OP_STORE_FLD_v6p:			// integers
+			case OP_STORE_S_v6p:
+			case OP_STORE_FN_v6p:			// pointers
+			case OP_STORE_I_v6p:
+			case OP_STORE_P_v6p:
 				OPB(int) = OPA(int);
 				break;
-			case OP_STORE_V:
+			case OP_STORE_V_v6p:
 				VectorCopy (&OPA(float), &OPB(float));
 				break;
-			case OP_STORE_Q:
+			case OP_STORE_Q_v6p:
 				QuatCopy (&OPA(float), &OPB(float));
 				break;
-			case OP_STORE_D:
+			case OP_STORE_D_v6p:
 				OPB(double) = OPA(double);
 				break;
 
-			case OP_STOREP_F:
-			case OP_STOREP_ENT:
-			case OP_STOREP_FLD:		// integers
-			case OP_STOREP_S:
-			case OP_STOREP_FN:		// pointers
-			case OP_STOREP_I:
-			case OP_STOREP_P:
+			case OP_STOREP_F_v6p:
+			case OP_STOREP_ENT_v6p:
+			case OP_STOREP_FLD_v6p:		// integers
+			case OP_STOREP_S_v6p:
+			case OP_STOREP_FN_v6p:		// pointers
+			case OP_STOREP_I_v6p:
+			case OP_STOREP_P_v6p:
 				pointer = OPB(int);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_integer);
@@ -755,7 +755,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				ptr = pr->pr_globals + pointer;
 				ptr->integer_var = OPA(int);
 				break;
-			case OP_STOREP_V:
+			case OP_STOREP_V_v6p:
 				pointer = OPB(int);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_vector);
@@ -763,7 +763,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				ptr = pr->pr_globals + pointer;
 				VectorCopy (&OPA(float), &ptr->vector_var);
 				break;
-			case OP_STOREP_Q:
+			case OP_STOREP_Q_v6p:
 				pointer = OPB(int);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_quat);
@@ -771,7 +771,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (&OPA(float), &ptr->quat_var);
 				break;
-			case OP_STOREP_D:
+			case OP_STOREP_D_v6p:
 				pointer = OPB(int);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_double);
@@ -780,7 +780,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				*(double *) ptr = OPA(double);
 				break;
 
-			case OP_ADDRESS:
+			case OP_ADDRESS_v6p:
 				if (pr_boundscheck->int_val) {
 					if (OPA(uint) >= pr->pr_edict_area_size)
 						PR_RunError (pr, "Progs attempted to address an out "
@@ -794,27 +794,27 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				fldofs = OPA(uint) + OPB(int);
 				OPC(int) = &pr->pr_edict_area[fldofs] - pr->pr_globals;
 				break;
-			case OP_ADDRESS_VOID:
-			case OP_ADDRESS_F:
-			case OP_ADDRESS_V:
-			case OP_ADDRESS_Q:
-			case OP_ADDRESS_S:
-			case OP_ADDRESS_ENT:
-			case OP_ADDRESS_FLD:
-			case OP_ADDRESS_FN:
-			case OP_ADDRESS_I:
-			case OP_ADDRESS_P:
-			case OP_ADDRESS_D:
+			case OP_ADDRESS_VOID_v6p:
+			case OP_ADDRESS_F_v6p:
+			case OP_ADDRESS_V_v6p:
+			case OP_ADDRESS_Q_v6p:
+			case OP_ADDRESS_S_v6p:
+			case OP_ADDRESS_ENT_v6p:
+			case OP_ADDRESS_FLD_v6p:
+			case OP_ADDRESS_FN_v6p:
+			case OP_ADDRESS_I_v6p:
+			case OP_ADDRESS_P_v6p:
+			case OP_ADDRESS_D_v6p:
 				OPC(int) = st->a;
 				break;
 
-			case OP_LOAD_F:
-			case OP_LOAD_FLD:
-			case OP_LOAD_ENT:
-			case OP_LOAD_S:
-			case OP_LOAD_FN:
-			case OP_LOAD_I:
-			case OP_LOAD_P:
+			case OP_LOAD_F_v6p:
+			case OP_LOAD_FLD_v6p:
+			case OP_LOAD_ENT_v6p:
+			case OP_LOAD_S_v6p:
+			case OP_LOAD_FN_v6p:
+			case OP_LOAD_I_v6p:
+			case OP_LOAD_P_v6p:
 				if (pr_boundscheck->int_val) {
 					if (OPA(uint) >= pr->pr_edict_area_size)
 						PR_RunError (pr, "Progs attempted to read an out of "
@@ -826,7 +826,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				fldofs = OPA(uint) + OPB(int);
 				OPC(int) = pr->pr_edict_area[fldofs].integer_var;
 				break;
-			case OP_LOAD_V:
+			case OP_LOAD_V_v6p:
 				if (pr_boundscheck->int_val) {
 					if (OPA(uint) >= pr->pr_edict_area_size)
 						PR_RunError (pr, "Progs attempted to read an out of "
@@ -838,7 +838,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				fldofs = OPA(uint) + OPB(int);
 				memcpy (op_c, &pr->pr_edict_area[fldofs], 3 * sizeof (*op_c));
 				break;
-			case OP_LOAD_Q:
+			case OP_LOAD_Q_v6p:
 				if (pr_boundscheck->int_val) {
 					if (OPA(uint) >= pr->pr_edict_area_size)
 						PR_RunError (pr, "Progs attempted to read an out of "
@@ -850,7 +850,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				fldofs = OPA(uint) + OPB(int);
 				memcpy (op_c, &pr->pr_edict_area[fldofs], 4 * sizeof (*op_c));
 				break;
-			case OP_LOAD_D:
+			case OP_LOAD_D_v6p:
 				if (pr_boundscheck->int_val) {
 					if (OPA(uint) >= pr->pr_edict_area_size)
 						PR_RunError (pr, "Progs attempted to read an out of "
@@ -863,13 +863,13 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				memcpy (op_c, &pr->pr_edict_area[fldofs], sizeof (double));
 				break;
 
-			case OP_LOADB_F:
-			case OP_LOADB_S:
-			case OP_LOADB_ENT:
-			case OP_LOADB_FLD:
-			case OP_LOADB_FN:
-			case OP_LOADB_I:
-			case OP_LOADB_P:
+			case OP_LOADB_F_v6p:
+			case OP_LOADB_S_v6p:
+			case OP_LOADB_ENT_v6p:
+			case OP_LOADB_FLD_v6p:
+			case OP_LOADB_FN_v6p:
+			case OP_LOADB_I_v6p:
+			case OP_LOADB_P_v6p:
 				pointer = OPA(int) + OPB(int);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_integer);
@@ -877,7 +877,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				ptr = pr->pr_globals + pointer;
 				OPC(int) = ptr->integer_var;
 				break;
-			case OP_LOADB_V:
+			case OP_LOADB_V_v6p:
 				pointer = OPA(int) + OPB(int);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_vector);
@@ -885,7 +885,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				ptr = pr->pr_globals + pointer;
 				VectorCopy (&ptr->vector_var, &OPC(float));
 				break;
-			case OP_LOADB_Q:
+			case OP_LOADB_Q_v6p:
 				pointer = OPA(int) + OPB(int);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_quat);
@@ -893,7 +893,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (&ptr->quat_var, &OPC(float));
 				break;
-			case OP_LOADB_D:
+			case OP_LOADB_D_v6p:
 				pointer = OPA(int) + OPB(int);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_double);
@@ -902,13 +902,13 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				OPC(double) = *(double *) ptr;
 				break;
 
-			case OP_LOADBI_F:
-			case OP_LOADBI_S:
-			case OP_LOADBI_ENT:
-			case OP_LOADBI_FLD:
-			case OP_LOADBI_FN:
-			case OP_LOADBI_I:
-			case OP_LOADBI_P:
+			case OP_LOADBI_F_v6p:
+			case OP_LOADBI_S_v6p:
+			case OP_LOADBI_ENT_v6p:
+			case OP_LOADBI_FLD_v6p:
+			case OP_LOADBI_FN_v6p:
+			case OP_LOADBI_I_v6p:
+			case OP_LOADBI_P_v6p:
 				pointer = OPA(int) + (short) st->b;
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_integer);
@@ -916,7 +916,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				ptr = pr->pr_globals + pointer;
 				OPC(int) = ptr->integer_var;
 				break;
-			case OP_LOADBI_V:
+			case OP_LOADBI_V_v6p:
 				pointer = OPA(int) + (short) st->b;
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_vector);
@@ -924,7 +924,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				ptr = pr->pr_globals + pointer;
 				VectorCopy (&ptr->vector_var, &OPC(float));
 				break;
-			case OP_LOADBI_Q:
+			case OP_LOADBI_Q_v6p:
 				pointer = OPA(int) + (short) st->b;
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_quat);
@@ -932,7 +932,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (&ptr->quat_var, &OPC(float));
 				break;
-			case OP_LOADBI_D:
+			case OP_LOADBI_D_v6p:
 				pointer = OPA(int) + (short) st->b;
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_quat);
@@ -941,23 +941,23 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				OPC(double) = *(double *) ptr;
 				break;
 
-			case OP_LEA:
+			case OP_LEA_v6p:
 				pointer = OPA(int) + OPB(int);
 				OPC(int) = pointer;
 				break;
 
-			case OP_LEAI:
+			case OP_LEAI_v6p:
 				pointer = OPA(int) + (short) st->b;
 				OPC(int) = pointer;
 				break;
 
-			case OP_STOREB_F:
-			case OP_STOREB_S:
-			case OP_STOREB_ENT:
-			case OP_STOREB_FLD:
-			case OP_STOREB_FN:
-			case OP_STOREB_I:
-			case OP_STOREB_P:
+			case OP_STOREB_F_v6p:
+			case OP_STOREB_S_v6p:
+			case OP_STOREB_ENT_v6p:
+			case OP_STOREB_FLD_v6p:
+			case OP_STOREB_FN_v6p:
+			case OP_STOREB_I_v6p:
+			case OP_STOREB_P_v6p:
 				pointer = OPB(int) + OPC(int);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_integer);
@@ -965,7 +965,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				ptr = pr->pr_globals + pointer;
 				ptr->integer_var = OPA(int);
 				break;
-			case OP_STOREB_V:
+			case OP_STOREB_V_v6p:
 				pointer = OPB(int) + OPC(int);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_vector);
@@ -973,7 +973,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				ptr = pr->pr_globals + pointer;
 				VectorCopy (&OPA(float), &ptr->vector_var);
 				break;
-			case OP_STOREB_Q:
+			case OP_STOREB_Q_v6p:
 				pointer = OPB(int) + OPC(int);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_quat);
@@ -981,7 +981,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (&OPA(float), &ptr->quat_var);
 				break;
-			case OP_STOREB_D:
+			case OP_STOREB_D_v6p:
 				pointer = OPB(int) + OPC(int);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_quat);
@@ -990,13 +990,13 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				*(double *) ptr = OPA(double);
 				break;
 
-			case OP_STOREBI_F:
-			case OP_STOREBI_S:
-			case OP_STOREBI_ENT:
-			case OP_STOREBI_FLD:
-			case OP_STOREBI_FN:
-			case OP_STOREBI_I:
-			case OP_STOREBI_P:
+			case OP_STOREBI_F_v6p:
+			case OP_STOREBI_S_v6p:
+			case OP_STOREBI_ENT_v6p:
+			case OP_STOREBI_FLD_v6p:
+			case OP_STOREBI_FN_v6p:
+			case OP_STOREBI_I_v6p:
+			case OP_STOREBI_P_v6p:
 				pointer = OPB(int) + (short) st->c;
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_integer);
@@ -1004,7 +1004,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				ptr = pr->pr_globals + pointer;
 				ptr->integer_var = OPA(int);
 				break;
-			case OP_STOREBI_V:
+			case OP_STOREBI_V_v6p:
 				pointer = OPB(int) + (short) st->c;
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_vector);
@@ -1012,7 +1012,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				ptr = pr->pr_globals + pointer;
 				VectorCopy (&OPA(float), &ptr->vector_var);
 				break;
-			case OP_STOREBI_Q:
+			case OP_STOREBI_Q_v6p:
 				pointer = OPB(int) + (short) st->c;
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_quat);
@@ -1020,7 +1020,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (&OPA(float), &ptr->quat_var);
 				break;
-			case OP_STOREBI_D:
+			case OP_STOREBI_D_v6p:
 				pointer = OPB(int) + (short) st->c;
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_quat);
@@ -1029,13 +1029,13 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				*(double *) ptr = OPA(double);
 				break;
 
-			case OP_PUSH_F:
-			case OP_PUSH_FLD:
-			case OP_PUSH_ENT:
-			case OP_PUSH_S:
-			case OP_PUSH_FN:
-			case OP_PUSH_I:
-			case OP_PUSH_P:
+			case OP_PUSH_F_v6p:
+			case OP_PUSH_FLD_v6p:
+			case OP_PUSH_ENT_v6p:
+			case OP_PUSH_S_v6p:
+			case OP_PUSH_FN_v6p:
+			case OP_PUSH_I_v6p:
+			case OP_PUSH_P_v6p:
 				{
 					pointer_t   stack = *pr->globals.stack - 1;
 					pr_type_t  *stk = pr->pr_globals + stack;
@@ -1046,7 +1046,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					*pr->globals.stack = stack;
 				}
 				break;
-			case OP_PUSH_V:
+			case OP_PUSH_V_v6p:
 				{
 					pointer_t   stack = *pr->globals.stack - 3;
 					pr_type_t  *stk = pr->pr_globals + stack;
@@ -1057,7 +1057,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					*pr->globals.stack = stack;
 				}
 				break;
-			case OP_PUSH_Q:
+			case OP_PUSH_Q_v6p:
 				{
 					pointer_t   stack = *pr->globals.stack - 4;
 					pr_type_t  *stk = pr->pr_globals + stack;
@@ -1069,13 +1069,13 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				}
 				break;
 
-			case OP_PUSHB_F:
-			case OP_PUSHB_S:
-			case OP_PUSHB_ENT:
-			case OP_PUSHB_FLD:
-			case OP_PUSHB_FN:
-			case OP_PUSHB_I:
-			case OP_PUSHB_P:
+			case OP_PUSHB_F_v6p:
+			case OP_PUSHB_S_v6p:
+			case OP_PUSHB_ENT_v6p:
+			case OP_PUSHB_FLD_v6p:
+			case OP_PUSHB_FN_v6p:
+			case OP_PUSHB_I_v6p:
+			case OP_PUSHB_P_v6p:
 				{
 					pointer_t   stack = *pr->globals.stack - 1;
 					pr_type_t  *stk = pr->pr_globals + stack;
@@ -1092,7 +1092,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					*pr->globals.stack = stack;
 				}
 				break;
-			case OP_PUSHB_V:
+			case OP_PUSHB_V_v6p:
 				{
 					pointer_t   stack = *pr->globals.stack - 3;
 					pr_type_t  *stk = pr->pr_globals + stack;
@@ -1109,7 +1109,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					*pr->globals.stack = stack;
 				}
 				break;
-			case OP_PUSHB_Q:
+			case OP_PUSHB_Q_v6p:
 				{
 					pointer_t   stack = *pr->globals.stack - 4;
 					pr_type_t  *stk = pr->pr_globals + stack;
@@ -1127,13 +1127,13 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				}
 				break;
 
-			case OP_PUSHBI_F:
-			case OP_PUSHBI_S:
-			case OP_PUSHBI_ENT:
-			case OP_PUSHBI_FLD:
-			case OP_PUSHBI_FN:
-			case OP_PUSHBI_I:
-			case OP_PUSHBI_P:
+			case OP_PUSHBI_F_v6p:
+			case OP_PUSHBI_S_v6p:
+			case OP_PUSHBI_ENT_v6p:
+			case OP_PUSHBI_FLD_v6p:
+			case OP_PUSHBI_FN_v6p:
+			case OP_PUSHBI_I_v6p:
+			case OP_PUSHBI_P_v6p:
 				{
 					pointer_t   stack = *pr->globals.stack - 1;
 					pr_type_t  *stk = pr->pr_globals + stack;
@@ -1150,7 +1150,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					*pr->globals.stack = stack;
 				}
 				break;
-			case OP_PUSHBI_V:
+			case OP_PUSHBI_V_v6p:
 				{
 					pointer_t   stack = *pr->globals.stack - 3;
 					pr_type_t  *stk = pr->pr_globals + stack;
@@ -1167,7 +1167,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					*pr->globals.stack = stack;
 				}
 				break;
-			case OP_PUSHBI_Q:
+			case OP_PUSHBI_Q_v6p:
 				{
 					pointer_t   stack = *pr->globals.stack - 4;
 					pr_type_t  *stk = pr->pr_globals + stack;
@@ -1185,13 +1185,13 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				}
 				break;
 
-			case OP_POP_F:
-			case OP_POP_FLD:
-			case OP_POP_ENT:
-			case OP_POP_S:
-			case OP_POP_FN:
-			case OP_POP_I:
-			case OP_POP_P:
+			case OP_POP_F_v6p:
+			case OP_POP_FLD_v6p:
+			case OP_POP_ENT_v6p:
+			case OP_POP_S_v6p:
+			case OP_POP_FN_v6p:
+			case OP_POP_I_v6p:
+			case OP_POP_P_v6p:
 				{
 					pointer_t   stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
@@ -1202,7 +1202,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					*pr->globals.stack = stack + 1;
 				}
 				break;
-			case OP_POP_V:
+			case OP_POP_V_v6p:
 				{
 					pointer_t   stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
@@ -1213,7 +1213,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					*pr->globals.stack = stack + 3;
 				}
 				break;
-			case OP_POP_Q:
+			case OP_POP_Q_v6p:
 				{
 					pointer_t   stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
@@ -1225,13 +1225,13 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				}
 				break;
 
-			case OP_POPB_F:
-			case OP_POPB_S:
-			case OP_POPB_ENT:
-			case OP_POPB_FLD:
-			case OP_POPB_FN:
-			case OP_POPB_I:
-			case OP_POPB_P:
+			case OP_POPB_F_v6p:
+			case OP_POPB_S_v6p:
+			case OP_POPB_ENT_v6p:
+			case OP_POPB_FLD_v6p:
+			case OP_POPB_FN_v6p:
+			case OP_POPB_I_v6p:
+			case OP_POPB_P_v6p:
 				{
 					pointer_t   stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
@@ -1248,7 +1248,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					*pr->globals.stack = stack + 1;
 				}
 				break;
-			case OP_POPB_V:
+			case OP_POPB_V_v6p:
 				{
 					pointer_t   stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
@@ -1265,7 +1265,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					*pr->globals.stack = stack + 3;
 				}
 				break;
-			case OP_POPB_Q:
+			case OP_POPB_Q_v6p:
 				{
 					pointer_t   stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
@@ -1283,13 +1283,13 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				}
 				break;
 
-			case OP_POPBI_F:
-			case OP_POPBI_S:
-			case OP_POPBI_ENT:
-			case OP_POPBI_FLD:
-			case OP_POPBI_FN:
-			case OP_POPBI_I:
-			case OP_POPBI_P:
+			case OP_POPBI_F_v6p:
+			case OP_POPBI_S_v6p:
+			case OP_POPBI_ENT_v6p:
+			case OP_POPBI_FLD_v6p:
+			case OP_POPBI_FN_v6p:
+			case OP_POPBI_I_v6p:
+			case OP_POPBI_P_v6p:
 				{
 					pointer_t   stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
@@ -1306,7 +1306,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					*pr->globals.stack = stack + 1;
 				}
 				break;
-			case OP_POPBI_V:
+			case OP_POPBI_V_v6p:
 				{
 					pointer_t   stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
@@ -1323,7 +1323,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					*pr->globals.stack = stack + 3;
 				}
 				break;
-			case OP_POPBI_Q:
+			case OP_POPBI_Q_v6p:
 				{
 					pointer_t   stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
@@ -1342,47 +1342,47 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				break;
 
 			// ==================
-			case OP_IFNOT:
+			case OP_IFNOT_v6p:
 				if (!OPA(int)) {
 					pr->pr_xstatement += (short)st->b - 1;	// offset the st++
 					st = pr->pr_statements + pr->pr_xstatement;
 				}
 				break;
-			case OP_IF:
+			case OP_IF_v6p:
 				if (OPA(int)) {
 					pr->pr_xstatement += (short)st->b - 1;	// offset the st++
 					st = pr->pr_statements + pr->pr_xstatement;
 				}
 				break;
-			case OP_IFBE:
+			case OP_IFBE_v6p:
 				if (OPA(int) <= 0) {
 					pr->pr_xstatement += (short)st->b - 1;	// offset the st++
 					st = pr->pr_statements + pr->pr_xstatement;
 				}
 				break;
-			case OP_IFB:
+			case OP_IFB_v6p:
 				if (OPA(int) < 0) {
 					pr->pr_xstatement += (short)st->b - 1;	// offset the st++
 					st = pr->pr_statements + pr->pr_xstatement;
 				}
 				break;
-			case OP_IFAE:
+			case OP_IFAE_v6p:
 				if (OPA(int) >= 0) {
 					pr->pr_xstatement += (short)st->b - 1;	// offset the st++
 					st = pr->pr_statements + pr->pr_xstatement;
 				}
 				break;
-			case OP_IFA:
+			case OP_IFA_v6p:
 				if (OPA(int) > 0) {
 					pr->pr_xstatement += (short)st->b - 1;	// offset the st++
 					st = pr->pr_statements + pr->pr_xstatement;
 				}
 				break;
-			case OP_GOTO:
+			case OP_GOTO_v6p:
 				pr->pr_xstatement += (short)st->a - 1;		// offset the st++
 				st = pr->pr_statements + pr->pr_xstatement;
 				break;
-			case OP_JUMP:
+			case OP_JUMP_v6p:
 				if (pr_boundscheck->int_val
 					&& (OPA(uint) >= pr->progs->numstatements)) {
 					PR_RunError (pr, "Invalid jump destination");
@@ -1390,7 +1390,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				pr->pr_xstatement = OPA(uint) - 1;	// offset the st++
 				st = pr->pr_statements + pr->pr_xstatement;
 				break;
-			case OP_JUMPB:
+			case OP_JUMPB_v6p:
 				pointer = st->a + OPB(int);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_integer);
@@ -1405,40 +1405,40 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				st = pr->pr_statements + pr->pr_xstatement;
 				break;
 
-			case OP_RCALL2:
-			case OP_RCALL3:
-			case OP_RCALL4:
-			case OP_RCALL5:
-			case OP_RCALL6:
-			case OP_RCALL7:
-			case OP_RCALL8:
+			case OP_RCALL2_v6p:
+			case OP_RCALL3_v6p:
+			case OP_RCALL4_v6p:
+			case OP_RCALL5_v6p:
+			case OP_RCALL6_v6p:
+			case OP_RCALL7_v6p:
+			case OP_RCALL8_v6p:
 				pr->pr_params[1] = op_c;
 				goto op_rcall;
-			case OP_RCALL1:
+			case OP_RCALL1_v6p:
 				pr->pr_params[1] = pr->pr_real_params[1];
 op_rcall:
 				pr->pr_params[0] = op_b;
-				pr->pr_argc = st->op - OP_RCALL1 + 1;
+				pr->pr_argc = st->op - OP_RCALL1_v6p + 1;
 				goto op_call;
-			case OP_CALL0:
-			case OP_CALL1:
-			case OP_CALL2:
-			case OP_CALL3:
-			case OP_CALL4:
-			case OP_CALL5:
-			case OP_CALL6:
-			case OP_CALL7:
-			case OP_CALL8:
+			case OP_CALL0_v6p:
+			case OP_CALL1_v6p:
+			case OP_CALL2_v6p:
+			case OP_CALL3_v6p:
+			case OP_CALL4_v6p:
+			case OP_CALL5_v6p:
+			case OP_CALL6_v6p:
+			case OP_CALL7_v6p:
+			case OP_CALL8_v6p:
 				PR_RESET_PARAMS (pr);
-				pr->pr_argc = st->op - OP_CALL0;
+				pr->pr_argc = st->op - OP_CALL0_v6p;
 op_call:
 				pr->pr_xfunction->profile += profile - startprofile;
 				startprofile = profile;
 				PR_CallFunction (pr, OPA(uint));
 				st = pr->pr_statements + pr->pr_xstatement;
 				break;
-			case OP_DONE:
-			case OP_RETURN:
+			case OP_DONE_v6p:
+			case OP_RETURN_v6p:
 				if (!st->a)
 					memset (&R_INT (pr), 0,
 							pr->pr_param_size * sizeof (*op_a));
@@ -1446,7 +1446,7 @@ op_call:
 					memcpy (&R_INT (pr), op_a,
 							pr->pr_param_size * sizeof (*op_a));
 				// fallthrough
-			case OP_RETURN_V:
+			case OP_RETURN_V_v6p:
 				pr->pr_xfunction->profile += profile - startprofile;
 				startprofile = profile;
 				PR_LeaveFunction (pr, pr->pr_depth == exitdepth);
@@ -1458,7 +1458,7 @@ op_call:
 					goto exit_program;
 				}
 				break;
-			case OP_STATE:
+			case OP_STATE_v6p:
 				{
 					int         self = *pr->globals.self;
 					int         nextthink = pr->fields.nextthink + self;
@@ -1470,7 +1470,7 @@ op_call:
 					pr->pr_edict_area[think].func_var = OPB(uint);
 				}
 				break;
-			case OP_STATE_F:
+			case OP_STATE_F_v6p:
 				{
 					int         self = *pr->globals.self;
 					int         nextthink = pr->fields.nextthink + self;
@@ -1482,19 +1482,19 @@ op_call:
 					pr->pr_edict_area[think].func_var = OPB(uint);
 				}
 				break;
-			case OP_ADD_I:
+			case OP_ADD_I_v6p:
 				OPC(int) = OPA(int) + OPB(int);
 				break;
-			case OP_SUB_I:
+			case OP_SUB_I_v6p:
 				OPC(int) = OPA(int) - OPB(int);
 				break;
-			case OP_MUL_I:
+			case OP_MUL_I_v6p:
 				OPC(int) = OPA(int) * OPB(int);
 				break;
-			case OP_DIV_I:
+			case OP_DIV_I_v6p:
 				OPC(int) = OPA(int) / OPB(int);
 				break;
-			case OP_MOD_I:
+			case OP_MOD_I_v6p:
 				{
 					// implement true modulo for integers:
 					//  5 mod  3 = 2
@@ -1512,10 +1512,10 @@ op_call:
 					OPC(int) = c + (mask & b);
 				}
 				break;
-			case OP_REM_I:
+			case OP_REM_I_v6p:
 				OPC(int) = OPA(int) % OPB(int);
 				break;
-			case OP_MOD_D:
+			case OP_MOD_D_v6p:
 				{
 					double      a = OPA(double);
 					double      b = OPB(double);
@@ -1523,98 +1523,98 @@ op_call:
 					OPC(double) = a - b * floor (a / b);
 				}
 				break;
-			case OP_REM_D:
+			case OP_REM_D_v6p:
 				{
 					double      a = OPA(double);
 					double      b = OPB(double);
 					OPC(double) = a - b * trunc (a / b);
 				}
 				break;
-			case OP_MOD_F:
+			case OP_MOD_F_v6p:
 				{
 					float       a = OPA(float);
 					float       b = OPB(float);
 					OPC(float) = a - b * floorf (a / b);
 				}
 				break;
-			case OP_REM_F:
+			case OP_REM_F_v6p:
 				{
 					float       a = OPA(float);
 					float       b = OPB(float);
 					OPC(float) = a - b * truncf (a / b);
 				}
 				break;
-			case OP_CONV_IF:
+			case OP_CONV_IF_v6p:
 				OPC(float) = OPA(int);
 				break;
-			case OP_CONV_FI:
+			case OP_CONV_FI_v6p:
 				OPC(int) = OPA(float);
 				break;
-			case OP_BITAND_I:
+			case OP_BITAND_I_v6p:
 				OPC(int) = OPA(int) & OPB(int);
 				break;
-			case OP_BITOR_I:
+			case OP_BITOR_I_v6p:
 				OPC(int) = OPA(int) | OPB(int);
 				break;
-			case OP_BITXOR_I:
+			case OP_BITXOR_I_v6p:
 				OPC(int) = OPA(int) ^ OPB(int);
 				break;
-			case OP_BITNOT_I:
+			case OP_BITNOT_I_v6p:
 				OPC(int) = ~OPA(int);
 				break;
 
-			case OP_GE_I:
-			case OP_GE_P:
+			case OP_GE_I_v6p:
+			case OP_GE_P_v6p:
 				OPC(int) = OPA(int) >= OPB(int);
 				break;
-			case OP_GE_U:
+			case OP_GE_U_v6p:
 				OPC(int) = OPA(uint) >= OPB(uint);
 				break;
-			case OP_LE_I:
-			case OP_LE_P:
+			case OP_LE_I_v6p:
+			case OP_LE_P_v6p:
 				OPC(int) = OPA(int) <= OPB(int);
 				break;
-			case OP_LE_U:
+			case OP_LE_U_v6p:
 				OPC(int) = OPA(uint) <= OPB(uint);
 				break;
-			case OP_GT_I:
-			case OP_GT_P:
+			case OP_GT_I_v6p:
+			case OP_GT_P_v6p:
 				OPC(int) = OPA(int) > OPB(int);
 				break;
-			case OP_GT_U:
+			case OP_GT_U_v6p:
 				OPC(int) = OPA(uint) > OPB(uint);
 				break;
-			case OP_LT_I:
-			case OP_LT_P:
+			case OP_LT_I_v6p:
+			case OP_LT_P_v6p:
 				OPC(int) = OPA(int) < OPB(int);
 				break;
-			case OP_LT_U:
+			case OP_LT_U_v6p:
 				OPC(int) = OPA(uint) < OPB(uint);
 				break;
 
-			case OP_AND_I:
+			case OP_AND_I_v6p:
 				OPC(int) = OPA(int) && OPB(int);
 				break;
-			case OP_OR_I:
+			case OP_OR_I_v6p:
 				OPC(int) = OPA(int) || OPB(int);
 				break;
-			case OP_NOT_I:
-			case OP_NOT_P:
+			case OP_NOT_I_v6p:
+			case OP_NOT_P_v6p:
 				OPC(int) = !OPA(int);
 				break;
-			case OP_EQ_I:
-			case OP_EQ_P:
+			case OP_EQ_I_v6p:
+			case OP_EQ_P_v6p:
 				OPC(int) = OPA(int) == OPB(int);
 				break;
-			case OP_NE_I:
-			case OP_NE_P:
+			case OP_NE_I_v6p:
+			case OP_NE_P_v6p:
 				OPC(int) = OPA(int) != OPB(int);
 				break;
 
-			case OP_MOVEI:
+			case OP_MOVEI_v6p:
 				memmove (op_c, op_a, st->b * 4);
 				break;
-			case OP_MOVEP:
+			case OP_MOVEP_v6p:
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheckSize (pr, OPC(int), OPB(uint));
 					PR_BoundsCheckSize (pr, OPA(int), OPB(uint));
@@ -1623,7 +1623,7 @@ op_call:
 						 pr->pr_globals + OPA(int),
 						 OPB(uint) * 4);
 				break;
-			case OP_MOVEPI:
+			case OP_MOVEPI_v6p:
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheckSize (pr, OPC(int), st->b);
 					PR_BoundsCheckSize (pr, OPA(int), st->b);
@@ -1632,61 +1632,61 @@ op_call:
 						 pr->pr_globals + OPA(int),
 						 st->b * 4);
 				break;
-			case OP_MEMSETI:
+			case OP_MEMSETI_v6p:
 				pr_memset (op_c, OPA(int), st->b);
 				break;
-			case OP_MEMSETP:
+			case OP_MEMSETP_v6p:
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheckSize (pr, OPC(pointer), OPB(int));
 				}
 				pr_memset (pr->pr_globals + OPC(pointer), OPA(int),
 						   OPB(int));
 				break;
-			case OP_MEMSETPI:
+			case OP_MEMSETPI_v6p:
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheckSize (pr, OPC(pointer), st->b);
 				}
 				pr_memset (pr->pr_globals + OPC(pointer), OPA(int),
 						   st->b);
 				break;
-			case OP_GE_D:
+			case OP_GE_D_v6p:
 				OPC(float) = OPA(double) >= OPB(double);
 				break;
-			case OP_LE_D:
+			case OP_LE_D_v6p:
 				OPC(float) = OPA(double) <= OPB(double);
 				break;
-			case OP_GT_D:
+			case OP_GT_D_v6p:
 				OPC(float) = OPA(double) > OPB(double);
 				break;
-			case OP_LT_D:
+			case OP_LT_D_v6p:
 				OPC(float) = OPA(double) < OPB(double);
 				break;
-			case OP_NOT_D:
+			case OP_NOT_D_v6p:
 				OPC(int) = (op_a[0].integer_var
 								   || (op_a[1].integer_var & ~0x80000000u));
 				break;
-			case OP_EQ_D:
+			case OP_EQ_D_v6p:
 				OPC(int) = OPA(double) == OPB(double);
 				break;
-			case OP_NE_D:
+			case OP_NE_D_v6p:
 				OPC(int) = OPA(double) != OPB(double);
 				break;
-			case OP_CONV_ID:
+			case OP_CONV_ID_v6p:
 				OPC(double) = OPA(int);
 				break;
-			case OP_CONV_DI:
+			case OP_CONV_DI_v6p:
 				OPC(int) = OPA(double);
 				break;
-			case OP_CONV_FD:
+			case OP_CONV_FD_v6p:
 				OPC(double) = OPA(float);
 				break;
-			case OP_CONV_DF:
+			case OP_CONV_DF_v6p:
 				OPC(float) = OPA(double);
 				break;
 
 // LordHavoc: to be enabled when Progs version 7 (or whatever it will be numbered) is finalized
 /*
-			case OP_BOUNDCHECK:
+			case OP_BOUNDCHECK_v6p:
 				if (OPA(int) < 0 || OPA(int) >= st->b) {
 					PR_RunError (pr, "Progs boundcheck failed at line number "
 					"%d, value is < 0 or >= %d", st->b, st->c);

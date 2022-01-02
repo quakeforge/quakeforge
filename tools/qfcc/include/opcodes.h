@@ -31,27 +31,28 @@
 #ifndef __opcodes_h
 #define __opcodes_h
 
-extern struct opcode_s *op_done;
-extern struct opcode_s *op_return;
-extern struct opcode_s *op_return_v;
-extern struct opcode_s *op_if;
-extern struct opcode_s *op_ifnot;
-extern struct opcode_s *op_ifbe;
-extern struct opcode_s *op_ifb;
-extern struct opcode_s *op_ifae;
-extern struct opcode_s *op_ifa;
-extern struct opcode_s *op_state;
-extern struct opcode_s *op_state_f;
-extern struct opcode_s *op_goto;
-extern struct opcode_s *op_jump;
-extern struct opcode_s *op_jumpb;
+extern struct v6p_opcode_s *op_done;
+extern struct v6p_opcode_s *op_return;
+extern struct v6p_opcode_s *op_return_v;
+extern struct v6p_opcode_s *op_if;
+extern struct v6p_opcode_s *op_ifnot;
+extern struct v6p_opcode_s *op_ifbe;
+extern struct v6p_opcode_s *op_ifb;
+extern struct v6p_opcode_s *op_ifae;
+extern struct v6p_opcode_s *op_ifa;
+extern struct v6p_opcode_s *op_state;
+extern struct v6p_opcode_s *op_state_f;
+extern struct v6p_opcode_s *op_goto;
+extern struct v6p_opcode_s *op_jump;
+extern struct v6p_opcode_s *op_jumpb;
 
 struct operand_s;
 
-extern struct opcode_s *opcode_map;
+extern struct v6p_opcode_s *opcode_map;
 
-struct opcode_s *opcode_find (const char *name, struct operand_s *op_a,
-							  struct operand_s *op_b, struct operand_s *op_c);
+struct v6p_opcode_s *opcode_find (const char *name, struct operand_s *op_a,
+								  struct operand_s *op_b,
+								  struct operand_s *op_c);
 void opcode_init (void);
 
 #endif//__opcodes_h

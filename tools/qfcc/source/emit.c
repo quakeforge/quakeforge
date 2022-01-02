@@ -185,7 +185,7 @@ emit_statement (statement_t *statement)
 {
 	const char *opcode = statement->opcode;
 	def_t      *def_a, *def_b, *def_c;
-	opcode_t   *op;
+	v6p_opcode_t *op;
 	dstatement_t *s;
 
 	def_a = get_operand_def (statement->expr, statement->opa);
