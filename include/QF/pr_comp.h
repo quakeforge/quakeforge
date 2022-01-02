@@ -427,7 +427,6 @@ typedef enum {
 typedef struct opcode_s {
 	const char *name;
 	const char *opname;
-	qboolean    right_associative;
 	etype_t     type_a, type_b, type_c;
 	unsigned int min_version;
 	const char *fmt;
