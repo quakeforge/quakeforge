@@ -1793,6 +1793,8 @@ extern const char *pr_gametype;
 #define MAX_STACK_DEPTH		64
 #define LOCALSTACK_SIZE		4096
 #define PR_RS_SLOTS			16
+#define PR_BASE_IND(o, b)	(((o) & OP_##b##_BASE) >> OP_##b##_SHIFT)
+#define PR_BASE(p, s, b)	(p->pr_bases[PR_BASE_IND(s->op, b)])
 
 typedef struct strref_s strref_t;
 
@@ -1876,6 +1878,7 @@ struct progs_s {
 	dstatement_t *pr_statements;
 	pr_type_t  *pr_globals;
 	unsigned    globals_size;
+	pr_uivec4_t pr_bases;		///< base registers (index in opcode)
 	///@}
 
 	/// \name parameter block

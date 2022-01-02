@@ -44,6 +44,12 @@
 #include "QF/sys.h"
 #include "QF/zone.h"
 
+#include "QF/simd/vec2d.h"
+#include "QF/simd/vec2f.h"
+#include "QF/simd/vec2i.h"
+#include "QF/simd/vec4d.h"
+#include "QF/simd/vec4f.h"
+#include "QF/simd/vec4i.h"
 #include "compat.h"
 
 
@@ -1713,6 +1719,917 @@ op_call:
 exit_program:
 }
 
+#define MM(type) (*((pr_##type##_t *) (mm)))
+#define STK(type) (*((pr_##type##_t *) (stk)))
+
+static pr_type_t *
+pr_entity_mode (progs_t *pr, const dstatement_t *st, int shift)
+{
+	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, A);
+	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, A);
+	int         mm_ind = (st->op >> shift) & 3;
+	pointer_t   edict_area = pr->pr_edict_area - pr->pr_globals;
+	pointer_t   mm_offs = 0;
+
+	switch (mm_ind) {
+		case 0:
+			// entity.field (equivalent to OP_LOAD_t_v6p)
+			mm_offs = edict_area + OPA(uint) + OPB(uint);
+			break;
+		case 1:
+			// simple pointer dereference: *a
+			mm_offs = OPA(uint);
+			break;
+		case 2:
+			// constant indexed pointer: *a + b
+			mm_offs = OPA(uint) + st->b;
+			break;
+		case 3:
+			// verible indexed pointer: *a + *b (supports -ve offset)
+			mm_offs = OPA(uint) + OPB(int);
+			break;
+	}
+	return pr->pr_globals + mm_offs;
+}
+
+static pr_type_t *
+pr_address_mode (progs_t *pr, const dstatement_t *st, int shift)
+{
+	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, A);
+	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, A);
+	int         mm_ind = (st->op >> shift) & 3;
+	pointer_t   mm_offs = 0;
+
+	switch (mm_ind) {
+		case 0:
+			// regular global access
+			mm_offs = op_a - pr->pr_globals;
+			break;
+		case 1:
+			// simple pointer dereference: *a
+			mm_offs = OPA(uint);
+			break;
+		case 2:
+			// constant indexed pointer: *a + b
+			mm_offs = OPA(uint) + st->b;
+			break;
+		case 3:
+			// verible indexed pointer: *a + *b (supports -ve offset)
+			mm_offs = OPA(uint) + OPB(int);
+			break;
+	}
+	return pr->pr_globals + mm_offs;
+}
+
+static pr_pointer_t
+pr_jump_mode (progs_t *pr, const dstatement_t *st)
+{
+	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, A);
+	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, A);
+	int         jump_ind = st->op & 3;
+	pointer_t   jump_offs = pr->pr_xstatement;
+
+	switch (jump_ind) {
+		case 0:
+			// instruction relative offset
+			jump_offs = jump_offs + st->a;
+			break;
+		case 1:
+			// simple pointer dereference: *a
+			jump_offs = OPA(uint);
+			break;
+		case 2:
+			// constant indexed pointer: *a + b
+			jump_offs = OPA(uint) + st->b;
+			break;
+		case 3:
+			// verible indexed pointer: *a + *b (supports -ve offset)
+			jump_offs = OPA(uint) + OPB(int);
+			break;
+	}
+	return jump_offs - 1;	// for st++
+}
+
+static pr_pointer_t __attribute__((pure))
+pr_with (progs_t *pr, const dstatement_t *st)
+{
+	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, A);
+	pointer_t   edict_area = pr->pr_edict_area - pr->pr_globals;
+	switch (st->a) {
+		case 0:
+			// hard-0 base
+			return st->b;
+		case 1:
+			// relative to current base
+			return op_b - pr->pr_globals;
+		case 2:
+			// relative to stack (-ve offset)
+			return *pr->globals.stack + (pr_short_t) st->b;
+		case 3:
+			// relative to edict_area (+ve only)
+			return edict_area + st->b;
+	}
+	PR_RunError (pr, "Invalid with index: %u", st->a);
+}
+
+static pr_type_t *
+pr_stack_push (progs_t *pr)
+{
+	// keep the stack 16-byte aligned
+	pointer_t   stack = *pr->globals.stack - 4;
+	pr_type_t  *stk = pr->pr_globals + stack;
+	if (pr_boundscheck->int_val) {
+		check_stack_pointer (pr, stack, 4);
+	}
+	*pr->globals.stack = stack;
+	return stk;
+}
+
+static pr_type_t *
+pr_stack_pop (progs_t *pr)
+{
+	pointer_t   stack = *pr->globals.stack;
+	pr_type_t  *stk = pr->pr_globals + stack;
+	if (pr_boundscheck->int_val) {
+		check_stack_pointer (pr, stack, 4);
+	}
+	// keep the stack 16-byte aligned
+	*pr->globals.stack = stack + 4;
+	return stk;
+}
+
+static void
+pr_exec_ruamoko (progs_t *pr, int exitdepth)
+{
+	int         profile, startprofile;
+	dstatement_t *st;
+	pr_type_t   old_val = {0};
+
+	// make a stack frame
+	startprofile = profile = 0;
+
+	st = pr->pr_statements + pr->pr_xstatement;
+
+	if (pr->watch) {
+		old_val = *pr->watch;
+	}
+
+	while (1) {
+		st++;
+		++pr->pr_xstatement;
+		if (pr->pr_xstatement != st - pr->pr_statements)
+			PR_RunError (pr, "internal error");
+		if (++profile > 1000000 && !pr->no_exec_limit) {
+			PR_RunError (pr, "runaway loop error");
+		}
+
+		if (pr->pr_trace) {
+			if (pr->debug_handler) {
+				pr->debug_handler (prd_trace, 0, pr->debug_data);
+			} else {
+				PR_PrintStatement (pr, st, 1);
+			}
+		}
+
+		if (st->op & OP_BREAK) {
+			if (pr->debug_handler) {
+				pr->debug_handler (prd_breakpoint, 0, pr->debug_data);
+			} else {
+				PR_RunError (pr, "breakpoint hit");
+			}
+		}
+
+		pointer_t   st_a = st->a + PR_BASE (pr, st, A);
+		pointer_t   st_b = st->b + PR_BASE (pr, st, A);
+		pointer_t   st_c = st->c + PR_BASE (pr, st, A);
+
+
+		pr_type_t  *op_a = pr->pr_globals + st_a;
+		pr_type_t  *op_b = pr->pr_globals + st_b;
+		pr_type_t  *op_c = pr->pr_globals + st_c;
+
+		pr_type_t  *stk;
+		pr_type_t  *mm;
+		func_t      function;
+		pr_opcode_e st_op = st->op & ~(OP_BREAK|OP_A_BASE|OP_B_BASE|OP_C_BASE);
+		switch (st_op) {
+			// 0 0000
+			case OP_LOAD_E_1:
+			case OP_LOAD_B_1:
+			case OP_LOAD_C_1:
+			case OP_LOAD_D_1:
+				mm = pr_entity_mode (pr, st, 2);
+				OPC(int) = MM(int);
+				break;
+			case OP_LOAD_E_2:
+			case OP_LOAD_B_2:
+			case OP_LOAD_C_2:
+			case OP_LOAD_D_2:
+				mm = pr_entity_mode (pr, st, 2);
+				OPC(ivec2) = MM(ivec2);
+				break;
+			case OP_LOAD_E_3:
+			case OP_LOAD_B_3:
+			case OP_LOAD_C_3:
+			case OP_LOAD_D_3:
+				mm = pr_entity_mode (pr, st, 2);
+				VectorCopy (&MM(int), &OPC(int));
+				break;
+			case OP_LOAD_E_4:
+			case OP_LOAD_B_4:
+			case OP_LOAD_C_4:
+			case OP_LOAD_D_4:
+				mm = pr_entity_mode (pr, st, 2);
+				OPC(ivec4) = MM(ivec4);
+				break;
+			// 0 0001
+			case OP_STORE_A_1:
+			case OP_STORE_B_1:
+			case OP_STORE_C_1:
+			case OP_STORE_D_1:
+				mm = pr_address_mode (pr, st, 2);
+				MM(int) = OPC(int);
+				break;
+			case OP_STORE_A_2:
+			case OP_STORE_B_2:
+			case OP_STORE_C_2:
+			case OP_STORE_D_2:
+				mm = pr_address_mode (pr, st, 2);
+				MM(ivec2) = OPC(ivec2);
+				break;
+			case OP_STORE_A_3:
+			case OP_STORE_B_3:
+			case OP_STORE_C_3:
+			case OP_STORE_D_3:
+				mm = pr_address_mode (pr, st, 2);
+				VectorCopy (&OPC(int), &MM(int));
+				break;
+			case OP_STORE_A_4:
+			case OP_STORE_B_4:
+			case OP_STORE_C_4:
+			case OP_STORE_D_4:
+				mm = pr_address_mode (pr, st, 2);
+				MM(ivec4) = OPC(ivec4);
+				break;
+			// 0 0010
+			case OP_PUSH_A_1:
+			case OP_PUSH_B_1:
+			case OP_PUSH_C_1:
+			case OP_PUSH_D_1:
+				mm = pr_address_mode (pr, st, 2);
+				stk = pr_stack_push (pr);
+				STK(int) = MM(int);
+				break;
+			case OP_PUSH_A_2:
+			case OP_PUSH_B_2:
+			case OP_PUSH_C_2:
+			case OP_PUSH_D_2:
+				mm = pr_address_mode (pr, st, 2);
+				stk = pr_stack_push (pr);
+				STK(ivec2) = MM(ivec2);
+				break;
+			case OP_PUSH_A_3:
+			case OP_PUSH_B_3:
+			case OP_PUSH_C_3:
+			case OP_PUSH_D_3:
+				mm = pr_address_mode (pr, st, 2);
+				stk = pr_stack_push (pr);
+				VectorCopy (&MM(int), &STK(int));
+				break;
+			case OP_PUSH_A_4:
+			case OP_PUSH_B_4:
+			case OP_PUSH_C_4:
+			case OP_PUSH_D_4:
+				mm = pr_address_mode (pr, st, 2);
+				stk = pr_stack_push (pr);
+				STK(ivec4) = MM(ivec4);
+				break;
+			// 0 0011
+			case OP_POP_A_1:
+			case OP_POP_B_1:
+			case OP_POP_C_1:
+			case OP_POP_D_1:
+				mm = pr_address_mode (pr, st, 2);
+				stk = pr_stack_pop (pr);
+				MM(int) = STK(int);
+				break;
+			case OP_POP_A_2:
+			case OP_POP_B_2:
+			case OP_POP_C_2:
+			case OP_POP_D_2:
+				mm = pr_address_mode (pr, st, 2);
+				stk = pr_stack_pop (pr);
+				MM(ivec2) = STK(ivec2);
+				break;
+			case OP_POP_A_3:
+			case OP_POP_B_3:
+			case OP_POP_C_3:
+			case OP_POP_D_3:
+				mm = pr_address_mode (pr, st, 2);
+				stk = pr_stack_pop (pr);
+				VectorCopy (&STK(int), &MM(int));
+				break;
+			case OP_POP_A_4:
+			case OP_POP_B_4:
+			case OP_POP_C_4:
+			case OP_POP_D_4:
+				mm = pr_address_mode (pr, st, 2);
+				stk = pr_stack_pop (pr);
+				MM(ivec4) = STK(ivec4);
+				break;
+			// 0 0100
+			case OP_IFNOT_A:
+			case OP_IFNOT_B:
+			case OP_IFNOT_C:
+			case OP_IFNOT_D:
+				if (!OPC(int)) {
+					pr->pr_xstatement = pr_jump_mode (pr, st);
+					st = pr->pr_statements + pr->pr_xstatement;
+				}
+				break;
+			case OP_IF_A:
+			case OP_IF_B:
+			case OP_IF_C:
+			case OP_IF_D:
+				if (OPC(int)) {
+					pr->pr_xstatement = pr_jump_mode (pr, st);
+					st = pr->pr_statements + pr->pr_xstatement;
+				}
+				break;
+			case OP_JUMP_A:
+			case OP_JUMP_B:
+			case OP_JUMP_C:
+			case OP_JUMP_D:
+				pr->pr_xstatement = pr_jump_mode (pr, st);
+				st = pr->pr_statements + pr->pr_xstatement;
+				break;
+			case OP_CALL_A:
+			case OP_CALL_B:
+			case OP_CALL_C:
+			case OP_CALL_D:
+				mm = pr_address_mode (pr, st, 0);
+				function = mm->func_var;
+				pr->pr_argc = 0;
+			op_call:
+				pr->pr_xfunction->profile += profile - startprofile;
+				startprofile = profile;
+				PR_CallFunction (pr, function);
+				st = pr->pr_statements + pr->pr_xstatement;
+				break;
+			// 0 0101
+			case OP_CALL_2: case OP_CALL_3: case OP_CALL_4:
+			case OP_CALL_5: case OP_CALL_6: case OP_CALL_7: case OP_CALL_8:
+				pr->pr_params[1] = op_c;
+				goto op_call_n;
+			case OP_CALL_1:
+				pr->pr_params[1] = pr->pr_real_params[1];
+			op_call_n:
+				pr->pr_params[0] = op_b;
+				function = op_a->func_var;
+				pr->pr_argc = st->op - OP_CALL_1 + 1;
+				goto op_call;
+			case OP_RETURN_4:
+				memcpy (&R_INT (pr), op_a, 4 * sizeof (*op_a));
+				goto op_return;
+			case OP_RETURN_3:
+				memcpy (&R_INT (pr), op_a, 3 * sizeof (*op_a));
+				goto op_return;
+			case OP_RETURN_2:
+				memcpy (&R_INT (pr), op_a, 2 * sizeof (*op_a));
+				goto op_return;
+			case OP_RETURN_1:
+				memcpy (&R_INT (pr), op_a, 1 * sizeof (*op_a));
+				goto op_return;
+			case OP_RETURN_0:
+			op_return:
+				pr->pr_xfunction->profile += profile - startprofile;
+				startprofile = profile;
+				PR_LeaveFunction (pr, pr->pr_depth == exitdepth);
+				st = pr->pr_statements + pr->pr_xstatement;
+				if (pr->pr_depth== exitdepth) {
+					if (pr->pr_trace && pr->pr_depth <= pr->pr_trace_depth) {
+						pr->pr_trace = false;
+					}
+					goto exit_program;
+				}
+				break;
+			case OP_WITH:
+				pr->pr_bases[st->c] = pr_with (pr, st);
+				break;
+			case OP_STATE_ft:
+				{
+					int         self = *pr->globals.self;
+					int         nextthink = pr->fields.nextthink + self;
+					int         frame = pr->fields.frame + self;
+					int         think = pr->fields.think + self;
+					float       time = *pr->globals.time + 0.1;
+					pr->pr_edict_area[nextthink].float_var = time;
+					pr->pr_edict_area[frame].float_var = OPA(float);
+					pr->pr_edict_area[think].func_var = op_b->func_var;
+				}
+				break;
+			case OP_STATE_ftt:
+				{
+					int         self = *pr->globals.self;
+					int         nextthink = pr->fields.nextthink + self;
+					int         frame = pr->fields.frame + self;
+					int         think = pr->fields.think + self;
+					float       time = *pr->globals.time + OPC(float);
+					pr->pr_edict_area[nextthink].float_var = time;
+					pr->pr_edict_area[frame].float_var = OPA(float);
+					pr->pr_edict_area[think].func_var = op_b->func_var;
+				}
+				break;
+			// 0 0110
+			case OP_IFA_A:
+			case OP_IFA_B:
+			case OP_IFA_C:
+			case OP_IFA_D:
+				if (OPC(int) > 0) {
+					pr->pr_xstatement = pr_jump_mode (pr, st);
+					st = pr->pr_statements + pr->pr_xstatement;
+				}
+				break;
+			case OP_IFBE_A:
+			case OP_IFBE_B:
+			case OP_IFBE_C:
+			case OP_IFBE_D:
+				if (OPC(int) <= 0) {
+					pr->pr_xstatement = pr_jump_mode (pr, st);
+					st = pr->pr_statements + pr->pr_xstatement;
+				}
+				break;
+			case OP_IFB_A:
+			case OP_IFB_B:
+			case OP_IFB_C:
+			case OP_IFB_D:
+				if (OPC(int) < 0) {
+					pr->pr_xstatement = pr_jump_mode (pr, st);
+					st = pr->pr_statements + pr->pr_xstatement;
+				}
+				break;
+			case OP_IFAE_A:
+			case OP_IFAE_B:
+			case OP_IFAE_C:
+			case OP_IFAE_D:
+				if (OPC(int) >= 0) {
+					pr->pr_xstatement = pr_jump_mode (pr, st);
+					st = pr->pr_statements + pr->pr_xstatement;
+				}
+				break;
+			// 0 0111
+			case OP_DOT_CC_F:
+				OPC(vec2) = dot2f (OPA(vec2), OPB(vec2));
+				break;
+			case OP_DOT_VV_F:
+				{
+					vec_t       d = DotProduct (&OPA(float),
+												&OPB(float));
+					VectorSet (d, d, d, &OPC(float));
+				}
+				break;
+			case OP_DOT_QQ_F:
+				OPC(vec4) = dotf (OPA(vec4), OPB(vec4));
+				break;
+			case OP_CROSS_VV_F:
+				{
+					pr_vec4_t   a = loadvec3f (&OPA(float));
+					pr_vec4_t   b = loadvec3f (&OPB(float));
+					pr_vec4_t   c = crossf (a, b);
+					storevec3f (&OPC(float), c);
+				}
+				break;
+			case OP_MUL_CC_F:
+				OPC(vec2) = cmulf (OPA(vec2), OPB(vec2));
+				break;
+			case OP_MUL_QV_F:
+				{
+					pr_vec4_t   v = loadvec3f (&OPB(float));
+					v = qvmulf (OPA(vec4), v);
+					storevec3f (&OPC(float), v);
+				}
+				break;
+			case OP_MUL_VQ_F:
+				{
+					pr_vec4_t   v = loadvec3f (&OPA(float));
+					v = vqmulf (v, OPB(vec4));
+					storevec3f (&OPC(float), v);
+				}
+				break;
+			case OP_MUL_QQ_F:
+				OPC(vec4) = qmulf (OPA(vec4), OPB(vec4));
+				break;
+			case OP_DOT_CC_D:
+				OPC(dvec2) = dot2d (OPA(dvec2), OPB(dvec2));
+				break;
+			case OP_DOT_VV_D:
+				{
+					double      d = DotProduct (&OPA(double),
+												&OPB(double));
+					VectorSet (d, d, d, &OPC(double));
+				}
+				break;
+			case OP_DOT_QQ_D:
+				OPC(dvec4) = dotd (OPA(dvec4), OPB(dvec4));
+				break;
+			case OP_CROSS_VV_D:
+				{
+					pr_dvec4_t  a = loadvec3d (&OPA(double));
+					pr_dvec4_t  b = loadvec3d (&OPB(double));
+					pr_dvec4_t  c = crossd (a, b);
+					storevec3d (&OPC(double), c);
+				}
+				break;
+			case OP_MUL_CC_D:
+				OPC(dvec2) = cmuld (OPA(dvec2), OPB(dvec2));
+				break;
+			case OP_MUL_QV_D:
+				{
+					pr_dvec4_t   v = loadvec3d (&OPB(double));
+					v = qvmuld (OPA(dvec4), v);
+					storevec3d (&OPC(double), v);
+				}
+				break;
+			case OP_MUL_VQ_D:
+				{
+					pr_dvec4_t  v = loadvec3d (&OPA(double));
+					v = vqmuld (v, OPB(dvec4));
+					storevec3d (&OPC(double), v);
+				}
+				break;
+			case OP_MUL_QQ_D:
+				OPC(dvec4) = qmuld (OPA(dvec4), OPB(dvec4));
+				break;
+
+#define OP_cmp_1(OP, T, rt, cmp, ct) \
+			case OP_##OP##_##T##_1: \
+				OPC(rt) = -(OPA(ct) cmp OPB(ct)); \
+				break
+#define OP_cmp_2(OP, T, rt, cmp, ct) \
+			case OP_##OP##_##T##_2: \
+				OPC(rt) = (OPA(ct) cmp OPB(ct)); \
+				break
+#define OP_cmp_3(OP, T, rt, cmp, ct) \
+			case OP_##OP##_##T##_3: \
+				VectorCompCompare (&OPC(rt), -, &OPA(ct), cmp, &OPB(ct)); \
+				break;
+#define OP_cmp_4(OP, T, rt, cmp, ct) \
+			case OP_##OP##_##T##_4: \
+				OPC(rt) = (OPA(ct) cmp OPB(ct)); \
+				break
+#define OP_cmp_T(OP, T, rt1, rt2, rt4, cmp, ct1, ct2, ct4) \
+			OP_cmp_1 (OP, T, rt1, cmp, ct1); \
+			OP_cmp_2 (OP, T, rt2, cmp, ct2); \
+			OP_cmp_3 (OP, T, rt1, cmp, ct1); \
+			OP_cmp_4 (OP, T, rt4, cmp, ct4)
+#define OP_cmp(OP, cmp) \
+			OP_cmp_T (OP, I, int, ivec2, ivec4, cmp, int, ivec2, ivec4); \
+			OP_cmp_T (OP, F, int, ivec2, ivec4, cmp, float, vec2, vec4); \
+			OP_cmp_T (OP, L, long, lvec2, lvec4, cmp, long, lvec2, lvec4); \
+			OP_cmp_T (OP, D, long, lvec2, lvec4, cmp, double, dvec2, dvec4)
+
+			// 0 1000
+			OP_cmp(EQ, ==);
+			// 0 1001
+			OP_cmp(LT, <);
+			// 0 1010
+			OP_cmp(GT, >);
+			// 0 1011
+			//FIXME conversion 1
+			// 0 1100
+			OP_cmp(NE, !=);
+			// 0 1101
+			OP_cmp(GE, >=);
+			// 0 1110
+			OP_cmp(LE, <=);
+			// 0 1011
+			//FIXME conversion 2
+
+#define OP_op_1(OP, T, t, op) \
+			case OP_##OP##_##T##_1: \
+				OPC(t) = (OPA(t) op OPB(t)); \
+				break
+#define OP_op_2(OP, T, t, op) \
+			case OP_##OP##_##T##_2: \
+				OPC(t) = (OPA(t) op OPB(t)); \
+				break
+#define OP_op_3(OP, T, t, op) \
+			case OP_##OP##_##T##_3: \
+				VectorCompOp (&OPC(t), &OPA(t), op, &OPB(t)); \
+				break;
+#define OP_op_4(OP, T, t, op) \
+			case OP_##OP##_##T##_4: \
+				OPC(t) = (OPA(t) op OPB(t)); \
+				break
+#define OP_op_T(OP, T, t1, t2, t4, op) \
+			OP_op_1 (OP, T, t1, op); \
+			OP_op_2 (OP, T, t2, op); \
+			OP_op_3 (OP, T, t1, op); \
+			OP_op_4 (OP, T, t4, op)
+#define OP_op(OP, op) \
+			OP_op_T (OP, I, int, ivec2, ivec4, op); \
+			OP_op_T (OP, F, float, vec2, vec4, op); \
+			OP_op_T (OP, L, long, lvec2, lvec4, op); \
+			OP_op_T (OP, D, double, dvec2, dvec4, op)
+#define OP_uop_1(OP, T, t, op) \
+			case OP_##OP##_##T##_1: \
+				OPC(t) = op (OPA(t)); \
+				break
+#define OP_uop_2(OP, T, t, op) \
+			case OP_##OP##_##T##_2: \
+				OPC(t) = op (OPA(t)); \
+				break
+#define OP_uop_3(OP, T, t, op) \
+			case OP_##OP##_##T##_3: \
+				VectorCompUop (&OPC(t), op, &OPA(t)); \
+				break;
+#define OP_uop_4(OP, T, t, op) \
+			case OP_##OP##_##T##_4: \
+				OPC(t) = op (OPA(t)); \
+				break
+#define OP_uop_T(OP, T, t1, t2, t4, op) \
+			OP_uop_1 (OP, T, t1, op); \
+			OP_uop_2 (OP, T, t2, op); \
+			OP_uop_3 (OP, T, t1, op); \
+			OP_uop_4 (OP, T, t4, op)
+
+			// 1 0000
+			OP_op(MUL, *);
+			// 1 0001
+			OP_op(DIV, /);
+
+#define OP_store(d, s) *(d) = s
+#define OP_remmod_T(OP, T, n, t, l, f, s) \
+			case OP_##OP##_##T##_##n: \
+				{ \
+					__auto_type a = l (&OPA(t)); \
+					__auto_type b = l (&OPB(t)); \
+					s (&OPC(t), a - b * f(a / b)); \
+				} \
+				break
+#define OP_rem_T(T, n, t, l, f, s) \
+			OP_remmod_T(REM, T, n, t, l, f, s)
+
+			// 1 0010
+			OP_op_T (REM, I, int, ivec2, ivec4, %);
+			OP_rem_T (F, 1, float, *, truncf, OP_store);
+			OP_rem_T (F, 2, vec2, *, vtrunc2f, OP_store);
+			OP_rem_T (F, 3, float, loadvec3f, vtrunc4f, storevec3f);
+			OP_rem_T (F, 4, vec4, *, vtrunc4f, OP_store);
+			OP_op_T (REM, L, long, lvec2, lvec4, %);
+			OP_rem_T (D, 1, double, *, trunc, OP_store);
+			OP_rem_T (D, 2, dvec2, *, vtrunc2d, OP_store);
+			OP_rem_T (D, 3, double, loadvec3d, vtrunc4d, storevec3d);
+			OP_rem_T (D, 4, dvec4, *, vtrunc4d, OP_store);
+
+// implement true modulo for integers:
+//  5 mod  3 = 2
+// -5 mod  3 = 1
+//  5 mod -3 = -1
+// -5 mod -3 = -2
+#define OP_mod_Ti(T, n, t, l, m, s) \
+			case OP_MOD_##T##_##n: \
+				{ \
+					__auto_type a = l(&OPA(t)); \
+					__auto_type b = l(&OPB(t)); \
+					__auto_type c = a % b; \
+					/* % is really remainder and so has the same sign rules */\
+					/* as division: -5 % 3 = -2, so need to add b (3 here)  */\
+					/* if c's sign is incorrect, but only if c is non-zero  */\
+					__auto_type mask = m((a ^ b) < 0); \
+					mask &= m(c != 0); \
+					s(&OPC(t), c + (mask & b)); \
+				} \
+				break
+// floating point modulo is so much easier :P (just use floor instead of trunc)
+#define OP_mod_Tf(T, n, t, l, f, s) \
+			OP_remmod_T(MOD, T, n, t, l, f, s)
+
+			// 1 0011
+			OP_mod_Ti (I, 1, int, *, -, OP_store);
+			OP_mod_Ti (I, 2, ivec2, *, +, OP_store);
+			OP_mod_Ti (I, 3, int, loadvec3i, +, storevec3i);
+			OP_mod_Ti (I, 4, ivec4, *, +, OP_store);
+			OP_mod_Tf (F, 1, float, *, floorf, OP_store);
+			OP_mod_Tf (F, 2, vec2, *, vfloor2f, OP_store);
+			OP_mod_Tf (F, 3, float, loadvec3f, vfloor4f, storevec3f);
+			OP_mod_Tf (F, 4, vec4, *, vfloor4f, OP_store);
+			OP_mod_Ti (L, 1, long, *, -, OP_store);
+			OP_mod_Ti (L, 2, ivec2, *, +, OP_store);
+			OP_mod_Ti (L, 3, long, loadvec3l, +, storevec3l);
+			OP_mod_Ti (L, 4, ivec4, *, +, OP_store);
+			OP_mod_Tf (D, 1, double, *, floor, OP_store);
+			OP_mod_Tf (D, 2, dvec2, *, vfloor2d, OP_store);
+			OP_mod_Tf (D, 3, double, loadvec3d, vfloor4d, storevec3d);
+			OP_mod_Tf (D, 4, dvec4, *, vfloor4d, OP_store);
+
+			// 1 0100
+			OP_op(ADD, +);
+			// 1 0101
+			OP_op(SUB, -);
+			// 1 0110
+			OP_op_T (SHL, I, int, ivec2, ivec4, <<);
+			OP_op_T (SHL, L, long, lvec2, lvec4, <<);
+			case OP_EQ_S:
+			case OP_LT_S:
+			case OP_GT_S:
+			case OP_CMP_S:
+			case OP_GE_S:
+			case OP_LE_S:
+				{
+					int         cmp = strcmp (PR_GetString (pr, OPA(string)),
+											  PR_GetString (pr, OPB(string)));
+					switch (st_op) {
+						case OP_EQ_S: cmp = (cmp == 0); break;
+						case OP_LT_S: cmp = (cmp <  0); break;
+						case OP_GT_S: cmp = (cmp >  0); break;
+						case OP_GE_S: cmp = (cmp >= 0); break;
+						case OP_LE_S: cmp = (cmp <= 0); break;
+						case OP_NOT_S: break;
+						default: break;
+					}
+					OPC(int) = cmp;
+				}
+				break;
+			case OP_ADD_S:
+				OPC(string) = PR_CatStrings(pr, PR_GetString (pr, OPA(string)),
+											PR_GetString (pr, OPB(string)));
+				break;
+			case OP_NOT_S:
+				OPC(int) = !OPA(string) || !*PR_GetString (pr, OPA(string));
+				break;
+			// 1 0111
+			OP_op_T (SHR, I, int, ivec2, ivec4, >>);
+			OP_op_T (SHR, u, uint, uivec2, uivec4, >>);
+			OP_op_T (SHR, L, long, lvec2, lvec4, >>);
+			OP_op_T (SHR, U, ulong, ulvec2, ulvec4, >>);
+			// 1 1000
+			OP_op_T (BITAND, I, int, ivec2, ivec4, &);
+			OP_op_T (BITOR, I, int, ivec2, ivec4, |);
+			OP_op_T (BITXOR, I, int, ivec2, ivec4, ^);
+			OP_uop_T (BITNOT, I, int, ivec2, ivec4, ~);
+			// 1 1001
+			OP_op_T (LT, u, uint, uivec2, uivec4, <);
+			//FIXME float ops
+			OP_op_T (LT, U, ulong, ulvec2, ulvec4, <);
+			//FIXME float ops
+			// 1 1010
+			OP_op_T (GT, u, uint, uivec2, uivec4, >);
+			//FIXME misc ops
+			OP_op_T (GT, U, ulong, ulvec2, ulvec4, >);
+			//FIXME misc ops
+			// 1 1011
+			case OP_LEA_A:
+			case OP_LEA_B:
+			case OP_LEA_C:
+			case OP_LEA_D:
+				mm = pr_address_mode (pr, st, 0);
+				op_c->pointer_var = mm - pr->pr_globals;
+				break;
+			case OP_LEA_E:
+				// ensures OP_LEA_E is compatible with OP_LOAD_E_n and thus
+				// with pr_entity_mode
+				mm = __builtin_choose_expr (
+						(OP_LEA_E & 3) == 0,
+						pr_entity_mode (pr, st, 0),
+						(void) 0);
+				op_c->pointer_var = mm - pr->pr_globals;
+				break;
+			case OP_ANY_2:
+				OPC(int) = any2i (OPA(ivec2));
+				break;
+			case OP_ANY_3:
+				{
+					__auto_type v = loadvec3i (&OPA(int));
+					OPC(int) = any4i (v);
+				}
+				break;
+			case OP_ANY_4:
+				OPC(int) = any4i (OPA(ivec4));
+				break;
+			case OP_PUSHREG:
+				stk = pr_stack_push (pr);
+				STK(uivec4) = pr->pr_bases;
+				break;
+			case OP_ALL_2:
+				OPC(int) = all2i (OPA(ivec2));
+				break;
+			case OP_ALL_3:
+				{
+					__auto_type v = loadvec3i (&OPA(int));
+					v[3] = -1;
+					OPC(int) = all4i (v);
+				}
+				break;
+			case OP_ALL_4:
+				OPC(int) = all4i (OPA(ivec4));
+				break;
+			case OP_POPREG:
+				stk = pr_stack_pop (pr);
+				pr->pr_bases = STK(uivec4);
+				break;
+			case OP_NONE_2:
+				OPC(int) = none2i (OPA(ivec2));
+				break;
+			case OP_NONE_3:
+				{
+					__auto_type v = loadvec3i (&OPA(int));
+					OPC(int) = none4i (v);
+				}
+				break;
+			case OP_NONE_4:
+				OPC(int) = none4i (OPA(ivec4));
+				break;
+
+#define OP_bool_n(OP, t, n, op, m) \
+			case OP_##OP##_I_##n: \
+				OPC(t) = m((OPA(t) != 0) op (OPB(t) != 0)); \
+				break
+#define OP_bool_3(OP, t, n, op, m) \
+			case OP_##OP##_I_##n: \
+				{ \
+					__auto_type a = loadvec3i (&OPA(int)); \
+					__auto_type b = loadvec3i (&OPB(int)); \
+					storevec3i (&OPC(int), (a != 0) op (b != 0)); \
+				} \
+				break
+#define OP_bool(OP, op) \
+			OP_bool_n (OP, int, 1, op, -); \
+			OP_bool_n (OP, ivec2, 2, op, +); \
+			OP_bool_3 (OP, int, 3, op, +); \
+			OP_bool_n (OP, ivec4, 4, op, +)
+#define OP_not_n(OP, t, n, m) \
+			case OP_##OP##_I_##n: \
+				OPC(t) = m((OPA(t) == 0)); \
+				break
+#define OP_not_3(OP, t, n, m) \
+			case OP_##OP##_I_##n: \
+				{ \
+					__auto_type a = loadvec3i (&OPA(int)); \
+					storevec3i (&OPC(int), (a == 0)); \
+				} \
+				break
+			// 1 1100
+			OP_bool (AND, &);
+			OP_bool (OR, |);
+			OP_bool (XOR, ^);
+			OP_not_n (NOT, int, 1, -);
+			OP_not_n (NOT, ivec2, 2, +);
+			OP_not_3 (NOT, int, 3, +);
+			OP_not_n (NOT, ivec4, 4, +);
+			// 1 1101
+			OP_op_T (GE, u, uint, uivec2, uivec4, >=);
+			//FIXME float shift
+			case OP_MOVE_I:
+				memmove (op_c, op_a, st->b * sizeof (pr_type_t));
+				break;
+			case OP_MOVE_P:
+				memmove (pr->pr_globals + OPC(int), pr->pr_globals + OPA(int),
+						 OPB(uint) * sizeof (pr_type_t));
+				break;
+			case OP_MOVE_PI:
+				memmove (pr->pr_globals + OPC(int), pr->pr_globals + OPA(int),
+						 st->b * sizeof (pr_type_t));
+				break;
+			OP_op_T (GE, U, ulong, ulvec2, ulvec4, >=);
+			//FIXME float shift
+			case OP_MEMSET_I:
+				memset (op_c, OPA(int), st->b * sizeof (pr_type_t));
+				break;
+			case OP_MEMSET_P:
+				memset (pr->pr_globals + OPC(int), OPA(int),
+						OPB(uint) * sizeof (pr_type_t));
+				break;
+			case OP_MEMSET_PI:
+				memset (pr->pr_globals + OPC(int), OPA(int),
+						st->b * sizeof (pr_type_t));
+				break;
+			// 1 1110
+			OP_op_T (LE, u, uint, uivec2, uivec4, <=);
+			//FIXME misc ops
+			OP_op_T (LE, U, ulong, ulvec2, ulvec4, <=);
+			//FIXME misc ops
+			// 1 1111
+			//FIXME conversion 3
+
+			default:
+				PR_RunError (pr, "Bad opcode %i", st->op);
+		}
+		if (pr->watch && pr->watch->integer_var != old_val.integer_var) {
+			if (!pr->wp_conditional
+				|| pr->watch->integer_var == pr->wp_val.integer_var) {
+				if (pr->debug_handler) {
+					pr->debug_handler (prd_watchpoint, 0, pr->debug_data);
+				} else {
+					PR_RunError (pr, "watchpoint hit: %d -> %d",
+								 old_val.integer_var, pr->watch->integer_var);
+				}
+			}
+			old_val.integer_var = pr->watch->integer_var;
+		}
+	}
+exit_program:
+}
 /*
 	PR_ExecuteProgram
 
@@ -1735,6 +2652,8 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 	}
 	if (1) {
 		pr_exec_quakec (pr, exitdepth);
+	} else {
+		pr_exec_ruamoko (pr, exitdepth);
 	}
 exit_program:
 	if (pr->debug_handler) {

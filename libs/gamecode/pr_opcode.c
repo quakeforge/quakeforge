@@ -1544,7 +1544,7 @@ is_vector_parameter_store (progs_t *pr, dstatement_t *st,
 {
 	int         i;
 
-	if (st->op != OP_STORE_V_v6p)
+	if ((pr_opcode_v6p_e) st->op != OP_STORE_V_v6p)
 		return 0;
 	if (operand != st->a)
 		return 0;
@@ -1653,13 +1653,15 @@ PR_Check_Opcodes (progs_t *pr)
 	if (0 && !pr_boundscheck->int_val) {
 		for (i = 0, st = pr->pr_statements; i < pr->progs->numstatements;
 			 st++, i++) {
-			op = PR_v6p_Opcode (st->op);
+			pr_opcode_v6p_e st_op = st->op;
+			op = PR_v6p_Opcode (st_op);
 			if (!op) {
 				PR_Error (pr, "PR_Check_Opcodes: unknown opcode %d at "
-						  "statement %ld", st->op,
+						  "statement %ld", st_op,
 						  (long)(st - pr->pr_statements));
 			}
-			if ((st->op == OP_STATE_v6p || st->op == OP_STATE_F_v6p) && !state_ok) {
+			if ((st_op == OP_STATE_v6p || st_op == OP_STATE_F_v6p)
+				&& !state_ok) {
 				PR_Error (pr, "PR_Check_Opcodes: %s used with missing fields "
 						  "or globals", op->opname);
 			}
@@ -1672,13 +1674,14 @@ PR_Check_Opcodes (progs_t *pr)
 	} else {
 		for (i = 0, st = pr->pr_statements; i < pr->progs->numstatements;
 			 st++, i++) {
-			op = PR_v6p_Opcode (st->op);
+			pr_opcode_v6p_e st_op = st->op;
+			op = PR_v6p_Opcode (st_op);
 			if (!op) {
 				PR_Error (pr, "PR_Check_Opcodes: unknown opcode %d at "
-						  "statement %ld", st->op,
+						  "statement %ld", st_op,
 						  (long)(st - pr->pr_statements));
 			}
-			switch (st->op) {
+			switch (st_op) {
 				case OP_IF_v6p:
 				case OP_IFNOT_v6p:
 					check_global (pr, st, op, op->type_a, st->a, 1);
@@ -1702,7 +1705,7 @@ PR_Check_Opcodes (progs_t *pr)
 				case OP_RCALL6_v6p:
 				case OP_RCALL7_v6p:
 				case OP_RCALL8_v6p:
-					if (st->op > OP_RCALL1_v6p)
+					if (st_op > OP_RCALL1_v6p)
 						check_global (pr, st, op, ev_integer, st->c, 1);
 					check_global (pr, st, op, ev_integer, st->b, 1);
 					check_global (pr, st, op, ev_func, st->a, 1);
