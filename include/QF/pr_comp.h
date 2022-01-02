@@ -23,13 +23,35 @@
 
 #include "QF/qtypes.h"
 
+typedef double pr_double_t;
+typedef float pr_float_t;
 typedef int16_t pr_short_t;
 typedef uint16_t pr_ushort_t;
 typedef int32_t pr_int_t;
 typedef uint32_t pr_uint_t;
+typedef int64_t pr_long_t;
+typedef uint64_t pr_ulong_t;
 typedef pr_uint_t func_t;
-typedef pr_int_t string_t;
-typedef pr_uint_t pointer_t;
+typedef pr_int_t pr_string_t;
+typedef pr_string_t string_t;//FIXME
+typedef pr_uint_t pr_pointer_t;
+typedef pr_pointer_t pointer_t;//FIXME
+
+#define PR_VEC_TYPE(t,n,s) \
+	typedef t n __attribute__ ((vector_size (s*sizeof (t))))
+
+PR_VEC_TYPE (pr_int_t, pr_ivec2_t, 2);
+PR_VEC_TYPE (pr_int_t, pr_ivec4_t, 4);
+PR_VEC_TYPE (pr_uint_t, pr_uivec2_t, 2);
+PR_VEC_TYPE (pr_uint_t, pr_uivec4_t, 4);
+PR_VEC_TYPE (float, pr_vec2_t, 2);
+PR_VEC_TYPE (float, pr_vec4_t, 4);
+PR_VEC_TYPE (pr_long_t, pr_lvec2_t, 2);
+PR_VEC_TYPE (pr_long_t, pr_lvec4_t, 4);
+PR_VEC_TYPE (pr_ulong_t, pr_ulvec2_t, 2);
+PR_VEC_TYPE (pr_ulong_t, pr_ulvec4_t, 4);
+PR_VEC_TYPE (double, pr_dvec2_t, 2);
+PR_VEC_TYPE (double, pr_dvec4_t, 4);
 
 typedef enum {
 	ev_void,
