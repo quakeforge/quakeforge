@@ -436,15 +436,10 @@ pr_memset (pr_type_t *dst, int val, int count)
 	}
 }
 
-/*
-	PR_ExecuteProgram
-
-	The interpretation main loop
-*/
-VISIBLE void
-PR_ExecuteProgram (progs_t *pr, func_t fnum)
+static void
+pr_exec_quakec (progs_t *pr, int exitdepth)
 {
-	int         exitdepth, profile, startprofile;
+	int         profile, startprofile;
 	int         fldofs;
 	pr_uint_t   pointer;
 	dstatement_t *st;
@@ -452,26 +447,13 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 	pr_type_t   old_val = {0};
 
 	// make a stack frame
-	exitdepth = pr->pr_depth;
 	startprofile = profile = 0;
 
-	Sys_PushSignalHook (signal_hook, pr);
-	Sys_PushErrorHandler (error_handler, pr);
-
-	if (pr->debug_handler) {
-		pr->debug_handler (prd_subenter, &fnum, pr->debug_data);
-	}
-
-	if (!PR_CallFunction (pr, fnum)) {
-		// called a builtin instead of progs code
-		goto exit_program;
-	}
 	st = pr->pr_statements + pr->pr_xstatement;
 
 	if (pr->watch) {
 		old_val = *pr->watch;
 	}
-
 	while (1) {
 		pr_type_t  *op_a, *op_b, *op_c;
 
@@ -1736,6 +1718,32 @@ op_call:
 			}
 			old_val.integer_var = pr->watch->integer_var;
 		}
+	}
+exit_program:
+}
+
+/*
+	PR_ExecuteProgram
+
+	The interpretation main loop
+*/
+VISIBLE void
+PR_ExecuteProgram (progs_t *pr, func_t fnum)
+{
+	Sys_PushSignalHook (signal_hook, pr);
+	Sys_PushErrorHandler (error_handler, pr);
+
+	if (pr->debug_handler) {
+		pr->debug_handler (prd_subenter, &fnum, pr->debug_data);
+	}
+
+	int         exitdepth = pr->pr_depth;
+	if (!PR_CallFunction (pr, fnum)) {
+		// called a builtin instead of progs code
+		goto exit_program;
+	}
+	if (1) {
+		pr_exec_quakec (pr, exitdepth);
 	}
 exit_program:
 	if (pr->debug_handler) {
