@@ -171,7 +171,9 @@ build_struct (int su, symbol_t *tag, symtab_t *symtab, type_t *type)
 	if (!type)
 		sym->type = find_type (sym->type);	// checks the tag, not the symtab
 	sym->type->t.symtab = symtab;
-	sym->type->alignment = alignment;
+	if (alignment > sym->type->alignment) {
+		sym->type->alignment = alignment;
+	}
 	if (!type && sym->type->type_def->external)	//FIXME should not be necessary
 		sym->type->type_def = qfo_encode_type (sym->type, pr.type_data);
 	return sym;

@@ -74,7 +74,7 @@ type_t      type_function = { ev_func, "function", 1, ty_basic,
 								{{&type_void}} };
 type_t      type_pointer = { ev_pointer, "pointer", 1, ty_basic,
 								{{&type_void}} };
-type_t      type_quaternion = { ev_quat, "quaternion", 1 };
+type_t      type_quaternion = { ev_quat, "quaternion", 4 };
 type_t      type_integer = { ev_integer, "int", 1 };
 type_t      type_uinteger = { ev_uinteger, "uint", 1 };
 type_t      type_short = { ev_short, "short", 1 };
