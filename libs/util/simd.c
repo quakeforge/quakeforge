@@ -34,15 +34,19 @@
 
 #define IMPLEMENT_VEC2F_Funcs
 #define IMPLEMENT_VEC2D_Funcs
+#define IMPLEMENT_VEC2I_Funcs
 #define IMPLEMENT_VEC4F_Funcs
 #define IMPLEMENT_VEC4D_Funcs
+#define IMPLEMENT_VEC4I_Funcs
 #define IMPLEMENT_MAT4F_Funcs
 
 #include "QF/mathlib.h"
 #include "QF/simd/vec2d.h"
 #include "QF/simd/vec2f.h"
+#include "QF/simd/vec2i.h"
 #include "QF/simd/vec4d.h"
 #include "QF/simd/vec4f.h"
+#include "QF/simd/vec4i.h"
 #include "QF/simd/mat4f.h"
 #include "QF/set.h"
 #include "QF/sys.h"

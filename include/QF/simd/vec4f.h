@@ -99,8 +99,6 @@ GNU89INLINE inline void storevec3f (float *v3, vec4f_t v4);
 GNU89INLINE inline vec4f_t normalf (vec4f_t v) __attribute__((pure));
 GNU89INLINE inline vec4f_t magnitudef (vec4f_t v) __attribute__((pure));
 GNU89INLINE inline vec4f_t magnitude3f (vec4f_t v) __attribute__((pure));
-GNU89INLINE inline vec4i_t loadvec3i (const int *v3) __attribute__((pure));
-GNU89INLINE inline void storevec3i (int *v3, vec4i_t v4);
 
 #ifndef IMPLEMENT_VEC4F_Funcs
 GNU89INLINE inline
@@ -423,30 +421,5 @@ vspheref_t __attribute__((pure))
 CircumSphere_vf (const vec4f_t *points, int num_points);
 
 vspheref_t SmallestEnclosingBall_vf (const vec4f_t *points, int num_points);
-
-#ifndef IMPLEMENT_VEC4F_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-vec4i_t
-loadvec3i (const int *v3)
-{
-	vec4i_t v4 = { v3[0], v3[1], v3[2], 0 };
-	return v4;
-}
-
-#ifndef IMPLEMENT_VEC4F_Funcs
-GNU89INLINE inline
-#else
-VISIBLE
-#endif
-void
-storevec3i (int *v3, vec4i_t v4)
-{
-	v3[0] = v4[0];
-	v3[1] = v4[1];
-	v3[2] = v4[2];
-}
 
 #endif//__QF_simd_vec4f_h
