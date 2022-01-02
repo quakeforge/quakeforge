@@ -289,7 +289,7 @@ void ED_Free (progs_t *pr, edict_t *ed);
 edict_t *ED_EdictNum(progs_t *pr, pr_int_t n) __attribute__((pure));
 pr_int_t ED_NumForEdict(progs_t *pr, edict_t *e) __attribute__((pure));
 void ED_Count (progs_t *pr);
-qboolean PR_EdictValid (progs_t *pr, pr_int_t e) __attribute__((pure));
+qboolean PR_EdictValid (progs_t *pr, pr_uint_t e) __attribute__((pure));
 
 // pr_debug.c
 void ED_Print (progs_t *pr, edict_t *ed, const char *fieldname);
@@ -1900,7 +1900,7 @@ struct progs_s {
 	void      (*free_edict) (progs_t *pr, edict_t *ent);
 	pr_type_t  *pr_edict_area;
 	int         pr_edict_size;		///< # of pr_type_t slots
-	int         pr_edict_area_size;	///< for bounds checking, starts at 0
+	pr_uint_t   pr_edict_area_size;	///< for bounds checking, starts at 0
 	func_t      edict_parse;
 	///@}
 

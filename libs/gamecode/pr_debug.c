@@ -1536,7 +1536,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 				const char *str;
 				char        mode = fmt[1], opchar = fmt[2];
 				unsigned    parm_ind = 0;
-				pr_int_t    opval;
+				pr_uint_t   opval;
 				qfot_type_t *optype = &res->void_type;
 				func_t      func;
 

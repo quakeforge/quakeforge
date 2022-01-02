@@ -241,12 +241,12 @@ ED_NumForEdict (progs_t *pr, edict_t *e)
 }
 
 qboolean
-PR_EdictValid (progs_t *pr, pr_int_t e)
+PR_EdictValid (progs_t *pr, pr_uint_t e)
 {
 	if (!pr->num_edicts) {
 		return false;
 	}
-	if (e < 0 || e >= pr->pr_edict_area_size)
+	if (e >= pr->pr_edict_area_size)
 		return false;
 	if (e % pr->pr_edict_size)
 		return false;
