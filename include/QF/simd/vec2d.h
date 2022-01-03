@@ -107,9 +107,9 @@ VISIBLE
 vec2d_t
 cmuld (vec2d_t a, vec2d_t b)
 {
-	vec2d_t     c = a * b[0];
-	c = _mm_addsub_pd (c, (vec2d_t) { c[1], c[0] });
-	return c;
+	vec2d_t     c1 = a * b[0];
+	vec2d_t     c2 = a * b[1];
+	return _mm_addsub_pd (c1, (vec2d_t) { c2[1], c2[0] });
 }
 
 #endif//__QF_simd_vec2d_h
