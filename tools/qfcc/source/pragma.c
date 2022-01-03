@@ -65,7 +65,7 @@ set_traditional (int traditional)
 		case 0:
 			options.traditional = 0;
 			options.advanced = true;
-			options.code.progsversion = PROG_VERSION;
+			options.code.progsversion = PROG_V6P_VERSION;
 			type_default = &type_integer;
 			break;
 		case 1:

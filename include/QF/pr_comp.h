@@ -693,7 +693,8 @@ typedef struct pr_va_list_s {
 	 |(((0x##b) & 0xfff) << 12)		\
 	 |(((0x##c) & 0xfff) <<  0) )
 #define	PROG_ID_VERSION	6
-#define	PROG_VERSION	PROG_VERSION_ENCODE(0,fff,00a)
+#define	PROG_V6P_VERSION	PROG_VERSION_ENCODE(0,fff,00a)
+#define	PROG_VERSION	PROG_VERSION_ENCODE(0,fff,010)
 
 typedef struct dprograms_s {
 	pr_uint_t   version;

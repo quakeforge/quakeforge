@@ -2650,7 +2650,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 		// called a builtin instead of progs code
 		goto exit_program;
 	}
-	if (1) {
+	if (pr->progs->version < PROG_VERSION) {
 		pr_exec_quakec (pr, exitdepth);
 	} else {
 		pr_exec_ruamoko (pr, exitdepth);

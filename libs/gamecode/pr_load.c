@@ -145,6 +145,7 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 		((int *) &progs)[i] = LittleLong (((int *) &progs)[i]);
 
 	if (progs.version != PROG_VERSION
+		&& progs.version != PROG_V6P_VERSION
 		&& progs.version != PROG_ID_VERSION) {
 		if (progs.version < 0x00fff000) {
 			PR_Error (pr, "%s has unrecognised version number (%u)",

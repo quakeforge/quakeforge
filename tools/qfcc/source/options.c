@@ -398,7 +398,7 @@ DecodeArgs (int argc, char **argv)
 			case OPT_ADVANCED:
 				options.traditional = 0;
 				options.advanced = true;
-				options.code.progsversion = PROG_VERSION;
+				options.code.progsversion = PROG_V6P_VERSION;
 				options.code.const_initializers = false;
 				break;
 			case OPT_BLOCK_DOT:
@@ -505,7 +505,7 @@ DecodeArgs (int argc, char **argv)
 							if (flag)
 								options.code.progsversion = PROG_ID_VERSION;
 							else
-								options.code.progsversion = PROG_VERSION;
+								options.code.progsversion = PROG_V6P_VERSION;
 						} else if (!(strcasecmp (temp, "const-initializers"))) {
 							options.code.const_initializers = flag;
 						}
@@ -699,7 +699,7 @@ DecodeArgs (int argc, char **argv)
 			options.code.vector_components = true;
 	}
 	if (!options.code.progsversion)
-		options.code.progsversion = PROG_VERSION;
+		options.code.progsversion = PROG_V6P_VERSION;
 	if (!options.traditional) {
 		options.advanced = true;
 		add_cpp_def ("-D__RUAMOKO__=1");

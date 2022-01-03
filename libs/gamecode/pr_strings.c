@@ -242,12 +242,15 @@ PR_LoadStrings (progs_t *pr)
 
 	while (str < end) {
 		count++;
-		if (*str == '@' && pr->progs->version == PROG_VERSION) {
+		if (*str == '@' && pr->progs->version == PROG_V6P_VERSION) {
 			if (!strcmp (str, "@float_promoted@")) {
 				pr->float_promoted = 1;
 			}
 		}
 		str += strlen (str) + 1;
+	}
+	if (pr->progs->version == PROG_VERSION) {
+		pr->float_promoted = 1;
 	}
 
 	res->ds_mem.alloc = pr_strings_alloc;
