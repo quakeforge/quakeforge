@@ -1713,7 +1713,7 @@ op_call:
 
 */
 			default:
-				PR_RunError (pr, "Bad opcode %i", st->op);
+				PR_RunError (pr, "Bad opcode %i", st->op & ~OP_BREAK);
 		}
 		if (pr->watch && pr->watch->integer_var != old_val.integer_var) {
 			if (!pr->wp_conditional
@@ -1923,7 +1923,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 		pr_type_t  *stk;
 		pr_type_t  *mm;
 		func_t      function;
-		pr_opcode_e st_op = st->op & ~(OP_BREAK|OP_A_BASE|OP_B_BASE|OP_C_BASE);
+		pr_opcode_e st_op = st->op & OP_MASK;
 		switch (st_op) {
 			// 0 0000
 			case OP_LOAD_E_1:
@@ -2623,7 +2623,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			//FIXME conversion 3
 
 			default:
-				PR_RunError (pr, "Bad opcode %i", st->op);
+				PR_RunError (pr, "Bad opcode o%03o", st->op & OP_MASK);
 		}
 		if (pr->watch && pr->watch->integer_var != old_val.integer_var) {
 			if (!pr->wp_conditional

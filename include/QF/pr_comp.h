@@ -598,6 +598,7 @@ typedef enum {
 #define OP_A_BASE (3 << OP_A_SHIFT)
 #define OP_B_BASE (3 << OP_B_SHIFT)
 #define OP_C_BASE (3 << OP_C_SHIFT)
+#define OP_MASK (~(OP_BREAK|OP_A_BASE|OP_B_BASE|OP_C_BASE))
 
 typedef enum {
 	OP_with_zero,
