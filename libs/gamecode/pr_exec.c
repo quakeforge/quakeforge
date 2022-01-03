@@ -3228,14 +3228,20 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_uop_T (BITNOT, I, int, ivec2, ivec4, ~);
 			// 1 1001
 			OP_op_T (LT, u, uint, uivec2, uivec4, <);
-			//FIXME float ops
+			case OP_SWIZZLE_F:
+				OPC(ivec4) = pr_swizzle_f (OPA(ivec4), st->b);
+				break;
+			//FIXME scale ops
 			OP_op_T (LT, U, ulong, ulvec2, ulvec4, <);
-			//FIXME float ops
+			case OP_SWIZZLE_D:
+				OPC(lvec4) = pr_swizzle_d (OPA(lvec4), st->b);
+				break;
+			//FIXME scale ops
 			// 1 1010
 			OP_op_T (GT, u, uint, uivec2, uivec4, >);
-			//FIXME misc ops
+			//FIXME conversion ops
 			OP_op_T (GT, U, ulong, ulvec2, ulvec4, >);
-			//FIXME misc ops
+			//FIXME conversion ops
 			// 1 1011
 			case OP_LEA_A:
 			case OP_LEA_B:
@@ -3337,7 +3343,9 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_not_n (NOT, ivec4, 4, +);
 			// 1 1101
 			OP_op_T (GE, u, uint, uivec2, uivec4, >=);
-			//FIXME float shift
+			case OP_MUL_QV4_F:
+				OPC(vec4) = qvmulf (OPA(vec4), OPB(vec4));
+				break;
 			case OP_MOVE_I:
 				memmove (op_c, op_a, st->b * sizeof (pr_type_t));
 				break;
@@ -3350,7 +3358,9 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 						 st->b * sizeof (pr_type_t));
 				break;
 			OP_op_T (GE, U, ulong, ulvec2, ulvec4, >=);
-			//FIXME float shift
+			case OP_MUL_QV4_D:
+				OPC(dvec4) = qvmuld (OPA(dvec4), OPB(dvec4));
+				break;
 			case OP_MEMSET_I:
 				pr_memset (op_c, OPA(int), st->b);
 				break;
@@ -3362,17 +3372,16 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				break;
 			// 1 1110
 			OP_op_T (LE, u, uint, uivec2, uivec4, <=);
-			case OP_SWIZZLE_F:
-				OPC(ivec4) = pr_swizzle_f (OPA(ivec4), st->b);
+			case OP_MUL_V4Q_F:
+				OPC(vec4) = vqmulf (OPA(vec4), OPB(vec4));
 				break;
-			//FIXME misc ops
+
 			OP_op_T (LE, U, ulong, ulvec2, ulvec4, <=);
-			case OP_SWIZZLE_D:
-				OPC(lvec4) = pr_swizzle_d (OPA(lvec4), st->b);
+			case OP_MUL_V4Q_D:
+				OPC(dvec4) = vqmuld (OPA(dvec4), OPB(dvec4));
 				break;
-			//FIXME misc ops
+
 			// 1 1111
-			//FIXME conversion 3
 
 			default:
 				PR_RunError (pr, "Bad opcode o%03o", st->op & OP_MASK);

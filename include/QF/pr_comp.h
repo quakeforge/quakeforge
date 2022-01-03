@@ -484,11 +484,11 @@ typedef enum {
 	OP_GT_F_1, OP_GT_F_2, OP_GT_F_3, OP_GT_F_4,
 	OP_GT_L_1, OP_GT_L_2, OP_GT_L_3, OP_GT_L_4,
 	OP_GT_D_1, OP_GT_D_2, OP_GT_D_3, OP_GT_D_4,
-	// 0 1011 convert between signed integral and double(XXX how useful as vec?)
-	OP_CONV_ID_1, OP_CONV_ID_2, OP_CONV_ID_3, OP_CONV_ID_4,
-	OP_CONV_DI_1, OP_CONV_DI_2, OP_CONV_DI_3, OP_CONV_DI_4,
-	OP_CONV_LD_1, OP_CONV_LD_2, OP_CONV_LD_3, OP_CONV_LD_4,
-	OP_CONV_DL_1, OP_CONV_DL_2, OP_CONV_DL_3, OP_CONV_DL_4,
+	// 0 1011
+	OP_spare_1,  OP_spare_2,  OP_spare_3,  OP_spare_4,
+	OP_spare_5,  OP_spare_6,  OP_spare_7,  OP_spare_8,
+	OP_spare_9,  OP_spare_10, OP_spare_11, OP_spare_12,
+	OP_spare_13, OP_spare_14, OP_spare_15, OP_spare_16,
 	// comparison
 	// 0 1100 !=
 	OP_NE_I_1, OP_NE_I_2, OP_NE_I_3, OP_NE_I_4,
@@ -505,11 +505,11 @@ typedef enum {
 	OP_LE_F_1, OP_LE_F_2, OP_LE_F_3, OP_LE_F_4,
 	OP_LE_L_1, OP_LE_L_2, OP_LE_L_3, OP_LE_L_4,
 	OP_LE_D_1, OP_LE_D_2, OP_LE_D_3, OP_LE_D_4,
-	// 0 1111 convert between signed integral sizes (XXX how useful as vec?)
-	OP_CONV_IL_1, OP_CONV_IL_2, OP_CONV_IL_3, OP_CONV_IL_4,
-	OP_CONV_LI_1, OP_CONV_LI_2, OP_CONV_LI_3, OP_CONV_LI_4,
-	OP_CONV_uU_1, OP_CONV_uU_2, OP_CONV_uU_3, OP_CONV_uU_4,
-	OP_CONV_Uu_1, OP_CONV_Uu_2, OP_CONV_Uu_3, OP_CONV_Uu_4,
+	// 0 1111
+	OP_spare_17, OP_spare_18, OP_spare_19, OP_spare_20,
+	OP_spare_21, OP_spare_22, OP_spare_23, OP_spare_24,
+	OP_spare_25, OP_spare_26, OP_spare_27, OP_spare_28,
+	OP_spare_29, OP_spare_30, OP_spare_31, OP_spare_32,
 
 	// 1 0000 c = a * b
 	OP_MUL_I_1, OP_MUL_I_2, OP_MUL_I_3, OP_MUL_I_4,
@@ -556,16 +556,16 @@ typedef enum {
 	OP_BITOR_I_1,  OP_BITOR_I_2,  OP_BITOR_I_3,  OP_BITOR_I_4,
 	OP_BITXOR_I_1, OP_BITXOR_I_2, OP_BITXOR_I_3, OP_BITXOR_I_4,
 	OP_BITNOT_I_1, OP_BITNOT_I_2, OP_BITNOT_I_3, OP_BITNOT_I_4,
-	// 1 1001 < unsigned (float logic and bit ops mixed in)
+	// 1 1001 < unsigned with swizzle and scale mixed in
 	OP_LT_u_1,   OP_LT_u_2,  OP_LT_u_3,   OP_LT_u_4,
-	OP_BITAND_F, OP_BITOR_F, OP_BITXOR_F, OP_BITNOT_F,
+	OP_SWIZZLE_F, OP_SCALE_F_2, OP_SCALE_F_3, OP_SCALE_F_4,
 	OP_LT_U_1,   OP_LT_U_2,  OP_LT_U_3,   OP_LT_U_4,
-	OP_AND_F,    OP_OR_F,    OP_XOR_F,    OP_NOT_F,
-	// 1 1010 > unsigned
+	OP_SWIZZLE_D, OP_SCALE_D_2, OP_SCALE_D_3, OP_SCALE_D_4,
+	// 1 1010 > unsigned and conversions
 	OP_GT_u_1, OP_GT_u_2, OP_GT_u_3, OP_GT_u_4,
-	OP_spare,  OP_NOT_D,  OP_NOT_V,  OP_NOT_Q,
+	OP_CONV_IF_1, OP_CONV_LD_1, OP_CONV_uF_1, OP_CONV_UD_1,
 	OP_GT_U_1, OP_GT_U_2, OP_GT_U_3, OP_GT_U_4,
-	OP_EQ_V,   OP_EQ_Q,   OP_NE_V,   OP_NE_Q,
+	OP_CONV_FI_1, OP_CONV_DL_1, OP_CONV_Fu_1, OP_CONV_DU_1,
 	// 1 1011 lea, with, etc
 	OP_LEA_A,   OP_LEA_B,  OP_LEA_C,  OP_LEA_D,
 	OP_LEA_E,   OP_ANY_2,  OP_ANY_3,  OP_ANY_4,
@@ -576,21 +576,23 @@ typedef enum {
 	OP_OR_I_1,  OP_OR_I_2,  OP_OR_I_3,  OP_OR_I_4,
 	OP_XOR_I_1, OP_XOR_I_2, OP_XOR_I_3, OP_XOR_I_4,
 	OP_NOT_I_1, OP_NOT_I_2, OP_NOT_I_3, OP_NOT_I_4,
-	// 1 1101 >= unsigned with float shifts and moves mixed in
-	OP_GE_u_1, OP_GE_u_2,   OP_GE_u_3,   OP_GE_u_4,
-	OP_SHL_F,  OP_MOVE_I,   OP_MOVE_P,   OP_MOVE_PI,
-	OP_GE_U_1, OP_GE_U_2,   OP_GE_U_3,   OP_GE_U_4,
-	OP_SHR_F,  OP_MEMSET_I, OP_MEMSET_P, OP_MEMSET_PI,
-	// 1 1110 <= unsigned with scale and swizzle mixed in
+	// 1 1101 >= unsigned with q v4 mul and moves mixed in
+	OP_GE_u_1,    OP_GE_u_2,   OP_GE_u_3,   OP_GE_u_4,
+	OP_MUL_QV4_F, OP_MOVE_I,   OP_MOVE_P,   OP_MOVE_PI,
+	OP_GE_U_1,    OP_GE_U_2,   OP_GE_U_3,   OP_GE_U_4,
+	OP_MUL_QV4_D, OP_MEMSET_I, OP_MEMSET_P, OP_MEMSET_PI,
+	// 1 1110 <= unsigned with v4 q mul and conversion mixed in
 	OP_LE_u_1,    OP_LE_u_2,    OP_LE_u_3,    OP_LE_u_4,
-	OP_SWIZZLE_F, OP_SCALE_F_2, OP_SCALE_F_3, OP_SCALE_F_4,
+	OP_MUL_V4Q_F, OP_CONV_IL_1, OP_CONV_uU_1, OP_CONV_FD_1,
 	OP_LE_U_1,    OP_LE_U_2,    OP_LE_U_3,    OP_LE_U_4,
-	OP_SWIZZLE_D, OP_SCALE_D_2, OP_SCALE_D_3, OP_SCALE_D_4,
-	// 1 1111 convert between integral and float (XXX how useful as vec?)
-	OP_CONV_IF_1, OP_CONV_IF_2, OP_CONV_IF_3, OP_CONV_IF_4,
-	OP_CONV_FI_1, OP_CONV_FI_2, OP_CONV_FI_3, OP_CONV_FI_4,
-	OP_CONV_FD_1, OP_CONV_FD_2, OP_CONV_FD_3, OP_CONV_FD_4,
-	OP_CONV_DF_1, OP_CONV_DF_2, OP_CONV_DF_3, OP_CONV_DF_4,
+	OP_MUL_V4Q_D, OP_CONV_LI_1, OP_CONV_Uu_1, OP_CONV_DF_1,
+	// 1 1111
+	OP_spare_33, OP_spare_34, OP_spare_35, OP_spare_36,
+	OP_spare_37, OP_spare_38, OP_spare_39, OP_spare_40,
+	OP_spare_41, OP_spare_42, OP_spare_43, OP_spare_44,
+	OP_spare_45, OP_spare_46, OP_spare_47, OP_spare_48,
+
+
 } pr_opcode_e;
 #define OP_A_SHIFT (9)
 #define OP_B_SHIFT (11)
