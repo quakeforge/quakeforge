@@ -75,6 +75,8 @@ typedef struct pr_debug_header_s {
 	pr_uint_t   debug_data;
 	pr_uint_t   debug_data_size;
 } pr_debug_header_t;
+
+extern const char *prdebug_names[];
 #endif
 
 typedef enum prdebug_e {

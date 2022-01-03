@@ -52,6 +52,18 @@
 #include "QF/simd/vec4i.h"
 #include "compat.h"
 
+const char *prdebug_names[] = {
+	[prd_none] = "none",
+	[prd_trace] = "trace",
+	[prd_breakpoint] = "breakpoint",
+	[prd_watchpoint] = "watchpoint",
+	[prd_subenter] = "subenter",
+	[prd_subexit] = "subexit",
+	[prd_begin] = "begin",
+	[prd_terminate] = "terminate",
+	[prd_runerror] = "runerror",
+	[prd_error] = "error",
+};
 
 /*
 	PR_RunError
