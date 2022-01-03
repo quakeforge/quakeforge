@@ -108,6 +108,21 @@ setup_test (test_t *test)
 }
 
 static int
+check_result (test_t *test)
+{
+	int         ret = 0;
+
+	if (memcmp (test_pr.pr_globals, test->expect_globals,
+				test->num_globals * sizeof (pr_int_t)) == 0) {
+		ret = 1;
+		printf ("test #%zd: %s: OK\n", test - tests, test->desc);
+	} else {
+		printf ("test #%zd: %s: words differ\n", test - tests, test->desc);
+	}
+	return ret;
+}
+
+static int
 run_test (test_t *test)
 {
 	int         jump_ret;
@@ -120,13 +135,7 @@ run_test (test_t *test)
 		printf ("returned from progs\n");
 	}
 	if (jump_ret == 1) {
-		if (memcmp (test_pr.pr_globals, test->expect_globals,
-					test->num_globals * sizeof (pr_int_t)) == 0) {
-			ret = 1;
-			printf ("test #%zd: %s: OK\n", test - tests, test->desc);
-		} else {
-			printf ("test #%zd: %s: words differ\n", test - tests, test->desc);
-		}
+		ret = check_result (test);
 	} else {
 		printf ("test #%zd: %s: critical failure\n", test - tests, test->desc);
 	}
