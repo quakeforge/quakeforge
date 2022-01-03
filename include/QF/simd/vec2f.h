@@ -120,9 +120,7 @@ vec2f_t
 dot2f (vec2f_t a, vec2f_t b)
 {
 	vec2f_t c = a * b;
-	vec4f_t     t = { c[0], c[1], 0, 0 };
-	t = _mm_hadd_ps (t, t);
-	return (vec2f_t) { t[0], t[1] };
+	return (vec2f_t) { c[0] + c[1], c[0] + c[1] };
 }
 
 #ifndef IMPLEMENT_VEC2F_Funcs
@@ -135,10 +133,7 @@ cmulf (vec2f_t a, vec2f_t b)
 {
 	vec2f_t     c1 = a * b[0];
 	vec2f_t     c2 = a * b[1];
-	vec4f_t     c14 ={ c1[0], c1[1], 0, 0 };
-	vec4f_t     c24 ={ c2[1], c2[0], 0, 0 };
-	vec4f_t     c = _mm_addsub_ps (c14, c24);
-	return (vec2f_t) { c[0], c[1] };
+	return (vec2f_t) { c1[0] - c2[1], c1[1] + c2[0] };
 }
 
 #ifndef IMPLEMENT_VEC2F_Funcs
