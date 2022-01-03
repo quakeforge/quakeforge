@@ -2606,15 +2606,13 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_op_T (GE, U, ulong, ulvec2, ulvec4, >=);
 			//FIXME float shift
 			case OP_MEMSET_I:
-				memset (op_c, OPA(int), st->b * sizeof (pr_type_t));
+				pr_memset (op_c, OPA(int), st->b);
 				break;
 			case OP_MEMSET_P:
-				memset (pr->pr_globals + OPC(int), OPA(int),
-						OPB(uint) * sizeof (pr_type_t));
+				pr_memset (pr->pr_globals + OPC(int), OPA(int), OPB(uint));
 				break;
 			case OP_MEMSET_PI:
-				memset (pr->pr_globals + OPC(int), OPA(int),
-						st->b * sizeof (pr_type_t));
+				pr_memset (pr->pr_globals + OPC(int), OPA(int), st->b);
 				break;
 			// 1 1110
 			OP_op_T (LE, u, uint, uivec2, uivec4, <=);
