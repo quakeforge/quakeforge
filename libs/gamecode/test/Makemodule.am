@@ -1,5 +1,6 @@
 libs_gamecode_tests = \
 	libs/gamecode/test/test-load \
+	libs/gamecode/test/test-stack \
 	libs/gamecode/test/test-store
 
 TESTS += $(libs_gamecode_tests)
@@ -16,6 +17,11 @@ libs_gamecode_test_test_load_SOURCES= \
 	libs/gamecode/test/test-load.c
 libs_gamecode_test_test_load_LDADD=			$(test_gamecode_libs)
 libs_gamecode_test_test_load_DEPENDENCIES=	$(test_gamecode_libs)
+
+libs_gamecode_test_test_stack_SOURCES= \
+	libs/gamecode/test/test-stack.c
+libs_gamecode_test_test_stack_LDADD=			$(test_gamecode_libs)
+libs_gamecode_test_test_stack_DEPENDENCIES=		$(test_gamecode_libs)
 
 libs_gamecode_test_test_store_SOURCES= \
 	libs/gamecode/test/test-store.c

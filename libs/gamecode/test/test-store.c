@@ -30,9 +30,6 @@ static pr_int_t test_globals_expect[] = {
 	1, 2, 3, 4,
 };
 
-#define BASE(b, base) (((base) & 3) << OP_##b##_SHIFT)
-#define OP(a, b, c, op) ((op) | BASE(A, a) | BASE(B, b) | BASE(C, c))
-
 static dstatement_t store_A_statements[] = {
 	{OP(0, 0, 0, OP_STORE_A_4), 32, 0, 12},
 	{OP(0, 0, 0, OP_STORE_A_3), 29, 0, 16},

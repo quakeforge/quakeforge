@@ -19,9 +19,13 @@ static int verbose = 0;
 #define num_statements(statements) \
 		(sizeof (statements) / sizeof (statements[0]))
 
+#define BASE(b, base) (((base) & 3) << OP_##b##_SHIFT)
+#define OP(a, b, c, op) ((op) | BASE(A, a) | BASE(B, b) | BASE(C, c))
+
 typedef struct {
 	const char *desc;
-	pr_uint_t   edict_area;
+	pointer_t   edict_area;
+	pointer_t   stack_size;
 	pr_uint_t   extra_globals;
 	pr_uint_t   num_globals;
 	pr_uint_t   num_statements;

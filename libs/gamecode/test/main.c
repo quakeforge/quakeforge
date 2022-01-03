@@ -27,6 +27,8 @@ static jmp_buf jump_buffer;
 static void
 test_debug_handler (prdebug_t event, void *param, void *data)
 {
+	progs_t    *pr = data;
+
 	switch (event) {
 		case prd_breakpoint:
 			if (verbose > 0) {
@@ -42,8 +44,16 @@ test_debug_handler (prdebug_t event, void *param, void *data)
 		case prd_trace:
 			dstatement_t *st = test_pr.pr_statements + test_pr.pr_xstatement;
 			if (verbose > 0) {
-				printf ("debug: trace %05x %04x %04x %04x %04x\n",
-						test_pr.pr_xstatement, st->op, st->a, st->b, st->c);
+				printf ("debug: trace %05x %04x %04x %04x %04x%s\n",
+						test_pr.pr_xstatement, st->op, st->a, st->b, st->c,
+						pr->globals.stack ? va (0, " %05x", *pr->globals.stack)
+										  : "");
+			}
+			if (pr->globals.stack) {
+				if (*pr->globals.stack & 3) {
+					printf ("stack not aligned: %d\n", *pr->globals.stack);
+					longjmp (jump_buffer, 3);
+				}
 			}
 			break;
 		case prd_runerror:
@@ -65,17 +75,26 @@ setup_test (test_t *test)
 	memset (&test_pr, 0, sizeof (test_pr));
 	test_pr.progs = &test_progs;
 	test_pr.debug_handler = test_debug_handler;
+	test_pr.debug_data = &test_pr;
 	test_pr.pr_trace = 1;
 	test_pr.pr_trace_depth = -1;
 	test_pr.function_table = test_functions;
 
-	test_pr.globals_size = test->num_globals;
-	pr_uint_t   num_globals = test->num_globals + test->extra_globals;
+	pr_uint_t   num_globals = test->num_globals;
+	num_globals += test->extra_globals + test->stack_size;
+
+	test_pr.globals_size = num_globals;
 	test_pr.pr_globals = malloc (num_globals * sizeof (pr_type_t));
 	memcpy (test_pr.pr_globals, test->init_globals,
 			test->num_globals * sizeof (pr_type_t));
 	memset (test_pr.pr_globals + test->num_globals, 0,
 			test->extra_globals * sizeof (pr_type_t));
+	if (test->stack_size) {
+		pointer_t   stack = num_globals - test->stack_size;
+		test_pr.stack_bottom = stack + 4;
+		test_pr.globals.stack = (pointer_t *) (test_pr.pr_globals + stack);
+		*test_pr.globals.stack = num_globals;
+	}
 	if (test->edict_area) {
 		test_pr.pr_edict_area = test_pr.pr_globals + test->edict_area;
 	}
@@ -128,6 +147,7 @@ main (int argc, char **argv)
 	Cmd_Init ();
 	Cvar_Init ();
 	PR_Init_Cvars ();
+	pr_boundscheck->int_val = 1;
 
 	while ((c = getopt (argc, argv, "qvt:")) != EOF) {
 		switch (c) {
