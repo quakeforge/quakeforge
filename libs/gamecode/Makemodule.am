@@ -1,3 +1,5 @@
+include libs/gamecode/test/Makemodule.am
+
 gc_deps=libs/util/libQFutil.la
 
 noinst_LTLIBRARIES += libs/gamecode/libQFgamecode.la

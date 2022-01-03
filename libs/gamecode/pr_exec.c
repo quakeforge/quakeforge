@@ -1753,11 +1753,11 @@ pr_entity_mode (progs_t *pr, const dstatement_t *st, int shift)
 			mm_offs = OPA(uint);
 			break;
 		case 2:
-			// constant indexed pointer: *a + b
-			mm_offs = OPA(uint) + st->b;
+			// constant indexed pointer: *a + b (supports -ve offset)
+			mm_offs = OPA(uint) + (short) st->b;
 			break;
 		case 3:
-			// verible indexed pointer: *a + *b (supports -ve offset)
+			// variable indexed pointer: *a + *b (supports -ve offset)
 			mm_offs = OPA(uint) + OPB(int);
 			break;
 	}
@@ -1782,11 +1782,11 @@ pr_address_mode (progs_t *pr, const dstatement_t *st, int shift)
 			mm_offs = OPA(uint);
 			break;
 		case 2:
-			// constant indexed pointer: *a + b
-			mm_offs = OPA(uint) + st->b;
+			// constant indexed pointer: *a + b (supports -ve offset)
+			mm_offs = OPA(uint) + (short) st->b;
 			break;
 		case 3:
-			// verible indexed pointer: *a + *b (supports -ve offset)
+			// variable indexed pointer: *a + *b (supports -ve offset)
 			mm_offs = OPA(uint) + OPB(int);
 			break;
 	}
@@ -1811,11 +1811,11 @@ pr_jump_mode (progs_t *pr, const dstatement_t *st)
 			jump_offs = OPA(uint);
 			break;
 		case 2:
-			// constant indexed pointer: *a + b
-			jump_offs = OPA(uint) + st->b;
+			// constant indexed pointer: *a + b (supports -ve offset)
+			jump_offs = OPA(uint) + (short) st->b;
 			break;
 		case 3:
-			// verible indexed pointer: *a + *b (supports -ve offset)
+			// variable indexed pointer: *a + *b (supports -ve offset)
 			jump_offs = OPA(uint) + OPB(int);
 			break;
 	}
