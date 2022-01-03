@@ -1,15 +1,21 @@
 libs_gamecode_tests = \
+	libs/gamecode/test/test-load \
 	libs/gamecode/test/test-store
 
 TESTS += $(libs_gamecode_tests)
 
 check_PROGRAMS += $(libs_gamecode_tests)
 
-EXTRA_DIST += main.c
+EXTRA_DIST += head.c main.c
 
 test_gamecode_libs= \
 	libs/gamecode/libQFgamecode.la \
 	libs/util/libQFutil.la
+
+libs_gamecode_test_test_load_SOURCES= \
+	libs/gamecode/test/test-load.c
+libs_gamecode_test_test_load_LDADD=			$(test_gamecode_libs)
+libs_gamecode_test_test_load_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_store_SOURCES= \
 	libs/gamecode/test/test-store.c

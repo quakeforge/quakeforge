@@ -68,6 +68,7 @@ setup_test (test_t *test)
 	test_pr.pr_trace = 1;
 	test_pr.pr_trace_depth = -1;
 	test_pr.function_table = test_functions;
+
 	test_pr.globals_size = test->num_globals;
 	pr_uint_t   num_globals = test->num_globals + test->extra_globals;
 	test_pr.pr_globals = malloc (num_globals * sizeof (pr_type_t));
@@ -75,6 +76,10 @@ setup_test (test_t *test)
 			test->num_globals * sizeof (pr_type_t));
 	memset (test_pr.pr_globals + test->num_globals, 0,
 			test->extra_globals * sizeof (pr_type_t));
+	if (test->edict_area) {
+		test_pr.pr_edict_area = test_pr.pr_globals + test->edict_area;
+	}
+
 	test_pr.pr_statements
 		= malloc ((test->num_statements + 1) * sizeof (dstatement_t));
 	memcpy (test_pr.pr_statements, test->statements,
@@ -101,7 +106,7 @@ run_test (test_t *test)
 			ret = 1;
 			printf ("test #%zd: %s: OK\n", test - tests, test->desc);
 		} else {
-			printf ("test #%zd: %s: bytes differ\n", test - tests, test->desc);
+			printf ("test #%zd: %s: words differ\n", test - tests, test->desc);
 		}
 	} else {
 		printf ("test #%zd: %s: critical failure\n", test - tests, test->desc);
