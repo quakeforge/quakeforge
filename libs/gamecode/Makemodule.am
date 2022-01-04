@@ -14,8 +14,8 @@ libs_gamecode_libQFgamecode_la_SOURCES= \
 	libs/gamecode/pr_exec.c \
 	libs/gamecode/pr_load.c \
 	libs/gamecode/pr_parse.c \
-	libs/gamecode/pr_opcode.c \
 	libs/gamecode/pr_resolve.c \
 	libs/gamecode/pr_resource.c \
 	libs/gamecode/pr_strings.c \
+	libs/gamecode/pr_v6p_opcode.c \
 	libs/gamecode/pr_zone.c
