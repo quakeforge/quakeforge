@@ -1819,6 +1819,9 @@ pr_jump_mode (progs_t *pr, const dstatement_t *st)
 			jump_offs = OPA(uint) + OPB(int);
 			break;
 	}
+	if (pr_boundscheck->int_val && jump_offs >= pr->progs->numstatements) {
+		PR_RunError (pr, "out of bounds: %x", jump_offs);
+	}
 	return jump_offs - 1;	// for st++
 }
 
