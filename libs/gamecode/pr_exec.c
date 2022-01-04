@@ -1804,7 +1804,7 @@ pr_jump_mode (progs_t *pr, const dstatement_t *st)
 	switch (jump_ind) {
 		case 0:
 			// instruction relative offset
-			jump_offs = jump_offs + st->a;
+			jump_offs = jump_offs + (short) st->a;
 			break;
 		case 1:
 			// simple pointer dereference: *a
