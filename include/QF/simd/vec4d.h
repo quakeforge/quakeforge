@@ -97,6 +97,7 @@ GNU89INLINE inline vec4d_t qconjd (vec4d_t q) __attribute__((const));
 GNU89INLINE inline vec4d_t loadvec3d (const double v3[]) __attribute__((pure));
 GNU89INLINE inline void storevec3d (double v3[3], vec4d_t v4);
 GNU89INLINE inline vec4l_t loadvec3l (const long *v3) __attribute__((pure));
+GNU89INLINE inline vec4l_t loadvec3l1 (const long *v3) __attribute__((pure));
 GNU89INLINE inline void storevec3l (long *v3, vec4l_t v4);
 
 #ifndef IMPLEMENT_VEC4D_Funcs
@@ -304,6 +305,18 @@ vec4l_t
 loadvec3l (const long *v3)
 {
 	vec4l_t v4 = { v3[0], v3[1], v3[2], 0 };
+	return v4;
+}
+
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+vec4l_t
+loadvec3l1 (const long *v3)
+{
+	vec4l_t v4 = { v3[0], v3[1], v3[2], 1 };
 	return v4;
 }
 

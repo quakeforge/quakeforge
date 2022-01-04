@@ -38,6 +38,7 @@ GNU89INLINE inline int any4i (vec4i_t v) __attribute__((const));
 GNU89INLINE inline int all4i (vec4i_t v) __attribute__((const));
 GNU89INLINE inline int none4i (vec4i_t v) __attribute__((const));
 GNU89INLINE inline vec4i_t loadvec3i (const int *v3) __attribute__((pure));
+GNU89INLINE inline vec4i_t loadvec3i1 (const int *v3) __attribute__((pure));
 GNU89INLINE inline void storevec3i (int *v3, vec4i_t v4);
 
 #ifndef IMPLEMENT_VEC4F_Funcs
@@ -104,6 +105,18 @@ vec4i_t
 loadvec3i (const int *v3)
 {
 	vec4i_t v4 = { v3[0], v3[1], v3[2], 0 };
+	return v4;
+}
+
+#ifndef IMPLEMENT_VEC4F_Funcs
+GNU89INLINE inline
+#else
+VISIBLE
+#endif
+vec4i_t
+loadvec3i1 (const int *v3)
+{
+	vec4i_t v4 = { v3[0], v3[1], v3[2], 1 };
 	return v4;
 }
 
