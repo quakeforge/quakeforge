@@ -1828,21 +1828,35 @@ pr_jump_mode (progs_t *pr, const dstatement_t *st)
 static pr_pointer_t __attribute__((pure))
 pr_with (progs_t *pr, const dstatement_t *st)
 {
-	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, A);
 	pointer_t   edict_area = pr->pr_edict_area - pr->pr_globals;
+	pr_type_t  *op_b = pr->pr_globals + PR_BASE (pr, st, B) + st->b;
+
 	switch (st->a) {
+		// fixed offset
 		case 0:
 			// hard-0 base
 			return st->b;
 		case 1:
 			// relative to current base
-			return op_b - pr->pr_globals;
+			return PR_BASE (pr, st, B) + st->b;
 		case 2:
 			// relative to stack (-ve offset)
 			return *pr->globals.stack + (pr_short_t) st->b;
 		case 3:
 			// relative to edict_area (+ve only)
 			return edict_area + st->b;
+
+		case 4:
+			// hard-0 base
+			return pr->pr_globals[st->b].pointer_var;
+		case 5:
+			return OPB(pointer);
+		case 6:
+			// relative to stack (-ve offset)
+			return *pr->globals.stack + OPB(int);
+		case 7:
+			// relative to edict_area (+ve only)
+			return edict_area + OPB(uint);
 	}
 	PR_RunError (pr, "Invalid with index: %u", st->a);
 }
@@ -2875,7 +2889,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				}
 				break;
 			case OP_WITH:
-				pr->pr_bases[st->c] = pr_with (pr, st);
+				pr->pr_bases[st->c & 3] = pr_with (pr, st);
 				break;
 			case OP_STATE_ft:
 				{
