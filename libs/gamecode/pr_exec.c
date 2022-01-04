@@ -3133,6 +3133,11 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			// 1 0001
 			OP_op(DIV, /);
 
+// implement remainder (c %) for integers:
+//  5 rem  3 =  2
+// -5 rem  3 = -2
+//  5 rem -3 =  2
+// -5 rem -3 = -2
 #define OP_store(d, s) *(d) = s
 #define OP_remmod_T(OP, T, n, t, l, f, s) \
 			case OP_##OP##_##T##_##n: \
@@ -3157,9 +3162,9 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_rem_T (D, 3, double, loadvec3d, vtrunc4d, storevec3d);
 			OP_rem_T (D, 4, dvec4, *, vtrunc4d, OP_store);
 
-// implement true modulo for integers:
-//  5 mod  3 = 2
-// -5 mod  3 = 1
+// implement true modulo (python %) for integers:
+//  5 mod  3 =  2
+// -5 mod  3 =  1
 //  5 mod -3 = -1
 // -5 mod -3 = -2
 #define OP_mod_Ti(T, n, t, l, m, s) \
@@ -3183,16 +3188,16 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			// 1 0011
 			OP_mod_Ti (I, 1, int, *, -, OP_store);
 			OP_mod_Ti (I, 2, ivec2, *, +, OP_store);
-			OP_mod_Ti (I, 3, int, loadvec3i, +, storevec3i);
+			OP_mod_Ti (I, 3, int, loadvec3i1, +, storevec3i);
 			OP_mod_Ti (I, 4, ivec4, *, +, OP_store);
 			OP_mod_Tf (F, 1, float, *, floorf, OP_store);
 			OP_mod_Tf (F, 2, vec2, *, vfloor2f, OP_store);
 			OP_mod_Tf (F, 3, float, loadvec3f, vfloor4f, storevec3f);
 			OP_mod_Tf (F, 4, vec4, *, vfloor4f, OP_store);
 			OP_mod_Ti (L, 1, long, *, -, OP_store);
-			OP_mod_Ti (L, 2, ivec2, *, +, OP_store);
-			OP_mod_Ti (L, 3, long, loadvec3l, +, storevec3l);
-			OP_mod_Ti (L, 4, ivec4, *, +, OP_store);
+			OP_mod_Ti (L, 2, lvec2, *, +, OP_store);
+			OP_mod_Ti (L, 3, long, loadvec3l1, +, storevec3l);
+			OP_mod_Ti (L, 4, lvec4, *, +, OP_store);
 			OP_mod_Tf (D, 1, double, *, floor, OP_store);
 			OP_mod_Tf (D, 2, dvec2, *, vfloor2d, OP_store);
 			OP_mod_Tf (D, 3, double, loadvec3d, vfloor4d, storevec3d);
