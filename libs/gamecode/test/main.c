@@ -84,7 +84,7 @@ setup_test (test_t *test)
 	num_globals += test->extra_globals + test->stack_size;
 
 	test_pr.globals_size = num_globals;
-	test_pr.pr_globals = malloc (num_globals * sizeof (pr_type_t));
+	test_pr.pr_globals = Sys_Alloc (num_globals * sizeof (pr_type_t));
 	memcpy (test_pr.pr_globals, test->init_globals,
 			test->num_globals * sizeof (pr_type_t));
 	memset (test_pr.pr_globals + test->num_globals, 0,
@@ -99,6 +99,7 @@ setup_test (test_t *test)
 		test_pr.pr_edict_area = test_pr.pr_globals + test->edict_area;
 	}
 
+	test_progs.numstatements = test->num_statements + 1;
 	test_pr.pr_statements
 		= malloc ((test->num_statements + 1) * sizeof (dstatement_t));
 	memcpy (test_pr.pr_statements, test->statements,
@@ -139,7 +140,11 @@ run_test (test_t *test)
 	} else {
 		printf ("test #%zd: %s: critical failure\n", test - tests, test->desc);
 	}
-	free (test_pr.pr_globals);
+
+	pr_uint_t   num_globals = test->num_globals;
+	num_globals += test->extra_globals + test->stack_size;
+	Sys_Free (test_pr.pr_globals, num_globals * sizeof (pr_type_t));
+
 	free (test_pr.pr_statements);
 	return ret;
 }
