@@ -1738,7 +1738,7 @@ static pr_type_t *
 pr_entity_mode (progs_t *pr, const dstatement_t *st, int shift)
 {
 	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, A);
-	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, A);
+	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, B);
 	int         mm_ind = (st->op >> shift) & 3;
 	pointer_t   edict_area = pr->pr_edict_area - pr->pr_globals;
 	pointer_t   mm_offs = 0;
@@ -1768,7 +1768,7 @@ static pr_type_t *
 pr_address_mode (progs_t *pr, const dstatement_t *st, int shift)
 {
 	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, A);
-	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, A);
+	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, B);
 	int         mm_ind = (st->op >> shift) & 3;
 	pointer_t   mm_offs = 0;
 
@@ -1793,11 +1793,11 @@ pr_address_mode (progs_t *pr, const dstatement_t *st, int shift)
 	return pr->pr_globals + mm_offs;
 }
 
-static pr_pointer_t
+static pr_pointer_t __attribute__((pure))
 pr_jump_mode (progs_t *pr, const dstatement_t *st)
 {
 	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, A);
-	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, A);
+	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, B);
 	int         jump_ind = st->op & 3;
 	pointer_t   jump_offs = pr->pr_xstatement;
 
@@ -2675,8 +2675,8 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 		}
 
 		pointer_t   st_a = st->a + PR_BASE (pr, st, A);
-		pointer_t   st_b = st->b + PR_BASE (pr, st, A);
-		pointer_t   st_c = st->c + PR_BASE (pr, st, A);
+		pointer_t   st_b = st->b + PR_BASE (pr, st, B);
+		pointer_t   st_c = st->c + PR_BASE (pr, st, C);
 
 
 		pr_type_t  *op_a = pr->pr_globals + st_a;
