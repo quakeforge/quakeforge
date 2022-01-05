@@ -2953,20 +2953,20 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				}
 				break;
 			// 0 0111
-			case OP_DOT_CC_F:
+			case OP_CDOT_F:
 				OPC(vec2) = dot2f (OPA(vec2), OPB(vec2));
 				break;
-			case OP_DOT_VV_F:
+			case OP_VDOT_F:
 				{
 					vec_t       d = DotProduct (&OPA(float),
 												&OPB(float));
 					VectorSet (d, d, d, &OPC(float));
 				}
 				break;
-			case OP_DOT_QQ_F:
+			case OP_QDOT_F:
 				OPC(vec4) = dotf (OPA(vec4), OPB(vec4));
 				break;
-			case OP_CROSS_VV_F:
+			case OP_CROSS_F:
 				{
 					pr_vec4_t   a = loadvec3f (&OPA(float));
 					pr_vec4_t   b = loadvec3f (&OPB(float));
@@ -2974,40 +2974,40 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 					storevec3f (&OPC(float), c);
 				}
 				break;
-			case OP_MUL_CC_F:
+			case OP_CMUL_F:
 				OPC(vec2) = cmulf (OPA(vec2), OPB(vec2));
 				break;
-			case OP_MUL_QV_F:
+			case OP_QVMUL_F:
 				{
 					pr_vec4_t   v = loadvec3f (&OPB(float));
 					v = qvmulf (OPA(vec4), v);
 					storevec3f (&OPC(float), v);
 				}
 				break;
-			case OP_MUL_VQ_F:
+			case OP_VQMUL_F:
 				{
 					pr_vec4_t   v = loadvec3f (&OPA(float));
 					v = vqmulf (v, OPB(vec4));
 					storevec3f (&OPC(float), v);
 				}
 				break;
-			case OP_MUL_QQ_F:
+			case OP_QMUL_F:
 				OPC(vec4) = qmulf (OPA(vec4), OPB(vec4));
 				break;
-			case OP_DOT_CC_D:
+			case OP_CDOT_D:
 				OPC(dvec2) = dot2d (OPA(dvec2), OPB(dvec2));
 				break;
-			case OP_DOT_VV_D:
+			case OP_VDOT_D:
 				{
 					double      d = DotProduct (&OPA(double),
 												&OPB(double));
 					VectorSet (d, d, d, &OPC(double));
 				}
 				break;
-			case OP_DOT_QQ_D:
+			case OP_QDOT_D:
 				OPC(dvec4) = dotd (OPA(dvec4), OPB(dvec4));
 				break;
-			case OP_CROSS_VV_D:
+			case OP_CROSS_D:
 				{
 					pr_dvec4_t  a = loadvec3d (&OPA(double));
 					pr_dvec4_t  b = loadvec3d (&OPB(double));
@@ -3015,24 +3015,24 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 					storevec3d (&OPC(double), c);
 				}
 				break;
-			case OP_MUL_CC_D:
+			case OP_CMUL_D:
 				OPC(dvec2) = cmuld (OPA(dvec2), OPB(dvec2));
 				break;
-			case OP_MUL_QV_D:
+			case OP_QVMUL_D:
 				{
 					pr_dvec4_t   v = loadvec3d (&OPB(double));
 					v = qvmuld (OPA(dvec4), v);
 					storevec3d (&OPC(double), v);
 				}
 				break;
-			case OP_MUL_VQ_D:
+			case OP_VQMUL_D:
 				{
 					pr_dvec4_t  v = loadvec3d (&OPA(double));
 					v = vqmuld (v, OPB(dvec4));
 					storevec3d (&OPC(double), v);
 				}
 				break;
-			case OP_MUL_QQ_D:
+			case OP_QMUL_D:
 				OPC(dvec4) = qmuld (OPA(dvec4), OPB(dvec4));
 				break;
 
@@ -3239,9 +3239,9 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				OPC(int) = !OPA(string) || !*PR_GetString (pr, OPA(string));
 				break;
 			// 1 0111
-			OP_op_T (SHR, I, int, ivec2, ivec4, >>);
+			OP_op_T (ASR, I, int, ivec2, ivec4, >>);
 			OP_op_T (SHR, u, uint, uivec2, uivec4, >>);
-			OP_op_T (SHR, L, long, lvec2, lvec4, >>);
+			OP_op_T (ASR, L, long, lvec2, lvec4, >>);
 			OP_op_T (SHR, U, ulong, ulvec2, ulvec4, >>);
 			// 1 1000
 			OP_op_T (BITAND, I, int, ivec2, ivec4, &);
@@ -3293,7 +3293,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_ANY_4:
 				OPC(int) = any4i (OPA(ivec4));
 				break;
-			case OP_PUSHREG:
+			case OP_PUSHREGS:
 				stk = pr_stack_push (pr);
 				STK(uivec4) = pr->pr_bases;
 				break;
@@ -3310,7 +3310,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_ALL_4:
 				OPC(int) = all4i (OPA(ivec4));
 				break;
-			case OP_POPREG:
+			case OP_POPREGS:
 				stk = pr_stack_pop (pr);
 				pr->pr_bases = STK(uivec4);
 				break;
@@ -3365,7 +3365,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_not_n (NOT, ivec4, 4, +);
 			// 1 1101
 			OP_op_T (GE, u, uint, uivec2, uivec4, >=);
-			case OP_MUL_QV4_F:
+			case OP_QV4MUL_F:
 				OPC(vec4) = qvmulf (OPA(vec4), OPB(vec4));
 				break;
 			case OP_MOVE_I:
@@ -3380,7 +3380,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 						 st->b * sizeof (pr_type_t));
 				break;
 			OP_op_T (GE, U, ulong, ulvec2, ulvec4, >=);
-			case OP_MUL_QV4_D:
+			case OP_QV4MUL_D:
 				OPC(dvec4) = qvmuld (OPA(dvec4), OPB(dvec4));
 				break;
 			case OP_MEMSET_I:
@@ -3394,12 +3394,12 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				break;
 			// 1 1110
 			OP_op_T (LE, u, uint, uivec2, uivec4, <=);
-			case OP_MUL_V4Q_F:
+			case OP_V4QMUL_F:
 				OPC(vec4) = vqmulf (OPA(vec4), OPB(vec4));
 				break;
 
 			OP_op_T (LE, U, ulong, ulvec2, ulvec4, <=);
-			case OP_MUL_V4Q_D:
+			case OP_V4QMUL_D:
 				OPC(dvec4) = vqmuld (OPA(dvec4), OPB(dvec4));
 				break;
 

@@ -464,10 +464,10 @@ typedef enum {
 	// C complex
 	// V vector (3d)
 	// Q quaternion
-	OP_DOT_CC_F, OP_DOT_VV_F, OP_DOT_QQ_F, OP_CROSS_VV_F,
-	OP_MUL_CC_F, OP_MUL_QV_F, OP_MUL_VQ_F, OP_MUL_QQ_F,
-	OP_DOT_CC_D, OP_DOT_VV_D, OP_DOT_QQ_D, OP_CROSS_VV_D,
-	OP_MUL_CC_D, OP_MUL_QV_D, OP_MUL_VQ_D, OP_MUL_QQ_D,
+	OP_CDOT_F, OP_VDOT_F,  OP_QDOT_F,  OP_CROSS_F,
+	OP_CMUL_F, OP_QVMUL_F, OP_VQMUL_F, OP_QMUL_F,
+	OP_CDOT_D, OP_VDOT_D,  OP_QDOT_D,  OP_CROSS_D,
+	OP_CMUL_D, OP_QVMUL_D, OP_VQMUL_D, OP_QMUL_D,
 	// comparison
 	// 0 1000 ==
 	OP_EQ_I_1, OP_EQ_I_2, OP_EQ_I_3, OP_EQ_I_4,
@@ -547,9 +547,9 @@ typedef enum {
 	OP_SHL_L_1, OP_SHL_L_2, OP_SHL_L_3, OP_SHL_L_4,
 	OP_CMP_S,   OP_GE_S,    OP_LE_S,    OP_NOT_S,  //OP_CMP_S doubles as NE
 	// 1 0111 c = a >> b
-	OP_SHR_I_1, OP_SHR_I_2, OP_SHR_I_3, OP_SHR_I_4,
+	OP_ASR_I_1, OP_ASR_I_2, OP_ASR_I_3, OP_ASR_I_4,
 	OP_SHR_u_1, OP_SHR_u_2, OP_SHR_u_3, OP_SHR_u_4,
-	OP_SHR_L_1, OP_SHR_L_2, OP_SHR_L_3, OP_SHR_L_4,
+	OP_ASR_L_1, OP_ASR_L_2, OP_ASR_L_3, OP_ASR_L_4,
 	OP_SHR_U_1, OP_SHR_U_2, OP_SHR_U_3, OP_SHR_U_4,
 	// 1 1000 c = a (& | ^) b or ~a (bitwise ops)
 	OP_BITAND_I_1, OP_BITAND_I_2, OP_BITAND_I_3, OP_BITAND_I_4,
@@ -563,29 +563,29 @@ typedef enum {
 	OP_SWIZZLE_D, OP_SCALE_D_2, OP_SCALE_D_3, OP_SCALE_D_4,
 	// 1 1010 > unsigned and conversions
 	OP_GT_u_1, OP_GT_u_2, OP_GT_u_3, OP_GT_u_4,
-	OP_CONV_IF_1, OP_CONV_LD_1, OP_CONV_uF_1, OP_CONV_UD_1,
+	OP_CONV_IF, OP_CONV_LD, OP_CONV_uF, OP_CONV_UD,
 	OP_GT_U_1, OP_GT_U_2, OP_GT_U_3, OP_GT_U_4,
-	OP_CONV_FI_1, OP_CONV_DL_1, OP_CONV_Fu_1, OP_CONV_DU_1,
+	OP_CONV_FI, OP_CONV_DL, OP_CONV_Fu, OP_CONV_DU,
 	// 1 1011 lea, with, etc
-	OP_LEA_A,   OP_LEA_B,  OP_LEA_C,  OP_LEA_D,
-	OP_LEA_E,   OP_ANY_2,  OP_ANY_3,  OP_ANY_4,
-	OP_PUSHREG, OP_ALL_2,  OP_ALL_3,  OP_ALL_4,
-	OP_POPREG,  OP_NONE_2, OP_NONE_3, OP_NONE_4,
+	OP_LEA_A,    OP_LEA_B,  OP_LEA_C,  OP_LEA_D,
+	OP_LEA_E,    OP_ANY_2,  OP_ANY_3,  OP_ANY_4,
+	OP_PUSHREGS, OP_ALL_2,  OP_ALL_3,  OP_ALL_4,
+	OP_POPREGS,  OP_NONE_2, OP_NONE_3, OP_NONE_4,
 	// 1 1100 c = a (&& || ^^) b or !a (logical ops (no short circuit))
 	OP_AND_I_1, OP_AND_I_2, OP_AND_I_3, OP_AND_I_4,
 	OP_OR_I_1,  OP_OR_I_2,  OP_OR_I_3,  OP_OR_I_4,
 	OP_XOR_I_1, OP_XOR_I_2, OP_XOR_I_3, OP_XOR_I_4,
 	OP_NOT_I_1, OP_NOT_I_2, OP_NOT_I_3, OP_NOT_I_4,
 	// 1 1101 >= unsigned with q v4 mul and moves mixed in
-	OP_GE_u_1,    OP_GE_u_2,   OP_GE_u_3,   OP_GE_u_4,
-	OP_MUL_QV4_F, OP_MOVE_I,   OP_MOVE_P,   OP_MOVE_PI,
-	OP_GE_U_1,    OP_GE_U_2,   OP_GE_U_3,   OP_GE_U_4,
-	OP_MUL_QV4_D, OP_MEMSET_I, OP_MEMSET_P, OP_MEMSET_PI,
+	OP_GE_u_1,   OP_GE_u_2,   OP_GE_u_3,   OP_GE_u_4,
+	OP_QV4MUL_F, OP_MOVE_I,   OP_MOVE_P,   OP_MOVE_PI,
+	OP_GE_U_1,   OP_GE_U_2,   OP_GE_U_3,   OP_GE_U_4,
+	OP_QV4MUL_D, OP_MEMSET_I, OP_MEMSET_P, OP_MEMSET_PI,
 	// 1 1110 <= unsigned with v4 q mul and conversion mixed in
 	OP_LE_u_1,    OP_LE_u_2,    OP_LE_u_3,    OP_LE_u_4,
-	OP_MUL_V4Q_F, OP_CONV_IL_1, OP_CONV_uU_1, OP_CONV_FD_1,
+	OP_V4QMUL_F, OP_CONV_IL_1, OP_CONV_uU_1, OP_CONV_FD_1,
 	OP_LE_U_1,    OP_LE_U_2,    OP_LE_U_3,    OP_LE_U_4,
-	OP_MUL_V4Q_D, OP_CONV_LI_1, OP_CONV_Uu_1, OP_CONV_DF_1,
+	OP_V4QMUL_D, OP_CONV_LI_1, OP_CONV_Uu_1, OP_CONV_DF_1,
 	// 1 1111
 	OP_spare_33, OP_spare_34, OP_spare_35, OP_spare_36,
 	OP_spare_37, OP_spare_38, OP_spare_39, OP_spare_40,
