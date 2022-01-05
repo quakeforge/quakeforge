@@ -1,0 +1,503 @@
+bitmap_txt = """
+0 0000 mmss load
+0 0001 mmss store
+0 0010 mmss push
+0 0011 mmss pop
+0 0100 ccmm branch
+0 0101 0nnn rcall 1-8 (0 0100 11mm with 0 params for [r]call0)
+0 0101 10ss return
+0 0101 1100 returnv
+0 0101 1101 with (reg encoded in st->c)
+0 0101 111t state
+0 0110 ccmm branch2
+0 0111 tooo vecops
+0 1ccc ttss compare
+1 0ooo ttss mathops
+1 011r tuss shiftops
+1 0110 o1oo string
+1 1ccc t0ss compare2
+1 1000 ooss bitops
+1 1001 t1ss scale
+1 1001 t100 swizzle
+1 1010 d1xx convert
+1 1011 00mm lea
+1 1011 01ss any
+1 1011 0100 lea_e
+1 1011 10ss all
+1 1011 1000 pushregs
+1 1011 11ss none
+1 1011 1100 popregs
+1 1101 01oo move
+1 1101 11oo memset
+1 1110 d1xx convert2
+1 11dd t100 vecops2
+1 1100 ooss boolops
+n 1111 nnnn
+0 1011 nnnn
+"""
+
+branch_fmt=[
+    "branch %sa (%Ob)",
+    "*%Ga",
+    "%Ga[%sb]",
+    "%Ga[%Gb]",
+]
+compare_ccc=[ "eq", "lt", "gt", None, "ne", "ge", "le", None]
+type_tt=['I', 'F', 'L', 'D']
+all_formats = {
+    "opcode": "OP_ALL_{ss+1}",
+    "mnemonic": "all",
+    "opname": "all",
+    "format": "%Ga, %gc",
+}
+any_formats = {
+    "opcode": "OP_ANY_{ss+1}",
+    "mnemonic": "any",
+    "opname": "any",
+    "format": "%Ga, %gc",
+}
+bitops_formats = {
+    "opcode": "OP_{op_bit[oo].upper()}_I_{ss+1}",
+    "mnemonic": "{op_bit[oo]}",
+    "opname": "{op_bit[oo]}",
+    "format": "{bit_fmt[oo]}",
+    "args": {
+        "op_bit":["bitand", "bitor", "bitxor", "bitnot"],
+        "bit_fmt": [
+            "%Ga, %Gb, %gc",
+            "%Ga, %Gb, %gc",
+            "%Ga, %Gb, %gc",
+            "%Ga, %gc",
+        ],
+    },
+}
+boolops_formats = {
+    "opcode": "OP_{op_bool[oo].upper()}_I_{ss+1}",
+    "mnemonic": "{op_bool[oo]}",
+    "opname": "{op_bool[oo]}",
+    "format": "{bool_fmt[oo]}",
+    "args": {
+        "op_bool":["and", "or", "xor", "not"],
+        "bool_fmt": [
+            "%Ga, %Gb, %gc",
+            "%Ga, %Gb, %gc",
+            "%Ga, %Gb, %gc",
+            "%Ga, %gc",
+        ],
+    },
+}
+branch_formats = {
+    "opcode": "OP_{op_cond[cc].upper()}_{op_mode[mm]}",
+    "mnemonic": "{op_cond[cc]}",
+    "opname": "{op_cond[cc]}",
+    "format": "{cond_fmt[cc]}{branch_fmt[mm]}",
+    "args": {
+        "op_mode": "ABCD",
+        "op_cond": ["ifnot", "if", "jump", "call"],
+        "branch_fmt": branch_fmt,
+        "cond_fmt": ["%Gc ", "%Gc ", "", ""],
+    },
+}
+branch2_formats = {
+    "opcode": "OP_{op_cond[cc].upper()}_{op_mode[mm]}",
+    "mnemonic": "{op_cond[cc]}",
+    "opname": "{op_cond[cc]}",
+    "format": "%Gc {branch_fmt[mm]}",
+    "args": {
+        "op_mode": "ABCD",
+        "op_cond": ["ifa", "ifbe", "ifb", "ifae"],
+        "branch_fmt": branch_fmt,
+    },
+}
+compare_formats = {
+    "opcode": "OP_{op_cmp[ccc].upper()}_{cmp_type[tt]}_{ss+1}",
+    "mnemonic": "{op_cmp[ccc]}.{cmp_type[tt]}",
+    "opname": "{op_cmp[ccc]}",
+    "args": {
+        "op_cmp": compare_ccc,
+        "cmp_type":type_tt,
+    },
+}
+compare2_formats = {
+    "opcode": "OP_{op_cmp[ccc].upper()}_{cmp_type[t]}_{ss+1}",
+    "mnemonic": "{op_cmp[ccc]}.{cmp_type[t]}",
+    "opname": "{op_cmp[ccc]}",
+    "args": {
+        "op_cmp": compare_ccc,
+        "cmp_type":['u', 'U'],
+    },
+}
+convert_formats = {
+    "opcode": "OP_CONV_{op_conv[d*4+xx]}",
+    "mnemonic": "conv.{op_conv[d*4+xx]}",
+    "opname": "conv",
+    "format": "%Ga %gc",
+    "args": {
+        "op_conv": ["IF", "LD", "uF", "UD", "FI", "DL", "Fu", "DU"],
+    },
+}
+lea_formats = {
+    "opcode": "OP_LEA_{op_mode[mm]}",
+    "mnemonic": "lea",
+    "opname": "lea",
+    "format": "{lea_fmt[mm]}",
+    "args": {
+        "op_mode": "ABCD",
+        "lea_fmt": [
+            "%ga, %gc",
+            "*%Ga, %gc",
+            "*(%Ga + %sb), %gc",
+            "*(%Ga + %Gb), %gc",
+        ],
+    },
+}
+lea_e_formats = {
+    "opcode": "OP_LEA_E",
+    "mnemonic": "lea",
+    "opname": "lea",
+    "format": "%Ga.%Gb(%Ec), %gc",
+}
+load_formats = {
+    "opcode": "OP_LOAD_{op_mode[mm]}_{ss+1}",
+    "mnemonic": "load",
+    "opname": "load",
+    "format": "{load_fmt[mm]}",
+    "args": {
+        "op_mode": "EBCD",
+        "load_fmt": [
+            "%Ga.%Gb(%Ex), %gc",
+            "*%Ga, %gc",
+            "*(%Ga + %sb), %gc",
+            "*(%Ga + %Gb), %gc",
+        ],
+    },
+}
+mathops_formats = {
+    "opcode": "OP_{op_math[ooo].upper()}_{math_type[tt]}_{ss+1}",
+    "mnemonic": "{op_math[ooo]}.{math_type[tt]}",
+    "opname": "{op_math[ooo]}",
+    "args": {
+        "op_math": ["mul", "div", "rem", "mod", "add", "sub", None, None],
+        "math_type":type_tt,
+    },
+}
+memset_formats = {
+    "opcode": "OP_MEMSET_{op_memset[oo].upper()}",
+    "mnemonic": "memset.{op_memset[oo]}",
+    "opname": "memset",
+    "format": "{memset_fmt[oo]}",
+    "args": {
+        "op_memset": [None, "i", "p", "pi"],
+        "memset_fmt": [None, "%Ga, %sb, %gc", "%Ga, %Gb, %Gc", "%Ga, %sb, %Gc"],
+    },
+}
+move_formats = {
+    "opcode": "OP_MOVE_{op_move[oo].upper()}",
+    "mnemonic": "memset.{op_move[oo]}",
+    "opname": "memset",
+    "format": "{move_fmt[oo]}",
+    "args": {
+        "op_move": [None, "i", "p", "pi"],
+        "move_fmt": [None, "%Ga, %sb, %gc", "%Ga, %Gb, %Gc", "%Ga, %sb, %Gc"],
+    },
+}
+none_formats = {
+    "opcode": "OP_NONE_{ss+1}",
+    "mnemonic": "none",
+    "opname": "none",
+    "format": "%Ga, %gc",
+}
+push_formats = {
+    "opcode": "OP_PUSH_{op_mode[mm]}_{ss+1}",
+    "mnemonic": "push",
+    "opname": "push",
+    "format": "{push_fmt[mm]}",
+    "args": {
+        "op_mode": "ABCD",
+        "push_fmt": [
+            "%Ga",
+            "*%Ga",
+            "*(%Ga + %sb)",
+            "*(%Ga + %Gb)",
+        ],
+    },
+}
+pushregs_formats = {
+    "opcode": "OP_PUSHREGS",
+    "mnemonic": "pushregs",
+    "opname": "pushregs",
+    "format": None,
+}
+pop_formats = {
+    "opcode": "OP_POP_{op_mode[mm]}_{ss+1}",
+    "mnemonic": "pop",
+    "opname": "pop",
+    "format": "{pop_fmt[mm]}",
+    "args": {
+        "op_mode": "ABCD",
+        "pop_fmt": [
+            "%ga",
+            "*%Ga",
+            "*(%Ga + %sb)",
+            "*(%Ga + %Gb)",
+        ],
+    },
+}
+popregs_formats = {
+    "opcode": "OP_POPREGS",
+    "mnemonic": "popregs",
+    "opname": "popregs",
+    "format": None,
+}
+scale_formats = {
+    "opcode": "OP_SCALE_{scale_type[t]}_{ss+1}",
+    "mnemonic": "scale.{scale_type[t]}",
+    "opname": "scale",
+    "args": {
+        "scale_type":['F', 'D'],
+    },
+}
+shiftops_formats = {
+    "opcode": "OP_{op_shift[u*2+r].upper()}_{shift_type[u*2+t]}_{ss+1}",
+    "mnemonic": "{op_shift[u*2+r]}.{shift_type[u*2+t]}",
+    "opname": "{op_shift[u*2+r]}",
+    "args": {
+        "op_shift": ["shl", "asr", "shl", "shr"],
+        "shift_type":['I', 'L', 'u', 'U'],
+    },
+}
+state_formats = {
+    "opcode": "OP_STATE_{state[t]}",
+    "mnemonic": "state.{state[t]}",
+    "opname": "state",
+    "format": "{state_fmt[t]}",
+    "args": {
+        "state": ["ft", "ftt"],
+        "state_fmt": ["%Ga, %Gb", "%Ga, %Gb, %Gc"],
+    },
+}
+store_formats = {
+    "opcode": "OP_STORE_{op_mode[mm]}_{ss+1}",
+    "mnemonic": "store",
+    "opname": "store",
+    "format": "{store_fmt[mm]}",
+    "args": {
+        "op_mode": "ABCD",
+        "store_fmt": [
+            "%Gc, %ga",
+            "%Gc, *%Ga",
+            "%Gc, *(%Ga + %sb)",
+            "%Gc, *(%Ga + %Gb)",
+        ],
+    },
+}
+string_formats = {
+    "opcode": "OP_{op_str[o*4+oo].upper()}_S",
+    "mnemonic": "{op_str[o*4+oo]}.s",
+    "opname": "{op_str[o*4+oo]}",
+    "format": "{str_fmt[o*4+oo]}",
+    "args": {
+        "op_str": ["eq", "lt", "gt", "add", "cmp", "ge", "le", "not"],
+        "str_fmt": [
+            "%Ga, %Gb, %gc",
+            "%Ga, %Gb, %gc",
+            "%Ga, %Gb, %gc",
+            "%Ga, %Gb, %gc",
+            "%Ga, %Gb, %gc",
+            "%Ga, %Gb, %gc",
+            "%Ga, %Gb, %gc",
+            "%Ga, %gc",
+        ],
+    },
+}
+swizzle_formats = {
+    "opcode": "OP_SWIZZLE_{swiz_type[t]}",
+    "mnemonic": "swizzle.{swiz_type[t]}",
+    "opname": "swizzle",
+    "format": "%Ga %sb %gc",
+    "args": {
+        "swiz_type":['F', 'D'],
+    },
+}
+rcall_formats = {
+    "opcode": "OP_CALL_{nnn+1}",
+    "mnemonic": "rcall{nnn+1}",
+    "opname": "rcall{nnn+1}",
+    "format": "{rcall_fmt[nnn]}",
+    "args": {
+        "rcall_fmt": [
+            "%Fa (%P0b)",
+            "%Fa (%P0b, %P1c)",
+            "%Fa (%P0b, %P1c, %P2x)",
+            "%Fa (%P0b, %P1c, %P2x, %P3x)",
+            "%Fa (%P0b, %P1c, %P2x, %P3x, %P4x)",
+            "%Fa (%P0b, %P1c, %P2x, %P3x, %P4x, %P5x)",
+            "%Fa (%P0b, %P1c, %P2x, %P3x, %P4x, %P5x, %P6x)",
+            "%Fa (%P0b, %P1c, %P2x, %P3x, %P4x, %P5x, %P6x, %P7x)",
+        ],
+    },
+}
+return_formats = {
+    "opcode": "OP_RETURN_{ss+1}",
+    "mnemonic": "return{ss+1}",
+    "opname": "return{ss+1}",
+    "format": "%Ra",
+}
+returnv_formats = {
+    "opcode": "OP_RETURN_0",
+    "mnemonic": "return",
+    "opname": "return",
+    "format": None,
+}
+vecops_formats = {
+    "opcode": "OP_{op_vop[ooo].upper()}_{vop_type[t]}",
+    "mnemonic": "{op_vop[ooo]}.{vop_type[t]}",
+    "opname": "{op_vop[ooo]}",
+    "args": {
+        "op_vop": ["cdot", "vdot", "qdot", "cross",
+                   "cmul", "qvmul", "vqmul", "qmul"],
+        "vop_type": ['F', 'D'],
+    },
+}
+vecops2_formats = {
+    "opcode": "OP_{op_vop[dd].upper()}_{vop_type[t]}",
+    "mnemonic": "{op_vop[dd]}.{vop_type[t]}",
+    "opname": "{op_vop[dd]}",
+    "args": {
+        "op_vop": [None, "qv4mul", "v4qmul", None],
+        "vop_type": ['F', 'D'],
+    },
+}
+with_formats = {
+    "opcode": "OP_WITH",
+    "mnemonic": "with",
+    "opname": "with",
+    "format": "%sa, %sb, $sc",
+}
+
+group_map = {
+    "all":      all_formats,
+    "any":      any_formats,
+    "bitops":   bitops_formats,
+    "boolops":  boolops_formats,
+    "branch":   branch_formats,
+    "branch2":  branch2_formats,
+    "compare":  compare_formats,
+    "compare2": compare2_formats,
+    "convert":  convert_formats,
+    "convert2": convert_formats,
+    "lea":      lea_formats,
+    "lea_e":    lea_e_formats,
+    "load":     load_formats,
+    "mathops":  mathops_formats,
+    "memset":   memset_formats,
+    "move":     move_formats,
+    "none":     none_formats,
+    "push":     push_formats,
+    "pushregs": pushregs_formats,
+    "pop":      pop_formats,
+    "popregs":  popregs_formats,
+    "scale":    scale_formats,
+    "shiftops": shiftops_formats,
+    "state":    state_formats,
+    "store":    store_formats,
+    "string":   string_formats,
+    "swizzle":  swizzle_formats,
+    "rcall":    rcall_formats,
+    "return":   return_formats,
+    "returnv":  returnv_formats,
+    "vecops":   vecops_formats,
+    "vecops2":  vecops2_formats,
+    "with":     with_formats,
+}
+
+def parse_bits(bit_string):
+    bits = [""]
+    isbit = bit_string[0] in ['0', '1']
+    lastbit = bit_string[0]
+    while bit_string:
+        bit = bit_string[0]
+        bit_string = bit_string[1:]
+        if isbit and bit in ['0', '1']:
+            bits[-1] = bits[-1] + bit
+        elif lastbit == bit:
+            bits[-1] = bits[-1] + bit
+        else:
+            bits.append(bit)
+        lastbit = bit
+        isbit = bit in ['0', '1']
+    return bits
+
+opcodes = [None] * 512
+
+def expand_opcodes(bits, group, num=0):
+    if not bits:
+        opcodes[num] = group
+        return
+    block = bits[0]
+    bits = bits[1:]
+    num <<= len(block)
+    if block[0] in ['0', '1']:
+        num |= int(block, 2)
+        expand_opcodes(bits, group, num)
+    else:
+        for n in range(1<<len(block)):
+            if group is not None:
+                expand_opcodes(bits, group + f",{block}={n}", num | n)
+            else:
+                expand_opcodes(bits, group, num | n)
+
+
+def process_opcode(opcode, group):
+    data = group.split(',')
+    params = {}
+    for d in data[1:]:
+        p = d.split('=')
+        params[p[0]] = int(p[1])
+    gm = group_map[data[0]]
+    if "args" in gm:
+        params.update(gm["args"])
+    inst = {}
+    opcodes[opcode] = inst
+    inst["op"] = eval(f'''f"{gm['opcode']}"''', params)
+    mn = eval(f'''f"{gm['mnemonic']}"''', params)
+    inst["mn"] = f'"{mn}"'
+    on = eval(f'''f"{gm['opname']}"''', params)
+    inst["on"] = f'"{on}"'
+    fmt = "%Ga, %Gb, %gc"
+    if "format" in gm:
+        if gm["format"] is not None:
+            fmt = eval(f'''f"{gm['format']}"''', params)
+        else:
+            fmt = None
+    if fmt is None:
+        fmt = "0"
+    else:
+        fmt = f'"{fmt}"'
+    inst["fmt"] = fmt
+
+lines = bitmap_txt.split('\n')
+for l in lines:
+    if not l:
+        continue
+    c = l.split(' ')
+    bits = "".join(c[0:3])
+    group = c[3:] and c[3] or None
+    descr = ' '.join(c[4:])
+    #print(bits, group, descr)
+    #print(parse_bits(bits))
+    expand_opcodes(parse_bits(bits), group)
+for i, group in enumerate(opcodes):
+    if group is not None:
+        process_opcode (i, group)
+N = 8
+W = 9
+#for i in range(len(opcodes)//N):
+#    print("%03x" % (i << 3), " ".join(map(lambda op: "%-*.*s" % (W, W, op and op["op"] or None), opcodes[i*N:i*N+N])))
+for i, group in enumerate(opcodes):
+    if group is not None:
+        print(eval('f"[{op}] = {{\\n'
+                   '\\t.opname = {on},\\n'
+                   '\\t.mnemonic = {mn},\\n'
+                   '\\t.fmt = {fmt},\\n'
+                   '}},"', group))

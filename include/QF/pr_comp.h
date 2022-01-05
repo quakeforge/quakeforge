@@ -619,6 +619,17 @@ typedef struct v6p_opcode_s {
 
 extern const v6p_opcode_t pr_v6p_opcodes[];
 const v6p_opcode_t *PR_v6p_Opcode (pr_ushort_t opcode) __attribute__((const));
+
+typedef struct opcode_s {
+	const char *opname;
+	const char *mnemonic;
+	int         width;		///< number of components (1-4)
+	int         size;		///< component size in words (1-2)
+	const char *fmt;
+} opcode_t;
+extern const opcode_t pr_opcodes[512];
+const opcode_t *PR_Opcode (pr_ushort_t opcode) __attribute__((const));
+
 void PR_Opcode_Init (void);	// idempotent
 
 typedef struct dstatement_s {

@@ -13,9 +13,22 @@ libs_gamecode_libQFgamecode_la_SOURCES= \
 	libs/gamecode/pr_debug.c \
 	libs/gamecode/pr_exec.c \
 	libs/gamecode/pr_load.c \
+	libs/gamecode/pr_opcode.c \
 	libs/gamecode/pr_parse.c \
 	libs/gamecode/pr_resolve.c \
 	libs/gamecode/pr_resource.c \
 	libs/gamecode/pr_strings.c \
 	libs/gamecode/pr_v6p_opcode.c \
 	libs/gamecode/pr_zone.c
+
+noinst_PYTHON += $(opcodes_py)
+
+opcodes_py = $(srcdir)/libs/gamecode/opcodes.py
+pr_opcode_cinc = $(top_builddir)/libs/gamecode/pr_opcode.cinc
+pr_opcode_src = \
+	${pr_opcode_cinc}
+libs/gamecode/pr_opcode.lo: libs/gamecode/pr_opcode.c ${pr_opcode_src}
+
+$(pr_opcode_cinc): $(opcodes_py)
+	$(V_PY)$(PYTHON) $(opcodes_py) > $(pr_opcode_cinc).t && \
+	$(am__mv) $(pr_opcode_cinc).t $(pr_opcode_cinc)
