@@ -625,8 +625,8 @@ const v6p_opcode_t *PR_v6p_Opcode (pr_ushort_t opcode) __attribute__((const));
 typedef struct opcode_s {
 	const char *opname;
 	const char *mnemonic;
-	int         width;		///< number of components (1-4)
-	int         size;		///< component size in words (1-2)
+	int         widths[3];		///< component count for each argument (1-4)
+	etype_t     types[3];		///< component type for each argument
 	const char *fmt;
 } opcode_t;
 extern const opcode_t pr_opcodes[512];

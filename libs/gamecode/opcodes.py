@@ -42,25 +42,34 @@ branch_fmt=[
     "%Ga[%sb]",
     "%Ga[%Gb]",
 ]
-compare_ccc=[ "eq", "lt", "gt", None, "ne", "ge", "le", None]
-type_tt=['I', 'F', 'L', 'D']
+compare_ccc = [ "eq", "lt", "gt", None, "ne", "ge", "le", None]
+type_tt = ['I', 'F', 'L', 'D']
+etype_tt = ["ev_integer", "ev_float", "ev_long", "ev_double"]
+unsigned_t = ["ev_uinteger", "ev_ulong"]
+float_t = ["ev_float", "ev_double"]
 all_formats = {
     "opcode": "OP_ALL_{ss+1}",
     "mnemonic": "all",
     "opname": "all",
     "format": "%Ga, %gc",
+    "widths": "{ss+1}, 0, 1",
+    "types": "ev_integer, ev_integer, ev_integer",
 }
 any_formats = {
     "opcode": "OP_ANY_{ss+1}",
     "mnemonic": "any",
     "opname": "any",
     "format": "%Ga, %gc",
+    "widths": "{ss+1}, 0, 1",
+    "types": "ev_integer, ev_integer, ev_integer",
 }
 bitops_formats = {
     "opcode": "OP_{op_bit[oo].upper()}_I_{ss+1}",
     "mnemonic": "{op_bit[oo]}",
     "opname": "{op_bit[oo]}",
     "format": "{bit_fmt[oo]}",
+    "widths": "{ss+1}, {ss+1}, {ss+1}",
+    "types": "ev_integer, ev_integer, ev_integer",
     "args": {
         "op_bit":["bitand", "bitor", "bitxor", "bitnot"],
         "bit_fmt": [
@@ -76,6 +85,8 @@ boolops_formats = {
     "mnemonic": "{op_bool[oo]}",
     "opname": "{op_bool[oo]}",
     "format": "{bool_fmt[oo]}",
+    "widths": "{ss+1}, {ss+1}, {ss+1}",
+    "types": "ev_integer, ev_integer, ev_integer",
     "args": {
         "op_bool":["and", "or", "xor", "not"],
         "bool_fmt": [
@@ -91,11 +102,19 @@ branch_formats = {
     "mnemonic": "{op_cond[cc]}",
     "opname": "{op_cond[cc]}",
     "format": "{cond_fmt[cc]}{branch_fmt[mm]}",
+    "widths": "{cond_widths[cc]}",
+    "types": "ev_void, ev_void, ev_integer",
     "args": {
         "op_mode": "ABCD",
         "op_cond": ["ifnot", "if", "jump", "call"],
         "branch_fmt": branch_fmt,
         "cond_fmt": ["%Gc ", "%Gc ", "", ""],
+        "cond_widths": [
+            "0, 0, 1",
+            "0, 0, 1",
+            "0, 0, 0",
+            "0, 0, 0",
+        ],
     },
 }
 branch2_formats = {
@@ -103,28 +122,42 @@ branch2_formats = {
     "mnemonic": "{op_cond[cc]}",
     "opname": "{op_cond[cc]}",
     "format": "%Gc {branch_fmt[mm]}",
+    "widths": "{cond_widths[cc]}",
+    "types": "ev_void, ev_void, ev_integer",
     "args": {
         "op_mode": "ABCD",
         "op_cond": ["ifa", "ifbe", "ifb", "ifae"],
         "branch_fmt": branch_fmt,
+        "cond_widths": [
+            "0, 0, 1",
+            "0, 0, 1",
+            "0, 0, 1",
+            "0, 0, 1",
+        ],
     },
 }
 compare_formats = {
     "opcode": "OP_{op_cmp[ccc].upper()}_{cmp_type[tt]}_{ss+1}",
     "mnemonic": "{op_cmp[ccc]}.{cmp_type[tt]}",
     "opname": "{op_cmp[ccc]}",
+    "widths": "{ss+1}, {ss+1}, {ss+1}",
+    "types": "{cmp_types[tt]}, {cmp_types[tt]}, ev_integer",
     "args": {
         "op_cmp": compare_ccc,
         "cmp_type":type_tt,
+        "cmp_types":etype_tt,
     },
 }
 compare2_formats = {
     "opcode": "OP_{op_cmp[ccc].upper()}_{cmp_type[t]}_{ss+1}",
     "mnemonic": "{op_cmp[ccc]}.{cmp_type[t]}",
     "opname": "{op_cmp[ccc]}",
+    "widths": "{ss+1}, {ss+1}, {ss+1}",
+    "types": "{cmp_types[t]}, {cmp_types[t]}, ev_integer",
     "args": {
         "op_cmp": compare_ccc,
         "cmp_type":['u', 'U'],
+        "cmp_types":unsigned_t,
     },
 }
 convert_formats = {
@@ -132,8 +165,16 @@ convert_formats = {
     "mnemonic": "conv.{op_conv[d*4+xx]}",
     "opname": "conv",
     "format": "%Ga %gc",
+    "widths": "1, 0, 1",
+    "types": "{cnv_types[xx][d]}, ev_invalid, {cnv_types[xx][1-d]}",
     "args": {
         "op_conv": ["IF", "LD", "uF", "UD", "FI", "DL", "Fu", "DU"],
+        "cnv_types": [
+            ["ev_integer", "ev_float"],
+            ["ev_long", "ev_double"],
+            ["ev_uinteger", "ev_float"],
+            ["ev_ulong", "ev_double"],
+        ],
     },
 }
 lea_formats = {
@@ -141,6 +182,8 @@ lea_formats = {
     "mnemonic": "lea",
     "opname": "lea",
     "format": "{lea_fmt[mm]}",
+    "widths": "0, 0, 1",
+    "types": "ev_pointer, ev_pointer, ev_pointer",
     "args": {
         "op_mode": "ABCD",
         "lea_fmt": [
@@ -156,12 +199,16 @@ lea_e_formats = {
     "mnemonic": "lea",
     "opname": "lea",
     "format": "%Ga.%Gb(%Ec), %gc",
+    "types": "ev_entity, ev_field, ev_pointer",
+    "widths": "0, 0, 1",
 }
 load_formats = {
     "opcode": "OP_LOAD_{op_mode[mm]}_{ss+1}",
     "mnemonic": "load",
     "opname": "load",
     "format": "{load_fmt[mm]}",
+    "widths": "0, 0, {ss+1}",
+    "types": "ev_void, ev_void, ev_void",
     "args": {
         "op_mode": "EBCD",
         "load_fmt": [
@@ -176,9 +223,12 @@ mathops_formats = {
     "opcode": "OP_{op_math[ooo].upper()}_{math_type[tt]}_{ss+1}",
     "mnemonic": "{op_math[ooo]}.{math_type[tt]}",
     "opname": "{op_math[ooo]}",
+    "widths": "{ss+1}, {ss+1}, {ss+1}",
+    "types": "{math_types[tt]}, {math_types[tt]}, {math_types[tt]}",
     "args": {
         "op_math": ["mul", "div", "rem", "mod", "add", "sub", None, None],
         "math_type":type_tt,
+        "math_types": etype_tt,
     },
 }
 memset_formats = {
@@ -186,6 +236,8 @@ memset_formats = {
     "mnemonic": "memset.{op_memset[oo]}",
     "opname": "memset",
     "format": "{memset_fmt[oo]}",
+    "widths": "0, 0, 0",
+    "types": "ev_integer, ev_void, ev_void",
     "args": {
         "op_memset": [None, "i", "p", "pi"],
         "memset_fmt": [None, "%Ga, %sb, %gc", "%Ga, %Gb, %Gc", "%Ga, %sb, %Gc"],
@@ -196,6 +248,8 @@ move_formats = {
     "mnemonic": "memset.{op_move[oo]}",
     "opname": "memset",
     "format": "{move_fmt[oo]}",
+    "widths": "0, 0, 0",
+    "types": "ev_integer, ev_void, ev_void",
     "args": {
         "op_move": [None, "i", "p", "pi"],
         "move_fmt": [None, "%Ga, %sb, %gc", "%Ga, %Gb, %Gc", "%Ga, %sb, %Gc"],
@@ -206,12 +260,16 @@ none_formats = {
     "mnemonic": "none",
     "opname": "none",
     "format": "%Ga, %gc",
+    "widths": "{ss+1}, 0, 1",
+    "types": "ev_integer, ev_invalid, ev_integer",
 }
 push_formats = {
     "opcode": "OP_PUSH_{op_mode[mm]}_{ss+1}",
     "mnemonic": "push",
     "opname": "push",
     "format": "{push_fmt[mm]}",
+    "widths": "{ss+1}, 0, 0",
+    "types": "ev_void, ev_void, ev_invalid",
     "args": {
         "op_mode": "ABCD",
         "push_fmt": [
@@ -226,6 +284,8 @@ pushregs_formats = {
     "opcode": "OP_PUSHREGS",
     "mnemonic": "pushregs",
     "opname": "pushregs",
+    "widths": "0, 0, 0",
+    "types": "ev_invalid, ev_invalid, ev_invalid",
     "format": None,
 }
 pop_formats = {
@@ -233,6 +293,8 @@ pop_formats = {
     "mnemonic": "pop",
     "opname": "pop",
     "format": "{pop_fmt[mm]}",
+    "widths": "{ss+1}, 0, 0",
+    "types": "ev_void, ev_void, ev_invalid",
     "args": {
         "op_mode": "ABCD",
         "pop_fmt": [
@@ -247,23 +309,34 @@ popregs_formats = {
     "opcode": "OP_POPREGS",
     "mnemonic": "popregs",
     "opname": "popregs",
+    "widths": "0, 0, 0",
     "format": None,
+    "types": "ev_invalid, ev_invalid, ev_invalid",
 }
 scale_formats = {
     "opcode": "OP_SCALE_{scale_type[t]}_{ss+1}",
     "mnemonic": "scale.{scale_type[t]}",
     "opname": "scale",
+    "widths": "{ss+1}, 1, {ss+1}",
+    "types": "{scale_types[t]}, {scale_types[t]}, {scale_types[t]}",
     "args": {
-        "scale_type":['F', 'D'],
+        "scale_type": ['F', 'D'],
+        "scale_types": float_t,
     },
 }
 shiftops_formats = {
     "opcode": "OP_{op_shift[u*2+r].upper()}_{shift_type[u*2+t]}_{ss+1}",
     "mnemonic": "{op_shift[u*2+r]}.{shift_type[u*2+t]}",
     "opname": "{op_shift[u*2+r]}",
+    "widths": "{ss+1}, {ss+1}, {ss+1}",
+    "types": "{shift_types[t][u]}, {shift_types[t][0]}, {shift_types[t][u]}",
     "args": {
         "op_shift": ["shl", "asr", "shl", "shr"],
-        "shift_type":['I', 'L', 'u', 'U'],
+        "shift_type": ['I', 'L', 'u', 'U'],
+        "shift_types": [
+            ["ev_integer", "ev_uinteger"],
+            ["ev_long", "ev_ulong"],
+        ],
     },
 }
 state_formats = {
@@ -271,9 +344,12 @@ state_formats = {
     "mnemonic": "state.{state[t]}",
     "opname": "state",
     "format": "{state_fmt[t]}",
+    "widths": "1, 1, 1",
+    "types": "ev_float, ev_func, {state_types[t]}",
     "args": {
         "state": ["ft", "ftt"],
         "state_fmt": ["%Ga, %Gb", "%Ga, %Gb, %Gc"],
+        "state_types": ["ev_invalid", "ev_float"],
     },
 }
 store_formats = {
@@ -281,6 +357,8 @@ store_formats = {
     "mnemonic": "store",
     "opname": "store",
     "format": "{store_fmt[mm]}",
+    "widths": "{ss+1}, 0, {ss+1}",
+    "types": "ev_void, ev_void, ev_void",
     "args": {
         "op_mode": "ABCD",
         "store_fmt": [
@@ -296,6 +374,8 @@ string_formats = {
     "mnemonic": "{op_str[o*4+oo]}.s",
     "opname": "{op_str[o*4+oo]}",
     "format": "{str_fmt[o*4+oo]}",
+    "widths": "1, 1, 1",
+    "types": "{str_types[o*4+oo]}",
     "args": {
         "op_str": ["eq", "lt", "gt", "add", "cmp", "ge", "le", "not"],
         "str_fmt": [
@@ -308,6 +388,16 @@ string_formats = {
             "%Ga, %Gb, %gc",
             "%Ga, %gc",
         ],
+        "str_types": [
+            "ev_string, ev_string, ev_integer",
+            "ev_string, ev_string, ev_integer",
+            "ev_string, ev_string, ev_integer",
+            "ev_string, ev_string, ev_string",
+            "ev_string, ev_string, ev_integer",
+            "ev_string, ev_string, ev_integer",
+            "ev_string, ev_string, ev_integer",
+            "ev_string, ev_invalid, ev_integer",
+        ],
     },
 }
 swizzle_formats = {
@@ -315,8 +405,11 @@ swizzle_formats = {
     "mnemonic": "swizzle.{swiz_type[t]}",
     "opname": "swizzle",
     "format": "%Ga %sb %gc",
+    "widths": "4, 0, 4",
+    "types": "{swizzle_types[t]}",
     "args": {
-        "swiz_type":['F', 'D'],
+        "swiz_type": ['F', 'D'],
+        "swizzle_types": float_t,
     },
 }
 rcall_formats = {
@@ -324,6 +417,8 @@ rcall_formats = {
     "mnemonic": "rcall{nnn+1}",
     "opname": "rcall{nnn+1}",
     "format": "{rcall_fmt[nnn]}",
+    "widths": "0, 0, 0",
+    "types": "ev_func, ev_void, ev_void",
     "args": {
         "rcall_fmt": [
             "%Fa (%P0b)",
@@ -341,31 +436,51 @@ return_formats = {
     "opcode": "OP_RETURN_{ss+1}",
     "mnemonic": "return{ss+1}",
     "opname": "return{ss+1}",
+    "widths": "0, 0, 0",
     "format": "%Ra",
+    "types": "ev_void, ev_invalid, ev_invalid",
 }
 returnv_formats = {
     "opcode": "OP_RETURN_0",
     "mnemonic": "return",
     "opname": "return",
+    "widths": "0, 0, 0",
     "format": None,
+    "types": "ev_invalid, ev_invalid, ev_invalid",
 }
 vecops_formats = {
     "opcode": "OP_{op_vop[ooo].upper()}_{vop_type[t]}",
     "mnemonic": "{op_vop[ooo]}.{vop_type[t]}",
     "opname": "{op_vop[ooo]}",
+    "widths": "{vec_widths[ooo]}",
+    "types": "{vec_types[t]}, {vec_types[t]}, {vec_types[t]}",
     "args": {
         "op_vop": ["cdot", "vdot", "qdot", "cross",
                    "cmul", "qvmul", "vqmul", "qmul"],
         "vop_type": ['F', 'D'],
+        "vec_widths": [
+            "2, 2, 2",
+            "3, 3, 3",
+            "4, 4, 4",
+            "3, 3, 3",
+            "2, 2, 2",
+            "4, 3, 3",
+            "3, 4, 3",
+            "4, 4, 4",
+        ],
+        "vec_types": float_t,
     },
 }
 vecops2_formats = {
     "opcode": "OP_{op_vop[dd].upper()}_{vop_type[t]}",
     "mnemonic": "{op_vop[dd]}.{vop_type[t]}",
     "opname": "{op_vop[dd]}",
+    "widths": "4, 4, 4",
+    "types": "{vec_types[t]}, {vec_types[t]}, {vec_types[t]}",
     "args": {
         "op_vop": [None, "qv4mul", "v4qmul", None],
         "vop_type": ['F', 'D'],
+        "vec_types": float_t,
     },
 }
 with_formats = {
@@ -373,6 +488,8 @@ with_formats = {
     "mnemonic": "with",
     "opname": "with",
     "format": "%sa, %sb, $sc",
+    "widths": "0, 0, 0",
+    "types": "ev_void, ev_void, ev_void",
 }
 
 group_map = {
@@ -475,6 +592,8 @@ def process_opcode(opcode, group):
     else:
         fmt = f'"{fmt}"'
     inst["fmt"] = fmt
+    inst["wd"] = "{%s}" % eval(f'''f"{gm['widths']}"''', params)
+    inst["ty"] = "{%s}" % eval(f'''f"{gm['types']}"''', params)
 
 lines = bitmap_txt.split('\n')
 for l in lines:
@@ -499,5 +618,7 @@ for i, group in enumerate(opcodes):
         print(eval('f"[{op}] = {{\\n'
                    '\\t.opname = {on},\\n'
                    '\\t.mnemonic = {mn},\\n'
+                   '\\t.widths = {wd},\\n'
+                   '\\t.types = {ty},\\n'
                    '\\t.fmt = {fmt},\\n'
                    '}},"', group))
