@@ -94,6 +94,9 @@ test_expr (expr_t *e)
 				return new_alias_expr (type_default, e);
 			new = new_string_expr (0);
 			break;
+		case ev_long:
+		case ev_ulong:
+			internal_error (e, "long not implemented");
 		case ev_uinteger:
 		case ev_integer:
 		case ev_short:

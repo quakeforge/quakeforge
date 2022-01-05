@@ -188,6 +188,8 @@ free_type (type_t *type)
 		case ev_quat:
 		case ev_integer:
 		case ev_uinteger:
+		case ev_long:
+		case ev_ulong:
 		case ev_short:
 		case ev_double:
 			break;
@@ -228,6 +230,8 @@ copy_chain (type_t *type, type_t *append)
 					case ev_quat:
 					case ev_integer:
 					case ev_uinteger:
+					case ev_long:
+					case ev_ulong:
 					case ev_short:
 					case ev_double:
 						internal_error (0, "copy basic type");
@@ -279,6 +283,8 @@ append_type (type_t *type, type_t *new)
 					case ev_quat:
 					case ev_integer:
 					case ev_uinteger:
+					case ev_long:
+					case ev_ulong:
 					case ev_short:
 					case ev_double:
 						internal_error (0, "append to basic type");
@@ -656,6 +662,8 @@ print_type_str (dstring_t *str, const type_t *type)
 				case ev_quat:
 				case ev_integer:
 				case ev_uinteger:
+				case ev_long:
+				case ev_ulong:
 				case ev_short:
 				case ev_double:
 					dasprintf (str, " %s", pr_type_name[type->type]);
@@ -819,6 +827,12 @@ encode_type (dstring_t *encoding, const type_t *type)
 					return;
 				case ev_uinteger:
 					dasprintf (encoding, "I");
+					return;
+				case ev_long:
+					dasprintf (encoding, "l");
+					return;
+				case ev_ulong:
+					dasprintf (encoding, "L");
 					return;
 				case ev_short:
 					dasprintf (encoding, "s");

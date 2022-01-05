@@ -1104,6 +1104,8 @@ static operation_t op_void[ev_type_count] = {
 	do_op_invalid,						// ev_uinteger
 	do_op_invalid,						// ev_short
 	do_op_invalid,						// ev_double
+	0,									// ev_long
+	0,									// ev_ulong
 	do_op_invalid,						// ev_invalid
 };
 
@@ -1121,6 +1123,8 @@ static operation_t op_string[ev_type_count] = {
 	do_op_invalid,						// ev_uinteger
 	do_op_invalid,						// ev_short
 	do_op_invalid,						// ev_double
+	0,									// ev_long
+	0,									// ev_ulong
 	do_op_invalid,						// ev_invalid
 };
 
@@ -1138,6 +1142,8 @@ static operation_t op_float[ev_type_count] = {
 	do_op_float,						// ev_uinteger
 	do_op_float,						// ev_short
 	do_op_double,						// ev_double
+	0,									// ev_long
+	0,									// ev_ulong
 	do_op_invalid,						// ev_invalid
 };
 
@@ -1155,6 +1161,8 @@ static operation_t op_vector[ev_type_count] = {
 	do_op_vector,						// ev_uinteger
 	do_op_vector,						// ev_short
 	do_op_vector,						// ev_double
+	0,									// ev_long
+	0,									// ev_ulong
 	do_op_invalid,						// ev_invalid
 };
 
@@ -1172,6 +1180,8 @@ static operation_t op_entity[ev_type_count] = {
 	do_op_invalid,						// ev_uinteger
 	do_op_invalid,						// ev_short
 	do_op_invalid,						// ev_double
+	0,									// ev_long
+	0,									// ev_ulong
 	do_op_invalid,						// ev_invalid
 };
 
@@ -1189,6 +1199,8 @@ static operation_t op_field[ev_type_count] = {
 	do_op_invalid,						// ev_uinteger
 	do_op_invalid,						// ev_short
 	do_op_invalid,						// ev_double
+	0,									// ev_long
+	0,									// ev_ulong
 	do_op_invalid,						// ev_invalid
 };
 
@@ -1206,6 +1218,8 @@ static operation_t op_func[ev_type_count] = {
 	do_op_func,							// ev_uinteger
 	do_op_func,							// ev_short
 	do_op_func,							// ev_double
+	0,									// ev_long
+	0,									// ev_ulong
 	do_op_func,							// ev_invalid
 };
 
@@ -1223,6 +1237,8 @@ static operation_t op_pointer[ev_type_count] = {
 	do_op_pointer,						// ev_uinteger
 	do_op_pointer,						// ev_short
 	do_op_pointer,						// ev_double
+	0,									// ev_long
+	0,									// ev_ulong
 	do_op_pointer,						// ev_invalid
 };
 
@@ -1240,6 +1256,8 @@ static operation_t op_quaternion[ev_type_count] = {
 	do_op_quaternion,					// ev_uinteger
 	do_op_quaternion,					// ev_short
 	do_op_quaternion,					// ev_double
+	0,									// ev_long
+	0,									// ev_ulong
 	do_op_invalid,						// ev_invalid
 };
 
@@ -1257,6 +1275,8 @@ static operation_t op_integer[ev_type_count] = {
 	do_op_uinteger,						// ev_uinteger
 	do_op_integer,						// ev_short
 	do_op_double,						// ev_double
+	0,									// ev_long
+	0,									// ev_ulong
 	do_op_invalid,						// ev_invalid
 };
 
@@ -1274,6 +1294,8 @@ static operation_t op_uinteger[ev_type_count] = {
 	do_op_uinteger,						// ev_uinteger
 	do_op_uinteger,						// ev_short
 	do_op_double,						// ev_double
+	0,									// ev_long
+	0,									// ev_ulong
 	do_op_invalid,						// ev_invalid
 };
 
@@ -1291,6 +1313,8 @@ static operation_t op_short[ev_type_count] = {
 	do_op_uinteger,						// ev_uinteger
 	do_op_short,						// ev_short
 	do_op_double,						// ev_double
+	0,									// ev_long
+	0,									// ev_ulong
 	do_op_invalid,						// ev_invalid
 };
 
@@ -1308,6 +1332,8 @@ static operation_t op_double[ev_type_count] = {
 	do_op_uinteger,						// ev_uinteger
 	do_op_short,						// ev_short
 	do_op_double,						// ev_double
+	0,									// ev_long
+	0,									// ev_ulong
 	do_op_invalid,						// ev_invalid
 };
 
@@ -1325,6 +1351,8 @@ static operation_t op_compound[ev_type_count] = {
 	do_op_compound,						// ev_uinteger
 	do_op_compound,						// ev_short
 	do_op_compound,						// ev_double
+	do_op_compound,						// ev_long
+	do_op_compound,						// ev_ulong
 	do_op_compound,						// ev_invalid
 };
 
@@ -1342,6 +1370,8 @@ static operation_t *do_op[ev_type_count] = {
 	op_uinteger,						// ev_uinteger
 	op_short,							// ev_short
 	op_double,							// ev_double
+	0,									// ev_long
+	0,									// ev_ulong
 	op_compound,						// ev_invalid
 };
 

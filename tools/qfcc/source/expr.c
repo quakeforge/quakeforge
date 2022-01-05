@@ -1633,6 +1633,9 @@ unary_expr (int op, expr_t *e)
 					case ev_quat:
 						QuatNegate (expr_vector (e), q);
 						return new_vector_expr (q);
+					case ev_long:
+					case ev_ulong:
+						internal_error (e, "long not implemented");
 					case ev_integer:
 						return new_integer_expr (-expr_integer (e));
 					case ev_uinteger:
@@ -1725,6 +1728,9 @@ unary_expr (int op, expr_t *e)
 						return new_integer_expr (!VectorIsZero (expr_vector (e)));
 					case ev_quat:
 						return new_integer_expr (!QuatIsZero (expr_quaternion (e)));
+					case ev_long:
+					case ev_ulong:
+						internal_error (e, "long not implemented");
 					case ev_integer:
 						return new_integer_expr (!expr_integer (e));
 					case ev_uinteger:
@@ -1791,6 +1797,9 @@ unary_expr (int op, expr_t *e)
 					case ev_quat:
 						QuatConj (expr_vector (e), q);
 						return new_vector_expr (q);
+					case ev_long:
+					case ev_ulong:
+						internal_error (e, "long not implemented");
 					case ev_integer:
 						return new_integer_expr (~expr_integer (e));
 					case ev_uinteger:

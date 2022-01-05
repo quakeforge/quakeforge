@@ -67,6 +67,8 @@ typedef enum {
 	ev_uinteger,
 	ev_short,			// value is embedded in the opcode
 	ev_double,
+	ev_long,
+	ev_ulong,
 
 	ev_invalid,			// invalid type. used for instruction checking
 	ev_type_count		// not a type, gives number of types

@@ -38,6 +38,7 @@
 #endif
 
 #include <stdlib.h>
+#include <inttypes.h>
 
 #include "qfalloca.h"
 
@@ -161,6 +162,10 @@ operand_string (operand_t *op)
 					return va (0, "int %d", op->value->v.integer_val);
 				case ev_uinteger:
 					return va (0, "uint %u", op->value->v.uinteger_val);
+				case ev_long:
+					return va (0, "long %"PRIi64, op->value->v.long_val);
+				case ev_ulong:
+					return va (0, "ulong %"PRIu64, op->value->v.ulong_val);
 				case ev_short:
 					return va (0, "short %d", op->value->v.short_val);
 				case ev_void:
@@ -237,6 +242,12 @@ _print_operand (operand_t *op)
 					break;
 				case ev_uinteger:
 					printf ("%u", op->value->v.uinteger_val);
+					break;
+				case ev_long:
+					printf ("%"PRIu64, op->value->v.long_val);
+					break;
+				case ev_ulong:
+					printf ("%"PRIu64, op->value->v.ulong_val);
 					break;
 				case ev_short:
 					printf ("%d", op->value->v.short_val);

@@ -38,6 +38,7 @@
 # include <strings.h>
 #endif
 #include <stdlib.h>
+#include <inttypes.h>
 
 #include <QF/dstring.h>
 #include <QF/mathlib.h>
@@ -517,6 +518,12 @@ print_value (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 			break;
 		case ev_uinteger:
 			label = va (0, "u %u", e->e.value->v.uinteger_val);
+			break;
+		case ev_long:
+			label = va (0, "i %"PRIi64, e->e.value->v.long_val);
+			break;
+		case ev_ulong:
+			label = va (0, "u %"PRIu64, e->e.value->v.ulong_val);
 			break;
 		case ev_short:
 			label = va (0, "s %d", e->e.value->v.short_val);

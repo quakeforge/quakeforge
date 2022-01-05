@@ -42,6 +42,7 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 #include "QF/fbsearch.h"
 #include "QF/cvar.h"
@@ -143,6 +144,10 @@ static void pr_debug_short_view (qfot_type_t *type, pr_type_t *value,
 								void *_data);
 static void pr_debug_double_view (qfot_type_t *type, pr_type_t *value,
 								void *_data);
+static void pr_debug_long_view (qfot_type_t *type, pr_type_t *value,
+								void *_data);
+static void pr_debug_ulong_view (qfot_type_t *type, pr_type_t *value,
+								void *_data);
 static void pr_debug_struct_view (qfot_type_t *type, pr_type_t *value,
 								void *_data);
 static void pr_debug_union_view (qfot_type_t *type, pr_type_t *value,
@@ -168,6 +173,8 @@ static type_view_t raw_type_view = {
 	pr_debug_uinteger_view,
 	pr_debug_short_view,
 	pr_debug_double_view,
+	pr_debug_long_view,
+	pr_debug_ulong_view,
 	pr_debug_struct_view,
 	pr_debug_union_view,
 	pr_debug_enum_view,
@@ -1060,6 +1067,12 @@ value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 				case ev_double:
 					raw_type_view.double_view (type, value, data);
 					break;
+				case ev_long:
+					raw_type_view.long_view (type, value, data);
+					break;
+				case ev_ulong:
+					raw_type_view.ulong_view (type, value, data);
+					break;
 				case ev_invalid:
 				case ev_type_count:
 					dstring_appendstr (data->dstr, "<?""?>");
@@ -1361,6 +1374,24 @@ pr_debug_double_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	dstring_t  *dstr = data->dstr;
 
 	dasprintf (dstr, "%.17g", *(double *)value);
+}
+
+static void
+pr_debug_long_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	__auto_type data = (pr_debug_data_t *) _data;
+	dstring_t  *dstr = data->dstr;
+
+	dasprintf (dstr, "%" PRIi64, *(int64_t *)value);
+}
+
+static void
+pr_debug_ulong_view (qfot_type_t *type, pr_type_t *value, void *_data)
+{
+	__auto_type data = (pr_debug_data_t *) _data;
+	dstring_t  *dstr = data->dstr;
+
+	dasprintf (dstr, "%" PRIu64, *(uint64_t *)value);
 }
 
 static void

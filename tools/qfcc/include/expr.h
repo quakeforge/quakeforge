@@ -209,6 +209,8 @@ typedef struct ex_value_s {
 	union {
 		const char *string_val;			///< string constant
 		double      double_val;			///< double constant
+		int64_t     long_val;			///< signed 64-bit constant
+		uint64_t    ulong_val;			///< unsigned 64-bit constant
 		float       float_val;			///< float constant
 		float       vector_val[3];		///< vector constant
 		int         entity_val;			///< entity constant

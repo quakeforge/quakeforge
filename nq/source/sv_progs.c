@@ -357,7 +357,11 @@ set_address (sv_def_t *def, void *address)
 		case ev_pointer:
 		case ev_integer:
 		case ev_uinteger:
-			*(int **)def->field = (int *) address;
+			*(pr_int_t **)def->field = (pr_int_t *) address;
+			break;
+		case ev_long:
+		case ev_ulong:
+			*(pr_long_t **)def->field = (pr_long_t *) address;
 			break;
 	}
 }
