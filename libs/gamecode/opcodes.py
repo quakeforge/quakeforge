@@ -36,7 +36,13 @@ n 1111 nnnn
 0 1011 nnnn
 """
 
-branch_fmt=[
+load_fmt =  [
+    "%Ga.%Gb(%Ea), %gc",
+    "*%Ga, %gc",
+    "*(%Ga + %sb), %gc",
+    "*(%Ga + %Gb), %gc",
+]
+branch_fmt = [
     "branch %sa (%Ob)",
     "*%Ga",
     "%Ga[%sb]",
@@ -47,6 +53,7 @@ type_tt = ['I', 'F', 'L', 'D']
 etype_tt = ["ev_integer", "ev_float", "ev_long", "ev_double"]
 unsigned_t = ["ev_uinteger", "ev_ulong"]
 float_t = ["ev_float", "ev_double"]
+
 all_formats = {
     "opcode": "OP_ALL_{ss+1}",
     "mnemonic": "all",
@@ -198,7 +205,8 @@ lea_e_formats = {
     "opcode": "OP_LEA_E",
     "mnemonic": "lea",
     "opname": "lea",
-    "format": "%Ga.%Gb(%Ec), %gc",
+    "format": "{load_fmt[0]}",
+    "format": "%Ga.%Gb(%Ea), %gc",
     "types": "ev_entity, ev_field, ev_pointer",
     "widths": "0, 0, 1",
 }
@@ -211,12 +219,7 @@ load_formats = {
     "types": "ev_void, ev_void, ev_void",
     "args": {
         "op_mode": "EBCD",
-        "load_fmt": [
-            "%Ga.%Gb(%Ex), %gc",
-            "*%Ga, %gc",
-            "*(%Ga + %sb), %gc",
-            "*(%Ga + %Gb), %gc",
-        ],
+        "load_fmt": load_fmt,
     },
 }
 mathops_formats = {
