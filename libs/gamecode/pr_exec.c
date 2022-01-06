@@ -2261,6 +2261,11 @@ negate:
 }
 
 static pr_lvec4_t
+#ifdef _WIN64
+//force gcc to use registers for the parameters to avoid alignment issues
+//on the stack (gcc bug as of 11.2)
+__attribute__((sysv_abi))
+#endif
 pr_swizzle_d (pr_lvec4_t vec, pr_ushort_t swiz)
 {
 	goto do_swizzle;
