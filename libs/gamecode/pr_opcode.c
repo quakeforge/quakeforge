@@ -36,3 +36,10 @@
 const opcode_t pr_opcodes[512] = {
 #include "libs/gamecode/pr_opcode.cinc"
 };
+
+const opcode_t *
+PR_Opcode (pr_ushort_t opcode)
+{
+	opcode &= OP_MASK;
+	return &pr_opcodes[opcode];
+}

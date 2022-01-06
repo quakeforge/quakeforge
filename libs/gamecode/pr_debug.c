@@ -1513,11 +1513,13 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 	int         addr = s - pr->pr_statements;
 	int         dump_code = contents & 2;
 	const char *fmt;
-	const v6p_opcode_t *op;
+	const char *mnemonic;
 	dfunction_t *call_func = 0;
 	pr_def_t   *parm_def = 0;
 	pr_auxfunction_t *aux_func = 0;
 	pr_debug_data_t data;
+	etype_t     op_type[3];
+	int         op_width[3];
 
 	dstring_clearstr (res->line);
 
@@ -1539,24 +1541,43 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 			return;
 	}
 
-	op = PR_v6p_Opcode (s->op);
-	if (!op) {
-		Sys_Printf ("%sUnknown instruction %d\n", res->line->str, s->op);
-		return;
+	if (pr->progs->version < PROG_VERSION) {
+		const v6p_opcode_t *op = PR_v6p_Opcode (s->op);
+		if (!op) {
+			Sys_Printf ("%sUnknown instruction %d\n", res->line->str, s->op);
+			return;
+		}
+		VectorSet (op->type_a, op->type_b, op->type_c, op_type);
+		VectorSet (1, 1, 1, op_width);
+		fmt = op->fmt;
+		mnemonic = op->opname;
+	} else {
+		const opcode_t *op = PR_Opcode (s->op);
+		if (!op) {
+			Sys_Printf ("%sUnknown instruction %d\n", res->line->str, s->op);
+			return;
+		}
+		VectorCopy (op->widths, op_width);
+		VectorCopy (op->types, op_type);
+		fmt = op->fmt;
+		mnemonic = op->mnemonic;
 	}
 
-	if (!(fmt = op->fmt))
+	if (!fmt) {
 		fmt = "%Ga, %Gb, %gc";
+	}
 
 	dasprintf (res->line, "%04x ", addr);
-	if (pr_debug->int_val > 2)
-		dasprintf (res->line, "%02x %04x(%8s) %04x(%8s) %04x(%8s)\t",
+	if (pr_debug->int_val > 2) {
+		dasprintf (res->line,
+					"%02x %04x(%8s)[%d] %04x(%8s)[%d] %04x(%8s)[%d]\t",
 					s->op,
-					s->a, pr_type_name[op->type_a],
-					s->b, pr_type_name[op->type_b],
-					s->c, pr_type_name[op->type_c]);
+					s->a, pr_type_name[op_type[0]], op_width[0],
+					s->b, pr_type_name[op_type[1]], op_width[1],
+					s->c, pr_type_name[op_type[2]], op_width[2]);
+	}
 
-	dasprintf (res->line, "%s ", op->opname);
+	dasprintf (res->line, "%s ", mnemonic);
 
 	while (*fmt) {
 		if (*fmt == '%') {
@@ -1582,15 +1603,15 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 				switch (opchar) {
 					case 'a':
 						opval = s->a;
-						optype = res->type_encodings[op->type_a];
+						optype = res->type_encodings[op_type[0]];
 						break;
 					case 'b':
 						opval = s->b;
-						optype = res->type_encodings[op->type_b];
+						optype = res->type_encodings[op_type[1]];
 						break;
 					case 'c':
 						opval = s->c;
-						optype = res->type_encodings[op->type_c];
+						optype = res->type_encodings[op_type[2]];
 						break;
 					case 'x':
 						if (mode == 'P') {

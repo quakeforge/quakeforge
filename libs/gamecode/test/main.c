@@ -43,11 +43,14 @@ test_debug_handler (prdebug_t event, void *param, void *data)
 			break;
 		case prd_trace:
 			dstatement_t *st = test_pr.pr_statements + test_pr.pr_xstatement;
-			if (verbose > 0) {
+			if (verbose > 1) {
 				printf ("debug: trace %05x %04x %04x %04x %04x%s\n",
 						test_pr.pr_xstatement, st->op, st->a, st->b, st->c,
 						pr->globals.stack ? va (0, " %05x", *pr->globals.stack)
 										  : "");
+			}
+			if (verbose > 0) {
+				PR_PrintStatement (&test_pr, st, 0);
 			}
 			if (pr->globals.stack) {
 				if (*pr->globals.stack & 3) {
@@ -73,6 +76,8 @@ static void
 setup_test (test_t *test)
 {
 	memset (&test_pr, 0, sizeof (test_pr));
+	PR_Init (&test_pr);
+	PR_Debug_Init (&test_pr);
 	test_pr.progs = &test_progs;
 	test_pr.debug_handler = test_debug_handler;
 	test_pr.debug_data = &test_pr;
