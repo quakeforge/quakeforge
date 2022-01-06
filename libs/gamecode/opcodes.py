@@ -43,7 +43,7 @@ load_fmt =  [
     "*(%Ga + %Gb), %gc",
 ]
 branch_fmt = [
-    "branch %sa (%Ob)",
+    "branch %sa (%Oa)",
     "*%Ga",
     "%Ga[%sb]",
     "%Ga[%Gb]",
@@ -490,7 +490,7 @@ with_formats = {
     "opcode": "OP_WITH",
     "mnemonic": "with",
     "opname": "with",
-    "format": "%sa, %sb, $sc",
+    "format": "%sa, %sb, %sc",
     "widths": "0, 0, 0",
     "types": "ev_void, ev_void, ev_void",
 }
