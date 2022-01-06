@@ -28,7 +28,6 @@
 #ifndef __QF_simd_vec4d_h
 #define __QF_simd_vec4d_h
 
-#ifdef __AVX2__
 #include <immintrin.h>
 
 #include "QF/simd/types.h"
@@ -96,9 +95,9 @@ GNU89INLINE inline vec4d_t qrotd (vec4d_t a, vec4d_t b) __attribute__((const));
 GNU89INLINE inline vec4d_t qconjd (vec4d_t q) __attribute__((const));
 GNU89INLINE inline vec4d_t loadvec3d (const double v3[]) __attribute__((pure));
 GNU89INLINE inline void storevec3d (double v3[3], vec4d_t v4);
-GNU89INLINE inline vec4l_t loadvec3l (const long *v3) __attribute__((pure));
-GNU89INLINE inline vec4l_t loadvec3l1 (const long *v3) __attribute__((pure));
-GNU89INLINE inline void storevec3l (long *v3, vec4l_t v4);
+GNU89INLINE inline vec4l_t loadvec3l (const int64_t *v3) __attribute__((pure));
+GNU89INLINE inline vec4l_t loadvec3l1 (const int64_t *v3) __attribute__((pure));
+GNU89INLINE inline void storevec3l (int64_t *v3, vec4l_t v4);
 
 #ifndef IMPLEMENT_VEC4D_Funcs
 GNU89INLINE inline
@@ -187,8 +186,7 @@ qmuld (vec4d_t a, vec4d_t b)
 	vec4d_t c = crossd (a, b) + a * b[3] + a[3] * b;
 	vec4d_t d = dotd (a, b);
 	// zero out the vector component of dot product so only the scalar remains
-	d = _mm256_permute2f128_pd (d, d, 0x18);
-	d = _mm256_permute4x64_pd (d, 0xc0);
+	d = (vec4d_t) { 0, 0, 0, d[3] };
 	return c - d;
 }
 
@@ -302,7 +300,7 @@ GNU89INLINE inline
 VISIBLE
 #endif
 vec4l_t
-loadvec3l (const long *v3)
+loadvec3l (const int64_t *v3)
 {
 	vec4l_t v4 = { v3[0], v3[1], v3[2], 0 };
 	return v4;
@@ -314,7 +312,7 @@ GNU89INLINE inline
 VISIBLE
 #endif
 vec4l_t
-loadvec3l1 (const long *v3)
+loadvec3l1 (const int64_t *v3)
 {
 	vec4l_t v4 = { v3[0], v3[1], v3[2], 1 };
 	return v4;
@@ -326,13 +324,11 @@ GNU89INLINE inline
 VISIBLE
 #endif
 void
-storevec3l (long *v3, vec4l_t v4)
+storevec3l (int64_t *v3, vec4l_t v4)
 {
 	v3[0] = v4[0];
 	v3[1] = v4[1];
 	v3[2] = v4[2];
 }
-
-#endif
 
 #endif//__QF_simd_vec4d_h

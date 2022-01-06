@@ -43,7 +43,6 @@ typedef double vec3d_t[3];
 VEC_TYPE (double, vec2d_t, 2);
 VEC_TYPE (int64_t, vec2l_t, 2);
 
-#ifdef __AVX2__
 /** Four element vector type for horizontal (AOS) vector data.
  *
  * This is used for both vectors (3D and 4D) and quaternions. 3D vectors
@@ -58,7 +57,6 @@ VEC_TYPE (double, vec4d_t, 4);
 /** Used mostly for __builtin_shuffle.
  */
 VEC_TYPE (int64_t, vec4l_t, 4);
-#endif
 
 /** Three element vector type for interfacing with compact data.
  *
