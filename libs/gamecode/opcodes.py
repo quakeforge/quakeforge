@@ -78,7 +78,7 @@ bitops_formats = {
     "widths": "{ss+1}, {ss+1}, {ss+1}",
     "types": "ev_integer, ev_integer, ev_integer",
     "args": {
-        "op_bit":["bitand", "bitor", "bitxor", "bitnot"],
+        "op_bit": ["bitand", "bitor", "bitxor", "bitnot"],
         "bit_fmt": [
             "%Ga, %Gb, %gc",
             "%Ga, %Gb, %gc",
@@ -95,7 +95,7 @@ boolops_formats = {
     "widths": "{ss+1}, {ss+1}, {ss+1}",
     "types": "ev_integer, ev_integer, ev_integer",
     "args": {
-        "op_bool":["and", "or", "xor", "not"],
+        "op_bool": ["and", "or", "xor", "not"],
         "bool_fmt": [
             "%Ga, %Gb, %gc",
             "%Ga, %Gb, %gc",
@@ -151,8 +151,8 @@ compare_formats = {
     "types": "{cmp_types[tt]}, {cmp_types[tt]}, ev_integer",
     "args": {
         "op_cmp": compare_ccc,
-        "cmp_type":type_tt,
-        "cmp_types":etype_tt,
+        "cmp_type": type_tt,
+        "cmp_types": etype_tt,
     },
 }
 compare2_formats = {
@@ -163,8 +163,8 @@ compare2_formats = {
     "types": "{cmp_types[t]}, {cmp_types[t]}, ev_integer",
     "args": {
         "op_cmp": compare_ccc,
-        "cmp_type":['u', 'U'],
-        "cmp_types":unsigned_t,
+        "cmp_type": ['u', 'U'],
+        "cmp_types": unsigned_t,
     },
 }
 convert_formats = {
@@ -230,7 +230,7 @@ mathops_formats = {
     "types": "{math_types[tt]}, {math_types[tt]}, {math_types[tt]}",
     "args": {
         "op_math": ["mul", "div", "rem", "mod", "add", "sub", None, None],
-        "math_type":type_tt,
+        "math_type": type_tt,
         "math_types": etype_tt,
     },
 }
