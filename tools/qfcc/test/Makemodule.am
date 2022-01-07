@@ -99,6 +99,8 @@ check_PROGRAMS += \
 	$(test_progs_dat) \
 	$(test_bins)
 
+qfcc-tests: tools/qfcc/test/test-harness $(test_progs_dat) $(test_bins)
+
 tools_qfcc_test_test_defspace_SOURCES=		tools/qfcc/test/test-defspace.c $(test_defspace_src)
 tools_qfcc_test_test_defspace_LDADD=		$(QFCC_LIBS)
 tools_qfcc_test_test_defspace_DEPENDENCIES=	$(QFCC_DEPS)
