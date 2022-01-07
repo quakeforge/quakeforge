@@ -479,7 +479,6 @@ PR_Init_Cvars (void)
 VISIBLE void
 PR_Init (progs_t *pr)
 {
-	PR_Opcode_Init ();	// idempotent
 	PR_Resources_Init (pr);
 	PR_Strings_Init (pr);
 	PR_Debug_Init (pr);

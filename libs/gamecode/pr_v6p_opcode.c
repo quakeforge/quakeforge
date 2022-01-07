@@ -1520,11 +1520,6 @@ PR_v6p_Opcode (pr_ushort_t opcode)
 	return &pr_v6p_opcodes[opcode];
 }
 
-VISIBLE void
-PR_Opcode_Init (void)
-{
-}
-
 static inline void
 check_branch (progs_t *pr, dstatement_t *st, const v6p_opcode_t *op, short offset)
 {

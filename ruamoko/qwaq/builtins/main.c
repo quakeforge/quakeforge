@@ -142,10 +142,6 @@ init_qf (void)
 
 	Cvar_Get ("pr_debug", "2", 0, 0, 0);
 	Cvar_Get ("pr_boundscheck", "0", 0, 0, 0);
-
-	// Normally, this is done by PR_Init, but PR_Init is not called in the main
-	// thread. However, PR_Opcode_Init() is idempotent.
-	PR_Opcode_Init ();
 }
 
 static void

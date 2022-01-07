@@ -139,7 +139,6 @@ opcode_init (void)
 		Hash_FlushTable (opcode_void_table);
 		Hash_FlushTable (opcode_type_table);
 	} else {
-		PR_Opcode_Init ();
 		opcode_type_table = Hash_NewTable (1021, 0, 0, 0, 0);
 		Hash_SetHashCompare (opcode_type_table, get_hash, compare);
 		opcode_void_table = Hash_NewTable (1021, get_key, 0, 0, 0);

@@ -632,8 +632,6 @@ typedef struct opcode_s {
 extern const opcode_t pr_opcodes[512];
 const opcode_t *PR_Opcode (pr_ushort_t opcode) __attribute__((const));
 
-void PR_Opcode_Init (void);	// idempotent
-
 typedef struct dstatement_s {
 	pr_opcode_e op:16;			// will be pr_opcode_v6p_e for older progs
 	pr_ushort_t a,b,c;
