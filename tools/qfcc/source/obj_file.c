@@ -480,6 +480,7 @@ qfo_write (qfo_t *qfo, const char *filename)
 	header->num_funcs = LittleLong (qfo->num_funcs);
 	header->num_lines = LittleLong (qfo->num_lines);
 	header->num_loose_relocs = LittleLong (qfo->num_loose_relocs);
+	header->progs_version = LittleLong (options.code.progsversion);
 	spaces = (qfo_space_t *) &header[1];
 	relocs = (qfo_reloc_t *) &spaces[qfo->num_spaces];
 	defs = (qfo_def_t *) &relocs[qfo->num_relocs];
@@ -562,6 +563,14 @@ qfo_read (QFile *file)
 		free (data);
 		return 0;
 	}
+	header->progs_version = LittleLong (header->progs_version);
+	if (header->progs_version != PROG_ID_VERSION
+		&& header->progs_version != PROG_V6P_VERSION
+		&& header->progs_version != PROG_VERSION) {
+		fprintf (stderr, "not a compatible qfo file\n");
+		free (data);
+		return 0;
+	}
 	qfo = calloc (1, sizeof (qfo_t));
 
 	qfo->num_spaces = LittleLong (header->num_spaces);
@@ -570,6 +579,7 @@ qfo_read (QFile *file)
 	qfo->num_funcs = LittleLong (header->num_funcs);
 	qfo->num_lines = LittleLong (header->num_lines);
 	qfo->num_loose_relocs = LittleLong (header->num_loose_relocs);
+	qfo->progs_version = header->progs_version;	//already swapped
 
 	spaces = (qfo_space_t *) &header[1];
 	qfo->data = data;

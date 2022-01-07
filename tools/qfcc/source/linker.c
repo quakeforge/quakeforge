@@ -1148,6 +1148,10 @@ linker_add_lib (const char *libname)
 				linker_error ("error opening");
 				return 1;
 			}
+			if (qfo->progs_version != options.code.progsversion) {
+				linker_error ("qfo progs version does not match target");
+				return 1;
+			}
 
 			for (j = 0; j < qfo->num_defs; j++) {
 				qfo_def_t  *def = qfo->defs + j;

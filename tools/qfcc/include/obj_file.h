@@ -49,7 +49,7 @@
 
 	\hideinitializer
 */
-#define QFO_VERSION 0x00001006
+#define QFO_VERSION 0x00001007
 
 /** Header block of QFO object files. The sections of the object file
 	come immediately after the header, and are always in the order given by
@@ -68,6 +68,8 @@ typedef struct qfo_header_s {
 	pr_uint_t   num_lines;		///< number of line records
 	pr_uint_t   num_loose_relocs;	///< number of loose relocation records
 								///< (included in num_relocs)
+	pr_uint_t   progs_version;	///< version of compatible VM
+	pr_uint_t   reserved[3];
 } qfo_header_t;
 
 typedef enum qfos_type_e {
@@ -260,6 +262,7 @@ typedef struct qfo_mspace_s {
 /** In-memory representation of a QFO object file.
 */
 typedef struct qfo_s {
+	pr_uint_t   progs_version;	///< version of compatible VM
 	void       *data;			///< data buffer holding qfo file when read
 	qfo_mspace_t *spaces;
 	unsigned    num_spaces;
