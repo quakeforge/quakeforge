@@ -55,25 +55,13 @@
 
 #include "tools/qfcc/source/qc-parse.h"
 
+#define EX_EXPR(expr) #expr,
 const char *expr_names[] =
 {
-	"error",
-	"state",
-	"bool",
-	"label",
-	"labelref",
-	"block",
-	"expr",
-	"uexpr",
-	"def",
-	"symbol",
-	"temp",
-	"vector",
-	"nil",
-	"value",
-	"compound",
-	"memset",
+#include "tools/qfcc/include/expr_names.h"
+	0
 };
+#undef EX_EXPR
 
 const char *
 get_op_string (int op)

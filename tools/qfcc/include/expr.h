@@ -40,28 +40,12 @@
 
 /**	Type of the exression node in an expression tree.
 */
+#define EX_EXPR(expr) ex_##expr,
 typedef enum {
-	ex_error,		///< error expression. used to signal an error
-	ex_state,		///< state expression (::ex_state_t)
-	ex_bool,		///< short circuit boolean logic expression (::ex_bool_t)
-	ex_label,		///< goto/branch label (::ex_label_t)
-	ex_labelref,	///< label reference (::ex_labelref_t)
-	ex_block,		///< statement block expression (::ex_block_t)
-	ex_expr,		///< binary expression (::ex_expr_t)
-	ex_uexpr,		///< unary expression (::ex_expr_t)
-	ex_def,			///< non-temporary variable (::def_t)
-	ex_symbol,		///< non-temporary variable (::symbol_t)
-	ex_temp,		///< temporary variable (::ex_temp_t)
-	ex_vector,		///< "vector" expression (::ex_vector_t)
-	ex_selector,	///< selector expression (::ex_selector_t)
-
-	ex_nil,			///< umm, nil, null. nuff said (0 of any type)
-	ex_value,		///< constant value (::ex_value_t)
-	ex_compound,	///< compound initializer
-	ex_memset,		///< memset needs three params...
-
+#include "tools/qfcc/include/expr_names.h"
 	ex_count,		///< number of valid expression types
 } expr_type;
+#undef EX_EXPR
 
 /**	Binary and unary expressions.
 
