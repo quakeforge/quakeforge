@@ -57,6 +57,8 @@ VISIBLE const pr_ushort_t pr_type_size[ev_type_count] = {
 	1,			// ev_uinteger
 	0,			// ev_short        value in opcode
 	2,			// ev_double
+	2,			// ev_long
+	2,			// ev_ulong
 	0,			// ev_invalid      not a valid/simple type
 };
 
@@ -74,6 +76,8 @@ VISIBLE const char * const pr_type_name[ev_type_count] = {
 	"uinteger",
 	"short",
 	"double",
+	"long",
+	"ulong",
 	"invalid",
 };
 
