@@ -438,7 +438,7 @@ rcall_formats = {
 return_formats = {
     "opcode": "OP_RETURN_{ss+1}",
     "mnemonic": "return{ss+1}",
-    "opname": "return{ss+1}",
+    "opname": "return",
     "widths": "0, 0, 0",
     "format": "%Ra",
     "types": "ev_void, ev_invalid, ev_invalid",
