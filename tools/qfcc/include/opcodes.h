@@ -31,13 +31,14 @@
 #ifndef __opcodes_h
 #define __opcodes_h
 
+#include "QF/pr_comp.h"
+
+typedef struct instruction_s instruction_t;
+
 struct operand_s;
-
-extern struct v6p_opcode_s *opcode_map;
-
-struct v6p_opcode_s *opcode_find (const char *name, struct operand_s *op_a,
-								  struct operand_s *op_b,
-								  struct operand_s *op_c);
+pr_ushort_t opcode_get (instruction_t *inst);
+instruction_t *opcode_find (const char *name, struct operand_s *op_a,
+							struct operand_s *op_b, struct operand_s *op_c);
 void opcode_init (void);
 
 #endif//__opcodes_h

@@ -185,7 +185,7 @@ emit_statement (statement_t *statement)
 {
 	const char *opcode = statement->opcode;
 	def_t      *def_a, *def_b, *def_c;
-	v6p_opcode_t *op;
+	instruction_t *inst;
 	dstatement_t *s;
 
 	def_a = get_operand_def (statement->expr, statement->opa);
@@ -194,9 +194,9 @@ emit_statement (statement_t *statement)
 	use_tempop (statement->opb, statement->expr);
 	def_c = get_operand_def (statement->expr, statement->opc);
 	use_tempop (statement->opc, statement->expr);
-	op = opcode_find (opcode, statement->opa, statement->opb, statement->opc);
+	inst = opcode_find (opcode, statement->opa, statement->opb, statement->opc);
 
-	if (!op) {
+	if (!inst) {
 		print_expr (statement->expr);
 		print_statement (statement);
 		internal_error (statement->expr, "ice ice baby");
@@ -213,7 +213,7 @@ emit_statement (statement_t *statement)
 		}
 	}
 	s = codespace_newstatement (pr.code);
-	s->op = op - opcode_map;
+	s->op = opcode_get (inst);
 	s->a = def_a ? def_a->offset : 0;
 	s->b = def_b ? def_b->offset : 0;
 	s->c = def_c ? def_c->offset : 0;

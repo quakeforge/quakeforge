@@ -47,9 +47,9 @@
 #include "tools/qfcc/include/statements.h"
 #include "tools/qfcc/include/type.h"
 
-hashtab_t  *opcode_type_table;
-hashtab_t  *opcode_void_table;
-v6p_opcode_t *opcode_map;
+static hashtab_t  *opcode_type_table;
+static hashtab_t  *opcode_void_table;
+static v6p_opcode_t *opcode_map;
 
 #define ROTL(x,n) ((((unsigned)(x))<<(n))|((unsigned)(x))>>(32-n))
 
@@ -92,7 +92,13 @@ check_operand_type (etype_t ot1, etype_t ot2)
 	return 0;
 }
 
-v6p_opcode_t *
+pr_ushort_t
+opcode_get (instruction_t *op)
+{
+	return (v6p_opcode_t *) op - opcode_map;
+}
+
+instruction_t *
 opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 			 operand_t *op_c)
 {
@@ -108,10 +114,10 @@ opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 	search_op.type_c = op_c ? low_level_type (op_c->type) : ev_invalid;
 	op = Hash_FindElement (opcode_type_table, &search_op);
 	if (op)
-		return op;
+		return (instruction_t *) op;
 	op_list = Hash_FindList (opcode_void_table, name);
 	if (!op_list)
-		return op;
+		return (instruction_t *) op;
 	for (i = 0; !op && op_list[i]; i++) {
 		sop = op_list[i];
 		if (check_operand_type (sop->type_a, search_op.type_a)
@@ -120,7 +126,7 @@ opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 			op = sop;
 	}
 	free (op_list);
-	return op;
+	return (instruction_t *) op;
 }
 
 void
