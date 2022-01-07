@@ -207,8 +207,10 @@ code_usage (void)
 "                            passing\n"
 "                            vectors to functiosn.\n"
 "    [no-]vector-components  Create *_[xyz] symbols for vector variables.\n"
-"    [no-]v6only             Restrict output code to version 6 progs\n"
-"                            features.\n"
+"    target=v6|v6p|ruamoko   Generate code for the specified target VM\n"
+"                                v6       Standard Quake VM (qcc compatible)\n"
+"                                v6p     *QuakeForge extended v6 instructions\n"
+"                                ruamoko  QuakeForge SIMD instructions\n"
 "\n"
 "For details, see the qfcc(1) manual page\n"
 	);
@@ -469,6 +471,19 @@ DecodeArgs (int argc, char **argv)
 					while (temp) {
 						qboolean    flag = true;
 
+						if (!(strncasecmp (temp, "target=", 7))) {
+							const char *tgt = temp + 7;
+							if (!strcasecmp (tgt, "v6")) {
+								options.code.progsversion = PROG_ID_VERSION;
+							} else if (!strcasecmp (tgt, "v6p")) {
+								options.code.progsversion = PROG_V6P_VERSION;
+							} else if (!strcasecmp (tgt, "ruamoko")) {
+								options.code.progsversion = PROG_VERSION;
+							} else {
+								fprintf (stderr, "unknown target: %s\n", tgt);
+								exit (1);
+							}
+						}
 						if (!strncasecmp (temp, "no-", 3)) {
 							flag = false;
 							temp += 3;
@@ -501,11 +516,6 @@ DecodeArgs (int argc, char **argv)
 							options.code.vector_calls = flag;
 						} else if (!(strcasecmp (temp, "vector-components"))) {
 							options.code.vector_components = flag;
-						} else if (!(strcasecmp (temp, "v6only"))) {
-							if (flag)
-								options.code.progsversion = PROG_ID_VERSION;
-							else
-								options.code.progsversion = PROG_V6P_VERSION;
 						} else if (!(strcasecmp (temp, "const-initializers"))) {
 							options.code.const_initializers = flag;
 						}

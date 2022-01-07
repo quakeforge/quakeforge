@@ -190,7 +190,7 @@ Look for \*[progs.src] in \fBDIR\fP instead of the current directory.
 .TP
 .B \-\-traditional
 Use traditional QuakeC syntax, semantics and \*(lqbugs\*(rq.
-Also implies the \fBv6only\fP, \fBno-short-circuit\fP,
+Also implies the \fBtarget=v6\fP, \fBno-short-circuit\fP,
 \fBconst-initializers\fP and \fBno-local-merging\fP code generation options
 (see \fBCODE GENERATION OPTIONS\fP).
 This is the default when using \fBprogs.src\fP mode.
@@ -271,8 +271,8 @@ output file is \*(lqprogs.dat\*(rq, the symbol file will be
 .B fast\-float
 Use float values directly in \*(lqif\*(rq statements.
 Defaults to on.
-This option is always enabled when using version 6 progs (\fBv6only\fP is in
-effect).
+This option is always enabled when targeting  v6 progs (\fBtarget=v6\fP is
+in effect).
 
 .TP
 .B local-merging
@@ -289,8 +289,9 @@ Defaults to off for traditional mode, and on for advanced mode.
 .TP
 .B promote\-float
 Promote float when passed to a function that takes a variable number of
-arguements. Defaults to enabled for advanced code, is forced off for
-traditional or v6only code (mostly because such code does not have doubles).
+arguements. Defaults to enabled for advanced code (v6p or ruamoko), is forced
+off for traditional or v6 code (mostly because such code does not have
+doubles).
 
 .TP
 .B short\-circuit
@@ -329,18 +330,32 @@ Create extra symbols for accessing the components of a vector variable or
 field. For example, \fBvector vel\fP will also create \fBvel_x\fP,
 \fBvel_y\fP, and \fBvel_z\fP. Defaults to on for traditional code and off
 for advanced.
+.PP
+Any of the above can be prefixed with \fBno\-\fP to negate its meaning.
 
 .TP
-.B v6only
-Restrict the compiler to produce only version 6 progs (original
-Quake/QuakeWorld) features.
+.B target=v6|v6p|ruamoko
+Specify the target for which the compiler is to produce code.
+.RS
+.TP
+.B v6
+Standard Quake VM (qcc compatible).
 This means that the compiled data file should be able to run on older servers,
 as long as you have not used any QuakeForge-specific built-in functions.
 Also disables compiler features (such as integers and string manipulation
 support) that require extensions.
-Defaults to on for traditional mode and off for advanced mode.
-.PP
-Any of the above can be prefixed with \fBno\-\fP to negate its meaning.
+.TP
+.B v6p
+Quakeforge extended v6 instructions.
+This is not compatible with older server, nor with most (any?) other Quake
+engine. It adds a variety of instructions and types, including integers,
+quaternions, pointers, doubles, structs, arrays and Objective-C style classes.
+.TP
+.B ruamoko
+Quakeforge SIMD instructions. This is currently under development
+and thus not the default.
+.RE
+Defaults to v6 for traditional mode and v6p for advanced mode.
 
 
 .SH "WARNING OPTIONS"
