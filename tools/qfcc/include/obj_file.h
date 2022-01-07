@@ -218,23 +218,21 @@ typedef struct qfo_func_s {
 		referenced relocs
 		unreferenced relocs
 
-	For \c ref_op_* relocation types, \c ofs is the code section address of the
-	statement that needs to be adjusted.
+	For \c ref_op_* relocation types, \c offset is the code section address
+	of the statement that needs to be adjusted.
 
-	For \c rel_def_* relocation types,
-	\c ofs refers to the data section address of the word that needs to be
-	adjusted.
+	For \c rel_def_* relocation types, \c offset refers to the data section
+	address of the word that needs to be adjusted.
 
-	For \c ref_*_def(_ofs) relocation types, \c def is the index of the
+	For \c ref_*_def(_ofs) relocation types, \c target is the index of the
 	referenced def.
 
-	For \c ref_*_op relocation types, \c def is the address of
-	the referenced statement.
+	For \c ref_*_op relocation types, \c target is the address of the
+	referenced statement.
 
-	For \c ref_*_string relocation types, \c def is
-	always 0.
+	For \c ref_*_string relocation types, \c target is always 0.
 
-	For \c ref_*_field(_ofs) relocation types, \c def is the index of
+	For \c ref_*_field(_ofs) relocation types, \c target is the index of
 	the referenced field def.
 */
 typedef struct qfo_reloc_s {
