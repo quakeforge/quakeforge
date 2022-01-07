@@ -31,21 +31,6 @@
 #ifndef __opcodes_h
 #define __opcodes_h
 
-extern struct v6p_opcode_s *op_done;
-extern struct v6p_opcode_s *op_return;
-extern struct v6p_opcode_s *op_return_v;
-extern struct v6p_opcode_s *op_if;
-extern struct v6p_opcode_s *op_ifnot;
-extern struct v6p_opcode_s *op_ifbe;
-extern struct v6p_opcode_s *op_ifb;
-extern struct v6p_opcode_s *op_ifae;
-extern struct v6p_opcode_s *op_ifa;
-extern struct v6p_opcode_s *op_state;
-extern struct v6p_opcode_s *op_state_f;
-extern struct v6p_opcode_s *op_goto;
-extern struct v6p_opcode_s *op_jump;
-extern struct v6p_opcode_s *op_jumpb;
-
 struct operand_s;
 
 extern struct v6p_opcode_s *opcode_map;
