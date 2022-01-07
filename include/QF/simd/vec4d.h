@@ -31,6 +31,7 @@
 #include <immintrin.h>
 
 #include "QF/simd/types.h"
+#include "QF/simd/vec2d.h"
 
 GNU89INLINE inline vec4d_t vsqrt4d (vec4d_t v) __attribute__((const));
 GNU89INLINE inline vec4d_t vceil4d (vec4d_t v) __attribute__((const));
@@ -107,7 +108,15 @@ VISIBLE
 vec4d_t
 vsqrt4d (vec4d_t v)
 {
+#ifndef __AVX__
+	vec2d_t     xy = { v[0], v[1] };
+	vec2d_t     zw = { v[2], v[3] };
+	xy = vsqrt2d (xy);
+	zw = vsqrt2d (zw);
+	return (vec4d_t) { xy[0], xy[1], zw[0], zw[1] };
+#else
 	return _mm256_sqrt_pd (v);
+#endif
 }
 
 #ifndef IMPLEMENT_VEC4D_Funcs
@@ -118,7 +127,15 @@ VISIBLE
 vec4d_t
 vceil4d (vec4d_t v)
 {
+#ifndef __AVX__
+	vec2d_t     xy = { v[0], v[1] };
+	vec2d_t     zw = { v[2], v[3] };
+	xy = vceil2d (xy);
+	zw = vceil2d (zw);
+	return (vec4d_t) { xy[0], xy[1], zw[0], zw[1] };
+#else
 	return _mm256_ceil_pd (v);
+#endif
 }
 
 #ifndef IMPLEMENT_VEC4D_Funcs
@@ -129,7 +146,15 @@ VISIBLE
 vec4d_t
 vfloor4d (vec4d_t v)
 {
+#ifndef __AVX__
+	vec2d_t     xy = { v[0], v[1] };
+	vec2d_t     zw = { v[2], v[3] };
+	xy = vfloor2d (xy);
+	zw = vfloor2d (zw);
+	return (vec4d_t) { xy[0], xy[1], zw[0], zw[1] };
+#else
 	return _mm256_floor_pd (v);
+#endif
 }
 
 #ifndef IMPLEMENT_VEC4D_Funcs
@@ -140,7 +165,15 @@ VISIBLE
 vec4d_t
 vtrunc4d (vec4d_t v)
 {
+#ifndef __AVX__
+	vec2d_t     xy = { v[0], v[1] };
+	vec2d_t     zw = { v[2], v[3] };
+	xy = vtrunc2d (xy);
+	zw = vtrunc2d (zw);
+	return (vec4d_t) { xy[0], xy[1], zw[0], zw[1] };
+#else
 	return _mm256_round_pd (v, _MM_FROUND_TRUNC);
+#endif
 }
 
 #ifndef IMPLEMENT_VEC4D_Funcs
@@ -167,7 +200,11 @@ vec4d_t
 dotd (vec4d_t a, vec4d_t b)
 {
 	vec4d_t c = a * b;
+#ifndef __AVX__
+	c = (vec4d_t) { c[0] + c[1], c[0] + c[1], c[2] + c[3], c[2] + c[3] };
+#else
 	c = _mm256_hadd_pd (c, c);
+#endif
 	static const vec4l_t A = {2, 3, 0, 1};
 	c += __builtin_shuffle(c, A);
 	return c;
@@ -202,8 +239,12 @@ qvmuld (vec4d_t q, vec4d_t v)
 	double s = q[3];
 	// zero the scalar of the quaternion. Results in an extra operation, but
 	// avoids adding precision issues.
+#ifndef __AVX__
+	q = (vec4d_t) { q[0], q[1], q[2], 0 };
+#else
 	vec4d_t z = {};
 	q = _mm256_blend_pd (q, z, 0x08);
+#endif
 	vec4d_t c = crossd (q, v);
 	vec4d_t qv = dotd (q, v);	// q.w is 0 so v.w is irrelevant
 	vec4d_t qq = dotd (q, q);
@@ -224,8 +265,12 @@ vqmuld (vec4d_t v, vec4d_t q)
 	double s = q[3];
 	// zero the scalar of the quaternion. Results in an extra operation, but
 	// avoids adding precision issues.
+#ifndef __AVX__
+	q = (vec4d_t) { q[0], q[1], q[2], 0 };
+#else
 	vec4d_t z = {};
 	q = _mm256_blend_pd (q, z, 0x08);
+#endif
 	vec4d_t c = crossd (q, v);
 	vec4d_t qv = dotd (q, v);	// q.w is 0 so v.w is irrelevant
 	vec4d_t qq = dotd (q, q);
@@ -262,7 +307,7 @@ qconjd (vec4d_t q)
 {
 	const uint64_t sign = UINT64_C(1) << 63;
 	const vec4l_t neg = { sign, sign, sign, 0 };
-	return _mm256_xor_pd (q, (__m256d) neg);
+	return (vec4d_t) ((vec4l_t) q ^ neg);
 }
 
 #ifndef IMPLEMENT_VEC4D_Funcs

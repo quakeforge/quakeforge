@@ -60,7 +60,11 @@ int
 any2i (vec2i_t v)
 {
 	vec2i_t     t = _m_pcmpeqd (v, (vec2i_t) {0, 0});
+#ifndef __SSSE3__
+	return (t[0] + t[1]) > -2;
+#else
 	return _mm_hadd_pi32 (t, t)[0] > -2;
+#endif
 }
 
 #ifndef IMPLEMENT_VEC2I_Funcs
@@ -72,7 +76,11 @@ int
 all2i (vec2i_t v)
 {
 	vec2i_t     t = _m_pcmpeqd (v, (vec2i_t) {0, 0});
+#ifndef __SSSE3__
+	return (t[0] + t[1]) == 0;
+#else
 	return _mm_hadd_pi32 (t, t)[0] == 0;
+#endif
 }
 
 #ifndef IMPLEMENT_VEC2I_Funcs
@@ -84,7 +92,11 @@ int
 none2i (vec2i_t v)
 {
 	vec2i_t     t = _m_pcmpeqd (v, (vec2i_t) {0, 0});
+#ifndef __SSSE3__
+	return (t[0] + t[1]) == -2;
+#else
 	return _mm_hadd_pi32 (t, t)[0] == -2;
+#endif
 }
 
 #endif//__QF_simd_vec2i_h

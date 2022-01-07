@@ -61,7 +61,14 @@ VISIBLE
 vec2d_t
 vceil2d (vec2d_t v)
 {
+#ifndef __SSE4_1__
+	return (vec2d_t) {
+		ceil (v[0]),
+		ceil (v[1]),
+	};
+#else
 	return _mm_ceil_pd (v);
+#endif
 }
 
 #ifndef IMPLEMENT_VEC2D_Funcs
@@ -72,7 +79,14 @@ VISIBLE
 vec2d_t
 vfloor2d (vec2d_t v)
 {
+#ifndef __SSE4_1__
+	return (vec2d_t) {
+		floor (v[0]),
+		floor (v[1]),
+	};
+#else
 	return _mm_floor_pd (v);
+#endif
 }
 
 #ifndef IMPLEMENT_VEC2D_Funcs
@@ -83,7 +97,14 @@ VISIBLE
 vec2d_t
 vtrunc2d (vec2d_t v)
 {
+#ifndef __SSE4_1__
+	return (vec2d_t) {
+		trunc (v[0]),
+		trunc (v[1]),
+	};
+#else
 	return _mm_round_pd (v, _MM_FROUND_TRUNC);
+#endif
 }
 
 #ifndef IMPLEMENT_VEC2D_Funcs
@@ -95,7 +116,8 @@ vec2d_t
 dot2d (vec2d_t a, vec2d_t b)
 {
 	vec2d_t c = a * b;
-	c = _mm_hadd_pd (c, c);
+	// gcc-11 does a good job with hadd
+	c = (vec2d_t) { c[0] + c[1], c[0] + c[1] };
 	return c;
 }
 
@@ -109,7 +131,11 @@ cmuld (vec2d_t a, vec2d_t b)
 {
 	vec2d_t     c1 = a * b[0];
 	vec2d_t     c2 = a * b[1];
+#ifndef __SSE3__
+	return (vec2d_t) { c1[0] - c2[1], c1[1] + c2[0] };
+#else
 	return _mm_addsub_pd (c1, (vec2d_t) { c2[1], c2[0] });
+#endif
 }
 
 #endif//__QF_simd_vec2d_h

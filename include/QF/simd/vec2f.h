@@ -80,9 +80,16 @@ VISIBLE
 vec2f_t
 vceil2f (vec2f_t v)
 {
+#ifndef __SSE4_1__
+	return (vec2f_t) {
+		ceilf (v[0]),
+		ceilf (v[1]),
+	};
+#else
 	vec4f_t     t = { v[0], v[1], 0, 0 };
 	t = _mm_ceil_ps (t);
 	return (vec2f_t) { t[0], t[1] };
+#endif
 }
 
 #ifndef IMPLEMENT_VEC2F_Funcs
@@ -93,9 +100,16 @@ VISIBLE
 vec2f_t
 vfloor2f (vec2f_t v)
 {
+#ifndef __SSE4_1__
+	return (vec2f_t) {
+		floorf (v[0]),
+		floorf (v[1]),
+	};
+#else
 	vec4f_t     t = { v[0], v[1], 0, 0 };
 	t = _mm_floor_ps (t);
 	return (vec2f_t) { t[0], t[1] };
+#endif
 }
 
 #ifndef IMPLEMENT_VEC2F_Funcs
@@ -106,9 +120,16 @@ VISIBLE
 vec2f_t
 vtrunc2f (vec2f_t v)
 {
+#ifndef __SSE4_1__
+	return (vec2f_t) {
+		truncf (v[0]),
+		truncf (v[1]),
+	};
+#else
 	vec4f_t     t = { v[0], v[1], 0, 0 };
 	t = _mm_round_ps (t, _MM_FROUND_TRUNC);
 	return (vec2f_t) { t[0], t[1] };
+#endif
 }
 
 #ifndef IMPLEMENT_VEC2F_Funcs

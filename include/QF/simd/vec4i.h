@@ -62,10 +62,12 @@ VISIBLE
 int
 any4i (vec4i_t v)
 {
+#ifndef __SSE4_1__
+	vec4i_t     t = (v != (vec4i_t) {});
+	return (t[0] + t[1] + t[2] + t[3]) != 0;
+#else
 	return !__builtin_ia32_ptestz128 ((__v2di)v, (__v2di)v);
-	/*vec4i_t     t = (v != (vec4i_t) {});
-	t = __builtin_ia32_phaddd128 (t, t);
-	return __builtin_ia32_phaddd128 (t, t)[0] != 0;*/
+#endif
 }
 
 #ifndef IMPLEMENT_VEC2I_Funcs
@@ -77,9 +79,11 @@ int
 all4i (vec4i_t v)
 {
 	vec4i_t     t = (v == (vec4i_t) {});
+#ifndef __SSE4_1__
+	return (t[0] + t[1] + t[2] + t[3]) == 0;
+#else
 	return __builtin_ia32_ptestz128 ((__v2di)t, (__v2di)t);
-	/*t = __builtin_ia32_phaddd128 (t, t);
-	return __builtin_ia32_phaddd128 (t, t)[0] == 0;*/
+#endif
 }
 
 #ifndef IMPLEMENT_VEC2I_Funcs
@@ -90,10 +94,12 @@ VISIBLE
 int
 none4i (vec4i_t v)
 {
+#ifndef __SSE4_1__
+	vec4i_t     t = (v != (vec4i_t) {});
+	return (t[0] + t[1] + t[2] + t[3]) == 0;
+#else
 	return __builtin_ia32_ptestz128 ((__v2di)v, (__v2di)v);
-	/*vec4i_t     t = (v != (vec4i_t) {});
-	t = __builtin_ia32_phaddd128 (t, t);
-	return __builtin_ia32_phaddd128 (t, t)[0] == 0;*/
+#endif
 }
 
 #ifndef IMPLEMENT_VEC4F_Funcs
