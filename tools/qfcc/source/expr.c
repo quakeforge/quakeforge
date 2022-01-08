@@ -1921,7 +1921,8 @@ bitnot_expr:
 			if (extract_type (e) != ev_pointer)
 				return error (e, "invalid type for unary .");
 			e = new_unary_expr ('.', e);
-			e->e.expr.type = get_type (e->e.expr.e1)->t.fldptr.type;
+			const type_t *t = unalias_type (get_type (e->e.expr.e1));
+			e->e.expr.type = t->t.fldptr.type;
 			return e;
 		case '+':
 			if (!is_math (get_type (e)))
