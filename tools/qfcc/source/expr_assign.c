@@ -112,16 +112,12 @@ is_lvalue (const expr_t *expr)
 			if (expr->e.expr.op == '.') {
 				return 1;
 			}
-			if (expr->e.expr.op == 'A') {
-				return is_lvalue (expr->e.expr.e1);
-			}
 			break;
+		case ex_alias:
+			return is_lvalue (expr->e.alias.expr);
 		case ex_uexpr:
 			if (expr->e.expr.op == '.') {
 				return 1;
-			}
-			if (expr->e.expr.op == 'A') {
-				return is_lvalue (expr->e.expr.e1);
 			}
 			break;
 		case ex_memset:

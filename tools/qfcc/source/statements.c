@@ -1202,11 +1202,11 @@ expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 	def_t     *def;
 	int        offset = 0;
 
-	if (e->type == ex_expr) {
-		offset = expr_integer (e->e.expr.e2);
+	if (e->e.alias.offset) {
+		offset = expr_integer (e->e.alias.offset);
 	}
-	type = e->e.expr.type;
-	sblock = statement_subexpr (sblock, e->e.expr.e1, &aop);
+	type = e->e.alias.type;
+	sblock = statement_subexpr (sblock, e->e.alias.expr, &aop);
 	if (type_compatible (aop->type, type)) {
 		//FIXME type_compatible??? shouldn't that be type_size ==?
 		if (offset) {
@@ -1267,9 +1267,6 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 		case 'm':
 		case 'M':
 			sblock = expr_move (sblock, e, op);
-			break;
-		case 'A':
-			sblock = expr_alias (sblock, e, op);
 			break;
 		default:
 			opcode = convert_op (e->e.expr.op);
@@ -1337,9 +1334,6 @@ expr_uexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 			break;
 		case '.':
 			sblock = expr_deref (sblock, e, op);
-			break;
-		case 'A':
-			sblock = expr_alias (sblock, e, op);
 			break;
 		case 'C':
 			sblock = expr_cast (sblock, e, op);
@@ -1529,6 +1523,7 @@ statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 		[ex_nil] = expr_nil,
 		[ex_value] = expr_value,
 		[ex_selector] = expr_selector,
+		[ex_alias] = expr_alias,
 	};
 	if (!e) {
 		*op = 0;

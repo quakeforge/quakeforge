@@ -258,6 +258,8 @@ get_type (expr_t *e)
 			return e->e.vector.type;
 		case ex_selector:
 			return &type_SEL;
+		case ex_alias:
+			return e->e.alias.type;
 		case ex_count:
 			internal_error (e, "invalid expression");
 	}
@@ -315,7 +317,7 @@ cast_error (expr_t *e, type_t *t1, type_t *t2)
 	print_type_str (s1, t1);
 	print_type_str (s2, t2);
 
-	e =  error (e, "cannot cast from %s to %s", s1->str, s2->str);
+	e = error (e, "cannot cast from %s to %s", s1->str, s2->str);
 	dstring_delete (s1);
 	dstring_delete (s2);
 	return e;
@@ -468,6 +470,12 @@ copy_expr (expr_t *e)
 			n->e.memset.dst = copy_expr (e->e.memset.dst);
 			n->e.memset.val = copy_expr (e->e.memset.val);
 			n->e.memset.count = copy_expr (e->e.memset.count);
+			return n;
+		case ex_alias:
+			n = new_expr ();
+			*n = *e;
+			n->e.alias.expr = copy_expr (e->e.alias.expr);
+			n->e.alias.offset = copy_expr (e->e.alias.offset);
 			return n;
 		case ex_count:
 			break;
@@ -875,9 +883,8 @@ new_short_expr (short short_val)
 int
 is_constant (expr_t *e)
 {
-	while ((e->type == ex_uexpr || e->type == ex_expr)
-		   && e->e.expr.op == 'A') {
-		e = e->e.expr.e1;
+	while (e->type == ex_alias) {
+		e = e->e.alias.expr;
 	}
 	if (e->type == ex_nil || e->type == ex_value || e->type == ex_labelref
 		|| (e->type == ex_symbol && e->e.symbol->sy_type == sy_const)
@@ -1231,15 +1238,14 @@ is_pointer_val (expr_t *e)
 expr_t *
 new_alias_expr (type_t *type, expr_t *expr)
 {
-	expr_t     *alias;
-
-	alias = new_unary_expr ('A', expr);
-	alias->e.expr.type = type;
-	//if (expr->type == ex_uexpr && expr->e.expr.op == 'A')
-	//	bug (alias, "aliasing an alias expression");
-	if (expr->type == ex_expr && expr->e.expr.op == 'A') {
+	if (expr->type == ex_alias) {
 		return new_offset_alias_expr (type, expr, 0);
 	}
+
+	expr_t     *alias = new_expr ();
+	alias->type = ex_alias;
+	alias->e.alias.type = type;
+	alias->e.alias.expr = expr;
 	alias->file = expr->file;
 	alias->line = expr->line;
 	return alias;
@@ -1248,18 +1254,24 @@ new_alias_expr (type_t *type, expr_t *expr)
 expr_t *
 new_offset_alias_expr (type_t *type, expr_t *expr, int offset)
 {
-	expr_t     *alias;
-
-	if (expr->type == ex_expr && expr->e.expr.op == 'A') {
-		expr_t     *ofs_expr = expr->e.expr.e2;
-		expr = expr->e.expr.e1;
+	if (expr->type == ex_alias && expr->e.alias.offset) {
+		expr_t     *ofs_expr = expr->e.alias.offset;
 		if (!is_constant (ofs_expr)) {
 			internal_error (ofs_expr, "non-constant offset for alias expr");
 		}
 		offset += expr_integer (ofs_expr);
+
+		if (expr->e.alias.expr->type == ex_alias) {
+			internal_error (expr, "alias expr of alias expr");
+		}
+		expr = expr->e.alias.expr;
 	}
-	alias = new_binary_expr ('A', expr, new_integer_expr (offset));
-	alias->e.expr.type = type;
+
+	expr_t     *alias = new_expr ();
+	alias->type = ex_alias;
+	alias->e.alias.type = type;
+	alias->e.alias.expr = expr;
+	alias->e.alias.offset = new_integer_expr (offset);
 	alias->file = expr->file;
 	alias->line = expr->line;
 	return alias;
@@ -1576,9 +1588,27 @@ has_function_call (expr_t *e)
 		case ex_uexpr:
 			if (e->e.expr.op != 'g')
 				return has_function_call (e->e.expr.e1);
-		default:
 			return 0;
+		case ex_alias:
+			return has_function_call (e->e.alias.expr);
+		case ex_error:
+		case ex_state:
+		case ex_label:
+		case ex_labelref:
+		case ex_def:
+		case ex_symbol:
+		case ex_temp:
+		case ex_vector:
+		case ex_selector:
+		case ex_nil:
+		case ex_value:
+		case ex_compound:
+		case ex_memset:
+			return 0;
+		case ex_count:
+			break;
 	}
+	internal_error (e, "invalid expression type");
 }
 
 expr_t *
@@ -1683,6 +1713,7 @@ unary_expr (int op, expr_t *e)
 				case ex_bool:
 				case ex_temp:
 				case ex_vector:
+				case ex_alias:
 					{
 						expr_t     *n = new_unary_expr (op, e);
 
@@ -1766,6 +1797,7 @@ unary_expr (int op, expr_t *e)
 				case ex_symbol:
 				case ex_temp:
 				case ex_vector:
+				case ex_alias:
 					{
 						expr_t     *n = new_unary_expr (op, e);
 
@@ -1842,6 +1874,7 @@ unary_expr (int op, expr_t *e)
 				case ex_symbol:
 				case ex_temp:
 				case ex_vector:
+				case ex_alias:
 bitnot_expr:
 					if (options.code.progsversion == PROG_ID_VERSION) {
 						expr_t     *n1 = new_integer_expr (-1);
@@ -2364,16 +2397,6 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 				e = e1->e.expr.e2;
 				break;
 			}
-			if (e1->e.expr.op == 'A') {
-				if (!t)
-					t = e1->e.expr.type;
-				if (e2) {
-					e2 = binary_expr ('+', e1->e.expr.e2, e2);
-				} else {
-					e2 = e1->e.expr.e2;
-				}
-				return address_expr (e1->e.expr.e1, e2, t);
-			}
 			return error (e1, "invalid type for unary &");
 		case ex_uexpr:
 			if (e1->e.expr.op == '.') {
@@ -2384,11 +2407,6 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 				}
 				break;
 			}
-			if (e1->e.expr.op == 'A') {
-				if (!t)
-					t = e1->e.expr.type;
-				return address_expr (e1->e.expr.e1, e2, t);
-			}
 			return error (e1, "invalid type for unary &");
 		case ex_label:
 			return new_label_ref (&e1->e.label);
@@ -2396,6 +2414,18 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 			e = new_unary_expr ('&', e1);
 			e->e.expr.type = pointer_type (t);
 			break;
+		case ex_alias:
+			if (!t) {
+				t = e1->e.alias.type;
+			}
+			if (e1->e.alias.offset) {
+				if (e2) {
+					e2 = binary_expr ('+', e1->e.alias.offset, e2);
+				} else {
+					e2 = e1->e.alias.offset;
+				}
+			}
+			return address_expr (e1->e.alias.expr, e2, t);
 		default:
 			return error (e1, "invalid type for unary &");
 	}
@@ -2416,8 +2446,11 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 					e = new_binary_expr ('&', e, e2);
 				}
 			}
-			if (e->type == ex_expr || e->type == ex_uexpr)
+			if (e->type == ex_expr || e->type == ex_uexpr) {
 				e->e.expr.type = pointer_type (t);
+			} else if (e->type == ex_alias) {
+				e->e.alias.type = pointer_type (t);
+			}
 		}
 	}
 	return e;

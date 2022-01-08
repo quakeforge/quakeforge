@@ -1718,7 +1718,7 @@ fold_constants (expr_t *e)
 			return e;
 		}
 		op = e->e.expr.op;
-		if (op == 'A' || op == 'g' || op == 'r')
+		if (op == 'g' || op == 'r')
 			return e;
 		t1 = extract_type (e1);
 		if (t1 >= ev_type_count || !do_unary_op[t1]) {
@@ -1734,7 +1734,7 @@ fold_constants (expr_t *e)
 		}
 
 		op = e->e.expr.op;
-		if (op == 'A' || op == 'i' || op == 'n' || op == 'c' || op == 's') {
+		if (op == 'i' || op == 'n' || op == 'c' || op == 's') {
 			return e;
 		}
 

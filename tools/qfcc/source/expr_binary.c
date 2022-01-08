@@ -970,12 +970,11 @@ binary_expr (int op, expr_t *e1, expr_t *e2)
 	e1 = convert_vector (e1);
 	// FIXME this is target-specific info and should not be in the
 	// expression tree
-	if ((e1->type == ex_expr || e1->type == ex_uexpr) && e1->e.expr.op == 'A'
-		&& is_call (e1->e.expr.e1)) {
+	if (e1->type == ex_alias && is_call (e1->e.alias.expr)) {
 		// move the alias expression inside the block so the following check
 		// can detect the call and move the temp assignment into the block
-		expr_t     *block = e1->e.expr.e1;
-		e1->e.expr.e1 = block->e.block.result;
+		expr_t     *block = e1->e.alias.expr;
+		e1->e.alias.expr = block->e.block.result;
 		block->e.block.result = e1;
 		e1 = block;
 	}

@@ -100,7 +100,6 @@ get_op_string (int op)
 		case 'r':	return "<return>";
 		case 's':	return "<state>";
 		case 'c':	return "<call>";
-		case 'A':	return "<alias>";
 		case 'C':	return "<cast>";
 		case 'M':	return "<move>";
 		case 'm':	return "<move>";
@@ -314,36 +313,43 @@ print_subexpr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"r\"];\n", indent, "", e,
 				   e->e.expr.e2);
 	}
-	if (e->e.expr.op == 'A') {
-		dstring_t  *typestr = dstring_newstr();
-		print_type_str (typestr, e->e.expr.type);
-		dasprintf (dstr, "%*se_%p [label=\"%s (%s)\\n%d\"];\n", indent, "", e,
-				   get_op_string (e->e.expr.op), typestr->str, e->line);
-		dstring_delete (typestr);
-	} else {
-		dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
-				   get_op_string (e->e.expr.op), e->line);
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   get_op_string (e->e.expr.op), e->line);
+}
+
+static void
+print_alias (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->e.alias.expr, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"a\"];\n", indent, "", e,
+			   e->e.alias.expr);
+	if (e->e.alias.offset) {
+		_print_expr (dstr, e->e.alias.offset, level, id, next);
+		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"o\"];\n", indent, "", e,
+				   e->e.alias.offset);
 	}
+
+	dstring_t  *typestr = dstring_newstr();
+	print_type_str (typestr, e->e.alias.type);
+	dasprintf (dstr, "%*se_%p [label=\"%s (%s)\\n%d\"];\n", indent, "", e,
+			   "<alias>", typestr->str, e->line);
+	dstring_delete (typestr);
 }
 
 static void
 print_uexpr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	int         indent = level * 2 + 2;
-	dstring_t  *typestr = dstring_newstr();
 
 	if (e->e.expr.op != 'g' && e->e.expr.e1)
 		_print_expr (dstr, e->e.expr.e1, level, id, next);
-	if (e->e.expr.op == 'A') {
-		dstring_copystr (typestr, "\\n");
-		print_type_str (typestr, e->e.expr.type);
-	}
 	if (e->e.expr.op != 'r' || e->e.expr.e1)
 		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e,
 				   e->e.expr.e1);
-	dasprintf (dstr, "%*se_%p [label=\"%s%s\\n%d\"];\n", indent, "", e,
-			   get_op_string (e->e.expr.op), typestr->str, e->line);
-	dstring_delete (typestr);
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   get_op_string (e->e.expr.op), e->line);
 }
 
 static void
@@ -574,6 +580,7 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		[ex_value] = print_value,
 		[ex_compound] = print_compound,
 		[ex_memset] = print_memset,
+		[ex_alias] = print_alias,
 	};
 	int         indent = level * 2 + 2;
 
@@ -585,7 +592,7 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		return;
 	e->printid = id;
 
-	if ((int) e->type < 0 || e->type > ex_memset || !print_funcs[e->type]) {
+	if ((int) e->type < 0 || e->type >= ex_count || !print_funcs[e->type]) {
 		dasprintf (dstr, "%*se_%p [label=\"(bad expr type)\\n%d\"];\n",
 				   indent, "", e, e->line);
 		return;

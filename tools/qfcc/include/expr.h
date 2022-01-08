@@ -207,6 +207,12 @@ typedef struct ex_value_s {
 	} v;
 } ex_value_t;
 
+typedef struct {
+	struct type_s *type;				///< type to view the expression
+	struct expr_s *expr;				///< the expression to alias
+	struct expr_s *offset;				///< offset for alias
+} ex_alias_t;
+
 #define POINTER_VAL(p) (((p).def ? (p).def->offset : 0) + (p).val)
 
 typedef struct expr_s {
@@ -233,6 +239,7 @@ typedef struct expr_s {
 		ex_value_t *value;				///< constant value
 		element_chain_t compound;		///< compound initializer
 		ex_memset_t memset;				///< memset expr params
+		ex_alias_t  alias;				///< alias expr params
 		struct type_s *nil;				///< type for nil if known
 	} e;
 } expr_t;

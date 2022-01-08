@@ -54,5 +54,6 @@ EX_EXPR(nil)		///< umm, nil, null. nuff said (0 of any type)
 EX_EXPR(value)		///< constant value (::ex_value_t)
 EX_EXPR(compound)	///< compound initializer
 EX_EXPR(memset)		///< memset needs three params...
+EX_EXPR(alias)		///< view expression as different type (::ex_alias_t)
 
 ///@}
