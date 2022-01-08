@@ -117,6 +117,8 @@ is_lvalue (const expr_t *expr)
 			return is_lvalue (expr->e.alias.expr);
 		case ex_address:
 			return 0;
+		case ex_assign:
+			return 0;
 		case ex_uexpr:
 			if (expr->e.expr.op == '.') {
 				return 1;
@@ -283,7 +285,6 @@ is_memset (expr_t *e)
 expr_t *
 assign_expr (expr_t *dst, expr_t *src)
 {
-	int         op = '=';
 	expr_t     *expr;
 	type_t     *dst_type, *src_type;
 
@@ -355,7 +356,6 @@ assign_expr (expr_t *dst, expr_t *src)
 		convert_nil (src, dst_type);
 	}
 
-	expr = new_binary_expr (op, dst, src);
-	expr->e.expr.type = dst_type;
+	expr = new_assign_expr (dst, src);
 	return expr;
 }

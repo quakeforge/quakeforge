@@ -75,7 +75,6 @@ get_op_string (int op)
 		case GE:	return ">=";
 		case LT:	return "<";
 		case GT:	return ">";
-		case '=':	return "=";
 		case '+':	return "+";
 		case '-':	return "-";
 		case '*':	return "*";
@@ -343,20 +342,36 @@ print_address (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	int         indent = level * 2 + 2;
 
-	_print_expr (dstr, e->e.alias.expr, level, id, next);
+	_print_expr (dstr, e->e.address.lvalue, level, id, next);
 	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"&\"];\n", indent, "", e,
-			   e->e.alias.expr);
-	if (e->e.alias.offset) {
-		_print_expr (dstr, e->e.alias.offset, level, id, next);
+			   e->e.address.lvalue);
+	if (e->e.address.offset) {
+		_print_expr (dstr, e->e.address.offset, level, id, next);
 		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"+\"];\n", indent, "", e,
-				   e->e.alias.offset);
+				   e->e.address.offset);
 	}
 
 	dstring_t  *typestr = dstring_newstr();
-	print_type_str (typestr, e->e.alias.type);
+	print_type_str (typestr, e->e.address.type);
 	dasprintf (dstr, "%*se_%p [label=\"%s (%s)\\n%d\"];\n", indent, "", e,
 			   "&", typestr->str, e->line);
 	dstring_delete (typestr);
+}
+
+static void
+print_assign (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->e.assign.dst, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"lval\"];\n", indent, "", e,
+			   e->e.assign.dst);
+	_print_expr (dstr, e->e.assign.src, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"rval\"];\n", indent, "", e,
+			   e->e.assign.src);
+
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   "=", e->line);
 }
 
 static void
@@ -603,6 +618,7 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		[ex_memset] = print_memset,
 		[ex_alias] = print_alias,
 		[ex_address] = print_address,
+		[ex_assign] = print_assign,
 	};
 	int         indent = level * 2 + 2;
 

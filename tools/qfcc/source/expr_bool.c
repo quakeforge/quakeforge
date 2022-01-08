@@ -249,16 +249,16 @@ convert_bool (expr_t *e, int block)
 {
 	expr_t     *b;
 
-	if (e->type == ex_expr && e->e.expr.op == '=') {
+	if (e->type == ex_assign) {
 		expr_t     *src;
 		if (!e->paren && options.warnings.precedence)
 			warning (e, "suggest parentheses around assignment "
 					 "used as truth value");
-		src = e->e.expr.e2;
+		src = e->e.assign.src;
 		if (src->type == ex_block) {
 			src = new_temp_def_expr (get_type (src));
-			e = new_binary_expr (e->e.expr.op, e->e.expr.e1,
-								 assign_expr (src, e->e.expr.e2));
+			e = new_assign_expr (e->e.assign.dst,
+								 assign_expr (src, e->e.assign.src));
 		}
 		b = convert_bool (src, 1);
 		if (b->type == ex_error)

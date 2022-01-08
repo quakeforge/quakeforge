@@ -574,7 +574,6 @@ convert_op (int op)
 		case GE:	return ">=";
 		case LT:	return "<";
 		case GT:	return ">";
-		case '=':	return "=";
 		case '+':	return "+";
 		case '-':	return "-";
 		case '*':	return "*";
@@ -819,8 +818,8 @@ static sblock_t *
 expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 {
 	statement_t *s;
-	expr_t     *dst_expr = e->e.expr.e1;
-	expr_t     *src_expr = e->e.expr.e2;
+	expr_t     *dst_expr = e->e.assign.dst;
+	expr_t     *src_expr = e->e.assign.src;
 	type_t     *dst_type = get_type (dst_expr);
 	type_t     *src_type = get_type (src_expr);
 	unsigned    count;
@@ -912,16 +911,16 @@ static sblock_t *
 expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	statement_t *s;
-	expr_t     *src_expr = e->e.expr.e2;
-	expr_t     *dst_expr = e->e.expr.e1;
+	expr_t     *src_expr = e->e.assign.src;
+	expr_t     *dst_expr = e->e.assign.dst;
 	type_t     *dst_type = get_type (dst_expr);
 	operand_t  *src = 0;
 	operand_t  *dst = 0;
 	operand_t  *ofs = 0;
-	const char *opcode = convert_op (e->e.expr.op);
+	const char *opcode = "=";
 	st_type_t   type;
 
-	if (src_expr->type == ex_expr && src_expr->e.expr.op == '=') {
+	if (src_expr->type == ex_assign) {
 		sblock = statement_subexpr (sblock, src_expr, &src);
 		if (is_structural (dst_type)) {
 			return expr_assign_copy (sblock, e, op, src);
@@ -1267,9 +1266,6 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 		case 'c':
 			sblock = expr_call (sblock, e, op);
 			break;
-		case '=':
-			sblock = expr_assign (sblock, e, op);
-			break;
 		case 'm':
 		case 'M':
 			sblock = expr_move (sblock, e, op);
@@ -1528,6 +1524,7 @@ statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 		[ex_selector] = expr_selector,
 		[ex_alias] = expr_alias,
 		[ex_address] = expr_address,
+		[ex_assign] = expr_assign,
 	};
 	if (!e) {
 		*op = 0;
@@ -1571,6 +1568,10 @@ build_bool_block (expr_t *block, expr_t *e)
 			build_bool_block (block, e->e.bool.e);
 			return;
 		case ex_label:
+			e->next = 0;
+			append_expr (block, e);
+			return;
+		case ex_assign:
 			e->next = 0;
 			append_expr (block, e);
 			return;
@@ -1735,9 +1736,6 @@ statement_expr (sblock_t *sblock, expr_t *e)
 		case IFA:
 			sblock = statement_branch (sblock, e);
 			break;
-		case '=':
-			sblock = expr_assign (sblock, e, 0);
-			break;
 		case 'm':
 		case 'M':
 			sblock = expr_move (sblock, e, 0);
@@ -1819,6 +1817,12 @@ statement_memset (sblock_t *sblock, expr_t *e)
 }
 
 static sblock_t *
+statement_assign (sblock_t *sblock, expr_t *e)
+{
+	return expr_assign (sblock, e, 0);
+}
+
+static sblock_t *
 statement_nonexec (sblock_t *sblock, expr_t *e)
 {
 	if (!e->rvalue && options.warnings.executable)
@@ -1844,6 +1848,7 @@ statement_slist (sblock_t *sblock, expr_t *e)
 		[ex_nil] = statement_nonexec,
 		[ex_value] = statement_nonexec,
 		[ex_memset] = statement_memset,
+		[ex_assign] = statement_assign,
 	};
 
 	for (/**/; e; e = e->next) {

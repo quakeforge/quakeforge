@@ -85,7 +85,7 @@ do_op_string (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	const char *s1, *s2;
 	static dstring_t *temp_str;
-	static int  valid[] = {'=', '+', LT, GT, LE, GE, EQ, NE, 0};
+	static int  valid[] = {'+', LT, GT, LE, GE, EQ, NE, 0};
 
 	if (!valid_op (op, valid))
 		return error (e1, "invalid operand for string");
@@ -99,7 +99,7 @@ do_op_string (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		e->e.expr.type = &type_string;
 	}
 
-	if (op == '=' || !is_constant (e1) || !is_constant (e2))
+	if (!is_constant (e1) || !is_constant (e2))
 		return e;
 
 	s1 = expr_string (e1);
@@ -220,27 +220,18 @@ do_op_float (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	expr_t     *conv;
 	type_t     *type = &type_float;
 	static int  valid[] = {
-		'=', '+', '-', '*', '/', '&', '|', '^', '%',
+		'+', '-', '*', '/', '&', '|', '^', '%',
 		SHL, SHR, AND, OR, LT, GT, LE, GE, EQ, NE, 0
 	};
 
 	if (!valid_op (op, valid))
 		return error (e1, "invalid operator for float");
 
-	if (op == '=') {
-		if (!is_float(type = get_type (e1))) {
-			//FIXME optimize casting a constant
-			e->e.expr.e2 = e2 = cf_cast_expr (type, e2);
-		} else if ((conv = convert_to_float (e2)) != e2) {
-			e->e.expr.e2 = e2 = conv;
-		}
-	} else {
-		if ((conv = convert_to_float (e1)) != e1) {
-			e->e.expr.e1 = e1 = conv;
-		}
-		if ((conv = convert_to_float (e2)) != e2) {
-			e->e.expr.e2 = e2 = conv;
-		}
+	if ((conv = convert_to_float (e1)) != e1) {
+		e->e.expr.e1 = e1 = conv;
+	}
+	if ((conv = convert_to_float (e2)) != e2) {
+		e->e.expr.e2 = e2 = conv;
 	}
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion > PROG_ID_VERSION)
@@ -271,7 +262,7 @@ do_op_float (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (op == '-' && is_constant (e2) && expr_float (e2) == 0)
 		return e1;
 
-	if (op == '=' || !is_constant (e1) || !is_constant (e2))
+	if (!is_constant (e1) || !is_constant (e2))
 		return e;
 
 	f1 = expr_float (e1);
@@ -349,27 +340,18 @@ do_op_double (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	expr_t     *conv;
 	type_t     *type = &type_double;
 	static int  valid[] = {
-		'=', '+', '-', '*', '/', '%',
+		'+', '-', '*', '/', '%',
 		LT, GT, LE, GE, EQ, NE, 0
 	};
 
 	if (!valid_op (op, valid))
 		return error (e1, "invalid operator for double");
 
-	if (op == '=') {
-		if (!is_double(type = get_type (e1))) {
-			//FIXME optimize casting a constant
-			e->e.expr.e2 = e2 = cf_cast_expr (type, e2);
-		} else if ((conv = convert_to_double (e2)) != e2) {
-			e->e.expr.e2 = e2 = conv;
-		}
-	} else {
-		if ((conv = convert_to_double (e1)) != e1) {
-			e->e.expr.e1 = e1 = conv;
-		}
-		if ((conv = convert_to_double (e2)) != e2) {
-			e->e.expr.e2 = e2 = conv;
-		}
+	if ((conv = convert_to_double (e1)) != e1) {
+		e->e.expr.e1 = e1 = conv;
+	}
+	if ((conv = convert_to_double (e2)) != e2) {
+		e->e.expr.e2 = e2 = conv;
 	}
 	if (is_compare (op) || is_logic (op)) {
 		type = &type_integer;
@@ -397,7 +379,7 @@ do_op_double (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (op == '-' && is_constant (e2) && expr_double (e2) == 0)
 		return e1;
 
-	if (op == '=' || !is_constant (e1) || !is_constant (e2))
+	if (!is_constant (e1) || !is_constant (e2))
 		return e;
 
 	d1 = expr_double (e1);
@@ -452,7 +434,7 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	const float *v1, *v2;
 	vec3_t      v, float_vec;
-	static int  valid[] = {'=', '+', '-', '*', EQ, NE, 0};
+	static int  valid[] = {'+', '-', '*', EQ, NE, 0};
 	expr_t     *t;
 
 	if (!is_vector(get_type (e1))) {
@@ -510,7 +492,7 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (op == '-' && is_constant (e2) && VectorIsZero (expr_vector (e2)))
 		return e1;
 
-	if (op == '=' || !is_constant (e1) || !is_constant (e2))
+	if (!is_constant (e1) || !is_constant (e2))
 		return e;
 
 	if (is_float_val (e1)) {
@@ -578,7 +560,7 @@ do_op_entity (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e->e.expr.type = &type_float;
 		return e;
 	}
-	if (op != '=' || !is_entity(type))
+	if (!is_entity(type))
 		return error (e1, "invalid operator for entity");
 	e->e.expr.type = &type_entity;
 	return e;
@@ -587,10 +569,7 @@ do_op_entity (int op, expr_t *e, expr_t *e1, expr_t *e2)
 static expr_t *
 do_op_field (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
-	if (op != '=')
-		return error (e1, "invalid operator for field");
-	e->e.expr.type = &type_field;
-	return e;
+	return error (e1, "invalid operator for field");
 }
 
 static expr_t *
@@ -607,17 +586,14 @@ do_op_func (int op, expr_t *e, expr_t *e1, expr_t *e2)
 			e->e.expr.type = &type_float;
 		return e;
 	}
-	if (op != '=')
-		return error (e1, "invalid operator for func");
-	e->e.expr.type = &type_function;
-	return e;
+	return error (e1, "invalid operator for func");
 }
 
 static expr_t *
 do_op_pointer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	type_t     *type;
-	static int  valid[] = {'=', '-', 'M', '.', EQ, NE, 0};
+	static int  valid[] = {'-', 'M', '.', EQ, NE, 0};
 
 	if (is_integral (type = get_type (e2)) && (op == '-' || op == '+')) {
 		// pointer arithmetic
@@ -682,7 +658,7 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	const float *q1, *q2;
 	quat_t      q, float_quat;
-	static int  valid[] = {'=', '+', '-', '*', EQ, NE, 0};
+	static int  valid[] = {'+', '-', '*', EQ, NE, 0};
 	expr_t     *t;
 
 	if (!is_quaternion(get_type (e1))) {
@@ -731,7 +707,7 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (op == '-' && is_constant (e2) && QuatIsZero (expr_quaternion (e2)))
 		return e1;
 
-	if (op == '=' || !is_constant (e1) || !is_constant (e2))
+	if (!is_constant (e1) || !is_constant (e2))
 		return e;
 
 	if (is_float_val (e1)) {
@@ -793,7 +769,7 @@ do_op_integer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	int         isval1 = 0, isval2 = 0;
 	int         val1 = 0, val2 = 0;
 	static int  valid[] = {
-		'=', '+', '-', '*', '/', '&', '|', '^', '%',
+		'+', '-', '*', '/', '&', '|', '^', '%',
 		SHL, SHR, AND, OR, LT, GT, LE, GE, EQ, NE, 0
 	};
 
@@ -848,7 +824,7 @@ do_op_integer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	if (op == '-' && isval2 && val2 == 0)
 		return e1;
 
-	if (op == '=' || !isval1 || !isval2)
+	if (!isval1 || !isval2)
 		return e;
 
 	switch (op) {
@@ -927,7 +903,7 @@ do_op_short (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	short       i1, i2;
 	static int  valid[] = {
-		'=', '+', '-', '*', '/', '&', '|', '^', '%',
+		'+', '-', '*', '/', '&', '|', '^', '%',
 		SHL, SHR, AND, OR, LT, GT, LE, GE, EQ, NE, 0
 	};
 
@@ -943,7 +919,7 @@ do_op_short (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		e->e.expr.type = &type_short;
 	}
 
-	if (op == '=' || !is_constant (e1) || !is_constant (e2))
+	if (!is_constant (e1) || !is_constant (e2))
 		return e;
 
 	i1 = expr_short (e1);
@@ -1019,7 +995,7 @@ do_op_struct (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	type_t     *type;
 
-	if (op != '=' && op != 'm')
+	if (op != 'm')
 		return error (e1, "invalid operator for struct");
 	if ((type = get_type (e1)) != get_type (e2))
 		return type_mismatch (e1, e2, op);

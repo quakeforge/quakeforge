@@ -262,6 +262,8 @@ get_type (expr_t *e)
 			return e->e.alias.type;
 		case ex_address:
 			return e->e.address.type;
+		case ex_assign:
+			return get_type (e->e.assign.dst);
 		case ex_count:
 			internal_error (e, "invalid expression");
 	}
@@ -484,6 +486,12 @@ copy_expr (expr_t *e)
 			*n = *e;
 			n->e.address.lvalue = copy_expr (e->e.address.lvalue);
 			n->e.address.offset = copy_expr (e->e.address.offset);
+			return n;
+		case ex_assign:
+			n = new_expr ();
+			*n = *e;
+			n->e.assign.dst = copy_expr (e->e.assign.dst);
+			n->e.assign.src = copy_expr (e->e.assign.src);
 			return n;
 		case ex_count:
 			break;
@@ -1296,6 +1304,16 @@ new_address_expr (type_t *lvtype, expr_t *lvalue, expr_t *offset)
 	return addr;
 }
 
+expr_t *
+new_assign_expr (expr_t *dst, expr_t *src)
+{
+	expr_t     *addr = new_expr ();
+	addr->type = ex_assign;
+	addr->e.assign.dst = dst;
+	addr->e.assign.src = src;
+	return addr;
+}
+
 static expr_t *
 param_expr (const char *name, type_t *type)
 {
@@ -1610,6 +1628,9 @@ has_function_call (expr_t *e)
 			return has_function_call (e->e.alias.expr);
 		case ex_address:
 			return has_function_call (e->e.address.lvalue);
+		case ex_assign:
+			return (has_function_call (e->e.assign.dst)
+					|| has_function_call (e->e.assign.src));
 		case ex_error:
 		case ex_state:
 		case ex_label:
@@ -1733,6 +1754,7 @@ unary_expr (int op, expr_t *e)
 				case ex_temp:
 				case ex_vector:
 				case ex_alias:
+				case ex_assign:
 					{
 						expr_t     *n = new_unary_expr (op, e);
 
@@ -1819,6 +1841,7 @@ unary_expr (int op, expr_t *e)
 				case ex_vector:
 				case ex_alias:
 				case ex_address:
+				case ex_assign:
 					{
 						expr_t     *n = new_unary_expr (op, e);
 
@@ -1896,6 +1919,7 @@ unary_expr (int op, expr_t *e)
 				case ex_temp:
 				case ex_vector:
 				case ex_alias:
+				case ex_assign:
 bitnot_expr:
 					if (options.code.progsversion == PROG_ID_VERSION) {
 						expr_t     *n1 = new_integer_expr (-1);
