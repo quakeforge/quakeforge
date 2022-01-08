@@ -568,7 +568,7 @@ do_op_entity (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	type_t     *type = get_type (e2);
 
-	if ((op == '.' || op == '&') && type->type == ev_field) {
+	if (op == '.' && type->type == ev_field) {
 		return e;
 	}
 	if (op == EQ || op == NE) {
@@ -617,7 +617,7 @@ static expr_t *
 do_op_pointer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	type_t     *type;
-	static int  valid[] = {'=', '-', '&', 'M', '.', EQ, NE, 0};
+	static int  valid[] = {'=', '-', 'M', '.', EQ, NE, 0};
 
 	if (is_integral (type = get_type (e2)) && (op == '-' || op == '+')) {
 		// pointer arithmetic
@@ -647,10 +647,10 @@ do_op_pointer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		else
 			e->e.expr.type = &type_float;
 	}
-	if (op != '.' && op != '&' && op != 'M'
+	if (op != '.' && op != 'M'
 		&& extract_type (e1) != extract_type (e2))
 		return type_mismatch (e1, e2, op);
-	if ((op == '.' || op == '&') && is_uinteger(get_type (e2)))
+	if (op == '.' && is_uinteger(get_type (e2)))
 		e->e.expr.e2 = cf_cast_expr (&type_integer, e2);
 	return e;
 }

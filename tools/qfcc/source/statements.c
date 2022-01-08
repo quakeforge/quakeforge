@@ -744,8 +744,11 @@ expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	statement_t *s;
 	s = new_statement (st_expr, "&", e);
-	sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
-	s->opc = temp_operand (e->e.expr.type, e);
+	sblock = statement_subexpr (sblock, e->e.address.lvalue, &s->opa);
+	if (e->e.address.offset) {
+		sblock = statement_subexpr (sblock, e->e.address.offset, &s->opb);
+	}
+	s->opc = temp_operand (e->e.address.type, e);
 	sblock_add_statement (sblock, s);
 	*(op) = s->opc;
 	return sblock;
@@ -960,9 +963,12 @@ dereference_dst:
 		// to get the pointer and switch to storep instructions.
 		dst_expr = expr_file_line (address_expr (dst_expr, 0, 0), e);
 		opcode = ".=";	// FIXME find a nicer representation (lose strings?)
-		if (dst_expr->type == ex_expr && !is_const_ptr (dst_expr->e.expr.e1)) {
-			sblock = statement_subexpr (sblock, dst_expr->e.expr.e1, &dst);
-			sblock = statement_subexpr (sblock, dst_expr->e.expr.e2, &ofs);
+		if (dst_expr->type == ex_address && dst_expr->e.address.offset
+			&& !is_const_ptr (dst_expr->e.address.lvalue)) {
+			sblock = statement_subexpr (sblock,
+										dst_expr->e.address.lvalue, &dst);
+			sblock = statement_subexpr (sblock,
+										dst_expr->e.address.offset, &ofs);
 		} else {
 			sblock = statement_subexpr (sblock, dst_expr, &dst);
 			ofs = 0;
@@ -1127,17 +1133,17 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 	expr_t     *e;
 
 	e = deref->e.expr.e1;
-	if (e->type == ex_uexpr && e->e.expr.op == '&'
-		&& e->e.expr.e1->type == ex_symbol) {
+	if (e->type == ex_address && !e->e.address.offset
+		&& e->e.address.lvalue->type == ex_symbol) {
 		if (e->e.expr.e1->e.symbol->sy_type != sy_var)
 			internal_error (e, "address of non-var");
 		*op = def_operand (e->e.expr.e1->e.symbol->s.def, type, e);
-	} else if (e->type == ex_expr && e->e.expr.op == '&') {
+	} else if (e->type == ex_address && e->e.address.offset) {
 		statement_t *s;
 		operand_t  *ptr = 0;
 		operand_t  *offs = 0;
-		sblock = statement_subexpr (sblock, e->e.expr.e1, &ptr);
-		sblock = statement_subexpr (sblock, e->e.expr.e2, &offs);
+		sblock = statement_subexpr (sblock, e->e.address.lvalue, &ptr);
+		sblock = statement_subexpr (sblock, e->e.address.offset, &offs);
 		if (!*op)
 			*op = temp_operand (type, e);
 		if (low_level_type (type) == ev_void) {
@@ -1329,9 +1335,6 @@ expr_uexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 	statement_t *s;
 
 	switch (e->e.expr.op) {
-		case '&':
-			sblock = expr_address (sblock, e, op);
-			break;
 		case '.':
 			sblock = expr_deref (sblock, e, op);
 			break;
@@ -1524,6 +1527,7 @@ statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 		[ex_value] = expr_value,
 		[ex_selector] = expr_selector,
 		[ex_alias] = expr_alias,
+		[ex_address] = expr_address,
 	};
 	if (!e) {
 		*op = 0;

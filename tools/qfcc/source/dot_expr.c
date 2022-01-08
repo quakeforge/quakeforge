@@ -339,6 +339,27 @@ print_alias (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 }
 
 static void
+print_address (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->e.alias.expr, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"&\"];\n", indent, "", e,
+			   e->e.alias.expr);
+	if (e->e.alias.offset) {
+		_print_expr (dstr, e->e.alias.offset, level, id, next);
+		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"+\"];\n", indent, "", e,
+				   e->e.alias.offset);
+	}
+
+	dstring_t  *typestr = dstring_newstr();
+	print_type_str (typestr, e->e.alias.type);
+	dasprintf (dstr, "%*se_%p [label=\"%s (%s)\\n%d\"];\n", indent, "", e,
+			   "&", typestr->str, e->line);
+	dstring_delete (typestr);
+}
+
+static void
 print_uexpr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	int         indent = level * 2 + 2;
@@ -581,6 +602,7 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		[ex_compound] = print_compound,
 		[ex_memset] = print_memset,
 		[ex_alias] = print_alias,
+		[ex_address] = print_address,
 	};
 	int         indent = level * 2 + 2;
 

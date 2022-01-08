@@ -213,6 +213,12 @@ typedef struct {
 	struct expr_s *offset;				///< offset for alias
 } ex_alias_t;
 
+typedef struct {
+	struct type_s *type;				///< pointer type
+	struct expr_s *lvalue;				///< the lvalue being addressed
+	struct expr_s *offset;				///< offset from the address
+} ex_address_t;
+
 #define POINTER_VAL(p) (((p).def ? (p).def->offset : 0) + (p).val)
 
 typedef struct expr_s {
@@ -240,6 +246,7 @@ typedef struct expr_s {
 		element_chain_t compound;		///< compound initializer
 		ex_memset_t memset;				///< memset expr params
 		ex_alias_t  alias;				///< alias expr params
+		ex_address_t address;			///< alias expr params
 		struct type_s *nil;				///< type for nil if known
 	} e;
 } expr_t;
@@ -653,6 +660,9 @@ expr_t *new_ret_expr (struct type_s *type);
 
 expr_t *new_alias_expr (struct type_s *type, expr_t *expr);
 expr_t *new_offset_alias_expr (struct type_s *type, expr_t *expr, int offset);
+
+expr_t *new_address_expr (struct type_s *lvtype, expr_t *lvalue,
+						  expr_t *offset);
 
 /**	Create an expression of the correct type that references the specified
 	parameter slot.

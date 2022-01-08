@@ -260,6 +260,8 @@ get_type (expr_t *e)
 			return &type_SEL;
 		case ex_alias:
 			return e->e.alias.type;
+		case ex_address:
+			return e->e.address.type;
 		case ex_count:
 			internal_error (e, "invalid expression");
 	}
@@ -476,6 +478,12 @@ copy_expr (expr_t *e)
 			*n = *e;
 			n->e.alias.expr = copy_expr (e->e.alias.expr);
 			n->e.alias.offset = copy_expr (e->e.alias.offset);
+			return n;
+		case ex_address:
+			n = new_expr ();
+			*n = *e;
+			n->e.address.lvalue = copy_expr (e->e.address.lvalue);
+			n->e.address.offset = copy_expr (e->e.address.offset);
 			return n;
 		case ex_count:
 			break;
@@ -1277,6 +1285,17 @@ new_offset_alias_expr (type_t *type, expr_t *expr, int offset)
 	return alias;
 }
 
+expr_t *
+new_address_expr (type_t *lvtype, expr_t *lvalue, expr_t *offset)
+{
+	expr_t     *addr = new_expr ();
+	addr->type = ex_address;
+	addr->e.address.type = pointer_type (lvtype);
+	addr->e.address.lvalue = lvalue;
+	addr->e.address.offset = offset;
+	return addr;
+}
+
 static expr_t *
 param_expr (const char *name, type_t *type)
 {
@@ -1406,8 +1425,7 @@ field_expr (expr_t *e1, expr_t *e2)
 
 			e2->type = ex_value;
 			e2->e.value = new_short_val (field->s.offset);
-			e = new_binary_expr ('&', e1, e2);
-			e->e.expr.type = pointer_type (field->type);
+			e = new_address_expr (field->type, e1, e2);
 			return unary_expr ('.', e);
 		} else if (is_class (t1->t.fldptr.type)) {
 			class_t    *class = t1->t.fldptr.type->t.class;
@@ -1420,8 +1438,7 @@ field_expr (expr_t *e1, expr_t *e2)
 				return new_error_expr ();
 			e2->type = ex_value;
 			e2->e.value = new_short_val (ivar->s.offset);
-			e = new_binary_expr ('&', e1, e2);
-			e->e.expr.type = pointer_type (ivar->type);
+			e = new_address_expr (ivar->type, e1, e2);
 			return unary_expr ('.', e);
 		}
 	} else if (is_vector (t1) || is_quaternion(t1) || is_struct (t1)) {
@@ -1591,6 +1608,8 @@ has_function_call (expr_t *e)
 			return 0;
 		case ex_alias:
 			return has_function_call (e->e.alias.expr);
+		case ex_address:
+			return has_function_call (e->e.address.lvalue);
 		case ex_error:
 		case ex_state:
 		case ex_label:
@@ -1735,6 +1754,7 @@ unary_expr (int op, expr_t *e)
 						return n;
 					}
 				case ex_nil:
+				case ex_address:
 					return error (e, "invalid type for unary -");
 				case ex_count:
 					internal_error (e, "invalid expression");
@@ -1798,6 +1818,7 @@ unary_expr (int op, expr_t *e)
 				case ex_temp:
 				case ex_vector:
 				case ex_alias:
+				case ex_address:
 					{
 						expr_t     *n = new_unary_expr (op, e);
 
@@ -1890,6 +1911,7 @@ bitnot_expr:
 						return n;
 					}
 				case ex_nil:
+				case ex_address:
 					return error (e, "invalid type for unary ~");
 				case ex_count:
 					internal_error (e, "invalid expression");
@@ -2312,9 +2334,7 @@ array_expr (expr_t *array, expr_t *index)
 		e = address_expr (array, index, array_type->t.array.type);
 	} else {
 		if (!is_short_val (index) || expr_short (index)) {
-			e = new_binary_expr ('&', array, index);
-			//e->e.expr.type = array_type->aux_type;
-			e->e.expr.type = array_type;
+			e = new_address_expr (array_type->t.array.type, array, index);
 		} else {
 			e = array;
 		}
@@ -2382,9 +2402,8 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 			return error (e1, "invalid type for unary &");
 		case ex_expr:
 			if (e1->e.expr.op == '.') {
-				e = e1;
-				e->e.expr.op = '&';
-				e->e.expr.type = pointer_type (e->e.expr.type);
+				e = new_address_expr (e1->e.expr.type,
+									  e1->e.expr.e1, e1->e.expr.e2);
 				break;
 			}
 			if (e1->e.expr.op == 'm') {
@@ -2402,8 +2421,7 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 			if (e1->e.expr.op == '.') {
 				e = e1->e.expr.e1;
 				if (e->type == ex_expr && e->e.expr.op == '.') {
-					e->e.expr.type = pointer_type (e->e.expr.type);
-					e->e.expr.op = '&';
+					e = new_address_expr (e->e.expr.type, e->e.expr.e1, e->e.expr.e2);
 				}
 				break;
 			}
@@ -2411,8 +2429,7 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 		case ex_label:
 			return new_label_ref (&e1->e.label);
 		case ex_temp:
-			e = new_unary_expr ('&', e1);
-			e->e.expr.type = pointer_type (t);
+			e = new_address_expr (t, e1, 0);
 			break;
 		case ex_alias:
 			if (!t) {
@@ -2438,19 +2455,17 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 			def_t      *def = e->e.value->v.pointer.def;
 			e->e.value = new_pointer_val (base + offset, t, def, 0);
 		} else {
-			if (!is_short_val (e2) || expr_short (e2)) {
-				if (e->type == ex_expr && e->e.expr.op == '&') {
-					e = new_binary_expr ('&', e->e.expr.e1,
-										 binary_expr ('+', e->e.expr.e2, e2));
-				} else {
-					e = new_binary_expr ('&', e, e2);
-				}
+			expr_t     *offset = 0;
+			if (e->type == ex_address) {
+				offset = e->e.address.offset;
+				e1 = e->e.address.lvalue;
+			} else {
+				e1 = e;
 			}
-			if (e->type == ex_expr || e->type == ex_uexpr) {
-				e->e.expr.type = pointer_type (t);
-			} else if (e->type == ex_alias) {
-				e->e.alias.type = pointer_type (t);
+			if (offset) {
+				e2 = binary_expr ('+', offset, e2);
 			}
+			e = new_address_expr (t, e1, e2);
 		}
 	}
 	return e;

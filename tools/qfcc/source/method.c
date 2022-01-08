@@ -486,8 +486,8 @@ get_selector (expr_t *sel)
 	if (sel->type == ex_selector) {
 		return sel->e.selector.sel;
 	}
-	if (sel->type != ex_expr && sel->e.expr.op != '&'
-		&& !is_SEL(sel->e.expr.type)) {
+	if (sel->type != ex_address && !sel->e.address.offset
+		&& !is_SEL(sel->e.address.type)) {
 		error (sel, "not a selector");
 		return 0;
 	}

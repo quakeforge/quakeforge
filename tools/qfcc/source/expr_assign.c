@@ -115,6 +115,8 @@ is_lvalue (const expr_t *expr)
 			break;
 		case ex_alias:
 			return is_lvalue (expr->e.alias.expr);
+		case ex_address:
+			return 0;
 		case ex_uexpr:
 			if (expr->e.expr.op == '.') {
 				return 1;
