@@ -36,6 +36,8 @@ n 1111 nnnn
 0 1011 nnnn
 """
 
+import copy
+
 load_fmt =  [
     "%Ga.%Gb(%Ea), %gc",
     "*%Ga, %gc",
@@ -184,6 +186,15 @@ convert_formats = {
         ],
     },
 }
+convert2_formats = copy.deepcopy (convert_formats)
+convert2_formats["args"]["op_conv"] = [None, "IL", "uU", "FD",
+                                       None, "LI", "Uu", "DF"]
+convert2_formats["args"]["cnv_types"] = [
+    [None, None],
+    ["ev_integer", "ev_long"],
+    ["ev_uinteger", "ev_ulong"],
+    ["ev_float", "ev_double"],
+]
 lea_formats = {
     "opcode": "OP_LEA_{op_mode[mm]}",
     "mnemonic": "lea",
@@ -505,7 +516,7 @@ group_map = {
     "compare":  compare_formats,
     "compare2": compare2_formats,
     "convert":  convert_formats,
-    "convert2": convert_formats,
+    "convert2": convert2_formats,
     "lea":      lea_formats,
     "lea_e":    lea_e_formats,
     "load":     load_formats,
@@ -598,6 +609,12 @@ def process_opcode(opcode, group):
     inst["wd"] = "{%s}" % eval(f'''f"{gm['widths']}"''', params)
     inst["ty"] = "{%s}" % eval(f'''f"{gm['types']}"''', params)
 
+import sys
+
+if len (sys.argv) < 2 or sys.argv[1] not in ["enum", "table"]:
+    sys.stderr.write ("specify output type: enum or table\n")
+    sys.exit(1)
+
 lines = bitmap_txt.split('\n')
 for l in lines:
     if not l:
@@ -612,16 +629,26 @@ for l in lines:
 for i, group in enumerate(opcodes):
     if group is not None:
         process_opcode (i, group)
-N = 8
-W = 9
-#for i in range(len(opcodes)//N):
-#    print("%03x" % (i << 3), " ".join(map(lambda op: "%-*.*s" % (W, W, op and op["op"] or None), opcodes[i*N:i*N+N])))
-for i, group in enumerate(opcodes):
-    if group is not None:
-        print(eval('f"[{op}] = {{\\n'
-                   '\\t.opname = {on},\\n'
-                   '\\t.mnemonic = {mn},\\n'
-                   '\\t.widths = {wd},\\n'
-                   '\\t.types = {ty},\\n'
-                   '\\t.fmt = {fmt},\\n'
-                   '}},"', group))
+if sys.argv[1] == "enum":
+    N = 4
+    W = 15
+    for i in range(len(opcodes)//N):
+        row = opcodes[i * N:i * N + N]
+        #row = map(lambda op: (op and op["op"] or f"OP_spare_{i}"), row)
+        row = [(op and op["op"] or f"OP_spare_{i*N+x}")
+               for x, op in enumerate(row)]
+        row = map(lambda op: f"%-{W}.{W}s" % (op + ','), row)
+        if sys.argv[2:3] == ["debug"]:
+            print("%03x" % (i << 3), " ".join(row))
+        else:
+            print(" ".join(row))
+elif sys.argv[1] == "table":
+    for i, group in enumerate(opcodes):
+        if group is not None:
+            print(eval('f"[{op}] = {{\\n'
+                       '\\t.opname = {on},\\n'
+                       '\\t.mnemonic = {mn},\\n'
+                       '\\t.widths = {wd},\\n'
+                       '\\t.types = {ty},\\n'
+                       '\\t.fmt = {fmt},\\n'
+                       '}},"', group))
