@@ -259,9 +259,11 @@ get_type (expr_t *e)
 		case ex_selector:
 			return &type_SEL;
 		case ex_alias:
-			return e->e.alias.type;
+			type = e->e.alias.type;
+			break;
 		case ex_address:
-			return e->e.address.type;
+			type = e->e.address.type;
+			break;
 		case ex_assign:
 			return get_type (e->e.assign.dst);
 		case ex_count:
