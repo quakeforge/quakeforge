@@ -3,13 +3,12 @@ bitmap_txt = """
 0 0001 mmss store
 0 0010 mmss push
 0 0011 mmss pop
-0 0100 ccmm branch
-0 0101 0nnn rcall 1-8 (0 0100 11mm with 0 params for [r]call0)
-0 0101 10ss return
-0 0101 1100 returnv
-0 0101 1101 with (reg encoded in st->c)
-0 0101 111t state
-0 0110 ccmm branch2
+0 010c ccmm branch
+0 0110 0nnn rcall 1-8 (0 0100 11mm with 0 params for [r]call0)
+0 0110 10ss return
+0 0110 1100 returnv
+0 0110 1101 with (reg encoded in st->c)
+0 0110 111t state
 0 0111 tooo vecops
 0 1ccc ttss compare
 1 0ooo ttss mathops
@@ -107,41 +106,27 @@ boolops_formats = {
     },
 }
 branch_formats = {
-    "opcode": "OP_{op_cond[cc].upper()}_{op_mode[mm]}",
-    "mnemonic": "{op_cond[cc]}",
-    "opname": "{op_cond[cc]}",
-    "format": "{cond_fmt[cc]}{branch_fmt[mm]}",
-    "widths": "{cond_widths[cc]}",
+    "opcode": "OP_{op_cond[ccc].upper()}_{op_mode[mm]}",
+    "mnemonic": "{op_cond[ccc]}",
+    "opname": "{op_cond[ccc]}",
+    "format": "{cond_fmt[ccc]}{branch_fmt[mm]}",
+    "widths": "{cond_widths[ccc]}",
     "types": "ev_void, ev_void, ev_integer",
     "args": {
         "op_mode": "ABCD",
-        "op_cond": ["ifnot", "if", "jump", "call"],
+        "op_cond": ["ifnot", "ifb", "ifa", "jump",
+                    "if", "ifae", "ifbe", "call"],
         "branch_fmt": branch_fmt,
-        "cond_fmt": ["%Gc ", "%Gc ", "", ""],
-        "cond_widths": [
-            "0, 0, 1",
-            "0, 0, 1",
-            "0, 0, 0",
-            "0, 0, 0",
-        ],
-    },
-}
-branch2_formats = {
-    "opcode": "OP_{op_cond[cc].upper()}_{op_mode[mm]}",
-    "mnemonic": "{op_cond[cc]}",
-    "opname": "{op_cond[cc]}",
-    "format": "%Gc {branch_fmt[mm]}",
-    "widths": "{cond_widths[cc]}",
-    "types": "ev_void, ev_void, ev_integer",
-    "args": {
-        "op_mode": "ABCD",
-        "op_cond": ["ifa", "ifbe", "ifb", "ifae"],
-        "branch_fmt": branch_fmt,
+        "cond_fmt": ["%Gc ", "%Gc ", "%Gc ", "", "%Gc ", "%Gc ", "%Gc ", ""],
         "cond_widths": [
             "0, 0, 1",
             "0, 0, 1",
             "0, 0, 1",
+            "0, 0, 0",
             "0, 0, 1",
+            "0, 0, 1",
+            "0, 0, 1",
+            "0, 0, 0",
         ],
     },
 }
@@ -512,7 +497,6 @@ group_map = {
     "bitops":   bitops_formats,
     "boolops":  boolops_formats,
     "branch":   branch_formats,
-    "branch2":  branch2_formats,
     "compare":  compare_formats,
     "compare2": compare2_formats,
     "convert":  convert_formats,
