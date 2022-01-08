@@ -36,7 +36,7 @@
 typedef struct instruction_s instruction_t;
 
 struct operand_s;
-pr_ushort_t opcode_get (instruction_t *inst);
+pr_ushort_t opcode_get (instruction_t *inst) __attribute__((pure));
 instruction_t *opcode_find (const char *name, struct operand_s *op_a,
 							struct operand_s *op_b, struct operand_s *op_c);
 void opcode_init (void);
