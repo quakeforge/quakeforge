@@ -1387,7 +1387,7 @@ append_expr (expr_t *block, expr_t *e)
 static symbol_t *
 get_struct_field (const type_t *t1, expr_t *e1, expr_t *e2)
 {
-	symtab_t   *strct = unalias_type(t1)->t.symtab;
+	symtab_t   *strct = t1->t.symtab;
 	symbol_t   *sym = e2->e.symbol;//FIXME need to check
 	symbol_t   *field;
 
@@ -1412,7 +1412,7 @@ field_expr (expr_t *e1, expr_t *e2)
 	t1 = get_type (e1);
 	if (e1->type == ex_error)
 		return e1;
-	if (is_entity (t1)) {
+	if (t1->type == ev_entity) {
 		symbol_t   *field = 0;
 
 		if (e2->type == ex_symbol)
@@ -1432,8 +1432,7 @@ field_expr (expr_t *e1, expr_t *e2)
 				return e;
 			}
 		}
-	} else if (is_pointer (t1)) {
-		t1 = unalias_type (t1);
+	} else if (t1->type == ev_pointer) {
 		if (is_struct (t1->t.fldptr.type)) {
 			symbol_t   *field;
 
@@ -1459,7 +1458,8 @@ field_expr (expr_t *e1, expr_t *e2)
 			e = new_address_expr (ivar->type, e1, e2);
 			return unary_expr ('.', e);
 		}
-	} else if (is_vector (t1) || is_quaternion(t1) || is_struct (t1)) {
+	} else if (t1->type == ev_vector || t1->type == ev_quat
+			   || is_struct (t1)) {
 		symbol_t   *field;
 
 		field = get_struct_field (t1, e1, e2);
@@ -2339,7 +2339,7 @@ array_expr (expr_t *array, expr_t *index)
 		ind = expr_short (index);
 	if (is_integer_val (index))
 		ind = expr_integer (index);
-	if (is_array (array_type)
+	if (array_type->t.func.num_params
 		&& is_constant (index)
 		&& (ind < array_type->t.array.base
 			|| ind - array_type->t.array.base >= array_type->t.array.size))
@@ -2755,7 +2755,7 @@ cast_expr (type_t *dstType, expr_t *e)
 	dstType = (type_t *) unalias_type (dstType); //FIXME cast
 	srcType = get_type (e);
 
-	if (dstType == unalias_type(srcType))
+	if (dstType == srcType)
 		return e;
 
 	if ((dstType == type_default && is_enum (srcType))
