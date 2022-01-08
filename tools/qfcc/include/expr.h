@@ -31,7 +31,7 @@
 #ifndef __expr_h
 #define __expr_h
 
-#include "QF/pr_comp.h"
+#include "QF/progs/pr_comp.h"
 
 /**	\defgroup qfcc_expr Expressions
 	\ingroup qfcc

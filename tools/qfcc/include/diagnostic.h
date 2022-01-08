@@ -31,8 +31,6 @@
 #ifndef __diagnostic_h
 #define __diagnostic_h
 
-#include "QF/pr_comp.h"
-
 /**	\defgroup qfcc_diagnostic Diagnostic Messages
 	\ingroup qfcc
 */

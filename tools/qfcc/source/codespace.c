@@ -39,7 +39,7 @@
 #endif
 #include <stdlib.h>
 
-#include "QF/pr_comp.h"
+#include "QF/progs/pr_comp.h"
 
 #include "tools/qfcc/include/codespace.h"
 

@@ -31,7 +31,7 @@
 #ifndef __QF_ruamoko_h
 #define __QF_ruamoko_h
 
-#include "QF/pr_obj.h"
+#include "QF/progs/pr_obj.h"
 
 struct progs_s;
 struct cbuf_s;

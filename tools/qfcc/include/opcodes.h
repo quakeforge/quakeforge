@@ -31,7 +31,7 @@
 #ifndef __opcodes_h
 #define __opcodes_h
 
-#include "QF/pr_comp.h"
+#include "QF/progs/pr_comp.h"
 
 typedef struct instruction_s instruction_t;
 

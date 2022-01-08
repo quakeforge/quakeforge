@@ -43,10 +43,6 @@ include_qf = \
 	include/QF/plist.h \
 	include/QF/plugin.h \
 	include/QF/pqueue.h \
-	include/QF/pr_comp.h \
-	include/QF/pr_debug.h \
-	include/QF/pr_obj.h \
-	include/QF/pr_type.h \
 	include/QF/progs.h \
 	include/QF/pvsfile.h \
 	include/QF/qargs.h \
@@ -134,6 +130,12 @@ include_qf_plugin = \
 	include/QF/plugin/snd_output.h \
 	include/QF/plugin/snd_render.h \
 	include/QF/plugin/vid_render.h
+
+include_qf_progs = \
+	include/QF/pr_comp.h \
+	include/QF/pr_debug.h \
+	include/QF/pr_obj.h \
+	include/QF/pr_type.h
 
 include_qf_scene = \
 	include/QF/scene/entity.h \
@@ -232,6 +234,7 @@ EXTRA_HEADERS += \
 	$(include_qf_input) \
 	$(include_qf_math) \
 	$(include_qf_plugin) \
+	$(include_qf_progs) \
 	$(include_qf_scene) \
 	$(include_qf_simd) \
 	$(include_qf_ui) \

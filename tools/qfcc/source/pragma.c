@@ -40,7 +40,8 @@
 #include <stdlib.h>
 
 #include "QF/alloc.h"
-#include "QF/pr_comp.h"
+
+#include "QF/progs/pr_comp.h"
 
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/opcodes.h"

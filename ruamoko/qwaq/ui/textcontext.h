@@ -61,7 +61,7 @@
 
 #else
 
-#include "QF/pr_obj.h"
+#include "QF/progs/pr_obj.h"
 
 typedef struct qwaq_textcontext_s {
 	pr_id_t     isa;

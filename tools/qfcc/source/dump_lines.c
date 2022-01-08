@@ -41,7 +41,8 @@
 #include <stdlib.h>
 
 #include "QF/progs.h"
-#include "QF/pr_type.h"
+
+#include "QF/progs/pr_type.h"
 
 #include "tools/qfcc/include/obj_file.h"
 #include "tools/qfcc/include/qfprogs.h"

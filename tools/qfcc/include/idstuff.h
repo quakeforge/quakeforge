@@ -31,7 +31,7 @@
 #ifndef __idstuff_h
 #define __idstuff_h
 
-#include "QF/pr_comp.h"
+#include "QF/progs/pr_comp.h"
 
 //XXX eww :/
 void PrecacheSound (const char *, int ch);

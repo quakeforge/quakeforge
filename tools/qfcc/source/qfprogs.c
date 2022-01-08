@@ -56,12 +56,13 @@
 #include "QF/cvar.h"
 #include "QF/hash.h"
 #include "QF/mathlib.h"
-#include "QF/pr_comp.h"
 #include "QF/progs.h"
 #include "QF/quakeio.h"
 #include "QF/sys.h"
 #include "QF/va.h"
 #include "QF/zone.h"
+
+#include "QF/progs/pr_comp.h"
 
 #include "tools/qfcc/include/obj_file.h"
 #include "tools/qfcc/include/obj_type.h"

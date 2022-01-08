@@ -31,7 +31,7 @@
 #ifndef __obj_type_h
 #define __obj_type_h
 
-#include "QF/pr_type.h"
+#include "QF/progs/pr_type.h"
 
 #include "type.h"
 

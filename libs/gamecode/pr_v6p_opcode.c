@@ -37,9 +37,10 @@
 #endif
 
 #include "QF/cvar.h"
-#include "QF/pr_comp.h"
 #include "QF/progs.h"
 #include "QF/sys.h"
+
+#include "QF/progs/pr_comp.h"
 
 #include "compat.h"
 

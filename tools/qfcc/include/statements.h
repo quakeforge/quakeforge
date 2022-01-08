@@ -30,7 +30,7 @@
 #ifndef statement_h
 #define statement_h
 
-#include "QF/pr_comp.h"
+#include "QF/progs/pr_comp.h"
 
 typedef enum {
 	op_def,

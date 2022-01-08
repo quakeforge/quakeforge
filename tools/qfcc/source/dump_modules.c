@@ -40,9 +40,10 @@
 
 #include <stdlib.h>
 
-#include "QF/pr_obj.h"
 #include "QF/progs.h"
 #include "QF/va.h"
+
+#include "QF/progs/pr_obj.h"
 
 #include "tools/qfcc/include/qfprogs.h"
 

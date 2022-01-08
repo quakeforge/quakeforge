@@ -32,7 +32,7 @@
 #define __QF_pr_debug_h
 
 #ifndef __QFCC__
-#include "QF/pr_comp.h"
+#include "QF/progs/pr_comp.h"
 
 typedef struct pr_compunit_s {
 	pr_uint_t   unit_name;

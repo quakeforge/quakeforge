@@ -48,10 +48,11 @@
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/mathlib.h"
-#include "QF/pr_obj.h"
 #include "QF/progs.h"
 #include "QF/ruamoko.h"
 #include "QF/sys.h"
+
+#include "QF/progs/pr_obj.h"
 
 #include "compat.h"
 #include "rua_internal.h"

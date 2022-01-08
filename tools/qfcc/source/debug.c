@@ -41,7 +41,7 @@
 #include <ctype.h>
 
 #include "QF/alloc.h"
-#include "QF/pr_comp.h"
+#include "QF/progs/pr_comp.h"
 
 #include "tools/qfcc/include/debug.h"
 #include "tools/qfcc/include/def.h"

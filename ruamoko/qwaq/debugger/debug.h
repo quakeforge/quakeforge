@@ -9,7 +9,7 @@ typedef enum {
 
 #ifdef __QFCC__
 
-#include <QF/pr_debug.h>
+#include <QF/progs/pr_debug.h>
 
 //FIXME finish unsigned in qfcc
 #ifndef umax

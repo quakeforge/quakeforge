@@ -36,8 +36,8 @@
 */
 ///@{
 
-#include "QF/pr_comp.h"
-#include "QF/pr_debug.h"
+#include "QF/progs/pr_comp.h"
+#include "QF/progs/pr_debug.h"
 #include "QF/quakeio.h"
 
 /** Identifier string for qfo object files (includes terminating nul)

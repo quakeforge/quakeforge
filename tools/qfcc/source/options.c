@@ -42,8 +42,9 @@
 
 #include <getopt.h>
 
-#include "QF/pr_comp.h"
 #include "QF/va.h"
+
+#include "QF/progs/pr_comp.h"
 
 #include "tools/qfcc/include/cpp.h"
 #include "tools/qfcc/include/linker.h"

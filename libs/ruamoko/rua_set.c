@@ -40,8 +40,9 @@
 #include <stdlib.h>
 
 #include "QF/progs.h"
-#include "QF/pr_obj.h"
 #include "QF/set.h"
+
+#include "QF/progs/pr_obj.h"
 
 #include "rua_internal.h"
 

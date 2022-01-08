@@ -41,8 +41,9 @@
 
 #include "QF/dstring.h"
 #include "QF/hash.h"
-#include "QF/pr_obj.h"
 #include "QF/va.h"
+
+#include "QF/progs/pr_obj.h"
 
 #include "tools/qfcc/include/qfcc.h"
 

@@ -38,7 +38,7 @@
 */
 ///@{
 
-#include "QF/pr_comp.h"
+#include "QF/progs/pr_comp.h"
 
 typedef enum {
 	ty_basic,				///< VM type (float, int, pointer, field, etc)

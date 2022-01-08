@@ -49,14 +49,15 @@
 #include "QF/dstring.h"
 #include "QF/hash.h"
 #include "QF/mathlib.h"
-#include "QF/pr_debug.h"
-#include "QF/pr_type.h"
 #include "QF/progs.h"
 #include "QF/qendian.h"
 #include "QF/quakefs.h"
 #include "QF/script.h"
 #include "QF/sys.h"
 #include "QF/zone.h"
+
+#include "QF/progs/pr_debug.h"
+#include "QF/progs/pr_type.h"
 
 #include "compat.h"
 

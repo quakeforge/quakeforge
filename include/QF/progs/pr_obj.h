@@ -31,7 +31,7 @@
 #ifndef __QF_pr_obj_h
 #define __QF_pr_obj_h
 
-#include "QF/pr_comp.h"
+#include "QF/progs/pr_comp.h"
 
 #define PR_BITS_PER_INT (sizeof (pr_int_t) * 8)
 
@@ -74,7 +74,7 @@
 #define PR_CLS_GETNUMBER(cls) (__CLS_INFO (cls) >> (PR_BITS_PER_INT / 2))
 #define PR_CLS_SETNUMBER(cls, num) \
   (__PR_CLS_INFO (cls) = __PR_CLS_INFO (cls) & (~0U >> (PR_BITS_PER_INT / 2)) \
-   						| (num) << (PR_BITS_PER_INT / 2))
+						| (num) << (PR_BITS_PER_INT / 2))
 
 typedef struct pr_sel_s {
 	pointer_t   sel_id;
