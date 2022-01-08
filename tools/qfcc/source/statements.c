@@ -594,8 +594,6 @@ convert_op (int op)
 		case IFB:	return "<IFB>";
 		case IFAE:	return "<IFAE>";
 		case IFA:	return "<IFA>";
-		case 'm':	return "<MOVE>";
-		case 'M':	return "<MOVEP>";
 		default:
 			return 0;
 	}

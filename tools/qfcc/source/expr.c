@@ -1342,33 +1342,6 @@ new_param_expr (type_t *type, int num)
 }
 
 expr_t *
-new_move_expr (expr_t *e1, expr_t *e2, type_t *type, int indirect)
-{
-	expr_t     *e = new_binary_expr (indirect ? 'M' : 'm', e1, e2);
-	e->e.expr.type = type;
-	return e;
-}
-
-expr_t *
-new_memset_expr (expr_t *dst, expr_t *val, type_t *type)
-{
-	expr_t     *e;
-	if (!is_pointer (get_type (dst))) {
-		return error (dst, "incorrect destination type for memset");
-	}
-	if (!is_scalar (get_type (val))) {
-		return error (val, "memset value must be a scalar");
-	}
-	e = new_expr ();
-	e->type = ex_memset;
-	e->e.memset.dst = dst;
-	e->e.memset.val = val;
-	e->e.memset.count = new_integer_expr (type_size (type));
-	e->e.memset.type = type;
-	return e;
-}
-
-expr_t *
 append_expr (expr_t *block, expr_t *e)
 {
 	if (block->type != ex_block)

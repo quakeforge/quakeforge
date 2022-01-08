@@ -97,7 +97,6 @@ get_op_string (int op)
 		case IFA:	return "<ifa>";
 		case 'g':	return "<goto>";
 		case 'r':	return "<return>";
-		case 's':	return "<state>";
 		case 'c':	return "<call>";
 		case 'C':	return "<cast>";
 		case 'M':	return "<move>";

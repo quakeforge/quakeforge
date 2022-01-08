@@ -680,22 +680,6 @@ expr_t *new_assign_expr (expr_t *dst, expr_t *src);
 */
 expr_t *new_param_expr (struct type_s *type, int num);
 
-/**	Create an expression representing a block copy.
-
-	This is used for structure assignments.
-
-	\param e1		Destination of move.
-	\param e2		Source of move.
-	\param type		type giving size of move.
-	\param indirect	Move uses dereferenced pointers.
-	\return			A new expression representing the move.
-*/
-expr_t *new_move_expr (expr_t *e1, expr_t *e2, struct type_s *type,
-					   int indirect);
-
-expr_t *new_memset_expr (expr_t *dst, expr_t *val, struct type_s *type);
-
-
 /**	Convert a name to an expression of the appropriate type.
 
 	Converts the expression in-place. If the exprssion is not a name

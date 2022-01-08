@@ -873,7 +873,7 @@ check_precedence (int op, expr_t *e1, expr_t *e2)
 {
 	if (e1->type == ex_uexpr && e1->e.expr.op == '!' && !e1->paren) {
 		if (options.traditional) {
-			if (op != AND && op != OR && op != '=') {
+			if (op != AND && op != OR) {
 				notice (e1, "precedence of `!' and `%s' inverted for "
 							"traditional code", get_op_string (op));
 				e1->e.expr.e1->paren = 1;
@@ -890,8 +890,7 @@ check_precedence (int op, expr_t *e1, expr_t *e2)
 		if (e2->type == ex_expr && !e2->paren) {
 			if (((op == '&' || op == '|')
 				 && (is_math_op (e2->e.expr.op) || is_compare (e2->e.expr.op)))
-				|| (op == '='
-					&& (e2->e.expr.op == OR || e2->e.expr.op == AND))) {
+				|| (e2->e.expr.op == OR || e2->e.expr.op == AND)) {
 				notice (e1, "precedence of `%s' and `%s' inverted for "
 							"traditional code", get_op_string (op),
 							get_op_string (e2->e.expr.op));
@@ -912,8 +911,7 @@ check_precedence (int op, expr_t *e1, expr_t *e2)
 		} else if (e1->type == ex_expr && !e1->paren) {
 			if (((op == '&' || op == '|')
 				 && (is_math_op (e1->e.expr.op) || is_compare (e1->e.expr.op)))
-				|| (op == '='
-					&& (e1->e.expr.op == OR || e1->e.expr.op == AND))) {
+				|| (e1->e.expr.op == OR || e1->e.expr.op == AND)) {
 				notice (e1, "precedence of `%s' and `%s' inverted for "
 							"traditional code", get_op_string (op),
 							get_op_string (e1->e.expr.op));
