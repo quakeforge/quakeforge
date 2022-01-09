@@ -89,18 +89,8 @@ get_op_string (int op)
 		case SHL:	return "<<";
 		case SHR:	return ">>";
 		case '.':	return ".";
-		case 'i':	return "<if>";
-		case 'n':	return "<ifnot>";
-		case IFBE:	return "<ifbe>";
-		case IFB:	return "<ifb>";
-		case IFAE:	return "<ifae>";
-		case IFA:	return "<ifa>";
-		case 'g':	return "<goto>";
 		case 'r':	return "<return>";
-		case 'c':	return "<call>";
 		case 'C':	return "<cast>";
-		case 'M':	return "<move>";
-		case 'm':	return "<move>";
 		default:
 			return "unknown";
 	}
@@ -256,61 +246,16 @@ print_block (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 }
 
 static void
-print_call (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
-{
-	int         indent = level * 2 + 2;
-	expr_t     *p;
-	int         i, count;
-	expr_t    **args;
-
-	for (count = 0, p = e->e.expr.e2; p; p = p->next)
-		count++;
-	args = alloca (count * sizeof (expr_t *));
-	for (i = 0, p = e->e.expr.e2; p; p = p->next, i++)
-		args[count - 1 - i] = p;
-
-	_print_expr (dstr, e->e.expr.e1, level, id, next);
-	dasprintf (dstr, "%*se_%p [label=\"<c>call", indent, "", e);
-	for (i = 0; i < count; i++)
-		dasprintf (dstr, "|<p%d>p%d", i, i);
-	dasprintf (dstr, "\",shape=record];\n");
-	for (i = 0; i < count; i++) {
-		_print_expr (dstr, args[i], level + 1, id, next);
-		dasprintf (dstr, "%*se_%p:p%d -> e_%p;\n", indent + 2, "", e, i,
-				   args[i]);
-	}
-	dasprintf (dstr, "%*se_%p:c -> e_%p;\n", indent, "", e, e->e.expr.e1);
-}
-
-static void
 print_subexpr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	int         indent = level * 2 + 2;
 
-	if (e->e.expr.op == 'c') {
-		print_call (dstr, e, level, id, next);
-		return;
-	} else if (e->e.expr.op == 'i' || e->e.expr.op == 'n'
-			   || e->e.expr.op == IFB || e->e.expr.op ==IFBE
-			   || e->e.expr.op == IFA || e->e.expr.op ==IFAE) {
-		_print_expr (dstr, e->e.expr.e1, level, id, next);
-		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"t\"];\n", indent, "", e,
-				   e->e.expr.e1);
-		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"g\"];\n", indent, "", e,
-				   e->e.expr.e2);
-		if (e->next)
-			next = e->next;
-		if (next)
-			dasprintf (dstr, "%*se_%p -> e_%p [constraint=true,"
-					   "style=dashed];\n", indent, "", e, next);
-	} else {
-		_print_expr (dstr, e->e.expr.e1, level, id, next);
-		_print_expr (dstr, e->e.expr.e2, level, id, next);
-		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"l\"];\n", indent, "", e,
-				   e->e.expr.e1);
-		dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"r\"];\n", indent, "", e,
-				   e->e.expr.e2);
-	}
+	_print_expr (dstr, e->e.expr.e1, level, id, next);
+	_print_expr (dstr, e->e.expr.e2, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"l\"];\n", indent, "", e,
+			   e->e.expr.e1);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"r\"];\n", indent, "", e,
+			   e->e.expr.e2);
 	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
 			   get_op_string (e->e.expr.op), e->line);
 }
@@ -374,12 +319,93 @@ print_assign (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 }
 
 static void
+print_conditional (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+	static const char *condition[] = {
+		"ifz", "ifb", "ifa", 0, "ifnz", "ifnb", "ifna", 0
+	};
+
+	_print_expr (dstr, e->e.branch.test, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"t\"];\n", indent, "", e,
+			   e->e.branch.test);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\" [label=\"g\"];\n", indent, "", e,
+			   e->e.branch.target);
+	if (e->next) {
+		next = e->next;
+	}
+	if (next) {
+		dasprintf (dstr, "%*se_%p -> e_%p [constraint=true,"
+				   "style=dashed];\n", indent, "", e, next);
+	}
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   condition [e->e.branch.type], e->line);
+}
+
+static void
+print_jump (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	_print_expr (dstr, e->e.branch.target, level, id, next);
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   "jump", e->line);
+}
+
+static void
+print_call (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+	expr_t     *p;
+	int         i, count;
+	expr_t    **args;
+
+	for (count = 0, p = e->e.branch.args; p; p = p->next)
+		count++;
+	args = alloca (count * sizeof (expr_t *));
+	for (i = 0, p = e->e.branch.args; p; p = p->next, i++)
+		args[count - 1 - i] = p;
+
+	_print_expr (dstr, e->e.branch.target, level, id, next);
+	dasprintf (dstr, "%*se_%p [label=\"<c>call", indent, "", e);
+	for (i = 0; i < count; i++)
+		dasprintf (dstr, "|<p%d>p%d", i, i);
+	dasprintf (dstr, "\",shape=record];\n");
+	for (i = 0; i < count; i++) {
+		_print_expr (dstr, args[i], level + 1, id, next);
+		dasprintf (dstr, "%*se_%p:p%d -> e_%p;\n", indent + 2, "", e, i,
+				   args[i]);
+	}
+	dasprintf (dstr, "%*se_%p:c -> e_%p;\n", indent, "", e,
+			   e->e.branch.target);
+}
+
+static void
+print_branch (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	switch (e->e.branch.type) {
+		case pr_branch_eq:
+		case pr_branch_lt:
+		case pr_branch_gt:
+		case pr_branch_ne:
+		case pr_branch_ge:
+		case pr_branch_le:
+			print_conditional (dstr, e, level, id, next);
+			break;
+		case pr_branch_jump:
+			print_jump (dstr, e, level, id, next);
+			break;
+		case pr_branch_call:
+			print_call (dstr, e, level, id, next);
+			break;
+	}
+}
+
+static void
 print_uexpr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	int         indent = level * 2 + 2;
 
-	if (e->e.expr.op != 'g' && e->e.expr.e1)
-		_print_expr (dstr, e->e.expr.e1, level, id, next);
 	if (e->e.expr.op != 'r' || e->e.expr.e1)
 		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e,
 				   e->e.expr.e1);
@@ -618,6 +644,7 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		[ex_alias] = print_alias,
 		[ex_address] = print_address,
 		[ex_assign] = print_assign,
+		[ex_branch] = print_branch,
 	};
 	int         indent = level * 2 + 2;
 

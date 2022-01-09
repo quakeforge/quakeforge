@@ -215,8 +215,10 @@ get_type (expr_t *e)
 	const type_t *type = 0;
 	convert_name (e);
 	switch (e->type) {
+		case ex_branch:
 		case ex_labelref:
-			return &type_void;
+			type = e->e.branch.ret_type;
+			break;
 		case ex_memset:
 			return e->e.memset.type;
 		case ex_label:
@@ -494,6 +496,13 @@ copy_expr (expr_t *e)
 			*n = *e;
 			n->e.assign.dst = copy_expr (e->e.assign.dst);
 			n->e.assign.src = copy_expr (e->e.assign.src);
+			return n;
+		case ex_branch:
+			n = new_expr ();
+			*n = *e;
+			n->e.branch.target = copy_expr (e->e.branch.target);
+			n->e.branch.test = copy_expr (e->e.branch.test);
+			n->e.branch.args = copy_expr (e->e.branch.args);
 			return n;
 		case ex_count:
 			break;
@@ -1591,14 +1600,10 @@ has_function_call (expr_t *e)
 					return 1;
 			return 0;
 		case ex_expr:
-			if (e->e.expr.op == 'c')
-				return 1;
 			return (has_function_call (e->e.expr.e1)
 					|| has_function_call (e->e.expr.e2));
 		case ex_uexpr:
-			if (e->e.expr.op != 'g')
-				return has_function_call (e->e.expr.e1);
-			return 0;
+			return has_function_call (e->e.expr.e1);
 		case ex_alias:
 			return has_function_call (e->e.alias.expr);
 		case ex_address:
@@ -1606,6 +1611,14 @@ has_function_call (expr_t *e)
 		case ex_assign:
 			return (has_function_call (e->e.assign.dst)
 					|| has_function_call (e->e.assign.src));
+		case ex_branch:
+			if (e->e.branch.type == pr_branch_call) {
+				return 1;
+			}
+			if (e->e.branch.type == pr_branch_jump) {
+				return 0;
+			}
+			return has_function_call (e->e.branch.test);
 		case ex_error:
 		case ex_state:
 		case ex_label:
@@ -1724,6 +1737,8 @@ unary_expr (int op, expr_t *e)
 						n->e.expr.type = get_type (e);
 						return n;
 					}
+				case ex_branch:
+					return error (e, "invalid type for unary -");
 				case ex_expr:
 				case ex_bool:
 				case ex_temp:
@@ -1826,6 +1841,7 @@ unary_expr (int op, expr_t *e)
 							n->e.expr.type = &type_float;
 						return n;
 					}
+				case ex_branch:
 				case ex_nil:
 					return error (e, "invalid type for unary !");
 				case ex_count:
@@ -1887,6 +1903,8 @@ unary_expr (int op, expr_t *e)
 					if (!e->e.block.result)
 						return error (e, "invalid type for unary ~");
 					goto bitnot_expr;
+				case ex_branch:
+					return error (e, "invalid type for unary ~");
 				case ex_expr:
 				case ex_bool:
 				case ex_def:
@@ -2072,8 +2090,7 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 		e = expr_file_line (e, arg_exprs[arg_expr_count - 1][0]);
 		append_expr (call, e);
 	}
-	e = expr_file_line (new_binary_expr ('c', fexpr, args), fexpr);
-	e->e.expr.type = ftype->t.func.type;
+	e = expr_file_line (call_expr (fexpr, args, ftype->t.func.type), fexpr);
 	append_expr (call, e);
 	if (!is_void(ftype->t.func.type)) {
 		call->e.block.result = new_ret_expr (ftype->t.func.type);
@@ -2118,21 +2135,70 @@ function_expr (expr_t *fexpr, expr_t *params)
 expr_t *
 branch_expr (int op, expr_t *test, expr_t *label)
 {
-	if (label && label->type != ex_label)
+	// need to translated op due to precedence rules dictating the layout
+	// of the token ids
+	static pr_branch_e branch_type [] = {
+		pr_branch_eq,
+		pr_branch_ne,
+		pr_branch_lt,
+		pr_branch_gt,
+		pr_branch_le,
+		pr_branch_ge,
+	};
+	if (op < EQ || op > LE) {
+		internal_error (label, "invalid op: %d", op);
+	}
+	if (label && label->type != ex_label) {
 		internal_error (label, "not a label");
-	if (label)
+	}
+	if (label) {
 		label->e.label.used++;
-	return new_binary_expr (op, test, label);
+	}
+	expr_t     *branch = new_expr ();
+	branch->type = ex_branch;
+	branch->e.branch.type = branch_type[op - EQ];
+	branch->e.branch.target = label;
+	branch->e.branch.test = test;
+	return branch;
 }
 
 expr_t *
 goto_expr (expr_t *label)
 {
-	if (label && label->type != ex_label)
+	if (label && label->type != ex_label) {
 		internal_error (label, "not a label");
-	if (label)
+	}
+	if (label) {
 		label->e.label.used++;
-	return new_unary_expr ('g', label);
+	}
+	expr_t     *branch = new_expr ();
+	branch->type = ex_branch;
+	branch->e.branch.type = pr_branch_jump;
+	branch->e.branch.target = label;
+	return branch;
+}
+
+expr_t *
+jump_table_expr (expr_t *table, expr_t *index)
+{
+	expr_t     *branch = new_expr ();
+	branch->type = ex_branch;
+	branch->e.branch.type = pr_branch_jump;
+	branch->e.branch.target = table;//FIXME separate? all branch types can
+	branch->e.branch.index = index;
+	return branch;
+}
+
+expr_t *
+call_expr (expr_t *func, expr_t *args, type_t *ret_type)
+{
+	expr_t     *branch = new_expr ();
+	branch->type = ex_branch;
+	branch->e.branch.type = pr_branch_call;
+	branch->e.branch.target = func;
+	branch->e.branch.args = args;
+	branch->e.branch.ret_type = ret_type;
+	return branch;
 }
 
 expr_t *

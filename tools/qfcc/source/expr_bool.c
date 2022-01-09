@@ -165,12 +165,9 @@ backpatch (ex_list_t *list, expr_t *label)
 
 	for (i = 0; i < list->size; i++) {
 		e = list->e[i];
-		if (e->type == ex_uexpr && e->e.expr.op == 'g')
-			e->e.expr.e1 = label;
-		else if (e->type == ex_expr && (e->e.expr.op == 'i'
-										|| e->e.expr.op == 'n'))
-			e->e.expr.e2 = label;
-		else {
+		if (e->type == ex_branch && e->e.branch.type < pr_branch_call) {
+			e->e.branch.target = label;
+		} else {
 			internal_error (e, 0);
 		}
 		label->e.label.used++;
@@ -299,7 +296,7 @@ convert_bool (expr_t *e, int block)
 				e = new_bool_expr (0, make_list (b), b);
 		} else {
 			b = new_block_expr ();
-			append_expr (b, branch_expr ('i', e, 0));
+			append_expr (b, branch_expr (NE, e, 0));
 			append_expr (b, goto_expr (0));
 			e = new_bool_expr (make_list (b->e.block.head),
 							   make_list (b->e.block.head->next), b);

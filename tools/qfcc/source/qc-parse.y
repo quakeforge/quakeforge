@@ -132,7 +132,7 @@ int yylex (void);
 %left			'^'
 %left			'&'
 %left			EQ NE
-%left			LE GE LT GT
+%left			LT GT GE LE
 // end of tokens common between qc and qp
 
 %left			SHL SHR
@@ -146,7 +146,7 @@ int yylex (void);
 %token	<expr>		VALUE STRING
 
 %token				LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS
-%token				NIL IFBE IFB IFAE IFA GOTO SWITCH CASE DEFAULT ENUM
+%token				NIL GOTO SWITCH CASE DEFAULT ENUM
 %token				ARGS TYPEDEF EXTERN STATIC SYSTEM NOSAVE OVERLOAD NOT
 %token	<op>		STRUCT
 %token	<type>		TYPE

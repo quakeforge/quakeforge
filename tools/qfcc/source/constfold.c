@@ -575,10 +575,6 @@ do_op_field (int op, expr_t *e, expr_t *e1, expr_t *e2)
 static expr_t *
 do_op_func (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
-	if (op == 'c') {
-		e->e.expr.type = get_type (e1)->t.func.type;
-		return e;
-	}
 	if (op == EQ || op == NE) {
 		if (options.code.progsversion > PROG_ID_VERSION)
 			e->e.expr.type = &type_integer;
@@ -593,7 +589,7 @@ static expr_t *
 do_op_pointer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	type_t     *type;
-	static int  valid[] = {'-', 'M', '.', EQ, NE, 0};
+	static int  valid[] = {'-', '.', EQ, NE, 0};
 
 	if (is_integral (type = get_type (e2)) && (op == '-' || op == '+')) {
 		// pointer arithmetic
@@ -623,8 +619,7 @@ do_op_pointer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		else
 			e->e.expr.type = &type_float;
 	}
-	if (op != '.' && op != 'M'
-		&& extract_type (e1) != extract_type (e2))
+	if (op != '.' && extract_type (e1) != extract_type (e2))
 		return type_mismatch (e1, e2, op);
 	if (op == '.' && is_uinteger(get_type (e2)))
 		e->e.expr.e2 = cf_cast_expr (&type_integer, e2);
@@ -993,14 +988,7 @@ do_op_short (int op, expr_t *e, expr_t *e1, expr_t *e2)
 static expr_t *
 do_op_struct (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
-	type_t     *type;
-
-	if (op != 'm')
-		return error (e1, "invalid operator for struct");
-	if ((type = get_type (e1)) != get_type (e2))
-		return type_mismatch (e1, e2, op);
-	e->e.expr.type = type;
-	return e;
+	return error (e1, "invalid operator for struct");
 }
 
 static expr_t *
@@ -1036,8 +1024,6 @@ do_op_invalid (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	type_t     *t1 = get_type (e1);
 	type_t     *t2 = get_type (e2);
 
-	if (e->e.expr.op == 'm')
-		return e;	// assume the rest of the compiler got it right
 	if (is_scalar (t1) && is_scalar (t2)) {
 		// one or both expressions are an enum, and the other is one of
 		// int, float or short. Treat the enum as the other type, or as
@@ -1694,7 +1680,7 @@ fold_constants (expr_t *e)
 			return e;
 		}
 		op = e->e.expr.op;
-		if (op == 'g' || op == 'r')
+		if (op == 'r')
 			return e;
 		t1 = extract_type (e1);
 		if (t1 >= ev_type_count || !do_unary_op[t1]) {
@@ -1710,9 +1696,6 @@ fold_constants (expr_t *e)
 		}
 
 		op = e->e.expr.op;
-		if (op == 'i' || op == 'n' || op == 'c') {
-			return e;
-		}
 
 		t1 = extract_type (e1);
 		t2 = extract_type (e2);

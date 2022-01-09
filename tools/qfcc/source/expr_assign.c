@@ -124,6 +124,7 @@ is_lvalue (const expr_t *expr)
 				return 1;
 			}
 			break;
+		case ex_branch:
 		case ex_memset:
 		case ex_compound:
 		case ex_state:

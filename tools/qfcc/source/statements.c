@@ -588,12 +588,6 @@ convert_op (int op)
 		case SHL:	return "<<";
 		case SHR:	return ">>";
 		case '.':	return ".";
-		case 'i':	return "<IF>";
-		case 'n':	return "<IFNOT>";
-		case IFBE:	return "<IFBE>";
-		case IFB:	return "<IFB>";
-		case IFAE:	return "<IFAE>";
-		case IFA:	return "<IFA>";
 		default:
 			return 0;
 	}
@@ -708,33 +702,6 @@ typedef sblock_t *(*expr_f) (sblock_t *, expr_t *, operand_t **);
 static sblock_t *statement_subexpr (sblock_t *sblock, expr_t *e,
 									operand_t **op);
 static sblock_t *statement_slist (sblock_t *sblock, expr_t *e);
-
-static sblock_t *
-statement_branch (sblock_t *sblock, expr_t *e)
-{
-	statement_t *s = 0;
-	const char *opcode;
-
-	if (e->type == ex_uexpr && e->e.expr.op == 'g') {
-		s = new_statement (st_flow, "<GOTO>", e);
-		s->opa = label_operand (e->e.expr.e1);
-	} else {
-		if (e->e.expr.op == 'g') {
-			s = new_statement (st_flow, "<JUMPB>", e);
-			sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
-			sblock = statement_subexpr (sblock, e->e.expr.e2, &s->opb);
-		} else {
-			opcode = convert_op (e->e.expr.op);
-			s = new_statement (st_flow, opcode, e);
-			sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
-			s->opb = label_operand (e->e.expr.e2);
-		}
-	}
-
-	sblock_add_statement (sblock, s);
-	sblock->next = new_sblock ();
-	return sblock->next;
-}
 
 static sblock_t *
 expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
@@ -1047,12 +1014,11 @@ vector_call (sblock_t *sblock, expr_t *earg, expr_t *param, int ind,
 	return sblock;
 }
 
-
 static sblock_t *
 expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 {
-	expr_t     *func = call->e.expr.e1;
-	expr_t     *args = call->e.expr.e2;
+	expr_t     *func = call->e.branch.target;
+	expr_t     *args = call->e.branch.args;
 	expr_t     *a;
 	expr_t     *param;
 	operand_t  *arguments[2] = {0, 0};
@@ -1108,6 +1074,46 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 	sblock = statement_subexpr (sblock, func, &s->opa);
 	s->opb = arguments[0];
 	s->opc = arguments[1];
+	sblock_add_statement (sblock, s);
+	sblock->next = new_sblock ();
+	return sblock->next;
+}
+
+static sblock_t *
+statement_branch (sblock_t *sblock, expr_t *e)
+{
+	static const char *opcodes[] = {
+		"<IFNOT>",
+		"<IFB>",
+		"<IFA>",
+		0,			// special handling
+		"<IF>",
+		"<IFAE>",
+		"<IFBE>",
+		0,			// not used here
+	};
+	statement_t *s = 0;
+	const char *opcode;
+
+	if (e->e.branch.type == pr_branch_call) {
+		return expr_call (sblock, e, 0);
+	}
+	if (e->e.branch.type == pr_branch_jump) {
+		if (e->e.branch.index) {
+			s = new_statement (st_flow, "<JUMPB>", e);
+			sblock = statement_subexpr (sblock, e->e.branch.target, &s->opa);
+			sblock = statement_subexpr (sblock, e->e.branch.index, &s->opb);
+		} else {
+			s = new_statement (st_flow, "<GOTO>", e);
+			s->opa = label_operand (e->e.branch.target);
+		}
+	} else {
+		opcode = opcodes [e->e.branch.type];
+		s = new_statement (st_flow, opcode, e);
+		sblock = statement_subexpr (sblock, e->e.branch.test, &s->opa);
+		s->opb = label_operand (e->e.branch.target);
+	}
+
 	sblock_add_statement (sblock, s);
 	sblock->next = new_sblock ();
 	return sblock->next;
@@ -1261,9 +1267,6 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 	statement_t *s;
 
 	switch (e->e.expr.op) {
-		case 'c':
-			sblock = expr_call (sblock, e, op);
-			break;
 		case 'm':
 		case 'M':
 			sblock = expr_move (sblock, e, op);
@@ -1573,27 +1576,20 @@ build_bool_block (expr_t *block, expr_t *e)
 			e->next = 0;
 			append_expr (block, e);
 			return;
+		case ex_branch:
+			e->next = 0;
+			append_expr (block, e);
+			return;
 		case ex_expr:
 			if (e->e.expr.op == OR || e->e.expr.op == AND) {
 				build_bool_block (block, e->e.expr.e1);
 				build_bool_block (block, e->e.expr.e2);
-			} else if (e->e.expr.op == 'i') {
-				e->next = 0;
-				append_expr (block, e);
-			} else if (e->e.expr.op == 'n') {
-				e->next = 0;
-				append_expr (block, e);
 			} else {
 				e->next = 0;
 				append_expr (block, e);
 			}
 			return;
 		case ex_uexpr:
-			if (e->e.expr.op == 'g') {
-				e->next = 0;
-				append_expr (block, e);
-				return;
-			}
 			break;
 		case ex_block:
 			if (!e->e.block.result) {
@@ -1614,19 +1610,20 @@ build_bool_block (expr_t *block, expr_t *e)
 static int
 is_goto_expr (expr_t *e)
 {
-	return e && e->type == ex_uexpr && e->e.expr.op == 'g';
+	return e && e->type == ex_branch && e->e.branch.type == pr_branch_jump
+			&& !e->e.branch.index;
 }
 
 static int
 is_if_expr (expr_t *e)
 {
-	return e && e->type == ex_expr && e->e.expr.op == 'i';
+	return e && e->type == ex_branch && e->e.branch.type == pr_branch_ne;
 }
 
 static int
 is_ifnot_expr (expr_t *e)
 {
-	return e && e->type == ex_expr && e->e.expr.op == 'n';
+	return e && e->type == ex_branch && e->e.branch.type == pr_branch_eq;
 }
 
 static sblock_t *
@@ -1641,33 +1638,33 @@ statement_bool (sblock_t *sblock, expr_t *e)
 	s = &block->e.block.head;
 	while (*s) {
 		if (is_if_expr (*s) && is_goto_expr ((*s)->next)) {
-			l = (*s)->e.expr.e2;
+			l = (*s)->e.branch.target;
 			for (e = (*s)->next->next; e && e->type == ex_label; e = e->next) {
 				if (e == l) {
 					l->e.label.used--;
 					e = *s;
-					e->e.expr.op = 'n';
-					e->e.expr.e2 = e->next->e.expr.e1;
+					e->e.branch.type = pr_branch_eq;
+					e->e.branch.target = e->next->e.branch.target;
 					e->next = e->next->next;
 					break;
 				}
 			}
 			s = &(*s)->next;
 		} else if (is_ifnot_expr (*s) && is_goto_expr ((*s)->next)) {
-			l = (*s)->e.expr.e2;
+			l = (*s)->e.branch.target;
 			for (e = (*s)->next->next; e && e->type == ex_label; e = e->next) {
 				if (e == l) {
 					l->e.label.used--;
 					e = *s;
-					e->e.expr.op = 'i';
-					e->e.expr.e2 = e->next->e.expr.e1;
+					e->e.branch.type = pr_branch_ne;
+					e->e.branch.target = e->next->e.branch.target;
 					e->next = e->next->next;
 					break;
 				}
 			}
 			s = &(*s)->next;
 		} else if (is_goto_expr (*s)) {
-			l = (*s)->e.expr.e1;
+			l = (*s)->e.branch.target;
 			for (e = (*s)->next; e && e->type == ex_label; e = e->next) {
 				if (e == l) {
 					l->e.label.used--;
@@ -1722,18 +1719,6 @@ static sblock_t *
 statement_expr (sblock_t *sblock, expr_t *e)
 {
 	switch (e->e.expr.op) {
-		case 'c':
-			sblock = expr_call (sblock, e, 0);
-			break;
-		case 'g':
-		case 'i':
-		case 'n':
-		case IFBE:
-		case IFB:
-		case IFAE:
-		case IFA:
-			sblock = statement_branch (sblock, e);
-			break;
 		case 'm':
 		case 'M':
 			sblock = expr_move (sblock, e, 0);
@@ -1775,9 +1760,6 @@ statement_uexpr (sblock_t *sblock, expr_t *e)
 			sblock_add_statement (sblock, s);
 			sblock->next = new_sblock ();
 			sblock = sblock->next;
-			break;
-		case 'g':
-			sblock = statement_branch (sblock, e);
 			break;
 		default:
 			debug (e, "e ue %d", e->e.expr.op);
@@ -1847,6 +1829,7 @@ statement_slist (sblock_t *sblock, expr_t *e)
 		[ex_value] = statement_nonexec,
 		[ex_memset] = statement_memset,
 		[ex_assign] = statement_assign,
+		[ex_branch] = statement_branch,
 	};
 
 	for (/**/; e; e = e->next) {
@@ -2115,24 +2098,19 @@ search_for_super_dealloc (sblock_t *sblock)
 			if (!statement_is_call (st)) {
 				continue;
 			}
+			// effectively checks target
 			if (st->opa->op_type != op_def
 				|| strcmp (st->opa->def->name, "obj_msgSend_super") != 0) {
-				continue;
-			}
-			// FIXME this is messy (calls should have their own expression
-			// type)
-			// have effectively checked e1 above
-			if (st->expr->type != ex_expr) {
 				continue;
 			}
 			// function arguments are in reverse order, and the selector
 			// is the second argument (or second last in the list)
 			expr_t     *arg;
-			for (arg = st->expr->e.expr.e2;
+			for (arg = st->expr->e.branch.args;
 				 arg && arg->next && arg->next->next; arg = arg->next) {
 			}
 			if (arg && arg->next && is_selector (arg)) {
-				selector_t *sel = get_selector (st->expr->e.expr.e2);
+				selector_t *sel = get_selector (st->expr->e.branch.args);
 				if (sel && strcmp (sel->name, "dealloc") == 0) {
 					op = pseudo_operand (super_dealloc, st->expr);
 					op->next = st->use;

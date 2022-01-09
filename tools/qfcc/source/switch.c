@@ -311,12 +311,12 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 	append_expr (sw, test);
 
 	if (tree->low == tree->high) {
-		branch = branch_expr ('n', new_alias_expr (&type_integer, temp),
+		branch = branch_expr (EQ, new_alias_expr (&type_integer, temp),
 							  tree->labels[0]);
 		append_expr (sw, branch);
 
 		if (tree->left) {
-			branch = branch_expr (IFA, new_alias_expr (&type_integer, temp),
+			branch = branch_expr (GT, new_alias_expr (&type_integer, temp),
 								  high_label);
 			append_expr (sw, branch);
 
@@ -352,14 +352,14 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 		table_expr = new_symbol_expr (table_sym);
 
 		if (tree->left) {
-			branch = branch_expr (IFB, temp, low_label);
+			branch = branch_expr (LT, temp, low_label);
 			append_expr (sw, branch);
 		}
 		test = binary_expr (GT, cast_expr (&type_uinteger, temp),
 							cast_expr (&type_uinteger, range));
-		branch = branch_expr ('i', test, high_label);
+		branch = branch_expr (NE, test, high_label);
 		append_expr (sw, branch);
-		branch = new_binary_expr ('g', table_expr, temp);
+		branch = jump_table_expr (table_expr, temp);
 		append_expr (sw, branch);
 		debug (sw, "switch using jump table");
 		if (tree->left) {
@@ -433,7 +433,7 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 		|| num_labels < 8) {
 		for (l = labels; *l; l++) {
 			expr_t     *cmp = binary_expr (EQ, sw_val, (*l)->value);
-			expr_t     *test = branch_expr ('i', test_expr (cmp),
+			expr_t     *test = branch_expr (NE, test_expr (cmp),
 											(*l)->label);
 
 			append_expr (sw, test);

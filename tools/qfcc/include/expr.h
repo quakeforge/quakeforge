@@ -224,6 +224,15 @@ typedef struct {
 	struct expr_s *src;					///< source of assignment
 } ex_assign_t;
 
+typedef struct {
+	pr_branch_e type;				///< type of branch
+	struct expr_s *target;			///< destination of branch
+	struct expr_s *index;			///< index for indirect branches
+	struct expr_s *test;			///< test expression (null for jump/call)
+	struct expr_s *args;			///< only for call
+	struct type_s *ret_type;		///< void for non-call
+} ex_branch_t;
+
 #define POINTER_VAL(p) (((p).def ? (p).def->offset : 0) + (p).val)
 
 typedef struct expr_s {
@@ -253,6 +262,7 @@ typedef struct expr_s {
 		ex_alias_t  alias;				///< alias expr params
 		ex_address_t address;			///< alias expr params
 		ex_assign_t assign;				///< assignment expr params
+		ex_branch_t branch;				///< branch expr params
 		struct type_s *nil;				///< type for nil if known
 	} e;
 } expr_t;
@@ -718,6 +728,8 @@ expr_t *function_expr (expr_t *e1, expr_t *e2);
 struct function_s;
 expr_t *branch_expr (int op, expr_t *test, expr_t *label);
 expr_t *goto_expr (expr_t *label);
+expr_t *jump_table_expr (expr_t *table, expr_t *index);
+expr_t *call_expr (expr_t *func, expr_t *args, struct type_s *ret_type);
 expr_t *return_expr (struct function_s *f, expr_t *e);
 expr_t *conditional_expr (expr_t *cond, expr_t *e1, expr_t *e2);
 expr_t *incop_expr (int op, expr_t *e, int postop);

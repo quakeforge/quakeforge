@@ -113,7 +113,7 @@ int yylex (void);
 %left   '^'
 %left   '&'
 %left   EQ NE
-%left   LE GE LT GT
+%left	LT GT GE LE
 // end of tokens common between qc and qp
 
 %left	<op>		RELOP
