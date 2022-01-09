@@ -58,5 +58,6 @@ EX_EXPR(alias)		///< view expression as different type (::ex_alias_t)
 EX_EXPR(address)	///< address of an lvalue expression (::ex_address_t)
 EX_EXPR(assign)		///< assignment of src expr to dst expr (::ex_assing_t)
 EX_EXPR(branch)		///< branch expression  (::ex_branch_t)
+EX_EXPR(return)		///< return expression  (::ex_return_t)
 
 ///@}

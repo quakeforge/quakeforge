@@ -221,10 +221,12 @@ get_type (expr_t *e)
 			break;
 		case ex_memset:
 			return e->e.memset.type;
-		case ex_label:
 		case ex_error:
+		case ex_return:
+			internal_error (e, "unexpected expression type");
+		case ex_label:
 		case ex_compound:
-			return 0;					// something went very wrong
+			return 0;
 		case ex_bool:
 			if (options.code.progsversion == PROG_ID_VERSION)
 				return &type_float;
@@ -503,6 +505,11 @@ copy_expr (expr_t *e)
 			n->e.branch.target = copy_expr (e->e.branch.target);
 			n->e.branch.test = copy_expr (e->e.branch.test);
 			n->e.branch.args = copy_expr (e->e.branch.args);
+			return n;
+		case ex_return:
+			n = new_expr ();
+			*n = *e;
+			n->e.retrn.ret_val = copy_expr (n->e.retrn.ret_val);
 			return n;
 		case ex_count:
 			break;
@@ -1325,6 +1332,15 @@ new_assign_expr (expr_t *dst, expr_t *src)
 	return addr;
 }
 
+expr_t *
+new_return_expr (expr_t *ret_val)
+{
+	expr_t     *retrn = new_expr ();
+	retrn->type = ex_return;
+	retrn->e.retrn.ret_val = ret_val;
+	return retrn;
+}
+
 static expr_t *
 param_expr (const char *name, type_t *type)
 {
@@ -1619,6 +1635,8 @@ has_function_call (expr_t *e)
 				return 0;
 			}
 			return has_function_call (e->e.branch.test);
+		case ex_return:
+			return has_function_call (e->e.retrn.ret_val);
 		case ex_error:
 		case ex_state:
 		case ex_label:
@@ -1716,7 +1734,8 @@ unary_expr (int op, expr_t *e)
 				case ex_compound:
 				case ex_memset:
 				case ex_selector:
-					internal_error (e, 0);
+				case ex_return:
+					internal_error (e, "unexpected expression type");
 				case ex_uexpr:
 					if (e->e.expr.op == '-') {
 						return e->e.expr.e1;
@@ -1816,7 +1835,8 @@ unary_expr (int op, expr_t *e)
 				case ex_compound:
 				case ex_memset:
 				case ex_selector:
-					internal_error (e, 0);
+				case ex_return:
+					internal_error (e, "unexpected expression type");
 				case ex_bool:
 					return new_bool_expr (e->e.bool.false_list,
 										  e->e.bool.true_list, e);
@@ -1894,7 +1914,8 @@ unary_expr (int op, expr_t *e)
 				case ex_compound:
 				case ex_memset:
 				case ex_selector:
-					internal_error (e, 0);
+				case ex_return:
+					internal_error (e, "unexpected expression type");
 				case ex_uexpr:
 					if (e->e.expr.op == '~')
 						return e->e.expr.e1;
@@ -2222,7 +2243,7 @@ return_expr (function_t *f, expr_t *e)
 		}
 		// the traditional check above may have set e
 		if (!e) {
-			return new_unary_expr ('r', 0);
+			return new_return_expr (0);
 		}
 	}
 
@@ -2279,7 +2300,7 @@ return_expr (function_t *f, expr_t *e)
 	if (e->type == ex_block) {
 		e->e.block.result->rvalue = 1;
 	}
-	return new_unary_expr ('r', e);
+	return new_return_expr (e);
 }
 
 expr_t *
@@ -2469,16 +2490,6 @@ address_expr (expr_t *e1, expr_t *e2, type_t *t)
 			if (e1->e.expr.op == '.') {
 				e = new_address_expr (e1->e.expr.type,
 									  e1->e.expr.e1, e1->e.expr.e2);
-				break;
-			}
-			if (e1->e.expr.op == 'm') {
-				// direct move, so obtain the address of the source
-				e = address_expr (e1->e.expr.e2, 0, t);
-				break;
-			}
-			if (e1->e.expr.op == 'M') {
-				// indirect move, so we already have the address of the source
-				e = e1->e.expr.e2;
 				break;
 			}
 			return error (e1, "invalid type for unary &");

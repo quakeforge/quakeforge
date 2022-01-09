@@ -137,6 +137,7 @@ is_lvalue (const expr_t *expr)
 		case ex_value:
 		case ex_error:
 		case ex_selector:
+		case ex_return:
 			break;
 		case ex_count:
 			internal_error (expr, "invalid expression");

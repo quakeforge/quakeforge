@@ -1680,8 +1680,6 @@ fold_constants (expr_t *e)
 			return e;
 		}
 		op = e->e.expr.op;
-		if (op == 'r')
-			return e;
 		t1 = extract_type (e1);
 		if (t1 >= ev_type_count || !do_unary_op[t1]) {
 			print_expr (e);

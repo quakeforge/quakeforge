@@ -233,6 +233,10 @@ typedef struct {
 	struct type_s *ret_type;		///< void for non-call
 } ex_branch_t;
 
+typedef struct {
+	struct expr_s *ret_val;
+} ex_return_t;
+
 #define POINTER_VAL(p) (((p).def ? (p).def->offset : 0) + (p).val)
 
 typedef struct expr_s {
@@ -263,6 +267,7 @@ typedef struct expr_s {
 		ex_address_t address;			///< alias expr params
 		ex_assign_t assign;				///< assignment expr params
 		ex_branch_t branch;				///< branch expr params
+		ex_return_t retrn;				///< return expr params
 		struct type_s *nil;				///< type for nil if known
 	} e;
 } expr_t;
@@ -680,6 +685,7 @@ expr_t *new_offset_alias_expr (struct type_s *type, expr_t *expr, int offset);
 expr_t *new_address_expr (struct type_s *lvtype, expr_t *lvalue,
 						  expr_t *offset);
 expr_t *new_assign_expr (expr_t *dst, expr_t *src);
+expr_t *new_return_expr (expr_t *ret_val);
 
 /**	Create an expression of the correct type that references the specified
 	parameter slot.

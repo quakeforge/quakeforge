@@ -270,7 +270,7 @@ subprogram_declaration
 		}
 	  declarations compound_statement ';'
 		{
-			append_expr ($5, new_unary_expr ('r', 0));
+			append_expr ($5, new_return_expr (0));
 			build_code_function ($1, 0, $5);
 			current_symtab = current_symtab->parent;
 			current_storage = $<storage>3;

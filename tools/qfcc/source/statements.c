@@ -964,35 +964,6 @@ dereference_dst:
 }
 
 static sblock_t *
-expr_move (sblock_t *sblock, expr_t *e, operand_t **op)
-{
-	statement_t *s;
-	type_t     *type = e->e.expr.type;
-	expr_t     *dst_expr = e->e.expr.e1;
-	expr_t     *src_expr = e->e.expr.e2;
-	expr_t     *size_expr;
-	operand_t  *dst = 0;
-	operand_t  *src = 0;
-	operand_t  *size = 0;
-
-	if (!op)
-		op = &dst;
-	size_expr = new_short_expr (type_size (type));
-	sblock = statement_subexpr (sblock, dst_expr, op);
-	dst = *op;
-	sblock = statement_subexpr (sblock, src_expr, &src);
-	sblock = statement_subexpr (sblock, size_expr, &size);
-	s = new_statement (e->e.expr.op == 'm' ? st_move : st_ptrmove,
-					   convert_op (e->e.expr.op), e);
-	s->opa = src;
-	s->opb = size;
-	s->opc = dst;
-	sblock_add_statement (sblock, s);
-
-	return sblock;
-}
-
-static sblock_t *
 vector_call (sblock_t *sblock, expr_t *earg, expr_t *param, int ind,
 			 operand_t **op)
 {
@@ -1117,6 +1088,33 @@ statement_branch (sblock_t *sblock, expr_t *e)
 	sblock_add_statement (sblock, s);
 	sblock->next = new_sblock ();
 	return sblock->next;
+}
+
+static sblock_t *
+statement_return (sblock_t *sblock, expr_t *e)
+{
+	const char *opcode;
+	statement_t *s;
+
+	debug (e, "RETURN");
+	opcode = "<RETURN>";
+	if (!e->e.retrn.ret_val) {
+		if (options.code.progsversion != PROG_ID_VERSION) {
+			opcode = "<RETURN_V>";
+		} else {
+			e->e.retrn.ret_val = new_float_expr (0);
+		}
+	}
+	s = new_statement (st_func, opcode, e);
+	if (e->e.retrn.ret_val) {
+		s->opa = return_operand (get_type (e->e.retrn.ret_val), e);
+		sblock = statement_subexpr (sblock, e->e.retrn.ret_val, &s->opa);
+	}
+	sblock_add_statement (sblock, s);
+	sblock->next = new_sblock ();
+	sblock = sblock->next;
+
+	return sblock;
 }
 
 static statement_t *
@@ -1266,24 +1264,17 @@ expr_expr (sblock_t *sblock, expr_t *e, operand_t **op)
 	const char *opcode;
 	statement_t *s;
 
-	switch (e->e.expr.op) {
-		case 'm':
-		case 'M':
-			sblock = expr_move (sblock, e, op);
-			break;
-		default:
-			opcode = convert_op (e->e.expr.op);
-			if (!opcode)
-				internal_error (e, "ice ice baby");
-			s = new_statement (st_expr, opcode, e);
-			sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
-			sblock = statement_subexpr (sblock, e->e.expr.e2, &s->opb);
-			if (!*op)
-				*op = temp_operand (e->e.expr.type, e);
-			s->opc = *op;
-			sblock_add_statement (sblock, s);
-			break;
-	}
+	opcode = convert_op (e->e.expr.op);
+	if (!opcode)
+		internal_error (e, "ice ice baby");
+	s = new_statement (st_expr, opcode, e);
+	sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
+	sblock = statement_subexpr (sblock, e->e.expr.e2, &s->opb);
+	if (!*op)
+		*op = temp_operand (e->e.expr.type, e);
+	s->opc = *op;
+	sblock_add_statement (sblock, s);
+
 	return sblock;
 }
 
@@ -1718,55 +1709,21 @@ statement_block (sblock_t *sblock, expr_t *e)
 static sblock_t *
 statement_expr (sblock_t *sblock, expr_t *e)
 {
-	switch (e->e.expr.op) {
-		case 'm':
-		case 'M':
-			sblock = expr_move (sblock, e, 0);
-			break;
-		default:
-			if (e->e.expr.op < 256)
-				debug (e, "e %c", e->e.expr.op);
-			else
-				debug (e, "e %d", e->e.expr.op);
-			if (options.warnings.executable)
-				warning (e, "Non-executable statement;"
-						 " executing programmer instead.");
-	}
+	if (e->e.expr.op < 256)
+		debug (e, "e %c", e->e.expr.op);
+	else
+		debug (e, "e %d", e->e.expr.op);
+	if (options.warnings.executable)
+		warning (e, "Non-executable statement; executing programmer instead.");
 	return sblock;
 }
 
 static sblock_t *
 statement_uexpr (sblock_t *sblock, expr_t *e)
 {
-	const char *opcode;
-	statement_t *s;
-
-	switch (e->e.expr.op) {
-		case 'r':
-			debug (e, "RETURN");
-			opcode = "<RETURN>";
-			if (!e->e.expr.e1) {
-				if (options.code.progsversion != PROG_ID_VERSION) {
-					opcode = "<RETURN_V>";
-				} else {
-					e->e.expr.e1 = new_float_expr (0);
-				}
-			}
-			s = new_statement (st_func, opcode, e);
-			if (e->e.expr.e1) {
-				s->opa = return_operand (get_type (e->e.expr.e1), e);
-				sblock = statement_subexpr (sblock, e->e.expr.e1, &s->opa);
-			}
-			sblock_add_statement (sblock, s);
-			sblock->next = new_sblock ();
-			sblock = sblock->next;
-			break;
-		default:
-			debug (e, "e ue %d", e->e.expr.op);
-			if (options.warnings.executable)
-				warning (e, "Non-executable statement;"
-						 " executing programmer instead.");
-	}
+	debug (e, "e ue %d", e->e.expr.op);
+	if (options.warnings.executable)
+		warning (e, "Non-executable statement; executing programmer instead.");
 	return sblock;
 }
 
@@ -1830,6 +1787,7 @@ statement_slist (sblock_t *sblock, expr_t *e)
 		[ex_memset] = statement_memset,
 		[ex_assign] = statement_assign,
 		[ex_branch] = statement_branch,
+		[ex_return] = statement_return,
 	};
 
 	for (/**/; e; e = e->next) {

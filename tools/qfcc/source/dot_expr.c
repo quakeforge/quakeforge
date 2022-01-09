@@ -89,7 +89,6 @@ get_op_string (int op)
 		case SHL:	return "<<";
 		case SHR:	return ">>";
 		case '.':	return ".";
-		case 'r':	return "<return>";
 		case 'C':	return "<cast>";
 		default:
 			return "unknown";
@@ -402,13 +401,24 @@ print_branch (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 }
 
 static void
+print_return (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	if (e->e.retrn.ret_val) {
+		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e,
+				   e->e.retrn.ret_val);
+	}
+	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
+			   "return", e->line);
+}
+
+static void
 print_uexpr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	int         indent = level * 2 + 2;
 
-	if (e->e.expr.op != 'r' || e->e.expr.e1)
-		dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e,
-				   e->e.expr.e1);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, e->e.expr.e1);
 	dasprintf (dstr, "%*se_%p [label=\"%s\\n%d\"];\n", indent, "", e,
 			   get_op_string (e->e.expr.op), e->line);
 }
@@ -645,6 +655,7 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		[ex_address] = print_address,
 		[ex_assign] = print_assign,
 		[ex_branch] = print_branch,
+		[ex_return] = print_return,
 	};
 	int         indent = level * 2 + 2;
 
