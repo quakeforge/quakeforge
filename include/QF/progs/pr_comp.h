@@ -430,6 +430,20 @@ typedef enum {
 #include "QF/progs/pr_opcode.hinc"
 } pr_opcode_e;
 
+// Used for both branch and comparison, with jump and call being ignored for
+// comparison. For branches, the test is against zero, while for comparison,
+// it's a cmp b (where cmp takes the place of "branch" in the enum names).
+typedef enum {
+	pr_branch_eq,
+	pr_branch_lt,
+	pr_branch_gt,
+	pr_branch_jump,
+	pr_branch_ne,
+	pr_branch_ge,
+	pr_branch_le,
+	pr_branch_call,
+} pr_branch_e;
+
 #define OP_A_SHIFT (9)
 #define OP_B_SHIFT (11)
 #define OP_C_SHIFT (13)
