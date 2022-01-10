@@ -7,7 +7,7 @@ bitmap_txt = """
 0 0110 0nnn rcall 1-8 (0 0100 11mm with 0 params for [r]call0)
 0 0110 10ss return
 0 0110 1100 returnv
-0 0110 1101 with (reg encoded in st->c)
+0 0110 1101 with (mode in st->a, value in st->b, reg in st->c)
 0 0110 111t state
 0 0111 tooo vecops
 0 1ccc ttss compare
