@@ -114,8 +114,8 @@ branch_formats = {
     "types": "ev_void, ev_void, ev_integer",
     "args": {
         "op_mode": "ABCD",
-        "op_cond": ["ifnot", "ifb", "ifa", "jump",
-                    "if", "ifae", "ifbe", "call"],
+        "op_cond": ["ifz",  "ifb",  "ifa",  "jump",
+                    "ifnz", "ifae", "ifbe", "call"],
         "branch_fmt": branch_fmt,
         "cond_fmt": ["%Gc ", "%Gc ", "%Gc ", "", "%Gc ", "%Gc ", "%Gc ", ""],
         "cond_widths": [

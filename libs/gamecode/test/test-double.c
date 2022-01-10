@@ -129,7 +129,7 @@ static dstatement_t double_cossin_statements[] = {
 	{ OP(0, 0, 0, OP_DIV_D_2),   40,  16,   40 },	// xn /= f
 	{ OP(0, 0, 0, OP_ADD_D_2),   16,  24,   16 },	// f += inc
 	{ OP(0, 0, 0, OP_LT_D_1),    16,  30,   46 },	// f0 < fmax
-	{ OP(0, 0, 0, OP_IF_A),      -7,   0,   46 },	// f0 < fmax
+	{ OP(0, 0, 0, OP_IFNZ_A),    -7,   0,   46 },	// f0 < fmax
 };
 
 test_t tests[] = {

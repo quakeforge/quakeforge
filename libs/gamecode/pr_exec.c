@@ -2819,20 +2819,29 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				MM(ivec4) = STK(ivec4);
 				break;
 			// 0 0100
-			case OP_IFNOT_A:
-			case OP_IFNOT_B:
-			case OP_IFNOT_C:
-			case OP_IFNOT_D:
+			case OP_IFZ_A:
+			case OP_IFZ_B:
+			case OP_IFZ_C:
+			case OP_IFZ_D:
 				if (!OPC(int)) {
 					pr->pr_xstatement = pr_jump_mode (pr, st);
 					st = pr->pr_statements + pr->pr_xstatement;
 				}
 				break;
-			case OP_IF_A:
-			case OP_IF_B:
-			case OP_IF_C:
-			case OP_IF_D:
-				if (OPC(int)) {
+			case OP_IFB_A:
+			case OP_IFB_B:
+			case OP_IFB_C:
+			case OP_IFB_D:
+				if (OPC(int) < 0) {
+					pr->pr_xstatement = pr_jump_mode (pr, st);
+					st = pr->pr_statements + pr->pr_xstatement;
+				}
+				break;
+			case OP_IFA_A:
+			case OP_IFA_B:
+			case OP_IFA_C:
+			case OP_IFA_D:
+				if (OPC(int) > 0) {
 					pr->pr_xstatement = pr_jump_mode (pr, st);
 					st = pr->pr_statements + pr->pr_xstatement;
 				}
@@ -2843,6 +2852,33 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_JUMP_D:
 				pr->pr_xstatement = pr_jump_mode (pr, st);
 				st = pr->pr_statements + pr->pr_xstatement;
+				break;
+			case OP_IFNZ_A:
+			case OP_IFNZ_B:
+			case OP_IFNZ_C:
+			case OP_IFNZ_D:
+				if (OPC(int)) {
+					pr->pr_xstatement = pr_jump_mode (pr, st);
+					st = pr->pr_statements + pr->pr_xstatement;
+				}
+				break;
+			case OP_IFAE_A:
+			case OP_IFAE_B:
+			case OP_IFAE_C:
+			case OP_IFAE_D:
+				if (OPC(int) >= 0) {
+					pr->pr_xstatement = pr_jump_mode (pr, st);
+					st = pr->pr_statements + pr->pr_xstatement;
+				}
+				break;
+			case OP_IFBE_A:
+			case OP_IFBE_B:
+			case OP_IFBE_C:
+			case OP_IFBE_D:
+				if (OPC(int) <= 0) {
+					pr->pr_xstatement = pr_jump_mode (pr, st);
+					st = pr->pr_statements + pr->pr_xstatement;
+				}
 				break;
 			case OP_CALL_A:
 			case OP_CALL_B:
@@ -2922,42 +2958,6 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				}
 				break;
 			// 0 0110
-			case OP_IFA_A:
-			case OP_IFA_B:
-			case OP_IFA_C:
-			case OP_IFA_D:
-				if (OPC(int) > 0) {
-					pr->pr_xstatement = pr_jump_mode (pr, st);
-					st = pr->pr_statements + pr->pr_xstatement;
-				}
-				break;
-			case OP_IFBE_A:
-			case OP_IFBE_B:
-			case OP_IFBE_C:
-			case OP_IFBE_D:
-				if (OPC(int) <= 0) {
-					pr->pr_xstatement = pr_jump_mode (pr, st);
-					st = pr->pr_statements + pr->pr_xstatement;
-				}
-				break;
-			case OP_IFB_A:
-			case OP_IFB_B:
-			case OP_IFB_C:
-			case OP_IFB_D:
-				if (OPC(int) < 0) {
-					pr->pr_xstatement = pr_jump_mode (pr, st);
-					st = pr->pr_statements + pr->pr_xstatement;
-				}
-				break;
-			case OP_IFAE_A:
-			case OP_IFAE_B:
-			case OP_IFAE_C:
-			case OP_IFAE_D:
-				if (OPC(int) >= 0) {
-					pr->pr_xstatement = pr_jump_mode (pr, st);
-					st = pr->pr_statements + pr->pr_xstatement;
-				}
-				break;
 			// 0 0111
 			case OP_CROSS_F:
 				{
