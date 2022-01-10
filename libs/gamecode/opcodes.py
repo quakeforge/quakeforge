@@ -11,6 +11,7 @@ bitmap_txt = """
 0 0101 1100 return (size in st->c)
 
 0 0110 0nnn
+0 0110 1100 convert (conversion mode in st->b)
 0 0110 1101 with (mode in st->a, value in st->b, reg in st->c)
 0 0110 111t state
 0 0111 tooo vecops
@@ -22,7 +23,7 @@ bitmap_txt = """
 1 1000 ooss bitops
 1 1001 t1ss scale
 1 1001 t100 swizzle
-1 1010 d1xx convert
+1 1010 d1xx
 1 1011 00mm lea
 1 1011 01ss any
 1 1011 0100 lea_e
@@ -32,7 +33,7 @@ bitmap_txt = """
 1 1011 1100 popregs
 1 1101 01oo move
 1 1101 11oo memset
-1 1110 d1xx convert2
+1 1110 d1xx
 1 11dd t100 vecops2
 1 1100 ooss boolops
 n 1111 nnnn
@@ -176,31 +177,13 @@ compare2_formats = {
     },
 }
 convert_formats = {
-    "opcode": "OP_CONV_{op_conv[d*4+xx]}",
-    "mnemonic": "conv.{op_conv[d*4+xx]}",
+    "opcode": "OP_CONV",
+    "mnemonic": "conv",
     "opname": "conv",
-    "format": "%Ga %gc",
+    "format": "%Ga %Cb %gc",
     "widths": "1, 0, 1",
-    "types": "{cnv_types[xx][d]}, ev_invalid, {cnv_types[xx][1-d]}",
-    "args": {
-        "op_conv": ["IF", "LD", "uF", "UD", "FI", "DL", "Fu", "DU"],
-        "cnv_types": [
-            ["ev_integer", "ev_float"],
-            ["ev_long", "ev_double"],
-            ["ev_uinteger", "ev_float"],
-            ["ev_ulong", "ev_double"],
-        ],
-    },
+    "types": "ev_void, ev_short, ev_void",
 }
-convert2_formats = copy.deepcopy (convert_formats)
-convert2_formats["args"]["op_conv"] = [None, "IL", "uU", "FD",
-                                       None, "LI", "Uu", "DF"]
-convert2_formats["args"]["cnv_types"] = [
-    [None, None],
-    ["ev_integer", "ev_long"],
-    ["ev_uinteger", "ev_ulong"],
-    ["ev_float", "ev_double"],
-]
 lea_formats = {
     "opcode": "OP_LEA_{op_mode[mm]}",
     "mnemonic": "lea",
@@ -494,7 +477,6 @@ group_map = {
     "compare":  compare_formats,
     "compare2": compare2_formats,
     "convert":  convert_formats,
-    "convert2": convert2_formats,
     "lea":      lea_formats,
     "lea_e":    lea_e_formats,
     "load":     load_formats,
