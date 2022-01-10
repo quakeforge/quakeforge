@@ -2959,6 +2959,14 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				}
 				break;
 			// 0 0111
+			case OP_CROSS_F:
+				{
+					pr_vec4_t   a = loadvec3f (&OPA(float));
+					pr_vec4_t   b = loadvec3f (&OPB(float));
+					pr_vec4_t   c = crossf (a, b);
+					storevec3f (&OPC(float), c);
+				}
+				break;
 			case OP_CDOT_F:
 				OPC(vec2) = dot2f (OPA(vec2), OPB(vec2));
 				break;
@@ -2971,14 +2979,6 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				break;
 			case OP_QDOT_F:
 				OPC(vec4) = dotf (OPA(vec4), OPB(vec4));
-				break;
-			case OP_CROSS_F:
-				{
-					pr_vec4_t   a = loadvec3f (&OPA(float));
-					pr_vec4_t   b = loadvec3f (&OPB(float));
-					pr_vec4_t   c = crossf (a, b);
-					storevec3f (&OPC(float), c);
-				}
 				break;
 			case OP_CMUL_F:
 				OPC(vec2) = cmulf (OPA(vec2), OPB(vec2));
@@ -3000,6 +3000,14 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_QMUL_F:
 				OPC(vec4) = qmulf (OPA(vec4), OPB(vec4));
 				break;
+			case OP_CROSS_D:
+				{
+					pr_dvec4_t  a = loadvec3d (&OPA(double));
+					pr_dvec4_t  b = loadvec3d (&OPB(double));
+					pr_dvec4_t  c = crossd (a, b);
+					storevec3d (&OPC(double), c);
+				}
+				break;
 			case OP_CDOT_D:
 				OPC(dvec2) = dot2d (OPA(dvec2), OPB(dvec2));
 				break;
@@ -3012,14 +3020,6 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				break;
 			case OP_QDOT_D:
 				OPC(dvec4) = dotd (OPA(dvec4), OPB(dvec4));
-				break;
-			case OP_CROSS_D:
-				{
-					pr_dvec4_t  a = loadvec3d (&OPA(double));
-					pr_dvec4_t  b = loadvec3d (&OPB(double));
-					pr_dvec4_t  c = crossd (a, b);
-					storevec3d (&OPC(double), c);
-				}
 				break;
 			case OP_CMUL_D:
 				OPC(dvec2) = cmuld (OPA(dvec2), OPB(dvec2));

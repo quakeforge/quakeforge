@@ -454,7 +454,7 @@ vecops_formats = {
     "widths": "{vec_widths[ooo]}",
     "types": "{vec_types[t]}, {vec_types[t]}, {vec_types[t]}",
     "args": {
-        "op_vop": ["cdot", "vdot", "qdot", "cross",
+        "op_vop": ["cross", "cdot", "vdot", "qdot",
                    "cmul", "qvmul", "vqmul", "qmul"],
         "vop_type": ['F', 'D'],
         "vec_widths": [
