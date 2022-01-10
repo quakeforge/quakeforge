@@ -2915,6 +2915,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				pr->pr_xstatement = pr_jump_mode (pr, st);
 				st = pr->pr_statements + pr->pr_xstatement;
 				break;
+			// 0 0101
 			case OP_IFNZ_A:
 			case OP_IFNZ_B:
 			case OP_IFNZ_C:
@@ -2972,9 +2973,17 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				PR_CallFunction (pr, function);
 				st = pr->pr_statements + pr->pr_xstatement;
 				break;
-			// 0 0101
-			//        nnn spare
-			//OP_CONV
+			// 0 0110
+			//        0nnn spare
+			//        10nn spare
+			case OP_CONV:
+				switch (st->b) {
+#include "libs/gamecode/pr_convert.cinc"
+					default:
+						PR_RunError (pr, "invalid conversion code: %04o",
+									 st->b);
+				}
+				break;
 			case OP_WITH:
 				pr->pr_bases[st->c & 3] = pr_with (pr, st);
 				break;
@@ -3002,7 +3011,6 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 					pr->pr_edict_area[think].func_var = op_b->func_var;
 				}
 				break;
-			// 0 0110
 			// 0 0111
 			case OP_CROSS_F:
 				{
@@ -3121,14 +3129,16 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			// 0 1010
 			OP_cmp(GT, >);
 			// 0 1011
+			// spare
 			// 0 1100
 			OP_cmp(NE, !=);
 			// 0 1101
 			OP_cmp(GE, >=);
 			// 0 1110
 			OP_cmp(LE, <=);
-			// 0 1011
-			//FIXME conversion 2
+
+			// 0 1111
+			// spare
 
 #define OP_op_1(OP, T, t, op) \
 			case OP_##OP##_##T##_1: \
@@ -3311,9 +3321,9 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			//FIXME scale ops
 			// 1 1010
 			OP_cmp_T (GT, u, int, ivec2, ivec4, >, uint, uivec2, uivec4);
-			//FIXME conversion ops
+			// spare
 			OP_cmp_T (GT, U, long, lvec2, lvec4, >, ulong, ulvec2, ulvec4);
-			//FIXME conversion ops
+			// spare
 			// 1 1011
 			case OP_LEA_A:
 			case OP_LEA_B:
@@ -3447,14 +3457,14 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_V4QMUL_F:
 				OPC(vec4) = vqmulf (OPA(vec4), OPB(vec4));
 				break;
-
+			// spare
 			OP_cmp_T (LE, U, long, lvec2, lvec4, <=, ulong, ulvec2, ulvec4);
 			case OP_V4QMUL_D:
 				OPC(dvec4) = vqmuld (OPA(dvec4), OPB(dvec4));
 				break;
-
+			// spare
 			// 1 1111
-
+			// spare
 			default:
 				PR_RunError (pr, "Bad opcode o%03o", st->op & OP_MASK);
 		}

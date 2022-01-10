@@ -31,7 +31,10 @@ pr_opcode_src = \
 	${pr_opcode_hinc}
 libs/gamecode/pr_opcode.lo: libs/gamecode/pr_opcode.c ${pr_opcode_src}
 
-BUILT_SOURCES += $(pr_opcode_cinc) $(pr_opcode_hinc)
+convert_py = $(srcdir)/libs/gamecode/convert.py
+pr_convert_cinc = $(top_builddir)/libs/gamecode/pr_convert.cinc
+
+BUILT_SOURCES += $(pr_opcode_cinc) $(pr_opcode_hinc) $(pr_convert_cinc)
 
 $(pr_opcode_cinc): $(opcodes_py)
 	$(V_PY)$(PYTHON) $(opcodes_py) table > $(pr_opcode_cinc).t && \
@@ -41,3 +44,7 @@ $(pr_opcode_hinc): $(opcodes_py)
 	$(V_PY) mkdir -p `dirname $(pr_opcode_hinc)` &&\
 	$(PYTHON) $(opcodes_py) enum > $(pr_opcode_hinc).t && \
 	$(am__mv) $(pr_opcode_hinc).t $(pr_opcode_hinc)
+
+$(pr_convert_cinc): $(convert_py)
+	$(V_PY)$(PYTHON) $(convert_py) table > $(pr_convert_cinc).t && \
+	$(am__mv) $(pr_convert_cinc).t $(pr_convert_cinc)
