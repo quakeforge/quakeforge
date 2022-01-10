@@ -4,9 +4,13 @@ bitmap_txt = """
 0 0010 mmss push
 0 0011 mmss pop
 0 010c ccmm branch
-0 0110 0nnn rcall 1-8 (0 0100 11mm with 0 params for [r]call0)
-0 0110 10ss return
-0 0110 1100 returnv
+
+# while call and return are part of the branch block, they have different
+# handling for addressing and formatting
+0 0101 11mm call (return specified st->c)
+0 0101 1100 return (size in st->c)
+
+0 0110 0nnn
 0 0110 1101 with (mode in st->a, value in st->b, reg in st->c)
 0 0110 111t state
 0 0111 tooo vecops
@@ -115,7 +119,7 @@ branch_formats = {
     "args": {
         "op_mode": "ABCD",
         "op_cond": ["ifz",  "ifb",  "ifa",  "jump",
-                    "ifnz", "ifae", "ifbe", "call"],
+                    "ifnz", "ifae", "ifbe", None],  #call and return seprate
         "branch_fmt": branch_fmt,
         "cond_fmt": ["%Gc ", "%Gc ", "%Gc ", "", "%Gc ", "%Gc ", "%Gc ", ""],
         "cond_widths": [
@@ -127,6 +131,23 @@ branch_formats = {
             "0, 0, 1",
             "0, 0, 1",
             "0, 0, 0",
+        ],
+    },
+}
+call_formats = {
+    "opcode": "OP_CALL_{op_mode[mm]}",
+    "mnemonic": "call",
+    "opname": "call",
+    "format": "{call_fmt[mm]}",
+    "widths": "0, 0, 0",
+    "types": "ev_void, ev_void, ev_void",
+    "args": {
+        "op_mode": ".BCD",
+        "call_fmt": [
+            None,           # return handled seprately
+            "%Ga, %gc",
+            "%Ga[%sb], %gc",
+            "%Ga[%Gb], %gc",
         ],
     },
 }
@@ -411,41 +432,13 @@ swizzle_formats = {
         "swizzle_types": float_t,
     },
 }
-rcall_formats = {
-    "opcode": "OP_CALL_{nnn+1}",
-    "mnemonic": "rcall{nnn+1}",
-    "opname": "rcall{nnn+1}",
-    "format": "{rcall_fmt[nnn]}",
-    "widths": "0, 0, 0",
-    "types": "ev_func, ev_void, ev_void",
-    "args": {
-        "rcall_fmt": [
-            "%Fa (%P0b)",
-            "%Fa (%P0b, %P1c)",
-            "%Fa (%P0b, %P1c, %P2x)",
-            "%Fa (%P0b, %P1c, %P2x, %P3x)",
-            "%Fa (%P0b, %P1c, %P2x, %P3x, %P4x)",
-            "%Fa (%P0b, %P1c, %P2x, %P3x, %P4x, %P5x)",
-            "%Fa (%P0b, %P1c, %P2x, %P3x, %P4x, %P5x, %P6x)",
-            "%Fa (%P0b, %P1c, %P2x, %P3x, %P4x, %P5x, %P6x, %P7x)",
-        ],
-    },
-}
 return_formats = {
-    "opcode": "OP_RETURN_{ss+1}",
-    "mnemonic": "return{ss+1}",
-    "opname": "return",
-    "widths": "0, 0, 0",
-    "format": "%Ra",
-    "types": "ev_void, ev_invalid, ev_invalid",
-}
-returnv_formats = {
-    "opcode": "OP_RETURN_0",
+    "opcode": "OP_RETURN",
     "mnemonic": "return",
     "opname": "return",
-    "widths": "0, 0, 0",
-    "format": None,
-    "types": "ev_invalid, ev_invalid, ev_invalid",
+    "widths": "0, 0, 0",    # width specified by st->c
+    "format": "FIXME",
+    "types": "ev_void, ev_void, ev_void",
 }
 vecops_formats = {
     "opcode": "OP_{op_vop[ooo].upper()}_{vop_type[t]}",
@@ -497,6 +490,7 @@ group_map = {
     "bitops":   bitops_formats,
     "boolops":  boolops_formats,
     "branch":   branch_formats,
+    "call":     call_formats,
     "compare":  compare_formats,
     "compare2": compare2_formats,
     "convert":  convert_formats,
@@ -518,9 +512,7 @@ group_map = {
     "store":    store_formats,
     "string":   string_formats,
     "swizzle":  swizzle_formats,
-    "rcall":    rcall_formats,
     "return":   return_formats,
-    "returnv":  returnv_formats,
     "vecops":   vecops_formats,
     "vecops2":  vecops2_formats,
     "with":     with_formats,
@@ -601,7 +593,8 @@ if len (sys.argv) < 2 or sys.argv[1] not in ["enum", "table"]:
 
 lines = bitmap_txt.split('\n')
 for l in lines:
-    if not l:
+    l = l.strip()
+    if not l or l[0] == '#':
         continue
     c = l.split(' ')
     bits = "".join(c[0:3])

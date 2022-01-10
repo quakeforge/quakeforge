@@ -1793,6 +1793,68 @@ pr_address_mode (progs_t *pr, const dstatement_t *st, int shift)
 	return pr->pr_globals + mm_offs;
 }
 
+static pr_type_t *
+pr_return_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
+{
+	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, A);
+	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, B);
+	pointer_t   mm_offs = 0;
+
+	switch (mm_ind) {
+		case 0:
+			// regular global access
+			mm_offs = op_a - pr->pr_globals;
+			break;
+		case 1:
+			// simple pointer dereference: *a
+			mm_offs = OPA(uint);
+			break;
+		case 2:
+			// constant indexed pointer: *a + b (supports -ve offset)
+			mm_offs = OPA(uint) + (short) st->b;
+			break;
+		case 3:
+			// variable indexed pointer: *a + *b (supports -ve offset)
+			mm_offs = OPA(uint) + OPB(int);
+			break;
+		case 4:
+			// entity.field (equivalent to OP_LOAD_t_v6p)
+			pointer_t   edict_area = pr->pr_edict_area - pr->pr_globals;
+			mm_offs = edict_area + OPA(uint) + OPB(uint);
+			break;
+	}
+	return pr->pr_globals + mm_offs;
+}
+
+static pr_type_t *
+pr_call_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
+{
+	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, A);
+	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, B);
+	pointer_t   mm_offs = 0;
+
+	switch (mm_ind) {
+		case 1:
+			// regular global access
+			mm_offs = op_a - pr->pr_globals;
+			break;
+		case 2:
+			// constant indexed pointer: *a + b (supports -ve offset)
+			mm_offs = OPA(uint) + (short) st->b;
+			break;
+		case 3:
+			// variable indexed pointer: *a + *b (supports -ve offset)
+			mm_offs = OPA(uint) + OPB(int);
+			break;
+		case 4:
+			// entity.field (equivalent to OP_LOAD_t_v6p)
+			pointer_t   edict_area = pr->pr_edict_area - pr->pr_globals;
+			mm_offs = edict_area + OPA(uint) + OPB(uint);
+			break;
+	}
+	return pr->pr_globals + mm_offs;
+}
+
 static pr_pointer_t __attribute__((pure))
 pr_jump_mode (progs_t *pr, const dstatement_t *st)
 {
@@ -2880,45 +2942,12 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 					st = pr->pr_statements + pr->pr_xstatement;
 				}
 				break;
-			case OP_CALL_A:
-			case OP_CALL_B:
-			case OP_CALL_C:
-			case OP_CALL_D:
-				mm = pr_address_mode (pr, st, 0);
-				function = mm->func_var;
-				pr->pr_argc = 0;
-			op_call:
-				pr->pr_xfunction->profile += profile - startprofile;
-				startprofile = profile;
-				PR_CallFunction (pr, function);
-				st = pr->pr_statements + pr->pr_xstatement;
-				break;
-			// 0 0101
-			case OP_CALL_2: case OP_CALL_3: case OP_CALL_4:
-			case OP_CALL_5: case OP_CALL_6: case OP_CALL_7: case OP_CALL_8:
-				pr->pr_params[1] = op_c;
-				goto op_call_n;
-			case OP_CALL_1:
-				pr->pr_params[1] = pr->pr_real_params[1];
-			op_call_n:
-				pr->pr_params[0] = op_b;
-				function = op_a->func_var;
-				pr->pr_argc = st->op - OP_CALL_1 + 1;
-				goto op_call;
-			case OP_RETURN_4:
-				memcpy (&R_INT (pr), op_a, 4 * sizeof (*op_a));
-				goto op_return;
-			case OP_RETURN_3:
-				memcpy (&R_INT (pr), op_a, 3 * sizeof (*op_a));
-				goto op_return;
-			case OP_RETURN_2:
-				memcpy (&R_INT (pr), op_a, 2 * sizeof (*op_a));
-				goto op_return;
-			case OP_RETURN_1:
-				memcpy (&R_INT (pr), op_a, 1 * sizeof (*op_a));
-				goto op_return;
-			case OP_RETURN_0:
-			op_return:
+			case OP_RETURN:
+				int         ret_size = st->c & 0x1f;	// up to 32 words
+				if (ret_size) {
+					mm = pr_return_mode (pr, st, (st->c >> 5) & 7);
+					memcpy (&R_INT (pr), mm, ret_size * sizeof (*op_a));
+				}
 				pr->pr_xfunction->profile += profile - startprofile;
 				startprofile = profile;
 				PR_LeaveFunction (pr, pr->pr_depth == exitdepth);
@@ -2930,6 +2959,22 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 					goto exit_program;
 				}
 				break;
+			case OP_CALL_B:
+			case OP_CALL_C:
+			case OP_CALL_D:
+				mm = pr_call_mode (pr, st, st->c & 3);
+				function = mm->func_var;
+				pr->pr_argc = 0;
+				// op_c specifies the location for the return value if any
+				pr->pr_return = op_c;
+				pr->pr_xfunction->profile += profile - startprofile;
+				startprofile = profile;
+				PR_CallFunction (pr, function);
+				st = pr->pr_statements + pr->pr_xstatement;
+				break;
+			// 0 0101
+			//        nnn spare
+			//OP_CONV
 			case OP_WITH:
 				pr->pr_bases[st->c & 3] = pr_with (pr, st);
 				break;
