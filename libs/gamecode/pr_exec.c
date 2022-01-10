@@ -3313,12 +3313,28 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_SWIZZLE_F:
 				OPC(ivec4) = pr_swizzle_f (OPA(ivec4), st->b);
 				break;
-			//FIXME scale ops
+			case OP_SCALE_F_2:
+				OPC(vec2) = OPA(vec2) * OPB(float);
+				break;
+			case OP_SCALE_F_3:
+				VectorScale (&OPA(float), OPB(float), &OPC(float));
+				break;
+			case OP_SCALE_F_4:
+				OPC(vec4) = OPA(vec4) * OPB(float);
+				break;
 			OP_cmp_T (LT, U, long, lvec2, lvec4, <, ulong, ulvec2, ulvec4);
 			case OP_SWIZZLE_D:
 				OPC(lvec4) = pr_swizzle_d (OPA(lvec4), st->b);
 				break;
-			//FIXME scale ops
+			case OP_SCALE_D_2:
+				OPC(dvec2) = OPA(dvec2) * OPB(double);
+				break;
+			case OP_SCALE_D_3:
+				VectorScale (&OPA(double), OPB(double), &OPC(double));
+				break;
+			case OP_SCALE_D_4:
+				OPC(dvec4) = OPA(dvec4) * OPB(double);
+				break;
 			// 1 1010
 			OP_cmp_T (GT, u, int, ivec2, ivec4, >, uint, uivec2, uivec4);
 			// spare
