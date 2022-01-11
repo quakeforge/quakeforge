@@ -4,9 +4,10 @@ libs_gamecode_tests = \
 	libs/gamecode/test/test-int \
 	libs/gamecode/test/test-load \
 	libs/gamecode/test/test-long \
-	libs/gamecode/test/test-vector \
 	libs/gamecode/test/test-stack \
-	libs/gamecode/test/test-store
+	libs/gamecode/test/test-store \
+	libs/gamecode/test/test-unsigned \
+	libs/gamecode/test/test-vector
 
 TESTS += $(libs_gamecode_tests)
 
@@ -57,3 +58,8 @@ libs_gamecode_test_test_vector_SOURCES= \
 	libs/gamecode/test/test-vector.c
 libs_gamecode_test_test_vector_LDADD=			$(test_gamecode_libs)
 libs_gamecode_test_test_vector_DEPENDENCIES=	$(test_gamecode_libs)
+
+libs_gamecode_test_test_unsigned_SOURCES= \
+	libs/gamecode/test/test-unsigned.c
+libs_gamecode_test_test_unsigned_LDADD=			$(test_gamecode_libs)
+libs_gamecode_test_test_unsigned_DEPENDENCIES=	$(test_gamecode_libs)

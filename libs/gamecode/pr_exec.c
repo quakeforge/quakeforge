@@ -3121,7 +3121,6 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			// 0 1010
 			OP_cmp(GT, >);
 			// 0 1011
-			//FIXME conversion 1
 			// 0 1100
 			OP_cmp(NE, !=);
 			// 0 1101
@@ -3300,20 +3299,20 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_op_T (BITXOR, I, int, ivec2, ivec4, ^);
 			OP_uop_T (BITNOT, I, int, ivec2, ivec4, ~);
 			// 1 1001
-			OP_op_T (LT, u, uint, uivec2, uivec4, <);
+			OP_cmp_T (LT, u, int, ivec2, ivec4, <, uint, uivec2, uivec4);
 			case OP_SWIZZLE_F:
 				OPC(ivec4) = pr_swizzle_f (OPA(ivec4), st->b);
 				break;
 			//FIXME scale ops
-			OP_op_T (LT, U, ulong, ulvec2, ulvec4, <);
+			OP_cmp_T (LT, U, long, lvec2, lvec4, <, ulong, ulvec2, ulvec4);
 			case OP_SWIZZLE_D:
 				OPC(lvec4) = pr_swizzle_d (OPA(lvec4), st->b);
 				break;
 			//FIXME scale ops
 			// 1 1010
-			OP_op_T (GT, u, uint, uivec2, uivec4, >);
+			OP_cmp_T (GT, u, int, ivec2, ivec4, >, uint, uivec2, uivec4);
 			//FIXME conversion ops
-			OP_op_T (GT, U, ulong, ulvec2, ulvec4, >);
+			OP_cmp_T (GT, U, long, lvec2, lvec4, >, ulong, ulvec2, ulvec4);
 			//FIXME conversion ops
 			// 1 1011
 			case OP_LEA_A:
@@ -3415,7 +3414,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_not_3 (NOT, int, 3, +);
 			OP_not_n (NOT, ivec4, 4, +);
 			// 1 1101
-			OP_op_T (GE, u, uint, uivec2, uivec4, >=);
+			OP_cmp_T (GE, u, int, ivec2, ivec4, >=, uint, uivec2, uivec4);
 			case OP_QV4MUL_F:
 				OPC(vec4) = qvmulf (OPA(vec4), OPB(vec4));
 				break;
@@ -3430,7 +3429,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				memmove (pr->pr_globals + OPC(int), pr->pr_globals + OPA(int),
 						 st->b * sizeof (pr_type_t));
 				break;
-			OP_op_T (GE, U, ulong, ulvec2, ulvec4, >=);
+			OP_cmp_T (GE, U, long, lvec2, lvec4, >=, ulong, ulvec2, ulvec4);
 			case OP_QV4MUL_D:
 				OPC(dvec4) = qvmuld (OPA(dvec4), OPB(dvec4));
 				break;
@@ -3444,12 +3443,12 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				pr_memset (pr->pr_globals + OPC(int), OPA(int), st->b);
 				break;
 			// 1 1110
-			OP_op_T (LE, u, uint, uivec2, uivec4, <=);
+			OP_cmp_T (LE, u, int, ivec2, ivec4, <=, uint, uivec2, uivec4);
 			case OP_V4QMUL_F:
 				OPC(vec4) = vqmulf (OPA(vec4), OPB(vec4));
 				break;
 
-			OP_op_T (LE, U, ulong, ulvec2, ulvec4, <=);
+			OP_cmp_T (LE, U, long, lvec2, lvec4, <=, ulong, ulvec2, ulvec4);
 			case OP_V4QMUL_D:
 				OPC(dvec4) = vqmuld (OPA(dvec4), OPB(dvec4));
 				break;
