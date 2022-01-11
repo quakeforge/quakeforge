@@ -132,6 +132,102 @@ static dstatement_t double_cossin_statements[] = {
 	{ OP(0, 0, 0, OP_IFNZ_A),    -7,   0,   46 },	// f0 < fmax
 };
 
+static pr_dvec4_t double_cmpop_init[] = {
+	{  5, -5,  5, -5},
+	{  5,  5, -5, -5},
+	{  0,  0, 0, 0},
+	{  0,  0, 0, 0},
+	{  0,  0, 0, 0},
+	{  0,  0, 0, 0},
+	{  0,  0, 0, 0},
+	{  0,  0, 0, 0},
+};
+
+// 5.0 as 64-bit int
+#define F 0x4014000000000000l
+#define mF 0xc014000000000000l
+static pr_lvec4_t double_cmpop_expect[] = {
+	{  F, mF,  F, mF},
+	{  F,  F, mF, mF},
+	{ -1,  0,  0, -1},
+	{  0, -1,  0,  0},
+	{  0,  0, -1,  0},
+	{  0, -1, -1,  0},
+	{ -1,  0, -1, -1},
+	{ -1, -1,  0, -1},
+};
+
+static dstatement_t double_cmpop_1_statements[] = {
+	{ OP(0, 0, 0, OP_LEA_A),    8,  0, 64 },	// init index
+//loop:
+	{ OP(0, 0, 0, OP_LEA_C),   64, -2, 64 },	// dec index
+	{ OP(0, 0, 0, OP_IFAE_A),   2,  0, 64 },
+	{ OP(0, 0, 0, OP_BREAK),    0,  0,  0 },
+	{ OP(0, 0, 0, OP_WITH),     4, 64,  1 },
+	{ OP(1, 1, 1, OP_EQ_D_1),  0,  8, 16 },
+	{ OP(1, 1, 1, OP_LT_D_1),  0,  8, 24 },
+	{ OP(1, 1, 1, OP_GT_D_1),  0,  8, 32 },
+	{ OP(1, 1, 1, OP_NE_D_1),  0,  8, 40 },
+	{ OP(1, 1, 1, OP_GE_D_1),  0,  8, 48 },
+	{ OP(1, 1, 1, OP_LE_D_1),  0,  8, 56 },
+	{ OP(1, 1, 1, OP_JUMP_A), -10,  0,  0 },
+};
+
+static dstatement_t double_cmpop_2_statements[] = {
+	{ OP(0, 0, 0, OP_LEA_A),    8,  0, 64 },	// init index
+//loop:
+	{ OP(0, 0, 0, OP_LEA_C),   64, -4, 64 },	// dec index
+	{ OP(0, 0, 0, OP_IFAE_A),   2,  0, 64 },
+	{ OP(0, 0, 0, OP_BREAK),    0,  0,  0 },
+	{ OP(0, 0, 0, OP_WITH),     4, 64,  1 },
+	{ OP(1, 1, 1, OP_EQ_D_2),  0,  8, 16 },
+	{ OP(1, 1, 1, OP_LT_D_2),  0,  8, 24 },
+	{ OP(1, 1, 1, OP_GT_D_2),  0,  8, 32 },
+	{ OP(1, 1, 1, OP_NE_D_2),  0,  8, 40 },
+	{ OP(1, 1, 1, OP_GE_D_2),  0,  8, 48 },
+	{ OP(1, 1, 1, OP_LE_D_2),  0,  8, 56 },
+	{ OP(1, 1, 1, OP_JUMP_A), -10,  0,  0 },
+};
+
+static dstatement_t double_cmpop_3a_statements[] = {
+	{ OP(1, 1, 1, OP_EQ_D_3), 0,  8, 16 },
+	{ OP(1, 1, 1, OP_EQ_D_1), 6, 14, 22 },
+	{ OP(1, 1, 1, OP_LT_D_3), 0,  8, 24 },
+	{ OP(1, 1, 1, OP_LT_D_1), 6, 14, 30 },
+	{ OP(1, 1, 1, OP_GT_D_3), 0,  8, 32 },
+	{ OP(1, 1, 1, OP_GT_D_1), 6, 14, 38 },
+	{ OP(1, 1, 1, OP_NE_D_3), 0,  8, 40 },
+	{ OP(1, 1, 1, OP_NE_D_1), 6, 14, 46 },
+	{ OP(1, 1, 1, OP_GE_D_3), 0,  8, 48 },
+	{ OP(1, 1, 1, OP_GE_D_1), 6, 14, 54 },
+	{ OP(1, 1, 1, OP_LE_D_3), 0,  8, 56 },
+	{ OP(1, 1, 1, OP_LE_D_1), 6, 14, 62 },
+};
+
+static dstatement_t double_cmpop_3b_statements[] = {
+	{ OP(1, 1, 1, OP_EQ_D_1), 0,  8, 16 },
+	{ OP(1, 1, 1, OP_EQ_D_3), 2, 10, 18 },
+	{ OP(1, 1, 1, OP_LT_D_1), 0,  8, 24 },
+	{ OP(1, 1, 1, OP_LT_D_3), 2, 10, 26 },
+	{ OP(1, 1, 1, OP_GT_D_1), 0,  8, 32 },
+	{ OP(1, 1, 1, OP_GT_D_3), 2, 10, 34 },
+	{ OP(1, 1, 1, OP_NE_D_1), 0,  8, 40 },
+	{ OP(1, 1, 1, OP_NE_D_3), 2, 10, 42 },
+	{ OP(1, 1, 1, OP_GE_D_1), 0,  8, 48 },
+	{ OP(1, 1, 1, OP_GE_D_3), 2, 10, 50 },
+	{ OP(1, 1, 1, OP_LE_D_1), 0,  8, 56 },
+	{ OP(1, 1, 1, OP_LE_D_3), 2, 10, 58 },
+};
+
+static dstatement_t double_cmpop_4_statements[] = {
+	{ OP(1, 1, 1, OP_EQ_D_4), 0, 8, 16 },
+	{ OP(1, 1, 1, OP_LT_D_4), 0, 8, 24 },
+	{ OP(1, 1, 1, OP_GT_D_4), 0, 8, 32 },
+	{ OP(1, 1, 1, OP_NE_D_4), 0, 8, 40 },
+	{ OP(1, 1, 1, OP_GE_D_4), 0, 8, 48 },
+	{ OP(1, 1, 1, OP_LE_D_4), 0, 8, 56 },
+};
+
 test_t tests[] = {
 	{
 		.desc = "double binop 1",
@@ -186,6 +282,51 @@ test_t tests[] = {
 		.statements = double_cossin_statements,
 		.init_globals = (pr_int_t *) double_cossin_init,
 		.expect_globals = (pr_int_t *) double_cossin_expect,
+	},
+	{
+		.desc = "double cmpop 1",
+		.extra_globals = 4 * 1,
+		.num_globals = 4*num_globals(double_cmpop_init,double_cmpop_expect),
+		.num_statements = num_statements (double_cmpop_1_statements),
+		.statements = double_cmpop_1_statements,
+		.init_globals = (pr_int_t *) double_cmpop_init,
+		.expect_globals = (pr_int_t *) double_cmpop_expect,
+	},
+	{
+		.desc = "double cmpop 2",
+		.extra_globals = 4 * 1,
+		.num_globals = 4*num_globals(double_cmpop_init,double_cmpop_expect),
+		.num_statements = num_statements (double_cmpop_2_statements),
+		.statements = double_cmpop_2_statements,
+		.init_globals = (pr_int_t *) double_cmpop_init,
+		.expect_globals = (pr_int_t *) double_cmpop_expect,
+	},
+	{
+		.desc = "double cmpop 3a",
+		.extra_globals = 4 * 1,
+		.num_globals = 4*num_globals(double_cmpop_init,double_cmpop_expect),
+		.num_statements = num_statements (double_cmpop_3a_statements),
+		.statements = double_cmpop_3a_statements,
+		.init_globals = (pr_int_t *) double_cmpop_init,
+		.expect_globals = (pr_int_t *) double_cmpop_expect,
+	},
+	{
+		.desc = "double cmpop 3b",
+		.extra_globals = 4 * 1,
+		.num_globals = 4*num_globals(double_cmpop_init,double_cmpop_expect),
+		.num_statements = num_statements (double_cmpop_3b_statements),
+		.statements = double_cmpop_3b_statements,
+		.init_globals = (pr_int_t *) double_cmpop_init,
+		.expect_globals = (pr_int_t *) double_cmpop_expect,
+	},
+	{
+		.desc = "double cmpop 4",
+		.extra_globals = 4 * 1,
+		.num_globals = 4*num_globals(double_cmpop_init,double_cmpop_expect),
+		.num_statements = num_statements (double_cmpop_4_statements),
+		.statements = double_cmpop_4_statements,
+		.init_globals = (pr_int_t *) double_cmpop_init,
+		.expect_globals = (pr_int_t *) double_cmpop_expect,
 	},
 };
 
