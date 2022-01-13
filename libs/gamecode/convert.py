@@ -34,22 +34,23 @@ vec_types = [
     "ulvec",
     None,       # no such thing as unsigned double
 ]
-skip_matrix = [
+convert_matrix = [
     #i  f  l  d   ui X  ul X
-    [1, 0, 0, 0,  1, 1, 0, 1],  # i
-    [0, 1, 0, 0,  0, 1, 0, 1],  # f
-    [0, 0, 1, 0,  0, 1, 1, 1],  # l
-    [0, 0, 0, 1,  0, 1, 0, 1],  # d
+    [0, 1, 1, 1,  0, 0, 1, 0],  # i
+    [1, 0, 1, 1,  1, 0, 1, 0],  # f
+    [1, 1, 0, 1,  1, 0, 0, 0],  # l
+    [1, 1, 1, 0,  1, 0, 1, 0],  # d
 
-    [1, 0, 0, 0,  1, 1, 0, 1],  # ui
-    [1, 1, 1, 1,  1, 1, 1, 1],  # X
-    [0, 0, 1, 0,  0, 1, 1, 1],  # ul
-    [1, 1, 1, 1,  1, 1, 1, 1],  # X
+    [0, 1, 1, 1,  0, 0, 1, 0],  # ui
+    [0, 0, 0, 0,  0, 0, 0, 0],  # X
+    [1, 1, 0, 1,  1, 0, 0, 0],  # ul
+    [0, 0, 0, 0,  0, 0, 0, 0],  # X
 ]
 for width in range(4):
     for src_type in range(8):
         for dst_type in range(8):
-            if skip_matrix[src_type][dst_type]:
+            mode = convert_matrix[src_type][dst_type]
+            if not mode:
                 continue
             case = (width << 6) | (src_type << 3) | (dst_type)
             if width == 0:
