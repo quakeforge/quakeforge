@@ -3403,42 +3403,11 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				OPC(int) = none4i (OPA(ivec4));
 				break;
 
-#define OP_bool_n(OP, t, n, op, m) \
-			case OP_##OP##_I_##n: \
-				OPC(t) = m((OPA(t) != 0) op (OPB(t) != 0)); \
-				break
-#define OP_bool_3(OP, t, n, op, m) \
-			case OP_##OP##_I_##n: \
-				{ \
-					__auto_type a = loadvec3i (&OPA(int)); \
-					__auto_type b = loadvec3i (&OPB(int)); \
-					storevec3i (&OPC(int), (a != 0) op (b != 0)); \
-				} \
-				break
-#define OP_bool(OP, op) \
-			OP_bool_n (OP, int, 1, op, -); \
-			OP_bool_n (OP, ivec2, 2, op, +); \
-			OP_bool_3 (OP, int, 3, op, +); \
-			OP_bool_n (OP, ivec4, 4, op, +)
-#define OP_not_n(OP, t, n, m) \
-			case OP_##OP##_I_##n: \
-				OPC(t) = m((OPA(t) == 0)); \
-				break
-#define OP_not_3(OP, t, n, m) \
-			case OP_##OP##_I_##n: \
-				{ \
-					__auto_type a = loadvec3i (&OPA(int)); \
-					storevec3i (&OPC(int), (a == 0)); \
-				} \
-				break
 			// 1 1100
-			OP_bool (AND, &);
-			OP_bool (OR, |);
-			OP_bool (XOR, ^);
-			OP_not_n (NOT, int, 1, -);
-			OP_not_n (NOT, ivec2, 2, +);
-			OP_not_3 (NOT, int, 3, +);
-			OP_not_n (NOT, ivec4, 4, +);
+			OP_op_T (BITAND, L, long, lvec2, lvec4, &);
+			OP_op_T (BITOR, L, long, lvec2, lvec4, |);
+			OP_op_T (BITXOR, L, long, lvec2, lvec4, ^);
+			OP_uop_T (BITNOT, L, long, lvec2, lvec4, ~);
 			// 1 1101
 			OP_cmp_T (GE, u, int, ivec2, ivec4, >=, uint, uivec2, uivec4);
 			case OP_QV4MUL_F:

@@ -20,7 +20,6 @@ bitmap_txt = """
 1 011r tuss shiftops
 1 0110 o1oo string
 1 1ccc t0ss compare2
-1 1000 ooss bitops
 1 1001 t1ss scale
 1 1001 t100 swizzle
 1 1010 d1xx
@@ -35,7 +34,7 @@ bitmap_txt = """
 1 1101 11oo memset
 1 1110 d1xx
 1 11dd t100 vecops2
-1 1100 ooss boolops
+1 1t00 ooss bitops
 n 1111 nnnn
 0 1011 nnnn
 """
@@ -77,32 +76,17 @@ any_formats = {
     "types": "ev_integer, ev_integer, ev_integer",
 }
 bitops_formats = {
-    "opcode": "OP_{op_bit[oo].upper()}_I_{ss+1}",
+    "opcode": "OP_{op_bit[oo].upper()}_{bit_type[t]}_{ss+1}",
     "mnemonic": "{op_bit[oo]}",
     "opname": "{op_bit[oo]}",
     "format": "{bit_fmt[oo]}",
     "widths": "{ss+1}, {ss+1}, {ss+1}",
-    "types": "ev_integer, ev_integer, ev_integer",
+    "types": "{bit_types[t]}, {bit_types[t]}, {bit_types[t]}",
     "args": {
         "op_bit": ["bitand", "bitor", "bitxor", "bitnot"],
+        "bit_type": ["I", "L"],
+        "bit_types": ["ev_integer", "ev_long"],
         "bit_fmt": [
-            "%Ga, %Gb, %gc",
-            "%Ga, %Gb, %gc",
-            "%Ga, %Gb, %gc",
-            "%Ga, %gc",
-        ],
-    },
-}
-boolops_formats = {
-    "opcode": "OP_{op_bool[oo].upper()}_I_{ss+1}",
-    "mnemonic": "{op_bool[oo]}",
-    "opname": "{op_bool[oo]}",
-    "format": "{bool_fmt[oo]}",
-    "widths": "{ss+1}, {ss+1}, {ss+1}",
-    "types": "ev_integer, ev_integer, ev_integer",
-    "args": {
-        "op_bool": ["and", "or", "xor", "not"],
-        "bool_fmt": [
             "%Ga, %Gb, %gc",
             "%Ga, %Gb, %gc",
             "%Ga, %Gb, %gc",
@@ -471,7 +455,6 @@ group_map = {
     "all":      all_formats,
     "any":      any_formats,
     "bitops":   bitops_formats,
-    "boolops":  boolops_formats,
     "branch":   branch_formats,
     "call":     call_formats,
     "compare":  compare_formats,
