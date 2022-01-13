@@ -46,22 +46,48 @@ convert_matrix = [
     [1, 1, 0, 1,  1, 0, 0, 0],  # ul
     [0, 0, 0, 0,  0, 0, 0, 0],  # X
 ]
+
+def case_str(width, src_type, dst_type):
+    case = (width << 6) | (src_type << 3) | (dst_type)
+    return f"case {case:04o}:"
+
+def cast_str(width, src_type, dst_type):
+    if width & 1 and (src_type & 2) == (dst_type & 2):
+        return f"(pr_{vec_types[dst_type]}{width+1}_t)"
+    else:
+        return f"(pr_{types[dst_type]}_t)"
+
+def src_str(width, src_type, dst_type):
+    if width & 1 and (src_type & 2) == (dst_type & 2):
+        return f"OPA({vec_types[src_type]}{width+1})"
+    else:
+        return f"OPA({types[src_type]})"
+
+def dst_str(width, src_type, dst_type):
+    if width & 1 and (src_type & 2) == (dst_type & 2):
+        return f"OPC({vec_types[dst_type]}{width+1})"
+    else:
+        return f"OPC({types[dst_type]})"
+
 for width in range(4):
     for src_type in range(8):
         for dst_type in range(8):
             mode = convert_matrix[src_type][dst_type]
             if not mode:
                 continue
-            case = (width << 6) | (src_type << 3) | (dst_type)
+            case = case_str(width, src_type, dst_type)
+            cast = cast_str(width, src_type, dst_type)
+            src = src_str(width, src_type, dst_type)
+            dst = dst_str(width, src_type, dst_type)
             if width == 0:
-                print(f"case {case:04o}: OPC({types[dst_type]}) = (pr_{types[dst_type]}_t) OPA({types[src_type]}); break;")
+                print(f"{case} {dst} = {cast} {src}; break;")
             elif width == 2:
-                print(f"case {case:04o}: VectorCompUop(&OPC({types[dst_type]}), (pr_{types[dst_type]}_t), &OPA({types[src_type]})); break;")
+                print(f"{case} VectorCompUop(&{dst}, {cast}, &{src}); break;")
             else:
                 if (src_type & 2) == (dst_type & 2):
-                    print(f"case {case:04o}: OPC({vec_types[dst_type]}{width+1}) = (pr_{vec_types[dst_type]}{width+1}_t) OPA({vec_types[src_type]}{width+1}); break;")
+                    print(f"{case} {dst} = {cast} {src}; break;")
                 else:
-                    print(f"case {case:04o}:")
+                    print(f"{case}")
                     for i in range(width + 1):
-                        print(f"\t(&OPC({types[dst_type]}))[{i}] = (pr_{types[dst_type]}_t) (&OPA({types[src_type]}))[{i}];")
+                        print(f"\t(&{dst})[{i}] = {cast} (&{src})[{i}];")
                     print(f"\tbreak;")
