@@ -2,6 +2,7 @@ print("""// types are encoded as ubf where:
 //  u = 0: signed, u = 1: unsigned
 //  b = 0: 32-bit, b = 1: 64-bit
 //  f = 0: int,    f = 1: float/double
+//  unsigned float/double is interpreted as bool
 // width is ww where:
 //  ww = 00: 1 component
 //  ww = 01: 2 components
@@ -19,9 +20,9 @@ types = [
     "long",
     "double",
     "uint",
-    None,       # no such thing as unsigned float
+    "int",      # 32-bit bool
     "ulong",
-    None,       # no such thing as unsigned double
+    "long",     # 64-bit bool
 ]
 #does not include size (2 or 4, 3 is special)
 vec_types = [
@@ -30,21 +31,21 @@ vec_types = [
     "lvec",
     "dvec",
     "uivec",
-    None,       # no such thing as unsigned float
+    "ivec",     # 32-bit bool
     "ulvec",
-    None,       # no such thing as unsigned double
+    "lvec",     # 64-bit bool
 ]
 convert_matrix = [
-    #i  f  l  d   ui X  ul X
-    [0, 1, 1, 1,  0, 0, 1, 0],  # i
-    [1, 0, 1, 1,  1, 0, 1, 0],  # f
-    [1, 1, 0, 1,  1, 0, 0, 0],  # l
-    [1, 1, 1, 0,  1, 0, 1, 0],  # d
+    #i  f  l  d   ui b  ul B
+    [0, 1, 1, 1,  0, 3, 1, 3],  # i
+    [1, 0, 1, 1,  1, 3, 1, 3],  # f
+    [1, 1, 0, 1,  1, 3, 0, 3],  # l
+    [1, 1, 1, 0,  1, 3, 1, 3],  # d
 
-    [0, 1, 1, 1,  0, 0, 1, 0],  # ui
-    [0, 0, 0, 0,  0, 0, 0, 0],  # X
-    [1, 1, 0, 1,  1, 0, 0, 0],  # ul
-    [0, 0, 0, 0,  0, 0, 0, 0],  # X
+    [0, 1, 1, 1,  0, 3, 1, 3],  # ui
+    [2, 2, 2, 2,  2, 0, 2, 1],  # 32-bit bool
+    [1, 1, 0, 1,  1, 3, 0, 3],  # ul
+    [2, 2, 2, 2,  2, 1, 2, 0],  # 64-bit bool
 ]
 
 def case_str(width, src_type, dst_type):
@@ -69,6 +70,14 @@ def dst_str(width, src_type, dst_type):
     else:
         return f"OPC({types[dst_type]})"
 
+def zero_str(width, src_type):
+    ones = "{%s}" % (", ".join(["0"] * (width + 1)))
+    return f"{cast_str(width, src_type, src_type)} {ones}"
+
+def one_str(width, src_type):
+    ones = "{%s}" % (", ".join(["1"] * (width + 1)))
+    return f"{cast_str(width, src_type, src_type)} {ones}"
+
 for width in range(4):
     for src_type in range(8):
         for dst_type in range(8):
@@ -79,15 +88,44 @@ for width in range(4):
             cast = cast_str(width, src_type, dst_type)
             src = src_str(width, src_type, dst_type)
             dst = dst_str(width, src_type, dst_type)
-            if width == 0:
-                print(f"{case} {dst} = {cast} {src}; break;")
-            elif width == 2:
-                print(f"{case} VectorCompUop(&{dst}, {cast}, &{src}); break;")
-            else:
-                if (src_type & 2) == (dst_type & 2):
+            if mode == 1:
+                if width == 0:
                     print(f"{case} {dst} = {cast} {src}; break;")
+                elif width == 2:
+                    print(f"{case} VectorCompUop(&{dst},{cast},&{src}); break;")
                 else:
-                    print(f"{case}")
-                    for i in range(width + 1):
-                        print(f"\t(&{dst})[{i}] = {cast} (&{src})[{i}];")
-                    print(f"\tbreak;")
+                    if (src_type & 2) == (dst_type & 2):
+                        print(f"{case} {dst} = {cast} {src}; break;")
+                    else:
+                        print(f"{case}")
+                        for i in range(width + 1):
+                            print(f"\t(&{dst})[{i}] = {cast} (&{src})[{i}];")
+                        print(f"\tbreak;")
+            elif mode == 2:
+                one = one_str(width, src_type)
+                if width == 0:
+                    print(f"{case} {dst} = !!{src}; break;")
+                elif width == 2:
+                    print(f"{case} VectorCompUop(&{dst},!!,&{src}); break;")
+                else:
+                    if (src_type & 2) == (dst_type & 2):
+                        print(f"{case} {dst} = {cast} ({src} & {one}); break;")
+                    else:
+                        print(f"{case}")
+                        for i in range(width + 1):
+                            print(f"\t(&{dst})[{i}] = !!(&{src})[{i}];")
+                        print(f"\tbreak;")
+            elif mode == 3:
+                zero = zero_str(width, src_type)
+                if width == 0:
+                    print(f"{case} {dst} = -!!{src}; break;")
+                elif width == 2:
+                    print(f"{case} VectorCompUop(&{dst},-!!,&{src}); break;")
+                else:
+                    if (src_type & 2) == (dst_type & 2):
+                        print(f"{case} {dst} = {src} != {zero}; break;")
+                    else:
+                        print(f"{case}")
+                        for i in range(width + 1):
+                            print(f"\t(&{dst})[{i}] = -!!(&{src})[{i}];")
+                        print(f"\tbreak;")
