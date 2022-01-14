@@ -152,7 +152,7 @@ test_t tests[] = {
 	{
 		.desc = "bool64 conv 1",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(bool64_conv_init,bool64_conv_expect),
+		.num_globals = num_globals(bool64_conv_init,bool64_conv_expect),
 		.num_statements = num_statements (bool64_conv_1_statements),
 		.statements = bool64_conv_1_statements,
 		.init_globals = (pr_int_t *) bool64_conv_init,
@@ -161,7 +161,7 @@ test_t tests[] = {
 	{
 		.desc = "bool64 conv 2",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(bool64_conv_init,bool64_conv_expect),
+		.num_globals = num_globals(bool64_conv_init,bool64_conv_expect),
 		.num_statements = num_statements (bool64_conv_2_statements),
 		.statements = bool64_conv_2_statements,
 		.init_globals = (pr_int_t *) bool64_conv_init,
@@ -170,7 +170,7 @@ test_t tests[] = {
 	{
 		.desc = "bool64 conv 3a",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(bool64_conv_init,bool64_conv_expect),
+		.num_globals = num_globals(bool64_conv_init,bool64_conv_expect),
 		.num_statements = num_statements (bool64_conv_3a_statements),
 		.statements = bool64_conv_3a_statements,
 		.init_globals = (pr_int_t *) bool64_conv_init,
@@ -179,7 +179,7 @@ test_t tests[] = {
 	{
 		.desc = "bool64 conv 3b",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(bool64_conv_init,bool64_conv_expect),
+		.num_globals = num_globals(bool64_conv_init,bool64_conv_expect),
 		.num_statements = num_statements (bool64_conv_3b_statements),
 		.statements = bool64_conv_3b_statements,
 		.init_globals = (pr_int_t *) bool64_conv_init,
@@ -188,7 +188,7 @@ test_t tests[] = {
 	{
 		.desc = "bool64 conv 4",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(bool64_conv_init,bool64_conv_expect),
+		.num_globals = num_globals(bool64_conv_init,bool64_conv_expect),
 		.num_statements = num_statements (bool64_conv_4_statements),
 		.statements = bool64_conv_4_statements,
 		.init_globals = (pr_int_t *) bool64_conv_init,

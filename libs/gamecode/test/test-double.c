@@ -232,7 +232,7 @@ test_t tests[] = {
 	{
 		.desc = "double binop 1",
 		.extra_globals = 8 * 1,
-		.num_globals = 8*num_globals(double_binop_init,double_binop_expect),
+		.num_globals = num_globals(double_binop_init,double_binop_expect),
 		.num_statements = num_statements (double_binop_1_statements),
 		.statements = double_binop_1_statements,
 		.init_globals = (pr_int_t *) double_binop_init,
@@ -241,7 +241,7 @@ test_t tests[] = {
 	{
 		.desc = "double binop 2",
 		.extra_globals = 8 * 1,
-		.num_globals = 8*num_globals(double_binop_init,double_binop_expect),
+		.num_globals = num_globals(double_binop_init,double_binop_expect),
 		.num_statements = num_statements (double_binop_2_statements),
 		.statements = double_binop_2_statements,
 		.init_globals = (pr_int_t *) double_binop_init,
@@ -250,7 +250,7 @@ test_t tests[] = {
 	{
 		.desc = "double binop 3a",
 		.extra_globals = 8 * 1,
-		.num_globals = 8*num_globals(double_binop_init,double_binop_expect),
+		.num_globals = num_globals(double_binop_init,double_binop_expect),
 		.num_statements = num_statements (double_binop_3a_statements),
 		.statements = double_binop_3a_statements,
 		.init_globals = (pr_int_t *) double_binop_init,
@@ -259,7 +259,7 @@ test_t tests[] = {
 	{
 		.desc = "double binop 3b",
 		.extra_globals = 8 * 1,
-		.num_globals = 8*num_globals(double_binop_init,double_binop_expect),
+		.num_globals = num_globals(double_binop_init,double_binop_expect),
 		.num_statements = num_statements (double_binop_3b_statements),
 		.statements = double_binop_3b_statements,
 		.init_globals = (pr_int_t *) double_binop_init,
@@ -268,7 +268,7 @@ test_t tests[] = {
 	{
 		.desc = "double binop 4",
 		.extra_globals = 8 * 1,
-		.num_globals = 8*num_globals(double_binop_init,double_binop_expect),
+		.num_globals = num_globals(double_binop_init,double_binop_expect),
 		.num_statements = num_statements (double_binop_4_statements),
 		.statements = double_binop_4_statements,
 		.init_globals = (pr_int_t *) double_binop_init,
@@ -277,7 +277,7 @@ test_t tests[] = {
 	{
 		.desc = "double cos sin",
 		.extra_globals = 8 * 1,
-		.num_globals = 8*num_globals(double_cossin_init,double_cossin_expect),
+		.num_globals = num_globals(double_cossin_init,double_cossin_expect),
 		.num_statements = num_statements (double_cossin_statements),
 		.statements = double_cossin_statements,
 		.init_globals = (pr_int_t *) double_cossin_init,
@@ -286,7 +286,7 @@ test_t tests[] = {
 	{
 		.desc = "double cmpop 1",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(double_cmpop_init,double_cmpop_expect),
+		.num_globals = num_globals(double_cmpop_init,double_cmpop_expect),
 		.num_statements = num_statements (double_cmpop_1_statements),
 		.statements = double_cmpop_1_statements,
 		.init_globals = (pr_int_t *) double_cmpop_init,
@@ -295,7 +295,7 @@ test_t tests[] = {
 	{
 		.desc = "double cmpop 2",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(double_cmpop_init,double_cmpop_expect),
+		.num_globals = num_globals(double_cmpop_init,double_cmpop_expect),
 		.num_statements = num_statements (double_cmpop_2_statements),
 		.statements = double_cmpop_2_statements,
 		.init_globals = (pr_int_t *) double_cmpop_init,
@@ -304,7 +304,7 @@ test_t tests[] = {
 	{
 		.desc = "double cmpop 3a",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(double_cmpop_init,double_cmpop_expect),
+		.num_globals = num_globals(double_cmpop_init,double_cmpop_expect),
 		.num_statements = num_statements (double_cmpop_3a_statements),
 		.statements = double_cmpop_3a_statements,
 		.init_globals = (pr_int_t *) double_cmpop_init,
@@ -313,7 +313,7 @@ test_t tests[] = {
 	{
 		.desc = "double cmpop 3b",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(double_cmpop_init,double_cmpop_expect),
+		.num_globals = num_globals(double_cmpop_init,double_cmpop_expect),
 		.num_statements = num_statements (double_cmpop_3b_statements),
 		.statements = double_cmpop_3b_statements,
 		.init_globals = (pr_int_t *) double_cmpop_init,
@@ -322,7 +322,7 @@ test_t tests[] = {
 	{
 		.desc = "double cmpop 4",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(double_cmpop_init,double_cmpop_expect),
+		.num_globals = num_globals(double_cmpop_init,double_cmpop_expect),
 		.num_statements = num_statements (double_cmpop_4_statements),
 		.statements = double_cmpop_4_statements,
 		.init_globals = (pr_int_t *) double_cmpop_init,

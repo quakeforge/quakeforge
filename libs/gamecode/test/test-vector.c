@@ -151,7 +151,7 @@ static dstatement_t double_vector_statements[] = {
 test_t tests[] = {
 	{
 		.desc = "float vector",
-		.num_globals = 4*num_globals(float_globals_init, float_globals_expect),
+		.num_globals = num_globals(float_globals_init, float_globals_expect),
 		.num_statements = num_statements (float_vector_statements),
 		.statements = float_vector_statements,
 		.init_globals = (pr_int_t *) float_globals_init,
@@ -159,7 +159,7 @@ test_t tests[] = {
 	},
 	{
 		.desc = "double vector",
-		.num_globals = 8*num_globals(double_globals_init,double_globals_expect),
+		.num_globals = num_globals(double_globals_init,double_globals_expect),
 		.num_statements = num_statements (double_vector_statements),
 		.statements = double_vector_statements,
 		.init_globals = (pr_int_t *) double_globals_init,

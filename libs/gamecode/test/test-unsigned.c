@@ -304,7 +304,7 @@ static pr_ulvec4_t ulong_shiftop_expect[] = {
 	{ UINT64_C(0x456789abcdef0000), UINT64_C(0xdef0123456780000),
 		UINT64_C(0x0000030000000200), UINT64_C(0x5554aaab5554aaaa) },//shl a
 	{ UINT64_C(0xef00000000000000), UINT64_C(0x5678000000000000),
-		UINT64_C(0x0020000000000000), UINT64_C(0x8000000000000000) },//shl b
+		UINT64_C(0x0080000000000000), UINT64_C(0x8000000000000000) },//shl b
 	{ UINT64_C(0x000123456789abcd), UINT64_C(0x00009abcdef01234),
 		UINT64_C(0x0040000000c00000), UINT64_C(0x55552aaad5552aaa) },//shr a
 	{ UINT64_C(0x0000000000000123), UINT64_C(0x0000000000009abc),
@@ -390,7 +390,7 @@ test_t tests[] = {
 	{
 		.desc = "uint cmpop 1",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(uint_cmpop_init,uint_cmpop_expect),
+		.num_globals = num_globals(uint_cmpop_init,uint_cmpop_expect),
 		.num_statements = num_statements (uint_cmpop_1_statements),
 		.statements = uint_cmpop_1_statements,
 		.init_globals = (pr_int_t *) uint_cmpop_init,
@@ -399,7 +399,7 @@ test_t tests[] = {
 	{
 		.desc = "uint cmpop 2",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(uint_cmpop_init,uint_cmpop_expect),
+		.num_globals = num_globals(uint_cmpop_init,uint_cmpop_expect),
 		.num_statements = num_statements (uint_cmpop_2_statements),
 		.statements = uint_cmpop_2_statements,
 		.init_globals = (pr_int_t *) uint_cmpop_init,
@@ -408,7 +408,7 @@ test_t tests[] = {
 	{
 		.desc = "uint cmpop 3a",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(uint_cmpop_init,uint_cmpop_expect),
+		.num_globals = num_globals(uint_cmpop_init,uint_cmpop_expect),
 		.num_statements = num_statements (uint_cmpop_3a_statements),
 		.statements = uint_cmpop_3a_statements,
 		.init_globals = (pr_int_t *) uint_cmpop_init,
@@ -417,7 +417,7 @@ test_t tests[] = {
 	{
 		.desc = "uint cmpop 3b",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(uint_cmpop_init,uint_cmpop_expect),
+		.num_globals = num_globals(uint_cmpop_init,uint_cmpop_expect),
 		.num_statements = num_statements (uint_cmpop_3b_statements),
 		.statements = uint_cmpop_3b_statements,
 		.init_globals = (pr_int_t *) uint_cmpop_init,
@@ -426,7 +426,7 @@ test_t tests[] = {
 	{
 		.desc = "uint cmpop 4",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(uint_cmpop_init,uint_cmpop_expect),
+		.num_globals = num_globals(uint_cmpop_init,uint_cmpop_expect),
 		.num_statements = num_statements (uint_cmpop_4_statements),
 		.statements = uint_cmpop_4_statements,
 		.init_globals = (pr_int_t *) uint_cmpop_init,
@@ -435,7 +435,7 @@ test_t tests[] = {
 	{
 		.desc = "ulong cmpop 1",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(ulong_cmpop_init,ulong_cmpop_expect),
+		.num_globals = num_globals(ulong_cmpop_init,ulong_cmpop_expect),
 		.num_statements = num_statements (ulong_cmpop_1_statements),
 		.statements = ulong_cmpop_1_statements,
 		.init_globals = (pr_int_t *) ulong_cmpop_init,
@@ -444,7 +444,7 @@ test_t tests[] = {
 	{
 		.desc = "ulong cmpop 2",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(ulong_cmpop_init,ulong_cmpop_expect),
+		.num_globals = num_globals(ulong_cmpop_init,ulong_cmpop_expect),
 		.num_statements = num_statements (ulong_cmpop_2_statements),
 		.statements = ulong_cmpop_2_statements,
 		.init_globals = (pr_int_t *) ulong_cmpop_init,
@@ -453,7 +453,7 @@ test_t tests[] = {
 	{
 		.desc = "ulong cmpop 3a",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(ulong_cmpop_init,ulong_cmpop_expect),
+		.num_globals = num_globals(ulong_cmpop_init,ulong_cmpop_expect),
 		.num_statements = num_statements (ulong_cmpop_3a_statements),
 		.statements = ulong_cmpop_3a_statements,
 		.init_globals = (pr_int_t *) ulong_cmpop_init,
@@ -462,7 +462,7 @@ test_t tests[] = {
 	{
 		.desc = "ulong cmpop 3b",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(ulong_cmpop_init,ulong_cmpop_expect),
+		.num_globals = num_globals(ulong_cmpop_init,ulong_cmpop_expect),
 		.num_statements = num_statements (ulong_cmpop_3b_statements),
 		.statements = ulong_cmpop_3b_statements,
 		.init_globals = (pr_int_t *) ulong_cmpop_init,
@@ -471,7 +471,7 @@ test_t tests[] = {
 	{
 		.desc = "ulong cmpop 4",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(ulong_cmpop_init,ulong_cmpop_expect),
+		.num_globals = num_globals(ulong_cmpop_init,ulong_cmpop_expect),
 		.num_statements = num_statements (ulong_cmpop_4_statements),
 		.statements = ulong_cmpop_4_statements,
 		.init_globals = (pr_int_t *) ulong_cmpop_init,
@@ -480,7 +480,7 @@ test_t tests[] = {
 	{
 		.desc = "uint shiftop 1",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(uint_shiftop_init,uint_shiftop_expect),
+		.num_globals = num_globals(uint_shiftop_init,uint_shiftop_expect),
 		.num_statements = num_statements (uint_shiftop_1_statements),
 		.statements = uint_shiftop_1_statements,
 		.init_globals = (pr_int_t *) uint_shiftop_init,
@@ -489,7 +489,7 @@ test_t tests[] = {
 	{
 		.desc = "uint shiftop 2",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(uint_shiftop_init,uint_shiftop_expect),
+		.num_globals = num_globals(uint_shiftop_init,uint_shiftop_expect),
 		.num_statements = num_statements (uint_shiftop_2_statements),
 		.statements = uint_shiftop_2_statements,
 		.init_globals = (pr_int_t *) uint_shiftop_init,
@@ -498,7 +498,7 @@ test_t tests[] = {
 	{
 		.desc = "uint shiftop 3a",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(uint_shiftop_init,uint_shiftop_expect),
+		.num_globals = num_globals(uint_shiftop_init,uint_shiftop_expect),
 		.num_statements = num_statements (uint_shiftop_3a_statements),
 		.statements = uint_shiftop_3a_statements,
 		.init_globals = (pr_int_t *) uint_shiftop_init,
@@ -507,7 +507,7 @@ test_t tests[] = {
 	{
 		.desc = "uint shiftop 3b",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(uint_shiftop_init,uint_shiftop_expect),
+		.num_globals = num_globals(uint_shiftop_init,uint_shiftop_expect),
 		.num_statements = num_statements (uint_shiftop_3b_statements),
 		.statements = uint_shiftop_3b_statements,
 		.init_globals = (pr_int_t *) uint_shiftop_init,
@@ -516,7 +516,7 @@ test_t tests[] = {
 	{
 		.desc = "uint shiftop 4",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(uint_shiftop_init,uint_shiftop_expect),
+		.num_globals = num_globals(uint_shiftop_init,uint_shiftop_expect),
 		.num_statements = num_statements (uint_shiftop_4_statements),
 		.statements = uint_shiftop_4_statements,
 		.init_globals = (pr_int_t *) uint_shiftop_init,
@@ -525,7 +525,7 @@ test_t tests[] = {
 	{
 		.desc = "ulong shiftop 1",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(ulong_shiftop_init,ulong_shiftop_expect),
+		.num_globals = num_globals(ulong_shiftop_init,ulong_shiftop_expect),
 		.num_statements = num_statements (ulong_shiftop_1_statements),
 		.statements = ulong_shiftop_1_statements,
 		.init_globals = (pr_int_t *) ulong_shiftop_init,
@@ -534,7 +534,7 @@ test_t tests[] = {
 	{
 		.desc = "ulong shiftop 2",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(ulong_shiftop_init,ulong_shiftop_expect),
+		.num_globals = num_globals(ulong_shiftop_init,ulong_shiftop_expect),
 		.num_statements = num_statements (ulong_shiftop_2_statements),
 		.statements = ulong_shiftop_2_statements,
 		.init_globals = (pr_int_t *) ulong_shiftop_init,
@@ -543,7 +543,7 @@ test_t tests[] = {
 	{
 		.desc = "ulong shiftop 3a",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(ulong_shiftop_init,ulong_shiftop_expect),
+		.num_globals = num_globals(ulong_shiftop_init,ulong_shiftop_expect),
 		.num_statements = num_statements (ulong_shiftop_3a_statements),
 		.statements = ulong_shiftop_3a_statements,
 		.init_globals = (pr_int_t *) ulong_shiftop_init,
@@ -552,7 +552,7 @@ test_t tests[] = {
 	{
 		.desc = "ulong shiftop 3b",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(ulong_shiftop_init,ulong_shiftop_expect),
+		.num_globals = num_globals(ulong_shiftop_init,ulong_shiftop_expect),
 		.num_statements = num_statements (ulong_shiftop_3b_statements),
 		.statements = ulong_shiftop_3b_statements,
 		.init_globals = (pr_int_t *) ulong_shiftop_init,
@@ -561,7 +561,7 @@ test_t tests[] = {
 	{
 		.desc = "ulong shiftop 4",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(ulong_shiftop_init,ulong_shiftop_expect),
+		.num_globals = num_globals(ulong_shiftop_init,ulong_shiftop_expect),
 		.num_statements = num_statements (ulong_shiftop_4_statements),
 		.statements = ulong_shiftop_4_statements,
 		.init_globals = (pr_int_t *) ulong_shiftop_init,

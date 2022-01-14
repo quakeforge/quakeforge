@@ -145,7 +145,7 @@ test_t tests[] = {
 	{
 		.desc = "long conv 1",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(long_conv_init,long_conv_expect),
+		.num_globals = num_globals(long_conv_init,long_conv_expect),
 		.num_statements = num_statements (long_conv_1_statements),
 		.statements = long_conv_1_statements,
 		.init_globals = (pr_int_t *) long_conv_init,
@@ -154,7 +154,7 @@ test_t tests[] = {
 	{
 		.desc = "long conv 2",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(long_conv_init,long_conv_expect),
+		.num_globals = num_globals(long_conv_init,long_conv_expect),
 		.num_statements = num_statements (long_conv_2_statements),
 		.statements = long_conv_2_statements,
 		.init_globals = (pr_int_t *) long_conv_init,
@@ -163,7 +163,7 @@ test_t tests[] = {
 	{
 		.desc = "long conv 3a",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(long_conv_init,long_conv_expect),
+		.num_globals = num_globals(long_conv_init,long_conv_expect),
 		.num_statements = num_statements (long_conv_3a_statements),
 		.statements = long_conv_3a_statements,
 		.init_globals = (pr_int_t *) long_conv_init,
@@ -172,7 +172,7 @@ test_t tests[] = {
 	{
 		.desc = "long conv 3b",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(long_conv_init,long_conv_expect),
+		.num_globals = num_globals(long_conv_init,long_conv_expect),
 		.num_statements = num_statements (long_conv_3b_statements),
 		.statements = long_conv_3b_statements,
 		.init_globals = (pr_int_t *) long_conv_init,
@@ -181,7 +181,7 @@ test_t tests[] = {
 	{
 		.desc = "long conv 4",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(long_conv_init,long_conv_expect),
+		.num_globals = num_globals(long_conv_init,long_conv_expect),
 		.num_statements = num_statements (long_conv_4_statements),
 		.statements = long_conv_4_statements,
 		.init_globals = (pr_int_t *) long_conv_init,

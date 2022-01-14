@@ -232,7 +232,7 @@ test_t tests[] = {
 	{
 		.desc = "float binop 1",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(float_binop_init,float_binop_expect),
+		.num_globals = num_globals(float_binop_init,float_binop_expect),
 		.num_statements = num_statements (float_binop_1_statements),
 		.statements = float_binop_1_statements,
 		.init_globals = (pr_int_t *) float_binop_init,
@@ -241,7 +241,7 @@ test_t tests[] = {
 	{
 		.desc = "float binop 2",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(float_binop_init,float_binop_expect),
+		.num_globals = num_globals(float_binop_init,float_binop_expect),
 		.num_statements = num_statements (float_binop_2_statements),
 		.statements = float_binop_2_statements,
 		.init_globals = (pr_int_t *) float_binop_init,
@@ -250,7 +250,7 @@ test_t tests[] = {
 	{
 		.desc = "float binop 3a",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(float_binop_init,float_binop_expect),
+		.num_globals = num_globals(float_binop_init,float_binop_expect),
 		.num_statements = num_statements (float_binop_3a_statements),
 		.statements = float_binop_3a_statements,
 		.init_globals = (pr_int_t *) float_binop_init,
@@ -259,7 +259,7 @@ test_t tests[] = {
 	{
 		.desc = "float binop 3b",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(float_binop_init,float_binop_expect),
+		.num_globals = num_globals(float_binop_init,float_binop_expect),
 		.num_statements = num_statements (float_binop_3b_statements),
 		.statements = float_binop_3b_statements,
 		.init_globals = (pr_int_t *) float_binop_init,
@@ -268,7 +268,7 @@ test_t tests[] = {
 	{
 		.desc = "float binop 4",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(float_binop_init,float_binop_expect),
+		.num_globals = num_globals(float_binop_init,float_binop_expect),
 		.num_statements = num_statements (float_binop_4_statements),
 		.statements = float_binop_4_statements,
 		.init_globals = (pr_int_t *) float_binop_init,
@@ -277,7 +277,7 @@ test_t tests[] = {
 	{
 		.desc = "float cos sin",
 		.extra_globals = 4 * 1,
-		.num_globals = 4 * num_globals (float_cossin_init, float_cossin_expect),
+		.num_globals = num_globals (float_cossin_init, float_cossin_expect),
 		.num_statements = num_statements (float_cossin_statements),
 		.statements = float_cossin_statements,
 		.init_globals = (pr_int_t *) float_cossin_init,
@@ -286,7 +286,7 @@ test_t tests[] = {
 	{
 		.desc = "float cmpop 1",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(float_cmpop_init,float_cmpop_expect),
+		.num_globals = num_globals(float_cmpop_init,float_cmpop_expect),
 		.num_statements = num_statements (float_cmpop_1_statements),
 		.statements = float_cmpop_1_statements,
 		.init_globals = (pr_int_t *) float_cmpop_init,
@@ -295,7 +295,7 @@ test_t tests[] = {
 	{
 		.desc = "float cmpop 2",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(float_cmpop_init,float_cmpop_expect),
+		.num_globals = num_globals(float_cmpop_init,float_cmpop_expect),
 		.num_statements = num_statements (float_cmpop_2_statements),
 		.statements = float_cmpop_2_statements,
 		.init_globals = (pr_int_t *) float_cmpop_init,
@@ -304,7 +304,7 @@ test_t tests[] = {
 	{
 		.desc = "float cmpop 3a",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(float_cmpop_init,float_cmpop_expect),
+		.num_globals = num_globals(float_cmpop_init,float_cmpop_expect),
 		.num_statements = num_statements (float_cmpop_3a_statements),
 		.statements = float_cmpop_3a_statements,
 		.init_globals = (pr_int_t *) float_cmpop_init,
@@ -313,7 +313,7 @@ test_t tests[] = {
 	{
 		.desc = "float cmpop 3b",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(float_cmpop_init,float_cmpop_expect),
+		.num_globals = num_globals(float_cmpop_init,float_cmpop_expect),
 		.num_statements = num_statements (float_cmpop_3b_statements),
 		.statements = float_cmpop_3b_statements,
 		.init_globals = (pr_int_t *) float_cmpop_init,
@@ -322,7 +322,7 @@ test_t tests[] = {
 	{
 		.desc = "float cmpop 4",
 		.extra_globals = 4 * 1,
-		.num_globals = 4*num_globals(float_cmpop_init,float_cmpop_expect),
+		.num_globals = num_globals(float_cmpop_init,float_cmpop_expect),
 		.num_statements = num_statements (float_cmpop_4_statements),
 		.statements = float_cmpop_4_statements,
 		.init_globals = (pr_int_t *) float_cmpop_init,

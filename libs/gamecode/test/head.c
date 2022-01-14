@@ -11,7 +11,9 @@ static int verbose = 0;
 // error if the sizes differ)
 #define num_globals(init, expect) \
 	__builtin_choose_expr ( \
-		sizeof (init) == sizeof (expect), sizeof (init) / sizeof (init[0]), \
+		sizeof (init) == sizeof (expect), \
+		(sizeof (init) / sizeof (init[0])) \
+			* (sizeof (init[0]) / sizeof (pr_type_t)), \
 		(void) 0\
 	)
 
