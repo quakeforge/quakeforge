@@ -1,4 +1,5 @@
 libs_gamecode_tests = \
+	libs/gamecode/test/test-conv0 \
 	libs/gamecode/test/test-double \
 	libs/gamecode/test/test-float \
 	libs/gamecode/test/test-int \
@@ -18,6 +19,11 @@ EXTRA_DIST += head.c main.c
 test_gamecode_libs= \
 	libs/gamecode/libQFgamecode.la \
 	libs/util/libQFutil.la
+
+libs_gamecode_test_test_conv0_SOURCES= \
+	libs/gamecode/test/test-conv0.c
+libs_gamecode_test_test_conv0_LDADD=		$(test_gamecode_libs)
+libs_gamecode_test_test_conv0_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_double_SOURCES= \
 	libs/gamecode/test/test-double.c
