@@ -63,7 +63,9 @@ static dstatement_t string_statements[] = {
 	{ OP(1, 2, 3, OP_LE_S),  0, 0, 80 },
 	{ OP(1, 2, 3, OP_NOT_S), 0, 0, 96 },
 
+//      }
 	{ OP(0, 0, 0, OP_JUMP_A), -13, 0, 0 },
+//  }
 };
 
 test_t tests[] = {
