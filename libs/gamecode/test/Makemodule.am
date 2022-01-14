@@ -2,6 +2,7 @@ libs_gamecode_tests = \
 	libs/gamecode/test/test-conv0 \
 	libs/gamecode/test/test-conv1 \
 	libs/gamecode/test/test-conv2 \
+	libs/gamecode/test/test-conv3 \
 	libs/gamecode/test/test-conv4 \
 	libs/gamecode/test/test-conv5 \
 	libs/gamecode/test/test-conv6 \
@@ -40,6 +41,11 @@ libs_gamecode_test_test_conv2_SOURCES= \
 	libs/gamecode/test/test-conv2.c
 libs_gamecode_test_test_conv2_LDADD=		$(test_gamecode_libs)
 libs_gamecode_test_test_conv2_DEPENDENCIES=	$(test_gamecode_libs)
+
+libs_gamecode_test_test_conv3_SOURCES= \
+	libs/gamecode/test/test-conv3.c
+libs_gamecode_test_test_conv3_LDADD=		$(test_gamecode_libs)
+libs_gamecode_test_test_conv3_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_conv4_SOURCES= \
 	libs/gamecode/test/test-conv4.c
