@@ -3280,12 +3280,12 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 					int         cmp = strcmp (PR_GetString (pr, OPA(string)),
 											  PR_GetString (pr, OPB(string)));
 					switch (st_op) {
-						case OP_EQ_S: cmp = (cmp == 0); break;
-						case OP_LT_S: cmp = (cmp <  0); break;
-						case OP_GT_S: cmp = (cmp >  0); break;
-						case OP_GE_S: cmp = (cmp >= 0); break;
-						case OP_LE_S: cmp = (cmp <= 0); break;
-						case OP_NOT_S: break;
+						case OP_EQ_S: cmp = -(cmp == 0); break;
+						case OP_LT_S: cmp = -(cmp <  0); break;
+						case OP_GT_S: cmp = -(cmp >  0); break;
+						case OP_GE_S: cmp = -(cmp >= 0); break;
+						case OP_LE_S: cmp = -(cmp <= 0); break;
+						case OP_CMP_S: break;
 						default: break;
 					}
 					OPC(int) = cmp;
@@ -3296,7 +3296,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 											PR_GetString (pr, OPB(string)));
 				break;
 			case OP_NOT_S:
-				OPC(int) = !OPA(string) || !*PR_GetString (pr, OPA(string));
+				OPC(int) = -(!OPA(string) || !*PR_GetString (pr, OPA(string)));
 				break;
 			// 1 0111
 			OP_op_T (ASR, I, int, ivec2, ivec4, >>);
