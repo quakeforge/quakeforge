@@ -44,10 +44,15 @@ test_debug_handler (prdebug_t event, void *param, void *data)
 		case prd_trace:
 			dstatement_t *st = test_pr.pr_statements + test_pr.pr_xstatement;
 			if (verbose > 1) {
+				printf ("---\n");
 				printf ("debug: trace %05x %04x %04x %04x %04x%s\n",
 						test_pr.pr_xstatement, st->op, st->a, st->b, st->c,
 						pr->globals.stack ? va (0, " %05x", *pr->globals.stack)
 										  : "");
+				printf ("                        %04x %04x %04x\n",
+						st->a + PR_BASE (pr, st, A),
+						st->b + PR_BASE (pr, st, B),
+						st->c + PR_BASE (pr, st, C));
 			}
 			if (verbose > 0) {
 				PR_PrintStatement (&test_pr, st, 0);
@@ -111,6 +116,9 @@ setup_test (test_t *test)
 			(test->num_statements + 1) * sizeof (dstatement_t));
 	test_pr.pr_statements[test->num_statements] =
 		(dstatement_t) { OP_BREAK, 0, 0, 0 };
+
+	test_pr.pr_strings = (char *) test->strings;
+	test_pr.pr_stringsize = test->string_size;
 }
 
 static int

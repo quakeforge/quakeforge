@@ -34,4 +34,6 @@ typedef struct {
 	dstatement_t *statements;
 	pr_int_t   *init_globals;
 	pr_int_t   *expect_globals;
+	const char *strings;
+	pr_uint_t   string_size;
 } test_t;
