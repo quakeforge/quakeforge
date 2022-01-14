@@ -45,7 +45,7 @@ convert_matrix = [
     [0, 1, 1, 1,  0, 3, 1, 3],  # ui
     [2, 2, 2, 2,  2, 0, 2, 1],  # 32-bit bool
     [1, 1, 0, 1,  1, 3, 0, 3],  # ul
-    [2, 2, 2, 2,  2, 1, 2, 0],  # 64-bit bool
+    [2, 2, 2, 2,  2, 3, 2, 0],  # 64-bit bool
 ]
 
 def case_str(width, src_type, dst_type):
