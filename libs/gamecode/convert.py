@@ -53,19 +53,19 @@ def case_str(width, src_type, dst_type):
     return f"case {case:04o}:"
 
 def cast_str(width, src_type, dst_type):
-    if width & 1 and (src_type & 2) == (dst_type & 2):
+    if width & 1:
         return f"(pr_{vec_types[dst_type]}{width+1}_t)"
     else:
         return f"(pr_{types[dst_type]}_t)"
 
 def src_str(width, src_type, dst_type):
-    if width & 1 and (src_type & 2) == (dst_type & 2):
+    if width & 1:
         return f"OPA({vec_types[src_type]}{width+1})"
     else:
         return f"OPA({types[src_type]})"
 
 def dst_str(width, src_type, dst_type):
-    if width & 1 and (src_type & 2) == (dst_type & 2):
+    if width & 1:
         return f"OPC({vec_types[dst_type]}{width+1})"
     else:
         return f"OPC({types[dst_type]})"
@@ -77,6 +77,10 @@ def zero_str(width, src_type):
 def one_str(width, src_type):
     ones = "{%s}" % (", ".join(["1"] * (width + 1)))
     return f"{cast_str(width, src_type, src_type)} {ones}"
+
+def expand_str(width, src, pref=""):
+    src = [f"{pref}{src}[{i}]" for i in range(width + 1)]
+    return "{%s}" % (", ".join(src));
 
 for width in range(4):
     for src_type in range(8):
@@ -94,13 +98,8 @@ for width in range(4):
                 elif width == 2:
                     print(f"{case} VectorCompUop(&{dst},{cast},&{src}); break;")
                 else:
-                    if (src_type & 2) == (dst_type & 2):
-                        print(f"{case} {dst} = {cast} {src}; break;")
-                    else:
-                        print(f"{case}")
-                        for i in range(width + 1):
-                            print(f"\t(&{dst})[{i}] = {cast} (&{src})[{i}];")
-                        print(f"\tbreak;")
+                    expand = expand_str(width, src)
+                    print(f"{case} {dst} = {cast} {expand}; break;")
             elif mode == 2:
                 one = one_str(width, src_type)
                 if width == 0:
@@ -108,13 +107,8 @@ for width in range(4):
                 elif width == 2:
                     print(f"{case} VectorCompUop(&{dst},!!,&{src}); break;")
                 else:
-                    if (src_type & 2) == (dst_type & 2):
-                        print(f"{case} {dst} = {cast} ({src} & {one}); break;")
-                    else:
-                        print(f"{case}")
-                        for i in range(width + 1):
-                            print(f"\t(&{dst})[{i}] = !!(&{src})[{i}];")
-                        print(f"\tbreak;")
+                    expand = expand_str(width, src, "!!")
+                    print(f"{case} {dst} = {cast} {expand}; break;")
             elif mode == 3:
                 zero = zero_str(width, src_type)
                 if width == 0:
@@ -122,10 +116,5 @@ for width in range(4):
                 elif width == 2:
                     print(f"{case} VectorCompUop(&{dst},-!!,&{src}); break;")
                 else:
-                    if (src_type & 2) == (dst_type & 2):
-                        print(f"{case} {dst} = {src} != {zero}; break;")
-                    else:
-                        print(f"{case}")
-                        for i in range(width + 1):
-                            print(f"\t(&{dst})[{i}] = -!!(&{src})[{i}];")
-                        print(f"\tbreak;")
+                    expand = expand_str(width, src, "-!!")
+                    print(f"{case} {dst} = {cast} {expand}; break;")
