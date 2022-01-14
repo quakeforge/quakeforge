@@ -49,10 +49,10 @@ static pr_ivec4_t ulong_conv_expect[] = {
 	{          5,          0,         -5, 0xffffffff},	// int
 	{ 0x80000000, 0xffffffff, 0x7fffffff,          0},
 	{          1,          0,         -1,         -1},	// float
-	{          0,          0,          0, 0x80000000},
+	{          0,          0,          0, 0x80000000},	// undef?
 	{          0,          0,          0,          0},	// long
 	{          0,          0,          0,          0},
-	{          0,          0,          0, 0x80000000},	// double
+	{          0,          0,          0, 0x80000000},	// double undef?
 	{          1,          0,         -1,         -1},
 	{          5,          0,         -5,          0},	// uint
 	{ 0x80000000,          0, 0x7fffffff,          0},

@@ -39,11 +39,9 @@ static pr_ivec4_t uint_conv_expect[] = {
 	{         ~0,         ~0,         ~0,          0},	//bool64
 	{          0,         ~0,          0,          0},	//bool64
 	{          0,          0,          0,          0},	// int
-	// why 0?  expected 0xfffffff.    vv   gcc bug?
-	{          1, 0xffffffff,          0,          0},	// float
+	{          1, 0xffffffff,          0,          0},	// float undef?
 	{         99, 0x80000000,        256, 0x7fffffff},	// long
-	// why 0? vv expected 0xfffffff. gcc bug?
-	{          0,          0,          1, 0xffffffff},	// double
+	{          0,          0,          1, 0xffffffff},	// double undef?
 	{          0,          0,          0,          0},	// uint
 	{          1,          1,          1,          0},	// bool32
 	{         99, 0x80000000,        256, 0x7fffffff},	// ulong
