@@ -6,7 +6,7 @@ static pr_int_t lea_globals_init[] = {
 	32, -4, -2, 0,
 	1, 4, 0xdeadbeef, 0xfeedf00d,
 
-	0, 0, 0, 0, 0,
+	0, 0, 0, 0,
 };
 
 static pr_int_t lea_globals_expect[] = {
@@ -15,15 +15,14 @@ static pr_int_t lea_globals_expect[] = {
 	32, -4, -2, 0,
 	1, 4, 0xdeadbeef, 0xfeedf00d,
 
-	7, 29, 34, 26, 88,
+	7, 34, 26, 88,
 };
 
 static dstatement_t lea_statements[] = {
 	{OP(0, 0, 0, OP_LEA_A), 7, 9, 12},
-	{OP(0, 0, 0, OP_LEA_B), 3, 8, 13},
-	{OP(0, 0, 0, OP_LEA_C), 2, 6, 14},
-	{OP(0, 0, 0, OP_LEA_D), 2, 6, 15},
-	{OP(0, 0, 0, OP_LEA_E), 4, 2, 16},
+	{OP(0, 0, 0, OP_LEA_C), 2, 6, 13},
+	{OP(0, 0, 0, OP_LEA_D), 2, 6, 14},
+	{OP(0, 0, 0, OP_LEA_E), 4, 2, 15},
 };
 
 test_t tests[] = {

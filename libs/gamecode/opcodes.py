@@ -25,7 +25,7 @@ bitmap_txt = """
 1 1010 d1xx
 1 1011 00mm lea
 1 1011 01ss any
-1 1011 0100 lea_e
+1 1011 0100
 1 1011 10ss all
 1 1011 1000 pushregs
 1 1011 11ss none
@@ -176,23 +176,14 @@ lea_formats = {
     "widths": "0, 0, 1",
     "types": "ev_pointer, ev_pointer, ev_pointer",
     "args": {
-        "op_mode": "ABCD",
+        "op_mode": "AECD",
         "lea_fmt": [
             "%ga, %gc",
-            "*%Ga, %gc",
+            "%Ga.%Gb(%Ea), %gc",
             "*(%Ga + %sb), %gc",
             "*(%Ga + %Gb), %gc",
         ],
     },
-}
-lea_e_formats = {
-    "opcode": "OP_LEA_E",
-    "mnemonic": "lea",
-    "opname": "lea",
-    "format": "{load_fmt[0]}",
-    "format": "%Ga.%Gb(%Ea), %gc",
-    "types": "ev_entity, ev_field, ev_pointer",
-    "widths": "0, 0, 1",
 }
 load_formats = {
     "opcode": "OP_LOAD_{op_mode[mm]}_{ss+1}",
@@ -461,7 +452,6 @@ group_map = {
     "compare2": compare2_formats,
     "convert":  convert_formats,
     "lea":      lea_formats,
-    "lea_e":    lea_e_formats,
     "load":     load_formats,
     "mathops":  mathops_formats,
     "memset":   memset_formats,

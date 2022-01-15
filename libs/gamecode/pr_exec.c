@@ -1735,41 +1735,10 @@ exit_program:
 #define STK(type) (*((pr_##type##_t *) (stk)))
 
 static pr_type_t *
-pr_entity_mode (progs_t *pr, const dstatement_t *st, int shift)
+pr_address_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 {
 	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, A);
 	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, B);
-	int         mm_ind = (st->op >> shift) & 3;
-	pointer_t   edict_area = pr->pr_edict_area - pr->pr_globals;
-	pointer_t   mm_offs = 0;
-
-	switch (mm_ind) {
-		case 0:
-			// entity.field (equivalent to OP_LOAD_t_v6p)
-			mm_offs = edict_area + OPA(uint) + OPB(uint);
-			break;
-		case 1:
-			// simple pointer dereference: *a
-			mm_offs = OPA(uint);
-			break;
-		case 2:
-			// constant indexed pointer: *a + b (supports -ve offset)
-			mm_offs = OPA(uint) + (short) st->b;
-			break;
-		case 3:
-			// variable indexed pointer: *a + *b (supports -ve offset)
-			mm_offs = OPA(uint) + OPB(int);
-			break;
-	}
-	return pr->pr_globals + mm_offs;
-}
-
-static pr_type_t *
-pr_address_mode (progs_t *pr, const dstatement_t *st, int shift)
-{
-	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, A);
-	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, B);
-	int         mm_ind = (st->op >> shift) & 3;
 	pointer_t   mm_offs = 0;
 
 	switch (mm_ind) {
@@ -1788,6 +1757,11 @@ pr_address_mode (progs_t *pr, const dstatement_t *st, int shift)
 		case 3:
 			// variable indexed pointer: *a + *b (supports -ve offset)
 			mm_offs = OPA(uint) + OPB(int);
+			break;
+		case 4:
+			// entity.field (equivalent to OP_LOAD_t_v6p)
+			pointer_t   edict_area = pr->pr_edict_area - pr->pr_globals;
+			mm_offs = edict_area + OPA(uint) + OPB(uint);
 			break;
 	}
 	return pr->pr_globals + mm_offs;
@@ -2758,31 +2732,43 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 		switch (st_op) {
 			// 0 0000
 			case OP_LOAD_E_1:
+				mm = pr_address_mode (pr, st, 4);
+				OPC(int) = MM(int);
+				break;
 			case OP_LOAD_B_1:
 			case OP_LOAD_C_1:
 			case OP_LOAD_D_1:
-				mm = pr_entity_mode (pr, st, 2);
+				mm = pr_address_mode (pr, st, (st_op - OP_LOAD_E_1) >> 2);
 				OPC(int) = MM(int);
 				break;
 			case OP_LOAD_E_2:
+				mm = pr_address_mode (pr, st, 4);
+				OPC(ivec2) = MM(ivec2);
+				break;
 			case OP_LOAD_B_2:
 			case OP_LOAD_C_2:
 			case OP_LOAD_D_2:
-				mm = pr_entity_mode (pr, st, 2);
+				mm = pr_address_mode (pr, st, (st_op - OP_LOAD_E_2) >> 2);
 				OPC(ivec2) = MM(ivec2);
 				break;
 			case OP_LOAD_E_3:
+				mm = pr_address_mode (pr, st, 4);
+				VectorCopy (&MM(int), &OPC(int));
+				break;
 			case OP_LOAD_B_3:
 			case OP_LOAD_C_3:
 			case OP_LOAD_D_3:
-				mm = pr_entity_mode (pr, st, 2);
+				mm = pr_address_mode (pr, st, (st_op - OP_LOAD_E_3) >> 2);
 				VectorCopy (&MM(int), &OPC(int));
 				break;
 			case OP_LOAD_E_4:
+				mm = pr_address_mode (pr, st, 4);
+				OPC(ivec4) = MM(ivec4);
+				break;
 			case OP_LOAD_B_4:
 			case OP_LOAD_C_4:
 			case OP_LOAD_D_4:
-				mm = pr_entity_mode (pr, st, 2);
+				mm = pr_address_mode (pr, st, (st_op - OP_LOAD_E_4) >> 2);
 				OPC(ivec4) = MM(ivec4);
 				break;
 			// 0 0001
@@ -2790,28 +2776,28 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_STORE_B_1:
 			case OP_STORE_C_1:
 			case OP_STORE_D_1:
-				mm = pr_address_mode (pr, st, 2);
+				mm = pr_address_mode (pr, st, (st_op - OP_STORE_A_1) >> 2);
 				MM(int) = OPC(int);
 				break;
 			case OP_STORE_A_2:
 			case OP_STORE_B_2:
 			case OP_STORE_C_2:
 			case OP_STORE_D_2:
-				mm = pr_address_mode (pr, st, 2);
+				mm = pr_address_mode (pr, st, (st_op - OP_STORE_A_2) >> 2);
 				MM(ivec2) = OPC(ivec2);
 				break;
 			case OP_STORE_A_3:
 			case OP_STORE_B_3:
 			case OP_STORE_C_3:
 			case OP_STORE_D_3:
-				mm = pr_address_mode (pr, st, 2);
+				mm = pr_address_mode (pr, st, (st_op - OP_STORE_A_3) >> 2);
 				VectorCopy (&OPC(int), &MM(int));
 				break;
 			case OP_STORE_A_4:
 			case OP_STORE_B_4:
 			case OP_STORE_C_4:
 			case OP_STORE_D_4:
-				mm = pr_address_mode (pr, st, 2);
+				mm = pr_address_mode (pr, st, (st_op - OP_STORE_A_4) >> 2);
 				MM(ivec4) = OPC(ivec4);
 				break;
 			// 0 0010
@@ -2819,7 +2805,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_PUSH_B_1:
 			case OP_PUSH_C_1:
 			case OP_PUSH_D_1:
-				mm = pr_address_mode (pr, st, 2);
+				mm = pr_address_mode (pr, st, (st_op - OP_PUSH_A_1) >> 2);
 				stk = pr_stack_push (pr);
 				STK(int) = MM(int);
 				break;
@@ -2827,7 +2813,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_PUSH_B_2:
 			case OP_PUSH_C_2:
 			case OP_PUSH_D_2:
-				mm = pr_address_mode (pr, st, 2);
+				mm = pr_address_mode (pr, st, (st_op - OP_PUSH_A_2) >> 2);
 				stk = pr_stack_push (pr);
 				STK(ivec2) = MM(ivec2);
 				break;
@@ -2835,7 +2821,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_PUSH_B_3:
 			case OP_PUSH_C_3:
 			case OP_PUSH_D_3:
-				mm = pr_address_mode (pr, st, 2);
+				mm = pr_address_mode (pr, st, (st_op - OP_PUSH_A_3) >> 2);
 				stk = pr_stack_push (pr);
 				VectorCopy (&MM(int), &STK(int));
 				break;
@@ -2843,7 +2829,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_PUSH_B_4:
 			case OP_PUSH_C_4:
 			case OP_PUSH_D_4:
-				mm = pr_address_mode (pr, st, 2);
+				mm = pr_address_mode (pr, st, (st_op - OP_PUSH_A_4) >> 2);
 				stk = pr_stack_push (pr);
 				STK(ivec4) = MM(ivec4);
 				break;
@@ -2852,7 +2838,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_POP_B_1:
 			case OP_POP_C_1:
 			case OP_POP_D_1:
-				mm = pr_address_mode (pr, st, 2);
+				mm = pr_address_mode (pr, st, (st_op - OP_POP_A_1) >> 2);
 				stk = pr_stack_pop (pr);
 				MM(int) = STK(int);
 				break;
@@ -2860,7 +2846,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_POP_B_2:
 			case OP_POP_C_2:
 			case OP_POP_D_2:
-				mm = pr_address_mode (pr, st, 2);
+				mm = pr_address_mode (pr, st, (st_op - OP_POP_A_2) >> 2);
 				stk = pr_stack_pop (pr);
 				MM(ivec2) = STK(ivec2);
 				break;
@@ -2868,7 +2854,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_POP_B_3:
 			case OP_POP_C_3:
 			case OP_POP_D_3:
-				mm = pr_address_mode (pr, st, 2);
+				mm = pr_address_mode (pr, st, (st_op - OP_POP_A_3) >> 2);
 				stk = pr_stack_pop (pr);
 				VectorCopy (&STK(int), &MM(int));
 				break;
@@ -2876,7 +2862,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_POP_B_4:
 			case OP_POP_C_4:
 			case OP_POP_D_4:
-				mm = pr_address_mode (pr, st, 2);
+				mm = pr_address_mode (pr, st, (st_op - OP_POP_A_4) >> 2);
 				stk = pr_stack_pop (pr);
 				MM(ivec4) = STK(ivec4);
 				break;
@@ -3342,19 +3328,13 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			// spare
 			// 1 1011
 			case OP_LEA_A:
-			case OP_LEA_B:
 			case OP_LEA_C:
 			case OP_LEA_D:
-				mm = pr_address_mode (pr, st, 0);
+				mm = pr_address_mode (pr, st, (st_op - OP_LEA_A));
 				op_c->pointer_var = mm - pr->pr_globals;
 				break;
 			case OP_LEA_E:
-				// ensures OP_LEA_E is compatible with OP_LOAD_E_n and thus
-				// with pr_entity_mode
-				mm = __builtin_choose_expr (
-						(OP_LEA_E & 3) == 0,
-						pr_entity_mode (pr, st, 0),
-						(void) 0);
+				mm = pr_address_mode (pr, st, 4);
 				op_c->pointer_var = mm - pr->pr_globals;
 				break;
 			case OP_ANY_2:
