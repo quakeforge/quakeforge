@@ -19,6 +19,7 @@ libs_gamecode_tests = \
 	libs/gamecode/test/test-stack \
 	libs/gamecode/test/test-store \
 	libs/gamecode/test/test-string \
+	libs/gamecode/test/test-swizzle \
 	libs/gamecode/test/test-unsigned \
 	libs/gamecode/test/test-vector \
 	libs/gamecode/test/test-with
@@ -132,6 +133,11 @@ libs_gamecode_test_test_string_SOURCES= \
 	libs/gamecode/test/test-string.c
 libs_gamecode_test_test_string_LDADD=			$(test_gamecode_libs)
 libs_gamecode_test_test_string_DEPENDENCIES=	$(test_gamecode_libs)
+
+libs_gamecode_test_test_swizzle_SOURCES= \
+	libs/gamecode/test/test-swizzle.c
+libs_gamecode_test_test_swizzle_LDADD=			$(test_gamecode_libs)
+libs_gamecode_test_test_swizzle_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_unsigned_SOURCES= \
 	libs/gamecode/test/test-unsigned.c
