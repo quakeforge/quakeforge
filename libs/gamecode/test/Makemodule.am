@@ -12,6 +12,7 @@ libs_gamecode_tests = \
 	libs/gamecode/test/test-int \
 	libs/gamecode/test/test-load \
 	libs/gamecode/test/test-long \
+	libs/gamecode/test/test-mem \
 	libs/gamecode/test/test-scale \
 	libs/gamecode/test/test-stack \
 	libs/gamecode/test/test-store \
@@ -93,6 +94,11 @@ libs_gamecode_test_test_long_SOURCES= \
 	libs/gamecode/test/test-long.c
 libs_gamecode_test_test_long_LDADD=			$(test_gamecode_libs)
 libs_gamecode_test_test_long_DEPENDENCIES=	$(test_gamecode_libs)
+
+libs_gamecode_test_test_mem_SOURCES= \
+	libs/gamecode/test/test-mem.c
+libs_gamecode_test_test_mem_LDADD=			$(test_gamecode_libs)
+libs_gamecode_test_test_mem_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_scale_SOURCES= \
 	libs/gamecode/test/test-scale.c
