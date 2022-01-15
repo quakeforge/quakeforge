@@ -39,7 +39,7 @@ static pr_ivec4_t float_conv_expect[] = {
 	{         ~0,         ~0,         ~0,          0},	//bool64
 	{          0,         ~0,          0,          0},	//bool64
 	{ 0x40a00000, 0xc0a00000, 0xcf000000, 0x4f000000},	// int
-	{          0,          0,          0,          0},	// float
+	{ 0x3fc00000, 0xbfc00000, 0x7149f2ca, 0xf149f2ca},	// float
 	{ 0xdf000000, 0x52c70000, 0x43800000, 0x4f000000},	// long
 	{ 0x7149f2ca, 0xf149f2ca, 0x3fc00000, 0xbfc00000},	// double
 	{ 0x40a00000, 0x4f800000, 0x4f000000, 0x4f000000},	// uint
@@ -59,13 +59,14 @@ static dstatement_t float_conv_1_statements[] = {
 	{ OP(0, 0, 0, OP_WITH), 4, 80, 1 },
 	{ OP(0, 0, 0, OP_WITH), 4, 81, 2 },
 	{ OP(1, 1, 1, OP_CONV),  0, 0001, 48 },
+	{ OP(1, 1, 1, OP_CONV),  4, 0011, 52 },
 	{ OP(2, 1, 1, OP_CONV),  8, 0021, 56 },
 	{ OP(2, 1, 1, OP_CONV), 16, 0031, 60 },
 	{ OP(1, 1, 1, OP_CONV), 24, 0041, 64 },
 	{ OP(1, 1, 1, OP_CONV), 28, 0051, 68 },
 	{ OP(2, 1, 1, OP_CONV), 32, 0061, 72 },
 	{ OP(2, 1, 1, OP_CONV), 40, 0071, 76 },
-	{ OP(1, 1, 1, OP_JUMP_A), -13, 0, 0 },
+	{ OP(1, 1, 1, OP_JUMP_A), -14, 0, 0 },
 };
 
 static dstatement_t float_conv_2_statements[] = {
@@ -79,18 +80,21 @@ static dstatement_t float_conv_2_statements[] = {
 	{ OP(0, 0, 0, OP_WITH), 4, 80, 1 },
 	{ OP(0, 0, 0, OP_WITH), 4, 81, 2 },
 	{ OP(1, 1, 1, OP_CONV),  0, 0101, 48 },
+	{ OP(1, 1, 1, OP_CONV),  4, 0111, 52 },
 	{ OP(2, 1, 1, OP_CONV),  8, 0121, 56 },
 	{ OP(2, 1, 1, OP_CONV), 16, 0131, 60 },
 	{ OP(1, 1, 1, OP_CONV), 24, 0141, 64 },
 	{ OP(1, 1, 1, OP_CONV), 28, 0151, 68 },
 	{ OP(2, 1, 1, OP_CONV), 32, 0161, 72 },
 	{ OP(2, 1, 1, OP_CONV), 40, 0171, 76 },
-	{ OP(1, 1, 1, OP_JUMP_A), -13, 0, 0 },
+	{ OP(1, 1, 1, OP_JUMP_A), -14, 0, 0 },
 };
 
 static dstatement_t float_conv_3a_statements[] = {
 	{ OP(1, 1, 1, OP_CONV),  0, 0201, 48 },
 	{ OP(1, 1, 1, OP_CONV),  3, 0001, 51 },
+	{ OP(1, 1, 1, OP_CONV),  4, 0211, 52 },
+	{ OP(1, 1, 1, OP_CONV),  7, 0011, 55 },
 	{ OP(2, 1, 1, OP_CONV),  8, 0221, 56 },
 	{ OP(2, 1, 1, OP_CONV), 14, 0021, 59 },
 	{ OP(2, 1, 1, OP_CONV), 16, 0231, 60 },
@@ -108,6 +112,8 @@ static dstatement_t float_conv_3a_statements[] = {
 static dstatement_t float_conv_3b_statements[] = {
 	{ OP(1, 1, 1, OP_CONV),  0, 0001, 48 },
 	{ OP(1, 1, 1, OP_CONV),  1, 0201, 49 },
+	{ OP(1, 1, 1, OP_CONV),  4, 0011, 52 },
+	{ OP(1, 1, 1, OP_CONV),  5, 0211, 53 },
 	{ OP(2, 1, 1, OP_CONV),  8, 0021, 56 },
 	{ OP(2, 1, 1, OP_CONV), 10, 0221, 57 },
 	{ OP(2, 1, 1, OP_CONV), 16, 0031, 60 },
@@ -124,6 +130,7 @@ static dstatement_t float_conv_3b_statements[] = {
 
 static dstatement_t float_conv_4_statements[] = {
 	{ OP(1, 1, 1, OP_CONV),  0, 0301, 48 },
+	{ OP(1, 1, 1, OP_CONV),  4, 0311, 52 },
 	{ OP(2, 1, 1, OP_CONV),  8, 0321, 56 },
 	{ OP(2, 1, 1, OP_CONV), 16, 0331, 60 },
 	{ OP(1, 1, 1, OP_CONV), 24, 0341, 64 },

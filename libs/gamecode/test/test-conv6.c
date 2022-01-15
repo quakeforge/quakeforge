@@ -50,16 +50,16 @@ static pr_ivec4_t ulong_conv_expect[] = {
 	{ 0x80000000, 0xffffffff, 0x7fffffff,          0},
 	{          1,          0,         -1,         -1},	// float
 	{          0,          0,          0, 0x80000000},	// undef?
-	{          0,          0,          0,          0},	// long
-	{          0,          0,          0,          0},
+	{         99, 0x80000000, 0x80000000,         99},	// long
+	{        256,          0, 0x7fffffff,          0},
 	{          0,          0,          0, 0x80000000},	// double undef?
 	{          1,          0,         -1,         -1},
 	{          5,          0,         -5,          0},	// uint
 	{ 0x80000000,          0, 0x7fffffff,          0},
 	{          1,          0,          1,          0},	// bool32
 	{          1,          0,          0,          0},
-	{          0,          0,          0,          0},	// ulong
-	{          0,          0,          0,          0},
+	{         99, 0x80000000, 0x80000000,         99},	// ulong
+	{        256,          0, 0x7fffffff,          0},
 	{          1,          0,          1,          0},	// bool64
 	{          1,          0,          0,          0},
 };
@@ -76,11 +76,13 @@ static dstatement_t ulong_conv_1_statements[] = {
 	{ OP(0, 0, 0, OP_WITH), 4, 113, 2 },
 	{ OP(1, 1, 2, OP_CONV),  0, 0006,  48 },
 	{ OP(1, 1, 2, OP_CONV),  4, 0016,  56 },
+	{ OP(2, 1, 2, OP_CONV),  8, 0026,  64 },
 	{ OP(2, 1, 2, OP_CONV), 16, 0036,  72 },
 	{ OP(1, 1, 2, OP_CONV), 24, 0046,  80 },
 	{ OP(1, 1, 2, OP_CONV), 28, 0056,  88 },
+	{ OP(2, 1, 2, OP_CONV), 32, 0066,  96 },
 	{ OP(2, 1, 2, OP_CONV), 40, 0076, 104 },
-	{ OP(0, 0, 0, OP_JUMP_A), -12, 0, 0 },
+	{ OP(0, 0, 0, OP_JUMP_A), -14, 0, 0 },
 };
 
 static dstatement_t ulong_conv_2_statements[] = {
@@ -95,11 +97,13 @@ static dstatement_t ulong_conv_2_statements[] = {
 	{ OP(0, 0, 0, OP_WITH), 4, 113, 2 },
 	{ OP(1, 1, 2, OP_CONV),  0, 0106,  48 },
 	{ OP(1, 1, 2, OP_CONV),  4, 0116,  56 },
+	{ OP(2, 1, 2, OP_CONV),  8, 0126,  64 },
 	{ OP(2, 1, 2, OP_CONV), 16, 0136,  72 },
 	{ OP(1, 1, 2, OP_CONV), 24, 0146,  80 },
 	{ OP(1, 1, 2, OP_CONV), 28, 0156,  88 },
+	{ OP(2, 1, 2, OP_CONV), 32, 0166,  96 },
 	{ OP(2, 1, 2, OP_CONV), 40, 0176, 104 },
-	{ OP(0, 0, 0, OP_JUMP_A), -12, 0, 0 },
+	{ OP(0, 0, 0, OP_JUMP_A), -14, 0, 0 },
 };
 
 static dstatement_t ulong_conv_3a_statements[] = {
@@ -107,12 +111,16 @@ static dstatement_t ulong_conv_3a_statements[] = {
 	{ OP(1, 1, 2, OP_CONV),  3, 0006,  54 },
 	{ OP(1, 1, 2, OP_CONV),  4, 0216,  56 },
 	{ OP(1, 1, 2, OP_CONV),  7, 0016,  62 },
+	{ OP(2, 1, 2, OP_CONV),  8, 0226,  64 },
+	{ OP(2, 1, 2, OP_CONV), 14, 0026,  70 },
 	{ OP(2, 1, 2, OP_CONV), 16, 0236,  72 },
 	{ OP(2, 1, 2, OP_CONV), 22, 0036,  78 },
 	{ OP(1, 1, 2, OP_CONV), 24, 0246,  80 },
 	{ OP(1, 1, 2, OP_CONV), 27, 0046,  86 },
 	{ OP(1, 1, 2, OP_CONV), 28, 0256,  88 },
 	{ OP(1, 1, 2, OP_CONV), 31, 0056,  94 },
+	{ OP(2, 1, 2, OP_CONV), 32, 0266,  96 },
+	{ OP(2, 1, 2, OP_CONV), 38, 0066, 102 },
 	{ OP(2, 1, 2, OP_CONV), 40, 0276, 104 },
 	{ OP(2, 1, 2, OP_CONV), 46, 0076, 110 },
 };
@@ -122,12 +130,16 @@ static dstatement_t ulong_conv_3b_statements[] = {
 	{ OP(1, 1, 2, OP_CONV),  1, 0206,  50 },
 	{ OP(1, 1, 2, OP_CONV),  4, 0016,  56 },
 	{ OP(1, 1, 2, OP_CONV),  5, 0216,  58 },
+	{ OP(2, 1, 2, OP_CONV),  8, 0026,  64 },
+	{ OP(2, 1, 2, OP_CONV), 10, 0226,  66 },
 	{ OP(2, 1, 2, OP_CONV), 16, 0036,  72 },
 	{ OP(2, 1, 2, OP_CONV), 18, 0236,  74 },
 	{ OP(1, 1, 2, OP_CONV), 24, 0046,  80 },
 	{ OP(1, 1, 2, OP_CONV), 25, 0246,  82 },
 	{ OP(1, 1, 2, OP_CONV), 28, 0056,  88 },
 	{ OP(1, 1, 2, OP_CONV), 29, 0256,  90 },
+	{ OP(2, 1, 2, OP_CONV), 32, 0066,  96 },
+	{ OP(2, 1, 2, OP_CONV), 34, 0266,  98 },
 	{ OP(2, 1, 2, OP_CONV), 40, 0076, 104 },
 	{ OP(2, 1, 2, OP_CONV), 42, 0276, 106 },
 };
@@ -135,9 +147,11 @@ static dstatement_t ulong_conv_3b_statements[] = {
 static dstatement_t ulong_conv_4_statements[] = {
 	{ OP(1, 1, 2, OP_CONV),  0, 0306,  48 },
 	{ OP(1, 1, 2, OP_CONV),  4, 0316,  56 },
+	{ OP(2, 1, 2, OP_CONV),  8, 0326,  64 },
 	{ OP(2, 1, 2, OP_CONV), 16, 0336,  72 },
 	{ OP(1, 1, 2, OP_CONV), 24, 0346,  80 },
 	{ OP(1, 1, 2, OP_CONV), 28, 0356,  88 },
+	{ OP(2, 1, 2, OP_CONV), 32, 0366,  96 },
 	{ OP(2, 1, 2, OP_CONV), 40, 0376, 104 },
 };
 

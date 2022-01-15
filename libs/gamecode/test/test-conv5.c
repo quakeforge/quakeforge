@@ -43,7 +43,7 @@ static pr_ivec4_t bool32_conv_expect[] = {
 	{         -1,         -1,         -1,         -1},	// long
 	{         -1,         -1,         -1,         -1},	// double
 	{         -1,         -1,         -1,         -1},	// uint
-	{          0,          0,          0,          0},	// bool32
+	{         ~0,          1, 0x80000000,          0},	// bool32
 	{         -1,         -1,         -1,         -1},	// ulong
 	{         -1,         -1,         -1,          0},	// bool64
 };
@@ -63,9 +63,10 @@ static dstatement_t bool32_conv_1_statements[] = {
 	{ OP(2, 1, 1, OP_CONV),  8, 0025, 56 },
 	{ OP(2, 1, 1, OP_CONV), 16, 0035, 60 },
 	{ OP(1, 1, 1, OP_CONV), 24, 0045, 64 },
+	{ OP(1, 1, 1, OP_CONV), 28, 0055, 68 },
 	{ OP(2, 1, 1, OP_CONV), 32, 0065, 72 },
 	{ OP(2, 1, 1, OP_CONV), 40, 0075, 76 },
-	{ OP(1, 1, 1, OP_JUMP_A), -13, 0, 0 },
+	{ OP(1, 1, 1, OP_JUMP_A), -14, 0, 0 },
 };
 
 static dstatement_t bool32_conv_2_statements[] = {
@@ -83,9 +84,10 @@ static dstatement_t bool32_conv_2_statements[] = {
 	{ OP(2, 1, 1, OP_CONV),  8, 0125, 56 },
 	{ OP(2, 1, 1, OP_CONV), 16, 0135, 60 },
 	{ OP(1, 1, 1, OP_CONV), 24, 0145, 64 },
+	{ OP(1, 1, 1, OP_CONV), 28, 0155, 68 },
 	{ OP(2, 1, 1, OP_CONV), 32, 0165, 72 },
 	{ OP(2, 1, 1, OP_CONV), 40, 0175, 76 },
-	{ OP(1, 1, 1, OP_JUMP_A), -13, 0, 0 },
+	{ OP(1, 1, 1, OP_JUMP_A), -14, 0, 0 },
 };
 
 static dstatement_t bool32_conv_3a_statements[] = {
@@ -99,6 +101,8 @@ static dstatement_t bool32_conv_3a_statements[] = {
 	{ OP(2, 1, 1, OP_CONV), 22, 0035, 63 },
 	{ OP(1, 1, 1, OP_CONV), 24, 0245, 64 },
 	{ OP(1, 1, 1, OP_CONV), 27, 0045, 67 },
+	{ OP(1, 1, 1, OP_CONV), 28, 0255, 68 },
+	{ OP(1, 1, 1, OP_CONV), 31, 0055, 71 },
 	{ OP(2, 1, 1, OP_CONV), 32, 0265, 72 },
 	{ OP(2, 1, 1, OP_CONV), 38, 0065, 75 },
 	{ OP(2, 1, 1, OP_CONV), 40, 0275, 76 },
@@ -116,6 +120,8 @@ static dstatement_t bool32_conv_3b_statements[] = {
 	{ OP(2, 1, 1, OP_CONV), 18, 0235, 61 },
 	{ OP(1, 1, 1, OP_CONV), 24, 0045, 64 },
 	{ OP(1, 1, 1, OP_CONV), 25, 0245, 65 },
+	{ OP(1, 1, 1, OP_CONV), 28, 0055, 68 },
+	{ OP(1, 1, 1, OP_CONV), 29, 0255, 69 },
 	{ OP(2, 1, 1, OP_CONV), 32, 0065, 72 },
 	{ OP(2, 1, 1, OP_CONV), 34, 0265, 73 },
 	{ OP(2, 1, 1, OP_CONV), 40, 0075, 76 },
@@ -128,6 +134,7 @@ static dstatement_t bool32_conv_4_statements[] = {
 	{ OP(2, 1, 1, OP_CONV),  8, 0325, 56 },
 	{ OP(2, 1, 1, OP_CONV), 16, 0335, 60 },
 	{ OP(1, 1, 1, OP_CONV), 24, 0345, 64 },
+	{ OP(1, 1, 1, OP_CONV), 28, 0355, 68 },
 	{ OP(2, 1, 1, OP_CONV), 32, 0365, 72 },
 	{ OP(2, 1, 1, OP_CONV), 40, 0375, 76 },
 };

@@ -52,8 +52,8 @@ static pr_ivec4_t double_conv_expect[] = {
 	{ 0x40000000, 0x46293e59, 0x40000000, 0xc6293e59},
 	{ 0x00000000, 0xc3e00000, 0x00000000, 0x4258e000},	// long
 	{ 0x00000000, 0x40700000, 0xffc00000, 0x41dfffff},
-	{          0,          0,          0,          0},	// double
-	{          0,          0,          0,          0},
+	{ 0x39a08cea, 0x46293e59, 0x39a08cea, 0xc6293e59},	// double
+	{          0, 0x3ff80000,          0, 0xbff80000},
 	{ 0x00000000, 0x40140000, 0xff600000, 0x41efffff},	// uint
 	{ 0x00000000, 0x41e00000, 0xffc00000, 0x41dfffff},
 	{ 0x00000000, 0x3ff00000, 0x00000000, 0x3ff00000},	// bool32
@@ -77,11 +77,12 @@ static dstatement_t double_conv_1_statements[] = {
 	{ OP(1, 1, 2, OP_CONV),  0, 0003,  48 },
 	{ OP(1, 1, 2, OP_CONV),  4, 0013,  56 },
 	{ OP(2, 1, 2, OP_CONV),  8, 0023,  64 },
+	{ OP(2, 1, 2, OP_CONV), 16, 0033,  72 },
 	{ OP(1, 1, 2, OP_CONV), 24, 0043,  80 },
 	{ OP(1, 1, 2, OP_CONV), 28, 0053,  88 },
 	{ OP(2, 1, 2, OP_CONV), 32, 0063,  96 },
 	{ OP(2, 1, 2, OP_CONV), 40, 0073, 104 },
-	{ OP(0, 0, 0, OP_JUMP_A), -13, 0, 0 },
+	{ OP(0, 0, 0, OP_JUMP_A), -14, 0, 0 },
 };
 
 static dstatement_t double_conv_2_statements[] = {
@@ -97,11 +98,12 @@ static dstatement_t double_conv_2_statements[] = {
 	{ OP(1, 1, 2, OP_CONV),  0, 0103,  48 },
 	{ OP(1, 1, 2, OP_CONV),  4, 0113,  56 },
 	{ OP(2, 1, 2, OP_CONV),  8, 0123,  64 },
+	{ OP(2, 1, 2, OP_CONV), 16, 0133,  72 },
 	{ OP(1, 1, 2, OP_CONV), 24, 0143,  80 },
 	{ OP(1, 1, 2, OP_CONV), 28, 0153,  88 },
 	{ OP(2, 1, 2, OP_CONV), 32, 0163,  96 },
 	{ OP(2, 1, 2, OP_CONV), 40, 0173, 104 },
-	{ OP(0, 0, 0, OP_JUMP_A), -13, 0, 0 },
+	{ OP(0, 0, 0, OP_JUMP_A), -14, 0, 0 },
 };
 
 static dstatement_t double_conv_3a_statements[] = {
@@ -111,6 +113,8 @@ static dstatement_t double_conv_3a_statements[] = {
 	{ OP(1, 1, 2, OP_CONV),  7, 0013,  62 },
 	{ OP(2, 1, 2, OP_CONV),  8, 0223,  64 },
 	{ OP(2, 1, 2, OP_CONV), 14, 0023,  70 },
+	{ OP(2, 1, 2, OP_CONV), 16, 0233,  72 },
+	{ OP(2, 1, 2, OP_CONV), 22, 0033,  78 },
 	{ OP(1, 1, 2, OP_CONV), 24, 0243,  80 },
 	{ OP(1, 1, 2, OP_CONV), 27, 0043,  86 },
 	{ OP(1, 1, 2, OP_CONV), 28, 0253,  88 },
@@ -128,6 +132,8 @@ static dstatement_t double_conv_3b_statements[] = {
 	{ OP(1, 1, 2, OP_CONV),  5, 0213,  58 },
 	{ OP(2, 1, 2, OP_CONV),  8, 0023,  64 },
 	{ OP(2, 1, 2, OP_CONV), 10, 0223,  66 },
+	{ OP(2, 1, 2, OP_CONV), 16, 0033,  72 },
+	{ OP(2, 1, 2, OP_CONV), 18, 0233,  74 },
 	{ OP(1, 1, 2, OP_CONV), 24, 0043,  80 },
 	{ OP(1, 1, 2, OP_CONV), 25, 0243,  82 },
 	{ OP(1, 1, 2, OP_CONV), 28, 0053,  88 },
@@ -142,6 +148,7 @@ static dstatement_t double_conv_4_statements[] = {
 	{ OP(1, 1, 2, OP_CONV),  0, 0303,  48 },
 	{ OP(1, 1, 2, OP_CONV),  4, 0313,  56 },
 	{ OP(2, 1, 2, OP_CONV),  8, 0323,  64 },
+	{ OP(2, 1, 2, OP_CONV), 16, 0333,  72 },
 	{ OP(1, 1, 2, OP_CONV), 24, 0343,  80 },
 	{ OP(1, 1, 2, OP_CONV), 28, 0353,  88 },
 	{ OP(2, 1, 2, OP_CONV), 32, 0363,  96 },

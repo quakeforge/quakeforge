@@ -85,14 +85,25 @@ def expand_str(width, src, pref=""):
 for width in range(4):
     for src_type in range(8):
         for dst_type in range(8):
-            mode = convert_matrix[src_type][dst_type]
-            if not mode:
-                continue
             case = case_str(width, src_type, dst_type)
             cast = cast_str(width, src_type, dst_type)
             src = src_str(width, src_type, dst_type)
             dst = dst_str(width, src_type, dst_type)
-            if mode == 1:
+            mode = convert_matrix[src_type][dst_type]
+            if mode == 0:
+                if dst_type & 2 != src_type & 2:
+                    continue
+                if dst_type & 2:
+                    src = src_str(width, 2, 2)
+                    dst = dst_str(width, 2, 2)
+                else:
+                    src = src_str(width, 0, 0)
+                    dst = dst_str(width, 0, 0)
+                if width == 2:
+                    print(f"{case} VectorCopy(&{src},&{dst}); break;")
+                else:
+                    print(f"{case} {dst} = {src}; break;")
+            elif mode == 1:
                 if width == 0:
                     print(f"{case} {dst} = {cast} {src}; break;")
                 elif width == 2:

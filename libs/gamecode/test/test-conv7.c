@@ -60,8 +60,8 @@ static pr_ivec4_t bool64_conv_expect[] = {
 	{ 0xffffffff, 0xffffffff,          0,          0},
 	{ 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff},	// ulong
 	{ 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff},
-	{          0,          0,          0,          0},	// bool64
-	{          0,          0,          0,          0},
+	{         ~0,         ~0,         ~0,          0},	// bool64
+	{          0,         ~0,          0,          0},
 };
 
 static dstatement_t bool64_conv_1_statements[] = {
@@ -81,7 +81,8 @@ static dstatement_t bool64_conv_1_statements[] = {
 	{ OP(1, 1, 2, OP_CONV), 24, 0047,  80 },
 	{ OP(1, 1, 2, OP_CONV), 28, 0057,  88 },
 	{ OP(2, 1, 2, OP_CONV), 32, 0067,  96 },
-	{ OP(0, 0, 0, OP_JUMP_A), -13, 0, 0 },
+	{ OP(2, 1, 2, OP_CONV), 40, 0077, 104 },
+	{ OP(0, 0, 0, OP_JUMP_A), -14, 0, 0 },
 };
 
 static dstatement_t bool64_conv_2_statements[] = {
@@ -101,7 +102,8 @@ static dstatement_t bool64_conv_2_statements[] = {
 	{ OP(1, 1, 2, OP_CONV), 24, 0147,  80 },
 	{ OP(1, 1, 2, OP_CONV), 28, 0157,  88 },
 	{ OP(2, 1, 2, OP_CONV), 32, 0167,  96 },
-	{ OP(0, 0, 0, OP_JUMP_A), -13, 0, 0 },
+	{ OP(2, 1, 2, OP_CONV), 40, 0177, 104 },
+	{ OP(0, 0, 0, OP_JUMP_A), -14, 0, 0 },
 };
 
 static dstatement_t bool64_conv_3a_statements[] = {
@@ -119,6 +121,8 @@ static dstatement_t bool64_conv_3a_statements[] = {
 	{ OP(1, 1, 2, OP_CONV), 31, 0057,  94 },
 	{ OP(2, 1, 2, OP_CONV), 32, 0267,  96 },
 	{ OP(2, 1, 2, OP_CONV), 38, 0067, 102 },
+	{ OP(2, 1, 2, OP_CONV), 40, 0277, 104 },
+	{ OP(2, 1, 2, OP_CONV), 46, 0077, 110 },
 };
 
 static dstatement_t bool64_conv_3b_statements[] = {
@@ -136,6 +140,8 @@ static dstatement_t bool64_conv_3b_statements[] = {
 	{ OP(1, 1, 2, OP_CONV), 29, 0257,  90 },
 	{ OP(2, 1, 2, OP_CONV), 32, 0067,  96 },
 	{ OP(2, 1, 2, OP_CONV), 34, 0267,  98 },
+	{ OP(2, 1, 2, OP_CONV), 40, 0077, 104 },
+	{ OP(2, 1, 2, OP_CONV), 42, 0277, 106 },
 };
 
 static dstatement_t bool64_conv_4_statements[] = {
@@ -146,6 +152,7 @@ static dstatement_t bool64_conv_4_statements[] = {
 	{ OP(1, 1, 2, OP_CONV), 24, 0347,  80 },
 	{ OP(1, 1, 2, OP_CONV), 28, 0357,  88 },
 	{ OP(2, 1, 2, OP_CONV), 32, 0367,  96 },
+	{ OP(2, 1, 2, OP_CONV), 40, 0377, 104 },
 };
 
 test_t tests[] = {
