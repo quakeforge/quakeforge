@@ -28,9 +28,9 @@ bitmap_txt = """
 1 1011 01ss any
 1 1011 0100
 1 1011 10ss all
-1 1011 1000 pushregs
+1 1011 1000
 1 1011 11ss none
-1 1011 1100 popregs
+1 1011 1100
 1 1101 01oo move
 1 1101 11oo memset
 1 1110 d1xx

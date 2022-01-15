@@ -1861,42 +1861,6 @@ pr_jump_mode (progs_t *pr, const dstatement_t *st)
 	return jump_offs - 1;	// for st++
 }
 
-static pr_pointer_t __attribute__((pure))
-pr_with (progs_t *pr, const dstatement_t *st)
-{
-	pointer_t   edict_area = pr->pr_edict_area - pr->pr_globals;
-	pr_type_t  *op_b = pr->pr_globals + PR_BASE (pr, st, B) + st->b;
-
-	switch (st->a) {
-		// fixed offset
-		case 0:
-			// hard-0 base
-			return st->b;
-		case 1:
-			// relative to current base
-			return PR_BASE (pr, st, B) + st->b;
-		case 2:
-			// relative to stack (-ve offset)
-			return *pr->globals.stack + (pr_short_t) st->b;
-		case 3:
-			// relative to edict_area (+ve only)
-			return edict_area + st->b;
-
-		case 4:
-			// hard-0 base
-			return pr->pr_globals[st->b].pointer_var;
-		case 5:
-			return OPB(pointer);
-		case 6:
-			// relative to stack (-ve offset)
-			return *pr->globals.stack + OPB(int);
-		case 7:
-			// relative to edict_area (+ve only)
-			return edict_area + OPB(uint);
-	}
-	PR_RunError (pr, "Invalid with index: %u", st->a);
-}
-
 static pr_type_t *
 pr_stack_push (progs_t *pr)
 {
@@ -1921,6 +1885,59 @@ pr_stack_pop (progs_t *pr)
 	// keep the stack 16-byte aligned
 	*pr->globals.stack = stack + 4;
 	return stk;
+}
+
+static void
+pr_with (progs_t *pr, const dstatement_t *st)
+{
+	pointer_t   edict_area = pr->pr_edict_area - pr->pr_globals;
+	pr_type_t  *op_b = pr->pr_globals + PR_BASE (pr, st, B) + st->b;
+	pr_type_t  *stk;
+
+	switch (st->a) {
+		// fixed offset
+		case 0:
+			// hard-0 base
+			pr->pr_bases[st->c & 3] = st->b;
+			return;
+		case 1:
+			// relative to current base
+			pr->pr_bases[st->c & 3] = PR_BASE (pr, st, B) + st->b;
+			return;
+		case 2:
+			// relative to stack (-ve offset)
+			pr->pr_bases[st->c & 3] = *pr->globals.stack + (pr_short_t) st->b;
+			return;
+		case 3:
+			// relative to edict_area (+ve only)
+			pr->pr_bases[st->c & 3] = edict_area + st->b;
+			return;
+
+		case 4:
+			// hard-0 base
+			pr->pr_bases[st->c & 3] = pr->pr_globals[st->b].pointer_var;
+			return;
+		case 5:
+			pr->pr_bases[st->c & 3] = OPB(pointer);
+			return;
+		case 6:
+			// relative to stack (-ve offset)
+			pr->pr_bases[st->c & 3] = *pr->globals.stack + OPB(int);
+			return;
+		case 7:
+			// relative to edict_area (+ve only)
+			pr->pr_bases[st->c & 3] = edict_area + OPB(uint);
+			return;
+		case 8:
+			stk = pr_stack_push (pr);
+			STK(uivec4) = pr->pr_bases;
+			return;
+		case 9:
+			stk = pr_stack_pop (pr);
+			pr->pr_bases = STK(uivec4);
+			return;
+	}
+	PR_RunError (pr, "Invalid with index: %u", st->a);
 }
 
 static pr_ivec4_t
@@ -2980,7 +2997,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				}
 				break;
 			case OP_WITH:
-				pr->pr_bases[st->c & 3] = pr_with (pr, st);
+				pr_with (pr, st);
 				break;
 			case OP_STATE_ft:
 				{
@@ -3349,10 +3366,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_ANY_4:
 				OPC(int) = any4i (OPA(ivec4));
 				break;
-			case OP_PUSHREGS:
-				stk = pr_stack_push (pr);
-				STK(uivec4) = pr->pr_bases;
-				break;
+			// spare
 			case OP_ALL_2:
 				OPC(int) = all2i (OPA(ivec2));
 				break;
@@ -3366,10 +3380,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_ALL_4:
 				OPC(int) = all4i (OPA(ivec4));
 				break;
-			case OP_POPREGS:
-				stk = pr_stack_pop (pr);
-				pr->pr_bases = STK(uivec4);
-				break;
+			// spare
 			case OP_NONE_2:
 				OPC(int) = none2i (OPA(ivec2));
 				break;
