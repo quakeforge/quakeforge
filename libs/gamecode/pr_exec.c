@@ -2961,7 +2961,16 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				break;
 			// 0 0110
 			//        0nnn spare
-			//        10nn spare
+			case OP_LEA_A:
+			case OP_LEA_C:
+			case OP_LEA_D:
+				mm = pr_address_mode (pr, st, (st_op - OP_LEA_A));
+				op_c->pointer_var = mm - pr->pr_globals;
+				break;
+			case OP_LEA_E:
+				mm = pr_address_mode (pr, st, 4);
+				op_c->pointer_var = mm - pr->pr_globals;
+				break;
 			case OP_CONV:
 				switch (st->b) {
 #include "libs/gamecode/pr_convert.cinc"
@@ -3327,16 +3336,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_cmp_T (GT, U, long, lvec2, lvec4, >, ulong, ulvec2, ulvec4);
 			// spare
 			// 1 1011
-			case OP_LEA_A:
-			case OP_LEA_C:
-			case OP_LEA_D:
-				mm = pr_address_mode (pr, st, (st_op - OP_LEA_A));
-				op_c->pointer_var = mm - pr->pr_globals;
-				break;
-			case OP_LEA_E:
-				mm = pr_address_mode (pr, st, 4);
-				op_c->pointer_var = mm - pr->pr_globals;
-				break;
+			//        00nn spare
 			case OP_ANY_2:
 				OPC(int) = any2i (OPA(ivec2));
 				break;

@@ -11,6 +11,7 @@ bitmap_txt = """
 0 0101 1100 return (size in st->c)
 
 0 0110 0nnn
+0 0110 10mm lea
 0 0110 1100 convert (conversion mode in st->b)
 0 0110 1101 with (mode in st->a, value in st->b, reg in st->c)
 0 0110 111t state
@@ -23,7 +24,7 @@ bitmap_txt = """
 1 1001 t1ss scale
 1 1001 t100 swizzle
 1 1010 d1xx
-1 1011 00mm lea
+1 1011 00nn
 1 1011 01ss any
 1 1011 0100
 1 1011 10ss all
