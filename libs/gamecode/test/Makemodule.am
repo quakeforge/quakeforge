@@ -1,4 +1,5 @@
 libs_gamecode_tests = \
+	libs/gamecode/test/test-bitops \
 	libs/gamecode/test/test-conv0 \
 	libs/gamecode/test/test-conv1 \
 	libs/gamecode/test/test-conv2 \
@@ -29,6 +30,11 @@ EXTRA_DIST += head.c main.c
 test_gamecode_libs= \
 	libs/gamecode/libQFgamecode.la \
 	libs/util/libQFutil.la
+
+libs_gamecode_test_test_bitops_SOURCES= \
+	libs/gamecode/test/test-bitops.c
+libs_gamecode_test_test_bitops_LDADD=		$(test_gamecode_libs)
+libs_gamecode_test_test_bitops_DEPENDENCIES=$(test_gamecode_libs)
 
 libs_gamecode_test_test_conv0_SOURCES= \
 	libs/gamecode/test/test-conv0.c
