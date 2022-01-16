@@ -68,7 +68,7 @@ ED_ClearEdict (progs_t *pr, edict_t *e, int val)
 VISIBLE edict_t *
 ED_Alloc (progs_t *pr)
 {
-	pr_int_t    i;
+	pr_uint_t   i;
 	edict_t    *e;
 	int         start = pr->reserved_edicts ? *pr->reserved_edicts : 0;
 
@@ -149,7 +149,7 @@ ED_PrintNum (progs_t *pr, pr_int_t ent, const char *fieldname)
 VISIBLE void
 ED_PrintEdicts (progs_t *pr, const char *fieldval)
 {
-	pr_int_t    i;
+	pr_uint_t   i;
 	int         count;
 	pr_def_t   *def;
 
@@ -183,7 +183,6 @@ ED_PrintEdicts (progs_t *pr, const char *fieldval)
 VISIBLE void
 ED_Count (progs_t *pr)
 {
-	pr_int_t    i;
 	int         active, models, solid, step, zombie;
 	pr_def_t   *solid_def;
 	pr_def_t   *model_def;
@@ -196,7 +195,7 @@ ED_Count (progs_t *pr)
 	solid_def = PR_FindField (pr, "solid");
 	model_def = PR_FindField (pr, "model");
 	active = models = solid = step = zombie = 0;
-	for (i = 0; i < *pr->num_edicts; i++) {
+	for (pr_uint_t i = 0; i < *pr->num_edicts; i++) {
 		ent = EDICT_NUM (pr, i);
 		if (ent->free) {
 			if (pr->globals.ftime && *pr->globals.ftime - ent->freetime <= 0.5)//FIXME double time
@@ -218,22 +217,22 @@ ED_Count (progs_t *pr)
 }
 
 edict_t *
-ED_EdictNum (progs_t *pr, pr_int_t n)
+ED_EdictNum (progs_t *pr, pr_uint_t n)
 {
-	if (n < 0 || n >= *pr->num_edicts)
+	if (n >= *pr->num_edicts)
 		PR_RunError (pr, "EDICT_NUM: bad number %d", n);
 
 	return PR_edicts(pr) + n;
 }
 
-pr_int_t
+pr_uint_t
 ED_NumForEdict (progs_t *pr, edict_t *e)
 {
-	pr_int_t    b;
+	pr_uint_t    b;
 
 	b = NUM_FOR_BAD_EDICT (pr, e);
 
-	if (b && (b < 0 || b >= *pr->num_edicts))
+	if (b && b >= *pr->num_edicts)
 		PR_RunError (pr, "NUM_FOR_EDICT: bad pointer %d %p %p", b, e,
 					 pr->pr_edicts);
 

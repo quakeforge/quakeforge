@@ -653,7 +653,6 @@ PF_findradius (progs_t *pr)
 	edict_t    *ent, *chain;
 	float       rsqr;
 	vec_t      *emins, *emaxs, *org;
-	int         i, j;
 	vec3_t      eorg;
 
 	chain = (edict_t *) sv.edicts;
@@ -663,7 +662,7 @@ PF_findradius (progs_t *pr)
 	rsqr *= rsqr;					// Square early, sqrt never
 
 	ent = NEXT_EDICT (pr, sv.edicts);
-	for (i = 1; i < sv.num_edicts; i++, ent = NEXT_EDICT (pr, ent)) {
+	for (unsigned i = 1; i < sv.num_edicts; i++, ent = NEXT_EDICT (pr, ent)) {
 		if (ent->free)
 			continue;
 		if (SVfloat (ent, solid) == SOLID_NOT
@@ -671,7 +670,7 @@ PF_findradius (progs_t *pr)
 			continue;
 		emins = SVvector (ent, absmin);
 		emaxs = SVvector (ent, absmax);
-		for (j = 0; j < 3; j++)
+		for (int j = 0; j < 3; j++)
 			eorg[j] = org[j] - 0.5 * (emins[j] + emaxs[j]);
 		if (DotProduct (eorg, eorg) > rsqr)
 			continue;
@@ -936,7 +935,7 @@ PF_aim (progs_t *pr)
 	edict_t    *ent, *check, *bestent;
 	float       dist, bestdist, speed;
 	float      *mins, *maxs, *org;
-	int         i, j;
+	unsigned    i, j;
 	trace_t     tr;
 	vec3_t      start, dir, end, bestdir;
 

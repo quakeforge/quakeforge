@@ -65,7 +65,7 @@ cvar_t     *pr_checkextensions;
 cvar_t     *sv_old_entity_free;
 cvar_t     *sv_hide_version_info;
 
-static int reserved_edicts = MAX_CLIENTS;
+static pr_uint_t reserved_edicts = MAX_CLIENTS;
 
 static int sv_range;
 

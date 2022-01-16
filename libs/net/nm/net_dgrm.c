@@ -652,7 +652,7 @@ _Datagram_CheckNewConnections (void)
 	if (command == CCREQ_PLAYER_INFO) {
 		int         playerNumber;
 		int         activeNumber;
-		int         clientNumber;
+		unsigned    clientNumber;
 		client_t   *client;
 
 		playerNumber = MSG_ReadByte (net_message);

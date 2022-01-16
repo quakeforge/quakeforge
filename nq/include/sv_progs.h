@@ -38,9 +38,9 @@
 #include "sv_pr_cmds.h"
 
 typedef struct {
-	pr_int_t   *self;
-	pr_int_t   *other;
-	pr_int_t   *world;
+	pr_uint_t  *self;
+	pr_uint_t  *other;
+	pr_uint_t  *world;
 	float      *time;
 	float      *frametime;
 	float      *force_retouch;
@@ -64,13 +64,13 @@ typedef struct {
 	vec3_t     *trace_endpos;
 	vec3_t     *trace_plane_normal;
 	float      *trace_plane_dist;
-	pr_int_t   *trace_ent;
+	pr_uint_t  *trace_ent;
 	float      *trace_inopen;
 	float      *trace_inwater;
-	pr_int_t   *msg_entity;
+	pr_uint_t  *msg_entity;
 	string_t   *null;
 
-	pr_int_t   *newmis;
+	pr_uint_t  *newmis;
 } sv_globals_t;
 
 extern sv_globals_t sv_globals;

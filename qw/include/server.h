@@ -81,7 +81,7 @@ typedef struct {
 	const char	*lightstyles[MAX_LIGHTSTYLES];
 	struct model_s		*models[MAX_MODELS];
 
-	int			num_edicts;			// increases towards MAX_EDICTS
+	unsigned    num_edicts;			// increases towards MAX_EDICTS
 	struct edict_s		*edicts;			// can NOT be array indexed, because
 									// struct edict_s is variable sized, but can
 									// be used to reference the world ent
@@ -304,8 +304,8 @@ typedef struct {
 	int			spawncount;			// number of servers spawned since start,
 									// used to check late spawns
 	client_t	clients[MAX_CLIENTS];
-	int			maxclients;
-	int			num_clients;
+	unsigned    maxclients;
+	unsigned    num_clients;
 	int			serverflags;		// episode completion information
 	void		(*phys_client) (struct edict_s *ent, int num);
 

@@ -276,8 +276,8 @@ void PR_BoundsCheck (progs_t *pr, int addr, etype_t type);
 struct edict_s {
 	qboolean    free;
 	progs_t    *pr;				///< progs owning this edict
-	int         entnum;			///< number of this entity
-	int         edict;			///< offset of this entity in pr_edict_area
+	pr_uint_t   entnum;			///< number of this entity
+	pr_uint_t   edict;			///< offset of this entity in pr_edict_area
 	float       freetime;		///< sv.time when the object was freed
 	void       *edata;			///< external per-edict data
 };
@@ -286,8 +286,8 @@ struct edict_s {
 void ED_ClearEdict (progs_t *pr, edict_t *e, int val);
 edict_t *ED_Alloc (progs_t *pr);
 void ED_Free (progs_t *pr, edict_t *ed);
-edict_t *ED_EdictNum(progs_t *pr, pr_int_t n) __attribute__((pure));
-pr_int_t ED_NumForEdict(progs_t *pr, edict_t *e) __attribute__((pure));
+edict_t *ED_EdictNum(progs_t *pr, pr_uint_t n) __attribute__((pure));
+pr_uint_t ED_NumForEdict(progs_t *pr, edict_t *e) __attribute__((pure));
 void ED_Count (progs_t *pr);
 qboolean PR_EdictValid (progs_t *pr, pr_uint_t e) __attribute__((pure));
 
@@ -1896,9 +1896,9 @@ struct progs_s {
 	/// \todo FIXME should this be outside the VM?
 	///@{
 	edict_t   **pr_edicts;
-	int         max_edicts;			///< set by user
-	int        *num_edicts;
-	int        *reserved_edicts;	///< alloc will start at reserved_edicts+1
+	pr_uint_t   max_edicts;			///< set by user
+	pr_uint_t  *num_edicts;
+	pr_uint_t  *reserved_edicts;	///< alloc will start at reserved_edicts+1
 	void      (*unlink) (edict_t *ent);
 	void      (*flush) (void);
 	int       (*prune_edict) (progs_t *pr, edict_t *ent);
@@ -1964,7 +1964,7 @@ struct progs_s {
 	struct {
 		double     *dtime;		///< required for OP_STATE d
 		float      *ftime;		///< required for OP_STATE f
-		pr_int_t   *self;		///< required for OP_STATE
+		pr_uint_t  *self;		///< required for OP_STATE
 		pointer_t  *stack;		///< required for OP_(PUSH|POP)*
 	} globals;
 	struct {

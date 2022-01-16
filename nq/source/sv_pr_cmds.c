@@ -304,7 +304,7 @@ PF_sprint (progs_t *pr)
 {
 	const char *s;
 	client_t   *client;
-	int         entnum;
+	unsigned    entnum;
 
 	entnum = P_EDICTNUM (pr, 0);
 	s = PF_VarString (pr, 1);
@@ -333,7 +333,7 @@ PF_centerprint (progs_t *pr)
 {
 	const char *s;
 	client_t   *cl;
-	int         entnum;
+	unsigned    entnum;
 
 	entnum = P_EDICTNUM (pr, 0);
 	s = PF_VarString (pr, 1);
@@ -542,11 +542,11 @@ PF_checkpos (progs_t *pr)
 
 static set_t *checkpvs;
 
-static int
-PF_newcheckclient (progs_t *pr, int check)
+static unsigned
+PF_newcheckclient (progs_t *pr, unsigned check)
 {
 	edict_t    *ent;
-	int         i;
+	unsigned    i;
 	mleaf_t    *leaf;
 	vec3_t      org;
 
@@ -656,7 +656,7 @@ PF_stuffcmd (progs_t *pr)
 {
 	const char *str;
 	client_t   *old;
-	int         entnum;
+	pr_uint_t   entnum;
 
 	entnum = P_EDICTNUM (pr, 0);
 	if (entnum < 1 || entnum > svs.maxclients)
@@ -700,7 +700,7 @@ PF_findradius (progs_t *pr)
 	edict_t    *ent, *chain;
 	float       rsqr;
 	vec_t      *emins, *emaxs, *org;
-	int         i, j;
+	pr_uint_t   i;
 	vec3_t      eorg;
 
 	chain = (edict_t *) sv.edicts;
@@ -717,7 +717,7 @@ PF_findradius (progs_t *pr)
 			continue;
 		emins = SVvector (ent, absmin);
 		emaxs = SVvector (ent, absmax);
-		for (j = 0; j < 3; j++)
+		for (int j = 0; j < 3; j++)
 			eorg[j] = org[j] - 0.5 * (emins[j] + emaxs[j]);
 		if (DotProduct (eorg, eorg) > rsqr)
 			continue;
@@ -903,7 +903,8 @@ PF_lightstyle (progs_t *pr)
 {
 	const char *val;
 	client_t   *cl;
-	int         style, j;
+	int         style;
+	unsigned    j;
 
 	style = P_FLOAT (pr, 0);
 	val = P_GSTRING (pr, 1);
@@ -960,7 +961,7 @@ PF_aim (progs_t *pr)
 	edict_t    *ent, *check, *bestent;
 	float       dist, bestdist, speed;
 	float      *mins, *maxs, *org;
-	int         i, j;
+	pr_uint_t   i;
 	trace_t     tr;
 	vec3_t      start, dir, end, bestdir;
 
@@ -1000,7 +1001,7 @@ PF_aim (progs_t *pr)
 		mins = SVvector (check, mins);
 		maxs = SVvector (check, maxs);
 		org = SVvector (check, origin);
-		for (j = 0; j < 3; j++)
+		for (int j = 0; j < 3; j++)
 			end[j] = org[j] + 0.5 * (mins[j] + maxs[j]);
 		VectorSubtract (end, start, dir);
 		VectorNormalize (dir);
@@ -1075,7 +1076,7 @@ PF_changeyaw (progs_t *pr)
 static __attribute__((pure)) sizebuf_t *
 WriteDest (progs_t *pr)
 {
-	int         entnum;
+	pr_uint_t   entnum;
 	int         dest;
 	edict_t    *ent;
 
@@ -1256,7 +1257,7 @@ PF_setspawnparms (progs_t *pr)
 {
 	client_t   *client;
 	edict_t    *ent;
-	int         i;
+	unsigned    i;
 
 	ent = P_EDICT (pr, 0);
 	i = NUM_FOR_EDICT (pr, ent);

@@ -268,7 +268,7 @@ void NET_AddCachedHost (const char *name, const char *map, const char *cname,
 
 extern	double		net_time;
 extern	struct msg_s *net_message;
-extern	int			net_activeconnections;
+extern	unsigned	net_activeconnections;
 
 /** Initialize the networking sub-system.
 */

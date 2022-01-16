@@ -75,8 +75,8 @@ static const char *short_options =
 static edict_t test_edicts[MAX_EDICTS];
 
 static edict_t *edicts;
-static int num_edicts;
-static int reserved_edicts;
+static pr_uint_t num_edicts;
+static pr_uint_t reserved_edicts;
 static progs_t test_pr;
 static const char *this_program;
 

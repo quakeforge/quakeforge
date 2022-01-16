@@ -126,8 +126,8 @@ static const char *short_options =
 	;
 
 static edict_t *edicts;
-static int      num_edicts;
-static int      reserved_edicts = 1;
+static pr_uint_t num_edicts;
+static pr_uint_t reserved_edicts = 1;
 static progs_t  pr;
 static qfo_t   *qfo;
 

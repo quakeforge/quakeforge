@@ -584,7 +584,7 @@ SV_ReadClientMessage (void)
 void
 SV_RunClients (void)
 {
-	int         i;
+	unsigned    i;
 
 	for (i = 0, host_client = svs.clients; i < svs.maxclients;
 		 i++, host_client++) {

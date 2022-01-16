@@ -414,7 +414,7 @@ static qboolean
 SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 {
 	float       solid_save;
-	int         num_moved, i, e;
+	int         num_moved, i;
 	edict_t    *check, *block;
 	edict_t   **moved_edict;
 	vec3_t      move, org, org2;
@@ -455,7 +455,7 @@ SV_Push (edict_t *pusher, const vec3_t tmove, const vec3_t amove)
 	// see if any solid entities are inside the final position
 	num_moved = 0;
 	check = NEXT_EDICT (&sv_pr_state, sv.edicts);
-	for (e = 1; e < sv.num_edicts;
+	for (unsigned e = 1; e < sv.num_edicts;
 		 e++, check = NEXT_EDICT (&sv_pr_state, check)) {
 		if (check->free)
 			continue;
@@ -854,14 +854,14 @@ void
 SV_Physics (void)
 {
 	edict_t    *ent;
-	int         i;
 
 	SV_ProgStartFrame ();
 
 	// treat each object in turn
 	// even the world gets a chance to think
 	ent = sv.edicts;
-	for (i = 0; i < sv.num_edicts; i++, ent = NEXT_EDICT (&sv_pr_state, ent)) {
+	for (unsigned i = 0; i < sv.num_edicts;
+		 i++, ent = NEXT_EDICT (&sv_pr_state, ent)) {
 		if (ent->free)
 			continue;
 

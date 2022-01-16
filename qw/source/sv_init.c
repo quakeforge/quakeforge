@@ -122,11 +122,8 @@ SV_FlushSignon (void)
 static void
 SV_CreateBaseline (void)
 {
-	int			entnum;
-	edict_t    *svent;
-
-	for (entnum = 0; entnum < sv.num_edicts; entnum++) {
-		svent = EDICT_NUM (&sv_pr_state, entnum);
+	for (unsigned entnum = 0; entnum < sv.num_edicts; entnum++) {
+		edict_t    *svent = EDICT_NUM (&sv_pr_state, entnum);
 		if (svent->free)
 			continue;
 		// create baselines for all player slots,

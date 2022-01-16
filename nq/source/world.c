@@ -780,11 +780,10 @@ SV_ClipToLinks (areanode_t *node, moveclip_t *clip)
 	edict_t    *touch;
 	link_t     *l, *next;
 	trace_t		trace;
-	int         i;
 
 	if (clip->type == TL_EVERYTHING) {
 		touch = NEXT_EDICT (&sv_pr_state, sv.edicts);
-		for (i = 1; i < sv.num_edicts; i++,
+		for (unsigned i = 1; i < sv.num_edicts; i++,
 			 touch = NEXT_EDICT (&sv_pr_state, touch)) {
 			if (clip->trace.allsolid)
 				return;
@@ -897,7 +896,6 @@ SV_Move (const vec3_t start, const vec3_t mins, const vec3_t maxs,
 edict_t *
 SV_TestPlayerPosition (edict_t *ent, const vec3_t origin)
 {
-	int         e;
 	edict_t    *check;
 	hull_t     *hull;
 	vec3_t      boxmins, boxmaxs, offset;
@@ -912,8 +910,8 @@ SV_TestPlayerPosition (edict_t *ent, const vec3_t origin)
 	VectorAdd (origin, SVvector (ent, maxs), boxmaxs);
 
 	check = NEXT_EDICT (&sv_pr_state, sv.edicts);
-	for (e = 1; e < sv.num_edicts; e++, check = NEXT_EDICT (&sv_pr_state,
-															check)) {
+	for (unsigned e = 1; e < sv.num_edicts;
+		 e++, check = NEXT_EDICT (&sv_pr_state, check)) {
 		if (check->free)
 			continue;
 		if (check == ent)

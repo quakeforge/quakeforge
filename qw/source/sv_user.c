@@ -491,16 +491,13 @@ SV_Spawn_f (void *unused)
 static void
 SV_SpawnSpectator (void)
 {
-	int         i;
-	edict_t    *e;
-
 	VectorZero (SVvector (sv_player, origin));
 	VectorZero (SVvector (sv_player, view_ofs));
 	SVvector (sv_player, view_ofs)[2] = 22;
 
 	// search for an info_playerstart to spawn the spectator at
-	for (i = MAX_CLIENTS - 1; i < sv.num_edicts; i++) {
-		e = EDICT_NUM (&sv_pr_state, i);
+	for (unsigned i = MAX_CLIENTS - 1; i < sv.num_edicts; i++) {
+		edict_t    *e = EDICT_NUM (&sv_pr_state, i);
 		if (!strcmp (PR_GetString (&sv_pr_state, SVstring (e, classname)),
 					 "info_player_start")) {
 			VectorCopy (SVvector (e, origin), SVvector (sv_player, origin));
@@ -1516,7 +1513,7 @@ static void
 AddLinksToPmove (areanode_t *node)
 {
 	edict_t    *check;
-	int         pl, i;
+	pr_uint_t   pl, i;
 	link_t     *l, *next;
 	physent_t  *pe;
 

@@ -150,7 +150,7 @@ PR_ResolveGlobals (progs_t *pr)
 	if (!pr->globals.self) {
 		if ((def = PR_FindGlobal (pr, ".self"))
 			|| (def = PR_FindGlobal (pr, "self")))
-			pr->globals.self = &G_INT (pr, def->ofs);
+			pr->globals.self = &G_UINT (pr, def->ofs);
 	}
 	if (!pr->globals.stack) {
 		if ((def = PR_FindGlobal (pr, ".stack"))

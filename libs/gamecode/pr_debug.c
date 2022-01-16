@@ -1266,7 +1266,7 @@ pr_debug_entity_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	progs_t    *pr = data->pr;
 	dstring_t  *dstr = data->dstr;
 
-	if (pr->pr_edicts && value->entity_var >= 0
+	if (pr->pr_edicts
 		&& value->entity_var < pr->max_edicts
 		&& !(value->entity_var % pr->pr_edict_size)) {
 		edict_t    *edict = PROG_TO_EDICT (pr, value->entity_var);

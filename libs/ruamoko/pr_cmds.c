@@ -253,7 +253,7 @@ PF_Find (progs_t *pr)
 {
 	const char *s = 0, *t;	// ev_string
 	int			i;			// ev_vector
-	int			e, f;
+	pr_uint_t   e, f;
 	etype_t		type;
 	pr_def_t   *field_def;
 	edict_t	   *ed;
@@ -394,7 +394,7 @@ PF_ceil (progs_t *pr)
 static void
 PF_nextent (progs_t *pr)
 {
-	int			i;
+	pr_uint_t   i;
 	edict_t	   *ent;
 
 	i = P_EDICTNUM (pr, 0);
