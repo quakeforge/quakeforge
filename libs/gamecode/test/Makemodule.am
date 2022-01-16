@@ -10,6 +10,7 @@ libs_gamecode_tests = \
 	libs/gamecode/test/test-conv7 \
 	libs/gamecode/test/test-double \
 	libs/gamecode/test/test-float \
+	libs/gamecode/test/test-hops \
 	libs/gamecode/test/test-int \
 	libs/gamecode/test/test-lea \
 	libs/gamecode/test/test-load \
@@ -82,12 +83,17 @@ libs_gamecode_test_test_conv7_DEPENDENCIES=	$(test_gamecode_libs)
 libs_gamecode_test_test_double_SOURCES= \
 	libs/gamecode/test/test-double.c
 libs_gamecode_test_test_double_LDADD=		$(test_gamecode_libs)
-libs_gamecode_test_test_double_DEPENDENCIES=	$(test_gamecode_libs)
+libs_gamecode_test_test_double_DEPENDENCIES=$(test_gamecode_libs)
 
 libs_gamecode_test_test_float_SOURCES= \
 	libs/gamecode/test/test-float.c
 libs_gamecode_test_test_float_LDADD=		$(test_gamecode_libs)
 libs_gamecode_test_test_float_DEPENDENCIES=	$(test_gamecode_libs)
+
+libs_gamecode_test_test_hops_SOURCES= \
+	libs/gamecode/test/test-hops.c
+libs_gamecode_test_test_hops_LDADD=			$(test_gamecode_libs)
+libs_gamecode_test_test_hops_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_int_SOURCES= \
 	libs/gamecode/test/test-int.c

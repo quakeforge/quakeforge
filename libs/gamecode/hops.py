@@ -39,7 +39,7 @@ def dst_str(type, width, op):
     return f"OPC({types[type][op]})"
 
 def hop_str(type, width, op):
-    return f"OP_hop{width+1}"
+    return f"{'~' if op & 4 and op != 7 else ''}OP_hop{width+1}"
 
 for type in range(2):
     for width in range(1, 4): # 0 is reserved
