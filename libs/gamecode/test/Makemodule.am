@@ -18,6 +18,7 @@ libs_gamecode_tests = \
 	libs/gamecode/test/test-mem \
 	libs/gamecode/test/test-scale \
 	libs/gamecode/test/test-stack \
+	libs/gamecode/test/test-state \
 	libs/gamecode/test/test-store \
 	libs/gamecode/test/test-string \
 	libs/gamecode/test/test-swizzle \
@@ -129,6 +130,10 @@ libs_gamecode_test_test_stack_SOURCES= \
 	libs/gamecode/test/test-stack.c
 libs_gamecode_test_test_stack_LDADD=			$(test_gamecode_libs)
 libs_gamecode_test_test_stack_DEPENDENCIES=		$(test_gamecode_libs)
+
+libs_gamecode_test_test_state_SOURCES= \
+	libs/gamecode/test/test-state.c
+libs_gamecode_test_test_state_LDADD=			$(test_gamecode_libs)
 
 libs_gamecode_test_test_store_SOURCES= \
 	libs/gamecode/test/test-store.c

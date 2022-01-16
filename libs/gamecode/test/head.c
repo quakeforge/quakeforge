@@ -36,4 +36,14 @@ typedef struct {
 	pr_int_t   *expect_globals;
 	const char *strings;
 	pr_uint_t   string_size;
+	// pointers/globals for state
+	double     *double_time;
+	pr_uint_t   dtime;
+	float      *float_time;
+	pr_uint_t   ftime;
+	pr_uint_t   self;
+	// fields for state
+	pr_uint_t   think;
+	pr_uint_t   nextthink;
+	pr_uint_t   frame;
 } test_t;

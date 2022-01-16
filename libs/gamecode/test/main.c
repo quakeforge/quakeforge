@@ -108,6 +108,20 @@ setup_test (test_t *test)
 	if (test->edict_area) {
 		test_pr.pr_edict_area = test_pr.pr_globals + test->edict_area;
 	}
+	if (test->double_time || test->float_time) {
+		test_pr.fields.nextthink = test->nextthink;
+		test_pr.fields.frame = test->frame;
+		test_pr.fields.think = test->think;
+		test_pr.globals.self = (pr_uint_t *) &test_pr.pr_globals[test->self];
+		if (test->double_time) {
+			test_pr.globals.dtime = (double *)&test_pr.pr_globals[test->dtime];
+			*test_pr.globals.dtime = *test->double_time;
+		}
+		if (test->float_time) {
+			test_pr.globals.ftime = (float *) &test_pr.pr_globals[test->ftime];
+			*test_pr.globals.ftime = *test->float_time;
+		}
+	}
 
 	test_progs.numstatements = test->num_statements + 1;
 	test_pr.pr_statements
