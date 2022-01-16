@@ -493,7 +493,7 @@ resolve (progs_t *pr)
 	resolve_fields (pr, qw_opt_fields, 0);
 	// progs engine needs these globals anyway
 	sv_pr_state.globals.self = sv_globals.self;
-	sv_pr_state.globals.time = sv_globals.time;
+	sv_pr_state.globals.ftime = sv_globals.time;//FIXME double time
 	return ret;
 }
 

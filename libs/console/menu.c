@@ -134,7 +134,7 @@ menu_resolve_globals (progs_t *pr)
 
 	if (!(def = PR_FindGlobal (pr, sym = "time")))
 		goto error;
-	menu_pr_state.globals.time = &G_FLOAT (pr, def->ofs);
+	menu_pr_state.globals.ftime = &G_FLOAT (pr, def->ofs);//FIXME double time
 	return 1;
 error:
 	Sys_Printf ("%s: undefined symbol %s\n", pr->progs_name, sym);
@@ -672,7 +672,7 @@ Menu_Draw (view_t *view)
 	if (menu->fadescreen)
 		r_funcs->Draw_FadeScreen ();
 
-	*menu_pr_state.globals.time = *con_data.realtime;
+	*menu_pr_state.globals.ftime = *con_data.realtime;//FIXME double time
 
 	if (menu->draw) {
 		int         ret;
@@ -729,7 +729,7 @@ void
 Menu_Draw_Hud (view_t *view)
 {
 	run_menu_pre ();
-	*menu_pr_state.globals.time = *con_data.realtime;
+	*menu_pr_state.globals.ftime = *con_data.realtime;//FIXME double time
 
 	PR_ExecuteProgram (&menu_pr_state, menu_draw_hud);
 	run_menu_post ();

@@ -1482,7 +1482,7 @@ op_call:
 					int         nextthink = pr->fields.nextthink + self;
 					int         frame = pr->fields.frame + self;
 					int         think = pr->fields.think + self;
-					float       time = *pr->globals.time + 0.1;
+					float       time = *pr->globals.ftime + 0.1;
 					pr->pr_edict_area[nextthink].float_var = time;
 					pr->pr_edict_area[frame].float_var = OPA(float);
 					pr->pr_edict_area[think].func_var = OPB(uint);
@@ -1494,7 +1494,7 @@ op_call:
 					int         nextthink = pr->fields.nextthink + self;
 					int         frame = pr->fields.frame + self;
 					int         think = pr->fields.think + self;
-					float       time = *pr->globals.time + OPC(float);
+					float       time = *pr->globals.ftime + OPC(float);
 					pr->pr_edict_area[nextthink].float_var = time;
 					pr->pr_edict_area[frame].float_var = OPA(float);
 					pr->pr_edict_area[think].func_var = OPB(uint);
@@ -2891,9 +2891,13 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				MM(ivec4) = STK(ivec4);
 				break;
 			// 0 0100
+			// spare
 			// 0 0101
+			// spare
 			// 0 0110
+			// spare
 			// 0 0111
+			// spare
 
 #define OP_cmp_1(OP, T, rt, cmp, ct) \
 			case OP_##OP##_##T##_1: \
@@ -2936,7 +2940,6 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_cmp(GE, >=);
 			// 0 1110
 			OP_cmp(LE, <=);
-
 			// 0 1111
 			// spare
 
@@ -3276,12 +3279,16 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				memmove (pr->pr_globals + OPC(int), pr->pr_globals + OPA(int),
 						 st->b * sizeof (pr_type_t));
 				break;
-			case OP_CONV:
-				switch (st->b) {
-#include "libs/gamecode/pr_convert.cinc"
-					default:
-						PR_RunError (pr, "invalid conversion code: %04o",
-									 st->b);
+			case OP_STATE_ft:
+				{
+					int         self = *pr->globals.self;
+					int         nextthink = pr->fields.nextthink + self;
+					int         frame = pr->fields.frame + self;
+					int         think = pr->fields.think + self;
+					float       time = *pr->globals.ftime + 0.1;
+					pr->pr_edict_area[nextthink].float_var = time;
+					pr->pr_edict_area[frame].float_var = OPA(float);
+					pr->pr_edict_area[think].func_var = op_b->func_var;
 				}
 				break;
 			OP_cmp_T (GE, U, long, lvec2, lvec4, >=, ulong, ulvec2, ulvec4);
@@ -3294,8 +3301,17 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_MEMSET_PI:
 				pr_memset (pr->pr_globals + OPC(int), OPA(int), st->b);
 				break;
-			case OP_WITH:
-				pr_with (pr, st);
+			case OP_STATE_ftt:
+				{
+					int         self = *pr->globals.self;
+					int         nextthink = pr->fields.nextthink + self;
+					int         frame = pr->fields.frame + self;
+					int         think = pr->fields.think + self;
+					float       time = *pr->globals.ftime + OPC(float);
+					pr->pr_edict_area[nextthink].float_var = time;
+					pr->pr_edict_area[frame].float_var = OPA(float);
+					pr->pr_edict_area[think].func_var = op_b->func_var;
+				}
 				break;
 			// 1 1110
 			OP_cmp_T (LE, u, int, ivec2, ivec4, <=, uint, uivec2, uivec4);
@@ -3317,15 +3333,15 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 					st = pr->pr_statements + pr->pr_xstatement;
 				}
 				break;
-			case OP_STATE_ft:
+			case OP_STATE_dt:
 				{
 					int         self = *pr->globals.self;
 					int         nextthink = pr->fields.nextthink + self;
 					int         frame = pr->fields.frame + self;
 					int         think = pr->fields.think + self;
-					float       time = *pr->globals.time + 0.1;
-					pr->pr_edict_area[nextthink].float_var = time;
-					pr->pr_edict_area[frame].float_var = OPA(float);
+					double      time = *pr->globals.dtime + 0.1;
+					*(double *) (&pr->pr_edict_area[nextthink]) = time;
+					pr->pr_edict_area[frame].integer_var = OPA(int);
 					pr->pr_edict_area[think].func_var = op_b->func_var;
 				}
 				break;
@@ -3348,15 +3364,15 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 					st = pr->pr_statements + pr->pr_xstatement;
 				}
 				break;
-			case OP_STATE_ftt:
+			case OP_STATE_dtt:
 				{
 					int         self = *pr->globals.self;
 					int         nextthink = pr->fields.nextthink + self;
 					int         frame = pr->fields.frame + self;
 					int         think = pr->fields.think + self;
-					float       time = *pr->globals.time + OPC(float);
-					pr->pr_edict_area[nextthink].float_var = time;
-					pr->pr_edict_area[frame].float_var = OPA(float);
+					double      time = *pr->globals.dtime + OPC(double);
+					*(double *) (&pr->pr_edict_area[nextthink]) = time;
+					pr->pr_edict_area[frame].integer_var = OPA(int);
 					pr->pr_edict_area[think].func_var = op_b->func_var;
 				}
 				break;
@@ -3384,8 +3400,17 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				OPC(dvec4) = vqmuld (OPA(dvec4), OPB(dvec4));
 				break;
 			//        10nn spare
-			//        1100 spare
-			//        1101 spare
+			case OP_CONV:
+				switch (st->b) {
+#include "libs/gamecode/pr_convert.cinc"
+					default:
+						PR_RunError (pr, "invalid conversion code: %04o",
+									 st->b);
+				}
+				break;
+			case OP_WITH:
+				pr_with (pr, st);
+				break;
 			//        1110 spare
 #define OP_hop2(vec, op) ((vec)[0] op (vec)[1])
 #define OP_hop3(vec, op) ((vec)[0] op (vec)[1] op (vec)[2])

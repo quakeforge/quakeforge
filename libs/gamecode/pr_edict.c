@@ -79,9 +79,9 @@ ED_Alloc (progs_t *pr)
 		e = EDICT_NUM (pr, i);
 		// the first couple seconds of server time can involve a lot of
 		// freeing and allocating, so relax the replacement policy
-		if (e->free && (!pr->globals.time
+		if (e->free && (!pr->globals.ftime//FIXME double time
 						|| e->freetime < 2
-						|| *pr->globals.time - e->freetime > 0.5)) {
+						|| *pr->globals.ftime - e->freetime > 0.5)) {
 			ED_ClearEdict (pr, e, 0);
 			return e;
 		}
@@ -123,8 +123,8 @@ ED_Free (progs_t *pr, edict_t *ed)
 			ED_ClearEdict (pr, ed, 0);
 	}
 	ed->free = true;
-	if (pr->globals.time)
-		ed->freetime = *pr->globals.time;
+	if (pr->globals.ftime)//FIXME double time
+		ed->freetime = *pr->globals.ftime;
 }
 
 //===========================================================================
@@ -199,7 +199,7 @@ ED_Count (progs_t *pr)
 	for (i = 0; i < *pr->num_edicts; i++) {
 		ent = EDICT_NUM (pr, i);
 		if (ent->free) {
-			if (pr->globals.time && *pr->globals.time - ent->freetime <= 0.5)
+			if (pr->globals.ftime && *pr->globals.ftime - ent->freetime <= 0.5)//FIXME double time
 				zombie++;
 			continue;
 		}

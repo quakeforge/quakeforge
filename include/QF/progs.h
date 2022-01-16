@@ -1962,7 +1962,8 @@ struct progs_s {
 	/// \name globals and fields needed by the VM
 	///@{
 	struct {
-		float      *time;		///< required for OP_STATE
+		double     *dtime;		///< required for OP_STATE d
+		float      *ftime;		///< required for OP_STATE f
 		pr_int_t   *self;		///< required for OP_STATE
 		pointer_t  *stack;		///< required for OP_(PUSH|POP)*
 	} globals;

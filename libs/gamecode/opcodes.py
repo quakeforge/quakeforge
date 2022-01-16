@@ -19,14 +19,16 @@ bitmap_txt = """
 1 1010 t100 swizzle
 1 1011 tooo vecops
 1 1101 01oo move
-1 1101 0111 convert (conversion mode in st->b)
 1 1101 11oo memset
-1 1101 1111 with (mode in st->a, value in st->b, reg in st->c)
+1 1101 c111 statef
 1 1110 c1cc branch
-1 1110 t111 state
+1 1110 c111 stated
 1 1111 00mm lea
 1 1111 01td vecops2
-1 1111 1nnn
+1 1111 10nn
+1 1111 1100 convert (conversion mode in st->b)
+1 1111 1101 with (mode in st->a, value in st->b, reg in st->c)
+1 1111 1110
 1 1111 1111 hops
 """
 
@@ -328,17 +330,30 @@ shiftops_formats = {
         ],
     },
 }
-state_formats = {
-    "opcode": "OP_STATE_{state[t]}",
-    "mnemonic": "state.{state[t]}",
+statef_formats = {
+    "opcode": "OP_STATE_{state[c]}",
+    "mnemonic": "state.{state[c]}",
     "opname": "state",
-    "format": "{state_fmt[t]}",
+    "format": "{state_fmt[c]}",
     "widths": "1, 1, 1",
-    "types": "ev_float, ev_func, {state_types[t]}",
+    "types": "ev_float, ev_func, {state_types[c]}",
     "args": {
         "state": ["ft", "ftt"],
         "state_fmt": ["%Ga, %Gb", "%Ga, %Gb, %Gc"],
         "state_types": ["ev_invalid", "ev_float"],
+    },
+}
+stated_formats = {
+    "opcode": "OP_STATE_{state[c]}",
+    "mnemonic": "state.{state[c]}",
+    "opname": "state",
+    "format": "{state_fmt[c]}",
+    "widths": "1, 1, 1",
+    "types": "ev_float, ev_func, {state_types[c]}",
+    "args": {
+        "state": ["dt", "dtt"],
+        "state_fmt": ["%Ga, %Gb", "%Ga, %Gb, %Gc"],
+        "state_types": ["ev_invalid", "ev_double"],
     },
 }
 store_formats = {
@@ -476,7 +491,8 @@ group_map = {
     "popregs":  popregs_formats,
     "scale":    scale_formats,
     "shiftops": shiftops_formats,
-    "state":    state_formats,
+    "statef":   statef_formats,
+    "stated":   stated_formats,
     "store":    store_formats,
     "string":   string_formats,
     "swizzle":  swizzle_formats,

@@ -1637,7 +1637,7 @@ PR_Check_Opcodes (progs_t *pr)
 	int         pushpop_ok = 0;
 	pr_uint_t   i;
 
-	if (pr->globals.time && pr->globals.self && pr->fields.nextthink != -1
+	if (pr->globals.ftime && pr->globals.self && pr->fields.nextthink != -1
 		&& pr->fields.think != -1 && pr->fields.frame != -1) {
 		state_ok = 1;
 	}
