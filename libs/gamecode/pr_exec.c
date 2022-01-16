@@ -3387,8 +3387,12 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			//        1100 spare
 			//        1101 spare
 			//        1110 spare
+#define OP_hop2(vec, op) ((vec)[0] op (vec)[1])
+#define OP_hop3(vec, op) ((vec)[0] op (vec)[1] op (vec)[2])
+#define OP_hop4(vec, op) ((vec)[0] op (vec)[1] op (vec)[2] op (vec)[3])
 			case OP_HOPS:
 				switch (st->b) {
+#include "libs/gamecode/pr_hops.cinc"
 					default:
 						PR_RunError (pr, "invalid hops code: %04o",
 									 st->b);
