@@ -28,7 +28,7 @@ static dstatement_t int_binop_1_statements[] = {
 	{ OP(0, 0, 0, OP_LEA_A), 4, 0, 32 },	// init index
 //loop:
 	{ OP(0, 0, 0, OP_LEA_C), 32, -1, 32 },	// dec index
-	{ OP(0, 0, 0, OP_IFAE_A), 2, 0, 32 },
+	{ OP(0, 0, 0, OP_IFAE), 2, 0, 32 },
 	{ OP(0, 0, 0, OP_BREAK), 0, 0, 0 },
 	{ OP(0, 0, 0, OP_WITH), 4, 32, 1 },
 	{ OP(1, 1, 1, OP_MUL_I_1), 0, 4,  8 },
@@ -44,7 +44,7 @@ static dstatement_t int_binop_2_statements[] = {
 	{ OP(0, 0, 0, OP_LEA_A), 4, 0, 32 },	// index
 //loop:
 	{ OP(0, 0, 0, OP_LEA_C), 32, -2, 32 },	// dec index
-	{ OP(0, 0, 0, OP_IFAE_A), 2, 0, 32 },
+	{ OP(0, 0, 0, OP_IFAE), 2, 0, 32 },
 	{ OP(0, 0, 0, OP_BREAK), 0, 0, 0 },
 	{ OP(0, 0, 0, OP_WITH), 4, 32, 1 },
 	{ OP(1, 1, 1, OP_MUL_I_2), 0, 4,  8 },
@@ -121,7 +121,7 @@ static dstatement_t int_cmpop_1_statements[] = {
 	{ OP(0, 0, 0, OP_LEA_A), 4, 0, 32 },	// init index
 //loop:
 	{ OP(0, 0, 0, OP_LEA_C), 32, -1, 32 },	// dec index
-	{ OP(0, 0, 0, OP_IFAE_A), 2, 0, 32 },
+	{ OP(0, 0, 0, OP_IFAE), 2, 0, 32 },
 	{ OP(0, 0, 0, OP_BREAK), 0, 0, 0 },
 	{ OP(0, 0, 0, OP_WITH), 4, 32, 1 },
 	{ OP(1, 1, 1, OP_EQ_I_1), 0, 4,  8 },
@@ -137,7 +137,7 @@ static dstatement_t int_cmpop_2_statements[] = {
 	{ OP(0, 0, 0, OP_LEA_A), 4, 0, 32 },	// index
 //loop:
 	{ OP(0, 0, 0, OP_LEA_C), 32, -2, 32 },	// dec index
-	{ OP(0, 0, 0, OP_IFAE_A), 2, 0, 32 },
+	{ OP(0, 0, 0, OP_IFAE), 2, 0, 32 },
 	{ OP(0, 0, 0, OP_BREAK), 0, 0, 0 },
 	{ OP(0, 0, 0, OP_WITH), 4, 32, 1 },
 	{ OP(1, 1, 1, OP_EQ_I_2), 0, 4,  8 },

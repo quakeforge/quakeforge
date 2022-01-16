@@ -70,7 +70,7 @@ static dstatement_t bool64_conv_1_statements[] = {
 //loop:
 	{ OP(0, 0, 0, OP_LEA_C), 112, -1, 112 },	// dec index
 	{ OP(0, 0, 0, OP_LEA_C), 113, -2, 113 },	// dec index for 64-bits
-	{ OP(0, 0, 0, OP_IFAE_A), 2, 0, 112 },
+	{ OP(0, 0, 0, OP_IFAE), 2, 0, 112 },
 	{ OP(0, 0, 0, OP_BREAK), 0, 0, 0 },
 	{ OP(0, 0, 0, OP_WITH), 4, 112, 1 },
 	{ OP(0, 0, 0, OP_WITH), 4, 113, 2 },
@@ -91,7 +91,7 @@ static dstatement_t bool64_conv_2_statements[] = {
 //loop:
 	{ OP(0, 0, 0, OP_LEA_C), 112, -2, 112 },	// dec index
 	{ OP(0, 0, 0, OP_LEA_C), 113, -4, 113 },	// dec index for 64-bits
-	{ OP(0, 0, 0, OP_IFAE_A), 2, 0, 112 },
+	{ OP(0, 0, 0, OP_IFAE), 2, 0, 112 },
 	{ OP(0, 0, 0, OP_BREAK), 0, 0, 0 },
 	{ OP(0, 0, 0, OP_WITH), 4, 112, 1 },
 	{ OP(0, 0, 0, OP_WITH), 4, 113, 2 },

@@ -28,7 +28,7 @@ static dstatement_t uint_cmpop_1_statements[] = {
 	{ OP(0, 0, 0, OP_LEA_A), 4, 0, 32 },	// init index
 //loop:
 	{ OP(0, 0, 0, OP_LEA_C), 32, -1, 32 },	// dec index
-	{ OP(0, 0, 0, OP_IFAE_A), 2, 0, 32 },
+	{ OP(0, 0, 0, OP_IFAE), 2, 0, 32 },
 	{ OP(0, 0, 0, OP_BREAK), 0, 0, 0 },
 	{ OP(0, 0, 0, OP_WITH), 4, 32, 1 },
 	// no unsigned EQ (redundant)
@@ -44,7 +44,7 @@ static dstatement_t uint_cmpop_2_statements[] = {
 	{ OP(0, 0, 0, OP_LEA_A), 4, 0, 32 },	// index
 //loop:
 	{ OP(0, 0, 0, OP_LEA_C), 32, -2, 32 },	// dec index
-	{ OP(0, 0, 0, OP_IFAE_A), 2, 0, 32 },
+	{ OP(0, 0, 0, OP_IFAE), 2, 0, 32 },
 	{ OP(0, 0, 0, OP_BREAK), 0, 0, 0 },
 	{ OP(0, 0, 0, OP_WITH), 4, 32, 1 },
 	// no unsigned EQ (redundant)
@@ -121,7 +121,7 @@ static dstatement_t ulong_cmpop_1_statements[] = {
 	{ OP(0, 0, 0, OP_LEA_A),    8,  0, 64 },	// init index
 //loop:
 	{ OP(0, 0, 0, OP_LEA_C),   64, -2, 64 },	// dec index
-	{ OP(0, 0, 0, OP_IFAE_A),   2,  0, 64 },
+	{ OP(0, 0, 0, OP_IFAE),   2,  0, 64 },
 	{ OP(0, 0, 0, OP_BREAK),    0,  0,  0 },
 	{ OP(0, 0, 0, OP_WITH),     4, 64,  1 },
 	// no unsigned EQ (redundant)
@@ -137,7 +137,7 @@ static dstatement_t ulong_cmpop_2_statements[] = {
 	{ OP(0, 0, 0, OP_LEA_A),    8,  0, 64 },	// init index
 //loop:
 	{ OP(0, 0, 0, OP_LEA_C),   64, -4, 64 },	// dec index
-	{ OP(0, 0, 0, OP_IFAE_A),   2,  0, 64 },
+	{ OP(0, 0, 0, OP_IFAE),   2,  0, 64 },
 	{ OP(0, 0, 0, OP_BREAK),    0,  0,  0 },
 	{ OP(0, 0, 0, OP_WITH),     4, 64,  1 },
 	// no unsigned EQ (redundant)
@@ -216,7 +216,7 @@ static dstatement_t uint_shiftop_1_statements[] = {
 	{ OP(0, 0, 0, OP_LEA_A), 4, 0, 36 },	// init index
 //loop:
 	{ OP(0, 0, 0, OP_LEA_C), 36, -1, 36 },	// dec index
-	{ OP(0, 0, 0, OP_IFAE_A), 2, 0, 36 },
+	{ OP(0, 0, 0, OP_IFAE), 2, 0, 36 },
 	{ OP(0, 0, 0, OP_BREAK), 0, 0, 0 },
 	{ OP(0, 0, 0, OP_WITH), 4, 36, 1 },
 	{ OP(1, 1, 1, OP_SHL_I_1), 0, 4, 12 },
@@ -232,7 +232,7 @@ static dstatement_t uint_shiftop_2_statements[] = {
 	{ OP(0, 0, 0, OP_LEA_A), 4, 0, 36 },	// index
 //loop:
 	{ OP(0, 0, 0, OP_LEA_C), 36, -2, 36 },	// dec index
-	{ OP(0, 0, 0, OP_IFAE_A), 2, 0, 36 },
+	{ OP(0, 0, 0, OP_IFAE), 2, 0, 36 },
 	{ OP(0, 0, 0, OP_BREAK), 0, 0, 0 },
 	{ OP(0, 0, 0, OP_WITH), 4, 36, 1 },
 	{ OP(1, 1, 1, OP_SHL_I_2), 0, 4, 12 },
@@ -319,7 +319,7 @@ static dstatement_t ulong_shiftop_1_statements[] = {
 	{ OP(0, 0, 0, OP_LEA_A), 8, 0, 72 },	// init index
 //loop:
 	{ OP(0, 0, 0, OP_LEA_C), 72, -2, 72 },	// dec index
-	{ OP(0, 0, 0, OP_IFAE_A), 2, 0, 72 },
+	{ OP(0, 0, 0, OP_IFAE), 2, 0, 72 },
 	{ OP(0, 0, 0, OP_BREAK), 0, 0, 0 },
 	{ OP(0, 0, 0, OP_WITH), 4, 72, 1 },
 	{ OP(1, 1, 1, OP_SHL_L_1), 0,  8, 24 },
@@ -335,7 +335,7 @@ static dstatement_t ulong_shiftop_2_statements[] = {
 	{ OP(0, 0, 0, OP_LEA_A), 8, 0, 72 },	// index
 //loop:
 	{ OP(0, 0, 0, OP_LEA_C), 72, -4, 72 },	// dec index
-	{ OP(0, 0, 0, OP_IFAE_A), 2, 0, 72 },
+	{ OP(0, 0, 0, OP_IFAE), 2, 0, 72 },
 	{ OP(0, 0, 0, OP_BREAK), 0, 0, 0 },
 	{ OP(0, 0, 0, OP_WITH), 4, 72, 1 },
 	{ OP(1, 1, 1, OP_SHL_L_2), 0,  8, 24 },

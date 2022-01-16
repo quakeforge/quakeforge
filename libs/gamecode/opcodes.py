@@ -3,41 +3,31 @@ bitmap_txt = """
 0 0001 mmss store
 0 0010 mmss push
 0 0011 mmss pop
-0 010c ccmm branch
-
-# while call and return are part of the branch block, they have different
-# handling for addressing and formatting
-0 0101 11mm call (return specified st->c)
-0 0101 1100 return (size in st->c)
-
-0 0110 0nnn
-0 0110 10mm lea
-0 0110 1100 convert (conversion mode in st->b)
-0 0110 1101 with (mode in st->a, value in st->b, reg in st->c)
-0 0110 111t state
-0 0111 tooo vecops
 0 1ccc ttss compare
+0 1011 nnnn
+0 1111 nnnn
+
 1 0ooo ttss mathops
 1 011r tuss shiftops
 1 0110 o1oo string
 1 1ccc t0ss compare2
-1 1001 t1ss scale
-1 1001 t100 swizzle
-1 1010 d1xx
-1 1011 00nn
-1 1011 01ss any
-1 1011 0100
-1 1011 10ss all
-1 1011 1000
-1 1011 11ss none
-1 1011 1100
-1 1101 01oo move
-1 1101 11oo memset
-1 1110 d1xx
-1 11dd t100 vecops2
 1 1t00 ooss bitops
-n 1111 nnnn
-0 1011 nnnn
+1 1001 01mm jump
+1 1001 11mm call (return specified st->c)
+1 1001 1100 return (size in st->c)
+1 1010 t1ss scale
+1 1010 t100 swizzle
+1 1011 tooo vecops
+1 1101 01oo move
+1 1101 0111 convert (conversion mode in st->b)
+1 1101 11oo memset
+1 1101 1111 with (mode in st->a, value in st->b, reg in st->c)
+1 1110 c1cc branch
+1 1110 t111 state
+1 1111 00mm lea
+1 1111 01td vecops2
+1 1111 1nnn
+1 1111 1111 hops
 """
 
 import copy
@@ -96,16 +86,16 @@ bitops_formats = {
     },
 }
 branch_formats = {
-    "opcode": "OP_{op_cond[ccc].upper()}_{op_mode[mm]}",
-    "mnemonic": "{op_cond[ccc]}",
-    "opname": "{op_cond[ccc]}",
-    "format": "{cond_fmt[ccc]}{branch_fmt[mm]}",
-    "widths": "{cond_widths[ccc]}",
+    "opcode": "OP_{op_cond[c*4+cc].upper()}",
+    "mnemonic": "{op_cond[c*4+cc]}",
+    "opname": "{op_cond[c*4+cc]}",
+    "format": "{cond_fmt[c*4+cc]}{branch_fmt[0]}",
+    "widths": "{cond_widths[c*4+cc]}",
     "types": "ev_void, ev_void, ev_integer",
     "args": {
         "op_mode": "ABCD",
-        "op_cond": ["ifz",  "ifb",  "ifa",  "jump",
-                    "ifnz", "ifae", "ifbe", None],  #call and return seprate
+        "op_cond": ["ifz",  "ifb",  "ifa",  None,
+                    "ifnz", "ifae", "ifbe", None],
         "branch_fmt": branch_fmt,
         "cond_fmt": ["%Gc ", "%Gc ", "%Gc ", "", "%Gc ", "%Gc ", "%Gc ", ""],
         "cond_widths": [
@@ -169,6 +159,26 @@ convert_formats = {
     "widths": "1, 0, 1",
     "types": "ev_void, ev_short, ev_void",
 }
+hops_formats = {
+    "opcode": "OP_HOPS",
+    "mnemonic": "hops",
+    "opname": "hops",
+    "format": "%Ga %Hb %gc",
+    "widths": "1, 0, 1",
+    "types": "ev_void, ev_short, ev_void",
+}
+jump_formats = {
+    "opcode": "OP_JUMP_{op_mode[mm]}",
+    "mnemonic": "jump",
+    "opname": "jump",
+    "format": "{branch_fmt[mm]}",
+    "widths": "0, 0, 0",
+    "types": "ev_void, ev_void, ev_invalid",
+    "args": {
+        "op_mode": "ABCD",
+        "branch_fmt": branch_fmt,
+    },
+}
 lea_formats = {
     "opcode": "OP_LEA_{op_mode[mm]}",
     "mnemonic": "lea",
@@ -218,8 +228,8 @@ memset_formats = {
     "widths": "0, 0, 0",
     "types": "ev_integer, ev_void, ev_void",
     "args": {
-        "op_memset": [None, "i", "p", "pi"],
-        "memset_fmt": [None, "%Ga, %sb, %gc", "%Ga, %Gb, %Gc", "%Ga, %sb, %Gc"],
+        "op_memset": ["i", "p", "pi", None],
+        "memset_fmt": ["%Ga, %sb, %gc", "%Ga, %Gb, %Gc", "%Ga, %sb, %Gc", None],
     },
 }
 move_formats = {
@@ -230,8 +240,8 @@ move_formats = {
     "widths": "0, 0, 0",
     "types": "ev_integer, ev_void, ev_void",
     "args": {
-        "op_move": [None, "i", "p", "pi"],
-        "move_fmt": [None, "%Ga, %sb, %gc", "%Ga, %Gb, %Gc", "%Ga, %sb, %Gc"],
+        "op_move": ["i", "p", "pi", None],
+        "move_fmt": ["%Ga, %sb, %gc", "%Ga, %Gb, %Gc", "%Ga, %sb, %Gc", None],
     },
 }
 none_formats = {
@@ -423,13 +433,13 @@ vecops_formats = {
     },
 }
 vecops2_formats = {
-    "opcode": "OP_{op_vop[dd].upper()}_{vop_type[t]}",
-    "mnemonic": "{op_vop[dd]}.{vop_type[t]}",
-    "opname": "{op_vop[dd]}",
+    "opcode": "OP_{op_vop[d].upper()}_{vop_type[t]}",
+    "mnemonic": "{op_vop[d]}.{vop_type[t]}",
+    "opname": "{op_vop[d]}",
     "widths": "4, 4, 4",
     "types": "{vec_types[t]}, {vec_types[t]}, {vec_types[t]}",
     "args": {
-        "op_vop": [None, "qv4mul", "v4qmul", None],
+        "op_vop": ["qv4mul", "v4qmul"],
         "vop_type": ['F', 'D'],
         "vec_types": float_t,
     },
@@ -452,6 +462,8 @@ group_map = {
     "compare":  compare_formats,
     "compare2": compare2_formats,
     "convert":  convert_formats,
+    "hops":     hops_formats,
+    "jump":     jump_formats,
     "lea":      lea_formats,
     "load":     load_formats,
     "mathops":  mathops_formats,
@@ -522,6 +534,7 @@ def process_opcode(opcode, group):
         params.update(gm["args"])
     inst = {}
     opcodes[opcode] = inst
+    #print(f"{opcode:03x}", group)
     inst["op"] = eval(f'''f"{gm['opcode']}"''', params)
     mn = eval(f'''f"{gm['mnemonic']}"''', params)
     inst["mn"] = f'"{mn}"'

@@ -30,7 +30,7 @@ static dstatement_t double_binop_1_statements[] = {
 	{ OP(0, 0, 0, OP_LEA_A),    8,  0, 64 },	// init index
 //loop:
 	{ OP(0, 0, 0, OP_LEA_C),   64, -2, 64 },	// dec index
-	{ OP(0, 0, 0, OP_IFAE_A),   2,  0, 64 },
+	{ OP(0, 0, 0, OP_IFAE),   2,  0, 64 },
 	{ OP(0, 0, 0, OP_BREAK),    0,  0,  0 },
 	{ OP(0, 0, 0, OP_WITH),     4, 64,  1 },
 	{ OP(1, 1, 1, OP_MUL_D_1),  0,  8, 16 },
@@ -46,7 +46,7 @@ static dstatement_t double_binop_2_statements[] = {
 	{ OP(0, 0, 0, OP_LEA_A),    8,  0, 64 },	// init index
 //loop:
 	{ OP(0, 0, 0, OP_LEA_C),   64, -4, 64 },	// dec index
-	{ OP(0, 0, 0, OP_IFAE_A),   2,  0, 64 },
+	{ OP(0, 0, 0, OP_IFAE),   2,  0, 64 },
 	{ OP(0, 0, 0, OP_BREAK),    0,  0,  0 },
 	{ OP(0, 0, 0, OP_WITH),     4, 64,  1 },
 	{ OP(1, 1, 1, OP_MUL_D_2),  0,  8, 16 },
@@ -129,7 +129,7 @@ static dstatement_t double_cossin_statements[] = {
 	{ OP(0, 0, 0, OP_DIV_D_2),   40,  16,   40 },	// xn /= f
 	{ OP(0, 0, 0, OP_ADD_D_2),   16,  24,   16 },	// f += inc
 	{ OP(0, 0, 0, OP_LT_D_1),    16,  30,   46 },	// f0 < fmax
-	{ OP(0, 0, 0, OP_IFNZ_A),    -7,   0,   46 },	// f0 < fmax
+	{ OP(0, 0, 0, OP_IFNZ),    -7,   0,   46 },	// f0 < fmax
 };
 
 static pr_dvec4_t double_cmpop_init[] = {
@@ -161,7 +161,7 @@ static dstatement_t double_cmpop_1_statements[] = {
 	{ OP(0, 0, 0, OP_LEA_A),    8,  0, 64 },	// init index
 //loop:
 	{ OP(0, 0, 0, OP_LEA_C),   64, -2, 64 },	// dec index
-	{ OP(0, 0, 0, OP_IFAE_A),   2,  0, 64 },
+	{ OP(0, 0, 0, OP_IFAE),   2,  0, 64 },
 	{ OP(0, 0, 0, OP_BREAK),    0,  0,  0 },
 	{ OP(0, 0, 0, OP_WITH),     4, 64,  1 },
 	{ OP(1, 1, 1, OP_EQ_D_1),  0,  8, 16 },
@@ -177,7 +177,7 @@ static dstatement_t double_cmpop_2_statements[] = {
 	{ OP(0, 0, 0, OP_LEA_A),    8,  0, 64 },	// init index
 //loop:
 	{ OP(0, 0, 0, OP_LEA_C),   64, -4, 64 },	// dec index
-	{ OP(0, 0, 0, OP_IFAE_A),   2,  0, 64 },
+	{ OP(0, 0, 0, OP_IFAE),   2,  0, 64 },
 	{ OP(0, 0, 0, OP_BREAK),    0,  0,  0 },
 	{ OP(0, 0, 0, OP_WITH),     4, 64,  1 },
 	{ OP(1, 1, 1, OP_EQ_D_2),  0,  8, 16 },

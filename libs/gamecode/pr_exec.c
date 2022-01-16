@@ -1830,11 +1830,10 @@ pr_call_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 }
 
 static pr_pointer_t __attribute__((pure))
-pr_jump_mode (progs_t *pr, const dstatement_t *st)
+pr_jump_mode (progs_t *pr, const dstatement_t *st, int jump_ind)
 {
 	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, A);
 	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, B);
-	int         jump_ind = st->op & 3;
 	pointer_t   jump_offs = pr->pr_xstatement;
 
 	switch (jump_ind) {
@@ -2892,228 +2891,9 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				MM(ivec4) = STK(ivec4);
 				break;
 			// 0 0100
-			case OP_IFZ_A:
-			case OP_IFZ_B:
-			case OP_IFZ_C:
-			case OP_IFZ_D:
-				if (!OPC(int)) {
-					pr->pr_xstatement = pr_jump_mode (pr, st);
-					st = pr->pr_statements + pr->pr_xstatement;
-				}
-				break;
-			case OP_IFB_A:
-			case OP_IFB_B:
-			case OP_IFB_C:
-			case OP_IFB_D:
-				if (OPC(int) < 0) {
-					pr->pr_xstatement = pr_jump_mode (pr, st);
-					st = pr->pr_statements + pr->pr_xstatement;
-				}
-				break;
-			case OP_IFA_A:
-			case OP_IFA_B:
-			case OP_IFA_C:
-			case OP_IFA_D:
-				if (OPC(int) > 0) {
-					pr->pr_xstatement = pr_jump_mode (pr, st);
-					st = pr->pr_statements + pr->pr_xstatement;
-				}
-				break;
-			case OP_JUMP_A:
-			case OP_JUMP_B:
-			case OP_JUMP_C:
-			case OP_JUMP_D:
-				pr->pr_xstatement = pr_jump_mode (pr, st);
-				st = pr->pr_statements + pr->pr_xstatement;
-				break;
 			// 0 0101
-			case OP_IFNZ_A:
-			case OP_IFNZ_B:
-			case OP_IFNZ_C:
-			case OP_IFNZ_D:
-				if (OPC(int)) {
-					pr->pr_xstatement = pr_jump_mode (pr, st);
-					st = pr->pr_statements + pr->pr_xstatement;
-				}
-				break;
-			case OP_IFAE_A:
-			case OP_IFAE_B:
-			case OP_IFAE_C:
-			case OP_IFAE_D:
-				if (OPC(int) >= 0) {
-					pr->pr_xstatement = pr_jump_mode (pr, st);
-					st = pr->pr_statements + pr->pr_xstatement;
-				}
-				break;
-			case OP_IFBE_A:
-			case OP_IFBE_B:
-			case OP_IFBE_C:
-			case OP_IFBE_D:
-				if (OPC(int) <= 0) {
-					pr->pr_xstatement = pr_jump_mode (pr, st);
-					st = pr->pr_statements + pr->pr_xstatement;
-				}
-				break;
-			case OP_RETURN:
-				int         ret_size = st->c & 0x1f;	// up to 32 words
-				if (ret_size) {
-					mm = pr_return_mode (pr, st, (st->c >> 5) & 7);
-					memcpy (&R_INT (pr), mm, ret_size * sizeof (*op_a));
-				}
-				pr->pr_xfunction->profile += profile - startprofile;
-				startprofile = profile;
-				PR_LeaveFunction (pr, pr->pr_depth == exitdepth);
-				st = pr->pr_statements + pr->pr_xstatement;
-				if (pr->pr_depth== exitdepth) {
-					if (pr->pr_trace && pr->pr_depth <= pr->pr_trace_depth) {
-						pr->pr_trace = false;
-					}
-					goto exit_program;
-				}
-				break;
-			case OP_CALL_B:
-			case OP_CALL_C:
-			case OP_CALL_D:
-				mm = pr_call_mode (pr, st, st->c & 3);
-				function = mm->func_var;
-				pr->pr_argc = 0;
-				// op_c specifies the location for the return value if any
-				pr->pr_return = op_c;
-				pr->pr_xfunction->profile += profile - startprofile;
-				startprofile = profile;
-				PR_CallFunction (pr, function);
-				st = pr->pr_statements + pr->pr_xstatement;
-				break;
 			// 0 0110
-			//        0nnn spare
-			case OP_LEA_A:
-			case OP_LEA_C:
-			case OP_LEA_D:
-				mm = pr_address_mode (pr, st, (st_op - OP_LEA_A));
-				op_c->pointer_var = mm - pr->pr_globals;
-				break;
-			case OP_LEA_E:
-				mm = pr_address_mode (pr, st, 4);
-				op_c->pointer_var = mm - pr->pr_globals;
-				break;
-			case OP_CONV:
-				switch (st->b) {
-#include "libs/gamecode/pr_convert.cinc"
-					default:
-						PR_RunError (pr, "invalid conversion code: %04o",
-									 st->b);
-				}
-				break;
-			case OP_WITH:
-				pr_with (pr, st);
-				break;
-			case OP_STATE_ft:
-				{
-					int         self = *pr->globals.self;
-					int         nextthink = pr->fields.nextthink + self;
-					int         frame = pr->fields.frame + self;
-					int         think = pr->fields.think + self;
-					float       time = *pr->globals.time + 0.1;
-					pr->pr_edict_area[nextthink].float_var = time;
-					pr->pr_edict_area[frame].float_var = OPA(float);
-					pr->pr_edict_area[think].func_var = op_b->func_var;
-				}
-				break;
-			case OP_STATE_ftt:
-				{
-					int         self = *pr->globals.self;
-					int         nextthink = pr->fields.nextthink + self;
-					int         frame = pr->fields.frame + self;
-					int         think = pr->fields.think + self;
-					float       time = *pr->globals.time + OPC(float);
-					pr->pr_edict_area[nextthink].float_var = time;
-					pr->pr_edict_area[frame].float_var = OPA(float);
-					pr->pr_edict_area[think].func_var = op_b->func_var;
-				}
-				break;
 			// 0 0111
-			case OP_CROSS_F:
-				{
-					pr_vec4_t   a = loadvec3f (&OPA(float));
-					pr_vec4_t   b = loadvec3f (&OPB(float));
-					pr_vec4_t   c = crossf (a, b);
-					storevec3f (&OPC(float), c);
-				}
-				break;
-			case OP_CDOT_F:
-				OPC(vec2) = dot2f (OPA(vec2), OPB(vec2));
-				break;
-			case OP_VDOT_F:
-				{
-					vec_t       d = DotProduct (&OPA(float),
-												&OPB(float));
-					VectorSet (d, d, d, &OPC(float));
-				}
-				break;
-			case OP_QDOT_F:
-				OPC(vec4) = dotf (OPA(vec4), OPB(vec4));
-				break;
-			case OP_CMUL_F:
-				OPC(vec2) = cmulf (OPA(vec2), OPB(vec2));
-				break;
-			case OP_QVMUL_F:
-				{
-					pr_vec4_t   v = loadvec3f (&OPB(float));
-					v = qvmulf (OPA(vec4), v);
-					storevec3f (&OPC(float), v);
-				}
-				break;
-			case OP_VQMUL_F:
-				{
-					pr_vec4_t   v = loadvec3f (&OPA(float));
-					v = vqmulf (v, OPB(vec4));
-					storevec3f (&OPC(float), v);
-				}
-				break;
-			case OP_QMUL_F:
-				OPC(vec4) = qmulf (OPA(vec4), OPB(vec4));
-				break;
-			case OP_CROSS_D:
-				{
-					pr_dvec4_t  a = loadvec3d (&OPA(double));
-					pr_dvec4_t  b = loadvec3d (&OPB(double));
-					pr_dvec4_t  c = crossd (a, b);
-					storevec3d (&OPC(double), c);
-				}
-				break;
-			case OP_CDOT_D:
-				OPC(dvec2) = dot2d (OPA(dvec2), OPB(dvec2));
-				break;
-			case OP_VDOT_D:
-				{
-					double      d = DotProduct (&OPA(double),
-												&OPB(double));
-					VectorSet (d, d, d, &OPC(double));
-				}
-				break;
-			case OP_QDOT_D:
-				OPC(dvec4) = dotd (OPA(dvec4), OPB(dvec4));
-				break;
-			case OP_CMUL_D:
-				OPC(dvec2) = cmuld (OPA(dvec2), OPB(dvec2));
-				break;
-			case OP_QVMUL_D:
-				{
-					pr_dvec4_t   v = loadvec3d (&OPB(double));
-					v = qvmuld (OPA(dvec4), v);
-					storevec3d (&OPC(double), v);
-				}
-				break;
-			case OP_VQMUL_D:
-				{
-					pr_dvec4_t  v = loadvec3d (&OPA(double));
-					v = vqmuld (v, OPB(dvec4));
-					storevec3d (&OPC(double), v);
-				}
-				break;
-			case OP_QMUL_D:
-				OPC(dvec4) = qmuld (OPA(dvec4), OPB(dvec4));
-				break;
 
 #define OP_cmp_1(OP, T, rt, cmp, ct) \
 			case OP_##OP##_##T##_1: \
@@ -3330,6 +3110,46 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_uop_T (BITNOT, I, int, ivec2, ivec4, ~);
 			// 1 1001
 			OP_cmp_T (LT, u, int, ivec2, ivec4, <, uint, uivec2, uivec4);
+			case OP_JUMP_A:
+			case OP_JUMP_B:
+			case OP_JUMP_C:
+			case OP_JUMP_D:
+				pr->pr_xstatement = pr_jump_mode (pr, st, st_op - OP_JUMP_A);
+				st = pr->pr_statements + pr->pr_xstatement;
+				break;
+			OP_cmp_T (LT, U, long, lvec2, lvec4, <, ulong, ulvec2, ulvec4);
+			case OP_RETURN:
+				int         ret_size = st->c & 0x1f;	// up to 32 words
+				if (ret_size) {
+					mm = pr_return_mode (pr, st, (st->c >> 5) & 7);
+					memcpy (&R_INT (pr), mm, ret_size * sizeof (*op_a));
+				}
+				pr->pr_xfunction->profile += profile - startprofile;
+				startprofile = profile;
+				PR_LeaveFunction (pr, pr->pr_depth == exitdepth);
+				st = pr->pr_statements + pr->pr_xstatement;
+				if (pr->pr_depth== exitdepth) {
+					if (pr->pr_trace && pr->pr_depth <= pr->pr_trace_depth) {
+						pr->pr_trace = false;
+					}
+					goto exit_program;
+				}
+				break;
+			case OP_CALL_B:
+			case OP_CALL_C:
+			case OP_CALL_D:
+				mm = pr_call_mode (pr, st, st->c & 3);
+				function = mm->func_var;
+				pr->pr_argc = 0;
+				// op_c specifies the location for the return value if any
+				pr->pr_return = op_c;
+				pr->pr_xfunction->profile += profile - startprofile;
+				startprofile = profile;
+				PR_CallFunction (pr, function);
+				st = pr->pr_statements + pr->pr_xstatement;
+				break;
+			// 1 1010
+			OP_cmp_T (GT, u, int, ivec2, ivec4, >, uint, uivec2, uivec4);
 			case OP_SWIZZLE_F:
 				OPC(ivec4) = pr_swizzle_f (OPA(ivec4), st->b);
 				break;
@@ -3342,7 +3162,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_SCALE_F_4:
 				OPC(vec4) = OPA(vec4) * OPB(float);
 				break;
-			OP_cmp_T (LT, U, long, lvec2, lvec4, <, ulong, ulvec2, ulvec4);
+			OP_cmp_T (GT, U, long, lvec2, lvec4, >, ulong, ulvec2, ulvec4);
 			case OP_SWIZZLE_D:
 				OPC(lvec4) = pr_swizzle_d (OPA(lvec4), st->b);
 				break;
@@ -3355,53 +3175,89 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_SCALE_D_4:
 				OPC(dvec4) = OPA(dvec4) * OPB(double);
 				break;
-			// 1 1010
-			OP_cmp_T (GT, u, int, ivec2, ivec4, >, uint, uivec2, uivec4);
-			// spare
-			OP_cmp_T (GT, U, long, lvec2, lvec4, >, ulong, ulvec2, ulvec4);
-			// spare
 			// 1 1011
-			//        00nn spare
-			case OP_ANY_2:
-				OPC(int) = any2i (OPA(ivec2));
-				break;
-			case OP_ANY_3:
+			case OP_CROSS_F:
 				{
-					__auto_type v = loadvec3i (&OPA(int));
-					OPC(int) = any4i (v);
+					pr_vec4_t   a = loadvec3f (&OPA(float));
+					pr_vec4_t   b = loadvec3f (&OPB(float));
+					pr_vec4_t   c = crossf (a, b);
+					storevec3f (&OPC(float), c);
 				}
 				break;
-			case OP_ANY_4:
-				OPC(int) = any4i (OPA(ivec4));
+			case OP_CDOT_F:
+				OPC(vec2) = dot2f (OPA(vec2), OPB(vec2));
 				break;
-			// spare
-			case OP_ALL_2:
-				OPC(int) = all2i (OPA(ivec2));
-				break;
-			case OP_ALL_3:
+			case OP_VDOT_F:
 				{
-					__auto_type v = loadvec3i (&OPA(int));
-					v[3] = -1;
-					OPC(int) = all4i (v);
+					vec_t       d = DotProduct (&OPA(float),
+												&OPB(float));
+					VectorSet (d, d, d, &OPC(float));
 				}
 				break;
-			case OP_ALL_4:
-				OPC(int) = all4i (OPA(ivec4));
+			case OP_QDOT_F:
+				OPC(vec4) = dotf (OPA(vec4), OPB(vec4));
 				break;
-			// spare
-			case OP_NONE_2:
-				OPC(int) = none2i (OPA(ivec2));
+			case OP_CMUL_F:
+				OPC(vec2) = cmulf (OPA(vec2), OPB(vec2));
 				break;
-			case OP_NONE_3:
+			case OP_QVMUL_F:
 				{
-					__auto_type v = loadvec3i (&OPA(int));
-					OPC(int) = none4i (v);
+					pr_vec4_t   v = loadvec3f (&OPB(float));
+					v = qvmulf (OPA(vec4), v);
+					storevec3f (&OPC(float), v);
 				}
 				break;
-			case OP_NONE_4:
-				OPC(int) = none4i (OPA(ivec4));
+			case OP_VQMUL_F:
+				{
+					pr_vec4_t   v = loadvec3f (&OPA(float));
+					v = vqmulf (v, OPB(vec4));
+					storevec3f (&OPC(float), v);
+				}
 				break;
-
+			case OP_QMUL_F:
+				OPC(vec4) = qmulf (OPA(vec4), OPB(vec4));
+				break;
+			case OP_CROSS_D:
+				{
+					pr_dvec4_t  a = loadvec3d (&OPA(double));
+					pr_dvec4_t  b = loadvec3d (&OPB(double));
+					pr_dvec4_t  c = crossd (a, b);
+					storevec3d (&OPC(double), c);
+				}
+				break;
+			case OP_CDOT_D:
+				OPC(dvec2) = dot2d (OPA(dvec2), OPB(dvec2));
+				break;
+			case OP_VDOT_D:
+				{
+					double      d = DotProduct (&OPA(double),
+												&OPB(double));
+					VectorSet (d, d, d, &OPC(double));
+				}
+				break;
+			case OP_QDOT_D:
+				OPC(dvec4) = dotd (OPA(dvec4), OPB(dvec4));
+				break;
+			case OP_CMUL_D:
+				OPC(dvec2) = cmuld (OPA(dvec2), OPB(dvec2));
+				break;
+			case OP_QVMUL_D:
+				{
+					pr_dvec4_t   v = loadvec3d (&OPB(double));
+					v = qvmuld (OPA(dvec4), v);
+					storevec3d (&OPC(double), v);
+				}
+				break;
+			case OP_VQMUL_D:
+				{
+					pr_dvec4_t  v = loadvec3d (&OPA(double));
+					v = vqmuld (v, OPB(dvec4));
+					storevec3d (&OPC(double), v);
+				}
+				break;
+			case OP_QMUL_D:
+				OPC(dvec4) = qmuld (OPA(dvec4), OPB(dvec4));
+				break;
 			// 1 1100
 			OP_op_T (BITAND, L, long, lvec2, lvec4, &);
 			OP_op_T (BITOR, L, long, lvec2, lvec4, |);
@@ -3409,9 +3265,6 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			OP_uop_T (BITNOT, L, long, lvec2, lvec4, ~);
 			// 1 1101
 			OP_cmp_T (GE, u, int, ivec2, ivec4, >=, uint, uivec2, uivec4);
-			case OP_QV4MUL_F:
-				OPC(vec4) = qvmulf (OPA(vec4), OPB(vec4));
-				break;
 			case OP_MOVE_I:
 				memmove (op_c, op_a, st->b * sizeof (pr_type_t));
 				break;
@@ -3423,10 +3276,15 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				memmove (pr->pr_globals + OPC(int), pr->pr_globals + OPA(int),
 						 st->b * sizeof (pr_type_t));
 				break;
-			OP_cmp_T (GE, U, long, lvec2, lvec4, >=, ulong, ulvec2, ulvec4);
-			case OP_QV4MUL_D:
-				OPC(dvec4) = qvmuld (OPA(dvec4), OPB(dvec4));
+			case OP_CONV:
+				switch (st->b) {
+#include "libs/gamecode/pr_convert.cinc"
+					default:
+						PR_RunError (pr, "invalid conversion code: %04o",
+									 st->b);
+				}
 				break;
+			OP_cmp_T (GE, U, long, lvec2, lvec4, >=, ulong, ulvec2, ulvec4);
 			case OP_MEMSET_I:
 				pr_memset (op_c, OPA(int), st->b);
 				break;
@@ -3436,19 +3294,106 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_MEMSET_PI:
 				pr_memset (pr->pr_globals + OPC(int), OPA(int), st->b);
 				break;
+			case OP_WITH:
+				pr_with (pr, st);
+				break;
 			// 1 1110
 			OP_cmp_T (LE, u, int, ivec2, ivec4, <=, uint, uivec2, uivec4);
+			case OP_IFZ:
+				if (!OPC(int)) {
+					pr->pr_xstatement = pr_jump_mode (pr, st, 0);
+					st = pr->pr_statements + pr->pr_xstatement;
+				}
+				break;
+			case OP_IFB:
+				if (OPC(int) < 0) {
+					pr->pr_xstatement = pr_jump_mode (pr, st, 0);
+					st = pr->pr_statements + pr->pr_xstatement;
+				}
+				break;
+			case OP_IFA:
+				if (OPC(int) > 0) {
+					pr->pr_xstatement = pr_jump_mode (pr, st, 0);
+					st = pr->pr_statements + pr->pr_xstatement;
+				}
+				break;
+			case OP_STATE_ft:
+				{
+					int         self = *pr->globals.self;
+					int         nextthink = pr->fields.nextthink + self;
+					int         frame = pr->fields.frame + self;
+					int         think = pr->fields.think + self;
+					float       time = *pr->globals.time + 0.1;
+					pr->pr_edict_area[nextthink].float_var = time;
+					pr->pr_edict_area[frame].float_var = OPA(float);
+					pr->pr_edict_area[think].func_var = op_b->func_var;
+				}
+				break;
+			OP_cmp_T (LE, U, long, lvec2, lvec4, <=, ulong, ulvec2, ulvec4);
+			case OP_IFNZ:
+				if (OPC(int)) {
+					pr->pr_xstatement = pr_jump_mode (pr, st, 0);
+					st = pr->pr_statements + pr->pr_xstatement;
+				}
+				break;
+			case OP_IFAE:
+				if (OPC(int) >= 0) {
+					pr->pr_xstatement = pr_jump_mode (pr, st, 0);
+					st = pr->pr_statements + pr->pr_xstatement;
+				}
+				break;
+			case OP_IFBE:
+				if (OPC(int) <= 0) {
+					pr->pr_xstatement = pr_jump_mode (pr, st, 0);
+					st = pr->pr_statements + pr->pr_xstatement;
+				}
+				break;
+			case OP_STATE_ftt:
+				{
+					int         self = *pr->globals.self;
+					int         nextthink = pr->fields.nextthink + self;
+					int         frame = pr->fields.frame + self;
+					int         think = pr->fields.think + self;
+					float       time = *pr->globals.time + OPC(float);
+					pr->pr_edict_area[nextthink].float_var = time;
+					pr->pr_edict_area[frame].float_var = OPA(float);
+					pr->pr_edict_area[think].func_var = op_b->func_var;
+				}
+				break;
+			// 1 1111
+			case OP_LEA_A:
+			case OP_LEA_C:
+			case OP_LEA_D:
+				mm = pr_address_mode (pr, st, (st_op - OP_LEA_A));
+				op_c->pointer_var = mm - pr->pr_globals;
+				break;
+			case OP_LEA_E:
+				mm = pr_address_mode (pr, st, 4);
+				op_c->pointer_var = mm - pr->pr_globals;
+				break;
+			case OP_QV4MUL_F:
+				OPC(vec4) = qvmulf (OPA(vec4), OPB(vec4));
+				break;
 			case OP_V4QMUL_F:
 				OPC(vec4) = vqmulf (OPA(vec4), OPB(vec4));
 				break;
-			// spare
-			OP_cmp_T (LE, U, long, lvec2, lvec4, <=, ulong, ulvec2, ulvec4);
+			case OP_QV4MUL_D:
+				OPC(dvec4) = qvmuld (OPA(dvec4), OPB(dvec4));
+				break;
 			case OP_V4QMUL_D:
 				OPC(dvec4) = vqmuld (OPA(dvec4), OPB(dvec4));
 				break;
-			// spare
-			// 1 1111
-			// spare
+			//        10nn spare
+			//        1100 spare
+			//        1101 spare
+			//        1110 spare
+			case OP_HOPS:
+				switch (st->b) {
+					default:
+						PR_RunError (pr, "invalid hops code: %04o",
+									 st->b);
+				}
+				break;
 			default:
 				PR_RunError (pr, "Bad opcode o%03o", st->op & OP_MASK);
 		}

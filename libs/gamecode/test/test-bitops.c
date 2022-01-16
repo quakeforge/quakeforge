@@ -26,7 +26,7 @@ static dstatement_t int_bitop_1_statements[] = {
 	{ OP(0, 0, 0, OP_LEA_A), 4, 0, 24 },	// init index
 //loop:
 	{ OP(0, 0, 0, OP_LEA_C), 24, -1, 24 },	// dec index
-	{ OP(0, 0, 0, OP_IFAE_A), 2, 0, 24 },
+	{ OP(0, 0, 0, OP_IFAE), 2, 0, 24 },
 	{ OP(0, 0, 0, OP_BREAK), 0, 0, 0 },
 	{ OP(0, 0, 0, OP_WITH), 4, 24, 1 },
 
@@ -42,7 +42,7 @@ static dstatement_t int_bitop_2_statements[] = {
 	{ OP(0, 0, 0, OP_LEA_A), 4, 0, 24 },	// index
 //loop:
 	{ OP(0, 0, 0, OP_LEA_C), 24, -2, 24 },	// dec index
-	{ OP(0, 0, 0, OP_IFAE_A), 2, 0, 24 },
+	{ OP(0, 0, 0, OP_IFAE), 2, 0, 24 },
 	{ OP(0, 0, 0, OP_BREAK), 0, 0, 0 },
 	{ OP(0, 0, 0, OP_WITH), 4, 24, 1 },
 
@@ -107,7 +107,7 @@ static dstatement_t long_bitop_1_statements[] = {
 	{ OP(0, 0, 0, OP_LEA_A),    8,  0, 48 },	// init index
 //loop:
 	{ OP(0, 0, 0, OP_LEA_C),   48, -2, 48 },	// dec index
-	{ OP(0, 0, 0, OP_IFAE_A),   2,  0, 48 },
+	{ OP(0, 0, 0, OP_IFAE),   2,  0, 48 },
 	{ OP(0, 0, 0, OP_BREAK),    0,  0,  0 },
 	{ OP(0, 0, 0, OP_WITH),     4, 48,  1 },
 
@@ -123,7 +123,7 @@ static dstatement_t long_bitop_2_statements[] = {
 	{ OP(0, 0, 0, OP_LEA_A),    8,  0, 48 },	// init index
 //loop:
 	{ OP(0, 0, 0, OP_LEA_C),   48, -4, 48 },	// dec index
-	{ OP(0, 0, 0, OP_IFAE_A),   2,  0, 48 },
+	{ OP(0, 0, 0, OP_IFAE),   2,  0, 48 },
 	{ OP(0, 0, 0, OP_BREAK),    0,  0,  0 },
 	{ OP(0, 0, 0, OP_WITH),     4, 48,  1 },
 

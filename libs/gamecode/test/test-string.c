@@ -36,7 +36,7 @@ static dstatement_t string_statements[] = {
 	{ OP(0, 0, 0, OP_LEA_A), 24, 0, 6 },	// init k
 // for (i = 4; i-- > 0; ) {
 	{ OP(0, 0, 0, OP_LEA_A), 4, 0, 4 },
-	{ OP(0, 0, 0, OP_IFA_A), 2, 0, 4 },
+	{ OP(0, 0, 0, OP_IFA), 2, 0, 4 },
 	{ OP(0, 0, 0, OP_BREAK), 0, 0, 0 },
 	{ OP(0, 0, 0, OP_LEA_C), 4, -1, 4 },	// dec i
 
@@ -45,7 +45,7 @@ static dstatement_t string_statements[] = {
 //     for (j = 4; j-- > 0; ) {
 	{ OP(0, 0, 0, OP_LEA_A), 4, 0, 5 },	// init j
 
-	{ OP(0, 0, 0, OP_IFA_A), 2, 0, 5 },
+	{ OP(0, 0, 0, OP_IFA), 2, 0, 5 },
 	{ OP(0, 0, 0, OP_JUMP_A), -6, 0, 0 },
 	{ OP(0, 0, 0, OP_LEA_C), 5, -1, 5 },	// dec j
 
