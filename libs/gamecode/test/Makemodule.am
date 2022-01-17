@@ -12,6 +12,7 @@ libs_gamecode_tests = \
 	libs/gamecode/test/test-float \
 	libs/gamecode/test/test-hops \
 	libs/gamecode/test/test-int \
+	libs/gamecode/test/test-jump \
 	libs/gamecode/test/test-lea \
 	libs/gamecode/test/test-load \
 	libs/gamecode/test/test-long \
@@ -100,6 +101,11 @@ libs_gamecode_test_test_int_SOURCES= \
 	libs/gamecode/test/test-int.c
 libs_gamecode_test_test_int_LDADD=		$(test_gamecode_libs)
 libs_gamecode_test_test_int_DEPENDENCIES=	$(test_gamecode_libs)
+
+libs_gamecode_test_test_jump_SOURCES= \
+	libs/gamecode/test/test-jump.c
+libs_gamecode_test_test_jump_LDADD=		$(test_gamecode_libs)
+libs_gamecode_test_test_jump_DEPENDENCIES=	$(test_gamecode_libs)
 
 libs_gamecode_test_test_lea_SOURCES= \
 	libs/gamecode/test/test-lea.c
