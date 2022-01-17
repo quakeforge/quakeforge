@@ -52,6 +52,7 @@ def case_str(width, src_type, dst_type):
     case = (width << 6) | (src_type << 3) | (dst_type)
     return f"case {case:04o}:"
 
+#FIXME look into using gcc's __builtin_convertvector
 def cast_str(width, src_type, dst_type):
     if width & 1:
         return f"(pr_{vec_types[dst_type]}{width+1}_t)"
