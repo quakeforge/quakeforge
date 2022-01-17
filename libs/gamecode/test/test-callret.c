@@ -11,27 +11,46 @@
 #define shx  0x3f0c4020		// sinh(pi/6)
 #define chx  0x3f91f354		// cosh(pi/6)
 
+#define DB 0xdeadbeef
+
 #define STK  (32 * 4)		// stack ptr just after globals
 
 static pr_ivec4_t float_callret_init[32] = {
-	{  0, pi_6, 2, 0},
-	{ f1,   f2, 0, 0},
+	{  0, pi_6,  2,  0},
+	{ f1,   f2,  0,  0},
+	// result
+	{ DB,   DB, DB, DB },
+	// pre-call with
+	{ DB,   DB, DB, DB },
+	// post-call with
+	{ DB,   DB, DB, DB },
+	{ DB,   DB, DB, DB },
 };
 
 static pr_ivec4_t float_callret_expect[32] = {
 	// constants
-	{  0, pi_6, 2, 0},
-	{ f1,   f2, 0, 0},
+	{    0, pi_6,   2,   0 },
+	{   f1,   f2,   0,   0 },
 	// result
 	{ r3_2, f1_2, chx, shx },
+	// pre-call with: should be all 0 on progs init
+	{    0,    0,   0,   0 },
+	// post-call with; should be restored to pre-call values (in this case,
+	// progs init)
+	{    0,    0,   0,   0 },
+	{   DB,   DB,  DB,  DB },
 };
 
 static dstatement_t float_callret_statements[] = {
+	{ OP_WITH,      8,   0,   0 },			// pushregs
+	{ OP_POP_A_4,  12,   0,   0 },
 	{ OP_STORE_A_1, 7,   0, STK },			// save stack pointer for check
 	{ OP_PUSH_A_1,  1,   0,   0 },
 	{ OP_CALL_B,    2,   0,   8 },
 	{ OP_LEA_C,   STK,   4, STK },			// discard param
 	{ OP_SUB_I_1,   7, STK,   7 },			// check stack restored
+	{ OP_WITH,      8,   0,   0 },			// pushregs
+	{ OP_POP_A_4,  16,   0,   0 },
 	{ OP_BREAK },
 // cos_sin_cosh_sinh:
 // calculate cos(x), sin(x), cosh(x) and sinh(x) simultaneously
@@ -76,7 +95,7 @@ static dstatement_t float_callret_statements[] = {
 #undef c
 
 static bfunction_t callret_functions[] = {
-	{ .first_statement = 6 },
+	{ .first_statement = 10 },
 };
 
 test_t tests[] = {
