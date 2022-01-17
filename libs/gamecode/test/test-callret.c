@@ -141,7 +141,7 @@ static pr_ivec4_t callchain_init[32] = {
 };
 
 static pr_ivec4_t callchain_expect[32] = {
-	{  0,  2,  3,  0 },
+	{  0,  2,  3,  4 },
 	{ 42, DB, DB, DB },
 };
 
@@ -152,7 +152,7 @@ static dstatement_t callchain_statements[] = {
 	{ OP_LEA_C,   STK, -4, STK },			// reserve 4 words on the stack
 	{ OP_WITH,      2,  0,   2 },			// put locals into reg 2
 	{ OP(0, 0, 2, OP_CALL_B), 2, 0, 0 },
-	{ OP(0, 0, 2, OP_CALL_B), 2, 0, 1 },
+	{ OP(0, 0, 2, OP_CALL_B), 3, 0, 1 },
 	{ OP(2, 0, 0, OP_RETURN), 0, 0, 0 },
 [64]=
 	{ OP_LEA_C,   STK, -4, STK },			// reserve 4 words on the stack
