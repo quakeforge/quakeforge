@@ -88,7 +88,16 @@ setup_test (test_t *test)
 	test_pr.debug_data = &test_pr;
 	test_pr.pr_trace = 1;
 	test_pr.pr_trace_depth = -1;
-	test_pr.function_table = test_functions;
+	if (test->num_functions && test->functions) {
+		test_pr.function_table = calloc ((test->num_functions + 2),
+										 sizeof (bfunction_t));
+		memcpy (test_pr.function_table, test_functions,
+				2 * sizeof (bfunction_t));
+		memcpy (test_pr.function_table + 2, test->functions,
+				test->num_functions * sizeof (bfunction_t));
+	} else {
+		test_pr.function_table = test_functions;
+	}
 
 	pr_uint_t   num_globals = test->num_globals;
 	num_globals += test->extra_globals + test->stack_size;
@@ -170,6 +179,9 @@ run_test (test_t *test)
 
 	pr_uint_t   num_globals = test->num_globals;
 	num_globals += test->extra_globals + test->stack_size;
+	if (test->num_functions && test->functions) {
+		free (test_pr.function_table);
+	}
 	Sys_Free (test_pr.pr_globals, num_globals * sizeof (pr_type_t));
 
 	free (test_pr.pr_statements);

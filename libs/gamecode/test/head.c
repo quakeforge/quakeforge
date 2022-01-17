@@ -21,6 +21,9 @@ static int verbose = 0;
 #define num_statements(statements) \
 		(sizeof (statements) / sizeof (statements[0]))
 
+#define num_functions(functions) \
+		(sizeof (functions) / sizeof (functions[0]))
+
 #define BASE(b, base) (((base) & 3) << OP_##b##_SHIFT)
 #define OP(a, b, c, op) ((op) | BASE(A, a) | BASE(B, b) | BASE(C, c))
 
@@ -46,4 +49,6 @@ typedef struct {
 	pr_uint_t   think;
 	pr_uint_t   nextthink;
 	pr_uint_t   frame;
+	bfunction_t *functions;
+	pr_uint_t   num_functions;
 } test_t;
