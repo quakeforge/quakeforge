@@ -1721,7 +1721,7 @@ dump_frame (progs_t *pr, prstack_t *frame)
 		pr_lineno_t *lineno = PR_Find_Lineno (pr, frame->staddr);
 		pr_auxfunction_t *func = PR_Get_Lineno_Func (pr, lineno);
 		pr_uint_t   line = PR_Get_Lineno_Line (pr, lineno);
-		pr_int_t    addr = PR_Get_Lineno_Addr (pr, lineno);
+		pr_uint_t   addr = PR_Get_Lineno_Addr (pr, lineno);
 
 		line += func->source_line;
 		if (addr == frame->staddr) {
