@@ -1801,6 +1801,7 @@ extern const char *pr_gametype;
 typedef struct strref_s strref_t;
 
 typedef struct {
+	pr_uivec4_t bases;				///< base registers on entry to function
 	pr_uint_t   staddr;				///< Return statement.
 	pr_uint_t   stack_ptr;			///< data stack on entry to function
 	bfunction_t *func;				///< Calling function.

@@ -146,6 +146,7 @@ PR_PushFrame (progs_t *pr)
 	if (pr->globals.stack) {
 		frame->stack_ptr = *pr->globals.stack;
 	}
+	frame->bases  = pr->pr_bases;
 	frame->func   = pr->pr_xfunction;
 	frame->tstr   = pr->pr_xtstr;
 
@@ -182,6 +183,7 @@ PR_PopFrame (progs_t *pr)
 	pr->pr_xfunction  = frame->func;
 	pr->pr_xstatement = frame->staddr;
 	pr->pr_xtstr      = frame->tstr;
+	pr->pr_bases      = frame->bases;
 	// restore data stack (discard any locals)
 	if (pr->globals.stack) {
 		*pr->globals.stack = frame->stack_ptr;
