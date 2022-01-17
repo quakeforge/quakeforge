@@ -3141,7 +3141,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_CALL_B:
 			case OP_CALL_C:
 			case OP_CALL_D:
-				mm = pr_call_mode (pr, st, st->c & 3);
+				mm = pr_call_mode (pr, st, st_op - OP_CALL_B + 1);
 				function = mm->func_var;
 				pr->pr_argc = 0;
 				// op_c specifies the location for the return value if any
