@@ -175,10 +175,12 @@ void PR_ExecuteProgram (progs_t *pr, func_t fnum);
 	execute upon return of control to PR_ExecuteProgram().
 	\param pr		pointer to ::progs_t VM struct
 	\param fnum		number of the function to call
+	\param return_ptr pointer to location in which return values will be
+					written
 	\return			true if \p fnum was a progs function, false if \p fnum was
 					a builtin
 */
-int PR_CallFunction (progs_t *pr, func_t fnum);
+int PR_CallFunction (progs_t *pr, func_t fnum, pr_type_t *return_ptr);
 
 ///@}
 
@@ -1806,6 +1808,7 @@ typedef struct {
 	pr_uint_t   stack_ptr;			///< data stack on entry to function
 	bfunction_t *func;				///< Calling function.
 	strref_t   *tstr;				///< Linked list of temporary strings.
+	pr_type_t  *return_ptr;			///< Saved return address
 } prstack_t;
 
 struct progs_s {

@@ -149,6 +149,7 @@ PR_PushFrame (progs_t *pr)
 	frame->bases  = pr->pr_bases;
 	frame->func   = pr->pr_xfunction;
 	frame->tstr   = pr->pr_xtstr;
+	frame->return_ptr = pr->pr_return;
 
 	pr->pr_xtstr = pr->pr_pushtstr;
 	pr->pr_pushtstr = 0;
@@ -180,6 +181,7 @@ PR_PopFrame (progs_t *pr)
 	// up stack
 	frame = pr->pr_stack + --pr->pr_depth;
 
+	pr->pr_return     = frame->return_ptr;
 	pr->pr_xfunction  = frame->func;
 	pr->pr_xstatement = frame->staddr;
 	pr->pr_xtstr      = frame->tstr;
@@ -419,7 +421,7 @@ error_handler (void *data)
 }
 
 VISIBLE int
-PR_CallFunction (progs_t *pr, func_t fnum)
+PR_CallFunction (progs_t *pr, func_t fnum, pr_type_t *return_ptr)
 {
 	bfunction_t *f;
 
@@ -432,10 +434,14 @@ PR_CallFunction (progs_t *pr, func_t fnum)
 			Sys_Printf ("Calling builtin %s @ %p\n",
 						PR_GetString (pr, f->descriptor->name), f->func);
 		}
+		pr_type_t  *saved_return = pr->pr_return;
+		pr->pr_return = return_ptr;
 		f->func (pr);
+		pr->pr_return = saved_return;
 		return 0;
 	} else {
 		PR_EnterFunction (pr, f);
+		pr->pr_return = return_ptr;
 		return 1;
 	}
 }
@@ -1461,7 +1467,7 @@ op_rcall:
 op_call:
 				pr->pr_xfunction->profile += profile - startprofile;
 				startprofile = profile;
-				PR_CallFunction (pr, OPA(uint));
+				PR_CallFunction (pr, OPA(uint), pr->pr_return);
 				st = pr->pr_statements + pr->pr_xstatement;
 				break;
 			case OP_DONE_v6p:
@@ -3154,10 +3160,9 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				function = mm->func_var;
 				pr->pr_argc = 0;
 				// op_c specifies the location for the return value if any
-				pr->pr_return = op_c;
 				pr->pr_xfunction->profile += profile - startprofile;
 				startprofile = profile;
-				PR_CallFunction (pr, function);
+				PR_CallFunction (pr, function, op_c);
 				st = pr->pr_statements + pr->pr_xstatement;
 				break;
 			// 1 1010
@@ -3466,7 +3471,7 @@ PR_ExecuteProgram (progs_t *pr, func_t fnum)
 	}
 
 	int         exitdepth = pr->pr_depth;
-	if (!PR_CallFunction (pr, fnum)) {
+	if (!PR_CallFunction (pr, fnum, pr->pr_return)) {
 		// called a builtin instead of progs code
 		goto exit_program;
 	}

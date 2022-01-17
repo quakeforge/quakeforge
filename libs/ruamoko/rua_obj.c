@@ -1291,7 +1291,7 @@ rua___obj_forward (progs_t *pr)
 		P_PACKED  (pr, pr_va_list_t, 3).count = argc;
 		P_PACKED  (pr, pr_va_list_t, 3).list = PR_SetPointer (pr, argv);
 		PR_PushTempString (pr, args_block);
-		PR_CallFunction (pr, imp);
+		PR_CallFunction (pr, imp, pr->pr_return);
 		return;
 	}
 	//FIXME ditto
@@ -1303,7 +1303,7 @@ rua___obj_forward (progs_t *pr)
 		P_POINTER (pr, 1) = PR_SetPointer (pr, err_sel);
 		P_POINTER (pr, 2) = PR_SetPointer (pr, sel);
 		pr->pr_argc = 3;
-		PR_CallFunction (pr, imp);
+		PR_CallFunction (pr, imp, pr->pr_return);
 		return;
 	}
 
@@ -1321,7 +1321,7 @@ rua___obj_forward (progs_t *pr)
 		P_POINTER (pr, 1) = PR_SetPointer (pr, err_sel);
 		P_POINTER (pr, 2) = PR_SetTempString (pr, probj->msg->str);
 		pr->pr_argc = 3;
-		PR_CallFunction (pr, imp);
+		PR_CallFunction (pr, imp, pr->pr_return);
 		return;
 	}
 
@@ -1437,7 +1437,7 @@ rua_obj_msg_sendv (progs_t *pr)
 		memcpy (&P_INT (pr, 2), params,
 				count * sizeof (pr_type_t) * pr->pr_param_size);
 	}
-	PR_CallFunction (pr, imp);
+	PR_CallFunction (pr, imp, pr->pr_return);
 }
 
 static void
@@ -1544,7 +1544,7 @@ rua_obj_msgSend (progs_t *pr)
 					 PR_GetString (pr, object_get_class_name (probj, self)),
 					 PR_GetString (pr, probj->selector_names[_cmd->sel_id]));
 
-	PR_CallFunction (pr, imp);
+	PR_CallFunction (pr, imp, pr->pr_return);
 }
 
 static void
@@ -1564,7 +1564,7 @@ rua_obj_msgSend_super (progs_t *pr)
 	}
 	pr->pr_params[0] = pr->pr_real_params[0];
 	P_POINTER (pr, 0) = super->self;
-	PR_CallFunction (pr, imp);
+	PR_CallFunction (pr, imp, pr->pr_return);
 }
 
 static void
