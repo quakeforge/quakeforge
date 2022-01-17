@@ -1802,6 +1802,7 @@ typedef struct strref_s strref_t;
 
 typedef struct {
 	pr_uint_t   staddr;				///< Return statement.
+	pr_uint_t   stack_ptr;			///< data stack on entry to function
 	bfunction_t *func;				///< Calling function.
 	strref_t   *tstr;				///< Linked list of temporary strings.
 } prstack_t;
