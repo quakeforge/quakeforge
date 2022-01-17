@@ -3131,9 +3131,9 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				break;
 			OP_cmp_T (LT, U, long, lvec2, lvec4, <, ulong, ulvec2, ulvec4);
 			case OP_RETURN:
-				int         ret_size = st->c & 0x1f;	// up to 32 words
-				if (ret_size) {
-					mm = pr_return_mode (pr, st, (st->c >> 5) & 7);
+				int         ret_size = (st->c & 0x1f) + 1;	// up to 32 words
+				if (st->c != 0xffff) {
+					mm = pr_return_mode (pr, st, st->c >> 5);
 					memcpy (&R_INT (pr), mm, ret_size * sizeof (*op_a));
 				}
 				pr->pr_xfunction->profile += profile - startprofile;

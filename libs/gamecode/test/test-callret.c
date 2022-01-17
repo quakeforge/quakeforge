@@ -85,7 +85,7 @@ static dstatement_t callret_statements[] = {
 	{ OP(2, 2, 2, OP_ADD_F_4),   fa, fi, fa },		// f += inc
 	{ OP(2, 0, 2, OP_LEA_C),      c, -1,  c },		// dec count
 	{ OP(0, 0, 2, OP_IFA),       -7,  0,  c },		// count > 0
-	{ OP(2, 0, 0, OP_RETURN),    ac,  0,  4 },
+	{ OP(2, 0, 0, OP_RETURN),    ac,  0,  3 },		// size is (c&31)+1
 #undef x
 #undef xn
 #undef x2
@@ -132,7 +132,7 @@ static dstatement_t call32_statements[] = {
     { OP(2, 0, 2, OP_LEA_C),     32, -1,   32 },
 	{ OP(2, 2, 2, OP_STORE_D_1), 33, 32,   32 },	// array[index] = index
 	{ OP(0, 0, 0, OP_JUMP_A),    -3,  0,    0 },
-	{ OP(2, 0, 0, OP_RETURN),     0,  0,   32 },
+	{ OP(2, 0, 0, OP_RETURN),     0,  0, 0x1f },	// only bits 0-5 are size
 };
 
 static pr_ivec4_t callchain_init[32] = {
@@ -152,12 +152,12 @@ static dstatement_t callchain_statements[] = {
 	{ OP_LEA_C,   STK, -4, STK },			// reserve 4 words on the stack
 	{ OP_WITH,      2,  0,   2 },			// put locals into reg 2
 	{ OP(0, 0, 2, OP_CALL_B), 2, 0, 0 },
-	{ OP(2, 0, 0, OP_RETURN), 0, 0, 1 },
+	{ OP(2, 0, 0, OP_RETURN), 0, 0, 0 },
 [64]=
 	{ OP_LEA_C,   STK, -4, STK },			// reserve 4 words on the stack
 	{ OP_WITH,      2,  0,   2 },			// put locals into reg 2
 	{ OP(0, 0, 2, OP_LEA_A),  42, 0, 0 },	// init value
-	{ OP(2, 0, 0, OP_RETURN),  0, 0, 1 },	// return value
+	{ OP(2, 0, 0, OP_RETURN),  0, 0, 0 },	// return value
 };
 
 static bfunction_t callret_functions[] = {
