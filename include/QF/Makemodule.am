@@ -132,11 +132,11 @@ include_qf_plugin = \
 	include/QF/plugin/vid_render.h
 
 include_qf_progs = \
-	include/QF/pr_comp.h \
-	include/QF/pr_debug.h \
-	include/QF/pr_obj.h \
-	include/QF/pr_type.h \
-	include/QF/pr_type_names.h
+	include/QF/progs/pr_comp.h \
+	include/QF/progs/pr_debug.h \
+	include/QF/progs/pr_obj.h \
+	include/QF/progs/pr_type.h \
+	include/QF/progs/pr_type_names.h
 
 include_qf_scene = \
 	include/QF/scene/entity.h \
