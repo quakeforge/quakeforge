@@ -25,8 +25,12 @@
 
 typedef int32_t   pr_string_t;
 typedef float     pr_float_t;
+typedef float     pr_vector_t[3];
+typedef uint32_t  pr_entity_t;
+typedef uint32_t  pr_field_t;
 typedef uint32_t  pr_func_t;
 typedef uint32_t  pr_ptr_t;
+typedef float     pr_quaternion_t[4];
 typedef int32_t   pr_int_t;
 typedef uint32_t  pr_uint_t;
 typedef int16_t   pr_short_t;

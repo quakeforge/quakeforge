@@ -33,22 +33,11 @@
 
 #include "QF/progs.h"
 
+typedef pr_type_t pr_void_t;	// so size of void is 1
+
+#define EV_TYPE(type) (sizeof (pr_##type##_t) / sizeof (pr_int_t)),
 VISIBLE const pr_ushort_t pr_type_size[ev_type_count] = {
-	1,			// ev_void
-	1,			// ev_string
-	1,			// ev_float
-	3,			// ev_vector
-	1,			// ev_entity
-	1,			// ev_field
-	1,			// ev_func
-	1,			// ev_pointer
-	4,			// ev_quat
-	1,			// ev_int
-	1,			// ev_uint
-	0,			// ev_short        value in opcode
-	2,			// ev_double
-	2,			// ev_long
-	2,			// ev_ulong
+#include "QF/progs/pr_type_names.h"
 	0,			// ev_invalid      not a valid/simple type
 };
 

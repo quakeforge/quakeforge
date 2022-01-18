@@ -11,8 +11,10 @@ string ty_meta_name[7] = {
 	"alias",
 };
 
-//FIXME use pr_type_names.h
+//FIXME use pr_type_names.h, but need to fix unsigned, and add missing types
+//#define EV_TYPE(type) sizeof(type),
 int pr_type_size[ev_type_count] = {
+//#include <QF/progs/pr_type_names.h>
 	1,			// ev_void
 	1,			// ev_string
 	1,			// ev_float
