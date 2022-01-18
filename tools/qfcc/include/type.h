@@ -96,21 +96,11 @@ typedef struct {
 	unsigned    nosave:1;
 } specifier_t;
 
+#define EV_TYPE(type) extern type_t type_##type;
+#include "QF/progs/pr_type_names.h"
+
 extern	type_t	type_invalid;
-extern	type_t	type_void;
-extern	type_t	type_string;
-extern	type_t	type_double;
-extern	type_t	type_float;
-extern	type_t	type_vector;
-extern	type_t	type_entity;
-extern	type_t	type_field;
-extern	type_t	type_function;
-extern	type_t	type_pointer;
 extern	type_t	type_floatfield;
-extern	type_t	type_quaternion;
-extern	type_t	type_int;
-extern	type_t	type_uint;
-extern	type_t	type_short;
 
 extern	type_t	*type_nil;		// for passing nil into ...
 extern	type_t	*type_default;	// default type (float or int)

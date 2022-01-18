@@ -60,23 +60,19 @@
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
 
-// simple types.  function types are dynamically allocated
-type_t      type_invalid = { ev_invalid, "invalid" };
-type_t      type_void = { ev_void, "void", 1 };
-type_t      type_string = { ev_string, "string", 1 };
-type_t      type_float = { ev_float, "float", 1 };
-type_t      type_vector = { ev_vector, "vector", 1 };
-type_t      type_entity = { ev_entity, "entity", 1 };
-type_t      type_field = {ev_field, "field", 1, ty_basic, {{&type_void}} };
+#define EV_TYPE(t) \
+	type_t type_##t = { \
+		.type = ev_##t, \
+		.name = #t, \
+		.alignment = __alignof__(pr_##t##_t) / __alignof__ (pr_int_t), \
+		.meta = ty_basic, \
+		{{ __builtin_choose_expr (ev_##t == ev_field \
+							   || ev_##t == ev_func \
+							   || ev_##t == ev_ptr, &type_void, 0 ) }}, \
+	};
+#include "QF/progs/pr_type_names.h"
 
-// type_func is a void() function used for state defs
-type_t      type_func = { ev_func, "func", 1, ty_basic, {{&type_void}} };
-type_t      type_ptr = { ev_ptr, "pointer", 1, ty_basic, {{&type_void}} };
-type_t      type_quaternion = { ev_quaternion, "quaternion", 4 };
-type_t      type_int = { ev_int, "int", 1 };
-type_t      type_uint = { ev_uint, "uint", 1 };
-type_t      type_short = { ev_short, "short", 1 };
-type_t      type_double = { ev_double, "double", 2 };
+type_t      type_invalid = { ev_invalid, "invalid" };
 
 type_t     *type_nil;
 type_t     *type_default;
@@ -94,21 +90,9 @@ type_t      type_xdefs = { ev_invalid, "@xdefs", 0, ty_struct };
 type_t      type_floatfield = { ev_field, ".float", 1, ty_basic,
 								{{&type_float}} };
 
+#define EV_TYPE(type) &type_##type,
 type_t     *ev_types[ev_type_count] = {
-	&type_void,
-	&type_string,
-	&type_float,
-	&type_vector,
-	&type_entity,
-	&type_field,
-	&type_function,
-	&type_pointer,
-	&type_quaternion,
-	&type_int,
-	&type_uint,
-	&type_short,
-	&type_double,
-	0, 0, 0,
+#include "QF/progs/pr_type_names.h"
 	&type_invalid,
 };
 
