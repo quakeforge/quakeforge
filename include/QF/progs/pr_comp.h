@@ -23,17 +23,17 @@
 
 #include "QF/qtypes.h"
 
-typedef double pr_double_t;
-typedef float pr_float_t;
-typedef int16_t pr_short_t;
-typedef uint16_t pr_ushort_t;
-typedef int32_t pr_int_t;
-typedef uint32_t pr_uint_t;
-typedef uint32_t pr_func_t;
-typedef int64_t pr_long_t;
-typedef uint64_t pr_ulong_t;
-typedef pr_int_t pr_string_t;
-typedef pr_uint_t pr_ptr_t;
+typedef int32_t   pr_string_t;
+typedef float     pr_float_t;
+typedef uint32_t  pr_func_t;
+typedef uint32_t  pr_ptr_t;
+typedef int32_t   pr_int_t;
+typedef uint32_t  pr_uint_t;
+typedef int16_t   pr_short_t;
+typedef double    pr_double_t;
+typedef int64_t   pr_long_t;
+typedef uint64_t  pr_ulong_t;
+typedef uint16_t  pr_ushort_t;
 
 #define PR_VEC_TYPE(t,n,s) \
 	typedef t n __attribute__ ((vector_size (s*sizeof (t))))
