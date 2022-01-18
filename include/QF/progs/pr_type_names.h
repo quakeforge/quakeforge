@@ -39,8 +39,8 @@ EV_TYPE(field)
 EV_TYPE(func)
 EV_TYPE(pointer)		// end of v6 types
 EV_TYPE(quat)
-EV_TYPE(integer)
-EV_TYPE(uinteger)
+EV_TYPE(int)
+EV_TYPE(uint)
 EV_TYPE(short)			// value is embedded in the opcode
 EV_TYPE(double)
 EV_TYPE(long)

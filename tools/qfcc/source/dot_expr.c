@@ -573,16 +573,16 @@ print_value (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 			}
 			break;
 		case ev_entity:
-			label = va (0, "ent %d", e->e.value->v.integer_val);
+			label = va (0, "ent %d", e->e.value->v.int_val);
 			break;
 		case ev_func:
-			label = va (0, "func %d", e->e.value->v.integer_val);
+			label = va (0, "func %d", e->e.value->v.int_val);
 			break;
-		case ev_integer:
-			label = va (0, "i %d", e->e.value->v.integer_val);
+		case ev_int:
+			label = va (0, "i %d", e->e.value->v.int_val);
 			break;
-		case ev_uinteger:
-			label = va (0, "u %u", e->e.value->v.uinteger_val);
+		case ev_uint:
+			label = va (0, "u %u", e->e.value->v.uint_val);
 			break;
 		case ev_long:
 			label = va (0, "i %"PRIi64, e->e.value->v.long_val);

@@ -215,7 +215,7 @@ SV_HullForEntity (edict_t *ent, const vec3_t mins, const vec3_t maxs,
 	vec3_t      hullmins, hullmaxs, size;
 
 	if ((sv_fields.rotated_bbox != -1
-		 && SVinteger (ent, rotated_bbox))
+		 && SVint (ent, rotated_bbox))
 		|| SVfloat (ent, solid) == SOLID_BSP) {
 		VectorSubtract (maxs, mins, size);
 		if (size[0] < 3)
@@ -226,8 +226,8 @@ SV_HullForEntity (edict_t *ent, const vec3_t mins, const vec3_t maxs,
 			hull_index = 2;
 	}
 	if (sv_fields.rotated_bbox != -1
-		&& SVinteger (ent, rotated_bbox)) {
-		int h = SVinteger (ent, rotated_bbox) - 1;
+		&& SVint (ent, rotated_bbox)) {
+		int h = SVint (ent, rotated_bbox) - 1;
 		hull_list = pf_hull_list[h]->hulls;
 	} if (SVfloat (ent, solid) == SOLID_BSP) {
 		// explicit hulls in the BSP model

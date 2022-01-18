@@ -53,8 +53,8 @@ struct ex_value_s *new_pointer_val (int val, struct type_s *type,
 									struct def_s *def,
 									struct operand_s *tempop);
 struct ex_value_s *new_quaternion_val (const float *quaternion_val);
-struct ex_value_s *new_integer_val (int integer_val);
-struct ex_value_s *new_uinteger_val (int uinteger_val);
+struct ex_value_s *new_int_val (int int_val);
+struct ex_value_s *new_uint_val (int uint_val);
 struct ex_value_s *new_short_val (short short_val);
 struct ex_value_s *new_nil_val (struct type_s *type);
 

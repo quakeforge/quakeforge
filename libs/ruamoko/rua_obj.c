@@ -1444,21 +1444,21 @@ static void
 rua_obj_increment_retaincount (progs_t *pr)
 {
 	pr_type_t  *obj = &P_STRUCT (pr, pr_type_t, 0);
-	R_INT (pr) = ++(*--obj).integer_var;
+	R_INT (pr) = ++(*--obj).int_var;
 }
 
 static void
 rua_obj_decrement_retaincount (progs_t *pr)
 {
 	pr_type_t  *obj = &P_STRUCT (pr, pr_type_t, 0);
-	R_INT (pr) = --(*--obj).integer_var;
+	R_INT (pr) = --(*--obj).int_var;
 }
 
 static void
 rua_obj_get_retaincount (progs_t *pr)
 {
 	pr_type_t  *obj = &P_STRUCT (pr, pr_type_t, 0);
-	R_INT (pr) = (*--obj).integer_var;
+	R_INT (pr) = (*--obj).int_var;
 }
 
 static void

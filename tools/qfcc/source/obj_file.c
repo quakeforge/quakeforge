@@ -434,7 +434,7 @@ qfo_byteswap_space (void *space, int size, qfos_type_t type)
 		case qfos_type:
 		case qfos_debug:
 			for (val = (pr_type_t *) space, c = 0; c < size; c++, val++)
-				val->integer_var = LittleLong (val->integer_var);
+				val->int_var = LittleLong (val->int_var);
 			break;
 	}
 }
@@ -696,7 +696,7 @@ get_def_type (qfo_t *qfo, pr_ptr_t type)
 		case ty_enum:
 			if (options.code.progsversion == PROG_ID_VERSION)
 				return ev_float;
-			return ev_integer;
+			return ev_int;
 		case ty_array:
 		case ty_class:
 			return ev_invalid;
@@ -732,7 +732,7 @@ get_type_size (qfo_t *qfo, pr_ptr_t type)
 			}
 			return size;
 		case ty_enum:
-			return pr_type_size[ev_integer];
+			return pr_type_size[ev_int];
 		case ty_array:
 			return type_def->array.size
 					* get_type_size (qfo, type_def->array.type);
@@ -781,7 +781,7 @@ get_type_alignment_log (qfo_t *qfo, pr_ptr_t type)
 			}
 			return alignment;
 		case ty_enum:
-			return qfo_log2 (ev_types[ev_integer]->alignment);
+			return qfo_log2 (ev_types[ev_int]->alignment);
 		case ty_array:
 			return get_type_alignment_log (qfo, type_def->array.type);
 		case ty_class:

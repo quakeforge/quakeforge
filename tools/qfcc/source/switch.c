@@ -136,14 +136,14 @@ case_label_expr (switch_block_t *switch_block, expr_t *value)
 		if (!type_assignable (type, get_type (value)))
 			return error (value, "type mismatch in case label");
 		if (is_integral (type) && is_integral (val_type)) {
-			value = new_integer_expr (expr_integer (value));
+			value = new_int_expr (expr_int (value));
 			debug (value, "integeral label used in integral switch");
 		} else if (is_integral (type) && is_float (val_type)) {
 			warning (value, "float label used in integral switch");
-			value = new_integer_expr (expr_float (value));
+			value = new_int_expr (expr_float (value));
 		} else if (is_float (type) && is_integral (val_type)) {
 			debug (value, "integeral label used in float switch");
-			value = new_float_expr (expr_integer (value));
+			value = new_float_expr (expr_int (value));
 		} else if (is_float (type) && is_float (val_type)) {
 			value = new_float_expr (expr_float (value));
 			debug (value, "float label used in float switch");
@@ -189,8 +189,8 @@ label_compare (const void *_a, const void *_b)
 		return strcmp (s1, s2);
 	} else if (is_float_val ((*a)->value)) {
 		return expr_float ((*a)->value) - expr_float ((*b)->value);
-	} else if (is_integer_val ((*a)->value)) {
-		return expr_integer ((*a)->value) - expr_integer ((*b)->value);
+	} else if (is_int_val ((*a)->value)) {
+		return expr_int ((*a)->value) - expr_int ((*b)->value);
 	}
 	internal_error (0, "in switch");
 }
@@ -210,9 +210,9 @@ new_case_node (expr_t *low, expr_t *high)
 	} else {
 		int         size;
 
-		if (!is_integer_val (low))
+		if (!is_int_val (low))
 			internal_error (low, "switch");
-		size = expr_integer (high) - expr_integer (low) + 1;
+		size = expr_int (high) - expr_int (low) + 1;
 		node->labels = calloc (size, sizeof (expr_t *));
 	}
 	node->left = node->right = 0;
@@ -253,18 +253,18 @@ build_case_tree (case_label_t **labels, int count, int range)
 	if (!nodes)
 		Sys_Error ("out of memory");
 
-	if (range && is_integer_val (labels[0]->value)) {
+	if (range && is_int_val (labels[0]->value)) {
 		for (i = 0; i < count - 1; i = j, num_nodes++) {
 			for (j = i + 1; j < count; j++) {
-				if (expr_integer (labels[j]->value)
-					- expr_integer (labels[j - 1]->value) > 1)
+				if (expr_int (labels[j]->value)
+					- expr_int (labels[j - 1]->value) > 1)
 					break;
 			}
 			nodes[num_nodes] = new_case_node (labels[i]->value,
 											  labels[j - 1]->value);
 			for (k = i; k < j; k++)
-				nodes[num_nodes]->labels[expr_integer (labels[k]->value)
-										 - expr_integer (labels[i]->value)]
+				nodes[num_nodes]->labels[expr_int (labels[k]->value)
+										 - expr_int (labels[i]->value)]
 					= labels[k]->label;
 		}
 		if (i < count) {
@@ -311,12 +311,12 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 	append_expr (sw, test);
 
 	if (tree->low == tree->high) {
-		branch = branch_expr (EQ, new_alias_expr (&type_integer, temp),
+		branch = branch_expr (EQ, new_alias_expr (&type_int, temp),
 							  tree->labels[0]);
 		append_expr (sw, branch);
 
 		if (tree->left) {
-			branch = branch_expr (GT, new_alias_expr (&type_integer, temp),
+			branch = branch_expr (GT, new_alias_expr (&type_int, temp),
 								  high_label);
 			append_expr (sw, branch);
 
@@ -329,8 +329,8 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 			build_switch (sw, tree->right, op, sw_val, temp, default_label);
 		}
 	} else {
-		int         low = expr_integer (tree->low);
-		int         high = expr_integer (tree->high);
+		int         low = expr_int (tree->low);
+		int         high = expr_int (tree->high);
 		symbol_t   *table_sym;
 		expr_t     *table_expr;
 		expr_t     *table_init;
@@ -346,7 +346,7 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 			append_element (table_init, new_element (label, 0));
 		}
 		table_sym = new_symbol_type (table_name,
-									 array_type (&type_integer,
+									 array_type (&type_int,
 												 high - low + 1));
 		initialize_def (table_sym, table_init, pr.near_data, sc_static);
 		table_expr = new_symbol_expr (table_sym);
@@ -355,8 +355,8 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 			branch = branch_expr (LT, temp, low_label);
 			append_expr (sw, branch);
 		}
-		test = binary_expr (GT, cast_expr (&type_uinteger, temp),
-							cast_expr (&type_uinteger, range));
+		test = binary_expr (GT, cast_expr (&type_uint, temp),
+							cast_expr (&type_uint, range));
 		branch = branch_expr (NE, test, high_label);
 		append_expr (sw, branch);
 		branch = jump_table_expr (table_expr, temp);
@@ -382,7 +382,7 @@ check_enum_switch (switch_block_t *switch_block)
 
 	for (enum_val = type->t.symtab->symbols; enum_val;
 		 enum_val = enum_val->next) {
-		cl.value = new_integer_expr (enum_val->s.value->v.integer_val);
+		cl.value = new_int_expr (enum_val->s.value->v.int_val);
 		if (!Hash_FindElement (switch_block->labels, &cl)) {
 			warning (switch_block->test,
 					 "enumeration value `%s' not handled in switch",
@@ -446,7 +446,7 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 		case_node_t *case_tree;
 
 		if (is_string(type))
-			temp = new_temp_def_expr (&type_integer);
+			temp = new_temp_def_expr (&type_int);
 		else
 			temp = new_temp_def_expr (type);
 		case_tree = build_case_tree (labels, num_labels, is_integral (type));

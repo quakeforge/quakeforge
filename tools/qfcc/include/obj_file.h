@@ -334,10 +334,10 @@ enum {
 */
 #define	QFO_FLOAT(q, s, o)		QFO_var (q, s, float, o)
 
-/** Access a integer variable in the object file. Can be assigned to.
+/** Access a int variable in the object file. Can be assigned to.
 
 	\par QC type:
-		\c integer
+		\c int
 	\param q pointer to ::qfo_t struct
 	\param s space index
 	\param o offset into object file data space
@@ -345,7 +345,7 @@ enum {
 
 	\hideinitializer
 */
-#define	QFO_INT(q, s, o)		QFO_var (q, s, integer, o)
+#define	QFO_INT(q, s, o)		QFO_var (q, s, int, o)
 
 /** Access a vector variable in the object file. Can be assigned to.
 
@@ -438,7 +438,7 @@ enum {
 
 	\hideinitializer
 */
-#define QFO_POINTER(q, s, t, o)	((t *)(char *)&QFO_var (q, s, integer, o))
+#define QFO_POINTER(q, s, t, o)	((t *)(char *)&QFO_var (q, s, int, o))
 
 /** Access a structure variable in the object file. Can be assigned to.
 

@@ -295,7 +295,7 @@ PF_Find (progs_t *pr)
 						continue;
 				RETURN_EDICT (pr, ed);
 				return;
-			case ev_integer:
+			case ev_int:
 			case ev_entity:
 				if (P_INT (pr, 2) != E_INT (ed, f))
 					continue;
@@ -420,7 +420,7 @@ PF_nextent (progs_t *pr)
 #endif
 
 /*
-	integer (float f) ftoi
+	int (float f) ftoi
 */
 static void
 PF_ftoi (progs_t *pr)
@@ -453,7 +453,7 @@ PF_ftos (progs_t *pr)
 }
 
 /*
-	float (integer i) itof
+	float (int i) itof
 */
 static void
 PF_itof (progs_t *pr)
@@ -462,7 +462,7 @@ PF_itof (progs_t *pr)
 }
 
 /*
-	string (integer i) itos
+	string (int i) itos
 */
 static void
 PF_itos (progs_t *pr)
@@ -484,7 +484,7 @@ PF_stof (progs_t *pr)
 }
 
 /*
-	integer (string s) stoi
+	int (string s) stoi
 */
 static void
 PF_stoi (progs_t *pr)

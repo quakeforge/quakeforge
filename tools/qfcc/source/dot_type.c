@@ -169,7 +169,7 @@ print_struct (dstring_t *dstr, type_t *t, int level, int id)
 		int         val;
 		const char *port = "";
 		if (sym->sy_type == sy_const) {
-			val = sym->s.value->v.integer_val;
+			val = sym->s.value->v.int_val;
 		} else {
 			if (sym->sy_type != sy_var) {
 				continue;

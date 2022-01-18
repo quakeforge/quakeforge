@@ -235,17 +235,17 @@ add_enum (symbol_t *enm, symbol_t *name, expr_t *val)
 	name->type = enum_type;
 	value = 0;
 	if (enum_tab->symbols)
-		value = ((symbol_t *)(enum_tab->symtail))->s.value->v.integer_val + 1;
+		value = ((symbol_t *)(enum_tab->symtail))->s.value->v.int_val + 1;
 	if (val) {
 		convert_name (val);
 		if (!is_constant (val))
 			error (val, "non-constant initializer");
-		else if (!is_integer_val (val))
+		else if (!is_int_val (val))
 			error (val, "invalid initializer type");
 		else
-			value = expr_integer (val);
+			value = expr_int (val);
 	}
-	name->s.value = new_integer_val (value);
+	name->s.value = new_int_val (value);
 	symtab_addsymbol (enum_tab, name);
 }
 
@@ -263,12 +263,12 @@ enum_as_bool (type_t *enm, expr_t **zero, expr_t **one)
 	for (sym = symtab->symbols; sym; sym = sym->next) {
 		if (sym->sy_type != sy_const)
 			continue;
-		val = sym->s.value->v.integer_val;
+		val = sym->s.value->v.int_val;
 		if (!val) {
 			zero_sym = sym;
 		} else {
 			if (one_sym) {
-				v = one_sym->s.value->v.integer_val;
+				v = one_sym->s.value->v.int_val;
 				if (val * val > v * v)
 					continue;
 			}

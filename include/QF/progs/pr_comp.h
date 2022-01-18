@@ -524,9 +524,9 @@ typedef union pr_type_u {
 	pr_uint_t   entity_var;
 	float       vector_var;	// really [3], but this structure must be 32 bits
 	float       quat_var;	// really [4], but this structure must be 32 bits
-	pr_int_t    integer_var;
+	pr_int_t    int_var;
 	pr_ptr_t    pointer_var;
-	pr_uint_t   uinteger_var;
+	pr_uint_t   uint_var;
 } pr_type_t;
 
 typedef struct pr_va_list_s {

@@ -1548,8 +1548,8 @@ AddLinksToPmove (areanode_t *node)
 			pe->info = NUM_FOR_EDICT (&sv_pr_state, check);
 
 			if (sv_fields.rotated_bbox != -1
-				&& SVinteger (check, rotated_bbox)) {
-				int h = SVinteger (check, rotated_bbox) - 1;
+				&& SVint (check, rotated_bbox)) {
+				int h = SVint (check, rotated_bbox) - 1;
 
 				pe->hull = pf_hull_list[h]->hulls[1];
 			} else {

@@ -241,11 +241,11 @@ v6p_opcode_init (void)
 			// treats the operands of certain operands as integers
 			// irrespective the progs version, so convert the engine's
 			// view of the operands to the prog's view.
-			if (mop->type_a == ev_integer)
+			if (mop->type_a == ev_int)
 				mop->type_a = ev_float;
-			if (mop->type_b == ev_integer)
+			if (mop->type_b == ev_int)
 				mop->type_b = ev_float;
-			if (mop->type_c == ev_integer)
+			if (mop->type_c == ev_int)
 				mop->type_c = ev_float;
 		}
 		Hash_AddElement (v6p_opcode_type_table, mop);

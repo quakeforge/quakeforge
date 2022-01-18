@@ -221,7 +221,7 @@ error:
 			break;
 		case ty_enum:
 			// enums are ints
-			size = pr_type_size[ev_integer];
+			size = pr_type_size[ev_int];
 			break;
 		case ty_class:
 			//FIXME

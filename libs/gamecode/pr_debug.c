@@ -137,9 +137,9 @@ static void pr_debug_pointer_view (qfot_type_t *type, pr_type_t *value,
 								void *_data);
 static void pr_debug_quat_view (qfot_type_t *type, pr_type_t *value,
 								void *_data);
-static void pr_debug_integer_view (qfot_type_t *type, pr_type_t *value,
+static void pr_debug_int_view (qfot_type_t *type, pr_type_t *value,
 								void *_data);
-static void pr_debug_uinteger_view (qfot_type_t *type, pr_type_t *value,
+static void pr_debug_uint_view (qfot_type_t *type, pr_type_t *value,
 								void *_data);
 static void pr_debug_short_view (qfot_type_t *type, pr_type_t *value,
 								void *_data);
@@ -170,8 +170,8 @@ static type_view_t raw_type_view = {
 	pr_debug_func_view,
 	pr_debug_pointer_view,
 	pr_debug_quat_view,
-	pr_debug_integer_view,
-	pr_debug_uinteger_view,
+	pr_debug_int_view,
+	pr_debug_uint_view,
 	pr_debug_short_view,
 	pr_debug_double_view,
 	pr_debug_long_view,
@@ -269,7 +269,7 @@ pr_debug_type_size (const progs_t *pr, const qfot_type_t *type)
 			}
 			return size;
 		case ty_enum:
-			return pr_type_size[ev_integer];
+			return pr_type_size[ev_int];
 		case ty_array:
 			aux_type = &G_STRUCT (pr, qfot_type_t, type->array.type);
 			size = pr_debug_type_size (pr, aux_type);
@@ -356,7 +356,7 @@ parse_expression (progs_t *pr, const char *expr, int conditional)
 					goto error;
 				if (!Script_GetToken (es, 1))
 					goto error;
-				pr->wp_val.integer_var = strtol (es->token->str, &e, 0);
+				pr->wp_val.int_var = strtol (es->token->str, &e, 0);
 				if (e == es->token->str)
 					goto error;
 				if (*e == '.' || *e == 'e' || *e == 'E')
@@ -404,7 +404,7 @@ pr_debug_clear (progs_t *pr, void *data)
 
 	pr->watch = 0;
 	pr->wp_conditional = 0;
-	pr->wp_val.integer_var = 0;
+	pr->wp_val.int_var = 0;
 
 	for (int i = 0; i < ev_type_count; i++ ) {
 		res->type_encodings[i] = &res->void_type;
@@ -1056,11 +1056,11 @@ value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 				case ev_quat:
 					raw_type_view.quat_view (type, value, data);
 					break;
-				case ev_integer:
-					raw_type_view.integer_view (type, value, data);
+				case ev_int:
+					raw_type_view.int_view (type, value, data);
 					break;
-				case ev_uinteger:
-					raw_type_view.uinteger_view (type, value, data);
+				case ev_uint:
+					raw_type_view.uint_view (type, value, data);
 					break;
 				case ev_short:
 					raw_type_view.short_view (type, value, data);
@@ -1242,9 +1242,9 @@ pr_debug_float_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	dstring_t  *dstr = data->dstr;
 
 	if (data->pr->progs->version == PROG_ID_VERSION
-		&& ISDENORM (value->integer_var)
-		&& value->uinteger_var != 0x80000000) {
-		dasprintf (dstr, "<%08x>", value->integer_var);
+		&& ISDENORM (value->int_var)
+		&& value->uint_var != 0x80000000) {
+		dasprintf (dstr, "<%08x>", value->int_var);
 	} else {
 		dasprintf (dstr, "%.9g", value->float_var);
 	}
@@ -1284,12 +1284,12 @@ pr_debug_field_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	progs_t    *pr = data->pr;
 	dstring_t  *dstr = data->dstr;
-	pr_def_t   *def = PR_FieldAtOfs (pr, value->integer_var);
+	pr_def_t   *def = PR_FieldAtOfs (pr, value->int_var);
 
 	if (def) {
 		dasprintf (dstr, ".%s", PR_GetString (pr, def->name));
 	} else {
-		dasprintf (dstr, ".<$%04x>", value->integer_var);
+		dasprintf (dstr, ".<$%04x>", value->int_var);
 	}
 }
 
@@ -1316,7 +1316,7 @@ pr_debug_pointer_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	progs_t    *pr = data->pr;
 	dstring_t  *dstr = data->dstr;
-	pr_ptr_t    offset = value->integer_var;
+	pr_ptr_t    offset = value->int_var;
 	pr_ptr_t    offs = offset;
 	pr_def_t   *def = 0;
 
@@ -1342,21 +1342,21 @@ pr_debug_quat_view (qfot_type_t *type, pr_type_t *value, void *_data)
 }
 
 static void
-pr_debug_integer_view (qfot_type_t *type, pr_type_t *value, void *_data)
+pr_debug_int_view (qfot_type_t *type, pr_type_t *value, void *_data)
 {
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "%d", value->integer_var);
+	dasprintf (dstr, "%d", value->int_var);
 }
 
 static void
-pr_debug_uinteger_view (qfot_type_t *type, pr_type_t *value, void *_data)
+pr_debug_uint_view (qfot_type_t *type, pr_type_t *value, void *_data)
 {
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "$%08x", value->uinteger_var);
+	dasprintf (dstr, "$%08x", value->uint_var);
 }
 
 static void
@@ -1365,7 +1365,7 @@ pr_debug_short_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
 
-	dasprintf (dstr, "%04x", (short)value->integer_var);
+	dasprintf (dstr, "%04x", (short)value->int_var);
 }
 
 static void
@@ -1468,7 +1468,7 @@ PR_Debug_Watch (progs_t *pr, const char *expr)
 						(int) (intptr_t) (pr->watch - pr->pr_globals));
 			if (pr->wp_conditional)
 				Sys_Printf ("        if new val == %d\n",
-							pr->wp_val.integer_var);
+							pr->wp_val.int_var);
 		} else { Sys_Printf ("    none active\n");
 		}
 		return;
@@ -1481,7 +1481,7 @@ PR_Debug_Watch (progs_t *pr, const char *expr)
 	if (pr->watch) {
 		Sys_Printf ("watchpoint set to [%d]\n", PR_SetPointer (pr, pr->watch));
 		if (pr->wp_conditional)
-			Sys_Printf ("    if new val == %d\n", pr->wp_val.integer_var);
+			Sys_Printf ("    if new val == %d\n", pr->wp_val.int_var);
 	} else {
 		Sys_Printf ("watchpoint cleared\n");
 	}
@@ -1672,7 +1672,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						{
 							edict_t    *ed = 0;
 							opval = pr->pr_globals[s->a].entity_var;
-							parm_ind = pr->pr_globals[s->b].uinteger_var;
+							parm_ind = pr->pr_globals[s->b].uint_var;
 							if (parm_ind < pr->progs->entityfields
 								&& opval > 0
 								&& opval < pr->pr_edict_area_size) {

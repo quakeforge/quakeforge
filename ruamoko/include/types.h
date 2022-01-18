@@ -11,8 +11,8 @@ typedef enum {
 	ev_func,
 	ev_pointer,			// end of v6 types
 	ev_quat,
-	ev_integer,
-	ev_uinteger,
+	ev_int,
+	ev_uint,
 	ev_short,			// value is embedded in the opcode
 	ev_double,
 

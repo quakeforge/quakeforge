@@ -76,7 +76,7 @@ cmp_result_expr (int result)
 	if (is_float (type_default)) {
 		return new_float_expr (result);
 	} else {
-		return new_integer_expr(result);
+		return new_int_expr(result);
 	}
 }
 
@@ -92,7 +92,7 @@ do_op_string (int op, expr_t *e, expr_t *e1, expr_t *e2)
 
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion > PROG_ID_VERSION)
-			e->e.expr.type = &type_integer;
+			e->e.expr.type = &type_int;
 		else
 			e->e.expr.type = &type_float;
 	} else {
@@ -153,7 +153,7 @@ convert_to_float (expr_t *e)
 	switch (e->type) {
 		case ex_value:
 			switch (e->e.value->lltype) {
-				case ev_integer:
+				case ev_int:
 					convert_int (e);
 					return e;
 				case ev_short:
@@ -188,8 +188,8 @@ convert_to_double (expr_t *e)
 	switch (e->type) {
 		case ex_value:
 			switch (e->e.value->lltype) {
-				case ev_integer:
-					e->e.value = new_double_val (expr_integer (e));
+				case ev_int:
+					e->e.value = new_double_val (expr_int (e));
 					return e;
 				case ev_short:
 					e->e.value = new_double_val (expr_short (e));
@@ -235,7 +235,7 @@ do_op_float (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	}
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion > PROG_ID_VERSION)
-			type = &type_integer;
+			type = &type_int;
 		else
 			type = &type_float;
 	}
@@ -354,7 +354,7 @@ do_op_double (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		e->e.expr.e2 = e2 = conv;
 	}
 	if (is_compare (op) || is_logic (op)) {
-		type = &type_integer;
+		type = &type_int;
 	}
 	e->e.expr.type = type;
 
@@ -456,7 +456,7 @@ do_op_vector (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	}
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion > PROG_ID_VERSION)
-			e->e.expr.type = &type_integer;
+			e->e.expr.type = &type_int;
 		else
 			e->e.expr.type = &type_float;
 	} else if (op == '*' && is_vector(get_type (e2))) {
@@ -555,7 +555,7 @@ do_op_entity (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	}
 	if (op == EQ || op == NE) {
 		if (options.code.progsversion > PROG_ID_VERSION)
-			e->e.expr.type = &type_integer;
+			e->e.expr.type = &type_int;
 		else
 			e->e.expr.type = &type_float;
 		return e;
@@ -577,7 +577,7 @@ do_op_func (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	if (op == EQ || op == NE) {
 		if (options.code.progsversion > PROG_ID_VERSION)
-			e->e.expr.type = &type_integer;
+			e->e.expr.type = &type_int;
 		else
 			e->e.expr.type = &type_float;
 		return e;
@@ -606,23 +606,23 @@ do_op_pointer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 		type = get_type (e1);
 		if (type != get_type (e2))
 			return error (e2, "invalid operands to binary -");
-		e1 = new_alias_expr (&type_integer, e1);
-		e2 = new_alias_expr (&type_integer, e2);
+		e1 = new_alias_expr (&type_int, e1);
+		e2 = new_alias_expr (&type_int, e2);
 		e = binary_expr ('-', e1, e2);
 		if (type_size (type) != 1)
-			e = binary_expr ('/', e, new_integer_expr (type_size (type)));
+			e = binary_expr ('/', e, new_int_expr (type_size (type)));
 		return e;
 	}
 	if (op == EQ || op == NE) {
 		if (options.code.progsversion > PROG_ID_VERSION)
-			e->e.expr.type = &type_integer;
+			e->e.expr.type = &type_int;
 		else
 			e->e.expr.type = &type_float;
 	}
 	if (op != '.' && extract_type (e1) != extract_type (e2))
 		return type_mismatch (e1, e2, op);
-	if (op == '.' && is_uinteger(get_type (e2)))
-		e->e.expr.e2 = cf_cast_expr (&type_integer, e2);
+	if (op == '.' && is_uint(get_type (e2)))
+		e->e.expr.e2 = cf_cast_expr (&type_int, e2);
 	return e;
 }
 
@@ -677,7 +677,7 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	}
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion > PROG_ID_VERSION)
-			e->e.expr.type = &type_integer;
+			e->e.expr.type = &type_int;
 		else
 			e->e.expr.type = &type_float;
 	} else if (op == '/' && !is_constant (e1)) {
@@ -759,7 +759,7 @@ do_op_quaternion (int op, expr_t *e, expr_t *e1, expr_t *e2)
 }
 
 static expr_t *
-do_op_integer (int op, expr_t *e, expr_t *e1, expr_t *e2)
+do_op_int (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	int         isval1 = 0, isval2 = 0;
 	int         val1 = 0, val2 = 0;
@@ -769,33 +769,33 @@ do_op_integer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 	};
 
 	if (!valid_op (op, valid))
-		return error (e1, "invalid operator for integer");
+		return error (e1, "invalid operator for int");
 
 	if (is_short_val (e1)) {
 		isval1 = 1;
 		val1 = expr_short (e1);
 	}
-	if (is_integer_val (e1)) {
+	if (is_int_val (e1)) {
 		isval1 = 1;
-		val1 = expr_integer (e1);
+		val1 = expr_int (e1);
 	}
 
 	if (is_short_val (e2)) {
 		isval2 = 1;
 		val2 = expr_short (e2);
 	}
-	if (is_integer_val (e2)) {
+	if (is_int_val (e2)) {
 		isval2 = 1;
-		val2 = expr_integer (e2);
+		val2 = expr_int (e2);
 	}
 
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion > PROG_ID_VERSION)
-			e->e.expr.type = &type_integer;
+			e->e.expr.type = &type_int;
 		else
 			e->e.expr.type = &type_float;
 	} else {
-		e->e.expr.type = &type_integer;
+		e->e.expr.type = &type_int;
 	}
 
 	if (op == '*' && isval1 && val1 == 1)
@@ -824,36 +824,36 @@ do_op_integer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 
 	switch (op) {
 		case '+':
-			e = new_integer_expr (val1 + val2);
+			e = new_int_expr (val1 + val2);
 			break;
 		case '-':
-			e = new_integer_expr (val1 - val2);
+			e = new_int_expr (val1 - val2);
 			break;
 		case '*':
-			e = new_integer_expr (val1 * val2);
+			e = new_int_expr (val1 * val2);
 			break;
 		case '/':
 			if (options.warnings.integer_divide)
 				warning (e2, "%d / %d == %d", val1, val2, val1 / val2);
-			e = new_integer_expr (val1 / val2);
+			e = new_int_expr (val1 / val2);
 			break;
 		case '&':
-			e = new_integer_expr (val1 & val2);
+			e = new_int_expr (val1 & val2);
 			break;
 		case '|':
-			e = new_integer_expr (val1 | val2);
+			e = new_int_expr (val1 | val2);
 			break;
 		case '^':
-			e = new_integer_expr (val1 ^ val2);
+			e = new_int_expr (val1 ^ val2);
 			break;
 		case '%':
-			e = new_integer_expr (val1 % val2);
+			e = new_int_expr (val1 % val2);
 			break;
 		case SHL:
-			e = new_integer_expr (val1 << val2);
+			e = new_int_expr (val1 << val2);
 			break;
 		case SHR:
-			e = new_integer_expr (val1 >> val2);
+			e = new_int_expr (val1 >> val2);
 			break;
 		case AND:
 			e = cmp_result_expr (val1 && val2);
@@ -888,7 +888,7 @@ do_op_integer (int op, expr_t *e, expr_t *e1, expr_t *e2)
 }
 
 static expr_t *
-do_op_uinteger (int op, expr_t *e, expr_t *e1, expr_t *e2)
+do_op_uint (int op, expr_t *e, expr_t *e1, expr_t *e2)
 {
 	return e;
 }
@@ -907,7 +907,7 @@ do_op_short (int op, expr_t *e, expr_t *e1, expr_t *e2)
 
 	if (is_compare (op) || is_logic (op)) {
 		if (options.code.progsversion > PROG_ID_VERSION)
-			e->e.expr.type = &type_integer;
+			e->e.expr.type = &type_int;
 		else
 			e->e.expr.type = &type_float;
 	} else {
@@ -1004,14 +1004,14 @@ do_op_compound (int op, expr_t *e, expr_t *e1, expr_t *e2)
 				return do_op_float (op, e, e1, e2);
 			if (t2->type == ev_double)
 				return do_op_float (op, e, e1, e2);
-			return do_op_integer (op, e, e1, e2);
+			return do_op_int (op, e, e1, e2);
 		}
 		if (is_enum (t2)) {
 			if (t1->type == ev_double)
 				return do_op_double (op, e, e1, e2);
 			if (t1->type == ev_float)
 				return do_op_float (op, e, e1, e2);
-			return do_op_integer (op, e, e1, e2);
+			return do_op_int (op, e, e1, e2);
 		}
 	}
 	return error (e1, "invalid operator for compound");
@@ -1062,8 +1062,8 @@ static operation_t op_void[ev_type_count] = {
 	do_op_invalid,						// ev_func
 	do_op_invalid,						// ev_pointer
 	do_op_invalid,						// ev_quaternion
-	do_op_invalid,						// ev_integer
-	do_op_invalid,						// ev_uinteger
+	do_op_invalid,						// ev_int
+	do_op_invalid,						// ev_uint
 	do_op_invalid,						// ev_short
 	do_op_invalid,						// ev_double
 	0,									// ev_long
@@ -1081,8 +1081,8 @@ static operation_t op_string[ev_type_count] = {
 	do_op_invalid,						// ev_func
 	do_op_invalid,						// ev_pointer
 	do_op_invalid,						// ev_quaternion
-	do_op_invalid,						// ev_integer
-	do_op_invalid,						// ev_uinteger
+	do_op_invalid,						// ev_int
+	do_op_invalid,						// ev_uint
 	do_op_invalid,						// ev_short
 	do_op_invalid,						// ev_double
 	0,									// ev_long
@@ -1100,8 +1100,8 @@ static operation_t op_float[ev_type_count] = {
 	do_op_invalid,						// ev_func
 	do_op_invalid,						// ev_pointer
 	do_op_quaternion,					// ev_quaternion
-	do_op_float,						// ev_integer
-	do_op_float,						// ev_uinteger
+	do_op_float,						// ev_int
+	do_op_float,						// ev_uint
 	do_op_float,						// ev_short
 	do_op_double,						// ev_double
 	0,									// ev_long
@@ -1119,8 +1119,8 @@ static operation_t op_vector[ev_type_count] = {
 	do_op_invalid,						// ev_func
 	do_op_invalid,						// ev_pointer
 	do_op_invalid,						// ev_quaternion
-	do_op_vector,						// ev_integer
-	do_op_vector,						// ev_uinteger
+	do_op_vector,						// ev_int
+	do_op_vector,						// ev_uint
 	do_op_vector,						// ev_short
 	do_op_vector,						// ev_double
 	0,									// ev_long
@@ -1138,8 +1138,8 @@ static operation_t op_entity[ev_type_count] = {
 	do_op_invalid,						// ev_func
 	do_op_invalid,						// ev_pointer
 	do_op_invalid,						// ev_quaternion
-	do_op_invalid,						// ev_integer
-	do_op_invalid,						// ev_uinteger
+	do_op_invalid,						// ev_int
+	do_op_invalid,						// ev_uint
 	do_op_invalid,						// ev_short
 	do_op_invalid,						// ev_double
 	0,									// ev_long
@@ -1157,8 +1157,8 @@ static operation_t op_field[ev_type_count] = {
 	do_op_invalid,						// ev_func
 	do_op_invalid,						// ev_pointer
 	do_op_invalid,						// ev_quaternion
-	do_op_invalid,						// ev_integer
-	do_op_invalid,						// ev_uinteger
+	do_op_invalid,						// ev_int
+	do_op_invalid,						// ev_uint
 	do_op_invalid,						// ev_short
 	do_op_invalid,						// ev_double
 	0,									// ev_long
@@ -1176,8 +1176,8 @@ static operation_t op_func[ev_type_count] = {
 	do_op_func,							// ev_func
 	do_op_func,							// ev_pointer
 	do_op_func,							// ev_quaternion
-	do_op_func,							// ev_integer
-	do_op_func,							// ev_uinteger
+	do_op_func,							// ev_int
+	do_op_func,							// ev_uint
 	do_op_func,							// ev_short
 	do_op_func,							// ev_double
 	0,									// ev_long
@@ -1195,8 +1195,8 @@ static operation_t op_pointer[ev_type_count] = {
 	do_op_pointer,						// ev_func
 	do_op_pointer,						// ev_pointer
 	do_op_pointer,						// ev_quaternion
-	do_op_pointer,						// ev_integer
-	do_op_pointer,						// ev_uinteger
+	do_op_pointer,						// ev_int
+	do_op_pointer,						// ev_uint
 	do_op_pointer,						// ev_short
 	do_op_pointer,						// ev_double
 	0,									// ev_long
@@ -1214,8 +1214,8 @@ static operation_t op_quaternion[ev_type_count] = {
 	do_op_invalid,						// ev_func
 	do_op_invalid,						// ev_pointer
 	do_op_quaternion,					// ev_quaternion
-	do_op_quaternion,					// ev_integer
-	do_op_quaternion,					// ev_uinteger
+	do_op_quaternion,					// ev_int
+	do_op_quaternion,					// ev_uint
 	do_op_quaternion,					// ev_short
 	do_op_quaternion,					// ev_double
 	0,									// ev_long
@@ -1223,7 +1223,7 @@ static operation_t op_quaternion[ev_type_count] = {
 	do_op_invalid,						// ev_invalid
 };
 
-static operation_t op_integer[ev_type_count] = {
+static operation_t op_int[ev_type_count] = {
 	do_op_invalid,						// ev_void
 	do_op_invalid,						// ev_string
 	do_op_float,						// ev_float
@@ -1233,16 +1233,16 @@ static operation_t op_integer[ev_type_count] = {
 	do_op_invalid,						// ev_func
 	do_op_invalid,						// ev_pointer
 	do_op_quaternion,					// ev_quaternion
-	do_op_integer,						// ev_integer
-	do_op_uinteger,						// ev_uinteger
-	do_op_integer,						// ev_short
+	do_op_int,							// ev_int
+	do_op_uint,							// ev_uint
+	do_op_int,							// ev_short
 	do_op_double,						// ev_double
 	0,									// ev_long
 	0,									// ev_ulong
 	do_op_invalid,						// ev_invalid
 };
 
-static operation_t op_uinteger[ev_type_count] = {
+static operation_t op_uint[ev_type_count] = {
 	do_op_invalid,						// ev_void
 	do_op_invalid,						// ev_string
 	do_op_float,						// ev_float
@@ -1252,9 +1252,9 @@ static operation_t op_uinteger[ev_type_count] = {
 	do_op_invalid,						// ev_func
 	do_op_invalid,						// ev_pointer
 	do_op_quaternion,					// ev_quaternion
-	do_op_uinteger,						// ev_integer
-	do_op_uinteger,						// ev_uinteger
-	do_op_uinteger,						// ev_short
+	do_op_uint,							// ev_int
+	do_op_uint,							// ev_uint
+	do_op_uint,							// ev_short
 	do_op_double,						// ev_double
 	0,									// ev_long
 	0,									// ev_ulong
@@ -1271,8 +1271,8 @@ static operation_t op_short[ev_type_count] = {
 	do_op_invalid,						// ev_func
 	do_op_invalid,						// ev_pointer
 	do_op_quaternion,					// ev_quaternion
-	do_op_integer,						// ev_integer
-	do_op_uinteger,						// ev_uinteger
+	do_op_int,							// ev_int
+	do_op_uint,							// ev_uint
 	do_op_short,						// ev_short
 	do_op_double,						// ev_double
 	0,									// ev_long
@@ -1290,8 +1290,8 @@ static operation_t op_double[ev_type_count] = {
 	do_op_invalid,						// ev_func
 	do_op_invalid,						// ev_pointer
 	do_op_quaternion,					// ev_quaternion
-	do_op_integer,						// ev_integer
-	do_op_uinteger,						// ev_uinteger
+	do_op_int,							// ev_int
+	do_op_uint,							// ev_uint
 	do_op_short,						// ev_short
 	do_op_double,						// ev_double
 	0,									// ev_long
@@ -1309,8 +1309,8 @@ static operation_t op_compound[ev_type_count] = {
 	do_op_invalid,						// ev_func
 	do_op_invalid,						// ev_pointer
 	do_op_invalid,						// ev_quaternion
-	do_op_compound,						// ev_integer
-	do_op_compound,						// ev_uinteger
+	do_op_compound,						// ev_int
+	do_op_compound,						// ev_uint
 	do_op_compound,						// ev_short
 	do_op_compound,						// ev_double
 	do_op_compound,						// ev_long
@@ -1328,8 +1328,8 @@ static operation_t *do_op[ev_type_count] = {
 	op_func,							// ev_func
 	op_pointer,							// ev_pointer
 	op_quaternion,						// ev_quaternion
-	op_integer,							// ev_integer
-	op_uinteger,						// ev_uinteger
+	op_int,								// ev_int
+	op_uint,							// ev_uint
 	op_short,							// ev_short
 	op_double,							// ev_double
 	0,									// ev_long
@@ -1390,7 +1390,7 @@ uop_float (int op, expr_t *e, expr_t *e1)
 	if (op == '+')
 		return e1;
 	type = get_type (e);
-	if (op == 'C' && !is_integer(type) && !is_double(type))
+	if (op == 'C' && !is_int(type) && !is_double(type))
 		return error (e1, "invalid cast of float");
 	if (!is_constant (e1))
 		return e;
@@ -1403,8 +1403,8 @@ uop_float (int op, expr_t *e, expr_t *e1)
 		case '~':
 			return new_float_expr (~(int) expr_float (e1));
 		case 'C':
-			if (is_integer(type)) {
-				return new_integer_expr (expr_float (e1));
+			if (is_int(type)) {
+				return new_int_expr (expr_float (e1));
 			} else {
 				return new_double_expr (expr_float (e1));
 			}
@@ -1533,7 +1533,7 @@ uop_quaternion (int op, expr_t *e, expr_t *e1)
 }
 
 static expr_t *
-uop_integer (int op, expr_t *e, expr_t *e1)
+uop_int (int op, expr_t *e, expr_t *e1)
 {
 	static int  valid[] = { '+', '-', '!', '~', 'C', 0 };
 
@@ -1548,19 +1548,19 @@ uop_integer (int op, expr_t *e, expr_t *e1)
 		return e;
 	switch (op) {
 		case '-':
-			return new_integer_expr (-expr_integer (e1));
+			return new_int_expr (-expr_int (e1));
 		case '!':
-			return cmp_result_expr (!expr_integer (e1));
+			return cmp_result_expr (!expr_int (e1));
 		case '~':
-			return new_integer_expr (~expr_integer (e1));
+			return new_int_expr (~expr_int (e1));
 		case 'C':
-			return new_float_expr (expr_integer (e1));
+			return new_float_expr (expr_int (e1));
 	}
-	internal_error (e, "integer unary op blew up");
+	internal_error (e, "int unary op blew up");
 }
 
 static expr_t *
-uop_uinteger (int op, expr_t *e, expr_t *e1)
+uop_uint (int op, expr_t *e, expr_t *e1)
 {
 	static int  valid[] = { '+', '-', '!', '~', 0 };
 
@@ -1573,13 +1573,13 @@ uop_uinteger (int op, expr_t *e, expr_t *e1)
 		return e;
 	switch (op) {
 		case '-':
-			return new_uinteger_expr (-expr_uinteger (e1));
+			return new_uint_expr (-expr_uint (e1));
 		case '!':
-			return cmp_result_expr (!expr_uinteger (e1));
+			return cmp_result_expr (!expr_uint (e1));
 		case '~':
-			return new_uinteger_expr (~expr_uinteger (e1));
+			return new_uint_expr (~expr_uint (e1));
 	}
-	internal_error (e, "uinteger unary op blew up");
+	internal_error (e, "uint unary op blew up");
 }
 
 static expr_t *
@@ -1617,7 +1617,7 @@ uop_double (int op, expr_t *e, expr_t *e1)
 	if (op == '+')
 		return e1;
 	type = get_type (e);
-	if (op == 'C' && !is_integer(type) && !is_float(type))
+	if (op == 'C' && !is_int(type) && !is_float(type))
 		return error (e1, "invalid cast of double");
 	if (!is_constant (e1))
 		return e;
@@ -1628,8 +1628,8 @@ uop_double (int op, expr_t *e, expr_t *e1)
 			print_type (get_type (e));
 			return cmp_result_expr (!expr_double (e1));
 		case 'C':
-			if (is_integer(type)) {
-				return new_integer_expr (expr_double (e1));
+			if (is_int(type)) {
+				return new_int_expr (expr_double (e1));
 			} else {
 				return new_float_expr (expr_double (e1));
 			}
@@ -1644,7 +1644,7 @@ uop_compound (int op, expr_t *e, expr_t *e1)
 
 	if (is_scalar (t1)) {
 		if (is_enum (t1)) {
-			return uop_integer (op, e, e1);
+			return uop_int (op, e, e1);
 		}
 	}
 	return error (e1, "invalid operand for unary %s", get_op_string (op));
@@ -1660,8 +1660,8 @@ static unaryop_t do_unary_op[ev_type_count] = {
 	uop_func,							// ev_func
 	uop_pointer,						// ev_pointer
 	uop_quaternion,						// ev_quaternion
-	uop_integer,						// ev_integer
-	uop_uinteger,						// ev_uinteger
+	uop_int,							// ev_int
+	uop_uint,							// ev_uint
 	uop_short,							// ev_short
 	uop_double,							// ev_double
 	uop_compound,						// ev_invalid

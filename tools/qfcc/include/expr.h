@@ -201,8 +201,8 @@ typedef struct ex_value_s {
 		ex_func_t   func_val;			///< function constant
 		ex_pointer_t pointer;			///< pointer constant
 		float       quaternion_val[4];	///< quaternion constant
-		int         integer_val;		///< integer constant
-		unsigned    uinteger_val;		///< unsigned integer constant
+		int         int_val;			///< int constant
+		unsigned    uint_val;			///< unsigned int constant
 		short       short_val;			///< short constant
 	} v;
 } ex_value_t;
@@ -571,23 +571,23 @@ expr_t *new_pointer_expr (int val, struct type_s *type, struct def_s *def);
 expr_t *new_quaternion_expr (const float *quaternion_val);
 const float *expr_quaternion (expr_t *e) __attribute__((pure));
 
-/** Create a new integer constant expression node.
+/** Create a new itn constant expression node.
 
-	\param integer_val	The integer constant being represented.
-	\return			The new integer constant expression node
-					(expr_t::e::integer_val).
+	\param int_val	The int constant being represented.
+	\return			The new int constant expression node
+					(expr_t::e::int_val).
 */
-expr_t *new_integer_expr (int integer_val);
-int expr_integer (expr_t *e) __attribute__((pure));
+expr_t *new_int_expr (int int_val);
+int expr_int (expr_t *e) __attribute__((pure));
 
-/** Create a new integer constant expression node.
+/** Create a new int constant expression node.
 
-	\param uinteger_val	The integer constant being represented.
-	\return			The new integer constant expression node
-					(expr_t::e::integer_val).
+	\param uint_val	The int constant being represented.
+	\return			The new int constant expression node
+					(expr_t::e::int_val).
 */
-expr_t *new_uinteger_expr (unsigned uinteger_val);
-unsigned expr_uinteger (expr_t *e) __attribute__((pure));
+expr_t *new_uint_expr (unsigned uint_val);
+unsigned expr_uint (expr_t *e) __attribute__((pure));
 
 /** Create a new short constant expression node.
 
@@ -652,8 +652,8 @@ int is_string_val (expr_t *e) __attribute__((pure));
 int is_float_val (expr_t *e) __attribute__((pure));
 int is_vector_val (expr_t *e) __attribute__((pure));
 int is_quaternion_val (expr_t *e) __attribute__((pure));
-int is_integer_val (expr_t *e) __attribute__((pure));
-int is_uinteger_val (expr_t *e) __attribute__((pure));
+int is_int_val (expr_t *e) __attribute__((pure));
+int is_uint_val (expr_t *e) __attribute__((pure));
 int is_short_val (expr_t *e) __attribute__((pure));
 int is_integral_val (expr_t *e) __attribute__((pure));
 int is_pointer_val (expr_t *e) __attribute__((pure));

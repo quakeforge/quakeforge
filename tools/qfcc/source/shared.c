@@ -72,7 +72,7 @@ check_undefined (symbol_t *sym)
 		if (options.code.progsversion == PROG_ID_VERSION)
 			sym->type = &type_float;
 		else
-			sym->type = &type_integer;
+			sym->type = &type_int;
 	}
 	return sym;
 }

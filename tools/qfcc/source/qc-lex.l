@@ -131,9 +131,9 @@ STRING		\"(\\.|[^"\\])*\"
 						else
 							i = strtol (yytext, 0, 0);
 						if (*c == 'u' || *c == 'U')
-							qc_yylval.expr = new_integer_expr (i);//FIXME
+							qc_yylval.expr = new_int_expr (i);//FIXME
 						else
-							qc_yylval.expr = new_integer_expr (i);
+							qc_yylval.expr = new_int_expr (i);
 						return VALUE;
 					}
 
@@ -208,7 +208,7 @@ STRING		\"(\\.|[^"\\])*\"
 
 						if (str[1])
 							warning (0, "multibyte char constant");
-						qc_yylval.expr = new_integer_expr (*str);
+						qc_yylval.expr = new_int_expr (*str);
 						return VALUE;
 					}
 
@@ -269,7 +269,7 @@ STRING		\"(\\.|[^"\\])*\"
 "$"{s}*{FRAMEID}	{
 						int ret = do_grab (yytext);
 						if (ret >= 0) {
-							qc_yylval.expr = new_integer_expr (ret);
+							qc_yylval.expr = new_int_expr (ret);
 							return VALUE;
 						} else {
 							BEGIN (-ret);
@@ -376,8 +376,8 @@ static keyword_t at_keywords[] = {
 static keyword_t qf_keywords[] = {
 	{"quaternion",	TYPE,	&type_quaternion},
 	{"double",		TYPE,	&type_double},
-	{"int",			TYPE,	&type_integer	},
-	{"unsigned",	TYPE,	&type_integer	},//FIXME
+	{"int",			TYPE,	&type_int	},
+	{"unsigned",	TYPE,	&type_int	},//FIXME
 
 	{"@function",	TYPE,	&type_function	},
 	{"@args",		ARGS,	0				},

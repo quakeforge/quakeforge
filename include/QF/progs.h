@@ -416,29 +416,29 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define G_DOUBLE(p,o)	(*(double *) ((p)->pr_globals + o))
 
-/** Access an integer global. Can be assigned to.
+/** Access an int global. Can be assigned to.
 
 	\par QC type:
-		\c integer
+		\c int
 	\param p		pointer to ::progs_t VM struct
 	\param o		offset into global data space
 	\return			int lvalue
 
 	\hideinitializer
 */
-#define G_INT(p,o)		G_var (p, o, integer)
+#define G_INT(p,o)		G_var (p, o, int)
 
-/** Access an unsigned integer global. Can be assigned to.
+/** Access an unsigned int global. Can be assigned to.
 
 	\par QC type:
-		\c uinteger
+		\c uint
 	\param p		pointer to ::progs_t VM struct
 	\param o		offset into global data space
 	\return			unsigned int lvalue
 
 	\hideinitializer
 */
-#define G_UINT(p,o)		G_var (p, o, uinteger)
+#define G_UINT(p,o)		G_var (p, o, uint)
 
 /** Access a vector global. Can be assigned to.
 
@@ -632,29 +632,29 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define P_DOUBLE(p,n)	P_PACKED(p, double, n)
 
-/** Access an integer parameter. Can be assigned to.
+/** Access an int parameter. Can be assigned to.
 
 	\par QC type:
-		\c integer
+		\c int
 	\param p		pointer to ::progs_t VM struct
 	\param n		parameter number (0-7)
 	\return			int lvalue
 
 	\hideinitializer
 */
-#define P_INT(p,n)		P_var (p, n, integer)
+#define P_INT(p,n)		P_var (p, n, int)
 
-/** Access an unsigned integer parameter. Can be assigned to.
+/** Access an unsigned int parameter. Can be assigned to.
 
 	\par QC type:
-		\c uinteger
+		\c uint
 	\param p		pointer to ::progs_t VM struct
 	\param n		parameter number (0-7)
 	\return			unsigned int lvalue
 
 	\hideinitializer
 */
-#define P_UINT(p,n)		P_var (p, n, uinteger)
+#define P_UINT(p,n)		P_var (p, n, uint)
 
 /** Access a vector parameter. Can be used any way a vec3_t variable can.
 
@@ -850,24 +850,24 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 /** Access the VM function return value as a \c ::pr_int_t (AKA int32_t)
 
 	\par QC type:
-		\c integer
+		\c int
 	\param p		pointer to ::progs_t VM struct
 	\return			::pr_int_t lvalue
 
 	\hideinitializer
 */
-#define R_INT(p)		R_var (p, integer)
+#define R_INT(p)		R_var (p, int)
 
 /** Access the VM function return value as a \c ::pr_uint_t (AKA uint32_t)
 
 	\par QC type:
-		\c uinteger
+		\c uint
 	\param p		pointer to ::progs_t VM struct
 	\return			::pr_int_t lvalue
 
 	\hideinitializer
 */
-#define R_UINT(p)		R_var (p, uinteger)
+#define R_UINT(p)		R_var (p, uint)
 
 /** Access the VM function return value as a \c ::vec3_t vector.
 
@@ -1036,29 +1036,29 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define E_DOUBLE(e,o)	(*(double *) ((e)->v + o))
 
-/** Access an integer entity field. Can be assigned to.
+/** Access an int entity field. Can be assigned to.
 
 	\par QC type:
-		\c integer
+		\c int
 	\param e		pointer to the entity
 	\param o		field offset into entity data space
 	\return			int lvalue
 
 	\hideinitializer
 */
-#define E_INT(e,o)		E_var (e, o, integer)
+#define E_INT(e,o)		E_var (e, o, int)
 
-/** Access an unsigned integer entity field. Can be assigned to.
+/** Access an unsigned int entity field. Can be assigned to.
 
 	\par QC type:
-		\c uinteger
+		\c uint
 	\param e		pointer to the entity
 	\param o		field offset into entity data space
 	\return			unsigned int lvalue
 
 	\hideinitializer
 */
-#define E_UINT(e,o)		E_var (e, o, uinteger)
+#define E_UINT(e,o)		E_var (e, o, uint)
 
 /** Access a vector entity field. Can be used any way a vec3_t variable can.
 
@@ -1452,14 +1452,14 @@ void PR_FreeTempStrings (progs_t *pr);
 		<ul>
 		<li>\c '@'	\c id Not yet implemented. Silently ignored.
 		<li>\c 'e'	\c entity Prints the edict number of the given entity ("%i")
-		<li>\c 'i'	\c integer Print a integer value. ("%i")
+		<li>\c 'i'	\c int Print a int value. ("%i")
 		<li>\c 'f'	\c float Print a float value. ("%f")
 		<li>\c 'g'	\c float Print a float value. ("%f")
 		<li>\c 'p'	\c void * Print a pointer value. ("%#x")
 		<li>\c 's'	\c string Print a string value. ("%s")
 		<li>\c 'v'	\c vector Print a vector value. ("'%g %g %g'")
 		<li>\c 'q'	\c quaternion Print a quaternion value. ("'%g %g %g %g'")
-		<li>\c 'x'	\c uinteger Print an unsigned integer value. ("%x")
+		<li>\c 'x'	\c uint Print an unsigned int value. ("%x")
 		</ul>
 	</ul>
 
@@ -1528,7 +1528,7 @@ void *PR_Resources_Find (progs_t *pr, const char *name);
 /** \name Resource Map support
 
 	These macros can be used to create functions for mapping C resources
-	to QuakeC integer handles.
+	to QuakeC int handles.
 
 	Valid handles are always negative.
 
@@ -1731,8 +1731,8 @@ typedef struct type_view_s {
 	type_view_func func_view;
 	type_view_func pointer_view;
 	type_view_func quat_view;
-	type_view_func integer_view;
-	type_view_func uinteger_view;
+	type_view_func int_view;
+	type_view_func uint_view;
 	type_view_func short_view;
 	type_view_func double_view;
 	type_view_func long_view;

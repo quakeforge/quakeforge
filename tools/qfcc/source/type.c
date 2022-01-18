@@ -75,8 +75,8 @@ type_t      type_function = { ev_func, "function", 1, ty_basic,
 type_t      type_pointer = { ev_pointer, "pointer", 1, ty_basic,
 								{{&type_void}} };
 type_t      type_quaternion = { ev_quat, "quaternion", 4 };
-type_t      type_integer = { ev_integer, "int", 1 };
-type_t      type_uinteger = { ev_uinteger, "uint", 1 };
+type_t      type_int = { ev_int, "int", 1 };
+type_t      type_uint = { ev_uint, "uint", 1 };
 type_t      type_short = { ev_short, "short", 1 };
 type_t      type_double = { ev_double, "double", 2 };
 
@@ -106,8 +106,8 @@ type_t     *ev_types[ev_type_count] = {
 	&type_function,
 	&type_pointer,
 	&type_quaternion,
-	&type_integer,
-	&type_uinteger,
+	&type_int,
+	&type_uint,
 	&type_short,
 	&type_double,
 	&type_invalid,
@@ -186,8 +186,8 @@ free_type (type_t *type)
 		case ev_entity:
 		case ev_type_count:
 		case ev_quat:
-		case ev_integer:
-		case ev_uinteger:
+		case ev_int:
+		case ev_uint:
 		case ev_long:
 		case ev_ulong:
 		case ev_short:
@@ -228,8 +228,8 @@ copy_chain (type_t *type, type_t *append)
 					case ev_entity:
 					case ev_type_count:
 					case ev_quat:
-					case ev_integer:
-					case ev_uinteger:
+					case ev_int:
+					case ev_uint:
 					case ev_long:
 					case ev_ulong:
 					case ev_short:
@@ -281,8 +281,8 @@ append_type (type_t *type, type_t *new)
 					case ev_entity:
 					case ev_type_count:
 					case ev_quat:
-					case ev_integer:
-					case ev_uinteger:
+					case ev_int:
+					case ev_uint:
 					case ev_long:
 					case ev_ulong:
 					case ev_short:
@@ -660,8 +660,8 @@ print_type_str (dstring_t *str, const type_t *type)
 				case ev_vector:
 				case ev_entity:
 				case ev_quat:
-				case ev_integer:
-				case ev_uinteger:
+				case ev_int:
+				case ev_uint:
 				case ev_long:
 				case ev_ulong:
 				case ev_short:
@@ -822,10 +822,10 @@ encode_type (dstring_t *encoding, const type_t *type)
 				case ev_quat:
 					dasprintf (encoding, "Q");
 					return;
-				case ev_integer:
+				case ev_int:
 					dasprintf (encoding, "i");
 					return;
-				case ev_uinteger:
+				case ev_uint:
 					dasprintf (encoding, "I");
 					return;
 				case ev_long:
@@ -863,23 +863,23 @@ is_enum (const type_t *type)
 }
 
 int
-is_integer (const type_t *type)
+is_int (const type_t *type)
 {
 	type = unalias_type (type);
 	etype_t     t = type->type;
 
-	if (t == ev_integer)
+	if (t == ev_int)
 		return 1;
 	return is_enum (type);
 }
 
 int
-is_uinteger (const type_t *type)
+is_uint (const type_t *type)
 {
 	type = unalias_type (type);
 	etype_t     t = type->type;
 
-	if (t == ev_uinteger)
+	if (t == ev_uint)
 		return 1;
 	return is_enum (type);
 }
@@ -899,7 +899,7 @@ int
 is_integral (const type_t *type)
 {
 	type = unalias_type (type);
-	if (is_integer (type) || is_uinteger (type) || is_short (type))
+	if (is_int (type) || is_uint (type) || is_short (type))
 		return 1;
 	return is_enum (type);
 }
@@ -1103,7 +1103,7 @@ type_size (const type_t *type)
 		case ty_enum:
 			if (!type->t.symtab)
 				return 0;
-			return type_size (&type_integer);
+			return type_size (&type_int);
 		case ty_array:
 			return type->t.array.size * type_size (type->t.array.type);
 		case ty_class:
@@ -1138,8 +1138,8 @@ chain_basic_types (void)
 	chain_type (&type_floatfield);
 	if (!options.traditional) {
 		chain_type (&type_quaternion);
-		chain_type (&type_integer);
-		chain_type (&type_uinteger);
+		chain_type (&type_int);
+		chain_type (&type_uint);
 		chain_type (&type_short);
 		chain_type (&type_double);
 	}
@@ -1175,10 +1175,10 @@ init_types (void)
 		{"func_val",         &type_function},
 		{"pointer_val",      &type_pointer},
 		{"vector_val",       &type_vector},
-		{"int_val",          &type_integer},
-		{"uint_val",         &type_uinteger},
-		{"integer_val",      &type_integer},
-		{"uinteger_val",     &type_uinteger},
+		{"int_val",          &type_int},
+		{"uint_val",         &type_uint},
+		{"int_val",          &type_int},
+		{"uint_val",         &type_uint},
 		{"quaternion_val",   &type_quaternion},
 		{"double_val",       &type_double},
 		{0, 0}
@@ -1191,10 +1191,8 @@ init_types (void)
 		{"field_val",        &type_field},
 		{"func_val",         &type_function},
 		{"pointer_val",      &type_pointer},
-		{"int_val",          &type_integer},
-		{"uint_val",         &type_uinteger},
-		{"integer_val",      &type_integer},
-		{"uinteger_val",     &type_uinteger},
+		{"int_val",          &type_int},
+		{"uint_val",         &type_uint},
 		{"quaternion_val",   &type_quaternion},
 		{"double_val",       &type_double},
 		{0, 0}
@@ -1212,7 +1210,7 @@ init_types (void)
 	};
 	static struct_def_t type_encoding_struct[] = {
 		{"types",	&type_pointer},
-		{"size",	&type_integer},
+		{"size",	&type_int},
 		{0, 0}
 	};
 	static struct_def_t xdef_struct[] = {
@@ -1226,7 +1224,7 @@ init_types (void)
 		{0, 0}
 	};
 	static struct_def_t va_list_struct[] = {
-		{"count", &type_integer},
+		{"count", &type_int},
 		{"list",  0},				// type will be filled in at runtime
 		{0, 0}
 	};
@@ -1234,7 +1232,7 @@ init_types (void)
 	chain_basic_types ();
 
 	type_nil = &type_quaternion;
-	type_default = &type_integer;
+	type_default = &type_int;
 	if (options.code.progsversion == PROG_ID_VERSION) {
 		// vector can't be part of .zero for v6 progs because for v6 progs,
 		// .zero is only one word wide.

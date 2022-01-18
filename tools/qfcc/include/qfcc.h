@@ -100,7 +100,7 @@ extern	pr_info_t	pr;
 #define D_var(t, d)			((d)->space->data[(d)->offset].t##_var)
 #define	D_DOUBLE(d)			(*(double *) ((d)->space->data + (d)->offset))
 #define	D_FLOAT(d)			D_var (float, d)
-#define	D_INT(d)			D_var (integer, d)
+#define	D_INT(d)			D_var (int, d)
 #define	D_VECTOR(d)			(&D_var (vector, d))
 #define	D_QUAT(d)			(&D_var (quat, d))
 #define	D_STRING(d)			D_var (string, d)

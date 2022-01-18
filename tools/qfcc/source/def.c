@@ -378,8 +378,7 @@ init_elements (struct def_s *def, expr_t *eles)
 				reloc_def_op (c->e.labelref.label, &dummy);
 				continue;
 			} else if (c->type == ex_value) {
-				if (c->e.value->lltype == ev_integer
-					&& is_float (element->type)) {
+				if (c->e.value->lltype == ev_int && is_float (element->type)) {
 					convert_int (c);
 				}
 				if (is_double (get_type (c)) && is_float (element->type)
@@ -610,7 +609,7 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 			}
 			while (init->type == ex_alias) {
 				if (init->e.alias.offset) {
-					offset += expr_integer (init->e.alias.offset);
+					offset += expr_int (init->e.alias.offset);
 				}
 				init = init->e.alias.expr;
 			}

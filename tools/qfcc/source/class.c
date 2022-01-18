@@ -132,7 +132,7 @@ static struct_def_t category_struct[] = {
 static struct_def_t ivar_struct[] = {
 	{"ivar_name",   &type_string},
 	{"ivar_type",   &type_string},
-	{"ivar_offset", &type_integer},
+	{"ivar_offset", &type_int},
 	{0, 0}
 };
 
@@ -143,8 +143,8 @@ static struct_def_t super_struct[] = {
 };
 
 static struct_def_t module_struct[] = {
-	{"version", &type_integer},
-	{"size",    &type_integer},
+	{"version", &type_int},
+	{"size",    &type_int},
 	{"name",    &type_string},
 	{"symtab",  &type_pointer},
 	{0, 0}
@@ -154,9 +154,9 @@ static struct_def_t class_struct[] = {
 	{"class_pointer",  &type_Class},
 	{"super_class",    &type_Class},
 	{"name",           &type_string},
-	{"version",        &type_integer},
-	{"info",           &type_integer},
-	{"instance_size",  &type_integer},
+	{"version",        &type_int},
+	{"info",           &type_int},
+	{"instance_size",  &type_int},
 	{"ivars",          &type_pointer},
 	{"methods",        &type_pointer},
 	{"dtable",         &type_pointer},
@@ -729,8 +729,8 @@ emit_ivar_count (def_t *def, void *data, int index)
 {
 	ivar_data_t *ivar_data = (ivar_data_t *) data;
 
-	if (!is_integer(def->type))
-		internal_error (0, "%s: expected integer def", __FUNCTION__);
+	if (!is_int(def->type))
+		internal_error (0, "%s: expected int def", __FUNCTION__);
 	D_INT (def) = ivar_data->count;
 }
 
@@ -774,8 +774,8 @@ static def_t *
 emit_ivars (symtab_t *ivars, const char *name)
 {
 	static struct_def_t ivar_list_struct[] = {
-		{"ivar_count", &type_integer, emit_ivar_count},
-		{"ivar_list",  0,             emit_ivar_list_item},
+		{"ivar_count", &type_int, emit_ivar_count},
+		{"ivar_list",  0,         emit_ivar_list_item},
 		{0, 0}
 	};
 	ivar_data_t ivar_data = {0, 0, 0};
@@ -1411,8 +1411,8 @@ emit_symtab_ref_cnt (def_t *def, void *data, int index)
 {
 	obj_symtab_data_t *da = (obj_symtab_data_t *)data;
 
-	if (!is_integer(def->type))
-		internal_error (0, "%s: expected integer def", __FUNCTION__);
+	if (!is_int(def->type))
+		internal_error (0, "%s: expected int def", __FUNCTION__);
 	D_INT (def) = 0;
 	if (da->refs)
 		D_INT (def) = da->refs->type->t.array.size;
@@ -1435,8 +1435,8 @@ emit_symtab_cls_def_cnt (def_t *def, void *data, int index)
 {
 	obj_symtab_data_t *da = (obj_symtab_data_t *)data;
 
-	if (!is_integer(def->type))
-		internal_error (0, "%s: expected integer def", __FUNCTION__);
+	if (!is_int(def->type))
+		internal_error (0, "%s: expected int def", __FUNCTION__);
 	D_INT (def) = da->cls_def_cnt;
 }
 
@@ -1445,8 +1445,8 @@ emit_symtab_cat_def_cnt (def_t *def, void *data, int index)
 {
 	obj_symtab_data_t *da = (obj_symtab_data_t *)data;
 
-	if (!is_integer(def->type))
-		internal_error (0, "%s: expected integer def", __FUNCTION__);
+	if (!is_int(def->type))
+		internal_error (0, "%s: expected int def", __FUNCTION__);
 	D_INT (def) = da->cat_def_cnt;
 }
 
@@ -1489,11 +1489,11 @@ void
 class_finish_module (void)
 {
 	static struct_def_t symtab_struct[] = {
-		{"sel_ref_cnt",	&type_integer, emit_symtab_ref_cnt},
-		{"refs",		&type_SEL,     emit_symtab_refs},
-		{"cls_def_cnt",	&type_integer, emit_symtab_cls_def_cnt},
-		{"cat_def_cnt",	&type_integer, emit_symtab_cat_def_cnt},
-		{"defs",		0,             emit_symtab_defs},
+		{"sel_ref_cnt",	&type_int, emit_symtab_ref_cnt},
+		{"refs",		&type_SEL, emit_symtab_refs},
+		{"cls_def_cnt",	&type_int, emit_symtab_cls_def_cnt},
+		{"cat_def_cnt",	&type_int, emit_symtab_cat_def_cnt},
+		{"defs",		0,         emit_symtab_defs},
 		{0, 0}
 	};
 
@@ -1750,8 +1750,8 @@ emit_protocol_count (def_t *def, void *data, int index)
 {
 	protocollist_t *protocols = (protocollist_t *) data;
 
-	if (!is_integer(def->type)) {
-		internal_error (0, "%s: expected integer def", __FUNCTION__);
+	if (!is_int(def->type)) {
+		internal_error (0, "%s: expected int def", __FUNCTION__);
 	}
 	D_INT (def) = protocols->count;
 }
@@ -1777,7 +1777,7 @@ emit_protocol_list (protocollist_t *protocols, const char *name)
 {
 	static struct_def_t proto_list_struct[] = {
 		{"next",  &type_pointer, emit_protocol_next},
-		{"count", &type_integer, emit_protocol_count},
+		{"count", &type_int,     emit_protocol_count},
 		{"list",  0,             emit_protocol_list_item},
 		{0, 0},
 	};

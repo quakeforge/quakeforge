@@ -323,7 +323,7 @@ static sv_def_t nq_opt_funcs[] = {
 };
 
 static sv_def_t nq_opt_fields[] = {
-	{ev_integer,	0,	"rotated_bbox",		&sv_fields.rotated_bbox},
+	{ev_int,		0,	"rotated_bbox",		&sv_fields.rotated_bbox},
 	{ev_float,		0,	"alpha",			&sv_fields.alpha},
 	{ev_float,		0,	"gravity",			&sv_fields.gravity},
 	{ev_float,		0,	"items2",			&sv_fields.items2},
@@ -355,8 +355,8 @@ set_address (sv_def_t *def, void *address)
 		case ev_field:
 		case ev_func:
 		case ev_pointer:
-		case ev_integer:
-		case ev_uinteger:
+		case ev_int:
+		case ev_uint:
 			*(pr_int_t **)def->field = (pr_int_t *) address;
 			break;
 		case ev_long:

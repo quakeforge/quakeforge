@@ -665,7 +665,7 @@ build_builtin_function (symbol_t *sym, expr_t *bi_val, int far,
 		error (bi_val, "%s redefined", sym->name);
 		return 0;
 	}
-	if (!is_integer_val (bi_val) && !is_float_val (bi_val)) {
+	if (!is_int_val (bi_val) && !is_float_val (bi_val)) {
 		error (bi_val, "invalid constant for = #");
 		return 0;
 	}
@@ -681,8 +681,8 @@ build_builtin_function (symbol_t *sym, expr_t *bi_val, int far,
 	sym->s.func->def->nosave = 1;
 	add_function (sym->s.func);
 
-	if (is_integer_val (bi_val))
-		bi = expr_integer (bi_val);
+	if (is_int_val (bi_val))
+		bi = expr_int (bi_val);
 	else
 		bi = expr_float (bi_val);
 	if (bi < 0) {

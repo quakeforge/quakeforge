@@ -148,7 +148,7 @@ build_dotmain (symbol_t *program)
 	expr_t     *exitcode;
 
 	dotmain->params = 0;
-	dotmain->type = parse_params (&type_integer, 0);
+	dotmain->type = parse_params (&type_int, 0);
 	dotmain->type = find_type (dotmain->type);
 	dotmain = function_symbol (dotmain, 0, 1);
 
@@ -198,7 +198,7 @@ program_head
 			// FIXME need units and standard units
 			{
 				symbol_t   *sym = new_symbol ("ExitCode");
-				sym->type = &type_integer;
+				sym->type = &type_int;
 				initialize_def (sym, 0, current_symtab->space, sc_global);
 				if (sym->s.def) {
 					sym->s.def->nosave = 1;
@@ -245,7 +245,7 @@ type
 	: standard_type
 	| ARRAY '[' VALUE RANGE VALUE ']' OF standard_type
 		{
-			$$ = based_array_type ($8, expr_integer ($3), expr_integer ($5));
+			$$ = based_array_type ($8, expr_int ($3), expr_int ($5));
 		}
 	;
 
@@ -480,7 +480,7 @@ name
 		{
 			if (!$1->table) {
 				error (0, "%s undefined", $1->name);
-				$1->type = &type_integer;
+				$1->type = &type_int;
 				symtab_addsymbol (current_symtab, $1);
 			}
 			$$ = new_symbol_expr ($1);

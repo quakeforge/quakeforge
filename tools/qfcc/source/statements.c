@@ -155,13 +155,13 @@ operand_string (operand_t *op)
 				case ev_field:
 					return va (0, "field %d", op->value->v.pointer.val);
 				case ev_entity:
-					return va (0, "ent %d", op->value->v.integer_val);
+					return va (0, "ent %d", op->value->v.int_val);
 				case ev_func:
-					return va (0, "func %d", op->value->v.integer_val);
-				case ev_integer:
-					return va (0, "int %d", op->value->v.integer_val);
-				case ev_uinteger:
-					return va (0, "uint %u", op->value->v.uinteger_val);
+					return va (0, "func %d", op->value->v.int_val);
+				case ev_int:
+					return va (0, "int %d", op->value->v.int_val);
+				case ev_uint:
+					return va (0, "uint %u", op->value->v.uint_val);
 				case ev_long:
 					return va (0, "long %"PRIi64, op->value->v.long_val);
 				case ev_ulong:
@@ -237,11 +237,11 @@ _print_operand (operand_t *op)
 					break;
 				case ev_entity:
 				case ev_func:
-				case ev_integer:
-					printf ("%d", op->value->v.integer_val);
+				case ev_int:
+					printf ("%d", op->value->v.int_val);
 					break;
-				case ev_uinteger:
-					printf ("%u", op->value->v.uinteger_val);
+				case ev_uint:
+					printf ("%u", op->value->v.uint_val);
 					break;
 				case ev_long:
 					printf ("%"PRIu64, op->value->v.long_val);
@@ -804,7 +804,7 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 	if ((src && src->op_type == op_nil) || src_expr->type == ex_nil) {
 		// switch to memset because nil is type agnostic 0 and structures
 		// can be any size
-		src_expr = new_integer_expr (0);
+		src_expr = new_int_expr (0);
 		sblock = statement_subexpr (sblock, src_expr, &src);
 		opcode_set = opcode_sets[1];
 		if (op) {
@@ -853,7 +853,7 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 	if (count < (1 << 16)) {
 		count_expr = expr_file_line (new_short_expr (count), e);
 	} else {
-		count_expr = expr_file_line (new_integer_expr (count), e);
+		count_expr = expr_file_line (new_int_expr (count), e);
 	}
 	sblock = statement_subexpr (sblock, count_expr, &size);
 
@@ -1210,7 +1210,7 @@ expr_alias (sblock_t *sblock, expr_t *e, operand_t **op)
 	int        offset = 0;
 
 	if (e->e.alias.offset) {
-		offset = expr_integer (e->e.alias.offset);
+		offset = expr_int (e->e.alias.offset);
 	}
 	type = e->e.alias.type;
 	sblock = statement_subexpr (sblock, e->e.alias.expr, &aop);
@@ -1473,9 +1473,9 @@ expr_nil (sblock_t *sblock, expr_t *e, operand_t **op)
 	if (nil_size < 0x10000) {
 		size_expr = new_short_expr (nil_size);
 	} else {
-		size_expr = new_integer_expr (nil_size);
+		size_expr = new_int_expr (nil_size);
 	}
-	sblock = statement_subexpr (sblock, new_integer_expr(0), &zero);
+	sblock = statement_subexpr (sblock, new_int_expr(0), &zero);
 	sblock = statement_subexpr (sblock, size_expr, &size);
 
 	s = new_statement (st_memset, "<MEMSET>", e);
@@ -1737,12 +1737,12 @@ statement_memset (sblock_t *sblock, expr_t *e)
 	statement_t *s;
 
 	if (is_constant (count)) {
-		if (is_integer (get_type (count))
-			&& (unsigned) expr_integer (count) < 0x10000) {
-			count = new_short_expr (expr_integer (count));
+		if (is_int (get_type (count))
+			&& (unsigned) expr_int (count) < 0x10000) {
+			count = new_short_expr (expr_int (count));
 		}
-		if (is_uinteger (get_type (count)) && expr_integer (count) < 0x10000) {
-			count = new_short_expr (expr_uinteger (count));
+		if (is_uint (get_type (count)) && expr_int (count) < 0x10000) {
+			count = new_short_expr (expr_uint (count));
 		}
 	}
 	s = new_statement (st_move, opcode, e);

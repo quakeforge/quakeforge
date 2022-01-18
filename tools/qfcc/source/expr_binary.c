@@ -53,12 +53,12 @@ static expr_t *double_compare (int op, expr_t *e1, expr_t *e2);
 
 static expr_type_t string_string[] = {
 	{'+',	&type_string},
-	{EQ,	&type_integer},
-	{NE,	&type_integer},
-	{LE,	&type_integer},
-	{GE,	&type_integer},
-	{LT,	&type_integer},
-	{GT,	&type_integer},
+	{EQ,	&type_int},
+	{NE,	&type_int},
+	{LE,	&type_int},
+	{GE,	&type_int},
+	{LT,	&type_int},
+	{GT,	&type_int},
 	{0, 0}
 };
 
@@ -74,14 +74,14 @@ static expr_type_t float_float[] = {
 	{MOD,	&type_float},
 	{SHL,	&type_float},
 	{SHR,	&type_float},
-	{AND,	&type_integer},
-	{OR,	&type_integer},
-	{EQ,	&type_integer},
-	{NE,	&type_integer},
-	{LE,	&type_integer},
-	{GE,	&type_integer},
-	{LT,	&type_integer},
-	{GT,	&type_integer},
+	{AND,	&type_int},
+	{OR,	&type_int},
+	{EQ,	&type_int},
+	{NE,	&type_int},
+	{LE,	&type_int},
+	{GE,	&type_int},
+	{LT,	&type_int},
+	{GT,	&type_int},
 	{0, 0}
 };
 
@@ -95,7 +95,7 @@ static expr_type_t float_quat[] = {
 	{0, 0}
 };
 
-static expr_type_t float_integer[] = {
+static expr_type_t float_int[] = {
 	{'+',	&type_float, 0, &type_float},
 	{'-',	&type_float, 0, &type_float},
 	{'*',	&type_float, 0, &type_float},
@@ -107,16 +107,16 @@ static expr_type_t float_integer[] = {
 	{MOD,	&type_float, 0, &type_float},
 	{SHL,	&type_float, 0, &type_float},
 	{SHR,	&type_float, 0, &type_float},
-	{EQ,	&type_integer, 0, &type_float},
-	{NE,	&type_integer, 0, &type_float},
-	{LE,	&type_integer, 0, &type_float},
-	{GE,	&type_integer, 0, &type_float},
-	{LT,	&type_integer, 0, &type_float},
-	{GT,	&type_integer, 0, &type_float},
+	{EQ,	&type_int, 0, &type_float},
+	{NE,	&type_int, 0, &type_float},
+	{LE,	&type_int, 0, &type_float},
+	{GE,	&type_int, 0, &type_float},
+	{LT,	&type_int, 0, &type_float},
+	{GT,	&type_int, 0, &type_float},
 	{0, 0}
 };
-#define float_uinteger float_integer
-#define float_short float_integer
+#define float_uint float_int
+#define float_short float_int
 
 static expr_type_t float_double[] = {
 	{'+',	&type_double, &type_double, 0},
@@ -144,13 +144,13 @@ static expr_type_t vector_vector[] = {
 	{'+',	&type_vector},
 	{'-',	&type_vector},
 	{'*',	&type_float},
-	{EQ,	&type_integer},
-	{NE,	&type_integer},
+	{EQ,	&type_int},
+	{NE,	&type_int},
 	{0, 0}
 };
 
-#define vector_integer vector_float
-#define vector_uinteger vector_float
+#define vector_int vector_float
+#define vector_uint vector_float
 #define vector_short vector_float
 
 static expr_type_t vector_double[] = {
@@ -160,20 +160,20 @@ static expr_type_t vector_double[] = {
 };
 
 static expr_type_t entity_entity[] = {
-	{EQ,	&type_integer},
-	{NE,	&type_integer},
+	{EQ,	&type_int},
+	{NE,	&type_int},
 	{0, 0}
 };
 
 static expr_type_t field_field[] = {
-	{EQ,	&type_integer},
-	{NE,	&type_integer},
+	{EQ,	&type_int},
+	{NE,	&type_int},
 	{0, 0}
 };
 
 static expr_type_t func_func[] = {
-	{EQ,	&type_integer},
-	{NE,	&type_integer},
+	{EQ,	&type_int},
+	{NE,	&type_int},
 	{0, 0}
 };
 
@@ -188,13 +188,13 @@ static expr_type_t pointer_pointer[] = {
 	{0, 0}
 };
 
-static expr_type_t pointer_integer[] = {
+static expr_type_t pointer_int[] = {
 	{'+',	0, 0, 0, pointer_arithmetic},
 	{'-',	0, 0, 0, pointer_arithmetic},
 	{0, 0}
 };
-#define pointer_uinteger pointer_integer
-#define pointer_short pointer_integer
+#define pointer_uint pointer_int
+#define pointer_short pointer_int
 
 static expr_type_t quat_float[] = {
 	{'*',	&type_quaternion},
@@ -211,18 +211,18 @@ static expr_type_t quat_quat[] = {
 	{'+',	&type_quaternion},
 	{'-',	&type_quaternion},
 	{'*',	&type_quaternion},
-	{EQ,	&type_integer},
-	{NE,	&type_integer},
+	{EQ,	&type_int},
+	{NE,	&type_int},
 	{0, 0}
 };
 
-static expr_type_t quat_integer[] = {
+static expr_type_t quat_int[] = {
 	{'*',	&type_quaternion, 0, &type_float},
 	{'/',	0, 0, 0, inverse_multiply},
 	{0, 0}
 };
-#define quat_uinteger quat_integer
-#define quat_short quat_integer
+#define quat_uint quat_int
+#define quat_short quat_int
 
 static expr_type_t quat_double[] = {
 	{'*',	&type_quaternion},
@@ -230,7 +230,7 @@ static expr_type_t quat_double[] = {
 	{0, 0}
 };
 
-static expr_type_t integer_float[] = {
+static expr_type_t int_float[] = {
 	{'+',	&type_float, &type_float, 0},
 	{'-',	&type_float, &type_float, 0},
 	{'*',	&type_float, &type_float, 0},
@@ -240,206 +240,206 @@ static expr_type_t integer_float[] = {
 	{'^',	&type_float, &type_float, 0},
 	{'%',	&type_float, &type_float, 0},
 	{MOD,	&type_float, &type_float, 0},
-	{SHL,	&type_integer, 0, &type_integer},	//FIXME?
-	{SHR,	&type_integer, 0, &type_integer},	//FIXME?
-	{EQ,	&type_integer, &type_float, 0},
-	{NE,	&type_integer, &type_float, 0},
-	{LE,	&type_integer, &type_float, 0},
-	{GE,	&type_integer, &type_float, 0},
-	{LT,	&type_integer, &type_float, 0},
-	{GT,	&type_integer, &type_float, 0},
+	{SHL,	&type_int, 0, &type_int},	//FIXME?
+	{SHR,	&type_int, 0, &type_int},	//FIXME?
+	{EQ,	&type_int, &type_float, 0},
+	{NE,	&type_int, &type_float, 0},
+	{LE,	&type_int, &type_float, 0},
+	{GE,	&type_int, &type_float, 0},
+	{LT,	&type_int, &type_float, 0},
+	{GT,	&type_int, &type_float, 0},
 	{0, 0}
 };
 
-static expr_type_t integer_vector[] = {
+static expr_type_t int_vector[] = {
 	{'*',	&type_vector, &type_float, 0},
 	{0, 0}
 };
 
-static expr_type_t integer_pointer[] = {
+static expr_type_t int_pointer[] = {
 	{'+',	0, 0, 0, pointer_arithmetic},
 	{0, 0}
 };
 
-static expr_type_t integer_quat[] = {
+static expr_type_t int_quat[] = {
 	{'*',	&type_quaternion, &type_float, 0},
 	{0, 0}
 };
 
-static expr_type_t integer_integer[] = {
-	{'+',	&type_integer},
-	{'-',	&type_integer},
-	{'*',	&type_integer},
-	{'/',	&type_integer},
-	{'&',	&type_integer},
-	{'|',	&type_integer},
-	{'^',	&type_integer},
-	{'%',	&type_integer},
-	{MOD,	&type_integer},
-	{SHL,	&type_integer},
-	{SHR,	&type_integer},
-	{AND,	&type_integer},
-	{OR,	&type_integer},
-	{EQ,	&type_integer},
-	{NE,	&type_integer},
-	{LE,	&type_integer},
-	{GE,	&type_integer},
-	{LT,	&type_integer},
-	{GT,	&type_integer},
+static expr_type_t int_int[] = {
+	{'+',	&type_int},
+	{'-',	&type_int},
+	{'*',	&type_int},
+	{'/',	&type_int},
+	{'&',	&type_int},
+	{'|',	&type_int},
+	{'^',	&type_int},
+	{'%',	&type_int},
+	{MOD,	&type_int},
+	{SHL,	&type_int},
+	{SHR,	&type_int},
+	{AND,	&type_int},
+	{OR,	&type_int},
+	{EQ,	&type_int},
+	{NE,	&type_int},
+	{LE,	&type_int},
+	{GE,	&type_int},
+	{LT,	&type_int},
+	{GT,	&type_int},
 	{0, 0}
 };
 
-static expr_type_t integer_uinteger[] = {
-	{'+',	&type_integer},
-	{'-',	&type_integer},
-	{'*',	&type_integer},
-	{'/',	&type_integer},
-	{'&',	&type_integer},
-	{'|',	&type_integer},
-	{'^',	&type_integer},
-	{'%',	&type_integer},
-	{MOD,	&type_integer},
-	{SHL,	&type_integer},
-	{SHR,	&type_integer},
-	{EQ,	&type_integer},
-	{NE,	&type_integer},
-	{LE,	&type_integer},
-	{GE,	&type_integer},
-	{LT,	&type_integer},
-	{GT,	&type_integer},
+static expr_type_t int_uint[] = {
+	{'+',	&type_int},
+	{'-',	&type_int},
+	{'*',	&type_int},
+	{'/',	&type_int},
+	{'&',	&type_int},
+	{'|',	&type_int},
+	{'^',	&type_int},
+	{'%',	&type_int},
+	{MOD,	&type_int},
+	{SHL,	&type_int},
+	{SHR,	&type_int},
+	{EQ,	&type_int},
+	{NE,	&type_int},
+	{LE,	&type_int},
+	{GE,	&type_int},
+	{LT,	&type_int},
+	{GT,	&type_int},
 	{0, 0}
 };
 
-static expr_type_t integer_short[] = {
-	{'+',	&type_integer, 0, &type_integer},
-	{'-',	&type_integer, 0, &type_integer},
-	{'*',	&type_integer, 0, &type_integer},
-	{'/',	&type_integer, 0, &type_integer},
-	{'&',	&type_integer, 0, &type_integer},
-	{'|',	&type_integer, 0, &type_integer},
-	{'^',	&type_integer, 0, &type_integer},
-	{'%',	&type_integer, 0, &type_integer},
-	{MOD,	&type_integer, 0, &type_integer},
-	{SHL,	&type_integer, 0, &type_integer},
-	{SHR,	&type_integer, 0, &type_integer},
-	{EQ,	&type_integer, 0, &type_integer},
-	{NE,	&type_integer, 0, &type_integer},
-	{LE,	&type_integer, 0, &type_integer},
-	{GE,	&type_integer, 0, &type_integer},
-	{LT,	&type_integer, 0, &type_integer},
-	{GT,	&type_integer, 0, &type_integer},
+static expr_type_t int_short[] = {
+	{'+',	&type_int, 0, &type_int},
+	{'-',	&type_int, 0, &type_int},
+	{'*',	&type_int, 0, &type_int},
+	{'/',	&type_int, 0, &type_int},
+	{'&',	&type_int, 0, &type_int},
+	{'|',	&type_int, 0, &type_int},
+	{'^',	&type_int, 0, &type_int},
+	{'%',	&type_int, 0, &type_int},
+	{MOD,	&type_int, 0, &type_int},
+	{SHL,	&type_int, 0, &type_int},
+	{SHR,	&type_int, 0, &type_int},
+	{EQ,	&type_int, 0, &type_int},
+	{NE,	&type_int, 0, &type_int},
+	{LE,	&type_int, 0, &type_int},
+	{GE,	&type_int, 0, &type_int},
+	{LT,	&type_int, 0, &type_int},
+	{GT,	&type_int, 0, &type_int},
 	{0, 0}
 };
 
-static expr_type_t integer_double[] = {
+static expr_type_t int_double[] = {
 	{'+',	&type_double, &type_double, 0},
 	{'-',	&type_double, &type_double, 0},
 	{'*',	&type_double, &type_double, 0},
 	{'/',	&type_double, &type_double, 0},
 	{'%',	&type_double, &type_double, 0},
 	{MOD,	&type_double, &type_double, 0},
-	{EQ,	&type_integer, &type_double, 0},
-	{NE,	&type_integer, &type_double, 0},
-	{LE,	&type_integer, &type_double, 0},
-	{GE,	&type_integer, &type_double, 0},
-	{LT,	&type_integer, &type_double, 0},
-	{GT,	&type_integer, &type_double, 0},
+	{EQ,	&type_int, &type_double, 0},
+	{NE,	&type_int, &type_double, 0},
+	{LE,	&type_int, &type_double, 0},
+	{GE,	&type_int, &type_double, 0},
+	{LT,	&type_int, &type_double, 0},
+	{GT,	&type_int, &type_double, 0},
 	{0, 0}
 };
 
-#define uinteger_float integer_float
-#define uinteger_vector integer_vector
-#define uinteger_pointer integer_pointer
-#define uinteger_quat integer_quat
+#define uint_float int_float
+#define uint_vector int_vector
+#define uint_pointer int_pointer
+#define uint_quat int_quat
 
-static expr_type_t uinteger_integer[] = {
-	{'+',	&type_integer},
-	{'-',	&type_integer},
-	{'*',	&type_integer},
-	{'/',	&type_integer},
-	{'&',	&type_integer},
-	{'|',	&type_integer},
-	{'^',	&type_integer},
-	{'%',	&type_integer},
-	{MOD,	&type_integer},
-	{SHL,	&type_uinteger},
-	{SHR,	&type_uinteger},
-	{EQ,	&type_integer},
-	{NE,	&type_integer},
-	{LE,	&type_integer},
-	{GE,	&type_integer},
-	{LT,	&type_integer},
-	{GT,	&type_integer},
+static expr_type_t uint_int[] = {
+	{'+',	&type_int},
+	{'-',	&type_int},
+	{'*',	&type_int},
+	{'/',	&type_int},
+	{'&',	&type_int},
+	{'|',	&type_int},
+	{'^',	&type_int},
+	{'%',	&type_int},
+	{MOD,	&type_int},
+	{SHL,	&type_uint},
+	{SHR,	&type_uint},
+	{EQ,	&type_int},
+	{NE,	&type_int},
+	{LE,	&type_int},
+	{GE,	&type_int},
+	{LT,	&type_int},
+	{GT,	&type_int},
 	{0, 0}
 };
 
-static expr_type_t uinteger_uinteger[] = {
-	{'+',	&type_uinteger},
-	{'-',	&type_uinteger},
-	{'*',	&type_uinteger},
-	{'/',	&type_uinteger},
-	{'&',	&type_uinteger},
-	{'|',	&type_uinteger},
-	{'^',	&type_uinteger},
-	{'%',	&type_uinteger},
-	{MOD,	&type_uinteger},
-	{SHL,	&type_uinteger},
-	{SHR,	&type_uinteger},
-	{EQ,	&type_integer},
-	{NE,	&type_integer},
-	{LE,	&type_integer},
-	{GE,	&type_integer},
-	{LT,	&type_integer},
-	{GT,	&type_integer},
+static expr_type_t uint_uint[] = {
+	{'+',	&type_uint},
+	{'-',	&type_uint},
+	{'*',	&type_uint},
+	{'/',	&type_uint},
+	{'&',	&type_uint},
+	{'|',	&type_uint},
+	{'^',	&type_uint},
+	{'%',	&type_uint},
+	{MOD,	&type_uint},
+	{SHL,	&type_uint},
+	{SHR,	&type_uint},
+	{EQ,	&type_int},
+	{NE,	&type_int},
+	{LE,	&type_int},
+	{GE,	&type_int},
+	{LT,	&type_int},
+	{GT,	&type_int},
 	{0, 0}
 };
-#define uinteger_short uinteger_integer
-#define uinteger_double integer_double
+#define uint_short uint_int
+#define uint_double int_double
 
-#define short_float integer_float
-#define short_vector integer_vector
-#define short_pointer integer_pointer
-#define short_quat integer_quat
+#define short_float int_float
+#define short_vector int_vector
+#define short_pointer int_pointer
+#define short_quat int_quat
 
-static expr_type_t short_integer[] = {
-	{'+',	&type_integer, &type_integer, 0},
-	{'-',	&type_integer, &type_integer, 0},
-	{'*',	&type_integer, &type_integer, 0},
-	{'/',	&type_integer, &type_integer, 0},
-	{'&',	&type_integer, &type_integer, 0},
-	{'|',	&type_integer, &type_integer, 0},
-	{'^',	&type_integer, &type_integer, 0},
-	{'%',	&type_integer, &type_integer, 0},
-	{MOD,	&type_integer, &type_integer, 0},
+static expr_type_t short_int[] = {
+	{'+',	&type_int, &type_int, 0},
+	{'-',	&type_int, &type_int, 0},
+	{'*',	&type_int, &type_int, 0},
+	{'/',	&type_int, &type_int, 0},
+	{'&',	&type_int, &type_int, 0},
+	{'|',	&type_int, &type_int, 0},
+	{'^',	&type_int, &type_int, 0},
+	{'%',	&type_int, &type_int, 0},
+	{MOD,	&type_int, &type_int, 0},
 	{SHL,	&type_short},
 	{SHR,	&type_short},
-	{EQ,	&type_integer, &type_integer, 0},
-	{NE,	&type_integer, &type_integer, 0},
-	{LE,	&type_integer, &type_integer, 0},
-	{GE,	&type_integer, &type_integer, 0},
-	{LT,	&type_integer, &type_integer, 0},
-	{GT,	&type_integer, &type_integer, 0},
+	{EQ,	&type_int, &type_int, 0},
+	{NE,	&type_int, &type_int, 0},
+	{LE,	&type_int, &type_int, 0},
+	{GE,	&type_int, &type_int, 0},
+	{LT,	&type_int, &type_int, 0},
+	{GT,	&type_int, &type_int, 0},
 	{0, 0}
 };
 
-static expr_type_t short_uinteger[] = {
-	{'+',	&type_uinteger, &type_uinteger, 0},
-	{'-',	&type_uinteger, &type_uinteger, 0},
-	{'*',	&type_uinteger, &type_uinteger, 0},
-	{'/',	&type_uinteger, &type_uinteger, 0},
-	{'&',	&type_uinteger, &type_uinteger, 0},
-	{'|',	&type_uinteger, &type_uinteger, 0},
-	{'^',	&type_uinteger, &type_uinteger, 0},
-	{'%',	&type_uinteger, &type_uinteger, 0},
-	{MOD,	&type_uinteger, &type_uinteger, 0},
+static expr_type_t short_uint[] = {
+	{'+',	&type_uint, &type_uint, 0},
+	{'-',	&type_uint, &type_uint, 0},
+	{'*',	&type_uint, &type_uint, 0},
+	{'/',	&type_uint, &type_uint, 0},
+	{'&',	&type_uint, &type_uint, 0},
+	{'|',	&type_uint, &type_uint, 0},
+	{'^',	&type_uint, &type_uint, 0},
+	{'%',	&type_uint, &type_uint, 0},
+	{MOD,	&type_uint, &type_uint, 0},
 	{SHL,	&type_short},
 	{SHR,	&type_short},
-	{EQ,	&type_integer, &type_uinteger, 0},
-	{NE,	&type_integer, &type_uinteger, 0},
-	{LE,	&type_integer, &type_uinteger, 0},
-	{GE,	&type_integer, &type_uinteger, 0},
-	{LT,	&type_integer, &type_uinteger, 0},
-	{GT,	&type_integer, &type_uinteger, 0},
+	{EQ,	&type_int, &type_uint, 0},
+	{NE,	&type_int, &type_uint, 0},
+	{LE,	&type_int, &type_uint, 0},
+	{GE,	&type_int, &type_uint, 0},
+	{LT,	&type_int, &type_uint, 0},
+	{GT,	&type_int, &type_uint, 0},
 	{0, 0}
 };
 
@@ -455,15 +455,15 @@ static expr_type_t short_short[] = {
 	{MOD,	&type_short},
 	{SHL,	&type_short},
 	{SHR,	&type_short},
-	{EQ,	&type_integer},
-	{NE,	&type_integer},
-	{LE,	&type_integer},
-	{GE,	&type_integer},
-	{LT,	&type_integer},
-	{GT,	&type_integer},
+	{EQ,	&type_int},
+	{NE,	&type_int},
+	{LE,	&type_int},
+	{GE,	&type_int},
+	{LT,	&type_int},
+	{GT,	&type_int},
 	{0, 0}
 };
-#define short_double integer_double
+#define short_double int_double
 
 static expr_type_t double_float[] = {
 	{'+',	&type_double, 0, &type_double},
@@ -491,7 +491,7 @@ static expr_type_t double_quat[] = {
 	{0, 0}
 };
 
-static expr_type_t double_integer[] = {
+static expr_type_t double_int[] = {
 	{'+',	&type_double, 0, &type_double},
 	{'-',	&type_double, 0, &type_double},
 	{'*',	&type_double, 0, &type_double},
@@ -506,8 +506,8 @@ static expr_type_t double_integer[] = {
 	{GT,	0, 0, 0, double_compare},
 	{0, 0}
 };
-#define double_uinteger double_integer
-#define double_short double_integer
+#define double_uint double_int
+#define double_short double_int
 
 static expr_type_t double_double[] = {
 	{'+',	&type_double},
@@ -516,12 +516,12 @@ static expr_type_t double_double[] = {
 	{'/',	&type_double},
 	{'%',	&type_double},
 	{MOD,	&type_double},
-	{EQ,	&type_integer},
-	{NE,	&type_integer},
-	{LE,	&type_integer},
-	{GE,	&type_integer},
-	{LT,	&type_integer},
-	{GT,	&type_integer},
+	{EQ,	&type_int},
+	{NE,	&type_int},
+	{LE,	&type_int},
+	{GE,	&type_int},
+	{LT,	&type_int},
+	{GT,	&type_int},
 	{0, 0}
 };
 
@@ -535,8 +535,8 @@ static expr_type_t *string_x[ev_type_count] = {
 	0,				// ev_func
 	0,				// ev_pointer
 	0,				// ev_quat
-	0,				// ev_integer
-	0,				// ev_uinteger
+	0,				// ev_int
+	0,				// ev_uint
 	0,				// ev_short
 	0,				// ev_double
 };
@@ -551,8 +551,8 @@ static expr_type_t *float_x[ev_type_count] = {
 	0,				// ev_func
 	0,				// ev_pointer
 	float_quat,
-	float_integer,
-	float_uinteger,
+	float_int,
+	float_uint,
 	float_short,
 	float_double,
 };
@@ -567,8 +567,8 @@ static expr_type_t *vector_x[ev_type_count] = {
 	0,				// ev_func
 	0,				// ev_pointer
 	0,				// ev_quaternion
-	vector_integer,
-	vector_uinteger,
+	vector_int,
+	vector_uint,
 	vector_short,
 	vector_double,
 };
@@ -583,8 +583,8 @@ static expr_type_t *entity_x[ev_type_count] = {
 	0,				// ev_func
 	0,				// ev_pointer
 	0,				// ev_quaternion
-	0,				// ev_integer
-	0,				// ev_uinteger
+	0,				// ev_int
+	0,				// ev_uint
 	0,				// ev_short
 	0,				// ev_double
 };
@@ -599,8 +599,8 @@ static expr_type_t *field_x[ev_type_count] = {
 	0,				// ev_func
 	0,				// ev_pointer
 	0,				// ev_quaternion
-	0,				// ev_integer
-	0,				// ev_uinteger
+	0,				// ev_int
+	0,				// ev_uint
 	0,				// ev_short
 	0,				// ev_double
 };
@@ -615,8 +615,8 @@ static expr_type_t *func_x[ev_type_count] = {
 	func_func,		// ev_func
 	0,				// ev_pointer
 	0,				// ev_quaternion
-	0,				// ev_integer
-	0,				// ev_uinteger
+	0,				// ev_int
+	0,				// ev_uint
 	0,				// ev_short
 	0,				// ev_double
 };
@@ -631,8 +631,8 @@ static expr_type_t *pointer_x[ev_type_count] = {
 	0,				// ev_func
 	pointer_pointer,
 	0,				// ev_quat
-	pointer_integer,
-	pointer_uinteger,
+	pointer_int,
+	pointer_uint,
 	pointer_short,
 	0,				// ev_double
 };
@@ -647,42 +647,42 @@ static expr_type_t *quat_x[ev_type_count] = {
 	0,				// ev_func
 	0,				// ev_pointer
 	quat_quat,
-	quat_integer,
-	quat_uinteger,
+	quat_int,
+	quat_uint,
 	quat_short,
 	quat_double,
 };
 
-static expr_type_t *integer_x[ev_type_count] = {
+static expr_type_t *int_x[ev_type_count] = {
 	0,				// ev_void
 	0,				// ev_string
-	integer_float,
-	integer_vector,
+	int_float,
+	int_vector,
 	0,				// ev_entity
 	0,				// ev_field
 	0,				// ev_func
-	integer_pointer,
-	integer_quat,
-	integer_integer,
-	integer_uinteger,
-	integer_short,
-	integer_double,
+	int_pointer,
+	int_quat,
+	int_int,
+	int_uint,
+	int_short,
+	int_double,
 };
 
-static expr_type_t *uinteger_x[ev_type_count] = {
+static expr_type_t *uint_x[ev_type_count] = {
 	0,				// ev_void
 	0,				// ev_string
-	uinteger_float,
-	uinteger_vector,
+	uint_float,
+	uint_vector,
 	0,				// ev_entity
 	0,				// ev_field
 	0,				// ev_func
-	uinteger_pointer,
-	uinteger_quat,
-	uinteger_integer,
-	uinteger_uinteger,
-	uinteger_short,
-	uinteger_double,
+	uint_pointer,
+	uint_quat,
+	uint_int,
+	uint_uint,
+	uint_short,
+	uint_double,
 };
 
 static expr_type_t *short_x[ev_type_count] = {
@@ -695,8 +695,8 @@ static expr_type_t *short_x[ev_type_count] = {
 	0,				// ev_func
 	short_pointer,
 	short_quat,
-	short_integer,
-	short_uinteger,
+	short_int,
+	short_uint,
 	short_short,
 	short_double,
 };
@@ -711,8 +711,8 @@ static expr_type_t *double_x[ev_type_count] = {
 	0,				// ev_func
 	0,				// ev_pointer
 	double_quat,
-	double_integer,
-	double_uinteger,
+	double_int,
+	double_uint,
 	double_short,
 	double_double,
 };
@@ -727,8 +727,8 @@ static expr_type_t **binary_expr_types[ev_type_count] = {
 	func_x,
 	pointer_x,
 	quat_x,
-	integer_x,
-	uinteger_x,
+	int_x,
+	uint_x,
 	short_x,
 	double_x
 };
@@ -755,20 +755,20 @@ pointer_arithmetic (int op, expr_t *e1, expr_t *e2)
 			return error (e2, "cannot use %c on pointers of different types",
 						  op);
 		}
-		e1 = cast_expr (&type_integer, e1);
-		e2 = cast_expr (&type_integer, e2);
-		psize = new_integer_expr (type_size (t1->t.fldptr.type));
+		e1 = cast_expr (&type_int, e1);
+		e2 = cast_expr (&type_int, e2);
+		psize = new_int_expr (type_size (t1->t.fldptr.type));
 		return binary_expr ('/', binary_expr ('-', e1, e2), psize);
 	} else if (is_pointer (t1)) {
-		offset = cast_expr (&type_integer, e2);
-		ptr = cast_expr (&type_integer, e1);
+		offset = cast_expr (&type_int, e2);
+		ptr = cast_expr (&type_int, e1);
 		ptype = t1;
 	} else if (is_pointer (t2)) {
-		offset = cast_expr (&type_integer, e1);
-		ptr = cast_expr (&type_integer, e2);
+		offset = cast_expr (&type_int, e1);
+		ptr = cast_expr (&type_int, e2);
 		ptype = t2;
 	}
-	psize = new_integer_expr (type_size (ptype->t.fldptr.type));
+	psize = new_int_expr (type_size (ptype->t.fldptr.type));
 	e = binary_expr (op, ptr, binary_expr ('*', offset, psize));
 	return cast_expr (ptype, e);
 }
@@ -785,7 +785,7 @@ pointer_compare (int op, expr_t *e1, expr_t *e2)
 					  get_op_string (op));
 	}
 	e = new_binary_expr (op, e1, e2);
-	e->e.expr.type = &type_integer;
+	e->e.expr.type = &type_int;
 	return e;
 }
 
@@ -817,19 +817,19 @@ double_compare (int op, expr_t *e1, expr_t *e2)
 		if (is_float (t2)) {
 			warning (e2, "comparison between double and float");
 		} else if (!is_constant (e2)) {
-			warning (e2, "comparison between double and integer");
+			warning (e2, "comparison between double and int");
 		}
 		e2 = cast_expr (&type_double, e2);
 	} else if (is_double (t2)) {
 		if (is_float (t1)) {
 			warning (e1, "comparison between float and double");
 		} else if (!is_constant (e1)) {
-			warning (e1, "comparison between integer and double");
+			warning (e1, "comparison between int and double");
 		}
 		e1 = cast_expr (&type_double, e1);
 	}
 	e = new_binary_expr (op, e1, e2);
-	e->e.expr.type = &type_integer;
+	e->e.expr.type = &type_int;
 	return e;
 }
 

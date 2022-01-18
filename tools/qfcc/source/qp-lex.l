@@ -113,7 +113,7 @@ FRAMEID		{ID}(\.{ID})*
 							i = strtol (yytext + 2, 0, 2);
 						else
 							i = strtol (yytext, 0, 0);
-						qp_yylval.expr = new_integer_expr (i);
+						qp_yylval.expr = new_int_expr (i);
 						return VALUE;
 					}
 
@@ -170,7 +170,7 @@ FRAMEID		{ID}(\.{ID})*
 "$"{s}*{FRAMEID}	{
 						int ret = do_grab (yytext);
 						if (ret >= 0) {
-							qp_yylval.expr = new_integer_expr (ret);
+							qp_yylval.expr = new_int_expr (ret);
 							return VALUE;
 						} else {
 							BEGIN (-ret);
@@ -209,7 +209,7 @@ static keyword_t keywords[] = {
 	{"vector",		TYPE,		&type_vector},
 	{"entity",		TYPE,		&type_entity},
 	{"quaternion",	TYPE,		&type_quaternion},
-	{"integer",		TYPE,		&type_integer},
+	{"integer",		TYPE,		&type_int},
 
 	{"program",		PROGRAM,	0},
 	{"var",			VAR,		0},

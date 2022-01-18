@@ -48,8 +48,8 @@ branch_fmt = [
 ]
 compare_ccc = [ "eq", "lt", "gt", None, "ne", "ge", "le", None]
 type_tt = ['I', 'F', 'L', 'D']
-etype_tt = ["ev_integer", "ev_float", "ev_long", "ev_double"]
-unsigned_t = ["ev_uinteger", "ev_ulong"]
+etype_tt = ["ev_int", "ev_float", "ev_long", "ev_double"]
+unsigned_t = ["ev_uint", "ev_ulong"]
 float_t = ["ev_float", "ev_double"]
 
 all_formats = {
@@ -58,7 +58,7 @@ all_formats = {
     "opname": "all",
     "format": "%Ga, %gc",
     "widths": "{ss+1}, 0, 1",
-    "types": "ev_integer, ev_integer, ev_integer",
+    "types": "ev_int, ev_int, ev_int",
 }
 any_formats = {
     "opcode": "OP_ANY_{ss+1}",
@@ -66,7 +66,7 @@ any_formats = {
     "opname": "any",
     "format": "%Ga, %gc",
     "widths": "{ss+1}, 0, 1",
-    "types": "ev_integer, ev_integer, ev_integer",
+    "types": "ev_int, ev_int, ev_int",
 }
 bitops_formats = {
     "opcode": "OP_{op_bit[oo].upper()}_{bit_type[t]}_{ss+1}",
@@ -78,7 +78,7 @@ bitops_formats = {
     "args": {
         "op_bit": ["bitand", "bitor", "bitxor", "bitnot"],
         "bit_type": ["I", "L"],
-        "bit_types": ["ev_integer", "ev_long"],
+        "bit_types": ["ev_int", "ev_long"],
         "bit_fmt": [
             "%Ga, %Gb, %gc",
             "%Ga, %Gb, %gc",
@@ -93,7 +93,7 @@ branch_formats = {
     "opname": "{op_cond[c*4+cc]}",
     "format": "{cond_fmt[c*4+cc]}{branch_fmt[0]}",
     "widths": "{cond_widths[c*4+cc]}",
-    "types": "ev_void, ev_void, ev_integer",
+    "types": "ev_void, ev_void, ev_int",
     "args": {
         "op_mode": "ABCD",
         "op_cond": ["ifz",  "ifb",  "ifa",  None,
@@ -134,7 +134,7 @@ compare_formats = {
     "mnemonic": "{op_cmp[ccc]}.{cmp_type[tt]}",
     "opname": "{op_cmp[ccc]}",
     "widths": "{ss+1}, {ss+1}, {ss+1}",
-    "types": "{cmp_types[tt]}, {cmp_types[tt]}, ev_integer",
+    "types": "{cmp_types[tt]}, {cmp_types[tt]}, ev_int",
     "args": {
         "op_cmp": compare_ccc,
         "cmp_type": type_tt,
@@ -146,7 +146,7 @@ compare2_formats = {
     "mnemonic": "{op_cmp[ccc]}.{cmp_type[t]}",
     "opname": "{op_cmp[ccc]}",
     "widths": "{ss+1}, {ss+1}, {ss+1}",
-    "types": "{cmp_types[t]}, {cmp_types[t]}, ev_integer",
+    "types": "{cmp_types[t]}, {cmp_types[t]}, ev_int",
     "args": {
         "op_cmp": compare_ccc,
         "cmp_type": ['u', 'U'],
@@ -228,7 +228,7 @@ memset_formats = {
     "opname": "memset",
     "format": "{memset_fmt[oo]}",
     "widths": "0, 0, 0",
-    "types": "ev_integer, ev_void, ev_void",
+    "types": "ev_int, ev_void, ev_void",
     "args": {
         "op_memset": ["i", "p", "pi", None],
         "memset_fmt": ["%Ga, %sb, %gc", "%Ga, %Gb, %Gc", "%Ga, %sb, %Gc", None],
@@ -240,7 +240,7 @@ move_formats = {
     "opname": "memset",
     "format": "{move_fmt[oo]}",
     "widths": "0, 0, 0",
-    "types": "ev_integer, ev_void, ev_void",
+    "types": "ev_int, ev_void, ev_void",
     "args": {
         "op_move": ["i", "p", "pi", None],
         "move_fmt": ["%Ga, %sb, %gc", "%Ga, %Gb, %Gc", "%Ga, %sb, %Gc", None],
@@ -252,7 +252,7 @@ none_formats = {
     "opname": "none",
     "format": "%Ga, %gc",
     "widths": "{ss+1}, 0, 1",
-    "types": "ev_integer, ev_invalid, ev_integer",
+    "types": "ev_int, ev_invalid, ev_int",
 }
 push_formats = {
     "opcode": "OP_PUSH_{op_mode[mm]}_{ss+1}",
@@ -325,7 +325,7 @@ shiftops_formats = {
         "op_shift": ["shl", "asr", "shl", "shr"],
         "shift_type": ['I', 'L', 'u', 'U'],
         "shift_types": [
-            ["ev_integer", "ev_uinteger"],
+            ["ev_int", "ev_uint"],
             ["ev_long", "ev_ulong"],
         ],
     },
@@ -393,14 +393,14 @@ string_formats = {
             "%Ga, %gc",
         ],
         "str_types": [
-            "ev_string, ev_string, ev_integer",
-            "ev_string, ev_string, ev_integer",
-            "ev_string, ev_string, ev_integer",
+            "ev_string, ev_string, ev_int",
+            "ev_string, ev_string, ev_int",
+            "ev_string, ev_string, ev_int",
             "ev_string, ev_string, ev_string",
-            "ev_string, ev_string, ev_integer",
-            "ev_string, ev_string, ev_integer",
-            "ev_string, ev_string, ev_integer",
-            "ev_string, ev_invalid, ev_integer",
+            "ev_string, ev_string, ev_int",
+            "ev_string, ev_string, ev_int",
+            "ev_string, ev_string, ev_int",
+            "ev_string, ev_invalid, ev_int",
         ],
     },
 }

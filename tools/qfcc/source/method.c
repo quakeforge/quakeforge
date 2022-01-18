@@ -543,8 +543,8 @@ emit_methods_count (def_t *def, void *data, int index)
 {
 	methodlist_t *methods = (methodlist_t *) data;
 
-	if (!is_integer(def->type))
-		internal_error (0, "%s: expected integer def", __FUNCTION__);
+	if (!is_int(def->type))
+		internal_error (0, "%s: expected int def", __FUNCTION__);
 	D_INT (def) = methods->count;
 }
 
@@ -586,7 +586,7 @@ emit_methods (methodlist_t *methods, const char *name, int instance)
 {
 	static struct_def_t methods_struct[] = {
 		{"method_next",		&type_pointer, emit_methods_next},
-		{"method_count",	&type_integer, emit_methods_count},
+		{"method_count",	&type_int,     emit_methods_count},
 		{"method_list",		0,             emit_methods_list_item},
 		{0, 0}
 	};
@@ -622,8 +622,8 @@ emit_method_list_count (def_t *def, void *data, int index)
 {
 	methodlist_t *methods = (methodlist_t *) data;
 
-	if (!is_integer(def->type))
-		internal_error (0, "%s: expected integer def", __FUNCTION__);
+	if (!is_int(def->type))
+		internal_error (0, "%s: expected int def", __FUNCTION__);
 	D_INT (def) = methods->count;
 }
 
@@ -660,7 +660,7 @@ emit_method_descriptions (methodlist_t *methods, const char *name,
 						  int instance)
 {
 	static struct_def_t method_list_struct[] = {
-		{"count",       &type_integer, emit_method_list_count},
+		{"count",       &type_int,     emit_method_list_count},
 		{"method_list", 0,             emit_method_list_item},
 		{0, 0}
 	};
@@ -746,8 +746,8 @@ method_check_params (method_t *method, expr_t *args)
 				}
 			}
 		} else {
-			if (is_integer_val (e) && options.warnings.vararg_integer) {
-				warning (e, "passing integer consant into ... function");
+			if (is_int_val (e) && options.warnings.vararg_integer) {
+				warning (e, "passing int consant into ... function");
 			}
 		}
 	}

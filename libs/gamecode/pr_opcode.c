@@ -43,8 +43,8 @@ VISIBLE const pr_ushort_t pr_type_size[ev_type_count] = {
 	1,			// ev_func
 	1,			// ev_pointer
 	4,			// ev_quat
-	1,			// ev_integer
-	1,			// ev_uinteger
+	1,			// ev_int
+	1,			// ev_uint
 	0,			// ev_short        value in opcode
 	2,			// ev_double
 	2,			// ev_long

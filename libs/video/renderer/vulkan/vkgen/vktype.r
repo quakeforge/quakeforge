@@ -77,7 +77,7 @@ static string get_type_key (void *type, void *unused)
 -(string) name
 {
 	if (type.meta == ty_basic) {
-		if (type.type == ev_integer) {
+		if (type.type == ev_int) {
 			return "int";
 		}
 		return pr_type_name[type.type];
@@ -123,7 +123,7 @@ static string get_type_key (void *type, void *unused)
 -(string) parseData
 {
 	if (type.meta == ty_basic) {
-		if (type.type == ev_integer) {
+		if (type.type == ev_int) {
 			return "&cexpr_int";
 		}
 		return "&cexpr_" + pr_type_name[type.type];

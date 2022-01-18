@@ -141,7 +141,7 @@ dump_def (progs_t *pr, pr_def_t *def, int indent)
 							  G_QUAT (pr, offset)[2],
 							  G_QUAT (pr, offset)[3]);
 				break;
-			case ev_integer:
+			case ev_int:
 				comment = va (0, " %d", G_INT (pr, offset));
 				break;
 			case ev_short:
@@ -327,7 +327,7 @@ qfo_globals (qfo_t *qfo)
 					QFO_TYPESTR (qfo, def->type));
 			if (!(def->flags & QFOD_EXTERNAL) && qfo->spaces[space].data)
 				printf (" %d",
-						qfo->spaces[space].data[def->offset].integer_var);
+						qfo->spaces[space].data[def->offset].int_var);
 			puts ("");
 		}
 	}

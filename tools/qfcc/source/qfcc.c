@@ -246,7 +246,7 @@ WriteProgs (dprograms_t *progs, int size)
 		fielddefs[i].name = LittleLong (fielddefs[i].name);
 	}
 	for (i = 0; i < progs->numglobals; i++)
-		globals[i].integer_var = LittleLong (globals[i].integer_var);
+		globals[i].int_var = LittleLong (globals[i].int_var);
 
 	if (!(h = Qopen (options.output_file, "wb")))
 		Sys_Error ("%s: %s\n", options.output_file, strerror(errno));
@@ -307,7 +307,7 @@ WriteSym (pr_debug_header_t *sym, int size)
 		debug_defs[i].type_encoding = LittleLong (debug_defs[i].type_encoding);
 	}
 	for (i = 0; i < sym->debug_data_size; i++) {
-		debug_data[i].integer_var = LittleLong (debug_data[i].integer_var);
+		debug_data[i].int_var = LittleLong (debug_data[i].int_var);
 	}
 
 	if (!(h = Qopen (options.debug_file, "wb")))
@@ -441,9 +441,9 @@ finish_link (void)
 	if (options.code.progsversion != PROG_ID_VERSION) {
 		pr_int_t    param_size = type_size (&type_param);
 		pr_int_t    param_alignment = qfo_log2 (type_param.alignment);
-		linker_add_def (".param_size", &type_integer, flags,
+		linker_add_def (".param_size", &type_int, flags,
 						&param_size);
-		linker_add_def (".param_alignment", &type_integer, flags,
+		linker_add_def (".param_alignment", &type_int, flags,
 						&param_alignment);
 		linker_add_def (".xdefs", &type_xdefs, flags, 0);
 	}

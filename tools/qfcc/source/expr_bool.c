@@ -97,10 +97,10 @@ test_expr (expr_t *e)
 		case ev_long:
 		case ev_ulong:
 			internal_error (e, "long not implemented");
-		case ev_uinteger:
-		case ev_integer:
+		case ev_uint:
+		case ev_int:
 		case ev_short:
-			if (!is_integer(type_default)) {
+			if (!is_int(type_default)) {
 				if (is_constant (e)) {
 					return cast_expr (type_default, e);
 				}
@@ -285,8 +285,8 @@ convert_bool (expr_t *e, int block)
 			int         val;
 
 			b = goto_expr (0);
-			if (is_integer_val (e)) {
-				val = expr_integer (e);
+			if (is_int_val (e)) {
+				val = expr_int (e);
 			} else {
 				val = expr_float (e) != 0;
 			}

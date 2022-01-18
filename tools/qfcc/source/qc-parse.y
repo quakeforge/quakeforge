@@ -969,11 +969,11 @@ abs_decl
 array_decl
 	: '[' expr ']'
 		{
-			if (!is_integer_val ($2) || expr_integer ($2) < 1) {
+			if (!is_int_val ($2) || expr_int ($2) < 1) {
 				error (0, "invalid array size");
 				$$ = 0;
 			} else {
-				$$ = expr_integer ($2);
+				$$ = expr_int ($2);
 			}
 		}
 	| '[' ']'					{ $$ = 0; }
@@ -1104,7 +1104,7 @@ non_code_func
 				if (sym->s.def)
 					sym->s.def->nosave |= spec.nosave;
 			} else {
-				if (is_integer_val ($2) || is_float_val ($2)) {
+				if (is_int_val ($2) || is_float_val ($2)) {
 					error (0, "invalid function initializer."
 						   " did you forget #?");
 				} else {
