@@ -23,21 +23,21 @@
 
 #include "QF/qtypes.h"
 
-typedef int32_t   pr_string_t;
-typedef float     pr_float_t;
-typedef float     pr_vector_t[3];
-typedef uint32_t  pr_entity_t;
-typedef uint32_t  pr_field_t;
-typedef uint32_t  pr_func_t;
-typedef uint32_t  pr_ptr_t;
-typedef float     pr_quaternion_t[4];
-typedef int32_t   pr_int_t;
-typedef uint32_t  pr_uint_t;
-typedef int16_t   pr_short_t;
-typedef double    pr_double_t;
-typedef int64_t   pr_long_t;
-typedef uint64_t  pr_ulong_t;
-typedef uint16_t  pr_ushort_t;
+typedef int32_t   pr_string_t        __attribute__((aligned(4)));
+typedef float     pr_float_t         __attribute__((aligned(4)));
+typedef float     pr_vector_t[3]     __attribute__((aligned(4)));
+typedef uint32_t  pr_entity_t        __attribute__((aligned(4)));
+typedef uint32_t  pr_field_t         __attribute__((aligned(4)));
+typedef uint32_t  pr_func_t          __attribute__((aligned(4)));
+typedef uint32_t  pr_ptr_t           __attribute__((aligned(4)));
+typedef float     pr_quaternion_t[4] __attribute__((aligned(4)));
+typedef int32_t   pr_int_t           __attribute__((aligned(4)));
+typedef uint32_t  pr_uint_t          __attribute__((aligned(4)));
+typedef int16_t   pr_short_t         __attribute__((aligned(2)));
+typedef double    pr_double_t        __attribute__((aligned(8)));
+typedef int64_t   pr_long_t          __attribute__((aligned(8)));
+typedef uint64_t  pr_ulong_t         __attribute__((aligned(8)));
+typedef uint16_t  pr_ushort_t        __attribute__((aligned(2)));;
 
 #define PR_VEC_TYPE(t,n,s) \
 	typedef t n __attribute__ ((vector_size (s*sizeof (t))))
@@ -63,6 +63,7 @@ typedef enum {
 } etype_t;
 
 extern const pr_ushort_t pr_type_size[ev_type_count];
+extern const pr_ushort_t pr_type_alignment[ev_type_count];
 extern const char * const pr_type_name[ev_type_count];
 
 #define	OFS_NULL		0

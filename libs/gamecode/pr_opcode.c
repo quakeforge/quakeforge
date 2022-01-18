@@ -41,6 +41,12 @@ VISIBLE const pr_ushort_t pr_type_size[ev_type_count] = {
 	0,			// ev_invalid      not a valid/simple type
 };
 
+#define EV_TYPE(type) (__alignof__ (pr_##type##_t) / __alignof__ (pr_int_t)),
+VISIBLE const pr_ushort_t pr_type_alignment[ev_type_count] = {
+#include "QF/progs/pr_type_names.h"
+	0,			// ev_invalid      not a valid/simple type
+};
+
 #define EV_TYPE(type) #type,
 VISIBLE const char * const pr_type_name[ev_type_count] = {
 #include "QF/progs/pr_type_names.h"
