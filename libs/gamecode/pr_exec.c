@@ -458,7 +458,7 @@ check_stack_pointer (progs_t *pr, pr_ptr_t stack, int size)
 }
 
 static inline void
-pr_memset (pr_type_t *dst, int val, int count)
+pr_memset (pr_type_t *dst, int val, pr_uint_t count)
 {
 	while (count-- > 0) {
 		(*dst++).int_var = val;
@@ -691,37 +691,34 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				OPC(int) = QuatIsZero (&OPA(float));
 				break;
 			case OP_NOT_S_v6p:
-				OPC(int) = !OPA(string) ||
-					!*PR_GetString (pr, OPA(string));
+				OPC(int) = !OPA(string) || !*PR_GetString (pr, OPA(string));
 				break;
 			case OP_NOT_FN_v6p:
-				OPC(int) = !OPA(uint);
+				OPC(int) = !OPA(func);
 				break;
 			case OP_NOT_ENT_v6p:
-				OPC(int) = !OPA(uint);
+				OPC(int) = !OPA(entity);
 				break;
 			case OP_EQ_F_v6p:
 				OPC(int) = OPA(float) == OPB(float);
 				break;
 			case OP_EQ_V_v6p:
-				OPC(int) = VectorCompare (&OPA(float),
-												 &OPB(float));
+				OPC(int) = VectorCompare (&OPA(float), &OPB(float));
 				break;
 			case OP_EQ_Q_v6p:
 				OPC(int) = QuatCompare (&OPA(float), &OPB(float));
 				break;
 			case OP_EQ_E_v6p:
-				OPC(int) = OPA(int) == OPB(int);
+				OPC(int) = OPA(field) == OPB(field);
 				break;
 			case OP_EQ_FN_v6p:
-				OPC(int) = OPA(uint) == OPB(uint);
+				OPC(int) = OPA(func) == OPB(func);
 				break;
 			case OP_NE_F_v6p:
 				OPC(int) = OPA(float) != OPB(float);
 				break;
 			case OP_NE_V_v6p:
-				OPC(int) = !VectorCompare (&OPA(float),
-												  &OPB(float));
+				OPC(int) = !VectorCompare (&OPA(float), &OPB(float));
 				break;
 			case OP_NE_Q_v6p:
 				OPC(int) = !QuatCompare (&OPA(float), &OPB(float));
@@ -748,10 +745,10 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				}
 				break;
 			case OP_NE_E_v6p:
-				OPC(int) = OPA(int) != OPB(int);
+				OPC(int) = OPA(entity) != OPB(entity);
 				break;
 			case OP_NE_FN_v6p:
-				OPC(int) = OPA(uint) != OPB(uint);
+				OPC(int) = OPA(func) != OPB(func);
 				break;
 
 			// ==================
@@ -781,7 +778,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 			case OP_STOREP_FN_v6p:		// pointers
 			case OP_STOREP_I_v6p:
 			case OP_STOREP_P_v6p:
-				pointer = OPB(int);
+				pointer = OPB(ptr);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_int);
 				}
@@ -789,7 +786,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				ptr->int_var = OPA(int);
 				break;
 			case OP_STOREP_V_v6p:
-				pointer = OPB(int);
+				pointer = OPB(ptr);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_vector);
 				}
@@ -797,7 +794,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				VectorCopy (&OPA(float), &ptr->vector_var);
 				break;
 			case OP_STOREP_Q_v6p:
-				pointer = OPB(int);
+				pointer = OPB(ptr);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_quaternion);
 				}
@@ -805,7 +802,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				QuatCopy (&OPA(float), &ptr->quat_var);
 				break;
 			case OP_STOREP_D_v6p:
-				pointer = OPB(int);
+				pointer = OPB(ptr);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_double);
 				}
@@ -815,17 +812,17 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 
 			case OP_ADDRESS_v6p:
 				if (pr_boundscheck->int_val) {
-					if (OPA(uint) >= pr->pr_edict_area_size)
+					if (OPA(entity) >= pr->pr_edict_area_size)
 						PR_RunError (pr, "Progs attempted to address an out "
 									 "of bounds edict");
-					if (OPA(uint) == 0 && pr->null_bad)
+					if (OPA(entity) == 0 && pr->null_bad)
 						PR_RunError (pr, "assignment to world entity");
-					if (OPB(uint) >= pr->progs->entityfields)
+					if (OPB(field) >= pr->progs->entityfields)
 						PR_RunError (pr, "Progs attempted to address an "
 									 "invalid field in an edict");
 				}
-				fldofs = OPA(uint) + OPB(int);
-				OPC(int) = &pr->pr_edict_area[fldofs] - pr->pr_globals;
+				fldofs = OPA(entity) + OPB(field);
+				OPC(ptr) = &pr->pr_edict_area[fldofs] - pr->pr_globals;
 				break;
 			case OP_ADDRESS_VOID_v6p:
 			case OP_ADDRESS_F_v6p:
@@ -849,50 +846,50 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 			case OP_LOAD_I_v6p:
 			case OP_LOAD_P_v6p:
 				if (pr_boundscheck->int_val) {
-					if (OPA(uint) >= pr->pr_edict_area_size)
+					if (OPA(entity) >= pr->pr_edict_area_size)
 						PR_RunError (pr, "Progs attempted to read an out of "
 									 "bounds edict number");
-					if (OPB(uint) >= pr->progs->entityfields)
+					if (OPB(field) >= pr->progs->entityfields)
 						PR_RunError (pr, "Progs attempted to read an invalid "
 									 "field in an edict");
 				}
-				fldofs = OPA(uint) + OPB(int);
+				fldofs = OPA(entity) + OPB(field);
 				OPC(int) = pr->pr_edict_area[fldofs].int_var;
 				break;
 			case OP_LOAD_V_v6p:
 				if (pr_boundscheck->int_val) {
-					if (OPA(uint) >= pr->pr_edict_area_size)
+					if (OPA(entity) >= pr->pr_edict_area_size)
 						PR_RunError (pr, "Progs attempted to read an out of "
 									 "bounds edict number");
-					if (OPB(uint) + 2 >= pr->progs->entityfields)
+					if (OPB(field) + 2 >= pr->progs->entityfields)
 						PR_RunError (pr, "Progs attempted to read an invalid "
 									 "field in an edict");
 				}
-				fldofs = OPA(uint) + OPB(int);
+				fldofs = OPA(entity) + OPB(field);
 				memcpy (op_c, &pr->pr_edict_area[fldofs], 3 * sizeof (*op_c));
 				break;
 			case OP_LOAD_Q_v6p:
 				if (pr_boundscheck->int_val) {
-					if (OPA(uint) >= pr->pr_edict_area_size)
+					if (OPA(entity) >= pr->pr_edict_area_size)
 						PR_RunError (pr, "Progs attempted to read an out of "
 									 "bounds edict number");
-					if (OPB(uint) + 3 >= pr->progs->entityfields)
+					if (OPB(field) + 3 >= pr->progs->entityfields)
 						PR_RunError (pr, "Progs attempted to read an invalid "
 									 "field in an edict");
 				}
-				fldofs = OPA(uint) + OPB(int);
+				fldofs = OPA(entity) + OPB(field);
 				memcpy (op_c, &pr->pr_edict_area[fldofs], 4 * sizeof (*op_c));
 				break;
 			case OP_LOAD_D_v6p:
 				if (pr_boundscheck->int_val) {
-					if (OPA(uint) >= pr->pr_edict_area_size)
+					if (OPA(entity) >= pr->pr_edict_area_size)
 						PR_RunError (pr, "Progs attempted to read an out of "
 									 "bounds edict number");
-					if (OPB(uint) + 1 >= pr->progs->entityfields)
+					if (OPB(field) + 1 >= pr->progs->entityfields)
 						PR_RunError (pr, "Progs attempted to read an invalid "
 									 "field in an edict");
 				}
-				fldofs = OPA(uint) + OPB(int);
+				fldofs = OPA(entity) + OPB(field);
 				memcpy (op_c, &pr->pr_edict_area[fldofs], sizeof (double));
 				break;
 
@@ -903,7 +900,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 			case OP_LOADB_FN_v6p:
 			case OP_LOADB_I_v6p:
 			case OP_LOADB_P_v6p:
-				pointer = OPA(int) + OPB(int);
+				pointer = OPA(entity) + OPB(field);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_int);
 				}
@@ -911,7 +908,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				OPC(int) = ptr->int_var;
 				break;
 			case OP_LOADB_V_v6p:
-				pointer = OPA(int) + OPB(int);
+				pointer = OPA(entity) + OPB(field);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_vector);
 				}
@@ -919,7 +916,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				VectorCopy (&ptr->vector_var, &OPC(float));
 				break;
 			case OP_LOADB_Q_v6p:
-				pointer = OPA(int) + OPB(int);
+				pointer = OPA(entity) + OPB(field);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_quaternion);
 				}
@@ -927,7 +924,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				QuatCopy (&ptr->quat_var, &OPC(float));
 				break;
 			case OP_LOADB_D_v6p:
-				pointer = OPA(int) + OPB(int);
+				pointer = OPA(entity) + OPB(field);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_double);
 				}
@@ -942,7 +939,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 			case OP_LOADBI_FN_v6p:
 			case OP_LOADBI_I_v6p:
 			case OP_LOADBI_P_v6p:
-				pointer = OPA(int) + (short) st->b;
+				pointer = OPA(ptr) + (short) st->b;
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_int);
 				}
@@ -950,7 +947,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				OPC(int) = ptr->int_var;
 				break;
 			case OP_LOADBI_V_v6p:
-				pointer = OPA(int) + (short) st->b;
+				pointer = OPA(ptr) + (short) st->b;
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_vector);
 				}
@@ -958,7 +955,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				VectorCopy (&ptr->vector_var, &OPC(float));
 				break;
 			case OP_LOADBI_Q_v6p:
-				pointer = OPA(int) + (short) st->b;
+				pointer = OPA(ptr) + (short) st->b;
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_quaternion);
 				}
@@ -966,7 +963,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				QuatCopy (&ptr->quat_var, &OPC(float));
 				break;
 			case OP_LOADBI_D_v6p:
-				pointer = OPA(int) + (short) st->b;
+				pointer = OPA(ptr) + (short) st->b;
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_quaternion);
 				}
@@ -975,13 +972,13 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				break;
 
 			case OP_LEA_v6p:
-				pointer = OPA(int) + OPB(int);
-				OPC(int) = pointer;
+				pointer = OPA(ptr) + OPB(int);
+				OPC(ptr) = pointer;
 				break;
 
 			case OP_LEAI_v6p:
-				pointer = OPA(int) + (short) st->b;
-				OPC(int) = pointer;
+				pointer = OPA(ptr) + (short) st->b;
+				OPC(ptr) = pointer;
 				break;
 
 			case OP_STOREB_F_v6p:
@@ -991,7 +988,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 			case OP_STOREB_FN_v6p:
 			case OP_STOREB_I_v6p:
 			case OP_STOREB_P_v6p:
-				pointer = OPB(int) + OPC(int);
+				pointer = OPB(ptr) + OPC(int);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_int);
 				}
@@ -999,7 +996,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				ptr->int_var = OPA(int);
 				break;
 			case OP_STOREB_V_v6p:
-				pointer = OPB(int) + OPC(int);
+				pointer = OPB(ptr) + OPC(int);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_vector);
 				}
@@ -1007,7 +1004,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				VectorCopy (&OPA(float), &ptr->vector_var);
 				break;
 			case OP_STOREB_Q_v6p:
-				pointer = OPB(int) + OPC(int);
+				pointer = OPB(ptr) + OPC(int);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_quaternion);
 				}
@@ -1015,7 +1012,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				QuatCopy (&OPA(float), &ptr->quat_var);
 				break;
 			case OP_STOREB_D_v6p:
-				pointer = OPB(int) + OPC(int);
+				pointer = OPB(ptr) + OPC(int);
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_quaternion);
 				}
@@ -1030,7 +1027,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 			case OP_STOREBI_FN_v6p:
 			case OP_STOREBI_I_v6p:
 			case OP_STOREBI_P_v6p:
-				pointer = OPB(int) + (short) st->c;
+				pointer = OPB(ptr) + (short) st->c;
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_int);
 				}
@@ -1038,7 +1035,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				ptr->int_var = OPA(int);
 				break;
 			case OP_STOREBI_V_v6p:
-				pointer = OPB(int) + (short) st->c;
+				pointer = OPB(ptr) + (short) st->c;
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_vector);
 				}
@@ -1046,7 +1043,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				VectorCopy (&OPA(float), &ptr->vector_var);
 				break;
 			case OP_STOREBI_Q_v6p:
-				pointer = OPB(int) + (short) st->c;
+				pointer = OPB(ptr) + (short) st->c;
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_quaternion);
 				}
@@ -1054,7 +1051,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				QuatCopy (&OPA(float), &ptr->quat_var);
 				break;
 			case OP_STOREBI_D_v6p:
-				pointer = OPB(int) + (short) st->c;
+				pointer = OPB(ptr) + (short) st->c;
 				if (pr_boundscheck->int_val) {
 					PR_BoundsCheck (pr, pointer, ev_quaternion);
 				}
@@ -1113,7 +1110,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					pr_ptr_t    stack = *pr->globals.stack - 1;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
-					pointer = OPA(int) + OPB(int);
+					pointer = OPA(ptr) + OPB(int);
 					ptr = pr->pr_globals + pointer;
 
 					if (pr_boundscheck->int_val) {
@@ -1130,7 +1127,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					pr_ptr_t    stack = *pr->globals.stack - 3;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
-					pointer = OPA(int) + OPB(int);
+					pointer = OPA(ptr) + OPB(int);
 					ptr = pr->pr_globals + pointer;
 
 					if (pr_boundscheck->int_val) {
@@ -1147,7 +1144,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					pr_ptr_t    stack = *pr->globals.stack - 4;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
-					pointer = OPA(int) + OPB(int);
+					pointer = OPA(ptr) + OPB(int);
 					ptr = pr->pr_globals + pointer;
 
 					if (pr_boundscheck->int_val) {
@@ -1171,7 +1168,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					pr_ptr_t    stack = *pr->globals.stack - 1;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
-					pointer = OPA(int) + st->b;
+					pointer = OPA(ptr) + st->b;
 					ptr = pr->pr_globals + pointer;
 
 					if (pr_boundscheck->int_val) {
@@ -1188,7 +1185,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					pr_ptr_t    stack = *pr->globals.stack - 3;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
-					pointer = OPA(int) + st->b;
+					pointer = OPA(ptr) + st->b;
 					ptr = pr->pr_globals + pointer;
 
 					if (pr_boundscheck->int_val) {
@@ -1205,7 +1202,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					pr_ptr_t    stack = *pr->globals.stack - 4;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
-					pointer = OPA(int) + st->b;
+					pointer = OPA(ptr) + st->b;
 					ptr = pr->pr_globals + pointer;
 
 					if (pr_boundscheck->int_val) {
@@ -1269,7 +1266,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					pr_ptr_t    stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
-					pointer = OPA(int) + OPB(int);
+					pointer = OPA(ptr) + OPB(int);
 					ptr = pr->pr_globals + pointer;
 
 					if (pr_boundscheck->int_val) {
@@ -1286,7 +1283,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					pr_ptr_t    stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
-					pointer = OPA(int) + OPB(int);
+					pointer = OPA(ptr) + OPB(int);
 					ptr = pr->pr_globals + pointer;
 
 					if (pr_boundscheck->int_val) {
@@ -1303,7 +1300,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					pr_ptr_t    stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
-					pointer = OPA(int) + OPB(int);
+					pointer = OPA(ptr) + OPB(int);
 					ptr = pr->pr_globals + pointer;
 
 					if (pr_boundscheck->int_val) {
@@ -1327,7 +1324,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					pr_ptr_t    stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
-					pointer = OPA(int) + st->b;
+					pointer = OPA(ptr) + st->b;
 					ptr = pr->pr_globals + pointer;
 
 					if (pr_boundscheck->int_val) {
@@ -1344,7 +1341,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					pr_ptr_t    stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
-					pointer = OPA(int) + st->b;
+					pointer = OPA(ptr) + st->b;
 					ptr = pr->pr_globals + pointer;
 
 					if (pr_boundscheck->int_val) {
@@ -1361,7 +1358,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 					pr_ptr_t    stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
-					pointer = OPA(int) + st->b;
+					pointer = OPA(ptr) + st->b;
 					ptr = pr->pr_globals + pointer;
 
 					if (pr_boundscheck->int_val) {
@@ -1467,7 +1464,7 @@ op_rcall:
 op_call:
 				pr->pr_xfunction->profile += profile - startprofile;
 				startprofile = profile;
-				PR_CallFunction (pr, OPA(uint), pr->pr_return);
+				PR_CallFunction (pr, OPA(func), pr->pr_return);
 				st = pr->pr_statements + pr->pr_xstatement;
 				break;
 			case OP_DONE_v6p:
@@ -1500,7 +1497,7 @@ op_call:
 					float       time = *pr->globals.ftime + 0.1;
 					pr->pr_edict_area[nextthink].float_var = time;
 					pr->pr_edict_area[frame].float_var = OPA(float);
-					pr->pr_edict_area[think].func_var = OPB(uint);
+					pr->pr_edict_area[think].func_var = OPB(func);
 				}
 				break;
 			case OP_STATE_F_v6p:
@@ -1512,7 +1509,7 @@ op_call:
 					float       time = *pr->globals.ftime + OPC(float);
 					pr->pr_edict_area[nextthink].float_var = time;
 					pr->pr_edict_area[frame].float_var = OPA(float);
-					pr->pr_edict_area[think].func_var = OPB(uint);
+					pr->pr_edict_area[think].func_var = OPB(func);
 				}
 				break;
 			case OP_ADD_I_v6p:
@@ -1649,31 +1646,31 @@ op_call:
 				break;
 			case OP_MOVEP_v6p:
 				if (pr_boundscheck->int_val) {
-					PR_BoundsCheckSize (pr, OPC(int), OPB(uint));
-					PR_BoundsCheckSize (pr, OPA(int), OPB(uint));
+					PR_BoundsCheckSize (pr, OPC(ptr), OPB(uint));
+					PR_BoundsCheckSize (pr, OPA(ptr), OPB(uint));
 				}
-				memmove (pr->pr_globals + OPC(int),
-						 pr->pr_globals + OPA(int),
+				memmove (pr->pr_globals + OPC(ptr),
+						 pr->pr_globals + OPA(ptr),
 						 OPB(uint) * 4);
 				break;
 			case OP_MOVEPI_v6p:
 				if (pr_boundscheck->int_val) {
-					PR_BoundsCheckSize (pr, OPC(int), st->b);
-					PR_BoundsCheckSize (pr, OPA(int), st->b);
+					PR_BoundsCheckSize (pr, OPC(ptr), st->b);
+					PR_BoundsCheckSize (pr, OPA(ptr), st->b);
 				}
-				memmove (pr->pr_globals + OPC(int),
-						 pr->pr_globals + OPA(int),
+				memmove (pr->pr_globals + OPC(ptr),
+						 pr->pr_globals + OPA(ptr),
 						 st->b * 4);
 				break;
 			case OP_MEMSETI_v6p:
-				pr_memset (op_c, OPA(int), st->b);
+				pr_memset (op_c, OPA(ptr), st->b);
 				break;
 			case OP_MEMSETP_v6p:
 				if (pr_boundscheck->int_val) {
-					PR_BoundsCheckSize (pr, OPC(ptr), OPB(int));
+					PR_BoundsCheckSize (pr, OPC(ptr), OPB(uint));
 				}
 				pr_memset (pr->pr_globals + OPC(ptr), OPA(int),
-						   OPB(int));
+						   OPB(uint));
 				break;
 			case OP_MEMSETPI_v6p:
 				if (pr_boundscheck->int_val) {
@@ -1720,7 +1717,7 @@ op_call:
 // LordHavoc: to be enabled when Progs version 7 (or whatever it will be numbered) is finalized
 /*
 			case OP_BOUNDCHECK_v6p:
-				if (OPA(int) < 0 || OPA(int) >= st->b) {
+				if (OPA(ptr) >= st->b) {
 					PR_RunError (pr, "Progs boundcheck failed at line number "
 					"%d, value is < 0 or >= %d", st->b, st->c);
 				}
@@ -1763,20 +1760,20 @@ pr_address_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 			break;
 		case 1:
 			// simple pointer dereference: *a
-			mm_offs = OPA(uint);
+			mm_offs = OPA(ptr);
 			break;
 		case 2:
 			// constant indexed pointer: *a + b (supports -ve offset)
-			mm_offs = OPA(uint) + (short) st->b;
+			mm_offs = OPA(ptr) + (short) st->b;
 			break;
 		case 3:
 			// variable indexed pointer: *a + *b (supports -ve offset)
-			mm_offs = OPA(uint) + OPB(int);
+			mm_offs = OPA(ptr) + OPB(int);
 			break;
 		case 4:
 			// entity.field (equivalent to OP_LOAD_t_v6p)
 			pr_ptr_t    edict_area = pr->pr_edict_area - pr->pr_globals;
-			mm_offs = edict_area + OPA(uint) + OPB(uint);
+			mm_offs = edict_area + OPA(entity) + OPB(field);
 			break;
 	}
 	return pr->pr_globals + mm_offs;
@@ -1796,20 +1793,20 @@ pr_return_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 			break;
 		case 1:
 			// simple pointer dereference: *a
-			mm_offs = OPA(uint);
+			mm_offs = OPA(ptr);
 			break;
 		case 2:
 			// constant indexed pointer: *a + b (supports -ve offset)
-			mm_offs = OPA(uint) + (short) st->b;
+			mm_offs = OPA(ptr) + (short) st->b;
 			break;
 		case 3:
 			// variable indexed pointer: *a + *b (supports -ve offset)
-			mm_offs = OPA(uint) + OPB(int);
+			mm_offs = OPA(ptr) + OPB(int);
 			break;
 		case 4:
 			// entity.field (equivalent to OP_LOAD_t_v6p)
 			pr_ptr_t    edict_area = pr->pr_edict_area - pr->pr_globals;
-			mm_offs = edict_area + OPA(uint) + OPB(uint);
+			mm_offs = edict_area + OPA(entity) + OPB(field);
 			break;
 	}
 	return pr->pr_globals + mm_offs;
@@ -1829,16 +1826,16 @@ pr_call_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 			break;
 		case 2:
 			// constant indexed pointer: *a + b (supports -ve offset)
-			mm_offs = OPA(uint) + (short) st->b;
+			mm_offs = OPA(ptr) + (short) st->b;
 			break;
 		case 3:
 			// variable indexed pointer: *a + *b (supports -ve offset)
-			mm_offs = OPA(uint) + OPB(int);
+			mm_offs = OPA(ptr) + OPB(int);
 			break;
 		case 4:
 			// entity.field (equivalent to OP_LOAD_t_v6p)
 			pr_ptr_t    edict_area = pr->pr_edict_area - pr->pr_globals;
-			mm_offs = edict_area + OPA(uint) + OPB(uint);
+			mm_offs = edict_area + OPA(entity) + OPB(field);
 			break;
 	}
 	return pr->pr_globals + mm_offs;
@@ -1858,15 +1855,15 @@ pr_jump_mode (progs_t *pr, const dstatement_t *st, int jump_ind)
 			break;
 		case 1:
 			// simple pointer dereference: *a
-			jump_offs = OPA(uint);
+			jump_offs = OPA(ptr);
 			break;
 		case 2:
 			// constant indexed pointer: *a + b (supports -ve offset)
-			jump_offs = OPA(uint) + (short) st->b;
+			jump_offs = OPA(ptr) + (short) st->b;
 			break;
 		case 3:
 			// variable indexed pointer: *a + *b (supports -ve offset)
-			jump_offs = OPA(uint) + OPB(int);
+			jump_offs = OPA(ptr) + OPB(int);
 			break;
 	}
 	if (pr_boundscheck->int_val && jump_offs >= pr->progs->numstatements) {
@@ -1941,7 +1938,7 @@ pr_with (progs_t *pr, const dstatement_t *st)
 			return;
 		case 7:
 			// relative to edict_area (only +ve)
-			*base = edict_area + OPB(uint);
+			*base = edict_area + OPB(field);
 			return;
 
 		case 8:
@@ -3286,11 +3283,11 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				memmove (op_c, op_a, st->b * sizeof (pr_type_t));
 				break;
 			case OP_MOVE_P:
-				memmove (pr->pr_globals + OPC(int), pr->pr_globals + OPA(int),
+				memmove (pr->pr_globals + OPC(ptr), pr->pr_globals + OPA(ptr),
 						 OPB(uint) * sizeof (pr_type_t));
 				break;
 			case OP_MOVE_PI:
-				memmove (pr->pr_globals + OPC(int), pr->pr_globals + OPA(int),
+				memmove (pr->pr_globals + OPC(ptr), pr->pr_globals + OPA(ptr),
 						 st->b * sizeof (pr_type_t));
 				break;
 			case OP_STATE_ft:
@@ -3310,10 +3307,10 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 				pr_memset (op_c, OPA(int), st->b);
 				break;
 			case OP_MEMSET_P:
-				pr_memset (pr->pr_globals + OPC(int), OPA(int), OPB(uint));
+				pr_memset (pr->pr_globals + OPC(ptr), OPA(int), OPB(uint));
 				break;
 			case OP_MEMSET_PI:
-				pr_memset (pr->pr_globals + OPC(int), OPA(int), st->b);
+				pr_memset (pr->pr_globals + OPC(ptr), OPA(int), st->b);
 				break;
 			case OP_STATE_ftt:
 				{
