@@ -134,7 +134,7 @@ test_expr (expr_t *e)
 			return new_alias_expr (type_default, e);
 		case ev_ptr:
 			return new_alias_expr (type_default, e);
-		case ev_quat:
+		case ev_quaternion:
 			new = new_quaternion_expr (zero);
 			break;
 		case ev_invalid:

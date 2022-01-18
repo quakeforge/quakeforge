@@ -230,7 +230,7 @@ WriteProgdefs (dprograms_t *progs, const char *filename)
 			case ev_vector:
 				dasprintf (dstr, "\tvec3_t\t%s;\n", name);
 				break;
-			case ev_quat:
+			case ev_quaternion:
 				dasprintf (dstr, "\tquat_t\t%s;\n", name);
 				break;
 			case ev_string:

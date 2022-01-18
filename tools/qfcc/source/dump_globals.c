@@ -134,7 +134,7 @@ dump_def (progs_t *pr, pr_def_t *def, int indent)
 			case ev_ptr:
 				comment = va (0, " %x", G_INT (pr, offset));
 				break;
-			case ev_quat:
+			case ev_quaternion:
 				comment = va (0, " '%g %g %g %g'",
 							  G_QUAT (pr, offset)[0],
 							  G_QUAT (pr, offset)[1],

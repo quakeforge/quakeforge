@@ -94,7 +94,7 @@ PR_UglyValueString (progs_t *pr, etype_t type, pr_type_t *val, dstring_t *line)
 		case ev_vector:
 			dsprintf (line, "%.9g %.9g %.9g", VectorExpand (&val->vector_var));
 			break;
-		case ev_quat:
+		case ev_quaternion:
 			dsprintf (line, "%.9g %.9g %.9g %.9g", QuatExpand (&val->quat_var));
 			break;
 		default:

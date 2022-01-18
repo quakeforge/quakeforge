@@ -534,7 +534,7 @@ static expr_type_t *string_x[ev_type_count] = {
 	0,				// ev_field
 	0,				// ev_func
 	0,				// ev_ptr
-	0,				// ev_quat
+	0,				// ev_quaternion
 	0,				// ev_int
 	0,				// ev_uint
 	0,				// ev_short
@@ -630,7 +630,7 @@ static expr_type_t *pointer_x[ev_type_count] = {
 	0,				// ev_field
 	0,				// ev_func
 	pointer_pointer,
-	0,				// ev_quat
+	0,				// ev_quaternion
 	pointer_int,
 	pointer_uint,
 	pointer_short,

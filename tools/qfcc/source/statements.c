@@ -134,7 +134,7 @@ operand_string (operand_t *op)
 							   op->value->v.vector_val[0],
 							   op->value->v.vector_val[1],
 							   op->value->v.vector_val[2]);
-				case ev_quat:
+				case ev_quaternion:
 					return va (0, "'%g %g %g %g'",
 							   op->value->v.quaternion_val[0],
 							   op->value->v.quaternion_val[1],
@@ -221,7 +221,7 @@ _print_operand (operand_t *op)
 					printf (" %g", op->value->v.vector_val[1]);
 					printf (" %g'", op->value->v.vector_val[2]);
 					break;
-				case ev_quat:
+				case ev_quaternion:
 					printf ("'%g", op->value->v.quaternion_val[0]);
 					printf (" %g", op->value->v.quaternion_val[1]);
 					printf (" %g", op->value->v.quaternion_val[2]);

@@ -799,7 +799,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 			case OP_STOREP_Q_v6p:
 				pointer = OPB(int);
 				if (pr_boundscheck->int_val) {
-					PR_BoundsCheck (pr, pointer, ev_quat);
+					PR_BoundsCheck (pr, pointer, ev_quaternion);
 				}
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (&OPA(float), &ptr->quat_var);
@@ -921,7 +921,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 			case OP_LOADB_Q_v6p:
 				pointer = OPA(int) + OPB(int);
 				if (pr_boundscheck->int_val) {
-					PR_BoundsCheck (pr, pointer, ev_quat);
+					PR_BoundsCheck (pr, pointer, ev_quaternion);
 				}
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (&ptr->quat_var, &OPC(float));
@@ -960,7 +960,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 			case OP_LOADBI_Q_v6p:
 				pointer = OPA(int) + (short) st->b;
 				if (pr_boundscheck->int_val) {
-					PR_BoundsCheck (pr, pointer, ev_quat);
+					PR_BoundsCheck (pr, pointer, ev_quaternion);
 				}
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (&ptr->quat_var, &OPC(float));
@@ -968,7 +968,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 			case OP_LOADBI_D_v6p:
 				pointer = OPA(int) + (short) st->b;
 				if (pr_boundscheck->int_val) {
-					PR_BoundsCheck (pr, pointer, ev_quat);
+					PR_BoundsCheck (pr, pointer, ev_quaternion);
 				}
 				ptr = pr->pr_globals + pointer;
 				OPC(double) = *(double *) ptr;
@@ -1009,7 +1009,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 			case OP_STOREB_Q_v6p:
 				pointer = OPB(int) + OPC(int);
 				if (pr_boundscheck->int_val) {
-					PR_BoundsCheck (pr, pointer, ev_quat);
+					PR_BoundsCheck (pr, pointer, ev_quaternion);
 				}
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (&OPA(float), &ptr->quat_var);
@@ -1017,7 +1017,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 			case OP_STOREB_D_v6p:
 				pointer = OPB(int) + OPC(int);
 				if (pr_boundscheck->int_val) {
-					PR_BoundsCheck (pr, pointer, ev_quat);
+					PR_BoundsCheck (pr, pointer, ev_quaternion);
 				}
 				ptr = pr->pr_globals + pointer;
 				*(double *) ptr = OPA(double);
@@ -1048,7 +1048,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 			case OP_STOREBI_Q_v6p:
 				pointer = OPB(int) + (short) st->c;
 				if (pr_boundscheck->int_val) {
-					PR_BoundsCheck (pr, pointer, ev_quat);
+					PR_BoundsCheck (pr, pointer, ev_quaternion);
 				}
 				ptr = pr->pr_globals + pointer;
 				QuatCopy (&OPA(float), &ptr->quat_var);
@@ -1056,7 +1056,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 			case OP_STOREBI_D_v6p:
 				pointer = OPB(int) + (short) st->c;
 				if (pr_boundscheck->int_val) {
-					PR_BoundsCheck (pr, pointer, ev_quat);
+					PR_BoundsCheck (pr, pointer, ev_quaternion);
 				}
 				ptr = pr->pr_globals + pointer;
 				*(double *) ptr = OPA(double);
@@ -1152,7 +1152,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 
 					if (pr_boundscheck->int_val) {
 						check_stack_pointer (pr, stack, 4);
-						PR_BoundsCheck (pr, pointer, ev_quat);
+						PR_BoundsCheck (pr, pointer, ev_quaternion);
 					}
 
 					QuatCopy (&ptr->quat_var, &stk->quat_var);
@@ -1210,7 +1210,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 
 					if (pr_boundscheck->int_val) {
 						check_stack_pointer (pr, stack, 4);
-						PR_BoundsCheck (pr, pointer, ev_quat);
+						PR_BoundsCheck (pr, pointer, ev_quaternion);
 					}
 
 					QuatCopy (&ptr->quat_var, &stk->quat_var);
@@ -1308,7 +1308,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 
 					if (pr_boundscheck->int_val) {
 						check_stack_pointer (pr, stack, 4);
-						PR_BoundsCheck (pr, pointer, ev_quat);
+						PR_BoundsCheck (pr, pointer, ev_quaternion);
 					}
 
 					QuatCopy (&stk->quat_var, &ptr->quat_var);
@@ -1366,7 +1366,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 
 					if (pr_boundscheck->int_val) {
 						check_stack_pointer (pr, stack, 4);
-						PR_BoundsCheck (pr, pointer, ev_quat);
+						PR_BoundsCheck (pr, pointer, ev_quaternion);
 					}
 
 					QuatCopy (&stk->quat_var, &ptr->quat_var);

@@ -540,7 +540,7 @@ print_value (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 						e->e.value->v.vector_val[1],
 						e->e.value->v.vector_val[2]);
 			break;
-		case ev_quat:
+		case ev_quaternion:
 			label = va (0, "'%g %g %g %g'",
 						e->e.value->v.quaternion_val[0],
 						e->e.value->v.quaternion_val[1],

@@ -74,7 +74,7 @@ type_t      type_function = { ev_func, "function", 1, ty_basic,
 								{{&type_void}} };
 type_t      type_pointer = { ev_ptr, "pointer", 1, ty_basic,
 								{{&type_void}} };
-type_t      type_quaternion = { ev_quat, "quaternion", 4 };
+type_t      type_quaternion = { ev_quaternion, "quaternion", 4 };
 type_t      type_int = { ev_int, "int", 1 };
 type_t      type_uint = { ev_uint, "uint", 1 };
 type_t      type_short = { ev_short, "short", 1 };
@@ -185,7 +185,7 @@ free_type (type_t *type)
 		case ev_vector:
 		case ev_entity:
 		case ev_type_count:
-		case ev_quat:
+		case ev_quaternion:
 		case ev_int:
 		case ev_uint:
 		case ev_long:
@@ -227,7 +227,7 @@ copy_chain (type_t *type, type_t *append)
 					case ev_vector:
 					case ev_entity:
 					case ev_type_count:
-					case ev_quat:
+					case ev_quaternion:
 					case ev_int:
 					case ev_uint:
 					case ev_long:
@@ -280,7 +280,7 @@ append_type (type_t *type, type_t *new)
 					case ev_vector:
 					case ev_entity:
 					case ev_type_count:
-					case ev_quat:
+					case ev_quaternion:
 					case ev_int:
 					case ev_uint:
 					case ev_long:
@@ -659,7 +659,7 @@ print_type_str (dstring_t *str, const type_t *type)
 				case ev_float:
 				case ev_vector:
 				case ev_entity:
-				case ev_quat:
+				case ev_quaternion:
 				case ev_int:
 				case ev_uint:
 				case ev_long:
@@ -819,7 +819,7 @@ encode_type (dstring_t *encoding, const type_t *type)
 					dasprintf (encoding, "^");
 					encode_type (encoding, type);
 					return;
-				case ev_quat:
+				case ev_quaternion:
 					dasprintf (encoding, "Q");
 					return;
 				case ev_int:
@@ -936,7 +936,7 @@ int
 is_quaternion (const type_t *type)
 {
 	type = unalias_type (type);
-	return type->type == ev_quat;
+	return type->type == ev_quaternion;
 }
 
 int
@@ -945,7 +945,7 @@ is_math (const type_t *type)
 	type = unalias_type (type);
 	etype_t     t = type->type;
 
-	return t == ev_vector || t == ev_quat || is_scalar (type);
+	return t == ev_vector || t == ev_quaternion || is_scalar (type);
 }
 
 int
@@ -1258,7 +1258,7 @@ init_types (void)
 	make_structure ("@va_list", 's', va_list_struct, &type_va_list);
 
 	make_structure ("@quaternion", 's', quaternion_struct, &type_quaternion);
-	type_quaternion.type = ev_quat;
+	type_quaternion.type = ev_quaternion;
 	type_quaternion.meta = ty_basic;
 	{
 		symbol_t   *sym;

@@ -1079,10 +1079,10 @@ is_quaternion_val (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return 1;
-	if (e->type == ex_value && e->e.value->lltype == ev_quat)
+	if (e->type == ex_value && e->e.value->lltype == ev_quaternion)
 		return 1;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
-		&& e->e.symbol->type->type == ev_quat)
+		&& e->e.symbol->type->type == ev_quaternion)
 		return 1;
 	return 0;
 }
@@ -1092,14 +1092,14 @@ expr_quaternion (expr_t *e)
 {
 	if (e->type == ex_nil)
 		return quat_origin;
-	if (e->type == ex_value && e->e.value->lltype == ev_quat)
+	if (e->type == ex_value && e->e.value->lltype == ev_quaternion)
 		return e->e.value->v.quaternion_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_const
-		&& e->e.symbol->type->type == ev_quat)
+		&& e->e.symbol->type->type == ev_quaternion)
 		return e->e.symbol->s.value->v.quaternion_val;
 	if (e->type == ex_symbol && e->e.symbol->sy_type == sy_var
 		&& e->e.symbol->s.def->constant
-		&& e->e.symbol->s.def->type->type == ev_quat)
+		&& e->e.symbol->s.def->type->type == ev_quaternion)
 		return D_QUAT (e->e.symbol->s.def);
 	internal_error (e, "not a quaternion constant");
 }
@@ -1459,7 +1459,7 @@ field_expr (expr_t *e1, expr_t *e2)
 			e = new_address_expr (ivar->type, e1, e2);
 			return unary_expr ('.', e);
 		}
-	} else if (t1->type == ev_vector || t1->type == ev_quat
+	} else if (t1->type == ev_vector || t1->type == ev_quaternion
 			   || is_struct (t1)) {
 		symbol_t   *field;
 
@@ -1707,7 +1707,7 @@ unary_expr (int op, expr_t *e)
 					case ev_vector:
 						VectorNegate (expr_vector (e), v);
 						return new_vector_expr (v);
-					case ev_quat:
+					case ev_quaternion:
 						QuatNegate (expr_vector (e), q);
 						return new_vector_expr (q);
 					case ev_long:
@@ -1809,7 +1809,7 @@ unary_expr (int op, expr_t *e)
 						return new_int_expr (!expr_float (e));
 					case ev_vector:
 						return new_int_expr (!VectorIsZero (expr_vector (e)));
-					case ev_quat:
+					case ev_quaternion:
 						return new_int_expr (!QuatIsZero (expr_quaternion (e)));
 					case ev_long:
 					case ev_ulong:
@@ -1882,7 +1882,7 @@ unary_expr (int op, expr_t *e)
 						return error (e, "invalid type for unary ~");
 					case ev_float:
 						return new_float_expr (~(int) expr_float (e));
-					case ev_quat:
+					case ev_quaternion:
 						QuatConj (expr_vector (e), q);
 						return new_vector_expr (q);
 					case ev_long:

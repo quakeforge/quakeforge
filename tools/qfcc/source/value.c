@@ -533,7 +533,7 @@ emit_value (ex_value_t *value, def_t *def)
 			tab = vector_imm_defs;
 			type = &type_vector;
 			break;
-		case ev_quat:
+		case ev_quaternion:
 			tab = quaternion_imm_defs;
 			type = &type_quaternion;
 			break;

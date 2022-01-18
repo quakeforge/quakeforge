@@ -38,7 +38,7 @@ EV_TYPE(entity)
 EV_TYPE(field)
 EV_TYPE(func)
 EV_TYPE(ptr)			// end of v6 types
-EV_TYPE(quat)
+EV_TYPE(quaternion)
 EV_TYPE(int)
 EV_TYPE(uint)
 EV_TYPE(short)			// value is embedded in the opcode
