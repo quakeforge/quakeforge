@@ -168,6 +168,8 @@ operand_string (operand_t *op)
 					return va (0, "ulong %"PRIu64, op->value->v.ulong_val);
 				case ev_short:
 					return va (0, "short %d", op->value->v.short_val);
+				case ev_ushort:
+					return va (0, "ushort %d", op->value->v.ushort_val);
 				case ev_void:
 					return "(void)";
 				case ev_invalid:
@@ -251,6 +253,9 @@ _print_operand (operand_t *op)
 					break;
 				case ev_short:
 					printf ("%d", op->value->v.short_val);
+					break;
+				case ev_ushort:
+					printf ("%d", op->value->v.ushort_val);
 					break;
 				case ev_void:
 				case ev_invalid:

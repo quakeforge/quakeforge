@@ -96,6 +96,7 @@ test_expr (expr_t *e)
 			break;
 		case ev_long:
 		case ev_ulong:
+		case ev_ushort:
 			internal_error (e, "long not implemented");
 		case ev_uint:
 		case ev_int:

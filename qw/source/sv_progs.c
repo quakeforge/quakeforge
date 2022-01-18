@@ -372,6 +372,7 @@ set_address (sv_def_t *def, void *address)
 	switch (def->type) {
 		case ev_void:
 		case ev_short:
+		case ev_ushort:
 		case ev_invalid:
 		case ev_type_count:
 			break;

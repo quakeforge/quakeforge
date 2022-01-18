@@ -1737,6 +1737,7 @@ typedef struct type_view_s {
 	type_view_func double_view;
 	type_view_func long_view;
 	type_view_func ulong_view;
+	type_view_func ushort_view;
 
 	type_view_func struct_view;
 	type_view_func union_view;

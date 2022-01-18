@@ -110,6 +110,7 @@ type_t     *ev_types[ev_type_count] = {
 	&type_uint,
 	&type_short,
 	&type_double,
+	0, 0, 0,
 	&type_invalid,
 };
 
@@ -191,6 +192,7 @@ free_type (type_t *type)
 		case ev_long:
 		case ev_ulong:
 		case ev_short:
+		case ev_ushort:
 		case ev_double:
 			break;
 		case ev_field:
@@ -233,6 +235,7 @@ copy_chain (type_t *type, type_t *append)
 					case ev_long:
 					case ev_ulong:
 					case ev_short:
+					case ev_ushort:
 					case ev_double:
 						internal_error (0, "copy basic type");
 					case ev_field:
@@ -286,6 +289,7 @@ append_type (type_t *type, type_t *new)
 					case ev_long:
 					case ev_ulong:
 					case ev_short:
+					case ev_ushort:
 					case ev_double:
 						internal_error (0, "append to basic type");
 					case ev_field:
@@ -665,6 +669,7 @@ print_type_str (dstring_t *str, const type_t *type)
 				case ev_long:
 				case ev_ulong:
 				case ev_short:
+				case ev_ushort:
 				case ev_double:
 					dasprintf (str, " %s", pr_type_name[type->type]);
 					return;
@@ -836,6 +841,9 @@ encode_type (dstring_t *encoding, const type_t *type)
 					return;
 				case ev_short:
 					dasprintf (encoding, "s");
+					return;
+				case ev_ushort:
+					dasprintf (encoding, "S");
 					return;
 				case ev_invalid:
 				case ev_type_count:

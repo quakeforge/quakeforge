@@ -593,6 +593,9 @@ print_value (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		case ev_short:
 			label = va (0, "s %d", e->e.value->v.short_val);
 			break;
+		case ev_ushort:
+			label = va (0, "us %d", e->e.value->v.ushort_val);
+			break;
 		case ev_void:
 			label = "<void>";
 			break;

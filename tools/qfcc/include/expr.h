@@ -203,7 +203,8 @@ typedef struct ex_value_s {
 		float       quaternion_val[4];	///< quaternion constant
 		int         int_val;			///< int constant
 		unsigned    uint_val;			///< unsigned int constant
-		short       short_val;			///< short constant
+		int16_t     short_val;			///< short constant
+		uint16_t    ushort_val;			///< unsigned short constant
 	} v;
 } ex_value_t;
 
