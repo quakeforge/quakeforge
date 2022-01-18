@@ -534,6 +534,8 @@ typedef union pr_type_u {
 	pr_uint_t   uint_var;
 } pr_type_t;
 
+typedef pr_type_t pr_void_t;	// so size of void is 1
+
 typedef struct pr_va_list_s {
 	pr_int_t    count;
 	pr_ptr_t    list;			// pr_type_t

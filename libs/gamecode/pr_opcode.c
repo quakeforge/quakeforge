@@ -33,8 +33,6 @@
 
 #include "QF/progs.h"
 
-typedef pr_type_t pr_void_t;	// so size of void is 1
-
 #define EV_TYPE(type) (sizeof (pr_##type##_t) / sizeof (pr_int_t)),
 VISIBLE const pr_ushort_t pr_type_size[ev_type_count] = {
 #include "QF/progs/pr_type_names.h"
