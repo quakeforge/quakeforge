@@ -397,13 +397,13 @@ resolve_functions (progs_t *pr, sv_def_t *def, int mode)
 
 	if (mode == 2) {
 		for (; def->name; def++)
-			*(func_t *) def->field = G_FUNCTION (pr, def->offset);
+			*(pr_func_t *) def->field = G_FUNCTION (pr, def->offset);
 		return 1;
 	}
 	for (; def->name; def++) {
 		dfunc = PR_FindFunction (pr, def->name);
 		if (dfunc) {
-			*(func_t *) def->field = dfunc - pr->pr_functions;
+			*(pr_func_t *) def->field = dfunc - pr->pr_functions;
 		} else if (mode) {
 			PR_Undefined (pr, "function", def->name);
 			ret = 0;

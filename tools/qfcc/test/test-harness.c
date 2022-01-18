@@ -259,7 +259,7 @@ int
 main (int argc, char **argv)
 {
 	dfunction_t *dfunc;
-	func_t      main_func = 0;
+	pr_func_t   main_func = 0;
 	const char *name = "progs.dat";
 	pr_string_t *pr_argv;
 	int         pr_argc = 1, i;

@@ -129,7 +129,7 @@ typedef struct pr_method_list_s {
 	struct pr_method_s {
 		pr_ptr_t    method_name;	// pr_sel_t
 		pr_string_t method_types;
-		func_t      method_imp;		// typedef id (id, SEL, ...) IMP
+		pr_func_t   method_imp;		// typedef id (id, SEL, ...) IMP
 	} method_list[1];
 } pr_method_list_t;
 typedef struct pr_method_s pr_method_t;

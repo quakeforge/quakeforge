@@ -83,7 +83,7 @@ quit_f (void)
 }
 
 static progs_t *bi_rprogs;
-static func_t qc2d;
+static pr_func_t qc2d;
 static int event_handler_id;
 
 static void

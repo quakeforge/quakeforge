@@ -37,7 +37,7 @@ test_debug_handler (prdebug_t event, void *param, void *data)
 			longjmp (jump_buffer, 1);
 		case prd_subenter:
 			if (verbose > 0) {
-				printf ("debug: subenter %d\n", *(func_t *) param);
+				printf ("debug: subenter %d\n", *(pr_func_t *) param);
 			}
 		case prd_subexit:
 			break;

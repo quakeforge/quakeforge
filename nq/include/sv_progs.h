@@ -76,18 +76,18 @@ typedef struct {
 extern sv_globals_t sv_globals;
 
 typedef struct {
-	func_t      main;
-	func_t      StartFrame;
-	func_t      PlayerPreThink;
-	func_t      PlayerPostThink;
-	func_t      ClientKill;
-	func_t      ClientConnect;
-	func_t      PutClientInServer;
-	func_t      ClientDisconnect;
-	func_t      SetNewParms;
-	func_t      SetChangeParms;
+	pr_func_t   main;
+	pr_func_t   StartFrame;
+	pr_func_t   PlayerPreThink;
+	pr_func_t   PlayerPostThink;
+	pr_func_t   ClientKill;
+	pr_func_t   ClientConnect;
+	pr_func_t   PutClientInServer;
+	pr_func_t   ClientDisconnect;
+	pr_func_t   SetNewParms;
+	pr_func_t   SetChangeParms;
 
-	func_t      EndFrame;
+	pr_func_t   EndFrame;
 } sv_funcs_t;
 
 extern sv_funcs_t sv_funcs;
@@ -115,9 +115,9 @@ typedef struct
 	pr_int_t    mins;				//vec3_t
 	pr_int_t    maxs;				//vec3_t
 	pr_int_t    size;				//vec3_t
-	pr_int_t    touch;				//func_t
-	pr_int_t    think;				//func_t
-	pr_int_t    blocked;			//func_t
+	pr_int_t    touch;				//pr_func_t
+	pr_int_t    think;				//pr_func_t
+	pr_int_t    blocked;			//pr_func_t
 	pr_int_t    nextthink;			//float
 	pr_int_t    groundentity;		//int
 	pr_int_t    health;				//float

@@ -167,7 +167,7 @@ void PR_PopFrame (progs_t *pr);
 	\param pr		pointer to ::progs_t VM struct
 	\param fnum		number of the function to call
 */
-void PR_ExecuteProgram (progs_t *pr, func_t fnum);
+void PR_ExecuteProgram (progs_t *pr, pr_func_t fnum);
 
 /** Setup to call a function. If \p fnum is a builtin rather than a progs
 	function, then the function is called immediately. When called from a
@@ -180,7 +180,7 @@ void PR_ExecuteProgram (progs_t *pr, func_t fnum);
 	\return			true if \p fnum was a progs function, false if \p fnum was
 					a builtin
 */
-int PR_CallFunction (progs_t *pr, func_t fnum, pr_type_t *return_ptr);
+int PR_CallFunction (progs_t *pr, pr_func_t fnum, pr_type_t *return_ptr);
 
 ///@}
 
@@ -482,7 +482,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 		\c void()
 	\param p		pointer to ::progs_t VM struct
 	\param o		offset into global data space
-	\return			func_t lvalue
+	\return			pr_func_t lvalue
 
 	\hideinitializer
 */
@@ -698,7 +698,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 		\c void()
 	\param p		pointer to ::progs_t VM struct
 	\param n		parameter number (0-7)
-	\return			func_t lvalue
+	\return			pr_func_t lvalue
 
 	\hideinitializer
 */
@@ -902,12 +902,12 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define R_STRING(p)		R_var (p, string)
 
-/** Access the VM function return value as a ::func_t (a VM function reference)
+/** Access the VM function return value as a ::pr_func_t (a VM function reference)
 
 	\par QC type:
 		\c void()
 	\param p		pointer to ::progs_t VM struct
-	\return			::func_t lvalue
+	\return			::pr_func_t lvalue
 
 	\hideinitializer
 */
@@ -1103,7 +1103,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 		\c void()
 	\param e		pointer to the entity
 	\param o		field offset into entity data space
-	\return			func_t lvalue
+	\return			pr_func_t lvalue
 
 	\hideinitializer
 */
@@ -1911,7 +1911,7 @@ struct progs_s {
 	pr_type_t  *pr_edict_area;
 	int         pr_edict_size;		///< # of pr_type_t slots
 	pr_uint_t   pr_edict_area_size;	///< for bounds checking, starts at 0
-	func_t      edict_parse;
+	pr_func_t   edict_parse;
 	///@}
 
 	/// \name execution state

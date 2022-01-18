@@ -19,7 +19,7 @@ typedef struct qwaq_thread_s {
 	int         rua_security;
 	struct memhunk_s *hunk;
 	struct hashlink_s *hashlink_freelist;
-	func_t      main_func;
+	pr_func_t   main_func;
 	void       *data;
 } qwaq_thread_t;
 

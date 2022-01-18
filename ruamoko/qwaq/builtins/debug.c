@@ -301,7 +301,7 @@ qdb_get_state (progs_t *pr)
 	pr_string_t file = 0;
 	unsigned    line = 0;
 	unsigned    staddr = tpr->pr_xstatement;
-	func_t      func = 0;
+	pr_func_t   func = 0;
 
 	if (tpr->pr_xfunction) {
 		func = tpr->pr_xfunction - tpr->function_table;
@@ -374,14 +374,14 @@ qdb_get_event (progs_t *pr)
 	event->what = target->event;
 	switch (event->what) {
 		case prd_subenter:
-			event->function = *(func_t *) target->param;
+			event->function = *(pr_func_t *) target->param;
 			break;
 		case prd_runerror:
 		case prd_error:
 			event->message = PR_SetReturnString (pr, *(char **) target->param);
 			break;
 		case prd_begin:
-			event->function = *(func_t *) target->param;
+			event->function = *(pr_func_t *) target->param;
 			break;
 		case prd_terminate:
 			event->exit_code = *(int *) target->param;

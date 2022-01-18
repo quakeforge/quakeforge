@@ -118,7 +118,7 @@ dump_def (progs_t *pr, pr_def_t *def, int indent)
 				break;
 			case ev_func:
 				{
-					func_t      func = G_FUNCTION (pr, offset);
+					pr_func_t   func = G_FUNCTION (pr, offset);
 					int         start;
 					if (func < pr->progs->numfunctions) {
 						start = pr->pr_functions[func].first_statement;

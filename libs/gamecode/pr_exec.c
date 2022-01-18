@@ -421,7 +421,7 @@ error_handler (void *data)
 }
 
 VISIBLE int
-PR_CallFunction (progs_t *pr, func_t fnum, pr_type_t *return_ptr)
+PR_CallFunction (progs_t *pr, pr_func_t fnum, pr_type_t *return_ptr)
 {
 	bfunction_t *f;
 
@@ -2766,7 +2766,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 
 		pr_type_t  *stk;
 		pr_type_t  *mm;
-		func_t      function;
+		pr_func_t   function;
 		pr_opcode_e st_op = st->op & OP_MASK;
 		switch (st_op) {
 			// 0 0000
@@ -3461,7 +3461,7 @@ exit_program:
 	The interpretation main loop
 */
 VISIBLE void
-PR_ExecuteProgram (progs_t *pr, func_t fnum)
+PR_ExecuteProgram (progs_t *pr, pr_func_t fnum)
 {
 	Sys_PushSignalHook (signal_hook, pr);
 	Sys_PushErrorHandler (error_handler, pr);

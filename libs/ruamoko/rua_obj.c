@@ -68,7 +68,7 @@ typedef struct dtable_s {
 	struct dtable_s *next;
 	struct dtable_s **prev;
 	size_t      size;
-	func_t     *imp;
+	pr_func_t  *imp;
 } dtable_t;
 
 typedef struct probj_resources_s {
@@ -79,7 +79,7 @@ typedef struct probj_resources_s {
 	pr_string_t *selector_names;
 	PR_RESMAP (dtable_t) dtables;
 	dtable_t   *dtable_list;
-	func_t      obj_forward;
+	pr_func_t   obj_forward;
 	pr_sel_t   *forward_selector;
 	dstring_t  *msg;
 	hashtab_t  *selector_hash;
@@ -936,7 +936,7 @@ obj_install_dispatch_table_for_class (probj_t *probj, pr_class_t *class)
 	dtable = dtable_new (probj);
 	class->dtable = dtable_index (probj, dtable);
 	dtable->size = probj->selector_index + 1;
-	dtable->imp = calloc (dtable->size, sizeof (func_t));
+	dtable->imp = calloc (dtable->size, sizeof (pr_func_t));
 	if (super) {
 		dtable_t   *super_dtable = get_dtable (probj, __FUNCTION__,
 											   super->dtable);
@@ -957,10 +957,10 @@ obj_check_dtable_installed (probj_t *probj, pr_class_t *class)
 	return get_dtable (probj, __FUNCTION__, class->dtable);
 }
 
-static func_t
+static pr_func_t
 get_imp (probj_t *probj, pr_class_t *class, pr_sel_t *sel)
 {
-	func_t     imp = 0;
+	pr_func_t  imp = 0;
 
 	if (class->dtable) {
 		dtable_t   *dtable = get_dtable (probj, __FUNCTION__, class->dtable);
@@ -985,7 +985,7 @@ obj_reponds_to (probj_t *probj, pr_id_t *obj, pr_sel_t *sel)
 	progs_t    *pr = probj->pr;
 	pr_class_t *class;
 	dtable_t   *dtable;
-	func_t      imp = 0;
+	pr_func_t   imp = 0;
 
 	class = &G_STRUCT (pr, pr_class_t, obj->class_pointer);
 	dtable = obj_check_dtable_installed (probj, class);
@@ -996,7 +996,7 @@ obj_reponds_to (probj_t *probj, pr_id_t *obj, pr_sel_t *sel)
 	return imp != 0;
 }
 
-static func_t
+static pr_func_t
 obj_msg_lookup (probj_t *probj, pr_id_t *receiver, pr_sel_t *op)
 {
 	progs_t    *pr = probj->pr;
@@ -1015,7 +1015,7 @@ obj_msg_lookup (probj_t *probj, pr_id_t *receiver, pr_sel_t *op)
 	return get_imp (probj, class, op);
 }
 
-static func_t
+static pr_func_t
 obj_msg_lookup_super (probj_t *probj, pr_super_t *super, pr_sel_t *op)
 {
 	progs_t    *pr = probj->pr;
@@ -1260,7 +1260,7 @@ rua___obj_forward (progs_t *pr)
 	pr_sel_t   *fwd_sel = probj->forward_selector;
 	pr_sel_t   *err_sel;
 	pr_class_t *class =&G_STRUCT (pr, pr_class_t, obj->class_pointer);
-	func_t      imp;
+	pr_func_t   imp;
 
 	if (!fwd_sel) {
 		//FIXME sel_register_typed_name is really not the way to go about
@@ -1372,7 +1372,7 @@ static void
 rua_obj_set_error_handler (progs_t *pr)
 {
 	//probj_t    *probj = pr->pr_objective_resources;
-	//func_t      func = P_INT (pr, 0);
+	//pr_func_t   func = P_INT (pr, 0);
 	//arglist
 	//XXX
 	PR_RunError (pr, "%s, not implemented", __FUNCTION__);
@@ -1406,7 +1406,7 @@ rua_obj_msg_sendv (progs_t *pr)
 	pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
 	pr_ptr_t    sel = P_POINTER (pr, 1);
 	pr_sel_t   *op = &P_STRUCT (pr, pr_sel_t, 1);
-	func_t      imp = obj_msg_lookup (probj, receiver, op);
+	pr_func_t   imp = obj_msg_lookup (probj, receiver, op);
 
 	__auto_type args = &P_PACKED (pr, pr_va_list_t, 2);
 	int         count = args->count;
@@ -1530,7 +1530,7 @@ rua_obj_msgSend (progs_t *pr)
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *self = &P_STRUCT (pr, pr_id_t, 0);
 	pr_sel_t   *_cmd = &P_STRUCT (pr, pr_sel_t, 1);
-	func_t      imp;
+	pr_func_t   imp;
 
 	if (!self) {
 		R_INT (pr) = P_INT (pr, 0);
@@ -1553,7 +1553,7 @@ rua_obj_msgSend_super (progs_t *pr)
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_super_t *super = &P_STRUCT (pr, pr_super_t, 0);
 	pr_sel_t   *_cmd = &P_STRUCT (pr, pr_sel_t, 1);
-	func_t      imp;
+	pr_func_t   imp;
 
 	imp = obj_msg_lookup_super (probj, super, _cmd);
 	if (!imp) {
@@ -2248,13 +2248,13 @@ RUA_Obj_Init (progs_t *pr, int secure)
 	PR_AddLoadFunc (pr, rua_obj_init_runtime);
 }
 
-func_t
+pr_func_t
 RUA_Obj_msg_lookup (progs_t *pr, pr_ptr_t _self, pr_ptr_t __cmd)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *self = &G_STRUCT (pr, pr_id_t, _self);
 	pr_sel_t   *_cmd = &G_STRUCT (pr, pr_sel_t, __cmd);
-	func_t      imp;
+	pr_func_t   imp;
 
 	if (!self)
 		return 0;

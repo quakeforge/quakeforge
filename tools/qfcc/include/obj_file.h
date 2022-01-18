@@ -420,7 +420,7 @@ enum {
 	\param q pointer to ::qfo_t struct
 	\param s space index
 	\param o offset into object file data space
-	\return func_t lvalue
+	\return pr_func_t lvalue
 
 	\hideinitializer
 */

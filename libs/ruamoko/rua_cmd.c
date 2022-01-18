@@ -50,7 +50,7 @@ typedef struct bi_cmd_s {
 	struct bi_cmd_s *next;
 	char       *name;
 	progs_t    *pr;
-	func_t      func;
+	pr_func_t   func;
 } bi_cmd_t;
 
 typedef struct {
@@ -90,7 +90,7 @@ bi_Cmd_AddCommand (progs_t *pr)
 	cmd_resources_t *res = PR_Resources_Find (pr, "Cmd");
 	bi_cmd_t   *cmd = malloc (sizeof (bi_cmd_t));
 	char       *name = strdup (P_GSTRING (pr, 0));
-	func_t      func = P_FUNCTION (pr, 1);
+	pr_func_t   func = P_FUNCTION (pr, 1);
 
 	if (!cmd || !name || !Cmd_AddCommand (name, bi_cmd_f, "CSQC command")) {
 		if (name)

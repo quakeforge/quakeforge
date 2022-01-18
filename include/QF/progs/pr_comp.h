@@ -29,9 +29,9 @@ typedef int16_t pr_short_t;
 typedef uint16_t pr_ushort_t;
 typedef int32_t pr_int_t;
 typedef uint32_t pr_uint_t;
+typedef uint32_t pr_func_t;
 typedef int64_t pr_long_t;
 typedef uint64_t pr_ulong_t;
-typedef pr_uint_t func_t;
 typedef pr_int_t pr_string_t;
 typedef pr_uint_t pr_ptr_t;
 
@@ -520,7 +520,7 @@ typedef struct dfunction_s {
 typedef union pr_type_u {
 	float       float_var;
 	pr_string_t string_var;
-	func_t      func_var;
+	pr_func_t   func_var;
 	pr_uint_t   entity_var;
 	float       vector_var;	// really [3], but this structure must be 32 bits
 	float       quat_var;	// really [4], but this structure must be 32 bits

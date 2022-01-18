@@ -56,9 +56,9 @@
 #include "qw/include/sv_recorder.h"
 
 typedef struct {
-	func_t      timeofday;
-	func_t      ConsoleCmd;
-	func_t      UserCmd;
+	pr_func_t   timeofday;
+	pr_func_t   ConsoleCmd;
+	pr_func_t   UserCmd;
 } qwe_funcs_t;
 
 static qwe_funcs_t qwe_funcs;
@@ -354,7 +354,7 @@ PF_calltimeofday (progs_t *pr)
 		P_STRING (pr, 6) = PR_SetReturnString (pr, date.str);
 
 		pr->pr_argc = 7;
-		PR_ExecuteProgram (pr, (func_t) (f - sv_pr_state.pr_functions));
+		PR_ExecuteProgram (pr, (pr_func_t) (f - sv_pr_state.pr_functions));
 		PR_PopFrame (&sv_pr_state);
 	}
 }
@@ -508,7 +508,7 @@ static builtin_t builtins[] = {
 
 static struct {
 	const char *name;
-	func_t     *field;
+	pr_func_t  *field;
 } qwe_func_list[] = {
 	{"timeofday",			&qwe_funcs.timeofday},
 	{"ConsoleCmd",			&qwe_funcs.ConsoleCmd},
@@ -574,7 +574,7 @@ qwe_load (progs_t *pr)
 
 		*qwe_func_list[i].field = 0;
 		if (f)
-			*qwe_func_list[i].field = (func_t) (f - pr->pr_functions);
+			*qwe_func_list[i].field = (pr_func_t) (f - pr->pr_functions);
 	}
 
 	sv_cbuf->unknown_command = qwe_console_cmd;

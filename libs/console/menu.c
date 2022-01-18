@@ -67,12 +67,12 @@ typedef struct menu_item_s {
 	int         max_items;
 	int         cur_item;
 	int         x, y;
-	func_t      func;
-	func_t      cursor;
-	func_t      keyevent;
-	func_t      draw;
-	func_t      enter_hook;
-	func_t      leave_hook;
+	pr_func_t   func;
+	pr_func_t   cursor;
+	pr_func_t   keyevent;
+	pr_func_t   draw;
+	pr_func_t   enter_hook;
+	pr_func_t   leave_hook;
 	unsigned    fadescreen:1;
 	unsigned    allkeys:1;
 	const char *text;
@@ -85,16 +85,16 @@ static progs_t  menu_pr_state;
 static menu_item_t *menu;
 //static keydest_t menu_keydest;
 static hashtab_t *menu_hash;
-static func_t   menu_init;
-static func_t   menu_quit;
-static func_t   menu_draw_hud;
-static func_t   menu_pre;
-static func_t   menu_post;
+static pr_func_t menu_init;
+static pr_func_t menu_quit;
+static pr_func_t menu_draw_hud;
+static pr_func_t menu_pre;
+static pr_func_t menu_post;
 static const char *top_menu;
 
 typedef struct menu_func_s {
 	const char *name;
-	func_t     *func;
+	pr_func_t  *func;
 } menu_func_t;
 
 static menu_func_t menu_functions[] = {
@@ -129,7 +129,7 @@ menu_resolve_globals (progs_t *pr)
 		sym = menu_functions[i].name;
 		if (!(f = PR_FindFunction (pr, sym)))
 			goto error;
-		*menu_functions[i].func = (func_t) (f - menu_pr_state.pr_functions);
+		*menu_functions[i].func = (pr_func_t) (f - menu_pr_state.pr_functions);
 	}
 
 	if (!(def = PR_FindGlobal (pr, sym = "time")))
@@ -315,7 +315,7 @@ bi_Menu_Item (progs_t *pr)
 	int         x = P_INT (pr, 0);
 	int         y = P_INT (pr, 1);
 	const char *text = P_GSTRING (pr, 2);
-	func_t      func = P_FUNCTION (pr, 3);
+	pr_func_t   func = P_FUNCTION (pr, 3);
 	int         allkeys = P_INT (pr, 4);
 	menu_item_t *mi = calloc (sizeof (menu_item_t), 1);
 
@@ -331,7 +331,7 @@ bi_Menu_Item (progs_t *pr)
 static void
 bi_Menu_Cursor (progs_t *pr)
 {
-	func_t      func = P_FUNCTION (pr, 0);
+	pr_func_t   func = P_FUNCTION (pr, 0);
 
 	menu->cursor = func;
 }
@@ -339,7 +339,7 @@ bi_Menu_Cursor (progs_t *pr)
 static void
 bi_Menu_KeyEvent (progs_t *pr)
 {
-	func_t      func = P_FUNCTION (pr, 0);
+	pr_func_t   func = P_FUNCTION (pr, 0);
 
 	menu->keyevent = func;
 }
@@ -385,7 +385,7 @@ bi_Menu_SelectMenu (progs_t *pr)
 static void
 bi_Menu_SetQuit (progs_t *pr)
 {
-	func_t      func = P_FUNCTION (pr, 0);
+	pr_func_t   func = P_FUNCTION (pr, 0);
 
 	menu_quit = func;
 }

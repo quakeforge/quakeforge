@@ -56,7 +56,7 @@
 
 typedef struct {
 	progs_t    *pr;
-	func_t      func;
+	pr_func_t   func;
 } function_t;
 
 static int
@@ -87,7 +87,7 @@ bi_bsearch (progs_t *pr)
 	const void *array = P_GPOINTER (pr, 1);
 	size_t      nmemb = P_INT (pr, 2);
 	size_t      size = P_INT (pr, 3) * sizeof (pr_int_t);
-	func_t      cmp = P_FUNCTION (pr, 4);
+	pr_func_t   cmp = P_FUNCTION (pr, 4);
 	void       *p = 0;
 
 	if (!cmp) {
@@ -106,7 +106,7 @@ bi_fbsearch (progs_t *pr)
 	const void *array = P_GPOINTER (pr, 1);
 	size_t      nmemb = P_INT (pr, 2);
 	size_t      size = P_INT (pr, 3) * sizeof (pr_int_t);
-	func_t      cmp = P_FUNCTION (pr, 4);
+	pr_func_t   cmp = P_FUNCTION (pr, 4);
 	void       *p = 0;
 
 	if (!cmp) {
@@ -124,7 +124,7 @@ bi_qsort (progs_t *pr)
 	void       *array = P_GPOINTER (pr, 0);
 	size_t      nmemb = P_INT (pr, 1);
 	size_t      size = P_INT (pr, 2) * sizeof (pr_int_t);
-	func_t      cmp = P_FUNCTION (pr, 3);
+	pr_func_t   cmp = P_FUNCTION (pr, 3);
 
 	if (!cmp) {
 		qsort (array, nmemb, size, int_compare);

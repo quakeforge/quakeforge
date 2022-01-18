@@ -48,8 +48,8 @@
 typedef struct bi_gib_builtin_s {
 	struct bi_gib_builtin_s *next;
 	gib_builtin_t *builtin;
-	progs_t *pr;
-	func_t func;
+	progs_t    *pr;
+	pr_func_t   func;
 } bi_gib_builtin_t;
 
 typedef struct bi_gib_resources_s {
@@ -117,7 +117,7 @@ bi_GIB_Builtin_Add (progs_t *pr)
 	bi_gib_resources_t *res = PR_Resources_Find (pr, "GIB");
 	bi_gib_builtin_t   *builtin;
 	const char *name = P_GSTRING (pr, 0);
-	func_t      func = P_FUNCTION (pr, 1);
+	pr_func_t   func = P_FUNCTION (pr, 1);
 
 	if (GIB_Builtin_Exists (name)) {
 		R_INT (pr) = 0;

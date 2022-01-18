@@ -95,7 +95,7 @@ typedef struct prdeb_resources_s {
 	pr_debug_header_t *debug;
 	pr_auxfunction_t *auxfunctions;
 	pr_auxfunction_t **auxfunction_map;
-	func_t     *sorted_functions;
+	pr_func_t  *sorted_functions;
 	pr_lineno_t *linenos;
 	pr_def_t   *local_defs;
 	pr_def_t   *type_encodings_def;
@@ -502,8 +502,8 @@ func_compare_sort (const void *_fa, const void *_fb, void *_res)
 {
 	prdeb_resources_t *res = _res;
 	progs_t    *pr = res->pr;
-	func_t      fa = *(const func_t *)_fa;
-	func_t      fb = *(const func_t *)_fb;
+	pr_func_t   fa = *(const pr_func_t *)_fa;
+	pr_func_t   fb = *(const pr_func_t *)_fb;
 	const char *fa_file = PR_GetString (pr, pr->pr_functions[fa].file);
 	const char *fb_file = PR_GetString (pr, pr->pr_functions[fb].file);
 	int         cmp = strcmp (fa_file, fb_file);
@@ -523,7 +523,7 @@ func_compare_search (const void *_key, const void *_f, void *_res)
 	prdeb_resources_t *res = _res;
 	progs_t    *pr = res->pr;
 	const func_key_t *key = _key;
-	func_t      f = *(const func_t *)_f;
+	pr_func_t   f = *(const pr_func_t *)_f;
 	const char *f_file = PR_GetString (pr, pr->pr_functions[f].file);
 	int         cmp = strcmp (key->file, f_file);
 	if (cmp) {
@@ -548,7 +548,7 @@ PR_DebugSetSym (progs_t *pr, pr_debug_header_t *debug)
 	size_t      size;
 	size = pr->progs->numfunctions * sizeof (pr_auxfunction_t *);
 	res->auxfunction_map = pr->allocate_progs_mem (pr, size);
-	size = pr->progs->numfunctions * sizeof (func_t);
+	size = pr->progs->numfunctions * sizeof (pr_func_t);
 	res->sorted_functions = pr->allocate_progs_mem (pr, size);
 
 	for (pr_uint_t i = 0; i < pr->progs->numfunctions; i++) {
@@ -572,8 +572,8 @@ PR_DebugSetSym (progs_t *pr, pr_debug_header_t *debug)
 		res->auxfunction_map[res->auxfunctions[i].function] =
 			&res->auxfunctions[i];
 	}
-	qsort_r (res->sorted_functions, pr->progs->numfunctions, sizeof (func_t),
-			 func_compare_sort, res);
+	qsort_r (res->sorted_functions, pr->progs->numfunctions,
+			 sizeof (pr_func_t), func_compare_sort, res);
 
 	for (pr_uint_t i = 0; i < debug->num_locals; i++) {
 		if (type_encodings) {
@@ -837,8 +837,8 @@ PR_FindSourceLineAddr (progs_t *pr, const char *file, pr_uint_t line)
 {
 	prdeb_resources_t *res = pr->pr_debug_resources;
 	func_key_t  key = { file, line };
-	func_t     *f = fbsearch_r (&key, res->sorted_functions,
-								pr->progs->numfunctions, sizeof (func_t),
+	pr_func_t  *f = fbsearch_r (&key, res->sorted_functions,
+								pr->progs->numfunctions, sizeof (pr_func_t),
 								func_compare_search, res);
 	if (!f) {
 		return 0;
@@ -1591,7 +1591,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 				unsigned    parm_ind = 0;
 				pr_uint_t   opval;
 				qfot_type_t *optype = &res->void_type;
-				func_t      func;
+				pr_func_t   func;
 
 				if (mode == 'P') {
 					opchar = fmt[3];

@@ -45,7 +45,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "world.h"
 
 static struct {
-	func_t      ClientCommand;
+	pr_func_t   ClientCommand;
 } cpqw_funcs;
 
 /*
@@ -796,7 +796,7 @@ static builtin_t builtins[] = {
 
 static struct {
 	const char *name;
-	func_t     *field;
+	pr_func_t  *field;
 } cpqw_func_list[] = {
 	{"ClientCommand",	&cpqw_funcs.ClientCommand},
 	{"UserInfoChanged",	&sv_funcs.UserInfoChanged},
@@ -841,7 +841,7 @@ cpqw_load (progs_t *pr)
 
 		*cpqw_func_list[i].field = 0;
 		if (f)
-			*cpqw_func_list[i].field = (func_t) (f - pr->pr_functions);
+			*cpqw_func_list[i].field = (pr_func_t) (f - pr->pr_functions);
 	}
 	ucmd_unknown = cpqw_user_cmd;
 	return 1;

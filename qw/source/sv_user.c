@@ -1332,7 +1332,7 @@ static void
 call_qc_hook (void *qc_hook)
 {
 	*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, sv_player);
-	PR_ExecuteProgram (&sv_pr_state, (func_t) (intptr_t) qc_hook);
+	PR_ExecuteProgram (&sv_pr_state, (pr_func_t) (intptr_t) qc_hook);
 }
 
 static const char *

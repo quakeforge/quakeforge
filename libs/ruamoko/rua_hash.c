@@ -49,10 +49,10 @@ typedef struct bi_hashtab_s {
 	struct bi_hashtab_s **prev;
 	progs_t    *pr;
 	hashtab_t  *tab;
-	func_t      gk;
-	func_t      gh;
-	func_t      cmp;
-	func_t      f;
+	pr_func_t   gk;
+	pr_func_t   gh;
+	pr_func_t   cmp;
+	pr_func_t   f;
 	pr_ptr_t    ud;
 } bi_hashtab_t;
 
