@@ -69,11 +69,9 @@ type_t      type_vector = { ev_vector, "vector", 1 };
 type_t      type_entity = { ev_entity, "entity", 1 };
 type_t      type_field = {ev_field, "field", 1, ty_basic, {{&type_void}} };
 
-// type_function is a void() function used for state defs
-type_t      type_function = { ev_func, "function", 1, ty_basic,
-								{{&type_void}} };
-type_t      type_pointer = { ev_ptr, "pointer", 1, ty_basic,
-								{{&type_void}} };
+// type_func is a void() function used for state defs
+type_t      type_func = { ev_func, "func", 1, ty_basic, {{&type_void}} };
+type_t      type_ptr = { ev_ptr, "pointer", 1, ty_basic, {{&type_void}} };
 type_t      type_quaternion = { ev_quaternion, "quaternion", 4 };
 type_t      type_int = { ev_int, "int", 1 };
 type_t      type_uint = { ev_uint, "uint", 1 };
@@ -1141,8 +1139,8 @@ chain_basic_types (void)
 	type_entity.t.symtab = pr.entity_fields;
 	chain_type (&type_entity);
 	chain_type (&type_field);
-	chain_type (&type_function);
-	chain_type (&type_pointer);
+	chain_type (&type_func);
+	chain_type (&type_ptr);
 	chain_type (&type_floatfield);
 	if (!options.traditional) {
 		chain_type (&type_quaternion);
@@ -1180,8 +1178,8 @@ init_types (void)
 		{"float_val",        &type_float},
 		{"entity_val",       &type_entity},
 		{"field_val",        &type_field},
-		{"func_val",         &type_function},
-		{"pointer_val",      &type_pointer},
+		{"func_val",         &type_func},
+		{"pointer_val",      &type_ptr},
 		{"vector_val",       &type_vector},
 		{"int_val",          &type_int},
 		{"uint_val",         &type_uint},
@@ -1197,8 +1195,8 @@ init_types (void)
 		{"vector_val",       &type_vector},
 		{"entity_val",       &type_entity},
 		{"field_val",        &type_field},
-		{"func_val",         &type_function},
-		{"pointer_val",      &type_pointer},
+		{"func_val",         &type_func},
+		{"pointer_val",      &type_ptr},
 		{"int_val",          &type_int},
 		{"uint_val",         &type_uint},
 		{"quaternion_val",   &type_quaternion},
@@ -1217,13 +1215,13 @@ init_types (void)
 		{0, 0}
 	};
 	static struct_def_t type_encoding_struct[] = {
-		{"types",	&type_pointer},
+		{"types",	&type_ptr},
 		{"size",	&type_uint},
 		{0, 0}
 	};
 	static struct_def_t xdef_struct[] = {
-		{"types",	&type_pointer},
-		{"offset",	&type_pointer},
+		{"types",	&type_ptr},
+		{"offset",	&type_ptr},
 		{0, 0}
 	};
 	static struct_def_t xdefs_struct[] = {

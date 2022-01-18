@@ -2789,7 +2789,7 @@ think_expr (symbol_t *think_sym)
 		&& sym->type->t.fldptr.type->type == ev_func) {
 		think_sym->type = sym->type->t.fldptr.type;
 	} else {
-		think_sym->type = &type_function;
+		think_sym->type = &type_func;
 	}
 	think_sym = function_symbol (think_sym, 0, 1);
 	make_function (think_sym, 0, current_symtab->space, current_storage);

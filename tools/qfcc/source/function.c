@@ -590,7 +590,7 @@ begin_function (symbol_t *sym, const char *nicename, symtab_t *parent,
 
 	if (sym->sy_type != sy_func) {
 		error (0, "%s is not a function", sym->name);
-		sym = new_symbol_type (sym->name, &type_function);
+		sym = new_symbol_type (sym->name, &type_func);
 		sym = function_symbol (sym, 1, 1);
 	}
 	if (sym->s.func && sym->s.func->def && sym->s.func->def->initialized) {

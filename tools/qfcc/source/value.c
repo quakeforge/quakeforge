@@ -505,11 +505,11 @@ emit_value (ex_value_t *value, def_t *def)
 			break;
 		case ev_func:
 			tab = func_imm_defs;
-			type = &type_function;
+			type = &type_func;
 			break;
 		case ev_ptr:
 			tab = pointer_imm_defs;
-			type = &type_pointer;
+			type = &type_ptr;
 			break;
 		case ev_int:
 		case ev_uint:

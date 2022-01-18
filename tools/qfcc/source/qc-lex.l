@@ -379,7 +379,7 @@ static keyword_t qf_keywords[] = {
 	{"int",			TYPE,	&type_int	},
 	{"unsigned",	TYPE,	&type_int	},//FIXME
 
-	{"@function",	TYPE,	&type_function	},
+	{"@function",	TYPE,	&type_func	},
 	{"@args",		ARGS,	0				},
 	{"@va_list",	TYPE,	&type_va_list	},
 	{"@param",		TYPE,	&type_param		},

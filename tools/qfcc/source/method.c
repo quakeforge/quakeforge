@@ -585,9 +585,9 @@ def_t *
 emit_methods (methodlist_t *methods, const char *name, int instance)
 {
 	static struct_def_t methods_struct[] = {
-		{"method_next",		&type_pointer, emit_methods_next},
-		{"method_count",	&type_int,     emit_methods_count},
-		{"method_list",		0,             emit_methods_list_item},
+		{"method_next",		&type_ptr, emit_methods_next},
+		{"method_count",	&type_int, emit_methods_count},
+		{"method_list",		0,         emit_methods_list_item},
 		{0, 0}
 	};
 	const char *type = instance ? "INSTANCE" : "CLASS";

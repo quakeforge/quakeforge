@@ -955,7 +955,7 @@ dereference_dst:
 		s = new_statement (st_expr, "&", dst_expr);
 		s->opa = dst;
 		s->opb = ofs;
-		s->opc = temp_operand (&type_pointer, dst_expr);
+		s->opc = temp_operand (&type_ptr, dst_expr);
 		sblock_add_statement (sblock, s);
 		dst = s->opc;
 		ofs = 0;
@@ -1128,7 +1128,7 @@ lea_statement (operand_t *pointer, operand_t *offset, expr_t *e)
 	statement_t *s = new_statement (st_expr, "&", e);
 	s->opa = pointer;
 	s->opb = offset;
-	s->opc = temp_operand (&type_pointer, e);
+	s->opc = temp_operand (&type_ptr, e);
 	return s;
 }
 

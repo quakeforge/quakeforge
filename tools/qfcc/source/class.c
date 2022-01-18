@@ -123,9 +123,9 @@ static struct_def_t method_desc_struct[] = {
 static struct_def_t category_struct[] = {
 	{"category_name",    &type_string},
 	{"class_name",       &type_string},
-	{"instance_methods", &type_pointer},
-	{"class_methods",    &type_pointer},
-	{"protocols",        &type_pointer},
+	{"instance_methods", &type_ptr},
+	{"class_methods",    &type_ptr},
+	{"protocols",        &type_ptr},
 	{0, 0}
 };
 
@@ -146,7 +146,7 @@ static struct_def_t module_struct[] = {
 	{"version", &type_int},
 	{"size",    &type_int},
 	{"name",    &type_string},
-	{"symtab",  &type_pointer},
+	{"symtab",  &type_ptr},
 	{0, 0}
 };
 
@@ -157,22 +157,22 @@ static struct_def_t class_struct[] = {
 	{"version",        &type_int},
 	{"info",           &type_int},
 	{"instance_size",  &type_int},
-	{"ivars",          &type_pointer},
-	{"methods",        &type_pointer},
-	{"dtable",         &type_pointer},
-	{"subclass_list",  &type_pointer},
-	{"sibling_class",  &type_pointer},
-	{"protocols",      &type_pointer},
-	{"gc_object_type", &type_pointer},
+	{"ivars",          &type_ptr},
+	{"methods",        &type_ptr},
+	{"dtable",         &type_ptr},
+	{"subclass_list",  &type_ptr},
+	{"sibling_class",  &type_ptr},
+	{"protocols",      &type_ptr},
+	{"gc_object_type", &type_ptr},
 	{0, 0}
 };
 
 static struct_def_t protocol_struct[] = {
 	{"class_pointer",    &type_Class},
 	{"protocol_name",    &type_string},
-	{"protocol_list",    &type_pointer},
-	{"instance_methods", &type_pointer},
-	{"class_methods",    &type_pointer},
+	{"protocol_list",    &type_ptr},
+	{"instance_methods", &type_ptr},
+	{"class_methods",    &type_ptr},
 	{0, 0}
 };
 
@@ -257,8 +257,7 @@ emit_static_instances (const char *classname)
 	for (static_instance_t **inst = data.instances; *inst; inst++) {
 		data.num_instances++;
 	}
-	instances_struct[1].type = array_type (&type_pointer,
-										   data.num_instances + 1);
+	instances_struct[1].type = array_type (&type_ptr, data.num_instances + 1);
 	instances_def = emit_structure (va (0, "_OBJ_STATIC_INSTANCES_%s",
 										classname),
 									's', instances_struct, 0, &data,
@@ -298,7 +297,7 @@ emit_static_instances_list (void)
 	free (classes);
 
 	// +1 for terminating null
-	instance_lists_type = array_type (&type_pointer, num_classes + 1);
+	instance_lists_type = array_type (&type_ptr, num_classes + 1);
 	instance_lists_sym = make_symbol ("_OBJ_STATIC_INSTANCES",
 									  instance_lists_type,
 									  pr.far_data, sc_static);
@@ -878,7 +877,7 @@ emit_class_ref (const char *class_name)
 	def_t      *name_def;
 
 	ref_sym = make_symbol (va (0, ".obj_class_ref_%s", class_name),
-						   &type_pointer, pr.far_data, sc_static);
+						   &type_ptr, pr.far_data, sc_static);
 	if (!ref_sym->table)
 		symtab_addsymbol (pr.symtab, ref_sym);
 	ref_def = ref_sym->s.def;
@@ -886,7 +885,7 @@ emit_class_ref (const char *class_name)
 		return;
 	ref_def->initialized = ref_def->constant = ref_def->nosave = 1;
 	name_sym = make_symbol (va (0, ".obj_class_name_%s", class_name),
-							&type_pointer, pr.far_data, sc_extern);
+							&type_ptr, pr.far_data, sc_extern);
 	if (!name_sym->table)
 		symtab_addsymbol (pr.symtab, name_sym);
 	name_def = name_sym->s.def;
@@ -902,7 +901,7 @@ emit_class_name (const char *class_name)
 	def_t      *name_def;
 
 	name_sym = make_symbol (va (0, ".obj_class_name_%s", class_name),
-							&type_pointer, pr.far_data, sc_global);
+							&type_ptr, pr.far_data, sc_global);
 	if (!name_sym->table)
 		symtab_addsymbol (pr.symtab, name_sym);
 	name_def = name_sym->s.def;
@@ -923,7 +922,7 @@ emit_category_ref (const char *class_name, const char *category_name)
 
 	ref_sym = make_symbol (va (0, ".obj_category_ref_%s_%s",
 							   class_name, category_name),
-						   &type_pointer, pr.far_data, sc_static);
+						   &type_ptr, pr.far_data, sc_static);
 	if (!ref_sym->table)
 		symtab_addsymbol (pr.symtab, ref_sym);
 	ref_def = ref_sym->s.def;
@@ -933,7 +932,7 @@ emit_category_ref (const char *class_name, const char *category_name)
 	ref_def->nosave = 1;
 	name_sym = make_symbol (va (0, ".obj_category_name_%s_%s",
 								class_name, category_name),
-							&type_pointer, pr.far_data, sc_extern);
+							&type_ptr, pr.far_data, sc_extern);
 	if (!name_sym->table)
 		symtab_addsymbol (pr.symtab, name_sym);
 	name_def = name_sym->s.def;
@@ -950,7 +949,7 @@ emit_category_name (const char *class_name, const char *category_name)
 
 	name_sym = make_symbol (va (0, ".obj_category_name_%s_%s",
 							    class_name, category_name),
-							&type_pointer, pr.far_data, sc_global);
+							&type_ptr, pr.far_data, sc_global);
 	if (!name_sym->table)
 		symtab_addsymbol (pr.symtab, name_sym);
 	name_def = name_sym->s.def;
@@ -1526,7 +1525,7 @@ class_finish_module (void)
 	if (!data.refs && !data.cls_def_cnt && !data.cat_def_cnt
 		&& !data.instances_list)
 		return;
-	symtab_struct[4].type = array_type (&type_pointer,
+	symtab_struct[4].type = array_type (&type_ptr,
 										data.cls_def_cnt
 										+ data.cat_def_cnt
 										+ 1);
@@ -1553,7 +1552,7 @@ class_finish_module (void)
 					   sc_extern);
 	}
 
-	init_sym = new_symbol_type (".ctor", &type_function);
+	init_sym = new_symbol_type (".ctor", &type_func);
 	init_sym = function_symbol (init_sym, 0, 1);
 
 	module_expr = address_expr (new_symbol_expr (module_sym), 0, 0);
@@ -1776,15 +1775,15 @@ def_t *
 emit_protocol_list (protocollist_t *protocols, const char *name)
 {
 	static struct_def_t proto_list_struct[] = {
-		{"next",  &type_pointer, emit_protocol_next},
-		{"count", &type_int,     emit_protocol_count},
-		{"list",  0,             emit_protocol_list_item},
+		{"next",  &type_ptr, emit_protocol_next},
+		{"count", &type_int, emit_protocol_count},
+		{"list",  0,         emit_protocol_list_item},
 		{0, 0},
 	};
 
 	if (!protocols)
 		return 0;
-	proto_list_struct[2].type = array_type (&type_pointer, protocols->count);
+	proto_list_struct[2].type = array_type (&type_ptr, protocols->count);
 	return emit_structure (va (0, "_OBJ_PROTOCOLS_%s", name), 's',
 						   proto_list_struct, 0, protocols, 0, sc_static);
 }
