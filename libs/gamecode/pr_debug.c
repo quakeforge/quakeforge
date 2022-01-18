@@ -1050,7 +1050,7 @@ value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 				case ev_func:
 					raw_type_view.func_view (type, value, data);
 					break;
-				case ev_pointer:
+				case ev_ptr:
 					raw_type_view.pointer_view (type, value, data);
 					break;
 				case ev_quat:

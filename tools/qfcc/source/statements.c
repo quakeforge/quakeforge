@@ -140,7 +140,7 @@ operand_string (operand_t *op)
 							   op->value->v.quaternion_val[1],
 							   op->value->v.quaternion_val[2],
 							   op->value->v.quaternion_val[3]);
-				case ev_pointer:
+				case ev_ptr:
 					if (op->value->v.pointer.def) {
 						return va (0, "ptr %s+%d",
 								   op->value->v.pointer.def->name,
@@ -227,7 +227,7 @@ _print_operand (operand_t *op)
 					printf (" %g", op->value->v.quaternion_val[2]);
 					printf (" %g'", op->value->v.quaternion_val[3]);
 					break;
-				case ev_pointer:
+				case ev_ptr:
 					printf ("(%s)[%d]",
 							pr_type_name[op->value->v.pointer.type->type],
 							op->value->v.pointer.val);
@@ -761,7 +761,7 @@ operand_address (operand_t *reference, expr_t *e)
 static __attribute__((pure)) int
 is_const_ptr (expr_t *e)
 {
-	if ((e->type != ex_value || e->e.value->lltype != ev_pointer)
+	if ((e->type != ex_value || e->e.value->lltype != ev_ptr)
 		|| !(POINTER_VAL (e->e.value->v.pointer) >= 0
 			 && POINTER_VAL (e->e.value->v.pointer) < 65536)) {
 		return 0;
@@ -1170,7 +1170,7 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 			s->opc = *op;
 			sblock_add_statement (sblock, s);
 		}
-	} else if (e->type == ex_value && e->e.value->lltype == ev_pointer) {
+	} else if (e->type == ex_value && e->e.value->lltype == ev_ptr) {
 		ex_pointer_t *ptr = &e->e.value->v.pointer;
 		*op = def_operand (alias_def (ptr->def, ptr->type, ptr->val),
 						   ptr->type, e);

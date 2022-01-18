@@ -187,7 +187,7 @@ lea_formats = {
     "opname": "lea",
     "format": "{lea_fmt[mm]}",
     "widths": "0, 0, 1",
-    "types": "ev_pointer, ev_pointer, ev_pointer",
+    "types": "ev_ptr, ev_ptr, ev_ptr",
     "args": {
         "op_mode": "AECD",
         "lea_fmt": [

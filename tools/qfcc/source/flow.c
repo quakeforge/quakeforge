@@ -1127,7 +1127,7 @@ flow_analyze_pointer_operand (operand_t *ptrop, set_t *def)
 {
 	operand_t  *op = 0;
 
-	if (ptrop->op_type == op_value && ptrop->value->lltype == ev_pointer) {
+	if (ptrop->op_type == op_value && ptrop->value->lltype == ev_ptr) {
 		ex_pointer_t *ptr = &ptrop->value->v.pointer;
 		if (ptrop->value->v.pointer.def) {
 			def_t      *alias;

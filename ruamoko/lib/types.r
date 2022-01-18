@@ -20,7 +20,7 @@ int pr_type_size[ev_type_count] = {
 	1,			// ev_entity
 	1,			// ev_field
 	1,			// ev_func
-	1,			// ev_pointer
+	1,			// ev_ptr
 	4,			// ev_quat
 	1,			// ev_integer
 	1,			// ev_uinteger

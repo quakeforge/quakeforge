@@ -547,7 +547,7 @@ print_value (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 						e->e.value->v.quaternion_val[2],
 						e->e.value->v.quaternion_val[3]);
 			break;
-		case ev_pointer:
+		case ev_ptr:
 			type = e->e.value->v.pointer.type;
 			dstring_clearstr(type_str);
 			if (type) {

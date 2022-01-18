@@ -37,7 +37,7 @@ EV_TYPE(vector)
 EV_TYPE(entity)
 EV_TYPE(field)
 EV_TYPE(func)
-EV_TYPE(pointer)		// end of v6 types
+EV_TYPE(ptr)			// end of v6 types
 EV_TYPE(quat)
 EV_TYPE(int)
 EV_TYPE(uint)

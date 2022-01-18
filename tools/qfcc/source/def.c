@@ -617,7 +617,7 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 				internal_error (0, "initializier not a value");
 				return;
 			}
-			if (init->e.value->lltype == ev_pointer
+			if (init->e.value->lltype == ev_ptr
 				|| init->e.value->lltype == ev_field) {
 				// FIXME offset pointers
 				D_INT (sym->s.def) = init->e.value->v.pointer.val;

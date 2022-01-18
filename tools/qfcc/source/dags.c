@@ -427,7 +427,7 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n)
 					set_add (node->edges, n->number);
 				}
 				if (op->op_type == op_value
-					&& op->value->lltype == ev_pointer
+					&& op->value->lltype == ev_ptr
 					&& op->value->v.pointer.def) {
 					def_visit_all (op->value->v.pointer.def, 1,
 								   dagnode_def_set_edges_visit, n);

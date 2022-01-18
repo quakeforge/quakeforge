@@ -262,7 +262,7 @@ new_nil_val (type_t *type)
 	if (val.lltype == ev_void) {
 		val.lltype = type_nil->type;
 	}
-	if (val.lltype == ev_pointer || val.lltype == ev_field )
+	if (val.lltype == ev_ptr || val.lltype == ev_field )
 		val.v.pointer.type = type->t.fldptr.type;
 	if (val.lltype == ev_func)
 		val.v.func_val.type = type;
@@ -507,7 +507,7 @@ emit_value (ex_value_t *value, def_t *def)
 			tab = func_imm_defs;
 			type = &type_function;
 			break;
-		case ev_pointer:
+		case ev_ptr:
 			tab = pointer_imm_defs;
 			type = &type_pointer;
 			break;
@@ -604,7 +604,7 @@ emit_value (ex_value_t *value, def_t *def)
 			if (val.v.pointer.def)
 				reloc_def_field_ofs (val.v.pointer.def, cn);
 			break;
-		case ev_pointer:
+		case ev_ptr:
 			if (val.v.pointer.def) {
 				EMIT_DEF_OFS (pr.near_data, D_INT (cn),
 							  val.v.pointer.def);

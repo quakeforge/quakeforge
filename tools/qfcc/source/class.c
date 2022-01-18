@@ -72,12 +72,12 @@ static hashtab_t *static_instance_classes;
 
 // these will be built up further
 type_t      type_selector = { ev_invalid, 0, 0, ty_struct};
-type_t      type_SEL = { ev_pointer, "SEL", 1, ty_basic, {{&type_selector}}};
+type_t      type_SEL = { ev_ptr, "SEL", 1, ty_basic, {{&type_selector}}};
 type_t     *IMP_params[] = {&type_id, &type_SEL};
 type_t      type_IMP = { ev_func, "IMP", 1, ty_basic,
 						 {{&type_id, -3, IMP_params}}};
 type_t      type_super = { ev_invalid, 0, 0 };
-type_t      type_SuperPtr = { ev_pointer, 0, 1, ty_basic, {{&type_super}}};
+type_t      type_SuperPtr = { ev_ptr, 0, 1, ty_basic, {{&type_super}}};
 type_t     *supermsg_params[] = {&type_SuperPtr, &type_SEL};
 type_t      type_supermsg = { ev_func, ".supermsg", 1, ty_basic,
 							  {{&type_id, -3, supermsg_params}}};
@@ -86,7 +86,7 @@ type_t      type_method_description = { ev_invalid, 0, 0, ty_struct };
 type_t      type_category = { ev_invalid, 0, 0, ty_struct};
 type_t      type_ivar = { ev_invalid, 0, 0, ty_struct};
 type_t      type_module = { ev_invalid, 0, 0, ty_struct};
-type_t      type_moduleptr = { ev_pointer, 0, 1, ty_basic, {{&type_module}}};
+type_t      type_moduleptr = { ev_ptr, 0, 1, ty_basic, {{&type_module}}};
 type_t     *obj_exec_class_params[] = { &type_moduleptr };
 type_t      type_exec_class = { ev_func, 0, 1, ty_basic,
 								{{&type_void, 1, obj_exec_class_params}}};
@@ -94,9 +94,9 @@ type_t      type_exec_class = { ev_func, 0, 1, ty_basic,
 // are never misidentified as id. It will be set to the correct value
 // when the obj system is initialized.
 type_t      type_object = {ev_invalid, 0, 0, ty_struct, {{(type_t *)1}}};
-type_t      type_id = { ev_pointer, "id", 1, ty_basic, {{&type_object}}};
+type_t      type_id = { ev_ptr, "id", 1, ty_basic, {{&type_object}}};
 type_t      type_class = { ev_invalid, 0, 0, ty_struct};
-type_t      type_Class = { ev_pointer, 0, 1, ty_basic, {{&type_class}}};
+type_t      type_Class = { ev_ptr, 0, 1, ty_basic, {{&type_class}}};
 type_t      type_protocol = { ev_invalid, 0, 0, ty_struct};
 
 int         obj_initialized = 0;
@@ -229,7 +229,7 @@ emit_instance_defs (def_t *def, void *data, int index)
 {
 	obj_static_instances_data_t *da = (obj_static_instances_data_t *)data;
 
-	if (!is_array (def->type) || def->type->t.array.type->type != ev_pointer)
+	if (!is_array (def->type) || def->type->t.array.type->type != ev_ptr)
 		internal_error (0, "%s: expected array of pointers def", __FUNCTION__);
 	if (index < 0 || index >= da->num_instances + 1)
 		internal_error (0, "%s: out of bounds index: %d %d",
@@ -325,7 +325,7 @@ is_id (const type_t *type)
 		return 1;
 	// type may be a qualified id, in which case it will be a pointer to
 	// a qualified obj_object struct
-	if (type->type != ev_pointer)
+	if (type->type != ev_ptr)
 		return 0;
 	if (!is_struct (type->t.fldptr.type))
 		return 0;
@@ -357,7 +357,7 @@ is_classptr (const type_t *type)
 	// easy cases first :)
 	if (is_id (type) || is_Class (type))
 		return 1;
-	if (type->type != ev_pointer)
+	if (type->type != ev_ptr)
 		return 0;
 	type = type->t.fldptr.type;
 	if (is_class (type))
@@ -1455,7 +1455,7 @@ emit_symtab_defs (def_t *def, void *data, int index)
 {
 	obj_symtab_data_t *da = (obj_symtab_data_t *)data;
 
-	if (!is_array (def->type) || def->type->t.array.type->type != ev_pointer)
+	if (!is_array (def->type) || def->type->t.array.type->type != ev_ptr)
 		internal_error (0, "%s: expected array of pointers def", __FUNCTION__);
 	if (index < 0 || index >= da->cls_def_cnt + da->cat_def_cnt + 1)
 		internal_error (0, "%s: out of bounds index: %d %d",

@@ -72,7 +72,7 @@ type_t      type_field = {ev_field, "field", 1, ty_basic, {{&type_void}} };
 // type_function is a void() function used for state defs
 type_t      type_function = { ev_func, "function", 1, ty_basic,
 								{{&type_void}} };
-type_t      type_pointer = { ev_pointer, "pointer", 1, ty_basic,
+type_t      type_pointer = { ev_ptr, "pointer", 1, ty_basic,
 								{{&type_void}} };
 type_t      type_quaternion = { ev_quat, "quaternion", 4 };
 type_t      type_int = { ev_int, "int", 1 };
@@ -90,7 +90,7 @@ type_t      type_zero = { ev_invalid, 0, 0, ty_struct };
 type_t      type_type_encodings = { ev_invalid, "@type_encodings", 0,
 									ty_struct };
 type_t      type_xdef = { ev_invalid, "@xdef", 0, ty_struct };
-type_t      type_xdef_pointer = { ev_pointer, 0, 1, ty_basic, {{&type_xdef}} };
+type_t      type_xdef_pointer = { ev_ptr, 0, 1, ty_basic, {{&type_xdef}} };
 type_t      type_xdefs = { ev_invalid, "@xdefs", 0, ty_struct };
 
 type_t      type_floatfield = { ev_field, ".float", 1, ty_basic,
@@ -194,7 +194,7 @@ free_type (type_t *type)
 		case ev_double:
 			break;
 		case ev_field:
-		case ev_pointer:
+		case ev_ptr:
 			free_type (type->t.fldptr.type);
 			break;
 		case ev_func:
@@ -236,7 +236,7 @@ copy_chain (type_t *type, type_t *append)
 					case ev_double:
 						internal_error (0, "copy basic type");
 					case ev_field:
-					case ev_pointer:
+					case ev_ptr:
 						n = &(*n)->t.fldptr.type;
 						type = type->t.fldptr.type;
 						break;
@@ -289,7 +289,7 @@ append_type (type_t *type, type_t *new)
 					case ev_double:
 						internal_error (0, "append to basic type");
 					case ev_field:
-					case ev_pointer:
+					case ev_ptr:
 						t = &(*t)->t.fldptr.type;
 						type->alignment = 1;
 						break;
@@ -335,7 +335,7 @@ types_same (type_t *a, type_t *b)
 		case ty_basic:
 			switch (a->type) {
 				case ev_field:
-				case ev_pointer:
+				case ev_ptr:
 					if (a->t.fldptr.type != b->t.fldptr.type)
 						return 0;
 				case ev_func:
@@ -401,7 +401,7 @@ find_type (type_t *type)
 			case ty_basic:
 				switch (type->type) {
 					case ev_field:
-					case ev_pointer:
+					case ev_ptr:
 						type->t.fldptr.type = find_type (type->t.fldptr.type);
 						break;
 					case ev_func:
@@ -475,7 +475,7 @@ pointer_type (type_t *aux)
 		memset (&_new, 0, sizeof (_new));
 	else
 		new = new_type ();
-	new->type = ev_pointer;
+	new->type = ev_ptr;
 	new->alignment = 1;
 	if (aux) {
 		new = find_type (append_type (new, aux));
@@ -639,7 +639,7 @@ print_type_str (dstring_t *str, const type_t *type)
 						dasprintf (str, ")");
 					}
 					return;
-				case ev_pointer:
+				case ev_ptr:
 					if (is_id (type)) {
 						dasprintf (str, "id");
 						if (type->t.fldptr.type->protos)
@@ -802,7 +802,7 @@ encode_type (dstring_t *encoding, const type_t *type)
 					encode_type (encoding, type->t.func.type);
 					dasprintf (encoding, "%s)", encode_params (type));
 					return;
-				case ev_pointer:
+				case ev_ptr:
 					if (is_id(type)) {
 						dasprintf (encoding, "@");
 						return;
@@ -962,7 +962,7 @@ int
 is_pointer (const type_t *type)
 {
 	type = unalias_type (type);
-	if (type->type == ev_pointer)
+	if (type->type == ev_ptr)
 		return 1;
 	return 0;
 }

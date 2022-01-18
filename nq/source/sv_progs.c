@@ -354,7 +354,7 @@ set_address (sv_def_t *def, void *address)
 		case ev_entity:
 		case ev_field:
 		case ev_func:
-		case ev_pointer:
+		case ev_ptr:
 		case ev_int:
 		case ev_uint:
 			*(pr_int_t **)def->field = (pr_int_t *) address;

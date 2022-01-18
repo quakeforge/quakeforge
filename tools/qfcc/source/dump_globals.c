@@ -131,7 +131,7 @@ dump_def (progs_t *pr, pr_def_t *def, int indent)
 					}
 				}
 				break;
-			case ev_pointer:
+			case ev_ptr:
 				comment = va (0, " %x", G_INT (pr, offset));
 				break;
 			case ev_quat:
@@ -559,7 +559,7 @@ dump_qfo_types (qfo_t *qfo, int base_address)
 						count = ~count;	//ones complement
 					for (i = 0; i < count; i++)
 						printf (" %x", type->func.param_types[i]);
-				} else if (type->type == ev_pointer
+				} else if (type->type == ev_ptr
 						   || type->type == ev_field) {
 					printf (" %4x", type->fldptr.aux_type);
 				}

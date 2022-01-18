@@ -58,7 +58,7 @@ typedef struct qfot_alias_s {
 } qfot_alias_t;
 
 typedef struct qfot_fldptr_s {
-	etype_t     type;				///< ev_field or ev_pointer
+	etype_t     type;				///< ev_field or ev_ptr
 	pr_ptr_t    aux_type;			///< referenced type
 } qfot_fldptr_t;
 
@@ -106,7 +106,7 @@ typedef struct qfot_type_s {
 	pr_string_t encoding;			///< Objective-QC encoding
 	union {
 		etype_t     type;			///< ty_basic: etype_t
-		qfot_fldptr_t fldptr;		///< ty_basic, ev_pointer/ev_field
+		qfot_fldptr_t fldptr;		///< ty_basic, ev_ptr/ev_field
 		qfot_func_t func;			///< ty_basic, ev_func
 		qfot_struct_t strct;		///< ty_struct/ty_union/ty_enum
 		qfot_array_t array;			///< ty_array

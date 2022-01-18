@@ -222,6 +222,7 @@ get_type (expr_t *e)
 		case ex_memset:
 			return e->e.memset.type;
 		case ex_error:
+			return 0;
 		case ex_return:
 			internal_error (e, "unexpected expression type");
 		case ex_label:
@@ -1263,7 +1264,7 @@ expr_integral (expr_t *e)
 int
 is_pointer_val (expr_t *e)
 {
-	if (e->type == ex_value && e->e.value->lltype == ev_pointer) {
+	if (e->type == ex_value && e->e.value->lltype == ev_ptr) {
 		return 1;
 	}
 	return 0;
@@ -1432,7 +1433,7 @@ field_expr (expr_t *e1, expr_t *e2)
 				return e;
 			}
 		}
-	} else if (t1->type == ev_pointer) {
+	} else if (t1->type == ev_ptr) {
 		if (is_struct (t1->t.fldptr.type)) {
 			symbol_t   *field;
 
@@ -1695,7 +1696,7 @@ unary_expr (int op, expr_t *e)
 					case ev_entity:
 					case ev_field:
 					case ev_func:
-					case ev_pointer:
+					case ev_ptr:
 						internal_error (e, "type check failed!");
 					case ev_double:
 						new = new_double_expr (-expr_double (e));
@@ -1797,7 +1798,7 @@ unary_expr (int op, expr_t *e)
 					case ev_entity:
 					case ev_field:
 					case ev_func:
-					case ev_pointer:
+					case ev_ptr:
 						internal_error (e, 0);
 					case ev_string:
 						s = expr_string (e);
@@ -1875,7 +1876,7 @@ unary_expr (int op, expr_t *e)
 					case ev_entity:
 					case ev_field:
 					case ev_func:
-					case ev_pointer:
+					case ev_ptr:
 					case ev_vector:
 					case ev_double:
 						return error (e, "invalid type for unary ~");
@@ -1956,7 +1957,7 @@ bitnot_expr:
 			}
 			break;
 		case '.':
-			if (extract_type (e) != ev_pointer)
+			if (extract_type (e) != ev_ptr)
 				return error (e, "invalid type for unary .");
 			e = new_unary_expr ('.', e);
 			e->e.expr.type = get_type (e->e.expr.e1)->t.fldptr.type;
@@ -2392,7 +2393,7 @@ array_expr (expr_t *array, expr_t *index)
 	if (index->type == ex_error)
 		return index;
 
-	if (array_type->type != ev_pointer && !is_array (array_type))
+	if (array_type->type != ev_ptr && !is_array (array_type))
 		return error (array, "not an array");
 	if (!is_integral (index_type))
 		return error (index, "invalid array index type");
@@ -2436,7 +2437,7 @@ pointer_expr (expr_t *pointer)
 
 	if (pointer->type == ex_error)
 		return pointer;
-	if (pointer_type->type != ev_pointer)
+	if (pointer_type->type != ev_ptr)
 		return error (pointer, "not a pointer");
 	return array_expr (pointer, new_int_expr (0));
 }
@@ -2889,7 +2890,9 @@ sizeof_expr (expr_t *expr, struct type_s *type)
 		internal_error (0, 0);
 	if (!type)
 		type = get_type (expr);
-	expr = new_int_expr (type_size (type));
+	if (type) {
+		expr = new_int_expr (type_size (type));
+	}
 	return expr;
 }
 

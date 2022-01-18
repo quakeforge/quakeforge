@@ -533,7 +533,7 @@ static expr_type_t *string_x[ev_type_count] = {
 	0,				// ev_entity
 	0,				// ev_field
 	0,				// ev_func
-	0,				// ev_pointer
+	0,				// ev_ptr
 	0,				// ev_quat
 	0,				// ev_int
 	0,				// ev_uint
@@ -549,7 +549,7 @@ static expr_type_t *float_x[ev_type_count] = {
 	0,				// ev_entity
 	0,				// ev_field
 	0,				// ev_func
-	0,				// ev_pointer
+	0,				// ev_ptr
 	float_quat,
 	float_int,
 	float_uint,
@@ -565,7 +565,7 @@ static expr_type_t *vector_x[ev_type_count] = {
 	0,				// ev_entity
 	0,				// ev_field
 	0,				// ev_func
-	0,				// ev_pointer
+	0,				// ev_ptr
 	0,				// ev_quaternion
 	vector_int,
 	vector_uint,
@@ -581,7 +581,7 @@ static expr_type_t *entity_x[ev_type_count] = {
 	entity_entity,	// ev_entity
 	0,				// ev_field
 	0,				// ev_func
-	0,				// ev_pointer
+	0,				// ev_ptr
 	0,				// ev_quaternion
 	0,				// ev_int
 	0,				// ev_uint
@@ -597,7 +597,7 @@ static expr_type_t *field_x[ev_type_count] = {
 	0,				// ev_entity
 	field_field,	// ev_field
 	0,				// ev_func
-	0,				// ev_pointer
+	0,				// ev_ptr
 	0,				// ev_quaternion
 	0,				// ev_int
 	0,				// ev_uint
@@ -613,7 +613,7 @@ static expr_type_t *func_x[ev_type_count] = {
 	0,				// ev_entity
 	0,				// ev_field
 	func_func,		// ev_func
-	0,				// ev_pointer
+	0,				// ev_ptr
 	0,				// ev_quaternion
 	0,				// ev_int
 	0,				// ev_uint
@@ -645,7 +645,7 @@ static expr_type_t *quat_x[ev_type_count] = {
 	0,				// ev_entity
 	0,				// ev_field
 	0,				// ev_func
-	0,				// ev_pointer
+	0,				// ev_ptr
 	quat_quat,
 	quat_int,
 	quat_uint,
@@ -709,7 +709,7 @@ static expr_type_t *double_x[ev_type_count] = {
 	0,				// ev_entity
 	0,				// ev_field
 	0,				// ev_func
-	0,				// ev_pointer
+	0,				// ev_ptr
 	double_quat,
 	double_int,
 	double_uint,

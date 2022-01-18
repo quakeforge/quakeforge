@@ -149,7 +149,7 @@ qfo_encode_basic (type_t *type, defspace_t *space)
 
 	if (type->type == ev_func)
 		return qfo_encode_func (type, space);
-	else if (type->type == ev_pointer || type->type == ev_field)
+	else if (type->type == ev_ptr || type->type == ev_field)
 		return qfo_encode_fldptr (type, space);
 
 	def = qfo_new_encoding (type, sizeof (enc->type), space);

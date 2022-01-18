@@ -1060,7 +1060,7 @@ static operation_t op_void[ev_type_count] = {
 	do_op_invalid,						// ev_entity
 	do_op_invalid,						// ev_field
 	do_op_invalid,						// ev_func
-	do_op_invalid,						// ev_pointer
+	do_op_invalid,						// ev_ptr
 	do_op_invalid,						// ev_quaternion
 	do_op_invalid,						// ev_int
 	do_op_invalid,						// ev_uint
@@ -1079,7 +1079,7 @@ static operation_t op_string[ev_type_count] = {
 	do_op_invalid,						// ev_entity
 	do_op_invalid,						// ev_field
 	do_op_invalid,						// ev_func
-	do_op_invalid,						// ev_pointer
+	do_op_invalid,						// ev_ptr
 	do_op_invalid,						// ev_quaternion
 	do_op_invalid,						// ev_int
 	do_op_invalid,						// ev_uint
@@ -1098,7 +1098,7 @@ static operation_t op_float[ev_type_count] = {
 	do_op_invalid,						// ev_entity
 	do_op_invalid,						// ev_field
 	do_op_invalid,						// ev_func
-	do_op_invalid,						// ev_pointer
+	do_op_invalid,						// ev_ptr
 	do_op_quaternion,					// ev_quaternion
 	do_op_float,						// ev_int
 	do_op_float,						// ev_uint
@@ -1117,7 +1117,7 @@ static operation_t op_vector[ev_type_count] = {
 	do_op_invalid,						// ev_entity
 	do_op_invalid,						// ev_field
 	do_op_invalid,						// ev_func
-	do_op_invalid,						// ev_pointer
+	do_op_invalid,						// ev_ptr
 	do_op_invalid,						// ev_quaternion
 	do_op_vector,						// ev_int
 	do_op_vector,						// ev_uint
@@ -1136,7 +1136,7 @@ static operation_t op_entity[ev_type_count] = {
 	do_op_entity,						// ev_entity
 	do_op_entity,						// ev_field
 	do_op_invalid,						// ev_func
-	do_op_invalid,						// ev_pointer
+	do_op_invalid,						// ev_ptr
 	do_op_invalid,						// ev_quaternion
 	do_op_invalid,						// ev_int
 	do_op_invalid,						// ev_uint
@@ -1155,7 +1155,7 @@ static operation_t op_field[ev_type_count] = {
 	do_op_invalid,						// ev_entity
 	do_op_field,						// ev_field
 	do_op_invalid,						// ev_func
-	do_op_invalid,						// ev_pointer
+	do_op_invalid,						// ev_ptr
 	do_op_invalid,						// ev_quaternion
 	do_op_invalid,						// ev_int
 	do_op_invalid,						// ev_uint
@@ -1174,7 +1174,7 @@ static operation_t op_func[ev_type_count] = {
 	do_op_func,							// ev_entity
 	do_op_func,							// ev_field
 	do_op_func,							// ev_func
-	do_op_func,							// ev_pointer
+	do_op_func,							// ev_ptr
 	do_op_func,							// ev_quaternion
 	do_op_func,							// ev_int
 	do_op_func,							// ev_uint
@@ -1193,7 +1193,7 @@ static operation_t op_pointer[ev_type_count] = {
 	do_op_pointer,						// ev_entity
 	do_op_pointer,						// ev_field
 	do_op_pointer,						// ev_func
-	do_op_pointer,						// ev_pointer
+	do_op_pointer,						// ev_ptr
 	do_op_pointer,						// ev_quaternion
 	do_op_pointer,						// ev_int
 	do_op_pointer,						// ev_uint
@@ -1212,7 +1212,7 @@ static operation_t op_quaternion[ev_type_count] = {
 	do_op_invalid,						// ev_entity
 	do_op_invalid,						// ev_field
 	do_op_invalid,						// ev_func
-	do_op_invalid,						// ev_pointer
+	do_op_invalid,						// ev_ptr
 	do_op_quaternion,					// ev_quaternion
 	do_op_quaternion,					// ev_int
 	do_op_quaternion,					// ev_uint
@@ -1231,7 +1231,7 @@ static operation_t op_int[ev_type_count] = {
 	do_op_invalid,						// ev_entity
 	do_op_invalid,						// ev_field
 	do_op_invalid,						// ev_func
-	do_op_invalid,						// ev_pointer
+	do_op_invalid,						// ev_ptr
 	do_op_quaternion,					// ev_quaternion
 	do_op_int,							// ev_int
 	do_op_uint,							// ev_uint
@@ -1250,7 +1250,7 @@ static operation_t op_uint[ev_type_count] = {
 	do_op_invalid,						// ev_entity
 	do_op_invalid,						// ev_field
 	do_op_invalid,						// ev_func
-	do_op_invalid,						// ev_pointer
+	do_op_invalid,						// ev_ptr
 	do_op_quaternion,					// ev_quaternion
 	do_op_uint,							// ev_int
 	do_op_uint,							// ev_uint
@@ -1269,7 +1269,7 @@ static operation_t op_short[ev_type_count] = {
 	do_op_invalid,						// ev_entity
 	do_op_invalid,						// ev_field
 	do_op_invalid,						// ev_func
-	do_op_invalid,						// ev_pointer
+	do_op_invalid,						// ev_ptr
 	do_op_quaternion,					// ev_quaternion
 	do_op_int,							// ev_int
 	do_op_uint,							// ev_uint
@@ -1288,7 +1288,7 @@ static operation_t op_double[ev_type_count] = {
 	do_op_invalid,						// ev_entity
 	do_op_invalid,						// ev_field
 	do_op_invalid,						// ev_func
-	do_op_invalid,						// ev_pointer
+	do_op_invalid,						// ev_ptr
 	do_op_quaternion,					// ev_quaternion
 	do_op_int,							// ev_int
 	do_op_uint,							// ev_uint
@@ -1307,7 +1307,7 @@ static operation_t op_compound[ev_type_count] = {
 	do_op_invalid,						// ev_entity
 	do_op_invalid,						// ev_field
 	do_op_invalid,						// ev_func
-	do_op_invalid,						// ev_pointer
+	do_op_invalid,						// ev_ptr
 	do_op_invalid,						// ev_quaternion
 	do_op_compound,						// ev_int
 	do_op_compound,						// ev_uint
@@ -1326,7 +1326,7 @@ static operation_t *do_op[ev_type_count] = {
 	op_entity,							// ev_entity
 	op_field,							// ev_field
 	op_func,							// ev_func
-	op_pointer,							// ev_pointer
+	op_pointer,							// ev_ptr
 	op_quaternion,						// ev_quaternion
 	op_int,								// ev_int
 	op_uint,							// ev_uint
@@ -1658,7 +1658,7 @@ static unaryop_t do_unary_op[ev_type_count] = {
 	uop_entity,							// ev_entity
 	uop_field,							// ev_field
 	uop_func,							// ev_func
-	uop_pointer,						// ev_pointer
+	uop_pointer,						// ev_ptr
 	uop_quaternion,						// ev_quaternion
 	uop_int,							// ev_int
 	uop_uint,							// ev_uint

@@ -132,7 +132,7 @@ test_expr (expr_t *e)
 			return new_alias_expr (type_default, e);
 		case ev_func:
 			return new_alias_expr (type_default, e);
-		case ev_pointer:
+		case ev_ptr:
 			return new_alias_expr (type_default, e);
 		case ev_quat:
 			new = new_quaternion_expr (zero);
