@@ -678,7 +678,7 @@ qfo_delete (qfo_t *qfo)
 }
 
 static etype_t
-get_def_type (qfo_t *qfo, pointer_t type)
+get_def_type (qfo_t *qfo, pr_ptr_t type)
 {
 	qfot_type_t *type_def;
 	if (type >= qfo->spaces[qfo_type_space].data_size)
@@ -705,7 +705,7 @@ get_def_type (qfo_t *qfo, pointer_t type)
 }
 
 static __attribute__((pure)) int
-get_type_size (qfo_t *qfo, pointer_t type)
+get_type_size (qfo_t *qfo, pr_ptr_t type)
 {
 	qfot_type_t *type_def;
 	int          i, size;
@@ -755,7 +755,7 @@ qfo_log2 (unsigned x)
 }
 
 static __attribute__((pure)) int
-get_type_alignment_log (qfo_t *qfo, pointer_t type)
+get_type_alignment_log (qfo_t *qfo, pr_ptr_t type)
 {
 	qfot_type_t *type_def;
 	int          i, alignment;
@@ -791,7 +791,7 @@ get_type_alignment_log (qfo_t *qfo, pointer_t type)
 }
 
 static __attribute__((pure)) dparmsize_t
-get_parmsize (qfo_t *qfo, pointer_t type)
+get_parmsize (qfo_t *qfo, pr_ptr_t type)
 {
 	dparmsize_t parmsize = {
 		get_type_size (qfo, type),

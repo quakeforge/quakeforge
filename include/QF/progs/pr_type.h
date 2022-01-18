@@ -34,7 +34,7 @@
 /** \defgroup qfcc_qfo_type Object file type encoding
 	\ingroup progs
 
-	All \c pointer_t \c type fields are pointers within the type qfo_space.
+	All \c pr_ptr_t \c type fields are pointers within the type qfo_space.
 */
 ///@{
 
@@ -52,43 +52,43 @@ typedef enum {
 
 typedef struct qfot_alias_s {
 	etype_t     type;				///< type at end of alias chain
-	pointer_t   aux_type;			///< referenced type: stripped of aliases
-	pointer_t   full_type;			///< includes full alias info
-	string_t    name;				///< alias name, may be null
+	pr_ptr_t    aux_type;			///< referenced type: stripped of aliases
+	pr_ptr_t    full_type;			///< includes full alias info
+	pr_string_t name;				///< alias name, may be null
 } qfot_alias_t;
 
 typedef struct qfot_fldptr_s {
 	etype_t     type;				///< ev_field or ev_pointer
-	pointer_t   aux_type;			///< referenced type
+	pr_ptr_t    aux_type;			///< referenced type
 } qfot_fldptr_t;
 
 typedef struct qfot_func_s {
 	etype_t     type;				///< always ev_func
-	pointer_t   return_type;		///< return type of the function
+	pr_ptr_t    return_type;		///< return type of the function
 	pr_int_t    num_params;			///< ones compliment count of the
 									///< parameters. -ve values indicate the
 									///< number of real parameters before the
 									///< ellipsis
-	pointer_t   param_types[1];		///< variable length list of parameter
+	pr_ptr_t    param_types[1];	///< variable length list of parameter
 									///< types
 } qfot_func_t;
 
 typedef struct qfot_var_s {
-	pointer_t   type;				///< type of field or self reference for
+	pr_ptr_t    type;				///< type of field or self reference for
 									///< enum
-	string_t    name;				///< name of field/enumerator
+	pr_string_t name;				///< name of field/enumerator
 	pr_int_t    offset;				///< value for enum, 0 for union
 } qfot_var_t;
 
 typedef struct qfot_struct_s {
-	string_t    tag;				///< struct/union/enum tag
+	pr_string_t tag;				///< struct/union/enum tag
 	pr_int_t    num_fields;			///< number of fields/enumerators
 	qfot_var_t  fields[1];			///< variable length list of
 									///< fields/enumerators
 } qfot_struct_t;
 
 typedef struct qfot_array_s {
-	pointer_t   type;				///< element type
+	pr_ptr_t    type;				///< element type
 	pr_int_t    base;				///< start index of array
 	pr_int_t    size;				///< number of elements in array
 } qfot_array_t;
@@ -103,20 +103,20 @@ typedef struct qfot_array_s {
 typedef struct qfot_type_s {
 	ty_meta_e   meta;				///< meta type
 	pr_uint_t   size;				///< total word size of this encoding
-	string_t    encoding;			///< Objective-QC encoding
+	pr_string_t encoding;			///< Objective-QC encoding
 	union {
 		etype_t     type;			///< ty_basic: etype_t
 		qfot_fldptr_t fldptr;		///< ty_basic, ev_pointer/ev_field
 		qfot_func_t func;			///< ty_basic, ev_func
 		qfot_struct_t strct;		///< ty_struct/ty_union/ty_enum
 		qfot_array_t array;			///< ty_array
-		string_t    class;			///< ty_class
+		pr_string_t class;			///< ty_class
 		qfot_alias_t alias;			///< ty_alias
 	};
 } qfot_type_t;
 
 typedef struct qfot_type_encodings_s {
-	pointer_t   types;
+	pr_ptr_t    types;
 	pr_uint_t   size;
 } qfot_type_encodings_t;
 

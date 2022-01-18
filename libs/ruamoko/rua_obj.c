@@ -76,7 +76,7 @@ typedef struct probj_resources_s {
 	unsigned    selector_index;
 	unsigned    selector_index_max;
 	obj_list  **selector_sels;
-	string_t   *selector_names;
+	pr_string_t *selector_names;
 	PR_RESMAP (dtable_t) dtables;
 	dtable_t   *dtable_list;
 	func_t      obj_forward;
@@ -423,7 +423,7 @@ object_is_instance (probj_t *probj, pr_id_t *object)
 	return 0;
 }
 
-static string_t
+static pr_string_t
 object_get_class_name (probj_t *probj, pr_id_t *object)
 {
 	progs_t    *pr = probj->pr;
@@ -446,7 +446,7 @@ object_get_class_name (probj_t *probj, pr_id_t *object)
 //====================================================================
 
 static void
-finish_class (probj_t *probj, pr_class_t *class, pointer_t object_ptr)
+finish_class (probj_t *probj, pr_class_t *class, pr_ptr_t object_ptr)
 {
 	progs_t    *pr = probj->pr;
 	pr_class_t *meta = &G_STRUCT (pr, pr_class_t, class->class_pointer);
@@ -463,7 +463,7 @@ finish_class (probj_t *probj, pr_class_t *class, pointer_t object_ptr)
 		meta->super_class = val->class_pointer;
 		class->super_class = PR_SetPointer (pr, val);
 	} else {
-		pointer_t  *ml = &meta->methods;
+		pr_ptr_t   *ml = &meta->methods;
 		while (*ml)
 			ml = &G_STRUCT (pr, pr_method_list_t, *ml).method_next;
 		*ml = class->methods;
@@ -485,7 +485,7 @@ add_sel_name (probj_t *probj, const char *name)
 		probj->selector_sels = realloc (probj->selector_sels,
 										size * sizeof (obj_list *));
 		probj->selector_names = realloc (probj->selector_names,
-										 size * sizeof (string_t));
+										 size * sizeof (pr_string_t));
 		for (i = probj->selector_index_max; i < size; i++) {
 			probj->selector_sels[i] = 0;
 			probj->selector_names[i] = 0;
@@ -805,7 +805,7 @@ obj_find_message (probj_t *probj, pr_class_t *class, pr_sel_t *selector)
 	pr_sel_t   *sel;
 	int         i;
 	int         dev = developer->int_val;
-	string_t   *names;
+	pr_string_t *names;
 
 	if (dev & SYS_rua_msg) {
 		names = probj->selector_names;
@@ -1041,7 +1041,7 @@ obj_verror (probj_t *probj, pr_id_t *object, int code, const char *fmt, int coun
 }
 
 static void
-dump_ivars (probj_t *probj, pointer_t _ivars)
+dump_ivars (probj_t *probj, pr_ptr_t _ivars)
 {
 	progs_t    *pr = probj->pr;
 	pr_ivar_list_t *ivars;
@@ -1063,8 +1063,8 @@ obj_init_statics (probj_t *probj)
 {
 	progs_t    *pr = probj->pr;
 	obj_list  **cell = &probj->uninitialized_statics;
-	pointer_t  *ptr;
-	pointer_t  *inst;
+	pr_ptr_t   *ptr;
+	pr_ptr_t   *inst;
 
 	Sys_MaskPrintf (SYS_rua_obj, "Initializing statics\n");
 	while (*cell) {
@@ -1110,7 +1110,7 @@ rua___obj_exec_class (progs_t *pr)
 	pr_module_t *module = &P_STRUCT (pr, pr_module_t, 0);
 	pr_symtab_t *symtab;
 	pr_sel_t   *sel;
-	pointer_t  *ptr;
+	pr_ptr_t   *ptr;
 	int         i;
 	obj_list  **cell;
 
@@ -1216,7 +1216,7 @@ rua___obj_exec_class (progs_t *pr)
 	if (*ptr) {
 		Sys_MaskPrintf (SYS_rua_obj, "Static instances lists: %x\n", *ptr);
 		probj->uninitialized_statics
-			= list_cons (&G_STRUCT (pr, pointer_t, *ptr),
+			= list_cons (&G_STRUCT (pr, pr_ptr_t, *ptr),
 						 probj->uninitialized_statics);
 	}
 	if (probj->uninitialized_statics) {
@@ -1275,7 +1275,7 @@ rua___obj_forward (progs_t *pr)
 		//FIXME oh for a stack
 		size_t      parm_size = pr->pr_param_size * sizeof(pr_type_t);
 		size_t      size = pr->pr_argc * parm_size;
-		string_t    args_block = PR_AllocTempBlock (pr, size);
+		pr_string_t args_block = PR_AllocTempBlock (pr, size);
 
 		int         argc = pr->pr_argc;
 		__auto_type argv = (pr_type_t *) PR_GetString (pr, args_block);
@@ -1402,9 +1402,9 @@ static void
 rua_obj_msg_sendv (progs_t *pr)
 {
 	probj_t    *probj = pr->pr_objective_resources;
-	pointer_t   obj = P_POINTER (pr, 0);
+	pr_ptr_t    obj = P_POINTER (pr, 0);
 	pr_id_t    *receiver = &P_STRUCT (pr, pr_id_t, 0);
-	pointer_t   sel = P_POINTER (pr, 1);
+	pr_ptr_t    sel = P_POINTER (pr, 1);
 	pr_sel_t   *op = &P_STRUCT (pr, pr_sel_t, 1);
 	func_t      imp = obj_msg_lookup (probj, receiver, op);
 
@@ -1679,12 +1679,12 @@ rua_class_pose_as (progs_t *pr)
 {
 	pr_class_t *impostor = &P_STRUCT (pr, pr_class_t, 0);
 	pr_class_t *superclass = &P_STRUCT (pr, pr_class_t, 1);
-	pointer_t  *subclass;
+	pr_ptr_t   *subclass;
 
 	subclass = &superclass->subclass_list;
 	while (*subclass) {
 		pr_class_t *sub = &P_STRUCT (pr, pr_class_t, *subclass);
-		pointer_t   nextSub = sub->sibling_class;
+		pr_ptr_t    nextSub = sub->sibling_class;
 		if (sub != impostor) {
 			sub->sibling_class = impostor->subclass_list;
 			sub->super_class = P_POINTER (pr, 0);	// impostor
@@ -2157,7 +2157,7 @@ rua_init_finish (progs_t *pr)
 	class_list = (pr_class_t **) Hash_GetList (probj->classes);
 	if (*class_list) {
 		pr_class_t *object_class;
-		pointer_t   object_ptr;
+		pr_ptr_t    object_ptr;
 
 		object_class = Hash_Find (probj->classes, "Object");
 		if (object_class && !object_class->super_class)
@@ -2249,7 +2249,7 @@ RUA_Obj_Init (progs_t *pr, int secure)
 }
 
 func_t
-RUA_Obj_msg_lookup (progs_t *pr, pointer_t _self, pointer_t __cmd)
+RUA_Obj_msg_lookup (progs_t *pr, pr_ptr_t _self, pr_ptr_t __cmd)
 {
 	probj_t    *probj = pr->pr_objective_resources;
 	pr_id_t    *self = &G_STRUCT (pr, pr_id_t, _self);

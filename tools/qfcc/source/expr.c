@@ -2551,7 +2551,7 @@ expr_t *
 build_if_statement (int not, expr_t *test, expr_t *s1, expr_t *els, expr_t *s2)
 {
 	int         line = pr.source_line;
-	string_t    file = pr.source_file;
+	pr_string_t file = pr.source_file;
 	expr_t     *if_expr;
 	expr_t     *tl = new_label_expr ();
 	expr_t     *fl = new_label_expr ();
@@ -2610,7 +2610,7 @@ build_while_statement (int not, expr_t *test, expr_t *statement,
 					   expr_t *break_label, expr_t *continue_label)
 {
 	int         line = pr.source_line;
-	string_t    file = pr.source_file;
+	pr_string_t file = pr.source_file;
 	expr_t     *l1 = new_label_expr ();
 	expr_t     *l2 = break_label;
 	expr_t     *while_expr;
@@ -2650,7 +2650,7 @@ build_do_while_statement (expr_t *statement, int not, expr_t *test,
 {
 	expr_t *l1 = new_label_expr ();
 	int         line = pr.source_line;
-	string_t    file = pr.source_file;
+	pr_string_t file = pr.source_file;
 	expr_t     *do_while_expr;
 
 	if (!statement) {
@@ -2696,7 +2696,7 @@ build_for_statement (expr_t *init, expr_t *test, expr_t *next,
 	expr_t     *l1 = 0;
 	expr_t     *t;
 	int         line = pr.source_line;
-	string_t    file = pr.source_file;
+	pr_string_t file = pr.source_file;
 	expr_t     *for_expr;
 
 	if (next)

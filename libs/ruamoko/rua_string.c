@@ -108,7 +108,7 @@ bi_str_free (progs_t *pr)
 static void
 bi_str_hold (progs_t *pr)
 {
-	string_t    str = P_STRING (pr, 0);
+	pr_string_t str = P_STRING (pr, 0);
 	PR_HoldString (pr, str);
 	R_STRING (pr) = str;
 }

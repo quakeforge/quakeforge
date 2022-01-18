@@ -29,8 +29,8 @@ static int verbose = 0;
 
 typedef struct {
 	const char *desc;
-	pointer_t   edict_area;
-	pointer_t   stack_size;
+	pr_ptr_t    edict_area;
+	pr_uint_t   stack_size;
 	pr_uint_t   extra_globals;
 	pr_uint_t   num_globals;
 	pr_uint_t   num_statements;

@@ -77,58 +77,58 @@
 						| (num) << (PR_BITS_PER_INT / 2))
 
 typedef struct pr_sel_s {
-	pointer_t   sel_id;
-	string_t    sel_types;
+	pr_ptr_t    sel_id;
+	pr_string_t sel_types;
 } pr_sel_t;
 
 typedef struct pr_id_s {
-	pointer_t   class_pointer;		// pr_class_t
+	pr_ptr_t    class_pointer;		// pr_class_t
 } pr_id_t;
 
 typedef struct pr_class_s {
-	pointer_t   class_pointer;		// pr_class_t
-	pointer_t   super_class;		// pr_class_t
-	string_t    name;
+	pr_ptr_t    class_pointer;		// pr_class_t
+	pr_ptr_t    super_class;		// pr_class_t
+	pr_string_t name;
 	pr_int_t    version;
 	pr_uint_t   info;
 	pr_int_t    instance_size;
-	pointer_t   ivars;				// pr_ivar_list_t
-	pointer_t   methods;			// pr_method_list_t
-	pointer_t   dtable;				// resource index
-	pointer_t   subclass_list;		// pr_class_t
-	pointer_t   sibling_class;		// pr_class_t
-	pointer_t   protocols;			// pr_protocol_list_t
-	pointer_t   gc_object_type;
+	pr_ptr_t    ivars;				// pr_ivar_list_t
+	pr_ptr_t    methods;			// pr_method_list_t
+	pr_ptr_t    dtable;			// resource index
+	pr_ptr_t    subclass_list;		// pr_class_t
+	pr_ptr_t    sibling_class;		// pr_class_t
+	pr_ptr_t    protocols;			// pr_protocol_list_t
+	pr_ptr_t    gc_object_type;
 } pr_class_t;
 
 typedef struct pr_protocol_s {
-	pointer_t   class_pointer;		// pr_class_t
-	string_t    protocol_name;
-	pointer_t   protocol_list;		// pr_protocol_list_t
-	pointer_t   instance_methods;	// pr_method_description_list_t
-	pointer_t   class_methods;		// pr_method_description_list_t
+	pr_ptr_t    class_pointer;		// pr_class_t
+	pr_string_t protocol_name;
+	pr_ptr_t    protocol_list;		// pr_protocol_list_t
+	pr_ptr_t    instance_methods;	// pr_method_description_list_t
+	pr_ptr_t    class_methods;		// pr_method_description_list_t
 } pr_protocol_t;
 
 typedef struct pr_category_s {
-	string_t    category_name;
-	string_t    class_name;
-	pointer_t   instance_methods;	// pr_method_list_t
-	pointer_t   class_methods;		// pr_method_list_t
-	pointer_t   protocols;			// pr_protocol_list_t
+	pr_string_t category_name;
+	pr_string_t class_name;
+	pr_ptr_t    instance_methods;	// pr_method_list_t
+	pr_ptr_t    class_methods;		// pr_method_list_t
+	pr_ptr_t    protocols;			// pr_protocol_list_t
 } pr_category_t;
 
 typedef struct pr_protocol_list_s {
-	pointer_t   next;
+	pr_ptr_t    next;
 	pr_int_t    count;
-	pointer_t   list[1];			// pr_protocol_t
+	pr_ptr_t    list[1];			// pr_protocol_t
 } pr_protocol_list_t;
 
 typedef struct pr_method_list_s {
-	pointer_t   method_next;
+	pr_ptr_t    method_next;
 	pr_int_t    method_count;
 	struct pr_method_s {
-		pointer_t   method_name;	// pr_sel_t
-		string_t    method_types;
+		pr_ptr_t    method_name;	// pr_sel_t
+		pr_string_t method_types;
 		func_t      method_imp;		// typedef id (id, SEL, ...) IMP
 	} method_list[1];
 } pr_method_list_t;
@@ -137,8 +137,8 @@ typedef struct pr_method_s pr_method_t;
 typedef struct pr_method_description_list_s {
 	pr_int_t    count;
 	struct pr_method_description_s {
-		pointer_t   name;			// pr_sel_t
-		string_t    types;
+		pr_ptr_t    name;			// pr_sel_t
+		pr_string_t types;
 	} list[1];
 } pr_method_description_list_t;
 typedef struct pr_method_description_s pr_method_description_t;
@@ -146,8 +146,8 @@ typedef struct pr_method_description_s pr_method_description_t;
 typedef struct pr_ivar_list_s {
 	pr_int_t    ivar_count;
 	struct pr_ivar_s {
-		string_t    ivar_name;
-		string_t    ivar_type;
+		pr_string_t ivar_name;
+		pr_string_t ivar_type;
 		pr_int_t    ivar_offset;
 	} ivar_list[1];
 } pr_ivar_list_t;
@@ -157,16 +157,16 @@ typedef struct pr_static_instances_s {
 	// one per staticly instanced class per module (eg, 3 instances of Object
 	// will produce one of these structs with 3 pointers to those instances in
 	// instances[]
-	string_t    class_name;
-	pointer_t   instances[1];		// null terminated array of pr_id_t
+	pr_string_t class_name;
+	pr_ptr_t    instances[1];		// null terminated array of pr_id_t
 } pr_static_instances_t;
 
 typedef struct pr_symtab_s {
 	pr_int_t    sel_ref_cnt;
-	pointer_t   refs;				// pr_sel_t
+	pr_ptr_t    refs;				// pr_sel_t
 	pr_int_t    cls_def_cnt;
 	pr_int_t    cat_def_cnt;
-	pointer_t   defs[1];			// variable array of cls_def_cnt class
+	pr_ptr_t    defs[1];			// variable array of cls_def_cnt class
 									// pointers then cat_def_cnt category
 									// pointers followed by a null terminated
 									// array of pr_static_instances (not yet
@@ -176,13 +176,13 @@ typedef struct pr_symtab_s {
 typedef struct pr_module_s {
 	pr_int_t    version;
 	pr_int_t    size;
-	string_t    name;
-	pointer_t   symtab;				// pr_symtab_t
+	pr_string_t name;
+	pr_ptr_t    symtab;			// pr_symtab_t
 } pr_module_t;
 
 typedef struct pr_super_s {
-	pointer_t   self;
-	pointer_t   class;
+	pr_ptr_t    self;
+	pr_ptr_t    class;
 } pr_super_t;
 
 #endif//__QF_pr_obj_h

@@ -265,7 +265,7 @@ int PR_RunPostLoadFuncs (progs_t *pr);
 */
 int PR_Check_Opcodes (progs_t *pr);
 
-void PR_BoundsCheckSize (progs_t *pr, pointer_t addr, unsigned size);
+void PR_BoundsCheckSize (progs_t *pr, pr_ptr_t addr, unsigned size);
 void PR_BoundsCheck (progs_t *pr, int addr, etype_t type);
 
 ///@}
@@ -336,10 +336,10 @@ void ED_EntityParseFunction (progs_t *pr);
 */
 ///@{
 
-pr_def_t *PR_SearchDefs (pr_def_t *defs, unsigned num_defs, pointer_t offset)
+pr_def_t *PR_SearchDefs (pr_def_t *defs, unsigned num_defs, pr_ptr_t offset)
 	__attribute__((pure));
-pr_def_t *PR_FieldAtOfs (progs_t *pr, pointer_t ofs) __attribute__((pure));
-pr_def_t *PR_GlobalAtOfs (progs_t *pr, pointer_t ofs) __attribute__((pure));
+pr_def_t *PR_FieldAtOfs (progs_t *pr, pr_ptr_t ofs) __attribute__((pure));
+pr_def_t *PR_GlobalAtOfs (progs_t *pr, pr_ptr_t ofs) __attribute__((pure));
 
 pr_def_t *PR_FindField (progs_t *pr, const char *name);
 pr_def_t *PR_FindGlobal (progs_t *pr, const char *name);
@@ -470,7 +470,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 		\c string
 	\param p		pointer to ::progs_t VM struct
 	\param o		offset into global data space
-	\return			string_t lvalue
+	\return			pr_string_t lvalue
 
 	\hideinitializer
 */
@@ -494,7 +494,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 		\c void *
 	\param p		pointer to ::progs_t VM struct
 	\param o		offset into global data space
-	\return			pointer_t lvalue
+	\return			pr_ptr_t lvalue
 
 	\hideinitializer
 */
@@ -686,7 +686,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 		\c string
 	\param p		pointer to ::progs_t VM struct
 	\param n		parameter number (0-7)
-	\return			string_t lvalue
+	\return			pr_string_t lvalue
 
 	\hideinitializer
 */
@@ -710,7 +710,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 		\c void *
 	\param p		pointer to ::progs_t VM struct
 	\param n		parameter number (0-7)
-	\return			pointer_t lvalue
+	\return			pr_ptr_t lvalue
 
 	\hideinitializer
 */
@@ -891,12 +891,12 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define R_QUAT(p)		(&R_var (p, quat))
 
-/** Access the VM function return value as a ::string_t (a VM string reference).
+/** Access the VM function return value as a ::pr_string_t (a VM string reference).
 
 	\par QC type:
 		\c string
 	\param p		pointer to ::progs_t VM struct
-	\return			::string_t lvalue
+	\return			::pr_string_t lvalue
 
 	\hideinitializer
 */
@@ -913,12 +913,12 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 */
 #define R_FUNCTION(p)	R_var (p, func)
 
-/** Access the VM function return value as a ::pointer_t (a VM "pointer")
+/** Access the VM function return value as a ::pr_ptr_t (a VM "pointer")
 
 	\par QC type:
 		\c void *
 	\param p		pointer to ::progs_t VM struct
-	\return			::pointer_t lvalue
+	\return			::pr_ptr_t lvalue
 
 	\hideinitializer
 */
@@ -1091,7 +1091,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 		\c string
 	\param e		pointer to the entity
 	\param o		field offset into entity data space
-	\return			string_t lvalue
+	\return			pr_string_t lvalue
 
 	\hideinitializer
 */
@@ -1115,7 +1115,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 		\c void *
 	\param e		pointer to the entity
 	\param o		field offset into entity data space
-	\return			pointer_t lvalue
+	\return			pr_ptr_t lvalue
 
 	\hideinitializer
 */
@@ -1282,28 +1282,28 @@ int PR_LoadStrings (progs_t *pr);
 	\param num		string index to be validated
 	\return			true if the index is valid, false otherwise
 */
-qboolean PR_StringValid (progs_t *pr, string_t num) __attribute__((pure));
+qboolean PR_StringValid (progs_t *pr, pr_string_t num) __attribute__((pure));
 
 /** Check if a string is valid and mutable.
 	\param pr		pointer to ::progs_t VM struct
 	\param num		string index to be checked
 	\return			true if the string is valid and mutable, false otherwise
 */
-qboolean PR_StringMutable (progs_t *pr, string_t num) __attribute__((pure));
+qboolean PR_StringMutable (progs_t *pr, pr_string_t num) __attribute__((pure));
 
 /** Convert a string index to a C string.
 	\param pr		pointer to ::progs_t VM struct
 	\param num		string index to be converted
 	\return			C pointer to the string.
 */
-const char *PR_GetString(progs_t *pr, string_t num) __attribute__((pure));
+const char *PR_GetString(progs_t *pr, pr_string_t num) __attribute__((pure));
 
 /** Retrieve the dstring_t associated with a mutable string.
 	\param pr		pointer to ::progs_t VM struct
 	\param num		string index of the mutable string
 	\return			the dstring implementing the mutable string
 */
-struct dstring_s *PR_GetMutableString(progs_t *pr, string_t num) __attribute__((pure));
+struct dstring_s *PR_GetMutableString(progs_t *pr, pr_string_t num) __attribute__((pure));
 
 /** Make a permanent progs string from the given C string. Will not create a
 	duplicate permanent string (temporary and mutable strings are not checked).
@@ -1311,7 +1311,7 @@ struct dstring_s *PR_GetMutableString(progs_t *pr, string_t num) __attribute__((
 	\param s		C string to be made into a permanent progs string
 	\return			string index of the progs string
 */
-string_t PR_SetString(progs_t *pr, const char *s);
+pr_string_t PR_SetString(progs_t *pr, const char *s);
 
 /**	Get the progs string if it exists.
 	Only static strings are searched.
@@ -1320,7 +1320,7 @@ string_t PR_SetString(progs_t *pr, const char *s);
 	\return			string index of the progs string if it exists, otherwise
 					0 (ambiguous with "").
 */
-string_t PR_FindString(progs_t *pr, const char *s);
+pr_string_t PR_FindString(progs_t *pr, const char *s);
 
 /** Make a temporary progs string that will survive across function returns.
 	Will not duplicate a permanent string. If a new progs string is created,
@@ -1330,7 +1330,7 @@ string_t PR_FindString(progs_t *pr, const char *s);
 	\param s		C string to be returned to the progs code
 	\return			string index of the progs string
 */
-string_t PR_SetReturnString(progs_t *pr, const char *s);
+pr_string_t PR_SetReturnString(progs_t *pr, const char *s);
 
 /** Make a temporary progs string that will be freed when the current progs
 	stack frame is exited. Will not duplicate a permantent string.
@@ -1338,7 +1338,7 @@ string_t PR_SetReturnString(progs_t *pr, const char *s);
 	\param s		C string
 	\return			string index of the progs string
 */
-string_t PR_SetTempString(progs_t *pr, const char *s);
+pr_string_t PR_SetTempString(progs_t *pr, const char *s);
 
 /** Make a temporary memory block that will be freed when the current progs
 	stack frame is exited. The contents may be anything and a new block is
@@ -1350,7 +1350,7 @@ string_t PR_SetTempString(progs_t *pr, const char *s);
 	\param size		size of block in bytes
 	\return			string index of the block
 */
-string_t PR_AllocTempBlock (progs_t *pr, size_t size);
+pr_string_t PR_AllocTempBlock (progs_t *pr, size_t size);
 
 /**	Push a temporary string to the callee stack frame
 
@@ -1361,7 +1361,7 @@ string_t PR_AllocTempBlock (progs_t *pr, size_t size);
 	\param pr		pointer to ::progs_t VM struct
 	\param num		string index of the temp string
 */
-void PR_PushTempString (progs_t *pr, string_t num);
+void PR_PushTempString (progs_t *pr, pr_string_t num);
 
 /** Make a temporary progs string that is the concatenation of two C strings.
 	\param pr		pointer to ::progs_t VM struct
@@ -1370,19 +1370,19 @@ void PR_PushTempString (progs_t *pr, string_t num);
 	\return			string index of the progs string that represents the
 					concatenation of strings a and b
 */
-string_t PR_CatStrings (progs_t *pr, const char *a, const char *b);
+pr_string_t PR_CatStrings (progs_t *pr, const char *a, const char *b);
 
 /** Convert a mutable string to a temporary string.
 	\param pr		pointer to ::progs_t VM struct
 	\param str		string index of the mutable string to be converted
 */
-void PR_MakeTempString(progs_t *pr, string_t str);
+void PR_MakeTempString(progs_t *pr, pr_string_t str);
 
 /** Create a new mutable string.
 	\param pr		pointer to ::progs_t VM struct
 	\return			string index of the newly created mutable string
 */
-string_t PR_NewMutableString (progs_t *pr);
+pr_string_t PR_NewMutableString (progs_t *pr);
 
 /** Make a dynamic progs string from the given C string. Will not create a
 	duplicate permanent string (temporary, dynamic and mutable strings are
@@ -1391,7 +1391,7 @@ string_t PR_NewMutableString (progs_t *pr);
 	\param s		C string to be made into a permanent progs string
 	\return			string index of the progs string
 */
-string_t PR_SetDynamicString (progs_t *pr, const char *s);
+pr_string_t PR_SetDynamicString (progs_t *pr, const char *s);
 
 /** Convert an ephemeral string to a dynamic string.
 
@@ -1403,13 +1403,13 @@ string_t PR_SetDynamicString (progs_t *pr, const char *s);
 	\param str		The string to be "held" (made non-ephemeral). Safe to call
 					on any valid string, but affects only ephemeral strings.
 */
-void PR_HoldString (progs_t *pr, string_t str);
+void PR_HoldString (progs_t *pr, pr_string_t str);
 
 /** Destroy a mutable, dynamic or temporary string.
 	\param pr		pointer to ::progs_t VM struct
 	\param str		string index of the string to be destroyed
 */
-void PR_FreeString (progs_t *pr, string_t str);
+void PR_FreeString (progs_t *pr, pr_string_t str);
 
 /** Free all the temporary strings allocated in the current stack frame.
 	\param pr		pointer to ::progs_t VM struct
@@ -1765,7 +1765,7 @@ pr_uint_t PR_FindSourceLineAddr (progs_t *pr, const char *file, pr_uint_t line) 
 const char *PR_Get_Source_File (progs_t *pr, pr_lineno_t *lineno) __attribute__((pure));
 const char *PR_Get_Source_Line (progs_t *pr, pr_uint_t addr);
 pr_def_t *PR_Get_Param_Def (progs_t *pr, dfunction_t *func, unsigned parm) __attribute__((pure));
-pr_def_t *PR_Get_Local_Def (progs_t *pr, pointer_t *offs) __attribute__((pure));
+pr_def_t *PR_Get_Local_Def (progs_t *pr, pr_ptr_t *offs) __attribute__((pure));
 void PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents);
 void PR_DumpState (progs_t *pr);
 void PR_StackTrace (progs_t *pr);
@@ -1935,7 +1935,7 @@ struct progs_s {
 	/// stack.
 	///@{
 	pr_type_t  *stack;
-	pointer_t   stack_bottom;
+	pr_ptr_t    stack_bottom;
 	int         stack_size;			///< set by user
 	///@}
 
@@ -1970,7 +1970,7 @@ struct progs_s {
 		double     *dtime;		///< required for OP_STATE d
 		float      *ftime;		///< required for OP_STATE f
 		pr_uint_t  *self;		///< required for OP_STATE
-		pointer_t  *stack;		///< required for OP_(PUSH|POP)*
+		pr_ptr_t   *stack;	///< required for OP_(PUSH|POP)*
 	} globals;
 	struct {
 		pr_int_t    nextthink;	///< required for OP_STATE
@@ -1991,7 +1991,7 @@ struct progs_s {
 	\return			C pointer represented by the parameter. 0 offset -> NULL
 */
 static inline pr_type_t *
-PR_GetPointer (const progs_t *pr, pointer_t o)
+PR_GetPointer (const progs_t *pr, pr_ptr_t o)
 {
 	return o ? pr->pr_globals + o : 0;
 }
@@ -2001,7 +2001,7 @@ PR_GetPointer (const progs_t *pr, pointer_t o)
 	\param p		C pointer to be converted.
 	\return			Progs offset/pointer represented by \c p. NULL -> 0 offset
 */
-static inline pointer_t
+static inline pr_ptr_t
 PR_SetPointer (const progs_t *pr, const void *p)
 {
 	return p ? (const pr_type_t *) p - pr->pr_globals : 0;

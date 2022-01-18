@@ -220,7 +220,7 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 {
 	pr_int_t    i;
 	pr_type_t  *dstParams[MAX_PARMS];
-	pointer_t   paramofs = 0;
+	pr_ptr_t    paramofs = 0;
 
 	if (pr->pr_trace && !pr->debug_handler) {
 		Sys_Printf ("Entering function %s\n",
@@ -338,9 +338,9 @@ PR_LeaveFunction (progs_t *pr, int to_engine)
 }
 
 VISIBLE void
-PR_BoundsCheckSize (progs_t *pr, pointer_t addr, unsigned size)
+PR_BoundsCheckSize (progs_t *pr, pr_ptr_t addr, unsigned size)
 {
-	if (addr < (pointer_t) (pr->pr_return - pr->pr_globals))
+	if (addr < (pr_ptr_t) (pr->pr_return - pr->pr_globals))
 		PR_RunError (pr, "null pointer access");
 	if (addr >= pr->globals_size
 		|| size > (unsigned) (pr->globals_size - addr))
@@ -447,7 +447,7 @@ PR_CallFunction (progs_t *pr, func_t fnum, pr_type_t *return_ptr)
 }
 
 static void
-check_stack_pointer (progs_t *pr, pointer_t stack, int size)
+check_stack_pointer (progs_t *pr, pr_ptr_t stack, int size)
 {
 	if (stack < pr->stack_bottom) {
 		PR_RunError (pr, "Progs stack overflow");
@@ -1070,7 +1070,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 			case OP_PUSH_I_v6p:
 			case OP_PUSH_P_v6p:
 				{
-					pointer_t   stack = *pr->globals.stack - 1;
+					pr_ptr_t    stack = *pr->globals.stack - 1;
 					pr_type_t  *stk = pr->pr_globals + stack;
 					if (pr_boundscheck->int_val) {
 						check_stack_pointer (pr, stack, 1);
@@ -1081,7 +1081,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				break;
 			case OP_PUSH_V_v6p:
 				{
-					pointer_t   stack = *pr->globals.stack - 3;
+					pr_ptr_t    stack = *pr->globals.stack - 3;
 					pr_type_t  *stk = pr->pr_globals + stack;
 					if (pr_boundscheck->int_val) {
 						check_stack_pointer (pr, stack, 3);
@@ -1092,7 +1092,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				break;
 			case OP_PUSH_Q_v6p:
 				{
-					pointer_t   stack = *pr->globals.stack - 4;
+					pr_ptr_t    stack = *pr->globals.stack - 4;
 					pr_type_t  *stk = pr->pr_globals + stack;
 					if (pr_boundscheck->int_val) {
 						check_stack_pointer (pr, stack, 4);
@@ -1110,7 +1110,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 			case OP_PUSHB_I_v6p:
 			case OP_PUSHB_P_v6p:
 				{
-					pointer_t   stack = *pr->globals.stack - 1;
+					pr_ptr_t    stack = *pr->globals.stack - 1;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
 					pointer = OPA(int) + OPB(int);
@@ -1127,7 +1127,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				break;
 			case OP_PUSHB_V_v6p:
 				{
-					pointer_t   stack = *pr->globals.stack - 3;
+					pr_ptr_t    stack = *pr->globals.stack - 3;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
 					pointer = OPA(int) + OPB(int);
@@ -1144,7 +1144,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				break;
 			case OP_PUSHB_Q_v6p:
 				{
-					pointer_t   stack = *pr->globals.stack - 4;
+					pr_ptr_t    stack = *pr->globals.stack - 4;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
 					pointer = OPA(int) + OPB(int);
@@ -1168,7 +1168,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 			case OP_PUSHBI_I_v6p:
 			case OP_PUSHBI_P_v6p:
 				{
-					pointer_t   stack = *pr->globals.stack - 1;
+					pr_ptr_t    stack = *pr->globals.stack - 1;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
 					pointer = OPA(int) + st->b;
@@ -1185,7 +1185,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				break;
 			case OP_PUSHBI_V_v6p:
 				{
-					pointer_t   stack = *pr->globals.stack - 3;
+					pr_ptr_t    stack = *pr->globals.stack - 3;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
 					pointer = OPA(int) + st->b;
@@ -1202,7 +1202,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				break;
 			case OP_PUSHBI_Q_v6p:
 				{
-					pointer_t   stack = *pr->globals.stack - 4;
+					pr_ptr_t    stack = *pr->globals.stack - 4;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
 					pointer = OPA(int) + st->b;
@@ -1226,7 +1226,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 			case OP_POP_I_v6p:
 			case OP_POP_P_v6p:
 				{
-					pointer_t   stack = *pr->globals.stack;
+					pr_ptr_t    stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
 					if (pr_boundscheck->int_val) {
 						check_stack_pointer (pr, stack, 1);
@@ -1237,7 +1237,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				break;
 			case OP_POP_V_v6p:
 				{
-					pointer_t   stack = *pr->globals.stack;
+					pr_ptr_t    stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
 					if (pr_boundscheck->int_val) {
 						check_stack_pointer (pr, stack, 3);
@@ -1248,7 +1248,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				break;
 			case OP_POP_Q_v6p:
 				{
-					pointer_t   stack = *pr->globals.stack;
+					pr_ptr_t    stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
 					if (pr_boundscheck->int_val) {
 						check_stack_pointer (pr, stack, 4);
@@ -1266,7 +1266,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 			case OP_POPB_I_v6p:
 			case OP_POPB_P_v6p:
 				{
-					pointer_t   stack = *pr->globals.stack;
+					pr_ptr_t    stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
 					pointer = OPA(int) + OPB(int);
@@ -1283,7 +1283,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				break;
 			case OP_POPB_V_v6p:
 				{
-					pointer_t   stack = *pr->globals.stack;
+					pr_ptr_t    stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
 					pointer = OPA(int) + OPB(int);
@@ -1300,7 +1300,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				break;
 			case OP_POPB_Q_v6p:
 				{
-					pointer_t   stack = *pr->globals.stack;
+					pr_ptr_t    stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
 					pointer = OPA(int) + OPB(int);
@@ -1324,7 +1324,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 			case OP_POPBI_I_v6p:
 			case OP_POPBI_P_v6p:
 				{
-					pointer_t   stack = *pr->globals.stack;
+					pr_ptr_t    stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
 					pointer = OPA(int) + st->b;
@@ -1341,7 +1341,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				break;
 			case OP_POPBI_V_v6p:
 				{
-					pointer_t   stack = *pr->globals.stack;
+					pr_ptr_t    stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
 					pointer = OPA(int) + st->b;
@@ -1358,7 +1358,7 @@ pr_exec_quakec (progs_t *pr, int exitdepth)
 				break;
 			case OP_POPBI_Q_v6p:
 				{
-					pointer_t   stack = *pr->globals.stack;
+					pr_ptr_t    stack = *pr->globals.stack;
 					pr_type_t  *stk = pr->pr_globals + stack;
 
 					pointer = OPA(int) + st->b;
@@ -1670,16 +1670,16 @@ op_call:
 				break;
 			case OP_MEMSETP_v6p:
 				if (pr_boundscheck->int_val) {
-					PR_BoundsCheckSize (pr, OPC(pointer), OPB(int));
+					PR_BoundsCheckSize (pr, OPC(ptr), OPB(int));
 				}
-				pr_memset (pr->pr_globals + OPC(pointer), OPA(int),
+				pr_memset (pr->pr_globals + OPC(ptr), OPA(int),
 						   OPB(int));
 				break;
 			case OP_MEMSETPI_v6p:
 				if (pr_boundscheck->int_val) {
-					PR_BoundsCheckSize (pr, OPC(pointer), st->b);
+					PR_BoundsCheckSize (pr, OPC(ptr), st->b);
 				}
-				pr_memset (pr->pr_globals + OPC(pointer), OPA(int),
+				pr_memset (pr->pr_globals + OPC(ptr), OPA(int),
 						   st->b);
 				break;
 			case OP_GE_D_v6p:
@@ -1754,7 +1754,7 @@ pr_address_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 {
 	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, A);
 	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, B);
-	pointer_t   mm_offs = 0;
+	pr_ptr_t    mm_offs = 0;
 
 	switch (mm_ind) {
 		case 0:
@@ -1775,7 +1775,7 @@ pr_address_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 			break;
 		case 4:
 			// entity.field (equivalent to OP_LOAD_t_v6p)
-			pointer_t   edict_area = pr->pr_edict_area - pr->pr_globals;
+			pr_ptr_t    edict_area = pr->pr_edict_area - pr->pr_globals;
 			mm_offs = edict_area + OPA(uint) + OPB(uint);
 			break;
 	}
@@ -1787,7 +1787,7 @@ pr_return_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 {
 	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, A);
 	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, B);
-	pointer_t   mm_offs = 0;
+	pr_ptr_t    mm_offs = 0;
 
 	switch (mm_ind) {
 		case 0:
@@ -1808,7 +1808,7 @@ pr_return_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 			break;
 		case 4:
 			// entity.field (equivalent to OP_LOAD_t_v6p)
-			pointer_t   edict_area = pr->pr_edict_area - pr->pr_globals;
+			pr_ptr_t    edict_area = pr->pr_edict_area - pr->pr_globals;
 			mm_offs = edict_area + OPA(uint) + OPB(uint);
 			break;
 	}
@@ -1820,7 +1820,7 @@ pr_call_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 {
 	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, A);
 	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, B);
-	pointer_t   mm_offs = 0;
+	pr_ptr_t    mm_offs = 0;
 
 	switch (mm_ind) {
 		case 1:
@@ -1837,19 +1837,19 @@ pr_call_mode (progs_t *pr, const dstatement_t *st, int mm_ind)
 			break;
 		case 4:
 			// entity.field (equivalent to OP_LOAD_t_v6p)
-			pointer_t   edict_area = pr->pr_edict_area - pr->pr_globals;
+			pr_ptr_t    edict_area = pr->pr_edict_area - pr->pr_globals;
 			mm_offs = edict_area + OPA(uint) + OPB(uint);
 			break;
 	}
 	return pr->pr_globals + mm_offs;
 }
 
-static pr_pointer_t __attribute__((pure))
+static pr_ptr_t __attribute__((pure))
 pr_jump_mode (progs_t *pr, const dstatement_t *st, int jump_ind)
 {
 	pr_type_t  *op_a = pr->pr_globals + st->a + PR_BASE (pr, st, A);
 	pr_type_t  *op_b = pr->pr_globals + st->b + PR_BASE (pr, st, B);
-	pointer_t   jump_offs = pr->pr_xstatement;
+	pr_ptr_t    jump_offs = pr->pr_xstatement;
 
 	switch (jump_ind) {
 		case 0:
@@ -1879,7 +1879,7 @@ static pr_type_t *
 pr_stack_push (progs_t *pr)
 {
 	// keep the stack 16-byte aligned
-	pointer_t   stack = *pr->globals.stack - 4;
+	pr_ptr_t    stack = *pr->globals.stack - 4;
 	pr_type_t  *stk = pr->pr_globals + stack;
 	if (pr_boundscheck->int_val) {
 		check_stack_pointer (pr, stack, 4);
@@ -1891,7 +1891,7 @@ pr_stack_push (progs_t *pr)
 static pr_type_t *
 pr_stack_pop (progs_t *pr)
 {
-	pointer_t   stack = *pr->globals.stack;
+	pr_ptr_t    stack = *pr->globals.stack;
 	pr_type_t  *stk = pr->pr_globals + stack;
 	if (pr_boundscheck->int_val) {
 		check_stack_pointer (pr, stack, 4);
@@ -1904,7 +1904,7 @@ pr_stack_pop (progs_t *pr)
 static void
 pr_with (progs_t *pr, const dstatement_t *st)
 {
-	pointer_t   edict_area = pr->pr_edict_area - pr->pr_globals;
+	pr_ptr_t    edict_area = pr->pr_edict_area - pr->pr_globals;
 	pr_type_t  *op_b = pr->pr_globals + PR_BASE (pr, st, B) + st->b;
 	pr_type_t  *stk;
 	pr_uint_t  *base = &pr->pr_bases[st->c & 3];
@@ -1933,7 +1933,7 @@ pr_with (progs_t *pr, const dstatement_t *st)
 			*base = pr->pr_globals[st->b].pointer_var;
 			return;
 		case 5:
-			*base = OPB(pointer);
+			*base = OPB(ptr);
 			return;
 		case 6:
 			// relative to stack (-ve offset)
@@ -2755,9 +2755,9 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			}
 		}
 
-		pointer_t   st_a = st->a + PR_BASE (pr, st, A);
-		pointer_t   st_b = st->b + PR_BASE (pr, st, B);
-		pointer_t   st_c = st->c + PR_BASE (pr, st, C);
+		pr_ptr_t    st_a = st->a + PR_BASE (pr, st, A);
+		pr_ptr_t    st_b = st->b + PR_BASE (pr, st, B);
+		pr_ptr_t    st_c = st->c + PR_BASE (pr, st, C);
 
 
 		pr_type_t  *op_a = pr->pr_globals + st_a;

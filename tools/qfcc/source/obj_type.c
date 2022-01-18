@@ -65,7 +65,7 @@
 
 typedef def_t *(*encode_f) (type_t *type, defspace_t *space);
 
-static string_t
+static pr_string_t
 encoding_string (const char *string)
 {
 	int         str;

@@ -50,7 +50,7 @@ typedef struct il_data_s {
 	inputline_t *line;
 	progs_t    *pr;
 	func_t      enter;		// enter key callback
-	pointer_t   data[2];	// allow two data params for the callback
+	pr_ptr_t    data[2];	// allow two data params for the callback
 	int         method;		// true if method rather than function
 } il_data_t;
 

@@ -45,7 +45,7 @@ typedef struct {
 	float      *frametime;
 	pr_uint_t  *newmis;
 	float      *force_retouch;
-	string_t   *mapname;
+	pr_string_t *mapname;
 	float      *serverflags;
 	float      *total_secrets;
 	float      *total_monsters;
@@ -108,8 +108,8 @@ typedef struct
 	pr_int_t    velocity;			//vec3_t
 	pr_int_t    angles;				//vec3_t
 	pr_int_t    avelocity;			//vec3_t
-	pr_int_t    classname;			//string_t
-	pr_int_t    model;				//string_t
+	pr_int_t    classname;			//pr_string_t
+	pr_int_t    model;				//pr_string_t
 	pr_int_t    frame;				//float
 	pr_int_t    skin;				//float
 	pr_int_t    effects;			//float
@@ -124,7 +124,7 @@ typedef struct
 	pr_int_t    health;				//float
 	pr_int_t    frags;				//float
 	pr_int_t    weapon;				//float
-	pr_int_t    weaponmodel;		//string_t
+	pr_int_t    weaponmodel;		//pr_string_t
 	pr_int_t    weaponframe;		//float
 	pr_int_t    currentammo;		//float
 	pr_int_t    ammo_shells;		//float
@@ -141,7 +141,7 @@ typedef struct
 	pr_int_t    impulse;			//float
 	pr_int_t    fixangle;			//float
 	pr_int_t    v_angle;			//vec3_t
-	pr_int_t    netname;			//string_t
+	pr_int_t    netname;			//pr_string_t
 	pr_int_t    enemy;				//int
 	pr_int_t    flags;				//float
 	pr_int_t    colormap;			//float
@@ -158,7 +158,7 @@ typedef struct
 	pr_int_t    dmg_save;			//float
 	pr_int_t    dmg_inflictor;		//int
 	pr_int_t    owner;				//int
-	pr_int_t    message;			//string_t
+	pr_int_t    message;			//pr_string_t
 	pr_int_t    sounds;				//float
 	pr_int_t    rotated_bbox;		//int
 

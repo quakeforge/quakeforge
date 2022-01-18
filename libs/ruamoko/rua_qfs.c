@@ -45,7 +45,7 @@
 
 typedef struct {
 	int         count;
-	pointer_t   list;
+	pr_ptr_t    list;
 } qfslist_t;
 
 static void
@@ -155,7 +155,7 @@ bi_QFS_Filelist (progs_t *pr)
 {
 	filelist_t *filelist = QFS_FilelistNew ();
 	qfslist_t  *list;
-	string_t   *strings;
+	pr_string_t *strings;
 	int         i;
 
 	QFS_FilelistFill (filelist, P_GSTRING (pr, 0), P_GSTRING (pr, 1),
@@ -163,7 +163,7 @@ bi_QFS_Filelist (progs_t *pr)
 
 	list = PR_Zone_Malloc (pr, sizeof (list) + filelist->count * 4);
 	list->count = filelist->count;
-	strings = (string_t *) (list + 1);
+	strings = (pr_string_t *) (list + 1);
 	list->list = PR_SetPointer (pr, strings);
 	for (i = 0; i < filelist->count; i++)
 		strings[i] = PR_SetDynamicString (pr, filelist->list[i]);
@@ -174,7 +174,7 @@ static void
 bi_QFS_FilelistFree (progs_t *pr)
 {
 	qfslist_t  *list = &P_STRUCT (pr, qfslist_t, 0);
-	string_t   *strings = &G_STRUCT (pr, string_t, list->list);
+	pr_string_t *strings = &G_STRUCT (pr, pr_string_t, list->list);
 	int         i;
 
 	for (i = 0; i < list->count; i++)

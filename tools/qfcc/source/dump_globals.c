@@ -65,7 +65,7 @@ dump_def (progs_t *pr, pr_def_t *def, int indent)
 	const char *type;
 	pr_uint_t   offset;
 	const char *comment;
-	string_t    string;
+	pr_string_t string;
 	const char *str;
 	int         saveglobal;
 
@@ -86,7 +86,7 @@ dump_def (progs_t *pr, pr_def_t *def, int indent)
 				break;
 			case ev_string:
 				string = G_INT (pr, offset);
-				// at runtime, strings can be negative (thus string_t is
+				// at runtime, strings can be negative (thus pr_string_t is
 				// signed), but negative strings means they have been
 				// dynamically allocated, thus a negative string index should
 				// never appear in compiled code
@@ -241,7 +241,7 @@ dump_functions (progs_t *pr)
 	int         start;
 	const char *comment;
 	pr_def_t   *encodings_def;
-	pointer_t type_encodings = 0;
+	pr_ptr_t    type_encodings = 0;
 
 	encodings_def = PR_FindGlobal (pr, ".type_encodings");
 	if (encodings_def) {
@@ -516,7 +516,7 @@ static const char *ty_meta_names[] = {
 static void
 dump_qfo_types (qfo_t *qfo, int base_address)
 {
-	pointer_t   type_ptr;
+	pr_ptr_t    type_ptr;
 	qfot_type_t *type;
 	const char *meta;
 	int         i, count;

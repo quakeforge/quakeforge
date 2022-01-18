@@ -109,9 +109,9 @@ setup_test (test_t *test)
 	memset (test_pr.pr_globals + test->num_globals, 0,
 			test->extra_globals * sizeof (pr_type_t));
 	if (test->stack_size) {
-		pointer_t   stack = num_globals - test->stack_size;
+		pr_ptr_t    stack = num_globals - test->stack_size;
 		test_pr.stack_bottom = stack + 4;
-		test_pr.globals.stack = (pointer_t *) (test_pr.pr_globals + stack);
+		test_pr.globals.stack = (pr_ptr_t *) (test_pr.pr_globals + stack);
 		*test_pr.globals.stack = num_globals;
 	}
 	if (test->edict_area) {

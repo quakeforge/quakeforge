@@ -77,7 +77,7 @@ typedef struct reloc_s {
 								///< adjustment
 	reloc_type	type;			///< type type of relocation to perform
 	int			line;			///< current source line when creating reloc
-	string_t	file;			///< current source file when creating reloc
+	pr_string_t file;			///< current source file when creating reloc
 	const void *return_address;	///< for debugging
 } reloc_t;
 

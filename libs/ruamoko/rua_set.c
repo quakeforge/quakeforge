@@ -432,8 +432,8 @@ bi_i_SetIterator__element (progs_t *pr)
 static void
 bi_i_Set__add_ (progs_t *pr)
 {
-	pointer_t    set_ptr = P_POINTER (pr, 0);
-	pr_set_t    *set_obj = &G_STRUCT (pr, pr_set_t, set_ptr);
+	pr_ptr_t    set_ptr = P_POINTER (pr, 0);
+	pr_set_t   *set_obj = &G_STRUCT (pr, pr_set_t, set_ptr);
 
 	PR_RESET_PARAMS (pr);
 	P_INT (pr, 0) = set_obj->set;
@@ -445,8 +445,8 @@ bi_i_Set__add_ (progs_t *pr)
 static void
 bi_i_Set__remove_ (progs_t *pr)
 {
-	pointer_t    set_ptr = P_POINTER (pr, 0);
-	pr_set_t    *set_obj = &G_STRUCT (pr, pr_set_t, set_ptr);
+	pr_ptr_t    set_ptr = P_POINTER (pr, 0);
+	pr_set_t   *set_obj = &G_STRUCT (pr, pr_set_t, set_ptr);
 
 	PR_RESET_PARAMS (pr);
 	P_INT (pr, 0) = set_obj->set;
@@ -458,8 +458,8 @@ bi_i_Set__remove_ (progs_t *pr)
 static void
 bi_i_Set__invert (progs_t *pr)
 {
-	pointer_t    set_ptr = P_POINTER (pr, 0);
-	pr_set_t    *set_obj = &G_STRUCT (pr, pr_set_t, set_ptr);
+	pr_ptr_t    set_ptr = P_POINTER (pr, 0);
+	pr_set_t   *set_obj = &G_STRUCT (pr, pr_set_t, set_ptr);
 
 	PR_RESET_PARAMS (pr);
 	P_INT (pr, 0) = set_obj->set;
@@ -470,8 +470,8 @@ bi_i_Set__invert (progs_t *pr)
 static void
 bi_i_Set__union_ (progs_t *pr)
 {
-	pointer_t    dst_ptr = P_POINTER (pr, 0);
-	pr_set_t    *dst_obj = &G_STRUCT (pr, pr_set_t, dst_ptr);
+	pr_ptr_t    dst_ptr = P_POINTER (pr, 0);
+	pr_set_t   *dst_obj = &G_STRUCT (pr, pr_set_t, dst_ptr);
 	pr_set_t    *src_obj = &P_STRUCT (pr, pr_set_t, 2);
 
 	PR_RESET_PARAMS (pr);
@@ -484,9 +484,9 @@ bi_i_Set__union_ (progs_t *pr)
 static void
 bi_i_Set__intersection_ (progs_t *pr)
 {
-	pointer_t    dst_ptr = P_POINTER (pr, 0);
-	pr_set_t    *dst_obj = &G_STRUCT (pr, pr_set_t, dst_ptr);
-	pr_set_t    *src_obj = &P_STRUCT (pr, pr_set_t, 2);
+	pr_ptr_t    dst_ptr = P_POINTER (pr, 0);
+	pr_set_t   *dst_obj = &G_STRUCT (pr, pr_set_t, dst_ptr);
+	pr_set_t   *src_obj = &P_STRUCT (pr, pr_set_t, 2);
 
 	PR_RESET_PARAMS (pr);
 	P_INT (pr, 0) = dst_obj->set;
@@ -498,9 +498,9 @@ bi_i_Set__intersection_ (progs_t *pr)
 static void
 bi_i_Set__difference_ (progs_t *pr)
 {
-	pointer_t    dst_ptr = P_POINTER (pr, 0);
-	pr_set_t    *dst_obj = &G_STRUCT (pr, pr_set_t, dst_ptr);
-	pr_set_t    *src_obj = &P_STRUCT (pr, pr_set_t, 2);
+	pr_ptr_t    dst_ptr = P_POINTER (pr, 0);
+	pr_set_t   *dst_obj = &G_STRUCT (pr, pr_set_t, dst_ptr);
+	pr_set_t   *src_obj = &P_STRUCT (pr, pr_set_t, 2);
 
 	PR_RESET_PARAMS (pr);
 	P_INT (pr, 0) = dst_obj->set;
@@ -512,9 +512,9 @@ bi_i_Set__difference_ (progs_t *pr)
 static void
 bi_i_Set__reverse_difference_ (progs_t *pr)
 {
-	pointer_t    dst_ptr = P_POINTER (pr, 0);
-	pr_set_t    *dst_obj = &G_STRUCT (pr, pr_set_t, dst_ptr);
-	pr_set_t    *src_obj = &P_STRUCT (pr, pr_set_t, 2);
+	pr_ptr_t    dst_ptr = P_POINTER (pr, 0);
+	pr_set_t   *dst_obj = &G_STRUCT (pr, pr_set_t, dst_ptr);
+	pr_set_t   *src_obj = &P_STRUCT (pr, pr_set_t, 2);
 
 	PR_RESET_PARAMS (pr);
 	P_INT (pr, 0) = dst_obj->set;
@@ -526,9 +526,9 @@ bi_i_Set__reverse_difference_ (progs_t *pr)
 static void
 bi_i_Set__assign_ (progs_t *pr)
 {
-	pointer_t    dst_ptr = P_POINTER (pr, 0);
-	pr_set_t    *dst_obj = &G_STRUCT (pr, pr_set_t, dst_ptr);
-	pr_set_t    *src_obj = &P_STRUCT (pr, pr_set_t, 2);
+	pr_ptr_t    dst_ptr = P_POINTER (pr, 0);
+	pr_set_t   *dst_obj = &G_STRUCT (pr, pr_set_t, dst_ptr);
+	pr_set_t   *src_obj = &P_STRUCT (pr, pr_set_t, 2);
 
 	PR_RESET_PARAMS (pr);
 	P_INT (pr, 0) = dst_obj->set;
@@ -540,8 +540,8 @@ bi_i_Set__assign_ (progs_t *pr)
 static void
 bi_i_Set__empty (progs_t *pr)
 {
-	pointer_t    set_ptr = P_POINTER (pr, 0);
-	pr_set_t    *set_obj = &G_STRUCT (pr, pr_set_t, set_ptr);
+	pr_ptr_t    set_ptr = P_POINTER (pr, 0);
+	pr_set_t   *set_obj = &G_STRUCT (pr, pr_set_t, set_ptr);
 
 	PR_RESET_PARAMS (pr);
 	P_INT (pr, 0) = set_obj->set;
@@ -552,8 +552,8 @@ bi_i_Set__empty (progs_t *pr)
 static void
 bi_i_Set__everything (progs_t *pr)
 {
-	pointer_t    set_ptr = P_POINTER (pr, 0);
-	pr_set_t    *set_obj = &G_STRUCT (pr, pr_set_t, set_ptr);
+	pr_ptr_t    set_ptr = P_POINTER (pr, 0);
+	pr_set_t   *set_obj = &G_STRUCT (pr, pr_set_t, set_ptr);
 
 	PR_RESET_PARAMS (pr);
 	P_INT (pr, 0) = set_obj->set;

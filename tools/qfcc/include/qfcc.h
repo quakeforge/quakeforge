@@ -45,7 +45,7 @@
 typedef struct srcline_s srcline_t;
 struct srcline_s {
 	srcline_t  *next;
-	string_t    source_file;
+	pr_string_t source_file;
 	int         source_line;
 };
 
@@ -79,7 +79,7 @@ typedef struct pr_info_s {
 	struct symtab_s *entity_fields;
 
 	srcline_t      *srcline_stack;
-	string_t        source_file;
+	pr_string_t     source_file;
 	int             source_line;
 	int             error_count;
 

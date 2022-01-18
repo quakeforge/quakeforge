@@ -239,7 +239,7 @@ spawn_progs (qwaq_thread_t *thread)
 {
 	dfunction_t *dfunc;
 	const char *name = 0;
-	string_t   *pr_argv;
+	pr_string_t *pr_argv;
 	int         pr_argc = 1, i;
 	progs_t    *pr;
 

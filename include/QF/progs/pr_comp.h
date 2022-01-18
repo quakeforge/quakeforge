@@ -33,9 +33,7 @@ typedef int64_t pr_long_t;
 typedef uint64_t pr_ulong_t;
 typedef pr_uint_t func_t;
 typedef pr_int_t pr_string_t;
-typedef pr_string_t string_t;//FIXME
-typedef pr_uint_t pr_pointer_t;
-typedef pr_pointer_t pointer_t;//FIXME
+typedef pr_uint_t pr_ptr_t;
 
 #define PR_VEC_TYPE(t,n,s) \
 	typedef t n __attribute__ ((vector_size (s*sizeof (t))))
@@ -489,25 +487,25 @@ typedef struct ddef_s {
 	pr_ushort_t type;			// if DEF_SAVEGLOBAL bit is set
 								// the variable needs to be saved in savegames
 	pr_ushort_t ofs;
-	string_t    name;
+	pr_string_t name;
 } ddef_t;
 
 typedef struct xdef_s {
-	pointer_t   type;			///< pointer to type definition
-	pointer_t   ofs;			///< 32-bit version of ddef_t.ofs
+	pr_ptr_t    type;			///< pointer to type definition
+	pr_ptr_t    ofs;			///< 32-bit version of ddef_t.ofs
 } xdef_t;
 
 typedef struct pr_xdefs_s {
-	pointer_t   xdefs;
+	pr_ptr_t    xdefs;
 	pr_int_t    num_xdefs;
 } pr_xdefs_t;
 
 typedef struct pr_def_s {
 	pr_ushort_t type;
 	pr_ushort_t size;			///< may not be correct
-	pointer_t   ofs;
-	string_t    name;
-	pointer_t   type_encoding;
+	pr_ptr_t    ofs;
+	pr_string_t name;
+	pr_ptr_t    type_encoding;
 } pr_def_t;
 
 typedef struct dparmsize_s {
@@ -526,8 +524,8 @@ typedef struct dfunction_s {
 
 	pr_uint_t   profile;			// runtime
 
-	string_t    name;				// source function name
-	string_t    file;				// source file defined in
+	pr_string_t name;				// source function name
+	pr_string_t file;				// source file defined in
 
 	pr_int_t    numparms;			// -ve is varargs (1s comp of real count)
 	dparmsize_t parm_size[MAX_PARMS];
@@ -535,19 +533,19 @@ typedef struct dfunction_s {
 
 typedef union pr_type_u {
 	float       float_var;
-	string_t    string_var;
+	pr_string_t string_var;
 	func_t      func_var;
 	pr_uint_t   entity_var;
 	float       vector_var;	// really [3], but this structure must be 32 bits
 	float       quat_var;	// really [4], but this structure must be 32 bits
 	pr_int_t    integer_var;
-	pointer_t   pointer_var;
+	pr_ptr_t    pointer_var;
 	pr_uint_t   uinteger_var;
 } pr_type_t;
 
 typedef struct pr_va_list_s {
 	pr_int_t    count;
-	pointer_t   list;			// pr_type_t
+	pr_ptr_t    list;			// pr_type_t
 } pr_va_list_t;
 
 #define PROG_VERSION_ENCODE(a,b,c)	\

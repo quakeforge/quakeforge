@@ -81,7 +81,7 @@ typedef struct eb_color_s {
 
 typedef struct qwaq_editbuffer_s {
 	pr_id_t     isa;
-	pointer_t   buffer;
+	pr_ptr_t    buffer;
 } qwaq_editbuffer_t;
 
 #endif//!__QFCC__

@@ -46,7 +46,7 @@
 
 typedef struct {
 	script_t    script;
-	string_t    dstr;
+	pr_string_t dstr;
 	progs_t    *pr;
 } rua_script_t;
 

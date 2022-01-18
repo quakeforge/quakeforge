@@ -98,7 +98,7 @@ typedef struct def_s {
 	unsigned    system:1;		///< system def
 	unsigned    nosave:1;		///< don't set DEF_SAVEGLOBAL
 
-	string_t    file;			///< declaring/defining source file
+	pr_string_t file;			///< declaring/defining source file
 	int         line;			///< declaring/defining source line
 
 	int         qfo_def;		///< index to def in qfo defs

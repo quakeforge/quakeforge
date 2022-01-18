@@ -53,7 +53,7 @@ typedef struct bi_hashtab_s {
 	func_t      gh;
 	func_t      cmp;
 	func_t      f;
-	pointer_t   ud;
+	pr_ptr_t    ud;
 } bi_hashtab_t;
 
 typedef struct {

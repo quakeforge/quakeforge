@@ -52,7 +52,7 @@ typedef struct {
 	const char *source_file;
 	pr_uint_t   source_line;
 	pr_int_t    first_statement;
-	pointer_t   return_type;
+	pr_ptr_t    return_type;
 	pr_uint_t   local_defs;
 	pr_uint_t   num_locals;
 	pr_uint_t   line_info;

@@ -60,7 +60,7 @@
 typedef struct {
 	def_t      *def;
 	union {
-		string_t    string_val;
+		pr_string_t string_val;
 		float       float_val;
 		float       vector_val[3];
 		int         entity_val;

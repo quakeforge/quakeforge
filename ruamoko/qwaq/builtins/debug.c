@@ -204,7 +204,7 @@ static void
 qdb_set_trace (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
-	pointer_t   handle = P_INT (pr, 0);
+	pr_ptr_t    handle = P_INT (pr, 0);
 	int         state = P_INT (pr, 1);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
@@ -216,7 +216,7 @@ static void
 qdb_set_breakpoint (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
-	pointer_t   handle = P_INT (pr, 0);
+	pr_ptr_t    handle = P_INT (pr, 0);
 	unsigned    staddr = P_INT (pr, 1);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
@@ -234,7 +234,7 @@ static void
 qdb_clear_breakpoint (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
-	pointer_t   handle = P_INT (pr, 0);
+	pr_ptr_t    handle = P_INT (pr, 0);
 	unsigned    staddr = P_UINT (pr, 1);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
@@ -251,8 +251,8 @@ static void
 qdb_set_watchpoint (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
-	pointer_t   handle = P_INT (pr, 0);
-	pointer_t   offset = P_UINT (pr, 1);
+	pr_ptr_t    handle = P_INT (pr, 0);
+	pr_ptr_t    offset = P_UINT (pr, 1);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
 
@@ -268,7 +268,7 @@ static void
 qdb_clear_watchpoint (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
-	pointer_t   handle = P_INT (pr, 0);
+	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
 
@@ -280,7 +280,7 @@ static void
 qdb_continue (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
-	pointer_t   handle = P_INT (pr, 0);
+	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 
 	pthread_mutex_lock (&target->run_cond.mut);
@@ -293,12 +293,12 @@ static void
 qdb_get_state (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
-	pointer_t   handle = P_INT (pr, 0);
+	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
 	pr_lineno_t *lineno;
 	pr_auxfunction_t *f;
-	string_t    file = 0;
+	pr_string_t file = 0;
 	unsigned    line = 0;
 	unsigned    staddr = tpr->pr_xstatement;
 	func_t      func = 0;
@@ -331,7 +331,7 @@ static void
 qdb_get_stack_depth (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
-	pointer_t   handle = P_INT (pr, 0);
+	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
 
@@ -342,7 +342,7 @@ static void
 qdb_get_stack (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
-	pointer_t   handle = P_INT (pr, 0);
+	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
 	int         count = tpr->pr_depth;
@@ -350,7 +350,7 @@ qdb_get_stack (progs_t *pr)
 	R_POINTER (pr) = 0;
 	if (count > 0) {
 		size_t      size = count * sizeof (qdb_stack_t);
-		string_t    stack_block = PR_AllocTempBlock (pr, size);
+		pr_string_t stack_block = PR_AllocTempBlock (pr, size);
 		__auto_type stack = (qdb_stack_t *) PR_GetString (pr, stack_block);
 
 		for (int i = 0; i < count; i++) {
@@ -366,7 +366,7 @@ static void
 qdb_get_event (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
-	pointer_t   handle = P_INT (pr, 0);
+	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	__auto_type event = &P_STRUCT (pr, qdb_event_t, 1);
 
@@ -400,12 +400,12 @@ static void
 qdb_get_data (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
-	pointer_t   handle = P_INT (pr, 0);
+	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
-	pointer_t   srcoff = P_POINTER (pr, 1);
+	pr_ptr_t    srcoff = P_POINTER (pr, 1);
 	unsigned    length = P_UINT (pr, 2);
-	pointer_t   dstoff = P_POINTER(pr, 3);
+	pr_ptr_t    dstoff = P_POINTER(pr, 3);
 
 	pr_type_t  *src = PR_GetPointer(tpr, srcoff);
 	pr_type_t  *dst = PR_GetPointer(pr, dstoff);
@@ -426,10 +426,10 @@ static void
 qdb_get_string (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
-	pointer_t   handle = P_INT (pr, 0);
+	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
-	string_t    string = P_STRING (pr, 1);
+	pr_string_t string = P_STRING (pr, 1);
 
 	R_STRING (pr) = 0;
 	if (PR_StringValid (tpr, string)) {
@@ -441,7 +441,7 @@ static void
 qdb_get_file_path (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
-	pointer_t   handle = P_INT (pr, 0);
+	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
 	const char *file = P_GSTRING (pr, 1);
@@ -466,7 +466,7 @@ static void
 qdb_find_string (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
-	pointer_t   handle = P_INT (pr, 0);
+	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
 	const char *str = P_GSTRING (pr, 1);
@@ -478,7 +478,7 @@ static void
 qdb_find_global (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
-	pointer_t   handle = P_INT (pr, 0);
+	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
 	const char *name = P_GSTRING (pr, 1);
@@ -498,7 +498,7 @@ static void
 qdb_find_field (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
-	pointer_t   handle = P_INT (pr, 0);
+	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
 	const char *name = P_GSTRING (pr, 1);
@@ -536,7 +536,7 @@ static void
 qdb_find_function (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
-	pointer_t   handle = P_INT (pr, 0);
+	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
 	const char *name = P_GSTRING (pr, 1);
@@ -549,7 +549,7 @@ static void
 qdb_get_function (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
-	pointer_t   handle = P_INT (pr, 0);
+	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
 	pr_uint_t   fnum = P_INT (pr, 1);
@@ -583,7 +583,7 @@ static void
 qdb_find_auxfunction (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
-	pointer_t   handle = P_INT (pr, 0);
+	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
 	const char *name = P_GSTRING (pr, 1);
@@ -601,7 +601,7 @@ static void
 qdb_get_auxfunction (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
-	pointer_t   handle = P_INT (pr, 0);
+	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
 	pr_uint_t   fnum = P_UINT (pr, 1);
@@ -614,7 +614,7 @@ static void
 qdb_get_local_defs (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
-	pointer_t   handle = P_INT (pr, 0);
+	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
 	pr_uint_t   fnum = P_UINT (pr, 1);
@@ -640,7 +640,7 @@ static void
 qdb_get_source_line_addr (progs_t *pr)
 {
 	__auto_type debug = PR_Resources_Find (pr, "qwaq-debug");
-	pointer_t   handle = P_INT (pr, 0);
+	pr_ptr_t    handle = P_INT (pr, 0);
 	qwaq_target_t *target = get_target (debug, __FUNCTION__, handle);
 	progs_t    *tpr = target->pr;
 	const char *file = P_GSTRING (pr, 1);

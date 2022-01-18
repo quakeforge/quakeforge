@@ -408,7 +408,7 @@ switch_expr (switch_block_t *switch_block, expr_t *break_label,
 	expr_t     *default_expr;
 	int         num_labels = 0;
 	int         saved_line = pr.source_line;
-	string_t    saved_file = pr.source_file;
+	pr_string_t saved_file = pr.source_file;
 
 	pr.source_line = sw_val->line = switch_block->test->line;
 	pr.source_file = sw_val->file = switch_block->test->file;

@@ -213,7 +213,7 @@ bi_Qreadstring (progs_t *pr)
 	int         handle = P_INT (pr, 0);
 	int         len = P_INT (pr, 1);
 	qfile_t    *h = get_handle (pr, __FUNCTION__, handle);
-	string_t    str = PR_NewMutableString (pr);
+	pr_string_t str = PR_NewMutableString (pr);
 	dstring_t  *dstr = PR_GetMutableString (pr, str);
 
 	dstr->size = len + 1;

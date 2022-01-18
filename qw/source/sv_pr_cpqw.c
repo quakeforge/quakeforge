@@ -446,7 +446,7 @@ PF_putsaytime (progs_t *pr)
 static void
 PF_makestr (progs_t *pr)
 {
-	string_t    res = PR_NewMutableString (pr);
+	pr_string_t res = PR_NewMutableString (pr);
 	dstring_t  *dst = PR_GetMutableString (pr, res);
     const char *src = P_GSTRING (pr, 0);
 

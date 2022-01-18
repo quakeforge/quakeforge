@@ -97,16 +97,16 @@ typedef struct qfo_space_s {
 /** Representation of a def in the object file.
 */
 typedef struct qfo_def_s {
-	pointer_t   type;			///< offset in type space
-	string_t    name;			///< def name
-	pointer_t   offset;			///< def offset (address)
+	pr_ptr_t    type;			///< offset in type space
+	pr_string_t name;			///< def name
+	pr_ptr_t    offset;			///< def offset (address)
 
 	pr_uint_t   relocs;			///< index of first reloc record
 	pr_uint_t   num_relocs;		///< number of reloc records
 
 	pr_uint_t   flags;			///< \ref qfcc_qfo_QFOD "QFOD flags"
 
-	string_t    file;			///< source file name
+	pr_string_t file;			///< source file name
 	pr_uint_t   line;			///< source line number
 } qfo_def_t;
 ///@}
@@ -180,9 +180,9 @@ typedef struct qfo_def_s {
 /** Representation of a function in the object file.
 */
 typedef struct qfo_func_s {
-	string_t    name;			///< function name
-	pointer_t   type;			///< function type (in type data space)
-	string_t    file;			///< source file name
+	pr_string_t name;			///< function name
+	pr_ptr_t    type;			///< function type (in type data space)
+	pr_string_t file;			///< source file name
 	pr_uint_t   line;			///< source line number
 
 	/** \name Function code location.
@@ -367,7 +367,7 @@ enum {
 	\param q pointer to ::qfo_t struct
 	\param s space index
 	\param o offset into object file data space
-	\return string_t lvalue
+	\return pr_string_t lvalue
 
 	\hideinitializer
 */

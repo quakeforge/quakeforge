@@ -276,7 +276,7 @@ emit_static_instances_list (void)
 	type_t     *instance_lists_type;
 	symbol_t   *instance_lists_sym;
 	def_t      *instance_lists_def;
-	pointer_t  *list;
+	pr_ptr_t   *list;
 	defspace_t *space;
 
 	if (!static_instance_classes || !static_instances) {
@@ -309,7 +309,7 @@ emit_static_instances_list (void)
 	instance_lists_def->initialized = instance_lists_def->constant = 1;
 	instance_lists_def->nosave = 1;
 
-	list = D_POINTER (pointer_t, instance_lists_def);
+	list = D_POINTER (pr_ptr_t, instance_lists_def);
 	space = instance_lists_def->space;
 	for (int i = 0; i < num_classes; i++, list++) {
 		EMIT_DEF (space, *list, instance_lists[i]);

@@ -47,7 +47,7 @@ typedef struct rua_in_cookie_s {
 	size_t      users;
 	progs_t    *pr;
 	func_t      func;
-	pointer_t   data;
+	pr_ptr_t    data;
 } rua_in_cookie_t;
 
 typedef struct input_resources_s {
@@ -193,7 +193,7 @@ bi_IN_GetButtonInfo (progs_t *pr)
 }
 
 static rua_in_cookie_t *
-make_cookie (progs_t *pr, func_t func, pointer_t data)
+make_cookie (progs_t *pr, func_t func, pr_ptr_t data)
 {
 	input_resources_t *res = PR_Resources_Find (pr, "input");
 	rua_in_cookie_t search = {
@@ -212,7 +212,7 @@ make_cookie (progs_t *pr, func_t func, pointer_t data)
 }
 
 static rua_in_cookie_t *
-find_cookie (progs_t *pr, func_t func, pointer_t data)
+find_cookie (progs_t *pr, func_t func, pr_ptr_t data)
 {
 	input_resources_t *res = PR_Resources_Find (pr, "input");
 	rua_in_cookie_t search = {

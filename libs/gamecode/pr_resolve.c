@@ -44,7 +44,7 @@
 static const char param_str[] = ".param_0";
 
 pr_def_t *
-PR_SearchDefs (pr_def_t *defs, unsigned num_defs, pointer_t offset)
+PR_SearchDefs (pr_def_t *defs, unsigned num_defs, pr_ptr_t offset)
 {
 	// fuzzy bsearh
 	unsigned    left = 0;
@@ -69,13 +69,13 @@ PR_SearchDefs (pr_def_t *defs, unsigned num_defs, pointer_t offset)
 }
 
 pr_def_t *
-PR_GlobalAtOfs (progs_t * pr, pointer_t ofs)
+PR_GlobalAtOfs (progs_t * pr, pr_ptr_t ofs)
 {
 	return PR_SearchDefs (pr->pr_globaldefs, pr->progs->numglobaldefs, ofs);
 }
 
 VISIBLE pr_def_t *
-PR_FieldAtOfs (progs_t * pr, pointer_t ofs)
+PR_FieldAtOfs (progs_t * pr, pr_ptr_t ofs)
 {
 	return PR_SearchDefs (pr->pr_fielddefs, pr->progs->numfielddefs, ofs);
 }

@@ -261,7 +261,7 @@ main (int argc, char **argv)
 	dfunction_t *dfunc;
 	func_t      main_func = 0;
 	const char *name = "progs.dat";
-	string_t   *pr_argv;
+	pr_string_t *pr_argv;
 	int         pr_argc = 1, i;
 
 	i = parse_options (argc, argv);

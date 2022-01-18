@@ -557,7 +557,7 @@ PR_DebugSetSym (progs_t *pr, pr_debug_header_t *debug)
 	}
 
 	qfot_type_encodings_t *encodings = 0;
-	pointer_t   type_encodings = 0;
+	pr_ptr_t    type_encodings = 0;
 	res->type_encodings_def = PR_FindGlobal (pr, ".type_encodings");
 	if (res->type_encodings_def) {
 		encodings = &G_STRUCT (pr, qfot_type_encodings_t,
@@ -581,7 +581,7 @@ PR_DebugSetSym (progs_t *pr, pr_debug_header_t *debug)
 		}
 	}
 
-	string_t    compunit_str = PR_FindString (pr, ".compile_unit");
+	pr_string_t compunit_str = PR_FindString (pr, ".compile_unit");
 	for (pr_uint_t i = 0; i < debug->num_debug_defs; i++) {
 		pr_def_t   *def = &res->debug_defs[i];
 		if (type_encodings) {
@@ -595,7 +595,7 @@ PR_DebugSetSym (progs_t *pr, pr_debug_header_t *debug)
 
 	if (encodings) {
 		qfot_type_t *type;
-		for (pointer_t type_ptr = 4; type_ptr < encodings->size;
+		for (pr_ptr_t type_ptr = 4; type_ptr < encodings->size;
 			 type_ptr += type->size) {
 			type = &G_STRUCT (pr, qfot_type_t, type_encodings + type_ptr);
 			if (type->meta == ty_basic
@@ -968,12 +968,12 @@ get_type (prdeb_resources_t *res, int typeptr)
 }
 
 pr_def_t *
-PR_Get_Local_Def (progs_t *pr, pointer_t *offset)
+PR_Get_Local_Def (progs_t *pr, pr_ptr_t *offset)
 {
 	prdeb_resources_t *res = pr->pr_debug_resources;
 	dfunction_t *func;
 	pr_auxfunction_t *aux_func;
-	pointer_t   offs = *offset;
+	pr_ptr_t    offs = *offset;
 	pr_def_t   *def;
 
 	if (!pr->pr_xfunction)
@@ -1102,7 +1102,7 @@ value_string (pr_debug_data_t *data, qfot_type_t *type, pr_type_t *value)
 }
 
 static pr_def_t *
-pr_debug_find_def (progs_t *pr, pointer_t *ofs)
+pr_debug_find_def (progs_t *pr, pr_ptr_t *ofs)
 {
 	prdeb_resources_t *res = pr->pr_debug_resources;
 	pr_def_t   *def = 0;
@@ -1123,7 +1123,7 @@ pr_debug_find_def (progs_t *pr, pointer_t *ofs)
 }
 
 static const char *
-global_string (pr_debug_data_t *data, pointer_t offset, qfot_type_t *type,
+global_string (pr_debug_data_t *data, pr_ptr_t offset, qfot_type_t *type,
 			   int contents)
 {
 	progs_t    *pr = data->pr;
@@ -1132,7 +1132,7 @@ global_string (pr_debug_data_t *data, pointer_t offset, qfot_type_t *type,
 	pr_def_t   *def = NULL;
 	qfot_type_t dummy_type = { };
 	const char *name = 0;
-	pointer_t   offs = offset;
+	pr_ptr_t    offs = offset;
 
 	dstring_clearstr (dstr);
 
@@ -1198,7 +1198,7 @@ pr_debug_string_view (qfot_type_t *type, pr_type_t *value, void *_data)
 {
 	__auto_type data = (pr_debug_data_t *) _data;
 	dstring_t  *dstr = data->dstr;
-	string_t    string = value->string_var;
+	pr_string_t string = value->string_var;
 	if (PR_StringValid (data->pr, string)) {
 		const char *str = PR_GetString (data->pr, string);
 
@@ -1316,8 +1316,8 @@ pr_debug_pointer_view (qfot_type_t *type, pr_type_t *value, void *_data)
 	__auto_type data = (pr_debug_data_t *) _data;
 	progs_t    *pr = data->pr;
 	dstring_t  *dstr = data->dstr;
-	pointer_t   offset = value->integer_var;
-	pointer_t   offs = offset;
+	pr_ptr_t    offset = value->integer_var;
+	pr_ptr_t    offs = offset;
 	pr_def_t   *def = 0;
 
 	def = pr_debug_find_def (pr, &offs);
