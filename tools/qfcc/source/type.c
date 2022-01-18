@@ -1210,7 +1210,7 @@ init_types (void)
 	};
 	static struct_def_t type_encoding_struct[] = {
 		{"types",	&type_pointer},
-		{"size",	&type_int},
+		{"size",	&type_uint},
 		{0, 0}
 	};
 	static struct_def_t xdef_struct[] = {
@@ -1220,7 +1220,7 @@ init_types (void)
 	};
 	static struct_def_t xdefs_struct[] = {
 		{"xdefs",	&type_xdef_pointer},
-		{"num_xdefs", &type_pointer},
+		{"num_xdefs", &type_uint},
 		{0, 0}
 	};
 	static struct_def_t va_list_struct[] = {
