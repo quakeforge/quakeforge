@@ -198,6 +198,7 @@ include_qf_vulkan = \
 
 # headers shared with ruamoko
 qfcc_include_qf = include/QF/input.h
+qfcc_include_qf_progs =	include/QF/progs/pr_type_names.h
 qfcc_include_qf_input = \
 	include/QF/input/binding.h \
 	include/QF/input/imt.h
@@ -225,8 +226,10 @@ qf_vulkan_include_HEADERS = @qfac_include_qf_vulkan@
 
 ruamoko_qf_includedir = $(ruamoko_includedir)/QF
 ruamoko_qf_input_includedir = $(ruamoko_includedir)/QF/input
+ruamoko_qf_progs_includedir = $(ruamoko_includedir)/QF/progs
 ruamoko_qf_include_HEADERS = @qfac_qfcc_include_qf@
 ruamoko_qf_input_include_HEADERS = @qfac_qfcc_include_qf_input@
+ruamoko_qf_progs_include_HEADERS = @qfac_qfcc_include_qf_progs@
 
 EXTRA_HEADERS += \
 	$(include_qf) \
