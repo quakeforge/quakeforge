@@ -135,7 +135,8 @@ include_qf_progs = \
 	include/QF/pr_comp.h \
 	include/QF/pr_debug.h \
 	include/QF/pr_obj.h \
-	include/QF/pr_type.h
+	include/QF/pr_type.h \
+	include/QF/pr_type_names.h
 
 include_qf_scene = \
 	include/QF/scene/entity.h \
