@@ -327,7 +327,7 @@ default_type (specifier_t spec, symbol_t *sym)
 		} else {
 			if (spec.is_unsigned) {
 				spec.type = &type_uint;
-			} else if (spec.is_signed) {
+			} else if (spec.is_signed || spec.is_short) {
 				spec.type = &type_int;
 			}
 		}
