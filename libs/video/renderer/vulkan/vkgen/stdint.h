@@ -7,5 +7,4 @@ typedef int int16_t;
 typedef int int32_t;
 typedef int int64_t;
 typedef int size_t;
-typedef int long;
 typedef int char;

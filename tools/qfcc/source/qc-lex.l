@@ -377,7 +377,10 @@ static keyword_t qf_keywords[] = {
 	{"quaternion",	TYPE,	&type_quaternion},
 	{"double",		TYPE,	&type_double},
 	{"int",			TYPE,	&type_int	},
-	{"unsigned",	TYPE,	&type_int	},//FIXME
+	{"unsigned",	UNSIGNED,	0	},
+	{"signed",		SIGNED,	0	},
+	{"long",		LONG,	0	},
+	{"short",		SHORT,	0	},
 
 	{"@function",	TYPE,	&type_func	},
 	{"@args",		ARGS,	0				},

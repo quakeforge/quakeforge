@@ -76,6 +76,8 @@ type_t      type_invalid = { ev_invalid, "invalid" };
 
 type_t     *type_nil;
 type_t     *type_default;
+type_t     *type_long_int;
+type_t     *type_ulong_uint;
 
 // these will be built up further
 type_t      type_va_list = { ev_invalid, 0, 0, ty_struct };
@@ -1118,6 +1120,14 @@ init_types (void)
 
 	type_nil = &type_quaternion;
 	type_default = &type_int;
+	type_long_int = &type_long;
+	type_ulong_uint = &type_ulong;
+	if (options.code.progsversion < PROG_VERSION) {
+		// even v6p doesn't support long, and I don't feel like adding it
+		// use ruamoko :P
+		type_long_int = &type_int;
+		type_ulong_uint = &type_uint;
+	}
 	if (options.code.progsversion == PROG_ID_VERSION) {
 		// vector can't be part of .zero for v6 progs because for v6 progs,
 		// .zero is only one word wide.

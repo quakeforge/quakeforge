@@ -148,6 +148,7 @@ int yylex (void);
 %token				LOCAL RETURN WHILE DO IF ELSE FOR BREAK CONTINUE ELLIPSIS
 %token				NIL GOTO SWITCH CASE DEFAULT ENUM
 %token				ARGS TYPEDEF EXTERN STATIC SYSTEM NOSAVE OVERLOAD NOT
+%token				UNSIGNED SIGNED LONG SHORT
 %token	<op>		STRUCT
 %token	<type>		TYPE
 %token	<symbol>	OBJECT TYPE_NAME
@@ -253,6 +254,23 @@ spec_merge (specifier_t spec, specifier_t new)
 		spec.storage = new.storage;
 		spec.is_typedef = new.is_typedef;
 	}
+	if ((new.is_unsigned && spec.is_signed)
+		|| (new.is_signed && spec.is_unsigned)) {
+		if (!spec.multi_type) {
+			error (0, "both signed and unsigned in declaration specifiers");
+			spec.multi_type = 1;
+		}
+	}
+	if ((new.is_long && spec.is_short) || (new.is_short && spec.is_long)) {
+		if (!spec.multi_store) {
+			error (0, "both long and short in declaration specifiers");
+			spec.multi_store = 1;
+		}
+	}
+	spec.is_signed |= new.is_signed;
+	spec.is_unsigned |= new.is_unsigned;
+	spec.is_short |= new.is_short;
+	spec.is_long |= new.is_long;
 	spec.is_overload |= new.is_overload;
 	spec.nosave |= new.nosave;
 	return spec;
@@ -261,6 +279,59 @@ spec_merge (specifier_t spec, specifier_t new)
 static specifier_t
 default_type (specifier_t spec, symbol_t *sym)
 {
+	if (spec.type) {
+		if (is_float (spec.type) && !spec.multi_type) {
+			// no modifieres allowed
+			if (spec.is_unsigned) {
+				spec.multi_type = 1;
+				error (0, "both unsigned and float in declaration specifiers");
+			} else if (spec.is_signed) {
+				spec.multi_type = 1;
+				error (0, "both signed and float in declaration specifiers");
+			} else if (spec.is_short) {
+				spec.multi_type = 1;
+				error (0, "both short and float in declaration specifiers");
+			} else if (spec.is_long) {
+				spec.multi_type = 1;
+				error (0, "both long and float in declaration specifiers");
+			}
+		}
+		if (is_double (spec.type)) {
+			// long is allowed but ignored
+			if (spec.is_unsigned) {
+				spec.multi_type = 1;
+				error (0, "both unsigned and double in declaration specifiers");
+			} else if (spec.is_signed) {
+				spec.multi_type = 1;
+				error (0, "both signed and double in declaration specifiers");
+			} else if (spec.is_short) {
+				spec.multi_type = 1;
+				error (0, "both short and double in declaration specifiers");
+			}
+		}
+		if (is_int (spec.type)) {
+			// signed and short are ignored
+			if (spec.is_unsigned && spec.is_long) {
+				spec.type = &type_ulong;
+			} else if (spec.is_long) {
+				spec.type = &type_long;
+			}
+		}
+	} else {
+		if (spec.is_long) {
+			if (spec.is_unsigned) {
+				spec.type = type_ulong_uint;
+			} else {
+				spec.type = type_long_int;
+			}
+		} else {
+			if (spec.is_unsigned) {
+				spec.type = &type_uint;
+			} else if (spec.is_signed) {
+				spec.type = &type_int;
+			}
+		}
+	}
 	if (!spec.type) {
 		spec.type = type_default;
 		warning (0, "type defaults to '%s' in declaration of '%s'",
@@ -414,11 +485,10 @@ function_body
 	: optional_state_expr
 		{
 			symbol_t   *sym = $<symbol>0;
+			specifier_t spec = default_type ($<spec>-1, sym);
 
-			if (!$<spec>-1.type)
-				$<spec>-1.type = type_default;
-			sym->type = find_type (append_type (sym->type, $<spec>-1.type));
-			$<symbol>$ = function_symbol (sym, $<spec>-1.is_overload, 1);
+			sym->type = find_type (append_type (sym->type, spec.type));
+			$<symbol>$ = function_symbol (sym, spec.is_overload, 1);
 		}
 	  save_storage
 		{
@@ -438,12 +508,11 @@ function_body
 	| '=' '#' expr ';'
 		{
 			symbol_t   *sym = $<symbol>0;
+			specifier_t spec = default_type ($<spec>-1, sym);
 
-			if (!$<spec>-1.type)
-				$<spec>-1.type = type_default;
-			sym->type = find_type (append_type (sym->type, $<spec>-1.type));
-			sym = function_symbol (sym, $<spec>-1.is_overload, 1);
-			build_builtin_function (sym, $3, 0, $<spec>-1.storage);
+			sym->type = find_type (append_type (sym->type, spec.type));
+			sym = function_symbol (sym, spec.is_overload, 1);
+			build_builtin_function (sym, $3, 0, spec.storage);
 		}
 	;
 
@@ -555,6 +624,26 @@ type_specifier
 	: TYPE
 		{
 			$$ = make_spec ($1, 0, 0, 0);
+		}
+	| UNSIGNED
+		{
+			$$ = make_spec (0, current_storage, 0, 0);
+			$$.is_unsigned = 1;
+		}
+	| SIGNED
+		{
+			$$ = make_spec (0, current_storage, 0, 0);
+			$$.is_signed = 1;
+		}
+	| LONG
+		{
+			$$ = make_spec (0, current_storage, 0, 0);
+			$$.is_long = 1;
+		}
+	| SHORT
+		{
+			$$ = make_spec (0, current_storage, 0, 0);
+			$$.is_short = 1;
 		}
 	| enum_specifier
 	| struct_specifier
@@ -768,8 +857,7 @@ struct_decl_list
 struct_decl
 	: function_decl
 		{
-			if (!$<spec>0.type)
-				$<spec>0.type = type_default;
+			$<spec>0 = default_type ($<spec>-0, $1);
 			$1->type = find_type (append_type ($1->type, $<spec>0.type));
 			$1->sy_type = sy_var;
 			$1->visibility = current_visibility;
@@ -780,8 +868,7 @@ struct_decl
 		}
 	| var_decl
 		{
-			if (!$<spec>0.type)
-				$<spec>0.type = type_default;
+			$<spec>0 = default_type ($<spec>-0, $1);
 			$1->type = find_type (append_type ($1->type, $<spec>0.type));
 			$1->sy_type = sy_var;
 			$1->visibility = current_visibility;
@@ -900,8 +987,7 @@ qc_var_list
 param_declaration
 	: type var_decl
 		{
-			if (!$1.type)
-				$1.type = type_default;
+			$1 = default_type ($1, $2);
 			$2->type = find_type (append_type ($2->type, $1.type));
 			$$ = new_param (0, $2->type, $2->name);
 		}
@@ -913,8 +999,7 @@ abstract_decl
 	: type abs_decl
 		{
 			$$ = $2;
-			if (!$1.type)
-				$1.type = type_default;
+			$1 = default_type ($1, $2);
 			$$->type = find_type (append_type ($$->type, $1.type));
 		}
 	| error		{ $$ = new_symbol (""); }

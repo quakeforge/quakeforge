@@ -47,8 +47,38 @@
 #include "tools/qfcc/include/statements.h"
 #include "tools/qfcc/include/type.h"
 
+typedef struct v6p_uint_opcode_s {
+	pr_opcode_v6p_e op;
+	v6p_opcode_t opcode;
+} v6p_uint_opcode_t;
+
+static v6p_uint_opcode_t v6p_uint_opcodes[] = {
+	{OP_LOAD_I_v6p,    {".", "load.i",    ev_entity, ev_field,   ev_uint }},
+	{OP_LOADBI_I_v6p,  {".", "loadbi.i",  ev_ptr,    ev_short,   ev_uint }},
+	{OP_ADDRESS_I_v6p, {"&", "address.i", ev_uint,   ev_invalid, ev_ptr }},
+	{OP_STORE_I_v6p,   {"=",  "store.i",   ev_uint, ev_uint, ev_invalid }},
+	{OP_STOREP_I_v6p,  {".=", "storep.i",  ev_uint, ev_ptr, ev_invalid }},
+	{OP_STOREB_I_v6p,  {".=", "storeb.i",  ev_uint, ev_ptr, ev_int }},
+	{OP_STOREBI_I_v6p, {".=", "storebi.i", ev_uint, ev_ptr, ev_short }},
+	{OP_IF_v6p,        {"<IF>",    "if",    ev_uint, ev_short, ev_invalid }},
+	{OP_IFNOT_v6p,     {"<IFNOT>", "ifnot", ev_uint, ev_short, ev_invalid }},
+	{OP_ADD_I_v6p,     {"+",  "add.i",    ev_uint, ev_uint, ev_uint }},
+	{OP_SUB_I_v6p,     {"-",  "sub.i",    ev_uint, ev_uint, ev_uint }},
+	{OP_MUL_I_v6p,     {"*",  "mul.i",    ev_uint, ev_uint, ev_uint }},
+	{OP_DIV_I_v6p,     {"/",  "div.i",    ev_uint, ev_uint, ev_uint }},
+	{OP_BITAND_I_v6p,  {"&",  "bitand.i", ev_uint, ev_uint, ev_uint }},
+	{OP_BITOR_I_v6p,   {"|",  "bitor.i",  ev_uint, ev_uint, ev_uint }},
+	{OP_BITXOR_I_v6p,  {"^",  "bitxor.i", ev_uint, ev_uint, ev_uint }},
+	{OP_REM_I_v6p,     {"%",  "rem.i",    ev_uint, ev_uint, ev_uint }},
+	{OP_MOD_I_v6p,     {"%%", "mod.i",    ev_uint, ev_uint, ev_uint }},
+	{OP_SHL_I_v6p,     {"<<", "shl.i",    ev_uint, ev_uint, ev_uint }},
+	{OP_BITNOT_I_v6p,  {"<<", "bitnot.i", ev_uint, ev_invalid, ev_int }},
+	{}
+};
+
 static hashtab_t  *v6p_opcode_type_table;
 static hashtab_t  *v6p_opcode_void_table;
+static hashtab_t  *v6p_opcode_uint_table;
 static v6p_opcode_t *v6p_opcode_map;
 
 static hashtab_t  *rua_opcode_type_table;
@@ -84,6 +114,21 @@ static const char *
 v6p_get_key (const void *op, void *unused)
 {
 	return ((v6p_opcode_t *) op)->name;
+}
+
+static uintptr_t
+v6p_uint_get_hash (const void *_op, void *_tab)
+{
+	__auto_type uint_op = (v6p_uint_opcode_t *) _op;
+	return v6p_get_hash (&uint_op->opcode, _tab);
+}
+
+static int
+v6p_uint_compare (const void *_opa, const void *_opb, void *data)
+{
+	__auto_type uint_opa = (v6p_uint_opcode_t *) _opa;
+	__auto_type uint_opb = (v6p_uint_opcode_t *) _opb;
+	return v6p_compare (&uint_opa->opcode, &uint_opb->opcode, data);
 }
 
 static uintptr_t
@@ -139,17 +184,25 @@ static v6p_opcode_t *
 v6p_opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 				 operand_t *op_c)
 {
-	v6p_opcode_t search_op = {};
+	v6p_uint_opcode_t search_op = {
+		.opcode = {
+			.name = name,
+			.type_a = op_a ? low_level_type (op_a->type) : ev_invalid,
+			.type_b = op_b ? low_level_type (op_b->type) : ev_invalid,
+			.type_c = op_c ? low_level_type (op_c->type) : ev_invalid,
+		},
+	};
+	v6p_uint_opcode_t *uint_op;
 	v6p_opcode_t *op;
 	v6p_opcode_t *sop;
 	void      **op_list;
 	int         i;
 
-	search_op.name = name;
-	search_op.type_a = op_a ? low_level_type (op_a->type) : ev_invalid;
-	search_op.type_b = op_b ? low_level_type (op_b->type) : ev_invalid;
-	search_op.type_c = op_c ? low_level_type (op_c->type) : ev_invalid;
-	op = Hash_FindElement (v6p_opcode_type_table, &search_op);
+	uint_op = Hash_FindElement (v6p_opcode_uint_table, &search_op);
+	if (uint_op) {
+		return v6p_opcode_map + uint_op->op;
+	}
+	op = Hash_FindElement (v6p_opcode_type_table, &search_op.opcode);
 	if (op)
 		return op;
 	op_list = Hash_FindList (v6p_opcode_void_table, name);
@@ -157,9 +210,9 @@ v6p_opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 		return op;
 	for (i = 0; !op && op_list[i]; i++) {
 		sop = op_list[i];
-		if (check_operand_type (sop->type_a, search_op.type_a)
-			&& check_operand_type (sop->type_b, search_op.type_b)
-			&& check_operand_type (sop->type_c, search_op.type_c))
+		if (check_operand_type (sop->type_a, search_op.opcode.type_a)
+			&& check_operand_type (sop->type_b, search_op.opcode.type_b)
+			&& check_operand_type (sop->type_c, search_op.opcode.type_c))
 			op = sop;
 	}
 	free (op_list);
@@ -217,10 +270,14 @@ v6p_opcode_init (void)
 	if (v6p_opcode_type_table) {
 		Hash_FlushTable (v6p_opcode_void_table);
 		Hash_FlushTable (v6p_opcode_type_table);
+		Hash_FlushTable (v6p_opcode_uint_table);
 	} else {
 		v6p_opcode_type_table = Hash_NewTable (1021, 0, 0, 0, 0);
 		Hash_SetHashCompare (v6p_opcode_type_table, v6p_get_hash, v6p_compare);
 		v6p_opcode_void_table = Hash_NewTable (1021, v6p_get_key, 0, 0, 0);
+		v6p_opcode_uint_table = Hash_NewTable (1021, 0, 0, 0, 0);
+		Hash_SetHashCompare (v6p_opcode_uint_table,
+							 v6p_uint_get_hash, v6p_uint_compare);
 	}
 
 	int         num_opcodes = 0;
@@ -252,6 +309,11 @@ v6p_opcode_init (void)
 		if (mop->type_a == ev_void || mop->type_b == ev_void
 			|| mop->type_c == ev_void)
 			Hash_Add (v6p_opcode_void_table, mop);
+	}
+	if (options.code.progsversion != PROG_ID_VERSION) {
+		for (__auto_type uiop = &v6p_uint_opcodes[0]; uiop->op; uiop++) {
+			Hash_AddElement (v6p_opcode_uint_table, uiop);
+		}
 	}
 }
 

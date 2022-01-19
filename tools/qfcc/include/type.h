@@ -104,6 +104,8 @@ extern	type_t	type_floatfield;
 
 extern	type_t	*type_nil;		// for passing nil into ...
 extern	type_t	*type_default;	// default type (float or int)
+extern	type_t	*type_long_int;	// supported type for long
+extern	type_t	*type_ulong_uint;// supported type for ulong
 
 extern	type_t	type_va_list;
 extern	type_t	type_param;
