@@ -149,26 +149,17 @@ void dump_dot_type (void *t, const char *filename);
 const char *encode_params (const type_t *type);
 void encode_type (struct dstring_s *encoding, const type_t *type);
 const char *type_get_encoding (const type_t *type);
-int is_void (const type_t *type) __attribute__((pure));
+
+#define EV_TYPE(t) int is_##t (const type_t *type) __attribute__((pure));
+#include "QF/progs/pr_type_names.h"
+
 int is_enum (const type_t *type) __attribute__((pure));
-int is_int (const type_t *type) __attribute__((pure));
-int is_uint (const type_t *type) __attribute__((pure));
-int is_short (const type_t *type) __attribute__((pure));
 int is_integral (const type_t *type) __attribute__((pure));
-int is_double (const type_t *type) __attribute__((pure));
-int is_float (const type_t *type) __attribute__((pure));
 int is_scalar (const type_t *type) __attribute__((pure));
-int is_vector (const type_t *type) __attribute__((pure));
-int is_quaternion (const type_t *type) __attribute__((pure));
 int is_math (const type_t *type) __attribute__((pure));
-int is_pointer (const type_t *type) __attribute__((pure));
-int is_field (const type_t *type) __attribute__((pure));
-int is_entity (const type_t *type) __attribute__((pure));
 int is_struct (const type_t *type) __attribute__((pure));
 int is_array (const type_t *type) __attribute__((pure));
 int is_structural (const type_t *type) __attribute__((pure));
-int is_func (const type_t *type) __attribute__((pure));
-int is_string (const type_t *type) __attribute__((pure));
 int type_compatible (const type_t *dst, const type_t *src) __attribute__((pure));
 int type_assignable (const type_t *dst, const type_t *src);
 int type_same (const type_t *dst, const type_t *src) __attribute__((pure));

@@ -90,8 +90,7 @@ get_value_def (expr_t *expr, ex_value_t *value, type_t *type)
 		def->offset = value->v.short_val;
 		return def;
 	}
-	if (is_pointer (type) && value->v.pointer.tempop
-		&& !value->v.pointer.def) {
+	if (is_ptr (type) && value->v.pointer.tempop && !value->v.pointer.def) {
 		value->v.pointer.def = get_tempop_def (expr, value->v.pointer.tempop,
 											   type->t.fldptr.type);
 	}

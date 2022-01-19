@@ -391,7 +391,7 @@ is_method_description (const type_t *type)
 static protocollist_t *
 obj_get_class_protos (const type_t *type)
 {
-	if (is_pointer (type))
+	if (is_ptr (type))
 		type = type->t.fldptr.type;
 	if (is_class (type))
 		return type->t.class->protocols;
@@ -401,7 +401,7 @@ obj_get_class_protos (const type_t *type)
 static protocollist_t *
 obj_get_protos (const type_t *type)
 {
-	if (is_pointer (type))
+	if (is_ptr (type))
 		type = type->t.fldptr.type;
 	return type->protos;
 }
@@ -409,7 +409,7 @@ obj_get_protos (const type_t *type)
 static category_t *
 obj_get_categories (const type_t *type)
 {
-	if (is_pointer (type))
+	if (is_ptr (type))
 		type = type->t.fldptr.type;
 	if (is_class (type))
 		return type->t.class->categories;
@@ -430,7 +430,7 @@ obj_classname (const type_t *type)
 	} else if (is_Class (type)) {
 		dstring_copystr (str, "Class");
 	} else {
-		if (is_pointer (type))
+		if (is_ptr (type))
 			type = type->t.fldptr.type;
 		if (is_class (type))
 			dstring_copystr (str, type->t.class->name);
@@ -1738,7 +1738,7 @@ emit_protocol (protocol_t *protocol)
 static void
 emit_protocol_next (def_t *def, void *data, int index)
 {
-	if (!is_pointer(def->type)) {
+	if (!is_ptr(def->type)) {
 		internal_error (0, "%s: expected pointer def", __FUNCTION__);
 	}
 	D_INT (def) = 0;
@@ -1761,7 +1761,7 @@ emit_protocol_list_item (def_t *def, void *data, int index)
 	protocollist_t *protocols = (protocollist_t *) data;
 	protocol_t *protocol = protocols->list[index];
 
-	if (!is_array (def->type) || !is_pointer(def->type->t.array.type)) {
+	if (!is_array (def->type) || !is_ptr(def->type->t.array.type)) {
 		internal_error (0, "%s: expected array of pointer def", __FUNCTION__);
 	}
 	if (index < 0 || index >= protocols->count) {

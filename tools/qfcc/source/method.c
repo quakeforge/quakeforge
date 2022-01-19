@@ -533,7 +533,7 @@ emit_selectors (void)
 static void
 emit_methods_next (def_t *def, void *data, int index)
 {
-	if (!is_pointer(def->type))
+	if (!is_ptr(def->type))
 		internal_error (0, "%s: expected pointer def", __FUNCTION__);
 	D_INT (def) = 0;
 }

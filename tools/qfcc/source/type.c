@@ -554,7 +554,7 @@ unalias_type (const type_t *type)
 const type_t *
 dereference_type (const type_t *type)
 {
-	if (!is_pointer (type) && !is_field (type)) {
+	if (!is_ptr (type) && !is_field (type)) {
 		internal_error (0, "dereference non pointer/field type");
 	}
 	if (type->meta == ty_alias) {
@@ -836,12 +836,13 @@ encode_type (dstring_t *encoding, const type_t *type)
 	internal_error (0, "bad type meta:type %d:%d", type->meta, type->type);
 }
 
-int
-is_void (const type_t *type)
-{
-	type = unalias_type (type);
-	return type->type == ev_void;
+#define EV_TYPE(t) \
+int is_##t (const type_t *type) \
+{ \
+	type = unalias_type (type); \
+	return type->type == ev_##t; \
 }
+#include "QF/progs/pr_type_names.h"
 
 int
 is_enum (const type_t *type)
@@ -850,39 +851,6 @@ is_enum (const type_t *type)
 	if (type->type == ev_invalid && type->meta == ty_enum)
 		return 1;
 	return 0;
-}
-
-int
-is_int (const type_t *type)
-{
-	type = unalias_type (type);
-	etype_t     t = type->type;
-
-	if (t == ev_int)
-		return 1;
-	return is_enum (type);
-}
-
-int
-is_uint (const type_t *type)
-{
-	type = unalias_type (type);
-	etype_t     t = type->type;
-
-	if (t == ev_uint)
-		return 1;
-	return is_enum (type);
-}
-
-int
-is_short (const type_t *type)
-{
-	type = unalias_type (type);
-	etype_t     t = type->type;
-
-	if (t == ev_short)
-		return 1;
-	return is_enum (type);
 }
 
 int
@@ -895,38 +863,10 @@ is_integral (const type_t *type)
 }
 
 int
-is_double (const type_t *type)
-{
-	type = unalias_type (type);
-	return type->type == ev_double;
-}
-
-int
-is_float (const type_t *type)
-{
-	type = unalias_type (type);
-	return type->type == ev_float;
-}
-
-int
 is_scalar (const type_t *type)
 {
 	type = unalias_type (type);
 	return is_float (type) || is_integral (type) || is_double (type);
-}
-
-int
-is_vector (const type_t *type)
-{
-	type = unalias_type (type);
-	return type->type == ev_vector;
-}
-
-int
-is_quaternion (const type_t *type)
-{
-	type = unalias_type (type);
-	return type->type == ev_quaternion;
 }
 
 int
@@ -949,33 +889,6 @@ is_struct (const type_t *type)
 }
 
 int
-is_pointer (const type_t *type)
-{
-	type = unalias_type (type);
-	if (type->type == ev_ptr)
-		return 1;
-	return 0;
-}
-
-int
-is_field (const type_t *type)
-{
-	type = unalias_type (type);
-	if (type->type == ev_field)
-		return 1;
-	return 0;
-}
-
-int
-is_entity (const type_t *type)
-{
-	type = unalias_type (type);
-	if (type->type == ev_entity)
-		return 1;
-	return 0;
-}
-
-int
 is_array (const type_t *type)
 {
 	type = unalias_type (type);
@@ -985,28 +898,10 @@ is_array (const type_t *type)
 }
 
 int
-is_func (const type_t *type)
-{
-	type = unalias_type (type);
-	if (type->type == ev_func)
-		return 1;
-	return 0;
-}
-
-int
 is_structural (const type_t *type)
 {
 	type = unalias_type (type);
 	return is_struct (type) || is_array (type);
-}
-
-int
-is_string (const type_t *type)
-{
-	type = unalias_type (type);
-	if (type->type == ev_string)
-		return 1;
-	return 0;
 }
 
 int
@@ -1022,7 +917,7 @@ type_compatible (const type_t *dst, const type_t *src)
 	if (is_func (dst) && is_func (src)) {
 		return 1;
 	}
-	if (is_pointer (dst) && is_pointer (src)) {
+	if (is_ptr (dst) && is_ptr (src)) {
 		return 1;
 	}
 	return 0;
@@ -1042,12 +937,12 @@ type_assignable (const type_t *dst, const type_t *src)
 	if (dst->type == ev_field && src->type == ev_field)
 		return 1;
 	// pointer = array
-	if (is_pointer (dst) && is_array (src)) {
+	if (is_ptr (dst) && is_array (src)) {
 		if (dst->t.fldptr.type == src->t.array.type)
 			return 1;
 		return 0;
 	}
-	if (!is_pointer (dst) || !is_pointer (src))
+	if (!is_ptr (dst) || !is_ptr (src))
 		return is_scalar (dst) && is_scalar (src);
 
 	// pointer = pointer

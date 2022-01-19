@@ -646,10 +646,10 @@ pointer_arithmetic (int op, expr_t *e1, expr_t *e2)
 	expr_t     *psize;
 	type_t     *ptype;
 
-	if (!is_pointer (t1) && !is_pointer (t2)) {
+	if (!is_ptr (t1) && !is_ptr (t2)) {
 		internal_error (e1, "pointer arithmetic on non-pointers");
 	}
-	if (is_pointer (t1) && is_pointer (t2)) {
+	if (is_ptr (t1) && is_ptr (t2)) {
 		if (op != '-') {
 			return error (e2, "invalid pointer operation");
 		}
@@ -661,11 +661,11 @@ pointer_arithmetic (int op, expr_t *e1, expr_t *e2)
 		e2 = cast_expr (&type_int, e2);
 		psize = new_int_expr (type_size (t1->t.fldptr.type));
 		return binary_expr ('/', binary_expr ('-', e1, e2), psize);
-	} else if (is_pointer (t1)) {
+	} else if (is_ptr (t1)) {
 		offset = cast_expr (&type_int, e2);
 		ptr = cast_expr (&type_int, e1);
 		ptype = t1;
-	} else if (is_pointer (t2)) {
+	} else if (is_ptr (t2)) {
 		offset = cast_expr (&type_int, e1);
 		ptr = cast_expr (&type_int, e2);
 		ptype = t2;
