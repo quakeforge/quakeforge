@@ -526,211 +526,113 @@ static expr_type_t double_double[] = {
 };
 
 static expr_type_t *string_x[ev_type_count] = {
-	0,				// ev_void
-	string_string,
-	0,				// ev_float
-	0,				// ev_vector
-	0,				// ev_entity
-	0,				// ev_field
-	0,				// ev_func
-	0,				// ev_ptr
-	0,				// ev_quaternion
-	0,				// ev_int
-	0,				// ev_uint
-	0,				// ev_short
-	0,				// ev_double
+	[ev_string] = string_string,
 };
 
 static expr_type_t *float_x[ev_type_count] = {
-	0,				// ev_void
-	0,				// ev_string
-	float_float,
-	float_vector,
-	0,				// ev_entity
-	0,				// ev_field
-	0,				// ev_func
-	0,				// ev_ptr
-	float_quat,
-	float_int,
-	float_uint,
-	float_short,
-	float_double,
+	[ev_float] = float_float,
+	[ev_vector] = float_vector,
+	[ev_quaternion] = float_quat,
+	[ev_int] = float_int,
+	[ev_uint] = float_uint,
+	[ev_short] = float_short,
+	[ev_double] = float_double,
 };
 
 static expr_type_t *vector_x[ev_type_count] = {
-	0,				// ev_void
-	0,				// ev_string
-	vector_float,
-	vector_vector,
-	0,				// ev_entity
-	0,				// ev_field
-	0,				// ev_func
-	0,				// ev_ptr
-	0,				// ev_quaternion
-	vector_int,
-	vector_uint,
-	vector_short,
-	vector_double,
+	[ev_float] = vector_float,
+	[ev_vector] = vector_vector,
+	[ev_int] = vector_int,
+	[ev_uint] = vector_uint,
+	[ev_short] = vector_short,
+	[ev_double] = vector_double,
 };
 
 static expr_type_t *entity_x[ev_type_count] = {
-	0,				// ev_void
-	0,				// ev_string
-	0,				// ev_float
-	0,				// ev_vector
-	entity_entity,	// ev_entity
-	0,				// ev_field
-	0,				// ev_func
-	0,				// ev_ptr
-	0,				// ev_quaternion
-	0,				// ev_int
-	0,				// ev_uint
-	0,				// ev_short
-	0,				// ev_double
+	[ev_entity] = entity_entity,
 };
 
 static expr_type_t *field_x[ev_type_count] = {
-	0,				// ev_void
-	0,				// ev_string
-	0,				// ev_float
-	0,				// ev_vector
-	0,				// ev_entity
-	field_field,	// ev_field
-	0,				// ev_func
-	0,				// ev_ptr
-	0,				// ev_quaternion
-	0,				// ev_int
-	0,				// ev_uint
-	0,				// ev_short
-	0,				// ev_double
+	[ev_field] = field_field,
 };
 
 static expr_type_t *func_x[ev_type_count] = {
-	0,				// ev_void
-	0,				// ev_string
-	0,				// ev_float
-	0,				// ev_vector
-	0,				// ev_entity
-	0,				// ev_field
-	func_func,		// ev_func
-	0,				// ev_ptr
-	0,				// ev_quaternion
-	0,				// ev_int
-	0,				// ev_uint
-	0,				// ev_short
-	0,				// ev_double
+	[ev_func] = func_func,
 };
 
 static expr_type_t *pointer_x[ev_type_count] = {
-	0,				// ev_void
-	0,				// ev_string
-	0,				// ev_float
-	0,				// ev_vector
-	0,				// ev_entity
-	0,				// ev_field
-	0,				// ev_func
-	pointer_pointer,
-	0,				// ev_quaternion
-	pointer_int,
-	pointer_uint,
-	pointer_short,
-	0,				// ev_double
+	[ev_ptr] = pointer_pointer,
+	[ev_int] = pointer_int,
+	[ev_uint] = pointer_uint,
+	[ev_short] = pointer_short,
 };
 
 static expr_type_t *quat_x[ev_type_count] = {
-	0,				// ev_void
-	0,				// ev_string
-	quat_float,
-	quat_vector,
-	0,				// ev_entity
-	0,				// ev_field
-	0,				// ev_func
-	0,				// ev_ptr
-	quat_quat,
-	quat_int,
-	quat_uint,
-	quat_short,
-	quat_double,
+	[ev_float] = quat_float,
+	[ev_vector] = quat_vector,
+	[ev_quaternion] = quat_quat,
+	[ev_int] = quat_int,
+	[ev_uint] = quat_uint,
+	[ev_short] = quat_short,
+	[ev_double] = quat_double,
 };
 
 static expr_type_t *int_x[ev_type_count] = {
-	0,				// ev_void
-	0,				// ev_string
-	int_float,
-	int_vector,
-	0,				// ev_entity
-	0,				// ev_field
-	0,				// ev_func
-	int_pointer,
-	int_quat,
-	int_int,
-	int_uint,
-	int_short,
-	int_double,
+	[ev_float] = int_float,
+	[ev_vector] = int_vector,
+	[ev_ptr] = int_pointer,
+	[ev_quaternion] = int_quat,
+	[ev_int] = int_int,
+	[ev_uint] = int_uint,
+	[ev_short] = int_short,
+	[ev_double] = int_double,
 };
 
 static expr_type_t *uint_x[ev_type_count] = {
-	0,				// ev_void
-	0,				// ev_string
-	uint_float,
-	uint_vector,
-	0,				// ev_entity
-	0,				// ev_field
-	0,				// ev_func
-	uint_pointer,
-	uint_quat,
-	uint_int,
-	uint_uint,
-	uint_short,
-	uint_double,
+	[ev_float] = uint_float,
+	[ev_vector] = uint_vector,
+	[ev_ptr] = uint_pointer,
+	[ev_quaternion] = uint_quat,
+	[ev_int] = uint_int,
+	[ev_uint] = uint_uint,
+	[ev_short] = uint_short,
+	[ev_double] = uint_double,
 };
 
 static expr_type_t *short_x[ev_type_count] = {
-	0,				// ev_void
-	0,				// ev_string
-	short_float,
-	short_vector,
-	0,				// ev_entity
-	0,				// ev_field
-	0,				// ev_func
-	short_pointer,
-	short_quat,
-	short_int,
-	short_uint,
-	short_short,
-	short_double,
+	[ev_float] = short_float,
+	[ev_vector] = short_vector,
+	[ev_ptr] = short_pointer,
+	[ev_quaternion] = short_quat,
+	[ev_int] = short_int,
+	[ev_uint] = short_uint,
+	[ev_short] = short_short,
+	[ev_double] = short_double,
 };
 
 static expr_type_t *double_x[ev_type_count] = {
-	0,				// ev_void
-	0,				// ev_string
-	double_float,
-	double_vector,
-	0,				// ev_entity
-	0,				// ev_field
-	0,				// ev_func
-	0,				// ev_ptr
-	double_quat,
-	double_int,
-	double_uint,
-	double_short,
-	double_double,
+	[ev_float] = double_float,
+	[ev_vector] = double_vector,
+	[ev_quaternion] = double_quat,
+	[ev_int] = double_int,
+	[ev_uint] = double_uint,
+	[ev_short] = double_short,
+	[ev_double] = double_double,
 };
 
 static expr_type_t **binary_expr_types[ev_type_count] = {
-	0,				// ev_void
-	string_x,
-	float_x,
-	vector_x,
-	entity_x,
-	field_x,
-	func_x,
-	pointer_x,
-	quat_x,
-	int_x,
-	uint_x,
-	short_x,
-	double_x
+	[ev_string] = string_x,
+	[ev_float] = float_x,
+	[ev_vector] = vector_x,
+	[ev_entity] = entity_x,
+	[ev_field] = field_x,
+	[ev_func] = func_x,
+	[ev_ptr] = pointer_x,
+	[ev_quaternion] = quat_x,
+	[ev_int] = int_x,
+	[ev_uint] = uint_x,
+	[ev_short] = short_x,
+	[ev_double] = double_x
 };
 
 static expr_t *
