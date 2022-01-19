@@ -492,7 +492,7 @@ get_selector (expr_t *sel)
 		error (sel, "not a selector");
 		return 0;
 	}
-	_sel.index = expr_short (sel->e.expr.e2);
+	_sel.index = expr_short (sel->e.address.offset);
 	_sel.index /= type_size (type_SEL.t.fldptr.type);
 	return (selector_t *) Hash_FindElement (sel_index_hash, &_sel);
 }

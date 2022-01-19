@@ -112,8 +112,8 @@ selector_expr (keywordarg_t *selector)
 		reloc_def_def (sel_table->s.def, sel_sym->s.def);
 	}
 	sel_ref = new_symbol_expr (sel_sym);
-	sel_ref = new_binary_expr ('&', sel_ref, new_short_expr (index));
-	sel_ref->e.expr.type = &type_SEL;
+	sel_ref = new_address_expr (&type_selector, sel_ref,
+								new_short_expr (index));
 
 	expr_t     *sel = new_expr ();
 	sel->type = ex_selector;
