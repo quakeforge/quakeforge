@@ -422,6 +422,18 @@ process_keyword (keyword_t *keyword, const char *token)
 
 		sym = symtab_lookup (current_symtab, token);
 		qc_yylval.symbol = sym;
+		// the global id symbol is always just a name so attempts to redefine
+		// it globally can be caught and treated as an error, but it needs to
+		// be redefinable when in an enclosing scope.
+		if (sym->sy_type == sy_name) {
+			// this is the global id (object)
+			return OBJECT;
+		} else if (sym->sy_type == sy_type) {
+			// id has been redeclared via a typedef
+			return TYPE_NAME;
+		}
+		// id has been redelcared as a variable (hopefully)
+		return NAME;
 	} else {
 		qc_yylval.type = keyword->type;
 	}

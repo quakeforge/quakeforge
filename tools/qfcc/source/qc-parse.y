@@ -267,6 +267,7 @@ spec_merge (specifier_t spec, specifier_t new)
 			spec.multi_store = 1;
 		}
 	}
+	spec.sym = new.sym;
 	spec.is_signed |= new.is_signed;
 	spec.is_unsigned |= new.is_unsigned;
 	spec.is_short |= new.is_short;
@@ -367,6 +368,16 @@ is_null_spec (specifier_t spec)
 	return memcmp (&spec, &null_spec, sizeof (spec)) == 0;
 }
 
+static int
+use_type_name (specifier_t spec)
+{
+	spec.sym = new_symbol (spec.sym->name);
+	spec.sym->type = spec.type;
+	spec.sym->sy_type = sy_var;
+	symtab_addsymbol (current_symtab, spec.sym);
+	return !!spec.sym->table;
+}
+
 static void
 check_specifiers (specifier_t spec)
 {
@@ -383,7 +394,12 @@ check_specifiers (specifier_t spec)
 		} else if (!spec.type && spec.sym) {
 			bug (0, "wha? %p %p", spec.type, spec.sym);
 		} else {
-			bug (0, "wha? %p %p", spec.type, spec.sym);
+			// a type name (id, typedef, etc) was used as a variable name.
+			// this is allowed in C, so long as it's in a different scope
+			if (!use_type_name (spec)) {
+				error (0, "%s redeclared as different kind of symbol",
+					   spec.sym->name);
+			}
 		}
 	}
 }
@@ -614,7 +630,9 @@ type
 			// deal with eg "int id"
 			$1.sym = $2.sym;
 
-			if (!$1.sym) {
+			if (!$1.sym && !$1.type) {
+				$1 = spec_merge ($1, $2);
+			} else if (!$1.sym) {
 				error (0, "two or more data types in declaration specifiers");
 			}
 			$$ = $1;
@@ -827,11 +845,7 @@ struct_def
 			if ($1.sym && $1.sym->type != $1.type) {
 				// a type name (id, typedef, etc) was used as a field name.
 				// this is allowed in C
-				$1.sym = new_symbol ($1.sym->name);
-				$1.sym->type = $1.type;
-				$1.sym->sy_type = sy_var;
-				symtab_addsymbol (current_symtab, $1.sym);
-				if (!$1.sym->table) {
+				if (!use_type_name ($1)) {
 					error (0, "duplicate field `%s'", $1.sym->name);
 				}
 			} else if (is_anonymous_struct ($1)) {
@@ -997,18 +1011,27 @@ param_declaration
 			$2->type = find_type (append_type ($2->type, $1.type));
 			$$ = new_param (0, $2->type, $2->name);
 		}
-	| abstract_decl			{ $$ = new_param (0, $1->type, 0); }
+	| abstract_decl			{ $$ = new_param (0, $1->type, $1->name); }
 	| ELLIPSIS				{ $$ = new_param (0, 0, 0); }
 	;
 
 abstract_decl
 	: type abs_decl
 		{
+			// abs_decl's symbol is just a carrier for the type
+			if ($2->name) {
+				bug (0, "unexpected name in abs_decl");
+			}
+			if ($1.sym) {
+				$1.sym = new_symbol ($1.sym->name);
+				$1.sym->type = $2->type;
+				$2 = $1.sym;
+			}
 			$$ = $2;
 			$1 = default_type ($1, $2);
 			$$->type = find_type (append_type ($$->type, $1.type));
 		}
-	| error		{ $$ = new_symbol (""); }
+	| error		{ $$ = new_symbol (0); }
 	;
 
 qc_param_decl
@@ -1035,7 +1058,7 @@ qc_param_decl
 	;
 
 abs_decl
-	: /* empty */			{ $$ = new_symbol (""); }
+	: /* empty */			{ $$ = new_symbol (0); }
 	| '(' abs_decl ')' function_params
 		{
 			$$ = $2;
