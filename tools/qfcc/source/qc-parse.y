@@ -367,6 +367,27 @@ is_null_spec (specifier_t spec)
 	return memcmp (&spec, &null_spec, sizeof (spec)) == 0;
 }
 
+static void
+check_specifiers (specifier_t spec)
+{
+	if (!is_null_spec (spec)) {
+		if (!spec.type && !spec.sym) {
+			warning (0, "useless specifiers");
+		} else if (spec.type && !spec.sym) {
+			if (is_anonymous_struct (spec)){
+				warning (0, "unnamed struct/union that defines "
+						 "no instances");
+			} else if (!is_enum (spec.type) && !is_struct (spec.type)) {
+				warning (0, "useless type name in empty declaration");
+			}
+		} else if (!spec.type && spec.sym) {
+			bug (0, "wha? %p %p", spec.type, spec.sym);
+		} else {
+			bug (0, "wha? %p %p", spec.type, spec.sym);
+		}
+	}
+}
+
 %}
 
 %expect 0
@@ -417,22 +438,7 @@ external_def
 	: optional_specifiers external_decl_list ';' { }
 	| optional_specifiers ';'
 		{
-			if (!is_null_spec ($1)) {
-				if (!$1.type && !$1.sym) {
-					warning (0, "useless specifiers");
-				} else if ($1.type && !$1.sym) {
-					if (is_anonymous_struct ($1)){
-						warning (0, "unnamed struct/union that defines "
-								 "no instances");
-					} else if (!is_enum ($1.type) && !is_struct ($1.type)) {
-						warning (0, "useless type name in empty declaration");
-					}
-				} else if (!$1.type && $1.sym) {
-					bug (0, "wha? %p %p", $1.type, $1.sym);
-				} else {
-					bug (0, "wha? %p %p", $1.type, $1.sym);
-				}
-			}
+			check_specifiers ($1);
 		}
 	| optional_specifiers qc_func_params
 		{
@@ -1329,22 +1335,7 @@ local_def
 		}
 	| specifiers ';'
 		{
-			if (!is_null_spec ($1)) {
-				if (!$1.type && !$1.sym) {
-					warning (0, "useless specifiers");
-				} else if ($1.type && !$1.sym) {
-					if (is_anonymous_struct ($1)){
-						warning (0, "unnamed struct/union that defines "
-								 "no instances");
-					} else if (!is_enum ($1.type) && !is_struct ($1.type)) {
-						warning (0, "useless type name in empty declaration");
-					}
-				} else if (!$1.type && $1.sym) {
-					bug (0, "wha? %p %p", $1.type, $1.sym);
-				} else {
-					bug (0, "wha? %p %p", $1.type, $1.sym);
-				}
-			}
+			check_specifiers ($1);
 			$$ = 0;
 		}
 	;
