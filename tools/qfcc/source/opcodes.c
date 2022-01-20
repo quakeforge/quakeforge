@@ -178,7 +178,7 @@ check_operand_type (etype_t ot1, etype_t ot2)
 static int
 check_operand_width (int ow1, int ow2)
 {
-	return ((ow1 == -1 && ow2) || ow1 == ow2);
+	return (ow1 == -1 || ow1 == ow2);
 }
 
 pr_ushort_t
