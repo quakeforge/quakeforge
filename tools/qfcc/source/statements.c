@@ -687,10 +687,10 @@ statement_get_targetlist (statement_t *s)
 static void
 invert_conditional (statement_t *s)
 {
-	if (!strcmp (s->opcode, "if"))
-		s->opcode = "ifnot";
-	else if (!strcmp (s->opcode, "ifnot"))
-		s->opcode = "if";
+	if (!strcmp (s->opcode, "ifnz"))
+		s->opcode = "ifz";
+	else if (!strcmp (s->opcode, "ifz"))
+		s->opcode = "ifnz";
 	else if (!strcmp (s->opcode, "ifbe"))
 		s->opcode = "ifa";
 	else if (!strcmp (s->opcode, "ifb"))
@@ -931,7 +931,7 @@ dereference_dst:
 		// dst_expr is a dereferenced pointer, so need to un-dereference it
 		// to get the pointer and switch to storep instructions.
 		dst_expr = expr_file_line (address_expr (dst_expr, 0, 0), e);
-		opcode = "store";// FIXME find a nicer representation (lose strings?)
+		opcode = "store";
 		if (dst_expr->type == ex_address && dst_expr->e.address.offset
 			&& !is_const_ptr (dst_expr->e.address.lvalue)) {
 			sblock = statement_subexpr (sblock,
@@ -1059,11 +1059,11 @@ static sblock_t *
 statement_branch (sblock_t *sblock, expr_t *e)
 {
 	static const char *opcodes[] = {
-		"ifnot",
+		"ifz",
 		"ifb",
 		"ifa",
 		0,			// special handling
-		"if",
+		"ifnz",
 		"ifae",
 		"ifbe",
 		0,			// not used here
@@ -1104,9 +1104,7 @@ statement_return (sblock_t *sblock, expr_t *e)
 	debug (e, "RETURN");
 	opcode = "return";
 	if (!e->e.retrn.ret_val) {
-		if (options.code.progsversion != PROG_ID_VERSION) {
-			opcode = "return_v";
-		} else {
+		if (options.code.progsversion == PROG_ID_VERSION) {
 			e->e.retrn.ret_val = new_float_expr (0);
 		}
 	}
@@ -2115,9 +2113,8 @@ check_final_block (sblock_t *sblock)
 		sblock->next = new_sblock ();
 		sblock = sblock->next;
 	}
-	s = new_statement (st_func, "return_v", 0);
+	s = new_statement (st_func, "return", 0);
 	if (options.traditional || options.code.progsversion == PROG_ID_VERSION) {
-		s->opcode = save_string ("return");
 		s->opa = return_operand (&type_void, 0);
 	}
 	sblock_add_statement (sblock, s);

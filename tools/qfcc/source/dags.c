@@ -457,7 +457,7 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n)
 			first_param = 2;
 		} else if (!strncmp (n->label->opcode, "call", 4)) {
 			num_params = n->label->opcode + 5;
-		} else if (!strcmp (n->label->opcode, "return")) {
+		} else if (!strcmp (n->label->opcode, "return") && n->children[0]) {
 			daglabel_t *label = n->children[0]->label;
 			if (!label->op) {
 				set_iter_t *lab_i;

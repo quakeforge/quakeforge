@@ -756,7 +756,7 @@ VISIBLE const v6p_opcode_t pr_v6p_opcodes[] = {
 	 "%Ra",
 	},
 
-	[OP_RETURN_V_v6p] = {"return_v", "return",
+	[OP_RETURN_V_v6p] = {"return", "return",
 	 ev_invalid, ev_invalid, ev_invalid,
 	 PROG_V6P_VERSION,
 	 "",
@@ -803,12 +803,12 @@ VISIBLE const v6p_opcode_t pr_v6p_opcodes[] = {
 	 "%Ga, %gc",
 	},
 
-	[OP_IF_v6p] = {"if", "if",
+	[OP_IF_v6p] = {"ifnz", "if",
 	 ev_int, ev_short, ev_invalid,
 	 PROG_ID_VERSION,
 	 "%Ga branch %sb (%Ob)",
 	},
-	[OP_IFNOT_v6p] = {"ifnot", "ifnot",
+	[OP_IFNOT_v6p] = {"ifz", "ifnot",
 	 ev_int, ev_short, ev_invalid,
 	 PROG_ID_VERSION,
 	 "%Ga branch %sb (%Ob)",
