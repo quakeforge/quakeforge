@@ -1586,7 +1586,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 	dasprintf (res->line, "%04x ", addr);
 	if (pr_debug->int_val > 2) {
 		dasprintf (res->line,
-					"%02x %04x(%8s)[%d] %04x(%8s)[%d] %04x(%8s)[%d]\t",
+					"%03x %04x(%8s)[%d] %04x(%8s)[%d] %04x(%8s)[%d]\t",
 					s->op,
 					s->a, pr_type_name[op_type[0]], op_width[0],
 					s->b, pr_type_name[op_type[1]], op_width[1],
