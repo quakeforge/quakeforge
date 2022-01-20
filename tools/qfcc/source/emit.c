@@ -217,6 +217,10 @@ emit_statement (statement_t *statement)
 	s->b = def_b ? def_b->offset : 0;
 	s->c = def_c ? def_c->offset : 0;
 
+	if (options.verbosity >= 2) {
+		opcode_print_statement (pr.code->size - 1, s);
+	}
+
 	add_statement_def_ref (def_a, s, 0);
 	add_statement_def_ref (def_b, s, 1);
 	add_statement_def_ref (def_c, s, 2);

@@ -351,3 +351,15 @@ opcode_init (void)
 		rua_opcode_init ();
 	}
 }
+
+void
+opcode_print_statement (pr_uint_t addr, dstatement_t *st)
+{
+	const char *mnemonic;
+	if (options.code.progsversion < PROG_VERSION) {
+		mnemonic = v6p_opcode_map[st->op].opname;
+	} else {
+		mnemonic = pr_opcodes[st->op].mnemonic;
+	}
+	printf ("%04x %8s %04x %04x %04x\n", addr, mnemonic, st->a, st->b, st->c);
+}

@@ -40,5 +40,6 @@ pr_ushort_t opcode_get (instruction_t *inst) __attribute__((pure));
 instruction_t *opcode_find (const char *name, struct operand_s *op_a,
 							struct operand_s *op_b, struct operand_s *op_c);
 void opcode_init (void);
+void opcode_print_statement (pr_uint_t addr, dstatement_t *st);
 
 #endif//__opcodes_h
