@@ -1136,6 +1136,14 @@ statement_return (sblock_t *sblock, expr_t *e)
 		}
 	} else {
 		if (e->e.retrn.ret_val) {
+			expr_t     *ret_val = e->e.retrn.ret_val;
+			type_t     *ret_type = get_type (ret_val);
+			if (is_indirect (ret_val)) {
+			} else {
+				sblock = statement_subexpr (sblock, ret_val, &s->opa);
+				s->opb = short_operand (0, e);
+				s->opc = short_operand (type_size (ret_type) - 1, e);
+			}
 		} else {
 			s->opa = short_operand (0, e);
 			s->opb = short_operand (0, e);

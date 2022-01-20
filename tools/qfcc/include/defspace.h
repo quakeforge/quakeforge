@@ -43,7 +43,8 @@ typedef enum {
 	ds_backed,		///< data space is globally addressable (near/far/type) and
 					///< has backing store
 	ds_virtual,		///< data space has no backing store (local vars, entity
-					///< fields)
+					///< fields) defspace_t::max_size reflects the highest
+					///< address allocated
 } ds_type_t;
 
 /** Represent a block of memory in the progs data space.
@@ -56,7 +57,8 @@ typedef struct defspace_s {
 	struct def_s **def_tail;	///< for appending to \a defs
 	pr_type_t  *data;			///< backing memory for this space
 	int         size;			///< current high-water mark for alloced data
-	int         max_size;		///< size of backing memory
+	int         max_size;		///< size of backing memory, or highwater mark
+								///< for ds_virtual
 	/** Grow the backing memory of the defspace.
 
 		This function is called when more memory is needed for the space.
@@ -167,6 +169,57 @@ void defspace_free_loc (defspace_t *space, int ofs, int size);
 	\return			The offset of the block allocated for the data.
 */
 int defspace_add_data (defspace_t *space, pr_type_t *data, int size);
+
+/** Allocate a block of data from the end of the defspace.
+
+	If memory cannot be allocated (there is no free space in the currently
+	available memory and defspace_t::grow is null), then an internal error
+	will be generated.
+
+	\param space	The space from which to allocate data.
+	\param size		The amount of pr_type_t words to allocated. int and float
+					need 1 word, vector 3 words, and quaternion 4.
+	\return			The offset of the first word of the freshly allocated
+					space. May be 0 if the allocated space is at the beginning
+					of the defspace.
+*/
+int defspace_alloc_highwater (defspace_t *space, int size);
+
+/** Allocate an aligned block of data from the end of the defspace.
+
+	Any unallocated holes in the defspace are ignored, even if the hole is
+	at the end of the defspace. However, any holes created by the padding
+	required for aligning the block will be available to defspace_alloc_loc()
+	and defspace_alloc_aligned_loc().
+
+	If memory cannot be allocated (there is no free space in the currently
+	available memory and defspace_t::grow is null), then an internal error
+	will be generated.
+
+	\param space	The space from which to allocate data.
+	\param size		The amount of pr_type_t words to allocated. int and float
+					need 1 word, vector 3 words, and quaternion 4.
+	\param alignment The alignment of the allocated space.
+	\return			The offset of the first word of the freshly allocated
+					space. May be 0 if the allocated space is at the beginning
+					of the defspace.
+*/
+int defspace_alloc_aligned_highwater (defspace_t *space, int size,
+									  int alignment);
+/** Reset a defspace, freeing all allocated memory.
+
+	defspace_t::max_size is not affected. This allows the defspace to be used
+	to find the larged block of memory required for a set of operations (eg,
+	the largest parameter block required in a function for all its calls
+	allowing the stack to remain constant instead of using many push/pop
+	operations. Note that this works best with ds_virtual defspaces.
+
+	If the defspace has backing memory (ds_backed), the memory is not freed,
+	but it is zeroed so any new allocations will contain zeroed memory.
+
+	\param space	The space to be reset.
+*/
+void defspace_reset (defspace_t *space);
 
 ///@}
 

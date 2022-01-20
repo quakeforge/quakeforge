@@ -105,14 +105,9 @@ grow_space_global (defspace_t *space)
 static int
 grow_space_virtual (defspace_t *space)
 {
-	int         size;
-
-	if (space->size <= space->max_size)
-		return 1;
-
-	size = space->size + GROW;
-	size -= size % GROW;
-	space->max_size = size;
+	if (space->size > space->max_size) {
+		space->max_size = space->size;
+	}
 	return 1;
 }
 
@@ -208,6 +203,7 @@ defspace_alloc_aligned_loc (defspace_t *space, int size, int alignment)
 			internal_error (0, "unable to allocate %d words", size);
 	}
 	if (pad) {
+		// mark the padding as free
 		*l = new_locref (ofs, pad, 0);
 	}
 	return ofs + pad;
@@ -270,4 +266,47 @@ defspace_add_data (defspace_t *space, pr_type_t *data, int size)
 	if (data)
 		memcpy (space->data + loc, data, size * sizeof (pr_type_t));
 	return loc;
+}
+
+int
+defspace_alloc_highwater (defspace_t *space, int size)
+{
+	return defspace_alloc_aligned_highwater (space, size, 1);
+}
+
+int
+defspace_alloc_aligned_highwater (defspace_t *space, int size, int alignment)
+{
+	if (size <= 0)
+		internal_error (0, "invalid number of words requested: %d", size);
+	if (alignment <= 0)
+		internal_error (0, "invalid alignment requested: %d", alignment);
+
+	int         ofs = space->size;
+	int         pad = alignment * ((ofs + alignment - 1) / alignment) - ofs;
+	space->size += size + pad;
+	if (space->size > space->max_size) {
+		if (!space->grow || !space->grow (space))
+			internal_error (0, "unable to allocate %d words", size);
+	}
+	locref_t  **l = &space->free_locs;
+	if (pad) {
+		// mark the padding as free
+		*l = new_locref (ofs, pad, 0);
+	}
+	return ofs + pad;
+}
+
+void
+defspace_reset (defspace_t *space)
+{
+	space->size = 0;
+	while (space->free_locs) {
+		locref_t   *l = space->free_locs;
+		space->free_locs = l->next;
+		del_locref (l);
+	}
+	if (space->data) {
+		memset (space->data, 0, space->max_size * sizeof (pr_type_t));
+	}
 }
