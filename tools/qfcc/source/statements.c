@@ -1129,9 +1129,18 @@ statement_return (sblock_t *sblock, expr_t *e)
 		}
 	}
 	s = new_statement (st_func, opcode, e);
-	if (e->e.retrn.ret_val) {
-		s->opa = return_operand (get_type (e->e.retrn.ret_val), e);
-		sblock = statement_subexpr (sblock, e->e.retrn.ret_val, &s->opa);
+	if (options.code.progsversion < PROG_VERSION) {
+		if (e->e.retrn.ret_val) {
+			s->opa = return_operand (get_type (e->e.retrn.ret_val), e);
+			sblock = statement_subexpr (sblock, e->e.retrn.ret_val, &s->opa);
+		}
+	} else {
+		if (e->e.retrn.ret_val) {
+		} else {
+			s->opa = short_operand (0, e);
+			s->opb = short_operand (0, e);
+			s->opc = short_operand (-1, e);
+		}
 	}
 	sblock_add_statement (sblock, s);
 	sblock->next = new_sblock ();
@@ -2134,8 +2143,15 @@ check_final_block (sblock_t *sblock)
 		sblock = sblock->next;
 	}
 	s = new_statement (st_func, "return", 0);
-	if (options.traditional || options.code.progsversion == PROG_ID_VERSION) {
-		s->opa = return_operand (&type_void, 0);
+	if (options.code.progsversion == PROG_VERSION) {
+		s->opa = short_operand (0, 0);
+		s->opb = short_operand (0, 0);
+		s->opc = short_operand (-1, 0);
+	} else {
+		if (options.traditional
+			|| options.code.progsversion == PROG_ID_VERSION) {
+			s->opa = return_operand (&type_void, 0);
+		}
 	}
 	sblock_add_statement (sblock, s);
 }

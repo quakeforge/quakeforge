@@ -452,7 +452,9 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n)
 		int         first_param = 0;
 		flowvar_t **flowvars = dag->flownode->graph->func->vars;
 
-		if (!strncmp (n->label->opcode, "rcall", 5)) {
+		if (!strcmp (n->label->opcode, "call")) {
+			internal_error (0, "not implemented");
+		} else if (!strncmp (n->label->opcode, "rcall", 5)) {
 			num_params = n->label->opcode + 6;
 			first_param = 2;
 		} else if (!strncmp (n->label->opcode, "call", 4)) {

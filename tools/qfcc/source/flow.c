@@ -1257,15 +1257,29 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			}
 			break;
 		case st_func:
-			if (strcmp (s->opcode, "return") == 0
-				|| strcmp (s->opcode, "done") == 0) {
-				flow_add_op_var (use, s->opa, 1);
-			} else if (strcmp (s->opcode, "return_v") == 0) {
+			if (statement_is_return (s)) {
+				if (s->opc) {
+					// ruamoko
+					// opc always short
+					short       ret_mode = s->opc->value->v.short_val;
+					// -1 is void
+					// FIXME size and addressing
+					if (ret_mode >= 0) {
+						flow_add_op_var (use, s->opa, 1);
+					}
+				} else {
+					// v6/v6p
+					if (s->opa) {
+						flow_add_op_var (use, s->opa, 1);
+					}
+				}
 				if (use) {
 					flow_add_op_var (use, &flow_params[0].op, 1);
 				}
 			}
-			if (strncmp (s->opcode, "call", 4) == 0) {
+			if (strcmp (s->opcode, "call") == 0) {
+				internal_error (s->expr, "not implemented");
+			} else if (strncmp (s->opcode, "call", 4) == 0) {
 				start = 0;
 				calln = s->opcode[5] - '0';
 				flow_add_op_var (use, s->opa, 1);
