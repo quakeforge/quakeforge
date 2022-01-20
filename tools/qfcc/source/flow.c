@@ -1205,20 +1205,20 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 		case st_ptrmemset:
 			flow_add_op_var (use, s->opa, 1);
 			flow_add_op_var (use, s->opb, 1);
-			if (!strcmp (s->opcode, "<MOVE>")
-				|| !strcmp (s->opcode, "<MEMSET>")) {
+			if (!strcmp (s->opcode, "move")
+				|| !strcmp (s->opcode, "memset")) {
 				flow_add_op_var (def, s->opc, 0);
 				res_op = s->opc;
-			} else if (!strcmp (s->opcode, "<MOVEP>")) {
+			} else if (!strcmp (s->opcode, "movep")) {
 				flow_add_op_var (use, s->opc, 0);
 				aux_op2 = flow_analyze_pointer_operand (s->opa, use);
 				res_op = flow_analyze_pointer_operand (s->opc, def);
 				aux_op1 = s->opc;
-			} else if (!strcmp (s->opcode, "<MEMSETP>")) {
+			} else if (!strcmp (s->opcode, "memsetp")) {
 				flow_add_op_var (use, s->opc, 0);
 				res_op = flow_analyze_pointer_operand (s->opc, def);
 				aux_op1 = s->opc;
-			} else if (!strcmp (s->opcode, ".=")) {
+			} else if (!strcmp (s->opcode, "store")) {
 				flow_add_op_var (use, s->opc, 1);
 				res_op = flow_analyze_pointer_operand (s->opb, def);
 				aux_op1 = s->opc;
@@ -1250,19 +1250,19 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			}
 			break;
 		case st_func:
-			if (strcmp (s->opcode, "<RETURN>") == 0
-				|| strcmp (s->opcode, "<DONE>") == 0) {
+			if (strcmp (s->opcode, "return") == 0
+				|| strcmp (s->opcode, "done") == 0) {
 				flow_add_op_var (use, s->opa, 1);
-			} else if (strcmp (s->opcode, "<RETURN_V>") == 0) {
+			} else if (strcmp (s->opcode, "return_v") == 0) {
 				if (use) {
 					flow_add_op_var (use, &flow_params[0].op, 1);
 				}
 			}
-			if (strncmp (s->opcode, "<CALL", 5) == 0) {
+			if (strncmp (s->opcode, "call", 4) == 0) {
 				start = 0;
 				calln = s->opcode[5] - '0';
 				flow_add_op_var (use, s->opa, 1);
-			} else if (strncmp (s->opcode, "<RCALL", 6) == 0) {
+			} else if (strncmp (s->opcode, "rcall", 5) == 0) {
 				start = 2;
 				calln = s->opcode[6] - '0';
 				flow_add_op_var (use, s->opa, 1);
@@ -1296,9 +1296,9 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			}
 			break;
 		case st_flow:
-			if (strcmp (s->opcode, "<GOTO>") != 0) {
+			if (strcmp (s->opcode, "jump") != 0) {
 				flow_add_op_var (use, s->opa, 1);
-				if (strcmp (s->opcode, "<JUMPB>") == 0)
+				if (strcmp (s->opcode, "jumpb") == 0)
 					flow_add_op_var (use, s->opb, 1);
 			}
 			if (operands) {

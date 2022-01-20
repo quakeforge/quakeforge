@@ -571,28 +571,28 @@ static const char *
 convert_op (int op)
 {
 	switch (op) {
-		case OR:	return "||";
-		case AND:	return "&&";
-		case EQ:	return "==";
-		case NE:	return "!=";
-		case LE:	return "<=";
-		case GE:	return ">=";
-		case LT:	return "<";
-		case GT:	return ">";
-		case '+':	return "+";
-		case '-':	return "-";
-		case '*':	return "*";
-		case '/':	return "/";
-		case '%':	return "%";
-		case MOD:	return "%%";
-		case '&':	return "&";
-		case '|':	return "|";
-		case '^':	return "^";
-		case '~':	return "~";
-		case '!':	return "!";
-		case SHL:	return "<<";
-		case SHR:	return ">>";
-		case '.':	return ".";
+		case OR:	return "or";
+		case AND:	return "and";
+		case EQ:	return "eq";
+		case NE:	return "ne";
+		case LE:	return "le";
+		case GE:	return "ge";
+		case LT:	return "lt";
+		case GT:	return "gt";
+		case '+':	return "add";
+		case '-':	return "sub";
+		case '*':	return "mul";
+		case '/':	return "div";
+		case '%':	return "rem";
+		case MOD:	return "mod";
+		case '&':	return "bitand";
+		case '|':	return "bitor";
+		case '^':	return "bitxor";
+		case '~':	return "bitnot";
+		case '!':	return "not";
+		case SHL:	return "shl";
+		case SHR:	return "shr";
+		case '.':	return "load";
 		default:
 			return 0;
 	}
@@ -603,7 +603,7 @@ statement_is_cond (statement_t *s)
 {
 	if (!s)
 		return 0;
-	return !strncmp (s->opcode, "<IF", 3);
+	return !strncmp (s->opcode, "if", 2);
 }
 
 int
@@ -611,7 +611,7 @@ statement_is_goto (statement_t *s)
 {
 	if (!s)
 		return 0;
-	return !strcmp (s->opcode, "<GOTO>");
+	return !strcmp (s->opcode, "jump");
 }
 
 int
@@ -619,7 +619,7 @@ statement_is_jumpb (statement_t *s)
 {
 	if (!s)
 		return 0;
-	return !strcmp (s->opcode, "<JUMPB>");
+	return !strcmp (s->opcode, "jumpb");
 }
 
 int
@@ -627,9 +627,9 @@ statement_is_call (statement_t *s)
 {
 	if (!s)
 		return 0;
-	if (!strncmp (s->opcode, "<CALL", 5))
+	if (!strncmp (s->opcode, "call", 4))
 		return 1;
-	if (!strncmp (s->opcode, "<RCALL", 6))
+	if (!strncmp (s->opcode, "rcall", 5))
 		return 2;
 	return 0;
 }
@@ -639,7 +639,7 @@ statement_is_return (statement_t *s)
 {
 	if (!s)
 		return 0;
-	return !strncmp (s->opcode, "<RETURN", 7);
+	return !strncmp (s->opcode, "return", 6);
 }
 
 sblock_t *
@@ -687,18 +687,18 @@ statement_get_targetlist (statement_t *s)
 static void
 invert_conditional (statement_t *s)
 {
-	if (!strcmp (s->opcode, "<IF>"))
-		s->opcode = "<IFNOT>";
-	else if (!strcmp (s->opcode, "<IFNOT>"))
-		s->opcode = "<IF>";
-	else if (!strcmp (s->opcode, "<IFBE>"))
-		s->opcode = "<IFA>";
-	else if (!strcmp (s->opcode, "<IFB>"))
-		s->opcode = "<IFAE>";
-	else if (!strcmp (s->opcode, "<IFAE>"))
-		s->opcode = "<IFB>";
-	else if (!strcmp (s->opcode, "<IFA>"))
-		s->opcode = "<IFBE>";
+	if (!strcmp (s->opcode, "if"))
+		s->opcode = "ifnot";
+	else if (!strcmp (s->opcode, "ifnot"))
+		s->opcode = "if";
+	else if (!strcmp (s->opcode, "ifbe"))
+		s->opcode = "ifa";
+	else if (!strcmp (s->opcode, "ifb"))
+		s->opcode = "ifae";
+	else if (!strcmp (s->opcode, "ifae"))
+		s->opcode = "ifb";
+	else if (!strcmp (s->opcode, "ifa"))
+		s->opcode = "ifbe";
 }
 
 typedef sblock_t *(*statement_f) (sblock_t *, expr_t *);
@@ -712,7 +712,7 @@ static sblock_t *
 expr_address (sblock_t *sblock, expr_t *e, operand_t **op)
 {
 	statement_t *s;
-	s = new_statement (st_expr, "&", e);
+	s = new_statement (st_expr, "lea", e);
 	sblock = statement_subexpr (sblock, e->e.address.lvalue, &s->opa);
 	if (e->e.address.offset) {
 		sblock = statement_subexpr (sblock, e->e.address.offset, &s->opb);
@@ -797,8 +797,8 @@ expr_assign_copy (sblock_t *sblock, expr_t *e, operand_t **op, operand_t *src)
 	operand_t  *dst = 0;
 	operand_t  *size = 0;
 	static const char *opcode_sets[][2] = {
-		{"<MOVE>", "<MOVEP>"},
-		{"<MEMSET>", "<MEMSETP>"},
+		{"move", "movep"},
+		{"memset", "memsetp"},
 	};
 	const unsigned max_count = 1 << 16;
 	const char **opcode_set = opcode_sets[0];
@@ -887,7 +887,7 @@ expr_assign (sblock_t *sblock, expr_t *e, operand_t **op)
 	operand_t  *src = 0;
 	operand_t  *dst = 0;
 	operand_t  *ofs = 0;
-	const char *opcode = "=";
+	const char *opcode = "assign";
 	st_type_t   type;
 
 	if (src_expr->type == ex_assign) {
@@ -931,7 +931,7 @@ dereference_dst:
 		// dst_expr is a dereferenced pointer, so need to un-dereference it
 		// to get the pointer and switch to storep instructions.
 		dst_expr = expr_file_line (address_expr (dst_expr, 0, 0), e);
-		opcode = ".=";	// FIXME find a nicer representation (lose strings?)
+		opcode = "store";// FIXME find a nicer representation (lose strings?)
 		if (dst_expr->type == ex_address && dst_expr->e.address.offset
 			&& !is_const_ptr (dst_expr->e.address.lvalue)) {
 			sblock = statement_subexpr (sblock,
@@ -952,7 +952,7 @@ dereference_dst:
 	}
 
 	if (is_entity (dst->type) && ofs && is_field (ofs->type)) {
-		s = new_statement (st_expr, "&", dst_expr);
+		s = new_statement (st_expr, "lea", dst_expr);
 		s->opa = dst;
 		s->opb = ofs;
 		s->opc = temp_operand (&type_ptr, dst_expr);
@@ -1012,7 +1012,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 		ind--;
 		param = new_param_expr (get_type (a), ind);
 		if (count && options.code.progsversion != PROG_ID_VERSION && ind < 2) {
-			pref = "R";
+			pref = "r";
 			sblock = statement_subexpr (sblock, param, &arguments[ind]);
 			if (options.code.vector_calls && a->type == ex_value
 				&& a->e.value->lltype == ev_vector)
@@ -1037,7 +1037,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 				arg = p;
 				sblock = statement_subexpr (sblock, a, &arg);
 				if (arg != p) {
-					s = new_statement (st_assign, "=", a);
+					s = new_statement (st_assign, "assign", a);
 					s->opa = arg;
 					s->opb = p;
 					sblock_add_statement (sblock, s);
@@ -1045,7 +1045,7 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 			}
 		}
 	}
-	opcode = va (0, "<%sCALL%d>", pref, count);
+	opcode = va (0, "%scall%d", pref, count);
 	s = new_statement (st_func, opcode, call);
 	sblock = statement_subexpr (sblock, func, &s->opa);
 	s->opb = arguments[0];
@@ -1059,13 +1059,13 @@ static sblock_t *
 statement_branch (sblock_t *sblock, expr_t *e)
 {
 	static const char *opcodes[] = {
-		"<IFNOT>",
-		"<IFB>",
-		"<IFA>",
+		"ifnot",
+		"ifb",
+		"ifa",
 		0,			// special handling
-		"<IF>",
-		"<IFAE>",
-		"<IFBE>",
+		"if",
+		"ifae",
+		"ifbe",
 		0,			// not used here
 	};
 	statement_t *s = 0;
@@ -1076,11 +1076,11 @@ statement_branch (sblock_t *sblock, expr_t *e)
 	}
 	if (e->e.branch.type == pr_branch_jump) {
 		if (e->e.branch.index) {
-			s = new_statement (st_flow, "<JUMPB>", e);
+			s = new_statement (st_flow, "jumpb", e);
 			sblock = statement_subexpr (sblock, e->e.branch.target, &s->opa);
 			sblock = statement_subexpr (sblock, e->e.branch.index, &s->opb);
 		} else {
-			s = new_statement (st_flow, "<GOTO>", e);
+			s = new_statement (st_flow, "jump", e);
 			s->opa = label_operand (e->e.branch.target);
 		}
 	} else {
@@ -1102,10 +1102,10 @@ statement_return (sblock_t *sblock, expr_t *e)
 	statement_t *s;
 
 	debug (e, "RETURN");
-	opcode = "<RETURN>";
+	opcode = "return";
 	if (!e->e.retrn.ret_val) {
 		if (options.code.progsversion != PROG_ID_VERSION) {
-			opcode = "<RETURN_V>";
+			opcode = "return_v";
 		} else {
 			e->e.retrn.ret_val = new_float_expr (0);
 		}
@@ -1125,7 +1125,7 @@ statement_return (sblock_t *sblock, expr_t *e)
 static statement_t *
 lea_statement (operand_t *pointer, operand_t *offset, expr_t *e)
 {
-	statement_t *s = new_statement (st_expr, "&", e);
+	statement_t *s = new_statement (st_expr, "lea", e);
 	s->opa = pointer;
 	s->opb = offset;
 	s->opc = temp_operand (&type_ptr, e);
@@ -1162,14 +1162,14 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 
 			dst_addr = operand_address (*op, e);
 
-			s = new_statement (st_ptrmove, "<MOVEP>", deref);
+			s = new_statement (st_ptrmove, "movep", deref);
 			s->opa = src_addr;
 			//FIXME large types
 			s->opb = short_operand (type_size (type), e);
 			s->opc = dst_addr;
 			sblock_add_statement (sblock, s);
 		} else {
-			s = new_statement (st_expr, ".", deref);
+			s = new_statement (st_expr, "load", deref);
 			s->opa = ptr;
 			s->opb = offs;
 			s->opc = *op;
@@ -1186,7 +1186,7 @@ expr_deref (sblock_t *sblock, expr_t *deref, operand_t **op)
 		sblock = statement_subexpr (sblock, e, &ptr);
 		if (!*op)
 			*op = temp_operand (type, e);
-		s = new_statement (st_expr, ".", deref);
+		s = new_statement (st_expr, "load", deref);
 		s->opa = ptr;
 		s->opb = short_operand (0, e);
 		s->opc = *op;
@@ -1295,7 +1295,7 @@ expr_cast (sblock_t *sblock, expr_t *e, operand_t **op)
 		operand_t  *src = 0;
 		sblock = statement_subexpr (sblock, e->e.expr.e1, &src);
 		*op = temp_operand (e->e.expr.type, e);
-		s = new_statement (st_expr, "<CONV>", e);
+		s = new_statement (st_expr, "conv", e);
 		s->opa = src;
 		s->opc = *op;
 		sblock_add_statement (sblock, s);
@@ -1483,7 +1483,7 @@ expr_nil (sblock_t *sblock, expr_t *e, operand_t **op)
 	sblock = statement_subexpr (sblock, new_int_expr(0), &zero);
 	sblock = statement_subexpr (sblock, size_expr, &size);
 
-	s = new_statement (st_memset, "<MEMSET>", e);
+	s = new_statement (st_memset, "memset", e);
 	s->opa = zero;
 	s->opb = size;
 	s->opc = *op;
@@ -1549,7 +1549,7 @@ statement_state (sblock_t *sblock, expr_t *e)
 {
 	statement_t *s;
 
-	s = new_statement (st_state, "<STATE>", e);
+	s = new_statement (st_state, "state", e);
 	sblock = statement_subexpr (sblock, e->e.state.frame, &s->opa);
 	sblock = statement_subexpr (sblock, e->e.state.think, &s->opb);
 	sblock = statement_subexpr (sblock, e->e.state.step, &s->opc);
@@ -1738,7 +1738,7 @@ statement_memset (sblock_t *sblock, expr_t *e)
 	expr_t     *dst = e->e.memset.dst;
 	expr_t     *val = e->e.memset.val;
 	expr_t     *count = e->e.memset.count;
-	const char *opcode = "<MEMSET>";
+	const char *opcode = "memset";
 	statement_t *s;
 
 	if (is_constant (count)) {
@@ -2115,9 +2115,9 @@ check_final_block (sblock_t *sblock)
 		sblock->next = new_sblock ();
 		sblock = sblock->next;
 	}
-	s = new_statement (st_func, "<RETURN_V>", 0);
+	s = new_statement (st_func, "return_v", 0);
 	if (options.traditional || options.code.progsversion == PROG_ID_VERSION) {
-		s->opcode = save_string ("<RETURN>");
+		s->opcode = save_string ("return");
 		s->opa = return_operand (&type_void, 0);
 	}
 	sblock_add_statement (sblock, s);
