@@ -93,7 +93,7 @@ branch_formats = {
     "opname": "{op_cond[c*4+cc]}",
     "format": "{cond_fmt[c*4+cc]}{branch_fmt[0]}",
     "widths": "{cond_widths[c*4+cc]}",
-    "types": "ev_void, ev_void, ev_int",
+    "types": "ev_short, ev_invalid, ev_int",
     "args": {
         "op_mode": "ABCD",
         "op_cond": ["ifz",  "ifb",  "ifa",  None,
@@ -173,12 +173,18 @@ jump_formats = {
     "opcode": "OP_JUMP_{op_mode[mm]}",
     "mnemonic": "jump",
     "opname": "jump",
-    "format": "{branch_fmt[mm]}",
+    "format": "{jump_fmt[mm]}",
     "widths": "0, 0, 0",
-    "types": "ev_void, ev_void, ev_invalid",
+    "types": "{jump_types[mm]}",
     "args": {
         "op_mode": "ABCD",
-        "branch_fmt": branch_fmt,
+        "jump_fmt": branch_fmt,
+        "jump_types": [
+            "ev_short, ev_invalid, ev_invalid",
+            "ev_ptr, ev_invalid, ev_invalid",
+            "ev_ptr, ev_short, ev_invalid",
+            "ev_ptr, ev_int, ev_invalid",
+        ],
     },
 }
 lea_formats = {
@@ -358,11 +364,11 @@ stated_formats = {
 }
 store_formats = {
     "opcode": "OP_STORE_{op_mode[mm]}_{ss+1}",
-    "mnemonic": "store",
-    "opname": "store",
+    "mnemonic": "{store_op[mm]}",
+    "opname": "{store_op[mm]}",
     "format": "{store_fmt[mm]}",
     "widths": "{ss+1}, 0, {ss+1}",
-    "types": "ev_void, ev_void, ev_void",
+    "types": "{store_types[mm]}",
     "args": {
         "op_mode": "ABCD",
         "store_fmt": [
@@ -370,6 +376,13 @@ store_formats = {
             "%Gc, *%Ga",
             "%Gc, *(%Ga + %sb)",
             "%Gc, *(%Ga + %Gb)",
+        ],
+        "store_op": ["assign", "store", "store", "store"],
+        "store_types": [
+            "ev_void, ev_invalid, ev_void",
+            "ev_ptr, ev_invalid, ev_void",
+            "ev_ptr, ev_short, ev_void",
+            "ev_ptr, ev_int, ev_void",
         ],
     },
 }
