@@ -30,20 +30,12 @@ static pr_int_t test_globals_expect[] = {
 	1, 2, 3, 4,
 };
 
-static dstatement_t load_E_statements[] = {
-	{OP(0, 0, 0, OP_LOAD_E_4), 7, 9, 12},
-	{OP(0, 0, 0, OP_LOAD_E_3), 7, 8, 16},
-	{OP(0, 0, 0, OP_LOAD_E_1), 7, 7, 19},
-	{OP(0, 0, 0, OP_LOAD_E_2), 7, 6, 20},
-	{OP(0, 0, 0, OP_LOAD_E_2), 7, 5, 22},
-};
-
 static dstatement_t load_B_statements[] = {
-	{OP(0, 0, 0, OP_LOAD_B_4), 4, 0, 12},
-	{OP(0, 0, 0, OP_LOAD_B_3), 3, 0, 16},
-	{OP(0, 0, 0, OP_LOAD_B_1), 2, 0, 19},
-	{OP(0, 0, 0, OP_LOAD_B_2), 1, 0, 20},
-	{OP(0, 0, 0, OP_LOAD_B_2), 0, 0, 22},
+	{OP(0, 0, 0, OP_LOAD_B_4), 7, 9, 12},
+	{OP(0, 0, 0, OP_LOAD_B_3), 7, 8, 16},
+	{OP(0, 0, 0, OP_LOAD_B_1), 7, 7, 19},
+	{OP(0, 0, 0, OP_LOAD_B_2), 7, 6, 20},
+	{OP(0, 0, 0, OP_LOAD_B_2), 7, 5, 22},
 };
 
 static dstatement_t load_C_statements[] = {
@@ -64,23 +56,15 @@ static dstatement_t load_D_statements[] = {
 
 test_t tests[] = {
 	{
-		.desc = "load E",
-		.num_globals = num_globals (test_globals_init, test_globals_expect),
-		.num_statements = num_statements (load_E_statements),
-		.statements = load_E_statements,
-		.init_globals = test_globals_init,
-		.expect_globals = test_globals_expect,
-		// FIXME negative field offsets are not official but work because all
-		// offset calculations are done in 32-bit and thus wrap anyway
-		.edict_area = 28,
-	},
-	{
 		.desc = "load B",
 		.num_globals = num_globals (test_globals_init, test_globals_expect),
 		.num_statements = num_statements (load_B_statements),
 		.statements = load_B_statements,
 		.init_globals = test_globals_init,
 		.expect_globals = test_globals_expect,
+		// FIXME negative field offsets are not official but work because all
+		// offset calculations are done in 32-bit and thus wrap anyway
+		.edict_area = 28,
 	},
 	{
 		.desc = "load C",

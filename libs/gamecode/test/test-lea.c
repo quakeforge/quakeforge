@@ -22,7 +22,7 @@ static dstatement_t lea_statements[] = {
 	{OP(0, 0, 0, OP_LEA_A), 7, 9, 12},
 	{OP(0, 0, 0, OP_LEA_C), 2, 6, 13},
 	{OP(0, 0, 0, OP_LEA_D), 2, 6, 14},
-	{OP(0, 0, 0, OP_LEA_E), 4, 2, 15},
+	{OP(0, 0, 0, OP_LEA_B), 4, 2, 15},
 };
 
 test_t tests[] = {

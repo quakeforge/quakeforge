@@ -4,6 +4,7 @@ bitmap_txt = """
 0 0010 mmss push
 0 0011 mmss pop
 0 1ccc ttss compare
+0 0000 00nn
 0 1011 nnnn
 0 1111 nnnn
 
@@ -34,11 +35,26 @@ bitmap_txt = """
 
 import copy
 
+address_mode = "ABCD"
+address_types = [
+    "ev_void, ev_invalid",
+    "ev_entity, ev_field",
+    "ev_ptr, ev_short",
+    "ev_ptr, ev_int",
+]
+#store, pop and lea
+store_fmt = [
+    "%ga",
+    "%Ga.%Gb(%Ea)",
+    "*(%Ga + %sb)",
+    "*(%Ga + %Gb)",
+]
+# load and push
 load_fmt =  [
-    "%Ga.%Gb(%Ea), %gc",
     "*%Ga, %gc",
-    "*(%Ga + %sb), %gc",
-    "*(%Ga + %Gb), %gc",
+    "%Ga.%Gb(%Ea)",
+    "*(%Ga + %sb)",
+    "*(%Ga + %Gb)",
 ]
 branch_fmt = [
     "branch %sa (%Oa)",
@@ -175,29 +191,26 @@ lea_formats = {
     "opcode": "OP_LEA_{op_mode[mm]}",
     "mnemonic": "lea",
     "opname": "lea",
-    "format": "{lea_fmt[mm]}",
+    "format": "{lea_fmt[mm]}, %gc",
     "widths": "0, 0, 1",
-    "types": "ev_ptr, ev_ptr, ev_ptr",
+    "types": "{lea_types[mm]}, ev_ptr",
     "args": {
-        "op_mode": "AECD",
-        "lea_fmt": [
-            "%ga, %gc",
-            "%Ga.%Gb(%Ea), %gc",
-            "*(%Ga + %sb), %gc",
-            "*(%Ga + %Gb), %gc",
-        ],
+        "op_mode": address_mode,
+        "lea_fmt": store_fmt,
+        "lea_types": address_types,
     },
 }
 load_formats = {
     "opcode": "OP_LOAD_{op_mode[mm]}_{ss+1}",
     "mnemonic": "load",
     "opname": "load",
-    "format": "{load_fmt[mm]}",
+    "format": "{load_fmt[mm]}, %gc",
     "widths": "0, 0, {ss+1}",
-    "types": "ev_void, ev_void, ev_void",
+    "types": "{load_types[mm]}, ev_void",
     "args": {
-        "op_mode": "EBCD",
+        "op_mode": address_mode,
         "load_fmt": load_fmt,
+        "load_types": address_types,
     },
 }
 mathops_formats = {
@@ -242,15 +255,11 @@ push_formats = {
     "opname": "push",
     "format": "{push_fmt[mm]}",
     "widths": "{ss+1}, 0, 0",
-    "types": "ev_void, ev_void, ev_invalid",
+    "types": "{push_types[mm]}, ev_invalid",
     "args": {
-        "op_mode": "ABCD",
-        "push_fmt": [
-            "%Ga",
-            "*%Ga",
-            "*(%Ga + %sb)",
-            "*(%Ga + %Gb)",
-        ],
+        "op_mode": address_mode,
+        "push_fmt": load_fmt,
+        "push_types": address_types,
     },
 }
 pushregs_formats = {
@@ -267,15 +276,11 @@ pop_formats = {
     "opname": "pop",
     "format": "{pop_fmt[mm]}",
     "widths": "{ss+1}, 0, 0",
-    "types": "ev_void, ev_void, ev_invalid",
+    "types": "{pop_types[mm]}, ev_invalid",
     "args": {
-        "op_mode": "ABCD",
-        "pop_fmt": [
-            "%ga",
-            "*%Ga",
-            "*(%Ga + %sb)",
-            "*(%Ga + %Gb)",
-        ],
+        "op_mode": address_mode,
+        "pop_fmt": store_fmt,
+        "pop_types": address_types,
     },
 }
 popregs_formats = {
@@ -342,24 +347,14 @@ store_formats = {
     "opcode": "OP_STORE_{op_mode[mm]}_{ss+1}",
     "mnemonic": "{store_op[mm]}",
     "opname": "{store_op[mm]}",
-    "format": "{store_fmt[mm]}",
+    "format": "%Gc, {store_fmt[mm]}",
     "widths": "{ss+1}, 0, {ss+1}",
-    "types": "{store_types[mm]}",
+    "types": "{store_types[mm]}, ev_void",
     "args": {
-        "op_mode": "ABCD",
-        "store_fmt": [
-            "%Gc, %ga",
-            "%Gc, *%Ga",
-            "%Gc, *(%Ga + %sb)",
-            "%Gc, *(%Ga + %Gb)",
-        ],
+        "op_mode": address_mode,
+        "store_fmt": store_fmt,
         "store_op": ["assign", "store", "store", "store"],
-        "store_types": [
-            "ev_void, ev_invalid, ev_void",
-            "ev_ptr, ev_invalid, ev_void",
-            "ev_ptr, ev_short, ev_void",
-            "ev_ptr, ev_int, ev_void",
-        ],
+        "store_types": address_types,
     },
 }
 string_formats = {

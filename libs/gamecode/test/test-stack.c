@@ -81,11 +81,11 @@ static dstatement_t stack_AB_statements[] = {
 	{OP(0, 0, 0, OP_PUSH_A_2), 20, 0, 0},
 	{OP(0, 0, 0, OP_PUSH_A_2), 22, 0, 0},
 
-	{OP(0, 0, 0, OP_POP_B_2), 0, 0, 0},
-	{OP(0, 0, 0, OP_POP_B_2), 1, 0, 0},
-	{OP(0, 0, 0, OP_POP_B_1), 2, 0, 0},
-	{OP(0, 0, 0, OP_POP_B_3), 3, 0, 0},
-	{OP(0, 0, 0, OP_POP_B_4), 4, 0, 0},
+	{OP(0, 0, 0, OP_POP_B_2), 7, 5, 0},
+	{OP(0, 0, 0, OP_POP_B_2), 7, 6, 0},
+	{OP(0, 0, 0, OP_POP_B_1), 7, 7, 0},
+	{OP(0, 0, 0, OP_POP_B_3), 7, 8, 0},
+	{OP(0, 0, 0, OP_POP_B_4), 7, 9, 0},
 };
 
 static dstatement_t stack_AC_statements[] = {
@@ -117,11 +117,11 @@ static dstatement_t stack_AD_statements[] = {
 };
 
 static dstatement_t stack_BA_statements[] = {
-	{OP(0, 0, 0, OP_PUSH_B_2), 0, 0, 0},
-	{OP(0, 0, 0, OP_PUSH_B_2), 1, 0, 0},
-	{OP(0, 0, 0, OP_PUSH_B_1), 2, 0, 0},
-	{OP(0, 0, 0, OP_PUSH_B_3), 3, 0, 0},
-	{OP(0, 0, 0, OP_PUSH_B_4), 4, 0, 0},
+	{OP(0, 0, 0, OP_PUSH_B_2), 7, 5, 0},
+	{OP(0, 0, 0, OP_PUSH_B_2), 7, 6, 0},
+	{OP(0, 0, 0, OP_PUSH_B_1), 7, 7, 0},
+	{OP(0, 0, 0, OP_PUSH_B_3), 7, 8, 0},
+	{OP(0, 0, 0, OP_PUSH_B_4), 7, 9, 0},
 
 	{OP(0, 0, 0, OP_POP_A_4), 12, 0, 0},
 	{OP(0, 0, 0, OP_POP_A_3), 16, 0, 0},
@@ -176,6 +176,9 @@ test_t tests[] = {
 		.statements = stack_AB_statements,
 		.init_globals = test_globals_init1,
 		.expect_globals = test_globals_expect1,
+		// FIXME negative field offsets are not official but work because all
+		// offset calculations are done in 32-bit and thus wrap anyway
+		.edict_area = 28,
 	},
 	{
 		.desc = "stack push A pop C",
@@ -203,6 +206,9 @@ test_t tests[] = {
 		.statements = stack_BA_statements,
 		.init_globals = test_globals_init2,
 		.expect_globals = test_globals_expect2,
+		// FIXME negative field offsets are not official but work because all
+		// offset calculations are done in 32-bit and thus wrap anyway
+		.edict_area = 28,
 	},
 	{
 		.desc = "stack push C pop A",

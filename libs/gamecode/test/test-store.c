@@ -39,11 +39,11 @@ static dstatement_t store_A_statements[] = {
 };
 
 static dstatement_t store_B_statements[] = {
-	{OP(0, 0, 0, OP_STORE_B_4), 4, 0, 12},
-	{OP(0, 0, 0, OP_STORE_B_3), 3, 0, 16},
-	{OP(0, 0, 0, OP_STORE_B_1), 2, 0, 19},
-	{OP(0, 0, 0, OP_STORE_B_2), 1, 0, 20},
-	{OP(0, 0, 0, OP_STORE_B_2), 0, 0, 22},
+	{OP(0, 0, 0, OP_STORE_B_4), 7, 9, 12},
+	{OP(0, 0, 0, OP_STORE_B_3), 7, 8, 16},
+	{OP(0, 0, 0, OP_STORE_B_1), 7, 7, 19},
+	{OP(0, 0, 0, OP_STORE_B_2), 7, 6, 20},
+	{OP(0, 0, 0, OP_STORE_B_2), 7, 5, 22},
 };
 
 static dstatement_t store_C_statements[] = {
@@ -78,6 +78,9 @@ test_t tests[] = {
 		.statements = store_B_statements,
 		.init_globals = test_globals_init,
 		.expect_globals = test_globals_expect,
+		// FIXME negative field offsets are not official but work because all
+		// offset calculations are done in 32-bit and thus wrap anyway
+		.edict_area = 28,
 	},
 	{
 		.desc = "store C",
