@@ -139,6 +139,8 @@ rua_get_hash (const void *_op, void *_tab)
 
 	hash = ROTL (~op->types[0], 8) + ROTL (~op->types[1], 16)
 		+ ROTL (~op->types[2], 24);
+	hash += ROTL (~op->widths[0], 12) + ROTL (~op->widths[1], 20)
+		+ ROTL (~op->widths[2], 28);
 	return hash + Hash_String (op->opname);
 }
 
@@ -152,6 +154,9 @@ rua_compare (const void *_opa, const void *_opb, void *unused)
 	cmp = (opa->types[0] == opb->types[0])
 		  && (opa->types[1] == opb->types[1])
 		  && (opa->types[2] == opb->types[2]);
+	cmp &= (opa->widths[0] == opb->widths[0])
+		  && (opa->widths[1] == opb->widths[1])
+		  && (opa->widths[2] == opb->widths[2]);
 	return cmp && !strcmp (opa->opname, opb->opname);
 }
 
@@ -168,6 +173,12 @@ check_operand_type (etype_t ot1, etype_t ot2)
 		|| ot1 == ot2)
 		return 1;
 	return 0;
+}
+
+static int
+check_operand_width (int ow1, int ow2)
+{
+	return ((ow1 == -1 && ow2) || ow1 == ow2);
 }
 
 pr_ushort_t
@@ -219,20 +230,43 @@ v6p_opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 	return op;
 }
 
+static int
+operand_width (operand_t *op)
+{
+	if (!op) {
+		return 0;
+	}
+	return op->width;
+}
+
 static opcode_t *
 rua_opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 				 operand_t *op_c)
 {
-	opcode_t    search_op = {};
+	opcode_t    search_op = {
+		.opname = name,
+		.types = {
+			op_a ? low_level_type (op_a->type) : ev_invalid,
+			op_b ? low_level_type (op_b->type) : ev_invalid,
+			op_c ? low_level_type (op_c->type) : ev_invalid,
+		},
+		.widths = {
+			operand_width (op_a),
+			operand_width (op_b),
+			operand_width (op_c),
+		},
+	};
 	opcode_t   *op;
 	opcode_t   *sop;
 	void      **op_list;
 	int         i;
 
-	search_op.opname = name;
-	search_op.types[0] = op_a ? low_level_type (op_a->type) : ev_invalid;
-	search_op.types[1] = op_b ? low_level_type (op_b->type) : ev_invalid;
-	search_op.types[2] = op_c ? low_level_type (op_c->type) : ev_invalid;
+#if 0
+	printf ("%s [%s %d] [%s %d] [%s %d]\n", search_op.opname,
+			pr_type_name[search_op.types[0]], search_op.widths[0],
+			pr_type_name[search_op.types[1]], search_op.widths[1],
+			pr_type_name[search_op.types[2]], search_op.widths[2]);
+#endif
 	op = Hash_FindElement (rua_opcode_type_table, &search_op);
 	if (op)
 		return op;
@@ -241,10 +275,23 @@ rua_opcode_find (const char *name, operand_t *op_a, operand_t *op_b,
 		return op;
 	for (i = 0; !op && op_list[i]; i++) {
 		sop = op_list[i];
-		if (check_operand_type (sop->types[0], search_op.types[0])
-			&& check_operand_type (sop->types[1], search_op.types[1])
-			&& check_operand_type (sop->types[2], search_op.types[2]))
-			op = sop;
+		if (!(check_operand_type (sop->types[0], search_op.types[0])
+			  && check_operand_type (sop->types[1], search_op.types[1])
+			  && check_operand_type (sop->types[2], search_op.types[2]))) {
+			continue;
+		}
+		if (!(check_operand_width (sop->widths[0], search_op.widths[0])
+			  && check_operand_width (sop->widths[1], search_op.widths[1])
+			  && check_operand_width (sop->widths[2], search_op.widths[2]))) {
+#if 0
+			printf ("%s [%s %d] [%s %d] [%s %d]\n", sop->opname,
+					pr_type_name[sop->types[0]], sop->widths[0],
+					pr_type_name[sop->types[1]], sop->widths[1],
+					pr_type_name[sop->types[2]], sop->widths[2]);
+#endif
+			continue;
+		}
+		op = sop;
 	}
 	free (op_list);
 	return op;

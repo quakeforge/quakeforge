@@ -1007,7 +1007,33 @@ type_size (const type_t *type)
 		case ty_alias:
 			return type_size (type->t.alias.aux_type);
 	}
-	return 0;
+	internal_error (0, "invalid type meta: %d", type->meta);
+}
+
+int
+type_width (const type_t *type)
+{
+	switch (type->meta) {
+		case ty_basic:
+			if (type->type == ev_ushort || type->type == ev_short) {
+				return 0;
+			}
+			return 1;	//FIXME vector should be 3
+		case ty_struct:
+		case ty_union:
+			return 1;
+		case ty_enum:
+			if (!type->t.symtab)
+				return 0;
+			return type_width (&type_int);
+		case ty_array:
+			return type_width (type->t.array.type);
+		case ty_class:
+			return 1;
+		case ty_alias:
+			return type_width (type->t.alias.aux_type);
+	}
+	internal_error (0, "invalid type meta: %d", type->meta);
 }
 
 static void

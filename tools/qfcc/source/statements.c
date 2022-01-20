@@ -426,6 +426,7 @@ nil_operand (type_t *type, expr_t *expr)
 	op = new_operand (op_nil, expr, __builtin_return_address (0));
 	op->type = type;
 	op->size = type_size (type);
+	op->width = type_width (type);
 	return op;
 }
 
@@ -439,6 +440,7 @@ def_operand (def_t *def, type_t *type, expr_t *expr)
 	op = new_operand (op_def, expr, __builtin_return_address (0));
 	op->type = type;
 	op->size = type_size (type);
+	op->width = type_width (type);
 	op->def = def;
 	return op;
 }
@@ -458,6 +460,8 @@ value_operand (ex_value_t *value, expr_t *expr)
 	operand_t  *op;
 	op = new_operand (op_value, expr, __builtin_return_address (0));
 	op->type = value->type;
+	op->size = type_size (value->type);
+	op->width = type_width (value->type);
 	op->value = value;
 	return op;
 }
@@ -470,6 +474,7 @@ temp_operand (type_t *type, expr_t *expr)
 	op->tempop.type = type;
 	op->type = type;
 	op->size = type_size (type);
+	op->width = type_width (type);
 	return op;
 }
 
@@ -544,6 +549,7 @@ alias_operand (type_t *type, operand_t *op, expr_t *expr)
 	aop->alias = op;
 	aop->type = type;
 	aop->size = type_size (type);
+	aop->width = type_width (type);
 	return aop;
 }
 

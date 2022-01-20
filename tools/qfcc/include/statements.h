@@ -68,6 +68,7 @@ typedef struct operand_s {
 	op_type_e   op_type;
 	struct type_s *type;		///< possibly override def's/nil's type
 	int         size;			///< for structures
+	int         width;			///< for SIMD selection
 	struct expr_s *expr;		///< expression generating this operand
 	void       *return_addr;	///< who created this operand
 	union {

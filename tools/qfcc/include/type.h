@@ -166,6 +166,7 @@ int type_compatible (const type_t *dst, const type_t *src) __attribute__((pure))
 int type_assignable (const type_t *dst, const type_t *src);
 int type_same (const type_t *dst, const type_t *src) __attribute__((pure));
 int type_size (const type_t *type) __attribute__((pure));
+int type_width (const type_t *type) __attribute__((pure));
 
 void init_types (void);
 void chain_initial_types (void);
