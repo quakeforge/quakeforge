@@ -948,7 +948,13 @@ dereference_dst:
 										dst_expr->e.address.offset, &ofs);
 		} else {
 			sblock = statement_subexpr (sblock, dst_expr, &dst);
-			ofs = 0;
+			if (options.code.progsversion < PROG_VERSION) {
+				// v6 and v6p stores don't need an index
+				ofs = 0;
+			} else {
+				// ruamoko stores do need an index
+				ofs = short_operand (0, e);
+			}
 		}
 		type = st_ptrassign;
 	}
