@@ -99,7 +99,7 @@ branch_formats = {
     "mnemonic": "{op_cond[c*4+cc]}",
     "opname": "{op_cond[c*4+cc]}",
     "format": "{cond_fmt[c*4+cc]}{branch_fmt[0]}",
-    "widths": "{cond_widths[c*4+cc]}",
+    "widths": "0, 0, 1",
     "types": "ev_short, ev_invalid, ev_int",
     "args": {
         "op_mode": "ABCD",
@@ -107,16 +107,6 @@ branch_formats = {
                     "ifnz", "ifae", "ifbe", None],
         "branch_fmt": branch_fmt,
         "cond_fmt": ["%Gc ", "%Gc ", "%Gc ", "", "%Gc ", "%Gc ", "%Gc ", ""],
-        "cond_widths": [
-            "0, 0, 1",
-            "0, 0, 1",
-            "0, 0, 1",
-            "0, 0, 0",
-            "0, 0, 1",
-            "0, 0, 1",
-            "0, 0, 1",
-            "0, 0, 0",
-        ],
     },
 }
 call_formats = {
@@ -124,7 +114,7 @@ call_formats = {
     "mnemonic": "call",
     "opname": "call",
     "format": "{call_fmt[mm]}",
-    "widths": "0, 0, 0",
+    "widths": "{call_widths[mm]}, 0",
     "types": "ev_void, ev_void, ev_void",
     "args": {
         "op_mode": ".BCD",
@@ -134,6 +124,7 @@ call_formats = {
             "%Ga[%sb], %gc",
             "%Ga[%Gb], %gc",
         ],
+        "call_widths": [ None, "1, 0", "1, 0", "1, 1" ]
     },
 }
 compare_formats = {
@@ -165,7 +156,7 @@ convert_formats = {
     "mnemonic": "conv",
     "opname": "conv",
     "format": "%Ga %Cb %gc",
-    "widths": "1, 0, 1",
+    "widths": "-1, 0, -1",
     "types": "ev_void, ev_short, ev_void",
 }
 hops_formats = {
@@ -173,7 +164,7 @@ hops_formats = {
     "mnemonic": "hops",
     "opname": "hops",
     "format": "%Ga %Hb %gc",
-    "widths": "1, 0, 1",
+    "widths": "-1, 0, 1",
     "types": "ev_void, ev_short, ev_void",
 }
 jump_formats = {
@@ -181,7 +172,7 @@ jump_formats = {
     "mnemonic": "jump",
     "opname": "jump",
     "format": "{jump_fmt[mm]}",
-    "widths": "0, 0, 0",
+    "widths": "{jump_widths[mm]}, 0",
     "types": "{jump_types[mm]}",
     "args": {
         "op_mode": "ABCD",
@@ -192,6 +183,7 @@ jump_formats = {
             "ev_ptr, ev_short, ev_invalid",
             "ev_ptr, ev_int, ev_invalid",
         ],
+        "jump_widths": [ "0, 0", "1, 0", "1, 0", "1, 1" ]
     },
 }
 lea_formats = {
@@ -239,11 +231,17 @@ memset_formats = {
     "mnemonic": "memset.{op_memset[oo]}",
     "opname": "memset",
     "format": "{memset_fmt[oo]}",
-    "widths": "0, 0, 0",
+    "widths": "{memset_widths[oo]}",
     "types": "ev_int, ev_void, ev_void",
     "args": {
         "op_memset": ["i", "p", "pi", None],
         "memset_fmt": ["%Ga, %sb, %gc", "%Ga, %Gb, %Gc", "%Ga, %sb, %Gc", None],
+        "memset_widths": [
+            "1, 0, -1",
+            "1, 1, 1",
+            "1, 0, 1",
+            None,
+        ],
     },
 }
 move_formats = {
@@ -251,11 +249,17 @@ move_formats = {
     "mnemonic": "memset.{op_move[oo]}",
     "opname": "memset",
     "format": "{move_fmt[oo]}",
-    "widths": "0, 0, 0",
+    "widths": "{move_widths[oo]}",
     "types": "ev_int, ev_void, ev_void",
     "args": {
         "op_move": ["i", "p", "pi", None],
         "move_fmt": ["%Ga, %sb, %gc", "%Ga, %Gb, %Gc", "%Ga, %sb, %Gc", None],
+        "move_widths": [
+            "-1, 0, -1",
+            "1, 1, 1",
+            "1, 0, 1",
+            None,
+        ],
     },
 }
 push_formats = {
@@ -331,7 +335,7 @@ statef_formats = {
     "mnemonic": "state.{state[c]}",
     "opname": "state",
     "format": "{state_fmt[c]}",
-    "widths": "1, 1, 1",
+    "widths": "1, 1, {c}",
     "types": "ev_float, ev_func, {state_types[c]}",
     "args": {
         "state": ["ft", "ftt"],
@@ -344,7 +348,7 @@ stated_formats = {
     "mnemonic": "state.{state[c]}",
     "opname": "state",
     "format": "{state_fmt[c]}",
-    "widths": "1, 1, 1",
+    "widths": "1, 1, {c}",
     "types": "ev_float, ev_func, {state_types[c]}",
     "args": {
         "state": ["dt", "dtt"],
@@ -372,7 +376,7 @@ string_formats = {
     "mnemonic": "{op_str[o*4+oo]}.s",
     "opname": "{op_str[o*4+oo]}",
     "format": "{str_fmt[o*4+oo]}",
-    "widths": "1, 1, 1",
+    "widths": "1, {(o*4+oo)<7 and 1 or 0}, 1",
     "types": "{str_types[o*4+oo]}",
     "args": {
         "op_str": ["eq", "lt", "gt", "add", "cmp", "ge", "le", "not"],
@@ -414,7 +418,7 @@ return_formats = {
     "opcode": "OP_RETURN",
     "mnemonic": "return",
     "opname": "return",
-    "widths": "0, 0, 0",    # width specified by st->c
+    "widths": "-1, -1, 0",    # width specified by st->c
     "format": "FIXME",
     "types": "ev_void, ev_void, ev_void",
 }
@@ -458,8 +462,8 @@ with_formats = {
     "mnemonic": "with",
     "opname": "with",
     "format": "%sa, %sb, %sc",
-    "widths": "0, 0, 0",
-    "types": "ev_void, ev_void, ev_void",
+    "widths": "0, -1, 0",
+    "types": "ev_short, ev_void, ev_short",
 }
 
 group_map = {
