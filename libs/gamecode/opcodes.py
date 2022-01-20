@@ -42,6 +42,13 @@ address_types = [
     "ev_ptr, ev_short",
     "ev_ptr, ev_int",
 ]
+address_widths = [
+    [ "1, 0", "1, 1", "1, 0", "1, 1", ],
+    [ "2, 0", "1, 1", "1, 0", "1, 1", ],
+    [ "3, 0", "1, 1", "1, 0", "1, 1", ],
+    [ "4, 0", "1, 1", "1, 0", "1, 1", ],
+    [ "-1, 0", "1, 1", "1, 0", "1, 1", ],
+]
 #store, pop and lea
 store_fmt = [
     "%ga",
@@ -192,12 +199,13 @@ lea_formats = {
     "mnemonic": "lea",
     "opname": "lea",
     "format": "{lea_fmt[mm]}, %gc",
-    "widths": "0, 0, 1",
+    "widths": "{lea_widths[mm]}, 1",
     "types": "{lea_types[mm]}, ev_ptr",
     "args": {
         "op_mode": address_mode,
         "lea_fmt": store_fmt,
         "lea_types": address_types,
+        "lea_widths": address_widths[4],
     },
 }
 load_formats = {
@@ -205,12 +213,13 @@ load_formats = {
     "mnemonic": "load",
     "opname": "load",
     "format": "{load_fmt[mm]}, %gc",
-    "widths": "0, 0, {ss+1}",
+    "widths": "{load_widths[ss][mm]}, {ss+1}",
     "types": "{load_types[mm]}, ev_void",
     "args": {
         "op_mode": address_mode,
         "load_fmt": load_fmt,
         "load_types": address_types,
+        "load_widths": address_widths,
     },
 }
 mathops_formats = {
@@ -348,13 +357,14 @@ store_formats = {
     "mnemonic": "{store_op[mm]}",
     "opname": "{store_op[mm]}",
     "format": "%Gc, {store_fmt[mm]}",
-    "widths": "{ss+1}, 0, {ss+1}",
+    "widths": "{store_widths[ss][mm]}, {ss+1}",
     "types": "{store_types[mm]}, ev_void",
     "args": {
         "op_mode": address_mode,
         "store_fmt": store_fmt,
         "store_op": ["assign", "store", "store", "store"],
         "store_types": address_types,
+        "store_widths": address_widths,
     },
 }
 string_formats = {
