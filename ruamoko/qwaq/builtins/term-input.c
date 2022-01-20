@@ -860,6 +860,12 @@ bi_init_input (progs_t *pr)
 	qwaq_input_init (res);
 	res->initialized = 1;
 	create_thread (qwaq_input_thread, res);
+
+	IE_event_t  event = {
+		.type = ie_app_gain_focus,
+		.when = Sys_LongTime (),
+	};
+	IE_Send_Event (&event);
 }
 
 static builtin_t builtins[] = {
