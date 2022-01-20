@@ -1149,9 +1149,11 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 						operand_t *operands[FLOW_OPERANDS])
 {
 	int         i, start, calln = -1;
+	operand_t  *src_op = 0;
 	operand_t  *res_op = 0;
 	operand_t  *aux_op1 = 0;
 	operand_t  *aux_op2 = 0;
+	operand_t  *aux_op3 = 0;
 
 	if (use) {
 		set_empty (use);
@@ -1191,11 +1193,11 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			}
 			break;
 		case st_assign:
-			flow_add_op_var (def, s->opb, 0);
-			flow_add_op_var (use, s->opa, 1);
+			flow_add_op_var (def, s->opa, 0);
+			flow_add_op_var (use, s->opc, 1);
 			if (operands) {
-				operands[0] = s->opb;
-				operands[1] = s->opa;
+				operands[0] = s->opa;
+				operands[1] = s->opc;
 			}
 			break;
 		case st_ptrassign:
@@ -1205,23 +1207,28 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 		case st_ptrmemset:
 			flow_add_op_var (use, s->opa, 1);
 			flow_add_op_var (use, s->opb, 1);
+			aux_op1 = s->opb;
 			if (!strcmp (s->opcode, "move")
 				|| !strcmp (s->opcode, "memset")) {
 				flow_add_op_var (def, s->opc, 0);
+				src_op = s->opa;
 				res_op = s->opc;
 			} else if (!strcmp (s->opcode, "movep")) {
 				flow_add_op_var (use, s->opc, 0);
-				aux_op2 = flow_analyze_pointer_operand (s->opa, use);
+				aux_op3 = flow_analyze_pointer_operand (s->opa, use);
 				res_op = flow_analyze_pointer_operand (s->opc, def);
-				aux_op1 = s->opc;
+				src_op = s->opa;
+				aux_op2 = s->opc;
 			} else if (!strcmp (s->opcode, "memsetp")) {
 				flow_add_op_var (use, s->opc, 0);
 				res_op = flow_analyze_pointer_operand (s->opc, def);
-				aux_op1 = s->opc;
+				src_op = s->opa;
+				aux_op2 = s->opc;
 			} else if (!strcmp (s->opcode, "store")) {
-				flow_add_op_var (use, s->opc, 1);
-				res_op = flow_analyze_pointer_operand (s->opb, def);
-				aux_op1 = s->opc;
+				flow_add_op_var (use, s->opb, 1);
+				res_op = flow_analyze_pointer_operand (s->opa, def);
+				src_op = s->opc;
+				aux_op2 = s->opa;
 			} else {
 				internal_error (s->expr, "unexpected opcode '%s' for %d",
 								s->opcode, s->type);
@@ -1231,10 +1238,10 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			}
 			if (operands) {
 				operands[0] = res_op;
-				operands[1] = s->opa;
-				operands[2] = s->opb;
-				operands[3] = aux_op1;
-				operands[4] = aux_op2;
+				operands[1] = src_op;
+				operands[2] = aux_op1;
+				operands[3] = aux_op2;
+				operands[4] = aux_op3;
 			}
 			break;
 		case st_state:
@@ -1296,14 +1303,21 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 			}
 			break;
 		case st_flow:
-			if (strcmp (s->opcode, "jump") != 0) {
+			if (statement_is_goto (s)) {
+				// opa is just a label
+			} else if (statement_is_jumpb (s)) {
 				flow_add_op_var (use, s->opa, 1);
-				if (strcmp (s->opcode, "jumpb") == 0)
-					flow_add_op_var (use, s->opb, 1);
+				flow_add_op_var (use, s->opb, 1);
+			} else if (statement_is_cond (s)) {
+				flow_add_op_var (use, s->opc, 1);
+			} else {
+				internal_error (s->expr, "unexpected flow statement: %s",
+								s->opcode);
 			}
 			if (operands) {
 				operands[1] = s->opa;
 				operands[2] = s->opb;
+				operands[3] = s->opc;
 			}
 			break;
 	}

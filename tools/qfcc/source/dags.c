@@ -1116,12 +1116,12 @@ generate_assignments (dag_t *dag, sblock_t *block, operand_t *src,
 	operand_t   *operands[3] = {0, 0, 0};
 	daglabel_t  *var;
 
-	operands[0] = fix_op_type (src, type);
+	operands[2] = fix_op_type (src, type);
 	for ( ; var_iter; var_iter = set_next (var_iter)) {
 		var = dag->labels[var_iter->element];
-		operands[1] = fix_op_type (var->op, type);
+		operands[0] = fix_op_type (var->op, type);
 		if (!dst)
-			dst = operands[1];
+			dst = operands[0];
 
 		st = build_statement ("assign", operands, var->expr);
 		sblock_add_statement (block, st);
@@ -1172,15 +1172,15 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 		case st_assign:
 			internal_error (0, "unexpected assignment node");
 		case st_ptrassign:
-			operands[0] = make_operand (dag, block, dagnode, 0);
-			operands[1] = make_operand (dag, block, dagnode, 1);
-			if (dagnode->children[2])
-				operands[2] = make_operand (dag, block, dagnode, 2);
+			operands[2] = make_operand (dag, block, dagnode, 0);
+			operands[0] = make_operand (dag, block, dagnode, 2);
+			if (dagnode->children[1])
+				operands[1] = make_operand (dag, block, dagnode, 1);
 			st = build_statement (dagnode->label->opcode, operands,
 								  dagnode->label->expr);
 			sblock_add_statement (block, st);
 			// the source location is suitable for use in other nodes
-			dst = operands[0];
+			dst = operands[2];
 			break;
 		case st_move:
 			dst = generate_moves (dag, block, dagnode);
@@ -1207,6 +1207,8 @@ dag_gencode (dag_t *dag, sblock_t *block, dagnode_t *dagnode)
 			operands[0] = make_operand (dag, block, dagnode, 0);
 			if (dagnode->children[1])
 				operands[1] = make_operand (dag, block, dagnode, 1);
+			if (dagnode->children[2])
+				operands[2] = make_operand (dag, block, dagnode, 2);
 			st = build_statement (dagnode->label->opcode, operands,
 								  dagnode->label->expr);
 			sblock_add_statement (block, st);

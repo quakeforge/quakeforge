@@ -183,20 +183,36 @@ static void
 emit_statement (statement_t *statement)
 {
 	const char *opcode = statement->opcode;
+	operand_t  *op_a, *op_b, *op_c;
 	def_t      *def_a, *def_b, *def_c;
 	instruction_t *inst;
 	dstatement_t *s;
 
-	def_a = get_operand_def (statement->expr, statement->opa);
+	if (options.code.progsversion < PROG_VERSION
+		&& (strcmp (statement->opcode, "store") == 0
+			|| strcmp (statement->opcode, "assign") == 0
+			|| statement_is_cond (statement))) {
+		// the operands for assign, store and branch instructions are rotated
+		// when comparing v6/v6p and ruamoko
+		op_a = statement->opc;
+		op_b = statement->opa;
+		op_c = statement->opb;
+	} else {
+		op_a = statement->opa;
+		op_b = statement->opb;
+		op_c = statement->opc;
+	}
+	def_a = get_operand_def (statement->expr, op_a);
 	use_tempop (statement->opa, statement->expr);
-	def_b = get_operand_def (statement->expr, statement->opb);
+	def_b = get_operand_def (statement->expr, op_b);
 	use_tempop (statement->opb, statement->expr);
-	def_c = get_operand_def (statement->expr, statement->opc);
+	def_c = get_operand_def (statement->expr, op_c);
 	use_tempop (statement->opc, statement->expr);
-	inst = opcode_find (opcode, statement->opa, statement->opb, statement->opc);
+	inst = opcode_find (opcode, op_a, op_b, op_c);
 
 	if (!inst) {
 		print_expr (statement->expr);
+		printf ("%d ", pr.code->size);
 		print_statement (statement);
 		internal_error (statement->expr, "ice ice baby");
 	}
@@ -225,9 +241,9 @@ emit_statement (statement_t *statement)
 	add_statement_def_ref (def_b, s, 1);
 	add_statement_def_ref (def_c, s, 2);
 
-	add_statement_op_ref (statement->opa, s, 0);
-	add_statement_op_ref (statement->opb, s, 1);
-	add_statement_op_ref (statement->opc, s, 2);
+	add_statement_op_ref (op_a, s, 0);
+	add_statement_op_ref (op_b, s, 1);
+	add_statement_op_ref (op_c, s, 2);
 }
 
 void

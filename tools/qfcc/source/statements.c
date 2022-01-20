@@ -642,14 +642,22 @@ statement_is_return (statement_t *s)
 	return !strncmp (s->opcode, "return", 6);
 }
 
+static ex_label_t **
+statement_get_labelref (statement_t *s)
+{
+	if (statement_is_cond (s)
+		|| statement_is_goto (s)
+		|| statement_is_jumpb (s)) {
+		return &s->opa->label;
+	}
+	return 0;
+}
+
 sblock_t *
 statement_get_target (statement_t *s)
 {
-	if (statement_is_cond (s))
-		return s->opb->label->dest;
-	if (statement_is_goto (s))
-		return s->opa->label->dest;
-	return 0;
+	ex_label_t **label = statement_get_labelref (s);
+	return label ? (*label)->dest : 0;
 }
 
 sblock_t **
@@ -961,9 +969,9 @@ dereference_dst:
 		ofs = 0;
 	}
 	s = new_statement (type, opcode, e);
-	s->opa = src;
-	s->opb = dst;
-	s->opc = ofs;
+	s->opa = dst;
+	s->opb = ofs;
+	s->opc = src;
 	sblock_add_statement (sblock, s);
 	return sblock;
 }
@@ -1038,8 +1046,8 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 				sblock = statement_subexpr (sblock, a, &arg);
 				if (arg != p) {
 					s = new_statement (st_assign, "assign", a);
-					s->opa = arg;
-					s->opb = p;
+					s->opa = p;
+					s->opc = arg;
 					sblock_add_statement (sblock, s);
 				}
 			}
@@ -1086,8 +1094,8 @@ statement_branch (sblock_t *sblock, expr_t *e)
 	} else {
 		opcode = opcodes [e->e.branch.type];
 		s = new_statement (st_flow, opcode, e);
-		sblock = statement_subexpr (sblock, e->e.branch.test, &s->opa);
-		s->opb = label_operand (e->e.branch.target);
+		sblock = statement_subexpr (sblock, e->e.branch.test, &s->opc);
+		s->opa = label_operand (e->e.branch.target);
 	}
 
 	sblock_add_statement (sblock, s);
@@ -1928,14 +1936,15 @@ thread_jumps (sblock_t *blocks)
 				(*label)->symbol = 0;
 			}
 		} else if (statement_is_cond (s)) {
-			label = &s->opb->label;
+			label = &s->opa->label;
 		} else {
 			continue;
 		}
 		for (l = *label;
 			 l->dest && l->dest->statements
 			 && statement_is_goto (l->dest->statements);
-			 l = l->dest->statements->opa->label) {
+			 l = *statement_get_labelref (l->dest->statements)) {
+			// empty loop
 		}
 		if (l != *label) {
 			unuse_label (*label);
@@ -1988,11 +1997,12 @@ remove_dead_blocks (sblock_t *blocks)
 			s = (statement_t *) sblock->tail;
 			if (statement_is_cond (s)
 				&& sb->statements && statement_is_goto (sb->statements)
-				&& s->opb->label->dest == sb->next) {
+				&& statement_get_target (s) == sb->next) {
 				debug (0, "merging if/goto %p %p", sblock, sb);
-				unuse_label (s->opb->label);
-				s->opb->label = sb->statements->opa->label;
-				s->opb->label->used++;
+				ex_label_t **labelref = statement_get_labelref(s);
+				unuse_label (*labelref);
+				*labelref = *statement_get_labelref (sb->statements);
+				(*labelref)->used++;
 				invert_conditional (s);
 				sb->reachable = 0;
 				for (sb = sb->next; sb; sb = sb->next)
@@ -2014,10 +2024,8 @@ remove_dead_blocks (sblock_t *blocks)
 
 				if (sb->statements) {
 					s = (statement_t *) sb->tail;
-					if (statement_is_goto (s))
-						label = s->opa->label;
-					else if (statement_is_cond (s))
-						label = s->opb->label;
+					ex_label_t **labelref = statement_get_labelref (s);
+					label = labelref ? *labelref : 0;
 				}
 				unuse_label (label);
 				did_something = 1;
