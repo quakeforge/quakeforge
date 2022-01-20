@@ -52,22 +52,6 @@ etype_tt = ["ev_int", "ev_float", "ev_long", "ev_double"]
 unsigned_t = ["ev_uint", "ev_ulong"]
 float_t = ["ev_float", "ev_double"]
 
-all_formats = {
-    "opcode": "OP_ALL_{ss+1}",
-    "mnemonic": "all",
-    "opname": "all",
-    "format": "%Ga, %gc",
-    "widths": "{ss+1}, 0, 1",
-    "types": "ev_int, ev_int, ev_int",
-}
-any_formats = {
-    "opcode": "OP_ANY_{ss+1}",
-    "mnemonic": "any",
-    "opname": "any",
-    "format": "%Ga, %gc",
-    "widths": "{ss+1}, 0, 1",
-    "types": "ev_int, ev_int, ev_int",
-}
 bitops_formats = {
     "opcode": "OP_{op_bit[oo].upper()}_{bit_type[t]}_{ss+1}",
     "mnemonic": "{op_bit[oo]}",
@@ -251,14 +235,6 @@ move_formats = {
         "op_move": ["i", "p", "pi", None],
         "move_fmt": ["%Ga, %sb, %gc", "%Ga, %Gb, %Gc", "%Ga, %sb, %Gc", None],
     },
-}
-none_formats = {
-    "opcode": "OP_NONE_{ss+1}",
-    "mnemonic": "none",
-    "opname": "none",
-    "format": "%Ga, %gc",
-    "widths": "{ss+1}, 0, 1",
-    "types": "ev_int, ev_invalid, ev_int",
 }
 push_formats = {
     "opcode": "OP_PUSH_{op_mode[mm]}_{ss+1}",
@@ -482,8 +458,6 @@ with_formats = {
 }
 
 group_map = {
-    "all":      all_formats,
-    "any":      any_formats,
     "bitops":   bitops_formats,
     "branch":   branch_formats,
     "call":     call_formats,
@@ -497,7 +471,6 @@ group_map = {
     "mathops":  mathops_formats,
     "memset":   memset_formats,
     "move":     move_formats,
-    "none":     none_formats,
     "push":     push_formats,
     "pushregs": pushregs_formats,
     "pop":      pop_formats,
