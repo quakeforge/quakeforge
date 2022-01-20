@@ -146,7 +146,6 @@ function_t *build_code_function (struct symbol_s *fsym,
 function_t *build_builtin_function (struct symbol_s *sym,
 									struct expr_s *bi_val, int far,
 									enum storage_class_e storage);
-void finish_function (function_t *f);
 void emit_function (function_t *f, struct expr_s *e);
 int function_parms (function_t *f, byte *parm_size);
 void clear_functions (void);

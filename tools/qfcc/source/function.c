@@ -646,7 +646,6 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 		statements = state_expr;
 	}
 	emit_function (fsym->s.func, statements);
-	finish_function (fsym->s.func);
 	return fsym->s.func;
 }
 
@@ -692,17 +691,11 @@ build_builtin_function (symbol_t *sym, expr_t *bi_val, int far,
 	sym->s.func->builtin = bi;
 	reloc_def_func (sym->s.func, sym->s.func->def);
 	build_function (sym);
-	finish_function (sym->s.func);
 
 	// for debug info
 	build_scope (sym, current_symtab);
 	sym->s.func->symtab->space->size = 0;
 	return sym->s.func;
-}
-
-void
-finish_function (function_t *f)
-{
 }
 
 void
