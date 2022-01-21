@@ -647,6 +647,7 @@ int is_math_op (int op) __attribute__((const));
 int is_logic (int op) __attribute__((const));
 
 int has_function_call (expr_t *e) __attribute__((pure));
+int is_function_call (expr_t *e) __attribute__((pure));
 
 int is_nil (expr_t *e) __attribute__((pure));
 int is_string_val (expr_t *e) __attribute__((pure));

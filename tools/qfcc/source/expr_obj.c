@@ -248,6 +248,9 @@ message_expr (expr_t *receiver, keywordarg_t *message)
 	if (call->type == ex_error)
 		return receiver;
 
-	call->e.block.result = new_ret_expr (return_type);
+	if (!is_function_call (call->e.block.result)) {
+		internal_error (call, "unexpected block result type");
+	}
+	call->e.block.result->e.branch.ret_type = return_type;
 	return call;
 }

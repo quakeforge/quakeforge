@@ -216,9 +216,10 @@ get_type (expr_t *e)
 	convert_name (e);
 	switch (e->type) {
 		case ex_branch:
-		case ex_labelref:
 			type = e->e.branch.ret_type;
 			break;
+		case ex_labelref:
+			return &type_void;
 		case ex_memset:
 			return e->e.memset.type;
 		case ex_error:
@@ -504,6 +505,7 @@ copy_expr (expr_t *e)
 			n = new_expr ();
 			*n = *e;
 			n->e.branch.target = copy_expr (e->e.branch.target);
+			n->e.branch.index = copy_expr (e->e.branch.index);
 			n->e.branch.test = copy_expr (e->e.branch.test);
 			n->e.branch.args = copy_expr (e->e.branch.args);
 			return n;
@@ -1658,6 +1660,12 @@ has_function_call (expr_t *e)
 	internal_error (e, "invalid expression type");
 }
 
+int
+is_function_call (expr_t *e)
+{
+	return e->type == ex_branch && e->e.branch.type == pr_branch_call;
+}
+
 expr_t *
 asx_expr (int op, expr_t *e1, expr_t *e2)
 {
@@ -2116,12 +2124,7 @@ build_function_call (expr_t *fexpr, const type_t *ftype, expr_t *params)
 		append_expr (call, e);
 	}
 	e = expr_file_line (call_expr (fexpr, args, ftype->t.func.type), fexpr);
-	append_expr (call, e);
-	if (!is_void(ftype->t.func.type)) {
-		call->e.block.result = new_ret_expr (ftype->t.func.type);
-	} else if (options.traditional) {
-		call->e.block.result = new_ret_expr (&type_float);
-	}
+	call->e.block.result = e;
 	return call;
 }
 

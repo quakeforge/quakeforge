@@ -1071,6 +1071,9 @@ expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
 	sblock = statement_subexpr (sblock, func, &s->opa);
 	s->opb = arguments[0];
 	s->opc = arguments[1];
+	if (op) {
+		*op = return_operand (call->e.branch.ret_type, call);
+	}
 	sblock_add_statement (sblock, s);
 	sblock->next = new_sblock ();
 	return sblock->next;
@@ -1116,6 +1119,16 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 	sblock_add_statement (sblock, s);
 	sblock->next = new_sblock ();
 	return sblock->next;
+}
+
+static sblock_t *
+expr_branch (sblock_t *sblock, expr_t *e, operand_t **op)
+{
+	if (e->e.branch.type != pr_branch_call) {
+		internal_error (e, "unexpected branch type in expression: %d",
+						e->e.branch.type);
+	}
+	return expr_call (sblock, e, op);
 }
 
 static sblock_t *
@@ -1618,6 +1631,7 @@ statement_subexpr (sblock_t *sblock, expr_t *e, operand_t **op)
 		[ex_alias] = expr_alias,
 		[ex_address] = expr_address,
 		[ex_assign] = expr_assign,
+		[ex_branch] = expr_branch,
 	};
 	if (!e) {
 		*op = 0;
@@ -1804,6 +1818,11 @@ statement_block (sblock_t *sblock, expr_t *e)
 		sblock = sblock->next;
 	}
 	sblock = statement_slist (sblock, e->e.block.head);
+	if (e->e.block.is_call) {
+		// for a fuction call, the call expresion is in only the result, not
+		// the actual block
+		sblock = statement_slist (sblock, e->e.block.result);
+	}
 	return sblock;
 }
 
