@@ -61,3 +61,12 @@ PR_Opcode (pr_ushort_t opcode)
 	opcode &= OP_MASK;
 	return &pr_opcodes[opcode];
 }
+
+int
+PR_Check_Opcodes (progs_t *pr)
+{
+	if (pr->progs->version < PROG_VERSION) {
+		return PR_Check_v6p_Opcodes (pr);
+	}
+	return 1;
+}

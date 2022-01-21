@@ -1591,7 +1591,7 @@ error:
 }
 
 int
-PR_Check_Opcodes (progs_t *pr)
+PR_Check_v6p_Opcodes (progs_t *pr)
 {
 	const v6p_opcode_t *op;
 	dstatement_t *st;

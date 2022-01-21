@@ -264,6 +264,7 @@ int PR_RunPostLoadFuncs (progs_t *pr);
 	\todo should this be elsewhere?
 */
 int PR_Check_Opcodes (progs_t *pr);
+int PR_Check_v6p_Opcodes (progs_t *pr);
 
 void PR_BoundsCheckSize (progs_t *pr, pr_ptr_t addr, unsigned size);
 void PR_BoundsCheck (progs_t *pr, int addr, etype_t type);
