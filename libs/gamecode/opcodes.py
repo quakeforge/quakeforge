@@ -5,6 +5,9 @@ bitmap_txt = """
 0 0011 mmss pop
 0 1ccc ttss compare
 0 0000 00nn
+0 0000 0000 noop
+0 0000 0001 adjstk
+0 0000 0010 constant
 0 1011 nnnn
 0 1111 nnnn
 
@@ -75,6 +78,14 @@ etype_tt = ["ev_int", "ev_float", "ev_long", "ev_double"]
 unsigned_t = ["ev_uint", "ev_ulong"]
 float_t = ["ev_float", "ev_double"]
 
+adjstk_formats = {
+    "opcode": "OP_ADJSTK",
+    "mnemonic": "adjstk",
+    "opname": "adjstk",
+    "format": "%sa, %sb",
+    "widths": "0, 0, 0",
+    "types": "ev_short, ev_short, ev_invalid",
+}
 bitops_formats = {
     "opcode": "OP_{op_bit[oo].upper()}_{bit_type[t]}_{ss+1}",
     "mnemonic": "{op_bit[oo]}",
@@ -156,6 +167,14 @@ compare2_formats = {
         "cmp_type": ['u', 'U'],
         "cmp_types": unsigned_t,
     },
+}
+constant_formats = {
+    "opcode": "OP_LDCONST",
+    "mnemonic": "ldconst",
+    "opname": "ldconst",
+    "format": "%sa, %sb, %gc",
+    "widths": "0, 0, -1",
+    "types": "ev_short, ev_short, ev_void",
 }
 convert_formats = {
     "opcode": "OP_CONV",
@@ -267,6 +286,14 @@ move_formats = {
             None,
         ],
     },
+}
+noop_formats = {
+    "opcode": "OP_NOP",
+    "mnemonic": "nop",
+    "opname": "nop",
+    "format": "there were plums...",
+    "widths": "0, 0, 0",
+    "types": "ev_invalid, ev_invalid, ev_invalid",
 }
 push_formats = {
     "opcode": "OP_PUSH_{op_mode[mm]}_{ss+1}",
@@ -473,11 +500,13 @@ with_formats = {
 }
 
 group_map = {
+    "adjstk":   adjstk_formats,
     "bitops":   bitops_formats,
     "branch":   branch_formats,
     "call":     call_formats,
     "compare":  compare_formats,
     "compare2": compare2_formats,
+    "constant": constant_formats,
     "convert":  convert_formats,
     "hops":     hops_formats,
     "jump":     jump_formats,
@@ -486,6 +515,7 @@ group_map = {
     "mathops":  mathops_formats,
     "memset":   memset_formats,
     "move":     move_formats,
+    "noop":     noop_formats,
     "push":     push_formats,
     "pushregs": pushregs_formats,
     "pop":      pop_formats,

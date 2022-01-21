@@ -2766,6 +2766,18 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 		pr_opcode_e st_op = st->op & OP_MASK;
 		switch (st_op) {
 			// 0 0000
+			case OP_NOP:
+				break;
+			case OP_ADJSTK:
+				if (st->a || (st->b & 3)) {
+					PR_RunError (pr, "invalid stack adjustment: %d, %d",
+								 st->a, (short) st->b);
+				}
+				*pr->globals.stack += (short) st->b;
+				break;
+			case OP_LDCONST:
+				PR_RunError (pr, "OP_LDCONST not implemented");
+				break;
 			case OP_LOAD_B_1:
 			case OP_LOAD_C_1:
 			case OP_LOAD_D_1:
