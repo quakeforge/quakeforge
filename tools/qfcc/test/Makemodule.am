@@ -41,6 +41,7 @@ test_progs_dat=\
 	tools/qfcc/test/ptrstructcast.dat \
 	tools/qfcc/test/quaternion.dat \
 	tools/qfcc/test/return-ivar.dat \
+	tools/qfcc/test/return-postop.dat \
 	tools/qfcc/test/sendv.dat \
 	tools/qfcc/test/state.dat \
 	tools/qfcc/test/static-init.dat \
@@ -62,7 +63,8 @@ test_progs_dat=\
 	tools/qfcc/test/while.dat \
 	tools/qfcc/test/zerolinker.dat
 
-fail_progs_dat=
+fail_progs_dat=\
+	tools/qfcc/test/return-postop.dat
 
 test_build_errors=\
 	tools/qfcc/test/classarray.r \
@@ -480,6 +482,16 @@ tools/qfcc/test/return-ivar.run: $(qfcc_test_run_deps)
 	@$(top_srcdir)/tools/qfcc/test/build-run $@
 include $(return_ivar_dep) # am--include-marker
 r_depfiles_remade += $(return_ivar_dep)
+
+tools_qfcc_test_return_postop_dat_SOURCES=tools/qfcc/test/return-postop.r
+return_postop_obj=$(tools_qfcc_test_return_postop_dat_SOURCES:.r=.o)
+return_postop_dep=$(call qcautodep,$(tools_qfcc_test_return_postop_dat_SOURCES))
+tools/qfcc/test/return-postop.dat$(EXEEXT): $(return_postop_obj) $(QFCC_DEP)
+	$(V_QFCCLD)$(QLINK) -o $@ $(return_postop_obj)
+tools/qfcc/test/return-postop.run: $(qfcc_test_run_deps)
+	@$(top_srcdir)/tools/qfcc/test/build-run $@
+include $(return_postop_dep) # am--include-marker
+r_depfiles_remade += $(return_postop_dep)
 
 tools_qfcc_test_sendv_dat_SOURCES=tools/qfcc/test/sendv.r
 sendv_obj=$(tools_qfcc_test_sendv_dat_SOURCES:.r=.o)
