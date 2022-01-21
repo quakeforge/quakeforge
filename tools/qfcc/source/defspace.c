@@ -277,7 +277,7 @@ defspace_alloc_highwater (defspace_t *space, int size)
 int
 defspace_alloc_aligned_highwater (defspace_t *space, int size, int alignment)
 {
-	if (size <= 0)
+	if (size < 0)
 		internal_error (0, "invalid number of words requested: %d", size);
 	if (alignment <= 0)
 		internal_error (0, "invalid alignment requested: %d", alignment);
