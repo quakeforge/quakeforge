@@ -230,6 +230,7 @@ temp_def (type_t *type)
 	temp->line = pr.source_line;
 	set_storage_bits (temp, sc_local);
 	temp->space = space;
+	temp->reg = current_func->temp_reg;
 	return temp;
 }
 

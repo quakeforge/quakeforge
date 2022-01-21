@@ -228,10 +228,20 @@ emit_statement (statement_t *statement)
 		}
 	}
 	s = codespace_newstatement (pr.code);
+	memset (s, 0, sizeof (*s));
 	s->op = opcode_get (inst);
-	s->a = def_a ? def_a->offset : 0;
-	s->b = def_b ? def_b->offset : 0;
-	s->c = def_c ? def_c->offset : 0;
+	if (def_a) {
+		s->a = def_a->offset;
+		s->op |= ((def_a->reg) << OP_A_SHIFT) & OP_A_BASE;
+	}
+	if (def_b) {
+		s->b = def_b->offset;
+		s->op |= ((def_b->reg) << OP_B_SHIFT) & OP_B_BASE;
+	}
+	if (def_c) {
+		s->c = def_c->offset;
+		s->op |= ((def_c->reg) << OP_C_SHIFT) & OP_C_BASE;
+	}
 
 	if (options.verbosity >= 2) {
 		opcode_print_statement (pr.code->size - 1, s);

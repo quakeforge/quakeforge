@@ -71,6 +71,10 @@ static function_t *functions_freelist;
 static hashtab_t *overloaded_functions;
 static hashtab_t *function_map;
 
+// standardized base register to use for all locals (arguments, local defs,
+// params)
+#define LOCALS_REG 1
+
 static const char *
 ol_func_get_key (const void *_f, void *unused)
 {
@@ -676,7 +680,7 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 	function_t *func = fsym->s.func;
 	if (options.code.progsversion == PROG_VERSION) {
 		expr_t     *e;
-		e = new_with_expr (2, 1, new_short_expr (0));
+		e = new_with_expr (2, LOCALS_REG, new_short_expr (0));
 		e->next = statements;
 		e->file = func->def->file;
 		e->line = func->def->line;
@@ -687,6 +691,18 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 		e->file = func->def->file;
 		e->line = func->def->line;
 		statements = e;
+
+		func->temp_reg = LOCALS_REG;
+		for (def_t *def = func->locals->space->defs; def; def = def->next) {
+			if (def->local || def->param) {
+				def->reg = LOCALS_REG;
+			}
+		}
+		for (def_t *def = func->parameters->space->defs; def; def = def->next) {
+			if (def->local || def->param) {
+				def->reg = LOCALS_REG;
+			}
+		}
 	}
 	emit_function (func, statements);
 	if (options.code.progsversion < PROG_VERSION) {

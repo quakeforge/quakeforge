@@ -60,6 +60,7 @@ typedef struct def_s {
 	const char *name;			///< the def's name
 	struct defspace_s *space;	///< defspace to which this def belongs
 	int	        offset;			///< address of this def in its defspace
+	int         reg;			///< base register index to access def
 
 	/** \name Def aliasing.
 		Aliasing a def provides a different view of the def providing access
