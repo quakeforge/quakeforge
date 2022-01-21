@@ -447,6 +447,10 @@ finish_link (void)
 						&param_alignment);
 		linker_add_def (".xdefs", &type_xdefs, flags, 0);
 	}
+	if (options.code.progsversion == PROG_VERSION) {
+		int stk = (QFOD_GLOBAL | QFOD_INITIALIZED | QFOD_NOSAVE);
+		linker_add_def (".stack", &type_uint, stk, 0);
+	}
 
 	if (options.code.debug) {
 		pr_int_t    str;
