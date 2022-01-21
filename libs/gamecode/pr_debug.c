@@ -1683,6 +1683,9 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 						str = dsprintf (res->dva, "%04x",
 										addr + (short) opval);
 						break;
+					case 'C':
+						str = dsprintf (res->dva, "%03o", opval);
+						break;
 					case 'E':
 						{
 							edict_t    *ed = 0;
