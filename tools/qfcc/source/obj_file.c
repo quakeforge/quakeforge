@@ -982,14 +982,16 @@ qfo_to_progs (qfo_t *in_qfo, int *size)
 	progs->numglobals = qfo->spaces[qfo_near_data_space].data_size;
 	progs->numglobals = align_globals_size (progs->numglobals);
 	locals_start = progs->numglobals;
-	for (i = qfo_num_spaces; i < qfo->num_spaces; i++) {
-		if (options.code.local_merging) {
-			if (locals_size < qfo->spaces[i].data_size) {
-				locals_size = qfo->spaces[i].data_size;
-				big_locals = i;
+	if (options.code.progsversion < PROG_VERSION) {
+		for (i = qfo_num_spaces; i < qfo->num_spaces; i++) {
+			if (options.code.local_merging) {
+				if (locals_size < qfo->spaces[i].data_size) {
+					locals_size = qfo->spaces[i].data_size;
+					big_locals = i;
+				}
+			} else {
+				locals_size += align_globals_size (qfo->spaces[i].data_size);
 			}
-		} else {
-			locals_size += align_globals_size (qfo->spaces[i].data_size);
 		}
 	}
 	progs->numglobals += locals_size;
@@ -1081,13 +1083,15 @@ qfo_to_progs (qfo_t *in_qfo, int *size)
 		qfo_mspace_t *space = qfo->spaces + qf->locals_space;
 
 		df->first_statement = qf->code;
-		df->parm_start = locals_start;
-		df->locals = space->data_size;
-		// finalize the offsets of the local defs
-		for (j = 0; j < space->num_defs; j++)
-			space->defs[j].offset += locals_start;
-		if (!options.code.local_merging)
-			locals_start += align_globals_size (df->locals);
+		if (options.code.progsversion < PROG_VERSION) {
+			df->parm_start = locals_start;
+			df->locals = space->data_size;
+			// finalize the offsets of the local defs
+			for (j = 0; j < space->num_defs; j++)
+				space->defs[j].offset += locals_start;
+			if (!options.code.local_merging)
+				locals_start += align_globals_size (df->locals);
+		}
 		df->profile = 0;
 		df->name = qf->name;
 		df->file = qf->file;
