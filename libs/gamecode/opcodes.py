@@ -114,7 +114,7 @@ call_formats = {
     "mnemonic": "call",
     "opname": "call",
     "format": "{call_fmt[mm]}",
-    "widths": "{call_widths[mm]}, 0",
+    "widths": "{call_widths[mm]}, -1",
     "types": "{call_types[mm]}, ev_void",
     "args": {
         "op_mode": ".BCD",

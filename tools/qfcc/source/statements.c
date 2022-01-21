@@ -1115,7 +1115,14 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 	}
 	statement_t *s = new_statement (st_func, "call", call);
 	sblock = statement_subexpr (sblock, func, &s->opa);
-	s->opc = short_operand (0, call);
+	if (!op) {
+		s->opc = short_operand (0, call);
+	} else {
+		if (!*op) {
+			*op = temp_operand (call->e.branch.ret_type, call);
+		}
+		s->opc = *op;
+	}
 	sblock_add_statement (sblock, s);
 	sblock->next = new_sblock ();
 	return sblock->next;
