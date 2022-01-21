@@ -427,6 +427,9 @@ PR_CallFunction (progs_t *pr, pr_func_t fnum, pr_type_t *return_ptr)
 
 	if (!fnum)
 		PR_RunError (pr, "NULL function");
+	if (!return_ptr || return_ptr == pr->pr_globals) {
+		return_ptr = pr->pr_return_buffer;
+	}
 	f = pr->function_table + fnum;
 	if (f->first_statement < 0) {
 		// negative statements are built in functions

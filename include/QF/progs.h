@@ -1896,6 +1896,8 @@ struct progs_s {
 	pr_type_t  *pr_real_params[MAX_PARMS];
 	int         pr_param_size;		///< covers both params and return
 	int         pr_param_alignment;	///< covers both params and return
+	pr_type_t   pr_return_buffer[32];///< for discarded return values
+									 ///< or returning values to C
 	///@}
 
 	/// \name edicts
