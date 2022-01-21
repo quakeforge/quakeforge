@@ -1091,6 +1091,8 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 	defspace_t *arg_space = current_func->arguments;
 	expr_t     *func = call->e.branch.target;
 	expr_t     *args = call->e.branch.args;
+	operand_t  *use = 0;
+	operand_t  *kill = 0;
 
 	defspace_reset (arg_space);
 
@@ -1112,6 +1114,17 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 		expr_t     *assign = assign_expr (new_def_expr (def), a);
 		expr_file_line (assign, call);
 		sblock = statement_slist (sblock, assign);
+
+		// The call both uses and kills the arguments: use is obvious, but kill
+		// is because the callee has direct access to them and might modify
+		// them
+		// need two ops for the one def because there's two lists
+		operand_t  *u = def_operand (def, arg_type, call);
+		operand_t  *k = def_operand (def, arg_type, call);
+		u->next = use;
+		use = u;
+		k->next = kill;
+		kill = k;
 	}
 	statement_t *s = new_statement (st_func, "call", call);
 	sblock = statement_subexpr (sblock, func, &s->opa);
@@ -1123,6 +1136,8 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 		}
 		s->opc = *op;
 	}
+	s->use = use;
+	s->kill = kill;
 	sblock_add_statement (sblock, s);
 	sblock->next = new_sblock ();
 	return sblock->next;

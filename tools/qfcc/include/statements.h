@@ -113,9 +113,9 @@ typedef struct statement_s {
 	operand_t  *opc;
 	struct expr_s *expr;		///< source expression for this statement
 	int         number;			///< number of this statement in function
-	operand_t  *use;			///< list of pseudo operands used
-	operand_t  *def;			///< list of pseudo operands defined
-	operand_t  *kill;			///< list of pseudo operands killed
+	operand_t  *use;			///< list of auxiliary operands used
+	operand_t  *def;			///< list of auxiliary operands defined
+	operand_t  *kill;			///< list of auxiliary operands killed
 } statement_t;
 
 typedef struct sblock_s {

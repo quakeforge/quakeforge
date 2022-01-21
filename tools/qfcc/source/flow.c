@@ -1278,7 +1278,12 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 				}
 			}
 			if (strcmp (s->opcode, "call") == 0) {
-				internal_error (s->expr, "not implemented");
+				// call uses opc to specify the destination of the return value
+				// parameter usage is taken care of by the statement's use
+				// list
+				flow_add_op_var (def, s->opc, 0);
+				// don't want old argument processing
+				calln = -1;
 			} else if (strncmp (s->opcode, "call", 4) == 0) {
 				start = 0;
 				calln = s->opcode[5] - '0';

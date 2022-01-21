@@ -406,7 +406,7 @@ dag_find_node (def_t *def, void *_daglabel)
 }
 
 static void
-dagnode_set_edges (dag_t *dag, dagnode_t *n)
+dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s)
 {
 	int         i;
 
@@ -447,13 +447,21 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n)
 				set_add (n->edges, child->number);
 		}
 	}
+	for (operand_t *use = s->use; use; use = use->next) {
+		if (use->op_type == op_pseudo) {
+			continue;
+		}
+		daglabel_t *label = operand_label (dag, use);
+		label->live = 1;
+		set_add (n->edges, label->dagnode->number);
+	}
 	if (n->type == st_func) {
 		const char *num_params = 0;
 		int         first_param = 0;
 		flowvar_t **flowvars = dag->flownode->graph->func->vars;
 
 		if (!strcmp (n->label->opcode, "call")) {
-			internal_error (0, "not implemented");
+			// nothing to do
 		} else if (!strncmp (n->label->opcode, "rcall", 5)) {
 			num_params = n->label->opcode + 6;
 			first_param = 2;
@@ -864,7 +872,7 @@ dag_create (flownode_t *flownode)
 				n->type = s->type;
 				n->label = op;
 				dagnode_add_children (dag, n, operands, children);
-				dagnode_set_edges (dag, n);
+				dagnode_set_edges (dag, n, s);
 				dagnode_set_reachable (dag, n);
 			}
 		}
