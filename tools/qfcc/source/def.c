@@ -204,7 +204,7 @@ def_t *
 temp_def (type_t *type)
 {
 	def_t      *temp;
-	defspace_t *space = current_func->symtab->space;
+	defspace_t *space = current_func->locals->space;
 	int         size = type_size (type);
 	int         alignment = type->alignment;
 

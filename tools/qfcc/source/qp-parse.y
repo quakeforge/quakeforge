@@ -156,7 +156,7 @@ build_dotmain (symbol_t *program)
 
 	current_func = begin_function (dotmain, 0, current_symtab, 0,
 								   current_storage);
-	current_symtab = current_func->symtab;
+	current_symtab = current_func->locals;
 	code = new_block_expr ();
 	append_expr (code, function_expr (new_symbol_expr (program), 0));
 	append_expr (code, return_expr (current_func, exitcode));
@@ -180,7 +180,7 @@ program
 
 			current_func = begin_function ($1, 0, current_symtab, 0,
 										   current_storage);
-			current_symtab = current_func->symtab;
+			current_symtab = current_func->locals;
 			build_code_function ($1, 0, $4);
 			current_symtab = st;
 
@@ -265,14 +265,14 @@ subprogram_declaration
 			$<storage>$ = current_storage;
 			current_func = begin_function ($1, 0, current_symtab, 0,
 										   current_storage);
-			current_symtab = current_func->symtab;
+			current_symtab = current_func->locals;
 			current_storage = sc_local;
 		}
 	  declarations compound_statement ';'
 		{
 			append_expr ($5, new_return_expr (0));
 			build_code_function ($1, 0, $5);
-			current_symtab = current_symtab->parent;
+			current_symtab = current_func->parameters->parent;
 			current_storage = $<storage>3;
 		}
 	| subprogram_head ASSIGNOP '#' VALUE ';'

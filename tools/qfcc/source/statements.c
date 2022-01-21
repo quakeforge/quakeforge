@@ -48,6 +48,7 @@
 
 #include "tools/qfcc/include/class.h"
 #include "tools/qfcc/include/dags.h"
+#include "tools/qfcc/include/defspace.h"
 #include "tools/qfcc/include/diagnostic.h"
 #include "tools/qfcc/include/dot.h"
 #include "tools/qfcc/include/expr.h"
@@ -1011,7 +1012,7 @@ vector_call (sblock_t *sblock, expr_t *earg, expr_t *param, int ind,
 }
 
 static sblock_t *
-expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
+expr_call_v6p (sblock_t *sblock, expr_t *call, operand_t **op)
 {
 	expr_t     *func = call->e.branch.target;
 	expr_t     *args = call->e.branch.args;
@@ -1070,6 +1071,48 @@ expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
 	sblock = statement_subexpr (sblock, func, &s->opa);
 	s->opb = arguments[0];
 	s->opc = arguments[1];
+	sblock_add_statement (sblock, s);
+	sblock->next = new_sblock ();
+	return sblock->next;
+}
+
+static sblock_t *
+expr_call (sblock_t *sblock, expr_t *call, operand_t **op)
+{
+	if (options.code.progsversion < PROG_VERSION) {
+		return expr_call_v6p (sblock, call, op);
+	}
+	if (!current_func->arguments) {
+		current_func->arguments = defspace_new (ds_virtual);
+	}
+	defspace_t *arg_space = current_func->arguments;
+	expr_t     *func = call->e.branch.target;
+	expr_t     *args = call->e.branch.args;
+
+	defspace_reset (arg_space);
+
+	args = reverse_expr_list (args);
+	int         arg_num = 0;
+	for (expr_t *a = args; a; a = a->next) {
+		const char *arg_name = va (0, ".arg%d", arg_num++);
+		def_t      *def = new_def (arg_name, 0, current_func->arguments,
+								   sc_local);
+		type_t     *arg_type = get_type (a);
+		int         size = type_size (arg_type);
+		int         alignment = arg_type->alignment;
+		if (alignment < 4) {
+			alignment = 4;
+		}
+		def->offset = defspace_alloc_aligned_highwater (arg_space, size,
+														alignment);
+		def->type = arg_type;
+		expr_t     *assign = assign_expr (new_def_expr (def), a);
+		expr_file_line (assign, call);
+		sblock = statement_slist (sblock, assign);
+	}
+	statement_t *s = new_statement (st_func, "call", call);
+	sblock = statement_subexpr (sblock, func, &s->opa);
+	s->opc = short_operand (0, call);
 	sblock_add_statement (sblock, s);
 	sblock->next = new_sblock ();
 	return sblock->next;

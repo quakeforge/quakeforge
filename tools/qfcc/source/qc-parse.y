@@ -517,7 +517,7 @@ function_body
 			$<symtab>$ = current_symtab;
 			current_func = begin_function ($<symbol>2, 0, current_symtab, 0,
 										   $<spec>-1.storage);
-			current_symtab = current_func->symtab;
+			current_symtab = current_func->locals;
 			current_storage = sc_local;
 		}
 	  compound_statement
@@ -1249,7 +1249,7 @@ code_func
 			$<symtab>$ = current_symtab;
 			current_func = begin_function ($<symbol>0, 0, current_symtab, 0,
 										   $<spec>-1.storage);
-			current_symtab = current_func->symtab;
+			current_symtab = current_func->locals;
 			current_storage = sc_local;
 		}
 	  compound_statement
@@ -2066,10 +2066,10 @@ methoddef
 			current_func = begin_function (sym, nicename, ivar_scope, 1,
 										   sc_static);
 			class_finish_ivar_scope (current_class, ivar_scope,
-									 current_func->symtab);
+									 current_func->locals);
 			method->func = sym->s.func;
 			method->def = sym->s.func->def;
-			current_symtab = current_func->symtab;
+			current_symtab = current_func->locals;
 			current_storage = sc_local;
 		}
 	  compound_statement

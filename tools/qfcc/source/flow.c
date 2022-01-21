@@ -609,7 +609,7 @@ flow_build_vars (function_t *func)
 
 	// set up pseudo address space for temp vars so accessing tmp vars
 	// though aliases analyses correctly
-	func->pseudo_addr = func->num_statements + func->symtab->space->size;
+	func->pseudo_addr = func->num_statements + func->locals->space->size;
 
 	func->num_vars = 0;	// incremented by add_operand
 	// first, add .return and .param_[0-7] as they are always needed

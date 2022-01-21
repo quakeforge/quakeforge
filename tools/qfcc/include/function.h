@@ -73,13 +73,32 @@ typedef struct function_s {
 	struct def_s       *temp_defs[4];	///< freed temp vars (by size)
 	struct def_s       *def;		///< output def holding function number
 	struct symbol_s    *sym;		///< internal symbol for this function
-	/** Root scope symbol table of the function.
+	/** \name Local data space
 
-		Sub-scope symbol tables are not directly accessible, but all defs
-		created in the function's local data space are recorded in the root
-		scope symbol table's defspace.
+		The function parameters form the root scope for the function. Its
+		defspace is separate from the locals defspace so that it can be moved
+		to the beginning of locals space for v6 progs, and too the end (just
+		above the stack pointer on entry to the function) for Ruamoko progs.
+
+		The locals scope is a direct child of the parameters scope, and any
+		sub-scope symbol tables are not directly accessible, but all defs
+		other than function call arugments created in the function's local
+		data space are recorded in the root local scope symbol table's
+		defspace.
+
+		The arguments defspace is not used for v6 progs. It is used as a
+		highwater allocator for the arguments to all calls made by the
+		funciton, with the arguments to separate functions overlapping each
+		other.
+
+		Afther the function has been emitted, locals, arguments and possibly
+		parameters will be merged into the one defspace.
 	*/
-	struct symtab_s    *symtab;
+	///@{
+	struct symtab_s    *parameters;	///< Root scope symbol table
+	struct symtab_s    *locals;		///< Actual local variables
+	struct defspace_s  *arguments;	///< Space for called function arguments
+	///@}
 	struct symtab_s    *label_scope;
 	struct reloc_s     *refs;		///< relocation targets for this function
 	struct expr_s      *var_init;

@@ -171,9 +171,9 @@ qfo_count_function_stuff (qfo_t *qfo, function_t *functions)
 	for (func = functions; func; func = func->next) {
 		qfo->num_funcs++;
 		qfo->num_relocs += count_relocs (func->refs);
-		if (func->symtab && func->symtab->space) {
+		if (func->locals && func->locals->space) {
 			qfo->num_spaces++;
-			qfo_count_space_stuff (qfo, func->symtab->space);
+			qfo_count_space_stuff (qfo, func->locals->space);
 		}
 	}
 }
@@ -306,10 +306,10 @@ qfo_encode_functions (qfo_t *qfo, qfo_def_t **defs, qfo_reloc_t **relocs,
 		if (f->builtin)		// FIXME redundant
 			q->code = -f->builtin;
 		q->def = f->def->qfo_def;
-		if (f->symtab && f->symtab->space) {
-			space->id = f->symtab->space->qfo_space;
-			qfo_init_data_space (qfo, defs, relocs, space++, f->symtab->space);
-			q->locals_space = f->symtab->space->qfo_space;
+		if (f->locals && f->locals->space) {
+			space->id = f->locals->space->qfo_space;
+			qfo_init_data_space (qfo, defs, relocs, space++, f->locals->space);
+			q->locals_space = f->locals->space->qfo_space;
 		}
 		q->line_info = f->line_info;
 		q->relocs = *relocs - qfo->relocs;

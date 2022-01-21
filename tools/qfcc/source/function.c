@@ -488,16 +488,23 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 	param_t    *p;
 	symbol_t   *args = 0;
 	symbol_t   *param;
-	symtab_t   *symtab;
-	symtab_t   *cs = current_symtab;
+	symtab_t   *parameters;
+	symtab_t   *locals;
+	symtab_t   *cs = current_symtab;//FIXME
 
 	check_function (fsym);
 
-	symtab = new_symtab (parent, stab_local);
-	fsym->s.func->symtab = symtab;
 	fsym->s.func->label_scope = new_symtab (0, stab_local);
-	symtab->space = defspace_new (ds_virtual);
-	current_symtab = symtab;
+
+	parameters = new_symtab (parent, stab_local);
+	parameters->space = defspace_new (ds_virtual);
+	fsym->s.func->parameters = parameters;
+
+	locals = new_symtab (parameters, stab_local);
+	locals->space = defspace_new (ds_virtual);
+	fsym->s.func->locals = locals;
+
+	current_symtab = locals;//FIXME
 
 	if (!fsym->s.func) {
 		internal_error (0, "function %s not defined", fsym->name);
@@ -507,7 +514,7 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 	}
 	if (fsym->s.func->type->t.func.num_params < 0) {
 		args = new_symbol_type (".args", &type_va_list);
-		initialize_def (args, 0, symtab->space, sc_param);
+		initialize_def (args, 0, parameters->space, sc_param);
 	}
 
 	for (p = fsym->params, i = 0; p; p = p->next) {
@@ -520,14 +527,14 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 			p->name = save_string ("");
 		}
 		param = new_symbol_type (p->name, p->type);
-		initialize_def (param, 0, symtab->space, sc_param);
+		initialize_def (param, 0, parameters->space, sc_param);
 		i++;
 	}
 
 	if (args) {
 		while (i < MAX_PARMS) {
 			param = new_symbol_type (va (0, ".par%d", i), &type_param);
-			initialize_def (param, 0, symtab->space, sc_param);
+			initialize_def (param, 0, parameters->space, sc_param);
 			i++;
 		}
 	}
@@ -628,11 +635,32 @@ build_function (symbol_t *fsym)
 	if (func_type->t.func.num_params > MAX_PARMS) {
 		error (0, "too many params");
 	}
-	//	FIXME
-//	f->def->constant = 1;
-//	f->def->nosave = 1;
-//	f->def->initialized = 1;
-//	G_FUNCTION (f->def->ofs) = f->function_num;
+}
+
+static void
+merge_spaces (defspace_t *dst, defspace_t *src, int alignment)
+{
+	int         offset;
+
+	for (def_t *def = src->defs; def; def = def->next) {
+		if (def->type->alignment > alignment) {
+			alignment = def->type->alignment;
+		}
+	}
+	offset = defspace_alloc_aligned_highwater (dst, src->size, alignment);
+	for (def_t *def = src->defs; def; def = def->next) {
+		def->offset += offset;
+		def->space = dst;
+	}
+
+	if (src->defs) {
+		*dst->def_tail = src->defs;
+		dst->def_tail = src->def_tail;
+		src->def_tail = &src->defs;
+		*src->def_tail = 0;
+	}
+
+	defspace_delete (src);
 }
 
 function_t *
@@ -645,7 +673,35 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 		state_expr->next = statements;
 		statements = state_expr;
 	}
-	emit_function (fsym->s.func, statements);
+	if (options.code.progsversion == PROG_VERSION) {
+	}
+	function_t *func = fsym->s.func;
+	emit_function (func, statements);
+	if (options.code.progsversion < PROG_VERSION) {
+		// stitch parameter and locals data together with parameters coming
+		// first
+		defspace_t *space = defspace_new (ds_virtual);
+
+		merge_spaces (space, func->parameters->space, 1);
+		func->parameters->space = space;
+
+		merge_spaces (space, func->locals->space, 1);
+		func->locals->space = space;
+	} else {
+		defspace_t *space = defspace_new (ds_virtual);
+
+		if (func->arguments) {
+			func->arguments->size = func->arguments->max_size;
+			merge_spaces (space, func->arguments, 4);
+			func->arguments = 0;
+		}
+
+		merge_spaces (space, func->locals->space, 4);
+		func->locals->space = space;
+
+		merge_spaces (space, func->parameters->space, 4);
+		func->parameters->space = space;
+	}
 	return fsym->s.func;
 }
 
@@ -694,7 +750,8 @@ build_builtin_function (symbol_t *sym, expr_t *bi_val, int far,
 
 	// for debug info
 	build_scope (sym, current_symtab);
-	sym->s.func->symtab->space->size = 0;
+	sym->s.func->parameters->space->size = 0;
+	sym->s.func->locals->space = sym->s.func->parameters->space;
 	return sym->s.func;
 }
 
