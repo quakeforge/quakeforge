@@ -115,7 +115,7 @@ call_formats = {
     "opname": "call",
     "format": "{call_fmt[mm]}",
     "widths": "{call_widths[mm]}, 0",
-    "types": "ev_void, ev_void, ev_void",
+    "types": "{call_types[mm]}, ev_void",
     "args": {
         "op_mode": ".BCD",
         "call_fmt": [
@@ -123,6 +123,12 @@ call_formats = {
             "%Ga, %gc",
             "%Ga[%sb], %gc",
             "%Ga[%Gb], %gc",
+        ],
+        "call_types": [
+            None,
+            "ev_void, ev_invalid",
+            "ev_ptr, ev_short",
+            "ev_ptr, ev_int",
         ],
         "call_widths": [ None, "1, 0", "1, 0", "1, 1" ]
     },
