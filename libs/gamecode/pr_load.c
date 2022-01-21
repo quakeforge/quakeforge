@@ -226,6 +226,9 @@ PR_LoadProgsFile (progs_t *pr, QFile *file, int size)
 	pr->stack_bottom = pr->stack - pr->pr_globals;
 	pr->globals_size = (pr_type_t *) ((byte *) pr->stack + pr->stack_size)
 						- pr->pr_globals;
+	if (pr->globals.stack && pr->stack_bottom) {
+		*pr->globals.stack = pr->globals_size;
+	}
 
 	if (pr->zone) {
 		PR_Zone_Init (pr);

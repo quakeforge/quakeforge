@@ -1898,6 +1898,21 @@ pr_stack_pop (progs_t *pr)
 }
 
 static void
+pr_stack_adjust (progs_t *pr, int mode, int offset)
+{
+	// keep the stack 16-byte aligned
+	if (mode || (offset & 3)) {
+		PR_RunError (pr, "invalid stack adjustment: %d, %d", mode, offset);
+	}
+
+	pr_ptr_t    stack = *pr->globals.stack;
+	if (pr_boundscheck->int_val) {
+		check_stack_pointer (pr, stack + offset, 0);
+	}
+	*pr->globals.stack = stack + offset;
+}
+
+static void
 pr_with (progs_t *pr, const dstatement_t *st)
 {
 	pr_ptr_t    edict_area = pr->pr_edict_area - pr->pr_globals;
@@ -2769,11 +2784,7 @@ pr_exec_ruamoko (progs_t *pr, int exitdepth)
 			case OP_NOP:
 				break;
 			case OP_ADJSTK:
-				if (st->a || (st->b & 3)) {
-					PR_RunError (pr, "invalid stack adjustment: %d, %d",
-								 st->a, (short) st->b);
-				}
-				*pr->globals.stack += (short) st->b;
+				pr_stack_adjust (pr, st->a, (short) st->b);
 				break;
 			case OP_LDCONST:
 				PR_RunError (pr, "OP_LDCONST not implemented");
