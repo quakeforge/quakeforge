@@ -1235,6 +1235,28 @@ statement_return (sblock_t *sblock, expr_t *e)
 	return sblock;
 }
 
+static sblock_t *
+statement_adjstk (sblock_t *sblock, expr_t *e)
+{
+	statement_t *s = new_statement (st_func, "adjstk", e);
+	s->opa = short_operand (e->e.adjstk.mode, e);
+	s->opb = short_operand (e->e.adjstk.offset, e);
+
+	sblock_add_statement (sblock, s);
+	return sblock;
+}
+
+static sblock_t *
+statement_with (sblock_t *sblock, expr_t *e)
+{
+	statement_t *s = new_statement (st_func, "with", e);
+	s->opa = short_operand (e->e.with.mode, e);
+	s->opc = short_operand (e->e.with.reg, e);
+	sblock = statement_subexpr (sblock, e->e.with.with, &s->opb);
+	sblock_add_statement (sblock, s);
+	return sblock;
+}
+
 static statement_t *
 lea_statement (operand_t *pointer, operand_t *offset, expr_t *e)
 {
@@ -1930,6 +1952,8 @@ statement_slist (sblock_t *sblock, expr_t *e)
 		[ex_assign] = statement_assign,
 		[ex_branch] = statement_branch,
 		[ex_return] = statement_return,
+		[ex_adjstk] = statement_adjstk,
+		[ex_with] = statement_with,
 	};
 
 	for (/**/; e; e = e->next) {

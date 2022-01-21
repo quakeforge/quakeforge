@@ -673,9 +673,21 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 		state_expr->next = statements;
 		statements = state_expr;
 	}
-	if (options.code.progsversion == PROG_VERSION) {
-	}
 	function_t *func = fsym->s.func;
+	if (options.code.progsversion == PROG_VERSION) {
+		expr_t     *e;
+		e = new_with_expr (2, 1, new_short_expr (0));
+		e->next = statements;
+		e->file = func->def->file;
+		e->line = func->def->line;
+		statements = e;
+
+		e = new_adjstk_expr (0, 0);
+		e->next = statements;
+		e->file = func->def->file;
+		e->line = func->def->line;
+		statements = e;
+	}
 	emit_function (func, statements);
 	if (options.code.progsversion < PROG_VERSION) {
 		// stitch parameter and locals data together with parameters coming
@@ -699,6 +711,13 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 		merge_spaces (space, func->locals->space, 4);
 		func->locals->space = space;
 
+		// allocate 0 words to force alignment
+		defspace_alloc_aligned_highwater (space, 0, 4);
+
+		dstatement_t *st = &pr.code->code[func->code];
+		if (st->op == OP_ADJSTK) {
+			st->b = -space->size;
+		}
 		merge_spaces (space, func->parameters->space, 4);
 		func->parameters->space = space;
 	}

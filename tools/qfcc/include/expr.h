@@ -238,6 +238,17 @@ typedef struct {
 	struct expr_s *ret_val;
 } ex_return_t;
 
+typedef struct {
+	short       mode;			///< currently must be 0
+	short       offset;			///< amount by which stack will be adjusted
+} ex_adjstk_t;
+
+typedef struct {
+	short       mode;			///< currently must be 0
+	short       reg;			///< base register to load
+	struct expr_s *with;		///< value to load
+} ex_with_t;
+
 #define POINTER_VAL(p) (((p).def ? (p).def->offset : 0) + (p).val)
 
 typedef struct expr_s {
@@ -269,6 +280,8 @@ typedef struct expr_s {
 		ex_assign_t assign;				///< assignment expr params
 		ex_branch_t branch;				///< branch expr params
 		ex_return_t retrn;				///< return expr params
+		ex_adjstk_t adjstk;				///< stack adjust param
+		ex_with_t   with;				///< with expr param
 		struct type_s *nil;				///< type for nil if known
 	} e;
 } expr_t;
@@ -688,6 +701,8 @@ expr_t *new_address_expr (struct type_s *lvtype, expr_t *lvalue,
 						  expr_t *offset);
 expr_t *new_assign_expr (expr_t *dst, expr_t *src);
 expr_t *new_return_expr (expr_t *ret_val);
+expr_t *new_adjstk_expr (int mode, int offset);
+expr_t *new_with_expr (int mode, int reg, expr_t *val);
 
 /**	Create an expression of the correct type that references the specified
 	parameter slot.

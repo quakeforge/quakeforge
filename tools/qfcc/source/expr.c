@@ -219,6 +219,8 @@ get_type (expr_t *e)
 			type = e->e.branch.ret_type;
 			break;
 		case ex_labelref:
+		case ex_adjstk:
+		case ex_with:
 			return &type_void;
 		case ex_memset:
 			return e->e.memset.type;
@@ -512,7 +514,16 @@ copy_expr (expr_t *e)
 		case ex_return:
 			n = new_expr ();
 			*n = *e;
-			n->e.retrn.ret_val = copy_expr (n->e.retrn.ret_val);
+			n->e.retrn.ret_val = copy_expr (e->e.retrn.ret_val);
+			return n;
+		case ex_adjstk:
+			n = new_expr ();
+			*n = *e;
+			return n;
+		case ex_with:
+			n = new_expr ();
+			*n = *e;
+			n->e.with.with = copy_expr (e->e.with.with);
 			return n;
 		case ex_count:
 			break;
@@ -1344,6 +1355,27 @@ new_return_expr (expr_t *ret_val)
 	return retrn;
 }
 
+expr_t *
+new_adjstk_expr (int mode, int offset)
+{
+	expr_t     *adj = new_expr ();
+	adj->type = ex_adjstk;
+	adj->e.adjstk.mode = mode;
+	adj->e.adjstk.offset = offset;
+	return adj;
+}
+
+expr_t *
+new_with_expr (int mode, int reg, expr_t *val)
+{
+	expr_t     *with = new_expr ();
+	with->type = ex_with;
+	with->e.with.mode = mode;
+	with->e.with.reg = reg;
+	with->e.with.with = val;
+	return with;
+}
+
 static expr_t *
 param_expr (const char *name, type_t *type)
 {
@@ -1653,6 +1685,8 @@ has_function_call (expr_t *e)
 		case ex_value:
 		case ex_compound:
 		case ex_memset:
+		case ex_adjstk:
+		case ex_with:
 			return 0;
 		case ex_count:
 			break;
@@ -1745,6 +1779,8 @@ unary_expr (int op, expr_t *e)
 				case ex_memset:
 				case ex_selector:
 				case ex_return:
+				case ex_adjstk:
+				case ex_with:
 					internal_error (e, "unexpected expression type");
 				case ex_uexpr:
 					if (e->e.expr.op == '-') {
@@ -1847,6 +1883,8 @@ unary_expr (int op, expr_t *e)
 				case ex_memset:
 				case ex_selector:
 				case ex_return:
+				case ex_adjstk:
+				case ex_with:
 					internal_error (e, "unexpected expression type");
 				case ex_bool:
 					return new_bool_expr (e->e.bool.false_list,
@@ -1927,6 +1965,8 @@ unary_expr (int op, expr_t *e)
 				case ex_memset:
 				case ex_selector:
 				case ex_return:
+				case ex_adjstk:
+				case ex_with:
 					internal_error (e, "unexpected expression type");
 				case ex_uexpr:
 					if (e->e.expr.op == '~')
