@@ -229,6 +229,14 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 
 	PR_PushFrame (pr);
 
+	//Sys_Printf("%s:\n", PR_GetString(pr,f->name));
+	pr->pr_xfunction = f;
+	pr->pr_xstatement = f->first_statement - 1;      		// offset the st++
+
+	if (!f->locals) {
+		return;
+	}
+
 	if (f->numparms > 0) {
 		paramofs = f->parm_start;
 		for (i = 0; i < f->numparms; i++) {
@@ -266,10 +274,6 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 			}
 		}
 	}
-
-	//Sys_Printf("%s:\n", PR_GetString(pr,f->name));
-	pr->pr_xfunction = f;
-	pr->pr_xstatement = f->first_statement - 1;      		// offset the st++
 
 	// save off any locals that the new function steps on
 	if (pr->localstack_used + f->locals > PR_LOCAL_STACK_SIZE)
