@@ -386,8 +386,7 @@ SV_DropClient (qboolean crash)
 			// call the prog function for removing a client
 			// this will set the body to a dead frame, among other things
 			saveSelf = *sv_globals.self;
-			*sv_globals.self =
-				EDICT_TO_PROG (&sv_pr_state, host_client->edict);
+			*sv_globals.self = EDICT_TO_PROG (&sv_pr_state, host_client->edict);
 			PR_ExecuteProgram (&sv_pr_state, sv_funcs.ClientDisconnect);
 			*sv_globals.self = saveSelf;
 		}
