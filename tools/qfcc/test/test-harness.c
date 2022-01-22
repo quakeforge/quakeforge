@@ -276,24 +276,29 @@ main (int argc, char **argv)
 	if (!load_progs (name))
 		Sys_Error ("couldn't load %s", name);
 
+	if ((dfunc = PR_FindFunction (&test_pr, ".main"))
+		|| (dfunc = PR_FindFunction (&test_pr, "main"))) {
+		main_func = dfunc - test_pr.pr_functions;
+	} else {
+		PR_Undefined (&test_pr, "function", "main");
+	}
+
 	PR_PushFrame (&test_pr);
-	if (argc > 2)
+	if (argc) {
 		pr_argc = argc;
+	}
 	pr_argv = PR_Zone_Malloc (&test_pr, (pr_argc + 1) * 4);
 	pr_argv[0] = PR_SetTempString (&test_pr, name);
-	for (i = 1; i < pr_argc; i++)
+	for (i = 1; i < pr_argc; i++) {
 		pr_argv[i] = PR_SetTempString (&test_pr, argv[i]);
+	}
 	pr_argv[i] = 0;
 
-	if ((dfunc = PR_FindFunction (&test_pr, ".main"))
-		|| (dfunc = PR_FindFunction (&test_pr, "main")))
-		main_func = dfunc - test_pr.pr_functions;
-	else
-		PR_Undefined (&test_pr, "function", "main");
 	PR_RESET_PARAMS (&test_pr);
 	P_INT (&test_pr, 0) = pr_argc;
 	P_POINTER (&test_pr, 1) = PR_SetPointer (&test_pr, pr_argv);
 	test_pr.pr_argc = 2;
+
 	PR_ExecuteProgram (&test_pr, main_func);
 	PR_PopFrame (&test_pr);
 	if (options.flote)
