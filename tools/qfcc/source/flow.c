@@ -1225,7 +1225,7 @@ flow_analyze_statement (statement_t *s, set_t *use, set_t *def, set_t *kill,
 				src_op = s->opa;
 				aux_op2 = s->opc;
 			} else if (!strcmp (s->opcode, "store")) {
-				flow_add_op_var (use, s->opb, 1);
+				flow_add_op_var (use, s->opc, 1);
 				res_op = flow_analyze_pointer_operand (s->opa, def);
 				src_op = s->opc;
 				aux_op2 = s->opa;
