@@ -166,6 +166,7 @@ void PR_PopFrame (progs_t *pr);
 	return to the caller. Nested calls are fully supported.
 	\param pr		pointer to ::progs_t VM struct
 	\param fnum		number of the function to call
+	\note Calls PR_CallFunction()
 */
 void PR_ExecuteProgram (progs_t *pr, pr_func_t fnum);
 
@@ -179,6 +180,9 @@ void PR_ExecuteProgram (progs_t *pr, pr_func_t fnum);
 					written
 	\return			true if \p fnum was a progs function, false if \p fnum was
 					a builtin
+	\note Called by PR_ExecuteProgram, so the only time this should be called
+	is in a builtin function that calls a progs function and returns
+	immediately (eg, to implement `return progsfunc();`).
 */
 int PR_CallFunction (progs_t *pr, pr_func_t fnum, pr_type_t *return_ptr);
 
