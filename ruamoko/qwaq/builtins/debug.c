@@ -378,7 +378,7 @@ qdb_get_event (progs_t *pr)
 			break;
 		case prd_runerror:
 		case prd_error:
-			event->message = PR_SetReturnString (pr, *(char **) target->param);
+			event->message = PR_SetReturnString (pr, (char *) target->param);
 			break;
 		case prd_begin:
 			event->function = *(pr_func_t *) target->param;
@@ -661,7 +661,7 @@ static builtin_t builtins[] = {
 	{"qdb_get_stack",			qdb_get_stack,			-1},
 	{"qdb_get_event",			qdb_get_event,			-1},
 	{"qdb_get_data",			qdb_get_data,			-1},
-	{"qdb_get_string|{tag qdb_target_s=}i",	qdb_get_string,	-1},
+	{"qdb_get_string|{tag qdb_target_s=}I",	qdb_get_string,	-1},
 	{"qdb_get_string|{tag qdb_target_s=}*",	qdb_get_string,	-1},
 	{"qdb_get_file_path",		qdb_get_file_path,		-1},
 	{"qdb_find_string",			qdb_find_string,		-1},
