@@ -197,7 +197,7 @@ typedef int pr_load_func_t (progs_t *pr);
 
 /** Initialize a ::progs_t VM struct from an already open file.
 	\param pr		pointer to ::progs_t VM struct
-	\param file		handle of file to read progs data from
+	\param file		handle of file from which to read progs data
 	\param size		bytes of \p file to read
 
 	\note \e All runtime strings (permanent or temporary) are allocated from
@@ -981,7 +981,7 @@ void PR_Undefined (progs_t *pr, const char *type, const char *name) __attribute_
 
 	\hideinitializer
 */
-#define RETURN_QUAT(p,q)		VectorCopy (q, R_QUAT (p))
+#define RETURN_QUAT(p,q)		QuatCopy (q, R_QUAT (p))
 ///@}
 
 /** \defgroup prda_entity_fields Entity Fields
@@ -1504,7 +1504,6 @@ void PR_Resources_Clear (progs_t *pr);
 	\param name		The name of the resource. Used for retrieving the
 					resource.
 	\param data		The resource data.
-					callback.
 	\param clear	Callback for performing any necessary cleanup. Called
 					by PR_Resources_Clear(). The parameters are the current
 					VM (\p pr) and \p data.
@@ -1796,8 +1795,8 @@ extern const char *pr_gametype;
 
 //============================================================================
 
-#define MAX_STACK_DEPTH		64
-#define LOCALSTACK_SIZE		4096
+#define PR_MAX_STACK_DEPTH	64
+#define PR_LOCAL_STACK_SIZE	4096
 #define PR_RS_SLOTS			16
 #define PR_BASE_IND(o, b)	(((o) & OP_##b##_BASE) >> OP_##b##_SHIFT)
 #define PR_BASE(p, s, b)	(p->pr_bases[PR_BASE_IND(s->op, b)])
@@ -1927,7 +1926,7 @@ struct progs_s {
 	bfunction_t *pr_xfunction;
 	int         pr_xstatement;
 
-	prstack_t   pr_stack[MAX_STACK_DEPTH];
+	prstack_t   pr_stack[PR_MAX_STACK_DEPTH];
 	int         pr_depth;
 
 	/// \name progs visible stack
@@ -1943,7 +1942,7 @@ struct progs_s {
 	int         stack_size;			///< set by user
 	///@}
 
-	int         localstack[LOCALSTACK_SIZE];
+	int         localstack[PR_LOCAL_STACK_SIZE];
 	int         localstack_used;
 	///@}
 
@@ -1974,7 +1973,7 @@ struct progs_s {
 		double     *dtime;		///< required for OP_STATE d
 		float      *ftime;		///< required for OP_STATE f
 		pr_uint_t  *self;		///< required for OP_STATE
-		pr_ptr_t   *stack;	///< required for OP_(PUSH|POP)*
+		pr_ptr_t   *stack;		///< required for OP_(PUSH|POP)*
 	} globals;
 	struct {
 		pr_int_t    nextthink;	///< required for OP_STATE

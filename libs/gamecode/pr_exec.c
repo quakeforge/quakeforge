@@ -137,7 +137,7 @@ PR_PushFrame (progs_t *pr)
 {
 	prstack_t  *frame;
 
-	if (pr->pr_depth == MAX_STACK_DEPTH)
+	if (pr->pr_depth == PR_MAX_STACK_DEPTH)
 		PR_RunError (pr, "stack overflow");
 
 	frame = pr->pr_stack + pr->pr_depth++;
@@ -272,7 +272,7 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 	pr->pr_xstatement = f->first_statement - 1;      		// offset the st++
 
 	// save off any locals that the new function steps on
-	if (pr->localstack_used + f->locals > LOCALSTACK_SIZE)
+	if (pr->localstack_used + f->locals > PR_LOCAL_STACK_SIZE)
 		PR_RunError (pr, "PR_EnterFunction: locals stack overflow");
 
 	memcpy (&pr->localstack[pr->localstack_used],
