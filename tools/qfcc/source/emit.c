@@ -203,11 +203,11 @@ emit_statement (statement_t *statement)
 		op_c = statement->opc;
 	}
 	def_a = get_operand_def (statement->expr, op_a);
-	use_tempop (statement->opa, statement->expr);
+	use_tempop (op_a, statement->expr);
 	def_b = get_operand_def (statement->expr, op_b);
-	use_tempop (statement->opb, statement->expr);
+	use_tempop (op_b, statement->expr);
 	def_c = get_operand_def (statement->expr, op_c);
-	use_tempop (statement->opc, statement->expr);
+	use_tempop (op_c, statement->expr);
 	inst = opcode_find (opcode, op_a, op_b, op_c);
 
 	if (!inst) {
