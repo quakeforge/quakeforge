@@ -916,6 +916,6 @@ BI_TermInput_Init (progs_t *pr)
 	qwaq_init_cond (&res->events.cond);
 
 	PR_Resources_Register (pr, "input", res, bi_input_clear);
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, res);
 	Sys_RegisterShutdown (bi_input_shutdown, pr);
 }

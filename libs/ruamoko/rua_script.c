@@ -207,6 +207,5 @@ RUA_Script_Init (progs_t *pr, int secure)
 	script_resources_t *res = calloc (1, sizeof (script_resources_t));
 
 	PR_Resources_Register (pr, "Script", res, bi_script_clear);
-
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, res);
 }

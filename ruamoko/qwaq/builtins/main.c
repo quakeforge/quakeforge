@@ -184,7 +184,7 @@ static builtin_t common_builtins[] = {
 static void
 common_builtins_init (progs_t *pr)
 {
-	PR_RegisterBuiltins (pr, common_builtins);
+	PR_RegisterBuiltins (pr, common_builtins, 0);
 }
 
 static void

@@ -747,5 +747,5 @@ RUA_Set_Init (progs_t *pr, int secure)
 	res->sets = 0;
 
 	PR_Resources_Register (pr, "Set", res, res_set_clear);
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, res);
 }

@@ -599,7 +599,7 @@ Menu_Init (void)
 
 	menu_hash = Hash_NewTable (61, menu_get_key, menu_free, 0, 0);
 
-	PR_RegisterBuiltins (&menu_pr_state, builtins);
+	PR_RegisterBuiltins (&menu_pr_state, builtins, 0);
 
 	RUA_Init (&menu_pr_state, 3);
 

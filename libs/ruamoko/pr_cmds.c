@@ -628,5 +628,5 @@ static builtin_t builtins[] = {
 VISIBLE void
 PR_Cmds_Init (progs_t *pr)
 {
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, 0);
 }

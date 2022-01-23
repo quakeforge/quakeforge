@@ -448,5 +448,5 @@ RUA_MsgBuf_Init (progs_t *pr, int secure)
 	msgbuf_resources_t *res = calloc (sizeof (msgbuf_resources_t), 1);
 
 	PR_Resources_Register (pr, "MsgBuf", res, bi_msgbuf_clear);
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, res);
 }

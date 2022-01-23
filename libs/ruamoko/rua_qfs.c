@@ -206,5 +206,5 @@ static builtin_t builtins[] = {
 void
 RUA_QFS_Init (progs_t *pr, int secure)
 {
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, 0);
 }

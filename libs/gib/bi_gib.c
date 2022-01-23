@@ -193,11 +193,10 @@ GIB_Progs_Init (progs_t *pr)
 	bi_gib_resources_t *res = malloc (sizeof (bi_gib_resources_t));
 	res->builtins = 0;
 
-	PR_Resources_Register (pr, "GIB", res, bi_gib_builtin_clear);
-
 	bi_gib_builtins = Hash_NewTable (1021, bi_gib_builtin_get_key,
 									 bi_gib_builtin_free, 0,
 									 pr->hashlink_freelist);
 
-	PR_RegisterBuiltins (pr, builtins);
+	PR_Resources_Register (pr, "GIB", res, bi_gib_builtin_clear);
+	PR_RegisterBuiltins (pr, builtins, res);
 }

@@ -2245,8 +2245,7 @@ RUA_Obj_Init (progs_t *pr, int secure)
 						 load_methods_compare);
 
 	PR_Resources_Register (pr, "RUA_ObjectiveQuakeC", probj, rua_obj_cleanup);
-
-	PR_RegisterBuiltins (pr, obj_methods);
+	PR_RegisterBuiltins (pr, obj_methods, probj);
 
 	PR_AddLoadFunc (pr, rua_obj_init_runtime);
 }

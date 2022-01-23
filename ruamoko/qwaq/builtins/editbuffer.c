@@ -1066,5 +1066,5 @@ QWAQ_EditBuffer_Init (progs_t *pr)
 	res->pr = pr;
 
 	PR_Resources_Register (pr, "qwaq-editbuffer", res, qwaq_ebresources_clear);
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, res);
 }

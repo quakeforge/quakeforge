@@ -479,5 +479,5 @@ RUA_Plist_Init (progs_t *pr, int secure)
 	Hash_SetHashCompare (res->plist_tab, plist_get_hash, plist_compare);
 
 	PR_Resources_Register (pr, "plist", res, bi_plist_clear);
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, res);
 }

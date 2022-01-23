@@ -102,7 +102,7 @@ bi_no_function (progs_t *pr)
 }
 
 VISIBLE void
-PR_RegisterBuiltins (progs_t *pr, builtin_t *builtins)
+PR_RegisterBuiltins (progs_t *pr, builtin_t *builtins, void *data)
 {
 	builtin_t  *bi;
 	int         count;
@@ -135,21 +135,25 @@ PR_RegisterBuiltins (progs_t *pr, builtin_t *builtins)
 	builtins = bi;
 
 	while (builtins->name) {
-		if (builtins->binum == 0 || builtins->binum >= PR_AUTOBUILTIN)
+		if (builtins->binum == 0 || builtins->binum >= PR_AUTOBUILTIN) {
 			PR_Error (pr, "bad builtin number: %s = #%d", builtins->name,
 					  builtins->binum);
+		}
 
-		if (builtins->binum < 0)
+		if (builtins->binum < 0) {
 			builtins->binum = builtin_next (pr);
+		}
 
 		if ((bi = Hash_Find (pr->builtin_hash, builtins->name))
-			|| (bi = Hash_FindElement (pr->builtin_num_hash, builtins)))
+			|| (bi = Hash_FindElement (pr->builtin_num_hash, builtins))) {
 			PR_Error (pr, "builtin %s = #%d already defined (%s = #%d)",
 					  builtins->name, builtins->binum,
 					  bi->name, bi->binum);
+		}
 
 		Hash_Add (pr->builtin_hash, builtins);
 		Hash_AddElement (pr->builtin_num_hash, builtins);
+		builtins->data = data;
 
 		builtins++;
 	}
@@ -231,6 +235,9 @@ PR_RelocateBuiltins (progs_t *pr)
 		}
 		func->first_statement = desc->first_statement;
 		func->func = proc;
+		if (bi) {
+			func->data = bi->data;
+		}
 	}
 	if (bad) {
 		Sys_Printf ("PR_RelocateBuiltins: %s: progs may not work due to "

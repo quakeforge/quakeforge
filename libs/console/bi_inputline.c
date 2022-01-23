@@ -328,7 +328,7 @@ InputLine_Progs_Init (progs_t *pr)
 	il_resources_t *res = calloc (1, sizeof (il_resources_t));
 
 	PR_Resources_Register (pr, "InputLine", res, bi_il_clear);
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, res);
 }
 
 VISIBLE void

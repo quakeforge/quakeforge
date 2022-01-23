@@ -353,5 +353,5 @@ R_Progs_Init (progs_t *pr)
 								   pr->hashlink_freelist);
 
 	PR_Resources_Register (pr, "Draw", res, bi_draw_clear);
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, res);
 }

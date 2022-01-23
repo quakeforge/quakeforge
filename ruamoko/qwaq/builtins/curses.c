@@ -1957,6 +1957,6 @@ BI_Curses_Init (progs_t *pr)
 	qwaq_init_pipe (&res->results);
 
 	PR_Resources_Register (pr, "curses", res, bi_curses_clear);
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, res);
 	Sys_RegisterShutdown (bi_shutdown, pr);
 }

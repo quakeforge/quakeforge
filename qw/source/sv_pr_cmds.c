@@ -2070,5 +2070,5 @@ SV_PR_Cmds_Init ()
 	bi = PR_FindBuiltin (&sv_pr_state, "cvar");
 	bi->proc = PF_sv_cvar;
 
-	PR_RegisterBuiltins (&sv_pr_state, builtins);
+	PR_RegisterBuiltins (&sv_pr_state, builtins, 0);
 }

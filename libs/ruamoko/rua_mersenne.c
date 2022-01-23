@@ -163,5 +163,5 @@ RUA_Mersenne_Init (progs_t *pr, int secure)
 	mtwist_resources_t *res = calloc (1, sizeof (mtwist_resources_t));
 
 	PR_Resources_Register (pr, "Mersenne Twister", res, bi_mtwist_clear);
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, res);
 }

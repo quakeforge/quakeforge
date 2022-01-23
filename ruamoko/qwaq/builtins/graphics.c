@@ -151,7 +151,7 @@ BI_Graphics_Init (progs_t *pr)
 	qwaq_thread_t *thread = PR_Resources_Find (pr, "qwaq_thread");
 	byte       *basepal, *colormap;
 
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, 0);
 
 	QFS_Init (thread->hunk, "nq");
 	PI_Init ();

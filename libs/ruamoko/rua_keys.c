@@ -181,5 +181,5 @@ static builtin_t builtins[] = {
 void
 RUA_Key_Init (progs_t *pr)
 {
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, 0);
 }

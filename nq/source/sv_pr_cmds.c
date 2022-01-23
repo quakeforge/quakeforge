@@ -1564,5 +1564,5 @@ SV_PR_Cmds_Init ()
 
 	PR_Cmds_Init (&sv_pr_state);
 
-	PR_RegisterBuiltins (&sv_pr_state, builtins);
+	PR_RegisterBuiltins (&sv_pr_state, builtins, 0);
 }

@@ -2012,7 +2012,7 @@ SV_UserInit (void)
 {
 	ucmd_table = Hash_NewTable (251, ucmds_getkey, ucmds_free, 0, 0);
 	Hash_SetHashCompare (ucmd_table, ucmd_get_hash, ucmd_compare);
-	PR_RegisterBuiltins (&sv_pr_state, builtins);
+	PR_RegisterBuiltins (&sv_pr_state, builtins, 0);
 	cl_rollspeed = Cvar_Get ("cl_rollspeed", "200", CVAR_NONE, NULL,
 							 "How quickly a player straightens out after "
 							 "strafing");

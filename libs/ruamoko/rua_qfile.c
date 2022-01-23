@@ -390,9 +390,9 @@ RUA_QFile_Init (progs_t *pr, int secure)
 
 	PR_Resources_Register (pr, "QFile", res, bi_qfile_clear);
 	if (secure) {
-		PR_RegisterBuiltins (pr, secure_builtins);
+		PR_RegisterBuiltins (pr, secure_builtins, res);
 	} else {
-		PR_RegisterBuiltins (pr, insecure_builtins);
+		PR_RegisterBuiltins (pr, insecure_builtins, res);
 	}
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, res);
 }

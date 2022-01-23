@@ -389,5 +389,5 @@ RUA_Hash_Init (progs_t *pr, int secure)
 	res->tabs = 0;
 
 	PR_Resources_Register (pr, "Hash", res, bi_hash_clear);
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, res);
 }

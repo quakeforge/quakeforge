@@ -1208,6 +1208,9 @@ typedef struct {
 	/// The encoding is the same as for progs functions, with 3:5 for
 	/// alignment:size (size 0 means 32 words).
 	dparmsize_t params[PR_MAX_PARAMS];
+
+	/// Data passed to builtin functions. Set by PR_RegisterBuiltins
+	void       *data;
 } builtin_t;
 
 #define PR_PARAM(type) { \
@@ -1238,6 +1241,7 @@ typedef struct {
 			// arugments, or they'll be modified to do the right thing.
 			pr_ushort_t  param_offsets[PR_MAX_PARAMS];
 			builtin_proc func;
+			void        *data;	///< extra data passed to the builtin
 		};
 	};
 } bfunction_t;
@@ -1247,8 +1251,10 @@ typedef struct {
 	for the same VM, but redefining a builtin is an error.
 	\param pr		pointer to ::progs_t VM struct
 	\param builtins	array of builtin_t builtins
+	\param data		pointer to builtin-specific data. Usually the resources
+					struct registered with PR_Resources_Register
 */
-void PR_RegisterBuiltins (progs_t *pr, builtin_t *builtins);
+void PR_RegisterBuiltins (progs_t *pr, builtin_t *builtins, void *data);
 
 /** Lookup a builtin function referred by name.
 	\param pr		pointer to ::progs_t VM struct

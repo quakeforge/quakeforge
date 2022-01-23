@@ -257,6 +257,5 @@ RUA_Cvar_Init (progs_t *pr, int secure)
 
 	res->aliases = 0;
 	PR_Resources_Register (pr, "Cvar", res, bi_cvar_clear);
-
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, res);
 }

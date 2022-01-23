@@ -109,7 +109,7 @@ RUA_Cbuf_Init (progs_t *pr, int secure)
 {
 	cbuf_resources_t *res = calloc (sizeof (cbuf_resources_t), 1);
 	PR_Resources_Register (pr, "Cbuf", res, bi_cbuf_clear);
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, res);
 }
 
 VISIBLE void

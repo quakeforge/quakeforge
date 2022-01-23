@@ -497,17 +497,17 @@ void
 RUA_Input_Init (progs_t *pr, int secure)
 {
 	input_resources_t *res = calloc (sizeof (input_resources_t), 1);
-	PR_Resources_Register (pr, "input", res, bi_input_clear);
 
 	res->cookie_super = new_memsuper ();
 	res->cookies = Hash_NewTable (251, 0, rua_in_free_cookie, res,
 								  &res->hash_links);
 	Hash_SetHashCompare (res->cookies, rua_in_hash_cookie, rua_in_cmp_cookies);
 
+	PR_Resources_Register (pr, "input", res, bi_input_clear);
 	if (secure & 2) {
-		PR_RegisterBuiltins (pr, secure_builtins);
+		PR_RegisterBuiltins (pr, secure_builtins, res);
 	} else {
-		PR_RegisterBuiltins (pr, insecure_builtins);
+		PR_RegisterBuiltins (pr, insecure_builtins, res);
 	}
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, res);
 }

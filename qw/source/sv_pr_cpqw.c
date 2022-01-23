@@ -855,6 +855,6 @@ cpqw_load (progs_t *pr)
 void
 SV_PR_CPQW_Init (progs_t *pr)
 {
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, 0);
 	PR_AddLoadFunc (pr, cpqw_load);
 }

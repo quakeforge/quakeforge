@@ -688,7 +688,7 @@ QWAQ_Debug_Init (progs_t *pr)
 
 	PR_AddLoadFunc (pr, qwaq_debug_load);
 	PR_Resources_Register (pr, "qwaq-debug", debug, qwaq_debug_clear);
-	PR_RegisterBuiltins (pr, builtins);
+	PR_RegisterBuiltins (pr, builtins, debug);
 }
 
 void
