@@ -1412,7 +1412,7 @@ rua_obj_msg_sendv (progs_t *pr)
 	int         count = args->count;
 	pr_type_t  *params = G_GPOINTER (pr, args->list);
 
-	if (count < 2 || count > MAX_PARMS) {
+	if (count < 2 || count > PR_MAX_PARAMS) {
 		PR_RunError (pr, "bad args count in obj_msg_sendv: %d", count);
 	}
 	if (pr_boundscheck->int_val) {

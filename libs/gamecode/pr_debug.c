@@ -1612,7 +1612,7 @@ PR_PrintStatement (progs_t *pr, dstatement_t *s, int contents)
 					opchar = fmt[3];
 					parm_ind = fmt[2] - '0';
 					fmt++;				// P has one extra item
-					if (parm_ind >= MAX_PARMS)
+					if (parm_ind >= PR_MAX_PARAMS)
 						goto err;
 				}
 

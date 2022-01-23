@@ -536,7 +536,7 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 	}
 
 	if (args) {
-		while (i < MAX_PARMS) {
+		while (i < PR_MAX_PARAMS) {
 			param = new_symbol_type (va (0, ".par%d", i), &type_param);
 			initialize_def (param, 0, parameters->space, sc_param);
 			i++;
@@ -636,7 +636,7 @@ static void
 build_function (symbol_t *fsym)
 {
 	const type_t *func_type = fsym->s.func->type;
-	if (func_type->t.func.num_params > MAX_PARMS) {
+	if (func_type->t.func.num_params > PR_MAX_PARAMS) {
 		error (0, "too many params");
 	}
 }

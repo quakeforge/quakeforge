@@ -506,7 +506,7 @@ typedef struct dparmsize_s {
 
 #define	DEF_SAVEGLOBAL	(1<<15)
 
-#define	MAX_PARMS	8
+#define	PR_MAX_PARAMS	8
 
 typedef struct dfunction_s {
 	pr_int_t    first_statement;	// negative numbers are builtins
@@ -519,7 +519,7 @@ typedef struct dfunction_s {
 	pr_string_t file;				// source file defined in
 
 	pr_int_t    numparms;			// -ve is varargs (1s comp of real count)
-	dparmsize_t parm_size[MAX_PARMS];
+	dparmsize_t parm_size[PR_MAX_PARAMS];
 } dfunction_t;
 
 typedef union pr_type_u {

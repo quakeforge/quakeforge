@@ -129,7 +129,7 @@ PR_ResolveGlobals (progs_t *pr)
 		if (!(def = PR_FindGlobal (pr, sym = ".return")))
 			goto error;
 		pr->pr_return = &pr->pr_globals[def->ofs];
-		for (i = 0; i < MAX_PARMS; i++) {
+		for (i = 0; i < PR_MAX_PARAMS; i++) {
 			param_n[sizeof (param_str) - 2] = i + '0';
 			if (!(def = PR_FindGlobal (pr, sym = param_n)))
 				goto error;

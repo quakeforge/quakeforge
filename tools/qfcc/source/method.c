@@ -710,8 +710,8 @@ method_check_params (method_t *method, expr_t *args)
 	for (count = 0, a = args; a; a = a->next)
 		count++;
 
-	if (count > MAX_PARMS)
-		return error (args, "more than %d parameters", MAX_PARMS);
+	if (count > PR_MAX_PARAMS)
+		return error (args, "more than %d parameters", PR_MAX_PARAMS);
 
 	if (mtype->t.func.num_params >= 0)
 		param_count = mtype->t.func.num_params;

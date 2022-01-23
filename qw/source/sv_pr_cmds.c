@@ -1115,7 +1115,7 @@ PF_WriteBytes (progs_t *pr)
 {
 	int         i, p;
 	int         count = pr->pr_argc - 1;
-	byte        buf[MAX_PARMS];
+	byte        buf[PR_MAX_PARAMS];
 
 	for (i = 0; i < count; i++) {
 		p = P_FLOAT (pr, i + 1);

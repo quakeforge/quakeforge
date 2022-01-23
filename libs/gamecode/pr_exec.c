@@ -219,7 +219,7 @@ static void
 PR_EnterFunction (progs_t *pr, bfunction_t *f)
 {
 	pr_int_t    i;
-	pr_type_t  *dstParams[MAX_PARMS];
+	pr_type_t  *dstParams[PR_MAX_PARAMS];
 	pr_ptr_t    paramofs = 0;
 
 	if (pr->pr_trace && !pr->debug_handler) {
@@ -263,7 +263,7 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 		}
 		dparmsize_t parmsize = { pr->pr_param_size, pr->pr_param_alignment };
 		paramofs = align_offset (paramofs, parmsize );
-		if (i < MAX_PARMS) {
+		if (i < PR_MAX_PARAMS) {
 			dstParams[i] = pr->pr_globals + paramofs;
 		}
 		for (; i < pr->pr_argc; i++) {
@@ -303,7 +303,7 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 		copy_args = pr->pr_argc - i;
 		argc->int_var = copy_args;
 		argv->int_var = dstParams[i] - pr->pr_globals;
-		if (i < MAX_PARMS) {
+		if (i < PR_MAX_PARAMS) {
 			memcpy (dstParams[i], pr->pr_params[i],
 					(copy_args * pr->pr_param_size) * sizeof (pr_type_t));
 		}

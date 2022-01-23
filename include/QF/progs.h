@@ -1205,7 +1205,7 @@ typedef struct {
 	pr_int_t    locals;
 	pr_uint_t   profile;
 	pr_int_t    numparms;
-	dparmsize_t parm_size[MAX_PARMS];
+	dparmsize_t parm_size[PR_MAX_PARAMS];
 	dfunction_t *descriptor;
 	builtin_proc func;
 } bfunction_t;
@@ -1896,8 +1896,8 @@ struct progs_s {
 	/// \name parameter block
 	///@{
 	pr_type_t  *pr_return;
-	pr_type_t  *pr_params[MAX_PARMS];
-	pr_type_t  *pr_real_params[MAX_PARMS];
+	pr_type_t  *pr_params[PR_MAX_PARAMS];
+	pr_type_t  *pr_real_params[PR_MAX_PARAMS];
 	int         pr_param_size;		///< covers both params and return
 	int         pr_param_alignment;	///< covers both params and return
 	pr_type_t   pr_return_buffer[32];///< for discarded return values

@@ -1508,7 +1508,7 @@ is_vector_parameter_store (progs_t *pr, dstatement_t *st,
 		return 0;
 	if (operand != st->a)
 		return 0;
-	for (i = 0; i < MAX_PARMS; i++)
+	for (i = 0; i < PR_MAX_PARAMS; i++)
 		if (st->b == pr->pr_params[i] - pr->pr_globals)
 			return 1;
 	return 0;
