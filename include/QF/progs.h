@@ -33,6 +33,7 @@
 	\image latex vm-mem.eps "VM memory map"
 */
 
+#include "QF/math/bitop.h"
 #include "QF/progs/pr_comp.h"
 #include "QF/progs/pr_debug.h"
 
@@ -1193,7 +1194,26 @@ typedef struct {
 	/// The number of the builtin for \#N in QC. -1 for automatic allocation.
 	/// 0 or >= ::PR_AUTOBUILTIN is invalid.
 	pr_int_t    binum;
+	/// The number of parameters the builtin takes. Negative numbers mean
+	/// varargs with ~num_params (-num_params - 1) being the number of real
+	/// parameters.
+	pr_int_t    num_params;
+	/// Parameter size specificiation.
+	///
+	/// Up to 8 parameters are supported for automatic parameter setup because
+	/// that's all that v6p progs can pass. Builtins taking more than 8
+	/// parameters are already Ruamoko-only and thus know how to deal with the
+	/// parameters being on the data stack.
+	///
+	/// The encoding is the same as for progs functions, with 3:5 for
+	/// alignment:size (size 0 means 32 words).
+	dparmsize_t params[PR_MAX_PARAMS];
 } builtin_t;
+
+#define PR_PARAM(type) { \
+	.size = PR_SIZEOF(type) & 0x1f, \
+	.alignment = BITOP_LOG2(PR_ALIGNOF(type)), \
+}
 
 /** Duplicate the dfunction_t descriptor with the addition of a pointer to the
 	builtin function. Avoids a level of indirection when calling a builtin

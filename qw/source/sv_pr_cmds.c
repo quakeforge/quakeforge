@@ -684,7 +684,7 @@ PF_findradius (progs_t *pr)
 
 // entity () spawn
 static void
-PF_Spawn (progs_t *pr)
+PF_spawn (progs_t *pr)
 {
 	edict_t    *ed;
 
@@ -696,7 +696,7 @@ cvar_t *pr_double_remove;
 
 // void (entity e) remove
 static void
-PF_Remove (progs_t *pr)
+PF_remove (progs_t *pr)
 {
 	edict_t    *ed;
 
@@ -767,6 +767,7 @@ PF_precache_file (progs_t *pr)
 	// precache_file is used only to copy files with qcc, it does nothing
 	R_INT (pr) = P_INT (pr, 0);
 }
+#define PF_precache_file2 PF_precache_file
 
 // void (string s) precache_sound
 // string (string s) precache_sound2
@@ -777,6 +778,7 @@ PF_precache_sound (progs_t *pr)
 				 "precache_sound");
 	R_INT (pr) = P_INT (pr, 0);
 }
+#define PF_precache_sound2 PF_precache_sound
 
 // void (string s) precache_model
 // string (string s) precache_model2
@@ -787,6 +789,7 @@ PF_precache_model (progs_t *pr)
 				 "precache_model");
 	R_INT (pr) = P_INT (pr, 0);
 }
+#define PF_precache_model2 PF_precache_model
 
 /*
 	PF_walkmove
@@ -1639,7 +1642,7 @@ PF_testentitypos (progs_t *pr)
 #define MAX_PF_HULLS 64		// FIXME make dynamic?
 clip_hull_t *pf_hull_list[MAX_PF_HULLS];
 
-// integer (entity ent, vector point) hullpointcontents
+// int (entity ent, vector point) hullpointcontents
 static void
 PF_hullpointcontents (progs_t *pr)
 {
@@ -1655,7 +1658,7 @@ PF_hullpointcontents (progs_t *pr)
 	R_INT (pr) = SV_HullPointContents (hull, 0, offset);
 }
 
-// vector (integer hull, integer max) getboxbounds
+// vector (int hull, int max) getboxbounds
 static void
 PF_getboxbounds (progs_t *pr)
 {
@@ -1672,7 +1675,7 @@ PF_getboxbounds (progs_t *pr)
 	}
 }
 
-// integer () getboxhull
+// int () getboxhull
 static void
 PF_getboxhull (progs_t *pr)
 {
@@ -1697,7 +1700,7 @@ PF_getboxhull (progs_t *pr)
 	}
 }
 
-// void (integer hull) freeboxhull
+// void (int hull) freeboxhull
 static void
 PF_freeboxhull (progs_t *pr)
 {
@@ -1727,7 +1730,7 @@ calc_dist (vec3_t p, vec3_t n, vec3_t *offsets)
 	return DotProduct (v, n);
 }
 
-// void (integer hull, vector right, vector forward, vector up, vector mins, vector maxs) rotate_bbox
+// void (int hull, vector right, vector forward, vector up, vector mins, vector maxs) rotate_bbox
 static void
 PF_rotate_bbox (progs_t *pr)
 {
@@ -1828,7 +1831,7 @@ PF_sv_cvar (progs_t *pr)
 	}
 }
 
-// int () SV_ClientNumber
+// int (entity) SV_ClientNumber
 // returns -1 if the entity is not a client (either not in the client range
 // or the entity is not in use by a client)
 static void
@@ -1898,9 +1901,9 @@ PF_SV_SetUserinfo (progs_t *pr)
 	SV_ExtractFromUserinfo (cl);
 }
 
-// void (entity cl, integer ping) SV_SetPing
+// void (entity cl, int ping) SV_SetPing
 static void
-PR_SV_SetPing (progs_t *pr)
+PF_SV_SetPing (progs_t *pr)
 {
 	int         entnum = P_EDICTNUM (pr, 0);
 	client_t   *cl = svs.clients + entnum - 1;
@@ -1910,9 +1913,9 @@ PR_SV_SetPing (progs_t *pr)
 	cl->ping = P_INT (pr, 1);
 }
 
-// void (entity cl, float secs, vector angles, vector move, integer buttons, integer impulse) SV_UserCmd
+// void (entity cl, float secs, vector angles, vector move, int buttons, int impulse) SV_UserCmd
 static void
-PR_SV_UserCmd (progs_t *pr)
+PF_SV_UserCmd (progs_t *pr)
 {
 	usercmd_t   ucmd;
 	int         entnum = P_EDICTNUM (pr, 0);
@@ -1938,7 +1941,7 @@ PR_SV_UserCmd (progs_t *pr)
 
 // void (entity cl) SV_Spawn
 static void
-PR_SV_Spawn (progs_t *pr)
+PF_SV_Spawn (progs_t *pr)
 {
 	int         entnum = P_EDICTNUM (pr, 0);
 	client_t   *cl = svs.clients + entnum - 1;
@@ -1951,96 +1954,106 @@ PR_SV_Spawn (progs_t *pr)
 
 #define QF (PR_RANGE_QF << PR_RANGE_SHIFT) |
 
+#define bi(x,n,np,params...) {#x, PF_##x, n, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
-	{"makevectors",			PF_makevectors,			1},
-	{"setorigin",			PF_setorigin,			2},
-	{"setmodel",			PF_setmodel,			3},
-	{"setsize",				PF_setsize,				4},
+	bi(makevectors,      1, 1, p(vector)),
+	bi(setorigin,        2, 2, p(entity), p(vector)),
+	bi(setmodel,         3, 2, p(entity), p(string)),
+	bi(setsize,          4, 3, p(entity), p(vector), p(vector)),
 
-	{"sound",				PF_sound,				8},
+	bi(sound,            8, 3, p(entity), p(float), p(string)),
 
-	{"error",				PF_error,				10},
-	{"objerror",			PF_objerror,			11},
-	{"spawn",				PF_Spawn,				14},
-	{"remove",				PF_Remove,				15},
-	{"traceline",			PF_traceline,			16},
-	{"checkclient",			PF_checkclient,			17},
+	bi(error,           10, -1),	// (...)
+	bi(objerror,        11, -1),	// (...)
+	bi(spawn,           14, 0),		// (void)
+	bi(remove,          15, 1, p(entity)),
+	bi(traceline,       16, 3, p(vector), p(vector), p(float)),
+	bi(checkclient,     17, 0),		// (void)
 
-	{"precache_sound",		PF_precache_sound,		19},
-	{"precache_model",		PF_precache_model,		20},
-	{"stuffcmd",			PF_stuffcmd,			21},
-	{"findradius",			PF_findradius,			22},
-	{"bprint",				PF_bprint,				23},
-	{"sprint",				PF_sprint,				24},
+	bi(precache_sound,  19, 1, p(string)),
+	bi(precache_model,  20, 1, p(string)),
+	bi(stuffcmd,        21, 2, p(entity), p(string)),
+	bi(findradius,      22, 2, p(vector), p(float)),
+	bi(bprint,          23, -1), // (...)
+	bi(sprint,          24, -2, p(entity)), // (entity, string...)
 
-	{"walkmove",			PF_walkmove,			32},
+	bi(walkmove,        32, 2, p(float), p(float)),
 
-	{"droptofloor",			PF_droptofloor,			34},
-	{"lightstyle",			PF_lightstyle,			35},
+	bi(droptofloor,     34, 0),		// (void)
+	bi(lightstyle,      35, 2, p(float), p(string)),
 
-	{"checkbottom",			PF_checkbottom,			40},
-	{"pointcontents",		PF_pointcontents,		41},
+	bi(checkbottom,     40, 1, p(entity)),
+	bi(pointcontents,   41, 1, p(vector)),
 
-	{"aim",					PF_aim,					44},
+	bi(aim,             44, 2, p(entity), p(float)),
 
-	{"localcmd",			PF_localcmd,			46},
+	bi(localcmd,        46, 1, p(string)),
 
-	{"changeyaw",			PF_changeyaw,			49},
+//	bi(particle,        48, 4, p(vector), p(vector), p(float), p(float)),
+	bi(changeyaw,       49, 0),		// (void)
 
-	{"writebyte",			PF_WriteByte,			52},
-	{"WriteBytes",			PF_WriteBytes,			-1},
-	{"writechar",			PF_WriteChar,			53},
-	{"writeshort",			PF_WriteShort,			54},
-	{"writelong",			PF_WriteLong,			55},
-	{"writecoord",			PF_WriteCoord,			56},
-	{"writeangle",			PF_WriteAngle,			57},
-	{"WriteCoordV",			PF_WriteCoordV,			-1},
-	{"WriteAngleV",			PF_WriteAngleV,			-1},
-	{"writestring",			PF_WriteString,			58},
-	{"writeentity",			PF_WriteEntity,			59},
+	bi(WriteByte,       52, 2, p(float), p(float)),
+	bi(WriteBytes,      -1, -2, p(float)),	// (float, float...)
+	bi(WriteChar,       53, 2, p(float), p(float)),
+	bi(WriteShort,      54, 2, p(float), p(float)),
+	bi(WriteLong,       55, 2, p(float), p(float)),
+	bi(WriteCoord,      56, 2, p(float), p(float)),
+	bi(WriteAngle,      57, 2, p(float), p(float)),
+	bi(WriteCoordV,     -1, 2, p(float), p(vector)),
+	bi(WriteAngleV,     -1, 2, p(float), p(vector)),
+	bi(WriteString,     58, 2, p(float), p(string)),
+	bi(WriteEntity,     59, 2, p(float), p(entity)),
+#define PF_movetogoal SV_MoveToGoal
+	bi(movetogoal,      67, 0),		// (void)
+#undef PF_movetogoal
+	bi(precache_file,   68, 1, p(string)),
+	bi(makestatic,      69, 1, p(entity)),
+	bi(changelevel,     70, 1, p(string)),
 
-	{"movetogoal",			SV_MoveToGoal,			67},
-	{"precache_file",		PF_precache_file,		68},
-	{"makestatic",			PF_makestatic,			69},
-	{"changelevel",			PF_changelevel,			70},
+	bi(centerprint,     73, -1), // (...)
+	bi(ambientsound,    74, 4, p(vector), p(string), p(float), p(float)),
+	bi(precache_model2, 75, 1, p(string)),
+	bi(precache_sound2, 76, 1, p(string)),
+	bi(precache_file2,  77, 1, p(string)),
+	bi(setspawnparms,   78, 1, p(entity)),
 
-	{"centerprint",			PF_centerprint,			73},
-	{"ambientsound",		PF_ambientsound,		74},
-	{"precache_model2",		PF_precache_model,		75},
-	{"precache_sound2",		PF_precache_sound,		76},
-	{"precache_file2",		PF_precache_file,		77},
-	{"setspawnparms",		PF_setspawnparms,		78},
+	bi(logfrag,         79, 2, p(entity), p(entity)),
+	bi(infokey,         80, 2, p(entity), p(string)),
+	bi(multicast,       81, 2, p(vector), p(float)),
 
-	{"logfrag",				PF_logfrag,				79},
-	{"infokey",				PF_infokey,				80},
-	{"multicast",			PF_multicast,			82},
+	bi(testentitypos,     QF 92, 1, p(entity)),
+	bi(hullpointcontents, QF 93, 2, p(entity), p(vector)),
+	bi(getboxbounds,      QF 94, 2, p(int), p(int)),
+	bi(getboxhull,        QF 95, 0),		// (void)
+	bi(freeboxhull,       QF 96, 1, p(int)),
+	bi(rotate_bbox,       QF 97, 6, p(int), p(vector), p(vector), p(vector),
+									p(vector), p(vector)),
+	bi(tracebox,          QF 98, 6, p(vector), p(vector), p(vector), p(vector),
+									p(float), p(entity)),
+	bi(checkextension,    QF 99, -1, {}),	//FIXME correct params?
 
-	{"testentitypos",		PF_testentitypos,		QF 92},
-	{"hullpointcontents",	PF_hullpointcontents,	QF 93},
-	{"getboxbounds",		PF_getboxbounds,		QF 94},
-	{"getboxhull",			PF_getboxhull,			QF 95},
-	{"freeboxhull",			PF_freeboxhull,			QF 96},
-	{"rotate_bbox",			PF_rotate_bbox,			QF 97},
-	{"tracebox",			PF_tracebox,			QF 98},
-	{"checkextension",		PF_checkextension,		QF 99},
-	{"setinfokey",			PF_setinfokey,			QF 102},
-	{"cfopen",				PF_cfopen,				QF 103},
-	{"cfclose",				PF_cfclose,				QF 104},
-	{"cfread",				PF_cfread,				QF 105},
-	{"cfwrite",				PF_cfwrite,				QF 106},
-	{"cfeof",				PF_cfeof,				QF 107},
-	{"cfquota",				PF_cfquota,				QF 108},
+	bi(setinfokey,       QF 102, 3, p(entity), p(string), p(string)),
+	bi(cfopen,           QF 103, 2, p(string), p(string)),
+	bi(cfclose,          QF 104, 1, p(float)),
+	bi(cfread,           QF 105, 1, p(float)),
+	bi(cfwrite,          QF 106, 2, p(float), p(string)),
+	bi(cfeof,            QF 107, 1, p(float)),
+	bi(cfquota,          QF 108, 0),		// (void)
 
-	{"SV_ClientNumber",		PF_SV_ClientNumber,		-1},
-	{"SV_AllocClient",		PF_SV_AllocClient,		-1},
-	{"SV_FreeClient",		PF_SV_FreeClient,		-1},
-	{"SV_SetUserinfo",		PF_SV_SetUserinfo,		-1},
-	{"SV_SetPing",			PR_SV_SetPing,			-1},
-	{"SV_UserCmd",			PR_SV_UserCmd,			-1},
-	{"SV_Spawn",			PR_SV_Spawn,			-1},
+	bi(SV_ClientNumber,  -1, 1, p(entity)),
+	bi(SV_AllocClient,   -1, 0),		// (void)
+	bi(SV_FreeClient,    -1, 1, p(entity)),
+	bi(SV_SetUserinfo,   -1, 2, p(entity), p(string)),
+	bi(SV_SetPing,       -1, 2, p(entity), p(int)),
+	bi(SV_UserCmd,       -1, 6, p(entity), p(float), p(vector), p(vector),
+								p(int), p(int)),
+	bi(SV_Spawn,         -1, 1, p(entity)),
 
-	{"EntityParseFunction", ED_EntityParseFunction,	-1},
 
+#define PF_EntityParseFunction ED_EntityParseFunction
+	bi(EntityParseFunction, -1, 1, p(func)),
+#undef PF_EntityParseFunction
 	{0}
 };
 

@@ -95,13 +95,15 @@ bi_remove (progs_t *pr)
 	ED_Free (pr, ed);
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
-	{"printf",		bi_printf,		-1},
-	{"errno",		bi_errno,		-1},
-	{"strerror",	bi_strerror,	-1},
-	{"exit",		bi_exit,		-1},
-	{"spawn",		bi_spawn,		-1},
-	{"remove",		bi_remove,		-1},
+	bi(printf,   -2, p(string)),
+	bi(errno,    0),
+	bi(strerror, 1, p(int)),
+	bi(exit,     1, p(int)),
+	bi(spawn,    0),
+	bi(remove,   1, p(entity)),
 	{0}
 };
 

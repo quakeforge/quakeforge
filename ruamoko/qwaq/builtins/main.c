@@ -172,10 +172,12 @@ bi_traceoff (progs_t *pr)
 	pr->pr_trace = false;
 }
 
+#define bi(x,n,np,params...) {#x, bi_##x, n, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t common_builtins[] = {
-	{"printf",			bi_printf,		-1},
-	{"traceon",			bi_traceon,		-1},
-	{"traceoff",		bi_traceoff,	-1},
+	bi(printf,   -1, -2, p(string)),
+	bi(traceon,  -1, 0),
+	bi(traceoff, -1, 0),
 	{},
 };
 

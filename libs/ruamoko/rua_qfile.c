@@ -346,35 +346,40 @@ bi_Qfilesize (progs_t *pr)
 	R_INT (pr) = Qfilesize (h->file);
 }
 
+#define bi(x,np,params...) {#x, secured, -1, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t secure_builtins[] = {
-	{"Qrename",		secured,		-1},
-	{"Qremove",		secured,		-1},
-	{"Qopen",		secured,		-1},
+	bi(Qrename, 2, p(string), p(string)),
+	bi(Qremove, 1, p(string)),
+	bi(Qopen,   2, p(string), p(string)),
 	{0}
 };
 
+#undef bi
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
 static builtin_t insecure_builtins[] = {
-	{"Qrename",		bi_Qrename,		-1},
-	{"Qremove",		bi_Qremove,		-1},
-	{"Qopen",		bi_Qopen,		-1},
+	bi(Qrename, 2, p(string), p(string)),
+	bi(Qremove, 1, p(string)),
+	bi(Qopen,   2, p(string), p(string)),
 	{0}
 };
 
 static builtin_t builtins[] = {
-	{"Qclose",		bi_Qclose,		-1},
-	{"Qgetline",	bi_Qgetline,	-1},
-	{"Qreadstring",	bi_Qreadstring,	-1},
-	{"Qread",		bi_Qread,		-1},
-	{"Qwrite",		bi_Qwrite,		-1},
-	{"Qputs",		bi_Qputs,		-1},
-//	{"Qgets",		bi_Qgets,		-1},
-	{"Qgetc",		bi_Qgetc,		-1},
-	{"Qputc",		bi_Qputc,		-1},
-	{"Qseek",		bi_Qseek,		-1},
-	{"Qtell",		bi_Qtell,		-1},
-	{"Qflush",		bi_Qflush,		-1},
-	{"Qeof",		bi_Qeof,		-1},
-	{"Qfilesize",	bi_Qfilesize,	-1},
+	bi(Qclose,      1, p(ptr)),
+	bi(Qgetline,    1, p(ptr)),
+	bi(Qreadstring, 2, p(ptr), p(int)),
+	bi(Qread,       3, p(ptr), p(ptr), p(int)),
+	bi(Qwrite,      3, p(ptr), p(ptr), p(int)),
+	bi(Qputs,       2, p(ptr), p(string)),
+//	bi(Qgets,       _, _),
+	bi(Qgetc,       1, p(ptr)),
+	bi(Qputc,       2, p(ptr), p(int)),
+	bi(Qseek,       3, p(ptr), p(int), p(int)),
+	bi(Qtell,       1, p(ptr)),
+	bi(Qflush,      1, p(ptr)),
+	bi(Qeof,        1, p(ptr)),
+	bi(Qfilesize,   1, p(ptr)),
 	{0}
 };
 

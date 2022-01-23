@@ -324,20 +324,24 @@ bi_draw_clear (progs_t *pr, void *data)
 	Hash_FlushTable (res->pic_hash);
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	{"Draw_FreePic",	bi_Draw_FreePic,	-1},
-	{"Draw_MakePic",	bi_Draw_MakePic,	-1},
-	{"Draw_CachePic",	bi_Draw_CachePic,	-1},
-	{"Draw_Pic",		bi_Draw_Pic,		-1},
-	{"Draw_Picf",		bi_Draw_Picf,		-1},
-	{"Draw_SubPic",		bi_Draw_SubPic,		-1},
-	{"Draw_CenterPic",	bi_Draw_CenterPic,	-1},
-	{"Draw_Character",	bi_Draw_Character,	-1},
-	{"Draw_String",		bi_Draw_String,		-1},
-	{"Draw_nString",	bi_Draw_nString,	-1},
-	{"Draw_AltString",	bi_Draw_AltString,	-1},
-	{"Draw_Fill",		bi_Draw_Fill,		-1},
-	{"Draw_Crosshair",	bi_Draw_Crosshair,	-1},
+	bi(Draw_FreePic,    1, p(ptr)),
+	bi(Draw_MakePic,    3, p(int), p(int), p(string)),
+	bi(Draw_CachePic,   2, p(string), p(int)),
+	bi(Draw_Pic,        3, p(int), p(int), p(ptr)),
+	bi(Draw_Picf,       3, p(float), p(float), p(ptr)),
+	bi(Draw_SubPic,     7, p(int), p(int), p(ptr),
+	                       p(int), p(int), p(int), p(int)),
+	bi(Draw_CenterPic,  3, p(int), p(int), p(ptr)),
+	bi(Draw_Character,  3, p(int), p(int), p(int)),
+	bi(Draw_String,     3, p(int), p(int), p(string)),
+	bi(Draw_nString,    4, p(int), p(int), p(string), p(int)),
+	bi(Draw_AltString,  3, p(int), p(int), p(string)),
+	bi(Draw_Fill,       5, p(int), p(int), p(int), p(int), p(int)),
+	bi(Draw_Crosshair,  5, p(int), p(int), p(int), p(int)),
 	{0}
 };
 

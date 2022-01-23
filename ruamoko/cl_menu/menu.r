@@ -21,3 +21,4 @@ int () Menu_GetIndex = #0;
 void (void) Menu_Next = #0;
 void (void) Menu_Prev = #0;
 void (void) Menu_Enter = #0;
+void (void) Menu_Leave = #0;

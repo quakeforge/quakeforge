@@ -407,56 +407,58 @@ secured (progs_t *pr)
 	PR_RunError (pr, "Secured function called");
 }
 
-#define bi(x) {#x, secured, -1}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
+#define bi(x,np,params...) {#x, secured, -1, np, {params}}
 static builtin_t secure_builtins[] = {
-	bi(IN_CreateButton),
-	bi(IN_CreateAxis),
-	bi(IN_LoadConfig),
+	bi(IN_CreateButton, 2, p(string), p(string)),
+	bi(IN_CreateAxis,   2, p(string), p(string)),
+	bi(IN_LoadConfig,   1, p(ptr)),
 	{0}
 };
 
 #undef bi
-#define bi(x) {#x, bi_##x, -1}
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
 static builtin_t insecure_builtins[] = {
-	bi(IN_CreateButton),
-	bi(IN_CreateAxis),
-	bi(IN_LoadConfig),
+	bi(IN_CreateButton, 2, p(string), p(string)),
+	bi(IN_CreateAxis,   2, p(string), p(string)),
+	bi(IN_LoadConfig,   1, p(ptr)),
 	{0}
 };
 static builtin_t builtins[] = {
-	bi(IN_FindDeviceId),
-	bi(IN_GetDeviceName),
-	bi(IN_GetDeviceId),
-	bi(IN_AxisInfo),
-	bi(IN_ButtonInfo),
-	bi(IN_GetAxisName),
-	bi(IN_GetButtonName),
-	bi(IN_GetAxisNumber),
-	bi(IN_GetButtonNumber),
-	bi(IN_ProcessEvents),
-	bi(IN_ClearStates),
-	bi(IN_GetAxisInfo),
-	bi(IN_GetButtonInfo),
+	bi(IN_FindDeviceId,     1, p(string)),
+	bi(IN_GetDeviceName,    1, p(int)),
+	bi(IN_GetDeviceId,      1, p(int)),
+	bi(IN_AxisInfo,         0), //FIXME
+	bi(IN_ButtonInfo,       0), //FIXME
+	bi(IN_GetAxisName,      2, p(int), p(int)),
+	bi(IN_GetButtonName,    2, p(int), p(int)),
+	bi(IN_GetAxisNumber,    2, p(int), p(string)),
+	bi(IN_GetButtonNumber,  2, p(int), p(string)),
+	bi(IN_ProcessEvents,    0),
+	bi(IN_ClearStates,      0),
+	bi(IN_GetAxisInfo,      3, p(int), p(int), p(ptr)),
+	bi(IN_GetButtonInfo,    3, p(int), p(int), p(ptr)),
 	{"IN_ButtonAddListener|^{tag in_button_s=}^(v^v^{tag in_button_s=})^v",
-		rua_IN_ButtonAddListener_func, -1},
+		rua_IN_ButtonAddListener_func, -1,      3, {p(ptr), p(func), p(ptr)}},
 	{"IN_ButtonRemoveListener|^{tag in_button_s=}^(v^v^{tag in_button_s=})^v",
-		rua_IN_ButtonRemoveListener_func, -1},
+		rua_IN_ButtonRemoveListener_func, -1,   3, {p(ptr), p(func), p(ptr)}},
 	{"IN_AxisAddListener|^{tag in_axis_s=}^(v^v^{tag in_axis_s=})^v",
-		rua_IN_AxisAddListener_func, -1},
+		rua_IN_AxisAddListener_func, -1,        3, {p(ptr), p(func), p(ptr)}},
 	{"IN_AxisRemoveListener|^{tag in_axis_s=}^(v^v^{tag in_axis_s=})^v",
-		rua_IN_AxisRemoveListener_func, -1},
+		rua_IN_AxisRemoveListener_func, -1,     3, {p(ptr), p(func), p(ptr)}},
 	{"IN_ButtonAddListener|^{tag in_button_s=}(@@:.)@",
-		rua_IN_ButtonAddListener_method, -1},
+		rua_IN_ButtonAddListener_method, -1,    3, {p(ptr), p(func), p(ptr)}},
 	{"IN_ButtonRemoveListener|^{tag in_button_s=}(@@:.)@",
-		rua_IN_ButtonRemoveListener_method, -1},
+		rua_IN_ButtonRemoveListener_method, -1, 3, {p(ptr), p(func), p(ptr)}},
 	{"IN_AxisAddListener|^{tag in_axis_s=}(@@:.)@",
-		rua_IN_AxisAddListener_method, -1},
+		rua_IN_AxisAddListener_method, -1,      3, {p(ptr), p(func), p(ptr)}},
 	{"IN_AxisRemoveListener|^{tag in_axis_s=}(@@:.)@",
-		rua_IN_AxisRemoveListener_method, -1},
+		rua_IN_AxisRemoveListener_method, -1,   3, {p(ptr), p(func), p(ptr)}},
 
-	bi(IMT_CreateContext),
-	bi(IMT_GetContext),
-	bi(IMT_SetContext),
+	bi(IMT_CreateContext,   1, p(string)),
+	bi(IMT_GetContext,      0),
+	bi(IMT_SetContext,      1, p(int)),
 
 	{0}
 };

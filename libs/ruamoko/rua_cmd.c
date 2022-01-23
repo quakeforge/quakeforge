@@ -145,11 +145,13 @@ bi_Cmd_Args (progs_t *pr)
 //Cmd_ExecuteString
 //Cmd_ForwardToServer
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
-	{"Cmd_AddCommand",	bi_Cmd_AddCommand,	-1},
-	{"Cmd_Argc",		bi_Cmd_Argc,		-1},
-	{"Cmd_Argv",		bi_Cmd_Argv,		-1},
-	{"Cmd_Args",		bi_Cmd_Args,		-1},
+	bi(Cmd_AddCommand, 2, p(string), p(func)),
+	bi(Cmd_Argc,       0),
+	bi(Cmd_Argv,       1, p(int)),
+	bi(Cmd_Args,       1, p(int)),
 	{0}
 };
 

@@ -575,7 +575,7 @@ formatLine (txtbuffer_t *buffer, unsigned linePtr, unsigned xpos,
 //===
 
 static void
-bi_i_EditBuffer__init (progs_t *pr)
+bi__i_EditBuffer__init (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	__auto_type self = &P_STRUCT (pr, qwaq_editbuffer_t, 0);
@@ -591,7 +591,7 @@ bi_i_EditBuffer__init (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__initWithFile_ (progs_t *pr)
+bi__i_EditBuffer__initWithFile_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	__auto_type self = &P_STRUCT (pr, qwaq_editbuffer_t, 0);
@@ -610,7 +610,7 @@ bi_i_EditBuffer__initWithFile_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__dealloc (progs_t *pr)
+bi__i_EditBuffer__dealloc (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	__auto_type self = &P_STRUCT (pr, qwaq_editbuffer_t, 0);
@@ -622,7 +622,7 @@ bi_i_EditBuffer__dealloc (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__nextChar_ (progs_t *pr)
+bi__i_EditBuffer__nextChar_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -633,7 +633,7 @@ bi_i_EditBuffer__nextChar_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__prevChar_ (progs_t *pr)
+bi__i_EditBuffer__prevChar_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -644,7 +644,7 @@ bi_i_EditBuffer__prevChar_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__nextNonSpace_ (progs_t *pr)
+bi__i_EditBuffer__nextNonSpace_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -655,7 +655,7 @@ bi_i_EditBuffer__nextNonSpace_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__prevNonSpace_ (progs_t *pr)
+bi__i_EditBuffer__prevNonSpace_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -666,7 +666,7 @@ bi_i_EditBuffer__prevNonSpace_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__isWord_ (progs_t *pr)
+bi__i_EditBuffer__isWord_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -677,7 +677,7 @@ bi_i_EditBuffer__isWord_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__nextWord_ (progs_t *pr)
+bi__i_EditBuffer__nextWord_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -688,7 +688,7 @@ bi_i_EditBuffer__nextWord_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__prevWord_ (progs_t *pr)
+bi__i_EditBuffer__prevWord_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -699,7 +699,7 @@ bi_i_EditBuffer__prevWord_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__nextLine_ (progs_t *pr)
+bi__i_EditBuffer__nextLine_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -710,7 +710,7 @@ bi_i_EditBuffer__nextLine_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__prevLine_ (progs_t *pr)
+bi__i_EditBuffer__prevLine_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -721,7 +721,7 @@ bi_i_EditBuffer__prevLine_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__nextLine__ (progs_t *pr)
+bi__i_EditBuffer__nextLine__ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -742,7 +742,7 @@ bi_i_EditBuffer__nextLine__ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__prevLine__ (progs_t *pr)
+bi__i_EditBuffer__prevLine__ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -757,7 +757,7 @@ bi_i_EditBuffer__prevLine__ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__charPos_at_ (progs_t *pr)
+bi__i_EditBuffer__charPos_at_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -770,7 +770,7 @@ bi_i_EditBuffer__charPos_at_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__charPtr_at_ (progs_t *pr)
+bi__i_EditBuffer__charPtr_at_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -783,7 +783,7 @@ bi_i_EditBuffer__charPtr_at_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__getWord_ (progs_t *pr)
+bi__i_EditBuffer__getWord_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -797,7 +797,7 @@ bi_i_EditBuffer__getWord_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__getLine_ (progs_t *pr)
+bi__i_EditBuffer__getLine_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -811,7 +811,7 @@ bi_i_EditBuffer__getLine_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__getBOL_ (progs_t *pr)
+bi__i_EditBuffer__getBOL_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -822,7 +822,7 @@ bi_i_EditBuffer__getBOL_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__getEOL_ (progs_t *pr)
+bi__i_EditBuffer__getEOL_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -833,7 +833,7 @@ bi_i_EditBuffer__getEOL_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__getBOT (progs_t *pr)
+bi__i_EditBuffer__getBOT (progs_t *pr)
 {
 	//qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	//int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -843,7 +843,7 @@ bi_i_EditBuffer__getBOT (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__getEOT (progs_t *pr)
+bi__i_EditBuffer__getEOT (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -853,7 +853,7 @@ bi_i_EditBuffer__getEOT (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__readString_ (progs_t *pr)
+bi__i_EditBuffer__readString_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -868,7 +868,7 @@ bi_i_EditBuffer__readString_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__getChar_ (progs_t *pr)
+bi__i_EditBuffer__getChar_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -882,7 +882,7 @@ bi_i_EditBuffer__getChar_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__putChar_at_ (progs_t *pr)
+bi__i_EditBuffer__putChar_at_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -897,7 +897,7 @@ bi_i_EditBuffer__putChar_at_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__insertChar_at_ (progs_t *pr)
+bi__i_EditBuffer__insertChar_at_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -912,7 +912,7 @@ bi_i_EditBuffer__insertChar_at_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__countLines_ (progs_t *pr)
+bi__i_EditBuffer__countLines_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -924,7 +924,7 @@ bi_i_EditBuffer__countLines_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__search_for_direction_ (progs_t *pr)
+bi__i_EditBuffer__search_for_direction_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -938,7 +938,7 @@ bi_i_EditBuffer__search_for_direction_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__isearch_for_direction_ (progs_t *pr)
+bi__i_EditBuffer__isearch_for_direction_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -952,7 +952,7 @@ bi_i_EditBuffer__isearch_for_direction_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__formatLine_from_into_width_highlight_colors_ (progs_t *pr)
+bi__i_EditBuffer__formatLine_from_into_width_highlight_colors_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -972,7 +972,7 @@ bi_i_EditBuffer__formatLine_from_into_width_highlight_colors_ (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__modified (progs_t *pr)
+bi__i_EditBuffer__modified (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -981,7 +981,7 @@ bi_i_EditBuffer__modified (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__textSize (progs_t *pr)
+bi__i_EditBuffer__textSize (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -990,7 +990,7 @@ bi_i_EditBuffer__textSize (progs_t *pr)
 }
 
 static void
-bi_i_EditBuffer__saveFile_ (progs_t *pr)
+bi__i_EditBuffer__saveFile_ (progs_t *pr)
 {
 	qwaq_ebresources_t *res = PR_Resources_Find (pr, "qwaq-editbuffer");
 	int         buffer_id = P_STRUCT (pr, qwaq_editbuffer_t, 0).buffer;
@@ -1015,43 +1015,47 @@ qwaq_ebresources_clear (progs_t *pr, void *data)
 	editbuffer_reset (res);
 }
 
+#define bi(x,n,np,params...) {#x, bi_##x, n, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	{"_i_EditBuffer__init",				bi_i_EditBuffer__init,			-1},
-	{"_i_EditBuffer__initWithFile_",	bi_i_EditBuffer__initWithFile_,	-1},
-	{"_i_EditBuffer__dealloc",			bi_i_EditBuffer__dealloc,		-1},
-	{"_i_EditBuffer__nextChar_",		bi_i_EditBuffer__nextChar_,		-1},
-	{"_i_EditBuffer__prevChar_",		bi_i_EditBuffer__prevChar_,		-1},
-	{"_i_EditBuffer__nextNonSpace_",	bi_i_EditBuffer__nextNonSpace_,	-1},
-	{"_i_EditBuffer__prevNonSpace_",	bi_i_EditBuffer__prevNonSpace_,	-1},
-	{"_i_EditBuffer__isWord_",			bi_i_EditBuffer__isWord_,		-1},
-	{"_i_EditBuffer__nextWord_",		bi_i_EditBuffer__nextWord_,		-1},
-	{"_i_EditBuffer__prevWord_",		bi_i_EditBuffer__prevWord_,		-1},
-	{"_i_EditBuffer__nextLine_",		bi_i_EditBuffer__nextLine_,		-1},
-	{"_i_EditBuffer__prevLine_",		bi_i_EditBuffer__prevLine_,		-1},
-	{"_i_EditBuffer__nextLine__",		bi_i_EditBuffer__nextLine__,	-1},
-	{"_i_EditBuffer__prevLine__",		bi_i_EditBuffer__prevLine__,	-1},
-	{"_i_EditBuffer__charPos_at_",		bi_i_EditBuffer__charPos_at_,	-1},
-	{"_i_EditBuffer__charPtr_at_",		bi_i_EditBuffer__charPtr_at_,	-1},
-	{"_i_EditBuffer__getWord_",			bi_i_EditBuffer__getWord_,		-1},
-	{"_i_EditBuffer__getLine_",			bi_i_EditBuffer__getLine_,		-1},
-	{"_i_EditBuffer__getBOL_",			bi_i_EditBuffer__getBOL_,		-1},
-	{"_i_EditBuffer__getEOL_",			bi_i_EditBuffer__getEOL_,		-1},
-	{"_i_EditBuffer__getBOT",			bi_i_EditBuffer__getBOT,		-1},
-	{"_i_EditBuffer__getEOT",			bi_i_EditBuffer__getEOT,		-1},
-	{"_i_EditBuffer__readString_",		bi_i_EditBuffer__readString_,	-1},
-	{"_i_EditBuffer__getChar_",			bi_i_EditBuffer__getChar_,		-1},
-	{"_i_EditBuffer__putChar_at_",		bi_i_EditBuffer__putChar_at_,	-1},
-	{"_i_EditBuffer__insertChar_at_",	bi_i_EditBuffer__insertChar_at_,-1},
-	{"_i_EditBuffer__countLines_",		bi_i_EditBuffer__countLines_,	-1},
-	{"_i_EditBuffer__search_for_direction_",
-								bi_i_EditBuffer__search_for_direction_,	-1},
-	{"_i_EditBuffer__isearch_for_direction_",
-								bi_i_EditBuffer__isearch_for_direction_,-1},
-	{"_i_EditBuffer__formatLine_from_into_width_highlight_colors_",
-		bi_i_EditBuffer__formatLine_from_into_width_highlight_colors_,	-1},
-	{"_i_EditBuffer__modified",			bi_i_EditBuffer__modified,		-1},
-	{"_i_EditBuffer__textSize",			bi_i_EditBuffer__textSize,		-1},
-	{"_i_EditBuffer__saveFile_",		bi_i_EditBuffer__saveFile_,		-1},
+	bi(_i_EditBuffer__init,           -1, 2, p(ptr), p(ptr)),
+	bi(_i_EditBuffer__initWithFile_,  -1, 3, p(ptr), p(ptr), p(string)),
+	bi(_i_EditBuffer__dealloc,        -1, 2, p(ptr), p(ptr)),
+	bi(_i_EditBuffer__nextChar_,      -1, 3, p(ptr), p(ptr), p(uint)),
+	bi(_i_EditBuffer__prevChar_,      -1, 3, p(ptr), p(ptr), p(uint)),
+	bi(_i_EditBuffer__nextNonSpace_,  -1, 3, p(ptr), p(ptr), p(uint)),
+	bi(_i_EditBuffer__prevNonSpace_,  -1, 3, p(ptr), p(ptr), p(uint)),
+	bi(_i_EditBuffer__isWord_,        -1, 3, p(ptr), p(ptr), p(uint)),
+	bi(_i_EditBuffer__nextWord_,      -1, 3, p(ptr), p(ptr), p(uint)),
+	bi(_i_EditBuffer__prevWord_,      -1, 3, p(ptr), p(ptr), p(uint)),
+	bi(_i_EditBuffer__nextLine_,      -1, 3, p(ptr), p(ptr), p(uint)),
+	bi(_i_EditBuffer__prevLine_,      -1, 3, p(ptr), p(ptr), p(uint)),
+	bi(_i_EditBuffer__nextLine__,     -1, 4, p(ptr), p(ptr), p(uint), p(uint)),
+	bi(_i_EditBuffer__prevLine__,     -1, 4, p(ptr), p(ptr), p(uint), p(uint)),
+	bi(_i_EditBuffer__charPos_at_,    -1, 4, p(ptr), p(ptr), p(uint), p(uint)),
+	bi(_i_EditBuffer__charPtr_at_,    -1, 4, p(ptr), p(ptr), p(uint), p(uint)),
+	bi(_i_EditBuffer__getWord_,       -1, 3, p(ptr), p(ptr), p(uint)),
+	bi(_i_EditBuffer__getLine_,       -1, 3, p(ptr), p(ptr), p(uint)),
+	bi(_i_EditBuffer__getBOL_,        -1, 3, p(ptr), p(ptr), p(uint)),
+	bi(_i_EditBuffer__getEOL_,        -1, 3, p(ptr), p(ptr), p(uint)),
+	bi(_i_EditBuffer__getBOT,         -1, 2, p(ptr), p(ptr)),
+	bi(_i_EditBuffer__getEOT,         -1, 2, p(ptr), p(ptr)),
+	bi(_i_EditBuffer__readString_,    -1, 3, p(ptr), p(ptr), P(1, 2)),
+	bi(_i_EditBuffer__getChar_,       -1, 3, p(ptr), p(ptr), p(uint)),
+	bi(_i_EditBuffer__putChar_at_,    -1, 4, p(ptr), p(ptr), p(int), p(uint)),
+	bi(_i_EditBuffer__insertChar_at_, -1, 4, p(ptr), p(ptr), p(int), p(uint)),
+	bi(_i_EditBuffer__countLines_,    -1, 3, p(ptr), p(ptr), P(1, 2)),
+	bi(_i_EditBuffer__search_for_direction_,	-1,
+						5, p(ptr), p(ptr), P(1, 2), p(string), p(int)),
+	bi(_i_EditBuffer__isearch_for_direction_,-1,
+						5, p(ptr), p(ptr), P(1, 2), p(string), p(int)),
+	bi(_i_EditBuffer__formatLine_from_into_width_highlight_colors_, -1,
+						8, p(ptr), p(ptr),
+						p(uint), p(uint), p(ptr), p(uint), P(1, 2), P(1, 2)),
+	bi(_i_EditBuffer__modified,       -1, 2, p(ptr), p(ptr)),
+	bi(_i_EditBuffer__textSize,       -1, 2, p(ptr), p(ptr)),
+	bi(_i_EditBuffer__saveFile_,      -1, 3, p(ptr), p(ptr), p(string)),
 	{}
 };
 

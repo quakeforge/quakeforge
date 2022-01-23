@@ -1422,7 +1422,7 @@ SV_RemoveUserCommand (void *cmd)
 }
 
 static void
-PF_AddUserCommand (progs_t *pr)
+PF_SV_AddUserCommand (progs_t *pr)
 {
 	const char *name = P_GSTRING (pr, 0);
 	ucmd_t     *cmd;
@@ -1999,8 +1999,11 @@ SV_ExecuteClientMessage (client_t *cl)
 	}
 }
 
+#define bi(x,np,params...) {#x, PF_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	{"SV_AddUserCommand",	PF_AddUserCommand,	-1},
+	bi(SV_AddUserCommand, 3, p(string), p(func), p(int)),
 	{0}
 };
 

@@ -120,15 +120,17 @@ bi_refresh_2d (progs_t *pr)
 }
 
 static void
-bi_shutdown_ (progs_t *pr)
+bi_shutdown (progs_t *pr)
 {
 	Sys_Shutdown ();
 }
 
+#define bi(x,n,np,params...) {#x, bi_##x, n, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
-	{"refresh",		bi_refresh,		-1},
-	{"refresh_2d",	bi_refresh_2d,	-1},
-	{"shutdown",	bi_shutdown_,	-1},
+	bi(refresh,    -1, 0),
+	bi(refresh_2d, -1, 1, p(func)),
+	bi(shutdown,   -1, 0),
 	{0}
 };
 
@@ -139,7 +141,7 @@ event_handler (const IE_event_t *ie_event, void *_pr)
 }
 
 static void
-bi_shutdown (void *data)
+BI_shutdown (void *data)
 {
 }
 
@@ -155,7 +157,7 @@ BI_Graphics_Init (progs_t *pr)
 	PI_Init ();
 	PI_RegisterPlugins (client_plugin_list);
 
-	Sys_RegisterShutdown (bi_shutdown, pr);
+	Sys_RegisterShutdown (BI_shutdown, pr);
 
 	VID_Init_Cvars ();
 	IN_Init_Cvars ();

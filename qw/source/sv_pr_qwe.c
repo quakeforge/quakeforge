@@ -480,28 +480,31 @@ PF_conprint (progs_t *pr)
 
 #define QWE (PR_RANGE_QWE << PR_RANGE_SHIFT) |
 
+#define bi(x,n,np,params...) {"QWE:"#x, PF_##x, n, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	{"QWE:executecmd",			PF_executecmd,		QWE 83},
-	{"QWE:tokanize" /* sic */,	PF_tokanize,		QWE 84},
-	{"QWE:argc",				PF_argc,			QWE 85},
-	{"QWE:argv",				PF_argv,			QWE 86},
-	{"QWE:teamfield",			PF_teamfield,		QWE 87},
-	{"QWE:substr",				PF_substr,			QWE 88},
-	{"QWE:strcat",				PF_strcat,			QWE 89},
-	{"QWE:strlen",				PF_strlen,			QWE 90},
-	{"QWE:str2byte",			PF_str2byte,		QWE 91},
-	{"QWE:str2short",			PF_str2short,		QWE 92},
-	{"QWE:newstr",				PF_newstr,			QWE 93},
-	{"QWE:freestr",				PF_freestr,			QWE 94},
-	{"QWE:conprint",			PF_conprint,		QWE 95},
-	{"QWE:readcmd",				PF_readcmd,			QWE 96},
-	{"QWE:strcpy",				PF_strcpy,			QWE 97},
-	{"QWE:strstr",				PF_strstr,			QWE 98},
-	{"QWE:strncpy",				PF_strncpy,			QWE 99},
-	{"QWE:log",					PF_log,				QWE 100},
-	{"QWE:redirectcmd",			PF_redirectcmd,		QWE 101},
-	{"QWE:calltimeofday",		PF_calltimeofday,	QWE 102},
-	{"QWE:forceddemoframe",		PF_forcedemoframe,	QWE 103},
+	bi(executecmd,      QWE 83, 0),
+	bi(tokanize,        QWE 84, 1, p(string)), /* sic */
+	bi(argc,            QWE 85, 0),
+	bi(argv,            QWE 86, 1, p(float)),
+	bi(teamfield,       QWE 87, 1, p(field)),
+	bi(substr,          QWE 88, 3, p(string), p(float), p(float)),
+	bi(strcat,          QWE 89, -1),
+	bi(strlen,          QWE 90, 1, p(string)),
+	bi(str2byte,        QWE 91, 1, p(string)),
+	bi(str2short,       QWE 92, 1, p(string)),
+	bi(newstr,          QWE 93, 2, p(string), p(float)),
+	bi(freestr,         QWE 94, 1, p(string)),
+	bi(conprint,        QWE 95, -1),
+	bi(readcmd,         QWE 96, 1, p(string)),
+	bi(strcpy,          QWE 97, 2, p(string), p(string)),
+	bi(strstr,          QWE 98, 2, p(string), p(string)),
+	bi(strncpy,         QWE 99, 3, p(string), p(string), p(float)),
+	bi(log,             QWE 100, 3, p(string), p(float), p(string)),
+	bi(redirectcmd,     QWE 101, 2, p(entity), p(string)),
+	bi(calltimeofday,   QWE 102, 0),
+	bi(forcedemoframe,  QWE 103, 1, p(float)),
 	{0}
 };
 #define LAST_QWE_BUILTIN 103

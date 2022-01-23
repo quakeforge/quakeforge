@@ -868,11 +868,13 @@ bi_init_input (progs_t *pr)
 	IE_Send_Event (&event);
 }
 
+#define bi(x,n,np,params...) {#x, bi_##x, n, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
-	{"send_connected_devices",	bi_send_connected_devices,	-1},
-	{"get_device_info",			bi_get_device_info,			-1},
-	{"get_event",				bi_get_event,				-1},
-	{"init_input",				bi_init_input,				-1},
+	bi(send_connected_devices, -1, 0),
+	bi(get_device_info,        -1, 1, p(int)),
+	bi(get_event,              -1, 1, p(ptr)),
+	bi(init_input,             -1, 0),
 
 	{0}
 };

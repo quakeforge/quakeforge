@@ -69,8 +69,11 @@ bi_va_copy (progs_t *pr)
 	R_PACKED (pr, pr_va_list_t).list = PR_SetPointer (pr, dst_list);
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	{"va_copy",		bi_va_copy,		-1},
+	bi(va_copy, 1, P(1, 2)),
 	{0}
 };
 

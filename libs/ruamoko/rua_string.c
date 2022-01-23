@@ -281,25 +281,28 @@ bi_str_upper (progs_t *pr)
 	RETURN_STRING (pr, upper);
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	{"strlen",		bi_strlen,		-1},
-	{"sprintf",		bi_sprintf,		-1},
-	{"vsprintf",	bi_vsprintf,	-1},
-	{"str_new",		bi_str_new,		-1},
-	{"str_free",	bi_str_free,	-1},
-	{"str_hold",	bi_str_hold,	-1},
-	{"str_valid",	bi_str_valid,	-1},
-	{"str_mutable",	bi_str_mutable,	-1},
-	{"str_copy",	bi_str_copy,	-1},
-	{"str_cat",		bi_str_cat,		-1},
-	{"str_clear",	bi_str_clear,	-1},
-	{"str_mid|*i",	bi_str_mid,		-1},
-	{"str_mid|*ii",	bi_str_mid,		-1},
-	{"str_str",		bi_str_str,		-1},
-	{"str_char",	bi_str_char,	-1},
-	{"str_quote",	bi_str_quote,	-1},
-	{"str_lower",	bi_str_lower,	-1},
-	{"str_upper",	bi_str_upper,	-1},
+	bi(strlen,      1, p(string)),
+	bi(sprintf,     -2, p(string)),
+	bi(vsprintf,    2, p(string), P(1, 2)),
+	bi(str_new,     0),
+	bi(str_free,    1, p(string)),
+	bi(str_hold,    1, p(string)),
+	bi(str_valid,   1, p(string)),
+	bi(str_mutable, 1, p(string)),
+	bi(str_copy,    2, p(string), p(string)),
+	bi(str_cat,     2, p(string), p(string)),
+	bi(str_clear,   1, p(string)),
+	{"str_mid|*i",	bi_str_mid,		-1, 2, {p(string), p(int)}},
+	{"str_mid|*ii",	bi_str_mid,		-1, 3, {p(string), p(int), p(int)}},
+	bi(str_str,     2, p(string), p(string)),
+	bi(str_char,    2, p(string), p(int)),
+	bi(str_quote,   1, p(string)),
+	bi(str_lower,   1, p(string)),
+	bi(str_upper,   1, p(string)),
 	{0}
 };
 

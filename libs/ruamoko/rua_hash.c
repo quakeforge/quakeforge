@@ -359,24 +359,26 @@ bi_hash_clear (progs_t *pr, void *data)
 	table_reset (res);
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
-	{"Hash_NewTable",			bi_Hash_NewTable,			-1},
-	{"Hash_SetHashCompare",		bi_Hash_SetHashCompare,		-1},
-	{"Hash_DelTable",			bi_Hash_DelTable,			-1},
-	{"Hash_FlushTable",			bi_Hash_FlushTable,			-1},
-	{"Hash_Add",				bi_Hash_Add,				-1},
-	{"Hash_AddElement",			bi_Hash_AddElement,			-1},
-	{"Hash_Find",				bi_Hash_Find,				-1},
-	{"Hash_FindElement",		bi_Hash_FindElement,		-1},
-	{"Hash_FindList",			bi_Hash_FindList,			-1},
-	{"Hash_FindElementList",	bi_Hash_FindElementList,	-1},
-	{"Hash_Del",				bi_Hash_Del,				-1},
-	{"Hash_DelElement",			bi_Hash_DelElement,			-1},
-	{"Hash_Free",				bi_Hash_Free,				-1},
-	{"Hash_String",				bi_Hash_String,				-1},
-	{"Hash_Buffer",				bi_Hash_Buffer,				-1},
-	{"Hash_GetList",			bi_Hash_GetList,			-1},
-	{"Hash_Stats",				bi_Hash_Stats,				-1},
+	bi(Hash_NewTable,        4, p(int), p(func), p(func), p(ptr)),
+	bi(Hash_SetHashCompare,  3, p(ptr), p(func), p(func)),
+	bi(Hash_DelTable,        1, p(ptr)),
+	bi(Hash_FlushTable,      1, p(ptr)),
+	bi(Hash_Add,             2, p(ptr), p(ptr)),
+	bi(Hash_AddElement,      2, p(ptr), p(ptr)),
+	bi(Hash_Find,            2, p(ptr), p(string)),
+	bi(Hash_FindElement,     2, p(ptr), p(ptr)),
+	bi(Hash_FindList,        2, p(ptr), p(string)),
+	bi(Hash_FindElementList, 2, p(ptr), p(ptr)),
+	bi(Hash_Del,             2, p(ptr), p(string)),
+	bi(Hash_DelElement,      2, p(ptr), p(ptr)),
+	bi(Hash_Free,            2, p(ptr), p(ptr)),
+	bi(Hash_String,          1, p(string)),
+	bi(Hash_Buffer,          2, p(ptr), p(int)),
+	bi(Hash_GetList,         1, p(ptr)),
+	bi(Hash_Stats,           1, p(ptr)),
 	{0}
 };
 

@@ -249,7 +249,7 @@ PF_fabs (progs_t *pr)
 	entity (entity start, .(...) fld, ... match) find
 */
 static void
-PF_Find (progs_t *pr)
+PF_find (progs_t *pr)
 {
 	const char *s = 0, *t;	// ev_string
 	int			i;			// ev_vector
@@ -557,7 +557,7 @@ PF_charcount (progs_t *pr)
 	string () gametype
 */
 static void
-PR_gametype (progs_t *pr)
+PF_gametype (progs_t *pr)
 {
 	RETURN_STRING (pr, pr_gametype);
 }
@@ -585,41 +585,43 @@ PF_PR_FindFunction (progs_t *pr)
 
 #define QF (PR_RANGE_QF << PR_RANGE_SHIFT) |
 
+#define bi(x,n,np,params...) {#x, PF_##x, n, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
-	{"break",			PF_break,			6},
-	{"random",			PF_random,			7},
-	{"normalize",		PF_normalize,		9},
-	{"vlen",			PF_vlen,			12},
-	{"vectoyaw",		PF_vectoyaw,		13},
-	{"find",			PF_Find,			18},
-	{"dprint",			PF_dprint,			25},
-	{"ftos",			PF_ftos,			26},
-	{"vtos",			PF_vtos,			27},
-	{"coredump",		PF_coredump,		28},
-	{"traceon",			PF_traceon,			29},
-	{"traceoff",		PF_traceoff,		30},
-	{"eprint",			PF_eprint,			31},
-	{"rint",			PF_rint,			36},
-	{"floor",			PF_floor,			37},
-	{"ceil",			PF_ceil,			38},
-	{"fabs",			PF_fabs,			43},
-	{"cvar",			PF_cvar,			45},
-	{"nextent",			PF_nextent,			47},
-	{"vectoangles",		PF_vectoangles,		51},
-	{"cvar_set",		PF_cvar_set,		72},
-	{"stof",			PF_stof,			81},
+	bi(break,            6, 0),
+	bi(random,           7, 0),
+	bi(normalize,        9, 1, p(vector)),
+	bi(vlen,            12, 1, p(vector)),
+	bi(vectoyaw,        13, 1, p(vector)),
+	bi(find,            18, -3, p(entity), p(field)),
+	bi(dprint,          25, -1),
+	bi(ftos,            26, 1, p(float)),
+	bi(vtos,            27, 1, p(vector)),
+	bi(coredump,        28, 0),
+	bi(traceon,         29, 0),
+	bi(traceoff,        30, 0),
+	bi(eprint,          31, 1, p(entity)),
+	bi(rint,            36, 1, p(float)),
+	bi(floor,           37, 1, p(float)),
+	bi(ceil,            38, 1, p(float)),
+	bi(fabs,            43, 1, p(float)),
+	bi(cvar,            45, 1, p(string)),
+	bi(nextent,         47, 1, p(entity)),
+	bi(vectoangles,     51, 1, p(vector)),
+	bi(cvar_set,        72, 2, p(string), p(string)),
+	bi(stof,            81, 1, p(string)),
 
 
-	{"charcount",		PF_charcount,		QF 101},
-	{"ftoi",			PF_ftoi,			QF 110},
-	{"itof",			PF_itof,			QF 111},
-	{"itos",			PF_itos,			QF 112},
-	{"stoi",			PF_stoi,			QF 113},
-	{"stov",			PF_stov,			QF 114},
-	{"gametype",		PR_gametype,		QF 115},
+	bi(charcount,   QF 101, 2, p(string), p(string)),
+	bi(ftoi,        QF 110, 1, p(float)),
+	bi(itof,        QF 111, 1, p(int)),
+	bi(itos,        QF 112, 1, p(int)),
+	bi(stoi,        QF 113, 1, p(string)),
+	bi(stov,        QF 114, 1, p(string)),
+	bi(gametype,    QF 115, 0),
 
-	{"PR_SetField",		PF_PR_SetField,		-1},
-	{"PR_FindFunction",	PF_PR_FindFunction,	-1},
+	bi(PR_SetField,     -1, 3, p(entity), p(string), p(string)),
+	bi(PR_FindFunction, -1, 1, p(string)),
 	{0}
 };
 

@@ -47,8 +47,10 @@ bi_S_LocalSound (progs_t *pr)
 	S_LocalSound (sound);
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
-	{"S_LocalSound",		bi_S_LocalSound,		-1},
+	bi(S_LocalSound, 1, p(string)),
 	{0}
 };
 

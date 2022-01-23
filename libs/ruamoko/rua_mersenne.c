@@ -145,14 +145,15 @@ bi_mtwist_clear (progs_t *pr, void *data)
 	state_reset (res);
 }
 
-#define bi(x) {#x, bi_##x, -1}
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
-	bi(mtwist_new),
-	bi(mtwist_delete),
-	bi(mtwist_seed),
-	bi(mtwist_rand),
-	bi(mtwist_rand_0_1),
-	bi(mtwist_rand_m1_1),
+	bi(mtwist_new,       1, p(int)),
+	bi(mtwist_delete,    1, p(ptr)),
+	bi(mtwist_seed,      2, p(ptr), p(int)),
+	bi(mtwist_rand,      1, p(ptr)),
+	bi(mtwist_rand_0_1,  1, p(ptr)),
+	bi(mtwist_rand_m1_1, 1, p(ptr)),
 	{0}
 };
 

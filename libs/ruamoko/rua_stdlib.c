@@ -156,12 +156,15 @@ bi_prefixsumf (progs_t *pr)
 	}
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	{"bsearch",			bi_bsearch,		-1},
-	{"fbsearch",		bi_fbsearch,	-1},
-	{"qsort",			bi_qsort,		-1},
-	{"prefixsum|^ii",	bi_prefixsumi,	-1},
-	{"prefixsum|^fi",	bi_prefixsumf,	-1},
+	bi(bsearch,  4, p(ptr), p(ptr), p(int), p(int), p(func)),
+	bi(fbsearch, 4, p(ptr), p(ptr), p(int), p(int), p(func)),
+	bi(qsort,    3, p(ptr), p(int), p(int), p(func)),
+	{"prefixsum|^ii",	bi_prefixsumi,	-1, 2, {p(ptr), p(int)}},
+	{"prefixsum|^fi",	bi_prefixsumf,	-1, 2, {p(ptr), p(int)}},
 	{0}
 };
 

@@ -12,7 +12,7 @@ void __obj_exec_class (struct obj_module *msg) = #0;
 BOOL __obj_responds_to(id obj, SEL sel) = #0;
 void (id object, int code, string fmt, ...) obj_error = #0;
 void (id object, int code, string fmt, @va_list args) obj_verror = #0;
-//obj_error_handler (objc_error_handler func) obj_set_error_handler = #0;
+//obj_error_handler obj_set_error_handler (objc_error_handler func) = #0;
 IMP (id receiver, SEL op) obj_msg_lookup = #0;
 IMP (Super class, SEL op) obj_msg_lookup_super = #0;
 id (id receiver, SEL op, ...) obj_msgSend = #0;
@@ -27,11 +27,11 @@ void *obj_valloc (int size) = #0;
 void *obj_realloc (void *mem, int size) = #0;
 void *obj_calloc (int nelem, int size) = #0;
 void obj_free (void *mem) = #0;
-//(void *) (void) obj_get_uninstalled_dtable = #0;
+void *obj_get_uninstalled_dtable (void) = #0;
 
-Class (string name) obj_get_class = #0;
-Class (string name) obj_lookup_class = #0;
-//Class (void **enum_stage) obj_next_class = #0;
+Class obj_get_class (string name) = #0;
+Class obj_lookup_class (string name) = #0;
+Class obj_next_class (void **enum_stage) = #0;
 
 string (SEL selector) sel_get_name = #0;
 string (SEL selector) sel_get_type = #0;

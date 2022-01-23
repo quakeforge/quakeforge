@@ -187,15 +187,17 @@ bi_Script_NoQuoteLines (progs_t *pr)
 	script->script.no_quote_lines = P_INT (pr, 1);
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
 static builtin_t builtins[] = {
-	{"Script_New",				bi_Script_New,				-1},
-	{"Script_Delete",			bi_Script_Delete,			-1},
-	{"Script_Start",			bi_Script_Start,			-1},
-	{"Script_TokenAvailable",	bi_Script_TokenAvailable,	-1},
-	{"Script_GetToken",			bi_Script_GetToken,			-1},
-	{"Script_UngetToken",		bi_Script_UngetToken,		-1},
-	{"Script_Error",			bi_Script_Error,			-1},
-	{"Script_NoQuoteLines",		bi_Script_NoQuoteLines,		-1},
+	bi(Script_New,            0),
+	bi(Script_Delete,         1, p(ptr)),
+	bi(Script_Start,          3, p(ptr), p(string), p(string)),
+	bi(Script_TokenAvailable, 2, p(ptr), p(int)),
+	bi(Script_GetToken,       2, p(ptr), p(int)),
+	bi(Script_UngetToken,     1, p(ptr)),
+	bi(Script_Error,          1, p(ptr)),
+	bi(Script_NoQuoteLines,   1, p(ptr)),
 	{0}
 };
 

@@ -175,12 +175,15 @@ bi_GIB_Handle_Get (progs_t *pr)
 	//	R_INT (pr) = 0;
 }
 
+#define bi(x,np,params...) {#x, bi_##x, -1, np, {params}}
+#define p(type) PR_PARAM(type)
+#define P(a, s) { .size = (s), .alignment = BITOP_LOG2 (a), }
 static builtin_t builtins[] = {
-	{"GIB_Builtin_Add",	bi_GIB_Builtin_Add,	-1},
-	{"GIB_Return",		bi_GIB_Return,		-1},
-	{"GIB_Handle_New",	bi_GIB_Handle_New,	-1},
-	{"GIB_Handle_Free",	bi_GIB_Handle_Free,	-1},
-	{"GIB_Handle_Get",	bi_GIB_Handle_Get,	-1},
+	bi(GIB_Builtin_Add, 2, p(string), p(func)),
+	bi(GIB_Return,      1, p(string)),
+	bi(GIB_Handle_New,  0),//FIXME
+	bi(GIB_Handle_Free, 0),//FIXME
+	bi(GIB_Handle_Get,  0),//FIXME
 	{0}
 };
 

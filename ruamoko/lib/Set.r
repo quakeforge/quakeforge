@@ -1,6 +1,7 @@
 #include <Set.h>
 
 void set_del_iter (set_iter_t *set_iter) = #0;
+unsigned set_iter_element (set_iter_t *set_iter) = #0;
 set_t *set_new (void) = #0;
 void set_delete (set_t *set) = #0;
 set_t *set_add (set_t *set, unsigned x) = #0;
