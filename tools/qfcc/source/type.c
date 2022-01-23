@@ -64,7 +64,7 @@
 	type_t type_##t = { \
 		.type = ev_##t, \
 		.name = #t, \
-		.alignment = __alignof__(pr_##t##_t) / __alignof__ (pr_int_t), \
+		.alignment = PR_ALIGNOF(t), \
 		.meta = ty_basic, \
 		{{ __builtin_choose_expr (ev_##t == ev_field \
 							   || ev_##t == ev_func \

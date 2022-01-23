@@ -33,13 +33,13 @@
 
 #include "QF/progs.h"
 
-#define EV_TYPE(type) (sizeof (pr_##type##_t) / sizeof (pr_int_t)),
+#define EV_TYPE(type) PR_SIZEOF(type),
 VISIBLE const pr_ushort_t pr_type_size[ev_type_count] = {
 #include "QF/progs/pr_type_names.h"
 	0,			// ev_invalid      not a valid/simple type
 };
 
-#define EV_TYPE(type) (__alignof__ (pr_##type##_t) / __alignof__ (pr_int_t)),
+#define EV_TYPE(type) PR_ALIGNOF(type),
 VISIBLE const pr_ushort_t pr_type_alignment[ev_type_count] = {
 #include "QF/progs/pr_type_names.h"
 	0,			// ev_invalid      not a valid/simple type
