@@ -1,6 +1,7 @@
 libs_util_tests = \
 	libs/util/test/test-bary \
 	libs/util/test/test-baryvf \
+	libs/util/test/test-bitop \
 	libs/util/test/test-bsearch \
 	libs/util/test/test-cexpr \
 	libs/util/test/test-cmem \
@@ -35,6 +36,10 @@ libs_util_test_test_bary_DEPENDENCIES=libs/util/libQFutil.la
 libs_util_test_test_baryvf_SOURCES=libs/util/test/test-baryvf.c
 libs_util_test_test_baryvf_LDADD=libs/util/libQFutil.la
 libs_util_test_test_baryvf_DEPENDENCIES=libs/util/libQFutil.la
+
+libs_util_test_test_bitop_SOURCES=libs/util/test/test-bitop.c
+libs_util_test_test_bitop_LDADD=libs/util/libQFutil.la
+libs_util_test_test_bitop_DEPENDENCIES=libs/util/libQFutil.la
 
 libs_util_test_test_bsearch_SOURCES=libs/util/test/test-bsearch.c
 libs_util_test_test_bsearch_LDADD=libs/util/libQFutil.la

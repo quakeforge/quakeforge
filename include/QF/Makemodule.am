@@ -115,6 +115,7 @@ include_qf_input = \
 	include/QF/input/imt.h
 
 include_qf_math = \
+	include/QF/math/bitop.h \
 	include/QF/math/dual.h \
 	include/QF/math/half.h \
 	include/QF/math/matrix3.h \
