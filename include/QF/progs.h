@@ -1221,13 +1221,25 @@ typedef struct {
 */
 typedef struct {
 	pr_int_t    first_statement;
-	pr_int_t    parm_start;
-	pr_int_t    locals;
-	pr_uint_t   profile;
 	pr_int_t    numparms;
-	dparmsize_t parm_size[PR_MAX_PARAMS];
-	dfunction_t *descriptor;
-	builtin_proc func;
+	union {
+		struct {
+			dparmsize_t parm_size[PR_MAX_PARAMS];
+			dfunction_t *descriptor;
+			pr_uint_t   parm_start;
+			pr_uint_t   locals;
+			pr_uint_t   profile;
+		};
+		struct {
+			// although Ruamoko progs support more than PR_MAX_PARAMS
+			// arguments, only the first PR_MAX_PARAMS parameter pointers
+			// are initialized. This keeps builtins meant for both ISAs
+			// simple as they either will never accept more tha PR_MAX_PARAMS
+			// arugments, or they'll be modified to do the right thing.
+			pr_ushort_t  param_offsets[PR_MAX_PARAMS];
+			builtin_proc func;
+		};
+	};
 } bfunction_t;
 
 /** Register a set of builtin functions with the VM. Different VMs within the

@@ -284,9 +284,11 @@ PR_EnterFunction (progs_t *pr, bfunction_t *f)
 			sizeof (pr_type_t) * f->locals);
 	pr->localstack_used += f->locals;
 
-	if (pr_deadbeef_locals->int_val)
-		for (i = f->parm_start; i < f->parm_start + f->locals; i++)
+	if (pr_deadbeef_locals->int_val) {
+		for (pr_uint_t i = f->parm_start; i < f->parm_start + f->locals; i++) {
 			pr->pr_globals[i].int_var = 0xdeadbeef;
+		}
+	}
 
 	// copy parameters
 	if (f->numparms >= 0) {
