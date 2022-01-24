@@ -196,6 +196,7 @@ alias_def (def_t *def, type_t *type, int offset)
 	alias->line = pr.source_line;
 	alias->file = pr.source_file;
 	alias->next = def->alias_defs;
+	alias->reg = def->reg;
 	def->alias_defs = alias;
 	return alias;
 }
