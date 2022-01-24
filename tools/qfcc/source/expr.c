@@ -1419,6 +1419,28 @@ append_expr (expr_t *block, expr_t *e)
 	return block;
 }
 
+expr_t *
+prepend_expr (expr_t *block, expr_t *e)
+{
+	if (block->type != ex_block)
+		internal_error (block, "not a block expression");
+
+	if (!e || e->type == ex_error)
+		return block;
+
+	if (e->next)
+		internal_error (e, "append_expr: expr loop detected");
+
+	e->next = block->e.block.head;
+	block->e.block.head = e;
+
+	if (block->e.block.tail == &block->e.block.head) {
+		block->e.block.tail = &e->next;
+	}
+
+	return block;
+}
+
 static symbol_t *
 get_struct_field (const type_t *t1, expr_t *e1, expr_t *e2)
 {

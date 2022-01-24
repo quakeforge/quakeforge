@@ -677,16 +677,14 @@ build_code_function (symbol_t *fsym, expr_t *state_expr, expr_t *statements)
 	if (options.code.progsversion == PROG_VERSION) {
 		expr_t     *e;
 		e = new_with_expr (2, LOCALS_REG, new_short_expr (0));
-		e->next = statements;
 		e->file = func->def->file;
 		e->line = func->def->line;
-		statements = e;
+		prepend_expr (statements, e);
 
 		e = new_adjstk_expr (0, 0);
-		e->next = statements;
 		e->file = func->def->file;
 		e->line = func->def->line;
-		statements = e;
+		prepend_expr (statements, e);
 
 		func->temp_reg = LOCALS_REG;
 		for (def_t *def = func->locals->space->defs; def; def = def->next) {
