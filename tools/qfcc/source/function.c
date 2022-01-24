@@ -494,7 +494,6 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 	symbol_t   *param;
 	symtab_t   *parameters;
 	symtab_t   *locals;
-	symtab_t   *cs = current_symtab;//FIXME
 
 	check_function (fsym);
 
@@ -508,8 +507,6 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 	locals->space = defspace_new (ds_virtual);
 	fsym->s.func->locals = locals;
 
-	current_symtab = locals;//FIXME
-
 	if (!fsym->s.func) {
 		internal_error (0, "function %s not defined", fsym->name);
 	}
@@ -518,7 +515,7 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 	}
 	if (fsym->s.func->type->t.func.num_params < 0) {
 		args = new_symbol_type (".args", &type_va_list);
-		initialize_def (args, 0, parameters->space, sc_param);
+		initialize_def (args, 0, parameters->space, sc_param, locals);
 	}
 
 	for (p = fsym->params, i = 0; p; p = p->next) {
@@ -531,18 +528,17 @@ build_scope (symbol_t *fsym, symtab_t *parent)
 			p->name = save_string ("");
 		}
 		param = new_symbol_type (p->name, p->type);
-		initialize_def (param, 0, parameters->space, sc_param);
+		initialize_def (param, 0, parameters->space, sc_param, locals);
 		i++;
 	}
 
 	if (args) {
 		while (i < PR_MAX_PARAMS) {
 			param = new_symbol_type (va (0, ".par%d", i), &type_param);
-			initialize_def (param, 0, parameters->space, sc_param);
+			initialize_def (param, 0, parameters->space, sc_param, locals);
 			i++;
 		}
 	}
-	current_symtab = cs;
 }
 
 function_t *

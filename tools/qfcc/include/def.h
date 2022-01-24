@@ -40,6 +40,7 @@
 ///@{
 
 struct symbol_s;
+struct symtab_s;
 struct expr_s;
 
 /** Represent a memory location that holds a QuakeC/Ruamoko object.
@@ -242,10 +243,11 @@ void def_to_ddef (def_t *def, ddef_t *ddef, int aux);
 	\param init		If not null, the expressions to use to initialize the def.
 	\param space	The space from which to allocate space for the def.
 	\param storage	The storage class of the def.
+	\param symtab   The symbol table into which the def will be placed.
 */
 void initialize_def (struct symbol_s *sym,
 					 struct expr_s *init, struct defspace_s *space,
-					 storage_class_t storage);
+					 storage_class_t storage, struct symtab_s *symtab);
 
 /** Determine if two defs overlap.
 

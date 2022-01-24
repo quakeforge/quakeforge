@@ -412,7 +412,7 @@ init_elements (struct def_s *def, expr_t *eles)
 }
 
 static void
-init_vector_components (symbol_t *vector_sym, int is_field)
+init_vector_components (symbol_t *vector_sym, int is_field, symtab_t *symtab)
 {
 	expr_t     *vector_expr;
 	int         i;
@@ -425,9 +425,9 @@ init_vector_components (symbol_t *vector_sym, int is_field)
 		const char *name;
 
 		name = va (0, "%s_%s", vector_sym->name, fields[i]);
-		sym = symtab_lookup (current_symtab, name);
+		sym = symtab_lookup (symtab, name);
 		if (sym) {
-			if (sym->table == current_symtab) {
+			if (sym->table == symtab) {
 				if (sym->sy_type != sy_expr) {
 					error (0, "%s redefined", name);
 					sym = 0;
@@ -461,12 +461,13 @@ init_vector_components (symbol_t *vector_sym, int is_field)
 		sym->sy_type = sy_expr;
 		sym->s.expr = expr;
 		if (!sym->table)
-			symtab_addsymbol (current_symtab, sym);
+			symtab_addsymbol (symtab, sym);
 	}
 }
 
 static void
-init_field_def (def_t *def, expr_t *init, storage_class_t storage)
+init_field_def (def_t *def, expr_t *init, storage_class_t storage,
+				symtab_t *symtab)
 {
 	type_t     *type = (type_t *) dereference_type (def->type);//FIXME cast
 	def_t      *field_def;
@@ -499,7 +500,7 @@ init_field_def (def_t *def, expr_t *init, storage_class_t storage)
 		}
 		// no support for initialized field vector componets (yet?)
 		if (is_vector(type) && options.code.vector_components)
-			init_vector_components (field_sym, 1);
+			init_vector_components (field_sym, 1, symtab);
 	} else if (init->type == ex_symbol) {
 		symbol_t   *sym = init->e.symbol;
 		symbol_t   *field = symtab_lookup (pr.entity_fields, sym->name);
@@ -523,12 +524,12 @@ num_elements (expr_t *e)
 
 void
 initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
-				storage_class_t storage)
+				storage_class_t storage, symtab_t *symtab)
 {
-	symbol_t   *check = symtab_lookup (current_symtab, sym->name);
+	symbol_t   *check = symtab_lookup (symtab, sym->name);
 	reloc_t    *relocs = 0;
 
-	if (check && check->table == current_symtab) {
+	if (check && check->table == symtab) {
 		if (check->sy_type != sy_var || !type_same (check->type, sym->type)) {
 			error (0, "%s redefined", sym->name);
 		} else {
@@ -549,7 +550,7 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 	}
 	sym->sy_type = sy_var;
 	if (!sym->table)
-		symtab_addsymbol (current_symtab, sym);
+		symtab_addsymbol (symtab, sym);
 
 	if (sym->s.def && sym->s.def->external) {
 		//FIXME this really is not the right way
@@ -567,10 +568,10 @@ initialize_def (symbol_t *sym, expr_t *init, defspace_t *space,
 		reloc_attach_relocs (relocs, &sym->s.def->relocs);
 	}
 	if (is_vector(sym->type) && options.code.vector_components)
-		init_vector_components (sym, 0);
+		init_vector_components (sym, 0, symtab);
 	if (sym->type->type == ev_field && storage != sc_local
 		&& storage != sc_param)
-		init_field_def (sym->s.def, init, storage);
+		init_field_def (sym->s.def, init, storage, symtab);
 	if (storage == sc_extern) {
 		if (init)
 			error (0, "initializing external variable");

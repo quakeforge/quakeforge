@@ -49,6 +49,7 @@
 #include "tools/qfcc/include/options.h"
 #include "tools/qfcc/include/qfcc.h"
 #include "tools/qfcc/include/reloc.h"
+#include "tools/qfcc/include/shared.h"
 #include "tools/qfcc/include/switch.h"
 #include "tools/qfcc/include/symtab.h"
 #include "tools/qfcc/include/type.h"
@@ -348,7 +349,8 @@ build_switch (expr_t *sw, case_node_t *tree, int op, expr_t *sw_val,
 		table_sym = new_symbol_type (table_name,
 									 array_type (&type_int,
 												 high - low + 1));
-		initialize_def (table_sym, table_init, pr.near_data, sc_static);
+		initialize_def (table_sym, table_init, pr.near_data, sc_static,
+						current_symtab);
 		table_expr = new_symbol_expr (table_sym);
 
 		if (tree->left) {

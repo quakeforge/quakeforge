@@ -554,7 +554,8 @@ external_decl
 				$1->type=find_type (alias_type ($1->type, $1->type, $1->name));
 				symtab_addsymbol (current_symtab, $1);
 			} else {
-				initialize_def ($1, 0, current_symtab->space, spec.storage);
+				initialize_def ($1, 0, current_symtab->space, spec.storage,
+								current_symtab);
 				if ($1->s.def)
 					$1->s.def->nosave |= spec.nosave;
 			}
@@ -570,7 +571,8 @@ external_decl
 				$1->type=find_type (alias_type ($1->type, $1->type, $1->name));
 				symtab_addsymbol (current_symtab, $1);
 			} else {
-				initialize_def ($1, $2, current_symtab->space, spec.storage);
+				initialize_def ($1, $2, current_symtab->space, spec.storage,
+								current_symtab);
 				if ($1->s.def)
 					$1->s.def->nosave |= spec.nosave;
 			}
@@ -1152,7 +1154,7 @@ decl
 			if (sc == sc_static)
 				space = pr.near_data;
 			$1->type = find_type (append_type ($1->type, spec.type));
-			initialize_def ($1, $2, space, sc);
+			initialize_def ($1, $2, space, sc, current_symtab);
 			if ($1->s.def)
 				$1->s.def->nosave |= spec.nosave;
 		}
@@ -1214,7 +1216,8 @@ non_code_func
 			if (local_expr) {
 				symbol_t   *sym = $<symbol>0;
 				specifier_t spec = $<spec>-1;
-				initialize_def (sym, $2, current_symtab->space, spec.storage);
+				initialize_def (sym, $2, current_symtab->space, spec.storage,
+								current_symtab);
 				if (sym->s.def)
 					sym->s.def->nosave |= spec.nosave;
 			} else {
@@ -1235,7 +1238,8 @@ non_code_func
 				if (sym->sy_type == sy_func)
 					make_function (sym, 0, sym->table->space, spec.storage);
 			} else {
-				initialize_def (sym, 0, current_symtab->space, spec.storage);
+				initialize_def (sym, 0, current_symtab->space, spec.storage,
+								current_symtab);
 				if (sym->s.def)
 					sym->s.def->nosave |= spec.nosave;
 			}
@@ -1524,7 +1528,8 @@ init_var_decl
 			specifier_t spec = $<spec>0;
 			$1->type = find_type (append_type ($1->type, spec.type));
 			$1->sy_type = sy_var;
-			initialize_def ($1, 0, current_symtab->space, spec.storage);
+			initialize_def ($1, 0, current_symtab->space, spec.storage,
+							current_symtab);
 			$$ = assign_expr (new_symbol_expr ($1), $2);
 		}
 	;

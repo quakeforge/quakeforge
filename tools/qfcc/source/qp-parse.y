@@ -199,7 +199,8 @@ program_head
 			{
 				symbol_t   *sym = new_symbol ("ExitCode");
 				sym->type = &type_int;
-				initialize_def (sym, 0, current_symtab->space, sc_global);
+				initialize_def (sym, 0, current_symtab->space, sc_global,
+								current_symtab);
 				if (sym->s.def) {
 					sym->s.def->nosave = 1;
 				}
@@ -234,7 +235,8 @@ declarations
 			while ($3) {
 				symbol_t   *next = $3->next;
 				$3->type = $5;
-				initialize_def ($3, 0, current_symtab->space, current_storage);
+				initialize_def ($3, 0, current_symtab->space, current_storage,
+								current_symtab);
 				$3 = next;
 			}
 		}
