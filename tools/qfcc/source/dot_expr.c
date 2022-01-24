@@ -634,6 +634,27 @@ print_memset (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 }
 
 static void
+print_adjstk (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+
+	dasprintf (dstr, "%*se_%p [label=\"adjstk %d:%d\\n%d\"];\n", indent, "", e,
+			   e->e.adjstk.mode, e->e.adjstk.offset, e->line);
+}
+
+static void
+print_with (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
+{
+	int         indent = level * 2 + 2;
+	expr_t     *with = e->e.with.with;
+
+	_print_expr (dstr, with, level, id, next);
+	dasprintf (dstr, "%*se_%p -> \"e_%p\";\n", indent, "", e, with);
+	dasprintf (dstr, "%*se_%p [label=\"with %d:%d\\n%d\"];\n", indent, "", e,
+			   e->e.with.mode, e->e.with.reg, e->line);
+}
+
+static void
 _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 {
 	static print_f print_funcs[ex_count] = {
@@ -659,6 +680,8 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 		[ex_assign] = print_assign,
 		[ex_branch] = print_branch,
 		[ex_return] = print_return,
+		[ex_adjstk] = print_adjstk,
+		[ex_with] = print_with,
 	};
 	int         indent = level * 2 + 2;
 
@@ -671,8 +694,12 @@ _print_expr (dstring_t *dstr, expr_t *e, int level, int id, expr_t *next)
 	e->printid = id;
 
 	if ((int) e->type < 0 || e->type >= ex_count || !print_funcs[e->type]) {
-		dasprintf (dstr, "%*se_%p [label=\"(bad expr type)\\n%d\"];\n",
-				   indent, "", e, e->line);
+		const char *type = va (0, "%d", e->type);
+		if (e->type >= 0 && e->type < ex_count) {
+			type = expr_names[e->type];
+		}
+		dasprintf (dstr, "%*se_%p [label=\"(bad expr type: %s)\\n%d\"];\n",
+				   indent, "", e, type, e->line);
 		return;
 	}
 	print_funcs[e->type] (dstr, e, level, id, next);
