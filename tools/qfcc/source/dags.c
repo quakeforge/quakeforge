@@ -66,6 +66,8 @@ static dag_t *dags_freelist;
 
 static daglabel_t *daglabel_chain;
 
+static void dag_live_aliases(operand_t *op);
+
 static void
 flush_daglabels (void)
 {
@@ -453,6 +455,7 @@ dagnode_set_edges (dag_t *dag, dagnode_t *n, statement_t *s)
 		}
 		daglabel_t *label = operand_label (dag, use);
 		label->live = 1;
+		dag_live_aliases (use);
 		set_add (n->edges, label->dagnode->number);
 	}
 	if (n->type == st_func) {
@@ -815,6 +818,7 @@ dag_create (flownode_t *flownode)
 	dagnode_t **nodes;
 	daglabel_t **labels;
 	int         num_statements = 0;
+	int         num_use = 0;
 	int         num_nodes;
 	int         num_lables;
 	set_t      *live_vars = set_new ();
@@ -823,18 +827,25 @@ dag_create (flownode_t *flownode)
 
 	// count the number of statements so the number of nodes and labels can be
 	// guessed
-	for (s = block->statements; s; s = s->next)
+	for (s = block->statements; s; s = s->next) {
 		num_statements++;
+		for (operand_t *use = s->use; use; use = use->next) {
+			if (use->op_type == op_pseudo) {
+				continue;
+			}
+			num_use++;
+		}
+	}
 
 	set_assign (live_vars, flownode->live_vars.out);
 
 	dag = new_dag ();
 	dag->flownode = flownode;
-	// at most FLOW_OPERANDS per statement
-	num_nodes = num_statements * FLOW_OPERANDS;
+	// at most FLOW_OPERANDS per statement + use
+	num_nodes = num_statements * FLOW_OPERANDS + num_use;
 	dag->nodes = alloca (num_nodes * sizeof (dagnode_t));
-	// at most FLOW_OPERANDS per statement, + return + params
-	num_lables = num_statements * (FLOW_OPERANDS + 1 + 8);
+	// at most FLOW_OPERANDS per statement, + return + params + use
+	num_lables = num_statements * (FLOW_OPERANDS + 1 + 8) + num_use;
 	dag->labels = alloca (num_lables * sizeof (daglabel_t));
 	dag->roots = set_new ();
 
@@ -843,6 +854,15 @@ dag_create (flownode_t *flownode)
 	for (s = block->statements; s; s = s->next) {
 		operand_t  *operands[FLOW_OPERANDS];
 		dag_make_leafs (dag, s, operands);
+		// make sure any auxiliary operands are given nodes, too
+		for (operand_t *use = s->use; use; use = use->next) {
+			if (use->op_type == op_pseudo) {
+				continue;
+			}
+			if (!dag_node (use)) {
+				leaf_node (dag, use, s->expr);
+			}
+		}
 	}
 	// actual dag creation
 	for (s = block->statements; s; s = s->next) {
